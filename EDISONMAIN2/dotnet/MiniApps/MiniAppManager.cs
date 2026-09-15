@@ -40,8 +40,9 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     {
         var vm = descriptor.CreateViewModel();
         var contentId = $"{descriptor.Id}#{_nextInstance++}";
-        return Mount(descriptor.Id, contentId, vm,
-            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, placement));
+        return Mount(descriptor.Id, contentId, vm, descriptor.Pinned,
+            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, placement,
+                                              canClose: !descriptor.Pinned));
     }
 
     /// <summary>
@@ -67,10 +68,18 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
         if (bottomRow is not null) Open(bottomRow, MiniAppPlacement.NewRow);
     }
 
-    /// <summary>Zavře všechny otevřené mini-apps (zavření shellu, přepnutí session).</summary>
-    public void CloseAll()
+    /// <summary>
+    /// Zavře všechny otevřené mini-apps včetně pinned (zavření shellu, přepnutí session, reset).
+    /// Pinned mají <c>CanClose=false</c>, ale programové zavření dock pouští dál.
+    /// </summary>
+    public void CloseAll() => Close(_ => true);
+
+    /// <summary>Zavře jen to, co smí zavřít uživatel - pinned (Plocha) zůstane.</summary>
+    public void CloseClosable() => Close(instance => !instance.Pinned);
+
+    private void Close(Func<MiniAppInstance, bool> predicate)
     {
-        foreach (var instance in _open.ToList())
+        foreach (var instance in _open.Where(predicate).ToList())
             instance.Pane.Close();
     }
 
@@ -90,14 +99,15 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 
         var vm = descriptor.CreateViewModel();
         Action? onClosed = null;
-        Mount(descriptor.Id, contentId, vm, addPane: oc => { onClosed = oc; return pane; });
+        Mount(descriptor.Id, contentId, vm, descriptor.Pinned, addPane: oc => { onClosed = oc; return pane; });
         BumpInstanceCounter(contentId);
-        return new RestoredContent(vm, onClosed!);
+        // CanClose z deskriptoru, ne z uloženého XML - změna pinned sady se retro-aplikuje.
+        return new RestoredContent(vm, onClosed!, CanClose: !descriptor.Pinned);
     }
 
     // Sdílené jádro pro Open i restore: vytvoří instanci, napojí RequestClose + tracking + OnOpened.
     // addPane dostane onClosed handler a vrátí handle panelu (Open ho založí, restore reuse-uje existující).
-    private MiniAppInstance Mount(string descriptorId, string contentId, EDMiniAppViewModel vm,
+    private MiniAppInstance Mount(string descriptorId, string contentId, EDMiniAppViewModel vm, bool pinned,
         Func<Action, IMiniAppPane> addPane)
     {
         MiniAppInstance? instance = null;
@@ -111,7 +121,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
         }
 
         var pane = addPane(OnClosed);
-        instance = new MiniAppInstance(descriptorId, contentId, vm, pane);
+        instance = new MiniAppInstance(descriptorId, contentId, vm, pane, pinned);
         vm.RequestClose += OnRequestClose;
         _open.Add(instance);
         if (vm is IMiniAppRefreshController controller) controller.AttachRefresher(RefreshAll);

@@ -69,10 +69,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenLegacyShellCommand { get; }
         public ICommand CloseAllCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
-        public ICommand OpenDefaultMiniAppsCommand { get; }
         public ICommand CloseMiniAppsCommand { get; }
         public ICommand ResetMiniAppsCommand { get; }
-        public ICommand ShowDesktopMiniAppCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
         public ICommand ConnectToDatabaseCommand { get; }
@@ -108,14 +106,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Otevře okno s jednoúrovňovým výběrem miniaplikace.</summary>
         public ICommand PickMiniAppCommand { get; }
 
-        private bool _hasOpenMiniApps;
-        /// <summary>Je v docku alespoň jedna mini-app? False → shell ukáže prázdný placeholder.</summary>
-        public bool HasOpenMiniApps { get => _hasOpenMiniApps; private set => Set(ref _hasOpenMiniApps, value); }
-
-        private bool _hasOpenDesktop;
-        /// <summary>Je otevřená miniaplikace Plocha? False → proužek pod stromem s výzvou k zobrazení.</summary>
-        public bool HasOpenDesktop { get => _hasOpenDesktop; private set => Set(ref _hasOpenDesktop, value); }
-
         /// <summary>
         /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/> a obnoví
         /// uložený layout aktuální firmy. Volá code-behind shellu po načtení okna.
@@ -123,14 +113,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public void AttachMiniAppHost(IMiniAppHost host)
         {
             _miniAppManager = new MiniAppManager(host, _miniAppCatalog);
-            _miniAppManager.InstancesChanged += UpdateMiniAppFlags;
             RestoreMiniAppLayout(Idfa);
-        }
-
-        private void UpdateMiniAppFlags()
-        {
-            HasOpenMiniApps = _miniAppManager!.OpenInstances.Count > 0;
-            HasOpenDesktop = _miniAppManager.OpenInstances.Any(i => i.DescriptorId == DesktopMiniAppProvider.DesktopId);
         }
 
         /// <summary>
@@ -159,6 +142,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             var desktop = _miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId);
             _miniAppManager?.OpenDefaultLayout(desktop is null ? [] : [desktop], bottomRow: null);
+        }
+
+        // Plocha musí být otevřená vždy - uložený layout ji mít nemusí (pochází z verze, kde šla
+        // zavřít). Bez ní by dock zůstal prázdný a uživatel by o dlaždice se zástupci přišel.
+        private void EnsureDesktopOpen()
+        {
+            if (_miniAppManager is null) return;
+            if (_miniAppManager.OpenInstances.Any(i => i.DescriptorId == DesktopMiniAppProvider.DesktopId)) return;
+            if (_miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId) is { } desktop)
+                _miniAppManager.Open(desktop);
         }
 
         // Po dobu výměny session (persist staré → CloseAll → async rebuild → restore nové) nesmí
@@ -196,6 +189,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             try
             {
                 _miniAppManager.RestoreLayout(xml);
+                EnsureDesktopOpen();
             }
             catch
             {
@@ -261,16 +255,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
             PickMiniAppCommand       = Command(PickMiniApp);
-            OpenDefaultMiniAppsCommand = Command(OpenDefaultMiniApps);
-            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseAll());
+            // Plocha zůstává - zavřít ji nejde a prázdný dock nemá uživateli co dát.
+            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseClosable());
             // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.
             ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
-            // Proužek pod stromem: Plocha jako řada dole, ať nepřekryje už otevřené sloupce.
-            ShowDesktopMiniAppCommand = Command(() =>
-            {
-                if (_miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId) is { } d)
-                    _miniAppManager?.Open(d, MiniAppPlacement.NewRow);
-            });
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(NotYetImplemented);

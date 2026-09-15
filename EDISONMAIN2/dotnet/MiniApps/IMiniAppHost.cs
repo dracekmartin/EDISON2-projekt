@@ -11,10 +11,11 @@ public interface IMiniAppHost
     /// <summary>
     /// Přidá panel do docku a vrátí jeho handle. <paramref name="onClosed"/> se zavolá, když se
     /// panel zavře - uživatelem (křížek) i programově (<see cref="IMiniAppPane.Close"/>).
-    /// <paramref name="placement"/> null = <see cref="MiniAppPlacement.Fill"/>.
+    /// <paramref name="placement"/> null = <see cref="MiniAppPlacement.Fill"/>,
+    /// <paramref name="canClose"/> false skryje křížek a zakáže odtržení (pinned mini-app).
     /// </summary>
     IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                         MiniAppPlacement? placement = null);
+                         MiniAppPlacement? placement = null, bool canClose = true);
 
     /// <summary>
     /// Snímek existujících pod-oken (skupin tabů) jako cílů pro vložení, v pořadí zleva/shora.
@@ -45,5 +46,9 @@ public interface IMiniAppPane
     void Close();
 }
 
-/// <summary>Obsah obnoveného panelu - VM a handler jeho zavření (z <see cref="MiniAppManager"/>).</summary>
-public sealed record RestoredContent(object Content, Action OnClosed);
+/// <summary>
+/// Obsah obnoveného panelu - VM a handler jeho zavření (z <see cref="MiniAppManager"/>).
+/// <see cref="CanClose"/> se bere z deskriptoru, ne z uloženého XML: změna pinned sady se tím
+/// retro-aplikuje i na layouty uložené dřív.
+/// </summary>
+public sealed record RestoredContent(object Content, Action OnClosed, bool CanClose);

@@ -5,8 +5,11 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 
 - `DockMinWidth/Height` razítkuje `AvalonDockHost` **každému** pane po `Layout.Updated`
   (hook nutno obnovovat přes `LayoutChanged` - Deserialize mění celý LayoutRoot); bez toho
-  AvalonDock pane pustí na svých 25 px a miniaplikace fakticky zmizí. Bez otevřené mini-app
-  Plocha (`HasOpenDesktop`) se pod stromem ukáže `EDInfoBar` s akcí na její zobrazení.
+  AvalonDock pane pustí na svých 25 px a miniaplikace fakticky zmizí.
+- **Plocha je `MiniAppDescriptor.Pinned`**: bez křížku a bez odtržení (`CanClose/CanFloat/CanMove`),
+  picker ji nenabízí, `CloseClosable` ji přeskočí (`CloseAll` pro shutdown/reset ne - programové
+  `Close()` dock pustí i tak). `CanClose` se při restore bere z deskriptoru, ne z uloženého XML,
+  a shell Plochu po obnově **doplní** (`EnsureDesktopOpen`) - starý layout ji mít nemusí.
 - Widgety `podpora.m-line.cz` v docku **nejsou** - kanál IT → uživatelé nese fixní pruh
   v shellu (`EdisonMainWindow`, `SupportStrip`), mimo dock, aby ho nešlo zavřít ani zúžit;
   URL nese IdFa + login + e-mail, po přepnutí firmy se widget naviguje znovu (změna `Idfa` VM).
@@ -50,7 +53,7 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   jinak není hit-testable a kolečko jde mimo ScrollViewer.
 - Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,
   stejný lifecycle přes `AttachTreeLayout`); chybí-li nebo je poškozený → výchozí rozložení
-  (jen Plocha). Prázdný dock ukáže placeholder s tlačítkem na výchozí sadu.
+  (jen Plocha).
 - Výběr miniaplikace je vlastní okno (`Windows/MiniAppPickerWindow`) s **jednoúrovňovým**
   seznamem; `IMiniAppProvider.GroupTitle` (pořadí = pořadí registrace v `AppBootstrapper`)
   z něj zbyl jen popisek řádku. Menu „Miniaplikace" na okno jen odkazuje.

@@ -11,7 +11,6 @@
         xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls"
         xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox;assembly=EDControls"
         xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox;assembly=EDControls"
-        xmlns:edib="clr-namespace:EDControls.EDInfoBar;assembly=EDControls"
         xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
         xmlns:edct="clr-namespace:EDControls.EDComponentToolbar;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
@@ -356,7 +355,6 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Přepínač záložek + akce nad aktivním stromem na jednom řádku. TabControl tu drží
@@ -472,25 +470,6 @@
                     </ListBox>
                 </Grid>
             </Border>
-
-            <!-- Upozornění, že miniaplikace Plocha není zobrazená (přišel by o rychlý přístup
-                 k připnutým zástupcům). Skryje se, jakmile je otevřená (HasOpenDesktop). -->
-            <edib:EDInfoBar Grid.Row="3"
-                            Text="Miniaplikace Plocha není zobrazena."
-                            Icon="{StaticResource EDIcons.Star}"
-                            ActionText="Zobrazit"
-                            ActionCommand="{Binding ShowDesktopMiniAppCommand}">
-                <edib:EDInfoBar.Style>
-                    <Style TargetType="{x:Type edib:EDInfoBar}" BasedOn="{StaticResource {x:Type edib:EDInfoBar}}">
-                        <Setter Property="Visibility" Value="Collapsed"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasOpenDesktop}" Value="False">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </edib:EDInfoBar.Style>
-            </edib:EDInfoBar>
         </Grid>
         <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                       Background="{DynamicResource EDTheme.Border.Light}"/>
@@ -513,28 +492,6 @@
                 </avalonDock:LayoutPanel>
             </avalonDock:LayoutRoot>
         </avalonDock:DockingManager>
-
-        <!-- Prázdný dock: výzva + tlačítko na výchozí rozložení. Skryje se, jakmile je otevřená mini-app. -->
-        <StackPanel Grid.Column="2" Grid.Row="2"
-                    HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360">
-            <StackPanel.Style>
-                <Style TargetType="StackPanel">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding HasOpenMiniApps}" Value="False">
-                            <Setter Property="Visibility" Value="Visible"/>
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </StackPanel.Style>
-            <TextBlock Text="V horní liště si vyberte miniaplikace k zobrazení."
-                       TextWrapping="Wrap" TextAlignment="Center"
-                       Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                       Margin="0,0,0,12"/>
-            <Button Content="Zobrazit výchozí miniaplikace"
-                    Command="{Binding OpenDefaultMiniAppsCommand}"
-                    HorizontalAlignment="Center" Padding="12,6"/>
-        </StackPanel>
 
         <!-- Segment = ikona + hodnota, technika (namespace, port, login, Mlp) je v ToolTipu.
              Separator jen mezi vždy viditelnými segmenty - u sbalitelných by zůstal viset. -->

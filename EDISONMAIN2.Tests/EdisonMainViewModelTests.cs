@@ -538,11 +538,11 @@ public class EdisonMainViewModelTests
         vm.AttachMiniAppHost(host);
         vm.OpenMiniAppCommand.Execute(descriptor);
         vm.OpenMiniAppCommand.Execute(descriptor);
-        Assert.True(vm.HasOpenMiniApps);
+        Assert.Equal(2, host.Panes.Count);
 
         vm.CloseMiniAppsCommand.Execute(null);
 
-        Assert.False(vm.HasOpenMiniApps);
+        // Katalog nemá pinned, takže „zavřít ostatní" tu zavře všechno.
         Assert.All(host.Panes, p => Assert.True(p.IsClosed));
     }
 
@@ -567,7 +567,6 @@ public class EdisonMainViewModelTests
         Assert.Equal(2, host.SkeletonResets);   // attach + reset
         var reopened = host.Panes.Where(p => !p.IsClosed).Select(p => p.ContentId).ToList();
         Assert.StartsWith(DesktopMiniAppProvider.DesktopId + "#", Assert.Single(reopened));
-        Assert.True(vm.HasOpenMiniApps);
     }
 
     [Fact]
@@ -589,38 +588,56 @@ public class EdisonMainViewModelTests
         Assert.False(layouts.ContainsKey("CB_DP"));
     }
 
+    private static MiniAppCatalog PinnedDesktopCatalog(EDServices services) =>
+        MiniAppCatalog.Build([new SingleProvider(
+            new MiniAppDescriptor(DesktopMiniAppProvider.DesktopId, "Plocha",
+                () => new StubMiniApp(services), Pinned: true))]);
+
     [Fact]
-    public void HasOpenDesktop_TrueAfterDefaultLayout_FalseWhenClosed()
+    public void DefaultLayout_OpensDesktop_UserCannotCloseIt()
     {
         var services = MockServices();
-        var desktop = new MiniAppDescriptor(DesktopMiniAppProvider.DesktopId, "Plocha",
-            () => new StubMiniApp(services));
-        var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(desktop)]));
+        var vm = CreateVM(services: services, miniAppCatalog: PinnedDesktopCatalog(services));
         var host = new RecordingHost();
 
-        vm.AttachMiniAppHost(host);   // bez uloženého layoutu → výchozí sada (Plocha jako řada dole)
-        Assert.True(vm.HasOpenDesktop);
+        vm.AttachMiniAppHost(host);   // bez uloženého layoutu → výchozí sada
 
-        host.Panes.Single(p => p.ContentId.StartsWith(DesktopMiniAppProvider.DesktopId + "#")).Close();
-        Assert.False(vm.HasOpenDesktop);
+        var desktop = Assert.Single(host.Panes);
+        Assert.StartsWith(DesktopMiniAppProvider.DesktopId + "#", desktop.ContentId);
+        Assert.False(desktop.CanClose);
     }
 
     [Fact]
-    public void ShowDesktopMiniAppCommand_OpensDesktop_SetsHasOpenDesktop()
+    public void RestoredLayoutWithoutDesktop_AddsIt()
     {
+        // Layout uložený verzí, kde Plocha ještě šla zavřít. RecordingHost.RestoreLayout je no-op,
+        // takže po obnově není otevřené nic a Plocha se musí doplnit.
         var services = MockServices();
-        var desktop = new MiniAppDescriptor(DesktopMiniAppProvider.DesktopId, "Plocha",
-            () => new StubMiniApp(services));
-        // Uložený layout → RecordingHost.RestoreLayout je no-op, Plocha se sama neotevře.
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.MiniAppLayouts.Returns(new Dictionary<string, string> { ["CB_DP"] = "x" });
-        var vm = CreateVM(prefs: prefs, miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(desktop)]));
-        vm.AttachMiniAppHost(new RecordingHost());
-        Assert.False(vm.HasOpenDesktop);
+        var vm = CreateVM(services: services, prefs: prefs, miniAppCatalog: PinnedDesktopCatalog(services));
+        var host = new RecordingHost();
 
-        vm.ShowDesktopMiniAppCommand.Execute(null);
+        vm.AttachMiniAppHost(host);
 
-        Assert.True(vm.HasOpenDesktop);
+        Assert.StartsWith(DesktopMiniAppProvider.DesktopId + "#", Assert.Single(host.Panes).ContentId);
+    }
+
+    [Fact]
+    public void CloseMiniAppsCommand_KeepsDesktop_ResetClosesEverything()
+    {
+        var services = MockServices();
+        var vm = CreateVM(services: services, miniAppCatalog: PinnedDesktopCatalog(services));
+        var host = new RecordingHost();
+        vm.AttachMiniAppHost(host);
+        var desktop = host.Panes.Single();
+
+        vm.CloseMiniAppsCommand.Execute(null);
+        Assert.False(desktop.IsClosed);
+
+        // Reset zavře i Plochu a postaví novou sadu.
+        vm.ResetMiniAppsCommand.Execute(null);
+        Assert.True(desktop.IsClosed);
     }
 
     private sealed class StubMiniApp(EDServices services) : EDMiniAppViewModel(services)
@@ -640,9 +657,9 @@ public class EdisonMainViewModelTests
         public int SkeletonResets { get; private set; }
 
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    MiniAppPlacement? placement = null)
+                                    MiniAppPlacement? placement = null, bool canClose = true)
         {
-            var pane = new RecordingPane(contentId, onClosed) { Placement = placement };
+            var pane = new RecordingPane(contentId, onClosed) { Placement = placement, CanClose = canClose };
             Panes.Add(pane);
             return pane;
         }
@@ -659,6 +676,7 @@ public class EdisonMainViewModelTests
     {
         public string ContentId => contentId;
         public MiniAppPlacement? Placement { get; set; }
+        public bool CanClose { get; set; } = true;
         public bool IsClosed { get; private set; }
 
         public void Close()
@@ -689,7 +707,7 @@ public class EdisonMainViewModelTests
     private sealed class ThrowingHost : IMiniAppHost
     {
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    MiniAppPlacement? placement = null)
+                                    MiniAppPlacement? placement = null, bool canClose = true)
             => throw new NotSupportedException();
         public IReadOnlyList<MiniAppTarget> GetTargets() => [];
         public void ResetToDefaultSkeleton() { }
@@ -702,7 +720,7 @@ public class EdisonMainViewModelTests
     private sealed class NullHost : IMiniAppHost
     {
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    MiniAppPlacement? placement = null)
+                                    MiniAppPlacement? placement = null, bool canClose = true)
             => Substitute.For<IMiniAppPane>();
         public IReadOnlyList<MiniAppTarget> GetTargets() => [];
         public void ResetToDefaultSkeleton() { }

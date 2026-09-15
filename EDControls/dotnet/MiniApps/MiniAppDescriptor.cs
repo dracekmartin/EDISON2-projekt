@@ -17,4 +17,10 @@ namespace EDControls.MiniApps;
 /// Továrna na VM. Volá se až při otevření / obnově panelu. Typicky <c>() => new FooMiniAppViewModel()</c>
 /// (bezparametrický ctor čte z <c>EDServices.Current</c>).
 /// </param>
-public sealed record MiniAppDescriptor(string Id, string Title, Func<EDMiniAppViewModel> CreateViewModel);
+/// <param name="Pinned">
+/// Uživatel ji nemůže zavřít ani odtrhnout a shell ji drží vždy otevřenou (Plocha). Programové
+/// zavření (přepnutí firmy, zavření shellu) funguje dál. Do nabídky pickeru se nedostane -
+/// co nejde zavřít, není co otvírat.
+/// </param>
+public sealed record MiniAppDescriptor(string Id, string Title, Func<EDMiniAppViewModel> CreateViewModel,
+                                       bool Pinned = false);

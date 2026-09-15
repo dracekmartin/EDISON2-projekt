@@ -35,7 +35,7 @@ public sealed class AvalonDockHost : IMiniAppHost
     }
 
     public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                               MiniAppPlacement? placement = null)
+                               MiniAppPlacement? placement = null, bool canClose = true)
     {
         var document = new LayoutDocument
         {
@@ -44,6 +44,7 @@ public sealed class AvalonDockHost : IMiniAppHost
             IconSource = icon,
             Content = content,
         };
+        ApplyClosability(document, canClose);
         document.Closed += (_, _) => onClosed();
         switch (placement?.Kind)
         {
@@ -63,6 +64,17 @@ public sealed class AvalonDockHost : IMiniAppHost
         }
         document.IsActive = true;
         return new Pane(document);
+    }
+
+    // CanClose=false skryje křížek a blokuje uživatelské zavření; programové document.Close()
+    // (přepnutí session, CloseAll) AvalonDock pouští dál. CanFloat/CanMove navíc drží panel
+    // v hlavním okně - odtržená Plocha by byla totéž co zavřená.
+    private static void ApplyClosability(LayoutDocument document, bool canClose)
+    {
+        document.CanClose = canClose;
+        if (canClose) return;
+        document.CanFloat = false;
+        document.CanMove = false;
     }
 
     public IReadOnlyList<MiniAppTarget> GetTargets() =>
@@ -162,6 +174,7 @@ public sealed class AvalonDockHost : IMiniAppHost
                 e.Cancel = true;
                 return;
             }
+            ApplyClosability(document, resolved.CanClose);
             e.Content = resolved.Content;
             document.Closed += (_, _) => resolved.OnClosed();
         };
