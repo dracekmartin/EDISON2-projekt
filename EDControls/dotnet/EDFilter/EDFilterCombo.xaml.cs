@@ -15,6 +15,10 @@ public partial class EDFilterCombo : EDFilterFieldBase
     public EDFilterCombo()
     {
         InitializeComponent();
+        // Odpojené pole nemá co viset na cizí kolekci (host ji může sdílet napříč okny);
+        // nedokončená obnova se po návratu do stromu rozjede znovu.
+        Loaded += (_, _) => TryApplyPendingRestore();
+        Unloaded += (_, _) => WatchSource(null);
     }
 
     /// <summary>Zdroj dat pro combo (typicky <c>List&lt;T&gt;</c> nebo <c>ObservableCollection</c> z VM).</summary>

@@ -33,6 +33,13 @@ public class EDFilterTests
             Value = value;
             RaiseValueChanged();
         }
+
+        /// <summary>Změna hodnoty uživatelem.</summary>
+        public void Change(string value)
+        {
+            Value = value;
+            RaiseValueChanged();
+        }
     }
 
     private sealed class FakeTarget : IEDFilterTarget
@@ -266,6 +273,40 @@ public class EDFilterTests
         });
     }
 
+    /// <summary>Zavření okna, kde nikdo filtrem nehnul, nemá posílat request.</summary>
+    [Fact]
+    public void Unload_WithoutChange_SavesNothing()
+    {
+        RunSta(() =>
+        {
+            var prefs = new FakePrefs();
+            var filter = Arrange(new EDFilter.EDFilter { HostId = "Test.Filter" }, prefs);
+            filter.Fields.Add(new FakeFilterField { Key = "agendaCode" });
+
+            filter.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+
+            Assert.Equal(0, prefs.Saves);
+        });
+    }
+
+    [Fact]
+    public void Unload_WithPendingChange_FlushesSave()
+    {
+        RunSta(() =>
+        {
+            var prefs = new FakePrefs();
+            var field = new FakeFilterField { Key = "agendaCode" };
+            var filter = Arrange(new EDFilter.EDFilter { HostId = "Test.Filter" }, prefs);
+            filter.Fields.Add(field);
+
+            field.Change("MHD");   // rozjede debounce, který by sám doběhl až za 500 ms
+            filter.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+
+            Assert.Equal(1, prefs.Saves);
+            Assert.Equal("MHD", prefs.Stored?["values"]?["agendaCode"]?.GetValue<string>());
+        });
+    }
+
     // ── EDFilterCombo ─────────────────────────────────────────────────────────
 
     private sealed record Agenda(string Code, string Label);
@@ -300,6 +341,27 @@ public class EDFilterTests
             Assert.Equal("", combo.GetValue());
 
             items.Add(new Agenda("MHD", "MHD"));
+
+            Assert.Equal("MHD", combo.GetValue());
+        });
+    }
+
+    /// <summary>Odpojené pole se odvěsí z cizí kolekce, po návratu do stromu obnovu dokončí.</summary>
+    [Fact]
+    public void Combo_PendingRestore_SurvivesUnloadReload()
+    {
+        RunSta(() =>
+        {
+            var items = new ObservableCollection<Agenda>();
+            var combo = new EDFilterCombo { SelectedValuePath = "Code", ItemsSource = items };
+
+            combo.RestoreValue("MHD");
+            combo.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+
+            items.Add(new Agenda("MHD", "MHD"));
+            Assert.Equal("", combo.GetValue());   // odpojené pole na kolekci neposlouchá
+
+            combo.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent));
 
             Assert.Equal("MHD", combo.GetValue());
         });

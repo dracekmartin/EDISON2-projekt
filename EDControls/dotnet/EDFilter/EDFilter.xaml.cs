@@ -183,8 +183,13 @@ public partial class EDFilter : UserControl
 
     private async void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        _saveDebouncer?.Stop();
-        await SavePrefsAsync();
+        // Dokončit jen rozdělané uložení - bezpodmínečný save by poslal request při každém
+        // zavření okna, i když uživatel filtrem nehnul.
+        if (_saveDebouncer is { IsEnabled: true })
+        {
+            _saveDebouncer.Stop();
+            await SavePrefsAsync();
+        }
     }
 
     private void OnFieldsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
