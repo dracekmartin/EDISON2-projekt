@@ -54,9 +54,8 @@ public class LegacyDashboardMiniAppViewModelTests
 
         Assert.Equal("Aktuální období", h.Vm.Title);
         Assert.Equal("21.06.2026 09:00", h.Vm.LastUpdated);
-        Assert.Equal(2, h.Vm.Sections.Count);
-        Assert.IsType<DashboardLabel>(h.Vm.Sections[0]);
-        Assert.IsType<DashboardTable>(h.Vm.Sections[1]);
+        // Label nad tabulkou už není sekce - je z něj titulek pruhu EDListu.
+        Assert.Equal("Celkem 3 vozidla", Assert.IsType<DashboardTable>(Assert.Single(h.Vm.Sections)).Title);
         Assert.False(h.Vm.HasNoData);
         Assert.False(h.Vm.IsLoading);
         Assert.Null(h.Vm.ErrorText);
@@ -94,7 +93,7 @@ public class LegacyDashboardMiniAppViewModelTests
         h.Vm.OnOpened();
         h.Vm.OnOpened();
 
-        Assert.Equal(2, h.Vm.Sections.Count);
+        Assert.Single(h.Vm.Sections);
     }
 
     [Fact]
@@ -113,7 +112,7 @@ public class LegacyDashboardMiniAppViewModelTests
         scheduler.Flush();
 
         Assert.False(h.Vm.IsLoading);
-        Assert.Equal(2, h.Vm.Sections.Count);
+        Assert.Single(h.Vm.Sections);
     }
 
     [Fact]

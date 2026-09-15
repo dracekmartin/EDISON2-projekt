@@ -22,6 +22,7 @@ public static class DashboardListSource
         if (d is not EDList list || e.NewValue is not DashboardTable table) return;
         // HostId musí být dřív než data - persistovaný layout se načítá uvnitř SetData.
         list.HostId = table.PrefsKey;
+        list.Title = table.Title;
         list.SetData(DashboardListMapper.ToColumns(table), DashboardListMapper.ToRows(table));
     }
 }

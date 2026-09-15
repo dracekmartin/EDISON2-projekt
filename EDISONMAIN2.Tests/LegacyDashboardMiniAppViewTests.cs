@@ -3,7 +3,6 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Threading;
 using EDISONMAIN2.LegacyMiniApps;
 
 namespace EDISONMAIN2.Tests;
@@ -51,23 +50,36 @@ public class LegacyDashboardMiniAppViewTests
         RunSta(() => Assert.NotNull(TableList().CellStyle));
     }
 
-    /// <summary>Tabulka se do EDListu dostane attached property, ne bindingem - data jdou metodou SetData.</summary>
+    /// <summary>Tabulka se do EDListu dostane attached property, ne bindingem na data - ta jdou SetData.</summary>
     [Fact]
     public void TableTemplate_BindsTableIntoList()
+    {
+        RunSta(() =>
+        {
+            var binding = Assert.IsType<Binding>(
+                BindingOperations.GetBinding(TableList(), DashboardListSource.TableProperty));
+
+            Assert.True(string.IsNullOrEmpty(binding.Path?.Path));   // {Binding} = celý DataContext
+        });
+    }
+
+    /// <summary>Co attached property s tabulkou udělá: HostId a titulek pruhu dřív než data.</summary>
+    [Fact]
+    public void TableSource_FillsHostIdTitleAndRows()
     {
         RunSta(() =>
         {
             var table = new DashboardTable(
                 [new DashboardColumn("Rz", 'T', ""), new DashboardColumn("MTH", 'N', "###0.00")],
                 [new DashboardRow(["1A2 3456", "  123.45"], "#FF0000", 0)],
-                "EDISONMAIN2.LegacyMiniApp.52015.0");
+                "EDISONMAIN2.LegacyMiniApp.52015.0", "Motohodiny vozidel");
 
             var list = TableList();
-            list.DataContext = table;
-            // Binding mimo vizuální strom dosedne až na DataBind prioritě dispatcheru.
-            list.Dispatcher.Invoke(() => { }, DispatcherPriority.DataBind);
+            DashboardListSource.SetTable(list, table);
 
             Assert.Equal("EDISONMAIN2.LegacyMiniApp.52015.0", list.HostId);
+            // Nadpis sekce nese pruh EDListu, ne samostatný TextBlock nad tabulkou.
+            Assert.Equal("Motohodiny vozidel", list.Title);
             var row = Assert.Single(list.Rows);
             Assert.Equal(123.45.ToString("###0.00", CultureInfo.CurrentCulture), row["c1"]);
             Assert.Equal("#FF0000", row[DashboardListMapper.ForeColorKey]);

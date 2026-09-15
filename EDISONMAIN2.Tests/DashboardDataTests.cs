@@ -31,12 +31,10 @@ public class DashboardDataTests
         var data = DashboardData.Parse(SampleOutput("52005"), D, "52005");
 
         Assert.Equal("21.06.2026 09:00", data.LastUpdated);
-        Assert.Equal(2, data.Sections.Count);
 
-        var label = Assert.IsType<DashboardLabel>(data.Sections[0]);
-        Assert.Equal("Celkem 3 vozidla", label.Text);
-
-        var table = Assert.IsType<DashboardTable>(data.Sections[1]);
+        // Label těsně nad tabulkou už není samostatná sekce - je z něj titulek pruhu EDListu.
+        var table = Assert.IsType<DashboardTable>(Assert.Single(data.Sections));
+        Assert.Equal("Celkem 3 vozidla", table.Title);
         Assert.Equal(["Linka", "Řidič"], table.Columns.Select(c => c.Name));
         Assert.Equal(2, table.Rows.Count);
         Assert.Equal(["1", "Novák"], table.Rows[0].Cells);
@@ -159,6 +157,7 @@ public class DashboardDataTests
             tables.Select(t => t.PrefsKey));
     }
 
+    /// <summary>Label, po kterém tabulka nenásleduje, zůstává samostatnou sekcí.</summary>
     [Fact]
     public void Parse_MultipleTablesAndLabels_PreserveOrder()
     {
@@ -176,8 +175,43 @@ public class DashboardDataTests
         var data = DashboardData.Parse(output, D, "52005");
 
         Assert.Collection(data.Sections,
-            s => Assert.Equal("L1", Assert.IsType<DashboardLabel>(s).Text),
-            s => Assert.Single(Assert.IsType<DashboardTable>(s).Rows),
+            s => Assert.Equal("L1", Assert.IsType<DashboardTable>(s).Title),
             s => Assert.Equal("L2", Assert.IsType<DashboardLabel>(s).Text));
+    }
+
+    /// <summary>Tabulka bez předchozího labelu titulek nemá - pruh ukáže jen search box.</summary>
+    [Fact]
+    public void Parse_TableWithoutLabel_HasNoTitle()
+    {
+        object[] output =
+        [
+            "",
+            $"appType{D}52005",
+            $"data{D}2{D}C1{D}2{D}T",
+            $"data{D}2{D}C1{D}3{D}A",
+        ];
+
+        Assert.Null(Assert.IsType<DashboardTable>(
+            Assert.Single(DashboardData.Parse(output, D, "52005").Sections)).Title);
+    }
+
+    /// <summary>Titulek si bere jen tabulka, která za labelem opravdu stojí - ne každá další.</summary>
+    [Fact]
+    public void Parse_LabelTitlesOnlyTheTableBelowIt()
+    {
+        object[] output =
+        [
+            "",
+            $"appType{D}52005",
+            $"data{D}1{D}C1{D}1{D}L1",
+            $"data{D}2{D}C2{D}2{D}T",
+            $"data{D}2{D}C2{D}3{D}A",
+            $"data{D}2{D}C3{D}2{D}T",
+            $"data{D}2{D}C3{D}3{D}B",
+        ];
+
+        var tables = DashboardData.Parse(output, D, "52005").Sections.OfType<DashboardTable>().ToList();
+
+        Assert.Equal(["L1", null], tables.Select(t => t.Title));
     }
 }

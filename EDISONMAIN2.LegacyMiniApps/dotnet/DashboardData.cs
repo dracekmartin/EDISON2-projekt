@@ -15,11 +15,15 @@ public sealed record DashboardLabel(string Text) : DashboardSection;
 /// </summary>
 public sealed record DashboardColumn(string Name, char Type, string Format);
 
-/// <summary><paramref name="PrefsKey"/> = HostId pro persist šířek sloupců, unikátní per (appType, pořadí tabulky).</summary>
+/// <summary>
+/// <paramref name="PrefsKey"/> = HostId pro persist šířek sloupců, unikátní per (appType, pořadí tabulky).
+/// <paramref name="Title"/> = label sekce, která v legacy datech stojí těsně nad tabulkou.
+/// </summary>
 public sealed record DashboardTable(
     IReadOnlyList<DashboardColumn> Columns,
     IReadOnlyList<DashboardRow> Rows,
-    string PrefsKey) : DashboardSection;
+    string PrefsKey,
+    string? Title = null) : DashboardSection;
 
 /// <summary>Řádek tabulky: buňky + volitelný styl (HTML hex barva textu, typ ikony z legacy IconTypeEnum).</summary>
 public sealed record DashboardRow(IReadOnlyList<string> Cells, string? ForeColorHtml, int IconType);
@@ -63,16 +67,19 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
         List<DashboardRow>? rows = null;
         // Deskriptor typů nese sekce SectionTable, názvy sloupců přijdou až v SectionCols.
         string? colTypes = null;
+        string? tableTitle = null;
         int tableIndex = 0;
 
         // Rozpracovaná tabulka se přidá do sekcí až při dalším objektu / konci bloku (zachová pořadí).
         void FlushTable()
         {
             if (cols is null) return;
-            sections.Add(new DashboardTable(cols, rows!, $"EDISONMAIN2.LegacyMiniApp.{currentApp}.{tableIndex++}"));
+            sections.Add(new DashboardTable(
+                cols, rows!, $"EDISONMAIN2.LegacyMiniApp.{currentApp}.{tableIndex++}", tableTitle));
             cols = null;
             rows = null;
             colTypes = null;
+            tableTitle = null;
         }
 
         void FlushApp()
@@ -116,6 +123,13 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
                             cols = [];
                             rows = [];
                             colTypes = value;
+                            // Label těsně nad tabulkou je její nadpis - převezme ho pruh EDListu místo
+                            // samostatného řádku. Kdyby mezi ním a tabulkou byla jiná sekce, byla by poslední ona.
+                            if (sections.Count > 0 && sections[^1] is DashboardLabel head)
+                            {
+                                tableTitle = head.Text;
+                                sections.RemoveAt(sections.Count - 1);
+                            }
                             break;
                         case SectionCols when cols is not null:
                             cols.AddRange(BuildColumns(value, colTypes));

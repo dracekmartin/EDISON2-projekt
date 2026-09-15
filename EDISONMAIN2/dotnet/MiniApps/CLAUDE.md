@@ -42,6 +42,8 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - **Sekce `ObjectSectionTable` nese deskriptor typů sloupců**, ne jen marker tabulky: `"T:N2#"` =
   text, číslo se 2 desetinnými a oddělovačem tisíců (grammar v legacy `EDMiniApplication.GetFormat`).
   Bez něj se `N` neformátuje, nezarovná vpravo a řadí lexikograficky; `D` je TEXT, wire posílá datum hotové.
+- **Label těsně nad tabulkou je její nadpis** - parser ho spotřebuje do `DashboardTable.Title`
+  (nese ho pruh EDListu), i když legacy tam dává i souhrny; ostatní labely zůstávají sekcí.
 - **Pruh miniaplikace je `EDControls.MiniApps.EDMiniAppBar`**, ne vlastní StackPanel. Barvu
   řádku ze serveru nese `CellStyle` s `BasedOn` nad skrytým sloupcem `_fore` - přes `RowStyle` ji
   implicitní styl buňky přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji

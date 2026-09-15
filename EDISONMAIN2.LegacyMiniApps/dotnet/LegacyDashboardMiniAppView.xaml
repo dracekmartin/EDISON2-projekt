@@ -29,6 +29,7 @@
 
         <DataTemplate DataType="{x:Type lma:DashboardTable}">
             <!-- Rám i pozadí kreslí themovaný DataGrid uvnitř EDListu - karta okolo by udělala dvojitou linku.
+                 Nadpis nese brandový pruh EDListu (plní ho DashboardListSource z labelu nad tabulkou).
                  Sekce je na výšku obsahu, roluje vnější ScrollViewer - kolečko nad tabulkou mu musí dojít. -->
             <edl:EDList Margin="0,0,0,10"
                         lma:DashboardListSource.Table="{Binding}"
