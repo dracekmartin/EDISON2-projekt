@@ -3857,7 +3857,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </remarks>
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "LINKOVY_JR_AD" };
         t.Sections.AddRange(CreateDefaultSections(t.PageSize));
         return t;
     }
