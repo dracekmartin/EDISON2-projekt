@@ -73,7 +73,7 @@ Parameter VariantLabel As %String = "AD (linková doprava)";
 /// a spustit znovu.
 ///
 /// Městská varianta (`LinkovyJrMhd`) zveřejněná nebyla nikdy: neprošla porovnáním se starým modulem.
-Parameter Released = 1;
+Parameter Released = 0;
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 
