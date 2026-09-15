@@ -28,45 +28,11 @@ public class WidgetUrlsTests
     }
 
     [Fact]
-    public void Novinky_IsAuthFree()
+    public void Edison2_PreLogin_CarriesIdfaOnly()
     {
-        var url = WidgetUrls.Novinky;
+        // Přihlašovací obrazovka zná firmu z pre-login MLRest, uživatele ani e-mail ještě ne.
+        var url = WidgetUrls.Edison2("ALVA", "", "");
 
-        Assert.StartsWith($"{WidgetsBase}info?", url);
-        Assert.Contains("key=", url);
-        // Pre-login bezpečné → žádná identita v URL.
-        Assert.DoesNotContain("idfa=", url);
-        Assert.DoesNotContain("user=", url);
-    }
-
-    [Fact]
-    public void Wiki_IsAuthFree()
-    {
-        var url = WidgetUrls.Wiki;
-
-        Assert.StartsWith($"{WidgetsBase}wiki?", url);
-        Assert.Contains("key=", url);
-        Assert.DoesNotContain("idfa=", url);
-        Assert.DoesNotContain("user=", url);
-    }
-
-    [Fact]
-    public void Trainings_CarriesEscapedIdentity()
-    {
-        var url = WidgetUrls.Trainings("A B", "user@x");
-
-        Assert.StartsWith($"{WidgetsBase}trainings?", url);
-        Assert.Contains("key=", url);
-        Assert.Contains("idfa=A%20B", url);
-        Assert.Contains("user=user%40x", url);
-    }
-
-    [Fact]
-    public void Trainings_EmptyIdentity_PreLogin()
-    {
-        var url = WidgetUrls.Trainings("", "");
-
-        Assert.Contains("idfa=&", url);
-        Assert.EndsWith("user=", url);
+        Assert.EndsWith("&idfa=ALVA&user=&email=", url);
     }
 }
