@@ -75,24 +75,36 @@ namespace EDControls.EDList
                 if (string.IsNullOrWhiteSpace(json)) continue;
 
                 using var doc = JsonDocument.Parse(json);
-                var dict = new Dictionary<string, string?>();
-                var sortKeys = new Dictionary<string, object?>();
-                string? id = null;
+                var raw = new Dictionary<string, string?>();
                 foreach (var prop in doc.RootElement.EnumerateObject())
-                {
-                    var raw = prop.Value.GetString();
-                    var col = columns?.FirstOrDefault(c => c.Key == prop.Name);
-                    var formatted = FormatValue(raw, col);
-                    if (prop.Name == "id") id = formatted;
-                    else
-                    {
-                        dict[prop.Name] = formatted;
-                        sortKeys[prop.Name] = EDListSort.BuildSortKey(raw, col?.Type ?? ListColumnType.Text, formatted);
-                    }
-                }
-                if (!string.IsNullOrEmpty(id))
-                    yield return new EDListRow(id, dict, sortKeys);
+                    raw[prop.Name] = prop.Value.GetString();
+
+                if (BuildRow(raw, columns) is { } row) yield return row;
             }
+        }
+
+        /// <summary>
+        /// Postaví řádek z raw (serverových) hodnot - naformátuje je podle sloupce a zvlášť si drží
+        /// typové sort klíče. Sdílí ho JSON cesta i režim „data zvenčí" (<c>EDList.SetData</c>), aby
+        /// formátování a řazení žilo na jednom místě. Bez neprázdného <c>id</c> vrací null.
+        /// </summary>
+        internal static EDListRow? BuildRow(IReadOnlyDictionary<string, string?> raw, IReadOnlyList<ListColumn>? columns)
+        {
+            var dict = new Dictionary<string, string?>();
+            var sortKeys = new Dictionary<string, object?>();
+            string? id = null;
+            foreach (var kv in raw)
+            {
+                var col = columns?.FirstOrDefault(c => c.Key == kv.Key);
+                var formatted = FormatValue(kv.Value, col);
+                if (kv.Key == "id") id = formatted;
+                else
+                {
+                    dict[kv.Key] = formatted;
+                    sortKeys[kv.Key] = EDListSort.BuildSortKey(kv.Value, col?.Type ?? ListColumnType.Text, formatted);
+                }
+            }
+            return string.IsNullOrEmpty(id) ? null : new EDListRow(id, dict, sortKeys);
         }
 
         internal static string? FormatValue(string? raw, ListColumn? col)

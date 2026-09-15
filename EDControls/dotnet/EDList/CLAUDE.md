@@ -17,6 +17,13 @@ staršího dotazu už nedosedne - rychlé přepínání filtru nezamíchá řád
 `InvalidOperationException` („volající vlákno nemá přístup..."); hodnotu si vytáhni do lokální
 proměnné **před** přechodem na threadpool. Testy to nechytí (WPF kontroluje vlákno až za běhu).
 
+**Data zvenčí**: `SetData(columns, rows)` naplní seznam tím, co sehnal host - EDList pak
+nepotřebuje `CacheClass` ani MLRest (host s vlastním transportem, třeba dávkovaný request přes
+víc komponent). Řádky jsou raw serverové hodnoty včetně `id`; formátování i sort klíče staví
+stejná cesta jako `LoadList`. Vzhled řízený daty řádku (barva textu) jde přes `CellStyle` +
+skrytý sloupec (`Visible = false`) - ten se nerenderuje ani nehledá, ale projde indexerem řádku.
+Konzument: `EDISONMAIN2.LegacyMiniApps/dotnet/DashboardListSource.cs`.
+
 ## Wire kontrakt (JSON přes `^||ML`)
 
 Detaily ve sdíleném `EDControls/DOCS/01-wire-formats.md` - tam patří změny formátu.
@@ -48,9 +55,8 @@ Detaily ve sdíleném `EDControls/DOCS/01-wire-formats.md` - tam patří změny 
   filtruje **formátované** hodnoty („8:30" najde „08:30", ne „830"); nepersistuje se.
 - `SelectionMode = Check` → checkbox sloupec. Binding checkboxů je záměrně **OneWay** +
   explicitní `Click` handler (TwoWay v CellTemplate je buggy; header `Click` brání rekurzi
-  CheckAll→Sync). Datové sloupce identifikuje `Tag = column.Key`; checkbox sloupec Tag nemá
-  (přeskakuje ho search i persist). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik**
-  na checkbox zaškrtne rozsah od kotvy (posledního kliku) v zobrazeném pořadí.
+  CheckAll→Sync). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik** na checkbox
+  zaškrtne rozsah od kotvy (posledního kliku) v zobrazeném pořadí.
 - Persist layoutu (šířky, pořadí, sort): nastav `HostId` (konvence `"<Projekt>.<Consumer>"`;
   prázdný = off). Storage `^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)`,
   save debounce 500 ms + force na Unload, load async po `LoadList`, best-effort.

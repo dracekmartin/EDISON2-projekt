@@ -58,6 +58,27 @@ namespace EDControls.EDList
 
         private const string PrefsScope = "EDControls.EDList";
 
+        /// <summary>
+        /// Styl buňky (<c>DataGridCell</c>) - pro vzhled řízený daty řádku, který sloupcové typy
+        /// nepokrývají (barva textu z dat). Foreground patří na buňku, ne na řádek: implicitní
+        /// <c>DataGridCell</c> styl si ho nastavuje setterem a přebije hodnotu děděnou z řádku.
+        /// Vlastní styl musí mít <c>BasedOn</c>, jinak přijde o theming.
+        /// </summary>
+        public static readonly DependencyProperty CellStyleProperty =
+            DependencyProperty.Register(nameof(CellStyle), typeof(Style), typeof(EDList),
+                new PropertyMetadata(null, OnCellStyleChanged));
+
+        public Style? CellStyle
+        {
+            get => (Style?)GetValue(CellStyleProperty);
+            set => SetValue(CellStyleProperty, value);
+        }
+
+        private static void OnCellStyleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EDList list) list.DataGrid.CellStyle = (Style)e.NewValue;
+        }
+
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(nameof(Title), typeof(string), typeof(EDList),
                 new PropertyMetadata(null, OnTitleOrSearchVisibleChanged));
@@ -337,15 +358,30 @@ namespace EDControls.EDList
             RebuildColumns();
         }
 
-        private void ApplyRows(CVar output)
+        /// <summary>
+        /// Naplní seznam daty, která si sehnal host - EDList sám nic z Caché nečte, takže nepotřebuje
+        /// ani <see cref="CacheClass"/>, ani MLRest. Pro hosty s vlastním transportem (dávkovaný
+        /// request přes víc komponent, data z jiného API). Řádky jsou raw (serverové) hodnoty včetně
+        /// klíče <c>id</c>; formátování i sort klíče staví stejná cesta jako <see cref="LoadList()"/>.
+        /// </summary>
+        public void SetData(IReadOnlyList<ListColumn> columns, IEnumerable<IReadOnlyDictionary<string, string?>> rows)
+        {
+            _loadGeneration++;   // data zvenčí jsou autoritativní - async odpověď v letu se zahodí
+            _columns = columns;
+            RebuildColumns();
+            ApplyRows([.. rows.Select(r => EDListParsing.BuildRow(r, columns)).OfType<EDListRow>()]);
+        }
+
+        // ToList: ParseRows je líný iterátor - druhý průchod by vyrobil jiné instance řádků
+        // a odběr změn by visel mimo seznam.
+        private void ApplyRows(CVar output) => ApplyRows(EDListParsing.ParseRows(output, _columns).ToList());
+
+        private void ApplyRows(List<EDListRow> newRows)
         {
             // Unsubscribe stará data - žádné spying na zaniklé řádky
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _checkAnchor = null;
 
-            // ToList: ParseRows je líný iterátor - druhý průchod by vyrobil jiné instance řádků
-            // a odběr změn by visel mimo seznam.
-            var newRows = EDListParsing.ParseRows(output, _columns).ToList();
             foreach (var row in newRows) row.PropertyChanged += OnRowPropertyChanged;
             _rows.ReplaceAll(newRows);
 
