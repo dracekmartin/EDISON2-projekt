@@ -1,6 +1,9 @@
 using System;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Threading;
 using EDISONMAIN2.LegacyMiniApps;
 
 namespace EDISONMAIN2.Tests;
@@ -26,26 +29,48 @@ public class LegacyDashboardMiniAppViewTests
         });
     }
 
+    /// <summary>Barva se čte ze skrytého sloupce EDListu - přejmenovaný klíč by ji tiše vypnul.</summary>
     [Fact]
-    public void TableTemplate_ColorsCellsNotRows()
+    public void CellStyle_BindsForegroundToHiddenColorColumn()
     {
         RunSta(() =>
         {
-            var grid = TableGrid();
+            var style = Assert.IsType<Style>(new LegacyDashboardMiniAppView().Resources["DashboardCell"]);
 
-            Assert.Null(grid.RowStyle);
-            Assert.NotNull(grid.CellStyle);
+            var setter = Assert.Single(style.Setters.OfType<Setter>(),
+                s => s.Property == DataGridCell.ForegroundProperty);
+            var binding = Assert.IsType<Binding>(setter.Value);
+            Assert.Equal($"[{DashboardListMapper.ForeColorKey}]", binding.Path.Path);
         });
     }
 
-    /// <summary>Rám kreslí karta okolo; grid s vlastním rámem by udělal dvojitou linku.</summary>
+    /// <summary>Rám i pozadí kreslí DataGrid uvnitř EDListu; karta okolo by udělala dvojitou linku.</summary>
     [Fact]
-    public void TableTemplate_LeavesBorderToCard()
+    public void TableTemplate_IsBareEDListWithCellColors()
+    {
+        RunSta(() => Assert.NotNull(TableList().CellStyle));
+    }
+
+    /// <summary>Tabulka se do EDListu dostane attached property, ne bindingem - data jdou metodou SetData.</summary>
+    [Fact]
+    public void TableTemplate_BindsTableIntoList()
     {
         RunSta(() =>
         {
-            Assert.Equal(new Thickness(0), TableGrid().BorderThickness);
-            Assert.Equal(2, TableGrid().AlternationCount);
+            var table = new DashboardTable(
+                [new DashboardColumn("Rz", 'T', ""), new DashboardColumn("MTH", 'N', "###0.00")],
+                [new DashboardRow(["1A2 3456", "  123.45"], "#FF0000", 0)],
+                "EDISONMAIN2.LegacyMiniApp.52015.0");
+
+            var list = TableList();
+            list.DataContext = table;
+            // Binding mimo vizuální strom dosedne až na DataBind prioritě dispatcheru.
+            list.Dispatcher.Invoke(() => { }, DispatcherPriority.DataBind);
+
+            Assert.Equal("EDISONMAIN2.LegacyMiniApp.52015.0", list.HostId);
+            var row = Assert.Single(list.Rows);
+            Assert.Equal(123.45.ToString("###0.00", CultureInfo.CurrentCulture), row["c1"]);
+            Assert.Equal("#FF0000", row[DashboardListMapper.ForeColorKey]);
         });
     }
 
@@ -56,12 +81,11 @@ public class LegacyDashboardMiniAppViewTests
         RunSta(() => Assert.NotNull(new LegacyDashboardMiniAppView().Content));
     }
 
-    private static DataGrid TableGrid()
+    private static EDControls.EDList.EDList TableList()
     {
         var view = new LegacyDashboardMiniAppView();
         var template = (DataTemplate)view.Resources[new DataTemplateKey(typeof(DashboardTable))];
-        var card = Assert.IsType<Border>(template.LoadContent());
-        return Assert.IsType<DataGrid>(card.Child);
+        return Assert.IsType<EDControls.EDList.EDList>(template.LoadContent());
     }
 
     private static void EnsureApplication()

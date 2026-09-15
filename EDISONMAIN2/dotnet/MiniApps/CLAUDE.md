@@ -37,13 +37,18 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.
   Chybu ukazuje panel sám (`ErrorText`), ne popup - dávka o N panelech by jich zvedla N.
   `MiniAppManager.RefreshAll` proto vrací názvy **spuštěných**, ne dokončených obnov.
+- **Sekce `ObjectSectionTable` nese deskriptor typů sloupců**, ne jen marker tabulky:
+  `"T:N2#"` = text, číslo se 2 desetinnými a oddělovačem tisíců (grammar v legacy
+  `EDMiniApplication.GetFormat`). Bez něj se `N` sloupce neformátují, nezarovnají vpravo
+  a řadí se lexikograficky. Tabulky renderuje `EDList` přes `SetData`, typ jde do
+  `ListColumn.Type`/`Format`; `D` zůstává TEXT, protože wire posílá datum už naformátované.
 - **Pruh miniaplikace je `EDControls.MiniApps.EDMiniAppBar`**, ne vlastní StackPanel. Barvu
-  řádku ze serveru nese `CellStyle` s `BasedOn` - přes `RowStyle` ji implicitní styl buňky
-  přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji
+  řádku ze serveru nese `CellStyle` s `BasedOn` nad skrytým sloupcem `_fore` - přes `RowStyle`
+  ji implicitní styl buňky přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji
   `LegacyForeColorConverter` zesvětlí na kontrast 4,5:1 (legacy palety počítají s bílým
   pozadím); motiv čte v okamžiku konverze, proto view po `ThemeService.Applied` sekce
   refreshuje.
-- **Kolečko myši v panelu**: vnořený seznam (DataGrid sekce přehledu) si MouseWheel nechá i bez místa
+- **Kolečko myši v panelu**: vnořený seznam (EDList sekce přehledu) si MouseWheel nechá i bez místa
   k rolování → `EDControls.ScrollWheelBubbling.IsEnabled` ho na kraji předá vnějšímu ScrollVieweru;
   prázdná plocha Plochy musí mít `Background`, jinak není hit-testable a kolečko jde mimo ScrollViewer.
 - Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,

@@ -18,7 +18,7 @@ public class DashboardDataTests
         $"appType{D}{appType}",
         $"param{D}1{D}21.06.2026 09:00",                      // TimeStamp
         $"data{D}1{D}C1{D}1{D}Celkem 3 vozidla",              // Label
-        $"data{D}2{D}C2{D}2{D}text:text",                     // Table start (datové typy sloupců)
+        $"data{D}2{D}C2{D}2{D}T:T",                           // Table start (deskriptor typů sloupců)
         $"data{D}2{D}C2{D}3{D}Linka~Řidič",                   // Cols
         $"data{D}2{D}C2{D}4{D}1~Novák",                       // Row 1
         $"data{D}2{D}C2{D}4{D}2~Svoboda",                     // Row 2
@@ -37,7 +37,7 @@ public class DashboardDataTests
         Assert.Equal("Celkem 3 vozidla", label.Text);
 
         var table = Assert.IsType<DashboardTable>(data.Sections[1]);
-        Assert.Equal(["Linka", "Řidič"], table.Columns);
+        Assert.Equal(["Linka", "Řidič"], table.Columns.Select(c => c.Name));
         Assert.Equal(2, table.Rows.Count);
         Assert.Equal(["1", "Novák"], table.Rows[0].Cells);
         Assert.Null(table.Rows[0].ForeColorHtml);
@@ -101,6 +101,62 @@ public class DashboardDataTests
         var all = DashboardData.ParseAll(["", $"appType{D}52005"], D);
 
         Assert.False(all.ContainsKey("52014"));
+    }
+
+    // Deskriptor typů z legacy (ObjectSectionTable) - bez něj se N sloupce neformátují,
+    // nezarovnají vpravo a řadí se lexikograficky. Motohodiny vozidel (52015) posílají "T:N2#".
+    private static DashboardTable TableWithTypes(string types, string columns) =>
+        Assert.IsType<DashboardTable>(Assert.Single(DashboardData.Parse(
+        [
+            "",
+            $"appType{D}52015",
+            $"data{D}2{D}C1{D}2{D}{types}",
+            $"data{D}2{D}C1{D}3{D}{columns}",
+        ], D, "52015").Sections));
+
+    [Fact]
+    public void Parse_ColumnTypeDescriptor_MapsTypeAndNumberFormat()
+    {
+        var table = TableWithTypes("T:N2#", "Rz~Celkové MTH");
+
+        Assert.Equal(new DashboardColumn("Rz", 'T', ""), table.Columns[0]);
+        Assert.Equal(new DashboardColumn("Celkové MTH", 'N', "#,##0.00"), table.Columns[1]);
+    }
+
+    [Theory]
+    [InlineData("N0#", "#,##0")]      // celá čísla s oddělovačem tisíců
+    [InlineData("N2", "###0.00")]     // desetinná bez oddělovače
+    [InlineData("N", "")]             // holé N = bez formátování, hodnota zůstane raw (parita s legacy)
+    public void Parse_NumberFormatVariants(string def, string expected) =>
+        Assert.Equal(expected, TableWithTypes(def, "X").Columns[0].Format);
+
+    [Fact]
+    public void Parse_MissingOrShortDescriptor_FallsBackToText()
+    {
+        // Kratší deskriptor než počet sloupců - zbytek je TEXT, ne výjimka.
+        Assert.Equal(['N', 'T'], TableWithTypes("N0", "A~B").Columns.Select(c => c.Type));
+        Assert.Equal(['T', 'T'], TableWithTypes("", "A~B").Columns.Select(c => c.Type));
+    }
+
+    [Fact]
+    public void Parse_TablePrefsKey_IsUniquePerAppAndTableIndex()
+    {
+        object[] output =
+        [
+            "",
+            $"appType{D}52015",
+            $"data{D}2{D}C1{D}2{D}T",
+            $"data{D}2{D}C1{D}3{D}A",
+            $"data{D}1{D}C2{D}1{D}mezi tabulkami",
+            $"data{D}2{D}C3{D}2{D}T",
+            $"data{D}2{D}C3{D}3{D}B",
+        ];
+
+        var tables = DashboardData.Parse(output, D, "52015").Sections.OfType<DashboardTable>().ToList();
+
+        Assert.Equal(
+            ["EDISONMAIN2.LegacyMiniApp.52015.0", "EDISONMAIN2.LegacyMiniApp.52015.1"],
+            tables.Select(t => t.PrefsKey));
     }
 
     [Fact]
