@@ -4,11 +4,12 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** nic akčního - § Zastávkové JŘ je uzavřená a § Linkové a knižní JŘ čeká
-> celá na odpověď zvenku. Vezmi položku z Backlogu.
-> ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
-> ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`). Z hovoru 11. 9.
-> platí jen to, co stojí níž v § Zastávkové JŘ.
+> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran) - od 14. 9. má doloženou
+> poptávku, takže to přestalo být čekání na zákazníka. Jediná další věc je **výtisk k `#11373`**,
+> a ten není práce na kód.
+> ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
+> s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
+> hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
 
 ---
 
@@ -61,18 +62,19 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
+### Připravené k práci
+
+- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
+  nemožné, náš engine na to má lepší pozici. **Poptávka doložená** (Jan 14. 9.): zákazníci chtějí
+  vejít na jednu stranu, kdykoli to jde, a jeden si výslovně řekl o agresivní zmenšování poznámek.
+  ⚠️ Liší se od `B151` rozsahem: ten zmenšuje jen tabulku, aby se nedělila, tohle sahá na **celou
+  sestavu včetně poznámek** - potřebuje vlastní strop (90 % nestačí) a vlastní volbu, protože
+  agresivní zmenšování nemůže být tiché. Podklad [`§14`](linkovy-knizni-jr-implementace-analyza.md).
+
 ### Čeká na odpověď zvenku
 
 Ani u jedné není první krok kód. Podklady k tiketům drží
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
-
-- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
-  nemožné, náš engine na to má lepší pozici. ⚠️ **Poptávka je doložená** (Jan 14. 9.): zákazníci
-  chtějí vejít na jednu stranu, kdykoli to jde, a jeden si výslovně řekl o **agresivní zmenšování
-  poznámek**, jen aby se to vešlo. Tím to přestalo být „podnět, ne závazek".
-  Liší se to od `B151` rozsahem: `B151` zmenšuje **jen tabulku**, aby se nedělila, tohle sahá na
-  **celou sestavu včetně poznámek** a potřebuje vlastní strop (90 % tam nestačí) a vlastní volbu -
-  agresivní zmenšování nemůže být tiché.
 
 - **`#9088` bod 3: ručně zadaný „název směru" u linky** [S] (TRANSDEV, dřív `C9`; chtěné i pro
   vývěsky). ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**. Náš díl
@@ -87,24 +89,18 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
   druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
 
-- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** - evidence, ne práce. Na 93 133
-  linkách šesti firem nejsou nikde nastavené: místenkování, vlastní texty sloupce MHD, tisk
-  provozoven dopravce, schovávání u linky, vrstva pod linkou, řazení spojů
-  ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Vytáhnout, až si o to
-  někdo řekne - **doklad z dat nebude**.
-
 ### K ověření na reálné sestavě
 
 Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
 takže nejde o práci, ale o doklad.
 
-| Co | Proč to čeká |
+| Tiket | Stav |
 |---|---|
-| **Prázdný přípojný řádek nemá zabírat místo (#11300, KORID)** | ✅ **Výtisk hotový 15. 9.** (`CB_CSADAD 1 / 0330510` směr Zpět, strana 3 = list jen s pracovními dny bez jediného přípojného řádku) - detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md). Zbývá **poslat zákazníkovi a tiket zavřít**; ten je pozastavený od 12/2025 s příslibem „příští rok s novým tiskovým modulem". |
-| **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
-| **Pořadí sloupců spojů (ruční pořadí u linky)** | ✅ **Doloženo voláním serveru 15. 9.** na `CB_CSADAD 4 / 0330520`, kde se ruční pořadí od časového liší (`1,3,5,7,101,103,105` × `1,101,3,103,5,7,105`) - vracíme ruční. Kryje to i Caché test `TestRucniPoradiSpoju`. ⚠️ `0370618` ze sady testovacích linek na doklad **nestačí**: její ruční pořadí je totožné s časovým, takže by rozdíl nešlo poznat. Zbývá už jen vizuální porovnání se starým výtiskem, pokud ho někdo bude chtít. |
-| **Písmena ze zóny** | ✅ **Doloženo voláním serveru 15. 9.** na `ZL_KOVED 1 / 0823955`: v datech stojí `Z420,I201`, agenda vrací `420,201`. Linka má nastavení „odstraňovat" a přebíjí jím globální. ⚠️ Vzorek je v **KOVEDu**, ne ve Vsetíně, jak tu stálo do 15. 9. - `VS_CSAD` na to data nemá. |
-| **Živý náhled (`GetMockData`) ignoroval vlastní definici sloupců** | ✅ **Opraveno 15. 9.** Definice ze šablony jde nově i do ukázkových dat; bez ní uživatel bez vybrané linky nadefinoval sloupce a v náhledu se nic nezměnilo (táž třída chyby jako `#13158` u vývěsek, kde se to opravilo v srpnu). Ověřeno voláním a Caché testem `TestDefiniceSloupcuVUkazkovychDatech`. ⚠️ **Obousměrný tisk a turnusy do mocku vědomě nejdou** - to jsou volby tisku, ne součást šablony, a kontrakt `BaseAgenda` říká, že mock je ukázka bez parametrů. |
+| **#11300 prázdný přípojný řádek** (KORID) | ✅ **výtisk hotový** (`CB_CSADAD 1 / 0330510` směr Zpět, strana 3) - zbývá **poslat a zavřít**. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md) |
+| **#11373 poznámky vedle tabulky** (KAD) | Umíme to (prvek má volnou pozici, od `B117` i u linkových). Zbývá **výtisk** - jde o to, jestli je legenda v úzkém sloupci čitelná |
+
+Naše vlastní kontrolní body (pořadí sloupců, písmena ze zóny, ukázková data v náhledu) jsou
+vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ---
 
@@ -156,7 +152,6 @@ takže nejde o práci, ale o doklad.
   (analýza 12. 7., detail v historii roadmapy).
 
 ---
-
 
 ## 🚋 Relace a vozové JŘ
 

@@ -1,5 +1,35 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B98` Nastavení starého tisku, která nikdo nemá zapnuté (evidence, odloženo 15. 9. 2026)
+
+Není to práce, je to měření. Na 93 133 linkách šesti firem nejsou **nikde** nastavené: místenkování,
+vlastní texty sloupce MHD, tisk provozoven dopravce, schovávání u linky, vrstva pod linkou a řazení
+spojů ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)).
+
+Vytáhnout, až si o některé z nich někdo řekne. ⚠️ **Doklad z dat nebude** - když je nastavení nikde
+zapnuté, není na čem ověřit, že se chováme jako starý modul; bude se muset věřit čtení legacy.
+
+## Doklady k linkovým JŘ bez tiketu (uzavřeno 15. 9. 2026)
+
+Tři kontrolní body ze sady testovacích linek - ne zákaznické požadavky, jen naše ověření, že se
+chováme jako starý modul. Všechny doloženy voláním serveru, ne čtením kódu.
+
+**Pořadí sloupců spojů (ruční pořadí u linky).** Ruční pořadí má přednost před dopočítaným podle
+času, jak to dělá legacy `mkPoradiSp`. Doloženo na `CB_CSADAD 4 / 0330520`, kde se obojí liší
+(`1,3,5,7,101,103,105` ručně × `1,101,3,103,5,7,105` podle času) - vracíme ruční. Kryje i Caché
+test `TestRucniPoradiSpoju`. ⚠️ `1 / 0370618` ze sady testovacích linek na doklad **nestačí**: její
+ruční pořadí je totožné s časovým. Linky, kde se liší, najde `LinkovyJrNastaveniProbe.RozdilneRucniPoradi`
+(8 z 11 měřených).
+
+**Písmena ze zóny se odstraňují.** Doloženo na `ZL_KOVED 1 / 0823955`: v datech `Z420,I201`, agenda
+vrací `420,201`. Linka má nastavení „odstraňovat" a přebíjí jím globální, takže se obojí ověřilo
+naráz. ⚠️ Vzorek je v **KOVEDu**, ne ve Vsetíně, jak roadmapa tvrdila - `VS_CSAD` zóny nevyplňuje
+vůbec. Zóny jsou vzácné i tam, kde je jejich tisk zapnutý (z 250 linek KOVEDu jediná).
+
+**Živý náhled ignoroval vlastní definici sloupců** - na rozdíl od předchozích dvou to **nebyl
+doklad, ale vada**, a opravila se (changelog 15. 9.). Obousměrný tisk a turnusy do ukázkových dat
+vědomě nejdou: to jsou volby tisku, ne součást šablony.
+
 ## `B140` Rozdvojená zastávka v postskriptovém tvaru (hotovo 15. 9. 2026)
 
 Prvek tabulky linky dostal volbu **„Sloučit popis u příjezdu a odjezdu"**. Zapnutá vypíše km,
