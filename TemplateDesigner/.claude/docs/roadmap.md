@@ -89,6 +89,18 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
   druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
 
+### Hotové, čeká zavření na helpdesku
+
+⚠️ **Zavřít se má až s vydáním** (rozhodnutí Jan 15. 9.) - zákazník to musí mít ve verzi, než mu
+napíšeme, že je to hotové. Po zavření **z roadmapy pryč**; tady visí jen proto, aby to bylo
+na jednom místě.
+
+| Tiket | Co dostal |
+|---|---|
+| **#8372 vkládat prázdné sloupce** (KORID) | Volba **„Dorovnat prázdnými sloupci"** u tabulky linky. Dorovnává i **levou** stranu, kterou tiket nežádal - u obousměrné sestavy bez ní zůstala díra |
+| **#8576 tarifní zóny do sloupců** (KU HK) | Volba **„Každá zóna ve vlastním sloupci"** (výchozí vypnutá, aby se nezměnily hotové sestavy) |
+| **#11300 prázdný přípojný řádek** (KORID) | Výtisk hotový 15. 9. - `CB_CSADAD 1 / 0330510` směr Zpět, strana 3 je list jen s pracovními dny bez jediného přípojného řádku. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md) |
+
 ### K ověření na reálné sestavě
 
 Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
@@ -96,7 +108,6 @@ takže nejde o práci, ale o doklad.
 
 | Tiket | Stav |
 |---|---|
-| **#11300 prázdný přípojný řádek** (KORID) | ✅ **výtisk hotový** (`CB_CSADAD 1 / 0330510` směr Zpět, strana 3) - zbývá **poslat a zavřít**. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md) |
 | **#11373 poznámky vedle tabulky** (KAD) | Umíme to (prvek má volnou pozici, od `B117` i u linkových). Zbývá **výtisk** - jde o to, jestli je legenda v úzkém sloupci čitelná |
 
 Naše vlastní kontrolní body (pořadí sloupců, písmena ze zóny, ukázková data v náhledu) jsou
@@ -159,6 +170,9 @@ Layout TBD - hlavička oběhu, tabulka spojů, poznámky (pravděpodobně víc e
 `ALVA.MHD.ReportGenerator` (MHD) + `AD.ADREPORTGEN` (linky), viz
 [`legacy-nahrada.md`](legacy-nahrada.md). **Relace (TiskJRRELACE)** - vývěsky
 nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý use case**.
+
+⚠️ **Živý use case tu je: `#13070`** (BBSK, pozastavený). Vypadá jako linkový jízdní řád, ale
+zákazníkova předloha je **odjezdová relace** - proto se v linkovém tracku neřeší a čeká tady.
 
 | Co | Stav |
 |---|---|
