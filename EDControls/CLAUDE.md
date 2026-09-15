@@ -106,7 +106,9 @@ XAML všech konzumentů.
   Šipky/Enter/Esc obsluhuje **override `OnPreviewKeyDown`**: `ComboBox` je značí `Handled`
   už ve fázi class handlerů, takže instance handler by se s otevřeným dropdownem nikdy
   nezavolal. Navigace jede přes `SelectedIndex` (ne přes interní zvýraznění WPF), aby pick
-  zachytil `SelectionChanged`. `EDFilter/` - skládání filtrů.
+  zachytil `SelectionChanged`.
+- `EDFilter/` - pruh filtračních polí; cíl je `IEDFilterTarget` (root namespace), ne konkrétní
+  control. Vlastní `CLAUDE.md`.
 - `EDSearchTextBox/` - `TextBox` pro hledání (placeholder, ✕, Esc); styl v `EDControlStyles.xaml`.
 - `EDInfoBar/` - info proužek (text + volitelná ikona + akční odkaz); prázdné → skryté,
   styl v `EDControlStyles.xaml`, viditelnost řídí konzument.

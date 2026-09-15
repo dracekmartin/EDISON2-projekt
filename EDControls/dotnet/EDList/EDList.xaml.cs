@@ -19,7 +19,7 @@ using System.Windows.Threading;
 
 namespace EDControls.EDList
 {
-    public partial class EDList : UserControl
+    public partial class EDList : UserControl, IEDFilterTarget
     {
 
         // MLRest + UserPrefs ze sdíleného EDServices.Current - nezávislé na Window.DataContext.
@@ -315,6 +315,9 @@ namespace EDControls.EDList
             if (generation != _loadGeneration) return;   // mezitím přišel novější požadavek
             ApplyRows(output);
         }
+
+        /// <summary><c>IEDFilterTarget</c> - napojení na <c>EDFilter</c>. Prázdný slovník = bez filtru.</summary>
+        public Task ApplyFilterAsync(IReadOnlyDictionary<string, string> filter) => LoadListAsync(filter);
 
         // Serializace dotazů - sdílený MLRest komunikuje přes procesní globály ^||ML, takže dva
         // souběžné dotazy z téhož EDListu by si vzájemně přepsaly vstup i výstup.

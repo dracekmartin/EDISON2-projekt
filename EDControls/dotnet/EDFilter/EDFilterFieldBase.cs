@@ -38,6 +38,12 @@ public abstract class EDFilterFieldBase : UserControl
     /// <summary>Vrátí aktuální hodnotu pole jako string (prázdné = filter klíč se neposílá).</summary>
     public abstract string GetValue();
 
+    /// <summary>
+    /// Dosadí hodnotu z uložených preferencí. Jméno je záměrně jiné než <c>SetValue</c>,
+    /// aby se nepletlo s WPF přetížením. Best-effort - co pole dosadit neumí, tiše ignoruje.
+    /// </summary>
+    public abstract void RestoreValue(string value);
+
     /// <summary>Vyvoláno při změně hodnoty pole. EDFilter ho subscribuje a trigger reload.</summary>
     public event EventHandler? ValueChanged;
 

@@ -339,14 +339,15 @@ private void ReloadList()
 }
 ```
 
-Toto je legacy ad-hoc řešení. **Preferovaná cesta od v1 EDFilter komponenty** je deklarativní — viz [`03-EDFilter.md`](03-EDFilter.md):
+Toto je legacy ad-hoc řešení. **Preferovaná cesta je deklarativní `EDFilter`** (EDList je jeho
+`IEDFilterTarget`), viz [`dotnet/EDFilter/CLAUDE.md`](../dotnet/EDFilter/CLAUDE.md):
 
 ```xml
-<el:EDFilter Target="{Binding ElementName=TheList}">
-    <edf:FilterCombo Key="agendaCode" Label="Agenda"
-                     ItemsSource="{Binding AgendaFilters}"
-                     SelectedValuePath="Code" DisplayMemberPath="Label"/>
-</el:EDFilter>
+<edf:EDFilter Target="{Binding ElementName=TheList}" HostId="MujProjekt.MujPicker">
+    <edf:EDFilterCombo Key="agendaCode" Label="Agenda"
+                       ItemsSource="{Binding AgendaFilters}"
+                       SelectedValuePath="Code" DisplayMemberPath="Label"/>
+</edf:EDFilter>
 <el:EDList x:Name="TheList"/>
 ```
 
