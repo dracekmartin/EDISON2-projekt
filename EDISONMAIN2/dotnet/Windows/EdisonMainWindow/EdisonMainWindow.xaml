@@ -78,7 +78,7 @@
                  (hlavní nabídka patří na začátek lišty). Cena: šipkami se mezi oběma menu nepřejde. -->
             <Menu x:Name="EdisonMenu" DockPanel.Dock="Left" BorderThickness="0">
             <MenuItem Header="EDISON">
-                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Molecule}" Width="16" Height="16"/></MenuItem.Icon>
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Molecule}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Připojit k databázi"   Command="{Binding ConnectToDatabaseCommand}"/>
                 <MenuItem Header="Spustit další EDISON"  Command="{Binding RunEdisonCopyCommand}"/>
                 <Separator/>
@@ -110,13 +110,13 @@
             </edfc:EDFilterComboBox>
             <Menu x:Name="TopMenu" BorderThickness="0">
             <MenuItem Header="Uživatel">
-                <MenuItem.Icon><Image Source="{StaticResource EDIcons.User}" Width="16" Height="16"/></MenuItem.Icon>
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.User}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Přihlásit jiného uživatele" Command="{Binding LoginAsAnotherUserCommand}"/>
                 <MenuItem Header="Aktuální uživatel"          Command="{Binding ShowUserProfileCommand}"/>
                 <MenuItem Header="Změnit heslo"               Command="{Binding ChangePasswordCommand}"/>
             </MenuItem>
             <MenuItem Header="Spuštěné moduly" ItemsSource="{Binding RunningModules}">
-                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Module}" Width="16" Height="16"/></MenuItem.Icon>
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Module}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <!-- MouseEnter, ne SubmenuOpened - prázdný submenu by se neotevřel a chicken-and-egg by zablokoval refresh. -->
                 <b:Interaction.Triggers>
                     <b:EventTrigger EventName="MouseEnter">
@@ -135,14 +135,14 @@
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
             <MenuItem Header="Miniaplikace">
-                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Panels}" Width="16" Height="16"/></MenuItem.Icon>
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Panels}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Zobrazit miniaplikaci" Command="{Binding PickMiniAppCommand}"/>
                 <Separator/>
                 <MenuItem Header="Zavřít miniaplikace" Command="{Binding CloseMiniAppsCommand}"/>
                 <MenuItem Header="Resetovat miniaplikace" Command="{Binding ResetMiniAppsCommand}"/>
             </MenuItem>
             <MenuItem Header="Nástroje">
-                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Tools}" Width="16" Height="16"/></MenuItem.Icon>
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Tools}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Úlohy na pozadí"      Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenceCommand}"/>
                 <Separator/>
@@ -151,7 +151,7 @@
                 <MenuItem Header="Aktivita uživatelů"   Command="{Binding ShowUsersActivityCommand}"/>
             </MenuItem>
             <MenuItem Header="Nastavení">
-                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Settings}" Width="16" Height="16"/></MenuItem.Icon>
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Settings}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Nastavení písma" Command="{Binding FontSettingsCommand}"/>
                 <MenuItem Header="Tmavý režim"  IsCheckable="True" IsChecked="{Binding IsDarkMode}"/>
                 <Separator/>
@@ -161,7 +161,7 @@
                 <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
             </MenuItem>
             <MenuItem Header="Nápověda">
-                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Help}" Width="16" Height="16"/></MenuItem.Icon>
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Help}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Informace o verzi"     Command="{Binding ShowInfoCommand}"/>
                 <MenuItem Header="Novinky v aktualizaci" Command="{Binding ShowShellChangelogCommand}"/>
                 <MenuItem Header="Helpdesk, Wiki"        Command="{Binding OpenHelpdeskWebCommand}"/>
@@ -216,7 +216,7 @@
                          Transparent → hit-test i napravo od textu (ContextMenu na celém řádku). -->
                     <StackPanel Orientation="Horizontal" Background="Transparent"
                                 Tag="{Binding Data, Source={StaticResource VmProxy}}">
-                        <Image Source="{StaticResource EDIcons.Folder}" Width="16" Height="16"
+                        <Image Source="{StaticResource EDIcons.Folder}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"
                                Margin="0,0,6,0" VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
                         <!-- Color "" → prázdná → themed text; v DEBUG nastaveno agregací (stub/broken). -->
@@ -270,7 +270,7 @@
                          Transparent → hit-test i napravo od textu (ContextMenu na celém řádku). -->
                     <StackPanel Orientation="Horizontal" Background="Transparent"
                                 Tag="{Binding Data, Source={StaticResource VmProxy}}">
-                        <Image Source="{StaticResource EDIcons.Module}" Width="16" Height="16"
+                        <Image Source="{StaticResource EDIcons.Module}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"
                                Margin="0,0,6,0" VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
                         <!-- Barva z modelu (launchability); prázdná → themed Text.Primary z BasedOn
@@ -345,8 +345,9 @@
                     <EventSetter Event="MouseMove" Handler="TreeItem_MouseMove"/>
                 </Style>
 
-                <!-- Ikonový tab - text nese ToolTip, aby se všech pět záložek vešlo na jeden řádek
-                     vedle akčního toolbaru. BasedOn povinné (theming + FocusVisual žijí v implicitním stylu). -->
+                <!-- Název nese jen aktivní záložka (ItemTemplate), neaktivní ho mají v ToolTipu -
+                     pět popisků vedle sebe by se do panelu nevešlo. BasedOn povinné (theming
+                     + FocusVisual žijí v implicitním stylu). -->
                 <Style x:Key="TreeTab" TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
                     <Setter Property="Padding" Value="4,6"/>
                 </Style>
@@ -357,81 +358,87 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Přepínač záložek + akce nad aktivním stromem na jednom řádku. TabControl tu drží
-                 jen tab strip: content skrývá prázdný ContentTemplate (stromy jsou pod hledáním
-                 v kartě níž, přepínané dle SelectedTab.Key) - content row tak zkolabuje na nulu.
-                 Přetemplatovat TabControl lokálně nelze, viz EDControls/CLAUDE.md.
-                 Záložky vs. akce se nesmí slít do jedné řady ikon (obě skupiny mají ★): taby sedí
-                 na kartě (Bg.Surface, spojité s hledáním i stromem = patří k obsahu), akce zůstávají
-                 vpravo na zapuštěném chrome. Odsazení vpravo drží Auto sloupec. -->
-            <Grid Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" HorizontalAlignment="Left" Margin="4,4,0,0" CornerRadius="3,3,0,0"
-                        Background="{DynamicResource EDTheme.Bg.Surface}"
-                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,1,1,0">
-                    <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění Hlavní nabídka.
-                         BorderThickness=0 - spodní linku kreslí až rámeček řádku s hledáním, spojitě přes celou šířku. -->
-                    <!-- Záložky jsou data (VM.TreeTabs), ne ručně psané TabItemy - pořadí i identita
-                         žijí v jednom seznamu. Ikona patří do Headeru; Content nastavuje generátor
-                         kontejnerů na datovou položku (record ToString!), skrývá ho prázdný
-                         ContentTemplate - Setter Content by generátor přebil lokální hodnotou. -->
-                    <TabControl x:Name="TreeTabControl" BorderThickness="0"
-                                ItemsSource="{Binding TreeTabs}"
-                                SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
-                        <TabControl.ItemContainerStyle>
-                            <Style TargetType="TabItem" BasedOn="{StaticResource TreeTab}">
-                                <Setter Property="ToolTip" Value="{Binding Title}"/>
-                            </Style>
-                        </TabControl.ItemContainerStyle>
-                        <TabControl.ItemTemplate>
-                            <DataTemplate>
-                                <Image Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"
+            <!-- Řádek 0 je celý tab strip: aktivní záložka ukazuje ikonu i název, takže se do řady
+                 s akcemi nevejde - akce sedí o řádek níž vedle hledání. TabControl tu drží jen tab
+                 strip: content skrývá prázdný ContentTemplate (stromy jsou pod hledáním v kartě níž,
+                 přepínané dle SelectedTab.Key) - content row tak zkolabuje na nulu.
+                 Přetemplatovat TabControl lokálně nelze, viz EDControls/CLAUDE.md. -->
+            <Border Grid.Row="0" HorizontalAlignment="Left" Margin="4,4,0,0" CornerRadius="3,3,0,0"
+                    Background="{DynamicResource EDTheme.Bg.Surface}"
+                    BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,1,1,0">
+                <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění Hlavní nabídka.
+                     BorderThickness=0 - spodní linku kreslí až rámeček řádku s hledáním, spojitě přes celou šířku. -->
+                <!-- Záložky jsou data (VM.TreeTabs), ne ručně psané TabItemy - pořadí i identita
+                     žijí v jednom seznamu. Ikona patří do Headeru; Content nastavuje generátor
+                     kontejnerů na datovou položku (record ToString!), skrývá ho prázdný
+                     ContentTemplate - Setter Content by generátor přebil lokální hodnotou. -->
+                <TabControl x:Name="TreeTabControl" BorderThickness="0"
+                            ItemsSource="{Binding TreeTabs}"
+                            SelectedItem="{Binding SelectedTab, Mode=TwoWay}">
+                    <TabControl.ItemContainerStyle>
+                        <Style TargetType="TabItem" BasedOn="{StaticResource TreeTab}">
+                            <Setter Property="ToolTip" Value="{Binding Title}"/>
+                        </Style>
+                    </TabControl.ItemContainerStyle>
+                    <TabControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
                                        Source="{Binding IconKey, Converter={StaticResource ResourceKey}}"/>
-                            </DataTemplate>
-                        </TabControl.ItemTemplate>
-                        <TabControl.ContentTemplate>
-                            <DataTemplate/>
-                        </TabControl.ContentTemplate>
-                    </TabControl>
-                </Border>
-                <!-- Rozbalit/sbalit cílí na aktivní strom (VM.ActiveExpandableTree), zbytek na vybraný
-                     uzel - jedna instance pro všechny záložky. -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="8,2,4,2">
-                    <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Rozbalit vše"
-                            Command="{Binding ExpandAllCommand}">
-                        <Image Source="{StaticResource EDIcons.ExpandAll}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/>
-                    </Button>
-                    <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Sbalit vše"
-                            Command="{Binding CollapseAllCommand}">
-                        <Image Source="{StaticResource EDIcons.CollapseAll}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/>
-                    </Button>
-                    <Border Width="1" Margin="4,4" Background="{DynamicResource EDTheme.Border.Medium}"/>
-                    <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Přidat/odebrat z oblíbených"
-                            Command="{Binding ToggleFavoriteCommand}" CommandParameter="{Binding SelectedModule}"
-                            IsEnabled="{Binding HasSelection}">
-                        <Image Source="{StaticResource EDIcons.Star}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/>
-                    </Button>
-                    <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Nastavit jako výchozí okno"
-                            Command="{Binding SetStartupWindowCommand}" CommandParameter="{Binding SelectedModule}"
-                            IsEnabled="{Binding CanSetStartup}">
-                        <Image Source="{StaticResource EDIcons.StartupWindow}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/>
-                    </Button>
-                </StackPanel>
-            </Grid>
+                                <!-- Název jen na aktivní záložce - pět popisků vedle sebe by se do panelu
+                                     nevešlo. Neaktivní ho mají v ToolTipu (ItemContainerStyle). -->
+                                <TextBlock Text="{Binding Title}" Margin="6,0,2,0" VerticalAlignment="Center"
+                                           Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis},
+                                                        RelativeSource={RelativeSource AncestorType=TabItem}}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </TabControl.ItemTemplate>
+                    <TabControl.ContentTemplate>
+                        <DataTemplate/>
+                    </TabControl.ContentTemplate>
+                </TabControl>
+            </Border>
 
-            <!-- Vyhledávání napříč všemi stromy - filtruje uzly dle názvu (VM.TreeSearchText).
+            <!-- Vyhledávání napříč všemi stromy (VM.TreeSearchText) + akce nad aktivním stromem.
                  Rámeček navazuje na pruh záložek i na kartu se stromem (jedna spojitá plocha). -->
             <Border Grid.Row="1" Margin="4,0,4,0" Padding="4"
                     Background="{DynamicResource EDTheme.Bg.Surface}"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,1,1,0">
-                <!-- Enter = fokus na první nález ve stromu (Esc si řeší EDSearchTextBox sám). -->
-                <edstx:EDSearchTextBox x:Name="TreeSearchBox"
-                                       Placeholder="Hledat modul…"
-                                       KeyDown="TreeSearchBox_KeyDown"
-                                       Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Enter = fokus na první nález ve stromu (Esc si řeší EDSearchTextBox sám). -->
+                    <edstx:EDSearchTextBox x:Name="TreeSearchBox" Grid.Column="0"
+                                           Placeholder="Hledat modul…"
+                                           KeyDown="TreeSearchBox_KeyDown"
+                                           Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                    <!-- Rozbalit/sbalit cílí na aktivní strom (VM.ActiveExpandableTree), zbytek na vybraný
+                         uzel - jedna instance pro všechny záložky. -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="6,0,0,0">
+                        <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Rozbalit vše"
+                                Command="{Binding ExpandAllCommand}">
+                            <Image Source="{StaticResource EDIcons.ExpandAll}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        </Button>
+                        <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Sbalit vše"
+                                Command="{Binding CollapseAllCommand}">
+                            <Image Source="{StaticResource EDIcons.CollapseAll}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        </Button>
+                        <Border Width="1" Margin="4,4" Background="{DynamicResource EDTheme.Border.Medium}"/>
+                        <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Přidat/odebrat z oblíbených"
+                                Command="{Binding ToggleFavoriteCommand}" CommandParameter="{Binding SelectedModule}"
+                                IsEnabled="{Binding HasSelection}">
+                            <Image Source="{StaticResource EDIcons.Star}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        </Button>
+                        <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Nastavit jako výchozí okno"
+                                Command="{Binding SetStartupWindowCommand}" CommandParameter="{Binding SelectedModule}"
+                                IsEnabled="{Binding CanSetStartup}">
+                            <Image Source="{StaticResource EDIcons.StartupWindow}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Karta s obsahem aktivní záložky - Bg.Surface proti zapuštěnému Bg.Sunken panelu.
@@ -492,6 +499,7 @@
                 </avalonDock:LayoutPanel>
             </avalonDock:LayoutRoot>
         </avalonDock:DockingManager>
+
 
         <!-- Segment = ikona + hodnota, technika (namespace, port, login, Mlp) je v ToolTipu.
              Separator jen mezi vždy viditelnými segmenty - u sbalitelných by zůstal viset. -->
