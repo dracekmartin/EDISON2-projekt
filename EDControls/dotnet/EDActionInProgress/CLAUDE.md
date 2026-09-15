@@ -1,7 +1,7 @@
 # EDActionInProgress - poznámky pro vývojáře
 
-Overlay „Akce probíhá" s pixel-art maskoty ve dvou sadách: dopravní prostředky
-(výchozí; kusy se během akce náhodně střídají) a peníze (finanční agendy, padají).
+Overlay „Akce probíhá" s načítacím kolečkem. Pixel-art maskoti (dopravní prostředky, peníze)
+jsou **vypnutí, ne smazaní** - `SpritesEnabled` v code-behind + `Visibility` na `SpriteViewport`.
 `EDActionInProgress` je **neviditelný controller** (FrameworkElement) - vlož kamkoli do okna
 (konvence: poslední child root Gridu). Na `Loaded` se sám naváže na
 `EDViewModel.IsActionInProgress` - v XAML se `IsActive` binding **nepíše**.
@@ -32,6 +32,9 @@ Aktivace z VM: `using var _ = ActionInProgress();`.
 
 ## Ostatní neodvoditelné
 
+- **Kolečko**: oblouk 270° v `EDTheme.Accent.BlueDark` nad slabým prstencem, rotace
+  `DoubleAnimation` na `RotateTransform`. Token záměrně není `Accent.Header` - obojí je v light
+  brand navy, ale Header se v dark nepřebarvuje a měl by na kartě kontrast 1,6:1 (BlueDark 7,4:1).
 - **Sprity žijí v sadách `Sprite.<Sada>.<Kus>`** (pixel-art Canvas, čelem doprava)
   v `ActionInProgressWindow.xaml`. Výchozí sada `Vehicles` jede přes průhled a kus se
   při každém přejezdu náhodně vymění (bez okamžitého opakování); sada `Money` padá

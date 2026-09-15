@@ -412,10 +412,27 @@
                 Padding="0,18">
             <StackPanel>
 
+                <!-- Načítací kolečko - výchozí obsah karty; se sadou spritů ho code-behind schová
+                     (PickSet). Oblouk se točí, slabý prstenec pod ním drží tvar i v momentě, kdy je
+                     oblouk na protilehlé straně. Accent.BlueDark, ne Accent.Header: obojí je v light
+                     brand navy #0D47A1, ale Header se v dark nepřebarvuje a na kartě by měl
+                     kontrast 1,6:1 (BlueDark 7,4:1). -->
+                <Grid x:Name="Spinner" Width="36" Height="36">
+                    <Ellipse Width="28" Height="28" Stroke="{DynamicResource EDTheme.Border.Light}" StrokeThickness="3"/>
+                    <Path Stroke="{DynamicResource EDTheme.Accent.BlueDark}" StrokeThickness="3"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                          Data="M 18,4 A 14,14 0 1 1 4,18"
+                          RenderTransformOrigin="0.5,0.5">
+                        <Path.RenderTransform>
+                            <RotateTransform x:Name="SpinnerRotate"/>
+                        </Path.RenderTransform>
+                    </Path>
+                </Grid>
+
                 <!-- Průhledové okno - kusy jím projíždějí/padají (clip). Obsah vkládá code-behind
                      do SpriteHost; transform (flip + posun) je na hostovi, ne na kusech →
-                     mechanismus je společný všem sadám. -->
-                <Border x:Name="SpriteViewport" Width="160" Height="48" ClipToBounds="True">
+                     mechanismus je společný všem sadám. Collapsed: bez klíče sady jede kolečko. -->
+                <Border x:Name="SpriteViewport" Width="160" Height="48" ClipToBounds="True" Visibility="Collapsed">
                     <ContentControl x:Name="SpriteHost" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <ContentControl.RenderTransform>
                             <TransformGroup>

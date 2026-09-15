@@ -5,8 +5,11 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 
 - `DockMinWidth/Height` razítkuje `AvalonDockHost` **každému** pane po `Layout.Updated`
   (hook nutno obnovovat přes `LayoutChanged` - Deserialize mění celý LayoutRoot); bez toho
-  AvalonDock pane pustí na svých 25 px a miniaplikace fakticky zmizí. Bez otevřené mini-app
-  Plocha (`HasOpenDesktop`) se pod stromem ukáže `EDInfoBar` s akcí na její zobrazení.
+  AvalonDock pane pustí na svých 25 px a miniaplikace fakticky zmizí.
+- **Plocha je `MiniAppDescriptor.Pinned`**: bez křížku a bez odtržení (`CanClose/CanFloat/CanMove`),
+  picker ji nenabízí, `CloseClosable` ji přeskočí (`CloseAll` pro shutdown/reset ne - programové
+  `Close()` dock pustí i tak). `CanClose` se při restore bere z deskriptoru, ne z uloženého XML,
+  a shell Plochu po obnově **doplní** (`EnsureDesktopOpen`) - starý layout ji mít nemusí.
 - Widgety `podpora.m-line.cz` v docku **nejsou** - kanál IT → uživatelé nese fixní pruh
   v shellu (`EdisonMainWindow`, `SupportStrip`), mimo dock, aby ho nešlo zavřít ani zúžit;
   URL nese IdFa + login + e-mail, po přepnutí firmy se widget naviguje znovu (změna `Idfa` VM).
@@ -14,8 +17,7 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   nahradí widgety neutrálním popiskem (anonymizované screenshoty) - WebView2 se vůbec nevytvoří.
   Hostí se přes `FontZoomWebView : WebView2` - **HWND, ne composition**, ta crashuje na dragu
   tabu do plovoucího okna. Airspace: WPF veil dimu HWND nepokryje, kartu „Akce probíhá" nad
-  ním kreslí owned okno
-  (viz [EDActionInProgress/CLAUDE.md](../../../EDControls/dotnet/EDActionInProgress/CLAUDE.md)).
+  ním kreslí owned okno ([EDActionInProgress/CLAUDE.md](../../../EDControls/dotnet/EDActionInProgress/CLAUDE.md)).
 - Font widgetu: `ZoomFactor = FontService.BodySize / 14` (základní text je 14 CSS px), rodina
   se do HTML nepropaguje. Dark mode widget sám neumí (natvrdo `bg-white`) - injektuje se
   inverzní CSS filtr (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému
@@ -37,18 +39,23 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.
   Chybu ukazuje panel sám (`ErrorText`), ne popup - dávka o N panelech by jich zvedla N.
   `MiniAppManager.RefreshAll` proto vrací názvy **spuštěných**, ne dokončených obnov.
+- **Sekce `ObjectSectionTable` nese deskriptor typů sloupců**, ne jen marker tabulky: `"T:N2#"` =
+  text, číslo se 2 desetinnými a oddělovačem tisíců (grammar v legacy `EDMiniApplication.GetFormat`).
+  Bez něj se `N` neformátuje, nezarovná vpravo a řadí lexikograficky; `D` je TEXT, wire posílá datum hotové.
+- **Label těsně nad tabulkou je její nadpis** - parser ho spotřebuje do `DashboardTable.Title`
+  (nese ho pruh EDListu), i když legacy tam dává i souhrny; ostatní labely zůstávají sekcí.
 - **Pruh miniaplikace je `EDControls.MiniApps.EDMiniAppBar`**, ne vlastní StackPanel. Barvu
-  řádku ze serveru nese `CellStyle` s `BasedOn` - přes `RowStyle` ji implicitní styl buňky
-  přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji
+  řádku ze serveru nese `CellStyle` s `BasedOn` nad skrytým sloupcem `_fore` - přes `RowStyle` ji
+  implicitní styl buňky přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji
   `LegacyForeColorConverter` zesvětlí na kontrast 4,5:1 (legacy palety počítají s bílým
   pozadím); motiv čte v okamžiku konverze, proto view po `ThemeService.Applied` sekce
   refreshuje.
-- **Kolečko myši v panelu**: vnořený seznam (DataGrid sekce přehledu) si MouseWheel nechá i bez místa
-  k rolování → `EDControls.ScrollWheelBubbling.IsEnabled` ho na kraji předá vnějšímu ScrollVieweru;
-  prázdná plocha Plochy musí mít `Background`, jinak není hit-testable a kolečko jde mimo ScrollViewer.
+- **Kolečko myši v panelu**: vnořený seznam si MouseWheel nechá i bez místa k rolování, na kraji ho
+  předá ven `EDControls.ScrollWheelBubbling.IsEnabled`; prázdná plocha Plochy musí mít `Background`,
+  jinak není hit-testable a kolečko jde mimo ScrollViewer.
 - Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,
   stejný lifecycle přes `AttachTreeLayout`); chybí-li nebo je poškozený → výchozí rozložení
-  (jen Plocha). Prázdný dock ukáže placeholder s tlačítkem na výchozí sadu.
+  (jen Plocha).
 - Výběr miniaplikace je vlastní okno (`Windows/MiniAppPickerWindow`) s **jednoúrovňovým**
   seznamem; `IMiniAppProvider.GroupTitle` (pořadí = pořadí registrace v `AppBootstrapper`)
   z něj zbyl jen popisek řádku. Menu „Miniaplikace" na okno jen odkazuje.

@@ -20,7 +20,6 @@ public class EdisonMainViewModelCommandTests
         "UsersLocks"       => vm.ShowUsersLocksCommand,
         "UsersActivity"    => vm.ShowUsersActivityCommand,
         "LanguageSettings" => vm.ShowLanguageSettingsCommand,
-        "SystemLog"        => vm.SendSystemLogCommand,
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
@@ -40,7 +39,6 @@ public class EdisonMainViewModelCommandTests
     [Theory]
     [InlineData("BgTasks", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList")]
     [InlineData("LanguageSettings", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList")]
-    [InlineData("SystemLog", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList")]
     public void DialogLegacyCommands_LaunchCorrectForm(string command, string exe, string form)
     {
         var nav = Substitute.For<IWindowNavigator>();

@@ -22,6 +22,12 @@ namespace EDControls.EDActionInProgress;
 /// </summary>
 internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOverlayWindow
 {
+    // Režim karty určuje klíč sady: bez klíče (produkce) se točí kolečko, s klíčem běží maskoti.
+    // Pixel-art styl se v produkci neosvědčil (zákaznická reklamace kapybary), sady ale zůstávají
+    // celé - pustí je „Test funkcí ▸ Akce probíhá", takže je jde kdykoli vrátit i do produkce.
+    // Doba jedné otáčky kolečka.
+    private static readonly TimeSpan SpinnerTurnDuration = TimeSpan.FromSeconds(1.1);
+
     // Sprity žijí v sadách "Sprite.<Sada>.<Kus>" ve Window.Resources; nový kus = jen XAML.
     private const string SpriteKeyPrefix = "Sprite.";
     // Výchozí sada (overlay bez explicitního klíče): dopravní prostředky, režim jízdy.
@@ -79,10 +85,22 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
     // x:Shared="False" → přístup k resource vrací pokaždé novou instanci (žádný konflikt rodiče).
     private void PickSet(string? preferred)
     {
-        _pieceKeys = SetPieceKeys(preferred) is { Length: > 0 } keys ? keys : SetPieceKeys(DefaultSetKey);
-        if (_pieceKeys.Length == 0) return;
+        _pieceKeys = SetPieceKeys(preferred);
+        if (_pieceKeys.Length == 0) return;   // bez sady zůstane viditelné kolečko
+        Spinner.Visibility = Visibility.Collapsed;
+        SpriteViewport.Visibility = Visibility.Visible;
         if (Equals((Resources[_pieceKeys[0]] as FrameworkElement)?.Tag, FallTag))
             BuildFallPieces();
+    }
+
+    // Stop přes BeginAnimation(.., null) vrátí úhel na klidovou hodnotu - stejný vzor jako
+    // u spritů, aby skryté okno nedrželo tikající clock.
+    private void ToggleSpinner(bool active)
+    {
+        if (Spinner.Visibility != Visibility.Visible) return;
+        SpinnerRotate.BeginAnimation(RotateTransform.AngleProperty, active
+            ? new DoubleAnimation(0, 360, SpinnerTurnDuration) { RepeatBehavior = RepeatBehavior.Forever }
+            : null);
     }
 
     private string[] SetPieceKeys(string? set) => set is null ? [] :
@@ -215,6 +233,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
     private void ToggleWalk(bool active)
     {
         _running = active;
+        ToggleSpinner(active);
         if (_fallPieces.Count > 0)
         {
             if (active) StartFall(); else StopFall();

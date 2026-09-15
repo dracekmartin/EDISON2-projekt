@@ -77,7 +77,7 @@ public class EDListLoadTests
     }
 
     // EDList.xaml čte StaticResource EDIcons/EDStrings → Application se slovníky appky;
-    // trvalé app vlákno viz EDComponentToolbarFlatTests.RunSta.
+    // trvalé app vlákno viz EDComponentToolbarTests.RunSta.
     private static void EnsureApplication()
     {
         if (Application.Current is not null) return;

@@ -8,41 +8,29 @@ using Toolbar = EDControls.EDComponentToolbar.EDComponentToolbar;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Flat režim toolbaru (vsazení do cizí hlavičky, dnes EDInputForm). Regrese, které to hlídá:
-/// přepnutý default by ztmavil pruh v EDListu i v shellu; ztracený DataTrigger by nechal
-/// brandové pozadí uprostřed světlé hlavičky.
+/// Sdílený toolbar komponentových hlaviček. Regrese, které to hlídá: rozejití brandového
+/// pruhu (EDList i EDInputForm stojí na témže podkladu) a akumulace Ctrl+F bindingů.
 /// </summary>
-public class EDComponentToolbarFlatTests
+public class EDComponentToolbarTests
 {
     private const string Comp = "pack://application:,,,/EDControls;component/";
 
     [Fact]
-    public void Flat_DefaultsToFalse()
-    {
-        var metadata = Toolbar.FlatProperty.GetMetadata(typeof(Toolbar));
-        Assert.Equal(false, metadata.DefaultValue);
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void BarBackground_FollowsFlat(bool flat)
+    public void BarBackground_IsBrandHeader()
     {
         RunSta(() =>
         {
-            var toolbar = new Toolbar { Flat = flat };
+            var toolbar = new Toolbar();
             var bar = Assert.IsType<Border>(toolbar.Content);
 
-            // Styl s triggerem se vyhodnotí až v resource stromu (DynamicResource lookup).
+            // DynamicResource se vyhodnotí až v resource stromu.
             var root = new Grid();
             root.Children.Add(toolbar);
             root.Measure(new Size(800, 100));
             root.Arrange(new Rect(0, 0, 800, 100));
             root.UpdateLayout();
 
-            var expected = flat
-                ? Brushes.Transparent
-                : (Brush)Application.Current!.Resources["EDTheme.Accent.Header"];
+            var expected = (Brush)Application.Current!.Resources["EDTheme.Accent.Header"];
             Assert.Equal(expected.ToString(), bar.Background.ToString());
         });
     }

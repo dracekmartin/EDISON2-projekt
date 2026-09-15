@@ -62,17 +62,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand TestActionOverlayCommand { get; }
         /// <summary>Varianty overlaye „Akce probíhá" pro menu Test funkcí.</summary>
         public IReadOnlyList<OverlayTestVariant> ActionOverlayVariants { get; } =
-            [new("Dopravní prostředky", null),
-             .. AgendaSprites.KnownSets.Select(s => new OverlayTestVariant(AgendaSprites.LabelFor(s), s))];
+            [new("Kolečko", null),
+             .. AgendaSprites.AllSets.Select(s => new OverlayTestVariant(AgendaSprites.LabelFor(s), s))];
         public ICommand TriggerErrorCommand { get; }
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand OpenLegacyShellCommand { get; }
         public ICommand CloseAllCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
-        public ICommand OpenDefaultMiniAppsCommand { get; }
         public ICommand CloseMiniAppsCommand { get; }
         public ICommand ResetMiniAppsCommand { get; }
-        public ICommand ShowDesktopMiniAppCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
         public ICommand ConnectToDatabaseCommand { get; }
@@ -102,20 +100,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand ShowShellChangelogCommand { get; }
         public ICommand ShowModuleChangelogCommand { get; }
         public ICommand OpenHelpdeskWebCommand { get; }
-        public ICommand SendSystemLogCommand { get; }
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
 
         /// <summary>Otevře okno s jednoúrovňovým výběrem miniaplikace.</summary>
         public ICommand PickMiniAppCommand { get; }
-
-        private bool _hasOpenMiniApps;
-        /// <summary>Je v docku alespoň jedna mini-app? False → shell ukáže prázdný placeholder.</summary>
-        public bool HasOpenMiniApps { get => _hasOpenMiniApps; private set => Set(ref _hasOpenMiniApps, value); }
-
-        private bool _hasOpenDesktop;
-        /// <summary>Je otevřená miniaplikace Plocha? False → proužek pod stromem s výzvou k zobrazení.</summary>
-        public bool HasOpenDesktop { get => _hasOpenDesktop; private set => Set(ref _hasOpenDesktop, value); }
 
         /// <summary>
         /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/> a obnoví
@@ -124,14 +113,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public void AttachMiniAppHost(IMiniAppHost host)
         {
             _miniAppManager = new MiniAppManager(host, _miniAppCatalog);
-            _miniAppManager.InstancesChanged += UpdateMiniAppFlags;
             RestoreMiniAppLayout(Idfa);
-        }
-
-        private void UpdateMiniAppFlags()
-        {
-            HasOpenMiniApps = _miniAppManager!.OpenInstances.Count > 0;
-            HasOpenDesktop = _miniAppManager.OpenInstances.Any(i => i.DescriptorId == DesktopMiniAppProvider.DesktopId);
         }
 
         /// <summary>
@@ -160,6 +142,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             var desktop = _miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId);
             _miniAppManager?.OpenDefaultLayout(desktop is null ? [] : [desktop], bottomRow: null);
+        }
+
+        // Plocha musí být otevřená vždy - uložený layout ji mít nemusí (pochází z verze, kde šla
+        // zavřít). Bez ní by dock zůstal prázdný a uživatel by o dlaždice se zástupci přišel.
+        private void EnsureDesktopOpen()
+        {
+            if (_miniAppManager is null) return;
+            if (_miniAppManager.OpenInstances.Any(i => i.DescriptorId == DesktopMiniAppProvider.DesktopId)) return;
+            if (_miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId) is { } desktop)
+                _miniAppManager.Open(desktop);
         }
 
         // Po dobu výměny session (persist staré → CloseAll → async rebuild → restore nové) nesmí
@@ -197,6 +189,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             try
             {
                 _miniAppManager.RestoreLayout(xml);
+                EnsureDesktopOpen();
             }
             catch
             {
@@ -262,16 +255,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
             PickMiniAppCommand       = Command(PickMiniApp);
-            OpenDefaultMiniAppsCommand = Command(OpenDefaultMiniApps);
-            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseAll());
+            // Plocha zůstává - zavřít ji nejde a prázdný dock nemá uživateli co dát.
+            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseClosable());
             // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.
             ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
-            // Proužek pod stromem: Plocha jako řada dole, ať nepřekryje už otevřené sloupce.
-            ShowDesktopMiniAppCommand = Command(() =>
-            {
-                if (_miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId) is { } d)
-                    _miniAppManager?.Open(d, MiniAppPlacement.NewRow);
-            });
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(NotYetImplemented);
@@ -318,7 +305,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ShowShellChangelogCommand     = CommandAsync(() => ShowChangelogForAsync("EDISONMAIN", "EDISON"));
             ShowModuleChangelogCommand    = CommandAsync<IModule>(ShowModuleChangelogAsync);
             OpenHelpdeskWebCommand        = Command(() => OpenWebUrl("http://podpora.m-line.cz"));
-            SendSystemLogCommand          = CommandAsync(() => LaunchDialogAsync("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
             // Spuštěné moduly menu - dynamický seznam, refresh při SubmenuOpened.
             RefreshRunningModulesCommand  = Command(RefreshRunningModules);
@@ -1017,7 +1003,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 await prompt.ShowIfNewAsync(path, em.DisplayedName);
 
             // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces - čekáme na jeho okno).
-            using (ActionInProgress(AgendaSprites.ForExe(path)))
+            using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
         }
 
@@ -1058,13 +1044,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
         private async Task LaunchModelessAsync(string exe, string formFqn)
         {
-            using (ActionInProgress(AgendaSprites.ForExe(exe)))
+            using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(exe, formFqn);
         }
 
         private async Task LaunchDialogAsync(string exe, string formFqn)
         {
-            using (ActionInProgress(AgendaSprites.ForExe(exe)))
+            using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
@@ -1138,7 +1124,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                                     + "nelze ho spustit. Vytvořte ho znovu z modulu.");
                 return;
             }
-            using (ActionInProgress(AgendaSprites.ForExe(shortcut.ExecutablePath)))
+            using (ActionInProgress())
                 await WindowNavigator.ShowLegacyShortcutAsync(shortcut.ExecutablePath, shortcut.FormName,
                     ShortcutLaunchPayloadCodec.Encode(shortcut), inputParam: shortcut.InputParam);
         }

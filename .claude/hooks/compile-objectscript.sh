@@ -5,17 +5,19 @@
 # Config env vars (set in ~/.claude/settings.json):
 #   CACHE_SERVER, CACHE_NAMESPACE, CACHE_USER, CACHE_PASSWORD
 
-# Skip compilation in worktree runs
-case "$CLAUDE_PROJECT_DIR" in
-  */.claude/worktrees/*) exit 0 ;;
-esac
-
 INPUT=$(cat)
 
 # Extract file_path from hook JSON using pure bash/sed
 FILE_PATH=$(echo "$INPUT" | grep -o '"file_path":"[^"]*"' | head -1 | sed 's/"file_path":"//;s/"$//' | sed 's|\\\\|/|g')
 
 [ -z "$FILE_PATH" ] && exit 0
+
+# Ve worktree nenasazovat - sdílený server patří hlavní kopii. Kotveno na cestu
+# souboru, ne na CLAUDE_PROJECT_DIR: ta při vstupu do worktree během session
+# zůstává na hlavním checkoutu, takže původní podmínka nikdy nesedla.
+case "$FILE_PATH" in
+  */.claude/worktrees/*) exit 0 ;;
+esac
 
 case "$FILE_PATH" in
   *.cls|*.mac|*.int|*.inc) ;;

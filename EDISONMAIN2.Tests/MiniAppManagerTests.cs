@@ -251,6 +251,55 @@ public class MiniAppManagerTests
         Assert.Empty(mgr.Targets);
     }
 
+    // Pinned mini-app (Plocha) - uživatel ji nezavře, programově zavřít jde.
+    private static (MiniAppManager mgr, FakeHost host, MiniAppDescriptor pinned, MiniAppDescriptor normal) PinnedSetup()
+    {
+        var services = MockServices();
+        var pinned = new MiniAppDescriptor("P", "pinned", () => new TestMiniApp(services), Pinned: true);
+        var normal = new MiniAppDescriptor("N", "normal", () => new TestMiniApp(services));
+        var host = new FakeHost();
+        return (new MiniAppManager(host, MiniAppCatalog.Build([new SingleProvider(pinned), new SingleProvider(normal)])),
+                host, pinned, normal);
+    }
+
+    [Fact]
+    public void Open_Pinned_TellsHostItCannotBeClosed()
+    {
+        var (mgr, host, pinned, _) = PinnedSetup();
+
+        mgr.Open(pinned);
+
+        Assert.False(host.Panes.Single().CanClose);
+    }
+
+    [Fact]
+    public void CloseClosable_SkipsPinned_CloseAllDoesNot()
+    {
+        var (mgr, host, pinned, normal) = PinnedSetup();
+        mgr.Open(pinned);
+        mgr.Open(normal);
+
+        mgr.CloseClosable();
+
+        Assert.Equal("P", Assert.Single(mgr.OpenInstances).DescriptorId);
+        Assert.True(host.Panes.Single(p => p.ContentId.StartsWith("N#")).IsClosed);
+
+        mgr.CloseAll();
+        Assert.Empty(mgr.OpenInstances);
+    }
+
+    [Fact]
+    public void RestoreLayout_TakesCanCloseFromDescriptor_NotFromSavedLayout()
+    {
+        // Layout uložený dřív, než se Plocha stala pinned - musí se opravit z katalogu.
+        var (mgr, host, _, _) = PinnedSetup();
+
+        mgr.RestoreLayout("P#1,N#2");
+
+        Assert.False(host.Panes.Single(p => p.ContentId == "P#1").CanClose);
+        Assert.True(host.Panes.Single(p => p.ContentId == "N#2").CanClose);
+    }
+
     private sealed class TestMiniApp(EDServices services) : EDMiniAppViewModel(services)
     {
         public override string Title => "test";
@@ -280,9 +329,12 @@ public class MiniAppManagerTests
         public int SkeletonResets { get; private set; }
 
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    MiniAppPlacement? placement = null)
+                                    MiniAppPlacement? placement = null, bool canClose = true)
         {
-            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed, Placement = placement };
+            var pane = new FakePane(contentId)
+            {
+                Title = title, Content = content, OnClosed = onClosed, Placement = placement, CanClose = canClose,
+            };
             Panes.Add(pane);
             return pane;
         }
@@ -304,6 +356,7 @@ public class MiniAppManagerTests
                 if (resolve(contentId, pane) is not { } rc) continue;
                 pane.Content = rc.Content;
                 pane.OnClosed = rc.OnClosed;
+                pane.CanClose = rc.CanClose;
                 Panes.Add(pane);
             }
         }
@@ -316,6 +369,7 @@ public class MiniAppManagerTests
         public object? Content { get; set; }
         public Action? OnClosed { get; set; }
         public MiniAppPlacement? Placement { get; set; }
+        public bool CanClose { get; set; } = true;
         public bool IsClosed { get; private set; }
 
         public void Close()

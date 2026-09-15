@@ -29,7 +29,9 @@ namespace EDISONMAIN2.Windows.MiniAppPickerWindow
         public MiniAppPickerViewModel(EDServices services, MiniAppCatalog catalog, IReadOnlyList<MiniAppTarget> targets)
             : base(services)
         {
-            Choices = [.. catalog.Groups.SelectMany(g => g.Apps.Select(a => new MiniAppChoice(a, g.Title)))];
+            // Pinned ven - co uživatel nezavře, není co otvírat (Plocha).
+            Choices = [.. catalog.Groups.SelectMany(g => g.Apps.Where(a => !a.Pinned)
+                                                               .Select(a => new MiniAppChoice(a, g.Title)))];
             Selected = Choices.FirstOrDefault();
             Placements = BuildPlacements(targets);
             SelectedPlacement = Placements.FirstOrDefault(p => p.Placement.Target?.IsActive == true)

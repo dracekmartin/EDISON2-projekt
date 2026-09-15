@@ -53,7 +53,7 @@ ClassMethod GetTree(ByRef sys As %String) As %Status
 		i tree="" s tree="main"
 
 		i tree="main" d ..FillMain()
-		e  i tree="system" d ..FillSystem()
+		e  i tree="system" d ..FillSystem(),..RenamePackageRoots(IdFa, systemDB)
 		e  i tree="partners" d ..FillPartners()
 	}
 	catch (ex) { $$$CatchErrRest }
@@ -76,6 +76,46 @@ ClassMethod AddFamilyEnd() [ Private ]
 ClassMethod AddExe(name As %String, exePath As %String, formName As %String, elementId As %String, isLicensed As %Boolean = 1, inputParam As %String = "", hidden As %Boolean = 0, color As %String = "", mlineOnly As %Boolean = 0, longName As %String = "") [ Private ]
 {
 	s ^||ML("OUT", $i(^||ML("OUT"))) = $lb("EXE", name, exePath, formName, elementId, $s(isLicensed:"1", 1:"0"), inputParam, $s(hidden:"1", 1:"0"), color, $s(mlineOnly:"1", 1:"0"), longName)
+}
+
+/// Název firmy (IdFa) pro zobrazení, prázdný string když ho lookup nedohledá.
+/// Týž zdroj jako legacy ALVA.EDISON.Main.LoadSettings: pole 58, fallback na 2.
+/// Chybu routiny polykáme schválně - kvůli popisku složky nemá spadnout celý strom.
+ClassMethod GetIdFaName(idfa As %String, systemDB As %String) As %String [ Private ]
+{
+	try
+	{
+		k aIn, aOut
+		s sc = $$gIdFa^MlJFapi(idfa, systemDB, .aIn, .aOut)
+		ret:sc ""
+		s name = $g(aOut("dta", 58))
+		i name = "" s name = $g(aOut("dta", 2))
+		ret name
+	}
+	catch (ex) { ret "" }
+}
+
+/// Kořeny Správy systému se v UI jmenují jinak než v legacy XML: package 0 je vždy
+/// "EDISON", package 1 nese název aktuální firmy. Parita s legacy
+/// ApplicationTree.UpdateXmlTree, které týž rename dělalo nad XML. Do generovaných dat
+/// se zapsat nedá - závisí na IdFa, se kterým se uživatel přihlásil.
+ClassMethod RenamePackageRoots(idfa As %String, systemDB As %String) [ Private ]
+{
+	s idfaName = ..GetIdFaName(idfa, systemDB)
+	s i = ""
+	f
+	{
+		s i = $o(^||ML("OUT", i)) q:i=""
+		continue:i'?1.N
+		s row = ^||ML("OUT", i)
+		continue:$lg(row, 1)'="FAMILY"
+		s newName = ""
+		i $lg(row, 4) = "0" s newName = "EDISON"
+		i $lg(row, 4) = "1" s newName = idfaName
+		continue:newName=""
+		s $li(row, 2) = newName
+		s ^||ML("OUT", i) = row
+	}
 }
 
 /// Generováno z legacy edisonnavbar.xml id=-2 (tools/GenerateTree.cs).
@@ -194,8 +234,8 @@ ClassMethod FillMain() [ Private ]
 		d ..AddFamilyEnd()
 	d ..AddFamilyEnd()
 	d ..AddFamily("Dispečink", 0, "29", 1, 0)
-		d ..AddExe("Archiv zpráv", "DISPECINK2.exe", "ALVA.DISPECINK2.formDISPECINK2Zpravy", "275004", 0, "", 0, "", 0)
 		d ..AddExe("Dispečink", "DISPECINK2.exe", "ALVA.DISPECINK2.formDISPECINK2Main", "275001", 1, "", 0, "", 0)
+		d ..AddExe("Archiv zpráv", "DISPECINK2.exe", "ALVA.DISPECINK2.formDISPECINK2Zpravy", "275004", 0, "", 0, "", 0)
 		d ..AddExe("Polohy vozidel", "DISPECINK2.exe", "ALVA.DISPECINK2.formDISPECINK2PolohyVozidel", "275002", 1, "", 0, "", 0)
 		d ..AddExe("Průjezdy zastávek", "DISPECINK2.exe", "ALVA.DISPECINK2.formDISPECINK2PrujezdyZastavek", "275003", 1, "", 0, "", 0)
 		d ..AddFamily("Nastavení a číselníky", 0, "29.1", 0, 0)
@@ -444,7 +484,7 @@ ClassMethod FillMain() [ Private ]
 			d ..AddExe("Import a export dat", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikyZalohaDat", "210017", 0, "", 0, "", 0)
 			d ..AddExe("Kalendáře", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikyKalendare", "210009", 0, "", 0, "", 0)
 			d ..AddExe("Kategorie výlukové dopravy", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikyKategorieVD", "210023", 0, "", 0, "", 0)
-			d ..AddExe("Mzdové sazby", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikySazby", "210025", 0, "", 0, "", 1)
+			d ..AddExe("Mzdové sazby", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikySazby", "210025", 0, "", 0, "", 0)
 			d ..AddExe("Návrhář sestav (nový)", "TISKJR.exe", "ALVA.TISKJR.formTISKJRTemplateDesigner", "76016", 0, "Agenda=ZASTAVKOVY_JR_MHD", 0, "", 0)
 			d ..AddExe("Návrhář sestav JŘ", "TISKJR.exe", "ALVA.TISKJR.formTISKJRSeznamSestav", "76002", 0, "", 0, "", 0)
 			d ..AddExe("Návrhář sestav JŘ MHD", "TISKMHD.exe", "ALVA.TISKMHD.formTISKMHDSeznamSestav", "70003", 0, "", 0, "", 0)
@@ -748,7 +788,7 @@ ClassMethod FillSystem() [ Private ]
 {
 	d ..AddFamily("Společná evidence", 0, "0", 1, 0)
 		d ..AddExe("EDISON", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINSettingsShow", "2002", 0, "", 0, "", 0)
-		d ..AddExe("Historie AI chatů", "", "", "277002", 0, "", 0, "", 0)
+		d ..AddExe("EDISON AI", "", "", "277002", 0, "", 0, "", 1)
 		d ..AddExe("Organizační struktura", "FIRMA2.exe", "ALVA.FIRMA2.formFIRMA2List", "147002", 0, "", 0, "", 0)
 		d ..AddExe("Uživatelé", "USERS.exe", "ALVA.USERS.formUSERSMain", "5001", 0, "", 0, "", 0)
 	d ..AddFamilyEnd()

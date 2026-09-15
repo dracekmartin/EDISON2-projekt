@@ -44,6 +44,9 @@ XAML všech konzumentů.
   hostují items přes panel s `IsItemsHost="True"`, takže `ItemsPanel` apod. WPF
   ignoruje) a rozbil by globální propagaci fontu (styly čtou font tokeny
   přes `DynamicResource`).
+- **Sloupec ikony v submenu je `Auto` + `SharedSizeGroup`** - popup, kde nikdo nemá ikonu ani
+  zaškrtnutí, ho smrští na nulu (jinak je celé menu odsazené naprázdno). Slot zaškrtnutí proto
+  musí být `Hidden`, ne `Collapsed`: `Collapsed` se neměří a text by při zaškrtnutí poskočil.
 - **Klávesový focus nese `FocusVisualStyle` (`EDTheme.FocusVisual`)**, ne triggery - WPF ho kreslí
   jen po Tab/Alt (`IsKeyboardFocused` svítí i po kliknutí myší). **Každý styl si ho musí nastavit
   sám**: theme style Aera přebíjí globální override `SystemParameters.FocusVisualStyleKey`
@@ -96,9 +99,9 @@ XAML všech konzumentů.
 
 - `EDComponentToolbar/` - sdílený toolbar EDInputForm/EDList (search, export, ...).
   Past: registruje window-level **Ctrl+F** binding v `OnLoaded` a musí ho odregistrovat
-  v `OnUnloaded` - jinak se při re-loadu akumulují kopie. `Flat="True"` = vsazení do cizí
-  hlavičky: nekreslí brandový pruh ani padding a barvy textu/hoveru přepne na světlé pozadí
-  (`OnAccent.*` overlaye jsou poloprůhledná bílá, na světlém neviditelné).
+  v `OnUnloaded` - jinak se při re-loadu akumulují kopie. Kreslí si **vlastní** brandový pruh
+  (`Accent.Header`, texty `OnAccent.*`) - hostitel ho nevsazuje do svého Borderu, jen ho
+  položí nad obsah.
 - `EDFilterComboBox/` - logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
   WPF). **Jediné místo pro filtrovaný editovatelný ComboBox - vlastní nepsat**; drží pasti
   pořadí WPF eventů (viz remarks třídy) a invariant „napsaný text = filtr, klidová hodnota
@@ -106,7 +109,9 @@ XAML všech konzumentů.
   Šipky/Enter/Esc obsluhuje **override `OnPreviewKeyDown`**: `ComboBox` je značí `Handled`
   už ve fázi class handlerů, takže instance handler by se s otevřeným dropdownem nikdy
   nezavolal. Navigace jede přes `SelectedIndex` (ne přes interní zvýraznění WPF), aby pick
-  zachytil `SelectionChanged`. `EDFilter/` - skládání filtrů.
+  zachytil `SelectionChanged`.
+- `EDFilter/` - pruh filtračních polí; cíl je `IEDFilterTarget` (root namespace), ne konkrétní
+  control. Vlastní `CLAUDE.md`.
 - `EDSearchTextBox/` - `TextBox` pro hledání (placeholder, ✕, Esc); styl v `EDControlStyles.xaml`.
 - `EDInfoBar/` - info proužek (text + volitelná ikona + akční odkaz); prázdné → skryté,
   styl v `EDControlStyles.xaml`, viditelnost řídí konzument.

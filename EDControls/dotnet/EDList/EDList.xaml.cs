@@ -19,7 +19,7 @@ using System.Windows.Threading;
 
 namespace EDControls.EDList
 {
-    public partial class EDList : UserControl
+    public partial class EDList : UserControl, IEDFilterTarget
     {
 
         // MLRest + UserPrefs ze sdíleného EDServices.Current - nezávislé na Window.DataContext.
@@ -58,25 +58,36 @@ namespace EDControls.EDList
 
         private const string PrefsScope = "EDControls.EDList";
 
+        /// <summary>
+        /// Styl buňky (<c>DataGridCell</c>) - pro vzhled řízený daty řádku, který sloupcové typy
+        /// nepokrývají (barva textu z dat). Foreground patří na buňku, ne na řádek: implicitní
+        /// <c>DataGridCell</c> styl si ho nastavuje setterem a přebije hodnotu děděnou z řádku.
+        /// Vlastní styl musí mít <c>BasedOn</c>, jinak přijde o theming.
+        /// </summary>
+        public static readonly DependencyProperty CellStyleProperty =
+            DependencyProperty.Register(nameof(CellStyle), typeof(Style), typeof(EDList),
+                new PropertyMetadata(null, OnCellStyleChanged));
+
+        public Style? CellStyle
+        {
+            get => (Style?)GetValue(CellStyleProperty);
+            set => SetValue(CellStyleProperty, value);
+        }
+
+        private static void OnCellStyleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EDList list) list.DataGrid.CellStyle = (Style)e.NewValue;
+        }
+
+        /// <summary>Text vlevo v brandovém pruhu. Pruh je vidět i bez něj (jen se search boxem).</summary>
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(nameof(Title), typeof(string), typeof(EDList),
-                new PropertyMetadata(null, OnTitleOrSearchVisibleChanged));
+                new PropertyMetadata(null));
 
         public string? Title
         {
             get => (string?)GetValue(TitleProperty);
             set => SetValue(TitleProperty, value);
-        }
-
-        /// <summary>Default: <c>null</c> = auto (true pokud Title set, jinak false). Lze nastavit explicitně true/false.</summary>
-        public static readonly DependencyProperty SearchVisibleProperty =
-            DependencyProperty.Register(nameof(SearchVisible), typeof(bool?), typeof(EDList),
-                new PropertyMetadata(null, OnTitleOrSearchVisibleChanged));
-
-        public bool? SearchVisible
-        {
-            get => (bool?)GetValue(SearchVisibleProperty);
-            set => SetValue(SearchVisibleProperty, value);
         }
 
         public static readonly DependencyProperty SearchTextProperty =
@@ -89,19 +100,8 @@ namespace EDControls.EDList
             set => SetValue(SearchTextProperty, value);
         }
 
-        private static void OnTitleOrSearchVisibleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
-            (d as EDList)?.UpdateHeaderVisibility();
-
         private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             (d as EDList)?.RefreshFilter();
-
-        private void UpdateHeaderVisibility()
-        {
-            bool showTitle  = !string.IsNullOrEmpty(Title);
-            bool showSearch = SearchVisible ?? !string.IsNullOrEmpty(Title);   // null = auto z Title
-            HeaderToolbar.ShowSearch = showSearch;
-            HeaderToolbar.Visibility = (showTitle || showSearch) ? Visibility.Visible : Visibility.Collapsed;
-        }
 
         private void RefreshFilter()
         {
@@ -316,6 +316,9 @@ namespace EDControls.EDList
             ApplyRows(output);
         }
 
+        /// <summary><c>IEDFilterTarget</c> - napojení na <c>EDFilter</c>. Prázdný slovník = bez filtru.</summary>
+        public Task ApplyFilterAsync(IReadOnlyDictionary<string, string> filter) => LoadListAsync(filter);
+
         // Serializace dotazů - sdílený MLRest komunikuje přes procesní globály ^||ML, takže dva
         // souběžné dotazy z téhož EDListu by si vzájemně přepsaly vstup i výstup.
         private readonly System.Threading.SemaphoreSlim _queryGate = new(1, 1);
@@ -334,15 +337,30 @@ namespace EDControls.EDList
             RebuildColumns();
         }
 
-        private void ApplyRows(CVar output)
+        /// <summary>
+        /// Naplní seznam daty, která si sehnal host - EDList sám nic z Caché nečte, takže nepotřebuje
+        /// ani <see cref="CacheClass"/>, ani MLRest. Pro hosty s vlastním transportem (dávkovaný
+        /// request přes víc komponent, data z jiného API). Řádky jsou raw (serverové) hodnoty včetně
+        /// klíče <c>id</c>; formátování i sort klíče staví stejná cesta jako <see cref="LoadList()"/>.
+        /// </summary>
+        public void SetData(IReadOnlyList<ListColumn> columns, IEnumerable<IReadOnlyDictionary<string, string?>> rows)
+        {
+            _loadGeneration++;   // data zvenčí jsou autoritativní - async odpověď v letu se zahodí
+            _columns = columns;
+            RebuildColumns();
+            ApplyRows([.. rows.Select(r => EDListParsing.BuildRow(r, columns)).OfType<EDListRow>()]);
+        }
+
+        // ToList: ParseRows je líný iterátor - druhý průchod by vyrobil jiné instance řádků
+        // a odběr změn by visel mimo seznam.
+        private void ApplyRows(CVar output) => ApplyRows(EDListParsing.ParseRows(output, _columns).ToList());
+
+        private void ApplyRows(List<EDListRow> newRows)
         {
             // Unsubscribe stará data - žádné spying na zaniklé řádky
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _checkAnchor = null;
 
-            // ToList: ParseRows je líný iterátor - druhý průchod by vyrobil jiné instance řádků
-            // a odběr změn by visel mimo seznam.
-            var newRows = EDListParsing.ParseRows(output, _columns).ToList();
             foreach (var row in newRows) row.PropertyChanged += OnRowPropertyChanged;
             _rows.ReplaceAll(newRows);
 

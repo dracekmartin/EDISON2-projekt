@@ -8,7 +8,22 @@ public abstract record DashboardSection;
 
 public sealed record DashboardLabel(string Text) : DashboardSection;
 
-public sealed record DashboardTable(IReadOnlyList<string> Columns, IReadOnlyList<DashboardRow> Rows) : DashboardSection;
+/// <summary>
+/// Sloupec legacy tabulky. <paramref name="Type"/> je písmeno z deskriptoru sekce
+/// <c>ObjectSectionTable</c> (<c>T</c> text, <c>N</c> číslo, <c>D</c> datum),
+/// <paramref name="Format"/> hotový .NET numerický formát (jen u <c>N</c>).
+/// </summary>
+public sealed record DashboardColumn(string Name, char Type, string Format);
+
+/// <summary>
+/// <paramref name="PrefsKey"/> = HostId pro persist šířek sloupců, unikátní per (appType, pořadí tabulky).
+/// <paramref name="Title"/> = label sekce, která v legacy datech stojí těsně nad tabulkou.
+/// </summary>
+public sealed record DashboardTable(
+    IReadOnlyList<DashboardColumn> Columns,
+    IReadOnlyList<DashboardRow> Rows,
+    string PrefsKey,
+    string? Title = null) : DashboardSection;
 
 /// <summary>Řádek tabulky: buňky + volitelný styl (HTML hex barva textu, typ ikony z legacy IconTypeEnum).</summary>
 public sealed record DashboardRow(IReadOnlyList<string> Cells, string? ForeColorHtml, int IconType);
@@ -48,16 +63,23 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
         string? currentApp = null;
         string? lastUpdated = null;
         var sections = new List<DashboardSection>();
-        List<string>? cols = null;
+        List<DashboardColumn>? cols = null;
         List<DashboardRow>? rows = null;
+        // Deskriptor typů nese sekce SectionTable, názvy sloupců přijdou až v SectionCols.
+        string? colTypes = null;
+        string? tableTitle = null;
+        int tableIndex = 0;
 
         // Rozpracovaná tabulka se přidá do sekcí až při dalším objektu / konci bloku (zachová pořadí).
         void FlushTable()
         {
             if (cols is null) return;
-            sections.Add(new DashboardTable(cols, rows!));
+            sections.Add(new DashboardTable(
+                cols, rows!, $"EDISONMAIN2.LegacyMiniApp.{currentApp}.{tableIndex++}", tableTitle));
             cols = null;
             rows = null;
+            colTypes = null;
+            tableTitle = null;
         }
 
         void FlushApp()
@@ -67,6 +89,7 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
             // Nový seznam, ne Clear - hotový blok si drží ten svůj.
             sections = [];
             lastUpdated = null;
+            tableIndex = 0;
         }
 
         foreach (var raw in output)
@@ -99,9 +122,17 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
                             FlushTable();
                             cols = [];
                             rows = [];
+                            colTypes = value;
+                            // Label těsně nad tabulkou je její nadpis - převezme ho pruh EDListu místo
+                            // samostatného řádku. Kdyby mezi ním a tabulkou byla jiná sekce, byla by poslední ona.
+                            if (sections.Count > 0 && sections[^1] is DashboardLabel head)
+                            {
+                                tableTitle = head.Text;
+                                sections.RemoveAt(sections.Count - 1);
+                            }
                             break;
                         case SectionCols when cols is not null:
-                            cols.AddRange(value.Split('~'));
+                            cols.AddRange(BuildColumns(value, colTypes));
                             break;
                         case SectionRows when rows is not null:
                             rows.Add(new DashboardRow(value.Split('~'), null, 0));
@@ -119,5 +150,33 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
 
         FlushApp();
         return result;
+    }
+
+    /// <summary>
+    /// Spáruje názvy sloupců (<c>~</c>) s deskriptorem typů (<c>:</c>) pozičně, např.
+    /// <c>"Rz~Celkové MTH"</c> + <c>"T:N2#"</c>. Kratší nebo chybějící deskriptor = TEXT.
+    /// </summary>
+    private static IEnumerable<DashboardColumn> BuildColumns(string names, string? types)
+    {
+        string[] typeDefs = types is null ? [] : types.Split(':');
+        return names.Split('~').Select((name, i) =>
+        {
+            var def = i < typeDefs.Length ? typeDefs[i] : "";
+            char type = def.Length > 0 ? char.ToUpperInvariant(def[0]) : 'T';
+            return new DashboardColumn(name, type, type == 'N' ? NumberFormat(def) : "");
+        });
+    }
+
+    /// <summary>
+    /// Numerický formát z deskriptoru (port <c>EDMiniApplication.GetFormat</c>): druhý znak =
+    /// počet desetinných míst, třetí <c>#</c> = oddělovat tisíce. <c>"N2#"</c> → <c>"#,##0.00"</c>.
+    /// Samotné <c>"N"</c> = bez formátování, hodnota zůstane raw jako v legacy.
+    /// </summary>
+    private static string NumberFormat(string def)
+    {
+        if (def.Length < 2) return "";
+        int digits = char.IsDigit(def[1]) ? def[1] - '0' : 0;
+        string fmt = def.Length > 2 && def[2] == '#' ? "#,##0" : "###0";
+        return digits > 0 ? fmt + "." + new string('0', digits) : fmt;
     }
 }

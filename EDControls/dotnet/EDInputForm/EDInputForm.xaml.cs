@@ -67,6 +67,20 @@ namespace EDControls.EDInputForm
             }
         }
 
+        /// <summary>Titulek v levé části brandového pruhu. Prázdný se skryje (toolbar sám).</summary>
+        public static readonly DependencyProperty TitleProperty =
+            DependencyProperty.Register(
+                nameof(Title),
+                typeof(string),
+                typeof(EDInputForm),
+                new PropertyMetadata(null));
+
+        public string? Title
+        {
+            get => (string?)GetValue(TitleProperty);
+            set => SetValue(TitleProperty, value);
+        }
+
         public static readonly DependencyProperty ItemsProperty =
             DependencyProperty.Register(
                 nameof(Items),

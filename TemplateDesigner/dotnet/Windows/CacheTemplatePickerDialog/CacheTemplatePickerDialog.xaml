@@ -50,7 +50,8 @@
         </Border>
 
         <!-- Filter - deklarativní přes EDFilter komponentu -->
-        <edf:EDFilter x:Name="TheFilter" DockPanel.Dock="Top" Target="{Binding ElementName=TheList}" Margin="0,0,0,8">
+        <edf:EDFilter x:Name="TheFilter" DockPanel.Dock="Top" Target="{Binding ElementName=TheList}"
+                      HostId="TemplateDesigner.TemplatePicker" Margin="0,0,0,8">
             <edf:EDFilterCombo Key="agendaCode" Label="Agenda"
                              ItemsSource="{Binding AgendaFilters}"
                              SelectedValuePath="Code"

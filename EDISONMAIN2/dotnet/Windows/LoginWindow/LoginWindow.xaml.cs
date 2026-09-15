@@ -1,5 +1,4 @@
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Threading;
 using ALWA.SYS;
 using EDControls;
@@ -18,8 +17,8 @@ namespace EDISONMAIN2.Windows.LoginWindow
         // Startup progress fáze - okno zůstává otevřené pod dobíhajícím bootstrapem, nesmí ho zavřít uživatel.
         private bool _inProgress;
 
-        // WebView2 widgety novinek/wiki/školení - pre-login (bez session).
-        private readonly List<IDisposable> _widgets = new();
+        // Widget podpory (WebView2) - pre-login, bez session.
+        private IDisposable? _supportWidget;
 
         public LoginResult? Result { get; private set; }
 
@@ -71,19 +70,13 @@ namespace EDISONMAIN2.Windows.LoginWindow
                     break;
             }
 
-            // Novinky/Wiki jsou auth-free; Školení pre-login bez personalizace (prázdná identita).
-            // Widgety jsou čistě dekorativní - jejich (ne)načtení nesmí blokovat login.
-            AddWidget(NovinkyHost, WidgetUrls.Novinky, "Novinky z portálu podpory");
-            AddWidget(WikiHost, WidgetUrls.Wiki, "Uživatelská nápověda a wiki");
-            AddWidget(SkoleniHost, WidgetUrls.Trainings("", ""), "Nabídka školení");
+            // Týž widget podpory jako fixní pruh shellu; pre-login nese jen IdFa - uživatel
+            // ještě není ověřený. Dekorace: jeho (ne)načtení nesmí blokovat login.
+            _supportWidget = SupportWidgetHost.Fill(SupportHost,
+                WidgetUrls.Edison2(_mlRest.Idfa ?? "", "", ""),
+                "Informační panel podpory - novinky a upozornění IT pro uživatele");
             // FontZoomWebView drží statické eventy (Font/Theme) → bez dispose leak; Closed jde na OK i Cancel.
-            Closed += (_, _) => { foreach (var w in _widgets) w.Dispose(); };
-        }
-
-        private void AddWidget(Border host, string url, string placeholder)
-        {
-            if (SupportWidgetHost.Fill(host, url, placeholder) is { } widget)
-                _widgets.Add(widget);
+            Closed += (_, _) => _supportWidget?.Dispose();
         }
 
         private void MlineWeb_Click(object sender, RoutedEventArgs e) => OpenExternal(SupportActions.WebUrl);

@@ -6,8 +6,8 @@ using EDControls.EDViewModel;
 namespace EDControls.EDComponentToolbar;
 
 /// <summary>
-/// Sdílený toolbar pro EDInputForm / EDList / tabulkové komponenty (search box vlevo, opt-in
-/// ikony vpravo). Ctrl+F uvnitř komponenty focusne search box. API viz jednotlivé DP níže.
+/// Sdílený toolbar pro EDInputForm / EDList / tabulkové komponenty: brandový pruh s Title
+/// vlevo a search boxem + opt-in ikonami vpravo. Ctrl+F focusne search box. API viz DP níže.
 /// </summary>
 public partial class EDComponentToolbar : UserControl
 {
@@ -21,17 +21,25 @@ public partial class EDComponentToolbar : UserControl
         Unloaded += OnUnloaded;
     }
 
+    // Jedno okno = jeden Ctrl+F binding. V hlavním okně shellu je toolbarů desítky (každá
+    // tabulka miniaplikace je EDList) a WPF stejně obslouží první shodný binding - ostatní by se
+    // jen hromadily v InputBindings.
+    private static readonly DependencyProperty CtrlFOwnerProperty =
+        DependencyProperty.RegisterAttached("CtrlFOwner", typeof(EDComponentToolbar), typeof(EDComponentToolbar));
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         // Ctrl+F focusne search box (window-level binding, pokud parent Window existuje).
         // Unsubscribe nutný v OnUnloaded - jinak při re-load akumulují binding kopie.
         var parentWindow = Window.GetWindow(this);
         if (parentWindow is null || _ctrlFBinding is not null) return;
+        if (parentWindow.GetValue(CtrlFOwnerProperty) is not null) return;
 
         _ctrlFBinding = new KeyBinding(
             new RelayCommand(FocusSearch),
             new KeyGesture(Key.F, ModifierKeys.Control));
         _attachedWindow = parentWindow;
+        parentWindow.SetValue(CtrlFOwnerProperty, this);
         parentWindow.InputBindings.Add(_ctrlFBinding);
     }
 
@@ -40,6 +48,7 @@ public partial class EDComponentToolbar : UserControl
         if (_ctrlFBinding is not null && _attachedWindow is not null)
         {
             _attachedWindow.InputBindings.Remove(_ctrlFBinding);
+            _attachedWindow.ClearValue(CtrlFOwnerProperty);   // uvolni slot dalšímu toolbaru
             _ctrlFBinding = null;
             _attachedWindow = null;
         }
@@ -61,18 +70,6 @@ public partial class EDComponentToolbar : UserControl
     {
         get => (string?)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
-    }
-
-    public static readonly DependencyProperty FlatProperty =
-        DependencyProperty.Register(nameof(Flat), typeof(bool), typeof(EDComponentToolbar),
-            new PropertyMetadata(false));
-
-    /// <summary>Toolbar nekreslí vlastní brandový pruh (pozadí + padding řeší hostitel) a barvy
-    /// textu/hoveru se přepnou na běžné plochy - pro vsazení do cizí hlavičky, viz EDInputForm.</summary>
-    public bool Flat
-    {
-        get => (bool)GetValue(FlatProperty);
-        set => SetValue(FlatProperty, value);
     }
 
     public static readonly DependencyProperty ShowSearchProperty =

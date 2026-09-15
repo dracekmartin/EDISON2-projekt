@@ -191,7 +191,7 @@
         </ControlTemplate.Triggers>
     </ControlTemplate>
 
-    <!-- SubmenuItem: leaf položka v dropdown (Nová šablona, Otevřít...) -->
+    <!-- SubmenuItem: leaf položka v dropdown (Nová šablona, Otevřít) -->
     <ControlTemplate x:Key="EDTheme.MenuItem.SubmenuItem" TargetType="MenuItem">
         <Border x:Name="Bd"
                 Background="{TemplateBinding Background}"
@@ -200,26 +200,30 @@
                 SnapsToDevicePixels="True">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="22" SharedSizeGroup="MenuIcon"/>
+                    <!-- Auto + SharedSizeGroup: popup, kde ikonu ani zaškrtnutí nikdo nemá,
+                         sloupec úplně smrští (jinak jsou všechny položky odsazené naprázdno). -->
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="MenuIcon"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto" SharedSizeGroup="MenuShortcut"/>
                     <ColumnDefinition Width="14"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Icon area: IsCheckable checkmark nebo IconSource -->
-                <Border x:Name="IconArea" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Border x:Name="IconArea" Grid.Column="0" Width="22" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <ContentPresenter ContentSource="Icon" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Border>
-                <Path x:Name="CheckMark"
-                      Grid.Column="0"
-                      Visibility="Collapsed"
-                      VerticalAlignment="Center" HorizontalAlignment="Center"
-                      Stroke="{DynamicResource EDTheme.Accent.Blue}"
-                      StrokeThickness="1.5"
-                      Data="M 2 6 L 5 9 L 11 3"
-                      StrokeStartLineCap="Round"
-                      StrokeEndLineCap="Round"
-                      StrokeLineJoin="Round"/>
+                <!-- Slot drží šířku i u odškrtnuté zaškrtávací položky (Hidden se měří, Collapsed ne) -
+                     jinak by text při zaškrtnutí poskočil o celý sloupec. -->
+                <Border x:Name="CheckSlot" Grid.Column="0" Width="22" Visibility="Collapsed"
+                        VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Path VerticalAlignment="Center" HorizontalAlignment="Center"
+                          Stroke="{DynamicResource EDTheme.Accent.Blue}"
+                          StrokeThickness="1.5"
+                          Data="M 2 6 L 5 9 L 11 3"
+                          StrokeStartLineCap="Round"
+                          StrokeEndLineCap="Round"
+                          StrokeLineJoin="Round"/>
+                </Border>
 
                 <!-- Header text -->
                 <ContentPresenter Grid.Column="1"
@@ -240,8 +244,12 @@
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="IconArea" Property="Visibility" Value="Collapsed"/>
             </Trigger>
+            <Trigger Property="IsCheckable" Value="True">
+                <Setter TargetName="CheckSlot" Property="Visibility" Value="Hidden"/>
+            </Trigger>
+            <!-- Až za IsCheckable - zaškrtnuté musí přebít jeho Hidden. -->
             <Trigger Property="IsChecked" Value="True">
-                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                <Setter TargetName="CheckSlot" Property="Visibility" Value="Visible"/>
                 <Setter TargetName="IconArea" Property="Visibility" Value="Collapsed"/>
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
@@ -263,13 +271,13 @@
                     SnapsToDevicePixels="True">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="22" SharedSizeGroup="MenuIcon"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="MenuIcon"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto" SharedSizeGroup="MenuShortcut"/>
                         <ColumnDefinition Width="14"/>
                     </Grid.ColumnDefinitions>
 
-                    <Border x:Name="IconArea" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Border x:Name="IconArea" Grid.Column="0" Width="22" VerticalAlignment="Center" HorizontalAlignment="Center">
                         <ContentPresenter ContentSource="Icon" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
 

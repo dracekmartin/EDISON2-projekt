@@ -5,6 +5,7 @@
              xmlns:edc="clr-namespace:EDControls;assembly=EDControls"
              xmlns:edct="clr-namespace:EDControls.EDComponentToolbar;assembly=EDControls"
              xmlns:edib="clr-namespace:EDControls.EDInfoBar;assembly=EDControls"
+             xmlns:edl="clr-namespace:EDControls.EDList;assembly=EDControls"
              xmlns:edma="clr-namespace:EDControls.MiniApps;assembly=EDControls">
     <UserControl.Resources>
         <lma:LegacyForeColorConverter x:Key="LegacyFore"/>
@@ -12,10 +13,11 @@
         <edct:NonEmptyStringToVisibleConverter x:Key="TextToVis"/>
 
         <!-- Barva řádku patří na buňku: implicitní DataGridCell styl si Foreground nastavuje
-             setterem a ten přebíjí hodnotu děděnou z řádku (viz EDControls/CLAUDE.md). -->
+             setterem a ten přebíjí hodnotu děděnou z řádku (viz EDControls/CLAUDE.md).
+             "_fore" je skrytý sloupec EDListu, čte se přes indexer řádku. -->
         <Style x:Key="DashboardCell" TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
             <Setter Property="Padding" Value="6,2"/>
-            <Setter Property="Foreground" Value="{Binding ForeColorHtml, Converter={StaticResource LegacyFore}}"/>
+            <Setter Property="Foreground" Value="{Binding [_fore], Converter={StaticResource LegacyFore}}"/>
         </Style>
 
         <DataTemplate DataType="{x:Type lma:DashboardLabel}">
@@ -26,20 +28,13 @@
         </DataTemplate>
 
         <DataTemplate DataType="{x:Type lma:DashboardTable}">
-            <!-- Rám kreslí karta, ne grid - jinak dvojitá linka. -->
-            <Border Margin="0,0,0,10" CornerRadius="3"
-                    Background="{DynamicResource EDTheme.Bg.Surface}"
-                    BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
-                <!-- Sekce je na výšku obsahu, roluje vnější ScrollViewer - kolečko nad tabulkou mu musí dojít. -->
-                <DataGrid ItemsSource="{Binding Rows}"
-                          lma:DashboardTableColumns.Columns="{Binding Columns}"
-                          edc:ScrollWheelBubbling.IsEnabled="True"
-                          IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False"
-                          BorderThickness="0"
-                          AlternationCount="2"
-                          AlternatingRowBackground="{DynamicResource EDTheme.Bg.PanelAlt}"
-                          CellStyle="{StaticResource DashboardCell}"/>
-            </Border>
+            <!-- Rám i pozadí kreslí themovaný DataGrid uvnitř EDListu - karta okolo by udělala dvojitou linku.
+                 Nadpis nese brandový pruh EDListu (plní ho DashboardListSource z labelu nad tabulkou).
+                 Sekce je na výšku obsahu, roluje vnější ScrollViewer - kolečko nad tabulkou mu musí dojít. -->
+            <edl:EDList Margin="0,0,0,10"
+                        lma:DashboardListSource.Table="{Binding}"
+                        edc:ScrollWheelBubbling.IsEnabled="True"
+                        CellStyle="{StaticResource DashboardCell}"/>
         </DataTemplate>
     </UserControl.Resources>
 

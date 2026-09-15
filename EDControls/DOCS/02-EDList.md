@@ -116,9 +116,8 @@ Tím máš funkční list s automatickým client-side search, persist šířky s
 |---|---|---|
 | `CacheClass` | `string` | FQN Caché třídy implementující contract — povinné. Třída musí mít metody `InitializeList(ByRef sys)` a `LoadList(ByRef sys)` |
 | `HostId` | `string?` | Identifikátor pro persist sloupců přes `IUserPrefsService`. Convention: `"<Project>.<DialogName>"`, např. `"TemplateDesigner.TemplatePicker"`. Null/empty = persist vypnutý |
-| `Title` | `string?` | Title nad listem. Null = bez title; SearchVisible se default vypne |
+| `Title` | `string?` | Text vlevo v brandovém pruhu. Null = pruh jen se search boxem |
 | `SearchText` | `string` | Aktuální hodnota search boxu (R/W). Změna trigger client-side filter |
-| `SearchVisible` | `bool` | Viditelnost search boxu. Default: `true` pokud `Title` set, jinak `false` |
 | `SelectionMode` | `EListSelectionMode` | `Single` (klasický single-select) nebo `Check` (multi-select s checkbox sloupcem). Default `Single` |
 
 ### Read-only state (po load)
@@ -339,14 +338,15 @@ private void ReloadList()
 }
 ```
 
-Toto je legacy ad-hoc řešení. **Preferovaná cesta od v1 EDFilter komponenty** je deklarativní — viz [`03-EDFilter.md`](03-EDFilter.md):
+Toto je legacy ad-hoc řešení. **Preferovaná cesta je deklarativní `EDFilter`** (EDList je jeho
+`IEDFilterTarget`), viz [`dotnet/EDFilter/CLAUDE.md`](../dotnet/EDFilter/CLAUDE.md):
 
 ```xml
-<el:EDFilter Target="{Binding ElementName=TheList}">
-    <edf:FilterCombo Key="agendaCode" Label="Agenda"
-                     ItemsSource="{Binding AgendaFilters}"
-                     SelectedValuePath="Code" DisplayMemberPath="Label"/>
-</el:EDFilter>
+<edf:EDFilter Target="{Binding ElementName=TheList}" HostId="MujProjekt.MujPicker">
+    <edf:EDFilterCombo Key="agendaCode" Label="Agenda"
+                       ItemsSource="{Binding AgendaFilters}"
+                       SelectedValuePath="Code" DisplayMemberPath="Label"/>
+</edf:EDFilter>
 <el:EDList x:Name="TheList"/>
 ```
 
@@ -375,15 +375,14 @@ Pro vypnutí: prostě `HostId` nenastavuj.
 
 ## Search
 
-EDList má built-in client-side search box (zobrazuje se nad listem pokud `Title` nebo `SearchVisible=true`):
+EDList má built-in client-side search box; pruh s ním je **vždy** vidět (shodně s `EDInputForm`em):
 
 - Aktualizuje filter na všech viditelných data sloupcích (skipuje checkbox sloupec)
 - Case-insensitive substring matching
 - Smaž text → vrátí kompletní list
 
 ```csharp
-TheList.Title = "Můj seznam";        // automaticky zobrazí title + search box
-TheList.SearchVisible = false;       // nebo explicit vypnout search box
+TheList.Title = "Můj seznam";        // text vlevo v pruhu
 TheList.SearchText = "hledaný výraz"; // programaticky nastavit search
 ```
 
