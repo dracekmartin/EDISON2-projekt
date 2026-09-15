@@ -444,7 +444,7 @@ ClassMethod FillMain() [ Private ]
 			d ..AddExe("Import a export dat", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikyZalohaDat", "210017", 0, "", 0, "", 0)
 			d ..AddExe("Kalendáře", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikyKalendare", "210009", 0, "", 0, "", 0)
 			d ..AddExe("Kategorie výlukové dopravy", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikyKategorieVD", "210023", 0, "", 0, "", 0)
-			d ..AddExe("Mzdové sazby", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikySazby", "210025", 0, "", 0, "", 1)
+			d ..AddExe("Mzdové sazby", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikySazby", "210025", 0, "", 0, "", 0)
 			d ..AddExe("Návrhář sestav (nový)", "TISKJR.exe", "ALVA.TISKJR.formTISKJRTemplateDesigner", "76016", 0, "Agenda=ZASTAVKOVY_JR_MHD", 0, "", 0)
 			d ..AddExe("Návrhář sestav JŘ", "TISKJR.exe", "ALVA.TISKJR.formTISKJRSeznamSestav", "76002", 0, "", 0, "", 0)
 			d ..AddExe("Návrhář sestav JŘ MHD", "TISKMHD.exe", "ALVA.TISKMHD.formTISKMHDSeznamSestav", "70003", 0, "", 0, "", 0)
@@ -748,7 +748,7 @@ ClassMethod FillSystem() [ Private ]
 {
 	d ..AddFamily("Společná evidence", 0, "0", 1, 0)
 		d ..AddExe("EDISON", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINSettingsShow", "2002", 0, "", 0, "", 0)
-		d ..AddExe("Historie AI chatů", "", "", "277002", 0, "", 0, "", 0)
+		d ..AddExe("EDISON AI", "", "", "277002", 0, "", 0, "", 1)
 		d ..AddExe("Organizační struktura", "FIRMA2.exe", "ALVA.FIRMA2.formFIRMA2List", "147002", 0, "", 0, "", 0)
 		d ..AddExe("Uživatelé", "USERS.exe", "ALVA.USERS.formUSERSMain", "5001", 0, "", 0, "", 0)
 	d ..AddFamilyEnd()
