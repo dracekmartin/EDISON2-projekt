@@ -1,4 +1,6 @@
+using EDControls.EDSupportPanel;
 using EDControls.EDTheme;
+using EDControls.EDViewModel;
 using EDControls.UserFonts;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
@@ -43,6 +45,9 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
     // URL k navigaci až po inicializaci Core + registraci dark skriptu (viz Navigate).
     private string? _pendingUrl;
 
+    // Poslední URL, kterou si vyžádal hostitel - jen ta smí zůstat v pruhu (viz OnNavigationStarting).
+    private string? _widgetUrl;
+
     public FontZoomWebView()
     {
         // Hodnota nastavená před inicializací CoreWebView2 se aplikuje po ní (WPF wrapper).
@@ -75,6 +80,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
     /// probleskne světlý, teprve pak ho NavigationCompleted ztmaví (bílo-černé bliknutí v dark modu).</summary>
     public void Navigate(string url)
     {
+        _widgetUrl = url;
         if (CoreWebView2 is not null)
         {
             CoreWebView2.Navigate(url);
@@ -92,6 +98,10 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         // NavigationCompleted je pojistka - první dokument může vzniknout dřív, než se
         // pre-create skript stihne zaregistrovat (JS je idempotentní, dvojí běh nevadí).
         CoreWebView2.NavigationCompleted += OnNavigationCompleted;
+        // Odkazy widgetu jsou target="_blank" -> NewWindowRequested. Bez obsluhy je WebView2
+        // otevře ve vlastním popup okně: bez adresního řádku, historie i session uživatele.
+        CoreWebView2.NewWindowRequested += OnNewWindowRequested;
+        CoreWebView2.NavigationStarting += OnNavigationStarting;
         ApplyPreferredColorScheme();
         await SyncDarkScriptAsync();
         if (_pendingUrl is not null)
@@ -107,6 +117,53 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
             await TryExecuteAsync(ApplyDarkJs);
         // Odkryj až teď - obsah je vykreslený a (v dark) invertovaný, takže žádné bílé bliknutí.
         Visibility = System.Windows.Visibility.Visible;
+    }
+
+    private void OnNewWindowRequested(object? sender, CoreWebView2NewWindowRequestedEventArgs e)
+    {
+        e.Handled = true; // popup okno WebView2 vůbec nevznikne
+        OpenExternally(e.Uri);
+    }
+
+    // Pojistka pro odkaz bez target="_blank" (obsah widgetu se mění na serveru) - klik by jinak
+    // přenavigoval pruh na portál.
+    private void OnNavigationStarting(object? sender, CoreWebView2NavigationStartingEventArgs e)
+    {
+        if (!ShouldOpenExternally(_widgetUrl, e.IsRedirected, e.Uri)) return;
+        e.Cancel = true;
+        OpenExternally(e.Uri);
+    }
+
+    /// <summary>V pruhu smí zůstat jen URL, kterou si vyžádal hostitel (<see cref="Navigate"/>),
+    /// a její přesměrování; všechno ostatní je odkaz z obsahu. Rozlišovat podle
+    /// <c>IsUserInitiated</c> nejde - WebView2 ho nastaví i na hostitelskou navigaci,
+    /// takže by se zrušilo první načtení a pruh by zůstal prázdný.</summary>
+    internal static bool ShouldOpenExternally(string? widgetUrl, bool isRedirected, string uri) =>
+        !isRedirected
+        && !string.Equals(uri, widgetUrl, StringComparison.OrdinalIgnoreCase)
+        && IsBrowsableScheme(uri);
+
+    /// <summary>Allowlist schémat pro ShellExecute - vzdálené HTML nesmí spustit libovolný
+    /// registrovaný protokol (file:, ms-settings:, ...).</summary>
+    internal static bool IsBrowsableScheme(string url) =>
+        Uri.TryCreate(url, UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttp
+            || uri.Scheme == Uri.UriSchemeHttps
+            || uri.Scheme == Uri.UriSchemeMailto);
+
+    private static void OpenExternally(string url)
+    {
+        if (!IsBrowsableScheme(url)) return;
+        try
+        {
+            SupportActions.OpenUrl(url);
+        }
+        catch (Exception)
+        {
+            // Chybějící asociace prohlížeče není chyba aplikace (nehlásit do telemetrie), ale
+            // klik musí dát zpětnou vazbu - jinak vypadá odkaz jako mrtvý.
+            EDServices.Current.PopupDisplayer.Info("Nepodařilo se otevřít prohlížeč.");
+        }
     }
 
     private async void OnThemeApplied()
