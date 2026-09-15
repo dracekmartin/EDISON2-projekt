@@ -62,8 +62,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand TestActionOverlayCommand { get; }
         /// <summary>Varianty overlaye „Akce probíhá" pro menu Test funkcí.</summary>
         public IReadOnlyList<OverlayTestVariant> ActionOverlayVariants { get; } =
-            [new("Dopravní prostředky", null),
-             .. AgendaSprites.KnownSets.Select(s => new OverlayTestVariant(AgendaSprites.LabelFor(s), s))];
+            [new("Kolečko", null),
+             .. AgendaSprites.AllSets.Select(s => new OverlayTestVariant(AgendaSprites.LabelFor(s), s))];
         public ICommand TriggerErrorCommand { get; }
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand OpenLegacyShellCommand { get; }
@@ -1003,7 +1003,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 await prompt.ShowIfNewAsync(path, em.DisplayedName);
 
             // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces - čekáme na jeho okno).
-            using (ActionInProgress(AgendaSprites.ForExe(path)))
+            using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
         }
 
@@ -1044,13 +1044,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
         private async Task LaunchModelessAsync(string exe, string formFqn)
         {
-            using (ActionInProgress(AgendaSprites.ForExe(exe)))
+            using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(exe, formFqn);
         }
 
         private async Task LaunchDialogAsync(string exe, string formFqn)
         {
-            using (ActionInProgress(AgendaSprites.ForExe(exe)))
+            using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
@@ -1124,7 +1124,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                                     + "nelze ho spustit. Vytvořte ho znovu z modulu.");
                 return;
             }
-            using (ActionInProgress(AgendaSprites.ForExe(shortcut.ExecutablePath)))
+            using (ActionInProgress())
                 await WindowNavigator.ShowLegacyShortcutAsync(shortcut.ExecutablePath, shortcut.FormName,
                     ShortcutLaunchPayloadCodec.Encode(shortcut), inputParam: shortcut.InputParam);
         }

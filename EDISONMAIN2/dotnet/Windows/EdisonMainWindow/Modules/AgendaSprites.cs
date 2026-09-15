@@ -41,23 +41,28 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         };
 
         /// <summary>Strom nese exe s příponou („MZDY2.exe") - klíčuje se holé jméno.</summary>
+        /// <remarks>
+        /// Produkce ji nevolá - overlay jede bez klíče sady, tedy s kolečkem. Mapa zůstává pro
+        /// případ návratu maskotů; pustit je jde přes „Test funkcí ▸ Akce probíhá".
+        /// </remarks>
         public static string? ForExe(string exeName) =>
             Map.GetValueOrDefault(Path.GetFileNameWithoutExtension(exeName));
 
-        /// <summary>Známé sady (distinct hodnoty mapy) - pro Test funkcí.</summary>
-        public static IReadOnlyList<string> KnownSets { get; } =
-            [.. Map.Values.Distinct().OrderBy(v => v, StringComparer.Ordinal)];
+        // Pořadí = pořadí v nabídce Test funkcí.
+        private static readonly (string Set, string Label)[] SetLabels =
+        [
+            ("Vehicles", "Dopravní prostředky"),
+            ("Money", "Peníze"),
+        ];
 
-        private static readonly Dictionary<string, string> SetLabels = new()
-        {
-            ["Vehicles"] = "Dopravní prostředky",
-            ["Money"] = "Peníze",
-        };
+        /// <summary>Všechny sady spritů pro Test funkcí, v pořadí nabídky.</summary>
+        public static IReadOnlyList<string> AllSets { get; } = [.. SetLabels.Select(x => x.Set)];
 
         /// <summary>Český popisek sady pro Test funkcí; neznámá sada zůstává pod svým klíčem.</summary>
-        public static string LabelFor(string set) => SetLabels.GetValueOrDefault(set, set);
+        public static string LabelFor(string set) =>
+            SetLabels.FirstOrDefault(x => x.Set == set).Label ?? set;
     }
 
-    /// <summary>Varianta overlaye pro Test funkcí; null klíč = výchozí sada (dopravní prostředky).</summary>
+    /// <summary>Varianta overlaye pro Test funkcí; null klíč = načítací kolečko (produkční vzhled).</summary>
     public sealed record OverlayTestVariant(string Label, string? SpriteKey);
 }

@@ -23,11 +23,20 @@ public class AgendaSpritesTests
         Assert.Null(AgendaSprites.ForExe(exe));
 
     [Fact]
-    public void KnownSets_DistinctAndAllLabeled()
+    public void AllSets_DistinctAndAllLabeled()
     {
-        Assert.Equal(AgendaSprites.KnownSets.Distinct(), AgendaSprites.KnownSets);
-        foreach (var set in AgendaSprites.KnownSets)
+        Assert.Equal(AgendaSprites.AllSets.Distinct(), AgendaSprites.AllSets);
+        foreach (var set in AgendaSprites.AllSets)
             Assert.False(string.IsNullOrEmpty(AgendaSprites.LabelFor(set)));
+    }
+
+    // Nabídka Test funkcí musí nést obě sady. Dřív se skládala z distinct hodnot mapy agend,
+    // a protože ta mapuje všechno na Money, „Dopravní prostředky" se do ní nikdy nedostaly.
+    [Fact]
+    public void AllSets_CoversBothSpriteSets()
+    {
+        Assert.Equal(["Vehicles", "Money"], AgendaSprites.AllSets);
+        Assert.Equal("Dopravní prostředky", AgendaSprites.LabelFor("Vehicles"));
     }
 
     [Fact]
