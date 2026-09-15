@@ -128,7 +128,8 @@
     <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FF93C5FD</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
 
-    <!-- Header bar pozadí (EDComponentToolbar) - brandová tmavě modrá s bílým textem.
+    <!-- Header bar pozadí (EDComponentToolbar, tedy pruh EDListu i EDInputFormu) - brandová
+         tmavě modrá s bílým textem.
          Záměrně se v dark režimu NEpřepisuje (stabilní barevný pruh v obou režimech). -->
     <Color x:Key="EDTheme.Accent.Header.Color">#FF0D47A1</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.Header" Color="{StaticResource EDTheme.Accent.Header.Color}"/>
@@ -269,6 +270,9 @@
          proporcionálně k user Body size (stejný poměr jako FontSize.*).
          ═══════════════════════════════════════════════════════════════════ -->
     <sys:Double x:Key="EDTheme.IconSize.Default">16</sys:Double>
+
+    <!-- Inline ikona uvnitř řádku textu (help u pole) - menší, ať nepřerůstá řádek. -->
+    <sys:Double x:Key="EDTheme.IconSize.Small">14</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════════
          SPACING - Padding / Margin tokens

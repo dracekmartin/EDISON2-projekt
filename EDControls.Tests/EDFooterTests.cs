@@ -151,7 +151,7 @@ public class EDFooterTests
             app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri(Comp + dict) });
     }
 
-    // Trvalé app vlákno - viz EDComponentToolbarFlatTests.RunSta (týž důvod).
+    // Trvalé app vlákno - viz EDComponentToolbarTests.RunSta (týž důvod).
     private static void RunSta(Action action) =>
         EDTesting.Sta.RunOnAppThread(() => { EnsureApplication(); action(); });
 }

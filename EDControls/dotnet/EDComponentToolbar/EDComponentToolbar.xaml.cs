@@ -6,8 +6,8 @@ using EDControls.EDViewModel;
 namespace EDControls.EDComponentToolbar;
 
 /// <summary>
-/// Sdílený toolbar pro EDInputForm / EDList / tabulkové komponenty (search box vlevo, opt-in
-/// ikony vpravo). Ctrl+F uvnitř komponenty focusne search box. API viz jednotlivé DP níže.
+/// Sdílený toolbar pro EDInputForm / EDList / tabulkové komponenty: brandový pruh s Title
+/// vlevo a search boxem + opt-in ikonami vpravo. Ctrl+F focusne search box. API viz DP níže.
 /// </summary>
 public partial class EDComponentToolbar : UserControl
 {
@@ -61,18 +61,6 @@ public partial class EDComponentToolbar : UserControl
     {
         get => (string?)GetValue(TitleProperty);
         set => SetValue(TitleProperty, value);
-    }
-
-    public static readonly DependencyProperty FlatProperty =
-        DependencyProperty.Register(nameof(Flat), typeof(bool), typeof(EDComponentToolbar),
-            new PropertyMetadata(false));
-
-    /// <summary>Toolbar nekreslí vlastní brandový pruh (pozadí + padding řeší hostitel) a barvy
-    /// textu/hoveru se přepnou na běžné plochy - pro vsazení do cizí hlavičky, viz EDInputForm.</summary>
-    public bool Flat
-    {
-        get => (bool)GetValue(FlatProperty);
-        set => SetValue(FlatProperty, value);
     }
 
     public static readonly DependencyProperty ShowSearchProperty =

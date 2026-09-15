@@ -36,24 +36,6 @@
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.OnAccent.PressedOverlay}"/>
                             </Trigger>
-                            <!-- Flat: poloprůhledná bílá z OnAccent.* je na hostitelově světlém pruhu
-                                 neviditelná → hover kreslí BlueBorder, pressed ho jen ztlumí.
-                                 Musí být až za triggery výše (poslední vyhrává). -->
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding Flat, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" Value="True"/>
-                                    <Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Accent.BlueBorder}"/>
-                            </MultiDataTrigger>
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding Flat, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" Value="True"/>
-                                    <Condition Binding="{Binding IsPressed, RelativeSource={RelativeSource Self}}" Value="True"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Accent.BlueBorder}"/>
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.7"/>
-                            </MultiDataTrigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.4"/>
                             </Trigger>
@@ -61,38 +43,16 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Flat, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" Value="True">
-                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Header}"/>
-                </DataTrigger>
-            </Style.Triggers>
         </Style>
 
-        <!-- Texty toolbaru (Title, počitadlo matchů) - bílé na brandovém pruhu, tmavé ve Flat. -->
+        <!-- Texty toolbaru (Title, počitadlo matchů) - bílé na brandovém pruhu. -->
         <Style x:Key="ToolbarTextStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
             <Setter Property="Foreground" Value="{DynamicResource EDTheme.OnAccent.Text}"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Flat, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" Value="True">
-                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Header}"/>
-                </DataTrigger>
-            </Style.Triggers>
         </Style>
     </UserControl.Resources>
 
-    <!-- Flat=True: pozadí i padding kreslí hostitel (toolbar je vsazený do jeho hlavičky). -->
-    <Border>
-        <Border.Style>
-            <Style TargetType="Border">
-                <Setter Property="Background" Value="{DynamicResource EDTheme.Accent.Header}"/>
-                <Setter Property="Padding" Value="6,4"/>
-                <Style.Triggers>
-                    <DataTrigger Binding="{Binding Flat, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" Value="True">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="Padding" Value="0"/>
-                    </DataTrigger>
-                </Style.Triggers>
-            </Style>
-        </Border.Style>
+    <!-- Brandový pruh - jediný vzhled komponentové hlavičky (EDList i EDInputForm). -->
+    <Border Background="{DynamicResource EDTheme.Accent.Header}" Padding="6,4">
         <DockPanel LastChildFill="False">
 
             <!-- Vpravo: standardní akční ikony (opt-in přes ShowX props) -->

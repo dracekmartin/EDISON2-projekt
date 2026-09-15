@@ -96,9 +96,9 @@ XAML všech konzumentů.
 
 - `EDComponentToolbar/` - sdílený toolbar EDInputForm/EDList (search, export, ...).
   Past: registruje window-level **Ctrl+F** binding v `OnLoaded` a musí ho odregistrovat
-  v `OnUnloaded` - jinak se při re-loadu akumulují kopie. `Flat="True"` = vsazení do cizí
-  hlavičky: nekreslí brandový pruh ani padding a barvy textu/hoveru přepne na světlé pozadí
-  (`OnAccent.*` overlaye jsou poloprůhledná bílá, na světlém neviditelné).
+  v `OnUnloaded` - jinak se při re-loadu akumulují kopie. Kreslí si **vlastní** brandový pruh
+  (`Accent.Header`, texty `OnAccent.*`) - hostitel ho nevsazuje do svého Borderu, jen ho
+  položí nad obsah.
 - `EDFilterComboBox/` - logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
   WPF). **Jediné místo pro filtrovaný editovatelný ComboBox - vlastní nepsat**; drží pasti
   pořadí WPF eventů (viz remarks třídy) a invariant „napsaný text = filtr, klidová hodnota
