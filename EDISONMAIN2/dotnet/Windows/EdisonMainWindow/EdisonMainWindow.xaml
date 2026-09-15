@@ -137,7 +137,7 @@
             </MenuItem>
             <MenuItem Header="Miniaplikace">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Panels}" Width="16" Height="16"/></MenuItem.Icon>
-                <MenuItem Header="Zobrazit miniaplikaci…" Command="{Binding PickMiniAppCommand}"/>
+                <MenuItem Header="Zobrazit miniaplikaci" Command="{Binding PickMiniAppCommand}"/>
                 <Separator/>
                 <MenuItem Header="Zavřít miniaplikace" Command="{Binding CloseMiniAppsCommand}"/>
                 <MenuItem Header="Resetovat miniaplikace" Command="{Binding ResetMiniAppsCommand}"/>
@@ -153,7 +153,7 @@
             </MenuItem>
             <MenuItem Header="Nastavení">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Settings}" Width="16" Height="16"/></MenuItem.Icon>
-                <MenuItem Header="Nastavení písma…" Command="{Binding FontSettingsCommand}"/>
+                <MenuItem Header="Nastavení písma" Command="{Binding FontSettingsCommand}"/>
                 <MenuItem Header="Tmavý režim"  IsCheckable="True" IsChecked="{Binding IsDarkMode}"/>
                 <Separator/>
                 <MenuItem Header="Nastavení jazyka" Command="{Binding ShowLanguageSettingsCommand}"/>
@@ -166,9 +166,6 @@
                 <MenuItem Header="Informace o verzi"     Command="{Binding ShowInfoCommand}"/>
                 <MenuItem Header="Novinky v aktualizaci" Command="{Binding ShowShellChangelogCommand}"/>
                 <MenuItem Header="Helpdesk, Wiki"        Command="{Binding OpenHelpdeskWebCommand}"/>
-                <Separator/>
-                <!-- Support diagnostika - dělá se na vyžádání helpdesku, proto u Nápovědy. -->
-                <MenuItem Header="Odeslat systémové soubory" Command="{Binding SendSystemLogCommand}"/>
             </MenuItem>
             <MenuItem Header="Test funkcí">
                 <MenuItem Header="Test EDInputForm"  Command="{Binding OpenInputFormTestCommand}"/>

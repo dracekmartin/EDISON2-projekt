@@ -102,7 +102,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand ShowShellChangelogCommand { get; }
         public ICommand ShowModuleChangelogCommand { get; }
         public ICommand OpenHelpdeskWebCommand { get; }
-        public ICommand SendSystemLogCommand { get; }
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
 
@@ -318,7 +317,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ShowShellChangelogCommand     = CommandAsync(() => ShowChangelogForAsync("EDISONMAIN", "EDISON"));
             ShowModuleChangelogCommand    = CommandAsync<IModule>(ShowModuleChangelogAsync);
             OpenHelpdeskWebCommand        = Command(() => OpenWebUrl("http://podpora.m-line.cz"));
-            SendSystemLogCommand          = CommandAsync(() => LaunchDialogAsync("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
             // Spuštěné moduly menu - dynamický seznam, refresh při SubmenuOpened.
             RefreshRunningModulesCommand  = Command(RefreshRunningModules);

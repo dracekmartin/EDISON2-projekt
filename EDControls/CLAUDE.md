@@ -44,6 +44,9 @@ XAML všech konzumentů.
   hostují items přes panel s `IsItemsHost="True"`, takže `ItemsPanel` apod. WPF
   ignoruje) a rozbil by globální propagaci fontu (styly čtou font tokeny
   přes `DynamicResource`).
+- **Sloupec ikony v submenu je `Auto` + `SharedSizeGroup`** - popup, kde nikdo nemá ikonu ani
+  zaškrtnutí, ho smrští na nulu (jinak je celé menu odsazené naprázdno). Slot zaškrtnutí proto
+  musí být `Hidden`, ne `Collapsed`: `Collapsed` se neměří a text by při zaškrtnutí poskočil.
 - **Klávesový focus nese `FocusVisualStyle` (`EDTheme.FocusVisual`)**, ne triggery - WPF ho kreslí
   jen po Tab/Alt (`IsKeyboardFocused` svítí i po kliknutí myší). **Každý styl si ho musí nastavit
   sám**: theme style Aera přebíjí globální override `SystemParameters.FocusVisualStyleKey`
