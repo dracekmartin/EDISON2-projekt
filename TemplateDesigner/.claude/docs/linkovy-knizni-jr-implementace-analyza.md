@@ -1133,10 +1133,12 @@ Pět samostatných věcí v jednom tiketu:
 ### 14.3 Co se ukázalo jako mimo tento track
 
 - **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky, ne pod ní. Umístit vedle jde,
-  prvky mají volnou pozici. ⚠️ **Ale u linkových to není prvek Poznámky** - ten je vázaný na druh
-  agendy `STOP`; u linkových se legenda skládá **dynamickou tabulkou** nad kolekcí `POZNAMKY`, takže
-  uživatel nedostane značky ani řazení, jen sloupce textu. Tvrzení „umíme už dnes, legenda je
-  samostatný prvek" platilo pro zastávkové (zjištěno 3. 9.). Souvisí s `B117`.
+  prvky mají volnou pozici. ⚠️ **Výhrada „u linkových to není prvek Poznámky" padla `B117`** (3. 9.):
+  od té doby je prvek Poznámky i u druhu agendy `LINE` a legendu skládá včetně negativních značek -
+  ověřeno na výtisku `0330510` 15. 9. (značky `21`, `23`, `70` i dny `X`, `6`, `7`, `+`).
+  Co zůstává: filtry na **kategorie** (bezbariér, na znamení, přestupy) jsou u linkových nečinné,
+  protože linkový posílá kategorii prázdnou, a **počet poznámek na řádek per druh** prvek neumí
+  vůbec (`#7487`).
 - **#13070** (BBSK) - vypadá jako linkový, ale zákazníkova předloha je **odjezdová relace**;
   patří tracku Relace, kde ještě nic není.
 - **#8175** (TRANSDEV) + bod 12 z **#8785** (POVED) - řazení spojů volitelně per linka a ruční pořadí.
