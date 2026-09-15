@@ -120,8 +120,11 @@ ClassMethod Pripoje(ByRef sys As %String) As %Status
 				continue:'pocet
 				f pi=0:1:pocet-1 {
 					s p = pr.%Get(pi)
+					// RADEK rozhoduje, jestli přípoj dostane řádek v tabulce, nebo jde jen do
+					// poznámek pod ní. Bez něj vypadá chybějící řádek jako vada vykreslení.
 					s ^||ML("OUT","pripoj~"_key_"~"_$tr($j(si+1,3)," ","0")_"~"_(pi+1)) =
-						"tc="_p.%Get("PORADI")_" typ="_p.%Get("TYP")_" cas="_p.%Get("CAS")
+						"tc="_p.%Get("PORADI")_" typ="_p.%Get("TYP")_" radek="_p.%Get("RADEK")
+						_" cas="_p.%Get("CAS")_" text="_p.%Get("TEXT")
 						_" linka="_p.%Get("LINKA")_" spoj="_p.%Get("SPOJ")
 				}
 			}
@@ -132,6 +135,122 @@ ClassMethod Pripoje(ByRef sys As %String) As %Status
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret $$$OK
+}
+
+/// Najde linky, na kterých jde předvést **prázdný přípojný řádek** (`#11300`).
+///
+/// Hledá se linka, kde spoje spadají do **víc skupin dnů** a zároveň aspoň jeden spoj nese přípoj
+/// tištěný jako **řádek tabulky** (`RADEK=1`), zatímco spoje jiné skupiny přípoj nemají. Teprve
+/// taková linka dá list, na kterém by ve starém tisku zůstal prázdný přípojný řádek.
+///
+/// ⚠️ Volá `GetData` na každou zkoumanou linku, takže je to **pomalé** - proto `LIMIT`.
+///
+/// IN: `LIMIT` (kolik linek projít, výchozí 150), `MAX` (kolik nálezů vypsat, výchozí 10),
+/// `MIN_SPOJU` (přeskočit linky s méně spoji, výchozí 4).
+/// OUT: `nalez~<n>` = `sku / lin  skupin=<n> spoju s radkovym pripojem=<n>`.
+ClassMethod NajdiProUkazku(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s limit = +$g(^||ML("IN","LIMIT")), max = +$g(^||ML("IN","MAX"))
+		s minSpoju = +$g(^||ML("IN","MIN_SPOJU"))
+		s:limit<1 limit = 150
+		s:max<1 max = 10
+		s:minSpoju<1 minSpoju = 4
+
+		s projito = 0, nalezu = 0, s1 = ""
+		f {
+			s s1 = $o(^[dataDB]JRL(s1))
+			q:s1=""
+			continue:'$isvalidnum(s1)
+			s l1 = ""
+			f {
+				s l1 = $o(^[dataDB]JRL(s1, l1))
+				q:l1=""
+				continue:'$d(^[dataDB]JRL(s1, l1, "I"))
+				continue:+$g(^[dataDB]JRL(s1, l1, "T"))<minSpoju
+				s projito = projito + 1
+				i projito > limit ret ..DopisSouhrn(projito - 1, nalezu, .statistika, .nalez)
+				s popis = ..ProzkoumejLinku(s1, l1, .sys, .statistika)
+				continue:popis=""
+				s nalezu = nalezu + 1
+				// ⚠️ Nálezy se hromadí stranou - `GetData` uvnitř helperu maže `^||ML("OUT")`,
+				// takže zapsané by je přepsala hned další zkoumaná linka.
+				s nalez(nalezu) = s1_" / "_l1_"  "_popis
+				i nalezu '< max ret ..DopisSouhrn(projito, nalezu, .statistika, .nalez)
+			}
+		}
+		d ..DopisSouhrn(projito, nalezu, .statistika, .nalez)
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Popis linky, když na ní jde ukázku postavit; jinak prázdno. Helper bez `ByRef sys` - volá se
+/// jen z metody, která catch má.
+ClassMethod ProzkoumejLinku(sku As %String, lin As %String, ByRef sys As %String, ByRef statistika) As %String
+{
+	s vysledek = ""
+	try {
+		k ^||ML("IN")
+		s ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		s ^||ML("IN","LINKA_ID") = lin
+		s ^||ML("IN","OBOUSMERNY_TISK") = "false"
+		k ^||ML("OUT")
+		d ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetData(.sys)
+		m odpoved = ^||ML("OUT")
+		k ^||ML("OUT")
+		i $g(odpoved("ERR"))'="" ret ""
+
+		s key = ""
+		f {
+			s key = $o(odpoved(key))
+			q:key=""
+			continue:key="ERR"
+			s page = ##class(%DynamicObject).%FromJSON(odpoved(key))
+			s skupiny = page.rows.%Get("SKUPINY_DNU")
+			continue:'$isobject(skupiny)
+			s statistika("stranek") = $g(statistika("stranek")) + 1
+			i skupiny.%Size()>1 s statistika("vic skupin") = $g(statistika("vic skupin")) + 1
+			continue:skupiny.%Size()<2
+			s spoje = page.rows.%Get("SPOJE")
+			continue:'$isobject(spoje)
+			// skupinaSRadkem = skupina dnů, jejíž spoj nese přípoj tištěný jako řádek
+			k maRadek, vsechny
+			f si=0:1:spoje.%Size()-1 {
+				s sp = spoje.%Get(si), vsechny(sp.%Get("SKUPINA")) = ""
+				s pr = sp.%Get("PRIPOJE")
+				continue:'$isobject(pr)
+				f pi=0:1:pr.%Size()-1 i +pr.%Get(pi).%Get("RADEK") s maRadek(sp.%Get("SKUPINA")) = ""
+			}
+			// Ukázka dává smysl jen tehdy, když jedna skupina řádkový přípoj má a jiná ne.
+			continue:'$d(maRadek)
+			s statistika("vic skupin + radkovy pripoj") = $g(statistika("vic skupin + radkovy pripoj")) + 1
+			s sRadkem = 0, k1 = "" f  s k1 = $o(maRadek(k1)) q:k1=""  s sRadkem = sRadkem + 1
+			s celkem = 0, k1 = "" f  s k1 = $o(vsechny(k1)) q:k1=""  s celkem = celkem + 1
+			continue:sRadkem'<celkem
+			s vysledek = "smer="_page.values.%Get("SMER")_" skupin="_skupiny.%Size()
+				_" spoju="_spoje.%Size()
+			q
+		}
+	}
+	catch (ex) {
+		s vysledek = ""
+		s statistika("chyba: "_ex.DisplayString()) = $g(statistika("chyba: "_ex.DisplayString())) + 1
+	}
+	q vysledek
+}
+
+/// Zapíše souhrn průchodu do OUT. Statistika říká, na které podmínce hledání padá, když nic nenajde.
+ClassMethod DopisSouhrn(projito As %Integer, nalezu As %Integer, ByRef statistika, ByRef nalez) As %Status
+{
+	s ^||ML("OUT","souhrn") = "projito linek="_projito_", nalezu="_nalezu
+	s k1 = ""
+	f  s k1 = $o(statistika(k1)) q:k1=""  s ^||ML("OUT","statistika~"_k1) = statistika(k1)
+	s k1 = ""
+	f  s k1 = $o(nalez(k1)) q:k1=""  s ^||ML("OUT","nalez~"_$tr($j(k1,2)," ","0")) = nalez(k1)
+	q $$$OK
 }
 
 /// Vypíše kilometrické sloupce linky - **společné i per směr** - a přepínače, které o nich rozhodují.
