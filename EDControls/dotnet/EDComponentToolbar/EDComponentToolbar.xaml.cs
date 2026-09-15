@@ -21,17 +21,25 @@ public partial class EDComponentToolbar : UserControl
         Unloaded += OnUnloaded;
     }
 
+    // Jedno okno = jeden Ctrl+F binding. V hlavním okně shellu je toolbarů desítky (každá
+    // tabulka miniaplikace je EDList) a WPF stejně obslouží první shodný binding - ostatní by se
+    // jen hromadily v InputBindings.
+    private static readonly DependencyProperty CtrlFOwnerProperty =
+        DependencyProperty.RegisterAttached("CtrlFOwner", typeof(EDComponentToolbar), typeof(EDComponentToolbar));
+
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         // Ctrl+F focusne search box (window-level binding, pokud parent Window existuje).
         // Unsubscribe nutný v OnUnloaded - jinak při re-load akumulují binding kopie.
         var parentWindow = Window.GetWindow(this);
         if (parentWindow is null || _ctrlFBinding is not null) return;
+        if (parentWindow.GetValue(CtrlFOwnerProperty) is not null) return;
 
         _ctrlFBinding = new KeyBinding(
             new RelayCommand(FocusSearch),
             new KeyGesture(Key.F, ModifierKeys.Control));
         _attachedWindow = parentWindow;
+        parentWindow.SetValue(CtrlFOwnerProperty, this);
         parentWindow.InputBindings.Add(_ctrlFBinding);
     }
 
@@ -40,6 +48,7 @@ public partial class EDComponentToolbar : UserControl
         if (_ctrlFBinding is not null && _attachedWindow is not null)
         {
             _attachedWindow.InputBindings.Remove(_ctrlFBinding);
+            _attachedWindow.ClearValue(CtrlFOwnerProperty);   // uvolni slot dalšímu toolbaru
             _ctrlFBinding = null;
             _attachedWindow = null;
         }

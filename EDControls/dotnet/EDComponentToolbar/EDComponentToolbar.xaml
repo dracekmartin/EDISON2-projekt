@@ -53,56 +53,38 @@
 
     <!-- Brandový pruh - jediný vzhled komponentové hlavičky (EDList i EDInputForm). -->
     <Border Background="{DynamicResource EDTheme.Accent.Header}" Padding="6,4">
-        <DockPanel LastChildFill="False">
-
-            <!-- Vpravo: standardní akční ikony (opt-in přes ShowX props) -->
-            <Button DockPanel.Dock="Right" Content="⚙" FontSize="{DynamicResource EDTheme.FontSize.Title}"
-                    Style="{StaticResource ToolbarButtonStyle}"
-                    ToolTip="Nastavení"
-                    Command="{Binding SettingsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Visibility="{Binding ShowSettings, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
-            <Button DockPanel.Dock="Right"
-                    Style="{StaticResource ToolbarButtonStyle}"
-                    ToolTip="Nápověda"
-                    Command="{Binding HelpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Visibility="{Binding ShowHelp, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
-                <Image Source="{StaticResource EDIcons.Help}"
-                       Width="{DynamicResource EDTheme.IconSize.Default}"
-                       Height="{DynamicResource EDTheme.IconSize.Default}"
-                       RenderOptions.BitmapScalingMode="HighQuality"/>
-            </Button>
-            <Button DockPanel.Dock="Right" Content="🖨" FontSize="{DynamicResource EDTheme.FontSize.Header}"
-                    Style="{StaticResource ToolbarButtonStyle}"
-                    ToolTip="Tisk"
-                    Command="{Binding PrintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Visibility="{Binding ShowPrint, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
-            <Button DockPanel.Dock="Right" Content="📊" FontSize="{DynamicResource EDTheme.FontSize.Header}"
-                    Style="{StaticResource ToolbarButtonStyle}"
-                    ToolTip="Export"
-                    Command="{Binding ExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Visibility="{Binding ShowExport, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
+        <!-- Grid, ne DockPanel: search má být pružný. V dlaždici miniaplikace (min 200 px)
+             by se pevný box nevešel a DockPanel by ho ořízl místo zmenšení. -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*" MinWidth="90" MaxWidth="228"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
             <!-- Title - left edge, prominent. Anchor co je v komponentě. -->
-            <TextBlock DockPanel.Dock="Left"
+            <TextBlock Grid.Column="0"
                        Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
                        Style="{StaticResource ToolbarTextStyle}"
                        FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Title}"
                        VerticalAlignment="Center" Margin="2,0,12,0"
+                       TextTrimming="CharacterEllipsis"
                        Visibility="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
 
-            <!-- Search - docked Right, vedle standard ikon (toolbar tool feel).
-                 Když Title je set, vznikne přirozená mezera mezi Title (vlevo) a Search (vpravo). -->
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                        VerticalAlignment="Center" Margin="0,0,8,0"
-                        Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+            <!-- Search + match nav (▲ ▼ counter) - vpravo, vedle standardních ikon. -->
+            <Grid Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0"
+                  Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
                 <!-- Placeholder, křížek i Esc řeší EDSearchTextBox interně. -->
-                <edstx:EDSearchTextBox x:Name="SearchTextBox" Width="220" VerticalAlignment="Center"
+                <edstx:EDSearchTextBox Grid.Column="0" x:Name="SearchTextBox" VerticalAlignment="Center"
                                        Placeholder="{Binding SearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                        Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"/>
 
-                <!-- Match nav (▲ ▼ counter) - visible jen pokud TotalMatches > 0 -->
-                <StackPanel Orientation="Horizontal"
+                <StackPanel Grid.Column="1" Orientation="Horizontal"
                             Visibility="{Binding TotalMatches, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntNonZeroToVis}}">
                     <Button Content="▲" FontSize="{DynamicResource EDTheme.FontSize.Small}"
                             Margin="6,0,0,0" Padding="6,2"
@@ -121,7 +103,35 @@
                         <Run Text="{Binding TotalMatches, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
                     </TextBlock>
                 </StackPanel>
+            </Grid>
+
+            <!-- Standardní akční ikony (opt-in přes ShowX props) -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <Button Content="📊" FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                        Style="{StaticResource ToolbarButtonStyle}"
+                        ToolTip="Export"
+                        Command="{Binding ExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Visibility="{Binding ShowExport, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
+                <Button Content="🖨" FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                        Style="{StaticResource ToolbarButtonStyle}"
+                        ToolTip="Tisk"
+                        Command="{Binding PrintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Visibility="{Binding ShowPrint, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
+                <Button Style="{StaticResource ToolbarButtonStyle}"
+                        ToolTip="Nápověda"
+                        Command="{Binding HelpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Visibility="{Binding ShowHelp, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+                    <Image Source="{StaticResource EDIcons.Help}"
+                           Width="{DynamicResource EDTheme.IconSize.Default}"
+                           Height="{DynamicResource EDTheme.IconSize.Default}"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Button>
+                <Button Content="⚙" FontSize="{DynamicResource EDTheme.FontSize.Title}"
+                        Style="{StaticResource ToolbarButtonStyle}"
+                        ToolTip="Nastavení"
+                        Command="{Binding SettingsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Visibility="{Binding ShowSettings, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
-        </DockPanel>
+        </Grid>
     </Border>
 </UserControl>

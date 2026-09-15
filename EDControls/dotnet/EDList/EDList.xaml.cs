@@ -79,25 +79,15 @@ namespace EDControls.EDList
             if (d is EDList list) list.DataGrid.CellStyle = (Style)e.NewValue;
         }
 
+        /// <summary>Text vlevo v brandovém pruhu. Pruh je vidět i bez něj (jen se search boxem).</summary>
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(nameof(Title), typeof(string), typeof(EDList),
-                new PropertyMetadata(null, OnTitleOrSearchVisibleChanged));
+                new PropertyMetadata(null));
 
         public string? Title
         {
             get => (string?)GetValue(TitleProperty);
             set => SetValue(TitleProperty, value);
-        }
-
-        /// <summary>Default: <c>null</c> = auto (true pokud Title set, jinak false). Lze nastavit explicitně true/false.</summary>
-        public static readonly DependencyProperty SearchVisibleProperty =
-            DependencyProperty.Register(nameof(SearchVisible), typeof(bool?), typeof(EDList),
-                new PropertyMetadata(null, OnTitleOrSearchVisibleChanged));
-
-        public bool? SearchVisible
-        {
-            get => (bool?)GetValue(SearchVisibleProperty);
-            set => SetValue(SearchVisibleProperty, value);
         }
 
         public static readonly DependencyProperty SearchTextProperty =
@@ -110,19 +100,8 @@ namespace EDControls.EDList
             set => SetValue(SearchTextProperty, value);
         }
 
-        private static void OnTitleOrSearchVisibleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
-            (d as EDList)?.UpdateHeaderVisibility();
-
         private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
             (d as EDList)?.RefreshFilter();
-
-        private void UpdateHeaderVisibility()
-        {
-            bool showTitle  = !string.IsNullOrEmpty(Title);
-            bool showSearch = SearchVisible ?? !string.IsNullOrEmpty(Title);   // null = auto z Title
-            HeaderToolbar.ShowSearch = showSearch;
-            HeaderToolbar.Visibility = (showTitle || showSearch) ? Visibility.Visible : Visibility.Collapsed;
-        }
 
         private void RefreshFilter()
         {

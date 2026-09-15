@@ -48,8 +48,9 @@ Detaily ve sdíleném `EDControls/DOCS/01-wire-formats.md` - tam patří změny 
 
 ## Search, Check mode, persist layoutu
 
-- `Title` / `SearchText` / `SearchVisible` (`bool?`, `null` = auto podle Title). Search
-  filtruje **formátované** hodnoty („8:30" najde „08:30", ne „830"); nepersistuje se.
+- **Brandový pruh je bezpodmínečný** (shodně s `EDInputForm`em), host plní jen `Title`; Ctrl+F
+  si na parent `Window` věší **jen první** toolbar - v shellu jich jsou desítky.
+- Search filtruje **formátované** hodnoty („8:30" najde „08:30", ne „830"); nepersistuje se.
 - `SelectionMode = Check` → checkbox sloupec. Binding checkboxů je záměrně **OneWay** +
   explicitní `Click` handler (TwoWay v CellTemplate je buggy; header `Click` brání rekurzi
   CheckAll→Sync). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik** na checkbox zaškrtne
