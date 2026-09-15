@@ -1163,7 +1163,7 @@ naslepo.
 
 | Firma | Skupina | Linka | Co je na ní vidět |
 |---|---|---|---|
-| CB_CSADAD | 1 | 0370618 | **ruční pořadí spojů** u linky (a že se použije, ne dopočítá) |
+| CB_CSADAD | 4 | 0330520 | **ruční pořadí spojů** u linky - a že se použije, ne dopočítá. Ručně `1,3,5,7,101,103,105`, podle času by vyšlo `1,101,3,103,5,7,105`; ověřeno voláním 15. 9., vracíme ruční. ⚠️ **Ne `1 / 0370618`**, jak tu stálo do 15. 9.: ta ruční pořadí sice má, ale shodné s časovým, takže na ní rozdíl vidět není. Linky, kde se obojí liší, najde `LinkovyJrNastaveniProbe.RozdilneRucniPoradi` (8 z 11 měřených) |
 | CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit). ⚠️ **Slabý doklad** (změřeno 26. 8.): v celé firmě má barvu **2 spoje z 483 246**, oba na téhle lince a oba světle růžové `255;128;255` - jeden z nich je **spoj 19**. Změna volby tedy přebarví dva sloupce z tisíců, takže na plné tabulce vypadá, že se neděje nic. Sledovat přímo spoj 19, ne celkový dojem. |
 | CB_CSADAD | 801 | 0345062 | **bez zón i bez km** (čtyřstavový přepínač `linIDS` = 3) |
 | VS_CSAD | 5 | 0771901 | **písmena ze zóny se odstraňují** |
