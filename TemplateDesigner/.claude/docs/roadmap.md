@@ -100,7 +100,7 @@ takže nejde o práci, ale o doklad.
 
 | Co | Proč to čeká |
 |---|---|
-| **Prázdný přípojný řádek nemá zabírat místo (#11300, KORID)** | **Zbývá ukázka a odpověď, ne kód** - postup a čím je to podložené: [`§16.2`](linkovy-knizni-jr-implementace-analyza.md). Tiket je pozastavený od 12/2025 s příslibem „příští rok s novým tiskovým modulem"; od 6. 9. jde jeho rozvržení předvést. |
+| **Prázdný přípojný řádek nemá zabírat místo (#11300, KORID)** | ✅ **Výtisk hotový 15. 9.** (`CB_CSADAD 1 / 0330510` směr Zpět, strana 3 = list jen s pracovními dny bez jediného přípojného řádku) - detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md). Zbývá **poslat zákazníkovi a tiket zavřít**; ten je pozastavený od 12/2025 s příslibem „příští rok s novým tiskovým modulem". |
 | **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
 | **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618`** | Starý tisk dává oba směry do jedné tabulky, takže není co k čemu přiložit. ⚠️ **Odblokováno 28. 8.** - obousměrný tisk je hotový, takže tuhle linku už je čím porovnat. Vzít při nejbližším průchodu doklady |
 | **Písmena ze zóny (`VS_CSAD 5 / 0771901`)** | V testovacích datech pro Vsetín na to není vzorek; firma navíc není v přepínači firem. Vzít, až ta data budou |

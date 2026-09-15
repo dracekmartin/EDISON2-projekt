@@ -1379,14 +1379,27 @@ přípoje jsou jen o víkendu. Je to **linkový tabelární JŘ** (linka 260, ID
   dny, a oddělování skupin dnů jsme do té doby neměli (§6.3). **Musí se tisknout jednosměrně** -
   u obousměrné sestavy se skupiny neoddělují a prázdné buňky v přípojném řádku vzniknout mohou.
 
-**Postup, až poběží dev server:**
+**✅ Doloženo výtiskem 15. 9. - `CB_CSADAD 1 / 0330510`, směr Zpět, jednosměrný tisk.**
+(Jeho vlastní firma ČSAD Liberec / IDOL na dev serveru není, proto náhrada.)
 
-1. Otevřít linkovou šablonu, v parametrech sestavy **vypnout Obousměrný tisk**.
-2. Vzít `CB_CSADAD 1 / 0330511` směr Tam - devět spojů a přípoj jen tři (9, 13, 31 na tarifním
-   čísle 19). ⚠️ Jeho vlastní firma (ČSAD Liberec / IDOL) na dev serveru **není**, proto náhrada.
-3. Exportovat a ověřit dvojí: každá tabulka nese jen jednu skupinu dnů, a kde přípoj není, není
-   ani řádek.
-4. Poslat mu to a tiket zavřít.
+- **Strana 3 je list jen s pracovními dny a nemá jediný přípojný řádek** - ani prázdný.
+- **Strana 4** nese tytéž zastávky (22 shodných) plus soboty a neděle a má pět přípojných řádků,
+  každý s aspoň jedním časem.
+
+Tím je vidět obojí naráz: řádek vzniká jen pro přípoj, který skutečně existuje, a na listu, kde
+takový přípoj není, se nerezervuje místo. Měřeno z PDF podle souřadnic - texty pod tabulkou jsou
+legenda poznámek, ne přípojné řádky. Zbývá **poslat a zavřít**.
+
+⚠️ **Dvě dřívější doporučení linky byla mimo** (obojí ověřeno voláním serveru 15. 9.):
+
+- `0330511` má všech devět spojů v **jedné skupině dnů**, takže se tabulka nemá podle čeho
+  rozdělit a zákazníkova situace („PD a víkend na zvláštní tabulce") na ní vůbec nenastane.
+- `0370618` dvě skupiny dnů má, ale jsou to dva spoje - oddělení by stálo blok navíc, takže
+  se nedělá. Její jediný přípoj navíc nese `RADEK=0`, tedy se v tabulce nekreslí tak jako tak.
+
+**Jak najít jinou linku:** `LinkovyJrSpojeProbe.NajdiProUkazku` hledá linku, kde spoje spadají do
+víc skupin dnů a zároveň aspoň jedna skupina nese přípoj tištěný jako řádek. Situace je běžná -
+19 z 23 měřených stránek. `LinkovyJrSpojeProbe.Pripoje` vypíše přípoje per spoj včetně `RADEK`.
 
 ### 16.3 Měření 4. 9. - sonda
 
