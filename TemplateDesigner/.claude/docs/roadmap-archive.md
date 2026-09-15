@@ -1,5 +1,28 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B140` Rozdvojená zastávka v postskriptovém tvaru (hotovo 15. 9. 2026)
+
+Prvek tabulky linky dostal volbu **„Sloučit popis u příjezdu a odjezdu"**. Zapnutá vypíše km,
+tarifní číslo, název i MHD jednou přes oba řádky na střed a mezi časy příjezdu a odjezdu nakreslí
+v každém sloupci spoje vodorovnou úsečku. Vypnutá nechává dosavadní tvar s popisy zopakovanými
+na obou řádcích. Tvar postskriptového × windowsového tisku - staré tisky se v tom liší, takže
+volba mezi nimi je jediná poctivá odpověď.
+
+Zóna se neslučuje (opakuje se a dostane úsečku, `JRapiLinPrtPS6.mac:74`), šipka taky ne - nese
+`př` a `od`, což ty dva řádky jediné odlišuje.
+
+⚠️ **Postskript má na to tři řádky, my dva** (rozhodnutí Jan 15. 9.). Prostřední je tam prázdný
+a slouží jen úsečce, protože ta je znak a potřebuje vlastní řádek. Naše čára leží na hranici dvou
+řádků: vypadá to stejně, zastávka nezabere o třetinu víc místa a nemění se výška tabulky ani
+místa řezu.
+
+⚠️ **Parita doložená čtením legacy, ne porovnaným výtiskem** (R6). Neověřená zůstává délka úsečky -
+v legacy je to šířka glyfu ve vlastním fontu, u nás šířka sloupce mínus vůle 0,4 mm.
+
+Jádro tabulky umí nově sloučení buňky přes řádky (`CellSpec.PresahNahoruMm`) - to byla ta část,
+kvůli které položka čekala. Kreslí ji dolní řádek, ne horní: co nakreslí horní pod sebe, dolní
+přemaže svým pozadím.
+
 ## `B152` Spoje se na části dělí rovným dílem (hotovo 14. 9. 2026)
 
 Když se sloupce spojů nevejdou do šířky a tabulka linky se rozdělí na části, rozdělí se spoje mezi

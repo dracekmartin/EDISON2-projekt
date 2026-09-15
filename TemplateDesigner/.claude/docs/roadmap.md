@@ -120,14 +120,6 @@ takže nejde o práci, ale o doklad.
   rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
   Vytáhnout, až to někdo bude chtít.
 
-- **`B140` Rozdvojená zastávka v postskriptovém tvaru** [M] (zjištěno 10. 9. při `B136`).
-  Dnes tiskneme tvar **windowsového** návrháře: popisné sloupce zopakované na obou řádcích.
-  **Postskript to dělá jinak** a vypadá to líp: km, tarifní číslo i název **sloučené přes oba
-  řádky svisle na střed**, `př`/`od` nahoře a dole a v časových sloupcích **vodorovná úsečka**
-  mezi příjezdem a odjezdem. Doloženo výřezem ze staré sestavy 330535.
-  ⚠️ Potřebuje **sloučení buňky přes řádky** v jádru tabulky (`RowPlanRenderer`), což dnes neumí -
-  proto to nešlo dodělat rovnou. Až to bude, přidat k prvku volbu mezi oběma tvary.
-
 - **`B138` Odložené do pozadí** [-] (Jan 9. 9., evidence). Tisk celé sestavy jen černě (dnes jde
   vypnout jen barvy spojů) a volba „bez roku" u textů omezení v šabloně (dnes to řídí nastavení
   EDISONu a to stačí). Vytáhnout, až si o to někdo řekne.

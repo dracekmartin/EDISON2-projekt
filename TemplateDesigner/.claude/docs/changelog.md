@@ -1,5 +1,33 @@
 ﻿# Changelog
 
+## 2026-09-15 (1) - ⇕ popis zastávky s příjezdem a odjezdem jednou přes oba řádky
+
+`B140`. U prvku tabulky linky přibyla volba **„Sloučit popis u příjezdu a odjezdu"** (skupina
+Popisné sloupce). Zapnutá vypíše km, tarifní číslo, název i MHD **jednou přes oba řádky na střed**
+a mezi časy příjezdu a odjezdu nakreslí v každém sloupci spoje **vodorovnou úsečku**. Vypnutá
+nechává dosavadní tvar, kde se popisy na obou řádcích opakují.
+
+Je to tvar **postskriptového** tisku; dosavadní odpovídá **windowsovému** (`B136`). Obě varianty
+starého tisku se v tomhle liší, takže volba mezi nimi je jediná poctivá odpověď.
+
+⚠️ **Zóna se neslučuje** - opakuje se na obou řádcích a úsečku dostane taky. Legacy ji sází jako
+sloupec spoje, ne jako popis (`JRapiLinPrtPS6.mac:74`). Šipka se neslučuje z jiného důvodu: nese
+`př` a `od`, což je jediné, čím se ty dva řádky od sebe liší.
+
+⚠️ **Postskript má na to tři řádky, my dva** (rozhodnutí Jan 15. 9.). Prostřední je tam prázdný
+a slouží jen úsečce, protože ta je v postskriptu **znak**, a znak potřebuje vlastní řádek
+(`JRapiLinPrtPS1.mac:51` přidává dva řádky, `JRapiLinPrtPS6.mac:138-147` plní prázdno / hodnota /
+prázdno). My kreslíme čáru, takže leží na hranici dvou řádků. Vypadá to stejně, zastávka nezabere
+o třetinu víc místa a **nemění se výška tabulky ani místa řezu**, tedy ani stránkování.
+
+⚠️ **Parita je doložená čtením legacy, ne porovnaným výtiskem** (R6). Rozvržení sedí na zdroj
+postskriptového tisku sloupec po sloupci; co není ověřené, je **délka úsečky** - v legacy je to
+šířka glyfu ve vlastním fontu, u nás šířka sloupce mínus vůle 0,4 mm.
+
+Buňka umí nově sahat nad svůj řádek (`CellSpec.PresahNahoruMm`), což je sloučení přes řádky
+v jádru tabulky. Kreslí ji **dolní** řádek, ne horní: řádky jdou po sobě, takže co nakreslí horní
+pod sebe, dolní přemaže svým pozadím.
+
 ## 2026-09-14 (11) - ⚖️ spoje se na části dělí rovným dílem
 
 `B152`. Když se sloupce spojů nevejdou do šířky a tabulka linky se rozdělí na části, rozdělí se
