@@ -336,6 +336,9 @@
                     <!-- Skryje uzly nevyhovující vyhledávání (VM nastaví IsVisibleBySearch). -->
                     <Setter Property="Visibility" Value="{Binding IsVisibleBySearch, Converter={StaticResource BoolToVis}}"/>
                     <Setter Property="Cursor" Value="Hand"/>
+                    <!-- Bez toho hlásí WPF do automation Content, tedy celý record modulu
+                         („ExecutableModule { DisplayedName = …, FormName = …, ElementId = … }"). -->
+                    <Setter Property="AutomationProperties.Name" Value="{Binding DisplayedName}"/>
                     <!-- Single-click: složka toggle expand, modul spustí (handler v code-behind). -->
                     <EventSetter Event="MouseLeftButtonUp" Handler="TreeItem_MouseLeftButtonUp"/>
                     <!-- Pravý klik označí položku, aby kontextové menu vizuálně sedělo na cíli. -->
@@ -378,6 +381,9 @@
                     <TabControl.ItemContainerStyle>
                         <Style TargetType="TabItem" BasedOn="{StaticResource TreeTab}">
                             <Setter Property="ToolTip" Value="{Binding Title}"/>
+                            <!-- Bez toho hlásí WPF do automation Content, tedy record.ToString()
+                                 („TreeTab { Key = main, Title = ... }") - čtečka z toho nic nemá. -->
+                            <Setter Property="AutomationProperties.Name" Value="{Binding Title}"/>
                         </Style>
                     </TabControl.ItemContainerStyle>
                     <TabControl.ItemTemplate>
@@ -470,6 +476,8 @@
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                 <Setter Property="Cursor" Value="Hand"/>
+                                <!-- Jako u stromu: bez toho jde do automation celý record modulu. -->
+                                <Setter Property="AutomationProperties.Name" Value="{Binding DisplayedName}"/>
                                 <!-- Single-click spustí modul - konzistentní se stromy výše. -->
                                 <EventSetter Event="MouseLeftButtonUp" Handler="UsedModuleItem_MouseLeftButtonUp"/>
                             </Style>
