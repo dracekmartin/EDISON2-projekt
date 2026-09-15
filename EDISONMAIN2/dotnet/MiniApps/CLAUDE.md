@@ -14,8 +14,7 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   nahradí widgety neutrálním popiskem (anonymizované screenshoty) - WebView2 se vůbec nevytvoří.
   Hostí se přes `FontZoomWebView : WebView2` - **HWND, ne composition**, ta crashuje na dragu
   tabu do plovoucího okna. Airspace: WPF veil dimu HWND nepokryje, kartu „Akce probíhá" nad
-  ním kreslí owned okno
-  (viz [EDActionInProgress/CLAUDE.md](../../../EDControls/dotnet/EDActionInProgress/CLAUDE.md)).
+  ním kreslí owned okno ([EDActionInProgress/CLAUDE.md](../../../EDControls/dotnet/EDActionInProgress/CLAUDE.md)).
 - Font widgetu: `ZoomFactor = FontService.BodySize / 14` (základní text je 14 CSS px), rodina
   se do HTML nepropaguje. Dark mode widget sám neumí (natvrdo `bg-white`) - injektuje se
   inverzní CSS filtr (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému
@@ -37,20 +36,18 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.
   Chybu ukazuje panel sám (`ErrorText`), ne popup - dávka o N panelech by jich zvedla N.
   `MiniAppManager.RefreshAll` proto vrací názvy **spuštěných**, ne dokončených obnov.
-- **Sekce `ObjectSectionTable` nese deskriptor typů sloupců**, ne jen marker tabulky:
-  `"T:N2#"` = text, číslo se 2 desetinnými a oddělovačem tisíců (grammar v legacy
-  `EDMiniApplication.GetFormat`). Bez něj se `N` sloupce neformátují, nezarovnají vpravo
-  a řadí se lexikograficky. Tabulky renderuje `EDList` přes `SetData`, typ jde do
-  `ListColumn.Type`/`Format`; `D` zůstává TEXT, protože wire posílá datum už naformátované.
+- **Sekce `ObjectSectionTable` nese deskriptor typů sloupců**, ne jen marker tabulky: `"T:N2#"` =
+  text, číslo se 2 desetinnými a oddělovačem tisíců (grammar v legacy `EDMiniApplication.GetFormat`).
+  Bez něj se `N` neformátuje, nezarovná vpravo a řadí lexikograficky; `D` je TEXT, wire posílá datum hotové.
 - **Pruh miniaplikace je `EDControls.MiniApps.EDMiniAppBar`**, ne vlastní StackPanel. Barvu
-  řádku ze serveru nese `CellStyle` s `BasedOn` nad skrytým sloupcem `_fore` - přes `RowStyle`
-  ji implicitní styl buňky přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji
+  řádku ze serveru nese `CellStyle` s `BasedOn` nad skrytým sloupcem `_fore` - přes `RowStyle` ji
+  implicitní styl buňky přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji
   `LegacyForeColorConverter` zesvětlí na kontrast 4,5:1 (legacy palety počítají s bílým
   pozadím); motiv čte v okamžiku konverze, proto view po `ThemeService.Applied` sekce
   refreshuje.
-- **Kolečko myši v panelu**: vnořený seznam (EDList sekce přehledu) si MouseWheel nechá i bez místa
-  k rolování → `EDControls.ScrollWheelBubbling.IsEnabled` ho na kraji předá vnějšímu ScrollVieweru;
-  prázdná plocha Plochy musí mít `Background`, jinak není hit-testable a kolečko jde mimo ScrollViewer.
+- **Kolečko myši v panelu**: vnořený seznam si MouseWheel nechá i bez místa k rolování, na kraji ho
+  předá ven `EDControls.ScrollWheelBubbling.IsEnabled`; prázdná plocha Plochy musí mít `Background`,
+  jinak není hit-testable a kolečko jde mimo ScrollViewer.
 - Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,
   stejný lifecycle přes `AttachTreeLayout`); chybí-li nebo je poškozený → výchozí rozložení
   (jen Plocha). Prázdný dock ukáže placeholder s tlačítkem na výchozí sadu.

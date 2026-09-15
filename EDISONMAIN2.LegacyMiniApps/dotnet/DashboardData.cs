@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -159,7 +158,7 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
     /// počet desetinných míst, třetí <c>#</c> = oddělovat tisíce. <c>"N2#"</c> → <c>"#,##0.00"</c>.
     /// Samotné <c>"N"</c> = bez formátování, hodnota zůstane raw jako v legacy.
     /// </summary>
-    internal static string NumberFormat(string def)
+    private static string NumberFormat(string def)
     {
         if (def.Length < 2) return "";
         int digits = char.IsDigit(def[1]) ? def[1] - '0' : 0;

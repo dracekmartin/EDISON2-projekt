@@ -30,7 +30,7 @@ public class DashboardListMapperTests
     [Fact]
     public void ToColumns_DateStaysText() =>
         Assert.Equal(ListColumnType.Text,
-            DashboardListMapper.ToColumns(Table(new DashboardColumn("Datum", 'D', ""))) [0].Type);
+            DashboardListMapper.ToColumns(Table(new DashboardColumn("Datum", 'D', "")))[0].Type);
 
     [Fact]
     public void ToColumns_AppendsHiddenForeColorColumn()
