@@ -1,5 +1,25 @@
 ﻿# Changelog
 
+## 2026-09-16 (1) - 🤖 Pomocník umí poradit i s tabulkou linky
+
+Průvodce dostával o tabulce linky **jedinou větu** („sloupcová tabulka celé linky, sloupce ve vlastním
+dialogu"), zatímco u seznamu zastávek, minut odjezdů i poznámek měl tři až pět vět s konkrétními
+radami. Na dotaz o linkovém jízdním řádu proto uměl jen vyjmenovat pole.
+
+Seznam vlastností se generuje z kódu sám a nedriftuje; co chybělo, jsou **souvislosti**, které
+nikde jinde nestojí:
+
+- popisné sloupce jsou **skupina** - společný nadpis, slití bez vnitřních čar, mezera za nimi
+- **šířka sloupce spoje rozhoduje o počtu stran** (kolik spojů vedle sebe → kolik částí) a vstupuje
+  do ní pět různých voleb včetně velikosti písma buněk
+- skupiny dnů se při dělení oddělí samy, když to nestojí část navíc
+- při malém přetečení se písmo samo zmenší do 90 %, místo aby přibyla strana
+- přípojné řádky a rozdvojená zastávka s volbou sloučeného popisu
+
+⚠️ **Test kryl jen zastávkové** (`BuildElementCatalog("STOP")`), takže by se nepoznalo, že průvodce
+o linkových neví nic. Nově se měří i `"LINE"`, a k tomu pět souvislostí zvlášť - výčet vlastností
+by prošel i s prázdnou poznámkou.
+
 ## 2026-09-15 (2) - 👁 náhled bez vybrané linky bere vlastní sloupce i u linkových JŘ
 
 Kdo si v šabloně linkového jízdního řádu nadefinoval vlastní sloupce a neměl vybranou linku, viděl

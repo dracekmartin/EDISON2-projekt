@@ -335,7 +335,20 @@ Pravidla obsahu (ZÁVAZNÁ):
             "bezbariérových spojů; NE v parametrech sestavy (dřív to parametry tisku byly). Značka a její " +
             "vysvětlivka jsou jedna volba. Bez tohoto prvku v šabloně se značky nevytisknou vůbec.",
         ElementTypes.LineTable =>
-            "Sloupcová tabulka celé linky (zastávky × spoje) pro linkový/knižní JŘ. Sloupce ve vlastním dialogu.",
+            "Sloupcová tabulka celé linky (zastávky × spoje) pro linkový/knižní JŘ. Zastávky jsou řádky, " +
+            "spoje sloupce. Viditelnost, pořadí, šířky a styl sloupců má vlastní dialog (Upravit sloupce…). " +
+            "POPISNÉ SLOUPCE (zóna, km, Tč, zastávka, MHD, šipka) jsou skupina: dají se přejmenovat, " +
+            "dostat jeden společný nadpis ('Nadpis popisných sloupců'), slít bez vnitřních čar " +
+            "('Popisné sloupce bez vnitřních čar') a oddělit od spojů mezerou ('Mezera mezi skupinami sloupců'). " +
+            "⚠️ ŠÍŘKA SLOUPCE SPOJE rozhoduje o všem ostatním: kolik spojů se vejde vedle sebe, na kolik ČÁSTÍ " +
+            "se tabulka rozřeže a kolik vyjde stran. Ovlivňují ji 'Nejmenší/Největší šířka sloupce spoje', " +
+            "'Stejně široké sloupce spojů', vnitřní okraj datových buněk a velikost jejich písma " +
+            "(to řídí i výšku řádku, když je prázdná). " +
+            "Skupiny dnů (pracovní / sobota / neděle) se při dělení oddělí samy, když to nestojí část navíc. " +
+            "Když tabulce do stránky chybí málo, písmo se samo zmenší (do 90 %), místo aby přibyla strana. " +
+            "Přípojné řádky 'vyčká/navazuje' se vkládají pod zastávku a dají se slučovat podle směru. " +
+            "Zastávka s atributem P/J se rozdvojí na příjezd a odjezd; 'Sloučit popis u příjezdu a odjezdu' " +
+            "vypíše km, Tč, název a MHD jednou přes oba řádky a mezi časy dá vodorovnou úsečku.",
         _ => null
     };
 }

@@ -40,4 +40,33 @@ public class AssistantKnowledgeTests
         Assert.Contains("Pozice šipky", catalog);
         Assert.DoesNotContain("vlastnosti se nepodařilo načíst", catalog);
     }
+
+    /// <summary>
+    /// Totéž pro linkové JŘ. Do 16. 9. se měřily jen zastávkové, takže by se nepoznalo, že
+    /// průvodce o tabulce linky neví nic - a poradit pro ni neumí.
+    /// </summary>
+    [Fact]
+    public void KatalogObsahujeTabulkuLinky()
+    {
+        var catalog = CapabilityCatalog.BuildElementCatalog("LINE");
+
+        Assert.Contains("Tabulka linky", catalog);
+        Assert.DoesNotContain("vlastnosti se nepodařilo načíst", catalog);
+    }
+
+    /// <summary>
+    /// Průvodce musí u tabulky linky znát **souvislosti**, ne jen výčet vlastností: ten se
+    /// generuje z kódu sám, kdežto „šířka sloupce spoje rozhoduje o počtu stran" nikde nestojí.
+    /// Bez toho odpoví na „proč mi vyšly čtyři strany" jen tím, že vyjmenuje pole.
+    /// </summary>
+    [Theory]
+    [InlineData("Upravit sloupce")]                  // dialog, který uživatel sám nenajde
+    [InlineData("Nadpis popisných sloupců")]         // skupina popisných sloupců
+    [InlineData("Mezera mezi skupinami sloupců")]
+    [InlineData("Nejmenší/Největší šířka sloupce spoje")]
+    [InlineData("Sloučit popis u příjezdu a odjezdu")]
+    public void KatalogLinkoveZnaSouvislosti(string tvar)
+    {
+        Assert.Contains(tvar, CapabilityCatalog.BuildElementCatalog("LINE"));
+    }
 }
