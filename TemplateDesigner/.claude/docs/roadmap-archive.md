@@ -1,5 +1,21 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B156` Uložení šablony zahazovalo nastavení sestavy (hotovo 16. 9. 2026)
+
+Hlásil TRANSDEV jako „po aktualizaci se mi nastavení resetují". Uložení si seznam hodnot stavělo
+**od nuly** jen z parametrů, které server v tu chvíli vrátil - cokoli mimo ně ze šablony zmizelo,
+a když server nevrátil nic, smazalo se všechno.
+
+Udeřilo to přes volbu „Písmena variant u odjezdů": 17. 8. se zrušila (`B90`), 11. 9. vrátila pod
+týmž klíčem (`B141`). Kdo mezi tím šablonu uložil, přišel o svou hodnotu. Stačil by i výpadek
+serveru při ukládání nebo dočasně skrytá agenda.
+
+Nově se stará hodnota nechává být a nové ji jen přepíšou. Cena je mrtvý klíč po parametru, který
+se nevrátí - ten nikdo nepřečte, protože se čte podle aktuálního seznamu.
+
+⚠️ **Reprodukce se nehledala** (rozhodnutí Jan 16. 9.): příčina je vidět v kódu a zákazníkova
+šablona je na jejich produkci, ne na dev serveru. Zpětně to nikomu nic nevrátí.
+
 ## `B98` Nastavení starého tisku, která nikdo nemá zapnuté (evidence, odloženo 15. 9. 2026)
 
 Není to práce, je to měření. Na 93 133 linkách šesti firem nejsou **nikde** nastavené: místenkování,

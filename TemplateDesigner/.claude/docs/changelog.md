@@ -1,5 +1,28 @@
 ﻿# Changelog
 
+## 2026-09-16 (3) - 💾 uložení šablony už nezahodí nastavení, které server zrovna nenabízí
+
+`B156`, hlásil TRANSDEV 16. 9. jako „po aktualizaci sa veľa nastavení v uloženej šablóne resetuje
+do východiskového nastavenia". Není to dojem - uložení si seznam hodnot **stavělo od nuly** jen
+z parametrů, které server v tu chvíli vrátil. Cokoli mimo ně ze šablony tiše zmizelo a při prázdném
+seznamu se smazalo všechno.
+
+**Kde to udeřilo:** volba „Písmena variant u odjezdů" se 17. 8. zrušila (`B90`) a 11. 9. vrátila
+pod týmž klíčem (`B141`). Kdo mezitím šablonu uložil, přišel o svou hodnotu a po návratu volby
+dostal výchozí stav. Přesně to zákazník popisuje - a v srpnu si na písmena stěžoval.
+
+Nově se **stará hodnota nechává být** a nové ji jen přepíšou. Stačilo k té ztrátě i míň nápadné
+situace: výpadek serveru v okamžiku ukládání, dočasně skrytá agenda nebo starší třída na serveru.
+
+⚠️ **Cenou je mrtvý klíč** po parametru, který se už nikdy nevrátí. Nevadí: hodnoty se čtou podle
+**aktuálního** seznamu parametrů, takže osiřelý klíč nikdo nepřečte.
+
+⚠️ **Zpětně to nikomu nic nevrátí** - hodnoty, které už ze šablon zmizely, jsou pryč. Oprava jen
+zastavuje další ztráty.
+
+Reprodukce se v srpnu nepovedla a nehledala se znovu: příčina je vidět v kódu, takže se opravila
+rovnou (rozhodnutí Jan 16. 9.). Pět nových testů, sada 1800.
+
 ## 2026-09-16 (2) - 🤖 Pomocník se neptá, o kterou tabulku jde
 
 Nález Jan 16. 9. na živé odpovědi: na dotaz „jak zruším čáry mezi km sloupci" začal průvodce

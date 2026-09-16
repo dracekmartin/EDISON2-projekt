@@ -21,15 +21,9 @@ nezadání.
 
 ### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
 
-Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. Ber shora - `B156` se týká
-i ostatních zákazníků, zbytek jen jeho.
-
-- **`B156` Uložená šablona přijde po aktualizaci o nastavení** [?]. Hlásí, že se mu checkboxy
-  a výběry vracejí do výchozího stavu a musí je nastavovat znovu - a že se to děje opakovaně,
-  ne jen teď. ⚠️ **Jediný bod, který se týká všech**, a příčinu neznáme. Podezření: měnili jsme
-  **výchozí hodnoty** (rovnoměrný rozestup, sloupec Varianty tras z výroby vypnutý, slučování
-  přípojů); u rozestupu migrace je (1.11 → 1.12), u ostatních se musí ověřit. Nejdřív zjistit
-  příčinu, pak teprve opravovat.
+Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. `B156` (mizející nastavení) je
+✅ **opravená 16. 9.** - viz changelog a [`roadmap-archive.md`](roadmap-archive.md); týkala se všech
+zákazníků, zbytek je jen jeho.
 
 - **`B157` Slučovat varianty: souvislý úsek, ne podmnožina** [S]. `B142` udělala „skryj variantu,
   jejíž zastávky jsou podmnožinou jiné"; chtěl **„skryj variantu, která je souvislým úsekem jiné
