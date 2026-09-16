@@ -4,9 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B156` (uložená šablona přijde po aktualizaci o nastavení) - jediný bod
-> ze zpětné vazby TRANSDEV 16. 9., který se týká **všech** zákazníků, a neznáme příčinu.
-> Po něm zbytek `B157`-`B161`. Linkové JŘ mezitím čekají na kolegy.
+> **Nejblíž na řadě:** `B158` a `B159` ze zpětné vazby TRANSDEV 16. 9. - obojí je malé a vada.
+> `B160` a `B161` jsou přání, u kterých zákazník sám píše, že současný stav přijme.
+> Linkové JŘ mezitím čekají na kolegy.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
@@ -21,15 +21,9 @@ nezadání.
 
 ### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
 
-Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. `B156` (mizející nastavení) je
-✅ **opravená 16. 9.** - viz changelog a [`roadmap-archive.md`](roadmap-archive.md); týkala se všech
+Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. `B156` (mizející nastavení) a `B157` (slučování variant) jsou
+✅ **opravené 16. 9.** - viz changelog a [`roadmap-archive.md`](roadmap-archive.md); týkala se všech
 zákazníků, zbytek je jen jeho.
-
-- **`B157` Slučovat varianty: souvislý úsek, ne podmnožina** [S]. `B142` udělala „skryj variantu,
-  jejíž zastávky jsou podmnožinou jiné"; chtěl **„skryj variantu, která je souvislým úsekem jiné
-  (od-do)"**. Rozdíl je zacházka: varianta, která uprostřed zajíždí jinam, je podmnožinou, ale
-  úsekem ne - a tu chce vidět. ⚠️ **Bez nového parametru** (jeho výslovné přání) - mění se chování
-  stávajícího `SLUCOVAT_PODMNOZINY`, tedy i jeho popisek.
 
 - **`B158` Dialog Minut odjezdů nabízí mrtvá pole** [S]. Záložka Sloupce nabízí u záhlaví font,
   velikost a řez, jenže typografie záhlaví je **úmyslně jednotná pro celý prvek**

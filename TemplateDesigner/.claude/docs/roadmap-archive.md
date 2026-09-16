@@ -1,5 +1,22 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B157` Slučují se varianty jedoucí část jiné, ne ty se zacházkou (hotovo 16. 9. 2026)
+
+Zadání TRANSDEV 16. 9., opravuje `B142`. Volba skrývala variantu, jejíž zastávky jsou **podmnožinou**
+jiné - jenže podmnožinou je i varianta, která uprostřed trasy **zajíždí jinam** a část zastávek
+vynechá. Ta se slila do delší a z vývěsky zmizelo, že tam spoj nejede.
+
+Nově platí **souvislý úsek**: mezi první a poslední zastávkou slévané varianty nesmí být žádná,
+kde delší staví a ona ne. Varianta jedoucí jen kus trasy (od-do) se slije, zacházka si sloupec nechá.
+
+Beze změny parametru - klíč `SLUCOVAT_PODMNOZINY` zůstal (jeho výslovné přání), změnilo se chování
+a popisek na „Slučovat varianty, které jedou jen část jiné".
+
+⚠️ Zákazník sám uznal, že požadavek zadal špatně: *„matematicky vzaté, ste skutočne nastavili
+skrytie variantov, ktorých zastávky sú podmnožinou zastávok iného variantu"*. Stará definice
+zůstala v kódu jako `JePodmnozinaProSrovnani`, aby šel v testu doložit rozdíl - tři z osmi testů
+měly opačné očekávání.
+
 ## `B156` Uložení šablony zahazovalo nastavení sestavy (hotovo 16. 9. 2026)
 
 Hlásil TRANSDEV jako „po aktualizaci se mi nastavení resetují". Uložení si seznam hodnot stavělo

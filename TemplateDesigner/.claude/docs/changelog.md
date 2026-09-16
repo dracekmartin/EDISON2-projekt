@@ -1,5 +1,30 @@
 ﻿# Changelog
 
+## 2026-09-16 (4) - 🔗 slučují se varianty, které jedou jen část jiné - ne ty se zacházkou
+
+`B157`, zadání TRANSDEV 16. 9. Volba `B142` skrývala variantu, jejíž zastávky jsou **podmnožinou**
+jiné. Podmnožinou je ale i varianta, která uprostřed trasy **zajíždí jinam** a část zastávek
+vynechá - ta se slila do delší a z vývěsky zmizelo, že tam spoj nejede.
+
+Nově platí **souvislý úsek**: mezi první a poslední zastávkou slévané varianty nesmí být žádná,
+kde delší staví a ona ne.
+
+```
+delší:      S  S  S  S  S  S
+jen část:   ·  ·  S  S  S  ·    → slije se (to je cíl)
+zacházka:   S  S  ·  S  S  S    → sloupec si nechá (do 16. 9. se slila)
+```
+
+⚠️ **Beze změny parametru** (jeho výslovné přání) - mění se chování stávající volby, jen se
+přejmenovala na „Slučovat varianty, které jedou jen část jiné". Klíč zůstává, takže kdo ji má
+zapnutou, nepřijde o nastavení.
+
+Zákazník sám uznal, že požadavek zadal špatně: *„matematicky vzaté, ste skutočne nastavili skrytie
+variantov, ktorých zastávky sú podmnožinou zastávok iného variantu"*.
+
+⚠️ Tři z osmi Caché testů měly opačné očekávání - to je ten rozdíl. Pravidlo podmnožiny zůstalo
+v kódu jako `JePodmnozinaProSrovnani`, aby šel v testu doložit.
+
 ## 2026-09-16 (3) - 💾 uložení šablony už nezahodí nastavení, které server zrovna nenabízí
 
 `B156`, hlásil TRANSDEV 16. 9. jako „po aktualizaci sa veľa nastavení v uloženej šablóne resetuje

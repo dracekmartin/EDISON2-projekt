@@ -709,13 +709,14 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     protože nastavitelné jsou obě.
   - **První varianta bez písmene** - nejčastější trasa zůstane bez písmene, odchylky se značí od A.
     Vypnuto = písmenkuje se už od první varianty.
-  - **Slučovat varianty tras, které jsou podmnožinou jiné** - varianta, která staví jen tam, kde
-    staví i jiná, dostane sloupec té delší. Výchozí vypnuto. Hodí se na lince, kde se spoje liší
-    jen vynechávkami a sloupců je moc.
-    ⚠️ Slití něco stojí: u slitých spojů **není ve sloupci vidět, které zastávky vynechávají**,
-    a časy jsou té delší varianty. U dvou variant se shodnými časy to nevadí, u variant s jinými
-    jízdními dobami se minuty posunou a spoj vypadá, že pokračuje dál, než reálně jede. Zapíná se
-    to na celou sestavu, ne po jednotlivých variantách - před zapnutím si vývěsku prohlédněte.
+  - **Slučovat varianty, které jedou jen část jiné** - varianta jedoucí **souvislý úsek** jiné
+    trasy (od - do) dostane sloupec té delší. Výchozí vypnuto. Hodí se na lince, kde část spojů
+    jezdí jen kus trasy a sloupců je moc.
+    ⚠️ **Varianta, která uprostřed zajíždí jinam a část zastávek vynechá, si sloupec nechá** -
+    jinak by z vývěsky zmizelo, že tam spoj nejede.
+    ⚠️ Slití něco stojí: u slitých spojů jsou **časy té delší varianty**. U dvou variant se shodnými
+    časy to nevadí, u variant s jinými jízdními dobami se minuty posunou. Zapíná se to na celou
+    sestavu, ne po jednotlivých variantách - před zapnutím si vývěsku prohlédněte.
 - **Samostatná stránka pro každý označník** (parametr „Seznam zastávek") - zastávka obsluhovaná
   z více označníků se vytiskne jako **samostatná vývěska pro každý označník**, vždy jen s odjezdy
   spojů, které z daného sloupku jedou; číslo označníku je i v titulku stránky. Hodí se, když
