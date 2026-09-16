@@ -1226,7 +1226,7 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
 |---|---|---|
 | 1 | odstranit **šedivý pruh nad nadpisy** | ✅ **umíme** - pás skupin dnů i řádek záhlaví berou barvu z `HeaderStyle` prvku (pozadí i text), nastavuje se v panelu |
 | 2 | **změnit pořadí info sloupců** (zóny, km, zastávky…) | ✅ **umíme** - sloupce jsou seznam a dialog je umí přesouvat (`ColumnListEditor`, `MoveUpCommand`) |
-| 3 | **odstranit sloupec MHD a sloupec se šipkou** | ✅ **umíme** - MHD má zaškrtávátko viditelnosti a navíc zmizí sám, když je pro celou linku prázdný; **sloupec se šipkou v prvku vůbec není** (přidat ho má naopak `L6`) |
+| 3 | **odstranit sloupec MHD a sloupec se šipkou** | ✅ **umíme** - obojí má zaškrtávátko viditelnosti; MHD navíc zmizí sám, když je pro celou linku prázdný. ⚠️ **Sloupec se šipkou od 10. 9. existuje a je z výroby ZAPNUTÝ** (`B136` - nese `př`/`od` u rozdvojené zastávky, což je jediné, čím se ty dva řádky liší). Do 10. 9. tu stálo, že v prvku vůbec není; kdo chce vzor IDZK, musí ho teď vypnout |
 | 4 | **odstranit ohraničení jednotlivých km sloupců** | ✅ **umíme** (26. 8., `L9`) - „Popisné sloupce bez vnitřních čar" slije km, zastávku a zóny do jednoho bloku a čáry mezi sloupci spojů nechá. ⚠️ Původní tvrzení „kreslí se buď všude, nebo nikde" **neplatilo**: `Grid.ShowColumnLines` prvek vůbec nečte a mřížku kreslí vždy (ověřeno vykreslením 27. 8., vedeno jako `L10`) |
 | 5 | **jiný styl čar mezi spoji** pro celou sekci | 🟡 **částečně** - `GridStyle` má zvlášť vodorovné a svislé čáry, ale **jednu barvu, tloušťku a styl pro obojí**. Vzor má jemné vodorovné a žádné svislé, což už jde; různá barva pro každý směr ne |
 | 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ✅ **umíme** (26. 8., `L9`) - „Nadpis popisných sloupců". Pás se přitom musel odvázat od skupin dnů: kreslil se jen při víc než jedné skupině, takže na lince s jedinou by nadpis nebyl |
@@ -1244,7 +1244,8 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
   mezera mezi bloky) - všechny jsou o tom, aby tabulka nevypadala jako jedna souvislá mřížka.
   ✅ **Všechny tři hotové jako `L9`** (26.-27. 8.), a potvrdilo se, že je to jeden pojem:
   **skupina sloupců** s nadpisem, bez vnitřních čar a s mezerou za sebou.
-- **Sloupec se šipkou** má `L6` v plánu přidat; tady je doklad, že se hodí i **vypnout**.
+- **Sloupec se šipkou** přibyl 10. 9. (`B136`) a je z výroby zapnutý; tady je doklad, že se hodí
+  i **vypnout** - vzor IDZK ho nemá.
 - ⚠️ **Neověřeno:** v PDF ze starého modulu jsou v buňkách písmena (`K`, `A`, `J`, `D`) tam, kde
   vzor má piktogramy (`|`, `⟨`). Může to být nevložený symbolový font v tom konkrétním PDF, nebo
   jiný obsah - **rozhodne se to až s `L4`**, netvrdit nic dopředu.
