@@ -233,7 +233,7 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 ### Dynamická tabulka
 Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
 od dat). Vlastnosti: **Upravit sloupce…**, **Zdroj dat**, **Výška řádku**, **Záhlaví**, **Výška
-záhlaví**, **Rámeček** (Žádný/Vnější/Vše/Řádky/Sloupce), **Střídání řádků**, **Tučné záhlaví**,
+záhlaví**, **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťka, styl), **Střídání řádků**, **Tučné záhlaví**,
 barvy pozadí a textu záhlaví i dat. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
 Editor sloupců (dialog „Tabulka - nastavení") má záložky **Obecné** a **Sloupce**: přidání/

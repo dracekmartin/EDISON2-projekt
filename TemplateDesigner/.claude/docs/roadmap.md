@@ -4,9 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran) - od 14. 9. má doloženou
-> poptávku, takže to přestalo být čekání na zákazníka. Jediná další věc je **výtisk k `#11373`**,
-> a ten není práce na kód.
+> **Nejblíž na řadě:** `B156` (uložená šablona přijde po aktualizaci o nastavení) - jediný bod
+> ze zpětné vazby TRANSDEV 16. 9., který se týká **všech** zákazníků, a neznáme příčinu.
+> Po něm zbytek `B157`-`B161`. Linkové JŘ mezitím čekají na kolegy.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
@@ -17,7 +17,45 @@
 
 Požadavky z hovoru s TRANSDEV 11. 9. jsou hotové (`B141`-`B143`, `B145`, `B147`-`B149`), viz
 [`roadmap-archive.md`](roadmap-archive.md). `B144` odložený v Backlogu, `B146` zrušený jako
-nezadání. **Nic otevřeného.**
+nezadání.
+
+### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
+
+Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. Ber shora - `B156` se týká
+i ostatních zákazníků, zbytek jen jeho.
+
+- **`B156` Uložená šablona přijde po aktualizaci o nastavení** [?]. Hlásí, že se mu checkboxy
+  a výběry vracejí do výchozího stavu a musí je nastavovat znovu - a že se to děje opakovaně,
+  ne jen teď. ⚠️ **Jediný bod, který se týká všech**, a příčinu neznáme. Podezření: měnili jsme
+  **výchozí hodnoty** (rovnoměrný rozestup, sloupec Varianty tras z výroby vypnutý, slučování
+  přípojů); u rozestupu migrace je (1.11 → 1.12), u ostatních se musí ověřit. Nejdřív zjistit
+  příčinu, pak teprve opravovat.
+
+- **`B157` Slučovat varianty: souvislý úsek, ne podmnožina** [S]. `B142` udělala „skryj variantu,
+  jejíž zastávky jsou podmnožinou jiné"; chtěl **„skryj variantu, která je souvislým úsekem jiné
+  (od-do)"**. Rozdíl je zacházka: varianta, která uprostřed zajíždí jinam, je podmnožinou, ale
+  úsekem ne - a tu chce vidět. ⚠️ **Bez nového parametru** (jeho výslovné přání) - mění se chování
+  stávajícího `SLUCOVAT_PODMNOZINY`, tedy i jeho popisek.
+
+- **`B158` Dialog Minut odjezdů nabízí mrtvá pole** [S]. Záložka Sloupce nabízí u záhlaví font,
+  velikost a řez, jenže typografie záhlaví je **úmyslně jednotná pro celý prvek**
+  (`WithParentHeaderTypography`), takže se nastavení neprojeví. Není to regrese, je to mrtvé pole -
+  přesně třída chyb `B24`. Skrýt je přes `CellStyleEditOptions` a v nápovědě poslat na „Velikost
+  záhlaví" v panelu prvku.
+
+- **`B159` Poznámky nemají velikost písma záhlaví** [S]. Skupina Záhlaví má text, pozadí, barvu,
+  font i řez - velikost ne. Datové buňky ji mají zvlášť („Velikost poznámek"). Vypadá to
+  na opomenutí, ne rozhodnutí.
+
+- **`B160` Rovnoměrný rozestup minut: úplně pevná mřížka** [M] (přání). Chce rozteč, kterou značka
+  vůbec neovlivní; dnes je rastr podle nejširšího odjezdu **včetně** značek. Posílá výtisk ze
+  starého návrháře. **Sám říká, že současný stav přijme**, je-li to velká práce.
+
+- **`B161` Pořadí stránek v exportu: tam vzestupně, zpět sestupně** [S] (přání). Chce
+  `T1…T5, S5…S1` místo dnešního `T1, S1, T2, S2…` (`B149`) - tarifní čísla v jednom směru rostou
+  a ve druhém klesají, takže cestující projde trasu tam a pak zpět. **Naši logiku taky přijme.**
+  ⚠️ Je to už **třetí** tvar pořadí; než se změní počtvrté, chce to vědět, který chce zbytek
+  zákazníků.
 
 ---
 
@@ -126,6 +164,11 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
   jedna sada, kdo chce, přebije ji u druhu (dvanáct plných polí by formulář neunesl).
   ⚠️ **Per-buňku ani per-hranu ne** (rozhodnutí Jan 16. 9.) - u tiskové sestavy s desítkami řádků
   je to zbytečné. Vnější obrys zůstává rámečkem prvku, ne součástí mřížky.
+  ⚠️ **Pohltí `PopisneSloupceBezVnitrnichCar`** („Popisné sloupce bez vnitřních čar", otázka Jan
+  16. 9.) - je to per-prvek náplast, která vznikla právě proto, že obecná mřížka nestačila, a dnes
+  je to jediný způsob, jak čáry odlišit uvnitř tabulky. V editoru je to **jeden z druhů čar**
+  („mezi popisnými sloupci"), ne samostatná volba jinde ve formuláři. Zároveň se tím dá to, co
+  dnes chybí: čára mezi zónou a km, ale ne mezi km podsloupci.
   Poptávka je zatím **jedna**: KOVED bod 5 ze `§15.2` chce jiný styl u spojů než u info sloupců
   a dnes se to obchází vypnutím svislých čar. Vytáhnout, až se sejde víc požadavků.
 
