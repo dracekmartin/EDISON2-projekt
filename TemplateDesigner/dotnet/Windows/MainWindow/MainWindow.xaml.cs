@@ -150,6 +150,11 @@ public partial class MainWindow : Window
             if (_vm is not null) _vm.PocetStranSazby = pocet;
         };
 
+        _previewCanvas.OriznuteBunkyChanged = popis =>
+        {
+            if (_vm is not null) _vm.OriznuteBunky = popis;
+        };
+
         // Wire SkiaSharp (must be code-behind - not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;
         skPreview.PaintSurface       += OnPreviewPaintSurface;

@@ -35,7 +35,7 @@ public class CellShrinkTests
     public void DlouhyText_SeZmensiNaSirkuMinusRezervu()
     {
         const string text = "České Budějovice,U Zelené ratolesti rozc. 1.0";
-        const float widthMm = 20f;
+        const float widthMm = 45f;
         float scale = Scale(text, widthMm);
         Assert.True(scale < 1f, $"dlouhý text se má zmenšit (scale={scale})");
 
@@ -49,8 +49,45 @@ public class CellShrinkTests
     public void ObsahZaTextem_ZmensujeVic()
     {
         const string text = "České Budějovice,U Zelené ratolesti rozc. 1.0";
-        float bezZnacek = Scale(text, widthMm: 20f);
-        float seZnackami = Scale(text, widthMm: 20f, trailingMm: 4f);
+        float bezZnacek = Scale(text, widthMm: 45f);
+        float seZnackami = Scale(text, widthMm: 45f, trailingMm: 8f);
         Assert.True(seZnackami < bezZnacek, "značky za textem mají zmenšit víc (text jim uhýbá)");
+    }
+
+    // ── `B162`: dolní mez zmenšování ─────────────────────────────────────────
+    // Bez ní se z písmene v úzkém sloupci stala tečka (variantní sloupce jízdních dob, 0330513).
+
+    [Fact]
+    public void UzkaBunka_NezmensiPodPolovinu()
+    {
+        float scale = Scale("České Budějovice,U Zelené ratolesti rozc. 1.0", widthMm: 6f);
+        Assert.Equal(CellRenderer.MinScale, scale, precision: 3);
+    }
+
+    [Fact]
+    public void DrobnePismo_NezmensiPodCtyriBody()
+    {
+        var drobny = CellDefaults.Default with { FontSize = 6f };
+        float scale = CellRenderer.ComputeShrinkScale(
+            drobny, ["České Budějovice,U Zelené ratolesti"], 6f, MmToPx,
+            fontScale: 1f, shrinkReserveMm: CellRenderer.DefaultShrinkReserveMm);
+        Assert.Equal(CellRenderer.MinFontPt, drobny.FontSize * scale, precision: 3);
+    }
+
+    [Fact]
+    public void JizZmensenyPrvek_MaMezPomernouKeSveSkale()
+    {
+        // Prvek už zmenšil písmo na 60 % (nevešel se na výšku). Polovina z toho by byla 2,7 bodu,
+        // takže rozhoduje absolutní dno - výsledek jsou 4 body, ne polovina zmenšené velikosti.
+        float scale = CellRenderer.ComputeShrinkScale(
+            Styl, ["České Budějovice,U Zelené ratolesti rozc. 1.0"], 6f, MmToPx,
+            fontScale: 0.6f, shrinkReserveMm: CellRenderer.DefaultShrinkReserveMm);
+        Assert.Equal(CellRenderer.MinFontPt, Styl.FontSize * scale, precision: 3);
+    }
+
+    [Fact]
+    public void KratkyText_MezNicNepokazi()
+    {
+        Assert.Equal(1f, Scale("Dasný", widthMm: 40f));
     }
 }

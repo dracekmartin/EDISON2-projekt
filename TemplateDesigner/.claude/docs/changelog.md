@@ -1,5 +1,29 @@
 ﻿# Changelog
 
+## 2026-09-16 (5) - 🔠 zmenšování textu v buňce má dolní mez
+
+`B162`, nález Jan 16. 9. na lince `0330513`. Text, který se nevešel do šířky buňky, se zmenšoval,
+jak bylo potřeba - v úzkém sloupci z písmene zbyla tečka. Z jedenácti variantních sloupců jízdních
+dob (6 mm) se nevykreslila právě ta nejširší záhlaví: `M`, `AA` a `DD`. Vypadalo to jako chybějící
+data, přitom server všech jedenáct písmen posílá.
+
+Nově platí táž mez jako u textového prvku: **nejvýš na polovinu nastavené velikosti a nikdy pod
+4 body**. Co se nevejde ani na mezi, se **ořízne na hraně buňky**, aby to nelezlo do sousedního
+sloupce - půlka písmene je viditelná vada, kdežto text přes sousedku vypadá jako správný obsah
+jiné buňky.
+
+Oříznutí se hlásí v oranžovém odznaku vpravo dole spolu se zmenšeným písmem (`Seznam zastávek:
+obsah 4 buněk je na zmenšení moc dlouhý, ořízl se`). Sbírá se **při kreslení**, ne dopředným
+výpočtem: šířka sloupce vzniká až v rozvržení prvku, takže dopočítávat ji podruhé by znamenalo
+riziko, že hláška tvrdí něco jiného, než co je na papíře. Důsledek - mluví o právě zobrazené
+stránce dat, ne o všech.
+
+⚠️ **Mez platí i zpětně.** Buňka, které dosud stačilo zmenšit písmo třeba na čtvrtinu (dlouhý
+název zastávky v úzkém sloupci), se nově zmenší jen na polovinu a zbytek se ořízne. Zlaté odtisky
+se nezměnily, takže žádná hlídaná sestava tak hluboko nezmenšovala.
+
+Zdvojování písmen variant po vyčerpání sady (`AA`, `DD`) zůstává - je v pořádku a neřešilo se.
+
 ## 2026-09-16 (4) - 🔗 slučují se varianty, které jedou jen část jiné - ne ty se zacházkou
 
 `B157`, zadání TRANSDEV 16. 9. Volba `B142` skrývala variantu, jejíž zastávky jsou **podmnožinou**

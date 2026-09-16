@@ -183,13 +183,13 @@ public class TextElement : TemplateElement
     /// <remarks>
     /// 4 pt je dolní hranice, kterou dovolí zadat pole Velikost, takže mez nemůže vyrobit písmo,
     /// jaké by uživatel nesměl nastavit ručně. Polovina drží autorův záměr: nadpis 40 pt se
-    /// nezmenší pod 20 pt, drobný text 8 pt pod 4 pt. (Rozhodnutí Jan 3. 9. - tabulky a prvky
-    /// jízdních řádů mez nemají, u textu se ale schválně nepůjde do nečitelna.)
+    /// nezmenší pod 20 pt, drobný text 8 pt pod 4 pt. (Rozhodnutí Jan 3. 9.; od 16. 9. platí táž
+    /// mez i pro buňky tabulek, proto je hodnota jen jedna - viz <see cref="Rendering.CellRenderer.MinScale"/>.)
     /// </remarks>
-    public const float MinScale = 0.5f;
+    public const float MinScale = Rendering.CellRenderer.MinScale;
 
     /// <summary>Absolutní dno v bodech - shodné s <c>Min</c> pole Velikost.</summary>
-    public const float MinFontPt = 4f;
+    public const float MinFontPt = Rendering.CellRenderer.MinFontPt;
 
     /// <summary>
     /// O kolik se musí písmo zmenšit, aby se text vešel do prvku (1 = vejde se). Bere v potaz

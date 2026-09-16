@@ -983,7 +983,7 @@
                             Background="{DynamicResource EDTheme.Semantic.Warning}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding HasContentShrinkWarning, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Obsah se nevešel do prvku, proto se písmo zmenšilo - vytiskne se menší, než je nastavené. Buď prvek zvětšete, nebo mu v nastavení zmenšete velikost písma.">
+                            ToolTip="Obsah se nevešel do prvku, proto se písmo zmenšilo - vytiskne se menší, než je nastavené. Buď prvek zvětšete, nebo mu v nastavení zmenšete velikost písma. Zmenšování má dolní mez (polovina nastavené velikosti, nejméně 4 body); co se nevejde ani na ní, se ořízne na hraně buňky - tam pomůže rozšířit sloupec.">
                         <!-- Black záměrně mimo theme: viz badge vlastních sloupců výše. -->
                         <TextBlock Text="{Binding ContentShrinkWarning}"
                                    Foreground="Black" FontWeight="SemiBold"

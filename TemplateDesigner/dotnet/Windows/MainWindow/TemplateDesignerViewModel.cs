@@ -167,7 +167,7 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 ColumnDataWarning = null;   // badge patří k zahozeným datům
-                ContentShrinkWarning = null;
+                ZmensenePismo = null;
                 _realPreviewIndex = 0;
                 Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
@@ -292,7 +292,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
                 ColumnDataWarning = null;
-                ContentShrinkWarning = null;
+                ZmensenePismo = null;
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
@@ -302,7 +302,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 ColumnDataWarning = DepartureColumnWarnings.Summarize(newData);
                 // Malý kód a zmenšené písmo jsou táž třída vady („vytiskne se to jinak, než jak to
                 // vypadá") a sdílí jeden odznak - čtvrtý pruh ve stavovém řádku už by se nevešel.
-                ContentShrinkWarning = SpojHlasky(
+                ZmensenePismo = SpojHlasky(
                     ContentShrinkWarnings.Summarize(State.CurrentTemplate, newData),
                     BarcodeSizeWarnings.Summarize(State.CurrentTemplate, newData));
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
@@ -699,13 +699,32 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
 
     private string? _contentShrinkWarning;
-    /// <summary>Prvky, jimž se zmenšilo písmo, aby se obsah vešel. Null = nic → odznak je skrytý.
+    /// <summary>Prvky, jimž se zmenšilo písmo, aby se obsah vešel, plus buňky, kde ani mez
+    /// zmenšování nestačila a obsah se ořízl. Null = nic → odznak je skrytý.
     /// Táž třída vady jako <see cref="FontWarning"/>: vytiskne se něco jiného, než co je nastavené,
     /// a bez hlášky to uživatel pozná až z papíru.</summary>
     public string? ContentShrinkWarning
     {
         get => _contentShrinkWarning;
         private set { if (Set(ref _contentShrinkWarning, value)) OnPropertyChanged(nameof(HasContentShrinkWarning)); }
+    }
+
+    private string? _zmensenePismo;
+    /// <summary>Půlka odznaku, která se počítá při načtení dat (přes všechny stránky).</summary>
+    private string? ZmensenePismo
+    {
+        get => _zmensenePismo;
+        set { _zmensenePismo = value; ContentShrinkWarning = SpojHlasky(_zmensenePismo, _oriznuteBunky); }
+    }
+
+    private string? _oriznuteBunky;
+    /// <summary>Půlka odznaku, která se pozná až při kreslení - buňka, do které se obsah nevešel
+    /// ani po zmenšení na mez. Plní ji <c>PreviewCanvas.OriznuteBunkyChanged</c>, proto mluví
+    /// o právě zobrazené stránce dat, ne o všech.</summary>
+    public string? OriznuteBunky
+    {
+        get => _oriznuteBunky;
+        set { if (_oriznuteBunky == value) return; _oriznuteBunky = value; ContentShrinkWarning = SpojHlasky(_zmensenePismo, _oriznuteBunky); }
     }
 
     public bool HasContentShrinkWarning => !string.IsNullOrEmpty(_contentShrinkWarning);

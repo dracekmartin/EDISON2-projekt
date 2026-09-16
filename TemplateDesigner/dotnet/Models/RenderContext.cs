@@ -29,6 +29,9 @@ public class RenderContext
     /// Nenulová jen tam, kde řez padl doprostřed nedělitelného dílu.</summary>
     public float OpakovanaHlavickaMm { get; init; }
 
+    /// <summary>Sběrač oříznutých buněk pro hlášku ve stavovém řádku. Null = nesbírá se (tisk, testy).</summary>
+    public Rendering.ClippedCells? ClippedCells { get; init; }
+
     public RenderContext(SKCanvas canvas, float mmToPx, DataContext? data = null)
     {
         Canvas = canvas;
@@ -54,5 +57,5 @@ public class RenderContext
 
     /// <summary>Vrátí nový kontext s posunutým originem sekce (px).</summary>
     public RenderContext WithSectionOrigin(float xPx, float yPx) =>
-        new(Canvas, MmToPx, Data) { SectionOriginX = xPx, SectionOriginY = yPx };
+        new(Canvas, MmToPx, Data) { SectionOriginX = xPx, SectionOriginY = yPx, ClippedCells = ClippedCells };
 }
