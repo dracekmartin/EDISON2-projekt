@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 
 namespace TemplateDesigner.Serialization;
 
@@ -22,7 +22,7 @@ namespace TemplateDesigner.Serialization;
 public class TemplateMigrator
 {
     /// <summary>Aktuální nejvyšší podporovaná verze Template JSON.</summary>
-    public const string CurrentVersion = "1.12.0";
+    public const string CurrentVersion = "1.13.0";
 
     /// <summary>
     /// Registrované migrace, sortovány podle FromVersion vzestupně.
@@ -48,6 +48,7 @@ public class TemplateMigrator
             new MigrationKonecnaZastavka(),          // 1.9.0 → 1.10.0
             new MigrationZahlaviPozadi(),            // 1.10.0 → 1.11.0
             new MigrationRozestupOdjezdu(),          // 1.11.0 → 1.12.0
+            new MigrationZahlaviOdjezduPerSloupec(), // 1.12.0 → 1.13.0
         ];
     }
 

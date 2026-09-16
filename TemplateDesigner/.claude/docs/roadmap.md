@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B158` ze zpětné vazby TRANSDEV 16. 9. - malé a je to vada.
-> `B160` a `B161` jsou přání, u kterých zákazník sám píše, že současný stav přijme.
+> **Nejblíž na řadě:** ze zpětné vazby TRANSDEV 16. 9. zbývají `B160` a `B161` - obojí je přání,
+> u kterého zákazník sám píše, že současný stav přijme.
 > Linkové JŘ mezitím čekají na kolegy.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -21,15 +21,10 @@ nezadání.
 
 ### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
 
-Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. `B156` (mizející nastavení) a `B157` (slučování variant) jsou
-✅ **opravené 16. 9.** - viz changelog a [`roadmap-archive.md`](roadmap-archive.md); týkala se všech
-zákazníků, zbytek je jen jeho.
-
-- **`B158` Dialog Minut odjezdů nabízí mrtvá pole** [S]. Záložka Sloupce nabízí u záhlaví font,
-  velikost a řez, jenže typografie záhlaví je **úmyslně jednotná pro celý prvek**
-  (`WithParentHeaderTypography`), takže se nastavení neprojeví. Není to regrese, je to mrtvé pole -
-  přesně třída chyb `B24`. Skrýt je přes `CellStyleEditOptions` a v nápovědě poslat na „Velikost
-  záhlaví" v panelu prvku.
+Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. Čtyři z nich jsou **opravené 16. 9.**
+(`B156` mizející nastavení, `B157` slučování variant, `B158` záhlaví odjezdů po sloupcích,
+`B159` velikost záhlaví u poznámek) - viz changelog a [`roadmap-archive.md`](roadmap-archive.md).
+První dva se týkaly všech zákazníků, zbytek je jen jeho.
 
 - **`B160` Rovnoměrný rozestup minut: úplně pevná mřížka** [M] (přání). Chce rozteč, kterou značka
   vůbec neovlivní; dnes je rastr podle nejširšího odjezdu **včetně** značek. Posílá výtisk ze

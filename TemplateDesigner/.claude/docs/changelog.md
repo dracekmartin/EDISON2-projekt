@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-09-16 (7) - 🔡 záhlaví Minut odjezdů jde nastavit po sloupcích
+
+`B158`, hlásil TRANSDEV 16. 9. V dialogu sloupců šlo u záhlaví nastavit font, velikost a řez, ale
+nic se nestalo - kreslení si typografii záhlaví bralo vždy z prvku. Mrtvá pole, přesně třída chyb
+`B24`.
+
+Rozhodnutí Jan 16. 9.: **zprovoznit kaskádu**, ne pole schovat. Prvek se tím chová jako ostatní
+tabulkové a jedna skupina dnů může mít jiné písmo než druhá. Pruh záhlaví je jeden pro celou
+mřížku, takže jeho výšku určuje největší písmo napříč sloupci - týž vzor jako u seznamu zastávek,
+aby se výška nerozešla s textem. Šířku a zalomení nadpisu měří každý sloupec svým fontem.
+
+Proč to 14. 6. vypnuté bylo: **import z PDF zapékal `Bold = true` do každé skupiny dnů** a ta
+hodnota přebíjela ovladač prvku, takže v záhlaví nešlo vypnout tučné. Řešilo se to tehdy v renderu.
+Teď je opravený zdroj - import zapéká jen barvu pozadí - a migrace `1.13.0` zapečené hodnoty
+z existujících šablon smazala. Od června se ignorovaly, takže se nic neztrácí; barvy, zarovnání
+a odsazení zůstávají.
+
 ## 2026-09-16 (6) - 🔤 Poznámky mají velikost písma záhlaví
 
 `B159`, hlásil TRANSDEV 16. 9. Skupina Záhlaví u prvku Poznámky měla text, pozadí, barvu, font

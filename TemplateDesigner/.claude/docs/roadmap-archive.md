@@ -1,5 +1,19 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B158` Záhlaví Minut odjezdů jde nastavit po sloupcích (hotovo 16. 9. 2026)
+
+Hlásil TRANSDEV 16. 9. jako mrtvá pole: dialog sloupců nabízel u záhlaví font, velikost a řez,
+ale kreslení si typografii bralo vždy z prvku.
+
+Rozhodnutí Jan 16. 9. bylo kaskádu **zprovoznit**, ne pole schovat - prvek se tím chová jako
+ostatní tabulkové a někdo může chtít jednu skupinu dnů jinak. Výška pruhu záhlaví se počítá
+z největšího písma napříč sloupci (vzor `MaxResolvedHeaderFontPt` ze seznamu zastávek), šířku
+a zalomení měří každý sloupec svým fontem.
+
+Vypnuté to bylo od 14. 6. (`36fb16e8`) kvůli importu z PDF, který zapékal `Bold = true` do každé
+skupiny dnů a přebíjel tím ovladač prvku. Opraven zdroj (import zapéká jen barvu) a migrace
+`1.13.0` zapečené hodnoty smazala.
+
 ## `B159` Poznámky mají velikost písma záhlaví (hotovo 16. 9. 2026)
 
 Hlásil TRANSDEV 16. 9. Skupina Záhlaví u prvku Poznámky měla text, pozadí, barvu, font i řez -
