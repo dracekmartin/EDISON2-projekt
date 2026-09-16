@@ -196,13 +196,23 @@ Pravidla obsahu (ZÁVAZNÁ):
         sb.AppendLine();
         sb.AppendLine(GeneralIntro);
         sb.AppendLine();
-        sb.AppendLine(BuildCurrentContext(agendaName, selectedElementType, sectionCount));
+        sb.AppendLine(BuildCurrentContext(agendaName, selectedElementType, sectionCount, elementKind));
         sb.AppendLine();
         sb.AppendLine(BuildElementCatalog(elementKind));
         return sb.ToString();
     }
 
-    private static string BuildCurrentContext(string? agendaName, string? selectedElementType, int sectionCount)
+    /// <summary>
+    /// Aktuální kontext + <b>pravidlo přednosti prvků</b>.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Bez pravidla přednosti dostane model specializovaný prvek a obecné tabulky jako
+    /// rovnocenné, takže na dotaz „jak zruším čáry mezi km sloupci" **začne otázkou, o kterou
+    /// tabulku jde** - přestože km sloupce má v linkové agendě jen tabulka linky (nález Jan 16. 9.).
+    /// Uživatel se ptá na to, co má před sebou, ne na obecnou tabulku, kterou v šabloně nemá.
+    /// </remarks>
+    private static string BuildCurrentContext(string? agendaName, string? selectedElementType,
+        int sectionCount, string? elementKind)
     {
         var sb = new StringBuilder();
         sb.AppendLine("# Aktuální kontext");
@@ -211,6 +221,19 @@ Pravidla obsahu (ZÁVAZNÁ):
         sb.AppendLine(selectedElementType is null
             ? "- Vybraný element: žádný"
             : $"- Vybraný element: {FriendlyName(selectedElementType)}");
+
+        var specialni = AgendaCapabilities.ScheduleElementTypes(elementKind);
+        if (specialni.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Který prvek má přednost");
+            sb.AppendLine($"Tahle agenda má specializované prvky: {string.Join(", ", specialni.Select(FriendlyName))}.");
+            sb.AppendLine("Dotaz o obsahu jízdního řádu (zastávky, spoje, časy, km, zóny, tarifní čísla,");
+            sb.AppendLine("skupiny dnů, poznámky, přípoje) **odpovídej podle nich** - uživatel se ptá na to,");
+            sb.AppendLine("co má v šabloně před sebou. Obecnou dynamickou nebo pevnou tabulku zmiň jen tehdy,");
+            sb.AppendLine("když se na ni ptá výslovně, nebo když specializovaný prvek tu vlastnost opravdu nemá.");
+            sb.AppendLine("**Nenabízej výběr mezi nimi** a neptej se zpět, o kterou tabulku jde.");
+        }
         return sb.ToString();
     }
 

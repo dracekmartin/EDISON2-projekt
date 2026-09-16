@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-09-16 (2) - 🤖 Pomocník se neptá, o kterou tabulku jde
+
+Nález Jan 16. 9. na živé odpovědi: na dotaz „jak zruším čáry mezi km sloupci" začal průvodce
+otázkou **„U jaké tabulky - Tabulka linky, nebo dynamická/pevná?"**, přestože km sloupce má
+v linkové agendě jen tabulka linky. Zbytek odpovědi byl správný.
+
+Příčina: prompt posílal specializovaný prvek a obecné tabulky jako **rovnocenné**. Model nemá jak
+poznat, že uživatel se ptá na to, co má v šabloně před sebou.
+
+Do kontextu proto přibyla sekce **„Který prvek má přednost"** - vypíše se jen u jízdněřádové
+agendy a říká, že dotaz o obsahu jízdního řádu (zastávky, spoje, km, zóny, skupiny dnů, poznámky)
+se má zodpovědět podle jejích prvků; obecné tabulky jen na výslovný dotaz nebo když ta vlastnost
+u specializovaného prvku opravdu není. A hlavně: **nenabízet výběr a neptat se zpět**.
+
+⚠️ **U agendy bez prvků jízdního řádu** (faktury, obecná) se sekce nevypíše - jinak by model hledal
+prvky, které v paletě nejsou. Hlídá to test.
+
 ## 2026-09-16 (1) - 🤖 Pomocník umí poradit i s tabulkou linky
 
 Průvodce dostával o tabulce linky **jedinou větu** („sloupcová tabulka celé linky, sloupce ve vlastním

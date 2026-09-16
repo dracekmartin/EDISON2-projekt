@@ -69,4 +69,38 @@ public class AssistantKnowledgeTests
     {
         Assert.Contains(tvar, CapabilityCatalog.BuildElementCatalog("LINE"));
     }
+
+    // ── Přednost prvků ──────────────────────────────────────────────────────
+
+    /// <summary>
+    /// V jízdněřádové agendě musí prompt říct, že přednost mají její specializované prvky.
+    /// </summary>
+    /// <remarks>
+    /// Bez toho dostane model tabulku linky a obecné tabulky jako rovnocenné a na dotaz
+    /// „jak zruším čáry mezi km sloupci" **začne otázkou, o kterou tabulku jde** - přestože
+    /// km sloupce má v linkové agendě jen tabulka linky (nález Jan 16. 9. na živé odpovědi).
+    /// </remarks>
+    [Theory]
+    [InlineData("LINE", "Tabulka linky")]
+    [InlineData("STOP", "Seznam zastávek")]
+    public void PromptRikaKteryPrvekMaPrednost(string elementKind, string ocekavanyPrvek)
+    {
+        var prompt = CapabilityCatalog.BuildSystemPrompt("Linkový JŘ (AD)", null, 2, elementKind);
+
+        Assert.Contains("Který prvek má přednost", prompt);
+        Assert.Contains(ocekavanyPrvek, prompt);
+        Assert.Contains("Nenabízej výběr mezi nimi", prompt);
+    }
+
+    /// <summary>
+    /// U agendy bez specializovaných prvků (faktury, obecná) pravidlo nedává smysl a nesmí tam být -
+    /// jinak by model hledal prvky jízdního řádu, které v paletě nejsou.
+    /// </summary>
+    [Fact]
+    public void ObecnaAgendaPravidloPrednostiNema()
+    {
+        var prompt = CapabilityCatalog.BuildSystemPrompt("Faktury", null, 1, "");
+
+        Assert.DoesNotContain("Který prvek má přednost", prompt);
+    }
 }
