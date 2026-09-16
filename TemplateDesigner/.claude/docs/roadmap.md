@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B158` a `B159` ze zpětné vazby TRANSDEV 16. 9. - obojí je malé a vada.
+> **Nejblíž na řadě:** `B158` ze zpětné vazby TRANSDEV 16. 9. - malé a je to vada.
 > `B160` a `B161` jsou přání, u kterých zákazník sám píše, že současný stav přijme.
 > Linkové JŘ mezitím čekají na kolegy.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
@@ -30,10 +30,6 @@ zákazníků, zbytek je jen jeho.
   (`WithParentHeaderTypography`), takže se nastavení neprojeví. Není to regrese, je to mrtvé pole -
   přesně třída chyb `B24`. Skrýt je přes `CellStyleEditOptions` a v nápovědě poslat na „Velikost
   záhlaví" v panelu prvku.
-
-- **`B159` Poznámky nemají velikost písma záhlaví** [S]. Skupina Záhlaví má text, pozadí, barvu,
-  font i řez - velikost ne. Datové buňky ji mají zvlášť („Velikost poznámek"). Vypadá to
-  na opomenutí, ne rozhodnutí.
 
 - **`B160` Rovnoměrný rozestup minut: úplně pevná mřížka** [M] (přání). Chce rozteč, kterou značka
   vůbec neovlivní; dnes je rastr podle nejširšího odjezdu **včetně** značek. Posílá výtisk ze

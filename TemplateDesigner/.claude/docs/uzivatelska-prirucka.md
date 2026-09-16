@@ -780,6 +780,8 @@ Vysvětlivky pod odjezdy.
   zabírat výšku, takže poznámky začínají u horní hrany prvku. Prázdný text záhlaví pruh nezruší -
   pás bez textu může být záměr
 - **Text záhlaví** - co je v pruhu napsané (výchozí „Poznámky")
+- **Velikost** (skupina Záhlaví) - velikost písma v pruhu záhlaví; prázdné = 9 bodů. Výška pruhu
+  se počítá z ní, takže větší písmo pruh zvýší. Poznámky pod ním mají velikost vlastní
 - **Oddělovač** - text mezi značkou a popisem (výchozí „ - ")
 - **Velikost poznámek** - velikost písma. Nevejdou-li se poznámky do prvku, písmo se zmenší
   a aplikace to oznámí ve stavovém řádku

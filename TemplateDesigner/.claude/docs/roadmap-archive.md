@@ -1,5 +1,17 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B159` Poznámky mají velikost písma záhlaví (hotovo 16. 9. 2026)
+
+Hlásil TRANSDEV 16. 9. Skupina Záhlaví u prvku Poznámky měla text, pozadí, barvu, font i řez -
+velikost ne, ačkoli ji datové buňky mají zvlášť („Velikost poznámek" v Rozložení).
+
+Opomenutí, ne rozhodnutí: kreslení i výpočet výšky pruhu záhlaví hodnotu četly odjakživa, jen
+nebylo kde ji změnit. Prázdné pole = 9 bodů, tedy dosavadní stav - žádné šabloně se nic nemění.
+
+Popisovač je sdílený (`GetHeaderFontSizeDescriptor` v `ScheduleElementBase`), aby popisek a rozsah
+seděly se zastávkami a linkovou tabulkou; Poznámky z něj berou jen zónu záhlaví, protože datovou
+velikost mají jinde.
+
 ## `B157` Slučují se varianty jedoucí část jiné, ne ty se zacházkou (hotovo 16. 9. 2026)
 
 Zadání TRANSDEV 16. 9., opravuje `B142`. Volba skrývala variantu, jejíž zastávky jsou **podmnožinou**

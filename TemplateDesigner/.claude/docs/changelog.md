@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-09-16 (6) - 🔤 Poznámky mají velikost písma záhlaví
+
+`B159`, hlásil TRANSDEV 16. 9. Skupina Záhlaví u prvku Poznámky měla text, pozadí, barvu, font
+i řez - velikost ne. Datové buňky ji přitom mají zvlášť jako „Velikost poznámek".
+
+Bylo to opomenutí, ne rozhodnutí: kreslení i výpočet výšky pruhu záhlaví hodnotu četly odjakživa,
+jen nebylo kde ji změnit. Prázdné pole = 9 bodů, což platilo i dřív, takže se žádné šabloně nic
+nemění.
+
+Velikost se zadává stejně jako u ostatních prvků (popisek **Velikost**, 3 až 24 bodů) - popisovač
+je sdílený se zastávkami a linkovou tabulkou, aby se hodnoty nerozešly.
+
 ## 2026-09-16 (5) - 🔠 zmenšování textu v buňce má dolní mez
 
 `B162`, nález Jan 16. 9. na lince `0330513`. Text, který se nevešel do šířky buňky, se zmenšoval,

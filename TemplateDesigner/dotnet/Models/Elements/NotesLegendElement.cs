@@ -516,6 +516,9 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor   { Label = "Záhlaví",               Group = "Obecné",       Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
         new StringPropertyDescriptor { FromImage = true, Label = "Text záhlaví",         Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
+        // Datová zóna má velikost jako „Velikost poznámek" v Rozložení, záhlaví ji do 16. 9. nemělo
+        // vůbec - přitom se kreslí i počítá výška záhlaví z ní (`B159`, hlásil TRANSDEV).
+        GetHeaderFontSizeDescriptor(),
 
         new StringPropertyDescriptor { Label = "Font",                Group = "Datové buňky", Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
         new StringPropertyDescriptor { FromImage = true, Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
