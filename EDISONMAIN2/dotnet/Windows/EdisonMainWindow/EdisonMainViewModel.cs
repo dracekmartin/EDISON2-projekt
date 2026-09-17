@@ -1105,8 +1105,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void PersistShortcuts() => _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
 
         // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModuleAsync (usage + overlay); ostatní
-        // druhy zástupců (tiskové sestavy, pohledy DS) shell zatím spustit neumí; kanál
-        // spuštění jde přes EDISONMAIN2API.
+        // druhy zástupců (tiskové sestavy, pohledy DS) pouští hostitelská agenda přes EDISONMAIN2API.
         private void LaunchShortcut(DesktopShortcut shortcut)
         {
             if (shortcut.Module is { } module) { OpenModuleCommand.Execute(module); return; }

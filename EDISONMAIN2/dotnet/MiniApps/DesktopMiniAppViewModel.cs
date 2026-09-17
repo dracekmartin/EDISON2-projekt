@@ -9,8 +9,8 @@ namespace EDISONMAIN2.MiniApps;
 
 /// <summary>
 /// Miniaplikace „Plocha" - osobní launcher zástupců jako dlaždice. Data bere ze sdílené
-/// <see cref="ModuleShortcutsService"/>, kam ★ ve stromu přidává moduly hlavní nabídky a moduly
-/// samy (do budoucna) tiskové sestavy a pohledy DS. Spuštění deleguje na službu
+/// <see cref="ModuleShortcutsService"/>, kam ★ ve stromu přidává moduly hlavní nabídky a agendy
+/// samy tiskové sestavy a pohledy DS. Spuštění deleguje na službu
 /// (<see cref="ModuleShortcutsService.RequestLaunch"/>) → obsluhuje shell (usage + overlay),
 /// miniaplikace launch logiku neduplikuje. Drag&amp;drop přidání/reorder viz View.
 /// </summary>
