@@ -1359,19 +1359,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PopupDisplayer.Info("Licence byla aktualizována.");
         }
 
-        // ShowWindowsAsDialogs nikdo nečte - flag se jen persistuje do LocalPrefs.
-        public bool ShowWindowsAsDialogs
-        {
-            get => _prefs.ShowWindowsAsDialogs;
-            set
-            {
-                if (_prefs.ShowWindowsAsDialogs == value) return;
-                _prefs.ShowWindowsAsDialogs = value;
-                _prefs.Save();
-                OnPropertyChanged();
-            }
-        }
-
         // Tmavý režim - sdílená preference (%APPDATA%\m-line\common\theme.json) přes ThemeService;
         // přepne živě + propaguje do ostatních m-line procesů (TemplateDesigner) přes watcher.
         public bool IsDarkMode

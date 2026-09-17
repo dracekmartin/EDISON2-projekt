@@ -506,7 +506,7 @@ jednou, ne po každém úkolu.
 
 ### R13b 🔸 - `ShowWindowsAsDialogs` toggle bez efektu
 
-- [ ] **Stav:** Open
+- [x] **Stav:** Done (2026-09-17) - toggle odstraněn z menu, VM i LocalPrefs.
 - **P3 · S** · Závisí na: - · Blokuje: -
 - **Rozhodnout:** Pref se persistuje a má UI toggle v menu, ale nikdo ho nečte. Buď
   doimplementovat (`WindowNavigator.Show` → `ShowDialog` podle prefu), nebo odstranit
