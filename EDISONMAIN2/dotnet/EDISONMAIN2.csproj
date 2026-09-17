@@ -13,6 +13,8 @@
     <!-- Úzký gate místo TreatWarningsAsErrors: WPF si generuje _wpftmp projekty zvlášť
          a umí v generovaném kódu překvapit. Rozšiřuj po kategoriích, ne naráz. -->
     <WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>
+    <!-- Připnutá aplikace na liště a okno bez Icon berou ikonu z exe, ne z okna - bez ní výchozí ikona .NET. -->
+    <ApplicationIcon>..\..\EDControls\dotnet\EDIcons\cube_molecule.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
