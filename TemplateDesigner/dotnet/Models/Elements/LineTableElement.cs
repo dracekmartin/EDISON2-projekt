@@ -285,6 +285,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public bool PopisneSloupceBezVnitrnichCar { get; set; }
 
     /// <summary>
+    /// U zastávky rozdvojené na příjezd a odjezd se km, tarifní číslo, název a MHD vypíšou
+    /// <b>jednou přes oba řádky</b> a v časových sloupcích je mezi nimi vodorovná úsečka.
+    /// Vypnuté = popisy se na obou řádcích zopakují (tvar windowsového tisku, dosavadní chování).
+    /// </summary>
+    /// <remarks>
+    /// Tvar postskriptového tisku. Ten má mezi příjezdem a odjezdem ještě **třetí, prázdný řádek**
+    /// a popisy sází do něj (`JRapiLinPrtPS1.mac:51` přidává dva řádky, `JRapiLinPrtPS6.mac:138-147`
+    /// plní prázdno / hodnota / prázdno); u nás je úsečka čára, ne znak, takže leží na hranici
+    /// dvou řádků a zastávka nezabere o třetinu víc místa (rozhodnutí Jan 15. 9.).
+    /// <para>⚠️ **Zóna se slučováním neřídí** - opakuje se na obou řádcích a úsečku dostane taky.
+    /// Legacy ji sází jako sloupec spoje, ne jako popis (`JRapiLinPrtPS6.mac:74`).</para>
+    /// </remarks>
+    public bool SloucitPopisyRozdvojene { get; set; }
+
+    /// <summary>
     /// Mezera mezi <b>skupinami sloupců</b> v mm - za popisným blokem a mezi skupinami dnů.
     /// 0 = bez mezery, tedy dosavadní souvislá mřížka.
     /// </summary>
@@ -1270,6 +1285,60 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         s.Atributy.Contains("P") || s.Atributy.Contains("J");
 
     /// <summary>
+    /// Slučuje se tenhle popisný sloupec u rozdvojené zastávky svisle přes oba řádky?
+    /// </summary>
+    /// <remarks>
+    /// Zóna a šipka ne: zónu legacy sází jako sloupec spoje, tedy na obou řádcích
+    /// (`JRapiLinPrtPS6.mac:74`), a šipka nese `př` a `od`, což je jediné, čím se ty dva řádky
+    /// od sebe liší.
+    /// </remarks>
+    private static bool PopisSeSlucuje(string key) =>
+        key is ColumnKeys.Km or ColumnKeys.Tc or ColumnKeys.StopName or ColumnKeys.Mhd;
+
+    /// <summary>Kde v rozdvojené dvojici leží řádek zastávky.</summary>
+    internal enum RozdvojenyRadek
+    {
+        /// <summary>Samostatná zastávka - jeden řádek.</summary>
+        Zadny,
+
+        /// <summary>Horní řádek dvojice (příjezd).</summary>
+        Horni,
+
+        /// <summary>Dolní řádek dvojice (odjezd).</summary>
+        Dolni,
+    }
+
+    /// <summary>
+    /// Pro každou zastávku určí, jestli je horním nebo dolním řádkem rozdvojené dvojice. Indexy
+    /// odpovídají vstupnímu seznamu, aby se výsledek dal číst přímo ve smyčce kreslení.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>Dvojice se poznává podle sousedství a shodného pořadí zastávky</b>, ne podle atributů:
+    /// vložený příjezdový řádek staví Caché a mohla by přestat, aniž by atribut zmizel. Zastávka,
+    /// kterou <paramref name="viditelna"/> odmítne, dvojici <b>přeruší</b> - její druhý řádek pak
+    /// stojí sám a musí si popisy vypsat, jinak by zůstal prázdný.
+    /// </remarks>
+    internal static RozdvojenyRadek[] RozdvojeneRadky(
+        IReadOnlyList<LineStopData> stops, Func<LineStopData, bool>? viditelna = null)
+    {
+        var vysledek = new RozdvojenyRadek[stops.Count];
+        int predchozi = -1;
+        for (int i = 0; i < stops.Count; i++)
+        {
+            if (viditelna is not null && !viditelna(stops[i])) continue;
+            if (predchozi >= 0
+                && stops[predchozi].Poradi == stops[i].Poradi
+                && stops[predchozi].JePrijezdovy && !stops[i].JePrijezdovy)
+            {
+                vysledek[predchozi] = RozdvojenyRadek.Horni;
+                vysledek[i] = RozdvojenyRadek.Dolni;
+            }
+            predchozi = i;
+        }
+        return vysledek;
+    }
+
+    /// <summary>
     /// Nadpisy popisnych sloupcu - rozpadle zony dostanou <b>jeden spolecny</b> pres vsechny sve dily.
     /// </summary>
     /// <remarks>
@@ -2005,9 +2074,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // Přípojný řádek má vlastní styl (#8360) - jinak vypadá stejně jako čas spoje.
         // Výška chodí zvenčí už přeškálovaná, ať se nepočítá dvakrát jinak než v `Render`.
         var pripojStyle = ResolvePripojStyle();
+        var rozdvojeni = SloucitPopisyRozdvojene
+            ? RozdvojeneRadky(stops, s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow))
+            : null;
         for (int si = 0; si < stops.Count; si++)
         {
             var stop = stops[si];
+            var rozdvojenyRadek = rozdvojeni?[si] ?? RozdvojenyRadek.Zadny;
 
             // Podmíněné skrytí řádku zastávky (i s jejími přípojnými řádky). Iterujeme přes plný
             // index si → zarovnání časů spojů (Casy[si]) zůstane zachováno; jen tuto zastávku nekreslíme.
@@ -2043,12 +2116,24 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
                 if (ci == nameIndex && TucneZastavkyDleTrasy && MaTucneZTrasy(stop))
                     bunkaStyl = bunkaStyl with { Bold = true };
+                // Sloučený popis rozdvojené zastávky: horní řádek ho nemá a dolní ho vypíše přes
+                // oba. Nese ho dolní, protože buňka smí přesahovat jen nahoru - a jen tak se jistě
+                // nakreslí nad už hotový horní řádek, ne pod něj.
+                bool sloucit = rozdvojenyRadek is not RozdvojenyRadek.Zadny
+                            && PopisSeSlucuje(fixedCols[ci].Key);
+                if (sloucit && rozdvojenyRadek is RozdvojenyRadek.Horni)
+                {
+                    specs.Add(new(fixedCols[ci].Width, "", bunkaStyl,
+                        SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
+                    continue;
+                }
                 string hodnota = fixedCols[ci].Value(stop);
                 if (ci == nameIndex)
                     hodnota = SNazvemATeckami(hodnota, fixedCols[ci].Width, bunkaStyl,
                         znakZastavkyPro, symbolFace, ctx);
                 specs.Add(new(fixedCols[ci].Width, hodnota, bunkaStyl,
-                    SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
+                    SuppressLeadingLine: BezCaryVlevo(ci, mrizka),
+                    PresahNahoruMm: sloucit ? rowH : 0f));
             }
             PridejSpoje(specs, mrizka, trips.Count, tripCellStyle, ti =>
             {
@@ -2074,7 +2159,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 Background = ColorHex.ParseOrNull(rowHl),
                 VerticalLinePaint = sloupcovaCara,
                 Decorate = (znackyRadku.Count == 0) && (znackyVBunceZrc.Count == 0)
-                        && (znakZastavky.Count == 0) ? null : rowY =>
+                        && (znakZastavky.Count == 0) && rozdvojenyRadek is RozdvojenyRadek.Zadny
+                        ? null : rowY =>
                 {
                     if (znackyRadku.Count > 0)
                         DrawBunkySeZnackou(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
@@ -2082,9 +2168,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     if (znackyVBunceZrc.Count > 0)
                         DrawBunkySeZnackou(ctx, rowY, rowH, ti => X + mrizka.XZrcadlenehoMm(ti),
                             mrizka.SirkaZrcadlenehoMm, znackyVBunceZrc, tripCellStyle, symbolFace, scale);
+                    // Značka za názvem patří ke sloučené buňce, takže se musí vycentrovat přes oba
+                    // řádky stejně jako název - jinak by stála u odjezdu a název byl nad ní.
                     if (znakZastavky.Count > 0 && nameIndex >= 0)
-                        DrawZnakZastavky(ctx, rowY, rowH, X, mrizka, nameIndex, znakZastavky,
+                        DrawZnakZastavky(ctx,
+                            rozdvojenyRadek is RozdvojenyRadek.Dolni ? rowY - rowH : rowY,
+                            rozdvojenyRadek is RozdvojenyRadek.Dolni ? rowH * 2 : rowH,
+                            X, mrizka, nameIndex, znakZastavky,
                             OddTc(fixedCols[nameIndex].DataStyle, oddTc), symbolFace, scale);
+                    // ⚠️ Kreslí ji **dolní** řádek na své horní hraně, ne horní pod sebou: řádky jdou
+                    // po sobě, takže úsečka nakreslená horním řádkem by zmizela pod pozadím dolního.
+                    if (rozdvojenyRadek is RozdvojenyRadek.Dolni)
+                        DrawUseckaRozdvojene(ctx, rowY, mrizka, trips.Count, zrcadlene.Count,
+                            tripCellStyle, scale);
                 },
             });
 
@@ -2158,6 +2254,43 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// a zmenšuje se, aby se vešel, kdežto piktogram má sedět u pravého okraje. U velmi dlouhého
     /// názvu se můžou potkat - kdyby se to ukázalo, patří to řešit rezervací místa v buňce.
     /// </remarks>
+    /// <summary>
+    /// Úsečka mezi příjezdem a odjezdem rozdvojené zastávky - v každém časovém sloupci a v zóně.
+    /// </summary>
+    /// <remarks>
+    /// Legacy ji sází jako <b>znak uvnitř buňky</b> (`JRapiLinPrtPS.mac:59`, pozice fontu 254),
+    /// takže nejde od kraje ke kraji sloupce; proto ta vůle po stranách. Kreslí se i ve sloupci,
+    /// kde spoj čas nemá - v postskriptu tam vznikne taky (`JRapiLinPrtPS7.mac:144-145`).
+    /// <para>⚠️ Nezávisí na tom, jestli má uživatel zapnutou mřížku. Není to čára mřížky, ale
+    /// obsah: říká, že ty dva časy patří téže zastávce.</para>
+    /// </remarks>
+    private void DrawUseckaRozdvojene(RenderContext ctx, float yMm, SloupcovaMrizka mrizka,
+        int spoju, int zrcadlenych, ResolvedTextStyle styl, float scale)
+    {
+        const float VuleMm = 0.4f, NejkratsiMm = 0.5f;
+        using var pero = new SKPaint
+        {
+            Color = ColorHex.ParseOrBlack(styl.TextColor),
+            StrokeWidth = 0.2f * scale * ctx.MmToPx,
+            IsAntialias = true,
+        };
+        void Usek(float odMm, float sirkaMm)
+        {
+            float vule = VuleMm * scale;
+            float delka = sirkaMm - (2 * vule);
+            if (delka < NejkratsiMm) return;
+            ctx.Canvas.DrawLine(ctx.ToCanvas(odMm + vule, yMm), ctx.ToCanvas(odMm + vule + delka, yMm), pero);
+        }
+
+        for (int ti = 0; ti < zrcadlenych; ti++)
+            Usek(X + mrizka.XZrcadlenehoMm(ti), mrizka.SirkaZrcadlenehoMm(ti));
+        for (int ti = 0; ti < spoju; ti++)
+            Usek(X + mrizka.XSpojeMm(ti), mrizka.SirkaSpojeMm(ti));
+        for (int ci = 0; ci < mrizka.Popisne.Count; ci++)
+            if (mrizka.Popisne[ci].Key == ColumnKeys.Zone)
+                Usek(X + mrizka.XPopisnehoMm(ci), mrizka.Popisne[ci].Width);
+    }
+
     private static void DrawZnakZastavky(RenderContext ctx, float rowTopMm, float rowH, float xMm,
         SloupcovaMrizka mrizka, int nameIndex, List<SymbolRunRenderer.Run> runs,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
@@ -2620,6 +2753,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
             PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
+            SloucitPopisyRozdvojene = SloucitPopisyRozdvojene,
             MezeraMeziSkupinamiMm = MezeraMeziSkupinamiMm,
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
@@ -2700,6 +2834,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },
         new BoolPropertyDescriptor { Label = "Popisné sloupce bez vnitřních čar", Group = PopisneGroup,
             Get = () => PopisneSloupceBezVnitrnichCar, Set = v => PopisneSloupceBezVnitrnichCar = v },
+        new BoolPropertyDescriptor { Label = "Sloučit popis u příjezdu a odjezdu", Group = PopisneGroup,
+            Get = () => SloucitPopisyRozdvojene, Set = v => SloucitPopisyRozdvojene = v },
         new FloatPropertyDescriptor { Label = "Mezera mezi skupinami sloupců", Group = SirkaGroup,
             Unit = "mm", Min = 0, Max = 20, Format = "0.#",
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },

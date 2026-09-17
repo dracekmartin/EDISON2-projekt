@@ -4,6 +4,7 @@ using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Models.Layout;
+using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Designer;
 
@@ -37,6 +38,15 @@ public class PreviewCanvas
 
     /// <summary>Na kolik stran se sází právě zobrazená stránka dat - druhá osa stránkování (`B131`).</summary>
     public Action<int>? PocetStranSazbyChanged { get; set; }
+
+    /// <summary>
+    /// Volá se na konci každého renderu preview s popisem buněk, jejichž obsah se nevešel ani po
+    /// zmenšení na mez, takže se ořízl (null = všechno se vešlo). Wire-uje MainWindow na status bar.
+    /// </summary>
+    public Action<string?>? OriznuteBunkyChanged { get; set; }
+
+    /// <summary>Sběrač oříznutých buněk právě probíhajícího renderu; mimo render null.</summary>
+    private ClippedCells? _oriznuteBunky;
 
     private readonly DesignerState _state;
     private readonly PageLayoutEngine _engine;
@@ -333,16 +343,21 @@ public class PreviewCanvas
         canvas.Clear(CanvasTheme.Background);
         if (layout.TotalPages == 0) return;
 
+        // Oříznuté buňky se poznají až při kreslení (šířka sloupce vzniká v rozvržení prvku),
+        // takže se sbírají průběžně a hlásí se, teprve až jsou nakreslené všechny strany sazby.
+        _oriznuteBunky = new ClippedCells();
         float currentPageY = PageTopPaddingPx;
         for (int i = 0; i < layout.Pages.Count; i++)
         {
             DrawShadow(canvas, pageX, currentPageY, pageW, pageH);
             DrawPageBackground(canvas, pageX, currentPageY, pageW, pageH);
-            RenderPage(canvas, ps, mmToPx, pageX, currentPageY, layout.Pages[i]);
+            RenderPage(canvas, ps, mmToPx, pageX, currentPageY, layout.Pages[i], _oriznuteBunky);
             DrawPageBorder(canvas, pageX, currentPageY, pageW, pageH, nalezy[i] is not null);
 
             currentPageY += pageH + PageGapPx;
         }
+        OriznuteBunkyChanged?.Invoke(_oriznuteBunky.Summarize());
+        _oriznuteBunky = null;
     }
 
     /// <summary>
@@ -437,7 +452,7 @@ public class PreviewCanvas
     /// <summary>Renderuje jednu stránku LayoutResult. Preview zrcadlí výstup (PDF/PNG/tisk) 1:1 -
     /// žádné orientační pomůcky navíc; hranice sekcí ukazuje jen editační plátno (DesignerCanvas).</summary>
     private static void RenderPage(SKCanvas canvas, PageSize ps, float mmToPx,
-        float pageX, float pageY, Page page)
+        float pageX, float pageY, Page page, ClippedCells? oriznuteBunky = null)
     {
         float ox = pageX + ps.MarginLeft * mmToPx;
         float contentW = ps.PrintableWidth * mmToPx;
@@ -468,7 +483,8 @@ public class PreviewCanvas
                 SectionOriginX = ox,
                 SectionOriginY = sectionTopPx + originYOffset,
                 ClipTopMm = placed.ClipTop ?? 0f,
-                OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm
+                OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm,
+                ClippedCells = oriznuteBunky
             };
 
             // Barvy z dat („pozadí = barva linky") se čtou z property elementu, kam se DataContext
@@ -494,6 +510,9 @@ public class PreviewCanvas
                     canvas.RotateDegrees(el.Rotation, cx, cy);
                 }
                 el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) - jedno místo pro všechny
+                // Hláška o oříznuté buňce má jmenovat prvek; kreslení buňky o prvku neví, tak mu
+                // jméno podrží kreslicí smyčka.
+                if (oriznuteBunky is not null) oriznuteBunky.CurrentElement = ElementNames.ForUser(el);
                 el.Render(ctx);
                 canvas.Restore();
             }

@@ -1,5 +1,188 @@
 ﻿# Changelog
 
+## 2026-09-16 (7) - 🔡 záhlaví Minut odjezdů jde nastavit po sloupcích
+
+`B158`, hlásil TRANSDEV 16. 9. V dialogu sloupců šlo u záhlaví nastavit font, velikost a řez, ale
+nic se nestalo - kreslení si typografii záhlaví bralo vždy z prvku. Mrtvá pole, přesně třída chyb
+`B24`.
+
+Rozhodnutí Jan 16. 9.: **zprovoznit kaskádu**, ne pole schovat. Prvek se tím chová jako ostatní
+tabulkové a jedna skupina dnů může mít jiné písmo než druhá. Pruh záhlaví je jeden pro celou
+mřížku, takže jeho výšku určuje největší písmo napříč sloupci - týž vzor jako u seznamu zastávek,
+aby se výška nerozešla s textem. Šířku a zalomení nadpisu měří každý sloupec svým fontem.
+
+Proč to 14. 6. vypnuté bylo: **import z PDF zapékal `Bold = true` do každé skupiny dnů** a ta
+hodnota přebíjela ovladač prvku, takže v záhlaví nešlo vypnout tučné. Řešilo se to tehdy v renderu.
+Teď je opravený zdroj - import zapéká jen barvu pozadí - a migrace `1.13.0` zapečené hodnoty
+z existujících šablon smazala. Od června se ignorovaly, takže se nic neztrácí; barvy, zarovnání
+a odsazení zůstávají.
+
+## 2026-09-16 (6) - 🔤 Poznámky mají velikost písma záhlaví
+
+`B159`, hlásil TRANSDEV 16. 9. Skupina Záhlaví u prvku Poznámky měla text, pozadí, barvu, font
+i řez - velikost ne. Datové buňky ji přitom mají zvlášť jako „Velikost poznámek".
+
+Bylo to opomenutí, ne rozhodnutí: kreslení i výpočet výšky pruhu záhlaví hodnotu četly odjakživa,
+jen nebylo kde ji změnit. Prázdné pole = 9 bodů, což platilo i dřív, takže se žádné šabloně nic
+nemění.
+
+Velikost se zadává stejně jako u ostatních prvků (popisek **Velikost**, 3 až 24 bodů) - popisovač
+je sdílený se zastávkami a linkovou tabulkou, aby se hodnoty nerozešly.
+
+## 2026-09-16 (5) - 🔠 zmenšování textu v buňce má dolní mez
+
+`B162`, nález Jan 16. 9. na lince `0330513`. Text, který se nevešel do šířky buňky, se zmenšoval,
+jak bylo potřeba - v úzkém sloupci z písmene zbyla tečka. Z jedenácti variantních sloupců jízdních
+dob (6 mm) se nevykreslila právě ta nejširší záhlaví: `M`, `AA` a `DD`. Vypadalo to jako chybějící
+data, přitom server všech jedenáct písmen posílá.
+
+Nově platí táž mez jako u textového prvku: **nejvýš na polovinu nastavené velikosti a nikdy pod
+4 body**. Co se nevejde ani na mezi, se **ořízne na hraně buňky**, aby to nelezlo do sousedního
+sloupce - půlka písmene je viditelná vada, kdežto text přes sousedku vypadá jako správný obsah
+jiné buňky.
+
+Oříznutí se hlásí v oranžovém odznaku vpravo dole spolu se zmenšeným písmem (`Seznam zastávek:
+obsah 4 buněk je na zmenšení moc dlouhý, ořízl se`). Sbírá se **při kreslení**, ne dopředným
+výpočtem: šířka sloupce vzniká až v rozvržení prvku, takže dopočítávat ji podruhé by znamenalo
+riziko, že hláška tvrdí něco jiného, než co je na papíře. Důsledek - mluví o právě zobrazené
+stránce dat, ne o všech.
+
+⚠️ **Mez platí i zpětně.** Buňka, které dosud stačilo zmenšit písmo třeba na čtvrtinu (dlouhý
+název zastávky v úzkém sloupci), se nově zmenší jen na polovinu a zbytek se ořízne. Zlaté odtisky
+se nezměnily, takže žádná hlídaná sestava tak hluboko nezmenšovala.
+
+Zdvojování písmen variant po vyčerpání sady (`AA`, `DD`) zůstává - je v pořádku a neřešilo se.
+
+## 2026-09-16 (4) - 🔗 slučují se varianty, které jedou jen část jiné - ne ty se zacházkou
+
+`B157`, zadání TRANSDEV 16. 9. Volba `B142` skrývala variantu, jejíž zastávky jsou **podmnožinou**
+jiné. Podmnožinou je ale i varianta, která uprostřed trasy **zajíždí jinam** a část zastávek
+vynechá - ta se slila do delší a z vývěsky zmizelo, že tam spoj nejede.
+
+Nově platí **souvislý úsek**: mezi první a poslední zastávkou slévané varianty nesmí být žádná,
+kde delší staví a ona ne.
+
+```
+delší:      S  S  S  S  S  S
+jen část:   ·  ·  S  S  S  ·    → slije se (to je cíl)
+zacházka:   S  S  ·  S  S  S    → sloupec si nechá (do 16. 9. se slila)
+```
+
+⚠️ **Beze změny parametru** (jeho výslovné přání) - mění se chování stávající volby, jen se
+přejmenovala na „Slučovat varianty, které jedou jen část jiné". Klíč zůstává, takže kdo ji má
+zapnutou, nepřijde o nastavení.
+
+Zákazník sám uznal, že požadavek zadal špatně: *„matematicky vzaté, ste skutočne nastavili skrytie
+variantov, ktorých zastávky sú podmnožinou zastávok iného variantu"*.
+
+⚠️ Tři z osmi Caché testů měly opačné očekávání - to je ten rozdíl. Pravidlo podmnožiny zůstalo
+v kódu jako `JePodmnozinaProSrovnani`, aby šel v testu doložit.
+
+## 2026-09-16 (3) - 💾 uložení šablony už nezahodí nastavení, které server zrovna nenabízí
+
+`B156`, hlásil TRANSDEV 16. 9. jako „po aktualizaci sa veľa nastavení v uloženej šablóne resetuje
+do východiskového nastavenia". Není to dojem - uložení si seznam hodnot **stavělo od nuly** jen
+z parametrů, které server v tu chvíli vrátil. Cokoli mimo ně ze šablony tiše zmizelo a při prázdném
+seznamu se smazalo všechno.
+
+**Kde to udeřilo:** volba „Písmena variant u odjezdů" se 17. 8. zrušila (`B90`) a 11. 9. vrátila
+pod týmž klíčem (`B141`). Kdo mezitím šablonu uložil, přišel o svou hodnotu a po návratu volby
+dostal výchozí stav. Přesně to zákazník popisuje - a v srpnu si na písmena stěžoval.
+
+Nově se **stará hodnota nechává být** a nové ji jen přepíšou. Stačilo k té ztrátě i míň nápadné
+situace: výpadek serveru v okamžiku ukládání, dočasně skrytá agenda nebo starší třída na serveru.
+
+⚠️ **Cenou je mrtvý klíč** po parametru, který se už nikdy nevrátí. Nevadí: hodnoty se čtou podle
+**aktuálního** seznamu parametrů, takže osiřelý klíč nikdo nepřečte.
+
+⚠️ **Zpětně to nikomu nic nevrátí** - hodnoty, které už ze šablon zmizely, jsou pryč. Oprava jen
+zastavuje další ztráty.
+
+Reprodukce se v srpnu nepovedla a nehledala se znovu: příčina je vidět v kódu, takže se opravila
+rovnou (rozhodnutí Jan 16. 9.). Pět nových testů, sada 1800.
+
+## 2026-09-16 (2) - 🤖 Pomocník se neptá, o kterou tabulku jde
+
+Nález Jan 16. 9. na živé odpovědi: na dotaz „jak zruším čáry mezi km sloupci" začal průvodce
+otázkou **„U jaké tabulky - Tabulka linky, nebo dynamická/pevná?"**, přestože km sloupce má
+v linkové agendě jen tabulka linky. Zbytek odpovědi byl správný.
+
+Příčina: prompt posílal specializovaný prvek a obecné tabulky jako **rovnocenné**. Model nemá jak
+poznat, že uživatel se ptá na to, co má v šabloně před sebou.
+
+Do kontextu proto přibyla sekce **„Který prvek má přednost"** - vypíše se jen u jízdněřádové
+agendy a říká, že dotaz o obsahu jízdního řádu (zastávky, spoje, km, zóny, skupiny dnů, poznámky)
+se má zodpovědět podle jejích prvků; obecné tabulky jen na výslovný dotaz nebo když ta vlastnost
+u specializovaného prvku opravdu není. A hlavně: **nenabízet výběr a neptat se zpět**.
+
+⚠️ **U agendy bez prvků jízdního řádu** (faktury, obecná) se sekce nevypíše - jinak by model hledal
+prvky, které v paletě nejsou. Hlídá to test.
+
+## 2026-09-16 (1) - 🤖 Pomocník umí poradit i s tabulkou linky
+
+Průvodce dostával o tabulce linky **jedinou větu** („sloupcová tabulka celé linky, sloupce ve vlastním
+dialogu"), zatímco u seznamu zastávek, minut odjezdů i poznámek měl tři až pět vět s konkrétními
+radami. Na dotaz o linkovém jízdním řádu proto uměl jen vyjmenovat pole.
+
+Seznam vlastností se generuje z kódu sám a nedriftuje; co chybělo, jsou **souvislosti**, které
+nikde jinde nestojí:
+
+- popisné sloupce jsou **skupina** - společný nadpis, slití bez vnitřních čar, mezera za nimi
+- **šířka sloupce spoje rozhoduje o počtu stran** (kolik spojů vedle sebe → kolik částí) a vstupuje
+  do ní pět různých voleb včetně velikosti písma buněk
+- skupiny dnů se při dělení oddělí samy, když to nestojí část navíc
+- při malém přetečení se písmo samo zmenší do 90 %, místo aby přibyla strana
+- přípojné řádky a rozdvojená zastávka s volbou sloučeného popisu
+
+⚠️ **Test kryl jen zastávkové** (`BuildElementCatalog("STOP")`), takže by se nepoznalo, že průvodce
+o linkových neví nic. Nově se měří i `"LINE"`, a k tomu pět souvislostí zvlášť - výčet vlastností
+by prošel i s prázdnou poznámkou.
+
+## 2026-09-15 (2) - 👁 náhled bez vybrané linky bere vlastní sloupce i u linkových JŘ
+
+Kdo si v šabloně linkového jízdního řádu nadefinoval vlastní sloupce a neměl vybranou linku, viděl
+v náhledu rozdělení podle linky - jeho sloupce se neprojevily. Vypadalo to jako nefunkční featura,
+přestože s vybranou linkou fungovala.
+
+Je to **táž třída chyby jako `#13158`** u vývěsek, kde se to opravilo v srpnu: klient definici
+posílá do ukázkových dat stejně pro obě agendy, jen linková ji zahazovala (`GetMockData` volalo
+stavbu stránky bez ní).
+
+⚠️ **Obousměrný tisk a turnusy do ukázkových dat vědomě nejdou.** To jsou volby tisku, ne součást
+šablony, a kontrakt `BaseAgenda` říká, že mock je ukázka bez parametrů. Rozdíl proti definici
+sloupců je v tom, odkud hodnota pochází: definice je v šabloně, kterou uživatel právě kreslí.
+
+Ověřeno voláním serveru (poslána definice s jediným sloupcem → vrátil se jeden pás místo tří)
+a Caché testem `TestDefiniceSloupcuVUkazkovychDatech`. Caché sada 161/161.
+
+## 2026-09-15 (1) - ⇕ popis zastávky s příjezdem a odjezdem jednou přes oba řádky
+
+`B140`. U prvku tabulky linky přibyla volba **„Sloučit popis u příjezdu a odjezdu"** (skupina
+Popisné sloupce). Zapnutá vypíše km, tarifní číslo, název i MHD **jednou přes oba řádky na střed**
+a mezi časy příjezdu a odjezdu nakreslí v každém sloupci spoje **vodorovnou úsečku**. Vypnutá
+nechává dosavadní tvar, kde se popisy na obou řádcích opakují.
+
+Je to tvar **postskriptového** tisku; dosavadní odpovídá **windowsovému** (`B136`). Obě varianty
+starého tisku se v tomhle liší, takže volba mezi nimi je jediná poctivá odpověď.
+
+⚠️ **Zóna se neslučuje** - opakuje se na obou řádcích a úsečku dostane taky. Legacy ji sází jako
+sloupec spoje, ne jako popis (`JRapiLinPrtPS6.mac:74`). Šipka se neslučuje z jiného důvodu: nese
+`př` a `od`, což je jediné, čím se ty dva řádky od sebe liší.
+
+⚠️ **Postskript má na to tři řádky, my dva** (rozhodnutí Jan 15. 9.). Prostřední je tam prázdný
+a slouží jen úsečce, protože ta je v postskriptu **znak**, a znak potřebuje vlastní řádek
+(`JRapiLinPrtPS1.mac:51` přidává dva řádky, `JRapiLinPrtPS6.mac:138-147` plní prázdno / hodnota /
+prázdno). My kreslíme čáru, takže leží na hranici dvou řádků. Vypadá to stejně, zastávka nezabere
+o třetinu víc místa a **nemění se výška tabulky ani místa řezu**, tedy ani stránkování.
+
+⚠️ **Parita je doložená čtením legacy, ne porovnaným výtiskem** (R6). Rozvržení sedí na zdroj
+postskriptového tisku sloupec po sloupci; co není ověřené, je **délka úsečky** - v legacy je to
+šířka glyfu ve vlastním fontu, u nás šířka sloupce mínus vůle 0,4 mm.
+
+Buňka umí nově sahat nad svůj řádek (`CellSpec.PresahNahoruMm`), což je sloučení přes řádky
+v jádru tabulky. Kreslí ji **dolní** řádek, ne horní: řádky jdou po sobě, takže co nakreslí horní
+pod sebe, dolní přemaže svým pozadím.
+
 ## 2026-09-14 (11) - ⚖️ spoje se na části dělí rovným dílem
 
 `B152`. Když se sloupce spojů nevejdou do šířky a tabulka linky se rozdělí na části, rozdělí se

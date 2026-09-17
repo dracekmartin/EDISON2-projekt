@@ -308,8 +308,13 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // Font pro měření textu záhlaví (default, přepíše se per-column)
         float effectiveMmToPx = mmToPx > 0 ? mmToPx : 3.78f;
 
-        // Font záhlaví je element-uniformní (typografie se per-column nepřebíjí - viz
-        // WithParentHeaderTypography), proto měření i výšky řádků počítáme z element fontu.
+        // Sloupec smí mít vlastní písmo záhlaví, takže se měří i počítá z jeho vyřešeného stylu,
+        // ne z elementového - jinak by se rozešla šířka a výška s tím, co se nakreslí.
+        var styleLookup = GroupColumnIndexResolver.BuildStyleLookup(
+            GroupColumns, targetSkupiny.Select(s => s.Id).ToList());
+        ResolvedTextStyle HeaderStyleForGroup(string id) =>
+            ResolveGroupHeaderStyle(styleLookup.TryGetValue(id, out var cs) ? cs : null);
+
         float defaultHeaderFontPt = HeaderStyle.FontSize ?? 9f;
 
         var groupLayouts = new List<GroupLayout>();
@@ -322,11 +327,11 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             if (sk.Nadpis2.Length > 0) fullName += " " + sk.Nadpis2;
             var words = HeaderWords(fullName);
 
-            // Element font pro měření minimální šířky
-            float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
+            var skHeader = HeaderStyleForGroup(sk.Id);
+            float fontPx = skHeader.FontSize * PtToMm * effectiveMmToPx;
             using var measureFont = new SKFont(
                 // resolved rodina + řez (vč. dokumentového defaultu) - měření musí trefit stejný font jako render
-                GetTypeface(ResolveGroupHeaderParent()), fontPx);
+                GetTypeface(skHeader), fontPx);
 
             // Minimální šířka = nejdelší slovo záhlaví + 2mm padding
             float maxWordW = 0;
@@ -357,10 +362,8 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         var hours = GetVisibleHoursFromSet(allHourKeys, effectiveTimeAxis, effectiveRangeFrom, effectiveRangeTo);
 
         // Pevná šířka skupiny (override) přebíjí auto výpočet; pinnuté se neúčastní přerozdělení.
-        var widthLookup = GroupColumnIndexResolver.BuildStyleLookup(
-            GroupColumns, targetSkupiny.Select(s => s.Id).ToList());
         float? PinnedWidth(GroupLayout g) =>
-            widthLookup.TryGetValue(g.Skupina.Id, out var cs) && cs.WidthOverride is float p && p > 0 ? p : null;
+            styleLookup.TryGetValue(g.Skupina.Id, out var cs) && cs.WidthOverride is float p && p > 0 ? p : null;
 
         // Šířky skupin: pin (override), jinak max(minuty, min. pro text záhlaví)
         var finalGroups = new List<GroupLayout>();
@@ -400,10 +403,11 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // - Bez zlomu a bez Nadpis2 → word-wrap podle šířky (dosavadní chování)
         finalGroups = finalGroups.Select(g =>
         {
-            float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
+            var skHeader = HeaderStyleForGroup(g.Skupina.Id);
+            float fontPx = skHeader.FontSize * PtToMm * effectiveMmToPx;
             using var wrapFont = new SKFont(
                 // resolved rodina + řez (vč. dokumentového defaultu) - wrap musí trefit stejný font jako render
-                GetTypeface(ResolveGroupHeaderParent()), fontPx);
+                GetTypeface(skHeader), fontPx);
 
             return g with
             {
@@ -413,7 +417,13 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         }).ToList();
 
         float effFontSize = DataStyle.FontSize ?? 8f;
-        float effHeaderFontSize = HeaderStyle.FontSize ?? 9f;
+        // Pruh záhlaví je jeden pro celou mřížku, takže jeho výšku určuje největší písmo záhlaví
+        // napříč sloupci (týž vzor jako u seznamu zastávek) - jinak by se větší písmo oříznulo.
+        float effHeaderFontSize = MathF.Max(
+            ResolveHourHeaderStyle().FontSize,
+            finalGroups.Count == 0
+                ? defaultHeaderFontPt
+                : finalGroups.Max(g => HeaderStyleForGroup(g.Skupina.Id).FontSize));
         float fontSizeMm = effFontSize * PtToMm;
         float headerFontMm = effHeaderFontSize * PtToMm;
         float minuteFontMm = MinuteFontSize * PtToMm;
@@ -422,13 +432,14 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
         // Výška řádku záhlaví - Line 1 (element font), Line 2 (HeaderLine2Style, element-level).
         // Per-group celková výška = součet výšek jeho řádků (různé výšky pro Line 1 a Line 2).
-        float line2FontPt = HeaderLine2Style?.FontSize ?? defaultHeaderFontPt;
-        float line2LineH = Math.Max(SkupinaDnuHeaderLineHeight, line2FontPt * PtToMm * 1.5f);
-
-        float line1LineH = Math.Max(SkupinaDnuHeaderLineHeight, defaultHeaderFontPt * PtToMm * 1.5f);
         float maxGroupBlockH = 0f;
         foreach (var g in finalGroups)
         {
+            // Výška řádku se počítá z písma TOHO sloupce; pruh pak dostane výšku nejvyššího z nich.
+            float groupFontPt = HeaderStyleForGroup(g.Skupina.Id).FontSize;
+            float line1LineH = Math.Max(SkupinaDnuHeaderLineHeight, groupFontPt * PtToMm * 1.5f);
+            float line2FontPt = HeaderLine2Style?.FontSize ?? groupFontPt;
+            float line2LineH = Math.Max(SkupinaDnuHeaderLineHeight, line2FontPt * PtToMm * 1.5f);
 
             float blockH = 0f;
             foreach (var hl in g.HeaderLines)
@@ -537,29 +548,11 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return p;
     }
 
-    /// <summary>
-    /// Typografie záhlaví odjezdů je element-uniformní - per-column sloupce nesou jen barvy
-    /// a zarovnání (per-skupina barva), ne font/velikost/řez. Vrátí resolved styl, kde
-    /// typografická pole jsou vždy z element-level rodiče. Tím element-level ovladače (velikost,
-    /// tučné, …) vždy fungují, i když má sloupec zapečený starý per-column typografický override.
-    /// </summary>
-    private static ResolvedTextStyle WithParentHeaderTypography(ResolvedTextStyle resolved, ResolvedTextStyle parent) =>
-        resolved with
-        {
-            FontFamily    = parent.FontFamily,
-            FontSize      = parent.FontSize,
-            Bold          = parent.Bold,
-            Italic        = parent.Italic,
-            Underline     = parent.Underline,
-            Strikethrough = parent.Strikethrough,
-        };
-
-    /// <summary>Vyřeší styl záhlaví sloupce hodin (typografie element-uniformní).</summary>
+    /// <summary>Vyřeší styl záhlaví sloupce hodin.</summary>
     private ResolvedTextStyle ResolveHourHeaderStyle()
     {
         var parent = ResolveHourHeaderParent();
-        var resolved = HourColumnStyle?.Header is { } h ? h.Resolve(parent) : parent;
-        return WithParentHeaderTypography(resolved, parent);
+        return HourColumnStyle?.Header is { } h ? h.Resolve(parent) : parent;
     }
 
     /// <summary>Vyřeší styl datové buňky sloupce hodin.</summary>
@@ -569,12 +562,11 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return HourColumnStyle?.Data is { } d ? d.Resolve(parent) : parent;
     }
 
-    /// <summary>Vyřeší styl záhlaví skupiny dnů (typografie element-uniformní, per-column jen barvy/zarovnání).</summary>
+    /// <summary>Vyřeší styl záhlaví skupiny dnů (celá kaskáda včetně per-sloupcové typografie).</summary>
     private ResolvedTextStyle ResolveGroupHeaderStyle(DepartureGroupColumnStyle? cs)
     {
         var parent = ResolveGroupHeaderParent();
-        var resolved = cs?.Style.Header is { } h ? h.Resolve(parent) : parent;
-        return WithParentHeaderTypography(resolved, parent);
+        return cs?.Style.Header is { } h ? h.Resolve(parent) : parent;
     }
 
     /// <summary>`B145`: pozadí **těla** sloupce hodin, když se opakuje u každé skupiny. Bere se

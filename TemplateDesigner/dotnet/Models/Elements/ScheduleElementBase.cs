@@ -354,12 +354,7 @@ public abstract class ScheduleElementBase : TemplateElement
         string headerGroup = "Záhlaví",
         string dataGroup = "Datové buňky") =>
     [
-        new FloatPropertyDescriptor
-        {
-            Label = "Velikost", Group = headerGroup, Unit = "pt", Min = 3, Max = 24,
-            Get = () => HeaderStyle.FontSize ?? ScheduleHeaderDefaults.FontSize,
-            Set = v => HeaderStyle.FontSize = v,
-        },
+        GetHeaderFontSizeDescriptor(headerGroup),
         new FloatPropertyDescriptor
         {
             Label = "Velikost", Group = dataGroup, Unit = "pt", Min = 3, Max = 24,
@@ -367,6 +362,16 @@ public abstract class ScheduleElementBase : TemplateElement
             Set = v => DataStyle.FontSize = v,
         },
     ];
+
+    /// <summary>Velikost písma záhlaví samostatně - pro prvek, jehož datová zóna má velikost jinde
+    /// (Poznámky ji mají jako „Velikost poznámek" ve skupině Rozložení).</summary>
+    protected PropertyDescriptor GetHeaderFontSizeDescriptor(string headerGroup = "Záhlaví") =>
+        new FloatPropertyDescriptor
+        {
+            Label = "Velikost", Group = headerGroup, Unit = "pt", Min = 3, Max = 24,
+            Get = () => HeaderStyle.FontSize ?? ScheduleHeaderDefaults.FontSize,
+            Set = v => HeaderStyle.FontSize = v,
+        };
 
     // ─── Parse helpery ──────────────────────────────────────────────────────
 

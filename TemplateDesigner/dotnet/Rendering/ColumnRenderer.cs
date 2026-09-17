@@ -15,13 +15,16 @@ public static class ColumnRenderer
     /// SuppressLeadingLine = na levé hraně buňky se nekreslí svislá čára; pro buňku, která je
     /// jen rozdělením jednoho sloupce (značky + název zastávky), ne samostatným sloupcem.
     /// Mezera = buňka je <b>mezera mezi skupinami sloupců</b>, tedy volné místo, ne sloupec:
-    /// nekreslí se přes ni vodorovná čára ani pozadí řádku (viz <see cref="RowPlanRenderer"/>).</summary>
+    /// nekreslí se přes ni vodorovná čára ani pozadí řádku (viz <see cref="RowPlanRenderer"/>).
+    /// PresahNahoruMm = buňka sahá o tolik mm NAD svůj řádek, tedy je <b>sloučená přes řádky</b>;
+    /// text se pak vycentruje přes celou sloučenou výšku.</summary>
     public readonly record struct CellSpec(
         float WidthMm, string Text, ResolvedTextStyle Style,
         float ShrinkReserveMm = CellRenderer.DefaultShrinkReserveMm,
         float TrailingWidthMm = 0f,
         bool SuppressLeadingLine = false,
-        bool Mezera = false);
+        bool Mezera = false,
+        float PresahNahoruMm = 0f);
 
     /// <summary>
     /// Vykreslí vodorovný řádek buněk. Volitelně mezi sloupce svislé mřížkové čáry.
@@ -45,15 +48,17 @@ public static class ColumnRenderer
 
         foreach (var cell in cells)
         {
+            // Sloučená buňka si svislou čáru kreslí přes celou svou výšku znovu: řádek nad ní ji
+            // sice nakreslil, ale pozadí sloučené buňky tu část přemaže.
             if (!first && gridPaint is not null && !cell.SuppressLeadingLine)
             {
-                var top = ctx.ToCanvas(x, yMm);
+                var top = ctx.ToCanvas(x, yMm - cell.PresahNahoruMm);
                 var bot = ctx.ToCanvas(x, yMm + heightMm);
                 ctx.Canvas.DrawLine(top, bot, gridPaint);
             }
             first = false;
 
-            var rect = new SKRect(x, yMm, x + cell.WidthMm, yMm + heightMm);
+            var rect = new SKRect(x, yMm - cell.PresahNahoruMm, x + cell.WidthMm, yMm + heightMm);
             CellRenderer.DrawCell(ctx, rect, cell.Text, cell.Style, fontScale, cell.ShrinkReserveMm, cell.TrailingWidthMm);
 
             x += cell.WidthMm;

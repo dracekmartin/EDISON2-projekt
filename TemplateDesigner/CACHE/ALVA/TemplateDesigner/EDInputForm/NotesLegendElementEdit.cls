@@ -42,6 +42,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("HeaderStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("HeaderStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
+        // Velikost záhlaví je samostatná; poznámky mají svou ve skupině Rozložení. Prázdno = 9 bodů,
+        // což kreslení používalo i dřív - do 16. 9. jen nebylo kde to změnit.
+        s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", "", 3, 24, "pt", "0.#")
+        s f.helpText = "Velikost písma v záhlaví prvku. Prázdné = 9 bodů. Výška pruhu záhlaví se počítá z ní."
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
         d form.AddGroup("data", "Datové buňky")

@@ -4,11 +4,12 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** nic akčního - § Zastávkové JŘ je uzavřená a § Linkové a knižní JŘ čeká
-> celá na odpověď zvenku. Vezmi položku z Backlogu.
-> ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - #12843 je celý odpovězený, i když v evidenci
-> ještě 3. 9. visely tři body jako zbývající (viz `customer-requirements §0.1`). Z hovoru 11. 9.
-> platí jen to, co stojí níž v § Zastávkové JŘ.
+> **Nejblíž na řadě:** ze zpětné vazby TRANSDEV 16. 9. zbývají `B160` a `B161` - obojí je přání,
+> u kterého zákazník sám píše, že současný stav přijme.
+> Linkové JŘ mezitím čekají na kolegy.
+> ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
+> s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
+> hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
 
 ---
 
@@ -16,7 +17,24 @@
 
 Požadavky z hovoru s TRANSDEV 11. 9. jsou hotové (`B141`-`B143`, `B145`, `B147`-`B149`), viz
 [`roadmap-archive.md`](roadmap-archive.md). `B144` odložený v Backlogu, `B146` zrušený jako
-nezadání. **Nic otevřeného.**
+nezadání.
+
+### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
+
+Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. Čtyři z nich jsou **opravené 16. 9.**
+(`B156` mizející nastavení, `B157` slučování variant, `B158` záhlaví odjezdů po sloupcích,
+`B159` velikost záhlaví u poznámek) - viz changelog a [`roadmap-archive.md`](roadmap-archive.md).
+První dva se týkaly všech zákazníků, zbytek je jen jeho.
+
+- **`B160` Rovnoměrný rozestup minut: úplně pevná mřížka** [M] (přání). Chce rozteč, kterou značka
+  vůbec neovlivní; dnes je rastr podle nejširšího odjezdu **včetně** značek. Posílá výtisk ze
+  starého návrháře. **Sám říká, že současný stav přijme**, je-li to velká práce.
+
+- **`B161` Pořadí stránek v exportu: tam vzestupně, zpět sestupně** [S] (přání). Chce
+  `T1…T5, S5…S1` místo dnešního `T1, S1, T2, S2…` (`B149`) - tarifní čísla v jednom směru rostou
+  a ve druhém klesají, takže cestující projde trasu tam a pak zpět. **Naši logiku taky přijme.**
+  ⚠️ Je to už **třetí** tvar pořadí; než se změní počtvrté, chce to vědět, který chce zbytek
+  zákazníků.
 
 ---
 
@@ -61,18 +79,19 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
+### Připravené k práci
+
+- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
+  nemožné, náš engine na to má lepší pozici. **Poptávka doložená** (Jan 14. 9.): zákazníci chtějí
+  vejít na jednu stranu, kdykoli to jde, a jeden si výslovně řekl o agresivní zmenšování poznámek.
+  ⚠️ Liší se od `B151` rozsahem: ten zmenšuje jen tabulku, aby se nedělila, tohle sahá na **celou
+  sestavu včetně poznámek** - potřebuje vlastní strop (90 % nestačí) a vlastní volbu, protože
+  agresivní zmenšování nemůže být tiché. Podklad [`§14`](linkovy-knizni-jr-implementace-analyza.md).
+
 ### Čeká na odpověď zvenku
 
 Ani u jedné není první krok kód. Podklady k tiketům drží
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
-
-- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
-  nemožné, náš engine na to má lepší pozici. ⚠️ **Poptávka je doložená** (Jan 14. 9.): zákazníci
-  chtějí vejít na jednu stranu, kdykoli to jde, a jeden si výslovně řekl o **agresivní zmenšování
-  poznámek**, jen aby se to vešlo. Tím to přestalo být „podnět, ne závazek".
-  Liší se to od `B151` rozsahem: `B151` zmenšuje **jen tabulku**, aby se nedělila, tohle sahá na
-  **celou sestavu včetně poznámek** a potřebuje vlastní strop (90 % tam nestačí) a vlastní volbu -
-  agresivní zmenšování nemůže být tiché.
 
 - **`#9088` bod 3: ručně zadaný „název směru" u linky** [S] (TRANSDEV, dřív `C9`; chtěné i pro
   vývěsky). ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**. Náš díl
@@ -87,30 +106,50 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
   druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
 
-- **`B98` Nastavení starého tisku, která nikdo nemá zapnuté** - evidence, ne práce. Na 93 133
-  linkách šesti firem nejsou nikde nastavené: místenkování, vlastní texty sloupce MHD, tisk
-  provozoven dopravce, schovávání u linky, vrstva pod linkou, řazení spojů
-  ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)). Vytáhnout, až si o to
-  někdo řekne - **doklad z dat nebude**.
+### Hotové, čeká zavření na helpdesku
+
+⚠️ **Zavřít se má až s vydáním** (rozhodnutí Jan 15. 9.) - zákazník to musí mít ve verzi, než mu
+napíšeme, že je to hotové. Po zavření **z roadmapy pryč**; tady visí jen proto, aby to bylo
+na jednom místě.
+
+| Tiket | Co dostal |
+|---|---|
+| **#8372 vkládat prázdné sloupce** (KORID) | Volba **„Dorovnat prázdnými sloupci"** u tabulky linky. Dorovnává i **levou** stranu, kterou tiket nežádal - u obousměrné sestavy bez ní zůstala díra |
+| **#8576 tarifní zóny do sloupců** (KU HK) | Volba **„Každá zóna ve vlastním sloupci"** (výchozí vypnutá, aby se nezměnily hotové sestavy) |
+| **#11300 prázdný přípojný řádek** (KORID) | Výtisk hotový 15. 9. - `CB_CSADAD 1 / 0330510` směr Zpět, strana 3 je list jen s pracovními dny bez jediného přípojného řádku. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md) |
 
 ### K ověření na reálné sestavě
 
 Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
 takže nejde o práci, ale o doklad.
 
-| Co | Proč to čeká |
+| Tiket | Stav |
 |---|---|
-| **Prázdný přípojný řádek nemá zabírat místo (#11300, KORID)** | **Zbývá ukázka a odpověď, ne kód** - postup a čím je to podložené: [`§16.2`](linkovy-knizni-jr-implementace-analyza.md). Tiket je pozastavený od 12/2025 s příslibem „příští rok s novým tiskovým modulem"; od 6. 9. jde jeho rozvržení předvést. |
-| **Poznámky vedle tabulky, ne pod ní (#11373, KAD)** | Legenda je samostatný prvek, takže to umíme dnes; ověřit a tiket zavřít |
-| **Pořadí sloupců spojů na `CB_CSADAD 1 / 0370618`** | Starý tisk dává oba směry do jedné tabulky, takže není co k čemu přiložit. ⚠️ **Odblokováno 28. 8.** - obousměrný tisk je hotový, takže tuhle linku už je čím porovnat. Vzít při nejbližším průchodu doklady |
-| **Písmena ze zóny (`VS_CSAD 5 / 0771901`)** | V testovacích datech pro Vsetín na to není vzorek; firma navíc není v přepínači firem. Vzít, až ta data budou |
-| **Živý náhled (`GetMockData`) ignoruje obousměrný tisk, turnusy i vlastní definici sloupců** (`LinkovyJrAd.cls:460-469` volá `BuildStrankaLinky` napevno s `deleni=2`, bez `defSloupcu`/`obousmerne`/`sTurnusy`) | Podle kontraktu `BaseAgenda` je mock jen ukázková data bez parametrů, takže to nejspíš je v pořádku - ověřit, jestli uživatel v návrháři čeká, že se mu obousměrný přepínač promítne do náhledu, a je zklamaný, že ne (zjištěno auditem 31. 8., nejistá závažnost) |
+| **#11373 poznámky vedle tabulky** (KAD) | Umíme to (prvek má volnou pozici, od `B117` i u linkových). Zbývá **výtisk** - jde o to, jestli je legenda v úzkém sloupci čitelná |
+
+Naše vlastní kontrolní body (pořadí sloupců, písmena ze zóny, ukázková data v náhledu) jsou
+vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ---
 
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B155` Jemnější nastavení mřížky** [M] (podnět Jan 16. 9.). Dnes má `GridStyle` **jednu** barvu,
+  tloušťku a styl pro vodorovné i svislé čáry - ty jdou jen zapnout nebo vypnout. Návrh: **čtyři
+  druhy čar** (mezi řádky, mezi sloupci, pod záhlavím, na hranici skupiny sloupců), každý s vlastní
+  barvou / tloušťkou / stylem a volbou „nekreslit", zadávané **kaskádou** jako styly buněk - nahoře
+  jedna sada, kdo chce, přebije ji u druhu (dvanáct plných polí by formulář neunesl).
+  ⚠️ **Per-buňku ani per-hranu ne** (rozhodnutí Jan 16. 9.) - u tiskové sestavy s desítkami řádků
+  je to zbytečné. Vnější obrys zůstává rámečkem prvku, ne součástí mřížky.
+  ⚠️ **Pohltí `PopisneSloupceBezVnitrnichCar`** („Popisné sloupce bez vnitřních čar", otázka Jan
+  16. 9.) - je to per-prvek náplast, která vznikla právě proto, že obecná mřížka nestačila, a dnes
+  je to jediný způsob, jak čáry odlišit uvnitř tabulky. V editoru je to **jeden z druhů čar**
+  („mezi popisnými sloupci"), ne samostatná volba jinde ve formuláři. Zároveň se tím dá to, co
+  dnes chybí: čára mezi zónou a km, ale ne mezi km podsloupci.
+  Poptávka je zatím **jedna**: KOVED bod 5 ze `§15.2` chce jiný styl u spojů než u info sloupců
+  a dnes se to obchází vypnutím svislých čar. Vytáhnout, až se sejde víc požadavků.
 
 - **`B144` Sloupec „Čas" i z ručních minut v trase** [S] **(zastávkové JŘ)** - volba zdroje hodnot:
   spočítané z jízdních dob (dnes), ruční „MHD čas tam/zpět" z trasy linky, nebo „Automaticky
@@ -119,14 +158,6 @@ takže nejde o práci, ale o doklad.
   ⚠️ **Odloženo, protože si o to zákazník neřekl** (Jan 11. 9.): vyšlo to najevo při hovoru jako
   rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
   Vytáhnout, až to někdo bude chtít.
-
-- **`B140` Rozdvojená zastávka v postskriptovém tvaru** [M] (zjištěno 10. 9. při `B136`).
-  Dnes tiskneme tvar **windowsového** návrháře: popisné sloupce zopakované na obou řádcích.
-  **Postskript to dělá jinak** a vypadá to líp: km, tarifní číslo i název **sloučené přes oba
-  řádky svisle na střed**, `př`/`od` nahoře a dole a v časových sloupcích **vodorovná úsečka**
-  mezi příjezdem a odjezdem. Doloženo výřezem ze staré sestavy 330535.
-  ⚠️ Potřebuje **sloučení buňky přes řádky** v jádru tabulky (`RowPlanRenderer`), což dnes neumí -
-  proto to nešlo dodělat rovnou. Až to bude, přidat k prvku volbu mezi oběma tvary.
 
 - **`B138` Odložené do pozadí** [-] (Jan 9. 9., evidence). Tisk celé sestavy jen černě (dnes jde
   vypnout jen barvy spojů) a volba „bez roku" u textů omezení v šabloně (dnes to řídí nastavení
@@ -165,13 +196,15 @@ takže nejde o práci, ale o doklad.
 
 ---
 
-
 ## 🚋 Relace a vozové JŘ
 
 Layout TBD - hlavička oběhu, tabulka spojů, poznámky (pravděpodobně víc elementů). Legacy:
 `ALVA.MHD.ReportGenerator` (MHD) + `AD.ADREPORTGEN` (linky), viz
 [`legacy-nahrada.md`](legacy-nahrada.md). **Relace (TiskJRRELACE)** - vývěsky
 nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý use case**.
+
+⚠️ **Živý use case tu je: `#13070`** (BBSK, pozastavený). Vypadá jako linkový jízdní řád, ale
+zákazníkova předloha je **odjezdová relace** - proto se v linkovém tracku neřeší a čeká tady.
 
 | Co | Stav |
 |---|---|

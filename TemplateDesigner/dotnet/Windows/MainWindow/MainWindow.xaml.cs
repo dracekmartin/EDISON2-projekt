@@ -150,6 +150,11 @@ public partial class MainWindow : Window
             if (_vm is not null) _vm.PocetStranSazby = pocet;
         };
 
+        _previewCanvas.OriznuteBunkyChanged = popis =>
+        {
+            if (_vm is not null) _vm.OriznuteBunky = popis;
+        };
+
         // Wire SkiaSharp (must be code-behind - not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;
         skPreview.PaintSurface       += OnPreviewPaintSurface;
@@ -2070,6 +2075,19 @@ public partial class MainWindow : Window
     // Keyboard handler
     // ─────────────────────────────────────────────────────────────────────────
 
+    /// <summary>Leží pole uvnitř panelu Pomocníka? Ten si klávesy obsluhuje sám.</summary>
+    /// <remarks>Hledá se po vizuálním stromu, ne podle jména pole - jméno by se dalo přejmenovat,
+    /// aniž by to někdo spojil s touhle výjimkou.</remarks>
+    private static bool JePolePomocnika(DependencyObject? prvek)
+    {
+        while (prvek is not null)
+        {
+            if (prvek is Windows.AiGuideDialog.AiGuidePanel) return true;
+            prvek = System.Windows.Media.VisualTreeHelper.GetParent(prvek);
+        }
+        return false;
+    }
+
     private void OnWindowKeyDown(object sender, KeyEventArgs e)
     {
         if (_vm is null) return;
@@ -2095,6 +2113,10 @@ public partial class MainWindow : Window
         // v poli smazal vybraný element. Ctrl/Alt zkratky (Ctrl+Z/S/…) procházejí dál.
         if (Keyboard.FocusedElement is System.Windows.Controls.TextBox focusedField)
         {
+            // ⚠️ Pomocník si Enter obsluhuje sám (odeslat dotaz) a bez téhle výjimky by se k němu
+            // nedostal: okno tuneluje `PreviewKeyDown` dřív než TextBox a Enter by tu skončil jako
+            // potvrzení bindingu (nález Jan 16. 9. - v Pomocníkovi se muselo klikat na Odeslat).
+            if (e.Key == Key.Enter && JePolePomocnika(focusedField)) return;
             if (e.Key == Key.Enter)
             {
                 focusedField.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateSource();

@@ -167,7 +167,7 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 ColumnDataWarning = null;   // badge patří k zahozeným datům
-                ContentShrinkWarning = null;
+                ZmensenePismo = null;
                 _realPreviewIndex = 0;
                 Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
@@ -292,7 +292,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
                 ColumnDataWarning = null;
-                ContentShrinkWarning = null;
+                ZmensenePismo = null;
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
@@ -302,7 +302,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 ColumnDataWarning = DepartureColumnWarnings.Summarize(newData);
                 // Malý kód a zmenšené písmo jsou táž třída vady („vytiskne se to jinak, než jak to
                 // vypadá") a sdílí jeden odznak - čtvrtý pruh ve stavovém řádku už by se nevešel.
-                ContentShrinkWarning = SpojHlasky(
+                ZmensenePismo = SpojHlasky(
                     ContentShrinkWarnings.Summarize(State.CurrentTemplate, newData),
                     BarcodeSizeWarnings.Summarize(State.CurrentTemplate, newData));
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
@@ -699,13 +699,32 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
 
     private string? _contentShrinkWarning;
-    /// <summary>Prvky, jimž se zmenšilo písmo, aby se obsah vešel. Null = nic → odznak je skrytý.
+    /// <summary>Prvky, jimž se zmenšilo písmo, aby se obsah vešel, plus buňky, kde ani mez
+    /// zmenšování nestačila a obsah se ořízl. Null = nic → odznak je skrytý.
     /// Táž třída vady jako <see cref="FontWarning"/>: vytiskne se něco jiného, než co je nastavené,
     /// a bez hlášky to uživatel pozná až z papíru.</summary>
     public string? ContentShrinkWarning
     {
         get => _contentShrinkWarning;
         private set { if (Set(ref _contentShrinkWarning, value)) OnPropertyChanged(nameof(HasContentShrinkWarning)); }
+    }
+
+    private string? _zmensenePismo;
+    /// <summary>Půlka odznaku, která se počítá při načtení dat (přes všechny stránky).</summary>
+    private string? ZmensenePismo
+    {
+        get => _zmensenePismo;
+        set { _zmensenePismo = value; ContentShrinkWarning = SpojHlasky(_zmensenePismo, _oriznuteBunky); }
+    }
+
+    private string? _oriznuteBunky;
+    /// <summary>Půlka odznaku, která se pozná až při kreslení - buňka, do které se obsah nevešel
+    /// ani po zmenšení na mez. Plní ji <c>PreviewCanvas.OriznuteBunkyChanged</c>, proto mluví
+    /// o právě zobrazené stránce dat, ne o všech.</summary>
+    public string? OriznuteBunky
+    {
+        get => _oriznuteBunky;
+        set { if (_oriznuteBunky == value) return; _oriznuteBunky = value; ContentShrinkWarning = SpojHlasky(_zmensenePismo, _oriznuteBunky); }
     }
 
     public bool HasContentShrinkWarning => !string.IsNullOrEmpty(_contentShrinkWarning);
@@ -1893,22 +1912,53 @@ public class TemplateDesignerViewModel : EDViewModel
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); return false; }
     }
 
+    /// <summary>
+    /// Zapíše do šablony definici parametrů a hodnoty, které uživatel nastavil.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **Hodnota, kterou server právě nenabízí, se v šabloně NECHÁVÁ** (`B156`, hlásil TRANSDEV
+    /// 16. 9. jako „po aktualizaci se mi nastavení resetují"). Do 16. 9. se seznam stavěl od nuly
+    /// jen z aktuálních parametrů, takže cokoli mimo ně z šablony tiše zmizelo - a při prázdném
+    /// seznamu se smazalo všechno.
+    /// <para>Nešlo o teoretický okraj: volba „Písmena variant u odjezdů" se 17. 8. zrušila
+    /// (`B90`) a 11. 9. vrátila pod týmž klíčem (`B141`). Kdo mezitím šablonu uložil, přišel
+    /// o svou hodnotu a po návratu volby dostal výchozí stav. Stačí k tomu i výpadek serveru
+    /// v okamžiku ukládání, dočasně skrytá agenda nebo starší `.cls` na serveru.</para>
+    /// <para>Cena je mrtvý klíč po parametru, který se už nikdy nevrátí - ten nikomu nevadí,
+    /// protože se čte jen podle aktuálního seznamu (<see cref="ApplyTemplatePrintParamsToPreview"/>).</para>
+    /// </remarks>
     private void SyncParametersToTemplate()
     {
-        State.CurrentTemplate.Parameters = _agendaParameters.Count > 0 ? [.. _agendaParameters] : null;
+        // Definice parametrů se drží jen když ji server vrátil - je to popis nabídky, ne data.
+        if (_agendaParameters.Count > 0)
+            State.CurrentTemplate.Parameters = [.. _agendaParameters];
 
         // Hodnoty obsahových tiskových parametrů patří šabloně (sdílené mezi uživateli, mají přednost
         // před per-agenda). Iterujeme jen _agendaParameters → export klíče (název/členění/imposice)
         // se sem záměrně nedostanou (nejsou mezi agenda parametry).
-        if (_agendaParameters.Count > 0)
-        {
-            var vals = new Dictionary<string, string>();
-            foreach (var p in _agendaParameters)
-                if (_previewParams.TryGetValue(p.Name, out var v))
-                    vals[p.Name] = ParamToFieldString(v, p.Type);
-            State.CurrentTemplate.PrintParameters = vals.Count > 0 ? vals : null;
-        }
-        else State.CurrentTemplate.PrintParameters = null;
+        var nove = new Dictionary<string, string>();
+        foreach (var p in _agendaParameters)
+            if (_previewParams.TryGetValue(p.Name, out var v))
+                nove[p.Name] = ParamToFieldString(v, p.Type);
+
+        State.CurrentTemplate.PrintParameters =
+            SlucHodnotyParametru(State.CurrentTemplate.PrintParameters, nove);
+    }
+
+    /// <summary>
+    /// Nové hodnoty přepíšou staré, **zbytek zůstane**. Vrací null, když by výsledek byl prázdný.
+    /// </summary>
+    /// <remarks>
+    /// Jádro opravy `B156`: klíč, který server právě nenabízí, se nesmí zahodit. Do 16. 9. se
+    /// výsledek stavěl jen z nových hodnot, takže dočasně odebraný parametr (nebo výpadek serveru
+    /// při ukládání) uživateli tiše smazal uložené nastavení.
+    /// </remarks>
+    internal static Dictionary<string, string>? SlucHodnotyParametru(
+        IReadOnlyDictionary<string, string>? stare, IReadOnlyDictionary<string, string> nove)
+    {
+        var vysledek = stare is { Count: > 0 } ? new Dictionary<string, string>(stare) : [];
+        foreach (var (klic, hodnota) in nove) vysledek[klic] = hodnota;
+        return vysledek.Count > 0 ? vysledek : null;
     }
 
     /// <summary>True během běžícího exportu - blokuje druhý souběžný export (PDF i PNG),

@@ -1,5 +1,117 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B158` Záhlaví Minut odjezdů jde nastavit po sloupcích (hotovo 16. 9. 2026)
+
+Hlásil TRANSDEV 16. 9. jako mrtvá pole: dialog sloupců nabízel u záhlaví font, velikost a řez,
+ale kreslení si typografii bralo vždy z prvku.
+
+Rozhodnutí Jan 16. 9. bylo kaskádu **zprovoznit**, ne pole schovat - prvek se tím chová jako
+ostatní tabulkové a někdo může chtít jednu skupinu dnů jinak. Výška pruhu záhlaví se počítá
+z největšího písma napříč sloupci (vzor `MaxResolvedHeaderFontPt` ze seznamu zastávek), šířku
+a zalomení měří každý sloupec svým fontem.
+
+Vypnuté to bylo od 14. 6. (`36fb16e8`) kvůli importu z PDF, který zapékal `Bold = true` do každé
+skupiny dnů a přebíjel tím ovladač prvku. Opraven zdroj (import zapéká jen barvu) a migrace
+`1.13.0` zapečené hodnoty smazala.
+
+## `B159` Poznámky mají velikost písma záhlaví (hotovo 16. 9. 2026)
+
+Hlásil TRANSDEV 16. 9. Skupina Záhlaví u prvku Poznámky měla text, pozadí, barvu, font i řez -
+velikost ne, ačkoli ji datové buňky mají zvlášť („Velikost poznámek" v Rozložení).
+
+Opomenutí, ne rozhodnutí: kreslení i výpočet výšky pruhu záhlaví hodnotu četly odjakživa, jen
+nebylo kde ji změnit. Prázdné pole = 9 bodů, tedy dosavadní stav - žádné šabloně se nic nemění.
+
+Popisovač je sdílený (`GetHeaderFontSizeDescriptor` v `ScheduleElementBase`), aby popisek a rozsah
+seděly se zastávkami a linkovou tabulkou; Poznámky z něj berou jen zónu záhlaví, protože datovou
+velikost mají jinde.
+
+## `B157` Slučují se varianty jedoucí část jiné, ne ty se zacházkou (hotovo 16. 9. 2026)
+
+Zadání TRANSDEV 16. 9., opravuje `B142`. Volba skrývala variantu, jejíž zastávky jsou **podmnožinou**
+jiné - jenže podmnožinou je i varianta, která uprostřed trasy **zajíždí jinam** a část zastávek
+vynechá. Ta se slila do delší a z vývěsky zmizelo, že tam spoj nejede.
+
+Nově platí **souvislý úsek**: mezi první a poslední zastávkou slévané varianty nesmí být žádná,
+kde delší staví a ona ne. Varianta jedoucí jen kus trasy (od-do) se slije, zacházka si sloupec nechá.
+
+Beze změny parametru - klíč `SLUCOVAT_PODMNOZINY` zůstal (jeho výslovné přání), změnilo se chování
+a popisek na „Slučovat varianty, které jedou jen část jiné".
+
+⚠️ Zákazník sám uznal, že požadavek zadal špatně: *„matematicky vzaté, ste skutočne nastavili
+skrytie variantov, ktorých zastávky sú podmnožinou zastávok iného variantu"*. Stará definice
+zůstala v kódu jako `JePodmnozinaProSrovnani`, aby šel v testu doložit rozdíl - tři z osmi testů
+měly opačné očekávání.
+
+## `B156` Uložení šablony zahazovalo nastavení sestavy (hotovo 16. 9. 2026)
+
+Hlásil TRANSDEV jako „po aktualizaci se mi nastavení resetují". Uložení si seznam hodnot stavělo
+**od nuly** jen z parametrů, které server v tu chvíli vrátil - cokoli mimo ně ze šablony zmizelo,
+a když server nevrátil nic, smazalo se všechno.
+
+Udeřilo to přes volbu „Písmena variant u odjezdů": 17. 8. se zrušila (`B90`), 11. 9. vrátila pod
+týmž klíčem (`B141`). Kdo mezi tím šablonu uložil, přišel o svou hodnotu. Stačil by i výpadek
+serveru při ukládání nebo dočasně skrytá agenda.
+
+Nově se stará hodnota nechává být a nové ji jen přepíšou. Cena je mrtvý klíč po parametru, který
+se nevrátí - ten nikdo nepřečte, protože se čte podle aktuálního seznamu.
+
+⚠️ **Reprodukce se nehledala** (rozhodnutí Jan 16. 9.): příčina je vidět v kódu a zákazníkova
+šablona je na jejich produkci, ne na dev serveru. Zpětně to nikomu nic nevrátí.
+
+## `B98` Nastavení starého tisku, která nikdo nemá zapnuté (evidence, odloženo 15. 9. 2026)
+
+Není to práce, je to měření. Na 93 133 linkách šesti firem nejsou **nikde** nastavené: místenkování,
+vlastní texty sloupce MHD, tisk provozoven dopravce, schovávání u linky, vrstva pod linkou a řazení
+spojů ([měření 21. 8., `§13.6`](linkovy-knizni-jr-implementace-analyza.md)).
+
+Vytáhnout, až si o některé z nich někdo řekne. ⚠️ **Doklad z dat nebude** - když je nastavení nikde
+zapnuté, není na čem ověřit, že se chováme jako starý modul; bude se muset věřit čtení legacy.
+
+## Doklady k linkovým JŘ bez tiketu (uzavřeno 15. 9. 2026)
+
+Tři kontrolní body ze sady testovacích linek - ne zákaznické požadavky, jen naše ověření, že se
+chováme jako starý modul. Všechny doloženy voláním serveru, ne čtením kódu.
+
+**Pořadí sloupců spojů (ruční pořadí u linky).** Ruční pořadí má přednost před dopočítaným podle
+času, jak to dělá legacy `mkPoradiSp`. Doloženo na `CB_CSADAD 4 / 0330520`, kde se obojí liší
+(`1,3,5,7,101,103,105` ručně × `1,101,3,103,5,7,105` podle času) - vracíme ruční. Kryje i Caché
+test `TestRucniPoradiSpoju`. ⚠️ `1 / 0370618` ze sady testovacích linek na doklad **nestačí**: její
+ruční pořadí je totožné s časovým. Linky, kde se liší, najde `LinkovyJrNastaveniProbe.RozdilneRucniPoradi`
+(8 z 11 měřených).
+
+**Písmena ze zóny se odstraňují.** Doloženo na `ZL_KOVED 1 / 0823955`: v datech `Z420,I201`, agenda
+vrací `420,201`. Linka má nastavení „odstraňovat" a přebíjí jím globální, takže se obojí ověřilo
+naráz. ⚠️ Vzorek je v **KOVEDu**, ne ve Vsetíně, jak roadmapa tvrdila - `VS_CSAD` zóny nevyplňuje
+vůbec. Zóny jsou vzácné i tam, kde je jejich tisk zapnutý (z 250 linek KOVEDu jediná).
+
+**Živý náhled ignoroval vlastní definici sloupců** - na rozdíl od předchozích dvou to **nebyl
+doklad, ale vada**, a opravila se (changelog 15. 9.). Obousměrný tisk a turnusy do ukázkových dat
+vědomě nejdou: to jsou volby tisku, ne součást šablony.
+
+## `B140` Rozdvojená zastávka v postskriptovém tvaru (hotovo 15. 9. 2026)
+
+Prvek tabulky linky dostal volbu **„Sloučit popis u příjezdu a odjezdu"**. Zapnutá vypíše km,
+tarifní číslo, název i MHD jednou přes oba řádky na střed a mezi časy příjezdu a odjezdu nakreslí
+v každém sloupci spoje vodorovnou úsečku. Vypnutá nechává dosavadní tvar s popisy zopakovanými
+na obou řádcích. Tvar postskriptového × windowsového tisku - staré tisky se v tom liší, takže
+volba mezi nimi je jediná poctivá odpověď.
+
+Zóna se neslučuje (opakuje se a dostane úsečku, `JRapiLinPrtPS6.mac:74`), šipka taky ne - nese
+`př` a `od`, což ty dva řádky jediné odlišuje.
+
+⚠️ **Postskript má na to tři řádky, my dva** (rozhodnutí Jan 15. 9.). Prostřední je tam prázdný
+a slouží jen úsečce, protože ta je znak a potřebuje vlastní řádek. Naše čára leží na hranici dvou
+řádků: vypadá to stejně, zastávka nezabere o třetinu víc místa a nemění se výška tabulky ani
+místa řezu.
+
+⚠️ **Parita doložená čtením legacy, ne porovnaným výtiskem** (R6). Neověřená zůstává délka úsečky -
+v legacy je to šířka glyfu ve vlastním fontu, u nás šířka sloupce mínus vůle 0,4 mm.
+
+Jádro tabulky umí nově sloučení buňky přes řádky (`CellSpec.PresahNahoruMm`) - to byla ta část,
+kvůli které položka čekala. Kreslí ji dolní řádek, ne horní: co nakreslí horní pod sebe, dolní
+přemaže svým pozadím.
+
 ## `B152` Spoje se na části dělí rovným dílem (hotovo 14. 9. 2026)
 
 Když se sloupce spojů nevejdou do šířky a tabulka linky se rozdělí na části, rozdělí se spoje mezi

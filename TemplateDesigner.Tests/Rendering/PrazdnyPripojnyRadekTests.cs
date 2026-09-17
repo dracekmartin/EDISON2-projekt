@@ -87,4 +87,81 @@ public class PrazdnyPripojnyRadekTests
         Assert.Equal(prvek.CalculateHeightFromData(Linka(sPripojem: false)),
                      prvek.CalculateHeightFromData(Linka(sPripojem: true)), precision: 2);
     }
+
+    // ── Tabulka rozdělená podle skupin dnů ──────────────────────────────────
+
+    /// <summary>
+    /// Přesně zákazníkova situace: pracovní dny a víkend na zvláštní tabulce, přípoj má jen spoj
+    /// pracovních dnů. Víkendová tabulka proto nesmí dostat přípojný řádek.
+    /// </summary>
+    /// <remarks>
+    /// Doloženo daty linky `CB_CSADAD 1 / 0370618`, směr Tam: spoj 11 jede v pracovních dnech
+    /// a navazuje na lince 380755 v tarifním čísle 17, spoj 13 jede v neděli a přípoj nemá.
+    /// <para>Dosavadní testy měřily linku s **jednou** skupinou dnů, takže rozdělení tabulky
+    /// nepokrývaly - a právě o ně tiketu jde: bez oddělení skupin ta situace na výtisku vůbec
+    /// nenastane.</para>
+    /// </remarks>
+    [Fact]
+    public void RozdelenaTabulka_PripojnyRadekNevznikneDvakrat()
+    {
+        float sPripojem = UzkyPrvek().CalculateHeightFromData(DveSkupiny(sPripojem: true));
+        float bez       = UzkyPrvek().CalculateHeightFromData(DveSkupiny(sPripojem: false));
+
+        // Přesně jeden řádek navíc. Dva by znamenaly, že si místo rezervuje i ten blok, jehož
+        // spoje žádný přípoj nemají - a to je ta situace, na kterou si zákazník stěžuje.
+        Assert.Equal(VyskaRadku, sPripojem - bez, precision: 2);
+    }
+
+    /// <summary>Pojistka, že se tabulka opravdu dělí - jinak by test výše měřil nerozdělenou.</summary>
+    /// <remarks>
+    /// Na kterém místě řez padne, test neřeší: pro tiket je podstatné, že rozdělení samo o sobě
+    /// přípojný řádek nezdvojí.
+    /// </remarks>
+    [Fact]
+    public void RozdelenaTabulka_OpravduSeDeliNaBloky()
+    {
+        var prvek = UzkyPrvek();
+        var data = DveSkupiny(sPripojem: true);
+        prvek.CalculateHeightFromData(data);
+
+        Assert.NotEmpty(prvek.ZlomyMm(data));
+    }
+
+    /// <summary>Úzký prvek, aby se šest spojů nevešlo do jednoho bloku.</summary>
+    private static LineTableElement UzkyPrvek()
+    {
+        var prvek = Prvek();
+        prvek.Width = 70f;
+        return prvek;
+    }
+
+    /// <summary>Šest spojů ve dvou skupinách dnů; `sPripojem` = přípoj u spoje pracovních dnů.</summary>
+    private static DataContext DveSkupiny(bool sPripojem)
+    {
+        var pracovni = new List<(string, object?)> { ("CISLO_SPOJE", "11"), ("SKUPINA", "1") };
+        if (sPripojem)
+            pracovni.Add(("PRIPOJE", RenderSnapshot.Nested(
+                [[("TYP", "navazuje"), ("PORADI", "2"), ("RADEK", "1"),
+                  ("CAS", "07:50"), ("LINKA", "380755"), ("SPOJ", "11"), ("TEXT", "Kaplice")]])));
+
+        List<DataContext> spoje = [RenderSnapshot.Row([.. pracovni])];
+        for (int i = 2; i <= 3; i++)
+            spoje.Add(RenderSnapshot.Row(("CISLO_SPOJE", (10 + i).ToString()), ("SKUPINA", "1")));
+        for (int i = 1; i <= 3; i++)
+            spoje.Add(RenderSnapshot.Row(("CISLO_SPOJE", (20 + i).ToString()), ("SKUPINA", "3")));
+
+        return RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("ID", "1"), ("NAZEV_ZASTAVKY", "Český Krumlov"), ("PORADI", "1")),
+                RenderSnapshot.Row(("ID", "2"), ("NAZEV_ZASTAVKY", "Kaplice, rozcestí"), ("PORADI", "2")),
+                RenderSnapshot.Row(("ID", "3"), ("NAZEV_ZASTAVKY", "České Budějovice"), ("PORADI", "3")),
+            ]),
+            ("SPOJE", spoje),
+            ("SKUPINY_DNU",
+            [
+                RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1")),
+                RenderSnapshot.Row(("ID", "3"), ("NADPIS", "Neděle"), ("PORADI", "2")),
+            ]));
+    }
 }

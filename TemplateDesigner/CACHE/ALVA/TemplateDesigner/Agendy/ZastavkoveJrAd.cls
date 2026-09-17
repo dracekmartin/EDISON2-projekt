@@ -468,7 +468,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             s cil = 0, cilStaveni = 0
             f viB=1:1:poradiVar {
                 i viB = viA continue
-                i '..JePodmnozinaVarianty($g(variantSigText(viA)), $g(variantSigText(viB))) continue
+                i '..JeUsekemVarianty($g(variantSigText(viA)), $g(variantSigText(viB))) continue
                 s staveniB = ..PocetZastaveni($g(variantSigText(viB)))
                 i staveniB '> staveniA continue          // shodný počet = táž varianta, tu slil dedup
                 i (cil = 0) || (staveniB > cilStaveni) || ((staveniB = cilStaveni) && (+$g(variantDelka(viB)) > +$g(variantDelka(cil)))) {
@@ -2565,11 +2565,41 @@ ClassMethod JeVUsekuVariant(poradi As %String, currentPoradi As %String, jeTam A
     q $s(jeTam:(poradi '< currentPoradi), 1:(poradi '> currentPoradi))
 }
 
-/// `B142`: je varianta `a` podmnožinou varianty `b`? Podmnožina = všude, kde `a` staví, staví i `b`.
+/// `B157`: jede varianta `a` jen **souvislý úsek** varianty `b`?
+///
 /// Signatura nese per zastávku „S" (staví), „<" (projíždí) nebo prázdno (mimo trasu) - projíždí
 /// i mimo trasu znamená pro cestujícího totéž („tady nenastoupíš"), takže se rozlišuje jen „S".
-/// Delší signatura než `b` podmnožinu nedá: chybějící kousek se čte jako prázdno, tedy ne „S".
-ClassMethod JePodmnozinaVarianty(a As %String, b As %String) As %Boolean
+/// Delší signatura než `b` úsek nedá: chybějící kousek se čte jako prázdno, tedy ne „S".
+///
+/// Dvě podmínky. Kde staví `a`, musí stavět i `b` - a mezi **první a poslední** zastávkou `a`
+/// nesmí být žádná, kde staví `b` a `a` ne.
+///
+/// ⚠️ **Druhá podmínka je celý smysl `B157`** (zadání TRANSDEV 16. 9., opravuje `B142`). Bez ní
+/// platí pouhá podmnožina, a tou je i varianta, která uprostřed trasy **zajíždí jinam** a část
+/// zastávek vynechá. Ta se slila do delší, takže z vývěsky zmizelo, že tam spoj nejede - zákazník
+/// to hlásil jako „prestali sa rozlišovať varianty, kde uprostred trasy je zachádzka". Sám uznal,
+/// že požadavek zadal špatně; cílem bylo skrýt varianty jedoucí jen část trasy (od-do).
+ClassMethod JeUsekemVarianty(a As %String, b As %String) As %Boolean
+{
+    s prvni = 0, posledni = 0
+    f i=1:1:$l(a,"~") {
+        i $p(a,"~",i) '= "S" continue
+        i $p(b,"~",i) '= "S" ret 0
+        s:'prvni prvni = i
+        s posledni = i
+    }
+    // Varianta, která nikde nestaví, není úsek ničeho - slít ji by zahodilo sloupec beze stopy.
+    i 'prvni ret 0
+    f i=prvni:1:posledni {
+        i ($p(b,"~",i) = "S") && ($p(a,"~",i) '= "S") ret 0
+    }
+    ret 1
+}
+
+/// Je varianta `a` podmnožinou `b`? **Slévání to už neřídí** (od `B157` rozhoduje
+/// <method>JeUsekemVarianty</method>) - zůstává jen proto, aby šel v testu doložit rozdíl mezi
+/// oběma pravidly: zacházka uprostřed trasy je podmnožinou, ale úsekem ne.
+ClassMethod JePodmnozinaProSrovnani(a As %String, b As %String) As %Boolean
 {
     f i=1:1:$l(a,"~") {
         i $p(a,"~",i) '= "S" continue
@@ -3466,7 +3496,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // `B142`: vědomá výměna „méně sloupců za méně informace", proto výchozí vypnuto. Popisek i
     // nápověda musí říct, CO to schová - jinak si to zapne někdo, kdo variantní sloupce nasadil
     // právě kvůli detailu (KOVED #13048).
-    d ..AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty tras, které jsou podmnožinou jiné", "false", "Seznam zastávek", "Varianta, která staví jen tam, kde staví i jiná, dostane sloupec té delší. Ubere to sloupce, ale u slitých spojů pak není ve sloupci vidět, které zastávky vynechávají, a časy jsou té delší varianty.")
+    d ..AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty, které jedou jen část jiné", "false", "Seznam zastávek", "Varianta, která jede jen souvislý úsek jiné trasy (od - do), dostane sloupec té delší. Ubere to sloupce na lince, kde část spojů jezdí jen kus trasy. Varianta, která uprostřed zajíždí jinam a část zastávek vynechá, si sloupec nechá - jinak by z vývěsky zmizelo, že tam spoj nejede.")
 
     // ⚠️ Následující dvě volby musí zůstat vedle sebe a v tomhle pořadí - obě jsou o písmenech
     // variant a slučování mezi ně nepatří (nález Jan 14. 9.).

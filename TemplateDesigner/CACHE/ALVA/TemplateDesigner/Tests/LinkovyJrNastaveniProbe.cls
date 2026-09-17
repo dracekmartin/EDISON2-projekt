@@ -1056,6 +1056,87 @@ ClassMethod NajdiLinkuSRucnimPoradim(platne As %Boolean, ByRef db, ByRef sku, By
     quit 0
 }
 
+/// Najde linky, kde se **ruční pořadí spojů liší od pořadí podle času odjezdu**.
+///
+/// Proč: že ruční pořadí čteme, drží `TestRucniPoradiSpoju`. Porovnat výtisk se starým tiskem má
+/// ale smysl jen na lince, kde se obě pořadí **rozcházejí** - jinde vyjde totéž tak jako tak
+/// a doklad by nic neřekl (`0370618` má ruční pořadí 11,13, což je i pořadí podle času).
+///
+/// IN: `MAX` (kolik vypsat, výchozí 10). OUT: `nalez~<n>` s linkou a oběma pořadími, `souhrn`
+/// s počtem linek, které ruční pořadí mají, a kolik z nich se liší.
+ClassMethod RozdilneRucniPoradi(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        set max = +$get(^||ML("IN","MAX"))
+        set:max<1 max = 10
+        kill ^||ML, nalez
+        set sRucnim = 0, rozdilnych = 0, hotovo = 0
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            quit:hotovo
+            set firma = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(firma)
+            set s1 = ""
+            for  {
+                set s1 = $order(^[firma]JRL(s1))
+                quit:s1=""
+                quit:hotovo
+                continue:'$isvalidnum(s1)
+                set l1 = ""
+                for  {
+                    set l1 = $order(^[firma]JRL(s1, l1))
+                    quit:l1=""
+                    quit:hotovo
+                    continue:'$data(^[firma]JRL(s1, l1, "PATCH", "SORT", "T"))
+                    continue:'+$get(^[firma]JRL(s1, l1, "T"))
+                    set sRucnim = sRucnim + 1
+                    set rucne = "", poradi = ""
+                    for  {
+                        set poradi = $order(^[firma]JRL(s1, l1, "PATCH", "SORT", "T", poradi))
+                        quit:poradi=""
+                        set rucne = rucne_$select(rucne="":"", 1:",")_(+$get(^[firma]JRL(s1, l1, "PATCH", "SORT", "T", poradi)))
+                    }
+                    // pořadí podle času odjezdu (hlava:4), při shodě podle čísla spoje
+                    kill razeni
+                    set sp = ""
+                    for  {
+                        set sp = $order(^[firma]JRL(s1, l1, "T", sp))
+                        quit:sp=""
+                        continue:'$isvalidnum(sp)
+                        set razeni(+$piece($piece($get(^[firma]JRL(s1, l1, "T", sp)),"#",1),":",4), sp) = ""
+                    }
+                    set casove = "", odj = ""
+                    for  {
+                        set odj = $order(razeni(odj))
+                        quit:odj=""
+                        set sp = ""
+                        for  {
+                            set sp = $order(razeni(odj, sp))
+                            quit:sp=""
+                            set casove = casove_$select(casove="":"", 1:",")_sp
+                        }
+                    }
+                    continue:rucne=casove
+                    set rozdilnych = rozdilnych + 1
+                    set nalez($increment(nalez)) = firma_" "_s1_" / "_l1
+                        _"  rucne: "_$extract(rucne,1,90)_"  casove: "_$extract(casove,1,90)
+                    if nalez '< max set hotovo = 1
+                }
+            }
+        }
+        set ^||ML("OUT","souhrn") = "linek s rucnim poradim="_sRucnim_", z toho odlisnych od casoveho="_rozdilnych
+        set idx = ""
+        for  {
+            set idx = $order(nalez(idx))
+            quit:idx=""
+            set ^||ML("OUT","nalez~"_$translate($justify(idx,2)," ","0")) = nalez(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    quit $$$OK
+}
+
 /// Vypíše ručně nastavené pořadí spojů jedné linky. IN: `DB`, `SKU`, `LIN`.
 ClassMethod RucniPoradi(ByRef sys As %String) As %Status
 {

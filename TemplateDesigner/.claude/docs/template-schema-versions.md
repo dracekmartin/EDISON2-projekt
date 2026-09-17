@@ -1,4 +1,4 @@
-# Template schema verze - convention
+﻿# Template schema verze - convention
 
 Tento dokument popisuje verzování Template JSON formátu a jak přidat migraci při breaking change. Detail implementace v `dotnet/Serialization/TemplateMigrator.cs`.
 
@@ -211,6 +211,14 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   takže starší šablony ji v JSON **nemají** a nový výchozí stav by jim mlčky přesázel mřížku minut.
   Migrace jim proto dopíše `minuteSpacing: "ByContent"`. Prvek s vlastní hodnotou se nechává být,
   jiných prvků než mřížky minut se to netýká.
+
+- **1.13.0** `MigrationZahlaviOdjezduPerSloupec` (2026-09-16, `B158`) - maže **per-sloupcovou
+  typografii záhlaví** u mřížky minut (`groupColumns[].style.header` i `hourColumnStyle.header`:
+  font, velikost, řez, podtržení, přeškrtnutí). Od 14. 6. ji kreslení ignorovalo, protože si element
+  typografii záhlaví vynucoval - hodnoty tedy v šablonách ležely nepoužité. Kaskáda se teď zapíná
+  zpátky, takže bez migrace by ožily a sloupec by vypadal jinak než celé léto. Typicky jde o
+  `bold: true`, které do každé skupiny dnů zapisoval import z PDF. Barvy, zarovnání a odsazení
+  zůstávají - ty per sloupec platily celou dobu.
 
 ---
 

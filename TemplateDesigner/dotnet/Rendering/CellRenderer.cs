@@ -21,6 +21,29 @@ public static class CellRenderer
     /// AŽ při skutečném přetečení - přesně vešlý text (auto šířky sloupců) se nemění.</summary>
     public const float DefaultShrinkReserveMm = 0.6f;
 
+    /// <summary>Nejmenší podíl nastavené velikosti, na který smí zmenšování jít.</summary>
+    /// <remarks>
+    /// Bez meze se text v úzkém sloupci zmenšil, jak bylo potřeba, a z písmene zbyla tečka -
+    /// doloženo na variantních sloupcích jízdních dob (6 mm), kde se nevykreslila právě ta nejširší
+    /// písmena. Polovina drží autorův záměr a 4 body jsou dolní hranice pole Velikost, takže mez
+    /// nevyrobí písmo, jaké by uživatel nesměl zadat ručně. Táž dvojice hodnot jako u textového
+    /// prvku (<see cref="Models.Elements.TextElement.MinScale"/>) - je to totéž pravidlo.
+    /// </remarks>
+    public const float MinScale = 0.5f;
+
+    /// <summary>Absolutní dno v bodech - shodné s <c>Min</c> pole Velikost.</summary>
+    public const float MinFontPt = 4f;
+
+    /// <summary>
+    /// Dolní mez zmenšení pro danou velikost písma: nikdy pod polovinu <paramref name="fontScale"/>
+    /// ani pod <see cref="MinFontPt"/>. Pod mezí se obsah buňky ořízne, místo aby se stal nečitelným.
+    /// </summary>
+    public static float MinShrinkScale(ResolvedTextStyle style, float fontScale)
+    {
+        if (style.FontSize <= 0f) return 0f;
+        return MathF.Min(fontScale, MathF.Max(fontScale * MinScale, MinFontPt / style.FontSize));
+    }
+
     /// <summary>
     /// Efektivní škála fontu po přizpůsobení buňce: <paramref name="fontScale"/> zmenšené tak, aby se
     /// text (u víceřádkového nejširší řádek - jednotná velikost) + volitelný trailing obsah vešly.
@@ -32,14 +55,18 @@ public static class CellRenderer
         float mmToPx, float fontScale, float shrinkReserveMm, float trailingWidthMm = 0f)
     {
         using var probe = style.CreateFont(fontScale, mmToPx);
-        return ComputeShrinkScale(probe, lines, contentWidthMm, mmToPx, fontScale, shrinkReserveMm, trailingWidthMm);
+        return ComputeShrinkScale(probe, lines, contentWidthMm, mmToPx, fontScale, shrinkReserveMm,
+            trailingWidthMm, MinShrinkScale(style, fontScale));
     }
 
     /// <summary>Jádro výpočtu zmenšení s existujícím fontem (bez alokace) - hot path DrawCell.
     /// <paramref name="probeAtFontScale"/> musí být vytvořený při <paramref name="fontScale"/>.</summary>
+    /// <param name="minScale">Dolní mez (0 = bez meze). Volající ji spočítá
+    /// <see cref="MinShrinkScale"/>; tahle přetížená verze font má, ale velikost v bodech ne.</param>
     public static float ComputeShrinkScale(
         SKFont probeAtFontScale, string[] lines, float contentWidthMm,
-        float mmToPx, float fontScale, float shrinkReserveMm, float trailingWidthMm = 0f)
+        float mmToPx, float fontScale, float shrinkReserveMm, float trailingWidthMm = 0f,
+        float minScale = 0f)
     {
         float maxLineWidthPx = 0f;
         foreach (var l in lines)
@@ -49,7 +76,7 @@ public static class CellRenderer
         float contentWidthPx = contentWidthMm * mmToPx;
         float targetWidthPx = (contentWidthMm - shrinkReserveMm) * mmToPx;
         if (maxLineWidthPx > contentWidthPx && targetWidthPx > 0f)
-            return fontScale * (targetWidthPx / maxLineWidthPx);
+            return Math.Max(fontScale * (targetWidthPx / maxLineWidthPx), minScale);
         return fontScale;
     }
 
@@ -91,7 +118,8 @@ public static class CellRenderer
         // 3. Font + paint. Přetékající text se zmenší na šířku buňky (vestavěné chování,
         // viz class doc); sedící buňky beze změny - font se pak nevytváří podruhé.
         var baseFont = style.CreateFont(fontScale, ctx.MmToPx);
-        float effScale = ComputeShrinkScale(baseFont, lines, contentMm.Width, ctx.MmToPx, fontScale, shrinkReserveMm, trailingWidthMm);
+        float effScale = ComputeShrinkScale(baseFont, lines, contentMm.Width, ctx.MmToPx, fontScale,
+            shrinkReserveMm, trailingWidthMm, MinShrinkScale(style, fontScale));
         if (effScale != fontScale)
         {
             baseFont.Dispose();
@@ -100,6 +128,41 @@ public static class CellRenderer
         using var font = baseFont;
         using var textPaint = style.CreateTextPaint();
 
+        // Na mezi zmenšování se text do buňky vejít nemusí. Ořízne se na její hranu, aby nelezl
+        // do sousedního sloupce - půlka písmene je vidět, že je něco špatně, kdežto text přes
+        // sousedku vypadá jako správný obsah jiné buňky.
+        bool oriznout = effScale <= MinShrinkScale(style, fontScale)
+            && MeasureWidestPx(font, lines) + trailingWidthMm * ctx.MmToPx > contentMm.Width * ctx.MmToPx;
+        if (oriznout)
+        {
+            ctx.ClippedCells?.Report();
+            ctx.Canvas.Save();
+            ctx.Canvas.ClipRect(ctx.ToCanvasRect(rectMm.Left, rectMm.Top, rectMm.Width, rectMm.Height));
+        }
+        try
+        {
+            DrawText(ctx, contentMm, text, lines, style, font, textPaint);
+        }
+        finally
+        {
+            if (oriznout) ctx.Canvas.Restore();
+        }
+    }
+
+    /// <summary>Šířka nejširšího řádku v px při daném fontu.</summary>
+    private static float MeasureWidestPx(SKFont font, string[] lines)
+    {
+        float max = 0f;
+        foreach (var l in lines)
+            if (!string.IsNullOrEmpty(l)) max = Math.Max(max, font.MeasureText(l));
+        return max;
+    }
+
+    /// <summary>Text buňky zarovnaný dle HAlign+VAlign do už vypočteného content boxu.</summary>
+    private static void DrawText(
+        RenderContext ctx, SKRect contentMm, string text, string[] lines,
+        ResolvedTextStyle style, SKFont font, SKPaint textPaint)
+    {
         var metrics = font.Metrics;
         float ascent  = -metrics.Ascent;   // Ascent je záporný (směr nahoru)
         float descent = metrics.Descent;

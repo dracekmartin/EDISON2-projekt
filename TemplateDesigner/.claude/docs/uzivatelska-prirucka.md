@@ -1,4 +1,4 @@
-# Návrhář sestav - uživatelská příručka
+﻿# Návrhář sestav - uživatelská příručka
 
 *aktuálně umožňuje navrhovat šablony ZASTÁVKOVÝCH (MHD) jízdních řádů, linkové JŘ jsou v přípravě*
 
@@ -233,7 +233,7 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 ### Dynamická tabulka
 Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
 od dat). Vlastnosti: **Upravit sloupce…**, **Zdroj dat**, **Výška řádku**, **Záhlaví**, **Výška
-záhlaví**, **Rámeček** (Žádný/Vnější/Vše/Řádky/Sloupce), **Střídání řádků**, **Tučné záhlaví**,
+záhlaví**, **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťka, styl), **Střídání řádků**, **Tučné záhlaví**,
 barvy pozadí a textu záhlaví i dat. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
 Editor sloupců (dialog „Tabulka - nastavení") má záložky **Obecné** a **Sloupce**: přidání/
@@ -662,14 +662,17 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   na zvolený vzor. Vzory: Pracovní-Sobota-Neděle+svátky / Pracovní-víkend / Prázdniny (mimo+o
   prázdninách)-víkend / Prázdniny (mimo+o prázdninách)-Sobota-Neděle+svátky.
 - **Varianty tras** (sloupec „Varianty tras" na prvku Tabulka zastávek - zapíná se v jeho nastavení
-  na záložce Sloupce) - když spoje jedou z dané zastávky různými trasami, dostane každá trasa
-  vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek); v jejím sloupci je
-  **průběh jedné skutečné trasy** - té s delší jízdní dobou, takže údaj odpovídá spoji, který
-  opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže **jedna položka
-  v seznamu sloupců se v tisku rozpadne na víc sloupců**; šířka a styl, které u ní nastavíte, platí
-  pro každý z nich. Linka s jedinou variantou žádný nedostane - to je sloupec „Čas jízdy", který
-  stojí vedle variant samostatně. Řazení a písmenné označení variant se nastavuje parametry sestavy
-  (viz níže).
+  na záložce Sloupce; **z výroby je vypnutý**) - když spoje jedou z dané zastávky různými trasami,
+  dostane každá trasa vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek);
+  v jejím sloupci je **průběh jedné skutečné trasy** - té s delší jízdní dobou, takže údaj odpovídá
+  spoji, který opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže
+  **jedna položka v seznamu sloupců se v tisku rozpadne na víc sloupců**; šířka a styl, které u ní
+  nastavíte, platí pro každý z nich. **Sloupec dostane i linka s jedinou variantou** - stejná trasa
+  všech spojů je taky varianta, takže vývěska postavená na variantách vypadá všude stejně.
+  Řazení a písmenné označení variant se nastavuje parametry sestavy (viz níže).
+  ⚠️ Sloupce „Varianty tras" a „Čas jízdy" ukazují **týž údaj dvěma způsoby**, takže zapnutý má být
+  vždy jen jeden z nich. Proto je variantní z výroby vypnutý; ve vašich hotových šablonách zůstává
+  tak, jak jste si ho nastavili.
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
@@ -706,6 +709,14 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     protože nastavitelné jsou obě.
   - **První varianta bez písmene** - nejčastější trasa zůstane bez písmene, odchylky se značí od A.
     Vypnuto = písmenkuje se už od první varianty.
+  - **Slučovat varianty, které jedou jen část jiné** - varianta jedoucí **souvislý úsek** jiné
+    trasy (od - do) dostane sloupec té delší. Výchozí vypnuto. Hodí se na lince, kde část spojů
+    jezdí jen kus trasy a sloupců je moc.
+    ⚠️ **Varianta, která uprostřed zajíždí jinam a část zastávek vynechá, si sloupec nechá** -
+    jinak by z vývěsky zmizelo, že tam spoj nejede.
+    ⚠️ Slití něco stojí: u slitých spojů jsou **časy té delší varianty**. U dvou variant se shodnými
+    časy to nevadí, u variant s jinými jízdními dobami se minuty posunou. Zapíná se to na celou
+    sestavu, ne po jednotlivých variantách - před zapnutím si vývěsku prohlédněte.
 - **Samostatná stránka pro každý označník** (parametr „Seznam zastávek") - zastávka obsluhovaná
   z více označníků se vytiskne jako **samostatná vývěska pro každý označník**, vždy jen s odjezdy
   spojů, které z daného sloupku jedou; číslo označníku je i v titulku stránky. Hodí se, když
@@ -741,6 +752,11 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 - **Záhlaví sloupců** - zap/vyp řádek záhlaví
 - **Podtržení aktuální / Tučně aktuální / Velikost aktuální / Pozadí aktuální / Barva textu aktuální** - zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná barva = stejná jako ostatní řádky)
 - **Projeté zastávky + Barva projetých** - zda tisknout i zastávky, které vozidlo od aktuální zastávky již projelo (ztlumeně)
+- **Čas u projetých** (*Nezobrazovat* / *Zobrazit*) - jízdní doby se počítají od vývěskové zastávky,
+  takže u projetých vycházejí záporné. *Nezobrazovat* vyprázdní u projetých zastávek **celou buňku**
+  časového sloupce, tedy i značku „<" (spoj tudy projíždí); dřív zmizelo jen číslo, takže sloupec
+  „Čas" byl prázdný a variantní sloupec vedle něj plný „<". Na neprojetých zastávkách zůstává „<"
+  beze změny - tam je to platná informace.
 
 #### Minuty odjezdů
 
@@ -764,6 +780,8 @@ Vysvětlivky pod odjezdy.
   zabírat výšku, takže poznámky začínají u horní hrany prvku. Prázdný text záhlaví pruh nezruší -
   pás bez textu může být záměr
 - **Text záhlaví** - co je v pruhu napsané (výchozí „Poznámky")
+- **Velikost** (skupina Záhlaví) - velikost písma v pruhu záhlaví; prázdné = 9 bodů. Výška pruhu
+  se počítá z ní, takže větší písmo pruh zvýší. Poznámky pod ním mají velikost vlastní
 - **Oddělovač** - text mezi značkou a popisem (výchozí „ - ")
 - **Velikost poznámek** - velikost písma. Nevejdou-li se poznámky do prvku, písmo se zmenší
   a aplikace to oznámí ve stavovém řádku
@@ -788,8 +806,8 @@ Vysvětlivky pod odjezdy.
 - **Přeprava kol u odjezdů** a **Místenky u odjezdů** - zapnou **značku u času odjezdu i vysvětlivku
   v legendě naráz**, aby nevznikla značka, které nikdo nerozumí. Kola se kreslí symbolem kola,
   místenka písmenem „R". Výchozí stav vypnuto.
-- **Pokračující spoje** - spoje, které pokračují dál po jiné lince, dostanou u odjezdu značku „u1“,
-  „u2“… a v legendě vysvětlivku „pokračuje do zast. … (l. 304)“ s posledním trojčíslím linky.
+- **Pokračující spoje** - spoje, které pokračují dál po jiné lince, dostanou u odjezdu značku „u1",
+  „u2"… a v legendě vysvětlivku „pokračuje do zast. … (l. 304)" s posledním trojčíslím linky.
   Odjezdy se stejným cílem po stejné lince mají tutéž značku, čísla spojů se neřeší. Výchozí vypnuto.
 
 > Značky kol a místenek se kreslí u minut, ale zapínají se tady - aby bylo vypínání obsahu na jednom
@@ -855,7 +873,11 @@ Analogický dvoutabový dialog:
   podle skutečných dat.
 - Pro skupinu: viditelnost, pořadí (▲/▼), **přepis nadpisu** (jinak se použije nadpis z dat, u
   sloupce hodin výchozí „Hod"), pevná šířka (prázdné = automatický výpočet + rovnoměrné dofill),
-  vlastní barva zebry pro danou skupinu.
+  vlastní **střídání řádků** pro danou skupinu.
+- **Barevné pruhy podle skupin dnů** - když každá skupina dostane vlastní barvu záhlaví, převezme
+  ji i **sloupec hodin** u té skupiny (platí při zapnuté volbě *Hodiny u každé skupiny*), takže
+  celý pruh vyjde jednobarevný sám a nemusíte ho barvit zvlášť. Buňka nad hodinami zůstane
+  neutrální - je to místo pro ikonku hodin.
 - **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `\n`)
   a nadpis se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
   jízdní řád u skupiny vyplněný i druhý nadpis, přidá se pod ně jako další řádek s vlastním

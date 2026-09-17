@@ -599,10 +599,6 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             ? CustomColumnVMs.Select(vm => vm.ToModel()).ToList()
             : null;
 
-        // Pozn.: per-column typografii záhlaví (font/velikost/řez) ignoruje render
-        // (DepartureGridElement.WithParentHeaderTypography) - element-level je autoritativní.
-        // Per-column nese jen barvy a zarovnání. Není potřeba nic mazat.
-
         CloseDialog(true);
     }
 }

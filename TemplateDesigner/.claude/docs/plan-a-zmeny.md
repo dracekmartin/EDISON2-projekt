@@ -35,6 +35,25 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
+### Týden od 7. 9. 2026 - Sloupce s jízdními dobami variant tras
+
+Když ze zastávky jedou spoje různými trasami, má každá trasa vlastní sloupec s jízdními dobami.
+Čtyři věci k tomu, jak ty sloupce vypadají.
+
+- **Písmena variant se dají vypnout.** Volba *Písmena variant tras* v parametrech sestavy,
+  skupina **Seznam zastávek**. Vypnutím zmizí označení v záhlaví sloupců i u minut odjezdů naráz,
+  samotné sloupce s časy zůstanou. Písmen, kterými se označují rozdíly tras, se to netýká -
+  ta se vypínají u linky.
+- **Blok sloupců může mít vlastní nadpis.** Položce *Varianty tras* v editoru sloupců jde nově
+  zadat záhlaví. S vypnutými písmeny se vytiskne jako jeden společný popisek přes celý blok,
+  ne jako tentýž text v každém sloupci zvlášť.
+- **I linka s jedinou variantou trasy dostane sloupec.** Dosud se položka při méně než dvou
+  variantách zahodila, takže kdo si vypnul sloupec *Čas* a stavěl vývěsku na variantách,
+  na takové lince neviděl nic.
+- **Varianty, které jsou podmnožinou jiné, jde slít.** Nová volba v parametrech, ve výchozím
+  stavu vypnutá: varianta, která staví jen tam, kde staví i jiná, dostane sloupec té delší.
+  Ubere to sloupce na lince, kde se spoje liší jen vynechávkami.
+
 ### Týden od 31. 8. 2026 - Písmena u odjezdů se berou z nastavení linky
 
 Písmena, kterými se u času odjezdu označuje varianta trasy, se nově berou **z nastavení u linky** -

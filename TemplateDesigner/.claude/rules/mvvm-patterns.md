@@ -286,7 +286,7 @@ float headerH = ComputeHeaderH(MaxResolvedHeaderFontPt());
 ```
 **Pravidlo:** kde se počítá výška z fontu, ber **resolved** font (per-column-aware), ne raw element property. A `Render()` + `CalculateHeightFromData()` musí použít **identický** výpočet.
 
-**Aplikováno:** DepartureGridElement (element font autoritativní - `SetHeaderFontSize` + dialog OnOk čistí per-column font, protože JŘ záhlaví je uniformní), StopListElement (výška z max resolved - per-column zůstává, protože sloupce mohou mít legitimně různý font). TableElement asymetrii nemá (výška = pevná `HeaderHeight` property).
+**Aplikováno:** StopListElement i DepartureGridElement (výška z max resolved přes viditelné sloupce - sloupec může mít legitimně jiný font). U odjezdů to platí **od 16. 9.**; do té doby si element typografii záhlaví vynucoval (`WithParentHeaderTypography`), protože import z PDF zapékal `Bold = true` do každé skupiny dnů a přebíjel tím ovladač prvku. Import to už nedělá a migrace 1.13.0 zapečené hodnoty smazala - **nezavádět zpátky**, správné místo pro takovou opravu je zdroj dat, ne render. TableElement asymetrii nemá (výška = pevná `HeaderHeight` property).
 
 ## Sdílený `CellStyleEditor` (dialogy sloupců)
 

@@ -36,8 +36,10 @@ Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Cach�
 
 Otevřené tikety #12434 (BBSK - „Export Tisk JŘ") a #12260 (BUSLINE - „úprava šablony") jsou obecné tracker / dotazy, ne konkrétní featury - neuvedeny.
 
-Mimo scope zastávkového JŘ (protříděno proti živému HD 2026-07-20 - všechny tiskové „suspended" tikety
-mimo tabulku výše jsou linkové/knižní JŘ, nebo úplně mimo TD; **žádný zastávkový nechybí**):
+Mimo scope zastávkového JŘ (protříděno proti živému HD 2026-07-20, znovu 15. 9. - všechny tiskové
+„suspended" tikety mimo tabulku výše jsou linkové/knižní JŘ, nebo úplně mimo TD; **žádný zastávkový
+nechybí**). ⚠️ Na Janovi je jich pozastavených **jedenáct** a všechny jsou níž; seznam odpovídá
+helpdesku k 15. 9.
 
 **Linkové / knižní JŘ (řeší se s jejich trackem, ne sem):**
 
@@ -45,13 +47,26 @@ mimo tabulku výše jsou linkové/knižní JŘ, nebo úplně mimo TD; **žádný
 > [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) §14
 > (projito 2026-08-19, navázané na vlny `L1`-`L8` roadmapy). Sem se to nekopíruje.
 
+✅ **Hotové, čekají jen na odpověď a zavření** (prověřeno proti helpdesku 15. 9.):
+
+- **#8372** (KORID) - „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).
+  Volba **„Dorovnat prázdnými sloupci"** u tabulky linky; dorovnává se i **levá** strana, kterou
+  tiket nežádal, ale u obousměrné sestavy bez ní zůstala díra.
+- **#8576** (KU HK) - tarifní zóny do sloupců + více zón u hraniční zastávky. Volba **„Každá zóna
+  ve vlastním sloupci"** u seznamu zastávek, výchozí vypnutá.
+- **#11300** (KORID) - prázdné přípojové řádky. Výtisk hotový 15. 9., viz roadmapa § K ověření.
+
+🟡 **Čeká práce nebo odpověď:**
+
 - **#7487** (KORID) - NZ + týdenní platnost 4 na řádek.
 - **#8360** (KU HK) - přípojové řádky: kurzíva / barva / velikost písma, aby čas přípoje nesplýval s časem spoje.
-- **#8372** (KORID) - „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).
-- **#8576** (KU HK) - tarifní zóny do sloupců + více zón u hraniční zastávky (layout linkového JŘ).
 - **#9417** (KORID) - dopravci v záhlaví souhrnného JŘ jen pro spoje na dané stránce (velké A4 linky).
-- **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky s časy (layout linkového JŘ).
-- **#9088** (TRANSDEV) - linkový cestovný poriadok · **#9283** (KOVED) - sdružený JŘ IDZK · **#11300** (KORID) - prázdné přípojové řádky.
+- **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky s časy. Umíme; zbývá výtisk.
+- **#9088** (TRANSDEV) - linkový cestovný poriadok · **#9283** (KOVED) - sdružený JŘ IDZK.
+- **#7937** (TRANSDEV) - odsazení zastávky. Půlku pokryje sloupec, druhá (odsazení per tarifní
+  pásmo) čeká na kolegy z jízdních řádů - detail v tabulce §TR.
+- **#13070** (BBSK) - vypadá jako linkový, ale předloha je **odjezdová relace**; patří tracku
+  Relace, kde zatím nic není.
 
 **Úplně mimo TD (Studio JŘ / editace dat, ne tisk):** #12803 (KOVED - výběr změněných km úseků),
 #7929/#8067/#8175/#8457/#9481/#9483/#10442/#12854 (editace spojů, MHD linek, stažky) - součinnost kolegů z JŘ.

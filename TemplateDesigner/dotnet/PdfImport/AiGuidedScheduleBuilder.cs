@@ -217,9 +217,12 @@ public static class AiGuidedScheduleBuilder
                 SkupinaDnuId = $"{GroupColumnIndexResolver.IndexKeyPrefix}{gi}",
                 IsVisible = true,
                 AlternatingRowColor = gc.AlternatingRowColor,
+                // Jen barva pozadí - typografie patří prvku. Zapečené `Bold = true` tady stálo
+                // za tím, že se v záhlaví odjezdů nedalo tučné vypnout: per-sloupcová hodnota
+                // přebíjela ovladač prvku a vypadalo to jako rozbité tlačítko (14. 6.).
                 Style = new ColumnVisualStyle
                 {
-                    Header = new TextStyle { BackgroundColor = gc.HeaderBgColor, Bold = true },
+                    Header = new TextStyle { BackgroundColor = gc.HeaderBgColor },
                 }
             });
             debug.Add($"  GroupColumn[{gi}]: header={gc.HeaderBgColor}, zebra={gc.AlternatingRowColor ?? "null"}");

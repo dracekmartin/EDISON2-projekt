@@ -566,7 +566,7 @@ Výčet je **uzavřený a ověřený**: knižní JŘ si z celého číselníku b
 | `PAtrSp` | které atributy nad spojem se vůbec tisknou (bezbariérově přístupné, kola, samoobslužný, nízkokapacitní) | ✅ hotovo 21. 8., u bezbariérového přebíjí linka (`TZPA,BBP`) |
 | `MistOR` / `MistNOD` | tvar tisku místenkování (odřádkování, dvojtečky) | ❌ |
 | `MHDPZ("P")` / `MHDPZ("Z")` | vlastní text místo „IDP-P" / „IDP-Z" ve sloupci MHD + jeho řádek legendy | ❌ máme napevno IDP-P/IDP-Z |
-| `ZonaIdsDelZnk` | odstranit písmena z označení zóny | ❌ (zastávkový JŘ to umí) |
+| `ZonaIdsDelZnk` | odstranit písmena z označení zóny | ✅ doloženo 15. 9. (`ZL_KOVED 1 / 0823955`: `Z420,I201` → `420,201`) |
 | `Print_Dopr_First` / `SDOP` / `PS_PrintSouhrnDoprLinYes` | pořadí a tisk dopravců a provozů, souhrn linek k dopravci | ❌ `PopisDopravce` má vlastní logiku, proti nastavení neověřenou |
 
 Z jazykové verze (`gMode`) engine odvozuje dvě věci, ne jednu:
@@ -595,7 +595,7 @@ Kompletní seznam toho, co tisková cesta reálně čte (`gPLSetWin` plus přím
 | `PATCH,cisIDS` | jak se skládá tištěné číslo linky (3místné, vlastní číslo, tablo) | ❌ |
 | `PATCH,ZLOM` | ruční zlom stránky na zadaném tarifním čísle | ❌ **vědomě odloženo** do `B100` (rozhodnutí Jan 25. 8.) - nastaveno na 3 linkách z ~93 tisíc. Ty se u nás tisknou jinak než ve starém modulu; **není to nedodělek, který by někdo hledal**, je to zapsané rozhodnutí |
 | `PATCH,TZPA("BBP")` | kam s bezbariérovým vozidlem (nad spoj / do poznámek) | ❌ |
-| `PATCH,ZonaIdsDelZnk` | **přebíjí** globální hodnotu téhož jména (`:1847`) | ❌ |
+| `PATCH,ZonaIdsDelZnk` | **přebíjí** globální hodnotu téhož jména (`:1847`) | ✅ doloženo 15. 9. na `ZL_KOVED 1 / 0823955` (globální 1, u linky 2) |
 | `MHD2,netisknoutTC` / `netisknoutCislaSpoju` / `netisknoutSipky` / `netisknoutKladivkaAPodobne` | schová sloupec Tč, čísla spojů, šipky, značky | ❌ |
 | `MHD2,umeleDatDoSekci` / `rozdelitUmeleSekceNaVlastniStranky` | ruční přiřazení spojů do skupin a jejich stránkování | ❌ |
 
@@ -1133,10 +1133,12 @@ Pět samostatných věcí v jednom tiketu:
 ### 14.3 Co se ukázalo jako mimo tento track
 
 - **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky, ne pod ní. Umístit vedle jde,
-  prvky mají volnou pozici. ⚠️ **Ale u linkových to není prvek Poznámky** - ten je vázaný na druh
-  agendy `STOP`; u linkových se legenda skládá **dynamickou tabulkou** nad kolekcí `POZNAMKY`, takže
-  uživatel nedostane značky ani řazení, jen sloupce textu. Tvrzení „umíme už dnes, legenda je
-  samostatný prvek" platilo pro zastávkové (zjištěno 3. 9.). Souvisí s `B117`.
+  prvky mají volnou pozici. ⚠️ **Výhrada „u linkových to není prvek Poznámky" padla `B117`** (3. 9.):
+  od té doby je prvek Poznámky i u druhu agendy `LINE` a legendu skládá včetně negativních značek -
+  ověřeno na výtisku `0330510` 15. 9. (značky `21`, `23`, `70` i dny `X`, `6`, `7`, `+`).
+  Co zůstává: filtry na **kategorie** (bezbariér, na znamení, přestupy) jsou u linkových nečinné,
+  protože linkový posílá kategorii prázdnou, a **počet poznámek na řádek per druh** prvek neumí
+  vůbec (`#7487`).
 - **#13070** (BBSK) - vypadá jako linkový, ale zákazníkova předloha je **odjezdová relace**;
   patří tracku Relace, kde ještě nic není.
 - **#8175** (TRANSDEV) + bod 12 z **#8785** (POVED) - řazení spojů volitelně per linka a ruční pořadí.
@@ -1161,10 +1163,10 @@ naslepo.
 
 | Firma | Skupina | Linka | Co je na ní vidět |
 |---|---|---|---|
-| CB_CSADAD | 1 | 0370618 | **ruční pořadí spojů** u linky (a že se použije, ne dopočítá) |
+| CB_CSADAD | 4 | 0330520 | **ruční pořadí spojů** u linky - a že se použije, ne dopočítá. Ručně `1,3,5,7,101,103,105`, podle času by vyšlo `1,101,3,103,5,7,105`; ověřeno voláním 15. 9., vracíme ruční. ⚠️ **Ne `1 / 0370618`**, jak tu stálo do 15. 9.: ta ruční pořadí sice má, ale shodné s časovým, takže na ní rozdíl vidět není. Linky, kde se obojí liší, najde `LinkovyJrNastaveniProbe.RozdilneRucniPoradi` (8 z 11 měřených) |
 | CB_CSADAD | 591 | 0380751 | **barevné spoje** (barva je na spoji, linka ji umí potlačit). ⚠️ **Slabý doklad** (změřeno 26. 8.): v celé firmě má barvu **2 spoje z 483 246**, oba na téhle lince a oba světle růžové `255;128;255` - jeden z nich je **spoj 19**. Změna volby tedy přebarví dva sloupce z tisíců, takže na plné tabulce vypadá, že se neděje nic. Sledovat přímo spoj 19, ne celkový dojem. |
 | CB_CSADAD | 801 | 0345062 | **bez zón i bez km** (čtyřstavový přepínač `linIDS` = 3) |
-| VS_CSAD | 5 | 0771901 | **písmena ze zóny se odstraňují** |
+| ZL_KOVED | 1 | 0823955 | **písmena ze zóny se odstraňují** - v datech `Z420,I201`, agenda vrací `420,201`. ⚠️ **Ne `VS_CSAD 5 / 0771901`**, jak tu stálo do 15. 9.: Vsetín na to data nemá a zóny vůbec nevyplňuje. Linku se zónami najde `LinkovyJrSpojeProbe.Zony` - zóny má jen zlomek linek i tam, kde je tisk zón zapnutý |
 | CB_GWBUS | 106 | 0320144 | **schovaný sloupec tarifních čísel** |
 | CB_GWBUS | 104 | 0320157 | **bez zastávek, kde žádný spoj nestaví** (ubírá řádky, nejvíc vidět) |
 | CB_CSADAD | 1 | 0330510 | **rozřezání na bloky**: 41 spojů, přípojné řádky, tři skupiny dnů (37/1, 38/2, 41/3 podle volby dělení) |
@@ -1224,7 +1226,7 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
 |---|---|---|
 | 1 | odstranit **šedivý pruh nad nadpisy** | ✅ **umíme** - pás skupin dnů i řádek záhlaví berou barvu z `HeaderStyle` prvku (pozadí i text), nastavuje se v panelu |
 | 2 | **změnit pořadí info sloupců** (zóny, km, zastávky…) | ✅ **umíme** - sloupce jsou seznam a dialog je umí přesouvat (`ColumnListEditor`, `MoveUpCommand`) |
-| 3 | **odstranit sloupec MHD a sloupec se šipkou** | ✅ **umíme** - MHD má zaškrtávátko viditelnosti a navíc zmizí sám, když je pro celou linku prázdný; **sloupec se šipkou v prvku vůbec není** (přidat ho má naopak `L6`) |
+| 3 | **odstranit sloupec MHD a sloupec se šipkou** | ✅ **umíme** - obojí má zaškrtávátko viditelnosti; MHD navíc zmizí sám, když je pro celou linku prázdný. ⚠️ **Sloupec se šipkou od 10. 9. existuje a je z výroby ZAPNUTÝ** (`B136` - nese `př`/`od` u rozdvojené zastávky, což je jediné, čím se ty dva řádky liší). Do 10. 9. tu stálo, že v prvku vůbec není; kdo chce vzor IDZK, musí ho teď vypnout |
 | 4 | **odstranit ohraničení jednotlivých km sloupců** | ✅ **umíme** (26. 8., `L9`) - „Popisné sloupce bez vnitřních čar" slije km, zastávku a zóny do jednoho bloku a čáry mezi sloupci spojů nechá. ⚠️ Původní tvrzení „kreslí se buď všude, nebo nikde" **neplatilo**: `Grid.ShowColumnLines` prvek vůbec nečte a mřížku kreslí vždy (ověřeno vykreslením 27. 8., vedeno jako `L10`) |
 | 5 | **jiný styl čar mezi spoji** pro celou sekci | 🟡 **částečně** - `GridStyle` má zvlášť vodorovné a svislé čáry, ale **jednu barvu, tloušťku a styl pro obojí**. Vzor má jemné vodorovné a žádné svislé, což už jde; různá barva pro každý směr ne |
 | 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ✅ **umíme** (26. 8., `L9`) - „Nadpis popisných sloupců". Pás se přitom musel odvázat od skupin dnů: kreslil se jen při víc než jedné skupině, takže na lince s jedinou by nadpis nebyl |
@@ -1242,7 +1244,8 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
   mezera mezi bloky) - všechny jsou o tom, aby tabulka nevypadala jako jedna souvislá mřížka.
   ✅ **Všechny tři hotové jako `L9`** (26.-27. 8.), a potvrdilo se, že je to jeden pojem:
   **skupina sloupců** s nadpisem, bez vnitřních čar a s mezerou za sebou.
-- **Sloupec se šipkou** má `L6` v plánu přidat; tady je doklad, že se hodí i **vypnout**.
+- **Sloupec se šipkou** přibyl 10. 9. (`B136`) a je z výroby zapnutý; tady je doklad, že se hodí
+  i **vypnout** - vzor IDZK ho nemá.
 - ⚠️ **Neověřeno:** v PDF ze starého modulu jsou v buňkách písmena (`K`, `A`, `J`, `D`) tam, kde
   vzor má piktogramy (`|`, `⟨`). Může to být nevložený symbolový font v tom konkrétním PDF, nebo
   jiný obsah - **rozhodne se to až s `L4`**, netvrdit nic dopředu.
@@ -1379,14 +1382,27 @@ přípoje jsou jen o víkendu. Je to **linkový tabelární JŘ** (linka 260, ID
   dny, a oddělování skupin dnů jsme do té doby neměli (§6.3). **Musí se tisknout jednosměrně** -
   u obousměrné sestavy se skupiny neoddělují a prázdné buňky v přípojném řádku vzniknout mohou.
 
-**Postup, až poběží dev server:**
+**✅ Doloženo výtiskem 15. 9. - `CB_CSADAD 1 / 0330510`, směr Zpět, jednosměrný tisk.**
+(Jeho vlastní firma ČSAD Liberec / IDOL na dev serveru není, proto náhrada.)
 
-1. Otevřít linkovou šablonu, v parametrech sestavy **vypnout Obousměrný tisk**.
-2. Vzít `CB_CSADAD 1 / 0330511` směr Tam - devět spojů a přípoj jen tři (9, 13, 31 na tarifním
-   čísle 19). ⚠️ Jeho vlastní firma (ČSAD Liberec / IDOL) na dev serveru **není**, proto náhrada.
-3. Exportovat a ověřit dvojí: každá tabulka nese jen jednu skupinu dnů, a kde přípoj není, není
-   ani řádek.
-4. Poslat mu to a tiket zavřít.
+- **Strana 3 je list jen s pracovními dny a nemá jediný přípojný řádek** - ani prázdný.
+- **Strana 4** nese tytéž zastávky (22 shodných) plus soboty a neděle a má pět přípojných řádků,
+  každý s aspoň jedním časem.
+
+Tím je vidět obojí naráz: řádek vzniká jen pro přípoj, který skutečně existuje, a na listu, kde
+takový přípoj není, se nerezervuje místo. Měřeno z PDF podle souřadnic - texty pod tabulkou jsou
+legenda poznámek, ne přípojné řádky. Zbývá **poslat a zavřít**.
+
+⚠️ **Dvě dřívější doporučení linky byla mimo** (obojí ověřeno voláním serveru 15. 9.):
+
+- `0330511` má všech devět spojů v **jedné skupině dnů**, takže se tabulka nemá podle čeho
+  rozdělit a zákazníkova situace („PD a víkend na zvláštní tabulce") na ní vůbec nenastane.
+- `0370618` dvě skupiny dnů má, ale jsou to dva spoje - oddělení by stálo blok navíc, takže
+  se nedělá. Její jediný přípoj navíc nese `RADEK=0`, tedy se v tabulce nekreslí tak jako tak.
+
+**Jak najít jinou linku:** `LinkovyJrSpojeProbe.NajdiProUkazku` hledá linku, kde spoje spadají do
+víc skupin dnů a zároveň aspoň jedna skupina nese přípoj tištěný jako řádek. Situace je běžná -
+19 z 23 měřených stránek. `LinkovyJrSpojeProbe.Pripoje` vypíše přípoje per spoj včetně `RADEK`.
 
 ### 16.3 Měření 4. 9. - sonda
 
