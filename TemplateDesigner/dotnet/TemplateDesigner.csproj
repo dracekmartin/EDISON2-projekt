@@ -9,6 +9,8 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <DebugType>embedded</DebugType>
+    <!-- Připnutá aplikace na liště bere ikonu z exe, ne z okna - bez ní výchozí ikona .NET. -->
+    <ApplicationIcon>..\..\EDControls\dotnet\EDIcons\cube_molecule.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

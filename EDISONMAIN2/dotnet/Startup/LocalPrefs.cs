@@ -19,8 +19,6 @@ public interface ILocalPrefs
     /// Null = nezapamatováno. Předvyplní se jen když jméno uložené v blobu == <see cref="LastLoginName"/>.</summary>
     string? RememberedPassword { get; set; }
 
-    bool ShowWindowsAsDialogs { get; set; }
-
     /// <summary>Uložený layout miniaplikací (AvalonDock XML) per IDFa. Null = žádný uložený.</summary>
     Dictionary<string, string>? MiniAppLayouts { get; set; }
 
@@ -41,9 +39,6 @@ public class LocalPrefs : ILocalPrefs
     public string? LastIdfa { get; set; }
     public string? LastLoginName { get; set; }
     public string? RememberedPassword { get; set; }
-
-    // Uživatel → Možnosti - ShowWindowsAsDialogs zatím bez behaviorálního efektu (uloženo pro budoucnost).
-    public bool ShowWindowsAsDialogs { get; set; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }

@@ -1105,8 +1105,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void PersistShortcuts() => _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
 
         // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModuleAsync (usage + overlay); ostatní
-        // druhy zástupců (tiskové sestavy, pohledy DS) shell zatím spustit neumí; kanál
-        // spuštění jde přes EDISONMAIN2API.
+        // druhy zástupců (tiskové sestavy, pohledy DS) pouští hostitelská agenda přes EDISONMAIN2API.
         private void LaunchShortcut(DesktopShortcut shortcut)
         {
             if (shortcut.Module is { } module) { OpenModuleCommand.Execute(module); return; }
@@ -1358,19 +1357,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             await RebuildSessionStateAsync(_services.LicenceLoader?.Invoke());
             PopupDisplayer.Info("Licence byla aktualizována.");
-        }
-
-        // ShowWindowsAsDialogs nikdo nečte - flag se jen persistuje do LocalPrefs.
-        public bool ShowWindowsAsDialogs
-        {
-            get => _prefs.ShowWindowsAsDialogs;
-            set
-            {
-                if (_prefs.ShowWindowsAsDialogs == value) return;
-                _prefs.ShowWindowsAsDialogs = value;
-                _prefs.Save();
-                OnPropertyChanged();
-            }
         }
 
         // Tmavý režim - sdílená preference (%APPDATA%\m-line\common\theme.json) přes ThemeService;

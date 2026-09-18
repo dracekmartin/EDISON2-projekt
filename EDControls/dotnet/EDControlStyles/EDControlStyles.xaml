@@ -208,21 +208,8 @@
                     <ColumnDefinition Width="14"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Icon area: IsCheckable checkmark nebo IconSource -->
                 <Border x:Name="IconArea" Grid.Column="0" Width="22" VerticalAlignment="Center" HorizontalAlignment="Center">
                     <ContentPresenter ContentSource="Icon" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
-                </Border>
-                <!-- Slot drží šířku i u odškrtnuté zaškrtávací položky (Hidden se měří, Collapsed ne) -
-                     jinak by text při zaškrtnutí poskočil o celý sloupec. -->
-                <Border x:Name="CheckSlot" Grid.Column="0" Width="22" Visibility="Collapsed"
-                        VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <Path VerticalAlignment="Center" HorizontalAlignment="Center"
-                          Stroke="{DynamicResource EDTheme.Accent.Blue}"
-                          StrokeThickness="1.5"
-                          Data="M 2 6 L 5 9 L 11 3"
-                          StrokeStartLineCap="Round"
-                          StrokeEndLineCap="Round"
-                          StrokeLineJoin="Round"/>
                 </Border>
 
                 <!-- Header text -->
@@ -238,19 +225,25 @@
                            Text="{TemplateBinding InputGestureText}"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+
+                <!-- Zaškrtnutí vpravo, v pevném sloupci šipky submenu - zaškrtávací položka si tak
+                     nerezervuje sloupec ikony a menu bez ikon zůstane bez odsazení. -->
+                <Path x:Name="CheckMark" Grid.Column="3" Visibility="Collapsed"
+                      VerticalAlignment="Center" HorizontalAlignment="Center"
+                      Stroke="{DynamicResource EDTheme.Accent.Blue}"
+                      StrokeThickness="1.5"
+                      Data="M 2 6 L 5 9 L 11 3"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round"
+                      StrokeLineJoin="Round"/>
             </Grid>
         </Border>
         <ControlTemplate.Triggers>
             <Trigger Property="Icon" Value="{x:Null}">
                 <Setter TargetName="IconArea" Property="Visibility" Value="Collapsed"/>
             </Trigger>
-            <Trigger Property="IsCheckable" Value="True">
-                <Setter TargetName="CheckSlot" Property="Visibility" Value="Hidden"/>
-            </Trigger>
-            <!-- Až za IsCheckable - zaškrtnuté musí přebít jeho Hidden. -->
             <Trigger Property="IsChecked" Value="True">
-                <Setter TargetName="CheckSlot" Property="Visibility" Value="Visible"/>
-                <Setter TargetName="IconArea" Property="Visibility" Value="Collapsed"/>
+                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
             </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>

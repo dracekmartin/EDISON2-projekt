@@ -157,7 +157,6 @@
                 <Separator/>
                 <MenuItem Header="Nastavení jazyka" Command="{Binding ShowLanguageSettingsCommand}"/>
                 <Separator/>
-                <MenuItem Header="Spouštět okna jako dialogy"     IsCheckable="True" IsChecked="{Binding ShowWindowsAsDialogs}"/>
                 <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
             </MenuItem>
             <MenuItem Header="Nápověda">

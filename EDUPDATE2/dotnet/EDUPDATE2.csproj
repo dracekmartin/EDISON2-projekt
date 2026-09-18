@@ -7,6 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>
+    <!-- Jen build-time soubor, ne závislost na EDControls.dll: okno updateru nemá Icon a bere ikonu z exe. -->
+    <ApplicationIcon>..\..\EDControls\dotnet\EDIcons\cube_molecule.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

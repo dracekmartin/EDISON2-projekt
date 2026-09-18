@@ -93,6 +93,9 @@ Platí pro aplikace postavené na EDControls. Bez těchto tří to padá za běh
 a `EDAppearance.Initialize(app)` (fonty + theme). Referenční implementace
 `EDISONMAIN2/dotnet/Startup/App.xaml(.cs)`. Výjimka `EDUPDATE2` - záměrně bez EDControls
 (vyměňuje je za běhu), povinný zůstává jen exception handler; viz `EDUPDATE2/CLAUDE.md`.
+Každý aplikační exe (i EDUPDATE2) má navíc `<ApplicationIcon>` na sdílené
+`EDControls/dotnet/EDIcons/cube_molecule.ico`: připnutá aplikace na liště a okno bez `Icon`
+berou ikonu z exe, ne z okna, a bez ní ukážou výchozí ikonu .NET.
 
 **Vzhled vždy přes sdílené tokeny/resource, nikdy hardcoded literál:** barvy `EDTheme.*`
 i `FontSize`/`IconSize` **přes `{DynamicResource}`** (`StaticResource` nepřežije swap dark
@@ -107,7 +110,7 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 - **Per-machine JSON** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`) přes
   injektovaný `ILocalPrefs` (composition root `AppBootstrapper`). Nové preference = nullable
   property (chybějící klíč zůstane null - kompatibilní upgrade). `RememberedPassword` je DPAPI
-  blob, předvyplní se jen když jméno v blobu == `LastLoginName`; `ShowWindowsAsDialogs` = no-op.
+  blob, předvyplní se jen když jméno v blobu == `LastLoginName`.
 - **Per-user × IDFa (Caché)** - stav oken automaticky přes `EDViewModel` /
   `WindowStatePersistence`; detaily v `EDControls/dotnet/EDViewModel/CLAUDE.md`.
 - **Cross-process (font, theme)** - `%APPDATA%\m-line\common\`; viz `EDControls/CLAUDE.md`.

@@ -44,7 +44,6 @@ public class LocalPrefsTests
             Assert.Null(prefs.LastIdfa);
             Assert.Null(prefs.LastLoginName);
             Assert.Null(prefs.RememberedPassword);
-            Assert.False(prefs.ShowWindowsAsDialogs);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
         });
@@ -89,7 +88,7 @@ public class LocalPrefsTests
         WithTempPrefs(
             """
             {"lastIdfa":"CB_DP","lastLoginName":"tester","rememberedPassword":"blob",
-             "showWindowsAsDialogs":true,"miniAppLayouts":{"CB_DP":"<xml/>"},
+             "miniAppLayouts":{"CB_DP":"<xml/>"},
              "treeWidths":{"CB_DP":321.5}}
             """, _ =>
         {
@@ -98,7 +97,6 @@ public class LocalPrefsTests
             Assert.Equal("CB_DP", prefs.LastIdfa);
             Assert.Equal("tester", prefs.LastLoginName);
             Assert.Equal("blob", prefs.RememberedPassword);
-            Assert.True(prefs.ShowWindowsAsDialogs);
             Assert.Equal("<xml/>", prefs.MiniAppLayouts!["CB_DP"]);
             Assert.Equal(321.5, prefs.TreeWidths!["CB_DP"]);
         });
@@ -124,7 +122,6 @@ public class LocalPrefsTests
             {
                 LastIdfa = "CB_DP",
                 LastLoginName = "tester",
-                ShowWindowsAsDialogs = true,
                 MiniAppLayouts = new() { ["CB_DP"] = "<xml/>", ["CB_MLINEAS"] = "<xml2/>" },
                 TreeWidths = new() { ["CB_DP"] = 280 },
             }.Save();
@@ -132,7 +129,6 @@ public class LocalPrefsTests
             var loaded = LocalPrefs.Load();
 
             Assert.Equal("tester", loaded.LastLoginName);
-            Assert.True(loaded.ShowWindowsAsDialogs);
             Assert.Equal(2, loaded.MiniAppLayouts!.Count);
             Assert.Equal("<xml2/>", loaded.MiniAppLayouts["CB_MLINEAS"]);
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
