@@ -199,11 +199,17 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
     /// stála pod sebou napříč hodinami **i sloupci** - za řádek by hodina se značkami měla jiný
     /// rozestup než hodina bez nich, za sloupec by se rozešly sloupce mezi sebou (`B143`).</summary>
     /// <summary>Rozteč pevného rastru: nastavená šířka minuty, nejméně však minuta + mezera + místo
-    /// na **jednu** značku. Nejde o nejhorší odjezd - kde značka není, místo zůstane prázdné a minuty
-    /// stojí v mřížce (vzor vývěsky TRANSDEV k `B160`). Bez té rezervy zbylo na značku jen to, co
-    /// nedobraly číslice, a zmenšování ji srazilo na mez čitelnosti (nález Jan 18. 9.).</summary>
-    internal static float PevnyRastr(float nominalMm, float minutaMm, float mezeraMm, float jednaZnackaMm) =>
-        MathF.Max(nominalMm, minutaMm + mezeraMm + jednaZnackaMm);
+    /// na **jednu** značku + odstup od dalšího odjezdu. Nejde o nejhorší odjezd - kde značka není,
+    /// místo zůstane prázdné a minuty stojí v mřížce (vzor vývěsky TRANSDEV k `B160`).
+    ///
+    /// <para>⚠️ Obě rezervy jsou nutné a každá z jiného důvodu. Bez místa na značku zbylo na ni jen
+    /// to, co nedobraly číslice, a zmenšování ji srazilo na mez čitelnosti. Bez odstupu vyšla rozteč
+    /// přesně na označkovaný odjezd, takže se slepily (`33₂₃42₇₀49₇₀` místo `33₂₃ 42₇₀ 49₇₀`) -
+    /// rovnoměrný rastr to nemá, protože počítá se všemi značkami nejhoršího odjezdu a ten přebytek
+    /// odstup udělá sám. Obojí nález Jan 18. 9.</para></summary>
+    internal static float PevnyRastr(float nominalMm, float minutaMm, float mezeraMm, float jednaZnackaMm,
+        float odstupMm = 0f) =>
+        MathF.Max(nominalMm, minutaMm + mezeraMm + jednaZnackaMm + (jednaZnackaMm > 0f ? odstupMm : 0f));
 
     /// <summary>Škála písma značek v pevném rastru: zmenší je tak, aby se za minutu do rozteče vešly.
     /// Nikdy pod mez zmenšování (<see cref="Rendering.CellRenderer.MinScale"/>) - pod ní by z nich byly
@@ -823,9 +829,13 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             // nevejdou, se zmenší; jedním poměrem pro celý prvek, aby nebyly každá jinak velká.
             else if (MinuteSpacing == DepartureSpacing.Fixed)
             {
-                float minutaMm = 0f;
+                float minutaMm = 0f, odstupMm = 0f;
                 foreach (var f in groupMinuteFonts.Values)
+                {
                     minutaMm = MathF.Max(minutaMm, f.MeasureText("00") / ctx.MmToPx);
+                    // Odstup = mezera v písmu minut, ať roste s velikostí a nemusí se nastavovat.
+                    odstupMm = MathF.Max(odstupMm, f.MeasureText(" ") / ctx.MmToPx);
+                }
 
                 float jednaZnackaMm = 0f, vsechnyZnackyMm = 0f;
                 foreach (var o in layout.Groups.SelectMany(g => g.ByHour.Values).SelectMany(o => o))
@@ -845,7 +855,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                 // místo zůstane prázdné a minuty stojí v mřížce. Doloženo vzorem vývěsky, kterou
                 // TRANSDEV posílal k `B160` (linka 32 Nitra): `18 38 58` i `08 к 18 28 к 38` mají
                 // tytéž pozice minut. Spoj s víc značkami se do místa vejde zmenšením.
-                float rastr = PevnyRastr(scaledMinuteW, minutaMm, AnotaceGap * dataScale, jednaZnackaMm);
+                float rastr = PevnyRastr(scaledMinuteW, minutaMm, AnotaceGap * dataScale, jednaZnackaMm, odstupMm);
 
                 float anotScale = ZmenseniZnacek(rastr, minutaMm, vsechnyZnackyMm, dataScale,
                     anotSymStyle, anotTextStyle, anotGlyphStyle);

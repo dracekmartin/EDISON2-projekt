@@ -109,6 +109,24 @@ public class DepartureSpacingTests
         Assert.Equal(5.3f, rastr, precision: 3);
     }
 
+    /// <summary>Za značkou musí zbýt odstup, jinak se označkované odjezdy slepí do jednoho shluku
+    /// (`33₂₃42₇₀49₇₀`). Rovnoměrný rastr to nemá, protože jeho přebytek odstup udělá sám.</summary>
+    [Fact]
+    public void PevnyRastr_NechaOdstupMeziOdjezdy()
+    {
+        float rastr = DepartureGridElement.PevnyRastr(
+            nominalMm: 5f, minutaMm: 3.2f, mezeraMm: 0.3f, jednaZnackaMm: 1.8f, odstupMm: 0.9f);
+
+        Assert.Equal(6.2f, rastr, precision: 3);
+    }
+
+    /// <summary>Bez značek není co oddělovat - odstup se nepřičítá, aby se vývěska bez nich nezředila.</summary>
+    [Fact]
+    public void PevnyRastr_BezZnacek_NepricitaOdstup()
+    {
+        Assert.Equal(5f, DepartureGridElement.PevnyRastr(5f, 3.2f, 0.3f, 0f, odstupMm: 0.9f), precision: 3);
+    }
+
     /// <summary>Nastavená šířka je spodní mez - širší rozteč si uživatel může vynutit.</summary>
     [Fact]
     public void PevnyRastr_NastavenaSirkaJeSpodniMez()
