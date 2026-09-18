@@ -73,6 +73,80 @@ ClassMethod KdeJeVidetRastr(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Konkrétní vývěsky jedné linky, na kterých je rozdíl rastru minut (`B160`) opravdu vidět.
+/// Rozestup se pozná jen tam, kde v jednom **řádku hodiny** stojí několik minut vedle sebe -
+/// na vývěsce s jedním odjezdem za hodinu není co rozestupovat.
+///
+/// IN: `SKUPINA_LINEK_ID`, `LINKA_ID`, `MAXOUT` (kolik vypsat, výchozí 8).
+/// OUT: `zastavka~<n>` = `<směr> <název>  nejvic minut v radku=<n>, nejvic znacek na odjezdu=<n>`.
+ClassMethod RastrPoZastavkach(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s sku = $g(^||ML("IN","SKUPINA_LINEK_ID")), lin = $g(^||ML("IN","LINKA_ID"))
+		s maxOut = +$g(^||ML("IN","MAXOUT"))
+		s:maxOut<1 maxOut = 8
+
+		k ^||ML("IN")
+		s ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+		k ^||ML("OUT")
+		d ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+		m odpoved = ^||ML("OUT")
+		k ^||ML("OUT")
+
+		k nalez
+		s stranek = 0, key = ""
+		f {
+			s key = $o(odpoved(key))
+			q:key=""
+			continue:'$isvalidnum(key)
+			s stranek = stranek + 1
+			s page = ##class(%DynamicObject).%FromJSON(odpoved(key))
+			s odjezdy = page.rows.%Get("ODJEZDY")
+			continue:'$isobject(odjezdy)
+
+			k vRadku
+			s maxVRadku = 0, maxZnacek = 0
+			f oi=0:1:(odjezdy.%Size()-1) {
+				s o = odjezdy.%Get(oi)
+				s radek = o.%Get("SKUPINA_DNU_ID")_"~"_o.%Get("HODINA")
+				s vRadku(radek) = $g(vRadku(radek)) + 1
+				s:vRadku(radek)>maxVRadku maxVRadku = vRadku(radek)
+				s anot = o.%Get("ANOTACE")
+				s pocet = $s($isobject(anot):anot.%Size(), 1:0)
+				s:pocet>maxZnacek maxZnacek = pocet
+			}
+			continue:maxVRadku<3
+			continue:maxZnacek<2
+			s nalez(maxZnacek, maxVRadku, stranek) =
+				page.values.SMER_" "_page.values."POPIS_ZASTAVKA"_
+				"  nejvic minut v radku="_maxVRadku_", nejvic znacek na odjezdu="_maxZnacek
+		}
+
+		s ^||ML("OUT","souhrn") = "linka "_sku_"/"_lin_", stranek="_stranek
+		s vypsano = 0, mz = ""
+		f {
+			s mz = $o(nalez(mz), -1)
+			q:(mz="")||(vypsano'<maxOut)
+			s mr = ""
+			f {
+				s mr = $o(nalez(mz, mr), -1)
+				q:(mr="")||(vypsano'<maxOut)
+				s st = ""
+				f {
+					s st = $o(nalez(mz, mr, st))
+					q:(st="")||(vypsano'<maxOut)
+					s vypsano = vypsano + 1
+					s ^||ML("OUT","zastavka~"_$tr($j(vypsano,2)," ","0")) = nalez(mz, mr, st)
+				}
+			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Kolik odjezdů linka má, kolik z nich nese značku a nejvíc značek na jednom odjezdu.
 /// Helper - volá se jen z metody, která catch má.
 ClassMethod ZmerZnackyLinky(sku As %String, lin As %String, ByRef sys As %String, ByRef celkem, ByRef sZnackou, ByRef maxZnacek)
