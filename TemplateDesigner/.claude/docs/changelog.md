@@ -2,12 +2,18 @@
 
 ## 2026-09-18 (2) - 📏 pevný rastr minut: značky rozestup neovlivní
 
-`B160`, přání TRANSDEV z 16. 9. Rovnoměrný rozestup počítá rastr z **nejširšího odjezdu celého
-prvku, tedy minuty i s jejími značkami**. Stačí jediný spoj se dvěma značkami a rozestup se roztáhne
+`B160`, přání TRANSDEV z 16. 9. Zarovnání dle nejširšího odjezdu počítá rozteč z **nejširšího
+odjezdu celého prvku, tedy minuty i s jejími značkami**. Stačí jediný spoj se dvěma značkami a rozestup se roztáhne
 všude - i v hodinách, kde žádná značka není, a vývěska působí zředěně.
 
-Třetí volba **Pevný rastr** v přepínači Rozestup odjezdů: rozteč je přesně „Šířka minuty" a značky
-se do ní nepočítají. Hustota vývěsky tak nezávisí na tom, kolik má linka značek.
+Třetí volba **Zarovnat na pevnou šířku**: rozteč se řídí nastavením a data ji nezmění. Hustota
+vývěsky tak nezávisí na tom, kolik má linka značek, a přidaný označkovaný spoj nepřesází zbytek.
+
+Při té příležitosti se přejmenovaly všechny tři volby. Dosavadní trojice („Podle obsahu",
+„Rovnoměrný", „Pevný rastr") mluvila v každé položce o něčem jiném - o zdroji šířky, o výsledku
+a o mechanismu - takže z ní nešlo poznat, že druhé dvě dělají totéž a liší se jen tím, odkud se
+rozteč bere. Nově **Bez zarovnání**, **Zarovnat dle nejširšího odjezdu** a **Zarovnat na pevnou
+šířku**. Uložené šablony se nemění, do JSON jde kód volby, ne popisek.
 
 V rozteči je místo na **jednu** značku, ne na nejhorší odjezd - kde značka není, místo zůstane
 prázdné a minuty stojí v mřížce. Doloženo vzorem vývěsky, kterou zákazník posílal (linka 32 Nitra):

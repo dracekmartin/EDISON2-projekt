@@ -1597,9 +1597,13 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             Set = v => MinuteSpacing = (DepartureSpacing)v,
             Options =
             [
-                ("Podle obsahu", (object)DepartureSpacing.ByContent),
-                ("Rovnoměrný", (object)DepartureSpacing.Even),
-                ("Pevný rastr", (object)DepartureSpacing.Fixed),
+                // Popisky pojmenovávají VÝSLEDEK, ne mechanismus: první slovo řekne, jestli se
+                // zarovnává, a zbytek věty jedinou věc, kterou se druhé dvě liší - odkud se bere
+                // rozteč. Dřívější trojice („Podle obsahu / Rovnoměrný / Pevný rastr") mluvila
+                // v každé položce o něčem jiném (rozhodnutí Jan 18. 9.).
+                ("Bez zarovnání", (object)DepartureSpacing.ByContent),
+                ("Zarovnat dle nejširšího odjezdu", (object)DepartureSpacing.Even),
+                ("Zarovnat na pevnou šířku", (object)DepartureSpacing.Fixed),
             ]
         },
         new FloatPropertyDescriptor { FromImage = true, Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },

@@ -1,11 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
-## `B160` Pevný rastr minut (hotovo 18. 9. 2026)
+## `B160` Zarovnání odjezdů na pevnou šířku (hotovo 18. 9. 2026)
 
-Přání TRANSDEV z 16. 9.: rozteč minut, kterou značka neovlivní. Rovnoměrný režim počítá rastr
-z nejširšího odjezdu včetně značek, takže jeden označkovaný spoj zředí celou vývěsku.
+Přání TRANSDEV z 16. 9.: rozteč minut, kterou značka neovlivní. Zarovnání dle nejširšího odjezdu
+počítá rozteč včetně značek, takže jeden označkovaný spoj zředí celou vývěsku.
 
-Třetí volba **Pevný rastr**: rozteč = „Šířka minuty", značky mimo výpočet. Co se za minutu nevejde,
+Třetí volba **Zarovnat na pevnou šířku**: rozteč se řídí nastavením, nejméně však minuta a jedna
+značka plus odstup. Co se za minutu nevejde,
 se úměrně zmenší s mezí z `B162` (nejvýš na polovinu, nikdy pod 4 body) - jedním poměrem pro celý
 prvek, aby značky nebyly každá jinak velká. Zmenšování zvoleno místo přetečení jako konzistentní
 se zbytkem aplikace (rozhodnutí Jan 18. 9.).
