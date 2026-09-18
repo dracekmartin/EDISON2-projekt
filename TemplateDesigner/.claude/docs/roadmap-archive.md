@@ -1,5 +1,15 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B160` Pevný rastr minut (hotovo 18. 9. 2026)
+
+Přání TRANSDEV z 16. 9.: rozteč minut, kterou značka neovlivní. Rovnoměrný režim počítá rastr
+z nejširšího odjezdu včetně značek, takže jeden označkovaný spoj zředí celou vývěsku.
+
+Třetí volba **Pevný rastr**: rozteč = „Šířka minuty", značky mimo výpočet. Co se za minutu nevejde,
+se úměrně zmenší s mezí z `B162` (nejvýš na polovinu, nikdy pod 4 body) - jedním poměrem pro celý
+prvek, aby značky nebyly každá jinak velká. Zmenšování zvoleno místo přetečení jako konzistentní
+se zbytkem aplikace (rozhodnutí Jan 18. 9.).
+
 ## `B161` Pořadí vývěsek v exportu je na výběr (hotovo 18. 9. 2026)
 
 Přání TRANSDEV z 16. 9.: projít trasu tam a pak zpět (`T1…T5, S5…S1`) místo dnešního pořadí, kde

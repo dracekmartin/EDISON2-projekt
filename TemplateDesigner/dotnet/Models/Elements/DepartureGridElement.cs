@@ -190,7 +190,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
     /// skupina může chtít širší prvek - „Šířka minuty" je pro rastr jen spodní mez.</summary>
     internal static List<float> ApplySpacingMode(List<float> slotW, DepartureSpacing mode, float uniformSlotMm)
     {
-        if (mode != DepartureSpacing.Even || slotW.Count == 0 || uniformSlotMm <= 0) return slotW;
+        if (mode == DepartureSpacing.ByContent || slotW.Count == 0 || uniformSlotMm <= 0) return slotW;
         return [.. slotW.Select(_ => uniformSlotMm)];
     }
 
@@ -198,6 +198,20 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
     /// značky), nejméně však nominální šířka minuty. Počítá se přes všechny skupiny dnů, aby čísla
     /// stála pod sebou napříč hodinami **i sloupci** - za řádek by hodina se značkami měla jiný
     /// rozestup než hodina bez nich, za sloupec by se rozešly sloupce mezi sebou (`B143`).</summary>
+    /// <summary>Škála písma značek v pevném rastru: zmenší je tak, aby se za minutu do rozteče vešly.
+    /// Nikdy pod mez zmenšování (<see cref="Rendering.CellRenderer.MinScale"/>) - pod ní by z nich byly
+    /// tečky, což je horší než těsný tisk. Vejdou-li se, vrací `dataScale` beze změny.</summary>
+    internal static float ZmenseniZnacek(float rastrMm, float minutaMm, float znackyMm, float dataScale,
+        params ResolvedTextStyle[] styly)
+    {
+        float volnoMm = rastrMm - minutaMm;
+        if (znackyMm <= 0f || volnoMm <= 0f || znackyMm <= volnoMm) return dataScale;
+
+        float dno = 0f;
+        foreach (var s in styly) dno = MathF.Max(dno, Rendering.CellRenderer.MinShrinkScale(s, dataScale));
+        return MathF.Max(dataScale * (volnoMm / znackyMm), dno);
+    }
+
     internal static float UniformSlotWidth(IEnumerable<float> sloty, float nominalMm)
     {
         float max = nominalMm;
@@ -796,6 +810,29 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                     layout.Groups.SelectMany(g => g.ByHour.Values).SelectMany(o => o).Select(SlotWidthMm),
                     scaledMinuteW);
                 foreach (var g in layout.Groups) uniformSlotByGroup[g.Skupina.Id] = rastr;
+            }
+            // Pevný rastr (`B160`): rozteč je nastavená šířka minuty, značky do ní nemluví - hustota
+            // vývěsky pak nezávisí na tom, kolik má linka značek. Značky, které se do zbytku rastru
+            // nevejdou, se zmenší; jedním poměrem pro celý prvek, aby nebyly každá jinak velká.
+            else if (MinuteSpacing == DepartureSpacing.Fixed)
+            {
+                float minutaMm = 0f;
+                foreach (var f in groupMinuteFonts.Values)
+                    minutaMm = MathF.Max(minutaMm, f.MeasureText("00") / ctx.MmToPx);
+                float znackyMm = 0f;
+                foreach (var o in layout.Groups.SelectMany(g => g.ByHour.Values).SelectMany(o => o))
+                    znackyMm = MathF.Max(znackyMm, SlotWidthMm(o) - scaledMinuteW);
+
+                float anotScale = ZmenseniZnacek(scaledMinuteW, minutaMm, znackyMm, dataScale,
+                    anotSymStyle, anotTextStyle, anotGlyphStyle);
+                if (anotScale < dataScale)
+                {
+                    anotSymFont.Dispose();  anotGlyphFont.Dispose();  anotTextFont.Dispose();
+                    anotSymFont   = anotSymStyle.CreateFont(anotScale, ctx.MmToPx);
+                    anotGlyphFont = anotGlyphStyle.CreateFont(anotScale, ctx.MmToPx);
+                    anotTextFont  = anotTextStyle.CreateFont(anotScale, ctx.MmToPx);
+                }
+                foreach (var g in layout.Groups) uniformSlotByGroup[g.Skupina.Id] = scaledMinuteW;
             }
 
             if (AlternatingRowColor is not null)
@@ -1528,6 +1565,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             [
                 ("Podle obsahu", (object)DepartureSpacing.ByContent),
                 ("Rovnoměrný", (object)DepartureSpacing.Even),
+                ("Pevný rastr", (object)DepartureSpacing.Fixed),
             ]
         },
         new FloatPropertyDescriptor { FromImage = true, Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
@@ -1651,4 +1689,7 @@ public enum DepartureSpacing
     /// <summary>Jeden rozestup pro celou skupinu podle nejširšího odjezdu - minuty stojí ve svislici
     /// napříč řádky, značka nerozhodí zarovnání ostatních.</summary>
     Even,
+    /// <summary>Rozestup daný jen nastavenou šířkou minuty; značky se do něj nepočítají, a když se
+    /// tam nevejdou, úměrně se zmenší. Hustota vývěsky tak nezávisí na tom, kolik má linka značek.</summary>
+    Fixed,
 }

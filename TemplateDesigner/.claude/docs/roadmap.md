@@ -5,8 +5,7 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** `B163`-`B167` ze zkoušení linkových JŘ kolegou 18. 9. - tři z nich jsou
-> vady výstupu. Ze zpětné vazby TRANSDEV 16. 9. zbývá už jen `B160`, přání, u kterého zákazník sám
-> píše, že současný stav přijme.
+> vady výstupu. Zpětná vazba TRANSDEV z 16. 9. je celá hotová.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
@@ -21,14 +20,10 @@ nezadání.
 
 ### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
 
-Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. Pět z nich je hotových
+Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. **Všechny jsou hotové**
 (`B156` mizející nastavení, `B157` slučování variant, `B158` záhlaví odjezdů po sloupcích,
-`B159` velikost záhlaví u poznámek, `B161` pořadí stránek v exportu) - viz changelog
-a [`roadmap-archive.md`](roadmap-archive.md). První dva se týkaly všech zákazníků, zbytek je jen jeho.
-
-- **`B160` Rovnoměrný rozestup minut: úplně pevná mřížka** [M] (přání). Chce rozteč, kterou značka
-  vůbec neovlivní; dnes je rastr podle nejširšího odjezdu **včetně** značek. Posílá výtisk ze
-  starého návrháře. **Sám říká, že současný stav přijme**, je-li to velká práce.
+`B159` velikost záhlaví u poznámek, `B160` pevný rastr minut, `B161` pořadí stránek v exportu) -
+viz changelog a [`roadmap-archive.md`](roadmap-archive.md). Zbývá je zavřít na helpdesku s vydáním.
 
 ---
 

@@ -1,5 +1,21 @@
 ﻿# Changelog
 
+## 2026-09-18 (2) - 📏 pevný rastr minut: značky rozestup neovlivní
+
+`B160`, přání TRANSDEV z 16. 9. Rovnoměrný rozestup počítá rastr z **nejširšího odjezdu celého
+prvku, tedy minuty i s jejími značkami**. Stačí jediný spoj se dvěma značkami a rozestup se roztáhne
+všude - i v hodinách, kde žádná značka není, a vývěska působí zředěně.
+
+Třetí volba **Pevný rastr** v přepínači Rozestup odjezdů: rozteč je přesně „Šířka minuty" a značky
+se do ní nepočítají. Hustota vývěsky tak nezávisí na tom, kolik má linka značek.
+
+Značky, které se za minutu do rozteče nevejdou, se **úměrně zmenší** - týmž způsobem, jakým se
+v aplikaci vejde do místa text buňky nebo textového prvku. Zmenšení má mez z `B162` (nejvýš na
+polovinu, nikdy pod 4 body): pod ní by ze značky byla tečka, což je horší než těsný tisk. Poměr
+je jeden pro celý prvek, takže značky nejsou každá jinak velká.
+
+Výchozí režim se nemění, volba je opt-in.
+
 ## 2026-09-18 (1) - 🔀 pořadí vývěsek v exportu je na výběr
 
 `B161`, přání TRANSDEV z 16. 9. Export šel dosud jedním pořadím: linka se projde jednou a u každé
