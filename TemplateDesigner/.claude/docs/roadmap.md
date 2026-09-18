@@ -5,8 +5,8 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** `B163`-`B167` ze zkoušení linkových JŘ kolegou 18. 9. - tři z nich jsou
-> vady výstupu. Ze zpětné vazby TRANSDEV 16. 9. zbývají `B160` a `B161`, obojí přání, u kterého
-> zákazník sám píše, že současný stav přijme.
+> vady výstupu. Ze zpětné vazby TRANSDEV 16. 9. zbývá už jen `B160`, přání, u kterého zákazník sám
+> píše, že současný stav přijme.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
@@ -21,20 +21,14 @@ nezadání.
 
 ### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
 
-Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. Čtyři z nich jsou **opravené 16. 9.**
+Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. Pět z nich je hotových
 (`B156` mizející nastavení, `B157` slučování variant, `B158` záhlaví odjezdů po sloupcích,
-`B159` velikost záhlaví u poznámek) - viz changelog a [`roadmap-archive.md`](roadmap-archive.md).
-První dva se týkaly všech zákazníků, zbytek je jen jeho.
+`B159` velikost záhlaví u poznámek, `B161` pořadí stránek v exportu) - viz changelog
+a [`roadmap-archive.md`](roadmap-archive.md). První dva se týkaly všech zákazníků, zbytek je jen jeho.
 
 - **`B160` Rovnoměrný rozestup minut: úplně pevná mřížka** [M] (přání). Chce rozteč, kterou značka
   vůbec neovlivní; dnes je rastr podle nejširšího odjezdu **včetně** značek. Posílá výtisk ze
   starého návrháře. **Sám říká, že současný stav přijme**, je-li to velká práce.
-
-- **`B161` Pořadí stránek v exportu: tam vzestupně, zpět sestupně** [S] (přání). Chce
-  `T1…T5, S5…S1` místo dnešního `T1, S1, T2, S2…` (`B149`) - tarifní čísla v jednom směru rostou
-  a ve druhém klesají, takže cestující projde trasu tam a pak zpět. **Naši logiku taky přijme.**
-  ⚠️ Je to už **třetí** tvar pořadí; než se změní počtvrté, chce to vědět, který chce zbytek
-  zákazníků.
 
 ---
 

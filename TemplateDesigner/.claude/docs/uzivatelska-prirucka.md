@@ -912,6 +912,11 @@ dávkový export/tisk (kap. 5).
 Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 
 - **Tisknout šipky směru**, **Tisknout projeté zastávky**
+- **Pořadí stránek** - v jakém pořadí jdou vývěsky v exportu. *Po zastávkách (oba směry za sebou)*
+  je výchozí: linka se projde jednou a u každé zastávky jsou obě její vývěsky vedle sebe, takže se
+  vytisknou a pověsí jedním výjezdem. *Po směrech (tam vzestupně, zpět sestupně)* vytiskne nejdřív
+  celý směr Tam od první zastávky k poslední a pak celý směr Zpět od poslední k první - cestující
+  tak projde trasu tam a zase zpátky
 - **Časová osa odjezdů** (Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah +
   Hodiny od/do). Vlastní rozsah **umí přejít přes půlnoc**: nastavíte-li např. od 22 do 5, osa
   jde 22, 23, 0, 1…5. Pro celodenní linku s nočními spoji zvolte např. od 4 do 0 - osa končí

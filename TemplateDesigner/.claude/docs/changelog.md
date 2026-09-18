@@ -1,5 +1,27 @@
 ﻿# Changelog
 
+## 2026-09-18 (1) - 🔀 pořadí vývěsek v exportu je na výběr
+
+`B161`, přání TRANSDEV z 16. 9. Export šel dosud jedním pořadím: linka se projde jednou a u každé
+zastávky jdou obě její vývěsky za sebou. Zákazník chce projít trasu tam a pak zpět, tedy celý směr
+Tam od první zastávky k poslední a pak celý směr Zpět od poslední k první.
+
+Nový parametr sestavy **Pořadí stránek** (skupina Obecné) se dvěma volbami:
+
+- **Po zastávkách (oba směry za sebou)** - výchozí, dosavadní chování
+- **Po směrech (tam vzestupně, zpět sestupně)**
+
+⚠️ **Výchozí se nemění, a to záměrně.** Dosavadní pořadí je parita se starým tiskem
+(`JRapiLinPrtMhd1.mac:397-398`, zastávka vnější smyčka, směr vnitřní) a má praktický důvod: obě
+vývěsky téže zastávky se vytisknou a pověsí jedním výjezdem. Přepsat ho by přesázelo export všem
+ostatním zákazníkům, kteří si na nic nestěžovali. Tvar pořadí se navíc za měsíc měnil potřetí -
+volba tu otázku uzavře, další varianta se dá přidat do seznamu (rozhodnutí Jan 18. 9.).
+
+**Srovnané i u městských linek**, aby se tisk nechoval ve dvou agendách různě - táž podmínka jako
+u `B149`. Tělo obou smyček je vytažené do jedné metody, takže se podmínky „která stránka vůbec
+vznikne" nemůžou mezi pořadími rozejít; pět testů hlídá, že obě volby vydají tytéž stránky, jen
+jinak seřazené.
+
 ## 2026-09-16 (7) - 🔡 záhlaví Minut odjezdů jde nastavit po sloupcích
 
 `B158`, hlásil TRANSDEV 16. 9. V dialogu sloupců šlo u záhlaví nastavit font, velikost a řez, ale

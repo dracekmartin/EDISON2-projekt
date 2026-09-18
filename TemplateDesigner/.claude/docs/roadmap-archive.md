@@ -1,5 +1,18 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B161` Pořadí vývěsek v exportu je na výběr (hotovo 18. 9. 2026)
+
+Přání TRANSDEV z 16. 9.: projít trasu tam a pak zpět (`T1…T5, S5…S1`) místo dnešního pořadí, kde
+u každé zastávky jdou obě její vývěsky za sebou.
+
+Řešeno **volbou, ne přepsáním** (rozhodnutí Jan 18. 9.). Dosavadní pořadí je parita se starým
+tiskem a má praktický důvod (obě vývěsky zastávky se pověsí jedním výjezdem), takže zůstává
+výchozí; přepsání by přesázelo export všem ostatním. Tvar pořadí se navíc měnil potřetí za měsíc.
+
+Parametr **Pořadí stránek** (skupina Obecné), volby „Po zastávkách (oba směry za sebou)" a
+„Po směrech (tam vzestupně, zpět sestupně)". Další varianty se dají přidat do seznamu.
+Srovnané i u městských linek, tělo obou smyček je v jedné metodě.
+
 ## `B158` Záhlaví Minut odjezdů jde nastavit po sloupcích (hotovo 16. 9. 2026)
 
 Hlásil TRANSDEV 16. 9. jako mrtvá pole: dialog sloupců nabízel u záhlaví font, velikost a řez,

@@ -247,35 +247,60 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         // Multi-page: jedna stránka per zastávka × směr (Tam + Zpět). Aktuální zastávka =
         // ze které se počítají odjezdy; StopList ukazuje úsek od ní ve směru jízdy.
-        // ⚠️ Vnější smyčka je ZASTÁVKA, vnitřní SMĚR - obě vývěsky téže zastávky musí jít v PDF
-        // za sebou, aby se daly vytisknout a pověsit na oba označníky jedním výjezdem. Tak to dělá
-        // i starý tisk (`JRapiLinPrtMhd1.mac:397-398`, Tc vnější, Smer vnitřní).
-        s poradi = ""
-        f {
-            s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi))
-            q:poradi=""
-            i '$isvalidnum(poradi) continue
-            i $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1) = "" continue   // bod bez zastávky
+        // ⚠️ Výchozí pořadí má vnější smyčku ZASTÁVKA a vnitřní SMĚR - obě vývěsky téže zastávky
+        // musí jít v PDF za sebou, aby se daly vytisknout a pověsit na oba označníky jedním
+        // výjezdem. Tak to dělá i starý tisk (`JRapiLinPrtMhd1.mac:397-398`, Tc vnější, Smer vnitřní).
+        // `B161`: druhá volba prohodí smyčky a zpáteční směr projde odzadu, takže cestující projde
+        // trasu tam a pak zpět.
+        i $g(^||ML("IN","PORADI_STRANEK")) = "Po směrech (tam vzestupně, zpět sestupně)" {
             f smer = "T", "Z" {
-                // Rozdělení per označník: jen když je zapnuté a vývěska má >1 označník obsluhovaný spoji.
-                if rozdelitOzn {
-                    s csvOzn = ..NastupisteSpoju(dataDB, sku, lin, smer, poradi, zdrojSt)
-                    if (csvOzn '= "") && ($l(csvOzn,",") > 1) {
-                        f oi=1:1:$l(csvOzn,",") {
-                            s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, $p(csvOzn,",",oi), IdFa, zdrojSt)
-                            i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
-                        }
-                        continue        // rozděleno → jedinou (smíchanou) stránku nevytvářet
-                    }
+                s poradi = ""
+                f {
+                    s poradi = $s(smer="Z":$o(^[dataDB]JRL(sku,lin,"J",poradi),-1), 1:$o(^[dataDB]JRL(sku,lin,"J",poradi)))
+                    q:poradi=""
+                    i '$isvalidnum(poradi) continue
+                    i $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1) = "" continue   // bod bez zastávky
+                    d ..VydatStrankyZastavky(dataDB, sku, lin, poradi, smer, rozdelitOzn, zdrojSt, IdFa)
                 }
-                s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, "", IdFa, zdrojSt)
-                i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+            }
+        }
+        else {
+            s poradi = ""
+            f {
+                s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi))
+                q:poradi=""
+                i '$isvalidnum(poradi) continue
+                i $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1) = "" continue   // bod bez zastávky
+                f smer = "T", "Z" {
+                    d ..VydatStrankyZastavky(dataDB, sku, lin, poradi, smer, rozdelitOzn, zdrojSt, IdFa)
+                }
             }
         }
     }
     catch (ex) { $$$CatchErrRest }
     k ^||TiskAd                        // úklid working global i po chybě (self-healing kill je na začátku)
     ret $$$OK
+}
+
+/// Vydá stránky jedné zastávky v jednom směru do `^||ML("OUT")`. Obvykle jednu; se zapnutým
+/// dělením per stanoviště tolik, kolik jich spoje obsluhují. Volá se ze dvou různých pořadí
+/// stránek (`B161`), proto samostatně - tělo smyčky musí být v obou shodné.
+/// Helper - volá se jen z GetData, která catch má.
+ClassMethod VydatStrankyZastavky(dataDB As %String, sku As %String, lin As %String, poradi As %String, smer As %String, rozdelitOzn As %Boolean, zdrojSt As %String, IdFa As %String)
+{
+    // Rozdělení per označník: jen když je zapnuté a vývěska má >1 označník obsluhovaný spoji.
+    if rozdelitOzn {
+        s csvOzn = ..NastupisteSpoju(dataDB, sku, lin, smer, poradi, zdrojSt)
+        if (csvOzn '= "") && ($l(csvOzn,",") > 1) {
+            f oi=1:1:$l(csvOzn,",") {
+                s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, $p(csvOzn,",",oi), IdFa, zdrojSt)
+                i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+            }
+            ret        // rozděleno → jedinou (smíchanou) stránku nevytvářet
+        }
+    }
+    s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, "", IdFa, zdrojSt)
+    i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
 }
 
 /// Sestaví JSON stránku zastávkového JŘ pro jednu linku - sdíleno mezi GetData (živě ze session
@@ -3442,6 +3467,23 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 
     d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnutím se použije název podle CIS.")
     d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.")
+
+    // `B161`: výchozí pořadí je parita se starým tiskem (`JRapiLinPrtMhd1.mac:397-398`, zastávka
+    // vnější smyčka, směr vnitřní) - obě vývěsky téže zastávky jdou za sebou, takže se vytisknou
+    // a pověsí jedním výjezdem. TRANSDEV chce projít trasu tam a pak zpět; místo přepsání logiky
+    // je to volba, protože tvar pořadí se za měsíc měnil potřetí (rozhodnutí Jan 18. 9.).
+    s pPorStr = ##class(%DynamicObject).%New()
+    s pPorStr.name         = "PORADI_STRANEK"
+    s pPorStr.label        = "Pořadí stránek"
+    s pPorStr.type         = "enum"
+    s pPorStr.group        = "Obecné"
+    s pPorStr.defaultValue = "Po zastávkách (oba směry za sebou)"
+    s pPorStr.description  = "V jakém pořadí jdou vývěsky v exportu. Po zastávkách = linka se projde jednou a u každé zastávky jsou obě její vývěsky za sebou (tak to dělá i starý tisk). Po směrech = nejdřív celý směr Tam od první zastávky k poslední, pak celý směr Zpět od poslední k první, takže se trasa projde tam a zase zpátky."
+    s optsPS = ##class(%DynamicArray).%New()
+    d optsPS.%Push("Po zastávkách (oba směry za sebou)")
+    d optsPS.%Push("Po směrech (tam vzestupně, zpět sestupně)")
+    s pPorStr.options = optsPS
+    d arr.%Push(pPorStr)
 
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")

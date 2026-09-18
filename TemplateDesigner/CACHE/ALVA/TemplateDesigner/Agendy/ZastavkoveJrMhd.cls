@@ -1022,24 +1022,44 @@ ClassMethod SestavitStranky(ByRef sys As %String)
         }
     }
 
-    // ⚠️ Vnější smyčka je ZASTÁVKA (bod trasy vzestupně = pořadí ve směru Tam), vnitřní SMĚR -
-    // obě vývěsky téže zastávky musí jít v PDF za sebou, aby se daly vytisknout a pověsit na oba
-    // označníky jedním výjezdem. Tak to dělá starý tisk (`JRapiLinPrtMhd1.mac:397-398`, Tc vnější,
-    // Smer vnitřní) i zastávkový JŘ z AD dat.
-    s BodID = ""
-    f {
-        s BodID = $o(vsechnyBody(BodID)) q:BodID=""
+    // ⚠️ Výchozí pořadí má vnější smyčku ZASTÁVKA (bod trasy vzestupně = pořadí ve směru Tam)
+    // a vnitřní SMĚR - obě vývěsky téže zastávky musí jít v PDF za sebou, aby se daly vytisknout
+    // a pověsit na oba označníky jedním výjezdem. Tak to dělá starý tisk
+    // (`JRapiLinPrtMhd1.mac:397-398`, Tc vnější, Smer vnitřní) i zastávkový JŘ z AD dat.
+    // `B161`: druhá volba prohodí smyčky a zpáteční směr projde odzadu. Obě agendy musí nabízet
+    // totéž, jinak by se tisk choval v každé jinak.
+    i $g(^||ML("IN","PORADI_STRANEK")) = "Po směrech (tam vzestupně, zpět sestupně)" {
         f SmerID = 0,1 {
-            i '$d(^||TiskMHD("trasa",SmerID,BodID)) continue
-            // Zastávka nemá odjezdy → přeskočit
-            i '$d(^||TiskMHD("odjezdy",SmerID,BodID)) continue
-            s ObsluhaBitmap = $g(^||TiskMHD("obsluha",SmerID,BodID))
-            i '$e(ObsluhaBitmap, BodID) continue
-
-            s page = ..SestavitJednuStranku(.sys, SmerID, BodID, pocetZastavek(SmerID))
-            s ^||ML("OUT",$i(^||ML("OUT"))) = page.%ToJSON()
+            s BodID = ""
+            f {
+                s BodID = $s(SmerID:$o(vsechnyBody(BodID),-1), 1:$o(vsechnyBody(BodID)))  q:BodID=""
+                d ..VydatStranku(.sys, SmerID, BodID, .pocetZastavek)
+            }
         }
     }
+    else {
+        s BodID = ""
+        f {
+            s BodID = $o(vsechnyBody(BodID)) q:BodID=""
+            f SmerID = 0,1 {
+                d ..VydatStranku(.sys, SmerID, BodID, .pocetZastavek)
+            }
+        }
+    }
+}
+
+/// Vydá stránku jedné zastávky v jednom směru, pokud tam vůbec zastavuje. Volá se ze dvou různých
+/// pořadí stránek (`B161`), proto samostatně - podmínky musí být v obou shodné.
+ClassMethod VydatStranku(ByRef sys As %String, SmerID As %Integer, BodID As %String, ByRef pocetZastavek)
+{
+    i '$d(^||TiskMHD("trasa",SmerID,BodID)) ret
+    // Zastávka nemá odjezdy → přeskočit
+    i '$d(^||TiskMHD("odjezdy",SmerID,BodID)) ret
+    s ObsluhaBitmap = $g(^||TiskMHD("obsluha",SmerID,BodID))
+    i '$e(ObsluhaBitmap, BodID) ret
+
+    s page = ..SestavitJednuStranku(.sys, SmerID, BodID, $g(pocetZastavek(SmerID)))
+    s ^||ML("OUT",$i(^||ML("OUT"))) = page.%ToJSON()
 }
 
 /// Sestaví jednu stránku (= jedna zastávka × jeden směr).
@@ -1745,6 +1765,21 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
     // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč - starší klient ignoruje).
     // Konvence: skupina = UI název elementu, který parametr ovlivňuje; celo-šablonové → „Obecné".
+    // `B161`: výchozí pořadí je parita se starým tiskem (obě vývěsky téže zastávky za sebou).
+    // Znění i chování se musí shodovat s agendou z AD dat, jinak by se tisk choval v každé jinak.
+    s pPorStr = ##class(%DynamicObject).%New()
+    s pPorStr.name         = "PORADI_STRANEK"
+    s pPorStr.label        = "Pořadí stránek"
+    s pPorStr.type         = "enum"
+    s pPorStr.group        = "Obecné"
+    s pPorStr.defaultValue = "Po zastávkách (oba směry za sebou)"
+    s pPorStr.description  = "V jakém pořadí jdou vývěsky v exportu. Po zastávkách = linka se projde jednou a u každé zastávky jsou obě její vývěsky za sebou (tak to dělá i starý tisk). Po směrech = nejdřív celý směr Tam od první zastávky k poslední, pak celý směr Zpět od poslední k první, takže se trasa projde tam a zase zpátky."
+    s optsPS = ##class(%DynamicArray).%New()
+    d optsPS.%Push("Po zastávkách (oba směry za sebou)")
+    d optsPS.%Push("Po směrech (tam vzestupně, zpět sestupně)")
+    s pPorStr.options = optsPS
+    d arr.%Push(pPorStr)
+
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
 
