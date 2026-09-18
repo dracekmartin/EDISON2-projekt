@@ -157,6 +157,17 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
+- **`B170` Formulář si pamatuje poslední filtr** [S] (podnět Jan 18. 9.). Ve formuláři prvku se
+  hledá Ctrl+F („rozest"), doladí se nastavení, formulář se zavře a při dalším otevření se musí
+  hledat znovu. U formuláře, který se otevírá pořád dokola nad **týmž** prvkem, je to zbytečné -
+  tak se chová i nastavení v IntelliJ nebo VS Code.
+  ⚠️ **Nesmí to být chování komponenty, ale volba hostitele.** EDInputForm běží i nad legacy
+  formuláři v shellu, kde se otevírá pokaždé **jiný záznam** a osekaný formulář by škodil. Tedy
+  aditivní vlastnost s výchozím vypnuto, kterou si zapne jen návrhář.
+  ⚠️ Zapamatovaný filtr znamená tři pole ze čtyřiceti - musí být na první pohled vidět (vyplněné
+  pole, křížek, počet skrytých) a Esc má nejdřív zrušit filtr, teprve podruhé zavřít. Jinak je to
+  táž třída chyb jako mizející nastavení. Držet jen v paměti běhu a per typ prvku, neukládat.
+
 - **`B155` Jemnější nastavení mřížky** [M] (podnět Jan 16. 9.). Dnes má `GridStyle` **jednu** barvu,
   tloušťku a styl pro vodorovné i svislé čáry - ty jdou jen zapnout nebo vypnout. Návrh: **čtyři
   druhy čar** (mezi řádky, mezi sloupci, pod záhlavím, na hranici skupiny sloupců), každý s vlastní
