@@ -98,6 +98,34 @@ public class DepartureSpacingTests
         Assert.Equal([5f, 5f, 5f], slots);
     }
 
+    /// <summary>V rozteči je místo na jednu značku, i když je nastavená Šířka minuty menší -
+    /// jinak na značku zbyde jen to, co nedoberou číslice, a zmenšení ji srazí na mez čitelnosti.</summary>
+    [Fact]
+    public void PevnyRastr_RezervujeMistoNaJednuZnacku()
+    {
+        float rastr = DepartureGridElement.PevnyRastr(
+            nominalMm: 5f, minutaMm: 3.2f, mezeraMm: 0.3f, jednaZnackaMm: 1.8f);
+
+        Assert.Equal(5.3f, rastr, precision: 3);
+    }
+
+    /// <summary>Nastavená šířka je spodní mez - širší rozteč si uživatel může vynutit.</summary>
+    [Fact]
+    public void PevnyRastr_NastavenaSirkaJeSpodniMez()
+    {
+        float rastr = DepartureGridElement.PevnyRastr(
+            nominalMm: 10f, minutaMm: 3.2f, mezeraMm: 0.3f, jednaZnackaMm: 1.8f);
+
+        Assert.Equal(10f, rastr, precision: 3);
+    }
+
+    /// <summary>Bez značek se nic nerezervuje - vývěska bez nich zůstane tak hustá, jak je nastavená.</summary>
+    [Fact]
+    public void PevnyRastr_BezZnacek_JeNastavenaSirka()
+    {
+        Assert.Equal(5f, DepartureGridElement.PevnyRastr(5f, 3.2f, 0.3f, 0f), precision: 3);
+    }
+
     [Fact]
     public void ZnackyKtereSeVejdou_SeNezmensuji()
     {

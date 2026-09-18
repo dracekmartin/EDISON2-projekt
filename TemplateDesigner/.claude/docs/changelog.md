@@ -9,6 +9,11 @@ všude - i v hodinách, kde žádná značka není, a vývěska působí zředě
 Třetí volba **Pevný rastr** v přepínači Rozestup odjezdů: rozteč je přesně „Šířka minuty" a značky
 se do ní nepočítají. Hustota vývěsky tak nezávisí na tom, kolik má linka značek.
 
+V rozteči je místo na **jednu** značku, ne na nejhorší odjezd - kde značka není, místo zůstane
+prázdné a minuty stojí v mřížce. Doloženo vzorem vývěsky, kterou zákazník posílal (linka 32 Nitra):
+řádky `18 38 58` i `08 к 18 28 к 38` tam mají tytéž pozice minut. Bez té rezervy zbylo na značku
+jen to, co nedobraly číslice, a zmenšení ji srazilo na mez čitelnosti (nález Jan 18. 9.).
+
 Značky, které se za minutu do rozteče nevejdou, se **úměrně zmenší** - týmž způsobem, jakým se
 v aplikaci vejde do místa text buňky nebo textového prvku. Zmenšení má mez z `B162` (nejvýš na
 polovinu, nikdy pod 4 body): pod ní by ze značky byla tečka, což je horší než těsný tisk. Poměr
