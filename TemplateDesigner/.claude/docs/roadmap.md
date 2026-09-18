@@ -4,9 +4,9 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** ze zpětné vazby TRANSDEV 16. 9. zbývají `B160` a `B161` - obojí je přání,
-> u kterého zákazník sám píše, že současný stav přijme.
-> Linkové JŘ mezitím čekají na kolegy.
+> **Nejblíž na řadě:** `B163`-`B167` ze zkoušení linkových JŘ kolegou 18. 9. - tři z nich jsou
+> vady výstupu. Ze zpětné vazby TRANSDEV 16. 9. zbývají `B160` a `B161`, obojí přání, u kterého
+> zákazník sám píše, že současný stav přijme.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
@@ -78,6 +78,38 @@ z nastavení u linky se bere jen to, co mění data.* Sporné případy řeš sm
 položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
+
+### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
+
+Sedm nálezů ze zkoušení, zatím jen evidence - **nic z toho není zanalyzované**. První tři jsou
+vady výstupu, zbytek je ovládání a dva dotazy na chování starého modulu.
+
+- **`B163` Atributy spoje se netisknou** [?]. Kolega zadal u spoje v jízdních řádech atributy
+  a v sestavě nevyšly (boční značky u sloupce spoje). Ověřit, jestli je vůbec posíláme.
+
+- **`B164` Zastávka se tiskne dvakrát** [?]. `CB_CSADAD` linka `320913`: „České Budějovice,
+  aut.nádr." zabírá dva řádky, ačkoli data mají jeden. Podezření na rozdvojení příjezd/odjezd
+  u linky s málo zastávkami.
+
+- **`B165` Značky poznámek vycházejí špatně** [?]. V legendě nesedí `⑦`, `&`, `N`, `G`. Kolega se
+  ptá, jestli je potřeba mít nainstalovaný font - spíš to ale vypadá na chybný překlad typu
+  poznámky. Ověřit obojí.
+
+- **`B166` Zvýraznění zastávky u kombinovaného zadání** [?]. `340366` zastávka Budec má být tučně
+  nebo podtrženě, u nás není. Kolega píše, že je zadaná zvláštně: „P je podtržené s příjezdem
+  a odjezdem + tučně, J je jen s příjezdem a odjezdem" - kombinovat se to nemá, tedy nejspíš
+  hraniční případ. Zjistit, co s tím dělá starý modul.
+
+- **`B167` Dorovnání prázdnými sloupci: prokládat, ne dolepit** [?]. Starý modul prázdné sloupce
+  **prokládal** mezi spoje (prázdný, spoj, prázdný…), my je dáváme na konec. Ověřit na výstupu
+  starého modulu a srovnat (`#8372`).
+
+- **`B168` Přepínání mezi vybranými linkami** [S]. Při více vybraných instancích se dnes listuje
+  jen šipkami doprava/doleva. Kolega chce rozbalovací seznam, aby šlo skočit rovnou na konkrétní.
+
+- **`B169` Zúžený formulář neukazuje hodnoty** [S]. V úzkém panelu je vidět jen popisek pole,
+  hodnota ne. Zkusit, jestli se při zúžení nedá hodnota přesunout pod popisek. Týká se EDInputFormu
+  obecně, ne jen linkových JŘ.
 
 ### Připravené k práci
 
