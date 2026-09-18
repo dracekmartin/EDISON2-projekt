@@ -8,6 +8,106 @@ Include (%occInclude, GENERAL)
 Class ALVA.TemplateDesigner.Tests.AdSloupekProbe
 {
 
+/// Linky, na kterých je vidět rozdíl mezi rovnoměrným a pevným rastrem minut (`B160`). Hledá se
+/// vývěska, kde **má značku jen menšina odjezdů, ale některý jich má víc** - tam rovnoměrný rastr
+/// roztáhne rozestup všem kvůli hrstce spojů, kdežto pevný ne.
+///
+/// IN: `LIMIT` (kolik linek projít, výchozí 25), `MAXOUT` (kolik vypsat, výchozí 8).
+/// OUT: `linka~<n>` = `sku/lin  odjezdu=<n>, se znackou=<n> (<%>), nejvic znacek na odjezdu=<n>`.
+/// ⚠️ Volá `GetData` na každou linku, takže je to pomalé.
+ClassMethod KdeJeVidetRastr(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s limit = +$g(^||ML("IN","LIMIT")), maxOut = +$g(^||ML("IN","MAXOUT"))
+		s:limit<1 limit = 25
+		s:maxOut<1 maxOut = 8
+
+		k kandidat
+		s projito = 0, hotovo = 0, s1 = ""
+		f {
+			s s1 = $o(^[dataDB]JRL(s1))
+			q:(s1="")||hotovo
+			continue:'$isvalidnum(s1)
+			s l1 = ""
+			f {
+				s l1 = $o(^[dataDB]JRL(s1, l1))
+				q:(l1="")||hotovo
+				continue:'$d(^[dataDB]JRL(s1, l1, "I"))
+				continue:'+$g(^[dataDB]JRL(s1, l1, "T"))
+				s projito = projito + 1
+				i projito > limit s hotovo = 1 q
+				d ..ZmerZnackyLinky(s1, l1, .sys, .celkem, .sZnackou, .maxZnacek)
+				continue:celkem<10
+				// Zajímavé je jen „pár označkovaných mezi mnoha holými" - jedna značka na odjezd
+				// rastr skoro nezvedne a linka, kde má značku skoro každý, vypadá v obou režimech stejně.
+				continue:maxZnacek<2
+				s podil = $j(sZnackou * 100 / celkem, 0, 0)
+				continue:podil>60
+				s kandidat(maxZnacek, 100-podil, s1_"/"_l1) =
+					"odjezdu="_celkem_", se znackou="_sZnackou_" ("_podil_"%), nejvic znacek na odjezdu="_maxZnacek
+			}
+		}
+
+		s ^||ML("OUT","souhrn") = "projito linek="_projito
+		s vypsano = 0, mz = ""
+		f {
+			s mz = $o(kandidat(mz), -1)
+			q:(mz="")||(vypsano'<maxOut)
+			s p = ""
+			f {
+				s p = $o(kandidat(mz, p))
+				q:(p="")||(vypsano'<maxOut)
+				s klic = ""
+				f {
+					s klic = $o(kandidat(mz, p, klic))
+					q:(klic="")||(vypsano'<maxOut)
+					s vypsano = vypsano + 1
+					s ^||ML("OUT","linka~"_$tr($j(vypsano,2)," ","0")) = klic_"  "_kandidat(mz, p, klic)
+				}
+			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Kolik odjezdů linka má, kolik z nich nese značku a nejvíc značek na jednom odjezdu.
+/// Helper - volá se jen z metody, která catch má.
+ClassMethod ZmerZnackyLinky(sku As %String, lin As %String, ByRef sys As %String, ByRef celkem, ByRef sZnackou, ByRef maxZnacek)
+{
+	s celkem = 0, sZnackou = 0, maxZnacek = 0
+	try {
+		k ^||ML("IN")
+		s ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+		k ^||ML("OUT")
+		d ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+		m odpoved = ^||ML("OUT")
+		k ^||ML("OUT")
+
+		s key = ""
+		f {
+			s key = $o(odpoved(key))
+			q:key=""
+			continue:'$isvalidnum(key)
+			s page = ##class(%DynamicObject).%FromJSON(odpoved(key))
+			s odjezdy = page.rows.%Get("ODJEZDY")
+			continue:'$isobject(odjezdy)
+			f oi=0:1:(odjezdy.%Size()-1) {
+				s anot = odjezdy.%Get(oi).%Get("ANOTACE")
+				s pocet = $s($isobject(anot):anot.%Size(), 1:0)
+				s celkem = celkem + 1
+				i pocet {
+					s sZnackou = sZnackou + 1
+					s:pocet>maxZnacek maxZnacek = pocet
+				}
+			}
+		}
+	}
+	catch (ex) { s celkem = 0 }
+}
+
 /// Nejkratší obousměrné linky firmy - kolik zastávek mají a kolik stránek z nich vyjde
 /// (zastávka × směr). Pro ruční zkoušení věcí, kde je potřeba projít celý export.
 /// IN: `MAXOUT` (kolik vypsat, výchozí 10). Read-only, čte jen globály.
