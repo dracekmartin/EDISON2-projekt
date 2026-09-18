@@ -8,6 +8,66 @@ Include (%occInclude, GENERAL)
 Class ALVA.TemplateDesigner.Tests.AdSloupekProbe
 {
 
+/// Nejkratší obousměrné linky firmy - kolik zastávek mají a kolik stránek z nich vyjde
+/// (zastávka × směr). Pro ruční zkoušení věcí, kde je potřeba projít celý export.
+/// IN: `MAXOUT` (kolik vypsat, výchozí 10). Read-only, čte jen globály.
+ClassMethod NejkratsiLinky(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s maxOut = +$g(^||ML("IN","MAXOUT"))
+		s:maxOut<1 maxOut = 10
+		// Linka o dvou zastávkách je na ruční zkoušení až moc krátká - `MIN_ZAST` zvedne spodní hranici.
+		s minZast = +$g(^||ML("IN","MIN_ZAST"))
+		s:minZast<2 minZast = 2
+
+		s projito = 0, s1 = ""
+		f {
+			s s1 = $o(^[dataDB]JRL(s1))
+			q:s1=""
+			continue:'$isvalidnum(s1)
+			s l1 = ""
+			f {
+				s l1 = $o(^[dataDB]JRL(s1, l1))
+				q:l1=""
+				continue:'$d(^[dataDB]JRL(s1, l1, "I"))
+				continue:'+$g(^[dataDB]JRL(s1, l1, "T"))
+				continue:+$g(^[dataDB]JRL(s1, l1, "PATCH", "linJEDNOSMERNA"))
+				s pocetZast = 0, pp = ""
+				f {
+					s pp = $o(^[dataDB]JRL(s1, l1, "J", pp))
+					q:pp=""
+					continue:'$isvalidnum(pp)
+					continue:$p($g(^[dataDB]JRL(s1, l1, "J", pp)),":",1)=""
+					s pocetZast = pocetZast + 1
+				}
+				continue:pocetZast<minZast
+				s projito = projito + 1
+				s nalez(pocetZast, s1_"/"_l1) = ""
+			}
+		}
+
+		s ^||ML("OUT","souhrn") = "obousmernych linek="_projito
+		s vypsano = 0, pocet = ""
+		f {
+			s pocet = $o(nalez(pocet))
+			// Postmínka nesmí obsahovat mezery - první z nich ji ukončí a zbytek je pak nový příkaz.
+			q:(pocet="")||(vypsano'<maxOut)
+			s klic = ""
+			f {
+				s klic = $o(nalez(pocet, klic))
+				q:(klic="")||(vypsano'<maxOut)
+				s vypsano = vypsano + 1
+				s ^||ML("OUT","linka~"_$tr($j(vypsano,2)," ","0")) =
+					klic_"  zastavek="_pocet_", stranek nejvyse "_(pocet * 2)
+			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Read-only hledání linek pro testovací sadu (`B67`): kde vznikají variantní sloupce, kde v základním
 /// sloupci časů vzniká „<" (vybraná trasa zastávkou projíždí bez stání) a kde má **tentýž sled zastávek
 /// dva různé časové průběhy** - právě tam rozhoduje pravidlo „vyhrává delší jízda". Jedna gold linka
