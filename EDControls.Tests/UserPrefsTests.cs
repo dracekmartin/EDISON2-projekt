@@ -9,13 +9,39 @@ namespace EDControls.Tests;
 /// <summary>
 /// Testy <see cref="CacheUserPrefsService"/> + <see cref="NullUserPrefsService"/>.
 /// MLRest mockujeme přes NSubstitute - testuje se kontrakt volání ne sítová komunikace.
+/// Služba volá vždy klon (<c>With()</c>), takže očekávání sedí na klonu, ne na sdílené instanci.
 /// </summary>
 public class UserPrefsTests
 {
     private static (CacheUserPrefsService Service, IMLRest MockMl) Setup()
     {
-        var mlRest = Substitute.For<IMLRest>();
-        return (new CacheUserPrefsService(mlRest), mlRest);
+        var (svc, _, clone, _) = SetupFull();
+        return (svc, clone);
+    }
+
+    private static (CacheUserPrefsService Service, IMLRest Shared, IMLRest Clone, List<Exception> Reported) SetupFull()
+    {
+        var shared = Substitute.For<IMLRest>();
+        var clone = Substitute.For<IMLRest>();
+        shared.With().Returns(clone);
+        var reported = new List<Exception>();
+        return (new CacheUserPrefsService(() => shared, reported.Add), shared, clone, reported);
+    }
+
+    [Fact]
+    public async Task Load_RunsOnClone_NotOnSharedInstance()
+    {
+        // RestStatus je per-instance: preference ukládá debouncer/zavření okna souběžně s UI threadem,
+        // takže request na sdílené instanci by si prohodil stav s cizím voláním.
+        var (svc, shared, clone, _) = SetupFull();
+        clone.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>()).Returns(new CVar());
+
+        await svc.LoadAsync("scope", "key");
+        await svc.SaveAsync("scope", "key", JsonNode.Parse("{}")!);
+        await svc.DeleteAsync("scope", "key");
+
+        shared.DidNotReceiveWithAnyArgs().QueryOrThrow(default!, default!, default(CVar)!);
+        clone.Received(3).QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>());
     }
 
     [Fact]
@@ -107,16 +133,19 @@ public class UserPrefsTests
     }
 
     [Fact]
-    public async Task Load_InvalidJsonInData_ReturnsNull()
+    public async Task Load_InvalidJsonInData_ReturnsNullAndReports()
     {
-        var (svc, ml) = Setup();
+        // Poškozený blob je k ničemu → null ho nechá příštím Save přepsat; ale nesmí projít tiše.
+        var (svc, _, ml, reported) = SetupFull();
         var result = new CVar();
         result["data"] = new CVar("{ not valid json");
         ml.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>())
           .Returns(result);
 
         var loaded = await svc.LoadAsync("scope", "key");
-        Assert.Null(loaded);  // JsonNode.Parse hodí → catch → null (odlišné od MLRest-throws)
+
+        Assert.Null(loaded);
+        Assert.Single(reported);
     }
 
     [Fact]
@@ -145,14 +174,18 @@ public class UserPrefsTests
     }
 
     [Fact]
-    public async Task Load_MLRestThrows_ReturnsNullNoException()
+    public async Task Load_MLRestThrows_PropagatesAndReports()
     {
-        var (svc, ml) = Setup();
-        ml.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>())
-          .Throws(new InvalidOperationException("Caché unavailable"));
+        // Null je vyhrazený pro „klíč neexistuje". Výpadek maskovaný jako prázdno by volajícího
+        // svedl k přepsání uživatelových dat prázdnem (plocha shellu, layout sloupců v TD).
+        var (svc, _, ml, reported) = SetupFull();
+        var failure = new InvalidOperationException("Caché unavailable");
+        ml.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>()).Throws(failure);
 
-        var loaded = await svc.LoadAsync("scope", "key");
-        Assert.Null(loaded);  // ne re-throw, ne padáme
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => svc.LoadAsync("scope", "key"));
+
+        Assert.Same(failure, ex);
+        Assert.Same(failure, Assert.Single(reported));
     }
 
     [Fact]
@@ -175,14 +208,16 @@ public class UserPrefsTests
     }
 
     [Fact]
-    public async Task Save_MLRestThrows_NoExceptionPropagates()
+    public async Task Save_MLRestThrows_NoExceptionPropagates_ButReports()
     {
-        var (svc, ml) = Setup();
-        ml.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>())
-          .Throws(new InvalidOperationException("Caché down"));
+        var (svc, _, ml, reported) = SetupFull();
+        var failure = new InvalidOperationException("Caché down");
+        ml.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>()).Throws(failure);
 
-        // Nemělo by hodit - Save je fire-and-forget vůči errorům
+        // Nemělo by hodit - Save je fire-and-forget vůči errorům; ztráta uložení ale jde do telemetrie.
         await svc.SaveAsync("scope", "key", JsonNode.Parse("{}")!);
+
+        Assert.Same(failure, Assert.Single(reported));
     }
 
     [Fact]

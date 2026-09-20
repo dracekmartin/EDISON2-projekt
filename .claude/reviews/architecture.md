@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/` |
 | **Odvozeno** | 4 read-only subagenti na oblasti shell / startup / EDControls infra / EDControls controls (~220 souborů), EDUPDATE2 ručně; každý nález ověřen citací kódu na HEAD |
 
-**Hotovo: 1 / 44**
+**Hotovo: 3 / 44**
 
 ## Jak s dokumentem zacházet
 
@@ -115,7 +115,18 @@ Největší soubory: `EdisonMainViewModel.cs` 1525 ř., `EDControlStyles.xaml` 1
 
 ### A2 · Preference jedou na sdílené instanci MLRest bez klonu; selhání loadu plochy ji vyprázdní
 
-- [ ] **Stav:** otevřeno
+- [x] **Stav:** vyřešeno (2026-09-20, commit s touto změnou) - (1) `CacheUserPrefsService` jede přes
+  `IRestCallRunner` (klon per request), nové ctory `(IRestCallRunner|Func<IMLRest>, Action<Exception>?)`,
+  starý `(IMLRest)` deleguje; **rozhodnuto nad rámec návrhu:** `Load` při selhání transportu hází
+  (null = jen chybějící klíč), všichni konzumenti v repu (`EDList`, `EDFilter`, `ModulePreferencesService`,
+  TD `TdPreferencesService`) už výjimku chytali; Save/Delete/poškozený JSON hlásí
+  `ErrorReports.ReportBackground`. (2) `ModulePreferencesService.LoadShortcutsAsync` vrací null při
+  selhání, `SessionData.Shortcuts` nullable; VM při null neseeduje reload a po selhání session loadu
+  (i `ClearSessionState`) drží `_shortcutsPersistable=false`, dokud se blob nenačte. Composition
+  rooty beze změny (starý ctor). `SessionDataLoader` preference dál sekvenčně (server je stejný).
+  Testy: `UserPrefsTests` (klon, propagace, report), `FavoritesAndUsageTests` (reload/session
+  selhání, obnova persistence), `SessionDataLoaderTests`. **Publish EDControls.dll** = chování
+  Load v TD (výjimka místo null; TD ji chytá).
 - **P1 · S-M** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20); backlog to znal jen jako poznámku (h) u R2
 - **Problém:** `CacheUserPrefsService` volá `QueryOrThrow` přes `Task.Run` na injektované sdílené
   instanci `IMLRest`, ne na klonu `With()`. Shell na ni pouští souběžná fire-and-forget volání
@@ -158,7 +169,11 @@ Největší soubory: `EdisonMainViewModel.cs` 1525 ř., `EDControlStyles.xaml` 1
 
 ### A3 · `EDInputForm` volá Caché `Init` a registruje toolbar handlery při každém `Loaded`
 
-- [ ] **Stav:** otevřeno
+- [x] **Stav:** vyřešeno (2026-09-20, commit s touto změnou) - `WireToolbarSearch` v konstruktoru
+  (jednou), auto-Init z `Loaded` pod flagem `_autoInitDone` resetovaným setterem `CacheClass`;
+  explicitní `Init()` běží vždy. TD workaround (`RefreshParamsTabInitParams`, čištění `CacheClass`)
+  ponechán, je s guardem kompatibilní. Testy `EDInputFormViewTests` (dvojí Loaded, změna třídy,
+  explicitní Init, search bez Loaded). Ruční ověření v TD (tab Parametry tam a zpět) zbývá.
 - **P1 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** `Loaded` fíruje při každém návratu do vizuálního stromu (přepnutí `TabItem`)
   a control při něm bezpodmínečně znovu volá synchronní Caché `Init` a znovu registruje

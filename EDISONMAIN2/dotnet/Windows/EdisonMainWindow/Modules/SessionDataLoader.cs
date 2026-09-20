@@ -11,11 +11,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// <summary>
     /// Session-scoped data ze serveru, ještě nepromítnutá do VM: surové (nefiltrované) stromy
     /// per jméno + aplikační přístup + per-user × IDFa preference + výchozí okno.
+    /// <c>Shortcuts == null</c> = load plochy selhal (ne prázdná plocha) - VM ji pak nesmí persistovat.
     /// </summary>
     public record SessionData(
         AccessTable AccessTable,
         IReadOnlyDictionary<string, IReadOnlyList<IModule>> Trees,
-        List<DesktopShortcutDto> Shortcuts,
+        List<DesktopShortcutDto>? Shortcuts,
         Dictionary<string, UsageEntry> Usage,
         List<string>? Expansion,
         string? SelectedTab,
@@ -59,10 +60,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 defaultWindow.Result);
         }
 
-        // Preference jdou sekvenčně v jedné větvi: IUserPrefsService drží sdílenou instanci MLRest
-        // z composition rootu, takže jim runner nemá kam podstrčit klon a souběžně by si praly
-        // RestStatus.
-        private static async Task<(List<DesktopShortcutDto>, Dictionary<string, UsageEntry>, List<string>?, string?, Dictionary<string, string>)>
+        // Preference jdou sekvenčně v jedné větvi souběžně s ostatními větvemi. Klon per request si
+        // dělá CacheUserPrefsService sám, rozpad na pět souběžných větví je tedy možný, zatím nebyl potřeba.
+        private static async Task<(List<DesktopShortcutDto>?, Dictionary<string, UsageEntry>, List<string>?, string?, Dictionary<string, string>)>
             LoadPreferencesAsync(ModulePreferencesService prefs)
         {
             var shortcuts = await prefs.LoadShortcutsAsync();

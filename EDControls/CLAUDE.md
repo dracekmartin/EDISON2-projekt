@@ -119,7 +119,10 @@ XAML všech konzumentů.
   `EDTheme.IconSize.Default`; v design-time záměrně prázdný (Actions až za běhu), ne bug.
 - `UserPrefs/` - `IUserPrefsService`; **default je no-op `NullUserPrefsService`** -
   dokud composition root nenastaví `CacheUserPrefsService` (po vzniku MLRest),
-  preference se tiše neukládají.
+  preference se tiše neukládají. Služba volá **klon per request** (`IRestCallRunner`) a
+  `Load` při selhání transportu **hází**, null = jen chybějící klíč: volající, který výpadek
+  nerozliší od prázdna, by uživatelova data přepsal prázdnem (plocha shellu). Save/Delete
+  selhání polykají a hlásí `ErrorReports.ReportBackground`.
 - `EDSupportPanel/` - vysouvací panel Podpora u pravého okraje okna; připojuje se sám ke
   **každému** oknu (class handler z `EDAppearance.Initialize`), karta žije v owned okně
   (airspace). Vlastní `CLAUDE.md`.

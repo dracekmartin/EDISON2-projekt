@@ -414,7 +414,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ClearSessionState() => ApplySessionData(new SessionData(
             new AccessTable([], isAllAccess: false),
             _sourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
-            Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
+            Shortcuts: null, Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
 
         private void ForgetSelection()
         {
@@ -485,15 +485,25 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (_modulePrefs is null) return;
             var stored = await _modulePrefs.LoadShortcutsAsync();
+            // Selhání loadu: v paměti zůstává stav téže session (agenda mohla přidat, nikdy neubírá);
+            // seed prázdnem by ho zahodil a další toggle prázdno zapsal do Caché.
+            if (stored is null) return;
+            SeedShortcuts(stored);
+            _shortcutsPersistable = true;
+
+            RefreshFamilyFavoriteFlags();
+            RebuildFavoritesTree();
+        }
+
+        private void SeedShortcuts(List<DesktopShortcutDto> stored)
+        {
             var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
+            // Seed pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
             _suppressFavoritesSync = true;
             _shortcuts.Seed(AllExecutables(), stored, exe =>
                 labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
                     ? label.Path : "");
             _suppressFavoritesSync = false;
-
-            RefreshFamilyFavoriteFlags();
-            RebuildFavoritesTree();
         }
 
         private void ApplyPersonalization(SessionData data)
@@ -502,13 +512,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _expansion = data.Expansion;
 
             // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
-            // Pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
-            _suppressFavoritesSync = true;
-            var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
-            _shortcuts.Seed(AllExecutables(), data.Shortcuts, exe =>
-                labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
-                    ? label.Path : "");
-            _suppressFavoritesSync = false;
+            // Null = load plochy selhal: zobrazit prázdno (data předchozí session sem nepatří), ale
+            // nepersistovat, dokud se blob nenačte - jinak by první toggle přepsal uživatelovu plochu.
+            SeedShortcuts(data.Shortcuts ?? []);
+            _shortcutsPersistable = data.Shortcuts is not null;
 
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
@@ -1101,8 +1108,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PersistShortcuts();
         }
 
+        /// <summary>Blob plochy se v této session podařilo načíst; do té doby se nesmí zapisovat (viz ApplyPersonalization).</summary>
+        private bool _shortcutsPersistable;
+
         // Uloží plochu (druh, identita, pozice). Volá se při změně členství i při přesunu dlaždice.
-        private void PersistShortcuts() => _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
+        private void PersistShortcuts()
+        {
+            if (!_shortcutsPersistable) return;
+            _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
+        }
 
         // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModuleAsync (usage + overlay); ostatní
         // druhy zástupců (tiskové sestavy, pohledy DS) pouští hostitelská agenda přes EDISONMAIN2API.

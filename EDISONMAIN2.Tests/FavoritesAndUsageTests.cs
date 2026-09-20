@@ -159,7 +159,7 @@ public class FavoritesAndUsageTests
                 """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A","Col":1,"Row":3}]""")));
         var svc = new ModulePreferencesService(prefs);
 
-        var dto = Assert.Single(await svc.LoadShortcutsAsync());
+        var dto = Assert.Single((await svc.LoadShortcutsAsync())!);
         Assert.Equal("MenuModule", dto.Kind);
         Assert.Equal("100", dto.ElementId);
         Assert.Equal((1, 3), (dto.Col, dto.Row));
@@ -171,7 +171,68 @@ public class FavoritesAndUsageTests
         var prefs = Substitute.For<IUserPrefsService>();   // LoadAsync default → Task<null>
         var svc = new ModulePreferencesService(prefs);
 
-        Assert.Empty(await svc.LoadShortcutsAsync());
+        Assert.Empty((await svc.LoadShortcutsAsync())!);
+    }
+
+    [Fact]
+    public async Task Prefs_LoadShortcuts_PrefsThrow_ReturnsNull_NotEmpty()
+    {
+        // Výpadek ≠ prázdná plocha: null říká VM „neseeduj a nepersistuj", prázdno by ji přepsalo.
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromException<JsonNode?>(new InvalidOperationException("server down")));
+        var svc = new ModulePreferencesService(prefs);
+
+        Assert.Null(await svc.LoadShortcutsAsync());
+    }
+
+    [Fact]
+    public void ReloadAfterLegacyExit_LoadFails_KeepsDesktopAndDoesNotSave()
+    {
+        // Exit agendy během výpadku dřív vyprázdnil plochu v paměti a první toggle prázdno zapsal.
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
+                """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A"}]""")));
+        var nav = Substitute.For<IWindowNavigator>();
+        var vm = EdisonMainViewModelHarness.CreateVM(services: MockServices(nav: nav), companies: OneCompany,
+            treeLoader: TreeLoaderWith([Exe("100", "App")]), userPrefs: prefs);
+        Assert.Single(vm.FavoritesTree);
+
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromException<JsonNode?>(new InvalidOperationException("server down")));
+        nav.LegacyModuleExited += Raise.Event<Action>();
+
+        Assert.Single(vm.FavoritesTree);
+        prefs.DidNotReceive().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
+
+        vm.ToggleFavoriteCommand.Execute(vm.MainMenuTree.OfType<ExecutableModule>().Single());
+
+        // Blob se v této session načetl, změna z shellu se ukládat smí.
+        prefs.Received(1).SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
+    }
+
+    [Fact]
+    public void SessionLoad_ShortcutsFail_ToggleWorksInMemory_SaveResumesAfterSuccessfulReload()
+    {
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromException<JsonNode?>(new InvalidOperationException("server down")));
+        var nav = Substitute.For<IWindowNavigator>();
+        var vm = EdisonMainViewModelHarness.CreateVM(services: MockServices(nav: nav), companies: OneCompany,
+            treeLoader: TreeLoaderWith([Exe("100", "App")]), userPrefs: prefs);
+        var module = vm.MainMenuTree.OfType<ExecutableModule>().Single();
+
+        vm.ToggleFavoriteCommand.Execute(module);
+
+        Assert.True(module.IsFavorite);   // v paměti plocha funguje
+        prefs.DidNotReceive().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());   // ale nepřepisuje neznámý blob
+
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts").Returns(Task.FromResult<JsonNode?>(new JsonArray()));
+        nav.LegacyModuleExited += Raise.Event<Action>();
+        vm.ToggleFavoriteCommand.Execute(module);
+
+        prefs.Received(1).SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
     }
 
     [Fact]
@@ -182,7 +243,7 @@ public class FavoritesAndUsageTests
             .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""{"not":"a list"}""")));
         var svc = new ModulePreferencesService(prefs);
 
-        Assert.Empty(await svc.LoadShortcutsAsync());
+        Assert.Empty((await svc.LoadShortcutsAsync())!);
     }
 
     [Fact]
@@ -200,7 +261,7 @@ public class FavoritesAndUsageTests
             "31001", "Přehled škod", "VOZIDLA2.exe", Col: 2, Row: 1, Report: report)]);
 
         prefs.LoadAsync("EDISONMAIN2", "Shortcuts").Returns(Task.FromResult(written));
-        var dto = Assert.Single(await svc.LoadShortcutsAsync());
+        var dto = Assert.Single((await svc.LoadShortcutsAsync())!);
         Assert.Equal(nameof(ShortcutKind.PrintReport), dto.Kind);
         Assert.Equal("PrehledSkod", dto.Id);
         Assert.Equal((2, 1), (dto.Col, dto.Row));

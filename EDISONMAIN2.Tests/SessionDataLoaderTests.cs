@@ -152,15 +152,16 @@ public class SessionDataLoaderTests
     }
 
     [Fact]
-    public async Task LoadAsync_PrefsFailure_DegradesToEmptyState()
+    public async Task LoadAsync_PrefsFailure_DegradesToEmptyState_ShortcutsSignalFailure()
     {
         // Preference jsou best-effort (persistence nesmí shodit shell) - strom musí dorazit i tak.
+        // Plocha je výjimka: null místo prázdna, aby ji VM po výpadku nepřepsala prázdným blobem.
         var (loader, prefs, _) = Create(failPrefs: true);
 
         var data = await loader.LoadAsync(licence: null, isAdmin: false, prefs);
 
         Assert.Single(data.Trees["main"]);
-        Assert.Empty(data.Shortcuts);
+        Assert.Null(data.Shortcuts);
         Assert.Empty(data.Usage);
         Assert.Null(data.Expansion);
         Assert.Null(data.SelectedTab);
