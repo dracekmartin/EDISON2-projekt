@@ -4,10 +4,13 @@ Hlavní WPF shell - login, výběr firmy, strom modulů, spouštění legacy `.e
 VB.NET `EDISONMAIN`.
 
 Bootstrap orchestruje `Startup/AppBootstrapper` (template method; vzhled/font záměrně před
-loginem, ať je login dialog themovaný; strom modulů načítá až shell VM asynchronně). **Po
-návratu z `Run` bootstrapper dožil** - co běží dál, má vlastní session-scoped objekt
-(`SessionSwitcher` = přihlášení jiného uživatele, `ShellShutdown` = vynucené ukončení);
-skládání session sdílí obě cesty přes `SessionFactory.Establish`.
+loginem, ať je login dialog themovaný; strom modulů načítá až shell VM asynchronně). `Run` má
+jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí v `DispatcherUnhandledException`
+(Handled) a app žije dál s `OnExplicitShutdown` a login oknem, které během progress fáze zavření
+ruší. Logout hook (`WireSessionLogout`) se zapojuje hned po `Accepted`, ne až se shellem, aby zámek
+uvolnil i exit kvůli updatu. **Po návratu z `Run` bootstrapper dožil** - co běží dál, má vlastní
+session-scoped objekt (`SessionSwitcher` = přihlášení jiného uživatele, `ShellShutdown` = vynucené
+ukončení); skládání session sdílí obě cesty přes `SessionFactory.Establish`.
 Login okno (jen Release dialog path) po OK zůstává jako progress podklad, zavírá se až na shell
 `ContentRendered`; `HandOffLoginWindow` musí dát `Application.MainWindow` na shell **před**
 restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo proces nemá konec.

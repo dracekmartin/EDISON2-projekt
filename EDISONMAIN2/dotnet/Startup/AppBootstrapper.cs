@@ -48,10 +48,27 @@ public class AppBootstrapper
 
     /// <summary>
     /// Provede celý bootstrap. Vrátí okno připravené k Show, nebo null pokud workflow selhal
-    /// (uživatel zrušil login / překročené licence). Při selhání <see cref="Shutdown"/> už
-    /// proběhl uvnitř, caller jen vrátí.
+    /// (uživatel zrušil login / překročené licence / výjimka). Při selhání <see cref="Shutdown"/>
+    /// už proběhl uvnitř, caller jen vrátí.
     /// </summary>
     public EdisonMainWindow? Run()
+    {
+        try
+        {
+            return RunCore();
+        }
+        catch (Exception ex)
+        {
+            // Bez explicitního Shutdown by výjimka skončila v DispatcherUnhandledException (Handled)
+            // a aplikace žila dál s OnExplicitShutdown a login oknem, které během progress fáze
+            // každé zavření ruší - proces by šel ukončit jen Task Managerem.
+            ReportStartupFailure(ex);
+            Shutdown();
+            return null;
+        }
+    }
+
+    private EdisonMainWindow? RunCore()
     {
         var (nav, popup, services) = InitializeServices();
         var prefs = LoadLocalPrefs();
@@ -100,6 +117,9 @@ public class AppBootstrapper
 
         SavePostLoginState(prefs, session.MLRest.Idfa, login.UserName);
         WireActivityFailedHandler(session, services);
+        // Od Accepted existuje ACTIVITY zámek - logout musí proběhnout při každém ukončení odteď,
+        // včetně exitu kvůli updatu a výjimky níž, ne až od vzniku shellu.
+        WireSessionLogout(services);
 
         // Až po SavePostLoginState - LastIdfa musí být uložená i když teď shell skončí updatem.
         _startupLoginWindow?.ShowProgress("Kontroluji aktualizace…");
@@ -440,17 +460,27 @@ public class AppBootstrapper
         logoutWatcher.Start();
         wnd.Closed += (_, _) => logoutWatcher.Stop();
 
-        // Graceful close → uvolnit ACTIVITY zámek (jinak visí do server-side idle timeoutu, jelikož
-        // je v temp globálu, ne nativním Caché locku). services.MLRest = aktuální (po switch user).
-        // Před logoutem flush usage telemetrie - pojistka na záznamy po posledním zavření okna
-        // (typicky legacy launche); potřebuje živou session kvůli userID.
+        return wnd;
+    }
+
+    /// <summary>
+    /// Graceful close → uvolnit ACTIVITY zámek (jinak visí do server-side idle timeoutu, jelikož
+    /// je v temp globálu, ne nativním Caché locku). services.MLRest = aktuální (po switch user).
+    /// Před logoutem flush usage telemetrie - pojistka na záznamy po posledním zavření okna
+    /// (typicky legacy launche); potřebuje živou session kvůli userID.
+    /// </summary>
+    protected virtual void WireSessionLogout(EDServices services)
+    {
         _application.Exit += (_, _) =>
         {
             EDUsageTelemetry.Flush(services.MLRest);
             SessionLogout.Logout(services.MLRest);
         };
-        return wnd;
     }
+
+    /// <summary>Chyba startup workflow: hlášení + dialog nad login oknem (pokud je), jinak top-level.</summary>
+    protected virtual void ReportStartupFailure(Exception ex) =>
+        new PopupDisplayer(_startupLoginWindow).Error(ex);
 
     protected virtual void Shutdown() => _shutdown.Force();
 }
