@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/` |
 | **Odvozeno** | 4 read-only subagenti na oblasti shell / startup / EDControls infra / EDControls controls (~220 souborů), EDUPDATE2 ručně; každý nález ověřen citací kódu na HEAD |
 
-**Hotovo: 0 / 44**
+**Hotovo: 1 / 44**
 
 ## Jak s dokumentem zacházet
 
@@ -80,7 +80,12 @@ Největší soubory: `EdisonMainViewModel.cs` 1525 ř., `EDControlStyles.xaml` 1
 
 ### A1 · Mezi `AcquireSession` a `HandOffLoginWindow` není chybová hranice
 
-- [ ] **Stav:** otevřeno
+- [x] **Stav:** vyřešeno 88c1d986 (2026-09-20) - hranice je širší než návrh: `Run()` obaluje celý
+  `RunCore()` (kryje i výjimku z `VerifyLic`/`EstablishSession`, ne jen od `AcquireSession`),
+  catch = `ReportStartupFailure` (dialog nad login oknem) + `Shutdown()`. Login okno se explicitně
+  nezavírá: `Application.Shutdown` jeho `Closing` cancel ignoruje. Exit hook s logoutem přesunut
+  do `WireSessionLogout` hned za `Accepted`. 8 testů (`AppBootstrapperTests`), Release ručně
+  neověřeno (A10).
 - **P1 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** `AppBootstrapper.Run()` po `AcquireSession` (ACTIVITY zámek existuje, `CacheLocks=1`)
   volá `CheckForUpdate` a `BuildShellWindow` bez try/catch. `CheckForUpdate` chrání jen kopii
