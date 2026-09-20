@@ -105,6 +105,60 @@ public class EDInputFormViewTests
         });
     }
 
+    [Fact]
+    public void Loaded_InitsOncePerCacheClass_ExplicitInitAlwaysRuns()
+    {
+        RunSta(() =>
+        {
+            var mock = MLRestMocks.Create();
+            mock.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>()).Returns(new CVar());
+            var form = new Form
+            {
+                CacheClass = "ALVA.A",
+                ServicesOverride = new EDServices(mock,
+                    Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+            };
+
+            RaiseLoaded(form);
+            RaiseLoaded(form);   // návrat do vizuálního stromu (přepnutí TabItem) Init neopakuje
+
+            mock.Received(1).QueryOrThrow("ALVA.A", "Init", Arg.Any<CVar>());
+
+            form.CacheClass = "ALVA.B";   // nová třída → další Loaded inicializuje znovu
+            RaiseLoaded(form);
+            RaiseLoaded(form);
+
+            mock.Received(1).QueryOrThrow("ALVA.B", "Init", Arg.Any<CVar>());
+
+            form.Init();   // explicitní volání hosta guard neobchází, běží vždy
+
+            mock.Received(2).QueryOrThrow("ALVA.B", "Init", Arg.Any<CVar>());
+        });
+    }
+
+    [Fact]
+    public void Loaded_WithoutCacheClass_DoesNotInit_ToolbarSearchWorksFromConstruction()
+    {
+        RunSta(() =>
+        {
+            var mock = MLRestMocks.Create();
+            var form = new Form
+            {
+                Items = new List<Item> { new Field { Number = 1, Key = "f", Label = "Pole" } },
+                ServicesOverride = new EDServices(mock,
+                    Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+            };
+
+            // Search je nadrátovaný v konstruktoru, ne na Loaded - jinak by se handlery hromadily.
+            form.Toolbar.SearchText = "pole";
+            Assert.Equal(1, form.Toolbar.TotalMatches);
+
+            RaiseLoaded(form);
+
+            mock.DidNotReceiveWithAnyArgs().QueryOrThrow(default!, default!, default(CVar)!);
+        });
+    }
+
     private static void RaiseLoaded(Form form) =>
         form.RaiseEvent(new RoutedEventArgs(FrameworkElement.LoadedEvent, form));
 
