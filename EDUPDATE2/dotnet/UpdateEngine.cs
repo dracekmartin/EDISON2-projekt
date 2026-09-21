@@ -36,7 +36,10 @@ public class UpdateEngine
     internal const string StagingDirName = "EDUPDATE2_Staging";
     internal const string BackupDirName = "EDUPDATE2_Backup";
     private const string DiffInfSuffix = "_DIFF.INF";
-    private static readonly string[] FixedWaitProcesses = ["EDISONMAIN", "EDUPDATE"];
+    // Kromě shellů i procesy, které drží vyměňované soubory: TemplateDesigner načítá EDControls.dll a shell
+    // ho při exitu nezavírá, když ho spustila legacy agenda; EDISONMAIN2API hostuje agendy z téhož adresáře.
+    // Se zamčeným souborem by swap selhal a update skončil rollbackem.
+    private static readonly string[] FixedWaitProcesses = ["EDISONMAIN", "EDUPDATE", "TemplateDesigner", "EDISONMAIN2API"];
     private static readonly string[] SourceSubDirs = ["EDFiles", "PS", "locales"];
     // Kopírují se vždy - v CRC manifestu nemají větu (ověřeno na produkci), diff by je nikdy nevzal:
     // - EDISONini.xml: adresa Caché serveru + REST port pro legacy svět; serverová kopie je autoritativní,

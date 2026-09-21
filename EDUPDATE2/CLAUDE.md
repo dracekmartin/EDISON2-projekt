@@ -22,7 +22,7 @@ Neznámý klíč se zaloguje a ignoruje.
 | `SourcePath` | povinný | adresář serverové instalace - síťová cesta `\\server\...` nebo lokální; `http*` odmítne validace |
 | `TargetPath` | adresář EDUPDATE2.exe | kam instalovat (shell updater kopíruje k sobě, default = instalace) |
 | `Version` | `VERZE.INF` ze zdroje | jen log a no-op pojistka: není-li novější než cíl, skončí se úspěchem bez kopírování |
-| `WaitProcess` | `EDISONMAIN2` | jméno procesu bez cesty (`.exe` se ořízne); navíc se čeká fixně na `EDISONMAIN` a `EDUPDATE` |
+| `WaitProcess` | `EDISONMAIN2` | jméno procesu bez cesty (`.exe` se ořízne); navíc se čeká fixně na `EDISONMAIN`, `EDUPDATE`, `TemplateDesigner` (drží `EDControls.dll`) a `EDISONMAIN2API` (hostuje agendy) |
 | `RunExe` | nespouštět nic | jen jméno souboru bez cesty; spustí se z TargetPath po úspěchu i no-op, po chybě nikdy (smyčka detekce) |
 | `NucenyUpdate` | `0` | `1` = plná kopie bez ohledu na manifest i verze |
 | `NucenyUpdateTime` | nezapisovat stopu | razítko vynucené vlny (viz poslední sekce) |
