@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-09-21 (3) - 🎫 místenka se v českém tisku značí „R"
+
+Nález kolegy z 21. 9. na lince 320913. U spoje se místo „R" tiskl ampersand a vysvětlivka mluvila
+o místenkových kancelářích AMS.
+
+Starý tisk rozlišuje **čtyři** druhy místenkování jen ve slovenské verzi. Česká zná dva: „R"
+(místenku je možné zakoupit) a „þ" (spoj jde použít jen s místenkou), a obě varianty s kancelářemi
+AMS do nich slučuje. Návrhář je posílal všem, takže se českým zákazníkům tiskla slovenská značka
+i slovenský text.
+
 ## 2026-09-21 (2) - 🔤 značky u zastávky se tisknou i v tabulce
 
 `B165`, nález kolegy z 18. 9. Vysvětlivky pod jízdním řádem popisovaly značky („spoj zastavuje jen

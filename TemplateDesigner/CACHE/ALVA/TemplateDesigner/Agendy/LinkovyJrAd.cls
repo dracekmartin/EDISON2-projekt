@@ -1221,7 +1221,11 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         i "1234567X+" [ znak s klice(znak) = "", platnostZnakySeen(znak) = ""
     }
     // místenkování: hlava:6 ("R") + hlava:11 (typ) → R / þ(R1) / &(R2) / Ü(R3)
+    // ⚠️ **Čtyři druhy zná jen slovenská verze.** Česká sloučí obě varianty s kancelářemi AMS
+    // zpátky na R a þ (1:1 legacy JRapiLinPrtWin.mac:2448, texty gMstNZLi^JRapiNZUtl3), takže
+    // ampersand ani Ü se u české firmy vytisknout nesmí - kolega to našel na lince 320913.
     s mistenka = $tr($p(hlava,":",6)_$p(hlava,":",11), " ", "")
+    i rec '= "*SK" s mistenka = $case(mistenka, "R2":"R", "R3":"R1", :mistenka)
     s mistZnak = $case(mistenka, "R":"R", "R1":$c(254), "R2":"&", "R3":$c(220), :"")
     i mistZnak '= "" s klice(mistZnak) = "", mistenkaSeen(mistZnak) = ""
     // pokračuje (omz34, typ výstupu ≠ 2) → klíč u (nebo p dle ^JRSET("Cis","comU34znk"))

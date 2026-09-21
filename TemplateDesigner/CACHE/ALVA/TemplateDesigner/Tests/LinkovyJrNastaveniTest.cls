@@ -568,4 +568,48 @@ ClassMethod Diag(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Místenkování s kancelářemi AMS: **čtyři druhy zná jen slovenská verze**, česká je slučuje
+/// zpátky na „R" a „þ" (1:1 legacy `JRapiLinPrtWin.mac:2448`, texty `gMstNZLi^JRapiNZUtl3`).
+///
+/// Bez toho se u české firmy tiskl u spoje ampersand místo „R" a vysvětlivka mluvila o kancelářích
+/// AMS (nález kolegy 21. 9. na lince 320913, kde je právě tenhle druh místenkování).
+Method TestMistenkaAmsJenSlovensky()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0320913"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka s místenkou AMS není na tomto serveru - přeskočeno")
+		quit
+	}
+	kill parametry
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set znacky = ..ZnackyPlatnosti()
+	do $$$AssertTrue(znacky [ "R", "spoj s místenkou musí mít v české verzi značku R, má: "_znacky)
+	do $$$AssertTrue('(znacky [ "&"), "ampersand je slovenská značka, česky být nesmí: "_znacky)
+}
+
+/// Všechny značky řádků platnosti z posledního běhu, spojené čárkou.
+ClassMethod ZnackyPlatnosti() As %String
+{
+	set vsechny = "", key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set spoje = page.rows.%Get("SPOJE")
+		continue:'$isobject(spoje)
+		set it = spoje.%GetIterator()
+		while it.%GetNext(.i, .spoj) {
+			set platnost = spoj.%Get("PLATNOST")
+			continue:'$isobject(platnost)
+			set it2 = platnost.%GetIterator()
+			while it2.%GetNext(.j, .znak) {
+				set vsechny = vsechny_$select(vsechny="":"", 1:",")_znak
+			}
+		}
+	}
+	quit vsechny
+}
+
 }
