@@ -59,7 +59,7 @@ public class ModulePreferencesServiceTests
         PrefsReturn("ModuleUsage", null);
         PrefsReturn("ChangelogSnooze", null);
 
-        Assert.Empty(await _service.LoadShortcutsAsync());
+        Assert.Empty((await _service.LoadShortcutsAsync())!);
         Assert.Empty(await _service.LoadUsageAsync());
         Assert.Empty(await _service.LoadChangelogSnoozeAsync());
     }
@@ -104,7 +104,8 @@ public class ModulePreferencesServiceTests
         _prefs.LoadAsync(Scope, Arg.Any<string>())
             .Returns<Task<JsonNode?>>(_ => throw new InvalidOperationException("server down"));
 
-        Assert.Empty(await _service.LoadShortcutsAsync());
+        // Plocha je výjimka: null hlásí selhání, aby ji VM nepřepsala prázdnem; zbytek degraduje.
+        Assert.Null(await _service.LoadShortcutsAsync());
         Assert.Empty(await _service.LoadUsageAsync());
         Assert.Null(await _service.LoadExpansionAsync());
         Assert.Null(await _service.LoadSelectedTabAsync());

@@ -954,6 +954,27 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
+    public void IsTestMenuVisible_FollowsInternalDiagnostics()
+    {
+        // Menu „Test funkcí" (Vyvolat chybu, mock formuláře) nesmí být u zákazníka vidět.
+        bool original = InternalDiagnostics.Enabled;
+        try
+        {
+            var vm = CreateVM();
+
+            InternalDiagnostics.Enabled = false;
+            Assert.False(vm.IsTestMenuVisible);
+
+            InternalDiagnostics.Enabled = true;
+            Assert.True(vm.IsTestMenuVisible);
+        }
+        finally
+        {
+            InternalDiagnostics.Enabled = original;
+        }
+    }
+
+    [Fact]
     public void LegacyShellStartInfo_PassesRunEdisonReason()
     {
         // Bez reason=2 (RunEdison) frmNoMDI ohlásí "nelze spustit samostatně" a zavře se.

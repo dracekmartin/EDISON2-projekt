@@ -1,7 +1,9 @@
 # EDInputForm - poznámky pro vývojáře
 
 Dynamický formulář definovaný a validovaný v Caché. Host nastaví `CacheClass`
-(+ volitelně `InitParams`), `Init()` proběhne automaticky na `Loaded`. Služby se čtou
+(+ volitelně `InitParams`), `Init()` proběhne automaticky na `Loaded` **jednou per
+`CacheClass`** (návrat do vizuálního stromu, např. přepnutí tabu, ho neopakuje; změna
+`CacheClass` nebo explicitní `Init()` ano). Služby se čtou
 z `EDServices.Current` - **ne** z DataContext okna. API čti z `EDInputForm.xaml.cs`;
 orchestrace bez WPF je `EDInputFormController.cs`, kodek wire formátu `EDInputFormWire.cs`
 (obojí testovatelné bez controlu); Caché builder je

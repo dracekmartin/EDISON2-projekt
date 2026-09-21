@@ -11,9 +11,11 @@ namespace EDISONMAIN2;
 /// update flow. <see cref="SourceDir"/> = legacy LocalClientSourcePath sémantika.
 /// <see cref="ForcedStamp"/> = razítko vynucené aktualizace klientů (globál
 /// NucenyUpdateLocalClientu; wire klíč "NucenyUpdatClentu" - překlep je součást kontraktu).
+/// <see cref="Pending"/> = na serveru běží instalace verze (legacy EDLOADER <c>UpdateIsRunning</c>).
 /// </summary>
 public record UpdateSettings(bool Enabled, string CacheVersion, string EdisonPath, string LocalSourcePath,
-                             string SourceServer = "", int SourcePort = 0, string ForcedStamp = "")
+                             string SourceServer = "", int SourcePort = 0, string ForcedStamp = "",
+                             bool Pending = false)
 {
     public string SourceDir => string.IsNullOrEmpty(LocalSourcePath) ? EdisonPath : LocalSourcePath;
 }
@@ -60,7 +62,7 @@ public class Updater
         var output = mlRest.QueryOrThrow("ALVA.SETUP.Main", "LoadSettings", new object[] { });
         char del = mlRest.Delimiter;
 
-        bool enabled = false;
+        bool enabled = false, pending = false;
         string version = "", edisonPath = "", localSourcePath = "", sourceServer = "", forcedStamp = "";
         int sourcePort = 0;
         for (int i = 1; i <= output.GetUpperBound(0); i++)
@@ -70,6 +72,7 @@ public class Updater
             switch (parts[0])
             {
                 case "update": enabled = int.TryParse(parts[1], out int e) && e != 0; break;
+                case "pending": pending = int.TryParse(parts[1], out int p) && p != 0; break;
                 case "version": version = parts[1]; break;
                 case "edisonPath": edisonPath = parts[1]; break;
                 case "localSourcePath": localSourcePath = parts[1]; break;
@@ -78,11 +81,16 @@ public class Updater
                 case "NucenyUpdatClentu": forcedStamp = parts[1]; break;
             }
         }
-        return new UpdateSettings(enabled, version, edisonPath, localSourcePath, sourceServer, sourcePort, forcedStamp);
+        return new UpdateSettings(enabled, version, edisonPath, localSourcePath, sourceServer, sourcePort, forcedStamp, pending);
     }
 
     public UpdateCheckResult Check(UpdateSettings settings)
     {
+        // Parita s EDLOADER UpdateIsRunning: během serverové instalace se klient nepřihlásí (rozjeté
+        // verze). Před Enabled - pending nezávisí na tom, zda stanice updaty dělá.
+        if (settings.Pending)
+            return new(UpdateOutcome.Broken, "Probíhá aktualizace systému, aplikace bude ukončena.");
+
         // Divergence od legacy: Enabled se honoruje vždy (legacy klient ho přes ForceYes
         // ignoruje) - dev server má update~0 a nedosažitelný edisonPath.
         if (!settings.Enabled) return new(UpdateOutcome.None);

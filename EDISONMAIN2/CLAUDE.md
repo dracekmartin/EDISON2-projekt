@@ -4,10 +4,13 @@ Hlavní WPF shell - login, výběr firmy, strom modulů, spouštění legacy `.e
 VB.NET `EDISONMAIN`.
 
 Bootstrap orchestruje `Startup/AppBootstrapper` (template method; vzhled/font záměrně před
-loginem, ať je login dialog themovaný; strom modulů načítá až shell VM asynchronně). **Po
-návratu z `Run` bootstrapper dožil** - co běží dál, má vlastní session-scoped objekt
-(`SessionSwitcher` = přihlášení jiného uživatele, `ShellShutdown` = vynucené ukončení);
-skládání session sdílí obě cesty přes `SessionFactory.Establish`.
+loginem, ať je login dialog themovaný; strom modulů načítá až shell VM asynchronně). `Run` má
+jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí v `DispatcherUnhandledException`
+(Handled) a app žije dál s `OnExplicitShutdown` a login oknem, které během progress fáze zavření
+ruší. Logout hook (`WireSessionLogout`) se zapojuje hned po `Accepted`, ne až se shellem, aby zámek
+uvolnil i exit kvůli updatu. **Po návratu z `Run` bootstrapper dožil** - co běží dál, má vlastní
+session-scoped objekt (`SessionSwitcher` = přihlášení jiného uživatele, `ShellShutdown` = vynucené
+ukončení); skládání session sdílí obě cesty přes `SessionFactory.Establish`.
 Login okno (jen Release dialog path) po OK zůstává jako progress podklad, zavírá se až na shell
 `ContentRendered`; `HandOffLoginWindow` musí dát `Application.MainWindow` na shell **před**
 restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo proces nemá konec.
@@ -17,7 +20,12 @@ Připojení čte `SettingsLoader` z `EDISONini.xml` vedle exe (sdílený s legac
 ze serveru): **`connection@restport`, ne `@port`** (to je superserver); wizard zapisuje plnou
 legacy paritu (`initialized`/`forceChange`=1), uzly mimo ni (`securedMode`) zachovává. Dev kopii
 v repu **publish nesmí vydat** - v `C:\Edison\` leží živý soubor legacy aplikací
-(`CopyToPublishDirectory="Never"` v csproj).
+(`CopyToPublishDirectory="Never"` v csproj). Argumenty `server=<host> restport=<port>`
+(`ConnectionOverride`) mají přednost a wizard přeskočí: menu „Připojit k databázi" jimi spouští
+**novou instanci** proti jinému serveru (session v procesu je na jeden server); uložená připojení
+jsou v `LocalPrefs.Connections`, výchozí z `EDISONini.xml` zůstává centrálně řízené (legacy `forceChange`).
+Před loginem shell opakuje brány EDLOADERu (`PassesPreLoginGates`: zákaz přihlašování přes `LoginGate`,
+`pending` serverové instalace z `LoadSettings`), protože zástupce přímo na exe EDLOADER obchází.
 
 ## Strom modulů = generovaný snapshot
 
@@ -82,7 +90,9 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
   koncového `[IDFa]` (suffix si přidávají legacy okna sama, `clsForm.ShowIDFA`). **Firma v titulku
   je jen u shellu**; titulek jde do jména tiketu v hlášení chyb (firma zvlášť polem `firma`).
 - Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
-  nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají).
+  nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají). Rozbalení
+  vynucené hledáním je **přechodné**: snímek před hledáním se po vymazání textu obnoví a změny
+  rozbalení během hledání se nepersistují.
 - **Status bar** = segmenty ikona + hodnota, technika jen v ToolTipu. `DockPanel.Dock="Right"`
   i `Visibility="Collapsed"` fungují jen na **explicitním `<StatusBarItem>`** (na surový
   `TextBlock` se nepropíší); `<Separator/>` jen mezi vždy viditelné (u sbalitelného by visel).
@@ -175,6 +185,6 @@ Pasti:
 Shell strana: `WindowNavigator.ShowLegacy*` (viz [EDViewModel/CLAUDE.md](../EDControls/dotnet/EDViewModel/CLAUDE.md));
 admin override při out-of-license řeší `LicenceVerifier` (`ShowLegacyAndWait(..., shareShellSession: false)`).
 
-Test funkcí → „Spustit starý shell": `EDISONMAIN.exe` s `reason=2` (`RunEdison`), bez něj se
+Nástroje → „Spustit starý shell": `EDISONMAIN.exe` s `reason=2` (`RunEdison`), bez něj se
 `frmNoMDI` odmítne spustit. Plain `Process.Start`, ne `ShowLegacy*` - starý shell nemá umřít
 s tímhle (KillOnExit) ani být ve „Spuštěné moduly"; přes EDLOADER se k němu už nedostaneš.

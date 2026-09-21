@@ -5,6 +5,10 @@
 Ten dokument je snapshot analýzy (evidence, dopad, návrh) a **nemění se**. Tady je plán
 a stav.
 
+**Od 2026-09-20 se tenhle backlog needituje.** Otevřené položky převzal živý dokument
+[architecture.md](architecture.md) pod novými ID (mapa R/N → A je v jeho hlavičce); stav se
+odškrtává tam.
+
 **Hotovo: 12 / 22 z review** (15 nálezů rozpadlých do 22 úkolů; `R1` má navíc 4 vnořené kroky)
 **+ 3 / 8 z pozdějšího skenu** (sekce „Nálezy mimo původní review" dole)
 

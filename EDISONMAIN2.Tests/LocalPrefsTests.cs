@@ -46,6 +46,7 @@ public class LocalPrefsTests
             Assert.Null(prefs.RememberedPassword);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
+            Assert.Null(prefs.Connections);
         });
     }
 
@@ -132,6 +133,23 @@ public class LocalPrefsTests
             Assert.Equal(2, loaded.MiniAppLayouts!.Count);
             Assert.Equal("<xml2/>", loaded.MiniAppLayouts["CB_MLINEAS"]);
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
+        });
+    }
+
+    [Fact]
+    public void SaveLoad_RoundTripsConnections()
+    {
+        WithTempPrefs(null, _ =>
+        {
+            new LocalPrefs
+            {
+                Connections = [new SavedConnection { Name = "Test", Server = "10.0.0.5", RestPort = 57770 }],
+            }.Save();
+
+            var loaded = LocalPrefs.Load();
+
+            var connection = Assert.Single(loaded.Connections!);
+            Assert.Equal(("Test", "10.0.0.5", 57770), (connection.Name, connection.Server, connection.RestPort));
         });
     }
 

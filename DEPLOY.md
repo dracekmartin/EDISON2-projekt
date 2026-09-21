@@ -1,31 +1,61 @@
 # Vydání shellu EDISONMAIN2 - co distribuovat
 
-Jen to, co existuje nebo se mění kvůli novému shellu. Zbytek (MLRest.dll, EDLIBRARY.dll, USERS.exe,
-C1 knihovny...) chodí k zákazníkům se starým shellem už dnes.
+Jen to, co existuje nebo se mění kvůli novému shellu. Zbytek (C1 knihovny, EDCore...) chodí
+k zákazníkům se starým shellem už dnes. TemplateDesigner je vydaný samostatně a sem nepatří;
+sdílí ale `EDControls.dll` - breaking change jejího API znamená vydat i TD (root `CLAUDE.md`).
 
-Z repa EDISON2 (publish `SingleFileCEdison`):
+## Binárky
 
-- `EDISONMAIN2.exe`
-- `EDControls.dll` (volná vedle exe, sdílená s `TemplateDesigner.exe` - při změně jejího API vydat i ten)
-- `TemplateDesigner.exe` (od F17 přebírá shell session z launch args - starší build by session nepřevzal)
-- `EDUPDATE2.exe` (klientský updater nového shellu; bez něj ve zdrojovém adresáři shell
-  aktualizaci nespustí - CopyUpdater selže s popupem)
+Z repa EDISON2 (publish profilem `SingleFileCEdison` do `C:\Edison\`, soubory vybírat ručně,
+složku nikdy nezipovat - leží tam stale `.pdb`/`.deps.json` a dev `VERZE.INF`):
+
+- `EDISONMAIN2.exe` - single-file bundle (obsahuje `EDISONMAIN2.LegacyMiniApps`, AvalonDock,
+  WebView2 i snapshot `MLRest.dll`/`EDLicence.dll`/`EDISONAPI.dll` ze stroje, kde se publikovalo -
+  publikovat jen tam, kde `C:\Edison\` odpovídá vydávané legacy verzi)
+- `EDControls.dll` - volná vedle exe
+- `EDUPDATE2.exe` - klientský updater; bez něj ve zdrojovém adresáři serveru shell po detekci
+  nové verze nenastartuje (`CopyUpdater` selže s popupem)
 
 Z repa EDISON (build do `C:\Edison`):
 
-- `EDISONMAIN2API.exe`
-- `EDISONMAIN2API.exe.config`
-- `EDISONMAIN.exe`
-- `EDUPDATE.EXE` (projekt `UPDATERCL`) - zůstává jen pro starý shell; nový shell od
-  přechodu na EDUPDATE2 jeho úpravy (`WaitProcess`/`RunExe`) nepotřebuje
+- `EDISONMAIN2API.exe` + `EDISONMAIN2API.exe.config` - generický host agend (projekt je od 06/2026
+  WinExe; zbylá `.dll` u zákazníka stíní `.exe`, viz codeBase pin v `EDISONMAIN.exe.config`)
+- existující soubory, build musí být z legacy HEAD ≥ 2026-09-11 (`git log --grep=EDISONMAIN2`):
+  `EDISONMAIN.exe` (retrofit `OnRun`), `EDISONMAIN.exe.config` (codeBase pin), `EDLibrary.dll`
+  (shortcut sink), `EDUsers.dll`, `EDCore.dll`, `MLRest.dll`, `EDLicence.dll`, `EDISONAPI.dll`,
+  `USERS.exe`, `UTILITIES.exe`, `EDISON.exe` (EDLOADER). `EDUPDATE.EXE` zůstává jen starému shellu.
 
-Ops prerekvizita na Cloud2: `FILES_DESCRIPTION.INF` musí dostat FULL řádky pro
-`EDISONMAIN2.exe`, `EDControls.dll`, `TemplateDesigner.exe` a `EDUPDATE2.exe`
-(edituje se ručně; dnes tam žádný z nich není).
+Nové řádky `FILES_DESCRIPTION.INF` (FULL, typ EXE/DLL): `EDISONMAIN2.exe`, `EDControls.dll`,
+`EDUPDATE2.exe`, `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`; řádek `EDISONMAIN2API.dll`
+zrušit. Ostatní soubory výše řádky už mají.
 
-Legacy verze musí být aspoň ta, která má úpravy agend pro shell (`EDLIBRARY` shortcut sink,
-`MHD2LINKY`/`TISKJR`/`ISYJR2` launch TemplateDesigneru přes shell session, `MHD2PlanDopravy` API pro
-miniaplikaci Dispečink, MZDY2 dual-write `^MZR("FiltrZam2")`) - `git log --grep=EDISONMAIN2` v repu EDISON.
+## Caché projekty (řádky `FULL~~XML~<projekt>.prj`)
 
-Připojení shell čte z `EDISONini.xml` serverové instalace (na stanice ho roznáší EDUPDATE);
-dev kopii z repa publish nevydává (`CopyToPublishDirectory="Never"` v csproj).
+Nové - projekt musí existovat na REL Caché (Compiler DEV→REL), `.project` v repu je jen jméno:
+
+- `ALVA_EDISONMAIN2` - `ALVA.EDISONMAIN2.API.Tree`, `ALVA.EDISONMAIN2.EDInputForm.UserProfile`;
+  bez package `Tests`
+- `ALVA_EDControls` - `UserData`, `DesktopShortcuts`, `EDInputForm.{Form,Field,Group,Item}`,
+  `EDList.{List,Column}` **a include `EDInputForm.inc`** (bez něj se třídy nezkompilují); bez
+  `Tests` a bez demo `EDIFExample`/`MockList`
+- **Nevydávat** `ALVA_EDTesting` (test framework)
+
+Existující, které shell volá (řádky jsou; verze musí nést změny pro shell): FULL `ALVA_SYS_Login`,
+`ALVA_SETUP`, `ALVA_SYSTEM`, `ALVA_EDISON`, `ALVA_LIBRARY`, `ALVA_LICENCE`, `ALWA_MLREST`;
+PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (DispecinkMiniApp),
+`ALVA_MZDY2` (FiltrZam2 dual-write).
+
+## Ops prerekvizity
+
+- `FILES_DESCRIPTION.INF` na Cloud2 (edituje se ručně) dostane řádky výše; bez nich nevznikne
+  záznam v `EDISONCRC.bin` a EDUPDATE2 soubor na stanice nikdy nezkopíruje.
+- Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty, jinak se do REL nic nepřenese.
+- Stanice: **.NET 10 Desktop Runtime x64** (publish je framework-dependent) a WebView2 Evergreen
+  runtime (bez něj se pruh podpory tiše nevyplní). Legacy stack to nepotřeboval.
+- Serverový adresář musí mít `VERZE.INF` a `EDUPDATE2.exe`; shell bez `VERZE.INF` vedle exe skončí
+  hláškou, instaluje se tedy vždy do adresáře EDISONu, nikdy samostatně.
+- Setup wizard shellu nikdy nespouštět v serverovém instalačním adresáři: přepíše `EDISONini.xml`,
+  který EDUPDATE roznáší na všechny stanice (a při updatu ho stejně vrátí).
+
+Připojení shell čte z `EDISONini.xml` serverové instalace; dev kopii z repa publish nevydává
+(`CopyToPublishDirectory="Never"` v csproj).

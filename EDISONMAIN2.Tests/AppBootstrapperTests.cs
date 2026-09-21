@@ -39,6 +39,15 @@ public class AppBootstrapperTests
             EnsureConfiguredCalled = true;
             return Configured;
         }
+
+        public bool PreLoginGatesPass { get; set; } = true;
+        public bool PreLoginGatesCalled { get; private set; }
+
+        protected override bool PassesPreLoginGates(MLRest loginRest, EDServices services)
+        {
+            PreLoginGatesCalled = true;
+            return PreLoginGatesPass;
+        }
         public LicenceAcquireOutcome SessionOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
         public IPopupDisplayer Popup { get; set; } = Substitute.For<IPopupDisplayer>();
         public IWindowNavigator Nav { get; set; } = Substitute.For<IWindowNavigator>();
@@ -98,9 +107,12 @@ public class AppBootstrapperTests
         protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
             => new(MLRest, login, () => null);
 
+        public Exception? AcquireSessionThrows { get; set; }
+
         protected override (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session, EDServices services)
         {
             AcquireSessionCalled = true;
+            if (AcquireSessionThrows is not null) throw AcquireSessionThrows;
             return (SessionOutcome, null);
         }
 
@@ -113,18 +125,36 @@ public class AppBootstrapperTests
         protected override void WireActivityFailedHandler(SessionContext session, EDServices services)
             => WireActivityCalled = true;
 
+        public bool SessionLogoutWired { get; private set; }
+        public bool LogoutWiredBeforeUpdateCheck { get; private set; }
+
+        protected override void WireSessionLogout(EDServices services) => SessionLogoutWired = true;
+
         public bool UpdateTriggered { get; set; }
+        public Exception? UpdateCheckThrows { get; set; }
 
         protected override (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) CheckForUpdate(
-            SessionContext session, EDServices services) => (UpdateTriggered, null);
+            SessionContext session, EDServices services)
+        {
+            LogoutWiredBeforeUpdateCheck = SessionLogoutWired;
+            if (UpdateCheckThrows is not null) throw UpdateCheckThrows;
+            return (UpdateTriggered, null);
+        }
+
+        public Exception? BuildShellThrows { get; set; }
 
         protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep, SessionContext session, Lic? licence,
             EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
             Task<ReleaseNoticeResult>? releaseNotice)
         {
+            if (BuildShellThrows is not null) throw BuildShellThrows;
             BuildShellCalled = true;
             return null!;
         }
+
+        public Exception? ReportedFailure { get; private set; }
+
+        protected override void ReportStartupFailure(Exception ex) => ReportedFailure = ex;
 
         public bool HandOffCalled { get; private set; }
         public bool ShellBuiltBeforeHandOff { get; private set; }
@@ -148,6 +178,21 @@ public class AppBootstrapperTests
         Assert.Null(result);
         Assert.True(b.ShutdownCalled);
         Assert.False(b.TryLoginCalled);   // setup zrušen → ani login se nezkouší
+        Assert.False(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_PreLoginGateRefuses_ShutsDown_BeforeLogin()
+    {
+        // Zákaz přihlašování / běžící instalace na serveru (parita s EDLOADER) - konec ještě před loginem.
+        var b = new TestableBootstrapper { PreLoginGatesPass = false };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.PreLoginGatesCalled);
+        Assert.True(b.ShutdownCalled);
+        Assert.False(b.TryLoginCalled);
         Assert.False(b.BuildShellCalled);
     }
 
@@ -447,6 +492,109 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.False(b.HandOffCalled);
+    }
+
+    // Chybová hranice startupu: každá výjimka po loginu končí explicitním Shutdown, jinak by
+    // aplikace žila dál s neuzavíratelným login oknem (Closing během progress fáze ruší).
+
+    [Fact]
+    public void Run_UpdateCheckThrows_ReportsAndShutsDown_NoShell()
+    {
+        var ex = new InvalidOperationException("LoadSettings selhal");
+        var b = new TestableBootstrapper { UpdateCheckThrows = ex };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.Same(ex, b.ReportedFailure);
+        Assert.False(b.BuildShellCalled);
+        Assert.False(b.HandOffCalled);
+    }
+
+    [Fact]
+    public void Run_BuildShellThrows_ReportsAndShutsDown_NoHandOff()
+    {
+        var ex = new InvalidOperationException("MiniAppCatalog");
+        var b = new TestableBootstrapper { BuildShellThrows = ex };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.Same(ex, b.ReportedFailure);
+        Assert.False(b.HandOffCalled);
+    }
+
+    [Fact]
+    public void Run_AcquireSessionThrows_ShutsDown_WithoutLogoutHook()
+    {
+        // VerifyLic spadl → zámek nevznikl, logout hook se nezapojuje, ale aplikace se ukončí.
+        var b = new TestableBootstrapper { AcquireSessionThrows = new InvalidOperationException("VerifyLic") };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.NotNull(b.ReportedFailure);
+        Assert.False(b.SessionLogoutWired);
+        Assert.Null(b.SavedIdfa);
+    }
+
+    [Fact]
+    public void Run_Success_DoesNotReportFailure()
+    {
+        var b = new TestableBootstrapper();
+
+        b.Run();
+
+        Assert.Null(b.ReportedFailure);
+        Assert.False(b.ShutdownCalled);
+    }
+
+    // Logout hook (uvolnění ACTIVITY zámku při Exit) se zapojuje hned po Accepted, aby ho
+    // dostal i exit kvůli updatu a výjimka v dalších krocích, ne až vznik shellu.
+
+    [Fact]
+    public void Run_Success_WiresSessionLogoutBeforeUpdateCheck()
+    {
+        var b = new TestableBootstrapper();
+
+        b.Run();
+
+        Assert.True(b.SessionLogoutWired);
+        Assert.True(b.LogoutWiredBeforeUpdateCheck);
+    }
+
+    [Fact]
+    public void Run_UpdateTriggered_HasSessionLogoutWired()
+    {
+        var b = new TestableBootstrapper { UpdateTriggered = true };
+
+        b.Run();
+
+        Assert.True(b.SessionLogoutWired);
+    }
+
+    [Fact]
+    public void Run_UpdateCheckThrows_HasSessionLogoutWired()
+    {
+        var b = new TestableBootstrapper { UpdateCheckThrows = new InvalidOperationException() };
+
+        b.Run();
+
+        Assert.True(b.SessionLogoutWired);
+    }
+
+    [Fact]
+    public void Run_LicenceRefused_DoesNotWireSessionLogout()
+    {
+        // Refused/Cancelled = VerifyLic zámek nevytvořil, není co odhlašovat.
+        var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Refused };
+
+        b.Run();
+
+        Assert.False(b.SessionLogoutWired);
     }
 
 }

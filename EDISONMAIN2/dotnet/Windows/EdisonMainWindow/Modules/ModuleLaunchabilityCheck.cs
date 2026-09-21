@@ -5,8 +5,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
     /// Kontrola launchovatelnosti modulů. Tree.cls neautoruje barvu - odvozuje se zde z exe
-    /// a promítá do barvy + textového suffixu v názvu. Běží v DEBUG i Release - kolegové
-    /// validují stav stromu na Release buildu z testovacího procesu.
+    /// a promítá do barvy (vždy) a textového suffixu v názvu (jen <see cref="InternalDiagnostics"/>:
+    /// kolegové validují stav stromu na Release buildu, u zákazníka by se suffix přetažením
+    /// na plochu uložil do Caché blobu sdíleného s legacy agendami).
     ///
     /// Stavy: prázdné exe = autorský stub (oranžová); exe vyplněné ale soubor chybí = červená
     /// (rozchod, který má být vidět); existující exe = launchovatelné (generický host
@@ -68,22 +69,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             if (anyBroken)
             {
                 marked.Color = BrokenColor;
-                marked.DisplayedName += " - rozbité";
+                marked.DisplayedName += Suffix(" - rozbité");
                 return (marked, Category.Broken);
             }
             if (anyLaunchable) return (marked, Category.Launchable);
 
             marked.Color = StubColor;
-            marked.DisplayedName += " - stuby";
+            marked.DisplayedName += Suffix(" - stuby");
             return (marked, Category.Stub);
         }
 
         private static (IModule, Category) MarkExe(ExecutableModule exe) => Evaluate(exe) switch
         {
             State.Launchable => (exe, Category.Launchable),
-            State.Stub => (exe with { Color = StubColor, DisplayedName = exe.DisplayedName + " - stub" }, Category.Stub),
-            _ => (exe with { Color = BrokenColor, DisplayedName = exe.DisplayedName + " - chybí exe" }, Category.Broken),
+            State.Stub => (exe with { Color = StubColor, DisplayedName = exe.DisplayedName + Suffix(" - stub") }, Category.Stub),
+            _ => (exe with { Color = BrokenColor, DisplayedName = exe.DisplayedName + Suffix(" - chybí exe") }, Category.Broken),
         };
+
+        private static string Suffix(string text) => InternalDiagnostics.Enabled ? text : "";
 
         private static State Evaluate(ExecutableModule exe)
         {

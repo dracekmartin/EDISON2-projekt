@@ -339,7 +339,27 @@ public class UpdateEngineTests : IDisposable
         var result = engine.Run();
 
         Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
-        Assert.Equal(["EDISONMAIN", "EDUPDATE"], engine.ProcessQueries);
+        Assert.Equal(["EDISONMAIN", "EDUPDATE", "TemplateDesigner", "EDISONMAIN2API"], engine.ProcessQueries);
+    }
+
+    [Fact]
+    public void Run_TemplateDesignerRunning_WaitTimeout_Exit1()
+    {
+        // TD spuštěný z legacy agendy shell při exitu nezavře a drží EDControls.dll - updater na něj čeká.
+        WriteSrc("A.dll", "new");
+        var engine = new RecordingEngine(
+            new UpdaterArgs(SourcePath: _src, TargetPath: _tgt),
+            new UpdateLog(_tgt))
+        {
+            WaitTimeoutMs = 500,
+            ProcessCountFor = name => name == "TemplateDesigner" ? 1 : 0,
+        };
+
+        var result = engine.Run();
+
+        Assert.Equal(UpdateEngine.ExitBadParamsOrAborted, result.ExitCode);
+        Assert.Contains("TemplateDesigner", result.Message);
+        Assert.False(File.Exists(Path.Combine(_tgt, "A.dll")));
     }
 
     [Fact]

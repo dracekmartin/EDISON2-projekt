@@ -12,6 +12,7 @@ public class SettingsLoaderTests : IDisposable
 {
     private readonly string _dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
     private readonly string _originalFilePath;
+    private readonly bool _originalDevDefaults;
 
     private string Path => System.IO.Path.Combine(_dir, "EDISONini.xml");
 
@@ -32,12 +33,14 @@ public class SettingsLoaderTests : IDisposable
     {
         Directory.CreateDirectory(_dir);
         _originalFilePath = SettingsLoader.FilePath;
+        _originalDevDefaults = SettingsLoader.UseDevDefaults;
         SettingsLoader.FilePath = Path;
     }
 
     public void Dispose()
     {
         SettingsLoader.FilePath = _originalFilePath;
+        SettingsLoader.UseDevDefaults = _originalDevDefaults;
         Directory.Delete(_dir, recursive: true);
     }
 
@@ -48,12 +51,27 @@ public class SettingsLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Load_NoFile_ReturnsDefaults()
+    public void Load_NoFile_DevDefaults_PrefillsDevServer()
     {
+        SettingsLoader.UseDevDefaults = true;
+
         var loaded = SettingsLoader.Load();
 
         Assert.Equal("192.168.16.1", loaded.Server.Host);
         Assert.Equal(57770, loaded.Server.Port);
+    }
+
+    [Fact]
+    public void Load_NoFile_Release_HostEmptyPortDefault()
+    {
+        // U zákazníka nesmí wizard nabídnout dev server M-line; REST port má rozumný default.
+        SettingsLoader.UseDevDefaults = false;
+
+        var loaded = SettingsLoader.Load();
+
+        Assert.Equal("", loaded.Server.Host);
+        Assert.Equal(57770, loaded.Server.Port);
+        Assert.False(SettingsLoader.IsConfigured());
     }
 
     [Fact]

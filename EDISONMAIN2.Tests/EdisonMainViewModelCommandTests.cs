@@ -2,6 +2,7 @@ using System.Windows.Input;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Windows.ConnectionWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using NSubstitute;
 using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
@@ -77,14 +78,15 @@ public class EdisonMainViewModelCommandTests
     }
 
     [Fact]
-    public void ConnectToDatabaseCommand_ReportsNotImplemented()
+    public void ConnectionLaunchInfo_PassesServerAndRestPortAsArguments()
     {
-        var popup = Substitute.For<IPopupDisplayer>();
-        var vm = CreateVM(services: MockServices(popup: popup));
+        // Nová instance proti jinému serveru - argumenty musí přečíst ConnectionOverride.Parse při startu.
+        var info = EdisonMainViewModel.ConnectionLaunchInfo(@"C:\Edison\EDISONMAIN2.exe",
+            new ConnectionChoice("Test", "10.0.0.5", 57770, IsDefault: false));
 
-        vm.ConnectToDatabaseCommand.Execute(null);
-
-        popup.Received(1).Info("Tato funkce zatím není v EDISONu 2 dostupná.");
+        Assert.Equal(@"C:\Edison\EDISONMAIN2.exe", info.FileName);
+        Assert.True(info.UseShellExecute);
+        Assert.Equal(new ConnectionOverride("10.0.0.5", 57770), ConnectionOverride.Parse(info.ArgumentList));
     }
 
     [Fact]

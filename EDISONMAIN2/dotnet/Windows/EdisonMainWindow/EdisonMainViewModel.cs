@@ -16,6 +16,7 @@ using EDControls.MiniApps;
 using EDControls.UserFonts;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.ChangelogWindow;
+using EDISONMAIN2.Windows.ConnectionWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias - class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
@@ -24,6 +25,7 @@ using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
 using ChangelogWnd = EDISONMAIN2.Windows.ChangelogWindow.ChangelogWindow;
 using MiniAppPickerWnd = EDISONMAIN2.Windows.MiniAppPickerWindow.MiniAppPickerWindow;
+using ConnectionWnd = EDISONMAIN2.Windows.ConnectionWindow.ConnectionWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -65,6 +67,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             [new("Kolečko", null),
              .. AgendaSprites.AllSets.Select(s => new OverlayTestVariant(AgendaSprites.LabelFor(s), s))];
         public ICommand TriggerErrorCommand { get; }
+        /// <summary>Menu „Test funkcí" jen pro vývoj a stanice M-line - u zákazníka by „Vyvolat chybu" založilo tiket.</summary>
+        public bool IsTestMenuVisible => InternalDiagnostics.Enabled;
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand OpenLegacyShellCommand { get; }
         public ICommand CloseAllCommand { get; }
@@ -261,7 +265,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
 
             // EDISON menu
-            ConnectToDatabaseCommand      = Command(NotYetImplemented);
+            ConnectToDatabaseCommand      = Command(ConnectToDatabase);
             RunEdisonCopyCommand          = Command(RunEdisonCopy);
             ExitCommand                   = Command(ExitApplication);
 
@@ -414,7 +418,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ClearSessionState() => ApplySessionData(new SessionData(
             new AccessTable([], isAllAccess: false),
             _sourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
-            Shortcuts: [], Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
+            Shortcuts: null, Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
 
         private void ForgetSelection()
         {
@@ -485,30 +489,39 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (_modulePrefs is null) return;
             var stored = await _modulePrefs.LoadShortcutsAsync();
+            // Selhání loadu: v paměti zůstává stav téže session (agenda mohla přidat, nikdy neubírá);
+            // seed prázdnem by ho zahodil a další toggle prázdno zapsal do Caché.
+            if (stored is null) return;
+            SeedShortcuts(stored);
+            _shortcutsPersistable = true;
+
+            RefreshFamilyFavoriteFlags();
+            RebuildFavoritesTree();
+        }
+
+        private void SeedShortcuts(List<DesktopShortcutDto> stored)
+        {
             var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
+            // Seed pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
             _suppressFavoritesSync = true;
             _shortcuts.Seed(AllExecutables(), stored, exe =>
                 labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
                     ? label.Path : "");
             _suppressFavoritesSync = false;
-
-            RefreshFamilyFavoriteFlags();
-            RebuildFavoritesTree();
         }
 
         private void ApplyPersonalization(SessionData data)
         {
             _usage = data.Usage;
             _expansion = data.Expansion;
+            // Stromy jsou nové instance s persistovaným rozbalením; trvající hledání si vezme čerstvý snímek.
+            _expansionBeforeSearch = null;
 
             // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
-            // Pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
-            _suppressFavoritesSync = true;
-            var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
-            _shortcuts.Seed(AllExecutables(), data.Shortcuts, exe =>
-                labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
-                    ? label.Path : "");
-            _suppressFavoritesSync = false;
+            // Null = load plochy selhal: zobrazit prázdno (data předchozí session sem nepatří), ale
+            // nepersistovat, dokud se blob nenačte - jinak by první toggle přepsal uživatelovu plochu.
+            SeedShortcuts(data.Shortcuts ?? []);
+            _shortcutsPersistable = data.Shortcuts is not null;
 
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
@@ -517,7 +530,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Obnoví uložené rozbalení a napojí persistenci na VŠECH stromech (vč. Oblíbených).
             // Suppress brání zápisu během programového apply.
             using (SuppressExpansionSave())
-                ApplyTreeExpansion();
+                ApplyTreeExpansion(_expansion);
 
             // Poslední otevřená záložka (per-user × IDFa); bez uložené volby výchozí dle oblíbených.
             _suppressTabSave = true;
@@ -534,7 +547,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Po přestavbě (i mimo load - po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
             using (SuppressExpansionSave())
             {
-                ApplyExpansion(FavoritesTree, FavoritesTab.Key);
+                ApplyExpansion(FavoritesTree, FavoritesTab.Key, _expansion);
 
                 // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) - při aktivním hledání přefiltrovat.
                 var searchText = _treeSearchText.Trim();
@@ -557,10 +570,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // z ModuleLaunchabilityCheck, na rozdíl od cesty přes DisplayedName. Save běží na každou změnu
         // rozbalení (IDFa je tehdy stabilní), proto switch/close nepotřebují zvláštní obsluhu.
 
-        private void ApplyTreeExpansion()
+        private void ApplyTreeExpansion(List<string>? keys)
         {
             foreach (var (name, tree) in ExpandableTrees)
-                ApplyExpansion(tree, name);
+                ApplyExpansion(tree, name, keys);
         }
 
         /// <summary>
@@ -601,7 +614,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 foreach (var module in tree)
                     ModuleTreeState.SetExpandedRecursive(module, expanded);
             }
-            _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
+            PersistExpansion();
         }
 
         // Rozbalit/sbalit rodinu i její potomky (kontextové menu „úroveň").
@@ -610,34 +623,43 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (module is not ModuleFamily) return;
             using (SuppressExpansionSave())
                 ModuleTreeState.SetExpandedRecursive(module, expanded);
-            _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
+            PersistExpansion();
         }
 
-        private void ApplyExpansion(IList<IModule> tree, string treeName)
+        private void ApplyExpansion(IList<IModule> tree, string treeName, List<string>? keys)
         {
             for (int i = 0; i < tree.Count; i++)
-                ApplyExpansionNode(tree[i], treeName, [i]);
+                ApplyExpansionNode(tree[i], treeName, [i], keys);
         }
 
-        private void ApplyExpansionNode(IModule module, string treeName, List<int> path)
+        private void ApplyExpansionNode(IModule module, string treeName, List<int> path, List<string>? keys)
         {
             if (module is not ModuleFamily family) return;
 
-            // _expansion == null → první spuštění, ponech serverové výchozí rozbalení.
-            if (_expansion is { } saved)
+            // keys == null → nikdy neuloženo, ponech serverové výchozí rozbalení.
+            if (keys is { } saved)
                 family.IsExpanded = saved.Contains(ModuleTreeState.ExpansionPathKey(treeName, path));
 
             family.PropertyChanged -= OnFamilyPropertyChanged;
             family.PropertyChanged += OnFamilyPropertyChanged;
 
             for (int i = 0; i < family.NestedModules.Count; i++)
-                ApplyExpansionNode(family.NestedModules[i], treeName, [.. path, i]);
+                ApplyExpansionNode(family.NestedModules[i], treeName, [.. path, i], keys);
         }
 
         private void OnFamilyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && _expansionSaveSuppressed == 0)
-                _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
+                PersistExpansion();
+        }
+
+        // Během hledání je rozbalení přechodné (vynucené nálezy); po vymazání textu se obnoví snímek.
+        // _expansion drží poslední uložený stav, aby přestavba Oblíbených nevracela rozbalení z loginu.
+        private void PersistExpansion()
+        {
+            if (_expansionBeforeSearch != null) return;
+            _expansion = CollectExpandedKeys();
+            _ = _modulePrefs?.SaveExpansionAsync(_expansion);
         }
 
         private List<string> CollectExpandedKeys()
@@ -667,18 +689,32 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Filtruje VŠECHNY stromy (vč. Oblíbených) dle TreeSearchText. Rozbalení vynucené hledáním
-        // se NEpersistuje (suppress flag); po vymazání textu se obnoví persistované rozbalení.
+        // se NEpersistuje; snímek ze začátku hledání se po vymazání textu obnoví.
         private void ApplySearch()
         {
             var text = _treeSearchText.Trim();
+            if (text.Length > 0) _expansionBeforeSearch ??= CollectExpandedKeys();
+
             using (SuppressExpansionSave())
             {
                 foreach (var (_, tree) in ExpandableTrees)
                     foreach (var root in tree)
                         ModuleTreeState.ApplySearchToModule(root, text);
-            }
 
-            if (text.Length == 0) ApplyTreeExpansion();
+                if (text.Length == 0 && _expansionBeforeSearch is { } before)
+                {
+                    _expansionBeforeSearch = null;
+                    ApplyTreeExpansion(before);
+                }
+            }
+        }
+
+        /// <summary>Aplikuje čekající hledání hned (debounce v testech netiká, Enter nesmí číst starý stav).</summary>
+        internal void FlushPendingSearch()
+        {
+            if (_searchDebouncer is not { IsEnabled: true }) return;
+            _searchDebouncer.Stop();
+            ApplySearch();
         }
 
         /// <summary>
@@ -688,13 +724,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         internal ExecutableModule? FirstSearchResult()
         {
             if (_treeSearchText.Trim().Length == 0) return null;
-            // Enter hned po psaní by jinak četl IsVisibleBySearch z předchozího běhu - filtrace
-            // je debouncovaná a čekající tick ještě nedoběhl.
-            if (_searchDebouncer is { IsEnabled: true })
-            {
-                _searchDebouncer.Stop();
-                ApplySearch();
-            }
+            FlushPendingSearch();
             return SelectedTab.Tree is { } tree ? ModuleTreeState.FirstVisibleExecutable(tree) : null;
         }
 
@@ -850,6 +880,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private Dictionary<string, UsageEntry> _usage = [];
         // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
         private List<string>? _expansion;
+        // Snímek rozbalení před hledáním; non-null = stromy nesou rozbalení vynucené hledáním.
+        private List<string>? _expansionBeforeSearch;
         private int _expansionSaveSuppressed;
         private const int UsedModulesCap = 20;
 
@@ -1101,8 +1133,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PersistShortcuts();
         }
 
+        /// <summary>Blob plochy se v této session podařilo načíst; do té doby se nesmí zapisovat (viz ApplyPersonalization).</summary>
+        private bool _shortcutsPersistable;
+
         // Uloží plochu (druh, identita, pozice). Volá se při změně členství i při přesunu dlaždice.
-        private void PersistShortcuts() => _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
+        private void PersistShortcuts()
+        {
+            if (!_shortcutsPersistable) return;
+            _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
+        }
 
         // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModuleAsync (usage + overlay); ostatní
         // druhy zástupců (tiskové sestavy, pohledy DS) pouští hostitelská agenda přes EDISONMAIN2API.
@@ -1327,10 +1366,42 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private static void RunEdisonCopy()
         {
-            var exe = Process.GetCurrentProcess().MainModule?.FileName;
-            if (string.IsNullOrEmpty(exe)) return;
+            var exe = CurrentExecutable();
+            if (exe.Length == 0) return;
             Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
         }
+
+        // Parita s legacy frmConnection: výchozí připojení řídí centrálně EDISONini.xml (jen pro čtení),
+        // další si uživatel ukládá lokálně. Jiný server = nová instance shellu - session v procesu
+        // je na jeden server (IMLRest.Server/Port jsou konstanty).
+        private void ConnectToDatabase()
+        {
+            var window = new ConnectionWnd(_prefs, DefaultConnection());
+            if (WindowNavigator.ShowDialog(window) != true || window.Picked is not { } picked) return;
+            var exe = CurrentExecutable();
+            if (exe.Length == 0) return;
+            Process.Start(ConnectionLaunchInfo(exe, picked));
+        }
+
+        // Bez EDISONini.xml (instance spuštěná s argumenty připojení) je výchozí aktuální session.
+        private ConnectionChoice DefaultConnection()
+        {
+            var ini = SettingsLoader.Load().Server;
+            return ini.Host.Length > 0
+                ? new ConnectionChoice(ini.Name.Length > 0 ? ini.Name : "EDISONini.xml", ini.Host, ini.Port, IsDefault: true)
+                : new ConnectionChoice("Aktuální", Rest.Server, Rest.Port, IsDefault: true);
+        }
+
+        /// <summary>Nová instance shellu proti vybranému serveru; argumenty čte <see cref="ConnectionOverride.Parse"/>.</summary>
+        internal static ProcessStartInfo ConnectionLaunchInfo(string exe, ConnectionChoice connection)
+        {
+            var info = new ProcessStartInfo(exe) { UseShellExecute = true };
+            foreach (var arg in new ConnectionOverride(connection.Server, connection.RestPort).ToArguments())
+                info.ArgumentList.Add(arg);
+            return info;
+        }
+
+        private static string CurrentExecutable() => Process.GetCurrentProcess().MainModule?.FileName ?? "";
 
         // TD přebírá shell session z launch argumentů (GUID + CacheLocks=1) - jeho requesty tak
         // drží ACTIVITY historii shellu (HD 13132/F17) a umírá se shellem jako agendové moduly.
@@ -1481,11 +1552,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (!trimmed.EndsWith(']')) return title;
             var open = trimmed.LastIndexOf('[');
             return open <= 0 ? title : trimmed[..open].TrimEnd();
-        }
-
-        private void NotYetImplemented()
-        {
-            PopupDisplayer.Info("Tato funkce zatím není v EDISONu 2 dostupná.");
         }
 
         // Ctrl+W+W (dvojhmat) - skrytá zkratka pro M-line utility.

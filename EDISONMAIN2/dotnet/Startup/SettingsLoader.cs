@@ -31,13 +31,25 @@ public class SettingsLoader
         return !string.IsNullOrEmpty(settings.Server.Host) && settings.Server.Port > 0;
     }
 
+    /// <summary>
+    /// Předvyplnit chybějící host adresou dev serveru M-line. Jen ve vývoji: u zákazníka by wizard
+    /// nabídl cizí IP a přes VPN partnera ji mohl zapsat do souboru, který čtou i legacy aplikace.
+    /// Settable kvůli testům (Release větev jde ověřit i v Debug běhu).
+    /// </summary>
+    internal static bool UseDevDefaults { get; set; } =
+#if DEBUG
+        true;
+#else
+        false;
+#endif
+
     public static SettingsLoader Load()
     {
         var settings = Read();
 
-        // Bez použitelné connection drž dev defaulty (předvyplnění wizardu).
-        if (string.IsNullOrEmpty(settings.Server.Host)) settings.Server.Host = ServerSettings.DefaultHost;
-        if (settings.Server.Port <= 0) settings.Server.Port = ServerSettings.DefaultPort;
+        // Bez použitelné connection: REST port má rozumný default vždy, host jen ve vývoji.
+        if (UseDevDefaults && string.IsNullOrEmpty(settings.Server.Host)) settings.Server.Host = ServerSettings.DevHost;
+        if (settings.Server.Port <= 0) settings.Server.Port = ServerSettings.DefaultRestPort;
 
         Current = settings;
         return Current;
@@ -134,12 +146,13 @@ public class SettingsLoader
 /// shell, zbytek nese wizard kvůli paritě souboru s legacy setupem.</summary>
 public class ServerSettings
 {
-    public const string DefaultHost = "192.168.16.1";
-    public const int    DefaultPort = 57770;
+    /// <summary>Dev server M-line - jen pro předvyplnění ve vývoji (<see cref="SettingsLoader.UseDevDefaults"/>).</summary>
+    internal const string DevHost = "192.168.16.1";
+    public const int DefaultRestPort = 57770;
 
-    public string Host { get; set; } = DefaultHost;
+    public string Host { get; set; } = "";
     /// <summary>REST port (<c>connection@restport</c>).</summary>
-    public int    Port { get; set; } = DefaultPort;
+    public int    Port { get; set; } = DefaultRestPort;
 
     public string Name      { get; set; } = "";
     /// <summary>Superserver port (<c>connection@port</c>) - shell ho nepoužívá, jen přenáší.</summary>

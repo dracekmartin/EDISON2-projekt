@@ -32,11 +32,13 @@ public class AppBootstrapper
 {
     private readonly Application _application;
     private readonly ShellShutdown _shutdown;
+    private readonly ConnectionOverride? _connectionOverride;
 
-    public AppBootstrapper(Application application)
+    public AppBootstrapper(Application application, ConnectionOverride? connectionOverride = null)
     {
         _application = application;
         _shutdown = new ShellShutdown(application);
+        _connectionOverride = connectionOverride;
     }
 
     /// <summary>Pro test-only subclassy - neinjektuje <see cref="Application"/>, takže
@@ -48,10 +50,27 @@ public class AppBootstrapper
 
     /// <summary>
     /// Provede celý bootstrap. Vrátí okno připravené k Show, nebo null pokud workflow selhal
-    /// (uživatel zrušil login / překročené licence). Při selhání <see cref="Shutdown"/> už
-    /// proběhl uvnitř, caller jen vrátí.
+    /// (uživatel zrušil login / překročené licence / výjimka). Při selhání <see cref="Shutdown"/>
+    /// už proběhl uvnitř, caller jen vrátí.
     /// </summary>
     public EdisonMainWindow? Run()
+    {
+        try
+        {
+            return RunCore();
+        }
+        catch (Exception ex)
+        {
+            // Bez explicitního Shutdown by výjimka skončila v DispatcherUnhandledException (Handled)
+            // a aplikace žila dál s OnExplicitShutdown a login oknem, které během progress fáze
+            // každé zavření ruší - proces by šel ukončit jen Task Managerem.
+            ReportStartupFailure(ex);
+            Shutdown();
+            return null;
+        }
+    }
+
+    private EdisonMainWindow? RunCore()
     {
         var (nav, popup, services) = InitializeServices();
         var prefs = LoadLocalPrefs();
@@ -68,6 +87,14 @@ public class AppBootstrapper
         }
 
         var prep = PrepareLogin(prefs);
+
+        // Brány legacy EDLOADERu (zákaz přihlašování, běžící instalace na serveru): zástupce přímo
+        // na EDISONMAIN2.exe je obchází, proto si je shell dělá sám.
+        if (!PassesPreLoginGates(prep.LoginRest, services))
+        {
+            Shutdown();
+            return null;
+        }
 
         // Auto-login (Windows SSO) má přednost; když neprojde, fallback na dialog.
         if (!TryAutoLogin(prep.LoginRest, prefs, out var login) && !TryLogin(prep.LoginRest, prefs, out login))
@@ -100,6 +127,9 @@ public class AppBootstrapper
 
         SavePostLoginState(prefs, session.MLRest.Idfa, login.UserName);
         WireActivityFailedHandler(session, services);
+        // Od Accepted existuje ACTIVITY zámek - logout musí proběhnout při každém ukončení odteď,
+        // včetně exitu kvůli updatu a výjimky níž, ne až od vzniku shellu.
+        WireSessionLogout(services);
 
         // Až po SavePostLoginState - LastIdfa musí být uložená i když teď shell skončí updatem.
         _startupLoginWindow?.ShowProgress("Kontroluji aktualizace…");
@@ -211,9 +241,11 @@ public class AppBootstrapper
     /// </summary>
     protected virtual bool EnsureConfigured()
     {
+        // Připojení z příkazové řádky (Připojit k databázi) - EDISONini.xml stanice se nepoužije.
+        if (_connectionOverride is not null) return true;
         if (SettingsLoader.IsConfigured()) return true;
 
-        SettingsLoader.Load();   // naplní Current dev defaulty pro předvyplnění polí
+        SettingsLoader.Load();   // naplní Current pro předvyplnění polí (dev server jen v DEBUG)
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
         {
@@ -227,9 +259,7 @@ public class AppBootstrapper
 
     protected virtual PreLoginContext PrepareLogin(ILocalPrefs prefs)
     {
-        var config = SettingsLoader.Load();
-        string server = config.Server.Host;
-        int port = config.Server.Port;
+        var (server, port) = ResolveConnection(_connectionOverride, () => SettingsLoader.Load().Server);
 
         // Pre-login MLRest - potřebné aby GetCompanyList šla zavolat (vlastní fallback Idfa="").
         var loginRest = new MLRest(server, port, "", "");
@@ -244,6 +274,46 @@ public class AppBootstrapper
         loginRest.Idfa = startCompany.Id;
 
         return new PreLoginContext(loginRest, companies, startCompany, server, port);
+    }
+
+    /// <summary>
+    /// Parita s EDLOADER <c>CheckLogin</c> + <c>UpdateIsRunning</c>: zákaz přihlašování (kdo ho zadal,
+    /// smí ho zrušit) a <c>pending</c> serverové instalace. False = shell se má ukončit.
+    /// </summary>
+    protected virtual bool PassesPreLoginGates(MLRest loginRest, EDServices services)
+    {
+        var rest = new MLRestAdapter(loginRest);
+        string ip = LoginGate.StationIp(), user = Environment.UserName;
+        var permission = LoginGate.Query(rest, ip, user);
+        if (!permission.Allowed)
+        {
+            if (permission.CanAlter
+                && services.PopupDisplayer.Confirm("Je zakázáno přihlašování uživatelů, přejete si jej povolit?"))
+            {
+                LoginGate.Allow(rest, ip, user);
+            }
+            else
+            {
+                services.PopupDisplayer.Info("Je zakázáno přihlašování uživatelů, aplikace bude ukončena.");
+                return false;
+            }
+        }
+
+        if (CreateUpdater().LoadSettings(rest).Pending)
+        {
+            services.PopupDisplayer.Info("Probíhá aktualizace systému, aplikace bude ukončena.");
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>Připojení z příkazové řádky má přednost před <c>EDISONini.xml</c>.</summary>
+    internal static (string Server, int Port) ResolveConnection(ConnectionOverride? connectionOverride,
+                                                                 Func<ServerSettings> loadSettings)
+    {
+        if (connectionOverride is { } overridden) return (overridden.Server, overridden.RestPort);
+        var settings = loadSettings();
+        return (settings.Host, settings.Port);
     }
 
     /// <summary>
@@ -440,17 +510,27 @@ public class AppBootstrapper
         logoutWatcher.Start();
         wnd.Closed += (_, _) => logoutWatcher.Stop();
 
-        // Graceful close → uvolnit ACTIVITY zámek (jinak visí do server-side idle timeoutu, jelikož
-        // je v temp globálu, ne nativním Caché locku). services.MLRest = aktuální (po switch user).
-        // Před logoutem flush usage telemetrie - pojistka na záznamy po posledním zavření okna
-        // (typicky legacy launche); potřebuje živou session kvůli userID.
+        return wnd;
+    }
+
+    /// <summary>
+    /// Graceful close → uvolnit ACTIVITY zámek (jinak visí do server-side idle timeoutu, jelikož
+    /// je v temp globálu, ne nativním Caché locku). services.MLRest = aktuální (po switch user).
+    /// Před logoutem flush usage telemetrie - pojistka na záznamy po posledním zavření okna
+    /// (typicky legacy launche); potřebuje živou session kvůli userID.
+    /// </summary>
+    protected virtual void WireSessionLogout(EDServices services)
+    {
         _application.Exit += (_, _) =>
         {
             EDUsageTelemetry.Flush(services.MLRest);
             SessionLogout.Logout(services.MLRest);
         };
-        return wnd;
     }
+
+    /// <summary>Chyba startup workflow: hlášení + dialog nad login oknem (pokud je), jinak top-level.</summary>
+    protected virtual void ReportStartupFailure(Exception ex) =>
+        new PopupDisplayer(_startupLoginWindow).Error(ex);
 
     protected virtual void Shutdown() => _shutdown.Force();
 }

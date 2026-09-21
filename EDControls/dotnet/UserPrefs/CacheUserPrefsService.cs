@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using System.Text.Json.Nodes;
 using ALWA.SYS;
+using EDControls.ErrorReporting;
 
 namespace EDControls.UserPrefs;
 
@@ -8,78 +8,105 @@ namespace EDControls.UserPrefs;
 /// Caché-backed implementace <see cref="IUserPrefsService"/> - volá ALVA.EDControls.UserData
 /// přes MLRest. IdFa + userID si Caché class bere automaticky z $$$FillParams (sys kontextu MLRest).
 ///
-/// MLRest.QueryOrThrow je sync (HTTP); wrap v Task.Run uvolní UI thread.
-/// Při chybě Load vrací null, Save / Delete tiše loguje (UI by nemělo padat kvůli persistence).
+/// Každý request jde přes <see cref="IRestCallRunner"/>, tedy mimo UI thread a na **klonu**
+/// sdílené instance: preference ukládá kdokoli kdykoli (debouncer layoutu, zavření okna, plocha)
+/// souběžně s requesty UI threadu, a <c>RestStatus</c> je per-instance (root CLAUDE.md).
+/// Load při selhání transportu **hází** - null znamená jen „klíč neexistuje" (bez toho volající
+/// nerozliší výpadek od prázdna a přepíše uživatelova data prázdnem). Save / Delete selhání
+/// hlásí do telemetrie a polykají (persistence nesmí shodit UI).
 /// </summary>
 public class CacheUserPrefsService : IUserPrefsService
 {
     public const string CacheClass = "ALVA.EDControls.UserData";
 
-    private readonly IMLRest _mlRest;
+    private readonly IRestCallRunner _runner;
+    private readonly Action<Exception> _reportFailure;
 
-    public CacheUserPrefsService(IMLRest mlRest) => _mlRest = mlRest;
+    public CacheUserPrefsService(IRestCallRunner runner, Action<Exception>? reportFailure = null)
+    {
+        _runner = runner;
+        _reportFailure = reportFailure ?? ErrorReports.ReportBackground;
+    }
+
+    /// <summary>Factory se čte per request - po přepnutí session (switch user) služba míří na novou.</summary>
+    public CacheUserPrefsService(Func<IMLRest> rest, Action<Exception>? reportFailure = null)
+        : this(new RestCallRunner(rest), reportFailure) { }
+
+    public CacheUserPrefsService(IMLRest mlRest) : this(() => mlRest) { }
 
     public Task<JsonNode?> LoadAsync(string scope, string key)
-        => Task.Run(() => LoadSync(scope, key));
-
-    private JsonNode? LoadSync(string scope, string key)
     {
         ValidateArgs(scope, key);
+        return _runner.RunAsync(rest => Load(rest, scope, key));
+    }
+
+    private JsonNode? Load(IMLRest rest, string scope, string key)
+    {
+        var inVar = new CVar();
+        inVar["scope"] = new CVar(scope);
+        inVar["key"]   = new CVar(key);
+
+        CVar result;
         try
         {
-            var inVar = new CVar();
-            inVar["scope"] = new CVar(scope);
-            inVar["key"]   = new CVar(key);
-
-            CVar result = _mlRest.QueryOrThrow(CacheClass, "Load", inVar);
-            string? json = result["data"]?.Value?.ToString();
-            return string.IsNullOrEmpty(json) ? null : JsonNode.Parse(json);
+            result = rest.QueryOrThrow(CacheClass, "Load", inVar);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[CacheUserPrefs] Load exception ({scope}/{key}): {ex.Message}");
+            _reportFailure(ex);
+            throw;
+        }
+
+        string? json = result["data"]?.Value?.ToString();
+        if (string.IsNullOrEmpty(json)) return null;
+        try
+        {
+            return JsonNode.Parse(json);
+        }
+        catch (Exception ex)
+        {
+            // Poškozený blob = data nejsou k ničemu; null ho nechá při příštím Save přepsat.
+            _reportFailure(ex);
             return null;
         }
     }
 
     public Task SaveAsync(string scope, string key, JsonNode data)
-        => Task.Run(() => SaveSync(scope, key, data));
-
-    private void SaveSync(string scope, string key, JsonNode data)
     {
         ValidateArgs(scope, key);
-        try
+        return _runner.RunAsync(rest =>
         {
             var inVar = new CVar();
             inVar["scope"] = new CVar(scope);
             inVar["key"]   = new CVar(key);
             inVar["data"]  = new CVar(data.ToJsonString());
-
-            _mlRest.QueryOrThrow(CacheClass, "Save", inVar);
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[CacheUserPrefs] Save exception ({scope}/{key}): {ex.Message}");
-        }
+            return TryQuery(rest, "Save", inVar);
+        });
     }
 
     public Task DeleteAsync(string scope, string key)
-        => Task.Run(() => DeleteSync(scope, key));
-
-    private void DeleteSync(string scope, string key)
     {
         ValidateArgs(scope, key);
-        try
+        return _runner.RunAsync(rest =>
         {
             var inVar = new CVar();
             inVar["scope"] = new CVar(scope);
             inVar["key"]   = new CVar(key);
+            return TryQuery(rest, "Delete", inVar);
+        });
+    }
 
-            _mlRest.QueryOrThrow(CacheClass, "Delete", inVar);
+    private bool TryQuery(IMLRest rest, string method, CVar inVar)
+    {
+        try
+        {
+            rest.QueryOrThrow(CacheClass, method, inVar);
+            return true;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[CacheUserPrefs] Delete exception ({scope}/{key}): {ex.Message}");
+            _reportFailure(ex);
+            return false;
         }
     }
 

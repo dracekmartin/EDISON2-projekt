@@ -6,9 +6,16 @@ namespace EDISONMAIN2.Tests;
 /// <summary>
 /// Testy obarvení stromu dle launchovatelnosti. Po zavedení generického hosta
 /// (EDISONMAIN2API.exe) je každá existující exe launchovatelná - odpadl stav „neretrofitnuto".
+/// Suffixy v názvu jsou jen diagnostika M-line; testy je zapínají explicitně a stav obnovují.
 /// </summary>
-public class ModuleLaunchabilityCheckTests
+public class ModuleLaunchabilityCheckTests : IDisposable
 {
+    private readonly bool _originalDiagnostics = InternalDiagnostics.Enabled;
+
+    public ModuleLaunchabilityCheckTests() => InternalDiagnostics.Enabled = true;
+
+    public void Dispose() => InternalDiagnostics.Enabled = _originalDiagnostics;
+
     // Existující soubor v AppContext.BaseDirectory (testovací dll) - ResolveExecutablePath ho najde.
     private static string ExistingExeName => Path.GetFileName(typeof(ModuleLaunchabilityCheckTests).Assembly.Location);
 
@@ -60,6 +67,34 @@ public class ModuleLaunchabilityCheckTests
 
         Assert.Equal(ModuleLaunchabilityCheck.BrokenColor, marked.Color);
         Assert.EndsWith(" - chybí exe", marked.DisplayedName);
+    }
+
+    [Fact]
+    public void MissingExe_DiagnosticsOff_ColorWithoutSuffix()
+    {
+        // U zákazníka: červená zůstane, název ne - přetažením na plochu by se suffix uložil do Caché blobu.
+        InternalDiagnostics.Enabled = false;
+        var module = new ExecutableModule { DisplayedName = "Chybí", ExecutablePath = "neexistuje_xyz.exe", FormName = "X" };
+
+        var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
+
+        Assert.Equal(ModuleLaunchabilityCheck.BrokenColor, marked.Color);
+        Assert.Equal("Chybí", marked.DisplayedName);
+    }
+
+    [Fact]
+    public void MarkFamily_DiagnosticsOff_ColorWithoutSuffix()
+    {
+        InternalDiagnostics.Enabled = false;
+        var family = new ModuleFamily { DisplayedName = "F" };
+        family.NestedModules.Add(Stub("A"));
+        family.NestedModules.Add(Broken("B"));
+
+        var marked = (ModuleFamily)ModuleLaunchabilityCheck.Mark(family);
+
+        Assert.Equal(ModuleLaunchabilityCheck.BrokenColor, marked.Color);
+        Assert.Equal("F", marked.DisplayedName);
+        Assert.All(marked.NestedModules, m => Assert.DoesNotContain(" - ", m.DisplayedName));
     }
 
     private static ExecutableModule Launchable(string name = "Live") =>

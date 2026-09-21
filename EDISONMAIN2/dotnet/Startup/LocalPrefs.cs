@@ -25,7 +25,18 @@ public interface ILocalPrefs
     /// <summary>Uložená šířka stromu modulů (px) per IDFa. Null = žádná uložená.</summary>
     Dictionary<string, double>? TreeWidths { get; set; }
 
+    /// <summary>Uživatelem uložená připojení pro „Připojit k databázi" (výchozí z EDISONini.xml sem nepatří). Null = žádná.</summary>
+    List<SavedConnection>? Connections { get; set; }
+
     void Save();
+}
+
+/// <summary>Alternativní připojení k jinému Caché serveru; spouští se jako nová instance shellu (<see cref="ConnectionOverride"/>).</summary>
+public class SavedConnection
+{
+    public string Name { get; set; } = "";
+    public string Server { get; set; } = "";
+    public int RestPort { get; set; }
 }
 
 /// <summary>
@@ -42,6 +53,7 @@ public class LocalPrefs : ILocalPrefs
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }
+    public List<SavedConnection>? Connections { get; set; }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

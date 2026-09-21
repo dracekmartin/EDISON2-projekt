@@ -28,9 +28,29 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         public ModulePreferencesService(IUserPrefsService prefs) => _prefs = prefs;
 
-        /// <summary>Položky plochy v pořadí připnutí (druh, identita, pozice). Prázdný list při chybě / chybějícím blobu.</summary>
-        public async Task<List<DesktopShortcutDto>> LoadShortcutsAsync() =>
-            await LoadBlobAsync<List<DesktopShortcutDto>>(ShortcutsKey) ?? [];
+        /// <summary>
+        /// Položky plochy v pořadí připnutí (druh, identita, pozice). Chybějící nebo poškozený blob
+        /// = prázdný list; <c>null</c> = load selhal. Rozdíl je podstatný: plocha se po selhání
+        /// nesmí seedovat prázdnem, první další toggle by prázdno zapsal zpět a uživatel by o ni přišel.
+        /// </summary>
+        public async Task<List<DesktopShortcutDto>?> LoadShortcutsAsync()
+        {
+            try
+            {
+                var node = await _prefs.LoadAsync(Scope, ShortcutsKey);
+                return node?.Deserialize<List<DesktopShortcutDto>>() ?? [];
+            }
+            catch (JsonException ex)
+            {
+                Debug.WriteLine($"[ModulePrefs] Shortcuts blob corrupt: {ex.Message}");
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ModulePrefs] Load failed ({ShortcutsKey}): {ex.Message}");
+                return null;
+            }
+        }
 
         public Task SaveShortcutsAsync(IEnumerable<DesktopShortcutDto> shortcuts) =>
             SaveBlobAsync(ShortcutsKey, shortcuts.ToList());

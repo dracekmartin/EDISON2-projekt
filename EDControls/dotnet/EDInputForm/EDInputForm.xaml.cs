@@ -42,9 +42,13 @@ namespace EDControls.EDInputForm
                 if (_cacheClass == value) return;
                 _cacheClass = value;
                 _controller = null;
+                _autoInitDone = false;
             }
         }
         private string _cacheClass = "";
+
+        /// <summary>Auto-Init z <c>Loaded</c> už pro aktuální <see cref="CacheClass"/> proběhl.</summary>
+        private bool _autoInitDone;
 
         private EDInputFormController? _controller;
 
@@ -111,10 +115,13 @@ namespace EDControls.EDInputForm
         public EDInputForm()
         {
             InitializeComponent();
+            WireToolbarSearch();
+            // Loaded fíruje při každém návratu do vizuálního stromu (přepnutí TabItem) - Init je
+            // synchronní Caché round-trip a reset hodnot, smí proběhnout jednou per CacheClass.
             Loaded += (_, _) =>
             {
-                if (!string.IsNullOrEmpty(CacheClass)) Init();
-                WireToolbarSearch();
+                if (_autoInitDone || string.IsNullOrEmpty(CacheClass)) return;
+                Init();
             };
         }
 
@@ -283,6 +290,7 @@ namespace EDControls.EDInputForm
         public void Init()
         {
             EnsureConfigured();
+            _autoInitDone = true;
             Controller.Init(InitParams);
             SchemaLoaded?.Invoke();
 #pragma warning disable CS0618 // deprekovaný alias - dokud existuje, musí fajrovat taky
