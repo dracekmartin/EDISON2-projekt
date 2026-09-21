@@ -40,12 +40,6 @@
 | [`legacy-nahrada.md`](legacy-nahrada.md) | Legacy vs TD: etapy náhrady (+§7 otázky E/F) · gap matice TiskMHD · mapa legacy generátorů · evidence prezentací 2026 |
 | [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) | Knižní/linkový pilot; §11–12 odložené body (C2–C9) |
 
-## Jednorázové analýzy (po vytěžení smazat i s řádkem)
-
-| Dokument | Obsah |
-|---|---|
-| [`review-navrhare-2026-09-21.md`](review-navrhare-2026-09-21.md) | Celkový review kódu a UX, 13 nálezů; průchod drží `B174` v roadmapě |
-
 ## Seedy zákaznické dokumentace (wiki - post-release úkol)
 
 | Dokument | Cíl |

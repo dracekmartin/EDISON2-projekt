@@ -1,5 +1,27 @@
 ﻿# Changelog
 
+## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře
+
+`B174`. Devět nálezů odbaveno, dva se týkají uživatele přímo:
+
+**Přepnutí šablony na slovenštinu se bez vybrané linky neprojevilo.** Ukázková data se pamatovala
+pod klíčem, ve kterém jazyk nebyl, takže se vrátila stará odpověď. S vybranou linkou to fungovalo,
+což z toho dělalo nahodilou nespolehlivost.
+
+**Větší písmo minut u jedné skupiny dnů zvětšilo číslice, ale ne řádek.** Výška se počítala z písma
+prvku, kdežto číslice se kreslily písmem skupiny. Nově vychází z většího z obou písem řádku (v řádku
+stojí i hodina), takže se šablonám bez per-skupinového písma nic nemění.
+
+Zbytek je pod kapotou: panel vlastností bere barvy a velikost písma z tokenů (v tmavém motivu
+splývaly popisky s pozadím), prvek se všude jmenuje stejně - AI pomocník říkal „Legenda poznámek"
+a „Tabulka linky", tedy jména přejmenovaná 1. 9. Při té příležitosti dostaly nové jméno dva prvky:
+**Kód (QR, čárový)** (ze samotného „Kód" nebylo poznat, co umí) a **Tabulka spojů** (dřív „Linkový
+JŘ", což je i název agendy).
+
+Uvnitř pak zmizely tři kopie téhož: ruční seznam server-side parametrů (příznak posílá agenda
+u definice parametru), barevné příkazy v pěti dialozích a výchozí vzhled buňky obou tabulek.
+Opsané metody mezi variantami agend a rozsekání hlavního ViewModelu se vědomě odkládají.
+
 ## 2026-09-21 (6) - ⌨️ výběr linek z klávesnice
 
 `Ctrl+Shift+I` otevře výběr instancí - u jízdních řádů tedy seznam linek. Hledání v něm je pak

@@ -1,5 +1,22 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B174` Průchod nálezů z review návrháře (hotovo 21. 9. 2026)
+
+Celkový průchod kódem (`dotnet/` 217 souborů, `CACHE/` 66 tříd, pravidla) dal třináct nálezů.
+**Odbaveno devět:** jazyk šablony v ukázkových datech (slovenština se bez vybrané linky neprojevila),
+výška řádku minut proti písmu skupiny dnů, panel vlastností přes tokeny místo pevných barev, jedno
+jméno prvku pro uživatele, server-side příznak místo ručního seznamu v klientovi, barvy buňky
+v `CellStyleVM` místo pěti kopií v dialozích, výchozí vzhled buňky tabulky na jednom místě,
+`dev.firmSwitch` ze sledovaného configu a úklid (tooltipy, CS0108, 21 dvojitých `<summary>`,
+zastaralá tvrzení v pravidlech).
+
+**Odloženo (rozhodnutí Jan 21. 9.: předčasná optimalizace, až se tvar ustálí):** opsané pomocné
+metody a schéma mezi variantami agend → dopsáno k `B56`; rozsekání `TemplateDesignerViewModel`
+→ vlastní položka v backlogu.
+
+Dva nálezy se ukázaly jako už vyřešené: popisky polí napříč agendami hlídá `AgendaSchemaDriftTests`
+od 17. 8. a výchozí režim pevné tabulky je záměr kvůli deserializaci starých šablon.
+
 ## `B172` Čára u zastávky podle trasy (hotovo 21. 9. 2026)
 
 Atributy trasy `p` („podtrženo") a `o` („podtrženo nad i pod") kreslí oba staré tisky - Windows

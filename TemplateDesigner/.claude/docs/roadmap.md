@@ -111,13 +111,6 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
-- **`B174` Průchod nálezů z review návrháře** [M] (review 21. 9.). Třináct bodů: pět věcí, které
-  zdraží další agendu (opsané kontraktové metody agend, dvojí „standardní" schéma JŘ, monolit
-  hlavního ViewModelu, ruční allowlist server-side parametrů, opsané dialogy sloupců), dvě chyby
-  (jazyk se neprojeví v náhledu bez vybrané linky, výška řádku minut ignoruje písmo skupiny) a
-  úklid (barvy natvrdo v panelu vlastností, čtyři zdroje jmen prvků, zastaralá pravidla).
-  Bod po bodu i s návrhy oprav: [`review-navrhare-2026-09-21.md`](review-navrhare-2026-09-21.md).
-
 - **`B173` Projít sdílené komponenty s kolegou** [?] (domluveno 21. 9., na program 22. 9.).
   Sbírka návrhů, které sahají do `EDControls`, tedy i do legacy formulářů v shellu - proto se
   neberou jednotlivě, ale projdou se najednou.
@@ -196,11 +189,24 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
   label) - všechno až s gramatikou, ne zvlášť.
 
 - **`B56` Sjednocení Caché tiskových enginů a jejich opsaných pomocných funkcí** (odloženo -
-  rozhodnutí Jan 5. 8. a 31. 8.: nedělat předčasnou deduplikaci, dokud se tvar výstupních dat
-  neustálí). ⚠️ **Pohltilo i dřívější `L8`** - tatáž práce ve větším rozsahu, jen visela v aktivní
-  roadmapě bez přírůstku pro uživatele. Vzít **až bude knižní JŘ doimplementovaný**.
+  rozhodnutí Jan 5. 8., 31. 8. a 21. 9.: nedělat předčasnou deduplikaci, dokud se tvar výstupních
+  dat neustálí). ⚠️ **Pohltilo i dřívější `L8`** - tatáž práce ve větším rozsahu, jen visela
+  v aktivní roadmapě bez přírůstku pro uživatele. Vzít **až bude knižní JŘ doimplementovaný**.
   Podklad (co je doslovná kopie, co se liší záměrně, kde chybí testy):
   [`legacy-nahrada.md §4`](legacy-nahrada.md).
+  **Změřeno 21. 9.:** zastávkové agendy mají 10 metod znak po znaku shodných (~100 řádků: barvy,
+  atributy zastávky, stavba odjezdu a skupiny dnů, obě metody předdefinovaných tabulek) a ze schématu
+  je 25 z 27 popisů polí MHD totožných s AD (u linkových 22 z 24). Liší se dva popisky po ose
+  AD × MHD (`CISLO_LINKY`, `LOKALNI_OZNACENI_LINKY`) - ve společné metodě by byly parametrem.
+  Tvar až se to bude brát: mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje.
+  Popisky mezitím hlídá `AgendaSchemaDriftTests`, takže tiše se rozejít nemůžou.
+
+- **Rozsekat `TemplateDesignerViewModel`** [M] (review 21. 9., odloženo). 4 217 řádků a 387 členů,
+  poctivě rozdělených komentářovými pruhy na ~25 celků (soubor, databáze, schránka, zarovnání,
+  parametry agendy, náhled dat, rozvržení sloupců). Každá featura nové agendy přistane sem a dva
+  lidé si v něm překážejí. Návrh: `partial` soubory přesně podle těch pruhů, beze změny chování;
+  precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
+  ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
