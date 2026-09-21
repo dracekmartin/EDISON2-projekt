@@ -247,4 +247,24 @@ public class WindowNavigatorTests
 
         Assert.Equal(Path.Combine(WindowNavigator.EdisonDeployRoot, nonExistent), result);
     }
+
+    [Fact]
+    public void EnsureExecutableExists_ExistingFile_DoesNotThrow()
+    {
+        WindowNavigator.EnsureExecutableExists(typeof(WindowNavigator).Assembly.Location, "EDControls.dll");
+    }
+
+    [Fact]
+    public void EnsureExecutableExists_MissingFile_NamesItForTheAdmin()
+    {
+        // Místo Win32Exception bez kontextu musí hláška říct, který soubor v adresáři EDISONu chybí.
+        var path = Path.Combine(WindowNavigator.EdisonDeployRoot, $"{Guid.NewGuid()}.exe");
+
+        var ex = Assert.Throws<FileNotFoundException>(
+            () => WindowNavigator.EnsureExecutableExists(path, "EDISONMAIN2API.exe"));
+
+        Assert.Contains("EDISONMAIN2API.exe", ex.Message);
+        Assert.Contains("správce IS", ex.Message);
+        Assert.Equal(path, ex.FileName);
+    }
 }

@@ -400,6 +400,10 @@ public class WindowNavigator : IWindowNavigator
         // per-forma default EDParamIn (ApplyDefaultInput), který generický host neumí dodat.
         // Ostatní agendy jdou přes host, takže nepotřebují retrofit.
         bool direct = LaunchesDirectly(exeName);
+        var launcherPath = direct ? agendaPath : ResolveExecutablePath(LauncherExe);
+        // Chybějící soubor by skončil Win32Exception bez jména souboru; správce IS potřebuje vědět, co chybí.
+        EnsureExecutableExists(agendaPath, Path.GetFileName(exeName));
+        if (!direct) EnsureExecutableExists(launcherPath, LauncherExe);
         // Licencované elementy z aktivní licence shellu → host z nich postaví Lic a načte
         // formuláři přístupová práva (MLProps.AccessTable). Bez toho moduly, které gate-ují
         // obsah přes RightGranted (např. DSINPUT Plánování), nezobrazí data. Viz FormToRunGetter.
@@ -409,7 +413,7 @@ public class WindowNavigator : IWindowNavigator
         var prc = Process.Start(new ProcessStartInfo
         {
             UseShellExecute = true,
-            FileName = direct ? agendaPath : ResolveExecutablePath(LauncherExe),
+            FileName = launcherPath,
             Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath,
                 licensedElements, EDServices.Current.IsAdmin, EDServices.Current.MayUpdate, shortcutPayload,
                 EDServices.Current.UserDirectory, EDServices.Current.UserEmail),
@@ -456,6 +460,14 @@ public class WindowNavigator : IWindowNavigator
         var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
         if (File.Exists(localPath)) return localPath;
         return Path.Combine(EdisonDeployRoot, relativePath);
+    }
+
+    /// <summary>Pre-flight před spuštěním legacy procesu: hláška jmenuje chybějící soubor, ne jen „soubor nenalezen".</summary>
+    internal static void EnsureExecutableExists(string path, string displayName)
+    {
+        if (File.Exists(path)) return;
+        throw new FileNotFoundException(
+            $"Nelze spustit modul: v adresáři EDISONu chybí soubor {displayName}. Kontaktujte správce IS.", path);
     }
 
     // Sdílené wire-up před Show()/ShowDialog(): Owner + AttachToWindow VM-if. Firma v titulku
