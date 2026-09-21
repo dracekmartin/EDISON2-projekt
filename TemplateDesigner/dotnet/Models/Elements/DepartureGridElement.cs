@@ -194,10 +194,6 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return [.. slotW.Select(_ => uniformSlotMm)];
     }
 
-    /// <summary>Rastr rovnoměrného rozestupu: **nejširší odjezd celého prvku** (minuta + její
-    /// značky), nejméně však nominální šířka minuty. Počítá se přes všechny skupiny dnů, aby čísla
-    /// stála pod sebou napříč hodinami **i sloupci** - za řádek by hodina se značkami měla jiný
-    /// rozestup než hodina bez nich, za sloupec by se rozešly sloupce mezi sebou (`B143`).</summary>
     /// <summary>Rozteč pevného rastru: nastavená šířka minuty, nejméně však minuta + mezera + místo
     /// na **jednu** značku + odstup od dalšího odjezdu. Nejde o nejhorší odjezd - kde značka není,
     /// místo zůstane prázdné a minuty stojí v mřížce (vzor vývěsky TRANSDEV k `B160`).
@@ -225,6 +221,10 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return MathF.Max(dataScale * (volnoMm / znackyMm), dno);
     }
 
+    /// <summary>Rastr rovnoměrného rozestupu: **nejširší odjezd celého prvku** (minuta + její
+    /// značky), nejméně však nominální šířka minuty. Počítá se přes všechny skupiny dnů, aby čísla
+    /// stála pod sebou napříč hodinami **i sloupci** - za řádek by hodina se značkami měla jiný
+    /// rozestup než hodina bez nich, za sloupec by se rozešly sloupce mezi sebou (`B143`).</summary>
     internal static float UniformSlotWidth(IEnumerable<float> sloty, float nominalMm)
     {
         float max = nominalMm;

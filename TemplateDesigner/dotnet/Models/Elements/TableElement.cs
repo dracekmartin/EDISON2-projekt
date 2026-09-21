@@ -236,10 +236,9 @@ public class TableElement : TemplateElement
     private float NaturalHeight(int rowCount) =>
         (ShowHeader ? HeaderHeight : 0f) + rowCount * RowHeight + (SummaryRows?.Count ?? 0) * RowHeight;
 
-    /// <summary>Řádky po filtru podmíněné viditelnosti - **jediné místo**, kudy jdou render i výpočet
-    /// výšky, takže se nemůžou rozejít v počtu.</summary>
     /// <summary>
-    /// Řádky, které se mají kreslit. **Bez dat se nefiltruje** - v návrháři žádná data nejsou,
+    /// Řádky, které se mají kreslit - **jediné místo**, kudy jdou render i výpočet výšky, takže se
+    /// nemůžou rozejít v počtu. **Bez dat se nefiltruje** - v návrháři žádná data nejsou,
     /// takže by podmíněný řádek zmizel i z plátna a uživatel by ho nemohl vybrat ani zbavit
     /// podmínky, kterou mu právě dal (nález 18. 8. při zavádění podmíněných řádků). Schovává se
     /// tedy až tam, kde je proti čemu podmínku vyhodnotit: v náhledu a při tisku.
@@ -871,11 +870,6 @@ public class TableElement : TemplateElement
     }
 
     /// <summary>
-    /// Rozseká text ze schránky na buňky. Excel a Sheets dávají do schránky **řádky oddělené
-    /// koncem řádku a buňky tabulátorem**, takže stačí tohle - uvozovkování hodnot s vnořeným
-    /// koncem řádku vědomě neřešíme (v tabulkách tohoto typu se nevyskytuje).
-    /// </summary>
-    /// <summary>
     /// Obsah výběru ve tvaru, kterému rozumí Excel a Sheets (řádky konci řádku, buňky tabulátorem) -
     /// tedy přesně to, co se z nich vkládá zpátky. Prázdná buňka je prázdné pole, ne vynechané.
     /// </summary>
@@ -913,6 +907,11 @@ public class TableElement : TemplateElement
         return zmena;
     }
 
+    /// <summary>
+    /// Rozseká text ze schránky na buňky. Excel a Sheets dávají do schránky **řádky oddělené
+    /// koncem řádku a buňky tabulátorem**, takže stačí tohle - uvozovkování hodnot s vnořeným
+    /// koncem řádku vědomě neřešíme (v tabulkách tohoto typu se nevyskytuje).
+    /// </summary>
     public static List<List<string>> ParseClipboardBlock(string text)
     {
         var radky = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n').ToList();

@@ -94,13 +94,9 @@ public partial class PropertiesPanel : UserControl
         ContentPanel.Children.Clear();
         _suppressChanges = false;
 
-        ContentPanel.Children.Add(new TextBlock
-        {
-            Text       = message,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99)),
-            Margin     = new Thickness(0, 6, 0, 0),
-            FontSize   = 11
-        });
+        var empty = new TextBlock { Text = message, Margin = new Thickness(0, 6, 0, 0) };
+        Themed(empty, "EDTheme.Text.Muted");
+        ContentPanel.Children.Add(empty);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -108,14 +104,14 @@ public partial class PropertiesPanel : UserControl
 
     private void AddGroupHeader(string name)
     {
-        ContentPanel.Children.Add(new TextBlock
+        var header = new TextBlock
         {
             Text       = name,
             FontWeight = FontWeights.SemiBold,
-            FontSize   = 11,
-            Foreground = new SolidColorBrush(Color.FromRgb(0x21, 0x96, 0xF3)),
             Margin     = new Thickness(0, 8, 0, 2)
-        });
+        };
+        Themed(header, "EDTheme.Accent.Blue");
+        ContentPanel.Children.Add(header);
     }
 
     private void AddRow(PropertyDescriptor d)
@@ -168,10 +164,10 @@ public partial class PropertiesPanel : UserControl
             Height          = sd.MultiLine ? 54 : double.NaN,
             VerticalScrollBarVisibility = sd.MultiLine
                 ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled,
-            FontSize = 11,
             Padding  = new Thickness(3, 2, 3, 2),
             MaxLength = 2000
         };
+        ThemedInput(box);
 
         string oldVal = sd.Get();
         box.LostFocus += (_, _) =>
@@ -264,11 +260,11 @@ public partial class PropertiesPanel : UserControl
             {
                 Content  = "⊞",
                 Width    = 24,
-                FontSize = 12,
                 Padding  = new Thickness(0),
                 Margin   = new Thickness(2, 0, 0, 0),
                 ToolTip  = "Vložit databázové pole"
             };
+            ThemedInput(btn, "EDTheme.FontSize.Small");
             DockPanel.SetDock(btn, Dock.Right);
             panel.Children.Add(btn);
 
@@ -353,10 +349,9 @@ public partial class PropertiesPanel : UserControl
                 Text              = fd.Unit,
                 Width             = 28,
                 VerticalAlignment = VerticalAlignment.Center,
-                Foreground        = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
-                FontSize          = 11,
                 Margin            = new Thickness(3, 0, 0, 0)
             };
+            Themed(unit, "EDTheme.Text.Muted");
             DockPanel.SetDock(unit, Dock.Right);
             panel.Children.Add(unit);
         }
@@ -364,9 +359,9 @@ public partial class PropertiesPanel : UserControl
         var box = new TextBox
         {
             Text     = fd.Get().ToString(fd.Format),
-            FontSize = 11,
             Padding  = new Thickness(3, 2, 3, 2)
         };
+        ThemedInput(box);
 
         float oldVal = fd.Get();
         box.LostFocus += (_, _) =>
@@ -445,11 +440,11 @@ public partial class PropertiesPanel : UserControl
 
         var box = new TextBox
         {
-            Text       = cd.Get(),
-            FontFamily = new FontFamily("Consolas"),
-            FontSize   = 11,
-            Padding    = new Thickness(3, 2, 3, 2)
+            Text    = cd.Get(),
+            Padding = new Thickness(3, 2, 3, 2)
         };
+        ThemedInput(box);
+        box.SetResourceReference(System.Windows.Controls.Control.FontFamilyProperty, "EDTheme.FontFamily.Mono");
 
         string oldVal = cd.Get();
 
@@ -503,7 +498,7 @@ public partial class PropertiesPanel : UserControl
         DockPanel.SetDock(label, Dock.Left);
         panel.Children.Add(label);
 
-        var combo = new ComboBox { FontSize = 11, MinWidth = 220 };
+        var combo = ThemedInput(new ComboBox { MinWidth = 220 });
         foreach (var (optLabel, optValue) in ed.Options)
             combo.Items.Add(new ComboBoxItem { Content = optLabel, Tag = optValue });
 
@@ -542,14 +537,11 @@ public partial class PropertiesPanel : UserControl
     // ─────────────────────────────────────────────────────────────────────
     // Helpers
 
-    private static readonly SolidColorBrush ErrorBorderBrush =
-        new(Color.FromRgb(0xCC, 0x00, 0x00));
-
     private static void ApplyValidation(TextBox box, string? error)
     {
         if (error is not null)
         {
-            box.BorderBrush = ErrorBorderBrush;
+            box.SetResourceReference(System.Windows.Controls.Control.BorderBrushProperty, "EDTheme.Semantic.Danger");
             box.ToolTip = error;
         }
         else
@@ -579,17 +571,34 @@ public partial class PropertiesPanel : UserControl
             Dispatcher.BeginInvoke(new Action(() => ShowDescriptors(_currentDescriptors)));
     }
 
+    // Vzhled panelu se skládá v kódu, ne v XAML, takže tokeny musí dosadit SetResourceReference
+    // (obdoba DynamicResource) - jinak by řádky nepřežily přepnutí motivu ani zvětšení písma.
+    private static void Themed(TextBlock t, string brushKey)
+    {
+        t.SetResourceReference(TextBlock.ForegroundProperty, brushKey);
+        t.SetResourceReference(TextBlock.FontSizeProperty, "EDTheme.FontSize.Tiny");
+    }
+
+    private static T ThemedInput<T>(T c, string sizeKey = "EDTheme.FontSize.Tiny") where T : System.Windows.Controls.Control
+    {
+        c.SetResourceReference(System.Windows.Controls.Control.FontSizeProperty, sizeKey);
+        return c;
+    }
+
     private static DockPanel MakeRow() => new() { Margin = new Thickness(0, 1, 0, 1), LastChildFill = true };
 
-    private static TextBlock MakeLabel(string text) => new()
+    private static TextBlock MakeLabel(string text)
     {
-        Text              = text + ":",
-        Width             = 90,
-        VerticalAlignment = VerticalAlignment.Center,
-        Foreground        = new SolidColorBrush(Color.FromRgb(0x44, 0x44, 0x44)),
-        FontSize          = 11,
-        Margin            = new Thickness(0, 0, 4, 0)
-    };
+        var label = new TextBlock
+        {
+            Text              = text + ":",
+            Width             = 90,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin            = new Thickness(0, 0, 4, 0)
+        };
+        Themed(label, "EDTheme.Text.Header");
+        return label;
+    }
 
     private static SolidColorBrush HexToBrush(string hex)
     {

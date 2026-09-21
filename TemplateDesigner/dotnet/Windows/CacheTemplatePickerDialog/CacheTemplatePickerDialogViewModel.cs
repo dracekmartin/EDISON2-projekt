@@ -41,7 +41,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     private bool IsSelectedSystem => string.Equals(Selected?["zdroj"], "M-line", StringComparison.Ordinal);
 
     public RelayCommand      OpenCommand   { get; }
-    public AsyncRelayCommand DeleteCommand { get; }
+    public AsyncRelayCommand DeleteTemplateCommand { get; }
     public AsyncRelayCommand RenameCommand { get; }
 
     // ── Nové šablony od M-line (distribuční kanál) ────────────────────────────
@@ -131,9 +131,9 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
             AgendaFilters.Add(new AgendaFilterVM(a.Code, a.DisplayName));
 
         // Systémové (M-line) jsou read-only - otevřít lze, mazat/přejmenovat ne.
-        OpenCommand    = Command(Open,                () => Selected is not null);
-        DeleteCommand  = CommandAsync(DeleteAsync,    () => Selected is not null && !IsSelectedSystem);
-        RenameCommand  = CommandAsync(RenameAsync,    () => Selected is not null && !IsSelectedSystem);
+        OpenCommand           = Command(Open,             () => Selected is not null);
+        DeleteTemplateCommand = CommandAsync(DeleteAsync, () => Selected is not null && !IsSelectedSystem);
+        RenameCommand         = CommandAsync(RenameAsync, () => Selected is not null && !IsSelectedSystem);
     }
 
     private void Open()

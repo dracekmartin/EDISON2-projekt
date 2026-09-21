@@ -81,12 +81,6 @@ public static class NoteVisibilityFilter
     }
 
     /// <summary>
-    /// Má se skrýt legenda přestupů („přestup na vlak / autobus")? Ano, když šablona MÁ StopList, ale
-    /// žádný z nich přestupy netiskne (<c>ShowTransferAttributes</c>, default vyp). Legenda následuje
-    /// viditelnost značky - jinak by u výchozího nastavení naskočily řádky k piktogramům, které nikde
-    /// nejsou. Bez StopListu nevíme záměr → neskrývat (stejně jako u „na znamení").
-    /// </summary>
-    /// <summary>
     /// Kategorie obsahu, které se v této šabloně **netisknou vůbec** (ani značka, ani vysvětlivka).
     /// Server posílá nadmnožinu otagovanou kategorií a rozhodnutí drží šablona - proto tady, na jednom
     /// místě, a ne parametrem sestavy: je to čistě „co se zobrazí", žádný re-fetch.
@@ -122,6 +116,12 @@ public static class NoteVisibilityFilter
         return hidden;
     }
 
+    /// <summary>
+    /// Má se skrýt legenda přestupů („přestup na vlak / autobus")? Ano, když šablona MÁ StopList, ale
+    /// žádný z nich přestupy netiskne (<c>ShowTransferAttributes</c>, default vyp). Legenda následuje
+    /// viditelnost značky - jinak by u výchozího nastavení naskočily řádky k piktogramům, které nikde
+    /// nejsou. Bez StopListu nevíme záměr → neskrývat (stejně jako u „na znamení").
+    /// </summary>
     public static bool ShouldHidePrestupLegend(Template template)
     {
         var stopLists = template.Sections

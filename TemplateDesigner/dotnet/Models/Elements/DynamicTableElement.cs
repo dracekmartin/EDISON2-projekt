@@ -263,11 +263,6 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
             Visible   = true
         }).ToList();
 
-    /// <summary>
-    /// Datové řádky po aplikaci <see cref="RowVisibilityExpression"/> (per řádek). Prázdný výraz =
-    /// beze změny. Používá se jednotně pro render, výpočet výšky i agregace v souhrnných řádcích
-    /// (skryté řádky se nesčítají).
-    /// </summary>
     /// <summary>Počet reálných datových řádků po ořezu <see cref="MaxRows"/> (bez Min paddingu).</summary>
     private int ClampMax(int dataCount) => MaxRows > 0 ? Math.Min(dataCount, MaxRows) : dataCount;
 

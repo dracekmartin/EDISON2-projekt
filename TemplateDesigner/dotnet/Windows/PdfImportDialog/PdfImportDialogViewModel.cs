@@ -280,10 +280,6 @@ public class PdfImportDialogViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Ukáže, co import z předlohy převzal a co nerozpoznal. Bez toho se hlášky ztratily se
-    /// zavřením dialogu a uživatel neměl jak zjistit, co si má dodělat ručně.
-    /// </summary>
-    /// <summary>
     /// Uloží podrobný protokol vedle PDF - <b>jen se zaškrtnutým Debugem</b>, tedy pro vývoj.
     /// Je to nástroj na porovnání dvou importů, ne informace pro uživatele: import je rychlý start,
     /// ne hotová šablona, takže výpis „co všechno se nastavilo" neumí říct, co ještě chybí - jen

@@ -644,7 +644,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     // ─── Layout ─────────────────────────────────────────────────────────────
 
-    /// <summary>Vyřešený popisový sloupec připravený k renderu (šířka + styly + hodnota z dat).</summary>
     /// <summary>Nouzové dno šířky sloupce (mm) pro případ, že se písmo nepodaří změřit.</summary>
     private const float MinAutoColumnWidthMm = 3f;
 
@@ -2039,11 +2038,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// Druhy řádků linkového JŘ: pás skupin dnů (sloučené sloupce) → čísla spojů → platnost →
     /// negativní značky → zastávky (s podřádky přípojů). Vodorovné čáry a pozadí zvýraznění nese
     /// <see cref="RowSpec"/>, samotné kreslení <see cref="RowPlanRenderer"/>.
+    /// <para><paramref name="sloupcovaCara"/> a <paramref name="radkovaCara"/> jsou <c>null</c>, když
+    /// si uživatel ten druh čar vypnul - stejné dělení jako u seznamu zastávek a obou tabulek.
+    /// Jemnější potlačení svislé čáry u konkrétního sloupce řeší <c>SuppressLeadingLine</c>, tohle
+    /// je nadřazený vypínač.</para>
     /// </summary>
-    /// <summary>Sestaví plán řádků tabulky. <paramref name="sloupcovaCara"/> a
-    /// <paramref name="radkovaCara"/> jsou <c>null</c>, když si uživatel ten druh čar vypnul -
-    /// stejné dělení jako u seznamu zastávek a obou tabulek. Jemnější potlačení svislé čáry
-    /// u konkrétního sloupce řeší <c>SuppressLeadingLine</c>, tohle je nadřazený vypínač.</summary>
     private List<RowSpec> BuildRowPlan(
         List<LineStopData> stops, List<LineTripData> trips, List<LineTripData> zrcadlene,
         List<LineTripData> vsechnySpoje,
@@ -2357,8 +2356,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return plan;
     }
 
-    /// <summary>Řádek, kde popisové sloupce jsou prázdné a spojové nesou znak z <paramref name="text"/>
-    /// (platnost, negativní značky).</summary>
     /// <summary>
     /// Atribut zastávky, který se kreslí piktogramem vpravo ve sloupci zastávek.
     /// </summary>
@@ -2695,8 +2692,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
     }
 
-    /// <summary>Prázdná buňka mezery mezi skupinami sloupců - bez pozadí, ať mezerou prosvítá
-    /// stránka a pruh záhlaví se v ní přeruší.</summary>
     /// <summary>
     /// Vysází do pásu sloučené buňky <b>úseků skupin dnů</b> - jednu na každý souvislý úsek spojů
     /// téže skupiny.

@@ -246,7 +246,6 @@ public class TemplateDesignerViewModel : EDViewModel
         CommandManager.InvalidateRequerySuggested();
     }
 
-    /// <summary>Caché GetData pro aktuální instanci → _realPreviewData. Async, fire-and-forget.</summary>
     /// <summary>„Obnovit data" (F5 / tlačítko ↻ u instance chipu): vyčistí cache provideru a znovu
     /// načte schéma, parametry i tisková data aktuální instance - data změněná na serveru (značky,
     /// poznámky) se projeví bez restartu.</summary>
@@ -328,6 +327,7 @@ public class TemplateDesignerViewModel : EDViewModel
         return Math.Clamp(oldIndex, 0, Math.Max(0, newPages.Count - 1));
     }
 
+    /// <summary>Caché GetData pro aktuální instanci → _realPreviewData. Async, volá se fire-and-forget.</summary>
     /// <param name="keepPage">true = zachovat aktuálně zobrazenou stránku dat (re-fetch téže instance -
     /// změna server parametru, F5); false = skočit na první (přepnutí instance/agendy).</param>
     private async Task RefreshDataForCurrentInstanceAsync(bool keepPage = false)
@@ -1143,7 +1143,6 @@ public class TemplateDesignerViewModel : EDViewModel
         ExecuteAsComposite("Nastavení odjezdů", cmds);
     }
 
-    /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
     /// <summary>Zvýraznění řádků (seznam pravidel) - jeden undoable krok. Prázdný seznam → null (čistý JSON).</summary>
     public void ApplyHighlightRulesEdit(IRowHighlightable element, List<HighlightRule> resultRules)
     {
@@ -1152,6 +1151,7 @@ public class TemplateDesignerViewModel : EDViewModel
             v => element.HighlightRules = (List<HighlightRule>?)v));
     }
 
+    /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
     public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
     {
         var cmds = new List<IDesignerCommand>();
@@ -3159,8 +3159,6 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestParamsFormReload?.Invoke();
     }
 
-    /// <summary>Parametry zpracovávané v Caché GetData (rozdělení sloupců, varianty tras) -
-    /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
     /// <summary>
     /// Parametry, jejichž hodnotu zpracovává až server v <c>GetData</c> - jejich změna proto musí
     /// spustit re-fetch dat, ne jen překreslení náhledu.
@@ -3295,13 +3293,6 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Preview mock data (called by code-behind preview renderer) ────────────
 
     /// <summary>
-    /// Sestaví DataContext pro preview. Priorita:
-    /// 1. Reálná data z Caché pro vybranou instanci (Instance Picker → _realPreviewData)
-    /// 2. Mock data z Caché GetMockData
-    /// 3. Syntetická mock data ze schématu
-    /// Volitelný parametr overrideParams nahrazuje interní _previewParams (pro PrintDialog).
-    /// </summary>
-    /// <summary>
     /// Vrátí všechny dostupné DataContexty pro export - všechny reálné stránky pokud jsou
     /// načtené, jinak jeden mock context. Použito pro PDF/PNG export, aby se exportovaly
     /// všechny zastávky/směry, ne jen aktuálně zobrazená. Fetch (N× GetData přes MLRest)
@@ -3373,9 +3364,6 @@ public class TemplateDesignerViewModel : EDViewModel
         return p;
     }
 
-    /// <summary>Vzor sloupců předvyplnit jen prvnímu prvku odjezdů v šabloně a jen u zastávkového
-    /// JŘ AD (jediná agenda, jejíž server DEFINICE_SLOUPCU čte). Kód agendy je stabilní
-    /// persistovaný klíč.</summary>
     /// <summary>Výchozí sloupce nového prvku odjezdů - vzor „Pracovní / Sobota / Neděle+svátky"
     /// tak, jak ho poslal server pro aktuální linku. Bez načtených dat null = prvek zůstane
     /// v režimu „Automaticky (dle linky)"; vzor složený naslepo by u téhle linky nemusel sedět.</summary>
@@ -3387,18 +3375,21 @@ public class TemplateDesignerViewModel : EDViewModel
             : null;
     }
 
+    /// <summary>Vzor sloupců předvyplnit jen prvnímu prvku odjezdů v šabloně a jen u zastávkového
+    /// JŘ AD (jediná agenda, jejíž server DEFINICE_SLOUPCU čte). Kód agendy je stabilní
+    /// persistovaný klíč.</summary>
     private bool ShouldPrefillDepartureColumns() =>
         string.Equals(State.CurrentTemplate.AgendaCode, "ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)
         && !State.CurrentTemplate.Sections.SelectMany(s => s.Elements).OfType<DepartureGridElement>().Any();
 
-    /// <summary>Definice vlastních sloupců platná pro celou šablonu - z prvního prvku odjezdů,
-    /// který ji má. Null = režim „Automaticky (dle linky)".</summary>
     /// <summary>Chce **některý** prvek šablony turnusy ke spojům? Podle toho se posílá serveru
     /// (dotaz do modulu turnusů je drahý, takže se nesmí spustit jinému než tomu, kdo je tiskne).</summary>
     internal bool CurrentTurnusyKeSpojum() =>
         State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
             .OfType<LineTableElement>().Any(e => e.TurnusyKeSpojum);
 
+    /// <summary>Definice vlastních sloupců platná pro celou šablonu - z prvního prvku odjezdů,
+    /// který ji má. Null = režim „Automaticky (dle linky)".</summary>
     internal string? CurrentColumnsDefinitionJson() =>
         State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
             .OfType<IColumnLayoutOwner>()
@@ -3602,6 +3593,13 @@ public class TemplateDesignerViewModel : EDViewModel
         return [.. items.Concat(fromCollections).DistinctBy(i => i.Key)];
     }
 
+    /// <summary>
+    /// Sestaví DataContext pro preview. Priorita:
+    /// 1. Reálná data z Caché pro vybranou instanci (Instance Picker → _realPreviewData)
+    /// 2. Mock data z Caché GetMockData
+    /// 3. Syntetická mock data ze schématu
+    /// Volitelný parametr overrideParams nahrazuje interní _previewParams (pro PrintDialog).
+    /// </summary>
     public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)
     {
         var agendaCode = State.CurrentTemplate.AgendaCode;

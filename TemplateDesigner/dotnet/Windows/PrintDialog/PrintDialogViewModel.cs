@@ -170,14 +170,6 @@ public class PrintDialogViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Export náhledu (ukázková data) - **záměrně synchronní**, dokud jde o jednu datovou sadu.
-    /// ⚠️ Kdo to bude převádět na pozadí: nestačí `Task.Run`. Tahle cesta renderuje nad ŽIVOU
-    /// šablonou (`RenderToPdf` → template null → `State.CurrentTemplate`) a dnes to nevadí právě
-    /// proto, že synchronní běh uživateli nedovolí mezitím editovat. Async bez `DeepClone`
-    /// snapshotu by zavedl závodu s preview renderem - viz `ExportRealDataPdfAsync` níže, které
-    /// to dělá správně.
-    /// </summary>
-    /// <summary>
     /// Popis uspořádání na list do stavové hlášky: varování, když mřížka vyjde 1×1 (papír se jen
     /// zvětšil), jinak neutrální popis. Prázdné = uspořádání vypnuté.
     /// </summary>
@@ -190,6 +182,14 @@ public class PrintDialogViewModel : EDViewModel
         ? ""
         : sheets.VarovaniBezEfektu() is { } bezEfektu ? $" · ⚠ {bezEfektu}" : $" · {sheets.ShortLabel}";
 
+    /// <summary>
+    /// Export náhledu (ukázková data) - **záměrně synchronní**, dokud jde o jednu datovou sadu.
+    /// ⚠️ Kdo to bude převádět na pozadí: nestačí `Task.Run`. Tahle cesta renderuje nad ŽIVOU
+    /// šablonou (`RenderToPdf` → template null → `State.CurrentTemplate`) a dnes to nevadí právě
+    /// proto, že synchronní běh uživateli nedovolí mezitím editovat. Async bez `DeepClone`
+    /// snapshotu by zavedl závodu s preview renderem - viz `ExportRealDataPdfAsync` níže, které
+    /// to dělá správně.
+    /// </summary>
     private void ExportPdf()
     {
         SheetLayoutOptions? sheets;

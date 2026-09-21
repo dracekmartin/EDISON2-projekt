@@ -61,7 +61,7 @@ public class HighlightRulesEditorDialogViewModel : EDViewModel
         set => Set(ref _selectedRule, value);
     }
 
-    public RelayCommand AddCommand { get; }
+    public RelayCommand AddRuleCommand { get; }
     public RelayCommand RemoveCommand { get; }
     public RelayCommand MoveUpCommand { get; }
     public RelayCommand MoveDownCommand { get; }
@@ -82,7 +82,7 @@ public class HighlightRulesEditorDialogViewModel : EDViewModel
 
         if (Rules.Count > 0) SelectedRule = Rules[0];
 
-        AddCommand = Command(() =>
+        AddRuleCommand = Command(() =>
         {
             var vm = new HighlightRuleVM { BackgroundColor = "#FFFFF2CC" };   // světle žlutá jako výchozí
             Rules.Add(vm);

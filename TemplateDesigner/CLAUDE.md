@@ -215,7 +215,7 @@ v každé session** - referenční mapy a procedury ne, ty jdou do `docs/` nebo 
 
 | Soubor | Obsah |
 |---|---|
-| `architecture-rules.md` | **Závazná pravidla R1-R5** (async Caché, IPopupDisplayer, CVar wire, MVVM bez WPF, versioning) + „must-not-happen" scénáře |
+| `architecture-rules.md` | **Závazná pravidla R1-R6** (async Caché, IPopupDisplayer, CVar wire, MVVM bez WPF, versioning, parita proti legacy) + „must-not-happen" scénáře |
 | `cache-api.md` | Wire pravidlo R3, prezentační nápovědy, aditivní evoluce kontraktu, ObjectScript konvence |
 | `implementation-patterns.md` | Pasti: barvy, RenderContext, ComboBox event ordering, SkiaSharp quirks, debugging stylů |
 | `mvvm-patterns.md` | Styling patterny, kaskáda stylů buněk + anti-patterny, CellStyleEditor |

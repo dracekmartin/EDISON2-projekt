@@ -446,6 +446,14 @@ public static class AiGuidedScheduleBuilder
         return result;
     }
 
+    /// <summary>Obdélníky jízdněřádových prvků tak, jak nakonec v šabloně leží (v mm).</summary>
+    private static List<(float L, float T, float R, float B)> ScheduleRects(List<TemplateElement> elements) =>
+    [
+        .. elements
+            .Where(e => e is StopListElement or DepartureGridElement or NotesLegendElement)
+            .Select(e => (e.X, e.Y, e.X + e.Width, e.Y + (e.Height ?? 0)))
+    ];
+
     /// <summary>
     /// Doplní texty, které v předloze prokazatelně jsou, ale model je nezmínil. Model vrací
     /// <b>význam</b> (co je nadpis, co je pole agendy), geometrii textu má PDF přesnou - a když
@@ -456,14 +464,6 @@ public static class AiGuidedScheduleBuilder
     /// <para>Vynechá se, co si kreslí jízdněřádový prvek sám (leží uvnitř jeho oblasti) a co už
     /// v šabloně je - i když to model pojmenoval jinak, než jak to stojí v PDF.</para>
     /// </summary>
-    /// <summary>Obdélníky jízdněřádových prvků tak, jak nakonec v šabloně leží (v mm).</summary>
-    private static List<(float L, float T, float R, float B)> ScheduleRects(List<TemplateElement> elements) =>
-    [
-        .. elements
-            .Where(e => e is StopListElement or DepartureGridElement or NotesLegendElement)
-            .Select(e => (e.X, e.Y, e.X + e.Width, e.Y + (e.Height ?? 0)))
-    ];
-
     private static List<TextElement> BuildUnmappedTextElements(
         ExtractedPage page,
         float marginLeft, float marginTop, ref int zIndex, List<string> debug,

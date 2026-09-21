@@ -551,11 +551,6 @@ public partial class MainWindow
     // ── Formátování buňky ─────────────────────────────────────────────────────
 
     /// <summary>
-    /// Buňky, na které míří formátování. Dnes je to vždy ta jedna vybraná; celá cesta zápisu je
-    /// ale psaná nad **množinou**, aby výběr oblasti tažením přidal jen jiný zdroj souřadnic
-    /// a nemusela se přepisovat ani jedna vratná operace.
-    /// </summary>
-    /// <summary>
     /// Buňky, na které míří formátování a mazání: celý výběr, **aktivní buňkou napřed** (podle ní
     /// se počítá nová hodnota a od ní se dorovnávají ostatní).
     /// </summary>
