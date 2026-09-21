@@ -1,5 +1,21 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B166` Zvýraznění zastávky u kombinovaného zadání (uzavřeno 21. 9. 2026 - vada neplatí)
+
+Kolega hlásil, že Budeč na lince 340366 nemá být obyčejně, ale tučně nebo podtrženě. Porovnáním
+s postskriptovým tiskem se ukázalo, že se nelišíme.
+
+**Co „podtržení" u atributů `P` a `J` znamená:** zastávka se nepodtrhává textem, ale rozdělí se na tři
+řádky - příjezd, krátká vodorovná úsečka, odjezd - a popis se vypíše jednou na prostředním
+(`JRapiLinPrtPS1.mac:51`, `JRapiLinPrtPS5.mac:24`, šipky `JRapiLinPrtPS6.mac:191`). Tučné písmo je
+vedle toho samostatné a dělá ho `P` i `T`. Přesně tenhle tvar dělá volba „Sloučit popis u příjezdu
+a odjezdu"; Budeč vychází tučně i u nás.
+
+⚠️ **Windowsový Tisk JR má na totéž jiný tvar** - silnou čáru přes celou šířku tabulky nad zastávkou
+a pod ní (`JRapiLinPrtWin.mac:1262`, kreslení `formTISKJRReportDotNet_Module.vb:2501`). Kdo tiskne
+windowsovou cestou, uvidí jiný výstup; je to volba tvaru, ne oprava. Samostatné atributy `p` a `o`
+(čára pod řádkem / nad i pod) neumíme - vytaženo jako `B172`.
+
 ## `B168` Rozbalovací seznam vybraných linek (hotovo 21. 9. 2026)
 
 Nález kolegy z 18. 9.: mezi vybranými linkami se listovalo jen šipkami, skok na konkrétní linku

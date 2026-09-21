@@ -70,10 +70,9 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
 
-Šest zbývajících nálezů (rozbalovací seznam linek hotový 21. 9.). Rozsah každého je projitý
-proti kódu 21. 9., pořadí je od nejmenšího. `B163`, `B165` a `B166` se dají vzít jedním
-průchodem - jsou ve stejném místě a odpoví na ně data téže linky; `B164` a `B167` potřebují
-výtisk ze starého modulu.
+Pět zbývajících nálezů (rozbalovací seznam linek hotový 21. 9., zvýraznění zastávky uzavřeno
+jako neplatné). Rozsah každého je projitý proti kódu 21. 9., pořadí je od nejmenšího. `B163`
+čeká na číslo linky a spoje od kolegy; `B164` a `B167` potřebují výtisk ze starého modulu.
 
 - **`B163` Atributy spoje se netisknou** [?]. Kolega zadal u spoje v jízdních řádech atributy
   a v sestavě nevyšly (boční značky u sloupce spoje). Ověřit, jestli je vůbec posíláme.
@@ -85,11 +84,6 @@ výtisk ze starého modulu.
 - **`B165` Značky poznámek vycházejí špatně** [?]. V legendě nesedí `⑦`, `&`, `N`, `G`. Kolega se
   ptá, jestli je potřeba mít nainstalovaný font - spíš to ale vypadá na chybný překlad typu
   poznámky. Ověřit obojí.
-
-- **`B166` Zvýraznění zastávky u kombinovaného zadání** [?]. `340366` zastávka Budec má být tučně
-  nebo podtrženě, u nás není. Kolega píše, že je zadaná zvláštně: „P je podtržené s příjezdem
-  a odjezdem + tučně, J je jen s příjezdem a odjezdem" - kombinovat se to nemá, tedy nejspíš
-  hraniční případ. Zjistit, co s tím dělá starý modul.
 
 - **`B167` Dorovnání prázdnými sloupci: prokládat, ne dolepit** [?]. Starý modul prázdné sloupce
   **prokládal** mezi spoje (prázdný, spoj, prázdný…), my je dáváme na konec. Ověřit na výstupu
@@ -155,6 +149,12 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B172` Čára u zastávky z atributů `p` a `o`** [S] (nález 21. 9. při `B166`). Starý tisk umí
+  u zastávky čáru pod řádkem (atribut trasy `p`) a nad i pod ním (`o`) - `JRapiLinPrtPS1.mac:110`.
+  Znaky na klienta chodí v `ATRIBUTY`, prvek je ignoruje. Nesouvisí s příjezdem a odjezdem (`P`/`J`),
+  ten tvar umíme.
+  ⚠️ **Nejdřív změřit, kolik linek je vůbec má** - když nula, nedělat vůbec.
 
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
