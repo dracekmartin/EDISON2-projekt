@@ -157,6 +157,16 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
+- **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
+  Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
+  engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi, a nad ním
+  by šlo u jedné stránky prvek posunout nebo zvětšit, teprve pak PDF. Umí to FastReport
+  a Stimulsoft, Acrobat totéž nad hotovým PDF.
+  ⚠️ **Data se znovu nevysází** - roztažený prvek dá bílé místo, ne víc textu, a úprava platí jen
+  pro ten jeden tisk. Levnější cesty k témuž: nechat prvek při přetečení narůst do volného místa
+  pod sebou místo zmenšení písma, a přiřadit lince vlastní šablonu (index dnes jen podle agendy,
+  chybí i dávkový tisk). Tohle vytáhnout, až se ukáže, že obojí nestačí.
+
 - **`B170` Formulář si pamatuje poslední filtr** [S] (podnět Jan 18. 9.). Ve formuláři prvku se
   hledá Ctrl+F („rozest"), doladí se nastavení, formulář se zavře a při dalším otevření se musí
   hledat znovu. U formuláře, který se otevírá pořád dokola nad **týmž** prvkem, je to zbytečné -
