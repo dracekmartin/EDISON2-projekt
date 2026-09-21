@@ -885,7 +885,7 @@
                             Cursor="Hand"
                             ToolTip="{Binding InstancePickerHint}">
                         <Border.InputBindings>
-                            <MouseBinding MouseAction="LeftClick" Command="{Binding OpenInstanceListCommand}"/>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding OpenInstancePickerCommand}"/>
                         </Border.InputBindings>
                         <StackPanel Orientation="Horizontal">
                             <Button Content="◀" Command="{Binding PreviousInstanceCommand}"
@@ -914,12 +914,14 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <!-- Šipka dolů je jen značka, že se chip rozbalí; klik obsluhuje celý chip. -->
-                            <TextBlock Text="▾"
-                                       Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
-                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                                       Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
-                                       VerticalAlignment="Center" Margin="4,0,0,0"/>
+                            <!-- Šipka nahoru drží vzhled sousedních šipek; seznam se rozbaluje nad lištu. -->
+                            <Button Content="▲" Command="{Binding OpenInstanceListCommand}"
+                                    Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,0"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                    Cursor="Hand" Margin="4,0,0,0"
+                                    ToolTip="{Binding InstancePickerHint}"/>
                             <Button Content="▶" Command="{Binding NextInstanceCommand}"
                                     Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
                                     Background="Transparent" BorderThickness="0" Padding="4,0"
@@ -941,10 +943,10 @@
                                    Placement="Top" VerticalOffset="-4"
                                    StaysOpen="False" AllowsTransparency="True"
                                    Focusable="False" PopupAnimation="Fade">
-                                <Border Background="{DynamicResource EDTheme.Bg.Panel}"
+                                <Border Background="{DynamicResource EDTheme.Bg.Surface}"
                                         BorderBrush="{DynamicResource EDTheme.Border.Light}"
                                         BorderThickness="1" CornerRadius="3"
-                                        MinWidth="300" MaxWidth="460" Padding="0,4">
+                                        MinWidth="220" MaxWidth="340" Padding="0,4">
                                     <StackPanel>
                                         <edstx:EDSearchTextBox Text="{Binding InstanceFilter, UpdateSourceTrigger=PropertyChanged}"
                                                  Visibility="{Binding ShowInstanceFilter, Converter={StaticResource BoolToVis}}"
@@ -967,22 +969,12 @@
                                                                            Foreground="{DynamicResource EDTheme.Text.Primary}"
                                                                            FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                                                            TextTrimming="CharacterEllipsis"/>
-                                                                <TextBlock Text="{Binding Subtitle}"
-                                                                           Margin="8,0,0,0"
-                                                                           Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                                                                           TextTrimming="CharacterEllipsis"/>
                                                             </StackPanel>
                                                         </Button>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </ScrollViewer>
-                                        <Border Height="1" Margin="0,4"
-                                                Background="{DynamicResource EDTheme.Border.Light}"/>
-                                        <Button Style="{StaticResource InstanceListItemButton}"
-                                                Command="{Binding PickInstancesFromListCommand}"
-                                                Content="{Binding InstancePickerItemText}"/>
                                     </StackPanel>
                                 </Border>
                             </Popup>

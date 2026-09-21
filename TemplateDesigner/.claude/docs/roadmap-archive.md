@@ -5,12 +5,16 @@
 Nález kolegy z 18. 9.: mezi vybranými linkami se listovalo jen šipkami, skok na konkrétní linku
 znamenal proklikat všechny před ní.
 
-Klik na jméno linky ve stavové liště rozbalí seznam vybraných linek s odškrtnutou aktuální; výběr
-linek zůstal dostupný jako poslední položka seznamu. Šipky beze změny.
+Šipka nahoru u jména linky rozbalí seznam vybraných linek s odškrtnutou aktuální. Klik na jméno
+linky dál otevírá výběr linek. Šipky doleva a doprava beze změny.
 
-Rozhodnutí Jan 21. 9.: **rozbalovací seznam místo zvláštního tlačítka** - chip by jinak musel nést
-dvě ovládací místa vedle dvou šipek. S jednou vybranou linkou klik otevírá výběr rovnou jako dřív,
-seznam o jedné položce by byl krok navíc. Hledací pole až nad dvanácti linkami.
+Rozhodnutí Jan 21. 9. po vyzkoušení: **přepínání a výběr mají dvě různá místa** - první návrh věsil
+obojí na jeden klik doprostřed chipu (výběr jako poslední položka seznamu) a naučená cesta k výběru
+tím zmizela. Položky nesou jen „číslo - název"; platnost z výběru instancí se do seznamu nepřenáší.
+Hledací pole až nad dvanácti linkami.
+
+⚠️ Seznam se rozbaluje **až na puštění tlačítka**. Při otevření na stisku si popup vezme myš,
+následující puštění se do něj netrefí a seznam se hned zavře - vypadá to, že v něm nejde nic vybrat.
 
 ## `B160` Zarovnání odjezdů na pevnou šířku (hotovo 18. 9. 2026)
 

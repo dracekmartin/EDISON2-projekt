@@ -125,7 +125,9 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Rozbalovací seznam vybraných instancí ─────────────────────────────────
 
     /// <summary>Jedna položka rozbalovacího seznamu vybraných instancí.</summary>
-    public record InstanceVolba(int Index, string Display, string? Subtitle, bool JeAktualni);
+    /// <remarks>Nese jen to, čím se instance pozná („číslo - název"). Doplňující popis z výběru
+    /// instancí (platnost) sem nepatří, seznam slouží k přepnutí, ne k prohlížení (Jan 21. 9.).</remarks>
+    public record InstanceVolba(int Index, string Display, bool JeAktualni);
 
     /// <summary>Od kolika vybraných instancí má seznam nahoře hledací pole.</summary>
     private const int InstanciNaHledani = 12;
@@ -180,16 +182,8 @@ public class TemplateDesignerViewModel : EDViewModel
     internal static IReadOnlyList<InstanceVolba> SestavVolby(
         IReadOnlyList<AgendaInstance> instance, int aktualni, string hledani) =>
         [.. instance
-            .Select((inst, i) => new InstanceVolba(i, inst.Display, inst.Subtitle, i == aktualni))
-            .Where(v => Vyhovuje(v, hledani))];
-
-    private static bool Vyhovuje(InstanceVolba v, string hledani) =>
-        hledani == ""
-        || v.Display.Contains(hledani, StringComparison.CurrentCultureIgnoreCase)
-        || (v.Subtitle ?? "").Contains(hledani, StringComparison.CurrentCultureIgnoreCase);
-
-    /// <summary>Popisek položky, kterou se ze seznamu jde na výběr instancí.</summary>
-    public string InstancePickerItemText => $"Vybrat {CurrentInstanceLabelPlural}…";
+            .Select((inst, i) => new InstanceVolba(i, inst.Display, i == aktualni))
+            .Where(v => hledani == "" || v.Display.Contains(hledani, StringComparison.CurrentCultureIgnoreCase))];
 
     /// <summary>Popisek hledacího pole v seznamu.</summary>
     public string InstanceFilterHint => $"Hledat {CurrentInstanceLabelPlural}";
@@ -445,7 +439,6 @@ public class TemplateDesignerViewModel : EDViewModel
         OnPropertyChanged(nameof(PreviousInstanceTooltip));
         OnPropertyChanged(nameof(NextInstanceTooltip));
         OnPropertyChanged(nameof(InstancePickerHint));
-        OnPropertyChanged(nameof(InstancePickerItemText));
         OnPropertyChanged(nameof(InstanceFilterHint));
         OnPropertyChanged(nameof(IsSampleDataPreview));
     }
@@ -922,7 +915,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Commands ──────────────────────────────────────────────────────────────
     private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _prevInstance, _nextInstance, _refreshData, _toggleParamsBar, _instanceList;
     private RelayCommand<int>? _selectInstance;
-    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda, _openInstancePicker, _pickFromList;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda, _openInstancePicker;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= Command(Redo,          () => CanRedo);
@@ -938,11 +931,10 @@ public class TemplateDesignerViewModel : EDViewModel
     public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
     public AsyncRelayCommand ChangeAgendaCommand   => _changeAgenda   ??= CommandAsync(ChangeAgendaAsync);
     public AsyncRelayCommand OpenInstancePickerCommand => _openInstancePicker ??= CommandAsync(OpenInstancePickerAsync);
-    // Chip s instancí: s jednou vybranou není mezi čím přepínat, takže klik vede rovnou na výběr
-    // jako dřív. Teprve u více instancí se rozbalí seznam a výběr je v něm poslední položkou.
+    // Šipka rozbaluje seznam vybraných instancí, jméno instance uprostřed chipu otevírá jejich
+    // výběr jako dřív (rozhodnutí Jan 21. 9.) - dvě různé věci, dvě různá místa.
     public RelayCommand OpenInstanceListCommand => _instanceList ??= Command(() =>
     {
-        if (!HasMultipleActiveInstances) { OpenInstancePickerCommand.Execute(null); return; }
         if (DateTime.UtcNow - _instanceListZavrenoV < TimeSpan.FromMilliseconds(250)) return;
         IsInstanceListOpen = !IsInstanceListOpen;
     });
@@ -950,11 +942,6 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         IsInstanceListOpen = false;
         ActiveInstanceIndex = i;
-    });
-    public AsyncRelayCommand PickInstancesFromListCommand => _pickFromList ??= CommandAsync(async () =>
-    {
-        IsInstanceListOpen = false;
-        await OpenInstancePickerAsync();
     });
     public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= Command(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
     public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);

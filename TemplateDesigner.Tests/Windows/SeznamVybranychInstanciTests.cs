@@ -37,12 +37,11 @@ public class SeznamVybranychInstanciTests
         Assert.False(jedina.JeAktualni);
     }
 
+    /// <summary>Seznam ukazuje jen „číslo - název", takže se ani nehledá v doplňujícím popisu.</summary>
     [Fact]
-    public void Hledani_ChytiIDoplnujiciPopis()
+    public void Hledani_NejdeDoDoplnujicihoPopisu()
     {
-        var volby = TemplateDesignerViewModel.SestavVolby(Linky, 0, "CSADAD");
-
-        Assert.Equal([0], volby.Select(v => v.Index));
+        Assert.Empty(TemplateDesignerViewModel.SestavVolby(Linky, 0, "CSADAD"));
     }
 
     [Fact]

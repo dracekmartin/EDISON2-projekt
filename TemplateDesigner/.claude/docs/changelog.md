@@ -5,11 +5,13 @@
 `B168`, nález kolegy z 18. 9. Mezi vybranými linkami se dalo listovat jen šipkami, takže skok
 na konkrétní linku znamenal proklikat všechny před ní.
 
-Kliknutí na jméno linky ve stavové liště teď rozbalí **seznam právě vybraných linek** s odškrtnutou
-tou, která je vidět v náhledu. Výběr linek se nikam neztratil, je v seznamu poslední položkou.
-Šipky doleva a doprava zůstávají.
+Ve stavové liště přibyla u jména linky šipka nahoru a ta rozbalí **seznam právě vybraných linek**
+s odškrtnutou tou, která je vidět v náhledu. Položka ukazuje jen číslo a název, nic dalšího - je to
+přepínač, ne prohlížeč. Šipky doleva a doprava zůstávají.
 
-Při jedné vybrané lince není mezi čím přepínat, takže klik vede rovnou na výběr jako dosud.
+Klik na jméno linky uprostřed otevírá výběr linek jako dosud. Jsou to dvě různé věci (přepnout mezi
+vybranými × vybrat jiné), takže mají dvě různá místa.
+
 Nad dvanácti linkami dostane seznam nahoře hledací pole - u stovky vybraných linek je posouvání
 seznamu k ničemu.
 
