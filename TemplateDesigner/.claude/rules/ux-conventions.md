@@ -145,7 +145,7 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 | Ctrl+Shift+H / Ctrl+Shift+J | Split element horizontálně / vertikálně |
 | Ctrl+Shift+N | Normalizovat pozice (snap na grid) |
 | Šipky | Posun vybraného elementu o **1 mm** |
-| Ctrl+šipky | Posun o **velikost mřížky** (lišta Mřížka: 1 / 2 / 5 mm) |
+| Ctrl+šipky | Posun o **velikost mřížky** (lišta Mřížka: 0,2 / 0,5 / 1 / 2 / 5 / 10 mm) |
 | **Shift+šipky** | **Změna velikosti** o 1 mm - mění se pravá a dolní hrana, levý horní roh drží |
 | Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
 | Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
