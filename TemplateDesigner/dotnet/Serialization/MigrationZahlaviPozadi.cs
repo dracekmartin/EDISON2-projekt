@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Serialization;
 
@@ -33,8 +34,8 @@ public class MigrationZahlaviPozadi : ITemplateMigration
         [ElementTypes.DepartureGrid] = ScheduleElementBase.NoveZahlaviPozadi,
         [ElementTypes.NotesLegend]   = ScheduleElementBase.NoveZahlaviPozadi,
         [ElementTypes.LineTable]     = ScheduleElementBase.NoveZahlaviPozadi,
-        [ElementTypes.Table]         = TableElement.NoveZahlaviPozadi,
-        [ElementTypes.DynamicTable]  = DynamicTableElement.NoveZahlaviPozadi,
+        [ElementTypes.Table]         = TableStyleDefaults.NoveZahlaviPozadi,
+        [ElementTypes.DynamicTable]  = TableStyleDefaults.NoveZahlaviPozadi,
     };
 
     public JsonNode Migrate(JsonNode root)

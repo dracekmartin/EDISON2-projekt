@@ -24,7 +24,7 @@ Rozsah: `dotnet/` (217 souborů, ~49k řádků), `CACHE/ALVA/TemplateDesigner/` 
 | 8 | Panel vlastností má barvy natvrdo (tmavý motiv) | S | ✅ 21. 9. |
 | 9 | Jméno prvku pro uživatele má čtyři zdroje, jeden rozejitý | S | ✅ 21. 9. |
 | 10 | `dev.firmSwitch` zapnutý ve sledovaném configu | XS | ✅ 21. 9. |
-| 11 | `TableElement` a `DynamicTableElement` sdílí opsanou kaskádu | S | ⬜ |
+| 11 | `TableElement` a `DynamicTableElement` sdílí opsanou kaskádu | S | ✅ 21. 9. |
 | 12 | Drobnosti: tooltipy, CS0108, dvojité `<summary>` | XS | ✅ 21. 9. |
 | 13 | Zastaralá tvrzení v `.claude/rules/` | XS | ✅ 21. 9. |
 

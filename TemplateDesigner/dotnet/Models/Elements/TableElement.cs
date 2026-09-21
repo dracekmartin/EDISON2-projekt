@@ -158,7 +158,7 @@ public class TableElement : TemplateElement
         var t = new TableElement
         {
             Mode        = TableMode.Fixed,
-            HeaderStyle = new TextStyle { BackgroundColor = NoveZahlaviPozadi },
+            HeaderStyle = new TextStyle { BackgroundColor = TableStyleDefaults.NoveZahlaviPozadi },
             Columns     = [.. Enumerable.Range(0, columns).Select(_ => new TableColumn { Header = "", Width = 0f })],
         };
         t.Rows = [.. Enumerable.Range(0, rows).Select(_ => new TableRow
@@ -263,48 +263,19 @@ public class TableElement : TemplateElement
 
     // ─── Style resolution (kaskáda column → element → table defaults → CellDefaults) ──
 
-    // Gettery (ne static readonly) - aby font dědily z aktuálního CellDefaults.Default (ambient
-    // = výchozí font šablony). Tyhle rodiče font nepřebíjejí, jen Bold/barvy.
-    /// <summary>Výchozí parent styl pro záhlaví tabulky. Bold + šedé pozadí (#FFE8E8E8) + tmavě šedý text (#FF333333).</summary>
-    private static ResolvedTextStyle TableHeaderParent => CellDefaults.Default with
-    {
-        Bold = true,
-        TextColor = "#FF333333",
-    };
-
-    // Podbarvení záhlaví se sem záměrně nepíše: prázdná hodnota u prvku má znamenat „nekreslit nic",
-    // a zapečená záloha v kaskádě by ji vrátila zpátky na šedou. Novému prvku se šedá zapisuje
-    // (NoveZahlaviPozadi), existujícím ji dopsala migrace 1.11.0.
-    /// <summary>Podbarvení záhlaví, které dostane <b>nově vložená</b> tabulka (zapisuje se do prvku).</summary>
-    public const string NoveZahlaviPozadi = "#FFE8E8E8";
-
-    /// <summary>Výchozí parent styl pro datové buňky. Tmavě šedý text (#FF222222) na průhledném pozadí.</summary>
-    private static ResolvedTextStyle TableDataParent => CellDefaults.Default with
-    {
-        TextColor = "#FF222222",
-    };
-
-    /// <summary>Výchozí parent styl pro souhrnné řádky. Bold + světle šedé pozadí (#FFF0F0F0).</summary>
-    private static ResolvedTextStyle TableSummaryParent => CellDefaults.Default with
-    {
-        Bold = true,
-        TextColor = "#FF222222",
-        BackgroundColor = "#FFF0F0F0",
-    };
-
     /// <summary>Parent kaskády pro element-level záhlaví CellStyleVM (= baked defaults).</summary>
-    public ResolvedTextStyle ResolveElementHeaderParent() => TableHeaderParent;
+    public ResolvedTextStyle ResolveElementHeaderParent() => TableStyleDefaults.Header;
 
     /// <summary>Parent kaskády pro element-level data CellStyleVM (= baked defaults).</summary>
-    public ResolvedTextStyle ResolveElementDataParent() => TableDataParent;
+    public ResolvedTextStyle ResolveElementDataParent() => TableStyleDefaults.Data;
 
     /// <summary>Parent kaskády pro per-column header override.</summary>
     public ResolvedTextStyle ResolveColumnHeaderParent() =>
-        (HeaderStyle ?? new TextStyle()).Resolve(TableHeaderParent);
+        (HeaderStyle ?? new TextStyle()).Resolve(TableStyleDefaults.Header);
 
     /// <summary>Parent kaskády pro per-column data override.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() =>
-        (DataStyle ?? new TextStyle()).Resolve(TableDataParent);
+        (DataStyle ?? new TextStyle()).Resolve(TableStyleDefaults.Data);
 
     // Kaskáda column → element → baked delegována do sdíleného jádra (TableLayout.ResolveCascade) -
     // stejně jako DynamicTable/StopList. Legacy col.Alignment = HAlign fallback jen když ho
@@ -1054,7 +1025,7 @@ public class TableElement : TemplateElement
         for (int colIdx = 0; colIdx < cols.Count; colIdx++)
         {
             var col = cols[colIdx];
-            var cellStyle = TableSummaryParent;
+            var cellStyle = TableStyleDefaults.Summary;
             string content = "";
 
             if (colIdx < row.Cells.Count)
@@ -1066,7 +1037,7 @@ public class TableElement : TemplateElement
                 if (cellFormat is not null)
                     content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
-                if (cell.Style is { } cs) cellStyle = cs.Resolve(TableSummaryParent);
+                if (cell.Style is { } cs) cellStyle = cs.Resolve(TableStyleDefaults.Summary);
 
                 // Legacy col.Alignment fallback, jen pokud cell.Style neurčil HAlign
                 if (cell.Style?.HAlign is null)
@@ -1082,7 +1053,7 @@ public class TableElement : TemplateElement
 
         return new(RowKind.Summary, rowH, specs)
         {
-            Background        = ColorHex.Parse(row.BackgroundColor, TableSummaryParent.ParsedBackgroundColor),
+            Background        = ColorHex.Parse(row.BackgroundColor, TableStyleDefaults.Summary.ParsedBackgroundColor),
             VerticalLinePaint = ColumnGridPaint(sepPaint),
             LineBelowPaint    = Grid.ShowRowLines ? sepPaint : null,
         };

@@ -44,7 +44,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     public float HeaderHeight { get; set; } = 8f;
 
     /// <summary>Styl záhlaví tabulky. Null = výchozí (Bold, #E8E8E8 pozadí, #333333 text).</summary>
-    public TextStyle? HeaderStyle { get; set; } = new() { BackgroundColor = NoveZahlaviPozadi };
+    public TextStyle? HeaderStyle { get; set; } = new() { BackgroundColor = TableStyleDefaults.NoveZahlaviPozadi };
 
     /// <summary>Styl datových buněk tabulky. Null = výchozí (#222222 text, průhledné pozadí).</summary>
     public TextStyle? DataStyle { get; set; }
@@ -106,43 +106,19 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
 
     // ─── Style resolution (kaskáda column → element → table defaults → CellDefaults) ──
 
-    private static ResolvedTextStyle TableHeaderParent => CellDefaults.Default with
-    {
-        Bold = true,
-        TextColor = "#FF333333",
-    };
-
-    // Podbarvení záhlaví se sem záměrně nepíše: prázdná hodnota u prvku má znamenat „nekreslit nic",
-    // a zapečená záloha v kaskádě by ji vrátila zpátky na šedou. Novému prvku se šedá zapisuje
-    // (NoveZahlaviPozadi), existujícím ji dopsala migrace 1.11.0.
-    /// <summary>Podbarvení záhlaví, které dostane <b>nově vložená</b> tabulka (zapisuje se do prvku).</summary>
-    public const string NoveZahlaviPozadi = "#FFE8E8E8";
-
-    private static ResolvedTextStyle TableDataParent => CellDefaults.Default with
-    {
-        TextColor = "#FF222222",
-    };
-
-    private static ResolvedTextStyle TableSummaryParent => CellDefaults.Default with
-    {
-        Bold = true,
-        TextColor = "#FF222222",
-        BackgroundColor = "#FFF0F0F0",
-    };
-
     /// <summary>Parent kaskády pro element-level záhlaví CellStyleVM (= baked defaults).</summary>
-    public ResolvedTextStyle ResolveElementHeaderParent() => TableHeaderParent;
+    public ResolvedTextStyle ResolveElementHeaderParent() => TableStyleDefaults.Header;
 
     /// <summary>Parent kaskády pro element-level data CellStyleVM (= baked defaults).</summary>
-    public ResolvedTextStyle ResolveElementDataParent() => TableDataParent;
+    public ResolvedTextStyle ResolveElementDataParent() => TableStyleDefaults.Data;
 
     /// <summary>Parent kaskády pro per-column header override.</summary>
     public ResolvedTextStyle ResolveColumnHeaderParent() =>
-        (HeaderStyle ?? new TextStyle()).Resolve(TableHeaderParent);
+        (HeaderStyle ?? new TextStyle()).Resolve(TableStyleDefaults.Header);
 
     /// <summary>Parent kaskády pro per-column data override.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() =>
-        (DataStyle ?? new TextStyle()).Resolve(TableDataParent);
+        (DataStyle ?? new TextStyle()).Resolve(TableStyleDefaults.Data);
 
     // Kaskáda column → element → baked delegována do sdíleného jádra (TableLayout.ResolveCascade).
     private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col) =>
@@ -402,7 +378,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         for (int colIdx = 0; colIdx < cols.Count; colIdx++)
         {
             var col = cols[colIdx];
-            var cellStyle = TableSummaryParent;
+            var cellStyle = TableStyleDefaults.Summary;
             string content = "";
 
             if (colIdx < row.Cells.Count)
@@ -414,7 +390,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
                 if (cellFormat is not null)
                     content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
-                if (cell.Style is { } cs) cellStyle = cs.Resolve(TableSummaryParent);
+                if (cell.Style is { } cs) cellStyle = cs.Resolve(TableStyleDefaults.Summary);
                 if (cell.Style?.HAlign is null)
                     cellStyle = cellStyle with { HAlign = col.Alignment };
             }
@@ -428,7 +404,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
 
         return new(RowKind.Summary, rowH, specs)
         {
-            Background = ColorHex.Parse(row.BackgroundColor, TableSummaryParent.ParsedBackgroundColor),
+            Background = ColorHex.Parse(row.BackgroundColor, TableStyleDefaults.Summary.ParsedBackgroundColor),
             VerticalLinePaint = ColumnGridPaint(sepPaint),
             LineBelowPaint = Grid.ShowRowLines ? sepPaint : null,
         };

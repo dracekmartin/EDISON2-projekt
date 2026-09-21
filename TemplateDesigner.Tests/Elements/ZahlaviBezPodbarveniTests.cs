@@ -1,6 +1,7 @@
 using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Tests.Elements;
 
@@ -27,8 +28,8 @@ public class ZahlaviBezPodbarveniTests
     [Fact]
     public void NovaTabulka_NeseSvujOdstinZapsany()
     {
-        Assert.Equal(TableElement.NoveZahlaviPozadi, TableElement.CreateGrid(2, 2).HeaderStyle?.BackgroundColor);
-        Assert.Equal(DynamicTableElement.NoveZahlaviPozadi, new DynamicTableElement().HeaderStyle?.BackgroundColor);
+        Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, TableElement.CreateGrid(2, 2).HeaderStyle?.BackgroundColor);
+        Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, new DynamicTableElement().HeaderStyle?.BackgroundColor);
     }
 
     [Fact]
