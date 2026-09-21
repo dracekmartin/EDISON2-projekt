@@ -88,6 +88,14 @@ public class AppBootstrapper
 
         var prep = PrepareLogin(prefs);
 
+        // Brány legacy EDLOADERu (zákaz přihlašování, běžící instalace na serveru): zástupce přímo
+        // na EDISONMAIN2.exe je obchází, proto si je shell dělá sám.
+        if (!PassesPreLoginGates(prep.LoginRest, services))
+        {
+            Shutdown();
+            return null;
+        }
+
         // Auto-login (Windows SSO) má přednost; když neprojde, fallback na dialog.
         if (!TryAutoLogin(prep.LoginRest, prefs, out var login) && !TryLogin(prep.LoginRest, prefs, out login))
         {
@@ -266,6 +274,37 @@ public class AppBootstrapper
         loginRest.Idfa = startCompany.Id;
 
         return new PreLoginContext(loginRest, companies, startCompany, server, port);
+    }
+
+    /// <summary>
+    /// Parita s EDLOADER <c>CheckLogin</c> + <c>UpdateIsRunning</c>: zákaz přihlašování (kdo ho zadal,
+    /// smí ho zrušit) a <c>pending</c> serverové instalace. False = shell se má ukončit.
+    /// </summary>
+    protected virtual bool PassesPreLoginGates(MLRest loginRest, EDServices services)
+    {
+        var rest = new MLRestAdapter(loginRest);
+        string ip = LoginGate.StationIp(), user = Environment.UserName;
+        var permission = LoginGate.Query(rest, ip, user);
+        if (!permission.Allowed)
+        {
+            if (permission.CanAlter
+                && services.PopupDisplayer.Confirm("Je zakázáno přihlašování uživatelů, přejete si jej povolit?"))
+            {
+                LoginGate.Allow(rest, ip, user);
+            }
+            else
+            {
+                services.PopupDisplayer.Info("Je zakázáno přihlašování uživatelů, aplikace bude ukončena.");
+                return false;
+            }
+        }
+
+        if (CreateUpdater().LoadSettings(rest).Pending)
+        {
+            services.PopupDisplayer.Info("Probíhá aktualizace systému, aplikace bude ukončena.");
+            return false;
+        }
+        return true;
     }
 
     /// <summary>Připojení z příkazové řádky má přednost před <c>EDISONini.xml</c>.</summary>

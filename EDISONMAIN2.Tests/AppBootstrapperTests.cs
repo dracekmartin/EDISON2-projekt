@@ -39,6 +39,15 @@ public class AppBootstrapperTests
             EnsureConfiguredCalled = true;
             return Configured;
         }
+
+        public bool PreLoginGatesPass { get; set; } = true;
+        public bool PreLoginGatesCalled { get; private set; }
+
+        protected override bool PassesPreLoginGates(MLRest loginRest, EDServices services)
+        {
+            PreLoginGatesCalled = true;
+            return PreLoginGatesPass;
+        }
         public LicenceAcquireOutcome SessionOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
         public IPopupDisplayer Popup { get; set; } = Substitute.For<IPopupDisplayer>();
         public IWindowNavigator Nav { get; set; } = Substitute.For<IWindowNavigator>();
@@ -169,6 +178,21 @@ public class AppBootstrapperTests
         Assert.Null(result);
         Assert.True(b.ShutdownCalled);
         Assert.False(b.TryLoginCalled);   // setup zrušen → ani login se nezkouší
+        Assert.False(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_PreLoginGateRefuses_ShutsDown_BeforeLogin()
+    {
+        // Zákaz přihlašování / běžící instalace na serveru (parita s EDLOADER) - konec ještě před loginem.
+        var b = new TestableBootstrapper { PreLoginGatesPass = false };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.PreLoginGatesCalled);
+        Assert.True(b.ShutdownCalled);
+        Assert.False(b.TryLoginCalled);
         Assert.False(b.BuildShellCalled);
     }
 

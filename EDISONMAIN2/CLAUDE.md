@@ -24,6 +24,8 @@ v repu **publish nesmí vydat** - v `C:\Edison\` leží živý soubor legacy apl
 (`ConnectionOverride`) mají přednost a wizard přeskočí: menu „Připojit k databázi" jimi spouští
 **novou instanci** proti jinému serveru (session v procesu je na jeden server); uložená připojení
 jsou v `LocalPrefs.Connections`, výchozí z `EDISONini.xml` zůstává centrálně řízené (legacy `forceChange`).
+Před loginem shell opakuje brány EDLOADERu (`PassesPreLoginGates`: zákaz přihlašování přes `LoginGate`,
+`pending` serverové instalace z `LoadSettings`), protože zástupce přímo na exe EDLOADER obchází.
 
 ## Strom modulů = generovaný snapshot
 

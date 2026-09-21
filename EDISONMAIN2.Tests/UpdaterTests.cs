@@ -78,6 +78,25 @@ public class UpdaterTests
     }
 
     [Fact]
+    public void LoadSettings_Pending_Parsed()
+    {
+        Assert.True(new Updater().LoadSettings(MockSettings("pending~1")).Pending);
+        Assert.False(new Updater().LoadSettings(MockSettings("pending~0")).Pending);
+    }
+
+    [Fact]
+    public void Check_Pending_Broken_EvenWhenUpdatesDisabled()
+    {
+        // Parita s EDLOADER UpdateIsRunning: během serverové instalace se klient nepřihlásí.
+        var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260526.1" };
+
+        var result = updater.Check(new UpdateSettings(false, "", @"\\edison", "", Pending: true));
+
+        Assert.Equal(UpdateOutcome.Broken, result.Outcome);
+        Assert.Contains("aktualizace systému", result.Message);
+    }
+
+    [Fact]
     public void SourceDir_LocalSourcePathPreferred_FallbackEdisonPath()
     {
         Assert.Equal(@"\\share", new UpdateSettings(true, "", @"\\edison", @"\\share").SourceDir);
