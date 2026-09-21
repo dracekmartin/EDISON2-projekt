@@ -111,6 +111,15 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
+- **`B173` Projít sdílené komponenty s kolegou** [?] (domluveno 21. 9., na program 22. 9.).
+  Sbírka návrhů, které sahají do `EDControls`, tedy i do legacy formulářů v shellu - proto se
+  neberou jednotlivě, ale projdou se najednou.
+  1. **Zrušit hlavičku „Položka | Hodnota" v EDInputFormu** - dvousloupcový formulář je čitelný
+     sám, hlavička bere 30 bodů výšky tam, kde je místa nejmíň. Vzniklo 26. 5. (`5d5afdb4`) kvůli
+     souladu s EDListem; tam ale hlavička pojmenovává sloupce, podle kterých jde řadit.
+  2. Na tutéž komponentu čekají `B169` (v úzkém panelu není vidět hodnota) a `B170` (zapamatovaný
+     filtr); `B18` (deklarativní pravidla) je větší a patří do téhož rozhovoru.
+
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
   engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi, a nad ním
