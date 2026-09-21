@@ -237,7 +237,7 @@ public class AppBootstrapper
         if (_connectionOverride is not null) return true;
         if (SettingsLoader.IsConfigured()) return true;
 
-        SettingsLoader.Load();   // naplní Current dev defaulty pro předvyplnění polí
+        SettingsLoader.Load();   // naplní Current pro předvyplnění polí (dev server jen v DEBUG)
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
         {

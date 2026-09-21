@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/` |
 | **Odvozeno** | 4 read-only subagenti na oblasti shell / startup / EDControls infra / EDControls controls (~220 souborů), EDUPDATE2 ručně; každý nález ověřen citací kódu na HEAD |
 
-**Hotovo: 3 / 44**
+**Hotovo: 5 / 44**
 
 ## Jak s dokumentem zacházet
 
@@ -393,7 +393,11 @@ Největší soubory: `EdisonMainViewModel.cs` 1525 ř., `EDControlStyles.xaml` 1
 
 ### A11 · Setup wizard v produkci předvyplní dev server M-line
 
-- [ ] **Stav:** otevřeno
+- [x] **Stav:** vyřešeno (2026-09-21, commit s touto změnou) - dev host jen pod
+  `SettingsLoader.UseDevDefaults` (DEBUG true, Release false, settable pro testy), REST port 57770
+  zůstává default vždy; `ServerSettings.Host` default prázdný. Oddělení `ServerSettings` od statického
+  `Current` (druhá část návrhu) záměrně ne - bez A10 by to byl jen přesun. Testy `SettingsLoaderTests`
+  (obě větve bez `#if`).
 - **P2 · S** · Závisí na: A10 (dev podmínka) · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** `SettingsLoader.Load()` doplní prázdný host/port „dev defaulty" a bootstrapper
   ho volá právě proto, aby wizard měl co předvyplnit. Na stanici zákazníka bez `EDISONini.xml`
@@ -812,7 +816,10 @@ Největší soubory: `EdisonMainViewModel.cs` 1525 ř., `EDControlStyles.xaml` 1
 
 ### A35 · Testovací okna a „Test funkcí" v produkčním exe a menu bez gate 🔸
 
-- [ ] **Stav:** otevřeno
+- [x] **Stav:** vyřešeno 9500b872 (2026-09-21) - menu „Test funkcí" má `Visibility` z
+  `InternalDiagnostics.Enabled` (DEBUG vždy, Release jen doména M-line - kolegové validují Release
+  build), TemplateDesigner a „Spustit starý shell" přesunuty do Nástrojů. Test okna zůstávají v exe
+  (ne `#if DEBUG`): gate je runtime, ať ho jde testovat bez Release buildu.
 - **P3 · S** · Závisí na: A10 (dev flag) · Původ: nový (2026-09-20)
 - **Důkaz:** `EdisonMainWindow.xaml:168-187` `<MenuItem Header="Test funkcí">` bez `Visibility`
   (Test EDInputForm, Test EDList, Test EDViewModel, countdown, overlay, „Vyvolat chybu");
