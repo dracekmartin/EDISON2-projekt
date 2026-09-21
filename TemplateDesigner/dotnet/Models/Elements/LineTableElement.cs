@@ -2868,7 +2868,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         float headerFontPx = headerResolved.FontSize * PtToMm * ctx.MmToPx;
         using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
-        float currentY = RenderSectionHeader(ctx, "Linkový JŘ - zastávky × spoje", X, Y, Width, headerH,
+        float currentY = RenderSectionHeader(ctx, "Tabulka spojů - zastávky × spoje", X, Y, Width, headerH,
             headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid);
 
         float dataFontPx = dataResolved.FontSize * PtToMm * ctx.MmToPx;

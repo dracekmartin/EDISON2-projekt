@@ -236,13 +236,13 @@ public class HelpDialogViewModel : EDViewModel
                 new("Text - statický nebo s poli {NAZEV}", "paleta"),
                 new("Obrázek - ze souboru (auto zmenšení velkých)", "paleta"),
                 new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
-                new("Kód - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
-                new("Dynamická tabulka - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
-                new("Pevná tabulka - mřížku vyplňujete sami (rozměr zadáte při vložení)", "paleta"),
+                new("Kód (QR, čárový) - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
+                new("Tabulka (z dat) - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
+                new("Tabulka (pevná) - mřížku vyplňujete sami (rozměr zadáte při vložení)", "paleta"),
                 new("Seznam zastávek - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
                 new("Minuty odjezdů - po skupinách dnů", "paleta (JŘ agenda)"),
                 new("Poznámky - značky, omezení a vysvětlivky pod vývěskou", "paleta (JŘ agenda)"),
-                new("Linkový JŘ - tabulka zastávky × spoje (linkové a knižní JŘ)", "paleta (JŘ agenda)"),
+                new("Tabulka spojů - zastávky × spoje (linkové a knižní JŘ)", "paleta (JŘ agenda)"),
             ],
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
                   "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr), min/max počet řádků " +
@@ -306,21 +306,21 @@ public class HelpDialogViewModel : EDViewModel
 
         new HelpSection
         {
-            Title = "🚆 Linkový JŘ - tabulka zastávky × spoje",
+            Title = "🚆 Tabulka spojů - linkový a knižní JŘ",
             Entries =
             [
                 new("Které sloupce popisu se tisknou (km, tarifní číslo, zóna, MHD, označník)",
-                    "prvek Linkový JŘ → Sloupce"),
+                    "prvek Tabulka spojů → Sloupce"),
                 new("Řádek platnosti pod číslem spoje - denní značky, místenka, atributy vozidla",
-                    "prvek Linkový JŘ → Řádky"),
-                new("Obousměrná sestava - spoje opačného směru nalevo od zastávek", "prvek Linkový JŘ"),
+                    "prvek Tabulka spojů → Řádky"),
+                new("Obousměrná sestava - spoje opačného směru nalevo od zastávek", "prvek Tabulka spojů"),
                 new("Tabulka širší než prvek se rozřeže na bloky pod sebe", "automaticky"),
-                new("Dorovnat prázdnými sloupci - volné místo se proloží mezi spoje", "prvek Linkový JŘ → Šířka"),
+                new("Dorovnat prázdnými sloupci - volné místo se proloží mezi spoje", "prvek Tabulka spojů → Šířka"),
                 new("Nejmenší a největší šířka sloupce spoje - řídí, kolik spojů je na bloku",
-                    "prvek Linkový JŘ → Šířka"),
-                new("Tučné zastávky a čáry u zastávek podle atributů trasy", "prvek Linkový JŘ → Datové buňky"),
-                new("Sloučit popis u příjezdu a odjezdu (tvar postskriptového tisku)", "prvek Linkový JŘ"),
-                new("Přípojné řádky Vyčká / Navazuje pod zastávkou", "prvek Linkový JŘ → Řádky"),
+                    "prvek Tabulka spojů → Šířka"),
+                new("Tučné zastávky a čáry u zastávek podle atributů trasy", "prvek Tabulka spojů → Datové buňky"),
+                new("Sloučit popis u příjezdu a odjezdu (tvar postskriptového tisku)", "prvek Tabulka spojů"),
+                new("Přípojné řádky Vyčká / Navazuje pod zastávkou", "prvek Tabulka spojů → Řádky"),
             ],
             Tip = "Zastávka, která má v trase atribut příjezdu a odjezdu, zabírá dva řádky. Vypnuté „Sloučit popis“ " +
                   "zopakuje název a km na obou (tvar windowsového tisku), zapnuté je vypíše jednou přes oba " +

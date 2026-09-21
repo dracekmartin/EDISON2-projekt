@@ -326,7 +326,7 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.ImageElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, EAN, ...)" Tag="BarcodeElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový)" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
@@ -350,7 +350,7 @@
                         </Button>
                         <!-- Hlavní tabulka sestavy před poznámkami - poznámky jsou doplněk. U zastávkových
                              to pořadí drží samo, u linkových by poznámky stály před svou tabulkou. -->
-                        <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Linkový JŘ (zastávky × spoje)" Tag="LineTableElement"
+                        <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Tabulka spojů (zastávky × spoje)" Tag="LineTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>

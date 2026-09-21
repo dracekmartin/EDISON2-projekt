@@ -317,21 +317,15 @@ Pravidla obsahu (ZÁVAZNÁ):
         foreach (var t in AgendaCapabilities.ScheduleElementTypes(elementKind)) yield return t;
     }
 
-    private static string FriendlyName(string type) => type switch
+    // Jméno prvku drží ElementNames (totéž vidí uživatel v paletě); tady se k němu jen doplní,
+    // do které sestavy prvek patří - asistent jinak neví, kdy ho má vůbec nabízet.
+    internal static string FriendlyName(string type) => ElementNames.ForType(type) + (type switch
     {
-        ElementTypes.Text          => "Text",
-        ElementTypes.Image         => "Obrázek",
-        ElementTypes.Rectangle     => "Obdélník",
-        ElementTypes.Line          => "Čára",
-        ElementTypes.Barcode       => "Kód (QR / čárový)",
-        ElementTypes.DynamicTable  => "Tabulka (dynamická)",
-        ElementTypes.Table         => "Tabulka (pevná)",
-        ElementTypes.StopList      => "Seznam zastávek (zastávkový JŘ)",
-        ElementTypes.DepartureGrid => "Minuty odjezdů (zastávkový JŘ)",
-        ElementTypes.NotesLegend   => "Legenda poznámek (zastávkový JŘ)",
-        ElementTypes.LineTable     => "Tabulka linky (linkový JŘ)",
-        _ => type
-    };
+        ElementTypes.StopList or ElementTypes.DepartureGrid or ElementTypes.NotesLegend
+            => " (zastávkový JŘ)",
+        ElementTypes.LineTable => " (linkový a knižní JŘ)",
+        _ => "",
+    });
 
     private static string? ElementNote(string type) => type switch
     {

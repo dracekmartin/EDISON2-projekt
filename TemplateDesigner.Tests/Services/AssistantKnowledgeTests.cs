@@ -1,3 +1,4 @@
+using TemplateDesigner.Models;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner.Tests.Services;
@@ -50,7 +51,7 @@ public class AssistantKnowledgeTests
     {
         var catalog = CapabilityCatalog.BuildElementCatalog("LINE");
 
-        Assert.Contains("Tabulka linky", catalog);
+        Assert.Contains(ElementNames.ForType(ElementTypes.LineTable), catalog);
         Assert.DoesNotContain("vlastnosti se nepodařilo načíst", catalog);
     }
 
@@ -81,14 +82,14 @@ public class AssistantKnowledgeTests
     /// km sloupce má v linkové agendě jen tabulka linky (nález Jan 16. 9. na živé odpovědi).
     /// </remarks>
     [Theory]
-    [InlineData("LINE", "Tabulka linky")]
-    [InlineData("STOP", "Seznam zastávek")]
-    public void PromptRikaKteryPrvekMaPrednost(string elementKind, string ocekavanyPrvek)
+    [InlineData("LINE", ElementTypes.LineTable)]
+    [InlineData("STOP", ElementTypes.StopList)]
+    public void PromptRikaKteryPrvekMaPrednost(string elementKind, string ocekavanyTyp)
     {
         var prompt = CapabilityCatalog.BuildSystemPrompt("Linkový JŘ (AD)", null, 2, elementKind);
 
         Assert.Contains("Který prvek má přednost", prompt);
-        Assert.Contains(ocekavanyPrvek, prompt);
+        Assert.Contains(ElementNames.ForType(ocekavanyTyp), prompt);
         Assert.Contains("Nenabízej výběr mezi nimi", prompt);
     }
 
