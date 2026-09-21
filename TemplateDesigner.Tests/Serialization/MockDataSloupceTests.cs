@@ -25,7 +25,7 @@ public class MockDataSloupceTests
     [Fact]
     public void DefiniceSloupcu_SePosilaServeru()
     {
-        var input = CacheAgendaProvider.MockDataInput(Definice);
+        var input = CacheAgendaProvider.MockDataInput(Definice, "cs");
 
         Assert.Equal(Definice, input["DEFINICE_SLOUPCU"]?.Value?.ToString());
     }
@@ -42,7 +42,7 @@ public class MockDataSloupceTests
     [InlineData("")]
     public void BezVlastnichSloupcu_SeKlicNeposila(string? definice)
     {
-        var input = CacheAgendaProvider.MockDataInput(definice);
+        var input = CacheAgendaProvider.MockDataInput(definice, "cs");
 
         Assert.DoesNotContain(input, kvp => kvp.Key == "DEFINICE_SLOUPCU");
     }
@@ -53,9 +53,9 @@ public class MockDataSloupceTests
     [Fact]
     public void ZmenaDefinice_ZmeniKlicCache()
     {
-        string bez = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", null);
-        string s = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice);
-        string jina = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", """[{"key":"VSE"}]""");
+        string bez = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", null, "cs");
+        string s = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs");
+        string jina = CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", """[{"key":"VSE"}]""", "cs");
 
         Assert.NotEqual(bez, s);
         Assert.NotEqual(s, jina);
@@ -72,8 +72,35 @@ public class MockDataSloupceTests
     public void StejnaDefinice_DaStejnyKlic()
     {
         Assert.Equal(
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice),
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice));
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs"),
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs"));
+    }
+
+    // ── jazyk ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Jazyk šablony se serveru posílá i do ukázkových dat - podle něj překládá texty značek.
+    /// </summary>
+    [Fact]
+    public void Jazyk_SePosilaServeru()
+    {
+        Assert.Equal("sk", CacheAgendaProvider.MockDataInput(null, "sk")["JAZYK"]?.Value?.ToString());
+    }
+
+    /// <summary>
+    /// Jiný jazyk = jiný klíč, jinak se vrátí vzorek v původním jazyce.
+    /// </summary>
+    /// <remarks>
+    /// Přepnutí šablony na slovenštinu <b>bez vybrané linky</b> do 21. 9. neudělalo nic: přenačtení
+    /// se spustilo, ale okamžitě se vrátilo ze staré cache, protože jazyk v klíči nebyl. S vybranou
+    /// linkou to fungovalo, takže to vypadalo jako nahodilá nespolehlivost.
+    /// </remarks>
+    [Fact]
+    public void ZmenaJazyka_ZmeniKlicCache()
+    {
+        Assert.NotEqual(
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs"),
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "sk"));
     }
 
     /// <summary>Dvě agendy se nesmí potkat v jednom klíči, ani když mají stejnou definici.</summary>
@@ -81,7 +108,7 @@ public class MockDataSloupceTests
     public void RuzneAgendy_MajiRuznyKlic()
     {
         Assert.NotEqual(
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice),
-            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_MHD", Definice));
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_AD", Definice, "cs"),
+            CacheAgendaProvider.MockCacheKey("ZASTAVKOVY_JR_MHD", Definice, "cs"));
     }
 }

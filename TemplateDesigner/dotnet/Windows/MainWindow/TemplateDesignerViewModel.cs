@@ -2959,8 +2959,9 @@ public class TemplateDesignerViewModel : EDViewModel
         // Definice sloupců jde i do ukázkových dat - jinak náhled bez vybrané instance ukazuje
         // rozvržení podle linky a vlastní sloupce se v něm neprojeví (#13158).
         var columnsDefJson = CurrentColumnsDefinitionJson();
-        if (CacheProvider.TryGetCachedMockData(agendaCode, columnsDefJson, out _)) return;   // už načteno (i negativně)
-        await Task.Run(() => CacheProvider.GetMockData(agendaCode, columnsDefJson));
+        var jazyk = JazykSablony;
+        if (CacheProvider.TryGetCachedMockData(agendaCode, columnsDefJson, jazyk, out _)) return;   // už načteno (i negativně)
+        await Task.Run(() => CacheProvider.GetMockData(agendaCode, columnsDefJson, jazyk));
         // Náhled se mezitím nakreslil ze syntetických dat - překresli s reálnými mock daty.
         if (State.CurrentTemplate.AgendaCode == agendaCode) RequestPreviewRefresh?.Invoke();
     }
@@ -3617,7 +3618,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // nejsou načtená, spadne to na syntetická data ze schématu (priorita 3) a prefetch
         // spuštěný při změně agendy je po dokončení doplní + překreslí náhled.
         if (mockData is null && agendaCode is not null && CacheProvider is not null
-            && CacheProvider.TryGetCachedMockData(agendaCode, CurrentColumnsDefinitionJson(), out var cachedMock))
+            && CacheProvider.TryGetCachedMockData(agendaCode, CurrentColumnsDefinitionJson(), JazykSablony, out var cachedMock))
             mockData = cachedMock?.WithCulture(culture);
 
         // Priorita 3: syntetická mock data ze schématu

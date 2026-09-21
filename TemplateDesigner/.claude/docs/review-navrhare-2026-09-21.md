@@ -19,8 +19,8 @@ Rozsah: `dotnet/` (217 souborů, ~49k řádků), `CACHE/ALVA/TemplateDesigner/` 
 | 3 | `TemplateDesignerViewModel` má 4217 řádků | M | ⬜ |
 | 4 | Allowlist `ServerSideParams` je ruční a má duplicity | S | ⬜ |
 | 5 | Dialog sloupců se zakládá kopií (8 barevných příkazů) | S | ⬜ |
-| 6 | Náhled na ukázkových datech ignoruje jazyk šablony | S | ⬜ |
-| 7 | Výška řádku minut se počítá z jiného písma, než se kreslí | S | ⬜ |
+| 6 | Náhled na ukázkových datech ignoruje jazyk šablony | S | ✅ 21. 9. |
+| 7 | Výška řádku minut se počítá z jiného písma, než se kreslí | S | ✅ 21. 9. |
 | 8 | Panel vlastností má barvy natvrdo (tmavý motiv) | S | ✅ 21. 9. |
 | 9 | Jméno prvku pro uživatele má čtyři zdroje, jeden rozejitý | S | ✅ 21. 9. |
 | 10 | `dev.firmSwitch` zapnutý ve sledovaném configu | XS | ✅ 21. 9. |
