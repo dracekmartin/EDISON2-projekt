@@ -10,6 +10,89 @@ Include (%occInclude, GENERAL)
 Class ALVA.TemplateDesigner.Tests.SlucovaniVariantProbe
 {
 
+/// Konkrétní vývěsky jedné linky, na kterých je vidět rozdíl mezi novým a starým pravidlem
+/// slučování (`B157`). Hledá stránku, kde se zapnutým slučováním něco zmizí (jede jen část jiné
+/// trasy) **a zároveň** zůstane varianta, kterou by staré pravidlo slilo (zacházka uprostřed).
+/// Na takové vývěsce jde obojí ukázat najednou.
+///
+/// IN: `SKUPINA_LINEK_ID`, `LINKA_ID`, `MAXOUT` (kolik vypsat, výchozí 8).
+/// OUT: `zastavka~<n>` = `<směr> <název>  variant=<n>, slije se nove=<n>, stare by slilo=<n>`.
+ClassMethod RozdilPoZastavkach(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s sku = $g(^||ML("IN","SKUPINA_LINEK_ID")), lin = $g(^||ML("IN","LINKA_ID"))
+		s maxOut = +$g(^||ML("IN","MAXOUT"))
+		s:maxOut<1 maxOut = 8
+
+		k ^||ML("IN")
+		s ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+		s ^||ML("IN","SLUCOVAT_PODMNOZINY") = "false"
+		k ^||ML("OUT")
+		d ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+		m odpoved = ^||ML("OUT")
+		k ^||ML("OUT")
+
+		k nalez
+		s stranek = 0, key = ""
+		f {
+			s key = $o(odpoved(key))
+			q:key=""
+			continue:'$isvalidnum(key)
+			s stranek = stranek + 1
+			s page = ##class(%DynamicObject).%FromJSON(odpoved(key))
+			s vt = page.values.%Get("VARIANTY_TRAS")
+			continue:'$isobject(vt)
+			s pocetVar = vt.%Size()
+			continue:pocetVar<3
+
+			k sig
+			s zastavky = page.rows.%Get("ZASTAVKY")
+			continue:'$isobject(zastavky)
+			f v=1:1:pocetVar { s sig(v) = "" }
+			f z=0:1:(zastavky.%Size()-1) {
+				s tm = zastavky.%Get(z).%Get("TRASA_MIN")
+				f v=1:1:pocetVar {
+					s hodnota = $s($isobject(tm)&&(v'>tm.%Size()):tm.%Get(v-1), 1:"")
+					s sig(v) = sig(v)_$s(sig(v)="":"", 1:"~")_$s($isvalidnum(hodnota):"S", 1:$g(hodnota))
+				}
+			}
+
+			s nove = ..PocetSlitych(pocetVar, .sig, 0)
+			s stare = ..PocetSlitych(pocetVar, .sig, 1)
+			// Zajímavá je jen stránka, kde je vidět obojí: něco se slije a něco si sloupec nechá,
+			// ačkoli by ho staré pravidlo vzalo.
+			continue:'nove
+			continue:stare'>nove
+			s nalez(stare - nove, nove, stranek) =
+				page.values.SMER_" "_page.values."POPIS_ZASTAVKA"_
+				"  variant="_pocetVar_", slije se nove="_nove_", stare by slilo="_stare
+		}
+
+		s ^||ML("OUT","souhrn") = "linka "_sku_"/"_lin_", stranek="_stranek
+		s vypsano = 0, r = ""
+		f {
+			s r = $o(nalez(r), -1)
+			q:(r="")||(vypsano'<maxOut)
+			s n = ""
+			f {
+				s n = $o(nalez(r, n), -1)
+				q:(n="")||(vypsano'<maxOut)
+				s st = ""
+				f {
+					s st = $o(nalez(r, n, st))
+					q:(st="")||(vypsano'<maxOut)
+					s vypsano = vypsano + 1
+					s ^||ML("OUT","zastavka~"_$tr($j(vypsano,2)," ","0")) = nalez(r, n, st)
+				}
+			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Linky, kde slučování variant něco ubere, seřazené od největšího úbytku.
 ///
 /// IN: `LIMIT` (kolik linek projít, výchozí 80), `MAX` (kolik vypsat, výchozí 10),
