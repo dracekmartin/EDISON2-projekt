@@ -2166,6 +2166,14 @@ public partial class MainWindow : Window
             _vm.ChangeAgendaCommand.Execute(null);
             e.Handled = true;
         }
+        // Výběr instancí z klávesnice - vedle změny agendy, protože je to táž dvojice voleb
+        // „nad čím pracuju". Písmeno I jako instance: agenda si sama říká linka nebo faktura,
+        // takže doménové písmeno by platilo jen pro jízdní řády.
+        else if (e.Key == Key.I && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.OpenInstancePickerCommand.Execute(null);
+            e.Handled = true;
+        }
         else if (e.Key == Key.PageUp && ctrl)
         {
             _vm.ChangeZIndex(+1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));

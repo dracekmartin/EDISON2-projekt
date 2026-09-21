@@ -191,6 +191,7 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
 | Ctrl+P | Tisk |
 | Ctrl+Shift+P | Vlastnosti stránky |
 | Ctrl+Shift+A | Změnit agendu |
+| Ctrl+Shift+I | Výběr instancí (linek) - **I jako instance**, doménové písmeno by platilo jen pro JŘ |
 | Ctrl+0 | Přizpůsobit stránce (Fit) - == tlačítko „Fit" |
 | Ctrl+1 | Skutečná velikost 100 % (1:1) - == tlačítko „1:1" |
 | Ctrl+B | Sbalit / rozbalit levý panel |

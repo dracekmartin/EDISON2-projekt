@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-09-21 (6) - ⌨️ výběr linek z klávesnice
+
+`Ctrl+Shift+I` otevře výběr instancí - u jízdních řádů tedy seznam linek. Hledání v něm je pak
+`Ctrl+F`, takže se dá skočit na linku podle čísla bez sáhnutí po myši.
+
+Písmeno `I` jako instance, ne `L` jako linka: agenda si sama říká, jestli jsou to linky nebo
+faktury. Zkratka stojí vedle `Ctrl+Shift+A` (změnit agendu), je to táž dvojice voleb „nad čím
+pracuju".
+
 ## 2026-09-21 (5) - ➖ čára u zastávky podle trasy
 
 `B172`. V trase linky jde u zastávky zadat „podtrženo" nebo „podtrženo nad i pod" - dispečer tím
