@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B163`-`B167` ze zkoušení linkových JŘ kolegou 18. 9. - tři z nich jsou
-> vady výstupu. Zpětná vazba TRANSDEV z 16. 9. je celá hotová.
+> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy
+> z 18. 9. je vyřízená až na `B169`; TRANSDEV z 16. 9. je celá hotová.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
@@ -70,12 +70,8 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
 
-Dva zbývající nálezy; zbytek vyřízený 21. 9. `B167` potřebuje výtisk ze starého modulu,
-`B169` sahá do sdílené komponenty formuláře.
-
-- **`B167` Dorovnání prázdnými sloupci: prokládat, ne dolepit** [?]. Starý modul prázdné sloupce
-  **prokládal** mezi spoje (prázdný, spoj, prázdný…), my je dáváme na konec. Ověřit na výstupu
-  starého modulu a srovnat (`#8372`).
+Poslední zbývající nález; zbytek vyřízený 21. 9. `B169` sahá do sdílené komponenty
+formuláře, takže se řeší jako její volba, ne jako featura návrháře.
 
 - **`B169` Zúžený formulář neukazuje hodnoty** [S]. V úzkém panelu je vidět jen popisek pole,
   hodnota ne. Zkusit, jestli se při zúžení nedá hodnota přesunout pod popisek. Týká se EDInputFormu

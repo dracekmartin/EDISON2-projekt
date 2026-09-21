@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-09-21 (4) - ⬜ prázdné sloupce se prokládají mezi spoje
+
+`B167`, nález kolegy z 18. 9. Volba „Dorovnat prázdnými sloupci" doplňovala volné místo **na konec**
+bloku, takže spoje zůstaly v hloučku vlevo a vpravo byl jeden široký prázdný pruh.
+
+Nově se prázdné sloupce rozdávají po jednom **střídavě z obou stran** - jeden za první spoj zleva,
+jeden za poslední zprava, pak za druhý zleva a tak dál. Výstup tím vypadá rovnoměrně proložený,
+jako ve starém tisku. Zrcadlená strana obousměrné sestavy se plní zrcadlově, takže její spoje
+zůstávají u zastávek.
+
+Počet prázdných sloupců se nemění: řídí ho dál to, kolik sloupců se do prvku vejde, tedy nastavení
+nejmenší a největší šířky sloupce spoje.
+
 ## 2026-09-21 (3) - 🎫 místenka se v českém tisku značí „R"
 
 Nález kolegy z 21. 9. na lince 320913. U spoje se místo „R" tiskl ampersand a vysvětlivka mluvila

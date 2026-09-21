@@ -1,5 +1,19 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B167` Prázdné sloupce se prokládají mezi spoje (hotovo 21. 9. 2026)
+
+Nález kolegy z 18. 9.: starý tisk prázdné sloupce prokládá, my je dolepovali na konec bloku.
+Ověřeno ve zdroji (`JRapiLinPrtWin.mac:1040-1086`): rozdávají se po jednom střídavě zleva
+a zprava, vždy hned za sloupec, u kterého smyčka prázdný založila, a po vyčerpání mezer se
+ukazatele vrátí na kraje.
+
+⚠️ **Počet zůstal náš** (rozhodnutí Jan 21. 9.): řídí ho kapacita prvku, tedy nastavení nejmenší
+a největší šířky sloupce spoje. Legacy ho počítá ze zbylé šířky - u tabulky, která se vejde celá,
+vychází stejně.
+⚠️ **Zrcadlená strana čte rozložení zrcadlově** - její vnitřní hrana je ta u zastávek, takže se
+prázdné zakládají před spoji. Jinak by u bloku s jediným spojem vznikla díra mezi jeho časy
+a zastávkami; hlídá to `ObousmernyTiskTests.Dorovnani_JeNaVnejsiHrane`.
+
 ## `B163` Atributy spoje se netisknou (uzavřeno 21. 9. 2026 - totéž co `B165`)
 
 Kolega myslel **boční značky u sloupce spoje** - tedy značky, které patří spoji u konkrétní
