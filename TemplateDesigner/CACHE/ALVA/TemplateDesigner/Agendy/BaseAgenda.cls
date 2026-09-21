@@ -223,7 +223,10 @@ ClassMethod RgbNaHex(rgb As %String) As %String
     q out
 }
 
-ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "", desc As %String = "")
+/// `serverSide` = hodnotu parametru zpracovává až `GetData`, takže její změna musí klientovi
+/// spustit načtení dat, ne jen překreslení náhledu. Dřív si ten seznam držel klient natvrdo a dalo
+/// se na něj zapomenout; příznak patří k definici parametru, kde se stejně píše.
+ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "", desc As %String = "", serverSide As %Boolean = 0)
 {
     s param = ##class(%DynamicObject).%New()
     s param.name  = name
@@ -234,6 +237,7 @@ ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String
     s param.defaultValue = $s((defaultVal=1)||(defaultVal="true"):"true", 1:"false")
     s:group'="" param.group = group
     s:desc'="" param.description = desc
+    s:serverSide param.serverSide = 1
     d arr.%Push(param)
 }
 

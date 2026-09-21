@@ -188,6 +188,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s p.label = "Dělení spojů dle platnosti"
     s p.type = "enum"
     s p.group = "Tabulka linky"
+    s p.serverSide = 1
     s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku tabulky - tady se jen ukáže, že ho šablona má."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Bez rozlišení")
@@ -211,6 +212,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pTc.label        = "Sloupec tarifních čísel"
     s pTc.type         = "enum"
     s pTc.group        = "Tabulka linky"
+    s pTc.serverSide   = 1
     s pTc.defaultValue = "Automaticky (dle linky)"
     s pTc.description  = "Zda se tiskne sloupec tarifních čísel. Automaticky = podle nastavení u linky v jízdních řádech; volbou Tisknout nebo Netisknout se to dá přebít pro tuhle sestavu."
     s optsTc = ##class(%DynamicArray).%New()
@@ -227,6 +229,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBez.label        = "Zastávky, kde žádný spoj nestaví"
     s pBez.type         = "enum"
     s pBez.group        = "Tabulka linky"
+    s pBez.serverSide   = 1
     s pBez.defaultValue = "Automaticky (dle linky)"
     s pBez.description  = "Zda se v tabulce objeví i zastávky, na kterých žádný spoj linky nestaví (jen je projíždí nebo jedou jinudy). Automaticky = podle nastavení u linky v jízdních řádech."
     s optsBez = ##class(%DynamicArray).%New()
@@ -244,6 +247,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZon.label        = "Písmeno systému u zóny"
     s pZon.type         = "enum"
     s pZon.group        = "Tabulka linky"
+    s pZon.serverSide   = 1
     s pZon.defaultValue = "Automaticky (dle linky)"
     s pZon.description  = "Zda označení zóny nese písmeno svého dopravního systému (Z420 místo 420). Bez něj nejdou u linky přes dvě IDS rozlišit stejně číslované zóny. Automaticky = podle nastavení u linky v jízdních řádech."
     s optsZon = ##class(%DynamicArray).%New()
@@ -259,6 +263,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBar.label        = "Barvy spojů"
     s pBar.type         = "enum"
     s pBar.group        = "Tabulka linky"
+    s pBar.serverSide   = 1
     s pBar.defaultValue = "Automaticky (dle linky)"
     s pBar.description  = "Zda se časy spoje tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Automaticky = podle nastavení u linky; Netisknout = celá tabulka černě."
     s optsBar = ##class(%DynamicArray).%New()
@@ -281,6 +286,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // nebo dvě), ne o vzhledu jednoho prvku. Že se promítne i do tabulky, platí skoro o každém
     // parametru téhle agendy (rozhodnutí Jan 31. 8.).
     s pObou.group        = "Obecné"
+    s pObou.serverSide   = 1
     s pObou.defaultValue = "false"
     s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuté = každý směr na vlastní stránce."
 
@@ -300,6 +306,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pTvar.label        = "Tvar názvu zastávky"
     s pTvar.type         = "enum"
     s pTvar.group        = "Obecné"
+    s pTvar.serverSide   = 1
     s pTvar.defaultValue = "Plný CIS"
     s pTvar.description  = "Plný CIS zachová dvojčárku podle číselníku zastávek (tak to tiskne starý modul), s okresem i jeho zkratku · Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou)."
     s optsTvar = ##class(%DynamicArray).%New()
@@ -316,6 +323,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pMhd.label        = "Použít název pro MHD"
     s pMhd.type         = "bool"
     s pMhd.group        = "Obecné"
+    s pMhd.serverSide   = 1
     s pMhd.defaultValue = "true"
     s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté; vypnutím se všude použije název podle CIS."
 
@@ -327,6 +335,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvZ.label        = "Zvýraznit zastávku"
     s pZvZ.type         = "text"
     s pZvZ.group        = "Tabulka linky"
+    s pZvZ.serverSide   = 1
     s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. Projíždí-li linka město víckrát, označí se všechny jeho zastávky; jednu z nich vybere Zvýraznit tarifní číslo."
 
     s pZvT = ##class(%DynamicObject).%New()
@@ -334,6 +343,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvT.label        = "Zvýraznit tarifní číslo"
     s pZvT.type         = "text"
     s pZvT.group        = "Tabulka linky"
+    s pZvT.serverSide   = 1
     s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
 
     // ── pořadí, v jakém je uvidí uživatel ────────────────────────────────────────

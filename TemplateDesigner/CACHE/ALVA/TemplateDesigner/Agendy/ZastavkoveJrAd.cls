@@ -3455,6 +3455,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pTvarNaz.label        = "Tvar názvu zastávky"
     s pTvarNaz.type         = "enum"
     s pTvarNaz.group        = "Obecné"
+    s pTvarNaz.serverSide   = 1
     s pTvarNaz.defaultValue = "Zkrácený"
     s pTvarNaz.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek, s okresem i jeho zkratku - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
     s optsTN = ##class(%DynamicArray).%New()
@@ -3465,8 +3466,8 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pTvarNaz.options = optsTN
     d arr.%Push(pTvarNaz)
 
-    d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnutím se použije název podle CIS.")
-    d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.")
+    d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnutím se použije název podle CIS.", 1)
+    d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.", 1)
 
     // `B161`: výchozí pořadí je parita se starým tiskem (`JRapiLinPrtMhd1.mac:397-398`, zastávka
     // vnější smyčka, směr vnitřní) - obě vývěsky téže zastávky jdou za sebou, takže se vytisknou
@@ -3477,6 +3478,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pPorStr.label        = "Pořadí stránek"
     s pPorStr.type         = "enum"
     s pPorStr.group        = "Obecné"
+    s pPorStr.serverSide   = 1
     s pPorStr.defaultValue = "Po zastávkách (oba směry za sebou)"
     s pPorStr.description  = "V jakém pořadí jdou vývěsky v exportu. Po zastávkách = linka se projde jednou a u každé zastávky jsou obě její vývěsky za sebou (tak to dělá i starý tisk). Po směrech = nejdřív celý směr Tam od první zastávky k poslední, pak celý směr Zpět od poslední k první, takže se trasa projde tam a zase zpátky."
     s optsPS = ##class(%DynamicArray).%New()
@@ -3490,7 +3492,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník
     // (odjezdy filtrované na spoje z toho označníku). Default vyp = jedna vývěska, odjezdy smíchané.
     // Label zrcadlí volbu elementu „Řádek pro každý označník" - stránka × řádek = dvě roviny téže věci
-    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Samostatná stránka pro každé stanoviště", "false", "Seznam zastávek", "Zastávka obsluhovaná z více stanovišť se vytiskne jako samostatná vývěska pro každé z nich, jen s odjezdy spojů, které z něj jedou. V titulku stránky pak je i jeho číslo. Které číslo to je, řídí volba Číslo stanoviště podle.")
+    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Samostatná stránka pro každé stanoviště", "false", "Seznam zastávek", "Zastávka obsluhovaná z více stanovišť se vytiskne jako samostatná vývěska pro každé z nich, jen s odjezdy spojů, které z něj jedou. V titulku stránky pak je i jeho číslo. Které číslo to je, řídí volba Číslo stanoviště podle.", 1)
 
     // KOVED #13088: označník a sloupek jsou dvě různá pole (volný text z trasy vs. číselník sloupků
     // zastávky) a zákazníci, kteří evidují sloupky, chtějí logiku stanovišť nad nimi. Jeden přepínač
@@ -3503,6 +3505,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pZdrojSt.label        = "Číslo stanoviště podle"
     s pZdrojSt.type         = "enum"
     s pZdrojSt.group        = "Seznam zastávek"
+    s pZdrojSt.serverSide   = 1
     s pZdrojSt.defaultValue = "Označník"
     s pZdrojSt.description  = "Který údaj z jízdního řádu se bere jako číslo stanoviště: Označník (pole nástupiště z trasy linky) nebo Sloupek (číslo z číselníku sloupků zastávky). Volba řídí Více stanovišť, samostatné stránky i titulek stránky. Sloupce Označník a Sloupek jdou tisknout oba nezávisle."
     s optsZS = ##class(%DynamicArray).%New()
@@ -3523,6 +3526,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRazV.label        = "Řazení variant tras"
     s pRazV.type         = "enum"
     s pRazV.group        = "Seznam zastávek"
+    s pRazV.serverSide   = 1
     s pRazV.defaultValue = "Dle četnosti ze zastávky"
     s pRazV.description  = "Pořadí variantních časových sloupců v seznamu zastávek: nejčastější varianta z dané zastávky první, stabilní pořadí dle spojů (stejné napříč stránkami), nebo od nejrychlejší varianty k nejpomalejší."
     s optsRV = ##class(%DynamicArray).%New()
@@ -3538,7 +3542,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // `B142`: vědomá výměna „méně sloupců za méně informace", proto výchozí vypnuto. Popisek i
     // nápověda musí říct, CO to schová - jinak si to zapne někdo, kdo variantní sloupce nasadil
     // právě kvůli detailu (KOVED #13048).
-    d ..AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty, které jedou jen část jiné", "false", "Seznam zastávek", "Varianta, která jede jen souvislý úsek jiné trasy (od - do), dostane sloupec té delší. Ubere to sloupce na lince, kde část spojů jezdí jen kus trasy. Varianta, která uprostřed zajíždí jinam a část zastávek vynechá, si sloupec nechá - jinak by z vývěsky zmizelo, že tam spoj nejede.")
+    d ..AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty, které jedou jen část jiné", "false", "Seznam zastávek", "Varianta, která jede jen souvislý úsek jiné trasy (od - do), dostane sloupec té delší. Ubere to sloupce na lince, kde část spojů jezdí jen kus trasy. Varianta, která uprostřed zajíždí jinam a část zastávek vynechá, si sloupec nechá - jinak by z vývěsky zmizelo, že tam spoj nejede.", 1)
 
     // ⚠️ Následující dvě volby musí zůstat vedle sebe a v tomhle pořadí - obě jsou o písmenech
     // variant a slučování mezi ně nepatří (nález Jan 14. 9.).
@@ -3555,6 +3559,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pPrvB.type         = "bool"
     s pPrvB.defaultValue = "true"
     s pPrvB.group        = "Seznam zastávek"
+    s pPrvB.serverSide   = 1
     s pPrvB.description  = "Nejčastější varianta zůstane bez písmene (hlavní trasa), odchylky se značí od A. Vypnuto = písmena už od první varianty."
     // Bez písmen variant tato volba nemá co ovlivnit - schovat ji je míň matoucí než ji nechat
     // svítit jako mrtvé zaškrtávátko.
@@ -3568,6 +3573,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRozd.label        = "Rozdělení sloupců (typy provozu)"
     s pRozd.type         = "enum"
     s pRozd.group        = "Minuty odjezdů"
+    s pRozd.serverSide   = 1
     s pRozd.defaultValue = "Automaticky (dle linky)"
     s optsR = ##class(%DynamicArray).%New()
     d optsR.%Push("Automaticky (dle linky)")
@@ -3615,7 +3621,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 
     d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů")
 
-    d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI", "Souhrn ""všechny zastávky na znamení"" místo × u každé", "false", "Poznámky")
+    d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI", "Souhrn ""všechny zastávky na znamení"" místo × u každé", "false", "Poznámky", , 1)
 
     // Rozsah „Spoje, nepoznámkovat" definuje legacy data (per spoj + TČ); tato volba určuje, CO se
     // v tom rozsahu v tisku schová. TD-aplikované (filtr nad nadmnožinou). Default = legacy.

@@ -3160,30 +3160,23 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestParamsFormReload?.Invoke();
     }
 
-    /// <summary>
-    /// Parametry, jejichž hodnotu zpracovává až server v <c>GetData</c> - jejich změna proto musí
-    /// spustit re-fetch dat, ne jen překreslení náhledu.
-    /// <para>
-    /// ⚠️ **Chybějící klíč je tichá vada:** přepnutí volby v UI nedělá nic a tisk pak vyjede jinak
-    /// než náhled (tiskový dialog fetchuje čerstvě). Stalo se to čtyřikrát, proto to hlídá
-    /// <c>ServerSideParamsDriftTests</c> - nový parametr čtený v <c>.cls</c> musí být i tady.
-    /// </para>
-    /// </summary>
-    internal static readonly string[] ServerSideParams =
-        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PRVNI_BEZ_PISMENE", "SLUCOVAT_PODMNOZINY",
-         "ROZDELIT_PER_OZNACNIK",
-         "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD", "ZDROJ_STANOVISTE", "PORADI_STRANEK",
-         "SOUHRN_NA_ZNAMENI", "SPOJE_U_DOPRAVCE",
-         "DELENI_SLOUPCU", "SLOUPEC_TC", "ZASTAVKY_BEZ_ZASTAVENI", "BARVY_SPOJU", "OBOUSMERNY_TISK",
-         "PISMENO_V_ZONE",
-        "TVAR_NAZVU_ZASTAVKY", "NAZEV_PRO_MHD",
-        "ZVYRAZNIT_ZASTAVKU", "ZVYRAZNIT_TC"];
-
     private string? _lastServerParamsSnapshot;
 
+    /// <summary>
+    /// Otisk hodnot parametrů, které zpracovává až server v <c>GetData</c> - jejich změna musí
+    /// spustit načtení dat, ne jen překreslení náhledu. Které to jsou, říká **sama agenda**
+    /// příznakem u definice parametru (<see cref="TemplateParameter.ServerSide"/>).
+    /// <para>
+    /// ⚠️ **Chybějící příznak je tichá vada:** přepnutí volby v UI nedělá nic a tisk pak vyjede
+    /// jinak než náhled (tiskový dialog načítá čerstvě). Stalo se to čtyřikrát, dokud si ten seznam
+    /// držel klient natvrdo; hlídá to <c>ServerSideParamsDriftTests</c> - parametr čtený
+    /// v <c>GetData</c> musí mít příznak v <c>GetParameters</c>.
+    /// </para>
+    /// </summary>
     private string ServerParamsSnapshot() => string.Join(
         "",
-        ServerSideParams.Select(p => _previewParams.TryGetValue(p, out var v) ? v?.ToString() : null));
+        _agendaParameters.Where(p => p.ServerSide)
+            .Select(p => _previewParams.TryGetValue(p.Name, out var v) ? v?.ToString() : null));
 
     /// <summary>Reakce na změnu parametru (z EDInputform tabu i staré cesty): invaliduje cache,
     /// server-side parametry → re-fetch dat, ostatní → jen překreslení náhledu.</summary>

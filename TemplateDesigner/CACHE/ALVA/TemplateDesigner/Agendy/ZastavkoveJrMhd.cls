@@ -1772,6 +1772,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pPorStr.label        = "Pořadí stránek"
     s pPorStr.type         = "enum"
     s pPorStr.group        = "Obecné"
+    s pPorStr.serverSide   = 1
     s pPorStr.defaultValue = "Po zastávkách (oba směry za sebou)"
     s pPorStr.description  = "V jakém pořadí jdou vývěsky v exportu. Po zastávkách = linka se projde jednou a u každé zastávky jsou obě její vývěsky za sebou (tak to dělá i starý tisk). Po směrech = nejdřív celý směr Tam od první zastávky k poslední, pak celý směr Zpět od poslední k první, takže se trasa projde tam a zase zpátky."
     s optsPS = ##class(%DynamicArray).%New()

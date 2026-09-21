@@ -32,6 +32,13 @@ public class TemplateParameter
     /// </summary>
     public string? VisibleWhen { get; set; }
 
+    /// <summary>
+    /// Hodnotu parametru zpracovává až server v <c>GetData</c>, takže její změna musí spustit
+    /// načtení dat, ne jen překreslení náhledu. Posílá ho agenda u definice parametru; starší
+    /// server ho neposílá (aditivní klíč kontraktu, R3) a parametr se pak chová jako klientský.
+    /// </summary>
+    public bool ServerSide { get; set; }
+
     /// <summary>Vrátí DefaultValue převedenou na typovanou hodnotu dle Type.</summary>
     public object? GetDefaultTyped() => Type switch
     {

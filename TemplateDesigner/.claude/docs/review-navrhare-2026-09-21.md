@@ -17,7 +17,7 @@ Rozsah: `dotnet/` (217 souborů, ~49k řádků), `CACHE/ALVA/TemplateDesigner/` 
 | 1 | Kontraktové metody agendy se kopírují mezi variantami | M | ⬜ |
 | 2 | „Standardní" schéma JŘ existuje dvakrát a už se rozešlo | M | ⬜ |
 | 3 | `TemplateDesignerViewModel` má 4217 řádků | M | ⬜ |
-| 4 | Allowlist `ServerSideParams` je ruční a má duplicity | S | ⬜ |
+| 4 | Allowlist `ServerSideParams` je ruční a má duplicity | S | ✅ 21. 9. |
 | 5 | Dialog sloupců se zakládá kopií (8 barevných příkazů) | S | ✅ 21. 9. |
 | 6 | Náhled na ukázkových datech ignoruje jazyk šablony | S | ✅ 21. 9. |
 | 7 | Výška řádku minut se počítá z jiného písma, než se kreslí | S | ✅ 21. 9. |
