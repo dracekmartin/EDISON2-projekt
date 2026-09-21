@@ -14,6 +14,7 @@ internal partial class EDErrorPopup : Window
         InitializeComponent();
         // CenterOwner mine maximalizovaný shell (restore bounds) - centrujeme ručně po layoutu.
         Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
+        MessageText.Text = HeadlineFor(ex);
         ErrorText.Text = ex.ToString();
 
         _refId = refId;
@@ -24,6 +25,14 @@ internal partial class EDErrorPopup : Window
             FollowUpPanel.Visibility = Visibility.Visible;
             SendFollowUpBtn.Visibility = Visibility.Visible;
         }
+    }
+
+    /// <summary>Hláška nahoře: zpráva nejvnitřnější výjimky (obalové TargetInvocation/Aggregate nic neříkají),
+    /// bez zprávy aspoň typ.</summary>
+    internal static string HeadlineFor(Exception ex)
+    {
+        var root = ex.GetBaseException();
+        return string.IsNullOrWhiteSpace(root.Message) ? root.GetType().Name : root.Message;
     }
 
     private void OkBtn_Click(object sender, RoutedEventArgs e) => Close();
