@@ -93,7 +93,7 @@ public class HelpDialogViewModel : EDViewModel
             [
                 new("1. Otevřít šablonu z databáze / založit novou", "Ctrl+O / Ctrl+N"),
                 new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", "Ctrl+Shift+A"),
-                new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "klik na štítek"),
+                new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "Ctrl+Shift+I"),
                 new("4. Přidat sekce (tlačítko + Sekce) a elementy (táhnout z palety)", "myš"),
                 new("5. Napojit data - pole ze záložky „Pole agendy“ táhnout na plochu", "táhnout myší"),
                 new("6. Upravit vzhled - záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
@@ -144,8 +144,9 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Změnit agendu / variantu (založí novou prázdnou šablonu)", "Ctrl+Shift+A"),
-                new("Výběr instancí (linek) pro náhled a tisk", "modrý štítek Instance"),
+                new("Výběr instancí (linek) pro náhled a tisk", "Ctrl+Shift+I / modrý štítek"),
                 new("Listování mezi vybranými instancemi", "◀ ▶ u štítku"),
+                new("Seznam vybraných instancí k přepnutí", "▲ u štítku"),
                 new("Obnovit data z databáze (znovu načte ze serveru)", "F5"),
                 new("Pole agendy → nový text s {POLE} na ploše", "táhnout pole na plochu"),
                 new("Pole agendy → přidat {POLE} do existujícího textu", "táhnout pole na text"),
