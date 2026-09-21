@@ -1,5 +1,15 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B163` Atributy spoje se netisknou (uzavřeno 21. 9. 2026 - totéž co `B165`)
+
+Kolega myslel **boční značky u sloupce spoje** - tedy značky, které patří spoji u konkrétní
+zastávky (`N` jen nástup, `G` paragraf). Je to týž nález jako `B165`, jen popsaný ze strany spoje,
+a opravila ho táž změna: server je posílá v `ZNACKY` a prvek je kreslí vlevo od času.
+Potvrzeno Janem 21. 9. porovnáním s postskriptovým výtiskem linky 320913.
+
+⚠️ **Atributy spoje v užším smyslu** (bezbariérové vozidlo, kola, wifi) jsou jiná rodina a chodí
+do řádku platnosti pod číslem spoje - ty fungovaly už předtím; linka 320913 žádný nemá.
+
 ## `B164` Zastávka se tiskne dvakrát (uzavřeno 21. 9. 2026 - planý poplach)
 
 Kolega hlásil, že „České Budějovice,,aut.nádr." zabírají na lince 320913 dva řádky, ačkoli data

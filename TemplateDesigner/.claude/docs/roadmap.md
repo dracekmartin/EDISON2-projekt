@@ -70,11 +70,8 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
 
-Tři zbývající nálezy; zbytek vyřízený 21. 9. Rozsah každého je projitý proti kódu.
-`B163` čeká na číslo linky a spoje od kolegy, `B167` na výtisk ze starého modulu.
-
-- **`B163` Atributy spoje se netisknou** [?]. Kolega zadal u spoje v jízdních řádech atributy
-  a v sestavě nevyšly (boční značky u sloupce spoje). Ověřit, jestli je vůbec posíláme.
+Dva zbývající nálezy; zbytek vyřízený 21. 9. `B167` potřebuje výtisk ze starého modulu,
+`B169` sahá do sdílené komponenty formuláře.
 
 - **`B167` Dorovnání prázdnými sloupci: prokládat, ne dolepit** [?]. Starý modul prázdné sloupce
   **prokládal** mezi spoje (prázdný, spoj, prázdný…), my je dáváme na konec. Ověřit na výstupu
