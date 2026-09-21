@@ -16,6 +16,7 @@ using EDControls.MiniApps;
 using EDControls.UserFonts;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.ChangelogWindow;
+using EDISONMAIN2.Windows.ConnectionWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias - class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
@@ -24,6 +25,7 @@ using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
 using ChangelogWnd = EDISONMAIN2.Windows.ChangelogWindow.ChangelogWindow;
 using MiniAppPickerWnd = EDISONMAIN2.Windows.MiniAppPickerWindow.MiniAppPickerWindow;
+using ConnectionWnd = EDISONMAIN2.Windows.ConnectionWindow.ConnectionWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -263,7 +265,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
 
             // EDISON menu
-            ConnectToDatabaseCommand      = Command(NotYetImplemented);
+            ConnectToDatabaseCommand      = Command(ConnectToDatabase);
             RunEdisonCopyCommand          = Command(RunEdisonCopy);
             ExitCommand                   = Command(ExitApplication);
 
@@ -1343,10 +1345,42 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private static void RunEdisonCopy()
         {
-            var exe = Process.GetCurrentProcess().MainModule?.FileName;
-            if (string.IsNullOrEmpty(exe)) return;
+            var exe = CurrentExecutable();
+            if (exe.Length == 0) return;
             Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
         }
+
+        // Parita s legacy frmConnection: výchozí připojení řídí centrálně EDISONini.xml (jen pro čtení),
+        // další si uživatel ukládá lokálně. Jiný server = nová instance shellu - session v procesu
+        // je na jeden server (IMLRest.Server/Port jsou konstanty).
+        private void ConnectToDatabase()
+        {
+            var window = new ConnectionWnd(_prefs, DefaultConnection());
+            if (WindowNavigator.ShowDialog(window) != true || window.Picked is not { } picked) return;
+            var exe = CurrentExecutable();
+            if (exe.Length == 0) return;
+            Process.Start(ConnectionLaunchInfo(exe, picked));
+        }
+
+        // Bez EDISONini.xml (instance spuštěná s argumenty připojení) je výchozí aktuální session.
+        private ConnectionChoice DefaultConnection()
+        {
+            var ini = SettingsLoader.Load().Server;
+            return ini.Host.Length > 0
+                ? new ConnectionChoice(ini.Name.Length > 0 ? ini.Name : "EDISONini.xml", ini.Host, ini.Port, IsDefault: true)
+                : new ConnectionChoice("Aktuální", Rest.Server, Rest.Port, IsDefault: true);
+        }
+
+        /// <summary>Nová instance shellu proti vybranému serveru; argumenty čte <see cref="ConnectionOverride.Parse"/>.</summary>
+        internal static ProcessStartInfo ConnectionLaunchInfo(string exe, ConnectionChoice connection)
+        {
+            var info = new ProcessStartInfo(exe) { UseShellExecute = true };
+            foreach (var arg in new ConnectionOverride(connection.Server, connection.RestPort).ToArguments())
+                info.ArgumentList.Add(arg);
+            return info;
+        }
+
+        private static string CurrentExecutable() => Process.GetCurrentProcess().MainModule?.FileName ?? "";
 
         // TD přebírá shell session z launch argumentů (GUID + CacheLocks=1) - jeho requesty tak
         // drží ACTIVITY historii shellu (HD 13132/F17) a umírá se shellem jako agendové moduly.
@@ -1497,11 +1531,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (!trimmed.EndsWith(']')) return title;
             var open = trimmed.LastIndexOf('[');
             return open <= 0 ? title : trimmed[..open].TrimEnd();
-        }
-
-        private void NotYetImplemented()
-        {
-            PopupDisplayer.Info("Tato funkce zatím není v EDISONu 2 dostupná.");
         }
 
         // Ctrl+W+W (dvojhmat) - skrytá zkratka pro M-line utility.

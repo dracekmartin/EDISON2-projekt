@@ -32,11 +32,13 @@ public class AppBootstrapper
 {
     private readonly Application _application;
     private readonly ShellShutdown _shutdown;
+    private readonly ConnectionOverride? _connectionOverride;
 
-    public AppBootstrapper(Application application)
+    public AppBootstrapper(Application application, ConnectionOverride? connectionOverride = null)
     {
         _application = application;
         _shutdown = new ShellShutdown(application);
+        _connectionOverride = connectionOverride;
     }
 
     /// <summary>Pro test-only subclassy - neinjektuje <see cref="Application"/>, takže
@@ -231,6 +233,8 @@ public class AppBootstrapper
     /// </summary>
     protected virtual bool EnsureConfigured()
     {
+        // Připojení z příkazové řádky (Připojit k databázi) - EDISONini.xml stanice se nepoužije.
+        if (_connectionOverride is not null) return true;
         if (SettingsLoader.IsConfigured()) return true;
 
         SettingsLoader.Load();   // naplní Current dev defaulty pro předvyplnění polí
@@ -247,9 +251,7 @@ public class AppBootstrapper
 
     protected virtual PreLoginContext PrepareLogin(ILocalPrefs prefs)
     {
-        var config = SettingsLoader.Load();
-        string server = config.Server.Host;
-        int port = config.Server.Port;
+        var (server, port) = ResolveConnection(_connectionOverride, () => SettingsLoader.Load().Server);
 
         // Pre-login MLRest - potřebné aby GetCompanyList šla zavolat (vlastní fallback Idfa="").
         var loginRest = new MLRest(server, port, "", "");
@@ -264,6 +266,15 @@ public class AppBootstrapper
         loginRest.Idfa = startCompany.Id;
 
         return new PreLoginContext(loginRest, companies, startCompany, server, port);
+    }
+
+    /// <summary>Připojení z příkazové řádky má přednost před <c>EDISONini.xml</c>.</summary>
+    internal static (string Server, int Port) ResolveConnection(ConnectionOverride? connectionOverride,
+                                                                 Func<ServerSettings> loadSettings)
+    {
+        if (connectionOverride is { } overridden) return (overridden.Server, overridden.RestPort);
+        var settings = loadSettings();
+        return (settings.Host, settings.Port);
     }
 
     /// <summary>

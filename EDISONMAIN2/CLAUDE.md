@@ -20,7 +20,10 @@ Připojení čte `SettingsLoader` z `EDISONini.xml` vedle exe (sdílený s legac
 ze serveru): **`connection@restport`, ne `@port`** (to je superserver); wizard zapisuje plnou
 legacy paritu (`initialized`/`forceChange`=1), uzly mimo ni (`securedMode`) zachovává. Dev kopii
 v repu **publish nesmí vydat** - v `C:\Edison\` leží živý soubor legacy aplikací
-(`CopyToPublishDirectory="Never"` v csproj).
+(`CopyToPublishDirectory="Never"` v csproj). Argumenty `server=<host> restport=<port>`
+(`ConnectionOverride`) mají přednost a wizard přeskočí: menu „Připojit k databázi" jimi spouští
+**novou instanci** proti jinému serveru (session v procesu je na jeden server); uložená připojení
+jsou v `LocalPrefs.Connections`, výchozí z `EDISONini.xml` zůstává centrálně řízené (legacy `forceChange`).
 
 ## Strom modulů = generovaný snapshot
 

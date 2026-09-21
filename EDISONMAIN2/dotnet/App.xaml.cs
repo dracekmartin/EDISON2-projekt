@@ -22,7 +22,7 @@ namespace EDISONMAIN2
                 args.SetObserved();
             };
 
-            var window = new AppBootstrapper(this).Run();
+            var window = new AppBootstrapper(this, ConnectionOverride.Parse(e.Args)).Run();
             window?.Show();
         }
 
