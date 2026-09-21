@@ -514,6 +514,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             _usage = data.Usage;
             _expansion = data.Expansion;
+            // Stromy jsou nové instance s persistovaným rozbalením; trvající hledání si vezme čerstvý snímek.
+            _expansionBeforeSearch = null;
 
             // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
             // Null = load plochy selhal: zobrazit prázdno (data předchozí session sem nepatří), ale
@@ -528,7 +530,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Obnoví uložené rozbalení a napojí persistenci na VŠECH stromech (vč. Oblíbených).
             // Suppress brání zápisu během programového apply.
             using (SuppressExpansionSave())
-                ApplyTreeExpansion();
+                ApplyTreeExpansion(_expansion);
 
             // Poslední otevřená záložka (per-user × IDFa); bez uložené volby výchozí dle oblíbených.
             _suppressTabSave = true;
@@ -545,7 +547,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Po přestavbě (i mimo load - po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
             using (SuppressExpansionSave())
             {
-                ApplyExpansion(FavoritesTree, FavoritesTab.Key);
+                ApplyExpansion(FavoritesTree, FavoritesTab.Key, _expansion);
 
                 // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) - při aktivním hledání přefiltrovat.
                 var searchText = _treeSearchText.Trim();
@@ -568,10 +570,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // z ModuleLaunchabilityCheck, na rozdíl od cesty přes DisplayedName. Save běží na každou změnu
         // rozbalení (IDFa je tehdy stabilní), proto switch/close nepotřebují zvláštní obsluhu.
 
-        private void ApplyTreeExpansion()
+        private void ApplyTreeExpansion(List<string>? keys)
         {
             foreach (var (name, tree) in ExpandableTrees)
-                ApplyExpansion(tree, name);
+                ApplyExpansion(tree, name, keys);
         }
 
         /// <summary>
@@ -612,7 +614,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 foreach (var module in tree)
                     ModuleTreeState.SetExpandedRecursive(module, expanded);
             }
-            _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
+            PersistExpansion();
         }
 
         // Rozbalit/sbalit rodinu i její potomky (kontextové menu „úroveň").
@@ -621,34 +623,43 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (module is not ModuleFamily) return;
             using (SuppressExpansionSave())
                 ModuleTreeState.SetExpandedRecursive(module, expanded);
-            _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
+            PersistExpansion();
         }
 
-        private void ApplyExpansion(IList<IModule> tree, string treeName)
+        private void ApplyExpansion(IList<IModule> tree, string treeName, List<string>? keys)
         {
             for (int i = 0; i < tree.Count; i++)
-                ApplyExpansionNode(tree[i], treeName, [i]);
+                ApplyExpansionNode(tree[i], treeName, [i], keys);
         }
 
-        private void ApplyExpansionNode(IModule module, string treeName, List<int> path)
+        private void ApplyExpansionNode(IModule module, string treeName, List<int> path, List<string>? keys)
         {
             if (module is not ModuleFamily family) return;
 
-            // _expansion == null → první spuštění, ponech serverové výchozí rozbalení.
-            if (_expansion is { } saved)
+            // keys == null → nikdy neuloženo, ponech serverové výchozí rozbalení.
+            if (keys is { } saved)
                 family.IsExpanded = saved.Contains(ModuleTreeState.ExpansionPathKey(treeName, path));
 
             family.PropertyChanged -= OnFamilyPropertyChanged;
             family.PropertyChanged += OnFamilyPropertyChanged;
 
             for (int i = 0; i < family.NestedModules.Count; i++)
-                ApplyExpansionNode(family.NestedModules[i], treeName, [.. path, i]);
+                ApplyExpansionNode(family.NestedModules[i], treeName, [.. path, i], keys);
         }
 
         private void OnFamilyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && _expansionSaveSuppressed == 0)
-                _ = _modulePrefs?.SaveExpansionAsync(CollectExpandedKeys());
+                PersistExpansion();
+        }
+
+        // Během hledání je rozbalení přechodné (vynucené nálezy); po vymazání textu se obnoví snímek.
+        // _expansion drží poslední uložený stav, aby přestavba Oblíbených nevracela rozbalení z loginu.
+        private void PersistExpansion()
+        {
+            if (_expansionBeforeSearch != null) return;
+            _expansion = CollectExpandedKeys();
+            _ = _modulePrefs?.SaveExpansionAsync(_expansion);
         }
 
         private List<string> CollectExpandedKeys()
@@ -678,18 +689,32 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Filtruje VŠECHNY stromy (vč. Oblíbených) dle TreeSearchText. Rozbalení vynucené hledáním
-        // se NEpersistuje (suppress flag); po vymazání textu se obnoví persistované rozbalení.
+        // se NEpersistuje; snímek ze začátku hledání se po vymazání textu obnoví.
         private void ApplySearch()
         {
             var text = _treeSearchText.Trim();
+            if (text.Length > 0) _expansionBeforeSearch ??= CollectExpandedKeys();
+
             using (SuppressExpansionSave())
             {
                 foreach (var (_, tree) in ExpandableTrees)
                     foreach (var root in tree)
                         ModuleTreeState.ApplySearchToModule(root, text);
-            }
 
-            if (text.Length == 0) ApplyTreeExpansion();
+                if (text.Length == 0 && _expansionBeforeSearch is { } before)
+                {
+                    _expansionBeforeSearch = null;
+                    ApplyTreeExpansion(before);
+                }
+            }
+        }
+
+        /// <summary>Aplikuje čekající hledání hned (debounce v testech netiká, Enter nesmí číst starý stav).</summary>
+        internal void FlushPendingSearch()
+        {
+            if (_searchDebouncer is not { IsEnabled: true }) return;
+            _searchDebouncer.Stop();
+            ApplySearch();
         }
 
         /// <summary>
@@ -699,13 +724,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         internal ExecutableModule? FirstSearchResult()
         {
             if (_treeSearchText.Trim().Length == 0) return null;
-            // Enter hned po psaní by jinak četl IsVisibleBySearch z předchozího běhu - filtrace
-            // je debouncovaná a čekající tick ještě nedoběhl.
-            if (_searchDebouncer is { IsEnabled: true })
-            {
-                _searchDebouncer.Stop();
-                ApplySearch();
-            }
+            FlushPendingSearch();
             return SelectedTab.Tree is { } tree ? ModuleTreeState.FirstVisibleExecutable(tree) : null;
         }
 
@@ -861,6 +880,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private Dictionary<string, UsageEntry> _usage = [];
         // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
         private List<string>? _expansion;
+        // Snímek rozbalení před hledáním; non-null = stromy nesou rozbalení vynucené hledáním.
+        private List<string>? _expansionBeforeSearch;
         private int _expansionSaveSuppressed;
         private const int UsedModulesCap = 20;
 

@@ -90,7 +90,9 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
   koncového `[IDFa]` (suffix si přidávají legacy okna sama, `clsForm.ShowIDFA`). **Firma v titulku
   je jen u shellu**; titulek jde do jména tiketu v hlášení chyb (firma zvlášť polem `firma`).
 - Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
-  nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají).
+  nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají). Rozbalení
+  vynucené hledáním je **přechodné**: snímek před hledáním se po vymazání textu obnoví a změny
+  rozbalení během hledání se nepersistují.
 - **Status bar** = segmenty ikona + hodnota, technika jen v ToolTipu. `DockPanel.Dock="Right"`
   i `Visibility="Collapsed"` fungují jen na **explicitním `<StatusBarItem>`** (na surový
   `TextBlock` se nepropíší); `<Separator/>` jen mezi vždy viditelné (u sbalitelného by visel).
