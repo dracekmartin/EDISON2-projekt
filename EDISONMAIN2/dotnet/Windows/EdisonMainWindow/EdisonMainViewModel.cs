@@ -65,6 +65,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             [new("Kolečko", null),
              .. AgendaSprites.AllSets.Select(s => new OverlayTestVariant(AgendaSprites.LabelFor(s), s))];
         public ICommand TriggerErrorCommand { get; }
+        /// <summary>Menu „Test funkcí" jen pro vývoj a stanice M-line - u zákazníka by „Vyvolat chybu" založilo tiket.</summary>
+        public bool IsTestMenuVisible => InternalDiagnostics.Enabled;
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand OpenLegacyShellCommand { get; }
         public ICommand CloseAllCommand { get; }

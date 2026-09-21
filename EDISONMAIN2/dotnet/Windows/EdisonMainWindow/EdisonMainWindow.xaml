@@ -32,6 +32,7 @@
         <edvm:BindingProxy x:Key="VmProxy" Data="{Binding}"/>
         <!-- Prázdný transientní text musí segment status baru sbalit, ne nechat mezeru s dividerem. -->
         <edct:NonEmptyStringToVisibleConverter x:Key="NonEmptyToVis"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <!-- Velikost z tokenu - FontService ji škáluje s user fontem (natvrdo 16 by nerostla). -->
         <Style x:Key="StatusIcon" TargetType="Image">
             <Setter Property="Width"  Value="{DynamicResource EDTheme.IconSize.Default}"/>
@@ -65,7 +66,7 @@
              Uživatel = jen identita/session, Nastavení konsoliduje preference (font, jazyk,
              okna), support diagnostika pod Nápovědou, Nápověda předposlední (Windows konvence).
              Combobox firem nahrazuje legacy "Firma" label (původně jen statický).
-             "Test funkcí" je dev-only nadstavba, v legacy je tam "Test funkcí (M-line)" s debug položkami.
+             "Test funkcí" je jen pro vývoj a stanice M-line (IsTestMenuVisible), v legacy je tam "Test funkcí (M-line)".
              Border drží spodní 1px linku přes celou šířku; Menu lokálně potlačí svoji vlastní linku, ta by končila u TextBlocku. -->
         <Border Grid.Row="0" Grid.ColumnSpan="100"
                 Background="{DynamicResource EDTheme.Bg.Footer}"
@@ -146,6 +147,9 @@
                 <MenuItem Header="Úlohy na pozadí"      Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenceCommand}"/>
                 <Separator/>
+                <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
+                <MenuItem Header="Spustit starý shell (EDISONMAIN)" Command="{Binding OpenLegacyShellCommand}"/>
+                <Separator/>
                 <!-- Admin-only (command gate přes IsAdmin) - separator je odděluje od běžných nástrojů. -->
                 <MenuItem Header="Správa zámků"         Command="{Binding ShowUsersLocksCommand}"/>
                 <MenuItem Header="Aktivita uživatelů"   Command="{Binding ShowUsersActivityCommand}"/>
@@ -165,7 +169,7 @@
                 <MenuItem Header="Novinky v aktualizaci" Command="{Binding ShowShellChangelogCommand}"/>
                 <MenuItem Header="Helpdesk, Wiki"        Command="{Binding OpenHelpdeskWebCommand}"/>
             </MenuItem>
-            <MenuItem Header="Test funkcí">
+            <MenuItem Header="Test funkcí" Visibility="{Binding IsTestMenuVisible, Converter={StaticResource BoolToVis}}">
                 <MenuItem Header="Test EDInputForm"  Command="{Binding OpenInputFormTestCommand}"/>
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
@@ -181,9 +185,6 @@
                     </MenuItem.ItemContainerStyle>
                 </MenuItem>
                 <MenuItem Header="Vyvolat chybu" Command="{Binding TriggerErrorCommand}"/>
-                <Separator/>
-                <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
-                <MenuItem Header="Spustit starý shell (EDISONMAIN)" Command="{Binding OpenLegacyShellCommand}"/>
             </MenuItem>
             </Menu>
         </DockPanel>
