@@ -754,7 +754,10 @@ Největší soubory: `EdisonMainViewModel.cs` 1525 ř., `EDControlStyles.xaml` 1
 
 ### A31 · `DisplayedName` nese tři věci a persistuje se do blobu 🔸
 
-- [ ] **Stav:** otevřeno
+- [ ] **Stav:** otevřeno, částečně (2026-09-21, commit s touto změnou) - suffixy stavu modulu
+  (`- stub`, `- chybí exe`, `- rozbité`, `- stuby`) přidává `ModuleLaunchabilityCheck` jen pod
+  `InternalDiagnostics.Enabled` (DEBUG / doména M-line), u zákazníka se do blobu nedostanou;
+  mlineOnly suffix a oddělení `Name`/`DisplayedName` zůstávají 🔸.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Problém:** dekorace pro zobrazení mutuje doménový model (`with { DisplayedName = ... }`),
   který dál slouží jako text hledání a zdroj persistovaného `Name` dlaždice.
