@@ -4,26 +4,11 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy
-> z 18. 9. je vyřízená až na `B169`; TRANSDEV z 16. 9. je celá hotová.
+> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy z 18. 9.
+> i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
-
----
-
-## 🚏 Zastávkové JŘ
-
-Požadavky z hovoru s TRANSDEV 11. 9. jsou hotové (`B141`-`B143`, `B145`, `B147`-`B149`), viz
-[`roadmap-archive.md`](roadmap-archive.md). `B144` odložený v Backlogu, `B146` zrušený jako
-nezadání.
-
-### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
-
-Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. **Všechny jsou hotové**
-(`B156` mizející nastavení, `B157` slučování variant, `B158` záhlaví odjezdů po sloupcích,
-`B159` velikost záhlaví u poznámek, `B160` pevný rastr minut, `B161` pořadí stránek v exportu) -
-viz changelog a [`roadmap-archive.md`](roadmap-archive.md). Zbývá je zavřít na helpdesku s vydáním.
 
 ---
 
@@ -68,15 +53,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
-### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
-
-Poslední zbývající nález; zbytek vyřízený 21. 9. `B169` sahá do sdílené komponenty
-formuláře, takže se řeší jako její volba, ne jako featura návrháře.
-
-- **`B169` Zúžený formulář neukazuje hodnoty** [S]. V úzkém panelu je vidět jen popisek pole,
-  hodnota ne. Zkusit, jestli se při zúžení nedá hodnota přesunout pod popisek. Týká se EDInputFormu
-  obecně, ne jen linkových JŘ.
-
 ### Připravené k práci
 
 - **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
@@ -114,6 +90,7 @@ na jednom místě.
 |---|---|
 | **#8372 vkládat prázdné sloupce** (KORID) | Volba **„Dorovnat prázdnými sloupci"** u tabulky linky. Dorovnává i **levou** stranu, kterou tiket nežádal - u obousměrné sestavy bez ní zůstala díra |
 | **#8576 tarifní zóny do sloupců** (KU HK) | Volba **„Každá zóna ve vlastním sloupci"** (výchozí vypnutá, aby se nezměnily hotové sestavy) |
+| **#12843 zpětná vazba TRANSDEV 16. 9.** (zastávkové) | Šest bodů z verze z 15. 9. hotových - mizející nastavení, slučování variant, záhlaví odjezdů po sloupcích, velikost záhlaví u poznámek, pevný rastr minut, pořadí stránek v exportu. Detail v archivu |
 | **#11300 prázdný přípojný řádek** (KORID) | Výtisk hotový 15. 9. - `CB_CSADAD 1 / 0330510` směr Zpět, strana 3 je list jen s pracovními dny bez jediného přípojného řádku. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md) |
 
 ### K ověření na reálné sestavě
@@ -149,6 +126,12 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
   pro ten jeden tisk. Levnější cesty k témuž: nechat prvek při přetečení narůst do volného místa
   pod sebou místo zmenšení písma, a přiřadit lince vlastní šablonu (index dnes jen podle agendy,
   chybí i dávkový tisk). Tohle vytáhnout, až se ukáže, že obojí nestačí.
+
+- **`B169` Zúžený formulář neukazuje hodnoty** [S] (nález kolegy 18. 9.). Popisek a hodnota
+  stojí vedle sebe, každý s dolní hranicí 120 bodů (`EDInputForm.xaml:55`), takže se v užším panelu
+  hodnota vytlačí mimo. Zkusit při zúžení přesunout hodnotu pod popisek.
+  ⚠️ **Sdílená komponenta** - stejně jako `B170` to musí být volba hostitele s výchozím vypnuto,
+  jinak se osekaný formulář objeví i u legacy formulářů v shellu.
 
 - **`B170` Formulář si pamatuje poslední filtr** [S] (podnět Jan 18. 9.). Ve formuláři prvku se
   hledá Ctrl+F („rozest"), doladí se nastavení, formulář se zavře a při dalším otevření se musí
