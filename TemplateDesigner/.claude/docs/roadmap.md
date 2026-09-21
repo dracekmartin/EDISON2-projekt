@@ -70,16 +70,11 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
 
-Čtyři zbývající nálezy (seznam linek, zvýraznění zastávky a značky u zastávky vyřízené 21. 9.).
-Rozsah každého je projitý proti kódu 21. 9. `B163` čeká na číslo linky a spoje od kolegy;
-`B164` a `B167` potřebují výtisk ze starého modulu.
+Tři zbývající nálezy; zbytek vyřízený 21. 9. Rozsah každého je projitý proti kódu.
+`B163` čeká na číslo linky a spoje od kolegy, `B167` na výtisk ze starého modulu.
 
 - **`B163` Atributy spoje se netisknou** [?]. Kolega zadal u spoje v jízdních řádech atributy
   a v sestavě nevyšly (boční značky u sloupce spoje). Ověřit, jestli je vůbec posíláme.
-
-- **`B164` Zastávka se tiskne dvakrát** [?]. `CB_CSADAD` linka `320913`: „České Budějovice,
-  aut.nádr." zabírá dva řádky, ačkoli data mají jeden. Podezření na rozdvojení příjezd/odjezd
-  u linky s málo zastávkami.
 
 - **`B167` Dorovnání prázdnými sloupci: prokládat, ne dolepit** [?]. Starý modul prázdné sloupce
   **prokládal** mezi spoje (prázdný, spoj, prázdný…), my je dáváme na konec. Ověřit na výstupu

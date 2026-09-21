@@ -1,5 +1,15 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B164` Zastávka se tiskne dvakrát (uzavřeno 21. 9. 2026 - planý poplach)
+
+Kolega hlásil, že „České Budějovice,,aut.nádr." zabírají na lince 320913 dva řádky, ačkoli data
+mají jeden. Zastávka má v trase atribut `P`, takže se řádek **správně** dělí na příjezd a odjezd.
+V šabloně jen nebyla zapnutá volba **„Sloučit popis u příjezdu a odjezdu"** - bez ní se název, km
+i tarifní číslo vypíšou na obou řádcích (tvar windowsového tisku) a vypadá to jako tatáž zastávka
+dvakrát. Se zapnutou volbou se popis vypíše jednou přes oba řádky (tvar postskriptu).
+
+Zjištěno 21. 9., potvrdil Jan. Beze změny kódu.
+
 ## `B165` Značky u zastávky se kreslí v tabulce (hotovo 21. 9. 2026)
 
 Nález kolegy z 18. 9.: značky ve vysvětlivkách (`N` jen nástup, `G` paragraf) nesouhlasily
