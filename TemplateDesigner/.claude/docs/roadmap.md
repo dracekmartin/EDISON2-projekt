@@ -111,14 +111,37 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
+- **`B174` Průchod nálezů z review návrháře** [M] (review 21. 9.). Třináct bodů: pět věcí, které
+  zdraží další agendu (opsané kontraktové metody agend, dvojí „standardní" schéma JŘ, monolit
+  hlavního ViewModelu, ruční allowlist server-side parametrů, opsané dialogy sloupců), dvě chyby
+  (jazyk se neprojeví v náhledu bez vybrané linky, výška řádku minut ignoruje písmo skupiny) a
+  úklid (barvy natvrdo v panelu vlastností, čtyři zdroje jmen prvků, zastaralá pravidla).
+  Bod po bodu i s návrhy oprav: [`review-navrhare-2026-09-21.md`](review-navrhare-2026-09-21.md).
+
 - **`B173` Projít sdílené komponenty s kolegou** [?] (domluveno 21. 9., na program 22. 9.).
   Sbírka návrhů, které sahají do `EDControls`, tedy i do legacy formulářů v shellu - proto se
   neberou jednotlivě, ale projdou se najednou.
   1. **Zrušit hlavičku „Položka | Hodnota" v EDInputFormu** - dvousloupcový formulář je čitelný
      sám, hlavička bere 30 bodů výšky tam, kde je místa nejmíň. Vzniklo 26. 5. (`5d5afdb4`) kvůli
      souladu s EDListem; tam ale hlavička pojmenovává sloupce, podle kterých jde řadit.
-  2. Na tutéž komponentu čekají `B169` (v úzkém panelu není vidět hodnota) a `B170` (zapamatovaný
-     filtr); `B18` (deklarativní pravidla) je větší a patří do téhož rozhovoru.
+  2. **Zrušit skákání po výsledcích hledání** (šipky ▲▼ a počitadlo ve sdílené hlavičce, Jan 21. 9.) -
+     hledání nesedící položky skryje, takže navigovat po zbylých třech nemá co řešit. S nimi padá
+     i nápověda zkratek pod ikonou; zbytek (Ctrl+F) nestojí za tlačítko s vyskakovacím oknem.
+  3. **Zúžený formulář neukazuje hodnoty** (nález kolegy 18. 9., dřív `B169`). Popisek a hodnota
+     mají každý dolní hranici 120 bodů (`EDInputForm.xaml:55`), formulář tedy potřebuje 280;
+     levý panel návrháře startuje na 200, hodnota je vytlačená rovnou. **Návrh (Jan 21. 9.):**
+     pod prahem zalomit řádek na dva - popisek nahoře, vstup pod ním přes celou šířku (tak to mají
+     panely ve VS Code i Figmě); rozhoduje naměřená šířka, zaškrtávátka zůstávají na řádku a jako
+     u bodu 4 to musí být volba hostitele s výchozím vypnuto. Cena je skoro dvojnásobná výška -
+     levnější varianta je nezalamovat a zvednout dolní hranici panelu na 280.
+  4. **Formulář si pamatuje poslední filtr** (podnět Jan 18. 9., dřív `B170`). Ve formuláři prvku se
+     hledá Ctrl+F („rozest"), doladí se nastavení, formulář se zavře a při dalším otevření se hledá
+     znovu; u formuláře otevíraného pořád dokola nad týmž prvkem je to zbytečné (tak to má i VS Code).
+     Volba hostitele s výchozím vypnuto - v shellu se otevírá pokaždé jiný záznam. Pamatovat **per
+     schéma formuláře** (`CacheClass`), jinak filtr z textu schová celou tabulku, a **jen po dobu
+     běhu**, neukládat. Filtr musí být na první pohled vidět (vyplněné pole, křížek, počet skrytých)
+     a Esc ho ruší dřív, než zavře okno. Pozor: panel se při návratu na záložku znovu inicializuje,
+     takže zapamatovaný filtr musí žít mimo položky formuláře.
 
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
@@ -129,23 +152,6 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
   pro ten jeden tisk. Levnější cesty k témuž: nechat prvek při přetečení narůst do volného místa
   pod sebou místo zmenšení písma, a přiřadit lince vlastní šablonu (index dnes jen podle agendy,
   chybí i dávkový tisk). Tohle vytáhnout, až se ukáže, že obojí nestačí.
-
-- **`B169` Zúžený formulář neukazuje hodnoty** [S] (nález kolegy 18. 9.). Popisek a hodnota
-  stojí vedle sebe, každý s dolní hranicí 120 bodů (`EDInputForm.xaml:55`), takže se v užším panelu
-  hodnota vytlačí mimo. Zkusit při zúžení přesunout hodnotu pod popisek.
-  ⚠️ **Sdílená komponenta** - stejně jako `B170` to musí být volba hostitele s výchozím vypnuto,
-  jinak se osekaný formulář objeví i u legacy formulářů v shellu.
-
-- **`B170` Formulář si pamatuje poslední filtr** [S] (podnět Jan 18. 9.). Ve formuláři prvku se
-  hledá Ctrl+F („rozest"), doladí se nastavení, formulář se zavře a při dalším otevření se musí
-  hledat znovu. U formuláře, který se otevírá pořád dokola nad **týmž** prvkem, je to zbytečné -
-  tak se chová i nastavení v IntelliJ nebo VS Code.
-  ⚠️ **Nesmí to být chování komponenty, ale volba hostitele.** EDInputForm běží i nad legacy
-  formuláři v shellu, kde se otevírá pokaždé **jiný záznam** a osekaný formulář by škodil. Tedy
-  aditivní vlastnost s výchozím vypnuto, kterou si zapne jen návrhář.
-  ⚠️ Zapamatovaný filtr znamená tři pole ze čtyřiceti - musí být na první pohled vidět (vyplněné
-  pole, křížek, počet skrytých) a Esc má nejdřív zrušit filtr, teprve podruhé zavřít. Jinak je to
-  táž třída chyb jako mizející nastavení. Držet jen v paměti běhu a per typ prvku, neukládat.
 
 - **`B155` Jemnější nastavení mřížky** [M] (podnět Jan 16. 9.). Dnes má `GridStyle` **jednu** barvu,
   tloušťku a styl pro vodorovné i svislé čáry - ty jdou jen zapnout nebo vypnout. Návrh: **čtyři
