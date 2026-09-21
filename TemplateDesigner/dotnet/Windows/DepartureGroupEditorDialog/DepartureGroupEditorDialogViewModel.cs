@@ -292,15 +292,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
     // ── Commands ──────────────────────────────────────────────────────
 
-    // Per-column (Sloupce tab)
-    public RelayCommand PickHeaderTextColorCommand { get; }
-    public RelayCommand PickHeaderBgColorCommand { get; }
-    public RelayCommand PickDataTextColorCommand { get; }
-    public RelayCommand PickDataBgColorCommand { get; }
-    public RelayCommand ClearHeaderTextColorCommand { get; }
-    public RelayCommand ClearHeaderBgColorCommand { get; }
-    public RelayCommand ClearDataTextColorCommand { get; }
-    public RelayCommand ClearDataBgColorCommand { get; }
+    // Per-column (Sloupce tab) - barvy buněk drží CellStyleVM, tady zbývá jen zebra
     public RelayCommand PickZebraColorCommand { get; }
     public RelayCommand ClearZebraColorCommand { get; }
     public RelayCommand ResetStyleCommand { get; }
@@ -417,18 +409,6 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         }
 
         if (GroupVMs.Count > 0) SelectedGroupVM = GroupVMs[0];
-
-        // Color picker commands - záhlaví
-        PickHeaderTextColorCommand  = Command(() => PickColor(g => g.Header.TextColor, (g, c) => g.Header.TextColor = c));
-        PickHeaderBgColorCommand    = Command(() => PickColor(g => g.Header.BgColor,   (g, c) => g.Header.BgColor   = c));
-        ClearHeaderTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Header.TextColor = null; });
-        ClearHeaderBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Header.BgColor   = null; });
-
-        // Color picker commands - data
-        PickDataTextColorCommand  = Command(() => PickColor(g => g.Data.TextColor, (g, c) => g.Data.TextColor = c));
-        PickDataBgColorCommand    = Command(() => PickColor(g => g.Data.BgColor,   (g, c) => g.Data.BgColor   = c));
-        ClearDataTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.TextColor = null; });
-        ClearDataBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.BgColor   = null; });
 
         // Střídání řádků per skupina - vlastní pole, ne součást stylu buňky: kreslí se pod buňky
         // a platí jen pro každý druhý řádek, takže do CellStyleEditoru nepatří.

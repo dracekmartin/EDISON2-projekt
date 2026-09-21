@@ -82,11 +82,7 @@
                             <TextBlock Text="Styl záhlaví sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <controls:CellStyleEditor
                                 DataContext="{Binding SelectedGroupVM.Header}"
-                                EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                ClearTextColorCommand="{Binding DataContext.ClearHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                PickBgColorCommand="{Binding DataContext.PickHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                ClearBgColorCommand="{Binding DataContext.ClearHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
 
                             <Separator Margin="0,8,0,8"/>
 
@@ -94,11 +90,7 @@
                             <TextBlock Text="Datové buňky" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <controls:CellStyleEditor
                                 DataContext="{Binding SelectedGroupVM.Data}"
-                                EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                PickTextColorCommand="{Binding DataContext.PickDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                ClearTextColorCommand="{Binding DataContext.ClearDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                PickBgColorCommand="{Binding DataContext.PickDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                ClearBgColorCommand="{Binding DataContext.ClearDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
 
                             <!-- ── Střídání řádků (per skupina) ────────────────
                                  Celý blok mizí u sloupce hodin: zebra se kreslí per skupina dnů

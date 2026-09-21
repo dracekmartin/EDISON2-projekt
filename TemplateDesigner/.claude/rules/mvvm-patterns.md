@@ -304,18 +304,20 @@ Všechny editovatelné vlastnosti jsou nullable (`string?`, `float?`, `bool?`, `
 
 **Host dialog (VM) musí poskytnout:**
 - `HeaderEditOptions` + `DataEditOptions` (zatím všude `AllEnabled`; do budoucna per-kontextové skrytí irelevantních voleb)
-- Pick/Clear commands per zóna × barva (Text/Bg) = 8 commands
-- `RequestColorPicker: Func<string, string?>` callback (dialog wire `ColorPickerHelper.PickColor`)
 - `ResetStyleCommand` (volitelný, pro tlačítko „Resetovat styl")
 - V konstruktoru: `CellStyleVM.FromModel(columnTextStyle, element.Resolve<Zone>Parent())` - nikdy nevytváří VM bez inherited!
+
+⚠️ **Barvy hostitel nedrátuje.** Výběr a smazání barvy textu i pozadí drží `CellStyleVM` (jsou to
+jeho hodnoty) a vyvolání výběru mu dosadí sám `CellStyleEditor`, protože jediný ví, v jakém okně
+sedí. Do 21. 9. si každý hostitel psal osm příkazů a vlastní `RequestColorPicker` - pět kopií téhož.
+Vlastní picker si drží jen dialog, který barvu edituje **mimo** tenhle editor (zebra u skupin dnů,
+pravidla zvýraznění).
 
 **Host dialog (XAML):**
 ```xml
 <controls:CellStyleEditor
     DataContext="{Binding SelectedColumnVM.HeaderStyle}"
-    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-    PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-    ... /> <!-- 3 zbývající color commands -->
+    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
 ```
 
 ---
