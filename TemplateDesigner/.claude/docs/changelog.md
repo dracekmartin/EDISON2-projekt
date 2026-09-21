@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-09-21 (5) - ➖ čára u zastávky podle trasy
+
+`B172`. V trase linky jde u zastávky zadat „podtrženo" nebo „podtrženo nad i pod" - dispečer tím
+odděluje úsek linky a **oba staré tisky to kreslí**. Návrhář ty dva atributy ignoroval.
+
+Nově se u takové zastávky nakreslí čára přes celou šířku tabulky, silnější než mřížka a barvou textu
+buněk. Vypnout to jde volbou **„Čáry u zastávek dle trasy"** u prvku, stejně jako u tučných zastávek.
+
+Netýká se to hrstky linek: u jedné firmy to má 12 tisíc linek z 15 tisíc, u dalších dvou přes dva
+tisíce (změřeno 21. 9.). Hotovým šablonám tedy čáry přibudou - je to ale návrat k tvaru starého
+tisku, ne nová ozdoba.
+
 ## 2026-09-21 (4) - ⬜ prázdné sloupce se prokládají mezi spoje
 
 `B167`, nález kolegy z 18. 9. Volba „Dorovnat prázdnými sloupci" doplňovala volné místo **na konec**

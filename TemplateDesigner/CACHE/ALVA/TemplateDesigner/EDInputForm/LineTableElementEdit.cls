@@ -108,6 +108,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Buňka spoje, ve které není čas, se vyplní tečkami - tabulka pak drží svislé vodicí pruhy jako starý tisk. U linky, kde většina spojů jede jen část trasy, se tím tabulka zaplní a čte se hůř."
         s f = form.AddBool("TucneZastavkyDleTrasy", "Tučné zastávky dle trasy", 1)
         s f.helpText = "V trase linky jde u zastávky zadat atribut ""tučně"" - zapnuté = návrhář ho respektuje, stejně jako to dělá starý tisk. Vypnuté = všechny zastávky stejným písmem."
+        s f = form.AddBool("CaryZastavekDleTrasy", "Čáry u zastávek dle trasy", 1)
+        s f.helpText = "V trase linky jde u zastávky zadat ""podtrženo"" nebo ""podtrženo nad i pod"" - zapnuté = návrhář nakreslí čáru přes celou šířku tabulky, stejně jako starý tisk. Odděluje se tím úsek linky."
         s f = form.AddBool("TeckyZaNazvemZastavky", "Tečky za názvem zastávky", 0)
         s f.helpText = "Za název zastávky se doplní tečky k pravému okraji sloupce, aby oko dojelo k času. Končí před piktogramem přestupu."
         d form.AddBool("HighlightOddTc", "Podbarvit lichá Tč", 1)

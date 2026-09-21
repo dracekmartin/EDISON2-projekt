@@ -1,5 +1,22 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B172` Čára u zastávky podle trasy (hotovo 21. 9. 2026)
+
+Atributy trasy `p` („podtrženo") a `o` („podtrženo nad i pod") kreslí oba staré tisky - Windows
+silnou čarou přes celou šířku tabulky (`JRapiLinPrtWin.mac:1259`, kreslení
+`formTISKJRReportDotNet_Module.vb:2501`), postskript sloupcem malého podtržení
+(`JRapiLinPrtPS1.mac:110`). Prvek je ignoroval.
+
+**Změřený výskyt** (sonda `AdSloupekProbe.KdeJeCaraUZastavky`, 21. 9.): KV_DP 11 966 linek
+z 15 849, VS_CSAD 2 451 z 31 915, ZL_KOVED 2 206 z 11 153, CB_CSADAD 28 z 30 831. Varianta `o`
+je vzácná - jen 14 výskytů u CB_CSADAD.
+
+⚠️ **Hotovým šablonám čáry přibudou** - volba „Čáry u zastávek dle trasy" je zapnutá, protože bez ní
+by se tvar starého tisku nevrátil ani u nové šablony. Vypínač stojí vedle tučných zastávek, je to
+táž rodina atributů.
+⚠️ **Čára se kreslí barvou textu buněk, ne mřížky** - šablona se světlou mřížkou by ji jinak
+schovala. Legacy ji má natvrdo černou a pětkrát silnější než rámeček.
+
 ## `B167` Prázdné sloupce se prokládají mezi spoje (hotovo 21. 9. 2026)
 
 Nález kolegy z 18. 9.: starý tisk prázdné sloupce prokládá, my je dolepovali na konec bloku.

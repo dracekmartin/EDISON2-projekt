@@ -111,12 +111,6 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
-- **`B172` Čára u zastávky z atributů `p` a `o`** [S] (nález 21. 9. při `B166`). Starý tisk umí
-  u zastávky čáru pod řádkem (atribut trasy `p`) a nad i pod ním (`o`) - `JRapiLinPrtPS1.mac:110`.
-  Znaky na klienta chodí v `ATRIBUTY`, prvek je ignoruje. Nesouvisí s příjezdem a odjezdem (`P`/`J`),
-  ten tvar umíme.
-  ⚠️ **Nejdřív změřit, kolik linek je vůbec má** - když nula, nedělat vůbec.
-
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
   engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi, a nad ním

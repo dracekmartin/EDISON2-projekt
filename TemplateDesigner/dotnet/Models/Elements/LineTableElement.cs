@@ -223,6 +223,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public bool TucneZastavkyDleTrasy { get; set; } = true;
 
+    /// <summary>Kreslit u zastávky čáru, kterou si vyžádala trasa (atributy `p` a `o`)?</summary>
+    /// <remarks>
+    /// ⚠️ <b>Není to naše rozhodnutí o vzhledu, je to údaj z jízdních řádů.</b> Atribut trasy
+    /// <c>p</c> znamená „podtrženo" a <c>o</c> „podtrženo nad i pod"; dispečer jimi odděluje úsek
+    /// linky. Obě staré cesty to tisknou: Windows tisk silnou čarou přes celou šířku tabulky
+    /// (<c>JRapiLinPrtWin.mac:1259-1262</c>, kreslení <c>formTISKJRReportDotNet_Module.vb:2501</c>),
+    /// postskript vlastním sloupcem „malého podtržení" (<c>JRapiLinPrtPS1.mac:110-112</c>).
+    /// <para>Není to totéž co <c>P</c> a <c>J</c> (příjezd a odjezd) - ty velkými písmeny rozdělují
+    /// řádek, tyhle jen kreslí čáru. Změřeno 21. 9.: používá je 12 tisíc linek z 15 tisíc u KV_DP,
+    /// u jiných firem jednotky procent.</para>
+    /// </remarks>
+    public bool CaryZastavekDleTrasy { get; set; } = true;
+
     /// <summary>Jak se sází čas spoje (výchozí hodina větším písmem, jako ve starém tisku).</summary>
     public FormatCasuSpoje FormatCasu { get; set; } = FormatCasuSpoje.HodinaVetsi;
 
@@ -1369,6 +1382,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static bool MaTucneZTrasy(LineStopData s) =>
         s.Atributy.Contains("T") || s.Atributy.Contains("P");
 
+    /// <summary>Má zastávka v trase vyžádanou čáru pod řádkem? Atribut trasy „p" nebo „o".</summary>
+    private static bool MaCaruPod(LineStopData s) =>
+        s.Atributy.Contains("p") || s.Atributy.Contains("o");
+
+    /// <summary>Má zastávka vyžádanou čáru i nad řádkem? Jen atribut „o" („podtrženo nad i pod").</summary>
+    private static bool MaCaruNad(LineStopData s) => s.Atributy.Contains("o");
+
     /// <summary>
     /// Rozdvojuje se u téhle zastávky řádek na příjezd a odjezd?
     /// </summary>
@@ -1750,6 +1770,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (Width <= 0) return;
 
         using var paints = CreateStandardPaints(ctx);
+        // Čára úseku z trasy je **silnější než mřížka** a kreslí se barvou textu, aby byla vidět
+        // i v šabloně se světlou mřížkou. Starý tisk ji má natvrdo černou a pětkrát silnější než
+        // rámeček (formTISKJRReportDotNet_Module.vb:2502).
+        using var caraUseku = new SKPaint
+        {
+            Color = ColorHex.Parse(DataStyle.TextColor, ColorHex.Black),
+            StrokeWidth = paints.Grid.StrokeWidth * 3f,
+            Style = SKPaintStyle.Stroke,
+        };
 
         if (ctx.Data is null)
         {
@@ -1849,6 +1878,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     headerH, rowH, PripojRowH() * scale,
                     Grid.ShowColumnLines ? paints.Grid : null,
                     Grid.ShowRowLines ? paints.Grid : null,
+                    CaryZastavekDleTrasy ? caraUseku : null,
                     headerResolved, headerCentered,
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
@@ -2020,7 +2050,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         List<LineSkupinaData> groups,
         SloupcovaMrizka mrizka, int nameIndex,
         float headerH, float rowH, float pripojRowH,
-        SKPaint? sloupcovaCara, SKPaint? radkovaCara,
+        SKPaint? sloupcovaCara, SKPaint? radkovaCara, SKPaint? caraUseku,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
         ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle,
         RenderContext ctx, SKTypeface symbolFace, float scale)
@@ -2240,10 +2270,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // **vpravo ve sloupci zastávek**, za názvem - proto overlay, ne předsazení před název.
             var znakZastavky = SymbolRunRenderer.BuildRuns(
                 stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveZastavka);
+            // Čára úseku z trasy: u rozdvojené zastávky patří dvojici jako celku, takže horní řádek
+            // nese tu nad ní a dolní tu pod ní - jinak by čára prošla dvojicí napůl.
+            bool caraPod = caraUseku is not null && MaCaruPod(stop)
+                        && rozdvojenyRadek is not RozdvojenyRadek.Horni;
+            bool caraNad = caraUseku is not null && MaCaruNad(stop)
+                        && rozdvojenyRadek is not RozdvojenyRadek.Dolni;
             plan.Add(new(RowKind.Data, rowH, specs)
             {
                 Background = ColorHex.ParseOrNull(rowHl),
                 VerticalLinePaint = sloupcovaCara,
+                LineAbovePaint = caraNad ? caraUseku : null,
+                LineBelowPaint = caraPod ? caraUseku : null,
                 Decorate = (znackyRadku.Count == 0) && (znackyVBunceZrc.Count == 0)
                         && (znakZastavky.Count == 0) && rozdvojenyRadek is RozdvojenyRadek.Zadny
                         ? null : rowY =>
@@ -2864,6 +2902,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             NejvetsiSirkaSpojeMm = NejvetsiSirkaSpojeMm,
             FormatCasu = FormatCasu,
             TucneZastavkyDleTrasy = TucneZastavkyDleTrasy,
+            CaryZastavekDleTrasy = CaryZastavekDleTrasy,
             PomerZnacek = PomerZnacek,
             PomerMinuty = PomerMinuty,
             VyplnitPrazdneBunkySpoju = VyplnitPrazdneBunkySpoju,
@@ -2940,6 +2979,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
         new BoolPropertyDescriptor { Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
         new BoolPropertyDescriptor { Label = "Tučné zastávky dle trasy", Group = "Datové buňky", Get = () => TucneZastavkyDleTrasy, Set = v => TucneZastavkyDleTrasy = v },
+        new BoolPropertyDescriptor { Label = "Čáry u zastávek dle trasy", Group = "Datové buňky", Get = () => CaryZastavekDleTrasy, Set = v => CaryZastavekDleTrasy = v },
         new FloatPropertyDescriptor
         {
             Label = "Velikost značek", Group = "Řádky",
