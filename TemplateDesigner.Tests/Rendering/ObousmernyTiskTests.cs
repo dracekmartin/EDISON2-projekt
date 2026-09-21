@@ -330,6 +330,32 @@ public class ObousmernyTiskTests
             $"zastávky začínají na {hrana:0.##} mm - dorovnání odsunulo tabulku od levé hrany");
     }
 
+    /// <summary>
+    /// S dorovnáním končí tabulka <b>na hraně prvku</b>, ne kousek před ní.
+    /// </summary>
+    /// <remarks>
+    /// Počet prázdných sloupců vychází z celých sloupců, takže po nich zbude kus šířky. Bez
+    /// rozpuštění do prázdných je za posledním sloupcem vidět useknutý pruh a vypadá to jako chyba
+    /// sazby (nález Jan 21. 9.). Šířka prvku je schválně nesoudělná s šířkou sloupce.
+    /// </remarks>
+    [Fact]
+    public void Dorovnani_KonciNaHranePrvku()
+    {
+        var prvek = Prvek();
+        prvek.Width = SirkaZastavky + (3.4f * SirkaSpoje);
+        prvek.PadEmptyColumns = true;
+        // Měří se podle mřížky, takže musí být vidět - fixtura ji jinak kreslí bíle.
+        prvek.Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FF000000", Width = 0.2f };
+
+        using var bmp = Vykresli(prvek, DataTriSloty(nazvyZastavek: true, obousmerne: false));
+
+        float konec = PosledniInkoustXMm(bmp);
+        Assert.True(konec > 0f, "tabulka se nenakreslila");
+        Assert.True(MathF.Abs(konec - prvek.Width) < 1f,
+            $"tabulka končí na {konec:0.##} mm, prvek na {prvek.Width:0.##} mm "
+            + "- zbytek šířky se nerozpustil do prázdných sloupců");
+    }
+
     /// <summary>Tři sloty v obou směrech - pro dělení na bloky.</summary>
     private static DataContext DataTriSloty(bool nazvyZastavek, bool casyPosledniZrcadlene = false,
         bool obousmerne = true)

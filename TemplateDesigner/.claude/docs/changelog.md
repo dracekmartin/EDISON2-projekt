@@ -13,6 +13,10 @@ zůstávají u zastávek.
 Počet prázdných sloupců se nemění: řídí ho dál to, kolik sloupců se do prvku vejde, tedy nastavení
 nejmenší a největší šířky sloupce spoje.
 
+Se zapnutým dorovnáním navíc tabulka **končí na hraně prvku**. Dřív za posledním sloupcem zbýval
+úzký useknutý pruh, protože se počet sloupců počítá po celých. Zbytek teď dostanou prázdné sloupce,
+a když žádný nevyšel, rozšíří se poslední sloupec spoje.
+
 ## 2026-09-21 (3) - 🎫 místenka se v českém tisku značí „R"
 
 Nález kolegy z 21. 9. na lince 320913. U spoje se místo „R" tiskl ampersand a vysvětlivka mluvila
