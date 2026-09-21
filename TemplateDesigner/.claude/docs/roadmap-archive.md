@@ -1,5 +1,17 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B168` Rozbalovací seznam vybraných linek (hotovo 21. 9. 2026)
+
+Nález kolegy z 18. 9.: mezi vybranými linkami se listovalo jen šipkami, skok na konkrétní linku
+znamenal proklikat všechny před ní.
+
+Klik na jméno linky ve stavové liště rozbalí seznam vybraných linek s odškrtnutou aktuální; výběr
+linek zůstal dostupný jako poslední položka seznamu. Šipky beze změny.
+
+Rozhodnutí Jan 21. 9.: **rozbalovací seznam místo zvláštního tlačítka** - chip by jinak musel nést
+dvě ovládací místa vedle dvou šipek. S jednou vybranou linkou klik otevírá výběr rovnou jako dřív,
+seznam o jedné položce by byl krok navíc. Hledací pole až nad dvanácti linkami.
+
 ## `B160` Zarovnání odjezdů na pevnou šířku (hotovo 18. 9. 2026)
 
 Přání TRANSDEV z 16. 9.: rozteč minut, kterou značka neovlivní. Zarovnání dle nejširšího odjezdu

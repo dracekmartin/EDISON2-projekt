@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-09-21 - 🔽 seznam vybraných linek přímo v liště
+
+`B168`, nález kolegy z 18. 9. Mezi vybranými linkami se dalo listovat jen šipkami, takže skok
+na konkrétní linku znamenal proklikat všechny před ní.
+
+Kliknutí na jméno linky ve stavové liště teď rozbalí **seznam právě vybraných linek** s odškrtnutou
+tou, která je vidět v náhledu. Výběr linek se nikam neztratil, je v seznamu poslední položkou.
+Šipky doleva a doprava zůstávají.
+
+Při jedné vybrané lince není mezi čím přepínat, takže klik vede rovnou na výběr jako dosud.
+Nad dvanácti linkami dostane seznam nahoře hledací pole - u stovky vybraných linek je posouvání
+seznamu k ničemu.
+
 ## 2026-09-18 (2) - 📏 pevný rastr minut: značky rozestup neovlivní
 
 `B160`, přání TRANSDEV z 16. 9. Zarovnání dle nejširšího odjezdu počítá rozteč z **nejširšího

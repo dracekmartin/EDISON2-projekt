@@ -70,8 +70,10 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
 
-Sedm nálezů ze zkoušení, zatím jen evidence - **nic z toho není zanalyzované**. První tři jsou
-vady výstupu, zbytek je ovládání a dva dotazy na chování starého modulu.
+Šest zbývajících nálezů (rozbalovací seznam linek hotový 21. 9.). Rozsah každého je projitý
+proti kódu 21. 9., pořadí je od nejmenšího. `B163`, `B165` a `B166` se dají vzít jedním
+průchodem - jsou ve stejném místě a odpoví na ně data téže linky; `B164` a `B167` potřebují
+výtisk ze starého modulu.
 
 - **`B163` Atributy spoje se netisknou** [?]. Kolega zadal u spoje v jízdních řádech atributy
   a v sestavě nevyšly (boční značky u sloupce spoje). Ověřit, jestli je vůbec posíláme.
@@ -92,9 +94,6 @@ vady výstupu, zbytek je ovládání a dva dotazy na chování starého modulu.
 - **`B167` Dorovnání prázdnými sloupci: prokládat, ne dolepit** [?]. Starý modul prázdné sloupce
   **prokládal** mezi spoje (prázdný, spoj, prázdný…), my je dáváme na konec. Ověřit na výstupu
   starého modulu a srovnat (`#8372`).
-
-- **`B168` Přepínání mezi vybranými linkami** [S]. Při více vybraných instancích se dnes listuje
-  jen šipkami doprava/doleva. Kolega chce rozbalovací seznam, aby šlo skočit rovnou na konkrétní.
 
 - **`B169` Zúžený formulář neukazuje hodnoty** [S]. V úzkém panelu je vidět jen popisek pole,
   hodnota ne. Zkusit, jestli se při zúžení nedá hodnota přesunout pod popisek. Týká se EDInputFormu

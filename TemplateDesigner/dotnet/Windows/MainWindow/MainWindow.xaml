@@ -6,6 +6,7 @@
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:aiguide="clr-namespace:TemplateDesigner.Windows.AiGuideDialog"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
+        xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox;assembly=EDControls"
         Title="Návrhář sestav" Height="768" Width="1280"
         Icon="{StaticResource EDIcons.Molecule}"
         WindowState="Maximized"
@@ -24,6 +25,23 @@
                 <Setter Property="Foreground"   Value="{DynamicResource EDTheme.Text.Primary}"/>
             </Style>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+            <!-- Položka rozbalovacího seznamu instancí - tlačítko přes celou šířku, bez rámečku. -->
+            <Style x:Key="InstanceListItemButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="Background"      Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding"         Value="8,4"/>
+                <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
+                <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+                <Setter Property="Cursor"          Value="Hand"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
 
             <!-- Rozměr ikon v toolbaru/paletě - FontService škáluje token spolu s user fontem. -->
             <Style x:Key="ToolbarIconStyle" TargetType="Image">
@@ -862,12 +880,12 @@
                     <Border Grid.Column="1" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
 
                     <!-- 2) Instance chip (klikatelný - OpenInstancePicker) -->
-                    <Border Grid.Column="2"
+                    <Border x:Name="InstanceChip" Grid.Column="2"
                             Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
                             ToolTip="{Binding InstancePickerHint}">
                         <Border.InputBindings>
-                            <MouseBinding MouseAction="LeftClick" Command="{Binding OpenInstancePickerCommand}"/>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding OpenInstanceListCommand}"/>
                         </Border.InputBindings>
                         <StackPanel Orientation="Horizontal">
                             <Button Content="◀" Command="{Binding PreviousInstanceCommand}"
@@ -896,6 +914,12 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
+                            <!-- Šipka dolů je jen značka, že se chip rozbalí; klik obsluhuje celý chip. -->
+                            <TextBlock Text="▾"
+                                       Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                       Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                       VerticalAlignment="Center" Margin="4,0,0,0"/>
                             <Button Content="▶" Command="{Binding NextInstanceCommand}"
                                     Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
                                     Background="Transparent" BorderThickness="0" Padding="4,0"
@@ -909,6 +933,59 @@
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                        Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                        Margin="12,0,0,0" VerticalAlignment="Center"/>
+
+                            <!-- Seznam vybraných instancí. Popup je v logickém stromu chipu, takže
+                                 dědí DataContext okna a položky se vážou přímo na ViewModel. -->
+                            <Popup IsOpen="{Binding IsInstanceListOpen, Mode=TwoWay}"
+                                   PlacementTarget="{Binding ElementName=InstanceChip}"
+                                   Placement="Top" VerticalOffset="-4"
+                                   StaysOpen="False" AllowsTransparency="True"
+                                   Focusable="False" PopupAnimation="Fade">
+                                <Border Background="{DynamicResource EDTheme.Bg.Panel}"
+                                        BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                                        BorderThickness="1" CornerRadius="3"
+                                        MinWidth="300" MaxWidth="460" Padding="0,4">
+                                    <StackPanel>
+                                        <edstx:EDSearchTextBox Text="{Binding InstanceFilter, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding ShowInstanceFilter, Converter={StaticResource BoolToVis}}"
+                                                 Placeholder="{Binding InstanceFilterHint}"
+                                                 Margin="8,4" Padding="4,2"
+                                                 FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                        <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding InstanceVolby}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Style="{StaticResource InstanceListItemButton}"
+                                                                Command="{Binding DataContext.SelectInstanceCommand,
+                                                                          RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding Index}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="✓" Width="16"
+                                                                           Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                                                           Visibility="{Binding JeAktualni, Converter={StaticResource BoolToVis}}"/>
+                                                                <TextBlock Text="{Binding Display}"
+                                                                           Foreground="{DynamicResource EDTheme.Text.Primary}"
+                                                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                                <TextBlock Text="{Binding Subtitle}"
+                                                                           Margin="8,0,0,0"
+                                                                           Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                        <Border Height="1" Margin="0,4"
+                                                Background="{DynamicResource EDTheme.Border.Light}"/>
+                                        <Button Style="{StaticResource InstanceListItemButton}"
+                                                Command="{Binding PickInstancesFromListCommand}"
+                                                Content="{Binding InstancePickerItemText}"/>
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
                         </StackPanel>
                     </Border>
 
