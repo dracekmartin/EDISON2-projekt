@@ -1,4 +1,4 @@
-﻿# Roadmap
+# Roadmap
 
 > **Jen otevřená / akční práce.** Hotové → [`roadmap-archive.md`](roadmap-archive.md), průběžný
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
@@ -70,9 +70,9 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
 
-Pět zbývajících nálezů (rozbalovací seznam linek hotový 21. 9., zvýraznění zastávky uzavřeno
-jako neplatné). Rozsah každého je projitý proti kódu 21. 9., pořadí je od nejmenšího. `B163`
-čeká na číslo linky a spoje od kolegy; `B164` a `B167` potřebují výtisk ze starého modulu.
+Čtyři zbývající nálezy (seznam linek, zvýraznění zastávky a značky u zastávky vyřízené 21. 9.).
+Rozsah každého je projitý proti kódu 21. 9. `B163` čeká na číslo linky a spoje od kolegy;
+`B164` a `B167` potřebují výtisk ze starého modulu.
 
 - **`B163` Atributy spoje se netisknou** [?]. Kolega zadal u spoje v jízdních řádech atributy
   a v sestavě nevyšly (boční značky u sloupce spoje). Ověřit, jestli je vůbec posíláme.
@@ -80,10 +80,6 @@ jako neplatné). Rozsah každého je projitý proti kódu 21. 9., pořadí je od
 - **`B164` Zastávka se tiskne dvakrát** [?]. `CB_CSADAD` linka `320913`: „České Budějovice,
   aut.nádr." zabírá dva řádky, ačkoli data mají jeden. Podezření na rozdvojení příjezd/odjezd
   u linky s málo zastávkami.
-
-- **`B165` Značky poznámek vycházejí špatně** [?]. V legendě nesedí `⑦`, `&`, `N`, `G`. Kolega se
-  ptá, jestli je potřeba mít nainstalovaný font - spíš to ale vypadá na chybný překlad typu
-  poznámky. Ověřit obojí.
 
 - **`B167` Dorovnání prázdnými sloupci: prokládat, ne dolepit** [?]. Starý modul prázdné sloupce
   **prokládal** mezi spoje (prázdný, spoj, prázdný…), my je dáváme na konec. Ověřit na výstupu

@@ -1180,13 +1180,19 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     s cisloTrasy = $p(hlava,":",3)
 
     // per-tč značky spoje z trasy (W segment ":"-piece 5, legacy gSpLin trs,6): N/V/x/G/a/b/c
-    // → legenda druhu 7 (r/i přesunuty do atributů, jako legacy)
+    // → legenda druhu 7 (r/i přesunuty do atributů, jako legacy) i do buňky vedle času
+    // (`znackyTc`), kam je starý tisk kreslí (JRapiLinPrtWin.mac:3838 a :1409).
+    k znackyTc
     s wTrasaVeta = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
     f wi=1:1:$l(wTrasaVeta,"#") {
-        s wZnaky = $p($p(wTrasaVeta,"#",wi),":",5)
+        s wSegment = $p(wTrasaVeta,"#",wi)
+        s wPoradi = $p(wSegment,":",1)
+        s wZnaky = $p(wSegment,":",5)
         f zi=1:1:$l(wZnaky) {
             s wZnak = $e(wZnaky,zi)
-            i (wZnak '= "") && (wZnak '= "r") && (wZnak '= "i") s trasaZnakySeen(wZnak) = ""
+            i (wZnak = "") || (wZnak = "r") || (wZnak = "i") continue
+            s trasaZnakySeen(wZnak) = ""
+            i wPoradi '= "" s znackyTc(+wPoradi) = $g(znackyTc(+wPoradi))_wZnak
         }
     }
     s odjezd = +$p(hlava,":",4)
@@ -1281,6 +1287,21 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         }
     }
     d o.%Set("CASY", casy)
+
+    // Značky u zastávky per řádek, stejně indexované jako CASY. Nesou je jen řádky s časem -
+    // u zdvojené zastávky tedy hlavní (odjezdový), jako v legacy (tc2row). Pole se posílá jen
+    // když má linka aspoň jednu značku, ať se stránka zbytečně nenafukuje.
+    i $d(znackyTc) {
+        s maZnacku = 0
+        s znacky = ##class(%DynamicArray).%New()
+        f i=1:1:pocetRadku {
+            s pp = $lg(rowMeta(i),1), typRadku = $lg(rowMeta(i),2)
+            s znakyRadku = $s(typRadku = "P":"", 1:$g(znackyTc(pp)))
+            i znakyRadku '= "" s maZnacku = 1
+            d znacky.%Push(znakyRadku)
+        }
+        i maZnacku d o.%Set("ZNACKY", znacky)
+    }
 
     // návaznosti: omzId 31 = vyčká, 32 = navazuje. Věta = znak@sekce@sekce…, sekce = tc#…:
     //   omz31: tc#maxCekaniMin#conn…, conn = AVL:linka:spoj:typVystupu:smerOdkud:minPrijezdu:

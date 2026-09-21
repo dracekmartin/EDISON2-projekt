@@ -1,5 +1,22 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B165` Značky u zastávky se kreslí v tabulce (hotovo 21. 9. 2026)
+
+Nález kolegy z 18. 9.: značky ve vysvětlivkách (`N` jen nástup, `G` paragraf) nesouhlasily
+s tabulkou. Měřením dat linky 320913 se ukázalo, že v tabulce **nebyly vůbec** - server je četl
+jen pro sestavení vysvětlivek.
+
+Značky u zastávky a spoje (W segment, `:`-pole 5) jdou nově na klienta v `ZNACKY` spoje, stejně
+indexované jako `CASY`, a prvek je kreslí vlevo od času - jako starý tisk
+(`JRapiLinPrtWin.mac:3838`, vykreslení `:1409`). Vysvětlivky je u druhu 7 překládají číselníkem
+zastávek, ne spojů; do té doby tam zůstávalo písmeno.
+
+⚠️ **Šířka sloupce i kreslení jdou jednou metodou** (`PiktogramyBunky`) - buňka může nést víc
+značek vedle sebe a dvě cesty by se rozešly, jako se to stalo 8. 9. u značek platnosti.
+⚠️ Značka bez ověřeného piktogramu se zahazuje (legacy filtruje přes `GSId`), takže složené
+značky metra (`e`/`f`/`g`) zůstávají nenakreslené - to legacy kreslí vlastní větví, není to
+přeneseno.
+
 ## `B166` Zvýraznění zastávky u kombinovaného zadání (uzavřeno 21. 9. 2026 - vada neplatí)
 
 Kolega hlásil, že Budeč na lince 340366 nemá být obyčejně, ale tučně nebo podtrženě. Porovnáním

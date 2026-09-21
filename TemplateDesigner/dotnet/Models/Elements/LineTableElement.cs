@@ -414,6 +414,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// se zapnutým parametrem „Turnusy ke spojům" - jinak je seznam prázdný a řádky nevzniknou.</summary>
         public List<string> Turnusy = [];
         public List<string> Casy = [];
+        /// <summary>Značky u zastávky per řádek, stejně indexované jako <see cref="Casy"/>
+        /// („N" jen nástup, „G" paragraf…). Prázdný seznam = linka žádnou nemá.</summary>
+        public List<string> Znacky = [];
         public List<LinePripojData> Pripoje = [];
     }
 
@@ -469,6 +472,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Platnost = ParseStringArray(row.GetValue("PLATNOST")),
             Turnusy = ParseStringArray(row.GetValue("TURNUSY")),
             Casy = ParseStringArray(row.GetValue("CASY")),
+            Znacky = ParseStringArray(row.GetValue("ZNACKY")),
             Pripoje = ParsePripoje(row.GetValue("PRIPOJE")),
         })];
 
@@ -889,12 +893,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             var stop = stops[si];
             if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
-            string znak = ZnakNavaznosti(spoj, stop.Poradi);
-            if (znak == "") continue;
             if (si >= spoj.Casy.Count || spoj.Casy[si] == "") continue;
-            if (!SymbolRunRenderer.MaPiktogram(
-                    SymbolRunRenderer.BuildRuns([znak], SymbolMap.ResolveLinkovy))) continue;
-            if (max < 1) max = 1;
+            // Buňka může nést víc značek vedle sebe (jen nástup, paragraf, návaznost), takže
+            // se počítají všechny - jinak by se sloupec spočítal na jednu a zbytek přetekl.
+            int vBunce = PiktogramyBunky(spoj, si, stop.Poradi).Count(r => r.Symbol);
+            if (max < vBunce) max = vBunce;
         }
         return max;
     }
@@ -2329,8 +2332,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             string cas = si < t.Casy.Count ? t.Casy[si] : "";
             if (cas == "") continue;
 
-            string znak = ZnakNavaznosti(t, stop.Poradi);
-            var runs = znak == "" ? [] : SymbolRunRenderer.BuildRuns([znak], SymbolMap.ResolveLinkovy);
+            var runs = PiktogramyBunky(t, si, stop.Poradi);
             bool maZnacku = SymbolRunRenderer.MaPiktogram(runs);
             if (!maZnacku) runs.Clear();   // neověřená značka → jako by žádná nebyla
 
@@ -2344,6 +2346,35 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             else runs.AddRange(casRuns);
             cil[ti] = runs;
         }
+    }
+
+    /// <summary>
+    /// Piktogramy, které v buňce stojí vlevo od času: značky u zastávky a za nimi návaznost.
+    /// </summary>
+    /// <remarks>
+    /// Značka bez ověřeného piktogramu se <b>zahazuje</b>, ne vypisuje písmenem - stejně to filtruje
+    /// starý tisk (<c>JRapiLinPrtWin.mac:3840</c> nekreslí to, pro co číselník nemá symbol).
+    /// <para>⚠️ Stejnou metodou se počítá <b>šířka</b> sloupce i kreslí obsah. Dvě cesty by se
+    /// rozešly a sloupec by přetekl - přesně to se stalo 8. 9. u značek platnosti.</para>
+    /// </remarks>
+    private static List<SymbolRunRenderer.Run> PiktogramyBunky(LineTripData spoj, int si, int poradi)
+    {
+        List<string> znacky = si < spoj.Znacky.Count
+            ? [.. spoj.Znacky[si].Select(z => z.ToString())
+                   .Where(z => SymbolMap.ResolveZastavka(z).Mode == SymbolRenderMode.FontGlyf)]
+            : [];
+        var runs = SymbolRunRenderer.BuildRuns(znacky, SymbolMap.ResolveZastavka);
+        string navaznost = ZnakNavaznosti(spoj, poradi);
+        if (navaznost != "")
+        {
+            var navaznostRuns = SymbolRunRenderer.BuildRuns([navaznost], SymbolMap.ResolveLinkovy);
+            if (SymbolRunRenderer.MaPiktogram(navaznostRuns))
+            {
+                if (runs.Count > 0) runs.Add(new(" ", false));
+                runs.AddRange(navaznostRuns);
+            }
+        }
+        return runs;
     }
 
     /// <summary>

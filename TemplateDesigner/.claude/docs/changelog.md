@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-09-21 (2) - 🔤 značky u zastávky se tisknou i v tabulce
+
+`B165`, nález kolegy z 18. 9. Vysvětlivky pod jízdním řádem popisovaly značky („spoj zastavuje jen
+pro nastupování", paragraf), které v tabulce nebyly vidět nikde - čtenář tedy nepoznal, ke které
+zastávce a spoji patří.
+
+Značky se nově kreslí **vlevo od času** v buňce toho spoje, jako ve starém tisku. Sloupec spoje si
+na ně rezervuje místo, takže tabulka nepřeteče. Značka, pro kterou číselník nemá obrázek, se
+nekreslí vůbec - stejně to dělá starý tisk.
+
+Ve vysvětlivkách se tytéž značky překládaly slovníkem značek spojů, ve kterém nejsou, takže tam
+zůstávalo písmeno, zatímco v tabulce je obrázek. Teď obojí sahá do téhož číselníku.
+
 ## 2026-09-21 - 🔽 seznam vybraných linek přímo v liště
 
 `B168`, nález kolegy z 18. 9. Mezi vybranými linkami se dalo listovat jen šipkami, takže skok
