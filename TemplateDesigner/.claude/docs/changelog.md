@@ -1,32 +1,35 @@
 ﻿# Changelog
 
-## 2026-09-22 (1) - 📏 šířka sloupců spojů jedním číslem, bez přetečení
+## 2026-09-22 (1) - 📏 šířka sloupců spojů vychází ze sazby, ne z ručního čísla
 
-U tabulky spojů se šířka nastavovala dvěma poli („nejmenší" a „největší"), ale zužovat uměl jen
-strop - a ten se zarážel o změřený obsah. Na vývěsce, kde nad časy stojí dvojice piktogramů, proto
-sloupec nešlo zúžit vůbec (linka 330510: 5,43 mm, ať se zadalo cokoli).
+U tabulky spojů se šířka sloupce nastavovala ručně - a nešlo to. Pole byla dvě („nejmenší"
+a „největší"), zužovat umělo jen jedno z nich a obě se zarážela o změřený obsah, takže na vývěsce,
+kde nad časy stojí dvojice piktogramů, se sloupec nehnul z 5,43 mm, ať se zadalo cokoli.
 
-Nově je to **jedno pole „Šířka sloupce spoje"** a jedno pravidlo: zadaná hodnota platí všude, kde se
-obsah vejde, a sloupec, do kterého se nevejde, zůstane tak široký, jak obsah potřebuje. Nastavíš
-tedy hustotu podle většiny sloupců, ušetříš místo a o výjimky se nemusíš starat - nic nepřeteče
-a písmo se nikdy nezmenší. Cenou je, že sloupce nejsou stejně široké; pravidelnou mřížku dělá dál
-volba „Stejně široké sloupce spojů" nebo větší zadaná hodnota.
+**Šířka se teď počítá z obsahu:** sloupec je tak široký, jak ho potřebuje to nejširší, co v něm
+stojí, plus vzduch kolem. Nic nepřeteče, písmo se nikdy nezmenší a ruční číslo zmizelo z panelu
+i z formuláře. Hustotu tisku řídí sazba:
 
-Zadané hodnotě navíc ustoupí vůle kolem obsahu - zarazí se teprve o to, co je vidět, a kolem toho
-nechá 0,15 mm z každé strany. Měří se přitom **kreslená stopa**, ne postup písma: piktogramy nad časy
-kreslí o kus dál, než kam posunou pero, takže se dřív počítalo s menší šířkou, než se nakreslí.
-Na 330510 vyjdou při zadaných 4 mm sloupce 4,00 až 5,88 mm (níž než 3,95 mm to nepustí, tolik měří
-samotný čas) a linka se vejde na dvě části místo tří.
+- **velikost písma** buněk a **velikost značek**,
+- tři nové odstupy v mm (prázdné = mezera z písma): **mezi značkami** nad časem, **mezi značkou
+  a časem** v buňce a **mezi hodinou a minutou**,
+- **vnitřní okraj buňky**, kterým se přidává vzduch kolem času.
 
-Staré šablony převezme migrace 1.14.0: vezme se největší šířka, a když chybí, nejmenší.
+**„Stejně široké sloupce spojů" je nově vypnuté.** Zapnuté srovná všechny sloupce na ten nejširší,
+takže zvětší i ty, které by se zúžit daly - a proti počítané šířce to působilo, jako by nastavení
+nefungovalo. Úspora místa vyhrála a odpovídá to i starému tisku. Šablonám, které to mají dnes
+zapnuté, zůstane zapnuté.
 
-K tomu jsou tři nové odstupy v téže skupině, všechny v milimetrech a prázdné = jako dosud
-(mezera z písma): **mezi značkami** nad časem, **mezi značkou a časem** v buňce a **mezi hodinou
-a minutou**. Jsou to jediná místa, kde se ve sloupci dá ubrat, aniž se zmenší písmo - na 330510
-stáhnou při zadaných 4 mm nejširší sloupec z 5,88 na 5,45 mm a s nulami až na 5,05 mm.
+Na 330510 vyjdou sloupce 4,65 až 6,58 mm a linka se vejde na dvě části místo tří; s utaženými
+odstupy 4,50 až 6,15 mm. Se srovnanými sloupci dostanou všechny 6,58 mm a části jsou tři.
 
-Vnitřní okraj buňky navíc ustoupí obsahu - když se čas se značkou do odsazeného místa nevejde,
-vysází se do celé buňky, místo aby přetekl přes hranu sloupce.
+Tabulka tím přestala sama vyplňovat celou šířku prvku - u linky s málo spoji zbyde vpravo volno,
+dokud se nezapne „Dorovnat prázdnými sloupci". To je tvar starého postskriptového tisku.
+
+Pod kapotou se k tomu srovnaly tři věci: šířka se měří z **kreslené stopy**, ne z postupu písma
+(piktogramy kreslí dál, než kam posunou pero, takže se s nimi počítalo úzce), vnitřní okraj buňky
+**ustoupí obsahu**, místo aby ho vytlačil přes hranu sloupce, a šířky se **přeměří při každé změně
+sazby**, ne jen při načtení dat.
 
 ## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře
 

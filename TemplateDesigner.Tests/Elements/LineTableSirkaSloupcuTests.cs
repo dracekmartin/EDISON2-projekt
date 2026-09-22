@@ -9,13 +9,13 @@ namespace TemplateDesigner.Tests.Elements;
 /// Šířka sloupce spoje u tabulky linkového JŘ.
 /// </summary>
 /// <remarks>
-/// <para>Do 22. 9. tu byla dvojice „nejmenší/největší": dvě pole svádějí k tomu, že jde o pár,
-/// jenže zužovat uměl jen strop - a ten se zarážel o změřený obsah, takže sloupec s dvojicí
-/// piktogramů nad časy nešlo zúžit vůbec (linka 330510: 5,43 mm, ať se zadalo cokoli).</para>
-/// <para>Nový model je jedno číslo a jedno pravidlo: <b>zadaná šířka platí všude, kde se obsah
-/// vejde, a kde ne, zůstane sloupec tak široký, jak obsah potřebuje</b>. Uživatel tím nastaví
-/// hustotu podle většiny sloupců, nic nepřeteče a písmo zůstane, jaké je (rozhodnutí Jan 22. 9.).
-/// Cena: sloupce nejsou stejně široké - od toho je volba „Stejně široké sloupce spojů".</para>
+/// <para><b>Šířka se nezadává, počítá se z obsahu</b> (rozhodnutí Jan 22. 9.): sloupec je tak
+/// široký, jak ho potřebuje to nejširší, co v něm stojí, plus vzduch kolem. Hustotu tisku řídí
+/// písmo, velikost značek a odstupy mezi nimi - tedy sazba, ne ruční číslo.</para>
+/// <para>Předtím se to za jediný den zkusilo dvěma způsoby a oba měly touž vadu: dvojice
+/// „nejmenší/největší šířka" svádí k tomu, že jde o pár, ale zužovat uměl jen strop; jedno pole
+/// „šířka sloupce" zase stálo proti volbě „stejně široké sloupce spojů", která ho tiše přebíjela.
+/// Dvě nastavení na jednu věc znamenají, že se jedno z nich chová, jako by nefungovalo.</para>
 /// </remarks>
 public class LineTableSirkaSloupcuTests
 {
@@ -26,114 +26,76 @@ public class LineTableSirkaSloupcuTests
     private static float SirkaSloupce(LineTableElement prvek, DataContext data) =>
         prvek.Rozvrzeni(data)[0].SirkySloupcu[0];
 
-    /// <summary>Nejširší sloupec spoje prvního bloku.</summary>
-    private static float NejsirsiSloupec(LineTableElement prvek, DataContext data) =>
-        prvek.Rozvrzeni(data)[0].SirkySloupcu.Max();
-
-    // ── Zadaná šířka ────────────────────────────────────────────────────────
+    // ── Šířka z obsahu ──────────────────────────────────────────────────────
 
     /// <summary>
-    /// Jádro požadavku: u linky, která se do prvku vejde, se sloupce bez zadané šířky roztáhnou
-    /// přes celý prvek. Zadaná hodnota je má zastavit.
+    /// ⚠️ Jádro modelu: sloupec se drží u obsahu, i když je v prvku místa habaděj. Dřív se zbytek
+    /// prvku rozdělil mezi sloupce, takže u linky s pár spoji stál čas uprostřed centimetrového
+    /// pole - a to je přesně to, co se lidem zvyklým na postskript nelíbilo.
     /// </summary>
     [Fact]
-    public void ZadanaSirkaZastaviRoztahovani()
+    public void SloupecSeDrziObsahu()
     {
-        var data = Data(spoju: 5);
-        float bez = SirkaSloupce(Prvek(), data);
-        var uzky = Prvek();
-        uzky.SirkaSloupceSpojeMm = 8f;
+        var uzkyPrvek = Prvek();
+        uzkyPrvek.Width = 60f;
+        var sirokyPrvek = Prvek();
+        sirokyPrvek.Width = 400f;
 
-        Assert.True(bez > 10f, $"sloupec bez zadané šířky vyšel {bez:0.00} mm - fixtura neroztahuje");
-        Assert.Equal(8f, SirkaSloupce(uzky, data), precision: 2);
+        Assert.Equal(SirkaSloupce(uzkyPrvek, Data(spoju: 5)),
+            SirkaSloupce(sirokyPrvek, Data(spoju: 5)), precision: 2);
     }
 
-    /// <summary>Prázdná hodnota = chování jako dosud. Existující šablony tisknou totéž.</summary>
+    /// <summary>Sloupec se značkami nad časem je širší než sloupec, kde jsou jen minuty.</summary>
     [Fact]
-    public void BezZadaneSirkySeNicNemeni()
+    public void SloupecSeZnackamiJeSirsiNezMinutovy()
     {
-        var data = Data(spoju: 5);
+        float sZnackami = SirkaSloupce(Prvek(), DataSeZnackami(spoju: 20));
+        float jenMinuty = SirkaSloupce(Prvek(), Data(spoju: 20));
 
-        var bezZadani = Prvek();
-        bezZadani.SirkaSloupceSpojeMm = null;
-
-        Assert.Equal(SirkaSloupce(Prvek(), data), SirkaSloupce(bezZadani, data), precision: 3);
+        Assert.True(sZnackami > jenMinuty + 0.2f,
+            $"se značkami {sZnackami:0.00} mm, jen s minutami {jenMinuty:0.00} mm");
     }
 
-    /// <summary>
-    /// ⚠️ Zadaná šířka sežere nejdřív <b>vůli</b> kolem obsahu, teprve o číslice se zarazí.
-    /// Bez toho zůstal sloupec o milimetr širší, než si uživatel řekl, a u sloupců jen s minutami
-    /// to bylo vidět jako zbytečné místo (nález Jan 22. 9.).
-    /// </summary>
+    /// <summary>Menší písmo = užší sloupec. Tohle je hlavní páka na hustotu tisku.</summary>
     [Fact]
-    public void ZadanaSirkaSezereNejdrivVuli()
+    public void MensiPismoZuziSloupec()
     {
-        var data = Data(spoju: 5);
-        var uzky = Prvek();
-        uzky.SirkaSloupceSpojeMm = 0.5f;   // pod vším, takže zůstane holý obsah
-        var automaticky = Prvek();
-        automaticky.Width = 1f;            // bez zadání rozhoduje obsah i s vůlí
+        var velke = Prvek();
+        velke.DataStyle.FontSize = 9f;
+        var male = Prvek();
+        male.DataStyle.FontSize = 5f;
 
-        float holy = SirkaSloupce(uzky, data);
-        float sVuli = SirkaSloupce(automaticky, data);
-
-        Assert.True(holy >= 3f, $"sloupec vyšel {holy:0.00} mm - pod tvrdou hranicí čitelnosti");
-        Assert.True(sVuli > holy + 0.5f,
-            $"holý obsah {holy:0.00} mm proti {sVuli:0.00} mm s vůlí - vůle neustoupila");
+        Assert.True(SirkaSloupce(male, Data(spoju: 20)) < SirkaSloupce(velke, Data(spoju: 20)) - 1f,
+            "menší písmo sloupec nezúžilo");
     }
 
-    /// <summary>Zadaná hodnota nad obsahem platí přesně - vůle se k ní nepřičítá.</summary>
+    /// <summary>Pod tvrdou hranici čitelnosti se sloupec nedostane ani u drobného písma.</summary>
     [Fact]
-    public void ZadanaSirkaNadObsahemPlatiPresne()
+    public void SloupecNepodlezeTvrdouHranici()
     {
         var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 6f;
+        prvek.DataStyle.FontSize = 3f;
 
-        Assert.Equal(6f, SirkaSloupce(prvek, Data(spoju: 20)), precision: 2);
+        Assert.True(SirkaSloupce(prvek, Data(spoju: 20)) >= 3f);
     }
 
-    // ── Sloupec, do kterého se obsah nevejde ────────────────────────────────
-
-    /// <summary>
-    /// ⚠️ Vlastní smysl nového modelu: sloupec se širším obsahem se nezúží pod svou potřebu,
-    /// takže obsah nepřeteče do sousedního sloupce a písmo zůstane nezmenšené.
-    /// </summary>
-    [Fact]
-    public void SirokyObsahSloupecNezuzi()
-    {
-        var data = DataSeZnackami(spoju: 20);
-        var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 4f;
-
-        // Značky platnosti se sázejí 1,5x zvětšené, takže sloupec s nimi musí zůstat širší.
-        Assert.True(SirkaSloupce(prvek, data) > 4f,
-            $"sloupec vyšel {SirkaSloupce(prvek, data):0.00} mm - obsah se do něj nevejde");
-    }
-
-    /// <summary>Sloupce bez širokého obsahu se zúžit mají - jinak by zadaná hodnota nic nedělala.</summary>
-    [Fact]
-    public void SloupecBezSirokehoObsahuSeZuzi()
-    {
-        var data = Data(spoju: 20);
-        var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 6f;
-
-        Assert.Equal(6f, NejsirsiSloupec(prvek, data), precision: 2);
-    }
-
-    /// <summary>Jednotná šířka srovná všechny sloupce na ten nejširší - to je ta cesta
-    /// k pravidelné mřížce za cenu volného místa.</summary>
+    /// <summary>Jednotná šířka srovná všechny sloupce na ten nejširší - cesta k pravidelné
+    /// mřížce za cenu volného místa.</summary>
     [Fact]
     public void JednotnaSirkaSrovnaSloupceNaNejsirsi()
     {
         var data = DataSeZnackami(spoju: 20);
         var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 4f;
         prvek.JednotnaSirkaSpoju = true;
 
         var sirky = prvek.Rozvrzeni(data)[0].SirkySloupcu;
         Assert.All(sirky, w => Assert.Equal(sirky[0], w, precision: 3));
     }
+
+    /// <summary>Výchozí je vypnutá - úspora místa vyhrála a odpovídá to starému tisku.</summary>
+    [Fact]
+    public void JednotnaSirkaJeVychoziVypnuta()
+        => Assert.False(new LineTableElement().JednotnaSirkaSpoju);
 
     /// <summary>Každý blok se musí vejít do prvku i s tím, že jsou sloupce různě široké -
     /// dělení proto sčítá skutečné šířky, ne počet × základ.</summary>
@@ -150,6 +112,34 @@ public class LineTableSirkaSloupcuTests
         Assert.Equal(60, bloky.Sum(b => b.Pocet));
     }
 
+    /// <summary>Tabulka končí tam, kde skončí sloupce - vpravo zbyde volno, které vyplní až
+    /// dorovnání prázdnými sloupci.</summary>
+    [Fact]
+    public void UzkaTabulkaNechaMistoVpravo()
+    {
+        var prvek = Prvek();
+
+        var blok = prvek.Rozvrzeni(Data(spoju: 5))[0];
+
+        Assert.True(blok.SirkaMm < prvek.Width - 20f,
+            $"blok měří {blok.SirkaMm:0.0} mm z {prvek.Width:0.0} mm - sloupce se roztáhly");
+    }
+
+    // ── Vzduch kolem obsahu ─────────────────────────────────────────────────
+
+    /// <summary>Vnitřní okraj buňky je páka na vzduch kolem času - sloupec o něj roste.</summary>
+    [Fact]
+    public void VnitrniOkrajRozsiriSloupec()
+    {
+        var data = Data(spoju: 20);
+        var siroky = Prvek();
+        siroky.DataStyle.PaddingLeft = 2f;
+        siroky.DataStyle.PaddingRight = 2f;
+
+        Assert.True(SirkaSloupce(siroky, data) > SirkaSloupce(Prvek(), data) + 1f,
+            "okraj se do šířky sloupce nepropsal");
+    }
+
     // ── Odstupy uvnitř sloupce ──────────────────────────────────────────────
 
     /// <summary>
@@ -162,30 +152,22 @@ public class LineTableSirkaSloupcuTests
     {
         var data = DataSeZnackami(spoju: 20);
         var uzka = Prvek();
-        uzka.SirkaSloupceSpojeMm = 3f;
         uzka.MezeraMeziZnackamiMm = 0f;
-        var zPisma = Prvek();
-        zPisma.SirkaSloupceSpojeMm = 3f;
 
-        Assert.True(SirkaSloupce(uzka, data) < SirkaSloupce(zPisma, data) - 0.2f,
-            $"se zadanou mezerou {SirkaSloupce(uzka, data):0.00} mm, s mezerou z písma "
-            + $"{SirkaSloupce(zPisma, data):0.00} mm - odstup se do šířky nepropsal");
+        Assert.True(SirkaSloupce(uzka, data) < SirkaSloupce(Prvek(), data) - 0.2f,
+            "odstup mezi značkami se do šířky nepropsal");
     }
 
-    /// <summary>Mezera mezi hodinou a minutou je uvnitř času, takže utáhne i sloupec jen s minutami.</summary>
+    /// <summary>Mezera mezi hodinou a minutou je uvnitř času, takže utáhne i minutový sloupec.</summary>
     [Fact]
     public void MezeraHodinaMinutaUtahneSloupecSMinutami()
     {
         var data = Data(spoju: 20);
         var uzka = Prvek();
-        uzka.SirkaSloupceSpojeMm = 1f;   // rozhoduje obsah
         uzka.MezeraHodinaMinutaMm = 0f;
-        var zPisma = Prvek();
-        zPisma.SirkaSloupceSpojeMm = 1f;
 
-        Assert.True(SirkaSloupce(uzka, data) < SirkaSloupce(zPisma, data) - 0.1f,
-            $"se zadanou mezerou {SirkaSloupce(uzka, data):0.00} mm, z písma "
-            + $"{SirkaSloupce(zPisma, data):0.00} mm");
+        Assert.True(SirkaSloupce(uzka, data) < SirkaSloupce(Prvek(), data) - 0.1f,
+            "odstup mezi hodinou a minutou se do šířky nepropsal");
     }
 
     /// <summary>
@@ -198,82 +180,22 @@ public class LineTableSirkaSloupcuTests
     {
         var data = DataSeZnackami(spoju: 20);
         var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 3f;
 
         float zPisma = SirkaSloupce(prvek, data);
         prvek.MezeraMeziZnackamiMm = 0f;
-        float utazena = SirkaSloupce(prvek, data);
 
-        Assert.True(utazena < zPisma - 0.2f,
-            $"po utažení mezery {utazena:0.00} mm, předtím {zPisma:0.00} mm - šířka se nepřepočítala");
-    }
-
-    // ── Dorovnání volného místa ─────────────────────────────────────────────
-
-    /// <summary>
-    /// Se zadanou šířkou zbyde vpravo volno i u tabulky, která se vůbec neřeže. Zapnuté dorovnání
-    /// ho má rozkreslit prázdnými sloupci - to je ten postskriptový vzhled.
-    /// </summary>
-    [Fact]
-    public void SeZadanouSirkouSeVolneMistoDorovna()
-    {
-        var data = Data(spoju: 5);
-        var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 8f;
-        prvek.PadEmptyColumns = true;
-
-        // Prázdné sloupce nese kreslení, ne rozvržení - ověřuje se, že po nich zbylo místo.
-        var blok = prvek.Rozvrzeni(data)[0];
-        Assert.True(blok.SirkaMm < prvek.Width - 8f,
-            $"blok měří {blok.SirkaMm:0.0} mm z {prvek.Width:0.0} mm - nezbylo co dorovnávat");
-    }
-
-    // ── Vnitřní okraj ───────────────────────────────────────────────────────
-
-    /// <summary>
-    /// Vůle kolem času se s vnitřním okrajem <b>nesčítá</b> - platí ta větší z nich. Měří se bez
-    /// zadané šířky; s ní vůle ustupuje (viz <c>ZadanaSirkaSezereNejdrivVuli</c>).
-    /// </summary>
-    [Fact]
-    public void VuleSeSOkrajemNescita()
-    {
-        var data = Data(spoju: 40);
-        var nulovy = Uzky();
-        nulovy.DataStyle.PaddingLeft = 0f;
-        nulovy.DataStyle.PaddingRight = 0f;
-        var vychozi = Uzky();
-        var siroky = Uzky();
-        siroky.DataStyle.PaddingLeft = 2f;
-        siroky.DataStyle.PaddingRight = 2f;
-
-        // Výchozí okraj (0,5 + 0,5) je právě vůle, takže vynulování nic nezmění.
-        Assert.Equal(SirkaSloupce(vychozi, data), SirkaSloupce(nulovy, data), precision: 3);
-        Assert.True(SirkaSloupce(siroky, data) > SirkaSloupce(vychozi, data),
-            "okraj větší než vůle se neuplatnil");
-
-        static LineTableElement Uzky()
-        {
-            // Prvek tak úzký, že o sloupci rozhoduje obsah, a bez zadané šířky - jinak by vůle
-            // ustoupila a okraj by neměl co ukázat.
-            var prvek = new LineTableElement { X = 0, Y = 0, Width = 1 };
-            prvek.DataStyle.FontSize = 5f;
-            return prvek;
-        }
+        Assert.True(SirkaSloupce(prvek, data) < zPisma - 0.2f, "šířka se nepřepočítala");
     }
 
     // ── Hláška o úzkém sloupci ──────────────────────────────────────────────
 
-    /// <summary>
-    /// Zadaná šířka hlášku nevyvolá - sloupec se pod obsah nezúží, takže není co hlásit.
-    /// </summary>
+    /// <summary>Sloupec počítaný z obsahu hlášku nevyvolá - není co hlásit.</summary>
     [Fact]
-    public void ZadanaSirkaHlaskuNevyvola()
+    public void SirkaZObsahuHlaskuNevyvola()
     {
         var data = DataSeZnackami(spoju: 20);
-        var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 4f;
         var sablona = new Template();
-        sablona.Sections.Add(new Section { Elements = { prvek } });
+        sablona.Sections.Add(new Section { Elements = { Prvek() } });
 
         Assert.Null(TripColumnWidthWarnings.Summarize(sablona, [data]));
     }
@@ -302,7 +224,6 @@ public class LineTableSirkaSloupcuTests
 
     /// <summary>Nastavení šířky jsou v panelu v jedné skupině.</summary>
     [Theory]
-    [InlineData("Šířka sloupce spoje")]
     [InlineData("Mezera mezi značkami")]
     [InlineData("Mezera mezi značkou a časem")]
     [InlineData("Mezera mezi hodinou a minutou")]
@@ -312,32 +233,36 @@ public class LineTableSirkaSloupcuTests
     public void NastaveniSirkyJsouVJedneSkupine(string label)
         => Assert.Equal("Šířka sloupců", Descriptor(Prvek(), label).Group);
 
-    /// <summary>Prázdná hodnota se v panelu zadává nulou - jinak by z něj nešlo omezení zrušit.</summary>
+    /// <summary>Ruční šířka sloupce spoje v panelu <b>není</b> - počítá se z obsahu.</summary>
+    [Fact]
+    public void RucniSirkaSloupceVPaneluNeni()
+        => Assert.DoesNotContain(Prvek().GetPropertyDescriptors(),
+            d => d.Label.Contains("Šířka sloupce spoje"));
+
+    /// <summary>Prázdná hodnota se v panelu zadává nulou - jinak by z něj nešel odstup zrušit.</summary>
     [Fact]
     public void NulaVPaneluZnamenaBezOmezeni()
     {
         var prvek = Prvek();
-        var d = (FloatPropertyDescriptor)Descriptor(prvek, "Šířka sloupce spoje");
+        var d = (FloatPropertyDescriptor)Descriptor(prvek, "Mezera mezi značkami");
 
-        d.Set(6f);
-        Assert.Equal(6f, prvek.SirkaSloupceSpojeMm);
+        d.Set(0.4f);
+        Assert.Equal(0.4f, prvek.MezeraMeziZnackamiMm);
         d.Set(0f);
-        Assert.Null(prvek.SirkaSloupceSpojeMm);
+        Assert.Null(prvek.MezeraMeziZnackamiMm);
     }
 
-    /// <summary>Šířka musí přežít kopii prvku, jinak by se duplikát tiskl jinak.</summary>
+    /// <summary>Odstupy musejí přežít kopii prvku, jinak by se duplikát tiskl jinak.</summary>
     [Fact]
-    public void KopiePrvkuNeseSirku()
+    public void KopiePrvkuNeseOdstupy()
     {
         var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 7f;
         prvek.MezeraMeziZnackamiMm = 0.2f;
         prvek.MezeraZnackaCasMm = 0.3f;
         prvek.MezeraHodinaMinutaMm = 0.1f;
 
         var kopie = (LineTableElement)prvek.Clone();
 
-        Assert.Equal(7f, kopie.SirkaSloupceSpojeMm);
         Assert.Equal(0.2f, kopie.MezeraMeziZnackamiMm);
         Assert.Equal(0.3f, kopie.MezeraZnackaCasMm);
         Assert.Equal(0.1f, kopie.MezeraHodinaMinutaMm);
@@ -345,8 +270,7 @@ public class LineTableSirkaSloupcuTests
 
     // ── Fixtury ─────────────────────────────────────────────────────────────
 
-    /// <summary>Prvek s drobným písmem vývěskové šablony - při 9 pt si sám čas říká o 7 mm,
-    /// takže by na něm nešlo zkoušet, co dělá šířka pod tím.</summary>
+    /// <summary>Prvek s drobným písmem vývěskové šablony - při 9 pt si sám čas říká o 7 mm.</summary>
     private static LineTableElement Prvek()
     {
         var prvek = new LineTableElement { X = 0, Y = 0, Width = 200 };

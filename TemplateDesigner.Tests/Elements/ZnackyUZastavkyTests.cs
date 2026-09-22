@@ -69,7 +69,7 @@ public class ZnackyUZastavkyTests
     private static float SirkaSloupce(DataContext data)
     {
         var prvek = new LineTableElement
-        { X = 0, Y = 0, Width = 200, Height = 100, SirkaSloupceSpojeMm = 4f };
+        { X = 0, Y = 0, Width = 200, Height = 100 };
         prvek.DataStyle.FontSize = 5f;
         return prvek.Rozvrzeni(data)[0].SirkySloupcu[0];
     }

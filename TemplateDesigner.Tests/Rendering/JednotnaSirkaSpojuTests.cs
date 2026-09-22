@@ -54,9 +54,6 @@ public class JednotnaSirkaSpojuTests
     {
         var el = ElementRenderFixtures.LineTable();
         el.JednotnaSirkaSpoju = jednotna;
-        // Bez zadané šířky se sloupce roztáhnou přes prvek a značka se vejde do volného místa -
-        // volba by pak neměla co srovnávat (od 22. 9.).
-        el.SirkaSloupceSpojeMm = 3f;
         return el;
     }
 
