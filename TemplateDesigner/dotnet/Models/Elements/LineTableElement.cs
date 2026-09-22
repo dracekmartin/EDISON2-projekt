@@ -172,6 +172,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// vyplní prázdnými sloupci.
     /// <para>Strop se počítá na <b>základ</b> sloupce; místo na značku návaznosti se přičítá nad
     /// něj (rozhodnutí Jan 8. 9. - značka není problém, jde o volné místo).</para>
+    /// <para>Je to <b>hlavní pole na zúžení sloupce</b>: strop pod měřeným obsahem stáhne i dno
+    /// (<see cref="DnoSloupceSpojeMm"/>), takže se vystačí s jedním polem. Tvrdá hranice
+    /// <see cref="MinAutoColumnWidthMm"/> platí dál.</para>
     /// <para>Co se stane s přebytkem, rozhoduje <see cref="PadEmptyColumns"/>: zapnuté ho rozkreslí
     /// prázdnými sloupci, vypnuté ho nechá bílé.</para>
     /// </remarks>
@@ -673,6 +676,25 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// sice vycházely, ale byly nečitelné (nahlásil Jan 25. 8.). Dno musí vycházet z písma, jinak
     /// zvětšení fontu tabulku jen zhustí, místo aby ubralo spojů na blok.
     /// </remarks>
+    /// <summary>
+    /// Dolní hranice šířky sloupce spoje po započtení obou zadaných mezí.
+    /// </summary>
+    /// <remarks>
+    /// Zadaný strop je stejně výslovné přání jako zadané dno, takže měřený obsah přebíjí taky.
+    /// Jinak by úzký sloupec vyžadoval vyplnit **obě** pole naráz: samotné dno sloupec nezužuje
+    /// (je to spodní hranice) a samotný strop se zarazil o měření, takže na lince s dvojicí
+    /// piktogramů nad časy nešlo pod 5,43 mm ani s oběma poli na 4 mm (nález Jan 22. 9.).
+    /// <para>Při rozporu (dno větší než strop) vyhrává strop - je to pole, kterým se sloupec
+    /// zužuje, a uživatel od něj čeká výsledek.</para>
+    /// </remarks>
+    private float DnoSloupceSpojeMm()
+    {
+        float dno = MinAutoSloupecMm();
+        if (NejvetsiSirkaSpojeMm is float strop && strop > 0f)
+            dno = MathF.Max(MinAutoColumnWidthMm, MathF.Min(dno, strop));
+        return dno;
+    }
+
     private float MinAutoSloupecMm()
     {
         // Vyplněné dno nahrazuje celý výpočet - viz `NejmensiSirkaSpojeMm`. Měří se až pod ním,
@@ -841,14 +863,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // Mezery mezi skupinami sloupců a místo na značky u času jdou ze stejné šířky jako
         // sloupce, takže je automatické sloupce nesmí rozdělit mezi sebe - jinak by tabulka
         // přetekla přes pravou hranu prvku.
+        float dno = DnoSloupceSpojeMm();
         float autoEach = autoUnits > 0
-            ? MathF.Max(MinAutoSloupecMm(), (Width - fixedSum - rezervaMezerMm - rezervaZnacekMm) / autoUnits)
+            ? MathF.Max(dno, (Width - fixedSum - rezervaMezerMm - rezervaZnacekMm) / autoUnits)
             : 8f;
-        // Strop se uplatní až po dnu, aby ho nemohl podlézt: kdo zadá strop menší než dno, dostane
-        // dno (a čitelný čas), ne oříznutý sloupec. Platí jen na automatické sloupce - pevná šířka
-        // sloupce je výslovné přání a strop ji nepřebíjí.
+        // Strop platí jen na automatické sloupce - pevná šířka sloupce je výslovné přání
+        // a strop ji nepřebíjí.
         if (NejvetsiSirkaSpojeMm is float strop && strop > 0f)
-            autoEach = MathF.Max(MinAutoSloupecMm(), MathF.Min(autoEach, strop));
+            autoEach = MathF.Max(dno, MathF.Min(autoEach, strop));
 
         var result = new List<RenderCol>();
         int nameIndex = -1;

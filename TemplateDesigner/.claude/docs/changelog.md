@@ -1,14 +1,18 @@
 ﻿# Changelog
 
-## 2026-09-22 (1) - 📏 nejmenší šířka sloupce spoje teď sloupec i zúží
+## 2026-09-22 (1) - 📏 sloupce spojů jdou zúžit pod měřený obsah
 
-U tabulky spojů rozhoduje vyplněné pole **Nejmenší šířka sloupce spoje** o šířce samo: měření
-obsahu i vůle kolem něj se přeskočí a drží jen hranice čitelnosti 3 mm. Dosud hodnotu jen zvedalo,
-takže u vývěsek, kde nad časy stojí dvojice piktogramů, pole tiše nedělalo nic - dno tam drží
-značky, ne čas (na lince 330510 5,43 mm proti 3,65 mm, které měří samotný čas).
+U tabulky spojů šlo dosud zúžit sloupec jen po šířku obsahu a ani to ne vždy: dno se počítá
+z toho nejširšího, co ve sloupci stojí, a nad časy bývá dvojice piktogramů. Na lince 330510 to
+dělalo 5,43 mm proti 3,65 mm, které měří samotný čas, a nešlo pod to žádným nastavením -
+obě pole se o změřený obsah zarazila. Nově obě měření přebíjejí a drží jen hranice čitelnosti 3 mm.
+
+Zúžení se řídí polem **Největší šířka sloupce spoje** a stačí ono samo - strop pod měřeným
+obsahem stáhne i dno. Nejmenší šířka zůstává pro opačný případ, kdy chceš sloupce rozšířit;
+když si obě pole odporují, platí největší.
 
 Cena je vidět hned v náhledu: do užšího sloupce se značky nevejdou a přetečou do sousedního.
-Prázdné pole se chová jako dřív.
+Prázdná pole se chovají jako dřív.
 
 ## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře
 

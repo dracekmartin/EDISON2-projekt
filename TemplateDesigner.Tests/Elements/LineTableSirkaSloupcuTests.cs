@@ -62,17 +62,35 @@ public class LineTableSirkaSloupcuTests
     }
 
     /// <summary>
-    /// Strop nesmí podlézt dno - kdo zadá nesmysl, dostane čitelný sloupec, ne oříznutý.
+    /// Strop nesmí podlézt tvrdou hranici čitelnosti - kdo zadá nesmysl, dostane 3 mm.
     /// </summary>
     [Fact]
-    public void StropPodDnemSeNeuplatni()
+    public void StropPodTvrdouHraniciSeNeuplatni()
     {
         var data = Data(spoju: 5);
         var prvek = Prvek();
         prvek.NejvetsiSirkaSpojeMm = 0.5f;
 
-        Assert.True(SirkaSloupce(prvek, data) >= 3f,
-            $"sloupec vyšel {SirkaSloupce(prvek, data):0.00} mm - strop podlezl tvrdé dno 3 mm");
+        Assert.Equal(3f, SirkaSloupce(prvek, data), precision: 2);
+    }
+
+    /// <summary>
+    /// ⚠️ Na zúžení sloupce stačí <b>samotný strop</b> - stáhne i měřené dno. Do 22. 9. se o ně
+    /// zarazil, takže úzký sloupec vyžadoval vyplnit obě pole naráz: samotné dno sloupec nezužuje
+    /// (je to spodní hranice) a samotný strop nedosáhl pod obsah. Na lince 330510 to znamenalo,
+    /// že ani se stropem 4 mm se sloupec nehnul z 5,43 mm (nález Jan 22. 9.).
+    /// </summary>
+    [Fact]
+    public void SamotnyStropStahneISloupecPodZmerenyObsah()
+    {
+        var data = Data(spoju: 40);
+        float zmereno = Dno(data);
+        float strop = zmereno - 1f;
+        var prvek = new LineTableElement { X = 0, Y = 0, Width = 120, NejvetsiSirkaSpojeMm = strop };
+
+        Assert.True(strop > 3f, $"fixtura měří {zmereno:0.00} mm - strop by spadl na tvrdou hranici");
+        Assert.Equal(strop, SirkaSloupce(prvek, data), precision: 2);
+        Assert.Null(prvek.NejmensiSirkaSpojeMm);
     }
 
     /// <summary>
