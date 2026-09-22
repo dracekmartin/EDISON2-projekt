@@ -111,6 +111,13 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
+- **`B176` Jedna vodorovná čára v tabulce spojů vypadá při zvětšení silnější** [S] (nález Jan 22. 9.,
+  linka 330530 nad přípojnými řádky u Velešína). V PDF i při 100 % je to v pořádku, projeví se to
+  až zvětšením náhledu. Vyloučeno měřením: dvojí kreslení téže čáry, tloušťka i barva (všechny
+  1 px, shodný odstín v PNG i přes celý náhled), srovnání na pixel a čára úseku z trasy - ta na
+  téhle lince není u žádné zastávky. Zbývá prohlédnout, jak se plátno náhledu škáluje na obrazovku.
+  Souvislost: commity 33a1758d, 36958359, 11303c6b.
+
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
   engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi, a nad ním
@@ -183,14 +190,17 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
   precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
   ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
 
-- **Vysvětlivka značky rovnou u spoje na obrazovce** (nápad Jan 22. 9., zatím bez poptávky).
-  Kdo si jízdní řád otevře na počítači nebo v mobilu, musí u každé značky sjet na legendu na konci.
-  Cíl: ukázat text poznámky u značky samotné. ⚠️ **První krok není kód, ale pokus** - vyrobit ručně
-  jedno PDF a otevřít ho v tom, co lidé používají. Tooltip u neviditelného pole umí Acrobat na
-  počítači, prohlížeč v Chromu nejspíš ne a **mobil nemá kam najet**; ťuknutím funguje jen poznámka
-  s viditelnou ikonkou, která zaplevelí tisk. Čistá cesta pro mobil je **výstup do HTML** (sázecí
-  engine nezná SkiaSharp, takže renderer jde přidat) - ale to už je vlastní featura, ne doplněk PDF.
-  Do PDF navíc anotace neumí zapsat ani SkiaSharp, ani `PdfPig` - potřebovaly by krok navíc.
+- **Jízdní řád ze zastávky na mobilu (QR na vývěsce)** (nápad Jan 22. 9., zatím bez poptávky).
+  Kód na vývěsce nese **linku, zastávku a stanoviště**, takže stránka ví, kde člověk fyzicky stojí -
+  to je jediná věc, kterou vyhledávač spojení neumí. Odpoví větou („nejbližší odjezd za 25 minut",
+  „dnes už odsud nic nejede, první zítra v 6:10", „z druhé strany jede za 6 minut"), pod tím výběr
+  cíle s dobou jízdy a texty poznámek místo značek. Papír navíc zastarává, odkaz ne.
+  ⚠️ **Nedělat plánovač s přestupy ani mapy** - tam vyhrává IDOS. Hranice je „co odsud jede přímo".
+  ⚠️ **Vidlička k rozhodnutí:** vývěska je jedna linka, cestující chce jednu cestu - silnější verze
+  je „odjezdy ze stanoviště za všechny linky", což je blíž relacím než vývěsce.
+  ⚠️ **Slabé místo je „jede to dnes"**: svátky a omezení dnes tiskneme jako text, ne jako datum,
+  které jde spočítat. Prototyp může jet na dni v týdnu a značky vypsat slovy.
+  Zpoždění v reálném čase by hodnotu zvedlo nejvíc, ale data živá nejsou (GTFS RT jen u DPCB).
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
