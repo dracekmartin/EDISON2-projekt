@@ -95,10 +95,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Vnitřní okraj je u této tabulky rozměrová volba, ne kosmetika: dolní práh sloupce spoje
         // je šířka času plus okraje po stranách, takže rozhoduje, kolik spojů se vejde do bloku
         // a kolikrát se tabulka řízne na šířku. Jen vodorovné - svislé drží pole "Výška řádku".
-        s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", "", 0, 20, "mm")
-        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
-        s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", "", 0, 20, "mm")
-        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Je to hlavní páka na vzduch kolem času: větší okraj sloupec rozšíří, vynulováním se stáhne až k obsahu, ale nikdy tak, aby se číslice dotýkaly čar."
+        // ⚠️ Výchozí hodnota vypsaná, ne prázdné pole: „prázdné = 0,5 mm" nedávalo smysl nikomu,
+        // kdo si chtěl sloupce utáhnout, protože z formuláře nebylo poznat, kolik vzduchu tam je
+        // (nález Jan 22. 9.). Binder prázdnou hodnotu modelu nechá na tomhle defaultu.
+        s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", 0.5, 0, 20, "mm")
+        s f.helpText = "Odsazení textu od svislé čáry. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
+        s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", 0.5, 0, 20, "mm")
+        s f.helpText = "Odsazení textu od svislé čáry. Je to hlavní páka na vzduch kolem času: větší okraj sloupec rozšíří, nulou se stáhne až k obsahu, ale nikdy tak, aby se číslice dotýkaly čar."
         s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
         d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
         d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")
