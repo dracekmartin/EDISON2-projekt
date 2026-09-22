@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-09-22 (5) - ▭ každá část tabulky má vlastní rámeček
+
+Linka, která se nevejde na šířku, se sází na několik částí pod sebou. Rámeček je obcházel všechny
+najednou i mezeru mezi nimi, takže to vypadalo jako jedna tabulka s dírou uprostřed. Nově má
+rámeček každá část zvlášť; nerozdělená tabulka vypadá stejně jako dosud.
+
+Část, kterou rozřízne zlom stránky, zůstává zatím na hraně papíru otevřená - uzavřít ji je
+samostatná práce (`B177`).
+
 ## 2026-09-22 (4) - ⋯ tečky i v dorovnaných sloupcích
 
 Volba „Tečky v prázdných buňkách" je plnila jen ve sloupcích spojů; prázdné sloupce, kterými

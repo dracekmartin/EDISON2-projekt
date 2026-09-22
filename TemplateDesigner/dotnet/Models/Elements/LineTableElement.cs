@@ -1835,6 +1835,60 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// uvnitř zastávky jsou jen nouze (<see cref="ZlomUroven.Radek"/>), aby stránkování mělo kam
     /// říznout i u zastávky vyšší než celá stránka.
     /// </summary>
+    /// <summary>
+    /// Svislé rozsahy jednotlivých částí tabulky (mm od horní hrany prvku) - podklad pro rámeček
+    /// kolem každé části zvlášť.
+    /// </summary>
+    /// <remarks>Počítá se stejně jako <see cref="ZlomyMm"/>, jen se nesbírají zlomy ale rozsahy;
+    /// obojí musí sedět s kreslením, jinak by rámeček ležel jinde než tabulka.</remarks>
+    internal List<(float OdMm, float VyskaMm)> RozsahyBlokuMm(DataContext? data)
+    {
+        if (data is null) return [];
+        EnsureParsed(data);
+        if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return [];
+
+        var rozsahy = new List<(float, float)>();
+        float zacatek = 0f;
+        foreach (var blok in SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!)))
+        {
+            var (hlavni, zrcadlene) = SpojeBloku(blok);
+            var (hlava, radky) = VyskyRadkuBloku(hlavni, zrcadlene);
+            float vyska = hlava.Sum() + radky.Sum(r => r.VyskaMm);
+            rozsahy.Add((zacatek, vyska));
+            zacatek += vyska + MezeraMeziBlokyMm;
+        }
+        return rozsahy;
+    }
+
+    /// <summary>
+    /// Rámeček kolem <b>každé části</b> tabulky, ne kolem celého prvku.
+    /// </summary>
+    /// <remarks>
+    /// Linka, která se nevejde na šířku, se sází na několik částí pod sebou. Obecný rámeček prvku
+    /// obchází všechny najednou i mezeru mezi nimi, takže to vypadá jako jedna tabulka s dírou
+    /// uprostřed (nález Jan 22. 9.). Každá část je přitom samostatná tabulka se svou hlavou.
+    /// <para>⚠️ Část rozříznutá zlomem stránky zůstává otevřená - rámeček se ořízne s obsahem.
+    /// Uzavřít ji na hraně papíru je samostatná práce (`B177`).</para>
+    /// </remarks>
+    public override void RenderBorderPass(RenderContext ctx)
+    {
+        var rozsahy = RozsahyBlokuMm(ctx.Data);
+        if (rozsahy.Count <= 1 || BorderWidth <= 0f || SkBorderColor.Alpha == 0)
+        {
+            base.RenderBorderPass(ctx);
+            return;
+        }
+
+        using var pero = new SKPaint
+        {
+            Color = SkBorderColor,
+            StrokeWidth = BorderWidth * ctx.MmToPx,
+            Style = SKPaintStyle.Stroke,
+        };
+        foreach (var (odMm, vyskaMm) in rozsahy)
+            ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, Y + odMm, Width, vyskaMm), pero);
+    }
+
     public IReadOnlyList<Zlom> ZlomyMm(DataContext? data)
     {
         if (data is null) return [];
