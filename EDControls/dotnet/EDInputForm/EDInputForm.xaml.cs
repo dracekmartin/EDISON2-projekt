@@ -125,8 +125,6 @@ namespace EDControls.EDInputForm
             };
         }
 
-        private readonly List<Field> _searchMatches = [];
-
         /// <summary>Stav rozbalení skupin před začátkem hledání - pro obnovení po smazání dotazu.</summary>
         private Dictionary<Group, bool>? _expandStateBeforeSearch;
 
@@ -137,8 +135,6 @@ namespace EDControls.EDInputForm
                 typeof(EDComponentToolbar.EDComponentToolbar));
             dpd.AddValueChanged(Toolbar, (_, _) => ApplySearchFilter(Toolbar.SearchText));
 
-            Toolbar.FindNextCommand = new RelayCommand(FindNext);
-            Toolbar.FindPreviousCommand = new RelayCommand(FindPrevious);
             Toolbar.HelpCommand = new RelayCommand(ShowShortcutsHelp);
         }
 
@@ -163,7 +159,6 @@ namespace EDControls.EDInputForm
 
         private void ApplySearchFilter(string searchText)
         {
-            _searchMatches.Clear();
             if (Items == null) return;
 
             var groups = Items.OfType<Group>().ToList();
@@ -180,19 +175,13 @@ namespace EDControls.EDInputForm
                         kvp.Key.IsExpanded = kvp.Value;
                     _expandStateBeforeSearch = null;
                 }
-                Toolbar.TotalMatches = 0;
-                Toolbar.CurrentMatchIndex = 0;
                 return;
             }
 
             // Při prvním hledání si zapamatovat rozbalení skupin, ať ho po smazání dotazu obnovíme.
             _expandStateBeforeSearch ??= groups.ToDictionary(g => g, g => g.IsExpanded);
 
-            _searchMatches.AddRange(ComputeSearchMatches(groups, fields, searchText));
-
-            Toolbar.TotalMatches = _searchMatches.Count;
-            Toolbar.CurrentMatchIndex = _searchMatches.Count > 0 ? 1 : 0;
-            if (_searchMatches.Count > 0) ScrollFieldIntoView(_searchMatches[0]);
+            ComputeSearchMatches(groups, fields, searchText);
         }
 
         /// <summary>
@@ -230,28 +219,6 @@ namespace EDControls.EDInputForm
         }
 
         private static string NormalizeForSearch(string s) => SearchNormalization.NormalizeForSearch(s);
-
-        private void FindNext()
-        {
-            if (_searchMatches.Count == 0) return;
-            int next = Toolbar.CurrentMatchIndex >= _searchMatches.Count ? 1 : Toolbar.CurrentMatchIndex + 1;
-            Toolbar.CurrentMatchIndex = next;
-            ScrollFieldIntoView(_searchMatches[next - 1]);
-        }
-
-        private void FindPrevious()
-        {
-            if (_searchMatches.Count == 0) return;
-            int prev = Toolbar.CurrentMatchIndex <= 1 ? _searchMatches.Count : Toolbar.CurrentMatchIndex - 1;
-            Toolbar.CurrentMatchIndex = prev;
-            ScrollFieldIntoView(_searchMatches[prev - 1]);
-        }
-
-        private void ScrollFieldIntoView(Field field)
-        {
-            var container = TheItemsControl.ItemContainerGenerator.ContainerFromItem(field) as FrameworkElement;
-            container?.BringIntoView();
-        }
 
         /// <summary>
         /// Volitelné initial parametry předané do Caché <c>Init</c> (čtené přes

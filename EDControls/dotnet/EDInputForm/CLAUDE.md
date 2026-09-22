@@ -54,12 +54,11 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
   **Toolbar nesmí spadnout dovnitř scrolleru** - scrollbar ukrojí pravý konec hledání
   (`EDInputFormHeaderTests`). `IsSharedSizeScope` sedí na vnějším Gridu, aby popisky field rows
   držely stejnou šířku; ScrollViewer scope nepřerušuje.
-- Search vstupuje do `EffectiveVisibility`
-  (pole může být skryté hledáním nezávisle na `Visibility`); match je diakritika-insensitive,
-  stav rozbalení skupin se před hledáním ukládá a po zrušení obnovuje.
+- Search vstupuje do `EffectiveVisibility` (pole může být skryté hledáním nezávisle na
+  `Visibility`); match je diakritika-insensitive, stav rozbalení skupin se před hledáním ukládá
+  a po zrušení obnovuje. **Navigace mezi nálezy tu není** - filtrování nechá vidět jen nálezy.
 - Enter = Tab (na Buttonu klikne); dialog potvrzuje jen Ctrl+Enter (window-level
   binding hosta). Ctrl+číslice skáče na položku dle `Number` (200 ms buffer).
 - Popup nápovědy (`HelpCommand`) se generuje z `KeyboardShortcuts` v `EDInputForm.xaml.cs` -
-  **při přidání/změně zkratky aktualizuj seznam**; jen reálně nadrátované zkratky
-  (search Enter/Shift+Enter/Esc zatím nefungují).
+  **při přidání/změně zkratky aktualizuj seznam**; jen reálně nadrátované zkratky.
 - Save při validačních chybách zobrazí popup přes `PopupDisplayer` a vrátí false.
