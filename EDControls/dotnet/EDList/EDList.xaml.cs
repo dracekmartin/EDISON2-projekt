@@ -287,7 +287,7 @@ namespace EDControls.EDList
         /// Načte data z Caché s volitelným filtrem. Filter hodnoty jdou do Caché jako sub-subscript
         /// pod <c>filter</c>: <c>filter["agendaCode"] = "MHD"</c> → <c>^||ML("IN","filter","agendaCode") = "MHD"</c>.
         /// Caché endpoint čte přes <c>$g(^||ML("IN","filter","klic"))</c>. Detail viz
-        /// <c>EDControls/DOCS/01-wire-formats.md §Filter konvence</c>.
+        /// <c>EDControls/docs/wire-formaty.md §Filter konvence</c>.
         /// </summary>
         public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {

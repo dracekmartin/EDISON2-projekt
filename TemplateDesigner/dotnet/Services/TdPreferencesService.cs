@@ -7,8 +7,8 @@ namespace TemplateDesigner.Services;
 
 /// <summary>
 /// Per-user × IDFa state pro TemplateDesigner. Wrapper nad <see cref="IUserPrefsService"/>
-/// s typed API. Schémata blobů a registr scope ownerships viz
-/// <c>EDControls/DOCS/05-userdata-scopes.md</c>.
+/// s typed API. Blob je opaque JSON v <c>ALVA.EDControls.UserData</c> (scope + key drží
+/// konzument, server ho neinterpretuje).
 ///
 /// <para>
 /// Scope rozdělení:
@@ -209,7 +209,7 @@ public class TdPreferencesService
 /// <summary>
 /// Hlavní per-user state. Všechny pole mají default - chybějící v starém blobu → použije se default
 /// (System.Text.Json + record primary ctor). Při breaking change (rename / změna typu) přidat
-/// <c>int Version</c> a migration logiku v LoadBlobAsync (viz 05-userdata-scopes.md §4).
+/// <c>int Version</c> a migration logiku v LoadBlobAsync.
 /// </summary>
 public record MainStatePref(
     float Zoom               = 1.0f,

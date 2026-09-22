@@ -19,7 +19,7 @@ namespace EDControls.EDFilter;
 /// (<see cref="IEDFilterTarget"/>, implementuje ho např. EDList) nebo <see cref="FilterCommand"/>.
 ///
 /// Wire formát komponent nad Caché: filter hodnoty jdou pod <c>^||ML("IN","filter",Key)</c>
-/// sub-subscript; detail v <c>EDControls/DOCS/01-wire-formats.md §Filter konvence</c>.
+/// sub-subscript; detail v <c>EDControls/docs/wire-formaty.md §Filter konvence</c>.
 /// </summary>
 [ContentProperty(nameof(Fields))]
 public partial class EDFilter : UserControl

@@ -93,7 +93,7 @@ public partial class App : Application
         // Krátký sync wait (200ms) pro warm-cache happy path; pokud propadne (cold-start
         // Caché HTTP typicky 2-3s), MainWindow startuje s defaults a po dokončení LoadAsync
         // se hodnoty aplikují přes event TdPreferencesService.Loaded (MainWindow subscribe).
-        // Detail v EDControls/DOCS/05-userdata-scopes.md.
+        // Blob drží ALVA.EDControls.UserData (scope + key per konzument).
         var prefs = new TemplateDesigner.Services.TdPreferencesService(EDServices.Current.UserPrefs);
         prefs.LoadAsync().Wait(TimeSpan.FromMilliseconds(200));
 
