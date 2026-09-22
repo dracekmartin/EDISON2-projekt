@@ -1,11 +1,11 @@
 ﻿# Návrhář sestav - uživatelská příručka
 
-*aktuálně umožňuje navrhovat šablony ZASTÁVKOVÝCH (MHD) jízdních řádů, linkové JŘ jsou v přípravě*
+*aktuálně umožňuje navrhovat šablony zastávkových a linkových jízdních řádů*
 
 > Vizuální editor tiskových sestav v EDISONu. Navrhnete vzhled šablony, systém k ní doplní
 > data a vytiskne PDF. **Část I** pokrývá obecné ovládání aplikace - práci se šablonou,
 > sekcemi, prvky, styly, daty a exportem - bez ohledu na typ sestavy. **Část II** popisuje
-> specifika jednotlivých agend (nyní zastávkový jízdní řád; další agendy přibudou jako
+> specifika jednotlivých agend (zastávkový a linkový jízdní řád; další agendy přibudou jako
 > nové kapitoly).
 
 **📦 Než začnete (pro IT):** [Technické požadavky a instalace](https://podpora.m-line.cz/support/wiki/3a07cae1-1198-4ffa-8875-856e3fc36094) - instalace .NET Desktop Runtime, kde nástroj v EDISONu najdete.
@@ -612,7 +612,7 @@ bez vlastní klávesové zkratky.
 
 > Tato část popisuje jednotlivé agendy - pro každou její specifika a to, jaká data nabízí.
 > Obecné ovládání (šablony, sekce, prvky, styly, export) je v části I a tady se neopakuje.
-> Nyní je popsaný **zastávkový jízdní řád**; další agendy (linkový JŘ, relace…) budeme
+> Nyní jsou popsané **zastávkový** a **linkový jízdní řád**; další agendy (relace…) budeme
 > přidávat jako samostatné kapitoly.
 
 ---
@@ -991,3 +991,191 @@ zmenšení pomůže, k varování nedojde.
 
 Pro rychlý start je v přehledu šablon (Ctrl+O) sekce **Systémové M-line** s výchozí
 zastávkovou šablonou (AD) dodávanou a aktualizovanou M-line.
+
+---
+
+## Linkový jízdní řád
+
+Celá linka na jedné sestavě: **zastávky jsou řádky, spoje sloupce**. Data jdou z hlavního modulu
+Jízdní řády (varianta AD) a jednou instancí je jedna linka - vyberete ji stejně jako u vývěsky.
+Většinu obsahu si sestava dopočítá sama (které zastávky, které spoje, co k nim patří za značky);
+vy nastavujete, co všechno se má tisknout a jak to má vypadat.
+
+### Obsah (linkový jízdní řád)
+
+1. [Z čeho se sestava skládá](#1-z-čeho-se-sestava-skládá)
+2. [Prvek Tabulka spojů](#2-prvek-tabulka-spojů)
+3. [Editor sloupců](#3-editor-sloupců-tabulky-spojů)
+4. [Jak se tabulka vejde na papír](#4-jak-se-tabulka-vejde-na-papír)
+5. [Parametry sestavy](#5-parametry-sestavy-linkového-jř)
+6. [Postup krok za krokem](#6-postup-krok-za-krokem-linkový-jř)
+
+---
+
+### 1. Z čeho se sestava skládá
+
+Obvyklá šablona má tři sekce pod sebou:
+
+- **Hlavička** (opakuje se na každé stránce) - textové prvky s poli `{CISLO_LINKY}`,
+  `{POPIS_LINKY}`, `{DATUM_PLATNOSTI_OD}`, `{DATUM_PLATNOSTI_DO}`, `{TYP_JR}`,
+  `{POPIS_DOPRAVCE}` a `{POZNAMKA_NAD_LINKU}`.
+- **Jízdní řád** - jediný prvek **Tabulka spojů**. Sekce má být nastavená na „Rozdělit přes
+  stránky", jinak se dlouhá linka nevytiskne celá.
+- **Poznámky** - prvek **Poznámky**, tentýž jako u vývěsky: vysvětlí značky, které tabulka
+  použila. Bez něj se značky v tabulce vytisknou, ale čtenář se nedozví, co znamenají.
+
+Data, se kterými tabulka pracuje: zastávky (zóna, kilometry, tarifní číslo, název, MHD, atributy
+trasy), spoje (číslo, časy na zastávkách, značky platnosti, negativní značky, barva), skupiny dnů,
+přípojné řádky a texty poznámek.
+
+---
+
+### 2. Prvek Tabulka spojů
+
+Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest skupin.
+
+**Řádky** - co se tiskne navíc k časům:
+
+- **Nadpisy skupin dnů** - pás nad sloupci spojů s označením skupiny (pracovní dny, sobota…).
+- **Řádek platnosti** - pod číslem spoje řádek se značkami platnosti (denní značky, místenka,
+  atributy vozidla).
+- **Řádek negativních značek** - značky, které pro spoj **neplatí** (bílý text v černém poli).
+- **Turnusy ke spojům** - k číslu spoje se dotáhne turnus. Je to provozní údaj dopravce, ne
+  informace pro cestujícího, proto je z výroby vypnutý; zapnutí stojí čas navíc při načítání dat.
+- **Přípojné řádky (vyčká/navazuje)** - pod zastávkou řádky o přípojích.
+- **Výška řádku** - prázdné = podle velikosti písma.
+- **Velikost značek** - kolikrát větší je písmo značek než písmo buňky (starý tisk 1,5×, aby byly
+  na výtisku čitelné).
+
+**Šířka sloupců** - viz kapitola 4.
+
+**Popisné sloupce** (levý blok se zastávkami):
+
+- **Každá zóna ve vlastním sloupci** - zastávka na hranici zón má víc zón; buď jsou za sebou
+  v jednom sloupci, nebo každá ve vlastním jako kilometry.
+- **Nadpis popisných sloupců** - jeden společný text nad zónou, km, Tč, zastávkou a MHD.
+- **Sloučit popis u příjezdu a odjezdu** - zastávka s příjezdem i odjezdem zabírá dva řádky.
+  Vypnuté zopakuje název a km na obou (tvar windowsového tisku), zapnuté je vypíše jednou
+  přes oba řádky.
+- **Popisné sloupce bez vnitřních čar** - levý blok se kreslí jako jeden celek, svislé čáry mezi
+  spoji zůstanou.
+
+**Záhlaví** a **Datové buňky** - velikost písma, pozadí a barva textu obou zón, vnitřní okraje
+buňky a tyhle volby:
+
+- **Formát času** - *Minuty menším písmem (hh mm)* jako starý tisk, nebo *Celý čas stejně (hh:mm)*.
+  **Velikost minut** říká, o kolik jsou minuty menší.
+- **Tečky v prázdných buňkách** - buňka bez času se vyplní tečkami, takže tabulka drží svislé
+  vodicí pruhy jako starý tisk. Dostanou je i prázdné sloupce dorovnání.
+- **Tučné zastávky dle trasy** a **Čáry u zastávek dle trasy** - v trase linky jde u zastávky zadat
+  „tučně" a „podtrženo"; zapnuté znamená, že je návrhář respektuje. Vypíná se to tady, ne
+  v parametrech sestavy - je to údaj z jízdních řádů.
+- **Tečky za názvem zastávky** - tečky od názvu k pravému okraji sloupce, aby oko dojelo k času.
+- **Podbarvit lichá Tč** a **Barva lichých Tč** - střídavé podbarvení podle tarifního čísla.
+
+**Přípojné řádky** - **Slučovat přípoje** (*Ne* / *Podle směru* / *Podle směru a linky*) a vlastní
+písmo řádku. Sloučený řádek nese časy víc spojů a v popisku má směr („ze směru Trhové Sviny"),
+takže šetří místo.
+
+**Data** - kolekce, ze kterých prvek čte, **Viditelnost řádku** (výraz nad poli zastávky, např.
+`{ZONA} == "1"`) a **Zvýraznění řádků** (seznam pravidel podmínka → barva pozadí, první splněné
+vyhrává).
+
+---
+
+### 3. Editor sloupců tabulky spojů
+
+Tlačítkem **Upravit sloupce…** se otevře editor se dvěma záložkami: **Obecné** (totéž co panel)
+a **Sloupce**. V seznamu jsou popisné sloupce - šipka směru, zóna, kilometry, tarifní číslo,
+název zastávky, MHD - a jako poslední položka **Spoj**.
+
+U každého sloupce nastavíte záhlaví, šířku v milimetrech, zarovnání a celý styl záhlaví i buněk
+(písmo, barvy, okraje). Sloupce se zapínají a vypínají - seznam je daný agendou.
+
+⚠️ **Sloupec Spoj šířku nemá.** Je to jedna položka, ze které se v tisku stane tolik sloupců,
+kolik má linka spojů, a jejich šířku počítá sazba z obsahu (viz kapitola 4). Styl, který u položky
+nastavíte, platí pro všechny.
+
+---
+
+### 4. Jak se tabulka vejde na papír
+
+Tohle je u linkového JŘ to hlavní: spojů bývá víc, než kolik se vejde vedle sebe.
+
+**Šířka sloupce spoje se počítá z obsahu.** Sazba změří, co v sloupci opravdu stojí - čas, značky
+nad ním, negativní značku - a k tomu přidá vnitřní okraje buňky. Žádné ruční číslo se nezadává;
+kdo chce sloupce užší, ubere z toho, co je uvnitř:
+
+- **Vnitřní okraj vlevo / vpravo** (skupina Datové buňky) - hlavní páka na vzduch kolem času.
+  Nulou se sloupec stáhne až k obsahu.
+- **Mezera mezi značkami** - odstup dvou značek nad časem (třeba kladívko a vozík). Dvojice
+  značek bývá ve sloupci to nejširší, takže utažením téhle mezery se tabulka zúží nejvíc.
+- **Mezera mezi značkou a časem** a **Mezera mezi hodinou a minutou** - totéž uvnitř buňky.
+  Prázdné pole u všech tří znamená „mezera z písma".
+
+**Stejně široké sloupce spojů** - vypnuté (výchozí) znamená, že každý sloupec je tak široký, jak
+potřebuje jeho obsah; sloupec se značkami je pak širší než ostatní, přesně jako ve starém tisku.
+Zapnuté srovná všechny na nejširší z nich - tabulka je pravidelná, ale zabere víc místa.
+
+**Dorovnat prázdnými sloupci** - co se stane s volným místem vpravo. Zapnuté ho rozkreslí
+prázdnými sloupci, takže tabulka končí rovně; vypnuté ho nechá bílé.
+
+**Mezera mezi skupinami sloupců** - volné místo za popisným blokem a mezi skupinami dnů.
+Bere se ze šířky prvku, takže se do řádku vejde méně spojů.
+
+**Co se nevejde, jde pod tabulku.** Když je spojů víc, než kolik se vejde do šířky prvku, sestaví
+se tabulka na několik **částí pod sebou**; každá zopakuje celý seznam zastávek se záhlavím a má
+**vlastní rámeček**, aby bylo vidět, že jde o samostatnou tabulku. Když se část nevejde na stránku,
+láme se a na další stránce se zopakuje její hlava (pás skupin dnů, čísla spojů, platnost).
+
+**Hláška ve stavovém řádku** upozorní, když je sloupec spoje užší, než se jeho obsah vejde -
+jmenuje konkrétní spoj a rozdíl v milimetrech. Řešením je buď širší prvek, nebo menší písmo buněk,
+nebo utažené mezery výše.
+
+---
+
+### 5. Parametry sestavy linkového JŘ
+
+V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
+
+**Obecné:**
+
+- **Obousměrný tisk** - oba směry v jedné tabulce, spoje opačného směru na druhé straně od
+  zastávek. Vypnuté = každý směr na vlastní stránce.
+- **Tvar názvu zastávky** - *Plný CIS* (výchozí, zachová dvojčárku podle číselníku, tak to tiskne
+  starý modul), *Plný CIS s okresem*, *Zkrácený*, *Typograficky upravený* (mezera za čárkou a tečkou).
+- **Použít název pro MHD** - zastávka může mít v číselníku vedle názvu podle CIS ještě upravený
+  název pro MHD; vypnutím se všude použije název podle CIS.
+
+**Tabulka linky:**
+
+- **Dělení spojů dle platnosti** - podle čeho se spoje rozdělí do skupin sloupců: *Bez rozlišení*,
+  *Pracovní dny / víkend+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
+  rozložení* se vybrat nedá - jen hlásí, že si šablona rozvržení drží vlastní.
+- **Sloupec tarifních čísel**, **Zastávky, kde žádný spoj nestaví**, **Písmeno systému u zóny**
+  a **Barvy spojů** - všechny čtyři mají volbu **Automaticky (dle linky)**, tedy podle nastavení
+  u linky v jízdních řádech, a pak *Tisknout* / *Netisknout*, kterými to pro tuhle sestavu přebijete.
+- **Zvýraznit zastávku** a **Zvýraznit tarifní číslo** - kus názvu zastávky (nerozlišují se velká
+  a malá písmena) označí její řádek jako aktuální; vzhled zvýraznění si řeší šablona pravidlem
+  nad polem „Zvýrazněná zastávka". Projíždí-li linka město víckrát, označí se všechny jeho
+  zastávky - jednu z nich vybere tarifní číslo.
+
+**Výběr linek k tisku** i **tisk a export** fungují stejně jako u zastávkového JŘ (viz kapitoly
+„Výběr linek k tisku" a „Tisk a export" výše).
+
+---
+
+### 6. Postup krok za krokem (linkový JŘ)
+
+1. **Založte šablonu se správnou agendou** - `Nástroje → Změnit agendu` (Ctrl+Shift+A), Linkový JŘ.
+   Rychlejší start: otevřete výchozí šablonu ze sekce **Systémové M-line** (Ctrl+O) - je v podobě
+   starého postskriptového tisku na A5 na šířku.
+2. **Postavte hlavičku** - textové prvky s poli linky; sekci nechte „na každé stránce".
+3. **Vložte Tabulku spojů** do vlastní sekce nastavené na rozdělení přes stránky a roztáhněte ji
+   přes celou šířku stránky.
+4. **Nastavte sloupce** - tlačítkem „Upravit sloupce…" zapněte, co se má tisknout vlevo, a dolaďte
+   šířky; sloupci Spoj nastavte jen styl.
+5. **Dolaďte, kolik spojů je vedle sebe** - vnitřními okraji buněk a mezerami u značek (kap. 4).
+   Náhled ukazuje výsledek rovnou.
+6. **Přidejte Poznámky** pod tabulku, jinak nebude čím značky vysvětlit.
+7. **Vyberte linky** (Ctrl+Shift+I) a **vytiskněte nebo exportujte** (Ctrl+P).
