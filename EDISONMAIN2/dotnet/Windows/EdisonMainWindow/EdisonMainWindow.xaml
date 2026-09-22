@@ -44,19 +44,20 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager).
+            <!-- Strom modulů (launcher) | splitter | pruh podpory + plocha miniaplikací.
                  Šířku stromu persistuje VM per IDFa (viz AttachTreeLayout) - restore ji přepíše na px.
-                 Min. šířku plochy miniaplikací drží code-behind (MiniAppArea_SizeChanged) - GridSplitter
-                 MinWidth star sloupce u fixní px šířky stromu obchází, layout MinWidth by přetékal. -->
+                 Min. šířku plochy miniaplikací drží code-behind (ShellSplitLimits.ClampTreeWidth) -
+                 GridSplitter MinWidth star sloupce u fixní px šířky stromu obchází, layout MinWidth
+                 by přetékal. -->
             <ColumnDefinition x:Name="TreeColumn" Width="*" MinWidth="150"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <!-- Pruh podpory nad dockem - Auto, výšku drží Border níž; strom tuhle řadu přesahuje. -->
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <!-- Star, tedy přidělenou výšku drží i když ji obsah přetéká - z toho počítá
+                 ShellSplitLimits strop pruhu podpory. -->
+            <RowDefinition x:Name="ContentRow" Height="*" />
             <!-- Auto - StatusBar musí růst se zvolenou velikostí fontu (user preference).
                  Pevná výška by ořízla text při větším fontu. -->
             <RowDefinition Height="Auto" />
@@ -190,20 +191,63 @@
         </DockPanel>
         </Border>
 
-        <!-- Fixní pruh podpory: jeden centrální widget podpora.m-line.cz nad plochou miniaplikací.
-             Záměrně MIMO dokovací komponentu - je to garantovaný kanál IT → uživatelé, uvnitř docku
-             si ho uživatel zavřel nebo zúžil. Jen nad dockem, ne přes celou šířku: strom si drží
-             celou levou část okna (RowSpan níž). Obsah plní code-behind (WebView2). -->
-        <Border x:Name="SupportStrip" Grid.Column="2" Grid.Row="1" Height="400"
-                Background="{DynamicResource EDTheme.Bg.Base}"
-                BorderBrush="{DynamicResource EDTheme.Border.Light}"
-                BorderThickness="0,0,0,1"/>
+        <!-- Pruh podpory + plocha miniaplikací pod ním, oddělené děličem. Vlastní Grid, ne řádky
+             rootu: dělič se nesmí týkat stromu vlevo, který drží celou výšku obsahu, a root tím
+             zůstane bez jediného RowSpan. Výšku pruhu persistuje VM per IDFa
+             (viz AttachSupportLayout), strop drží code-behind (ShellSplitLimits.ApplySupportCeiling). -->
+        <Grid Grid.Column="2" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <!-- MinHeight = garance kanálu IT → uživatelé: pruh jde zvětšit, zmenšit pod tuhle
+                     výšku ne. Height je zároveň výchozí hodnota, než přijde uložená. -->
+                <RowDefinition x:Name="SupportRow" Height="400" MinHeight="400"/>
+                <!-- Pixelová výška, ne Auto - strop odměřuje dělič z deklarované hodnoty. -->
+                <RowDefinition x:Name="SupportSplitterRow" Height="5"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Pruh podpory: jeden centrální widget podpora.m-line.cz nad plochou miniaplikací.
+                 Záměrně MIMO dokovací komponentu - je to garantovaný kanál IT → uživatelé, uvnitř docku
+                 si ho uživatel zavřel nebo zúžil na nulu. Jen nad dockem, ne přes celou šířku: strom
+                 si drží celou levou část okna. Obsah plní code-behind (WebView2).
+                 Bez spodní linky - tu kreslí dělič, dohromady by působily jako zdvojený pruh. -->
+            <Border x:Name="SupportStrip" Grid.Row="0"
+                    Background="{DynamicResource EDTheme.Bg.Base}"/>
+
+            <!-- ResizeDirection explicitně: Auto se u Stretch/Stretch rozhoduje podle poměru
+                 ActualWidth/ActualHeight, tedy podle živých rozměrů. RowSpan tu být nesmí -
+                 přepnul by ResizeBehavior z PreviousAndNext. -->
+            <GridSplitter Grid.Row="1" Height="5" ResizeDirection="Rows"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                          Cursor="SizeNS" FocusVisualStyle="{x:Null}"
+                          AutomationProperties.Name="Dělič pruhu podpory a plochy miniaplikací"
+                          Background="{DynamicResource EDTheme.Border.Light}"/>
+
+            <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
+                 AvalonDockHost nad tímto DockingManagerem). -->
+            <!-- AllowMixedOrientation: bez něj AvalonDock skryje boční drop targety, jakmile by
+                 vyžadovaly vnořený panel s jinou orientací (např. dokovat vedle pane, který po
+                 collect-garbage sedí přímo ve svislém rootu; nebo nad/pod pane ve vodorovném pásu). -->
+            <avalonDock:DockingManager x:Name="DockManager" Grid.Row="2"
+                                       AllowMixedOrientation="True"
+                                       Background="{DynamicResource EDTheme.Bg.Panel}"
+                                       Foreground="{DynamicResource EDTheme.Text.Primary}"
+                                       BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                                       FontFamily="{DynamicResource EDTheme.FontFamily}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}">
+                <avalonDock:LayoutRoot>
+                    <avalonDock:LayoutPanel Orientation="Horizontal">
+                        <!-- Miniaplikace = dokumenty v tomto pane → vyplní plochu, další jdou jako taby. -->
+                        <avalonDock:LayoutDocumentPane/>
+                    </avalonDock:LayoutPanel>
+                </avalonDock:LayoutRoot>
+            </avalonDock:DockingManager>
+        </Grid>
 
         <!-- Tři stromy odpovídají legacy edisonnavbar.xml: Hlavní nabídka (id=-2),
              Správa systému (id=-3), Partnerská řešení (id=-4).
              Bg.Sunken → chrome panelu je zapuštěné a strom na něm leží jako karta z Bg.Surface;
              v light je totiž Bg.Base == Bg.Surface a bez toho by celý panel splynul s obsahem. -->
-        <Grid Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Background="{DynamicResource EDTheme.Bg.Sunken}">
+        <Grid Grid.Column="0" Grid.Row="1" Background="{DynamicResource EDTheme.Bg.Sunken}">
             <Grid.Resources>
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -486,32 +530,12 @@
                 </Grid>
             </Border>
         </Grid>
-        <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+        <GridSplitter Grid.Column="1" Grid.Row="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                       Background="{DynamicResource EDTheme.Border.Light}"/>
-        <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
-             AvalonDockHost nad tímto DockingManagerem). -->
-        <!-- AllowMixedOrientation: bez něj AvalonDock skryje boční drop targety, jakmile by
-             vyžadovaly vnořený panel s jinou orientací (např. dokovat vedle pane, který po
-             collect-garbage sedí přímo ve svislém rootu; nebo nad/pod pane ve vodorovném pásu). -->
-        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="2"
-                                   AllowMixedOrientation="True"
-                                   Background="{DynamicResource EDTheme.Bg.Panel}"
-                                   Foreground="{DynamicResource EDTheme.Text.Primary}"
-                                   BorderBrush="{DynamicResource EDTheme.Border.Light}"
-                                   FontFamily="{DynamicResource EDTheme.FontFamily}"
-                                   FontSize="{DynamicResource EDTheme.FontSize.Body}">
-            <avalonDock:LayoutRoot>
-                <avalonDock:LayoutPanel Orientation="Horizontal">
-                    <!-- Miniaplikace = dokumenty v tomto pane → vyplní plochu, další jdou jako taby. -->
-                    <avalonDock:LayoutDocumentPane/>
-                </avalonDock:LayoutPanel>
-            </avalonDock:LayoutRoot>
-        </avalonDock:DockingManager>
-
 
         <!-- Segment = ikona + hodnota, technika (namespace, port, login, Mlp) je v ToolTipu.
              Separator jen mezi vždy viditelnými segmenty - u sbalitelných by zůstal viset. -->
-        <StatusBar Grid.Row="3" Grid.ColumnSpan="100">
+        <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
             <!-- Značka aplikace (stejný molecule jako ikona okna a hero pruh přihlášení) - brand,
                  ne segment, proto bez hodnoty; velikost z tokenu, ať roste s user fontem. -->
             <StatusBarItem Padding="8,3,4,3" ToolTip="EDISON">

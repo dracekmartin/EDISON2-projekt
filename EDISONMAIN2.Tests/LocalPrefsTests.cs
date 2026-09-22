@@ -46,6 +46,7 @@ public class LocalPrefsTests
             Assert.Null(prefs.RememberedPassword);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
+            Assert.Null(prefs.SupportStripHeights);
             Assert.Null(prefs.Connections);
         });
     }
@@ -80,6 +81,7 @@ public class LocalPrefsTests
             Assert.Null(prefs.LastLoginName);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
+            Assert.Null(prefs.SupportStripHeights);
         });
     }
 
@@ -90,7 +92,8 @@ public class LocalPrefsTests
             """
             {"lastIdfa":"CB_DP","lastLoginName":"tester","rememberedPassword":"blob",
              "miniAppLayouts":{"CB_DP":"<xml/>"},
-             "treeWidths":{"CB_DP":321.5}}
+             "treeWidths":{"CB_DP":321.5},
+             "supportStripHeights":{"CB_DP":512.5}}
             """, _ =>
         {
             var prefs = LocalPrefs.Load();
@@ -100,6 +103,7 @@ public class LocalPrefsTests
             Assert.Equal("blob", prefs.RememberedPassword);
             Assert.Equal("<xml/>", prefs.MiniAppLayouts!["CB_DP"]);
             Assert.Equal(321.5, prefs.TreeWidths!["CB_DP"]);
+            Assert.Equal(512.5, prefs.SupportStripHeights!["CB_DP"]);
         });
     }
 
@@ -125,6 +129,7 @@ public class LocalPrefsTests
                 LastLoginName = "tester",
                 MiniAppLayouts = new() { ["CB_DP"] = "<xml/>", ["CB_MLINEAS"] = "<xml2/>" },
                 TreeWidths = new() { ["CB_DP"] = 280 },
+                SupportStripHeights = new() { ["CB_DP"] = 520 },
             }.Save();
 
             var loaded = LocalPrefs.Load();
@@ -133,6 +138,7 @@ public class LocalPrefsTests
             Assert.Equal(2, loaded.MiniAppLayouts!.Count);
             Assert.Equal("<xml2/>", loaded.MiniAppLayouts["CB_MLINEAS"]);
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
+            Assert.Equal(520, loaded.SupportStripHeights!["CB_DP"]);
         });
     }
 

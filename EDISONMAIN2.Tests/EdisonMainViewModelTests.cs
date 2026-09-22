@@ -163,10 +163,13 @@ public class EdisonMainViewModelTests
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var prefs = Substitute.For<ILocalPrefs>();
         var layouts = new Dictionary<string, string>();
+        var heights = new Dictionary<string, double>();
         prefs.MiniAppLayouts.Returns(layouts);
+        prefs.SupportStripHeights.Returns(heights);
         var ml = MockMLRest();
         var runner = new SwitchableGateRunner(ml);
         var vm = CreateVM(popup: mockPopup, prefs: prefs, mlRest: ml, restRunner: runner);
+        vm.AttachSupportLayout(() => 520, _ => { });
         vm.AttachMiniAppHost(Substitute.For<IMiniAppHost>());
 
         runner.Gate = new TaskCompletionSource();
@@ -177,6 +180,8 @@ public class EdisonMainViewModelTests
 
         Assert.DoesNotContain("JI_DP", layouts.Keys);
         Assert.Contains("CB_DP", layouts.Keys);
+        Assert.DoesNotContain("JI_DP", heights.Keys);
+        Assert.Contains("CB_DP", heights.Keys);
     }
 
     private static IModuleTreeLoader MainTreeWith(params ExecutableModule[] modules)
@@ -769,6 +774,81 @@ public class EdisonMainViewModelTests
 
         Assert.Equal(275, widths["CB_DP"]);
         prefs.Received().Save();
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_AppliesSavedSupportHeight()
+    {
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.SupportStripHeights.Returns(new Dictionary<string, double> { ["CB_DP"] = 520 });
+        var vm = CreateVM(prefs: prefs);
+
+        double? applied = null;
+        vm.AttachSupportLayout(() => 0, h => applied = h);
+        vm.AttachMiniAppHost(new NullHost());
+
+        Assert.Equal(520, applied);
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_NoSavedSupportHeight_LeavesDefault()
+    {
+        var vm = CreateVM(); // ILocalPrefs substitute → SupportStripHeights null
+
+        bool applied = false;
+        vm.AttachSupportLayout(() => 0, _ => applied = true);
+        vm.AttachMiniAppHost(new NullHost());
+
+        Assert.False(applied);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void RestoreMiniAppLayout_NonPositiveSavedSupportHeight_Ignored(double saved)
+    {
+        // Neplatná hodnota (poškozený soubor) nesmí pruh srazit na nulu - platí XAML default.
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.SupportStripHeights.Returns(new Dictionary<string, double> { ["CB_DP"] = saved });
+        var vm = CreateVM(prefs: prefs);
+
+        bool applied = false;
+        vm.AttachSupportLayout(() => 0, _ => applied = true);
+        vm.AttachMiniAppHost(new NullHost());
+
+        Assert.False(applied);
+    }
+
+    [Fact]
+    public void CloseAll_PersistsSupportHeightPerIdfa()
+    {
+        var heights = new Dictionary<string, double>();
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.SupportStripHeights.Returns(heights);
+        var vm = CreateVM(prefs: prefs);
+
+        vm.AttachSupportLayout(() => 520, _ => { });
+        vm.AttachMiniAppHost(new NullHost());
+
+        vm.CloseAllCommand.Execute(null);
+
+        Assert.Equal(520, heights["CB_DP"]);
+        prefs.Received().Save();
+    }
+
+    [Fact]
+    public void CloseAll_WithoutAttachSupportLayout_PersistsNothingAndDoesNotThrow()
+    {
+        // View nemusí rozměry napojit (testy, jiný hostitel) - save cesta musí přežít bez delegatů.
+        var heights = new Dictionary<string, double>();
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.SupportStripHeights.Returns(heights);
+        var vm = CreateVM(prefs: prefs);
+        vm.AttachMiniAppHost(new NullHost());
+
+        vm.CloseAllCommand.Execute(null);
+
+        Assert.Empty(heights);
     }
 
     [Fact]

@@ -10,8 +10,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   picker ji nenabízí, `CloseClosable` ji přeskočí (`CloseAll` pro shutdown/reset ne - programové
   `Close()` dock pustí i tak). `CanClose` se při restore bere z deskriptoru, ne z uloženého XML,
   a shell Plochu po obnově **doplní** (`EnsureDesktopOpen`) - starý layout ji mít nemusí.
-- Widgety `podpora.m-line.cz` v docku **nejsou** - kanál IT → uživatelé nese fixní pruh
-  v shellu (`EdisonMainWindow`, `SupportStrip`), mimo dock, aby ho nešlo zavřít ani zúžit;
+- Widgety `podpora.m-line.cz` v docku **nejsou** - kanál IT → uživatelé nese pruh v shellu
+  (`EdisonMainWindow`, `SupportStrip`) mimo dock, aby ho nešlo zavřít; děličem ho lze zvětšit,
+  garanci drží podlaha `SupportRow.MinHeight`, plochu naopak `ShellSplitLimits`;
   URL nese IdFa + login + e-mail, po přepnutí firmy se widget naviguje znovu (změna `Idfa` VM).
   Oba hostitelé (pruh i login) jdou přes `SupportWidgetHost`; `EDISON_SCREENSHOT_MODE=1`
   nahradí widgety neutrálním popiskem (anonymizované screenshoty) - WebView2 se vůbec nevytvoří.
@@ -53,9 +54,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - **Kolečko myši v panelu**: vnořený seznam si MouseWheel nechá i bez místa k rolování, na kraji ho
   předá ven `EDControls.ScrollWheelBubbling.IsEnabled`; prázdná plocha Plochy musí mít `Background`,
   jinak není hit-testable a kolečko jde mimo ScrollViewer.
-- Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,
-  stejný lifecycle přes `AttachTreeLayout`); chybí-li nebo je poškozený → výchozí rozložení
-  (jen Plocha).
+- Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`
+  a výškou pruhu podpory v `SupportStripHeights`, lifecycle přes `AttachTreeLayout` /
+  `AttachSupportLayout`); chybí-li nebo je poškozený → výchozí rozložení (jen Plocha).
 - Výběr miniaplikace je vlastní okno (`Windows/MiniAppPickerWindow`) s **jednoúrovňovým**
   seznamem; `IMiniAppProvider.GroupTitle` (pořadí = pořadí registrace v `AppBootstrapper`)
   z něj zbyl jen popisek řádku. Menu „Miniaplikace" na okno jen odkazuje.

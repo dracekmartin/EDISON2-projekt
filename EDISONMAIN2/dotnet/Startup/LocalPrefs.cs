@@ -25,6 +25,9 @@ public interface ILocalPrefs
     /// <summary>Uložená šířka stromu modulů (px) per IDFa. Null = žádná uložená.</summary>
     Dictionary<string, double>? TreeWidths { get; set; }
 
+    /// <summary>Uložená výška pruhu podpory (px) per IDFa. Null = žádná uložená.</summary>
+    Dictionary<string, double>? SupportStripHeights { get; set; }
+
     /// <summary>Uživatelem uložená připojení pro „Připojit k databázi" (výchozí z EDISONini.xml sem nepatří). Null = žádná.</summary>
     List<SavedConnection>? Connections { get; set; }
 
@@ -53,6 +56,7 @@ public class LocalPrefs : ILocalPrefs
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }
+    public Dictionary<string, double>? SupportStripHeights { get; set; }
     public List<SavedConnection>? Connections { get; set; }
 
     private static readonly JsonSerializerOptions JsonOptions = new()

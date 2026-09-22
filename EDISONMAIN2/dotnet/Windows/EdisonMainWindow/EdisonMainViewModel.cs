@@ -52,6 +52,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Přístup k šířce stromu (ColumnDefinition ve view) - registruje code-behind přes AttachTreeLayout.
         private Func<double>? _getTreeWidth;
         private Action<double>? _applyTreeWidth;
+        // Výška pruhu podpory (RowDefinition ve view) - registruje code-behind přes AttachSupportLayout.
+        private Func<double>? _getSupportHeight;
+        private Action<double>? _applySupportHeight;
 
         public ICommand OpenModuleCommand { get; }
         /// <summary>Spuštění zástupce mimo hlavní nabídku (tisková sestava, pohled DS) přes hosta.</summary>
@@ -131,6 +134,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _applyTreeWidth = applyWidth;
         }
 
+        /// <summary>
+        /// Napojí přístup k výšce pruhu podpory z view (RowDefinition). Výška se persistuje per IDFa
+        /// společně s layoutem miniaplikací. Volat **před** <see cref="AttachMiniAppHost"/> - ten
+        /// spouští první restore, který už výšku aplikuje.
+        /// </summary>
+        public void AttachSupportLayout(Func<double> getHeight, Action<double> applyHeight)
+        {
+            _getSupportHeight = getHeight;
+            _applySupportHeight = applyHeight;
+        }
+
         // Výběr miniaplikace je vlastní okno, ne vnořené submenu - katalog roste a seskupení
         // per provider se v menu neosvědčilo (HD 13132/F2).
         private void PickMiniApp()
@@ -172,6 +186,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 (_prefs.MiniAppLayouts ??= new())[idfa] = _miniAppManager.SaveLayout();
                 if (_getTreeWidth is not null)
                     (_prefs.TreeWidths ??= new())[idfa] = _getTreeWidth();
+                if (_getSupportHeight is not null)
+                    (_prefs.SupportStripHeights ??= new())[idfa] = _getSupportHeight();
                 _prefs.Save();
             }
             catch { }
@@ -180,10 +196,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void RestoreMiniAppLayout(string idfa)
         {
             if (_miniAppManager is null) return;
-            // Šířka stromu (nezávislá na tom, zda je uložený layout miniaplikací) - bez uložené
-            // hodnoty zůstane XAML default (*).
+            // Rozměry panelů (nezávislé na tom, zda je uložený layout miniaplikací) - bez uložené
+            // hodnoty zůstane XAML default. Aplikovat před RestoreLayout, ať AvalonDock
+            // deserializuje do už správně velké plochy a nepřepočítává pane dvakrát.
             if (_applyTreeWidth is not null && _prefs.TreeWidths?.TryGetValue(idfa, out var width) == true && width > 0)
                 _applyTreeWidth(width);
+            if (_applySupportHeight is not null && _prefs.SupportStripHeights?.TryGetValue(idfa, out var height) == true && height > 0)
+                _applySupportHeight(height);
             if (_prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) != true || string.IsNullOrWhiteSpace(xml))
             {
                 // Žádný uložený layout (první spuštění / nová firma) → výchozí rozložení.
