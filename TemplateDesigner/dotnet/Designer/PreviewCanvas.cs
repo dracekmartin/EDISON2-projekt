@@ -45,6 +45,12 @@ public class PreviewCanvas
     /// </summary>
     public Action<string?>? OriznuteBunkyChanged { get; set; }
 
+    /// <summary>
+    /// Volá se při každém renderu preview s popisem tabulek spojů, kde je sloupec užší, než se
+    /// obsah vejde (null = v pořádku). Wire-uje MainWindow na týž odznak status baru.
+    /// </summary>
+    public Action<string?>? UzkeSloupceChanged { get; set; }
+
     /// <summary>Sběrač oříznutých buněk právě probíhajícího renderu; mimo render null.</summary>
     private ClippedCells? _oriznuteBunky;
 
@@ -338,6 +344,12 @@ public class PreviewCanvas
         // Kolik stran leží pod sebou ve scrollu. Nabídka nad náhledem přepíná stránky DAT, tohle
         // je ta druhá osa - bez ní si uživatel obojí plete (`B131`).
         PocetStranSazbyChanged?.Invoke(layout.Pages.Count);
+
+        // Úzký sloupec spoje se hlásí odsud, ne z načtení dat: uživatel mění šířku v panelu
+        // a hláška musí jít s ním, ne čekat na příští stažení jízdního řádku.
+        UzkeSloupceChanged?.Invoke(data is null
+            ? null
+            : TripColumnWidthWarnings.Summarize(_state.CurrentTemplate, [data]));
 
         // Jen obrazovkový náhled - export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
         canvas.Clear(CanvasTheme.Background);

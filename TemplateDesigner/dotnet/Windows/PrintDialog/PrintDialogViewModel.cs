@@ -283,6 +283,10 @@ public class PrintDialogViewModel : EDViewModel
             // pozná až u zastávky s mobilem v ruce (#13158).
             var maleKody = BarcodeSizeWarnings.Summarize(_template, dataPages);
             string maleKodyInfo = maleKody is null ? "" : $" · ⚠ {maleKody}";
+            // Úzký sloupec spoje: zadaná šířka smí podlézt obsah, takže časy a značky tečou
+            // do souseda. Na papíře to vypadá jako vada sazby, ne jako důsledek nastavení.
+            var uzkeSloupce = TripColumnWidthWarnings.Summarize(_template, dataPages);
+            string uzkeSloupceInfo = uzkeSloupce is null ? "" : $" · ⚠ {uzkeSloupce}";
 
             if (splitMode == ExportSplitMode.Single)
             {
@@ -292,7 +296,7 @@ public class PrintDialogViewModel : EDViewModel
                 OpenPdf(target);
                 StatusText = (overflow > 0
                     ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká{preteceniInfo}: {Path.GetFileName(target)}{sheetInfo}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo;
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo + uzkeSloupceInfo;
                 return;
             }
 
@@ -314,7 +318,7 @@ public class PrintDialogViewModel : EDViewModel
             OpenFolder(target);
             StatusText = (overflow > 0
                 ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{preteceniInfo}{sheetInfo}"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo;
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo + uzkeSloupceInfo;
         }
         catch (Exception ex)
         {

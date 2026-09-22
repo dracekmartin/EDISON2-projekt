@@ -11,7 +11,9 @@ Zúžení se řídí polem **Největší šířka sloupce spoje** a stačí ono 
 obsahem stáhne i dno. Nejmenší šířka zůstává pro opačný případ, kdy chceš sloupce rozšířit;
 když si obě pole odporují, platí největší.
 
-Cena je vidět hned v náhledu: do užšího sloupce se značky nevejdou a přetečou do sousedního.
+Cenou je, že do užšího sloupce se obsah nevejde a přeteče do sousedního. Proto o tom nově mluví
+odznak ve stavovém řádku i hláška po uložení PDF, a to s oběma čísly: kolik sloupec má a kolik si
+žádá obsah - z toho je vidět, o kolik povolit. V návrháři se přepočítá hned při změně šířky.
 Prázdná pole se chovají jako dřív.
 
 ## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře

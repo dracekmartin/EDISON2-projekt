@@ -291,6 +291,39 @@ public class LineTableSirkaSloupcuTests
         Assert.Equal(40, sDnem.Sum(b => b.Pocet));
     }
 
+    // ── Hláška o úzkém sloupci ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Sloupec zúžený pod obsah se musí ohlásit ve stavovém řádku - jinak vypadá přetečení
+    /// značek do souseda jako vada sazby, ne jako důsledek nastavení (požadavek Jan 22. 9.).
+    /// </summary>
+    [Fact]
+    public void UzkySloupecSeOhlasi()
+    {
+        var data = Data(spoju: 40);
+        var prvek = Prvek();
+        prvek.NejvetsiSirkaSpojeMm = Dno(data) - 1f;
+        var sablona = new Template();
+        sablona.Sections.Add(new Section { Elements = { prvek } });
+
+        var hlaska = TripColumnWidthWarnings.Summarize(sablona, [data]);
+
+        Assert.NotNull(hlaska);
+        Assert.Contains("sloupec spoje", hlaska);
+        Assert.Contains(ElementNames.ForUser(prvek), hlaska);
+    }
+
+    /// <summary>Sloupec, do kterého se obsah vejde, hlášku nevyvolá - jinak by svítila pořád.</summary>
+    [Fact]
+    public void SirokySloupecHlaskuNevyvola()
+    {
+        var data = Data(spoju: 40);
+        var sablona = new Template();
+        sablona.Sections.Add(new Section { Elements = { Prvek() } });
+
+        Assert.Null(TripColumnWidthWarnings.Summarize(sablona, [data]));
+    }
+
     private static LineTableElement Prvek() => new() { X = 0, Y = 0, Width = 200 };
 
     /// <summary>Dno fixtury - prvek tak úzký, že o šířce sloupce rozhoduje jen spodní hranice.

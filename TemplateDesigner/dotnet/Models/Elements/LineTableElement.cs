@@ -668,15 +668,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private const float MinVuleKolemCasuMm = 1f;
 
     /// <summary>
-    /// Nejmenší šířka automatického sloupce (mm) - tolik, aby se do ní vešel čas „00:00" i s odsazením.
-    /// </summary>
-    /// <remarks>
-    /// Dokud tu stála pevná 3 mm, řídila **kde se tabulka rozřízne**: dělení nasypalo do bloku tolik
-    /// spojů, kolik se jich při té šířce vešlo - a čas se do 3 mm nevejde v žádném písmu, takže bloky
-    /// sice vycházely, ale byly nečitelné (nahlásil Jan 25. 8.). Dno musí vycházet z písma, jinak
-    /// zvětšení fontu tabulku jen zhustí, místo aby ubralo spojů na blok.
-    /// </remarks>
-    /// <summary>
     /// Dolní hranice šířky sloupce spoje po započtení obou zadaných mezí.
     /// </summary>
     /// <remarks>
@@ -695,13 +686,42 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return dno;
     }
 
+    /// <summary>
+    /// Nejmenší šířka automatického sloupce (mm) - zadaná hodnota, jinak měřený obsah.
+    /// </summary>
+    /// <remarks>
+    /// Dokud tu stála pevná 3 mm, řídila **kde se tabulka rozřízne**: dělení nasypalo do bloku tolik
+    /// spojů, kolik se jich při té šířce vešlo - a čas se do 3 mm nevejde v žádném písmu, takže bloky
+    /// sice vycházely, ale byly nečitelné (nahlásil Jan 25. 8.). Dno musí vycházet z písma, jinak
+    /// zvětšení fontu tabulku jen zhustí, místo aby ubralo spojů na blok.
+    /// </remarks>
     private float MinAutoSloupecMm()
     {
-        // Vyplněné dno nahrazuje celý výpočet - viz `NejmensiSirkaSpojeMm`. Měří se až pod ním,
-        // aby bylo z kódu vidět, že měření obsahu do zadané hodnoty nemluví.
+        // Vyplněné dno nahrazuje měření - viz `NejmensiSirkaSpojeMm`.
         if (NejmensiSirkaSpojeMm is float zadane)
             return MathF.Max(MinAutoColumnWidthMm, zadane);
+        return ZmerenaSirkaSloupceSpojeMm();
+    }
 
+    /// <summary>
+    /// Sloupec spoje, jak vyjde, proti tomu, co si žádá obsah (mm). Null = prvek nemá co kreslit.
+    /// </summary>
+    /// <remarks>Podklad pro hlášku o přetékajícím sloupci - zadané meze smějí obsah podlézt
+    /// (viz <see cref="NejvetsiSirkaSpojeMm"/>), takže je to jediné, co uživateli řekne, že se
+    /// značky vylily do sousedního sloupce. Bere se nejužší blok.</remarks>
+    internal (float Sloupec, float Potreba)? SirkaSloupceProtiObsahu(DataContext data)
+    {
+        var bloky = Rozvrzeni(data);
+        if (bloky.Count == 0) return null;
+        return (bloky.Min(b => b.SloupecSpojeMm), ZmerenaSirkaSloupceSpojeMm());
+    }
+
+    /// <summary>
+    /// Kolik místa si žádá obsah sloupce spoje (mm) - nejširší z času a značek plus vůle kolem nich.
+    /// Zadané meze do toho nemluví, proto se podle toho pozná, že je sloupec užší, než se obsah vejde.
+    /// </summary>
+    internal float ZmerenaSirkaSloupceSpojeMm()
+    {
         var st = ResolveDataStyle(TripColumn());
         using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
         // ⚠️ Měří se **skutečný tvar času**, ne vždycky „00:00". Při formátu s menšími minutami je
