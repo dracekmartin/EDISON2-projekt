@@ -459,6 +459,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     [JsonIgnore] private List<LineTripData>? _cachedZrcadlene;
     /// <summary>Nejširší řádek značek nad časy (pt) - viz <see cref="NejsirsiZnackyPt"/>.</summary>
     [JsonIgnore] private float? _cachedZnackyPt;
+    /// <summary>Co je ta nejširší značka - pro hlášku o úzkém sloupci (spoj a druh značky).</summary>
+    [JsonIgnore] private string? _cachedZnackyKde;
 
     private void EnsureParsed(DataContext data)
     {
@@ -466,6 +468,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         _lineCacheRef = data;
         _cachedCulture = data.Culture;
         _cachedZnackyPt = null;
+        _cachedZnackyKde = null;
 
         _cachedStops = [.. data.GetRows(ZastavkyDataSource).Select(row => new LineStopData
         {
@@ -704,46 +707,49 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Sloupec spoje, jak vyjde, proti tomu, co si žádá obsah (mm). Null = prvek nemá co kreslit.
+    /// Sloupec spoje, jak vyjde, proti tomu, co se do něj musí vejít (mm), a co to je.
+    /// Null = prvek nemá co kreslit.
     /// </summary>
-    /// <remarks>Podklad pro hlášku o přetékajícím sloupci - zadané meze smějí obsah podlézt
+    /// <remarks>
+    /// Podklad pro hlášku o přetékajícím sloupci - zadané meze smějí obsah podlézt
     /// (viz <see cref="NejvetsiSirkaSpojeMm"/>), takže je to jediné, co uživateli řekne, že se
-    /// značky vylily do sousedního sloupce. Bere se nejužší blok.</remarks>
-    internal (float Sloupec, float Potreba)? SirkaSloupceProtiObsahu(DataContext data)
+    /// značky vylily do sousedního sloupce. Bere se nejužší blok.
+    /// <para>⚠️ Porovnává se **holý obsah bez vůle** kolem něj. Do 22. 9. se tu počítalo dno
+    /// sloupce, které vůli 1 mm zahrnuje, takže hláška svítila i tam, kde se obsah pohodlně vejde
+    /// a přijde jen o komfortní mezeru (nález Jan: sloupec 5 mm proti hlášené potřebě 5,4 mm,
+    /// zatímco značky měří 4,4 mm).</para>
+    /// </remarks>
+    internal (float Sloupec, float Potreba, string Kde)? SirkaSloupceProtiObsahu(DataContext data)
     {
         var bloky = Rozvrzeni(data);
         if (bloky.Count == 0) return null;
-        return (bloky.Min(b => b.SloupecSpojeMm), ZmerenaSirkaSloupceSpojeMm());
+        var (obsah, kde) = NejsirsiObsahSloupceSpoje();
+        return (bloky.Min(b => b.SloupecSpojeMm), obsah, kde);
+    }
+
+    /// <summary>Nejširší věc, která ve sloupci spoje stojí (mm), a co to je - bez vůle kolem ní.</summary>
+    private (float Mm, string Kde) NejsirsiObsahSloupceSpoje()
+    {
+        var st = ResolveDataStyle(TripColumn());
+        float casPt = ZmerCasPt(st);
+        float znackyPt = NejsirsiZnackyPt(st);
+        return znackyPt > casPt
+            ? (znackyPt * PtToMm, _cachedZnackyKde ?? "značky u spoje")
+            : (casPt * PtToMm, "čas odjezdu");
     }
 
     /// <summary>
     /// Kolik místa si žádá obsah sloupce spoje (mm) - nejširší z času a značek plus vůle kolem nich.
-    /// Zadané meze do toho nemluví, proto se podle toho pozná, že je sloupec užší, než se obsah vejde.
+    /// Zadané meze do toho nemluví; je to dno, na které sloupec spadne, když se nezadají.
     /// </summary>
     internal float ZmerenaSirkaSloupceSpojeMm()
     {
         var st = ResolveDataStyle(TripColumn());
-        using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
-        // ⚠️ Měří se **skutečný tvar času**, ne vždycky „00:00". Při formátu s menšími minutami je
-        // obsah „23 59" - hodina bez vedoucí nuly v plné velikosti, minuta zmenšená - a to je
-        // znatelně užší. Dokud se tu měřilo „00:00", byl dolní práh sloupce zbytečně velký
-        // a do řádku se vešlo míň spojů, než se reálně vejde (nález Jan 7. 9.).
-        float textPt;
-        if (FormatCasu == FormatCasuSpoje.HodinaVetsi)
-        {
-            float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
-            using var maly = new SKFont(GetTypeface(st), st.FontSize * pomer);
-            textPt = font.MeasureText("23") + maly.MeasureText(" 59");
-        }
-        else
-        {
-            textPt = font.MeasureText("00:00");
-        }
         // ⚠️ Nad časy stojí značky platnosti a negativní značky, a ty jsou **širší než čas**: sázejí
         // se písmem zvětšeným o `PomerZnacek` (výchozí 1,5×) a na řádek platnosti jdou **dvě vedle
         // sebe**. Dokud se do dolní hranice nepočítaly, přetékaly ze sloupce do sousedního (nález
         // Jan 8. 9.). Šířka sloupce se proto řídí tou nejširší věcí, která v něm stojí.
-        textPt = MathF.Max(textPt, NejsirsiZnackyPt(st));
+        float textPt = MathF.Max(ZmerCasPt(st), NejsirsiZnackyPt(st));
 
         // Kolem času musí zůstat vůle, i když si uživatel vynuluje okraje - jinak procházejí svislé
         // čáry vedle číslic a časy sousedních sloupců se slévají (nález Jan 8. 9. na vyrenderované
@@ -752,6 +758,23 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float vzduch = MathF.Max(MinVuleKolemCasuMm, st.PaddingLeft + st.PaddingRight);
         float mm = (textPt * PtToMm) + vzduch;
         return MathF.Max(MinAutoColumnWidthMm, mm);
+    }
+
+    /// <summary>Šířka času tak, jak se sází (pt).</summary>
+    /// <remarks>
+    /// ⚠️ Měří se **skutečný tvar času**, ne vždycky „00:00". Při formátu s menšími minutami je
+    /// obsah „23 59" - hodina bez vedoucí nuly v plné velikosti, minuta zmenšená - a to je
+    /// znatelně užší. Dokud se tu měřilo „00:00", byl dolní práh sloupce zbytečně velký
+    /// a do řádku se vešlo míň spojů, než se reálně vejde (nález Jan 7. 9.).
+    /// </remarks>
+    private float ZmerCasPt(ResolvedTextStyle st)
+    {
+        using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
+        if (FormatCasu != FormatCasuSpoje.HodinaVetsi) return font.MeasureText("00:00");
+
+        float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
+        using var maly = new SKFont(GetTypeface(st), st.FontSize * pomer);
+        return font.MeasureText("23") + maly.MeasureText(" 59");
     }
 
     /// <summary>
@@ -789,13 +812,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     foreach (var run in SymbolRunRenderer.BuildRuns(
                                  ZnackyRadku(t, r), SymbolMap.ResolveLinkovy))
                         sirka += (run.Symbol ? symbol : normal).MeasureText(run.Text);
-                    if (sirka > nejsirsi) nejsirsi = sirka;
+                    if (sirka <= nejsirsi) continue;
+                    nejsirsi = sirka;
+                    _cachedZnackyKde = $"značky platnosti u spoje {t.CisloSpoje}";
                 }
             }
             if (ShowNzRow && t.Nz.Length > 0)
             {
                 float box = normal.MeasureText(t.Nz) + velikost * NegativniZnackaRenderer.PomerVnitrniMezery * 2f;
-                if (box > nejsirsi) nejsirsi = box;
+                if (box <= nejsirsi) continue;
+                nejsirsi = box;
+                _cachedZnackyKde = $"negativní značka u spoje {t.CisloSpoje}";
             }
         }
         return (float)(_cachedZnackyPt = nejsirsi);

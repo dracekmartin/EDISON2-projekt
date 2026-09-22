@@ -302,26 +302,37 @@ public class LineTableSirkaSloupcuTests
     {
         var data = Data(spoju: 40);
         var prvek = Prvek();
-        prvek.NejvetsiSirkaSpojeMm = Dno(data) - 1f;
+        // O vůli 1 mm pod dnem se ještě nehlásí nic (obsah se vejde), proto výrazně níž.
+        prvek.NejvetsiSirkaSpojeMm = MathF.Max(3.5f, Dno(data) - 2.5f);
         var sablona = new Template();
         sablona.Sections.Add(new Section { Elements = { prvek } });
 
         var hlaska = TripColumnWidthWarnings.Summarize(sablona, [data]);
 
         Assert.NotNull(hlaska);
-        Assert.Contains("sloupec spoje", hlaska);
+        Assert.Contains("obsah potřebuje", hlaska);
+        Assert.Contains("čas odjezdu", hlaska);   // fixtura nemá značky, takže přetéká čas
         Assert.Contains(ElementNames.ForUser(prvek), hlaska);
     }
 
-    /// <summary>Sloupec, do kterého se obsah vejde, hlášku nevyvolá - jinak by svítila pořád.</summary>
+    /// <summary>
+    /// Sloupec, do kterého se obsah vejde, hlášku nevyvolá - a to ani když je užší než dno.
+    /// Dno zahrnuje vůli 1 mm kolem obsahu; její ztráta není přetečení a hlásit se nemá
+    /// (nález Jan 22. 9.: sloupec 5 mm proti hlášené potřebě 5,4 mm, zatímco obsah měřil 4,4 mm).
+    /// </summary>
     [Fact]
-    public void SirokySloupecHlaskuNevyvola()
+    public void SloupecBezVuleHlaskuNevyvola()
     {
         var data = Data(spoju: 40);
+        var tesny = Prvek();
+        tesny.NejvetsiSirkaSpojeMm = Dno(data) - 0.5f;   // pod dnem, ale obsah se vejde
         var sablona = new Template();
         sablona.Sections.Add(new Section { Elements = { Prvek() } });
+        var tesnaSablona = new Template();
+        tesnaSablona.Sections.Add(new Section { Elements = { tesny } });
 
         Assert.Null(TripColumnWidthWarnings.Summarize(sablona, [data]));
+        Assert.Null(TripColumnWidthWarnings.Summarize(tesnaSablona, [data]));
     }
 
     private static LineTableElement Prvek() => new() { X = 0, Y = 0, Width = 200 };

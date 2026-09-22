@@ -12,8 +12,9 @@ obsahem stáhne i dno. Nejmenší šířka zůstává pro opačný případ, kdy
 když si obě pole odporují, platí největší.
 
 Cenou je, že do užšího sloupce se obsah nevejde a přeteče do sousedního. Proto o tom nově mluví
-odznak ve stavovém řádku i hláška po uložení PDF, a to s oběma čísly: kolik sloupec má a kolik si
-žádá obsah - z toho je vidět, o kolik povolit. V návrháři se přepočítá hned při změně šířky.
+odznak ve stavovém řádku i hláška po uložení PDF: kolik sloupec má, kolik si žádá obsah a **u kterého
+spoje** to poprvé nevyjde - dá se tedy jít podívat a zúžit postupně. V návrháři se přepočítá hned
+při změně šířky. Hlásí se jen skutečný přesah obsahu, ne ztráta 1mm vůle kolem něj.
 Prázdná pole se chovají jako dřív.
 
 ## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře
