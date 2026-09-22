@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Rendering;
 using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -47,7 +48,7 @@ public class MigrationZahlaviPozadiTests
     public void Tabulky_DostanouSvujOdstin(string typ)
     {
         var root = Migruj($$"""{ "type": "{{typ}}" }""");
-        Assert.Equal(TableElement.NoveZahlaviPozadi, Pozadi(root));
+        Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, Pozadi(root));
     }
 
     [Fact]

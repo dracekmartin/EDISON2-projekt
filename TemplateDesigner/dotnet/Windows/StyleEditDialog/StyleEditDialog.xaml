@@ -24,11 +24,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <controls:CellStyleEditor
                 DataContext="{Binding Style}"
-                EditOptions="{Binding DataContext.EditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                PickTextColorCommand="{Binding DataContext.PickTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                ClearTextColorCommand="{Binding DataContext.ClearTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                PickBgColorCommand="{Binding DataContext.PickBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                ClearBgColorCommand="{Binding DataContext.ClearBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                EditOptions="{Binding DataContext.EditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
         </ScrollViewer>
     </DockPanel>
 </Window>

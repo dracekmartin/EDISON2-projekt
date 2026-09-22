@@ -66,7 +66,6 @@ public partial class DynamicTableEditorDialog : Window
         GeneralForm.AddHandler(Selector.SelectionChangedEvent,
             new SelectionChangedEventHandler(OnFormSelectionChanged));
 
-        _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         _vm.RequestClose += result => { DialogResult = result; Close(); };
     }
 

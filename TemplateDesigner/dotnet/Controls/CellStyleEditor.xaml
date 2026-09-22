@@ -198,7 +198,7 @@
             <TextBlock Grid.Column="0" Text="Barva textu:" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
-                        Command="{Binding PickTextColorCommand, ElementName=Root}"
+                        Command="{Binding PickTextColorCommand}"
                         ToolTip="Vybrat barvu textu">
                     <Border BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1" Width="20" Height="14">
                         <Border.Background>
@@ -220,7 +220,7 @@
                                Visibility="{Binding Text, ElementName=TextColorBox, Converter={StaticResource NullToVis}}"/>
                 </Grid>
                 <Button Style="{StaticResource ResetButton}"
-                        Command="{Binding ClearTextColorCommand, ElementName=Root}"
+                        Command="{Binding ClearTextColorCommand}"
                         Visibility="{Binding TextColor, Converter={StaticResource NotNullToVis}}"/>
             </StackPanel>
         </Grid>
@@ -234,7 +234,7 @@
             <TextBlock Grid.Column="0" Text="Pozadí:" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
-                        Command="{Binding PickBgColorCommand, ElementName=Root}"
+                        Command="{Binding PickBgColorCommand}"
                         ToolTip="Vybrat barvu pozadí">
                     <Border BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1" Width="20" Height="14">
                         <Border.Background>
@@ -254,7 +254,7 @@
                                Visibility="{Binding Text, ElementName=BgColorBox, Converter={StaticResource NullToVis}}"/>
                 </Grid>
                 <Button Style="{StaticResource ResetButton}"
-                        Command="{Binding ClearBgColorCommand, ElementName=Root}"
+                        Command="{Binding ClearBgColorCommand}"
                         Visibility="{Binding BgColor, Converter={StaticResource NotNullToVis}}"/>
             </StackPanel>
         </Grid>

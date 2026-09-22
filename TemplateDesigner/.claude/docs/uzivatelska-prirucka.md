@@ -63,7 +63,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Soubor** - Nová šablona, Otevřít, Uložit
 - **Upravit** - Zpět, Vpřed
 - **Sekce** - Přidat sekci (rozbalovací nabídka presetů)
-- **Přidat / Elementy** - paleta prvků: Text, Obdélník, Čára, Obrázek, Tabulka, Kód (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
+- **Přidat / Elementy** - paleta prvků: Text, Obdélník, Čára, Obrázek, Tabulka, Kód (QR, čárový) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
 - **Vrstva** - Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
 - **Data** - obnovení dat náhledu (↻)
@@ -220,7 +220,7 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 - **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
-- **Kód** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí.
+- **Kód (QR, čárový)** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí.
   Kód vždy vyplní celý prvek. **Musí být dost velký, aby se dal sejmout z papíru** - potřebná
   velikost roste s délkou obsahu, takže dlouhý odkaz potřebuje víc místa než krátký. Když je
   prvek malý, aplikace po tisku napíše konkrétní čísla („QR kód je 10 mm, pro spolehlivé čtení

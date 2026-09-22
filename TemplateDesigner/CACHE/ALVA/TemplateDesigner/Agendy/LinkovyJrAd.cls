@@ -188,6 +188,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s p.label = "Dělení spojů dle platnosti"
     s p.type = "enum"
     s p.group = "Tabulka linky"
+    s p.serverSide = 1
     s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku tabulky - tady se jen ukáže, že ho šablona má."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Bez rozlišení")
@@ -211,6 +212,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pTc.label        = "Sloupec tarifních čísel"
     s pTc.type         = "enum"
     s pTc.group        = "Tabulka linky"
+    s pTc.serverSide   = 1
     s pTc.defaultValue = "Automaticky (dle linky)"
     s pTc.description  = "Zda se tiskne sloupec tarifních čísel. Automaticky = podle nastavení u linky v jízdních řádech; volbou Tisknout nebo Netisknout se to dá přebít pro tuhle sestavu."
     s optsTc = ##class(%DynamicArray).%New()
@@ -227,6 +229,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBez.label        = "Zastávky, kde žádný spoj nestaví"
     s pBez.type         = "enum"
     s pBez.group        = "Tabulka linky"
+    s pBez.serverSide   = 1
     s pBez.defaultValue = "Automaticky (dle linky)"
     s pBez.description  = "Zda se v tabulce objeví i zastávky, na kterých žádný spoj linky nestaví (jen je projíždí nebo jedou jinudy). Automaticky = podle nastavení u linky v jízdních řádech."
     s optsBez = ##class(%DynamicArray).%New()
@@ -244,6 +247,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZon.label        = "Písmeno systému u zóny"
     s pZon.type         = "enum"
     s pZon.group        = "Tabulka linky"
+    s pZon.serverSide   = 1
     s pZon.defaultValue = "Automaticky (dle linky)"
     s pZon.description  = "Zda označení zóny nese písmeno svého dopravního systému (Z420 místo 420). Bez něj nejdou u linky přes dvě IDS rozlišit stejně číslované zóny. Automaticky = podle nastavení u linky v jízdních řádech."
     s optsZon = ##class(%DynamicArray).%New()
@@ -259,6 +263,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBar.label        = "Barvy spojů"
     s pBar.type         = "enum"
     s pBar.group        = "Tabulka linky"
+    s pBar.serverSide   = 1
     s pBar.defaultValue = "Automaticky (dle linky)"
     s pBar.description  = "Zda se časy spoje tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Automaticky = podle nastavení u linky; Netisknout = celá tabulka černě."
     s optsBar = ##class(%DynamicArray).%New()
@@ -281,6 +286,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // nebo dvě), ne o vzhledu jednoho prvku. Že se promítne i do tabulky, platí skoro o každém
     // parametru téhle agendy (rozhodnutí Jan 31. 8.).
     s pObou.group        = "Obecné"
+    s pObou.serverSide   = 1
     s pObou.defaultValue = "false"
     s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuté = každý směr na vlastní stránce."
 
@@ -300,6 +306,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pTvar.label        = "Tvar názvu zastávky"
     s pTvar.type         = "enum"
     s pTvar.group        = "Obecné"
+    s pTvar.serverSide   = 1
     s pTvar.defaultValue = "Plný CIS"
     s pTvar.description  = "Plný CIS zachová dvojčárku podle číselníku zastávek (tak to tiskne starý modul), s okresem i jeho zkratku · Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou)."
     s optsTvar = ##class(%DynamicArray).%New()
@@ -316,6 +323,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pMhd.label        = "Použít název pro MHD"
     s pMhd.type         = "bool"
     s pMhd.group        = "Obecné"
+    s pMhd.serverSide   = 1
     s pMhd.defaultValue = "true"
     s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté; vypnutím se všude použije název podle CIS."
 
@@ -327,6 +335,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvZ.label        = "Zvýraznit zastávku"
     s pZvZ.type         = "text"
     s pZvZ.group        = "Tabulka linky"
+    s pZvZ.serverSide   = 1
     s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. Projíždí-li linka město víckrát, označí se všechny jeho zastávky; jednu z nich vybere Zvýraznit tarifní číslo."
 
     s pZvT = ##class(%DynamicObject).%New()
@@ -334,6 +343,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvT.label        = "Zvýraznit tarifní číslo"
     s pZvT.type         = "text"
     s pZvT.group        = "Tabulka linky"
+    s pZvT.serverSide   = 1
     s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
 
     // ── pořadí, v jakém je uvidí uživatel ────────────────────────────────────────
@@ -1180,13 +1190,19 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     s cisloTrasy = $p(hlava,":",3)
 
     // per-tč značky spoje z trasy (W segment ":"-piece 5, legacy gSpLin trs,6): N/V/x/G/a/b/c
-    // → legenda druhu 7 (r/i přesunuty do atributů, jako legacy)
+    // → legenda druhu 7 (r/i přesunuty do atributů, jako legacy) i do buňky vedle času
+    // (`znackyTc`), kam je starý tisk kreslí (JRapiLinPrtWin.mac:3838 a :1409).
+    k znackyTc
     s wTrasaVeta = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
     f wi=1:1:$l(wTrasaVeta,"#") {
-        s wZnaky = $p($p(wTrasaVeta,"#",wi),":",5)
+        s wSegment = $p(wTrasaVeta,"#",wi)
+        s wPoradi = $p(wSegment,":",1)
+        s wZnaky = $p(wSegment,":",5)
         f zi=1:1:$l(wZnaky) {
             s wZnak = $e(wZnaky,zi)
-            i (wZnak '= "") && (wZnak '= "r") && (wZnak '= "i") s trasaZnakySeen(wZnak) = ""
+            i (wZnak = "") || (wZnak = "r") || (wZnak = "i") continue
+            s trasaZnakySeen(wZnak) = ""
+            i wPoradi '= "" s znackyTc(+wPoradi) = $g(znackyTc(+wPoradi))_wZnak
         }
     }
     s odjezd = +$p(hlava,":",4)
@@ -1215,7 +1231,11 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         i "1234567X+" [ znak s klice(znak) = "", platnostZnakySeen(znak) = ""
     }
     // místenkování: hlava:6 ("R") + hlava:11 (typ) → R / þ(R1) / &(R2) / Ü(R3)
+    // ⚠️ **Čtyři druhy zná jen slovenská verze.** Česká sloučí obě varianty s kancelářemi AMS
+    // zpátky na R a þ (1:1 legacy JRapiLinPrtWin.mac:2448, texty gMstNZLi^JRapiNZUtl3), takže
+    // ampersand ani Ü se u české firmy vytisknout nesmí - kolega to našel na lince 320913.
     s mistenka = $tr($p(hlava,":",6)_$p(hlava,":",11), " ", "")
+    i rec '= "*SK" s mistenka = $case(mistenka, "R2":"R", "R3":"R1", :mistenka)
     s mistZnak = $case(mistenka, "R":"R", "R1":$c(254), "R2":"&", "R3":$c(220), :"")
     i mistZnak '= "" s klice(mistZnak) = "", mistenkaSeen(mistZnak) = ""
     // pokračuje (omz34, typ výstupu ≠ 2) → klíč u (nebo p dle ^JRSET("Cis","comU34znk"))
@@ -1281,6 +1301,21 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         }
     }
     d o.%Set("CASY", casy)
+
+    // Značky u zastávky per řádek, stejně indexované jako CASY. Nesou je jen řádky s časem -
+    // u zdvojené zastávky tedy hlavní (odjezdový), jako v legacy (tc2row). Pole se posílá jen
+    // když má linka aspoň jednu značku, ať se stránka zbytečně nenafukuje.
+    i $d(znackyTc) {
+        s maZnacku = 0
+        s znacky = ##class(%DynamicArray).%New()
+        f i=1:1:pocetRadku {
+            s pp = $lg(rowMeta(i),1), typRadku = $lg(rowMeta(i),2)
+            s znakyRadku = $s(typRadku = "P":"", 1:$g(znackyTc(pp)))
+            i znakyRadku '= "" s maZnacku = 1
+            d znacky.%Push(znakyRadku)
+        }
+        i maZnacku d o.%Set("ZNACKY", znacky)
+    }
 
     // návaznosti: omzId 31 = vyčká, 32 = navazuje. Věta = znak@sekce@sekce…, sekce = tc#…:
     //   omz31: tc#maxCekaniMin#conn…, conn = AVL:linka:spoj:typVystupu:smerOdkud:minPrijezdu:

@@ -138,26 +138,12 @@ class DynamicTableEditorDialogViewModel : EDViewModel
 
     public bool HasSelection => _selectedColumnVM is not null;
 
-    // ── Callbacks ──────────────────────────────────────────────────────────────
-
-    public Func<string, string?>? RequestColorPicker { get; set; }
-
     // ── Commands ─────────────────────────────────────────────────────────────────
 
     public RelayCommand MoveUpCommand   { get; }
     public RelayCommand MoveDownCommand { get; }
     public RelayCommand AddColumnCommand    { get; }
     public RelayCommand RemoveColumnCommand { get; }
-
-    public RelayCommand PickHeaderTextColorCommand  { get; }
-    public RelayCommand PickHeaderBgColorCommand    { get; }
-    public RelayCommand ClearHeaderTextColorCommand { get; }
-    public RelayCommand ClearHeaderBgColorCommand   { get; }
-
-    public RelayCommand PickDataTextColorCommand  { get; }
-    public RelayCommand PickDataBgColorCommand    { get; }
-    public RelayCommand ClearDataTextColorCommand { get; }
-    public RelayCommand ClearDataBgColorCommand   { get; }
 
     public RelayCommand ResetStyleCommand           { get; }
     public RelayCommand ResetAllColumnStylesCommand { get; }
@@ -192,16 +178,6 @@ class DynamicTableEditorDialogViewModel : EDViewModel
         MoveDownCommand = Command(MoveDown);
         AddColumnCommand    = Command(AddColumn);
         RemoveColumnCommand = Command(RemoveColumn);
-
-        PickHeaderTextColorCommand  = Command(() => PickColor(g => g.HeaderStyle.TextColor, (g, c) => g.HeaderStyle.TextColor = c));
-        PickHeaderBgColorCommand    = Command(() => PickColor(g => g.HeaderStyle.BgColor,   (g, c) => g.HeaderStyle.BgColor = c));
-        ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = null; });
-        ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor   = null; });
-
-        PickDataTextColorCommand  = Command(() => PickColor(g => g.DataStyle.TextColor, (g, c) => g.DataStyle.TextColor = c));
-        PickDataBgColorCommand    = Command(() => PickColor(g => g.DataStyle.BgColor,   (g, c) => g.DataStyle.BgColor = c));
-        ClearDataTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor = null; });
-        ClearDataBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor   = null; });
 
         ResetStyleCommand = Command(() =>
         {
@@ -318,13 +294,6 @@ class DynamicTableEditorDialogViewModel : EDViewModel
         if (SelectedColumnVM is null) return;
         int idx = ColumnVMs.IndexOf(SelectedColumnVM);
         if (idx >= 0 && idx < ColumnVMs.Count - 1) ColumnVMs.Move(idx, idx + 1);
-    }
-
-    private void PickColor(Func<DynamicTableColumnVM, string?> getter, Action<DynamicTableColumnVM, string?> setter)
-    {
-        if (SelectedColumnVM is null || RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(SelectedColumnVM) ?? "");
-        if (result is not null) setter(SelectedColumnVM, result);
     }
 
     // ── OK ───────────────────────────────────────────────────────────────────────

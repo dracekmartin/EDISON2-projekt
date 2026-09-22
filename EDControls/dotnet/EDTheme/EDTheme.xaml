@@ -241,6 +241,10 @@
          rodina: FontService přepisuje jen přesný klíč EDTheme.FontFamily, tenhle zůstane. -->
     <FontFamily x:Key="EDTheme.FontFamily.Mono">Consolas</FontFamily>
 
+    <!-- Nejmenší velikost - hustý nástrojový panel, kde jde o počet řádků na obrazovku
+         (panel vlastností návrháře). Pro běžné drobné popisky je Small. -->
+    <sys:Double x:Key="EDTheme.FontSize.Tiny">11</sys:Double>
+
     <!-- Drobné popisky - ruler ticks, badge texts, group labels v toolbaru -->
     <sys:Double x:Key="EDTheme.FontSize.Small">12</sys:Double>
 

@@ -101,7 +101,8 @@ public class MyElement : TemplateElement
 
 ### Pattern 2 - Dual-zone tabulkový element
 
-**Pro:** elementy s `Header` a `Data` zónou (`StopListElement`, `DepartureGridElement`, `NotesLegendElement`, `TableElement`).
+**Pro:** elementy s `Header` a `Data` zónou (`StopListElement`, `DepartureGridElement`,
+`NotesLegendElement`, `LineTableElement`, `TableElement`, `DynamicTableElement`).
 
 **Charakteristika:**
 - Element má **`HeaderStyle: TextStyle` + `DataStyle: TextStyle`** properties (kompozice)
@@ -158,29 +159,22 @@ public class MyScheduleElement : ScheduleElementBase
 
 ## TableElement - architektura
 
-### Dva módy
+### Pevná × dynamická tabulka jsou dva PRVKY, ne dva režimy
 
-| Mód | Kdo definuje strukturu | Kdo dodá řádky při tisku |
-|---|---|---|
-| **Fixed** | Uživatel v `TableEditorDialog` (sloupce + řádky) | Print engine resolvuje `{PLACEHOLDER}` ze skalárů DataContext |
-| **Dynamic** | Uživatel definuje sloupce; řádky z dat | Print engine iteruje `DataContext._rows[dataSource]` |
+`TableElement` = pevná tabulka: uživatel vyplní sloupce i řádky v `TableEditorDialog`, sázecí
+engine v buňkách dosadí `{PLACEHOLDER}` ze skalárů DataContextu. Řádky z kolekce dat kreslí
+samostatný `DynamicTableElement` (`DataSource` = klíč do `DataContext._rows`, odpovídá
+`DataFieldCollection.CollectionKey` ve schématu).
 
-V JSON šabloně Fixed ukládá `columns[]` + `rows[]`, Dynamic ukládá jen `columns[]`.
-
-### DataContext - jak data tečou
+⚠️ `TableElement.Mode` s hodnotou `TableMode.Dynamic` **zůstal jen kvůli starým šablonám**
+a z UI se nenastavuje (`TableElement.cs:134`). Je i výchozí hodnotou property kvůli deserializaci,
+takže se ta hodnota v kódu potká - není to nabídka pro uživatele. Nová práce patří na
+`DynamicTableElement`.
 
 ```
-DataContext._values["CISLO_LINKY"] = "42"           → Fixed buňky s "{CISLO_LINKY}"
-DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → Dynamic TableElement (DataSource="ZASTAVKY")
+DataContext._values["CISLO_LINKY"] = "42"           → buňky pevné tabulky s "{CISLO_LINKY}"
+DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → DynamicTableElement (DataSource="ZASTAVKY")
 ```
-
-`TableElement.DataSource` = klíč do `_rows`, odpovídá `DataFieldGroup.CollectionKey` ve schématu.
-
-### Budoucí rozšíření nad TableElement
-
-- `VisibilityExpression` na `TableRow` - podmíněné řádky (vyhodnocuje print engine)
-- Grouping - Group Header/Footer řádky mezi dynamickými daty
-- Filtrování v Dynamic tabulce (předání filtru do DataContext)
 
 ---
 
@@ -310,18 +304,20 @@ Všechny editovatelné vlastnosti jsou nullable (`string?`, `float?`, `bool?`, `
 
 **Host dialog (VM) musí poskytnout:**
 - `HeaderEditOptions` + `DataEditOptions` (zatím všude `AllEnabled`; do budoucna per-kontextové skrytí irelevantních voleb)
-- Pick/Clear commands per zóna × barva (Text/Bg) = 8 commands
-- `RequestColorPicker: Func<string, string?>` callback (dialog wire `ColorPickerHelper.PickColor`)
 - `ResetStyleCommand` (volitelný, pro tlačítko „Resetovat styl")
 - V konstruktoru: `CellStyleVM.FromModel(columnTextStyle, element.Resolve<Zone>Parent())` - nikdy nevytváří VM bez inherited!
+
+⚠️ **Barvy hostitel nedrátuje.** Výběr a smazání barvy textu i pozadí drží `CellStyleVM` (jsou to
+jeho hodnoty) a vyvolání výběru mu dosadí sám `CellStyleEditor`, protože jediný ví, v jakém okně
+sedí. Do 21. 9. si každý hostitel psal osm příkazů a vlastní `RequestColorPicker` - pět kopií téhož.
+Vlastní picker si drží jen dialog, který barvu edituje **mimo** tenhle editor (zebra u skupin dnů,
+pravidla zvýraznění).
 
 **Host dialog (XAML):**
 ```xml
 <controls:CellStyleEditor
     DataContext="{Binding SelectedColumnVM.HeaderStyle}"
-    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-    PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-    ... /> <!-- 3 zbývající color commands -->
+    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
 ```
 
 ---

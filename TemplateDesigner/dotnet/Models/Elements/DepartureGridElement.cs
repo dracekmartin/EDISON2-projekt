@@ -194,10 +194,6 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return [.. slotW.Select(_ => uniformSlotMm)];
     }
 
-    /// <summary>Rastr rovnoměrného rozestupu: **nejširší odjezd celého prvku** (minuta + její
-    /// značky), nejméně však nominální šířka minuty. Počítá se přes všechny skupiny dnů, aby čísla
-    /// stála pod sebou napříč hodinami **i sloupci** - za řádek by hodina se značkami měla jiný
-    /// rozestup než hodina bez nich, za sloupec by se rozešly sloupce mezi sebou (`B143`).</summary>
     /// <summary>Rozteč pevného rastru: nastavená šířka minuty, nejméně však minuta + mezera + místo
     /// na **jednu** značku + odstup od dalšího odjezdu. Nejde o nejhorší odjezd - kde značka není,
     /// místo zůstane prázdné a minuty stojí v mřížce (vzor vývěsky TRANSDEV k `B160`).
@@ -225,6 +221,10 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return MathF.Max(dataScale * (volnoMm / znackyMm), dno);
     }
 
+    /// <summary>Rastr rovnoměrného rozestupu: **nejširší odjezd celého prvku** (minuta + její
+    /// značky), nejméně však nominální šířka minuty. Počítá se přes všechny skupiny dnů, aby čísla
+    /// stála pod sebou napříč hodinami **i sloupci** - za řádek by hodina se značkami měla jiný
+    /// rozestup než hodina bez nich, za sloupec by se rozešly sloupce mezi sebou (`B143`).</summary>
     internal static float UniformSlotWidth(IEnumerable<float> sloty, float nominalMm)
     {
         float max = nominalMm;
@@ -341,6 +341,8 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             GroupColumns, targetSkupiny.Select(s => s.Id).ToList());
         ResolvedTextStyle HeaderStyleForGroup(string id) =>
             ResolveGroupHeaderStyle(styleLookup.TryGetValue(id, out var cs) ? cs : null);
+        ResolvedTextStyle MinuteStyleForGroup(string id) =>
+            ResolveGroupMinuteStyle(styleLookup.TryGetValue(id, out var cs) ? cs : null);
 
         float defaultHeaderFontPt = HeaderStyle.FontSize ?? 9f;
 
@@ -443,7 +445,14 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             };
         }).ToList();
 
-        float effFontSize = DataStyle.FontSize ?? 8f;
+        // Datový řádek nese hodinu (písmo prvku) i minuty, jejichž písmo smí přebít skupina dnů
+        // v dialogu skupin - výška proto musí vyjít z toho většího z nich, stejně jako u pruhu
+        // záhlaví níž. Z písma prvku samotného se větší číslice kreslily do nízkého řádku.
+        float effFontSize = MathF.Max(
+            ResolveHourDataStyle().FontSize,
+            finalGroups.Count == 0
+                ? ResolveGroupMinuteStyle(null).FontSize
+                : finalGroups.Max(g => MinuteStyleForGroup(g.Skupina.Id).FontSize));
         // Pruh záhlaví je jeden pro celou mřížku, takže jeho výšku určuje největší písmo záhlaví
         // napříč sloupci (týž vzor jako u seznamu zastávek) - jinak by se větší písmo oříznulo.
         float effHeaderFontSize = MathF.Max(
@@ -678,8 +687,9 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         float dataScale = scale * dataGrow;
 
         // B2/TR4: výška řádku škáluje konzistentně (shrink i grow) - i explicitní DataRowHeight se zmenší,
-        // když se obsah nevejde. Sdílený helper `ScaledDataRowHeight` = jediné místo pravidla (viz StopList).
-        float scaledRowH = ScaledDataRowHeight(DataStyle.FontSize ?? 8f, dataScale);
+        // když se obsah nevejde. Škáluje se výška z layoutu (ta už počítá s písmem skupin), ne druhý
+        // výpočet z písma prvku - dva zdroje se rozešly a číslice přetekly z řádku.
+        float scaledRowH = layout.RowH * dataScale;
         float scaledGroupHeaderH = layout.GroupHeaderH * scale;
         float scaledCombinedHeaderH = combinedHeaderH * scale;
 

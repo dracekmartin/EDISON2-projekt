@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -139,12 +140,39 @@ public class CellStyleVM : INotifyPropertyChanged
                 case nameof(PaddingLeft):   PaddingLeft   = null; break;
             }
         });
+
+        PickTextColorCommand  = new RelayCommand(() => PickColor(TextColor, v => TextColor = v));
+        ClearTextColorCommand = new RelayCommand(() => TextColor = null);
+        PickBgColorCommand    = new RelayCommand(() => PickColor(BgColor, v => BgColor = v));
+        ClearBgColorCommand   = new RelayCommand(() => BgColor = null);
+    }
+
+    private void PickColor(string? soucasna, Action<string?> zapis)
+    {
+        if (RequestColorPicker?.Invoke(soucasna ?? "") is { } zvolena) zapis(zvolena);
     }
 
     /// <summary>
     /// Command pro reset jednoho pole na „dědit" (null). CommandParameter = název property.
     /// </summary>
     public ICommand ResetFieldCommand { get; }
+
+    /// <summary>
+    /// Jak vyvolat výběr barvy (vstup = současná barva, výstup = zvolená nebo null při storno).
+    /// Dosadí ho <see cref="CellStyleEditor"/>, protože jediný ví, v jakém okně sedí; nenastavené
+    /// = tlačítka barev nic neudělají (návrhový režim, testy).
+    /// </summary>
+    public Func<string, string?>? RequestColorPicker { get; set; }
+
+    /// <summary>
+    /// Výběr a smazání barvy textu i pozadí. Patří sem, protože hodnoty drží tenhle VM - do 21. 9.
+    /// si je psal každý dialog sloupců sám (8 příkazů + pomocná metoda), takže každý další dialog
+    /// tu kopii zaplatil znovu.
+    /// </summary>
+    public ICommand PickTextColorCommand { get; }
+    public ICommand ClearTextColorCommand { get; }
+    public ICommand PickBgColorCommand { get; }
+    public ICommand ClearBgColorCommand { get; }
 
     /// <summary>
     /// Vytvoří VM z volitelného explicit stylu + povinného rodičovského (vyřešeného) stylu.

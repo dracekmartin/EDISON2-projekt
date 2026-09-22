@@ -2489,4 +2489,85 @@ ClassMethod DumpJVeta(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Kolik linek má v trase atribut „čára pod řádkem" (`p`) nebo „čára nad i pod" (`o`) - podklad
+/// k `B172`. Čte jen trasu (`^JRL(sku,lin,"J",poradi)`), žádný tisk se nespouští.
+///
+/// IN: `LIMIT` (kolik linek projít, 0 = všechny), `MAXOUT` (kolik příkladů vypsat, výchozí 10).
+/// OUT: `souhrn` a `linka~<n>` = `sku/lin  p=<počet zastávek>, o=<počet zastávek>`.
+ClassMethod KdeJeCaraUZastavky(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s limit = +$g(^||ML("IN","LIMIT")), maxOut = +$g(^||ML("IN","MAXOUT"))
+		s:maxOut<1 maxOut = 10
+
+		s projito = 0, sCarou = 0, zastavekP = 0, zastavekO = 0, vypsano = 0
+		s s1 = ""
+		f {
+			s s1 = $o(^[dataDB]JRL(s1))
+			q:s1=""
+			continue:'$isvalidnum(s1)
+			s l1 = ""
+			f {
+				s l1 = $o(^[dataDB]JRL(s1, l1))
+				q:l1=""
+				continue:'$d(^[dataDB]JRL(s1, l1, "I"))
+				s projito = projito + 1
+				i limit, projito > limit q
+				s pocetP = 0, pocetO = 0, poradi = ""
+				f {
+					s poradi = $o(^[dataDB]JRL(s1, l1, "J", poradi))
+					q:poradi=""
+					continue:'$isvalidnum(poradi)
+					s atr = $p($p($g(^[dataDB]JRL(s1, l1, "J", poradi)), ":", 2), "#", 1)
+					i atr [ "p" s pocetP = pocetP + 1
+					i atr [ "o" s pocetO = pocetO + 1
+				}
+				continue:'(pocetP + pocetO)
+				s sCarou = sCarou + 1
+				s zastavekP = zastavekP + pocetP, zastavekO = zastavekO + pocetO
+				i vypsano < maxOut {
+					s vypsano = vypsano + 1
+					s ^||ML("OUT", "linka~"_vypsano) = s1_"/"_l1_"  p="_pocetP_", o="_pocetO
+				}
+			}
+			i limit, projito > limit q
+		}
+		s ^||ML("OUT", "souhrn") = "projito linek="_projito_", s carou="_sCarou
+			_", zastavek p="_zastavekP_", zastavek o="_zastavekO
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// U které zastávky konkrétní linky je čára (`p` / `o`) - podklad k porovnání se starým výtiskem.
+///
+/// IN: `SKUPINA_LINEK_ID`, `LINKA_ID`. OUT: `zastavka~<n>` = `poradi. nazev  atributy=<znaky>`.
+ClassMethod CaryLinky(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s sku = $g(^||ML("IN","SKUPINA_LINEK_ID")), lin = $g(^||ML("IN","LINKA_ID"))
+		s:sku="" sku = 1
+		s vypsano = 0, poradi = ""
+		f {
+			s poradi = $o(^[dataDB]JRL(sku, lin, "J", poradi))
+			q:poradi=""
+			continue:'$isvalidnum(poradi)
+			s veta = $g(^[dataDB]JRL(sku, lin, "J", poradi))
+			s atr = $p($p(veta, ":", 2), "#", 1)
+			continue:'((atr [ "p") || (atr [ "o"))
+			s czst = $p(veta, ":", 1)
+			s nazev = $p($g(^[dataDB]JRZ(czst)), "$", 2)
+			s vypsano = vypsano + 1
+			s ^||ML("OUT", "zastavka~"_vypsano) = poradi_". "_nazev_"  atributy="_atr
+		}
+		s ^||ML("OUT", "souhrn") = sku_"/"_lin_" - zastavek s carou: "_vypsano
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 }

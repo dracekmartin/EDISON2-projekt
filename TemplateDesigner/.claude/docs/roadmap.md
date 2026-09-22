@@ -1,29 +1,14 @@
-﻿# Roadmap
+# Roadmap
 
 > **Jen otevřená / akční práce.** Hotové → [`roadmap-archive.md`](roadmap-archive.md), průběžný
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B163`-`B167` ze zkoušení linkových JŘ kolegou 18. 9. - tři z nich jsou
-> vady výstupu. Zpětná vazba TRANSDEV z 16. 9. je celá hotová.
+> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy z 18. 9.
+> i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
-
----
-
-## 🚏 Zastávkové JŘ
-
-Požadavky z hovoru s TRANSDEV 11. 9. jsou hotové (`B141`-`B143`, `B145`, `B147`-`B149`), viz
-[`roadmap-archive.md`](roadmap-archive.md). `B144` odložený v Backlogu, `B146` zrušený jako
-nezadání.
-
-### Zpětná vazba TRANSDEV z 16. 9. (`#12843`)
-
-Šest bodů k verzi z 15. 9. Ostatní změny si ověřil a fungují. **Všechny jsou hotové**
-(`B156` mizející nastavení, `B157` slučování variant, `B158` záhlaví odjezdů po sloupcích,
-`B159` velikost záhlaví u poznámek, `B160` pevný rastr minut, `B161` pořadí stránek v exportu) -
-viz changelog a [`roadmap-archive.md`](roadmap-archive.md). Zbývá je zavřít na helpdesku s vydáním.
 
 ---
 
@@ -68,38 +53,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
-### Zpětná vazba kolegy z 18. 9. (zkoušení linkových JŘ)
-
-Sedm nálezů ze zkoušení, zatím jen evidence - **nic z toho není zanalyzované**. První tři jsou
-vady výstupu, zbytek je ovládání a dva dotazy na chování starého modulu.
-
-- **`B163` Atributy spoje se netisknou** [?]. Kolega zadal u spoje v jízdních řádech atributy
-  a v sestavě nevyšly (boční značky u sloupce spoje). Ověřit, jestli je vůbec posíláme.
-
-- **`B164` Zastávka se tiskne dvakrát** [?]. `CB_CSADAD` linka `320913`: „České Budějovice,
-  aut.nádr." zabírá dva řádky, ačkoli data mají jeden. Podezření na rozdvojení příjezd/odjezd
-  u linky s málo zastávkami.
-
-- **`B165` Značky poznámek vycházejí špatně** [?]. V legendě nesedí `⑦`, `&`, `N`, `G`. Kolega se
-  ptá, jestli je potřeba mít nainstalovaný font - spíš to ale vypadá na chybný překlad typu
-  poznámky. Ověřit obojí.
-
-- **`B166` Zvýraznění zastávky u kombinovaného zadání** [?]. `340366` zastávka Budec má být tučně
-  nebo podtrženě, u nás není. Kolega píše, že je zadaná zvláštně: „P je podtržené s příjezdem
-  a odjezdem + tučně, J je jen s příjezdem a odjezdem" - kombinovat se to nemá, tedy nejspíš
-  hraniční případ. Zjistit, co s tím dělá starý modul.
-
-- **`B167` Dorovnání prázdnými sloupci: prokládat, ne dolepit** [?]. Starý modul prázdné sloupce
-  **prokládal** mezi spoje (prázdný, spoj, prázdný…), my je dáváme na konec. Ověřit na výstupu
-  starého modulu a srovnat (`#8372`).
-
-- **`B168` Přepínání mezi vybranými linkami** [S]. Při více vybraných instancích se dnes listuje
-  jen šipkami doprava/doleva. Kolega chce rozbalovací seznam, aby šlo skočit rovnou na konkrétní.
-
-- **`B169` Zúžený formulář neukazuje hodnoty** [S]. V úzkém panelu je vidět jen popisek pole,
-  hodnota ne. Zkusit, jestli se při zúžení nedá hodnota přesunout pod popisek. Týká se EDInputFormu
-  obecně, ne jen linkových JŘ.
-
 ### Připravené k práci
 
 - **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
@@ -137,6 +90,7 @@ na jednom místě.
 |---|---|
 | **#8372 vkládat prázdné sloupce** (KORID) | Volba **„Dorovnat prázdnými sloupci"** u tabulky linky. Dorovnává i **levou** stranu, kterou tiket nežádal - u obousměrné sestavy bez ní zůstala díra |
 | **#8576 tarifní zóny do sloupců** (KU HK) | Volba **„Každá zóna ve vlastním sloupci"** (výchozí vypnutá, aby se nezměnily hotové sestavy) |
+| **#12843 zpětná vazba TRANSDEV 16. 9.** (zastávkové) | Šest bodů z verze z 15. 9. hotových - mizející nastavení, slučování variant, záhlaví odjezdů po sloupcích, velikost záhlaví u poznámek, pevný rastr minut, pořadí stránek v exportu. Detail v archivu |
 | **#11300 prázdný přípojný řádek** (KORID) | Výtisk hotový 15. 9. - `CB_CSADAD 1 / 0330510` směr Zpět, strana 3 je list jen s pracovními dny bez jediného přípojného řádku. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md) |
 
 ### K ověření na reálné sestavě
@@ -157,16 +111,40 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
-- **`B170` Formulář si pamatuje poslední filtr** [S] (podnět Jan 18. 9.). Ve formuláři prvku se
-  hledá Ctrl+F („rozest"), doladí se nastavení, formulář se zavře a při dalším otevření se musí
-  hledat znovu. U formuláře, který se otevírá pořád dokola nad **týmž** prvkem, je to zbytečné -
-  tak se chová i nastavení v IntelliJ nebo VS Code.
-  ⚠️ **Nesmí to být chování komponenty, ale volba hostitele.** EDInputForm běží i nad legacy
-  formuláři v shellu, kde se otevírá pokaždé **jiný záznam** a osekaný formulář by škodil. Tedy
-  aditivní vlastnost s výchozím vypnuto, kterou si zapne jen návrhář.
-  ⚠️ Zapamatovaný filtr znamená tři pole ze čtyřiceti - musí být na první pohled vidět (vyplněné
-  pole, křížek, počet skrytých) a Esc má nejdřív zrušit filtr, teprve podruhé zavřít. Jinak je to
-  táž třída chyb jako mizející nastavení. Držet jen v paměti běhu a per typ prvku, neukládat.
+- **`B173` Projít sdílené komponenty s kolegou** [?] (domluveno 21. 9., na program 22. 9.).
+  Sbírka návrhů, které sahají do `EDControls`, tedy i do legacy formulářů v shellu - proto se
+  neberou jednotlivě, ale projdou se najednou.
+  1. **Zrušit hlavičku „Položka | Hodnota" v EDInputFormu** - dvousloupcový formulář je čitelný
+     sám, hlavička bere 30 bodů výšky tam, kde je místa nejmíň. Vzniklo 26. 5. (`5d5afdb4`) kvůli
+     souladu s EDListem; tam ale hlavička pojmenovává sloupce, podle kterých jde řadit.
+  2. **Zrušit skákání po výsledcích hledání** (šipky ▲▼ a počitadlo ve sdílené hlavičce, Jan 21. 9.) -
+     hledání nesedící položky skryje, takže navigovat po zbylých třech nemá co řešit. S nimi padá
+     i nápověda zkratek pod ikonou; zbytek (Ctrl+F) nestojí za tlačítko s vyskakovacím oknem.
+  3. **Zúžený formulář neukazuje hodnoty** (nález kolegy 18. 9., dřív `B169`). Popisek a hodnota
+     mají každý dolní hranici 120 bodů (`EDInputForm.xaml:55`), formulář tedy potřebuje 280;
+     levý panel návrháře startuje na 200, hodnota je vytlačená rovnou. **Návrh (Jan 21. 9.):**
+     pod prahem zalomit řádek na dva - popisek nahoře, vstup pod ním přes celou šířku (tak to mají
+     panely ve VS Code i Figmě); rozhoduje naměřená šířka, zaškrtávátka zůstávají na řádku a jako
+     u bodu 4 to musí být volba hostitele s výchozím vypnuto. Cena je skoro dvojnásobná výška -
+     levnější varianta je nezalamovat a zvednout dolní hranici panelu na 280.
+  4. **Formulář si pamatuje poslední filtr** (podnět Jan 18. 9., dřív `B170`). Ve formuláři prvku se
+     hledá Ctrl+F („rozest"), doladí se nastavení, formulář se zavře a při dalším otevření se hledá
+     znovu; u formuláře otevíraného pořád dokola nad týmž prvkem je to zbytečné (tak to má i VS Code).
+     Volba hostitele s výchozím vypnuto - v shellu se otevírá pokaždé jiný záznam. Pamatovat **per
+     schéma formuláře** (`CacheClass`), jinak filtr z textu schová celou tabulku, a **jen po dobu
+     běhu**, neukládat. Filtr musí být na první pohled vidět (vyplněné pole, křížek, počet skrytých)
+     a Esc ho ruší dřív, než zavře okno. Pozor: panel se při návratu na záložku znovu inicializuje,
+     takže zapamatovaný filtr musí žít mimo položky formuláře.
+
+- **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
+  Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
+  engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi, a nad ním
+  by šlo u jedné stránky prvek posunout nebo zvětšit, teprve pak PDF. Umí to FastReport
+  a Stimulsoft, Acrobat totéž nad hotovým PDF.
+  ⚠️ **Data se znovu nevysází** - roztažený prvek dá bílé místo, ne víc textu, a úprava platí jen
+  pro ten jeden tisk. Levnější cesty k témuž: nechat prvek při přetečení narůst do volného místa
+  pod sebou místo zmenšení písma, a přiřadit lince vlastní šablonu (index dnes jen podle agendy,
+  chybí i dávkový tisk). Tohle vytáhnout, až se ukáže, že obojí nestačí.
 
 - **`B155` Jemnější nastavení mřížky** [M] (podnět Jan 16. 9.). Dnes má `GridStyle` **jednu** barvu,
   tloušťku a styl pro vodorovné i svislé čáry - ty jdou jen zapnout nebo vypnout. Návrh: **čtyři
@@ -211,11 +189,24 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
   label) - všechno až s gramatikou, ne zvlášť.
 
 - **`B56` Sjednocení Caché tiskových enginů a jejich opsaných pomocných funkcí** (odloženo -
-  rozhodnutí Jan 5. 8. a 31. 8.: nedělat předčasnou deduplikaci, dokud se tvar výstupních dat
-  neustálí). ⚠️ **Pohltilo i dřívější `L8`** - tatáž práce ve větším rozsahu, jen visela v aktivní
-  roadmapě bez přírůstku pro uživatele. Vzít **až bude knižní JŘ doimplementovaný**.
+  rozhodnutí Jan 5. 8., 31. 8. a 21. 9.: nedělat předčasnou deduplikaci, dokud se tvar výstupních
+  dat neustálí). ⚠️ **Pohltilo i dřívější `L8`** - tatáž práce ve větším rozsahu, jen visela
+  v aktivní roadmapě bez přírůstku pro uživatele. Vzít **až bude knižní JŘ doimplementovaný**.
   Podklad (co je doslovná kopie, co se liší záměrně, kde chybí testy):
   [`legacy-nahrada.md §4`](legacy-nahrada.md).
+  **Změřeno 21. 9.:** zastávkové agendy mají 10 metod znak po znaku shodných (~100 řádků: barvy,
+  atributy zastávky, stavba odjezdu a skupiny dnů, obě metody předdefinovaných tabulek) a ze schématu
+  je 25 z 27 popisů polí MHD totožných s AD (u linkových 22 z 24). Liší se dva popisky po ose
+  AD × MHD (`CISLO_LINKY`, `LOKALNI_OZNACENI_LINKY`) - ve společné metodě by byly parametrem.
+  Tvar až se to bude brát: mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje.
+  Popisky mezitím hlídá `AgendaSchemaDriftTests`, takže tiše se rozejít nemůžou.
+
+- **Rozsekat `TemplateDesignerViewModel`** [M] (review 21. 9., odloženo). 4 217 řádků a 387 členů,
+  poctivě rozdělených komentářovými pruhy na ~25 celků (soubor, databáze, schránka, zarovnání,
+  parametry agendy, náhled dat, rozvržení sloupců). Každá featura nové agendy přistane sem a dva
+  lidé si v něm překážejí. Návrh: `partial` soubory přesně podle těch pruhů, beze změny chování;
+  precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
+  ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.

@@ -58,7 +58,7 @@
             </DataGrid>
 
             <StackPanel Grid.Column="1" Margin="8,0,0,0" Width="96">
-                <Button Content="Přidat"  Command="{Binding AddCommand}"    Padding="6,3" Margin="0,0,0,4"/>
+                <Button Content="Přidat"  Command="{Binding AddRuleCommand}"    Padding="6,3" Margin="0,0,0,4"/>
                 <Button Content="Odebrat" Command="{Binding RemoveCommand}" Padding="6,3" Margin="0,0,0,4"/>
                 <Button Content="▲ Nahoru" Command="{Binding MoveUpCommand}"   Padding="6,3" Margin="0,0,0,4"/>
                 <Button Content="▼ Dolů"   Command="{Binding MoveDownCommand}" Padding="6,3"/>

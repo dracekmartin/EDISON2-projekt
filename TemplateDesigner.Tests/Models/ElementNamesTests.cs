@@ -1,6 +1,8 @@
 using System.IO;
+using System.Reflection;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Services;
 
 namespace TemplateDesigner.Tests.Models;
 
@@ -38,6 +40,8 @@ public class ElementNamesTests
     [InlineData("Tabulka (z dat)")]
     [InlineData("Obdélník")]
     [InlineData("Obrázek")]
+    [InlineData("Kód (QR, čárový)")]
+    [InlineData("Tabulka spojů")]
     public void JmenoSedisPaletou(string jmeno)
     {
         // Paleta a nabídka vkládání jsou to, co uživatel vidí; hláška se musí trefit do stejného
@@ -47,6 +51,30 @@ public class ElementNamesTests
 
         Assert.Contains(jmeno, paleta);
     }
+
+    [Fact]
+    public void KatalogProAsistentaBerreJmenaZPalety()
+    {
+        // Asistent odpovídá o prvku, který má uživatel před sebou - musí ho pojmenovat stejně.
+        // Do 21. 9. měl vlastní seznam a po přejmenování 1. 9. v něm zbyla tři stará jména.
+        foreach (var typ in TypyPrvku())
+            Assert.StartsWith(ElementNames.ForType(typ), CapabilityCatalog.FriendlyName(typ));
+    }
+
+    [Fact]
+    public void KazdyTypMaJmenoIPodleRetezce()
+    {
+        // ForType je cesta pro místa, kde je po ruce jen typ ze serializace. Vrácený typ
+        // = chybějící větev switche.
+        foreach (var typ in TypyPrvku())
+            Assert.NotEqual(typ, ElementNames.ForType(typ));
+    }
+
+    /// <summary>Všechny konstanty <see cref="ElementTypes"/> - nový prvek se sem přidá sám.</summary>
+    private static IEnumerable<string> TypyPrvku() =>
+        typeof(ElementTypes).GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string))
+            .Select(f => (string)f.GetRawConstantValue()!);
 
     [Fact]
     public void StareNazvyPrvkuJsouPryc()

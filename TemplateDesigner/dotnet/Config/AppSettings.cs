@@ -182,7 +182,6 @@ public class CacheConnectionSettings
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Server) && Port > 0;
 }
 
-/// <summary>Nastavení AI asistenta pro generování šablon.</summary>
 /// <summary>
 /// Distribuční kanál systémových šablon. U zákazníka je **jen pro čtení** (úložiště → klient);
 /// nahrávat a měnit smíme jen my ve vývoji, nikdy ne z buildu, který jde ven - proto tady žádná
@@ -201,6 +200,7 @@ public class TemplateChannelSettings
     public string ApiKey { get; set; } = "";
 }
 
+/// <summary>Nastavení AI asistenta pro generování šablon.</summary>
 public class AiAssistantSettings
 {
     /// <summary>Povolení AI asistenta (false = skryje menu položku).</summary>

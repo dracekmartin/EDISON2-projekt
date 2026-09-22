@@ -1507,7 +1507,7 @@ public partial class MainWindow : Window
         Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Rectangle, 5, 5));
         Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
-        Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
+        Add("Kód (QR, čárový)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
         Add("Tabulka (z dat)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
         Add("Tabulka (pevná)", () => _vm.CreateElementInteractive(ElementTypes.Table, 0, 0));
 
@@ -1522,7 +1522,7 @@ public partial class MainWindow : Window
         // pořadí drží samo (seznam zastávek, odjezdy, poznámky), u linkových by poznámky vyšly
         // první, protože jejich tabulka je v tomhle výčtu za nimi.
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
-            Add("Linkový JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
+            Add("Tabulka spojů (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
             Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
 
@@ -2164,6 +2164,14 @@ public partial class MainWindow : Window
         else if (e.Key == Key.A && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             _vm.ChangeAgendaCommand.Execute(null);
+            e.Handled = true;
+        }
+        // Výběr instancí z klávesnice - vedle změny agendy, protože je to táž dvojice voleb
+        // „nad čím pracuju". Písmeno I jako instance: agenda si sama říká linka nebo faktura,
+        // takže doménové písmeno by platilo jen pro jízdní řády.
+        else if (e.Key == Key.I && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.OpenInstancePickerCommand.Execute(null);
             e.Handled = true;
         }
         else if (e.Key == Key.PageUp && ctrl)

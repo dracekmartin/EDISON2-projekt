@@ -1,5 +1,122 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B174` Průchod nálezů z review návrháře (hotovo 21. 9. 2026)
+
+Celkový průchod kódem (`dotnet/` 217 souborů, `CACHE/` 66 tříd, pravidla) dal třináct nálezů.
+**Odbaveno devět:** jazyk šablony v ukázkových datech (slovenština se bez vybrané linky neprojevila),
+výška řádku minut proti písmu skupiny dnů, panel vlastností přes tokeny místo pevných barev, jedno
+jméno prvku pro uživatele, server-side příznak místo ručního seznamu v klientovi, barvy buňky
+v `CellStyleVM` místo pěti kopií v dialozích, výchozí vzhled buňky tabulky na jednom místě,
+`dev.firmSwitch` ze sledovaného configu a úklid (tooltipy, CS0108, 21 dvojitých `<summary>`,
+zastaralá tvrzení v pravidlech).
+
+**Odloženo (rozhodnutí Jan 21. 9.: předčasná optimalizace, až se tvar ustálí):** opsané pomocné
+metody a schéma mezi variantami agend → dopsáno k `B56`; rozsekání `TemplateDesignerViewModel`
+→ vlastní položka v backlogu.
+
+Dva nálezy se ukázaly jako už vyřešené: popisky polí napříč agendami hlídá `AgendaSchemaDriftTests`
+od 17. 8. a výchozí režim pevné tabulky je záměr kvůli deserializaci starých šablon.
+
+## `B172` Čára u zastávky podle trasy (hotovo 21. 9. 2026)
+
+Atributy trasy `p` („podtrženo") a `o` („podtrženo nad i pod") kreslí oba staré tisky - Windows
+silnou čarou přes celou šířku tabulky (`JRapiLinPrtWin.mac:1259`, kreslení
+`formTISKJRReportDotNet_Module.vb:2501`), postskript sloupcem malého podtržení
+(`JRapiLinPrtPS1.mac:110`). Prvek je ignoroval.
+
+**Změřený výskyt** (sonda `AdSloupekProbe.KdeJeCaraUZastavky`, 21. 9.): KV_DP 11 966 linek
+z 15 849, VS_CSAD 2 451 z 31 915, ZL_KOVED 2 206 z 11 153, CB_CSADAD 28 z 30 831. Varianta `o`
+je vzácná - jen 14 výskytů u CB_CSADAD.
+
+⚠️ **Hotovým šablonám čáry přibudou** - volba „Čáry u zastávek dle trasy" je zapnutá, protože bez ní
+by se tvar starého tisku nevrátil ani u nové šablony. Vypínač stojí vedle tučných zastávek, je to
+táž rodina atributů.
+⚠️ **Čára se kreslí barvou textu buněk, ne mřížky** - šablona se světlou mřížkou by ji jinak
+schovala. Legacy ji má natvrdo černou a pětkrát silnější než rámeček.
+
+## `B167` Prázdné sloupce se prokládají mezi spoje (hotovo 21. 9. 2026)
+
+Nález kolegy z 18. 9.: starý tisk prázdné sloupce prokládá, my je dolepovali na konec bloku.
+Ověřeno ve zdroji (`JRapiLinPrtWin.mac:1040-1086`): rozdávají se po jednom střídavě zleva
+a zprava, vždy hned za sloupec, u kterého smyčka prázdný založila, a po vyčerpání mezer se
+ukazatele vrátí na kraje.
+
+⚠️ **Počet zůstal náš** (rozhodnutí Jan 21. 9.): řídí ho kapacita prvku, tedy nastavení nejmenší
+a největší šířky sloupce spoje. Legacy ho počítá ze zbylé šířky - u tabulky, která se vejde celá,
+vychází stejně.
+⚠️ **Zrcadlená strana čte rozložení zrcadlově** - její vnitřní hrana je ta u zastávek, takže se
+prázdné zakládají před spoji. Jinak by u bloku s jediným spojem vznikla díra mezi jeho časy
+a zastávkami; hlídá to `ObousmernyTiskTests.Dorovnani_JeNaVnejsiHrane`.
+
+## `B163` Atributy spoje se netisknou (uzavřeno 21. 9. 2026 - totéž co `B165`)
+
+Kolega myslel **boční značky u sloupce spoje** - tedy značky, které patří spoji u konkrétní
+zastávky (`N` jen nástup, `G` paragraf). Je to týž nález jako `B165`, jen popsaný ze strany spoje,
+a opravila ho táž změna: server je posílá v `ZNACKY` a prvek je kreslí vlevo od času.
+Potvrzeno Janem 21. 9. porovnáním s postskriptovým výtiskem linky 320913.
+
+⚠️ **Atributy spoje v užším smyslu** (bezbariérové vozidlo, kola, wifi) jsou jiná rodina a chodí
+do řádku platnosti pod číslem spoje - ty fungovaly už předtím; linka 320913 žádný nemá.
+
+## `B164` Zastávka se tiskne dvakrát (uzavřeno 21. 9. 2026 - planý poplach)
+
+Kolega hlásil, že „České Budějovice,,aut.nádr." zabírají na lince 320913 dva řádky, ačkoli data
+mají jeden. Zastávka má v trase atribut `P`, takže se řádek **správně** dělí na příjezd a odjezd.
+V šabloně jen nebyla zapnutá volba **„Sloučit popis u příjezdu a odjezdu"** - bez ní se název, km
+i tarifní číslo vypíšou na obou řádcích (tvar windowsového tisku) a vypadá to jako tatáž zastávka
+dvakrát. Se zapnutou volbou se popis vypíše jednou přes oba řádky (tvar postskriptu).
+
+Zjištěno 21. 9., potvrdil Jan. Beze změny kódu.
+
+## `B165` Značky u zastávky se kreslí v tabulce (hotovo 21. 9. 2026)
+
+Nález kolegy z 18. 9.: značky ve vysvětlivkách (`N` jen nástup, `G` paragraf) nesouhlasily
+s tabulkou. Měřením dat linky 320913 se ukázalo, že v tabulce **nebyly vůbec** - server je četl
+jen pro sestavení vysvětlivek.
+
+Značky u zastávky a spoje (W segment, `:`-pole 5) jdou nově na klienta v `ZNACKY` spoje, stejně
+indexované jako `CASY`, a prvek je kreslí vlevo od času - jako starý tisk
+(`JRapiLinPrtWin.mac:3838`, vykreslení `:1409`). Vysvětlivky je u druhu 7 překládají číselníkem
+zastávek, ne spojů; do té doby tam zůstávalo písmeno.
+
+⚠️ **Šířka sloupce i kreslení jdou jednou metodou** (`PiktogramyBunky`) - buňka může nést víc
+značek vedle sebe a dvě cesty by se rozešly, jako se to stalo 8. 9. u značek platnosti.
+⚠️ Značka bez ověřeného piktogramu se zahazuje (legacy filtruje přes `GSId`), takže složené
+značky metra (`e`/`f`/`g`) zůstávají nenakreslené - to legacy kreslí vlastní větví, není to
+přeneseno.
+
+## `B166` Zvýraznění zastávky u kombinovaného zadání (uzavřeno 21. 9. 2026 - vada neplatí)
+
+Kolega hlásil, že Budeč na lince 340366 nemá být obyčejně, ale tučně nebo podtrženě. Porovnáním
+s postskriptovým tiskem se ukázalo, že se nelišíme.
+
+**Co „podtržení" u atributů `P` a `J` znamená:** zastávka se nepodtrhává textem, ale rozdělí se na tři
+řádky - příjezd, krátká vodorovná úsečka, odjezd - a popis se vypíše jednou na prostředním
+(`JRapiLinPrtPS1.mac:51`, `JRapiLinPrtPS5.mac:24`, šipky `JRapiLinPrtPS6.mac:191`). Tučné písmo je
+vedle toho samostatné a dělá ho `P` i `T`. Přesně tenhle tvar dělá volba „Sloučit popis u příjezdu
+a odjezdu"; Budeč vychází tučně i u nás.
+
+⚠️ **Windowsový Tisk JR má na totéž jiný tvar** - silnou čáru přes celou šířku tabulky nad zastávkou
+a pod ní (`JRapiLinPrtWin.mac:1262`, kreslení `formTISKJRReportDotNet_Module.vb:2501`). Kdo tiskne
+windowsovou cestou, uvidí jiný výstup; je to volba tvaru, ne oprava. Samostatné atributy `p` a `o`
+(čára pod řádkem / nad i pod) neumíme - vytaženo jako `B172`.
+
+## `B168` Rozbalovací seznam vybraných linek (hotovo 21. 9. 2026)
+
+Nález kolegy z 18. 9.: mezi vybranými linkami se listovalo jen šipkami, skok na konkrétní linku
+znamenal proklikat všechny před ní.
+
+Šipka nahoru u jména linky rozbalí seznam vybraných linek s odškrtnutou aktuální. Klik na jméno
+linky dál otevírá výběr linek. Šipky doleva a doprava beze změny.
+
+Rozhodnutí Jan 21. 9. po vyzkoušení: **přepínání a výběr mají dvě různá místa** - první návrh věsil
+obojí na jeden klik doprostřed chipu (výběr jako poslední položka seznamu) a naučená cesta k výběru
+tím zmizela. Položky nesou jen „číslo - název"; platnost z výběru instancí se do seznamu nepřenáší.
+Hledací pole až nad dvanácti linkami.
+
+⚠️ Seznam se rozbaluje **až na puštění tlačítka**. Při otevření na stisku si popup vezme myš,
+následující puštění se do něj netrefí a seznam se hned zavře - vypadá to, že v něm nejde nic vybrat.
+
 ## `B160` Zarovnání odjezdů na pevnou šířku (hotovo 18. 9. 2026)
 
 Přání TRANSDEV z 16. 9.: rozteč minut, kterou značka neovlivní. Zarovnání dle nejširšího odjezdu

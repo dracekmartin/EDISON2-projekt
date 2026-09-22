@@ -5,14 +5,17 @@ using System.Text.RegularExpressions;
 namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
-/// Driftová pojistka allowlistu <c>ServerSideParams</c>. Parametr, jehož hodnotu zpracovává až
-/// server v <c>GetData</c>, musí být v allowlistu - jinak jeho přepnutí v UI **nespustí re-fetch**,
-/// takže klik nedělá nic a tisk vyjede jinak než náhled (tiskový dialog si data tahá čerstvě).
+/// Parametr, jehož hodnotu zpracovává až server v <c>GetData</c>, musí mít v <c>GetParameters</c>
+/// příznak <c>serverSide</c> - podle něj klient pozná, že jeho změna vyžaduje načtení dat. Bez
+/// příznaku klik v UI nedělá nic a tisk vyjede jinak než náhled (tiskový dialog si data tahá čerstvě).
 ///
 /// Past se vrátila **čtyřikrát** (`ROZDELIT_PER_OZNACNIK`, pak `SOUHRN_NA_ZNAMENI` +
 /// `SPOJE_U_DOPRAVCE`, a `DELENI_SLOUPCU` našel až tenhle test), proto strojová kontrola: test
-/// vyparsuje z agendových `.cls` čtení <c>^||ML("IN","KLIC")</c>, odečte infrastrukturní klíče
-/// a ověří, že zbytek je podmnožinou allowlistu. Offline, bez Caché serveru.
+/// vyparsuje z agendových `.cls` čtení <c>^||ML("IN","KLIC")</c> i příznaky u definic parametrů,
+/// odečte infrastrukturní klíče a porovná obojí. Offline, bez Caché serveru.
+///
+/// Do 21. 9. držel seznam takových parametrů klient natvrdo a test hlídal ten seznam; příznak
+/// u definice se zapomene hůř, protože se píše na stejném místě jako parametr sám.
 /// </summary>
 public class ServerSideParamsDriftTests
 {
@@ -44,40 +47,72 @@ public class ServerSideParamsDriftTests
         @"\^\|\|ML\(""IN"",""([A-Za-z_0-9]+)""(.?)",
         RegexOptions.Compiled);
 
+    // `s pRozd.name = "ROZDELENI_SLOUPCU"` → proměnná ↔ název parametru.
+    private static readonly Regex ParamNameRx = new(
+        @"^\s*s\s+(\w+)\.name\s*=\s*""([A-Za-z_0-9]+)""",
+        RegexOptions.Compiled | RegexOptions.Multiline);
+
+    // `s pRozd.serverSide = 1`
+    private static readonly Regex ParamFlagRx = new(
+        @"^\s*s\s+(\w+)\.serverSide\s*=\s*1\s*$",
+        RegexOptions.Compiled | RegexOptions.Multiline);
+
+    // `d ..AddBoolParam(arr, "KLIC", …, 1)` - příznak je poslední argument na řádku.
+    private static readonly Regex BoolParamFlagRx = new(
+        @"AddBoolParam\(arr,\s*""([A-Za-z_0-9]+)"".*,\s*1\)\s*$",
+        RegexOptions.Compiled | RegexOptions.Multiline);
+
     [Fact]
-    public void KazdyParametrCtenyVAgende_JeVAllowlistu()
+    public void KazdyParametrCtenyVAgende_MaPriznakServerSide()
     {
-        var allowed = TemplateDesignerViewModel.ServerSideParams.ToHashSet(StringComparer.Ordinal);
+        // Příznak stačí kdekoli v rodině agend: MHD čte klíče, jejichž definici drží AD varianta
+        // (týž parametr, jiný zdroj dat).
+        var flagged = AgendaFiles().SelectMany(ServerSideParams).ToHashSet(StringComparer.Ordinal);
         var found = new List<string>();
 
         foreach (var file in AgendaFiles())
         {
             foreach (var key in StaticInKeys(file))
             {
-                if (InfrastructureKeys.Contains(key) || allowed.Contains(key)) continue;
+                if (InfrastructureKeys.Contains(key) || flagged.Contains(key)) continue;
                 found.Add($"{Path.GetFileName(file)}: \"{key}\"");
             }
         }
 
         Assert.True(found.Count == 0,
-            "Agenda čte parametr, který není v ServerSideParams → jeho přepnutí v UI nespustí "
-            + "re-fetch dat (klik je no-op a tisk vyjede jinak než náhled):\n"
+            "Agenda čte parametr, který nemá v GetParameters příznak serverSide → jeho přepnutí "
+            + "v UI nespustí načtení dat (klik je no-op a tisk vyjede jinak než náhled):\n"
             + string.Join("\n", found)
-            + "\nDoplň klíč do ServerSideParams (TemplateDesignerViewModel), nebo - jde-li "
-            + "o technický vstup dispatchu - do InfrastructureKeys v tomhle testu.");
+            + "\nDoplň příznak k definici parametru, nebo - jde-li o technický vstup dispatchu - "
+            + "klíč do InfrastructureKeys v tomhle testu.");
     }
 
     [Fact]
-    public void AllowlistNeobsahujeMrtveKlice()
+    public void PriznakNemaParametr_KteryNikdoNecte()
     {
-        // Druhý směr: klíč v allowlistu, který už žádná agenda nečte, znamená zbytečný re-fetch
-        // při každé jeho změně (a nejspíš přežil odstranění parametru).
+        // Druhý směr: příznak u parametru, jehož hodnotu žádná agenda nečte, znamená zbytečné
+        // načítání dat při každé jeho změně (nejspíš přežil odstranění kódu, který ho četl).
         var read = AgendaFiles().SelectMany(StaticInKeys).ToHashSet(StringComparer.Ordinal);
-        var dead = TemplateDesignerViewModel.ServerSideParams.Where(p => !read.Contains(p)).ToList();
+        var dead = AgendaFiles()
+            .SelectMany(f => ServerSideParams(f).Select(p => (Soubor: Path.GetFileName(f), Klic: p)))
+            .Where(x => !read.Contains(x.Klic))
+            .Select(x => $"{x.Soubor}: \"{x.Klic}\"")
+            .ToList();
 
         Assert.True(dead.Count == 0,
-            "ServerSideParams obsahuje klíče, které žádná agenda nečte - zbytečný re-fetch dat "
-            + $"při jejich změně:\n{string.Join(", ", dead)}");
+            "Parametr má příznak serverSide, ale žádná agenda jeho hodnotu nečte - zbytečné "
+            + $"načítání dat při každé změně:\n{string.Join("\n", dead)}");
+    }
+
+    [Fact]
+    public void ParserNasel_PriznakyAgendy()
+    {
+        // Pojistka druhého parseru: kdyby zrezivěl, testy výše by prošly na prázdném vstupu.
+        var flagged = ServerSideParams(AgendaFile("ZastavkoveJrAd.cls"));
+
+        Assert.Contains("ROZDELENI_SLOUPCU", flagged);   // vlastní objekt
+        Assert.Contains("SOUHRN_NA_ZNAMENI", flagged);   // přes AddBoolParam
+        Assert.DoesNotContain("CASOVA_OSA", flagged);    // klientský parametr
     }
 
     [Fact]
@@ -113,6 +148,30 @@ public class ServerSideParamsDriftTests
 
     /// <summary>Pevně pojmenované IN klíče souboru (bez klíčů skládaných konkatenací).</summary>
     private static List<string> StaticInKeys(string file) => StaticInKeysFromText(File.ReadAllText(file));
+
+    /// <summary>
+    /// Parametry, které si agenda označila příznakem <c>serverSide</c>. Dvě podoby zápisu:
+    /// vlastní objekt (<c>s pX.name = "KLIC"</c> + <c>s pX.serverSide = 1</c>) a pomocná metoda
+    /// <c>AddBoolParam(..., 1)</c>, kde je příznak poslední argument.
+    /// </summary>
+    private static List<string> ServerSideParams(string file)
+    {
+        var text = File.ReadAllText(file);
+
+        var nazvyPromennych = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (Match m in ParamNameRx.Matches(text))
+            nazvyPromennych[m.Groups[1].Value] = m.Groups[2].Value;
+
+        var result = new List<string>();
+        foreach (Match m in ParamFlagRx.Matches(text))
+            if (nazvyPromennych.TryGetValue(m.Groups[1].Value, out var name))
+                result.Add(name);
+
+        foreach (Match m in BoolParamFlagRx.Matches(text))
+            result.Add(m.Groups[1].Value);
+
+        return result.Distinct(StringComparer.Ordinal).ToList();
+    }
 
     private static List<string> StaticInKeysFromText(string text) =>
         InKeyRx.Matches(text)

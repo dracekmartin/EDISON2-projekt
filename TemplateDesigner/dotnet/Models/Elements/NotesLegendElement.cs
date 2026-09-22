@@ -432,8 +432,25 @@ public class NotesLegendElement : StopScheduleElementBase
     /// </remarks>
     private static bool JePiktogramPoznamky(PoznamkaData pozn) =>
         pozn.Druh != ""
-            ? SymbolMap.ResolveLinkovy(pozn.Znak).Mode == SymbolRenderMode.FontGlyf
+            ? ZnackaLinkoveho(pozn).Mode == SymbolRenderMode.FontGlyf
             : JePiktogram(pozn.Znak);
+
+    /// <summary>Druh „stálé značky" v číselníku linkového JŘ - značky u zastávky a spoje.</summary>
+    private const string DruhStaleZnacky = "7";
+
+    /// <summary>Značka poznámky přeložená tím slovníkem, do kterého její druh patří.</summary>
+    /// <remarks>
+    /// ⚠️ Stálé značky mají <b>vlastní číselník</b>: „N" tam znamená „jen nástup", kdežto ve
+    /// slovníku značek spojů nic. Do 21. 9. šly i ony přes slovník spojů, takže je legenda
+    /// vypisovala písmenem, zatímco tabulka kreslí obrázek (nález kolegy 18. 9.).
+    /// </remarks>
+    internal static (SymbolRenderMode Mode, string Value) ZnackaLinkoveho(PoznamkaData pozn)
+    {
+        if (pozn.Druh != DruhStaleZnacky) return SymbolMap.ResolveLinkovy(pozn.Znak);
+        return SymbolMap.PruchodZastavkou(pozn.Znak) is { } pruchod
+            ? (SymbolRenderMode.FontGlyf, pruchod)
+            : SymbolMap.ResolveZastavka(pozn.Znak);
+    }
 
     /// <summary>
     /// Značka, která se kreslí <b>normálním fontem</b> - i ta může mít v legacy jiný text než kód
@@ -446,13 +463,13 @@ public class NotesLegendElement : StopScheduleElementBase
     /// </remarks>
     private static string TextZnakPoznamky(PoznamkaData pozn) =>
         pozn.Typ == TypPoznamky.SpecialniZnak && pozn.Druh != ""
-            ? SymbolMap.ResolveLinkovy(pozn.Znak).Value
+            ? ZnackaLinkoveho(pozn).Value
             : pozn.Znak;
 
     /// <summary>Co se pro značku poznámky reálně vypíše - viz <see cref="JePiktogramPoznamky"/>.</summary>
     private static string GlyfPoznamky(PoznamkaData pozn) =>
         pozn.Druh != ""
-            ? SymbolMap.ResolveLinkovy(pozn.Znak).Value
+            ? ZnackaLinkoveho(pozn).Value
             : GlyfDleKategorie(pozn.Znak, pozn.Kategorie);
 
     /// <summary>Kategorie, kterou Caché dává výlukovým poznámkám linky (text začíná „Výluka").</summary>

@@ -258,15 +258,17 @@ Každý OUT node je vlastní `%DynamicObject.%ToJSON()` → na .NET straně `Cac
 **Proč:** JSON je autoreferenční (struktura popsaná schématem), verzovatelný, debugovatelný v síťovém monitoru, a mapuje se 1:1 na `%DynamicObject` v Caché a `JsonNode` v .NET. Nové API metody musí tento vzor následovat.
 
 **⚠️ Past: nový server-side parametr sestavy** (hodnotu zpracovává `GetData`, ne klientský filtr)
-musí do allowlistu `ServerSideParams` v `TemplateDesignerViewModel.cs` - jinak jeho změna v UI
-nespustí re-fetch dat a klik je no-op. Bool parametry se na wire posílají jako `"true"/"false"`
-a server je čte tolerantně přes `$zcvt(...,"L")` (starší klienti posílali `"True"`).
-Labely enum parametrů jsou ZAMČENÉ - persistuje se zobrazovaný text (viz `ux-conventions §8`).
+musí mít v `GetParameters` příznak `serverSide` (`s pX.serverSide = 1`, u `AddBoolParam` poslední
+argument) - jinak jeho změna v UI nespustí načtení dat a klik je no-op. Klient žádný seznam
+takových parametrů nedrží (od 21. 9.), ptá se definice parametru. Bool parametry se na wire
+posílají jako `"true"/"false"` a server je čte tolerantně přes `$zcvt(...,"L")` (starší klienti
+posílali `"True"`). Labely enum parametrů jsou ZAMČENÉ - persistuje se zobrazovaný text
+(viz `ux-conventions §8`).
 
 **Volba, která patří k prvku, ale server ji musí znát** (dnes `DEFINICE_SLOUPCU`, `JAZYK`,
 `TURNUSY_KE_SPOJUM`) **není parametr sestavy**: skládá se do IN vždy **čerstvě ze šablony**
-v `ComposeGetDataParams` (nikdy z persistovaných hodnot - třída chyb `B24`), do allowlistu nepatří
-(patří do `InfrastructureKeys` v `ServerSideParamsDriftTests`) a **re-fetch při její změně drží
+v `ComposeGetDataParams` (nikdy z persistovaných hodnot - třída chyb `B24`), příznak `serverSide`
+nedostane (patří do `InfrastructureKeys` v `ServerSideParamsDriftTests`) a **re-fetch při její změně drží
 `CurrentWireSnapshot`** - do něj se nová volba musí přidat, jinak zaškrtnutí nic neudělá, dokud
 uživatel nezmáčkne obnovení dat. Poznávací znak: „odpověď na tuhle otázku dává šablona, ne uživatel
 před tiskem."

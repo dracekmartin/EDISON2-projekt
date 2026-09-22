@@ -93,7 +93,7 @@ public class HelpDialogViewModel : EDViewModel
             [
                 new("1. Otevřít šablonu z databáze / založit novou", "Ctrl+O / Ctrl+N"),
                 new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", "Ctrl+Shift+A"),
-                new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "klik na štítek"),
+                new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "Ctrl+Shift+I"),
                 new("4. Přidat sekce (tlačítko + Sekce) a elementy (táhnout z palety)", "myš"),
                 new("5. Napojit data - pole ze záložky „Pole agendy“ táhnout na plochu", "táhnout myší"),
                 new("6. Upravit vzhled - záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
@@ -144,8 +144,9 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Změnit agendu / variantu (založí novou prázdnou šablonu)", "Ctrl+Shift+A"),
-                new("Výběr instancí (linek) pro náhled a tisk", "modrý štítek Instance"),
+                new("Výběr instancí (linek) pro náhled a tisk", "Ctrl+Shift+I / modrý štítek"),
                 new("Listování mezi vybranými instancemi", "◀ ▶ u štítku"),
+                new("Seznam vybraných instancí k přepnutí", "▲ u štítku"),
                 new("Obnovit data z databáze (znovu načte ze serveru)", "F5"),
                 new("Pole agendy → nový text s {POLE} na ploše", "táhnout pole na plochu"),
                 new("Pole agendy → přidat {POLE} do existujícího textu", "táhnout pole na text"),
@@ -203,6 +204,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Přidat sekci", "tlačítko + Sekce"),
                 new("Přesunout aktivní sekci nahoru / dolů", "Ctrl+Shift+↑ / Ctrl+Shift+↓"),
                 new("Přesunout sekci tažením", "táhnout myší v panelu"),
+                new("Výška sekce myší - patička se tahá za HORNÍ hranu (roste nahoru)", "táhnout hranu na ploše"),
                 new("Vlastnosti / smazání sekce", "pravý klik"),
                 new("Uložit sekci jako šablonu pro opakované použití", "pravý klik → Uložit jako šablonu"),
             ],
@@ -234,12 +236,13 @@ public class HelpDialogViewModel : EDViewModel
                 new("Text - statický nebo s poli {NAZEV}", "paleta"),
                 new("Obrázek - ze souboru (auto zmenšení velkých)", "paleta"),
                 new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
-                new("Kód - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
-                new("Dynamická tabulka - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
-                new("Pevná tabulka - mřížku vyplňujete sami (rozměr zadáte při vložení)", "paleta"),
-                new("Zastávky JŘ - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
-                new("Minuty odjezdů JŘ - po skupinách dnů", "paleta (JŘ agenda)"),
-                new("Legenda poznámek JŘ - značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
+                new("Kód (QR, čárový) - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
+                new("Tabulka (z dat) - řádky z kolekce dat agendy (vč. řazení řádků)", "paleta"),
+                new("Tabulka (pevná) - mřížku vyplňujete sami (rozměr zadáte při vložení)", "paleta"),
+                new("Seznam zastávek - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
+                new("Minuty odjezdů - po skupinách dnů", "paleta (JŘ agenda)"),
+                new("Poznámky - značky, omezení a vysvětlivky pod vývěskou", "paleta (JŘ agenda)"),
+                new("Tabulka spojů - zastávky × spoje (linkové a knižní JŘ)", "paleta (JŘ agenda)"),
             ],
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
                   "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr), min/max počet řádků " +
@@ -274,17 +277,17 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Které poznámky se tisknou (negativní značky, speciální znaky, textové, poznámky linky)",
-                    "prvek Legenda poznámek → Co se tiskne"),
+                    "prvek Poznámky → Co se tiskne"),
                 new("Značky u odjezdů: přeprava kol, místenky, pokračující spoje",
-                    "prvek Legenda poznámek → Značky u odjezdů"),
+                    "prvek Poznámky → Značky u odjezdů"),
                 new("Souhrn bezbariérových spojů (jedna věta místo značky u každého odjezdu)",
                     "dtto Značky u odjezdů"),
                 new("Poznámky linky - výluky, tarifní, všeobecné, radiobus",
-                    "prvek Legenda poznámek → Poznámky linky"),
-                new("Řazení poznámek a směr plnění sloupců legendy", "prvek Legenda poznámek → Rozložení"),
+                    "prvek Poznámky → Poznámky linky"),
+                new("Řazení poznámek a směr plnění sloupců legendy", "prvek Poznámky → Rozložení"),
                 new("Dlouhá trasa na užší vývěsku - rozdělit seznam zastávek na oddíly vedle sebe",
-                    "prvek Zastávky JŘ → Rozdělit na více oddílů"),
-                new("Zvýraznění aktuální zastávky, projeté zastávky, šipka směru", "prvek Zastávky JŘ"),
+                    "prvek Seznam zastávek → Rozdělit na více oddílů"),
+                new("Zvýraznění aktuální zastávky, projeté zastávky, šipka směru", "prvek Seznam zastávek"),
                 new("Skupiny dnů, šířka minuty, oddělovač skupin, značky u minut", "prvek Minuty odjezdů"),
                 new("Které sloupce vývěsky vzniknou (vzory i vlastní definice)",
                     "prvek Minuty odjezdů → Definice sloupců"),
@@ -292,13 +295,37 @@ public class HelpDialogViewModel : EDViewModel
                     + "písmeno i první varianta", "tab Parametry → První varianta bez písmene"),
                 new("Kolik vývěsek se vytiskne (zastávka × směr) a co je na které", "lišta stránkování nad náhledem"),
             ],
-            Tip = "Značky u odjezdů a souhrn bezbariérovosti se zapínají v prvku Legenda poznámek, " +
+            Tip = "Značky u odjezdů a souhrn bezbariérovosti se zapínají v prvku Poznámky, " +
                   "NE v parametrech sestavy - dřív to byly parametry tisku. Značka u odjezdu a její vysvětlivka " +
                   "jsou jedna volba, takže nemůže vzniknout značka, kterou legenda nevysvětlí. " +
-                  "Když šablona prvek Legenda poznámek nemá, značky se nevytisknou vůbec. " +
+                  "Když šablona prvek Poznámky nemá, značky se nevytisknou vůbec. " +
                   "Rozvržení sloupců drží šablona: parametr sestavy „Rozdělení sloupců (typy provozu)“ je jen pohled " +
                   "na definici v prvku odjezdů, takže se ta dvě nastavení nemůžou přebíjet. " +
                   "V seznamu zastávek jsou jen zastávky, kam z té vývěsky opravdu nějaký spoj jede.",
+        },
+
+        new HelpSection
+        {
+            Title = "🚆 Tabulka spojů - linkový a knižní JŘ",
+            Entries =
+            [
+                new("Které sloupce popisu se tisknou (km, tarifní číslo, zóna, MHD, označník)",
+                    "prvek Tabulka spojů → Sloupce"),
+                new("Řádek platnosti pod číslem spoje - denní značky, místenka, atributy vozidla",
+                    "prvek Tabulka spojů → Řádky"),
+                new("Obousměrná sestava - spoje opačného směru nalevo od zastávek", "prvek Tabulka spojů"),
+                new("Tabulka širší než prvek se rozřeže na bloky pod sebe", "automaticky"),
+                new("Dorovnat prázdnými sloupci - volné místo se proloží mezi spoje", "prvek Tabulka spojů → Šířka"),
+                new("Nejmenší a největší šířka sloupce spoje - řídí, kolik spojů je na bloku",
+                    "prvek Tabulka spojů → Šířka"),
+                new("Tučné zastávky a čáry u zastávek podle atributů trasy", "prvek Tabulka spojů → Datové buňky"),
+                new("Sloučit popis u příjezdu a odjezdu (tvar postskriptového tisku)", "prvek Tabulka spojů"),
+                new("Přípojné řádky Vyčká / Navazuje pod zastávkou", "prvek Tabulka spojů → Řádky"),
+            ],
+            Tip = "Zastávka, která má v trase atribut příjezdu a odjezdu, zabírá dva řádky. Vypnuté „Sloučit popis“ " +
+                  "zopakuje název a km na obou (tvar windowsového tisku), zapnuté je vypíše jednou přes oba " +
+                  "a mezi časy dá vodorovnou úsečku. Značky u zastávky a čáry z atributů trasy jdou z jízdních " +
+                  "řádů - vypínají se v prvku, ne v parametrech sestavy.",
         },
 
         new HelpSection

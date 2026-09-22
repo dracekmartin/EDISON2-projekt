@@ -18,7 +18,6 @@ public partial class StyleEditDialog : Window
         DataContext = vm;
         InitializeComponent();
 
-        vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         vm.RequestClose += result => { DialogResult = result; Close(); };
     }
 }

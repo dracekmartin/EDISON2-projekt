@@ -1,5 +1,103 @@
 ﻿# Changelog
 
+## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře
+
+`B174`. Devět nálezů odbaveno, dva se týkají uživatele přímo:
+
+**Přepnutí šablony na slovenštinu se bez vybrané linky neprojevilo.** Ukázková data se pamatovala
+pod klíčem, ve kterém jazyk nebyl, takže se vrátila stará odpověď. S vybranou linkou to fungovalo,
+což z toho dělalo nahodilou nespolehlivost.
+
+**Větší písmo minut u jedné skupiny dnů zvětšilo číslice, ale ne řádek.** Výška se počítala z písma
+prvku, kdežto číslice se kreslily písmem skupiny. Nově vychází z většího z obou písem řádku (v řádku
+stojí i hodina), takže se šablonám bez per-skupinového písma nic nemění.
+
+Zbytek je pod kapotou: panel vlastností bere barvy a velikost písma z tokenů (v tmavém motivu
+splývaly popisky s pozadím), prvek se všude jmenuje stejně - AI pomocník říkal „Legenda poznámek"
+a „Tabulka linky", tedy jména přejmenovaná 1. 9. Při té příležitosti dostaly nové jméno dva prvky:
+**Kód (QR, čárový)** (ze samotného „Kód" nebylo poznat, co umí) a **Tabulka spojů** (dřív „Linkový
+JŘ", což je i název agendy).
+
+Uvnitř pak zmizely tři kopie téhož: ruční seznam server-side parametrů (příznak posílá agenda
+u definice parametru), barevné příkazy v pěti dialozích a výchozí vzhled buňky obou tabulek.
+Opsané metody mezi variantami agend a rozsekání hlavního ViewModelu se vědomě odkládají.
+
+## 2026-09-21 (6) - ⌨️ výběr linek z klávesnice
+
+`Ctrl+Shift+I` otevře výběr instancí - u jízdních řádů tedy seznam linek. Hledání v něm je pak
+`Ctrl+F`, takže se dá skočit na linku podle čísla bez sáhnutí po myši.
+
+Písmeno `I` jako instance, ne `L` jako linka: agenda si sama říká, jestli jsou to linky nebo
+faktury. Zkratka stojí vedle `Ctrl+Shift+A` (změnit agendu), je to táž dvojice voleb „nad čím
+pracuju".
+
+## 2026-09-21 (5) - ➖ čára u zastávky podle trasy
+
+`B172`. V trase linky jde u zastávky zadat „podtrženo" nebo „podtrženo nad i pod" - dispečer tím
+odděluje úsek linky a **oba staré tisky to kreslí**. Návrhář ty dva atributy ignoroval.
+
+Nově se u takové zastávky nakreslí čára přes celou šířku tabulky, silnější než mřížka a barvou textu
+buněk. Vypnout to jde volbou **„Čáry u zastávek dle trasy"** u prvku, stejně jako u tučných zastávek.
+
+Netýká se to hrstky linek: u jedné firmy to má 12 tisíc linek z 15 tisíc, u dalších dvou přes dva
+tisíce (změřeno 21. 9.). Hotovým šablonám tedy čáry přibudou - je to ale návrat k tvaru starého
+tisku, ne nová ozdoba.
+
+## 2026-09-21 (4) - ⬜ prázdné sloupce se prokládají mezi spoje
+
+`B167`, nález kolegy z 18. 9. Volba „Dorovnat prázdnými sloupci" doplňovala volné místo **na konec**
+bloku, takže spoje zůstaly v hloučku vlevo a vpravo byl jeden široký prázdný pruh.
+
+Nově se prázdné sloupce rozdávají po jednom **střídavě z obou stran** - jeden za první spoj zleva,
+jeden za poslední zprava, pak za druhý zleva a tak dál. Výstup tím vypadá rovnoměrně proložený,
+jako ve starém tisku. Zrcadlená strana obousměrné sestavy se plní zrcadlově, takže její spoje
+zůstávají u zastávek.
+
+Počet prázdných sloupců se nemění: řídí ho dál to, kolik sloupců se do prvku vejde, tedy nastavení
+nejmenší a největší šířky sloupce spoje.
+
+Se zapnutým dorovnáním navíc tabulka **končí na hraně prvku**. Dřív za posledním sloupcem zbýval
+úzký useknutý pruh, protože se počet sloupců počítá po celých. Zbytek teď dostanou prázdné sloupce,
+a když žádný nevyšel, rozšíří se poslední sloupec spoje.
+
+## 2026-09-21 (3) - 🎫 místenka se v českém tisku značí „R"
+
+Nález kolegy z 21. 9. na lince 320913. U spoje se místo „R" tiskl ampersand a vysvětlivka mluvila
+o místenkových kancelářích AMS.
+
+Starý tisk rozlišuje **čtyři** druhy místenkování jen ve slovenské verzi. Česká zná dva: „R"
+(místenku je možné zakoupit) a „þ" (spoj jde použít jen s místenkou), a obě varianty s kancelářemi
+AMS do nich slučuje. Návrhář je posílal všem, takže se českým zákazníkům tiskla slovenská značka
+i slovenský text.
+
+## 2026-09-21 (2) - 🔤 značky u zastávky se tisknou i v tabulce
+
+`B165`, nález kolegy z 18. 9. Vysvětlivky pod jízdním řádem popisovaly značky („spoj zastavuje jen
+pro nastupování", paragraf), které v tabulce nebyly vidět nikde - čtenář tedy nepoznal, ke které
+zastávce a spoji patří.
+
+Značky se nově kreslí **vlevo od času** v buňce toho spoje, jako ve starém tisku. Sloupec spoje si
+na ně rezervuje místo, takže tabulka nepřeteče. Značka, pro kterou číselník nemá obrázek, se
+nekreslí vůbec - stejně to dělá starý tisk.
+
+Ve vysvětlivkách se tytéž značky překládaly slovníkem značek spojů, ve kterém nejsou, takže tam
+zůstávalo písmeno, zatímco v tabulce je obrázek. Teď obojí sahá do téhož číselníku.
+
+## 2026-09-21 - 🔽 seznam vybraných linek přímo v liště
+
+`B168`, nález kolegy z 18. 9. Mezi vybranými linkami se dalo listovat jen šipkami, takže skok
+na konkrétní linku znamenal proklikat všechny před ní.
+
+Ve stavové liště přibyla u jména linky šipka nahoru a ta rozbalí **seznam právě vybraných linek**
+s odškrtnutou tou, která je vidět v náhledu. Položka ukazuje jen číslo a název, nic dalšího - je to
+přepínač, ne prohlížeč. Šipky doleva a doprava zůstávají.
+
+Klik na jméno linky uprostřed otevírá výběr linek jako dosud. Jsou to dvě různé věci (přepnout mezi
+vybranými × vybrat jiné), takže mají dvě různá místa.
+
+Nad dvanácti linkami dostane seznam nahoře hledací pole - u stovky vybraných linek je posouvání
+seznamu k ničemu.
+
 ## 2026-09-18 (2) - 📏 pevný rastr minut: značky rozestup neovlivní
 
 `B160`, přání TRANSDEV z 16. 9. Zarovnání dle nejširšího odjezdu počítá rozteč z **nejširšího

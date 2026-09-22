@@ -350,7 +350,7 @@ Neprimární, ale na radaru. Drž si je v hlavě při implementaci, neoptimalizu
 - [`elementy-architektura.md`](elementy-architektura.md) - architektura specializovaných JŘ elementů.
 - `.claude/rules/mvvm-patterns.md` - Pattern 1 (single-zone) / Pattern 2 (dual-zone) styling.
 - `skill `novy-element`` - 10-kroková reference pro přidání nového typu elementu.
-- `.claude/rules/architecture-rules.md` - závazná pravidla R1–R5 (async, errors, JSON, MVVM, versioning) + „must-not-happen" scénáře.
+- `.claude/rules/architecture-rules.md` - závazná pravidla R1-R6 (async, errors, JSON, MVVM, versioning, parita proti legacy) + „must-not-happen" scénáře.
 
 ---
 

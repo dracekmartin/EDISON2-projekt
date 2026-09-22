@@ -313,15 +313,10 @@ public class AiVisionImportPipeline
         }
     }
 
-    private static string ElementNazev(TemplateElement el) => el switch
-    {
-        StopListElement      => "Seznam zastávek",
-        DepartureGridElement => "Minuty odjezdů",
-        NotesLegendElement   => "Poznámky",
-        TextElement t        => "Text: " + t.Text,
-        ImageElement         => "Obrázek",
-        _                    => el.GetType().Name
-    };
+    // Text se v protokolu pozná jen podle svého obsahu (jich je na stránce dvacet), zbytek
+    // jménem z palety.
+    private static string ElementNazev(TemplateElement el) =>
+        el is TextElement t ? "Text: " + t.Text : ElementNames.ForUser(el);
 
     /// <summary>
     /// Na co se u jízdněřádových prvků ptát - soupis jejich vlastních nastavitelných vlastností.

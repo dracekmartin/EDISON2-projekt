@@ -223,6 +223,19 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public bool TucneZastavkyDleTrasy { get; set; } = true;
 
+    /// <summary>Kreslit u zastávky čáru, kterou si vyžádala trasa (atributy `p` a `o`)?</summary>
+    /// <remarks>
+    /// ⚠️ <b>Není to naše rozhodnutí o vzhledu, je to údaj z jízdních řádů.</b> Atribut trasy
+    /// <c>p</c> znamená „podtrženo" a <c>o</c> „podtrženo nad i pod"; dispečer jimi odděluje úsek
+    /// linky. Obě staré cesty to tisknou: Windows tisk silnou čarou přes celou šířku tabulky
+    /// (<c>JRapiLinPrtWin.mac:1259-1262</c>, kreslení <c>formTISKJRReportDotNet_Module.vb:2501</c>),
+    /// postskript vlastním sloupcem „malého podtržení" (<c>JRapiLinPrtPS1.mac:110-112</c>).
+    /// <para>Není to totéž co <c>P</c> a <c>J</c> (příjezd a odjezd) - ty velkými písmeny rozdělují
+    /// řádek, tyhle jen kreslí čáru. Změřeno 21. 9.: používá je 12 tisíc linek z 15 tisíc u KV_DP,
+    /// u jiných firem jednotky procent.</para>
+    /// </remarks>
+    public bool CaryZastavekDleTrasy { get; set; } = true;
+
     /// <summary>Jak se sází čas spoje (výchozí hodina větším písmem, jako ve starém tisku).</summary>
     public FormatCasuSpoje FormatCasu { get; set; } = FormatCasuSpoje.HodinaVetsi;
 
@@ -414,6 +427,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// se zapnutým parametrem „Turnusy ke spojům" - jinak je seznam prázdný a řádky nevzniknou.</summary>
         public List<string> Turnusy = [];
         public List<string> Casy = [];
+        /// <summary>Značky u zastávky per řádek, stejně indexované jako <see cref="Casy"/>
+        /// („N" jen nástup, „G" paragraf…). Prázdný seznam = linka žádnou nemá.</summary>
+        public List<string> Znacky = [];
         public List<LinePripojData> Pripoje = [];
     }
 
@@ -469,6 +485,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Platnost = ParseStringArray(row.GetValue("PLATNOST")),
             Turnusy = ParseStringArray(row.GetValue("TURNUSY")),
             Casy = ParseStringArray(row.GetValue("CASY")),
+            Znacky = ParseStringArray(row.GetValue("ZNACKY")),
             Pripoje = ParsePripoje(row.GetValue("PRIPOJE")),
         })];
 
@@ -627,7 +644,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     // ─── Layout ─────────────────────────────────────────────────────────────
 
-    /// <summary>Vyřešený popisový sloupec připravený k renderu (šířka + styly + hodnota z dat).</summary>
     /// <summary>Nouzové dno šířky sloupce (mm) pro případ, že se písmo nepodaří změřit.</summary>
     private const float MinAutoColumnWidthMm = 3f;
 
@@ -889,12 +905,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             var stop = stops[si];
             if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
-            string znak = ZnakNavaznosti(spoj, stop.Poradi);
-            if (znak == "") continue;
             if (si >= spoj.Casy.Count || spoj.Casy[si] == "") continue;
-            if (!SymbolRunRenderer.MaPiktogram(
-                    SymbolRunRenderer.BuildRuns([znak], SymbolMap.ResolveLinkovy))) continue;
-            if (max < 1) max = 1;
+            // Buňka může nést víc značek vedle sebe (jen nástup, paragraf, návaznost), takže
+            // se počítají všechny - jinak by se sloupec spočítal na jednu a zbytek přetekl.
+            int vBunce = PiktogramyBunky(spoj, si, stop.Poradi).Count(r => r.Symbol);
+            if (max < vBunce) max = vBunce;
         }
         return max;
     }
@@ -968,20 +983,78 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         private readonly float[] _sirkySpoju;
         private readonly float[] _sirkyZrcadlene;
 
+        private readonly int[] _prazdnePoSpoji;
+        private readonly int[] _prazdnePoZrcadlenem;
+
         public SloupcovaMrizka(IReadOnlyList<RenderCol> popisne, IReadOnlyList<float> sirkySpoju,
             float zakladSpojeMm, float mezeraMm, IEnumerable<int> hraniceSkupin,
-            IReadOnlyList<float>? sirkyZrcadlene = null, int prazdnychZrcadlenych = 0)
+            IReadOnlyList<float>? sirkyZrcadlene = null,
+            IReadOnlyList<int>? prazdnePoSpoji = null,
+            IReadOnlyList<int>? prazdnePoZrcadlenem = null)
         {
-            PrazdnychZrcadlenych = Math.Max(0, prazdnychZrcadlenych);
             Popisne = popisne;
             _sirkySpoju = [.. sirkySpoju];
             _sirkyZrcadlene = sirkyZrcadlene is null ? [] : [.. sirkyZrcadlene];
+            _prazdnePoSpoji = prazdnePoSpoji is null ? [] : [.. prazdnePoSpoji];
+            _prazdnePoZrcadlenem = prazdnePoZrcadlenem is null ? [] : [.. prazdnePoZrcadlenem];
             ZakladSpojeMm = zakladSpojeMm;
             MezeraMm = mezeraMm;
             _mezeraPred = mezeraMm > 0f ? [.. hraniceSkupin] : [];
             PopisneSirkaMm = popisne.Sum(c => c.Width);
-            ZrcadlenaSirkaMm = _sirkyZrcadlene.Sum() + (PrazdnychZrcadlenych * ZakladSpojeMm);
+            PrazdnychZrcadlenych = _prazdnePoZrcadlenem.Sum();
+            SirkaPrazdnehoMm = zakladSpojeMm;
         }
+
+        /// <summary>Šířka jednoho prázdného sloupce dorovnání.</summary>
+        /// <remarks>Zbytek šířky prvku se rozpustí do prázdných sloupců (viz
+        /// <see cref="DoplnitZbytekDoPrazdnych"/>), aby tabulka končila na hraně prvku a ne kousek
+        /// před ní. Bez dorovnání je to prostě základ sloupce spoje.</remarks>
+        public float SirkaPrazdnehoMm { get; private set; }
+
+        /// <summary>Kolik prázdných sloupců blok dohromady nese.</summary>
+        public int PrazdnychCelkem => _prazdnePoSpoji.Sum() + PrazdnychZrcadlenych;
+
+        /// <summary>Obsazená šířka celé tabulky - popisné sloupce, spoje, prázdné i mezery.</summary>
+        public float CelkovaSirkaMm =>
+            PopisneSirkaMm + ZrcadlenaSirkaMm + MezeraZaZrcadlenymMm
+            + _sirkySpoju.Sum() + (_prazdnePoSpoji.Sum() * SirkaPrazdnehoMm)
+            + (_mezeraPred.Count * MezeraMm);
+
+        /// <summary>
+        /// Rozpustí zbylou šířku prvku, aby tabulka končila na jeho hraně.
+        /// </summary>
+        /// <remarks>
+        /// ⚠️ Počty sloupců vycházejí z celých sloupců, takže po nich zbude kus šířky - a ten se bez
+        /// rozpuštění projeví jako <b>useknutý pruh</b> za posledním sloupcem, který vypadá jako
+        /// chyba sazby (nález Jan 21. 9.). Zbytek dostanou přednostně prázdné sloupce, protože jsou
+        /// to výplň; když žádný nevyšel, rozšíří se poslední sloupec spoje (rozhodnutí Jan 21. 9.:
+        /// širší poslední sloupec je lepší než useknutý pruh).
+        /// <para>Volá se <b>jen se zapnutým dorovnáním</b> - bez něj tabulka končí tam, kde ji
+        /// skončí sloupce, a to je dosavadní chování.</para>
+        /// </remarks>
+        public void RozpustitZbytek(float sirkaPrvkuMm)
+        {
+            float zbytek = sirkaPrvkuMm - CelkovaSirkaMm;
+            if (zbytek <= 0.01f) return;
+            int prazdnych = PrazdnychCelkem;
+            if (prazdnych > 0) { SirkaPrazdnehoMm += zbytek / prazdnych; return; }
+            if (_sirkySpoju.Length > 0) _sirkySpoju[^1] += zbytek;
+        }
+
+        /// <summary>Kolik prázdných sloupců stojí <b>za</b> sloupcem spoje.</summary>
+        /// <remarks>Prázdné se prokládají mezi spoje (viz <see cref="RozlozeniPrazdnych"/>), takže
+        /// každý sloupec ví, kolik jich za ním následuje - odtud se počítají i všechny šířky.</remarks>
+        public int PrazdnychPoSpoji(int indexSpoje) =>
+            indexSpoje >= 0 && indexSpoje < _prazdnePoSpoji.Length ? _prazdnePoSpoji[indexSpoje] : 0;
+
+        /// <summary>Kolik prázdných sloupců stojí <b>před</b> sloupcem zrcadleného spoje.</summary>
+        /// <remarks>
+        /// Zrcadlená strana se plní <b>zrcadlově</b>: její vnitřní hrana je ta u zastávek, takže se
+        /// prázdné zakládají před spoji a odsouvají se doleva. Jinak by u bloku s jediným spojem
+        /// vznikla díra mezi jeho časy a zastávkami (rozhodnutí Jan, `ObousmernyTiskTests`).
+        /// </remarks>
+        public int PrazdnychPredZrcadlenym(int index) =>
+            index >= 0 && index < _prazdnePoZrcadlenem.Length ? _prazdnePoZrcadlenem[index] : 0;
 
         public IReadOnlyList<RenderCol> Popisne { get; }
         public float MezeraMm { get; }
@@ -994,7 +1067,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         public int ZrcadlenychSpoju => _sirkyZrcadlene.Length;
 
         /// <summary>Obsazená šířka zrcadleného bloku (bez mezery za ním), včetně dorovnání.</summary>
-        public float ZrcadlenaSirkaMm { get; }
+        public float ZrcadlenaSirkaMm => _sirkyZrcadlene.Sum() + (PrazdnychZrcadlenych * SirkaPrazdnehoMm);
 
         /// <summary>
         /// Kolik prázdných sloupců dorovnává zrcadlenou stranu - stojí <b>před</b> jejími spoji.
@@ -1016,8 +1089,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// <summary>Odsazení levé hrany zrcadleného sloupce od levé hrany prvku.</summary>
         public float XZrcadlenehoMm(int index)
         {
-            float x = PrazdnychZrcadlenych * ZakladSpojeMm;
-            for (int i = 0; i < index && i < _sirkyZrcadlene.Length; i++) x += _sirkyZrcadlene[i];
+            float x = PrazdnychPredZrcadlenym(index) * SirkaPrazdnehoMm;
+            for (int i = 0; i < index && i < _sirkyZrcadlene.Length; i++)
+                x += _sirkyZrcadlene[i] + (PrazdnychPredZrcadlenym(i) * SirkaPrazdnehoMm);
             return x;
         }
 
@@ -1045,7 +1119,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             float x = ZrcadlenaSirkaMm + MezeraZaZrcadlenymMm
                 + PopisneSirkaMm + MezeraMm * _mezeraPred.Count(m => m <= indexSpoje);
-            for (int i = 0; i < indexSpoje && i < _sirkySpoju.Length; i++) x += _sirkySpoju[i];
+            for (int i = 0; i < indexSpoje && i < _sirkySpoju.Length; i++)
+                x += _sirkySpoju[i] + (PrazdnychPoSpoji(i) * SirkaPrazdnehoMm);
             return x;
         }
 
@@ -1053,7 +1128,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         public float SirkaUsekuMm(int od, int doExkluzivne)
         {
             float w = 0f;
-            for (int i = od; i < doExkluzivne && i < _sirkySpoju.Length; i++) w += _sirkySpoju[i];
+            for (int i = od; i < doExkluzivne && i < _sirkySpoju.Length; i++)
+                w += _sirkySpoju[i] + (PrazdnychPoSpoji(i) * SirkaPrazdnehoMm);
             return w;
         }
 
@@ -1061,7 +1137,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         public float SirkaUsekuZrcadlenehoMm(int od, int doExkluzivne)
         {
             float w = 0f;
-            for (int i = od; i < doExkluzivne && i < _sirkyZrcadlene.Length; i++) w += _sirkyZrcadlene[i];
+            for (int i = od; i < doExkluzivne && i < _sirkyZrcadlene.Length; i++)
+                w += _sirkyZrcadlene[i] + (PrazdnychPredZrcadlenym(i) * SirkaPrazdnehoMm);
             return w;
         }
 
@@ -1072,6 +1149,36 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             for (int i = 0; i < indexSloupce && i < Popisne.Count; i++) x += Popisne[i].Width;
             return x;
         }
+    }
+
+    /// <summary>
+    /// Kam přijdou prázdné sloupce dorovnání - vrací počet prázdných <b>za</b> každým spojem.
+    /// </summary>
+    /// <remarks>
+    /// Rozdávají se po jednom a <b>střídavě z obou stran</b>: jeden za první spoj zleva, jeden za
+    /// poslední zprava, pak za druhý zleva, za předposlední zprava… a když dojdou mezery, ukazatele
+    /// se vrátí na kraje a přidá se druhá řada. Doslovný postup starého tisku
+    /// (<c>JRapiLinPrtWin.mac:1040-1086</c>), kde prázdný sloupec vzniká vždy hned za sloupcem,
+    /// u kterého ho smyčka založila.
+    /// <para>⚠️ Do 21. 9. se všechny dolepily na konec bloku, takže spoje zůstaly v hloučku vlevo
+    /// a volné místo v jednom pruhu vpravo (nález kolegy 18. 9.).</para>
+    /// </remarks>
+    internal static int[] RozlozeniPrazdnych(int pocetSpoju, int prazdnych)
+    {
+        var rozlozeni = new int[Math.Max(0, pocetSpoju)];
+        if (pocetSpoju <= 0 || prazdnych <= 0) return rozlozeni;
+        int zleva = 0, zprava = pocetSpoju - 1;
+        while (prazdnych > 0)
+        {
+            rozlozeni[zleva]++;
+            prazdnych--;
+            zleva = zleva + 1 < pocetSpoju ? zleva + 1 : 0;
+            if (prazdnych <= 0) break;
+            rozlozeni[zprava]++;
+            prazdnych--;
+            zprava = zprava - 1 >= 0 ? zprava - 1 : pocetSpoju - 1;
+        }
+        return rozlozeni;
     }
 
     /// <summary>
@@ -1273,6 +1380,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// ho sází tučně také.</summary>
     private static bool MaTucneZTrasy(LineStopData s) =>
         s.Atributy.Contains("T") || s.Atributy.Contains("P");
+
+    /// <summary>Má zastávka v trase vyžádanou čáru pod řádkem? Atribut trasy „p" nebo „o".</summary>
+    private static bool MaCaruPod(LineStopData s) =>
+        s.Atributy.Contains("p") || s.Atributy.Contains("o");
+
+    /// <summary>Má zastávka vyžádanou čáru i nad řádkem? Jen atribut „o" („podtrženo nad i pod").</summary>
+    private static bool MaCaruNad(LineStopData s) => s.Atributy.Contains("o");
 
     /// <summary>
     /// Rozdvojuje se u téhle zastávky řádek na příjezd a odjezd?
@@ -1655,6 +1769,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (Width <= 0) return;
 
         using var paints = CreateStandardPaints(ctx);
+        // Čára úseku z trasy je **silnější než mřížka** a kreslí se barvou textu, aby byla vidět
+        // i v šabloně se světlou mřížkou. Starý tisk ji má natvrdo černou a pětkrát silnější než
+        // rámeček (formTISKJRReportDotNet_Module.vb:2502).
+        using var caraUseku = new SKPaint
+        {
+            Color = ColorHex.Parse(DataStyle.TextColor, ColorHex.Black),
+            StrokeWidth = paints.Grid.StrokeWidth * 3f,
+            Style = SKPaintStyle.Stroke,
+        };
 
         if (ctx.Data is null)
         {
@@ -1736,7 +1859,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var mrizka = new SloupcovaMrizka(fixedCols,
                     SirkySpoju(spojeBloku, stops, tripW, znackaMm), tripW,
                     MezeraMeziSkupinamiMm, HraniceSkupin(spojeBloku),
-                    SirkySpoju(zrcadleneBloku, stops, tripW, znackaMm), prazdnychVlevo);
+                    SirkySpoju(zrcadleneBloku, stops, tripW, znackaMm),
+                    RozlozeniPrazdnych(spojeBloku.Count, prazdnychVpravo),
+                    // Zrcadlená strana čte rozložení zrcadlově - první prázdný patří k jejímu
+                    // spoji u zastávek, ne k tomu na vnějším okraji.
+                    [.. RozlozeniPrazdnych(zrcadleneBloku.Count, prazdnychVlevo).Reverse()]);
+                // Zbytek šířky se rozpustí, ať tabulka končí na hraně prvku a ne kousek před ní.
+                if (PadEmptyColumns) mrizka.RozpustitZbytek(Width);
 
                 float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
                 float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
@@ -1748,22 +1877,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     headerH, rowH, PripojRowH() * scale,
                     Grid.ShowColumnLines ? paints.Grid : null,
                     Grid.ShowRowLines ? paints.Grid : null,
+                    CaryZastavekDleTrasy ? caraUseku : null,
                     headerResolved, headerCentered,
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
-
-                // Neúplný blok dorovnat prázdnými sloupci, ať mají všechny bloky stejný počet
-                // sloupců a tabulka končí rovně (#8372). Styl podle druhu řádku, jinak by prázdné
-                // buňky v záhlaví vypadly z jeho podbarvení.
-                int prazdnych = prazdnychVpravo;
-                if (prazdnych > 0)
-                    plan = [.. plan.Select(r => r with
-                    {
-                        Cells = [.. r.Cells, .. Enumerable.Repeat(
-                            new ColumnRenderer.CellSpec(mrizka.ZakladSpojeMm, "",
-                                r.Kind is RowKind.Header or RowKind.GroupHeader ? tripHeaderStyle : tripDataStyle),
-                            prazdnych)]
-                    })];
 
                 float konecBloku = y + plan.Sum(r => r.HeightMm);
 
@@ -1921,18 +2038,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// Druhy řádků linkového JŘ: pás skupin dnů (sloučené sloupce) → čísla spojů → platnost →
     /// negativní značky → zastávky (s podřádky přípojů). Vodorovné čáry a pozadí zvýraznění nese
     /// <see cref="RowSpec"/>, samotné kreslení <see cref="RowPlanRenderer"/>.
+    /// <para><paramref name="sloupcovaCara"/> a <paramref name="radkovaCara"/> jsou <c>null</c>, když
+    /// si uživatel ten druh čar vypnul - stejné dělení jako u seznamu zastávek a obou tabulek.
+    /// Jemnější potlačení svislé čáry u konkrétního sloupce řeší <c>SuppressLeadingLine</c>, tohle
+    /// je nadřazený vypínač.</para>
     /// </summary>
-    /// <summary>Sestaví plán řádků tabulky. <paramref name="sloupcovaCara"/> a
-    /// <paramref name="radkovaCara"/> jsou <c>null</c>, když si uživatel ten druh čar vypnul -
-    /// stejné dělení jako u seznamu zastávek a obou tabulek. Jemnější potlačení svislé čáry
-    /// u konkrétního sloupce řeší <c>SuppressLeadingLine</c>, tohle je nadřazený vypínač.</summary>
     private List<RowSpec> BuildRowPlan(
         List<LineStopData> stops, List<LineTripData> trips, List<LineTripData> zrcadlene,
         List<LineTripData> vsechnySpoje,
         List<LineSkupinaData> groups,
         SloupcovaMrizka mrizka, int nameIndex,
         float headerH, float rowH, float pripojRowH,
-        SKPaint? sloupcovaCara, SKPaint? radkovaCara,
+        SKPaint? sloupcovaCara, SKPaint? radkovaCara, SKPaint? caraUseku,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
         ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle,
         RenderContext ctx, SKTypeface symbolFace, float scale)
@@ -1962,8 +2079,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var band = new List<ColumnRenderer.CellSpec>();
             // Zrcadlený blok má vlastní úseky skupin dnů - jeho spoje jsou z opačného směru, takže
             // do skupin padnou jinak než ty vpravo. Jednosměrná stránka sem nepřidá nic.
-            for (int pi = 0; pi < mrizka.PrazdnychZrcadlenych; pi++)
-                band.Add(new(mrizka.ZakladSpojeMm, "", headerResolved));
             PridejUsekySkupin(band, zrcadlene, groups, headerCentered,
                 mrizka.SirkaUsekuZrcadlenehoMm);
             if (mrizka.MezeraZaZrcadlenymMm > 0f)
@@ -2154,10 +2269,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // **vpravo ve sloupci zastávek**, za názvem - proto overlay, ne předsazení před název.
             var znakZastavky = SymbolRunRenderer.BuildRuns(
                 stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveZastavka);
+            // Čára úseku z trasy: u rozdvojené zastávky patří dvojici jako celku, takže horní řádek
+            // nese tu nad ní a dolní tu pod ní - jinak by čára prošla dvojicí napůl.
+            bool caraPod = caraUseku is not null && MaCaruPod(stop)
+                        && rozdvojenyRadek is not RozdvojenyRadek.Horni;
+            bool caraNad = caraUseku is not null && MaCaruNad(stop)
+                        && rozdvojenyRadek is not RozdvojenyRadek.Dolni;
             plan.Add(new(RowKind.Data, rowH, specs)
             {
                 Background = ColorHex.ParseOrNull(rowHl),
                 VerticalLinePaint = sloupcovaCara,
+                LineAbovePaint = caraNad ? caraUseku : null,
+                LineBelowPaint = caraPod ? caraUseku : null,
                 Decorate = (znackyRadku.Count == 0) && (znackyVBunceZrc.Count == 0)
                         && (znakZastavky.Count == 0) && rozdvojenyRadek is RozdvojenyRadek.Zadny
                         ? null : rowY =>
@@ -2233,8 +2356,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return plan;
     }
 
-    /// <summary>Řádek, kde popisové sloupce jsou prázdné a spojové nesou znak z <paramref name="text"/>
-    /// (platnost, negativní značky).</summary>
     /// <summary>
     /// Atribut zastávky, který se kreslí piktogramem vpravo ve sloupci zastávek.
     /// </summary>
@@ -2329,8 +2450,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             string cas = si < t.Casy.Count ? t.Casy[si] : "";
             if (cas == "") continue;
 
-            string znak = ZnakNavaznosti(t, stop.Poradi);
-            var runs = znak == "" ? [] : SymbolRunRenderer.BuildRuns([znak], SymbolMap.ResolveLinkovy);
+            var runs = PiktogramyBunky(t, si, stop.Poradi);
             bool maZnacku = SymbolRunRenderer.MaPiktogram(runs);
             if (!maZnacku) runs.Clear();   // neověřená značka → jako by žádná nebyla
 
@@ -2344,6 +2464,35 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             else runs.AddRange(casRuns);
             cil[ti] = runs;
         }
+    }
+
+    /// <summary>
+    /// Piktogramy, které v buňce stojí vlevo od času: značky u zastávky a za nimi návaznost.
+    /// </summary>
+    /// <remarks>
+    /// Značka bez ověřeného piktogramu se <b>zahazuje</b>, ne vypisuje písmenem - stejně to filtruje
+    /// starý tisk (<c>JRapiLinPrtWin.mac:3840</c> nekreslí to, pro co číselník nemá symbol).
+    /// <para>⚠️ Stejnou metodou se počítá <b>šířka</b> sloupce i kreslí obsah. Dvě cesty by se
+    /// rozešly a sloupec by přetekl - přesně to se stalo 8. 9. u značek platnosti.</para>
+    /// </remarks>
+    private static List<SymbolRunRenderer.Run> PiktogramyBunky(LineTripData spoj, int si, int poradi)
+    {
+        List<string> znacky = si < spoj.Znacky.Count
+            ? [.. spoj.Znacky[si].Select(z => z.ToString())
+                   .Where(z => SymbolMap.ResolveZastavka(z).Mode == SymbolRenderMode.FontGlyf)]
+            : [];
+        var runs = SymbolRunRenderer.BuildRuns(znacky, SymbolMap.ResolveZastavka);
+        string navaznost = ZnakNavaznosti(spoj, poradi);
+        if (navaznost != "")
+        {
+            var navaznostRuns = SymbolRunRenderer.BuildRuns([navaznost], SymbolMap.ResolveLinkovy);
+            if (SymbolRunRenderer.MaPiktogram(navaznostRuns))
+            {
+                if (runs.Count > 0) runs.Add(new(" ", false));
+                runs.AddRange(navaznostRuns);
+            }
+        }
+        return runs;
     }
 
     /// <summary>
@@ -2526,7 +2675,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     private static void PridejSpoje(List<ColumnRenderer.CellSpec> specs, SloupcovaMrizka mrizka,
         int pocetSpoju, ResolvedTextStyle stylMezery,
-        Func<int, (string Text, ResolvedTextStyle Style)> bunka)
+        Func<int, (string Text, ResolvedTextStyle Style)> bunka,
+        ResolvedTextStyle? stylPrazdne = null)
     {
         for (int ti = 0; ti < pocetSpoju; ti++)
         {
@@ -2534,11 +2684,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (mezera) specs.Add(BunkaMezery(mrizka.MezeraMm, stylMezery));
             var (text, style) = bunka(ti);
             specs.Add(new(mrizka.SirkaSpojeMm(ti), text, style, SuppressLeadingLine: mezera));
+            // Prázdné sloupce dorovnání stojí hned za svým spojem - viz RozlozeniPrazdnych.
+            // Styl je styl řádku, ne mezery: prázdný sloupec je součást tabulky a musí mít
+            // podbarvení záhlaví, kdežto mezerou mezi skupinami prosvítá stránka.
+            for (int pi = 0; pi < mrizka.PrazdnychPoSpoji(ti); pi++)
+                specs.Add(new(mrizka.SirkaPrazdnehoMm, "", stylPrazdne ?? style));
         }
     }
 
-    /// <summary>Prázdná buňka mezery mezi skupinami sloupců - bez pozadí, ať mezerou prosvítá
-    /// stránka a pruh záhlaví se v ní přeruší.</summary>
     /// <summary>
     /// Vysází do pásu sloučené buňky <b>úseků skupin dnů</b> - jednu na každý souvislý úsek spojů
     /// téže skupiny.
@@ -2573,12 +2726,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         Func<int, (string Text, ResolvedTextStyle Style)> bunka,
         ResolvedTextStyle? stylPrazdne = null)
     {
-        // Dorovnání stojí před spoji - na vnější hraně tabulky (viz PrazdnychZrcadlenych).
-        for (int i = 0; i < mrizka.PrazdnychZrcadlenych; i++)
-            specs.Add(new(mrizka.ZakladSpojeMm, "", stylPrazdne ?? stylMezery));
         for (int ti = 0; ti < pocet; ti++)
         {
             var (text, style) = bunka(ti);
+            for (int pi = 0; pi < mrizka.PrazdnychPredZrcadlenym(ti); pi++)
+                specs.Add(new(mrizka.SirkaPrazdnehoMm, "", stylPrazdne ?? style));
             specs.Add(new(mrizka.SirkaZrcadlenehoMm(ti), text, style));
         }
         if (mrizka.MezeraZaZrcadlenymMm > 0f)
@@ -2716,7 +2868,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         float headerFontPx = headerResolved.FontSize * PtToMm * ctx.MmToPx;
         using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
-        float currentY = RenderSectionHeader(ctx, "Linkový JŘ - zastávky × spoje", X, Y, Width, headerH,
+        float currentY = RenderSectionHeader(ctx, "Tabulka spojů - zastávky × spoje", X, Y, Width, headerH,
             headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid);
 
         float dataFontPx = dataResolved.FontSize * PtToMm * ctx.MmToPx;
@@ -2745,6 +2897,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             NejvetsiSirkaSpojeMm = NejvetsiSirkaSpojeMm,
             FormatCasu = FormatCasu,
             TucneZastavkyDleTrasy = TucneZastavkyDleTrasy,
+            CaryZastavekDleTrasy = CaryZastavekDleTrasy,
             PomerZnacek = PomerZnacek,
             PomerMinuty = PomerMinuty,
             VyplnitPrazdneBunkySpoju = VyplnitPrazdneBunkySpoju,
@@ -2821,6 +2974,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
         new BoolPropertyDescriptor { Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
         new BoolPropertyDescriptor { Label = "Tučné zastávky dle trasy", Group = "Datové buňky", Get = () => TucneZastavkyDleTrasy, Set = v => TucneZastavkyDleTrasy = v },
+        new BoolPropertyDescriptor { Label = "Čáry u zastávek dle trasy", Group = "Datové buňky", Get = () => CaryZastavekDleTrasy, Set = v => CaryZastavekDleTrasy = v },
         new FloatPropertyDescriptor
         {
             Label = "Velikost značek", Group = "Řádky",

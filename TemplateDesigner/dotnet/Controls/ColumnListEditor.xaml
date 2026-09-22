@@ -44,8 +44,10 @@
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
             <Button Content="▲" Width="28" Padding="2,1" Margin="0,0,4,0"
+                    ToolTip="Posunout nahoru"
                     Command="{Binding MoveUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
             <Button Content="▼" Width="28" Padding="2,1"
+                    ToolTip="Posunout dolů"
                     Command="{Binding MoveDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
         </StackPanel>
     </Grid>

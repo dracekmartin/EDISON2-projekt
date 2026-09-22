@@ -13,11 +13,16 @@ namespace TemplateDesigner.Controls;
 /// DataContext = CellStyleVM. EditOptions řídí, které řádky se zobrazí.
 /// Placeholdery zobrazují zděděné hodnoty (CellStyleVM.Inherited) u polí, která uživatel
 /// explicitně nepřepsal. Tri-state checkboxy = null znamená „dědit".
-/// Pick/Clear commands deleguje na rodiče (dialog VM).
+/// Tlačítka barev jedou přes příkazy na <see cref="CellStyleVM"/>; tenhle control mu jen dosadí,
+/// jak výběr barvy vyvolat.
 /// </summary>
 public partial class CellStyleEditor : UserControl
 {
-    public CellStyleEditor() { InitializeComponent(); }
+    public CellStyleEditor()
+    {
+        InitializeComponent();
+        DataContextChanged += OnDataContextChanged;
+    }
 
     // ── Nullable-enum ItemsSource pro HAlign/VAlign ComboBoxy ─────────────
     // Value je nullable, první položka reprezentuje „dědit" (null sentinel).
@@ -90,37 +95,12 @@ public partial class CellStyleEditor : UserControl
         DependencyProperty.Register(nameof(EditOptions), typeof(CellStyleEditOptions), typeof(CellStyleEditor),
             new PropertyMetadata(CellStyleEditOptions.AllEnabled));
 
-    // ── Color picker commands (delegovány na rodiče) ──────────────────────
-
-    public ICommand? PickTextColorCommand
+    // Výběr barvy potřebuje okno jako rodiče, a to zná jedině tenhle control - dosadí ho proto
+    // VM sám. Dialogy tím nemusí drátovat nic (do 21. 9. každý 8 příkazů a vlastní picker).
+    private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        get => (ICommand?)GetValue(PickTextColorCommandProperty);
-        set => SetValue(PickTextColorCommandProperty, value);
+        if (e.NewValue is CellStyleVM vm)
+            vm.RequestColorPicker = hex =>
+                Window.GetWindow(this) is { } okno ? ColorPickerHelper.PickColor(okno, hex) : null;
     }
-    public static readonly DependencyProperty PickTextColorCommandProperty =
-        DependencyProperty.Register(nameof(PickTextColorCommand), typeof(ICommand), typeof(CellStyleEditor));
-
-    public ICommand? ClearTextColorCommand
-    {
-        get => (ICommand?)GetValue(ClearTextColorCommandProperty);
-        set => SetValue(ClearTextColorCommandProperty, value);
-    }
-    public static readonly DependencyProperty ClearTextColorCommandProperty =
-        DependencyProperty.Register(nameof(ClearTextColorCommand), typeof(ICommand), typeof(CellStyleEditor));
-
-    public ICommand? PickBgColorCommand
-    {
-        get => (ICommand?)GetValue(PickBgColorCommandProperty);
-        set => SetValue(PickBgColorCommandProperty, value);
-    }
-    public static readonly DependencyProperty PickBgColorCommandProperty =
-        DependencyProperty.Register(nameof(PickBgColorCommand), typeof(ICommand), typeof(CellStyleEditor));
-
-    public ICommand? ClearBgColorCommand
-    {
-        get => (ICommand?)GetValue(ClearBgColorCommandProperty);
-        set => SetValue(ClearBgColorCommandProperty, value);
-    }
-    public static readonly DependencyProperty ClearBgColorCommandProperty =
-        DependencyProperty.Register(nameof(ClearBgColorCommand), typeof(ICommand), typeof(CellStyleEditor));
 }

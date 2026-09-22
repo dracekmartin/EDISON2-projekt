@@ -21,15 +21,9 @@ class StyleEditDialogViewModel : EDViewModel
     public CellStyleVM Style { get; }
     public CellStyleEditOptions EditOptions { get; } = CellStyleEditOptions.AllEnabled;
 
-    public Func<string, string?>? RequestColorPicker { get; set; }
-
     /// <summary>Po OK: undo-able command měnící danou style property (null = beze změny).</summary>
     public IDesignerCommand? ResultCommand { get; private set; }
 
-    public RelayCommand PickTextColorCommand { get; }
-    public RelayCommand ClearTextColorCommand { get; }
-    public RelayCommand PickBgColorCommand { get; }
-    public RelayCommand ClearBgColorCommand { get; }
     public RelayCommand ResetStyleCommand { get; }
 
     public StyleEditDialogViewModel(object element, string prefix, ResolvedTextStyle inherited)
@@ -39,11 +33,7 @@ class StyleEditDialogViewModel : EDViewModel
         _original = element.GetType().GetProperty(prefix)?.GetValue(element) as TextStyle;
         Style = CellStyleVM.FromModel(_original, inherited);
 
-        PickTextColorCommand  = Command(() => { var c = RequestColorPicker?.Invoke(Style.TextColor ?? ""); if (c is not null) Style.TextColor = c; });
-        PickBgColorCommand    = Command(() => { var c = RequestColorPicker?.Invoke(Style.BgColor ?? "");   if (c is not null) Style.BgColor = c; });
-        ClearTextColorCommand = Command(() => Style.TextColor = null);
-        ClearBgColorCommand   = Command(() => Style.BgColor = null);
-        ResetStyleCommand     = Command(() => Style.Reset());
+        ResetStyleCommand = Command(() => Style.Reset());
     }
 
     protected override void OnOk()

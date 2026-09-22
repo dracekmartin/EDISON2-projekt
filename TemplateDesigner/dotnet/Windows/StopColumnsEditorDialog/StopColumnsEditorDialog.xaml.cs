@@ -42,7 +42,6 @@ public partial class StopColumnsEditorDialog : Window
         ElementFormBinder.HookFontWeightRefresh(GeneralForm);
         GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 
-        _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         _vm.RequestClose += result => { DialogResult = result; Close(); };
     }
 

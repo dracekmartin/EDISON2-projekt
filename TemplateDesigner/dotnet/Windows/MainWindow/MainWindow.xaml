@@ -6,6 +6,7 @@
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:aiguide="clr-namespace:TemplateDesigner.Windows.AiGuideDialog"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
+        xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox;assembly=EDControls"
         Title="Návrhář sestav" Height="768" Width="1280"
         Icon="{StaticResource EDIcons.Molecule}"
         WindowState="Maximized"
@@ -24,6 +25,19 @@
                 <Setter Property="Foreground"   Value="{DynamicResource EDTheme.Text.Primary}"/>
             </Style>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+            <!-- Položka rozbalovacího seznamu instancí. Ne tlačítko: sdílená šablona tlačítka
+                 sází obsah na střed napevno, takže by čísla linek stála každé jinde. -->
+            <Style x:Key="InstanceListItemRow" TargetType="Border">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Padding"    Value="8,4"/>
+                <Setter Property="Cursor"     Value="Hand"/>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
 
             <!-- Rozměr ikon v toolbaru/paletě - FontService škáluje token spolu s user fontem. -->
             <Style x:Key="ToolbarIconStyle" TargetType="Image">
@@ -312,7 +326,7 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.ImageElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, EAN, ...)" Tag="BarcodeElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový)" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
@@ -336,7 +350,7 @@
                         </Button>
                         <!-- Hlavní tabulka sestavy před poznámkami - poznámky jsou doplněk. U zastávkových
                              to pořadí drží samo, u linkových by poznámky stály před svou tabulkou. -->
-                        <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Linkový JŘ (zastávky × spoje)" Tag="LineTableElement"
+                        <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Tabulka spojů (zastávky × spoje)" Tag="LineTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
@@ -862,7 +876,7 @@
                     <Border Grid.Column="1" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
 
                     <!-- 2) Instance chip (klikatelný - OpenInstancePicker) -->
-                    <Border Grid.Column="2"
+                    <Border x:Name="InstanceChip" Grid.Column="2"
                             Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
                             ToolTip="{Binding InstancePickerHint}">
@@ -896,6 +910,14 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
+                            <!-- Šipka nahoru drží vzhled sousedních šipek; seznam se rozbaluje nad lištu. -->
+                            <Button Content="▲" Command="{Binding OpenInstanceListCommand}"
+                                    Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,0"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                    Cursor="Hand" Margin="4,0,0,0"
+                                    ToolTip="{Binding InstancePickerHint}"/>
                             <Button Content="▶" Command="{Binding NextInstanceCommand}"
                                     Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
                                     Background="Transparent" BorderThickness="0" Padding="4,0"
@@ -909,6 +931,56 @@
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                        Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                        Margin="12,0,0,0" VerticalAlignment="Center"/>
+
+                            <!-- Seznam vybraných instancí. Popup je v logickém stromu chipu, takže
+                                 dědí DataContext okna a položky se vážou přímo na ViewModel. -->
+                            <Popup IsOpen="{Binding IsInstanceListOpen, Mode=TwoWay}"
+                                   PlacementTarget="{Binding ElementName=InstanceChip}"
+                                   Placement="Top" VerticalOffset="-4"
+                                   StaysOpen="False" AllowsTransparency="True"
+                                   Focusable="False" PopupAnimation="Fade">
+                                <Border Background="{DynamicResource EDTheme.Bg.Surface}"
+                                        BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                                        BorderThickness="1" CornerRadius="3"
+                                        MinWidth="220" MaxWidth="340" Padding="0,4">
+                                    <StackPanel>
+                                        <edstx:EDSearchTextBox Text="{Binding InstanceFilter, UpdateSourceTrigger=PropertyChanged}"
+                                                 Visibility="{Binding ShowInstanceFilter, Converter={StaticResource BoolToVis}}"
+                                                 Placeholder="{Binding InstanceFilterHint}"
+                                                 Margin="8,4" Padding="4,2"
+                                                 FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                        <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                                            <ItemsControl ItemsSource="{Binding InstanceVolby}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Style="{StaticResource InstanceListItemRow}">
+                                                            <Border.InputBindings>
+                                                                <MouseBinding MouseAction="LeftClick"
+                                                                              Command="{Binding DataContext.SelectInstanceCommand,
+                                                                                        RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                              CommandParameter="{Binding Index}"/>
+                                                            </Border.InputBindings>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="16"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0" Text="✓"
+                                                                           Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                                                           Visibility="{Binding JeAktualni, Converter={StaticResource BoolToVis}}"/>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Display}"
+                                                                           Foreground="{DynamicResource EDTheme.Text.Primary}"
+                                                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </StackPanel>
+                                </Border>
+                            </Popup>
                         </StackPanel>
                     </Border>
 
