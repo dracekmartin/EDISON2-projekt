@@ -1704,13 +1704,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float headerH = ComputeHeaderH(MaxHeaderFontPt()) * LayoutZmenseni;
         float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * LayoutZmenseni;
 
+        // ⚠️ Značkové řádky se řídí spoji **tohoto bloku**, ne celé linky: blok, ve kterém žádný
+        // spoj druhý řádek platnosti nemá, by jinak nesl prázdný pás přes celou šířku tabulky
+        // (nález Jan 22. 9. na lince 330510: čtyři spoje ze skupin 2 a 3 přidaly řádek i části se
+        // skupinou 1). Pás skupin dnů zůstává podle celé linky - ten musí být nad každým blokem.
+        var spojeTohotoBloku = new List<LineTripData>(spojeBloku);
+        if (zrcadleneBloku is not null) spojeTohotoBloku.AddRange(zrcadleneBloku);
+
         var hlava = new List<float>();
         if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
         hlava.Add(headerH);                                                  // řádek čísel spojů
-        for (int tr = 0; tr < PocetTurnusovychRadku(trips); tr++) hlava.Add(rowH);
+        for (int tr = 0; tr < PocetTurnusovychRadku(spojeTohotoBloku); tr++) hlava.Add(rowH);
         float znackaH = VyskaRadkuZnacek(rowH);
-        for (int pr = 0; pr < PocetRadkuPlatnosti(trips); pr++) hlava.Add(znackaH);
-        if (HasNzRow(trips)) hlava.Add(znackaH);
+        for (int pr = 0; pr < PocetRadkuPlatnosti(spojeTohotoBloku); pr++) hlava.Add(znackaH);
+        if (HasNzRow(spojeTohotoBloku)) hlava.Add(znackaH);
 
         // Jen viditelné zastávky a jejich přípojné řádky (matched na Poradi zastávky - jako render).
         var visibleStops = RowConditions.VisibleRows(_cachedStops!, s => s.SourceRow, RowVisibilityExpression);
@@ -1784,12 +1791,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     /// <summary>Pokračovací stránka zopakuje hlavu bloku - pás skupin dnů, čísla spojů,
     /// platnost a negativní značky. Bez ní nejde poznat, který sloupec je který spoj.</summary>
+    /// <remarks>Bere se <b>nejvyšší hlava přes bloky</b>: od 22. 9. má každý blok tolik značkových
+    /// řádků, kolik jeho spoje potřebují, a rezerva musí stačit i tomu nejbohatšímu - jinak by se
+    /// na pokračovací stránce hlava ořízla.</remarks>
     public float OpakovanaHlavickaMm(DataContext? data)
     {
         if (data is null) return 0f;
         EnsureParsed(data);
         if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return 0f;
-        return VyskyRadkuBloku(_cachedTrips!).Hlava.Sum();
+
+        float nejvyssi = 0f;
+        foreach (var blok in SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!)))
+        {
+            var (hlavni, zrcadlene) = SpojeBloku(blok);
+            nejvyssi = MathF.Max(nejvyssi, VyskyRadkuBloku(hlavni, zrcadlene).Hlava.Sum());
+        }
+        return nejvyssi;
     }
 
     /// <summary>
@@ -2135,11 +2152,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         // pás názvů skupin dnů - spojité úseky sloupců spojů stejné skupiny (sloučené buňky,
         // proto bez svislých čar, které by nadpis rozsekaly)
-        // ⚠️ O tom, které řádky tabulka MÁ, rozhodují **všechny spoje linky**, ne spoje bloku.
-        // Podle bloku to znamenalo, že pás skupin dnů byl jen nad prvním blokem (nahlásil Jan
-        // 25. 8.) - druhý blok padl celý do jedné skupiny, takže nad ním nebylo poznat, ke kterým
-        // dnům patří. Totéž by potkalo řádek platnosti a negativních značek a rozešlo by to výšku
-        // s `CalculateHeightFromData`, které počítá z celé linky.
+        // ⚠️ Pás skupin dnů se řídí **všemi spoji linky**: podle bloku byl jen nad prvním
+        // (nahlásil Jan 25. 8.), protože druhý blok padl celý do jedné skupiny a nad ním pak
+        // nebylo poznat, ke kterým dnům patří.
+        // Značkové řádky jsou naopak podle spojů **tohoto bloku** (od 22. 9.) - prázdný pás přes
+        // celou tabulku je ztracené místo. Musí to počítat stejně jako `VyskyRadkuBloku`, jinak
+        // se výška prvku rozejde s kreslením.
         if (HasGroupHeaderBand(vsechnySpoje, groups))
         {
             // Popisné sloupce jsou jedna skupina, takže jedna sloučená buňka s jedním nadpisem.
@@ -2200,7 +2218,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // Tak je řadí i starý modul: jeho indexy řádků jdou číslo spoje (1) → turnusy (1.001xx)
         // → platnost (1.1, 1.2…) → negativní značky (1.9), `JRapiLinPrtWin.mac:2948` a `:3795`.
         // Spoj s méně turnusy má zbylé řádky prázdné - řádků je tolik, kolik má nejbohatší spoj.
-        int turnusovychRadku = PocetTurnusovychRadku(vsechnySpoje);
+        var spojeTohotoBloku = new List<LineTripData>(trips);
+        spojeTohotoBloku.AddRange(zrcadlene);
+        int turnusovychRadku = PocetTurnusovychRadku(spojeTohotoBloku);
         for (int tr = 0; tr < turnusovychRadku; tr++)
         {
             plan.Add(new(RowKind.HeaderExtra, rowH,
@@ -2210,7 +2230,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
 
         // řádky platnosti (znaky X/6/7/+ nad spojem) - nejvýš dvě značky na řádek, zbytek pod něj
-        for (int pr = 0; pr < PocetRadkuPlatnosti(vsechnySpoje); pr++)
+        for (int pr = 0; pr < PocetRadkuPlatnosti(spojeTohotoBloku); pr++)
         {
             // Značky se kreslí ručně nad hotovým řádkem, aby šel v jedné buňce střídat symbolový
             // a běžný font („⚒ BEV"). Buňky proto zůstávají prázdné - jinak by se text zdvojil.
@@ -2240,7 +2260,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
 
         // řádek NZ (negativní značky) - kreslí se ručně, protože jde o inverzní box, ne o text
-        if (HasNzRow(vsechnySpoje))
+        if (HasNzRow(spojeTohotoBloku))
         {
             var prazdneNz = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, znackaRowH, prazdneNz)

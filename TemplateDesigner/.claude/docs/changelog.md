@@ -23,6 +23,11 @@ zapnuté, zůstane zapnuté.
 Na 330510 vyjdou sloupce 4,65 až 6,58 mm a linka se vejde na dvě části místo tří; s utaženými
 odstupy 4,50 až 6,15 mm. Se srovnanými sloupci dostanou všechny 6,58 mm a části jsou tři.
 
+**Prázdný pás nad časy zmizel.** Řádky značek platnosti, turnusů a negativních značek se počítají
+podle spojů té části tabulky, ne celé linky: na 330510 měly tři značky jen čtyři spoje ze skupin
+2 a 3, a přesto druhý řádek dostaly i části se skupinou 1, kde zůstal přes celou šířku prázdný.
+Pás s názvy skupin dnů se dál řídí celou linkou - ten musí být nad každou částí.
+
 Tabulka tím přestala sama vyplňovat celou šířku prvku - u linky s málo spoji zbyde vpravo volno,
 dokud se nezapne „Dorovnat prázdnými sloupci". To je tvar starého postskriptového tisku.
 
