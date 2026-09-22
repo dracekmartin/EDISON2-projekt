@@ -20,6 +20,11 @@ samotný čas) a linka se vejde na dvě části místo tří.
 
 Staré šablony převezme migrace 1.14.0: vezme se největší šířka, a když chybí, nejmenší.
 
+K tomu jsou tři nové odstupy v téže skupině, všechny v milimetrech a prázdné = jako dosud
+(mezera z písma): **mezi značkami** nad časem, **mezi značkou a časem** v buňce a **mezi hodinou
+a minutou**. Jsou to jediná místa, kde se ve sloupci dá ubrat, aniž se zmenší písmo - na 330510
+stáhnou při zadaných 4 mm nejširší sloupec z 5,88 na 5,45 mm a s nulami až na 5,05 mm.
+
 Vnitřní okraj buňky navíc ustoupí obsahu - když se čas se značkou do odsazeného místa nevejde,
 vysází se do celé buňky, místo aby přetekl přes hranu sloupce.
 

@@ -41,13 +41,19 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
 
         // ── Skupina "Šířka sloupců" ───────────────────────────────────────
-        // Šířka sloupce spoje je jeden vzorec: zbytek prvku dělený počtem spojů, přiskřípnutý mezi
-        // dno a strop. Všechno, co do něj vstupuje, patří pod jeden nadpis - do 8. 9. to bylo
-        // roztroušené mezi "Sloupce" a "Datové buňky" a nešlo přečíst jako jedna věc.
+        // Šířka sloupce spoje je zadané přání a to, co se do sloupce musí vejít. Všechno, co do
+        // toho vstupuje - i odstupy mezi značkami a časem - patří pod jeden nadpis; do 8. 9. to
+        // bylo roztroušené mezi "Sloupce" a "Datové buňky" a nešlo přečíst jako jedna věc.
         // ⚠️ Ne "Šířka a dělení" - "dělení sloupců" už v UI znamená členění na skupiny dnů.
         d form.AddGroup("width", "Šířka sloupců")
         s f = form.AddDecimal("SirkaSloupceSpojeMm", "Šířka sloupce spoje", "", 0, 200, "mm")
         s f.helpText = "Kolik má sloupec měřit. Prázdné = sloupce si rozdělí šířku prvku a vpravo nic nezbyde. Vyplněné = užší sloupce a vpravo volné místo, jako ve starém postskriptovém tisku; sloupec, do kterého se obsah nevejde, zůstane širší, takže nic nepřeteče a písmo se nezmenší. Pod 3 mm to nepustí."
+        s f = form.AddDecimal("MezeraMeziZnackamiMm", "Mezera mezi značkami", "", 0, 10, "mm")
+        s f.helpText = "Odstup mezi značkami nad časem (například kladívko a vozík vedle sebe). Prázdné = mezera z písma. Dvojice značek bývá ve sloupci to nejširší, takže utažením téhle mezery jde sloupec zúžit až na šířku času."
+        s f = form.AddDecimal("MezeraZnackaCasMm", "Mezera mezi značkou a časem", "", 0, 10, "mm")
+        s f.helpText = "Odstup značky, která stojí v buňce vlevo od času (návaznost, jen nástup). Prázdné = mezera z písma."
+        s f = form.AddDecimal("MezeraHodinaMinutaMm", "Mezera mezi hodinou a minutou", "", 0, 10, "mm")
+        s f.helpText = "Odstup mezi hodinou a menší minutou. Prázdné = mezera z písma. Uplatní se jen u formátu s hodinou větším písmem a zužuje i sloupec, protože je uvnitř času."
         s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
         s f.helpText = "Co se stane s volným místem vpravo: zapnuté = rozkreslí se prázdnými sloupci, takže tabulka končí rovně, vypnuté = zůstane bílé. Týká se posledního nedopsaného bloku i tabulky, které místo zbylo kvůli největší šířce."
         s f = form.AddBool("JednotnaSirkaSpoju", "Stejně široké sloupce spojů", 1)

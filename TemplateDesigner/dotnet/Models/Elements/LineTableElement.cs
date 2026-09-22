@@ -165,6 +165,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public float? SirkaSloupceSpojeMm { get; set; }
 
+    /// <summary>Mezera mezi značkami nad časem v mm. Null = mezera z písma.</summary>
+    /// <remarks>Dvojice piktogramů („kladívko vozík") je nad časy nejširší věc ve sloupci, takže
+    /// právě tahle mezera rozhoduje, jak úzký sloupec může být. Z písma vychází při 4,8 pt zhruba
+    /// 0,6 mm ze 4,3 mm celé dvojice - utažením se sloupec dostane na úroveň času
+    /// (požadavek Jan 22. 9.).</remarks>
+    public float? MezeraMeziZnackamiMm { get; set; }
+
+    /// <summary>Mezera mezi značkou v buňce a časem v mm. Null = mezera z písma.</summary>
+    public float? MezeraZnackaCasMm { get; set; }
+
+    /// <summary>Mezera mezi hodinou a minutou v mm (formát s menšími minutami). Null = z písma.</summary>
+    /// <remarks>Je uvnitř změřené šířky času, takže utažením klesne i dolní hranice sloupce -
+    /// jinak se pod šířku času nedá jít jinak než menším písmem.</remarks>
+    public float? MezeraHodinaMinutaMm { get; set; }
+
     /// <summary>
     /// Vyplnit tečkami buňky spojů, ve kterých není čas (výchozí vypnuto).
     /// </summary>
@@ -736,6 +751,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float x = 0f, levy = float.MaxValue, pravy = float.MinValue;
         foreach (var r in runs)
         {
+            if (r.MezeraMm is float mezera) { x += mezera / PtToMm; continue; }
             var f = font(r);
             float postup = f.MeasureText(r.Text, out var stopa);
             if (stopa.Width > 0f)
@@ -780,7 +796,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             for (int r = 0; r < radku; r++)
             {
                 float sirka = StopaPt(SymbolRunRenderer.BuildRuns(
-                    ZnackyRadku(spoj, r), SymbolMap.ResolveLinkovy), run => run.Symbol ? symbol : normal);
+                    ZnackyRadku(spoj, r), SymbolMap.ResolveLinkovy, MezeraMeziZnackamiMm),
+                    run => run.Symbol ? symbol : normal);
                 if (sirka * PtToMm <= potreba) continue;
                 potreba = sirka * PtToMm;
                 kde = $"značky platnosti u spoje {spoj.CisloSpoje}";
@@ -836,8 +853,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
         using var maly = new SKFont(GetTypeface(st), st.FontSize * pomer);
-        return StopaPt([new("23", false), new(" 59", false, pomer)],
-            r => r.Zmenseni < 0.999f ? maly : font);
+        // Tytéž úseky jako `CasRuns`, včetně nastavitelného odstupu - jinak by se dolní hranice
+        // sloupce o utaženou mezeru nesnížila.
+        return StopaPt([new("23", false), SymbolRunRenderer.Mezera(MezeraHodinaMinutaMm, pomer),
+            new("59", false, pomer)], r => r.Zmenseni < 0.999f ? maly : font);
     }
 
     /// <summary>
@@ -2278,12 +2297,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // Značky se kreslí ručně nad hotovým řádkem, aby šel v jedné buňce střídat symbolový
             // a běžný font („⚒ BEV"). Buňky proto zůstávají prázdné - jinak by se text zdvojil.
             var platnostRuns = trips
-                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy))
+                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy,
+                    MezeraMeziZnackamiMm))
                 .ToList();
             // Zrcadlený blok má svoje značky platnosti - bez nich by jeho sloupce neřekly, ve které
             // dny spoj jede, a to je informace, ne ozdoba.
             var platnostRunsZrc = zrcadlene
-                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy))
+                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy,
+                    MezeraMeziZnackamiMm))
                 .ToList();
             var prazdne = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, znackaRowH, prazdne)
@@ -2607,7 +2628,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (!maZnacku) runs.Clear();   // neověřená značka → jako by žádná nebyla
 
         var casRuns = CasRuns(cas);
-        if (maZnacku) runs.Add(new(" ", false));
+        if (maZnacku) runs.Add(SymbolRunRenderer.Mezera(MezeraZnackaCasMm));
         if (casRuns is null) runs.Add(new(cas, false));
         else runs.AddRange(casRuns);
         return (runs, maZnacku, casRuns is not null);
@@ -2622,20 +2643,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <para>⚠️ Stejnou metodou se počítá <b>šířka</b> sloupce i kreslí obsah. Dvě cesty by se
     /// rozešly a sloupec by přetekl - přesně to se stalo 8. 9. u značek platnosti.</para>
     /// </remarks>
-    private static List<SymbolRunRenderer.Run> PiktogramyBunky(LineTripData spoj, int si, int poradi)
+    private List<SymbolRunRenderer.Run> PiktogramyBunky(LineTripData spoj, int si, int poradi)
     {
         List<string> znacky = si < spoj.Znacky.Count
             ? [.. spoj.Znacky[si].Select(z => z.ToString())
                    .Where(z => SymbolMap.ResolveZastavka(z).Mode == SymbolRenderMode.FontGlyf)]
             : [];
-        var runs = SymbolRunRenderer.BuildRuns(znacky, SymbolMap.ResolveZastavka);
+        var runs = SymbolRunRenderer.BuildRuns(znacky, SymbolMap.ResolveZastavka, MezeraMeziZnackamiMm);
         string navaznost = ZnakNavaznosti(spoj, poradi);
         if (navaznost != "")
         {
             var navaznostRuns = SymbolRunRenderer.BuildRuns([navaznost], SymbolMap.ResolveLinkovy);
             if (SymbolRunRenderer.MaPiktogram(navaznostRuns))
             {
-                if (runs.Count > 0) runs.Add(new(" ", false));
+                if (runs.Count > 0) runs.Add(SymbolRunRenderer.Mezera(MezeraMeziZnackamiMm));
                 runs.AddRange(navaznostRuns);
             }
         }
@@ -2724,7 +2745,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         hodina = hodina.TrimStart('0');
         if (hodina == "") hodina = "0";
         float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
-        return [new(hodina, false), new(" ", false, pomer), new(minuta, false, pomer)];
+        return [new(hodina, false), SymbolRunRenderer.Mezera(MezeraHodinaMinutaMm, pomer),
+            new(minuta, false, pomer)];
     }
 
     /// <summary>Značka návaznosti, kterou má spoj u tohohle tarifního čísla - prázdné, když žádná.
@@ -3041,6 +3063,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PadEmptyColumns = PadEmptyColumns,
             JednotnaSirkaSpoju = JednotnaSirkaSpoju,
             SirkaSloupceSpojeMm = SirkaSloupceSpojeMm,
+            MezeraMeziZnackamiMm = MezeraMeziZnackamiMm,
+            MezeraZnackaCasMm = MezeraZnackaCasMm,
+            MezeraHodinaMinutaMm = MezeraHodinaMinutaMm,
             FormatCasu = FormatCasu,
             TucneZastavkyDleTrasy = TucneZastavkyDleTrasy,
             CaryZastavekDleTrasy = CaryZastavekDleTrasy,
@@ -3095,6 +3120,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Unit = "mm", Min = 0, Max = 200, Format = "0.##",
             Get = () => SirkaSloupceSpojeMm ?? 0f,
             Set = v => SirkaSloupceSpojeMm = v <= 0f ? null : v },
+        new FloatPropertyDescriptor { Label = "Mezera mezi značkami", Group = SirkaGroup,
+            Unit = "mm", Min = 0, Max = 10, Format = "0.##",
+            Get = () => MezeraMeziZnackamiMm ?? 0f,
+            Set = v => MezeraMeziZnackamiMm = v <= 0f ? null : v },
+        new FloatPropertyDescriptor { Label = "Mezera mezi značkou a časem", Group = SirkaGroup,
+            Unit = "mm", Min = 0, Max = 10, Format = "0.##",
+            Get = () => MezeraZnackaCasMm ?? 0f,
+            Set = v => MezeraZnackaCasMm = v <= 0f ? null : v },
+        new FloatPropertyDescriptor { Label = "Mezera mezi hodinou a minutou", Group = SirkaGroup,
+            Unit = "mm", Min = 0, Max = 10, Format = "0.##",
+            Get = () => MezeraHodinaMinutaMm ?? 0f,
+            Set = v => MezeraHodinaMinutaMm = v <= 0f ? null : v },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = SirkaGroup, Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
         new BoolPropertyDescriptor { Label = "Stejně široké sloupce spojů", Group = SirkaGroup, Get = () => JednotnaSirkaSpoju, Set = v => JednotnaSirkaSpoju = v },
         new EnumPropertyDescriptor

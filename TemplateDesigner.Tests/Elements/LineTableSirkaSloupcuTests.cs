@@ -150,6 +150,44 @@ public class LineTableSirkaSloupcuTests
         Assert.Equal(60, bloky.Sum(b => b.Pocet));
     }
 
+    // ── Odstupy uvnitř sloupce ──────────────────────────────────────────────
+
+    /// <summary>
+    /// ⚠️ Mezera mezi značkami nad časem je jediná cesta, jak zúžit sloupec, ve kterém stojí
+    /// dvojice piktogramů - ty jsou širší než čas a jinak by se muselo zmenšit písmo
+    /// (požadavek Jan 22. 9.).
+    /// </summary>
+    [Fact]
+    public void MezeraMeziZnackamiUtahneSloupec()
+    {
+        var data = DataSeZnackami(spoju: 20);
+        var uzka = Prvek();
+        uzka.SirkaSloupceSpojeMm = 3f;
+        uzka.MezeraMeziZnackamiMm = 0f;
+        var zPisma = Prvek();
+        zPisma.SirkaSloupceSpojeMm = 3f;
+
+        Assert.True(SirkaSloupce(uzka, data) < SirkaSloupce(zPisma, data) - 0.2f,
+            $"se zadanou mezerou {SirkaSloupce(uzka, data):0.00} mm, s mezerou z písma "
+            + $"{SirkaSloupce(zPisma, data):0.00} mm - odstup se do šířky nepropsal");
+    }
+
+    /// <summary>Mezera mezi hodinou a minutou je uvnitř času, takže utáhne i sloupec jen s minutami.</summary>
+    [Fact]
+    public void MezeraHodinaMinutaUtahneSloupecSMinutami()
+    {
+        var data = Data(spoju: 20);
+        var uzka = Prvek();
+        uzka.SirkaSloupceSpojeMm = 1f;   // rozhoduje obsah
+        uzka.MezeraHodinaMinutaMm = 0f;
+        var zPisma = Prvek();
+        zPisma.SirkaSloupceSpojeMm = 1f;
+
+        Assert.True(SirkaSloupce(uzka, data) < SirkaSloupce(zPisma, data) - 0.1f,
+            $"se zadanou mezerou {SirkaSloupce(uzka, data):0.00} mm, z písma "
+            + $"{SirkaSloupce(zPisma, data):0.00} mm");
+    }
+
     // ── Dorovnání volného místa ─────────────────────────────────────────────
 
     /// <summary>
@@ -245,6 +283,9 @@ public class LineTableSirkaSloupcuTests
     /// <summary>Nastavení šířky jsou v panelu v jedné skupině.</summary>
     [Theory]
     [InlineData("Šířka sloupce spoje")]
+    [InlineData("Mezera mezi značkami")]
+    [InlineData("Mezera mezi značkou a časem")]
+    [InlineData("Mezera mezi hodinou a minutou")]
     [InlineData("Dorovnat prázdnými sloupci")]
     [InlineData("Stejně široké sloupce spojů")]
     [InlineData("Mezera mezi skupinami sloupců")]
@@ -270,8 +311,16 @@ public class LineTableSirkaSloupcuTests
     {
         var prvek = Prvek();
         prvek.SirkaSloupceSpojeMm = 7f;
+        prvek.MezeraMeziZnackamiMm = 0.2f;
+        prvek.MezeraZnackaCasMm = 0.3f;
+        prvek.MezeraHodinaMinutaMm = 0.1f;
 
-        Assert.Equal(7f, ((LineTableElement)prvek.Clone()).SirkaSloupceSpojeMm);
+        var kopie = (LineTableElement)prvek.Clone();
+
+        Assert.Equal(7f, kopie.SirkaSloupceSpojeMm);
+        Assert.Equal(0.2f, kopie.MezeraMeziZnackamiMm);
+        Assert.Equal(0.3f, kopie.MezeraZnackaCasMm);
+        Assert.Equal(0.1f, kopie.MezeraHodinaMinutaMm);
     }
 
     // ── Fixtury ─────────────────────────────────────────────────────────────
