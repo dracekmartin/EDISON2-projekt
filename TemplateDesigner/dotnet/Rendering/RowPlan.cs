@@ -176,7 +176,10 @@ public static class RowPlanRenderer
     private static float NaPixel(float yPx, float strokePx)
     {
         if (strokePx <= 0f) return yPx;
-        bool lichy = (int)MathF.Round(strokePx) % 2 == 1;
-        return lichy ? MathF.Floor(yPx) + 0.5f : MathF.Round(yPx);
+        // ⚠️ Tenčí tah než pixel a půl patří doprostřed pixelu, ne na jeho hranu - na hraně by se
+        // rozdělil na dvě šedé řady, což je přesně ta „dvakrát silnější" čára. Nad tou hranicí
+        // rozhoduje lichost: lichý počet pixelů sedí na půlce, sudý na celém.
+        if (strokePx <= 1.5f) return MathF.Floor(yPx) + 0.5f;
+        return (int)MathF.Round(strokePx) % 2 == 1 ? MathF.Floor(yPx) + 0.5f : MathF.Round(yPx);
     }
 }
