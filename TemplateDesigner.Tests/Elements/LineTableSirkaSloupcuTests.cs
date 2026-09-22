@@ -60,19 +60,36 @@ public class LineTableSirkaSloupcuTests
         Assert.Equal(SirkaSloupce(Prvek(), data), SirkaSloupce(bezZadani, data), precision: 3);
     }
 
-    /// <summary>Nesmyslně malá hodnota sloupec nerozbije - zůstane tak široký, jak se do něj
-    /// vejde čas, a nikdy ne pod tvrdou hranicí čitelnosti.</summary>
+    /// <summary>
+    /// ⚠️ Zadaná šířka sežere nejdřív <b>vůli</b> kolem obsahu, teprve o číslice se zarazí.
+    /// Bez toho zůstal sloupec o milimetr širší, než si uživatel řekl, a u sloupců jen s minutami
+    /// to bylo vidět jako zbytečné místo (nález Jan 22. 9.).
+    /// </summary>
     [Fact]
-    public void SirkaPodObsahemSloupecNezuzi()
+    public void ZadanaSirkaSezereNejdrivVuli()
     {
         var data = Data(spoju: 5);
-        var prvek = Prvek();
-        prvek.SirkaSloupceSpojeMm = 0.5f;
-        var bezZadani = Prvek();
-        bezZadani.Width = 1f;   // tady o šířce rozhoduje jen obsah
+        var uzky = Prvek();
+        uzky.SirkaSloupceSpojeMm = 0.5f;   // pod vším, takže zůstane holý obsah
+        var automaticky = Prvek();
+        automaticky.Width = 1f;            // bez zadání rozhoduje obsah i s vůlí
 
-        Assert.True(SirkaSloupce(prvek, data) >= 3f);
-        Assert.Equal(SirkaSloupce(bezZadani, data), SirkaSloupce(prvek, data), precision: 2);
+        float holy = SirkaSloupce(uzky, data);
+        float sVuli = SirkaSloupce(automaticky, data);
+
+        Assert.True(holy >= 3f, $"sloupec vyšel {holy:0.00} mm - pod tvrdou hranicí čitelnosti");
+        Assert.True(sVuli > holy + 0.5f,
+            $"holý obsah {holy:0.00} mm proti {sVuli:0.00} mm s vůlí - vůle neustoupila");
+    }
+
+    /// <summary>Zadaná hodnota nad obsahem platí přesně - vůle se k ní nepřičítá.</summary>
+    [Fact]
+    public void ZadanaSirkaNadObsahemPlatiPresne()
+    {
+        var prvek = Prvek();
+        prvek.SirkaSloupceSpojeMm = 6f;
+
+        Assert.Equal(6f, SirkaSloupce(prvek, Data(spoju: 20)), precision: 2);
     }
 
     // ── Sloupec, do kterého se obsah nevejde ────────────────────────────────
@@ -156,8 +173,8 @@ public class LineTableSirkaSloupcuTests
     // ── Vnitřní okraj ───────────────────────────────────────────────────────
 
     /// <summary>
-    /// Vůle kolem času se s vnitřním okrajem <b>nesčítá</b> - platí ta větší z nich. Projeví se
-    /// na potřebě sloupce, tedy tam, kde se sloupec už zúžit nedá.
+    /// Vůle kolem času se s vnitřním okrajem <b>nesčítá</b> - platí ta větší z nich. Měří se bez
+    /// zadané šířky; s ní vůle ustupuje (viz <c>ZadanaSirkaSezereNejdrivVuli</c>).
     /// </summary>
     [Fact]
     public void VuleSeSOkrajemNescita()
@@ -178,7 +195,9 @@ public class LineTableSirkaSloupcuTests
 
         static LineTableElement Uzky()
         {
-            var prvek = new LineTableElement { X = 0, Y = 0, Width = 120, SirkaSloupceSpojeMm = 3f };
+            // Prvek tak úzký, že o sloupci rozhoduje obsah, a bez zadané šířky - jinak by vůle
+            // ustoupila a okraj by neměl co ukázat.
+            var prvek = new LineTableElement { X = 0, Y = 0, Width = 1 };
             prvek.DataStyle.FontSize = 5f;
             return prvek;
         }

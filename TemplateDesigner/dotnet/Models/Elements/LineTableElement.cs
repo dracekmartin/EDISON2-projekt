@@ -445,7 +445,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Nejširší řádek značek nad časy (pt) - viz <see cref="NejsirsiZnackyPt"/>.</summary>
     [JsonIgnore] private float? _cachedZnackyPt;
     /// <summary>Kolik místa si žádá sloupec každého spoje (mm) - měří se jednou na parsovaná data.</summary>
-    [JsonIgnore] private Dictionary<LineTripData, float>? _cachedPotrebaSpoje;
+    [JsonIgnore] private Dictionary<LineTripData, (float SVuli, float Hola)>? _cachedPotrebaSpoje;
 
     private void EnsureParsed(DataContext data)
     {
@@ -983,19 +983,24 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <para>Výsledek je cachovaný spolu s parsovanými daty - dělení do bloků hledá počet spojů
     /// půlením intervalu, takže by se jinak přeměřovalo pořád dokola.</para>
     /// </remarks>
-    private float PotrebaSpojeMm(LineTripData spoj)
+    private float PotrebaSpojeMm(LineTripData spoj, bool sVuli)
     {
         NaplnPotrebySpoju();
-        return _cachedPotrebaSpoje!.TryGetValue(spoj, out var mm) ? mm : MinAutoColumnWidthMm;
+        if (!_cachedPotrebaSpoje!.TryGetValue(spoj, out var potreba)) return MinAutoColumnWidthMm;
+        return sVuli ? potreba.SVuli : potreba.Hola;
     }
 
     /// <summary>Největší potřeba přes celou linku - podklad pro <see cref="JednotnaSirkaSpoju"/>
     /// (přes linku, ne přes blok, aby bloky pod sebou seděly).</summary>
-    private float NejvetsiPotrebaSpojeMm()
+    private float NejvetsiPotrebaSpojeMm(bool sVuli)
     {
         NaplnPotrebySpoju();
         float max = MinAutoColumnWidthMm;
-        foreach (var mm in _cachedPotrebaSpoje!.Values) if (mm > max) max = mm;
+        foreach (var p in _cachedPotrebaSpoje!.Values)
+        {
+            float mm = sVuli ? p.SVuli : p.Hola;
+            if (mm > max) max = mm;
+        }
         return max;
     }
 
@@ -1028,7 +1033,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             var (obsah, _) = ObsahSpojeMm(t, znackyNormal, znackySymbol, velikostZnacek,
                 MerBunku, ZmerCasPt(st) * PtToMm);
-            _cachedPotrebaSpoje[t] = MathF.Max(MinAutoColumnWidthMm, obsah + vzduch);
+            _cachedPotrebaSpoje[t] = (MathF.Max(MinAutoColumnWidthMm, obsah + vzduch),
+                MathF.Max(MinAutoColumnWidthMm, obsah));
         }
     }
 
@@ -1040,10 +1046,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // se do ní nevejde, řekne to hláška (viz `SirkaSloupceProtiObsahu`).
         if (TripColumn().Width is float pevna) return [.. spojeBloku.Select(_ => pevna)];
 
+        // ⚠️ Vůle kolem obsahu **ustupuje zadané šířce**: kdo si šířku řekne, chce úzký sloupec,
+        // a vzduch kolem číslic je to první, co se má obětovat. Glyfy ne - pod ně se nejde
+        // (nález Jan 22. 9.: „tam, kde jsou jenom minuty, má jít zúžit víc").
+        bool sVuli = SirkaSloupceSpojeMm is null;
         if (!JednotnaSirkaSpoju)
-            return [.. spojeBloku.Select(t => MathF.Max(zakladMm, PotrebaSpojeMm(t)))];
+            return [.. spojeBloku.Select(t => MathF.Max(zakladMm, PotrebaSpojeMm(t, sVuli)))];
 
-        float jednotna = MathF.Max(zakladMm, NejvetsiPotrebaSpojeMm());
+        float jednotna = MathF.Max(zakladMm, NejvetsiPotrebaSpojeMm(sVuli));
         return [.. spojeBloku.Select(_ => jednotna)];
     }
 
