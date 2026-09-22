@@ -1853,13 +1853,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (Width <= 0) return;
 
         using var paints = CreateStandardPaints(ctx);
-        // Čára úseku z trasy je **silnější než mřížka** a kreslí se barvou textu, aby byla vidět
-        // i v šabloně se světlou mřížkou. Starý tisk ji má natvrdo černou a pětkrát silnější než
-        // rámeček (formTISKJRReportDotNet_Module.vb:2502).
+        // Čára úseku z trasy je **stejně silná jako mřížka**, jen se kreslí barvou textu, aby byla
+        // vidět i v šabloně se světlou mřížkou. Starý tisk ji má pětkrát silnější než rámeček
+        // (formTISKJRReportDotNet_Module.vb:2502), u nás vycházela třikrát - a proti tenké mřížce
+        // působila jako vnější rám tabulky (nález Jan 22. 9.). Odliší ji barva, ne tloušťka.
         using var caraUseku = new SKPaint
         {
             Color = ColorHex.Parse(DataStyle.TextColor, ColorHex.Black),
-            StrokeWidth = paints.Grid.StrokeWidth * 3f,
+            StrokeWidth = paints.Grid.StrokeWidth,
             Style = SKPaintStyle.Stroke,
         };
 

@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-09-22 (2) - ✏ čára u zastávky je tenká jako mřížka
+
+Čára, kterou dispečer odděluje úsek linky (atribut trasy „podtrženo"), se kreslila třikrát silněji
+než mřížka a proti tenkým vnitřním čarám vypadala jako vnější rám tabulky. Nově má tloušťku mřížky
+a odliší ji barva - kreslí se barvou textu, takže je vidět i ve světlé mřížce.
+
 ## 2026-09-22 (1) - 📏 šířka sloupců spojů vychází ze sazby, ne z ručního čísla
 
 U tabulky spojů se šířka sloupce nastavovala ručně - a nešlo to. Pole byla dvě („nejmenší"
