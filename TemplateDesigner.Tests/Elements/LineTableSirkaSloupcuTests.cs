@@ -188,6 +188,26 @@ public class LineTableSirkaSloupcuTests
             + $"{SirkaSloupce(zPisma, data):0.00} mm");
     }
 
+    /// <summary>
+    /// ⚠️ Změna odstupu se musí projevit hned, na týchž datech: šířky se měří jednou a schovávají,
+    /// takže bez přepočtu uživatel v panelu utahoval mezeru a v náhledu se nedělo nic
+    /// (nález Jan 22. 9.).
+    /// </summary>
+    [Fact]
+    public void ZmenaOdstupuPrepocitaSirkuNaTychzDatech()
+    {
+        var data = DataSeZnackami(spoju: 20);
+        var prvek = Prvek();
+        prvek.SirkaSloupceSpojeMm = 3f;
+
+        float zPisma = SirkaSloupce(prvek, data);
+        prvek.MezeraMeziZnackamiMm = 0f;
+        float utazena = SirkaSloupce(prvek, data);
+
+        Assert.True(utazena < zPisma - 0.2f,
+            $"po utažení mezery {utazena:0.00} mm, předtím {zPisma:0.00} mm - šířka se nepřepočítala");
+    }
+
     // ── Dorovnání volného místa ─────────────────────────────────────────────
 
     /// <summary>
