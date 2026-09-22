@@ -25,6 +25,12 @@ public class RenderContext
     /// <summary>Kde na sekci začíná pás viditelný na téhle stránce (mm). 0 = sekce začíná tady.</summary>
     public float ClipTopMm { get; init; }
 
+    /// <summary>Výška pásu sekce viditelného na téhle stránce (mm; 0 = neomezeno).</summary>
+    /// <remarks>Obsah ořezává plátno samo, tohle je pro <b>rámečky</b>: kreslí se mimo ořez sekce
+    /// (aby nebyly půlené na její hraně), takže si prvek s vlastním rámečkem musí pás pohlídat sám
+    /// - jinak nakreslí i rámeček části, která na téhle stránce vůbec není.</remarks>
+    public float ViditelnyPasMm { get; init; }
+
     /// <summary>Výška hlavičky, kterou má prvek na téhle stránce zopakovat (mm; 0 = žádnou).
     /// Nenulová jen tam, kde řez padl doprostřed nedělitelného dílu.</summary>
     public float OpakovanaHlavickaMm { get; init; }

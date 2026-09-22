@@ -499,6 +499,7 @@ public class PreviewCanvas
                 SectionOriginX = ox,
                 SectionOriginY = sectionTopPx + originYOffset,
                 ClipTopMm = placed.ClipTop ?? 0f,
+                ViditelnyPasMm = placed.Height,
                 OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm,
                 ClippedCells = oriznuteBunky,
                 SrovnatCaryNaPixel = naRastr,

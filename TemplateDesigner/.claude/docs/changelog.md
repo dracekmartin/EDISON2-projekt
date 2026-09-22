@@ -6,8 +6,9 @@ Linka, která se nevejde na šířku, se sází na několik částí pod sebou. 
 najednou i mezeru mezi nimi, takže to vypadalo jako jedna tabulka s dírou uprostřed. Nově má
 rámeček každá část zvlášť; nerozdělená tabulka vypadá stejně jako dosud.
 
-Část, kterou rozřízne zlom stránky, zůstává zatím na hraně papíru otevřená - uzavřít ji je
-samostatná práce (`B177`).
+Platí to i přes stránky: rámeček se kreslí jen kolem té části, která je na papíře vidět. Část,
+která se na stránku nevešla, po sobě nenechá prázdný obdélník přes zbytek listu, a část přeťatou
+zlomem stránky rámeček na hraně papíru uzavře.
 
 ## 2026-09-22 (4) - ⋯ tečky i v dorovnaných sloupcích
 

@@ -1840,8 +1840,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// kolem každé části zvlášť.
     /// </summary>
     /// <remarks>Počítá se stejně jako <see cref="ZlomyMm"/>, jen se nesbírají zlomy ale rozsahy;
-    /// obojí musí sedět s kreslením, jinak by rámeček ležel jinde než tabulka.</remarks>
-    internal List<(float OdMm, float VyskaMm)> RozsahyBlokuMm(DataContext? data)
+    /// obojí musí sedět s kreslením, jinak by rámeček ležel jinde než tabulka.
+    /// <para><paramref name="zmenseni"/> = zmenšení obsahu do pevné výšky prvku. Mezera mezi částmi
+    /// se nezmenšuje, stejně jako v kreslení.</para></remarks>
+    internal List<(float OdMm, float VyskaMm)> RozsahyBlokuMm(DataContext? data, float zmenseni = 1f)
     {
         if (data is null) return [];
         EnsureParsed(data);
@@ -1853,7 +1855,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         {
             var (hlavni, zrcadlene) = SpojeBloku(blok);
             var (hlava, radky) = VyskyRadkuBloku(hlavni, zrcadlene);
-            float vyska = hlava.Sum() + radky.Sum(r => r.VyskaMm);
+            float vyska = (hlava.Sum() + radky.Sum(r => r.VyskaMm)) * zmenseni;
             rozsahy.Add((zacatek, vyska));
             zacatek += vyska + MezeraMeziBlokyMm;
         }
@@ -1861,19 +1863,38 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Rámeček kolem <b>každé části</b> tabulky, ne kolem celého prvku.
+    /// Rámeček kolem <b>každé části</b> tabulky, ne kolem celého prvku - a jen kolem té části,
+    /// která je na téhle stránce.
     /// </summary>
     /// <remarks>
     /// Linka, která se nevejde na šířku, se sází na několik částí pod sebou. Obecný rámeček prvku
     /// obchází všechny najednou i mezeru mezi nimi, takže to vypadá jako jedna tabulka s dírou
     /// uprostřed (nález Jan 22. 9.). Každá část je přitom samostatná tabulka se svou hlavou.
-    /// <para>⚠️ Část rozříznutá zlomem stránky zůstává otevřená - rámeček se ořízne s obsahem.
-    /// Uzavřít ji na hraně papíru je samostatná práce (`B177`).</para>
+    /// <para>⚠️ Rámečky se kreslí <b>mimo ořez sekce</b>, takže část, která se na stránku nevešla,
+    /// by se tu vykreslila jako prázdný obdélník přes zbytek papíru (nález Jan 22. 9. na 330530).
+    /// Proto se každá část ořízne na pás viditelný na téhle stránce
+    /// (<see cref="RenderContext.ViditelnyPasMm"/>) a část mimo pás se přeskočí. Vedlejší účinek
+    /// je žádoucí: část přeťatá zlomem stránky se na hraně papíru <b>zavře</b>.</para>
     /// </remarks>
     public override void RenderBorderPass(RenderContext ctx)
     {
-        var rozsahy = RozsahyBlokuMm(ctx.Data);
-        if (rozsahy.Count <= 1 || BorderWidth <= 0f || SkBorderColor.Alpha == 0)
+        var rozsahy = RozsahyBlokuMm(ctx.Data, ComputeFontScale(CalculateHeightFromData(ctx.Data)));
+        if (rozsahy.Count == 0 || BorderWidth <= 0f || SkBorderColor.Alpha == 0)
+        {
+            base.RenderBorderPass(ctx);
+            return;
+        }
+
+        // Horní hrana pásu leží o zopakovanou hlavičku výš než řez - o ni je obsah posunutý dolů
+        // (stejný výpočet jako `vrch` u kreslení hlavičky).
+        float pasOd = ctx.ClipTopMm - ctx.OpakovanaHlavickaMm;
+        float pasDo = ctx.ViditelnyPasMm > 0f ? pasOd + ctx.ViditelnyPasMm : float.MaxValue;
+        var posledni = rozsahy[^1];
+        bool prerizlaStranka = pasOd > Y + 0.1f || pasDo < Y + posledni.OdMm + posledni.VyskaMm - 0.1f;
+
+        // Jedna část, celá na stránce = nic k dělení; jde obecnou cestou prvku, která umí i zaoblené
+        // rohy a otočení.
+        if (rozsahy.Count == 1 && !prerizlaStranka)
         {
             base.RenderBorderPass(ctx);
             return;
@@ -1886,7 +1907,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Style = SKPaintStyle.Stroke,
         };
         foreach (var (odMm, vyskaMm) in rozsahy)
-            ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, Y + odMm, Width, vyskaMm), pero);
+        {
+            float od = MathF.Max(Y + odMm, pasOd);
+            float doY = MathF.Min(Y + odMm + vyskaMm, pasDo);
+            if (doY - od < 0.1f) continue;
+            ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, od, Width, doY - od), pero);
+        }
     }
 
     public IReadOnlyList<Zlom> ZlomyMm(DataContext? data)

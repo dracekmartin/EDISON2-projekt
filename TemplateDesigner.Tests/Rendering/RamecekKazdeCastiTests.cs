@@ -18,7 +18,10 @@ public class RamecekKazdeCastiTests
     private const float MmToPx = 8f;
 
     /// <summary>Y-souřadnice (mm) všech vodorovných čar přes celou šířku prvku.</summary>
-    private static List<float> VodorovneCaryMm(LineTableElement prvek, DataContext data)
+    /// <param name="pasMm">Výška pásu viditelného na stránce (0 = celý prvek). Kreslí se jen
+    /// rámeček, aby se do čar nepletl obsah, který by jinak ořízla sekce.</param>
+    private static List<float> VodorovneCaryMm(LineTableElement prvek, DataContext data,
+        float pasMm = 0f)
     {
         float vyska = prvek.CalculateHeightFromData(data);
         int w = (int)MathF.Ceiling((prvek.X + prvek.Width + 4f) * MmToPx);
@@ -27,8 +30,8 @@ public class RamecekKazdeCastiTests
         using (var canvas = new SKCanvas(bmp))
         {
             canvas.Clear(SKColors.White);
-            var ctx = new RenderContext(canvas, MmToPx, data);
-            prvek.Render(ctx);
+            var ctx = new RenderContext(canvas, MmToPx, data) { ViditelnyPasMm = pasMm };
+            if (pasMm <= 0f) prvek.Render(ctx);
             prvek.RenderBorderPass(ctx);
         }
 
@@ -69,6 +72,28 @@ public class RamecekKazdeCastiTests
         Assert.True(cary.Count >= casti.Count * 2,
             $"přes celou šířku vede {cary.Count} čar, pro {casti.Count} orámovaných částí "
             + $"jich má být aspoň {casti.Count * 2} (výška prvku {konecPrvni:0.0} mm)");
+    }
+
+    /// <summary>
+    /// ⚠️ Jádro: část, která se na stránku nevešla, na ní nesmí nechat prázdný rámeček. Rámečky
+    /// se kreslí mimo ořez sekce, takže si prvek musí viditelný pás pohlídat sám (nález Jan 22. 9.
+    /// na 330530: pod tabulkou zbyl prázdný obdélník přes zbytek papíru).
+    /// </summary>
+    [Fact]
+    public void CastMimoStrankuSeNekresli()
+    {
+        var prvek = Prvek();
+        var data = Data(spoju: 40);
+        var rozsahy = prvek.RozsahyBlokuMm(data);
+        Assert.True(rozsahy.Count > 1, "fixtura se musí rozdělit, jinak test nic neměří");
+
+        // Stránka končí přesně tam, kde začíná druhá část - ta patří celá na další stránku.
+        float pas = rozsahy[1].OdMm;
+        var cary = VodorovneCaryMm(prvek, data, pas);
+
+        Assert.All(cary, y => Assert.True(y <= pas + 0.5f,
+            $"čára na {y:0.0} mm leží pod koncem stránky ({pas:0.0} mm) - kreslí se rámeček části, "
+            + "která na stránce není"));
     }
 
     /// <summary>Nerozdělená tabulka se chová jako dosud - jeden rámeček kolem prvku.</summary>
