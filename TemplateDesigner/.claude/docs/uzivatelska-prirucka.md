@@ -1,6 +1,7 @@
-﻿# Návrhář sestav - uživatelská příručka
+# Návrhář sestav - uživatelská příručka
 
-*aktuálně umožňuje navrhovat šablony zastávkových a linkových jízdních řádů*
+⚠️ **Důležité - které jízdní řády už umíme:** **zastávkové** (AD i MHD) a nově **linkové**
+(zatím jen AD, MHD se připravuje). Ostatní sestavy zatím tiskne Report Generátor.
 
 > Vizuální editor tiskových sestav v EDISONu. Navrhnete vzhled šablony, systém k ní doplní
 > data a vytiskne PDF. **Část I** pokrývá obecné ovládání aplikace - práci se šablonou,
