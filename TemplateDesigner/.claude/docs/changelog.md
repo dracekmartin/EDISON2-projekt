@@ -11,7 +11,10 @@ Zúžení se řídí polem **Největší šířka sloupce spoje** a stačí ono 
 obsahem stáhne i dno. Nejmenší šířka zůstává pro opačný případ, kdy chceš sloupce rozšířit;
 když si obě pole odporují, platí největší.
 
-Cenou je, že do užšího sloupce se obsah nevejde a přeteče do sousedního. Proto o tom nově mluví
+Vnitřní okraj buňky přitom **ustoupí obsahu**: když se čas se značkou návaznosti do odsazeného
+místa nevejde, vysází se do celé buňky místo aby přetekl přes hranu sloupce.
+
+Cenou je, že do ještě užšího sloupce se obsah nevejde ani tak a přeteče do sousedního. Proto o tom nově mluví
 odznak ve stavovém řádku i hláška po uložení PDF: kolik sloupec má, kolik si žádá obsah a **u kterého
 spoje** to poprvé nevyjde - dá se tedy jít podívat a zúžit postupně. V návrháři se přepočítá hned
 při změně šířky. Hlásí se jen skutečný přesah obsahu, ne ztráta 1mm vůle kolem něj.

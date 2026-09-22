@@ -300,10 +300,11 @@ public class LineTableSirkaSloupcuTests
     [Fact]
     public void UzkySloupecSeOhlasi()
     {
-        var data = Data(spoju: 40);
+        // Značky platnosti se sázejí 1,5x zvětšené, takže jsou širší než čas - u nich se
+        // přetečení pozná dřív než u samotných číslic.
+        var data = DataSeZnackami(spoju: 40);
         var prvek = Prvek();
-        // O vůli 1 mm pod dnem se ještě nehlásí nic (obsah se vejde), proto výrazně níž.
-        prvek.NejvetsiSirkaSpojeMm = MathF.Max(3.5f, Dno(data) - 2.5f);
+        prvek.NejvetsiSirkaSpojeMm = 3.2f;
         var sablona = new Template();
         sablona.Sections.Add(new Section { Elements = { prvek } });
 
@@ -311,7 +312,7 @@ public class LineTableSirkaSloupcuTests
 
         Assert.NotNull(hlaska);
         Assert.Contains("obsah potřebuje", hlaska);
-        Assert.Contains("čas odjezdu", hlaska);   // fixtura nemá značky, takže přetéká čas
+        Assert.Contains("značky platnosti", hlaska);
         Assert.Contains(ElementNames.ForUser(prvek), hlaska);
     }
 
@@ -341,6 +342,20 @@ public class LineTableSirkaSloupcuTests
     /// Měří se, ne hardcoduje: závisí na písmu, a to se může změnit.</summary>
     private static float Dno(DataContext data) =>
         new LineTableElement { X = 0, Y = 0, Width = 1 }.Rozvrzeni(data)[0].SloupecSpojeMm;
+
+    /// <summary>Táž linka, ale se značkami platnosti nad časy - ty jsou 1,5x zvětšené.</summary>
+    private static DataContext DataSeZnackami(int spoju) => RenderSnapshot.Data(
+        ("ZASTAVKY",
+        [
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Hulín"), ("PORADI", "2")),
+        ]),
+        ("SPOJE",
+        [.. Enumerable.Range(1, spoju).Select(i => RenderSnapshot.Row(
+            ("CISLO_SPOJE", i.ToString()), ("SKUPINA", "1"), ("SMER", "T"),
+            ("PLATNOST", new JsonArray("X", "BEV")),
+            ("CASY", new JsonArray("8:00", "8:20"))))]),
+        ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", ""), ("PORADI", "1"))]));
 
     private static DataContext Data(int spoju) => RenderSnapshot.Data(
         ("ZASTAVKY",

@@ -46,8 +46,14 @@ public static class SymbolRunRenderer
     /// běžná buňka.</summary>
     public static bool MaPiktogram(List<Run> runs) => runs.Exists(r => r.Symbol);
 
-    /// <summary>Nakreslí úseky do obdélníku (v mm) podle zarovnání stylu.</summary>
-    public static void Draw(RenderContext ctx, SKRect contentMm, List<Run> runs,
+    /// <summary>Nakreslí úseky do buňky (v mm) podle zarovnání stylu.</summary>
+    /// <remarks>
+    /// Vnitřní odsazení si bere sám, protože <b>ustupuje obsahu</b>: když se úseky do odsazeného
+    /// boxu nevejdou, kreslí se do celé buňky. Odsazení je vzduch kolem obsahu, ne jeho hranice -
+    /// bez toho se čas se značkou návaznosti vylil přes hranu sloupce, i když se do sloupce vešel
+    /// (nález Jan 22. 9.). Užší než buňka to neudělá; co se nevejde ani tam, přeteče jako dřív.
+    /// </remarks>
+    public static void Draw(RenderContext ctx, SKRect cellMm, List<Run> runs,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
     {
         if (runs.Count == 0) return;
@@ -71,11 +77,18 @@ public static class SymbolRunRenderer
         try
         {
             var m = normalFont.Metrics;
+            var contentMm = CellLayout.ApplyPadding(cellMm, style);
             var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
             var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
 
             float totalPx = 0f;
             foreach (var r in runs) totalPx += Font(r).MeasureText(r.Text);
+
+            if (totalPx > br.X - tl.X)
+            {
+                tl = ctx.ToCanvas(cellMm.Left, contentMm.Top);
+                br = ctx.ToCanvas(cellMm.Right, contentMm.Bottom);
+            }
 
             var (xPx, baselineY) = CellLayout.TextAnchorPx(
                 tl, br, totalPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
