@@ -121,7 +121,8 @@ Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `Desktop
 Položka, kterou aktuální strom nezná (licence, `hidden`), se **nezobrazí, ale uloží zpátky** -
 jinak by ji první změna členství tiše smazala. Ostatní druhy (tiskové sestavy, pohledy DS)
 zapisují agendy přímo do Caché (`ALVA.EDControls.DesktopShortcuts`, týž blob, který shell čte)
-a spouští se 14. argem hosta; shell blob přenačte až po `LegacyModuleExited`. Název + cesta
+a spouští se 14. argem hosta; shell blob přenačte až po `LegacyModuleExited`. Typová matice,
+oba kanály a jejich pasti: [docs/zastupci-na-plose.md](docs/zastupci-na-plose.md). Název + cesta
 dlaždice se odvozují ze stromu, do `DesktopShortcutDto` se nepersistují; text zmenšuje `Viewbox`
 (`DownOnly`) a `MaxHeight` `TextBlocku` je jeho podlaha (z tokenu `FontSize` se spočítat nedá).
 Pozice = absolutní `Column`/`Row` na `TileGridPanel` (v DTO `Col`/`Row`) - mřížka se

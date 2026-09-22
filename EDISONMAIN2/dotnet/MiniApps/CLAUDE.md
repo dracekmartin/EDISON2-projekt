@@ -34,7 +34,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   `MiniAplikaceAPI.LoadData` s N parametry `appType` (parita s legacy `clsMiniApplication.LoadData`),
   na klonu mimo UI vlákno. Obnova layoutu běží z `Loaded` = **před prvním paintem**, takže
   blokující load tam stál N round-tripů bez progresu. Provider proto musí dát všem descriptorům
-  **tutéž** instanci loaderu - vlastní per panel dávkování zruší.
+  **tutéž** instanci loaderu - vlastní per panel dávkování zruší. Mini-app nepředělané agendy
+  je vždy nová WPF view nad týmiž Caché daty, **nikdy `WindowsFormsHost`** (focus/z-order se
+  tlučou s dockem).
 - **`refresh=0` při otevření panelu, `refresh=1` jen z „Načíst" / hromadné obnovy.** Data
   předpočítává serverová úloha (`ALVA.EDISON.Task`, `TaskTypeALVAEDISONMiniAppRefresh`); přepočet
   při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.

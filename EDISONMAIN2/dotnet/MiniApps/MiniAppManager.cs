@@ -5,7 +5,8 @@ namespace EDISONMAIN2.MiniApps;
 /// <summary>
 /// Otevírá, trackuje a zavírá mini-apps v docku. Multi-instance: tutéž mini-app jde otevřít
 /// vícekrát, každá instance dostane unikátní <c>ContentId "{Id}#{n}"</c>. Záměrně samostatný
-/// (nerozšiřuje <c>WindowNavigator</c> - viz MINIAPPS.md §5); shell ho volá explicitně.
+/// (nerozšiřuje <c>WindowNavigator</c>, ten zůstává bez závislosti na docku); shell ho volá
+/// explicitně.
 /// </summary>
 public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 {
