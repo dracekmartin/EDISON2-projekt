@@ -82,6 +82,10 @@ public static class RowPlanRenderer
         float fontScale = 1f)
     {
         float y = yStartMm;
+        // ⚠️ Na jedné hranici jedna čára: čáru nad řádkem kreslí jen ten, pod kterým žádná není.
+        // Dvě čáry přes sebe vyjdou o pixel silnější a v tabulce to vypadá jako vnější rám -
+        // přesně tak vypadala čára úseku pod zastávkou proti tenké mřížce (nález Jan 22. 9.).
+        bool caraNaHranici = false;
 
         foreach (var row in rows)
         {
@@ -98,11 +102,12 @@ public static class RowPlanRenderer
 
             row.Decorate?.Invoke(y);
 
-            if (row.LineAbovePaint is { } above)
+            if (row.LineAbovePaint is { } above && !caraNaHranici)
                 DrawHorizontalLine(ctx, xMm, y, totalWidthMm, above, mezery);
             if (row.LineBelowPaint is { } below)
                 DrawHorizontalLine(ctx, xMm, y + row.HeightMm, totalWidthMm, below, mezery);
 
+            caraNaHranici = row.LineBelowPaint is not null;
             y += row.HeightMm;
         }
 
