@@ -459,8 +459,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     [JsonIgnore] private List<LineTripData>? _cachedZrcadlene;
     /// <summary>Nejširší řádek značek nad časy (pt) - viz <see cref="NejsirsiZnackyPt"/>.</summary>
     [JsonIgnore] private float? _cachedZnackyPt;
-    /// <summary>Co je ta nejširší značka - pro hlášku o úzkém sloupci (spoj a druh značky).</summary>
-    [JsonIgnore] private string? _cachedZnackyKde;
 
     private void EnsureParsed(DataContext data)
     {
@@ -468,7 +466,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         _lineCacheRef = data;
         _cachedCulture = data.Culture;
         _cachedZnackyPt = null;
-        _cachedZnackyKde = null;
 
         _cachedStops = [.. data.GetRows(ZastavkyDataSource).Select(row => new LineStopData
         {
@@ -707,35 +704,79 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Sloupec spoje, jak vyjde, proti tomu, co se do něj musí vejít (mm), a co to je.
+    /// Nejtěsnější sloupec spoje: jeho šířka, co se do něj musí vejít (mm) a co to je.
     /// Null = prvek nemá co kreslit.
     /// </summary>
     /// <remarks>
     /// Podklad pro hlášku o přetékajícím sloupci - zadané meze smějí obsah podlézt
     /// (viz <see cref="NejvetsiSirkaSpojeMm"/>), takže je to jediné, co uživateli řekne, že se
-    /// značky vylily do sousedního sloupce. Bere se nejužší blok.
-    /// <para>⚠️ Porovnává se **holý obsah bez vůle** kolem něj. Do 22. 9. se tu počítalo dno
-    /// sloupce, které vůli 1 mm zahrnuje, takže hláška svítila i tam, kde se obsah pohodlně vejde
-    /// a přijde jen o komfortní mezeru (nález Jan: sloupec 5 mm proti hlášené potřebě 5,4 mm,
-    /// zatímco značky měří 4,4 mm).</para>
+    /// značky vylily do sousedního sloupce.
+    /// <para>⚠️ Porovnává se **spoj po spoji**, ne nejširší obsah linky proti nejužšímu sloupci.
+    /// Sloupce nejsou stejně široké: spoj se značkou návaznosti u času dostane sloupec o ni širší,
+    /// takže se do něj vejde i to, co by v sousedním přeteklo. Do 22. 9. hláška míchala obojí
+    /// a ukázala na spoj, kde je všechno v pořádku (nález Jan na lince 330510, spoj 247).</para>
+    /// <para>⚠️ Porovnává se **holý obsah bez vůle** kolem něj. Dno sloupce vůli 1 mm zahrnuje,
+    /// takže hláška svítila i tam, kde se obsah pohodlně vejde a přijde jen o komfortní mezeru.</para>
     /// </remarks>
     internal (float Sloupec, float Potreba, string Kde)? SirkaSloupceProtiObsahu(DataContext data)
     {
         var bloky = Rozvrzeni(data);
         if (bloky.Count == 0) return null;
-        var (obsah, kde) = NejsirsiObsahSloupceSpoje();
-        return (bloky.Min(b => b.SloupecSpojeMm), obsah, kde);
+
+        var st = ResolveDataStyle(TripColumn());
+        float casMm = ZmerCasPt(st) * PtToMm;
+        float velikost = st.FontSize * Math.Clamp(PomerZnacek, 1f, 3f);
+        using var normal = new SKFont(GetTypeface(st), velikost);
+        using var symbol = new SKFont(
+            GetTypeface(FontResolver.SymbolFontFamily(_cachedCulture)), velikost);
+
+        (float Sloupec, float Potreba, string Kde)? nejtesnejsi = null;
+        foreach (var blok in bloky)
+        {
+            var spoje = SpojeBlokuVse(new TableLayout.SloupcovyBlok(blok.Od, blok.Pocet));
+            for (int i = 0; i < spoje.Count && i < blok.SirkySloupcu.Count; i++)
+            {
+                var (potreba, kde) = ObsahSpojeMm(spoje[i], normal, symbol, velikost, casMm);
+                float sloupec = blok.SirkySloupcu[i];
+                if (nejtesnejsi is { } n && potreba - sloupec <= n.Potreba - n.Sloupec) continue;
+                nejtesnejsi = (sloupec, potreba, kde);
+            }
+        }
+        return nejtesnejsi;
     }
 
-    /// <summary>Nejširší věc, která ve sloupci spoje stojí (mm), a co to je - bez vůle kolem ní.</summary>
-    private (float Mm, string Kde) NejsirsiObsahSloupceSpoje()
+    /// <summary>Nejširší věc ve sloupci jednoho spoje (mm) a co to je - bez vůle kolem ní.</summary>
+    private (float Mm, string Kde) ObsahSpojeMm(LineTripData spoj, SKFont normal, SKFont symbol,
+        float velikost, float casMm)
     {
-        var st = ResolveDataStyle(TripColumn());
-        float casPt = ZmerCasPt(st);
-        float znackyPt = NejsirsiZnackyPt(st);
-        return znackyPt > casPt
-            ? (znackyPt * PtToMm, _cachedZnackyKde ?? "značky u spoje")
-            : (casPt * PtToMm, "čas odjezdu");
+        float potreba = casMm;
+        string kde = "čas odjezdu";
+
+        if (ShowPlatnostRow)
+        {
+            int radku = (spoj.Platnost.Count + ZnacekNaRadekPlatnosti - 1) / ZnacekNaRadekPlatnosti;
+            for (int r = 0; r < radku; r++)
+            {
+                float sirka = 0f;
+                foreach (var run in SymbolRunRenderer.BuildRuns(
+                             ZnackyRadku(spoj, r), SymbolMap.ResolveLinkovy))
+                    sirka += (run.Symbol ? symbol : normal).MeasureText(run.Text);
+                if (sirka * PtToMm <= potreba) continue;
+                potreba = sirka * PtToMm;
+                kde = $"značky platnosti u spoje {spoj.CisloSpoje}";
+            }
+        }
+        if (ShowNzRow && spoj.Nz.Length > 0)
+        {
+            float box = normal.MeasureText(spoj.Nz)
+                + velikost * NegativniZnackaRenderer.PomerVnitrniMezery * 2f;
+            if (box * PtToMm > potreba)
+            {
+                potreba = box * PtToMm;
+                kde = $"negativní značka u spoje {spoj.CisloSpoje}";
+            }
+        }
+        return (potreba, kde);
     }
 
     /// <summary>
@@ -812,17 +853,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     foreach (var run in SymbolRunRenderer.BuildRuns(
                                  ZnackyRadku(t, r), SymbolMap.ResolveLinkovy))
                         sirka += (run.Symbol ? symbol : normal).MeasureText(run.Text);
-                    if (sirka <= nejsirsi) continue;
-                    nejsirsi = sirka;
-                    _cachedZnackyKde = $"značky platnosti u spoje {t.CisloSpoje}";
+                    if (sirka > nejsirsi) nejsirsi = sirka;
                 }
             }
             if (ShowNzRow && t.Nz.Length > 0)
             {
                 float box = normal.MeasureText(t.Nz) + velikost * NegativniZnackaRenderer.PomerVnitrniMezery * 2f;
-                if (box <= nejsirsi) continue;
-                nejsirsi = box;
-                _cachedZnackyKde = $"negativní značka u spoje {t.CisloSpoje}";
+                if (box > nejsirsi) nejsirsi = box;
             }
         }
         return (float)(_cachedZnackyPt = nejsirsi);
