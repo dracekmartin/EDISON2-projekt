@@ -20,7 +20,7 @@ namespace TemplateDesigner.Tests.Elements;
 public class LineTableZnackyASirkaTests
 {
     private static float SirkaSloupce(LineTableElement prvek, DataContext data) =>
-        prvek.Rozvrzeni(data)[0].SloupecSpojeMm;
+        prvek.Rozvrzeni(data)[0].SirkySloupcu[0];
 
     /// <summary>
     /// ⚠️ Jádro první opravy: spoj se dvěma značkami platnosti potřebuje širší sloupec než spoj

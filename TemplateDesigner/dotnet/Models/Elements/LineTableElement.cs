@@ -146,39 +146,24 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     internal const string PopisneGroup = "Popisné sloupce";
 
     /// <summary>
-    /// Nejmenší šířka sloupce spoje v mm. Null = odvodit z písma (šířka času + vnitřní okraje).
+    /// Šířka sloupce spoje v mm. Null = rozdělit mezi sloupce zbytek šířky prvku.
     /// </summary>
     /// <remarks>
-    /// Odvozené dno se dá utáhnout jen oklikou přes vnitřní okraj buňky a uživatel musí znát vzorec,
-    /// aby výsledek odhadl (požadavek Jan 8. 9.). Vyplněná hodnota proto <b>nahradí</b> celý výpočet
-    /// dna, takže okraj na šířku přestane mít vliv a řekne se rovnou, jak úzký sloupec smí být.
-    /// <para>Tvrdé dno <see cref="MinAutoColumnWidthMm"/> platí dál - pod ně se nedostane ani
-    /// vyplněnou hodnotou, jinak by se do bloku nasypalo tolik spojů, že by čas nebyl čitelný.</para>
-    /// <para>⚠️ Nahrazuje i <see cref="MinVuleKolemCasuMm"/> a měření značek: kdo zadá míň, než se
-    /// obsah vejde, uvidí značky přetékat do sousedního sloupce a čáry těsně u číslic. Do 22. 9.
-    /// to hodnota jen zvedala (pojistka z 8. 9.), jenže pole tím u vývěsek s dvojicí piktogramů
-    /// tiše nedělalo nic - dno tam drží značky, ne čas (rozhodnutí Jan 22. 9.).</para>
+    /// ⚠️ Je to <b>přání, ne strop</b>: sloupec, do kterého se obsah nevejde, zůstane tak široký,
+    /// jak ho obsah potřebuje (<see cref="PotrebaSpojeMm"/>). Uživatel tím nastaví hustotu podle
+    /// většiny sloupců a ušetří místo, aniž by musel hlídat výjimky - ty se o sebe postarají samy
+    /// a nic nepřeteče (rozhodnutí Jan 22. 9.). Písmo se kvůli šířce <b>nikdy nezmenšuje</b>:
+    /// tisklo by se jiné, než co je v šabloně.
+    /// <para>Sloupce proto nejsou stejně široké. Jednotnou mřížku dělá
+    /// <see cref="JednotnaSirkaSpoju"/> (všechny dostanou šířku nejširšího), nebo se zadá hodnota
+    /// nad nejširším obsahem - za cenu volného místa.</para>
+    /// <para>Nahradilo dvojici „nejmenší/největší šířka" (do 22. 9.): dvě pole svádějí k tomu, že
+    /// jde o pár, ale zužovat uměl jen strop a ten se zarážel o změřený obsah, takže sloupec
+    /// s dvojicí piktogramů nad časy nešlo zúžit vůbec. Staré hodnoty přenáší migrace 1.14.0.</para>
+    /// <para>Tvrdá hranice <see cref="MinAutoColumnWidthMm"/> platí dál. Pevná šířka zadaná přímo
+    /// sloupci spoje (<c>StopColumn.Width</c>) má přednost - to je výslovné zadání.</para>
     /// </remarks>
-    public float? NejmensiSirkaSpojeMm { get; set; }
-
-    /// <summary>
-    /// Největší šířka sloupce spoje v mm. Null = bez omezení (sloupce vyplní prvek).
-    /// </summary>
-    /// <remarks>
-    /// ⚠️ Do 8. 9. měla šířka sloupce <b>dno, ale žádný strop</b>: zbytek prvku se vždy rozdělil
-    /// mezi sloupce, takže u linky s pár spoji vyšel sloupec extrémně široký a čas stál uprostřed
-    /// prázdného pole (na 200mm prvku a pěti spojích kolem 24 mm proti dnu 3,1 mm). Lidem, kteří
-    /// dnes tisknou postskriptem, se to nelíbí - ten místo roztahování drží sloupce úzké a zbytek
-    /// vyplní prázdnými sloupci.
-    /// <para>Strop se počítá na <b>základ</b> sloupce; místo na značku návaznosti se přičítá nad
-    /// něj (rozhodnutí Jan 8. 9. - značka není problém, jde o volné místo).</para>
-    /// <para>Je to <b>hlavní pole na zúžení sloupce</b>: strop pod měřeným obsahem stáhne i dno
-    /// (<see cref="DnoSloupceSpojeMm"/>), takže se vystačí s jedním polem. Tvrdá hranice
-    /// <see cref="MinAutoColumnWidthMm"/> platí dál.</para>
-    /// <para>Co se stane s přebytkem, rozhoduje <see cref="PadEmptyColumns"/>: zapnuté ho rozkreslí
-    /// prázdnými sloupci, vypnuté ho nechá bílé.</para>
-    /// </remarks>
-    public float? NejvetsiSirkaSpojeMm { get; set; }
+    public float? SirkaSloupceSpojeMm { get; set; }
 
     /// <summary>
     /// Vyplnit tečkami buňky spojů, ve kterých není čas (výchozí vypnuto).
@@ -459,6 +444,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     [JsonIgnore] private List<LineTripData>? _cachedZrcadlene;
     /// <summary>Nejširší řádek značek nad časy (pt) - viz <see cref="NejsirsiZnackyPt"/>.</summary>
     [JsonIgnore] private float? _cachedZnackyPt;
+    /// <summary>Kolik místa si žádá sloupec každého spoje (mm) - měří se jednou na parsovaná data.</summary>
+    [JsonIgnore] private Dictionary<LineTripData, float>? _cachedPotrebaSpoje;
 
     private void EnsureParsed(DataContext data)
     {
@@ -466,6 +453,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         _lineCacheRef = data;
         _cachedCulture = data.Culture;
         _cachedZnackyPt = null;
+        _cachedPotrebaSpoje = null;
 
         _cachedStops = [.. data.GetRows(ZastavkyDataSource).Select(row => new LineStopData
         {
@@ -659,8 +647,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </summary>
     /// <remarks>
     /// Drží se při nulovém vnitřním okraji - bez ní procházely svislé čáry vedle číslic a časy
-    /// sousedních sloupců se slévaly. Neplatí proti <see cref="NejmensiSirkaSpojeMm"/>: vyplněné
-    /// dno je výslovné přání a přebíjí celý výpočet včetně vůle.
+    /// sousedních sloupců se slévaly. Je součástí <see cref="PotrebaSpojeMm"/>, takže sloupec,
+    /// který se zúžit nedá, ji má vždycky.
     /// <para>Záměrně konstanta, ne další pole formuláře: je to pojistka čitelnosti, ne volba -
     /// vzduch kolem času si uživatel přidává vnitřním okrajem. Hodnota odpovídá výchozímu okraji
     /// (0,5 mm na stranu), takže se dnešním šablonám nic nemění.</para>
@@ -668,49 +656,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private const float MinVuleKolemCasuMm = 1f;
 
     /// <summary>
-    /// Dolní hranice šířky sloupce spoje po započtení obou zadaných mezí.
-    /// </summary>
-    /// <remarks>
-    /// Zadaný strop je stejně výslovné přání jako zadané dno, takže měřený obsah přebíjí taky.
-    /// Jinak by úzký sloupec vyžadoval vyplnit **obě** pole naráz: samotné dno sloupec nezužuje
-    /// (je to spodní hranice) a samotný strop se zarazil o měření, takže na lince s dvojicí
-    /// piktogramů nad časy nešlo pod 5,43 mm ani s oběma poli na 4 mm (nález Jan 22. 9.).
-    /// <para>Při rozporu (dno větší než strop) vyhrává strop - je to pole, kterým se sloupec
-    /// zužuje, a uživatel od něj čeká výsledek.</para>
-    /// </remarks>
-    private float DnoSloupceSpojeMm()
-    {
-        float dno = MinAutoSloupecMm();
-        if (NejvetsiSirkaSpojeMm is float strop && strop > 0f)
-            dno = MathF.Max(MinAutoColumnWidthMm, MathF.Min(dno, strop));
-        return dno;
-    }
-
-    /// <summary>
-    /// Nejmenší šířka automatického sloupce (mm) - zadaná hodnota, jinak měřený obsah.
-    /// </summary>
-    /// <remarks>
-    /// Dokud tu stála pevná 3 mm, řídila **kde se tabulka rozřízne**: dělení nasypalo do bloku tolik
-    /// spojů, kolik se jich při té šířce vešlo - a čas se do 3 mm nevejde v žádném písmu, takže bloky
-    /// sice vycházely, ale byly nečitelné (nahlásil Jan 25. 8.). Dno musí vycházet z písma, jinak
-    /// zvětšení fontu tabulku jen zhustí, místo aby ubralo spojů na blok.
-    /// </remarks>
-    private float MinAutoSloupecMm()
-    {
-        // Vyplněné dno nahrazuje měření - viz `NejmensiSirkaSpojeMm`.
-        if (NejmensiSirkaSpojeMm is float zadane)
-            return MathF.Max(MinAutoColumnWidthMm, zadane);
-        return ZmerenaSirkaSloupceSpojeMm();
-    }
-
-    /// <summary>
     /// Nejtěsnější sloupec spoje: jeho šířka, co se do něj musí vejít (mm) a co to je.
     /// Null = prvek nemá co kreslit.
     /// </summary>
     /// <remarks>
-    /// Podklad pro hlášku o přetékajícím sloupci - zadané meze smějí obsah podlézt
-    /// (viz <see cref="NejvetsiSirkaSpojeMm"/>), takže je to jediné, co uživateli řekne, že se
-    /// značky vylily do sousedního sloupce.
+    /// Podklad pro hlášku o přetékajícím sloupci. Od 22. 9. se sloupec pod obsah nezúží
+    /// (<see cref="SirkaSloupceSpojeMm"/>), takže zbývá jediná cesta, jak přetečení vyrobit -
+    /// pevná šířka zadaná přímo sloupci spoje.
     /// <para>⚠️ Porovnává se **spoj po spoji**, ne nejširší obsah linky proti nejužšímu sloupci.
     /// Sloupce nejsou stejně široké: spoj se značkou návaznosti u času dostane sloupec o ni širší,
     /// takže se do něj vejde i to, co by v sousedním přeteklo. Do 22. 9. hláška míchala obojí
@@ -748,7 +700,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var spoje = SpojeBlokuVse(new TableLayout.SloupcovyBlok(blok.Od, blok.Pocet));
             for (int i = 0; i < spoje.Count && i < blok.SirkySloupcu.Count; i++)
             {
-                var (potreba, kde) = ObsahSpojeMm(spoje[i], normal, symbol, velikost, MerBunku);
+                var (potreba, kde) = ObsahSpojeMm(spoje[i], normal, symbol, velikost,
+                    MerBunku, ZmerCasPt(st) * PtToMm);
                 float sloupec = blok.SirkySloupcu[i];
                 if (nejtesnejsi is { } n && potreba - sloupec <= n.Potreba - n.Sloupec) continue;
                 nejtesnejsi = (sloupec, blok.SloupecSpojeMm, potreba, kde);
@@ -771,9 +724,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// jen nástup): sloupec sice o ně dostane příplatek, ale ten vychází z jedné značky v písmu
     /// buňky, takže dvě značky nebo širší piktogram přesto přetečou.</remarks>
     private (float Mm, string Kde) ObsahSpojeMm(LineTripData spoj, SKFont normal, SKFont symbol,
-        float velikost, Func<List<SymbolRunRenderer.Run>, float> merBunku)
+        float velikost, Func<List<SymbolRunRenderer.Run>, float> merBunku, float casMm)
     {
-        float potreba = 0f;
+        // ⚠️ Vychází se z **plného** času, ne z těch, které v datech zrovna jsou: linka, jejíž
+        // spoje jedou dopoledne, by jinak měla užší sloupce než táž linka odpoledne (invariant
+        // z 25. 8. - sloupec spoje musí unést „00:00"). Buňky se měří kvůli značkám vedle času.
+        float potreba = casMm;
         string kde = $"čas odjezdu u spoje {spoj.CisloSpoje}";
 
         foreach (var (si, stop) in ViditelneZastavky())
@@ -955,8 +911,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </para>
     /// </summary>
     private (List<RenderCol> Fixed, float TripWidth, int NameIndex) BuildColumns(
-        List<LineStopData> stops, int kmCount, int tripCount, float rezervaMezerMm = 0f,
-        float rezervaZnacekMm = 0f)
+        List<LineStopData> stops, int kmCount, int tripCount, float rezervaMezerMm = 0f)
     {
         var structural = StructuralColumns();
         var trip = TripColumn();
@@ -981,17 +936,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             .Sum(c => c.Width!.Value * PocetPodsloupcu(c.Key, kmCount, zonaCount));
         int autoStructural = structural.Count(c => !c.Width.HasValue);
         int autoUnits = autoStructural + (trip.Width.HasValue ? 0 : tripCount);
-        // Mezery mezi skupinami sloupců a místo na značky u času jdou ze stejné šířky jako
-        // sloupce, takže je automatické sloupce nesmí rozdělit mezi sebe - jinak by tabulka
-        // přetekla přes pravou hranu prvku.
-        float dno = DnoSloupceSpojeMm();
-        float autoEach = autoUnits > 0
-            ? MathF.Max(dno, (Width - fixedSum - rezervaMezerMm - rezervaZnacekMm) / autoUnits)
-            : 8f;
-        // Strop platí jen na automatické sloupce - pevná šířka sloupce je výslovné přání
-        // a strop ji nepřebíjí.
-        if (NejvetsiSirkaSpojeMm is float strop && strop > 0f)
-            autoEach = MathF.Max(dno, MathF.Min(autoEach, strop));
+        // Mezery mezi skupinami sloupců jdou ze stejné šířky jako sloupce, takže je automatické
+        // sloupce nesmí rozdělit mezi sebe - jinak by tabulka přetekla přes pravou hranu prvku.
+        // Zadaná šířka platí jen na automatické sloupce; pevná šířka sloupce je výslovné přání.
+        float autoEach = SirkaSloupceSpojeMm is float zadana && zadana > 0f
+            ? MathF.Max(MinAutoColumnWidthMm, zadana)
+            : autoUnits > 0
+                ? MathF.Max(MinAutoColumnWidthMm, (Width - fixedSum - rezervaMezerMm) / autoUnits)
+                : 8f;
 
         var result = new List<RenderCol>();
         int nameIndex = -1;
@@ -1018,102 +970,109 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Kolik mm si vezme značka návaznosti, která se tiskne <b>vedle času</b> ve stejné buňce.
+    /// Kolik místa si žádá sloupec jednoho spoje (mm) - jeho nejširší obsah i s vůlí kolem něj.
     /// </summary>
     /// <remarks>
-    /// Měří se stejným způsobem jako <see cref="MinAutoSloupecMm"/> (velikost v pt → míra v pt),
-    /// aby to šlo spočítat bez kreslicího kontextu - šířky sloupců se počítají i při zjišťování
-    /// výšky prvku. Do šířky patří i mezera za glyfem, protože se kreslí „&lt;glyf&gt; &lt;čas&gt;".
+    /// ⚠️ Tohle je celý mechanismus adaptace šířky: sloupec se zúží na zadanou hodnotu všude, kde
+    /// se obsah vejde, a kde ne, zůstane přesně tak široký, jak obsah potřebuje (rozhodnutí Jan
+    /// 22. 9.). Sloupce tím nejsou stejně široké - jednotnou mřížku dělá
+    /// <see cref="JednotnaSirkaSpoju"/>.
+    /// <para>Do 22. 9. se místo toho k základu přičítal <b>odhad</b> podle glyfu „vyčká/navazuje",
+    /// takže širší piktogram u času přetekl do sousedního sloupce, aniž kdokoli něco nastavil
+    /// špatně. Měří se proto <b>skutečný obsah</b> týmiž úseky, jakými se kreslí.</para>
+    /// <para>Výsledek je cachovaný spolu s parsovanými daty - dělení do bloků hledá počet spojů
+    /// půlením intervalu, takže by se jinak přeměřovalo pořád dokola.</para>
     /// </remarks>
-    private float SirkaZnackyMm()
+    private float PotrebaSpojeMm(LineTripData spoj)
     {
-        var st = ResolveDataStyle(TripColumn());
-        using var normal = new SKFont(GetTypeface(st), st.FontSize);
-        using var symbol = new SKFont(
-            GetTypeface(FontResolver.SymbolFontFamily(_cachedCulture)), st.FontSize);
-        // Vyčká má glyf „A", navazuje „B" - bere se širší z nich, ať se vejde obojí.
-        float glyf = MathF.Max(symbol.MeasureText("A"), symbol.MeasureText("B"));
-        return (glyf + normal.MeasureText(" ")) * PtToMm;
+        NaplnPotrebySpoju();
+        return _cachedPotrebaSpoje!.TryGetValue(spoj, out var mm) ? mm : MinAutoColumnWidthMm;
     }
 
-    /// <summary>
-    /// Nejvyšší počet značek, který v tomhle sloupci spoje někde je - napříč všemi zastávkami.
-    /// </summary>
-    /// <remarks>
-    /// ⚠️ Podle tohohle čísla <b>roste šířka sloupce</b>, a je to <b>parita se starým modulem</b>:
-    /// ten má pro sloupec spoje čtyři šířky a vybírá mezi nimi právě podle největšího počtu značek
-    /// ve sloupci (<c>JRapiLinPrtWin.mac:1793</c>, počet se bere z vedlejšího slotu „znacky spoje",
-    /// tamtéž <c>:1769</c> a <c>:2611</c>). Text tedy <b>nezmenšuje</b> - dělá místo.
-    /// <para>Podmínka musí být tatáž jako u kreslení (značka se tiskne jen tam, kde je i čas
-    /// a kde je značka ověřený piktogram), jinak by se rezervovalo místo pro něco, co se nenakreslí.</para>
-    /// </remarks>
-    private int ZnacekVeSloupci(LineTripData spoj, List<LineStopData> stops)
+    /// <summary>Největší potřeba přes celou linku - podklad pro <see cref="JednotnaSirkaSpoju"/>
+    /// (přes linku, ne přes blok, aby bloky pod sebou seděly).</summary>
+    private float NejvetsiPotrebaSpojeMm()
     {
-        int max = 0;
-        for (int si = 0; si < stops.Count; si++)
-        {
-            var stop = stops[si];
-            if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
-            if (si >= spoj.Casy.Count || spoj.Casy[si] == "") continue;
-            // Buňka může nést víc značek vedle sebe (jen nástup, paragraf, návaznost), takže
-            // se počítají všechny - jinak by se sloupec spočítal na jednu a zbytek přetekl.
-            int vBunce = PiktogramyBunky(spoj, si, stop.Poradi).Count(r => r.Symbol);
-            if (max < vBunce) max = vBunce;
-        }
+        NaplnPotrebySpoju();
+        float max = MinAutoColumnWidthMm;
+        foreach (var mm in _cachedPotrebaSpoje!.Values) if (mm > max) max = mm;
         return max;
     }
 
-    /// <summary>Šířky sloupců spojů bloku - základ plus místo na značky, které ten sloupec nese.
-    /// Se zapnutou <see cref="JednotnaSirkaSpoju"/> dostanou všechny šířku toho nejširšího.</summary>
-    private List<float> SirkySpoju(IReadOnlyList<LineTripData> spojeBloku, List<LineStopData> stops,
-        float zakladMm, float znackaMm)
+    private void NaplnPotrebySpoju()
     {
-        if (!JednotnaSirkaSpoju)
-            return [.. spojeBloku.Select(t => zakladMm + ZnacekVeSloupci(t, stops) * znackaMm)];
+        if (_cachedPotrebaSpoje is not null) return;
 
-        float jednotna = zakladMm + NejvicZnacekVeSloupci(stops) * znackaMm;
+        var st = ResolveDataStyle(TripColumn());
+        // Vůle kolem obsahu není aditivní k vnitřnímu okraji - platí ta větší z nich.
+        float vzduch = MathF.Max(MinVuleKolemCasuMm, st.PaddingLeft + st.PaddingRight);
+        float velikostZnacek = st.FontSize * Math.Clamp(PomerZnacek, 1f, 3f);
+        using var znackyNormal = new SKFont(GetTypeface(st), velikostZnacek);
+        using var znackySymbol = new SKFont(
+            GetTypeface(FontResolver.SymbolFontFamily(_cachedCulture)), velikostZnacek);
+        using var casNormal = new SKFont(GetTypeface(st), st.FontSize);
+        using var casSymbol = new SKFont(
+            GetTypeface(FontResolver.SymbolFontFamily(_cachedCulture)), st.FontSize);
+        using var casMaly = new SKFont(GetTypeface(st), st.FontSize * Math.Clamp(PomerMinuty, 0.3f, 1f));
+
+        float MerBunku(List<SymbolRunRenderer.Run> runs)
+        {
+            float pt = 0f;
+            foreach (var r in runs)
+                pt += (r.Symbol ? casSymbol : r.Zmenseni < 0.999f ? casMaly : casNormal).MeasureText(r.Text);
+            return pt * PtToMm;
+        }
+
+        _cachedPotrebaSpoje = [];
+        foreach (var t in _cachedTrips ?? [])
+        {
+            var (obsah, _) = ObsahSpojeMm(t, znackyNormal, znackySymbol, velikostZnacek,
+                MerBunku, ZmerCasPt(st) * PtToMm);
+            _cachedPotrebaSpoje[t] = MathF.Max(MinAutoColumnWidthMm, obsah + vzduch);
+        }
+    }
+
+    /// <summary>Šířky sloupců spojů bloku: zadaný základ, a kde se obsah nevejde, tolik, kolik
+    /// potřebuje. Se zapnutou <see cref="JednotnaSirkaSpoju"/> dostanou všechny šířku nejširšího.</summary>
+    private List<float> SirkySpoju(IReadOnlyList<LineTripData> spojeBloku, float zakladMm)
+    {
+        // Pevná šířka zadaná přímo sloupci spoje je výslovné zadání - obsah ji nerozšíří, a když
+        // se do ní nevejde, řekne to hláška (viz `SirkaSloupceProtiObsahu`).
+        if (TripColumn().Width is float pevna) return [.. spojeBloku.Select(_ => pevna)];
+
+        if (!JednotnaSirkaSpoju)
+            return [.. spojeBloku.Select(t => MathF.Max(zakladMm, PotrebaSpojeMm(t)))];
+
+        float jednotna = MathF.Max(zakladMm, NejvetsiPotrebaSpojeMm());
         return [.. spojeBloku.Select(_ => jednotna)];
     }
 
-    /// <summary>Nejvyšší počet značek, který nese kterýkoli sloupec spoje <b>celé linky</b>.
-    /// Přes celou linku, ne přes blok - viz <see cref="JednotnaSirkaSpoju"/>.</summary>
-    private int NejvicZnacekVeSloupci(List<LineStopData> stops)
-    {
-        int max = 0;
-        foreach (var t in _cachedTrips ?? [])
-        {
-            int n = ZnacekVeSloupci(t, stops);
-            if (n > max) max = n;
-        }
-        return max;
-    }
-
     /// <summary>
-    /// Kolik místa si vezmou značky v <b>nejhorším</b> bloku o daném počtu spojů.
+    /// Šířka nejširšího úseku <paramref name="naBlok"/> slotů za sebou - tolik místa musí blok dostat.
     /// </summary>
     /// <remarks>
-    /// Bere se maximum přes všechna okna po sobě jdoucích spojů, ne součet za celou linku: kdyby se
-    /// rezervovalo za linku, u lince plné značek by se šířka rozdala tak, že by se nevešlo nic.
-    /// Maximum přes okna drží dvě věci naráz - základ sloupce je pro všechny bloky stejný (invariant
-    /// z 25. 8.) a žádný blok nepřeteče.
+    /// Maximum přes okna, ne součet za linku: blok se skládá ze spojů, které jdou po sobě, takže
+    /// rozhoduje ten nejbohatší úsek. U obousměrné sestavy nese slot sloupec na každé straně
+    /// zastávek, proto se sčítají obě.
     /// </remarks>
-    private float RezervaZnacekMm(List<LineTripData> trips, List<LineStopData> stops,
-        float znackaMm, int naBlok)
+    private float NejsirsiOknoSlotuMm(float zakladMm, int naBlok)
     {
-        if (znackaMm <= 0f || naBlok <= 0) return 0f;
-        // Jednotná šířka: každý sloupec nese místo na nejširší značkový sloupec linky, takže se
-        // rezervuje za všechny. Musí to být týž vzorec jako v `SirkySpoju`, jinak by se blok
-        // spočítal užší, než se nakreslí, a přetekl by přes hranu prvku.
-        if (JednotnaSirkaSpoju) return naBlok * NejvicZnacekVeSloupci(stops) * znackaMm;
-        var znacky = trips.Select(t => ZnacekVeSloupci(t, stops)).ToList();
-        int nejvic = 0, okno = 0;
-        for (int i = 0; i < znacky.Count; i++)
+        var hlavni = SirkySpoju(_cachedHlavni ?? [], zakladMm);
+        var zrcadlene = SirkySpoju(_cachedZrcadlene ?? [], zakladMm);
+        int slotu = Math.Max(hlavni.Count, zrcadlene.Count);
+        if (slotu == 0 || naBlok <= 0) return 0f;
+
+        float Slot(int i) =>
+            (i < hlavni.Count ? hlavni[i] : 0f) + (i < zrcadlene.Count ? zrcadlene[i] : 0f);
+
+        float nejsirsi = 0f, okno = 0f;
+        for (int i = 0; i < slotu; i++)
         {
-            okno += znacky[i];
-            if (i >= naBlok) okno -= znacky[i - naBlok];
-            if (okno > nejvic) nejvic = okno;
+            okno += Slot(i);
+            if (i >= naBlok) okno -= Slot(i - naBlok);
+            if (okno > nejsirsi) nejsirsi = okno;
         }
-        return nejvic * znackaMm;
+        return nejsirsi;
     }
 
     /// <summary>
@@ -1361,12 +1320,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private float RezervaMezerMm(IReadOnlyList<LineTripData> vsechnySpoje) =>
         MezeraMeziSkupinamiMm <= 0f ? 0f : MezeraMeziSkupinamiMm * HraniceSkupin(vsechnySpoje).Count;
 
-    /// <summary>Šířka, kterou zabere blok s daným počtem spojů - s rezervou na mezery, ne
-    /// s mezerami toho bloku, ať se každý blok do prvku vejde.</summary>
-    private static float SirkaBlokuMm(IReadOnlyList<RenderCol> popisne, float sloupecSpojeMm,
-        float rezervaMezerMm, float rezervaZnacekMm, int pocetSpoju) =>
-        popisne.Sum(c => c.Width) + rezervaMezerMm + rezervaZnacekMm + pocetSpoju * sloupecSpojeMm;
-
     /// <summary>
     /// Kolik slotů spojů se při dané šířce sloupce do prvku vejde - podklad pro dorovnání
     /// prázdnými sloupci.
@@ -1376,10 +1329,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// každé straně zastávek, takže se do šířky vejde poloviční počet.
     /// </remarks>
     private static int KapacitaSlotu(IReadOnlyList<RenderCol> popisne, float sloupecSpojeMm,
-        float rezervaMezerMm, float rezervaZnacekMm, int sloupcuNaSlot, float sirkaPrvku)
+        float rezervaMezerMm, float obsazenoSpojiMm, int sloupcuNaSlot, float sirkaPrvku)
     {
         if (sloupecSpojeMm <= 0f || sloupcuNaSlot <= 0) return 0;
-        float volno = sirkaPrvku - popisne.Sum(c => c.Width) - rezervaMezerMm - rezervaZnacekMm;
+        float volno = sirkaPrvku - popisne.Sum(c => c.Width) - rezervaMezerMm - obsazenoSpojiMm;
         return volno <= 0f ? 0 : (int)MathF.Floor(volno / (sloupecSpojeMm * sloupcuNaSlot));
     }
 
@@ -1409,9 +1362,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // části automatické, takže jejich šířka závisí na tom, kolik spojů s nimi sdílí místo.
         // Hledá se proto největší počet, který se **při vlastním rozvržení** opravdu vejde - kdyby
         // se pravidlo pro šířky sloupců změnilo, dělení se přizpůsobí samo místo aby se rozešlo.
-        // O čitelnost bloku se stará dno šířky sloupce, viz `MinAutoSloupecMm`.
+        // O čitelnost bloku se stará potřeba sloupce, viz `PotrebaSpojeMm`.
         int naBlok = NejvicSpojuNaBlok(stops, kmCount, pocetSpoju,
-            RezervaMezerMm(_cachedTrips ?? []), SirkaZnackyMm(), SloupcuNaSlot());
+            RezervaMezerMm(_cachedTrips ?? []), SloupcuNaSlot());
         return TableLayout.ZvolBloky(SkupinaSlotu(), pocetSpoju, naBlok);
     }
 
@@ -1461,12 +1414,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // se u ní nehlídal (nález 4. 9., `B122`).
         int sloupcuBloku = naBlok * SloupcuNaSlot();
         float rezerva = RezervaMezerMm(trips);
-        float znackaMm = SirkaZnackyMm();
-        float rezervaZnacek = RezervaZnacekMm(trips, stops, znackaMm, sloupcuBloku);
         return bloky.Select(b =>
         {
-            var (cols, tripW, _) = BuildColumns(stops, kmCount, sloupcuBloku, rezerva, rezervaZnacek);
-            var sirky = SirkySpoju(SpojeBlokuVse(b), stops, tripW, znackaMm);
+            var (cols, tripW, _) = BuildColumns(stops, kmCount, sloupcuBloku, rezerva);
+            var sirky = SirkySpoju(SpojeBlokuVse(b), tripW);
             return new BlokRozvrh(b.Od, b.Pocet,
                 cols.Sum(c => c.Width) + rezerva + sirky.Sum(), tripW, sirky);
         }).ToList();
@@ -1475,16 +1426,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Největší počet spojů, který se do šířky vejde i s popisnými sloupci spočítanými
     /// pro týž počet. Půlením intervalu, ať se `BuildColumns` nevolá pro každý počet zvlášť.</summary>
     private int NejvicSpojuNaBlok(List<LineStopData> stops, int kmCount, int pocetSpoju,
-        float rezervaMezerMm, float znackaMm, int sloupcuNaSlot)
+        float rezervaMezerMm, int sloupcuNaSlot)
     {
         bool Vejde(int n)
         {
             // U obousměrné sestavy zabere slot sloupec na každé straně zastávek, takže se do šířky
             // musí vejít dvojnásobek - jinak by zrcadlený blok tabulku vystrčil za hranu prvku.
-            int sloupcu = n * sloupcuNaSlot;
-            float rezervaZnacek = RezervaZnacekMm(_cachedTrips ?? [], stops, znackaMm, sloupcu);
-            var (cols, tripW, _) = BuildColumns(stops, kmCount, sloupcu, rezervaMezerMm, rezervaZnacek);
-            return SirkaBlokuMm(cols, tripW, rezervaMezerMm, rezervaZnacek, sloupcu) <= Width + 0.01f;
+            var (cols, tripW, _) = BuildColumns(stops, kmCount, n * sloupcuNaSlot, rezervaMezerMm);
+            // Sčítají se **skutečné** šířky sloupců toho nejbohatšího úseku, ne počet × základ:
+            // sloupec se širším obsahem je širší a blok se s ním musí do prvku vejít.
+            float sirka = cols.Sum(c => c.Width) + rezervaMezerMm + NejsirsiOknoSlotuMm(tripW, n);
+            return sirka <= Width + 0.01f;
         }
 
         if (Vejde(pocetSpoju)) return pocetSpoju;
@@ -1982,13 +1934,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             int naBlok = bloky.Max(b => b.Pocet);
             int sloupcuNaSlot = SloupcuNaSlot();
             float rezervaMezer = RezervaMezerMm(trips);
-            float znackaMm = SirkaZnackyMm();
-            float rezervaZnacek = RezervaZnacekMm(trips, stops, znackaMm, naBlok * sloupcuNaSlot);
             float y = Y;
             foreach (var blok in bloky)
             {
                 var (fixedCols, tripW, nameIndex) =
-                    BuildColumns(stops, kmCount, naBlok * sloupcuNaSlot, rezervaMezer, rezervaZnacek);
+                    BuildColumns(stops, kmCount, naBlok * sloupcuNaSlot, rezervaMezer);
                 var (spojeBloku, zrcadleneBloku) = SpojeBloku(blok);
                 // Hranice skupin se berou ze spojů **tohoto** bloku - mezera se kreslí tam, kde
                 // v bloku opravdu začíná nová skupina. Rezerva na šířku je naopak z celé linky.
@@ -1999,16 +1949,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // Dorovnává se na kapacitu prvku, ne jen na nejplnější blok. Bez stropu je obojí
                 // totéž (sloupce zbytek prvku spotřebují), ale se stropem zůstane vpravo volno
                 // i u tabulky, která se vůbec neřeže - a právě to má dorovnání vyplnit.
+                var sirkySpoju = SirkySpoju(spojeBloku, tripW);
+                var sirkyZrcadlenych = SirkySpoju(zrcadleneBloku, tripW);
                 int kapacita = Math.Max(naBlok, KapacitaSlotu(fixedCols, tripW, rezervaMezer,
-                    rezervaZnacek, sloupcuNaSlot, Width));
+                    sirkySpoju.Sum() + sirkyZrcadlenych.Sum(), sloupcuNaSlot, Width));
                 int prazdnychVpravo = PadEmptyColumns ? Math.Max(0, kapacita - spojeBloku.Count) : 0;
                 int prazdnychVlevo = PadEmptyColumns && sloupcuNaSlot > 1
                     ? Math.Max(0, kapacita - zrcadleneBloku.Count) : 0;
 
                 var mrizka = new SloupcovaMrizka(fixedCols,
-                    SirkySpoju(spojeBloku, stops, tripW, znackaMm), tripW,
+                    sirkySpoju, tripW,
                     MezeraMeziSkupinamiMm, HraniceSkupin(spojeBloku),
-                    SirkySpoju(zrcadleneBloku, stops, tripW, znackaMm),
+                    sirkyZrcadlenych,
                     RozlozeniPrazdnych(spojeBloku.Count, prazdnychVpravo),
                     // Zrcadlená strana čte rozložení zrcadlově - první prázdný patří k jejímu
                     // spoji u zastávek, ne k tomu na vnějším okraji.
@@ -3054,8 +3006,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PripojeSlucovani = PripojeSlucovani,
             PadEmptyColumns = PadEmptyColumns,
             JednotnaSirkaSpoju = JednotnaSirkaSpoju,
-            NejmensiSirkaSpojeMm = NejmensiSirkaSpojeMm,
-            NejvetsiSirkaSpojeMm = NejvetsiSirkaSpojeMm,
+            SirkaSloupceSpojeMm = SirkaSloupceSpojeMm,
             FormatCasu = FormatCasu,
             TucneZastavkyDleTrasy = TucneZastavkyDleTrasy,
             CaryZastavekDleTrasy = CaryZastavekDleTrasy,
@@ -3106,14 +3057,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 ("Podle směru",               (object)PripojSlucovani.PodleSmeru),
                 ("Podle směru a linky",       (object)PripojSlucovani.PodleSmeruALinky),
             ] },
-        new FloatPropertyDescriptor { Label = "Nejmenší šířka sloupce spoje", Group = SirkaGroup,
-            Unit = "mm", Min = 0, Max = 50, Format = "0.##",
-            Get = () => NejmensiSirkaSpojeMm ?? 0f,
-            Set = v => NejmensiSirkaSpojeMm = v <= 0f ? null : v },
-        new FloatPropertyDescriptor { Label = "Největší šířka sloupce spoje", Group = SirkaGroup,
+        new FloatPropertyDescriptor { Label = "Šířka sloupce spoje", Group = SirkaGroup,
             Unit = "mm", Min = 0, Max = 200, Format = "0.##",
-            Get = () => NejvetsiSirkaSpojeMm ?? 0f,
-            Set = v => NejvetsiSirkaSpojeMm = v <= 0f ? null : v },
+            Get = () => SirkaSloupceSpojeMm ?? 0f,
+            Set = v => SirkaSloupceSpojeMm = v <= 0f ? null : v },
         new BoolPropertyDescriptor { Label = "Dorovnat prázdnými sloupci", Group = SirkaGroup, Get = () => PadEmptyColumns, Set = v => PadEmptyColumns = v },
         new BoolPropertyDescriptor { Label = "Stejně široké sloupce spojů", Group = SirkaGroup, Get = () => JednotnaSirkaSpoju, Set = v => JednotnaSirkaSpoju = v },
         new EnumPropertyDescriptor

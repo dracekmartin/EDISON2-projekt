@@ -54,6 +54,9 @@ public class JednotnaSirkaSpojuTests
     {
         var el = ElementRenderFixtures.LineTable();
         el.JednotnaSirkaSpoju = jednotna;
+        // Bez zadané šířky se sloupce roztáhnou přes prvek a značka se vejde do volného místa -
+        // volba by pak neměla co srovnávat (od 22. 9.).
+        el.SirkaSloupceSpojeMm = 3f;
         return el;
     }
 
@@ -95,8 +98,11 @@ public class JednotnaSirkaSpojuTests
         // konkrétní milimetry napříč nastaveními by měřilo dvě různá rozvržení.
         Assert.True(bez[0].SirkySloupcu.Distinct().Count() > 1, "fixtura musí mít různě široké sloupce");
         Assert.Single(s[0].SirkySloupcu.Distinct());
-        Assert.True(s[0].Pocet < bez[0].Pocet,
-            $"do bloku se vešlo {s[0].Pocet} sloupců stejně jako bez volby ({bez[0].Pocet})");
+        // Všechny sloupce dostanou šířku toho nejširšího, takže zabere víc místa a spojů se do
+        // bloku vejde nejvýš tolik co bez volby.
+        Assert.Equal(bez[0].SirkySloupcu.Max(), s[0].SirkySloupcu[0], precision: 2);
+        Assert.True(s[0].Pocet <= bez[0].Pocet,
+            $"se srovnanými sloupci se vešlo {s[0].Pocet} spojů proti {bez[0].Pocet} bez volby");
     }
 
     /// <summary>

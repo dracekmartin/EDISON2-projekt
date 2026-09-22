@@ -1,26 +1,23 @@
 ﻿# Changelog
 
-## 2026-09-22 (1) - 📏 sloupce spojů jdou zúžit pod měřený obsah
+## 2026-09-22 (1) - 📏 šířka sloupců spojů jedním číslem, bez přetečení
 
-U tabulky spojů šlo dosud zúžit sloupec jen po šířku obsahu a ani to ne vždy: dno se počítá
-z toho nejširšího, co ve sloupci stojí, a nad časy bývá dvojice piktogramů. Na lince 330510 to
-dělalo 5,43 mm proti 3,65 mm, které měří samotný čas, a nešlo pod to žádným nastavením -
-obě pole se o změřený obsah zarazila. Nově obě měření přebíjejí a drží jen hranice čitelnosti 3 mm.
+U tabulky spojů se šířka nastavovala dvěma poli („nejmenší" a „největší"), ale zužovat uměl jen
+strop - a ten se zarážel o změřený obsah. Na vývěsce, kde nad časy stojí dvojice piktogramů, proto
+sloupec nešlo zúžit vůbec (linka 330510: 5,43 mm, ať se zadalo cokoli).
 
-Zúžení se řídí polem **Největší šířka sloupce spoje** a stačí ono samo - strop pod měřeným
-obsahem stáhne i dno. Nejmenší šířka zůstává pro opačný případ, kdy chceš sloupce rozšířit;
-když si obě pole odporují, platí největší.
+Nově je to **jedno pole „Šířka sloupce spoje"** a jedno pravidlo: zadaná hodnota platí všude, kde se
+obsah vejde, a sloupec, do kterého se nevejde, zůstane tak široký, jak obsah potřebuje. Nastavíš
+tedy hustotu podle většiny sloupců, ušetříš místo a o výjimky se nemusíš starat - nic nepřeteče
+a písmo se nikdy nezmenší. Cenou je, že sloupce nejsou stejně široké; pravidelnou mřížku dělá dál
+volba „Stejně široké sloupce spojů" nebo větší zadaná hodnota.
 
-Vnitřní okraj buňky přitom **ustoupí obsahu**: když se čas se značkou návaznosti do odsazeného
-místa nevejde, vysází se do celé buňky místo aby přetekl přes hranu sloupce.
+Na 330510 při zadaných 4 mm vyjdou sloupce 4,65 až 6,58 mm a linka se vejde na dvě části místo tří.
 
-Cenou je, že do ještě užšího sloupce se obsah nevejde ani tak a přeteče do sousedního. Proto o tom nově mluví
-odznak ve stavovém řádku i hláška po uložení PDF: kolik sloupec má, kolik si žádá obsah a **u kterého
-spoje** to poprvé nevyjde - dá se tedy jít podívat a zúžit postupně. Šířka sloupce se přitom rozepíše
-na základ a příplatek za značku u času, protože sloupec se značkou je o ni širší než nastavená
-hodnota. V návrháři se hláška přepočítá hned při změně šířky. Ozve se od půl milimetru přesahu -
-menší se na papíře ztratí v tloušťce čáry.
-Prázdná pole se chovají jako dřív.
+Staré šablony převezme migrace 1.14.0: vezme se největší šířka, a když chybí, nejmenší.
+
+Vnitřní okraj buňky navíc ustoupí obsahu - když se čas se značkou do odsazeného místa nevejde,
+vysází se do celé buňky, místo aby přetekl přes hranu sloupce.
 
 ## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře
 

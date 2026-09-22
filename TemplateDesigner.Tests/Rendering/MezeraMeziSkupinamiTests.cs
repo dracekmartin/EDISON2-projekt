@@ -34,6 +34,7 @@ public class MezeraMeziSkupinamiTests
     private static LineTableElement Prvek() => new()
     {
         X = 0, Y = 0, Width = 100, Height = null,
+        SirkaSloupceSpojeMm = SirkaSpoje,
         // ⚠️ Vypnuto schválně: konstanty níž počítají s tím, že sloupec spoje je přesně
         // `SirkaSpoje` široký a jen ten se značkou návaznosti je širší. Se zapnutou volbou
         // (dnes výchozí) jsou všechny sloupce široké jako ten nejširší a celá geometrie
@@ -46,7 +47,9 @@ public class MezeraMeziSkupinamiTests
         Columns =
         [
             new StopColumn { Key = ColumnKeys.StopName, Header = "Zastávka", Width = SirkaZastavky, Visible = true },
-            new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj", Width = SirkaSpoje,
+            // ⚠️ Šířka sloupce spoje je na prvku, ne pevná na sloupci: pevná je výslovné zadání
+            // a obsah ji nerozšíří, takže by sloupec se značkou nebyl širší (od 22. 9.).
+            new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj",
                 Visible = true, Alignment = TextHorizontalAlignment.Center },
         ],
     };
@@ -419,15 +422,16 @@ public class MezeraMeziSkupinamiTests
     public void SloupecSeZnackou_JeSirsiNezSloupecBezNi()
     {
         var prvek = Prvek();
+        // Užší, než kolik si žádá čas se značkou - jinak by se značka vešla do volného místa
+        // a sloupec by se rozšiřovat nemusel (od 22. 9.).
+        prvek.SirkaSloupceSpojeMm = 6f;
         var data = Data();   // značka návaznosti je na posledním ze tří spojů
 
-        var rozvrh = prvek.Rozvrzeni(data);
-        float sirkaSeZnackou = rozvrh.Max(b => b.SirkaMm)
-            - (SirkaZastavky + 2 * rozvrh[0].SloupecSpojeMm);
+        var sirky = prvek.Rozvrzeni(data)[0].SirkySloupcu;
 
-        Assert.True(sirkaSeZnackou > rozvrh[0].SloupecSpojeMm + 0.1f,
-            $"sloupec se značkou ({sirkaSeZnackou:0.##} mm) není širší než sloupec bez ní "
-            + $"({rozvrh[0].SloupecSpojeMm:0.##} mm) - značka pak z buňky vyleze");
+        Assert.True(sirky[^1] > sirky[0] + 0.1f,
+            $"sloupec se značkou ({sirky[^1]:0.##} mm) není širší než sloupec bez ní "
+            + $"({sirky[0]:0.##} mm) - značka pak z buňky vyleze");
     }
 
     /// <summary>
