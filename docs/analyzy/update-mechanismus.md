@@ -179,8 +179,7 @@ instalace i výroba verze zůstávají legacy beze změny. Od 8. 9. 2026 dělá 
 výměnu souborů **vlastní `EDUPDATE2.exe`** (projekt `EDUPDATE2/`, kontrakt
 v `EDUPDATE2/CLAUDE.md`): staging do přechodné složky, swap se zálohou, rollback,
 čtení legacy manifestu `EDISONCRC.bin` zůstává bit-kompatibilní. Legacy `EDUPDATE.EXE`
-slouží už jen starému shellu. Původní návrhový doc `EDISONMAIN2/docs/UPDATE_FLOW.md`
-(neudržovaný) popisuje stav před EDUPDATE2.
+slouží už jen starému shellu.
 
 ### 3.1 Tok
 
@@ -231,7 +230,7 @@ slouží už jen starému shellu. Původní návrhový doc `EDISONMAIN2/docs/UPD
   a `EDUPDATE2.exe` **nejsou** ve `FILES_DESCRIPTION.INF` na Cloud2 (v repo kopii je
   jen `EDISONMAIN2API.dll`, omylem pod typem EXE) - bez FULL řádků se k zákazníkům
   nedostanou. Upravený legacy `EDUPDATE.EXE` (WaitProcess/RunExe) už nový shell
-  nepotřebuje. Seznam binárek vydání: `DEPLOY.md`.
+  nepotřebuje. Seznam binárek vydání: `docs/deploy.md`.
 - `MayUpdate` (USERS "UpdateEdison") je jen **právo spustit serverový update**
   z Nastavení - do legacy hosta jde jako launch arg pole [15]
   (`EDControls/dotnet/EDViewModel/WindowNavigator.cs:441-444`); s klientským
@@ -340,7 +339,6 @@ podle odhadované pravděpodobnosti):
 | Credentials Cloud2 (`compiler` + heslo) plaintextem ve zdrojáku | `EDISON/SETUPWIZARD/frmMain.vb:211-214` |
 | Mrtvý kód `ClientUpdater\` (net8 "Updater" z 2024) - prázdná UI kostra | `EDISON/ClientUpdater/` |
 | Launch argumenty legacy hosta se neescapují, jen obalují uvozovkami | `EDControls/dotnet/EDViewModel/WindowNavigator.cs:441-446` |
-| `RESPONSIBILITIES.md §12` tvrdí "EDISONMAIN2 nemá update mechanismus" - stale od 12. 6. 2026 | `EDISONMAIN2/RESPONSIBILITIES.md:1170` |
 
 ## 5. Parita starý vs. nový shell
 

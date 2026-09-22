@@ -1,7 +1,7 @@
 # Přepínač „nový shell" per zákazník: dvě varianty
 
 Stav k 2026-09-22. Zdroje: repo EDISON (EDLOADER, EDISONINS/CACHE/ALVA/SETUP, EDISONMAIN), repo
-EDISON2 (`DEPLOY.md`, `EDISONMAIN2/dotnet/Startup`). Rozhodnutí odloženo; tenhle dokument drží fakta
+EDISON2 (`docs/deploy.md`, `EDISONMAIN2/dotnet/Startup`). Rozhodnutí odloženo; tenhle dokument drží fakta
 a oba návrhy, aby se nemusely znovu dohledávat.
 
 ## Proč přepínač
