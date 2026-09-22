@@ -343,7 +343,7 @@ public class LineTableBlokyTests
         // ⚠️ Neúplný blok musí vzniknout, jinak test nic neměří - a od 14. 9. se spoje dělí rovným
         // dílem, takže u většiny počtů vyjdou všechny části stejné. Hledá se proto první počet
         // spojů, u kterého poslední část kratší je.
-        var bloky = Enumerable.Range(80, 20)
+        var bloky = Enumerable.Range(60, 80)
             .Select(n => prvek.Rozvrzeni(SirokaLinkaData(n, pocetZastavek: 28)))
             .First(b => b.Count > 1 && b[^1].Pocet < b.Max(x => x.Pocet));
 

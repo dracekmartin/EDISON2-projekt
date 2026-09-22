@@ -12,9 +12,11 @@ tedy hustotu podle většiny sloupců, ušetříš místo a o výjimky se nemus�
 a písmo se nikdy nezmenší. Cenou je, že sloupce nejsou stejně široké; pravidelnou mřížku dělá dál
 volba „Stejně široké sloupce spojů" nebo větší zadaná hodnota.
 
-Zadané hodnotě navíc ustoupí vůle kolem obsahu - zarazí se teprve o číslice, takže sloupec jen
-s minutami jde stáhnout až k nim. Na 330510 vyjdou při zadaných 4 mm sloupce 4,00 až 5,58 mm
-(níž než 3,65 mm už to nepustí, tolik měří samotný čas) a linka se vejde na dvě části místo tří.
+Zadané hodnotě navíc ustoupí vůle kolem obsahu - zarazí se teprve o to, co je vidět, a kolem toho
+nechá 0,15 mm z každé strany. Měří se přitom **kreslená stopa**, ne postup písma: piktogramy nad časy
+kreslí o kus dál, než kam posunou pero, takže se dřív počítalo s menší šířkou, než se nakreslí.
+Na 330510 vyjdou při zadaných 4 mm sloupce 4,00 až 5,88 mm (níž než 3,95 mm to nepustí, tolik měří
+samotný čas) a linka se vejde na dvě části místo tří.
 
 Staré šablony převezme migrace 1.14.0: vezme se největší šířka, a když chybí, nejmenší.
 

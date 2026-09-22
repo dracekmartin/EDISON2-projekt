@@ -656,6 +656,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private const float MinVuleKolemCasuMm = 1f;
 
     /// <summary>
+    /// Nejmenší vzduch kolem kreslené stopy (mm celkem), který zůstane i při zadané šířce.
+    /// </summary>
+    /// <remarks>Zadaná šířka je cíl, ne příkaz na doraz: číslice ani značky se nesmějí dotýkat
+    /// svislých čar, jinak tabulka vypadá slitá. Víc než tohle si uživatel přidá vnitřním okrajem
+    /// (rozhodnutí Jan 22. 9.).</remarks>
+    private const float MinBufferKolemStopyMm = 0.3f;
+
+    /// <summary>
     /// Nejtěsnější sloupec spoje: jeho šířka, co se do něj musí vejít (mm) a co to je.
     /// Null = prvek nemá co kreslit.
     /// </summary>
@@ -686,13 +694,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             GetTypeface(FontResolver.SymbolFontFamily(_cachedCulture)), st.FontSize);
         using var casMaly = new SKFont(GetTypeface(st), st.FontSize * Math.Clamp(PomerMinuty, 0.3f, 1f));
 
-        float MerBunku(List<SymbolRunRenderer.Run> runs)
-        {
-            float pt = 0f;
-            foreach (var r in runs)
-                pt += (r.Symbol ? casSymbol : r.Zmenseni < 0.999f ? casMaly : casNormal).MeasureText(r.Text);
-            return pt * PtToMm;
-        }
+        float MerBunku(List<SymbolRunRenderer.Run> runs) => StopaPt(runs,
+            r => r.Symbol ? casSymbol : r.Zmenseni < 0.999f ? casMaly : casNormal) * PtToMm;
 
         (float Sloupec, float Zaklad, float Potreba, string Kde)? nejtesnejsi = null;
         foreach (var blok in bloky)
@@ -717,6 +720,32 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         for (int si = 0; si < stops.Count; si++)
             if (RowConditions.IsVisible(RowVisibilityExpression, stops[si].SourceRow))
                 yield return (si, stops[si]);
+    }
+
+    /// <summary>
+    /// Šířka <b>kreslené stopy</b> úseků (pt) - od levé hrany prvního glyfu po pravou hranu posledního.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Ne součet postupů písma: postup je krok pera a nese i prázdno, které má glyf zabudované
+    /// po stranách. U dvojice piktogramů nad časy to dělá několik desetin milimetru, takže sloupec
+    /// vycházel širší, než kam se doopravdy kreslí, a nešel zúžit na to, co je vidět
+    /// (nález Jan 22. 9.). Mezera **mezi** úseky zůstává - ta je vysázená.
+    /// </remarks>
+    private static float StopaPt(List<SymbolRunRenderer.Run> runs, Func<SymbolRunRenderer.Run, SKFont> font)
+    {
+        float x = 0f, levy = float.MaxValue, pravy = float.MinValue;
+        foreach (var r in runs)
+        {
+            var f = font(r);
+            float postup = f.MeasureText(r.Text, out var stopa);
+            if (stopa.Width > 0f)
+            {
+                levy = MathF.Min(levy, x + stopa.Left);
+                pravy = MathF.Max(pravy, x + stopa.Right);
+            }
+            x += postup;
+        }
+        return pravy > levy ? pravy - levy : x;
     }
 
     /// <summary>Nejširší věc ve sloupci jednoho spoje (mm) a co to je - bez vůle kolem ní.</summary>
@@ -750,10 +779,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             int radku = (spoj.Platnost.Count + ZnacekNaRadekPlatnosti - 1) / ZnacekNaRadekPlatnosti;
             for (int r = 0; r < radku; r++)
             {
-                float sirka = 0f;
-                foreach (var run in SymbolRunRenderer.BuildRuns(
-                             ZnackyRadku(spoj, r), SymbolMap.ResolveLinkovy))
-                    sirka += (run.Symbol ? symbol : normal).MeasureText(run.Text);
+                float sirka = StopaPt(SymbolRunRenderer.BuildRuns(
+                    ZnackyRadku(spoj, r), SymbolMap.ResolveLinkovy), run => run.Symbol ? symbol : normal);
                 if (sirka * PtToMm <= potreba) continue;
                 potreba = sirka * PtToMm;
                 kde = $"značky platnosti u spoje {spoj.CisloSpoje}";
@@ -804,11 +831,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private float ZmerCasPt(ResolvedTextStyle st)
     {
         using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
-        if (FormatCasu != FormatCasuSpoje.HodinaVetsi) return font.MeasureText("00:00");
+        if (FormatCasu != FormatCasuSpoje.HodinaVetsi)
+            return StopaPt([new("00:00", false)], _ => font);
 
         float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
         using var maly = new SKFont(GetTypeface(st), st.FontSize * pomer);
-        return font.MeasureText("23") + maly.MeasureText(" 59");
+        return StopaPt([new("23", false), new(" 59", false, pomer)],
+            r => r.Zmenseni < 0.999f ? maly : font);
     }
 
     /// <summary>
@@ -1020,13 +1049,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             GetTypeface(FontResolver.SymbolFontFamily(_cachedCulture)), st.FontSize);
         using var casMaly = new SKFont(GetTypeface(st), st.FontSize * Math.Clamp(PomerMinuty, 0.3f, 1f));
 
-        float MerBunku(List<SymbolRunRenderer.Run> runs)
-        {
-            float pt = 0f;
-            foreach (var r in runs)
-                pt += (r.Symbol ? casSymbol : r.Zmenseni < 0.999f ? casMaly : casNormal).MeasureText(r.Text);
-            return pt * PtToMm;
-        }
+        float MerBunku(List<SymbolRunRenderer.Run> runs) => StopaPt(runs,
+            r => r.Symbol ? casSymbol : r.Zmenseni < 0.999f ? casMaly : casNormal) * PtToMm;
 
         _cachedPotrebaSpoje = [];
         foreach (var t in _cachedTrips ?? [])
@@ -1034,7 +1058,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var (obsah, _) = ObsahSpojeMm(t, znackyNormal, znackySymbol, velikostZnacek,
                 MerBunku, ZmerCasPt(st) * PtToMm);
             _cachedPotrebaSpoje[t] = (MathF.Max(MinAutoColumnWidthMm, obsah + vzduch),
-                MathF.Max(MinAutoColumnWidthMm, obsah));
+                MathF.Max(MinAutoColumnWidthMm, obsah + MinBufferKolemStopyMm));
         }
     }
 
