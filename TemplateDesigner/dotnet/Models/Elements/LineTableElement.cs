@@ -2337,7 +2337,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 if (cas == "" && !znackyVBunceZrc.ContainsKey(ti))
                     cas = VyplnBunky(mrizka.SirkaZrcadlenehoMm(ti), st, ctx);
                 return (cas, st);
-            });
+            }, vyplnPrazdneho: VyplnBunky(mrizka.SirkaPrazdnehoMm, tripCellStyle, ctx));
             var znakZastavkyPro = SymbolRunRenderer.BuildRuns(
                 stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveZastavka);
             for (int ci = 0; ci < fixedCols.Count; ci++)
@@ -2374,7 +2374,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 if (text == "" && !znackyVBunce.ContainsKey(ti))
                     text = VyplnBunky(mrizka.SirkaSpojeMm(ti), cellStyle, ctx);
                 return (text, cellStyle);
-            });
+                // ⚠️ Tečky patří i do prázdných sloupců dorovnání: starý postskript jimi drží
+                // svislé vodicí pruhy přes celou šířku tabulky, a sloupec bez nich by v té řadě
+                // vypadal jako díra (rozhodnutí Jan 22. 9.).
+            }, vyplnPrazdneho: VyplnBunky(mrizka.SirkaPrazdnehoMm, tripCellStyle, ctx));
 
             // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
             string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
@@ -2806,7 +2809,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static void PridejSpoje(List<ColumnRenderer.CellSpec> specs, SloupcovaMrizka mrizka,
         int pocetSpoju, ResolvedTextStyle stylMezery,
         Func<int, (string Text, ResolvedTextStyle Style)> bunka,
-        ResolvedTextStyle? stylPrazdne = null)
+        ResolvedTextStyle? stylPrazdne = null, string vyplnPrazdneho = "")
     {
         for (int ti = 0; ti < pocetSpoju; ti++)
         {
@@ -2818,7 +2821,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // Styl je styl řádku, ne mezery: prázdný sloupec je součást tabulky a musí mít
             // podbarvení záhlaví, kdežto mezerou mezi skupinami prosvítá stránka.
             for (int pi = 0; pi < mrizka.PrazdnychPoSpoji(ti); pi++)
-                specs.Add(new(mrizka.SirkaPrazdnehoMm, "", stylPrazdne ?? style));
+                specs.Add(new(mrizka.SirkaPrazdnehoMm, vyplnPrazdneho, stylPrazdne ?? style));
         }
     }
 
@@ -2854,13 +2857,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static void PridejZrcadlene(List<ColumnRenderer.CellSpec> specs, SloupcovaMrizka mrizka,
         int pocet, ResolvedTextStyle stylMezery,
         Func<int, (string Text, ResolvedTextStyle Style)> bunka,
-        ResolvedTextStyle? stylPrazdne = null)
+        ResolvedTextStyle? stylPrazdne = null, string vyplnPrazdneho = "")
     {
         for (int ti = 0; ti < pocet; ti++)
         {
             var (text, style) = bunka(ti);
             for (int pi = 0; pi < mrizka.PrazdnychPredZrcadlenym(ti); pi++)
-                specs.Add(new(mrizka.SirkaPrazdnehoMm, "", stylPrazdne ?? style));
+                specs.Add(new(mrizka.SirkaPrazdnehoMm, vyplnPrazdneho, stylPrazdne ?? style));
             specs.Add(new(mrizka.SirkaZrcadlenehoMm(ti), text, style));
         }
         if (mrizka.MezeraZaZrcadlenymMm > 0f)

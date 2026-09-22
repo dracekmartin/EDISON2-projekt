@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-09-22 (4) - ⋯ tečky i v dorovnaných sloupcích
+
+Volba „Tečky v prázdných buňkách" je plnila jen ve sloupcích spojů; prázdné sloupce, kterými
+dorovnání zaplňuje pravou část tabulky, zůstávaly bílé a v každé řadě tam byla díra. Nově tečky
+dostanou taky, takže svislé vodicí pruhy jdou přes celou šířku jako ve starém postskriptu.
+
 ## 2026-09-22 (3) - ↹ názvy zastávek stojí ve svislici
 
 Zastávka „na znamení" má před názvem značku, ostatní ji neměly - a sloupec pak vypadal rozházeně,
