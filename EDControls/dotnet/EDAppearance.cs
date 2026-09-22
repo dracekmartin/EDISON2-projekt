@@ -8,7 +8,8 @@ namespace EDControls;
 /// Jedna společná registrace sdíleného vzhledu m-line nástrojů na startupu: uživatelský font
 /// (<see cref="FontService"/>), světlý/tmavý režim (<see cref="ThemeService"/>), panel Podpora
 /// (<see cref="EDSupportPanel.EDSupportPanel"/>) a usage telemetrie
-/// (<see cref="EDViewModel.EDUsageTelemetryHook"/>). Font a téma čtou sdílené preference
+/// (<see cref="EDViewModel.EDUsageTelemetryHook"/>) a obnovu ikony v liště (<see cref="TaskbarIcon"/>).
+/// Font a téma čtou sdílené preference
 /// v <c>%APPDATA%\m-line\common\</c> a propagují změny mezi procesy (shell ↔ TemplateDesigner)
 /// přes FileSystemWatcher.
 ///
@@ -27,5 +28,7 @@ public static class EDAppearance
         // dostane i tam, kde se nespouští přes WindowNavigator (hlavní okno a dialogy TemplateDesigneru).
         EDSupportPanel.EDSupportPanel.AttachToAllWindows();
         EDViewModel.EDUsageTelemetryHook.AttachToAllWindows();
+        // Taskbar Win11 se na ikonu ptá jen jednou po vzniku okna; blokovaný startup ho nechá na výchozí.
+        TaskbarIcon.AttachToAllWindows();
     }
 }

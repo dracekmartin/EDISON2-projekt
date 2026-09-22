@@ -21,7 +21,7 @@ XAML všech konzumentů.
 
 - `EDAppearance.Initialize(app)` jednou před prvním oknem (a **až po** `EDServices.Initialize`):
   napojí `FontService` + `ThemeService` a class handlery na `Window.Loaded`, které rozdají
-  panel Podpora a usage telemetrii.
+  panel Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`).
 - Zbytek dělá konzument sám: merge `EDIcons.xaml` + `EDStrings.xaml` v App.xaml,
   `DispatcherUnhandledException` handler (viz root CLAUDE.md) a `EDServices.FormIdPrefix`,
   ať se okna nové aplikace nemíchají se shellem.
@@ -92,6 +92,8 @@ XAML všech konzumentů.
 - `WindowDimmer` - ztmavení okna, refcount per okno; UI-thread only.
 - `OwnerWindowCentering` - vycentrování na klientskou oblast ownera (volat z `Loaded`).
   WPF `CenterOwner` u maximalizovaného ownera centruje podle restore bounds → mimo střed.
+- `TaskbarIcon` - po `Loaded` znovu pošle ikonu okna a dá ji i třídě okna: taskbar Win11 (od
+  KB5051989) se na ikonu ptá jednou s krátkým timeoutem, blokovaný startup ho nechá na výchozí.
 - `ErrorReporting/` - hlášení chyb na `podpora.m-line.cz` (přímý HTTPS POST, **ne** přes
   Caché jako usage telemetrie). Vlastní `CLAUDE.md`.
 
