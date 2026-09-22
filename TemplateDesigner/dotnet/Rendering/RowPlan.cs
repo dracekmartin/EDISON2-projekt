@@ -157,7 +157,7 @@ public static class RowPlanRenderer
         {
             var zacatek = ctx.ToCanvas(od, yMm);
             var konec = ctx.ToCanvas(doX, yMm);
-            float y = NaPixel(zacatek.Y, paint.StrokeWidth);
+            float y = ctx.SrovnatCaryNaPixel ? NaPixel(zacatek.Y, paint.StrokeWidth) : zacatek.Y;
             ctx.Canvas.DrawLine(new SKPoint(zacatek.X, y), new SKPoint(konec.X, y), paint);
         }
     }
@@ -170,8 +170,8 @@ public static class RowPlanRenderer
     /// rozprostře do dvou řad po 40 % a vedle crisp čáry vypadá dvakrát silnější, i když má touž
     /// tloušťku (nález Jan 22. 9. na hranici nad přípojnými řádky). Tenký tah se proto posadí na
     /// půl pixelu, silný na celý - to je pravidlo, jak se kreslí ostré čáry.
-    /// <para>Netýká se tisku: v PDF je pixel tak malý, že posun není vidět. Vyrovnává to jen
-    /// náhled, kde je čára jeden pixel.</para>
+    /// <para>Dělá se to <b>jen na rastru</b> (viz <see cref="RenderContext.SrovnatCaryNaPixel"/>).
+    /// V PDF je jednotkou bod, takže by srovnání čáru posunulo o desetiny milimetru.</para>
     /// </remarks>
     private static float NaPixel(float yPx, float strokePx)
     {

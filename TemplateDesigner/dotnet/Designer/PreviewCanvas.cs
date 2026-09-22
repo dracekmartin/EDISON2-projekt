@@ -172,7 +172,7 @@ public class PreviewCanvas
                 using (var bg = new SKPaint { Color = SKColors.White })
                     canvas.DrawRect(0, 0, pageW, pageH, bg);
 
-                RenderPage(canvas, ps, pointsPerMm, 0, 0, page);
+                RenderPage(canvas, ps, pointsPerMm, 0, 0, page, naRastr: false);
 
                 doc.EndPage();
             }
@@ -212,7 +212,8 @@ public class PreviewCanvas
 
             foreach (var placed in sheet.Pages)
                 RenderPage(canvas, ps, pointsPerMm,
-                    placed.OffsetX * bodyNaMmListu, placed.OffsetY * bodyNaMmListu, placed.Page);
+                    placed.OffsetX * bodyNaMmListu, placed.OffsetY * bodyNaMmListu, placed.Page,
+                    naRastr: false);
 
             if (o.DrawCutMarks)
                 DrawCutMarks(canvas, o, bodyNaMmListu);
@@ -463,8 +464,11 @@ public class PreviewCanvas
 
     /// <summary>Renderuje jednu stránku LayoutResult. Preview zrcadlí výstup (PDF/PNG/tisk) 1:1 -
     /// žádné orientační pomůcky navíc; hranice sekcí ukazuje jen editační plátno (DesignerCanvas).</summary>
+    /// <param name="naRastr">Kreslí se na obrazovku nebo do PNG - čáry se pak srovnají na pixel.
+    /// Pro PDF <c>false</c>: tam je jednotkou bod a srovnání by čáry posunulo.</param>
     private static void RenderPage(SKCanvas canvas, PageSize ps, float mmToPx,
-        float pageX, float pageY, Page page, ClippedCells? oriznuteBunky = null)
+        float pageX, float pageY, Page page, ClippedCells? oriznuteBunky = null,
+        bool naRastr = true)
     {
         float ox = pageX + ps.MarginLeft * mmToPx;
         float contentW = ps.PrintableWidth * mmToPx;
@@ -496,7 +500,8 @@ public class PreviewCanvas
                 SectionOriginY = sectionTopPx + originYOffset,
                 ClipTopMm = placed.ClipTop ?? 0f,
                 OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm,
-                ClippedCells = oriznuteBunky
+                ClippedCells = oriznuteBunky,
+                SrovnatCaryNaPixel = naRastr,
             };
 
             // Barvy z dat („pozadí = barva linky") se čtou z property elementu, kam se DataContext

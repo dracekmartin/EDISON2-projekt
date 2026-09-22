@@ -32,6 +32,16 @@ public class RenderContext
     /// <summary>Sběrač oříznutých buněk pro hlášku ve stavovém řádku. Null = nesbírá se (tisk, testy).</summary>
     public Rendering.ClippedCells? ClippedCells { get; init; }
 
+    /// <summary>
+    /// Kreslí se na rastr, kde má smysl srovnávat čáry na celý pixel?
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Jen pro obrazovku a PNG. V PDF je jednotkou <b>bod</b> (0,35 mm), takže srovnání na
+    /// „pixel" by čáru posunulo o desetiny milimetru a tabulka by se rozešla s tím, co je
+    /// v náhledu (nález Jan 22. 9. na exportu 330530).
+    /// </remarks>
+    public bool SrovnatCaryNaPixel { get; init; }
+
     public RenderContext(SKCanvas canvas, float mmToPx, DataContext? data = null)
     {
         Canvas = canvas;

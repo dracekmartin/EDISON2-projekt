@@ -9,9 +9,10 @@ a odliší ji barva - kreslí se barvou textu, takže je vidět i ve světlé m�
 K tomu se na jedné hranici kreslí **jen jedna čára**: dosud tam mohla padnout čára pod řádkem
 i čára nad tím následujícím a dvě přes sebe vyšly o pixel silnější.
 
-A vodorovné čáry se srovnávají na pixel. Výšky řádků jsou v milimetrech, takže hranice padaly mezi
-pixely a čára se rozprostřela do dvou řad - vedle ostré čáry vypadala dvakrát silnější, přestože
-měla touž tloušťku. V náhledu jsou teď všechny stejné; tisku se to netýká.
+A vodorovné čáry se **na obrazovce** srovnávají na pixel. Výšky řádků jsou v milimetrech, takže
+hranice padaly mezi pixely a čára se rozprostřela do dvou řad - vedle ostré čáry vypadala dvakrát
+silnější, přestože měla touž tloušťku. Do PDF se to nepřenáší: tam je jednotkou bod (0,35 mm)
+a srovnání by čáry posunulo o desetiny milimetru proti tomu, co je v náhledu.
 
 ## 2026-09-22 (1) - 📏 šířka sloupců spojů vychází ze sazby, ne z ručního čísla
 
