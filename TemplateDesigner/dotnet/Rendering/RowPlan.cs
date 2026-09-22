@@ -157,7 +157,7 @@ public static class RowPlanRenderer
         {
             var zacatek = ctx.ToCanvas(od, yMm);
             var konec = ctx.ToCanvas(doX, yMm);
-            float y = ctx.SrovnatCaryNaPixel ? NaPixel(zacatek.Y, paint.StrokeWidth) : zacatek.Y;
+            float y = NaPixel(ctx, zacatek.Y, paint.StrokeWidth);
             ctx.Canvas.DrawLine(new SKPoint(zacatek.X, y), new SKPoint(konec.X, y), paint);
         }
     }
@@ -172,10 +172,13 @@ public static class RowPlanRenderer
     /// půl pixelu, silný na celý - to je pravidlo, jak se kreslí ostré čáry.
     /// <para>Dělá se to <b>jen na rastru</b> (viz <see cref="RenderContext.SrovnatCaryNaPixel"/>).
     /// V PDF je jednotkou bod, takže by srovnání čáru posunulo o desetiny milimetru.</para>
+    /// <para>⚠️ Musí jí projít <b>každá</b> vodorovná čára tabulky. Když si ji část kreslila sama
+    /// (řádky mřížky u tabulky spojů), vyšly srovnané a nesrovnané čáry vedle sebe různě silně -
+    /// a přesně to vypadalo jako „ta jedna čára je tlustší" (nález Jan 22. 9.).</para>
     /// </remarks>
-    private static float NaPixel(float yPx, float strokePx)
+    internal static float NaPixel(RenderContext ctx, float yPx, float strokePx)
     {
-        if (strokePx <= 0f) return yPx;
+        if (!ctx.SrovnatCaryNaPixel || strokePx <= 0f) return yPx;
         // ⚠️ Tenčí tah než pixel a půl patří doprostřed pixelu, ne na jeho hranu - na hraně by se
         // rozdělil na dvě šedé řady, což je přesně ta „dvakrát silnější" čára. Nad tou hranicí
         // rozhoduje lichost: lichý počet pixelů sedí na půlce, sudý na celém.

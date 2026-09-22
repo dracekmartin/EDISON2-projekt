@@ -2495,7 +2495,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             float vule = VuleMm * scale;
             float delka = sirkaMm - (2 * vule);
             if (delka < NejkratsiMm) return;
-            ctx.Canvas.DrawLine(ctx.ToCanvas(odMm + vule, yMm), ctx.ToCanvas(odMm + vule + delka, yMm), pero);
+            var zacatekCary = ctx.ToCanvas(odMm + vule, yMm);
+            var konecCary = ctx.ToCanvas(odMm + vule + delka, yMm);
+            float yCary = RowPlanRenderer.NaPixel(ctx, zacatekCary.Y, pero.StrokeWidth);
+            ctx.Canvas.DrawLine(new SKPoint(zacatekCary.X, yCary), new SKPoint(konecCary.X, yCary), pero);
         }
 
         for (int ti = 0; ti < zrcadlenych; ti++)
@@ -2960,11 +2963,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             zrcadleny ? radek.CasPerZrcadleny : radek.CasPerSpoj;
     }
 
+    /// <summary>Vodorovná čára přes celou šířku prvku - srovnaná na pixel týmž pravidlem jako
+    /// čáry řádkového plánu, jinak by vedle sebe vyšly různě silně.</summary>
     private void DrawRowLine(RenderContext ctx, float yMm, SchedulePaints paints)
     {
         var s = ctx.ToCanvas(X, yMm);
         var e = ctx.ToCanvas(X + Width, yMm);
-        ctx.Canvas.DrawLine(s, e, paints.Grid);
+        float y = RowPlanRenderer.NaPixel(ctx, s.Y, paints.Grid.StrokeWidth);
+        ctx.Canvas.DrawLine(new SKPoint(s.X, y), new SKPoint(e.X, y), paints.Grid);
     }
 
     private void RenderPlaceholder(RenderContext ctx, SchedulePaints paints)
