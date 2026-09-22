@@ -9,6 +9,10 @@ a odliší ji barva - kreslí se barvou textu, takže je vidět i ve světlé m�
 K tomu se na jedné hranici kreslí **jen jedna čára**: dosud tam mohla padnout čára pod řádkem
 i čára nad tím následujícím a dvě přes sebe vyšly o pixel silnější.
 
+A vodorovné čáry se srovnávají na pixel. Výšky řádků jsou v milimetrech, takže hranice padaly mezi
+pixely a čára se rozprostřela do dvou řad - vedle ostré čáry vypadala dvakrát silnější, přestože
+měla touž tloušťku. V náhledu jsou teď všechny stejné; tisku se to netýká.
+
 ## 2026-09-22 (1) - 📏 šířka sloupců spojů vychází ze sazby, ne z ručního čísla
 
 U tabulky spojů se šířka sloupce nastavovala ručně - a nešlo to. Pole byla dvě („nejmenší"

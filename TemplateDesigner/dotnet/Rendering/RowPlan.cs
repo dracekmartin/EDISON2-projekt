@@ -154,6 +154,29 @@ public static class RowPlanRenderer
         SKPaint paint, List<(float Od, float Do)> mezery)
     {
         foreach (var (od, doX) in Useky(xMm, xMm + widthMm, mezery))
-            ctx.Canvas.DrawLine(ctx.ToCanvas(od, yMm), ctx.ToCanvas(doX, yMm), paint);
+        {
+            var zacatek = ctx.ToCanvas(od, yMm);
+            var konec = ctx.ToCanvas(doX, yMm);
+            float y = NaPixel(zacatek.Y, paint.StrokeWidth);
+            ctx.Canvas.DrawLine(new SKPoint(zacatek.X, y), new SKPoint(konec.X, y), paint);
+        }
+    }
+
+    /// <summary>
+    /// Srovná vodorovnou čáru na pixel, aby se nerozmazala do dvou řad.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Výšky řádků jsou v milimetrech, takže hranice padají mezi pixely: tenká čára se pak
+    /// rozprostře do dvou řad po 40 % a vedle crisp čáry vypadá dvakrát silnější, i když má touž
+    /// tloušťku (nález Jan 22. 9. na hranici nad přípojnými řádky). Tenký tah se proto posadí na
+    /// půl pixelu, silný na celý - to je pravidlo, jak se kreslí ostré čáry.
+    /// <para>Netýká se tisku: v PDF je pixel tak malý, že posun není vidět. Vyrovnává to jen
+    /// náhled, kde je čára jeden pixel.</para>
+    /// </remarks>
+    private static float NaPixel(float yPx, float strokePx)
+    {
+        if (strokePx <= 0f) return yPx;
+        bool lichy = (int)MathF.Round(strokePx) % 2 == 1;
+        return lichy ? MathF.Floor(yPx) + 0.5f : MathF.Round(yPx);
     }
 }
