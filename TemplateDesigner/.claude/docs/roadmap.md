@@ -183,6 +183,15 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
   precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
   ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
 
+- **Vysvětlivka značky rovnou u spoje na obrazovce** (nápad Jan 22. 9., zatím bez poptávky).
+  Kdo si jízdní řád otevře na počítači nebo v mobilu, musí u každé značky sjet na legendu na konci.
+  Cíl: ukázat text poznámky u značky samotné. ⚠️ **První krok není kód, ale pokus** - vyrobit ručně
+  jedno PDF a otevřít ho v tom, co lidé používají. Tooltip u neviditelného pole umí Acrobat na
+  počítači, prohlížeč v Chromu nejspíš ne a **mobil nemá kam najet**; ťuknutím funguje jen poznámka
+  s viditelnou ikonkou, která zaplevelí tisk. Čistá cesta pro mobil je **výstup do HTML** (sázecí
+  engine nezná SkiaSharp, takže renderer jde přidat) - ale to už je vlastní featura, ne doplněk PDF.
+  Do PDF navíc anotace neumí zapsat ani SkiaSharp, ani `PdfPig` - potřebovaly by krok navíc.
+
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
 
