@@ -850,7 +850,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // tím, jestli zastávka má **jakýkoli** atribut - jenže řídicí atributy (T, P) se netisknou,
         // takže zastávka s nimi dostala název odsazený o mezeru bez viditelného důvodu. Vypadalo
         // to jako záměrné odsazení významných zastávek (nález Jan 7. 9.).
-        ColumnKeys.StopName => s => NazevSeZnackami(s.Atributy, s.Popis),
+        ColumnKeys.StopName => s => NazevSeZnackami(s.Atributy, s.Popis, SirkaZnacekZastavek()),
         // U rozdvojené zastávky je tohle jediné, co říká, který ze dvou časů je příjezd a který
         // odjezd - ze šipky směru se to nepozná (`B136`). Legacy to píše do téhož sloupce
         // (`JRapiLinPrtWin.mac:3075`), takže se sloupec šipky u těch řádků přeruší.
@@ -1435,11 +1435,30 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// **jakýkoli** atribut - jenže řídicí atributy („T" tarifní bod, „P" oddělený příjezd)
     /// se netisknou, takže právě významné zastávky vyšly odsazené o mezeru bez viditelného
     /// důvodu a vypadalo to jako záměr (nález Jan 7. 9.).
+    /// <para>⚠️ <paramref name="sirkaZnacek"/> odsadí **všechny** názvy stejně, jakmile má značku
+    /// aspoň jedna zastávka linky - tak to dělá starý tisk a názvy pak stojí ve svislici
+    /// (rozhodnutí Jan 22. 9.). Nula = bez odsazení, tedy linka, kde značku nemá nikdo.</para>
     /// </remarks>
-    internal static string NazevSeZnackami(IReadOnlyList<string> atributy, string popis)
+    internal static string NazevSeZnackami(IReadOnlyList<string> atributy, string popis,
+        int sirkaZnacek = 0)
     {
         string znacky = string.Join("", atributy.Where(IsDisplayableStopAttribute));
-        return znacky == "" ? popis : znacky + " " + popis;
+        if (sirkaZnacek <= 0) return znacky == "" ? popis : znacky + " " + popis;
+        return znacky.PadRight(sirkaZnacek) + " " + popis;
+    }
+
+    /// <summary>Nejvíc zobrazitelných značek u jedné zastávky linky (0 = nemá je žádná).</summary>
+    /// <remarks>Podle toho se odsazují názvy všech zastávek, aby stály ve svislici. Počítá se
+    /// z celé trasy, ne z viditelných řádků: schování zastávky výrazem nemá posunout ostatní.</remarks>
+    private int SirkaZnacekZastavek()
+    {
+        int max = 0;
+        foreach (var s in _cachedStops ?? [])
+        {
+            int pocet = s.Atributy.Count(IsDisplayableStopAttribute);
+            if (pocet > max) max = pocet;
+        }
+        return max;
     }
 
     /// <summary>Má zastávka v trase vyžádané tučné písmo? Atribut „T" znamená v číselníku

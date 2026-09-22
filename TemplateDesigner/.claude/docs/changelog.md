@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-09-22 (3) - ↹ názvy zastávek stojí ve svislici
+
+Zastávka „na znamení" má před názvem značku, ostatní ji neměly - a sloupec pak vypadal rozházeně,
+protože každý druhý název začínal o znak vedle. Nově se odsadí **všechny názvy stejně**, jakmile
+má značku aspoň jedna zastávka linky; tak to dělá i starý tisk. Linka, kde značku nemá nikdo,
+zůstává bez odsazení, aby se sloupec zbytečně nerozšířil.
+
 ## 2026-09-22 (2) - ✏ čára u zastávky je tenká jako mřížka
 
 Čára, kterou dispečer odděluje úsek linky (atribut trasy „podtrženo"), se kreslila třikrát silněji
