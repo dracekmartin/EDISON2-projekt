@@ -718,7 +718,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <para>⚠️ Porovnává se **holý obsah bez vůle** kolem něj. Dno sloupce vůli 1 mm zahrnuje,
     /// takže hláška svítila i tam, kde se obsah pohodlně vejde a přijde jen o komfortní mezeru.</para>
     /// </remarks>
-    internal (float Sloupec, float Potreba, string Kde)? SirkaSloupceProtiObsahu(DataContext data)
+    internal (float Sloupec, float Zaklad, float Potreba, string Kde)? SirkaSloupceProtiObsahu(DataContext data)
     {
         var bloky = Rozvrzeni(data);
         if (bloky.Count == 0) return null;
@@ -742,7 +742,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             return pt * PtToMm;
         }
 
-        (float Sloupec, float Potreba, string Kde)? nejtesnejsi = null;
+        (float Sloupec, float Zaklad, float Potreba, string Kde)? nejtesnejsi = null;
         foreach (var blok in bloky)
         {
             var spoje = SpojeBlokuVse(new TableLayout.SloupcovyBlok(blok.Od, blok.Pocet));
@@ -751,7 +751,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var (potreba, kde) = ObsahSpojeMm(spoje[i], normal, symbol, velikost, MerBunku);
                 float sloupec = blok.SirkySloupcu[i];
                 if (nejtesnejsi is { } n && potreba - sloupec <= n.Potreba - n.Sloupec) continue;
-                nejtesnejsi = (sloupec, potreba, kde);
+                nejtesnejsi = (sloupec, blok.SloupecSpojeMm, potreba, kde);
             }
         }
         return nejtesnejsi;

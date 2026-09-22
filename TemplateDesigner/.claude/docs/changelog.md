@@ -16,8 +16,10 @@ místa nevejde, vysází se do celé buňky místo aby přetekl přes hranu slou
 
 Cenou je, že do ještě užšího sloupce se obsah nevejde ani tak a přeteče do sousedního. Proto o tom nově mluví
 odznak ve stavovém řádku i hláška po uložení PDF: kolik sloupec má, kolik si žádá obsah a **u kterého
-spoje** to poprvé nevyjde - dá se tedy jít podívat a zúžit postupně. V návrháři se přepočítá hned
-při změně šířky. Hlásí se jen skutečný přesah obsahu, ne ztráta 1mm vůle kolem něj.
+spoje** to poprvé nevyjde - dá se tedy jít podívat a zúžit postupně. Šířka sloupce se přitom rozepíše
+na základ a příplatek za značku u času, protože sloupec se značkou je o ni širší než nastavená
+hodnota. V návrháři se hláška přepočítá hned při změně šířky. Ozve se od půl milimetru přesahu -
+menší se na papíře ztratí v tloušťce čáry.
 Prázdná pole se chovají jako dřív.
 
 ## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře
