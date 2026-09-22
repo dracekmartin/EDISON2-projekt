@@ -14,14 +14,12 @@
         <local:ColorPreviewHexToBrushConverter x:Key="ColorPreviewHexToBrush"/>
         <local:Base64ToImageSourceConverter x:Key="Base64ToImage"/>
     </UserControl.Resources>
-    <!-- IsSharedSizeScope na vnějším Gridu → column header bar (mimo scroller) a field rows
-         (uvnitř) sdílí šířku sloupce ItemLabel; ScrollViewer scope nepřerušuje.
-         3 rows: toolbar pruh | column header bar | scrollovaný obsah.
-         Toolbar i hlavička musí zůstat NAD ScrollViewerem: uvnitř jim scrollbar ukrojil
-         pravý okraj (překryl zaoblený konec hledání) a při scrollování utekly pryč. -->
+    <!-- IsSharedSizeScope na vnějším Gridu → field rows sdílí šířku sloupce ItemLabel.
+         2 rows: toolbar pruh | scrollovaný obsah.
+         Toolbar musí zůstat NAD ScrollViewerem: uvnitř mu scrollbar ukrojil pravý okraj
+         (překryl zaoblený konec hledání) a při scrollování utekl pryč. -->
     <Grid Grid.IsSharedSizeScope="True" Background="{DynamicResource EDTheme.Bg.Surface}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -36,37 +34,7 @@
                                  ShowSettings="False"
                                  Title="{Binding Title, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"/>
 
-        <!-- Column header bar: Položka | Hodnota. Bg.Panel a MinHeight 30 = sloupcové
-             hlavičky DataGridu v EDListu.
-             Modern PropertyGrid layout: 2 logické sloupce - label + input. Errors/help
-             inline pod inputem (Material Design pattern).
-             Responzivní šířka: label Auto (fit obsahu, floor MinWidth), hodnota "*" s
-             MaxWidth → při dostatku místa se zastaví na 320 a přebytek zůstane prázdný
-             vpravo (jako fixní sloupec + spacer dřív); při nedostatku se hodnota zmenší
-             první až na MinWidth, teprve pak tlačí na label. Definice sloupců musí sedět
-             s field row níž, Padding s jejím Marginem. -->
-        <Border Grid.Row="1"
-                Background="{DynamicResource EDTheme.Bg.Panel}"
-                BorderBrush="{DynamicResource EDTheme.Border.Light}"
-                BorderThickness="0,0,0,1"
-                Padding="16,4,2,4" MinHeight="30">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" MinWidth="120" SharedSizeGroup="ItemLabel"/>
-                    <ColumnDefinition Width="*" MinWidth="120" MaxWidth="320"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Položka"
-                           Foreground="{DynamicResource EDTheme.Text.Header}"
-                           FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                           Margin="6,0,12,0" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="Hodnota"
-                           Foreground="{DynamicResource EDTheme.Text.Header}"
-                           FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                           Margin="2,0,0,0" VerticalAlignment="Center"/>
-            </Grid>
-        </Border>
-
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="TheItemsControl"
                           ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"
                           d:ItemsSource="{Binding Items, Source={d:DesignInstance designTime:EDInputFormDesignTimeData, IsDesignTimeCreatable=True}}">
@@ -349,7 +317,7 @@
                      Položka Auto SharedSize MinWidth=120 → konzistentní label width napříč rows
                      (fit obsahu, jen floor). Hodnota "*" MinWidth=120 MaxWidth=320 → responzivní:
                      do 320 fixní vzhled + prázdno vpravo, při zúžení se zmenší první až na 120,
-                     teprve pak tlačí na label. Definice sloupců musí sedět s column header barem.
+                     teprve pak tlačí na label.
                      Row 1 pod inputem zobrazí error/help inline (Material Design pattern).
                      Margin.Left=16 → fields indented pod group header pro vizuální hierarchii. -->
                 <DataTemplate DataType="{x:Type local:Field}">

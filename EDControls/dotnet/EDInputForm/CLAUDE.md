@@ -50,10 +50,10 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
 - Volitelný `List` dostane implicitní prázdnou položku, povinný ne.
 - `ComboBox` = editable s autocomplete (custom hodnota povolena, items jsou nápověda);
   `List` = strict enum. Renderuje se sdíleným `EDFilterComboBox`.
-- Kořen: brandový `EDComponentToolbar` (týž jako EDList), column header `Položka | Hodnota`,
-  teprve pak `ScrollViewer`. **Ani jedna hlavička nesmí spadnout dovnitř scrolleru** -
-  scrollbar ukrojí pravý konec hledání (`EDInputFormHeaderTests`). `IsSharedSizeScope` proto
-  sedí na vnějším Gridu; ScrollViewer scope nepřerušuje.
+- Kořen: brandový `EDComponentToolbar` (týž jako EDList), pod ním rovnou `ScrollViewer`.
+  **Toolbar nesmí spadnout dovnitř scrolleru** - scrollbar ukrojí pravý konec hledání
+  (`EDInputFormHeaderTests`). `IsSharedSizeScope` sedí na vnějším Gridu, aby popisky field rows
+  držely stejnou šířku; ScrollViewer scope nepřerušuje.
 - Search vstupuje do `EffectiveVisibility`
   (pole může být skryté hledáním nezávisle na `Visibility`); match je diakritika-insensitive,
   stav rozbalení skupin se před hledáním ukládá a po zrušení obnovuje.

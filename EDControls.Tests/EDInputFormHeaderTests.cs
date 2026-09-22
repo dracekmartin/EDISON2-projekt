@@ -38,10 +38,10 @@ public class EDInputFormHeaderTests
         });
     }
 
-    /// <summary>Field rows jsou ve scrolleru, hlavička nad ním - scope musí přemostit
-    /// hranici ScrollVieweru, jinak se popisky rozjedou.</summary>
+    /// <summary>Popisky všech field rows drží stejnou šířku přes SharedSizeGroup - scope
+    /// sedí na vnějším Gridu, takže hranice ScrollVieweru ho nepřerušuje.</summary>
     [Fact]
-    public void ColumnHeader_SharesLabelWidthWithFieldRows()
+    public void FieldRows_ShareLabelWidth()
     {
         RunSta(() =>
         {
@@ -52,8 +52,22 @@ public class EDInputFormHeaderTests
                             && g.ColumnDefinitions[0].SharedSizeGroup == "ItemLabel")
                 .ToList();
 
-            Assert.True(shared.Count >= 2, $"čekal hlavičku + field rows, našel {shared.Count}");
+            Assert.True(shared.Count >= 2, $"čekal dva field rows, našel {shared.Count}");
             Assert.Single(shared.Select(g => g.ColumnDefinitions[0].ActualWidth).Distinct());
+        });
+    }
+
+    /// <summary>Hlavičkový řádek „Položka | Hodnota" je zrušený - jen zabíral místo.</summary>
+    [Fact]
+    public void ColumnHeaderRow_IsGone()
+    {
+        RunSta(() =>
+        {
+            var form = Layout(NewForm());
+
+            var texts = Descendants<TextBlock>(form).Select(t => t.Text).ToList();
+            Assert.DoesNotContain("Položka", texts);
+            Assert.DoesNotContain("Hodnota", texts);
         });
     }
 
