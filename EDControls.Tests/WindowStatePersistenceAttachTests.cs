@@ -6,14 +6,44 @@ using NSubstitute;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Celá cesta Attach → restore při SourceInitialized → save při Closing, přes seam
-/// <see cref="WindowStatePersistence.MLRestProvider"/>. Statický provider → kolekce
-/// bez paralelizace.
+/// Celá cesta Attach → restore při SourceInitialized → save při Closing, jednou přes fake
+/// úložiště a jednou přes legacy Caché seam <see cref="CacheWindowStateStore.MLRestProvider"/>.
+/// Statický provider → kolekce bez paralelizace.
 /// </summary>
 [Collection(SharedStaticStateCollection.Name)]
 public class WindowStatePersistenceAttachTests
 {
     private const char D = '\0';
+
+    private sealed class FakeStore(WindowGeometry geometry) : IWindowStateStore
+    {
+        public FakeStore() : this(WindowGeometry.None) { }
+
+        public bool LoadThrows { get; set; }
+        public int SaveCount { get; private set; }
+        public Rect SavedBounds { get; private set; }
+        public bool SavedMaximized { get; private set; }
+
+        public WindowGeometry Load() =>
+            LoadThrows ? throw new InvalidOperationException("úložiště nedostupné") : geometry;
+
+        public void Save(Rect bounds, bool maximized)
+        {
+            SaveCount++;
+            SavedBounds = bounds;
+            SavedMaximized = maximized;
+        }
+    }
+
+    /// <summary>Tolerance jeden fyzický pixel: Show přichytí geometrii na celé pixely (při 150 %
+    /// je 111 DIP = 166,5 px → 111,33).</summary>
+    private static void AssertBounds(Rect expected, Rect actual)
+    {
+        Assert.Equal(expected.Left, actual.Left, tolerance: 1.0);
+        Assert.Equal(expected.Top, actual.Top, tolerance: 1.0);
+        Assert.Equal(expected.Width, actual.Width, tolerance: 1.0);
+        Assert.Equal(expected.Height, actual.Height, tolerance: 1.0);
+    }
 
     private static IMLRest MockWithSavedState(params string[] rows)
     {
@@ -25,14 +55,130 @@ public class WindowStatePersistenceAttachTests
 
     private static void WithProvider(IMLRest mlRest, Action action)
     {
-        var original = WindowStatePersistence.MLRestProvider;
-        WindowStatePersistence.MLRestProvider = () => mlRest;
+        var original = CacheWindowStateStore.MLRestProvider;
+        CacheWindowStateStore.MLRestProvider = () => mlRest;
         try { action(); }
-        finally { WindowStatePersistence.MLRestProvider = original; }
+        finally { CacheWindowStateStore.MLRestProvider = original; }
     }
 
     [Fact]
-    public void Attach_RestoresSavedBoundsOnShow_SavesOnClose()
+    public void Attach_Store_RestoresSavedBoundsOnShow_SavesOnClose()
+    {
+        var store = new FakeStore(new(100, 120, 400, 300, false));
+
+        Sta.RunOnAppThread(() =>
+        {
+            var window = new Window { ShowInTaskbar = false, ShowActivated = false };
+            WindowStatePersistence.Attach(window, store);
+
+            window.Show();   // SourceInitialized → restore ještě před prvním paintem
+
+            Assert.Equal(100, window.Left);
+            Assert.Equal(120, window.Top);
+            Assert.Equal(400, window.Width);
+            Assert.Equal(300, window.Height);
+            Assert.Equal(WindowState.Normal, window.WindowState);
+
+            window.Close();
+
+            Assert.Equal(1, store.SaveCount);
+            AssertBounds(new Rect(100, 120, 400, 300), store.SavedBounds);
+            Assert.False(store.SavedMaximized);
+        });
+    }
+
+    [Fact]
+    public void Attach_Store_CancelledClosingDoesNotSave()
+    {
+        var store = new FakeStore();
+
+        Sta.RunOnAppThread(() =>
+        {
+            var window = new Window { ShowInTaskbar = false, ShowActivated = false, Width = 300, Height = 200 };
+            // Veto zavření (potvrzovací dialog shellu) - geometrie se ukládat nesmí.
+            window.Closing += (_, e) => e.Cancel = true;
+            WindowStatePersistence.Attach(window, store);
+
+            window.Show();
+            window.Close();
+
+            Assert.Equal(0, store.SaveCount);
+
+            window.Closing += (_, e) => e.Cancel = false;
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public void Attach_Store_FailingLoadKeepsDefaultsAndOpens()
+    {
+        var store = new FakeStore { LoadThrows = true };
+
+        Sta.RunOnAppThread(() =>
+        {
+            var window = new Window
+            {
+                ShowInTaskbar = false, ShowActivated = false,
+                Width = 222, Height = 111,
+                WindowState = WindowState.Maximized,
+            };
+            WindowStatePersistence.Attach(window, store);
+
+            window.Show();   // best-effort: chyba nesmí otevření zablokovat
+
+            // XAML stav se musí vrátit i když úložiště spadlo.
+            Assert.Equal(WindowState.Maximized, window.WindowState);
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public void Attach_ReadOnlyStore_RestoresButNeverSaves()
+    {
+        // Přihlašovací okno sdílený záznam jen přebírá - zapsat ho smí shell, ne přetažený dialog.
+        var store = new FakeStore(new(100, 120, 400, 300, false));
+
+        Sta.RunOnAppThread(() =>
+        {
+            var window = new Window { ShowInTaskbar = false, ShowActivated = false };
+            WindowStatePersistence.Attach(window, new ReadOnlyWindowStateStore(store));
+
+            window.Show();
+
+            Assert.Equal(400, window.Width);
+            Assert.Equal(300, window.Height);
+
+            window.Close();
+
+            Assert.Equal(0, store.SaveCount);
+        });
+    }
+
+    [Fact]
+    public void Save_WritesGeometryWithoutClosing()
+    {
+        // Login okno ukládá pozici hned po přihlášení - shell si ji čte dřív, než se zavře.
+        var store = new FakeStore();
+
+        Sta.RunOnAppThread(() =>
+        {
+            var window = new Window
+            {
+                ShowInTaskbar = false, ShowActivated = false,
+                Left = 40, Top = 50, Width = 300, Height = 200,
+            };
+            window.Show();
+
+            WindowStatePersistence.Save(window, store);
+
+            Assert.Equal(1, store.SaveCount);
+            AssertBounds(new Rect(40, 50, 300, 200), store.SavedBounds);
+            window.Close();
+        });
+    }
+
+    [Fact]
+    public void Attach_FormId_RestoresSavedBoundsOnShow_SavesOnClose()
     {
         var mlRest = MockWithSavedState(
             $"param{D}location{D}100;120",
@@ -44,7 +190,7 @@ public class WindowStatePersistenceAttachTests
             var window = new Window { ShowInTaskbar = false, ShowActivated = false };
             WindowStatePersistence.Attach(window, "EDISON2.TestWindow");
 
-            window.Show();   // SourceInitialized → restore ještě před prvním paintem
+            window.Show();
 
             Assert.Equal(100, window.Left);
             Assert.Equal(120, window.Top);

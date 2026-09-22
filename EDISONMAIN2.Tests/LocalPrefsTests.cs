@@ -48,6 +48,7 @@ public class LocalPrefsTests
             Assert.Null(prefs.TreeWidths);
             Assert.Null(prefs.SupportStripHeights);
             Assert.Null(prefs.Connections);
+            Assert.Null(prefs.ShellWindowBounds);
         });
     }
 
@@ -156,6 +157,29 @@ public class LocalPrefsTests
 
             var connection = Assert.Single(loaded.Connections!);
             Assert.Equal(("Test", "10.0.0.5", 57770), (connection.Name, connection.Server, connection.RestPort));
+        });
+    }
+
+    [Fact]
+    public void SaveLoad_RoundTripsShellWindowBounds()
+    {
+        // Geometrie hlavního okna: sdílí ji shell i přihlašovací okno, takže se čte hned
+        // při startu, ještě před loginem.
+        WithTempPrefs(null, _ =>
+        {
+            new LocalPrefs
+            {
+                // Monitor vlevo od primárního má zápornou pozici - nesmí se cestou ztratit.
+                ShellWindowBounds = new WindowBoundsPrefs
+                {
+                    Left = -1800, Top = -120, Width = 1600, Height = 900, Maximized = true,
+                },
+            }.Save();
+
+            var bounds = LocalPrefs.Load().ShellWindowBounds!;
+
+            Assert.Equal((-1800, -120, 1600, 900), (bounds.Left, bounds.Top, bounds.Width, bounds.Height));
+            Assert.True(bounds.Maximized);
         });
     }
 

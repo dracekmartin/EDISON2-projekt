@@ -27,7 +27,8 @@ public class SessionSwitcherTests
         private readonly WireSpy _wire;
 
         private TestableSessionSwitcher(EDServices services, WireSpy wire, Func<bool> closeAllWindows)
-            : base(services, () => null, wire.Attach, closeAllWindows) => _wire = wire;
+            : base(services, () => null, wire.Attach, closeAllWindows,
+                   Substitute.For<IWindowStateStore>()) => _wire = wire;
 
         public static TestableSessionSwitcher Create(EDServices services, Func<bool> closeAllWindows)
             => new(services, new WireSpy(), closeAllWindows);

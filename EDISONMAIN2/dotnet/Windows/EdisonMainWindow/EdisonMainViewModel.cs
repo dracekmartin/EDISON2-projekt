@@ -376,6 +376,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _initialLicence = initialLicence;
         }
 
+        /// <summary>
+        /// Geometrii shellu drží local.json, ne Caché: týž záznam čte i přihlašovací okno,
+        /// které před loginem na serverové úložiště (per uživatel × IDFa) nedosáhne. Obě okna
+        /// tak naskočí na stejném monitoru.
+        /// </summary>
+        protected override IWindowStateStore? WindowStateStore => new ShellWindowStateStore(_prefs);
+
         private readonly Lic? _initialLicence;
         private Task? _initialization;
 

@@ -14,6 +14,8 @@ ukončení); skládání session sdílí obě cesty přes `SessionFactory.Establ
 Login okno (jen Release dialog path) po OK zůstává jako progress podklad, zavírá se až na shell
 `ContentRendered`; `HandOffLoginWindow` musí dát `Application.MainWindow` na shell **před**
 restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo proces nemá konec.
+Geometrii sdílí se shellem (`ShellWindowStateStore`, local.json), ale jen ji **čte** - zapisuje ji
+shell a jednou bootstrapper hned po přihlášení (při zavření je pozdě, shell ji čte dřív).
 `Services/` složka neexistuje záměrně - single-consumer infrastruktura je ko-lokovaná se svým
 consumerem, cross-cutting věci jdou do `EDControls`.
 Připojení čte `SettingsLoader` z `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho roznáší

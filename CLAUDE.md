@@ -107,12 +107,14 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 
 ## Persistence stavu
 
-- **Per-machine JSON** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`) přes
+- **Per Windows-uživatele (JSON)** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`) přes
   injektovaný `ILocalPrefs` (composition root `AppBootstrapper`). Nové preference = nullable
   property (chybějící klíč zůstane null - kompatibilní upgrade). `RememberedPassword` je DPAPI
-  blob, předvyplní se jen když jméno v blobu == `LastLoginName`.
-- **Per-user × IDFa (Caché)** - stav oken automaticky přes `EDViewModel` /
-  `WindowStatePersistence`; detaily v `EDControls/dotnet/EDViewModel/CLAUDE.md`.
+  blob, předvyplní se jen když jméno v blobu == `LastLoginName`. `ShellWindowBounds` je **jedna
+  geometrie shellu i přihlašovacího okna** - před loginem není session, do které by šlo ukládat.
+- **Per-user × IDFa (Caché)** - stav agendových oken automaticky přes `EDViewModel` /
+  `WindowStatePersistence` (úložiště je vyměnitelné, viz `IWindowStateStore`); detaily
+  v `EDControls/dotnet/EDViewModel/CLAUDE.md`.
 - **Cross-process (font, theme)** - `%APPDATA%\m-line\common\`; viz `EDControls/CLAUDE.md`.
 
 Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAUDE.md`.

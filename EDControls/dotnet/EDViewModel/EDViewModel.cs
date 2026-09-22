@@ -148,6 +148,14 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Kam se ukládá geometrie okna. Null = výchozí Caché úložiště pod <see cref="PersistedFormId"/>
+    /// (per uživatel × IDFa). Override, když okno potřebuje jiné - shell ukládá do local.json,
+    /// protože týž záznam čte i přihlašovací okno, které před loginem na server nedosáhne.
+    /// Opt-out z persistence je <see cref="PersistedFormId"/> = null, ne tohle.
+    /// </summary>
+    protected virtual IWindowStateStore? WindowStateStore => null;
+
+    /// <summary>
     /// <see cref="PersistedFormId"/> pro <see cref="EDUsageTelemetryHook"/> - ten visí na class
     /// handleru <c>Window.Loaded</c>, takže na protected člen nedosáhne.
     /// </summary>
@@ -165,7 +173,7 @@ public class EDViewModel : INotifyPropertyChanged
         _scopedPopupDisplayer = new WindowScopedPopupDisplayer(_services.PopupDisplayer, window);
         RegisterKeyBindings(window);
         if (PersistedFormId is { } formId)
-            WindowStatePersistence.Attach(window, formId);
+            WindowStatePersistence.Attach(window, WindowStateStore ?? new CacheWindowStateStore(formId));
     }
 
     /// <summary>

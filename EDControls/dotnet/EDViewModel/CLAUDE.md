@@ -8,7 +8,8 @@ Základní třída ViewModelů + infrastruktura (`EDServices` - DI singleton `Cu
 `WindowNavigator` ho volá automaticky, shell okno ručně v AppBootstrapperu. Dělá:
 1. klávesy z `Actions` + vždy **Ctrl+Enter → OkCommand** (OK záměrně bez `IsDefault` -
    samotný Enter slouží EDInputFormu k navigaci mezi poli);
-2. persistenci stavu okna - hook `SourceInitialized` (fíruje synchronně uvnitř `Show()`
+2. persistenci stavu okna - úložiště drží `IWindowStateStore` (default Caché pod
+   `PersistedFormId`, override `WindowStateStore`); hook `SourceInitialized` (fíruje synchronně uvnitř `Show()`
    před prvním paintem → žádný flicker); **okno pustí do `Show()` vždy jako `Normal`** - HWND
    s `WS_MAXIMIZE` Win32 zvětšit nenechá a uložená velikost by skončila jen v restore bounds;
    restore pak size → location → Maximize **poslední**, save z `RestoreBounds`; **uložená pozice

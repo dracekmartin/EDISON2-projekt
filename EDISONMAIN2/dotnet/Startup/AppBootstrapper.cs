@@ -337,6 +337,11 @@ public class AppBootstrapper
 
         var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, prefs.LastLoginName, initialPassword,
                                                               keepOpenOnSuccess: true);
+        // Geometrii sdílí se shellem, aby obě okna naskočila na monitoru, kde uživatel pracuje.
+        // Okno ji jen přebírá - jediný zápis je níž, hned po úspěšném přihlášení.
+        var windowState = new ShellWindowStateStore(prefs);
+        WindowStatePersistence.Attach(loginWindow, new ReadOnlyWindowStateStore(windowState));
+
         var frame = new System.Windows.Threading.DispatcherFrame();
         loginWindow.LoginSucceeded += (_, _) => frame.Continue = false;
         loginWindow.Closed += (_, _) => frame.Continue = false;
@@ -357,6 +362,9 @@ public class AppBootstrapper
         }
         login = loginWindow.Result;
         _startupLoginWindow = loginWindow;
+        // Uložit tady: login okno se zavírá až po vykreslení shellu, který si geometrii čte dřív,
+        // a v progress fázi ho uživatel může minimalizovat (stav při zavření už nic neříká).
+        WindowStatePersistence.Save(loginWindow, windowState);
 
         // Ulož / zapomeň. Při vynucené změně hesla (feature #17) heslo neukládej - za chvíli
         // se změní a zapamatované by bylo neplatné. Persist proběhne v SavePostLoginState.
@@ -483,7 +491,8 @@ public class AppBootstrapper
         ]);
         // Owner login dialogu se čte lazily - MainWindow ukazuje na shell až po HandOffLoginWindow.
         var sessionSwitcher = new SessionSwitcher(services, () => _application.MainWindow,
-                                                  BuildActivityFailedWire(services), nav.TryCloseAll);
+                                                  BuildActivityFailedWire(services), nav.TryCloseAll,
+                                                  new ShellWindowStateStore(prefs));
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeLoader,
                                                 licence, switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,

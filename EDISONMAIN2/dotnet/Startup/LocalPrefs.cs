@@ -31,7 +31,21 @@ public interface ILocalPrefs
     /// <summary>Uživatelem uložená připojení pro „Připojit k databázi" (výchozí z EDISONini.xml sem nepatří). Null = žádná.</summary>
     List<SavedConnection>? Connections { get; set; }
 
+    /// <summary>Geometrie hlavního okna; jeden záznam sdílí shell i přihlašovací okno
+    /// (<see cref="ShellWindowStateStore"/>). Null = nic uloženo.</summary>
+    WindowBoundsPrefs? ShellWindowBounds { get; set; }
+
     void Save();
+}
+
+/// <summary>Uložená geometrie okna. Rozměry si drží i maximalizované okno - platí po un-maximize.</summary>
+public class WindowBoundsPrefs
+{
+    public double Left { get; set; }
+    public double Top { get; set; }
+    public double Width { get; set; }
+    public double Height { get; set; }
+    public bool Maximized { get; set; }
 }
 
 /// <summary>Alternativní připojení k jinému Caché serveru; spouští se jako nová instance shellu (<see cref="ConnectionOverride"/>).</summary>
@@ -58,6 +72,7 @@ public class LocalPrefs : ILocalPrefs
     public Dictionary<string, double>? TreeWidths { get; set; }
     public Dictionary<string, double>? SupportStripHeights { get; set; }
     public List<SavedConnection>? Connections { get; set; }
+    public WindowBoundsPrefs? ShellWindowBounds { get; set; }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
