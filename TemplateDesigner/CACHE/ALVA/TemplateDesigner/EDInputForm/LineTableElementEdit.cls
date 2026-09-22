@@ -47,7 +47,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ⚠️ Ne "Šířka a dělení" - "dělení sloupců" už v UI znamená členění na skupiny dnů.
         d form.AddGroup("width", "Šířka sloupců")
         s f = form.AddDecimal("NejmensiSirkaSpojeMm", "Nejmenší šířka sloupce spoje", "", 0, 50, "mm")
-        s f.helpText = "Sloupec nebude užší než tohle. Prázdné = jen tolik, aby se vešel čas a kolem něj zůstala vůle. Menší hodnota, než čas měří, se neuplatní - sloupec se pod čitelnou šířku nezúží, ať se zadá cokoli."
+        s f.helpText = "Sloupec nebude užší než tohle. Prázdné = jen tolik, aby se vešel čas se značkami a kolem nich zůstala vůle. Vyplněné rozhoduje samo: zadáte-li méně, než obsah měří, značky přetečou do sousedního sloupce. Pod 3 mm to nepustí."
         s f = form.AddDecimal("NejvetsiSirkaSpojeMm", "Největší šířka sloupce spoje", "", 0, 200, "mm")
         s f.helpText = "Prázdné = bez omezení, sloupce se roztáhnou přes celý prvek. Vyplněné = u linky s málo spoji zůstanou úzké a vpravo zbyde volné místo, jako ve starém postskriptovém tisku. U linky s hodně spoji se nic nemění, tam je sloupec stejně na svém minimu."
         s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
@@ -96,7 +96,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", "", 0, 20, "mm")
         s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
         s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", "", 0, 20, "mm")
-        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Vynulováním se sloupec nezúží pod čitelnou šířku - kolem času zůstane vůle 1 mm vždy."
+        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Vynulováním se sloupec nezúží pod čitelnou šířku - kolem času zůstane vůle 1 mm. Užší sloupec se dá vynutit jen polem Nejmenší šířka sloupce spoje."
         s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
         d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
         d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")

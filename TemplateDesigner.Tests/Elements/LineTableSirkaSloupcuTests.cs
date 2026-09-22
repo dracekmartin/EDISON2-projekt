@@ -141,25 +141,35 @@ public class LineTableSirkaSloupcuTests
     }
 
     /// <summary>
-    /// ⚠️ Dno menší, než čas měří, se neuplatní - kolem času zůstane vůle 1 mm, ať uživatel zadá
-    /// cokoli. Bez toho procházely svislé čáry vedle číslic a časy sousedních sloupců se slévaly
-    /// (nález Jan 8. 9. na vyrenderované stránce: dno 3 mm proti potřebným 3,99 mm).
+    /// ⚠️ Dno menší, než obsah měří, se <b>uplatní</b> - to je celý smysl toho pole. Do 22. 9. ho
+    /// pojistka jen zvedala, takže u vývěsky s dvojicí piktogramů nad časy pole tiše nedělalo nic:
+    /// dno tam drží značky (na lince 330510 5,43 mm), ne čas, a uživatel se pod ně nedostal.
+    /// Cenou je, že se do užšího sloupce značky nevejdou - vidí to hned v náhledu.
     /// </summary>
     [Fact]
-    public void DnoPodSirkouCasuSeNeuplatni()
+    public void DnoPodSirkouObsahuSeUplatni()
     {
         var data = Data(spoju: 40);
-        var bezDna = new LineTableElement { X = 0, Y = 0, Width = 120 };
-        bezDna.DataStyle.PaddingLeft = 0f;
-        bezDna.DataStyle.PaddingRight = 0f;
-        var sNesmyslnymDnem = new LineTableElement
-        { X = 0, Y = 0, Width = 120, NejmensiSirkaSpojeMm = 0.1f };
-        sNesmyslnymDnem.DataStyle.PaddingLeft = 0f;
-        sNesmyslnymDnem.DataStyle.PaddingRight = 0f;
+        float zmereno = Dno(data);
+        float zadane = zmereno - 1f;
+        // Prvek o šířce 1 mm: o sloupci rozhoduje jen dno, ne dělení zbytku mezi spoje.
+        var prvek = new LineTableElement { X = 0, Y = 0, Width = 1, NejmensiSirkaSpojeMm = zadane };
 
-        Assert.Equal(SirkaSloupce(bezDna, data), SirkaSloupce(sNesmyslnymDnem, data), precision: 3);
-        Assert.True(SirkaSloupce(sNesmyslnymDnem, data) > 3f,
-            "sloupec spadl na nouzové dno - vůle kolem času se neuplatnila");
+        Assert.True(zadane > 3f, $"fixtura měří {zmereno:0.00} mm - zadané dno by spadlo na tvrdou hranici");
+        Assert.Equal(zadane, SirkaSloupce(prvek, data), precision: 2);
+    }
+
+    /// <summary>Vyplněné dno odpojí i vnitřní okraj buňky - o šířce rozhoduje jen zadané číslo.</summary>
+    [Fact]
+    public void ZadaneDnoOdpojiVnitrniOkraj()
+    {
+        var data = Data(spoju: 40);
+        float zadane = Dno(data) - 1f;
+        var siroky = new LineTableElement { X = 0, Y = 0, Width = 1, NejmensiSirkaSpojeMm = zadane };
+        siroky.DataStyle.PaddingLeft = 2f;
+        siroky.DataStyle.PaddingRight = 2f;
+
+        Assert.Equal(zadane, SirkaSloupce(siroky, data), precision: 2);
     }
 
     /// <summary>
