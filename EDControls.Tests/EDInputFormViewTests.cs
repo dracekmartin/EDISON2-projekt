@@ -9,8 +9,8 @@ using Form = EDControls.EDInputForm.EDInputForm;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Code-behind EDInputFormu, který nejde pokrýt bez controlu: hledání (obnova rozbalení,
-/// počítadla, wraparound) a lifecycle Init/CacheClass (přes ServicesOverride, bez statik).
+/// Code-behind EDInputFormu, který nejde pokrýt bez controlu: hledání (filtrování položek
+/// a obnova rozbalení skupin) a lifecycle Init/CacheClass (přes ServicesOverride, bez statik).
 /// </summary>
 public class EDInputFormViewTests
 {
@@ -33,43 +33,12 @@ public class EDInputFormViewTests
             Assert.True(g1.IsExpanded);              // nalezená skupina se rozbalí
             Assert.True(g2.IsFilteredBySearch);      // nematchující zmizí
             Assert.True(f2.IsFilteredBySearch);
-            Assert.Equal(1, form.Toolbar.TotalMatches);
-            Assert.Equal(1, form.Toolbar.CurrentMatchIndex);
 
             form.Toolbar.SearchText = "";
 
             Assert.False(g1.IsExpanded);             // obnova stavu z doby před hledáním
             Assert.True(g2.IsExpanded);
             Assert.False(f2.IsFilteredBySearch);
-            Assert.Equal(0, form.Toolbar.TotalMatches);
-            Assert.Equal(0, form.Toolbar.CurrentMatchIndex);
-        });
-    }
-
-    [Fact]
-    public void FindNextAndPrevious_WrapAround()
-    {
-        RunSta(() =>
-        {
-            var fields = Enumerable.Range(1, 3)
-                .Select(i => new Field { Number = i, Key = $"f{i}", Label = $"Pole {i}" })
-                .ToList();
-            var form = new Form { Items = fields.Cast<Item>().ToList() };
-            RaiseLoaded(form);
-
-            form.Toolbar.SearchText = "pole";
-            Assert.Equal(3, form.Toolbar.TotalMatches);
-            Assert.Equal(1, form.Toolbar.CurrentMatchIndex);
-
-            form.Toolbar.FindNextCommand!.Execute(null);
-            Assert.Equal(2, form.Toolbar.CurrentMatchIndex);
-            form.Toolbar.FindNextCommand.Execute(null);
-            Assert.Equal(3, form.Toolbar.CurrentMatchIndex);
-            form.Toolbar.FindNextCommand.Execute(null);
-            Assert.Equal(1, form.Toolbar.CurrentMatchIndex);   // z posledního na první
-
-            form.Toolbar.FindPreviousCommand!.Execute(null);
-            Assert.Equal(3, form.Toolbar.CurrentMatchIndex);   // z prvního na poslední
         });
     }
 
@@ -142,16 +111,19 @@ public class EDInputFormViewTests
         RunSta(() =>
         {
             var mock = MLRestMocks.Create();
+            var match = new Field { Number = 1, Key = "f", Label = "Pole" };
+            var other = new Field { Number = 2, Key = "j", Label = "Jiné" };
             var form = new Form
             {
-                Items = new List<Item> { new Field { Number = 1, Key = "f", Label = "Pole" } },
+                Items = new List<Item> { match, other },
                 ServicesOverride = new EDServices(mock,
                     Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
             };
 
             // Search je nadrátovaný v konstruktoru, ne na Loaded - jinak by se handlery hromadily.
             form.Toolbar.SearchText = "pole";
-            Assert.Equal(1, form.Toolbar.TotalMatches);
+            Assert.False(match.IsFilteredBySearch);
+            Assert.True(other.IsFilteredBySearch);
 
             RaiseLoaded(form);
 

@@ -15,13 +15,13 @@ Týmž profilem se vydává i **EDControls samostatně**: `PublishOwnAssemblyOnl
 vlastní assembly (plný uzávěr závislostí - MLRest, EDLicence, EDCore, Newtonsoft - by
 v `C:\Edison\` přepsal soubory legacy repa) a nezávislá kontrola počtu publish **shodí**,
 než něco zapíše. `C:\Edison\` je staging: do produkce jde až explicitní klik v Compileru. Seznam binárek
-k distribuci při vydání shellu (včetně těch z repa EDISON): `DEPLOY.md`.
+k distribuci při vydání shellu (včetně těch z repa EDISON): `docs/deploy.md`.
 
 ## Struktura a pravidla pro CLAUDE.md
 
 `EDISONMAIN2/`, `EDControls/`, `TemplateDesigner/`, `ServiceGtfsRt/` a `EDUPDATE2/`
 (klientský updater nového shellu) mají **vlastní `CLAUDE.md`**, EDControls navíc per-komponenta. `EDTesting/` = Caché test framework
-(`MLTestCase` + `TestRunner`), `MLRest.md` = kompletní reference Caché architektury,
+(`MLTestCase` + `TestRunner`), `docs/mlrest.md` = kompletní reference Caché architektury,
 `.husky/` = git hooks (auto-install při `dotnet restore`).
 
 **Krátké a výstižné**: root i project doc (`EDISONMAIN2/`, `EDControls/`,
@@ -34,9 +34,10 @@ k distribuci při vydání shellu (včetně těch z repa EDISON): `DEPLOY.md`.
 - Když měníš chování popsané v CLAUDE.md, **aktualizuj doc v témže commitu**; stale
   tvrzení maž bez milosti. Nový vnořený CLAUDE.md zakládej jen pro komponentu s vlastními
   neodvoditelnými kontrakty; jinak patří poznámka do nadřazeného.
-- `EDISONMAIN2/docs/`, `EDISONMAIN2/RESPONSIBILITIES.md`, `EDISONMAIN2/LEGACY_FEATURE_INVENTORY.md`
-  a `EDControls/DOCS/05-userdata-scopes.md` se **neudržují** - neodkazuj na ně, podstatu
-  vtáhni sem (`EDControls/DOCS/` 01-wire-formats a 04-EDTheme naopak platí).
+- **Nový samostatný doc nezakládej** - neodvoditelná poznámka patří do `CLAUDE.md`. Co už mimo
+  něj žije, sedí v `docs/` (malými) kořene nebo projektu, jméno kebab-case česky bez číselných
+  prefixů. `docs/analyzy/` a `.claude/reviews/` jsou datované výstupy skillů - **neudržují se**,
+  ber je jako snímek ke dni vzniku.
 
 ## MLRest - použití v .NET
 
@@ -61,11 +62,11 @@ deleguje na `MLRestAdapter`, překlad chyby žije na jednom místě). Odděleně
 `Query`, takže paralelní volání na téže instanci si stavy prohodí (spolknutá chyba / cizí
 výjimka). Klon má stejný GUID (pro server tatáž session) a každý request běží ve vlastním
 Caché procesu, takže si nešlapou ani po `^||ML`. Vzor: `RestCallRunner` (EDControls,
-`dotnet/RestCallRunner.cs`). Binární data: `BinarySave`/`BinaryLoad` (API MLRest.dll, viz `MLRest.md`).
+`dotnet/RestCallRunner.cs`). Binární data: `BinarySave`/`BinaryLoad` (API MLRest.dll, viz `docs/mlrest.md`).
 
 ## Kostra Caché metody
 
-Kompletní reference `MLRest.md §2.2`. Minimum: `ClassMethod MyMethod(ByRef sys As %String)
+Kompletní reference `docs/mlrest.md §2.2`. Minimum: `ClassMethod MyMethod(ByRef sys As %String)
 As %Status`, tělo `$$$Init` → try `{ $$$FillParams ... }` catch `{ $$$CatchErrRest }` →
 `ret ret`. Wire invariant: `$$$CatchErrRest` nastaví `ret="1~message"` → `ThrowIfError()`
 vyhodí výjimku v .NET. Výstup buď named (`s ^||ML("OUT","klíč")=...`) nebo indexovaný
@@ -107,12 +108,14 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 
 ## Persistence stavu
 
-- **Per-machine JSON** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`) přes
+- **Per Windows-uživatele (JSON)** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`) přes
   injektovaný `ILocalPrefs` (composition root `AppBootstrapper`). Nové preference = nullable
   property (chybějící klíč zůstane null - kompatibilní upgrade). `RememberedPassword` je DPAPI
-  blob, předvyplní se jen když jméno v blobu == `LastLoginName`.
-- **Per-user × IDFa (Caché)** - stav oken automaticky přes `EDViewModel` /
-  `WindowStatePersistence`; detaily v `EDControls/dotnet/EDViewModel/CLAUDE.md`.
+  blob, předvyplní se jen když jméno v blobu == `LastLoginName`. `ShellWindowBounds` je **jedna
+  geometrie shellu i přihlašovacího okna** - před loginem není session, do které by šlo ukládat.
+- **Per-user × IDFa (Caché)** - stav agendových oken automaticky přes `EDViewModel` /
+  `WindowStatePersistence` (úložiště je vyměnitelné, viz `IWindowStateStore`); detaily
+  v `EDControls/dotnet/EDViewModel/CLAUDE.md`.
 - **Cross-process (font, theme)** - `%APPDATA%\m-line\common\`; viz `EDControls/CLAUDE.md`.
 
 Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAUDE.md`.
@@ -149,6 +152,6 @@ hlídají UI labely drift testy.
 Komentáře v `EDISONMAIN2/` a `EDControls/` jsou **česky** (výjimka: stock VS šablony).
 Defaultně nekomentovat; přidávej jen netriviální WHY (skrytá invarianta, workaround bugu)
 a sémantiku legacy systému (Caché global, ACTIVITY zámek, licenční flag). Nekomentovat WHAT
-ani odkazy na task/commit/plánovací položku - `PLAN.md` a „feature #N" odkazy jsou zakázané;
+ani odkazy na task/commit/plánovací položku - plánovací docy a „feature #N" odkazy jsou zakázané;
 číslované Caché user flagy (feature #17/#23) jsou naopak doménová sémantika a zůstávají.
 Délka 1 řádek, max 2-3; multi-paragraph `<remarks>` je špatně.

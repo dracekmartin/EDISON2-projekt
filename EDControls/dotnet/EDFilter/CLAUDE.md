@@ -17,7 +17,7 @@ jinak reagoval na načtení, které neproběhlo.
 
 `Key` pole = filter klíč. Prázdná hodnota nebo prázdný `Key` → klíč se neposílá, protože
 Caché `$g()` vrací `""` a endpoint filtr přeskočí. Komponenty nad Caché to posílají jako
-`^||ML("IN","filter",Key)` (detail v `DOCS/01-wire-formats.md §Filter konvence`).
+`^||ML("IN","filter",Key)` (detail v `docs/wire-formaty.md §Filter konvence`).
 
 ## Pořadí při startu (na tom záleží)
 

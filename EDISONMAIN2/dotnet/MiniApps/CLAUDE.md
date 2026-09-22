@@ -10,8 +10,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   picker ji nenabízí, `CloseClosable` ji přeskočí (`CloseAll` pro shutdown/reset ne - programové
   `Close()` dock pustí i tak). `CanClose` se při restore bere z deskriptoru, ne z uloženého XML,
   a shell Plochu po obnově **doplní** (`EnsureDesktopOpen`) - starý layout ji mít nemusí.
-- Widgety `podpora.m-line.cz` v docku **nejsou** - kanál IT → uživatelé nese fixní pruh
-  v shellu (`EdisonMainWindow`, `SupportStrip`), mimo dock, aby ho nešlo zavřít ani zúžit;
+- Widgety `podpora.m-line.cz` v docku **nejsou** - kanál IT → uživatelé nese pruh v shellu
+  (`EdisonMainWindow`, `SupportStrip`) mimo dock, aby ho nešlo zavřít; děličem ho lze zvětšit,
+  garanci drží podlaha `SupportRow.MinHeight`, plochu naopak `ShellSplitLimits`;
   URL nese IdFa + login + e-mail, po přepnutí firmy se widget naviguje znovu (změna `Idfa` VM).
   Oba hostitelé (pruh i login) jdou přes `SupportWidgetHost`; `EDISON_SCREENSHOT_MODE=1`
   nahradí widgety neutrálním popiskem (anonymizované screenshoty) - WebView2 se vůbec nevytvoří.
@@ -33,7 +34,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   `MiniAplikaceAPI.LoadData` s N parametry `appType` (parita s legacy `clsMiniApplication.LoadData`),
   na klonu mimo UI vlákno. Obnova layoutu běží z `Loaded` = **před prvním paintem**, takže
   blokující load tam stál N round-tripů bez progresu. Provider proto musí dát všem descriptorům
-  **tutéž** instanci loaderu - vlastní per panel dávkování zruší.
+  **tutéž** instanci loaderu - vlastní per panel dávkování zruší. Mini-app nepředělané agendy
+  je vždy nová WPF view nad týmiž Caché daty, **nikdy `WindowsFormsHost`** (focus/z-order se
+  tlučou s dockem).
 - **`refresh=0` při otevření panelu, `refresh=1` jen z „Načíst" / hromadné obnovy.** Data
   předpočítává serverová úloha (`ALVA.EDISON.Task`, `TaskTypeALVAEDISONMiniAppRefresh`); přepočet
   při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.
@@ -53,9 +56,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - **Kolečko myši v panelu**: vnořený seznam si MouseWheel nechá i bez místa k rolování, na kraji ho
   předá ven `EDControls.ScrollWheelBubbling.IsEnabled`; prázdná plocha Plochy musí mít `Background`,
   jinak není hit-testable a kolečko jde mimo ScrollViewer.
-- Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`,
-  stejný lifecycle přes `AttachTreeLayout`); chybí-li nebo je poškozený → výchozí rozložení
-  (jen Plocha).
+- Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`
+  a výškou pruhu podpory v `SupportStripHeights`, lifecycle přes `AttachTreeLayout` /
+  `AttachSupportLayout`); chybí-li nebo je poškozený → výchozí rozložení (jen Plocha).
 - Výběr miniaplikace je vlastní okno (`Windows/MiniAppPickerWindow`) s **jednoúrovňovým**
   seznamem; `IMiniAppProvider.GroupTitle` (pořadí = pořadí registrace v `AppBootstrapper`)
   z něj zbyl jen popisek řádku. Menu „Miniaplikace" na okno jen odkazuje.

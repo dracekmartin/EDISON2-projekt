@@ -1,33 +1,23 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Windows;
-using System.Windows.Interop;
-using EDControls.EDViewModel;
 
 namespace EDControls;
 
 /// <summary>
-/// Persistence stavu WPF okna (pozice, velikost, Maximized) přes existující Caché endpoint
-/// <c>ALVA.LIBRARY.Form.SaveParams</c> / <c>LoadParams</c>. Storage je per-MLP × IDFa
-/// (server čte IDFa ze sys kontextu MLRest). Wire je <c>object[]</c>, ne CVar - legacy endpoint
-/// posílá IN i OUT jako číslované řádky <c>"klíč{del}hodnota"</c>.
+/// Persistence stavu WPF okna (pozice, velikost, Maximized). Kam se ukládá, drží
+/// <see cref="IWindowStateStore"/> - default <see cref="CacheWindowStateStore"/> (per uživatel ×
+/// IDFa na serveru), shell a přihlašovací okno sdílejí jeden záznam v local.json.
 /// </summary>
-/// <remarks>
-/// FormID se default odvozuje z názvu VM (viz <see cref="EDViewModel.PersistedFormId"/>) a
-/// dostává prefix <c>"EDISON2."</c> - odděluje od starých numerických IDs z <c>EDISFormEnum</c>
-/// (tam VB moduly ukládají vlastní state).
-/// </remarks>
 public static class WindowStatePersistence
 {
     // Kolik z titulku musí zůstat na ploše, aby šlo okno uchopit myší (DIP).
     private const double MinVisibleCaptionWidth = 120;
     private const double CaptionStripHeight = 32;
 
-    /// <summary>Settable jen kvůli testům - produkce čte sdílené <c>EDServices.Current</c>.</summary>
-    internal static Func<IMLRest?> MLRestProvider { get; set; } = () => EDServices.Current.MLRest;
+    /// <summary>Persistence do Caché úložiště pod daným formID.</summary>
+    public static void Attach(Window window, string formId) =>
+        Attach(window, new CacheWindowStateStore(formId));
 
-    public static void Attach(Window window, string formId)
+    public static void Attach(Window window, IWindowStateStore store)
     {
         // Před Show(): PresentationSource je null, hookne se SourceInitialized event,
         // který se synchronně vyvolá uvnitř Show() ještě před prvním paintem - restore
@@ -43,60 +33,31 @@ public static class WindowStatePersistence
             var xamlState = window.WindowState;
             if (xamlState != WindowState.Normal) window.WindowState = WindowState.Normal;
 
-            window.SourceInitialized += (_, _) => TryRestore(window, formId, xamlState);
+            window.SourceInitialized += (_, _) => TryRestore(window, store, xamlState);
         }
         else
-            TryRestore(window, formId, window.WindowState);
+            TryRestore(window, store, window.WindowState);
 
         // Guard na e.Cancel: WPF pustí i zbylé Closing handlery, když jiný zavření zrušil
-        // (potvrzovací dialog shellu) - bez guardu by každé odmítnuté zavření platilo SaveParams.
-        window.Closing += (_, e) => { if (!e.Cancel) TrySave(window, formId); };
+        // (potvrzovací dialog shellu) - bez guardu by každé odmítnuté zavření platilo Save.
+        window.Closing += (_, e) => { if (!e.Cancel) Save(window, store); };
     }
 
-    private static void TryRestore(Window window, string formId, WindowState xamlState)
-    {
-        var prefs = new Dictionary<string, string>();
-        try
-        {
-            var mlRest = MLRestProvider();
-            if (mlRest is not null)
-            {
-                var del = mlRest.Delimiter;
-
-                var input = new object[]
-                {
-                    $"formID{del}{formId}",
-                    $"ciselnik{del}state",
-                };
-                var output = mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", input);
-                prefs = ParseOutput(output, del);
-            }
-        }
-        catch
-        {
-            // Best-effort restore - chyba neblokuje start okna, použijí se XAML defaults.
-        }
-
-        // I při selhání se musí projít ApplyToWindow: vrací stav sražený v Attach.
-        try { ApplyToWindow(window, prefs, xamlState); }
-        catch { }
-    }
-
-    private static void TrySave(Window window, string formId)
+    /// <summary>
+    /// Uloží aktuální geometrii okna. <see cref="Attach"/> ji volá sám při zavírání; ručně
+    /// volej, když okno musí geometrii předat dřív - login okno se zavírá až po vykreslení
+    /// shellu, který si ji ale čte v témž běhu.
+    /// </summary>
+    public static void Save(Window window, IWindowStateStore store)
     {
         try
         {
-            var mlRest = MLRestProvider();
-            if (mlRest is null) return;
-            var del = mlRest.Delimiter;
-
             // RestoreBounds drží "normal" rozměry i když je okno aktuálně Maximized.
             var bounds = window.WindowState == WindowState.Normal
                 ? new Rect(window.Left, window.Top, window.Width, window.Height)
                 : window.RestoreBounds;
-            var stateInt = window.WindowState == WindowState.Maximized ? 1 : 0;
 
-            mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams", BuildSaveParams(formId, bounds, stateInt, del));
+            store.Save(bounds, window.WindowState == WindowState.Maximized);
         }
         catch
         {
@@ -104,32 +65,24 @@ public static class WindowStatePersistence
         }
     }
 
-    internal static object[] BuildSaveParams(string formId, Rect bounds, int stateInt, char del) =>
-    [
-        $"formID{del}{formId}",
-        $"clear{del}1",
-        $"param{del}location{del}{bounds.Left:0};{bounds.Top:0}",
-        $"param{del}size{del}{bounds.Width:0};{bounds.Height:0}",
-        $"param{del}state{del}{stateInt}",
-    ];
-
-    internal static Dictionary<string, string> ParseOutput(object[] output, char del)
+    private static void TryRestore(Window window, IWindowStateStore store, WindowState xamlState)
     {
-        var dict = new Dictionary<string, string>();
-        for (int i = 1; i < output.Length; i++)
+        var geometry = WindowGeometry.None;
+        try { geometry = store.Load(); }
+        catch
         {
-            var s = output[i]?.ToString() ?? "";
-            var parts = s.Split(del);
-            if (parts.Length >= 3 && parts[0] == "param")
-                dict[parts[1]] = parts[2];
+            // Best-effort restore - chyba neblokuje start okna, použijí se XAML defaults.
         }
-        return dict;
+
+        // I při selhání se musí projít ApplyToWindow: vrací stav sražený v Attach.
+        try { ApplyToWindow(window, geometry, xamlState); }
+        catch { }
     }
 
-    internal static void ApplyToWindow(Window window, Dictionary<string, string> prefs, WindowState xamlState)
+    internal static void ApplyToWindow(Window window, WindowGeometry geometry, WindowState xamlState)
     {
         // Nic uloženého - vrátíme stav, který chtěl XAML (Attach ho kvůli HWND srazil na Normal).
-        if (prefs.Count == 0)
+        if (geometry.IsEmpty)
         {
             window.WindowState = xamlState;
             return;
@@ -141,22 +94,22 @@ public static class WindowStatePersistence
 
         // Pořadí: rozměry → pozice → stav. Maximize as last, jinak by se velikost nezachovala
         // pro un-maximize krok.
-        if (prefs.TryGetValue("size", out var size) && TryParsePair(size, out var w, out var h))
-        {
-            if (w > 0) window.Width = w;
-            if (h > 0) window.Height = h;
-        }
-        if (prefs.TryGetValue("location", out var loc) && TryParsePair(loc, out var x, out var y)
-            && IsLocationReachable(x, y, VirtualScreen()))
+        if (geometry.Width is > 0) window.Width = geometry.Width.Value;
+        if (geometry.Height is > 0) window.Height = geometry.Height.Value;
+
+        if (geometry.Left is { } x && geometry.Top is { } y && IsLocationReachable(x, y, VirtualScreen()))
         {
             window.Left = x;
             window.Top = y;
         }
 
-        // Chybějící klíč `state` nesmí okno nechat odmaximalizované - vrátíme stav z XAML.
-        window.WindowState = prefs.TryGetValue("state", out var state)
-            ? (state == "1" ? WindowState.Maximized : WindowState.Normal)
-            : xamlState;
+        // Chybějící uložený stav nesmí okno nechat odmaximalizované - vrátíme stav z XAML.
+        window.WindowState = geometry.Maximized switch
+        {
+            true => WindowState.Maximized,
+            false => WindowState.Normal,
+            null => xamlState,
+        };
     }
 
     private static Rect VirtualScreen() => new(
@@ -177,18 +130,9 @@ public static class WindowStatePersistence
     /// </remarks>
     internal static bool IsLocationReachable(double left, double top, Rect virtualScreen)
     {
-        // NaN projde TryParsePair jako platné číslo (NumberStyles.Float zná symbol NaN).
+        // NaN projde parsováním jako platné číslo (NumberStyles.Float zná symbol NaN).
         if (!double.IsFinite(left) || !double.IsFinite(top)) return false;
 
         return virtualScreen.Contains(new Rect(left, top, MinVisibleCaptionWidth, CaptionStripHeight));
-    }
-
-    internal static bool TryParsePair(string s, out double a, out double b)
-    {
-        a = b = 0;
-        var parts = s.Split(';');
-        return parts.Length == 2
-            && double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out a)
-            && double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out b);
     }
 }

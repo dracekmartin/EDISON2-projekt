@@ -35,7 +35,7 @@ namespace EDISONMAIN2
             TreeCard.AddHandler(KeyDownEvent, new System.Windows.Input.KeyEventHandler(TreeCard_KeyDown));
             Loaded += WireMiniAppHost;
             ContentRendered += OnContentRendered;
-            // Drží plochu miniaplikací nad minimem při zúžení (splitter i okno) - viz handler.
+            // Drží plochu miniaplikací nad minimem při zúžení i snížení (splittery i okno) - viz handler.
             DockManager.SizeChanged += MiniAppArea_SizeChanged;
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
@@ -104,7 +104,7 @@ namespace EDISONMAIN2
         {
             ContentRendered -= OnContentRendered;
             // Až teď je okno v cílové (maximalizované) velikosti a restore šířky stromu proběhl -
-            // od teď smí SizeChanged clamp zasahovat (dřív by přepsal restorovanou šířku).
+            // od teď smí šířkový clamp zasahovat (dřív by přepsal restorovanou šířku).
             _layoutReady = true;
             if (DataContext is not EdisonMainViewModel vm) return;
             try
@@ -129,31 +129,32 @@ namespace EDISONMAIN2
             Loaded -= WireMiniAppHost;
             if (DataContext is EdisonMainViewModel vm)
             {
-                // Před AttachMiniAppHost - ten spouští první restore, který už šířku stromu aplikuje.
+                // Před AttachMiniAppHost - ten spouští první restore, který už rozměry panelů aplikuje.
                 vm.AttachTreeLayout(
                     () => TreeColumn.ActualWidth,
                     w => TreeColumn.Width = new GridLength(w));
+                vm.AttachSupportLayout(
+                    () => SupportRow.ActualHeight,
+                    h => SupportRow.Height = new GridLength(h));
                 vm.AttachMiniAppHost(new AvalonDockHost(DockManager));
             }
         }
 
-        // Minimální šířka plochy miniaplikací (aby ji strom nezakryl).
+        // Minimální rozměry plochy miniaplikací (aby ji strom ani pruh podpory nezakryly).
+        // Výška = dvě řady dlaždic Plochy (TileGridPanel.CellHeight 84) + pruh panelu a tab strip docku;
+        // na star řádek MinHeight nesmí (přetékalo by z okna), proto je to konstanta tady, ne v XAML.
         private const double MinMiniAppAreaWidth = 540;
-        private const double MinTreeWidth = 150;
+        private const double MinMiniAppAreaHeight = 220;
         private bool _layoutReady;
 
-        // Post-layout korekce: když cokoli (drag splitteru, zúžení okna) zmenší plochu docku pod
-        // minimum, o schodek zúžíme strom (až po jeho vlastní min). Nezávisí na chování GridSplitteru
-        // (ten aplikuje posun až PO DragDelta, takže přímý clamp v handleru přepíše). Guard _layoutReady
-        // brání zásahu během úvodního layoutu, kdy ještě neproběhl restore šířky stromu.
+        // Limity dělení sloupce - podrobnosti u ShellSplitLimits. Strop výšky je nedestruktivní,
+        // takže smí běžet i během úvodního layoutu; šířkový clamp by v něm zašlapal restore.
         private void MiniAppArea_SizeChanged(object sender, SizeChangedEventArgs e)
         {
+            ShellSplitLimits.ApplySupportCeiling(SupportRow, SupportSplitterRow,
+                                                 ContentRow.ActualHeight, MinMiniAppAreaHeight);
             if (!_layoutReady) return;
-            double deficit = MinMiniAppAreaWidth - DockManager.ActualWidth;
-            if (deficit <= 0) return;
-            double treeTarget = Math.Max(MinTreeWidth, TreeColumn.ActualWidth - deficit);
-            if (treeTarget < TreeColumn.ActualWidth)
-                TreeColumn.Width = new GridLength(treeTarget);
+            ShellSplitLimits.ClampTreeWidth(TreeColumn, DockManager.ActualWidth, MinMiniAppAreaWidth);
         }
 
         // Single-click ve stromu: složka toggle expand, modul spustí. Event bubluje přes

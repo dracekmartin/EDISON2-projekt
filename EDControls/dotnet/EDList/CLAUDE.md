@@ -25,7 +25,7 @@ Referenční `LegacyMiniApps/dotnet/DashboardListSource.cs`.
 
 ## Wire kontrakt (JSON přes `^||ML`)
 
-Detaily ve sdíleném `EDControls/DOCS/01-wire-formats.md` - tam patří změny formátu.
+Detaily ve sdíleném `EDControls/docs/wire-formaty.md` - tam patří změny formátu.
 
 - `InitializeList`: `OUT[1]` = **jedno** JSON pole definic sloupců (parser čte jen `OUT[1]`).
 - `LoadList`: `OUT[1..n]` = jeden JSON objekt na řádek; **každý řádek musí mít `id`** -

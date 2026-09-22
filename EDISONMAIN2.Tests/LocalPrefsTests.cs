@@ -46,7 +46,9 @@ public class LocalPrefsTests
             Assert.Null(prefs.RememberedPassword);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
+            Assert.Null(prefs.SupportStripHeights);
             Assert.Null(prefs.Connections);
+            Assert.Null(prefs.ShellWindowBounds);
         });
     }
 
@@ -80,6 +82,7 @@ public class LocalPrefsTests
             Assert.Null(prefs.LastLoginName);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
+            Assert.Null(prefs.SupportStripHeights);
         });
     }
 
@@ -90,7 +93,8 @@ public class LocalPrefsTests
             """
             {"lastIdfa":"CB_DP","lastLoginName":"tester","rememberedPassword":"blob",
              "miniAppLayouts":{"CB_DP":"<xml/>"},
-             "treeWidths":{"CB_DP":321.5}}
+             "treeWidths":{"CB_DP":321.5},
+             "supportStripHeights":{"CB_DP":512.5}}
             """, _ =>
         {
             var prefs = LocalPrefs.Load();
@@ -100,6 +104,7 @@ public class LocalPrefsTests
             Assert.Equal("blob", prefs.RememberedPassword);
             Assert.Equal("<xml/>", prefs.MiniAppLayouts!["CB_DP"]);
             Assert.Equal(321.5, prefs.TreeWidths!["CB_DP"]);
+            Assert.Equal(512.5, prefs.SupportStripHeights!["CB_DP"]);
         });
     }
 
@@ -125,6 +130,7 @@ public class LocalPrefsTests
                 LastLoginName = "tester",
                 MiniAppLayouts = new() { ["CB_DP"] = "<xml/>", ["CB_MLINEAS"] = "<xml2/>" },
                 TreeWidths = new() { ["CB_DP"] = 280 },
+                SupportStripHeights = new() { ["CB_DP"] = 520 },
             }.Save();
 
             var loaded = LocalPrefs.Load();
@@ -133,6 +139,7 @@ public class LocalPrefsTests
             Assert.Equal(2, loaded.MiniAppLayouts!.Count);
             Assert.Equal("<xml2/>", loaded.MiniAppLayouts["CB_MLINEAS"]);
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
+            Assert.Equal(520, loaded.SupportStripHeights!["CB_DP"]);
         });
     }
 
@@ -150,6 +157,29 @@ public class LocalPrefsTests
 
             var connection = Assert.Single(loaded.Connections!);
             Assert.Equal(("Test", "10.0.0.5", 57770), (connection.Name, connection.Server, connection.RestPort));
+        });
+    }
+
+    [Fact]
+    public void SaveLoad_RoundTripsShellWindowBounds()
+    {
+        // Geometrie hlavního okna: sdílí ji shell i přihlašovací okno, takže se čte hned
+        // při startu, ještě před loginem.
+        WithTempPrefs(null, _ =>
+        {
+            new LocalPrefs
+            {
+                // Monitor vlevo od primárního má zápornou pozici - nesmí se cestou ztratit.
+                ShellWindowBounds = new WindowBoundsPrefs
+                {
+                    Left = -1800, Top = -120, Width = 1600, Height = 900, Maximized = true,
+                },
+            }.Save();
+
+            var bounds = LocalPrefs.Load().ShellWindowBounds!;
+
+            Assert.Equal((-1800, -120, 1600, 900), (bounds.Left, bounds.Top, bounds.Width, bounds.Height));
+            Assert.True(bounds.Maximized);
         });
     }
 

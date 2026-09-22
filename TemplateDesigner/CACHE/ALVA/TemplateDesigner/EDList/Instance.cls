@@ -15,7 +15,7 @@ Include GENERAL
 /// Data: routuje přes $classmethod na agenda-specifickou GetAvailableInstances
 ///       v ALVA.TemplateDesigner.Agendy.<konkrétní> (každá agenda iteruje vlastní doménovou strukturu -
 ///       MHD: ^ALVA.MHD.LSO(IdFa,1,"IDX",...); faktury: TBD).
-/// Wire formát: CVar named IN + JSON multi-slot OUT (Styl 3 viz EDControls/DOCS/01-wire-formats.md).
+/// Wire formát: CVar named IN + JSON multi-slot OUT (Styl 3 viz EDControls/docs/wire-formaty.md).
 /// Konzument: InstancePickerDialog v TD (.NET)
 Class ALVA.TemplateDesigner.EDList.Instance Extends %RegisteredObject
 {

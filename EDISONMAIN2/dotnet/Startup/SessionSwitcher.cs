@@ -39,11 +39,14 @@ public enum SwitchUserResult
 /// <param name="wireActivityFailed">Napojení force-logout / version gate handlerů na nový MLRest.</param>
 /// <param name="closeAllWindows">Zavření všech oken a legacy modulů staré session;
 /// <c>false</c> = okno zavření vetovalo a switch se musí zrušit.</param>
+/// <param name="windowState">Sdílená geometrie hlavního okna - login dialog z ní jen čte,
+/// ať naskočí na monitoru shellu, ne na primárním.</param>
 public class SessionSwitcher(
     EDServices services,
     Func<System.Windows.Window?> ownerWindow,
     Action<IMLRest> wireActivityFailed,
-    Func<bool> closeAllWindows)
+    Func<bool> closeAllWindows,
+    IWindowStateStore windowState)
 {
     /// <summary>
     /// Prompt → close all → <see cref="SessionFactory.Establish"/> (drží UserPrefs cache
@@ -87,6 +90,8 @@ public class SessionSwitcher(
         {
             Owner = ownerWindow(),
         };
+        // Jen přebírá, ať naskočí na monitoru shellu; zapisovat sdílený záznam má shell.
+        WindowStatePersistence.Attach(loginWindow, new ReadOnlyWindowStateStore(windowState));
         return loginWindow.ShowDialog() == true ? loginWindow.Result : null;
     }
 

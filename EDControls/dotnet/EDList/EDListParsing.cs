@@ -8,7 +8,7 @@ using ALWA.SYS;
 namespace EDControls.EDList
 {
     /// <summary>
-    /// Wire vrstva EDListu (JSON přes <c>^||ML</c>, kontrakt v <c>DOCS/01-wire-formats.md</c>) -
+    /// Wire vrstva EDListu (JSON přes <c>^||ML</c>, kontrakt v <c>docs/wire-formaty.md</c>) -
     /// statická a bez WPF, aby šla testovat bez konstrukce controlu.
     /// </summary>
     internal static class EDListParsing

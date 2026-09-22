@@ -9,7 +9,6 @@
              d:DesignHeight="32" d:DesignWidth="800">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <local:IntZeroToCollapsedConverter x:Key="IntNonZeroToVis"/>
         <local:NonEmptyStringToVisibleConverter x:Key="NonEmptyToVis"/>
 
         <Style x:Key="ToolbarButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
@@ -71,39 +70,15 @@
                        TextTrimming="CharacterEllipsis"
                        Visibility="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
 
-            <!-- Search + match nav (▲ ▼ counter) - vpravo, vedle standardních ikon. -->
-            <Grid Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0"
-                  Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Placeholder, křížek i Esc řeší EDSearchTextBox interně. -->
-                <edstx:EDSearchTextBox Grid.Column="0" x:Name="SearchTextBox" VerticalAlignment="Center"
-                                       Placeholder="{Binding SearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                       Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"/>
-
-                <StackPanel Grid.Column="1" Orientation="Horizontal"
-                            Visibility="{Binding TotalMatches, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntNonZeroToVis}}">
-                    <Button Content="▲" FontSize="{DynamicResource EDTheme.FontSize.Small}"
-                            Margin="6,0,0,0" Padding="6,2"
-                            Style="{StaticResource ToolbarButtonStyle}"
-                            ToolTip="Předchozí výsledek (Shift+Enter)"
-                            Command="{Binding FindPreviousCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                    <Button Content="▼" FontSize="{DynamicResource EDTheme.FontSize.Small}"
-                            Margin="2,0,0,0" Padding="6,2"
-                            Style="{StaticResource ToolbarButtonStyle}"
-                            ToolTip="Další výsledek (Enter)"
-                            Command="{Binding FindNextCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                    <TextBlock Style="{StaticResource ToolbarTextStyle}" VerticalAlignment="Center"
-                               Margin="6,0,0,0" FontSize="{DynamicResource EDTheme.FontSize.Caption}">
-                        <Run Text="{Binding CurrentMatchIndex, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
-                        <Run Text="/"/>
-                        <Run Text="{Binding TotalMatches, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
-                    </TextBlock>
-                </StackPanel>
-            </Grid>
+            <!-- Hledání - vpravo, vedle standardních ikon. Placeholder, křížek i Esc
+                 řeší EDSearchTextBox interně. Navigace mezi nálezy tu není záměrně:
+                 konzumenti hledáním filtrují (nematchující položky zmizí), takže skákat
+                 mezi výskyty nemá co. -->
+            <edstx:EDSearchTextBox Grid.Column="1" x:Name="SearchTextBox"
+                                   VerticalAlignment="Center" Margin="0,0,8,0"
+                                   Placeholder="{Binding SearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                   Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
+                                   Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
 
             <!-- Standardní akční ikony (opt-in přes ShowX props) -->
             <StackPanel Grid.Column="2" Orientation="Horizontal">

@@ -163,7 +163,7 @@ rozhodnutím F2 (bridge vs. čisté agendy) - bez toho nejde F2 rozhodnout pouč
 věrnost bridge stojí přesně na tom, kolik prezentace umíme přenést.
 
 > **Upřesněno 2026-07-03 (diskuze):** základ kontraktu UŽ existuje (`cache-api.md` - tvary
-> metod, čistý JSON, konvence klíčů; + `EDControls/DOCS/01-wire-formats.md`). Doplnit se mají
+> metod, čistý JSON, konvence klíčů; + `EDControls/docs/wire-formaty.md`). Doplnit se mají
 > právě dvě sekce: **(a) prezentační nápovědy v1** - princip „volitelný klíč + sémantický kde
 > to jde": `ZVYRAZNENI` 0–5 (šablona určí vzhled úrovní), typ řádku (data / mezisoučet /
 > nadpis skupiny), „opakuj řádek na další stránce", „text přes celou šířku"; přímé

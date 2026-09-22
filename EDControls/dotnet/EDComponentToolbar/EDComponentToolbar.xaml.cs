@@ -103,48 +103,6 @@ public partial class EDComponentToolbar : UserControl
         set => SetValue(SearchPlaceholderProperty, value);
     }
 
-    public static readonly DependencyProperty CurrentMatchIndexProperty =
-        DependencyProperty.Register(nameof(CurrentMatchIndex), typeof(int), typeof(EDComponentToolbar),
-            new PropertyMetadata(0));
-
-    /// <summary>1-based index aktuálního výskytu (0 = žádný). Nastavuje host při iteraci.</summary>
-    public int CurrentMatchIndex
-    {
-        get => (int)GetValue(CurrentMatchIndexProperty);
-        set => SetValue(CurrentMatchIndexProperty, value);
-    }
-
-    public static readonly DependencyProperty TotalMatchesProperty =
-        DependencyProperty.Register(nameof(TotalMatches), typeof(int), typeof(EDComponentToolbar),
-            new PropertyMetadata(0));
-
-    /// <summary>Celkový počet výskytů; nastavuje host. 0 = počitadlo skryté.</summary>
-    public int TotalMatches
-    {
-        get => (int)GetValue(TotalMatchesProperty);
-        set => SetValue(TotalMatchesProperty, value);
-    }
-
-    public static readonly DependencyProperty FindNextCommandProperty =
-        DependencyProperty.Register(nameof(FindNextCommand), typeof(ICommand), typeof(EDComponentToolbar),
-            new PropertyMetadata(null));
-
-    public ICommand? FindNextCommand
-    {
-        get => (ICommand?)GetValue(FindNextCommandProperty);
-        set => SetValue(FindNextCommandProperty, value);
-    }
-
-    public static readonly DependencyProperty FindPreviousCommandProperty =
-        DependencyProperty.Register(nameof(FindPreviousCommand), typeof(ICommand), typeof(EDComponentToolbar),
-            new PropertyMetadata(null));
-
-    public ICommand? FindPreviousCommand
-    {
-        get => (ICommand?)GetValue(FindPreviousCommandProperty);
-        set => SetValue(FindPreviousCommandProperty, value);
-    }
-
     public static readonly DependencyProperty ShowExportProperty =
         DependencyProperty.Register(nameof(ShowExport), typeof(bool), typeof(EDComponentToolbar),
             new PropertyMetadata(false));

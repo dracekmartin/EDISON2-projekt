@@ -111,11 +111,41 @@ namespace EDControls.EDInputForm
             set => SetValue(HelpTextModeProperty, value);
         }
 
+        private static readonly DependencyPropertyKey IsNarrowLayoutPropertyKey =
+            DependencyProperty.RegisterReadOnly(
+                nameof(IsNarrowLayout),
+                typeof(bool),
+                typeof(EDInputForm),
+                new PropertyMetadata(false));
+
+        public static readonly DependencyProperty IsNarrowLayoutProperty =
+            IsNarrowLayoutPropertyKey.DependencyProperty;
+
+        /// <summary>Formulář se nevejde na dva sloupce - popisek jde nad hodnotu.
+        /// Čtou to šablony řádku v XAML, host to jen pozoruje.</summary>
+        public bool IsNarrowLayout
+        {
+            get => (bool)GetValue(IsNarrowLayoutProperty);
+            private set => SetValue(IsNarrowLayoutPropertyKey, value);
+        }
+
+        // Dvousloupcový řádek potřebuje 120+120 px plus odsazení; pod tím se hodnota mačká.
+        // Práh je dvojí: hostitel, který se přizpůsobuje obsahu, by při jediném prahu layout
+        // rozkmital (úzký režim mění potřebnou šířku, a ta zase režim).
+        private const double NarrowThresholdPx = 380;
+        private const double WideThresholdPx = 400;
+
+        private void UpdateNarrowLayout(double width)
+        {
+            if (IsNarrowLayout) { if (width > WideThresholdPx) IsNarrowLayout = false; }
+            else if (width < NarrowThresholdPx) IsNarrowLayout = true;
+        }
 
         public EDInputForm()
         {
             InitializeComponent();
             WireToolbarSearch();
+            SizeChanged += (_, e) => UpdateNarrowLayout(e.NewSize.Width);
             // Loaded fíruje při každém návratu do vizuálního stromu (přepnutí TabItem) - Init je
             // synchronní Caché round-trip a reset hodnot, smí proběhnout jednou per CacheClass.
             Loaded += (_, _) =>
@@ -124,8 +154,6 @@ namespace EDControls.EDInputForm
                 Init();
             };
         }
-
-        private readonly List<Field> _searchMatches = [];
 
         /// <summary>Stav rozbalení skupin před začátkem hledání - pro obnovení po smazání dotazu.</summary>
         private Dictionary<Group, bool>? _expandStateBeforeSearch;
@@ -137,8 +165,6 @@ namespace EDControls.EDInputForm
                 typeof(EDComponentToolbar.EDComponentToolbar));
             dpd.AddValueChanged(Toolbar, (_, _) => ApplySearchFilter(Toolbar.SearchText));
 
-            Toolbar.FindNextCommand = new RelayCommand(FindNext);
-            Toolbar.FindPreviousCommand = new RelayCommand(FindPrevious);
             Toolbar.HelpCommand = new RelayCommand(ShowShortcutsHelp);
         }
 
@@ -163,7 +189,6 @@ namespace EDControls.EDInputForm
 
         private void ApplySearchFilter(string searchText)
         {
-            _searchMatches.Clear();
             if (Items == null) return;
 
             var groups = Items.OfType<Group>().ToList();
@@ -180,19 +205,13 @@ namespace EDControls.EDInputForm
                         kvp.Key.IsExpanded = kvp.Value;
                     _expandStateBeforeSearch = null;
                 }
-                Toolbar.TotalMatches = 0;
-                Toolbar.CurrentMatchIndex = 0;
                 return;
             }
 
             // Při prvním hledání si zapamatovat rozbalení skupin, ať ho po smazání dotazu obnovíme.
             _expandStateBeforeSearch ??= groups.ToDictionary(g => g, g => g.IsExpanded);
 
-            _searchMatches.AddRange(ComputeSearchMatches(groups, fields, searchText));
-
-            Toolbar.TotalMatches = _searchMatches.Count;
-            Toolbar.CurrentMatchIndex = _searchMatches.Count > 0 ? 1 : 0;
-            if (_searchMatches.Count > 0) ScrollFieldIntoView(_searchMatches[0]);
+            ComputeSearchMatches(groups, fields, searchText);
         }
 
         /// <summary>
@@ -230,28 +249,6 @@ namespace EDControls.EDInputForm
         }
 
         private static string NormalizeForSearch(string s) => SearchNormalization.NormalizeForSearch(s);
-
-        private void FindNext()
-        {
-            if (_searchMatches.Count == 0) return;
-            int next = Toolbar.CurrentMatchIndex >= _searchMatches.Count ? 1 : Toolbar.CurrentMatchIndex + 1;
-            Toolbar.CurrentMatchIndex = next;
-            ScrollFieldIntoView(_searchMatches[next - 1]);
-        }
-
-        private void FindPrevious()
-        {
-            if (_searchMatches.Count == 0) return;
-            int prev = Toolbar.CurrentMatchIndex <= 1 ? _searchMatches.Count : Toolbar.CurrentMatchIndex - 1;
-            Toolbar.CurrentMatchIndex = prev;
-            ScrollFieldIntoView(_searchMatches[prev - 1]);
-        }
-
-        private void ScrollFieldIntoView(Field field)
-        {
-            var container = TheItemsControl.ItemContainerGenerator.ContainerFromItem(field) as FrameworkElement;
-            container?.BringIntoView();
-        }
 
         /// <summary>
         /// Volitelné initial parametry předané do Caché <c>Init</c> (čtené přes

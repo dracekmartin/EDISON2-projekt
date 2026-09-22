@@ -3,7 +3,7 @@
 Sdílená WPF knihovna pro m-line aplikace (EDISONMAIN2, TemplateDesigner): ovládací
 prvky, base třída ViewModelů a infrastruktura. `.NET` strana v `dotnet/`, serverová
 Caché strana v `CACHE/` (ALVA projekt `ALVA_EDControls`), hlubší dokumentace
-v `DOCS/` (wire formáty → `DOCS/01-wire-formats.md`).
+v `docs/wire-formaty.md` (wire formáty Caché ↔ .NET).
 
 **Breaking change veřejného API ⇒ publikovat i konzumenty.** Uvnitř repa se všichni
 (EDISONMAIN2, TemplateDesigner, LegacyMiniApps, EDTesting, ThemeRender) buildí spolu, takže
@@ -17,11 +17,15 @@ do konzumenta a nepřebuildovaný exe změnu nedostane (`SupportActions`, `Error
 rebuild - `{DynamicResource}` na neznámý klíč tiše nevrátí nic. Přejmenování = ruční grep
 XAML všech konzumentů.
 
+**Z legacy `EDFORMS` se vědomě nemigruje** BDG (komerční C1FlexGrid), atomické kontrolky
+(nativní WPF stačí), `BaseDocument` ani centrální katalog codebooků - `EDInputBox`,
+`EDMessageBox` a `EDScheduler` nahrazuje `IPopupDisplayer`.
+
 ## Nová m-line aplikace
 
 - `EDAppearance.Initialize(app)` jednou před prvním oknem (a **až po** `EDServices.Initialize`):
   napojí `FontService` + `ThemeService` a class handlery na `Window.Loaded`, které rozdají
-  panel Podpora a usage telemetrii.
+  panel Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`).
 - Zbytek dělá konzument sám: merge `EDIcons.xaml` + `EDStrings.xaml` v App.xaml,
   `DispatcherUnhandledException` handler (viz root CLAUDE.md) a `EDServices.FormIdPrefix`,
   ať se okna nové aplikace nemíchají se shellem.
@@ -33,6 +37,8 @@ XAML všech konzumentů.
   přidává na konec MergedDictionaries a přebíjí klíče. Preference je cross-process
   (`%APPDATA%\m-line\common\theme.json` + FileSystemWatcher) - shell i TemplateDesigner
   se přepnou spolu. Stejný mechanismus má font (`UserFonts/`, `font.json`).
+  Klíč je `EDTheme.<Skupina>.<Varianta>` **podle účelu, ne podle hodnoty**; ke každé barvě
+  patří dvojice `EDTheme.X` (brush) a `EDTheme.X.Color` (`Color` pro gradient stopy).
 - **Font: `font.json` je v pt, tokeny v px** - konverze (×4/3) je jen ve `FontService`,
   nikde jinde ji nepiš. Výchozí Body 14 px drží legacy standard (Segoe UI 9,75 pt);
   volitelné rodiny jsou **whitelist** ve `FontCatalog` (systémový výčet nabízel
@@ -92,6 +98,8 @@ XAML všech konzumentů.
 - `WindowDimmer` - ztmavení okna, refcount per okno; UI-thread only.
 - `OwnerWindowCentering` - vycentrování na klientskou oblast ownera (volat z `Loaded`).
   WPF `CenterOwner` u maximalizovaného ownera centruje podle restore bounds → mimo střed.
+- `TaskbarIcon` - po `Loaded` znovu pošle ikonu okna a dá ji i třídě okna: taskbar Win11 (od
+  KB5051989) se na ikonu ptá jednou s krátkým timeoutem, blokovaný startup ho nechá na výchozí.
 - `ErrorReporting/` - hlášení chyb na `podpora.m-line.cz` (přímý HTTPS POST, **ne** přes
   Caché jako usage telemetrie). Vlastní `CLAUDE.md`.
 
@@ -122,7 +130,9 @@ XAML všech konzumentů.
   preference se tiše neukládají. Služba volá **klon per request** (`IRestCallRunner`) a
   `Load` při selhání transportu **hází**, null = jen chybějící klíč: volající, který výpadek
   nerozliší od prázdna, by uživatelova data přepsal prázdnem (plocha shellu). Save/Delete
-  selhání polykají a hlásí `ErrorReports.ReportBackground`.
+  selhání polykají a hlásí `ErrorReports.ReportBackground`. Scope je `"<App>"` pro sdílený
+  stav aplikace, `"<App>.<Featura>"` když klíč škáluje s entitami; kolizím brání jen
+  konvence, server blob neinterpretuje.
 - `EDSupportPanel/` - vysouvací panel Podpora u pravého okraje okna; připojuje se sám ke
   **každému** oknu (class handler z `EDAppearance.Initialize`), karta žije v owned okně
   (airspace). Vlastní `CLAUDE.md`.

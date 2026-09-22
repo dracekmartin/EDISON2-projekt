@@ -8,7 +8,7 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Wire vrstva EDListu (LoadList řádky, filter vstup, dispatch formátování) -
-/// kontrakt z DOCS/01-wire-formats.md, dosud hlídaný jen z Caché strany.
+/// kontrakt z docs/wire-formaty.md, dosud hlídaný jen z Caché strany.
 /// </summary>
 public class EDListParsingTests
 {
