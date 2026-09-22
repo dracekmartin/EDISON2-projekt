@@ -111,11 +111,41 @@ namespace EDControls.EDInputForm
             set => SetValue(HelpTextModeProperty, value);
         }
 
+        private static readonly DependencyPropertyKey IsNarrowLayoutPropertyKey =
+            DependencyProperty.RegisterReadOnly(
+                nameof(IsNarrowLayout),
+                typeof(bool),
+                typeof(EDInputForm),
+                new PropertyMetadata(false));
+
+        public static readonly DependencyProperty IsNarrowLayoutProperty =
+            IsNarrowLayoutPropertyKey.DependencyProperty;
+
+        /// <summary>Formulář se nevejde na dva sloupce - popisek jde nad hodnotu.
+        /// Čtou to šablony řádku v XAML, host to jen pozoruje.</summary>
+        public bool IsNarrowLayout
+        {
+            get => (bool)GetValue(IsNarrowLayoutProperty);
+            private set => SetValue(IsNarrowLayoutPropertyKey, value);
+        }
+
+        // Dvousloupcový řádek potřebuje 120+120 px plus odsazení; pod tím se hodnota mačká.
+        // Práh je dvojí: hostitel, který se přizpůsobuje obsahu, by při jediném prahu layout
+        // rozkmital (úzký režim mění potřebnou šířku, a ta zase režim).
+        private const double NarrowThresholdPx = 380;
+        private const double WideThresholdPx = 400;
+
+        private void UpdateNarrowLayout(double width)
+        {
+            if (IsNarrowLayout) { if (width > WideThresholdPx) IsNarrowLayout = false; }
+            else if (width < NarrowThresholdPx) IsNarrowLayout = true;
+        }
 
         public EDInputForm()
         {
             InitializeComponent();
             WireToolbarSearch();
+            SizeChanged += (_, e) => UpdateNarrowLayout(e.NewSize.Width);
             // Loaded fíruje při každém návratu do vizuálního stromu (přepnutí TabItem) - Init je
             // synchronní Caché round-trip a reset hodnot, smí proběhnout jednou per CacheClass.
             Loaded += (_, _) =>

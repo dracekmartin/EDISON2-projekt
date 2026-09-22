@@ -8,6 +8,7 @@
              xmlns:edct="clr-namespace:EDControls.EDComponentToolbar"
              xmlns:designTime="clr-namespace:EDControls.EDInputForm.DesignTimeData"
              mc:Ignorable="d"
+             MinWidth="240"
              d:DesignHeight="450" d:DesignWidth="420">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
@@ -34,7 +35,10 @@
                                  ShowSettings="False"
                                  Title="{Binding Title, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"/>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <!-- HorizontalScrollBarVisibility="Disabled" drží obsah v šířce viewportu. Default Hidden
+             měří obsah na nekonečné šířce, takže úzký formulář místo zúžení ořízne. -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled">
             <ItemsControl x:Name="TheItemsControl"
                           ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"
                           d:ItemsSource="{Binding Items, Source={d:DesignInstance designTime:EDInputFormDesignTimeData, IsDesignTimeCreatable=True}}">
@@ -89,6 +93,15 @@
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible"/>
                         </MultiDataTrigger>
+                        <!-- Úzký režim: sloupec s nápovědou u skupiny se sbalí (ukrojil by místo
+                             názvu), nápověda proto vede přes ikonu i v column režimu. -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding HelpTextVisibility}" Value="Visible"/>
+                                <Condition Binding="{Binding IsNarrowLayout, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="True"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </MultiDataTrigger>
                     </Style.Triggers>
                 </Style>
 
@@ -104,6 +117,11 @@
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible"/>
                         </MultiDataTrigger>
+                        <!-- Za MultiDataTriggerem (vyhrává poslední): v úzkém režimu se sloupec
+                             s nápovědou nevejde, nápovědu ukáže ikona. -->
+                        <DataTrigger Binding="{Binding IsNarrowLayout, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="True">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
 
@@ -313,15 +331,137 @@
                     </Grid>
                 </DataTemplate>
 
-                <!-- Field row: 2-column modern PropertyGrid layout (Položka | Hodnota).
-                     Položka Auto SharedSize MinWidth=120 → konzistentní label width napříč rows
+                <!-- Popisek pole - sdílený oběma režimy řádku.
+                     StackPanel s HorizontalAlignment="Left" → hugs left edge, nedrift. -->
+                <DataTemplate x:Key="FieldLabelTemplate">
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Margin="6,0,12,0">
+                        <Ellipse Width="6" Height="6" Fill="{DynamicResource EDTheme.Accent.Blue}"
+                                 Margin="0,0,4,0" VerticalAlignment="Center"
+                                 Visibility="{Binding ValidateIndicatorVisibility}"
+                                 ToolTip="Automatická validace"/>
+                        <Image Source="{StaticResource EDIcons.Help}"
+                               Width="{DynamicResource EDTheme.IconSize.Small}"
+                               Height="{DynamicResource EDTheme.IconSize.Small}" Margin="0,0,4,0"
+                               ToolTip="{Binding HelpText}" Cursor="Help"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource HelpIconStyle}"/>
+                        <!-- Zámek u needitovatelných polí - monochromatický glyph (Segoe MDL2),
+                             barví se z tokenu → čitelný v light i dark. -->
+                        <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="0,0,4,0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource EDTheme.Field.ReadOnly.Fg}"
+                                   Visibility="{Binding NonEditableIndicatorVisibility}"
+                                   ToolTip="Needitovatelné (jen pro čtení)"/>
+                        <TextBlock Text="{Binding Label}" TextWrapping="Wrap"
+                                   MaxWidth="280" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <!-- BasedOn povinné - bez něj se v editable stavu ztratí themed Foreground → v dark černý (neviditelný) label. -->
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Editable}" Value="False">
+                                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Field.ReadOnly.Fg}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="*" Foreground="{DynamicResource EDTheme.Semantic.Danger}"
+                                   Visibility="{Binding RequiredIndicatorVisibility}"
+                                   ToolTip="Povinné pole" Margin="4,0,0,0"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+                </DataTemplate>
+
+                <!-- Hodnota pole - input (template per FieldType) v recessed wrapperu.
+                     Needitovatelné: recessed pozadí (Field.ReadOnly.Bg) obalí hodnotu
+                     nezávisle na typu pole (text i disabled controly) → sjednocený
+                     „vypnutý" vzhled v light i dark. Editovatelné = Transparent (beze změny). -->
+                <DataTemplate x:Key="FieldValueTemplate">
+                    <Border VerticalAlignment="Center" CornerRadius="3">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Editable}" Value="False">
+                                        <Setter Property="Background" Value="{DynamicResource EDTheme.Field.ReadOnly.Bg}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    <ContentControl VerticalAlignment="Center"
+                                    Content="{Binding}" Focusable="False">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="ContentTemplate" Value="{StaticResource TextFieldTemplate}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Number}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource NumberFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Decimal}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource DecimalFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Date}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource DateFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Bool}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource BoolFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Button}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource ButtonFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.List}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource ListFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.File}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource FileFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Color}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource ColorFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.ComboBox}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource ComboBoxFieldTemplate}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Image}">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource ImageFieldTemplate}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                    </Border>
+                </DataTemplate>
+
+                <!-- Chyba / nápověda pod hodnotou (Material Design pattern). Error má prioritu
+                     (červený text), jinak help text (italic muted). Žádný layout shift - řádek
+                     je Auto height, prázdný = 0px. -->
+                <DataTemplate x:Key="FieldMessageTemplate">
+                    <Grid>
+                        <TextBlock
+                                   Text="{Binding ValidationError}"
+                                   Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                                   TextWrapping="Wrap" MaxWidth="320"
+                                   Margin="2,2,2,2"
+                                   Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock
+                                   Text="{Binding HelpText}"
+                                   Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontStyle="Italic"
+                                   TextWrapping="Wrap" MaxWidth="320"
+                                   Margin="2,2,2,2"
+                                   Style="{StaticResource FieldHelpTextColumnStyle}"/>
+                    </Grid>
+                </DataTemplate>
+
+                <!-- Široký řádek: 2-column modern PropertyGrid layout.
+                     Popisek Auto SharedSize MinWidth=120 → konzistentní šířka napříč rows
                      (fit obsahu, jen floor). Hodnota "*" MinWidth=120 MaxWidth=320 → responzivní:
                      do 320 fixní vzhled + prázdno vpravo, při zúžení se zmenší první až na 120,
-                     teprve pak tlačí na label.
-                     Row 1 pod inputem zobrazí error/help inline (Material Design pattern).
+                     teprve pak tlačí na popisek.
                      Margin.Left=16 → fields indented pod group header pro vizuální hierarchii. -->
-                <DataTemplate DataType="{x:Type local:Field}">
-                    <Grid Margin="16,3,2,3" Visibility="{Binding EffectiveVisibility}">
+                <DataTemplate x:Key="FieldRowWideTemplate">
+                    <Grid Margin="16,3,2,3">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" MinWidth="120" SharedSizeGroup="ItemLabel"/>
                             <ColumnDefinition Width="*" MinWidth="120" MaxWidth="320"/>
@@ -330,122 +470,51 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
+                        <ContentPresenter Grid.Row="0" Grid.Column="0" Content="{Binding}"
+                                          ContentTemplate="{StaticResource FieldLabelTemplate}"/>
+                        <ContentPresenter Grid.Row="0" Grid.Column="1" Content="{Binding}"
+                                          ContentTemplate="{StaticResource FieldValueTemplate}"/>
+                        <ContentPresenter Grid.Row="1" Grid.Column="1" Content="{Binding}"
+                                          ContentTemplate="{StaticResource FieldMessageTemplate}"/>
+                    </Grid>
+                </DataTemplate>
 
-                            <!-- Col 0 / Row 0: Položka - label + help/validate ikona + asterisk.
-                                 StackPanel s HorizontalAlignment="Left" → hugs left edge, nedrift. -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal"
-                                        HorizontalAlignment="Left" VerticalAlignment="Center"
-                                        Margin="6,0,12,0">
-                                <Ellipse Width="6" Height="6" Fill="{DynamicResource EDTheme.Accent.Blue}"
-                                         Margin="0,0,4,0" VerticalAlignment="Center"
-                                         Visibility="{Binding ValidateIndicatorVisibility}"
-                                         ToolTip="Automatická validace"/>
-                                <Image Source="{StaticResource EDIcons.Help}"
-                                       Width="{DynamicResource EDTheme.IconSize.Small}"
-                                       Height="{DynamicResource EDTheme.IconSize.Small}" Margin="0,0,4,0"
-                                       ToolTip="{Binding HelpText}" Cursor="Help"
-                                       VerticalAlignment="Center"
-                                       Style="{StaticResource HelpIconStyle}"/>
-                                <!-- Zámek u needitovatelných polí - monochromatický glyph (Segoe MDL2),
-                                     barví se z tokenu → čitelný v light i dark. -->
-                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
-                                           FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="0,0,4,0" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource EDTheme.Field.ReadOnly.Fg}"
-                                           Visibility="{Binding NonEditableIndicatorVisibility}"
-                                           ToolTip="Needitovatelné (jen pro čtení)"/>
-                                <TextBlock Text="{Binding Label}" TextWrapping="Wrap"
-                                           MaxWidth="280" VerticalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <!-- BasedOn povinné - bez něj se v editable stavu ztratí themed Foreground → v dark černý (neviditelný) label. -->
-                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Editable}" Value="False">
-                                                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Field.ReadOnly.Fg}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                <TextBlock Text="*" Foreground="{DynamicResource EDTheme.Semantic.Danger}"
-                                           Visibility="{Binding RequiredIndicatorVisibility}"
-                                           ToolTip="Povinné pole" Margin="4,0,0,0"
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
+                <!-- Úzký řádek: jeden sloupec, popisek nad hodnotou. Žádné MinWidth - dvousloupcová
+                     minima (120+120) se sem nevejdou a Grid by místo zúžení přetekl. Menší odsazení
+                     zleva, větší mezera dole (řádky stojí na sobě, hranici mezi poli nic nekreslí). -->
+                <DataTemplate x:Key="FieldRowNarrowTemplate">
+                    <Grid Margin="10,3,4,7">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <ContentPresenter Grid.Row="0" Content="{Binding}"
+                                          ContentTemplate="{StaticResource FieldLabelTemplate}"/>
+                        <!-- Hodnota odsazená pod popisek: bez odsazení začíná o kus vlevo od jeho
+                             textu (popisek má vlastní Margin) a lepí se na něj. -->
+                        <ContentPresenter Grid.Row="1" Content="{Binding}" Margin="12,4,0,0"
+                                          ContentTemplate="{StaticResource FieldValueTemplate}"/>
+                        <ContentPresenter Grid.Row="2" Content="{Binding}" Margin="10,0,0,0"
+                                          ContentTemplate="{StaticResource FieldMessageTemplate}"/>
+                    </Grid>
+                </DataTemplate>
 
-                            <!-- Col 1 / Row 0: Hodnota - input (template per FieldType).
-                                 Needitovatelné: recessed pozadí (Field.ReadOnly.Bg) obalí hodnotu
-                                 nezávisle na typu pole (text i disabled controly) → sjednocený
-                                 „vypnutý" vzhled v light i dark. Editovatelné = Transparent (beze změny). -->
-                            <Border Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" CornerRadius="3">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Setter Property="Background" Value="Transparent"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Editable}" Value="False">
-                                                <Setter Property="Background" Value="{DynamicResource EDTheme.Field.ReadOnly.Bg}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                            <ContentControl VerticalAlignment="Center"
-                                            Content="{Binding}" Focusable="False">
-                                <ContentControl.Style>
-                                    <Style TargetType="ContentControl">
-                                        <Setter Property="ContentTemplate" Value="{StaticResource TextFieldTemplate}"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Number}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource NumberFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Decimal}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource DecimalFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Date}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource DateFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Bool}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource BoolFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Button}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource ButtonFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.List}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource ListFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.File}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource FileFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Color}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource ColorFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.ComboBox}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource ComboBoxFieldTemplate}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:FieldType.Image}">
-                                                <Setter Property="ContentTemplate" Value="{StaticResource ImageFieldTemplate}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ContentControl.Style>
-                            </ContentControl>
-                            </Border>
-
-                            <!-- Row 1 / Col 1: inline error/help pod inputem (Material Design pattern).
-                                 Error má prioritu (červený text), jinak help text (italic muted).
-                                 Žádný layout shift - Row 1 je Auto height, prázdná = 0px. -->
-                            <TextBlock Grid.Row="1" Grid.Column="1"
-                                       Text="{Binding ValidationError}"
-                                       Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontSize="{DynamicResource EDTheme.FontSize.Caption}"
-                                       TextWrapping="Wrap" MaxWidth="320"
-                                       Margin="2,2,2,2"
-                                       Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
-                            <TextBlock Grid.Row="1" Grid.Column="1"
-                                       Text="{Binding HelpText}"
-                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
-                                       FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontStyle="Italic"
-                                       TextWrapping="Wrap" MaxWidth="320"
-                                       Margin="2,2,2,2"
-                                       Style="{StaticResource FieldHelpTextColumnStyle}"/>
-                        </Grid>
+                <!-- Řádek pole - variantu vybírá šířka formuláře (EDInputForm.IsNarrowLayout). -->
+                <DataTemplate DataType="{x:Type local:Field}">
+                    <ContentControl Content="{Binding}" Focusable="False"
+                                    Visibility="{Binding EffectiveVisibility}">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Setter Property="ContentTemplate" Value="{StaticResource FieldRowWideTemplate}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsNarrowLayout, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}" Value="True">
+                                        <Setter Property="ContentTemplate" Value="{StaticResource FieldRowNarrowTemplate}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
                 </DataTemplate>
 
                 <!-- Group header: modern flat section header s 3px modrým accent vlevo.
