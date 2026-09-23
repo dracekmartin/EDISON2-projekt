@@ -26,7 +26,7 @@
             <!-- Výchozí nastavení celého elementu (styl záhlaví/buněk = báze pro sloupce).
                  Per-sloupec overridy v tabu Sloupce. -->
             <TabItem Header="Obecné">
-                <eif:EDInputForm x:Name="GeneralForm"/>
+                <eif:EDInputForm x:Name="GeneralForm" SearchMemoryKey="TemplateDesigner.ElementEdit"/>
             </TabItem>
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->
