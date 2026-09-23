@@ -10,6 +10,10 @@
 - **#11300** (KORID) - prázdný přípojný řádek: řádek vzniká jen pro přípoj spojů téže tabulky.
   Ukázáno na CB_CSADAD 0330510 směr Zpět (víkendová tabulka nese jen „směr Horní Planá"), odpověď
   poslal Jan. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md).
+- **#8372** (KORID) - „vkládat prázdné sloupce" bez druhé šablony: Jan poslal obě varianty
+  (s dorovnáním a bez) na 0330517 a 0330510 k posouzení. Ve starém Win tisku byla volba v šabloně
+  (sekce Data linky), u knižního a vývěsního u linky. Kdyby chtěl krátké linky bez dorovnání
+  a dlouhé s ním jednou šablonou: volba *Jen když se tabulka dělí na části* (odhad S).
 
 ## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
 

@@ -47,11 +47,6 @@ helpdesku k 15. 9.
 > [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) §14
 > (projito 2026-08-19, navázané na vlny `L1`-`L8` roadmapy). Sem se to nekopíruje.
 
-✅ **Hotové, čekají jen na odpověď a zavření** (prověřeno proti helpdesku 15. 9.):
-
-- **#8372** (KORID) - „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).
-  Volba **„Dorovnat prázdnými sloupci"** u tabulky linky; dorovnává se i **levá** strana, kterou
-  tiket nežádal, ale u obousměrné sestavy bez ní zůstala díra.
 
 🟡 **Čeká práce nebo odpověď:**
 

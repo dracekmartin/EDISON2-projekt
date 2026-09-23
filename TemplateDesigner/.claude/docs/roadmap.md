@@ -73,15 +73,6 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
   druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
 
-### Hotové, čeká zavření na helpdesku
-
-Zavřít se mělo až s vydáním (rozhodnutí Jan 15. 9.) - **vydání proběhlo 22. 9., takže se dají
-zavřít**. Po zavření **z roadmapy pryč**; tady visí jen proto, aby to bylo na jednom místě.
-
-| Tiket | Co dostal |
-|---|---|
-| **#8372 vkládat prázdné sloupce** (KORID) | Volba **„Dorovnat prázdnými sloupci"** u tabulky linky. Dorovnává i **levou** stranu, kterou tiket nežádal - u obousměrné sestavy bez ní zůstala díra |
-
 ### K ověření na reálné sestavě
 
 Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
