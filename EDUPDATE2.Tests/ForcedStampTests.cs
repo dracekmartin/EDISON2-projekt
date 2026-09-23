@@ -22,6 +22,24 @@ public class ForcedStampTests
     }
 
     [Fact]
+    public void Read_LegacyFileName_ReadsLegacyWriterFormat()
+    {
+        // Legacy EDUPDATE zapisuje StreamWriter.WriteLine("Spuštěn=" & razítko), UTF-8 bez BOM.
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, ForcedStamp.LegacyFileName), "Spuštěn=66234,2\r\n");
+            Assert.Equal("66234,2", ForcedStamp.Read(dir, ForcedStamp.LegacyFileName));
+            Assert.Equal("", ForcedStamp.Read(dir));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public void Read_MissingFile_ReturnsEmpty()
     {
         var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());

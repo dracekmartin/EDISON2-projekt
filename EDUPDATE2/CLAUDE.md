@@ -1,10 +1,10 @@
 # EDUPDATE2 - klientský updater pro EDISONMAIN2
 
 Samostatný exe: vymění soubory EDISONu na stanici za novější ze serverové instalace
-a spustí shell znovu. Volá ho jen EDISONMAIN2 (`Updater.LaunchUpdate`) - zkopíruje si ho
-ze serveru k sobě, spustí a ukončí se; updater počká na zánik procesů, vymění soubory,
-restartuje shell. Legacy `EDUPDATE.exe` (repo EDISON) zůstává starému shellu.
-Kontext: `docs/analyzy/update-mechanismus.md`.
+a spustí shell znovu. **Shell ho zatím nevolá:** `Updater.ActiveKind` (EDISONMAIN2) je legacy
+`EDUPDATE.exe` (repo EDISON), spuštěný jako ze starého shellu s `WaitProcess=EDISONMAIN2`;
+stopu vlny pak shell čte z jeho `CliUp.ini`. Přepnutí na EDUPDATE2 = změna konstanty a vydání
+shellu, `EDUPDATE2.exe` musí být ve zdrojovém adresáři serveru. Kontext: `docs/analyzy/update-mechanismus.md`.
 
 ## Invariant: žádné závislosti
 
@@ -14,8 +14,8 @@ updater vyměňuje a načtenou assembly Windows zamyká. Proto hardcoded barvy v
 
 ## Argumenty
 
-Tokeny `Key=value`, staví je `Updater.BuildArguments` v EDISONMAIN2 přes `ArgumentList`.
-Neznámý klíč se zaloguje a ignoruje.
+Tokeny `Key=value`, staví je `Updater.BuildArguments(ClientUpdaterKind.Edupdate2, ...)`
+v EDISONMAIN2 přes `ArgumentList`. Neznámý klíč se zaloguje a ignoruje.
 
 | Klíč | Default | Význam |
 |---|---|---|

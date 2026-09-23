@@ -24,7 +24,7 @@ public enum UpdateOutcome
 {
     /// <summary>Verze sedí (nebo update vypnutý) - pokračovat ve startu.</summary>
     None,
-    /// <summary>Nová verze na serverové instalaci (nebo vynucená vlna) - spawn EDUPDATE2 + shutdown.</summary>
+    /// <summary>Nová verze na serverové instalaci (nebo vynucená vlna) - spawn updateru + shutdown.</summary>
     UpdateRequired,
     /// <summary>Stav, který klient nespraví (nečitelné verze, Caché mismatch bez nové verze) - popup + shutdown.</summary>
     Broken,
@@ -45,15 +45,30 @@ public enum ReleaseNoticeOutcome
 
 public record ReleaseNoticeResult(ReleaseNoticeOutcome Outcome, string Version = "");
 
+/// <summary>Updater, kterým shell aktualizuje stanici; aktivní volí <see cref="Updater.ActiveKind"/>.</summary>
+public enum ClientUpdaterKind
+{
+    /// <summary>Legacy EDUPDATE (repo EDISON) spuštěný jako ze starého shellu, stopa vlny v CliUp.ini.</summary>
+    LegacyEdupdate,
+    /// <summary>EDUPDATE2, kontrakt v EDUPDATE2/CLAUDE.md, stopa vlny v CliUp2.ini.</summary>
+    Edupdate2,
+}
+
 /// <summary>
 /// Klientský (stanicový) update - detekce (porovnání lokální VERZE.INF proti serverové
-/// instalaci a Caché verzi, razítko vynucené vlny) + spuštění EDUPDATE2. Mandatory
-/// sémantika bez user volby; virtuální metody kvůli testům (čtení disku, spawn).
+/// instalaci a Caché verzi, razítko vynucené vlny) + spuštění updateru podle <see cref="ActiveKind"/>.
+/// Mandatory sémantika bez user volby; virtuální metody kvůli testům (čtení disku, spawn).
 /// </summary>
 public class Updater
 {
-    private const string UpdaterExe = "EDUPDATE2.exe";
-    private const string ShellExe = "EDISONMAIN2.exe";
+    /// <summary>
+    /// Přepnutí = změna konstanty a vydání shellu. EDUPDATE2 potřebuje EDUPDATE2.exe ve zdrojovém
+    /// adresáři serveru; při razítku vlny v Caché kvůli jinému souboru stopy jednou plně zkopíruje každou stanici.
+    /// </summary>
+    public const ClientUpdaterKind ActiveKind = ClientUpdaterKind.LegacyEdupdate;
+
+    // Restart přes EDLOADER: o shellu po updatu rozhodne přepínač nového shellu, ne updater.
+    private const string RestartExe = "EDISON.exe";
     private const string ShellProcessName = "EDISONMAIN2";
 
     // object[] protokol - LoadSettings je legacy endpoint s numerickými subscripty.
@@ -126,48 +141,90 @@ public class Updater
 
     protected virtual string GetSourceVersion(string sourceDir) => VerzeInf.ReadVersion(sourceDir);
 
-    /// <summary>Lokální stopa poslední splněné vynucené vlny (CliUp2.ini vedle exe, píše ji updater).</summary>
-    protected virtual string GetForcedStampSeen() => EDUPDATE2.ForcedStamp.Read(AppContext.BaseDirectory);
+    /// <summary>Lokální stopa poslední splněné vynucené vlny vedle exe. Legacy CliUp.ini čte i starý shell,
+    /// takže vlnu splněnou kterýmkoli shellem druhý neopakuje.</summary>
+    protected virtual string GetForcedStampSeen() => ReadForcedStampSeen(AppContext.BaseDirectory, ActiveKind);
+
+    internal static string ReadForcedStampSeen(string installDirectory, ClientUpdaterKind kind) =>
+        EDUPDATE2.ForcedStamp.Read(installDirectory, StampFileFor(kind));
+
+    internal static string UpdaterExeFor(ClientUpdaterKind kind) => kind switch
+    {
+        ClientUpdaterKind.LegacyEdupdate => "EDUPDATE.exe",
+        ClientUpdaterKind.Edupdate2 => "EDUPDATE2.exe",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+    };
+
+    internal static string StampFileFor(ClientUpdaterKind kind) => kind switch
+    {
+        ClientUpdaterKind.LegacyEdupdate => EDUPDATE2.ForcedStamp.LegacyFileName,
+        ClientUpdaterKind.Edupdate2 => EDUPDATE2.ForcedStamp.FileName,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+    };
 
     /// <summary>
     /// Self-update updateru - kopii dělá shell, protože updater v tu chvíli neběží
     /// (legacy UpdateClientUpdater pattern).
     /// </summary>
-    public virtual void CopyUpdater(string sourceDir) =>
-        File.Copy(Path.Combine(sourceDir, UpdaterExe),
-                  Path.Combine(AppContext.BaseDirectory, UpdaterExe), overwrite: true);
+    public virtual void CopyUpdater(string sourceDir)
+    {
+        var exe = UpdaterExeFor(ActiveKind);
+        File.Copy(Path.Combine(sourceDir, exe), Path.Combine(AppContext.BaseDirectory, exe), overwrite: true);
+    }
 
     /// <summary>
-    /// Spawn EDUPDATE2 - kontrakt argumentů viz EDUPDATE2/CLAUDE.md. Razítko se posílá vždy,
-    /// když ho známe - i úspěšný běžný update splní čekající vynucenou vlnu (legacy parita).
+    /// Spawn updateru. Razítko se posílá vždy, když ho známe - i úspěšný běžný update
+    /// splní čekající vynucenou vlnu (legacy parita).
     /// </summary>
     public virtual void LaunchUpdate(string sourceDir, string version, bool forced, string forcedStamp)
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = Path.Combine(AppContext.BaseDirectory, UpdaterExe),
+            FileName = Path.Combine(AppContext.BaseDirectory, UpdaterExeFor(ActiveKind)),
             UseShellExecute = true,
+            // Legacy EDUPDATE zapisuje CliUp.ini relativní cestou - musí skončit tam, odkud ho čte GetForcedStampSeen.
             WorkingDirectory = AppContext.BaseDirectory,
         };
-        foreach (var arg in BuildArguments(sourceDir, version, forced, forcedStamp))
+        foreach (var arg in BuildArguments(ActiveKind, sourceDir, version, forced, forcedStamp))
             startInfo.ArgumentList.Add(arg);
         Process.Start(startInfo);
     }
 
-    /// <summary>Tokeny Key=value; quoting (mezery v cestách) řeší ArgumentList, ne ruční eskapace.</summary>
-    internal static IReadOnlyList<string> BuildArguments(string sourceDir, string version, bool forced, string forcedStamp)
+    /// <summary>Tokeny <c>Key=value</c> pro daný updater; quoting (mezery v cestách) řeší ArgumentList.</summary>
+    internal static IReadOnlyList<string> BuildArguments(ClientUpdaterKind kind, string sourceDir, string version,
+        bool forced, string forcedStamp)
     {
         var targetPath = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
-        return
-        [
-            $"SourcePath={sourceDir}",
-            $"TargetPath={targetPath}",
-            $"Version={version}",
-            $"WaitProcess={ShellProcessName}",
-            $"RunExe={ShellExe}",
-            $"NucenyUpdate={(forced ? "1" : "0")}",
-            $"NucenyUpdateTime={forcedStamp}",
-        ];
+        return kind switch
+        {
+            // Sada legacy shellu (EDISONMAIN clsUpdate.vb) + WaitProcess/RunExe: bez FormMode=1 legacy
+            // čeká na klik OK, bez RunEdison=1 po updatu nic nespustí.
+            ClientUpdaterKind.LegacyEdupdate =>
+            [
+                "FormMode=1",
+                "Async=1",
+                "RunEdison=1",
+                $"SourcePath={sourceDir}",
+                $"TargetPath={targetPath}",
+                $"Version={version}",
+                $"NucenyUpdate={(forced ? "True" : "False")}",
+                $"NucenyUpdateTime={forcedStamp}",
+                $"WaitProcess={ShellProcessName}",
+                $"RunExe={RestartExe}",
+            ],
+            // Kontrakt EDUPDATE2/CLAUDE.md.
+            ClientUpdaterKind.Edupdate2 =>
+            [
+                $"SourcePath={sourceDir}",
+                $"TargetPath={targetPath}",
+                $"Version={version}",
+                $"WaitProcess={ShellProcessName}",
+                $"RunExe={RestartExe}",
+                $"NucenyUpdate={(forced ? "1" : "0")}",
+                $"NucenyUpdateTime={forcedStamp}",
+            ],
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
     }
 
     /// <summary>

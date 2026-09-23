@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.IO;
+using System.Net.Http;
 using EDControls;
 using EDTesting;
 using NSubstitute;
@@ -293,53 +294,152 @@ public class UpdaterTests
         Assert.Equal(UpdateOutcome.Broken, result.Outcome);
     }
 
-    [Fact]
-    public void BuildArguments_ComposesEdupdate2Contract()
+    [Theory]
+    [InlineData(ClientUpdaterKind.LegacyEdupdate, "EDUPDATE.exe", "CliUp.ini")]
+    [InlineData(ClientUpdaterKind.Edupdate2, "EDUPDATE2.exe", "CliUp2.ini")]
+    public void UpdaterKind_PairsExeWithItsStampFile(ClientUpdaterKind kind, string exe, string stampFile)
     {
-        var args = Updater.BuildArguments(@"\\server\Edison", "260901.1", forced: true, forcedStamp: "66234,2");
+        Assert.Equal(exe, Updater.UpdaterExeFor(kind));
+        Assert.Equal(stampFile, Updater.StampFileFor(kind));
+    }
 
-        var expectedTarget = AppContext.BaseDirectory.TrimEnd(System.IO.Path.DirectorySeparatorChar);
+    [Fact]
+    public void BuildArguments_Legacy_ComposesLegacyEdupdateContract()
+    {
+        var args = Updater.BuildArguments(ClientUpdaterKind.LegacyEdupdate, @"\\server\Edison", "260901.1",
+            forced: true, forcedStamp: "66234,2");
+
+        var expectedTarget = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
+        Assert.Equal(
+        [
+            "FormMode=1",
+            "Async=1",
+            "RunEdison=1",
+            @"SourcePath=\\server\Edison",
+            $"TargetPath={expectedTarget}",
+            "Version=260901.1",
+            "NucenyUpdate=True",
+            "NucenyUpdateTime=66234,2",
+            "WaitProcess=EDISONMAIN2",
+            "RunExe=EDISON.exe",
+        ], args);
+    }
+
+    [Fact]
+    public void BuildArguments_Legacy_NotForced_SendsFalseAndStamp()
+    {
+        // Razítko jde i s běžným updatem - úspěch splní čekající vlnu bez druhého kola.
+        var args = Updater.BuildArguments(ClientUpdaterKind.LegacyEdupdate, @"\\s", "1", forced: false,
+            forcedStamp: "66234,2");
+
+        Assert.Contains("NucenyUpdate=False", args);
+        Assert.Contains("NucenyUpdateTime=66234,2", args);
+    }
+
+    /// <summary>Čtení jako legacy UPDATERCL <c>CommandLine.GetArgument</c>: argv spojené přes NUL,
+    /// první výskyt <c>Key=</c>, hodnota do dalšího NUL.</summary>
+    private static string LegacyGetArgument(IReadOnlyList<string> argv, string key)
+    {
+        var joined = string.Join('\0', argv);
+        int start = joined.IndexOf(key + "=", StringComparison.Ordinal);
+        if (start < 0) return "";
+        start += key.Length + 1;
+        int end = joined.IndexOf('\0', start);
+        return end < 0 ? joined[start..] : joined[start..end];
+    }
+
+    [Fact]
+    public void BuildArguments_Legacy_ParsedLikeLegacyEdupdate_EveryKeyGetsItsOwnValue()
+    {
+        // Legacy parser bere první výskyt "Key=" - klíč schovaný v jiném tokenu (např. OldVersion
+        // před Version) by si vzal cizí hodnotu; mezera v cestě musí projít celá.
+        const string source = @"\\server\EDISON data\Účetní";
+        var argv = new List<string> { @"C:\Edison\EDUPDATE.exe" };
+        argv.AddRange(Updater.BuildArguments(ClientUpdaterKind.LegacyEdupdate, source, "260901.1",
+            forced: true, forcedStamp: "66234,2"));
+
+        Assert.Equal("1", LegacyGetArgument(argv, "FormMode"));
+        Assert.Equal("1", LegacyGetArgument(argv, "Async"));
+        Assert.Equal("1", LegacyGetArgument(argv, "RunEdison"));
+        Assert.Equal(source, LegacyGetArgument(argv, "SourcePath"));
+        Assert.Equal(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), LegacyGetArgument(argv, "TargetPath"));
+        Assert.Equal("260901.1", LegacyGetArgument(argv, "Version"));
+        Assert.Equal("True", LegacyGetArgument(argv, "NucenyUpdate"));
+        Assert.Equal("66234,2", LegacyGetArgument(argv, "NucenyUpdateTime"));
+        Assert.Equal("EDISONMAIN2", LegacyGetArgument(argv, "WaitProcess"));
+        Assert.Equal("EDISON.exe", LegacyGetArgument(argv, "RunExe"));
+    }
+
+    [Fact]
+    public void BuildArguments_Edupdate2_ComposesEdupdate2Contract()
+    {
+        var args = Updater.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\server\Edison", "260901.1",
+            forced: true, forcedStamp: "66234,2");
+
+        var expectedTarget = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
         Assert.Equal(
         [
             @"SourcePath=\\server\Edison",
             $"TargetPath={expectedTarget}",
             "Version=260901.1",
             "WaitProcess=EDISONMAIN2",
-            "RunExe=EDISONMAIN2.exe",
+            "RunExe=EDISON.exe",
             "NucenyUpdate=1",
             "NucenyUpdateTime=66234,2",
         ], args);
     }
 
     [Fact]
-    public void BuildArguments_NotForced_SendsZeroAndStamp()
+    public void BuildArguments_Edupdate2_NotForced_SendsZeroAndStamp()
     {
-        // Razítko jde i s běžným updatem - úspěch splní čekající vlnu bez druhého kola.
-        var args = Updater.BuildArguments(@"\\s", "1", forced: false, forcedStamp: "66234,2");
+        var args = Updater.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\s", "1", forced: false,
+            forcedStamp: "66234,2");
 
         Assert.Contains("NucenyUpdate=0", args);
         Assert.Contains("NucenyUpdateTime=66234,2", args);
     }
 
     [Fact]
-    public void BuildArguments_ParsedByUpdaterArgs_RoundTripsWithoutUnknownTokens()
+    public void BuildArguments_Edupdate2_ParsedByUpdaterArgs_RoundTripsWithoutUnknownTokens()
     {
         // Drift guard obou stran kontraktu: přejmenování klíče na jedné straně by prošlo
         // oběma sadami zeleně - tady se producent a konzument (source-link) potkají.
         var unknown = new List<string>();
 
         var parsed = EDUPDATE2.UpdaterArgs.Parse(
-            Updater.BuildArguments(@"\\server\Edison", "260901.1", forced: true, forcedStamp: "66234,2"),
+            Updater.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\server\Edison", "260901.1",
+                forced: true, forcedStamp: "66234,2"),
             unknown.Add);
 
         Assert.Empty(unknown);
         Assert.Equal(@"\\server\Edison", parsed.SourcePath);
-        Assert.Equal(AppContext.BaseDirectory.TrimEnd(System.IO.Path.DirectorySeparatorChar), parsed.TargetPath);
+        Assert.Equal(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), parsed.TargetPath);
         Assert.Equal("260901.1", parsed.Version);
         Assert.Equal("EDISONMAIN2", parsed.WaitProcess);
-        Assert.Equal("EDISONMAIN2.exe", parsed.RunExe);
+        Assert.Equal("EDISON.exe", parsed.RunExe);
         Assert.True(parsed.NucenyUpdate);
         Assert.Equal("66234,2", parsed.NucenyUpdateTime);
+    }
+
+    [Fact]
+    public void ReadForcedStampSeen_EachUpdaterReadsItsOwnStampFile()
+    {
+        // Legacy EDUPDATE píše CliUp.ini, EDUPDATE2 CliUp2.ini - čtení cizího souboru by vlnu
+        // nikdy nesplnilo a každý start by spustil plnou kopii.
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "CliUp.ini"), "Spuštěn=66234,2\r\n");
+            File.WriteAllText(Path.Combine(dir, "CliUp2.ini"), "Spuštěn=11111,1\r\n");
+
+            Assert.Equal("66234,2", Updater.ReadForcedStampSeen(dir, ClientUpdaterKind.LegacyEdupdate));
+            Assert.Equal("11111,1", Updater.ReadForcedStampSeen(dir, ClientUpdaterKind.Edupdate2));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     private class NoticeUpdater : Updater

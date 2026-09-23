@@ -13,8 +13,6 @@ složku nikdy nezipovat - leží tam stale `.pdb`/`.deps.json` a dev `VERZE.INF`
   WebView2 i snapshot `MLRest.dll`/`EDLicence.dll`/`EDISONAPI.dll` ze stroje, kde se publikovalo -
   publikovat jen tam, kde `C:\Edison\` odpovídá vydávané legacy verzi)
 - `EDControls.dll` - volná vedle exe
-- `EDUPDATE2.exe` - klientský updater; bez něj ve zdrojovém adresáři serveru shell po detekci
-  nové verze nenastartuje (`CopyUpdater` selže s popupem)
 
 Z repa EDISON (build do `C:\Edison`):
 
@@ -24,11 +22,14 @@ Z repa EDISON (build do `C:\Edison`):
   `EDISONMAIN.exe` (retrofit `OnRun`), `EDISONMAIN.exe.config` (codeBase pin), `EDLibrary.dll`
   (shortcut sink), `EDUsers.dll`, `EDCore.dll`, `MLRest.dll`, `EDLicence.dll`, `EDISONAPI.dll`,
   `USERS.exe`, `UTILITIES.exe`, `EDISON.exe` (EDLOADER, přepínač shellu níže: build ≥ 2026-09-23).
-  `EDUPDATE.EXE` zůstává jen starému shellu.
+- `EDUPDATE.EXE` - klientský updater obou shellů, build ≥ 2026-06-17 (`WaitProcess`, `49d19295d9`),
+  starší na zavření nového shellu nepočká. Bez něj ve zdrojovém adresáři serveru nový shell po
+  detekci nové verze nenastartuje (`CopyUpdater` selže s popupem). `EDUPDATE2.exe` (repo EDISON2)
+  jen po přepnutí shellu na něj (`Updater.ActiveKind`).
 
 Nové řádky `FILES_DESCRIPTION.INF` (FULL, typ EXE/DLL): `EDISONMAIN2.exe`, `EDControls.dll`,
-`EDUPDATE2.exe`, `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`; řádek `EDISONMAIN2API.dll`
-zrušit. Ostatní soubory výše řádky už mají.
+`EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`; řádek `EDISONMAIN2API.dll` zrušit. Ostatní
+soubory výše řádky už mají.
 
 ## Caché projekty (řádky `FULL~~XML~<projekt>.prj`)
 
@@ -50,11 +51,11 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
 ## Ops prerekvizity
 
 - `FILES_DESCRIPTION.INF` na Cloud2 (edituje se ručně) dostane řádky výše; bez nich nevznikne
-  záznam v `EDISONCRC.bin` a EDUPDATE2 soubor na stanice nikdy nezkopíruje.
+  záznam v `EDISONCRC.bin` a updater soubor na stanice nikdy nezkopíruje.
 - Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty, jinak se do REL nic nepřenese.
 - Stanice: **.NET 10 Desktop Runtime x64** (publish je framework-dependent) a WebView2 Evergreen
   runtime (bez něj se pruh podpory tiše nevyplní). Legacy stack to nepotřeboval.
-- Serverový adresář musí mít `VERZE.INF` a `EDUPDATE2.exe`; shell bez `VERZE.INF` vedle exe skončí
+- Serverový adresář musí mít `VERZE.INF` a `EDUPDATE.EXE`; shell bez `VERZE.INF` vedle exe skončí
   hláškou, instaluje se tedy vždy do adresáře EDISONu, nikdy samostatně.
 - Setup wizard shellu nikdy nespouštět v serverovém instalačním adresáři: přepíše `EDISONini.xml`,
   který EDUPDATE roznáší na všechny stanice (a při updatu ho stejně vrátí).

@@ -35,7 +35,7 @@ public class AppBootstrapperUpdateTests
         public override void CopyUpdater(string sourceDir)
         {
             Calls.Add("copy");
-            if (CopyThrows) throw new IOException("EDUPDATE2.exe je zamčený");
+            if (CopyThrows) throw new IOException("EDUPDATE.exe je zamčený");
         }
 
         public override void LaunchUpdate(string sourceDir, string version, bool forced, string forcedStamp) =>
