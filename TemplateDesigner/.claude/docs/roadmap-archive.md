@@ -1,5 +1,13 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Tikety odbavené po vydání 22. 9. (23. 9. 2026)
+
+- **#8576** (KU HK) - tarifní zóny do sloupců: volba **„Každá zóna ve vlastním sloupci"** u tabulky
+  linky, výchozí vypnutá. Vyzkoušeno na ZL_KOVED 823955 (Kroměříž má zóny 420,201), odpověď poslal Jan.
+- **#12843** (TRANSDEV) - šest bodů zpětné vazby z 16. 9. hotových (mizející nastavení, slučování
+  variant, záhlaví odjezdů po sloupcích, velikost záhlaví u poznámek, pevný rastr minut, pořadí
+  stránek v exportu); odbavil Jan.
+
 ## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
 
 Hledaná čára nebyla čára mřížky, ale **úsečka rozdvojené zastávky** mezi dvěma zónami 208. Měla
