@@ -1698,6 +1698,12 @@ public partial class MainWindow : Window
 
     // ── Properties dialog helpers ────────────────────────────────────────────
 
+    /// <summary>Filtr hledání, který si pamatují okna vlastností prvku otevřená z plátna.</summary>
+    /// <remarks>Uživatel ladí jednu vlastnost: vyhledá ji, změní, zavře okno kvůli náhledu a otevře
+    /// znovu - bez paměti by hledal pokaždé znovu (Jan 23. 9.). Jen tady: panel vlastností, sekce,
+    /// stránka ani buňka tabulky ho nesdílí.</remarks>
+    private const string ElementDialogSearchKey = "TemplateDesigner.ElementDialog";
+
     private void OpenPropertiesForElement(TemplateElement element)
     {
         if (element is DepartureGridElement depEl)
@@ -1748,7 +1754,7 @@ public partial class MainWindow : Window
         var dlg = new DepartureGroupEditorDialog(
             element, availableGroups, element.GroupColumns, element.HourColumnStyle,
             element.CustomColumns, presetsJson)
-            { Owner = this };
+            { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
 
         if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)
 
@@ -1797,7 +1803,7 @@ public partial class MainWindow : Window
     private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
         var dlg = new ElementEditDialog(element, cacheClass, title)
-            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);
@@ -1809,7 +1815,7 @@ public partial class MainWindow : Window
 
     private void OpenStopColumnsDialog(StopListElement element)
     {
-        var dlg = new StopColumnsEditorDialog(element) { Owner = this };
+        var dlg = new StopColumnsEditorDialog(element) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
 
         if (dlg.ShowDialog() == true)
         {
@@ -1847,7 +1853,7 @@ public partial class MainWindow : Window
 
     private void OpenLineTableColumnsDialog(LineTableElement element)
     {
-        var dlg = new LineTableColumnsEditorDialog(element) { Owner = this };
+        var dlg = new LineTableColumnsEditorDialog(element) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
 
         if (dlg.ShowDialog() == true)
         {
@@ -1863,7 +1869,7 @@ public partial class MainWindow : Window
     private void OpenDynamicTableDialog(DynamicTableElement element)
     {
         var collections = _vm!.GetAvailableGroups();
-        var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this };
+        var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
 
         if (dlg.ShowDialog() == true)
         {

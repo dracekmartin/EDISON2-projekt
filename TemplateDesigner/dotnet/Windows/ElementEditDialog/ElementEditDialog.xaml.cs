@@ -21,6 +21,10 @@ namespace TemplateDesigner;
 /// </summary>
 public partial class ElementEditDialog : Window
 {
+    /// <summary>Klíč pamatování filtru hledání (viz <c>EDInputForm.SearchMemoryKey</c>). Nastavuje
+    /// ho jen otevření vlastností prvku z plátna - jinde se filtr nepamatuje.</summary>
+    public string SearchMemoryKey { get => TheForm.SearchMemoryKey; set => TheForm.SearchMemoryKey = value; }
+
     private readonly object _target;
 
     // Hodnoty nastavené při pre-fillu - change detection proti nim (ne proti raw property),

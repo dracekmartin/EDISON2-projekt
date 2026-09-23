@@ -25,7 +25,7 @@
 
             <!-- ── Tab 1: Obecné (EDInputForm - schéma z Caché DepartureGridElementEdit) ── -->
             <TabItem Header="Obecné">
-                <eif:EDInputForm x:Name="GeneralForm" SearchMemoryKey="TemplateDesigner.ElementEdit"/>
+                <eif:EDInputForm x:Name="GeneralForm"/>
             </TabItem>
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->

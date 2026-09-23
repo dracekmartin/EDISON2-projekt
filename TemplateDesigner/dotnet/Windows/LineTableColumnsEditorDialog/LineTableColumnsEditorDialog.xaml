@@ -24,7 +24,7 @@
 
             <!-- ── Tab 1: Obecné ──────────────────────────────────── -->
             <TabItem Header="Obecné">
-                <eif:EDInputForm x:Name="GeneralForm" SearchMemoryKey="TemplateDesigner.ElementEdit"/>
+                <eif:EDInputForm x:Name="GeneralForm"/>
             </TabItem>
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->
