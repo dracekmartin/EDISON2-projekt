@@ -42,6 +42,9 @@ Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživate
 - **Persistované hodnoty parametrů sestavy se aplikují jednou cestou** -
   `ApplyPersistedPrintParamsAsync()` nastaví hodnoty i UI pohromadě. Dvě cesty vedly k tomu,
   že se tisklo jiné nastavení, než UI ukazovalo, a nikdo si toho nevšiml.
+- **Panel vlastností a modální dialog sdílí jeden `SearchMemoryKey`** - hledaný výraz drží po
+  dobu běhu aplikace, takže přežije zavření dialogu i přepnutí typu prvku (uživatel ladí fonty
+  napříč prvky). Změna klíče jen na jednom místě to tiše rozpojí.
 - **Signál „nastavení mění obsah vývěsky" ve stavovém řádku už neexistuje** (zrušen 5. 8.,
   rozhodnutí Jan). Vznikl jako obklad na chybu `B24` (uložený parametr zapnutý, UI ho ukazovalo
   vypnutý, z vývěsky tiše zmizely odjezdy) - ale obklad není oprava a nikdo z hlášky nepoznal, co

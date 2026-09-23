@@ -4,5 +4,5 @@
              xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls">
     <!-- Embedded EDInputForm pro inline editaci elementu (živý write-back, W4-10).
          Sdílí *Edit.cls schéma + ElementFormBinder s modálním ElementEditDialogem. -->
-    <eif:EDInputForm x:Name="TheForm"/>
+    <eif:EDInputForm x:Name="TheForm" SearchMemoryKey="TemplateDesigner.ElementEdit"/>
 </UserControl>
