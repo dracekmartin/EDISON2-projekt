@@ -23,7 +23,7 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   se do HTML nepropaguje. Dark mode widget sám neumí (natvrdo `bg-white`) - injektuje se
   inverzní CSS filtr (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému
   záblesku. Chrome docku EDTheme tokeny nečte, dark řeší swap `DockManager.Theme` na VS2013
-  Light/Dark v code-behind okna.
+  Light/Dark v code-behind okna; tab strip navrch dotahuje na paletu `DockThemeBrushes`.
 - **Vlastní okna docku (overlay s drop terči, plovoucí okna) nikdo zvenčí nesmí zavírat ani
   k nim věšet owned okna** - AvalonDock si overlay cachuje a cizí `Close()` shodí každý další
   drag (hlídá `FrameworkWindows` v EDControls, detail v jeho
