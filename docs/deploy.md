@@ -23,7 +23,8 @@ Z repa EDISON (build do `C:\Edison`):
 - existující soubory, build musí být z legacy HEAD ≥ 2026-09-11 (`git log --grep=EDISONMAIN2`):
   `EDISONMAIN.exe` (retrofit `OnRun`), `EDISONMAIN.exe.config` (codeBase pin), `EDLibrary.dll`
   (shortcut sink), `EDUsers.dll`, `EDCore.dll`, `MLRest.dll`, `EDLicence.dll`, `EDISONAPI.dll`,
-  `USERS.exe`, `UTILITIES.exe`, `EDISON.exe` (EDLOADER). `EDUPDATE.EXE` zůstává jen starému shellu.
+  `USERS.exe`, `UTILITIES.exe`, `EDISON.exe` (EDLOADER, přepínač shellu níže: build ≥ 2026-09-23).
+  `EDUPDATE.EXE` zůstává jen starému shellu.
 
 Nové řádky `FILES_DESCRIPTION.INF` (FULL, typ EXE/DLL): `EDISONMAIN2.exe`, `EDControls.dll`,
 `EDUPDATE2.exe`, `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`; řádek `EDISONMAIN2API.dll`
@@ -41,7 +42,8 @@ Nové - projekt musí existovat na REL Caché (Compiler DEV→REL), `.project` v
 - **Nevydávat** `ALVA_EDTesting` (test framework)
 
 Existující, které shell volá (řádky jsou; verze musí nést změny pro shell): FULL `ALVA_SYS_Login`,
-`ALVA_SETUP`, `ALVA_SYSTEM`, `ALVA_EDISON`, `ALVA_LIBRARY`, `ALVA_LICENCE`, `ALWA_MLREST`;
+`ALVA_SETUP` (řádek `newShell` v `LoadSettings` pro přepínač níže), `ALVA_SYSTEM`, `ALVA_EDISON`,
+`ALVA_LIBRARY`, `ALVA_LICENCE`, `ALWA_MLREST`;
 PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (DispecinkMiniApp),
 `ALVA_MZDY2` (FiltrZam2 dual-write).
 
@@ -59,3 +61,21 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
 
 Připojení shell čte z `EDISONini.xml` serverové instalace; dev kopii z repa publish nevydává
 (`CopyToPublishDirectory="Never"` v csproj).
+
+## Zapnutí u zákazníka
+
+Zástupce na ploše míří na `EDISON.exe` (EDLOADER). Ten místo `EDISONMAIN.EXE` spustí
+`EDISONMAIN2.exe`, jen když platí obojí:
+
+- na serveru zákazníka je `^|"MLINE"|EDISON("System","NewShell")=1` (EDLOADER ho čte přes
+  `ALVA.SETUP.Main.LoadSettings`, řádek `newShell`),
+- vedle `EDISON.exe` jsou `EDISONMAIN2.exe`, `EDControls.dll`, `EDISONMAIN2API.exe` a stanice má
+  x64 .NET 10 Desktop Runtime ve výchozím umístění (`%ProgramW6432%\dotnet`).
+
+Jinak, i při chybě serveru, spustí starý shell. Přepínač tedy potřebuje obojí: `EDISON.exe`
+s přepínačem a `ALVA_SETUP`, jehož `LoadSettings` řádek vrací. Chybí-li kterékoli, uzel nemá
+účinek. Uzel leží mimo `^EDISON("System","Update")`, protože ten maže každé uložení legacy
+Nastavení. Zapnutí i vypnutí (`k` uzlu) platí od příštího startu přes zástupce, běžící shelly
+dojedou. Platí pro celou instalaci, tedy pro všechny firmy na serveru. Jedna stanice se ke starému
+shellu vrátí zástupcem na `EDISONMAIN.EXE reason=2` (obchází brány EDLOADERu). Na sdíleném dev
+serveru hodnota 1 přepne každou stanici s novým EDLOADERem.
