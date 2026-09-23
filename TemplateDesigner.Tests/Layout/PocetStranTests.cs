@@ -86,6 +86,38 @@ public class PocetStranTests
     }
 
     /// <summary>
+    /// Zmenšení tabulky i se šířkami vměstná do části víc spojů, takže části ubydou - bez šířek
+    /// (samočinné zmenšení `B151`) se dělení nemění.
+    /// </summary>
+    [Fact]
+    public void ZmenseniSeSirkami_UbereCastTabulky()
+    {
+        var data = RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Přerov"), ("PORADI", "2")),
+            ]),
+            ("SPOJE",
+            [
+                .. Enumerable.Range(1, 40).Select(i => RenderSnapshot.Row(
+                    ("CISLO_SPOJE", i.ToString()), ("SKUPINA", "1"),
+                    ("CASY", new JsonArray($"{6 + i % 12}:{i % 60:00}", $"{7 + i % 12}:{i % 60:00}")))),
+            ]));
+        var el = new LineTableElement { X = 0, Y = 0, Width = 150, Height = null, JednotnaSirkaSpoju = false };
+
+        int plne = el.Rozvrzeni(data).Count;
+        el.LayoutZmenseni = 0.8f;
+        int bezSirek = el.Rozvrzeni(data).Count;
+        el.ZmensovatISirky = true;
+        int seSirkami = el.Rozvrzeni(data).Count;
+
+        Assert.True(plne > 1, $"test potřebuje tabulku na víc částí, vyšlo {plne}");
+        Assert.Equal(plne, bezSirek);
+        Assert.True(seSirkami < plne, $"plně {plne} částí, se šířkami {seSirkami}");
+    }
+
+    /// <summary>
     /// Když se sestava nevejde ani na mezích, zůstane v plné velikosti - zmenšení, které stránku
     /// neušetří, jen zhorší čitelnost (rozhodnutí Jan 23. 9.).
     /// </summary>

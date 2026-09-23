@@ -54,6 +54,7 @@ public class PageLayoutEngine
         var legendy = ZmensitelneLegendy(template);
         NastavZmenseniLegend(legendy, 1f);
         NastavBezMezer(ZmensitelnePrvky(template), false);
+        NastavZmensovatISirky(ZmensitelnePrvky(template), false);
         var vysledek = LayoutSeZmensenimTabulky(template, data);
 
         int cil = CilStran(data);
@@ -84,7 +85,7 @@ public class PageLayoutEngine
     }
 
     /// <summary>
-    /// Srazí části tabulky k sobě, pak zmenší poznámky, pak tabulku, dokud se sestava nevejde na <paramref name="cil"/>
+    /// Srazí části tabulky k sobě, pak zmenší poznámky, pak celou tabulku i se šířkami, dokud se sestava nevejde na <paramref name="cil"/>
     /// stran. Vrací první (tedy nejmenší) zmenšení, které stačí; když nestačí ani na mezích,
     /// vrací sazbu v plné velikosti s příznakem nesplněného cíle.
     /// </summary>
@@ -115,6 +116,9 @@ public class PageLayoutEngine
             posledni = LayoutBezZmenseni(template, data);
             if (posledni.TotalPages <= cil) return posledni;
         }
+        // Tabulka se zmenšuje celá, i se šířkami sloupců: do části se vejde víc spojů a celá
+        // část může odpadnout (Jan 23. 9.). Jen tady - samočinné zmenšení `B151` šířky nemění.
+        NastavZmensovatISirky(tabulky, true);
         foreach (float mira in tabulky.Count > 0 ? ZebrikTabulky : [])
         {
             NastavZmenseni(tabulky, mira);
@@ -128,6 +132,7 @@ public class PageLayoutEngine
         // jako `B151`). Prvky se musí vrátit do stavu, se kterým se pak kreslí.
         NastavZmenseniLegend(legendy, 1f);
         NastavBezMezer(tabulky, false);
+        NastavZmensovatISirky(tabulky, false);
         var plna = LayoutSeZmensenimTabulky(template, data);
         plna.CilStranNesplnen = cil;
         return plna;
@@ -138,6 +143,11 @@ public class PageLayoutEngine
             .SelectMany(s => s.Elements)
             .OfType<NotesLegendElement>()
             .Where(e => e.Height is null)];
+
+    private static void NastavZmensovatISirky(List<LineTableElement> prvky, bool ano)
+    {
+        foreach (var p in prvky) p.ZmensovatISirky = ano;
+    }
 
     private static void NastavBezMezer(List<LineTableElement> prvky, bool bezMezer)
     {

@@ -48,12 +48,10 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Připravené k práci
 
-- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
-  nemožné, náš engine na to má lepší pozici. **Poptávka doložená** (Jan 14. 9.): zákazníci chtějí
-  vejít na jednu stranu, kdykoli to jde, a jeden si výslovně řekl o agresivní zmenšování poznámek.
-  ⚠️ Liší se od `B151` rozsahem: ten zmenšuje jen tabulku, aby se nedělila, tohle sahá na **celou
-  sestavu včetně poznámek** - potřebuje vlastní strop (90 % nestačí) a vlastní volbu, protože
-  agresivní zmenšování nemůže být tiché. Podklad [`§14`](linkovy-knizni-jr-implementace-analyza.md).
+- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED) - 🔧 **ladí se na našich datech** (týden
+  od 23. 9.). Parametr „Počet stran" (Automaticky / 1 / 2) funguje: bez mezer → poznámky 90-60 % →
+  tabulka i se šířkami 97-80 %, nevejde-li se, plná velikost (changelog 2026-09-23 (3)). Zbývá:
+  hláška o nesplněném cíli, rozhodnout meze (v šabloně × pevné), „Automaticky" až s polem u linky.
 
 ### Čeká na odpověď zvenku
 

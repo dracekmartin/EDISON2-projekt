@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-09-23 (3) - 📄 sestava se vejde na zadaný počet stran (#8785, ladí se)
+
+Nový parametr sestavy linkového JŘ **„Počet stran"** (Obecné): *Automaticky (dle linky)*, *1 strana*,
+*2 strany*. Když má směr linky víc stran než cíl, návrhář postupně: srazí části tabulky těsně pod
+sebe, zmenší poznámky (90-60 %), pak celou tabulku i se šířkami sloupců (97-80 %), takže se do části
+vejde víc spojů. Vybere první stupeň, který stačí; když nestačí ani meze, zůstane plná velikost -
+zmenšení bez ušetřené stránky jen zhorší čitelnost. „Automaticky" zatím nedělá nic (u linky pole
+není). Na CB_CSADAD 0330510 vyjdou oba směry na jednu stranu.
+
+Legenda poznámek zarovná texty všech poznámek za nejširší značku (negativní, piktogram i textová
+jako „MHD") - dřív široká značka text překryla nebo ho odsunula jen u sebe.
+
 ## 2026-09-23 (2) - 🇸🇰 linkový JŘ slovensky, čísla spojů a pole pokračování (#9088)
 
 Dorovnání linkového JŘ se starým Win tiskem podle tiketu TRANSDEV (slovenská instalace):

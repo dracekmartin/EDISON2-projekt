@@ -370,6 +370,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     [JsonIgnore]
     public float LayoutZmenseni { get; set; } = 1f;
 
+    /// <summary>
+    /// Stav sazby: <see cref="LayoutZmenseni"/> zmenší i <b>šířky sloupců</b>, takže se do části
+    /// tabulky vejde víc spojů a část může odpadnout úplně (`#8785`).
+    /// </summary>
+    /// <remarks>Jen při zmenšování na zadaný počet stran - samočinné zmenšení (`B151`) šířky
+    /// schválně nemění, viz <see cref="LayoutZmenseni"/>. Nastavuje `PageLayoutEngine`.</remarks>
+    [JsonIgnore]
+    public bool ZmensovatISirky { get; set; }
+
+    /// <summary>Násobitel šířek sloupců: zmenšení sazby, když se zmenšují i šířky, jinak 1.</summary>
+    private float SirkaMeritko => ZmensovatISirky ? LayoutZmenseni : 1f;
+
     // ─── Runtime data (neserializují se) ────────────────────────────────────
 
     public sealed class LineStopData
@@ -902,9 +914,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // sloupcích spojů. ⚠️ Sloupec spoje se **nepodílí na dělení zbytku** - je tak široký, jak
         // ho žádá jeho obsah (rozhodnutí Jan 22. 9.). Dřív se zbytek prvku dělil mezi spoje, takže
         // linka s pár spoji měla čas uprostřed centimetrového pole.
+        float meritko = SirkaMeritko;
         float fixedSum = structural.Where(c => c.Width.HasValue)
-            .Sum(c => c.Width!.Value * PocetPodsloupcu(c.Key, kmCount, zonaCount));
-        float tripW = trip.Width ?? PotrebaCasuMm();
+            .Sum(c => c.Width!.Value * meritko * PocetPodsloupcu(c.Key, kmCount, zonaCount));
+        float tripW = trip.Width * meritko ?? PotrebaCasuMm();
         int autoStructural = structural.Count(c => !c.Width.HasValue);
         // Mezery mezi skupinami sloupců jdou ze stejné šířky jako sloupce, takže je automatické
         // sloupce nesmí rozdělit mezi sebe - jinak by tabulka přetekla přes pravou hranu prvku.
@@ -920,7 +933,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             var hs = ResolveHeaderStyle(col);
             var ds = ResolveDataStyle(col);
             string header = col.Header != "" ? col.Header : DefaultHeaderFor(col.Key);
-            float w = col.Width ?? autoEach;
+            float w = col.Width * meritko ?? autoEach;
             int podsloupcu = PocetPodsloupcu(col.Key, kmCount, zonaCount);
             if (podsloupcu > 1 || col.Key == ColumnKeys.Km)
             {
@@ -953,14 +966,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private float PotrebaSpojeMm(LineTripData spoj)
     {
         NaplnPotrebySpoju();
-        return _cachedPotrebaSpoje!.TryGetValue(spoj, out var mm) ? mm : MinAutoColumnWidthMm;
+        return MathF.Max(MinAutoColumnWidthMm,
+            (_cachedPotrebaSpoje!.TryGetValue(spoj, out var mm) ? mm : MinAutoColumnWidthMm) * SirkaMeritko);
     }
 
     /// <summary>Šířka sloupce, ve kterém stojí jen čas - tolik dostane i prázdný sloupec dorovnání.</summary>
     private float PotrebaCasuMm()
     {
         var st = ResolveDataStyle(TripColumn());
-        return MathF.Max(MinAutoColumnWidthMm, ZmerCasPt(st) * PtToMm + VzduchKolemObsahuMm(st));
+        return MathF.Max(MinAutoColumnWidthMm, (ZmerCasPt(st) * PtToMm + VzduchKolemObsahuMm(st)) * SirkaMeritko);
     }
 
     /// <summary>Vzduch kolem obsahu buňky (mm celkem) - vnitřní okraj, nejméně ale tvrdý buffer.</summary>
@@ -974,7 +988,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         NaplnPotrebySpoju();
         float max = MinAutoColumnWidthMm;
         foreach (var mm in _cachedPotrebaSpoje!.Values) if (mm > max) max = mm;
-        return max;
+        return MathF.Max(MinAutoColumnWidthMm, max * SirkaMeritko);
     }
 
     private void NaplnPotrebySpoju()
@@ -1012,7 +1026,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     {
         // Pevná šířka zadaná přímo sloupci spoje je výslovné zadání - obsah ji nerozšíří, a když
         // se do ní nevejde, řekne to hláška (viz `SirkaSloupceProtiObsahu`).
-        if (TripColumn().Width is float pevna) return [.. spojeBloku.Select(_ => pevna)];
+        if (TripColumn().Width is float pevna) return [.. spojeBloku.Select(_ => pevna * SirkaMeritko)];
 
         List<float> sirky;
         if (!JednotnaSirkaSpoju) sirky = [.. spojeBloku.Select(PotrebaSpojeMm)];
@@ -1049,7 +1063,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             while (i < spoje.Count && spoje[i].Skupina == skupina) i++;
             string nadpis = _cachedGroups.FirstOrDefault(g => g.Id == skupina)?.Nadpis ?? "";
             if (nadpis == "") continue;
-            float potreba = CellLayout.SplitLines(nadpis).Max(r => font.MeasureText(r)) * PtToMm + vzduch;
+            float potreba = (CellLayout.SplitLines(nadpis).Max(r => font.MeasureText(r)) * PtToMm + vzduch) * SirkaMeritko;
             float mame = 0f;
             for (int k = start; k < i; k++) mame += sirky[k];
             if (potreba <= mame + 0.01f) continue;
@@ -1329,7 +1343,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// nechává i dnes.
     /// </remarks>
     private float RezervaMezerMm(IReadOnlyList<LineTripData> vsechnySpoje) =>
-        MezeraMeziSkupinamiMm <= 0f ? 0f : MezeraMeziSkupinamiMm * HraniceSkupin(vsechnySpoje).Count;
+        MezeraMeziSkupinamiMm <= 0f ? 0f : MezeraMeziSkupinamiMm * SirkaMeritko * HraniceSkupin(vsechnySpoje).Count;
 
     /// <summary>
     /// Kolik <b>dalších</b> slotů spojů se do prvku ještě vejde - podklad pro dorovnání
@@ -2105,7 +2119,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
                 var mrizka = new SloupcovaMrizka(fixedCols,
                     sirkySpoju, tripW,
-                    MezeraMeziSkupinamiMm, HraniceSkupin(spojeBloku),
+                    MezeraMeziSkupinamiMm * SirkaMeritko, HraniceSkupin(spojeBloku),
                     sirkyZrcadlenych,
                     RozlozeniPrazdnych(spojeBloku.Count, prazdnychVpravo),
                     // Zrcadlená strana čte rozložení zrcadlově - první prázdný patří k jejímu
