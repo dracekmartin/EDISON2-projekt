@@ -17,18 +17,11 @@
 > ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
-**Stav: paritní vlny jsou hotové** a z průchodu testovacími linkami nevzešel datový rozdíl proti
-starému tisku. Zbývá průchod § K ověření (doklady k tiketům) a věci, u kterých je první krok
-dotaz ven. Sloučení dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku
-bez přírůstku pro uživatele (rozhodnutí Jan 31. 8.).
-
-⚠️ **Linková AD agenda je zveřejněná a je výchozí pro novou šablonu** (`Released = 1`; 24. 8.
-zveřejněná, 1. 9. skrytá kvůli vydání, **3. 9. vrácená** kvůli dovývoji) - **ukáže se i zákazníkům,
-jakmile se vydá nová verze**, takže před vydáním se musí znovu rozhodnout. Skrývá se na **dvou
-místech**: `Parameter Released` v `LinkovyJrAd.cls` a konstanta ve `CreateSampleTemplate` (jinak
-skrytí obejde samotný start aplikace); vazbu hlídá `SkrytaAgendaTests`.
-⚠️ **`Released` je serverová hodnota, ne v exe** - nasazení `.cls` na dev změní nabídku agend i těm,
-kdo mají starší exe. Městská zůstává skrytá, dokud neprojde porovnáním se starým modulem.
+**Stav: linkový JŘ z AD dat je od 22. 9. vydaný zákazníkům** a je výchozí agendou pro novou
+šablonu. Zbývá `#8785`, jeden výtisk k ověření a věci, u kterých je první krok dotaz ven. Sloučení
+dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku bez přírůstku pro uživatele
+(rozhodnutí Jan 31. 8.). Městská varianta zůstává skrytá, dokud neprojde porovnáním se starým
+modulem; jak se agenda skrývá, popisuje komentář u `Released` v `LinkovyJrAd.cls`.
 
 **Když přijde na řadu MHD** (dnes se neřeší, rozhodnutí Jan 28. 8.), platí čtyři věci, které se z kódu
 nepoznají:
@@ -45,7 +38,7 @@ nepoznají:
   zapsat příznak**, i kdyby přibyl parametr - a bez toho půjde část voleb udělat jen naoko.
 
 📄 **Zkušební vzor pro celý track: linka 940 Kroměříž-Přerov (IDZK)** - reálné zadání zákazníka,
-které starý modul nedokázal vyrobit. Až bude šablona stát, ověřuj proti němu.
+které starý modul nedokázal vyrobit. Novou práci na linkovém JŘ ověřuj proti němu.
 
 🧭 **Jak se nakládá s nastavením starého modulu:** *to, jak je výstup složený, patří do návrháře;
 z nastavení u linky se bere jen to, co mění data.* Sporné případy řeš směrem do šablony. Rozhodnutí
@@ -82,9 +75,8 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
 
 ### Hotové, čeká zavření na helpdesku
 
-⚠️ **Zavřít se má až s vydáním** (rozhodnutí Jan 15. 9.) - zákazník to musí mít ve verzi, než mu
-napíšeme, že je to hotové. Po zavření **z roadmapy pryč**; tady visí jen proto, aby to bylo
-na jednom místě.
+Zavřít se mělo až s vydáním (rozhodnutí Jan 15. 9.) - **vydání proběhlo 22. 9., takže se dají
+zavřít**. Po zavření **z roadmapy pryč**; tady visí jen proto, aby to bylo na jednom místě.
 
 | Tiket | Co dostal |
 |---|---|

@@ -59,10 +59,11 @@ Parameter Variant As %String = "AD";
 
 Parameter VariantLabel As %String = "AD (linková doprava)";
 
-/// ⚠️ **Zveřejněná od 24. 8., 1. 9. skrytá kvůli vydání, 3. 9. vrácená** (rozhodnutí Jan) - pokračuje
-/// se v dovývoji linkových jízdních řádů, takže je agenda potřeba v nabídce. **Před dalším vydáním
-/// se musí znovu rozhodnout, jestli má jít k zákazníkům**: `Released = 1` znamená, že se ukáže všem,
-/// jakmile se vydá nová verze.
+/// Vydaná zákazníkům 22. 9. (před tím 24. 8. zveřejněná, 1. 9. skrytá, 3. 9. vrácená kvůli dovývoji).
+///
+/// ⚠️ **Skrývá se na dvou místech**: tady a v konstantě ve `CreateSampleTemplate` (jinak skrytí
+/// obejde samotný start aplikace); vazbu hlídá `SkrytaAgendaTests`. **`Released` je serverová
+/// hodnota, ne v exe** - nasazení třídy změní nabídku agend i těm, kdo mají starší exe.
 ///
 /// ⚠️ **Skrytí neznepřístupní hotové šablony** (platí pro obě strany přepínače). Výběr agendy
 /// nezveřejněnou agendu nenabízí, ale **aktuální agendu šablony ukáže vždy**, a v otevírání
