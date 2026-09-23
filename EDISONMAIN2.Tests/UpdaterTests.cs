@@ -358,12 +358,28 @@ public class UpdaterTests
     }
 
     [Fact]
-    public void Check_NewerVersionAndForcedStamp_VersionWins_ForcedFalse()
+    public void Check_NewerVersionAndPendingForcedStamp_ForcedFullCopy()
     {
-        // Verzový update má přednost - razítko doveze LaunchUpdate v NucenyUpdateTime.
+        // Diff jde podle manifestu vydání - hotfix nahraný na server po instalaci by stanici pozadu
+        // vynechal a razítko by vlnu přesto označilo za splněnou.
         var updater = new TestableUpdater
         {
             LocalVersion = "20260526.1", SourceVersion = "20260601.1", StampSeen = "",
+        };
+
+        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+
+        Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
+        Assert.True(result.Forced);
+        Assert.Equal("20260601.1", result.Version);
+    }
+
+    [Fact]
+    public void Check_NewerVersionAndSatisfiedForcedStamp_DiffUpdate()
+    {
+        var updater = new TestableUpdater
+        {
+            LocalVersion = "20260526.1", SourceVersion = "20260601.1", StampSeen = "66234,2",
         };
 
         var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));

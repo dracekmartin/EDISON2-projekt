@@ -124,14 +124,17 @@ public class Updater
             return new(UpdateOutcome.Broken,
                 $"Z cesty \"{settings.SourceDir}\" nelze zjistit serverovou verzi. Kontaktujte Vašeho správce IS.");
 
-        if (VerzeInf.IsNewVersion(source, local))
-            return new(UpdateOutcome.UpdateRequired, Version: source);
-
         // Vynucená vlna: razítko z Caché nesedí s lokální stopou → plné stažení. Záměrně až
         // po dev guardu a Broken checcích a před Caché mismatchem (plná kopie ho může spravit).
         // Ze serverové instalace ne (legacy parita): kopie updateru sama na sebe by shell ukončila při každém startu.
-        if (settings.ForcedStamp != "" && GetForcedStampSeen() != settings.ForcedStamp
-            && !IsServerInstallation(settings.SourceDir))
+        bool forcedPending = settings.ForcedStamp != "" && GetForcedStampSeen() != settings.ForcedStamp
+            && !IsServerInstallation(settings.SourceDir);
+
+        // I s novou verzí plná kopie: diff jde podle manifestu vydání a hotfix nahraný po instalaci by vynechal.
+        if (VerzeInf.IsNewVersion(source, local))
+            return new(UpdateOutcome.UpdateRequired, Version: source, Forced: forcedPending);
+
+        if (forcedPending)
             return new(UpdateOutcome.UpdateRequired, Version: source, Forced: true);
 
         if (settings.CacheVersion != "" && !VerzeInf.IsSameVersion(settings.CacheVersion, local))
