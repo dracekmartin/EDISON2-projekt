@@ -63,6 +63,26 @@ public class TucneZastavkyDleTrasyTests
         Assert.Equal("x Kroměříž", LineTableElement.NazevSeZnackami(["x", "T"], "Kroměříž"));
     }
 
+    /// <summary>
+    /// ⚠️ Má-li značku aspoň jedna zastávka linky, odsadí se **všechny** názvy stejně, takže stojí
+    /// ve svislici - tak to dělá starý tisk (rozhodnutí Jan 22. 9.). Bez toho vypadal sloupec
+    /// rozházeně, protože každý druhý název začínal o znak vedle.
+    /// </summary>
+    [Fact]
+    public void SeZnackouNaLinceSeOdsadiIZastavkyBezNi()
+    {
+        Assert.Equal("x Kroměříž", LineTableElement.NazevSeZnackami(["x"], "Kroměříž", 1));
+        Assert.Equal("  Hulín", LineTableElement.NazevSeZnackami(["T"], "Hulín", 1));
+    }
+
+    /// <summary>Linka, kde značku nemá nikdo, zůstane bez odsazení - jinak by se sloupec
+    /// zbytečně rozšířil o znak, který se nikdy nevytiskne.</summary>
+    [Fact]
+    public void BezZnacekNaLinceSeNeodsazuje()
+    {
+        Assert.Equal("Kroměříž", LineTableElement.NazevSeZnackami(["T"], "Kroměříž"));
+    }
+
     // ── Tučné zvýraznění ────────────────────────────────────────────────────
 
     [Fact]

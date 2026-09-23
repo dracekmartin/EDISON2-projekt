@@ -1,5 +1,8 @@
 # Návrhář sestav - novinky a plán rozvoje
 
+⚠️ **Důležité - které jízdní řády už umíme:** **zastávkové** (AD i MHD) a nově **linkové**
+(zatím jen AD, MHD se připravuje). Ostatní sestavy zatím tiskne Report Generátor.
+
 > Přehled toho, co je v Návrháři sestav nového a co chystáme.
 > Hledáte návod k použití? → [Návrhář sestav - uživatelská příručka](https://podpora.m-line.cz/support/wiki/90511fc5-10e5-476d-b7c1-3cd70672f26d)
 
@@ -14,7 +17,6 @@ Hlavní směry, kterými se Návrhář sestav bude dál rozvíjet:
   ze zastávkových jízdních řádů.
 - **Tisk přímo z agendy** - vytisknout sestavu jedním tlačítkem přímo u linky/dokladu
   v EDISONu, bez otevírání celého Návrháře.
-- **Linkové jízdní řády** - samostatná agenda pro linkové (knižní) jízdní řády.
 - **Relace** - podpora tisku relací.
 - **Další agendy z Report Generátoru** - postupná migrace dalších typů sestav ze stávajícího
   generátoru do nového Návrháře.
@@ -35,7 +37,47 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
-### Týden od 7. 9. 2026 - Sloupce s jízdními dobami variant tras
+> U každého záznamu je uvedené, které agendy se týká.
+
+### Týden od 21. 9. 2026 · Linkové JŘ - Nová agenda
+
+Vydali jsme novou agendu **Linkové jízdní řády**, zatím variantu **AD** (data z jízdních řádů).
+Výchozí šablona od M-line připomíná starý postskriptový tisk, takže se dá začít na hotovém.
+
+- Oba směry v jedné tabulce, nebo každý na vlastní stránce.
+- Tabulka, která se nevejde do šířky, se rozdělí na části pod sebou - každá má svůj seznam
+  zastávek i rámeček.
+- Šířka sloupců se spoji vychází z jejich obsahu; doladíte ji mezerami u značek a okraji buněk.
+- Sloupec tarifních čísel, zastávky bez zastavení, barvy spojů a písmeno systému u zóny se berou
+  podle nastavení linky a jde je pro sestavu přebít.
+- Značky vysvětluje legenda poznámek pod tabulkou, stejná jako u vývěsky.
+
+Podrobnosti v [uživatelské příručce](https://podpora.m-line.cz/support/wiki/90511fc5-10e5-476d-b7c1-3cd70672f26d).
+
+### Týden od 14. 9. 2026 · Zastávkové JŘ - Pořadí vývěsek a pevný rastr minut
+
+- **Pořadí stránek v exportu je na výběr** (parametr sestavy, skupina Obecné): *Po zastávkách*
+  vytiskne u každé zastávky oba směry za sebou (dosavadní stav), *Po směrech* projde celý směr
+  Tam a pak celý směr Zpět.
+- **Rozestup odjezdů má třetí volbu - Zarovnat na pevnou šířku.** Rozteč se řídí nastavením,
+  takže jediný spoj se dvěma značkami už nezředí celou vývěsku. Volby se při té příležitosti
+  přejmenovaly na *Bez zarovnání*, *Zarovnat dle nejširšího odjezdu* a *Zarovnat na pevnou šířku*;
+  uložené šablony se nemění.
+- **Záhlaví Minut odjezdů jde nastavit po jednotlivých sloupcích.**
+- **Legenda poznámek nese na každé stránce jen značky, které na té stránce opravdu jsou.**
+- **Místenka se v českém tisku značí „R".**
+
+### Týden od 14. 9. 2026 · Návrhář - Výchozí font a práce s linkami
+
+- **Výchozí font dokumentu konečně přepíše celou sestavu.** Dodávané šablony měly font zapsaný
+  u každého prvku zvlášť, takže výchozí font neměl koho ovlivnit. Vzhled šablon se nemění, mění se
+  jen to, odkud se font bere. ⚠️ Vlastní šablony to mají pořád po starém - font u prvku vždycky
+  přebije ten výchozí.
+- **Vybrané linky jsou vidět přímo v liště** a dají se procházet z klávesnice.
+- **Uložení šablony nezahodí nastavení, které server zrovna nenabízí.**
+- **Pomocník poradí i s tabulkou linky** a neptá se, o kterou tabulku jde.
+
+### Týden od 7. 9. 2026 · Zastávkové JŘ - Sloupce s jízdními dobami variant tras
 
 Když ze zastávky jedou spoje různými trasami, má každá trasa vlastní sloupec s jízdními dobami.
 Čtyři věci k tomu, jak ty sloupce vypadají.
@@ -54,7 +96,7 @@ Když ze zastávky jedou spoje různými trasami, má každá trasa vlastní slo
   stavu vypnutá: varianta, která staví jen tam, kde staví i jiná, dostane sloupec té delší.
   Ubere to sloupce na lince, kde se spoje liší jen vynechávkami.
 
-### Týden od 31. 8. 2026 - Písmena u odjezdů se berou z nastavení linky
+### Týden od 31. 8. 2026 · Zastávkové JŘ - Písmena u odjezdů se berou z nastavení linky
 
 Písmena, kterými se u času odjezdu označuje varianta trasy, se nově berou **z nastavení u linky** -
 z týchž polí, kde si určujete značky pro poznámky o rozdílech tras. Když je pole prázdné, použije se
@@ -68,7 +110,7 @@ napsal - i kdyby se obě sady kryly; přesunout jde kterákoli z nich.
 ⚠️ **Vývěska linky se třemi a více variantami tras bude mít u odjezdů jiná písmena než dosud.**
 Linky s jednou nebo dvěma variantami se nemění.
 
-### Týden od 31. 8. 2026 - Údaje dopravce po jednotlivých polích
+### Týden od 31. 8. 2026 · Zastávkové JŘ - Údaje dopravce po jednotlivých polích
 
 Název, adresa, telefon, e-mail a IČO dopravce jsou nově samostatná datová pole. Dosud šlo použít
 jen jedno pole, které všechny údaje slepilo dohromady a adresu vypsalo dvakrát - jednou u firmy
@@ -77,7 +119,7 @@ a jednou u provozovny. Teď si na vývěsku poskládáte právě ty údaje, kter
 Adresa je jedno pole včetně PSČ a obce, protože tak je uložená v číselníku dopravců. U linky
 s více dopravci nesou pole prvního z nich.
 
-### 17. 8. 2026 - Písmeno varianty je u odjezdu vždy
+### 17. 8. 2026 · Zastávkové JŘ - Písmeno varianty je u odjezdu vždy
 
 Když ze zastávky jedou spoje různými trasami, má každá trasa vlastní sloupec s časy a písmeno,
 které se tiskne i u minuty odjezdu - podle něj cestující pozná, který sloupec pro spoj platí. Dosud
@@ -86,12 +128,12 @@ má písmeno i první, nejčastější varianta.
 
 ⚠️ Pokud jste volbu měli vypnutou, uvidíte u minut písmena, která tam dřív nebyla.
 
-### 17. 8. 2026 - V seznamu zastávek jsou jen zastávky, kam se odsud dostanete
+### 17. 8. 2026 · Zastávkové JŘ - V seznamu zastávek jsou jen zastávky, kam se odsud dostanete
 
 Zastávka, kam z dané vývěsky nejede žádný spoj, se v seznamu už neobjeví. Dosud zabírala řádek,
 ve kterém byly u všech časů jen znaky „<".
 
-### 17. 8. 2026 - Pevná tabulka
+### 17. 8. 2026 · Návrhář - Pevná tabulka
 
 Do palety přibyla **pevná tabulka** - mřížka, kterou vyplňujete sami. Je určená hlavně jako náhrada
 za skládání hlaviček a bloků údajů z jednotlivých textových polí: místo šesti textů máte jeden
@@ -101,19 +143,19 @@ Rozměr zadáte při vkládání, obsah píšete přímo v tabulce jako v Excelu
 a jednotlivé buňky jde formátovat, slučovat do nadpisů a podmiňovat, aby se prázdný řádek netiskl.
 Ovládání a všechna nastavení popisuje příručka.
 
-### 14. 8. 2026 - Rozvržení sloupců vývěsky drží šablona
+### 14. 8. 2026 · Zastávkové JŘ - Rozvržení sloupců vývěsky drží šablona
 
 Jaké sloupce na vývěsce vzniknou, určuje jen definice uložená v šabloně; parametr sestavy
 **„Rozdělení sloupců (typy provozu)"** je jejím pohledem i ovladačem. Dosud šlo totéž nastavit ze
 dvou míst a jedno druhé tiše přebíjelo, takže parametr býval mrtvé tlačítko.
 
-### 14. 8. 2026 - Vysvětlivky značek dnů podle vašeho číselníku
+### 14. 8. 2026 · Zastávkové JŘ - Vysvětlivky značek dnů podle vašeho číselníku
 
 Vysvětlivky u kroužkových značek dnů se berou **z číselníku popisů v EDISONu**, ne z pevného
 seznamu v programu - když si v číselníku znění upravíte, projeví se i na vývěsce. Zároveň se
 opravilo vestavěné znění značky **„+"** na „jede v neděli a ve státem uznané svátky".
 
-### 13. 8. 2026 - Jízdní doby variant tras: přehlednější a lépe čitelné
+### 13. 8. 2026 · Zastávkové JŘ - Jízdní doby variant tras: přehlednější a lépe čitelné
 
 Sloupec **„Čas jízdy" už na zastávkách s více variantami nezmizí**, znak **„&lt;"** nově odlišuje
 „spoj tudy jede, ale nestaví" od „tudy vůbec nejede" a **písmena variant jdou dohromady s poznámkami
@@ -122,14 +164,14 @@ o rozdílech tras** - dosud se obojí vylučovalo. Přibyly dvě volby řazení 
 Zapínání variant se přesunulo mezi sloupce, takže má vlastní šířku, styl i pořadí jako každý jiný
 sloupec. **Vaše stávající šablony se převedou samy** a vytisknou se stejně jako dosud.
 
-### 12. 8. 2026 - Slovenské vysvětlivky podle jazyka šablony
+### 12. 8. 2026 · Zastávkové JŘ - Slovenské vysvětlivky podle jazyka šablony
 
 Vysvětlivky, které Návrhář skládá sám (na znamenie, prestup, bezbariérovosť, názvy dnů), se tisknou
 **v jazyce nastaveném v šabloně**; stejnou volbou se řídí i znaková sada symbolů. Nepřekládá se to,
 co jste napsali sami - poznámky u linky, názvy zastávek ani vlastní nadpisy sloupců. Jedna firma
 tak může mít českou i slovenskou šablonu vedle sebe.
 
-### 12. 8. 2026 - Sloupce vývěsky si můžete nadefinovat sami
+### 12. 8. 2026 · Zastávkové JŘ - Sloupce vývěsky si můžete nadefinovat sami
 
 Rozvržení sloupců mřížky odjezdů dosud určovala konfigurace linky - jedno ze čtyř pevných schémat.
 Nově si můžete **v šabloně nadefinovat až pět vlastních sloupců**: dny podle vyhlášky, značky,
@@ -140,7 +182,7 @@ vybrat a doladit. Když sloupce nedefinujete, nic se nemění. Spoj, který by n
 sloupce, se neztratí potichu - návrhář i tisk upozorní, kolik jich je a které to jsou. Podrobnosti
 k zadávání najdete v příručce.
 
-### 11. 8. 2026 - Drobnosti ze zastávkových vývěsek
+### 11. 8. 2026 · Zastávkové JŘ - Drobnosti ze zastávkových vývěsek
 
 Tři věci z vašich podnětů k zastávkovým jízdním řádům.
 
@@ -155,7 +197,7 @@ Tři věci z vašich podnětů k zastávkovým jízdním řádům.
   sám, takže ho neumisťujete ručně a drží i při změně rozvržení. Když je obrázek nastavený,
   nadpis sloupce se netiskne.
 
-### 10. 8. 2026 - Vývěska respektuje, které značky jste u linky vypnuli
+### 10. 8. 2026 · Zastávkové JŘ - Vývěska respektuje, které značky jste u linky vypnuli
 
 U linky lze určit, **které negativní značky se v kterém sloupci nemají vypisovat**. Toto nastavení
 jsme dosud nečetli, takže se na vývěsce tiskly značky, které jste měli vypnuté - a byly i v legendě.
@@ -165,7 +207,7 @@ co vysvětlovat. Spoj se přitom tiskne dál - potlačuje se jen značka u minut
 
 Nastavení zůstává tam, kde bylo, u linky - v návrháři není co zapínat.
 
-### 10. 8. 2026 - Krátká jízdní doba se dá vytisknout jako „<1"
+### 10. 8. 2026 · Zastávkové JŘ - Krátká jízdní doba se dá vytisknout jako „<1"
 
 Časy jízdy se na vývěsce počítají od zastávky, pro kterou se tiskne. Když se na následující zastávku
 jede pod minutu, vycházela nula a ve sloupci nezůstalo nic. Nově se tam dá vytisknout **„<1"**, tedy
@@ -180,7 +222,7 @@ s ostatními časy.
 **Navíc oprava:** nastavení sloupce „Čas" - zarovnání i styl - se teď propíše i na časové sloupce
 variant tras. Když měla linka víc variant, sloupce se rozpadly a vaše nastavení se tiše nepoužilo.
 
-### 5. 8. 2026 - Pokračující spoje
+### 5. 8. 2026 · Zastávkové JŘ - Pokračující spoje
 
 Spoje, které v místě konečné pokračují dál už jako jiný spoj, jde na vývěsce označit: u času odjezdu
 se vytiskne značka „u1“, „u2“… a v legendě přijde vysvětlivka **„pokračuje do zast. Podhradí (l. 532)“**
@@ -190,7 +232,7 @@ Odjezdy, které pokračují do **stejného cíle po stejné lince**, dostanou tu
 neřeší, taková legenda zůstane krátká. Zapíná se u prvku Legenda poznámek volbou **Pokračující spoje**
 (výchozí vypnuto) a bere se z údaje o pokračování, který v jízdních řádech už zadáváte.
 
-### 4. 8. 2026 - Datová pole se vybírají ze seznamu, nemusíte je psát
+### 4. 8. 2026 · Návrhář - Datová pole se vybírají ze seznamu, nemusíte je psát
 
 Název databázového pole jste dosud museli znát a napsat bez překlepu - a chyba se projevila
 až na vytištěné sestavě. Nově je u takových polí vpravo tlačítko `{ }`, které otevře seznam
@@ -202,13 +244,13 @@ polí aktuální agendy s možností hledat.
   i sekce, viditelnost řádku tabulek, název souboru při exportu.
 - Psát názvy polí ručně jde dál, nic se tím nemění.
 
-### 4. 8. 2026 - Řádky dynamické tabulky lze seřadit
+### 4. 8. 2026 · Návrhář - Řádky dynamické tabulky lze seřadit
 
 U dynamické tabulky vyberete **sloupec a směr** řazení; druhý sloupec se nabídne, až vyplníte
 první. Čísla, data i text se poznají podle hodnot, takže se neptáme, jak se má řadit - textově
 by „12" bylo před „9". Prázdné hodnoty jdou vždy nakonec. Bez nastavení se pořadí nemění.
 
-### 4. 8. 2026 - Poznámky zadané u linky, kola a místenky na vývěsce
+### 4. 8. 2026 · Zastávkové JŘ - Poznámky zadané u linky, kola a místenky na vývěsce
 
 Zastávková vývěska umí zobrazit texty, které máte zadané ve **vlastnostech linky**, a označit spoje
 přepravující jízdní kola nebo umožňující místenku.
@@ -230,7 +272,7 @@ ukáže" je nově na jednom místě v šabloně - z parametrů sestavy tato nast
 nemusíte hledat na dvou místech. Ve výchozím stavu jsou nové položky vypnuté, takže se vzhled
 stávajících šablon nemění, dokud si je nezapnete.
 
-### 3. 8. 2026 - Sloupek v seznamu zastávek
+### 3. 8. 2026 · Zastávkové JŘ - Sloupek v seznamu zastávek
 
 - **Nový sloupec Sloupek** v seznamu zastávek u zastávkových jízdních řádů. Bere se z trasy linky
   podle směru jízdy a je to číslo z číselníku sloupků zastávky, tedy jiný údaj než dosavadní sloupec
@@ -254,7 +296,7 @@ stávajících šablon nemění, dokud si je nezapnete.
 - Volby, které dřív mluvily o označníku, ale platí pro obojí, se jmenují **Více stanovišť**,
   **Řádek pro každé stanoviště** a **Samostatná stránka pro každé stanoviště**.
 
-### 31. 7. 2026 - Vzhled seznamu zastávek a barva linky ve sloupcích
+### 31. 7. 2026 · Zastávkové JŘ - Vzhled seznamu zastávek a barva linky ve sloupcích
 
 - **Šipka směru jízdy** - nastavitelná tloušťka, velikost hrotu, tvar hrotu (plný / otevřený /
   bez hrotu) a styl čáry (plná / čárkovaná / tečkovaná).
@@ -280,7 +322,7 @@ stávajících šablon nemění, dokud si je nezapnete.
   (u hraniční zastávky obě zóny). Volbou u linky **„Zóny - tisk a export do JDF bez písmen"** lze
   z kódu zóny odstranit písmeno přepravního systému, takže se tiskne jen číslo zóny.
 
-### 28. 7. 2026 - Zastávkové jízdní řády
+### 28. 7. 2026 · Zastávkové JŘ - Zastávkové jízdní řády
 
 - **Označníky** - nový sloupec **Označník** v seznamu zastávek a volba **Více označníků** pro
   zastávky obsluhované z více sloupků (číslo z trasy / nejčetnější / výčet / řádek pro každý

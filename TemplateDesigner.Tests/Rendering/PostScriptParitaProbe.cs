@@ -92,6 +92,13 @@ public class PostScriptParitaProbe
                 + string.Join(", ", zl.Where(z => z.Silny).Select(z => z.Mm.ToString("0.0"))) + "\n";
         }
         foreach (var pg in layout.Pages)
+        {
+            popisBloku += $"--- stranka {pg.PageNumber} ---\n";
+            foreach (var ps2 in pg.Sections)
+                popisBloku += $"    {ps2.Source.Name,-14} y={ps2.Y:0.0} h={ps2.Height:0.0}"
+                    + $" {ps2.Source.PrintBehavior} {ps2.Source.OverflowBehavior}\n";
+        }
+        foreach (var pg in layout.Pages)
             foreach (var ps2 in pg.Sections.Where(x => x.ClipTop is not null))
                 popisBloku += $"str. {pg.PageNumber} sekce {ps2.Source.Name}: rez {ps2.ClipTop:0.0} → "
                     + $"{ps2.ClipBottom:0.0} (opakovana hlavicka {ps2.OpakovanaHlavickaMm:0.0})\n";

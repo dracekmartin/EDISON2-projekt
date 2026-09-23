@@ -17,16 +17,16 @@ public class ZnackyUZastavkyTests
     /// <summary>
     /// Značka v buňce si musí vzít místo, jinak přeteče přes hranu prvku.
     /// </summary>
-    /// <remarks>Měří se na <b>základu</b> sloupce: místo na značky se z něj ukrojí, protože celková
-    /// šířka bloku je daná prvkem. Táž třída chyb jako u značek platnosti 8. 9. - kreslí se něco,
-    /// na co se nepočítalo místo.</remarks>
+    /// <remarks>Měří se při <b>zadané šířce sloupce</b>: sloupec, do kterého se obsah nevejde,
+    /// zůstane širší, takže se rozdíl projeví právě na něm (od 22. 9.). Táž třída chyb jako
+    /// u značek platnosti 8. 9. - kreslí se něco, na co se nepočítalo místo.</remarks>
     [Fact]
     public void ZnackaVBunceSiVezmeMistoVeSloupci()
     {
         var bez = SirkaSloupce(Data(znacky: null));
         var se = SirkaSloupce(Data(znacky: new JsonArray("N", "", "")));
 
-        Assert.True(se < bez,
+        Assert.True(se > bez,
             $"se značkou {se:0.00} mm, bez ní {bez:0.00} mm - značka si místo nevzala");
     }
 
@@ -66,8 +66,13 @@ public class ZnackyUZastavkyTests
         Assert.Equal(SymbolMap.ResolveLinkovy("X"), NotesLegendElement.ZnackaLinkoveho(pozn));
     }
 
-    private static float SirkaSloupce(DataContext data) =>
-        new LineTableElement { X = 0, Y = 0, Width = 200, Height = 100 }.Rozvrzeni(data)[0].SloupecSpojeMm;
+    private static float SirkaSloupce(DataContext data)
+    {
+        var prvek = new LineTableElement
+        { X = 0, Y = 0, Width = 200, Height = 100 };
+        prvek.DataStyle.FontSize = 5f;
+        return prvek.Rozvrzeni(data)[0].SirkySloupcu[0];
+    }
 
     private static DataContext Data(JsonArray? znacky)
     {

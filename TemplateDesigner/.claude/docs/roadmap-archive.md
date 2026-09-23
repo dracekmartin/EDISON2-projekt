@@ -1,5 +1,13 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B173` Sdílené komponenty - předáno kolegovi (22. 9. 2026)
+
+Sbírka čtyř návrhů do `EDControls` (hlavička „Položka | Hodnota" v EDInputFormu, zrušit skákání
+po výsledcích hledání, zalomení řádku v úzkém panelu, zapamatovaný filtr). Prošlo se s kolegou
+22. 9. a **bere si je k sobě** - sahají do legacy formulářů v shellu, tedy mimo návrhář.
+Rozhodnutí, která z toho platí, zůstávají v zápisu; z roadmapy návrháře je položka pryč, ať
+nepřekáží. `B18` (deklarativní pravidla formuláře) zůstává v backlogu samostatně.
+
 ## `B174` Průchod nálezů z review návrháře (hotovo 21. 9. 2026)
 
 Celkový průchod kódem (`dotnet/` 217 souborů, `CACHE/` 66 tříd, pravidla) dal třináct nálezů.

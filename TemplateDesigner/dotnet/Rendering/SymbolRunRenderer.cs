@@ -24,30 +24,44 @@ public static class SymbolRunRenderer
     /// <param name="Symbol">true = symbolový Timetable font (piktogram).</param>
     /// <param name="Zmenseni">Podíl velikosti písma vůči zbytku buňky (1 = stejné). Slouží
     /// k sázení minut menším písmem než hodina; úseky sedí na společné účaří.</param>
-    public readonly record struct Run(string Text, bool Symbol, float Zmenseni = 1f);
+    /// <param name="MezeraMm">Úsek je <b>mezera dané šířky</b> (mm) a nic se v něm nekreslí.
+    /// Null = běžný text. Slouží k nastavitelným odstupům mezi značkami a časem, které se jinak
+    /// řídí mezerou z písma a nejdou utáhnout.</param>
+    public readonly record struct Run(string Text, bool Symbol, float Zmenseni = 1f,
+        float? MezeraMm = null);
 
     /// <summary>Rozdělí značky na úseky podle fontu a mezerou je oddělí, jako by to byl jeden text.
     /// Vrací prázdný seznam, když není co kreslit.</summary>
     public static List<Run> BuildRuns(IEnumerable<string> znacky,
-        Func<string, (SymbolRenderMode Mode, string Value)> resolve)
+        Func<string, (SymbolRenderMode Mode, string Value)> resolve, float? mezeraMm = null)
     {
         var runs = new List<Run>();
         foreach (var znak in znacky)
         {
             if (string.IsNullOrEmpty(znak)) continue;
-            if (runs.Count > 0) runs.Add(new(" ", false));
+            if (runs.Count > 0) runs.Add(Mezera(mezeraMm));
             var (mode, value) = resolve(znak);
             runs.Add(new(value, mode == SymbolRenderMode.FontGlyf));
         }
         return runs;
     }
 
+    /// <summary>Odstup mezi úseky: zadaný v mm, jinak mezera z písma.</summary>
+    public static Run Mezera(float? mezeraMm, float zmenseni = 1f) =>
+        mezeraMm is float mm ? new("", false, zmenseni, mm) : new(" ", false, zmenseni);
+
     /// <summary>Obsahuje sada aspoň jeden piktogram? Když ne, nemá smysl kreslit ručně - stačí
     /// běžná buňka.</summary>
     public static bool MaPiktogram(List<Run> runs) => runs.Exists(r => r.Symbol);
 
-    /// <summary>Nakreslí úseky do obdélníku (v mm) podle zarovnání stylu.</summary>
-    public static void Draw(RenderContext ctx, SKRect contentMm, List<Run> runs,
+    /// <summary>Nakreslí úseky do buňky (v mm) podle zarovnání stylu.</summary>
+    /// <remarks>
+    /// Vnitřní odsazení si bere sám, protože <b>ustupuje obsahu</b>: když se úseky do odsazeného
+    /// boxu nevejdou, kreslí se do celé buňky. Odsazení je vzduch kolem obsahu, ne jeho hranice -
+    /// bez toho se čas se značkou návaznosti vylil přes hranu sloupce, i když se do sloupce vešel
+    /// (nález Jan 22. 9.). Užší než buňka to neudělá; co se nevejde ani tam, přeteče jako dřív.
+    /// </remarks>
+    public static void Draw(RenderContext ctx, SKRect cellMm, List<Run> runs,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
     {
         if (runs.Count == 0) return;
@@ -71,17 +85,26 @@ public static class SymbolRunRenderer
         try
         {
             var m = normalFont.Metrics;
+            var contentMm = CellLayout.ApplyPadding(cellMm, style);
             var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
             var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
 
             float totalPx = 0f;
-            foreach (var r in runs) totalPx += Font(r).MeasureText(r.Text);
+            foreach (var r in runs)
+                totalPx += r.MezeraMm is float mm ? mm * ctx.MmToPx : Font(r).MeasureText(r.Text);
+
+            if (totalPx > br.X - tl.X)
+            {
+                tl = ctx.ToCanvas(cellMm.Left, contentMm.Top);
+                br = ctx.ToCanvas(cellMm.Right, contentMm.Bottom);
+            }
 
             var (xPx, baselineY) = CellLayout.TextAnchorPx(
                 tl, br, totalPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
 
             foreach (var r in runs)
             {
+                if (r.MezeraMm is float mm) { xPx += mm * ctx.MmToPx; continue; }
                 var f = Font(r);
                 ctx.Canvas.DrawText(r.Text, xPx, baselineY, f, paint);
                 xPx += f.MeasureText(r.Text);

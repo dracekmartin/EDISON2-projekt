@@ -54,7 +54,7 @@ public class SystemTemplateSeedTests
         // (picker ji nenabídne, dokud Released = 0), aby se kanál nedodělával až s vydáním.
         Assert.Contains("zastavkovy-jr-ad.json", names);
         Assert.Contains("zastavkovy-jr-mhd.json", names);
-        Assert.Contains("linkovy-jr-ad.json", names);
+        Assert.Contains("linkovy-jr-ad-postskript-a5.json", names);
     }
 
     /// <summary>Tohle je vlastní jádro `B92`: soubor ve složce ještě neznamená soubor v .exe.</summary>
@@ -91,7 +91,7 @@ public class SystemTemplateSeedTests
         // uživatel dostal jen sloupce textu - bez inverzního boxu negativních značek a bez
         // řazení podle typu (`B117`). Test drží, že se to nevrátí.
         var t = TemplateSerializer.Deserialize(
-            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-ad.json")));
+            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-ad-postskript-a5.json")));
 
         var prvky = t.Sections.SelectMany(s => s.Elements).ToList();
 

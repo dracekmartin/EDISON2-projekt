@@ -45,6 +45,12 @@ public class PreviewCanvas
     /// </summary>
     public Action<string?>? OriznuteBunkyChanged { get; set; }
 
+    /// <summary>
+    /// Volá se při každém renderu preview s popisem tabulek spojů, kde je sloupec užší, než se
+    /// obsah vejde (null = v pořádku). Wire-uje MainWindow na týž odznak status baru.
+    /// </summary>
+    public Action<string?>? UzkeSloupceChanged { get; set; }
+
     /// <summary>Sběrač oříznutých buněk právě probíhajícího renderu; mimo render null.</summary>
     private ClippedCells? _oriznuteBunky;
 
@@ -166,7 +172,7 @@ public class PreviewCanvas
                 using (var bg = new SKPaint { Color = SKColors.White })
                     canvas.DrawRect(0, 0, pageW, pageH, bg);
 
-                RenderPage(canvas, ps, pointsPerMm, 0, 0, page);
+                RenderPage(canvas, ps, pointsPerMm, 0, 0, page, naRastr: false);
 
                 doc.EndPage();
             }
@@ -206,7 +212,8 @@ public class PreviewCanvas
 
             foreach (var placed in sheet.Pages)
                 RenderPage(canvas, ps, pointsPerMm,
-                    placed.OffsetX * bodyNaMmListu, placed.OffsetY * bodyNaMmListu, placed.Page);
+                    placed.OffsetX * bodyNaMmListu, placed.OffsetY * bodyNaMmListu, placed.Page,
+                    naRastr: false);
 
             if (o.DrawCutMarks)
                 DrawCutMarks(canvas, o, bodyNaMmListu);
@@ -339,6 +346,12 @@ public class PreviewCanvas
         // je ta druhá osa - bez ní si uživatel obojí plete (`B131`).
         PocetStranSazbyChanged?.Invoke(layout.Pages.Count);
 
+        // Úzký sloupec spoje se hlásí odsud, ne z načtení dat: uživatel mění šířku v panelu
+        // a hláška musí jít s ním, ne čekat na příští stažení jízdního řádku.
+        UzkeSloupceChanged?.Invoke(data is null
+            ? null
+            : TripColumnWidthWarnings.Summarize(_state.CurrentTemplate, [data]));
+
         // Jen obrazovkový náhled - export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
         canvas.Clear(CanvasTheme.Background);
         if (layout.TotalPages == 0) return;
@@ -451,8 +464,11 @@ public class PreviewCanvas
 
     /// <summary>Renderuje jednu stránku LayoutResult. Preview zrcadlí výstup (PDF/PNG/tisk) 1:1 -
     /// žádné orientační pomůcky navíc; hranice sekcí ukazuje jen editační plátno (DesignerCanvas).</summary>
+    /// <param name="naRastr">Kreslí se na obrazovku nebo do PNG - čáry se pak srovnají na pixel.
+    /// Pro PDF <c>false</c>: tam je jednotkou bod a srovnání by čáry posunulo.</param>
     private static void RenderPage(SKCanvas canvas, PageSize ps, float mmToPx,
-        float pageX, float pageY, Page page, ClippedCells? oriznuteBunky = null)
+        float pageX, float pageY, Page page, ClippedCells? oriznuteBunky = null,
+        bool naRastr = true)
     {
         float ox = pageX + ps.MarginLeft * mmToPx;
         float contentW = ps.PrintableWidth * mmToPx;
@@ -483,8 +499,10 @@ public class PreviewCanvas
                 SectionOriginX = ox,
                 SectionOriginY = sectionTopPx + originYOffset,
                 ClipTopMm = placed.ClipTop ?? 0f,
+                ViditelnyPasMm = placed.Height,
                 OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm,
-                ClippedCells = oriznuteBunky
+                ClippedCells = oriznuteBunky,
+                SrovnatCaryNaPixel = naRastr,
             };
 
             // Barvy z dat („pozadí = barva linky") se čtou z property elementu, kam se DataContext

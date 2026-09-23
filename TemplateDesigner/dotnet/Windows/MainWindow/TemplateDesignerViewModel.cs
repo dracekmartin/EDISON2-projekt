@@ -783,7 +783,7 @@ public class TemplateDesignerViewModel : EDViewModel
     private string? ZmensenePismo
     {
         get => _zmensenePismo;
-        set { _zmensenePismo = value; ContentShrinkWarning = SpojHlasky(_zmensenePismo, _oriznuteBunky); }
+        set { _zmensenePismo = value; ContentShrinkWarning = SlozOdznak(); }
     }
 
     private string? _oriznuteBunky;
@@ -793,8 +793,19 @@ public class TemplateDesignerViewModel : EDViewModel
     public string? OriznuteBunky
     {
         get => _oriznuteBunky;
-        set { if (_oriznuteBunky == value) return; _oriznuteBunky = value; ContentShrinkWarning = SpojHlasky(_zmensenePismo, _oriznuteBunky); }
+        set { if (_oriznuteBunky == value) return; _oriznuteBunky = value; ContentShrinkWarning = SlozOdznak(); }
     }
+
+    private string? _uzkeSloupce;
+    /// <summary>Třetí půlka odznaku - sloupec spoje užší, než se obsah vejde. Počítá se při kreslení
+    /// náhledu, aby hláška následovala změnu šířky v panelu, ne až další načtení dat.</summary>
+    public string? UzkeSloupce
+    {
+        get => _uzkeSloupce;
+        set { if (_uzkeSloupce == value) return; _uzkeSloupce = value; ContentShrinkWarning = SlozOdznak(); }
+    }
+
+    private string? SlozOdznak() => SpojHlasky(_zmensenePismo, _oriznuteBunky, _uzkeSloupce);
 
     public bool HasContentShrinkWarning => !string.IsNullOrEmpty(_contentShrinkWarning);
 

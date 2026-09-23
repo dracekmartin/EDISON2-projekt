@@ -70,8 +70,13 @@ public class LineTableVnitrniOkrajTests
         ((FloatPropertyDescriptor)Descriptor(nulovy, "Vnitřní okraj vlevo")).Set(0f);
         ((FloatPropertyDescriptor)Descriptor(nulovy, "Vnitřní okraj vpravo")).Set(0f);
 
-        Assert.Equal(vychozi.Rozvrzeni(data)[0].SloupecSpojeMm,
-            nulovy.Rozvrzeni(data)[0].SloupecSpojeMm, precision: 3);
+        // Vynulovaný okraj sloupec zúží, ale kolem kreslené stopy zůstane vzduch - bez něj by
+        // číslice seděly na svislých čarách a časy sousedních sloupců se slévaly.
+        float sNulovym = nulovy.Rozvrzeni(data)[0].SirkySloupcu[0];
+        float sVychozim = vychozi.Rozvrzeni(data)[0].SirkySloupcu[0];
+        Assert.True(sNulovym < sVychozim, "vynulovaný okraj se do šířky nepropsal");
+        Assert.True(sNulovym > sVychozim - 1f,
+            $"sloupec spadl z {sVychozim:0.00} na {sNulovym:0.00} mm - vzduch kolem stopy zmizel");
     }
 
     /// <summary>Okraj větší než vůle sloupec naopak rozšíří - potud pole funguje dál.</summary>

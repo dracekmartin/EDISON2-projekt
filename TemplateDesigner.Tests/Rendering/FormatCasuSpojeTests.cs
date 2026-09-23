@@ -70,14 +70,18 @@ public class FormatCasuSpojeTests
     [Fact]
     public void UzsiFormatPustiDoBlokuVicSpoju()
     {
+        // Měří se na prvku tak úzkém, že o sloupci rozhoduje jen obsah - kapacita bloku je
+        // hrubší měřítko a rozdíl mezi formáty se v ní nemusí projevit celým sloupcem.
         var uzky = PrvekSAutoSloupcem(FormatCasuSpoje.HodinaVetsi);
+        uzky.Width = 21f;
         var siroky = PrvekSAutoSloupcem(FormatCasuSpoje.SDvojteckou);
+        siroky.Width = 21f;
 
-        int sUzkym = KapacitaBloku(uzky);
-        int sSirokym = KapacitaBloku(siroky);
+        float sUzkym = uzky.Rozvrzeni(SirokaData(4))[0].SirkySloupcu[0];
+        float sSirokym = siroky.Rozvrzeni(SirokaData(4))[0].SirkySloupcu[0];
 
-        Assert.True(sUzkym > sSirokym,
-            $"užší formát pustil do bloku {sUzkym} spojů, širší {sSirokym} - práh sloupce se nezměnil");
+        Assert.True(sUzkym < sSirokym,
+            $"užší formát dal sloupec {sUzkym:0.00} mm, širší {sSirokym:0.00} mm - práh se nezměnil");
     }
 
     /// <summary>Kolik spojů se do prvku vejde na jeden blok - největší počet, který se ještě

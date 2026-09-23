@@ -41,19 +41,21 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
 
         // ── Skupina "Šířka sloupců" ───────────────────────────────────────
-        // Šířka sloupce spoje je jeden vzorec: zbytek prvku dělený počtem spojů, přiskřípnutý mezi
-        // dno a strop. Všechno, co do něj vstupuje, patří pod jeden nadpis - do 8. 9. to bylo
-        // roztroušené mezi "Sloupce" a "Datové buňky" a nešlo přečíst jako jedna věc.
+        // Šířka sloupce spoje je zadané přání a to, co se do sloupce musí vejít. Všechno, co do
+        // toho vstupuje - i odstupy mezi značkami a časem - patří pod jeden nadpis; do 8. 9. to
+        // bylo roztroušené mezi "Sloupce" a "Datové buňky" a nešlo přečíst jako jedna věc.
         // ⚠️ Ne "Šířka a dělení" - "dělení sloupců" už v UI znamená členění na skupiny dnů.
         d form.AddGroup("width", "Šířka sloupců")
-        s f = form.AddDecimal("NejmensiSirkaSpojeMm", "Nejmenší šířka sloupce spoje", "", 0, 50, "mm")
-        s f.helpText = "Sloupec nebude užší než tohle. Prázdné = jen tolik, aby se vešel čas a kolem něj zůstala vůle. Menší hodnota, než čas měří, se neuplatní - sloupec se pod čitelnou šířku nezúží, ať se zadá cokoli."
-        s f = form.AddDecimal("NejvetsiSirkaSpojeMm", "Největší šířka sloupce spoje", "", 0, 200, "mm")
-        s f.helpText = "Prázdné = bez omezení, sloupce se roztáhnou přes celý prvek. Vyplněné = u linky s málo spoji zůstanou úzké a vpravo zbyde volné místo, jako ve starém postskriptovém tisku. U linky s hodně spoji se nic nemění, tam je sloupec stejně na svém minimu."
+        s f = form.AddDecimal("MezeraMeziZnackamiMm", "Mezera mezi značkami", "", 0, 10, "mm")
+        s f.helpText = "Odstup mezi značkami nad časem (například kladívko a vozík vedle sebe). Prázdné = mezera z písma. Dvojice značek bývá ve sloupci to nejširší, takže utažením téhle mezery jde sloupec zúžit až na šířku času."
+        s f = form.AddDecimal("MezeraZnackaCasMm", "Mezera mezi značkou a časem", "", 0, 10, "mm")
+        s f.helpText = "Odstup značky, která stojí v buňce vlevo od času (návaznost, jen nástup). Prázdné = mezera z písma."
+        s f = form.AddDecimal("MezeraHodinaMinutaMm", "Mezera mezi hodinou a minutou", "", 0, 10, "mm")
+        s f.helpText = "Odstup mezi hodinou a menší minutou. Prázdné = mezera z písma. Uplatní se jen u formátu s hodinou větším písmem a zužuje i sloupec, protože je uvnitř času."
         s f = form.AddBool("PadEmptyColumns", "Dorovnat prázdnými sloupci", 0)
         s f.helpText = "Co se stane s volným místem vpravo: zapnuté = rozkreslí se prázdnými sloupci, takže tabulka končí rovně, vypnuté = zůstane bílé. Týká se posledního nedopsaného bloku i tabulky, které místo zbylo kvůli největší šířce."
-        s f = form.AddBool("JednotnaSirkaSpoju", "Stejně široké sloupce spojů", 1)
-        s f.helpText = "Vypnuté = sloupec, ve kterém je někde značka návaznosti, je o ni širší než ostatní (tak to dělá starý tisk) a tabulka působí roztřepeně. Zapnuté = všechny sloupce spojů dostanou šířku toho nejširšího; do řádku se jich tím vejde méně."
+        s f = form.AddBool("JednotnaSirkaSpoju", "Stejně široké sloupce spojů", 0)
+        s f.helpText = "Vypnuté = každý sloupec je tak široký, jak ho potřebuje jeho obsah, takže ten se značkami je širší než ostatní (tak to dělá starý tisk) a tabulka působí roztřepeně; do řádku se ale vejde víc spojů. Zapnuté = všechny dostanou šířku toho nejširšího, tabulka je pravidelná a zabere víc místa."
         s f = form.AddDecimal("MezeraMeziSkupinamiMm", "Mezera mezi skupinami sloupců", 0, 0, 20, "mm")
         s f.helpText = "Volné místo za popisným blokem a mezi skupinami dnů. 0 = souvislá mřížka bez mezer. Mezera se bere ze šířky prvku, takže se do řádku vejde méně spojů."
 
@@ -93,10 +95,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Vnitřní okraj je u této tabulky rozměrová volba, ne kosmetika: dolní práh sloupce spoje
         // je šířka času plus okraje po stranách, takže rozhoduje, kolik spojů se vejde do bloku
         // a kolikrát se tabulka řízne na šířku. Jen vodorovné - svislé drží pole "Výška řádku".
-        s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", "", 0, 20, "mm")
-        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
-        s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", "", 0, 20, "mm")
-        s f.helpText = "Odsazení textu od svislé čáry. Prázdné = 0,5 mm. Vynulováním se sloupec nezúží pod čitelnou šířku - kolem času zůstane vůle 1 mm vždy."
+        // ⚠️ Výchozí hodnota vypsaná, ne prázdné pole: „prázdné = 0,5 mm" nedávalo smysl nikomu,
+        // kdo si chtěl sloupce utáhnout, protože z formuláře nebylo poznat, kolik vzduchu tam je
+        // (nález Jan 22. 9.). Binder prázdnou hodnotu modelu nechá na tomhle defaultu.
+        s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", 0.5, 0, 20, "mm")
+        s f.helpText = "Odsazení textu od svislé čáry. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
+        s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", 0.5, 0, 20, "mm")
+        s f.helpText = "Odsazení textu od svislé čáry. Je to hlavní páka na vzduch kolem času: větší okraj sloupec rozšíří, nulou se stáhne až k obsahu, ale nikdy tak, aby se číslice dotýkaly čar."
         s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
         d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
         d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")

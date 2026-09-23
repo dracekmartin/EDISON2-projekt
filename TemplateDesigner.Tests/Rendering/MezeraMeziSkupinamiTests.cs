@@ -46,6 +46,8 @@ public class MezeraMeziSkupinamiTests
         Columns =
         [
             new StopColumn { Key = ColumnKeys.StopName, Header = "Zastávka", Width = SirkaZastavky, Visible = true },
+            // ⚠️ Pevná šířka sloupce spoje: konstanty níž počítají souřadnice z ní. Jinde se
+            // šířka bere z obsahu (od 22. 9.), takže by se s písmem i značkami hýbala.
             new StopColumn { Key = LineTableElement.TripKey, Header = "Spoj", Width = SirkaSpoje,
                 Visible = true, Alignment = TextHorizontalAlignment.Center },
         ],
@@ -419,15 +421,15 @@ public class MezeraMeziSkupinamiTests
     public void SloupecSeZnackou_JeSirsiNezSloupecBezNi()
     {
         var prvek = Prvek();
+        // Bez pevné šířky - o sloupci rozhoduje jeho obsah, a právě to má značka posunout.
+        prvek.Columns.Single(c => c.Key == LineTableElement.TripKey).Width = null;
         var data = Data();   // značka návaznosti je na posledním ze tří spojů
 
-        var rozvrh = prvek.Rozvrzeni(data);
-        float sirkaSeZnackou = rozvrh.Max(b => b.SirkaMm)
-            - (SirkaZastavky + 2 * rozvrh[0].SloupecSpojeMm);
+        var sirky = prvek.Rozvrzeni(data)[0].SirkySloupcu;
 
-        Assert.True(sirkaSeZnackou > rozvrh[0].SloupecSpojeMm + 0.1f,
-            $"sloupec se značkou ({sirkaSeZnackou:0.##} mm) není širší než sloupec bez ní "
-            + $"({rozvrh[0].SloupecSpojeMm:0.##} mm) - značka pak z buňky vyleze");
+        Assert.True(sirky[^1] > sirky[0] + 0.1f,
+            $"sloupec se značkou ({sirky[^1]:0.##} mm) není širší než sloupec bez ní "
+            + $"({sirky[0]:0.##} mm) - značka pak z buňky vyleze");
     }
 
     /// <summary>

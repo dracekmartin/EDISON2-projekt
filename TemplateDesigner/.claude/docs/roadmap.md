@@ -111,30 +111,12 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
-- **`B173` Projít sdílené komponenty s kolegou** [?] (domluveno 21. 9., na program 22. 9.).
-  Sbírka návrhů, které sahají do `EDControls`, tedy i do legacy formulářů v shellu - proto se
-  neberou jednotlivě, ale projdou se najednou.
-  1. **Zrušit hlavičku „Položka | Hodnota" v EDInputFormu** - dvousloupcový formulář je čitelný
-     sám, hlavička bere 30 bodů výšky tam, kde je místa nejmíň. Vzniklo 26. 5. (`5d5afdb4`) kvůli
-     souladu s EDListem; tam ale hlavička pojmenovává sloupce, podle kterých jde řadit.
-  2. **Zrušit skákání po výsledcích hledání** (šipky ▲▼ a počitadlo ve sdílené hlavičce, Jan 21. 9.) -
-     hledání nesedící položky skryje, takže navigovat po zbylých třech nemá co řešit. S nimi padá
-     i nápověda zkratek pod ikonou; zbytek (Ctrl+F) nestojí za tlačítko s vyskakovacím oknem.
-  3. **Zúžený formulář neukazuje hodnoty** (nález kolegy 18. 9., dřív `B169`). Popisek a hodnota
-     mají každý dolní hranici 120 bodů (`EDInputForm.xaml:55`), formulář tedy potřebuje 280;
-     levý panel návrháře startuje na 200, hodnota je vytlačená rovnou. **Návrh (Jan 21. 9.):**
-     pod prahem zalomit řádek na dva - popisek nahoře, vstup pod ním přes celou šířku (tak to mají
-     panely ve VS Code i Figmě); rozhoduje naměřená šířka, zaškrtávátka zůstávají na řádku a jako
-     u bodu 4 to musí být volba hostitele s výchozím vypnuto. Cena je skoro dvojnásobná výška -
-     levnější varianta je nezalamovat a zvednout dolní hranici panelu na 280.
-  4. **Formulář si pamatuje poslední filtr** (podnět Jan 18. 9., dřív `B170`). Ve formuláři prvku se
-     hledá Ctrl+F („rozest"), doladí se nastavení, formulář se zavře a při dalším otevření se hledá
-     znovu; u formuláře otevíraného pořád dokola nad týmž prvkem je to zbytečné (tak to má i VS Code).
-     Volba hostitele s výchozím vypnuto - v shellu se otevírá pokaždé jiný záznam. Pamatovat **per
-     schéma formuláře** (`CacheClass`), jinak filtr z textu schová celou tabulku, a **jen po dobu
-     běhu**, neukládat. Filtr musí být na první pohled vidět (vyplněné pole, křížek, počet skrytých)
-     a Esc ho ruší dřív, než zavře okno. Pozor: panel se při návratu na záložku znovu inicializuje,
-     takže zapamatovaný filtr musí žít mimo položky formuláře.
+- **`B176` Jedna vodorovná čára v tabulce spojů vypadá při zvětšení silnější** [S] (nález Jan 22. 9.,
+  linka 330530 nad přípojnými řádky u Velešína). V PDF i při 100 % je to v pořádku, projeví se to
+  až zvětšením náhledu. Vyloučeno měřením: dvojí kreslení téže čáry, tloušťka i barva (všechny
+  1 px, shodný odstín v PNG i přes celý náhled), srovnání na pixel a čára úseku z trasy - ta na
+  téhle lince není u žádné zastávky. Zbývá prohlédnout, jak se plátno náhledu škáluje na obrazovku.
+  Souvislost: commity 33a1758d, 36958359, 11303c6b.
 
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
@@ -207,6 +189,18 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
   lidé si v něm překážejí. Návrh: `partial` soubory přesně podle těch pruhů, beze změny chování;
   precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
   ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
+
+- **Jízdní řád ze zastávky na mobilu (QR na vývěsce)** (nápad Jan 22. 9., zatím bez poptávky).
+  Kód na vývěsce nese **linku, zastávku a stanoviště**, takže stránka ví, kde člověk fyzicky stojí -
+  to je jediná věc, kterou vyhledávač spojení neumí. Odpoví větou („nejbližší odjezd za 25 minut",
+  „dnes už odsud nic nejede, první zítra v 6:10", „z druhé strany jede za 6 minut"), pod tím výběr
+  cíle s dobou jízdy a texty poznámek místo značek. Papír navíc zastarává, odkaz ne.
+  ⚠️ **Nedělat plánovač s přestupy ani mapy** - tam vyhrává IDOS. Hranice je „co odsud jede přímo".
+  ⚠️ **Vidlička k rozhodnutí:** vývěska je jedna linka, cestující chce jednu cestu - silnější verze
+  je „odjezdy ze stanoviště za všechny linky", což je blíž relacím než vývěsce.
+  ⚠️ **Slabé místo je „jede to dnes"**: svátky a omezení dnes tiskneme jako text, ne jako datum,
+  které jde spočítat. Prototyp může jet na dni v týdnu a značky vypsat slovy.
+  Zpoždění v reálném čase by hodnotu zvedlo nejvíc, ale data živá nejsou (GTFS RT jen u DPCB).
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.

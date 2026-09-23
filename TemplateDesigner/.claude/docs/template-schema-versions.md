@@ -220,6 +220,20 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   `bold: true`, které do každé skupiny dnů zapisoval import z PDF. Barvy, zarovnání a odsazení
   zůstávají - ty per sloupec platily celou dobu.
 
+- **1.14.0** `MigrationSirkaSloupceSpoje` (2026-09-22) - u tabulky spojů slévá dvojici
+  `nejmensiSirkaSpojeMm` / `nejvetsiSirkaSpojeMm` do jednoho `sirkaSloupceSpojeMm`. Dvě pole
+  svádějí k tomu, že jde o pár, jenže zužovat uměl jen strop a ten se zarážel o změřený obsah,
+  takže sloupec s dvojicí piktogramů nad časy nešlo zúžit vůbec. Nově zadaná šířka platí všude,
+  kde se obsah vejde, a kde ne, zůstane sloupec tak široký, jak obsah potřebuje. Přebírá se strop
+  (bylo to pole, kterým se šířka reálně určovala), a když chybí, dno; nula znamenala „nenastaveno"
+  a nepřenáší se.
+
+- **1.15.0** `MigrationSirkaZObsahu` (2026-09-22) - ruší `sirkaSloupceSpojeMm`: šířka sloupce spoje
+  se počítá z obsahu, ručně se nezadává. Proti zadanému číslu stála volba „stejně široké sloupce
+  spojů", která ho tiše přebíjela - dvě nastavení na jednu věc. Šabloně, která volbu v JSON nemá,
+  se dopíše `jednotnaSirkaSpoju: true`: od 7. 9. to bylo výchozí chování a nová výchozí hodnota je
+  vypnuto, takže by se jí jinak rozvržení změnilo.
+
 ---
 
 ## Operational notes

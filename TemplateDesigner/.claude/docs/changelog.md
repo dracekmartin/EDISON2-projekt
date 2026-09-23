@@ -1,5 +1,78 @@
 ﻿# Changelog
 
+## 2026-09-22 (5) - ▭ každá část tabulky má vlastní rámeček
+
+Linka, která se nevejde na šířku, se sází na několik částí pod sebou. Rámeček je obcházel všechny
+najednou i mezeru mezi nimi, takže to vypadalo jako jedna tabulka s dírou uprostřed. Nově má
+rámeček každá část zvlášť; nerozdělená tabulka vypadá stejně jako dosud.
+
+Platí to i přes stránky: rámeček se kreslí jen kolem té části, která je na papíře vidět. Část,
+která se na stránku nevešla, po sobě nenechá prázdný obdélník přes zbytek listu, a část přeťatou
+zlomem stránky rámeček na hraně papíru uzavře.
+
+## 2026-09-22 (4) - ⋯ tečky i v dorovnaných sloupcích
+
+Volba „Tečky v prázdných buňkách" je plnila jen ve sloupcích spojů; prázdné sloupce, kterými
+dorovnání zaplňuje pravou část tabulky, zůstávaly bílé a v každé řadě tam byla díra. Nově tečky
+dostanou taky, takže svislé vodicí pruhy jdou přes celou šířku jako ve starém postskriptu.
+
+## 2026-09-22 (3) - ↹ názvy zastávek stojí ve svislici
+
+Zastávka „na znamení" má před názvem značku, ostatní ji neměly - a sloupec pak vypadal rozházeně,
+protože každý druhý název začínal o znak vedle. Nově se odsadí **všechny názvy stejně**, jakmile
+má značku aspoň jedna zastávka linky; tak to dělá i starý tisk. Linka, kde značku nemá nikdo,
+zůstává bez odsazení, aby se sloupec zbytečně nerozšířil.
+
+## 2026-09-22 (2) - ✏ čára u zastávky je tenká jako mřížka
+
+Čára, kterou dispečer odděluje úsek linky (atribut trasy „podtrženo"), se kreslila třikrát silněji
+než mřížka a proti tenkým vnitřním čarám vypadala jako vnější rám tabulky. Nově má tloušťku mřížky
+a odliší ji barva - kreslí se barvou textu, takže je vidět i ve světlé mřížce.
+
+K tomu se na jedné hranici kreslí **jen jedna čára**: dosud tam mohla padnout čára pod řádkem
+i čára nad tím následujícím a dvě přes sebe vyšly o pixel silnější.
+
+A vodorovné čáry se **na obrazovce** srovnávají na pixel. Výšky řádků jsou v milimetrech, takže
+hranice padaly mezi pixely a čára se rozprostřela do dvou řad - vedle ostré čáry vypadala dvakrát
+silnější, přestože měla touž tloušťku. Do PDF se to nepřenáší: tam je jednotkou bod (0,35 mm)
+a srovnání by čáry posunulo o desetiny milimetru proti tomu, co je v náhledu.
+
+## 2026-09-22 (1) - 📏 šířka sloupců spojů vychází ze sazby, ne z ručního čísla
+
+U tabulky spojů se šířka sloupce nastavovala ručně - a nešlo to. Pole byla dvě („nejmenší"
+a „největší"), zužovat umělo jen jedno z nich a obě se zarážela o změřený obsah, takže na vývěsce,
+kde nad časy stojí dvojice piktogramů, se sloupec nehnul z 5,43 mm, ať se zadalo cokoli.
+
+**Šířka se teď počítá z obsahu:** sloupec je tak široký, jak ho potřebuje to nejširší, co v něm
+stojí, plus vzduch kolem. Nic nepřeteče, písmo se nikdy nezmenší a ruční číslo zmizelo z panelu
+i z formuláře. Hustotu tisku řídí sazba:
+
+- **velikost písma** buněk a **velikost značek**,
+- tři nové odstupy v mm (prázdné = mezera z písma): **mezi značkami** nad časem, **mezi značkou
+  a časem** v buňce a **mezi hodinou a minutou**,
+- **vnitřní okraj buňky**, kterým se přidává vzduch kolem času.
+
+**„Stejně široké sloupce spojů" je nově vypnuté.** Zapnuté srovná všechny sloupce na ten nejširší,
+takže zvětší i ty, které by se zúžit daly - a proti počítané šířce to působilo, jako by nastavení
+nefungovalo. Úspora místa vyhrála a odpovídá to i starému tisku. Šablonám, které to mají dnes
+zapnuté, zůstane zapnuté.
+
+Na 330510 vyjdou sloupce 4,65 až 6,58 mm a linka se vejde na dvě části místo tří; s utaženými
+odstupy 4,50 až 6,15 mm. Se srovnanými sloupci dostanou všechny 6,58 mm a části jsou tři.
+
+**Prázdný pás nad časy zmizel.** Řádky značek platnosti, turnusů a negativních značek se počítají
+podle spojů té části tabulky, ne celé linky: na 330510 měly tři značky jen čtyři spoje ze skupin
+2 a 3, a přesto druhý řádek dostaly i části se skupinou 1, kde zůstal přes celou šířku prázdný.
+Pás s názvy skupin dnů se dál řídí celou linkou - ten musí být nad každou částí.
+
+Tabulka tím přestala sama vyplňovat celou šířku prvku - u linky s málo spoji zbyde vpravo volno,
+dokud se nezapne „Dorovnat prázdnými sloupci". To je tvar starého postskriptového tisku.
+
+Pod kapotou se k tomu srovnaly tři věci: šířka se měří z **kreslené stopy**, ne z postupu písma
+(piktogramy kreslí dál, než kam posunou pero, takže se s nimi počítalo úzce), vnitřní okraj buňky
+**ustoupí obsahu**, místo aby ho vytlačil přes hranu sloupce, a šířky se **přeměří při každé změně
+sazby**, ne jen při načtení dat.
+
 ## 2026-09-21 (7) - 🧹 průchod nálezů z review návrháře
 
 `B174`. Devět nálezů odbaveno, dva se týkají uživatele přímo:
