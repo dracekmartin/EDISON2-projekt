@@ -74,7 +74,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 ### Levý panel - 6 záložek
 
 - **Sekce** - seznam sekcí šablony, přidávání, řazení, mazání
-- **Pole agendy** - databázová pole dostupná pro aktuální agendu (dvojklik nebo tažení vloží `{POLE}` na plátno); hlavička zobrazuje název aktuální agendy a je klikatelná - otevře přepnutí agendy
+- **Datová pole** - pole aktuální agendy a pole stránky (číslo stránky, počet stran, pokračování) (dvojklik nebo tažení vloží `{POLE}` na plátno); hlavička zobrazuje název aktuální agendy a je klikatelná - otevře přepnutí agendy
 - **Vlastnosti** - nastavení právě vybraného prvku nebo sekce - okamžitá editace bez nutnosti otevírat dialog
 - **Strom** - hierarchický přehled celé šablony (sekce → skupiny prvků → prvky) pro rychlou navigaci
 - **Pomocník** - AI pomocník: zeptáte se vlastními slovy, kde v aplikaci co najdete nebo jak něco udělat (vyžaduje aktivovanou AI službu u M-line)
@@ -124,7 +124,7 @@ doprava z hlavního JŘ modulu, **MHD** = městský modul). Kombinace určuje, j
 a jaké **specializované prvky** máte k dispozici.
 
 - Aktuální agenda a varianta je vidět jako **zelený štítek** ve status baru (např. „Zastávkový
-  JŘ · AD"), v titulku okna a v hlavičce panelu „Pole agendy".
+  JŘ · AD"), v titulku okna a v hlavičce panelu „Datová pole".
 - Změna: `Nástroje → Změnit agendu…`, klávesa **Ctrl+Shift+A**, nebo klik na zelený štítek -
   dialog nabízí agendy seskupené s variantami pod sebou.
 - **Přepnutí agendy vždy založí novou prázdnou šablonu** pro zvolenou agendu - nejde o konverzi
@@ -285,7 +285,7 @@ je za tlačítkem **„Nastavení celé tabulky"** v prvním řádku panelu (neb
 ### Přidání prvku
 - Klik na tlačítko v paletě vloží prvek do aktivní sekce (souřadnice 5, 5 mm).
 - **Tažení z palety** přímo na plátno - během tažení vidíte náhled a zvýrazní se cílová sekce.
-- **Tažení databázového pole** z panelu „Pole agendy" - tažení do prázdna vytvoří nový textový
+- **Tažení databázového pole** z panelu „Datová pole" - tažení do prázdna vytvoří nový textový
   prvek s `{POLE}`; tažení na existující text pole připojí k jeho obsahu. Dvojklik na pole
   funguje jako alternativa k tažení.
 
@@ -407,7 +407,23 @@ v dialogu sloupců.
 ### Zástupné symboly (databázová pole)
 Kdekoli v textu napíšete pole ve složených závorkách, např. `Linka {CISLO_LINKY}`. Při tisku se
 `{CISLO_LINKY}` nahradí skutečnou hodnotou. Dostupná pole pro aktuální agendu vidíte v panelu
-„Pole agendy" a můžete je přetáhnout přímo na plátno.
+„Datová pole" a můžete je přetáhnout přímo na plátno.
+
+### Pole stránky
+Ve skupině **Stránka** panelu „Datová pole" jsou hodnoty, které nejsou v datech agendy, ale doplní
+je sazba pro každou stránku zvlášť:
+
+- `{STRANA}` - číslo stránky, `{POCET_STRAN}` - počet stran,
+- `{POKRACOVANI}` - nápis jako ve starém tisku: na první stránce směru tam nic, na dalších
+  „pokračování", na první stránce směru zpět „opačný směr", na dalších „opačný směr - pokračování".
+  Slovenská šablona je vypíše slovensky.
+
+⚠️ Pole stránky patří do **sekce, která se tiskne na každé stránce** (hlavička nebo patička stránky).
+V sekci obsahu, která se tiskne jednou, by ukázala jen hodnotu první stránky. Vzhled nápisu (pozadí,
+rámeček, písmo) nastavíte textovému prvku. Pokud nechcete na první stránce prázdný podbarvený pruh,
+dejte prvku podmínku viditelnosti `{STRANA} > 1 || {SMER} == "Z"`.
+
+Starší zápisy `{PAGE}` a `{TOTAL_PAGES}` fungují dál.
 
 Název pole nemusíte psát ručně - u polí, kam se data dosazují, je vpravo tlačítko `{ }`. Otevře
 seznam polí agendy, ve kterém lze hledat, a vybrané pole vloží **na místo, kde máte kurzor**.
@@ -445,7 +461,7 @@ i v záhlaví a buňkách tabulek a specializovaných prvků jízdního řádu.
 ### Podmíněná viditelnost
 Prvek nebo sekci lze zobrazit jen za podmínky - pole **Podmínka viditelnosti**, např.:
 - `{POCET} > 0` - zobrazit jen když je počet kladný,
-- `{PAGE} > 1` - jen od druhé stránky.
+- `{STRANA} > 1` - jen od druhé stránky.
 
 Podporované operátory: `&&` (a zároveň), `||` (nebo), `!` (negace), `==`, `!=`, `>`, `<`, `>=`,
 `<=`, závorky, textové literály, čísla, `true`/`false`. Prázdný nebo neplatný výraz znamená

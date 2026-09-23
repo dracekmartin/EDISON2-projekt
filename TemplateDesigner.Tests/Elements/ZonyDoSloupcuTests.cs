@@ -166,4 +166,30 @@ public class ZonyDoSloupcuTests
     {
         Assert.Equal(["037", "066"], LineTableElement.RozdelZony("037, 066"));
     }
+
+    /// <summary>
+    /// Pomlčka (zastávka bez zóny) stojí v <b>každém</b> dílu, ne jen v prvním - jinak druhý díl
+    /// vypadal nevyplněný (nález Jan 23. 9. na 823955). Zastávka s jednou zónou má druhý díl
+    /// dál prázdný, protože tam zóna je, jen druhá ne.
+    /// </summary>
+    [Fact]
+    public void ZastavkaBezZony_MaPomlckuVKazdemDilu()
+    {
+        var data = RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("PORADI", "1"), ("TYP", "zastavka"), ("NAZEV_ZASTAVKY", "Zlín"),
+                    ("ZONY", "-"), ("TC", "1")),
+                RenderSnapshot.Row(("PORADI", "2"), ("TYP", "zastavka"), ("NAZEV_ZASTAVKY", "Kroměříž"),
+                    ("ZONY", "420,201"), ("TC", "2")),
+                RenderSnapshot.Row(("PORADI", "3"), ("TYP", "zastavka"), ("NAZEV_ZASTAVKY", "Hulín"),
+                    ("ZONY", "425"), ("TC", "3")),
+            ]),
+            ("SPOJE", [RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"), ("SMER", "T"))]));
+        List<string> Zony(int radek) => [.. Prvek(rozdelit: true).PopisneSloupceProTest(data, radek)
+            .Where(c => c.Klic == ColumnKeys.Zone).Select(c => c.Hodnota)];
+
+        Assert.Equal(["-", "-"], Zony(0));
+        Assert.Equal(["425", ""], Zony(2));
+    }
 }

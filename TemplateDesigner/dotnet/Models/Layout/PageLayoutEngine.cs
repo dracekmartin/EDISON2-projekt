@@ -51,6 +51,117 @@ public class PageLayoutEngine
     /// </remarks>
     public LayoutResult Layout(Template template, DataContext? data)
     {
+        var legendy = ZmensitelneLegendy(template);
+        NastavZmenseniLegend(legendy, 1f);
+        NastavBezMezer(ZmensitelnePrvky(template), false);
+        NastavZmensovatISirky(ZmensitelnePrvky(template), false);
+        var vysledek = LayoutSeZmensenimTabulky(template, data);
+
+        int cil = CilStran(data);
+        if (cil <= 0 || vysledek.TotalPages <= cil) return vysledek;
+        return VejdiNaStrany(template, data, cil, legendy) ?? vysledek;
+    }
+
+    /// <summary>Parametr sestavy „Počet stran" (`#8785`).</summary>
+    public const string CilStranKlic = "POCET_STRAN_SESTAVY";
+
+    /// <summary>Míry zmenšení poznámek - zkoušejí se první, tabulka zůstává (`#8785`).</summary>
+    /// <remarks>Meze jsou zatím pevné kvůli ladění na vlastních datech (rozhodnutí Jan 23. 9.);
+    /// jestli půjdou do šablony, se rozhodne podle výsledků.</remarks>
+    private static readonly float[] ZebrikPoznamek = [0.9f, 0.8f, 0.7f, 0.6f];
+
+    /// <summary>Míry zmenšení tabulky, když poznámky na své mezi nestačí.</summary>
+    private static readonly float[] ZebrikTabulky = [0.97f, 0.94f, 0.9f, 0.85f, 0.8f];
+
+    /// <summary>Cílový počet stran z parametru sestavy; 0 = bez omezení.</summary>
+    /// <remarks>„Automaticky (dle linky)" zatím nedělá nic - u linky pole zatím není; až bude,
+    /// přijde v datech a přečte se tady.</remarks>
+    internal static int CilStran(DataContext? data)
+    {
+        string text = data?.GetValue(CilStranKlic)?.ToString() ?? "";
+        int i = 0;
+        while (i < text.Length && char.IsDigit(text[i])) i++;
+        return i > 0 && int.TryParse(text[..i], out int n) ? n : 0;
+    }
+
+    /// <summary>
+    /// Srazí části tabulky k sobě, pak zmenší poznámky, pak celou tabulku i se šířkami, dokud se sestava nevejde na <paramref name="cil"/>
+    /// stran. Vrací první (tedy nejmenší) zmenšení, které stačí; když nestačí ani na mezích,
+    /// vrací sazbu v plné velikosti s příznakem nesplněného cíle.
+    /// </summary>
+    /// <remarks>
+    /// Pořadí je záměr (`#8785`): u 0330510 se tabulka na první stranu vejde a na druhou přetečou
+    /// jen poznámky - zmenšit rovnoměrně všechno by zbytečně zmenšilo i časy. Stránky se počítají
+    /// pro jednu sadu dat, tedy pro jeden směr linky.
+    /// </remarks>
+    private LayoutResult? VejdiNaStrany(Template template, DataContext? data, int cil,
+        List<NotesLegendElement> legendy)
+    {
+        var tabulky = ZmensitelnePrvky(template);
+        if (legendy.Count == 0 && tabulky.Count == 0) return null;
+
+        NastavZmenseni(tabulky, 1f);
+        LayoutResult? posledni = null;
+        // Krok 0: části tabulky těsně pod sebou - nic se nezmenší a poznámky dostanou místo
+        // (nález Jan 23. 9. na 0330510: mezery mezi částmi zbytečně braly místo zmenšeným poznámkám).
+        if (tabulky.Count > 0)
+        {
+            NastavBezMezer(tabulky, true);
+            posledni = LayoutBezZmenseni(template, data);
+            if (posledni.TotalPages <= cil) return posledni;
+        }
+        foreach (float mira in legendy.Count > 0 ? ZebrikPoznamek : [])
+        {
+            NastavZmenseniLegend(legendy, mira);
+            posledni = LayoutBezZmenseni(template, data);
+            if (posledni.TotalPages <= cil) return posledni;
+        }
+        // Tabulka se zmenšuje celá, i se šířkami sloupců: do části se vejde víc spojů a celá
+        // část může odpadnout (Jan 23. 9.). Jen tady - samočinné zmenšení `B151` šířky nemění.
+        NastavZmensovatISirky(tabulky, true);
+        foreach (float mira in tabulky.Count > 0 ? ZebrikTabulky : [])
+        {
+            NastavZmenseni(tabulky, mira);
+            posledni = LayoutBezZmenseni(template, data);
+            if (posledni.TotalPages <= cil) return posledni;
+        }
+        if (posledni is null) return null;
+
+        // Nevešlo se ani na mezích → plná velikost jako bez cíle. Zmenšení, které stránku
+        // neušetří, jen zhorší čitelnost (rozhodnutí Jan 23. 9. na 0330510 směr Zpět; týž princip
+        // jako `B151`). Prvky se musí vrátit do stavu, se kterým se pak kreslí.
+        NastavZmenseniLegend(legendy, 1f);
+        NastavBezMezer(tabulky, false);
+        NastavZmensovatISirky(tabulky, false);
+        var plna = LayoutSeZmensenimTabulky(template, data);
+        plna.CilStranNesplnen = cil;
+        return plna;
+    }
+
+    private static List<NotesLegendElement> ZmensitelneLegendy(Template template) =>
+        [.. template.Sections
+            .SelectMany(s => s.Elements)
+            .OfType<NotesLegendElement>()
+            .Where(e => e.Height is null)];
+
+    private static void NastavZmensovatISirky(List<LineTableElement> prvky, bool ano)
+    {
+        foreach (var p in prvky) p.ZmensovatISirky = ano;
+    }
+
+    private static void NastavBezMezer(List<LineTableElement> prvky, bool bezMezer)
+    {
+        foreach (var p in prvky) p.BezMezerMeziBloky = bezMezer;
+    }
+
+    private static void NastavZmenseniLegend(List<NotesLegendElement> prvky, float mira)
+    {
+        foreach (var p in prvky) p.LayoutZmenseni = mira;
+    }
+
+    /// <summary>Samočinné zmenšení tabulky, aby se nedělila o stránku víc (`B151`).</summary>
+    private LayoutResult LayoutSeZmensenimTabulky(Template template, DataContext? data)
+    {
         var zmensitelne = ZmensitelnePrvky(template);
         NastavZmenseni(zmensitelne, 1f);
         var vysledek = LayoutBezZmenseni(template, data);
@@ -619,11 +730,7 @@ public class PageLayoutEngine
                 if (!IsHeaderVisibleOnPage(header, pageNum, totalPages)) continue;
 
                 // VisibilityExpression per stránku (může obsahovat {PAGE})
-                var pageData = data?.WithExtraValues(new Dictionary<string, object?>
-                {
-                    ["PAGE"] = pageNum,
-                    ["TOTAL_PAGES"] = totalPages
-                });
+                var pageData = data?.WithExtraValues(HodnotyStranky(pageNum, totalPages, data));
                 if (!ExpressionEvaluator.IsVisible(header.VisibilityExpression, pageData)) continue;
 
                 float h = sectionHeights[header.Id];
@@ -644,11 +751,7 @@ public class PageLayoutEngine
             {
                 if (!IsHeaderVisibleOnPage(sekce, pageNum, totalPages)) continue;
 
-                var pageData = data?.WithExtraValues(new Dictionary<string, object?>
-                {
-                    ["PAGE"] = pageNum,
-                    ["TOTAL_PAGES"] = totalPages
-                });
+                var pageData = data?.WithExtraValues(HodnotyStranky(pageNum, totalPages, data));
                 if (!ExpressionEvaluator.IsVisible(sekce.VisibilityExpression, pageData)) continue;
 
                 float h = sectionHeights[sekce.Id];
@@ -675,11 +778,7 @@ public class PageLayoutEngine
             {
                 if (!IsFooterVisibleOnPage(footer, pageNum, totalPages)) continue;
 
-                var pageData = data?.WithExtraValues(new Dictionary<string, object?>
-                {
-                    ["PAGE"] = pageNum,
-                    ["TOTAL_PAGES"] = totalPages
-                });
+                var pageData = data?.WithExtraValues(HodnotyStranky(pageNum, totalPages, data));
                 if (!ExpressionEvaluator.IsVisible(footer.VisibilityExpression, pageData)) continue;
 
                 float h = sectionHeights[footer.Id];
@@ -698,6 +797,45 @@ public class PageLayoutEngine
     // ─────────────────────────────────────────────────────────────────────
     // PAGE / TOTAL_PAGES
 
+    /// <summary>Hodnoty, které zná jen sazba: číslo stránky, počet stran a text pokračování.</summary>
+    /// <remarks>⚠️ `PAGE` a `TOTAL_PAGES` zůstávají vedle českých názvů kvůli uloženým šablonám -
+    /// v nabídce polí jsou od 23. 9. jen `STRANA` a `POCET_STRAN`.</remarks>
+    internal static Dictionary<string, object?> HodnotyStranky(int stranka, int stran, DataContext? data) => new()
+    {
+        ["STRANA"] = stranka,
+        ["POCET_STRAN"] = stran,
+        ["PAGE"] = stranka,
+        ["TOTAL_PAGES"] = stran,
+        ["POKRACOVANI"] = TextPokracovani(stranka, data),
+    };
+
+    /// <summary>
+    /// Nápis „pokračování / opačný směr" jako ve starém Win tisku - podle toho, jestli je stránka
+    /// první stránkou sady dat a jestli jde o směr Zpět (`SMER` = "Z").
+    /// </summary>
+    /// <remarks>
+    /// Starý tisk ho kreslil šedým pruhem nad každou částí tabulky s barvou natvrdo (#9088 chtěl
+    /// jinou). Tady je to pole, které si uživatel vloží do vlastního textového prvku, takže vzhled
+    /// řeší prvek. ⚠️ Platí pro <b>stránku</b>, ne pro část tabulky: dvě části pod sebou na jedné
+    /// stránce dostanou nápis jen jeden. Stránky se číslují zvlášť pro každou sadu dat (každý směr
+    /// linky je jedna), proto „první stránka" = začátek směru. Jazyk řídí kultura šablony.
+    /// </remarks>
+    internal static string TextPokracovani(int stranka, DataContext? data)
+    {
+        bool zpet = string.Equals(data?.GetValue("SMER")?.ToString(), "Z", StringComparison.OrdinalIgnoreCase);
+        bool sk = string.Equals(data?.Culture.TwoLetterISOLanguageName, "sk", StringComparison.OrdinalIgnoreCase);
+        return (zpet, stranka > 1, sk) switch
+        {
+            (false, false, _) => "",
+            (false, true, false) => "pokračování",
+            (false, true, true) => "pokračovanie",
+            (true, false, false) => "opačný směr",
+            (true, false, true) => "opačný smer",
+            (true, true, false) => "opačný směr - pokračování",
+            (true, true, true) => "opačný smer - pokračovanie",
+        };
+    }
+
     private static void InjectPageNumbers(LayoutResult result)
     {
         int totalPages = result.TotalPages;
@@ -705,23 +843,10 @@ public class PageLayoutEngine
         {
             foreach (var placed in page.Sections)
             {
-                if (placed.Data is not null)
-                {
-                    placed.Data = placed.Data.WithExtraValues(new Dictionary<string, object?>
-                    {
-                        ["PAGE"] = page.PageNumber,
-                        ["TOTAL_PAGES"] = totalPages
-                    });
-                }
-                else
-                {
-                    placed.Data = new DataContext(
-                        new Dictionary<string, object?>
-                        {
-                            ["PAGE"] = page.PageNumber,
-                            ["TOTAL_PAGES"] = totalPages
-                        });
-                }
+                var hodnoty = HodnotyStranky(page.PageNumber, totalPages, placed.Data);
+                placed.Data = placed.Data is not null
+                    ? placed.Data.WithExtraValues(hodnoty)
+                    : new DataContext(hodnoty);
             }
         }
     }

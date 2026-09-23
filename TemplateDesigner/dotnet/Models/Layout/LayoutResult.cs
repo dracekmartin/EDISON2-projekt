@@ -8,6 +8,10 @@ public class LayoutResult
 {
     public List<Page> Pages { get; set; } = [];
     public int TotalPages => Pages.Count;
+
+    /// <summary>Cíl parametru „Počet stran", který se nepodařilo splnit ani v nejmenší povolené
+    /// velikosti (`#8785`) - sazba je pak v plné velikosti; null = cíl není nebo je splněný.</summary>
+    public int? CilStranNesplnen { get; set; }
 }
 
 /// <summary>Jedna stránka výstupu.</summary>

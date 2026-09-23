@@ -50,6 +50,17 @@ public class NotesLegendElement : StopScheduleElementBase
     [JsonIgnore]
     public float EffectiveNoteLineHeight => NoteLineHeight ?? ComputeRowH(NoteFontSize);
 
+    /// <summary>
+    /// Zmenšení, které nastavila sazba, aby se sestava vešla na zadaný počet stran (`#8785`).
+    /// </summary>
+    /// <remarks>
+    /// Stav sazby, ne šablony - nastavuje ho `PageLayoutEngine` před výpočtem výšky a nechá ho na
+    /// vítězné hodnotě pro kreslení (týž vzor jako <see cref="LineTableElement.LayoutZmenseni"/>).
+    /// Násobí písmo, výšku řádku, záhlaví i buňku značky, takže výška a kreslení sedí.
+    /// </remarks>
+    [JsonIgnore]
+    public float LayoutZmenseni { get; set; } = 1f;
+
     // ═══════════════════════════════════════════
     // Rozložení legendy (sloupce / řazení / zarovnání markeru)
     // ═══════════════════════════════════════════
@@ -144,7 +155,7 @@ public class NotesLegendElement : StopScheduleElementBase
         if (!hasData && ctx.Data is not null) return;
 
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
-        float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
+        float scale = (hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f) * LayoutZmenseni;
 
         float effHeaderFontSize = HeaderStyle.FontSize ?? 9f;
         // Kaskáda místo ruční rodiny: nese i řez písma (váha / kurzíva), který ruční cesta dřív zahazovala.
@@ -201,6 +212,8 @@ public class NotesLegendElement : StopScheduleElementBase
             int rowsPerCol = Math.Max(1, (int)Math.Ceiling(ordered.Count / (double)cols));
             float colW = Width / cols;
             float markerCell = MarkerSirka * scale;   // 0 = inline (jako dnes)
+            if (markerCell > 0)
+                markerCell = MathF.Max(markerCell, NejsirsiZnackaMm(ordered, boldFont, symbolFont, noteFont, ctx.MmToPx));
             float headerBottom = currentY;
 
             // Y kurzor per sloupec - poznámky mohou být víceřádkové (text se zalamuje na šířku
@@ -247,6 +260,39 @@ public class NotesLegendElement : StopScheduleElementBase
         // sjednocená cesta s ostatními elementy.
     }
 
+    /// <summary>
+    /// Kolik místa od levé hrany sloupce zabere nejširší značka legendy i s mezerou za ní (mm).
+    /// </summary>
+    /// <remarks>
+    /// Buňka značky je aspoň tak široká, aby texty všech poznámek stály ve svislici - i když je
+    /// značka („70") širší než zadaná buňka, třeba po zmenšení na počet stran (nález Jan 23. 9.
+    /// na 0330510). Míry musí odpovídat kreslení v <see cref="RenderNegativniZnacka"/>
+    /// a <see cref="RenderSymbolWithText"/>.
+    /// </remarks>
+    private float NejsirsiZnackaMm(IReadOnlyList<PoznamkaData> poznamky, SKFont boldFont,
+        SKFont symbolFont, SKFont noteFont, float mmToPx)
+    {
+        float nejsirsi = 0f;
+        foreach (var pozn in poznamky)
+        {
+            float w = pozn.Typ switch
+            {
+                TypPoznamky.NegativniZnacka =>
+                    boldFont.MeasureText(pozn.Znak) / mmToPx + 2f * 0.75f * LayoutZmenseni + 1f * LayoutZmenseni,
+                TypPoznamky.SpecialniZnak =>
+                    (JePiktogramPoznamky(pozn) ? symbolFont : boldFont)
+                        .MeasureText(JePiktogramPoznamky(pozn) ? GlyfPoznamky(pozn) : TextZnakPoznamky(pozn)) / mmToPx
+                    + 1.5f * LayoutZmenseni,
+                // Textová značka („MHD") - kreslí se písmem poznámek (týž případ v Render).
+                _ when pozn.Znak.Length > 0 =>
+                    noteFont.MeasureText(TextZnakPoznamky(pozn)) / mmToPx + 1.5f * LayoutZmenseni,
+                _ => 0f,
+            };
+            nejsirsi = MathF.Max(nejsirsi, w);
+        }
+        return nejsirsi > 0f ? 1f + nejsirsi : 0f;   // 1 mm = odsazení od hrany sloupce (lineX)
+    }
+
     private int RenderNegativniZnacka(RenderContext ctx, PoznamkaData pozn,
         ref float lineX, float currentY, float lineH, SKFont noteFont, SKFont boldFont, SKPaint textPaint,
         float colRight, float? textStartX = null)
@@ -254,8 +300,10 @@ public class NotesLegendElement : StopScheduleElementBase
         var nzBgColor = ColorHex.ParseOrBlack(NegativniZnackaBackColor);
         var nzFgColor = ColorHex.Parse(NegativniZnackaForeColor, "#FFFFFFFF");
 
-        // Invertovaný obdélník se znakem
-        float znakW = boldFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
+        // Invertovaný obdélník se znakem. Okraje se zmenšují s poznámkami - pevné by při zmenšení
+        // na počet stran (`#8785`) přerostly zmenšenou buňku značky (nález Jan 23. 9. na 0330510).
+        float okraj = 0.75f * LayoutZmenseni;
+        float znakW = boldFont.MeasureText(pozn.Znak) / ctx.MmToPx + 2f * okraj;
         float boxH = lineH * 0.85f;
         float boxY = currentY + (lineH - boxH) / 2f;
 
@@ -264,13 +312,15 @@ public class NotesLegendElement : StopScheduleElementBase
         ctx.Canvas.DrawRect(boxRect, nzBgPaint);
 
         using var nzFgPaint = new SKPaint { Color = nzFgColor, IsAntialias = true };
-        var znakPt = ctx.ToCanvas(lineX + 0.75f, currentY + lineH * 0.75f);
+        var znakPt = ctx.ToCanvas(lineX + okraj, currentY + lineH * 0.75f);
         ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, boldFont, nzFgPaint);
 
-        lineX += znakW + 1f;
+        lineX += znakW + 1f * LayoutZmenseni;
 
-        // Text za značkou - zalomený na šířku sloupce; zarovnaný na marker buňku (textStartX) nebo za znakem.
-        float textX = textStartX ?? lineX;
+        // Text za značkou - zalomený na šířku sloupce; zarovnaný na marker buňku (textStartX) nebo
+        // za znakem. ⚠️ Nikdy ne dřív, než rámeček skončí: široká značka („70") by jinak text
+        // překryla, když je buňka značky užší než ona.
+        float textX = textStartX is float start ? MathF.Max(start, lineX) : lineX;
         return DrawWrappedBody(ctx, pozn.Text, textX, currentY, colRight, noteFont, textPaint, lineH);
     }
 
@@ -303,11 +353,12 @@ public class NotesLegendElement : StopScheduleElementBase
             // A jen u piktogramů: značka kreslená normálním fontem je písmeno zadané zákazníkem.
             string znak = piktogram ? GlyfPoznamky(pozn) : TextZnakPoznamky(pozn);
             ctx.Canvas.DrawText(znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
-            lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f;
+            lineX += symbolFont.MeasureText(znak) / ctx.MmToPx + 1.5f * LayoutZmenseni;
 
             // Text - vždy default barva (klient výslovně chce barvit jen znak).
             // Při pevné marker buňce (textStartX) text zarovnán; jinak hned za znakem (bez separátoru).
-            float textX = textStartX ?? lineX;
+            // Nikdy ale přes znak, když je širší než buňka (týž důvod jako u negativní značky).
+            float textX = textStartX is float start ? MathF.Max(start, lineX) : lineX;
             string displayText = (suffixSeparator && textStartX is null) ? $"{NoteSeparator}{pozn.Text}" : pozn.Text;
             return DrawWrappedBody(ctx, displayText, textX, currentY, colRight, textFont, textPaint, lineH);
         }
@@ -356,8 +407,19 @@ public class NotesLegendElement : StopScheduleElementBase
         const float refMmToPx = 96f / 25.4f;
         // Měření musí trefit stejný font jako render (vč. řezu) - jinak se počet zalomených řádků rozejde.
         var typeface = GetTypeface(DataStyle.Resolve(ScheduleDataDefaults));
-        using var font = new SKFont(typeface, NoteFontSize * ResolvedTextStyle.PtToMm * refMmToPx);
-        float availMm = colW - (MarkerSirka > 0 ? MarkerSirka : 2f) - 0.5f;
+        using var font = new SKFont(typeface, NoteFontSize * LayoutZmenseni * ResolvedTextStyle.PtToMm * refMmToPx);
+        float bunkaZnacky = 2f;
+        if (MarkerSirka > 0)
+        {
+            // Táž buňka jako při kreslení - jinak by se zalomení a výška rozešly.
+            float velikost = NoteFontSize * LayoutZmenseni * ResolvedTextStyle.PtToMm * refMmToPx;
+            var dataResolved = DataStyle.Resolve(ScheduleDataDefaults);
+            var boldResolved = DataStyle.Bold is null ? dataResolved with { Bold = true } : dataResolved;
+            using var boldFont = new SKFont(GetTypeface(boldResolved), velikost);
+            using var symbolFont = new SKFont(GetTypeface(FontResolver.SymbolFontFamily(data?.Culture)), velikost);
+            bunkaZnacky = MathF.Max(MarkerSirka * LayoutZmenseni, NejsirsiZnackaMm(ordered, boldFont, symbolFont, font, refMmToPx));
+        }
+        float availMm = colW - bunkaZnacky - 0.5f;
 
         var colLines = new int[cols];
         for (int i = 0; i < ordered.Count; i++)
@@ -371,8 +433,8 @@ public class NotesLegendElement : StopScheduleElementBase
         }
         int maxLines = 1;
         foreach (var n in colLines) if (n > maxLines) maxLines = n;
-        float headerH = ShowHeaderBar ? ComputeHeaderH(HeaderStyle.FontSize ?? 9f) : 0f;
-        return headerH + maxLines * EffectiveNoteLineHeight;
+        float headerH = ShowHeaderBar ? ComputeHeaderH((HeaderStyle.FontSize ?? 9f) * LayoutZmenseni) : 0f;
+        return headerH + maxLines * EffectiveNoteLineHeight * LayoutZmenseni;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────

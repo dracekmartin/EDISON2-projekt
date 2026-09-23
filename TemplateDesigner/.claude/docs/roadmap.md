@@ -17,18 +17,11 @@
 > ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
-**Stav: paritní vlny jsou hotové** a z průchodu testovacími linkami nevzešel datový rozdíl proti
-starému tisku. Zbývá průchod § K ověření (doklady k tiketům) a věci, u kterých je první krok
-dotaz ven. Sloučení dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku
-bez přírůstku pro uživatele (rozhodnutí Jan 31. 8.).
-
-⚠️ **Linková AD agenda je zveřejněná a je výchozí pro novou šablonu** (`Released = 1`; 24. 8.
-zveřejněná, 1. 9. skrytá kvůli vydání, **3. 9. vrácená** kvůli dovývoji) - **ukáže se i zákazníkům,
-jakmile se vydá nová verze**, takže před vydáním se musí znovu rozhodnout. Skrývá se na **dvou
-místech**: `Parameter Released` v `LinkovyJrAd.cls` a konstanta ve `CreateSampleTemplate` (jinak
-skrytí obejde samotný start aplikace); vazbu hlídá `SkrytaAgendaTests`.
-⚠️ **`Released` je serverová hodnota, ne v exe** - nasazení `.cls` na dev změní nabídku agend i těm,
-kdo mají starší exe. Městská zůstává skrytá, dokud neprojde porovnáním se starým modulem.
+**Stav: linkový JŘ z AD dat je od 22. 9. vydaný zákazníkům** a je výchozí agendou pro novou
+šablonu. Zbývá `#8785`, jeden výtisk k ověření a věci, u kterých je první krok dotaz ven. Sloučení
+dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku bez přírůstku pro uživatele
+(rozhodnutí Jan 31. 8.). Městská varianta zůstává skrytá, dokud neprojde porovnáním se starým
+modulem; jak se agenda skrývá, popisuje komentář u `Released` v `LinkovyJrAd.cls`.
 
 **Když přijde na řadu MHD** (dnes se neřeší, rozhodnutí Jan 28. 8.), platí čtyři věci, které se z kódu
 nepoznají:
@@ -45,7 +38,7 @@ nepoznají:
   zapsat příznak**, i kdyby přibyl parametr - a bez toho půjde část voleb udělat jen naoko.
 
 📄 **Zkušební vzor pro celý track: linka 940 Kroměříž-Přerov (IDZK)** - reálné zadání zákazníka,
-které starý modul nedokázal vyrobit. Až bude šablona stát, ověřuj proti němu.
+které starý modul nedokázal vyrobit. Novou práci na linkovém JŘ ověřuj proti němu.
 
 🧭 **Jak se nakládá s nastavením starého modulu:** *to, jak je výstup složený, patří do návrháře;
 z nastavení u linky se bere jen to, co mění data.* Sporné případy řeš směrem do šablony. Rozhodnutí
@@ -55,21 +48,15 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Připravené k práci
 
-- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED, dřív `C8`). Starý modul to odmítl jako
-  nemožné, náš engine na to má lepší pozici. **Poptávka doložená** (Jan 14. 9.): zákazníci chtějí
-  vejít na jednu stranu, kdykoli to jde, a jeden si výslovně řekl o agresivní zmenšování poznámek.
-  ⚠️ Liší se od `B151` rozsahem: ten zmenšuje jen tabulku, aby se nedělila, tohle sahá na **celou
-  sestavu včetně poznámek** - potřebuje vlastní strop (90 % nestačí) a vlastní volbu, protože
-  agresivní zmenšování nemůže být tiché. Podklad [`§14`](linkovy-knizni-jr-implementace-analyza.md).
+- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED) - 🔧 **ladí se na našich datech** (týden
+  od 23. 9.). Parametr „Počet stran" (Automaticky / 1 / 2) funguje: bez mezer → poznámky 90-60 % →
+  tabulka i se šířkami 97-80 %, nevejde-li se, plná velikost (changelog 2026-09-23 (3)). Zbývá:
+  hláška o nesplněném cíli, rozhodnout meze (v šabloně × pevné), „Automaticky" až s polem u linky.
 
 ### Čeká na odpověď zvenku
 
 Ani u jedné není první krok kód. Podklady k tiketům drží
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
-
-- **`#9088` bod 3: ručně zadaný „název směru" u linky** [S] (TRANSDEV, dřív `C9`; chtěné i pro
-  vývěsky). ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**. Náš díl
-  je malý (pole pustit schématem a nabídnout v šabloně), ale bez toho pole nemá kam sáhnout.
 
 - **`#9417` Filtrování dopravců v záhlaví** [M] (KORID, dřív `B102`). Přetečení hlavičky pod
   tabulku je vyřešené (záhlaví má vlastní sekci), zbývá volba, kteří dopravci se tisknou.
@@ -80,43 +67,15 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
   druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
 
-### Hotové, čeká zavření na helpdesku
-
-⚠️ **Zavřít se má až s vydáním** (rozhodnutí Jan 15. 9.) - zákazník to musí mít ve verzi, než mu
-napíšeme, že je to hotové. Po zavření **z roadmapy pryč**; tady visí jen proto, aby to bylo
-na jednom místě.
-
-| Tiket | Co dostal |
-|---|---|
-| **#8372 vkládat prázdné sloupce** (KORID) | Volba **„Dorovnat prázdnými sloupci"** u tabulky linky. Dorovnává i **levou** stranu, kterou tiket nežádal - u obousměrné sestavy bez ní zůstala díra |
-| **#8576 tarifní zóny do sloupců** (KU HK) | Volba **„Každá zóna ve vlastním sloupci"** (výchozí vypnutá, aby se nezměnily hotové sestavy) |
-| **#12843 zpětná vazba TRANSDEV 16. 9.** (zastávkové) | Šest bodů z verze z 15. 9. hotových - mizející nastavení, slučování variant, záhlaví odjezdů po sloupcích, velikost záhlaví u poznámek, pevný rastr minut, pořadí stránek v exportu. Detail v archivu |
-| **#11300 prázdný přípojný řádek** (KORID) | Výtisk hotový 15. 9. - `CB_CSADAD 1 / 0330510` směr Zpět, strana 3 je list jen s pracovními dny bez jediného přípojného řádku. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md) |
-
-### K ověření na reálné sestavě
-
-Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
-takže nejde o práci, ale o doklad.
-
-| Tiket | Stav |
-|---|---|
-| **#11373 poznámky vedle tabulky** (KAD) | Umíme to (prvek má volnou pozici, od `B117` i u linkových). Zbývá **výtisk** - jde o to, jestli je legenda v úzkém sloupci čitelná |
-
-Naše vlastní kontrolní body (pořadí sloupců, písmena ze zóny, ukázková data v náhledu) jsou
-vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
-
 ---
 
 ## 📥 Backlog
 
 ### Ostatní
 
-- **`B176` Jedna vodorovná čára v tabulce spojů vypadá při zvětšení silnější** [S] (nález Jan 22. 9.,
-  linka 330530 nad přípojnými řádky u Velešína). V PDF i při 100 % je to v pořádku, projeví se to
-  až zvětšením náhledu. Vyloučeno měřením: dvojí kreslení téže čáry, tloušťka i barva (všechny
-  1 px, shodný odstín v PNG i přes celý náhled), srovnání na pixel a čára úseku z trasy - ta na
-  téhle lince není u žádné zastávky. Zbývá prohlédnout, jak se plátno náhledu škáluje na obrazovku.
-  Souvislost: commity 33a1758d, 36958359, 11303c6b.
+- **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
+  JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
+  (zákazníkovi odpovězeno 23. 9.). Náš díl: pustit pole schématem obou agend a nabídnout v šabloně.
 
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí

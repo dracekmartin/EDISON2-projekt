@@ -65,22 +65,31 @@ public class TucneZastavkyDleTrasyTests
 
     /// <summary>
     /// ⚠️ Má-li značku aspoň jedna zastávka linky, odsadí se **všechny** názvy stejně, takže stojí
-    /// ve svislici - tak to dělá starý tisk (rozhodnutí Jan 22. 9.). Bez toho vypadal sloupec
-    /// rozházeně, protože každý druhý název začínal o znak vedle.
+    /// ve svislici - tak to dělá starý tisk (rozhodnutí Jan 22. 9.). Odsazení je změřená šířka
+    /// „x ", ne mezery: mezera je užší než „x" a názvy bez značky začínaly o kus vlevo (23. 9.).
     /// </summary>
     [Fact]
-    public void SeZnackouNaLinceSeOdsadiIZastavkyBezNi()
+    public void SeZnackouNaLinceZacinajiVsechnyNazvyNaStejnemMiste()
     {
-        Assert.Equal("x Kroměříž", LineTableElement.NazevSeZnackami(["x"], "Kroměříž", 1));
-        Assert.Equal("  Hulín", LineTableElement.NazevSeZnackami(["T"], "Hulín", 1));
+        using var font = new SKFont(SKTypeface.FromFamilyName("Arial"), 40f);
+        string[] linka = ["x"];
+
+        float bezZnacky = LineTableElement.DorovnaniNazvuMm("", linka, font, MmToPx);
+        float seZnackou = LineTableElement.DorovnaniNazvuMm("x", linka, font, MmToPx);
+
+        Assert.Equal(font.MeasureText("x ") / MmToPx, bezZnacky, 3);
+        Assert.Equal(0f, seZnackou);
     }
 
     /// <summary>Linka, kde značku nemá nikdo, zůstane bez odsazení - jinak by se sloupec
-    /// zbytečně rozšířil o znak, který se nikdy nevytiskne.</summary>
+    /// zbytečně posunul o znak, který se nikdy nevytiskne.</summary>
     [Fact]
     public void BezZnacekNaLinceSeNeodsazuje()
     {
+        using var font = new SKFont(SKTypeface.FromFamilyName("Arial"), 40f);
+
         Assert.Equal("Kroměříž", LineTableElement.NazevSeZnackami(["T"], "Kroměříž"));
+        Assert.Equal(0f, LineTableElement.DorovnaniNazvuMm("", [], font, MmToPx));
     }
 
     // ── Tučné zvýraznění ────────────────────────────────────────────────────

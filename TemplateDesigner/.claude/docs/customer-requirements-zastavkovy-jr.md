@@ -47,22 +47,13 @@ helpdesku k 15. 9.
 > [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) §14
 > (projito 2026-08-19, navázané na vlny `L1`-`L8` roadmapy). Sem se to nekopíruje.
 
-✅ **Hotové, čekají jen na odpověď a zavření** (prověřeno proti helpdesku 15. 9.):
-
-- **#8372** (KORID) - „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).
-  Volba **„Dorovnat prázdnými sloupci"** u tabulky linky; dorovnává se i **levá** strana, kterou
-  tiket nežádal, ale u obousměrné sestavy bez ní zůstala díra.
-- **#8576** (KU HK) - tarifní zóny do sloupců + více zón u hraniční zastávky. Volba **„Každá zóna
-  ve vlastním sloupci"** u seznamu zastávek, výchozí vypnutá.
-- **#11300** (KORID) - prázdné přípojové řádky. Výtisk hotový 15. 9., viz roadmapa § K ověření.
 
 🟡 **Čeká práce nebo odpověď:**
 
 - **#7487** (KORID) - NZ + týdenní platnost 4 na řádek.
 - **#8360** (KU HK) - přípojové řádky: kurzíva / barva / velikost písma, aby čas přípoje nesplýval s časem spoje.
 - **#9417** (KORID) - dopravci v záhlaví souhrnného JŘ jen pro spoje na dané stránce (velké A4 linky).
-- **#11373** (KAD) - negativní značky a poznámky **vedle** tabulky s časy. Umíme; zbývá výtisk.
-- **#9088** (TRANSDEV) - linkový cestovný poriadok · **#9283** (KOVED) - sdružený JŘ IDZK.
+- **#9283** (KOVED) - sdružený JŘ IDZK.
 - **#7937** (TRANSDEV) - odsazení zastávky. Půlku pokryje sloupec, druhá (odsazení per tarifní
   pásmo) čeká na kolegy z jízdních řádů - detail v tabulce §TR.
 - **#13070** (BBSK) - vypadá jako linkový, ale předloha je **odjezdová relace**; patří tracku

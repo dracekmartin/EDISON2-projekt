@@ -59,10 +59,11 @@ Parameter Variant As %String = "AD";
 
 Parameter VariantLabel As %String = "AD (linková doprava)";
 
-/// ⚠️ **Zveřejněná od 24. 8., 1. 9. skrytá kvůli vydání, 3. 9. vrácená** (rozhodnutí Jan) - pokračuje
-/// se v dovývoji linkových jízdních řádů, takže je agenda potřeba v nabídce. **Před dalším vydáním
-/// se musí znovu rozhodnout, jestli má jít k zákazníkům**: `Released = 1` znamená, že se ukáže všem,
-/// jakmile se vydá nová verze.
+/// Vydaná zákazníkům 22. 9. (před tím 24. 8. zveřejněná, 1. 9. skrytá, 3. 9. vrácená kvůli dovývoji).
+///
+/// ⚠️ **Skrývá se na dvou místech**: tady a v konstantě ve `CreateSampleTemplate` (jinak skrytí
+/// obejde samotný start aplikace); vazbu hlídá `SkrytaAgendaTests`. **`Released` je serverová
+/// hodnota, ne v exe** - nasazení třídy změní nabídku agend i těm, kdo mají starší exe.
 ///
 /// ⚠️ **Skrytí neznepřístupní hotové šablony** (platí pro obě strany přepínače). Výběr agendy
 /// nezveřejněnou agendu nenabízí, ale **aktuální agendu šablony ukáže vždy**, a v otevírání
@@ -346,6 +347,22 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvT.serverSide   = 1
     s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
 
+    // Počet stran (#8785): sazba zmenší nejdřív poznámky, pak tabulku, aby se sestava vešla.
+    // Řeší ho návrhář při sazbě, ne server - proto bez `serverSide`. „Automaticky" zatím nedělá
+    // nic: u linky pole zatím není (rozhodnutí Jan 23. 9., ladí se na vlastních datech).
+    s pStr = ##class(%DynamicObject).%New()
+    s pStr.name         = "POCET_STRAN_SESTAVY"
+    s pStr.label        = "Počet stran"
+    s pStr.type         = "enum"
+    s pStr.group        = "Obecné"
+    s pStr.defaultValue = "Automaticky (dle linky)"
+    s pStr.description  = "Na kolik stran se má vejít každý směr linky. Když se nevejde, zmenší se nejdřív poznámky, pak tabulka. Automaticky = podle nastavení u linky (zatím bez omezení)."
+    s optsStr = ##class(%DynamicArray).%New()
+    d optsStr.%Push("Automaticky (dle linky)")
+    d optsStr.%Push("1 strana")
+    d optsStr.%Push("2 strany")
+    s pStr.options = optsStr
+
     // ── pořadí, v jakém je uvidí uživatel ────────────────────────────────────────
     // Skupiny se v tabu Parametry řadí podle **prvního výskytu** v tomhle poli, ne abecedně, takže
     // se sem pushuje najednou a v pořadí, které má platit. „Obecné" je první schválně - je to
@@ -356,6 +373,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(pTvar)     // Obecné
     d arr.%Push(pMhd)
     d arr.%Push(pObou)
+    d arr.%Push(pStr)
     d arr.%Push(p)         // Tabulka linky - dělení spojů je nejdůležitější volba agendy
     d arr.%Push(pTc)
     d arr.%Push(pBez)
@@ -556,9 +574,16 @@ ClassMethod DeleniZParametru(label As %String) As %Integer
     q $case(label, "Bez rozlišení":0, "Pracovní dny / víkend+svátky":1, :2)
 }
 
-/// Jazyková varianta textových číselníků (NCOME/STALCOME/WinMHD): "CZ", při SK instalaci "*SK".
+/// Jazyková varianta textových číselníků (NCOME/STALCOME/WinMHD): "CZ" nebo "*SK".
+///
+/// ⚠️ **Rozhoduje jazyk šablony** (`JAZYK` z klienta), stejně jako u zastávkového JŘ (#12843):
+/// firma může mít vyplněné obě varianty a dřív tu vyhrála čeština vždy, když existovala - slovenská
+/// šablona na Nitře tiskla české poznámky (#9088, 23. 9.). Bez jazyka šablony zůstává dřívější volba.
 ClassMethod Jazyk(dataDB As %String) As %String
 {
+    s kod = $zcvt($p($g(^||ML("IN","JAZYK")),"-",1),"L")
+    i (kod = "sk") && $d(^[dataDB]JRSET("NCOME","*SK")) q "*SK"
+    i (kod = "cs") && $d(^[dataDB]JRSET("NCOME","CZ")) q "CZ"
     i $g(^[dataDB]JRSET("NCOME","CZ","X")) '= "" q "CZ"
     i $d(^[dataDB]JRSET("NCOME","*SK")) q "*SK"
     q "CZ"
@@ -1387,18 +1412,23 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                 i (typZobrazeni=0) || (typZobrazeni=2) {
                     // AVL abeceda: A=autobus, V=vlak, L=loď (legacy $tr("AVL","ALD") před GSId)
                     i omzId = 31 {
-                        // „spoje 25 linky 330510" / vlak: „vlaku 20880" (bez čísla spoje); [ z SMĚR]
-                        s slovoAvl = $case(avl, "V":"vlaku", "L":"lodě", :"linky")
-                        s f31 = $s(+spoj2:"spoje "_(+spoj2)_" ", 1:"")_slovoAvl_" "_..OznaceniLinky(linka2)
-                        i kam '= "" s f31 = f31_" z "_kam
+                        // „spoje 25 linky 330510" / vlak: „vlaku 20880" (bez čísla spoje); [ z SMĚR].
+                        // NCOME 31 kus 4 = „vlaku:linky:lodě z" - slova V:A:L a předložka za mezerou.
+                        s kus4 = ..TextNavaznosti(dataDB, 31, 4)
+                        s slovoAvl = $p($p(kus4," ",1), ":", $case(avl, "V":1, "L":3, :2))
+                        s predlozka = $p(kus4, " ", 2, 99)
+                        // „spoje" (2. pád) v číselníku není - slovensky „spoja"
+                        s slovoSpoje = $s(..Jazyk(dataDB) = "*SK":"spoja", 1:"spoje")
+                        s f31 = $s(+spoj2:slovoSpoje_" "_(+spoj2)_" ", 1:"")_slovoAvl_" "_..OznaceniLinky(linka2)
+                        i kam '= "" s f31 = f31_" "_predlozka_" "_kam
                         s fraze = fraze_$s(fraze="":"", 1:",")_f31
                     }
                     else {
-                        // „spoj 24 linky 330530 do X" / vlak: „vlak 20875 do X" (NCOME 32 piece 6)
-                        i avl = "V" { s f32 = "vlak "_..OznaceniLinky(linka2) }
-                        elseif avl = "L" { s f32 = "lodní doprava "_..OznaceniLinky(linka2) }
-                        else { s f32 = "spoj "_(+spoj2)_" linky "_..OznaceniLinky(linka2) }
-                        i kam '= "" s f32 = f32_" do "_kam
+                        // „spoj 24 linky 330530 do X" / vlak: „vlak 20875 do X" (NCOME 32 kusy 3-7)
+                        i avl = "V" { s f32 = ..TextNavaznosti(dataDB, 32, 6)_" "_..OznaceniLinky(linka2) }
+                        elseif avl = "L" { s f32 = ..TextNavaznosti(dataDB, 32, 7)_" "_..OznaceniLinky(linka2) }
+                        else { s f32 = ..TextNavaznosti(dataDB, 32, 3)_" "_(+spoj2)_" "_..TextNavaznosti(dataDB, 32, 4)_" "_..OznaceniLinky(linka2) }
+                        i kam '= "" s f32 = f32_" "_..TextNavaznosti(dataDB, 32, 5)_" "_kam
                         s fraze = fraze_$s(fraze="":"", 1:", ")_f32
                     }
                 }
@@ -1407,13 +1437,16 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
             // (spoj ve víc skupinách dnů se zpracovává vícekrát)
             i fraze '= "" {
                 s nazevTc = ..NazevZastavkyPoradi(dataDB, sku, lin, tc)
+                // Slova vět jsou z číselníku NCOME 31/32 v jazyce šablony, jako ve starém tisku -
+                // do 23. 9. tu byla česky natvrdo a slovenská šablona je tiskla česky (#9088).
                 i omzId = 31 {
-                    s txt = "spoj "_(+sp)_" vyčká v zastávce "_nazevTc_" příjezdu "_fraze
-                    i +$p(sekce,"#",2) s txt = txt_" nejvýše "_(+$p(sekce,"#",2))_" minut"
+                    s txt = ..TextNavaznosti(dataDB, 31, 1)_" "_(+sp)_" "_..TextNavaznosti(dataDB, 31, 2)_" "_nazevTc
+                        _" "_..TextNavaznosti(dataDB, 31, 3)_" "_fraze
+                    i +$p(sekce,"#",2) s txt = txt_" "_..TextNavaznosti(dataDB, 31, 5)_" "_(+$p(sekce,"#",2))_" "_..TextNavaznosti(dataDB, 31, 6)
                     s bucket = 2
                 }
                 else {
-                    s txt = "na spoj "_(+sp)_" navazuje v zastávce "_nazevTc_" "_fraze
+                    s txt = ..TextNavaznosti(dataDB, 32, 1)_" "_(+sp)_" "_..TextNavaznosti(dataDB, 32, 2)_" "_nazevTc_" "_fraze
                     s bucket = 3
                 }
                 i '$d(pripojePoznamky("seen", txt)) {
@@ -2163,6 +2196,18 @@ ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 /// („0330510" → „330510"), u vlaku ale bývá **nečíselné** („R 627") - a to se převodem na číslo
 /// scvrklo na nulu, takže v tisku stálo „vyčká příjezdu vlaku 0".
 /// ⚠️ Našlo to rozšíření porovnávací sady 24. 8.; na původních čtyřech linkách vlakový přípoj nebyl.
+/// Kus věty návaznosti z číselníku `^JRSET("NCOME",jazyk,31|32)` (kusy oddělené `~`).
+/// Bez záznamu platí česká slova, jak byla v kódu do 23. 9.
+/// 31 = spoj~vyčká v zastávce~příjezdu~vlaku:linky:lodě z~nejvýše~minut,
+/// 32 = na spoj~navazuje v zastávce~spoj~linky~do~vlak~lodní doprava.
+ClassMethod TextNavaznosti(dataDB As %String, omz As %Integer, kus As %Integer) As %String
+{
+    s vychozi = $s(omz = 31:"spoj~vyčká v zastávce~příjezdu~vlaku:linky:lodě z~nejvýše~minut",
+        1:"na spoj~navazuje v zastávce~spoj~linky~do~vlak~lodní doprava")
+    s text = $p($g(^[dataDB]JRSET("NCOME", ..Jazyk(dataDB), omz)), "~", kus)
+    q $s(text '= "":text, 1:$p(vychozi, "~", kus))
+}
+
 ClassMethod OznaceniLinky(hodnota As %String) As %String
 {
     i $isvalidnum(hodnota) q +hodnota

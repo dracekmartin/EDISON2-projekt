@@ -31,6 +31,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Řádky" ───────────────────────────────────────────────
         d form.AddGroup("rows", "Řádky")
         d form.AddBool("ShowGroupHeaders", "Nadpisy skupin dnů", 1)
+        d form.AddBool("ShowTripNumbers", "Čísla spojů", 1)
         d form.AddBool("ShowPlatnostRow", "Řádek platnosti", 1)
         d form.AddBool("ShowNzRow", "Řádek negativních značek", 1)
         d form.AddBool("TurnusyKeSpojum", "Turnusy ke spojům", 0)

@@ -1,5 +1,36 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Tikety odbavené po vydání 22. 9. (23. 9. 2026)
+
+- **#8576** (KU HK) - tarifní zóny do sloupců: volba **„Každá zóna ve vlastním sloupci"** u tabulky
+  linky, výchozí vypnutá. Vyzkoušeno na ZL_KOVED 823955 (Kroměříž má zóny 420,201), odpověď poslal Jan.
+- **#12843** (TRANSDEV) - šest bodů zpětné vazby z 16. 9. hotových (mizející nastavení, slučování
+  variant, záhlaví odjezdů po sloupcích, velikost záhlaví u poznámek, pevný rastr minut, pořadí
+  stránek v exportu); odbavil Jan.
+- **#11300** (KORID) - prázdný přípojný řádek: řádek vzniká jen pro přípoj spojů téže tabulky.
+  Ukázáno na CB_CSADAD 0330510 směr Zpět (víkendová tabulka nese jen „směr Horní Planá"), odpověď
+  poslal Jan. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md).
+- **#8372** (KORID) - „vkládat prázdné sloupce" bez druhé šablony: Jan poslal obě varianty
+  (s dorovnáním a bez) na 0330517 a 0330510 k posouzení. Ve starém Win tisku byla volba v šabloně
+  (sekce Data linky), u knižního a vývěsního u linky. Kdyby chtěl krátké linky bez dorovnání
+  a dlouhé s ním jednou šablonou: volba *Jen když se tabulka dělí na části* (odhad S).
+- **#11373** (KAD) - poznámky a negativní značky vedle tabulky: šablona
+  `templates/linkovy-jr-ad-poznamky-vedle-a4.json` (A4 naležato, tabulka 195 mm vlevo, Poznámky
+  87 mm vpravo v jedné sekci), odvozená z postskriptové A5. Jan ji uložil a poslal zákazníkovi.
+  Neověřeno: zlom stránky u linky delší než strana může Poznámky přetnout.
+- **#9088** (TRANSDEV, slovenská instalace) - osm bodů prošlo proti starému Win tisku: slévání stran
+  se nás netýká, směrová zastávka podle směru i jako název MHD, volba „Čísla spojů", turnusy,
+  přípojné řádky s číslem linky, slovenské poznámky i věty návazností podle jazyka šablony, pole
+  `{POKRACOVANI}` místo šedého řádku. Detail changelog 2026-09-23 (2). Odpověď poslal Jan; zbylý
+  název směru je v backlogu.
+
+## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
+
+Hledaná čára nebyla čára mřížky, ale **úsečka rozdvojené zastávky** mezi dvěma zónami 208. Měla
+pevných 0,2 mm, tedy dvojnásobek mřížky; nově má tloušťku mřížky. 22. 9. se hledalo mezi čarami
+mřížky a řádků, proto ji měření nenašlo. Při hledání se opravilo i to, že náhled roztahoval
+bitmapu na necelý rozměr (převzorkování rozmazávalo čáry).
+
 ## `B173` Sdílené komponenty - předáno kolegovi (22. 9. 2026)
 
 Sbírka čtyř návrhů do `EDControls` (hlavička „Položka | Hodnota" v EDInputFormu, zrušit skákání
