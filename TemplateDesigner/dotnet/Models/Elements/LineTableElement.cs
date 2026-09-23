@@ -438,6 +438,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// („N" jen nástup, „G" paragraf…). Prázdný seznam = linka žádnou nemá.</summary>
         public List<string> Znacky = [];
         public List<LinePripojData> Pripoje = [];
+        /// <summary>Jména dopravců spoje (týž tvar jako v <c>POPIS_DOPRAVCE</c>) - pro dopravce
+        /// jen za spoje na stránce (#9417).</summary>
+        public List<string> Dopravci = [];
     }
 
     public sealed class LineSkupinaData
@@ -508,6 +511,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Casy = ParseStringArray(row.GetValue("CASY")),
             Znacky = ParseStringArray(row.GetValue("ZNACKY")),
             Pripoje = ParsePripoje(row.GetValue("PRIPOJE")),
+            Dopravci = ParseStringArray(row.GetValue("DOPRAVCI")),
         })];
 
         RozdelPodleSmeru();
@@ -1855,11 +1859,24 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public IReadOnlyCollection<string> ZnackyVUseku(DataContext? data, float odMm, float doMm)
     {
+        var znacky = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var spoj in SpojeVUseku(data, odMm, doMm))
+        {
+            if (spoj.Nz.Length > 0) znacky.Add(spoj.Nz);
+            foreach (var p in spoj.Platnost) if (p.Length > 0) znacky.Add(p);
+        }
+        return znacky;
+    }
+
+    /// <summary>Spoje částí tabulky, které zasahují do úseku prvku <paramref name="odMm"/>-<paramref name="doMm"/>
+    /// - tedy spoje, které jsou na téhle stránce vidět.</summary>
+    internal List<LineTripData> SpojeVUseku(DataContext? data, float odMm, float doMm)
+    {
         if (data is null) return [];
         EnsureParsed(data);
         if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return [];
 
-        var znacky = new HashSet<string>(StringComparer.Ordinal);
+        var spoje = new List<LineTripData>();
         float zacatekBloku = 0f;
         foreach (var blok in SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!)))
         {
@@ -1868,17 +1885,73 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             float konecBloku = zacatekBloku + hlava.Sum() + radky.Sum(r => r.VyskaMm);
 
             if (konecBloku > odMm + 0.01f && zacatekBloku < doMm - 0.01f)
-            {
-                foreach (var spoj in hlavni.Concat(zrcadlene ?? []))
-                {
-                    if (spoj.Nz.Length > 0) znacky.Add(spoj.Nz);
-                    foreach (var p in spoj.Platnost) if (p.Length > 0) znacky.Add(p);
-                }
-            }
+                spoje.AddRange(hlavni.Concat(zrcadlene ?? []));
             zacatekBloku = konecBloku + MezeraMeziBlokyMm;
         }
-        return znacky;
+        return spoje;
     }
+
+    /// <summary>
+    /// <c>POPIS_DOPRAVCE</c> jen za spoje na stránce (#9417): víc dopravců = „Název (spoje 1-4, 8)",
+    /// jeden = jen název. Null = spoje dopravce nenesou (starší server), text zůstává celý.
+    /// </summary>
+    /// <remarks>
+    /// Řady spojů se slučují podle pořadí <b>na stránce</b>: „1-4" říká, že všechny spoje stránky
+    /// mezi 1 a 4 jede tenhle dopravce. Počítat po jedné by na jednosměrné stránce (lichá čísla)
+    /// nesloučilo nic. Starý tisk vypisoval spoje za celou linku a u souhrnného JŘ text přetekl
+    /// pod tabulku - proto zákazník chtěl jen stránku.
+    /// </remarks>
+    internal static string? PopisDopravcuStranky(IReadOnlyList<LineTripData> spoje)
+    {
+        if (spoje.Count == 0 || spoje.All(s => s.Dopravci.Count == 0)) return null;
+
+        var poradi = spoje.Select(s => s.CisloSpoje).Distinct()
+            .OrderBy(c => int.TryParse(c, out int n) ? n : int.MaxValue).ThenBy(c => c, StringComparer.Ordinal)
+            .Select((c, i) => (c, i)).ToDictionary(x => x.c, x => x.i);
+        var poDopravcich = new List<(string Nazev, SortedSet<int> Pozice)>();
+        foreach (var spoj in spoje)
+            foreach (var nazev in spoj.Dopravci)
+            {
+                int k = poDopravcich.FindIndex(d => d.Nazev == nazev);
+                if (k < 0) { poDopravcich.Add((nazev, [])); k = poDopravcich.Count - 1; }
+                poDopravcich[k].Pozice.Add(poradi[spoj.CisloSpoje]);
+            }
+
+        if (poDopravcich.Count == 1) return poDopravcich[0].Nazev;
+        var cisla = poradi.OrderBy(x => x.Value).Select(x => x.Key).ToList();
+        return string.Join(", ", poDopravcich.Select(d => $"{d.Nazev} (spoje {Rady(d.Pozice, cisla)})"));
+    }
+
+    /// <summary>Jen názvy dopravců bez čísel spojů - pro list bez spojů (přetečené poznámky).
+    /// Null = spoje dopravce nenesou.</summary>
+    internal static string? JmenaDopravcu(IReadOnlyList<LineTripData> spoje)
+    {
+        var jmena = spoje.SelectMany(s => s.Dopravci).Distinct().ToList();
+        return jmena.Count == 0 ? null : string.Join(", ", jmena);
+    }
+
+    /// <remarks>
+    /// Do řady jdou jen spoje, které jsou na stránce vedle sebe <b>a zároveň</b> se číslem liší
+    /// nejvýš o 2 (jeden směr má lichá, druhý sudá čísla). Bez druhé podmínky vyšlo „15-105"
+    /// pro spoje 15 a 105 a čtenář to četl jako všechny spoje mezi nimi (nález Jan 23. 9.).
+    /// </remarks>
+    private static string Rady(SortedSet<int> pozice, List<string> cisla)
+    {
+        var casti = new List<string>();
+        int? od = null, posledni = null;
+        foreach (int p in pozice)
+        {
+            if (od is null) { od = posledni = p; continue; }
+            if (p == posledni + 1 && NavazujiCislem(cisla[posledni.Value], cisla[p])) { posledni = p; continue; }
+            casti.Add(od == posledni ? cisla[od.Value] : $"{cisla[od.Value]}-{cisla[posledni!.Value]}");
+            od = posledni = p;
+        }
+        if (od is not null) casti.Add(od == posledni ? cisla[od.Value] : $"{cisla[od.Value]}-{cisla[posledni!.Value]}");
+        return string.Join(", ", casti);
+    }
+
+    private static bool NavazujiCislem(string predchozi, string dalsi) =>
+        int.TryParse(predchozi, out int a) && int.TryParse(dalsi, out int b) && b - a is > 0 and <= 2;
 
     /// <summary>Pokračovací stránka zopakuje hlavu bloku - pás skupin dnů, čísla spojů,
     /// platnost a negativní značky. Bez ní nejde poznat, který sloupec je který spoj.</summary>

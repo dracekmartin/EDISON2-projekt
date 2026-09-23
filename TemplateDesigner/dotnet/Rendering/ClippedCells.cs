@@ -25,15 +25,33 @@ public sealed class ClippedCells
         _pocty[nazev] = _pocty.TryGetValue(nazev, out int n) ? n + 1 : 1;
     }
 
+    private readonly HashSet<string> _texty = [];
+
+    /// <summary>
+    /// Ohlásí textový prvek, který se nevešel ani po zmenšení písma. Volá <c>TextElement</c>.
+    /// </summary>
+    /// <remarks>
+    /// Kreslí se s daty té stránky sazby, takže hláška sedí i na pole, které sazba plní až po
+    /// rozvržení (dopravci za spoje na stránce), a jde se změnou výšky prvku, ne až s dalším
+    /// načtením dat.
+    /// </remarks>
+    public void ReportText() => _texty.Add(CurrentElement ?? "Text");
+
     /// <summary>Text do stavového řádku, nebo null když se všechno vešlo.</summary>
     public string? Summarize()
     {
-        if (_pocty.Count == 0) return null;
+        var texty = _texty.Order().Select(n =>
+            $"{n}: text se nevejde ani po zmenšení písma, ořízl se - zvětšete prvek nebo nechte výšku prázdnou");
+        if (_pocty.Count == 0)
+        {
+            var jenTexty = texty.ToList();
+            return jenTexty.Count == 0 ? null : string.Join("; ", jenTexty);
+        }
         // Počet buněk, ne seznam textů: v tabulce se ořízne celý sloupec naráz a výčet čtyřiceti
         // názvů zastávek by hlášku roztáhl přes celý řádek.
         var casti = _pocty.OrderBy(p => p.Key).Select(p => p.Value == 1
             ? $"{p.Key}: obsah jedné buňky je na zmenšení moc dlouhý, ořízl se"
             : $"{p.Key}: obsah {p.Value} buněk je na zmenšení moc dlouhý, ořízl se");
-        return string.Join("; ", casti);
+        return string.Join("; ", casti.Concat(texty));
     }
 }

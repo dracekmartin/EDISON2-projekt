@@ -16,7 +16,7 @@ public class SkiaHeightCalculator : IElementHeightCalculator
 
         return element switch
         {
-            TextElement te => CalculateTextElementHeight(te, data),
+            TextElement te => CalculateTextElementHeight(te, availableWidthMm, data),
             TableElement table => table.CalculateHeightFromData(data),
             DynamicTableElement dynTable => dynTable.CalculateHeightFromData(data),
             StopListElement stopList => stopList.CalculateHeightFromData(data),
@@ -27,12 +27,12 @@ public class SkiaHeightCalculator : IElementHeightCalculator
         };
     }
 
-    private static float CalculateTextElementHeight(TextElement te, DataContext? data)
+    private static float CalculateTextElementHeight(TextElement te, float availableWidthMm, DataContext? data)
     {
         if (!te.WordWrap || te.Width <= 0)
             return te.EffectiveDesignerHeight;
 
         var resolvedText = data?.ResolvePlaceholders(te.Text) ?? te.Text;
-        return te.CalculateTextHeight(resolvedText);
+        return te.CalculateTextHeight(resolvedText, te.SirkaTextuMm(availableWidthMm));
     }
 }

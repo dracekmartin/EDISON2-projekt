@@ -43,8 +43,10 @@ public class TextElement : TemplateElement
 
         var rs = Style.Resolve();
 
+        float sirkaMm = SirkaTextuMm(ctx.SirkaSekceMm);
+
         // Dynamická výška: Height ?? dopočítaná z textu (pokud WordWrap)
-        float heightMm = Height ?? (WordWrap ? CalculateTextHeight(resolvedText) : EffectiveDesignerHeight);
+        float heightMm = Height ?? (WordWrap ? CalculateTextHeight(resolvedText, sirkaMm) : EffectiveDesignerHeight);
         var rect = ctx.ToCanvasRect(X, Y, Width, heightMm);
 
         // Pozadí (pokud není průhledné). Ořez na tvar rohů řeší render loop obecně (ApplyCornerClip).
@@ -62,8 +64,10 @@ public class TextElement : TemplateElement
         // se škála počítala z jiné délky, než jaká se vytiskne - a font je už omezený na 10 pt.
         float effectiveFontSize = ctx.Data is null
             ? Math.Min(rs.FontSize, 10f)
-            : rs.FontSize * ComputeShrinkScale(resolvedText);
+            : rs.FontSize * ComputeShrinkScale(resolvedText, sirkaMm);
         float fontSizePx = ctx.Px(effectiveFontSize * ResolvedTextStyle.PtToMm);
+        if (ctx.Data is not null && ctx.ClippedCells is { } oriznute && ContentOverflows(ctx.Data, sirkaMm))
+            oriznute.ReportText();
 
         var typeface = FontResolver.Resolve(rs.FontFamily, rs.ToSKFontStyle());
         using var font = new SKFont(typeface, fontSizePx);
@@ -74,8 +78,8 @@ public class TextElement : TemplateElement
 
         if (WordWrap)
         {
-            float widthPx = ctx.Px(Width);
-            var lines = TextWrapHelper.WrapText(resolvedText, font, widthPx);
+            float widthPx = ctx.Px(sirkaMm);
+            var lines = TextWrapHelper.WrapText(resolvedText, font, widthPx - 2f * OdsazeniPx);
             float lineHeightPx = fontSizePx * rs.LineSpacing;
 
             // Vertikální zarovnání bloku řádků
@@ -95,7 +99,7 @@ public class TextElement : TemplateElement
                 {
                     TextHorizontalAlignment.Center => rect.Left + (widthPx - lineWidth) / 2,
                     TextHorizontalAlignment.Right => rect.Right - lineWidth,
-                    _ => rect.Left + 1f
+                    _ => rect.Left + OdsazeniPx
                 };
                 ctx.Canvas.DrawText(line, xPx, yPx, font, paint);
                 rs.DrawTextDecorations(ctx.Canvas, xPx, yPx, lineWidth, font, paint);
@@ -109,8 +113,8 @@ public class TextElement : TemplateElement
             float xPx = rs.HAlign switch
             {
                 TextHorizontalAlignment.Center => rect.Left + (rect.Width - textWidth) / 2,
-                TextHorizontalAlignment.Right => rect.Right - textWidth - 1f,
-                _ => rect.Left + 1f
+                TextHorizontalAlignment.Right => rect.Right - textWidth - OdsazeniPx,
+                _ => rect.Left + OdsazeniPx
             };
             float yPx = rs.VAlign switch
             {
@@ -129,7 +133,7 @@ public class TextElement : TemplateElement
     public override float RenderedHeightMm(RenderContext ctx)
     {
         var resolved = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
-        return Height ?? (WordWrap ? CalculateTextHeight(resolved) : EffectiveDesignerHeight);
+        return Height ?? (WordWrap ? CalculateTextHeight(resolved, SirkaTextuMm(ctx.SirkaSekceMm)) : EffectiveDesignerHeight);
     }
 
     public override void ApplyScale(float scale)
@@ -175,6 +179,24 @@ public class TextElement : TemplateElement
         return clone;
     }
 
+    /// <summary>
+    /// Odsazení textu od hrany prvku. Měření šířky ho musí odečíst - do 23. 9. počítalo s celou
+    /// šířkou, takže text zmenšený „přesně do prvku" přesáhl o odsazení a na hraně stránky
+    /// se ořízl poslední znak (závorka za čísly spojů v hlavičce).
+    /// </summary>
+    private const float OdsazeniPx = 1f;
+
+    /// <summary>
+    /// Šířka, do které se text sází: prvek, ale nejvýš k pravému okraji tiskové plochy.
+    /// </summary>
+    /// <remarks>
+    /// Co přečnívá přes okraj, sekce ořízne - text zmenšený do celé šířky prvku by na hraně
+    /// stránky přišel o konec (nález Jan 23. 9.: závorka za čísly spojů v hlavičce, prvek
+    /// přečníval o 0,5 mm). Prvek se tím nemění, jen se text vejde tam, kde je vidět.
+    /// </remarks>
+    public float SirkaTextuMm(float? sirkaSekceMm) =>
+        sirkaSekceMm is > 0f and var s ? Math.Max(0f, Math.Min(Width, s - X)) : Width;
+
     // ── Zmenšení do prvku ────────────────────────────────────────────────────
 
     /// <summary>
@@ -201,14 +223,15 @@ public class TextElement : TemplateElement
     /// jinak se tiskne něco jiného, než co hláška tvrdí. Dynamická výška (prázdná Height) se
     /// nezmenšuje: prvek si doroste, což je totéž pravidlo jako u prvků jízdních řádů.
     /// </remarks>
-    public float ComputeShrinkScale(string? resolvedText)
+    public float ComputeShrinkScale(string? resolvedText, float? sirkaMm = null)
     {
-        if (string.IsNullOrEmpty(resolvedText) || Width <= 0) return 1f;
+        float sirka = sirkaMm ?? Width;
+        if (string.IsNullOrEmpty(resolvedText) || sirka <= 0) return 1f;
 
         var rs = Style.Resolve();
         if (rs.FontSize <= 0f) return 1f;
 
-        float potreba = WordWrap ? PotrebnaSkalaNaVysku(resolvedText, rs) : PotrebnaSkalaNaSirku(resolvedText, rs);
+        float potreba = WordWrap ? PotrebnaSkalaNaVysku(resolvedText, rs, sirka) : PotrebnaSkalaNaSirku(resolvedText, rs, sirka);
         if (potreba >= 1f) return 1f;
 
         float dnoZVelikosti = MinFontPt / rs.FontSize;   // 4 pt jako podíl nastavené velikosti
@@ -216,23 +239,24 @@ public class TextElement : TemplateElement
     }
 
     /// <summary>Text se vejde do prvku i po zmenšení? False = pod mezí se ořízne.</summary>
-    public bool ContentOverflows(DataContext? data)
+    public bool ContentOverflows(DataContext? data, float? sirkaMm = null)
     {
+        float sirka = sirkaMm ?? Width;
         var text = data?.ResolvePlaceholders(Text) ?? Text;
-        if (string.IsNullOrEmpty(text) || Width <= 0) return false;
+        if (string.IsNullOrEmpty(text) || sirka <= 0) return false;
 
         var rs = Style.Resolve();
         if (rs.FontSize <= 0f) return false;
 
-        float potreba = WordWrap ? PotrebnaSkalaNaVysku(text, rs) : PotrebnaSkalaNaSirku(text, rs);
-        return potreba < ComputeShrinkScale(text) - 0.001f;
+        float potreba = WordWrap ? PotrebnaSkalaNaVysku(text, rs, sirka) : PotrebnaSkalaNaSirku(text, rs, sirka);
+        return potreba < ComputeShrinkScale(text, sirka) - 0.001f;
     }
 
     /// <summary>Zalomený text: zmenšit tak, aby se všechny řádky vešly do pevné výšky.</summary>
-    private float PotrebnaSkalaNaVysku(string text, ResolvedTextStyle rs)
+    private float PotrebnaSkalaNaVysku(string text, ResolvedTextStyle rs, float sirkaMm)
     {
         if (Height is not { } vyska || vyska <= 0f) return 1f;   // dynamická výška roste sama
-        if (VyskaTextu(text, rs, 1f) <= vyska) return 1f;        // vejde se v plné velikosti
+        if (VyskaTextu(text, rs, 1f, sirkaMm) <= vyska) return 1f;        // vejde se v plné velikosti
 
         // Škála je vidět až po přeměření (menší font = jiné zalomení = jiný počet řádků), takže
         // se hledá půlením. Deset kroků dá přesnost pod 0,1 %, což je pod rozlišením tisku.
@@ -240,41 +264,42 @@ public class TextElement : TemplateElement
         for (int i = 0; i < 10; i++)
         {
             float stred = (dolni + horni) / 2f;
-            if (VyskaTextu(text, rs, stred) <= vyska) dolni = stred; else horni = stred;
+            if (VyskaTextu(text, rs, stred, sirkaMm) <= vyska) dolni = stred; else horni = stred;
         }
         return dolni > 0f ? dolni : horni;
     }
 
     /// <summary>Jednořádkový text: zmenšit tak, aby se vešel do šířky prvku.</summary>
-    private float PotrebnaSkalaNaSirku(string text, ResolvedTextStyle rs)
+    private static float PotrebnaSkalaNaSirku(string text, ResolvedTextStyle rs, float sirkaMm)
     {
         var typeface = FontResolver.Resolve(rs.FontFamily, rs.ToSKFontStyle());
         float refMmToPx = 96f / 25.4f;
         using var font = new SKFont(typeface, rs.FontSize * ResolvedTextStyle.PtToMm * refMmToPx);
 
         float sirkaTextu = font.MeasureText(text);
-        float sirkaPrvku = Width * refMmToPx;
+        float sirkaPrvku = sirkaMm * refMmToPx - 2f * OdsazeniPx;
         return sirkaTextu > sirkaPrvku && sirkaTextu > 0f ? sirkaPrvku / sirkaTextu : 1f;
     }
 
     /// <summary>Výška zalomeného textu v mm při dané škále písma.</summary>
-    private float VyskaTextu(string text, ResolvedTextStyle rs, float scale)
+    private static float VyskaTextu(string text, ResolvedTextStyle rs, float scale, float sirkaMm)
     {
         var typeface = FontResolver.Resolve(rs.FontFamily, rs.ToSKFontStyle());
         float fontSizeMm = rs.FontSize * scale * ResolvedTextStyle.PtToMm;
         float refMmToPx = 96f / 25.4f;
 
         using var font = new SKFont(typeface, fontSizeMm * refMmToPx);
-        var lines = TextWrapHelper.WrapText(text, font, Width * refMmToPx);
+        var lines = TextWrapHelper.WrapText(text, font, sirkaMm * refMmToPx - 2f * OdsazeniPx);
         return lines.Count * fontSizeMm * rs.LineSpacing;
     }
 
     // ── Word wrap helpers ────────────────────────────────────────────────────
 
     /// <summary>Vypočítá výšku textu v mm při zalamování do dané šířky.</summary>
-    internal float CalculateTextHeight(string text)
+    internal float CalculateTextHeight(string text, float? sirkaMm = null)
     {
-        if (string.IsNullOrEmpty(text) || Width <= 0) return 8f;
+        float sirka = sirkaMm ?? Width;
+        if (string.IsNullOrEmpty(text) || sirka <= 0) return 8f;
 
         var rs = Style.Resolve();
 
@@ -283,7 +308,7 @@ public class TextElement : TemplateElement
         float fontSizeMm = rs.FontSize * ResolvedTextStyle.PtToMm;
         float refMmToPx = 96f / 25.4f;
         float fontSizePx = fontSizeMm * refMmToPx;
-        float widthPx = Width * refMmToPx;
+        float widthPx = sirka * refMmToPx - 2f * OdsazeniPx;
 
         using var font = new SKFont(typeface, fontSizePx);
         var lines = TextWrapHelper.WrapText(text, font, widthPx);

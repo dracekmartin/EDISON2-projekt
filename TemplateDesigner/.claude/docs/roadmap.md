@@ -58,10 +58,9 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 Ani u jedné není první krok kód. Podklady k tiketům drží
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
-- **`#9417` Filtrování dopravců v záhlaví** [M] (KORID, dřív `B102`). Přetečení hlavičky pod
-  tabulku je vyřešené (záhlaví má vlastní sekci), zbývá volba, kteří dopravci se tisknou.
-  **Čeká na zákazníka s linkou, která má mnoho dopravců** - jeho případ byl souhrnný JŘ dvou linek
-  a sdružování se řeší v jízdních řádech, ne u nás.
+- **`#9417` Dopravci v záhlaví jen za spoje na stránce** (KORID) - ✅ **hotové 23. 9.**, čeká na
+  odpověď zákazníkovi (Jan). Ověřeno na CB_GWBUS 402 / 0330530 rozloženém na víc stran
+  (changelog 2026-09-23 (4)). Po odpovědi do archivu.
 
 - **`#7487` Počet poznámek na řádek podle druhu** [M] (KORID) - ⏸️ **Jan probere s kolegou**, jak
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí

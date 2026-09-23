@@ -66,6 +66,63 @@ public class OriznuteBunkyHlaskaTests
         Assert.Null(log.Summarize());
     }
 
+    /// <summary>
+    /// Textový prvek s nízkou pevnou výškou, kterému se zalomený text nevejde ani po zmenšení -
+    /// hlásí se při kreslení s daty stránky, protože pole jako dopravci stránky plní až sazba.
+    /// </summary>
+    [Fact]
+    public void NizkyTextovyPrvek_PriKresleniOhlasiOriznuti()
+    {
+        var log = KresliText("{POPIS_DOPRAVCE}", vyskaMm: 3f);
+
+        string? hlaska = log.Summarize();
+        Assert.NotNull(hlaska);
+        Assert.Contains("Text", hlaska);
+        Assert.Contains("ořízl", hlaska);
+    }
+
+    [Fact]
+    public void TextovyPrvekSPrazdnouVyskou_NehlasiNic()
+    {
+        Assert.Null(KresliText("{POPIS_DOPRAVCE}", vyskaMm: null).Summarize());
+    }
+
+    [Fact]
+    public void PrvekPresOkrajStranky_TextSeZmensiDoViditelneSirky()
+    {
+        // Hlavička z tisku 23. 9.: prvek od 0,5 mm široký 200 mm na ploše široké 200 mm.
+        var prvek = new TemplateDesigner.Models.Elements.TextElement
+        {
+            X = 0.5f, Width = 200, Height = 3.2f, WordWrap = false,
+            Style = new TemplateDesigner.Models.TextStyle { FontFamily = "Arial", FontSize = 6f },
+        };
+        string text = string.Join(", ", Enumerable.Repeat("ČSAD AUTOBUSY České Budějovice a.s. (spoje 1-5, 9)", 5));
+
+        float viditelna = prvek.SirkaTextuMm(200f);
+        Assert.Equal(199.5f, viditelna, 3);
+        Assert.True(prvek.ComputeShrinkScale(text, viditelna) < prvek.ComputeShrinkScale(text),
+            "do viditelné šířky se musí text zmenšit víc než do celého prvku");
+        Assert.Equal(200f, prvek.SirkaTextuMm(null));   // mimo stránku (testy, plátno) platí prvek
+    }
+
+    private static ClippedCells KresliText(string text, float? vyskaMm)
+    {
+        var log = new ClippedCells { CurrentElement = "Text" };
+        var prvek = new TemplateDesigner.Models.Elements.TextElement
+        {
+            X = 0, Y = 0, Width = 60, Height = vyskaMm, Text = text, WordWrap = true,
+            Style = new TemplateDesigner.Models.TextStyle { FontFamily = "Arial", FontSize = 6f },
+        };
+        var data = new TemplateDesigner.Models.DataContext(new Dictionary<string, object?>
+        {
+            ["POPIS_DOPRAVCE"] = string.Join(", ", Enumerable.Repeat("ČSAD AUTOBUSY České Budějovice a.s. (spoje 1-5, 9)", 12)),
+        });
+        using var bitmap = new SkiaSharp.SKBitmap(400, 100);
+        using var canvas = new SkiaSharp.SKCanvas(bitmap);
+        prvek.Render(new TemplateDesigner.Models.RenderContext(canvas, 96f / 25.4f, data) { ClippedCells = log });
+        return log;
+    }
+
     /// <summary>Nakreslí jednu buňku dané šířky a vrátí sběrač, aby šlo zkontrolovat, co ohlásila.</summary>
     private static ClippedCells KresliBunku(string text, float sirkaMm)
     {

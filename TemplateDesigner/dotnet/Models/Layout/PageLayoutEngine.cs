@@ -185,6 +185,9 @@ public class PageLayoutEngine
     /// <summary>Klíč v datech stránky se značkami, které na ní jsou. Čte ho legenda poznámek.</summary>
     public const string ZnackyStrankyKlic = "ZNACKY_NA_STRANCE";
 
+    /// <summary>Pole dopravců linkového JŘ, které sazba přepíše textem za spoje na stránce.</summary>
+    public const string PopisDopravceKlic = "POPIS_DOPRAVCE";
+
     /// <summary>
     /// Doplní do dat stránky značky, které se na ní vyskytují - z prvků, které se dělí na díly.
     /// Bez takového prvku vrací data beze změny, takže se nic nefiltruje.
@@ -193,11 +196,12 @@ public class PageLayoutEngine
     /// Tudy se legenda poznámek dozví, u které části tabulky stojí, aniž by prvky o sobě musely
     /// vědět. Táž cesta, jakou se na stránku dostává její číslo.
     /// </remarks>
-    private static DataContext? SZnackamiStranky(Page page, DataContext? data)
+    private static DataContext? SZnackamiStranky(Page page, DataContext? data, string? dopravciBezSpoju)
     {
         if (data is null) return null;
 
         HashSet<string>? znacky = null;
+        var spojeStranky = new List<LineTableElement.LineTripData>();
         foreach (var umistena in page.Sections)
         {
             foreach (var prvek in umistena.Source.Elements.OfType<INedelitelneDily>())
@@ -205,16 +209,35 @@ public class PageLayoutEngine
                 float od = umistena.ClipTop ?? 0f;
                 float doKam = umistena.ClipBottom ?? float.MaxValue;
                 var nalezene = prvek.ZnackyVUseku(umistena.Data ?? data, od, doKam);
+                if (prvek is LineTableElement tabulka)
+                    spojeStranky.AddRange(tabulka.SpojeVUseku(umistena.Data ?? data, od, doKam));
                 if (nalezene.Count == 0) continue;
                 znacky ??= new HashSet<string>(StringComparer.Ordinal);
                 znacky.UnionWith(nalezene);
             }
         }
 
-        return znacky is null
-            ? data
-            : data.WithExtraValues(new Dictionary<string, object?> { [ZnackyStrankyKlic] = znacky });
+        var doplnit = new Dictionary<string, object?>();
+        if (znacky is not null) doplnit[ZnackyStrankyKlic] = znacky;
+        // Dopravci jen za spoje na stránce (#9417) - přepíše `POPIS_DOPRAVCE`, kterým se plní
+        // hlavička. Stránka bez spojů (poznámky přetečené za tabulku) dostane jen názvy dopravců
+        // směru bez čísel: převzít čísla jedné ze stránek tabulky by bylo libovolné, jakmile jich
+        // je víc (rozhodnutí Jan 23. 9.). Šablona bez tabulky linky nechá celý text za linku.
+        if (dopravciBezSpoju is not null)
+            doplnit[PopisDopravceKlic] = LineTableElement.PopisDopravcuStranky(spojeStranky) ?? dopravciBezSpoju;
+
+        return doplnit.Count == 0 ? data : data.WithExtraValues(doplnit);
     }
+
+    /// <summary>
+    /// Názvy dopravců směru pro list bez spojů. Null = šablona nemá tabulku linky nebo spoje
+    /// dopravce nenesou - pak se text dopravců za stránku neskládá vůbec.
+    /// </summary>
+    private static string? DopravciBezSpoju(Template template, DataContext? data) =>
+        data is not null
+        && template.Sections.SelectMany(s => s.Elements).OfType<LineTableElement>().FirstOrDefault() is { } tabulka
+            ? LineTableElement.JmenaDopravcu(tabulka.SpojeVUseku(data, 0f, float.MaxValue))
+            : null;
 
     /// <summary>Sekce, ve kterých leží zmenšitelná tabulka.</summary>
     private static HashSet<Guid> SekceZmensitelnych(Template template) =>
@@ -706,6 +729,7 @@ public class PageLayoutEngine
     {
         int totalPages = result.TotalPages;
         float printableHeight = template.PageSize.PrintableHeight;
+        string? dopravciBezSpoju = DopravciBezSpoju(template, data);
 
         foreach (var page in result.Pages)
         {
@@ -721,7 +745,7 @@ public class PageLayoutEngine
             // každá z nich: legenda poznámek podle nich vypíše jen to, co na stránku patří (`B127`).
             // Počítá se to ze stejného dělení jako tabulka, takže to není zadarmo - proto jednou
             // na stránku, ne pro každou sekci zvlášť.
-            var dataStranky = SZnackamiStranky(page, data);
+            var dataStranky = SZnackamiStranky(page, data, dopravciBezSpoju);
 
             // Hlavičky nahoře
             float y = 0f;

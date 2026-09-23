@@ -502,6 +502,7 @@ public class PreviewCanvas
                 ViditelnyPasMm = placed.Height,
                 OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm,
                 ClippedCells = oriznuteBunky,
+                SirkaSekceMm = ps.PrintableWidth,
                 SrovnatCaryNaPixel = naRastr,
             };
 

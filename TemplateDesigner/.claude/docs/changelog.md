@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-09-23 (4) - 🚌 dopravci v záhlaví jen za spoje na stránce (#9417)
+
+Pole `{POPIS_DOPRAVCE}` linkového JŘ nevypisuje dopravce za celou linku, ale **jen za spoje, které
+jsou na té stránce**. Když jich stránka má víc, dostane každý dopravce v závorce svoje spoje
+(„GW BUS … (spoje 1, 7, 15, 105), ČSAD … (spoje 5, 9-11, 203-205)"); s jedním dopravcem zůstane
+jen název. Do řady se slučují jen spoje, které jsou na stránce vedle sebe a liší se číslem nejvýš
+o 2, takže „15-105" nevznikne. Stránka jen s přetečenými poznámkami dostane názvy dopravců směru
+bez čísel. Server k tomu posílá u spoje jeho dopravce (`DOPRAVCI`).
+
+Textový prvek se sází do šířky, **která je na stránce vidět**: přečníval-li přes okraj tiskové
+plochy, zmenšené písmo vyplnilo celý prvek a konec textu se na hraně ořízl (závorka v hlavičce).
+Zmenšení také nově odečítá odsazení textu od hrany prvku. Hláška „text se nevejde ani po
+zmenšení písma" se počítá při kreslení náhledu, takže jde se změnou výšky a písma prvku.
+
 ## 2026-09-23 (3) - 📄 sestava se vejde na zadaný počet stran (#8785, ladí se)
 
 Nový parametr sestavy linkového JŘ **„Počet stran"** (Obecné): *Automaticky (dle linky)*, *1 strana*,
