@@ -1008,10 +1008,48 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // se do ní nevejde, řekne to hláška (viz `SirkaSloupceProtiObsahu`).
         if (TripColumn().Width is float pevna) return [.. spojeBloku.Select(_ => pevna)];
 
-        if (!JednotnaSirkaSpoju) return [.. spojeBloku.Select(PotrebaSpojeMm)];
+        List<float> sirky;
+        if (!JednotnaSirkaSpoju) sirky = [.. spojeBloku.Select(PotrebaSpojeMm)];
+        else
+        {
+            float jednotna = NejvetsiPotrebaSpojeMm();
+            sirky = [.. spojeBloku.Select(_ => jednotna)];
+        }
+        RozsirProNadpisySkupin(sirky, spojeBloku);
+        return sirky;
+    }
 
-        float jednotna = NejvetsiPotrebaSpojeMm();
-        return [.. spojeBloku.Select(_ => jednotna)];
+    /// <summary>
+    /// Když je nadpis skupiny dnů širší než její sloupce, rozdělí chybějící místo rovnoměrně mezi ně.
+    /// </summary>
+    /// <remarks>
+    /// Šířka sloupce se počítá z časů a značek; nadpis nad dvěma spoji („soboty, neděle a svátky")
+    /// se do nich nevešel a uřízl se (nález Jan 23. 9. na 330517 bez dorovnání). Úsek se bere
+    /// ze spojů <paramref name="spoje"/> po sobě, tedy tak, jak ho kreslí pás skupin.
+    /// </remarks>
+    private void RozsirProNadpisySkupin(List<float> sirky, IReadOnlyList<LineTripData> spoje)
+    {
+        if (spoje.Count == 0 || _cachedTrips is null || _cachedGroups is null) return;
+        if (!HasGroupHeaderBand(_cachedTrips, _cachedGroups)) return;
+
+        var st = ResolveColumnHeaderParent();
+        using var font = new SKFont(GetTypeface(st), st.FontSize);
+        float vzduch = VzduchKolemObsahuMm(st);
+        int i = 0;
+        while (i < spoje.Count)
+        {
+            int start = i;
+            int skupina = spoje[i].Skupina;
+            while (i < spoje.Count && spoje[i].Skupina == skupina) i++;
+            string nadpis = _cachedGroups.FirstOrDefault(g => g.Id == skupina)?.Nadpis ?? "";
+            if (nadpis == "") continue;
+            float potreba = CellLayout.SplitLines(nadpis).Max(r => font.MeasureText(r)) * PtToMm + vzduch;
+            float mame = 0f;
+            for (int k = start; k < i; k++) mame += sirky[k];
+            if (potreba <= mame + 0.01f) continue;
+            float pridat = (potreba - mame) / (i - start);
+            for (int k = start; k < i; k++) sirky[k] += pridat;
+        }
     }
 
     /// <summary>
