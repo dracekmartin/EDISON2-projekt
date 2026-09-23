@@ -1,12 +1,14 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-# Pre-push: run .NET (xUnit) and Cache (%UnitTest) suites.
+# Pre-push: run .NET (xUnit), Cache (%UnitTest) and integration (.NET <-> Cache seam) suites.
 #
 # Change-aware: only runs the suite whose sources changed in the pushed range
-#   (.cs/.csproj/.sln -> .NET, .cls -> Cache). If the range can't be resolved,
-#   both run (safe default).
-# Visibility: full per-suite output goes to .husky/{dotnet,cache}-tests.log and a
+#   (.cs/.csproj/.sln -> .NET, .cls -> Cache, any of those or .inc -> integration).
+#   If the range can't be resolved, all run (safe default).
+# Integration = real MLRest against the dev server. Required when the server side
+#   changed (.cls/.inc); a .cs-only push without VPN reports it skipped and goes on.
+# Visibility: full per-suite output goes to .husky/{dotnet,cache,integration}-tests.log and a
 #   short failure summary to .husky/last-test-run.log. On failure the paths are
 #   printed in a banner so they're clickable from the VSCode Git output panel.
 # Emergency bypass: git push --no-verify (don't make a habit).
@@ -15,6 +17,7 @@ set -e
 
 DOTNET_LOG=".husky/dotnet-tests.log"
 CACHE_LOG=".husky/cache-tests.log"
+IT_LOG=".husky/integration-tests.log"
 SUMMARY=".husky/last-test-run.log"
 
 # --- Resolve the range being pushed, then decide which suites to run ----------
@@ -27,11 +30,15 @@ fi
 
 run_dotnet=1
 run_cache=1
+run_it=1
+it_required=1
 if [ -n "$RANGE" ]; then
     CHANGED=$(git diff --name-only "$RANGE" 2>/dev/null || true)
     if [ -n "$CHANGED" ]; then
-        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln)$' && run_dotnet=1 || run_dotnet=0
-        echo "$CHANGED" | grep -qiE '\.cls$'            && run_cache=1  || run_cache=0
+        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln)$'         && run_dotnet=1  || run_dotnet=0
+        echo "$CHANGED" | grep -qiE '\.cls$'                     && run_cache=1   || run_cache=0
+        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|cls|inc)$' && run_it=1      || run_it=0
+        echo "$CHANGED" | grep -qiE '\.(cls|inc)$'               && it_required=1 || it_required=0
     fi
 fi
 
@@ -80,16 +87,23 @@ report_failure() {
     exit 1
 }
 
-# --- .NET ---------------------------------------------------------------------
-if [ "$run_dotnet" = "1" ]; then
-    # A running EDISONMAIN2.exe locks its bin\Debug DLLs -> build fails (MSB3027).
+# A running EDISONMAIN2.exe locks its bin\Debug DLLs -> build fails (MSB3027).
+shell_stopped=0
+stop_shell() {
+    [ "$shell_stopped" = "1" ] && return
+    shell_stopped=1
     echo "==> Checking for a running EDISONMAIN2 (locks build DLLs)"
     powershell -NoProfile -Command "\$p = Get-Process EDISONMAIN2 -ErrorAction SilentlyContinue; if (\$p) { \$p | Stop-Process -Force; Start-Sleep -Milliseconds 800; Write-Host '    EDISONMAIN2 was running - closed it.' } else { Write-Host '    not running - OK.' }" || true
+}
+
+# --- .NET ---------------------------------------------------------------------
+if [ "$run_dotnet" = "1" ]; then
+    stop_shell
 
     echo ""
     echo "==> [.NET] dotnet test EDISON2.sln (log: $DOTNET_LOG)"
     set +e
-    dotnet test EDISON2.sln --nologo --verbosity minimal > "$DOTNET_LOG" 2>&1
+    dotnet test EDISON2.sln --nologo --verbosity minimal --filter "Category!=Integration" > "$DOTNET_LOG" 2>&1
     dotnet_status=$?
     set -e
     if [ $dotnet_status -ne 0 ]; then
@@ -118,6 +132,30 @@ if [ "$run_cache" = "1" ]; then
     echo "    Cache tests passed."
 else
     echo "==> [Cache] skipped (no .cls in pushed range)"
+fi
+
+# --- Integration (.NET <-> Cache seam) ----------------------------------------
+if [ "$run_it" = "1" ]; then
+    echo ""
+    echo "==> [Integration] dotnet test EDISON2.IntegrationTests (log: $IT_LOG)"
+    # The .NET run above already built the whole solution.
+    IT_ARGS=""
+    if [ "$run_dotnet" = "1" ]; then IT_ARGS="--no-build"; else stop_shell; fi
+    set +e
+    EDISON_IT_REQUIRED=$it_required dotnet test EDISON2.IntegrationTests/EDISON2.IntegrationTests.csproj \
+        --nologo --verbosity minimal $IT_ARGS > "$IT_LOG" 2>&1
+    it_status=$?
+    set -e
+    if [ $it_status -ne 0 ]; then
+        report_failure "Integration tests" "$IT_LOG" "grep -E '^[[:space:]]*(Failed |Failed!|error )' '$IT_LOG'"
+    fi
+    if grep -qE 'Skipped: +[1-9]' "$IT_LOG"; then
+        echo "    Integration tests skipped (dev server unreachable, .cs-only push)."
+    else
+        echo "    Integration tests passed."
+    fi
+else
+    echo "==> [Integration] skipped (no .cs/.cls/.inc in pushed range)"
 fi
 
 echo ""

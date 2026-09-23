@@ -137,11 +137,11 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
   a uložení nic neudělá" a **drift testy to nechytí, čtou `.cls` z repa**. Deploy pak vynuť
   `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash
   .claude/hooks/compile-objectscript.sh` (MCP `cache_compile` hledá zdroj v `C:\DEV\EDISON`).
-- **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - sadu pustí
-  jen když se změnily její zdroje (`.cs`→.NET, `.cls`→Caché); Caché zúží na dotčené package.
-  Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí všechny; testovací `.cls`
-  (EDControls `Tests/`) jen svůj balíček - TD sada je nejdražší (~45 s). Souhrn selhání
-  `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
+- **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - `.cs`→.NET
+  (bez `Category=Integration`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
+  sada (při `.cls/.inc` povinná). Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí
+  všechny Caché balíčky, testovací `.cls` (EDControls `Tests/`) jen svůj - TD sada je nejdražší
+  (~45 s). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
 
 ## Typografie a komentáře
 

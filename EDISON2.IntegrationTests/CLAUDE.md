@@ -6,9 +6,9 @@ jedou s `'~'`) a `sys("C","App")="ALWA.SYS.MLRest"`, podle kterého `$$$CatchErr
 `^||ML("ERR")` (`SetupSys` ho neposílá).
 
 - **Běh**: bez dostupného serveru (`DevServer.IsReachable`, TCP 2 s) jsou testy Skipped,
-  `EDISON_IT_REQUIRED=1` z nedostupnosti dělá chybu. Server `EDISON_IT_SERVER` /
-  `EDISON_IT_PORT`, default `192.168.16.1:57770`. Třídy nesou `[Trait("Category", "Integration")]`
-  a `[DevServerFact]` / `[DevServerTheory]`.
+  `EDISON_IT_REQUIRED=1` (pre-push při změně `.cls`/`.inc`) z nedostupnosti dělá chybu.
+  Server `EDISON_IT_SERVER` / `EDISON_IT_PORT`, default `192.168.16.1:57770`. Třídy nesou
+  `[Trait("Category", "Integration")]` (hlavní .NET běh je vyfiltruje) a `[DevServerFact]` / `[DevServerTheory]`.
 - **Identita je pevná** (`DevServer`), ne z `CACHE_USER`: čtení pod `CB_DP` / MLP 1, zápisy jen
   pod `TEST_EDISON2_IT` / MLP 999 s úklidem ve `finally`.
 - **Tolerantní parser** (chybějící řádek nebo pole = default) ověřuj i na surovém výstupu, jinak

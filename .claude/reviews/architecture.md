@@ -449,7 +449,11 @@ Největší soubory: `EdisonMainViewModel.cs` 1525 ř., `EDControlStyles.xaml` 1
 
 ### A13 · Kontrakty k legacy Caché endpointům: pozicní parsování ~10 metod, contract testy pro 2
 
-- [ ] **Stav:** otevřeno
+- [ ] **Stav:** částečně (2026-09-23) - integrační testy šva (`EDISON2.IntegrationTests`, skutečné MLRest
+  proti dev serveru) pokrývají `GetEdisonAccess` (index 1 = apId), `ALVA.SETUP.Main.LoadSettings`
+  (povinné klíče), `GetUserDefaultForm`, `maSeUkoncit` a `LoginAllowed`. Zbývá `Login`, `ChangePassword`,
+  `VerifyLic`, `LoadUser/SaveUser`, `ALVA.EDISON.Main.LoadSettings`, `LoadDatabaseList`, `LockClearExt`
+  (část potřebuje testovací účet na serveru) a skip-as-pass v Caché contract testech.
 - **P2 · M** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** Shell závisí na positional formátu `Login` (indexy 1,2,3,4,5,7,10),
   `ChangePassword`, `VerifyLic`, `GetEdisonAccess`, `LoadUser/SaveUser`, `ALVA.EDISON.Main.LoadSettings`,
