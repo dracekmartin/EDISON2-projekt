@@ -7,6 +7,9 @@
 - **#12843** (TRANSDEV) - šest bodů zpětné vazby z 16. 9. hotových (mizející nastavení, slučování
   variant, záhlaví odjezdů po sloupcích, velikost záhlaví u poznámek, pevný rastr minut, pořadí
   stránek v exportu); odbavil Jan.
+- **#11300** (KORID) - prázdný přípojný řádek: řádek vzniká jen pro přípoj spojů téže tabulky.
+  Ukázáno na CB_CSADAD 0330510 směr Zpět (víkendová tabulka nese jen „směr Horní Planá"), odpověď
+  poslal Jan. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md).
 
 ## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
 

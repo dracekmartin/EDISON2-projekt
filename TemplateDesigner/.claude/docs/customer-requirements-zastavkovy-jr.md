@@ -52,7 +52,6 @@ helpdesku k 15. 9.
 - **#8372** (KORID) - „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).
   Volba **„Dorovnat prázdnými sloupci"** u tabulky linky; dorovnává se i **levá** strana, kterou
   tiket nežádal, ale u obousměrné sestavy bez ní zůstala díra.
-- **#11300** (KORID) - prázdné přípojové řádky. Výtisk hotový 15. 9., viz roadmapa § K ověření.
 
 🟡 **Čeká práce nebo odpověď:**
 

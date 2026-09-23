@@ -81,7 +81,6 @@ zavřít**. Po zavření **z roadmapy pryč**; tady visí jen proto, aby to bylo
 | Tiket | Co dostal |
 |---|---|
 | **#8372 vkládat prázdné sloupce** (KORID) | Volba **„Dorovnat prázdnými sloupci"** u tabulky linky. Dorovnává i **levou** stranu, kterou tiket nežádal - u obousměrné sestavy bez ní zůstala díra |
-| **#11300 prázdný přípojný řádek** (KORID) | Výtisk hotový 15. 9. - `CB_CSADAD 1 / 0330510` směr Zpět, strana 3 je list jen s pracovními dny bez jediného přípojného řádku. Detail [`§16.2`](linkovy-knizni-jr-implementace-analyza.md) |
 
 ### K ověření na reálné sestavě
 
