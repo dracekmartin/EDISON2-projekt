@@ -1382,16 +1382,22 @@ přípoje jsou jen o víkendu. Je to **linkový tabelární JŘ** (linka 260, ID
   dny, a oddělování skupin dnů jsme do té doby neměli (§6.3). **Musí se tisknout jednosměrně** -
   u obousměrné sestavy se skupiny neoddělují a prázdné buňky v přípojném řádku vzniknout mohou.
 
-**✅ Doloženo výtiskem 15. 9. - `CB_CSADAD 1 / 0330510`, směr Zpět, jednosměrný tisk.**
-(Jeho vlastní firma ČSAD Liberec / IDOL na dev serveru není, proto náhrada.)
+**✅ Doloženo okem v návrháři 23. 9. - `CB_CSADAD 1 / 0330510`, směr Zpět, jednosměrný tisk,
+dělení *Pracovní dny / víkend+svátky*.** (Jeho vlastní firma ČSAD Liberec / IDOL na dev serveru
+není, proto náhrada.) Linka se nevejde na šířku, takže se skupiny oddělí samy:
 
-- **Strana 3 je list jen s pracovními dny a nemá jediný přípojný řádek** - ani prázdný.
-- **Strana 4** nese tytéž zastávky (22 shodných) plus soboty a neděle a má pět přípojných řádků,
-  každý s aspoň jedním časem.
+- **Tabulka pracovních dnů** má u Českého Krumlova pět přípojných řádků (Přídolí, Velešín,
+  Rožmberk, Větřní, Horní Planá), každý s časem.
+- **Tabulka sobot, nedělí a svátků** má jen „směr Horní Planá" - ostatní čtyři přípoje jsou jen
+  v pracovní dny, starý tisk by je tu nechal prázdné.
 
-Tím je vidět obojí naráz: řádek vzniká jen pro přípoj, který skutečně existuje, a na listu, kde
-takový přípoj není, se nerezervuje místo. Měřeno z PDF podle souřadnic - texty pod tabulkou jsou
-legenda poznámek, ne přípojné řádky. Zbývá **poslat a zavřít**.
+⚠️ **Zápis z 15. 9. tvrdil opak** („list jen s pracovními dny nemá jediný přípojný řádek") a 23. 9.
+podle něj agent Janovi popsal, co má uvidět - nesedělo to. Než se tvrzení odsud použije jako
+očekávaný výsledek, ověřit ho na obrazovce.
+
+⚠️ **Rozdělení nejde vynutit** - skupiny se oddělí jen tehdy, když se linka nevejde na šířku
+a oddělení nestojí blok navíc. Na lince, která se vejde (`0330512`), stojí skupiny v jedné tabulce
+a přípojný řádek pracovních dnů jde i přes nedělní sloupce (prázdné buňky, ne prázdný řádek).
 
 ⚠️ **Dvě dřívější doporučení linky byla mimo** (obojí ověřeno voláním serveru 15. 9.):
 
