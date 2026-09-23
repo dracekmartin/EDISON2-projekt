@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-09-23 (1) - ― úsečka mezi příjezdem a odjezdem je tenká jako mřížka
+
+U zastávky, kde se příjezd a odjezd tisknou na dva řádky (dvě zóny nad sebou), je mezi nimi
+vodorovná úsečka. Kreslila se pevnou tloušťkou 0,2 mm, dvakrát silněji než mřížka, a vedle
+tenkých čar přípojných řádků vypadala jako chyba. Nově má tloušťku mřížky - na obrazovce, v PDF
+i na tisku.
+
+Náhled navíc dostává plochu zaokrouhlenou na celé pixely. Dosud ji knihovna Skia uřízla na celé
+pixely a okno ji roztáhlo zpátky na necelý rozměr, takže se obraz převzorkoval a čáry se místy
+rozmazaly do dvou řad.
+
 ## 2026-09-22 (5) - ▭ každá část tabulky má vlastní rámeček
 
 Linka, která se nevejde na šířku, se sází na několik částí pod sebou. Rámeček je obcházel všechny

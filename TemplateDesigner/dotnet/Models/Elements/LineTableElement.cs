@@ -2066,7 +2066,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     headerH, rowH, PripojRowH() * scale,
                     Grid.ShowColumnLines ? paints.Grid : null,
                     Grid.ShowRowLines ? paints.Grid : null,
-                    CaryZastavekDleTrasy ? caraUseku : null,
+                    CaryZastavekDleTrasy ? caraUseku : null, paints.Grid.StrokeWidth,
                     headerResolved, headerCentered,
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
@@ -2238,7 +2238,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         List<LineSkupinaData> groups,
         SloupcovaMrizka mrizka, int nameIndex,
         float headerH, float rowH, float pripojRowH,
-        SKPaint? sloupcovaCara, SKPaint? radkovaCara, SKPaint? caraUseku,
+        SKPaint? sloupcovaCara, SKPaint? radkovaCara, SKPaint? caraUseku, float tloustkaMrizkyPx,
         ResolvedTextStyle headerResolved, ResolvedTextStyle headerCentered,
         ResolvedTextStyle tripHeaderStyle, ResolvedTextStyle tripDataStyle,
         RenderContext ctx, SKTypeface symbolFace, float scale)
@@ -2500,7 +2500,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     // po sobě, takže úsečka nakreslená horním řádkem by zmizela pod pozadím dolního.
                     if (rozdvojenyRadek is RozdvojenyRadek.Dolni)
                         DrawUseckaRozdvojene(ctx, rowY, mrizka, trips.Count, zrcadlene.Count,
-                            tripCellStyle, scale);
+                            tripCellStyle, scale, tloustkaMrizkyPx);
                 },
             });
 
@@ -2583,15 +2583,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// obsah: říká, že ty dva časy patří téže zastávce.</para>
     /// </remarks>
     private void DrawUseckaRozdvojene(RenderContext ctx, float yMm, SloupcovaMrizka mrizka,
-        int spoju, int zrcadlenych, ResolvedTextStyle styl, float scale)
+        int spoju, int zrcadlenych, ResolvedTextStyle styl, float scale, float tloustkaPx)
     {
         const float VuleMm = 0.4f, NejkratsiMm = 0.5f;
         using var pero = new SKPaint
         {
             Color = ColorHex.ParseOrBlack(styl.TextColor),
-            StrokeWidth = 0.2f * scale * ctx.MmToPx,
+            StrokeWidth = tloustkaPx,
             IsAntialias = true,
         };
+    /// <para>Tloušťku má ale mřížky: pevných 0,2 mm byla dvojnásobná a vedle tenkých čar
+    /// přípojných řádků působila jako chyba (nález Jan 23. 9.).</para>
         void Usek(float odMm, float sirkaMm)
         {
             float vule = VuleMm * scale;

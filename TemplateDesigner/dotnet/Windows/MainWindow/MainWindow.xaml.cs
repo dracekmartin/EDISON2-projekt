@@ -568,8 +568,9 @@ public partial class MainWindow : Window
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
         // Výška plátna roste s obsahem (souvislé multi-page plátno), ne pevná A4.
         float paperH  = _canvas.TotalPaperHeightPx();
-        skCanvas.Width  = pageW + padding + _canvas.ExtraLeftPx;
-        skCanvas.Height = paperH + padding + topBuffer;
+        var dpi = VisualTreeHelper.GetDpi(skCanvas);
+        skCanvas.Width  = NaCelePixely(pageW + padding + _canvas.ExtraLeftPx, dpi.DpiScaleX);
+        skCanvas.Height = NaCelePixely(paperH + padding + topBuffer, dpi.DpiScaleY);
         skCanvas.InvalidateVisual();
         UpdatePreviewSize();
     }
@@ -656,9 +657,18 @@ public partial class MainWindow : Window
     {
         if (BtnPreview?.IsChecked != true || _previewCanvas is null || _vm is null) return;
         float zoom = PreviewZoom;
-        skPreview.Width  = _previewCanvas.ComputePageWidthPx(zoom);
-        skPreview.Height = _previewCanvas.CalculatePageHeightPx(zoom, _vm.BuildPreviewMockData()) + 40f;
+        var dpi = VisualTreeHelper.GetDpi(skPreview);
+        skPreview.Width  = NaCelePixely(_previewCanvas.ComputePageWidthPx(zoom), dpi.DpiScaleX);
+        skPreview.Height = NaCelePixely(
+            _previewCanvas.CalculatePageHeightPx(zoom, _vm.BuildPreviewMockData()) + 40f, dpi.DpiScaleY);
     }
+
+    /// <summary>Rozměr plochy Skia zaokrouhlený nahoru na celý pixel obrazovky.</summary>
+    /// <remarks>⚠️ <c>SKElement</c> uřízne bitmapu na celé pixely a WPF ji pak roztáhne zpátky na
+    /// necelý rozměr - obraz se převzorkuje a čára, která tím padne mezi pixely, se rozmaže do dvou
+    /// řad. Při zvětšení pak jedna čára tabulky vypadala silnější, v PDF ne.</remarks>
+    private static double NaCelePixely(double dip, double dpiScale) =>
+        Math.Ceiling((dip * dpiScale) - 0.001) / dpiScale;
 
     private void OnPreviewScrollWheel(object sender, MouseWheelEventArgs e)
     {

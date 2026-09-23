@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
+
+Hledaná čára nebyla čára mřížky, ale **úsečka rozdvojené zastávky** mezi dvěma zónami 208. Měla
+pevných 0,2 mm, tedy dvojnásobek mřížky; nově má tloušťku mřížky. 22. 9. se hledalo mezi čarami
+mřížky a řádků, proto ji měření nenašlo. Při hledání se opravilo i to, že náhled roztahoval
+bitmapu na necelý rozměr (převzorkování rozmazávalo čáry).
+
 ## `B173` Sdílené komponenty - předáno kolegovi (22. 9. 2026)
 
 Sbírka čtyř návrhů do `EDControls` (hlavička „Položka | Hodnota" v EDInputFormu, zrušit skákání

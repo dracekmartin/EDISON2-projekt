@@ -103,13 +103,6 @@ vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
 
 ### Ostatní
 
-- **`B176` Jedna vodorovná čára v tabulce spojů vypadá při zvětšení silnější** [S] (nález Jan 22. 9.,
-  linka 330530 nad přípojnými řádky u Velešína). V PDF i při 100 % je to v pořádku, projeví se to
-  až zvětšením náhledu. Vyloučeno měřením: dvojí kreslení téže čáry, tloušťka i barva (všechny
-  1 px, shodný odstín v PNG i přes celý náhled), srovnání na pixel a čára úseku z trasy - ta na
-  téhle lince není u žádné zastávky. Zbývá prohlédnout, jak se plátno náhledu škáluje na obrazovku.
-  Souvislost: commity 33a1758d, 36958359, 11303c6b.
-
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí
   engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi, a nad ním
