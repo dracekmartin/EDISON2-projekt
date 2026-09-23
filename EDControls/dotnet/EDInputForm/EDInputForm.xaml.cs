@@ -111,6 +111,26 @@ namespace EDControls.EDInputForm
             set => SetValue(HelpTextModeProperty, value);
         }
 
+        public static readonly DependencyProperty SearchMemoryKeyProperty =
+            DependencyProperty.Register(
+                nameof(SearchMemoryKey),
+                typeof(string),
+                typeof(EDInputForm),
+                new PropertyMetadata(""));
+
+        /// <summary>
+        /// Zapne zapamatování hledaného výrazu mezi otevřeními formuláře (v rámci běhu aplikace).
+        /// Prázdný = vypnuto; agenda si o to musí říct. Klíč sdílí filtr napříč instancemi,
+        /// konvence <c>"&lt;Projekt&gt;.&lt;Konzument&gt;"</c> jako <c>EDList.HostId</c>.
+        /// </summary>
+        public string SearchMemoryKey
+        {
+            get => (string)GetValue(SearchMemoryKeyProperty);
+            set => SetValue(SearchMemoryKeyProperty, value);
+        }
+
+        private const string SearchMemoryScope = "EDInputForm.Search";
+
         private static readonly DependencyPropertyKey IsNarrowLayoutPropertyKey =
             DependencyProperty.RegisterReadOnly(
                 nameof(IsNarrowLayout),
@@ -163,7 +183,13 @@ namespace EDControls.EDInputForm
             var dpd = DependencyPropertyDescriptor.FromProperty(
                 EDComponentToolbar.EDComponentToolbar.SearchTextProperty,
                 typeof(EDComponentToolbar.EDComponentToolbar));
-            dpd.AddValueChanged(Toolbar, (_, _) => ApplySearchFilter(Toolbar.SearchText));
+            dpd.AddValueChanged(Toolbar, (_, _) =>
+            {
+                ApplySearchFilter(Toolbar.SearchText);
+                if (SearchMemoryKey is { Length: > 0 } memoryKey)
+                    Services.SessionState.Set(SearchMemoryScope, memoryKey,
+                        string.IsNullOrWhiteSpace(Toolbar.SearchText) ? null : Toolbar.SearchText);
+            });
 
             Toolbar.HelpCommand = new RelayCommand(ShowShortcutsHelp);
         }
@@ -293,6 +319,20 @@ namespace EDControls.EDInputForm
 #pragma warning disable CS0618 // deprekovaný alias - dokud existuje, musí fajrovat taky
             Initialized?.Invoke();
 #pragma warning restore CS0618
+            RestoreRememberedSearch();
+        }
+
+        /// <summary>
+        /// Dosadí zapamatovaný filtr. Až po <see cref="SchemaLoaded"/> - to je okamžik, kdy jsou
+        /// Items naplněné a host je prefillnul; dřív by filtr běžel nad prázdným formulářem.
+        /// </summary>
+        private void RestoreRememberedSearch()
+        {
+            if (SearchMemoryKey is not { Length: > 0 } memoryKey) return;
+            if (Services.SessionState.Get(SearchMemoryScope, memoryKey) is not { Length: > 0 } remembered) return;
+
+            if (Toolbar.SearchText == remembered) ApplySearchFilter(remembered);   // nová Items, týž výraz
+            else Toolbar.SearchText = remembered;
         }
 
         /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>
