@@ -841,7 +841,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // postskript je místo toho slučuje svisle na střed přes obě řádky a mezi časy dává
         // vodorovnou úsečku, což naše tabulka zatím neumí (sloučení buňky přes řádky).
         // Do 10. 9. jsme dělali třetí věc, kterou nemá ani jeden: název jen u spodního řádku.
+        // Pomlčka = zastávka nemá žádnou zónu, platí tedy pro všechny díly, ne jen pro první
+        // (rozhodnutí Jan 23. 9.). Prázdný díl u zastávky s jednou zónou znamená něco jiného.
         ColumnKeys.Zone     => s => !RozdelitZonyDoSloupcu ? s.Zona
+            : s.Zony is ["-"] ? "-"
             : kmIndex < s.Zony.Count ? s.Zony[kmIndex] : "",
         ColumnKeys.Km       => s => kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
         ColumnKeys.Tc       => s => s.Tc,
