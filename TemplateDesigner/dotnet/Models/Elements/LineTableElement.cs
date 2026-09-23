@@ -89,6 +89,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     // ─── Řádky ──────────────────────────────────────────────────────────────
 
+    /// <summary>Čísla spojů v záhlaví sloupců. Vypnuté nechá řádek záhlaví (nese nadpisy popisných
+    /// sloupců), jen nad spoji zůstane prázdný.</summary>
+    /// <remarks>Starý Win tisk z AD volbu „Nevypisovat čísla spojů" nabízel, ale čísla neskryl -
+    /// jen nekreslil čáry mezi nimi (`formTISKJRReportDotNet_Module.vb:1832-1861`); skrýval je
+    /// jen tisk MHD. Zákazník to čekal (#9088).</remarks>
+    public bool ShowTripNumbers { get; set; } = true;
     /// <summary>Řádek znaků týdenní platnosti (X, 6, 7, +) nad časy spojů.</summary>
     public bool ShowPlatnostRow { get; set; } = true;
     /// <summary>Řádek negativních značek (NZ) nad časy spojů.</summary>
@@ -2352,11 +2358,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
         var headerSpecs = new List<ColumnRenderer.CellSpec>();
         PridejZrcadlene(headerSpecs, mrizka, zrcadlene.Count, headerResolved,
-            ti => (zrcadlene[ti].CisloSpoje, tripHeaderStyle), tripHeaderStyle);
+            ti => (TextCislaSpoje(zrcadlene[ti]), tripHeaderStyle), tripHeaderStyle);
         foreach (var (index, sirka, text, styl) in NadpisyPopisnychSloupcu(fixedCols))
             headerSpecs.Add(new(sirka, text, styl, SuppressLeadingLine: BezCaryVlevo(index, mrizka)));
         PridejSpoje(headerSpecs, mrizka, trips.Count, headerResolved,
-            ti => (trips[ti].CisloSpoje, tripHeaderStyle));
+            ti => (TextCislaSpoje(trips[ti]), tripHeaderStyle));
         plan.Add(new(RowKind.Header, headerH, headerSpecs)
             { VerticalLinePaint = sloupcovaCara, LineBelowPaint = radkovaCara });
 
@@ -3019,6 +3025,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private bool BezCaryVlevo(int indexPopisnehoSloupce) =>
         PopisneSloupceBezVnitrnichCar && indexPopisnehoSloupce > 0;
 
+    internal string TextCislaSpoje(LineTripData spoj) => ShowTripNumbers ? spoj.CisloSpoje : "";
+
     private ResolvedTextStyle OddTc(ResolvedTextStyle style, bool odd) =>
         odd ? style with { BackgroundColor = OddTcBackColor } : style;
 
@@ -3182,6 +3190,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             SpojeDataSource = SpojeDataSource,
             SkupinyDnuDataSource = SkupinyDnuDataSource,
             Columns = Columns.Select(c => c.Clone()).ToList(),
+            ShowTripNumbers = ShowTripNumbers,
             ShowPlatnostRow = ShowPlatnostRow,
             TurnusyKeSpojum = TurnusyKeSpojum,
             ShowNzRow = ShowNzRow,
@@ -3230,6 +3239,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
+        new BoolPropertyDescriptor { Label = "Čísla spojů", Group = "Řádky", Get = () => ShowTripNumbers, Set = v => ShowTripNumbers = v },
         new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
         new BoolPropertyDescriptor { Label = "Turnusy ke spojům", Group = "Řádky", Get = () => TurnusyKeSpojum, Set = v => TurnusyKeSpojum = v },
         new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
