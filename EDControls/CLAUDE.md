@@ -125,6 +125,8 @@ XAML všech konzumentů.
   styl v `EDControlStyles.xaml`, viditelnost řídí konzument.
 - `EDToolbar/` - ikonová tlačítka z `EDViewModel.Actions`; velikost ikon z tokenu
   `EDTheme.IconSize.Default`; v design-time záměrně prázdný (Actions až za běhu), ne bug.
+- `SessionState/` - `ISessionState`, slovník v paměti procesu pro stav, který má přežít zavření
+  dialogu, ale ne restart (filtr v `EDInputForm`); co restart přežít má, patří do `UserPrefs/`.
 - `UserPrefs/` - `IUserPrefsService`; **default je no-op `NullUserPrefsService`** -
   dokud composition root nenastaví `CacheUserPrefsService` (po vzniku MLRest),
   preference se tiše neukládají. Služba volá **klon per request** (`IRestCallRunner`) a

@@ -6,12 +6,19 @@ namespace EDUPDATE2;
 
 public enum UpdatePhase
 {
+    /// <summary>Kontrola parametrů, cest a volného místa; cíl nedotčen.</summary>
     Validation,
+    /// <summary>Čekání na ukončení shellu a procesů, které drží vyměňované soubory (Detail = jméno procesu).</summary>
     WaitingForProcess,
+    /// <summary>Výběr souborů: diff proti manifestu EDISONCRC.bin, bez něj nebo při vynucení plná kopie.</summary>
     Selection,
+    /// <summary>Stažení do EDUPDATE2_Staging s kontrolou hashe; cíl nedotčen, zavření okna update přeruší.</summary>
     Staging,
+    /// <summary>Výměna souborů v cíli se zálohou do EDUPDATE2_Backup; okno nejde zavřít.</summary>
     Swap,
+    /// <summary>Obnova cíle ze zálohy po chybě výměny; okno nejde zavřít.</summary>
     Rollback,
+    /// <summary>Konec běhu - úspěch, no-op i chyba; výsledek nese UpdateResult.</summary>
     Done,
 }
 

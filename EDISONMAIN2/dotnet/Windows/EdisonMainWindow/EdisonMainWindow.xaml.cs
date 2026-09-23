@@ -88,9 +88,11 @@ namespace EDISONMAIN2
 
         // Vestavěný generic theme AvalonDocku má chrome (taby, bordery, pozadí dokumentů) natvrdo
         // světlý a EDTheme tokeny nečte - dark mode řeší výměna celého Theme; VS2013 dark paleta
-        // odpovídá EDTheme dark (#1E1E1E/#252526). Guard: Applied chodí i bez změny theme.
+        // odpovídá EDTheme dark (#1E1E1E/#252526). Guard: Applied chodí i bez změny theme, dotažení
+        // tab stripu na paletu ale musí proběhnout vždy.
         private void ApplyDockTheme()
         {
+            DockThemeBrushes.Apply(DockManager);
             bool dark = ThemeService.Current == AppTheme.Dark;
             if (dark ? DockManager.Theme is Vs2013DarkTheme : DockManager.Theme is Vs2013LightTheme) return;
             DockManager.Theme = dark ? new Vs2013DarkTheme() : new Vs2013LightTheme();

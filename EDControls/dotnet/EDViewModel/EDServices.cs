@@ -1,4 +1,5 @@
 using ALVA.LICENCE.EDLicence;
+using EDControls.SessionState;
 using EDControls.UserPrefs;
 
 namespace EDControls.EDViewModel;
@@ -65,6 +66,12 @@ public class EDServices(
     /// <see cref="CacheUserPrefsService"/> po vytvoření <see cref="MLRest"/>.
     /// </summary>
     public IUserPrefsService UserPrefs { get; set; } = new NullUserPrefsService();
+
+    /// <summary>
+    /// Přechodný stav sdílený controly po dobu běhu procesu (naposledy hledaný výraz, ...).
+    /// Nic neukládá - co má přežít restart, patří do <see cref="UserPrefs"/>.
+    /// </summary>
+    public ISessionState SessionState { get; set; } = new InMemorySessionState();
 
     private static EDServices? _current;
 
