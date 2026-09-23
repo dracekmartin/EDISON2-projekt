@@ -2,7 +2,9 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using EDControls;
+using Microsoft.Win32.SafeHandles;
 
 namespace EDISONMAIN2;
 
@@ -127,7 +129,9 @@ public class Updater
 
         // Vynucená vlna: razítko z Caché nesedí s lokální stopou → plné stažení. Záměrně až
         // po dev guardu a Broken checcích a před Caché mismatchem (plná kopie ho může spravit).
-        if (settings.ForcedStamp != "" && GetForcedStampSeen() != settings.ForcedStamp)
+        // Ze serverové instalace ne (legacy parita): kopie updateru sama na sebe by shell ukončila při každém startu.
+        if (settings.ForcedStamp != "" && GetForcedStampSeen() != settings.ForcedStamp
+            && !IsServerInstallation(settings.SourceDir))
             return new(UpdateOutcome.UpdateRequired, Version: source, Forced: true);
 
         if (settings.CacheVersion != "" && !VerzeInf.IsSameVersion(settings.CacheVersion, local))
@@ -140,6 +144,62 @@ public class Updater
     protected virtual string GetLocalVersion() => VerzeInf.Current;
 
     protected virtual string GetSourceVersion(string sourceDir) => VerzeInf.ReadVersion(sourceDir);
+
+    /// <summary>Shell běží přímo ze serverové instalace (na serveru, stanice spouštěná ze share).</summary>
+    protected virtual bool IsServerInstallation(string sourceDir) =>
+        IsSameInstallation(AppContext.BaseDirectory, sourceDir);
+
+    /// <summary>
+    /// Tentýž adresář textově (normalizace jako legacy <c>clsUpdate.NormalizePath</c>), nebo fyzicky:
+    /// VERZE.INF je v obou cestách tentýž soubor, i když server vidí <c>D:\Edison</c> a zdroj je <c>\\SERVER\Edison</c>.
+    /// </summary>
+    internal static bool IsSameInstallation(string installDirectory, string sourceDir)
+    {
+        if (string.IsNullOrWhiteSpace(sourceDir)) return false;
+        try
+        {
+            if (string.Equals(NormalizeDirectory(installDirectory), NormalizeDirectory(sourceDir),
+                              StringComparison.OrdinalIgnoreCase))
+                return true;
+            return FileIdentity(Path.Combine(installDirectory, VerzeInf.FileName)) is { } local
+                && FileIdentity(Path.Combine(sourceDir, VerzeInf.FileName)) is { } source
+                && local == source;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException
+                                      or NotSupportedException)
+        {
+            return false;
+        }
+    }
+
+    private static string NormalizeDirectory(string path) =>
+        Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+    private static (uint Volume, ulong Index)? FileIdentity(string path)
+    {
+        if (!File.Exists(path)) return null;
+        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        if (!GetFileInformationByHandle(handle, out var info)) return null;
+        return (info.VolumeSerialNumber, ((ulong)info.FileIndexHigh << 32) | info.FileIndexLow);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ByHandleFileInformation
+    {
+        public uint FileAttributes;
+        public System.Runtime.InteropServices.ComTypes.FILETIME CreationTime;
+        public System.Runtime.InteropServices.ComTypes.FILETIME LastAccessTime;
+        public System.Runtime.InteropServices.ComTypes.FILETIME LastWriteTime;
+        public uint VolumeSerialNumber;
+        public uint FileSizeHigh;
+        public uint FileSizeLow;
+        public uint NumberOfLinks;
+        public uint FileIndexHigh;
+        public uint FileIndexLow;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GetFileInformationByHandle(SafeFileHandle file, out ByHandleFileInformation info);
 
     /// <summary>Lokální stopa poslední splněné vynucené vlny vedle exe. Legacy CliUp.ini čte i starý shell,
     /// takže vlnu splněnou kterýmkoli shellem druhý neopakuje.</summary>

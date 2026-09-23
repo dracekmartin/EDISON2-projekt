@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using EDControls;
 using EDTesting;
@@ -13,9 +14,12 @@ public class UpdaterTests
         public string LocalVersion { get; set; } = "";
         public string SourceVersion { get; set; } = "";
         public string StampSeen { get; set; } = "";
+        public bool ServerInstallation { get; set; }
         public string? SourceDirSeen { get; private set; }
 
         protected override string GetLocalVersion() => LocalVersion;
+
+        protected override bool IsServerInstallation(string sourceDir) => ServerInstallation;
 
         protected override string GetSourceVersion(string sourceDir)
         {
@@ -239,6 +243,91 @@ public class UpdaterTests
         var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    [Fact]
+    public void Check_ForcedStampButShellRunsFromServerInstallation_None()
+    {
+        // Legacy parita: shell na serveru / stanice ze share by kopíroval updater sám na sebe
+        // a při každém startu skončil na výjimce.
+        var updater = new TestableUpdater
+        {
+            LocalVersion = "20260526.1", SourceVersion = "20260526.1", StampSeen = "65995,1",
+            ServerInstallation = true,
+        };
+
+        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+
+        Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    private static string NewInstallDir()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, VerzeInf.FileName), "LAST=260901.1\n");
+        return dir;
+    }
+
+    [Fact]
+    public void IsSameInstallation_SameDirectoryWrittenDifferently_True()
+    {
+        var dir = NewInstallDir();
+        try
+        {
+            Assert.True(Updater.IsSameInstallation(dir, dir.ToUpperInvariant() + Path.DirectorySeparatorChar));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void IsSameInstallation_JunctionToSameDirectory_True()
+    {
+        // Jiná cesta k témuž adresáři, jako D:\Edison proti \\SERVER\Edison na serveru - textově
+        // se neshodují, pozná se to podle ID souboru VERZE.INF.
+        var dir = NewInstallDir();
+        var junction = dir + "-junction";
+        try
+        {
+            using (var mklink = Process.Start(new ProcessStartInfo("cmd.exe")
+                   {
+                       ArgumentList = { "/c", "mklink", "/J", junction, dir },
+                       UseShellExecute = false,
+                       CreateNoWindow = true,
+                   })!)
+            {
+                mklink.WaitForExit();
+                Assert.Equal(0, mklink.ExitCode);
+            }
+
+            Assert.True(Updater.IsSameInstallation(dir, junction));
+        }
+        finally
+        {
+            if (Directory.Exists(junction)) Directory.Delete(junction);
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void IsSameInstallation_DifferentInstallationsOrEmptySource_False()
+    {
+        var a = NewInstallDir();
+        var b = NewInstallDir();
+        try
+        {
+            Assert.False(Updater.IsSameInstallation(a, b));
+            Assert.False(Updater.IsSameInstallation(a, ""));
+            Assert.False(Updater.IsSameInstallation(a, Path.Combine(a, "neexistuje")));
+        }
+        finally
+        {
+            Directory.Delete(a, recursive: true);
+            Directory.Delete(b, recursive: true);
+        }
     }
 
     [Fact]
