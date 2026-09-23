@@ -274,7 +274,7 @@ skládej z jednotlivých TextElementů s rámečky, ne z tabulky.
 
 4. **Placeholdery:**
    - Datová pole: `{CISLO}`, `{NAZEV}`, `{DATUM}`
-   - Speciální: `{PAGE}` (číslo stránky), `{DATE}` (datum tisku)
+   - Speciální: `{STRANA}` (číslo stránky), `{POCET_STRAN}`, `{DATE}` (datum tisku)
    - Použití v text, table cells, barcode content
 
 5. **Typografie:**
@@ -395,7 +395,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
       ""elements"": [
         {
           ""type"": ""TextElement"",
-          ""text"": ""Stránka {PAGE}"",
+          ""text"": ""Stránka {STRANA}"",
           ""style"": { ""fontSize"": 10, ""hAlign"": ""Center"", ""textColor"": ""#FF666666"" },
           ""x"": 10,
           ""y"": 5,

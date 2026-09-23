@@ -71,8 +71,9 @@ s daty z agendy → PDF.
 - Vybrat linky/instance: Ctrl+Shift+I, nebo klik na modrý chip ve status baru (u JŘ popsaný
   'Linka') → výběr se search boxem; ◀▶ listuje, ▲ rozbalí seznam vybraných, ↻ (nebo F5) znovu
   načte data.
-- Pole agendy: záložka 'Pole agendy' v levém panelu; pole lze táhnout na canvas
-  (vytvoří text) nebo na existující text (přidá placeholder); dvojklik = do schránky.
+- Datová pole: záložka 'Datová pole' v levém panelu - pole agendy a pole stránky ({STRANA},
+  {POCET_STRAN}, {POKRACOVANI}); pole lze táhnout na canvas (vytvoří text) nebo na existující
+  text (přidá placeholder); dvojklik = do schránky.
 - Parametry sestavy: lišta parametrů nad náhledem (živě mění náhled) - tytéž
   hodnoty jsou v dialogu tisku.
 
@@ -121,7 +122,7 @@ s daty z agendy → PDF.
 - Zoom: Ctrl+kolečko (k kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
 - Mřížka a přichytávání: toolbar - zobrazit mřížku, snap na mřížku (velikost 0,2–10 mm),
   snap na elementy; Ctrl+Shift+N normalizuje pozice existujících elementů.
-- Levý panel: záložky Sekce / Pole agendy / Vlastnosti / Strom / Pomocník; Ctrl+B sbalí.
+- Levý panel: záložky Sekce / Datová pole / Vlastnosti / Strom / Pomocník; Ctrl+B sbalí.
 - Strom šablony: záložka 'Strom' - hierarchie sekce → skupiny → elementy.
 
 ## Klávesové zkratky (kompletní)

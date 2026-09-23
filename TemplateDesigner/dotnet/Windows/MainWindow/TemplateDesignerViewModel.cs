@@ -739,7 +739,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Bindable properties ───────────────────────────────────────────────────
 
     private bool _showFieldsEmptyState;
-    /// <summary>Panel „Pole agendy" nemá co zobrazit (bez agendy/DB nebo obecná šablona) → ukázat empty-state místo prázdna.</summary>
+    /// <summary>Panel „Datová pole" nemá co zobrazit z agendy (bez agendy/DB nebo obecná šablona) → ukázat empty-state místo prázdna.</summary>
     public bool ShowFieldsEmptyState { get => _showFieldsEmptyState; private set => Set(ref _showFieldsEmptyState, value); }
     public bool CanUndo => State.CanUndo;
     public bool CanRedo => State.CanRedo;
@@ -2995,7 +2995,13 @@ public class TemplateDesignerViewModel : EDViewModel
                 $"📋 Pole agendy ({textFields.Count})",
                 textFields.Select(f => new SchemaFieldVM(f.FieldName, f.Label))));
 
-        ShowFieldsEmptyState = SchemaGroups.Count == 0;
+        // Hodnoty, které dosadí až sazba podle stránky (`PageLayoutEngine.HodnotyStranky`) - v datech
+        // agendy nejsou, a číslo stránky proto do 23. 9. znala jen nápověda. Vloží se jen do sekce
+        // tištěné na každé stránce - v sekci obsahu by ukázala hodnotu první strany.
+        SchemaGroups.Add(new SchemaGroupVM($"📄 Stránka ({PoleStranky.Length})",
+            PoleStranky.Select(p => new SchemaFieldVM(p.Pole, p.Popis))));
+
+        ShowFieldsEmptyState = textFields.Count == 0;
     }
 
     public void LoadAgendaParameters(string? agendaCode)
@@ -3595,8 +3601,17 @@ public class TemplateDesignerViewModel : EDViewModel
         var fromCollections = (schema.FieldCollections ?? []).SelectMany(c =>
             c.Fields.Select(f => new EDControls.ListItem(f.FieldName, $"{f.Label ?? f.FieldName} ({c.Name})")));
 
-        return [.. items.Concat(fromCollections).DistinctBy(i => i.Key)];
+        var zeStranky = PoleStranky.Select(p => new EDControls.ListItem(p.Pole, $"{p.Popis} (stránka)"));
+        return [.. items.Concat(fromCollections).Concat(zeStranky).DistinctBy(i => i.Key)];
     }
+
+    /// <summary>Pole, která dosadí až sazba podle stránky (`PageLayoutEngine.HodnotyStranky`).</summary>
+    internal static readonly (string Pole, string Popis)[] PoleStranky =
+    [
+        ("STRANA", "Číslo stránky"),
+        ("POCET_STRAN", "Počet stran"),
+        ("POKRACOVANI", "Pokračování / opačný směr"),
+    ];
 
     /// <summary>
     /// Sestaví DataContext pro preview. Priorita:

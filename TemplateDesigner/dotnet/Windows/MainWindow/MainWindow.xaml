@@ -613,8 +613,8 @@
                         </DockPanel>
                     </TabItem>
 
-                    <!-- ── Záložka Pole agendy ── -->
-                    <TabItem x:Name="TabFields"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Fields}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Pole agendy" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
+                    <!-- ── Záložka Datová pole ── -->
+                    <TabItem x:Name="TabFields"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Fields}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Datová pole" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <DockPanel>
                             <!-- Záhlaví: název agendy -->
                             <Border DockPanel.Dock="Top"

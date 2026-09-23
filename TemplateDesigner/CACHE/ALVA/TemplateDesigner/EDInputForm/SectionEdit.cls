@@ -68,7 +68,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
         s f.placeholders = 1
-        s f.helpText = "Např. {PAGE} > 1 - sekce se vytiskne jen když podmínka platí"
+        s f.helpText = "Např. {STRANA} > 1 - sekce se vytiskne jen když podmínka platí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

@@ -34,7 +34,7 @@ public class Section
 
     /// <summary>
     /// Podmínka viditelnosti (volitelné). Null = vždy viditelné.
-    /// Příklady: "{PAGE} > 1" (kromě první stránky), "{POCET} > 0" (pokud jsou data).
+    /// Příklady: "{STRANA} > 1" (kromě první stránky), "{POCET} > 0" (pokud jsou data).
     /// Vyhodnocuje print engine, designer zobrazuje vždy.
     /// </summary>
     public string? VisibilityExpression { get; set; }

@@ -619,11 +619,7 @@ public class PageLayoutEngine
                 if (!IsHeaderVisibleOnPage(header, pageNum, totalPages)) continue;
 
                 // VisibilityExpression per stránku (může obsahovat {PAGE})
-                var pageData = data?.WithExtraValues(new Dictionary<string, object?>
-                {
-                    ["PAGE"] = pageNum,
-                    ["TOTAL_PAGES"] = totalPages
-                });
+                var pageData = data?.WithExtraValues(HodnotyStranky(pageNum, totalPages, data));
                 if (!ExpressionEvaluator.IsVisible(header.VisibilityExpression, pageData)) continue;
 
                 float h = sectionHeights[header.Id];
@@ -644,11 +640,7 @@ public class PageLayoutEngine
             {
                 if (!IsHeaderVisibleOnPage(sekce, pageNum, totalPages)) continue;
 
-                var pageData = data?.WithExtraValues(new Dictionary<string, object?>
-                {
-                    ["PAGE"] = pageNum,
-                    ["TOTAL_PAGES"] = totalPages
-                });
+                var pageData = data?.WithExtraValues(HodnotyStranky(pageNum, totalPages, data));
                 if (!ExpressionEvaluator.IsVisible(sekce.VisibilityExpression, pageData)) continue;
 
                 float h = sectionHeights[sekce.Id];
@@ -675,11 +667,7 @@ public class PageLayoutEngine
             {
                 if (!IsFooterVisibleOnPage(footer, pageNum, totalPages)) continue;
 
-                var pageData = data?.WithExtraValues(new Dictionary<string, object?>
-                {
-                    ["PAGE"] = pageNum,
-                    ["TOTAL_PAGES"] = totalPages
-                });
+                var pageData = data?.WithExtraValues(HodnotyStranky(pageNum, totalPages, data));
                 if (!ExpressionEvaluator.IsVisible(footer.VisibilityExpression, pageData)) continue;
 
                 float h = sectionHeights[footer.Id];
@@ -698,6 +686,45 @@ public class PageLayoutEngine
     // ─────────────────────────────────────────────────────────────────────
     // PAGE / TOTAL_PAGES
 
+    /// <summary>Hodnoty, které zná jen sazba: číslo stránky, počet stran a text pokračování.</summary>
+    /// <remarks>⚠️ `PAGE` a `TOTAL_PAGES` zůstávají vedle českých názvů kvůli uloženým šablonám -
+    /// v nabídce polí jsou od 23. 9. jen `STRANA` a `POCET_STRAN`.</remarks>
+    internal static Dictionary<string, object?> HodnotyStranky(int stranka, int stran, DataContext? data) => new()
+    {
+        ["STRANA"] = stranka,
+        ["POCET_STRAN"] = stran,
+        ["PAGE"] = stranka,
+        ["TOTAL_PAGES"] = stran,
+        ["POKRACOVANI"] = TextPokracovani(stranka, data),
+    };
+
+    /// <summary>
+    /// Nápis „pokračování / opačný směr" jako ve starém Win tisku - podle toho, jestli je stránka
+    /// první stránkou sady dat a jestli jde o směr Zpět (`SMER` = "Z").
+    /// </summary>
+    /// <remarks>
+    /// Starý tisk ho kreslil šedým pruhem nad každou částí tabulky s barvou natvrdo (#9088 chtěl
+    /// jinou). Tady je to pole, které si uživatel vloží do vlastního textového prvku, takže vzhled
+    /// řeší prvek. ⚠️ Platí pro <b>stránku</b>, ne pro část tabulky: dvě části pod sebou na jedné
+    /// stránce dostanou nápis jen jeden. Stránky se číslují zvlášť pro každou sadu dat (každý směr
+    /// linky je jedna), proto „první stránka" = začátek směru. Jazyk řídí kultura šablony.
+    /// </remarks>
+    internal static string TextPokracovani(int stranka, DataContext? data)
+    {
+        bool zpet = string.Equals(data?.GetValue("SMER")?.ToString(), "Z", StringComparison.OrdinalIgnoreCase);
+        bool sk = string.Equals(data?.Culture.TwoLetterISOLanguageName, "sk", StringComparison.OrdinalIgnoreCase);
+        return (zpet, stranka > 1, sk) switch
+        {
+            (false, false, _) => "",
+            (false, true, false) => "pokračování",
+            (false, true, true) => "pokračovanie",
+            (true, false, false) => "opačný směr",
+            (true, false, true) => "opačný smer",
+            (true, true, false) => "opačný směr - pokračování",
+            (true, true, true) => "opačný smer - pokračovanie",
+        };
+    }
+
     private static void InjectPageNumbers(LayoutResult result)
     {
         int totalPages = result.TotalPages;
@@ -705,23 +732,10 @@ public class PageLayoutEngine
         {
             foreach (var placed in page.Sections)
             {
-                if (placed.Data is not null)
-                {
-                    placed.Data = placed.Data.WithExtraValues(new Dictionary<string, object?>
-                    {
-                        ["PAGE"] = page.PageNumber,
-                        ["TOTAL_PAGES"] = totalPages
-                    });
-                }
-                else
-                {
-                    placed.Data = new DataContext(
-                        new Dictionary<string, object?>
-                        {
-                            ["PAGE"] = page.PageNumber,
-                            ["TOTAL_PAGES"] = totalPages
-                        });
-                }
+                var hodnoty = HodnotyStranky(page.PageNumber, totalPages, placed.Data);
+                placed.Data = placed.Data is not null
+                    ? placed.Data.WithExtraValues(hodnoty)
+                    : new DataContext(hodnoty);
             }
         }
     }

@@ -1,5 +1,27 @@
 ﻿# Changelog
 
+## 2026-09-23 (2) - 🇸🇰 linkový JŘ slovensky, čísla spojů a pole pokračování (#9088)
+
+Dorovnání linkového JŘ se starým Win tiskem podle tiketu TRANSDEV (slovenská instalace):
+
+- **Poznámky jazykem šablony.** Texty z číselníku se vybírají podle jazyka šablony, stejně jako
+  u zastávkového JŘ - dřív vyhrála čeština vždy, když ji firma měla. Týká se i vět o návaznostech
+  („spoj … počká na zastávke …"), které byly česky natvrdo v kódu; teď jdou z číselníku.
+  Česky zůstává jen to, co je česky v datech (texty značek ve slovenském číselníku firmy,
+  poznámky zadané u linky).
+- **Popisky přípojných řádků slovensky** („zo smeru" / „smer", doslova ze starého tisku). Při
+  slučování i podle linky nese popisek číslo linky - dřív měly řádky dvou linek týž popisek.
+- **Volba „Čísla spojů"** u tabulky linky. Starý Win tisk ji nabízel, ale čísla neskryl.
+- **Pole stránky `{POKRACOVANI}`** - nápis „pokračování / opačný směr / opačný směr - pokračování"
+  jako ve starém tisku, do vlastního textového prvku v hlavičce stránky (vzhled tedy řeší prvek;
+  starý tisk měl šedou barvu natvrdo). Platí pro stránku, ne pro část tabulky.
+- Záložka „Pole agendy" se jmenuje **„Datová pole"** a má skupinu **Stránka** s poli `{STRANA}`,
+  `{POCET_STRAN}` a `{POKRACOVANI}`; staré `{PAGE}` / `{TOTAL_PAGES}` fungují dál.
+
+Týž den ještě tři opravy tabulky linky: pomlčka zastávky bez zóny je ve všech dílech rozdělených
+zón, nadpis skupiny dnů rozšíří své sloupce, když se do nich nevejde, a názvy zastávek bez značky
+„na znamení" odsazuje změřená šířka místo mezer.
+
 ## 2026-09-23 (1) - ― úsečka mezi příjezdem a odjezdem je tenká jako mřížka
 
 U zastávky, kde se příjezd a odjezd tisknou na dva řádky (dvě zóny nad sebou), je mezi nimi
