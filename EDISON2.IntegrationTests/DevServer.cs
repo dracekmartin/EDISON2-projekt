@@ -27,7 +27,7 @@ internal static class DevServer
     public const string WriteIdfa = "TEST_EDISON2_IT";
     public const string WriteMlp = "999";
 
-    private const string LoginName = "test";
+    public const string LoginName = "test";
 
     // MLRest má timeout 8 h - bez předběžné kontroly by každý test bez VPN visel na TCP timeoutu OS.
     private static readonly Lazy<bool> Reachable = new(Probe);

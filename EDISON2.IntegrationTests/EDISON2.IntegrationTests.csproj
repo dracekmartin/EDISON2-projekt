@@ -28,6 +28,9 @@
     <Reference Include="MLRest">
       <HintPath>C:\Edison\MLRest.dll</HintPath>
     </Reference>
+    <Reference Include="EDLicence">
+      <HintPath>C:\Edison\EDLicence.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
