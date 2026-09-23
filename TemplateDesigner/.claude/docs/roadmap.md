@@ -60,10 +60,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 Ani u jedné není první krok kód. Podklady k tiketům drží
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
-- **`#9088` bod 3: ručně zadaný „název směru" u linky** [S] (TRANSDEV, dřív `C9`; chtěné i pro
-  vývěsky). ⚠️ **Nejde udělat u nás** - vyžaduje **nové pole u linky v jízdních řádech**. Náš díl
-  je malý (pole pustit schématem a nabídnout v šabloně), ale bez toho pole nemá kam sáhnout.
-
 - **`#9417` Filtrování dopravců v záhlaví** [M] (KORID, dřív `B102`). Přetečení hlavičky pod
   tabulku je vyřešené (záhlaví má vlastní sekci), zbývá volba, kteří dopravci se tisknou.
   **Čeká na zákazníka s linkou, která má mnoho dopravců** - jeho případ byl souhrnný JŘ dvou linek
@@ -78,6 +74,10 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
 ## 📥 Backlog
 
 ### Ostatní
+
+- **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
+  JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
+  (zákazníkovi odpovězeno 23. 9.). Náš díl: pustit pole schématem obou agend a nabídnout v šabloně.
 
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší. Nápad: sázecí

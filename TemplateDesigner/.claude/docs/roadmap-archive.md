@@ -18,6 +18,11 @@
   `templates/linkovy-jr-ad-poznamky-vedle-a4.json` (A4 naležato, tabulka 195 mm vlevo, Poznámky
   87 mm vpravo v jedné sekci), odvozená z postskriptové A5. Jan ji uložil a poslal zákazníkovi.
   Neověřeno: zlom stránky u linky delší než strana může Poznámky přetnout.
+- **#9088** (TRANSDEV, slovenská instalace) - osm bodů prošlo proti starému Win tisku: slévání stran
+  se nás netýká, směrová zastávka podle směru i jako název MHD, volba „Čísla spojů", turnusy,
+  přípojné řádky s číslem linky, slovenské poznámky i věty návazností podle jazyka šablony, pole
+  `{POKRACOVANI}` místo šedého řádku. Detail changelog 2026-09-23 (2). Odpověď poslal Jan; zbylý
+  název směru je v backlogu.
 
 ## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
 
