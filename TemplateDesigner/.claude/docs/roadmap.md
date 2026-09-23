@@ -73,18 +73,6 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
   druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
 
-### K ověření na reálné sestavě
-
-Ne implementace - **projít a zavřít**. Vzniká to tím, že návrhář umí věc, kterou starý modul neuměl,
-takže nejde o práci, ale o doklad.
-
-| Tiket | Stav |
-|---|---|
-| **#11373 poznámky vedle tabulky** (KAD) | Umíme to (prvek má volnou pozici, od `B117` i u linkových). Zbývá **výtisk** - jde o to, jestli je legenda v úzkém sloupci čitelná |
-
-Naše vlastní kontrolní body (pořadí sloupců, písmena ze zóny, ukázková data v náhledu) jsou
-vyřízené - [`roadmap-archive.md`](roadmap-archive.md).
-
 ---
 
 ## 📥 Backlog

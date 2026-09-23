@@ -14,6 +14,10 @@
   (s dorovnáním a bez) na 0330517 a 0330510 k posouzení. Ve starém Win tisku byla volba v šabloně
   (sekce Data linky), u knižního a vývěsního u linky. Kdyby chtěl krátké linky bez dorovnání
   a dlouhé s ním jednou šablonou: volba *Jen když se tabulka dělí na části* (odhad S).
+- **#11373** (KAD) - poznámky a negativní značky vedle tabulky: šablona
+  `templates/linkovy-jr-ad-poznamky-vedle-a4.json` (A4 naležato, tabulka 195 mm vlevo, Poznámky
+  87 mm vpravo v jedné sekci), odvozená z postskriptové A5. Jan ji uložil a poslal zákazníkovi.
+  Neověřeno: zlom stránky u linky delší než strana může Poznámky přetnout.
 
 ## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
 
