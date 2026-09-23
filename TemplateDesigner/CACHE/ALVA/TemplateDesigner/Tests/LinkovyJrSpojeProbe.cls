@@ -75,6 +75,42 @@ ClassMethod Spoje(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Vypíše **texty poznámek** první stránky, jak je `GetData` pošle - hlavně kvůli jazyku textů
+/// (#9088: slovenská šablona na Nitře tiskla české poznámky).
+///
+/// IN: `LINKA_ID` (+ `SKUPINA_LINEK_ID`, `JAZYK` a další parametry tisku), `MAX` (výchozí 8).
+/// OUT: `poznamka~<i>` = `druh:znak text`.
+ClassMethod Poznamky(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s max = +$g(^||ML("IN","MAX"))
+		s:max<1 max = 8
+		m vstup = ^||ML("IN")
+		k ^||ML("OUT")
+		d ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetData(.sys)
+		m odpoved = ^||ML("OUT")
+		k ^||ML("OUT")
+		s ^||ML("OUT","chyba") = $g(odpoved("ERR"))
+		s key = $o(odpoved(""))
+		i (key '= "") && (key '= "ERR") {
+			s pozn = ##class(%DynamicObject).%FromJSON(odpoved(key)).rows.%Get("POZNAMKY")
+			i $isobject(pozn) {
+				f pi=0:1:pozn.%Size()-1 {
+					q:pi'<max
+					s p = pozn.%Get(pi)
+					s ^||ML("OUT","poznamka~"_(pi+1)) = p.%Get("DRUH")_":"_p.%Get("ZNAK")_" "_$e(p.%Get("TEXT"),1,80)
+				}
+			}
+		}
+		k ^||ML("IN")
+		m ^||ML("IN") = vstup
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Vypíše **přípoje per spoj** tak, jak je `GetData` pošle - u kterého spoje a na které zastávce.
 ///
 /// Proč: `#11300` (KORID) je o prázdném přípojném řádku na tabulce, kde jsou pracovní dny a víkend

@@ -557,9 +557,16 @@ ClassMethod DeleniZParametru(label As %String) As %Integer
     q $case(label, "Bez rozlišení":0, "Pracovní dny / víkend+svátky":1, :2)
 }
 
-/// Jazyková varianta textových číselníků (NCOME/STALCOME/WinMHD): "CZ", při SK instalaci "*SK".
+/// Jazyková varianta textových číselníků (NCOME/STALCOME/WinMHD): "CZ" nebo "*SK".
+///
+/// ⚠️ **Rozhoduje jazyk šablony** (`JAZYK` z klienta), stejně jako u zastávkového JŘ (#12843):
+/// firma může mít vyplněné obě varianty a dřív tu vyhrála čeština vždy, když existovala - slovenská
+/// šablona na Nitře tiskla české poznámky (#9088, 23. 9.). Bez jazyka šablony zůstává dřívější volba.
 ClassMethod Jazyk(dataDB As %String) As %String
 {
+    s kod = $zcvt($p($g(^||ML("IN","JAZYK")),"-",1),"L")
+    i (kod = "sk") && $d(^[dataDB]JRSET("NCOME","*SK")) q "*SK"
+    i (kod = "cs") && $d(^[dataDB]JRSET("NCOME","CZ")) q "CZ"
     i $g(^[dataDB]JRSET("NCOME","CZ","X")) '= "" q "CZ"
     i $d(^[dataDB]JRSET("NCOME","*SK")) q "*SK"
     q "CZ"

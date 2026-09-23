@@ -3022,9 +3022,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private ResolvedTextStyle OddTc(ResolvedTextStyle style, bool odd) =>
         odd ? style with { BackgroundColor = OddTcBackColor } : style;
 
-    private static string PripojText(LinePripojData pr)
+    /// <summary>Popisky přípojných řádků jdou jazykem šablony, jako legenda poznámek.</summary>
+    /// <remarks>Na slovenské šabloně vycházely česky, horší než starý tisk (#9088).</remarks>
+    private bool SlovenskePopisky() =>
+        string.Equals(_cachedCulture?.TwoLetterISOLanguageName, "sk", StringComparison.OrdinalIgnoreCase);
+
+    /// <remarks>Starý tisk tuhle větu v tabulce nemá (tiskne jen sloučené řádky), takže slovenské
+    /// znění je naše, odvozené z jeho textů poznámek (`Main.cls:245-246`).</remarks>
+    internal static string PripojText(LinePripojData pr, bool slovensky = false)
     {
-        string sloveso = pr.Typ == "vycka" ? "vyčká na spoj" : "navazuje spoj";
+        string sloveso = (pr.Typ == "vycka", slovensky) switch
+        {
+            (true, false) => "vyčká na spoj",
+            (false, false) => "navazuje spoj",
+            (true, true) => "počká na spoj",
+            (false, true) => "nadväzuje spoj",
+        };
         return $"{sloveso} {pr.Spoj} linky {pr.Linka} do {pr.Text}";
     }
 
@@ -3036,9 +3049,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// Sloučený řádek nese časy víc spojů, takže v popisku nemůže být číslo jednoho z nich.
     /// Rozhodnutí Jan 4. 9.: šetření místa váží víc než to, aby cestující věděl, kterou linkou
     /// přípoj přijede - potřebuje čas.
+    /// <para>Slovensky „zo smeru" / „smer" doslova ze starého tisku (`Main.cls:243-244`). Při slučování
+    /// i podle linky předchází popisku číslo linky, jinak by řádky dvou linek měly týž popisek
+    /// (starý tisk totéž, `JRapiLinPrtWin01.mac:149-170`).</para>
     /// </remarks>
-    private static string PripojTextSouhrnny(LinePripojData pr) =>
-        pr.Typ == "vycka" ? $"ze směru {pr.Text}" : $"směr {pr.Text}";
+    internal static string PripojTextSouhrnny(LinePripojData pr, bool slovensky = false, bool sLinkou = false)
+    {
+        string popisek = (pr.Typ == "vycka", slovensky) switch
+        {
+            (true, false) => $"ze směru {pr.Text}",
+            (false, false) => $"směr {pr.Text}",
+            (true, true) => $"zo smeru {pr.Text}",
+            (false, true) => $"smer {pr.Text}",
+        };
+        return sLinkou && pr.Linka != "" ? $"{pr.Linka} {popisek}" : popisek;
+    }
 
     /// <summary>Jeden přípojný řádek: popisek a časy per spoj (index do sady spojů bloku).</summary>
     /// <remarks>
@@ -3087,7 +3112,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 {
                     if (PripojeSlucovani == PripojSlucovani.Ne)
                     {
-                        var samostatny = new PripojRadek { Popisek = PripojText(pr) };
+                        var samostatny = new PripojRadek { Popisek = PripojText(pr, SlovenskePopisky()) };
                         Casy(samostatny, zrcadleny)[ti] = pr.Cas;
                         radky.Add(samostatny);
                         continue;
@@ -3106,7 +3131,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     var cil = skupina.FirstOrDefault(r => !Casy(r, zrcadleny).ContainsKey(ti));
                     if (cil is null)
                     {
-                        cil = new PripojRadek { Popisek = PripojTextSouhrnny(pr) };
+                        cil = new PripojRadek { Popisek = PripojTextSouhrnny(pr, SlovenskePopisky(),
+                            PripojeSlucovani == PripojSlucovani.PodleSmeruALinky) };
                         skupina.Add(cil);
                         radky.Add(cil);
                     }
