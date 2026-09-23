@@ -19,8 +19,8 @@ k distribuci při vydání shellu (včetně těch z repa EDISON): `docs/deploy.m
 
 ## Struktura a pravidla pro CLAUDE.md
 
-`EDISONMAIN2/`, `EDControls/`, `TemplateDesigner/`, `ServiceGtfsRt/` a `EDUPDATE2/`
-(klientský updater nového shellu) mají **vlastní `CLAUDE.md`**, EDControls navíc per-komponenta. `EDTesting/` = Caché test framework
+`EDISONMAIN2/`, `EDControls/`, `TemplateDesigner/`, `ServiceGtfsRt/`, `EDUPDATE2/`
+(klientský updater nového shellu) a `EDISON2.IntegrationTests/` mají **vlastní `CLAUDE.md`**, EDControls navíc per-komponenta. `EDTesting/` = Caché test framework
 (`MLTestCase` + `TestRunner`), `docs/mlrest.md` = kompletní reference Caché architektury,
 `.husky/` = git hooks (auto-install při `dotnet restore`).
 
@@ -123,9 +123,11 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
 ## Testy
 
 - **.NET**: `dotnet test EDISON2.sln` (xUnit + NSubstitute).
+- **Šev .NET ↔ Caché**: `EDISON2.IntegrationTests` (skutečné MLRest proti dev serveru, pravidla v jeho `CLAUDE.md`).
 - **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)`
   pro `$$$FillParams` boilerplate), metody `TestXxx()`. Běh `pwsh -File
-  tools/run-cache-tests.ps1 [-Package ...]`; nový package mimo default list skriptu
+  tools/run-cache-tests.ps1 [-Package ...]` proti dev serveru `192.168.16.1:57770` (VPN, user
+  `$env:USERNAME`, override `$env:CACHE_USER`); nový package mimo default list skriptu
   (EDISONMAIN2/EDControls/TemplateDesigner Tests) tam přidej, jinak ho pre-push hook nepokryje.
 - **Nasazení `.cls` na server dělá hook sám** (`.claude/hooks/compile-objectscript.sh`,
   PostToolUse na Edit/Write) - upload + compile, chyby na stderr. `cache_compile` (MCP) volej
@@ -140,8 +142,6 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
   Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí všechny; testovací `.cls`
   (EDControls `Tests/`) jen svůj balíček - TD sada je nejdražší (~45 s). Souhrn selhání
   `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
-- Caché testy potřebují dev server `192.168.16.1:57770` (VPN); user z `$env:USERNAME`
-  (override `$env:CACHE_USER`).
 
 ## Typografie a komentáře
 
