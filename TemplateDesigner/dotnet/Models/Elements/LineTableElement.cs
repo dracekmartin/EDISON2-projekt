@@ -850,7 +850,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // tím, jestli zastávka má **jakýkoli** atribut - jenže řídicí atributy (T, P) se netisknou,
         // takže zastávka s nimi dostala název odsazený o mezeru bez viditelného důvodu. Vypadalo
         // to jako záměrné odsazení významných zastávek (nález Jan 7. 9.).
-        ColumnKeys.StopName => s => NazevSeZnackami(s.Atributy, s.Popis, SirkaZnacekZastavek()),
+        ColumnKeys.StopName => s => NazevSeZnackami(s.Atributy, s.Popis),
         // U rozdvojené zastávky je tohle jediné, co říká, který ze dvou časů je příjezd a který
         // odjezd - ze šipky směru se to nepozná (`B136`). Legacy to píše do téhož sloupce
         // (`JRapiLinPrtWin.mac:3075`), takže se sloupec šipky u těch řádků přeruší.
@@ -1435,30 +1435,35 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// **jakýkoli** atribut - jenže řídicí atributy („T" tarifní bod, „P" oddělený příjezd)
     /// se netisknou, takže právě významné zastávky vyšly odsazené o mezeru bez viditelného
     /// důvodu a vypadalo to jako záměr (nález Jan 7. 9.).
-    /// <para>⚠️ <paramref name="sirkaZnacek"/> odsadí **všechny** názvy stejně, jakmile má značku
-    /// aspoň jedna zastávka linky - tak to dělá starý tisk a názvy pak stojí ve svislici
-    /// (rozhodnutí Jan 22. 9.). Nula = bez odsazení, tedy linka, kde značku nemá nikdo.</para>
+    /// Svislici názvů drží <see cref="DorovnaniNazvuMm"/>, ne tenhle text.
     /// </remarks>
-    internal static string NazevSeZnackami(IReadOnlyList<string> atributy, string popis,
-        int sirkaZnacek = 0)
+    internal static string NazevSeZnackami(IReadOnlyList<string> atributy, string popis)
     {
-        string znacky = string.Join("", atributy.Where(IsDisplayableStopAttribute));
-        if (sirkaZnacek <= 0) return znacky == "" ? popis : znacky + " " + popis;
-        return znacky.PadRight(sirkaZnacek) + " " + popis;
+        string znacky = ZnackyZastavky(atributy);
+        return znacky == "" ? popis : znacky + " " + popis;
     }
 
-    /// <summary>Nejvíc zobrazitelných značek u jedné zastávky linky (0 = nemá je žádná).</summary>
-    /// <remarks>Podle toho se odsazují názvy všech zastávek, aby stály ve svislici. Počítá se
-    /// z celé trasy, ne z viditelných řádků: schování zastávky výrazem nemá posunout ostatní.</remarks>
-    private int SirkaZnacekZastavek()
+    private static string ZnackyZastavky(IReadOnlyList<string> atributy) =>
+        string.Join("", atributy.Where(IsDisplayableStopAttribute));
+
+    /// <summary>
+    /// O kolik mm posunout název zastávky, aby začínal tam, kde název za nejširší značkou linky.
+    /// </summary>
+    /// <remarks>
+    /// Jakmile má značku aspoň jedna zastávka linky, stojí všechny názvy ve svislici - tak to
+    /// dělá starý tisk (rozhodnutí Jan 22. 9.). Linka bez značek se neodsazuje.
+    /// <para>⚠️ Odsazuje se <b>změřenou šířkou</b>, ne mezerami: mezera je v proporcionálním
+    /// písmu užší než „x", takže názvy bez značky začínaly o kus vlevo (nález Jan 23. 9.).</para>
+    /// Počítá se z celé trasy, ne z viditelných řádků: schování zastávky výrazem nemá posunout ostatní.
+    /// </remarks>
+    internal static float DorovnaniNazvuMm(string vlastniZnacky, IEnumerable<string> znackyLinky,
+        SKFont font, float mmToPx)
     {
-        int max = 0;
-        foreach (var s in _cachedStops ?? [])
-        {
-            int pocet = s.Atributy.Count(IsDisplayableStopAttribute);
-            if (pocet > max) max = pocet;
-        }
-        return max;
+        float Predpona(string z) => z == "" ? 0f : font.MeasureText(z + " ") / mmToPx;
+        float nejsirsi = 0f;
+        foreach (var z in znackyLinky)
+            nejsirsi = MathF.Max(nejsirsi, Predpona(z));
+        return MathF.Max(0f, nejsirsi - Predpona(vlastniZnacky));
     }
 
     /// <summary>Má zastávka v trase vyžádané tučné písmo? Atribut „T" znamená v číselníku
@@ -2386,6 +2391,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var rozdvojeni = SloucitPopisyRozdvojene
             ? RozdvojeneRadky(stops, s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow))
             : null;
+        var znackyLinky = stops.Select(s => ZnackyZastavky(s.Atributy)).Where(z => z != "").Distinct().ToList();
+        using var fontNazvu = nameIndex >= 0 && znackyLinky.Count > 0
+            ? fixedCols[nameIndex].DataStyle.CreateFont(1f, ctx.MmToPx) : null;
         for (int si = 0; si < stops.Count; si++)
         {
             var stop = stops[si];
@@ -2425,6 +2433,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
                 if (ci == nameIndex && TucneZastavkyDleTrasy && MaTucneZTrasy(stop))
                     bunkaStyl = bunkaStyl with { Bold = true };
+                if (ci == nameIndex && fontNazvu is not null)
+                    bunkaStyl = bunkaStyl with { PaddingLeft = bunkaStyl.PaddingLeft
+                        + DorovnaniNazvuMm(ZnackyZastavky(stop.Atributy), znackyLinky, fontNazvu, ctx.MmToPx) };
                 // Sloučený popis rozdvojené zastávky: horní řádek ho nemá a dolní ho vypíše přes
                 // oba. Nese ho dolní, protože buňka smí přesahovat jen nahoru - a jen tak se jistě
                 // nakreslí nad už hotový horní řádek, ne pod něj.
@@ -2581,6 +2592,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// kde spoj čas nemá - v postskriptu tam vznikne taky (`JRapiLinPrtPS7.mac:144-145`).
     /// <para>⚠️ Nezávisí na tom, jestli má uživatel zapnutou mřížku. Není to čára mřížky, ale
     /// obsah: říká, že ty dva časy patří téže zastávce.</para>
+    /// <para>Tloušťku má ale mřížky: pevných 0,2 mm byla dvojnásobná a vedle tenkých čar
+    /// přípojných řádků působila jako chyba (nález Jan 23. 9.).</para>
     /// </remarks>
     private void DrawUseckaRozdvojene(RenderContext ctx, float yMm, SloupcovaMrizka mrizka,
         int spoju, int zrcadlenych, ResolvedTextStyle styl, float scale, float tloustkaPx)
@@ -2592,8 +2605,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             StrokeWidth = tloustkaPx,
             IsAntialias = true,
         };
-    /// <para>Tloušťku má ale mřížky: pevných 0,2 mm byla dvojnásobná a vedle tenkých čar
-    /// přípojných řádků působila jako chyba (nález Jan 23. 9.).</para>
         void Usek(float odMm, float sirkaMm)
         {
             float vule = VuleMm * scale;
