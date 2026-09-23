@@ -347,6 +347,22 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvT.serverSide   = 1
     s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
 
+    // Počet stran (#8785): sazba zmenší nejdřív poznámky, pak tabulku, aby se sestava vešla.
+    // Řeší ho návrhář při sazbě, ne server - proto bez `serverSide`. „Automaticky" zatím nedělá
+    // nic: u linky pole zatím není (rozhodnutí Jan 23. 9., ladí se na vlastních datech).
+    s pStr = ##class(%DynamicObject).%New()
+    s pStr.name         = "POCET_STRAN_SESTAVY"
+    s pStr.label        = "Počet stran"
+    s pStr.type         = "enum"
+    s pStr.group        = "Obecné"
+    s pStr.defaultValue = "Automaticky (dle linky)"
+    s pStr.description  = "Na kolik stran se má vejít každý směr linky. Když se nevejde, zmenší se nejdřív poznámky, pak tabulka. Automaticky = podle nastavení u linky (zatím bez omezení)."
+    s optsStr = ##class(%DynamicArray).%New()
+    d optsStr.%Push("Automaticky (dle linky)")
+    d optsStr.%Push("1 strana")
+    d optsStr.%Push("2 strany")
+    s pStr.options = optsStr
+
     // ── pořadí, v jakém je uvidí uživatel ────────────────────────────────────────
     // Skupiny se v tabu Parametry řadí podle **prvního výskytu** v tomhle poli, ne abecedně, takže
     // se sem pushuje najednou a v pořadí, které má platit. „Obecné" je první schválně - je to
@@ -357,6 +373,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(pTvar)     // Obecné
     d arr.%Push(pMhd)
     d arr.%Push(pObou)
+    d arr.%Push(pStr)
     d arr.%Push(p)         // Tabulka linky - dělení spojů je nejdůležitější volba agendy
     d arr.%Push(pTc)
     d arr.%Push(pBez)

@@ -51,6 +51,107 @@ public class PageLayoutEngine
     /// </remarks>
     public LayoutResult Layout(Template template, DataContext? data)
     {
+        var legendy = ZmensitelneLegendy(template);
+        NastavZmenseniLegend(legendy, 1f);
+        NastavBezMezer(ZmensitelnePrvky(template), false);
+        var vysledek = LayoutSeZmensenimTabulky(template, data);
+
+        int cil = CilStran(data);
+        if (cil <= 0 || vysledek.TotalPages <= cil) return vysledek;
+        return VejdiNaStrany(template, data, cil, legendy) ?? vysledek;
+    }
+
+    /// <summary>Parametr sestavy „Počet stran" (`#8785`).</summary>
+    public const string CilStranKlic = "POCET_STRAN_SESTAVY";
+
+    /// <summary>Míry zmenšení poznámek - zkoušejí se první, tabulka zůstává (`#8785`).</summary>
+    /// <remarks>Meze jsou zatím pevné kvůli ladění na vlastních datech (rozhodnutí Jan 23. 9.);
+    /// jestli půjdou do šablony, se rozhodne podle výsledků.</remarks>
+    private static readonly float[] ZebrikPoznamek = [0.9f, 0.8f, 0.7f, 0.6f];
+
+    /// <summary>Míry zmenšení tabulky, když poznámky na své mezi nestačí.</summary>
+    private static readonly float[] ZebrikTabulky = [0.97f, 0.94f, 0.9f, 0.85f, 0.8f];
+
+    /// <summary>Cílový počet stran z parametru sestavy; 0 = bez omezení.</summary>
+    /// <remarks>„Automaticky (dle linky)" zatím nedělá nic - u linky pole zatím není; až bude,
+    /// přijde v datech a přečte se tady.</remarks>
+    internal static int CilStran(DataContext? data)
+    {
+        string text = data?.GetValue(CilStranKlic)?.ToString() ?? "";
+        int i = 0;
+        while (i < text.Length && char.IsDigit(text[i])) i++;
+        return i > 0 && int.TryParse(text[..i], out int n) ? n : 0;
+    }
+
+    /// <summary>
+    /// Srazí části tabulky k sobě, pak zmenší poznámky, pak tabulku, dokud se sestava nevejde na <paramref name="cil"/>
+    /// stran. Vrací první (tedy nejmenší) zmenšení, které stačí; když nestačí ani na mezích,
+    /// vrací sazbu v plné velikosti s příznakem nesplněného cíle.
+    /// </summary>
+    /// <remarks>
+    /// Pořadí je záměr (`#8785`): u 0330510 se tabulka na první stranu vejde a na druhou přetečou
+    /// jen poznámky - zmenšit rovnoměrně všechno by zbytečně zmenšilo i časy. Stránky se počítají
+    /// pro jednu sadu dat, tedy pro jeden směr linky.
+    /// </remarks>
+    private LayoutResult? VejdiNaStrany(Template template, DataContext? data, int cil,
+        List<NotesLegendElement> legendy)
+    {
+        var tabulky = ZmensitelnePrvky(template);
+        if (legendy.Count == 0 && tabulky.Count == 0) return null;
+
+        NastavZmenseni(tabulky, 1f);
+        LayoutResult? posledni = null;
+        // Krok 0: části tabulky těsně pod sebou - nic se nezmenší a poznámky dostanou místo
+        // (nález Jan 23. 9. na 0330510: mezery mezi částmi zbytečně braly místo zmenšeným poznámkám).
+        if (tabulky.Count > 0)
+        {
+            NastavBezMezer(tabulky, true);
+            posledni = LayoutBezZmenseni(template, data);
+            if (posledni.TotalPages <= cil) return posledni;
+        }
+        foreach (float mira in legendy.Count > 0 ? ZebrikPoznamek : [])
+        {
+            NastavZmenseniLegend(legendy, mira);
+            posledni = LayoutBezZmenseni(template, data);
+            if (posledni.TotalPages <= cil) return posledni;
+        }
+        foreach (float mira in tabulky.Count > 0 ? ZebrikTabulky : [])
+        {
+            NastavZmenseni(tabulky, mira);
+            posledni = LayoutBezZmenseni(template, data);
+            if (posledni.TotalPages <= cil) return posledni;
+        }
+        if (posledni is null) return null;
+
+        // Nevešlo se ani na mezích → plná velikost jako bez cíle. Zmenšení, které stránku
+        // neušetří, jen zhorší čitelnost (rozhodnutí Jan 23. 9. na 0330510 směr Zpět; týž princip
+        // jako `B151`). Prvky se musí vrátit do stavu, se kterým se pak kreslí.
+        NastavZmenseniLegend(legendy, 1f);
+        NastavBezMezer(tabulky, false);
+        var plna = LayoutSeZmensenimTabulky(template, data);
+        plna.CilStranNesplnen = cil;
+        return plna;
+    }
+
+    private static List<NotesLegendElement> ZmensitelneLegendy(Template template) =>
+        [.. template.Sections
+            .SelectMany(s => s.Elements)
+            .OfType<NotesLegendElement>()
+            .Where(e => e.Height is null)];
+
+    private static void NastavBezMezer(List<LineTableElement> prvky, bool bezMezer)
+    {
+        foreach (var p in prvky) p.BezMezerMeziBloky = bezMezer;
+    }
+
+    private static void NastavZmenseniLegend(List<NotesLegendElement> prvky, float mira)
+    {
+        foreach (var p in prvky) p.LayoutZmenseni = mira;
+    }
+
+    /// <summary>Samočinné zmenšení tabulky, aby se nedělila o stránku víc (`B151`).</summary>
+    private LayoutResult LayoutSeZmensenimTabulky(Template template, DataContext? data)
+    {
         var zmensitelne = ZmensitelnePrvky(template);
         NastavZmenseni(zmensitelne, 1f);
         var vysledek = LayoutBezZmenseni(template, data);

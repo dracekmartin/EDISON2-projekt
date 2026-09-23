@@ -1350,7 +1350,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>Mezera mezi stránkovými bloky, ať na sebe tabulky nenavazují bez předělu.</summary>
-    private const float MezeraMeziBlokyMm = 4f;
+    /// <remarks>Při zmenšování na zadaný počet stran (`#8785`) padá na nulu jako první krok - místo
+    /// dostanou poznámky, které pak zůstanou větší (nález Jan 23. 9. na 0330510).</remarks>
+    private float MezeraMeziBlokyMm => BezMezerMeziBloky ? 0f : 4f;
+
+    /// <summary>Stav sazby: části tabulky těsně pod sebou (`#8785`). Nastavuje `PageLayoutEngine`.</summary>
+    [JsonIgnore]
+    public bool BezMezerMeziBloky { get; set; }
 
     /// <summary>
     /// Rozdělení sloupců spojů do stránkových bloků - <b>místo dřívějšího mačkání</b>.

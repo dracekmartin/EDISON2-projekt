@@ -50,6 +50,17 @@ public class NotesLegendElement : StopScheduleElementBase
     [JsonIgnore]
     public float EffectiveNoteLineHeight => NoteLineHeight ?? ComputeRowH(NoteFontSize);
 
+    /// <summary>
+    /// Zmenšení, které nastavila sazba, aby se sestava vešla na zadaný počet stran (`#8785`).
+    /// </summary>
+    /// <remarks>
+    /// Stav sazby, ne šablony - nastavuje ho `PageLayoutEngine` před výpočtem výšky a nechá ho na
+    /// vítězné hodnotě pro kreslení (týž vzor jako <see cref="LineTableElement.LayoutZmenseni"/>).
+    /// Násobí písmo, výšku řádku, záhlaví i buňku značky, takže výška a kreslení sedí.
+    /// </remarks>
+    [JsonIgnore]
+    public float LayoutZmenseni { get; set; } = 1f;
+
     // ═══════════════════════════════════════════
     // Rozložení legendy (sloupce / řazení / zarovnání markeru)
     // ═══════════════════════════════════════════
@@ -144,7 +155,7 @@ public class NotesLegendElement : StopScheduleElementBase
         if (!hasData && ctx.Data is not null) return;
 
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
-        float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
+        float scale = (hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f) * LayoutZmenseni;
 
         float effHeaderFontSize = HeaderStyle.FontSize ?? 9f;
         // Kaskáda místo ruční rodiny: nese i řez písma (váha / kurzíva), který ruční cesta dřív zahazovala.
@@ -356,8 +367,8 @@ public class NotesLegendElement : StopScheduleElementBase
         const float refMmToPx = 96f / 25.4f;
         // Měření musí trefit stejný font jako render (vč. řezu) - jinak se počet zalomených řádků rozejde.
         var typeface = GetTypeface(DataStyle.Resolve(ScheduleDataDefaults));
-        using var font = new SKFont(typeface, NoteFontSize * ResolvedTextStyle.PtToMm * refMmToPx);
-        float availMm = colW - (MarkerSirka > 0 ? MarkerSirka : 2f) - 0.5f;
+        using var font = new SKFont(typeface, NoteFontSize * LayoutZmenseni * ResolvedTextStyle.PtToMm * refMmToPx);
+        float availMm = colW - (MarkerSirka > 0 ? MarkerSirka * LayoutZmenseni : 2f) - 0.5f;
 
         var colLines = new int[cols];
         for (int i = 0; i < ordered.Count; i++)
@@ -371,8 +382,8 @@ public class NotesLegendElement : StopScheduleElementBase
         }
         int maxLines = 1;
         foreach (var n in colLines) if (n > maxLines) maxLines = n;
-        float headerH = ShowHeaderBar ? ComputeHeaderH(HeaderStyle.FontSize ?? 9f) : 0f;
-        return headerH + maxLines * EffectiveNoteLineHeight;
+        float headerH = ShowHeaderBar ? ComputeHeaderH((HeaderStyle.FontSize ?? 9f) * LayoutZmenseni) : 0f;
+        return headerH + maxLines * EffectiveNoteLineHeight * LayoutZmenseni;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
