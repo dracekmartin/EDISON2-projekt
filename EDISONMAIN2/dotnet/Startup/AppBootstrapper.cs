@@ -170,7 +170,9 @@ public class AppBootstrapper
         SessionContext session, EDServices services)
     {
         var updater = CreateUpdater();
-        var settings = updater.LoadSettings(session.MLRest);
+        // Klon s Locks=0: session nese verzi stanice a po FULL vydání by ji server version gate
+        // odmítl dřív, než se update spustí (legacy shell kontroluje ještě před nastavením verze).
+        var settings = updater.LoadSettings(session.MLRest.With(cacheLocks: 0));
         var result = updater.Check(settings);
         switch (result.Outcome)
         {

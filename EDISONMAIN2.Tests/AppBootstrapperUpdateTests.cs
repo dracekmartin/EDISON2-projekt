@@ -20,9 +20,14 @@ public class AppBootstrapperUpdateTests
         public string SourceVersion { get; set; } = "260825.1";
         public string StampSeen { get; set; } = "";
         public bool CopyThrows { get; set; }
+        public EDControls.IMLRest? LoadedFrom { get; private set; }
         public readonly List<string> Calls = [];
 
-        public override UpdateSettings LoadSettings(EDControls.IMLRest mlRest) => Settings;
+        public override UpdateSettings LoadSettings(EDControls.IMLRest mlRest)
+        {
+            LoadedFrom = mlRest;
+            return Settings;
+        }
         protected override string GetLocalVersion() => LocalVersion;
         protected override string GetSourceVersion(string sourceDir) => SourceVersion;
         protected override string GetForcedStampSeen() => StampSeen;
@@ -41,10 +46,11 @@ public class AppBootstrapperUpdateTests
     {
         protected override Updater CreateUpdater() => updater;
 
-        public (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) Call(EDServices services) =>
+        public (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) Call(EDServices services,
+            EDControls.IMLRest? sessionRest = null) =>
             CheckForUpdate(
-                new SessionContext(MLRestMocks.Create(), new LoginResult(7, "bob", "Bob", false, "", false, true, ""),
-                    () => null),
+                new SessionContext(sessionRest ?? MLRestMocks.Create(),
+                    new LoginResult(7, "bob", "Bob", false, "", false, true, ""), () => null),
                 services);
     }
 
@@ -68,6 +74,22 @@ public class AppBootstrapperUpdateTests
         Assert.Null(notice);
         popup.Received(1).Info(Arg.Is<string>(s => s.Contains("260901.1")));
         Assert.Equal(["copy", "launch:260901.1|forced=False|stamp="], updater.Calls);
+    }
+
+    [Fact]
+    public void UpdateCheck_LoadsSettingsOnLocksZeroClone()
+    {
+        // Session po licenci má Locks=1 a verzi stanice - po FULL vydání by LoadSettings odmítl
+        // server version gate a shell by skončil dřív, než spustí updater.
+        var updater = new FakeUpdater { SourceVersion = "260901.1" };
+        var (bootstrapper, _, services) = Build(updater);
+        var sessionRest = MLRestMocks.Create();
+        var clone = MLRestMocks.Create();
+        sessionRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
+
+        bootstrapper.Call(services, sessionRest);
+
+        Assert.Same(clone, updater.LoadedFrom);
     }
 
     [Fact]

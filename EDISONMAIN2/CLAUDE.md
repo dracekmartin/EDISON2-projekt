@@ -55,8 +55,9 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
   idle timer (jinak aktivní shell vypadá serveru jako idle) a detekují zaniklý zámek/verzi.
   Přepnutí firmy jede s `CacheLocks=0` po dobu verify **i logoutu staré firmy** (zámek nové
   firmy ještě/už neexistuje, LockExist by session shodil; `LicenceLoader` je taky request na
-  sdílené instanci). Version gate jen při Locks=1; DEBUG posílá prázdnou `EdisonVersion`
-  (dev verze `999999.9` by gate shodila; táž netriggeruje ani update check).
+  sdílené instanci). Version gate jen při Locks=1: update check proto jede na klonu s `Locks=0`
+  (po FULL vydání by jinak `LoadSettings` odmítl a updater se nespustil), DEBUG posílá prázdnou
+  `EdisonVersion` (dev verze `999999.9` by gate shodila; táž netriggeruje ani update check).
 - `SelectedCompanyIndex` musí odpovídat `MLRest.Idfa` - tam má bootstrapper zámek; jiná volba
   rozbije koexistenci shell ↔ moduly. Startupní výběr: `CompanySwitcher.PickInitial`.
 - `SessionLogout.Logout` jede na **klonu** `IMLRest.With(...)` - odhlášení staré firmy/session
