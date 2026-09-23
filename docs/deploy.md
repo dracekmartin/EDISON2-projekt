@@ -75,7 +75,16 @@ Zástupce na ploše míří na `EDISON.exe` (EDLOADER). Ten místo `EDISONMAIN.E
 Jinak, i při chybě serveru, spustí starý shell. Přepínač tedy potřebuje obojí: `EDISON.exe`
 s přepínačem a `ALVA_SETUP`, jehož `LoadSettings` řádek vrací. Chybí-li kterékoli, uzel nemá
 účinek. Uzel leží mimo `^EDISON("System","Update")`, protože ten maže každé uložení legacy
-Nastavení. Zapnutí i vypnutí (`k` uzlu) platí od příštího startu přes zástupce, běžící shelly
-dojedou. Platí pro celou instalaci, tedy pro všechny firmy na serveru. Jedna stanice se ke starému
-shellu vrátí zástupcem na `EDISONMAIN.EXE reason=2` (obchází brány EDLOADERu). Na sdíleném dev
-serveru hodnota 1 přepne každou stanici s novým EDLOADERem.
+Nastavení.
+
+Nastavuje se v Caché Terminalu na serveru zákazníka. Rozšířený odkaz `^|"MLINE"|` funguje
+z libovolného namespace:
+
+- zapnout: `s ^|"MLINE"|EDISON("System","NewShell")=1`
+- zkontrolovat: `w ^|"MLINE"|EDISON("System","NewShell")`
+- vypnout: `k ^|"MLINE"|EDISON("System","NewShell")`
+
+Zapnutí i vypnutí platí od příštího startu přes zástupce, běžící shelly dojedou. Platí pro celou
+instalaci, tedy pro všechny firmy na serveru. Jedna stanice se ke starému shellu vrátí zástupcem
+na `EDISONMAIN.EXE reason=2` (obchází brány EDLOADERu). Na sdíleném dev serveru hodnota 1 přepne
+každou stanici s novým EDLOADERem.
