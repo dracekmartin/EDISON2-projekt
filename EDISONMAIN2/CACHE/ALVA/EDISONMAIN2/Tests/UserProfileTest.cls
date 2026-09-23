@@ -5,7 +5,7 @@ Include %occInclude
 /// přepínače, neprázdnost při ukládání). Data samotná drží .NET klient - netestuje se tu.
 ///
 /// OnBeforeOneTest (kill ^||ML) + SetupSys zděděny z MLTestCase. Chyba je v návratové
-/// hodnotě (ret="1~..."), ne v ^||ML("ERR") - testy zachytávají ret.
+/// hodnotě (ret="1~...") i v ^||ML("ERR"); testy zachytávají ret.
 Class ALVA.EDISONMAIN2.Tests.UserProfileTest Extends ALVA.EDTesting.MLTestCase
 {
 

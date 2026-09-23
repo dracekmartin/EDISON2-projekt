@@ -5,8 +5,7 @@ Class ALVA.EDISONMAIN2.Tests.TreeTest Extends ALVA.EDTesting.MLTestCase
 
 /// %UnitTest pro ALVA.EDISONMAIN2.API.Tree.GetTree.
 /// OnBeforeOneTest (kill ^||ML) a SetupSys (sys array boilerplate) zděděny z MLTestCase.
-/// Pozn.: chyba je nesena návratovou hodnotou GetTree (ret="1~zpráva"), NE v ^||ML("ERR")
-/// - ten plní až MLRest HTTP vrstva, ne in-process. Testy proto vždy zachytávají ret.
+/// Pozn.: chyba je v návratové hodnotě GetTree (ret="1~zpráva") i v ^||ML("ERR"); testy zachytávají ret.
 
 /// Default input (tree="") -> main tree. První záznam je validní wire-format uzel
 /// (FAMILY nebo EXE - main začíná rozbalenou agendou-rodinou po materializaci z legacy XML).
@@ -35,7 +34,6 @@ Method TestSystemTreeReturnsNonEmpty()
 }
 
 /// Partners tree může být prázdný (žádné 3rd-party řešení yet), ale GetTree nesmí nahlásit error.
-/// Chyba je v návratové hodnotě, ne v ^||ML("ERR") (ten je in-process vždy prázdný).
 Method TestPartnersTreeDoesNotError()
 {
 	do ..SetupSys(.sys)

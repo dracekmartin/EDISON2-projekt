@@ -2,7 +2,7 @@ Include %occInclude
 
 /// Smoke test referenční implementace EDInputForm featur (EDIFExample) - CLAUDE.md
 /// nařizuje rozšiřovat ji s každou novou featurou, takže rozbití wire formátu se
-/// projeví nejdřív tady. Chyba je v návratové hodnotě (ret="1~..."), ne v ^||ML("ERR").
+/// projeví nejdřív tady. Chyba je v návratové hodnotě (ret="1~...") i v ^||ML("ERR").
 Class ALVA.EDControls.Tests.EDIFExampleTest Extends ALVA.EDTesting.MLTestCase
 {
 

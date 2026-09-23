@@ -37,7 +37,7 @@ Method Cleanup()
 	do ##class(ALVA.EDControls.UserData).Delete(.sys)
 }
 
-/// Návratová hodnota posledního Call - chyba metody je tam ("1~zpráva"), ne v ^||ML("ERR").
+/// Návratová hodnota posledního Call - chyba metody je tam ("1~zpráva") i v ^||ML("ERR").
 Property lastRet As %String;
 
 /// Zavolá Add/Remove/Exists s daným JSON a vrátí hodnotu z OUT.

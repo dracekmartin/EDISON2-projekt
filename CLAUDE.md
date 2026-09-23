@@ -68,9 +68,9 @@ Caché procesu, takže si nešlapou ani po `^||ML`. Vzor: `RestCallRunner` (EDCo
 
 Kompletní reference `docs/mlrest.md §2.2`. Minimum: `ClassMethod MyMethod(ByRef sys As %String)
 As %Status`, tělo `$$$Init` → try `{ $$$FillParams ... }` catch `{ $$$CatchErrRest }` →
-`ret ret`. Wire invariant: `$$$CatchErrRest` nastaví `ret="1~message"` → `ThrowIfError()`
-vyhodí výjimku v .NET. Výstup buď named (`s ^||ML("OUT","klíč")=...`) nebo indexovaný
-(`s ^||ML("OUT",$i(i))=$lb(...)` pro foreach).
+`ret ret`. Wire invariant: `$$$CatchErrRest` nastaví `ret="1~message"` a s `sys("C","App")` od MLRest
+i `^||ML("ERR")`, ze kterého `ThrowIfError()` vyhodí výjimku v .NET (`ret` dispatcher ignoruje).
+Výstup named (`s ^||ML("OUT","klíč")=...`) nebo indexovaný (`s ^||ML("OUT",$i(i))=$lb(...)`, foreach).
 
 **Výjimka `TemplateDesigner`:** `$$$Init` tam vědomě NEpoužíváme - metoda končí `ret $$$OK`
 a `s err = ""` si musí nastavit sama; pravidla v `TemplateDesigner/.claude/rules/cache-api.md`.

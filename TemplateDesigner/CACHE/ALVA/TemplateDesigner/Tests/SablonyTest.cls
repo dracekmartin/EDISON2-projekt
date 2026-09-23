@@ -5,9 +5,9 @@ Include %occInclude
 /// globálu ^ALVA.TemplateDesigner.Templates - nezávislé na živých firemních datech,
 /// cleanup před každým testem.
 ///
-/// Chybové cesty: Sablony metody vrací $$$OK i po chybě ($$$CatchErrRest plní `ret`,
-/// který zvedá až MLRest HTTP vrstva - in-process není zpráva dostupná). Chyba se proto
-/// assertuje přes OBSERVABLE stav: chybějící OUT klíče + nezměněná data v globálu.
+/// Chybové cesty: Sablony metody vrací $$$OK i po chybě, zprávu nese jen ^||ML("ERR")
+/// ($$$CatchErrRest ve větvi sys("C","App"), kterou posílá SetupSys). Chyba se assertuje
+/// přes OBSERVABLE stav: chybějící OUT klíče + nezměněná data v globálu.
 Class ALVA.TemplateDesigner.Tests.SablonyTest Extends ALVA.EDTesting.MLTestCase
 {
 

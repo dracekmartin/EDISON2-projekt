@@ -50,8 +50,8 @@ Method TestLoadMissingKeyReturnsEmpty()
 	do $$$AssertEquals($get(^||ML("ERR")), "", "Neexistující klíč není chyba")
 }
 
-/// Regrese: bez $$$Init padal $$$CatchErrRest na <UNDEFINED> err. Chyba je nesena návratovou
-/// hodnotou metody (ret = "1~zpráva"); ^||ML("ERR") se plní až v MLRest HTTP vrstvě, ne in-process.
+/// Regrese: bez $$$Init padal $$$CatchErrRest na <UNDEFINED> err. Chyba je v návratové
+/// hodnotě (ret = "1~zpráva") i v ^||ML("ERR"), odkud ji čte MLRest.
 Method TestSaveWithoutScopeReturnsError()
 {
 	do ..SetupSys(.sys)
@@ -59,6 +59,7 @@ Method TestSaveWithoutScopeReturnsError()
 	set sc = ##class(ALVA.EDControls.UserData).Save(.sys)
 	do $$$AssertNotTrue((sc = 0), "Save bez scope musí vrátit chybu, ne 0")
 	do $$$AssertTrue((sc [ "scope is required"), "Chyba musí zmínit chybějící scope, dostal: "_sc)
+	do $$$AssertTrue(($get(^||ML("ERR")) [ "scope is required"), "Chyba musí dojít i do ^||ML(""ERR""), odkud ji čte MLRest")
 }
 
 Method TestSaveWithoutKeyReturnsError()

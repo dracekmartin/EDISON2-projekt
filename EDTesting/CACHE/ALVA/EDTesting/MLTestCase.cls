@@ -23,6 +23,8 @@ ClassMethod SetupSys(ByRef sys, idfa As %String = "CB_DP", mlp As %String = "1",
 	set sys("U","MLP") = mlp
 	set sys("U","loginName") = loginName
 	set sys("U","fullName") = "Test User"
+	// Jako MLRest: podle App makra volí větev, $$$CatchErrRest plní ^||ML("ERR") jen s ním.
+	set sys("C","App") = "ALWA.SYS.MLRest"
 }
 
 }

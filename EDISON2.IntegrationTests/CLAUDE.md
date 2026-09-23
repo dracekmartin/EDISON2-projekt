@@ -2,8 +2,8 @@
 
 Testy volají sdílený dev server skutečným MLRest a odpověď předávají produkční třídě, která ji
 v shellu parsuje. Hlídají, co mocky ani Caché testy nevidí: oddělovač `'\0'` (mocky parserů
-jedou s `'~'`) a `sys("C","App")="ALWA.SYS.MLRest"`, podle kterého `$$$CatchErrRest` plní
-`^||ML("ERR")` (`SetupSys` ho neposílá).
+i `SetupSys` jedou s `'~'`), skutečné kódování CVar / `$lb` přes HTTP a produkční parser nad
+skutečnou odpovědí.
 
 - **Běh**: bez dostupného serveru (`DevServer.IsReachable`, TCP 2 s) jsou testy Skipped,
   `EDISON_IT_REQUIRED=1` (pre-push při změně `.cls`/`.inc`) z nedostupnosti dělá chybu.
