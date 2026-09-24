@@ -184,6 +184,9 @@ v rozbalovacích seznamech:
   stránce - patička s „Jen poslední stránce" je dole jen na posledním listu. Pod obsahem stránky
   se tiskne vždy na každé stránce
 - **Přetečení** (jen u obsahu): Držet pohromadě · Rozdělit přes stránky
+- **Začít na nové stránce** (jen u obsahu): sekce začne na novém listu - třeba poznámky na
+  samostatné stránce za tabulkou. S přetečením „Rozdělit přes stránky" dlouhé poznámky pokračují
+  na dalším listu. Na listu, kde ještě nic není, se nový nezakládá
 
 Pole, která v dané kombinaci nic nedělají, formulář schová - barva a tloušťka rámečku jsou vidět
 jen se zapnutým Rámečkem.

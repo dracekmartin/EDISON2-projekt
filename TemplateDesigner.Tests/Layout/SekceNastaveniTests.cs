@@ -219,3 +219,78 @@ public class TypSekceTests
         Assert.Equal(viditelne, TemplateDesigner.MainWindow.ViditelnostPoleSekce(klic, hodnoty));
     }
 }
+
+/// <summary>`B177`: „Začít na nové stránce" - poznámky na samostatném listu za tabulkou.</summary>
+public class ZacitNaNoveStranceTests
+{
+    private static LayoutResult Vysad(params Section[] sekce) =>
+        new PageLayoutEngine(new SkiaHeightCalculator()).Layout(new Template
+        {
+            PageSize = new PageSize { Width = 210, Height = 100, MarginTop = 0, MarginBottom = 0 },
+            Sections = [.. sekce],
+        }, new DataContext(new Dictionary<string, object?>()));
+
+    private static Section Obsah(string nazev, float vyska, bool novaStrana = false, string? podminka = null) => new()
+    {
+        Name = nazev, DesignerHeight = vyska, ZacitNaNoveStrance = novaStrana, VisibilityExpression = podminka,
+    };
+
+    private static List<int> Stranky(LayoutResult r, string nazev) =>
+        [.. r.Pages.Where(p => p.Sections.Any(s => s.Source.Name == nazev)).Select(p => p.PageNumber)];
+
+    [Fact]
+    public void Poznamky_ZacnouNaNovemListu_IKdyzByseVesly()
+    {
+        var r = Vysad(Obsah("Tabulka", 30), Obsah("Poznámky", 20, novaStrana: true));
+
+        Assert.Equal([1], Stranky(r, "Tabulka"));
+        Assert.Equal([2], Stranky(r, "Poznámky"));
+        Assert.Equal(0f, r.Pages[1].Sections.Single(s => s.Source.Name == "Poznámky").Y);
+    }
+
+    [Fact]
+    public void PrvniSekce_NevyrobiPrazdnyList()
+    {
+        var r = Vysad(Obsah("Poznámky", 20, novaStrana: true), Obsah("Další", 20));
+
+        Assert.Single(r.Pages);
+        Assert.Equal([1], Stranky(r, "Poznámky"));
+    }
+
+    [Fact]
+    public void DveSekceZaSebou_KazdaNaSvemListu_BezPrazdneho()
+    {
+        var r = Vysad(Obsah("A", 20), Obsah("B", 20, novaStrana: true), Obsah("C", 20, novaStrana: true));
+
+        Assert.Equal(3, r.Pages.Count);
+        Assert.All(r.Pages, p => Assert.NotEmpty(p.Sections));
+    }
+
+    [Fact]
+    public void SkrytaSekce_NovyListNezalozi()
+    {
+        var r = Vysad(Obsah("Tabulka", 30), Obsah("Poznámky", 20, novaStrana: true, podminka: "1 == 2"));
+
+        Assert.Single(r.Pages);
+    }
+
+    /// <summary>Podmínka se stránkou počítá s novým listem, na kterém sekce opravdu začne.</summary>
+    [Fact]
+    public void PodminkaSeStrankou_ZnaNovyList()
+    {
+        var r = Vysad(Obsah("Tabulka", 30), Obsah("Poznámky", 20, novaStrana: true, podminka: "{STRANA} = 2"));
+
+        Assert.Equal([2], Stranky(r, "Poznámky"));
+    }
+
+    [Fact]
+    public void DlouhePoznamky_PokracujiNaDalsimListu()
+    {
+        var poznamky = Obsah("Poznámky", 150, novaStrana: true);
+        poznamky.OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages;
+
+        var r = Vysad(Obsah("Tabulka", 30), poznamky);
+
+        Assert.Equal([2, 3], Stranky(r, "Poznámky"));
+    }
+}

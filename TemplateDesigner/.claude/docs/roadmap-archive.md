@@ -1,5 +1,16 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B177` Nastavení sekcí se nesmí tiše přepisovat (hotovo 24. 9. 2026)
+
+Audit sazby sekcí našel volby, které nic nedělaly nebo slibovaly něco jiného, než sazba dělala.
+Opraveno: podmínka se stránkou u obsahu (`{STRANA} > 1` dřív nikdy neplatilo), jedno `=` jako
+rovnost, „Pod obsahem + Jen poslední" nepřeteče, skrytá opakovaná sekce nevyhradí místo, tloušťka
+rámečku bez vynuceného minima. Formulář sekce přestavěn na **Typ sekce + Tisknout na + Přetečení**
+(vzor Crystal Reports / FastReport) jako pohled na dnešní Tisk a Umístění, bez změny formátu;
+„Povolit rozdělení" a „Kromě první" z nabídky pryč. Nová volba **„Začít na nové stránce"** pro
+poznámky na samostatném listu (podnět zákazníka). Zbylé hlášky převzal `B178`. Detail changelog
+2026-09-24 (1)-(4), pravidla [`architecture.md` §Nastavení sekcí](architecture.md).
+
 ## Tikety odbavené po vydání 22. 9. (23.-24. 9. 2026)
 
 - **#8576** (KU HK) - tarifní zóny do sloupců: volba **„Každá zóna ve vlastním sloupci"** u tabulky

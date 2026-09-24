@@ -581,11 +581,17 @@ public class PageLayoutEngine
             // Podmínka se vyhodnocuje s číslem stránky, na které sekce začne. Do 24. 9. dostávala
             // jen data bez něj, takže `{STRANA} > 1` - příklad z nápovědy formuláře - nikdy
             // neplatil a sekce se tiše nevytiskla vůbec.
+            // „Začít na nové stránce" (`B177`): jen u obsahu a jen když stránka už něco nese - první
+            // sekce ani sekce za jinou, která list právě založila, prázdný list nevyrobí. Opakované
+            // sekce (hlavička) se do toho nepočítají, přidávají se až po rozvržení obsahu.
+            bool novaStrana = section.ZacitNaNoveStrance && currentPage.Sections.Count > 0;
+
             if (section.VisibilityExpression is { Length: > 0 } podminka)
             {
                 bool vejdeSe = cursorY + sectionH <= headerH + availableHeight + SectionLayoutMath.TolerancePrekryvuMm;
-                int strana = !vejdeSe && section.OverflowBehavior == SectionOverflowBehavior.KeepTogether
-                             && currentPage.Sections.Count > 0
+                int strana = novaStrana
+                             || (!vejdeSe && section.OverflowBehavior == SectionOverflowBehavior.KeepTogether
+                                 && currentPage.Sections.Count > 0)
                     ? currentPageNum + 1
                     : currentPageNum;
                 var dataSekce = sectionData ?? data;
@@ -593,6 +599,19 @@ public class PageLayoutEngine
                                  ?? new DataContext(HodnotyStranky(strana, estTotal, null));
                 if (!ExpressionEvaluator.IsVisible(podminka, sHodnotami))
                     continue;
+            }
+
+            if (novaStrana)
+            {
+                currentPageNum++;
+                currentPage = new Page { PageNumber = currentPageNum };
+                result.Pages.Add(currentPage);
+
+                headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+                footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+                plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
+                availableHeight = printableHeight - headerH - footerH - plovouciH;
+                cursorY = headerH;
             }
 
             // Vejde se na stránku? Tolerance kryje smetí z desetinných výšek sekcí - bez ní

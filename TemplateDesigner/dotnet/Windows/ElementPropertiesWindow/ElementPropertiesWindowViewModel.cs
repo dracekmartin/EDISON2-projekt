@@ -641,6 +641,13 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         list.Add(new BoolPropertyDescriptor
         {
+            Label = "Začít na nové stránce", Group = "Sekce",
+            Get   = () => section.ZacitNaNoveStrance,
+            Set   = v  => section.ZacitNaNoveStrance = v
+        });
+
+        list.Add(new BoolPropertyDescriptor
+        {
             Label = "Rámeček", Group = "Vzhled",
             Get   = () => section.ShowBorder,
             Set   = v  => section.ShowBorder = v

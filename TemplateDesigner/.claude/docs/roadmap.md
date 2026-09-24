@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B177` (nastavení sekcí), pak `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `B178` (revize upozornění), pak `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -63,14 +63,11 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
-- **`B177` Nastavení sekcí se nesmí tiše přepisovat + „Začít na nové stránce"** [M] (audit 24. 9.,
-  podnět zákazníka: poznámky vždy na samostatné stránce). Opravit `{STRANA}` v podmínce obsahové
-  sekce a místo pro „Pod obsahem + Jen poslední", rozhodnout „Povolit rozdělení" (doporučeno
-  dodělat), nápověda k výšce sekce, pak nové zaškrtávátko. Volby bez účinku jdou do `B18`.
-  **Dál (rozhodnutí Jan 24. 9.):** formulář sekce jako Typ (Obsah / Hlavička / Pod obsahem /
-  Patička stránky) + Tisknout na + Přetečení, jen přemapování na dnešní Tisk a Umístění (formát
-  šablony beze změny); pamatovat na typ „na vlastní stránce na konci".
-  Nálezy a pravidla: [`architecture.md` §Nastavení sekcí](architecture.md).
+- **`B178` Revize upozornění vpravo dole** [M] (Jan 24. 9.). Hlášky přibývaly po jedné (přetečení,
+  zmenšené písmo, oříznuté buňky a text, úzké sloupce, malý kód) a nemají jednotný tvar ani
+  pořadí. Projít je jako celek a doplnit, co chybí: nesplněný Počet stran i s příčinou (např.
+  sekce na nové stránce), nečitelná podmínka viditelnosti. Pořadí priority nastavení:
+  [`architecture.md` §Nastavení sekcí](architecture.md).
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
@@ -125,7 +122,7 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   vyplněné hodnoty jen oklikou přes server. Začít **viditelností** (`visibleWhen`), gramatiku sdílet
   s tiskovými parametry - nezavádět druhý dialekt; skutečná validace zůstává imperativní.
   Nese s sebou tři návazné věci: migraci `CellStyleEditor` na formulář z Caché, zašednutí polí
-  bez účinku (parametry sestavy, sekce - seznam u `B177`) a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
+  bez účinku (parametry sestavy; u sekcí je dnes drží návrhář, `B177`) a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
   label) - všechno až s gramatikou, ne zvlášť.
 
 - **`B56` Sjednocení Caché tiskových enginů a jejich opsaných pomocných funkcí** (odloženo -

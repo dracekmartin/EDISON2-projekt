@@ -54,6 +54,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "KeepTogether"
         s f.helpText = "Co se stane, když se sekce nevejde na zbytek stránky"
 
+        s f = form.AddBool("ZacitNaNoveStrance", "Začít na nové stránce", 0)
+        s f.helpText = "Sekce začne na novém listu - třeba poznámky na samostatné stránce za tabulkou. Na listu, kde ještě nic není, se nový nezakládá"
+
         // ── Skupina "Vzhled" ──────────────────────────────────────────────
         d form.AddGroup("appearance", "Vzhled")
 

@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-09-24 (4) - 📄 sekce může začít na nové stránce (`B177`)
+
+U sekce typu Obsah přibyla volba **„Začít na nové stránce"**: poznámky pak začnou na samostatném
+listu za tabulkou, i když by se pod ni vešly. S přetečením „Rozdělit přes stránky" dlouhé poznámky
+pokračují na dalším listu. Na listu, kde ještě nic není, se nový nezakládá, a skrytá sekce ho
+nezaloží. Volba má přednost před parametrem „Počet stran".
+
 ## 2026-09-24 (3) - 📐 sekce se nastavuje typem: hlavička, obsah, pod obsahem, patička (`B177`, část 3)
 
 Místo tří polí, z nichž vždy jedno nic nedělalo (Tisk, Umístění, Přetečení), má formulář sekce

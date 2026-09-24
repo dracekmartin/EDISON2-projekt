@@ -21,6 +21,14 @@ public class Section
     /// <summary>Určuje, kdy a jak často se sekce tiskne.</summary>
     public SectionPrintBehavior PrintBehavior { get; set; } = SectionPrintBehavior.Once;
 
+    /// <summary>
+    /// Obsahová sekce začne na novém listu (`B177`, podnět zákazníka: poznámky vždy na samostatné
+    /// stránce). Na listu, kde ještě nic není, se nový nezakládá; u opakovaných sekcí se nepoužije.
+    /// </summary>
+    /// <remarks>Nová vlastnost s výchozím <c>false</c> - starší exe ji přeskočí a sekci vytiskne
+    /// za předchozím obsahem jako dřív.</remarks>
+    public bool ZacitNaNoveStrance { get; set; }
+
     /// <summary>Určuje, jak se sekce chová při přetečení stránky.</summary>
     /// <remarks>Stará hodnota <see cref="SectionOverflowBehavior.AllowSplit"/> se čte jako
     /// „Rozdělit přes stránky" - sazba je nikdy nerozlišovala (`B177`, 24. 9.).</remarks>
@@ -167,6 +175,7 @@ public class Section
             Name = Name,
             PrintBehavior = PrintBehavior,
             OverflowBehavior = OverflowBehavior,
+            ZacitNaNoveStrance = ZacitNaNoveStrance,
             Role = Role,
             ShowBorder = ShowBorder,
             BorderColor = BorderColor,

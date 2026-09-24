@@ -143,33 +143,31 @@ ElementPropertiesWindow.xaml / .cs - dialog vlastností elementu/sekce
 | `PageLayoutEngine.cs` | `PageLayoutEngine` | Hlavní algoritmus: klasifikace sekcí, výpočet výšek, stránkování, hlavičky/patičky, split, flow layout, PAGE/TOTAL_PAGES |
 | `SkiaHeightCalculator.cs` | `SkiaHeightCalculator` | Měření výšky TextElement (word wrap) a TableElement pomocí SkiaSharp |
 
-### Nastavení sekcí - jak se skládají (audit 24. 9., `B177`)
+### Nastavení sekcí - jak se skládají (`B177`, 24. 9.)
 
-Nastavení sekce (Tisk, Umístění, Přetečení, Výška, Podmínka viditelnosti) se nesmí tiše přepisovat.
-Kombinace se **nezakazují ani nepřepínají**; sazba má pevné pořadí a co nemá účinek, formulář
-zašedí (`B18`) nebo řekne nápovědou. Postup Crystal Reports, SSRS, Wordu i CSS pro tisk.
+Formulář sekce ukazuje **Typ sekce** (Hlavička stránky / Obsah / Pod obsahem stránky / Patička
+stránky), **Tisknout na** (jen hlavička a patička) a u obsahu **Přetečení** a **Začít na nové
+stránce**. Typ a Tisknout na jsou jen pohled (`Section.Typ`, `Section.Stranky`, `[JsonIgnore]`)
+na uložené `PrintBehavior` + `Role` - formát šablony se nemění a starší exe ji otevře.
 
-Nálezy z kódu sazby k 24. 9. (neověřeno v náhledu):
+- **Při načtení šablony** (`TemplateSerializer`, bez hlášky o migraci - tisk se nemění): opakovaná
+  sekce s `Role = Body` dostane výslovně hlavičku/patičku stejným pravidlem jako sazba, „Kromě
+  první" → „Každá stránka" + `{STRANA} > 1`, `AllowSplit` → `SplitAcrossPages`.
+- **Podmínka viditelnosti zná stránku** i u obsahu (stránka, kde sekce začne) a sazba nevyhradí
+  místo opakované sekci, kterou podmínka na stránce schová. Jedno `=` je rovnost.
+- **„Pod obsahem" + „Jen poslední"** (jen staré šablony, formulář to nenabízí) se sází jako obsah
+  na konci.
+- **Pole bez účinku formulář schová** (`MainWindow.ViditelnostPoleSekce`) - do `B18` pravidla
+  drží návrhář, formulář z Caché viditelnost neumí.
+- **Výška sekce je nejmenší** - `max(zadaná, obsah)`.
 
-- **`{STRANA}` v podmínce sekce „Jednou" nefunguje** - obsahová sekce se vyhodnocuje bez hodnot
-  stránky (`LayoutBody`, `IsVisible(… sectionData ?? data)`), neznámé pole = nepravda, sekce se
-  nevytiskne nikdy. Nápověda formuláře (`SectionEdit.cls`) přitom tenhle příklad nabízí.
-- **„Pod obsahem" + „Jen poslední" si nevyhradí místo** - druhý průchod pro poslední stránku
-  hlídá jen hlavičky a patičky (`hasLastPageOnly`), plovoucí sekce ne.
-- **„Povolit rozdělení" = „Přes stránky"** - sazba je nerozlišovala; od 24. 9. volba z nabídky
-  zmizela a stará hodnota se čte jako „Rozdělit přes stránky" (vrátit, až si o ni někdo řekne).
-- **Bez účinku:** Umístění u sekce „Jednou" (vždy obsah), Přetečení u opakované sekce,
-  `Section.RowHeight` (čte ho jen škálování šablony).
-- **Podmínka, kterou nejde přečíst, tiše platí** (`IsVisible` fail-open) - překlep v podmínce
-  sekce nebo prvku nikdo nepozná. Jedno `=` od 24. 9. znamená rovnost (dřív tenhle případ);
-  obecně chybí upozornění na nečitelnou podmínku.
-- **Výška sekce je nejmenší, ne pevná** - `max(zadaná, obsah)`. Popis v `Section.cs`
-  („print engine ignoruje") neplatí, formulář to neříká.
+**Pořadí priority, když se nastavení tlučou:** výslovný pokyn k sekci (nová stránka, typ) >
+rozdělení obsahu (držet pohromadě / rozdělit) > přání pro celou sestavu (Počet stran) > samočinné
+úpravy (zmenšení tabulky, písma). Nic se neblokuje ani tiše nepřepíná; co prohrálo, má říct
+upozornění vpravo dole - to zatím chybí (`B178`).
 
-**Nová volba „Začít na nové stránce"** (zaškrtávátko, ne hodnota v Tisku - neznámou hodnotu výčtu
-starší exe neotevře, neznámou vlastnost přeskočí): platí jen pro sekci „Jednou" / za řádek dat,
-na prázdné stránce nový list nezakládá, skrytá sekce ho nezaloží, s „Počet stran" se nepřetahuje
-potichu (upozornění vpravo dole).
+Otevřené: podmínka, kterou nejde přečíst, tiše platí (`IsVisible` fail-open, `B178`);
+`Section.RowHeight` čte jen škálování šablony.
 
 ---
 
