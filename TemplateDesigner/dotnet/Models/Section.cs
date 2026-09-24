@@ -81,6 +81,70 @@ public class Section
     /// <summary>Bag pro budoucí vlastnosti bez zásahu do modelu.</summary>
     public Dictionary<string, string>? CustomProperties { get; set; }
 
+    // --- Formulář sekce: Typ + Stránky (`B177`) ---
+
+    /// <summary>
+    /// Kde se sekce tiskne - jak ji ukazuje formulář. Jen jiný pohled na <see cref="PrintBehavior"/>
+    /// a <see cref="Role"/>; do šablony se zapisují ty dvě, formát se nemění (rozhodnutí Jan 24. 9.).
+    /// </summary>
+    /// <remarks>Opakovaná sekce s <see cref="SectionRole.Body"/> („podle pořadí") se při otevření
+    /// šablony převede na hlavičku nebo patičku (<c>TemplateSerializer</c>), takže tady už nenastane;
+    /// kdyby přesto, ukáže se jako hlavička, protože tak ji zařadí sazba, leží-li nad obsahem.</remarks>
+    [JsonIgnore]
+    public TypSekce Typ
+    {
+        get => PrintBehavior is SectionPrintBehavior.Once or SectionPrintBehavior.PerDataRow
+            ? TypSekce.Obsah
+            : Role switch
+            {
+                SectionRole.Footer       => TypSekce.PatickaStranky,
+                SectionRole.BelowContent => TypSekce.PodObsahemStranky,
+                _                        => TypSekce.HlavickaStranky,
+            };
+        set
+        {
+            if (value == TypSekce.Obsah)
+            {
+                if (PrintBehavior != SectionPrintBehavior.PerDataRow) PrintBehavior = SectionPrintBehavior.Once;
+                return;
+            }
+            Role = value switch
+            {
+                TypSekce.PatickaStranky    => SectionRole.Footer,
+                TypSekce.PodObsahemStranky => SectionRole.BelowContent,
+                _                          => SectionRole.Header,
+            };
+            // Pod obsahem je vždy na všech stránkách: jednou na konci je totéž co Obsah za tabulkou
+            // a jen pod první částí nedává smysl (rozhodnutí Jan 24. 9.).
+            if (value == TypSekce.PodObsahemStranky
+                || PrintBehavior is SectionPrintBehavior.Once or SectionPrintBehavior.PerDataRow)
+                PrintBehavior = SectionPrintBehavior.OnEveryPage;
+        }
+    }
+
+    /// <summary>Na kterých stránkách se hlavička nebo patička tiskne. U obsahu a sekce pod obsahem
+    /// se nepoužije.</summary>
+    [JsonIgnore]
+    public StrankySekce Stranky
+    {
+        get => PrintBehavior switch
+        {
+            SectionPrintBehavior.OnFirstPageOnly => StrankySekce.JenPrvni,
+            SectionPrintBehavior.OnLastPageOnly  => StrankySekce.JenPosledni,
+            _                                    => StrankySekce.Vsechny,
+        };
+        set
+        {
+            if (Typ is TypSekce.Obsah or TypSekce.PodObsahemStranky) return;
+            PrintBehavior = value switch
+            {
+                StrankySekce.JenPrvni    => SectionPrintBehavior.OnFirstPageOnly,
+                StrankySekce.JenPosledni => SectionPrintBehavior.OnLastPageOnly,
+                _                        => SectionPrintBehavior.OnEveryPage,
+            };
+        }
+    }
+
     // --- Computed properties ---
 
     /// <summary>Skutečná výška pro designer - DesignerHeight nebo placeholder.</summary>
@@ -121,6 +185,12 @@ public class Section
 }
 
 // ---------------------------------------------------------------------------
+
+/// <summary>Typ sekce ve formuláři (`B177`) - neukládá se, viz <see cref="Section.Typ"/>.</summary>
+public enum TypSekce { HlavickaStranky, Obsah, PodObsahemStranky, PatickaStranky }
+
+/// <summary>Stránky opakované sekce ve formuláři - neukládá se, viz <see cref="Section.Stranky"/>.</summary>
+public enum StrankySekce { Vsechny, JenPrvni, JenPosledni }
 
 public enum SectionPrintBehavior
 {

@@ -1882,6 +1882,25 @@ public partial class MainWindow : Window
         UpdatePropertiesPanel();
     }
 
+    /// <summary>
+    /// Pole formuláře sekce, která v dané kombinaci nic nedělají, se schovají (rozhodnutí Jan 24. 9.):
+    /// barva a tloušťka bez rámečku, Stránky jinde než u hlavičky a patičky (obsah se tiskne jednou,
+    /// pod obsahem vždy na všech stránkách), Přetečení u opakované sekce (ta se nedělí). Do `B18` pravidla drží návrhář, formulář z Caché viditelnost neumí.
+    /// </summary>
+    internal static bool ViditelnostPoleSekce(string klic, IReadOnlyDictionary<string, string> hodnoty)
+    {
+        string typ = hodnoty.GetValueOrDefault(nameof(Section.Typ)) ?? "";
+        bool obsah = typ is "" or nameof(TypSekce.Obsah);
+        return klic switch
+        {
+            nameof(Section.BorderColor) or nameof(Section.BorderWidth)
+                => hodnoty.GetValueOrDefault(nameof(Section.ShowBorder)) == "1",
+            nameof(Section.Stranky) => typ is nameof(TypSekce.HlavickaStranky) or nameof(TypSekce.PatickaStranky),
+            nameof(Section.OverflowBehavior) => obsah,
+            _ => true,
+        };
+    }
+
     private void OpenPropertiesForSection(Section section)
     {
         var dlg = new ElementEditDialog(
@@ -1890,10 +1909,7 @@ public partial class MainWindow : Window
             "Vlastnosti sekce: " + section.Name)
             {
                 Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(),
-                // Barva a tloušťka rámečku bez zapnutého rámečku nic nedělají (rozhodnutí Jan 24. 9.).
-                ViditelnostPole = (klic, hodnoty) =>
-                    klic is not (nameof(Section.BorderColor) or nameof(Section.BorderWidth))
-                    || hodnoty.GetValueOrDefault(nameof(Section.ShowBorder)) == "1",
+                ViditelnostPole = ViditelnostPoleSekce,
             };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {

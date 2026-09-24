@@ -152,3 +152,70 @@ public class PodminkaOpakovaneSekceTests
         Assert.Equal("{STRANA} > 1 && ({A} == 1)", sekce.VisibilityExpression);
     }
 }
+
+/// <summary>`B177`: formulář sekce ukazuje Typ + Stránky, do šablony jdou dál Tisk a Umístění.</summary>
+public class TypSekceTests
+{
+    [Theory]
+    [InlineData(SectionPrintBehavior.Once, SectionRole.Header, TypSekce.Obsah)]
+    [InlineData(SectionPrintBehavior.OnEveryPage, SectionRole.Header, TypSekce.HlavickaStranky)]
+    [InlineData(SectionPrintBehavior.OnLastPageOnly, SectionRole.BelowContent, TypSekce.PodObsahemStranky)]
+    [InlineData(SectionPrintBehavior.OnFirstPageOnly, SectionRole.Footer, TypSekce.PatickaStranky)]
+    public void Typ_SeCteZTiskuAUmisteni(SectionPrintBehavior tisk, SectionRole umisteni, TypSekce typ)
+    {
+        Assert.Equal(typ, new Section { PrintBehavior = tisk, Role = umisteni }.Typ);
+    }
+
+    [Fact]
+    public void ZmenaTypuAStranek_ZapiseTiskAUmisteni()
+    {
+        var sekce = new Section { PrintBehavior = SectionPrintBehavior.Once };
+
+        sekce.Typ = TypSekce.PatickaStranky;
+        sekce.Stranky = StrankySekce.JenPosledni;
+        Assert.Equal(SectionRole.Footer, sekce.Role);
+        Assert.Equal(SectionPrintBehavior.OnLastPageOnly, sekce.PrintBehavior);
+
+        sekce.Typ = TypSekce.PodObsahemStranky;   // pod obsahem vždy na všech stránkách
+        Assert.Equal(SectionPrintBehavior.OnEveryPage, sekce.PrintBehavior);
+        sekce.Stranky = StrankySekce.JenPosledni;
+        Assert.Equal(SectionPrintBehavior.OnEveryPage, sekce.PrintBehavior);
+
+        sekce.Typ = TypSekce.Obsah;
+        Assert.Equal(SectionPrintBehavior.Once, sekce.PrintBehavior);
+        sekce.Stranky = StrankySekce.JenPrvni;   // u obsahu se nepoužije
+        Assert.Equal(SectionPrintBehavior.Once, sekce.PrintBehavior);
+    }
+
+    /// <summary>Opakovaná sekce „podle pořadí" se při otevření zařadí stejně jako v sazbě.</summary>
+    [Fact]
+    public void UmisteniPodlePoradi_SePriNacteniZapiseVyslovne()
+    {
+        var sekce = new List<Section>
+        {
+            new() { Name = "Hlavička", PrintBehavior = SectionPrintBehavior.OnEveryPage, Role = SectionRole.Body },
+            new() { Name = "Obsah" },
+            new() { Name = "Patička", PrintBehavior = SectionPrintBehavior.OnEveryPage, Role = SectionRole.Body },
+        };
+
+        TemplateDesigner.Serialization.TemplateSerializer.UrciUmisteniPodlePoradi(sekce);
+
+        Assert.Equal(SectionRole.Header, sekce[0].Role);
+        Assert.Equal(SectionRole.Body, sekce[1].Role);
+        Assert.Equal(SectionRole.Footer, sekce[2].Role);
+    }
+
+    [Theory]
+    [InlineData("OverflowBehavior", "Obsah", "0", true)]
+    [InlineData("OverflowBehavior", "HlavickaStranky", "0", false)]
+    [InlineData("Stranky", "Obsah", "0", false)]
+    [InlineData("Stranky", "PatickaStranky", "0", true)]
+    [InlineData("Stranky", "PodObsahemStranky", "0", false)]
+    [InlineData("BorderWidth", "Obsah", "0", false)]
+    [InlineData("BorderWidth", "Obsah", "1", true)]
+    public void PoleBezUcinku_SeSchovaji(string klic, string typ, string ramecek, bool viditelne)
+    {
+        var hodnoty = new Dictionary<string, string> { ["Typ"] = typ, ["ShowBorder"] = ramecek };
+        Assert.Equal(viditelne, TemplateDesigner.MainWindow.ViditelnostPoleSekce(klic, hodnoty));
+    }
+}

@@ -174,13 +174,19 @@ Tlačítko `+ Přidat sekci` nabízí presety:
 - *(vlastní uložené šablony sekcí, značené 💾)* - podle uložené šablony
 
 ### Vlastnosti sekce (dialog)
-Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Tisk**, **Umístění**, **Přetečení**,
+Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Typ sekce**, **Tisknout na**, **Přetečení**,
 **Rámeček**, **Barva rámečku**, **Tloušťka rámečku**, **Podmínka viditelnosti**. Volby
 v rozbalovacích seznamech:
 
-- **Tisk**: Jednou · Každá stránka · Jen první · Jen poslední
-- **Umístění** (jen u sekce, která se opakuje): Hlavička · Obsah · Pod obsahem · Patička (patičky se umisťují od spodního okraje stránky)
-- **Přetečení**: Držet pohromadě · Rozdělit přes stránky
+- **Typ sekce**: Hlavička stránky · Obsah · Pod obsahem stránky · Patička stránky. Obsah se tiskne
+  jednou v pořadí podle šablony; ostatní typy se opakují nahoře, hned pod obsahem, nebo dole na stránce
+- **Tisknout na** (jen u hlavičky a patičky): Každé stránce · Jen první stránce · Jen poslední
+  stránce - patička s „Jen poslední stránce" je dole jen na posledním listu. Pod obsahem stránky
+  se tiskne vždy na každé stránce
+- **Přetečení** (jen u obsahu): Držet pohromadě · Rozdělit přes stránky
+
+Pole, která v dané kombinaci nic nedělají, formulář schová - barva a tloušťka rámečku jsou vidět
+jen se zapnutým Rámečkem.
 
 Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole **Datový zdroj** a
 **Výška řádku**.

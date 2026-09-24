@@ -69,6 +69,28 @@ public static class TemplateSerializer
         return true;
     }
 
+    /// <summary>
+    /// Opakovaná sekce s Umístěním „Obsah" se zařadila podle pořadí: nad posledním obsahem hlavička,
+    /// pod ním patička. Formulář (`B177`) takovou volbu nemá, proto se zařazení zapíše výslovně -
+    /// stejným pravidlem jako v sazbě (<c>PageLayoutEngine.ClassifySections</c>), takže se tisk
+    /// nezmění. Starší exe výslovnou hlavičku i patičku zná.
+    /// </summary>
+    internal static bool UrciUmisteniPodlePoradi(List<Section> sekce)
+    {
+        int posledniObsah = sekce.FindLastIndex(s =>
+            s.PrintBehavior is SectionPrintBehavior.Once or SectionPrintBehavior.PerDataRow);
+        bool zmena = false;
+        for (int i = 0; i < sekce.Count; i++)
+        {
+            var s = sekce[i];
+            if (s.PrintBehavior is SectionPrintBehavior.Once or SectionPrintBehavior.PerDataRow) continue;
+            if (s.Role != SectionRole.Body) continue;
+            s.Role = posledniObsah >= 0 && i > posledniObsah ? SectionRole.Footer : SectionRole.Header;
+            zmena = true;
+        }
+        return zmena;
+    }
+
     /// <summary>Serializuje sekci do JSON (pro uložení jako custom šablona).</summary>
     public static string SerializeSection(Section section)
     {
@@ -172,8 +194,11 @@ public static class TemplateSerializer
                 wasMigrated = true;
             }
 
+            // Převody sekcí (`B177`) tisk nemění, proto nehlásí migraci - stavový řádek by jinak
+            // tvrdil „nový formát", který to není.
             foreach (var sekce in template.Sections)
-                wasMigrated |= PrevedKromePrvni(sekce);
+                PrevedKromePrvni(sekce);
+            UrciUmisteniPodlePoradi(template.Sections);
 
             template.WasMigrated = wasMigrated;
             return template;

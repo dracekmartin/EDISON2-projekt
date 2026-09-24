@@ -31,27 +31,28 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("DesignerHeight", "Výška", 30, 5, 9999, "mm")
         s f.helpText = "Nejmenší výška - obsah ji může zvětšit. Prázdné = výška podle obsahu"
 
-        s f = form.AddFieldToLastGroup("PrintBehavior", "Tisk", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Once", "Jednou")
-        d f.AddListItem("OnEveryPage", "Každá stránka")
-        d f.AddListItem("OnFirstPageOnly", "Jen první")
-        d f.AddListItem("OnLastPageOnly", "Jen poslední")
-        s f.value = "Once"
-        s f.helpText = "Kdy se sekce tiskne při vícestránkovém tisku: jednou, nebo opakovaně na stránkách"
+        // Typ + Stránky jsou pohled na PrintBehavior a Role modelu (Section.Typ / Section.Stranky) -
+        // do šablony se zapisují ty dvě, formát se nemění. Stránky a Přetečení skrývá podle typu host.
+        s f = form.AddFieldToLastGroup("Typ", "Typ sekce", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("HlavickaStranky", "Hlavička stránky")
+        d f.AddListItem("Obsah", "Obsah")
+        d f.AddListItem("PodObsahemStranky", "Pod obsahem stránky")
+        d f.AddListItem("PatickaStranky", "Patička stránky")
+        s f.value = "Obsah"
+        s f.helpText = "Hlavička stránky - nahoře na stránce. Obsah - jednou, v pořadí podle šablony (tabulka, poznámky za ní). Pod obsahem stránky - na každé stránce hned pod tím, co na ní je (poznámky pod každou částí tabulky). Patička stránky - dole na stránce."
 
-        s f = form.AddFieldToLastGroup("Role", "Umístění", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Header", "Hlavička")
-        d f.AddListItem("Body", "Obsah")
-        d f.AddListItem("BelowContent", "Pod obsahem")
-        d f.AddListItem("Footer", "Patička")
-        s f.value = "Body"
-        s f.helpText = "Kam na stránku se tiskne sekce, která se opakuje. U sekce tištěné jednou se nepoužije - leží tam, kde je v šabloně"
+        s f = form.AddFieldToLastGroup("Stranky", "Tisknout na", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Vsechny", "Každé stránce")
+        d f.AddListItem("JenPrvni", "Jen první stránce")
+        d f.AddListItem("JenPosledni", "Jen poslední stránce")
+        s f.value = "Vsechny"
+        s f.helpText = "Na kterých listech sestavy se hlavička nebo patička vytiskne. Kde na listu leží, určuje Typ sekce"
 
         s f = form.AddFieldToLastGroup("OverflowBehavior", "Přetečení", $$$FieldTypeList, 0, 1)
         d f.AddListItem("KeepTogether", "Držet pohromadě")
         d f.AddListItem("SplitAcrossPages", "Rozdělit přes stránky")
         s f.value = "KeepTogether"
-        s f.helpText = "Co se stane, když se sekce nevejde na zbytek stránky. Opakované sekce se nedělí"
+        s f.helpText = "Co se stane, když se sekce nevejde na zbytek stránky"
 
         // ── Skupina "Vzhled" ──────────────────────────────────────────────
         d form.AddGroup("appearance", "Vzhled")

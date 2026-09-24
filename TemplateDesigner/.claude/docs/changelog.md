@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-09-24 (3) - 📐 sekce se nastavuje typem: hlavička, obsah, pod obsahem, patička (`B177`, část 3)
+
+Místo tří polí, z nichž vždy jedno nic nedělalo (Tisk, Umístění, Přetečení), má formulář sekce
+**Typ sekce**: *Hlavička stránky* (nahoře), *Obsah* (jednou, v pořadí šablony), *Pod obsahem
+stránky* (na každém listu hned pod jeho obsahem) a *Patička stránky* (dole). K hlavičce a patičce
+patří **Tisknout na** (každé / jen první / jen poslední stránce), k obsahu **Přetečení**; co k typu
+nepatří, formulář nenabízí. Model podle Crystal Reports a FastReportu.
+
+Šablona se ukládá beze změny formátu, starší verze ji otevře. Opakovaná sekce, která se dřív
+zařazovala jako hlavička nebo patička podle pořadí, dostane při otevření to zařazení výslovně -
+tisk se nemění.
+
 ## 2026-09-24 (2) - 📐 formulář sekce bez voleb, které nic nedělaly (`B177`, část 2)
 
 Pole Tisk, Umístění a Přetečení mají nápovědu, co se jimi nastavuje. Přetečení nabízí **Držet

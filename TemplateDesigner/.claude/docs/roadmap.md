@@ -68,7 +68,7 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   sekce a místo pro „Pod obsahem + Jen poslední", rozhodnout „Povolit rozdělení" (doporučeno
   dodělat), nápověda k výšce sekce, pak nové zaškrtávátko. Volby bez účinku jdou do `B18`.
   **Dál (rozhodnutí Jan 24. 9.):** formulář sekce jako Typ (Obsah / Hlavička / Pod obsahem /
-  Patička stránky) + Stránky + Přetečení, jen přemapování na dnešní Tisk a Umístění (formát
+  Patička stránky) + Tisknout na + Přetečení, jen přemapování na dnešní Tisk a Umístění (formát
   šablony beze změny); pamatovat na typ „na vlastní stránce na konci".
   Nálezy a pravidla: [`architecture.md` §Nastavení sekcí](architecture.md).
 
