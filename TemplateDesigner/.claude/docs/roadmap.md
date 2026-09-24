@@ -63,6 +63,12 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
+- **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
+  prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není
+  (`PdfImport/` se jí nedotýká), takže linkový JŘ by skončil jako obecné tabulky a texty. Nejdřív
+  zkusit na zákazníkově PDF, jak se chová, a podle toho rozhodnout, jestli naučit import
+  rozpoznat tabulku spojů a nastavit její vzhled.
+
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
   (zákazníkovi odpovězeno 23. 9.). Náš díl: pustit pole schématem obou agend a nabídnout v šabloně.
