@@ -9,9 +9,23 @@
         ResizeMode="CanResizeWithGrip"
         Background="{DynamicResource EDTheme.Bg.Base}">
     <DockPanel Margin="16">
-        <TextBlock DockPanel.Dock="Top" Text="{Binding Nadpis}" Margin="0,0,0,10"
-                   FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Header}"
-                   Foreground="{DynamicResource EDTheme.Text.Primary}" TextWrapping="Wrap"/>
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+            <TextBlock Text="{Binding Nadpis}"
+                       FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                       Foreground="{DynamicResource EDTheme.Text.Primary}" TextWrapping="Wrap"/>
+            <ProgressBar Height="4" Margin="0,6,0,0" Minimum="0" Maximum="1" Value="{Binding Prubeh, Mode=OneWay}">
+                <ProgressBar.Style>
+                    <Style TargetType="ProgressBar">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Probiha}" Value="True">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ProgressBar.Style>
+            </ProgressBar>
+        </StackPanel>
 
         <!-- Zavřít jako jediné tlačítko: okno je jen výpis, nic se v něm nepotvrzuje (Enter i Esc). -->
         <Button DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,12,0,0" Padding="16,6"
@@ -25,7 +39,13 @@
                 <ItemsControl ItemsSource="{Binding Hlaseni}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Grid Margin="10,4">
+                            <Border x:Name="Radek" Padding="10,4" Background="Transparent">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick"
+                                                  Command="{Binding DataContext.VybratCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                  CommandParameter="{Binding}"/>
+                                </Border.InputBindings>
+                            <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="22"/>
                                     <ColumnDefinition Width="*"/>
@@ -37,6 +57,17 @@
                                     <Run Text="{Binding Kde, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding Co, Mode=OneWay}"/><Run Text="{Binding RadaVRadku, Mode=OneWay}" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
                                 </TextBlock>
                             </Grid>
+                            </Border>
+                            <DataTemplate.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsMouseOver, ElementName=Radek}" Value="True"/>
+                                        <Condition Binding="{Binding MaPrvek}" Value="True"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter TargetName="Radek" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                                    <Setter TargetName="Radek" Property="Cursor" Value="Hand"/>
+                                </MultiDataTrigger>
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>

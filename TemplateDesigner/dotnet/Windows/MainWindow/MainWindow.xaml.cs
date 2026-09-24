@@ -1048,13 +1048,12 @@ public partial class MainWindow : Window
         finally { _printDialogOpening = false; }
     }
 
-    private void OpenPrintDialog()
+    /// <summary>
+    /// Načtení dat všech vybraných linek (tiskové okno, kontrola z návrháře). Null = bez databáze
+    /// nebo agendy. Stránky dat nesou popis linky (<c>KontrolaVystupu.LinkaKlic</c>).
+    /// </summary>
+    private Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? NacitaniVsechLinek()
     {
-        // PrintDialog operuje nad sdíleným dict s preview lištou (_vm.PreviewParamValues).
-        // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
-        // takže _previewParams už obsahuje persistované hodnoty - žádný extra I/O zde.
-
-        // Callback pro reálná data - pouze pokud je CacheProvider k dispozici
         Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null;
         if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
         {
@@ -1111,6 +1110,85 @@ public partial class MainWindow : Window
                     hiddenContent: TemplateDesigner.Models.NoteVisibilityFilter.HiddenContentCategories(_vm.State.CurrentTemplate));
             };
         }
+
+        return buildRealData;
+    }
+
+    /// <summary>
+    /// Kontrola všech vybraných linek z návrháře (`B178`). Okno s výsledkem se otevře hned a ukazuje
+    /// průběh; klik na hlášku přepne na její linku a vybere prvek - to z tiskového okna nejde.
+    /// </summary>
+    private async void BtnKontrola_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm is null) return;
+        var nacitani = NacitaniVsechLinek();
+        if (nacitani is null || _vm.ActiveInstances.Count == 0)
+        {
+            _vm.StatusText = "Kontrola potřebuje vybrané linky - vyberte je na štítku vedle agendy.";
+            return;
+        }
+
+        var vysledek = new KontrolaVysledkuDialogViewModel("Načítám data…", []) { Probiha = true };
+        vysledek.RequestVybrat = PrejdiNaHlaseni;
+        new KontrolaVysledkuDialog(vysledek) { Owner = this }.Show();
+        try
+        {
+            var parametry = new Dictionary<string, object?>(_vm.PreviewParamValues);
+            var prubeh = new Progress<(int Hotovo, int Celkem, string Linka)>(p =>
+            {
+                vysledek.Nadpis = $"Načítám data {p.Hotovo + 1} z {p.Celkem} · {p.Linka}";
+                vysledek.Prubeh = p.Celkem > 0 ? 0.5 * p.Hotovo / p.Celkem : 0;
+            });
+            var data = await Task.Run(() => nacitani(parametry, prubeh));
+            if (data is null or { Count: 0 })
+            {
+                vysledek.Nadpis = "Databáze nevrátila žádná data.";
+                return;
+            }
+            var template = _vm.State.CurrentTemplate;
+            var hlaseni = await TemplateDesigner.Models.KontrolaVystupu.ZkontrolujAsync(template, data,
+                d => TemplateDesigner.Models.KontrolaVystupu.ZLinky(template, d, _previewCanvas!.HlaseniSazby),
+                (hotovo, celkem, linka) =>
+                {
+                    vysledek.Nadpis = hotovo < celkem ? $"Kontroluji {hotovo + 1} z {celkem} · {linka}" : "";
+                    vysledek.Prubeh = celkem > 0 ? 0.5 + 0.5 * hotovo / celkem : 1;
+                });
+            int linek = TemplateDesigner.Models.KontrolaVystupu.PoLinkach(data).Count;
+            vysledek.Hlaseni = hlaseni;
+            vysledek.Nadpis = hlaseni.Count > 0
+                ? $"Zkontrolováno {TemplateDesigner.Models.KontrolaVystupu.Linek(linek)}: {TemplateDesigner.Models.KontrolaVystupu.SouhrnPoctu(hlaseni)}"
+                : $"Zkontrolováno {TemplateDesigner.Models.KontrolaVystupu.Linek(linek)} - bez hlášek";
+        }
+        catch (Exception ex)
+        {
+            vysledek.Nadpis = $"Kontrola selhala: {ex.Message}";
+        }
+        finally
+        {
+            vysledek.Probiha = false;
+        }
+    }
+
+    /// <summary>Klik na hlášku v okně kontroly: přepnout na její linku a vybrat prvek.</summary>
+    private void PrejdiNaHlaseni(Hlaseni h)
+    {
+        if (_vm is null) return;
+        if (h.Linka is { } linka)
+        {
+            int i = _vm.ActiveInstances.ToList().FindIndex(x => x.Display == linka);
+            if (i >= 0 && i != _vm.ActiveInstanceIndex) _vm.ActiveInstanceIndex = i;
+        }
+        if (h.PrvekId is { } id) VyberPrvekZHlaseni(id);
+        Activate();
+    }
+
+    private void OpenPrintDialog()
+    {
+        // PrintDialog operuje nad sdíleným dict s preview lištou (_vm.PreviewParamValues).
+        // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
+        // takže _previewParams už obsahuje persistované hodnoty - žádný extra I/O zde.
+
+        var buildRealData = NacitaniVsechLinek();
 
         var tplAgendaCode = _vm.State.CurrentTemplate.AgendaCode;
         var agendaClass = string.IsNullOrEmpty(tplAgendaCode) ? null : _vm.CacheProvider?.GetCacheClass(tplAgendaCode);

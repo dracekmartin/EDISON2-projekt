@@ -1,5 +1,16 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B178` Hlášky vpravo dole (hotovo 24. 9. 2026)
+
+Hlášky návrháře sjednocené do jednoho bloku s ikonami podle závažnosti (chyba / upozornění /
+informace), v tvaru *kde · co → krátká rada*, s klikem na prvek. Doplněné dřív tiché hlášky
+(zmenšená tabulka, Počet stran splněný i nesplněný s příčinou, nečitelná podmínka). Kontrola
+všech vybraných linek v tiskovém okně i v návrháři (lupa ve skupině Export), s průběhem, výsledkem
+ve vlastním okně a slučováním stejných hlášek přes linky; z návrháře klik přepne na linku.
+Závažnosti a texty se ladí podle používání (rozhodnutí Jan 24. 9.). Neudělané, vytáhnout až při
+potřebě: sloupec u oříznutých buněk, klik přepne stránku náhledu, oříznuté buňky v kontrole linek
+(poznají se jen při kreslení). Detail changelog 2026-09-24 (5)-(8).
+
 ## `B177` Nastavení sekcí se nesmí tiše přepisovat (hotovo 24. 9. 2026)
 
 Audit sazby sekcí našel volby, které nic nedělaly nebo slibovaly něco jiného, než sazba dělala.

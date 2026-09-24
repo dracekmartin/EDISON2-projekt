@@ -18,8 +18,12 @@ public enum ZavaznostHlaseni { Informace, Upozorneni, Chyba }
 public sealed record Hlaseni(ZavaznostHlaseni Zavaznost, string Kde, string Co, string? Rada = null,
     Guid? PrvekId = null)
 {
-    /// <summary>Řádek seznamu jde prokliknout na prvek.</summary>
-    public bool MaPrvek => PrvekId is not null;
+    /// <summary>Linka, na kterou klik v okně kontroly přepne (první z těch, kterých se hláška
+    /// týká); null = aktuální linka.</summary>
+    public string? Linka { get; init; }
+
+    /// <summary>Řádek seznamu jde prokliknout na prvek nebo linku.</summary>
+    public bool MaPrvek => PrvekId is not null || Linka is not null;
 
     /// <summary>Kde a co - do bloku s jedinou hláškou, kde se rada nevejde.</summary>
     public string KratkyText => $"{Kde}: {Co}";

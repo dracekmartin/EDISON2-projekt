@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-09-24 (8) - 🔍 kontrola vybraných linek i přímo v návrháři (`B178`)
+
+Lupa ve skupině Export (a „Zkontrolovat vybrané linky…" v menu Soubor) projde všechny vybrané
+linky s parametry z lišty náhledu. Okno kontroly se otevře hned a ukazuje průběh; **klik na hlášku
+přepne náhled na její linku a vybere prvek**, okno zůstává otevřené pro další hlášky.
+
 ## 2026-09-24 (7) - 🔍 tiskové okno zkontroluje všechny vybrané linky (`B178`, část 3)
 
 Tlačítko **„Zkontrolovat"** v tiskovém okně načte data všech vybraných linek a projde jejich

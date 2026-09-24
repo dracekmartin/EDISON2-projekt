@@ -130,21 +130,13 @@ public class PrintDialogViewModel : EDViewModel
     /// Hlášky všech linek s průběhem. Sazba běží na UI vlákně (sdílí cache prvků s náhledem),
     /// proto se mezi linkami pustí kreslení - jinak by pruh průběhu stál.
     /// </summary>
-    private async Task<List<Hlaseni>> ZkontrolujLinkyAsync(IReadOnlyList<DataContext> dataPages)
-    {
-        var linky = KontrolaVystupu.PoLinkach(dataPages);
-        var vysledky = new List<(string Linka, List<Hlaseni> Hlaseni)>();
-        for (int i = 0; i < linky.Count; i++)
-        {
-            var (linka, data) = linky[i];
-            StatusText = $"Kontroluji {i + 1} z {linky.Count} · {linka}";
-            Prubeh = 0.5 + 0.5 * i / linky.Count;
-            await Task.Delay(1);
-            vysledky.Add((linka, [.. RequestKontrolaLinky?.Invoke(data) ?? []]));
-        }
-        Prubeh = 1;
-        return KontrolaVystupu.Sluc(_template, vysledky);
-    }
+    private Task<List<Hlaseni>> ZkontrolujLinkyAsync(IReadOnlyList<DataContext> dataPages) =>
+        KontrolaVystupu.ZkontrolujAsync(_template, dataPages, d => RequestKontrolaLinky?.Invoke(d) ?? [],
+            (hotovo, celkem, linka) =>
+            {
+                StatusText = hotovo < celkem ? $"Kontroluji {hotovo + 1} z {celkem} · {linka}" : "Kontrola hotová";
+                Prubeh = celkem > 0 ? 0.5 + 0.5 * hotovo / celkem : 1;
+            });
 
     private static string Linek(int n) => $"{n} {(n == 1 ? "linka" : n <= 4 ? "linky" : "linek")}";
 

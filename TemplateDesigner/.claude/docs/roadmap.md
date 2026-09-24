@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B178` (revize upozornění), pak `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran) a `#7487` - obojí Jan prochází s kolegou. Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -62,11 +62,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 ## 📥 Backlog
 
 ### Ostatní
-
-- **`B178` Hlášky vpravo dole** [M] (Jan 24. 9.). Hotový blok se závažnostmi a klikem na prvek
-  a jednotný tvar kde · co → rada (changelog 2026-09-24 (5), (6)); závažnosti a texty se ladí podle
-  používání; kontrola všech vybraných linek je v tiskovém okně (changelog (7)). Zbývá: **přesnější
-  místo** (sloupec u oříznutých buněk, klik přepne stránku náhledu), klik z okna kontroly na linku.
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají

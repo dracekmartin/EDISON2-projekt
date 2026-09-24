@@ -164,6 +164,7 @@
                 <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF…" Click="MenuExportPdf_Click"/>
                 <MenuItem x:Name="MenuExportPng" Header="Exportovat náhled jako PNG…" Click="MenuExportPng_Click"/>
                 <MenuItem x:Name="MenuPrint" Header="Tisk…" InputGestureText="Ctrl+P" Click="MenuPrint_Click"/>
+                <MenuItem x:Name="MenuKontrola" Header="Zkontrolovat vybrané linky…" Click="BtnKontrola_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="Ctrl+Shift+P" Click="MenuPageProps_Click"/>
                 <Separator/>
@@ -533,6 +534,19 @@
                 <!-- ── Export ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnKontrola" Style="{StaticResource ToolbarButton}" Click="BtnKontrola_Click"
+                                ToolTip="Zkontrolovat všechny vybrané linky - co se kde nevejde nebo vytiskne jinak">
+                            <!-- Lupa kreslená obrysem v barvě textu - obrázková sada (EDIcons) ji nemá
+                               a znak písma se vykreslil plný černý, proti obrysovým ikonám okolo. -->
+                            <Viewbox Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}">
+                                <Canvas Width="16" Height="16">
+                                    <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="9" Height="9"
+                                             Stroke="{DynamicResource EDTheme.Text.Primary}" StrokeThickness="1.5"/>
+                                    <Line X1="9.2" Y1="9.2" X2="14.5" Y2="14.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Stroke="{DynamicResource EDTheme.Text.Primary}" StrokeThickness="1.8"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
                         <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk - Ctrl+P" Click="MenuPrint_Click">
                             <Image Source="{StaticResource EDIcons.Print}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
