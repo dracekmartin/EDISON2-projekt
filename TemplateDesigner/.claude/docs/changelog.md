@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-09-24 (10) - ⌨ nápověda formuláře jako přehledný panel
+
+Otazník v hlavičce formuláře (sdílená komponenta EDControls, tedy celý EDISON) ukáže zkratky
+v rozbalovacím panelu: vlevo akce, vpravo klávesa - stejný vzhled jako nápověda návrháře (F1).
+Popisy říkají, co zkratka dělá („Hledat v polích formuláře", ne „skok do vyhledávacího pole").
+
 ## 2026-09-24 (9) - 🧹 spodní lišta ukazuje jen to podstatné
 
 **Řádek výběru** jmenuje prvek jako paleta (u textu i s obsahem, např. Text „{POPIS_DOPRAVCE}"),
