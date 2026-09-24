@@ -56,7 +56,7 @@ public class PreteceniNalezTests
         Assert.NotNull(popis);
         Assert.Contains("Text", popis);             // jméno prvku z palety
         Assert.Contains("Vývěska", popis);          // jméno sekce, jak si ji uživatel pojmenoval
-        Assert.Contains("Text v sekci", popis);      // vinník jmenovaný i se sekcí
+        Assert.Contains("Text „dlouhý text“ v sekci", popis);   // vinník i s obsahem a sekcí
         Assert.Contains("strana 1", popis);
     }
 

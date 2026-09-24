@@ -424,7 +424,7 @@ public class PreviewCanvas
 
             nejhorsi = NejvetsiPrvek(placed, ps) is { } vinnik
                 ? new PreteceniNalez(page.PageNumber, DruhPreteceni.ObsahPrvku,
-                                     placed.Source.Name, ElementNames.ForUser(vinnik), presah, vinnik.Id)
+                                     placed.Source.Name, ElementNames.SPopisem(vinnik), presah, vinnik.Id)
                 : new PreteceniNalez(page.PageNumber, DruhPreteceni.NastavenaVyskaSekce,
                                      placed.Source.Name, null, presah);
         }
@@ -551,7 +551,7 @@ public class PreviewCanvas
                 // jméno podrží kreslicí smyčka.
                 if (oriznuteBunky is not null)
                 {
-                    oriznuteBunky.CurrentElement = ElementNames.ForUser(el);
+                    oriznuteBunky.CurrentElement = ElementNames.SPopisem(el);
                     oriznuteBunky.CurrentElementId = el.Id;
                 }
                 el.Render(ctx);

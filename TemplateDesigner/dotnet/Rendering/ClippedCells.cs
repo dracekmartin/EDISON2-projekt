@@ -60,25 +60,11 @@ public sealed class ClippedCells
             "rozšířit sloupec", _idPrvku.GetValueOrDefault(p.Key)));
         var texty = _texty.Order().Select(n => new Hlaseni(ZavaznostHlaseni.Chyba, n,
             "text se nevejde ani po zmenšení písma, ořízl se",
-            "zvětšit prvek, nebo nechat výšku prázdnou", _idPrvku.GetValueOrDefault(n)));
+            "zkrátit text, nebo zvětšit prvek", _idPrvku.GetValueOrDefault(n)));
         return [.. bunky, .. texty];
     }
 
     /// <summary>Text do stavového řádku, nebo null když se všechno vešlo.</summary>
-    public string? Summarize()
-    {
-        var texty = _texty.Order().Select(n =>
-            $"{n}: text se nevejde ani po zmenšení písma, ořízl se - zvětšete prvek nebo nechte výšku prázdnou");
-        if (_pocty.Count == 0)
-        {
-            var jenTexty = texty.ToList();
-            return jenTexty.Count == 0 ? null : string.Join("; ", jenTexty);
-        }
-        // Počet buněk, ne seznam textů: v tabulce se ořízne celý sloupec naráz a výčet čtyřiceti
-        // názvů zastávek by hlášku roztáhl přes celý řádek.
-        var casti = _pocty.OrderBy(p => p.Key).Select(p => p.Value == 1
-            ? $"{p.Key}: obsah jedné buňky je na zmenšení moc dlouhý, ořízl se"
-            : $"{p.Key}: obsah {p.Value} buněk je na zmenšení moc dlouhý, ořízl se");
-        return string.Join("; ", casti.Concat(texty));
-    }
+    public string? Summarize() =>
+        Seznam() is { Count: > 0 } s ? string.Join("; ", s.Select(h => h.Text)) : null;
 }

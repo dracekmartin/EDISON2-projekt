@@ -216,6 +216,11 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Generace preview dat - chrání proti dosednutí zastaralého async GetData
     /// (přepnu agendu/instanci, zatímco běží předchozí fetch staré). Bump při každé změně.</summary>
     private int _previewDataGeneration;
+    private bool _nacitaniBezi;
+
+    private bool _nacitaniDat;
+    /// <summary>Načítají se data linky déle než půl sekundy - štítek linky ukáže „načítám…".</summary>
+    public bool NacitaniDat { get => _nacitaniDat; private set => Set(ref _nacitaniDat, value); }
 
     /// <param name="clearRealData">true (změna agendy/šablony) = stará data vyčistit hned - patří jiné
     /// šabloně, jinak by se kreslila přes novou (náhled do dosednutí ukáže mock). false (přepnutí instance
@@ -341,13 +346,21 @@ public class TemplateDesignerViewModel : EDViewModel
         int gen = ++_previewDataGeneration;
         try
         {
-            StatusText = $"Načítám data: {instance.Display}…";
+            // Průběh u štítku linky, ne ve stavovém řádku - tam se střídal s ostatními texty a blikal
+            // (nález Jan 24. 9.). A jen u delšího načtení, krátké by bliklo i tak.
+            _ = Task.Delay(500).ContinueWith(_ =>
+            {
+                if (gen == _previewDataGeneration && _nacitaniBezi) NacitaniDat = true;
+            }, TaskScheduler.FromCurrentSynchronizationContext());
+            _nacitaniBezi = true;
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
             var columnsDefJson = CurrentColumnsDefinitionJson();
             var turnusy = CurrentTurnusyKeSpojum();
             var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson, turnusy, JazykSablony);
-            var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
+            List<DataContext>? pages;
+            try { pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams)); }
+            finally { if (gen == _previewDataGeneration) { _nacitaniBezi = false; NacitaniDat = false; } }
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
             // zastaralý a nesmí dosednout do nové šablony.
@@ -370,7 +383,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 NastavHlaseni(ZdrojHlaseni.Data,
                 [
                     .. DepartureColumnWarnings.Seznam(newData),
-                    .. ContentShrinkWarnings.Seznam(State.CurrentTemplate, newData),
+                    .. ContentShrinkWarnings.Seznam(State.CurrentTemplate, newData, vcetneOrezuTextu: false),
                     .. BarcodeSizeWarnings.Seznam(State.CurrentTemplate, newData),
                 ]);
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
@@ -381,7 +394,9 @@ public class TemplateDesignerViewModel : EDViewModel
                 _realPreviewData = newData;
                 Models.ColorHex.UiData = null;   // naplní ho až kreslení nové stránky
                 _realPreviewIndex = keepPage ? FindMatchingPageIndex(newData, currentPage, _realPreviewIndex) : 0;
-                StatusText = $"{instance.Display}: {pages.Count} stránek";
+                // Linka je na štítku a stránky v přepínači nad náhledem - úspěch nic nehlásí,
+                // jen smaže „Načítám data…" (rozhodnutí Jan 24. 9.).
+                // (dřív tu byl text „linka: N stránek" - duplikoval štítek a přepínač stránek)
             }
             NotifyPreviewPagesChanged();
             // Vzory sloupců chodí až s daty - teprve teď jde poznat, jestli definice v šabloně
@@ -776,7 +791,7 @@ public class TemplateDesignerViewModel : EDViewModel
         OnPropertyChanged(nameof(HasHlaseni));
         foreach (var n in new[] { nameof(PocetChyb), nameof(PocetUpozorneni), nameof(PocetInformaci),
                                   nameof(HasChyby), nameof(HasUpozorneni), nameof(HasInformace),
-                                  nameof(JedinaHlaseni), nameof(MaJedinouHlaseni), nameof(MaViceHlaseni) })
+ })
             OnPropertyChanged(n);
         if (Hlaseni.Count == 0) IsHlaseniListOpen = false;
     }
@@ -789,15 +804,11 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool HasUpozorneni => Pocet(ZavaznostHlaseni.Upozorneni) > 0;
     public bool HasInformace => Pocet(ZavaznostHlaseni.Informace) > 0;
 
-    // Jeden kompaktní blok (rozhodnutí Jan 24. 9.): víc hlášek = barevné tečky s počty, jediná
-    // hláška = rovnou její text; celé znění je v rozbaleném seznamu.
+    // Jeden kompaktní blok (rozhodnutí Jan 24. 9.): ikony s počty podle závažnosti, celé znění
+    // je v rozbaleném seznamu.
     public int PocetChyb => Pocet(ZavaznostHlaseni.Chyba);
     public int PocetUpozorneni => Pocet(ZavaznostHlaseni.Upozorneni);
     public int PocetInformaci => Pocet(ZavaznostHlaseni.Informace);
-
-    public Hlaseni? JedinaHlaseni => Hlaseni.Count == 1 ? Hlaseni[0] : null;
-    public bool MaJedinouHlaseni => Hlaseni.Count == 1;
-    public bool MaViceHlaseni => Hlaseni.Count > 1;
 
     private int Pocet(ZavaznostHlaseni z) => Hlaseni.Count(h => h.Zavaznost == z);
 
@@ -1772,8 +1783,7 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Pokud byla aktuální šablona při loadu auto-migrována (Template.WasMigrated=true),
-    /// zobrazí hlášku ve stavovém řádku. Uložením se přepíše stará verze v souboru/Caché.
+    /// Šablona převedená při otevření na nový formát (Template.WasMigrated) - jen ladicí výpis.
     /// </summary>
     /// <remarks>
     /// ⚠️ **Migrace NEZNAMENÁ neuloženou změnu** (rozhodnutí Jan 14. 9.). Do té doby se tu
@@ -1782,11 +1792,13 @@ public class TemplateDesignerViewModel : EDViewModel
     /// otevření ptalo na uložení změn, které neudělal. Na takovou otázku nejde odpovědět správně
     /// a naučí to lidi proklikávat dialogy. Migrace je idempotentní a pouští se při každém načtení,
     /// takže se nic neztratí: nový formát se zapíše, až šablonu uživatel opravdu upraví a uloží.
+    /// <para>Ze stejného důvodu se neukazuje ani ve stavovém řádku (rozhodnutí Jan 24. 9.) -
+    /// uživatel s ní nemá co dělat a tisk se nemění.</para>
     /// </remarks>
     private void NotifyMigrationIfNeeded()
     {
         if (State.CurrentTemplate.WasMigrated)
-            StatusText = $"⚠ Šablona migrována na nový formát (V{State.CurrentTemplate.Version}). Uložením přepíšete starou verzi.";
+            System.Diagnostics.Debug.WriteLine($"[Šablona] převedena na formát {State.CurrentTemplate.Version} při otevření");
     }
 
     /// <summary>Aplikuje grid/snap nastavení uložené v šabloně. Null hodnoty → ponechat aktuální.</summary>
@@ -3285,12 +3297,9 @@ public class TemplateDesignerViewModel : EDViewModel
         if (CacheProvider is null)
         { StatusText = "Databáze: není nakonfigurována - pole načtena z JSON"; return; }
 
-        if (agendaCode is null)
-        { StatusText = "Databáze: nakonfigurována"; return; }
-
-        StatusText = cacheSchema is not null
-            ? $"● Databáze: připojeno - {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
-            : $"○ Databáze: pro tuto agendu nejsou databázová pole ({agendaCode})";
+        // Stav připojení se nehlásí vůbec (rozhodnutí Jan 24. 9.): „pro agendu nejsou databázová
+        // pole" se ukázalo na okamžik při každém otevření, než se schéma donačetlo. Skutečný
+        // problém s daty ukáže „Žádná data" nebo prázdný náhled.
     }
 
     public CultureInfo GetTemplateCulture()
@@ -3756,29 +3765,39 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Status text for selection ──────────────────────────────────────────────
 
     /// <summary>Aktualizuje SelectionStatusText podle aktuálního výběru (klidová zóna status baru).</summary>
+    // Jen kontextová informace o výběru - pevné nápovědy („2× klik = vlastnosti") sem nepatří,
+    // ovládání je v nápovědě F1 (rozhodnutí Jan 24. 9.). Názvy prvků jako v paletě.
     public void UpdateStatusForSelection()
     {
         if (State.SelectedElements.Count == 1)
         {
             var el = State.SelectedElements[0];
-            string type = el.GetType().Name.Replace("Element", "");
-            SelectionStatusText = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
-                         (el.IsLocked ? "  [ZAMČENO]" : "") +
-                         "  |  2× klik nebo Enter = vlastnosti";
+            string vyska = el.Height is { } h ? $"{h:0.#} mm" : "výška podle obsahu";
+            SelectionStatusText = $"{ElementNames.SPopisem(el)}  ·  X {el.X:0.#}  Y {el.Y:0.#} mm  ·  {el.Width:0.#} mm × {vyska}"
+                + (el.IsLocked ? "  ·  Uzamčeno" : "");
         }
         else if (State.SelectedElements.Count > 1)
         {
-            SelectionStatusText = $"Vybráno {State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru";
+            int n = State.SelectedElements.Count;
+            SelectionStatusText = $"Vybráno {n} {(n <= 4 ? "prvky" : "prvků")}";
         }
-        else if (State.ActiveSection is not null)
+        else if (State.ActiveSection is { } sekce)
         {
-            SelectionStatusText = $"Sekce: {State.ActiveSection.Name}  |  " +
-                         $"Výška: {State.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
-                         $"Elementy: {State.ActiveSection.Elements.Count}";
+            string typ = sekce.Typ switch
+            {
+                TypSekce.HlavickaStranky   => "hlavička stránky",
+                TypSekce.PodObsahemStranky => "pod obsahem stránky",
+                TypSekce.PatickaStranky    => "patička stránky",
+                _                          => "obsah",
+            };
+            string vyska = sekce.DesignerHeight is { } h ? $"výška {h:0.#} mm" : "výška podle obsahu";
+            int n = sekce.Elements.Count;
+            SelectionStatusText = $"Sekce „{sekce.Name}“  ·  {typ}  ·  {vyska}  ·  {n} "
+                + (n == 1 ? "prvek" : n is >= 2 and <= 4 ? "prvky" : "prvků");
         }
         else
         {
-            SelectionStatusText = "Vyberte element nebo sekci.";
+            SelectionStatusText = "";
         }
     }
 

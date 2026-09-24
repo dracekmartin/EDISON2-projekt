@@ -40,7 +40,7 @@ public static class SazbaHlaseni
                     $"podmínku viditelnosti nejde přečíst ({chybaSekce}), sekce se tiskne vždy", "opravit podmínku"));
             foreach (var prvek in sekce.Elements)
                 if (ExpressionEvaluator.Validate(prvek.VisibilityExpression) is { } chybaPrvku)
-                    hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni, ElementNames.ForUser(prvek),
+                    hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni, ElementNames.SPopisem(prvek),
                         $"podmínku viditelnosti nejde přečíst ({chybaPrvku}), prvek se tiskne vždy", "opravit podmínku",
                         prvek.Id));
         }

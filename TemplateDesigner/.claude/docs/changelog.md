@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-09-24 (9) - 🧹 spodní lišta ukazuje jen to podstatné
+
+**Řádek výběru** jmenuje prvek jako paleta (u textu i s obsahem, např. Text „{POPIS_DOPRAVCE}"),
+pozici a oba rozměry (prázdná výška = „výška podle obsahu"); pevné nápovědy k ovládání zmizely.
+**Stavový text** vpravo hlásí jen výsledek akce a problém - úspěšné načtení dat, připojení
+k databázi ani převod šablony na nový formát se nehlásí, načítání dat ukazuje štítek linky
+(„načítám…"). **Blok hlášek** má jen ikony s počty; „chyba" se v souhrnech jmenuje „problém"
+a bublina vysvětluje, čím se problém, upozornění a informace liší. Oříznutý text se v návrháři
+hlásí jednou, ne dvakrát.
+
 ## 2026-09-24 (8) - 🔍 kontrola vybraných linek i přímo v návrháři (`B178`)
 
 Lupa ve skupině Export (a „Zkontrolovat vybrané linky…" v menu Soubor) projde všechny vybrané

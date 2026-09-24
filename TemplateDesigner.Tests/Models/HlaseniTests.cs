@@ -88,3 +88,25 @@ public class HlaseniTests
         Assert.Equal(id, h.PrvekId);
     }
 }
+
+/// <summary>Textový prvek se v hláškách pozná podle obsahu - „Text" samo je nerozliší.</summary>
+public class ElementNamesSPopisemTests
+{
+    private static string Popis(string text) =>
+        ElementNames.SPopisem(new TemplateDesigner.Models.Elements.TextElement { Text = text });
+
+    [Theory]
+    [InlineData("{POPIS_DOPRAVCE}", "Text „{POPIS_DOPRAVCE}“")]
+    [InlineData("Platí od {DATUM_PLATNOSTI_OD}", "Text „Platí od {DATUM_PLATNOSTI_OD}“")]
+    [InlineData("Přepravu zajišťuje :   {POPIS_DOPRAVCE} a další text", "Text „Přepravu zajišťuje : {POPIS_DOPRAVCE}…“")]
+    public void TextPrvku_KratkyCely_DlouhyTriSlova(string text, string ocekavano)
+    {
+        Assert.Equal(ocekavano, Popis(text));
+    }
+
+    [Fact]
+    public void JinyPrvek_JenNazev()
+    {
+        Assert.Equal("Obrázek", ElementNames.SPopisem(new TemplateDesigner.Models.Elements.ImageElement()));
+    }
+}

@@ -85,7 +85,7 @@ public class PrintDialogViewModel : EDViewModel
             int ch = Hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Chyba);
             int up = Hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Upozorneni);
             int inf = Hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Informace);
-            if (ch > 0) casti.Add($"{ch} {(ch == 1 ? "chyba" : ch <= 4 ? "chyby" : "chyb")}");
+            if (ch > 0) casti.Add($"{ch} {(ch == 1 ? "problém" : ch <= 4 ? "problémy" : "problémů")}");
             if (up > 0) casti.Add($"{up} upozornění");
             if (inf > 0) casti.Add($"{inf} {(inf <= 4 ? "informace" : "informací")}");
             return string.Join(", ", casti);

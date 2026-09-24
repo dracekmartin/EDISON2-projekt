@@ -939,6 +939,12 @@
                                     Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                     Cursor="Hand" Margin="4,0,0,0"
                                     ToolTip="{Binding NextInstanceTooltip}"/>
+                            <!-- Načítání dat linky (jen když trvá déle) - tady u linky, ne ve stavovém řádku. -->
+                            <TextBlock Text="načítám…"
+                                       Visibility="{Binding NacitaniDat, Converter={StaticResource BoolToVis}}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}" FontStyle="Italic"
+                                       Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                       Margin="8,0,0,0" VerticalAlignment="Center"/>
                             <!-- Zvolená skupina linek (filtr) - viditelná jen když je zvolená -->
                             <TextBlock Text="{Binding ActiveSkupinaText}"
                                        Visibility="{Binding HasActiveSkupina, Converter={StaticResource BoolToVis}}"
@@ -1018,17 +1024,36 @@
 
                     <!-- 4) Hlášky (B178): jeden kompaktní blok - chyba (na papíře něco chybí nebo přetéká),
                          upozornění (vytiskne se jinak, než je nastavené), informace (návrhář něco upravil,
-                         jak má - nesmí vypadat jako vada). Jediná hláška je vidět celá, víc = ikony
+                         jak má - nesmí vypadat jako vada). V bloku jen ikony
                          s počty; klik rozbalí seznam nahoru, klik na řádek vybere prvek. -->
                     <StackPanel x:Name="HlaseniPanel" Grid.Column="6" Grid.ColumnSpan="4"
-                                Orientation="Horizontal" VerticalAlignment="Stretch">
+                                Orientation="Horizontal" VerticalAlignment="Stretch" HorizontalAlignment="Right">
                         <StackPanel.Resources>
                             <Style x:Key="HlaseniOdznak" TargetType="Button">
                                 <Setter Property="Padding" Value="10,3"/>
                                 <Setter Property="Margin" Value="6,2,0,2"/>
                                 <Setter Property="Cursor" Value="Hand"/>
-                                <Setter Property="MaxWidth" Value="520"/>
-                                <Setter Property="ToolTip" Value="Zobrazit všechny hlášky (vykřičník = chyba, trojúhelník = upozornění, „i“ = informace)"/>
+                                <Setter Property="ToolTip">
+                                    <Setter.Value>
+                                        <StackPanel>
+                                            <TextBlock FontWeight="SemiBold" Margin="0,0,0,4">
+                                                <Run Text="Hlášky k sestavě"/><Run Text=" (kliknutím zobrazíte seznam)" FontWeight="Normal"/>
+                                            </TextBlock>
+                                            <StackPanel Orientation="Horizontal" Margin="0,1">
+                                                <controls:HlaseniIkona Zavaznost="Chyba" Margin="0,0,6,0"/>
+                                                <TextBlock><Run Text="Problém" FontWeight="SemiBold"/><Run Text=" - část obsahu se nevytiskne: ořízne se nebo přeteče"/></TextBlock>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,1">
+                                                <controls:HlaseniIkona Zavaznost="Upozorneni" Margin="0,0,6,0"/>
+                                                <TextBlock><Run Text="Upozornění" FontWeight="SemiBold"/><Run Text=" - výstup se liší od nastavení šablony: náhradní font, příliš malý kód, nesplněný počet stran"/></TextBlock>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,1">
+                                                <controls:HlaseniIkona Zavaznost="Informace" Margin="0,0,6,0"/>
+                                                <TextBlock><Run Text="Informace" FontWeight="SemiBold"/><Run Text=" - obsah je upravený podle nastavení šablony: zmenšené písmo, zmenšení na zadaný počet stran"/></TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Setter.Value>
+                                </Setter>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="Button">
@@ -1047,8 +1072,9 @@
                                 Background="{DynamicResource EDTheme.Bg.Surface}" BorderBrush="{DynamicResource EDTheme.Border.Light}"
                                 Visibility="{Binding HasHlaseni, Converter={StaticResource BoolToVis}}">
                             <StackPanel Orientation="Horizontal">
-                                <!-- Víc hlášek: tečka a počet za každou závažnost, která je. -->
-                                <StackPanel Orientation="Horizontal" Visibility="{Binding MaViceHlaseni, Converter={StaticResource BoolToVis}}">
+                                <!-- Ikona a počet za každou závažnost, která je - text je až v rozbaleném seznamu,
+                                     aby šířka bloku nezávisela na délce hlášky (rozhodnutí Jan 24. 9.). -->
+                                <StackPanel Orientation="Horizontal">
                                     <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
                                                 Visibility="{Binding HasChyby, Converter={StaticResource BoolToVis}}">
                                         <controls:HlaseniIkona Zavaznost="Chyba" VerticalAlignment="Center" Margin="0,0,4,0"/>
@@ -1068,14 +1094,7 @@
                                                    Foreground="{DynamicResource EDTheme.Text.Primary}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
                                     </StackPanel>
                                 </StackPanel>
-                                <!-- Jediná hláška: rovnou její text s tečkou její závažnosti. -->
-                                <StackPanel Orientation="Horizontal" Visibility="{Binding MaJedinouHlaseni, Converter={StaticResource BoolToVis}}">
-                                    <controls:HlaseniIkona Zavaznost="{Binding JedinaHlaseni.Zavaznost}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBlock Text="{Binding JedinaHlaseni.KratkyText}" TextTrimming="CharacterEllipsis" MaxWidth="480"
-                                               Foreground="{DynamicResource EDTheme.Text.Primary}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                                </StackPanel>
-                                <TextBlock Text="&#x25B2;" Margin="8,0,0,0" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource EDTheme.Accent.BlueDark}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+
                             </StackPanel>
                         </Button>
 

@@ -83,7 +83,8 @@ public static class KontrolaVystupu
         int ch = hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Chyba);
         int up = hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Upozorneni);
         int inf = hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Informace);
-        if (ch > 0) casti.Add($"{ch} {(ch == 1 ? "chyba" : ch <= 4 ? "chyby" : "chyb")}");
+        // „Problém", ne „chyba" - jde o vadu v sestavě, ne v programu (rozhodnutí Jan 24. 9.).
+        if (ch > 0) casti.Add($"{ch} {(ch == 1 ? "problém" : ch <= 4 ? "problémy" : "problémů")}");
         if (up > 0) casti.Add($"{up} upozornění");
         if (inf > 0) casti.Add($"{inf} {(inf <= 4 ? "informace" : "informací")}");
         return string.Join(", ", casti);

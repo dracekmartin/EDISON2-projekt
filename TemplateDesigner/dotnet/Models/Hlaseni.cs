@@ -3,8 +3,9 @@ namespace TemplateDesigner.Models;
 /// <summary>Jak vážná je hláška vpravo dole (`B178`).</summary>
 /// <remarks>
 /// Rozhoduje <b>následek na papíře</b>, ne to, která část návrháře hlášku vyrobila (rozhodnutí
-/// Jan 24. 9.): chyba = něco chybí nebo přetéká, upozornění = vytiskne se jinak, než je nastavené,
-/// informace = návrhář něco upravil, jak má (zmenšení písma, o které si zákazníci sami řekli) -
+/// Jan 24. 9.): chyba (v UI „problém") = část obsahu se nevytiskne; upozornění = výstup se liší
+/// od nastavení šablony a uživatel o tom nemusí vědět (náhradní font, malý kód, nesplněný počet
+/// stran); informace = obsah je upravený podle nastavení šablony (zmenšené písmo, počet stran) -
 /// nesmí vypadat jako vada, jinak z ní uživatel zpanikaří.
 /// </remarks>
 public enum ZavaznostHlaseni { Informace, Upozorneni, Chyba }

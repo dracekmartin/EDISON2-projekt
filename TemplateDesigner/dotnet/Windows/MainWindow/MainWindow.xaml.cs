@@ -1190,7 +1190,7 @@ public partial class MainWindow : Window
 
         var buildRealData = NacitaniVsechLinek();
 
-        var tplAgendaCode = _vm.State.CurrentTemplate.AgendaCode;
+        var tplAgendaCode = _vm!.State.CurrentTemplate.AgendaCode;
         var agendaClass = string.IsNullOrEmpty(tplAgendaCode) ? null : _vm.CacheProvider?.GetCacheClass(tplAgendaCode);
 
         var vm = new PrintDialogViewModel(

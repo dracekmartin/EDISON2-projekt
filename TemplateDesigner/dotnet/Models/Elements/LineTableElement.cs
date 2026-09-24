@@ -1942,7 +1942,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         foreach (int p in pozice)
         {
             if (od is null) { od = posledni = p; continue; }
-            if (p == posledni + 1 && NavazujiCislem(cisla[posledni.Value], cisla[p])) { posledni = p; continue; }
+            if (p == posledni + 1 && NavazujiCislem(cisla[posledni!.Value], cisla[p])) { posledni = p; continue; }
             casti.Add(od == posledni ? cisla[od.Value] : $"{cisla[od.Value]}-{cisla[posledni!.Value]}");
             od = posledni = p;
         }

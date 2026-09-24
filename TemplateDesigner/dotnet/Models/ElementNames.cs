@@ -14,6 +14,36 @@ namespace TemplateDesigner.Models;
 /// </remarks>
 public static class ElementNames
 {
+    /// <summary>
+    /// Název prvku i s tím, podle čeho ho uživatel pozná na plátně - u textu jeho obsah (hlášky,
+    /// řádek výběru). Jedno datové pole nebo krátký text celý, delší první tři slova
+    /// (rozhodnutí Jan 24. 9.); textů je v šabloně obvykle víc a samotné „Text" je nerozliší.
+    /// </summary>
+    public static string SPopisem(TemplateElement el)
+    {
+        if (el is not TextElement { Text: { } obsah } || string.IsNullOrWhiteSpace(obsah)) return ForUser(el);
+
+        string jednim = string.Join(" ", obsah.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (jednim.Length > MaxDelkaPopisu)
+        {
+            // Za slovo se počítá jen to, co nese písmeno nebo datové pole - samotná „:" nebo „-" ne.
+            var slova = jednim.Split(' ');
+            var vzate = new List<string>();
+            int vyznamnych = 0;
+            foreach (var slovo in slova)
+            {
+                if (vyznamnych == 3) break;
+                vzate.Add(slovo);
+                if (slovo.Any(char.IsLetter) || slovo.Contains('{')) vyznamnych++;
+            }
+            jednim = string.Join(" ", vzate) + (vzate.Count < slova.Length ? "…" : "");
+        }
+        return $"{ForUser(el)} „{jednim}“";
+    }
+
+    /// <summary>Do kolika znaků se text prvku vypíše celý.</summary>
+    private const int MaxDelkaPopisu = 30;
+
     /// <summary>Název prvku pro uživatele. Neznámý typ dostane obecné „prvek", aby hláška držela.</summary>
     public static string ForUser(TemplateElement el) => el switch
     {

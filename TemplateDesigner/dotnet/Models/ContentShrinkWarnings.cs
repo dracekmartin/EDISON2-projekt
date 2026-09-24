@@ -24,7 +24,7 @@ public static class ContentShrinkWarnings
     private static string? NazevProUzivatele(TemplateElement el) => el switch
     {
         NotesLegendElement or StopListElement or DepartureGridElement or LineTableElement
-            or TextElement => ElementNames.ForUser(el),
+            or TextElement => ElementNames.SPopisem(el),
         _   => null,
     };
 
@@ -36,7 +36,10 @@ public static class ContentShrinkWarnings
     /// Hlášky po prvcích. Zmenšení je informace - dělá se na přání zákazníků a je to v pořádku
     /// (rozhodnutí Jan 24. 9.); oříznutí pod mezí je chyba, protože text na papíře chybí.
     /// </summary>
-    public static List<Hlaseni> Seznam(Template? template, IReadOnlyList<DataContext>? pages)
+    /// <param name="vcetneOrezuTextu">Hlásit i text oříznutý pod mezí zmenšení. Návrhář ho hlásí
+    /// při kreslení náhledu (aktuálně, i s okrajem stránky), takže tady false - jinak by táž vada
+    /// svítila dvakrát (nález Jan 24. 9.). Tiskové okno a kontrola linek nekreslí, proto true.</param>
+    public static List<Hlaseni> Seznam(Template? template, IReadOnlyList<DataContext>? pages, bool vcetneOrezuTextu = true)
     {
         if (template is null || pages is null || pages.Count == 0) return [];
 
@@ -63,6 +66,7 @@ public static class ContentShrinkWarnings
                 dotcenychStranek++;
                 if (zmenseni < nejvetsiZmenseni) nejvetsiZmenseni = zmenseni;
             }
+            if (oriznuto && !vcetneOrezuTextu) continue;
             if (dotcenychStranek == 0 && !oriznuto) continue;
 
             // Procenta, ne body: velikost písma drží každý prvek jinde (poznámky ve vlastní
@@ -74,7 +78,7 @@ public static class ContentShrinkWarnings
                 ? $"{nazev} · {dotcenychStranek} z {pages.Count} stránek" : nazev;
             casti.Add(oriznuto
                 ? new Hlaseni(ZavaznostHlaseni.Chyba, nazev,
-                    $"písmo zmenšeno na {procent} % a text se přesto nevejde", "zkraťte text, nebo zvětšete prvek", el.Id)
+                    "text se nevejde ani po zmenšení písma, ořízl se", "zkrátit text, nebo zvětšit prvek", el.Id)
                 : new Hlaseni(ZavaznostHlaseni.Informace, kde,
                     pages.Count > 1 ? $"písmo zmenšeno až na {procent} %" : $"písmo zmenšeno na {procent} %", null, el.Id));
         }

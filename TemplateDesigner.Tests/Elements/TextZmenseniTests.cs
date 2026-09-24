@@ -120,7 +120,7 @@ public class TextZmenseniTests
         var hlaska = ContentShrinkWarnings.Summarize(Sablona(prvek), [new DataContext(new Dictionary<string, object?>())]);
         Assert.NotNull(hlaska);
         Assert.Contains("nevejde", hlaska);
-        Assert.Contains("zkraťte", hlaska);
+        Assert.Contains("zkrátit", hlaska);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class TextZmenseniTests
         Assert.NotNull(hlaska);
         Assert.Contains("Text", hlaska);              // jméno prvku z palety
         Assert.Contains("%", hlaska);
-        Assert.DoesNotContain("zkraťte", hlaska);     // vešlo se, není co zkracovat
+        Assert.DoesNotContain("zkrátit", hlaska);     // vešlo se, není co zkracovat
     }
 
     [Fact]
