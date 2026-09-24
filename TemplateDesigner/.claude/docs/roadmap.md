@@ -12,16 +12,6 @@
 
 ---
 
-## 📐 Nastavení sekcí
-
-- **`B177` Nastavení sekcí se nesmí tiše přepisovat + „Začít na nové stránce"** [M] (audit 24. 9.,
-  podnět zákazníka: poznámky vždy na samostatné stránce). Opravit `{STRANA}` v podmínce obsahové
-  sekce a místo pro „Pod obsahem + Jen poslední", rozhodnout „Povolit rozdělení" (doporučeno
-  dodělat), nápověda k výšce sekce, pak nové zaškrtávátko. Volby bez účinku jdou do `B18`.
-  Nálezy a pravidla: [`architecture.md` §Nastavení sekcí](architecture.md).
-
----
-
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
 
 > ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
@@ -72,6 +62,12 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B177` Nastavení sekcí se nesmí tiše přepisovat + „Začít na nové stránce"** [M] (audit 24. 9.,
+  podnět zákazníka: poznámky vždy na samostatné stránce). Opravit `{STRANA}` v podmínce obsahové
+  sekce a místo pro „Pod obsahem + Jen poslední", rozhodnout „Povolit rozdělení" (doporučeno
+  dodělat), nápověda k výšce sekce, pak nové zaškrtávátko. Volby bez účinku jdou do `B18`.
+  Nálezy a pravidla: [`architecture.md` §Nastavení sekcí](architecture.md).
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
