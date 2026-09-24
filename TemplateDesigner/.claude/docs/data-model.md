@@ -58,7 +58,7 @@ enum SectionPrintBehavior {
 enum SectionOverflowBehavior {
     KeepTogether,                 // nepřerušovat, přesunout celou na další stránku
     SplitAcrossPages,             // rozdělí se přes stránky (tabulky, dlouhý text)
-    AllowSplit                    // rozdělení povoleno ale ne preferováno
+    AllowSplit                    // jen kvůli starým šablonám, při načtení = SplitAcrossPages
 }
 ```
 

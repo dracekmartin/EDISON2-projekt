@@ -178,9 +178,9 @@ Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Tisk**, **Umí
 **Rámeček**, **Barva rámečku**, **Tloušťka rámečku**, **Podmínka viditelnosti**. Volby
 v rozbalovacích seznamech:
 
-- **Tisk**: Jednou · Každá stránka · Jen první · Jen poslední · Kromě první
-- **Umístění**: Obsah · Hlavička · Patička (patičky se umisťují od spodního okraje stránky)
-- **Přetečení**: Nepřerušovat · Přes stránky · Povolit split
+- **Tisk**: Jednou · Každá stránka · Jen první · Jen poslední
+- **Umístění** (jen u sekce, která se opakuje): Hlavička · Obsah · Pod obsahem · Patička (patičky se umisťují od spodního okraje stránky)
+- **Přetečení**: Držet pohromadě · Rozdělit přes stránky
 
 Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole **Datový zdroj** a
 **Výška řádku**.
@@ -516,7 +516,7 @@ Tentýž prvek na víc stránkách je **jedna položka**, ne výpis po stránká
 vypisují čísla, nad to počet a první výskyt. Stejný popis se ukáže i po tisku, protože tisknout
 můžete jinou linku, než máte v náhledu.
 
-Varování se týká jen sekcí nastavených jako „Nepřerušovat" - sekce, které lze rozdělit přes
+Varování se týká jen sekcí nastavených jako „Držet pohromadě" - sekce, které lze rozdělit přes
 stránky, se prostě rozdělí a nic se neztratí, takže tam varování nedává smysl.
 
 ### Export
@@ -983,7 +983,7 @@ velikost písma**, aby se všechno vešlo do vymezeného prostoru. Pokud je vý�
 
 Varování o přetečení (červený rámeček stránky v náhledu) se u JŘ elementů řídí stejným
 pravidlem jako v části I (kap. 9): objeví se jen u sekcí nastavených
-jako „Nepřerušovat", a jen když se prvek fyzicky nevejde i po auto-zmenšení písma - pokud
+jako „Držet pohromadě", a jen když se prvek fyzicky nevejde i po auto-zmenšení písma - pokud
 zmenšení pomůže, k varování nedojde.
 
 ---

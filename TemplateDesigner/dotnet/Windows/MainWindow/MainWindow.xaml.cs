@@ -1888,7 +1888,13 @@ public partial class MainWindow : Window
             section,
             "ALVA.TemplateDesigner.EDInputForm.SectionEdit",
             "Vlastnosti sekce: " + section.Name)
-            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
+            {
+                Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(),
+                // Barva a tloušťka rámečku bez zapnutého rámečku nic nedělají (rozhodnutí Jan 24. 9.).
+                ViditelnostPole = (klic, hodnoty) =>
+                    klic is not (nameof(Section.BorderColor) or nameof(Section.BorderWidth))
+                    || hodnoty.GetValueOrDefault(nameof(Section.ShowBorder)) == "1",
+            };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);

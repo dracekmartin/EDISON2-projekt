@@ -156,8 +156,8 @@ Nálezy z kódu sazby k 24. 9. (neověřeno v náhledu):
   nevytiskne nikdy. Nápověda formuláře (`SectionEdit.cls`) přitom tenhle příklad nabízí.
 - **„Pod obsahem" + „Jen poslední" si nevyhradí místo** - druhý průchod pro poslední stránku
   hlídá jen hlavičky a patičky (`hasLastPageOnly`), plovoucí sekce ne.
-- **„Povolit rozdělení" = „Přes stránky"** - sazba je nerozlišuje, model i popis pro AI slibují
-  „rozdělení povoleno, ale ne preferováno".
+- **„Povolit rozdělení" = „Přes stránky"** - sazba je nerozlišovala; od 24. 9. volba z nabídky
+  zmizela a stará hodnota se čte jako „Rozdělit přes stránky" (vrátit, až si o ni někdo řekne).
 - **Bez účinku:** Umístění u sekce „Jednou" (vždy obsah), Přetečení u opakované sekce,
   `Section.RowHeight` (čte ho jen škálování šablony).
 - **Podmínka, kterou nejde přečíst, tiše platí** (`IsVisible` fail-open) - překlep v podmínce

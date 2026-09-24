@@ -80,12 +80,10 @@ Každá sekce má:
 - `OnEveryPage` - každá stránka (hlavička/patička)
 - `OnFirstPageOnly` - jen první stránka
 - `OnLastPageOnly` - jen poslední stránka
-- `OnEveryPageExceptFirst` - všechny kromě první
 
 ### OverflowBehavior hodnoty:
-- `KeepTogether` - nepřerušovat
-- `SplitAcrossPages` - rozdělí se přes stránky
-- `AllowSplit` - rozdělení povoleno ale ne preferováno
+- `KeepTogether` - držet pohromadě (celá sekce přejde na další stránku)
+- `SplitAcrossPages` - rozdělit přes stránky (vyplní zbytek stránky a pokračuje)
 
 ## Elements (typy)
 

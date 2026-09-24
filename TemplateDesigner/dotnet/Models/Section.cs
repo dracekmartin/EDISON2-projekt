@@ -22,7 +22,16 @@ public class Section
     public SectionPrintBehavior PrintBehavior { get; set; } = SectionPrintBehavior.Once;
 
     /// <summary>Určuje, jak se sekce chová při přetečení stránky.</summary>
-    public SectionOverflowBehavior OverflowBehavior { get; set; } = SectionOverflowBehavior.KeepTogether;
+    /// <remarks>Stará hodnota <see cref="SectionOverflowBehavior.AllowSplit"/> se čte jako
+    /// „Rozdělit přes stránky" - sazba je nikdy nerozlišovala (`B177`, 24. 9.).</remarks>
+    public SectionOverflowBehavior OverflowBehavior
+    {
+        get => _overflowBehavior;
+        set => _overflowBehavior = value == SectionOverflowBehavior.AllowSplit
+            ? SectionOverflowBehavior.SplitAcrossPages
+            : value;
+    }
+    private SectionOverflowBehavior _overflowBehavior = SectionOverflowBehavior.KeepTogether;
 
     /// <summary>
     /// Role sekce na stránce - Header (nahoře), Body (střed), Footer (dole).
@@ -123,7 +132,8 @@ public enum SectionPrintBehavior
     OnFirstPageOnly,
     /// <summary>Pouze na poslední stránce.</summary>
     OnLastPageOnly,
-    /// <summary>Na každé stránce kromě první (alternativní záhlaví).</summary>
+    /// <summary>Zůstává kvůli uloženým šablonám - při načtení se převede na <see cref="OnEveryPage"/>
+    /// s podmínkou <c>{STRANA} &gt; 1</c> (`B177`, 24. 9.).</summary>
     OnEveryPageExceptFirst,
     /// <summary>Opakuje se per řádek dat (tabulky s designem vlastních řádků).</summary>
     PerDataRow
@@ -155,6 +165,7 @@ public enum SectionOverflowBehavior
     KeepTogether,
     /// <summary>Sekce se rozdělí - pokračuje na další stránce (tabulky).</summary>
     SplitAcrossPages,
-    /// <summary>Rozdělení povoleno ale ne preferováno (textové bloky).</summary>
+    /// <summary>Zůstává jen kvůli uloženým šablonám - chovala se jako <see cref="SplitAcrossPages"/>
+    /// a při načtení se na ni převede. Z nabídky zmizela 24. 9. (`B177`).</summary>
     AllowSplit
 }

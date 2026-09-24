@@ -36,22 +36,22 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("OnEveryPage", "Každá stránka")
         d f.AddListItem("OnFirstPageOnly", "Jen první")
         d f.AddListItem("OnLastPageOnly", "Jen poslední")
-        d f.AddListItem("OnEveryPageExceptFirst", "Kromě první")
         s f.value = "Once"
+        s f.helpText = "Kdy se sekce tiskne při vícestránkovém tisku: jednou, nebo opakovaně na stránkách"
 
         s f = form.AddFieldToLastGroup("Role", "Umístění", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Header", "Hlavička")
         d f.AddListItem("Body", "Obsah")
         d f.AddListItem("BelowContent", "Pod obsahem")
-        d f.AddListItem("Header", "Hlavička")
         d f.AddListItem("Footer", "Patička")
         s f.value = "Body"
-        s f.helpText = "Pod obsahem = na každé stránce hned za obsahem té stránky"
+        s f.helpText = "Kam na stránku se tiskne sekce, která se opakuje. U sekce tištěné jednou se nepoužije - leží tam, kde je v šabloně"
 
         s f = form.AddFieldToLastGroup("OverflowBehavior", "Přetečení", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("KeepTogether", "Nepřerušovat")
-        d f.AddListItem("SplitAcrossPages", "Přes stránky")
-        d f.AddListItem("AllowSplit", "Povolit rozdělení")
+        d f.AddListItem("KeepTogether", "Držet pohromadě")
+        d f.AddListItem("SplitAcrossPages", "Rozdělit přes stránky")
         s f.value = "KeepTogether"
+        s f.helpText = "Co se stane, když se sekce nevejde na zbytek stránky. Opakované sekce se nedělí"
 
         // ── Skupina "Vzhled" ──────────────────────────────────────────────
         d form.AddGroup("appearance", "Vzhled")

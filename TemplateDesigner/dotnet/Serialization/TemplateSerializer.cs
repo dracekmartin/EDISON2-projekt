@@ -53,6 +53,22 @@ public static class TemplateSerializer
 
     // --- Serializace Section (pro custom šablony) ---
 
+    /// <summary>
+    /// Tisk „Kromě první" zmizel z nabídky (`B177`, 24. 9.) - stará sekce se převede na „Každá
+    /// stránka" s podmínkou <c>{STRANA} &gt; 1</c>, která se chová stejně. Vrací, jestli se něco změnilo.
+    /// </summary>
+    /// <remarks>Mimo verzový pipeline, jako přemapování kódů agend: hodnota výčtu zůstává, takže
+    /// ji starší exe dál přečte, a uložením se propíše nový tvar.</remarks>
+    internal static bool PrevedKromePrvni(Section sekce)
+    {
+        if (sekce.PrintBehavior != SectionPrintBehavior.OnEveryPageExceptFirst) return false;
+        sekce.PrintBehavior = SectionPrintBehavior.OnEveryPage;
+        sekce.VisibilityExpression = string.IsNullOrWhiteSpace(sekce.VisibilityExpression)
+            ? "{STRANA} > 1"
+            : $"{{STRANA}} > 1 && ({sekce.VisibilityExpression})";
+        return true;
+    }
+
     /// <summary>Serializuje sekci do JSON (pro uložení jako custom šablona).</summary>
     public static string SerializeSection(Section section)
     {
@@ -80,7 +96,9 @@ public static class TemplateSerializer
             var (migrated, _, _) = Migrator.Migrate(wrapper);
 
             if (migrated["sections"] is not JsonArray { Count: > 0 } sections) return null;
-            return sections[0]?.Deserialize<Section>(Options);
+            var sekce = sections[0]?.Deserialize<Section>(Options);
+            if (sekce is not null) PrevedKromePrvni(sekce);
+            return sekce;
         }
         catch (JsonException)
         {
@@ -153,6 +171,9 @@ public static class TemplateSerializer
                 template.AgendaCode = canonical;
                 wasMigrated = true;
             }
+
+            foreach (var sekce in template.Sections)
+                wasMigrated |= PrevedKromePrvni(sekce);
 
             template.WasMigrated = wasMigrated;
             return template;

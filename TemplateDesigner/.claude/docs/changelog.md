@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-09-24 (2) - 📐 formulář sekce bez voleb, které nic nedělaly (`B177`, část 2)
+
+Pole Tisk, Umístění a Přetečení mají nápovědu, co se jimi nastavuje. Přetečení nabízí **Držet
+pohromadě** a **Rozdělit přes stránky**; „Povolit rozdělení" dělalo totéž co druhá volba a zmizelo.
+Z Tisku zmizelo „Kromě první" - totéž je „Každá stránka" s podmínkou `{STRANA} > 1`. Uložené
+šablony se oboje při otevření převedou a tisknou se stejně.
+
+**Opakovaná sekce skrytá podmínkou si nevyhrazuje místo**: hlavička s `{STRANA} > 1` dřív nechala na
+první stránce prázdný pruh. Barva a tloušťka rámečku sekce jsou vidět jen se zapnutým Rámečkem.
+
 ## 2026-09-24 (1) - 📐 nastavení sekcí dělá, co slibuje (`B177`, část 1)
 
 **Podmínka viditelnosti sekce „Jednou" zná číslo stránky.** Počítá se stránka, na které sekce

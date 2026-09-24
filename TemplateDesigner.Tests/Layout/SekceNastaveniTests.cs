@@ -103,3 +103,52 @@ public class SekceNastaveniTests
             $"sekce {s.Source.Name} končí na {s.Y + s.Height} mm, stránka má 100 mm"));
     }
 }
+
+/// <summary>`B177`: volba „Povolit rozdělení" zmizela - uložené šablony ji čtou jako „Rozdělit přes stránky".</summary>
+public class PovolitRozdeleniTests
+{
+    [Fact]
+    public void StaraHodnota_SeCteJakoRozdelitPresStranky()
+    {
+        var sekce = TemplateDesigner.Serialization.TemplateSerializer.DeserializeSection(
+            """{ "name": "Poznámky", "overflowBehavior": "AllowSplit" }""")!;
+
+        Assert.Equal(SectionOverflowBehavior.SplitAcrossPages, sekce.OverflowBehavior);
+    }
+}
+
+/// <summary>`B177`: opakovaná sekce skrytá podmínkou si na té stránce nesmí vyhradit místo.</summary>
+public class PodminkaOpakovaneSekceTests
+{
+    [Fact]
+    public void SkrytaHlavicka_NenechaPrazdnyPruh()
+    {
+        var vysledek = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(new Template
+        {
+            PageSize = new PageSize { Width = 210, Height = 100, MarginTop = 0, MarginBottom = 0 },
+            Sections =
+            [
+                new Section { Name = "Hlavička", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+                              Role = SectionRole.Header, DesignerHeight = 20, VisibilityExpression = "{STRANA} > 1" },
+                new Section { Name = "A", DesignerHeight = 90 },
+                new Section { Name = "B", DesignerHeight = 50 },
+            ],
+        }, new DataContext(new Dictionary<string, object?>()));
+
+        var strana1 = vysledek.Pages[0].Sections;
+        Assert.DoesNotContain(strana1, s => s.Source.Name == "Hlavička");
+        Assert.Equal(0f, strana1.Single(s => s.Source.Name == "A").Y);
+        var strana2 = vysledek.Pages[1].Sections;
+        Assert.Equal(20f, strana2.Single(s => s.Source.Name == "B").Y);
+    }
+
+    [Fact]
+    public void KromePrvni_SePriNacteniPrevede()
+    {
+        var sekce = TemplateDesigner.Serialization.TemplateSerializer.DeserializeSection(
+            """{ "name": "Hlavička", "printBehavior": "OnEveryPageExceptFirst", "visibilityExpression": "{A} == 1" }""")!;
+
+        Assert.Equal(SectionPrintBehavior.OnEveryPage, sekce.PrintBehavior);
+        Assert.Equal("{STRANA} > 1 && ({A} == 1)", sekce.VisibilityExpression);
+    }
+}

@@ -610,7 +610,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                 ("Každá stránka",   (object)SectionPrintBehavior.OnEveryPage),
                 ("Jen první",       (object)SectionPrintBehavior.OnFirstPageOnly),
                 ("Jen poslední",    (object)SectionPrintBehavior.OnLastPageOnly),
-                ("Kromě první",     (object)SectionPrintBehavior.OnEveryPageExceptFirst),
             ]
         });
 
@@ -621,9 +620,10 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             Set     = v  => section.Role = (SectionRole)v,
             Options =
             [
-                ("Obsah",   (object)SectionRole.Body),
-                ("Hlavička", (object)SectionRole.Header),
-                ("Patička",  (object)SectionRole.Footer),
+                ("Hlavička",    (object)SectionRole.Header),
+                ("Obsah",       (object)SectionRole.Body),
+                ("Pod obsahem", (object)SectionRole.BelowContent),
+                ("Patička",     (object)SectionRole.Footer),
             ]
         });
 
@@ -634,9 +634,8 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             Set     = v  => section.OverflowBehavior = (SectionOverflowBehavior)v,
             Options =
             [
-                ("Nepřerušovat",  (object)SectionOverflowBehavior.KeepTogether),
-                ("Přes stránky",  (object)SectionOverflowBehavior.SplitAcrossPages),
-                ("Povolit rozdělení", (object)SectionOverflowBehavior.AllowSplit),
+                ("Držet pohromadě",       (object)SectionOverflowBehavior.KeepTogether),
+                ("Rozdělit přes stránky", (object)SectionOverflowBehavior.SplitAcrossPages),
             ]
         });
 

@@ -304,7 +304,7 @@ public class PageLayoutEngine
         // a podmínka obsahové sekce s počtem stran.
         bool hasLastPageOnly = footers.Any(s => s.PrintBehavior == SectionPrintBehavior.OnLastPageOnly)
             || headers.Any(s => s.PrintBehavior == SectionPrintBehavior.OnLastPageOnly)
-            || bodySections.Any(s => PodminkaSPoctemStran(s.VisibilityExpression));
+            || allSections.Any(s => PodminkaSPoctemStran(s.VisibilityExpression));
 
         LayoutResult result;
         if (hasLastPageOnly && totalPages > 0)
@@ -479,29 +479,42 @@ public class PageLayoutEngine
     // ─────────────────────────────────────────────────────────────────────
     // Výpočet prostoru na stránce
 
+    // Místo se vyhrazuje jen pro opakovanou sekci, která se na stránce opravdu vytiskne - i podle
+    // podmínky viditelnosti. Do 24. 9. se podmínka hlídala až při umístění, takže hlavička skrytá
+    // `{STRANA} > 1` nechala na první stránce prázdný pruh.
+
     private static float GetHeaderHeight(int pageNum, int totalPages,
-        List<Section> headers, Dictionary<Guid, float> heights)
+        List<Section> headers, Dictionary<Guid, float> heights, DataContext? data)
     {
         float h = 0f;
         foreach (var section in headers)
         {
-            if (IsHeaderVisibleOnPage(section, pageNum, totalPages))
+            if (IsHeaderVisibleOnPage(section, pageNum, totalPages)
+                && PodminkaNaStrance(section, pageNum, totalPages, data))
                 h += heights[section.Id];
         }
         return h;
     }
 
     private static float GetFooterHeight(int pageNum, int totalPages,
-        List<Section> footers, Dictionary<Guid, float> heights)
+        List<Section> footers, Dictionary<Guid, float> heights, DataContext? data)
     {
         float h = 0f;
         foreach (var section in footers)
         {
-            if (IsFooterVisibleOnPage(section, pageNum, totalPages))
+            if (IsFooterVisibleOnPage(section, pageNum, totalPages)
+                && PodminkaNaStrance(section, pageNum, totalPages, data))
                 h += heights[section.Id];
         }
         return h;
     }
+
+    /// <summary>Podmínka viditelnosti sekce vyhodnocená s hodnotami dané stránky.</summary>
+    private static bool PodminkaNaStrance(Section section, int pageNum, int totalPages, DataContext? data) =>
+        section.VisibilityExpression is not { Length: > 0 } podminka
+        || ExpressionEvaluator.IsVisible(podminka,
+            data?.WithExtraValues(HodnotyStranky(pageNum, totalPages, data))
+            ?? new DataContext(HodnotyStranky(pageNum, totalPages, null)));
 
     private static bool IsHeaderVisibleOnPage(Section s, int pageNum, int totalPages) =>
         s.PrintBehavior switch
@@ -542,9 +555,9 @@ public class PageLayoutEngine
         // Estimovat totalPages pro header/footer height výpočet
         int estTotal = knownTotalPages > 0 ? knownTotalPages : 1000;
 
-        float headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-        float footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-        float plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+        float headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+        float footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+        float plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
         float availableHeight = printableHeight - headerH - footerH - plovouciH;
         float cursorY = headerH;
 
@@ -607,9 +620,9 @@ public class PageLayoutEngine
                     currentPage = new Page { PageNumber = currentPageNum };
                     result.Pages.Add(currentPage);
 
-                    headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-                    footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                    plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                    headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+                    footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+                    plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
                     availableHeight = printableHeight - headerH - footerH - plovouciH;
                     cursorY = headerH;
                 }
@@ -645,9 +658,9 @@ public class PageLayoutEngine
                         currentPage = new Page { PageNumber = currentPageNum };
                         result.Pages.Add(currentPage);
 
-                        headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-                        footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                        headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+                        footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
                         availableHeight = printableHeight - headerH - footerH - plovouciH;
                         cursorY = headerH;
                         spaceOnPage = availableHeight - hlavicka;
@@ -700,9 +713,9 @@ public class PageLayoutEngine
                         currentPage = new Page { PageNumber = currentPageNum };
                         result.Pages.Add(currentPage);
 
-                        headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-                        footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                        headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+                        footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
                         availableHeight = printableHeight - headerH - footerH - plovouciH;
                         cursorY = headerH;
                     }
@@ -826,7 +839,8 @@ public class PageLayoutEngine
             float totalFooterH = 0f;
             foreach (var footer in footers)
             {
-                if (IsFooterVisibleOnPage(footer, pageNum, totalPages))
+                if (IsFooterVisibleOnPage(footer, pageNum, totalPages)
+                    && PodminkaNaStrance(footer, pageNum, totalPages, data))
                     totalFooterH += sectionHeights[footer.Id];
             }
 
