@@ -34,7 +34,7 @@ public class PreviewCanvas
     /// se všechno). Wire-uje MainWindow na status bar. ⚠️ Posílá se **text, ne příznak** - z „něco
     /// přetéká" uživatel nepoznal, na které stránce ani co ji přetéká.
     /// </summary>
-    public Action<string?>? OverflowChanged { get; set; }
+    public Action<IReadOnlyList<Hlaseni>>? OverflowChanged { get; set; }
 
     /// <summary>Na kolik stran se sází právě zobrazená stránka dat - druhá osa stránkování (`B131`).</summary>
     public Action<int>? PocetStranSazbyChanged { get; set; }
@@ -43,13 +43,17 @@ public class PreviewCanvas
     /// Volá se na konci každého renderu preview s popisem buněk, jejichž obsah se nevešel ani po
     /// zmenšení na mez, takže se ořízl (null = všechno se vešlo). Wire-uje MainWindow na status bar.
     /// </summary>
-    public Action<string?>? OriznuteBunkyChanged { get; set; }
+    public Action<IReadOnlyList<Hlaseni>>? OriznuteBunkyChanged { get; set; }
 
     /// <summary>
     /// Volá se při každém renderu preview s popisem tabulek spojů, kde je sloupec užší, než se
     /// obsah vejde (null = v pořádku). Wire-uje MainWindow na týž odznak status baru.
     /// </summary>
-    public Action<string?>? UzkeSloupceChanged { get; set; }
+    public Action<IReadOnlyList<Hlaseni>>? UzkeSloupceChanged { get; set; }
+
+    /// <summary>Co sazba sama upravila nebo nesplnila - zmenšení, Počet stran, nečitelné podmínky
+    /// (`B178`). Volá se při každém renderu náhledu.</summary>
+    public Action<IReadOnlyList<Hlaseni>>? SazbaChanged { get; set; }
 
     /// <summary>Sběrač oříznutých buněk právě probíhajícího renderu; mimo render null.</summary>
     private ClippedCells? _oriznuteBunky;
@@ -339,18 +343,19 @@ public class PreviewCanvas
         // Pre-detekce přetečení per stránka (funguje bez renderu) → červený rámeček konkrétní
         // přetékající stránky + hláška ve status baru (přes OverflowChanged).
         var nalezy = layout.Pages.Select(p => NajdiPreteceni(p, ps)).ToList();
-        OverflowChanged?.Invoke(OverflowWarnings.Summarize(
+        OverflowChanged?.Invoke(OverflowWarnings.Seznam(
             [.. nalezy.Where(n => n is not null).Select(n => n!)], layout.Pages.Count));
 
         // Kolik stran leží pod sebou ve scrollu. Nabídka nad náhledem přepíná stránky DAT, tohle
         // je ta druhá osa - bez ní si uživatel obojí plete (`B131`).
         PocetStranSazbyChanged?.Invoke(layout.Pages.Count);
+        SazbaChanged?.Invoke(SazbaHlaseni.Seznam(_state.CurrentTemplate, layout));
 
         // Úzký sloupec spoje se hlásí odsud, ne z načtení dat: uživatel mění šířku v panelu
         // a hláška musí jít s ním, ne čekat na příští stažení jízdního řádku.
         UzkeSloupceChanged?.Invoke(data is null
-            ? null
-            : TripColumnWidthWarnings.Summarize(_state.CurrentTemplate, [data]));
+            ? []
+            : TripColumnWidthWarnings.Seznam(_state.CurrentTemplate, [data]));
 
         // Jen obrazovkový náhled - export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
         canvas.Clear(CanvasTheme.Background);
@@ -369,7 +374,7 @@ public class PreviewCanvas
 
             currentPageY += pageH + PageGapPx;
         }
-        OriznuteBunkyChanged?.Invoke(_oriznuteBunky.Summarize());
+        OriznuteBunkyChanged?.Invoke(_oriznuteBunky.Seznam());
         _oriznuteBunky = null;
     }
 
@@ -406,7 +411,7 @@ public class PreviewCanvas
 
             nejhorsi = NejvetsiPrvek(placed, ps) is { } vinnik
                 ? new PreteceniNalez(page.PageNumber, DruhPreteceni.ObsahPrvku,
-                                     placed.Source.Name, vinnik, presah)
+                                     placed.Source.Name, ElementNames.ForUser(vinnik), presah, vinnik.Id)
                 : new PreteceniNalez(page.PageNumber, DruhPreteceni.NastavenaVyskaSekce,
                                      placed.Source.Name, null, presah);
         }
@@ -418,10 +423,10 @@ public class PreviewCanvas
     /// sekci nafoukla nastavená výška, prvky se do ní vejdou (pak nemá smysl jmenovat prvek, ten
     /// za to nemůže).
     /// </summary>
-    private string? NejvetsiPrvek(PlacedSection placed, PageSize ps)
+    private TemplateElement? NejvetsiPrvek(PlacedSection placed, PageSize ps)
     {
         float mez = placed.Source.DesignerHeight ?? 0f;
-        string? vinnik = null;
+        TemplateElement? vinnik = null;
         float nejdal = mez;
 
         foreach (var el in placed.Source.Elements)
@@ -430,7 +435,7 @@ public class PreviewCanvas
             float dno = el.Y + (el.Height ?? _heightCalc.CalculateHeight(el, ps.PrintableWidth, placed.Data));
             if (dno <= nejdal) continue;
             nejdal = dno;
-            vinnik = ElementNames.ForUser(el);
+            vinnik = el;
         }
         return vinnik;
     }
@@ -531,7 +536,11 @@ public class PreviewCanvas
                 el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) - jedno místo pro všechny
                 // Hláška o oříznuté buňce má jmenovat prvek; kreslení buňky o prvku neví, tak mu
                 // jméno podrží kreslicí smyčka.
-                if (oriznuteBunky is not null) oriznuteBunky.CurrentElement = ElementNames.ForUser(el);
+                if (oriznuteBunky is not null)
+                {
+                    oriznuteBunky.CurrentElement = ElementNames.ForUser(el);
+                    oriznuteBunky.CurrentElementId = el.Id;
+                }
                 el.Render(ctx);
                 canvas.Restore();
             }

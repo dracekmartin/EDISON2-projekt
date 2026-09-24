@@ -234,8 +234,7 @@ public class TemplateDesignerViewModel : EDViewModel
             if (clearRealData)
             {
                 _realPreviewData = null;
-                ColumnDataWarning = null;   // badge patří k zahozeným datům
-                ZmensenePismo = null;
+                NastavHlaseni(ZdrojHlaseni.Data, []);   // hlášky patří k zahozeným datům
                 _realPreviewIndex = 0;
                 Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
@@ -359,20 +358,21 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
-                ColumnDataWarning = null;
-                ZmensenePismo = null;
+                NastavHlaseni(ZdrojHlaseni.Data, []);
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
             {
                 var culture = GetTemplateCulture();
                 var newData = pages.Select(d => d.WithCulture(culture)).ToList();
-                ColumnDataWarning = DepartureColumnWarnings.Summarize(newData);
-                // Malý kód a zmenšené písmo jsou táž třída vady („vytiskne se to jinak, než jak to
-                // vypadá") a sdílí jeden odznak - čtvrtý pruh ve stavovém řádku už by se nevešel.
-                ZmensenePismo = SpojHlasky(
-                    ContentShrinkWarnings.Summarize(State.CurrentTemplate, newData),
-                    BarcodeSizeWarnings.Summarize(State.CurrentTemplate, newData));
+                // Odjezdy mimo sloupce na vývěsce chybí (chyba); zmenšené písmo a malý kód jsou z dat
+                // všech stránek, takže se počítají tady, ne při kreslení jedné z nich.
+                NastavHlaseni(ZdrojHlaseni.Data,
+                [
+                    .. DepartureColumnWarnings.Seznam(newData),
+                    .. ContentShrinkWarnings.Seznam(State.CurrentTemplate, newData),
+                    .. BarcodeSizeWarnings.Seznam(State.CurrentTemplate, newData),
+                ]);
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
                 // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
                 var currentPage = (keepPage && _realPreviewData is not null
@@ -754,79 +754,72 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _statusText, value);
     }
 
-    private string? _columnDataWarning;
-    /// <summary>Co vlastní sloupce nevzaly - odjezdy mimo všechny sloupce a sloupce s obdobím mimo
-    /// platnost jízdního řádku. Null = nic → badge ve status baru je skrytý. Obojí je jinak
-    /// neviditelná vada (chybějící minuta, prázdný sloupec) - proto viditelné upozornění,
-    /// ne tichý log.</summary>
-    public string? ColumnDataWarning
+    // ── Hlášky vpravo dole (`B178`) ─────────────────────────────────────────
+
+    /// <summary>Odkud hláška přišla - každý zdroj se přepočítává v jinou chvíli, proto zvlášť.</summary>
+    public enum ZdrojHlaseni { Data, Font, Preteceni, Orez, Sloupce, Sazba }
+
+    private readonly Dictionary<ZdrojHlaseni, IReadOnlyList<Hlaseni>> _hlaseniZeZdroju = [];
+
+    /// <summary>
+    /// Nastaví hlášky jednoho zdroje. Data (sloupce odjezdů, zmenšené písmo, malé kódy) se počítají
+    /// při načtení dat, font při výměně šablony, přetečení / ořez / úzké sloupce při kreslení náhledu.
+    /// </summary>
+    public void NastavHlaseni(ZdrojHlaseni zdroj, IReadOnlyList<Hlaseni> hlaseni)
     {
-        get => _columnDataWarning;
-        private set { if (Set(ref _columnDataWarning, value)) OnPropertyChanged(nameof(HasColumnDataWarning)); }
+        var stare = _hlaseniZeZdroju.GetValueOrDefault(zdroj) ?? [];
+        if (stare.SequenceEqual(hlaseni)) return;
+        _hlaseniZeZdroju[zdroj] = hlaseni;
+        Hlaseni = [.. _hlaseniZeZdroju.Values.SelectMany(h => h)
+            .OrderByDescending(h => h.Zavaznost)];
+        OnPropertyChanged(nameof(Hlaseni));
+        OnPropertyChanged(nameof(HasHlaseni));
+        foreach (var n in new[] { nameof(PocetChyb), nameof(PocetUpozorneni), nameof(PocetInformaci),
+                                  nameof(HasChyby), nameof(HasUpozorneni), nameof(HasInformace),
+                                  nameof(JedinaHlaseni), nameof(MaJedinouHlaseni), nameof(MaViceHlaseni) })
+            OnPropertyChanged(n);
+        if (Hlaseni.Count == 0) IsHlaseniListOpen = false;
     }
 
-    public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
+    /// <summary>Všechny hlášky, nejvážnější první.</summary>
+    public IReadOnlyList<Hlaseni> Hlaseni { get; private set; } = [];
 
-    private string? _contentShrinkWarning;
-    /// <summary>Prvky, jimž se zmenšilo písmo, aby se obsah vešel, plus buňky, kde ani mez
-    /// zmenšování nestačila a obsah se ořízl. Null = nic → odznak je skrytý.
-    /// Táž třída vady jako <see cref="FontWarning"/>: vytiskne se něco jiného, než co je nastavené,
-    /// a bez hlášky to uživatel pozná až z papíru.</summary>
-    public string? ContentShrinkWarning
+    public bool HasHlaseni => Hlaseni.Count > 0;
+    public bool HasChyby => Pocet(ZavaznostHlaseni.Chyba) > 0;
+    public bool HasUpozorneni => Pocet(ZavaznostHlaseni.Upozorneni) > 0;
+    public bool HasInformace => Pocet(ZavaznostHlaseni.Informace) > 0;
+
+    // Jeden kompaktní blok (rozhodnutí Jan 24. 9.): víc hlášek = barevné tečky s počty, jediná
+    // hláška = rovnou její text; celé znění je v rozbaleném seznamu.
+    public int PocetChyb => Pocet(ZavaznostHlaseni.Chyba);
+    public int PocetUpozorneni => Pocet(ZavaznostHlaseni.Upozorneni);
+    public int PocetInformaci => Pocet(ZavaznostHlaseni.Informace);
+
+    public Hlaseni? JedinaHlaseni => Hlaseni.Count == 1 ? Hlaseni[0] : null;
+    public bool MaJedinouHlaseni => Hlaseni.Count == 1;
+    public bool MaViceHlaseni => Hlaseni.Count > 1;
+
+    private int Pocet(ZavaznostHlaseni z) => Hlaseni.Count(h => h.Zavaznost == z);
+
+    private bool _hlaseniListOpen;
+    private DateTime _hlaseniListZavrenoV = DateTime.MinValue;
+
+    /// <summary>Je rozbalený seznam hlášek? Klik na odznak ho otevře, klik mimo zavře.</summary>
+    public bool IsHlaseniListOpen
     {
-        get => _contentShrinkWarning;
-        private set { if (Set(ref _contentShrinkWarning, value)) OnPropertyChanged(nameof(HasContentShrinkWarning)); }
+        get => _hlaseniListOpen;
+        set
+        {
+            if (_hlaseniListOpen == value) return;
+            _hlaseniListOpen = value;
+            if (!value) _hlaseniListZavrenoV = DateTime.UtcNow;
+            OnPropertyChanged(nameof(IsHlaseniListOpen));
+        }
     }
 
-    private string? _zmensenePismo;
-    /// <summary>Půlka odznaku, která se počítá při načtení dat (přes všechny stránky).</summary>
-    private string? ZmensenePismo
-    {
-        get => _zmensenePismo;
-        set { _zmensenePismo = value; ContentShrinkWarning = SlozOdznak(); }
-    }
-
-    private string? _oriznuteBunky;
-    /// <summary>Půlka odznaku, která se pozná až při kreslení - buňka, do které se obsah nevešel
-    /// ani po zmenšení na mez. Plní ji <c>PreviewCanvas.OriznuteBunkyChanged</c>, proto mluví
-    /// o právě zobrazené stránce dat, ne o všech.</summary>
-    public string? OriznuteBunky
-    {
-        get => _oriznuteBunky;
-        set { if (_oriznuteBunky == value) return; _oriznuteBunky = value; ContentShrinkWarning = SlozOdznak(); }
-    }
-
-    private string? _uzkeSloupce;
-    /// <summary>Třetí půlka odznaku - sloupec spoje užší, než se obsah vejde. Počítá se při kreslení
-    /// náhledu, aby hláška následovala změnu šířky v panelu, ne až další načtení dat.</summary>
-    public string? UzkeSloupce
-    {
-        get => _uzkeSloupce;
-        set { if (_uzkeSloupce == value) return; _uzkeSloupce = value; ContentShrinkWarning = SlozOdznak(); }
-    }
-
-    private string? SlozOdznak() => SpojHlasky(_zmensenePismo, _oriznuteBunky, _uzkeSloupce);
-
-    public bool HasContentShrinkWarning => !string.IsNullOrEmpty(_contentShrinkWarning);
-
-    /// <summary>Spojí neprázdné hlášky do jedné; vše prázdné = null (odznak skrytý).</summary>
-    private static string? SpojHlasky(params string?[] hlasky)
-    {
-        var neprazdne = hlasky.Where(h => !string.IsNullOrEmpty(h)).ToList();
-        return neprazdne.Count == 0 ? null : string.Join("; ", neprazdne);
-    }
-
-    private string? _fontWarning;
-    /// <summary>Fonty, které šablona chce a počítač je nemá. Null = nic → badge je skrytý.
-    /// Stejná třída vady jako <see cref="ColumnDataWarning"/>: výstup vypadá v pořádku a jen je
-    /// jiný, než autor zamýšlel (viz <see cref="FontWarnings"/>).</summary>
-    public string? FontWarning
-    {
-        get => _fontWarning;
-        private set { if (Set(ref _fontWarning, value)) OnPropertyChanged(nameof(HasFontWarning)); }
-    }
-
-    public bool HasFontWarning => !string.IsNullOrEmpty(_fontWarning);
+    /// <summary>Klik na řádek seznamu vybere prvek, ke kterému hláška patří. Host (okno) ho najde
+    /// v šabloně a aktivuje jeho sekci.</summary>
+    public Action<Guid>? RequestSelectElement { get; set; }
 
     private string _selectionStatusText = "";
     /// <summary>Klidová „stav výběru" zóna status baru (aktuální element / sekce). Píše ji jen
@@ -837,18 +830,6 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _selectionStatusText, value);
     }
 
-    private string? _previewOverflow;
-    /// <summary>Co se v náhledu nevejde a kde (číslo stránky, sekce, prvek, přesah v mm). Null = nic
-    /// nepřetéká → červený blok ve status baru je skrytý. ⚠️ Nese **text, ne příznak**: z obecného
-    /// „obsah se nevejde na stránku" uživatel nepoznal, kterou stránku ani co ji přetéká, takže
-    /// neměl kde začít (podnět kolega 3. 9.).</summary>
-    public string? PreviewOverflow
-    {
-        get => _previewOverflow;
-        set { if (Set(ref _previewOverflow, value)) OnPropertyChanged(nameof(HasPreviewOverflow)); }
-    }
-
-    public bool HasPreviewOverflow => !string.IsNullOrEmpty(_previewOverflow);
 
     private string _agendaNameText = "Agenda: -";
     public string AgendaNameText
@@ -949,6 +930,19 @@ public class TemplateDesignerViewModel : EDViewModel
         if (DateTime.UtcNow - _instanceListZavrenoV < TimeSpan.FromMilliseconds(250)) return;
         IsInstanceListOpen = !IsInstanceListOpen;
     });
+    public RelayCommand OpenHlaseniListCommand => _hlaseniList ??= Command(() =>
+    {
+        if (DateTime.UtcNow - _hlaseniListZavrenoV < TimeSpan.FromMilliseconds(250)) return;
+        IsHlaseniListOpen = !IsHlaseniListOpen;
+    });
+    private RelayCommand? _hlaseniList;
+    public RelayCommand<Hlaseni> VybratPrvekHlaseniCommand => _vybratPrvekHlaseni ??= Command<Hlaseni>(h =>
+    {
+        if (h?.PrvekId is not { } id) return;
+        IsHlaseniListOpen = false;
+        RequestSelectElement?.Invoke(id);
+    });
+    private RelayCommand<Hlaseni>? _vybratPrvekHlaseni;
     public RelayCommand<int> SelectInstanceCommand => _selectInstance ??= Command<int>(i =>
     {
         IsInstanceListOpen = false;
@@ -985,7 +979,12 @@ public class TemplateDesignerViewModel : EDViewModel
         // Výměna šablony je jediný okamžik, kdy může přibýt font, který tenhle počítač nemá.
         // Psaní vlastního názvu do pole fontu se sem záměrně nenapojuje: nabídka jmenuje jen
         // nainstalované a záměna je vidět hned na plátně; před tiskem to dialog kontroluje znovu.
-        State.TemplateSwapped = () => FontWarning = FontWarnings.Summarize(State.CurrentTemplate);
+        State.TemplateSwapped = () =>
+        {
+            NastavHlaseni(ZdrojHlaseni.Font,
+                FontWarnings.Summarize(State.CurrentTemplate) is { } font
+                    ? [new Hlaseni(ZavaznostHlaseni.Upozorneni, font)] : []);
+        };
 
         Preferences = preferences;
 

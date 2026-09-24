@@ -29,18 +29,25 @@ public static class ContentShrinkWarnings
     };
 
     /// <summary>Text upozornění, nebo null když se nic nezmenšilo.</summary>
-    public static string? Summarize(Template? template, IReadOnlyList<DataContext>? pages)
+    public static string? Summarize(Template? template, IReadOnlyList<DataContext>? pages) =>
+        Seznam(template, pages) is { Count: > 0 } s ? string.Join("; ", s.Select(h => h.Text)) : null;
+
+    /// <summary>
+    /// Hlášky po prvcích. Zmenšení je informace - dělá se na přání zákazníků a je to v pořádku
+    /// (rozhodnutí Jan 24. 9.); oříznutí pod mezí je chyba, protože text na papíře chybí.
+    /// </summary>
+    public static List<Hlaseni> Seznam(Template? template, IReadOnlyList<DataContext>? pages)
     {
-        if (template is null || pages is null || pages.Count == 0) return null;
+        if (template is null || pages is null || pages.Count == 0) return [];
 
         var elements = template.Sections
             .SelectMany(s => s.Elements)
             .Where(el => el is ScheduleElementBase or TextElement)
             .Where(el => el.Height.HasValue)
             .ToList();
-        if (elements.Count == 0) return null;
+        if (elements.Count == 0) return [];
 
-        var casti = new List<string>();
+        var casti = new List<Hlaseni>();
         foreach (var el in elements)
         {
             if (NazevProUzivatele(el) is not { } nazev) continue;
@@ -64,13 +71,14 @@ public static class ContentShrinkWarnings
             // Text pod mezí zmenšování se ořízne - to je ztráta obsahu, takže se musí říct
             // i s cestou k nápravě. Do 3. 9. se ořez nehlásil vůbec a uživatel o něm nevěděl.
             casti.Add(oriznuto
-                ? $"{nazev}: písmo zmenšeno na {procent} % a text se přesto nevejde - zkraťte ho nebo zvětšete prvek"
-                : pages.Count > 1
+                ? new Hlaseni(ZavaznostHlaseni.Chyba,
+                    $"{nazev}: písmo zmenšeno na {procent} % a text se přesto nevejde - zkraťte ho nebo zvětšete prvek", el.Id)
+                : new Hlaseni(ZavaznostHlaseni.Informace, pages.Count > 1
                     ? $"{nazev}: písmo zmenšeno až na {procent} % ({dotcenychStranek} z {pages.Count} stránek)"
-                    : $"{nazev}: písmo zmenšeno na {procent} %");
+                    : $"{nazev}: písmo zmenšeno na {procent} %", el.Id));
         }
 
-        return casti.Count == 0 ? null : string.Join("; ", casti);
+        return casti;
     }
 
     /// <summary>

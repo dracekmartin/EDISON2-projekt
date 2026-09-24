@@ -1,3 +1,5 @@
+using TemplateDesigner.Models;
+
 namespace TemplateDesigner.Rendering;
 
 /// <summary>
@@ -16,6 +18,11 @@ public sealed class ClippedCells
     /// <summary>Prvek, který se právě kreslí - jeho jméno jde do hlášky. Nastavuje kreslicí smyčka.</summary>
     public string? CurrentElement { get; set; }
 
+    /// <summary>Id prvku, který se právě kreslí - klik na hlášku ho vybere. Nastavuje kreslicí smyčka.</summary>
+    public Guid? CurrentElementId { get; set; }
+
+    private readonly Dictionary<string, Guid?> _idPrvku = [];
+
     private readonly Dictionary<string, int> _pocty = [];
 
     /// <summary>Ohlásí jednu oříznutou buňku. Volá <see cref="CellRenderer"/>.</summary>
@@ -23,6 +30,7 @@ public sealed class ClippedCells
     {
         string nazev = CurrentElement ?? "Prvek";
         _pocty[nazev] = _pocty.TryGetValue(nazev, out int n) ? n + 1 : 1;
+        _idPrvku.TryAdd(nazev, CurrentElementId);
     }
 
     private readonly HashSet<string> _texty = [];
@@ -35,7 +43,26 @@ public sealed class ClippedCells
     /// rozvržení (dopravci za spoje na stránce), a jde se změnou výšky prvku, ne až s dalším
     /// načtením dat.
     /// </remarks>
-    public void ReportText() => _texty.Add(CurrentElement ?? "Text");
+    public void ReportText()
+    {
+        string nazev = CurrentElement ?? "Text";
+        _texty.Add(nazev);
+        _idPrvku.TryAdd(nazev, CurrentElementId);
+    }
+
+    /// <summary>Hlášky po prvcích - oříznutý obsah na papíře chybí, proto chyba.</summary>
+    public List<Hlaseni> Seznam()
+    {
+        var bunky = _pocty.OrderBy(p => p.Key).Select(p => new Hlaseni(ZavaznostHlaseni.Chyba,
+            p.Value == 1
+                ? $"{p.Key}: obsah jedné buňky je na zmenšení moc dlouhý, ořízl se"
+                : $"{p.Key}: obsah {p.Value} buněk je na zmenšení moc dlouhý, ořízl se",
+            _idPrvku.GetValueOrDefault(p.Key)));
+        var texty = _texty.Order().Select(n => new Hlaseni(ZavaznostHlaseni.Chyba,
+            $"{n}: text se nevejde ani po zmenšení písma, ořízl se - zvětšete prvek nebo nechte výšku prázdnou",
+            _idPrvku.GetValueOrDefault(n)));
+        return [.. bunky, .. texty];
+    }
 
     /// <summary>Text do stavového řádku, nebo null když se všechno vešlo.</summary>
     public string? Summarize()

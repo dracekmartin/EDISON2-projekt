@@ -164,9 +164,9 @@ na uložené `PrintBehavior` + `Role` - formát šablony se nemění a starší 
 **Pořadí priority, když se nastavení tlučou:** výslovný pokyn k sekci (nová stránka, typ) >
 rozdělení obsahu (držet pohromadě / rozdělit) > přání pro celou sestavu (Počet stran) > samočinné
 úpravy (zmenšení tabulky, písma). Nic se neblokuje ani tiše nepřepíná; co prohrálo, má říct
-upozornění vpravo dole - to zatím chybí (`B178`).
+upozornění vpravo dole (`SazbaHlaseni`, `B178`).
 
-Otevřené: podmínka, kterou nejde přečíst, tiše platí (`IsVisible` fail-open, `B178`);
+Podmínka, kterou nejde přečíst, se dál tiskne (fail-open), ale hlásí se jako upozornění.
 `Section.RowHeight` čte jen škálování šablony.
 
 ---

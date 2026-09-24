@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-09-24 (5) - ⚠ hlášky vpravo dole v jednom bloku podle závažnosti (`B178`, část 1)
+
+Hlášky návrháře (přetečení, oříznutý obsah, zmenšené písmo, malý kód, chybějící font, úzký
+sloupec, odjezdy mimo sloupce) jsou **jeden kompaktní blok** s ikonami a počty: **chyba** (na
+papíře něco chybí nebo přetéká), **upozornění** (vytiskne se jinak, než je nastavené) a
+**informace** (návrhář něco upravil, jak má - třeba zmenšil písmo). Jediná hláška je vidět celá;
+klik rozbalí seznam všech a **klik na řádek vybere prvek**, ke kterému patří.
+
+Nově se hlásí i to, co dřív bylo tiché: tabulka zmenšená, aby se nedělila, Počet stran splněný
+zmenšením i nesplněný (s příčinou, např. sekce na nové stránce) a podmínka viditelnosti, kterou
+nejde přečíst.
+
 ## 2026-09-24 (4) - 📄 sekce může začít na nové stránce (`B177`)
 
 U sekce typu Obsah přibyla volba **„Začít na nové stránce"**: poznámky pak začnou na samostatném

@@ -59,8 +59,28 @@ public class PageLayoutEngine
 
         int cil = CilStran(data);
         if (cil <= 0 || vysledek.TotalPages <= cil) return vysledek;
+
+        // Sekce, které začínají na nové stránce, mají přednost (pořadí priority, `B177`): když samy
+        // dají víc listů, než je cíl, nemá smysl zmenšovat - ušetřit stránku nejde (nález Jan 24. 9.).
+        var nucene = SekceNaNoveStrance(vysledek);
+        if (1 + nucene.Count > cil)
+        {
+            vysledek.CilStranNesplnen = cil;
+            vysledek.DuvodNesplneni = nucene.Count == 1
+                ? $"sekce „{nucene[0]}“ začíná na nové stránce"
+                : $"sekce {string.Join(", ", nucene.Select(n => $"„{n}“"))} začínají na nové stránce";
+            return vysledek;
+        }
         return VejdiNaStrany(template, data, cil, legendy) ?? vysledek;
     }
+
+    /// <summary>Sekce, které založily vlastní list volbou „Začít na nové stránce".</summary>
+    private static List<string> SekceNaNoveStrance(LayoutResult vysledek) =>
+        [.. vysledek.Pages.Skip(1)
+            .Select(p => p.Sections.FirstOrDefault(s => s.ClipTop is null or <= 0.01f))
+            .Where(s => s?.Source.ZacitNaNoveStrance == true)
+            .Select(s => s!.Source.Name)
+            .Distinct()];
 
     /// <summary>Parametr sestavy „Počet stran" (`#8785`).</summary>
     public const string CilStranKlic = "POCET_STRAN_SESTAVY";
@@ -108,13 +128,13 @@ public class PageLayoutEngine
         {
             NastavBezMezer(tabulky, true);
             posledni = LayoutBezZmenseni(template, data);
-            if (posledni.TotalPages <= cil) return posledni;
+            if (posledni.TotalPages <= cil) return Splneno(posledni, cil, 1f, 1f);
         }
         foreach (float mira in legendy.Count > 0 ? ZebrikPoznamek : [])
         {
             NastavZmenseniLegend(legendy, mira);
             posledni = LayoutBezZmenseni(template, data);
-            if (posledni.TotalPages <= cil) return posledni;
+            if (posledni.TotalPages <= cil) return Splneno(posledni, cil, 1f, mira);
         }
         // Tabulka se zmenšuje celá, i se šířkami sloupců: do části se vejde víc spojů a celá
         // část může odpadnout (Jan 23. 9.). Jen tady - samočinné zmenšení `B151` šířky nemění.
@@ -123,7 +143,8 @@ public class PageLayoutEngine
         {
             NastavZmenseni(tabulky, mira);
             posledni = LayoutBezZmenseni(template, data);
-            if (posledni.TotalPages <= cil) return posledni;
+            if (posledni.TotalPages <= cil)
+                return Splneno(posledni, cil, mira, legendy.Count > 0 ? ZebrikPoznamek[^1] : 1f);
         }
         if (posledni is null) return null;
 
@@ -136,6 +157,14 @@ public class PageLayoutEngine
         var plna = LayoutSeZmensenimTabulky(template, data);
         plna.CilStranNesplnen = cil;
         return plna;
+    }
+
+    private static LayoutResult Splneno(LayoutResult r, int cil, float tabulka, float poznamky)
+    {
+        r.CilStranSplnen = cil;
+        r.ZmenseniTabulky = tabulka;
+        r.ZmenseniPoznamek = poznamky;
+        return r;
     }
 
     private static List<NotesLegendElement> ZmensitelneLegendy(Template template) =>
@@ -175,7 +204,11 @@ public class PageLayoutEngine
         {
             NastavZmenseni(zmensitelne, mira);
             var uzsi = LayoutBezZmenseni(template, data);
-            if (StranekSekci(uzsi, sekceTabulek) < stranekPlne) return uzsi;
+            if (StranekSekci(uzsi, sekceTabulek) < stranekPlne)
+            {
+                uzsi.ZmenseniTabulky = mira;
+                return uzsi;
+            }
         }
 
         NastavZmenseni(zmensitelne, 1f);

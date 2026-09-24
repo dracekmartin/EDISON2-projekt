@@ -19,7 +19,8 @@ public record PreteceniNalez(
     DruhPreteceni Druh,
     string Sekce,
     string? Prvek,
-    float PresahMm);
+    float PresahMm,
+    Guid? PrvekId = null);
 
 /// <summary>
 /// Souhrn toho, co se nevejde a kde. Ukazuje se v návrháři (stavový řádek u červeného rámečku
@@ -42,9 +43,13 @@ public record PreteceniNalez(
 public static class OverflowWarnings
 {
     /// <summary>Text upozornění, nebo null když se všechno vejde.</summary>
-    public static string? Summarize(IReadOnlyList<PreteceniNalez> nalezy, int celkemStranek)
+    public static string? Summarize(IReadOnlyList<PreteceniNalez> nalezy, int celkemStranek) =>
+        Seznam(nalezy, celkemStranek) is { Count: > 0 } s ? string.Join("; ", s.Select(h => h.Text)) : null;
+
+    /// <summary>Hlášky po vinících - přetečení stránky je chyba, obsah se neztratí jen náhodou.</summary>
+    public static List<Hlaseni> Seznam(IReadOnlyList<PreteceniNalez> nalezy, int celkemStranek)
     {
-        if (nalezy.Count == 0) return null;
+        if (nalezy.Count == 0) return [];
 
         // Seskupit podle vinníka, ne podle stránky: u vývěsky se stránkou na zastávku je tentýž
         // prvek přes všechny stránky, takže výpis po stránkách by dal dvacet řádků o jedné chybě.
@@ -57,19 +62,20 @@ public static class OverflowWarnings
                 g.Key.Prvek,
                 Stranky = g.Select(n => n.CisloStranky).Distinct().OrderBy(c => c).ToList(),
                 NejvetsiPresah = g.Max(n => n.PresahMm),
+                PrvekId = g.Select(n => n.PrvekId).FirstOrDefault(id => id is not null),
             })
             .OrderByDescending(s => s.NejvetsiPresah)
             .ToList();
 
-        var casti = skupiny.Select(s =>
+        return [.. skupiny.Select(s =>
         {
             string co = s.Druh == DruhPreteceni.ObsahPrvku
                 ? $"sekce „{s.Sekce}“ nevejde na stránku, nejvíc místa bere {s.Prvek}"
                 : $"sekce „{s.Sekce}“ nevejde na stránku";
-            return $"{co} (přesah {s.NejvetsiPresah:0.#} mm, {PopisStranek(s.Stranky, celkemStranek)}) - {Rada(s.Druh)}";
-        });
-
-        return string.Join("; ", casti);
+            return new Hlaseni(ZavaznostHlaseni.Chyba,
+                $"{co} (přesah {s.NejvetsiPresah:0.#} mm, {PopisStranek(s.Stranky, celkemStranek)}) - {Rada(s.Druh)}",
+                s.PrvekId);
+        })];
     }
 
     /// <summary>Co s tím má autor šablony udělat.</summary>

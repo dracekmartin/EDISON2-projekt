@@ -17,14 +17,18 @@ namespace TemplateDesigner.Models;
 public static class BarcodeSizeWarnings
 {
     /// <summary>Text upozornění, nebo null když jsou všechny kódy dost velké.</summary>
-    public static string? Summarize(Template? template, IReadOnlyList<DataContext>? pages)
+    public static string? Summarize(Template? template, IReadOnlyList<DataContext>? pages) =>
+        Seznam(template, pages) is { Count: > 0 } s ? string.Join("; ", s.Select(h => h.Text)) : null;
+
+    /// <summary>Hlášky po kódech - kód se vytiskne, jen se nemusí dát sejmout, proto upozornění.</summary>
+    public static List<Hlaseni> Seznam(Template? template, IReadOnlyList<DataContext>? pages)
     {
-        if (template is null) return null;
+        if (template is null) return [];
 
         var kody = template.Sections.SelectMany(s => s.Elements).OfType<BarcodeElement>().ToList();
-        if (kody.Count == 0) return null;
+        if (kody.Count == 0) return [];
 
-        var casti = new List<string>();
+        var casti = new List<Hlaseni>();
         foreach (var kod in kody)
         {
             float nejvetsiPotreba = 0f;
@@ -38,10 +42,11 @@ public static class BarcodeSizeWarnings
             float mistoMm = MathF.Min(kod.Width, kod.Height ?? kod.Width);
             if (nejvetsiPotreba <= 0f || mistoMm >= nejvetsiPotreba) continue;
 
-            casti.Add($"{Nazev(kod)} je {mistoMm:0.#} mm, pro spolehlivé čtení potřebuje {nejvetsiPotreba:0.#} mm");
+            casti.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni,
+                $"{Nazev(kod)} je {mistoMm:0.#} mm, pro spolehlivé čtení potřebuje {nejvetsiPotreba:0.#} mm", kod.Id));
         }
 
-        return casti.Count == 0 ? null : string.Join("; ", casti);
+        return casti;
     }
 
     /// <summary>Obsahy kódu podle dat stránek; bez dat aspoň to, co je v šabloně napsané.</summary>

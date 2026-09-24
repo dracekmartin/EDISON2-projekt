@@ -139,26 +139,17 @@ public partial class MainWindow : Window
 
         _canvas        = new DesignerCanvas(_vm.State);
         _previewCanvas = new PreviewCanvas(_vm.State);
-        _previewCanvas.OverflowChanged = popis =>
-        {
-            if (_vm is not null && _vm.PreviewOverflow != popis)
-                _vm.PreviewOverflow = popis;
-        };
+        _previewCanvas.OverflowChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Preteceni, h);
 
         _previewCanvas.PocetStranSazbyChanged = pocet =>
         {
             if (_vm is not null) _vm.PocetStranSazby = pocet;
         };
 
-        _previewCanvas.OriznuteBunkyChanged = popis =>
-        {
-            if (_vm is not null) _vm.OriznuteBunky = popis;
-        };
-
-        _previewCanvas.UzkeSloupceChanged = popis =>
-        {
-            if (_vm is not null) _vm.UzkeSloupce = popis;
-        };
+        _previewCanvas.OriznuteBunkyChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Orez, h);
+        _previewCanvas.UzkeSloupceChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Sloupce, h);
+        _previewCanvas.SazbaChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Sazba, h);
+        _vm.RequestSelectElement = VyberPrvekZHlaseni;
 
         // Wire SkiaSharp (must be code-behind - not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;
@@ -1900,6 +1891,20 @@ public partial class MainWindow : Window
             nameof(Section.OverflowBehavior) or nameof(Section.ZacitNaNoveStrance) => obsah,
             _ => true,
         };
+    }
+
+    /// <summary>Klik na hlášku vpravo dole vybere její prvek na plátně (`B178`).</summary>
+    private void VyberPrvekZHlaseni(Guid id)
+    {
+        if (_vm is null) return;
+        var sekce = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Any(e => e.Id == id));
+        var prvek = sekce?.Elements.First(e => e.Id == id);
+        if (sekce is null || prvek is null) return;
+        _vm.State.SelectedElements.Clear();
+        _vm.State.SelectedElements.Add(prvek);
+        _vm.ActivateSection(sekce);
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
     }
 
     private void OpenPropertiesForSection(Section section)
