@@ -269,9 +269,13 @@ namespace EDControls.EDInputForm
             _napovedaZkratek = new System.Windows.Controls.Primitives.Popup
             {
                 Child = ramecek,
-                PlacementTarget = Toolbar,
-                Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom,
-                HorizontalOffset = Math.Max(0, Toolbar.ActualWidth - 320),
+                // Pod otazníkem, pravým okrajem zarovnané s jeho pravým okrajem (přání Jan 24. 9.).
+                PlacementTarget = Toolbar.HelpButton,
+                Placement = System.Windows.Controls.Primitives.PlacementMode.Custom,
+                CustomPopupPlacementCallback = (popup, cil, _) =>
+                    [new System.Windows.Controls.Primitives.CustomPopupPlacement(
+                        new Point(cil.Width - popup.Width, cil.Height + 2),
+                        System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal)],
                 StaysOpen = false,
                 AllowsTransparency = true,
                 PopupAnimation = System.Windows.Controls.Primitives.PopupAnimation.Fade,

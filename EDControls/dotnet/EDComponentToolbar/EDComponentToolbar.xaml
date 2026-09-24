@@ -92,7 +92,7 @@
                         ToolTip="Tisk"
                         Command="{Binding PrintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         Visibility="{Binding ShowPrint, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
-                <Button Style="{StaticResource ToolbarButtonStyle}"
+                <Button x:Name="HelpButton" Style="{StaticResource ToolbarButtonStyle}"
                         ToolTip="Nápověda"
                         Command="{Binding HelpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         Visibility="{Binding ShowHelp, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
