@@ -63,15 +63,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   tabulka i se šířkami 97-80 %, nevejde-li se, plná velikost (changelog 2026-09-23 (3)). Zbývá:
   hláška o nesplněném cíli, rozhodnout meze (v šabloně × pevné), „Automaticky" až s polem u linky.
 
-### Čeká na odpověď zvenku
-
-Ani u jedné není první krok kód. Podklady k tiketům drží
-[`§14`](linkovy-knizni-jr-implementace-analyza.md).
-
-- **`#9417` Dopravci v záhlaví jen za spoje na stránce** (KORID) - ✅ **hotové 23. 9.**, čeká na
-  odpověď zákazníkovi (Jan). Ověřeno na CB_GWBUS 402 / 0330530 rozloženém na víc stran
-  (changelog 2026-09-23 (4)). Po odpovědi do archivu.
-
 - **`#7487` Počet poznámek na řádek podle druhu** [M] (KORID) - ⏸️ **Jan probere s kolegou**, jak
   je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
   druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.

@@ -1,6 +1,6 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
-## Tikety odbavené po vydání 22. 9. (23. 9. 2026)
+## Tikety odbavené po vydání 22. 9. (23.-24. 9. 2026)
 
 - **#8576** (KU HK) - tarifní zóny do sloupců: volba **„Každá zóna ve vlastním sloupci"** u tabulky
   linky, výchozí vypnutá. Vyzkoušeno na ZL_KOVED 823955 (Kroměříž má zóny 420,201), odpověď poslal Jan.
@@ -23,6 +23,9 @@
   přípojné řádky s číslem linky, slovenské poznámky i věty návazností podle jazyka šablony, pole
   `{POKRACOVANI}` místo šedého řádku. Detail changelog 2026-09-23 (2). Odpověď poslal Jan; zbylý
   název směru je v backlogu.
+- **#9417** (KORID) - dopravci v záhlaví jen za spoje na stránce: víc dopravců s čísly spojů
+  v jednoznačných řadách, stránka jen s poznámkami s názvy bez čísel. Ověřeno na CB_GWBUS
+  402 / 0330530 na šesti stránkách (changelog 2026-09-23 (4)), odpověď poslal Jan 24. 9.
 
 ## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
 
