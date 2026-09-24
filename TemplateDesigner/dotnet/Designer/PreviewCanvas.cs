@@ -309,6 +309,19 @@ public class PreviewCanvas
     /// Čísla stránek jsou průběžná přes všechny instance, ne od jedničky za každou - v tisku jde
     /// o jeden výstup a uživatel v něm hledá pořadovou stránku.
     /// </remarks>
+    /// <summary>
+    /// Hlášky ze sazby pro stránky dat jedné linky - přetečení, Počet stran, zmenšení tabulky,
+    /// nečitelné podmínky (`B178`). Bez kreslení, jen layout.
+    /// </summary>
+    public List<Hlaseni> HlaseniSazby(IReadOnlyList<DataContext> dataPages)
+    {
+        var (nalezy, total) = CountOverflowingPages(dataPages);
+        var hlaseni = OverflowWarnings.Seznam(nalezy, total);
+        foreach (var data in dataPages)
+            hlaseni.AddRange(SazbaHlaseni.Seznam(_state.CurrentTemplate, Layout(data)));
+        return [.. hlaseni.Distinct()];
+    }
+
     public (IReadOnlyList<PreteceniNalez> Nalezy, int Total) CountOverflowingPages(IReadOnlyList<DataContext> dataPages)
     {
         var ps = _state.CurrentTemplate.PageSize;

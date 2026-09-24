@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-09-24 (7) - 🔍 tiskové okno zkontroluje všechny vybrané linky (`B178`, část 3)
+
+Tlačítko **„Zkontrolovat"** v tiskovém okně načte data všech vybraných linek a projde jejich
+sazbu bez tisku. Výsledek se otevře ve **vlastním okně** a každá hláška říká, kterých linek se
+týká („2 - Kaplice · Poznámky · nevejde se na stránku"; stejná hláška z víc linek je jeden řádek).
+Načítání i kontrola ukazují **průběh** po linkách. Totéž okno se otevře i po tisku, když je co
+hlásit. Oříznuté buňky kontrola nevidí - poznají se až při kreslení náhledu.
+
 ## 2026-09-24 (6) - ⚠ hlášky v jednotném tvaru: kde · co → rada (`B178`, část 2)
 
 Každá hláška má tři části: **kde** (prvek či sekce a co nejpřesnější místo - spoj, sloupec,

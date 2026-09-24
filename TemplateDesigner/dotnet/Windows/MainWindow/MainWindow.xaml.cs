@@ -1055,7 +1055,7 @@ public partial class MainWindow : Window
         // takže _previewParams už obsahuje persistované hodnoty - žádný extra I/O zde.
 
         // Callback pro reálná data - pouze pokud je CacheProvider k dispozici
-        Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null;
+        Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null;
         if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
         {
             var provider = _vm.CacheProvider;
@@ -1063,7 +1063,7 @@ public partial class MainWindow : Window
             // Snapshot na UI threadu - callback běží na threadpoolu a nesmí sahat na živou šablonu
             var columnsDefJson = _vm.CurrentColumnsDefinitionJson();
             var turnusy = _vm.CurrentTurnusyKeSpojum();
-            buildRealData = paramValues =>
+            buildRealData = (paramValues, prubeh) =>
             {
                 List<DataContext>? pages;
 
@@ -1073,13 +1073,18 @@ public partial class MainWindow : Window
                 {
                     var paramName = _vm.CurrentInstanceParamName;
                     var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
+                    int hotovo = 0;
                     foreach (var inst in _vm.ActiveInstances)
                     {
+                        prubeh?.Report((hotovo++, _vm.ActiveInstances.Count, inst.Display));
                         var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
                             paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson,
                             turnusy, _vm.JazykSablony));
                         if (instPages is null) continue;
-                        all.AddRange(instPages);
+                        // Linka ke každé stránce - kontrola v tiskovém okně z ní řekne, které lince
+                        // hláška patří (`B178`).
+                        var linka = new Dictionary<string, object?> { [TemplateDesigner.Models.KontrolaVystupu.LinkaKlic] = inst.Display };
+                        all.AddRange(instPages.Select(p => p.WithExtraValues(linka)));
                     }
                     pages = all.Count > 0 ? all : null;
                 }
@@ -1132,6 +1137,8 @@ public partial class MainWindow : Window
 
         vm.RequestOverflowCheck = dataPages =>
             _previewCanvas!.CountOverflowingPages(dataPages);
+        vm.RequestKontrolaLinky = data => TemplateDesigner.Models.KontrolaVystupu.ZLinky(
+            _vm.State.CurrentTemplate, data, _previewCanvas!.HlaseniSazby);
 
         var dlg = new PrintDialog(vm)
             { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };

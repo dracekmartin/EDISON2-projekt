@@ -1,0 +1,46 @@
+<Window x:Class="TemplateDesigner.KontrolaVysledkuDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:TemplateDesigner.Controls"
+        Title="Kontrola vybraných linek"
+        Width="720" Height="480" MinWidth="420" MinHeight="240"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="CanResizeWithGrip"
+        Background="{DynamicResource EDTheme.Bg.Base}">
+    <DockPanel Margin="16">
+        <TextBlock DockPanel.Dock="Top" Text="{Binding Nadpis}" Margin="0,0,0,10"
+                   FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                   Foreground="{DynamicResource EDTheme.Text.Primary}" TextWrapping="Wrap"/>
+
+        <!-- Zavřít jako jediné tlačítko: okno je jen výpis, nic se v něm nepotvrzuje (Enter i Esc). -->
+        <Button DockPanel.Dock="Bottom" HorizontalAlignment="Right" Margin="0,12,0,0" Padding="16,6"
+                Content="{StaticResource EDStrings.Close}" IsDefault="True" IsCancel="True"
+                Command="{Binding OkCommand}"/>
+
+        <!-- Tvar jako vpravo dole v návrháři: kde (tučně) · co → krátká rada. -->
+        <Border BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1" CornerRadius="4"
+                Background="{DynamicResource EDTheme.Bg.Surface}" Padding="0,6">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Hlaseni}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="10,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <controls:HlaseniIkona Zavaznost="{Binding Zavaznost}" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                                <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource EDTheme.Text.Primary}"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}">
+                                    <Run Text="{Binding Kde, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding Co, Mode=OneWay}"/><Run Text="{Binding RadaVRadku, Mode=OneWay}" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+                                </TextBlock>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+    </DockPanel>
+</Window>

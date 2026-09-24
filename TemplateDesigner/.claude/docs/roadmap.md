@@ -65,9 +65,8 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 - **`B178` Hlášky vpravo dole** [M] (Jan 24. 9.). Hotový blok se závažnostmi a klikem na prvek
   a jednotný tvar kde · co → rada (changelog 2026-09-24 (5), (6)); závažnosti a texty se ladí podle
-  používání. Zbývá: **přesnější místo** (sloupec u oříznutých buněk, klik přepne stránku náhledu),
-  týž seznam v **tiskovém okně**. Na konec: **souhrn přes všechny vybrané linky** (zjednodušeně -
-  jen přetečení a ořez, bez kreslení), aby šlo říct „vadí jen linka X".
+  používání; kontrola všech vybraných linek je v tiskovém okně (changelog (7)). Zbývá: **přesnější
+  místo** (sloupec u oříznutých buněk, klik přepne stránku náhledu), klik z okna kontroly na linku.
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají

@@ -24,6 +24,9 @@ public partial class PrintDialog : Window
         DataContext = vm;
         InitializeComponent();
         vm.RequestClose += result => { DialogResult = result; Close(); };
+        // Hlášky kontroly ve vlastním okně - nezavírá tiskové, jde mít otevřené obojí.
+        vm.RequestShowHlaseni = (nadpis, hlaseni) =>
+            new KontrolaVysledkuDialog(new KontrolaVysledkuDialogViewModel(nadpis, hlaseni)) { Owner = this }.Show();
 
         // Parametry sestavy + export pole renderuje EDInputForm z Caché (AgendaParams) - schéma
         // řídí agenda přes GetParameters, AgendaParams přidává universální skupinu „Export".
