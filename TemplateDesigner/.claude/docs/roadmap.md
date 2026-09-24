@@ -4,11 +4,21 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `B177` (nastavení sekcí), pak `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
+
+---
+
+## 📐 Nastavení sekcí
+
+- **`B177` Nastavení sekcí se nesmí tiše přepisovat + „Začít na nové stránce"** [M] (audit 24. 9.,
+  podnět zákazníka: poznámky vždy na samostatné stránce). Opravit `{STRANA}` v podmínce obsahové
+  sekce a místo pro „Pod obsahem + Jen poslední", rozhodnout „Povolit rozdělení" (doporučeno
+  dodělat), nápověda k výšce sekce, pak nové zaškrtávátko. Volby bez účinku jdou do `B18`.
+  Nálezy a pravidla: [`architecture.md` §Nastavení sekcí](architecture.md).
 
 ---
 
@@ -125,7 +135,7 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   vyplněné hodnoty jen oklikou přes server. Začít **viditelností** (`visibleWhen`), gramatiku sdílet
   s tiskovými parametry - nezavádět druhý dialekt; skutečná validace zůstává imperativní.
   Nese s sebou tři návazné věci: migraci `CellStyleEditor` na formulář z Caché, zašednutí polí
-  mrtvých bez parametru sestavy a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
+  bez účinku (parametry sestavy, sekce - seznam u `B177`) a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
   label) - všechno až s gramatikou, ne zvlášť.
 
 - **`B56` Sjednocení Caché tiskových enginů a jejich opsaných pomocných funkcí** (odloženo -

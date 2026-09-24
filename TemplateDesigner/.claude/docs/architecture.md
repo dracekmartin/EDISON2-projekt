@@ -143,6 +143,31 @@ ElementPropertiesWindow.xaml / .cs - dialog vlastností elementu/sekce
 | `PageLayoutEngine.cs` | `PageLayoutEngine` | Hlavní algoritmus: klasifikace sekcí, výpočet výšek, stránkování, hlavičky/patičky, split, flow layout, PAGE/TOTAL_PAGES |
 | `SkiaHeightCalculator.cs` | `SkiaHeightCalculator` | Měření výšky TextElement (word wrap) a TableElement pomocí SkiaSharp |
 
+### Nastavení sekcí - jak se skládají (audit 24. 9., `B177`)
+
+Nastavení sekce (Tisk, Umístění, Přetečení, Výška, Podmínka viditelnosti) se nesmí tiše přepisovat.
+Kombinace se **nezakazují ani nepřepínají**; sazba má pevné pořadí a co nemá účinek, formulář
+zašedí (`B18`) nebo řekne nápovědou. Postup Crystal Reports, SSRS, Wordu i CSS pro tisk.
+
+Nálezy z kódu sazby k 24. 9. (neověřeno v náhledu):
+
+- **`{STRANA}` v podmínce sekce „Jednou" nefunguje** - obsahová sekce se vyhodnocuje bez hodnot
+  stránky (`LayoutBody`, `IsVisible(… sectionData ?? data)`), neznámé pole = nepravda, sekce se
+  nevytiskne nikdy. Nápověda formuláře (`SectionEdit.cls`) přitom tenhle příklad nabízí.
+- **„Pod obsahem" + „Jen poslední" si nevyhradí místo** - druhý průchod pro poslední stránku
+  hlídá jen hlavičky a patičky (`hasLastPageOnly`), plovoucí sekce ne.
+- **„Povolit rozdělení" = „Přes stránky"** - sazba je nerozlišuje, model i popis pro AI slibují
+  „rozdělení povoleno, ale ne preferováno".
+- **Bez účinku:** Umístění u sekce „Jednou" (vždy obsah), Přetečení u opakované sekce,
+  `Section.RowHeight` (čte ho jen škálování šablony).
+- **Výška sekce je nejmenší, ne pevná** - `max(zadaná, obsah)`. Popis v `Section.cs`
+  („print engine ignoruje") neplatí, formulář to neříká.
+
+**Nová volba „Začít na nové stránce"** (zaškrtávátko, ne hodnota v Tisku - neznámou hodnotu výčtu
+starší exe neotevře, neznámou vlastnost přeskočí): platí jen pro sekci „Jednou" / za řádek dat,
+na prázdné stránce nový list nezakládá, skrytá sekce ho nezaloží, s „Počet stran" se nepřetahuje
+potichu (upozornění vpravo dole).
+
 ---
 
 ## Architekturální rozhodnutí (MVVM hranice)
