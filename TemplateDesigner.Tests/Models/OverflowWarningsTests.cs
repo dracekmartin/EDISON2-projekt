@@ -69,8 +69,8 @@ public class OverflowWarningsTests
 
         Assert.NotNull(text);
         Assert.Contains("Vývěska", text);
-        Assert.Contains("nevejde na stránku", text);
-        Assert.DoesNotContain("nejvíc místa bere", text);
+        Assert.Contains("nevejde se na stránku", text);
+        Assert.DoesNotContain(" v sekci ", text);
     }
 
     [Fact]

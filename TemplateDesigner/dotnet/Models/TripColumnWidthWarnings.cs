@@ -62,9 +62,9 @@ public static class TripColumnWidthWarnings
             string sirka = nejhorsiSloupec - zaklad > 0.05f
                 ? $"{nejhorsiSloupec:0.0} mm (základ {zaklad:0.0} mm + místo na značky)"
                 : $"{nejhorsiSloupec:0.0} mm";
-            casti.Add(new Hlaseni(ZavaznostHlaseni.Chyba,
-                $"{ElementNames.ForUser(el)}: sloupec spoje má {sirka}, "
-                + $"obsah potřebuje {potreba:0.0} mm ({kde}) - přeteče do sousedního sloupce", el.Id));
+            casti.Add(new Hlaseni(ZavaznostHlaseni.Chyba, $"{ElementNames.ForUser(el)} · {kde}",
+                $"sloupec spoje má {sirka}, obsah potřebuje {potreba:0.0} mm - přeteče do souseda",
+                "rozšířit sloupce spojů, nebo zmenšit písmo", el.Id));
         }
 
         return casti;

@@ -42,8 +42,8 @@ public static class BarcodeSizeWarnings
             float mistoMm = MathF.Min(kod.Width, kod.Height ?? kod.Width);
             if (nejvetsiPotreba <= 0f || mistoMm >= nejvetsiPotreba) continue;
 
-            casti.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni,
-                $"{Nazev(kod)} je {mistoMm:0.#} mm, pro spolehlivé čtení potřebuje {nejvetsiPotreba:0.#} mm", kod.Id));
+            casti.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni, Nazev(kod),
+                $"má {mistoMm:0.#} mm, pro spolehlivé čtení potřebuje {nejvetsiPotreba:0.#} mm", "zvětšit prvek", kod.Id));
         }
 
         return casti;

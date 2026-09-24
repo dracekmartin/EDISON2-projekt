@@ -21,26 +21,27 @@ public static class SazbaHlaseni
         var tabulka = template.Sections.SelectMany(s => s.Elements).OfType<LineTableElement>().FirstOrDefault();
 
         if (sazba.CilStranNesplnen is { } cil)
-            hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni, sazba.DuvodNesplneni is { } duvod
-                ? $"Počet stran {cil} nejde splnit - {duvod}"
-                : $"Počet stran {cil} nejde splnit - sestava se nevejde ani po zmenšení na mez", tabulka?.Id));
+            hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni, "Sestava",
+                $"Počet stran {cil} nejde splnit - {sazba.DuvodNesplneni ?? "nevejde se ani po zmenšení na mez"}",
+                sazba.DuvodNesplneni is null ? "zvýšit Počet stran" : "vypnout Začít na nové stránce, nebo zvýšit Počet stran",
+                tabulka?.Id));
         else if (sazba.CilStranSplnen is { } splnen)
-            hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Informace,
-                $"Sestava se vešla na {PocetStran(splnen)}{Zmenseni(sazba)}", tabulka?.Id));
+            hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Informace, "Sestava",
+                $"vešla se na {PocetStran(splnen)}{Zmenseni(sazba)}", null, tabulka?.Id));
         else if (sazba.ZmenseniTabulky < 0.999f)
             hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Informace,
-                $"{(tabulka is null ? "Tabulka" : ElementNames.ForUser(tabulka))}: zmenšena na "
-                + $"{Procent(sazba.ZmenseniTabulky)} %, aby se nedělila na další stránku", tabulka?.Id));
+                tabulka is null ? "Tabulka" : ElementNames.ForUser(tabulka),
+                $"zmenšena na {Procent(sazba.ZmenseniTabulky)} %, aby se nedělila na další stránku", null, tabulka?.Id));
 
         foreach (var sekce in template.Sections)
         {
             if (ExpressionEvaluator.Validate(sekce.VisibilityExpression) is { } chybaSekce)
-                hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni,
-                    $"Sekce „{sekce.Name}“: podmínku viditelnosti nejde přečíst ({chybaSekce}) - sekce se tiskne vždy"));
+                hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni, $"Sekce „{sekce.Name}“",
+                    $"podmínku viditelnosti nejde přečíst ({chybaSekce}), sekce se tiskne vždy", "opravit podmínku"));
             foreach (var prvek in sekce.Elements)
                 if (ExpressionEvaluator.Validate(prvek.VisibilityExpression) is { } chybaPrvku)
-                    hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni,
-                        $"{ElementNames.ForUser(prvek)}: podmínku viditelnosti nejde přečíst ({chybaPrvku}) - prvek se tiskne vždy",
+                    hlaseni.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni, ElementNames.ForUser(prvek),
+                        $"podmínku viditelnosti nejde přečíst ({chybaPrvku}), prvek se tiskne vždy", "opravit podmínku",
                         prvek.Id));
         }
         return hlaseni;

@@ -53,14 +53,14 @@ public sealed class ClippedCells
     /// <summary>Hlášky po prvcích - oříznutý obsah na papíře chybí, proto chyba.</summary>
     public List<Hlaseni> Seznam()
     {
-        var bunky = _pocty.OrderBy(p => p.Key).Select(p => new Hlaseni(ZavaznostHlaseni.Chyba,
+        var bunky = _pocty.OrderBy(p => p.Key).Select(p => new Hlaseni(ZavaznostHlaseni.Chyba, p.Key,
             p.Value == 1
-                ? $"{p.Key}: obsah jedné buňky je na zmenšení moc dlouhý, ořízl se"
-                : $"{p.Key}: obsah {p.Value} buněk je na zmenšení moc dlouhý, ořízl se",
-            _idPrvku.GetValueOrDefault(p.Key)));
-        var texty = _texty.Order().Select(n => new Hlaseni(ZavaznostHlaseni.Chyba,
-            $"{n}: text se nevejde ani po zmenšení písma, ořízl se - zvětšete prvek nebo nechte výšku prázdnou",
-            _idPrvku.GetValueOrDefault(n)));
+                ? "obsah jedné buňky se nevejde ani po zmenšení písma, ořízl se"
+                : $"obsah {p.Value} buněk se nevejde ani po zmenšení písma, ořízl se",
+            "rozšířit sloupec", _idPrvku.GetValueOrDefault(p.Key)));
+        var texty = _texty.Order().Select(n => new Hlaseni(ZavaznostHlaseni.Chyba, n,
+            "text se nevejde ani po zmenšení písma, ořízl se",
+            "zvětšit prvek, nebo nechat výšku prázdnou", _idPrvku.GetValueOrDefault(n)));
         return [.. bunky, .. texty];
     }
 

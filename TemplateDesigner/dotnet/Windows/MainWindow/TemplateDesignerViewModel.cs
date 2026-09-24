@@ -982,8 +982,7 @@ public class TemplateDesignerViewModel : EDViewModel
         State.TemplateSwapped = () =>
         {
             NastavHlaseni(ZdrojHlaseni.Font,
-                FontWarnings.Summarize(State.CurrentTemplate) is { } font
-                    ? [new Hlaseni(ZavaznostHlaseni.Upozorneni, font)] : []);
+                FontWarnings.Hlaska(State.CurrentTemplate) is { } font ? [font] : []);
         };
 
         Preferences = preferences;

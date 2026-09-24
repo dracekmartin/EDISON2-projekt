@@ -69,12 +69,11 @@ public static class OverflowWarnings
 
         return [.. skupiny.Select(s =>
         {
-            string co = s.Druh == DruhPreteceni.ObsahPrvku
-                ? $"sekce „{s.Sekce}“ nevejde na stránku, nejvíc místa bere {s.Prvek}"
-                : $"sekce „{s.Sekce}“ nevejde na stránku";
-            return new Hlaseni(ZavaznostHlaseni.Chyba,
-                $"{co} (přesah {s.NejvetsiPresah:0.#} mm, {PopisStranek(s.Stranky, celkemStranek)}) - {Rada(s.Druh)}",
-                s.PrvekId);
+            string kde = s.Druh == DruhPreteceni.ObsahPrvku
+                ? $"{s.Prvek} v sekci „{s.Sekce}“ · {PopisStranek(s.Stranky, celkemStranek)}"
+                : $"Sekce „{s.Sekce}“ · {PopisStranek(s.Stranky, celkemStranek)}";
+            return new Hlaseni(ZavaznostHlaseni.Chyba, kde,
+                $"nevejde se na stránku, přesahuje o {s.NejvetsiPresah:0.#} mm", Rada(s.Druh), s.PrvekId);
         })];
     }
 
@@ -87,8 +86,8 @@ public static class OverflowWarnings
     /// jen zmenšovat písmo, i když stačí přehodit jedno nastavení sekce (nález Jan 7. 9.).
     /// </remarks>
     private static string Rada(DruhPreteceni druh) => druh == DruhPreteceni.ObsahPrvku
-        ? "povol sekci rozdělit přes stránky, nebo prvek zmenši"
-        : "zmenši nastavenou výšku sekce";
+        ? "sekci rozdělit přes stránky, nebo prvek zmenšit"
+        : "zmenšit výšku sekce";
 
     /// <summary>
     /// Které stránky to potkalo. Čísla se vypisují do tří stránek; nad to je užitečnější počet

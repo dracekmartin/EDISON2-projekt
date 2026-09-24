@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-09-24 (6) - ⚠ hlášky v jednotném tvaru: kde · co → rada (`B178`, část 2)
+
+Každá hláška má tři části: **kde** (prvek či sekce a co nejpřesnější místo - spoj, sloupec,
+stránky), **co se stalo** na papíře a krátkou **radu**. V rozbaleném seznamu je kde tučně a rada
+šedě za šipkou; v bloku s jedinou hláškou se ukáže jen kde a co.
+
 ## 2026-09-24 (5) - ⚠ hlášky vpravo dole v jednom bloku podle závažnosti (`B178`, část 1)
 
 Hlášky návrháře (přetečení, oříznutý obsah, zmenšené písmo, malý kód, chybějící font, úzký

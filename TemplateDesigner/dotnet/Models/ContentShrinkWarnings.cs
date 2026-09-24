@@ -70,12 +70,13 @@ public static class ContentShrinkWarnings
             int procent = (int)MathF.Round(nejvetsiZmenseni * 100f);
             // Text pod mezí zmenšování se ořízne - to je ztráta obsahu, takže se musí říct
             // i s cestou k nápravě. Do 3. 9. se ořez nehlásil vůbec a uživatel o něm nevěděl.
+            string kde = pages.Count > 1 && dotcenychStranek > 0
+                ? $"{nazev} · {dotcenychStranek} z {pages.Count} stránek" : nazev;
             casti.Add(oriznuto
-                ? new Hlaseni(ZavaznostHlaseni.Chyba,
-                    $"{nazev}: písmo zmenšeno na {procent} % a text se přesto nevejde - zkraťte ho nebo zvětšete prvek", el.Id)
-                : new Hlaseni(ZavaznostHlaseni.Informace, pages.Count > 1
-                    ? $"{nazev}: písmo zmenšeno až na {procent} % ({dotcenychStranek} z {pages.Count} stránek)"
-                    : $"{nazev}: písmo zmenšeno na {procent} %", el.Id));
+                ? new Hlaseni(ZavaznostHlaseni.Chyba, nazev,
+                    $"písmo zmenšeno na {procent} % a text se přesto nevejde", "zkraťte text, nebo zvětšete prvek", el.Id)
+                : new Hlaseni(ZavaznostHlaseni.Informace, kde,
+                    pages.Count > 1 ? $"písmo zmenšeno až na {procent} %" : $"písmo zmenšeno na {procent} %", null, el.Id));
         }
 
         return casti;

@@ -42,17 +42,21 @@ public static class DepartureColumnWarnings
             var vzorek = jePodleSpoju
                 ? "č. " + string.Join(", ", Serazene(trips).Take(6)) + (trips.Count > 6 ? ", …" : "")
                 : string.Join(", ", times.Take(4)) + (times.Count > 4 ? ", …" : "");
-            casti.Add(new Hlaseni(ZavaznostHlaseni.Chyba,
-                $"{pocet} {podstatne} {slovesa} do žádného sloupce a na vývěsce {nebude} ({vzorek})"));
+            casti.Add(new Hlaseni(ZavaznostHlaseni.Chyba, "Minuty odjezdů",
+                $"{pocet} {podstatne} {slovesa} do žádného sloupce a na vývěsce {nebude} ({vzorek})",
+                "upravit vlastní definici sloupců"));
         }
 
         var sloupce = Hodnoty(pages, "OBDOBI_MIMO_PLATNOST");
         if (sloupce.Count > 0)
         {
             var vyjmenovani = string.Join(", ", sloupce.Select(s => $"„{s}“"));
-            casti.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni, sloupce.Count == 1
-                ? $"období sloupce {vyjmenovani} leží mimo platnost jízdního řádku - sloupec zůstane prázdný"
-                : $"období sloupců {vyjmenovani} leží mimo platnost jízdního řádku - zůstanou prázdné"));
+            casti.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni,
+                sloupce.Count == 1 ? $"Minuty odjezdů · sloupec {vyjmenovani}" : $"Minuty odjezdů · sloupce {vyjmenovani}",
+                sloupce.Count == 1
+                    ? "období sloupce leží mimo platnost jízdního řádku - sloupec zůstane prázdný"
+                    : "období sloupců leží mimo platnost jízdního řádku - zůstanou prázdné",
+                "upravit období sloupce"));
         }
 
         return casti;

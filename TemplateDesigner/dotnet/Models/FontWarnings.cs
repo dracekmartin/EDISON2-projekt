@@ -69,7 +69,10 @@ public static class FontWarnings
     /// Věta pro uživatele, nebo null když je vše v pořádku. Jmenuje konkrétní fonty a říká,
     /// co se místo nich stane - bez toho by hláška nutila hádat.
     /// </summary>
-    public static string? Summarize(Template? template)
+    public static string? Summarize(Template? template) => Hlaska(template)?.Text;
+
+    /// <summary>Hláška vpravo dole - upozornění: tiskne se, jen jiným písmem.</summary>
+    public static Hlaseni? Hlaska(Template? template)
     {
         var missing = MissingFamilies(template);
         if (missing.Count == 0) return null;
@@ -84,8 +87,9 @@ public static class FontWarnings
 
         string vyjmenovane = string.Join(", ", reported.Select(x => $"„{x.Family}\""));
         string nahradnici = string.Join(", ", reported.Select(x => x.Substitute).Distinct());
-        return reported.Count == 1
-            ? $"Font {vyjmenovane} není na tomto počítači nainstalovaný - tiskne se místo něj {nahradnici}."
-            : $"Tyto fonty nejsou na tomto počítači nainstalované: {vyjmenovane} - tiskne se místo nich {nahradnici}.";
+        return new Hlaseni(ZavaznostHlaseni.Upozorneni, "Šablona", reported.Count == 1
+                ? $"font {vyjmenovane} není na tomto počítači nainstalovaný, tiskne se místo něj {nahradnici}"
+                : $"fonty {vyjmenovane} nejsou na tomto počítači nainstalované, tiskne se místo nich {nahradnici}",
+            "nainstalovat font, nebo vybrat jiný");
     }
 }

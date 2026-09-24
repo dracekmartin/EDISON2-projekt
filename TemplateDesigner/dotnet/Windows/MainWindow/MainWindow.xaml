@@ -1057,7 +1057,7 @@
                                 <!-- Jediná hláška: rovnou její text s tečkou její závažnosti. -->
                                 <StackPanel Orientation="Horizontal" Visibility="{Binding MaJedinouHlaseni, Converter={StaticResource BoolToVis}}">
                                     <controls:HlaseniIkona Zavaznost="{Binding JedinaHlaseni.Zavaznost}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBlock Text="{Binding JedinaHlaseni.Text}" TextTrimming="CharacterEllipsis" MaxWidth="480"
+                                    <TextBlock Text="{Binding JedinaHlaseni.KratkyText}" TextTrimming="CharacterEllipsis" MaxWidth="480"
                                                Foreground="{DynamicResource EDTheme.Text.Primary}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
                                 </StackPanel>
                                 <TextBlock Text="&#x25B2;" Margin="8,0,0,0" VerticalAlignment="Center"
@@ -1091,9 +1091,12 @@
                                                             <ColumnDefinition Width="*"/>
                                                         </Grid.ColumnDefinitions>
                                                         <controls:HlaseniIkona Zavaznost="{Binding Zavaznost}" VerticalAlignment="Top" Margin="0,2,0,0"/>
-                                                        <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap"
+                                                        <!-- Jednotný tvar: kde (tučně) · co se stalo → krátká rada (šedě). -->
+                                                        <TextBlock Grid.Column="1" TextWrapping="Wrap"
                                                                    Foreground="{DynamicResource EDTheme.Text.Primary}"
-                                                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                                                   FontSize="{DynamicResource EDTheme.FontSize.Body}">
+                                                            <Run Text="{Binding Kde, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding Co, Mode=OneWay}"/><Run Text="{Binding RadaVRadku, Mode=OneWay}" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+                                                        </TextBlock>
                                                     </Grid>
                                                 </Border>
                                                 <DataTemplate.Triggers>
