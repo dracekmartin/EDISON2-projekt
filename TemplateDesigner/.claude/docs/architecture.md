@@ -160,6 +160,9 @@ Nálezy z kódu sazby k 24. 9. (neověřeno v náhledu):
   „rozdělení povoleno, ale ne preferováno".
 - **Bez účinku:** Umístění u sekce „Jednou" (vždy obsah), Přetečení u opakované sekce,
   `Section.RowHeight` (čte ho jen škálování šablony).
+- **Podmínka, kterou nejde přečíst, tiše platí** (`IsVisible` fail-open) - překlep v podmínce
+  sekce nebo prvku nikdo nepozná. Jedno `=` od 24. 9. znamená rovnost (dřív tenhle případ);
+  obecně chybí upozornění na nečitelnou podmínku.
 - **Výška sekce je nejmenší, ne pevná** - `max(zadaná, obsah)`. Popis v `Section.cs`
   („print engine ignoruje") neplatí, formulář to neříká.
 

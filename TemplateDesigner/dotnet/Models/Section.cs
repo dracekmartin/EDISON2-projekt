@@ -12,9 +12,9 @@ public class Section
     public string Name { get; set; } = "Sekce";
 
     /// <summary>
-    /// Výška sekce v mm pro zobrazení v designeru.
-    /// Null u dynamických sekcí (tabulka, nekonečný text) - designer zobrazí placeholder výšku.
-    /// Print engine tuto hodnotu ignoruje.
+    /// Nejmenší výška sekce v mm - sazba bere <c>max(tahle hodnota, obsah)</c>, takže obsah ji
+    /// může zvětšit (jako „Can Grow" v Crystal Reports). Null = výška jen podle obsahu; designer
+    /// pak zobrazí placeholder výšku.
     /// </summary>
     public float? DesignerHeight { get; set; } = 30f;
 

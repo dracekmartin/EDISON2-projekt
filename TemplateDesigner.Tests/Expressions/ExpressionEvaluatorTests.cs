@@ -106,6 +106,17 @@ public class ExpressionEvaluatorTests
         Assert.Equal(expected, ExpressionEvaluator.IsVisible(expression, Data(("POCET", pocet))));
     }
 
+    /// <summary>Jedno „=" je rovnost jako „==" - dřív se výraz nepřečetl a platil vždy.</summary>
+    [Theory]
+    [InlineData("{STRANA} = 1", "1", true)]
+    [InlineData("{STRANA} = 1", "2", false)]
+    [InlineData("{STRANA} >= 2", "2", true)]
+    [InlineData("{STRANA} <= 1", "2", false)]
+    public void JednoRovnaSe_JeRovnost(string vyraz, string strana, bool ocekavano)
+    {
+        Assert.Equal(ocekavano, ExpressionEvaluator.IsVisible(vyraz, Data(("STRANA", strana))));
+    }
+
     [Fact]
     public void NumerickePorovnani_PorovnavaCiselne_NeLexikograficky()
     {

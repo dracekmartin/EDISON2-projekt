@@ -300,9 +300,11 @@ public class PageLayoutEngine
         int totalPages = firstPassResult.TotalPages;
         if (totalPages == 0) totalPages = 1;
 
-        // Druhý průchod: s OnLastPageOnly (pokud existují)
+        // Druhý průchod, když sazba potřebuje znát počet stran: sekce jen na poslední stránce
+        // a podmínka obsahové sekce s počtem stran.
         bool hasLastPageOnly = footers.Any(s => s.PrintBehavior == SectionPrintBehavior.OnLastPageOnly)
-            || headers.Any(s => s.PrintBehavior == SectionPrintBehavior.OnLastPageOnly);
+            || headers.Any(s => s.PrintBehavior == SectionPrintBehavior.OnLastPageOnly)
+            || bodySections.Any(s => PodminkaSPoctemStran(s.VisibilityExpression));
 
         LayoutResult result;
         if (hasLastPageOnly && totalPages > 0)
@@ -354,6 +356,7 @@ public class PageLayoutEngine
             }
         }
 
+        var naKonecObsahu = new List<Section>();
         for (int i = 0; i < all.Count; i++)
         {
             var section = all[i];
@@ -363,6 +366,16 @@ public class PageLayoutEngine
                                      or SectionPrintBehavior.PerDataRow)
             {
                 body.Add(section);
+                continue;
+            }
+
+            // „Pod obsahem" jen na poslední stránce = jednou za celým obsahem. Jako plovoucí sekce
+            // neměla kam odejít, když se na poslední stránku nevešla, a přetekla přes její spodek;
+            // jako obsah na konci přejde na nový list, který se tím stane posledním.
+            if (section.Role == SectionRole.BelowContent
+                && section.PrintBehavior == SectionPrintBehavior.OnLastPageOnly)
+            {
+                naKonecObsahu.Add(section);
                 continue;
             }
 
@@ -382,6 +395,7 @@ public class PageLayoutEngine
                     headers.Add(section);
             }
         }
+        body.AddRange(naKonecObsahu);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -539,10 +553,6 @@ public class PageLayoutEngine
 
         foreach (var (section, sectionData) in expandedSections)
         {
-            // Vyhodnotit VisibilityExpression na sekci
-            if (!ExpressionEvaluator.IsVisible(section.VisibilityExpression, sectionData ?? data))
-                continue;
-
             float sectionH;
             List<Zlom> zlomySekce;
             float hlavickaSekce;
@@ -553,6 +563,23 @@ public class PageLayoutEngine
                 sectionH = sectionHeights[section.Id];
                 zlomySekce = _sectionBreaks.TryGetValue(section.Id, out var z) ? z : [];
                 hlavickaSekce = _sectionHeaders.TryGetValue(section.Id, out var hh) ? hh : 0f;
+            }
+
+            // Podmínka se vyhodnocuje s číslem stránky, na které sekce začne. Do 24. 9. dostávala
+            // jen data bez něj, takže `{STRANA} > 1` - příklad z nápovědy formuláře - nikdy
+            // neplatil a sekce se tiše nevytiskla vůbec.
+            if (section.VisibilityExpression is { Length: > 0 } podminka)
+            {
+                bool vejdeSe = cursorY + sectionH <= headerH + availableHeight + SectionLayoutMath.TolerancePrekryvuMm;
+                int strana = !vejdeSe && section.OverflowBehavior == SectionOverflowBehavior.KeepTogether
+                             && currentPage.Sections.Count > 0
+                    ? currentPageNum + 1
+                    : currentPageNum;
+                var dataSekce = sectionData ?? data;
+                var sHodnotami = dataSekce?.WithExtraValues(HodnotyStranky(strana, estTotal, dataSekce))
+                                 ?? new DataContext(HodnotyStranky(strana, estTotal, null));
+                if (!ExpressionEvaluator.IsVisible(podminka, sHodnotami))
+                    continue;
             }
 
             // Vejde se na stránku? Tolerance kryje smetí z desetinných výšek sekcí - bez ní
@@ -685,6 +712,12 @@ public class PageLayoutEngine
 
         return result;
     }
+
+    /// <summary>Podmínka, kterou jde vyhodnotit až se známým počtem stran.</summary>
+    private static bool PodminkaSPoctemStran(string? podminka) =>
+        podminka is { Length: > 0 }
+        && (podminka.Contains("POCET_STRAN", StringComparison.OrdinalIgnoreCase)
+            || podminka.Contains("TOTAL_PAGES", StringComparison.OrdinalIgnoreCase));
 
     // ─────────────────────────────────────────────────────────────────────
     // PerDataRow expanze

@@ -29,7 +29,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddText("Name", "Název")
 
         s f = form.AddDecimal("DesignerHeight", "Výška", 30, 5, 9999, "mm")
-        s f.helpText = "Prázdné = dynamická výška (počítá engine)"
+        s f.helpText = "Nejmenší výška - obsah ji může zvětšit. Prázdné = výška podle obsahu"
 
         s f = form.AddFieldToLastGroup("PrintBehavior", "Tisk", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Once", "Jednou")
@@ -61,7 +61,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
 
-        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0.3, 0.1, 5, "mm")
+        s f = form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0.3, 0, 5, "mm")
+        s f.helpText = "Jen když je zapnutý Rámeček. Prázdné nebo 0 = bez rámečku"
 
         // ── Skupina "Podmínky" ────────────────────────────────────────────
         d form.AddGroup("conditions", "Podmínky")

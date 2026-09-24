@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-09-24 (1) - 📐 nastavení sekcí dělá, co slibuje (`B177`, část 1)
+
+**Podmínka viditelnosti sekce „Jednou" zná číslo stránky.** Počítá se stránka, na které sekce
+začne; `{STRANA} > 1` z nápovědy formuláře do teď nikdy neplatil a sekce se tiše nevytiskla.
+Funguje i `{POCET_STRAN}` (`{STRANA} = {POCET_STRAN}` = jen na konci). Podmínky nově berou
+**jedno `=`** jako rovnost - dřív se výraz nepřečetl a platil vždy.
+
+**„Pod obsahem" + „Jen poslední"** se chová jako sekce jednou za celým obsahem: vejde-li se, sedí
+pod ním, jinak přejde na nový list, který je pak poslední. Dřív přetekla přes spodek stránky.
+
+Nápověda k výšce sekce říká, že jde o nejmenší výšku (obsah ji zvětší). **Tloušťka rámečku sekce
+nic nevynucuje** - 0 i prázdné pole jsou povolené a znamenají bez rámečku.
+
 ## 2026-09-23 (4) - 🚌 dopravci v záhlaví jen za spoje na stránce (#9417)
 
 Pole `{POPIS_DOPRAVCE}` linkového JŘ nevypisuje dopravce za celou linku, ale **jen za spoje, které

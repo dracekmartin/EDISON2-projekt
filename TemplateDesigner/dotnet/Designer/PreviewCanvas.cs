@@ -537,7 +537,8 @@ public class PreviewCanvas
             }
 
             // Rámeček sekce (volitelný - ShowBorder property)
-            if (placed.Source.ShowBorder)
+            // Tloušťka 0 = bez rámečku; Skia by čáru s nulovou tloušťkou nakreslila vlasovou.
+            if (placed.Source.ShowBorder && placed.Source.BorderWidth > 0f)
             {
                 using var borderPaint = new SKPaint
                 {

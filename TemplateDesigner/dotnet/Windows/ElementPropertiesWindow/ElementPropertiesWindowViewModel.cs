@@ -659,7 +659,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             Label = "Tloušťka rámečku", Group = "Vzhled",
             Get   = () => section.BorderWidth,
             Set   = v  => section.BorderWidth = v,
-            Min   = 0.1f, Max = 5f, Unit = "mm"
+            Min   = 0f, Max = 5f, Unit = "mm"
         });
 
         list.Add(new StringPropertyDescriptor
