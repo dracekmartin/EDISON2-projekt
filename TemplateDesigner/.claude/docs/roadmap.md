@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B180` a `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `#8785` a `#7487` - ty Jan prochází s kolegou. Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `B180` a `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `#8785`, `B182` a `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -53,9 +53,16 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   tabulka i se šířkami 97-80 %, nevejde-li se, plná velikost (changelog 2026-09-23 (3)). Zbývá:
   hláška o nesplněném cíli, rozhodnout meze (v šabloně × pevné), „Automaticky" až s polem u linky.
 
-- **`#7487` Počet poznámek na řádek podle druhu** [M] (KORID) - ⏸️ **Jan probere s kolegou**, jak
-  je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
-  druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
+- **`#7487` Rozložení poznámek podle druhu** [M] (KORID; potvrzeno hovorem s kolegou 25. 9.).
+  Druhy jako ve starém win tisku (dny platnosti, negativní značky, návaznosti, atributy, textové
+  poznámky…): u každého **pořadí** a **počet sloupců** zvlášť, např. „všechno do 3 sloupců, negativní
+  značky do 1". Dnes jde jen jeden „Počet sloupců" pro celou legendu. Přesný tvar nastavení se
+  ještě upřesní s kolegou - nejdřív návrh formuláře, pak kód.
+
+- **`B182` Minuty ve sloupci spoje pod sebou** [S] (hovor s kolegou 25. 9.). Když má ve sloupci
+  aspoň jeden řádek značku před časem (návaznost, jen nástup), jeho čas se posune doprava a ostatní
+  zůstanou na středu, takže minuty nestojí pod sebou. Ostatní časy ve sloupci se mají posunout
+  o stejný kus. Vzor je odsazení názvů zastávek (changelog 2026-09-22 (3)).
 
 ---
 
