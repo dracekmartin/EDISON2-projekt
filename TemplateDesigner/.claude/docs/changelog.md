@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-09-25 (4) - 🖨 dva doklady oboustranně na jeden list (#12854)
+
+Uspořádání na list umělo stránky jen skládat za sebou, nebo opakovat tutéž. Pro doklad o dvou
+stranách (stazka A5: líc a rub) to znamenalo, že na A4 vyšel líc i rub jednoho dokladu vedle sebe
+a oboustranný tisk nešel. Nová volba **„Oboustranně (líc a rub dokladu)"** dá na jednu stranu
+listu líce dvou dokladů a na druhou jejich ruby na tatáž místa; po oboustranném tisku (převracet
+na delší straně) a rozříznutí má každá A5 svůj líc i rub a papíru je polovina (požadavek DPKV).
+
+Funguje pro jakoukoli šablonu s dvěma stránkami na doklad; pro stazky poslouží, až bude jejich
+agenda v návrháři. ⚠️ Umístění rubu je odvozené z převracení listu, **fyzickým tiskem neověřené**.
+
 ## 2026-09-25 (3) - ✂ nejvýš N sloupců variant tras (`B181`)
 
 Na vývěsce, kde spoje z jedné zastávky jezdí mnoha trasami, vznikalo tolik sloupců s časy

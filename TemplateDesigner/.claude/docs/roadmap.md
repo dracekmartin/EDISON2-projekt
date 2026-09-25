@@ -60,6 +60,11 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
+- **`B183` Oboustranný tisk: doklad doplnit na sudý počet stránek** [S] (Jan 25. 9., navazuje na #12854).
+  Volba „Oboustranně" páruje stránky po dvojicích, ne po dokladech: doklad o 1 nebo 3 stránkách
+  posune líce a ruby u všech dalších. Při zapnuté volbě doplnit každý doklad (instanci) prázdnou
+  stránkou na sudý počet; hranice dokladů tisk zná. Vzít, než to začne někdo reálně používat.
+
 - **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
   prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není
   (`PdfImport/` se jí nedotýká), takže linkový JŘ by skončil jako obecné tabulky a texty. Nejdřív

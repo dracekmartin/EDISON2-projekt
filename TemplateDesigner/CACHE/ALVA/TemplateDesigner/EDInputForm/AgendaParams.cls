@@ -129,6 +129,12 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_REPEAT") { s v = vals.%Get("__EXPORT_SHEET_REPEAT")  s repeat = $s((v="true")||(v=1):1, 1:0) }
     d form.AddBool("__EXPORT_SHEET_REPEAT", "Každá stránka na celý list (pro řezání)", repeat)
 
+    // #12854: dvě stazky A5 oboustranně na A4 - líce na jedné straně listu, ruby na druhé.
+    s duplex = 0
+    i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_DUPLEX") { s v = vals.%Get("__EXPORT_SHEET_DUPLEX")  s duplex = $s((v="true")||(v=1):1, 1:0) }
+    s f = form.AddBool("__EXPORT_SHEET_DUPLEX", "Oboustranně (líc a rub dokladu)", duplex)
+    s f.helpText = "Každé dvě stránky za sebou jsou líc a rub jednoho dokladu. Na jednu stranu listu přijdou líce několika dokladů, na druhou jejich ruby na tatáž místa. List se vytiskne oboustranně s převracením na delší straně a rozřízne - například dvě stazky A5 na A4 na šířku ušetří polovinu papíru. Když je zapnuté i Každá stránka na celý list, platí to."
+
     s marks = 0
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_MARKS") { s v = vals.%Get("__EXPORT_SHEET_MARKS")  s marks = $s((v="true")||(v=1):1, 1:0) }
     d form.AddBool("__EXPORT_SHEET_MARKS", "Ořezové značky", marks)

@@ -34,6 +34,13 @@ public sealed record SheetLayoutOptions
     /// <summary>True = kreslit tenké ořezové čáry na hranicích stránek.</summary>
     public bool DrawCutMarks { get; init; }
 
+    /// <summary>
+    /// True = oboustranný tisk dokladů o dvou stranách: každé dvě stránky za sebou jsou líc a rub
+    /// jednoho dokladu. Líce jdou na jeden list, ruby na další na tatáž místa (#12854, dvě stazky
+    /// A5 na A4). Opakování stránky má přednost - samo střídá líc a rub na celých listech.
+    /// </summary>
+    public bool Oboustranne { get; init; }
+
     /// <summary>Počet pozic na jednom listu.</summary>
     public int SlotsPerSheet => Rows * Cols;
 
@@ -98,13 +105,14 @@ public static class SheetLayoutKeys
     public const string Grid = "__EXPORT_SHEET_GRID";
     public const string Repeat = "__EXPORT_SHEET_REPEAT";
     public const string Marks = "__EXPORT_SHEET_MARKS";
+    public const string Oboustranne = "__EXPORT_SHEET_DUPLEX";
     public const string Meritko = "__EXPORT_SCALE";
 
     public const string SheetNone = "NONE";
     public const string GridAuto = "AUTO";
 
     /// <summary>Všechny klíče - pro persistence restore (nejsou mezi agenda parametry).</summary>
-    public static readonly string[] All = [Sheet, Grid, Repeat, Marks, Meritko];
+    public static readonly string[] All = [Sheet, Grid, Repeat, Marks, Oboustranne, Meritko];
 }
 
 /// <summary>
@@ -145,6 +153,7 @@ public static class SheetComposer
             PageHeight = pageH,
             RepeatEachPage = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Repeat)),
             DrawCutMarks = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Marks)),
+            Oboustranne = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Oboustranne)),
         };
     }
 
@@ -234,6 +243,28 @@ public static class SheetComposer
         }
 
         var slots = AllSlots(o).ToList();
+        if (o.Oboustranne)
+        {
+            // Rub jde na totéž místo jako jeho líc: při převracení listu na delší straně se list
+            // otočí kolem vodorovné osy a levá polovina zůstane vlevo (ověřeno jen úvahou, ne tiskem).
+            for (int i = 0; i < pages.Count; i += 2 * slots.Count)
+            {
+                var lice = new List<PlacedPage>();
+                var ruby = new List<PlacedPage>();
+                for (int s = 0; s < slots.Count && i + 2 * s < pages.Count; s++)
+                {
+                    lice.Add(new PlacedPage(pages[i + 2 * s], slots[s].X, slots[s].Y));
+                    if (i + 2 * s + 1 < pages.Count)
+                        ruby.Add(new PlacedPage(pages[i + 2 * s + 1], slots[s].X, slots[s].Y));
+                }
+                sheets.Add(new Sheet(lice));
+                // Rubová strana listu existuje, i když je prázdná - jinak by se další líc
+                // vytiskl na rub předchozího listu.
+                sheets.Add(new Sheet(ruby));
+            }
+            return sheets;
+        }
+
         for (int i = 0; i < pages.Count; i += slots.Count)
         {
             var placed = new List<PlacedPage>();

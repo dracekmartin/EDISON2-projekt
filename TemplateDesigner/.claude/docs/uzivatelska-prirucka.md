@@ -547,9 +547,14 @@ Nastavení výstupu je univerzální napříč agendami:
 - **Uspořádání na list (imposice)** - více vývěsek na jeden fyzický list: cílový list
   (Vypnuto / A4 / A3, na výšku i na šířku), **mřížka** (AUTO = největší počet, který se vejde
   bez zmenšování, nebo pevně 2×1, 2×2…), **„Každá stránka na celý list"** (táž vývěska
-  vícekrát - pro rozřezání) a **ořezové značky**. Typicky: dvě A5 vývěsky na jeden list A4.
+  vícekrát - pro rozřezání), **„Oboustranně (líc a rub dokladu)"** a **ořezové značky**.
+  Typicky: dvě A5 vývěsky na jeden list A4.
   Volba se pamatuje pro každou agendu zvlášť; návrat k běžnému tisku = „Vypnuto".
-  (Export PNG imposici nepoužívá; brožurové řazení a oboustranný tisk zůstávají na tiskárně.)
+- **Oboustranně** je pro doklady o dvou stranách (líc a rub), třeba stazky A5: na jednu stranu
+  listu A4 přijdou líce dvou dokladů, na druhou jejich ruby na tatáž místa. Tiskne se
+  oboustranně s **převracením na delší straně**; po rozříznutí má každá A5 svůj líc i rub a papíru
+  je poloviční spotřeba. Předpokladem je, že každý doklad má právě dvě stránky za sebou.
+  (Export PNG imposici nepoužívá; brožurové řazení zůstává na tiskárně.)
 
 ---
 

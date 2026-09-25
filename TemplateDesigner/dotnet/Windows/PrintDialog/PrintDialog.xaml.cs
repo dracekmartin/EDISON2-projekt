@@ -75,7 +75,8 @@ public partial class PrintDialog : Window
             bool visible = field.Key switch
             {
                 PrintDialogViewModel.ExportFileNameKey => isSplit,
-                SheetLayoutKeys.Grid or SheetLayoutKeys.Repeat or SheetLayoutKeys.Marks => hasSheet,
+                SheetLayoutKeys.Grid or SheetLayoutKeys.Repeat or SheetLayoutKeys.Marks
+                    or SheetLayoutKeys.Oboustranne => hasSheet,
                 _ => _vm.IsParamVisible(field.Key),
             };
             var target = visible ? ItemVisibility.Visible : ItemVisibility.Collapsed;

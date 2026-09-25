@@ -1,0 +1,188 @@
+{
+  "version": "1.15.0",
+  "id": "26be0757-1d43-4a50-8e18-6468cf1da67e",
+  "name": "Zkouška oboustranného tisku A5",
+  "description": "Každá linka = dva stránky: líc a rub. Pro ověření volby Oboustranně v uspořádání na list.",
+  "pageSize": {
+    "width": 148,
+    "height": 210,
+    "marginTop": 5,
+    "marginBottom": 5,
+    "marginLeft": 5,
+    "marginRight": 5
+  },
+  "agendaCode": "LINKOVY_JR_AD",
+  "parameters": [],
+  "printParameters": {},
+  "defaultTextStyle": {
+    "fontFamily": "Arial"
+  },
+  "editorPreferences": {
+    "gridSize": 5,
+    "snapToGrid": false,
+    "snapToElements": true,
+    "showGrid": false
+  },
+  "sections": [
+    {
+      "id": "cee393e5-b78a-4189-92cf-e2da8bec41d0",
+      "name": "Líc",
+      "designerHeight": 190,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": true,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.5,
+      "zacitNaNoveStrance": false,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "LÍC",
+          "style": {
+            "fontSize": 72,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "17a64e08-0318-4068-922c-f96f9835fd4d",
+          "x": 5,
+          "y": 20,
+          "width": 128,
+          "height": 40.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "linka {CISLO_LINKY}",
+          "style": {
+            "fontSize": 28,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "41923da9-cb43-4bda-a7f6-859b4015b10e",
+          "x": 5,
+          "y": 70,
+          "width": 128,
+          "height": 18.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "strana {STRANA}",
+          "style": {
+            "fontSize": 16,
+            "bold": false
+          },
+          "wordWrap": true,
+          "id": "a73ecfbe-502f-4930-8d87-824dfb4e723b",
+          "x": 5,
+          "y": 110,
+          "width": 128,
+          "height": 12.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "1733843e-71ca-43db-8485-79c5b677ca0a",
+      "name": "Rub",
+      "designerHeight": 190,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": true,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.5,
+      "zacitNaNoveStrance": true,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "RUB",
+          "style": {
+            "fontSize": 72,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "ab987028-daa2-48c5-8240-191833faa561",
+          "x": 5,
+          "y": 20,
+          "width": 128,
+          "height": 40.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "linka {CISLO_LINKY}",
+          "style": {
+            "fontSize": 28,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "a32c9580-e06c-472c-93a2-155995a7c493",
+          "x": 5,
+          "y": 70,
+          "width": 128,
+          "height": 18.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "strana {STRANA}",
+          "style": {
+            "fontSize": 16,
+            "bold": false
+          },
+          "wordWrap": true,
+          "id": "e75bcd91-79ba-49d9-a922-1e6c039fe68a",
+          "x": 5,
+          "y": 110,
+          "width": 128,
+          "height": 12.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    }
+  ]
+}

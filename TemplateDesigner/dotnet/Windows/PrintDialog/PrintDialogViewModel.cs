@@ -247,6 +247,7 @@ public class PrintDialogViewModel : EDViewModel
         vals[SheetLayoutKeys.Grid] = (_paramValues.GetValueOrDefault(SheetLayoutKeys.Grid) as string) is { Length: > 0 } gr ? gr : SheetLayoutKeys.GridAuto;
         vals[SheetLayoutKeys.Repeat] = StoredBool(SheetLayoutKeys.Repeat) ? "true" : "false";
         vals[SheetLayoutKeys.Marks] = StoredBool(SheetLayoutKeys.Marks) ? "true" : "false";
+        vals[SheetLayoutKeys.Oboustranne] = StoredBool(SheetLayoutKeys.Oboustranne) ? "true" : "false";
 
         init["values"] = new CVar(JsonSerializer.Serialize(vals));
         return init;
