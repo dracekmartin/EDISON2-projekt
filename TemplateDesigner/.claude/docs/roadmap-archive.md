@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B181` Nejvýš N sloupců variant tras (hotovo 25. 9. 2026)
+
+TRANSDEV `#12843`: parametr sestavy „Nejvýš sloupců variant tras" (0 = všechny) nechá prvních N
+sloupců podle řazení variant. Spoje skrytých variant přijdou o sloupec i písmeno - vědomá ztráta
+informace, kombinace s písmeny variant se neřeší (rozhodnutí Jan 25. 9.). Detail changelog 2026-09-25 (3).
+
 ## `B180` Odjezd na konečné spoje a v zastávce „jen výstup" (hotovo 25. 9. 2026)
 
 TRANSDEV `#12843`: vývěska Kmeťova (Nitra, linka 32) tiskla odjezdy spojů, které tam končí.

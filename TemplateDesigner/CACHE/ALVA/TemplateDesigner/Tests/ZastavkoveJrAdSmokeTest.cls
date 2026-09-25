@@ -7,6 +7,53 @@ Include %occInclude
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSmokeTest Extends ALVA.EDTesting.MLTestCase
 {
 
+/// `B181` (TRANSDEV #12843): „Nejvýš sloupců variant tras" nechá prvních N sloupců podle řazení
+/// a zbytek netiskne. Linka 0330530 má nejvíc variant ze všech prověřených (až 12 na stránku).
+/// Hlídá tři věci: strop, že zůstanou TYTÉŽ první sloupce jako bez stropu (ořez, ne jiný výběr),
+/// a že žádný odjezd nenese písmeno sloupce, který se netiskne.
+Method TestMaxSloupcuVariantOrizneNaPrvniN()
+{
+	set db = "CB_CSADAD", max = 2
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		quit
+	}
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdLegacyTest).SetupSysFor(.sys, db)
+	for rezim = "bez", "s" {
+		kill ^||ML("IN"), ^||ML("OUT")
+		set ^||ML("IN","SKUPINA_LINEK_ID") = 1, ^||ML("IN","LINKA_ID") = "0330530"
+		set:rezim="s" ^||ML("IN","MAX_SLOUPCU_VARIANT") = max
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+		merge vystup(rezim) = ^||ML("OUT")
+	}
+	set orezanych = 0, cizichPismen = 0, p = ""
+	for {
+		set p = $order(vystup("bez",p)) quit:p=""
+		continue:'$isvalidnum(p)
+		set bez = ##class(%DynamicObject).%FromJSON(vystup("bez",p)).values.%Get("VARIANTY_TRAS")
+		set strS = ##class(%DynamicObject).%FromJSON($get(vystup("s",p)))
+		set s = strS.values.%Get("VARIANTY_TRAS")
+		set cekano = $select(bez.%Size() > max: max, 1: bez.%Size())
+		set:bez.%Size()>max orezanych = orezanych + 1
+		do $$$AssertEquals(s.%Size(), cekano, "stránka "_p_": sloupců variant")
+		kill tistena
+		for i=0:1:(s.%Size()-1) {
+			do $$$AssertEquals(s.%Get(i), bez.%Get(i), "stránka "_p_": sloupec "_(i+1)_" shodný s neoříznutou")
+			set:s.%Get(i)'="" tistena(s.%Get(i)) = ""
+		}
+		set it = strS.rows.%Get("ODJEZDY").%GetIterator()
+		while it.%GetNext(.k, .o) {
+			set ai = o.%Get("ANOTACE").%GetIterator()
+			while ai.%GetNext(.ak, .a) {
+				continue:a.%Get("KATEGORIE")'="varianta-trasy"
+				set:'$data(tistena(a.%Get("ZNAK"))) cizichPismen = cizichPismen + 1
+			}
+		}
+	}
+	do $$$AssertTrue(orezanych > 0, "linka má stránky s víc než "_max_" variantami ("_orezanych_") - jinak test nic neověří")
+	do $$$AssertEquals(cizichPismen, 0, "odjezdy bez písmene netištěného sloupce")
+}
+
 Method TestGetDataVraciValidniStrankyProPrvniLinku()
 {
 	do ..SetupSys(.sys)

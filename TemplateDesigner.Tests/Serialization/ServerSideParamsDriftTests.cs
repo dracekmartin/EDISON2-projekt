@@ -57,9 +57,9 @@ public class ServerSideParamsDriftTests
         @"^\s*s\s+(\w+)\.serverSide\s*=\s*1\s*$",
         RegexOptions.Compiled | RegexOptions.Multiline);
 
-    // `d ..AddBoolParam(arr, "KLIC", …, 1)` - příznak je poslední argument na řádku.
+    // `d ..AddBoolParam(arr, "KLIC", …, 1)` (i `AddNumberParam`) - příznak je poslední argument na řádku.
     private static readonly Regex BoolParamFlagRx = new(
-        @"AddBoolParam\(arr,\s*""([A-Za-z_0-9]+)"".*,\s*1\)\s*$",
+        @"Add(?:Bool|Number)Param\(arr,\s*""([A-Za-z_0-9]+)"".*,\s*1\)\s*$",
         RegexOptions.Compiled | RegexOptions.Multiline);
 
     [Fact]
@@ -112,6 +112,7 @@ public class ServerSideParamsDriftTests
 
         Assert.Contains("ROZDELENI_SLOUPCU", flagged);   // vlastní objekt
         Assert.Contains("SOUHRN_NA_ZNAMENI", flagged);   // přes AddBoolParam
+        Assert.Contains("MAX_SLOUPCU_VARIANT", flagged); // přes AddNumberParam
         Assert.DoesNotContain("CASOVA_OSA", flagged);    // klientský parametr
     }
 
@@ -152,7 +153,7 @@ public class ServerSideParamsDriftTests
     /// <summary>
     /// Parametry, které si agenda označila příznakem <c>serverSide</c>. Dvě podoby zápisu:
     /// vlastní objekt (<c>s pX.name = "KLIC"</c> + <c>s pX.serverSide = 1</c>) a pomocná metoda
-    /// <c>AddBoolParam(..., 1)</c>, kde je příznak poslední argument.
+    /// <c>AddBoolParam(..., 1)</c> / <c>AddNumberParam(..., 1)</c>, kde je příznak poslední argument.
     /// </summary>
     private static List<string> ServerSideParams(string file)
     {

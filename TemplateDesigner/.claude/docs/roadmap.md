@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -59,11 +59,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 ## 📥 Backlog
 
 ### Ostatní
-
-- **`B181` Nejvýš N sloupců variant tras** [S] (TRANSDEV `#12843`, 23. 9.). Volba s počtem (např. 2):
-  varianty se vyberou a seřadí jako dnes (slučování, řazení podle délky), vytisknou se jen první N.
-  Jinak vývěsku kazí moc sloupců. Otázka: co se stane se spoji zbylých variant (dnes by zůstaly bez
-  sloupce) - ověřit na jeho linkách, než se to zapne.
 
 - **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
   prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není

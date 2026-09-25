@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-09-25 (3) - ✂ nejvýš N sloupců variant tras (`B181`)
+
+Na vývěsce, kde spoje z jedné zastávky jezdí mnoha trasami, vznikalo tolik sloupců s časy
+variant, že seznam zastávek přerostl zbytek vývěsky (TRANSDEV #12843). Nový parametr sestavy
+**„Nejvýš sloupců variant tras"** ve skupině Seznam zastávek určí, kolik se jich vytiskne;
+vezmou se první podle zvoleného řazení variant, ostatní se netisknou. 0 = všechny, jako dosud.
+
+Je to vědomá výměna místa za informaci: spoje skrytých variant nemají v seznamu svou trasu
+a nemají ani písmeno varianty, takže se s písmeny variant tahle volba nekombinuje.
+
 ## 2026-09-25 (2) - 🚏 vývěska netiskne odjezd, se kterým se nikam nedojede (`B180`)
 
 Zastávková vývěska z dat AD tiskla odjezd i u spoje, který v té zastávce **končí** - na Nitře
