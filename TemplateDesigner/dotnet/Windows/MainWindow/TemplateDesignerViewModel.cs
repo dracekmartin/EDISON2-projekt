@@ -1284,16 +1284,134 @@ public class TemplateDesignerViewModel : EDViewModel
         DocumentDefaults.Style = State.CurrentTemplate.DefaultTextStyle;
 
         Sections.Clear();
-        foreach (var s in State.CurrentTemplate.Sections)
-            Sections.Add(new SectionVM(s, this));
+        var template = State.CurrentTemplate;
+        var stranky = DesignerPages.ObsahStranek(template);
+        if (stranky.Count < 2)
+        {
+            foreach (var s in template.Sections)
+                Sections.Add(new SectionVM(s, this));
+        }
+        else
+        {
+            // Šablona o víc stránkách (`B184`): nahoře společné sekce (hlavička, patička - patří
+            // dokladu, jsou na každé předloze, kde se tisknou), pod nimi jen sekce otevřené
+            // předlohy. Pořadí v šabloně se nemění, jen zobrazení.
+            int otevrena = OtevrenaPredloha;
+            bool prvni = true;
+            foreach (var s in template.Sections.Where(DesignerPages.JeOpakovana))
+            {
+                Sections.Add(new SectionVM(s, this) { ZahlaviStranky = prvni ? "Společné (všechny stránky)" : null });
+                prvni = false;
+            }
+            for (int j = 0; j < stranky[otevrena].Count; j++)
+                Sections.Add(new SectionVM(stranky[otevrena][j], this)
+                {
+                    ZahlaviStranky = j == 0 ? stranky[otevrena][0].Name : null,
+                    ZahlaviAktivni = j == 0,
+                });
+        }
+        OnPredlohyZmeneny();
         SectionsRebuilt?.Invoke();
     }
 
     public void ActivateSection(Section? section)
     {
         State.ActiveSection = section;
+        // Sekce z jiné předlohy (výběr ze stromu, z hlášky, ze seznamu) předlohu otevře - jinak by
+        // byla vybraná sekce, která na plátně není. Společná sekce je na každé, nic se nepřepíná.
+        if (section is not null && !DesignerPages.JeOpakovana(section))
+        {
+            int index = DesignerPages.IndexStranky(State.CurrentTemplate, section);
+            if (index != OtevrenaPredloha) NastavPredlohu(index, zNahledu: false);
+        }
         RebuildSections();
         RequestCanvasRefresh?.Invoke();
+    }
+
+    // ── Předlohy stránek (`B184`) ─────────────────────────────────────────────
+
+    /// <summary>Otevřená předloha stránky, srovnaná do rozsahu (šablona se mohla zkrátit).</summary>
+    public int OtevrenaPredloha =>
+        Math.Clamp(State.Predloha, 0, DesignerPages.ObsahStranek(State.CurrentTemplate).Count - 1);
+
+    public int  PocetPredloh => DesignerPages.ObsahStranek(State.CurrentTemplate).Count;
+
+    /// <summary>Přepínač předloh je vidět jen u šablony o víc stránkách - jednostránková (jízdní
+    /// řády) vypadá jako dřív (rozhodnutí Jan 25. 9.).</summary>
+    public bool MaPredlohy => PocetPredloh > 1;
+
+    /// <summary>„Rub · 1 stránka (2/3)" - jméno předlohy a kolik stránek z ní vyjde.</summary>
+    public string PredlohaText
+    {
+        get
+        {
+            var stranky = DesignerPages.ObsahStranek(State.CurrentTemplate);
+            int i = OtevrenaPredloha;
+            string nazev = stranky[i].FirstOrDefault()?.Name ?? $"Stránka {i + 1}";
+            string kolik = DesignerPages.JePodleDat(stranky[i]) ? "podle dat" : "1 stránka";
+            return $"{nazev} · {kolik}  ({i + 1}/{stranky.Count})";
+        }
+    }
+
+    /// <summary>Náhled ukazuje celý doklad (jinak jen otevřenou stránku šablony).</summary>
+    public bool NahledCelyDoklad
+    {
+        get => State.NahledCelyDoklad;
+        set
+        {
+            if (State.NahledCelyDoklad == value) return;
+            State.NahledCelyDoklad = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NahledJenStranka));
+            PredlohaZmenena?.Invoke(OtevrenaPredloha, false);
+        }
+    }
+
+    public bool NahledJenStranka
+    {
+        get => !NahledCelyDoklad;
+        set => NahledCelyDoklad = !value;
+    }
+
+    /// <summary>Předloha se přepnula; true = přepnul ji posun náhledu (náhled už se neposouvá).</summary>
+    public Action<int, bool>? PredlohaZmenena { get; set; }
+
+    private RelayCommand? _predchoziPredloha, _dalsiPredloha;
+    public RelayCommand PredchoziPredlohaCommand => _predchoziPredloha ??= Command(
+        () => OtevriPredlohu(OtevrenaPredloha - 1), () => OtevrenaPredloha > 0);
+    public RelayCommand DalsiPredlohaCommand => _dalsiPredloha ??= Command(
+        () => OtevriPredlohu(OtevrenaPredloha + 1), () => OtevrenaPredloha < PocetPredloh - 1);
+
+    /// <summary>
+    /// Otevře předlohu na plátně: vybere se její první sekce (tam jde „Přidat sekci") a zruší se
+    /// výběr prvků, které na ní nejsou.
+    /// </summary>
+    public void OtevriPredlohu(int index, bool zNahledu = false)
+    {
+        index = Math.Clamp(index, 0, PocetPredloh - 1);
+        if (index == OtevrenaPredloha && State.Predloha == index) return;
+        NastavPredlohu(index, zNahledu);
+        var naPredloze = DesignerPages.SekceStranky(State.CurrentTemplate, index);
+        if (State.ActiveSection is null || !naPredloze.Contains(State.ActiveSection))
+            State.ActiveSection = DesignerPages.ObsahStranek(State.CurrentTemplate)[index].FirstOrDefault();
+        State.SelectedElements.RemoveAll(el => !naPredloze.Any(sekce => sekce.Elements.Contains(el)));
+        RebuildSections();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    private void NastavPredlohu(int index, bool zNahledu)
+    {
+        State.Predloha = index;
+        OnPredlohyZmeneny();
+        RequestCanvasSizeUpdate?.Invoke();
+        PredlohaZmenena?.Invoke(index, zNahledu);
+    }
+
+    private void OnPredlohyZmeneny()
+    {
+        OnPropertyChanged(nameof(MaPredlohy));
+        OnPropertyChanged(nameof(PredlohaText));
+        CommandManager.InvalidateRequerySuggested();
     }
 
     /// <summary>
@@ -1309,9 +1427,28 @@ public class TemplateDesignerViewModel : EDViewModel
     public void AddSection(Section section)
     {
         var commands = new List<IDesignerCommand>();
+        var template = State.CurrentTemplate;
+
+        // Stránky, na které nová sekce padne (`B184`): obsah na konec aktivní stránky, hlavička
+        // a patička na všechny stránky, kde se tisknou - místo musí najít na každé z nich.
+        int aktivni = OtevrenaPredloha;
+        bool opakovana = DesignerPages.JeOpakovana(section);
+        int stranek = DesignerPages.ObsahStranek(template).Count;
+        var dotcene = opakovana
+            ? Enumerable.Range(0, stranek).Where(i => DesignerPages.TiskneSeNaStrance(section, i, stranek))
+                .Select(i => DesignerPages.SekceStranky(template, i)).ToList()
+            : [DesignerPages.SekceStranky(template, aktivni)];
+        if (dotcene.Count == 0) dotcene.Add(DesignerPages.SekceStranky(template, aktivni));
 
         float pozadovana = section.DesignerHeight ?? 30f;
-        var misto = SectionLayoutMath.RozdelMistoProNovouSekci(State.CurrentTemplate, pozadovana);
+        // Výška, která se vejde na všechny dotčené stránky; teprve s ní se počítá, co zkrátit.
+        float vyska = dotcene.Min(p => SectionLayoutMath.RozdelMistoProNovouSekci(template, pozadovana, p).VyskaNoveSekce);
+        var zkraceni = new Dictionary<Section, float>();
+        foreach (var p in dotcene)
+            foreach (var (sekce, novaVyska) in SectionLayoutMath.RozdelMistoProNovouSekci(template, vyska, p).Zkraceni)
+                zkraceni[sekce] = zkraceni.TryGetValue(sekce, out var dosavadni) ? MathF.Min(dosavadni, novaVyska) : novaVyska;
+        var misto = new SectionLayoutMath.MistoProNovouSekci(vyska,
+            [.. zkraceni.Select(z => new SectionLayoutMath.ZkraceniSekce(z.Key, z.Value))]);
 
         foreach (var (sekce, novaVyska) in misto.Zkraceni)
         {
@@ -1326,7 +1463,8 @@ public class TemplateDesignerViewModel : EDViewModel
         if (section.DesignerHeight is not null)
             section.DesignerHeight = misto.VyskaNoveSekce;
 
-        commands.Add(new AddSectionCommand(State.CurrentTemplate, section));
+        commands.Add(new AddSectionCommand(template, section,
+            opakovana ? null : DesignerPages.PoziceNaKonciStranky(template, aktivni)));
 
         if (commands.Count > 1)
             Execute(new CompositeCommand("Přidat sekci", commands));
@@ -1342,6 +1480,39 @@ public class TemplateDesignerViewModel : EDViewModel
             StatusText = $"Sekce {section.Name} přidána s výškou {misto.VyskaNoveSekce:0.#} mm "
                        + "- na víc už na stránce nebylo místo. Zkraťte jinou sekci, jestli má být vyšší.";
         }
+    }
+
+    /// <summary>
+    /// Přidá stránku dokladu: sekci se „Začít na nové stránce", která zabere celou volnou plochu
+    /// nové stránky (bez hlavičky a patičky, které se na ni tisknou). Ostatní sekce se nemění.
+    /// </summary>
+    /// <remarks>
+    /// Nejde přes <see cref="AddSection"/> - ten hledá místo na dosavadní poslední stránce a kvůli
+    /// nové by zkrátil její sekce. Nová stránka je prázdná, takže místo krátit nemusí.
+    /// </remarks>
+    public void AddPage()
+    {
+        var template = State.CurrentTemplate;
+        int stranek = DesignerPages.ObsahStranek(template).Count;
+        bool prvniJePrazdna = stranek == 1 && DesignerPages.ObsahStranek(template)[0].Count == 0;
+        int nova = prvniJePrazdna ? 0 : stranek;
+        int pocet = nova + 1;
+        float opakovane = template.Sections
+            .Where(s => DesignerPages.JeOpakovana(s) && DesignerPages.TiskneSeNaStrance(s, nova, pocet))
+            .Sum(s => s.EffectiveDesignerHeight);
+
+        var section = new Section
+        {
+            Name = $"Strana {nova + 1}",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            ZacitNaNoveStrance = !prvniJePrazdna,
+            DesignerHeight = MathF.Max(SectionLayoutMath.MinimalniVyskaNoveSekceMm,
+                template.PageSize.PrintableHeight - opakovane),
+        };
+        Execute(new AddSectionCommand(template, section));
+        ActivateSection(section);   // otevře novou předlohu
+        RequestCanvasSizeUpdate?.Invoke();
     }
 
     /// <summary>
@@ -4082,6 +4253,14 @@ public class SectionVM : INotifyPropertyChanged
     }
 
     public string  Name      => Section.Name;
+    /// <summary>„Strana 2" (nebo „Na každé stránce") nad první sekcí oddílu; jinak null.</summary>
+    public string? ZahlaviStranky { get; init; }
+    public bool    MaZahlaviStranky => ZahlaviStranky is not null;
+    /// <summary>Stránka tohoto nadpisu je aktivní - sem jde „Přidat sekci".</summary>
+    public bool    ZahlaviAktivni { get; init; }
+    /// <summary>Pod poslední sekcí stránky: hlavička a patička, které se na ni tisknou navíc.</summary>
+    public string? SpolecneNaStrance { get; init; }
+    public bool    MaSpolecneNaStrance => SpolecneNaStrance is not null;
     public bool    IsDynamic => Section.DesignerHeight is null;
     public bool    IsActive  => _vm.State.ActiveSection == Section;
     public bool    HasSubtitle => Subtitle is not null;

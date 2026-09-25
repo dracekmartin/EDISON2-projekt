@@ -1,5 +1,14 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B184` Výslovné stránky v návrháři (hotovo 25. 9. 2026)
+
+Po #12854: šablona o víc stránkách má nad plátnem přepínač stránek šablony (jméno + „1 stránka /
+podle dat", odvozené z obsahu), plátno ukazuje jednu stránku pevné výšky se šrafovaným přesahem,
+hlavička a patička jsou společné a upravitelné na každé stránce. Přepnutí synchronizované
+s posunem náhledu. Jednostránkové šablony beze změny. První verze (listy pod sebou se šedými
+kopiemi) se týž den zahodila - míchala výběr sekce a stránky (rozhodnutí Jan 25. 9.). Formát
+šablony beze změny. Detail changelog 2026-09-25 (6).
+
 ## `B183` Oboustranný tisk dorovná doklad na sudý počet stránek (hotovo 25. 9. 2026)
 
 Navazuje na #12854. Volba „Oboustranně" párovala stránky po dvojicích, takže doklad s jednou nebo

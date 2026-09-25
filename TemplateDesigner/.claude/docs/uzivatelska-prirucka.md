@@ -188,6 +188,15 @@ v rozbalovacích seznamech:
   samostatné stránce za tabulkou. S přetečením „Rozdělit přes stránky" dlouhé poznámky pokračují
   na dalším listu. Na listu, kde ještě nic není, se nový nezakládá
 
+**Doklad o více stránkách** (stazka s lícem a rubem, faktura s podmínkami na zadní straně): tlačítko
+**„+ Přidat stránku"** pod seznamem sekcí přidá stránku šablony. Nad plátnem se pak objeví přepínač
+stránek a plátno ukazuje vždy jednu stránku přesně velikosti papíru; u každé je napsané, jestli
+z ní vyjde jedna stránka, nebo víc podle dat. Hlavička a patička jsou společné - jsou na každé
+stránce, kde se tisknou, a upravit je jde z kterékoli (mají jinak barevný štítek). Obsah, který se
+na stránku nevejde, je pod listem vidět v šrafovaném pásu: při tisku přeteče na další stránku.
+Druhou stránku proto dělejte vždy přidáním stránky, ne roztažením sekce. Náhled vpravo ukazuje jen
+otevřenou stránku; přepínačem „Celý doklad" nad ním uvidíte všechny stránky za sebou.
+
 Pole, která v dané kombinaci nic nedělají, formulář schová - barva a tloušťka rámečku jsou vidět
 jen se zapnutým Rámečkem.
 

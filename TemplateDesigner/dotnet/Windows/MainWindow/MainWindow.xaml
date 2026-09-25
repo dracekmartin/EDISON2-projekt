@@ -48,6 +48,25 @@
 
             <!-- ── Section item DataTemplate ── -->
             <DataTemplate x:Key="SectionItemTemplate" DataType="{x:Type local:SectionVM}">
+                <StackPanel>
+                <TextBlock Text="{Binding ZahlaviStranky}" Margin="2,8,0,2"
+                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                           Foreground="{DynamicResource EDTheme.Text.Secondary}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding MaZahlaviStranky}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ZahlaviAktivni}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.Blue}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
                 <Border Margin="0,2,0,0"
                         Padding="8,5,4,5"
                         CornerRadius="3"
@@ -139,6 +158,21 @@
                         </StackPanel>
                     </DockPanel>
                 </Border>
+                <TextBlock Text="{Binding SpolecneNaStrance}" Margin="8,2,0,0" FontStyle="Italic"
+                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                           Foreground="{DynamicResource EDTheme.Text.Muted}" TextTrimming="CharacterEllipsis"
+                           ToolTip="Tiskne se i na této stránce - upravuje se v oddílu Na každé stránce">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding MaSpolecneNaStrance}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                </StackPanel>
             </DataTemplate>
 
             <!-- Parameter DataTemplates jsou ve sdílené ResourceDictionary (viz MergedDictionaries výše).
@@ -594,8 +628,13 @@
                             <Border DockPanel.Dock="Bottom"
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
                                     Padding="6" Background="{DynamicResource EDTheme.Bg.Footer}">
-                                <Button x:Name="BtnAddSectionPanel" Content="+ Přidat sekci"
-                                        Click="BtnAddSection_Click" HorizontalAlignment="Stretch" Padding="4,4"/>
+                                <UniformGrid Columns="2">
+                                    <Button x:Name="BtnAddSectionPanel" Content="+ Přidat sekci"
+                                            Click="BtnAddSection_Click" HorizontalAlignment="Stretch" Padding="4,4" Margin="0,0,3,0"/>
+                                    <Button x:Name="BtnAddPagePanel" Content="+ Přidat stránku"
+                                            ToolTip="Nová stránka dokladu, třeba rub stazky - na plátně vlastní list"
+                                            Click="BtnAddPage_Click" HorizontalAlignment="Stretch" Padding="4,4" Margin="3,0,0,0"/>
+                                </UniformGrid>
                             </Border>
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <!-- Data-bound sections list -->
@@ -759,8 +798,35 @@
                           HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Bg.Canvas}" Cursor="SizeWE"/>
 
             <!-- ── Canvas ── -->
-            <ScrollViewer Grid.Column="2" Grid.Row="0"
-                          HorizontalScrollBarVisibility="Auto"
+            <DockPanel Grid.Column="2" Grid.Row="0">
+            <!-- Přepínač stránek šablony (`B184`) - stejný 34px pruh jako stránkování nad náhledem
+                 a na stejném místě, rezervovaný vždy, aby plátno začínalo ve stejné výšce jako
+                 náhled. Obsah jen u šablony o víc stránkách; jednostránková (jízdní řády) má jen
+                 souvislý horní okraj. Text má pevnou šířku jako nabídka nad náhledem, aby šipky
+                 při přepnutí neposkakovaly. -->
+            <Grid DockPanel.Dock="Top" Height="34" Background="{DynamicResource EDTheme.Bg.Canvas}">
+                <Border Visibility="{Binding MaPredlohy, Converter={StaticResource BoolToVis}}"
+                        Background="{DynamicResource EDTheme.Bg.PanelAlt}"
+                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Content="◀" Command="{Binding PredchoziPredlohaCommand}" ToolTip="Předchozí stránka šablony"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                            <TextBlock Text="{Binding PredlohaText}" Width="230" Margin="8,0"
+                                       TextAlignment="Center" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                       ToolTip="Stránka šablony, kterou navrhujete. Kolik stránek z ní vyjde s daty, ukazuje náhled."/>
+                            <Button Content="▶" Command="{Binding DalsiPredlohaCommand}" ToolTip="Další stránka šablony"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                        </StackPanel>
+                        <Button Content="+ Stránka" Click="BtnAddPage_Click" HorizontalAlignment="Right"
+                                VerticalAlignment="Center" Margin="0,0,8,0" Padding="8,1"
+                                ToolTip="Přidat stránku šablony, třeba rub stazky"
+                                FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                    </Grid>
+                </Border>
+            </Grid>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           Background="{DynamicResource EDTheme.Bg.Canvas}"
                           x:Name="CanvasScrollViewer">
@@ -794,6 +860,7 @@
                     </Canvas>
                 </Grid>
             </ScrollViewer>
+            </DockPanel>
 
             <!-- ── GridSplitter pravý ── -->
             <GridSplitter Grid.Column="3" Grid.Row="0" FocusVisualStyle="{x:Null}"
@@ -839,6 +906,21 @@
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                             </StackPanel>
                         </Border>
+                        <!-- Co náhled ukazuje u šablony o víc stránkách (`B184`): jen stránky z otevřené
+                             stránky šablony (výchozí - pevný doklad jako stazka), nebo celý doklad.
+                             Jednostránková šablona přepínač nemá. -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Margin="0,0,8,0"
+                                    Visibility="{Binding MaPredlohy, Converter={StaticResource BoolToVis}}">
+                            <RadioButton GroupName="RozsahNahledu" Content="Tato stránka" Margin="0,0,10,0"
+                                         IsChecked="{Binding NahledJenStranka, Mode=TwoWay}"
+                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" VerticalAlignment="Center"
+                                         ToolTip="Náhled ukazuje jen stránky, které vzniknou z otevřené stránky šablony"/>
+                            <RadioButton GroupName="RozsahNahledu" Content="Celý doklad"
+                                         IsChecked="{Binding NahledCelyDoklad, Mode=TwoWay}"
+                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" VerticalAlignment="Center"
+                                         ToolTip="Náhled ukazuje všechny stránky dokladu pod sebou; posun náhledu přepíná stránku v návrhu"/>
+                        </StackPanel>
                     </Grid>
 
                     <!-- Scrollovatelný canvas náhledu - vyplní zbytek, začíná nahoře (zarovnané s návrhářem).

@@ -1,6 +1,7 @@
 ﻿using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Layout;
 
 namespace TemplateDesigner.Designer;
 
@@ -23,11 +24,11 @@ public class DesignerCanvas
     private const float SectionTabMinLabelPx = 28f;
     private const float PagePaddingPx  = 40f;
     /// <summary>
-    /// Extra prostor nad stránkou v designeru - kompenzuje vyšší chrome live preview pane
-    /// (header bar + parametry sestavy + page navigation). Drží Y-zarovnání stránky mezi
-    /// designerem a preview, aby vizuálně nebyly posunuté na ose Y.
+    /// Extra prostor nad stránkou v designeru - drží Y-zarovnání stránky s náhledem. Náhled má
+    /// nad sebou 34px pruh stránkování a 66 px okraje (= 100); návrhář má od `B184` stejný 34px
+    /// pruh přepínače stránek, takže tady zbývá 100 - 34 - 40 (PagePaddingPx) = 26.
     /// </summary>
-    private const float TopBufferPx    = 60f;
+    private const float TopBufferPx    = 26f;
     private const float HandleSizePx   = 7f;
     private const float RulerThicknessPx = 20f;
     private const float RulerOffsetPx    = 3f;
@@ -57,7 +58,10 @@ public class DesignerCanvas
     private static readonly SKColor ClrRulerTick         = new(0xFF555555);
     private static readonly SKColor ClrRulerText         = new(0xFF333333);
     private static readonly SKColor ClrRulerHighlight    = new(0x602563EB); // poloprůhledná modrá
-    private static readonly SKColor ClrPageBreak         = new(0xFF2D7DD2); // modrá dělící čára stránek (návrhář)
+    private static readonly SKColor ClrPageBreak         = new(0xFF2D7DD2); // modrá: popisky stránek a přesah (návrhář)
+    private static readonly SKColor ClrPresahPozadi      = new(0xFFF3F6FB); // pás obsahu, který se na stránku nevejde
+    private static readonly SKColor ClrPresahSrafy       = new(0x552D7DD2);
+    private static readonly SKColor ClrSectionHeaderSpolecna = new(0xFF7A6BB0); // štítek společné sekce (víc předloh)
 
 
     private readonly DesignerState _state;
@@ -92,21 +96,28 @@ public class DesignerCanvas
         canvas.Clear(CanvasTheme.Background);
 
         var template = _state.CurrentTemplate;
-        float pageW  = template.PageSize.Width * MmToPx;
-        // „Papír" roste s obsahem (součet výšek sekcí) - návrhář už není omezen na jednu A4.
-        // Zlomy stránek se vyznačí overlayem (Slice 2); tady jen souvislý papír na plnou výšku.
-        float paperH = TotalPaperHeightPx();
+        var ps       = template.PageSize;
+        float pageW  = ps.Width * MmToPx;
+        float pageH  = ps.Height * MmToPx;
         float pageX  = CalculatePageX(canvasWidth);
-        float pageY  = PagePaddingPx + TopBufferPx;
+        var (list, top) = OtevrenyList();
 
-        DrawPageShadow(canvas, pageX, pageY, pageW, paperH);
-        DrawPageBackground(canvas, pageX, pageY, pageW, paperH);
-        DrawMarginGuides(canvas, pageX, pageY, template.PageSize, paperH);
-        DrawSections(canvas, template, pageX, pageY, canvasWidth);
+        // Plátno ukazuje JEDNU předlohu stránky - tu, která je otevřená v přepínači nad ním
+        // (`B184`). List má pevnou výšku stránky; co se nevejde, je vidět pod ním jako šrafovaný
+        // přesah - papír se nenatahuje, protože natažený papír vypadal jako správný způsob, jak
+        // dělat víc stránek (rozhodnutí Jan 25. 9.).
+        float celaH = list.VyskaMm * MmToPx;
+        DrawPageShadow(canvas, pageX, top, pageW, pageH);
+        DrawPageBackground(canvas, pageX, top, pageW, pageH);
+        if (celaH > pageH + 0.5f) DrawPresah(canvas, pageX, top + pageH, pageW, celaH - pageH, list.PresahMm(ps));
+        // Okraje a mřížka jen na papíře - v přesahu by splývaly s rámečky sekcí.
+        DrawMarginGuides(canvas, pageX, top, ps, pageH);
+        DrawSections(canvas, template, pageX, 0f, canvasWidth);
         // Grid - kreslen po sekcích, aby byl vidět přes jejich pozadí (v printable area, kde se pozicují elementy).
-        if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, paperH, template.PageSize);
-        DrawPageBorder(canvas, pageX, pageY, pageW, paperH);
-        DrawPageBreakLines(canvas, pageX, pageY, pageW, paperH, template.PageSize);
+        if (_state.ShowGrid) DrawGrid(canvas, pageX, top, pageW, pageH, ps);
+        DrawPageBorder(canvas, pageX, top, pageW, pageH);
+        float pageY  = top;
+        float paperH = celaH;
 
         // Selection handles kreslíme naposled - vždy nad elementy
         DrawSnapTargetHighlights(canvas, canvasWidth);
@@ -198,8 +209,8 @@ public class DesignerCanvas
     /// <para>U sekcí v toku **není potřeba zvlášť chytat horní hranu**: je to táž linka jako spodní
     /// hrana sekce nad ní, takže se uchopí jako ona a chování zůstane jedno.</para>
     ///
-    /// <para>Poslední sekce se záměrně nevynechává: roztažením poslední sekce roste papír, což je
-    /// legitimní (plátno není omezené na jednu stránku, viz <see cref="TotalPaperHeightPx"/>).</para>
+    /// <para>Poslední sekce se záměrně nevynechává: roztáhnout ji jde i za stránku, obsah navíc se
+    /// pak ukáže jako šrafovaný přesah (<see cref="DrawPresah"/>) - další stránka se dělá výslovně.</para>
     /// </remarks>
     public (Section Section, bool RosteNahoru)? HitTestSectionEdge(float canvasX, float canvasY, float canvasWidth)
     {
@@ -400,58 +411,34 @@ public class DesignerCanvas
         return Math.Max(minLeft, (canvasWidth - pageW) / 2f);
     }
 
-    /// <summary>Vrátí origin (levý horní roh obsahu) každé sekce na canvasu.</summary>
+    /// <summary>Otevřená předloha stránky (podle <see cref="DesignerState.Predloha"/>) a horní hrana
+    /// jejího listu v px. Index mimo rozsah se srovná na poslední předlohu.</summary>
+    private (ListNavrhu List, float Top) OtevrenyList()
+    {
+        var listy = DesignerPages.Rozloz(_state.CurrentTemplate);
+        return (listy[Math.Clamp(_state.Predloha, 0, listy.Count - 1)], PagePaddingPx + TopBufferPx);
+    }
+
+    /// <summary>Vrátí origin (levý horní roh obsahu) každé sekce otevřené předlohy na canvasu.</summary>
+    /// <remarks>Společné sekce (hlavička, patička) jsou na každé předloze, kde se tisknou, a všude jdou
+    /// upravovat - je to pořád tatáž sekce. Sekce jiných předloh na plátně nejsou.</remarks>
     public IEnumerable<(Section Section, float OriginX, float OriginY)> GetSectionOrigins(float canvasWidth)
     {
-        var ps      = _state.CurrentTemplate.PageSize;
-        float pageX = CalculatePageX(canvasWidth);
-        float pageY = PagePaddingPx + TopBufferPx;
-
-        float ox       = pageX + ps.MarginLeft * MmToPx;
-        float currentY = pageY + ps.MarginTop  * MmToPx;
-
-        var sections = _state.CurrentTemplate.Sections;
-
-        // Souvislé plátno: hlavička+tělo se skládají shora dolů ve své PRAVÉ (neclampnuté) výšce a
-        // plátno poroste (viz TotalPaperHeightPx). Žádné zahazování za přehybem - zlomy vyznačí overlay.
-        foreach (var section in sections)
-        {
-            if (section.Role == SectionRole.Footer) continue;
-            yield return (section, ox, currentY);
-            currentY += SectionHeightPx(section);
-        }
-
-        // Patičky kotvené ke SPODKU rostoucího papíru - u jednostránkové šablony tak sedí s preview/tiskem
-        // (WYSIWYG), u vysokého obsahu vyjdou hned za tělem. Per-stránkové opakování řeší preview/engine.
-        float totalFooterH = 0f;
-        foreach (var s in sections)
-            if (s.Role == SectionRole.Footer) totalFooterH += SectionHeightPx(s);
-        float footerY = pageY + TotalPaperHeightPx() - ps.MarginBottom * MmToPx - totalFooterH;
-        foreach (var section in sections)
-        {
-            if (section.Role != SectionRole.Footer) continue;
-            yield return (section, ox, footerY);
-            footerY += SectionHeightPx(section);
-        }
+        var ps  = _state.CurrentTemplate.PageSize;
+        float ox = CalculatePageX(canvasWidth) + ps.MarginLeft * MmToPx;
+        var (list, top) = OtevrenyList();
+        foreach (var umisteni in list.Sekce)
+            yield return (umisteni.Section, ox, top + umisteni.YMm * MmToPx);
     }
 
     /// <summary>Výška sekce v px = její pravá (neclampnutá) designer-výška.</summary>
     public float SectionHeightPx(Section section) => section.EffectiveDesignerHeight * MmToPx;
 
     /// <summary>
-    /// Celková výška „papíru" v px - roste s obsahem: horní okraj + součet výšek všech sekcí +
-    /// spodní okraj. Minimum = jedna stránka (malá šablona ukáže plnou A4). Návrhář tím přestává
-    /// být omezen na jednu stránku; plátno se přizpůsobí (viz UpdateCanvasSize).
+    /// Výška listu otevřené předlohy v px. List má výšku stránky, jen obsah, který se nevejde, ho
+    /// prodlouží o šrafovaný přesah.
     /// </summary>
-    public float TotalPaperHeightPx()
-    {
-        var ps = _state.CurrentTemplate.PageSize;
-        float sectionsMm = 0f;
-        foreach (var s in _state.CurrentTemplate.Sections)
-            sectionsMm += s.EffectiveDesignerHeight;
-        float paperMm = ps.MarginTop + sectionsMm + ps.MarginBottom;
-        return Math.Max(ps.Height, paperMm) * MmToPx;
-    }
+    public float TotalPaperHeightPx() => OtevrenyList().List.VyskaMm * MmToPx;
 
     // ─────────────────────────────────────────────────────────────────────
     // Interní renderovací metody
@@ -463,36 +450,27 @@ public class DesignerCanvas
         MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6f)
     };
 
-    /// <summary>
-    /// Přerušované dělící čáry stránek přes souvislé plátno - orientační vodítko „kudy půjde zlom"
-    /// (varianta 1: geometrické, po výšce tisknutelné oblasti). NENÍ pixel-přesné vůči preview
-    /// (nezná opakování hlaviček/patiček ani KeepTogether) - přesný stránkovaný výsledek je v preview.
-    /// Kreslí se jen když obsah přesahuje jednu stránku.
-    /// </summary>
-    private void DrawPageBreakLines(SKCanvas canvas, float pageX, float pageY, float pageW, float paperH, PageSize ps)
+    /// <summary>Šrafovaný pás pod listem: obsah, který se na stránku nevejde.</summary>
+    /// <remarks>Při tisku se takový obsah zalomí na další stránku, nebo ořízne - podle nastavení
+    /// sekce. Návrhář to neřeší, jen to ukáže; přesný výsledek je v náhledu.</remarks>
+    private static void DrawPresah(SKCanvas canvas, float x, float y, float w, float h, float presahMm)
     {
-        float printableHpx = (ps.Height - ps.MarginTop - ps.MarginBottom) * MmToPx;
-        if (printableHpx <= 0.5f) return;
-
-        float contentTop    = pageY + ps.MarginTop * MmToPx;
-        float contentBottom = pageY + paperH - ps.MarginBottom * MmToPx;
-
-        using var linePaint = new SKPaint
-        {
-            Color = ClrPageBreak, StrokeWidth = 1f, IsAntialias = true,
-            PathEffect = SKPathEffect.CreateDash([8f, 4f], 0)
-        };
-        using var labelFont  = new SKFont(SKTypeface.Default, 11f);
-        using var labelPaint = new SKPaint { Color = ClrPageBreak, IsAntialias = true };
-
-        int page = 2;
-        for (float y = contentTop + printableHpx; y < contentBottom - 0.5f; y += printableHpx, page++)
-        {
-            canvas.DrawLine(pageX, y, pageX + pageW, y, linePaint);
-            string label = $"Strana {page}";
-            float tw = labelFont.MeasureText(label);
-            canvas.DrawText(label, pageX + pageW - tw - 4f, y - 3f, labelFont, labelPaint);
-        }
+        var rect = new SKRect(x, y, x + w, y + h);
+        using (var bg = new SKPaint { Color = ClrPresahPozadi })
+            canvas.DrawRect(rect, bg);
+        canvas.Save();
+        canvas.ClipRect(rect);
+        using (var sraf = new SKPaint { Color = ClrPresahSrafy, StrokeWidth = 1f, IsAntialias = true })
+            for (float d = -h; d < w; d += 10f)
+                canvas.DrawLine(x + d, y + h, x + d + h, y, sraf);
+        canvas.Restore();
+        using var font  = new SKFont(SKTypeface.Default, 11f);
+        using var paint = new SKPaint { Color = ClrPageBreak, IsAntialias = true };
+        using var cara  = new SKPaint { Color = ClrPageBreak, StrokeWidth = 1.5f, IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([8f, 4f], 0) };
+        canvas.DrawLine(x, y, x + w, y, cara);
+        canvas.DrawText($"Nevejde se na stránku ({presahMm:0.#} mm) - při tisku přeteče na další",
+            x + 4f, y + 14f, font, paint);
     }
 
     private static void DrawPageShadow(SKCanvas canvas, float x, float y, float w, float h)
@@ -697,7 +675,14 @@ public class DesignerCanvas
         float tabLeft  = tabRight - SectionTabWidthPx;
 
         var tabRect = new SKRect(tabLeft, contentOy, tabRight, contentOy + sectionH);
-        using (var bg = new SKPaint { Color = isActive ? ClrSectionActive : (dynamic ? ClrSectionHeaderDyn : ClrSectionHeader) })
+        // Společná sekce vícestránkové šablony má jiný štítek: je na každé předloze, kde se tiskne,
+        // a úprava na jedné platí pro všechny (`B184`).
+        bool spolecna = DesignerPages.JeOpakovana(section)
+                        && DesignerPages.ObsahStranek(_state.CurrentTemplate).Count > 1;
+        var barva = isActive ? ClrSectionActive
+                  : spolecna ? ClrSectionHeaderSpolecna
+                  : dynamic ? ClrSectionHeaderDyn : ClrSectionHeader;
+        using (var bg = new SKPaint { Color = barva })
             canvas.DrawRect(tabRect, bg);
 
         // Tenký rámeček štítku - vizuální oddělení

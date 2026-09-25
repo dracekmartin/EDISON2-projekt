@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     // ── Canvas / preview ──────────────────────────────────────────────────────
     private DesignerCanvas?         _canvas;
     private PreviewCanvas?          _previewCanvas;
+    private DateTime                _nahledPosunulProgram;
     private ElementPropertiesWindowViewModel? _propsVm;
 
     // Zoom max omezen na 500% - při vyšším zoomu má SKElement >20 MP, což způsobuje
@@ -163,6 +164,36 @@ public partial class MainWindow : Window
         PreviewScrollViewer.PreviewMouseWheel += OnPreviewScrollWheel;
         // Repaint canvas po scroll - viewport culling potřebuje aktuální viditelnou oblast
         CanvasScrollViewer.ScrollChanged += (_, _) => skCanvas.InvalidateVisual();
+
+        // Předlohy stránek (`B184`): přepnutí v návrhu posune náhled na první stránku, která
+        // z předlohy vznikla; posun náhledu přepne předlohu v návrhu. Posun, který udělal program,
+        // se chvíli ignoruje - jinak by se oba směry přetahovaly.
+        _vm.PredlohaZmenena = (predloha, zNahledu) =>
+        {
+            CanvasScrollViewer.ScrollToVerticalOffset(0);
+            if (!_vm.NahledCelyDoklad)
+            {
+                // Náhled ukazuje jen stránky otevřené předlohy - po přepnutí jiné, jinak vysoký.
+                UpdatePreviewSize();
+                InvalidatePreview();
+                PreviewScrollViewer.ScrollToVerticalOffset(0);
+                return;
+            }
+            UpdatePreviewSize();
+            InvalidatePreview();
+            if (zNahledu || _previewCanvas?.TopPredlohy(predloha) is not float y) return;
+            _nahledPosunulProgram = DateTime.UtcNow;
+            PreviewScrollViewer.ScrollToVerticalOffset(Math.Max(0, y - 20));
+        };
+        PreviewScrollViewer.ScrollChanged += (_, e) =>
+        {
+            if (_vm is null || !_vm.MaPredlohy || !_vm.NahledCelyDoklad || e.VerticalChange == 0) return;
+            if ((DateTime.UtcNow - _nahledPosunulProgram).TotalMilliseconds < 400) return;
+            // Rozhoduje stránka v horní třetině okna náhledu - tu má uživatel před očima.
+            float y = (float)(PreviewScrollViewer.VerticalOffset + PreviewScrollViewer.ViewportHeight / 3);
+            if (_previewCanvas?.PredlohaNa(y) is int p && p != _vm.OtevrenaPredloha)
+                _vm.OtevriPredlohu(p, zNahledu: true);
+        };
 
         // Plocha kolem stránky: WPF (pozadí ScrollViewerů) i Skia (canvas.Clear) musí mít
         // shodnou barvu, jinak je na hranici plátna/náhledu vidět šev. XAML bere token
@@ -555,9 +586,9 @@ public partial class MainWindow : Window
     {
         if (_canvas is null || _vm is null) return;
         const float padding   = 80f;  // 40 top + 40 bottom standardní okraj kolem stránky
-        const float topBuffer = 60f;  // extra prostor nahoře - kompenzuje preview chrome (Y-zarovnání)
+        const float topBuffer = 26f;  // = DesignerCanvas.TopBufferPx (nad plátnem je 34px pruh stránek jako nad náhledem)
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
-        // Výška plátna roste s obsahem (souvislé multi-page plátno), ne pevná A4.
+        // Výška plátna = listy stránek pod sebou (i s případným přesahem obsahu).
         float paperH  = _canvas.TotalPaperHeightPx();
         var dpi = VisualTreeHelper.GetDpi(skCanvas);
         skCanvas.Width  = NaCelePixely(pageW + padding + _canvas.ExtraLeftPx, dpi.DpiScaleX);
@@ -1485,6 +1516,8 @@ public partial class MainWindow : Window
     // ─────────────────────────────────────────────────────────────────────────
     // Add section / element menus
     // ─────────────────────────────────────────────────────────────────────────
+
+    private void BtnAddPage_Click(object sender, RoutedEventArgs e) => _vm?.AddPage();
 
     private void BtnAddSection_Click(object sender, RoutedEventArgs e)
     {

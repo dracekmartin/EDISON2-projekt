@@ -22,6 +22,7 @@ public class DesignerState
             // Při swapu šablony (Open/New/Import) by přežila → nová šablona se stejným Guid sekce
             // (systémová šablona má pevné Guidy) by dostala stará data předchozí. Invalidovat na swapu.
             InvalidateElementCache();
+            Predloha = 0;   // jiná šablona se otevírá na první stránce
             TemplateSwapped?.Invoke();
         }
     }
@@ -35,6 +36,14 @@ public class DesignerState
     public Section? ActiveSection { get; set; }
 
     public List<TemplateElement> SelectedElements { get; } = [];
+
+    /// <summary>Která předloha stránky je otevřená na plátně (0 = první). Jen u šablony o víc
+    /// stránkách; plátno index mimo rozsah srovná na poslední (`B184`).</summary>
+    public int Predloha { get; set; }
+
+    /// <summary>Náhled ukazuje celý doklad; false = jen stránky z otevřené předlohy (výchozí u
+    /// šablony o víc stránkách). Jednostránkové šablony se to netýká.</summary>
+    public bool NahledCelyDoklad { get; set; }
 
     private float _zoom = 1.0f;
     public float Zoom

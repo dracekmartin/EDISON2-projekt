@@ -105,7 +105,7 @@ public class PreviewCanvas
     public float CalculatePageHeightPx(float zoom, DataContext? data = null)
     {
         var layout = Layout(data);
-        int pageCount = Math.Max(1, layout.TotalPages);
+        int pageCount = Math.Max(1, ZobrazeneStranky(layout).Count);
         float pageH = _state.CurrentTemplate.PageSize.Height * BaseMmToPx * zoom;
         return PageTopPaddingPx + pageCount * pageH + (pageCount - 1) * PageGapPx + PagePaddingPx;
     }
@@ -379,8 +379,22 @@ public class PreviewCanvas
         // takže se sbírají průběžně a hlásí se, teprve až jsou nakreslené všechny strany sazby.
         _oriznuteBunky = new ClippedCells();
         float currentPageY = PageTopPaddingPx;
+        var stranky = new List<(float Top, int Predloha)>();
+        var predlohy = PredlohyStranek(layout);
+        var zobrazene = ZobrazeneStranky(layout).ToHashSet();
         for (int i = 0; i < layout.Pages.Count; i++)
         {
+            if (!zobrazene.Contains(i))
+            {
+                // Skrytá stránka (jiná předloha) se vykreslí naprázdno, jen aby hláška
+                // o oříznutých buňkách platila za celý doklad, ne jen za otevřenou stránku.
+                using var zaznam = new SKPictureRecorder();
+                RenderPage(zaznam.BeginRecording(new SKRect(0, 0, pageW, pageH)), ps, mmToPx, 0, 0,
+                    layout.Pages[i], _oriznuteBunky);
+                zaznam.EndRecording().Dispose();
+                continue;
+            }
+            stranky.Add((currentPageY, predlohy[i]));
             DrawShadow(canvas, pageX, currentPageY, pageW, pageH);
             DrawPageBackground(canvas, pageX, currentPageY, pageW, pageH);
             RenderPage(canvas, ps, mmToPx, pageX, currentPageY, layout.Pages[i], _oriznuteBunky);
@@ -390,6 +404,67 @@ public class PreviewCanvas
         }
         OriznuteBunkyChanged?.Invoke(_oriznuteBunky.Seznam());
         _oriznuteBunky = null;
+        _strankyNahledu = stranky;
+
+        if (zobrazene.Count == 0)
+        {
+            var obsahPredloh = DesignerPages.ObsahStranek(_state.CurrentTemplate);
+            string nazev = obsahPredloh[Math.Clamp(_state.Predloha, 0, obsahPredloh.Count - 1)].FirstOrDefault()?.Name ?? "Tato stránka";
+            using var font  = new SKFont(SKTypeface.Default, 13f);
+            using var paint = new SKPaint { Color = new SKColor(0xFF5B5F66), IsAntialias = true };
+            canvas.DrawText($"Stránka „{nazev}“ se pro tuto položku netiskne.", pageX, PageTopPaddingPx + 20f, font, paint);
+            canvas.DrawText("Skryla ji podmínka viditelnosti. Celý doklad ukáže volba Celý doklad.",
+                pageX, PageTopPaddingPx + 40f, font, paint);
+        }
+    }
+
+    /// <summary>
+    /// Ze které předlohy (stránky šablony) vznikla každá stránka sazby - podle první obsahové sekce
+    /// na ní; stránka jen s hlavičkou a patičkou patří k předloze předchozí stránky.
+    /// </summary>
+    private List<int> PredlohyStranek(LayoutResult layout)
+    {
+        var vysledek = new List<int>(layout.Pages.Count);
+        int predloha = 0;
+        foreach (var stranka in layout.Pages)
+        {
+            if (stranka.Sections.FirstOrDefault(s => !DesignerPages.JeOpakovana(s.Source)) is { } obsah)
+                predloha = DesignerPages.IndexStranky(_state.CurrentTemplate, obsah.Source);
+            vysledek.Add(predloha);
+        }
+        return vysledek;
+    }
+
+    /// <summary>
+    /// Které stránky sazby náhled ukáže: u šablony o víc stránkách v režimu „Tato stránka" jen ty,
+    /// které vznikly z otevřené předlohy (u pevné jedna, u „podle dat" všechny její); jinak všechny.
+    /// </summary>
+    private List<int> ZobrazeneStranky(LayoutResult layout)
+    {
+        var vse = Enumerable.Range(0, layout.Pages.Count).ToList();
+        int pocetPredloh = DesignerPages.ObsahStranek(_state.CurrentTemplate).Count;
+        if (pocetPredloh < 2 || _state.NahledCelyDoklad) return vse;
+        int otevrena = Math.Clamp(_state.Predloha, 0, pocetPredloh - 1);
+        var predlohy = PredlohyStranek(layout);
+        // Předloha, ze které pro tuto položku nic nevyjde (podmínka viditelnosti), dá prázdný
+        // náhled s vysvětlením - ne celý doklad, to vypadalo, jako by přepínač nefungoval.
+        return [.. vse.Where(i => predlohy[i] == otevrena)];
+    }
+
+    // Kde leží stránky posledního vykreslení a ze které předlohy vznikly - pro synchronizaci
+    // přepínače předloh v návrhu s posunem náhledu (`B184`).
+    private List<(float Top, int Predloha)> _strankyNahledu = [];
+
+    /// <summary>Horní hrana první stránky náhledu, která vznikla z předlohy; null = žádná.</summary>
+    public float? TopPredlohy(int predloha) =>
+        _strankyNahledu.FirstOrDefault(s => s.Predloha == predloha) is { Top: > 0 } s ? s.Top : null;
+
+    /// <summary>Předloha stránky náhledu na svislé pozici <paramref name="y"/>; null = nic tam není.</summary>
+    public int? PredlohaNa(float y)
+    {
+        for (int i = _strankyNahledu.Count - 1; i >= 0; i--)
+            if (y >= _strankyNahledu[i].Top) return _strankyNahledu[i].Predloha;
+        return _strankyNahledu.Count > 0 ? _strankyNahledu[0].Predloha : null;
     }
 
     /// <summary>

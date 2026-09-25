@@ -1,5 +1,32 @@
 ﻿# Changelog
 
+## 2026-09-25 (6) - 📄 stránky šablony s přepínačem nad plátnem (`B184`)
+
+Plátno návrháře bylo jeden pruh, který se natahoval podle součtu výšek sekcí, a čáry „Strana 2"
+ležely jen tam, kde by stránka vyšla geometricky - u sekce se „Začít na nové stránce" klidně
+uprostřed ní. Druhá stránka se tak dala „udělat" i roztažením sekce a nebylo poznat, co se kam
+vytiskne.
+
+Nově má šablona o víc stránkách **přepínač nad plátnem** (◀ Rub · 1 stránka (2/2) ▶ + Stránka)
+a plátno ukazuje vždy jednu **stránku šablony** přesně velikosti papíru. U každé je vidět, jestli
+z ní vyjde jedna stránka, nebo víc podle dat. Obsah, který se nevejde, se ukáže pod listem
+v **šrafovaném pásu** - papír se už nenatahuje. Jednostránkové šablony (jízdní řády) přepínač
+nemají a vypadají jako dřív.
+
+Hlavička a patička jsou **společné**: jsou na každé stránce, kde se tisknou, všude jdou upravit
+a mají jinak barevný štítek. Seznam sekcí ukazuje nahoře společné sekce a pod nimi jen sekce
+otevřené stránky; „+ Přidat sekci" přidává na otevřenou stránku, hlavička a patička hledají
+místo na všech stránkách, kde se tisknou. Stránka se přidá tlačítkem **„+ Stránka"** nad plátnem
+nebo „+ Přidat stránku" pod seznamem sekcí.
+
+Náhled vpravo ukazuje u šablony o víc stránkách jen stránky, které vzniknou z otevřené stránky
+šablony (u pevného rubu jednu), a přepínačem **„Tato stránka | Celý doklad"** celý doklad pod
+sebou - tam posun náhledu přepíná stránku v návrhu. Hlášky se dál počítají za celý doklad. Výběr prvku ze stromu nebo z hlášky otevře stránku, na které prvek je. Šablona se
+nemění (stránku začíná sekce se „Začít na nové stránce", jméno stránky je jméno té sekce).
+
+Plátno teď kreslí patičku podle toho, jak ji tiskne sazba: sekce s rolí patička, která se tiskne
+jen jednou, stojí v pořadí jako obsah, ne dole.
+
 ## 2026-09-25 (5) - 🖨 oboustranný tisk si poradí i s dokladem bez rubu (`B183`)
 
 Volba „Oboustranně" brala stránky po dvou jako líc a rub bez ohledu na to, kde doklad končí. Když

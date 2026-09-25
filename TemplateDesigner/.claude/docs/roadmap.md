@@ -60,15 +60,15 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
-- **`B184` Listy vedle sebe na plátně** [M] (Jan 25. 9., po #12854). Sekce se „Začít na nové
-  stránce" založí na plátně vlastní list v přesné velikosti stránky, vpravo od předchozího; dnes
-  je plátno jeden pruh a čára „Strana 2" nezná novou stránku (`DesignerCanvas.cs:472`). Šablona se
-  nemění. Vzít s agendou stazek, ne dřív. Mock: https://claude.ai/artifact/6cWzS49KkKhN8sZYmBjqdZ
+- **`B186` Uspořádání na list obrázky a v šabloně** [M] (Jan 25. 9., krok 2 po `B184`, ten je hotový). Dlaždice
+  s nákresem („2 vedle sebe, oboustranně"…) a živý nákres listů místo čtyř polí; uspořádání si
+  pamatuje šablona (`printParameters`), dispečer jen tiskne. Šablona se 2 stránkami nabídne
+  oboustranný tisk sama.
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
   stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
-  hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`.
+  hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. Nejdřív `B184` a `B186`, pak podle poptávky.
 
 - **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
   prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není
