@@ -200,12 +200,13 @@ public class PreviewCanvas
         // Offsety na listu jsou v milimetrech LISTU (nezvětšují se), obsah stránky ano - proto
         // se ořezové značky a pozice kreslí základním převodem a stránka měřítkem.
         float bodyNaMmListu = pointsPerMm / (ps.Width > 0.01f ? o.PageWidth / ps.Width : 1f);
-        var logicalPages = new List<Page>();
+        var doklady = new List<IReadOnlyList<Page>>();
         for (int i = 0; i < dataPages.Count; i++)
         {
-            logicalPages.AddRange(Layout(dataPages[i], tpl).Pages);
+            doklady.Add(Layout(dataPages[i], tpl).Pages);
             progress?.Report((i + 1, dataPages.Count));
         }
+        var logicalPages = SheetComposer.StrankyDokladu(doklady, o);
 
         foreach (var sheet in SheetComposer.Compose(logicalPages, o))
         {

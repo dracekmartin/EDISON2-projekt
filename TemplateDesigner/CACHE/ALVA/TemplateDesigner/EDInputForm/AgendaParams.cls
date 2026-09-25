@@ -133,7 +133,7 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
     s duplex = 0
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_DUPLEX") { s v = vals.%Get("__EXPORT_SHEET_DUPLEX")  s duplex = $s((v="true")||(v=1):1, 1:0) }
     s f = form.AddBool("__EXPORT_SHEET_DUPLEX", "Oboustranně (líc a rub dokladu)", duplex)
-    s f.helpText = "Každé dvě stránky za sebou jsou líc a rub jednoho dokladu. Na jednu stranu listu přijdou líce několika dokladů, na druhou jejich ruby na tatáž místa. List se vytiskne oboustranně s převracením na delší straně a rozřízne - například dvě stazky A5 na A4 na šířku ušetří polovinu papíru. Když je zapnuté i Každá stránka na celý list, platí to."
+    s f.helpText = "Stránky dokladu se berou po dvou jako líc a rub. Na jednu stranu listu přijdou líce několika dokladů, na druhou jejich ruby na tatáž místa. Doklad s lichým počtem stránek dostane prázdný rub, aby se další doklady neposunuly. List se vytiskne oboustranně s převracením na delší straně a rozřízne - například dvě stazky A5 na A4 na šířku ušetří polovinu papíru. Když je zapnuté i Každá stránka na celý list, platí to."
 
     s marks = 0
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_MARKS") { s v = vals.%Get("__EXPORT_SHEET_MARKS")  s marks = $s((v="true")||(v=1):1, 1:0) }

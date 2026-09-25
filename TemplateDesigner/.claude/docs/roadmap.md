@@ -60,11 +60,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
-- **`B183` Oboustranný tisk: doklad doplnit na sudý počet stránek** [S] (Jan 25. 9., navazuje na #12854).
-  Volba „Oboustranně" páruje stránky po dvojicích, ne po dokladech: doklad o 1 nebo 3 stránkách
-  posune líce a ruby u všech dalších. Při zapnuté volbě doplnit každý doklad (instanci) prázdnou
-  stránkou na sudý počet; hranice dokladů tisk zná. Vzít, než to začne někdo reálně používat.
-
 - **`B184` Listy vedle sebe na plátně** [M] (Jan 25. 9., po #12854). Sekce se „Začít na nové
   stránce" založí na plátně vlastní list v přesné velikosti stránky, vpravo od předchozího; dnes
   je plátno jeden pruh a čára „Strana 2" nezná novou stránku (`DesignerCanvas.cs:472`). Šablona se
@@ -72,7 +67,7 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
-  stránce" i „Jen první / poslední" a pohltí `B183`. Mění formát šablony (migrace). Až budou
+  stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
   hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`.
 
 - **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen

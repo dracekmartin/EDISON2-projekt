@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B183` Oboustranný tisk dorovná doklad na sudý počet stránek (hotovo 25. 9. 2026)
+
+Navazuje na #12854. Volba „Oboustranně" párovala stránky po dvojicích, takže doklad s jednou nebo
+třemi stránkami posunul líce a ruby u všech dalších. Při zapnuté volbě dostane doklad (jedna
+datová stránka agendy) s lichým počtem stránek prázdný rub. Detail changelog 2026-09-25 (5).
+
 ## `B181` Nejvýš N sloupců variant tras (hotovo 25. 9. 2026)
 
 TRANSDEV `#12843`: parametr sestavy „Nejvýš sloupců variant tras" (prázdné = všechny) nechá prvních N

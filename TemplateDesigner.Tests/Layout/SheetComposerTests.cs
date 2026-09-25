@@ -190,6 +190,43 @@ public class SheetComposerTests
         Assert.Same(p[1], Assert.Single(sheets[1].Pages).Page);
     }
 
+    /// <summary>
+    /// ⚠️ `B183`: doklad s lichým počtem stránek (chybí rub, nebo obsah přetekl na třetí) dostane
+    /// prázdnou stránku, jinak by se líce a ruby posunuly u všech dalších dokladů.
+    /// </summary>
+    [Fact]
+    public void Doklady_Oboustranne_LichyDokladSeDorovna()
+    {
+        var a = Pages(1);   // jen líc
+        var b = Pages(2);   // líc a rub
+
+        var stranky = SheetComposer.StrankyDokladu([a, b], A5OnA4Landscape(duplex: true));
+
+        Assert.Equal(4, stranky.Count);
+        Assert.Same(a[0], stranky[0]);
+        Assert.Empty(stranky[1].Sections);   // prázdný rub dokladu A
+        Assert.Same(b[0], stranky[2]);
+        Assert.Same(b[1], stranky[3]);
+    }
+
+    [Fact]
+    public void Doklady_Oboustranne_TriStrankySeDorovnajiNaCtyri()
+    {
+        var stranky = SheetComposer.StrankyDokladu([Pages(3)], A5OnA4Landscape(duplex: true));
+
+        Assert.Equal(4, stranky.Count);
+        Assert.Empty(stranky[3].Sections);
+    }
+
+    /// <summary>Bez oboustranného tisku se nic nedoplňuje - stránky jdou za sebou jako dosud.</summary>
+    [Fact]
+    public void Doklady_BezOboustranneho_BezDoplneni()
+    {
+        var stranky = SheetComposer.StrankyDokladu([Pages(1), Pages(1)], A5OnA4Landscape());
+
+        Assert.Equal(2, stranky.Count);
+    }
+
     [Fact]
     public void FromParamValues_Oboustranne()
     {

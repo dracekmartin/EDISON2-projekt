@@ -2,7 +2,7 @@
   "version": "1.15.0",
   "id": "26be0757-1d43-4a50-8e18-6468cf1da67e",
   "name": "Zkouška oboustranného tisku A5",
-  "description": "Každá linka = dva stránky: líc a rub. Pro ověření volby Oboustranně v uspořádání na list.",
+  "description": "Každá linka = líc a rub; linka 330510 má navíc přílohu (3 stránky), aby šlo ověřit dorovnání prázdným rubem.",
   "pageSize": {
     "width": 148,
     "height": 210,
@@ -183,6 +183,87 @@
           "rotation": 0
         }
       ]
+    },
+    {
+      "id": "ff666ef4-04fd-4be5-9a90-01eea370ed9c",
+      "name": "Příloha (jen 330510)",
+      "designerHeight": 190,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": true,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.5,
+      "zacitNaNoveStrance": true,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "PŘÍLOHA",
+          "style": {
+            "fontSize": 40,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "952131c5-7de4-4cab-9ea1-cbba20577df9",
+          "x": 5,
+          "y": 20,
+          "width": 128,
+          "height": 40.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "linka {CISLO_LINKY}",
+          "style": {
+            "fontSize": 28,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "649b9625-2776-49ed-a596-7296b7d7d9e7",
+          "x": 5,
+          "y": 70,
+          "width": 128,
+          "height": 18.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "strana {STRANA}",
+          "style": {
+            "fontSize": 16,
+            "bold": false
+          },
+          "wordWrap": true,
+          "id": "e6cccc95-06ce-4f50-9b13-38ffe67cada5",
+          "x": 5,
+          "y": 110,
+          "width": 128,
+          "height": 12.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ],
+      "visibilityExpression": "{CISLO_LINKY} = 330510"
     }
   ]
 }

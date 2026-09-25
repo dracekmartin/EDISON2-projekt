@@ -226,6 +226,28 @@ public static class SheetComposer
     }
 
     /// <summary>
+    /// Stránky všech dokladů za sebou, jak půjdou do <see cref="Compose"/>. Při oboustranném tisku
+    /// se doklad s lichým počtem stránek dorovná prázdnou stránkou (`B183`).
+    /// </summary>
+    /// <remarks>
+    /// Skládání páruje líc a rub po dvojicích stránek. Doklad bez rubu, nebo s obsahem přeteklým na
+    /// třetí stránku, by bez dorovnání posunul líce a ruby u všech dalších dokladů. Hranici dokladu
+    /// zná jen volající (jedna datová stránka agendy = jeden doklad), proto se to děje tady a ne
+    /// v <see cref="Compose"/>.
+    /// </remarks>
+    public static List<Page> StrankyDokladu(IEnumerable<IReadOnlyList<Page>> doklady, SheetLayoutOptions o)
+    {
+        var stranky = new List<Page>();
+        foreach (var doklad in doklady)
+        {
+            stranky.AddRange(doklad);
+            if (o.Oboustranne && !o.RepeatEachPage && doklad.Count % 2 == 1)
+                stranky.Add(new Page { PageNumber = doklad.Count + 1 });
+        }
+        return stranky;
+    }
+
+    /// <summary>
     /// Složí logické stránky na listy. Sekvenčně po řádcích (zleva doprava, shora dolů);
     /// <see cref="SheetLayoutOptions.RepeatEachPage"/> = každá stránka vyplní celý list.
     /// Poslední list může mít prázdné pozice (lichý počet stránek).

@@ -553,7 +553,8 @@ Nastavení výstupu je univerzální napříč agendami:
 - **Oboustranně** je pro doklady o dvou stranách (líc a rub), třeba stazky A5: na jednu stranu
   listu A4 přijdou líce dvou dokladů, na druhou jejich ruby na tatáž místa. Tiskne se
   oboustranně s **převracením na delší straně**; po rozříznutí má každá A5 svůj líc i rub a papíru
-  je poloviční spotřeba. Předpokladem je, že každý doklad má právě dvě stránky za sebou.
+  je poloviční spotřeba. Doklad s lichým počtem stránek (chybí rub, nebo obsah přetekl na třetí
+  stránku) dostane prázdný rub, takže se další doklady neposunou.
   (Export PNG imposici nepoužívá; brožurové řazení zůstává na tiskárně.)
 
 ---

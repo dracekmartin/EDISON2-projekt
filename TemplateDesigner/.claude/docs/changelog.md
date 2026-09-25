@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-09-25 (5) - 🖨 oboustranný tisk si poradí i s dokladem bez rubu (`B183`)
+
+Volba „Oboustranně" brala stránky po dvou jako líc a rub bez ohledu na to, kde doklad končí. Když
+jednomu dokladu podmínka skryla rub, nebo mu obsah přetekl na třetí stránku, posunuly se líce
+a ruby u všech dalších dokladů a po rozříznutí seděl za lícem cizí rub. Nově dostane doklad
+s lichým počtem stránek prázdný rub a další doklady zůstanou správně spárované.
+
 ## 2026-09-25 (4) - 🖨 dva doklady oboustranně na jeden list (#12854)
 
 Uspořádání na list umělo stránky jen skládat za sebou, nebo opakovat tutéž. Pro doklad o dvou
