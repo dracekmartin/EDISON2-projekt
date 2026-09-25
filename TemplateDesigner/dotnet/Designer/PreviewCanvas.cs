@@ -206,9 +206,13 @@ public class PreviewCanvas
             doklady.Add(Layout(dataPages[i], tpl).Pages);
             progress?.Report((i + 1, dataPages.Count));
         }
-        var logicalPages = SheetComposer.StrankyDokladu(doklady, o);
+        // Nakreslené uspořádání (`B186`) skládá podle stránek šablony, dřívější režimy za sebou.
+        var listy = o.Plan is not null
+            ? SheetComposer.ComposeDle([.. doklady.Select(d => (IReadOnlyList<(Page, int)>)
+                  [.. d.Zip(DesignerPages.StrankySablony(tpl, d), (page, stranka) => (page, stranka))])], o)
+            : SheetComposer.Compose(SheetComposer.StrankyDokladu(doklady, o), o);
 
-        foreach (var sheet in SheetComposer.Compose(logicalPages, o))
+        foreach (var sheet in listy)
         {
             var canvas = doc.BeginPage(o.SheetWidth * bodyNaMmListu, o.SheetHeight * bodyNaMmListu);
 
@@ -405,35 +409,14 @@ public class PreviewCanvas
         OriznuteBunkyChanged?.Invoke(_oriznuteBunky.Seznam());
         _oriznuteBunky = null;
         _strankyNahledu = stranky;
-
-        if (zobrazene.Count == 0)
-        {
-            var obsahPredloh = DesignerPages.ObsahStranek(_state.CurrentTemplate);
-            string nazev = obsahPredloh[Math.Clamp(_state.Predloha, 0, obsahPredloh.Count - 1)].FirstOrDefault()?.Name ?? "Tato stránka";
-            using var font  = new SKFont(SKTypeface.Default, 13f);
-            using var paint = new SKPaint { Color = new SKColor(0xFF5B5F66), IsAntialias = true };
-            canvas.DrawText($"Stránka „{nazev}“ se pro tuto položku netiskne.", pageX, PageTopPaddingPx + 20f, font, paint);
-            canvas.DrawText("Skryla ji podmínka viditelnosti. Celý doklad ukáže volba Celý doklad.",
-                pageX, PageTopPaddingPx + 40f, font, paint);
-        }
     }
 
     /// <summary>
     /// Ze které předlohy (stránky šablony) vznikla každá stránka sazby - podle první obsahové sekce
     /// na ní; stránka jen s hlavičkou a patičkou patří k předloze předchozí stránky.
     /// </summary>
-    private List<int> PredlohyStranek(LayoutResult layout)
-    {
-        var vysledek = new List<int>(layout.Pages.Count);
-        int predloha = 0;
-        foreach (var stranka in layout.Pages)
-        {
-            if (stranka.Sections.FirstOrDefault(s => !DesignerPages.JeOpakovana(s.Source)) is { } obsah)
-                predloha = DesignerPages.IndexStranky(_state.CurrentTemplate, obsah.Source);
-            vysledek.Add(predloha);
-        }
-        return vysledek;
-    }
+    private List<int> PredlohyStranek(LayoutResult layout) =>
+        DesignerPages.StrankySablony(_state.CurrentTemplate, layout.Pages);
 
     /// <summary>
     /// Které stránky sazby náhled ukáže: u šablony o víc stránkách v režimu „Tato stránka" jen ty,
@@ -446,8 +429,6 @@ public class PreviewCanvas
         if (pocetPredloh < 2 || _state.NahledCelyDoklad) return vse;
         int otevrena = Math.Clamp(_state.Predloha, 0, pocetPredloh - 1);
         var predlohy = PredlohyStranek(layout);
-        // Předloha, ze které pro tuto položku nic nevyjde (podmínka viditelnosti), dá prázdný
-        // náhled s vysvětlením - ne celý doklad, to vypadalo, jako by přepínač nefungoval.
         return [.. vse.Where(i => predlohy[i] == otevrena)];
     }
 

@@ -1,5 +1,23 @@
 ﻿# Changelog
 
+## 2026-09-25 (7) - 🖨 uspořádání na list nákresem (`B186`)
+
+Uspořádání na list se nastavovalo čtyřmi poli (list, mřížka, každá stránka na celý list,
+oboustranně) a z nich nebylo vidět, co vyjde. Tiskové okno teď pod formulářem ukazuje **nákres
+1. a 2. strany PDF** a stránky dokladu (Stránka 1, Stránka 2…) se do jeho polí přetahují, nebo
+se na pole klikne a vybere.
+
+Nahoře se volí **„Na jeden list: Jeden doklad / Víc dokladů"**. Jeden doklad = stránky dokladu
+vedle sebe, stejná stránka ve dvou polích je kopie pro řezání. Víc dokladů = každý další výskyt
+téže stránky je další doklad a pole to napíše („Stránka 1 · 2. doklad"); tak se skládají dvě
+vývěsky na A4 nebo dvě stazky oboustranně (Stránka 1 · Stránka 1 na 1. straně PDF, Stránka 2 ·
+Stránka 2 na 2. straně). Panel mluví jen o stranách PDF: vyrábí se PDF ve správném pořadí
+a oboustranný tisk si zapne tiskárna.
+
+Uspořádání jde tlačítkem **„Uložit jako výchozí pro šablonu"** uložit do šablony - kdo navrhne
+stazku, nastaví ho jednou a tisk ho pak nabídne sám. Dřívější uložené volby se při otevření
+tisku převedou na nákres, nic se neztratí.
+
 ## 2026-09-25 (6) - 📄 stránky šablony s přepínačem nad plátnem (`B184`)
 
 Plátno návrháře bylo jeden pruh, který se natahoval podle součtu výšek sekcí, a čáry „Strana 2"

@@ -553,18 +553,24 @@ Nastavení výstupu je univerzální napříč agendami:
 - **Název souboru (tokeny {POLE})** - vlastní kombinace datových polí pro pojmenování
   výsledných souborů; při rozdělení výstupu na víc souborů se vybírá cílová složka, kolize jmen
   se řeší automaticky příponou `_2`, `_3`…
-- **Uspořádání na list (imposice)** - více vývěsek na jeden fyzický list: cílový list
-  (Vypnuto / A4 / A3, na výšku i na šířku), **mřížka** (AUTO = největší počet, který se vejde
-  bez zmenšování, nebo pevně 2×1, 2×2…), **„Každá stránka na celý list"** (táž vývěska
-  vícekrát - pro rozřezání), **„Oboustranně (líc a rub dokladu)"** a **ořezové značky**.
-  Typicky: dvě A5 vývěsky na jeden list A4.
-  Volba se pamatuje pro každou agendu zvlášť; návrat k běžnému tisku = „Vypnuto".
-- **Oboustranně** je pro doklady o dvou stranách (líc a rub), třeba stazky A5: na jednu stranu
-  listu A4 přijdou líce dvou dokladů, na druhou jejich ruby na tatáž místa. Tiskne se
-  oboustranně s **převracením na delší straně**; po rozříznutí má každá A5 svůj líc i rub a papíru
-  je poloviční spotřeba. Doklad s lichým počtem stránek (chybí rub, nebo obsah přetekl na třetí
-  stránku) dostane prázdný rub, takže se další doklady neposunou.
-  (Export PNG imposici nepoužívá; brožurové řazení zůstává na tiskárně.)
+- **Uspořádání na list** (panel pod formulářem) - kolik stránek dokladu a kde se vytiskne na
+  jeden list papíru. Zvolíte **list** (Vypnuto / A4 / A3, na výšku i na šířku), **mřížku** (nabízí
+  se jen to, co se vejde bez zmenšování) a **kolik dokladů na list**:
+  - **Jeden doklad** - stránky dokladu vedle sebe; stejná stránka ve dvou polích je kopie (pro
+    řezání),
+  - **Víc dokladů (šetří papír)** - každý další výskyt téže stránky je další doklad, pole to
+    napíše („Stránka 1 · 2. doklad").
+  Pod tím je nákres **1. a 2. strany PDF**: stránky dokladu přetáhnete do polí, nebo na pole
+  kliknete a vyberete. 2. strana je nepovinná; tisknete-li oboustranně, padne na zadní stranu
+  papíru. Typické nastavení:
+  - dvě vývěsky A5 na A4: víc dokladů, na 1. straně Stránka 1 · Stránka 1,
+  - dvě stazky A5 oboustranně: víc dokladů, na 1. straně Stránka 1 · Stránka 1, na 2. straně
+    Stránka 2 · Stránka 2,
+  - obě stránky téže stazky vedle sebe: jeden doklad, Stránka 1 · Stránka 2.
+- Dále **ořezové značky** a tlačítko **„Uložit jako výchozí pro šablonu"** - tisk pak uspořádání
+  nabídne sám. Jinak se pamatuje poslední použité u agendy.
+  (Export PNG uspořádání nepoužívá; brožurové řazení zůstává na tiskárně.)
+
 
 ---
 
@@ -986,8 +992,8 @@ v záložce Parametry v levém panelu):
 - **Název souboru (tokeny {POLE})** - výchozí `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}`,
   lze upravit na libovolnou kombinaci datových polí.
 
-K dispozici je i **Uspořádání na list (imposice)** - např. dvě A5 vývěsky na jeden list A4,
-včetně opakování téže vývěsky pro řezání a ořezových značek; detail viz část I, kap. 9.
+K dispozici je i **Uspořádání na list** - nákres listu, do kterého se přetahují stránky šablony
+(dvě A5 vývěsky na A4, stazky oboustranně, táž vývěska pro řezání); detail viz část I, kap. 9.
 
 „Vše do jednoho" vybere jeden cílový soubor; ostatní dvě volby vybírají cílovou složku a vytvoří
 tolik souborů, kolik odpovídá volbě (kolize jmen se řeší automaticky `_2`, `_3`…). Export běží

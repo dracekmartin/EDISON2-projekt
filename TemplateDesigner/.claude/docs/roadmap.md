@@ -60,15 +60,16 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
-- **`B186` Uspořádání na list obrázky a v šabloně** [M] (Jan 25. 9., krok 2 po `B184`, ten je hotový). Dlaždice
-  s nákresem („2 vedle sebe, oboustranně"…) a živý nákres listů místo čtyř polí; uspořádání si
-  pamatuje šablona (`printParameters`), dispečer jen tiskne. Šablona se 2 stránkami nabídne
-  oboustranný tisk sama.
+- **`B187` Doladit stránky šablony a uspořádání na list** [M] (Jan 25. 9., po `B184`/`B186`, před
+  zavřením #12854). Známé: mřížka nepočítá s měřítkem tisku; stránka „podle dat" se do polí skládá
+  jen za sebou; jméno stránky = jméno její první sekce; nákres listu jen s popisky (bez náhledu
+  obsahu); export z hlavního okna bere poslední uspořádání z tiskového okna; starý režim
+  „Oboustranně" (`B183`) jde časem pryč. Detail changelog 2026-09-25 (6)-(7).
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
   stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
-  hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. Nejdřív `B184` a `B186`, pak podle poptávky.
+  hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184` a `B186` hotové, dál podle poptávky.
 
 - **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
   prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není

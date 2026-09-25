@@ -1,8 +1,8 @@
 {
   "version": "1.15.0",
   "id": "26be0757-1d43-4a50-8e18-6468cf1da67e",
-  "name": "Zkouška oboustranného tisku A5",
-  "description": "Každá linka = líc a rub; linka 330510 má navíc přílohu (3 stránky), aby šlo ověřit dorovnání prázdným rubem.",
+  "name": "Zkouška stránek dokladu A5",
+  "description": "Každá linka = dvě stránky: líc a rub. Pro ověření stránek šablony a uspořádání na list.",
   "pageSize": {
     "width": 148,
     "height": 210,
@@ -26,7 +26,7 @@
   "sections": [
     {
       "id": "cee393e5-b78a-4189-92cf-e2da8bec41d0",
-      "name": "Líc",
+      "name": "Stránka 1",
       "designerHeight": 190,
       "printBehavior": "Once",
       "overflowBehavior": "KeepTogether",
@@ -38,9 +38,9 @@
       "elements": [
         {
           "type": "TextElement",
-          "text": "LÍC",
+          "text": "STRÁNKA 1",
           "style": {
-            "fontSize": 72,
+            "fontSize": 40,
             "bold": true
           },
           "wordWrap": true,
@@ -106,7 +106,7 @@
     },
     {
       "id": "1733843e-71ca-43db-8485-79c5b677ca0a",
-      "name": "Rub",
+      "name": "Stránka 2",
       "designerHeight": 190,
       "printBehavior": "Once",
       "overflowBehavior": "KeepTogether",
@@ -118,9 +118,9 @@
       "elements": [
         {
           "type": "TextElement",
-          "text": "RUB",
+          "text": "STRÁNKA 2",
           "style": {
-            "fontSize": 72,
+            "fontSize": 40,
             "bold": true
           },
           "wordWrap": true,
@@ -183,87 +183,6 @@
           "rotation": 0
         }
       ]
-    },
-    {
-      "id": "ff666ef4-04fd-4be5-9a90-01eea370ed9c",
-      "name": "Příloha (jen 330510)",
-      "designerHeight": 190,
-      "printBehavior": "Once",
-      "overflowBehavior": "KeepTogether",
-      "role": "Body",
-      "showBorder": true,
-      "borderColor": "#FF000000",
-      "borderWidth": 0.5,
-      "zacitNaNoveStrance": true,
-      "elements": [
-        {
-          "type": "TextElement",
-          "text": "PŘÍLOHA",
-          "style": {
-            "fontSize": 40,
-            "bold": true
-          },
-          "wordWrap": true,
-          "id": "952131c5-7de4-4cab-9ea1-cbba20577df9",
-          "x": 5,
-          "y": 20,
-          "width": 128,
-          "height": 40.0,
-          "zIndex": 0,
-          "isLocked": false,
-          "backgroundColor": "#00FFFFFF",
-          "borderColor": "#00FFFFFF",
-          "borderWidth": 0,
-          "cornerStyle": "None",
-          "cornerSize": 0,
-          "rotation": 0
-        },
-        {
-          "type": "TextElement",
-          "text": "linka {CISLO_LINKY}",
-          "style": {
-            "fontSize": 28,
-            "bold": true
-          },
-          "wordWrap": true,
-          "id": "649b9625-2776-49ed-a596-7296b7d7d9e7",
-          "x": 5,
-          "y": 70,
-          "width": 128,
-          "height": 18.0,
-          "zIndex": 0,
-          "isLocked": false,
-          "backgroundColor": "#00FFFFFF",
-          "borderColor": "#00FFFFFF",
-          "borderWidth": 0,
-          "cornerStyle": "None",
-          "cornerSize": 0,
-          "rotation": 0
-        },
-        {
-          "type": "TextElement",
-          "text": "strana {STRANA}",
-          "style": {
-            "fontSize": 16,
-            "bold": false
-          },
-          "wordWrap": true,
-          "id": "e6cccc95-06ce-4f50-9b13-38ffe67cada5",
-          "x": 5,
-          "y": 110,
-          "width": 128,
-          "height": 12.0,
-          "zIndex": 0,
-          "isLocked": false,
-          "backgroundColor": "#00FFFFFF",
-          "borderColor": "#00FFFFFF",
-          "borderWidth": 0,
-          "cornerStyle": "None",
-          "cornerSize": 0,
-          "rotation": 0
-        }
-      ],
-      "visibilityExpression": "{CISLO_LINKY} = 330510"
     }
   ]
 }

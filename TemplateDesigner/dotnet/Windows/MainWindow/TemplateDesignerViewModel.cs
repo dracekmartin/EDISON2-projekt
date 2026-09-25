@@ -2220,6 +2220,19 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
+    /// Uloží nakreslené uspořádání na list jako výchozí pro šablonu (`B186`); null = šablona
+    /// výchozí uspořádání nemá. Tisk ho pak nabídne sám - dispečer nemusí vědět, jak se nastavuje.
+    /// </summary>
+    public void UlozUsporadaniDoSablony(string? json)
+    {
+        var tp = State.CurrentTemplate.PrintParameters is { } p ? new Dictionary<string, string>(p) : [];
+        if (json is null) tp.Remove(SheetLayoutKeys.Plan);
+        else tp[SheetLayoutKeys.Plan] = json;
+        State.CurrentTemplate.PrintParameters = tp.Count > 0 ? tp : null;
+        IsDirty = true;
+    }
+
+    /// <summary>
     /// Nové hodnoty přepíšou staré, **zbytek zůstane**. Vrací null, když by výsledek byl prázdný.
     /// </summary>
     /// <remarks>

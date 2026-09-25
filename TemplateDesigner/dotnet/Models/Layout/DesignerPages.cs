@@ -55,6 +55,23 @@ public static class DesignerPages
         || s.OverflowBehavior == SectionOverflowBehavior.SplitAcrossPages
         || s.PrintBehavior == SectionPrintBehavior.PerDataRow);
 
+    /// <summary>
+    /// Ze které stránky šablony vznikla každá vysázená stránka - podle první obsahové sekce na ní;
+    /// stránka jen s hlavičkou a patičkou patří ke stránce šablony předchozí stránky.
+    /// </summary>
+    public static List<int> StrankySablony(Template template, IReadOnlyList<Page> stranky)
+    {
+        var vysledek = new List<int>(stranky.Count);
+        int predloha = 0;
+        foreach (var stranka in stranky)
+        {
+            if (stranka.Sections.FirstOrDefault(s => !JeOpakovana(s.Source)) is { } obsah)
+                predloha = IndexStranky(template, obsah.Source);
+            vysledek.Add(predloha);
+        }
+        return vysledek;
+    }
+
     /// <summary>Tiskne se opakovaná sekce na stránce <paramref name="index"/> z <paramref name="pocet"/>?</summary>
     public static bool TiskneSeNaStrance(Section s, int index, int pocet) => s.Stranky switch
     {

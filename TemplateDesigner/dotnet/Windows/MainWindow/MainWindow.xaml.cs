@@ -1232,7 +1232,8 @@ public partial class MainWindow : Window
             buildRealData,
             _preferences,
             onParamsChanged: _vm.OnExternalParamsChanged,
-            agendaClass: agendaClass);
+            agendaClass: agendaClass,
+            ulozitUsporadaniDoSablony: _vm.UlozUsporadaniDoSablony);
 
         vm.RequestRenderPdf = (filePath, data, sheets, meritko) =>
             _previewCanvas!.RenderToPdf(filePath, data, sheets, meritko);

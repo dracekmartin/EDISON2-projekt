@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:TemplateDesigner"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
+        xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         Title="Tisk šablony"
-        Width="560" Height="560"
-        MinWidth="420" MinHeight="360"
+        Width="620" Height="860"
+        MinWidth="560" MinHeight="560"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip">
@@ -53,6 +54,15 @@
                 <Button Content="{StaticResource EDStrings.Close}" Padding="16,6" IsDefault="True" IsCancel="True"/>
             </StackPanel>
         </Grid>
+
+        <!-- Uspořádání na list (`B186`) - nákres pod formulářem, ne ve formuláři: formulář je z Caché
+             a vlastní kreslicí prvek se do něj vložit nedá (míchat obojí se nesmí, rozbíjí se to
+             při obnovení formuláře). -->
+        <Border DockPanel.Dock="Bottom" Margin="0,10,0,0"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1"
+                CornerRadius="4" Padding="12" Background="{DynamicResource EDTheme.Bg.Footer}">
+            <controls:UsporadaniListuPanel x:Name="UsporadaniPanel"/>
+        </Border>
 
         <!-- Obsah - parametry + export (formulář řízený z Caché přes EDInputForm / AgendaParams;
              AgendaParams přidává universální skupinu „Export" s členěním výstupu + názvem souboru) -->

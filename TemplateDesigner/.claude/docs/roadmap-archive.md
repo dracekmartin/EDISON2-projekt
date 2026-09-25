@@ -1,5 +1,14 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B186` Uspořádání na list nákresem (hotovo 25. 9. 2026)
+
+Tiskové okno místo polí Mřížka / Každá stránka na celý list / Oboustranně ukazuje nákres přední
+a zadní strany listu, do jehož polí se přetahují stránky šablony. Pravidlo: další výskyt téže
+stránky na straně = další doklad; oboustranně = zadní strana něco obsahuje. Uspořádání jde uložit
+do šablony jako výchozí. Staré uložené volby se převedou na nákres. Nákres je panel pod
+formulářem, protože do formuláře z Caché se vlastní kreslicí prvek vložit nedá. Detail changelog
+2026-09-25 (7).
+
 ## `B184` Výslovné stránky v návrháři (hotovo 25. 9. 2026)
 
 Po #12854: šablona o víc stránkách má nad plátnem přepínač stránek šablony (jméno + „1 stránka /

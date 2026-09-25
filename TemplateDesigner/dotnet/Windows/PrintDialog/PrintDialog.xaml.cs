@@ -24,6 +24,8 @@ public partial class PrintDialog : Window
         DataContext = vm;
         InitializeComponent();
         vm.RequestClose += result => { DialogResult = result; Close(); };
+        UsporadaniPanel.DataContext = vm.Usporadani;
+        UsporadaniPanel.UlozitDoSablony = vm.UlozitUsporadaniDoSablony;
         // Hlášky kontroly ve vlastním okně - nezavírá tiskové, jde mít otevřené obojí.
         vm.RequestShowHlaseni = (nadpis, hlaseni) =>
             new KontrolaVysledkuDialog(new KontrolaVysledkuDialogViewModel(nadpis, hlaseni)) { Owner = this }.Show();
@@ -66,17 +68,11 @@ public partial class PrintDialog : Window
         var split = fields.FirstOrDefault(f => f.Key == PrintDialogViewModel.ExportSplitKey)?.Value ?? "SINGLE";
         bool isSplit = split != "SINGLE";
 
-        // Detailní pole imposice (mřížka/opakování/značky) jen když je zvolen formát listu.
-        var sheet = fields.FirstOrDefault(f => f.Key == SheetLayoutKeys.Sheet)?.Value ?? SheetLayoutKeys.SheetNone;
-        bool hasSheet = sheet is not ("" or SheetLayoutKeys.SheetNone);
-
         foreach (var field in fields)
         {
             bool visible = field.Key switch
             {
                 PrintDialogViewModel.ExportFileNameKey => isSplit,
-                SheetLayoutKeys.Grid or SheetLayoutKeys.Repeat or SheetLayoutKeys.Marks
-                    or SheetLayoutKeys.Oboustranne => hasSheet,
                 _ => _vm.IsParamVisible(field.Key),
             };
             var target = visible ? ItemVisibility.Visible : ItemVisibility.Collapsed;
