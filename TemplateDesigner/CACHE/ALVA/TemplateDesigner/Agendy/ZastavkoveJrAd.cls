@@ -451,10 +451,11 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s spV = $o(^[dataDB]JRL(sku,lin,smer,spV))
         q:spV=""
         i '$isvalidnum(spV) continue
-        s ctV = $p($p($g(^[dataDB]JRL(sku,lin,smer,spV)),"#",1),":",3)
+        s hlavaV = $p($g(^[dataDB]JRL(sku,lin,smer,spV)),"#",1)
+        s ctV = $p(hlavaV,":",3)
         i ctV = "" continue
         d ..WMapa(dataDB, sku, lin, ctV, .wMapV)
-        i ..CasHodnota($g(wMapV(currentPoradi))) = "" continue   // spoj zde nestaví → nedává časový sloupec
+        i '..OdjizdiZde(.wMapV, currentPoradi, $p(hlavaV,":",2)) continue   // odtud nejede → nedává časový sloupec
         s sigV = "", ppV = ""
         f {
             s ppV = $o(servedPoradi(ppV))  q:ppV=""
@@ -893,8 +894,8 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
 
         // offset času na aktuální zastávce z trasy spoje (cachovaná W-mapa); pobytová zast. = příjezd+čekání
         d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
+        i '..OdjizdiZde(.wMap, currentPoradi, $p(hlava, ":", 2)) continue
         s offset = ..CasHodnota($g(wMap(currentPoradi)))
-        i offset = "" continue            // spoj zde nestaví (`<`) / zastávka mimo trasu spoje
 
         // #8828: filtr per stanoviště - na stránce jen spoje odjíždějící z daného stanoviště vývěsky.
         // Spoj úplně bez stanoviště (prázdná W-trasa i J-věta) patří na stránku NEJČETNĚJŠÍHO
@@ -1424,7 +1425,10 @@ ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy 
     f i=1:1:$l(wTrasa,"#") {
         s seg = $p(wTrasa,"#",i)
         s p = $p(seg,":",1)
-        i p '= "" s wMap(p) = $p(seg,":",2)
+        i p = "" continue
+        s wMap(p) = $p(seg,":",2)
+        // atributy spoje v zastávce (legacy arrsp("trs",Tc,6), JRapiSp.mac:239) - „V" = jen výstup
+        i $p(seg,":",5) '= "" s wMap(p,"atr") = $p(seg,":",5)
     }
     i $d(wMap) m ^||TiskAd("wmap",dataDB,sku,lin,cisloTrasy) = wMap   // prázdnou trasu necachovat (merge z undef = <UNDEFINED>)
 }
@@ -1570,6 +1574,21 @@ ClassMethod CasHodnota(cas As %String) As %String
 {
     i (cas = "") || (cas = "<") || (cas = "|") q ""
     q +$p(cas,"/",1) + +$p(cas,"/",2)        // "33/4"→37, "27"→27 (piece2 prázdné = +0)
+}
+
+/// Odjíždí spoj z vývěskové zastávky? Ne, když tu nestaví, když tu **končí** (`tcDo` = 2. pole
+/// hlavičky spoje) nebo když tu má příznak **jen výstup** (`V`). 1:1 legacy `JRapiLinPrtMhd1.mac`
+/// ř.194 (`I Tc=TcDo Q`) a ř.201 (`I AtrSpTc["V" q`).
+///
+/// ⚠️ Do 25. 9. se kontrolovalo jen „nestaví" a vývěska tiskla i odjezd, se kterým cestující nikam
+/// nedojede: na konečné spoje (TRANSDEV #12843, Nitra linka 32 Kmeťova) a v zastávce pro výstup,
+/// která je v datech častá (VS_CSAD skoro 30 000 zastávek spojů, obvykle ta před konečnou).
+ClassMethod OdjizdiZde(ByRef wMap, currentPoradi As %String, tcDo As %String) As %Boolean
+{
+    i ..CasHodnota($g(wMap(currentPoradi))) = "" q 0
+    i (tcDo '= "") && (+tcDo = +currentPoradi) q 0
+    i $g(wMap(currentPoradi,"atr")) [ "V" q 0
+    q 1
 }
 
 /// Kumulativní doba jízdy (min) ze zastávky `fromPoradi` na `poradi` z W-mapy (`poradi → cas`).

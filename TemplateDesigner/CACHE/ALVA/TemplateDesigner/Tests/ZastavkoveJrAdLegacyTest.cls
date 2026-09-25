@@ -271,6 +271,27 @@ Method TestSplitTitulekARadek()
 }
 
 /// 1:1 porovnání řetězce zón per zastávka (#-delim napříč zastávkami) legacy vs náš.
+/// Odjezdy každé vývěsky linky shodné se starým tiskem (oracle `ALVA.TISKMHD.Data.LoadData`):
+/// zastávka, počet a minuty stránku po stránce. Linka má zastávky „jen výstup" i spoje končící
+/// uprostřed trasy - bez kontroly obojího se lišilo 11 stránek a na konečné vznikala stránka navíc
+/// (TRANSDEV #12843, 25. 9.). Hodiny se nesrovnávají, jen minuty a jejich počty.
+Method TestOdjezdyVsLegacyGwbus()
+{
+	set db = "CB_GWBUS"
+	if '##class(%SYS.Namespace).Exists(db) || '##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") {
+		do $$$AssertTrue(1, "namespace "_db_" nebo legacy ALVA.TISKMHD.Data není na serveru - přeskočeno")
+		quit
+	}
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","1") = "DB~"_db, ^||ML("IN","2") = "SKU~1", ^||ML("IN","3") = "LIN~0320113"
+	set ^||ML("IN","4") = "NAZEV~*", ^||ML("IN","5") = "STRAN~60"
+	do ..ParitaOdjezduProbe(.sys)
+	set rozdily = "", k = ""
+	for { set k = $order(^||ML("OUT",k)) quit:k=""  continue:k="SOUHRN"  set rozdily = rozdily_$get(^||ML("OUT",k))_"; " }
+	do $$$AssertEquals($get(^||ML("OUT","SOUHRN")), "SOUHRN = hotovo", "porovnání doběhlo")
+	do $$$AssertEquals(rozdily, "", "odjezdy 0320113 shodné se starým tiskem")
+}
+
 Method AssertZony(db As %String, sku As %String, lin As %String, page As %Integer)
 {
 	if '##class(%SYS.Namespace).Exists(db) {
@@ -733,6 +754,125 @@ ClassMethod ZonyProbe(ByRef sys As %String) As %Status
 	set ^||ML("OUT","OUR") = our
 	set ^||ML("OUT","MATCH") = (leg = our)
 	quit $$$OK
+}
+
+/// Diagnostika (cache_query): stránka `PAGE` legacy `LoadData` - řádky, jejichž klíč obsahuje
+/// `FILTR` (prázdný = seznam klíčů). IN jako u `ZonyProbe`.
+ClassMethod LegacyStrankaProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for {
+		set k = $order(^||ML("IN",k)) quit:k=""
+		set v = $get(^||ML("IN",k))
+		set inp($piece(v,"~",1)) = $piece(v,"~",2,999)
+	}
+	set db = $get(inp("DB")), sku = $get(inp("SKU"),1), lin = $get(inp("LIN"))
+	set page = +$get(inp("PAGE"),1), filtr = $get(inp("FILTR"))
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","1") = "VOLANO_Z~JRMAIN"
+	set ^||ML("IN","2") = "SESTAVA~1"
+	set ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
+	do ##class(ALVA.TISKMHD.Data).LoadData(.sys)
+	set i = "", n = 0
+	for {
+		set i = $order(^||ML("OUT",i)) quit:i=""
+		set radek = $get(^||ML("OUT",i)), klic = $piece(radek,"~",1)
+		set:klic="" klic = "(prazdny)"
+		if filtr = "" { set klice(klic) = $get(klice(klic)) + 1  continue }
+		continue:klic'[filtr
+		set n = n + 1, vystup(n) = $extract(radek, 1, 400)
+	}
+	kill ^||ML("OUT")
+	if filtr = "" {
+		set klic = "", s = ""
+		for { set klic = $order(klice(klic)) quit:klic=""  set s = s_klic_"×"_klice(klic)_" " }
+		set ^||ML("OUT","KLICE") = s
+	}
+	for j=1:1:n set ^||ML("OUT","R"_j) = vystup(j)
+	quit $$$OK
+}
+
+/// Diagnostika parity odjezdů (cache_query): pro zastávku `NAZEV` vypíše po stránkách počet odjezdů
+/// a seřazené minuty - legacy `LoadData` (`LEG~stránka`) i náš `GetData` (`OUR~stránka~směr`).
+/// IN jako u `ZonyProbe` + `NAZEV`, `STRAN` (kolik legacy stránek projít, výchozí 60).
+ClassMethod ParitaOdjezduProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for {
+		set k = $order(^||ML("IN",k)) quit:k=""
+		set v = $get(^||ML("IN",k))
+		set inp($piece(v,"~",1)) = $piece(v,"~",2,999)
+	}
+	set db = $get(inp("DB")), sku = $get(inp("SKU"),1), lin = $get(inp("LIN"))
+	set nazev = $get(inp("NAZEV")), stran = +$get(inp("STRAN"),60)
+	do ..SetupSysFor(.sys, db)
+	for page=1:1:stran {
+		kill ^||ML("IN"), ^||ML("OUT"), minuty
+		set ^||ML("IN","1") = "VOLANO_Z~JRMAIN"
+		set ^||ML("IN","2") = "SESTAVA~1"
+		set ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
+		do ##class(ALVA.TISKMHD.Data).LoadData(.sys)
+		set i = "", idx = "", nazvy = "", pocet = 0
+		for {
+			set i = $order(^||ML("OUT",i)) quit:i=""
+			set radek = $get(^||ML("OUT",i)), klic = $piece(radek,"~",1), hodnota = $piece(radek,"~",2,999)
+			if klic = "SeznamZastavekIndexAktualniZastavky" set idx = +hodnota
+			if klic = "SeznamZastavekDataSloupecNazevZastavky" set nazvy = hodnota
+			continue:klic'="MinutyOdjezduDataHodiny"
+			for m=1:1:$length(hodnota,"#") {
+				set mm = $piece($piece(hodnota,"#",m),"^",1)
+				continue:mm=""
+				set pocet = pocet + 1, minuty(+mm) = $get(minuty(+mm)) + 1
+			}
+		}
+		continue:idx=""
+		set jmeno = $piece($piece(nazvy,"#",idx),"^",1)
+		if nazev = "*" { set leg(jmeno_"~"_pocet_"~"_..SeznamMinut(.minuty)) = $get(leg(jmeno_"~"_pocet_"~"_..SeznamMinut(.minuty))) + 1  continue }
+		continue:jmeno'=nazev
+		set vysledek("LEG~"_page) = pocet_"~"_..SeznamMinut(.minuty)
+	}
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set p = ""
+	for {
+		set p = $order(^||ML("OUT",p)) quit:p=""
+		continue:'$isvalidnum(p)
+		set obj = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT",p)))
+		continue:(nazev'="*")&&(obj.values.%Get("POPIS_ZASTAVKA")'=nazev)
+		kill minuty
+		set odj = obj.rows.%Get("ODJEZDY"), pocet = 0
+		if $isobject(odj) {
+			set it = odj.%GetIterator()
+			while it.%GetNext(.ok, .o) { set pocet = pocet + 1, minuty(+o.%Get("MINUTA")) = $get(minuty(+o.%Get("MINUTA"))) + 1 }
+		}
+		if nazev = "*" {
+			set kl = obj.values.%Get("POPIS_ZASTAVKA")_"~"_pocet_"~"_..SeznamMinut(.minuty)
+			set our(kl) = $get(our(kl)) + 1
+			continue
+		}
+		set vysledek("OUR~"_p_"~"_obj.values.%Get("SMER")) = pocet_"~"_..SeznamMinut(.minuty)
+	}
+	// Režim „*": jen stránky, které jsou v jednom výstupu a ve druhém ne (nebo jinak často).
+	if nazev = "*" {
+		set kl = ""
+		for { set kl = $order(leg(kl)) quit:kl=""  set:$get(our(kl))'=leg(kl) vysledek("LEG-JEN~"_kl) = leg(kl)_" vs "_$get(our(kl),0) }
+		for { set kl = $order(our(kl)) quit:kl=""  set:'$data(leg(kl)) vysledek("OUR-JEN~"_kl) = our(kl) }
+		set vysledek("SOUHRN") = "hotovo"
+	}
+	kill ^||ML("OUT")
+	set klic = ""
+	for { set klic = $order(vysledek(klic)) quit:klic=""  set ^||ML("OUT",klic) = klic_" = "_vysledek(klic) }
+	quit $$$OK
+}
+
+ClassMethod SeznamMinut(ByRef minuty) As %String
+{
+	set s = "", m = ""
+	for { set m = $order(minuty(m)) quit:m=""  set s = s_m_"×"_minuty(m)_" " }
+	quit s
 }
 
 }

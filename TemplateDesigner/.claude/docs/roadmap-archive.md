@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B180` Odjezd na konečné spoje a v zastávce „jen výstup" (hotovo 25. 9. 2026)
+
+TRANSDEV `#12843`: vývěska Kmeťova (Nitra, linka 32) tiskla odjezdy spojů, které tam končí.
+Nebyla to regrese - kontrola chyběla od vzniku agendy. Opraveno 1:1 se starým tiskem i s druhým
+případem téže smyčky (zastávka „jen výstup", v datech častá). Ověřeno proti starému tisku stránku
+po stránce na 4 linkách; trvalý test `TestOdjezdyVsLegacyGwbus`. Detail changelog 2026-09-25 (2).
+
 ## `B182` Minuty ve sloupci spoje pod sebou (hotovo 25. 9. 2026)
 
 Z hovoru s kolegou: čas se značkou před sebou stál o její šířku vpravo, ostatní na středu.

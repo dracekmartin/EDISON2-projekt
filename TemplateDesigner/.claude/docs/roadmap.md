@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B180` a `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -59,11 +59,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 ## 📥 Backlog
 
 ### Ostatní
-
-- **`B180` Minuty odjezdů u zastávky, kde spoj končí** [S] (TRANSDEV `#12843`, 23. 9., chyba).
-  Vývěska vypisuje odjezd i v konečné zastávce spoje - dřív ne, takže regrese. Příklad v příloze
-  tiketu „Linka 32.pdf", str. 16, zastávka Kmeťova (spoje s poznámkou „končí v zastávce Kmeťova");
-  podle zákazníka se to děje na všech linkách. Nejdřív najít, kdy se to rozbilo.
 
 - **`B181` Nejvýš N sloupců variant tras** [S] (TRANSDEV `#12843`, 23. 9.). Volba s počtem (např. 2):
   varianty se vyberou a seřadí jako dnes (slučování, řazení podle délky), vytisknou se jen první N.

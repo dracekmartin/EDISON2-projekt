@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-09-25 (2) - 🚏 vývěska netiskne odjezd, se kterým se nikam nedojede (`B180`)
+
+Zastávková vývěska z dat AD tiskla odjezd i u spoje, který v té zastávce **končí** - na Nitře
+na lince 32 tak na Kmeťovej stály časy spojů s poznámkou „premáva po zast. Kmeťova" (TRANSDEV
+#12843). Zákazník to hlásil jako regresi; ve skutečnosti kontrola chyběla od začátku a srovnával
+se starým tiskem, který ji má.
+
+Opraveno podle starého tisku, a to rovnou i druhý případ téže věci: zastávka, kde má spoj
+příznak **„jen výstup"**. Ten je v datech častý (obvykle zastávka před konečnou) a nikdo ho
+zatím nenahlásil. Obojí platí i pro sloupce variant tras, jinak by spoj, který končí, založil
+prázdný sloupec. Zastávka, kde spoje jen končí, stránku nedostane, stejně jako ve starém tisku.
+
+Ověřeno proti starému tisku stránku po stránce (zastávka, počet a minuty odjezdů) na čtyřech
+linkách ze čtyř firem - bez jediného rozdílu; před opravou se na `0320113` lišilo 11 stránek.
+
 ## 2026-09-25 (1) - ⇥ minuty ve sloupci spoje stojí pod sebou (`B182`)
 
 Značka před časem (jen nástup, návaznost) posunula čas o svou šířku doprava a ostatní časy
