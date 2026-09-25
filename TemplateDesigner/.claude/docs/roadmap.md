@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B180` a `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `#8785`, `B182` a `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `B180` a `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `B182` a `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -18,7 +18,7 @@
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
 **Stav: linkový JŘ z AD dat je od 22. 9. vydaný zákazníkům** a je výchozí agendou pro novou
-šablonu. Zbývá `#8785`, jeden výtisk k ověření a věci, u kterých je první krok dotaz ven. Sloučení
+šablonu. Zbývá jeden výtisk k ověření a věci, u kterých je první krok dotaz ven. Sloučení
 dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku bez přírůstku pro uživatele
 (rozhodnutí Jan 31. 8.). Městská varianta zůstává skrytá, dokud neprojde porovnáním se starým
 modulem; jak se agenda skrývá, popisuje komentář u `Released` v `LinkovyJrAd.cls`.
@@ -47,11 +47,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
 ### Připravené k práci
-
-- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED) - 🔧 **ladí se na našich datech** (týden
-  od 23. 9.). Parametr „Počet stran" (Automaticky / 1 / 2) funguje: bez mezer → poznámky 90-60 % →
-  tabulka i se šířkami 97-80 %, nevejde-li se, plná velikost (changelog 2026-09-23 (3)). Zbývá:
-  hláška o nesplněném cíli, rozhodnout meze (v šabloně × pevné), „Automaticky" až s polem u linky.
 
 - **`#7487` Rozložení poznámek podle druhu** [M] (KORID; potvrzeno hovorem s kolegou 25. 9.).
   Druhy jako ve starém win tisku (dny platnosti, negativní značky, návaznosti, atributy, textové

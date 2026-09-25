@@ -1,5 +1,14 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `#8785` Vejdi výstup na zadaný počet stran (hotovo 25. 9. 2026)
+
+Parametr sestavy **„Počet stran"** (Automaticky / 1 / 2) pro POVED: sazba nejdřív ubere mezery,
+pak zmenší poznámky (90-60 %) a tabulku i se šířkami sloupců (97-80 %); když se sestava nevejde
+ani tak, zůstane v plné velikosti. Splněný i nesplněný cíl hlásí návrhář s příčinou (`B178`).
+Kolega viděl 25. 9. a schválil, POVED se to ukáže na prezentaci (rozhodnutí Jan). Neřešené, vytáhnout
+při potřebě: meze zmenšení v šabloně místo pevných, „Automaticky" podle pole u linky.
+Detail changelog 2026-09-23 (3).
+
 ## `B178` Hlášky vpravo dole (hotovo 24. 9. 2026)
 
 Hlášky návrháře sjednocené do jednoho bloku s ikonami podle závažnosti (chyba / upozornění /
