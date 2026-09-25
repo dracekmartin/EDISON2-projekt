@@ -5,7 +5,8 @@
 Na vývěsce, kde spoje z jedné zastávky jezdí mnoha trasami, vznikalo tolik sloupců s časy
 variant, že seznam zastávek přerostl zbytek vývěsky (TRANSDEV #12843). Nový parametr sestavy
 **„Nejvýš sloupců variant tras"** ve skupině Seznam zastávek určí, kolik se jich vytiskne;
-vezmou se první podle zvoleného řazení variant, ostatní se netisknou. 0 = všechny, jako dosud.
+vezmou se první podle zvoleného řazení variant, ostatní se netisknou. Prázdné pole = všechny, jako dosud
+(číselný parametr sestavy nově zůstává prázdný, dřív se prázdno ukázalo jako 0).
 
 Je to vědomá výměna místa za informaci: spoje skrytých variant nemají v seznamu svou trasu
 a nemají ani písmeno varianty, takže se s písmeny variant tahle volba nekombinuje.

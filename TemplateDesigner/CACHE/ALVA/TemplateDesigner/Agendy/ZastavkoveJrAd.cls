@@ -590,7 +590,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // `B181` (TRANSDEV #12843): nejvýš N sloupců - prvních N podle zvoleného řazení, zbytek se
     // netiskne. ⚠️ Vědomá ztráta informace: spoje skrytých variant nemají sloupec, a protože písmena
     // se dávají jen tištěným sloupcům, nemají ani písmeno. Kombinace s písmeny variant tak nedává
-    // smysl a ani se neřeší (rozhodnutí Jan 25. 9.). 0 / prázdné = bez omezení.
+    // smysl a ani se neřeší (rozhodnutí Jan 25. 9.). Prázdné (i 0) = bez omezení.
     s maxSloupcu = +$g(^||ML("IN","MAX_SLOUPCU_VARIANT"))
     i (maxSloupcu > 0) && (pocetSloupcu > maxSloupcu) {
         f colZ=(maxSloupcu+1):1:pocetSloupcu k displayVar(colZ)
@@ -3569,7 +3569,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d arr.%Push(pRazV)
 
     // `B181`: hned pod řazením, protože ořezává podle něj.
-    d ..AddNumberParam(arr, "MAX_SLOUPCU_VARIANT", "Nejvýš sloupců variant tras", "0", "Seznam zastávek", "Kolik sloupců variant tras se nejvýš vytiskne (0 = všechny). Vezmou se první podle řazení variant, ostatní se netisknou - jejich spoje pak ve sloupcích nemají svou trasu ani písmeno varianty. Zúží to seznam zastávek za cenu té informace.", 1)
+    d ..AddNumberParam(arr, "MAX_SLOUPCU_VARIANT", "Nejvýš sloupců variant tras", "", "Seznam zastávek", "Kolik sloupců variant tras se nejvýš vytiskne. Prázdné = všechny. Vezmou se první podle řazení variant, ostatní se netisknou - jejich spoje pak ve sloupcích nemají svou trasu ani písmeno varianty. Zúží to seznam zastávek za cenu té informace.", 1)
 
     // `B142`: vědomá výměna „méně sloupců za méně informace", proto výchozí vypnuto. Popisek i
     // nápověda musí říct, CO to schová - jinak si to zapne někdo, kdo variantní sloupce nasadil

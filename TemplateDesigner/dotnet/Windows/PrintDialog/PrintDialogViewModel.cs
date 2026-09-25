@@ -260,7 +260,7 @@ public class PrintDialogViewModel : EDViewModel
         _paramValues[name] = type switch
         {
             "bool"   => fieldValue == "1" || string.Equals(fieldValue, "true", StringComparison.OrdinalIgnoreCase),
-            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
             _        => (object)fieldValue
         };
 

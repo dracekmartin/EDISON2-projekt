@@ -2,7 +2,7 @@
 
 ## `B181` Nejvýš N sloupců variant tras (hotovo 25. 9. 2026)
 
-TRANSDEV `#12843`: parametr sestavy „Nejvýš sloupců variant tras" (0 = všechny) nechá prvních N
+TRANSDEV `#12843`: parametr sestavy „Nejvýš sloupců variant tras" (prázdné = všechny) nechá prvních N
 sloupců podle řazení variant. Spoje skrytých variant přijdou o sloupec i písmeno - vědomá ztráta
 informace, kombinace s písmeny variant se neřeší (rozhodnutí Jan 25. 9.). Detail changelog 2026-09-25 (3).
 

@@ -3096,7 +3096,7 @@ public class TemplateDesignerViewModel : EDViewModel
             _previewParams[p.Name] = p.Type switch
             {
                 "bool"   => s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase),
-                "number" => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+                "number" => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
                 _        => (object)s
             };
         }
@@ -3271,7 +3271,7 @@ public class TemplateDesignerViewModel : EDViewModel
         object? newValue = type switch
         {
             "bool"   => fieldValue == "1" || string.Equals(fieldValue, "true", StringComparison.OrdinalIgnoreCase),
-            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
             _        => (object)fieldValue
         };
         // Beze změny → nic (chrání proti falešnému dirty i re-fetchi při reloadu EDInputformu tabu,
