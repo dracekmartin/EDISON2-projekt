@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B180` a `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `B182` a `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `B180` a `B181` (zastávkové JŘ, TRANSDEV `#12843`), pak `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -53,11 +53,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   poznámky…): u každého **pořadí** a **počet sloupců** zvlášť, např. „všechno do 3 sloupců, negativní
   značky do 1". Dnes jde jen jeden „Počet sloupců" pro celou legendu. Přesný tvar nastavení se
   ještě upřesní s kolegou - nejdřív návrh formuláře, pak kód.
-
-- **`B182` Minuty ve sloupci spoje pod sebou** [S] (hovor s kolegou 25. 9.). Když má ve sloupci
-  aspoň jeden řádek značku před časem (návaznost, jen nástup), jeho čas se posune doprava a ostatní
-  zůstanou na středu, takže minuty nestojí pod sebou. Ostatní časy ve sloupci se mají posunout
-  o stejný kus. Vzor je odsazení názvů zastávek (changelog 2026-09-22 (3)).
 
 ---
 

@@ -54,6 +54,25 @@ public static class SymbolRunRenderer
     /// běžná buňka.</summary>
     public static bool MaPiktogram(List<Run> runs) => runs.Exists(r => r.Symbol);
 
+    /// <summary>Šířka úseků (mm) tak, jak je <see cref="Draw"/> sází za sebou - i s mezerou na konci.</summary>
+    public static float SirkaMm(RenderContext ctx, List<Run> runs,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
+    {
+        if (runs.Count == 0) return 0f;
+        using var normalFont = style.CreateFont(scale, ctx.MmToPx);
+        using var symbolFont = new SKFont(symbolFace, normalFont.Size);
+        float px = 0f;
+        foreach (var r in runs)
+        {
+            if (r.MezeraMm is float mm) { px += mm * ctx.MmToPx; continue; }
+            var zaklad = r.Symbol ? symbolFont : normalFont;
+            if (r.Zmenseni >= 0.999f) { px += zaklad.MeasureText(r.Text); continue; }
+            using var f = new SKFont(zaklad.Typeface, normalFont.Size * r.Zmenseni);
+            px += f.MeasureText(r.Text);
+        }
+        return px / ctx.MmToPx;
+    }
+
     /// <summary>Nakreslí úseky do buňky (v mm) podle zarovnání stylu.</summary>
     /// <remarks>
     /// Vnitřní odsazení si bere sám, protože <b>ustupuje obsahu</b>: když se úseky do odsazeného

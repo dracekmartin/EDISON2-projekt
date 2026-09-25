@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B182` Minuty ve sloupci spoje pod sebou (hotovo 25. 9. 2026)
+
+Z hovoru s kolegou: čas se značkou před sebou stál o její šířku vpravo, ostatní na středu.
+Časy sloupce se nově odsadí na nejširší značku v něm, jako výchozí chování bez volby (zadání Jan).
+Přípojné řádky vědomě mimo (vlastní písmo). Detail changelog 2026-09-25 (1).
+
 ## `#8785` Vejdi výstup na zadaný počet stran (hotovo 25. 9. 2026)
 
 Parametr sestavy **„Počet stran"** (Automaticky / 1 / 2) pro POVED: sazba nejdřív ubere mezery,

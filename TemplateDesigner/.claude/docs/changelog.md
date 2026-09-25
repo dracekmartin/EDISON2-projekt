@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-09-25 (1) - ⇥ minuty ve sloupci spoje stojí pod sebou (`B182`)
+
+Značka před časem (jen nástup, návaznost) posunula čas o svou šířku doprava a ostatní časy
+sloupce zůstaly na středu, takže minuty nestály pod sebou. Nově se ve sloupci, kde má značku
+aspoň jeden řádek, odsadí o stejný kus i časy bez ní; s různě širokými značkami se srovnává na
+tu nejširší. Sloupec bez značek vypadá jako dřív. Přípojné řádky se nesrovnávají - mají vlastní
+písmo, takže by pod časy zastávek stejně nesedly.
+
+Sloupec se značkou může vyjít o kousek širší: musí unést značku i s nejširším časem, ne jen
+s tím, který stojí vedle ní. A ručně kreslená buňka se značkou nově nese i barvu spoje z dat
+(dřív ji ztrácela).
+
 ## 2026-09-24 (10) - ⌨ nápověda formuláře jako přehledný panel
 
 Otazník v hlavičce formuláře (sdílená komponenta EDControls, tedy celý EDISON) ukáže zkratky
