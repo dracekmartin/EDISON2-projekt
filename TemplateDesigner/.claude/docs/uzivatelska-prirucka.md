@@ -63,13 +63,16 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 
 - **Soubor** - Nová šablona, Otevřít, Uložit
 - **Upravit** - Zpět, Vpřed
+- **Stránka** - Vlastnosti stránky
 - **Sekce** - Přidat sekci (rozbalovací nabídka presetů)
 - **Přidat / Elementy** - paleta prvků: Text, Obdélník, Čára, Obrázek, Tabulka, Kód (QR, čárový) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
 - **Vrstva** - Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
 - **Data** - obnovení dat náhledu (↻)
-- **Tisk** - kontrola vybraných linek a Tisk (PDF i PNG se vytváří v okně Tisk)
-- **Zobrazení** - přepínač mřížky, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání, zoom, tlačítka „Fit" a „1:1", skrytí panelu sekcí, přepínač živého náhledu
+- **Tisk** - kontrola vybraných linek (lupa) a Tisk; PDF i PNG se vytváří v okně Tisk
+- **Mřížka a přichytávání** - přepínač mřížky, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání
+- **Zoom** - zoom, tlačítka „Fit" a „1:1"
+- **Panely** - skrytí panelu sekcí, přepínač živého náhledu
 
 ### Levý panel - 6 záložek
 
@@ -87,21 +90,20 @@ Zleva doprava:
 - modrý štítek **aktivní instance** (např. vybrané linky) s tlačítky ◀ / ▶ pro přepínání mezi
   vybranými instancemi a formátem „Instance: X - Y (N/M)",
 - informace o aktuálním výběru,
-- obecné stavové hlášky,
-- při přetečení obsahu stránky červené upozornění s tím, co se nevejde a na které straně.
+- vpravo **blok hlášek** k tisku (viz kap. 9, Hlášky a kontrola před tiskem).
 
 ### Hlavní menu
 
 - **Soubor** - Nová šablona · Otevřít z databáze… · Uložit do databáze · Uložit do databáze
   jako… · Importovat ze souboru… · Exportovat do souboru… · Otevřít poslední soubor
-  (submenu) · Tisk… · Vlastnosti
-  stránky… · Konec
-- **Úpravy** - Zpět · Vpřed · Smazat · Z-order (podnabídka) · Zarovnat (podnabídka) · Rozložit
-  (podnabídka) · Normalizovat pozice… · Škálovat šablonu (podnabídka procent) · Kopírovat styl ·
-  Vložit styl
+  (podnabídka) · Tisk… · Zkontrolovat vybrané linky… · Vlastnosti stránky… · Konec
+- **Upravit** - Zpět · Vpřed · Smazat · pořadí vrstev (dopředu / dozadu / zcela) · zarovnání
+  (vlevo, vpravo, na střed, nahoru, dolů) · Rozložit vodorovně / svisle · Normalizovat pozice… ·
+  Přepočítat šablonu na jinou velikost (podnabídka procent) · Kopírovat styl · Vložit styl ·
+  Použít výchozí font u všech prvků
 - **Zobrazit** - Mřížka, Přichytit na mřížku, Přichytit k elementům, Záhlaví sekcí, Pravítka,
   Panel sekcí, Živý náhled (zaškrtávací položky)
-- **Nástroje** - Změnit agendu… · Šablony v databázi… · Import PDF…
+- **Nástroje** - Změnit agendu… · Šablony v databázi… · AI Asistent šablon… · Import PDF…
 - **Nápověda** - Klávesové zkratky a ovládání (F1) - s fulltextovým hledáním (Ctrl+F)
 
 Titulek okna má formát `[KÓD_AGENDY] [DB nebo neuloženo] Název šablony [*]` - hvězdička značí
@@ -184,7 +186,7 @@ v rozbalovacích seznamech:
   stránce - patička s „Jen poslední stránce" je dole jen na posledním listu. Pod obsahem stránky
   se tiskne vždy na každé stránce
 - **Přetečení** (jen u obsahu): Držet pohromadě · Rozdělit přes stránky
-- **Začít na nové stránce** (jen u obsahu): sekce začne na novém listu - třeba poznámky na
+- **Začít na nové stránce** (jen u obsahu): sekce začne na novém listu - např. poznámky na
   samostatné stránce za tabulkou. S přetečením „Rozdělit přes stránky" dlouhé poznámky pokračují
   na dalším listu. Na listu, kde ještě nic není, se nový nezakládá
 
@@ -198,9 +200,6 @@ všechny stránky za sebou; po vypnutí „Náhled všech stránek" nad ním jen
 
 Pole, která v dané kombinaci nic nedělají, formulář schová - barva a tloušťka rámečku jsou vidět
 jen se zapnutým Rámečkem.
-
-Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole **Datový zdroj** a
-**Výška řádku**.
 
 ### Práce se sekcemi
 - **Výška** - tři cesty. Ve vlastnostech sekce ji zadáte **číslem v mm**; na plátně ji **utáhnete
@@ -510,7 +509,8 @@ Na rozdíl od plátna respektuje podmíněnou viditelnost, takže vidíte přesn
 
 Dokud nemáte vybranou linku, kreslí náhled **ukázková data** - štítek linky ve stavovém řádku to
 říká (*Linka: - (ukázková data, klikněte pro výběr)*). S vybranou linkou se nad náhledem objeví pruh
-pro procházení stránek dat, takže je vždy poznat, na co se koukáte.
+pro procházení stránek dat, takže je vždy poznat, na co se koukáte. Pruh se neukáže, když by
+přepnutí nic nezměnilo - šablona nemá prvek plněný z dat ani pole, které se mezi stránkami dat liší.
 
 ### Vícestránkové sestavy
 Stránkování řeší systém automaticky: hlavičky/patičky se opakují podle nastaveného chování sekcí,
@@ -522,19 +522,27 @@ Nad náhledem je pruh pro přepínání mezi jednotlivými **stránkami dat** (u
 zastávka × směr): šipky ◀ / ▶, rozbalovací seznam pro přímý skok na konkrétní stránku a počítadlo
 „/ N". Rychle tak proklikáte, co se reálně vytiskne pro jednotlivé vybrané instance.
 
-### Varování o přetečení
-Pokud se obsah nevejde na stránku, dostane stránka v náhledu **červený rámeček** a status bar
-řekne, **která sekce se nevejde, o kolik a na které straně** - a když ji nafoukl konkrétní prvek,
-jmenuje i ten: „sekce „Vývěska" nevejde na stránku, nejvíc místa bere Poznámky (přesah 12,4 mm,
-strana 2)". Podle toho poznáte, co zmenšit: jmenovaný prvek, nebo výšku sekce, když se do ní prvky
-vejdou. Tooltip nabízí i třetí cestu - zvětšit stránku.
+### Hlášky a kontrola před tiskem
+Vpravo ve stavovém řádku je **blok hlášek**: počty hlášek podle závažnosti. Klik na blok rozbalí
+seznam, klik na řádek seznamu vybere prvek, kterého se hláška týká. Každá hláška má tvar
+*kde · co se stane na papíře → rada*, např. „Poznámky · písmo zmenšeno na 85 %".
 
-Tentýž prvek na víc stránkách je **jedna položka**, ne výpis po stránkách; do tří stránek se
-vypisují čísla, nad to počet a první výskyt. Stejný popis se ukáže i po tisku, protože tisknout
-můžete jinou linku, než máte v náhledu.
+Hlášky mají tři úrovně a žádná tisk nezastaví:
 
-Varování se týká jen sekcí nastavených jako „Držet pohromadě" - sekce, které lze rozdělit přes
-stránky, se prostě rozdělí a nic se neztratí, takže tam varování nedává smysl.
+- **Informace** (šedé kolečko) - jen oznámení, že návrhář něco upravil, např. zmenšil písmo, aby se obsah
+  vešel. Není třeba nic dělat.
+- **Upozornění** (trojúhelník) - výsledek se může lišit od očekávání, např. sloupec, jehož období leží
+  mimo platnost jízdního řádu, zůstane prázdný. Doporučujeme zkontrolovat.
+- **Problém** (červené kolečko) - část obsahu se na papír nedostane, např. text se ořízne nebo sekce se
+  nevejde na stránku. Stránka má v náhledu navíc červený rámeček. Rada u hlášky říká, co upravit.
+
+Náhled a blok hlášek se týkají jen linky, která je právě v náhledu. Tlačítkem **„Zkontrolovat"**
+v okně Tisk, lupou na liště nebo `Soubor → Zkontrolovat vybrané linky…` projdete **všechny vybrané
+linky** bez tisku. Okno kontroly ukazuje průběh a klik na hlášku přepne na její linku a vybere
+prvek. Stejný souhrn se ukáže i po vytvoření PDF.
+
+Tentýž prvek na víc stránkách je **jedna hláška**, ne výpis po stránkách. U sekcí nastavených na
+„Rozdělit přes stránky" se přetečení nehlásí - sekce se rozdělí a nic se neztratí.
 
 ### Tisk
 `Soubor → Tisk…` (Ctrl+P) otevře dialog „Tisk šablony" s parametry, které se generují dynamicky
@@ -547,6 +555,8 @@ volby u něj schovají.
 Nastavení výstupu je univerzální napříč agendami:
 - **Členění výstupu** - Vše do jednoho PDF / Jeden PDF na instanci / (u agend s více úrovní dat
   i jemnější dělení, viz dokument dané agendy).
+- **Měřítko tisku** - hotová sestava se před tiskem celá zvětší nebo zmenší (1 = skutečná
+  velikost); počet stránek se nemění. Stavový řádek okna řekne, jaký rozměr papíru z toho vyjde.
 - **Název souboru (tokeny {POLE})** - vlastní kombinace datových polí pro pojmenování
   výsledných souborů; při rozdělení výstupu na víc souborů se vybírá cílová složka, kolize jmen
   se řeší automaticky příponou `_2`, `_3`…
@@ -556,12 +566,12 @@ Nastavení výstupu je univerzální napříč agendami:
   zmenšování, spočítá návrhář sám (A5 na výšku: na A4 na šířku dvě, na A3 na výšku čtyři).
   Stránky jdou na místa po řadě. U šablony o víc stránkách se k tomu volí, kam jde **druhá stránka
   dokladu**:
-  - **Na stejnou stranu listu, vedle první** - třeba první stránka faktury vlevo a druhá vpravo,
+  - **Na stejnou stranu listu, vedle první** - např. první stránka faktury vlevo a druhá vpravo,
   - **Na zadní stranu listu, za první** - na přední stranu přijdou první stránky dokladů, na zadní
-    jejich druhé stránky, po rozříznutí má každý kus obě strany (dvě stazky A5 na A4). Tiskněte
+    jejich druhé stránky, po rozříznutí má každý kus obě strany (např. dva doklady A5 na A4). Tiskněte
     oboustranně s převracením na delší straně.
-  Nákres pod volbami ukazuje, co kam padne. Kdo měl z dřívějška uloženou volbu „Každá stránka na
-  celý list" nebo zapnuté ořezové značky, uvidí je v panelu i dál. Uspořádání si návrhář
+  Nákres pod volbami ukazuje, co kam padne. Kdo měl z dřívějška uloženou volbu „Kopie přes celý
+  list" nebo zapnuté ořezové značky, uvidí je v panelu i dál. Uspořádání si návrhář
   pamatuje sám - příště nabídne poslední použité u agendy.
   (Brožurové řazení zůstává na tiskárně.)
 
@@ -639,6 +649,7 @@ operaci).
 - **Ctrl+P** - Tisk
 - **Ctrl+Shift+P** - Vlastnosti stránky
 - **Ctrl+Shift+A** - Změnit agendu
+- **Ctrl+Shift+I** - Výběr instancí (linek)
 - **F5** - Obnovit data z databáze
 - **F1** - Nápověda
 - **Escape** - Zrušit probíhající operaci (např. přidávání prvku)
@@ -750,6 +761,9 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     protože nastavitelné jsou obě.
   - **První varianta bez písmene** - nejčastější trasa zůstane bez písmene, odchylky se značí od A.
     Vypnuto = písmenkuje se už od první varianty.
+  - **Nejvýš sloupců variant tras** - kolik sloupců variant se nejvýš vytiskne; prázdné = všechny.
+    Vezmou se první podle řazení variant. Spoje ostatních variant pak ve sloupcích nemají svou
+    trasu ani písmeno varianty - seznam zastávek se zúží za cenu této informace.
   - **Slučovat varianty, které jedou jen část jiné** - varianta jedoucí **souvislý úsek** jiné
     trasy (od - do) dostane sloupec té delší. Výchozí vypnuto. Hodí se na lince, kde část spojů
     jezdí jen kus trasy a sloupců je moc.
@@ -966,7 +980,7 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 - **Roztáhnout na výšku**
 
 Navíc jen u AD: **Rozdělení sloupců (typy provozu)**, **Řazení variant tras**, **Písmena variant
-u odjezdů** (+ **První varianta bez písmene**), **Samostatná stránka pro každý označník** (vše
+u odjezdů** (+ **První varianta bez písmene**), **Nejvýš sloupců variant tras**, **Samostatná stránka pro každý označník** (vše
 viz kap. 1), **V rozsahu nepoznámkovat schovat** a **Souhrn „všechny zastávky na znamení"** - místo
 značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
 všechny zastávky).
@@ -982,12 +996,12 @@ Většina parametrů má u sebe **nápovědu** (bublinu s vysvětlením), co př
 Tato pole se nastavují jen v tiskovém dialogu (nejsou to parametry sestavy, takže nejsou
 v záložce Parametry v levém panelu):
 
-- **Členění výstupu** - Vše do jednoho PDF / Jeden PDF na linku / Jeden PDF na zastávku a směr.
+- **Členění výstupu** - Vše do jednoho PDF / Jeden PDF na linku / Jeden PDF na zastávku/směr.
 - **Název souboru (tokeny {POLE})** - výchozí `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}`,
   lze upravit na libovolnou kombinaci datových polí.
 
-K dispozici je i **Uspořádání na list** - nákres listu, do kterého se přetahují stránky šablony
-(dvě A5 vývěsky na A4, stazky oboustranně, táž vývěska pro řezání); detail viz část I, kap. 9.
+U šablony o víc stránkách je k dispozici i **Uspořádání na list** (víc stránek na jeden papír);
+detail viz část I, kap. 9.
 
 „Vše do jednoho" vybere jeden cílový soubor; ostatní dvě volby vybírají cílovou složku a vytvoří
 tolik souborů, kolik odpovídá volbě (kolize jmen se řeší automaticky `_2`, `_3`…). Export běží
@@ -1027,8 +1041,9 @@ zmenšení pomůže, k varování nedojde.
    procházíte šipkami mezi vybranými.
 5. **Doladíte parametry tisku** - v tiskovém dialogu (Ctrl+P) nastavíte parametry specifické pro
    agendu a způsob exportu (členění, název souboru).
-6. **Exportujte nebo vytiskněte** - export náhledu (ukázková data), nebo dávkový export reálných
-   dat pro všechny vybrané linky s automatickým otevřením výsledku.
+6. **Vytvořte PDF** - tlačítkem „Vytvořit PDF" v tiskovém dialogu; vezmou se všechny vybrané
+   linky (bez vybrané linky ukázková data) a výsledek se automaticky otevře. Předtím můžete
+   tlačítkem „Zkontrolovat" projít hlášky za všechny linky.
 
 Pro rychlý start je v přehledu šablon (Ctrl+O) sekce **Systémové M-line** s výchozí
 zastávkovou šablonou (AD) dodávanou a aktualizovanou M-line.
@@ -1059,7 +1074,8 @@ Obvyklá šablona má tři sekce pod sebou:
 
 - **Hlavička** (opakuje se na každé stránce) - textové prvky s poli `{CISLO_LINKY}`,
   `{POPIS_LINKY}`, `{DATUM_PLATNOSTI_OD}`, `{DATUM_PLATNOSTI_DO}`, `{TYP_JR}`,
-  `{POPIS_DOPRAVCE}` a `{POZNAMKA_NAD_LINKU}`.
+  `{POPIS_DOPRAVCE}` a `{POZNAMKA_NAD_LINKU}`. `{POPIS_DOPRAVCE}` uvádí jen dopravce spojů na dané
+  stránce; jezdí-li na stránce víc dopravců, připíše ke každému čísla jeho spojů.
 - **Jízdní řád** - jediný prvek **Tabulka spojů**. Sekce má být nastavená na „Rozdělit přes
   stránky", jinak se dlouhá linka nevytiskne celá.
 - **Poznámky** - prvek **Poznámky**, tentýž jako u vývěsky: vysvětlí značky, které tabulka
@@ -1078,6 +1094,8 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
 **Řádky** - co se tiskne navíc k časům:
 
 - **Nadpisy skupin dnů** - pás nad sloupci spojů s označením skupiny (pracovní dny, sobota…).
+- **Čísla spojů** - řádek s čísly spojů nad časy. Vypnuté = řádek zůstane (nese nadpisy popisných
+  sloupců), jen nad spoji je prázdný.
 - **Řádek platnosti** - pod číslem spoje řádek se značkami platnosti (denní značky, místenka,
   atributy vozidla).
 - **Řádek negativních značek** - značky, které pro spoj **neplatí** (bílý text v černém poli).
@@ -1187,6 +1205,9 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
   starý modul), *Plný CIS s okresem*, *Zkrácený*, *Typograficky upravený* (mezera za čárkou a tečkou).
 - **Použít název pro MHD** - zastávka může mít v číselníku vedle názvu podle CIS ještě upravený
   název pro MHD; vypnutím se všude použije název podle CIS.
+- **Počet stran** - *1 strana* / *2 strany*: na kolik stran se má vejít každý směr linky. Když se
+  nevejde, zmenší se nejdřív poznámky, pak tabulka; nejde-li to ani tak, ozve se hláška.
+  *Automaticky (dle linky)* zatím počet stran neomezuje.
 
 **Tabulka linky:**
 
@@ -1219,4 +1240,4 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 5. **Dolaďte, kolik spojů je vedle sebe** - vnitřními okraji buněk a mezerami u značek (kap. 4).
    Náhled ukazuje výsledek rovnou.
 6. **Přidejte Poznámky** pod tabulku, jinak nebude čím značky vysvětlit.
-7. **Vyberte linky** (Ctrl+Shift+I) a **vytiskněte nebo exportujte** (Ctrl+P).
+7. **Vyberte linky** (Ctrl+Shift+I) a v tiskovém dialogu (Ctrl+P) **vytvořte PDF**.

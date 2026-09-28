@@ -43,8 +43,8 @@ Dílčí vylepšení a náměty.
 - Šablona může mít víc stránek (např. líc a rub dokladu), přidávají se tlačítkem **„+ Stránka"**.
 - Při tisku lze druhou stránku dokladu dát vedle první, nebo na zadní stranu listu.
 - PDF a PNG se vytváří jen v okně **Tisk**, tlačítka na liště byla zrušena.
-- Upozornění k tisku jsou vpravo dole v jednom bloku podle závažnosti. Jde o doporučení, tisk
-  proběhne i s nimi.
+- Hlášky k tisku jsou vpravo dole v jednom bloku podle závažnosti (informace, upozornění,
+  problém). Tisk nezastaví, co znamenají, popisuje příručka.
 - Tlačítko **„Zkontrolovat"** v okně Tisk projde všechny vybrané linky.
 
 ### Týden od 21. 9. 2026 · Linkové JŘ - Nová agenda
