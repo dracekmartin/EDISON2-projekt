@@ -569,6 +569,7 @@ public class TemplateDesignerViewModel : EDViewModel
             OnPropertyChanged(nameof(PageNavigationText));
             OnPropertyChanged(nameof(HasMultiplePages));
             OnPropertyChanged(nameof(HasPageNavigation));
+            OnPropertyChanged(nameof(MaListuNadNahledem));
             OnPropertyChanged(nameof(IsSampleDataPreview));
             OnPropertyChanged(nameof(PreviewItemNoun));
             OnPropertyChanged(nameof(PreviousPageTooltip));
@@ -1340,37 +1341,24 @@ public class TemplateDesignerViewModel : EDViewModel
     /// řády) vypadá jako dřív (rozhodnutí Jan 25. 9.).</summary>
     public bool MaPredlohy => PocetPredloh > 1;
 
-    /// <summary>„Rub · 1 stránka (2/3)" - jméno předlohy a kolik stránek z ní vyjde.</summary>
-    public string PredlohaText
-    {
-        get
-        {
-            var stranky = DesignerPages.ObsahStranek(State.CurrentTemplate);
-            int i = OtevrenaPredloha;
-            string nazev = stranky[i].FirstOrDefault()?.Name ?? $"Stránka {i + 1}";
-            string kolik = DesignerPages.JePodleDat(stranky[i]) ? "podle dat" : "1 stránka";
-            return $"{nazev} · {kolik}  ({i + 1}/{stranky.Count})";
-        }
-    }
+    /// <summary>Lišta nad náhledem je vidět, když je co přepínat: stránky dat nebo stránky šablony.</summary>
+    public bool MaListuNadNahledem => HasPageNavigation || MaPredlohy;
 
-    /// <summary>Náhled ukazuje celý doklad (jinak jen otevřenou stránku šablony).</summary>
-    public bool NahledCelyDoklad
+    /// <summary>„Stránka 2 z 3". Jméno sekce ani „podle dat" se nepíše - dublovalo seznam sekcí
+    /// a náhled a přepínač se nedal přečíst (nález Jan 28. 9.).</summary>
+    public string PredlohaText => $"Stránka {OtevrenaPredloha + 1} z {PocetPredloh}";
+
+    /// <summary>Náhled ukazuje všechny stránky šablony (jinak jen otevřenou).</summary>
+    public bool NahledVsechStranek
     {
-        get => State.NahledCelyDoklad;
+        get => State.NahledVsechStranek;
         set
         {
-            if (State.NahledCelyDoklad == value) return;
-            State.NahledCelyDoklad = value;
+            if (State.NahledVsechStranek == value) return;
+            State.NahledVsechStranek = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(NahledJenStranka));
             PredlohaZmenena?.Invoke(OtevrenaPredloha, false);
         }
-    }
-
-    public bool NahledJenStranka
-    {
-        get => !NahledCelyDoklad;
-        set => NahledCelyDoklad = !value;
     }
 
     /// <summary>Předloha se přepnula; true = přepnul ji posun náhledu (náhled už se neposouvá).</summary>
@@ -1410,6 +1398,7 @@ public class TemplateDesignerViewModel : EDViewModel
     private void OnPredlohyZmeneny()
     {
         OnPropertyChanged(nameof(MaPredlohy));
+        OnPropertyChanged(nameof(MaListuNadNahledem));
         OnPropertyChanged(nameof(PredlohaText));
         CommandManager.InvalidateRequerySuggested();
     }

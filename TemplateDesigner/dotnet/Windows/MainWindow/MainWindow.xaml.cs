@@ -171,7 +171,7 @@ public partial class MainWindow : Window
         _vm.PredlohaZmenena = (predloha, zNahledu) =>
         {
             CanvasScrollViewer.ScrollToVerticalOffset(0);
-            if (!_vm.NahledCelyDoklad)
+            if (!_vm.NahledVsechStranek)
             {
                 // Náhled ukazuje jen stránky otevřené předlohy - po přepnutí jiné, jinak vysoký.
                 UpdatePreviewSize();
@@ -187,7 +187,7 @@ public partial class MainWindow : Window
         };
         PreviewScrollViewer.ScrollChanged += (_, e) =>
         {
-            if (_vm is null || !_vm.MaPredlohy || !_vm.NahledCelyDoklad || e.VerticalChange == 0) return;
+            if (_vm is null || !_vm.MaPredlohy || !_vm.NahledVsechStranek || e.VerticalChange == 0) return;
             if ((DateTime.UtcNow - _nahledPosunulProgram).TotalMilliseconds < 400) return;
             // Rozhoduje stránka v horní třetině okna náhledu - tu má uživatel před očima.
             float y = (float)(PreviewScrollViewer.VerticalOffset + PreviewScrollViewer.ViewportHeight / 3);

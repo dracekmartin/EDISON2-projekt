@@ -41,9 +41,9 @@ public class DesignerState
     /// stránkách; plátno index mimo rozsah srovná na poslední (`B184`).</summary>
     public int Predloha { get; set; }
 
-    /// <summary>Náhled ukazuje celý doklad; false = jen stránky z otevřené předlohy (výchozí u
-    /// šablony o víc stránkách). Jednostránkové šablony se to netýká.</summary>
-    public bool NahledCelyDoklad { get; set; }
+    /// <summary>Náhled ukazuje všechny stránky šablony (výchozí); false = jen stránky z otevřené
+    /// předlohy. Jednostránkové šablony se to netýká.</summary>
+    public bool NahledVsechStranek { get; set; } = true;
 
     private float _zoom = 1.0f;
     public float Zoom

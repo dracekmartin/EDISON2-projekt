@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-09-28 - 📄 přepínač stránek šablony i nad náhledem (`B187`)
+
+Přepínač nad plátnem ukazuje jen „Stránka 1 z 2" - jméno první sekce a „1 stránka / podle dat"
+v něm dublovaly seznam sekcí a náhled. Týž přepínač je nově i v liště nad náhledem a přepíná
+plátno i náhled naráz; lišta má stejné pozadí jako lišta nad plátnem, aby nesplývala s plochou.
+Dvojici „Tato stránka | Celý doklad" nahradilo zaškrtávátko **„Náhled všech stránek"**, výchozí
+zapnuté.
+
 ## 2026-09-25 (7) - 🖨 uspořádání na list nákresem (`B186`)
 
 Uspořádání na list se nastavovalo čtyřmi poli (list, mřížka, každá stránka na celý list,

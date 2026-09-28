@@ -80,23 +80,24 @@ public class PredlohyNaPlatneTests
     }
 
     /// <summary>
-    /// Náhled u šablony o víc stránkách ukazuje jen stránky z otevřené stránky šablony, na přání
-    /// celý doklad (rozhodnutí Jan 25. 9.).
+    /// Náhled u šablony o víc stránkách ukazuje všechny stránky; po vypnutí „Náhled všech stránek"
+    /// jen stránky z otevřené stránky šablony (rozhodnutí Jan 28. 9.).
     /// </summary>
     [Fact]
-    public void Nahled_JenOtevrenaStrankaNeboCelyDoklad()
+    public void Nahled_VsechnyStrankyVychozi_NeboJenOtevrena()
     {
         var (_, state, _, _, _) = Scena();
         var nahled = new PreviewCanvas(state);
 
         state.Predloha = 1;
+        Assert.True(state.NahledVsechStranek);
+        float vsechny = nahled.CalculatePageHeightPx(1f);
+        state.NahledVsechStranek = false;
         float jenRub = nahled.CalculatePageHeightPx(1f);
-        state.NahledCelyDoklad = true;
-        float celyDoklad = nahled.CalculatePageHeightPx(1f);
 
         float strankaPx = 210f * 96f / 25.4f;
         const float mezeraMeziStrankamiPx = 16f;   // PreviewCanvas.PageGapPx
-        Assert.Equal(strankaPx + mezeraMeziStrankamiPx, celyDoklad - jenRub, precision: 0);   // o jednu stránku víc
+        Assert.Equal(strankaPx + mezeraMeziStrankamiPx, vsechny - jenRub, precision: 0);   // o jednu stránku víc
     }
 
     [Theory]

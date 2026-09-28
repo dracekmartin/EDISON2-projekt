@@ -812,7 +812,7 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <Button Content="◀" Command="{Binding PredchoziPredlohaCommand}" ToolTip="Předchozí stránka šablony"
                                     FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
-                            <TextBlock Text="{Binding PredlohaText}" Width="230" Margin="8,0"
+                            <TextBlock Text="{Binding PredlohaText}" Width="120" Margin="8,0"
                                        TextAlignment="Center" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                        ToolTip="Stránka šablony, kterou navrhujete. Kolik stránek z ní vyjde s daty, ukazuje náhled."/>
@@ -872,17 +872,20 @@
                 <DockPanel>
                     <!-- Stránkování dat (pager) - pevný 34px pruh NAHOŘE, rezervovaný vždy (i bez dat),
                          aby náhled začínal ve stejné výšce jako plátno vlevo (34 + 66 padding = 100 =
-                         horní okraj stránky návrháře). Pozadí pruhu = plocha plátna → v mock režimu
-                         (bez pageru) je to jen souvislý horní okraj. Obsah (◀ combo ▶) jen s daty. -->
+                         horní okraj stránky návrháře). Bez čeho přepínat je to jen souvislý horní okraj
+                         v barvě plochy plátna. -->
                     <Grid DockPanel.Dock="Top" Height="34" Background="{DynamicResource EDTheme.Bg.Canvas}">
-                        <Border Visibility="{Binding HasPageNavigation, Converter={StaticResource BoolToVis}}"
+                        <Border Visibility="{Binding MaListuNadNahledem, Converter={StaticResource BoolToVis}}"
                                 Background="{DynamicResource EDTheme.Bg.PanelAlt}"
                                 BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
+                          <Grid>
                             <!-- Střed panelu. Zarovnání doleva nad stránku se 14. 9. zkusilo a zahodilo:
                                  vypadalo to odstrčeně a šipky patří doprostřed toho, co uživatel vidí.
                                  Že lišta „ustřelovala doprava", nedělalo centrování, ale přetékající
                                  panel (viz OrizniSirkuNahledu v code-behind). -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                              <StackPanel Orientation="Horizontal"
+                                          Visibility="{Binding HasPageNavigation, Converter={StaticResource BoolToVis}}">
                                 <Button Content="◀" Command="{Binding PreviousPageCommand}" ToolTip="{Binding PreviousPageTooltip}"
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                                 <!-- Přímý skok na stránku dat (zastávka × směr) - bez proklikávání ◀▶.
@@ -904,23 +907,29 @@
                                            VerticalAlignment="Center" Margin="0,0,8,0"/>
                                 <Button Content="▶" Command="{Binding NextPageCommand}" ToolTip="{Binding NextPageTooltip}"
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                              </StackPanel>
+                              <!-- Týž přepínač stránek šablony jako nad plátnem (`B184`) - přepíná plátno
+                                   i náhled naráz. -->
+                              <StackPanel Orientation="Horizontal" Margin="12,0,0,0"
+                                          Visibility="{Binding MaPredlohy, Converter={StaticResource BoolToVis}}">
+                                <Button Content="◀" Command="{Binding PredchoziPredlohaCommand}" ToolTip="Předchozí stránka šablony"
+                                        FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                                <TextBlock Text="{Binding PredlohaText}" Width="120" Margin="8,0"
+                                           TextAlignment="Center" VerticalAlignment="Center"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                <Button Content="▶" Command="{Binding DalsiPredlohaCommand}" ToolTip="Další stránka šablony"
+                                        FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                              </StackPanel>
                             </StackPanel>
+                            <!-- Jen u šablony o víc stránkách (`B184`); jednostránková ho nemá. -->
+                            <CheckBox Content="Náhled všech stránek" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                      Margin="0,0,8,0"
+                                      Visibility="{Binding MaPredlohy, Converter={StaticResource BoolToVis}}"
+                                      IsChecked="{Binding NahledVsechStranek, Mode=TwoWay}"
+                                      FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                      ToolTip="Zapnuto: všechny stránky pod sebou, posun náhledu přepíná stránku v návrhu. Vypnuto: jen stránky z otevřené stránky šablony."/>
+                          </Grid>
                         </Border>
-                        <!-- Co náhled ukazuje u šablony o víc stránkách (`B184`): jen stránky z otevřené
-                             stránky šablony (výchozí - pevný doklad jako stazka), nebo celý doklad.
-                             Jednostránková šablona přepínač nemá. -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                    Margin="0,0,8,0"
-                                    Visibility="{Binding MaPredlohy, Converter={StaticResource BoolToVis}}">
-                            <RadioButton GroupName="RozsahNahledu" Content="Tato stránka" Margin="0,0,10,0"
-                                         IsChecked="{Binding NahledJenStranka, Mode=TwoWay}"
-                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" VerticalAlignment="Center"
-                                         ToolTip="Náhled ukazuje jen stránky, které vzniknou z otevřené stránky šablony"/>
-                            <RadioButton GroupName="RozsahNahledu" Content="Celý doklad"
-                                         IsChecked="{Binding NahledCelyDoklad, Mode=TwoWay}"
-                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" VerticalAlignment="Center"
-                                         ToolTip="Náhled ukazuje všechny stránky dokladu pod sebou; posun náhledu přepíná stránku v návrhu"/>
-                        </StackPanel>
                     </Grid>
 
                     <!-- Scrollovatelný canvas náhledu - vyplní zbytek, začíná nahoře (zarovnané s návrhářem).
