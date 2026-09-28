@@ -11,6 +11,13 @@ namespace EDISONMAIN2
     {
         private void Application_Startup(object sender, System.Windows.StartupEventArgs e)
         {
+            TestRunOptions? testRun = null;
+#if DEBUG
+            // E2E test spouští DEBUG build; Release skrytý vypínač hlášení chyb nedostane.
+            testRun = TestRunOptions.Parse(e.Args);
+            testRun?.ApplyProcessIsolation();
+#endif
+
             // Chyby mimo dispatcher by jinak zmizely beze stopy - do telemetrie, bez dialogu.
             AppDomain.CurrentDomain.UnhandledException += (_, args) =>
             {
@@ -22,7 +29,7 @@ namespace EDISONMAIN2
                 args.SetObserved();
             };
 
-            var window = new AppBootstrapper(this, ConnectionOverride.Parse(e.Args)).Run();
+            var window = new AppBootstrapper(this, ConnectionOverride.Parse(e.Args), testRun).Run();
             window?.Show();
         }
 

@@ -107,5 +107,27 @@ public class SessionFactoryTests
 
         Assert.Equal("", ((MLRestAdapter)ctx.MLRest).Inner.EdisonVersion);
     }
+
+    [Fact]
+    public void Establish_DebugBuild_TestRunTagGivesOwnSessionGuid()
+    {
+        // Logout maže zámky podle GUID - E2E instance nesmí sdílet GUID s vývojářovým shellem.
+        var services = new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+        var previous = SessionFactory.SessionTag;
+        SessionFactory.SessionTag = TestRunOptions.WindowMarker;
+        try
+        {
+            var ctx = SessionFactory.Establish(
+                new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"),
+                new LoginResult(7, "bob", "Bob", false, "", false, true, ""), services);
+
+            Assert.Equal($"E2E-{Environment.MachineName}-{Environment.UserName}",
+                ((MLRestAdapter)ctx.MLRest).Inner.GUID);
+        }
+        finally
+        {
+            SessionFactory.SessionTag = previous;
+        }
+    }
 #endif
 }

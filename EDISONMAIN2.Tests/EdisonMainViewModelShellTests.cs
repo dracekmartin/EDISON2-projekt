@@ -109,6 +109,20 @@ public class EdisonMainViewModelShellTests
     }
 
     [Fact]
+    public void OpenStartupWindowIfAny_TestRun_OpensNothing()
+    {
+        var nav = Substitute.For<IWindowNavigator>();
+        var vm = CreateVM(services: MockServices(nav: nav), treeLoader: TreeLoaderWith([Exe("23")]));
+        vm.SetStartupWindowCommand.Execute(vm.MainMenuTree.OfType<ExecutableModule>().Single());
+        vm.OpensStartupWindow = false;
+
+        vm.OpenStartupWindowIfAny();
+
+        nav.DidNotReceive().ShowLegacyAsync(Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<bool>(), Arg.Any<string>());
+    }
+
+    [Fact]
     public void LaunchShortcutCommand_ShortcutWithoutForm_ExplainsInsteadOfSilence()
     {
         var nav = Substitute.For<IWindowNavigator>();

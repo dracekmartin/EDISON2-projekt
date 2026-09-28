@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Automation;
 using ALVA.EDISONAPI;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
@@ -33,18 +34,25 @@ public class AppBootstrapper
     private readonly Application _application;
     private readonly ShellShutdown _shutdown;
     private readonly ConnectionOverride? _connectionOverride;
+    private readonly TestRunOptions? _testRun;
 
-    public AppBootstrapper(Application application, ConnectionOverride? connectionOverride = null)
+    public AppBootstrapper(Application application, ConnectionOverride? connectionOverride = null,
+                           TestRunOptions? testRun = null)
     {
         _application = application;
         _shutdown = new ShellShutdown(application);
         _connectionOverride = connectionOverride;
+        _testRun = testRun;
     }
 
     /// <summary>Pro test-only subclassy - neinjektuje <see cref="Application"/>, takže
     /// derived class MUSÍ přepsat všechny metody co by ho použily (Shutdown, BuildShellWindow,
     /// WireActivityFailedHandler, Release branch TryLogin).</summary>
     protected AppBootstrapper() : this(null!)
+    {
+    }
+
+    protected AppBootstrapper(TestRunOptions? testRun) : this(null!, null, testRun)
     {
     }
 
@@ -96,8 +104,10 @@ public class AppBootstrapper
             return null;
         }
 
-        // Auto-login (Windows SSO) má přednost; když neprojde, fallback na dialog.
-        if (!TryAutoLogin(prep.LoginRest, prefs, out var login) && !TryLogin(prep.LoginRest, prefs, out login))
+        // Auto-login (Windows SSO) má přednost; když neprojde, fallback na dialog. E2E běh ho vynechá:
+        // úspěšný Login pod Windows jménem nuluje uživatelské flagy a identitu testu dává DEBUG login.
+        if (!(_testRun is null && TryAutoLogin(prep.LoginRest, prefs, out var login))
+            && !TryLogin(prep.LoginRest, prefs, out login))
         {
             Shutdown();
             return null;
@@ -233,7 +243,8 @@ public class AppBootstrapper
         return (nav, popup, services);
     }
 
-    protected virtual ILocalPrefs LoadLocalPrefs() => LocalPrefs.Load();
+    protected virtual ILocalPrefs LoadLocalPrefs() =>
+        _testRun is null ? LocalPrefs.Load() : new TransientLocalPrefs();
 
     /// <summary>
     /// First-launch setup: když <c>EDISONini.xml</c> nemá vyplněné připojení, zobrazí
@@ -498,10 +509,15 @@ public class AppBootstrapper
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeLoader,
                                                 licence, switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
-                                                miniAppCatalog, shortcuts, new InfChangelogSource());
+                                                miniAppCatalog, shortcuts,
+                                                _testRun is null ? new InfChangelogSource() : null)
+        {
+            OpensStartupWindow = _testRun is null
+        };
         _shutdown.AttachShell(viewModel.SuppressCloseConfirm);
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };
+        if (_testRun is not null) AutomationProperties.SetItemStatus(wnd, TestRunOptions.WindowMarker);
         popup.DefaultOwner = wnd;
         viewModel.AttachToWindow(wnd);
 

@@ -22,6 +22,9 @@ public record SessionContext(IMLRest MLRest, LoginResult Login, Func<Lic?> Licen
 /// </summary>
 public static class SessionFactory
 {
+    /// <summary>Prefix deterministického DEBUG GUID; E2E běh má vlastní (<see cref="TestRunOptions"/>).</summary>
+    internal static string SessionTag { get; set; } = "DEV";
+
     public static SessionContext Establish(ConnectionInfo conn, LoginResult login, EDServices services)
     {
         var inner = new MLRest(conn.Server, conn.Port, conn.Database, conn.Idfa)
@@ -42,7 +45,7 @@ public static class SessionFactory
         // Deterministický GUID v dev: Stop Debugging (hard-kill) ACTIVITY zámek neuvolní, ale
         // příští spuštění reusne stejný klíč (idfa~ip~guid) → zámek se přepíše, neakumuluje se
         // (a neroste falešně licenční počet). V produkci náhodný GUID per session (default).
-        inner.GUID = $"DEV-{Environment.MachineName}-{Environment.UserName}";
+        inner.GUID = $"{SessionTag}-{Environment.MachineName}-{Environment.UserName}";
 #endif
         var mlRest = new MLRestAdapter(inner);
 

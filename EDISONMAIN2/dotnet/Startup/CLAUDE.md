@@ -33,9 +33,9 @@ Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDA
 
 ## Session / ACTIVITY zámek
 
-- Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - nezaniká se spojením, hard-kill
-  ho neuvolní (uklidí až server idle timeout). V dev to tlumí deterministický session GUID
-  (`#if DEBUG` v `SessionFactory.Establish`) - re-run přepíše týž klíč.
+- Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - hard-kill ho neuvolní (uklidí až idle
+  timeout). V dev ho re-run přepíše díky deterministickému GUID (`SessionFactory.SessionTag`); E2E běh
+  (`e2e=1`) má vlastní tag, jinak by jeho logout (maže zámky podle GUID) shodil vývojářův shell.
 - Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty obnovují
   idle timer (jinak aktivní shell vypadá serveru jako idle) a detekují zaniklý zámek/verzi.
   Přepnutí firmy jede s `CacheLocks=0` po dobu verify **i logoutu staré firmy** (zámek nové
