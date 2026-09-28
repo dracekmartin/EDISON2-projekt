@@ -82,5 +82,35 @@ public partial class PrintDialog : Window
             // Guard - Item.Visibility setter nemá early-return, vyhneme se zbytečným notifikacím při každém stisku.
             if (field.Visibility != target) field.Visibility = target;
         }
+
+        SchovejPrazdneSkupiny();
+    }
+
+    private readonly Dictionary<Group, ItemVisibility> _stavSkupinyPredSchovanim = [];
+
+    /// <summary>
+    /// Skupina bez jediného viditelného pole se schová i s nadpisem - u PNG by jinak zůstal prázdný
+    /// nadpis „Export". Při návratu dostane zpátky rozbalení, které měla.
+    /// </summary>
+    private void SchovejPrazdneSkupiny()
+    {
+        Group? skupina = null;
+        bool maPole = false;
+        foreach (var item in (ParamForm.Items ?? []).Append(null))
+        {
+            if (item is Field f) { maPole |= f.Visibility == ItemVisibility.Visible; continue; }
+            if (skupina is not null)
+            {
+                if (!maPole && skupina.Visibility != ItemVisibility.ProgrammerHidden)
+                {
+                    _stavSkupinyPredSchovanim[skupina] = skupina.Visibility;
+                    skupina.Visibility = ItemVisibility.ProgrammerHidden;
+                }
+                else if (maPole && _stavSkupinyPredSchovanim.Remove(skupina, out var puvodni))
+                    skupina.Visibility = puvodni;
+            }
+            skupina = item as Group;
+            maPole = false;
+        }
     }
 }
