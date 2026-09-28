@@ -34,11 +34,14 @@ public class PrintDialogViewModel : EDViewModel
     /// (→ persistence per-agenda zadarmo).</summary>
     public const string ExportSplitKey = "__EXPORT_SPLIT";
     public const string ExportFileNameKey = "__EXPORT_FILENAME";
+    /// <summary>Formát výstupu „PDF" / „PNG" - volí se v patičce okna, ne ve formuláři z Caché
+    /// (ten u šablony bez agendy není, a PNG musí jít i tam).</summary>
+    public const string ExportFormatKey = "__EXPORT_FORMAT";
 
     /// <summary>Klíče export polí - pro restore v <c>LoadPrintParamsAndApplyAsync</c> (nejsou
     /// v <c>_agendaParameters</c>, takže by se jinak nenačetly).</summary>
     public static readonly string[] ExportKeys =
-        [ExportSplitKey, ExportFileNameKey, .. SheetLayoutKeys.All];
+        [ExportSplitKey, ExportFileNameKey, ExportFormatKey, .. SheetLayoutKeys.All];
 
     /// <summary>FQN Caché agenda třídy pro EDInputForm AgendaParams (null = bez agendy / GENERAL).</summary>
     public string? AgendaClass => _agendaClass;
@@ -50,8 +53,42 @@ public class PrintDialogViewModel : EDViewModel
     public bool CanExportRealData => _buildRealData is not null;
     public string StatusText { get => _statusText; set => Set(ref _statusText, value); }
 
-    public RelayCommand ExportPdfCommand { get; }
-    public AsyncRelayCommand ExportRealDataPdfCommand { get; }
+    /// <summary>
+    /// Jediné tlačítko výstupu (rozhodnutí Jan 28. 9.): z vybraných linek, bez vybrané linky
+    /// z ukázkových dat. Dřív to byly čtyři cesty (PDF a PNG na liště, „Tisk všech vybraných",
+    /// „Export náhledu"), které se lišily v tom, co umí, a nebylo poznat, kterou použít.
+    /// </summary>
+    public AsyncRelayCommand VytvoritCommand { get; }
+
+    public IReadOnlyList<string> Formaty { get; } = ["PDF", "PNG"];
+
+    public string Format
+    {
+        get => _paramValues.GetValueOrDefault(ExportFormatKey) as string == "PNG" ? "PNG" : "PDF";
+        set
+        {
+            if (value == Format) return;
+            _paramValues[ExportFormatKey] = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(JePng));
+            OnPropertyChanged(nameof(UkazatUsporadani));
+            OnPropertyChanged(nameof(TlacitkoVytvorit));
+            RequestApplyVisibility?.Invoke();
+        }
+    }
+
+    /// <summary>PNG je obrázek za každou stránku - neskládá se na list, nečlení do souborů a nemá měřítko.</summary>
+    public bool JePng => Format == "PNG";
+
+    public bool UkazatUsporadani => !JePng && Usporadani.UkazatPanel;
+
+    public string TlacitkoVytvorit => $"Vytvořit {Format}";
+
+    /// <summary>Code-behind po změně formátu znovu vyhodnotí viditelnost polí formuláře.</summary>
+    public Action? RequestApplyVisibility { get; set; }
+
+    /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPng; vrací počet souborů.</summary>
+    public Func<string, IReadOnlyList<DataContext>, int>? RequestRenderPng { get; set; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.RenderToPdf. Třetí parametr = imposice (null = vypnutá).</summary>
     public Action<string, DataContext?, SheetLayoutOptions?, float>? RequestRenderPdf { get; set; }
@@ -200,8 +237,10 @@ public class PrintDialogViewModel : EDViewModel
         Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null,
         TdPreferencesService? preferences = null,
         Action? onParamsChanged = null,
-        string? agendaClass = null)
+        string? agendaClass = null,
+        Func<bool>? maVybraneLinky = null)
     {
+        _maVybraneLinky = maVybraneLinky ?? (() => false);
         _template = template;
         _paramValues = sharedParamValues;
         _parameters = parameters;
@@ -211,8 +250,7 @@ public class PrintDialogViewModel : EDViewModel
         _buildRealData = buildRealData;
         _preferences = preferences;
 
-        ExportPdfCommand = Command(ExportPdf);
-        ExportRealDataPdfCommand = CommandAsync(ExportRealDataPdfAsync, () => _buildRealData is not null);
+        VytvoritCommand = CommandAsync(VytvoritAsync);
         KontrolaCommand = CommandAsync(ZkontrolujAsync, () => _buildRealData is not null);
         ZobrazitHlaseniCommand = Command(() => RequestShowHlaseni?.Invoke(_nadpisHlaseni, Hlaseni), () => HasHlaseni);
 
@@ -226,6 +264,49 @@ public class PrintDialogViewModel : EDViewModel
 
         Usporadani = new UsporadaniListuViewModel(_paramValues, DesignerPages.ObsahStranek(template).Count,
             template.PageSize, Meritko);
+    }
+
+    private readonly Func<bool> _maVybraneLinky;
+
+    /// <summary>Z vybraných linek, jinak z ukázkových dat (šablona bez agendy, žádná vybraná linka).</summary>
+    private bool ZVybranychLinek => _buildRealData is not null && _maVybraneLinky();
+
+    private async Task VytvoritAsync()
+    {
+        if (JePng) await VytvoritPngAsync();
+        else if (ZVybranychLinek) await ExportRealDataPdfAsync();
+        else ExportPdf();
+    }
+
+    private async Task VytvoritPngAsync()
+    {
+        var path = ShowSaveDialog("Vytvořit PNG", "png");
+        if (path is null) return;
+        try
+        {
+            PersistParams();
+            IReadOnlyList<DataContext> stranky;
+            if (ZVybranychLinek)
+            {
+                var paramsSnapshot = new Dictionary<string, object?>(_paramValues);
+                stranky = await Task.Run(() => _buildRealData!(paramsSnapshot, PrubehNacitani())) ?? [];
+                Probiha = false;
+                if (stranky.Count == 0) { StatusText = "Databáze nevrátila žádná data."; return; }
+            }
+            else stranky = [_buildMockData(_paramValues) ?? new DataContext()];
+
+            StatusText = "Generuji PNG…";
+            int pocet = await Task.Run(() => RequestRenderPng?.Invoke(path, stranky) ?? 0);
+            if (pocet == 1) OpenPdf(path);
+            StatusText = pocet == 1
+                ? $"PNG uloženo: {Path.GetFileName(path)}"
+                : $"PNG uloženo: {pocet} souborů ({Path.GetFileNameWithoutExtension(path)}_001.png …)";
+        }
+        catch (Exception ex)
+        {
+            Probiha = false;
+            StatusText = $"⚠ Chyba: {ex.Message}";
+        }
     }
 
     // ── Uspořádání na list ────────────────────────────────────────────────────
@@ -327,7 +408,7 @@ public class PrintDialogViewModel : EDViewModel
         try { sheets = BuildSheetOptions(); }
         catch (ArgumentException ex) { StatusText = $"⚠ {ex.Message}"; return; }
 
-        var filePath = ShowSaveDialog("Export náhledu do PDF");
+        var filePath = ShowSaveDialog("Vytvořit PDF z ukázkových dat");
         if (filePath is null) return;
 
         try
@@ -358,8 +439,8 @@ public class PrintDialogViewModel : EDViewModel
 
         // Single = vyber soubor (jako dnes); split = vyber složku, vznikne N souborů.
         string? target = splitMode == ExportSplitMode.Single
-            ? ShowSaveDialog("Tisk všech vybraných do PDF")
-            : ShowFolderDialog("Tisk všech vybraných - vyber složku");
+            ? ShowSaveDialog("Vytvořit PDF")
+            : ShowFolderDialog("Vytvořit PDF - vyberte složku");
         if (target is null) return;
 
         try
@@ -518,15 +599,15 @@ public class PrintDialogViewModel : EDViewModel
         catch { /* průzkumník nemusí být dostupný */ }
     }
 
-    private string? ShowSaveDialog(string title)
+    private string? ShowSaveDialog(string title, string pripona = "pdf")
     {
         var dlg = new SaveFileDialog
         {
             Title = title,
-            Filter = "PDF soubory (*.pdf)|*.pdf",
-            DefaultExt = "pdf",
+            Filter = $"{pripona.ToUpperInvariant()} soubory (*.{pripona})|*.{pripona}",
+            DefaultExt = pripona,
             FileName = (string.IsNullOrWhiteSpace(_template.Name)
-                ? "sablona" : _template.Name) + ".pdf"
+                ? "sablona" : _template.Name) + "." + pripona
         };
         return dlg.ShowDialog() == true ? dlg.FileName : null;
     }

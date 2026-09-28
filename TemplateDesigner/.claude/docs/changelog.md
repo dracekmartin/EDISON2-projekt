@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-09-28 (2) - 🖨 PDF a PNG jen z okna Tisk
+
+Výstup šel udělat čtyřmi cestami: tlačítky PDF a PNG na liště, „Tisk všech vybraných" a „Export
+náhledu" v tisku. Lišily se v tom, co umí (PDF z lišty nečlenil do souborů, „Export náhledu" bral
+jen ukázková data), a „náhled" znamenal pokaždé něco jiného. Teď je jediná cesta: okno **Tisk**
+s volbou **Formát** (PDF / PNG) a tlačítkem **„Vytvořit PDF"** - z vybraných linek, bez vybrané
+linky z ukázkových dat. Tlačítka PDF a PNG z lišty i položky z menu Soubor zmizely.
+
+Po cestě: tisk vybraných linek formátoval data podle nastavení Windows, ne podle jazyka šablony
+jako náhled a dřívější PDF z lišty. Teď bere kulturu šablony (ověřeno čtením kódu, slovenskou
+šablonou ne).
+
 ## 2026-09-28 - 📄 přepínač stránek šablony i nad náhledem (`B187`)
 
 Přepínač nad plátnem ukazuje jen „Stránka 1 z 2" - jméno první sekce a „1 stránka / podle dat"

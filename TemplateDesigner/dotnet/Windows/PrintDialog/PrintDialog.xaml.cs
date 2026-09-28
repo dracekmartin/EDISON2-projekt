@@ -25,6 +25,7 @@ public partial class PrintDialog : Window
         InitializeComponent();
         vm.RequestClose += result => { DialogResult = result; Close(); };
         UsporadaniPanel.DataContext = vm.Usporadani;
+        vm.RequestApplyVisibility = ApplyVisibility;
         // Hlášky kontroly ve vlastním okně - nezavírá tiskové, jde mít otevřené obojí.
         vm.RequestShowHlaseni = (nadpis, hlaseni) =>
             new KontrolaVysledkuDialog(new KontrolaVysledkuDialogViewModel(nadpis, hlaseni)) { Owner = this }.Show();
@@ -66,12 +67,15 @@ public partial class PrintDialog : Window
         // Název souboru má smysl jen při členění na víc souborů (split != Single).
         var split = fields.FirstOrDefault(f => f.Key == PrintDialogViewModel.ExportSplitKey)?.Value ?? "SINGLE";
         bool isSplit = split != "SINGLE";
+        // PNG je obrázek za každou stránku - členění do souborů ani měřítko tisku se ho netýkají.
+        bool png = _vm.JePng;
 
         foreach (var field in fields)
         {
             bool visible = field.Key switch
             {
-                PrintDialogViewModel.ExportFileNameKey => isSplit,
+                PrintDialogViewModel.ExportFileNameKey => isSplit && !png,
+                PrintDialogViewModel.ExportSplitKey or SheetLayoutKeys.Meritko => !png,
                 _ => _vm.IsParamVisible(field.Key),
             };
             var target = visible ? ItemVisibility.Visible : ItemVisibility.Collapsed;

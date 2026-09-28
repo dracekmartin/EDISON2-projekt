@@ -68,7 +68,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Vrstva** - Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
 - **Data** - obnovení dat náhledu (↻)
-- **Export** - Tisk, Export do PDF, Export do PNG
+- **Tisk** - kontrola vybraných linek a Tisk (PDF i PNG se vytváří v okně Tisk)
 - **Zobrazení** - přepínač mřížky, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání, zoom, tlačítka „Fit" a „1:1", skrytí panelu sekcí, přepínač živého náhledu
 
 ### Levý panel - 6 záložek
@@ -94,7 +94,7 @@ Zleva doprava:
 
 - **Soubor** - Nová šablona · Otevřít z databáze… · Uložit do databáze · Uložit do databáze
   jako… · Importovat ze souboru… · Exportovat do souboru… · Otevřít poslední soubor
-  (submenu) · Exportovat náhled jako PDF… · Exportovat náhled jako PNG… · Tisk… · Vlastnosti
+  (submenu) · Tisk… · Vlastnosti
   stránky… · Konec
 - **Úpravy** - Zpět · Vpřed · Smazat · Z-order (podnabídka) · Zarovnat (podnabídka) · Rozložit
   (podnabídka) · Normalizovat pozice… · Škálovat šablonu (podnabídka procent) · Kopírovat styl ·
@@ -144,7 +144,7 @@ a jaké **specializované prvky** máte k dispozici.
   roztroušené po jednotlivých počítačích.
 
 ### Import a export do souboru
-Šablonu lze také uložit jako **soubor JSON** - obdoba exportu do PDF/PNG, ne náhrada
+Šablonu lze také uložit jako **soubor JSON** - ne náhrada
 databázového úložiště:
 
 - `Soubor → Importovat z JSON souboru…` - otevře soubor; šablona se pak chová jako nová
@@ -536,15 +536,13 @@ můžete jinou linku, než máte v náhledu.
 Varování se týká jen sekcí nastavených jako „Držet pohromadě" - sekce, které lze rozdělit přes
 stránky, se prostě rozdělí a nic se neztratí, takže tam varování nedává smysl.
 
-### Export
-- `Soubor → Exportovat náhled jako PDF…` / `…jako PNG…` - export aktuálního náhledu
-  (víceřánkově), běží asynchronně nad snímkem šablony pořízeným v okamžiku kliknutí (další
-  editace mezitím výsledek neovlivní).
-
 ### Tisk
 `Soubor → Tisk…` (Ctrl+P) otevře dialog „Tisk šablony" s parametry, které se generují dynamicky
 podle zvolené agendy (bez agendy: „Šablona nemá žádné parametry."). Dialog obsahuje i výběr
-instancí (např. linek) k tisku a tlačítka „Tisk všech vybraných", „Export náhledu", „Zavřít".
+instancí (např. linek) k tisku. PDF i PNG vzniká jen tady, jedním tlačítkem **„Vytvořit PDF"**
+(„Vytvořit PNG") vedle volby **Formát**: z vybraných linek, a když žádná vybraná není, z ukázkových
+dat. PNG je obrázek za každou stránku - neskládá se na list a nečlení do souborů, takže se tyto
+volby u něj schovají.
 
 Nastavení výstupu je univerzální napříč agendami:
 - **Členění výstupu** - Vše do jednoho PDF / Jeden PDF na instanci / (u agend s více úrovní dat
@@ -565,7 +563,7 @@ Nastavení výstupu je univerzální napříč agendami:
   Nákres pod volbami ukazuje, co kam padne. Kdo měl z dřívějška uloženou volbu „Každá stránka na
   celý list" nebo zapnuté ořezové značky, uvidí je v panelu i dál. Uspořádání si návrhář
   pamatuje sám - příště nabídne poslední použité u agendy.
-  (Export PNG uspořádání nepoužívá; brožurové řazení zůstává na tiskárně.)
+  (Brožurové řazení zůstává na tiskárně.)
 
 
 ---

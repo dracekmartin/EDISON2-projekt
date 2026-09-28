@@ -39,6 +39,14 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
+### Týden od 28. 9. 2026 · Návrhář - PDF a PNG jen z okna Tisk
+
+PDF i PNG se nově vytváří jen v okně **Tisk** (Ctrl+P), jedním tlačítkem vedle volby formátu -
+z vybraných linek, a když žádná vybraná není, z ukázkových dat. Tlačítka PDF a PNG na liště
+zmizela, všechno nastavení výstupu je tak na jednom místě. U šablony o víc stránkách jde v tisku
+zvolit, jestli druhá stránka dokladu přijde vedle první, nebo na zadní stranu listu - třeba dvě
+stazky A5 oboustranně na A4.
+
 ### Týden od 21. 9. 2026 · Linkové JŘ - Nová agenda
 
 Vydali jsme novou agendu **Linkové jízdní řády**, zatím variantu **AD** (data z jízdních řádů).
