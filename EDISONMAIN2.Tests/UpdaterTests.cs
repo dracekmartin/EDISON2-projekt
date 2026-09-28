@@ -470,7 +470,7 @@ public class UpdaterTests
 
     [Fact]
     public void IsSameInstallation_HttpSource_False() =>
-        Assert.False(Updater.IsSameInstallation(Path.GetTempPath(), "http://srv/edison"));
+        Assert.False(Updater.IsSameInstallation(@"D:\Edison", "http://srv/edison"));
 
     [Fact]
     public void Check_EmptyForcedStamp_NoEffect()
