@@ -30,8 +30,7 @@ Dílčí vylepšení a náměty.
 - **Napojení na externí zdroje dat** - možnost tisknout i z dat mimo EDISON (např. z tabulky
   nebo databáze). Zvažujeme jako budoucí směr; konkrétní zdroje a rozsah zatím nejsou dané.
 - **Mezisoučty ve skupinách řádků** - souhrnný řádek za skupinu dat.
-- **Oboustranný / brožurový tisk** při skládání více vývěsek na list - dnes se skládá jednostranně,
-  duplex řeší tiskárna.
+- **Brožurový tisk** - řazení stránek do brožury při skládání na list.
 
 ---
 
@@ -39,13 +38,14 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
-### Týden od 28. 9. 2026 · Návrhář - PDF a PNG jen z okna Tisk
+### Týden od 28. 9. 2026 · Návrhář - Doklady o více stránkách, kontrola před tiskem
 
-PDF i PNG se nově vytváří jen v okně **Tisk** (Ctrl+P), jedním tlačítkem vedle volby formátu -
-z vybraných linek, a když žádná vybraná není, z ukázkových dat. Tlačítka PDF a PNG na liště
-zmizela, všechno nastavení výstupu je tak na jednom místě. U šablony o víc stránkách jde v tisku
-zvolit, jestli druhá stránka dokladu přijde vedle první, nebo na zadní stranu listu - třeba dvě
-stazky A5 oboustranně na A4.
+- Šablona může mít víc stránek (např. líc a rub dokladu), přidávají se tlačítkem **„+ Stránka"**.
+- Při tisku lze druhou stránku dokladu dát vedle první, nebo na zadní stranu listu.
+- PDF a PNG se vytváří jen v okně **Tisk**, tlačítka na liště byla zrušena.
+- Upozornění k tisku jsou vpravo dole v jednom bloku podle závažnosti. Jde o doporučení, tisk
+  proběhne i s nimi.
+- Tlačítko **„Zkontrolovat"** v okně Tisk projde všechny vybrané linky.
 
 ### Týden od 21. 9. 2026 · Linkové JŘ - Nová agenda
 
@@ -59,6 +59,10 @@ Výchozí šablona od M-line připomíná starý postskriptový tisk, takže se 
 - Sloupec tarifních čísel, zastávky bez zastavení, barvy spojů a písmeno systému u zóny se berou
   podle nastavení linky a jde je pro sestavu přebít.
 - Značky vysvětluje legenda poznámek pod tabulkou, stejná jako u vývěsky.
+- Parametr **Počet stran**: jízdní řád se přizpůsobí na jednu nebo dvě strany.
+- Pole **{POKRACOVANI}** pro text „pokračování / opačný směr" v hlavičce stránky.
+- Dopravci v hlavičce se uvádějí jen za spoje na dané stránce.
+- Tabulka spojů umožňuje skrýt čísla spojů.
 
 Podrobnosti v [uživatelské příručce](https://podpora.m-line.cz/support/wiki/90511fc5-10e5-476d-b7c1-3cd70672f26d).
 
