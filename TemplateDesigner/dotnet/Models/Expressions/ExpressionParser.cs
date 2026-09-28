@@ -82,6 +82,9 @@ internal static class Tokenizer
             // Jednoznakové operátory
             switch (c)
             {
+                // Jedno „=" je rovnost jako v Excelu - uživatel ho tak napíše. Jinak by se výraz
+                // nepřečetl a podmínka tiše platila vždy (nález Jan 24. 9. u `{STRANA} = 1`).
+                case '=': tokens.Add(new Token(TK.Eq));     i++; continue;
                 case '>': tokens.Add(new Token(TK.Gt));     i++; continue;
                 case '<': tokens.Add(new Token(TK.Lt));     i++; continue;
                 case '!': tokens.Add(new Token(TK.Not));    i++; continue;

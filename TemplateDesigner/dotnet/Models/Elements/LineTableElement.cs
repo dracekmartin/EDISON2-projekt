@@ -438,6 +438,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// („N" jen nástup, „G" paragraf…). Prázdný seznam = linka žádnou nemá.</summary>
         public List<string> Znacky = [];
         public List<LinePripojData> Pripoje = [];
+        /// <summary>Jména dopravců spoje (týž tvar jako v <c>POPIS_DOPRAVCE</c>) - pro dopravce
+        /// jen za spoje na stránce (#9417).</summary>
+        public List<string> Dopravci = [];
     }
 
     public sealed class LineSkupinaData
@@ -508,6 +511,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Casy = ParseStringArray(row.GetValue("CASY")),
             Znacky = ParseStringArray(row.GetValue("ZNACKY")),
             Pripoje = ParsePripoje(row.GetValue("PRIPOJE")),
+            Dopravci = ParseStringArray(row.GetValue("DOPRAVCI")),
         })];
 
         RozdelPodleSmeru();
@@ -780,6 +784,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (cas == "") continue;
             var (runs, maZnacku, _) = BunkaCasuRuns(spoj, si, stop.Poradi, cas);
             float sirka = merBunku(runs);
+            // Časy ostatních řádků se odsadí o tuhle značku, takže sloupec musí unést značku
+            // i s nejširším časem, ne jen s tím, který stojí vedle ní.
+            if (maZnacku)
+                sirka = MathF.Max(sirka, merBunku([.. ZnackyPredCasem(spoj, si, stop.Poradi), .. NejsirsiCasRuns()]));
             if (sirka <= potreba) continue;
             potreba = sirka;
             kde = maZnacku
@@ -824,14 +832,21 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     {
         using var font = new SKFont(GetTypeface(st), st.FontSize);   // velikost v pt → míra vyjde v pt
         if (FormatCasu != FormatCasuSpoje.HodinaVetsi)
-            return StopaPt([new("00:00", false)], _ => font);
+            return StopaPt(NejsirsiCasRuns(), _ => font);
 
         float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
         using var maly = new SKFont(GetTypeface(st), st.FontSize * pomer);
-        // Tytéž úseky jako `CasRuns`, včetně nastavitelného odstupu - jinak by se dolní hranice
-        // sloupce o utaženou mezeru nesnížila.
-        return StopaPt([new("23", false), SymbolRunRenderer.Mezera(MezeraHodinaMinutaMm, pomer),
-            new("59", false, pomer)], r => r.Zmenseni < 0.999f ? maly : font);
+        return StopaPt(NejsirsiCasRuns(), r => r.Zmenseni < 0.999f ? maly : font);
+    }
+
+    /// <summary>Úseky nejširšího času, který se ve sloupci spoje může objevit.</summary>
+    /// <remarks>Tytéž úseky jako <see cref="CasRuns"/>, včetně nastavitelného odstupu - jinak by se
+    /// dolní hranice sloupce o utaženou mezeru nesnížila.</remarks>
+    private List<SymbolRunRenderer.Run> NejsirsiCasRuns()
+    {
+        if (FormatCasu != FormatCasuSpoje.HodinaVetsi) return [new("00:00", false)];
+        float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
+        return [new("23", false), SymbolRunRenderer.Mezera(MezeraHodinaMinutaMm, pomer), new("59", false, pomer)];
     }
 
     /// <summary>Vyřešený popisný sloupec. <c>Key</c> je klíč té definice sloupce, ze které vznikl -
@@ -1855,11 +1870,24 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public IReadOnlyCollection<string> ZnackyVUseku(DataContext? data, float odMm, float doMm)
     {
+        var znacky = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var spoj in SpojeVUseku(data, odMm, doMm))
+        {
+            if (spoj.Nz.Length > 0) znacky.Add(spoj.Nz);
+            foreach (var p in spoj.Platnost) if (p.Length > 0) znacky.Add(p);
+        }
+        return znacky;
+    }
+
+    /// <summary>Spoje částí tabulky, které zasahují do úseku prvku <paramref name="odMm"/>-<paramref name="doMm"/>
+    /// - tedy spoje, které jsou na téhle stránce vidět.</summary>
+    internal List<LineTripData> SpojeVUseku(DataContext? data, float odMm, float doMm)
+    {
         if (data is null) return [];
         EnsureParsed(data);
         if (_cachedStops!.Count == 0 || _cachedTrips!.Count == 0) return [];
 
-        var znacky = new HashSet<string>(StringComparer.Ordinal);
+        var spoje = new List<LineTripData>();
         float zacatekBloku = 0f;
         foreach (var blok in SloupcoveBloky(_cachedStops!, MaxKmCount(_cachedStops!)))
         {
@@ -1868,17 +1896,73 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             float konecBloku = zacatekBloku + hlava.Sum() + radky.Sum(r => r.VyskaMm);
 
             if (konecBloku > odMm + 0.01f && zacatekBloku < doMm - 0.01f)
-            {
-                foreach (var spoj in hlavni.Concat(zrcadlene ?? []))
-                {
-                    if (spoj.Nz.Length > 0) znacky.Add(spoj.Nz);
-                    foreach (var p in spoj.Platnost) if (p.Length > 0) znacky.Add(p);
-                }
-            }
+                spoje.AddRange(hlavni.Concat(zrcadlene ?? []));
             zacatekBloku = konecBloku + MezeraMeziBlokyMm;
         }
-        return znacky;
+        return spoje;
     }
+
+    /// <summary>
+    /// <c>POPIS_DOPRAVCE</c> jen za spoje na stránce (#9417): víc dopravců = „Název (spoje 1-4, 8)",
+    /// jeden = jen název. Null = spoje dopravce nenesou (starší server), text zůstává celý.
+    /// </summary>
+    /// <remarks>
+    /// Řady spojů se slučují podle pořadí <b>na stránce</b>: „1-4" říká, že všechny spoje stránky
+    /// mezi 1 a 4 jede tenhle dopravce. Počítat po jedné by na jednosměrné stránce (lichá čísla)
+    /// nesloučilo nic. Starý tisk vypisoval spoje za celou linku a u souhrnného JŘ text přetekl
+    /// pod tabulku - proto zákazník chtěl jen stránku.
+    /// </remarks>
+    internal static string? PopisDopravcuStranky(IReadOnlyList<LineTripData> spoje)
+    {
+        if (spoje.Count == 0 || spoje.All(s => s.Dopravci.Count == 0)) return null;
+
+        var poradi = spoje.Select(s => s.CisloSpoje).Distinct()
+            .OrderBy(c => int.TryParse(c, out int n) ? n : int.MaxValue).ThenBy(c => c, StringComparer.Ordinal)
+            .Select((c, i) => (c, i)).ToDictionary(x => x.c, x => x.i);
+        var poDopravcich = new List<(string Nazev, SortedSet<int> Pozice)>();
+        foreach (var spoj in spoje)
+            foreach (var nazev in spoj.Dopravci)
+            {
+                int k = poDopravcich.FindIndex(d => d.Nazev == nazev);
+                if (k < 0) { poDopravcich.Add((nazev, [])); k = poDopravcich.Count - 1; }
+                poDopravcich[k].Pozice.Add(poradi[spoj.CisloSpoje]);
+            }
+
+        if (poDopravcich.Count == 1) return poDopravcich[0].Nazev;
+        var cisla = poradi.OrderBy(x => x.Value).Select(x => x.Key).ToList();
+        return string.Join(", ", poDopravcich.Select(d => $"{d.Nazev} (spoje {Rady(d.Pozice, cisla)})"));
+    }
+
+    /// <summary>Jen názvy dopravců bez čísel spojů - pro list bez spojů (přetečené poznámky).
+    /// Null = spoje dopravce nenesou.</summary>
+    internal static string? JmenaDopravcu(IReadOnlyList<LineTripData> spoje)
+    {
+        var jmena = spoje.SelectMany(s => s.Dopravci).Distinct().ToList();
+        return jmena.Count == 0 ? null : string.Join(", ", jmena);
+    }
+
+    /// <remarks>
+    /// Do řady jdou jen spoje, které jsou na stránce vedle sebe <b>a zároveň</b> se číslem liší
+    /// nejvýš o 2 (jeden směr má lichá, druhý sudá čísla). Bez druhé podmínky vyšlo „15-105"
+    /// pro spoje 15 a 105 a čtenář to četl jako všechny spoje mezi nimi (nález Jan 23. 9.).
+    /// </remarks>
+    private static string Rady(SortedSet<int> pozice, List<string> cisla)
+    {
+        var casti = new List<string>();
+        int? od = null, posledni = null;
+        foreach (int p in pozice)
+        {
+            if (od is null) { od = posledni = p; continue; }
+            if (p == posledni + 1 && NavazujiCislem(cisla[posledni!.Value], cisla[p])) { posledni = p; continue; }
+            casti.Add(od == posledni ? cisla[od.Value] : $"{cisla[od.Value]}-{cisla[posledni!.Value]}");
+            od = posledni = p;
+        }
+        if (od is not null) casti.Add(od == posledni ? cisla[od.Value] : $"{cisla[od.Value]}-{cisla[posledni!.Value]}");
+        return string.Join(", ", casti);
+    }
+
+    private static bool NavazujiCislem(string predchozi, string dalsi) =>
+        int.TryParse(predchozi, out int a) && int.TryParse(dalsi, out int b) && b - a is > 0 and <= 2;
 
     /// <summary>Pokračovací stránka zopakuje hlavu bloku - pás skupin dnů, čísla spojů,
     /// platnost a negativní značky. Bez ní nejde poznat, který sloupec je který spoj.</summary>
@@ -2455,6 +2539,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // Přípojný řádek má vlastní styl (#8360) - jinak vypadá stejně jako čas spoje.
         // Výška chodí zvenčí už přeškálovaná, ať se nepočítá dvakrát jinak než v `Render`.
         var pripojStyle = ResolvePripojStyle();
+        var predsazeni = PredsazeniCasu(ctx, trips, stops, tripDataStyle, symbolFace, scale);
+        var predsazeniZrc = PredsazeniCasu(ctx, zrcadlene, stops, tripDataStyle, symbolFace, scale);
         var rozdvojeni = SloucitPopisyRozdvojene
             ? RozdvojeneRadky(stops, s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow))
             : null;
@@ -2479,9 +2565,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // a nakreslí se ručně - stejně jako řádek platnosti. Musí se to vědět **před** sázením
             // buněk, aby se text nezdvojil.
             var znackyVBunce = new Dictionary<int, List<SymbolRunRenderer.Run>>();
-            ZnackyVBunce(trips, stop, si, znackyVBunce);
+            ZnackyVBunce(trips, stop, si, znackyVBunce, ctx, predsazeni, tripCellStyle, symbolFace, scale);
             var znackyVBunceZrc = new Dictionary<int, List<SymbolRunRenderer.Run>>();
-            ZnackyVBunce(zrcadlene, stop, si, znackyVBunceZrc);
+            ZnackyVBunce(zrcadlene, stop, si, znackyVBunceZrc, ctx, predsazeniZrc, tripCellStyle, symbolFace, scale);
             int siRadku = si;
             PridejZrcadlene(specs, mrizka, zrcadlene.Count, tripCellStyle, ti =>
             {
@@ -2562,10 +2648,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 {
                     if (znackyRadku.Count > 0)
                         DrawBunkySeZnackou(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
-                            mrizka.SirkaSpojeMm, znackyRadku, tripCellStyle, symbolFace, scale);
+                            mrizka.SirkaSpojeMm, znackyRadku, ti => SBarvouSpoje(tripCellStyle, trips[ti]),
+                            symbolFace, scale);
                     if (znackyVBunceZrc.Count > 0)
                         DrawBunkySeZnackou(ctx, rowY, rowH, ti => X + mrizka.XZrcadlenehoMm(ti),
-                            mrizka.SirkaZrcadlenehoMm, znackyVBunceZrc, tripCellStyle, symbolFace, scale);
+                            mrizka.SirkaZrcadlenehoMm, znackyVBunceZrc,
+                            ti => SBarvouSpoje(tripCellStyle, zrcadlene[ti]), symbolFace, scale);
                     // Značka za názvem patří ke sloučené buňce, takže se musí vycentrovat přes oba
                     // řádky stejně jako název - jinak by stála u odjezdu a název byl nad ní.
                     if (znakZastavky.Count > 0 && nameIndex >= 0)
@@ -2722,7 +2810,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// hlavní i zrcadlený blok - značka patří ke spoji, ne ke straně tabulky.
     /// </remarks>
     private void ZnackyVBunce(List<LineTripData> spoje, LineStopData stop, int si,
-        Dictionary<int, List<SymbolRunRenderer.Run>> cil)
+        Dictionary<int, List<SymbolRunRenderer.Run>> cil, RenderContext ctx, float[] predsazeni,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
     {
         for (int ti = 0; ti < spoje.Count; ti++)
         {
@@ -2731,9 +2820,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (cas == "") continue;
 
             var (runs, maZnacku, rozpadlyCas) = BunkaCasuRuns(t, si, stop.Poradi, cas);
+            // Čas s užší značkou (nebo bez ní) dorovná mezerou na nejširší značku sloupce.
+            float vlastni = maZnacku
+                ? SymbolRunRenderer.SirkaMm(ctx, ZnackyPredCasem(t, si, stop.Poradi), style, symbolFace, scale)
+                : 0f;
+            float doplnit = ti < predsazeni.Length ? predsazeni[ti] - vlastni : 0f;
+            if (doplnit > 0.01f) runs.Insert(0, SymbolRunRenderer.Mezera(doplnit));
             // Buňka jde ručně jen tehdy, když v ní je aspoň jedna věc, kterou obyčejná buňka
-            // neumí: piktogram, nebo hodina a minuta různě velké. Jinak ať ji vysází CellRenderer.
-            if (!maZnacku && !rozpadlyCas) continue;
+            // neumí: piktogram, posunutý čas, nebo hodina a minuta různě velké. Jinak ať ji
+            // vysází CellRenderer.
+            if (!maZnacku && !rozpadlyCas && doplnit <= 0.01f) continue;
             cil[ti] = runs;
         }
     }
@@ -2747,15 +2843,47 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private (List<SymbolRunRenderer.Run> Runs, bool MaZnacku, bool RozpadlyCas) BunkaCasuRuns(
         LineTripData spoj, int si, int poradi, string cas)
     {
-        var runs = PiktogramyBunky(spoj, si, poradi);
-        bool maZnacku = SymbolRunRenderer.MaPiktogram(runs);
-        if (!maZnacku) runs.Clear();   // neověřená značka → jako by žádná nebyla
+        var runs = ZnackyPredCasem(spoj, si, poradi);
+        bool maZnacku = runs.Count > 0;
 
         var casRuns = CasRuns(cas);
-        if (maZnacku) runs.Add(SymbolRunRenderer.Mezera(MezeraZnackaCasMm));
         if (casRuns is null) runs.Add(new(cas, false));
         else runs.AddRange(casRuns);
         return (runs, maZnacku, casRuns is not null);
+    }
+
+    /// <summary>Piktogramy vlevo od času i s mezerou za nimi, nebo prázdno, když buňka značku nemá.</summary>
+    private List<SymbolRunRenderer.Run> ZnackyPredCasem(LineTripData spoj, int si, int poradi)
+    {
+        var runs = PiktogramyBunky(spoj, si, poradi);
+        if (!SymbolRunRenderer.MaPiktogram(runs)) return [];   // neověřená značka → jako by žádná nebyla
+        runs.Add(SymbolRunRenderer.Mezera(MezeraZnackaCasMm));
+        return runs;
+    }
+
+    /// <summary>
+    /// O kolik (mm) se ve sloupci každého spoje posune čas, aby minuty stály pod sebou: šířka
+    /// nejširší značky před časem v tom sloupci. Nula u sloupce, kde značku nemá žádný řádek.
+    /// </summary>
+    /// <remarks>
+    /// Bez toho stál čas se značkou o její šířku vpravo a ostatní časy na středu, takže minuty
+    /// ve sloupci nešly pod sebou (hovor s kolegou 25. 9.).
+    /// </remarks>
+    private float[] PredsazeniCasu(RenderContext ctx, List<LineTripData> spoje, List<LineStopData> stops,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
+    {
+        var predsazeni = new float[spoje.Count];
+        for (int ti = 0; ti < spoje.Count; ti++)
+            for (int si = 0; si < stops.Count; si++)
+            {
+                if (!RowConditions.IsVisible(RowVisibilityExpression, stops[si].SourceRow)) continue;
+                if (si >= spoje[ti].Casy.Count || spoje[ti].Casy[si] == "") continue;
+                var znacky = ZnackyPredCasem(spoje[ti], si, stops[si].Poradi);
+                if (znacky.Count == 0) continue;
+                predsazeni[ti] = MathF.Max(predsazeni[ti],
+                    SymbolRunRenderer.SirkaMm(ctx, znacky, style, symbolFace, scale));
+            }
+        return predsazeni;
     }
 
     /// <summary>
@@ -2891,15 +3019,26 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static void DrawBunkySeZnackou(RenderContext ctx, float rowTopMm, float rowH,
         Func<int, float> xSpojeMm, Func<int, float> sirkaSpojeMm,
         Dictionary<int, List<SymbolRunRenderer.Run>> znacky,
-        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale) =>
+        DrawBunkySeZnackou(ctx, rowTopMm, rowH, xSpojeMm, sirkaSpojeMm, znacky, _ => style, symbolFace, scale);
+
+    private static void DrawBunkySeZnackou(RenderContext ctx, float rowTopMm, float rowH,
+        Func<int, float> xSpojeMm, Func<int, float> sirkaSpojeMm,
+        Dictionary<int, List<SymbolRunRenderer.Run>> znacky,
+        Func<int, ResolvedTextStyle> style, SKTypeface symbolFace, float scale)
     {
         foreach (var (ti, runs) in znacky)
         {
             float leftMm = xSpojeMm(ti);
             var cellMm = new SKRect(leftMm, rowTopMm, leftMm + sirkaSpojeMm(ti), rowTopMm + rowH);
-            SymbolRunRenderer.Draw(ctx, cellMm, runs, style, symbolFace, scale);
+            SymbolRunRenderer.Draw(ctx, cellMm, runs, style(ti), symbolFace, scale);
         }
     }
+
+    /// <summary>Styl buňky času s barvou spoje z dat - ručně kreslená buňka ji musí nést stejně
+    /// jako ta, kterou sází <c>CellRenderer</c>.</summary>
+    private static ResolvedTextStyle SBarvouSpoje(ResolvedTextStyle style, LineTripData spoj) =>
+        spoj.ForeColor is null ? style : style with { TextColor = spoj.ForeColor };
 
     /// <summary>Nakreslí značky platnosti do sloupců spojů - piktogramy symbolovým fontem,
     /// zkratky běžným, i když jsou v jedné buňce vedle sebe.</summary>

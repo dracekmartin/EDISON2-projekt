@@ -52,7 +52,9 @@ Method TestGold0330510()
 	// Re-baseline 2026-09-04: k přípoji přibylo pole AVL (druh dopravy) - prvek podle něj seskupuje
 	// přípojné řádky, takže se autobus nesloučí s vlakem téhož směru. Mění se jen md5, počty jsou
 	// do jednoho shodné.
-	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=Ket/Gr8gH2gQRPOQLspU3Q==")
+	// Re-baseline 2026-09-23 (#9417): spoj nese pole DOPRAVCI, z něhož klient skládá dopravce
+	// za spoje na stránce. Mění se jen md5, počty jsou do jednoho shodné.
+	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=SZ09OsQOghU36bPLfymmWA==")
 }
 
 /// Druhý tvar: bez skupin dnů, zdvojené řádky příjezd/odjezd, šest km sloupců.
@@ -82,7 +84,8 @@ Method TestGold0330511()
 	// Re-baseline 2026-08-28 (`L6b`, směr u spoje) - ⚠️ **mění se JEN md5**, počty shodné.
 	// Re-baseline 2026-08-31 (#13158) - přejmenování POPIS_SMER, viz gold 0330510. Jen md5.
 	// Re-baseline 2026-09-04: pole AVL u přípoje (viz TestGold0330510). Jen md5, počty shodné.
-	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=nTQ5pCiYY8JRIx0NXA9l7w==")
+	// Re-baseline 2026-09-23 (#9417): pole DOPRAVCI u spoje (viz TestGold0330510). Jen md5.
+	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=w5wB5Z6g/3IDihJXKQF1bA==")
 }
 
 /// Třetí tvar, jiná firma: největší linka jádra (99 spojů, 53 na stránku, osm km sloupců).
@@ -110,7 +113,8 @@ Method TestGold0410107()
 	// Re-baseline 2026-08-28 (`L6b`, směr u spoje) - ⚠️ **mění se JEN md5**, počty shodné.
 	// Re-baseline 2026-08-31 (#13158) - přejmenování POPIS_SMER, viz gold 0330510. Jen md5.
 	// Re-baseline 2026-09-04: pole AVL u přípoje (viz TestGold0330510). Jen md5, počty shodné.
-	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=9FybPT0f6ejpZcoJBsSfrQ==")
+	// Re-baseline 2026-09-23 (#9417): pole DOPRAVCI u spoje (viz TestGold0330510). Jen md5.
+	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=7WjG8clL9So+k2LfXJf4iw==")
 }
 
 /// Čtvrtý tvar: 109 spojů na **jediné** stránce (jeden směr), bez zón a bez sloupce MHD.
@@ -141,7 +145,8 @@ Method TestGold0945001()
 	// Re-baseline 2026-08-28 (`L6b`, směr u spoje) - ⚠️ **mění se JEN md5**, počty shodné.
 	// Re-baseline 2026-08-31 (#13158) - přejmenování POPIS_SMER, viz gold 0330510. Jen md5.
 	// Re-baseline 2026-09-04: pole AVL u přípoje (viz TestGold0330510). Jen md5, počty shodné.
-	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=FweRykLdfkDoAmaaw3kHgQ==")
+	// Re-baseline 2026-09-23 (#9417): pole DOPRAVCI u spoje (viz TestGold0330510). Jen md5.
+	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=5Fxu2z5zBmNCeSAwSifVuA==")
 }
 
 /// Ověří digest jedné linky proti očekávané hodnotě. Rozlišuje:

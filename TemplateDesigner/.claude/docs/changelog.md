@@ -1,5 +1,210 @@
 ﻿# Changelog
 
+## 2026-09-25 (7) - 🖨 uspořádání na list nákresem (`B186`)
+
+Uspořádání na list se nastavovalo čtyřmi poli (list, mřížka, každá stránka na celý list,
+oboustranně) a z nich nebylo vidět, co vyjde. Tiskové okno teď pod formulářem ukazuje **nákres
+1. a 2. strany PDF** a stránky dokladu (Stránka 1, Stránka 2…) se do jeho polí přetahují, nebo
+se na pole klikne a vybere.
+
+Nahoře se volí **„Na jeden list: Jeden doklad / Víc dokladů"**. Jeden doklad = stránky dokladu
+vedle sebe, stejná stránka ve dvou polích je kopie pro řezání. Víc dokladů = každý další výskyt
+téže stránky je další doklad a pole to napíše („Stránka 1 · 2. doklad"); tak se skládají dvě
+vývěsky na A4 nebo dvě stazky oboustranně (Stránka 1 · Stránka 1 na 1. straně PDF, Stránka 2 ·
+Stránka 2 na 2. straně). Panel mluví jen o stranách PDF: vyrábí se PDF ve správném pořadí
+a oboustranný tisk si zapne tiskárna.
+
+Uspořádání jde tlačítkem **„Uložit jako výchozí pro šablonu"** uložit do šablony - kdo navrhne
+stazku, nastaví ho jednou a tisk ho pak nabídne sám. Dřívější uložené volby se při otevření
+tisku převedou na nákres, nic se neztratí.
+
+## 2026-09-25 (6) - 📄 stránky šablony s přepínačem nad plátnem (`B184`)
+
+Plátno návrháře bylo jeden pruh, který se natahoval podle součtu výšek sekcí, a čáry „Strana 2"
+ležely jen tam, kde by stránka vyšla geometricky - u sekce se „Začít na nové stránce" klidně
+uprostřed ní. Druhá stránka se tak dala „udělat" i roztažením sekce a nebylo poznat, co se kam
+vytiskne.
+
+Nově má šablona o víc stránkách **přepínač nad plátnem** (◀ Rub · 1 stránka (2/2) ▶ + Stránka)
+a plátno ukazuje vždy jednu **stránku šablony** přesně velikosti papíru. U každé je vidět, jestli
+z ní vyjde jedna stránka, nebo víc podle dat. Obsah, který se nevejde, se ukáže pod listem
+v **šrafovaném pásu** - papír se už nenatahuje. Jednostránkové šablony (jízdní řády) přepínač
+nemají a vypadají jako dřív.
+
+Hlavička a patička jsou **společné**: jsou na každé stránce, kde se tisknou, všude jdou upravit
+a mají jinak barevný štítek. Seznam sekcí ukazuje nahoře společné sekce a pod nimi jen sekce
+otevřené stránky; „+ Přidat sekci" přidává na otevřenou stránku, hlavička a patička hledají
+místo na všech stránkách, kde se tisknou. Stránka se přidá tlačítkem **„+ Stránka"** nad plátnem
+nebo „+ Přidat stránku" pod seznamem sekcí.
+
+Náhled vpravo ukazuje u šablony o víc stránkách jen stránky, které vzniknou z otevřené stránky
+šablony (u pevného rubu jednu), a přepínačem **„Tato stránka | Celý doklad"** celý doklad pod
+sebou - tam posun náhledu přepíná stránku v návrhu. Hlášky se dál počítají za celý doklad. Výběr prvku ze stromu nebo z hlášky otevře stránku, na které prvek je. Šablona se
+nemění (stránku začíná sekce se „Začít na nové stránce", jméno stránky je jméno té sekce).
+
+Plátno teď kreslí patičku podle toho, jak ji tiskne sazba: sekce s rolí patička, která se tiskne
+jen jednou, stojí v pořadí jako obsah, ne dole.
+
+## 2026-09-25 (5) - 🖨 oboustranný tisk si poradí i s dokladem bez rubu (`B183`)
+
+Volba „Oboustranně" brala stránky po dvou jako líc a rub bez ohledu na to, kde doklad končí. Když
+jednomu dokladu podmínka skryla rub, nebo mu obsah přetekl na třetí stránku, posunuly se líce
+a ruby u všech dalších dokladů a po rozříznutí seděl za lícem cizí rub. Nově dostane doklad
+s lichým počtem stránek prázdný rub a další doklady zůstanou správně spárované.
+
+## 2026-09-25 (4) - 🖨 dva doklady oboustranně na jeden list (#12854)
+
+Uspořádání na list umělo stránky jen skládat za sebou, nebo opakovat tutéž. Pro doklad o dvou
+stranách (stazka A5: líc a rub) to znamenalo, že na A4 vyšel líc i rub jednoho dokladu vedle sebe
+a oboustranný tisk nešel. Nová volba **„Oboustranně (líc a rub dokladu)"** dá na jednu stranu
+listu líce dvou dokladů a na druhou jejich ruby na tatáž místa; po oboustranném tisku (převracet
+na delší straně) a rozříznutí má každá A5 svůj líc i rub a papíru je polovina (požadavek DPKV).
+
+Funguje pro jakoukoli šablonu s dvěma stránkami na doklad; pro stazky poslouží, až bude jejich
+agenda v návrháři. ⚠️ Umístění rubu je odvozené z převracení listu, **fyzickým tiskem neověřené**.
+
+## 2026-09-25 (3) - ✂ nejvýš N sloupců variant tras (`B181`)
+
+Na vývěsce, kde spoje z jedné zastávky jezdí mnoha trasami, vznikalo tolik sloupců s časy
+variant, že seznam zastávek přerostl zbytek vývěsky (TRANSDEV #12843). Nový parametr sestavy
+**„Nejvýš sloupců variant tras"** ve skupině Seznam zastávek určí, kolik se jich vytiskne;
+vezmou se první podle zvoleného řazení variant, ostatní se netisknou. Prázdné pole = všechny, jako dosud
+(číselný parametr sestavy nově zůstává prázdný, dřív se prázdno ukázalo jako 0).
+
+Je to vědomá výměna místa za informaci: spoje skrytých variant nemají v seznamu svou trasu
+a nemají ani písmeno varianty, takže se s písmeny variant tahle volba nekombinuje.
+
+## 2026-09-25 (2) - 🚏 vývěska netiskne odjezd, se kterým se nikam nedojede (`B180`)
+
+Zastávková vývěska z dat AD tiskla odjezd i u spoje, který v té zastávce **končí** - na Nitře
+na lince 32 tak na Kmeťovej stály časy spojů s poznámkou „premáva po zast. Kmeťova" (TRANSDEV
+#12843). Zákazník to hlásil jako regresi; ve skutečnosti kontrola chyběla od začátku a srovnával
+se starým tiskem, který ji má.
+
+Opraveno podle starého tisku, a to rovnou i druhý případ téže věci: zastávka, kde má spoj
+příznak **„jen výstup"**. Ten je v datech častý (obvykle zastávka před konečnou) a nikdo ho
+zatím nenahlásil. Obojí platí i pro sloupce variant tras, jinak by spoj, který končí, založil
+prázdný sloupec. Zastávka, kde spoje jen končí, stránku nedostane, stejně jako ve starém tisku.
+
+Ověřeno proti starému tisku stránku po stránce (zastávka, počet a minuty odjezdů) na čtyřech
+linkách ze čtyř firem - bez jediného rozdílu; před opravou se na `0320113` lišilo 11 stránek.
+
+## 2026-09-25 (1) - ⇥ minuty ve sloupci spoje stojí pod sebou (`B182`)
+
+Značka před časem (jen nástup, návaznost) posunula čas o svou šířku doprava a ostatní časy
+sloupce zůstaly na středu, takže minuty nestály pod sebou. Nově se ve sloupci, kde má značku
+aspoň jeden řádek, odsadí o stejný kus i časy bez ní; s různě širokými značkami se srovnává na
+tu nejširší. Sloupec bez značek vypadá jako dřív. Přípojné řádky se nesrovnávají - mají vlastní
+písmo, takže by pod časy zastávek stejně nesedly.
+
+Sloupec se značkou může vyjít o kousek širší: musí unést značku i s nejširším časem, ne jen
+s tím, který stojí vedle ní. A ručně kreslená buňka se značkou nově nese i barvu spoje z dat
+(dřív ji ztrácela).
+
+## 2026-09-24 (10) - ⌨ nápověda formuláře jako přehledný panel
+
+Otazník v hlavičce formuláře (sdílená komponenta EDControls, tedy celý EDISON) ukáže zkratky
+v rozbalovacím panelu: vlevo akce, vpravo klávesa - stejný vzhled jako nápověda návrháře (F1).
+Popisy říkají, co zkratka dělá („Hledat v polích formuláře", ne „skok do vyhledávacího pole").
+
+## 2026-09-24 (9) - 🧹 spodní lišta ukazuje jen to podstatné
+
+**Řádek výběru** jmenuje prvek jako paleta (u textu i s obsahem, např. Text „{POPIS_DOPRAVCE}"),
+pozici a oba rozměry (prázdná výška = „výška podle obsahu"); pevné nápovědy k ovládání zmizely.
+**Stavový text** vpravo hlásí jen výsledek akce a problém - úspěšné načtení dat, připojení
+k databázi ani převod šablony na nový formát se nehlásí, načítání dat ukazuje štítek linky
+(„načítám…"). **Blok hlášek** má jen ikony s počty; „chyba" se v souhrnech jmenuje „problém"
+a bublina vysvětluje, čím se problém, upozornění a informace liší. Oříznutý text se v návrháři
+hlásí jednou, ne dvakrát.
+
+## 2026-09-24 (8) - 🔍 kontrola vybraných linek i přímo v návrháři (`B178`)
+
+Lupa ve skupině Export (a „Zkontrolovat vybrané linky…" v menu Soubor) projde všechny vybrané
+linky s parametry z lišty náhledu. Okno kontroly se otevře hned a ukazuje průběh; **klik na hlášku
+přepne náhled na její linku a vybere prvek**, okno zůstává otevřené pro další hlášky.
+
+## 2026-09-24 (7) - 🔍 tiskové okno zkontroluje všechny vybrané linky (`B178`, část 3)
+
+Tlačítko **„Zkontrolovat"** v tiskovém okně načte data všech vybraných linek a projde jejich
+sazbu bez tisku. Výsledek se otevře ve **vlastním okně** a každá hláška říká, kterých linek se
+týká („2 - Kaplice · Poznámky · nevejde se na stránku"; stejná hláška z víc linek je jeden řádek).
+Načítání i kontrola ukazují **průběh** po linkách. Totéž okno se otevře i po tisku, když je co
+hlásit. Oříznuté buňky kontrola nevidí - poznají se až při kreslení náhledu.
+
+## 2026-09-24 (6) - ⚠ hlášky v jednotném tvaru: kde · co → rada (`B178`, část 2)
+
+Každá hláška má tři části: **kde** (prvek či sekce a co nejpřesnější místo - spoj, sloupec,
+stránky), **co se stalo** na papíře a krátkou **radu**. V rozbaleném seznamu je kde tučně a rada
+šedě za šipkou; v bloku s jedinou hláškou se ukáže jen kde a co.
+
+## 2026-09-24 (5) - ⚠ hlášky vpravo dole v jednom bloku podle závažnosti (`B178`, část 1)
+
+Hlášky návrháře (přetečení, oříznutý obsah, zmenšené písmo, malý kód, chybějící font, úzký
+sloupec, odjezdy mimo sloupce) jsou **jeden kompaktní blok** s ikonami a počty: **chyba** (na
+papíře něco chybí nebo přetéká), **upozornění** (vytiskne se jinak, než je nastavené) a
+**informace** (návrhář něco upravil, jak má - třeba zmenšil písmo). Jediná hláška je vidět celá;
+klik rozbalí seznam všech a **klik na řádek vybere prvek**, ke kterému patří.
+
+Nově se hlásí i to, co dřív bylo tiché: tabulka zmenšená, aby se nedělila, Počet stran splněný
+zmenšením i nesplněný (s příčinou, např. sekce na nové stránce) a podmínka viditelnosti, kterou
+nejde přečíst.
+
+## 2026-09-24 (4) - 📄 sekce může začít na nové stránce (`B177`)
+
+U sekce typu Obsah přibyla volba **„Začít na nové stránce"**: poznámky pak začnou na samostatném
+listu za tabulkou, i když by se pod ni vešly. S přetečením „Rozdělit přes stránky" dlouhé poznámky
+pokračují na dalším listu. Na listu, kde ještě nic není, se nový nezakládá, a skrytá sekce ho
+nezaloží. Volba má přednost před parametrem „Počet stran".
+
+## 2026-09-24 (3) - 📐 sekce se nastavuje typem: hlavička, obsah, pod obsahem, patička (`B177`, část 3)
+
+Místo tří polí, z nichž vždy jedno nic nedělalo (Tisk, Umístění, Přetečení), má formulář sekce
+**Typ sekce**: *Hlavička stránky* (nahoře), *Obsah* (jednou, v pořadí šablony), *Pod obsahem
+stránky* (na každém listu hned pod jeho obsahem) a *Patička stránky* (dole). K hlavičce a patičce
+patří **Tisknout na** (každé / jen první / jen poslední stránce), k obsahu **Přetečení**; co k typu
+nepatří, formulář nenabízí. Model podle Crystal Reports a FastReportu.
+
+Šablona se ukládá beze změny formátu, starší verze ji otevře. Opakovaná sekce, která se dřív
+zařazovala jako hlavička nebo patička podle pořadí, dostane při otevření to zařazení výslovně -
+tisk se nemění.
+
+## 2026-09-24 (2) - 📐 formulář sekce bez voleb, které nic nedělaly (`B177`, část 2)
+
+Pole Tisk, Umístění a Přetečení mají nápovědu, co se jimi nastavuje. Přetečení nabízí **Držet
+pohromadě** a **Rozdělit přes stránky**; „Povolit rozdělení" dělalo totéž co druhá volba a zmizelo.
+Z Tisku zmizelo „Kromě první" - totéž je „Každá stránka" s podmínkou `{STRANA} > 1`. Uložené
+šablony se oboje při otevření převedou a tisknou se stejně.
+
+**Opakovaná sekce skrytá podmínkou si nevyhrazuje místo**: hlavička s `{STRANA} > 1` dřív nechala na
+první stránce prázdný pruh. Barva a tloušťka rámečku sekce jsou vidět jen se zapnutým Rámečkem.
+
+## 2026-09-24 (1) - 📐 nastavení sekcí dělá, co slibuje (`B177`, část 1)
+
+**Podmínka viditelnosti sekce „Jednou" zná číslo stránky.** Počítá se stránka, na které sekce
+začne; `{STRANA} > 1` z nápovědy formuláře do teď nikdy neplatil a sekce se tiše nevytiskla.
+Funguje i `{POCET_STRAN}` (`{STRANA} = {POCET_STRAN}` = jen na konci). Podmínky nově berou
+**jedno `=`** jako rovnost - dřív se výraz nepřečetl a platil vždy.
+
+**„Pod obsahem" + „Jen poslední"** se chová jako sekce jednou za celým obsahem: vejde-li se, sedí
+pod ním, jinak přejde na nový list, který je pak poslední. Dřív přetekla přes spodek stránky.
+
+Nápověda k výšce sekce říká, že jde o nejmenší výšku (obsah ji zvětší). **Tloušťka rámečku sekce
+nic nevynucuje** - 0 i prázdné pole jsou povolené a znamenají bez rámečku.
+
+## 2026-09-23 (4) - 🚌 dopravci v záhlaví jen za spoje na stránce (#9417)
+
+Pole `{POPIS_DOPRAVCE}` linkového JŘ nevypisuje dopravce za celou linku, ale **jen za spoje, které
+jsou na té stránce**. Když jich stránka má víc, dostane každý dopravce v závorce svoje spoje
+(„GW BUS … (spoje 1, 7, 15, 105), ČSAD … (spoje 5, 9-11, 203-205)"); s jedním dopravcem zůstane
+jen název. Do řady se slučují jen spoje, které jsou na stránce vedle sebe a liší se číslem nejvýš
+o 2, takže „15-105" nevznikne. Stránka jen s přetečenými poznámkami dostane názvy dopravců směru
+bez čísel. Server k tomu posílá u spoje jeho dopravce (`DOPRAVCI`).
+
+Textový prvek se sází do šířky, **která je na stránce vidět**: přečníval-li přes okraj tiskové
+plochy, zmenšené písmo vyplnilo celý prvek a konec textu se na hraně ořízl (závorka v hlavičce).
+Zmenšení také nově odečítá odsazení textu od hrany prvku. Hláška „text se nevejde ani po
+zmenšení písma" se počítá při kreslení náhledu, takže jde se změnou výšky a písma prvku.
+
 ## 2026-09-23 (3) - 📄 sestava se vejde na zadaný počet stran (#8785, ladí se)
 
 Nový parametr sestavy linkového JŘ **„Počet stran"** (Obecné): *Automaticky (dle linky)*, *1 strana*,

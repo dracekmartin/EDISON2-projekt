@@ -107,8 +107,9 @@ public static class SectionLayoutMath
     /// </remarks>
     public static float ZbyvajiciMistoMm(Template template, Section section)
     {
+        // Jen sekce téže stránky (`B184`) - sekce na rubu nebere místo líci.
         float obsazeno = 0f;
-        foreach (var s in template.Sections)
+        foreach (var s in DesignerPages.SekceStranky(template, section))
         {
             if (ReferenceEquals(s, section)) continue;
             obsazeno += s.EffectiveDesignerHeight;
@@ -149,10 +150,18 @@ public static class SectionLayoutMath
     /// <para>Když ani po zkrácení místo není, dostane nová sekce jen to, co zbylo - ale nikdy míň
     /// než <see cref="MinimalniVyskaNoveSekceMm"/>, i za cenu přetečení stránky.</para>
     /// </remarks>
-    public static MistoProNovouSekci RozdelMistoProNovouSekci(Template template, float pozadovanaVyska)
+    public static MistoProNovouSekci RozdelMistoProNovouSekci(Template template, float pozadovanaVyska) =>
+        RozdelMistoProNovouSekci(template, pozadovanaVyska, DesignerPages.SekcePosledniStranky(template));
+
+    /// <summary>
+    /// Totéž pro sekci, která přijde na konkrétní stránku (<paramref name="stranka"/> = sekce, které
+    /// na ní sdílejí tiskovou plochu) - krátit se smí jen ty.
+    /// </summary>
+    public static MistoProNovouSekci RozdelMistoProNovouSekci(Template template, float pozadovanaVyska,
+        IReadOnlyList<Section> stranka)
     {
         float obsazeno = 0f;
-        foreach (var s in template.Sections)
+        foreach (var s in stranka)
             obsazeno += s.EffectiveDesignerHeight;
 
         // Sekce, která si řekla o méně než dno (oddělovač 5 mm), dostane svou výšku - dno ji
@@ -165,7 +174,7 @@ public static class SectionLayoutMath
 
         var rezervy = new List<(Section Sekce, float Vyska, float Rezerva)>();
         float celkovaRezerva = 0f;
-        foreach (var s in template.Sections)
+        foreach (var s in stranka)
         {
             if (s.DesignerHeight is not { } vyska) continue;   // dynamickou výšku počítá engine z obsahu
             float rezerva = vyska - MinimalniVyskaProSekci(s);

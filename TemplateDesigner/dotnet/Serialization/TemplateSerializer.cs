@@ -53,6 +53,44 @@ public static class TemplateSerializer
 
     // --- Serializace Section (pro custom šablony) ---
 
+    /// <summary>
+    /// Tisk „Kromě první" zmizel z nabídky (`B177`, 24. 9.) - stará sekce se převede na „Každá
+    /// stránka" s podmínkou <c>{STRANA} &gt; 1</c>, která se chová stejně. Vrací, jestli se něco změnilo.
+    /// </summary>
+    /// <remarks>Mimo verzový pipeline, jako přemapování kódů agend: hodnota výčtu zůstává, takže
+    /// ji starší exe dál přečte, a uložením se propíše nový tvar.</remarks>
+    internal static bool PrevedKromePrvni(Section sekce)
+    {
+        if (sekce.PrintBehavior != SectionPrintBehavior.OnEveryPageExceptFirst) return false;
+        sekce.PrintBehavior = SectionPrintBehavior.OnEveryPage;
+        sekce.VisibilityExpression = string.IsNullOrWhiteSpace(sekce.VisibilityExpression)
+            ? "{STRANA} > 1"
+            : $"{{STRANA}} > 1 && ({sekce.VisibilityExpression})";
+        return true;
+    }
+
+    /// <summary>
+    /// Opakovaná sekce s Umístěním „Obsah" se zařadila podle pořadí: nad posledním obsahem hlavička,
+    /// pod ním patička. Formulář (`B177`) takovou volbu nemá, proto se zařazení zapíše výslovně -
+    /// stejným pravidlem jako v sazbě (<c>PageLayoutEngine.ClassifySections</c>), takže se tisk
+    /// nezmění. Starší exe výslovnou hlavičku i patičku zná.
+    /// </summary>
+    internal static bool UrciUmisteniPodlePoradi(List<Section> sekce)
+    {
+        int posledniObsah = sekce.FindLastIndex(s =>
+            s.PrintBehavior is SectionPrintBehavior.Once or SectionPrintBehavior.PerDataRow);
+        bool zmena = false;
+        for (int i = 0; i < sekce.Count; i++)
+        {
+            var s = sekce[i];
+            if (s.PrintBehavior is SectionPrintBehavior.Once or SectionPrintBehavior.PerDataRow) continue;
+            if (s.Role != SectionRole.Body) continue;
+            s.Role = posledniObsah >= 0 && i > posledniObsah ? SectionRole.Footer : SectionRole.Header;
+            zmena = true;
+        }
+        return zmena;
+    }
+
     /// <summary>Serializuje sekci do JSON (pro uložení jako custom šablona).</summary>
     public static string SerializeSection(Section section)
     {
@@ -80,7 +118,9 @@ public static class TemplateSerializer
             var (migrated, _, _) = Migrator.Migrate(wrapper);
 
             if (migrated["sections"] is not JsonArray { Count: > 0 } sections) return null;
-            return sections[0]?.Deserialize<Section>(Options);
+            var sekce = sections[0]?.Deserialize<Section>(Options);
+            if (sekce is not null) PrevedKromePrvni(sekce);
+            return sekce;
         }
         catch (JsonException)
         {
@@ -153,6 +193,12 @@ public static class TemplateSerializer
                 template.AgendaCode = canonical;
                 wasMigrated = true;
             }
+
+            // Převody sekcí (`B177`) tisk nemění, proto nehlásí migraci - stavový řádek by jinak
+            // tvrdil „nový formát", který to není.
+            foreach (var sekce in template.Sections)
+                PrevedKromePrvni(sekce);
+            UrciUmisteniPodlePoradi(template.Sections);
 
             template.WasMigrated = wasMigrated;
             return template;

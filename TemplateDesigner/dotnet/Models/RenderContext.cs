@@ -35,6 +35,10 @@ public class RenderContext
     /// Nenulová jen tam, kde řez padl doprostřed nedělitelného dílu.</summary>
     public float OpakovanaHlavickaMm { get; init; }
 
+    /// <summary>Šířka sekce = tisková plocha (mm; 0 = neomezeno). Co přečnívá přes ni, sekce
+    /// ořízne - text se podle ní sází, aby nepřišel o konec.</summary>
+    public float SirkaSekceMm { get; init; }
+
     /// <summary>Sběrač oříznutých buněk pro hlášku ve stavovém řádku. Null = nesbírá se (tisk, testy).</summary>
     public Rendering.ClippedCells? ClippedCells { get; init; }
 
@@ -73,5 +77,5 @@ public class RenderContext
 
     /// <summary>Vrátí nový kontext s posunutým originem sekce (px).</summary>
     public RenderContext WithSectionOrigin(float xPx, float yPx) =>
-        new(Canvas, MmToPx, Data) { SectionOriginX = xPx, SectionOriginY = yPx, ClippedCells = ClippedCells };
+        new(Canvas, MmToPx, Data) { SectionOriginX = xPx, SectionOriginY = yPx, ClippedCells = ClippedCells, SirkaSekceMm = SirkaSekceMm };
 }

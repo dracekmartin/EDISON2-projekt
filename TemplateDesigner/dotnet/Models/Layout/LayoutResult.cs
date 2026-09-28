@@ -12,6 +12,21 @@ public class LayoutResult
     /// <summary>Cíl parametru „Počet stran", který se nepodařilo splnit ani v nejmenší povolené
     /// velikosti (`#8785`) - sazba je pak v plné velikosti; null = cíl není nebo je splněný.</summary>
     public int? CilStranNesplnen { get; set; }
+
+    /// <summary>Proč se cíl nesplnil, když to sazba ví (např. sekce na nové stránce); null = nevejde
+    /// se ani po zmenšení na mez.</summary>
+    public string? DuvodNesplneni { get; set; }
+
+    /// <summary>Cíl „Počet stran", který se splnil až úpravou sazby (`B178`); null = bez cíle, nebo
+    /// se vešel sám.</summary>
+    public int? CilStranSplnen { get; set; }
+
+    /// <summary>Míra, na kterou sazba zmenšila tabulku linky (1 = nezmenšila) - samočinně
+    /// (`B151`) nebo kvůli Počtu stran.</summary>
+    public float ZmenseniTabulky { get; set; } = 1f;
+
+    /// <summary>Míra, na kterou sazba zmenšila poznámky kvůli Počtu stran (1 = nezmenšila).</summary>
+    public float ZmenseniPoznamek { get; set; } = 1f;
 }
 
 /// <summary>Jedna stránka výstupu.</summary>

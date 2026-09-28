@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace TemplateDesigner.Models;
 
 /// <summary>
@@ -43,7 +45,9 @@ public class TemplateParameter
     public object? GetDefaultTyped() => Type switch
     {
         "bool"   => string.Equals(DefaultValue, "true", StringComparison.OrdinalIgnoreCase),
-        "number" => float.TryParse(DefaultValue, out var f) ? f : 0f,
+        // Prázdné číslo zůstává prázdné (null), ne 0: u „Nejvýš sloupců variant" znamená prázdno
+        // „bez omezení", kdežto 0 vypadalo jako „netisknout žádné" (nález Jan 25. 9.).
+        "number" => float.TryParse(DefaultValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
         _        => DefaultValue ?? ""
     };
 

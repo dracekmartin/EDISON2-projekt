@@ -11,13 +11,14 @@ public class SheetComposerTests
 {
     private static readonly PageSize A5 = new() { Width = 148, Height = 210 };
 
-    private static SheetLayoutOptions A5OnA4Landscape(bool repeat = false, bool marks = false) => new()
+    private static SheetLayoutOptions A5OnA4Landscape(bool repeat = false, bool marks = false, bool duplex = false) => new()
     {
         SheetWidth = 297, SheetHeight = 210,
         Rows = 1, Cols = 2,
         PageWidth = 148, PageHeight = 210,
         RepeatEachPage = repeat,
         DrawCutMarks = marks,
+        Oboustranne = duplex,
     };
 
     private static List<Page> Pages(int count) =>
@@ -139,6 +140,103 @@ public class SheetComposerTests
             Assert.Equal(2, sheet.Pages.Count);
             Assert.All(sheet.Pages, p => Assert.Same(page, p.Page));
         }
+    }
+
+    // ── Oboustranně: líce na jednu stranu listu, ruby na druhou (#12854) ─────
+
+    /// <summary>
+    /// ⚠️ Jádro: dvě stazky o dvou stranách (líc, rub) → list 1 nese oba líce, list 2 oba ruby
+    /// **na tatáž místa**. Po oboustranném tisku a rozříznutí má každá A5 svůj líc i rub.
+    /// </summary>
+    [Fact]
+    public void Compose_Oboustranne_LiceNaJedenListRubyNaDruhy()
+    {
+        var p = Pages(4);   // stazka 1: p0 líc, p1 rub; stazka 2: p2 líc, p3 rub
+
+        var sheets = SheetComposer.Compose(p, A5OnA4Landscape(duplex: true));
+
+        Assert.Equal(2, sheets.Count);
+        Assert.Same(p[0], sheets[0].Pages[0].Page);
+        Assert.Same(p[2], sheets[0].Pages[1].Page);
+        Assert.Same(p[1], sheets[1].Pages[0].Page);
+        Assert.Same(p[3], sheets[1].Pages[1].Page);
+        Assert.Equal(sheets[0].Pages[0].OffsetX, sheets[1].Pages[0].OffsetX);
+        Assert.Equal(sheets[0].Pages[1].OffsetX, sheets[1].Pages[1].OffsetX);
+    }
+
+    /// <summary>Lichý počet dokladů: poslední list má volné místo, ale líc a rub pořád sedí.</summary>
+    [Fact]
+    public void Compose_Oboustranne_LichyPocetDokladu()
+    {
+        var p = Pages(6);
+
+        var sheets = SheetComposer.Compose(p, A5OnA4Landscape(duplex: true));
+
+        Assert.Equal(4, sheets.Count);
+        Assert.Same(p[4], Assert.Single(sheets[2].Pages).Page);
+        Assert.Same(p[5], Assert.Single(sheets[3].Pages).Page);
+    }
+
+    /// <summary>Doklad bez rubu (lichý počet stránek) dostane prázdnou rubovou stranu, nic se neposune.</summary>
+    [Fact]
+    public void Compose_Oboustranne_ChybejiciRub()
+    {
+        var p = Pages(3);
+
+        var sheets = SheetComposer.Compose(p, A5OnA4Landscape(duplex: true));
+
+        Assert.Equal(2, sheets.Count);
+        Assert.Equal([p[0], p[2]], sheets[0].Pages.Select(x => x.Page));
+        Assert.Same(p[1], Assert.Single(sheets[1].Pages).Page);
+    }
+
+    /// <summary>
+    /// ⚠️ `B183`: doklad s lichým počtem stránek (chybí rub, nebo obsah přetekl na třetí) dostane
+    /// prázdnou stránku, jinak by se líce a ruby posunuly u všech dalších dokladů.
+    /// </summary>
+    [Fact]
+    public void Doklady_Oboustranne_LichyDokladSeDorovna()
+    {
+        var a = Pages(1);   // jen líc
+        var b = Pages(2);   // líc a rub
+
+        var stranky = SheetComposer.StrankyDokladu([a, b], A5OnA4Landscape(duplex: true));
+
+        Assert.Equal(4, stranky.Count);
+        Assert.Same(a[0], stranky[0]);
+        Assert.Empty(stranky[1].Sections);   // prázdný rub dokladu A
+        Assert.Same(b[0], stranky[2]);
+        Assert.Same(b[1], stranky[3]);
+    }
+
+    [Fact]
+    public void Doklady_Oboustranne_TriStrankySeDorovnajiNaCtyri()
+    {
+        var stranky = SheetComposer.StrankyDokladu([Pages(3)], A5OnA4Landscape(duplex: true));
+
+        Assert.Equal(4, stranky.Count);
+        Assert.Empty(stranky[3].Sections);
+    }
+
+    /// <summary>Bez oboustranného tisku se nic nedoplňuje - stránky jdou za sebou jako dosud.</summary>
+    [Fact]
+    public void Doklady_BezOboustranneho_BezDoplneni()
+    {
+        var stranky = SheetComposer.StrankyDokladu([Pages(1), Pages(1)], A5OnA4Landscape());
+
+        Assert.Equal(2, stranky.Count);
+    }
+
+    [Fact]
+    public void FromParamValues_Oboustranne()
+    {
+        var values = new Dictionary<string, object?>
+        {
+            [SheetLayoutKeys.Sheet] = "A4_LANDSCAPE",
+            [SheetLayoutKeys.Oboustranne] = "true",
+        };
+
+        Assert.True(SheetComposer.FromParamValues(values, A5)!.Oboustranne);
     }
 
     [Fact]

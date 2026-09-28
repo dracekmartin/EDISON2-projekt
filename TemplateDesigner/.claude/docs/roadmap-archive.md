@@ -1,6 +1,80 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
-## Tikety odbavené po vydání 22. 9. (23. 9. 2026)
+## `B186` Uspořádání na list nákresem (hotovo 25. 9. 2026)
+
+Tiskové okno místo polí Mřížka / Každá stránka na celý list / Oboustranně ukazuje nákres přední
+a zadní strany listu, do jehož polí se přetahují stránky šablony. Pravidlo: další výskyt téže
+stránky na straně = další doklad; oboustranně = zadní strana něco obsahuje. Uspořádání jde uložit
+do šablony jako výchozí. Staré uložené volby se převedou na nákres. Nákres je panel pod
+formulářem, protože do formuláře z Caché se vlastní kreslicí prvek vložit nedá. Detail changelog
+2026-09-25 (7).
+
+## `B184` Výslovné stránky v návrháři (hotovo 25. 9. 2026)
+
+Po #12854: šablona o víc stránkách má nad plátnem přepínač stránek šablony (jméno + „1 stránka /
+podle dat", odvozené z obsahu), plátno ukazuje jednu stránku pevné výšky se šrafovaným přesahem,
+hlavička a patička jsou společné a upravitelné na každé stránce. Přepnutí synchronizované
+s posunem náhledu. Jednostránkové šablony beze změny. První verze (listy pod sebou se šedými
+kopiemi) se týž den zahodila - míchala výběr sekce a stránky (rozhodnutí Jan 25. 9.). Formát
+šablony beze změny. Detail changelog 2026-09-25 (6).
+
+## `B183` Oboustranný tisk dorovná doklad na sudý počet stránek (hotovo 25. 9. 2026)
+
+Navazuje na #12854. Volba „Oboustranně" párovala stránky po dvojicích, takže doklad s jednou nebo
+třemi stránkami posunul líce a ruby u všech dalších. Při zapnuté volbě dostane doklad (jedna
+datová stránka agendy) s lichým počtem stránek prázdný rub. Detail changelog 2026-09-25 (5).
+
+## `B181` Nejvýš N sloupců variant tras (hotovo 25. 9. 2026)
+
+TRANSDEV `#12843`: parametr sestavy „Nejvýš sloupců variant tras" (prázdné = všechny) nechá prvních N
+sloupců podle řazení variant. Spoje skrytých variant přijdou o sloupec i písmeno - vědomá ztráta
+informace, kombinace s písmeny variant se neřeší (rozhodnutí Jan 25. 9.). Detail changelog 2026-09-25 (3).
+
+## `B180` Odjezd na konečné spoje a v zastávce „jen výstup" (hotovo 25. 9. 2026)
+
+TRANSDEV `#12843`: vývěska Kmeťova (Nitra, linka 32) tiskla odjezdy spojů, které tam končí.
+Nebyla to regrese - kontrola chyběla od vzniku agendy. Opraveno 1:1 se starým tiskem i s druhým
+případem téže smyčky (zastávka „jen výstup", v datech častá). Ověřeno proti starému tisku stránku
+po stránce na 4 linkách; trvalý test `TestOdjezdyVsLegacyGwbus`. Detail changelog 2026-09-25 (2).
+
+## `B182` Minuty ve sloupci spoje pod sebou (hotovo 25. 9. 2026)
+
+Z hovoru s kolegou: čas se značkou před sebou stál o její šířku vpravo, ostatní na středu.
+Časy sloupce se nově odsadí na nejširší značku v něm, jako výchozí chování bez volby (zadání Jan).
+Přípojné řádky vědomě mimo (vlastní písmo). Detail changelog 2026-09-25 (1).
+
+## `#8785` Vejdi výstup na zadaný počet stran (hotovo 25. 9. 2026)
+
+Parametr sestavy **„Počet stran"** (Automaticky / 1 / 2) pro POVED: sazba nejdřív ubere mezery,
+pak zmenší poznámky (90-60 %) a tabulku i se šířkami sloupců (97-80 %); když se sestava nevejde
+ani tak, zůstane v plné velikosti. Splněný i nesplněný cíl hlásí návrhář s příčinou (`B178`).
+Kolega viděl 25. 9. a schválil, POVED se to ukáže na prezentaci (rozhodnutí Jan). Neřešené, vytáhnout
+při potřebě: meze zmenšení v šabloně místo pevných, „Automaticky" podle pole u linky.
+Detail changelog 2026-09-23 (3).
+
+## `B178` Hlášky vpravo dole (hotovo 24. 9. 2026)
+
+Hlášky návrháře sjednocené do jednoho bloku s ikonami podle závažnosti (chyba / upozornění /
+informace), v tvaru *kde · co → krátká rada*, s klikem na prvek. Doplněné dřív tiché hlášky
+(zmenšená tabulka, Počet stran splněný i nesplněný s příčinou, nečitelná podmínka). Kontrola
+všech vybraných linek v tiskovém okně i v návrháři (lupa ve skupině Export), s průběhem, výsledkem
+ve vlastním okně a slučováním stejných hlášek přes linky; z návrháře klik přepne na linku.
+Závažnosti a texty se ladí podle používání (rozhodnutí Jan 24. 9.). Neudělané, vytáhnout až při
+potřebě: sloupec u oříznutých buněk, klik přepne stránku náhledu, oříznuté buňky v kontrole linek
+(poznají se jen při kreslení). Detail changelog 2026-09-24 (5)-(8).
+
+## `B177` Nastavení sekcí se nesmí tiše přepisovat (hotovo 24. 9. 2026)
+
+Audit sazby sekcí našel volby, které nic nedělaly nebo slibovaly něco jiného, než sazba dělala.
+Opraveno: podmínka se stránkou u obsahu (`{STRANA} > 1` dřív nikdy neplatilo), jedno `=` jako
+rovnost, „Pod obsahem + Jen poslední" nepřeteče, skrytá opakovaná sekce nevyhradí místo, tloušťka
+rámečku bez vynuceného minima. Formulář sekce přestavěn na **Typ sekce + Tisknout na + Přetečení**
+(vzor Crystal Reports / FastReport) jako pohled na dnešní Tisk a Umístění, bez změny formátu;
+„Povolit rozdělení" a „Kromě první" z nabídky pryč. Nová volba **„Začít na nové stránce"** pro
+poznámky na samostatném listu (podnět zákazníka). Zbylé hlášky převzal `B178`. Detail changelog
+2026-09-24 (1)-(4), pravidla [`architecture.md` §Nastavení sekcí](architecture.md).
+
+## Tikety odbavené po vydání 22. 9. (23.-24. 9. 2026)
 
 - **#8576** (KU HK) - tarifní zóny do sloupců: volba **„Každá zóna ve vlastním sloupci"** u tabulky
   linky, výchozí vypnutá. Vyzkoušeno na ZL_KOVED 823955 (Kroměříž má zóny 420,201), odpověď poslal Jan.
@@ -23,6 +97,9 @@
   přípojné řádky s číslem linky, slovenské poznámky i věty návazností podle jazyka šablony, pole
   `{POKRACOVANI}` místo šedého řádku. Detail changelog 2026-09-23 (2). Odpověď poslal Jan; zbylý
   název směru je v backlogu.
+- **#9417** (KORID) - dopravci v záhlaví jen za spoje na stránce: víc dopravců s čísly spojů
+  v jednoznačných řadách, stránka jen s poznámkami s názvy bez čísel. Ověřeno na CB_GWBUS
+  402 / 0330530 na šesti stránkách (changelog 2026-09-23 (4)), odpověď poslal Jan 24. 9.
 
 ## `B176` Silnější čára u Velešína na 330530 (hotovo 23. 9. 2026)
 

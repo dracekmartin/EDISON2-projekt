@@ -395,6 +395,11 @@ původní odvozené mapě:
 ### Trasa spoje `("W",cisloTrasy)`
 - `#`-segment per zastávka (pořadí 1..N), `:`-delimited: `poradi:čas:km:…`
   - poz 2 = **čas od počátku spoje** (min); poz 3 = km.
+  - poz 5 = **atributy spoje v zastávce** (legacy `arrsp("trs",Tc,6)`, `JRapiSp.mac:239`);
+    `V` = **jen výstup** - odjezd se netiskne (`JRapiLinPrtMhd1.mac:201`). Častý: VS_CSAD
+    ~30 000 zastávek spojů, obvykle ta před konečnou (měřeno 25. 9.).
+- **Konec spoje** = 2. pole hlavičky spoje `^JRL(sku,lin,smer,sp)` (`TcOd:TcDo:CisloTrasy:…`, legacy
+  `arrsp("dta",2)`). Na konečné spoje se odjezd netiskne (`JRapiLinPrtMhd1.mac:194`).
   - **`<` = spoj zde NESTAVÍ** (projíždí / zastávka mimo trasu spoje).
 - **Odjezd v zastávce = `Odjezd spoje + W[zastávka].čas`** (např. stop 26: 392+53 = 445 = 7:25).
 

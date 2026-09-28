@@ -174,13 +174,31 @@ Tlačítko `+ Přidat sekci` nabízí presety:
 - *(vlastní uložené šablony sekcí, značené 💾)* - podle uložené šablony
 
 ### Vlastnosti sekce (dialog)
-Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Tisk**, **Umístění**, **Přetečení**,
+Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Typ sekce**, **Tisknout na**, **Přetečení**,
 **Rámeček**, **Barva rámečku**, **Tloušťka rámečku**, **Podmínka viditelnosti**. Volby
 v rozbalovacích seznamech:
 
-- **Tisk**: Jednou · Každá stránka · Jen první · Jen poslední · Kromě první
-- **Umístění**: Obsah · Hlavička · Patička (patičky se umisťují od spodního okraje stránky)
-- **Přetečení**: Nepřerušovat · Přes stránky · Povolit split
+- **Typ sekce**: Hlavička stránky · Obsah · Pod obsahem stránky · Patička stránky. Obsah se tiskne
+  jednou v pořadí podle šablony; ostatní typy se opakují nahoře, hned pod obsahem, nebo dole na stránce
+- **Tisknout na** (jen u hlavičky a patičky): Každé stránce · Jen první stránce · Jen poslední
+  stránce - patička s „Jen poslední stránce" je dole jen na posledním listu. Pod obsahem stránky
+  se tiskne vždy na každé stránce
+- **Přetečení** (jen u obsahu): Držet pohromadě · Rozdělit přes stránky
+- **Začít na nové stránce** (jen u obsahu): sekce začne na novém listu - třeba poznámky na
+  samostatné stránce za tabulkou. S přetečením „Rozdělit přes stránky" dlouhé poznámky pokračují
+  na dalším listu. Na listu, kde ještě nic není, se nový nezakládá
+
+**Doklad o více stránkách** (stazka s lícem a rubem, faktura s podmínkami na zadní straně): tlačítko
+**„+ Přidat stránku"** pod seznamem sekcí přidá stránku šablony. Nad plátnem se pak objeví přepínač
+stránek a plátno ukazuje vždy jednu stránku přesně velikosti papíru; u každé je napsané, jestli
+z ní vyjde jedna stránka, nebo víc podle dat. Hlavička a patička jsou společné - jsou na každé
+stránce, kde se tisknou, a upravit je jde z kterékoli (mají jinak barevný štítek). Obsah, který se
+na stránku nevejde, je pod listem vidět v šrafovaném pásu: při tisku přeteče na další stránku.
+Druhou stránku proto dělejte vždy přidáním stránky, ne roztažením sekce. Náhled vpravo ukazuje jen
+otevřenou stránku; přepínačem „Celý doklad" nad ním uvidíte všechny stránky za sebou.
+
+Pole, která v dané kombinaci nic nedělají, formulář schová - barva a tloušťka rámečku jsou vidět
+jen se zapnutým Rámečkem.
 
 Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole **Datový zdroj** a
 **Výška řádku**.
@@ -516,7 +534,7 @@ Tentýž prvek na víc stránkách je **jedna položka**, ne výpis po stránká
 vypisují čísla, nad to počet a první výskyt. Stejný popis se ukáže i po tisku, protože tisknout
 můžete jinou linku, než máte v náhledu.
 
-Varování se týká jen sekcí nastavených jako „Nepřerušovat" - sekce, které lze rozdělit přes
+Varování se týká jen sekcí nastavených jako „Držet pohromadě" - sekce, které lze rozdělit přes
 stránky, se prostě rozdělí a nic se neztratí, takže tam varování nedává smysl.
 
 ### Export
@@ -535,12 +553,24 @@ Nastavení výstupu je univerzální napříč agendami:
 - **Název souboru (tokeny {POLE})** - vlastní kombinace datových polí pro pojmenování
   výsledných souborů; při rozdělení výstupu na víc souborů se vybírá cílová složka, kolize jmen
   se řeší automaticky příponou `_2`, `_3`…
-- **Uspořádání na list (imposice)** - více vývěsek na jeden fyzický list: cílový list
-  (Vypnuto / A4 / A3, na výšku i na šířku), **mřížka** (AUTO = největší počet, který se vejde
-  bez zmenšování, nebo pevně 2×1, 2×2…), **„Každá stránka na celý list"** (táž vývěska
-  vícekrát - pro rozřezání) a **ořezové značky**. Typicky: dvě A5 vývěsky na jeden list A4.
-  Volba se pamatuje pro každou agendu zvlášť; návrat k běžnému tisku = „Vypnuto".
-  (Export PNG imposici nepoužívá; brožurové řazení a oboustranný tisk zůstávají na tiskárně.)
+- **Uspořádání na list** (panel pod formulářem) - kolik stránek dokladu a kde se vytiskne na
+  jeden list papíru. Zvolíte **list** (Vypnuto / A4 / A3, na výšku i na šířku), **mřížku** (nabízí
+  se jen to, co se vejde bez zmenšování) a **kolik dokladů na list**:
+  - **Jeden doklad** - stránky dokladu vedle sebe; stejná stránka ve dvou polích je kopie (pro
+    řezání),
+  - **Víc dokladů (šetří papír)** - každý další výskyt téže stránky je další doklad, pole to
+    napíše („Stránka 1 · 2. doklad").
+  Pod tím je nákres **1. a 2. strany PDF**: stránky dokladu přetáhnete do polí, nebo na pole
+  kliknete a vyberete. 2. strana je nepovinná; tisknete-li oboustranně, padne na zadní stranu
+  papíru. Typické nastavení:
+  - dvě vývěsky A5 na A4: víc dokladů, na 1. straně Stránka 1 · Stránka 1,
+  - dvě stazky A5 oboustranně: víc dokladů, na 1. straně Stránka 1 · Stránka 1, na 2. straně
+    Stránka 2 · Stránka 2,
+  - obě stránky téže stazky vedle sebe: jeden doklad, Stránka 1 · Stránka 2.
+- Dále **ořezové značky** a tlačítko **„Uložit jako výchozí pro šablonu"** - tisk pak uspořádání
+  nabídne sám. Jinak se pamatuje poslední použité u agendy.
+  (Export PNG uspořádání nepoužívá; brožurové řazení zůstává na tiskárně.)
+
 
 ---
 
@@ -962,8 +992,8 @@ v záložce Parametry v levém panelu):
 - **Název souboru (tokeny {POLE})** - výchozí `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}`,
   lze upravit na libovolnou kombinaci datových polí.
 
-K dispozici je i **Uspořádání na list (imposice)** - např. dvě A5 vývěsky na jeden list A4,
-včetně opakování téže vývěsky pro řezání a ořezových značek; detail viz část I, kap. 9.
+K dispozici je i **Uspořádání na list** - nákres listu, do kterého se přetahují stránky šablony
+(dvě A5 vývěsky na A4, stazky oboustranně, táž vývěska pro řezání); detail viz část I, kap. 9.
 
 „Vše do jednoho" vybere jeden cílový soubor; ostatní dvě volby vybírají cílovou složku a vytvoří
 tolik souborů, kolik odpovídá volbě (kolize jmen se řeší automaticky `_2`, `_3`…). Export běží
@@ -983,7 +1013,7 @@ velikost písma**, aby se všechno vešlo do vymezeného prostoru. Pokud je vý�
 
 Varování o přetečení (červený rámeček stránky v náhledu) se u JŘ elementů řídí stejným
 pravidlem jako v části I (kap. 9): objeví se jen u sekcí nastavených
-jako „Nepřerušovat", a jen když se prvek fyzicky nevejde i po auto-zmenšení písma - pokud
+jako „Držet pohromadě", a jen když se prvek fyzicky nevejde i po auto-zmenšení písma - pokud
 zmenšení pomůže, k varování nedojde.
 
 ---

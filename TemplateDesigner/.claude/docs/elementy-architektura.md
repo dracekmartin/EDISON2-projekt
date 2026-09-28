@@ -187,7 +187,7 @@ Není to dvojí cesta k témuž, jsou to **dva různé druhy sestavy** a míchá
 (nález Jan 7. 9. při stavbě linkové šablony).
 
 **Pevné plátno - zastávková vývěska.** Papír je daný, jedna zastávka = jedna stránka do vitríny.
-Systémové šablony proto mají **jednu sekci 146,6 mm s „Nepřerušovat"** a prvkům dávají **pevnou
+Systémové šablony proto mají **jednu sekci 146,6 mm s „Držet pohromadě"** a prvkům dávají **pevnou
 výšku** (seznam zastávek 120,4 · minuty odjezdů 120,4 · poznámky 103,1).
 Pevná výška obsah **nezřezává, ale zmenšuje do fitu** (`ScheduleElementBase.ComputeFontScale`) -
 a to je tady **záměr**: vývěska musí vyjít na jednu stránku, i když má zastávka o pět poznámek víc.
@@ -196,8 +196,8 @@ a to je tady **záměr**: vývěska musí vyjít na jednu stránku, i když má 
 a papír se přidá. Prvky mají **výšku prázdnou**, rozměr se řídí velikostí písma a výškou řádku,
 sekce se smí dělit a co se nevejde, pokračuje na další stránce.
 
-**Volí se to jako celek, ne per prvek:** buď pevná sekce + pevné výšky + „Nepřerušovat", nebo
-prázdné výšky + „Přes stránky".
+**Volí se to jako celek, ne per prvek:** buď pevná sekce + pevné výšky + „Držet pohromadě", nebo
+prázdné výšky + „Rozdělit přes stránky".
 
 ⚠️ **Důsledky, které se z kódu nepoznají:**
 

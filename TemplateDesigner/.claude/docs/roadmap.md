@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `#8785` (vejdi výstup na zadaný počet stran). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -18,7 +18,7 @@
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
 **Stav: linkový JŘ z AD dat je od 22. 9. vydaný zákazníkům** a je výchozí agendou pro novou
-šablonu. Zbývá `#8785`, jeden výtisk k ověření a věci, u kterých je první krok dotaz ven. Sloučení
+šablonu. Zbývá jeden výtisk k ověření a věci, u kterých je první krok dotaz ven. Sloučení
 dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku bez přírůstku pro uživatele
 (rozhodnutí Jan 31. 8.). Městská varianta zůstává skrytá, dokud neprojde porovnáním se starým
 modulem; jak se agenda skrývá, popisuje komentář u `Released` v `LinkovyJrAd.cls`.
@@ -48,30 +48,34 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Připravené k práci
 
-- **`#8785` Vejdi výstup na zadaný počet stran** [M] (POVED) - 🔧 **ladí se na našich datech** (týden
-  od 23. 9.). Parametr „Počet stran" (Automaticky / 1 / 2) funguje: bez mezer → poznámky 90-60 % →
-  tabulka i se šířkami 97-80 %, nevejde-li se, plná velikost (changelog 2026-09-23 (3)). Zbývá:
-  hláška o nesplněném cíli, rozhodnout meze (v šabloně × pevné), „Automaticky" až s polem u linky.
-
-### Čeká na odpověď zvenku
-
-Ani u jedné není první krok kód. Podklady k tiketům drží
-[`§14`](linkovy-knizni-jr-implementace-analyza.md).
-
-- **`#9417` Filtrování dopravců v záhlaví** [M] (KORID, dřív `B102`). Přetečení hlavičky pod
-  tabulku je vyřešené (záhlaví má vlastní sekci), zbývá volba, kteří dopravci se tisknou.
-  **Čeká na zákazníka s linkou, která má mnoho dopravců** - jeho případ byl souhrnný JŘ dvou linek
-  a sdružování se řeší v jízdních řádech, ne u nás.
-
-- **`#7487` Počet poznámek na řádek podle druhu** [M] (KORID) - ⏸️ **Jan probere s kolegou**, jak
-  je důležitý. Starý modul má volbu u **každého druhu** (Jedna / Dvě / Tři / Žádná) plus pořadí
-  druhů, zákazník chce čtyři; náš „Počet sloupců" dělí celou legendu jednou mřížkou.
+- **`#7487` Rozložení poznámek podle druhu** [M] (KORID; potvrzeno hovorem s kolegou 25. 9.).
+  Druhy jako ve starém win tisku (dny platnosti, negativní značky, návaznosti, atributy, textové
+  poznámky…): u každého **pořadí** a **počet sloupců** zvlášť, např. „všechno do 3 sloupců, negativní
+  značky do 1". Dnes jde jen jeden „Počet sloupců" pro celou legendu. Přesný tvar nastavení se
+  ještě upřesní s kolegou - nejdřív návrh formuláře, pak kód.
 
 ---
 
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B187` Doladit stránky šablony a uspořádání na list** [M] (Jan 25. 9., po `B184`/`B186`, před
+  zavřením #12854). Známé: mřížka nepočítá s měřítkem tisku; stránka „podle dat" se do polí skládá
+  jen za sebou; jméno stránky = jméno její první sekce; nákres listu jen s popisky (bez náhledu
+  obsahu); export z hlavního okna bere poslední uspořádání z tiskového okna; starý režim
+  „Oboustranně" (`B183`) jde časem pryč. Detail changelog 2026-09-25 (6)-(7).
+
+- **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
+  průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
+  stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
+  hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184` a `B186` hotové, dál podle poptávky.
+
+- **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
+  prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není
+  (`PdfImport/` se jí nedotýká), takže linkový JŘ by skončil jako obecné tabulky a texty. Nejdřív
+  zkusit na zákazníkově PDF, jak se chová, a podle toho rozhodnout, jestli naučit import
+  rozpoznat tabulku spojů a nastavit její vzhled.
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
@@ -126,7 +130,7 @@ Ani u jedné není první krok kód. Podklady k tiketům drží
   vyplněné hodnoty jen oklikou přes server. Začít **viditelností** (`visibleWhen`), gramatiku sdílet
   s tiskovými parametry - nezavádět druhý dialekt; skutečná validace zůstává imperativní.
   Nese s sebou tři návazné věci: migraci `CellStyleEditor` na formulář z Caché, zašednutí polí
-  mrtvých bez parametru sestavy a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
+  bez účinku (parametry sestavy; u sekcí je dnes drží návrhář, `B177`) a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
   label) - všechno až s gramatikou, ne zvlášť.
 
 - **`B56` Sjednocení Caché tiskových enginů a jejich opsaných pomocných funkcí** (odloženo -

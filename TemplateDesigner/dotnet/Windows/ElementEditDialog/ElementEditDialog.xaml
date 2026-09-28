@@ -21,8 +21,6 @@
             <Button Grid.Column="2" Content="{StaticResource EDStrings.Cancel}" IsCancel="True" Width="80"/>
         </Grid>
 
-        <!-- Filtr hledání sdílený s inline panelem: uživatel ladí jednu vlastnost (fonty)
-             napříč prvky a nemá ho psát po každém otevření znovu. -->
-        <eif:EDInputForm x:Name="TheForm" SearchMemoryKey="TemplateDesigner.ElementEdit"/>
+        <eif:EDInputForm x:Name="TheForm"/>
     </DockPanel>
 </Window>

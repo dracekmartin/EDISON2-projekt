@@ -599,31 +599,31 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             });
         }
 
+        // Typ + Stránky = pohled na PrintBehavior a Role (viz Section.Typ), stejně jako formulář sekce.
         list.Add(new EnumPropertyDescriptor
         {
-            Label   = "Tisk",    Group = "Sekce",
-            Get     = () => section.PrintBehavior,
-            Set     = v  => section.PrintBehavior = (SectionPrintBehavior)v,
+            Label   = "Typ sekce", Group = "Sekce",
+            Get     = () => section.Typ,
+            Set     = v  => section.Typ = (TypSekce)v,
             Options =
             [
-                ("Jednou",          (object)SectionPrintBehavior.Once),
-                ("Každá stránka",   (object)SectionPrintBehavior.OnEveryPage),
-                ("Jen první",       (object)SectionPrintBehavior.OnFirstPageOnly),
-                ("Jen poslední",    (object)SectionPrintBehavior.OnLastPageOnly),
-                ("Kromě první",     (object)SectionPrintBehavior.OnEveryPageExceptFirst),
+                ("Hlavička stránky",    (object)TypSekce.HlavickaStranky),
+                ("Obsah",               (object)TypSekce.Obsah),
+                ("Pod obsahem stránky", (object)TypSekce.PodObsahemStranky),
+                ("Patička stránky",     (object)TypSekce.PatickaStranky),
             ]
         });
 
         list.Add(new EnumPropertyDescriptor
         {
-            Label   = "Umístění", Group = "Sekce",
-            Get     = () => section.Role,
-            Set     = v  => section.Role = (SectionRole)v,
+            Label   = "Tisknout na", Group = "Sekce",
+            Get     = () => section.Stranky,
+            Set     = v  => section.Stranky = (StrankySekce)v,
             Options =
             [
-                ("Obsah",   (object)SectionRole.Body),
-                ("Hlavička", (object)SectionRole.Header),
-                ("Patička",  (object)SectionRole.Footer),
+                ("Každé stránce",        (object)StrankySekce.Vsechny),
+                ("Jen první stránce",    (object)StrankySekce.JenPrvni),
+                ("Jen poslední stránce", (object)StrankySekce.JenPosledni),
             ]
         });
 
@@ -634,10 +634,16 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             Set     = v  => section.OverflowBehavior = (SectionOverflowBehavior)v,
             Options =
             [
-                ("Nepřerušovat",  (object)SectionOverflowBehavior.KeepTogether),
-                ("Přes stránky",  (object)SectionOverflowBehavior.SplitAcrossPages),
-                ("Povolit rozdělení", (object)SectionOverflowBehavior.AllowSplit),
+                ("Držet pohromadě",       (object)SectionOverflowBehavior.KeepTogether),
+                ("Rozdělit přes stránky", (object)SectionOverflowBehavior.SplitAcrossPages),
             ]
+        });
+
+        list.Add(new BoolPropertyDescriptor
+        {
+            Label = "Začít na nové stránce", Group = "Sekce",
+            Get   = () => section.ZacitNaNoveStrance,
+            Set   = v  => section.ZacitNaNoveStrance = v
         });
 
         list.Add(new BoolPropertyDescriptor
@@ -659,7 +665,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             Label = "Tloušťka rámečku", Group = "Vzhled",
             Get   = () => section.BorderWidth,
             Set   = v  => section.BorderWidth = v,
-            Min   = 0.1f, Max = 5f, Unit = "mm"
+            Min   = 0f, Max = 5f, Unit = "mm"
         });
 
         list.Add(new StringPropertyDescriptor

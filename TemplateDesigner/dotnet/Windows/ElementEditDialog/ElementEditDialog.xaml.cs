@@ -21,6 +21,10 @@ namespace TemplateDesigner;
 /// </summary>
 public partial class ElementEditDialog : Window
 {
+    /// <summary>Klíč pamatování filtru hledání (viz <c>EDInputForm.SearchMemoryKey</c>). Nastavuje
+    /// ho jen otevření vlastností prvku z plátna - jinde se filtr nepamatuje.</summary>
+    public string SearchMemoryKey { get => TheForm.SearchMemoryKey; set => TheForm.SearchMemoryKey = value; }
+
     private readonly object _target;
 
     // Hodnoty nastavené při pre-fillu - change detection proti nim (ne proti raw property),
@@ -47,6 +51,13 @@ public partial class ElementEditDialog : Window
     /// Viz <see cref="ElementFormBinder.ApplyInheritedValues"/>; nastavit před zobrazením.</summary>
     public IReadOnlyDictionary<string, string>? InheritedValues { get; set; }
 
+    /// <summary>
+    /// Které pole je vidět podle hodnot ostatních (klíč pole, hodnoty formuláře → viditelné).
+    /// Null = vidět je všechno. Pravidlo drží host, dokud formulář z Caché neumí viditelnost
+    /// sám (`B18`); přepočítá se po každé změně pole i po serverové validaci, která pole přestaví.
+    /// </summary>
+    public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
+
     /// <param name="target">Editovaný objekt (element, sekce, stránka - in-memory model).</param>
     /// <param name="cacheClass">Caché schema class (např. "ALVA.TemplateDesigner.EDInputForm.TextElementEdit").</param>
     /// <param name="title">Titulek okna.</param>
@@ -60,7 +71,20 @@ public partial class ElementEditDialog : Window
         // Po Init (Caché schema načteno) pre-fillni Field.Value z elementu přes reflexi,
         // pak re-validuj (Init validace běžela na prázdných / default hodnotách).
         TheForm.SchemaLoaded += OnFormInitialized;
+        TheForm.FieldChanged += _ => PouzijViditelnost();
         ElementFormBinder.HookFontWeightRefresh(TheForm);
+    }
+
+    private void PouzijViditelnost()
+    {
+        if (ViditelnostPole is null) return;
+        var pole = (TheForm.Items ?? []).OfType<Field>().ToList();
+        var hodnoty = pole.ToDictionary(f => f.Key, f => f.Value ?? "");
+        foreach (var f in pole)
+        {
+            var cil = ViditelnostPole(f.Key, hodnoty) ? ItemVisibility.Visible : ItemVisibility.Collapsed;
+            if (f.Visibility != cil) f.Visibility = cil;
+        }
     }
 
     private void OnFormInitialized()
@@ -72,11 +96,12 @@ public partial class ElementEditDialog : Window
         // (Validate serializuje aktuální items a Caché je echuje zpět).
         ElementFormBinder.PopulateFontWeightFields(TheForm);
         TheForm.Validate();
+        PouzijViditelnost();
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!TheForm.Save()) return;
+        if (!TheForm.Save()) { PouzijViditelnost(); return; }
 
         FinalValues = ElementFormBinder.Snapshot(TheForm);
         var commands = ElementFormBinder.ExtractCommands(TheForm, _target, _preFilled);

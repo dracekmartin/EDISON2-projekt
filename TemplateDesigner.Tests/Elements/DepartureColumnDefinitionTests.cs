@@ -198,26 +198,30 @@ public class DepartureColumnDefinitionTests
             Page("5:48", cisla: "10"),
         };
 
-        var text = DepartureColumnWarnings.Summarize(pages);
+        var text = Co(pages);
 
         Assert.StartsWith("2 spoje se nevejdou do žádného sloupce", text);
         Assert.Contains("č. 10, 23", text);
         // pořadí je vzestupné, ne v jakém je potkaly stránky - jinak to vypadá jako jiná čísla
-        var prehazene = DepartureColumnWarnings.Summarize([Page("5:32", cisla: "21,3"), Page("5:40", cisla: "14")]);
+        var prehazene = Co([Page("5:32", cisla: "21,3"), Page("5:40", cisla: "14")]);
         Assert.Contains("č. 3, 14, 21", prehazene);
         // časy odjezdů v závorce být nesmí - je jich víc než spojů a hláška by se rozešla s počtem
         Assert.DoesNotContain("5:32", text);
     }
 
+    /// <summary>Co se stalo z hlášek (bez „kde" a rady) - to, co tyhle testy hlídají.</summary>
+    private static string? Co(IReadOnlyList<DataContext> pages) =>
+        DepartureColumnWarnings.Seznam(pages) is { Count: > 0 } s ? string.Join("; ", s.Select(h => h.Co)) : null;
+
     [Fact]
     public void ColumnWarning_AgregujeStrankyADrziCeskePluraly()
     {
-        Assert.Null(DepartureColumnWarnings.Summarize([Page(null), Page("")]));
+        Assert.Null(Co([Page(null), Page("")]));
 
-        var jeden = DepartureColumnWarnings.Summarize([Page("5:32", cisla: "10")]);
+        var jeden = Co([Page("5:32", cisla: "10")]);
         Assert.Equal("1 spoj se nevejde do žádného sloupce a na vývěsce nebude (č. 10)", jeden);
 
-        var pet = DepartureColumnWarnings.Summarize([Page("5:32", cisla: "1,2,3,4,5")]);
+        var pet = Co([Page("5:32", cisla: "1,2,3,4,5")]);
         Assert.StartsWith("5 spojů se nevejde", pet);
     }
 
@@ -225,7 +229,7 @@ public class DepartureColumnDefinitionTests
     [Fact]
     public void ColumnWarning_BezCiselSpojuPocitaOdjezdy()
     {
-        var text = DepartureColumnWarnings.Summarize([Page("5:32"), Page("14:10, 5:32")]);
+        var text = Co([Page("5:32"), Page("14:10, 5:32")]);
         Assert.StartsWith("2 odjezdy se nevejdou do žádného sloupce", text);
         Assert.Contains("5:32", text);
     }
@@ -235,11 +239,13 @@ public class DepartureColumnDefinitionTests
     [Fact]
     public void ColumnWarning_HlasiObdobiMimoPlatnostAJmenujeSloupce()
     {
-        var jeden = DepartureColumnWarnings.Summarize([Page(null, "Vánoční provoz")]);
-        Assert.Equal("období sloupce „Vánoční provoz“ leží mimo platnost jízdního řádku - sloupec zůstane prázdný", jeden);
+        var jeden = Assert.Single(DepartureColumnWarnings.Seznam([Page(null, "Vánoční provoz")]));
+        Assert.Equal("Minuty odjezdů · sloupec „Vánoční provoz“", jeden.Kde);
+        Assert.Equal("období sloupce leží mimo platnost jízdního řádku - sloupec zůstane prázdný", jeden.Co);
 
-        var dva = DepartureColumnWarnings.Summarize([Page(null, "Vánoce"), Page(null, "Prázdniny, Vánoce")]);
-        Assert.Equal("období sloupců „Vánoce“, „Prázdniny“ leží mimo platnost jízdního řádku - zůstanou prázdné", dva);
+        var dva = Assert.Single(DepartureColumnWarnings.Seznam([Page(null, "Vánoce"), Page(null, "Prázdniny, Vánoce")]));
+        Assert.Equal("Minuty odjezdů · sloupce „Vánoce“, „Prázdniny“", dva.Kde);
+        Assert.Equal("období sloupců leží mimo platnost jízdního řádku - zůstanou prázdné", dva.Co);
     }
 
     /// <summary>Obě vady naráz se spojí do jedné hlášky - badge ve status baru je jeden.</summary>

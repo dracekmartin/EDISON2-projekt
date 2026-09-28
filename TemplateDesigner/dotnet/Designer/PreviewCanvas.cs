@@ -34,7 +34,7 @@ public class PreviewCanvas
     /// se všechno). Wire-uje MainWindow na status bar. ⚠️ Posílá se **text, ne příznak** - z „něco
     /// přetéká" uživatel nepoznal, na které stránce ani co ji přetéká.
     /// </summary>
-    public Action<string?>? OverflowChanged { get; set; }
+    public Action<IReadOnlyList<Hlaseni>>? OverflowChanged { get; set; }
 
     /// <summary>Na kolik stran se sází právě zobrazená stránka dat - druhá osa stránkování (`B131`).</summary>
     public Action<int>? PocetStranSazbyChanged { get; set; }
@@ -43,13 +43,17 @@ public class PreviewCanvas
     /// Volá se na konci každého renderu preview s popisem buněk, jejichž obsah se nevešel ani po
     /// zmenšení na mez, takže se ořízl (null = všechno se vešlo). Wire-uje MainWindow na status bar.
     /// </summary>
-    public Action<string?>? OriznuteBunkyChanged { get; set; }
+    public Action<IReadOnlyList<Hlaseni>>? OriznuteBunkyChanged { get; set; }
 
     /// <summary>
     /// Volá se při každém renderu preview s popisem tabulek spojů, kde je sloupec užší, než se
     /// obsah vejde (null = v pořádku). Wire-uje MainWindow na týž odznak status baru.
     /// </summary>
-    public Action<string?>? UzkeSloupceChanged { get; set; }
+    public Action<IReadOnlyList<Hlaseni>>? UzkeSloupceChanged { get; set; }
+
+    /// <summary>Co sazba sama upravila nebo nesplnila - zmenšení, Počet stran, nečitelné podmínky
+    /// (`B178`). Volá se při každém renderu náhledu.</summary>
+    public Action<IReadOnlyList<Hlaseni>>? SazbaChanged { get; set; }
 
     /// <summary>Sběrač oříznutých buněk právě probíhajícího renderu; mimo render null.</summary>
     private ClippedCells? _oriznuteBunky;
@@ -101,7 +105,7 @@ public class PreviewCanvas
     public float CalculatePageHeightPx(float zoom, DataContext? data = null)
     {
         var layout = Layout(data);
-        int pageCount = Math.Max(1, layout.TotalPages);
+        int pageCount = Math.Max(1, ZobrazeneStranky(layout).Count);
         float pageH = _state.CurrentTemplate.PageSize.Height * BaseMmToPx * zoom;
         return PageTopPaddingPx + pageCount * pageH + (pageCount - 1) * PageGapPx + PagePaddingPx;
     }
@@ -196,14 +200,19 @@ public class PreviewCanvas
         // Offsety na listu jsou v milimetrech LISTU (nezvětšují se), obsah stránky ano - proto
         // se ořezové značky a pozice kreslí základním převodem a stránka měřítkem.
         float bodyNaMmListu = pointsPerMm / (ps.Width > 0.01f ? o.PageWidth / ps.Width : 1f);
-        var logicalPages = new List<Page>();
+        var doklady = new List<IReadOnlyList<Page>>();
         for (int i = 0; i < dataPages.Count; i++)
         {
-            logicalPages.AddRange(Layout(dataPages[i], tpl).Pages);
+            doklady.Add(Layout(dataPages[i], tpl).Pages);
             progress?.Report((i + 1, dataPages.Count));
         }
+        // Nakreslené uspořádání (`B186`) skládá podle stránek šablony, dřívější režimy za sebou.
+        var listy = o.Plan is not null
+            ? SheetComposer.ComposeDle([.. doklady.Select(d => (IReadOnlyList<(Page, int)>)
+                  [.. d.Zip(DesignerPages.StrankySablony(tpl, d), (page, stranka) => (page, stranka))])], o)
+            : SheetComposer.Compose(SheetComposer.StrankyDokladu(doklady, o), o);
 
-        foreach (var sheet in SheetComposer.Compose(logicalPages, o))
+        foreach (var sheet in listy)
         {
             var canvas = doc.BeginPage(o.SheetWidth * bodyNaMmListu, o.SheetHeight * bodyNaMmListu);
 
@@ -305,6 +314,19 @@ public class PreviewCanvas
     /// Čísla stránek jsou průběžná přes všechny instance, ne od jedničky za každou - v tisku jde
     /// o jeden výstup a uživatel v něm hledá pořadovou stránku.
     /// </remarks>
+    /// <summary>
+    /// Hlášky ze sazby pro stránky dat jedné linky - přetečení, Počet stran, zmenšení tabulky,
+    /// nečitelné podmínky (`B178`). Bez kreslení, jen layout.
+    /// </summary>
+    public List<Hlaseni> HlaseniSazby(IReadOnlyList<DataContext> dataPages)
+    {
+        var (nalezy, total) = CountOverflowingPages(dataPages);
+        var hlaseni = OverflowWarnings.Seznam(nalezy, total);
+        foreach (var data in dataPages)
+            hlaseni.AddRange(SazbaHlaseni.Seznam(_state.CurrentTemplate, Layout(data)));
+        return [.. hlaseni.Distinct()];
+    }
+
     public (IReadOnlyList<PreteceniNalez> Nalezy, int Total) CountOverflowingPages(IReadOnlyList<DataContext> dataPages)
     {
         var ps = _state.CurrentTemplate.PageSize;
@@ -339,18 +361,19 @@ public class PreviewCanvas
         // Pre-detekce přetečení per stránka (funguje bez renderu) → červený rámeček konkrétní
         // přetékající stránky + hláška ve status baru (přes OverflowChanged).
         var nalezy = layout.Pages.Select(p => NajdiPreteceni(p, ps)).ToList();
-        OverflowChanged?.Invoke(OverflowWarnings.Summarize(
+        OverflowChanged?.Invoke(OverflowWarnings.Seznam(
             [.. nalezy.Where(n => n is not null).Select(n => n!)], layout.Pages.Count));
 
         // Kolik stran leží pod sebou ve scrollu. Nabídka nad náhledem přepíná stránky DAT, tohle
         // je ta druhá osa - bez ní si uživatel obojí plete (`B131`).
         PocetStranSazbyChanged?.Invoke(layout.Pages.Count);
+        SazbaChanged?.Invoke(SazbaHlaseni.Seznam(_state.CurrentTemplate, layout));
 
         // Úzký sloupec spoje se hlásí odsud, ne z načtení dat: uživatel mění šířku v panelu
         // a hláška musí jít s ním, ne čekat na příští stažení jízdního řádku.
         UzkeSloupceChanged?.Invoke(data is null
-            ? null
-            : TripColumnWidthWarnings.Summarize(_state.CurrentTemplate, [data]));
+            ? []
+            : TripColumnWidthWarnings.Seznam(_state.CurrentTemplate, [data]));
 
         // Jen obrazovkový náhled - export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
         canvas.Clear(CanvasTheme.Background);
@@ -360,8 +383,22 @@ public class PreviewCanvas
         // takže se sbírají průběžně a hlásí se, teprve až jsou nakreslené všechny strany sazby.
         _oriznuteBunky = new ClippedCells();
         float currentPageY = PageTopPaddingPx;
+        var stranky = new List<(float Top, int Predloha)>();
+        var predlohy = PredlohyStranek(layout);
+        var zobrazene = ZobrazeneStranky(layout).ToHashSet();
         for (int i = 0; i < layout.Pages.Count; i++)
         {
+            if (!zobrazene.Contains(i))
+            {
+                // Skrytá stránka (jiná předloha) se vykreslí naprázdno, jen aby hláška
+                // o oříznutých buňkách platila za celý doklad, ne jen za otevřenou stránku.
+                using var zaznam = new SKPictureRecorder();
+                RenderPage(zaznam.BeginRecording(new SKRect(0, 0, pageW, pageH)), ps, mmToPx, 0, 0,
+                    layout.Pages[i], _oriznuteBunky);
+                zaznam.EndRecording().Dispose();
+                continue;
+            }
+            stranky.Add((currentPageY, predlohy[i]));
             DrawShadow(canvas, pageX, currentPageY, pageW, pageH);
             DrawPageBackground(canvas, pageX, currentPageY, pageW, pageH);
             RenderPage(canvas, ps, mmToPx, pageX, currentPageY, layout.Pages[i], _oriznuteBunky);
@@ -369,8 +406,46 @@ public class PreviewCanvas
 
             currentPageY += pageH + PageGapPx;
         }
-        OriznuteBunkyChanged?.Invoke(_oriznuteBunky.Summarize());
+        OriznuteBunkyChanged?.Invoke(_oriznuteBunky.Seznam());
         _oriznuteBunky = null;
+        _strankyNahledu = stranky;
+    }
+
+    /// <summary>
+    /// Ze které předlohy (stránky šablony) vznikla každá stránka sazby - podle první obsahové sekce
+    /// na ní; stránka jen s hlavičkou a patičkou patří k předloze předchozí stránky.
+    /// </summary>
+    private List<int> PredlohyStranek(LayoutResult layout) =>
+        DesignerPages.StrankySablony(_state.CurrentTemplate, layout.Pages);
+
+    /// <summary>
+    /// Které stránky sazby náhled ukáže: u šablony o víc stránkách v režimu „Tato stránka" jen ty,
+    /// které vznikly z otevřené předlohy (u pevné jedna, u „podle dat" všechny její); jinak všechny.
+    /// </summary>
+    private List<int> ZobrazeneStranky(LayoutResult layout)
+    {
+        var vse = Enumerable.Range(0, layout.Pages.Count).ToList();
+        int pocetPredloh = DesignerPages.ObsahStranek(_state.CurrentTemplate).Count;
+        if (pocetPredloh < 2 || _state.NahledCelyDoklad) return vse;
+        int otevrena = Math.Clamp(_state.Predloha, 0, pocetPredloh - 1);
+        var predlohy = PredlohyStranek(layout);
+        return [.. vse.Where(i => predlohy[i] == otevrena)];
+    }
+
+    // Kde leží stránky posledního vykreslení a ze které předlohy vznikly - pro synchronizaci
+    // přepínače předloh v návrhu s posunem náhledu (`B184`).
+    private List<(float Top, int Predloha)> _strankyNahledu = [];
+
+    /// <summary>Horní hrana první stránky náhledu, která vznikla z předlohy; null = žádná.</summary>
+    public float? TopPredlohy(int predloha) =>
+        _strankyNahledu.FirstOrDefault(s => s.Predloha == predloha) is { Top: > 0 } s ? s.Top : null;
+
+    /// <summary>Předloha stránky náhledu na svislé pozici <paramref name="y"/>; null = nic tam není.</summary>
+    public int? PredlohaNa(float y)
+    {
+        for (int i = _strankyNahledu.Count - 1; i >= 0; i--)
+            if (y >= _strankyNahledu[i].Top) return _strankyNahledu[i].Predloha;
+        return _strankyNahledu.Count > 0 ? _strankyNahledu[0].Predloha : null;
     }
 
     /// <summary>
@@ -406,7 +481,7 @@ public class PreviewCanvas
 
             nejhorsi = NejvetsiPrvek(placed, ps) is { } vinnik
                 ? new PreteceniNalez(page.PageNumber, DruhPreteceni.ObsahPrvku,
-                                     placed.Source.Name, vinnik, presah)
+                                     placed.Source.Name, ElementNames.SPopisem(vinnik), presah, vinnik.Id)
                 : new PreteceniNalez(page.PageNumber, DruhPreteceni.NastavenaVyskaSekce,
                                      placed.Source.Name, null, presah);
         }
@@ -418,10 +493,10 @@ public class PreviewCanvas
     /// sekci nafoukla nastavená výška, prvky se do ní vejdou (pak nemá smysl jmenovat prvek, ten
     /// za to nemůže).
     /// </summary>
-    private string? NejvetsiPrvek(PlacedSection placed, PageSize ps)
+    private TemplateElement? NejvetsiPrvek(PlacedSection placed, PageSize ps)
     {
         float mez = placed.Source.DesignerHeight ?? 0f;
-        string? vinnik = null;
+        TemplateElement? vinnik = null;
         float nejdal = mez;
 
         foreach (var el in placed.Source.Elements)
@@ -430,7 +505,7 @@ public class PreviewCanvas
             float dno = el.Y + (el.Height ?? _heightCalc.CalculateHeight(el, ps.PrintableWidth, placed.Data));
             if (dno <= nejdal) continue;
             nejdal = dno;
-            vinnik = ElementNames.ForUser(el);
+            vinnik = el;
         }
         return vinnik;
     }
@@ -502,6 +577,7 @@ public class PreviewCanvas
                 ViditelnyPasMm = placed.Height,
                 OpakovanaHlavickaMm = placed.OpakovanaHlavickaMm,
                 ClippedCells = oriznuteBunky,
+                SirkaSekceMm = ps.PrintableWidth,
                 SrovnatCaryNaPixel = naRastr,
             };
 
@@ -530,13 +606,18 @@ public class PreviewCanvas
                 el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) - jedno místo pro všechny
                 // Hláška o oříznuté buňce má jmenovat prvek; kreslení buňky o prvku neví, tak mu
                 // jméno podrží kreslicí smyčka.
-                if (oriznuteBunky is not null) oriznuteBunky.CurrentElement = ElementNames.ForUser(el);
+                if (oriznuteBunky is not null)
+                {
+                    oriznuteBunky.CurrentElement = ElementNames.SPopisem(el);
+                    oriznuteBunky.CurrentElementId = el.Id;
+                }
                 el.Render(ctx);
                 canvas.Restore();
             }
 
             // Rámeček sekce (volitelný - ShowBorder property)
-            if (placed.Source.ShowBorder)
+            // Tloušťka 0 = bez rámečku; Skia by čáru s nulovou tloušťkou nakreslila vlasovou.
+            if (placed.Source.ShowBorder && placed.Source.BorderWidth > 0f)
             {
                 using var borderPaint = new SKPaint
                 {

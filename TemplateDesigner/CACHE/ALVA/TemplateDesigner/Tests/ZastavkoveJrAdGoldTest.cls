@@ -133,7 +133,10 @@ Method TestGold0365005()
 	// Re-baseline 2026-09-03 (`B113`): disjunktní sada písmen variant - viz vysvětlení u gold 0365001.
 	// Počty shodné do jednoho, ověřeno izolovaně vrácením sady na abecedu.
 	// Re-baseline 2026-09-14: pořadí stránek po zastávkách - viz vysvětlení u gold 0365001. Jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=498 pozn=236 md5=N9Adm+nGIvZTemnbLMSKQQ==")
+	// Re-baseline 2026-09-25 (#12843): odjezd se netiskne na konečné spoje ani v zastávce „jen
+	// výstup" (legacy `JRapiLinPrtMhd1.mac:194,201`). ⚠️ Mění POČTY: odjezdů 498 → 484, poznámek
+	// 236 → 235. Každá stránka linky ověřena proti starému tisku (`ParitaOdjezduProbe`, bez rozdílu).
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=c4VxOnzunreqtdZy8efvIw==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -215,7 +218,10 @@ Method TestGold0330530()
 	// Re-baseline 2026-09-03 (`B113`): disjunktní sada písmen variant - viz vysvětlení u gold 0365001.
 	// Počty shodné do jednoho, ověřeno izolovaně vrácením sady na abecedu.
 	// Re-baseline 2026-09-14: pořadí stránek po zastávkách - viz vysvětlení u gold 0365001. Jen md5.
-	do ..AssertLine(1, "0330530", "pages=45 zast=1022 odj=1236 pozn=638 md5=UpDfkPt0LQOCcuAFCHcITA==")
+	// Re-baseline 2026-09-25 (#12843): odjezd na konečné spoje a v zastávce „jen výstup" - viz gold
+	// 0365005. Stránek 45 → 44: na jedné zastávce jen končily spoje, starý tisk ji nevydává také.
+	// Odjezdů 1236 → 1232, zastávek 1022 → 999, poznámek 638 → 632; ověřeno proti starému tisku.
+	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=sDwj8xUf0kMBuLmK3Wu9qw==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

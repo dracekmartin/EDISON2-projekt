@@ -29,29 +29,33 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddText("Name", "Název")
 
         s f = form.AddDecimal("DesignerHeight", "Výška", 30, 5, 9999, "mm")
-        s f.helpText = "Prázdné = dynamická výška (počítá engine)"
+        s f.helpText = "Nejmenší výška - obsah ji může zvětšit. Prázdné = výška podle obsahu"
 
-        s f = form.AddFieldToLastGroup("PrintBehavior", "Tisk", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Once", "Jednou")
-        d f.AddListItem("OnEveryPage", "Každá stránka")
-        d f.AddListItem("OnFirstPageOnly", "Jen první")
-        d f.AddListItem("OnLastPageOnly", "Jen poslední")
-        d f.AddListItem("OnEveryPageExceptFirst", "Kromě první")
-        s f.value = "Once"
+        // Typ + Stránky jsou pohled na PrintBehavior a Role modelu (Section.Typ / Section.Stranky) -
+        // do šablony se zapisují ty dvě, formát se nemění. Stránky a Přetečení skrývá podle typu host.
+        s f = form.AddFieldToLastGroup("Typ", "Typ sekce", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("HlavickaStranky", "Hlavička stránky")
+        d f.AddListItem("Obsah", "Obsah")
+        d f.AddListItem("PodObsahemStranky", "Pod obsahem stránky")
+        d f.AddListItem("PatickaStranky", "Patička stránky")
+        s f.value = "Obsah"
+        s f.helpText = "Hlavička stránky - nahoře na stránce. Obsah - jednou, v pořadí podle šablony (tabulka, poznámky za ní). Pod obsahem stránky - na každé stránce hned pod tím, co na ní je (poznámky pod každou částí tabulky). Patička stránky - dole na stránce."
 
-        s f = form.AddFieldToLastGroup("Role", "Umístění", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Body", "Obsah")
-        d f.AddListItem("BelowContent", "Pod obsahem")
-        d f.AddListItem("Header", "Hlavička")
-        d f.AddListItem("Footer", "Patička")
-        s f.value = "Body"
-        s f.helpText = "Pod obsahem = na každé stránce hned za obsahem té stránky"
+        s f = form.AddFieldToLastGroup("Stranky", "Tisknout na", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Vsechny", "Každé stránce")
+        d f.AddListItem("JenPrvni", "Jen první stránce")
+        d f.AddListItem("JenPosledni", "Jen poslední stránce")
+        s f.value = "Vsechny"
+        s f.helpText = "Na kterých listech sestavy se hlavička nebo patička vytiskne. Kde na listu leží, určuje Typ sekce"
 
         s f = form.AddFieldToLastGroup("OverflowBehavior", "Přetečení", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("KeepTogether", "Nepřerušovat")
-        d f.AddListItem("SplitAcrossPages", "Přes stránky")
-        d f.AddListItem("AllowSplit", "Povolit rozdělení")
+        d f.AddListItem("KeepTogether", "Držet pohromadě")
+        d f.AddListItem("SplitAcrossPages", "Rozdělit přes stránky")
         s f.value = "KeepTogether"
+        s f.helpText = "Co se stane, když se sekce nevejde na zbytek stránky"
+
+        s f = form.AddBool("ZacitNaNoveStrance", "Začít na nové stránce", 0)
+        s f.helpText = "Sekce začne na novém listu - třeba poznámky na samostatné stránce za tabulkou. Na listu, kde ještě nic není, se nový nezakládá"
 
         // ── Skupina "Vzhled" ──────────────────────────────────────────────
         d form.AddGroup("appearance", "Vzhled")
@@ -61,7 +65,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
 
-        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0.3, 0.1, 5, "mm")
+        s f = form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0.3, 0, 5, "mm")
+        s f.helpText = "Jen když je zapnutý Rámeček. Prázdné nebo 0 = bez rámečku"
 
         // ── Skupina "Podmínky" ────────────────────────────────────────────
         d form.AddGroup("conditions", "Podmínky")

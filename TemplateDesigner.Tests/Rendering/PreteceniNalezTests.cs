@@ -56,7 +56,7 @@ public class PreteceniNalezTests
         Assert.NotNull(popis);
         Assert.Contains("Text", popis);             // jméno prvku z palety
         Assert.Contains("Vývěska", popis);          // jméno sekce, jak si ji uživatel pojmenoval
-        Assert.Contains("nejvíc místa bere", popis);
+        Assert.Contains("Text „dlouhý text“ v sekci", popis);   // vinník i s obsahem a sekcí
         Assert.Contains("strana 1", popis);
     }
 
@@ -106,9 +106,9 @@ public class PreteceniNalezTests
         var popis = Popis(stav);
 
         Assert.NotNull(popis);
-        Assert.Contains("nevejde na stránku", popis);
+        Assert.Contains("nevejde se na stránku", popis);
         Assert.Contains("Vývěska", popis);
-        Assert.DoesNotContain("nejvíc místa bere", popis);
+        Assert.DoesNotContain(" v sekci ", popis);
     }
 
     [Fact]

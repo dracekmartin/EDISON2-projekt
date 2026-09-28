@@ -65,11 +65,128 @@ ClassMethod Spoje(ByRef sys As %String) As %Status
 				s ^||ML("OUT","spoj~"_key_"~"_$tr($j(si+1,3)," ","0")) =
 					sp.%Get("CISLO_SPOJE")_":"_sp.%Get("SMER")_":"_sp.%Get("SKUPINA")
 					_" casy="_neprazdnych_"/"_casu_" nz="_sp.%Get("NZ")_" platnost="_plText
+					_" dopravci="_$s($isobject(sp.%Get("DOPRAVCI")):$e(sp.%Get("DOPRAVCI").%ToJSON(),1,60), 1:"")
 			}
 		}
 		s ^||ML("OUT","souhrn") = "stranek="_stranek_" spoju="_spojuCelkem
 		k ^||ML("IN")
 		m ^||ML("IN") = vstup
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Najde linky, na kterých jezdí **víc dopravců** (#9417: dopravci v záhlaví jen za spoje na stránce).
+///
+/// Čte jen `^JRL` - dopravce spoje je v díle za `#` hlavičky spoje (`fa:provozovna~...`), stejně
+/// jako ho skládá `LinkovyJrAd.PopisDopravce`.
+/// Dopravci se počítají podle názvu, jak se tisknou (dvě provozovny se stejným textem = jeden).
+/// IN: `MIN` (nejméně dopravců, výchozí 2), `MAX` (kolik nálezů, výchozí 15),
+/// `MIN_VE_SMERU` (nejméně spojů v jednom směru - linka, která se nevejde na jednu stránku).
+/// OUT: `nalez~<n>` = `sku / lin  dopravcu=<n> spoju=<n> nejviceVeSmeru=<n>`.
+ClassMethod NajdiViceDopravcu(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s min = +$g(^||ML("IN","MIN")), max = +$g(^||ML("IN","MAX"))
+		s:min<2 min = 2
+		s:max<1 max = 15
+		s minVeSmeru = +$g(^||ML("IN","MIN_VE_SMERU"))
+		s nalezu = 0, s1 = ""
+		f {
+			s s1 = $o(^[dataDB]JRL(s1))
+			q:s1=""
+			continue:'$isvalidnum(s1)
+			s l1 = ""
+			f {
+				s l1 = $o(^[dataDB]JRL(s1, l1))
+				q:l1=""
+				continue:'$d(^[dataDB]JRL(s1, l1, "I"))
+				k dop
+				s dopravcu = 0, spoju = 0, nejviceVeSmeru = 0
+				f smer="T","Z" {
+					s sp = "", veSmeru = 0
+					f {
+						s sp = $o(^[dataDB]JRL(s1, l1, smer, sp))
+						q:sp=""
+						continue:'$isvalidnum(sp)
+						s spoju = spoju + 1, veSmeru = veSmeru + 1
+						s carriers = $p($g(^[dataDB]JRL(s1, l1, smer, sp)), "#", 2)
+						f ci=1:1:$l(carriers,"~") {
+							s slot = $p(carriers,"~",ci)
+							continue:$p(slot,":",1)=""
+							s nazev = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NazevDopravce(dataDB, $p(slot,":",1), $p(slot,":",2))
+							continue:nazev=""
+							i '$d(dop(nazev)) s dop(nazev) = "", dopravcu = dopravcu + 1
+						}
+					}
+					s:veSmeru>nejviceVeSmeru nejviceVeSmeru = veSmeru
+				}
+				continue:dopravcu<min
+				continue:nejviceVeSmeru<minVeSmeru
+				s nalezu = nalezu + 1
+				s ^||ML("OUT","nalez~"_nalezu) = s1_" / "_l1_"  dopravcu="_dopravcu_" spoju="_spoju_" nejviceVeSmeru="_nejviceVeSmeru
+				i nalezu '< max ret $$$OK
+			}
+		}
+		s ^||ML("OUT","souhrn") = "nalezu="_nalezu
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Najde spoje, které mají v zastávce příznak „jen výstup" (`V` v 5. poli zastávky trasy spoje,
+/// legacy `arrsp("trs",Tc,6)`, `JRapiSp.mac:239`). Starý tisk vývěsky v takové zastávce odjezd
+/// netiskne (`JRapiLinPrtMhd1.mac:201`).
+///
+/// IN: `MAX` (výchozí 15). OUT: `nalez~<i>` = `sku / linka  smer spoj  poradi  konecna`,
+/// `souhrn` = počty (celkem, z toho mimo konečnou spoje).
+ClassMethod NajdiJenVystup(ByRef sys As %String) As %Status
+{
+	s err = ""
+	try {
+		$$$FillParams
+		s max = +$g(^||ML("IN","MAX"))
+		s:max<1 max = 15
+		s celkem = 0, mimoKonecnou = 0, nalezu = 0, linek = 0, s1 = ""
+		f {
+			s s1 = $o(^[dataDB]JRL(s1))
+			q:s1=""
+			continue:'$isvalidnum(s1)
+			s l1 = ""
+			f {
+				s l1 = $o(^[dataDB]JRL(s1, l1))
+				q:l1=""
+				continue:'$d(^[dataDB]JRL(s1, l1, "I"))
+				s naLince = 0
+				f smer="T","Z" {
+					s sp = ""
+					f {
+						s sp = $o(^[dataDB]JRL(s1, l1, smer, sp))
+						q:sp=""
+						continue:'$isvalidnum(sp)
+						s hlava = $p($g(^[dataDB]JRL(s1, l1, smer, sp)), "#", 1)
+						s tcDo = $p(hlava, ":", 2), ct = $p(hlava, ":", 3)
+						continue:ct=""
+						s wTrasa = $g(^[dataDB]JRL(s1, l1, "W", ct))
+						f i=1:1:$l(wTrasa,"#") {
+							s seg = $p(wTrasa, "#", i)
+							continue:$p(seg,":",5)'["V"
+							s celkem = celkem + 1, naLince = 1
+							s konecna = (+$p(seg,":",1) = +tcDo)
+							s:'konecna mimoKonecnou = mimoKonecnou + 1
+							continue:konecna
+							continue:nalezu'<max
+							s nalezu = nalezu + 1
+							s ^||ML("OUT","nalez~"_nalezu) = s1_" / "_l1_"  "_smer_" spoj "_sp_"  poradi "_$p(seg,":",1)_"  konecna "_tcDo_"  atr "_$p(seg,":",5)
+						}
+					}
+				}
+				s:naLince linek = linek + 1
+			}
+		}
+		s ^||ML("OUT","souhrn") = "celkem="_celkem_" mimoKonecnou="_mimoKonecnou_" linek="_linek
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret $$$OK

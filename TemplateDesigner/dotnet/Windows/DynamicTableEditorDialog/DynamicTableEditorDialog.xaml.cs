@@ -16,6 +16,10 @@ namespace TemplateDesigner;
 
 public partial class DynamicTableEditorDialog : Window
 {
+    /// <summary>Klíč pamatování filtru hledání (viz <c>EDInputForm.SearchMemoryKey</c>). Nastavuje
+    /// ho jen otevření vlastností prvku z plátna - jinde se filtr nepamatuje.</summary>
+    public string SearchMemoryKey { get => GeneralForm.SearchMemoryKey; set => GeneralForm.SearchMemoryKey = value; }
+
     private const string GeneralSchemaClass = "ALVA.TemplateDesigner.EDInputForm.DynamicTableElementEdit";
 
     private readonly DynamicTableEditorDialogViewModel _vm;

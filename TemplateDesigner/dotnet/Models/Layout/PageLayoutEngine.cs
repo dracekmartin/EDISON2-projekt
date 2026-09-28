@@ -59,8 +59,28 @@ public class PageLayoutEngine
 
         int cil = CilStran(data);
         if (cil <= 0 || vysledek.TotalPages <= cil) return vysledek;
+
+        // Sekce, které začínají na nové stránce, mají přednost (pořadí priority, `B177`): když samy
+        // dají víc listů, než je cíl, nemá smysl zmenšovat - ušetřit stránku nejde (nález Jan 24. 9.).
+        var nucene = SekceNaNoveStrance(vysledek);
+        if (1 + nucene.Count > cil)
+        {
+            vysledek.CilStranNesplnen = cil;
+            vysledek.DuvodNesplneni = nucene.Count == 1
+                ? $"sekce „{nucene[0]}“ začíná na nové stránce"
+                : $"sekce {string.Join(", ", nucene.Select(n => $"„{n}“"))} začínají na nové stránce";
+            return vysledek;
+        }
         return VejdiNaStrany(template, data, cil, legendy) ?? vysledek;
     }
+
+    /// <summary>Sekce, které založily vlastní list volbou „Začít na nové stránce".</summary>
+    private static List<string> SekceNaNoveStrance(LayoutResult vysledek) =>
+        [.. vysledek.Pages.Skip(1)
+            .Select(p => p.Sections.FirstOrDefault(s => s.ClipTop is null or <= 0.01f))
+            .Where(s => s?.Source.ZacitNaNoveStrance == true)
+            .Select(s => s!.Source.Name)
+            .Distinct()];
 
     /// <summary>Parametr sestavy „Počet stran" (`#8785`).</summary>
     public const string CilStranKlic = "POCET_STRAN_SESTAVY";
@@ -108,13 +128,13 @@ public class PageLayoutEngine
         {
             NastavBezMezer(tabulky, true);
             posledni = LayoutBezZmenseni(template, data);
-            if (posledni.TotalPages <= cil) return posledni;
+            if (posledni.TotalPages <= cil) return Splneno(posledni, cil, 1f, 1f);
         }
         foreach (float mira in legendy.Count > 0 ? ZebrikPoznamek : [])
         {
             NastavZmenseniLegend(legendy, mira);
             posledni = LayoutBezZmenseni(template, data);
-            if (posledni.TotalPages <= cil) return posledni;
+            if (posledni.TotalPages <= cil) return Splneno(posledni, cil, 1f, mira);
         }
         // Tabulka se zmenšuje celá, i se šířkami sloupců: do části se vejde víc spojů a celá
         // část může odpadnout (Jan 23. 9.). Jen tady - samočinné zmenšení `B151` šířky nemění.
@@ -123,7 +143,8 @@ public class PageLayoutEngine
         {
             NastavZmenseni(tabulky, mira);
             posledni = LayoutBezZmenseni(template, data);
-            if (posledni.TotalPages <= cil) return posledni;
+            if (posledni.TotalPages <= cil)
+                return Splneno(posledni, cil, mira, legendy.Count > 0 ? ZebrikPoznamek[^1] : 1f);
         }
         if (posledni is null) return null;
 
@@ -136,6 +157,14 @@ public class PageLayoutEngine
         var plna = LayoutSeZmensenimTabulky(template, data);
         plna.CilStranNesplnen = cil;
         return plna;
+    }
+
+    private static LayoutResult Splneno(LayoutResult r, int cil, float tabulka, float poznamky)
+    {
+        r.CilStranSplnen = cil;
+        r.ZmenseniTabulky = tabulka;
+        r.ZmenseniPoznamek = poznamky;
+        return r;
     }
 
     private static List<NotesLegendElement> ZmensitelneLegendy(Template template) =>
@@ -175,7 +204,11 @@ public class PageLayoutEngine
         {
             NastavZmenseni(zmensitelne, mira);
             var uzsi = LayoutBezZmenseni(template, data);
-            if (StranekSekci(uzsi, sekceTabulek) < stranekPlne) return uzsi;
+            if (StranekSekci(uzsi, sekceTabulek) < stranekPlne)
+            {
+                uzsi.ZmenseniTabulky = mira;
+                return uzsi;
+            }
         }
 
         NastavZmenseni(zmensitelne, 1f);
@@ -185,6 +218,9 @@ public class PageLayoutEngine
     /// <summary>Klíč v datech stránky se značkami, které na ní jsou. Čte ho legenda poznámek.</summary>
     public const string ZnackyStrankyKlic = "ZNACKY_NA_STRANCE";
 
+    /// <summary>Pole dopravců linkového JŘ, které sazba přepíše textem za spoje na stránce.</summary>
+    public const string PopisDopravceKlic = "POPIS_DOPRAVCE";
+
     /// <summary>
     /// Doplní do dat stránky značky, které se na ní vyskytují - z prvků, které se dělí na díly.
     /// Bez takového prvku vrací data beze změny, takže se nic nefiltruje.
@@ -193,11 +229,12 @@ public class PageLayoutEngine
     /// Tudy se legenda poznámek dozví, u které části tabulky stojí, aniž by prvky o sobě musely
     /// vědět. Táž cesta, jakou se na stránku dostává její číslo.
     /// </remarks>
-    private static DataContext? SZnackamiStranky(Page page, DataContext? data)
+    private static DataContext? SZnackamiStranky(Page page, DataContext? data, string? dopravciBezSpoju)
     {
         if (data is null) return null;
 
         HashSet<string>? znacky = null;
+        var spojeStranky = new List<LineTableElement.LineTripData>();
         foreach (var umistena in page.Sections)
         {
             foreach (var prvek in umistena.Source.Elements.OfType<INedelitelneDily>())
@@ -205,16 +242,35 @@ public class PageLayoutEngine
                 float od = umistena.ClipTop ?? 0f;
                 float doKam = umistena.ClipBottom ?? float.MaxValue;
                 var nalezene = prvek.ZnackyVUseku(umistena.Data ?? data, od, doKam);
+                if (prvek is LineTableElement tabulka)
+                    spojeStranky.AddRange(tabulka.SpojeVUseku(umistena.Data ?? data, od, doKam));
                 if (nalezene.Count == 0) continue;
                 znacky ??= new HashSet<string>(StringComparer.Ordinal);
                 znacky.UnionWith(nalezene);
             }
         }
 
-        return znacky is null
-            ? data
-            : data.WithExtraValues(new Dictionary<string, object?> { [ZnackyStrankyKlic] = znacky });
+        var doplnit = new Dictionary<string, object?>();
+        if (znacky is not null) doplnit[ZnackyStrankyKlic] = znacky;
+        // Dopravci jen za spoje na stránce (#9417) - přepíše `POPIS_DOPRAVCE`, kterým se plní
+        // hlavička. Stránka bez spojů (poznámky přetečené za tabulku) dostane jen názvy dopravců
+        // směru bez čísel: převzít čísla jedné ze stránek tabulky by bylo libovolné, jakmile jich
+        // je víc (rozhodnutí Jan 23. 9.). Šablona bez tabulky linky nechá celý text za linku.
+        if (dopravciBezSpoju is not null)
+            doplnit[PopisDopravceKlic] = LineTableElement.PopisDopravcuStranky(spojeStranky) ?? dopravciBezSpoju;
+
+        return doplnit.Count == 0 ? data : data.WithExtraValues(doplnit);
     }
+
+    /// <summary>
+    /// Názvy dopravců směru pro list bez spojů. Null = šablona nemá tabulku linky nebo spoje
+    /// dopravce nenesou - pak se text dopravců za stránku neskládá vůbec.
+    /// </summary>
+    private static string? DopravciBezSpoju(Template template, DataContext? data) =>
+        data is not null
+        && template.Sections.SelectMany(s => s.Elements).OfType<LineTableElement>().FirstOrDefault() is { } tabulka
+            ? LineTableElement.JmenaDopravcu(tabulka.SpojeVUseku(data, 0f, float.MaxValue))
+            : null;
 
     /// <summary>Sekce, ve kterých leží zmenšitelná tabulka.</summary>
     private static HashSet<Guid> SekceZmensitelnych(Template template) =>
@@ -277,9 +333,11 @@ public class PageLayoutEngine
         int totalPages = firstPassResult.TotalPages;
         if (totalPages == 0) totalPages = 1;
 
-        // Druhý průchod: s OnLastPageOnly (pokud existují)
+        // Druhý průchod, když sazba potřebuje znát počet stran: sekce jen na poslední stránce
+        // a podmínka obsahové sekce s počtem stran.
         bool hasLastPageOnly = footers.Any(s => s.PrintBehavior == SectionPrintBehavior.OnLastPageOnly)
-            || headers.Any(s => s.PrintBehavior == SectionPrintBehavior.OnLastPageOnly);
+            || headers.Any(s => s.PrintBehavior == SectionPrintBehavior.OnLastPageOnly)
+            || allSections.Any(s => PodminkaSPoctemStran(s.VisibilityExpression));
 
         LayoutResult result;
         if (hasLastPageOnly && totalPages > 0)
@@ -331,6 +389,7 @@ public class PageLayoutEngine
             }
         }
 
+        var naKonecObsahu = new List<Section>();
         for (int i = 0; i < all.Count; i++)
         {
             var section = all[i];
@@ -340,6 +399,16 @@ public class PageLayoutEngine
                                      or SectionPrintBehavior.PerDataRow)
             {
                 body.Add(section);
+                continue;
+            }
+
+            // „Pod obsahem" jen na poslední stránce = jednou za celým obsahem. Jako plovoucí sekce
+            // neměla kam odejít, když se na poslední stránku nevešla, a přetekla přes její spodek;
+            // jako obsah na konci přejde na nový list, který se tím stane posledním.
+            if (section.Role == SectionRole.BelowContent
+                && section.PrintBehavior == SectionPrintBehavior.OnLastPageOnly)
+            {
+                naKonecObsahu.Add(section);
                 continue;
             }
 
@@ -359,6 +428,7 @@ public class PageLayoutEngine
                     headers.Add(section);
             }
         }
+        body.AddRange(naKonecObsahu);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -442,29 +512,42 @@ public class PageLayoutEngine
     // ─────────────────────────────────────────────────────────────────────
     // Výpočet prostoru na stránce
 
+    // Místo se vyhrazuje jen pro opakovanou sekci, která se na stránce opravdu vytiskne - i podle
+    // podmínky viditelnosti. Do 24. 9. se podmínka hlídala až při umístění, takže hlavička skrytá
+    // `{STRANA} > 1` nechala na první stránce prázdný pruh.
+
     private static float GetHeaderHeight(int pageNum, int totalPages,
-        List<Section> headers, Dictionary<Guid, float> heights)
+        List<Section> headers, Dictionary<Guid, float> heights, DataContext? data)
     {
         float h = 0f;
         foreach (var section in headers)
         {
-            if (IsHeaderVisibleOnPage(section, pageNum, totalPages))
+            if (IsHeaderVisibleOnPage(section, pageNum, totalPages)
+                && PodminkaNaStrance(section, pageNum, totalPages, data))
                 h += heights[section.Id];
         }
         return h;
     }
 
     private static float GetFooterHeight(int pageNum, int totalPages,
-        List<Section> footers, Dictionary<Guid, float> heights)
+        List<Section> footers, Dictionary<Guid, float> heights, DataContext? data)
     {
         float h = 0f;
         foreach (var section in footers)
         {
-            if (IsFooterVisibleOnPage(section, pageNum, totalPages))
+            if (IsFooterVisibleOnPage(section, pageNum, totalPages)
+                && PodminkaNaStrance(section, pageNum, totalPages, data))
                 h += heights[section.Id];
         }
         return h;
     }
+
+    /// <summary>Podmínka viditelnosti sekce vyhodnocená s hodnotami dané stránky.</summary>
+    private static bool PodminkaNaStrance(Section section, int pageNum, int totalPages, DataContext? data) =>
+        section.VisibilityExpression is not { Length: > 0 } podminka
+        || ExpressionEvaluator.IsVisible(podminka,
+            data?.WithExtraValues(HodnotyStranky(pageNum, totalPages, data))
+            ?? new DataContext(HodnotyStranky(pageNum, totalPages, null)));
 
     private static bool IsHeaderVisibleOnPage(Section s, int pageNum, int totalPages) =>
         s.PrintBehavior switch
@@ -505,9 +588,9 @@ public class PageLayoutEngine
         // Estimovat totalPages pro header/footer height výpočet
         int estTotal = knownTotalPages > 0 ? knownTotalPages : 1000;
 
-        float headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-        float footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-        float plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+        float headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+        float footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+        float plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
         float availableHeight = printableHeight - headerH - footerH - plovouciH;
         float cursorY = headerH;
 
@@ -516,10 +599,6 @@ public class PageLayoutEngine
 
         foreach (var (section, sectionData) in expandedSections)
         {
-            // Vyhodnotit VisibilityExpression na sekci
-            if (!ExpressionEvaluator.IsVisible(section.VisibilityExpression, sectionData ?? data))
-                continue;
-
             float sectionH;
             List<Zlom> zlomySekce;
             float hlavickaSekce;
@@ -530,6 +609,42 @@ public class PageLayoutEngine
                 sectionH = sectionHeights[section.Id];
                 zlomySekce = _sectionBreaks.TryGetValue(section.Id, out var z) ? z : [];
                 hlavickaSekce = _sectionHeaders.TryGetValue(section.Id, out var hh) ? hh : 0f;
+            }
+
+            // Podmínka se vyhodnocuje s číslem stránky, na které sekce začne. Do 24. 9. dostávala
+            // jen data bez něj, takže `{STRANA} > 1` - příklad z nápovědy formuláře - nikdy
+            // neplatil a sekce se tiše nevytiskla vůbec.
+            // „Začít na nové stránce" (`B177`): jen u obsahu a jen když stránka už něco nese - první
+            // sekce ani sekce za jinou, která list právě založila, prázdný list nevyrobí. Opakované
+            // sekce (hlavička) se do toho nepočítají, přidávají se až po rozvržení obsahu.
+            bool novaStrana = section.ZacitNaNoveStrance && currentPage.Sections.Count > 0;
+
+            if (section.VisibilityExpression is { Length: > 0 } podminka)
+            {
+                bool vejdeSe = cursorY + sectionH <= headerH + availableHeight + SectionLayoutMath.TolerancePrekryvuMm;
+                int strana = novaStrana
+                             || (!vejdeSe && section.OverflowBehavior == SectionOverflowBehavior.KeepTogether
+                                 && currentPage.Sections.Count > 0)
+                    ? currentPageNum + 1
+                    : currentPageNum;
+                var dataSekce = sectionData ?? data;
+                var sHodnotami = dataSekce?.WithExtraValues(HodnotyStranky(strana, estTotal, dataSekce))
+                                 ?? new DataContext(HodnotyStranky(strana, estTotal, null));
+                if (!ExpressionEvaluator.IsVisible(podminka, sHodnotami))
+                    continue;
+            }
+
+            if (novaStrana)
+            {
+                currentPageNum++;
+                currentPage = new Page { PageNumber = currentPageNum };
+                result.Pages.Add(currentPage);
+
+                headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+                footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+                plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
+                availableHeight = printableHeight - headerH - footerH - plovouciH;
+                cursorY = headerH;
             }
 
             // Vejde se na stránku? Tolerance kryje smetí z desetinných výšek sekcí - bez ní
@@ -557,9 +672,9 @@ public class PageLayoutEngine
                     currentPage = new Page { PageNumber = currentPageNum };
                     result.Pages.Add(currentPage);
 
-                    headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-                    footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                    plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                    headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+                    footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+                    plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
                     availableHeight = printableHeight - headerH - footerH - plovouciH;
                     cursorY = headerH;
                 }
@@ -595,9 +710,9 @@ public class PageLayoutEngine
                         currentPage = new Page { PageNumber = currentPageNum };
                         result.Pages.Add(currentPage);
 
-                        headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-                        footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                        headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+                        footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
                         availableHeight = printableHeight - headerH - footerH - plovouciH;
                         cursorY = headerH;
                         spaceOnPage = availableHeight - hlavicka;
@@ -650,9 +765,9 @@ public class PageLayoutEngine
                         currentPage = new Page { PageNumber = currentPageNum };
                         result.Pages.Add(currentPage);
 
-                        headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-                        footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights);
+                        headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights, data);
+                        footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights, data);
+                        plovouciH = GetHeaderHeight(currentPageNum, estTotal, plovouci, sectionHeights, data);
                         availableHeight = printableHeight - headerH - footerH - plovouciH;
                         cursorY = headerH;
                     }
@@ -662,6 +777,12 @@ public class PageLayoutEngine
 
         return result;
     }
+
+    /// <summary>Podmínka, kterou jde vyhodnotit až se známým počtem stran.</summary>
+    private static bool PodminkaSPoctemStran(string? podminka) =>
+        podminka is { Length: > 0 }
+        && (podminka.Contains("POCET_STRAN", StringComparison.OrdinalIgnoreCase)
+            || podminka.Contains("TOTAL_PAGES", StringComparison.OrdinalIgnoreCase));
 
     // ─────────────────────────────────────────────────────────────────────
     // PerDataRow expanze
@@ -706,6 +827,7 @@ public class PageLayoutEngine
     {
         int totalPages = result.TotalPages;
         float printableHeight = template.PageSize.PrintableHeight;
+        string? dopravciBezSpoju = DopravciBezSpoju(template, data);
 
         foreach (var page in result.Pages)
         {
@@ -721,7 +843,7 @@ public class PageLayoutEngine
             // každá z nich: legenda poznámek podle nich vypíše jen to, co na stránku patří (`B127`).
             // Počítá se to ze stejného dělení jako tabulka, takže to není zadarmo - proto jednou
             // na stránku, ne pro každou sekci zvlášť.
-            var dataStranky = SZnackamiStranky(page, data);
+            var dataStranky = SZnackamiStranky(page, data, dopravciBezSpoju);
 
             // Hlavičky nahoře
             float y = 0f;
@@ -769,7 +891,8 @@ public class PageLayoutEngine
             float totalFooterH = 0f;
             foreach (var footer in footers)
             {
-                if (IsFooterVisibleOnPage(footer, pageNum, totalPages))
+                if (IsFooterVisibleOnPage(footer, pageNum, totalPages)
+                    && PodminkaNaStrance(footer, pageNum, totalPages, data))
                     totalFooterH += sectionHeights[footer.Id];
             }
 

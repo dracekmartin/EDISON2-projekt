@@ -10,9 +10,16 @@ namespace TemplateDesigner.Models;
 public static class DepartureColumnWarnings
 {
     /// <summary>Text upozornění, nebo null když je vše v pořádku.</summary>
-    public static string? Summarize(IReadOnlyList<DataContext> pages)
+    public static string? Summarize(IReadOnlyList<DataContext> pages) =>
+        Seznam(pages) is { Count: > 0 } s ? string.Join("; ", s.Select(h => h.Text)) : null;
+
+    /// <summary>
+    /// Odjezdy mimo sloupce na vývěsce chybí - chyba; sloupec s obdobím mimo platnost zůstane
+    /// prázdný, ale nic nechybí - upozornění (rozhodnutí Jan 24. 9.).
+    /// </summary>
+    public static List<Hlaseni> Seznam(IReadOnlyList<DataContext> pages)
     {
-        var casti = new List<string>();
+        var casti = new List<Hlaseni>();
 
         var times = Hodnoty(pages, "NEZARAZENE_SPOJE");
         if (times.Count > 0)
@@ -35,19 +42,24 @@ public static class DepartureColumnWarnings
             var vzorek = jePodleSpoju
                 ? "č. " + string.Join(", ", Serazene(trips).Take(6)) + (trips.Count > 6 ? ", …" : "")
                 : string.Join(", ", times.Take(4)) + (times.Count > 4 ? ", …" : "");
-            casti.Add($"{pocet} {podstatne} {slovesa} do žádného sloupce a na vývěsce {nebude} ({vzorek})");
+            casti.Add(new Hlaseni(ZavaznostHlaseni.Chyba, "Minuty odjezdů",
+                $"{pocet} {podstatne} {slovesa} do žádného sloupce a na vývěsce {nebude} ({vzorek})",
+                "upravit vlastní definici sloupců"));
         }
 
         var sloupce = Hodnoty(pages, "OBDOBI_MIMO_PLATNOST");
         if (sloupce.Count > 0)
         {
             var vyjmenovani = string.Join(", ", sloupce.Select(s => $"„{s}“"));
-            casti.Add(sloupce.Count == 1
-                ? $"období sloupce {vyjmenovani} leží mimo platnost jízdního řádku - sloupec zůstane prázdný"
-                : $"období sloupců {vyjmenovani} leží mimo platnost jízdního řádku - zůstanou prázdné");
+            casti.Add(new Hlaseni(ZavaznostHlaseni.Upozorneni,
+                sloupce.Count == 1 ? $"Minuty odjezdů · sloupec {vyjmenovani}" : $"Minuty odjezdů · sloupce {vyjmenovani}",
+                sloupce.Count == 1
+                    ? "období sloupce leží mimo platnost jízdního řádku - sloupec zůstane prázdný"
+                    : "období sloupců leží mimo platnost jízdního řádku - zůstanou prázdné",
+                "upravit období sloupce"));
         }
 
-        return casti.Count == 0 ? null : string.Join("; ", casti);
+        return casti;
     }
 
     /// <summary>Čísla spojů vzestupně; nečíselné hodnoty (kdyby je server někdy poslal) až za nimi

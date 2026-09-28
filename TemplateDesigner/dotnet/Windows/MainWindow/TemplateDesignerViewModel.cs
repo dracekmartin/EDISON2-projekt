@@ -216,6 +216,11 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Generace preview dat - chrání proti dosednutí zastaralého async GetData
     /// (přepnu agendu/instanci, zatímco běží předchozí fetch staré). Bump při každé změně.</summary>
     private int _previewDataGeneration;
+    private bool _nacitaniBezi;
+
+    private bool _nacitaniDat;
+    /// <summary>Načítají se data linky déle než půl sekundy - štítek linky ukáže „načítám…".</summary>
+    public bool NacitaniDat { get => _nacitaniDat; private set => Set(ref _nacitaniDat, value); }
 
     /// <param name="clearRealData">true (změna agendy/šablony) = stará data vyčistit hned - patří jiné
     /// šabloně, jinak by se kreslila přes novou (náhled do dosednutí ukáže mock). false (přepnutí instance
@@ -234,8 +239,7 @@ public class TemplateDesignerViewModel : EDViewModel
             if (clearRealData)
             {
                 _realPreviewData = null;
-                ColumnDataWarning = null;   // badge patří k zahozeným datům
-                ZmensenePismo = null;
+                NastavHlaseni(ZdrojHlaseni.Data, []);   // hlášky patří k zahozeným datům
                 _realPreviewIndex = 0;
                 Models.ColorHex.UiData = null;   // ať náhled barvy z dat neukáže barvu staré instance
                 NotifyPreviewPagesChanged();
@@ -342,13 +346,21 @@ public class TemplateDesignerViewModel : EDViewModel
         int gen = ++_previewDataGeneration;
         try
         {
-            StatusText = $"Načítám data: {instance.Display}…";
+            // Průběh u štítku linky, ne ve stavovém řádku - tam se střídal s ostatními texty a blikal
+            // (nález Jan 24. 9.). A jen u delšího načtení, krátké by bliklo i tak.
+            _ = Task.Delay(500).ContinueWith(_ =>
+            {
+                if (gen == _previewDataGeneration && _nacitaniBezi) NacitaniDat = true;
+            }, TaskScheduler.FromCurrentSynchronizationContext());
+            _nacitaniBezi = true;
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
             var columnsDefJson = CurrentColumnsDefinitionJson();
             var turnusy = CurrentTurnusyKeSpojum();
             var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson, turnusy, JazykSablony);
-            var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
+            List<DataContext>? pages;
+            try { pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams)); }
+            finally { if (gen == _previewDataGeneration) { _nacitaniBezi = false; NacitaniDat = false; } }
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
             // zastaralý a nesmí dosednout do nové šablony.
@@ -359,20 +371,21 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
-                ColumnDataWarning = null;
-                ZmensenePismo = null;
+                NastavHlaseni(ZdrojHlaseni.Data, []);
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
             {
                 var culture = GetTemplateCulture();
                 var newData = pages.Select(d => d.WithCulture(culture)).ToList();
-                ColumnDataWarning = DepartureColumnWarnings.Summarize(newData);
-                // Malý kód a zmenšené písmo jsou táž třída vady („vytiskne se to jinak, než jak to
-                // vypadá") a sdílí jeden odznak - čtvrtý pruh ve stavovém řádku už by se nevešel.
-                ZmensenePismo = SpojHlasky(
-                    ContentShrinkWarnings.Summarize(State.CurrentTemplate, newData),
-                    BarcodeSizeWarnings.Summarize(State.CurrentTemplate, newData));
+                // Odjezdy mimo sloupce na vývěsce chybí (chyba); zmenšené písmo a malý kód jsou z dat
+                // všech stránek, takže se počítají tady, ne při kreslení jedné z nich.
+                NastavHlaseni(ZdrojHlaseni.Data,
+                [
+                    .. DepartureColumnWarnings.Seznam(newData),
+                    .. ContentShrinkWarnings.Seznam(State.CurrentTemplate, newData, vcetneOrezuTextu: false),
+                    .. BarcodeSizeWarnings.Seznam(State.CurrentTemplate, newData),
+                ]);
                 // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo -
                 // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
                 var currentPage = (keepPage && _realPreviewData is not null
@@ -381,7 +394,9 @@ public class TemplateDesignerViewModel : EDViewModel
                 _realPreviewData = newData;
                 Models.ColorHex.UiData = null;   // naplní ho až kreslení nové stránky
                 _realPreviewIndex = keepPage ? FindMatchingPageIndex(newData, currentPage, _realPreviewIndex) : 0;
-                StatusText = $"{instance.Display}: {pages.Count} stránek";
+                // Linka je na štítku a stránky v přepínači nad náhledem - úspěch nic nehlásí,
+                // jen smaže „Načítám data…" (rozhodnutí Jan 24. 9.).
+                // (dřív tu byl text „linka: N stránek" - duplikoval štítek a přepínač stránek)
             }
             NotifyPreviewPagesChanged();
             // Vzory sloupců chodí až s daty - teprve teď jde poznat, jestli definice v šabloně
@@ -754,79 +769,68 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _statusText, value);
     }
 
-    private string? _columnDataWarning;
-    /// <summary>Co vlastní sloupce nevzaly - odjezdy mimo všechny sloupce a sloupce s obdobím mimo
-    /// platnost jízdního řádku. Null = nic → badge ve status baru je skrytý. Obojí je jinak
-    /// neviditelná vada (chybějící minuta, prázdný sloupec) - proto viditelné upozornění,
-    /// ne tichý log.</summary>
-    public string? ColumnDataWarning
+    // ── Hlášky vpravo dole (`B178`) ─────────────────────────────────────────
+
+    /// <summary>Odkud hláška přišla - každý zdroj se přepočítává v jinou chvíli, proto zvlášť.</summary>
+    public enum ZdrojHlaseni { Data, Font, Preteceni, Orez, Sloupce, Sazba }
+
+    private readonly Dictionary<ZdrojHlaseni, IReadOnlyList<Hlaseni>> _hlaseniZeZdroju = [];
+
+    /// <summary>
+    /// Nastaví hlášky jednoho zdroje. Data (sloupce odjezdů, zmenšené písmo, malé kódy) se počítají
+    /// při načtení dat, font při výměně šablony, přetečení / ořez / úzké sloupce při kreslení náhledu.
+    /// </summary>
+    public void NastavHlaseni(ZdrojHlaseni zdroj, IReadOnlyList<Hlaseni> hlaseni)
     {
-        get => _columnDataWarning;
-        private set { if (Set(ref _columnDataWarning, value)) OnPropertyChanged(nameof(HasColumnDataWarning)); }
+        var stare = _hlaseniZeZdroju.GetValueOrDefault(zdroj) ?? [];
+        if (stare.SequenceEqual(hlaseni)) return;
+        _hlaseniZeZdroju[zdroj] = hlaseni;
+        Hlaseni = [.. _hlaseniZeZdroju.Values.SelectMany(h => h)
+            .OrderByDescending(h => h.Zavaznost)];
+        OnPropertyChanged(nameof(Hlaseni));
+        OnPropertyChanged(nameof(HasHlaseni));
+        foreach (var n in new[] { nameof(PocetChyb), nameof(PocetUpozorneni), nameof(PocetInformaci),
+                                  nameof(HasChyby), nameof(HasUpozorneni), nameof(HasInformace),
+ })
+            OnPropertyChanged(n);
+        if (Hlaseni.Count == 0) IsHlaseniListOpen = false;
     }
 
-    public bool HasColumnDataWarning => !string.IsNullOrEmpty(_columnDataWarning);
+    /// <summary>Všechny hlášky, nejvážnější první.</summary>
+    public IReadOnlyList<Hlaseni> Hlaseni { get; private set; } = [];
 
-    private string? _contentShrinkWarning;
-    /// <summary>Prvky, jimž se zmenšilo písmo, aby se obsah vešel, plus buňky, kde ani mez
-    /// zmenšování nestačila a obsah se ořízl. Null = nic → odznak je skrytý.
-    /// Táž třída vady jako <see cref="FontWarning"/>: vytiskne se něco jiného, než co je nastavené,
-    /// a bez hlášky to uživatel pozná až z papíru.</summary>
-    public string? ContentShrinkWarning
+    public bool HasHlaseni => Hlaseni.Count > 0;
+    public bool HasChyby => Pocet(ZavaznostHlaseni.Chyba) > 0;
+    public bool HasUpozorneni => Pocet(ZavaznostHlaseni.Upozorneni) > 0;
+    public bool HasInformace => Pocet(ZavaznostHlaseni.Informace) > 0;
+
+    // Jeden kompaktní blok (rozhodnutí Jan 24. 9.): ikony s počty podle závažnosti, celé znění
+    // je v rozbaleném seznamu.
+    public int PocetChyb => Pocet(ZavaznostHlaseni.Chyba);
+    public int PocetUpozorneni => Pocet(ZavaznostHlaseni.Upozorneni);
+    public int PocetInformaci => Pocet(ZavaznostHlaseni.Informace);
+
+    private int Pocet(ZavaznostHlaseni z) => Hlaseni.Count(h => h.Zavaznost == z);
+
+    private bool _hlaseniListOpen;
+    private DateTime _hlaseniListZavrenoV = DateTime.MinValue;
+
+    /// <summary>Je rozbalený seznam hlášek? Klik na odznak ho otevře, klik mimo zavře.</summary>
+    public bool IsHlaseniListOpen
     {
-        get => _contentShrinkWarning;
-        private set { if (Set(ref _contentShrinkWarning, value)) OnPropertyChanged(nameof(HasContentShrinkWarning)); }
+        get => _hlaseniListOpen;
+        set
+        {
+            if (_hlaseniListOpen == value) return;
+            _hlaseniListOpen = value;
+            if (!value) _hlaseniListZavrenoV = DateTime.UtcNow;
+            OnPropertyChanged(nameof(IsHlaseniListOpen));
+        }
     }
 
-    private string? _zmensenePismo;
-    /// <summary>Půlka odznaku, která se počítá při načtení dat (přes všechny stránky).</summary>
-    private string? ZmensenePismo
-    {
-        get => _zmensenePismo;
-        set { _zmensenePismo = value; ContentShrinkWarning = SlozOdznak(); }
-    }
-
-    private string? _oriznuteBunky;
-    /// <summary>Půlka odznaku, která se pozná až při kreslení - buňka, do které se obsah nevešel
-    /// ani po zmenšení na mez. Plní ji <c>PreviewCanvas.OriznuteBunkyChanged</c>, proto mluví
-    /// o právě zobrazené stránce dat, ne o všech.</summary>
-    public string? OriznuteBunky
-    {
-        get => _oriznuteBunky;
-        set { if (_oriznuteBunky == value) return; _oriznuteBunky = value; ContentShrinkWarning = SlozOdznak(); }
-    }
-
-    private string? _uzkeSloupce;
-    /// <summary>Třetí půlka odznaku - sloupec spoje užší, než se obsah vejde. Počítá se při kreslení
-    /// náhledu, aby hláška následovala změnu šířky v panelu, ne až další načtení dat.</summary>
-    public string? UzkeSloupce
-    {
-        get => _uzkeSloupce;
-        set { if (_uzkeSloupce == value) return; _uzkeSloupce = value; ContentShrinkWarning = SlozOdznak(); }
-    }
-
-    private string? SlozOdznak() => SpojHlasky(_zmensenePismo, _oriznuteBunky, _uzkeSloupce);
-
-    public bool HasContentShrinkWarning => !string.IsNullOrEmpty(_contentShrinkWarning);
-
-    /// <summary>Spojí neprázdné hlášky do jedné; vše prázdné = null (odznak skrytý).</summary>
-    private static string? SpojHlasky(params string?[] hlasky)
-    {
-        var neprazdne = hlasky.Where(h => !string.IsNullOrEmpty(h)).ToList();
-        return neprazdne.Count == 0 ? null : string.Join("; ", neprazdne);
-    }
-
-    private string? _fontWarning;
-    /// <summary>Fonty, které šablona chce a počítač je nemá. Null = nic → badge je skrytý.
-    /// Stejná třída vady jako <see cref="ColumnDataWarning"/>: výstup vypadá v pořádku a jen je
-    /// jiný, než autor zamýšlel (viz <see cref="FontWarnings"/>).</summary>
-    public string? FontWarning
-    {
-        get => _fontWarning;
-        private set { if (Set(ref _fontWarning, value)) OnPropertyChanged(nameof(HasFontWarning)); }
-    }
-
-    public bool HasFontWarning => !string.IsNullOrEmpty(_fontWarning);
+    /// <summary>Klik na řádek seznamu vybere prvek, ke kterému hláška patří. Host (okno) ho najde
+    /// v šabloně a aktivuje jeho sekci.</summary>
+    public Action<Guid>? RequestSelectElement { get; set; }
 
     private string _selectionStatusText = "";
     /// <summary>Klidová „stav výběru" zóna status baru (aktuální element / sekce). Píše ji jen
@@ -837,18 +841,6 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _selectionStatusText, value);
     }
 
-    private string? _previewOverflow;
-    /// <summary>Co se v náhledu nevejde a kde (číslo stránky, sekce, prvek, přesah v mm). Null = nic
-    /// nepřetéká → červený blok ve status baru je skrytý. ⚠️ Nese **text, ne příznak**: z obecného
-    /// „obsah se nevejde na stránku" uživatel nepoznal, kterou stránku ani co ji přetéká, takže
-    /// neměl kde začít (podnět kolega 3. 9.).</summary>
-    public string? PreviewOverflow
-    {
-        get => _previewOverflow;
-        set { if (Set(ref _previewOverflow, value)) OnPropertyChanged(nameof(HasPreviewOverflow)); }
-    }
-
-    public bool HasPreviewOverflow => !string.IsNullOrEmpty(_previewOverflow);
 
     private string _agendaNameText = "Agenda: -";
     public string AgendaNameText
@@ -949,6 +941,19 @@ public class TemplateDesignerViewModel : EDViewModel
         if (DateTime.UtcNow - _instanceListZavrenoV < TimeSpan.FromMilliseconds(250)) return;
         IsInstanceListOpen = !IsInstanceListOpen;
     });
+    public RelayCommand OpenHlaseniListCommand => _hlaseniList ??= Command(() =>
+    {
+        if (DateTime.UtcNow - _hlaseniListZavrenoV < TimeSpan.FromMilliseconds(250)) return;
+        IsHlaseniListOpen = !IsHlaseniListOpen;
+    });
+    private RelayCommand? _hlaseniList;
+    public RelayCommand<Hlaseni> VybratPrvekHlaseniCommand => _vybratPrvekHlaseni ??= Command<Hlaseni>(h =>
+    {
+        if (h?.PrvekId is not { } id) return;
+        IsHlaseniListOpen = false;
+        RequestSelectElement?.Invoke(id);
+    });
+    private RelayCommand<Hlaseni>? _vybratPrvekHlaseni;
     public RelayCommand<int> SelectInstanceCommand => _selectInstance ??= Command<int>(i =>
     {
         IsInstanceListOpen = false;
@@ -985,7 +990,11 @@ public class TemplateDesignerViewModel : EDViewModel
         // Výměna šablony je jediný okamžik, kdy může přibýt font, který tenhle počítač nemá.
         // Psaní vlastního názvu do pole fontu se sem záměrně nenapojuje: nabídka jmenuje jen
         // nainstalované a záměna je vidět hned na plátně; před tiskem to dialog kontroluje znovu.
-        State.TemplateSwapped = () => FontWarning = FontWarnings.Summarize(State.CurrentTemplate);
+        State.TemplateSwapped = () =>
+        {
+            NastavHlaseni(ZdrojHlaseni.Font,
+                FontWarnings.Hlaska(State.CurrentTemplate) is { } font ? [font] : []);
+        };
 
         Preferences = preferences;
 
@@ -1275,16 +1284,134 @@ public class TemplateDesignerViewModel : EDViewModel
         DocumentDefaults.Style = State.CurrentTemplate.DefaultTextStyle;
 
         Sections.Clear();
-        foreach (var s in State.CurrentTemplate.Sections)
-            Sections.Add(new SectionVM(s, this));
+        var template = State.CurrentTemplate;
+        var stranky = DesignerPages.ObsahStranek(template);
+        if (stranky.Count < 2)
+        {
+            foreach (var s in template.Sections)
+                Sections.Add(new SectionVM(s, this));
+        }
+        else
+        {
+            // Šablona o víc stránkách (`B184`): nahoře společné sekce (hlavička, patička - patří
+            // dokladu, jsou na každé předloze, kde se tisknou), pod nimi jen sekce otevřené
+            // předlohy. Pořadí v šabloně se nemění, jen zobrazení.
+            int otevrena = OtevrenaPredloha;
+            bool prvni = true;
+            foreach (var s in template.Sections.Where(DesignerPages.JeOpakovana))
+            {
+                Sections.Add(new SectionVM(s, this) { ZahlaviStranky = prvni ? "Společné (všechny stránky)" : null });
+                prvni = false;
+            }
+            for (int j = 0; j < stranky[otevrena].Count; j++)
+                Sections.Add(new SectionVM(stranky[otevrena][j], this)
+                {
+                    ZahlaviStranky = j == 0 ? stranky[otevrena][0].Name : null,
+                    ZahlaviAktivni = j == 0,
+                });
+        }
+        OnPredlohyZmeneny();
         SectionsRebuilt?.Invoke();
     }
 
     public void ActivateSection(Section? section)
     {
         State.ActiveSection = section;
+        // Sekce z jiné předlohy (výběr ze stromu, z hlášky, ze seznamu) předlohu otevře - jinak by
+        // byla vybraná sekce, která na plátně není. Společná sekce je na každé, nic se nepřepíná.
+        if (section is not null && !DesignerPages.JeOpakovana(section))
+        {
+            int index = DesignerPages.IndexStranky(State.CurrentTemplate, section);
+            if (index != OtevrenaPredloha) NastavPredlohu(index, zNahledu: false);
+        }
         RebuildSections();
         RequestCanvasRefresh?.Invoke();
+    }
+
+    // ── Předlohy stránek (`B184`) ─────────────────────────────────────────────
+
+    /// <summary>Otevřená předloha stránky, srovnaná do rozsahu (šablona se mohla zkrátit).</summary>
+    public int OtevrenaPredloha =>
+        Math.Clamp(State.Predloha, 0, DesignerPages.ObsahStranek(State.CurrentTemplate).Count - 1);
+
+    public int  PocetPredloh => DesignerPages.ObsahStranek(State.CurrentTemplate).Count;
+
+    /// <summary>Přepínač předloh je vidět jen u šablony o víc stránkách - jednostránková (jízdní
+    /// řády) vypadá jako dřív (rozhodnutí Jan 25. 9.).</summary>
+    public bool MaPredlohy => PocetPredloh > 1;
+
+    /// <summary>„Rub · 1 stránka (2/3)" - jméno předlohy a kolik stránek z ní vyjde.</summary>
+    public string PredlohaText
+    {
+        get
+        {
+            var stranky = DesignerPages.ObsahStranek(State.CurrentTemplate);
+            int i = OtevrenaPredloha;
+            string nazev = stranky[i].FirstOrDefault()?.Name ?? $"Stránka {i + 1}";
+            string kolik = DesignerPages.JePodleDat(stranky[i]) ? "podle dat" : "1 stránka";
+            return $"{nazev} · {kolik}  ({i + 1}/{stranky.Count})";
+        }
+    }
+
+    /// <summary>Náhled ukazuje celý doklad (jinak jen otevřenou stránku šablony).</summary>
+    public bool NahledCelyDoklad
+    {
+        get => State.NahledCelyDoklad;
+        set
+        {
+            if (State.NahledCelyDoklad == value) return;
+            State.NahledCelyDoklad = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NahledJenStranka));
+            PredlohaZmenena?.Invoke(OtevrenaPredloha, false);
+        }
+    }
+
+    public bool NahledJenStranka
+    {
+        get => !NahledCelyDoklad;
+        set => NahledCelyDoklad = !value;
+    }
+
+    /// <summary>Předloha se přepnula; true = přepnul ji posun náhledu (náhled už se neposouvá).</summary>
+    public Action<int, bool>? PredlohaZmenena { get; set; }
+
+    private RelayCommand? _predchoziPredloha, _dalsiPredloha;
+    public RelayCommand PredchoziPredlohaCommand => _predchoziPredloha ??= Command(
+        () => OtevriPredlohu(OtevrenaPredloha - 1), () => OtevrenaPredloha > 0);
+    public RelayCommand DalsiPredlohaCommand => _dalsiPredloha ??= Command(
+        () => OtevriPredlohu(OtevrenaPredloha + 1), () => OtevrenaPredloha < PocetPredloh - 1);
+
+    /// <summary>
+    /// Otevře předlohu na plátně: vybere se její první sekce (tam jde „Přidat sekci") a zruší se
+    /// výběr prvků, které na ní nejsou.
+    /// </summary>
+    public void OtevriPredlohu(int index, bool zNahledu = false)
+    {
+        index = Math.Clamp(index, 0, PocetPredloh - 1);
+        if (index == OtevrenaPredloha && State.Predloha == index) return;
+        NastavPredlohu(index, zNahledu);
+        var naPredloze = DesignerPages.SekceStranky(State.CurrentTemplate, index);
+        if (State.ActiveSection is null || !naPredloze.Contains(State.ActiveSection))
+            State.ActiveSection = DesignerPages.ObsahStranek(State.CurrentTemplate)[index].FirstOrDefault();
+        State.SelectedElements.RemoveAll(el => !naPredloze.Any(sekce => sekce.Elements.Contains(el)));
+        RebuildSections();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    private void NastavPredlohu(int index, bool zNahledu)
+    {
+        State.Predloha = index;
+        OnPredlohyZmeneny();
+        RequestCanvasSizeUpdate?.Invoke();
+        PredlohaZmenena?.Invoke(index, zNahledu);
+    }
+
+    private void OnPredlohyZmeneny()
+    {
+        OnPropertyChanged(nameof(MaPredlohy));
+        OnPropertyChanged(nameof(PredlohaText));
+        CommandManager.InvalidateRequerySuggested();
     }
 
     /// <summary>
@@ -1300,9 +1427,28 @@ public class TemplateDesignerViewModel : EDViewModel
     public void AddSection(Section section)
     {
         var commands = new List<IDesignerCommand>();
+        var template = State.CurrentTemplate;
+
+        // Stránky, na které nová sekce padne (`B184`): obsah na konec aktivní stránky, hlavička
+        // a patička na všechny stránky, kde se tisknou - místo musí najít na každé z nich.
+        int aktivni = OtevrenaPredloha;
+        bool opakovana = DesignerPages.JeOpakovana(section);
+        int stranek = DesignerPages.ObsahStranek(template).Count;
+        var dotcene = opakovana
+            ? Enumerable.Range(0, stranek).Where(i => DesignerPages.TiskneSeNaStrance(section, i, stranek))
+                .Select(i => DesignerPages.SekceStranky(template, i)).ToList()
+            : [DesignerPages.SekceStranky(template, aktivni)];
+        if (dotcene.Count == 0) dotcene.Add(DesignerPages.SekceStranky(template, aktivni));
 
         float pozadovana = section.DesignerHeight ?? 30f;
-        var misto = SectionLayoutMath.RozdelMistoProNovouSekci(State.CurrentTemplate, pozadovana);
+        // Výška, která se vejde na všechny dotčené stránky; teprve s ní se počítá, co zkrátit.
+        float vyska = dotcene.Min(p => SectionLayoutMath.RozdelMistoProNovouSekci(template, pozadovana, p).VyskaNoveSekce);
+        var zkraceni = new Dictionary<Section, float>();
+        foreach (var p in dotcene)
+            foreach (var (sekce, novaVyska) in SectionLayoutMath.RozdelMistoProNovouSekci(template, vyska, p).Zkraceni)
+                zkraceni[sekce] = zkraceni.TryGetValue(sekce, out var dosavadni) ? MathF.Min(dosavadni, novaVyska) : novaVyska;
+        var misto = new SectionLayoutMath.MistoProNovouSekci(vyska,
+            [.. zkraceni.Select(z => new SectionLayoutMath.ZkraceniSekce(z.Key, z.Value))]);
 
         foreach (var (sekce, novaVyska) in misto.Zkraceni)
         {
@@ -1317,7 +1463,8 @@ public class TemplateDesignerViewModel : EDViewModel
         if (section.DesignerHeight is not null)
             section.DesignerHeight = misto.VyskaNoveSekce;
 
-        commands.Add(new AddSectionCommand(State.CurrentTemplate, section));
+        commands.Add(new AddSectionCommand(template, section,
+            opakovana ? null : DesignerPages.PoziceNaKonciStranky(template, aktivni)));
 
         if (commands.Count > 1)
             Execute(new CompositeCommand("Přidat sekci", commands));
@@ -1333,6 +1480,39 @@ public class TemplateDesignerViewModel : EDViewModel
             StatusText = $"Sekce {section.Name} přidána s výškou {misto.VyskaNoveSekce:0.#} mm "
                        + "- na víc už na stránce nebylo místo. Zkraťte jinou sekci, jestli má být vyšší.";
         }
+    }
+
+    /// <summary>
+    /// Přidá stránku dokladu: sekci se „Začít na nové stránce", která zabere celou volnou plochu
+    /// nové stránky (bez hlavičky a patičky, které se na ni tisknou). Ostatní sekce se nemění.
+    /// </summary>
+    /// <remarks>
+    /// Nejde přes <see cref="AddSection"/> - ten hledá místo na dosavadní poslední stránce a kvůli
+    /// nové by zkrátil její sekce. Nová stránka je prázdná, takže místo krátit nemusí.
+    /// </remarks>
+    public void AddPage()
+    {
+        var template = State.CurrentTemplate;
+        int stranek = DesignerPages.ObsahStranek(template).Count;
+        bool prvniJePrazdna = stranek == 1 && DesignerPages.ObsahStranek(template)[0].Count == 0;
+        int nova = prvniJePrazdna ? 0 : stranek;
+        int pocet = nova + 1;
+        float opakovane = template.Sections
+            .Where(s => DesignerPages.JeOpakovana(s) && DesignerPages.TiskneSeNaStrance(s, nova, pocet))
+            .Sum(s => s.EffectiveDesignerHeight);
+
+        var section = new Section
+        {
+            Name = $"Strana {nova + 1}",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            ZacitNaNoveStrance = !prvniJePrazdna,
+            DesignerHeight = MathF.Max(SectionLayoutMath.MinimalniVyskaNoveSekceMm,
+                template.PageSize.PrintableHeight - opakovane),
+        };
+        Execute(new AddSectionCommand(template, section));
+        ActivateSection(section);   // otevře novou předlohu
+        RequestCanvasSizeUpdate?.Invoke();
     }
 
     /// <summary>
@@ -1774,8 +1954,7 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Pokud byla aktuální šablona při loadu auto-migrována (Template.WasMigrated=true),
-    /// zobrazí hlášku ve stavovém řádku. Uložením se přepíše stará verze v souboru/Caché.
+    /// Šablona převedená při otevření na nový formát (Template.WasMigrated) - jen ladicí výpis.
     /// </summary>
     /// <remarks>
     /// ⚠️ **Migrace NEZNAMENÁ neuloženou změnu** (rozhodnutí Jan 14. 9.). Do té doby se tu
@@ -1784,11 +1963,13 @@ public class TemplateDesignerViewModel : EDViewModel
     /// otevření ptalo na uložení změn, které neudělal. Na takovou otázku nejde odpovědět správně
     /// a naučí to lidi proklikávat dialogy. Migrace je idempotentní a pouští se při každém načtení,
     /// takže se nic neztratí: nový formát se zapíše, až šablonu uživatel opravdu upraví a uloží.
+    /// <para>Ze stejného důvodu se neukazuje ani ve stavovém řádku (rozhodnutí Jan 24. 9.) -
+    /// uživatel s ní nemá co dělat a tisk se nemění.</para>
     /// </remarks>
     private void NotifyMigrationIfNeeded()
     {
         if (State.CurrentTemplate.WasMigrated)
-            StatusText = $"⚠ Šablona migrována na nový formát (V{State.CurrentTemplate.Version}). Uložením přepíšete starou verzi.";
+            System.Diagnostics.Debug.WriteLine($"[Šablona] převedena na formát {State.CurrentTemplate.Version} při otevření");
     }
 
     /// <summary>Aplikuje grid/snap nastavení uložené v šabloně. Null hodnoty → ponechat aktuální.</summary>
@@ -2036,6 +2217,19 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate.PrintParameters =
             SlucHodnotyParametru(State.CurrentTemplate.PrintParameters, nove);
+    }
+
+    /// <summary>
+    /// Uloží nakreslené uspořádání na list jako výchozí pro šablonu (`B186`); null = šablona
+    /// výchozí uspořádání nemá. Tisk ho pak nabídne sám - dispečer nemusí vědět, jak se nastavuje.
+    /// </summary>
+    public void UlozUsporadaniDoSablony(string? json)
+    {
+        var tp = State.CurrentTemplate.PrintParameters is { } p ? new Dictionary<string, string>(p) : [];
+        if (json is null) tp.Remove(SheetLayoutKeys.Plan);
+        else tp[SheetLayoutKeys.Plan] = json;
+        State.CurrentTemplate.PrintParameters = tp.Count > 0 ? tp : null;
+        IsDirty = true;
     }
 
     /// <summary>
@@ -3086,7 +3280,7 @@ public class TemplateDesignerViewModel : EDViewModel
             _previewParams[p.Name] = p.Type switch
             {
                 "bool"   => s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase),
-                "number" => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+                "number" => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
                 _        => (object)s
             };
         }
@@ -3261,7 +3455,7 @@ public class TemplateDesignerViewModel : EDViewModel
         object? newValue = type switch
         {
             "bool"   => fieldValue == "1" || string.Equals(fieldValue, "true", StringComparison.OrdinalIgnoreCase),
-            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
             _        => (object)fieldValue
         };
         // Beze změny → nic (chrání proti falešnému dirty i re-fetchi při reloadu EDInputformu tabu,
@@ -3287,12 +3481,9 @@ public class TemplateDesignerViewModel : EDViewModel
         if (CacheProvider is null)
         { StatusText = "Databáze: není nakonfigurována - pole načtena z JSON"; return; }
 
-        if (agendaCode is null)
-        { StatusText = "Databáze: nakonfigurována"; return; }
-
-        StatusText = cacheSchema is not null
-            ? $"● Databáze: připojeno - {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
-            : $"○ Databáze: pro tuto agendu nejsou databázová pole ({agendaCode})";
+        // Stav připojení se nehlásí vůbec (rozhodnutí Jan 24. 9.): „pro agendu nejsou databázová
+        // pole" se ukázalo na okamžik při každém otevření, než se schéma donačetlo. Skutečný
+        // problém s daty ukáže „Žádná data" nebo prázdný náhled.
     }
 
     public CultureInfo GetTemplateCulture()
@@ -3758,29 +3949,39 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Status text for selection ──────────────────────────────────────────────
 
     /// <summary>Aktualizuje SelectionStatusText podle aktuálního výběru (klidová zóna status baru).</summary>
+    // Jen kontextová informace o výběru - pevné nápovědy („2× klik = vlastnosti") sem nepatří,
+    // ovládání je v nápovědě F1 (rozhodnutí Jan 24. 9.). Názvy prvků jako v paletě.
     public void UpdateStatusForSelection()
     {
         if (State.SelectedElements.Count == 1)
         {
             var el = State.SelectedElements[0];
-            string type = el.GetType().Name.Replace("Element", "");
-            SelectionStatusText = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
-                         (el.IsLocked ? "  [ZAMČENO]" : "") +
-                         "  |  2× klik nebo Enter = vlastnosti";
+            string vyska = el.Height is { } h ? $"{h:0.#} mm" : "výška podle obsahu";
+            SelectionStatusText = $"{ElementNames.SPopisem(el)}  ·  X {el.X:0.#}  Y {el.Y:0.#} mm  ·  {el.Width:0.#} mm × {vyska}"
+                + (el.IsLocked ? "  ·  Uzamčeno" : "");
         }
         else if (State.SelectedElements.Count > 1)
         {
-            SelectionStatusText = $"Vybráno {State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru";
+            int n = State.SelectedElements.Count;
+            SelectionStatusText = $"Vybráno {n} {(n <= 4 ? "prvky" : "prvků")}";
         }
-        else if (State.ActiveSection is not null)
+        else if (State.ActiveSection is { } sekce)
         {
-            SelectionStatusText = $"Sekce: {State.ActiveSection.Name}  |  " +
-                         $"Výška: {State.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
-                         $"Elementy: {State.ActiveSection.Elements.Count}";
+            string typ = sekce.Typ switch
+            {
+                TypSekce.HlavickaStranky   => "hlavička stránky",
+                TypSekce.PodObsahemStranky => "pod obsahem stránky",
+                TypSekce.PatickaStranky    => "patička stránky",
+                _                          => "obsah",
+            };
+            string vyska = sekce.DesignerHeight is { } h ? $"výška {h:0.#} mm" : "výška podle obsahu";
+            int n = sekce.Elements.Count;
+            SelectionStatusText = $"Sekce „{sekce.Name}“  ·  {typ}  ·  {vyska}  ·  {n} "
+                + (n == 1 ? "prvek" : n is >= 2 and <= 4 ? "prvky" : "prvků");
         }
         else
         {
-            SelectionStatusText = "Vyberte element nebo sekci.";
+            SelectionStatusText = "";
         }
     }
 
@@ -4065,6 +4266,14 @@ public class SectionVM : INotifyPropertyChanged
     }
 
     public string  Name      => Section.Name;
+    /// <summary>„Strana 2" (nebo „Na každé stránce") nad první sekcí oddílu; jinak null.</summary>
+    public string? ZahlaviStranky { get; init; }
+    public bool    MaZahlaviStranky => ZahlaviStranky is not null;
+    /// <summary>Stránka tohoto nadpisu je aktivní - sem jde „Přidat sekci".</summary>
+    public bool    ZahlaviAktivni { get; init; }
+    /// <summary>Pod poslední sekcí stránky: hlavička a patička, které se na ni tisknou navíc.</summary>
+    public string? SpolecneNaStrance { get; init; }
+    public bool    MaSpolecneNaStrance => SpolecneNaStrance is not null;
     public bool    IsDynamic => Section.DesignerHeight is null;
     public bool    IsActive  => _vm.State.ActiveSection == Section;
     public bool    HasSubtitle => Subtitle is not null;

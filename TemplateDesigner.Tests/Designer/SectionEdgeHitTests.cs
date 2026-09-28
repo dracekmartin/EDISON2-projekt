@@ -115,7 +115,10 @@ public class SectionEdgeHitTests
     public void Paticka_SeChytaZaHorniHranu()
     {
         var (canvas, _, sekce) = Scena(50f, 30f);
+        // Patička stránky = opakovaná sekce. Samotná role u sekce „jednou" nic nedělá - sazba ji
+        // tiskne v pořadí jako obsah, a plátno od `B184` kreslí totéž co tisk.
         sekce[1].Role = SectionRole.Footer;
+        sekce[1].PrintBehavior = SectionPrintBehavior.OnEveryPage;
 
         var (_, ox, oy) = canvas.GetSectionOrigins(CanvasWidth).First(t => t.Section == sekce[1]);
 

@@ -27,11 +27,15 @@ public static class TripColumnWidthWarnings
     private const float NoticeableMm = 0.5f;
 
     /// <summary>Text upozornění, nebo null když se obsah všude vejde.</summary>
-    public static string? Summarize(Template? template, IReadOnlyList<DataContext>? pages)
-    {
-        if (template is null || pages is null || pages.Count == 0) return null;
+    public static string? Summarize(Template? template, IReadOnlyList<DataContext>? pages) =>
+        Seznam(template, pages) is { Count: > 0 } s ? string.Join("; ", s.Select(h => h.Text)) : null;
 
-        var casti = new List<string>();
+    /// <summary>Hlášky po tabulkách - obsah přeteče do souseda, na papíře to vypadá jako vada sazby.</summary>
+    public static List<Hlaseni> Seznam(Template? template, IReadOnlyList<DataContext>? pages)
+    {
+        if (template is null || pages is null || pages.Count == 0) return [];
+
+        var casti = new List<Hlaseni>();
         foreach (var el in template.Sections.SelectMany(s => s.Elements).OfType<LineTableElement>())
         {
             float nejhorsiSloupec = 0f, zaklad = 0f, potreba = 0f;
@@ -58,10 +62,11 @@ public static class TripColumnWidthWarnings
             string sirka = nejhorsiSloupec - zaklad > 0.05f
                 ? $"{nejhorsiSloupec:0.0} mm (základ {zaklad:0.0} mm + místo na značky)"
                 : $"{nejhorsiSloupec:0.0} mm";
-            casti.Add($"{ElementNames.ForUser(el)}: sloupec spoje má {sirka}, "
-                + $"obsah potřebuje {potreba:0.0} mm ({kde}) - přeteče do sousedního sloupce");
+            casti.Add(new Hlaseni(ZavaznostHlaseni.Chyba, $"{ElementNames.ForUser(el)} · {kde}",
+                $"sloupec spoje má {sirka}, obsah potřebuje {potreba:0.0} mm - přeteče do souseda",
+                "rozšířit sloupce spojů, nebo zmenšit písmo", el.Id));
         }
 
-        return casti.Count == 0 ? null : string.Join("; ", casti);
+        return casti;
     }
 }

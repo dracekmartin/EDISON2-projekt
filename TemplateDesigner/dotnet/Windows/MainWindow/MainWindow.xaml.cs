@@ -27,6 +27,7 @@ public partial class MainWindow : Window
     // ── Canvas / preview ──────────────────────────────────────────────────────
     private DesignerCanvas?         _canvas;
     private PreviewCanvas?          _previewCanvas;
+    private DateTime                _nahledPosunulProgram;
     private ElementPropertiesWindowViewModel? _propsVm;
 
     // Zoom max omezen na 500% - při vyšším zoomu má SKElement >20 MP, což způsobuje
@@ -139,26 +140,17 @@ public partial class MainWindow : Window
 
         _canvas        = new DesignerCanvas(_vm.State);
         _previewCanvas = new PreviewCanvas(_vm.State);
-        _previewCanvas.OverflowChanged = popis =>
-        {
-            if (_vm is not null && _vm.PreviewOverflow != popis)
-                _vm.PreviewOverflow = popis;
-        };
+        _previewCanvas.OverflowChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Preteceni, h);
 
         _previewCanvas.PocetStranSazbyChanged = pocet =>
         {
             if (_vm is not null) _vm.PocetStranSazby = pocet;
         };
 
-        _previewCanvas.OriznuteBunkyChanged = popis =>
-        {
-            if (_vm is not null) _vm.OriznuteBunky = popis;
-        };
-
-        _previewCanvas.UzkeSloupceChanged = popis =>
-        {
-            if (_vm is not null) _vm.UzkeSloupce = popis;
-        };
+        _previewCanvas.OriznuteBunkyChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Orez, h);
+        _previewCanvas.UzkeSloupceChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Sloupce, h);
+        _previewCanvas.SazbaChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Sazba, h);
+        _vm.RequestSelectElement = VyberPrvekZHlaseni;
 
         // Wire SkiaSharp (must be code-behind - not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;
@@ -172,6 +164,36 @@ public partial class MainWindow : Window
         PreviewScrollViewer.PreviewMouseWheel += OnPreviewScrollWheel;
         // Repaint canvas po scroll - viewport culling potřebuje aktuální viditelnou oblast
         CanvasScrollViewer.ScrollChanged += (_, _) => skCanvas.InvalidateVisual();
+
+        // Předlohy stránek (`B184`): přepnutí v návrhu posune náhled na první stránku, která
+        // z předlohy vznikla; posun náhledu přepne předlohu v návrhu. Posun, který udělal program,
+        // se chvíli ignoruje - jinak by se oba směry přetahovaly.
+        _vm.PredlohaZmenena = (predloha, zNahledu) =>
+        {
+            CanvasScrollViewer.ScrollToVerticalOffset(0);
+            if (!_vm.NahledCelyDoklad)
+            {
+                // Náhled ukazuje jen stránky otevřené předlohy - po přepnutí jiné, jinak vysoký.
+                UpdatePreviewSize();
+                InvalidatePreview();
+                PreviewScrollViewer.ScrollToVerticalOffset(0);
+                return;
+            }
+            UpdatePreviewSize();
+            InvalidatePreview();
+            if (zNahledu || _previewCanvas?.TopPredlohy(predloha) is not float y) return;
+            _nahledPosunulProgram = DateTime.UtcNow;
+            PreviewScrollViewer.ScrollToVerticalOffset(Math.Max(0, y - 20));
+        };
+        PreviewScrollViewer.ScrollChanged += (_, e) =>
+        {
+            if (_vm is null || !_vm.MaPredlohy || !_vm.NahledCelyDoklad || e.VerticalChange == 0) return;
+            if ((DateTime.UtcNow - _nahledPosunulProgram).TotalMilliseconds < 400) return;
+            // Rozhoduje stránka v horní třetině okna náhledu - tu má uživatel před očima.
+            float y = (float)(PreviewScrollViewer.VerticalOffset + PreviewScrollViewer.ViewportHeight / 3);
+            if (_previewCanvas?.PredlohaNa(y) is int p && p != _vm.OtevrenaPredloha)
+                _vm.OtevriPredlohu(p, zNahledu: true);
+        };
 
         // Plocha kolem stránky: WPF (pozadí ScrollViewerů) i Skia (canvas.Clear) musí mít
         // shodnou barvu, jinak je na hranici plátna/náhledu vidět šev. XAML bere token
@@ -564,9 +586,9 @@ public partial class MainWindow : Window
     {
         if (_canvas is null || _vm is null) return;
         const float padding   = 80f;  // 40 top + 40 bottom standardní okraj kolem stránky
-        const float topBuffer = 60f;  // extra prostor nahoře - kompenzuje preview chrome (Y-zarovnání)
+        const float topBuffer = 26f;  // = DesignerCanvas.TopBufferPx (nad plátnem je 34px pruh stránek jako nad náhledem)
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
-        // Výška plátna roste s obsahem (souvislé multi-page plátno), ne pevná A4.
+        // Výška plátna = listy stránek pod sebou (i s případným přesahem obsahu).
         float paperH  = _canvas.TotalPaperHeightPx();
         var dpi = VisualTreeHelper.GetDpi(skCanvas);
         skCanvas.Width  = NaCelePixely(pageW + padding + _canvas.ExtraLeftPx, dpi.DpiScaleX);
@@ -1057,14 +1079,13 @@ public partial class MainWindow : Window
         finally { _printDialogOpening = false; }
     }
 
-    private void OpenPrintDialog()
+    /// <summary>
+    /// Načtení dat všech vybraných linek (tiskové okno, kontrola z návrháře). Null = bez databáze
+    /// nebo agendy. Stránky dat nesou popis linky (<c>KontrolaVystupu.LinkaKlic</c>).
+    /// </summary>
+    private Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? NacitaniVsechLinek()
     {
-        // PrintDialog operuje nad sdíleným dict s preview lištou (_vm.PreviewParamValues).
-        // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
-        // takže _previewParams už obsahuje persistované hodnoty - žádný extra I/O zde.
-
-        // Callback pro reálná data - pouze pokud je CacheProvider k dispozici
-        Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null;
+        Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null;
         if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
         {
             var provider = _vm.CacheProvider;
@@ -1072,7 +1093,7 @@ public partial class MainWindow : Window
             // Snapshot na UI threadu - callback běží na threadpoolu a nesmí sahat na živou šablonu
             var columnsDefJson = _vm.CurrentColumnsDefinitionJson();
             var turnusy = _vm.CurrentTurnusyKeSpojum();
-            buildRealData = paramValues =>
+            buildRealData = (paramValues, prubeh) =>
             {
                 List<DataContext>? pages;
 
@@ -1082,13 +1103,18 @@ public partial class MainWindow : Window
                 {
                     var paramName = _vm.CurrentInstanceParamName;
                     var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
+                    int hotovo = 0;
                     foreach (var inst in _vm.ActiveInstances)
                     {
+                        prubeh?.Report((hotovo++, _vm.ActiveInstances.Count, inst.Display));
                         var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
                             paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson,
                             turnusy, _vm.JazykSablony));
                         if (instPages is null) continue;
-                        all.AddRange(instPages);
+                        // Linka ke každé stránce - kontrola v tiskovém okně z ní řekne, které lince
+                        // hláška patří (`B178`).
+                        var linka = new Dictionary<string, object?> { [TemplateDesigner.Models.KontrolaVystupu.LinkaKlic] = inst.Display };
+                        all.AddRange(instPages.Select(p => p.WithExtraValues(linka)));
                     }
                     pages = all.Count > 0 ? all : null;
                 }
@@ -1116,7 +1142,86 @@ public partial class MainWindow : Window
             };
         }
 
-        var tplAgendaCode = _vm.State.CurrentTemplate.AgendaCode;
+        return buildRealData;
+    }
+
+    /// <summary>
+    /// Kontrola všech vybraných linek z návrháře (`B178`). Okno s výsledkem se otevře hned a ukazuje
+    /// průběh; klik na hlášku přepne na její linku a vybere prvek - to z tiskového okna nejde.
+    /// </summary>
+    private async void BtnKontrola_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm is null) return;
+        var nacitani = NacitaniVsechLinek();
+        if (nacitani is null || _vm.ActiveInstances.Count == 0)
+        {
+            _vm.StatusText = "Kontrola potřebuje vybrané linky - vyberte je na štítku vedle agendy.";
+            return;
+        }
+
+        var vysledek = new KontrolaVysledkuDialogViewModel("Načítám data…", []) { Probiha = true };
+        vysledek.RequestVybrat = PrejdiNaHlaseni;
+        new KontrolaVysledkuDialog(vysledek) { Owner = this }.Show();
+        try
+        {
+            var parametry = new Dictionary<string, object?>(_vm.PreviewParamValues);
+            var prubeh = new Progress<(int Hotovo, int Celkem, string Linka)>(p =>
+            {
+                vysledek.Nadpis = $"Načítám data {p.Hotovo + 1} z {p.Celkem} · {p.Linka}";
+                vysledek.Prubeh = p.Celkem > 0 ? 0.5 * p.Hotovo / p.Celkem : 0;
+            });
+            var data = await Task.Run(() => nacitani(parametry, prubeh));
+            if (data is null or { Count: 0 })
+            {
+                vysledek.Nadpis = "Databáze nevrátila žádná data.";
+                return;
+            }
+            var template = _vm.State.CurrentTemplate;
+            var hlaseni = await TemplateDesigner.Models.KontrolaVystupu.ZkontrolujAsync(template, data,
+                d => TemplateDesigner.Models.KontrolaVystupu.ZLinky(template, d, _previewCanvas!.HlaseniSazby),
+                (hotovo, celkem, linka) =>
+                {
+                    vysledek.Nadpis = hotovo < celkem ? $"Kontroluji {hotovo + 1} z {celkem} · {linka}" : "";
+                    vysledek.Prubeh = celkem > 0 ? 0.5 + 0.5 * hotovo / celkem : 1;
+                });
+            int linek = TemplateDesigner.Models.KontrolaVystupu.PoLinkach(data).Count;
+            vysledek.Hlaseni = hlaseni;
+            vysledek.Nadpis = hlaseni.Count > 0
+                ? $"Zkontrolováno {TemplateDesigner.Models.KontrolaVystupu.Linek(linek)}: {TemplateDesigner.Models.KontrolaVystupu.SouhrnPoctu(hlaseni)}"
+                : $"Zkontrolováno {TemplateDesigner.Models.KontrolaVystupu.Linek(linek)} - bez hlášek";
+        }
+        catch (Exception ex)
+        {
+            vysledek.Nadpis = $"Kontrola selhala: {ex.Message}";
+        }
+        finally
+        {
+            vysledek.Probiha = false;
+        }
+    }
+
+    /// <summary>Klik na hlášku v okně kontroly: přepnout na její linku a vybrat prvek.</summary>
+    private void PrejdiNaHlaseni(Hlaseni h)
+    {
+        if (_vm is null) return;
+        if (h.Linka is { } linka)
+        {
+            int i = _vm.ActiveInstances.ToList().FindIndex(x => x.Display == linka);
+            if (i >= 0 && i != _vm.ActiveInstanceIndex) _vm.ActiveInstanceIndex = i;
+        }
+        if (h.PrvekId is { } id) VyberPrvekZHlaseni(id);
+        Activate();
+    }
+
+    private void OpenPrintDialog()
+    {
+        // PrintDialog operuje nad sdíleným dict s preview lištou (_vm.PreviewParamValues).
+        // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
+        // takže _previewParams už obsahuje persistované hodnoty - žádný extra I/O zde.
+
+        var buildRealData = NacitaniVsechLinek();
+
+        var tplAgendaCode = _vm!.State.CurrentTemplate.AgendaCode;
         var agendaClass = string.IsNullOrEmpty(tplAgendaCode) ? null : _vm.CacheProvider?.GetCacheClass(tplAgendaCode);
 
         var vm = new PrintDialogViewModel(
@@ -1127,7 +1232,8 @@ public partial class MainWindow : Window
             buildRealData,
             _preferences,
             onParamsChanged: _vm.OnExternalParamsChanged,
-            agendaClass: agendaClass);
+            agendaClass: agendaClass,
+            ulozitUsporadaniDoSablony: _vm.UlozUsporadaniDoSablony);
 
         vm.RequestRenderPdf = (filePath, data, sheets, meritko) =>
             _previewCanvas!.RenderToPdf(filePath, data, sheets, meritko);
@@ -1141,6 +1247,8 @@ public partial class MainWindow : Window
 
         vm.RequestOverflowCheck = dataPages =>
             _previewCanvas!.CountOverflowingPages(dataPages);
+        vm.RequestKontrolaLinky = data => TemplateDesigner.Models.KontrolaVystupu.ZLinky(
+            _vm.State.CurrentTemplate, data, _previewCanvas!.HlaseniSazby);
 
         var dlg = new PrintDialog(vm)
             { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
@@ -1409,6 +1517,8 @@ public partial class MainWindow : Window
     // ─────────────────────────────────────────────────────────────────────────
     // Add section / element menus
     // ─────────────────────────────────────────────────────────────────────────
+
+    private void BtnAddPage_Click(object sender, RoutedEventArgs e) => _vm?.AddPage();
 
     private void BtnAddSection_Click(object sender, RoutedEventArgs e)
     {
@@ -1698,6 +1808,12 @@ public partial class MainWindow : Window
 
     // ── Properties dialog helpers ────────────────────────────────────────────
 
+    /// <summary>Filtr hledání, který si pamatují okna vlastností prvku otevřená z plátna.</summary>
+    /// <remarks>Uživatel ladí jednu vlastnost: vyhledá ji, změní, zavře okno kvůli náhledu a otevře
+    /// znovu - bez paměti by hledal pokaždé znovu (Jan 23. 9.). Jen tady: panel vlastností, sekce,
+    /// stránka ani buňka tabulky ho nesdílí.</remarks>
+    private const string ElementDialogSearchKey = "TemplateDesigner.ElementDialog";
+
     private void OpenPropertiesForElement(TemplateElement element)
     {
         if (element is DepartureGridElement depEl)
@@ -1748,7 +1864,7 @@ public partial class MainWindow : Window
         var dlg = new DepartureGroupEditorDialog(
             element, availableGroups, element.GroupColumns, element.HourColumnStyle,
             element.CustomColumns, presetsJson)
-            { Owner = this };
+            { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
 
         if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)
 
@@ -1797,7 +1913,7 @@ public partial class MainWindow : Window
     private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
         var dlg = new ElementEditDialog(element, cacheClass, title)
-            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);
@@ -1809,7 +1925,7 @@ public partial class MainWindow : Window
 
     private void OpenStopColumnsDialog(StopListElement element)
     {
-        var dlg = new StopColumnsEditorDialog(element) { Owner = this };
+        var dlg = new StopColumnsEditorDialog(element) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
 
         if (dlg.ShowDialog() == true)
         {
@@ -1847,7 +1963,7 @@ public partial class MainWindow : Window
 
     private void OpenLineTableColumnsDialog(LineTableElement element)
     {
-        var dlg = new LineTableColumnsEditorDialog(element) { Owner = this };
+        var dlg = new LineTableColumnsEditorDialog(element) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
 
         if (dlg.ShowDialog() == true)
         {
@@ -1863,7 +1979,7 @@ public partial class MainWindow : Window
     private void OpenDynamicTableDialog(DynamicTableElement element)
     {
         var collections = _vm!.GetAvailableGroups();
-        var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this };
+        var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
 
         if (dlg.ShowDialog() == true)
         {
@@ -1876,13 +1992,50 @@ public partial class MainWindow : Window
         UpdatePropertiesPanel();
     }
 
+    /// <summary>
+    /// Pole formuláře sekce, která v dané kombinaci nic nedělají, se schovají (rozhodnutí Jan 24. 9.):
+    /// barva a tloušťka bez rámečku, Stránky jinde než u hlavičky a patičky (obsah se tiskne jednou,
+    /// pod obsahem vždy na všech stránkách), Přetečení a nový list u opakované sekce (ta se nedělí
+    /// a opakuje se na každém listu). Do `B18` pravidla drží návrhář, formulář z Caché viditelnost neumí.
+    /// </summary>
+    internal static bool ViditelnostPoleSekce(string klic, IReadOnlyDictionary<string, string> hodnoty)
+    {
+        string typ = hodnoty.GetValueOrDefault(nameof(Section.Typ)) ?? "";
+        bool obsah = typ is "" or nameof(TypSekce.Obsah);
+        return klic switch
+        {
+            nameof(Section.BorderColor) or nameof(Section.BorderWidth)
+                => hodnoty.GetValueOrDefault(nameof(Section.ShowBorder)) == "1",
+            nameof(Section.Stranky) => typ is nameof(TypSekce.HlavickaStranky) or nameof(TypSekce.PatickaStranky),
+            nameof(Section.OverflowBehavior) or nameof(Section.ZacitNaNoveStrance) => obsah,
+            _ => true,
+        };
+    }
+
+    /// <summary>Klik na hlášku vpravo dole vybere její prvek na plátně (`B178`).</summary>
+    private void VyberPrvekZHlaseni(Guid id)
+    {
+        if (_vm is null) return;
+        var sekce = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Any(e => e.Id == id));
+        var prvek = sekce?.Elements.First(e => e.Id == id);
+        if (sekce is null || prvek is null) return;
+        _vm.State.SelectedElements.Clear();
+        _vm.State.SelectedElements.Add(prvek);
+        _vm.ActivateSection(sekce);
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
+    }
+
     private void OpenPropertiesForSection(Section section)
     {
         var dlg = new ElementEditDialog(
             section,
             "ALVA.TemplateDesigner.EDInputForm.SectionEdit",
             "Vlastnosti sekce: " + section.Name)
-            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems() };
+            {
+                Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(),
+                ViditelnostPole = ViditelnostPoleSekce,
+            };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);

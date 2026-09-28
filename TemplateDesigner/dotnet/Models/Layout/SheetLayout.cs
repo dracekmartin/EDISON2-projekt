@@ -34,6 +34,19 @@ public sealed record SheetLayoutOptions
     /// <summary>True = kreslit tenké ořezové čáry na hranicích stránek.</summary>
     public bool DrawCutMarks { get; init; }
 
+    /// <summary>
+    /// True = oboustranný tisk dokladů o dvou stranách: každé dvě stránky za sebou jsou líc a rub
+    /// jednoho dokladu. Líce jdou na jeden list, ruby na další na tatáž místa (#12854, dvě stazky
+    /// A5 na A4). Opakování stránky má přednost - samo střídá líc a rub na celých listech.
+    /// </summary>
+    public bool Oboustranne { get; init; }
+
+    /// <summary>
+    /// Nakreslené uspořádání (`B186`) - která stránka šablony jde do kterého pole přední a zadní
+    /// strany. Null = dřívější režimy (za sebou / opakovat / oboustranně) z uložených voleb.
+    /// </summary>
+    public UsporadaniListu? Plan { get; init; }
+
     /// <summary>Počet pozic na jednom listu.</summary>
     public int SlotsPerSheet => Rows * Cols;
 
@@ -98,13 +111,16 @@ public static class SheetLayoutKeys
     public const string Grid = "__EXPORT_SHEET_GRID";
     public const string Repeat = "__EXPORT_SHEET_REPEAT";
     public const string Marks = "__EXPORT_SHEET_MARKS";
+    public const string Oboustranne = "__EXPORT_SHEET_DUPLEX";
+    /// <summary>Nakreslené uspořádání jako JSON (<see cref="UsporadaniListu"/>, `B186`).</summary>
+    public const string Plan = "__EXPORT_SHEET_PLAN";
     public const string Meritko = "__EXPORT_SCALE";
 
     public const string SheetNone = "NONE";
     public const string GridAuto = "AUTO";
 
     /// <summary>Všechny klíče - pro persistence restore (nejsou mezi agenda parametry).</summary>
-    public static readonly string[] All = [Sheet, Grid, Repeat, Marks, Meritko];
+    public static readonly string[] All = [Sheet, Grid, Repeat, Marks, Oboustranne, Plan, Meritko];
 }
 
 /// <summary>
@@ -120,6 +136,10 @@ public static class SheetComposer
     /// </summary>
     public static SheetLayoutOptions? FromParamValues(IReadOnlyDictionary<string, object?> values, PageSize page)
     {
+        // Nakreslené uspořádání má přednost před dřívějšími poli (`B186`).
+        if (UsporadaniListu.FromJson(values.GetValueOrDefault(SheetLayoutKeys.Plan) as string) is { } plan)
+            return ZPlanu(plan, page, MeritkoZParamValues(values));
+
         var sheetKey = (values.GetValueOrDefault(SheetLayoutKeys.Sheet) as string) ?? SheetLayoutKeys.SheetNone;
         if (sheetKey is "" or SheetLayoutKeys.SheetNone) return null;
 
@@ -145,7 +165,74 @@ public static class SheetComposer
             PageHeight = pageH,
             RepeatEachPage = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Repeat)),
             DrawCutMarks = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Marks)),
+            Oboustranne = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Oboustranne)),
         };
+    }
+
+    /// <summary>Volby skládání z nakresleného uspořádání. Formát „Vypnuto" = null.</summary>
+    public static SheetLayoutOptions? ZPlanu(UsporadaniListu plan, PageSize page, float meritko = 1f)
+    {
+        if (plan.Format is "" or SheetLayoutKeys.SheetNone) return null;
+        var (sheetW, sheetH) = ParseSheetFormat(plan.Format)
+            ?? throw new ArgumentException($"Neznámý formát listu: {plan.Format}");
+        float pageW = page.Width * meritko, pageH = page.Height * meritko;
+        var (rows, cols) = ResolveGrid($"{plan.Radku}x{plan.Sloupcu}", pageW, pageH, sheetW, sheetH);
+        return new SheetLayoutOptions
+        {
+            SheetWidth = sheetW, SheetHeight = sheetH, Rows = rows, Cols = cols,
+            PageWidth = pageW, PageHeight = pageH,
+            DrawCutMarks = plan.OrezoveZnacky,
+            Plan = plan,
+        };
+    }
+
+    /// <summary>
+    /// Složí doklady na listy podle nakresleného uspořádání. Doklad = stránky jedné datové stránky
+    /// agendy, u každé stránka šablony, ze které vznikla. Strany PDF jdou za sebou: 1. strana,
+    /// a má-li plán 2. stranu, hned za ní 2. strana - oboustranný tisk si zapne tiskárna.
+    /// </summary>
+    /// <remarks>
+    /// <para>Pole bez stránky v dokladu (stránku skryla podmínka, doklady došly) zůstane prázdné.</para>
+    /// <para>⚠️ Stránka šablony „podle dat" vydá v jednom dokladu víc stránek a pole ji neumí vzít
+    /// po jedné. Pak se pole plní stránkami za sebou bez ohledu na nákres, jen vpředu - nic se tím
+    /// neztratí, jen se to neskládá oboustranně. U jízdních řádů (jedna stránka šablony, vývěsky
+    /// na A4) na to nedojde.</para>
+    /// </remarks>
+    public static List<Sheet> ComposeDle(IReadOnlyList<IReadOnlyList<(Page Page, int Stranka)>> doklady,
+        SheetLayoutOptions o)
+    {
+        var plan = (o.Plan ?? throw new ArgumentException("Chybí uspořádání listu")).Normalizuj();
+        var sloty = AllSlots(o).ToList();
+        var sheets = new List<Sheet>();
+        if (doklady.Count == 0) return sheets;
+
+        bool vicestrankove = doklady.Any(d => d.GroupBy(x => x.Stranka).Any(g => g.Count() > 1));
+        if (vicestrankove)
+            return Compose([.. doklady.SelectMany(d => d.Select(x => x.Page))], o with { Plan = null });
+
+        int naList = plan.DokladuNaList;
+        int kroku = (doklady.Count + naList - 1) / naList;
+        for (int k = 0; k < kroku; k++)
+        {
+            sheets.Add(Strana(zadni: false));
+            if (plan.DveStrany) sheets.Add(Strana(zadni: true));
+
+            Sheet Strana(bool zadni)
+            {
+                var placed = new List<PlacedPage>();
+                for (int i = 0; i < sloty.Count; i++)
+                {
+                    if (plan.Pole(zadni, i) is not { } pole) continue;
+                    int doklad = k * naList + pole.Doklad;
+                    if (doklad >= doklady.Count) continue;
+                    var stranka = doklady[doklad].FirstOrDefault(x => x.Stranka == pole.Stranka).Page;
+                    if (stranka is null) continue;
+                    placed.Add(new PlacedPage(stranka, sloty[i].X, sloty[i].Y));
+                }
+                return new Sheet(placed);
+            }
+        }
+        return sheets;
     }
 
     /// <summary>Nejmenší a největší povolené měřítko tisku - shodné s mezemi pole ve formuláři.</summary>
@@ -217,6 +304,28 @@ public static class SheetComposer
     }
 
     /// <summary>
+    /// Stránky všech dokladů za sebou, jak půjdou do <see cref="Compose"/>. Při oboustranném tisku
+    /// se doklad s lichým počtem stránek dorovná prázdnou stránkou (`B183`).
+    /// </summary>
+    /// <remarks>
+    /// Skládání páruje líc a rub po dvojicích stránek. Doklad bez rubu, nebo s obsahem přeteklým na
+    /// třetí stránku, by bez dorovnání posunul líce a ruby u všech dalších dokladů. Hranici dokladu
+    /// zná jen volající (jedna datová stránka agendy = jeden doklad), proto se to děje tady a ne
+    /// v <see cref="Compose"/>.
+    /// </remarks>
+    public static List<Page> StrankyDokladu(IEnumerable<IReadOnlyList<Page>> doklady, SheetLayoutOptions o)
+    {
+        var stranky = new List<Page>();
+        foreach (var doklad in doklady)
+        {
+            stranky.AddRange(doklad);
+            if (o.Oboustranne && !o.RepeatEachPage && doklad.Count % 2 == 1)
+                stranky.Add(new Page { PageNumber = doklad.Count + 1 });
+        }
+        return stranky;
+    }
+
+    /// <summary>
     /// Složí logické stránky na listy. Sekvenčně po řádcích (zleva doprava, shora dolů);
     /// <see cref="SheetLayoutOptions.RepeatEachPage"/> = každá stránka vyplní celý list.
     /// Poslední list může mít prázdné pozice (lichý počet stránek).
@@ -234,6 +343,28 @@ public static class SheetComposer
         }
 
         var slots = AllSlots(o).ToList();
+        if (o.Oboustranne)
+        {
+            // Rub jde na totéž místo jako jeho líc: při převracení listu na delší straně se list
+            // otočí kolem vodorovné osy a levá polovina zůstane vlevo (ověřeno jen úvahou, ne tiskem).
+            for (int i = 0; i < pages.Count; i += 2 * slots.Count)
+            {
+                var lice = new List<PlacedPage>();
+                var ruby = new List<PlacedPage>();
+                for (int s = 0; s < slots.Count && i + 2 * s < pages.Count; s++)
+                {
+                    lice.Add(new PlacedPage(pages[i + 2 * s], slots[s].X, slots[s].Y));
+                    if (i + 2 * s + 1 < pages.Count)
+                        ruby.Add(new PlacedPage(pages[i + 2 * s + 1], slots[s].X, slots[s].Y));
+                }
+                sheets.Add(new Sheet(lice));
+                // Rubová strana listu existuje, i když je prázdná - jinak by se další líc
+                // vytiskl na rub předchozího listu.
+                sheets.Add(new Sheet(ruby));
+            }
+            return sheets;
+        }
+
         for (int i = 0; i < pages.Count; i += slots.Count)
         {
             var placed = new List<PlacedPage>();

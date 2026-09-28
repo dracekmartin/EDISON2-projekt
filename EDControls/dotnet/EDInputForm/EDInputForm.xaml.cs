@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -197,21 +198,91 @@ namespace EDControls.EDInputForm
         /// <summary>Jediný zdroj pravdy pro popup nápovědy - vypisují se jen reálně nadrátované zkratky.</summary>
         internal static readonly (string Keys, string Description)[] KeyboardShortcuts =
         [
-            ("Ctrl+F", "Skok do vyhledávacího pole"),
-            ("Enter", "Přechod na další pole (na tlačítku ho stiskne)"),
-            ("Ctrl+Enter", "Potvrzení / uložení dialogu"),
-            ("Ctrl+<číslo>", "Skok na položku podle jejího čísla (víceciferné do 200 ms)"),
+            ("Ctrl+F", "Hledat v polích formuláře"),
+            ("Enter", "Přejít na další pole"),
+            ("Ctrl+číslo", "Přejít na pole podle čísla"),
+            ("Ctrl+Enter", "Potvrdit a zavřít okno"),
         ];
 
+        /// <summary>Řádky ve tvaru „Akce - klávesa" jako v tooltipech tlačítek, ať je zápis zkratek
+        /// všude stejný.</summary>
         internal static string FormatShortcutsHelp()
         {
-            var sb = new System.Text.StringBuilder("Klávesové zkratky:\n");
+            var sb = new System.Text.StringBuilder("Klávesové zkratky formuláře\n");
             foreach (var (keys, description) in KeyboardShortcuts)
-                sb.Append('\n').Append(keys).Append("  -  ").Append(description);
+                sb.Append('\n').Append(description).Append(" - ").Append(keys);
             return sb.ToString();
         }
 
-        private void ShowShortcutsHelp() => PopupDisplayer?.Info(FormatShortcutsHelp());
+        private System.Windows.Controls.Primitives.Popup? _napovedaZkratek;
+        private DateTime _napovedaZavrenaV = DateTime.MinValue;
+
+        /// <summary>
+        /// Nápověda jako rozbalovací panel pod hlavičkou: vlevo akce, vpravo klávesa tučně a modře -
+        /// týž vzhled jako zkratky v nápovědě návrháře šablon (F1). Informační okno umí jen prostý
+        /// text, zkratky v něm nešlo zarovnat.
+        /// </summary>
+        private void ShowShortcutsHelp()
+        {
+            // Klik na otazník při otevřeném panelu ho nejdřív zavře (klik mimo panel) a pak by ho
+            // znovu otevřel - druhý klik má panel jen zavřít.
+            if (DateTime.UtcNow - _napovedaZavrenaV < TimeSpan.FromMilliseconds(250)) return;
+
+            var grid = new Grid { Margin = new Thickness(12, 8, 12, 10) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var nadpis = new TextBlock { Text = "Klávesové zkratky formuláře", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 6) };
+            nadpis.SetResourceReference(TextBlock.ForegroundProperty, "EDTheme.Text.Primary");
+            Grid.SetColumnSpan(nadpis, 2);
+            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            grid.Children.Add(nadpis);
+
+            foreach (var (keys, description) in KeyboardShortcuts)
+            {
+                int radek = grid.RowDefinitions.Count;
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+                var akce = new TextBlock { Text = description, Margin = new Thickness(0, 2, 0, 2) };
+                akce.SetResourceReference(TextBlock.ForegroundProperty, "EDTheme.Text.Primary");
+                Grid.SetRow(akce, radek);
+
+                var klavesa = new TextBlock
+                {
+                    Text = keys, FontWeight = FontWeights.SemiBold, FontFamily = new FontFamily("Consolas"),
+                    Margin = new Thickness(24, 2, 0, 2), HorizontalAlignment = HorizontalAlignment.Right,
+                };
+                klavesa.SetResourceReference(TextBlock.ForegroundProperty, "EDTheme.Accent.Blue");
+                Grid.SetRow(klavesa, radek);
+                Grid.SetColumn(klavesa, 1);
+
+                grid.Children.Add(akce);
+                grid.Children.Add(klavesa);
+            }
+
+            var ramecek = new Border { Child = grid, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3) };
+            ramecek.SetResourceReference(Border.BackgroundProperty, "EDTheme.Bg.Surface");
+            ramecek.SetResourceReference(Border.BorderBrushProperty, "EDTheme.Border.Light");
+            // Panel není ve stromu okna, velikost písma by nezdědil.
+            ramecek.SetResourceReference(TextElement.FontSizeProperty, "EDTheme.FontSize.Body");
+
+            _napovedaZkratek = new System.Windows.Controls.Primitives.Popup
+            {
+                Child = ramecek,
+                // Pod otazníkem, pravým okrajem zarovnané s jeho pravým okrajem (přání Jan 24. 9.).
+                PlacementTarget = Toolbar.HelpButton,
+                Placement = System.Windows.Controls.Primitives.PlacementMode.Custom,
+                CustomPopupPlacementCallback = (popup, cil, _) =>
+                    [new System.Windows.Controls.Primitives.CustomPopupPlacement(
+                        new Point(cil.Width - popup.Width, cil.Height + 2),
+                        System.Windows.Controls.Primitives.PopupPrimaryAxis.Horizontal)],
+                StaysOpen = false,
+                AllowsTransparency = true,
+                PopupAnimation = System.Windows.Controls.Primitives.PopupAnimation.Fade,
+            };
+            _napovedaZkratek.Closed += (_, _) => _napovedaZavrenaV = DateTime.UtcNow;
+            _napovedaZkratek.IsOpen = true;
+        }
 
         private void ApplySearchFilter(string searchText)
         {

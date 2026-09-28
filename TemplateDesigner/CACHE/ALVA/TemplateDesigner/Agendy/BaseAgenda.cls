@@ -242,7 +242,7 @@ ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String
 }
 
 /// Přidá number parametr do pole parametrů.
-ClassMethod AddNumberParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %String, group As %String = "")
+ClassMethod AddNumberParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %String, group As %String = "", desc As %String = "", serverSide As %Boolean = 0)
 {
     s param = ##class(%DynamicObject).%New()
     s param.name  = name
@@ -250,6 +250,8 @@ ClassMethod AddNumberParam(arr As %DynamicArray, name As %String, label As %Stri
     s param.type  = "number"
     s param.defaultValue = defaultVal
     s:group'="" param.group = group
+    s:desc'="" param.description = desc
+    s:serverSide param.serverSide = 1
     d arr.%Push(param)
 }
 

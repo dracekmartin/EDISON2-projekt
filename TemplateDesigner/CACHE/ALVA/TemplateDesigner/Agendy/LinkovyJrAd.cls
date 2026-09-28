@@ -1241,6 +1241,21 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     // pozná, kam sloupec patří, a jednotný tvar je pro klienta jednodušší než pole navíc jen někdy.
     d o.%Set("SMER", smer)
     d o.%Set("NZ", cnz)
+    // Dopravci spoje (#9417) - týmiž jmény, jaká skládá `PopisDopravce`, aby si klient mohl
+    // `POPIS_DOPRAVCE` sestavit jen za spoje na stránce, i s jejich čísly jako starý tisk.
+    s dopravciSpoje = ##class(%DynamicArray).%New()
+    k videnDopravce
+    s carriers = $p(spoj, "#", 2)
+    f ci=1:1:$l(carriers,"~") {
+        s slot = $p(carriers,"~",ci)
+        continue:$p(slot,":",1)=""
+        s nazevDop = ..NazevDopravce(dataDB, $p(slot,":",1), $p(slot,":",2))
+        continue:nazevDop=""
+        continue:$d(videnDopravce(nazevDop))
+        s videnDopravce(nazevDop) = ""
+        d dopravciSpoje.%Push(nazevDop)
+    }
+    d o.%Set("DOPRAVCI", dopravciSpoje)
     // Barva spoje jako prezentační nápověda (R3): 12. „#"-pole záznamu ve tvaru „r;g;b".
     // Prázdno = šablona rozhodne; `0;0;0` je v legacy „nenastaveno", ne černá, takže se neposílá.
     // Nastavení u linky (a parametr sestavy) barvy potlačí - pak se neposílá nic.

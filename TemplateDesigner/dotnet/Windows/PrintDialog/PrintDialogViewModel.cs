@@ -20,7 +20,7 @@ public class PrintDialogViewModel : EDViewModel
     private readonly string? _agendaClass;
     private readonly Action? _onParamsChanged;
     private readonly Func<Dictionary<string, object?>, DataContext?> _buildMockData;
-    private readonly Func<Dictionary<string, object?>, List<DataContext>?>? _buildRealData;
+    private readonly Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? _buildRealData;
     private readonly TdPreferencesService? _preferences;
 
     private string _statusText = "";
@@ -64,6 +64,128 @@ public class PrintDialogViewModel : EDViewModel
     /// a celkový počet stránek.</summary>
     public Func<IReadOnlyList<DataContext>, (IReadOnlyList<PreteceniNalez> Nalezy, int Total)>? RequestOverflowCheck { get; set; }
 
+    /// <summary>Hlášky jedné linky (`KontrolaVystupu.ZLinky`) - napojí code-behind, protože sazbu
+    /// počítá náhled.</summary>
+    public Func<IReadOnlyList<DataContext>, IReadOnlyList<Hlaseni>>? RequestKontrolaLinky { get; set; }
+
+    /// <summary>Otevře okno s výsledkem kontroly (nadpis, hlášky) - hlášky nezabírají formulář.</summary>
+    public Action<string, IReadOnlyList<Hlaseni>>? RequestShowHlaseni { get; set; }
+
+    /// <summary>Hlášky poslední kontroly nebo tisku, nejvážnější první.</summary>
+    public IReadOnlyList<Hlaseni> Hlaseni { get; private set; } = [];
+    public bool HasHlaseni => Hlaseni.Count > 0;
+    private string _nadpisHlaseni = "";
+
+    /// <summary>„2 chyby, 1 upozornění" - konec řádku stavu a nadpis okna s výsledkem.</summary>
+    public string SouhrnHlaseni
+    {
+        get
+        {
+            var casti = new List<string>();
+            int ch = Hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Chyba);
+            int up = Hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Upozorneni);
+            int inf = Hlaseni.Count(h => h.Zavaznost == ZavaznostHlaseni.Informace);
+            if (ch > 0) casti.Add($"{ch} {(ch == 1 ? "problém" : ch <= 4 ? "problémy" : "problémů")}");
+            if (up > 0) casti.Add($"{up} upozornění");
+            if (inf > 0) casti.Add($"{inf} {(inf <= 4 ? "informace" : "informací")}");
+            return string.Join(", ", casti);
+        }
+    }
+
+    private void NastavHlaseni(IReadOnlyList<Hlaseni> hlaseni, string nadpis)
+    {
+        Hlaseni = hlaseni;
+        _nadpisHlaseni = nadpis;
+        OnPropertyChanged(nameof(Hlaseni));
+        OnPropertyChanged(nameof(HasHlaseni));
+        OnPropertyChanged(nameof(SouhrnHlaseni));
+        if (HasHlaseni) RequestShowHlaseni?.Invoke(nadpis, hlaseni);
+    }
+
+    public RelayCommand ZobrazitHlaseniCommand { get; private set; } = null!;
+
+    // ── Průběh (načítání dat a kontrola po linkách) ──
+
+    private bool _probiha;
+    /// <summary>Běží načítání nebo kontrola - pruh průběhu ve stavovém řádku.</summary>
+    public bool Probiha { get => _probiha; private set => Set(ref _probiha, value); }
+
+    private double _prubeh;
+    /// <summary>Hotová část 0-1.</summary>
+    public double Prubeh { get => _prubeh; private set => Set(ref _prubeh, value); }
+
+    /// <summary>Hlášení průběhu načítání - vzniká na UI vlákně, takže hodnoty chodí zpátky na něj.</summary>
+    private IProgress<(int Hotovo, int Celkem, string Linka)> PrubehNacitani()
+    {
+        Probiha = true;
+        Prubeh = 0;
+        return new Progress<(int Hotovo, int Celkem, string Linka)>(p =>
+        {
+            Prubeh = p.Celkem > 0 ? 0.5 * p.Hotovo / p.Celkem : 0;
+            StatusText = $"Načítám data {p.Hotovo} z {p.Celkem} · {p.Linka}";
+        });
+    }
+
+    /// <summary>
+    /// Hlášky všech linek s průběhem. Sazba běží na UI vlákně (sdílí cache prvků s náhledem),
+    /// proto se mezi linkami pustí kreslení - jinak by pruh průběhu stál.
+    /// </summary>
+    private Task<List<Hlaseni>> ZkontrolujLinkyAsync(IReadOnlyList<DataContext> dataPages) =>
+        KontrolaVystupu.ZkontrolujAsync(_template, dataPages, d => RequestKontrolaLinky?.Invoke(d) ?? [],
+            (hotovo, celkem, linka) =>
+            {
+                StatusText = hotovo < celkem ? $"Kontroluji {hotovo + 1} z {celkem} · {linka}" : "Kontrola hotová";
+                Prubeh = celkem > 0 ? 0.5 + 0.5 * hotovo / celkem : 1;
+            });
+
+    private static string Linek(int n) => $"{n} {(n == 1 ? "linka" : n <= 4 ? "linky" : "linek")}";
+
+    public AsyncRelayCommand KontrolaCommand { get; private set; } = null!;
+
+    /// <summary>
+    /// Zkontroluje všechny vybrané linky bez tisku - uživatel se dozví „vadí jen linka X" dřív,
+    /// než pošle PDF dál (nápad Jan 24. 9.).
+    /// </summary>
+    private async Task ZkontrolujAsync()
+    {
+        if (_buildRealData is null) return;
+        try
+        {
+            PersistParams();
+            StatusText = "Načítání dat z databáze…";
+            var paramsSnapshot = new Dictionary<string, object?>(_paramValues);
+            var dataPages = await Task.Run(() => _buildRealData(paramsSnapshot, PrubehNacitani()));
+            if (dataPages is null or { Count: 0 })
+            {
+                StatusText = "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).";
+                return;
+            }
+            var hlaseni = await ZkontrolujLinkyAsync(dataPages);
+            int linek = KontrolaVystupu.PoLinkach(dataPages).Count;
+            StatusText = hlaseni.Count > 0
+                ? $"Zkontrolováno {Linek(linek)}"
+                : $"Zkontrolováno {Linek(linek)} - bez hlášek";
+            NastavHlaseni(hlaseni, $"Zkontrolováno {Linek(linek)}: {Souhrn(hlaseni)}");
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"⚠ Chyba: {ex.Message}";
+        }
+        finally
+        {
+            Probiha = false;
+        }
+    }
+
+    private string Souhrn(IReadOnlyList<Hlaseni> hlaseni)
+    {
+        var predtim = Hlaseni;
+        Hlaseni = hlaseni;
+        var s = SouhrnHlaseni;
+        Hlaseni = predtim;
+        return s;
+    }
+
     /// <summary>
     /// PrintDialog operuje nad **sdíleným** dictionary parametrů (typicky <c>MainWindowViewModel.PreviewParamValues</c>).
     /// Tím je zaručeno že preview lišta a PrintDialog ukazují stejné hodnoty - když user změní
@@ -75,10 +197,11 @@ public class PrintDialogViewModel : EDViewModel
         IReadOnlyList<TemplateParameter> parameters,
         Dictionary<string, object?> sharedParamValues,
         Func<Dictionary<string, object?>, DataContext?> buildMockData,
-        Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null,
+        Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null,
         TdPreferencesService? preferences = null,
         Action? onParamsChanged = null,
-        string? agendaClass = null)
+        string? agendaClass = null,
+        Action<string?>? ulozitUsporadaniDoSablony = null)
     {
         _template = template;
         _paramValues = sharedParamValues;
@@ -91,6 +214,8 @@ public class PrintDialogViewModel : EDViewModel
 
         ExportPdfCommand = Command(ExportPdf);
         ExportRealDataPdfCommand = CommandAsync(ExportRealDataPdfAsync, () => _buildRealData is not null);
+        KontrolaCommand = CommandAsync(ZkontrolujAsync, () => _buildRealData is not null);
+        ZobrazitHlaseniCommand = Command(() => RequestShowHlaseni?.Invoke(_nadpisHlaseni, Hlaseni), () => HasHlaseni);
 
         // _paramValues přichází už naplněný (preview lišta defaults + případně saved PrintParams
         // aplikované při openu šablony). Pro chybějící klíče (nový parametr přidaný po předchozím
@@ -99,6 +224,72 @@ public class PrintDialogViewModel : EDViewModel
         // VM jen drží definice + sdílený dict a poskytuje konverzní/visibility helpery (viz níže).
         foreach (var p in parameters)
             _paramValues.TryAdd(p.Name, p.GetDefaultTyped());
+
+        _ulozitUsporadani = ulozitUsporadaniDoSablony;
+        int pocetStranek = DesignerPages.ObsahStranek(template).Count;
+        var plan = PocatecniUsporadani(template, _paramValues, pocetStranek);
+        if (plan is not null) _paramValues[SheetLayoutKeys.Plan] = plan.ToJson();
+        Usporadani = new UsporadaniListuViewModel(plan, pocetStranek, template.PageSize,
+            p => _paramValues[SheetLayoutKeys.Plan] = p.ToJson());
+    }
+
+    // ── Uspořádání na list (`B186`) ───────────────────────────────────────────
+
+    private readonly Action<string?>? _ulozitUsporadani;
+
+    /// <summary>Nákres uspořádání na list pod formulářem.</summary>
+    public UsporadaniListuViewModel Usporadani { get; }
+
+    /// <summary>Uloží nakreslené uspořádání do šablony jako výchozí (šablonu je pak třeba uložit).</summary>
+    public void UlozitUsporadaniDoSablony()
+    {
+        if (_ulozitUsporadani is null) return;
+        _ulozitUsporadani(Usporadani.JeZapnuto ? Usporadani.Plan.ToJson() : null);
+        StatusText = Usporadani.JeZapnuto
+            ? "Uspořádání se u šablony zapamatuje - uložte šablonu."
+            : "Šablona už výchozí uspořádání nemá - uložte šablonu.";
+    }
+
+    /// <summary>
+    /// Čím nákres začne: uspořádání uložené v šabloně (autor ho nastavil pro tenhle doklad), jinak
+    /// poslední použité u agendy, jinak převedené z dřívějších polí (Mřížka, Opakovat,
+    /// Oboustranně), aby se uložená volba neztratila. Null = vypnuto.
+    /// </summary>
+    internal static UsporadaniListu? PocatecniUsporadani(Template template, IReadOnlyDictionary<string, object?> hodnoty,
+        int pocetStranek)
+    {
+        if (UsporadaniListu.FromJson(template.PrintParameters?.GetValueOrDefault(SheetLayoutKeys.Plan)) is { } zeSablony)
+            return zeSablony;
+        if (UsporadaniListu.FromJson(hodnoty.GetValueOrDefault(SheetLayoutKeys.Plan) as string) is { } posledni)
+            return posledni;
+
+        var format = hodnoty.GetValueOrDefault(SheetLayoutKeys.Sheet) as string;
+        if (format is null or "" or SheetLayoutKeys.SheetNone) return null;
+        if (SheetComposer.ParseSheetFormat(format) is not { } list) return null;
+        (int r, int c) mrizka;
+        try
+        {
+            mrizka = SheetComposer.ResolveGrid(hodnoty.GetValueOrDefault(SheetLayoutKeys.Grid) as string ?? SheetLayoutKeys.GridAuto,
+                template.PageSize.Width, template.PageSize.Height, list.W, list.H);
+        }
+        catch (ArgumentException) { return null; }
+
+        static bool Zapnuto(object? v) => v is true || (v is string s && (s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase)));
+        UsporadaniListu u;
+        if (Zapnuto(hodnoty.GetValueOrDefault(SheetLayoutKeys.Repeat)))
+        {
+            // Dřív „každá stránka na celý list": táž stránka do všech polí, jeden doklad = kopie.
+            u = new UsporadaniListu { Format = format, Radku = mrizka.r, Sloupcu = mrizka.c, JedenDoklad = true }.Normalizuj();
+            for (int i = 0; i < u.PoliNaStranu; i++) u.Predni[i] = 0;
+        }
+        else if (Zapnuto(hodnoty.GetValueOrDefault(SheetLayoutKeys.Oboustranne)) && pocetStranek >= 2)
+            u = UsporadaniListu.Vychozi(pocetStranek, jedenDoklad: false, format, mrizka.r, mrizka.c);
+        else
+            // Dřív „za sebou": jednostránková šablona = víc dokladů vedle sebe, víc stránek =
+            // stránky dokladu vedle sebe.
+            u = UsporadaniListu.Vychozi(pocetStranek, UsporadaniListu.VychoziJedenDoklad(pocetStranek), format, mrizka.r, mrizka.c);
+        u.OrezoveZnacky = Zapnuto(hodnoty.GetValueOrDefault(SheetLayoutKeys.Marks));
+        return u;
     }
 
     // ── EDInputForm integrace ─────────────────────────────────────────────────
@@ -119,10 +310,7 @@ public class PrintDialogViewModel : EDViewModel
         // Export pole (universální, ne agenda parametry) - prefill posledně použitými / defaulty.
         vals[ExportSplitKey] = CurrentSplitKey();
         vals[ExportFileNameKey] = CurrentFileNamePattern();
-        vals[SheetLayoutKeys.Sheet] = (_paramValues.GetValueOrDefault(SheetLayoutKeys.Sheet) as string) is { Length: > 0 } sh ? sh : SheetLayoutKeys.SheetNone;
-        vals[SheetLayoutKeys.Grid] = (_paramValues.GetValueOrDefault(SheetLayoutKeys.Grid) as string) is { Length: > 0 } gr ? gr : SheetLayoutKeys.GridAuto;
-        vals[SheetLayoutKeys.Repeat] = StoredBool(SheetLayoutKeys.Repeat) ? "true" : "false";
-        vals[SheetLayoutKeys.Marks] = StoredBool(SheetLayoutKeys.Marks) ? "true" : "false";
+        // Uspořádání na list už není ve formuláři - kreslí se v panelu pod ním (`B186`).
 
         init["values"] = new CVar(JsonSerializer.Serialize(vals));
         return init;
@@ -136,7 +324,7 @@ public class PrintDialogViewModel : EDViewModel
         _paramValues[name] = type switch
         {
             "bool"   => fieldValue == "1" || string.Equals(fieldValue, "true", StringComparison.OrdinalIgnoreCase),
-            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
             _        => (object)fieldValue
         };
 
@@ -240,7 +428,7 @@ public class PrintDialogViewModel : EDViewModel
             // sync by zamrazil dialog na desítky sekund (R1). Snapshot parametrů: uživatel je
             // může během fetche v dialogu měnit (sdílený dict s preview lištou).
             var paramsSnapshot = new Dictionary<string, object?>(_paramValues);
-            var dataPages = await Task.Run(() => _buildRealData(paramsSnapshot));
+            var dataPages = await Task.Run(() => _buildRealData(paramsSnapshot, PrubehNacitani()));
 
             if (dataPages is null or { Count: 0 })
             {
@@ -249,44 +437,17 @@ public class PrintDialogViewModel : EDViewModel
                 return;
             }
 
-            // Kontrola přetečení na UI threadu (layout-only, levná) - sdílí element cache
-            // s preview renderem, na pozadí by závodila.
-            var (preteceni, totalPages) = RequestOverflowCheck?.Invoke(dataPages)
-                                          ?? ([], dataPages.Count);
-            int overflow = preteceni.Count;
-            // Co konkrétně přetéká, ne jen kolik stránek: uživatel tiskne dávkově a bez toho nemá
-            // v desítkách stránek co hledat (podnět kolega 3. 9.).
-            string preteceniInfo = OverflowWarnings.Summarize(preteceni, totalPages) is { } popis
-                ? $" ({popis})" : "";
+            // Hlášky za všechny vybrané linky (`B178`) - tisknout může jiná linka než ta v náhledu.
+            var hlaseniTisku = await ZkontrolujLinkyAsync(dataPages);
+            Probiha = false;
+            int totalPages = dataPages.Count;
 
-            StatusText = $"Generuji PDF ({totalPages} stránek)…";
+            StatusText = "Generuji PDF…";
             // Skládání 1×1 papír jen zvětší (A5 šablona + list „A4 na výšku" = A4 s jednou vývěskou
             // uprostřed). Volba se persistuje per agenda, takže uživatel nemá jak zjistit proč -
             // zákazník to hlásil jako chybu tisku (#13158). Proto varování, ne neutrální popis.
             string sheetInfo = PopisUsporadani(sheets) + PopisMeritka();
-            // Vlastní sloupce: co se na vývěsku nedostane (odjezd mimo sloupce, sloupec s obdobím
-            // mimo platnost JŘ) říct i tady, ne jen ve status baru návrháře - tisknout může jiná
-            // linka než v náhledu.
-            var unassigned = DepartureColumnWarnings.Summarize(dataPages);
-            string unassignedInfo = unassigned is null ? "" : $" · ⚠ {unassigned}";
-            // Chybějící font: tichá záměna za Arial, takže PDF vypadá v pořádku a jen je jiné,
-            // než autor zamýšlel. Kontroluje se i tady, ne jen v návrháři - tisknout může
-            // někdo, kdo šablonu jen otevřel z databáze.
-            var chybejiciFonty = FontWarnings.Summarize(_template);
-            string fontInfo = chybejiciFonty is null ? "" : $" · ⚠ {chybejiciFonty}";
-            // Zmenšené písmo: prvek se nevešel, takže se tiskne menší, než co je v šabloně
-            // nastavené. Bez hlášky to jde poznat až z papíru - a u vývěsek vyjde každá zastávka
-            // jinak podle počtu poznámek.
-            var zmenseno = ContentShrinkWarnings.Summarize(_template, dataPages);
-            string zmensenoInfo = zmenseno is null ? "" : $" · ⚠ {zmenseno}";
-            // Malý QR: na papíře se nesejme, ale v PDF vypadá „nakresleně" - bez hlášky to zákazník
-            // pozná až u zastávky s mobilem v ruce (#13158).
-            var maleKody = BarcodeSizeWarnings.Summarize(_template, dataPages);
-            string maleKodyInfo = maleKody is null ? "" : $" · ⚠ {maleKody}";
-            // Úzký sloupec spoje: zadaná šířka smí podlézt obsah, takže časy a značky tečou
-            // do souseda. Na papíře to vypadá jako vada sazby, ne jako důsledek nastavení.
-            var uzkeSloupce = TripColumnWidthWarnings.Summarize(_template, dataPages);
-            string uzkeSloupceInfo = uzkeSloupce is null ? "" : $" · ⚠ {uzkeSloupce}";
+            string hlaseniInfo = hlaseniTisku.Count > 0 ? $" · {Souhrn(hlaseniTisku)}" : "";
 
             if (splitMode == ExportSplitMode.Single)
             {
@@ -294,9 +455,8 @@ public class PrintDialogViewModel : EDViewModel
                 // ve wiring), takže nekoliduje s preview renderem UI threadu.
                 await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets, Meritko));
                 OpenPdf(target);
-                StatusText = (overflow > 0
-                    ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká{preteceniInfo}: {Path.GetFileName(target)}{sheetInfo}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo + uzkeSloupceInfo;
+                StatusText = $"PDF uloženo: {Path.GetFileName(target)}{sheetInfo}{hlaseniInfo}";
+                NastavHlaseni(hlaseniTisku, $"Vytištěno {Linek(KontrolaVystupu.PoLinkach(dataPages).Count)}: {Souhrn(hlaseniTisku)}");
                 return;
             }
 
@@ -316,9 +476,8 @@ public class PrintDialogViewModel : EDViewModel
             });
 
             OpenFolder(target);
-            StatusText = (overflow > 0
-                ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{preteceniInfo}{sheetInfo}"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}") + unassignedInfo + fontInfo + zmensenoInfo + maleKodyInfo + uzkeSloupceInfo;
+            StatusText = $"{fileCount} PDF uloženo do složky{sheetInfo}{hlaseniInfo}";
+            NastavHlaseni(hlaseniTisku, $"Vytištěno {Linek(KontrolaVystupu.PoLinkach(dataPages).Count)}: {Souhrn(hlaseniTisku)}");
         }
         catch (Exception ex)
         {

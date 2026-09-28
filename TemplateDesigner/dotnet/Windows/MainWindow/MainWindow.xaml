@@ -48,6 +48,25 @@
 
             <!-- ── Section item DataTemplate ── -->
             <DataTemplate x:Key="SectionItemTemplate" DataType="{x:Type local:SectionVM}">
+                <StackPanel>
+                <TextBlock Text="{Binding ZahlaviStranky}" Margin="2,8,0,2"
+                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                           Foreground="{DynamicResource EDTheme.Text.Secondary}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding MaZahlaviStranky}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ZahlaviAktivni}" Value="True">
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.Blue}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
                 <Border Margin="0,2,0,0"
                         Padding="8,5,4,5"
                         CornerRadius="3"
@@ -139,6 +158,21 @@
                         </StackPanel>
                     </DockPanel>
                 </Border>
+                <TextBlock Text="{Binding SpolecneNaStrance}" Margin="8,2,0,0" FontStyle="Italic"
+                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                           Foreground="{DynamicResource EDTheme.Text.Muted}" TextTrimming="CharacterEllipsis"
+                           ToolTip="Tiskne se i na této stránce - upravuje se v oddílu Na každé stránce">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding MaSpolecneNaStrance}" Value="False">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                </StackPanel>
             </DataTemplate>
 
             <!-- Parameter DataTemplates jsou ve sdílené ResourceDictionary (viz MergedDictionaries výše).
@@ -164,6 +198,7 @@
                 <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF…" Click="MenuExportPdf_Click"/>
                 <MenuItem x:Name="MenuExportPng" Header="Exportovat náhled jako PNG…" Click="MenuExportPng_Click"/>
                 <MenuItem x:Name="MenuPrint" Header="Tisk…" InputGestureText="Ctrl+P" Click="MenuPrint_Click"/>
+                <MenuItem x:Name="MenuKontrola" Header="Zkontrolovat vybrané linky…" Click="BtnKontrola_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="Ctrl+Shift+P" Click="MenuPageProps_Click"/>
                 <Separator/>
@@ -533,6 +568,19 @@
                 <!-- ── Export ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnKontrola" Style="{StaticResource ToolbarButton}" Click="BtnKontrola_Click"
+                                ToolTip="Zkontrolovat všechny vybrané linky - co se kde nevejde nebo vytiskne jinak">
+                            <!-- Lupa kreslená obrysem v barvě textu - obrázková sada (EDIcons) ji nemá
+                               a znak písma se vykreslil plný černý, proti obrysovým ikonám okolo. -->
+                            <Viewbox Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}">
+                                <Canvas Width="16" Height="16">
+                                    <Ellipse Canvas.Left="1.5" Canvas.Top="1.5" Width="9" Height="9"
+                                             Stroke="{DynamicResource EDTheme.Text.Primary}" StrokeThickness="1.5"/>
+                                    <Line X1="9.2" Y1="9.2" X2="14.5" Y2="14.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                          Stroke="{DynamicResource EDTheme.Text.Primary}" StrokeThickness="1.8"/>
+                                </Canvas>
+                            </Viewbox>
+                        </Button>
                         <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk - Ctrl+P" Click="MenuPrint_Click">
                             <Image Source="{StaticResource EDIcons.Print}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
@@ -580,8 +628,13 @@
                             <Border DockPanel.Dock="Bottom"
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
                                     Padding="6" Background="{DynamicResource EDTheme.Bg.Footer}">
-                                <Button x:Name="BtnAddSectionPanel" Content="+ Přidat sekci"
-                                        Click="BtnAddSection_Click" HorizontalAlignment="Stretch" Padding="4,4"/>
+                                <UniformGrid Columns="2">
+                                    <Button x:Name="BtnAddSectionPanel" Content="+ Přidat sekci"
+                                            Click="BtnAddSection_Click" HorizontalAlignment="Stretch" Padding="4,4" Margin="0,0,3,0"/>
+                                    <Button x:Name="BtnAddPagePanel" Content="+ Přidat stránku"
+                                            ToolTip="Nová stránka dokladu, třeba rub stazky - na plátně vlastní list"
+                                            Click="BtnAddPage_Click" HorizontalAlignment="Stretch" Padding="4,4" Margin="3,0,0,0"/>
+                                </UniformGrid>
                             </Border>
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
                                 <!-- Data-bound sections list -->
@@ -745,8 +798,35 @@
                           HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Bg.Canvas}" Cursor="SizeWE"/>
 
             <!-- ── Canvas ── -->
-            <ScrollViewer Grid.Column="2" Grid.Row="0"
-                          HorizontalScrollBarVisibility="Auto"
+            <DockPanel Grid.Column="2" Grid.Row="0">
+            <!-- Přepínač stránek šablony (`B184`) - stejný 34px pruh jako stránkování nad náhledem
+                 a na stejném místě, rezervovaný vždy, aby plátno začínalo ve stejné výšce jako
+                 náhled. Obsah jen u šablony o víc stránkách; jednostránková (jízdní řády) má jen
+                 souvislý horní okraj. Text má pevnou šířku jako nabídka nad náhledem, aby šipky
+                 při přepnutí neposkakovaly. -->
+            <Grid DockPanel.Dock="Top" Height="34" Background="{DynamicResource EDTheme.Bg.Canvas}">
+                <Border Visibility="{Binding MaPredlohy, Converter={StaticResource BoolToVis}}"
+                        Background="{DynamicResource EDTheme.Bg.PanelAlt}"
+                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Button Content="◀" Command="{Binding PredchoziPredlohaCommand}" ToolTip="Předchozí stránka šablony"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                            <TextBlock Text="{Binding PredlohaText}" Width="230" Margin="8,0"
+                                       TextAlignment="Center" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                       ToolTip="Stránka šablony, kterou navrhujete. Kolik stránek z ní vyjde s daty, ukazuje náhled."/>
+                            <Button Content="▶" Command="{Binding DalsiPredlohaCommand}" ToolTip="Další stránka šablony"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                        </StackPanel>
+                        <Button Content="+ Stránka" Click="BtnAddPage_Click" HorizontalAlignment="Right"
+                                VerticalAlignment="Center" Margin="0,0,8,0" Padding="8,1"
+                                ToolTip="Přidat stránku šablony, třeba rub stazky"
+                                FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                    </Grid>
+                </Border>
+            </Grid>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           Background="{DynamicResource EDTheme.Bg.Canvas}"
                           x:Name="CanvasScrollViewer">
@@ -780,6 +860,7 @@
                     </Canvas>
                 </Grid>
             </ScrollViewer>
+            </DockPanel>
 
             <!-- ── GridSplitter pravý ── -->
             <GridSplitter Grid.Column="3" Grid.Row="0" FocusVisualStyle="{x:Null}"
@@ -825,6 +906,21 @@
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                             </StackPanel>
                         </Border>
+                        <!-- Co náhled ukazuje u šablony o víc stránkách (`B184`): jen stránky z otevřené
+                             stránky šablony (výchozí - pevný doklad jako stazka), nebo celý doklad.
+                             Jednostránková šablona přepínač nemá. -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Margin="0,0,8,0"
+                                    Visibility="{Binding MaPredlohy, Converter={StaticResource BoolToVis}}">
+                            <RadioButton GroupName="RozsahNahledu" Content="Tato stránka" Margin="0,0,10,0"
+                                         IsChecked="{Binding NahledJenStranka, Mode=TwoWay}"
+                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" VerticalAlignment="Center"
+                                         ToolTip="Náhled ukazuje jen stránky, které vzniknou z otevřené stránky šablony"/>
+                            <RadioButton GroupName="RozsahNahledu" Content="Celý doklad"
+                                         IsChecked="{Binding NahledCelyDoklad, Mode=TwoWay}"
+                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" VerticalAlignment="Center"
+                                         ToolTip="Náhled ukazuje všechny stránky dokladu pod sebou; posun náhledu přepíná stránku v návrhu"/>
+                        </StackPanel>
                     </Grid>
 
                     <!-- Scrollovatelný canvas náhledu - vyplní zbytek, začíná nahoře (zarovnané s návrhářem).
@@ -925,6 +1021,12 @@
                                     Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                     Cursor="Hand" Margin="4,0,0,0"
                                     ToolTip="{Binding NextInstanceTooltip}"/>
+                            <!-- Načítání dat linky (jen když trvá déle) - tady u linky, ne ve stavovém řádku. -->
+                            <TextBlock Text="načítám…"
+                                       Visibility="{Binding NacitaniDat, Converter={StaticResource BoolToVis}}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}" FontStyle="Italic"
+                                       Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                       Margin="8,0,0,0" VerticalAlignment="Center"/>
                             <!-- Zvolená skupina linek (filtr) - viditelná jen když je zvolená -->
                             <TextBlock Text="{Binding ActiveSkupinaText}"
                                        Visibility="{Binding HasActiveSkupina, Converter={StaticResource BoolToVis}}"
@@ -1002,66 +1104,134 @@
                                FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                Foreground="{DynamicResource EDTheme.Text.Primary}"/>
 
-                    <!-- 4) Varování o přetečení preview (červený blok, jen když obsah přetéká).
-                         Text jmenuje stránku, sekci i prvek - stejně jako ostatní odznaky vedle;
-                         pevné „Obsah se nevejde na stránku" uživateli neřeklo, kde začít. -->
-                    <Border Grid.Column="6"
-                            Background="{DynamicResource EDTheme.Semantic.Danger}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
-                            VerticalAlignment="Stretch"
-                            Visibility="{Binding HasPreviewOverflow, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Zvětšete stránku (Vlastnosti stránky, Ctrl+Shift+P), zvětšete sekci, nebo zmenšete obsah prvku">
-                        <!-- White záměrně mimo theme: text na Semantic.Danger pozadí (červená je
-                             v obou tématech tmavá, bílá na ní má vždy dostatečný kontrast). -->
-                        <TextBlock Text="{Binding PreviewOverflow}"
-                                   Foreground="White" FontWeight="SemiBold"
-                                   VerticalAlignment="Center"
-                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                    </Border>
+                    <!-- 4) Hlášky (B178): jeden kompaktní blok - chyba (na papíře něco chybí nebo přetéká),
+                         upozornění (vytiskne se jinak, než je nastavené), informace (návrhář něco upravil,
+                         jak má - nesmí vypadat jako vada). V bloku jen ikony
+                         s počty; klik rozbalí seznam nahoru, klik na řádek vybere prvek. -->
+                    <StackPanel x:Name="HlaseniPanel" Grid.Column="6" Grid.ColumnSpan="4"
+                                Orientation="Horizontal" VerticalAlignment="Stretch" HorizontalAlignment="Right">
+                        <StackPanel.Resources>
+                            <Style x:Key="HlaseniOdznak" TargetType="Button">
+                                <Setter Property="Padding" Value="10,3"/>
+                                <Setter Property="Margin" Value="6,2,0,2"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="ToolTip">
+                                    <Setter.Value>
+                                        <StackPanel>
+                                            <TextBlock FontWeight="SemiBold" Margin="0,0,0,4">
+                                                <Run Text="Hlášky k sestavě"/><Run Text=" (kliknutím zobrazíte seznam)" FontWeight="Normal"/>
+                                            </TextBlock>
+                                            <StackPanel Orientation="Horizontal" Margin="0,1">
+                                                <controls:HlaseniIkona Zavaznost="Chyba" Margin="0,0,6,0"/>
+                                                <TextBlock><Run Text="Problém" FontWeight="SemiBold"/><Run Text=" - část obsahu se nevytiskne: ořízne se nebo přeteče"/></TextBlock>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,1">
+                                                <controls:HlaseniIkona Zavaznost="Upozorneni" Margin="0,0,6,0"/>
+                                                <TextBlock><Run Text="Upozornění" FontWeight="SemiBold"/><Run Text=" - výstup se liší od nastavení šablony: náhradní font, příliš malý kód, nesplněný počet stran"/></TextBlock>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,1">
+                                                <controls:HlaseniIkona Zavaznost="Informace" Margin="0,0,6,0"/>
+                                                <TextBlock><Run Text="Informace" FontWeight="SemiBold"/><Run Text=" - obsah je upravený podle nastavení šablony: zmenšené písmo, zmenšení na zadaný počet stran"/></TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Setter.Value>
+                                </Setter>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" CornerRadius="3"
+                                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </StackPanel.Resources>
 
-                    <!-- 5) Co vlastní sloupce nevzaly - nezařazené odjezdy i sloupec s obdobím mimo
-                         platnost JŘ (jmenuje konkrétní minuty / sloupce i cestu k nápravě,
-                         na rozdíl od zrušeného signálu B24 z 5. 8.). -->
-                    <Border Grid.Column="7"
-                            Background="{DynamicResource EDTheme.Semantic.Warning}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
-                            VerticalAlignment="Stretch"
-                            Visibility="{Binding HasColumnDataWarning, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Definice sloupců nepokrývá všechny spoje, nebo její období leží mimo platnost jízdního řádku - upravte ji v prvku odjezdů (dvojklik na prvek, tab Vlastní definice sloupců)">
-                        <!-- Black záměrně mimo theme: text na Semantic.Warning pozadí (oranžová je
-                             v obou tématech světlá, černá na ní má vždy dostatečný kontrast). -->
-                        <TextBlock Text="{Binding ColumnDataWarning}"
-                                   Foreground="Black" FontWeight="SemiBold"
-                                   VerticalAlignment="Center"
-                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                    </Border>
+                        <Button Style="{StaticResource HlaseniOdznak}" Command="{Binding OpenHlaseniListCommand}"
+                                Background="{DynamicResource EDTheme.Bg.Surface}" BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                                Visibility="{Binding HasHlaseni, Converter={StaticResource BoolToVis}}">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Ikona a počet za každou závažnost, která je - text je až v rozbaleném seznamu,
+                                     aby šířka bloku nezávisela na délce hlášky (rozhodnutí Jan 24. 9.). -->
+                                <StackPanel Orientation="Horizontal">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
+                                                Visibility="{Binding HasChyby, Converter={StaticResource BoolToVis}}">
+                                        <controls:HlaseniIkona Zavaznost="Chyba" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding PocetChyb}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource EDTheme.Text.Primary}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
+                                                Visibility="{Binding HasUpozorneni, Converter={StaticResource BoolToVis}}">
+                                        <controls:HlaseniIkona Zavaznost="Upozorneni" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding PocetUpozorneni}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource EDTheme.Text.Primary}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0"
+                                                Visibility="{Binding HasInformace, Converter={StaticResource BoolToVis}}">
+                                        <controls:HlaseniIkona Zavaznost="Informace" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding PocetInformaci}" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource EDTheme.Text.Primary}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                    </StackPanel>
+                                </StackPanel>
 
-                    <!-- 6) Šablona chce font, který na tomhle počítači není. Bez hlášky by se
-                         tiše tisklo Arialem a táž šablona by u kolegy vypadala jinak. -->
-                    <Border Grid.Column="8"
-                            Background="{DynamicResource EDTheme.Semantic.Warning}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
-                            VerticalAlignment="Stretch"
-                            Visibility="{Binding HasFontWarning, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Font ze šablony není na tomto počítači nainstalovaný - vykresluje se místo něj Arial. Buď font doinstalujte, nebo v šabloně vyberte jiný (nabídka fontů jmenuje jen ty dostupné).">
-                        <!-- Black záměrně mimo theme: viz badge vlastních sloupců výše. -->
-                        <TextBlock Text="{Binding FontWarning}"
-                                   Foreground="Black" FontWeight="SemiBold"
-                                   VerticalAlignment="Center"
-                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                    </Border>
+                            </StackPanel>
+                        </Button>
 
-                    <!-- 7) Obsah se nevešel, takže se písmo zmenšilo. Bez hlášky se tiskne něco
-                         jiného, než co je nastavené, a u vývěsek vyjde každá zastávka jinak podle
-                         počtu poznámek - jmenuje konkrétní prvek i míru, ne obecné „něco se změnilo". -->
-                    <Border Grid.Column="9"
-                            Background="{DynamicResource EDTheme.Semantic.Warning}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
-                            VerticalAlignment="Stretch"
-                            Visibility="{Binding HasContentShrinkWarning, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Obsah se nevešel do prvku, proto se písmo zmenšilo - vytiskne se menší, než je nastavené. Buď prvek zvětšete, nebo mu v nastavení zmenšete velikost písma. Zmenšování má dolní mez (polovina nastavené velikosti, nejméně 4 body); co se nevejde ani na ní, se ořízne na hraně buňky - tam pomůže rozšířit sloupec.">
-                        <!-- Black záměrně mimo theme: viz badge vlastních sloupců výše. -->
-                        <TextBlock Text="{Binding ContentShrinkWarning}"
-                                   Foreground="Black" FontWeight="SemiBold"
-                                   VerticalAlignment="Center"
-                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
-                    </Border>
+                        <Popup IsOpen="{Binding IsHlaseniListOpen, Mode=TwoWay}"
+                               PlacementTarget="{Binding ElementName=HlaseniPanel}"
+                               Placement="Top" VerticalOffset="-4"
+                               StaysOpen="False" AllowsTransparency="True"
+                               Focusable="False" PopupAnimation="Fade">
+                            <Border Background="{DynamicResource EDTheme.Bg.Surface}"
+                                    BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                                    BorderThickness="1" CornerRadius="3"
+                                    MinWidth="320" MaxWidth="640" Padding="0,4">
+                                <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding Hlaseni}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border x:Name="Radek" Padding="10,4" Background="Transparent">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding MouseAction="LeftClick"
+                                                                      Command="{Binding DataContext.VybratPrvekHlaseniCommand,
+                                                                                RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="22"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <controls:HlaseniIkona Zavaznost="{Binding Zavaznost}" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                                                        <!-- Jednotný tvar: kde (tučně) · co se stalo → krátká rada (šedě). -->
+                                                        <TextBlock Grid.Column="1" TextWrapping="Wrap"
+                                                                   Foreground="{DynamicResource EDTheme.Text.Primary}"
+                                                                   FontSize="{DynamicResource EDTheme.FontSize.Body}">
+                                                            <Run Text="{Binding Kde, Mode=OneWay}" FontWeight="SemiBold"/><Run Text=" · "/><Run Text="{Binding Co, Mode=OneWay}"/><Run Text="{Binding RadaVRadku, Mode=OneWay}" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </Border>
+                                                <DataTemplate.Triggers>
+                                                    <!-- Řádek s prvkem je klikací - kurzor a podbarvení to napoví. -->
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding IsMouseOver, ElementName=Radek}" Value="True"/>
+                                                            <Condition Binding="{Binding MaPrvek}" Value="True"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter TargetName="Radek" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                                                        <Setter TargetName="Radek" Property="Cursor" Value="Hand"/>
+                                                    </MultiDataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </StackPanel>
                 </Grid>
             </Border>
 

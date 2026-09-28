@@ -52,7 +52,6 @@ helpdesku k 15. 9.
 
 - **#7487** (KORID) - NZ + týdenní platnost 4 na řádek.
 - **#8360** (KU HK) - přípojové řádky: kurzíva / barva / velikost písma, aby čas přípoje nesplýval s časem spoje.
-- **#9417** (KORID) - dopravci v záhlaví souhrnného JŘ jen pro spoje na dané stránce (velké A4 linky).
 - **#9283** (KOVED) - sdružený JŘ IDZK.
 - **#7937** (TRANSDEV) - odsazení zastávky. Půlku pokryje sloupec, druhá (odsazení per tarifní
   pásmo) čeká na kolegy z jízdních řádů - detail v tabulce §TR.

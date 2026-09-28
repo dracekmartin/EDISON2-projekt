@@ -143,6 +143,32 @@ ElementPropertiesWindow.xaml / .cs - dialog vlastností elementu/sekce
 | `PageLayoutEngine.cs` | `PageLayoutEngine` | Hlavní algoritmus: klasifikace sekcí, výpočet výšek, stránkování, hlavičky/patičky, split, flow layout, PAGE/TOTAL_PAGES |
 | `SkiaHeightCalculator.cs` | `SkiaHeightCalculator` | Měření výšky TextElement (word wrap) a TableElement pomocí SkiaSharp |
 
+### Nastavení sekcí - jak se skládají (`B177`, 24. 9.)
+
+Formulář sekce ukazuje **Typ sekce** (Hlavička stránky / Obsah / Pod obsahem stránky / Patička
+stránky), **Tisknout na** (jen hlavička a patička) a u obsahu **Přetečení** a **Začít na nové
+stránce**. Typ a Tisknout na jsou jen pohled (`Section.Typ`, `Section.Stranky`, `[JsonIgnore]`)
+na uložené `PrintBehavior` + `Role` - formát šablony se nemění a starší exe ji otevře.
+
+- **Při načtení šablony** (`TemplateSerializer`, bez hlášky o migraci - tisk se nemění): opakovaná
+  sekce s `Role = Body` dostane výslovně hlavičku/patičku stejným pravidlem jako sazba, „Kromě
+  první" → „Každá stránka" + `{STRANA} > 1`, `AllowSplit` → `SplitAcrossPages`.
+- **Podmínka viditelnosti zná stránku** i u obsahu (stránka, kde sekce začne) a sazba nevyhradí
+  místo opakované sekci, kterou podmínka na stránce schová. Jedno `=` je rovnost.
+- **„Pod obsahem" + „Jen poslední"** (jen staré šablony, formulář to nenabízí) se sází jako obsah
+  na konci.
+- **Pole bez účinku formulář schová** (`MainWindow.ViditelnostPoleSekce`) - do `B18` pravidla
+  drží návrhář, formulář z Caché viditelnost neumí.
+- **Výška sekce je nejmenší** - `max(zadaná, obsah)`.
+
+**Pořadí priority, když se nastavení tlučou:** výslovný pokyn k sekci (nová stránka, typ) >
+rozdělení obsahu (držet pohromadě / rozdělit) > přání pro celou sestavu (Počet stran) > samočinné
+úpravy (zmenšení tabulky, písma). Nic se neblokuje ani tiše nepřepíná; co prohrálo, má říct
+upozornění vpravo dole (`SazbaHlaseni`, `B178`).
+
+Podmínka, kterou nejde přečíst, se dál tiskne (fail-open), ale hlásí se jako upozornění.
+`Section.RowHeight` čte jen škálování šablony.
+
 ---
 
 ## Architekturální rozhodnutí (MVVM hranice)
