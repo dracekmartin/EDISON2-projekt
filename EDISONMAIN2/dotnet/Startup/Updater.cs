@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using EDControls;
 using Microsoft.Win32.SafeHandles;
 
@@ -144,7 +145,36 @@ public class Updater
 
     protected virtual string GetLocalVersion() => VerzeInf.Current;
 
-    protected virtual string GetSourceVersion(string sourceDir) => VerzeInf.ReadVersion(sourceDir);
+    protected virtual string GetSourceVersion(string sourceDir)
+    {
+        if (!IsUri(sourceDir)) return VerzeInf.ReadVersion(sourceDir);
+        try
+        {
+            // StreamReader kvůli BOM - Encoding.GetString ho nechá a klíč LAST by pak nesedl.
+            using var reader = new StreamReader(new MemoryStream(DownloadSourceFile(SourceFileUrl(sourceDir, VerzeInf.FileName))));
+            return VerzeInf.ParseLast(reader.ReadToEnd());
+        }
+        // IOException: přerušené spojení při čtení těla (HttpIOException) HttpRequestException nezabalí.
+        catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException
+                                      or UriFormatException or InvalidOperationException)
+        {
+            return ""; // → Broken "nelze zjistit serverovou verzi" (legacy parita)
+        }
+    }
+
+    /// <summary>Zdroj stanic jako URL (legacy <c>clsUpdate.PathIsUri</c>) - legacy EDUPDATE ho umí stahovat sám.</summary>
+    internal static bool IsUri(string path) =>
+        path.StartsWith("http:", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("https:", StringComparison.OrdinalIgnoreCase);
+
+    internal static string SourceFileUrl(string sourceDir, string fileName) =>
+        sourceDir.Replace('\\', '/').TrimEnd('/') + "/" + fileName;
+
+    protected virtual byte[] DownloadSourceFile(string url)
+    {
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        return client.GetByteArrayAsync(url).GetAwaiter().GetResult();
+    }
 
     /// <summary>Shell běží přímo ze serverové instalace (na serveru, stanice spouštěná ze share).</summary>
     protected virtual bool IsServerInstallation(string sourceDir) =>
@@ -156,7 +186,7 @@ public class Updater
     /// </summary>
     internal static bool IsSameInstallation(string installDirectory, string sourceDir)
     {
-        if (string.IsNullOrWhiteSpace(sourceDir)) return false;
+        if (string.IsNullOrWhiteSpace(sourceDir) || IsUri(sourceDir)) return false;
         try
         {
             if (string.Equals(NormalizeDirectory(installDirectory), NormalizeDirectory(sourceDir),
@@ -227,10 +257,25 @@ public class Updater
     /// Self-update updateru - kopii dělá shell, protože updater v tu chvíli neběží
     /// (legacy UpdateClientUpdater pattern).
     /// </summary>
-    public virtual void CopyUpdater(string sourceDir)
+    public virtual void CopyUpdater(string sourceDir) => CopyUpdaterTo(sourceDir, AppContext.BaseDirectory);
+
+    internal void CopyUpdaterTo(string sourceDir, string targetDir)
     {
         var exe = UpdaterExeFor(ActiveKind);
-        File.Copy(Path.Combine(sourceDir, exe), Path.Combine(AppContext.BaseDirectory, exe), overwrite: true);
+        var target = Path.Combine(targetDir, exe);
+        if (!IsUri(sourceDir))
+        {
+            File.Copy(Path.Combine(sourceDir, exe), target, overwrite: true);
+            return;
+        }
+        var content = DownloadSourceFile(SourceFileUrl(sourceDir, exe));
+        // Chybová stránka portálu/proxy s HTTP 200 by jinak přepsala updater a rozbila každý další start.
+        if (content.Length < 2 || content[0] != (byte)'M' || content[1] != (byte)'Z')
+            throw new InvalidDataException($"Ze zdroje nepřišel spustitelný soubor {exe}.");
+        // Přes dočasný soubor: přerušený zápis nesmí zničit lokální updater.
+        var partial = target + ".download";
+        File.WriteAllBytes(partial, content);
+        File.Move(partial, target, overwrite: true);
     }
 
     /// <summary>

@@ -55,8 +55,9 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
 - Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty, jinak se do REL nic nepřenese.
 - Stanice: **.NET 10 Desktop Runtime x64** (publish je framework-dependent) a WebView2 Evergreen
   runtime (bez něj se pruh podpory tiše nevyplní). Legacy stack to nepotřeboval.
-- Serverový adresář musí mít `VERZE.INF` a `EDUPDATE.EXE`; shell bez `VERZE.INF` vedle exe skončí
-  hláškou, instaluje se tedy vždy do adresáře EDISONu, nikdy samostatně.
+- Serverový adresář (zdroj stanic: UNC share, nebo http URL jako u legacy) musí mít `VERZE.INF`
+  a `EDUPDATE.EXE`; shell bez `VERZE.INF` vedle exe skončí hláškou, instaluje se tedy vždy
+  do adresáře EDISONu, nikdy samostatně.
 - Stanice jde za serverovou instalací vždy, flag „update" v Nastavení na ni nemá vliv (legacy parita);
   update check vynechá jen server bez nainstalovaného release (prázdné `^EDISON("System","Update",2)`, dev).
 - Setup wizard shellu nikdy nespouštět v serverovém instalačním adresáři: přepíše `EDISONini.xml`,

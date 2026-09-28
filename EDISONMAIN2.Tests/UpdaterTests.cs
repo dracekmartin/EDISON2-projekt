@@ -321,6 +321,157 @@ public class UpdaterTests
         }
     }
 
+    /// <summary>Base <c>GetSourceVersion</c>/<c>CopyUpdaterTo</c> nad falešným HTTP.</summary>
+    private class HttpSourceUpdater : Updater
+    {
+        public Dictionary<string, byte[]> Files { get; } = [];
+        public List<string> Requested { get; } = [];
+        public Exception? Failure { get; set; }
+
+        protected override string GetLocalVersion() => "20260526.1";
+
+        protected override byte[] DownloadSourceFile(string url)
+        {
+            Requested.Add(url);
+            if (Failure != null) throw Failure;
+            return Files.TryGetValue(url, out var content) ? content : throw new HttpRequestException("404");
+        }
+    }
+
+    [Theory]
+    [InlineData("http://srv/edison", true)]
+    [InlineData("HTTPS://srv/edison", true)]
+    [InlineData(@"\\srv\edison", false)]
+    [InlineData(@"D:\Edison", false)]
+    [InlineData("", false)]
+    public void IsUri_LegacyPathIsUriSemantics(string path, bool expected) =>
+        Assert.Equal(expected, Updater.IsUri(path));
+
+    [Theory]
+    [InlineData("http://srv/edison", "http://srv/edison/VERZE.INF")]
+    [InlineData("http://srv/edison/", "http://srv/edison/VERZE.INF")]
+    [InlineData(@"http://srv/edison\release\", "http://srv/edison/release/VERZE.INF")]
+    public void SourceFileUrl_JoinsWithSingleSlash(string sourceDir, string expected) =>
+        Assert.Equal(expected, Updater.SourceFileUrl(sourceDir, VerzeInf.FileName));
+
+    [Fact]
+    public void Check_HttpSource_VersionDownloaded()
+    {
+        var updater = new HttpSourceUpdater();
+        updater.Files["http://srv/edison/VERZE.INF"] = System.Text.Encoding.UTF8.GetBytes("TYPE=1\r\nLAST=20260601.1\r\n");
+
+        var result = updater.Check(new UpdateSettings("20260601.1", @"D:\Edison", "http://srv/edison"));
+
+        Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
+        Assert.Equal("20260601.1", result.Version);
+    }
+
+    [Fact]
+    public void Check_HttpSourceUnreachable_Broken()
+    {
+        var updater = new HttpSourceUpdater();
+
+        var result = updater.Check(new UpdateSettings("20260601.1", @"D:\Edison", "http://srv/edison"));
+
+        Assert.Equal(UpdateOutcome.Broken, result.Outcome);
+        Assert.Contains("http://srv/edison", result.Message);
+    }
+
+    [Fact]
+    public void CopyUpdater_HttpSource_DownloadsWithoutLeftovers()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var exe = Updater.UpdaterExeFor(Updater.ActiveKind);
+            File.WriteAllText(Path.Combine(dir, exe), "old");
+            var updater = new HttpSourceUpdater();
+            updater.Files[$"http://srv/edison/{exe}"] = [(byte)'M', (byte)'Z', 3];
+
+            updater.CopyUpdaterTo("http://srv/edison", dir);
+
+            Assert.Equal(new byte[] { (byte)'M', (byte)'Z', 3 }, File.ReadAllBytes(Path.Combine(dir, exe)));
+            Assert.Single(Directory.GetFiles(dir));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void CopyUpdater_HttpDownloadFails_LocalUpdaterKept()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var exe = Updater.UpdaterExeFor(Updater.ActiveKind);
+            File.WriteAllText(Path.Combine(dir, exe), "old");
+
+            Assert.Throws<HttpRequestException>(() => new HttpSourceUpdater().CopyUpdaterTo("http://srv/edison", dir));
+
+            Assert.Equal("old", File.ReadAllText(Path.Combine(dir, exe)));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void Check_HttpSourceWithBom_VersionRead()
+    {
+        // UNC cesta (File.ReadAllText) BOM odstraní, http cesta ho musí zvládnout stejně.
+        var updater = new HttpSourceUpdater();
+        updater.Files["http://srv/edison/VERZE.INF"] = [0xEF, 0xBB, 0xBF, .. "LAST=20260601.1\r\n"u8.ToArray()];
+
+        var result = updater.Check(new UpdateSettings("20260601.1", @"D:\Edison", "http://srv/edison"));
+
+        Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
+        Assert.Equal("20260601.1", result.Version);
+    }
+
+    [Fact]
+    public void Check_HttpConnectionDropsMidBody_Broken()
+    {
+        // HttpIOException dědí z IOException, ne z HttpRequestException.
+        var updater = new HttpSourceUpdater { Failure = new IOException("connection reset") };
+
+        var result = updater.Check(new UpdateSettings("20260601.1", @"D:\Edison", "http://srv/edison"));
+
+        Assert.Equal(UpdateOutcome.Broken, result.Outcome);
+    }
+
+    [Fact]
+    public void CopyUpdater_HttpReturnsNonExecutable_LocalUpdaterKept()
+    {
+        // Chybová stránka portálu s HTTP 200 nesmí přepsat updater.
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var exe = Updater.UpdaterExeFor(Updater.ActiveKind);
+            File.WriteAllText(Path.Combine(dir, exe), "old");
+            var updater = new HttpSourceUpdater();
+            updater.Files[$"http://srv/edison/{exe}"] = "<html>login</html>"u8.ToArray();
+
+            Assert.Throws<InvalidDataException>(() => updater.CopyUpdaterTo("http://srv/edison", dir));
+
+            Assert.Equal("old", File.ReadAllText(Path.Combine(dir, exe)));
+            Assert.Single(Directory.GetFiles(dir));
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void IsSameInstallation_HttpSource_False() =>
+        Assert.False(Updater.IsSameInstallation(Path.GetTempPath(), "http://srv/edison"));
+
     [Fact]
     public void Check_EmptyForcedStamp_NoEffect()
     {
