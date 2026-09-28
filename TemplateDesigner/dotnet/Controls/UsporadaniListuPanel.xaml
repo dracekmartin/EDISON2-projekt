@@ -33,7 +33,7 @@
                    FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
         <!-- Kdy to chtít, jednou větou - bez ní uživatel zkouší nastavovat i to, co nepotřebuje. -->
         <TextBlock Margin="0,0,0,8" TextWrapping="Wrap" Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                   Text="Jen když chcete na jeden papír víc stránek a list pak rozříznout - třeba dvě vývěsky A5 na A4, nebo dvě stazky A5 oboustranně. Jinak nechte Vypnuto."/>
+                   Text="Jen když chcete na jeden papír víc stránek a list pak rozříznout, např. dva doklady A5 na A4. Jinak nechte Vypnuto."/>
 
         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
             <TextBlock Text="Papír:" VerticalAlignment="Center" Margin="0,0,6,0"/>
