@@ -52,20 +52,11 @@ public class UpdaterTests
 
         var settings = new Updater().LoadSettings(mlRest);
 
-        Assert.True(settings.Enabled);
         Assert.Equal("20260526.1.0", settings.CacheVersion);
         Assert.Equal("\\\\server\\edison", settings.EdisonPath);
         Assert.Equal("\\\\share\\local", settings.LocalSourcePath);
         Assert.Equal("release.m-line.cz", settings.SourceServer);
         Assert.Equal(59993, settings.SourcePort);
-    }
-
-    [Fact]
-    public void LoadSettings_UpdateDisabled_EnabledFalse()
-    {
-        var settings = new Updater().LoadSettings(MockSettings("update~0~1"));
-
-        Assert.False(settings.Enabled);
     }
 
     [Fact]
@@ -78,7 +69,6 @@ public class UpdaterTests
             "sourceServer~release.m-line.cz",
             "version~2.0"));
 
-        Assert.True(settings.Enabled);
         Assert.Equal("2.0", settings.CacheVersion);
     }
 
@@ -90,12 +80,12 @@ public class UpdaterTests
     }
 
     [Fact]
-    public void Check_Pending_Broken_EvenWhenUpdatesDisabled()
+    public void Check_Pending_Broken_EvenWithoutInstalledRelease()
     {
         // Parita s EDLOADER UpdateIsRunning: během serverové instalace se klient nepřihlásí.
         var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260526.1" };
 
-        var result = updater.Check(new UpdateSettings(false, "", @"\\edison", "", Pending: true));
+        var result = updater.Check(new UpdateSettings("", @"\\edison", "", Pending: true));
 
         Assert.Equal(UpdateOutcome.Broken, result.Outcome);
         Assert.Contains("aktualizace systému", result.Message);
@@ -104,19 +94,20 @@ public class UpdaterTests
     [Fact]
     public void SourceDir_LocalSourcePathPreferred_FallbackEdisonPath()
     {
-        Assert.Equal(@"\\share", new UpdateSettings(true, "", @"\\edison", @"\\share").SourceDir);
-        Assert.Equal(@"\\edison", new UpdateSettings(true, "", @"\\edison", "").SourceDir);
+        Assert.Equal(@"\\share", new UpdateSettings("", @"\\edison", @"\\share").SourceDir);
+        Assert.Equal(@"\\edison", new UpdateSettings("", @"\\edison", "").SourceDir);
     }
 
     [Fact]
-    public void Check_Disabled_None()
+    public void Check_UpdateFlagOff_StillUpdates()
     {
-        // Divergence od legacy ForceYes: Enabled=false znamená skip i na stanici (dev prostředí).
-        var updater = new TestableUpdater { LocalVersion = "1.0", SourceVersion = "2.0" };
+        // Legacy parita: klient flag "update" ignoruje - stanice pozadu by jinak po FULL shodila verzová brána.
+        var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260601.1" };
+        var settings = updater.LoadSettings(MockSettings("update~0~1", "version~20260601.1"));
 
-        var result = updater.Check(new UpdateSettings(false, "9.9", @"\\edison", ""));
+        var result = updater.Check(settings);
 
-        Assert.Equal(UpdateOutcome.None, result.Outcome);
+        Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
     }
 
     [Fact]
@@ -125,7 +116,7 @@ public class UpdaterTests
         // Dev guard: 999999.9 nesmí spadnout ani do update (zdroj "novější") ani do Broken (Caché mismatch).
         var updater = new TestableUpdater { LocalVersion = VerzeInf.DevVersion, SourceVersion = "260612.1" };
 
-        var result = updater.Check(new UpdateSettings(true, "260612.1", @"\\edison", ""));
+        var result = updater.Check(new UpdateSettings("260612.1", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
@@ -135,7 +126,7 @@ public class UpdaterTests
     {
         var updater = new TestableUpdater { LocalVersion = "", SourceVersion = "2.0" };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", ""));
+        var result = updater.Check(new UpdateSettings("2.0", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.Broken, result.Outcome);
         Assert.Contains("VERZE.INF", result.Message);
@@ -146,7 +137,7 @@ public class UpdaterTests
     {
         var updater = new TestableUpdater { LocalVersion = "1.0", SourceVersion = "" };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", ""));
+        var result = updater.Check(new UpdateSettings("1.0", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.Broken, result.Outcome);
         Assert.Contains(@"\\edison", result.Message);
@@ -157,7 +148,7 @@ public class UpdaterTests
     {
         var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260601.1" };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", @"\\share"));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", @"\\share"));
 
         Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
         Assert.Equal("20260601.1", result.Version);
@@ -169,7 +160,7 @@ public class UpdaterTests
     {
         var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260526.1" };
 
-        var result = updater.Check(new UpdateSettings(true, "20260526.1", @"\\edison", ""));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
@@ -180,7 +171,7 @@ public class UpdaterTests
         // Server instalace == lokál, ale Caché verze jiná → klient to updatem nespraví.
         var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260526.1" };
 
-        var result = updater.Check(new UpdateSettings(true, "20260601.1", @"\\edison", ""));
+        var result = updater.Check(new UpdateSettings("20260601.1", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.Broken, result.Outcome);
         Assert.Contains("20260526.1 -> 20260601.1", result.Message);
@@ -192,18 +183,18 @@ public class UpdaterTests
         // Nová verze na zdroji řeší i Caché mismatch - update má přednost před Broken.
         var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260601.1" };
 
-        var result = updater.Check(new UpdateSettings(true, "20260601.1", @"\\edison", ""));
+        var result = updater.Check(new UpdateSettings("20260601.1", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
     }
 
     [Fact]
-    public void Check_EmptyCacheVersion_NoMismatchCheck()
+    public void Check_NoInstalledRelease_None()
     {
-        // Dev server má version~ prázdné - mismatch check se přeskakuje.
-        var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260526.1" };
+        // Dev server má version~ prázdné: bez releasu se nic nenabízí ani nevynucuje, i když zdroj vypadá novější.
+        var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "20260601.1", StampSeen = "" };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", ""));
+        var result = updater.Check(new UpdateSettings("", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
@@ -225,7 +216,7 @@ public class UpdaterTests
             LocalVersion = "20260526.1", SourceVersion = "20260526.1", StampSeen = "65995,1",
         };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
         Assert.True(result.Forced);
@@ -240,7 +231,7 @@ public class UpdaterTests
             LocalVersion = "20260526.1", SourceVersion = "20260526.1", StampSeen = "66234,2",
         };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
@@ -256,7 +247,7 @@ public class UpdaterTests
             ServerInstallation = true,
         };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
@@ -338,7 +329,7 @@ public class UpdaterTests
             LocalVersion = "20260526.1", SourceVersion = "20260526.1", StampSeen = "cokoliv",
         };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", ""));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
@@ -352,7 +343,7 @@ public class UpdaterTests
             LocalVersion = VerzeInf.DevVersion, SourceVersion = "20260526.1", StampSeen = "",
         };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
@@ -367,7 +358,7 @@ public class UpdaterTests
             LocalVersion = "20260526.1", SourceVersion = "20260601.1", StampSeen = "",
         };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
         Assert.True(result.Forced);
@@ -382,7 +373,7 @@ public class UpdaterTests
             LocalVersion = "20260526.1", SourceVersion = "20260601.1", StampSeen = "66234,2",
         };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
         Assert.False(result.Forced);
@@ -394,7 +385,7 @@ public class UpdaterTests
         // Nedosažitelný zdroj shodí check dřív, než by vynucená vlna spustila updater do prázdna.
         var updater = new TestableUpdater { LocalVersion = "20260526.1", SourceVersion = "", StampSeen = "" };
 
-        var result = updater.Check(new UpdateSettings(true, "", @"\\edison", "", ForcedStamp: "66234,2"));
+        var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", "", ForcedStamp: "66234,2"));
 
         Assert.Equal(UpdateOutcome.Broken, result.Outcome);
     }
@@ -560,7 +551,7 @@ public class UpdaterTests
     }
 
     private static readonly UpdateSettings NoticeSettings =
-        new(true, "", @"\\edison", "", "release.m-line.cz", 59993);
+        new("", @"\\edison", "", "release.m-line.cz", 59993);
 
     [Fact]
     public void ReleaseNotice_NewerRemote_NewVersionAvailable()

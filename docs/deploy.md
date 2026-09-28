@@ -57,6 +57,8 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
   runtime (bez něj se pruh podpory tiše nevyplní). Legacy stack to nepotřeboval.
 - Serverový adresář musí mít `VERZE.INF` a `EDUPDATE.EXE`; shell bez `VERZE.INF` vedle exe skončí
   hláškou, instaluje se tedy vždy do adresáře EDISONu, nikdy samostatně.
+- Stanice jde za serverovou instalací vždy, flag „update" v Nastavení na ni nemá vliv (legacy parita);
+  update check vynechá jen server bez nainstalovaného release (prázdné `^EDISON("System","Update",2)`, dev).
 - Setup wizard shellu nikdy nespouštět v serverovém instalačním adresáři: přepíše `EDISONini.xml`,
   který EDUPDATE roznáší na všechny stanice (a při updatu ho stejně vrátí).
 
