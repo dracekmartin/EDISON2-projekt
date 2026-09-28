@@ -154,6 +154,23 @@ public class CompanySwitcherTests
     }
 
     [Fact]
+    public void Switch_SupportLogin_AcceptedWithoutLock()
+    {
+        // Podpora (_mline) jede bez zámku: přepnutí nesmí zavolat VerifyLic ani vrátit session na Locks=1.
+        var mlRest = MLRestMocks.Create();
+        mlRest.LoginName.Returns("_mline");
+        mlRest.UserID.Returns("_mline");
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence);
+
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
+        Assert.Equal(0, mlRest.CacheLocks);
+        mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
+    }
+
+    [Fact]
     public void Switch_SameFirm_DoesNotLogout()
     {
         // Přepnutí na tutéž firmu (originalIdfa == newIdfa) nesmí odhlásit - jinak by shell

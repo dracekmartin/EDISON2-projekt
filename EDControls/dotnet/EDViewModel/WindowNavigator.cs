@@ -393,7 +393,7 @@ public class WindowNavigator : IWindowNavigator
         // Launch modulu jako usage telemetrie shellu. Záměrně ne (formFqn, "OPEN") -
         // hostovaná legacy forma si OPEN trackne sama přes EDForm, jinak by byl dvakrát.
         EDUsageTelemetry.Track("EDISON2.LegacyLaunch", string.IsNullOrEmpty(formFqn) ? exeName : formFqn);
-        var shellGuid = shareShellSession ? mlRest.Guid : "";
+        var shellGuid = ShellGuidFor(mlRest, shareShellSession);
         var agendaPath = ResolveExecutablePath(exeName);
 
         // EDISONMAIN se spouští napřímo (ne přes host): jeho ApplicationEvents.OnRun nastavuje
@@ -447,6 +447,13 @@ public class WindowNavigator : IWindowNavigator
     /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
     /// argv-safe (bez uvozovek a mezer).
     /// </summary>
+    /// <summary>
+    /// Shell GUID = modul jede s Locks=1 pod shellovým zámkem; bez zámku (podpora, selhaný ReacquireLock)
+    /// by každý jeho request padl na LockExist, proto prázdný = vlastní GUID bez kontrol.
+    /// </summary>
+    internal static string ShellGuidFor(IMLRest mlRest, bool shareShellSession) =>
+        shareShellSession && mlRest.CacheLocks == 1 ? mlRest.Guid : "";
+
     internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
         string inputParam, string agendaPath, string licensedElements, bool isAdmin, bool mayUpdate,
         string shortcutPayload = "", string userDirectory = "", string userEmail = "") =>

@@ -30,6 +30,12 @@ public interface IMLRest
     /// <summary>Plné jméno uživatele. Konstanta.</summary>
     string FullName { get; }
 
+    /// <summary>
+    /// Technický účet HTTP spojení (MLRest default <c>_mline</c>). Shoda s <see cref="LoginName"/> =
+    /// přihlášení podpory, které legacy do licence nepočítá. Konstanta.
+    /// </summary>
+    string UserID { get; }
+
     /// <summary>Mlp (interní user ID v Caché) jako string. Konstanta.</summary>
     string Mlp { get; }
 

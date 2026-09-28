@@ -56,6 +56,7 @@ public class SessionDataLoaderTests
         public string Server => "srv";
         public int Port => 1;
         public string LoginName => "login";
+        public string UserID => "_mline";
         public string FullName => "Full Name";
         public string Mlp => "mlp";
         public string Guid => "guid";

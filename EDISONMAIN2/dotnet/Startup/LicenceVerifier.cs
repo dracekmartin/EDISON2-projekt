@@ -31,6 +31,10 @@ public static class LicenceVerifier
         IWindowNavigator windowNavigator)
     {
         Lic? licence;
+        // Parita s EDUsers.VerifyLic: podpora licenci nezabírá a jede bez zámku s CacheLocks=0 - server
+        // pak nekontroluje LockExist ani verzi, agendy nedostanou shell GUID (WindowNavigator).
+        if (IsSupportLogin(mlRest)) return (LicenceAcquireOutcome.Accepted, licenceLoader());
+
         while (true)
         {
             licence = licenceLoader();
@@ -74,6 +78,7 @@ public static class LicenceVerifier
     /// </summary>
     public static bool ReacquireLock(IMLRest mlRest, Lic? licence)
     {
+        if (IsSupportLogin(mlRest)) return true;
         try
         {
             // Klon s Locks=0: request pod chybějícím zámkem by padl na LockExist ještě před
@@ -92,4 +97,8 @@ public static class LicenceVerifier
             return false;
         }
     }
+
+    /// <summary>Přihlášení technickým účtem spojení (legacy <c>LoginName = UserID</c>, typicky <c>_mline</c>).</summary>
+    public static bool IsSupportLogin(IMLRest mlRest) =>
+        !string.IsNullOrEmpty(mlRest.LoginName) && string.Equals(mlRest.LoginName, mlRest.UserID, StringComparison.Ordinal);
 }
