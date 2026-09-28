@@ -286,6 +286,52 @@ public class ParseTreeTests
         Assert.Equal("Vnitřní", inner.DisplayedName);
         var exe = Assert.IsType<ExecutableModule>(Assert.Single(inner.NestedModules));
         Assert.Equal("App", exe.DisplayedName);
+        Assert.Equal("Vnější › Vnitřní", exe.FamilyPath);
+        Assert.Equal("Vnější › Vnitřní › App", exe.TreePath);
+    }
+
+    [Fact]
+    public void ParseTree_FamilyPath_ClosedBranchNotInheritedBySiblings()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FAMILY", "Sklady", "1");
+        data["2"] = new CList("FAMILY", "Servis", "1");
+        data["3"] = new CList("EXE", "Uzávěrka", "a.exe", "A");
+        data["4"] = new CList("FAMILY_END");
+        data["5"] = new CList("EXE", "Doklady", "b.exe", "B");
+        data["6"] = new CList("FAMILY_END");
+        data["7"] = new CList("EXE", "Kořenový", "c.exe", "C");
+
+        var tree = ModuleTreeLoader.ParseTree(data);
+
+        var sklady = Assert.IsType<ModuleFamily>(tree[0]);
+        Assert.Equal("Sklady", Assert.IsType<ExecutableModule>(sklady.NestedModules[1]).FamilyPath);
+        Assert.Equal("", Assert.IsType<ExecutableModule>(tree[1]).FamilyPath);
+    }
+
+    [Fact]
+    public void DisplayedDistinctName_PrefersLongName()
+    {
+        var exe = new ExecutableModule { DisplayedName = "Doklady", LongName = "Doklady fakturace", FamilyPath = "Fakturace" };
+
+        Assert.Equal("Doklady fakturace", exe.DisplayedDistinctName);
+    }
+
+    [Fact]
+    public void DisplayedDistinctName_WithoutLongName_IsTreePath()
+    {
+        var exe = new ExecutableModule { DisplayedName = "Doklady", FamilyPath = "Provozní pokladna" };
+
+        Assert.Equal("Provozní pokladna › Doklady", exe.DisplayedDistinctName);
+    }
+
+    [Fact]
+    public void DisplayedDistinctName_RootModuleWithoutLongName_IsShortName()
+    {
+        var exe = new ExecutableModule { DisplayedName = "Doklady" };
+
+        Assert.Equal("Doklady", exe.TreePath);
+        Assert.Equal("Doklady", exe.DisplayedDistinctName);
     }
 
     [Fact]
@@ -316,6 +362,7 @@ public class ParseTreeTests
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("App", mod.DisplayedName);
+        Assert.Equal("", mod.FamilyPath);
     }
 
     [Fact]

@@ -44,10 +44,12 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
 - `EDFilterComboBox` (výběr firmy) **musí být mimo `<Menu>`** - WPF Menu krade fokus editovatelnému
   poli; horní lišta jsou proto dva `Menu` controly + combo v `DockPanel` mezi nimi (cena: šipkami
   se mezi menu nepřejde). `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
-- **Spuštěné moduly** se značí dlouhým názvem modulu, jinak cestou agendou (krátký název mají dvě
-  agendy běžně shodný). Fallback = titulek bez koncového `[IDFa]` (suffix si přidávají legacy okna
-  sama, `clsForm.ShowIDFA`). **Firma v titulku je jen u shellu**; titulek jde do jména tiketu
-  v hlášení chyb (firma zvlášť polem `firma`).
+- **Spuštěné moduly** i seznam **Používané** se značí dlouhým názvem modulu, jinak cestou agendou
+  (krátký název mají agendy běžně shodný, „Doklady" jich má pět). Používané přepisují styl názvu
+  sdílené šablony stromu (`ModuleNameText`, proto `DynamicResource`). Fallback Spuštěných =
+  titulek bez koncového `[IDFa]` (suffix si přidávají legacy okna sama, `clsForm.ShowIDFA`).
+  **Firma v titulku je jen u shellu**; titulek jde do jména tiketu v hlášení chyb (firma zvlášť
+  polem `firma`).
 - Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
   nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají). Rozbalení
   vynucené hledáním je **přechodné**: snímek před hledáním se po vymazání textu obnoví a změny

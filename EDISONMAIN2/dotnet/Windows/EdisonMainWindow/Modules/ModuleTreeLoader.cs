@@ -25,6 +25,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         {
             var result = new ObservableCollection<IModule>();
             var familyStack = new Stack<ObservableCollection<IModule>>();
+            var familyNames = new List<string>();
             ObservableCollection<IModule> currentList = result;
 
             foreach (KeyValuePair<string, CVar> kvp in treeData)
@@ -43,6 +44,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                         };
                         currentList.Add(family);
                         familyStack.Push(currentList);
+                        familyNames.Add(family.DisplayedName);
                         currentList = family.NestedModules;
                         break;
                     case "EXE":
@@ -56,11 +58,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                             Hidden         = row.Count >= 8 && row.GetString(8) == "1",
                             Color          = row.Count >= 9 ? row.GetString(9) : "",
                             MlineOnly      = row.Count >= 10 && row.GetString(10) == "1",
-                            LongName       = row.Count >= 11 ? row.GetString(11) : ""
+                            LongName       = row.Count >= 11 ? row.GetString(11) : "",
+                            FamilyPath     = string.Join(ExecutableModule.PathSeparator, familyNames)
                         });
                         break;
                     case "FAMILY_END":
-                        if (familyStack.Count > 0) currentList = familyStack.Pop();
+                        if (familyStack.Count > 0)
+                        {
+                            currentList = familyStack.Pop();
+                            familyNames.RemoveAt(familyNames.Count - 1);
+                        }
                         break;
                 }
             }

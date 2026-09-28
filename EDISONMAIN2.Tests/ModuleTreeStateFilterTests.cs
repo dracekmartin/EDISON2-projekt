@@ -315,6 +315,16 @@ public class ModuleTreeStateFilterTests
     }
 
     [Fact]
+    public void TryFilter_MlineOnlyExe_InDomain_TreePathKeepsFamilyPathAndSuffix()
+    {
+        var exe = new ExecutableModule { DisplayedName = "Doklady OLD", ElementId = "92101", MlineOnly = true, FamilyPath = "Sklady" };
+
+        var filtered = Assert.IsType<ExecutableModule>(ModuleTreeState.TryFilter(exe, licence: null, access: null, isMlineDomain: true));
+
+        Assert.Equal("Sklady › Doklady OLD [### M-line ###]", filtered.TreePath);
+    }
+
+    [Fact]
     public void TryFilter_NormalExe_InDomain_NoSuffix()
     {
         var exe = Exe("100", licensed: false, name: "Běžný");

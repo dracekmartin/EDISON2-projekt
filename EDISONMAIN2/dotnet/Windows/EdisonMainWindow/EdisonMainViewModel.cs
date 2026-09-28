@@ -1548,7 +1548,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        private const string PathSeparator = " › ";
+        private const string PathSeparator = ExecutableModule.PathSeparator;
 
         private static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
 
