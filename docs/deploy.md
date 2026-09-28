@@ -18,10 +18,10 @@ Z repa EDISON (build do `C:\Edison`):
 
 - `EDISONMAIN2API.exe` + `EDISONMAIN2API.exe.config` - generický host agend (projekt je od 06/2026
   WinExe; zbylá `.dll` u zákazníka stíní `.exe`, viz codeBase pin v `EDISONMAIN.exe.config`)
-- existující soubory, build musí být z legacy HEAD ≥ 2026-09-11 (`git log --grep=EDISONMAIN2`):
-  `EDISONMAIN.exe` (retrofit `OnRun`), `EDISONMAIN.exe.config` (codeBase pin), `EDLibrary.dll`
-  (shortcut sink), `EDUsers.dll`, `EDCore.dll`, `MLRest.dll`, `EDLicence.dll`, `EDISONAPI.dll`,
-  `USERS.exe`, `UTILITIES.exe`, `EDISON.exe` (EDLOADER, přepínač shellu níže: build ≥ 2026-09-23).
+- existující soubory, všechno buildit z legacy HEAD ≥ `d64a020f1` (2026-09-23, přepínač shellu;
+  `git log --grep=EDISONMAIN2`): `EDISONMAIN.exe` (retrofit `OnRun`), `EDISONMAIN.exe.config`
+  (codeBase pin), `EDLibrary.dll` (shortcut sink), `EDUsers.dll`, `EDCore.dll`, `MLRest.dll`,
+  `EDLicence.dll`, `EDISONAPI.dll`, `USERS.exe`, `UTILITIES.exe`, `EDISON.exe` (EDLOADER).
 - `EDUPDATE.EXE` - klientský updater obou shellů, build ≥ 2026-06-17 (`WaitProcess`, `49d19295d9`),
   starší na zavření nového shellu nepočká. Bez něj ve zdrojovém adresáři serveru nový shell po
   detekci nové verze nenastartuje (`CopyUpdater` selže s popupem). `EDUPDATE2.exe` (repo EDISON2)
@@ -76,10 +76,12 @@ Zástupce na ploše míří na `EDISON.exe` (EDLOADER). Ten místo `EDISONMAIN.E
 - vedle `EDISON.exe` jsou `EDISONMAIN2.exe`, `EDControls.dll`, `EDISONMAIN2API.exe` a stanice má
   x64 .NET 10 Desktop Runtime ve výchozím umístění (`%ProgramW6432%\dotnet`).
 
-Jinak, i při chybě serveru, spustí starý shell. Přepínač tedy potřebuje obojí: `EDISON.exe`
-s přepínačem a `ALVA_SETUP`, jehož `LoadSettings` řádek vrací. Chybí-li kterékoli, uzel nemá
-účinek. Uzel leží mimo `^EDISON("System","Update")`, protože ten maže každé uložení legacy
-Nastavení.
+Jinak, i když selže `LoadSettings`, spustí starý shell; nedostupný server zastaví start už
+v `CheckLogin` (beze změny). Fallback končí spuštěním procesu: nový shell, který spadne hned po
+startu, starý shell nespustí; náprava je vypnutí uzlu níže. Přepínač tedy potřebuje obojí:
+`EDISON.exe` s přepínačem a `ALVA_SETUP`, jehož `LoadSettings` řádek vrací. Chybí-li kterékoli,
+uzel nemá účinek. Uzel leží mimo `^EDISON("System","Update")`, protože ten maže každé uložení
+legacy Nastavení.
 
 Nastavuje se v Caché Terminalu na serveru zákazníka. Rozšířený odkaz `^|"MLINE"|` funguje
 z libovolného namespace:
