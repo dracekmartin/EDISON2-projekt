@@ -60,15 +60,10 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
-- **`B187` Ověřit uspořádání na list tiskem** [S] (před zavřením #12854). Panel je od 28. 9.
-  zjednodušený (papír + kam jde druhá stránka). Zbývá fyzický oboustranný tisk s převracením na
-  delší straně: A4 na šířku (stazky KV, i lichý počet dokladů) a A3 na výšku, kde se ruby zrcadlí
-  po sloupcích - obojí je ověřené jen výpočtem. Nákres s obsahem stránek odložen bez poptávky.
-
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
   stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
-  hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184` a `B186` hotové, dál podle poptávky.
+  hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184`, `B186` a `B187` hotové, dál podle poptávky.
 
 - **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
   prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není
