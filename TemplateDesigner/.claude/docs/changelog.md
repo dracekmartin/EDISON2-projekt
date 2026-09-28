@@ -8,6 +8,26 @@ plátno i náhled naráz; lišta má stejné pozadí jako lišta nad plátnem, a
 Dvojici „Tato stránka | Celý doklad" nahradilo zaškrtávátko **„Náhled všech stránek"**, výchozí
 zapnuté.
 
+Uspořádání na list se zjednodušilo: uživatel volí jen **papír** a u šablony o víc stránkách, kam jde
+**druhá stránka dokladu** - vedle první, nebo na zadní stranu listu za první. Název „Oboustranně"
+zmizel, protože oboustranně jde tisknout i stránky vedle sebe. Dřívější „Každá stránka na celý list"
+a ořezové značky se nabízejí jen tomu, kdo je má uložené. Mřížka se nevolí, je vždy největší, co se vejde, a
+počítá s měřítkem tisku. Přetahování stránek do polí zmizelo. Panel se ukáže jen u šablony o víc stránkách, nebo když je uspořádání už zapnuté
+z dřívějška - u jednostránkové šablony jen mátl. U volby „na zadní stranu“ ruby na listu na výšku zrcadlí sloupce - do té doby padly
+jen na tatáž místa, což sedí jen pro jednu řadu na listu na šířku. Umístění rubu je ověřené
+výpočtem, fyzickým tiskem zatím ne. Hodnoty jdou do týchž klíčů jako před 25. 9., takže uložené
+volby platí dál; dřív uložená menší mřížka se nahradí největší.
+
+V tisku zmizelo tlačítko **„Uložit jako výchozí pro šablonu"**: byl to mezikrok navíc vedle
+toho, že si návrhář poslední uspořádání u agendy pamatuje sám. Panel uspořádání na list nově
+jednou větou říká, kdy ho chtít (víc stránek na jeden papír a pak řezat); jinak zůstává vypnutý.
+
+Nabídka stránek dat nad náhledem (zastávka, směr, linka) se ukáže, jen když její přepnutí změní
+výstup: šablona má prvek plněný z dat, nebo pole ve závorkách, které se mezi stránkami dat liší.
+Stazka pod agendou linkového JŘ s jedinou linkou ji dřív nabízela a přepínání nic nedělalo. Když
+návrhář neumí rozhodnout, nabídku ukáže. „Tiskne se na N strany" se nehlásí, když totéž říká
+přepínač stránek šablony.
+
 ## 2026-09-25 (7) - 🖨 uspořádání na list nákresem (`B186`)
 
 Uspořádání na list se nastavovalo čtyřmi poli (list, mřížka, každá stránka na celý list,

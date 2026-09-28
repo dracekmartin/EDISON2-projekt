@@ -204,8 +204,9 @@ public partial class MainWindow : Window
         // Wire VM callbacks
         // UpdateCanvasSize (ne jen InvalidateVisual) - výška plátna roste s obsahem, takže po každé
         // změně (přidání/smazání/resize sekce či elementu) je třeba přepočítat velikost plátna.
-        _vm.RequestCanvasRefresh         = () => { UpdateCanvasSize(); InvalidatePreview(); };
-        _vm.RequestPreviewRefresh        = InvalidatePreview;
+        // Nabídka stránek dat závisí i na obsahu šablony (pole ve závorkách) - přepočet s náhledem.
+        _vm.RequestCanvasRefresh         = () => { UpdateCanvasSize(); InvalidatePreview(); _vm.ObnovStrankovaniDat(); };
+        _vm.RequestPreviewRefresh        = () => { InvalidatePreview(); _vm.ObnovStrankovaniDat(); };
         // Titulek se mění mj. při změně agendy → stejný signál řídí i kontextovou paletu JŘ elementů
         _vm.RequestTitleUpdate           = () => { UpdateTitle(); UpdatePaletteForAgenda(); };
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); UpdatePaletteForAgenda(); };
@@ -1232,8 +1233,7 @@ public partial class MainWindow : Window
             buildRealData,
             _preferences,
             onParamsChanged: _vm.OnExternalParamsChanged,
-            agendaClass: agendaClass,
-            ulozitUsporadaniDoSablony: _vm.UlozUsporadaniDoSablony);
+            agendaClass: agendaClass);
 
         vm.RequestRenderPdf = (filePath, data, sheets, meritko) =>
             _previewCanvas!.RenderToPdf(filePath, data, sheets, meritko);

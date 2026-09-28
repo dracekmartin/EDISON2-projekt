@@ -25,7 +25,6 @@ public partial class PrintDialog : Window
         InitializeComponent();
         vm.RequestClose += result => { DialogResult = result; Close(); };
         UsporadaniPanel.DataContext = vm.Usporadani;
-        UsporadaniPanel.UlozitDoSablony = vm.UlozitUsporadaniDoSablony;
         // Hlášky kontroly ve vlastním okně - nezavírá tiskové, jde mít otevřené obojí.
         vm.RequestShowHlaseni = (nadpis, hlaseni) =>
             new KontrolaVysledkuDialog(new KontrolaVysledkuDialogViewModel(nadpis, hlaseni)) { Owner = this }.Show();

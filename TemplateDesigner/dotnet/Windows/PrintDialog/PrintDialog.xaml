@@ -60,7 +60,8 @@
              při obnovení formuláře). -->
         <Border DockPanel.Dock="Bottom" Margin="0,10,0,0"
                 BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1"
-                CornerRadius="4" Padding="12" Background="{DynamicResource EDTheme.Bg.Footer}">
+                CornerRadius="4" Padding="12" Background="{DynamicResource EDTheme.Bg.Footer}"
+                Visibility="{Binding Usporadani.UkazatPanel, Converter={StaticResource BoolToVis}}">
             <controls:UsporadaniListuPanel x:Name="UsporadaniPanel"/>
         </Border>
 

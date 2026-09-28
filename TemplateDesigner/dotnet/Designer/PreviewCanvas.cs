@@ -206,11 +206,7 @@ public class PreviewCanvas
             doklady.Add(Layout(dataPages[i], tpl).Pages);
             progress?.Report((i + 1, dataPages.Count));
         }
-        // Nakreslené uspořádání (`B186`) skládá podle stránek šablony, dřívější režimy za sebou.
-        var listy = o.Plan is not null
-            ? SheetComposer.ComposeDle([.. doklady.Select(d => (IReadOnlyList<(Page, int)>)
-                  [.. d.Zip(DesignerPages.StrankySablony(tpl, d), (page, stranka) => (page, stranka))])], o)
-            : SheetComposer.Compose(SheetComposer.StrankyDokladu(doklady, o), o);
+        var listy = SheetComposer.Compose(SheetComposer.StrankyDokladu(doklady, o), o);
 
         foreach (var sheet in listy)
         {

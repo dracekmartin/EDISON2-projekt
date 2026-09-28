@@ -522,8 +522,9 @@ public class TemplateDesignerViewModel : EDViewModel
         }
     }
 
-    /// <summary>Jediná strana se nehlásí - text, který nic neříká, jen zabírá lištu.</summary>
-    public bool HasPocetStranSazby => _pocetStranSazby > 1;
+    /// <summary>Jediná strana se nehlásí - text, který nic neříká, jen zabírá lištu.
+    /// Nehlásí se ani počet, který už říká přepínač stránek šablony („Stránka 1 z 2").</summary>
+    public bool HasPocetStranSazby => _pocetStranSazby > 1 && !(MaPredlohy && _pocetStranSazby == PocetPredloh);
 
     public string PocetStranSazbyText => _pocetStranSazby switch
     {
@@ -534,7 +535,23 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Viditelnost lišty stránkování dat - i pro jedinou stránku (combobox říká, CO preview
     /// zobrazuje - zastávka × směr); skrytá jen v mock módu (žádná reálná data).</summary>
-    public bool HasPageNavigation => RealPreviewPageCount > 0;
+    public bool HasPageNavigation => RealPreviewPageCount > 0 && _prepinaniDatMaSmysl;
+
+    private bool _prepinaniDatMaSmysl;
+
+    /// <summary>
+    /// Přepočítá, jestli nabídka stránek dat nad náhledem něco přepíná (`B187`). Volá se po výměně
+    /// dat i po každé změně šablony - pole ze závorek přibude třeba jen úpravou textu.
+    /// </summary>
+    public void ObnovStrankovaniDat()
+    {
+        bool ma = _realPreviewData is { Count: > 0 } data
+            && ZavislostNaDatech.PrepinaniMaSmysl(State.CurrentTemplate, data);
+        if (ma == _prepinaniDatMaSmysl) return;
+        _prepinaniDatMaSmysl = ma;
+        OnPropertyChanged(nameof(HasPageNavigation));
+        OnPropertyChanged(nameof(MaListuNadNahledem));
+    }
 
     /// <summary>
     /// Náhled kreslí ukázková data, ne data z databáze. Říká to **štítek instance** ve stavovém
@@ -560,6 +577,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     private void NotifyPreviewPagesChanged()
     {
+        _prepinaniDatMaSmysl = _realPreviewData is { Count: > 0 } data
+            && ZavislostNaDatech.PrepinaniMaSmysl(State.CurrentTemplate, data);
         _previewPagesSyncing = true;
         try
         {
@@ -1399,6 +1418,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         OnPropertyChanged(nameof(MaPredlohy));
         OnPropertyChanged(nameof(MaListuNadNahledem));
+        OnPropertyChanged(nameof(HasPocetStranSazby));
         OnPropertyChanged(nameof(PredlohaText));
         CommandManager.InvalidateRequerySuggested();
     }
@@ -2206,19 +2226,6 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate.PrintParameters =
             SlucHodnotyParametru(State.CurrentTemplate.PrintParameters, nove);
-    }
-
-    /// <summary>
-    /// Uloží nakreslené uspořádání na list jako výchozí pro šablonu (`B186`); null = šablona
-    /// výchozí uspořádání nemá. Tisk ho pak nabídne sám - dispečer nemusí vědět, jak se nastavuje.
-    /// </summary>
-    public void UlozUsporadaniDoSablony(string? json)
-    {
-        var tp = State.CurrentTemplate.PrintParameters is { } p ? new Dictionary<string, string>(p) : [];
-        if (json is null) tp.Remove(SheetLayoutKeys.Plan);
-        else tp[SheetLayoutKeys.Plan] = json;
-        State.CurrentTemplate.PrintParameters = tp.Count > 0 ? tp : null;
-        IsDirty = true;
     }
 
     /// <summary>

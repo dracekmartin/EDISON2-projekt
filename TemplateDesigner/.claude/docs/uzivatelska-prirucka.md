@@ -552,22 +552,19 @@ Nastavení výstupu je univerzální napříč agendami:
 - **Název souboru (tokeny {POLE})** - vlastní kombinace datových polí pro pojmenování
   výsledných souborů; při rozdělení výstupu na víc souborů se vybírá cílová složka, kolize jmen
   se řeší automaticky příponou `_2`, `_3`…
-- **Uspořádání na list** (panel pod formulářem) - kolik stránek dokladu a kde se vytiskne na
-  jeden list papíru. Zvolíte **list** (Vypnuto / A4 / A3, na výšku i na šířku), **mřížku** (nabízí
-  se jen to, co se vejde bez zmenšování) a **kolik dokladů na list**:
-  - **Jeden doklad** - stránky dokladu vedle sebe; stejná stránka ve dvou polích je kopie (pro
-    řezání),
-  - **Víc dokladů (šetří papír)** - každý další výskyt téže stránky je další doklad, pole to
-    napíše („Stránka 1 · 2. doklad").
-  Pod tím je nákres **1. a 2. strany PDF**: stránky dokladu přetáhnete do polí, nebo na pole
-  kliknete a vyberete. 2. strana je nepovinná; tisknete-li oboustranně, padne na zadní stranu
-  papíru. Typické nastavení:
-  - dvě vývěsky A5 na A4: víc dokladů, na 1. straně Stránka 1 · Stránka 1,
-  - dvě stazky A5 oboustranně: víc dokladů, na 1. straně Stránka 1 · Stránka 1, na 2. straně
-    Stránka 2 · Stránka 2,
-  - obě stránky téže stazky vedle sebe: jeden doklad, Stránka 1 · Stránka 2.
-- Dále **ořezové značky** a tlačítko **„Uložit jako výchozí pro šablonu"** - tisk pak uspořádání
-  nabídne sám. Jinak se pamatuje poslední použité u agendy.
+- **Uspořádání na list** (panel pod formulářem) - víc stránek na jeden papír, který pak
+  rozříznete; jinak ho nechte vypnuté. Panel je vidět jen u šablony o víc stránkách, nebo
+  když je uspořádání už zapnuté z dřívějška. Zvolíte jen **papír** - kolik stránek se na něj vejde bez
+  zmenšování, spočítá návrhář sám (A5 na výšku: na A4 na šířku dvě, na A3 na výšku čtyři).
+  Stránky jdou na místa po řadě. U šablony o víc stránkách se k tomu volí, kam jde **druhá stránka
+  dokladu**:
+  - **Na stejnou stranu listu, vedle první** - třeba první stránka faktury vlevo a druhá vpravo,
+  - **Na zadní stranu listu, za první** - na přední stranu přijdou první stránky dokladů, na zadní
+    jejich druhé stránky, po rozříznutí má každý kus obě strany (dvě stazky A5 na A4). Tiskněte
+    oboustranně s převracením na delší straně.
+  Nákres pod volbami ukazuje, co kam padne. Kdo měl z dřívějška uloženou volbu „Každá stránka na
+  celý list" nebo zapnuté ořezové značky, uvidí je v panelu i dál. Uspořádání si návrhář
+  pamatuje sám - příště nabídne poslední použité u agendy.
   (Export PNG uspořádání nepoužívá; brožurové řazení zůstává na tiskárně.)
 
 

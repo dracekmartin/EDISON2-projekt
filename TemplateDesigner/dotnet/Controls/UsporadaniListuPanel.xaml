@@ -2,155 +2,89 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:TemplateDesigner">
-    <!-- Uspořádání na list (`B186`): formát listu, mřížka, režim (jeden / víc dokladů na list)
-         a nákres 1. a 2. strany PDF. Stránky dokladu se z palety přetahují do polí listu (klik na
-         pole = nabídka). Mluví se jen o stranách PDF - oboustranný tisk řeší tiskárna. List je bílý
-         záměrně mimo theme - kreslí papír, ne plochu aplikace. -->
+    <!-- Uspořádání na list: uživatel volí jen papír a co se na něj skládá, počet míst se spočítá
+         z velikosti stránky. Nákres jen ukazuje, co kam padne. List je bílý záměrně mimo theme -
+         kreslí papír, ne plochu aplikace. -->
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <DataTemplate x:Key="PoleTemplate" DataType="{x:Type local:PoleListuVM}">
-            <Border Margin="1" CornerRadius="2" BorderThickness="1" AllowDrop="True"
-                    Width="{Binding DataContext.PoleSirkaPx, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Height="{Binding DataContext.PoleVyskaPx, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Tag="{Binding}" Cursor="Hand"
-                    Drop="Pole_Drop" DragOver="Pole_DragOver"
-                    PreviewMouseLeftButtonDown="Pole_MouseDown" MouseMove="Pole_MouseMove"
-                    MouseLeftButtonUp="Pole_MouseUp"
-                    ToolTip="Přetáhněte sem stránku dokladu, nebo klikněte a vyberte">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="{DynamicResource EDTheme.Accent.BlueBg}"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.BlueBorder}"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding JePrazdne}" Value="True">
-                                <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Light}"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
+        <DataTemplate x:Key="MistoTemplate" DataType="{x:Type local:MistoListuVM}">
+            <Border Margin="1" CornerRadius="2" BorderThickness="1"
+                    Width="{Binding DataContext.MistoSirkaPx, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Height="{Binding DataContext.MistoVyskaPx, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Background="{DynamicResource EDTheme.Accent.BlueBg}"
+                    BorderBrush="{DynamicResource EDTheme.Accent.BlueBorder}">
                 <TextBlock Text="{Binding Popis}" TextWrapping="Wrap" TextAlignment="Center"
                            VerticalAlignment="Center" Margin="2"
-                           FontSize="{DynamicResource EDTheme.FontSize.Caption}">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding JePrazdne}" Value="True">
-                                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Muted}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
+                           Foreground="{DynamicResource EDTheme.Text.Primary}"
+                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"/>
             </Border>
         </DataTemplate>
 
-        <ItemsPanelTemplate x:Key="MrizkaPoli">
+        <ItemsPanelTemplate x:Key="MrizkaMist">
             <UniformGrid Rows="{Binding DataContext.Radku, RelativeSource={RelativeSource AncestorType=UserControl}}"
                          Columns="{Binding DataContext.Sloupcu, RelativeSource={RelativeSource AncestorType=UserControl}}"
                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </ItemsPanelTemplate>
     </UserControl.Resources>
 
-    <StackPanel>
-        <TextBlock Text="Uspořádání na list" FontWeight="SemiBold" Margin="0,0,0,6"
+    <StackPanel MaxWidth="600" HorizontalAlignment="Left">
+        <TextBlock Text="Uspořádání na list" FontWeight="SemiBold" Margin="0,0,0,2"
                    FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
+        <!-- Kdy to chtít, jednou větou - bez ní uživatel zkouší nastavovat i to, co nepotřebuje. -->
+        <TextBlock Margin="0,0,0,8" TextWrapping="Wrap" Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                   Text="Jen když chcete na jeden papír víc stránek a list pak rozříznout - třeba dvě vývěsky A5 na A4, nebo dvě stazky A5 oboustranně. Jinak nechte Vypnuto."/>
 
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-            <TextBlock Text="List:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <ComboBox ItemsSource="{Binding Source={x:Static local:UsporadaniListuViewModel.Formaty}}"
-                      DisplayMemberPath="Popis" SelectedItem="{Binding VybranyFormat}" Width="200"/>
-            <TextBlock Text="Mřížka:" VerticalAlignment="Center" Margin="14,0,6,0"
-                       Visibility="{Binding JeZapnuto, Converter={StaticResource BoolToVis}}"/>
-            <ComboBox ItemsSource="{Binding Mrizky}" DisplayMemberPath="Popis" SelectedItem="{Binding VybranaMrizka}"
-                      Width="80" Visibility="{Binding JeZapnuto, Converter={StaticResource BoolToVis}}"
-                      ToolTip="Kolik polí je na jedné straně listu (řádky × sloupce). Nabízí se jen to, co se vejde bez zmenšování."/>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBlock Text="Papír:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <ComboBox ItemsSource="{Binding Formaty}" DisplayMemberPath="Popis" SelectedItem="{Binding VybranyFormat}"
+                      Width="300"
+                      ToolTip="Kolik stránek se na papír vejde, se spočítá z velikosti stránky šablony (bez zmenšování)."/>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,8"
-                    Visibility="{Binding JeZapnuto, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="Na jeden list:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-            <RadioButton GroupName="RezimListu" Content="Jeden doklad" IsChecked="{Binding JedenDoklad}"
-                         VerticalAlignment="Center" Margin="0,0,14,0"
-                         ToolTip="Celý doklad na jednom listu - stránky vedle sebe. Stejná stránka ve dvou polích = kopie téhož dokladu (pro řezání)."/>
-            <RadioButton GroupName="RezimListu" Content="Víc dokladů (šetří papír)" IsChecked="{Binding VicDokladu}"
-                         VerticalAlignment="Center"
-                         ToolTip="Na list jde víc dokladů - každý další výskyt téže stránky je další doklad (třeba dvě vývěsky, nebo dvě stazky)."/>
+        <StackPanel Visibility="{Binding JeZapnuto, Converter={StaticResource BoolToVis}}">
+            <!-- Doklad o víc stránkách: jediná otázka je, kam jde druhá stránka. „Oboustranně" jako
+                 název volby mátlo - oboustranně jde tisknout i stránky vedle sebe (nález Jan 28. 9.). -->
+            <StackPanel Visibility="{Binding NabiziOboustranne, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Druhá stránka dokladu:" Margin="0,0,0,4"/>
+                <RadioButton GroupName="RezimListu" Content="Na stejnou stranu listu, vedle první" IsChecked="{Binding ZaSebou}" Margin="0,0,0,4"/>
+                <RadioButton GroupName="RezimListu" Content="Na zadní stranu listu, za první" IsChecked="{Binding Oboustranne}" Margin="0,0,0,4"/>
+            </StackPanel>
+
+            <!-- Kopie jen pro toho, kdo ji má uloženou z dřívějška. -->
+            <StackPanel Visibility="{Binding NabiziKopie, Converter={StaticResource BoolToVis}}">
+                <RadioButton GroupName="RezimListu" Content="Stránky po řadě" IsChecked="{Binding ZaSebou}" Margin="0,0,0,4"
+                             Visibility="{Binding JednaStranka, Converter={StaticResource BoolToVis}}"/>
+                <RadioButton GroupName="RezimListu" Content="Kopie přes celý list" IsChecked="{Binding Kopie}" Margin="0,0,0,4"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                        Visibility="{Binding MaNakres, Converter={StaticResource BoolToVis}}">
+                <StackPanel Margin="0,0,14,0">
+                    <TextBlock Text="Přední strana listu" Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                               FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="0,0,0,4"/>
+                    <Border Width="{Binding ListSirkaPx}" Height="{Binding ListVyskaPx}" Background="White"
+                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
+                        <ItemsControl ItemsSource="{Binding PredniMista}" ItemTemplate="{StaticResource MistoTemplate}"
+                                      ItemsPanel="{StaticResource MrizkaMist}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+                <StackPanel Visibility="{Binding Oboustranne, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Zadní strana listu" Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                               FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="0,0,0,4"/>
+                    <Border Width="{Binding ListSirkaPx}" Height="{Binding ListVyskaPx}" Background="White"
+                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
+                        <ItemsControl ItemsSource="{Binding ZadniMista}" ItemTemplate="{StaticResource MistoTemplate}"
+                                      ItemsPanel="{StaticResource MrizkaMist}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Visibility="{Binding NabiziOrezoveZnacky, Converter={StaticResource BoolToVis}}">
+                <CheckBox Content="Ořezové značky" IsChecked="{Binding OrezoveZnacky}" Margin="0,10,0,0"/>
+            </StackPanel>
         </StackPanel>
-
-        <Grid Visibility="{Binding JeZapnuto, Converter={StaticResource BoolToVis}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Paleta stránek dokladu -->
-            <StackPanel Grid.Column="0" Margin="0,18,14,0" MinWidth="90">
-                <TextBlock Text="Stránky dokladu" Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                           FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="0,0,0,4"/>
-                <ItemsControl ItemsSource="{Binding Stranky}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type local:StrankaSablonyVM}">
-                            <Border Margin="0,0,0,4" Padding="8,4" CornerRadius="3" BorderThickness="1"
-                                    Background="{DynamicResource EDTheme.Accent.BlueBg}"
-                                    BorderBrush="{DynamicResource EDTheme.Accent.BlueBorder}"
-                                    Cursor="SizeAll" Tag="{Binding}"
-                                    PreviewMouseLeftButtonDown="Stranka_MouseDown" MouseMove="Stranka_MouseMove"
-                                    ToolTip="Přetáhněte do pole listu">
-                                <TextBlock Text="{Binding Nazev}"/>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-
-            <!-- 1. strana PDF -->
-            <StackPanel Grid.Column="1" Margin="0,0,14,0">
-                <TextBlock Text="1. strana PDF" Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                           FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="0,0,0,4"/>
-                <Border Width="{Binding ListSirkaPx}" Height="{Binding ListVyskaPx}" Background="White"
-                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
-                    <ItemsControl ItemsSource="{Binding PredniPole}" ItemTemplate="{StaticResource PoleTemplate}"
-                                  ItemsPanel="{StaticResource MrizkaPoli}"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-            </StackPanel>
-
-            <!-- 2. strana PDF (nepovinná) -->
-            <StackPanel Grid.Column="2">
-                <DockPanel Margin="0,0,0,4">
-                    <Button DockPanel.Dock="Right" Content="Vyprázdnit" Padding="6,0"
-                            FontSize="{DynamicResource EDTheme.FontSize.Caption}" Click="VycistitZadni_Click"
-                            ToolTip="Prázdná 2. strana = každý list je jen jedna strana PDF"/>
-                    <TextBlock Text="2. strana PDF (nepovinná)" Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                               FontSize="{DynamicResource EDTheme.FontSize.Caption}" VerticalAlignment="Center"/>
-                </DockPanel>
-                <Border Width="{Binding ListSirkaPx}" Height="{Binding ListVyskaPx}" Background="White"
-                        BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1">
-                    <ItemsControl ItemsSource="{Binding ZadniPole}" ItemTemplate="{StaticResource PoleTemplate}"
-                                  ItemsPanel="{StaticResource MrizkaPoli}"
-                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Border>
-            </StackPanel>
-        </Grid>
-
-        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{DynamicResource EDTheme.Text.Muted}"
-                   FontSize="{DynamicResource EDTheme.FontSize.Caption}"
-                   Text="Tisknete-li oboustranně, padne 2. strana PDF na zadní stranu papíru."
-                   Visibility="{Binding JeZapnuto, Converter={StaticResource BoolToVis}}"/>
-
-        <CheckBox Content="Ořezové značky" IsChecked="{Binding OrezoveZnacky}" Margin="0,8,0,0"
-                  Visibility="{Binding JeZapnuto, Converter={StaticResource BoolToVis}}"/>
-
-        <DockPanel Margin="0,4,0,0">
-            <Button DockPanel.Dock="Right" Content="Uložit jako výchozí pro šablonu" Padding="8,2"
-                    Click="UlozitDoSablony_Click"
-                    ToolTip="Šablona si uspořádání zapamatuje a tisk ho příště nabídne sám"/>
-            <TextBlock Text="{Binding Souhrn}" VerticalAlignment="Center"
-                       Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
-        </DockPanel>
     </StackPanel>
 </UserControl>

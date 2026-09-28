@@ -200,8 +200,7 @@ public class PrintDialogViewModel : EDViewModel
         Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null,
         TdPreferencesService? preferences = null,
         Action? onParamsChanged = null,
-        string? agendaClass = null,
-        Action<string?>? ulozitUsporadaniDoSablony = null)
+        string? agendaClass = null)
     {
         _template = template;
         _paramValues = sharedParamValues;
@@ -225,72 +224,14 @@ public class PrintDialogViewModel : EDViewModel
         foreach (var p in parameters)
             _paramValues.TryAdd(p.Name, p.GetDefaultTyped());
 
-        _ulozitUsporadani = ulozitUsporadaniDoSablony;
-        int pocetStranek = DesignerPages.ObsahStranek(template).Count;
-        var plan = PocatecniUsporadani(template, _paramValues, pocetStranek);
-        if (plan is not null) _paramValues[SheetLayoutKeys.Plan] = plan.ToJson();
-        Usporadani = new UsporadaniListuViewModel(plan, pocetStranek, template.PageSize,
-            p => _paramValues[SheetLayoutKeys.Plan] = p.ToJson());
+        Usporadani = new UsporadaniListuViewModel(_paramValues, DesignerPages.ObsahStranek(template).Count,
+            template.PageSize, Meritko);
     }
 
-    // ── Uspořádání na list (`B186`) ───────────────────────────────────────────
+    // ── Uspořádání na list ────────────────────────────────────────────────────
 
-    private readonly Action<string?>? _ulozitUsporadani;
-
-    /// <summary>Nákres uspořádání na list pod formulářem.</summary>
+    /// <summary>Panel uspořádání na list pod formulářem.</summary>
     public UsporadaniListuViewModel Usporadani { get; }
-
-    /// <summary>Uloží nakreslené uspořádání do šablony jako výchozí (šablonu je pak třeba uložit).</summary>
-    public void UlozitUsporadaniDoSablony()
-    {
-        if (_ulozitUsporadani is null) return;
-        _ulozitUsporadani(Usporadani.JeZapnuto ? Usporadani.Plan.ToJson() : null);
-        StatusText = Usporadani.JeZapnuto
-            ? "Uspořádání se u šablony zapamatuje - uložte šablonu."
-            : "Šablona už výchozí uspořádání nemá - uložte šablonu.";
-    }
-
-    /// <summary>
-    /// Čím nákres začne: uspořádání uložené v šabloně (autor ho nastavil pro tenhle doklad), jinak
-    /// poslední použité u agendy, jinak převedené z dřívějších polí (Mřížka, Opakovat,
-    /// Oboustranně), aby se uložená volba neztratila. Null = vypnuto.
-    /// </summary>
-    internal static UsporadaniListu? PocatecniUsporadani(Template template, IReadOnlyDictionary<string, object?> hodnoty,
-        int pocetStranek)
-    {
-        if (UsporadaniListu.FromJson(template.PrintParameters?.GetValueOrDefault(SheetLayoutKeys.Plan)) is { } zeSablony)
-            return zeSablony;
-        if (UsporadaniListu.FromJson(hodnoty.GetValueOrDefault(SheetLayoutKeys.Plan) as string) is { } posledni)
-            return posledni;
-
-        var format = hodnoty.GetValueOrDefault(SheetLayoutKeys.Sheet) as string;
-        if (format is null or "" or SheetLayoutKeys.SheetNone) return null;
-        if (SheetComposer.ParseSheetFormat(format) is not { } list) return null;
-        (int r, int c) mrizka;
-        try
-        {
-            mrizka = SheetComposer.ResolveGrid(hodnoty.GetValueOrDefault(SheetLayoutKeys.Grid) as string ?? SheetLayoutKeys.GridAuto,
-                template.PageSize.Width, template.PageSize.Height, list.W, list.H);
-        }
-        catch (ArgumentException) { return null; }
-
-        static bool Zapnuto(object? v) => v is true || (v is string s && (s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase)));
-        UsporadaniListu u;
-        if (Zapnuto(hodnoty.GetValueOrDefault(SheetLayoutKeys.Repeat)))
-        {
-            // Dřív „každá stránka na celý list": táž stránka do všech polí, jeden doklad = kopie.
-            u = new UsporadaniListu { Format = format, Radku = mrizka.r, Sloupcu = mrizka.c, JedenDoklad = true }.Normalizuj();
-            for (int i = 0; i < u.PoliNaStranu; i++) u.Predni[i] = 0;
-        }
-        else if (Zapnuto(hodnoty.GetValueOrDefault(SheetLayoutKeys.Oboustranne)) && pocetStranek >= 2)
-            u = UsporadaniListu.Vychozi(pocetStranek, jedenDoklad: false, format, mrizka.r, mrizka.c);
-        else
-            // Dřív „za sebou": jednostránková šablona = víc dokladů vedle sebe, víc stránek =
-            // stránky dokladu vedle sebe.
-            u = UsporadaniListu.Vychozi(pocetStranek, UsporadaniListu.VychoziJedenDoklad(pocetStranek), format, mrizka.r, mrizka.c);
-        u.OrezoveZnacky = Zapnuto(hodnoty.GetValueOrDefault(SheetLayoutKeys.Marks));
-        return u;
-    }
 
     // ── EDInputForm integrace ─────────────────────────────────────────────────
 
@@ -327,6 +268,8 @@ public class PrintDialogViewModel : EDViewModel
             "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
             _        => (object)fieldValue
         };
+
+        if (name == SheetLayoutKeys.Meritko) Usporadani.NastavMeritko(Meritko);
 
         // Export pole (split/název/imposice) neovlivňují obsah sestavy → zbytečně neobnovovat náhled.
         if (!name.StartsWith("__EXPORT", StringComparison.Ordinal))
