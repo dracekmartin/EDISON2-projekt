@@ -13,7 +13,7 @@ bez WPF i HTTP, aby šla testovat přímo.
 
 - Povinné `source`, `type`, `module`, `name`; `type` ∈ `info` | `warning` | `error`.
 - Volitelné `partner` (= IdFa), `description`, `data`, `attachments[{filename,mimeType,data}]`.
-- Pole až 100 záznamů = jedna dávka; víc server odmítne 400 (`MaxBatchSize`).
+- Pole až 100 záznamů = jedna dávka; víc server odmítne 400 (`MAX_BATCH_SIZE`, klient `MaxBatchSize`).
 - Jediný klíč pro celý systém (nastavení `telemetry_api_key`), **sdílený s legacy EDISONem** -
   server nerozlišuje podle zdroje. Vlastní klíč by byl zásah do mlwebu.
 

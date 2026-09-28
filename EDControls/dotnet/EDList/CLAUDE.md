@@ -21,7 +21,7 @@ proměnné **před** přechodem na threadpool. Testy to nechytí (WPF kontroluje
 s vlastním transportem). Řádky jsou **raw** serverové hodnoty včetně `id`, formátování i sort
 klíče staví stejná cesta jako `LoadList`. Vzhled z dat řádku (barva textu) přes `CellStyle` a
 skrytý sloupec (`Visible = false`): projde indexerem, ale nerenderuje se ani nehledá.
-Referenční `LegacyMiniApps/dotnet/DashboardListSource.cs`.
+Referenční `EDISONMAIN2.LegacyMiniApps/dotnet/DashboardListSource.cs`.
 
 ## Wire kontrakt (JSON přes `^||ML`)
 
@@ -30,8 +30,7 @@ Detaily ve sdíleném `EDControls/docs/wire-formaty.md` - tam patří změny for
 - `InitializeList`: `OUT[1]` = **jedno** JSON pole definic sloupců (parser čte jen `OUT[1]`).
 - `LoadList`: `OUT[1..n]` = jeden JSON objekt na řádek; **každý řádek musí mít `id`** -
   bez něj se tiše zahodí. Klíč `"ERR"` parser přeskakuje.
-- Filtr: `LoadList(filter)` posílá `^||ML("IN","filter","klíč")` - pojmenované klíče, ne
-  poziční; Caché čte `$g(^||ML("IN","filter","k"))`.
+- Filtr: pojmenované klíče `^||ML("IN","filter","klíč")`, ne poziční (viz EDFilter/CLAUDE.md).
 - Hodnoty vždy interní formát jako string: NUMBER s **tečkou**, DATE ISO-8601,
   DATETIME `yyyy-MM-ddTHH:mm:ss`, BOOL `"1"`/`"0"`, HHMM int (`830` = 08:30),
   COLOR `"R;G;B"`. Zobrazení řídí `type` + `format` na klientovi.
@@ -48,8 +47,7 @@ Detaily ve sdíleném `EDControls/docs/wire-formaty.md` - tam patří změny for
 
 ## Search, Check mode, persist layoutu
 
-- **Brandový pruh je bezpodmínečný** (shodně s `EDInputForm`em), host plní jen `Title`; Ctrl+F
-  si na parent `Window` věší **jen první** toolbar - v shellu jich jsou desítky.
+- **Brandový pruh je bezpodmínečný** (shodně s `EDInputForm`em), host plní jen `Title`.
 - Search filtruje **formátované** hodnoty („8:30" najde „08:30", ne „830"); nepersistuje se.
 - `SelectionMode = Check` → checkbox sloupec. Binding checkboxů je záměrně **OneWay** +
   explicitní `Click` handler (TwoWay v CellTemplate je buggy; header `Click` brání rekurzi

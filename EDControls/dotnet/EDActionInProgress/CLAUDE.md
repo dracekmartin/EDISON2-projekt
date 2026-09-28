@@ -1,10 +1,8 @@
 # EDActionInProgress - poznámky pro vývojáře
 
-Overlay „Akce probíhá" s načítacím kolečkem. Pixel-art maskoti (dopravní prostředky, peníze)
-jsou **vypnutí, ne smazaní** - `SpritesEnabled` v code-behind + `Visibility` na `SpriteViewport`.
-`EDActionInProgress` je **neviditelný controller** (FrameworkElement) - vlož kamkoli do okna
-(konvence: poslední child root Gridu). Na `Loaded` se sám naváže na
-`EDViewModel.IsActionInProgress` - v XAML se `IsActive` binding **nepíše**.
+Overlay „Akce probíhá" s načítacím kolečkem. `EDActionInProgress` je **neviditelný controller**
+(FrameworkElement) - vlož kamkoli do okna (konvence: poslední child root Gridu). Na `Loaded` se
+sám naváže na `EDViewModel.IsActionInProgress` - v XAML se `IsActive` binding **nepíše**.
 Aktivace z VM: `using var _ = ActionInProgress();`.
 
 ## Karta žije v owned okně (`ActionInProgressWindow`)
@@ -32,22 +30,18 @@ Aktivace z VM: `using var _ = ActionInProgress();`.
 
 ## Ostatní neodvoditelné
 
-- **Kolečko**: oblouk 270° v `EDTheme.Accent.BlueDark` nad slabým prstencem, rotace
-  `DoubleAnimation` na `RotateTransform`. Token záměrně není `Accent.Header` - obojí je v light
-  brand navy, ale Header se v dark nepřebarvuje a měl by na kartě kontrast 1,6:1 (BlueDark 7,4:1).
-- **Sprity žijí v sadách `Sprite.<Sada>.<Kus>`** (pixel-art Canvas, čelem doprava)
-  v `ActionInProgressWindow.xaml`. Výchozí sada `Vehicles` jede přes průhled a kus se
-  při každém přejezdu náhodně vymění (bez okamžitého opakování); sada `Money` padá
-  shora na náhodných X. **Režim sady = `Tag` prvního kusu** (`"Fall"` = pád, jinak
-  jízda). Přidat kus = jen další `<Canvas>` se správným prefixem, žádná změna kódu.
-  Jinou sadu vybere `ActionInProgress("Money")` na VM (`EDViewModel.ActionSpriteKey`); mapování
-  agenda→sada drží shell (`EDISONMAIN2/dotnet/Windows/EdisonMainWindow/Modules/AgendaSprites.cs`).
-- **Animace řídí code-behind, žádný storyboard** - náhodu per kolo (výběr kusu, pozice,
-  tempo) storyboard s pevnými hodnotami neumí. Vzor: `DoubleAnimation` na transform +
-  další kolo v `Completed` (guard `_running`); stop = `BeginAnimation(..., null)`, tím
-  se transform vrátí na klidovou hodnotu (kus schovaný mimo průhled: jízda X=-60,
-  pád Y=-výška). Start/stop vždy podle viditelnosti okna - clock skrytého okna by
-  tikal dál. Flip `CenterX` (půlka šířky kusu) nastavuje code-behind per kus.
+- **Kolečko** je v `EDTheme.Accent.BlueDark`, záměrně ne `Accent.Header` - obojí je v light brand
+  navy, ale Header se v dark nepřebarvuje a měl by na kartě kontrast 1,6:1 (BlueDark 7,4:1).
+- **Pixel-art maskoti jsou vypnutí, ne smazaní**: bez klíče sady (produkce) se točí kolečko,
+  s klíčem (`ActionInProgress("Money")` → `EDViewModel.ActionSpriteKey`) běží sprity. Shell je
+  pouští jen z Test funkcí; mapa agenda→sada `AgendaSprites` v shellu je, ale produkce ji nevolá.
+  Sady `Sprite.<Sada>.<Kus>` (pixel-art Canvas, čelem doprava) žijí v `ActionInProgressWindow.xaml`;
+  **režim sady = `Tag` prvního kusu** (`"Fall"` = pád shora na náhodných X, jinak jízda přes
+  průhled s náhodnou výměnou kusu). Přidat kus = jen další `<Canvas>` se správným prefixem.
+- **Animace řídí code-behind, žádný storyboard** - náhodu per kolo (výběr kusu, pozice, tempo)
+  storyboard s pevnými hodnotami neumí; další kolo startuje v `Completed`, stop =
+  `BeginAnimation(..., null)` vrátí transform na klidovou hodnotu (kus mimo průhled). Start/stop
+  vždy podle viditelnosti okna - clock skrytého okna by tikal dál.
 - **Závoj nekreslí sám** - drží `WindowDimmer.Dim(window)`; refcount zaručí jediný tint
   i při překryvu s dialogovým dimem ze shellu. U nezobrazeného okna dimmer přeskočí
   vizuál a nechá jen blokaci vstupu.

@@ -1,6 +1,6 @@
 # Mini-apps shellu - poznámky pro vývojáře
 
-Dlaždicové widgety hlavního okna. Framework je v `EDControls/MiniApps`, shell je hostuje
+Dlaždicové widgety hlavního okna. Framework je v `EDControls/dotnet/MiniApps`, shell je hostuje
 jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 
 - `DockMinWidth/Height` razítkuje `AvalonDockHost` **každému** pane po `Layout.Updated`
@@ -11,32 +11,27 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   `Close()` dock pustí i tak). `CanClose` se při restore bere z deskriptoru, ne z uloženého XML,
   a shell Plochu po obnově **doplní** (`EnsureDesktopOpen`) - starý layout ji mít nemusí.
 - Widgety `podpora.m-line.cz` v docku **nejsou** - kanál IT → uživatelé nese pruh v shellu
-  (`EdisonMainWindow`, `SupportStrip`) mimo dock, aby ho nešlo zavřít; děličem ho lze zvětšit,
-  garanci drží podlaha `SupportRow.MinHeight`, plochu naopak `ShellSplitLimits`;
-  URL nese IdFa + login + e-mail, po přepnutí firmy se widget naviguje znovu (změna `Idfa` VM).
-  Oba hostitelé (pruh i login) jdou přes `SupportWidgetHost`; `EDISON_SCREENSHOT_MODE=1`
-  nahradí widgety neutrálním popiskem (anonymizované screenshoty) - WebView2 se vůbec nevytvoří.
-  Hostí se přes `FontZoomWebView : WebView2` - **HWND, ne composition**, ta crashuje na dragu
-  tabu do plovoucího okna. Airspace: WPF veil dimu HWND nepokryje, kartu „Akce probíhá" nad
-  ním kreslí owned okno ([EDActionInProgress/CLAUDE.md](../../../EDControls/dotnet/EDActionInProgress/CLAUDE.md)).
+  (`EdisonMainWindow`, `SupportStrip`) mimo dock, aby ho nešlo zavřít; garanci drží podlaha
+  `SupportRow.MinHeight`, plochu naopak `ShellSplitLimits`. `EDISON_SCREENSHOT_MODE=1` nahradí
+  widgety neutrálním popiskem (anonymizované screenshoty, WebView2 se vůbec nevytvoří). Hostí se
+  přes `FontZoomWebView : WebView2` - **HWND, ne composition**, ta crashuje na dragu tabu do
+  plovoucího okna. Airspace: WPF veil dimu HWND nepokryje, kartu „Akce probíhá" nad ním kreslí
+  owned okno ([EDActionInProgress/CLAUDE.md](../../../EDControls/dotnet/EDActionInProgress/CLAUDE.md)).
 - Font widgetu: `ZoomFactor = FontService.BodySize / 14` (základní text je 14 CSS px), rodina
   se do HTML nepropaguje. Dark mode widget sám neumí (natvrdo `bg-white`) - injektuje se
   inverzní CSS filtr (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému
-  záblesku. Chrome docku EDTheme tokeny nečte, dark řeší swap `DockManager.Theme` na VS2013
-  Light/Dark v code-behind okna; tab strip navrch dotahuje na paletu `DockThemeBrushes`.
+  záblesku. Chrome docku EDTheme tokeny nečte: dark řeší swap `DockManager.Theme` na VS2013
+  Light/Dark, tab strip navrch dotahuje `DockThemeBrushes`.
 - **Vlastní okna docku (overlay s drop terči, plovoucí okna) nikdo zvenčí nesmí zavírat ani
-  k nim věšet owned okna** - AvalonDock si overlay cachuje a cizí `Close()` shodí každý další
-  drag (hlídá `FrameworkWindows` v EDControls, detail v jeho
-  [EDViewModel/CLAUDE.md](../../../EDControls/dotnet/EDViewModel/CLAUDE.md)).
+  k nim věšet owned okna** (proč: `FrameworkWindows`, [EDViewModel/CLAUDE.md](../../../EDControls/dotnet/EDViewModel/CLAUDE.md)).
   Odtržené mini-apps zavírej přes `document.Close()` (`MiniAppManager`), ne přes okno.
 - **Legacy dashboardy jedou přes sdílený `LegacyDashboardLoader`** (`EDISONMAIN2.LegacyMiniApps`):
   požadavky panelů, které se přihlásí v téže dispatcher operaci, odejdou jako **jeden**
   `MiniAplikaceAPI.LoadData` s N parametry `appType` (parita s legacy `clsMiniApplication.LoadData`),
   na klonu mimo UI vlákno. Obnova layoutu běží z `Loaded` = **před prvním paintem**, takže
   blokující load tam stál N round-tripů bez progresu. Provider proto musí dát všem descriptorům
-  **tutéž** instanci loaderu - vlastní per panel dávkování zruší. Mini-app nepředělané agendy
-  je vždy nová WPF view nad týmiž Caché daty, **nikdy `WindowsFormsHost`** (focus/z-order se
-  tlučou s dockem).
+  **tutéž** instanci loaderu - vlastní per panel dávkování zruší. Mini-app nepředělané agendy je
+  vždy nová WPF view nad týmiž Caché daty, **nikdy `WindowsFormsHost`** (focus a z-order kolidují s dockem).
 - **`refresh=0` při otevření panelu, `refresh=1` jen z „Načíst" / hromadné obnovy.** Data
   předpočítává serverová úloha (`ALVA.EDISON.Task`, `TaskTypeALVAEDISONMiniAppRefresh`); přepočet
   při každém otevření layoutu byl hlavní zdroj pomalého startu. Flag je společný pro celou dávku.
@@ -48,20 +43,17 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - **Label těsně nad tabulkou je její nadpis** - parser ho spotřebuje do `DashboardTable.Title`
   (nese ho pruh EDListu), i když legacy tam dává i souhrny; ostatní labely zůstávají sekcí.
 - **Pruh miniaplikace je `EDControls.MiniApps.EDMiniAppBar`**, ne vlastní StackPanel. Barvu
-  řádku ze serveru nese `CellStyle` s `BasedOn` nad skrytým sloupcem `_fore` - přes `RowStyle` ji
-  implicitní styl buňky přebije setterem a barvy se tiše přestanou zobrazovat. V dark režimu ji
-  `LegacyForeColorConverter` zesvětlí na kontrast 4,5:1 (legacy palety počítají s bílým
-  pozadím); motiv čte v okamžiku konverze, proto view po `ThemeService.Applied` sekce
-  refreshuje.
+  řádku ze serveru nese `CellStyle` s `BasedOn` nad skrytým sloupcem `_fore` (proč ne `RowStyle`:
+  EDControls/CLAUDE.md). V dark režimu ji `LegacyForeColorConverter` zesvětlí na kontrast 4,5:1
+  (legacy palety počítají s bílým pozadím); motiv čte v okamžiku konverze, proto view po
+  `ThemeService.Applied` sekce refreshuje.
 - **Kolečko myši v panelu**: vnořený seznam si MouseWheel nechá i bez místa k rolování, na kraji ho
   předá ven `EDControls.ScrollWheelBubbling.IsEnabled`; prázdná plocha Plochy musí mít `Background`,
   jinak není hit-testable a kolečko jde mimo ScrollViewer.
-- Layout per IDFa v `LocalPrefs.MiniAppLayouts` (se šířkou stromu v `LocalPrefs.TreeWidths`
-  a výškou pruhu podpory v `SupportStripHeights`, lifecycle přes `AttachTreeLayout` /
-  `AttachSupportLayout`); chybí-li nebo je poškozený → výchozí rozložení (jen Plocha).
-- Výběr miniaplikace je vlastní okno (`Windows/MiniAppPickerWindow`) s **jednoúrovňovým**
-  seznamem; `IMiniAppProvider.GroupTitle` (pořadí = pořadí registrace v `AppBootstrapper`)
-  z něj zbyl jen popisek řádku. Menu „Miniaplikace" na okno jen odkazuje.
+- Layout per IDFa v `LocalPrefs.MiniAppLayouts` (šířka stromu v `TreeWidths`, výška pruhu
+  podpory v `SupportStripHeights`); chybí-li nebo je poškozený → výchozí rozložení (jen Plocha).
+- Výběr miniaplikace je okno `Windows/MiniAppPickerWindow` s **jednoúrovňovým** seznamem;
+  z `IMiniAppProvider.GroupTitle` (pořadí = registrace v `AppBootstrapper`) zbyl jen popisek řádku.
 - Picker vybírá i **umístění** (`MiniAppPlacement`). Cíle jsou **jen ukotvená** pod-okna:
   `Descendents()` vrací i ta v plovoucích oknech, filtruje se `IsHostedInFloatingWindow`.
   **Poslední document pane AvalonDock neodstraní** - po zavření všeho zbude prázdný přes celou
