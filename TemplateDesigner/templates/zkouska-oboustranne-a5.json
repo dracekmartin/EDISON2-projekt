@@ -101,6 +101,28 @@
           "cornerStyle": "None",
           "cornerSize": 0,
           "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "do {KONECNA_ZASTAVKA}",
+          "style": {
+            "fontSize": 16,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "d6617bc1-5170-4a05-98f6-112b05329d36",
+          "x": 5,
+          "y": 90.0,
+          "width": 128,
+          "height": 18.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
         }
       ]
     },
@@ -173,6 +195,28 @@
           "y": 110,
           "width": 128,
           "height": 12.0,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "do {KONECNA_ZASTAVKA}",
+          "style": {
+            "fontSize": 16,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "410cfa7f-1b84-4968-bdf3-88be0359c481",
+          "x": 5,
+          "y": 90.0,
+          "width": 128,
+          "height": 18.0,
           "zIndex": 0,
           "isLocked": false,
           "backgroundColor": "#00FFFFFF",
