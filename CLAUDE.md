@@ -9,7 +9,9 @@ dostávají pouze přes `dotnet publish` s profilem „SingleFileCEdison"
 i EDControls): **`EDControls.dll` je vedle exe volný soubor**, aby šla nasadit samostatně
 (do produkce jde DLL + exe, který ji používá; druhý exe se nepřebuildí a novou DLL převezme).
 Cena: **breaking change API znamená publikovat i konzumenty** (DLL nikdy samotnou) - viz
-`EDControls/CLAUDE.md`.
+`EDControls/CLAUDE.md`. Tamtéž `AppHostDotNetSearch`: exe hledají .NET runtime nejdřív v `dotnet\`
+vedle sebe (EDLOADER ho rozbalí z `EDISONRUNTIME.zip`), globální **jen když `dotnet\` neexistuje** -
+neúplná složka exe shodí.
 
 Týmž profilem se vydává i **EDControls samostatně**: `PublishOwnAssemblyOnly` propustí jen
 vlastní assembly (plný uzávěr závislostí - MLRest, EDLicence, EDCore, Newtonsoft - by

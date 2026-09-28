@@ -13,6 +13,9 @@ složku nikdy nezipovat - leží tam stale `.pdb`/`.deps.json` a dev `VERZE.INF`
   WebView2 i snapshot `MLRest.dll`/`EDLicence.dll`/`EDISONAPI.dll` ze stroje, kde se publikovalo -
   publikovat jen tam, kde `C:\Edison\` odpovídá vydávané legacy verzi)
 - `EDControls.dll` - volná vedle exe
+- `EDISONRUNTIME.zip` - privátní .NET 10 runtime (`tools/build-runtime-zip.ps1`: oficiální
+  `dotnet-runtime` + `windowsdesktop-runtime` win-x64 sloučené, SHA512 z metadat Microsoftu, ~70 MB).
+  Záplaty runtime vydáváme **my** (Microsoft Update ho nevidí): nová patch verze = nový zip + verze
 
 Z repa EDISON (build do `C:\Edison`):
 
@@ -29,7 +32,10 @@ Z repa EDISON (build do `C:\Edison`):
 
 Nové řádky `FILES_DESCRIPTION.INF` (FULL, typ EXE/DLL): `EDISONMAIN2.exe`, `EDControls.dll`,
 `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`; řádek `EDISONMAIN2API.dll` zrušit. Ostatní
-soubory výše řádky už mají.
+soubory výše řádky už mají. `EDISONRUNTIME.zip` jen `FULL~~DLL~...`: řádek `PATCH~EDISON2` by 70 MB
+vezl v každém patchi shellu (a binární patch maže `EDISONCRC.bin`, stanice pak stahují vše), záplata
+runtime proto jde FULL verzí. Rozbalený strom runtime distribuce neunese (plochý SETUP.DAT, strop 999
+souborů, duplicitní jména `*.resources.dll`).
 
 ## Caché projekty (řádky `FULL~~XML~<projekt>.prj`)
 
@@ -53,8 +59,10 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
 - `FILES_DESCRIPTION.INF` na Cloud2 (edituje se ručně) dostane řádky výše; bez nich nevznikne
   záznam v `EDISONCRC.bin` a updater soubor na stanice nikdy nezkopíruje.
 - Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty, jinak se do REL nic nepřenese.
-- Stanice: **.NET 10 Desktop Runtime x64** (publish je framework-dependent) a WebView2 Evergreen
-  runtime (bez něj se pruh podpory tiše nevyplní). Legacy stack to nepotřeboval.
+- Stanice: x64 Windows a WebView2 Evergreen runtime (bez něj se pruh podpory tiše nevyplní).
+  .NET 10 instalovat nemusí: publish je framework-dependent, ale exe hledají runtime nejdřív
+  v `dotnet\` vedle sebe (`SingleFilePublish.targets`) a EDLOADER ho tam rozbalí z `EDISONRUNTIME.zip`,
+  když globální instalace chybí.
 - Serverový adresář (zdroj stanic: UNC share, nebo http URL jako u legacy) musí mít `VERZE.INF`
   a `EDUPDATE.EXE`; shell bez `VERZE.INF` vedle exe skončí hláškou, instaluje se tedy vždy
   do adresáře EDISONu, nikdy samostatně.
@@ -73,8 +81,11 @@ Zástupce na ploše míří na `EDISON.exe` (EDLOADER). Ten místo `EDISONMAIN.E
 
 - na serveru zákazníka je `^|"MLINE"|EDISON("System","NewShell")=1` (EDLOADER ho čte přes
   `ALVA.SETUP.Main.LoadSettings`, řádek `newShell`),
-- vedle `EDISON.exe` jsou `EDISONMAIN2.exe`, `EDControls.dll`, `EDISONMAIN2API.exe` a stanice má
-  x64 .NET 10 Desktop Runtime ve výchozím umístění (`%ProgramW6432%\dotnet`).
+- vedle `EDISON.exe` jsou `EDISONMAIN2.exe`, `EDControls.dll`, `EDISONMAIN2API.exe` a runtime:
+  kompletní `dotnet\` vedle exe, nebo globální x64 .NET 10 Desktop Runtime (`%ProgramW6432%\dotnet`).
+  Globální chybí a je `EDISONRUNTIME.zip` → EDLOADER zip rozbalí do `dotnet\` (staging + atomický
+  přesun, mutex pro víc sezení na terminálovém serveru, nutné právo zápisu do adresáře EDISONu).
+  Existující, ale neúplný `dotnet\` = starý shell: exe by na globální runtime nepřešel.
 
 Jinak, i když selže `LoadSettings`, spustí starý shell; nedostupný server zastaví start už
 v `CheckLogin` (beze změny). Fallback končí spuštěním procesu: nový shell, který spadne hned po

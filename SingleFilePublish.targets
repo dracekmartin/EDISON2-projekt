@@ -1,7 +1,7 @@
 <Project>
 
   <!-- Sdílená publish logika aplikačních projektů (profil SingleFileCEdison).
-       Importuje EDISONMAIN2.csproj a TemplateDesigner.csproj. -->
+       Importují ho EDISONMAIN2, TemplateDesigner, EDUPDATE2 a EDControls. -->
 
   <!-- EDControls je sdílená knihovna obou aplikací — vedle exe jako volná DLL, ať jde
        nasadit samostatně (nové pole v EDInputFormu → do produkce stačí DLL + exe, který
@@ -11,6 +11,15 @@
   <ItemGroup>
     <LooseFromSingleFile Include="EDControls" />
   </ItemGroup>
+
+  <!-- .NET 10 runtime nejdřív z dotnet\ vedle exe (EDLOADER ho tam rozbalí z EDISONRUNTIME.zip,
+       stanice bez práv správce), jinak globální instalace. Globální se zkouší JEN když dotnet\
+       vůbec neexistuje - neúplná složka = exe nenastartuje, proto se plní atomicky.
+       Nepodmíněně: pubxml se importuje až po těle projektu, podmínka na PublishSingleFile by neplatila. -->
+  <PropertyGroup>
+    <AppHostRelativeDotNet>dotnet</AppHostRelativeDotNet>
+    <AppHostDotNetSearch>AppRelative;Global</AppHostDotNetSearch>
+  </PropertyGroup>
 
   <!-- Hook musí být po ComputeResolvedFilesToPublishList (ne ComputeFilesToPublish — ten
        má bundling už v dependencies, takže by změny přišly pozdě). Sidecar .pdb/.xml
