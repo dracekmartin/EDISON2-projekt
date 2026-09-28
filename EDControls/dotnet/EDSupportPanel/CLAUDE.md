@@ -16,8 +16,8 @@ stejného důvodu visí na témže class handleru i usage telemetrie (`EDUsageTe
 
 Přeskočí se (`ShouldAttach`): `IOverlayWindow`, **okna frameworku** (`FrameworkWindows` - chrome
 AvalonDocku, viz [EDViewModel/CLAUDE.md](../EDViewModel/CLAUDE.md)), `EDSupportPanel.Suppress="True"`
-(opt-out pro okna bez VM - nastaveno na `EDPopup`/`EDErrorPopup`, ten je 640×440 a guard velikosti
-by ho propustil), `EDViewModel.ShowSupportPanel = false`, a okno, které panel už má.
+(opt-out pro okna bez VM - nastaveno na `EDPopup`/`EDErrorPopup`, ten je dost velký, aby ho guard
+velikosti propustil), `EDViewModel.ShowSupportPanel = false`, a okno, které panel už má.
 
 ## Karta žije v owned okně (`SupportPanelWindow`)
 
@@ -34,8 +34,8 @@ by ho propustil), `EDViewModel.ShowSupportPanel = false`, a okno, které panel u
   v každé fázi animace (hlídá test).
 - **Pozice přes `PointToScreen(0,0)` + `GetClientRect` + `TransformFromDevice`** -
   maximalizovaný owner má v `Left/Top` restore bounds.
-- **Panel je `IOverlayWindow`** - jinak by ho `WindowNavigator` bral jako okno modulu: nabídl
-  by ho v „Spuštěné moduly" a `CloseAll()` by ho zavřel **nevratně** (attach je jednorázový).
+- **Panel je `IOverlayWindow`** (proč: [EDViewModel/CLAUDE.md](../EDViewModel/CLAUDE.md)) - zavření
+  přes `CloseAll()` by bylo **nevratné**, attach je jednorázový.
 - **Do klientské oblasti ownera se musí vejít celá karta** (`SupportPanelGeometry.Fits`), jinak
   se panel nepřipojí - samostatné okno by u malého dialogu kreslilo kartu mimo něj, přes footer
   s tlačítky. `Compute` drží spodní hranu v klientské oblasti i po zmenšení okna.

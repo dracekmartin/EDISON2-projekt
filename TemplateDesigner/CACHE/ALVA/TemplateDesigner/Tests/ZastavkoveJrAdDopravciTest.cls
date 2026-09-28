@@ -38,8 +38,7 @@ Method TestAdresaDopravceNesePlnyTvarJakoStaryPopis()
 	// Adresa ze samostatného pole musí být v tom starém slepeném bloku obsažená celá - jinak jsme
 	// vzali kratší variantu z číselníku a zákazníkovi zmizelo PSČ a obec.
 	if prvni.ADRESA '= "" {
-		do $$$AssertTrue((popis [ prvni.ADRESA),
-			"adresa """_prvni.ADRESA_""" musí být celá v POPIS_DOPRAVCE ("_popis_")")
+		do $$$AssertTrue((popis [ prvni.ADRESA), "adresa """_prvni.ADRESA_""" musí být celá v POPIS_DOPRAVCE ("_popis_")")
 	}
 }
 

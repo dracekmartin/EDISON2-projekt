@@ -9,7 +9,9 @@ dostávají pouze přes `dotnet publish` s profilem „SingleFileCEdison"
 i EDControls): **`EDControls.dll` je vedle exe volný soubor**, aby šla nasadit samostatně
 (do produkce jde DLL + exe, který ji používá; druhý exe se nepřebuildí a novou DLL převezme).
 Cena: **breaking change API znamená publikovat i konzumenty** (DLL nikdy samotnou) - viz
-`EDControls/CLAUDE.md`.
+`EDControls/CLAUDE.md`. Tamtéž `AppHostDotNetSearch`: exe hledají .NET runtime nejdřív v `dotnet\`
+vedle sebe (EDLOADER ho rozbalí z `EDISONRUNTIME.zip`), globální **jen když `dotnet\` neexistuje** -
+neúplná složka exe shodí.
 
 Týmž profilem se vydává i **EDControls samostatně**: `PublishOwnAssemblyOnly` propustí jen
 vlastní assembly (plný uzávěr závislostí - MLRest, EDLicence, EDCore, Newtonsoft - by
@@ -19,13 +21,13 @@ k distribuci při vydání shellu (včetně těch z repa EDISON): `docs/deploy.m
 
 ## Struktura a pravidla pro CLAUDE.md
 
-`EDISONMAIN2/`, `EDControls/`, `TemplateDesigner/`, `ServiceGtfsRt/`, `EDUPDATE2/`
-(klientský updater nového shellu) a `EDISON2.IntegrationTests/` mají **vlastní `CLAUDE.md`**, EDControls navíc per-komponenta. `EDTesting/` = Caché test framework
-(`MLTestCase` + `TestRunner`), `docs/mlrest.md` = kompletní reference Caché architektury,
-`.husky/` = git hooks (auto-install při `dotnet restore`).
+`EDISONMAIN2/`, `EDControls/`, `TemplateDesigner/`, `ServiceGtfsRt/`, `EDUPDATE2/` (klientský
+updater nového shellu) a `EDISON2.IntegrationTests/` mají **vlastní `CLAUDE.md`**, EDControls
+a EDISONMAIN2 navíc per-komponenta (ACTIVITY zámek: `EDISONMAIN2/dotnet/Startup/`). `EDTesting/`
+= Caché test framework (`MLTestCase` + `TestRunner`), `docs/mlrest.md` = kompletní reference
+Caché architektury, `.husky/` = git hooks (auto-install při `dotnet restore`).
 
-**Krátké a výstižné**: root i project doc (`EDISONMAIN2/`, `EDControls/`,
-`TemplateDesigner/`, `EDUPDATE2/`) ≤ ~150 řádků, komponentový ≤ ~60. Při překročení škrtej.
+**Krátké a výstižné**: root i projektový doc ≤ ~150 řádků, komponentový ≤ ~60. Při překročení škrtej.
 
 - **Patří sem**: neodvoditelné invarianty, wire kontrakty, pasti, workaroundy, netriviální
   WHY, pořadí volání, na kterém záleží.
@@ -56,13 +58,12 @@ Pasti wire formátu: subscripty jsou **stringy** (`cVar["1"]` → `^||ML("IN","1
 numerické 1); `CList` ↔ `$lb()`, čte se `$li(^||ML("IN","i"), n)` (1-based); v named
 foreach přeskoč klíč `"ERR"` (MLRest metadata, ne data).
 
-`QueryOrThrow` = `Query` + `ThrowIfError()` - na `IMLRest` i jako extension na `MLRest` (legacy;
-deleguje na `MLRestAdapter`, překlad chyby žije na jednom místě). Odděleně jen pro graceful degradation.
-**Souběžné requesty jen na klonech** (`With()`) - `RestStatus` je per-instance a čte se až po
-`Query`, takže paralelní volání na téže instanci si stavy prohodí (spolknutá chyba / cizí
-výjimka). Klon má stejný GUID (pro server tatáž session) a každý request běží ve vlastním
-Caché procesu, takže si nešlapou ani po `^||ML`. Vzor: `RestCallRunner` (EDControls,
-`dotnet/RestCallRunner.cs`). Binární data: `BinarySave`/`BinaryLoad` (API MLRest.dll, viz `docs/mlrest.md`).
+`QueryOrThrow` = `Query` + `ThrowIfError()` na `IMLRest` i jako extension na `MLRest`; odděleně
+jen pro graceful degradation. **Souběžné requesty jen na klonech** (`With()`) - `RestStatus` je
+per-instance a čte se až po `Query`, takže paralelní volání na téže instanci si stavy prohodí
+(spolknutá chyba / cizí výjimka). Klon má stejný GUID (pro server tatáž session) a každý request
+běží ve vlastním Caché procesu, takže si nešlapou ani po `^||ML`. Vzor: `RestCallRunner`
+(`EDControls/dotnet/RestCallRunner.cs`). Binární data: `BinarySave`/`BinaryLoad` (`docs/mlrest.md`).
 
 ## Kostra Caché metody
 
@@ -80,8 +81,8 @@ a `s err = ""` si musí nastavit sama; pravidla v `TemplateDesigner/.claude/rule
 Složka `EDISONMAIN2/dotnet/Windows/MyWindow/` s `MyWindow.xaml(.cs)` a `MyWindowViewModel`
 (dědí `EDViewModel`, bezparametrický ctor čte `EDServices.Current`). Neodvoditelné:
 `DataContext = _vm = new MyWindowViewModel();` musí být **před** `InitializeComponent()`;
-registrace v `EdisonMainViewModel` jde přes `Command(...)` (= RelayCommand s error handlingem
-přes `PopupDisplayer`, výjimky mimo příkazy bere globální handler); vstupní data konstruktorem.
+registrace v `EdisonMainViewModel` jde přes `Command(...)` (výjimky mimo příkazy bere globální
+handler); vstupní data konstruktorem.
 
 Reference: `EDComponentAndViewModelTestWindow`, footer v `EDControls/dotnet/EDFooter/CLAUDE.md`,
 EDInputForm příklad `EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls`.
@@ -92,7 +93,7 @@ Platí pro aplikace postavené na EDControls. Bez těchto tří to padá za běh
 `EDIcons.xaml` + `EDStrings.xaml` (jinak `{StaticResource}` hodí výjimku),
 `DispatcherUnhandledException` handler s `e.Handled = true` (jinak crash)
 a `EDAppearance.Initialize(app)` (fonty + theme). Referenční implementace
-`EDISONMAIN2/dotnet/Startup/App.xaml(.cs)`. Výjimka `EDUPDATE2` - záměrně bez EDControls
+`EDISONMAIN2/dotnet/App.xaml(.cs)` a `Startup/AppBootstrapper.cs`. Výjimka `EDUPDATE2` - záměrně bez EDControls
 (vyměňuje je za běhu), povinný zůstává jen exception handler; viz `EDUPDATE2/CLAUDE.md`.
 Každý aplikační exe (i EDUPDATE2) má navíc `<ApplicationIcon>` na sdílené
 `EDControls/dotnet/EDIcons/cube_molecule.ico`: připnutá aplikace na liště a okno bez `Icon`
@@ -108,17 +109,12 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 
 ## Persistence stavu
 
-- **Per Windows-uživatele (JSON)** - `LocalPrefs` (`%APPDATA%\m-line\EDISONMAIN2\local.json`) přes
-  injektovaný `ILocalPrefs` (composition root `AppBootstrapper`). Nové preference = nullable
-  property (chybějící klíč zůstane null - kompatibilní upgrade). `RememberedPassword` je DPAPI
-  blob, předvyplní se jen když jméno v blobu == `LastLoginName`. `ShellWindowBounds` je **jedna
-  geometrie shellu i přihlašovacího okna** - před loginem není session, do které by šlo ukládat.
+- **Per Windows-uživatele (JSON)** - `LocalPrefs` shellu (`%APPDATA%\m-line\EDISONMAIN2\local.json`)
+  přes injektovaný `ILocalPrefs`. Nové preference = nullable property (chybějící klíč zůstane
+  null - kompatibilní upgrade).
 - **Per-user × IDFa (Caché)** - stav agendových oken automaticky přes `EDViewModel` /
-  `WindowStatePersistence` (úložiště je vyměnitelné, viz `IWindowStateStore`); detaily
-  v `EDControls/dotnet/EDViewModel/CLAUDE.md`.
+  `WindowStatePersistence` (vyměnitelné přes `IWindowStateStore`), viz `EDControls/dotnet/EDViewModel/CLAUDE.md`.
 - **Cross-process (font, theme)** - `%APPDATA%\m-line\common\`; viz `EDControls/CLAUDE.md`.
-
-Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAUDE.md`.
 
 ## Testy
 
@@ -135,8 +131,7 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
   výsledek. ⚠️ **Úprava `.cls` mimo Edit/Write hook NESPUSTÍ** (hromadná změna skriptem): na
   serveru zůstane stará třída, u EDInputForm formulářů se to projeví jako „pole je prázdné
   a uložení nic neudělá" a **drift testy to nechytí, čtou `.cls` z repa**. Deploy pak vynuť
-  `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash
-  .claude/hooks/compile-objectscript.sh` (MCP `cache_compile` hledá zdroj v `C:\DEV\EDISON`).
+  `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`.
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - `.cs`→.NET
   (bez `Category=Integration`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
   sada (při `.cls/.inc` povinná). Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí

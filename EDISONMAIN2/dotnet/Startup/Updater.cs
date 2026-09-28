@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using EDControls;
 using Microsoft.Win32.SafeHandles;
 
@@ -15,7 +16,7 @@ namespace EDISONMAIN2;
 /// NucenyUpdateLocalClientu; wire klíč "NucenyUpdatClentu" - překlep je součást kontraktu).
 /// <see cref="Pending"/> = na serveru běží instalace verze (legacy EDLOADER <c>UpdateIsRunning</c>).
 /// </summary>
-public record UpdateSettings(bool Enabled, string CacheVersion, string EdisonPath, string LocalSourcePath,
+public record UpdateSettings(string CacheVersion, string EdisonPath, string LocalSourcePath,
                              string SourceServer = "", int SourcePort = 0, string ForcedStamp = "",
                              bool Pending = false)
 {
@@ -24,7 +25,7 @@ public record UpdateSettings(bool Enabled, string CacheVersion, string EdisonPat
 
 public enum UpdateOutcome
 {
-    /// <summary>Verze sedí (nebo update vypnutý) - pokračovat ve startu.</summary>
+    /// <summary>Verze sedí (nebo server nemá nainstalovaný release) - pokračovat ve startu.</summary>
     None,
     /// <summary>Nová verze na serverové instalaci (nebo vynucená vlna) - spawn updateru + shutdown.</summary>
     UpdateRequired,
@@ -79,7 +80,7 @@ public class Updater
         var output = mlRest.QueryOrThrow("ALVA.SETUP.Main", "LoadSettings", new object[] { });
         char del = mlRest.Delimiter;
 
-        bool enabled = false, pending = false;
+        bool pending = false;
         string version = "", edisonPath = "", localSourcePath = "", sourceServer = "", forcedStamp = "";
         int sourcePort = 0;
         for (int i = 1; i <= output.GetUpperBound(0); i++)
@@ -88,7 +89,6 @@ public class Updater
             if (parts.Length < 2) continue;
             switch (parts[0])
             {
-                case "update": enabled = int.TryParse(parts[1], out int e) && e != 0; break;
                 case "pending": pending = int.TryParse(parts[1], out int p) && p != 0; break;
                 case "version": version = parts[1]; break;
                 case "edisonPath": edisonPath = parts[1]; break;
@@ -98,19 +98,18 @@ public class Updater
                 case "NucenyUpdatClentu": forcedStamp = parts[1]; break;
             }
         }
-        return new UpdateSettings(enabled, version, edisonPath, localSourcePath, sourceServer, sourcePort, forcedStamp, pending);
+        return new UpdateSettings(version, edisonPath, localSourcePath, sourceServer, sourcePort, forcedStamp, pending);
     }
 
     public UpdateCheckResult Check(UpdateSettings settings)
     {
-        // Parita s EDLOADER UpdateIsRunning: během serverové instalace se klient nepřihlásí (rozjeté
-        // verze). Před Enabled - pending nezávisí na tom, zda stanice updaty dělá.
+        // Parita s EDLOADER UpdateIsRunning: během serverové instalace se klient nepřihlásí (rozjeté verze).
         if (settings.Pending)
             return new(UpdateOutcome.Broken, "Probíhá aktualizace systému, aplikace bude ukončena.");
 
-        // Divergence od legacy: Enabled se honoruje vždy (legacy klient ho přes ForceYes
-        // ignoruje) - dev server má update~0 a nedosažitelný edisonPath.
-        if (!settings.Enabled) return new(UpdateOutcome.None);
+        // Server bez nainstalovaného release (prázdné Update,2 - dev) nemá stanicím co nabídnout. Flag
+        // "update" legacy klient ignoruje: stanice musí jít za serverem, jinak ji po FULL shodí verzová brána.
+        if (settings.CacheVersion == "") return new(UpdateOutcome.None);
 
         var local = GetLocalVersion();
         // Dev build nikdy netriggeruje update ani Broken - vývoj proti libovolnému serveru.
@@ -137,7 +136,7 @@ public class Updater
         if (forcedPending)
             return new(UpdateOutcome.UpdateRequired, Version: source, Forced: true);
 
-        if (settings.CacheVersion != "" && !VerzeInf.IsSameVersion(settings.CacheVersion, local))
+        if (!VerzeInf.IsSameVersion(settings.CacheVersion, local))
             return new(UpdateOutcome.Broken,
                 $"Nesouhlasí verze programů a objektů [{local} -> {settings.CacheVersion}].");
 
@@ -146,7 +145,36 @@ public class Updater
 
     protected virtual string GetLocalVersion() => VerzeInf.Current;
 
-    protected virtual string GetSourceVersion(string sourceDir) => VerzeInf.ReadVersion(sourceDir);
+    protected virtual string GetSourceVersion(string sourceDir)
+    {
+        if (!IsUri(sourceDir)) return VerzeInf.ReadVersion(sourceDir);
+        try
+        {
+            // StreamReader kvůli BOM - Encoding.GetString ho nechá a klíč LAST by pak nesedl.
+            using var reader = new StreamReader(new MemoryStream(DownloadSourceFile(SourceFileUrl(sourceDir, VerzeInf.FileName))));
+            return VerzeInf.ParseLast(reader.ReadToEnd());
+        }
+        // IOException: přerušené spojení při čtení těla (HttpIOException) HttpRequestException nezabalí.
+        catch (Exception e) when (e is HttpRequestException or IOException or TaskCanceledException
+                                      or UriFormatException or InvalidOperationException)
+        {
+            return ""; // → Broken "nelze zjistit serverovou verzi" (legacy parita)
+        }
+    }
+
+    /// <summary>Zdroj stanic jako URL (legacy <c>clsUpdate.PathIsUri</c>) - legacy EDUPDATE ho umí stahovat sám.</summary>
+    internal static bool IsUri(string path) =>
+        path.StartsWith("http:", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("https:", StringComparison.OrdinalIgnoreCase);
+
+    internal static string SourceFileUrl(string sourceDir, string fileName) =>
+        sourceDir.Replace('\\', '/').TrimEnd('/') + "/" + fileName;
+
+    protected virtual byte[] DownloadSourceFile(string url)
+    {
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        return client.GetByteArrayAsync(url).GetAwaiter().GetResult();
+    }
 
     /// <summary>Shell běží přímo ze serverové instalace (na serveru, stanice spouštěná ze share).</summary>
     protected virtual bool IsServerInstallation(string sourceDir) =>
@@ -158,7 +186,7 @@ public class Updater
     /// </summary>
     internal static bool IsSameInstallation(string installDirectory, string sourceDir)
     {
-        if (string.IsNullOrWhiteSpace(sourceDir)) return false;
+        if (string.IsNullOrWhiteSpace(sourceDir) || IsUri(sourceDir)) return false;
         try
         {
             if (string.Equals(NormalizeDirectory(installDirectory), NormalizeDirectory(sourceDir),
@@ -229,10 +257,25 @@ public class Updater
     /// Self-update updateru - kopii dělá shell, protože updater v tu chvíli neběží
     /// (legacy UpdateClientUpdater pattern).
     /// </summary>
-    public virtual void CopyUpdater(string sourceDir)
+    public virtual void CopyUpdater(string sourceDir) => CopyUpdaterTo(sourceDir, AppContext.BaseDirectory);
+
+    internal void CopyUpdaterTo(string sourceDir, string targetDir)
     {
         var exe = UpdaterExeFor(ActiveKind);
-        File.Copy(Path.Combine(sourceDir, exe), Path.Combine(AppContext.BaseDirectory, exe), overwrite: true);
+        var target = Path.Combine(targetDir, exe);
+        if (!IsUri(sourceDir))
+        {
+            File.Copy(Path.Combine(sourceDir, exe), target, overwrite: true);
+            return;
+        }
+        var content = DownloadSourceFile(SourceFileUrl(sourceDir, exe));
+        // Chybová stránka portálu/proxy s HTTP 200 by jinak přepsala updater a rozbila každý další start.
+        if (content.Length < 2 || content[0] != (byte)'M' || content[1] != (byte)'Z')
+            throw new InvalidDataException($"Ze zdroje nepřišel spustitelný soubor {exe}.");
+        // Přes dočasný soubor: přerušený zápis nesmí zničit lokální updater.
+        var partial = target + ".download";
+        File.WriteAllBytes(partial, content);
+        File.Move(partial, target, overwrite: true);
     }
 
     /// <summary>

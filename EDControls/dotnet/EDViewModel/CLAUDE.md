@@ -17,11 +17,10 @@ Základní třída ViewModelů + infrastruktura (`EDServices` - DI singleton `Cu
 3. window-scoped `PopupDisplayer` (owner: per-call → okno VM → globální default) -
    agendová okna nedostávají popupy nad shellem.
 
-Panel Podpora ani usage telemetrie tu nejsou - visí na `Window.Loaded` z `EDAppearance.Initialize`,
-protože TemplateDesigner volá `AttachToWindow` jen pro hlavní okno (viz [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md)).
-Telemetrie (`EDUsageTelemetryHook`): OPEN + kliky na **pojmenované** controly, flush při `Closed`,
-best-effort, nikdy nehazí; bere jen okna s `EDViewModel` a nenulovým `PersistedFormId`, guard
-`IsHooked` (`Loaded` fíruje opakovaně); legacy launch trackuje `WindowNavigator.LaunchLegacy`.
+Panel Podpora ani usage telemetrie tu nejsou - visí na `Window.Loaded` z `EDAppearance.Initialize`
+(proč: [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md)). Telemetrie (`EDUsageTelemetryHook`)
+bere kliky jen na **pojmenované** controly a jen okna s `EDViewModel` a nenulovým `PersistedFormId`;
+guard `IsHooked` (`Loaded` fíruje opakovaně); legacy launch trackuje `WindowNavigator.LaunchLegacy`.
 `PersistedFormId` default `"<FormIdPrefix>.<Window>"` (shell `EDISON2`, TD `TD`) - odděluje
 aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
 
@@ -46,8 +45,8 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
 
 - `ShowDialog` ztmavuje ownera přes `WindowDimmer` (refcount), **ne** `IsEnabled=false` -
   to by srazilo controly na 0.5 opacity.
-- Legacy launch kontrakt (značka + 17 polí) viz `BuildLauncherArguments` a EDISONMAIN2/CLAUDE.md;
-  pre-login admin override musí předat `shareShellSession=false`, jinak requesty padají na `LockExist`.
+- Legacy launch kontrakt viz `BuildLauncherArguments` a EDISONMAIN2/CLAUDE.md; pre-login admin
+  override musí předat `shareShellSession=false`, jinak requesty padají na `LockExist`.
 - Modeless `ShowLegacy*` dedupují (`TryFocusExistingLegacy`, klíč `exe+forma+inputParam`),
   dialogové ne (ztmavují shell). `GetActiveModules` vrací i `ExeName`/`FormFqn`/`InputParam` -
   `DisplayName` je doslovný `MainWindowTitle`, stejnojmenné moduly rozliší až tahle identita.
@@ -55,7 +54,7 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
   třídě, ne interface; `Try*` varianty hlásí veto okna (`e.Cancel`) - výměna session ho musí
   respektovat, jinak přeživší okno mluví s cizí session.
 - `CloseAll()` ani „Spuštěné moduly" nevidí owned overlay okna (`IOverlayWindow`: panel
-  Podpora, „Akce probíhá" - jinak by se nabídly jako modul a zavřely, panel nevratně; nové
+  Podpora, „Akce probíhá" - jinak by se nabídly jako modul a zavřely; nové
   owned overlay okno marker potřebuje) a nezavírá okna frameworku (`FrameworkWindows`:
   AvalonDock si overlay okno cachuje a cizí zavření shodí každý další drag přes dock;
   jeho `AvalonDock.Controls.IOverlayWindow` je jiný typ téhož názvu → predikát podle namespace).

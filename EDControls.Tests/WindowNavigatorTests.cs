@@ -112,6 +112,18 @@ public class WindowNavigatorTests
         Assert.Equal(expected, WindowNavigator.LaunchesDirectly(exeName));
     }
 
+    [Theory]
+    [InlineData(true, 1, "SHELLGUID")]
+    [InlineData(true, 0, "")]  // shell bez zámku (podpora): modul by pod shell GUID padl na LockExist
+    [InlineData(false, 1, "")] // pre-login admin override
+    public void ShellGuidFor_SharesGuidOnlyUnderShellLock(bool share, int cacheLocks, string expected)
+    {
+        var mlRest = MakeMlRest();
+        mlRest.CacheLocks.Returns(cacheLocks);
+
+        Assert.Equal(expected, WindowNavigator.ShellGuidFor(mlRest, share));
+    }
+
     private static IMLRest MakeMlRest()
     {
         var m = Substitute.For<IMLRest>();

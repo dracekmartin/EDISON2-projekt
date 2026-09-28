@@ -5,9 +5,10 @@ prvky, base třída ViewModelů a infrastruktura. `.NET` strana v `dotnet/`, ser
 Caché strana v `CACHE/` (ALVA projekt `ALVA_EDControls`), hlubší dokumentace
 v `docs/wire-formaty.md` (wire formáty Caché ↔ .NET).
 
-**Breaking change veřejného API ⇒ publikovat i konzumenty.** Uvnitř repa se všichni
-(EDISONMAIN2, TemplateDesigner, LegacyMiniApps, EDTesting, ThemeRender) buildí spolu, takže
-odebraný člen je hned compile error - API se měnit smí. Nebezpečné je samostatné vydání
+**Breaking change veřejného API ⇒ publikovat i konzumenty.** Konzumenti v `EDISON2.sln`
+(EDISONMAIN2, TemplateDesigner, EDISONMAIN2.LegacyMiniApps, EDTesting a testy) se buildí spolu,
+takže odebraný člen je hned compile error - API se měnit smí; `tools/ThemeRender` stojí mimo sln
+a buildí se zvlášť. Nebezpečné je samostatné vydání
 `EDControls.dll` (`PublishOwnAssemblyOnly`, viz root CLAUDE.md): ta potká starý exe a shodí ho
 až za běhu. **TemplateDesigner běží u zákazníků**, EDISONMAIN2 zatím ne. Hodnoty sdílené přes
 samostatně nasazenou DLL proto drž jako **`static readonly`, ne `const`** - `const` se inlinuje
@@ -18,23 +19,22 @@ rebuild - `{DynamicResource}` na neznámý klíč tiše nevrátí nic. Přejmeno
 XAML všech konzumentů.
 
 **Z legacy `EDFORMS` se vědomě nemigruje** BDG (komerční C1FlexGrid), atomické kontrolky
-(nativní WPF stačí), `BaseDocument` ani centrální katalog codebooků - `EDInputBox`,
-`EDMessageBox` a `EDScheduler` nahrazuje `IPopupDisplayer`.
+(nativní WPF stačí), `BaseDocument` ani centrální katalog codebooků; `EDInputBox`
+a `EDMessageBox` (legacy `EDComponents2`) nahrazuje `IPopupDisplayer`.
 
 ## Nová m-line aplikace
 
-- `EDAppearance.Initialize(app)` jednou před prvním oknem (a **až po** `EDServices.Initialize`):
-  napojí `FontService` + `ThemeService` a class handlery na `Window.Loaded`, které rozdají
-  panel Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`).
-- Zbytek dělá konzument sám: merge `EDIcons.xaml` + `EDStrings.xaml` v App.xaml,
-  `DispatcherUnhandledException` handler (viz root CLAUDE.md) a `EDServices.FormIdPrefix`,
-  ať se okna nové aplikace nemíchají se shellem.
+`EDAppearance.Initialize(app)` jednou před prvním oknem (a **až po** `EDServices.Initialize`):
+napojí `FontService` + `ThemeService` a class handlery na `Window.Loaded`, které rozdají panel
+Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povinného nastavení
+(resource dictionaries, exception handler, ikona exe) je v root CLAUDE.md; navíc vlastní
+`EDServices.FormIdPrefix`, ať se okna nové aplikace nemíchají se shellem.
 
 ## Vzhled: EDTheme + EDControlStyles
 
 - `EDTheme/` - design tokeny (`EDTheme.xaml`, dark `EDThemeDark.xaml`) + `ThemeService`.
-  **Dark mode funguje jen pro barvy čtené přes `DynamicResource`** - dark dictionary se
-  přidává na konec MergedDictionaries a přebíjí klíče. Preference je cross-process
+  Dark dictionary se přidává na konec MergedDictionaries a přebíjí klíče, proto dark mode
+  vidí jen barvy čtené přes `DynamicResource` (pravidlo v root CLAUDE.md). Preference je cross-process
   (`%APPDATA%\m-line\common\theme.json` + FileSystemWatcher) - shell i TemplateDesigner
   se přepnou spolu. Stejný mechanismus má font (`UserFonts/`, `font.json`).
   Klíč je `EDTheme.<Skupina>.<Varianta>` **podle účelu, ne podle hodnoty**; ke každé barvě
@@ -43,13 +43,11 @@ XAML všech konzumentů.
   nikde jinde ji nepiš. Výchozí Body 14 px drží legacy standard (Segoe UI 9,75 pt);
   volitelné rodiny jsou **whitelist** ve `FontCatalog` (systémový výčet nabízel
   i symbolové fonty a uživatel si tím rozbil UI včetně cesty zpět).
-- `EDControlStyles/` - implicitní styly standardních controls (Button, Menu, TabControl,
-  TreeView, ScrollBar, ...) + keyed `EDTheme.ToolbarButton` (ploché ikonové tlačítko
-  toolbaru, opt-in, hover/pressed z theme tokenů). **Úpravy vzhledu standardního controlu patří sem, ne do
-  lokálního overridu v okně** - lokální override často ani nefunguje (themed templaty
-  hostují items přes panel s `IsItemsHost="True"`, takže `ItemsPanel` apod. WPF
-  ignoruje) a rozbil by globální propagaci fontu (styly čtou font tokeny
-  přes `DynamicResource`).
+- `EDControlStyles/` - implicitní styly standardních controls + keyed `EDTheme.ToolbarButton`.
+  **Úpravy vzhledu standardního controlu patří sem, ne do lokálního overridu v okně** -
+  lokální override často ani nefunguje (themed templaty hostují items přes panel
+  s `IsItemsHost="True"`, takže `ItemsPanel` apod. WPF ignoruje) a rozbil by globální
+  propagaci fontu (styly čtou font tokeny přes `DynamicResource`).
 - **Sloupec ikony v submenu je `Auto` + `SharedSizeGroup`** - popup, kde nikdo nemá ikonu,
   ho smrští na nulu (jinak je celé menu odsazené naprázdno). Zaškrtnutí proto nesedí v něm,
   ale vpravo v pevném sloupci šipky submenu - zaškrtávací položka sloupec ikony nerezervuje.
@@ -70,12 +68,11 @@ XAML všech konzumentů.
   není, proto to legacy vzor dělal přes řádek). Barvu řádku dej na `CellStyle` (s `BasedOn`) -
   ale pozor, legacy barvy jsou navržené na bílé pozadí a v dark modu jsou nečitelné.
 
-## EDIcons / EDStrings
+## EDIcons
 
 - Nová ikona: PNG do `EDIcons/png/` + **explicitní** `<Resource>` v csproj (jen PNG -
   `.xaml` SDK zahrnuje sám, ruční `<Page>` = duplikát) + `BitmapImage` v `EDIcons.xaml`
   se sémantickým klíčem (`EDIcons.MyName`, ne název souboru).
-- Nový text: `<sys:String x:Key="EDStrings.X">` v `EDStrings.xaml`, bez změny csproj.
 - Výjimka: `EDIcons.MlineLogo` je `DrawingImage` (vektor) s brand barvou zapečenou v geometrii -
   rastr se v běžné velikosti rozpadá a v dark modu se značka záměrně nepřebarvuje.
 
@@ -87,8 +84,7 @@ XAML všech konzumentů.
 - `IRestCallRunner` / `RestCallRunner` - blokující MLRest volání mimo UI thread, vždy na **klonu**
   (proč: root CLAUDE.md, sekce MLRest); instanci snapshotuje na volajícím threadu, takže celá
   dávka jede proti téže session.
-- `MLRestJson` - JSON-envelope volání přes sdílený klíč `"payload"` (kontrakt na obou
-  stranách); `CallAsync` = `Task.Run` nad blokujícím MLRest.
+- `MLRestJson` - JSON-envelope volání přes sdílený klíč `"payload"` (kontrakt na obou stranách).
 - `EdisonLaunchArgs` - parser launch kontraktu shellu; **zrcadlí
   `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) - pořadí
   a počet polí musí zůstat synchronní. Producent je `WindowNavigator.BuildLauncherArguments`;
@@ -106,8 +102,9 @@ XAML všech konzumentů.
 ## Ostatní podsložky
 
 - `EDComponentToolbar/` - sdílený toolbar EDInputForm/EDList (search, export, ...).
-  Past: registruje window-level **Ctrl+F** binding v `OnLoaded` a musí ho odregistrovat
-  v `OnUnloaded` - jinak se při re-loadu akumulují kopie. Kreslí si **vlastní** brandový pruh
+  Past: window-level **Ctrl+F** binding si v `OnLoaded` vezme jen první toolbar okna
+  (`CtrlFOwnerProperty`, v shellu jich jsou desítky) a v `OnUnloaded` ho musí uvolnit - jinak
+  se při re-loadu akumulují kopie. Kreslí si **vlastní** brandový pruh
   (`Accent.Header`, texty `OnAccent.*`) - hostitel ho nevsazuje do svého Borderu, jen ho
   položí nad obsah.
 - `EDFilterComboBox/` - logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
@@ -120,11 +117,9 @@ XAML všech konzumentů.
   zachytil `SelectionChanged`.
 - `EDFilter/` - pruh filtračních polí; cíl je `IEDFilterTarget` (root namespace), ne konkrétní
   control. Vlastní `CLAUDE.md`.
-- `EDSearchTextBox/` - `TextBox` pro hledání (placeholder, ✕, Esc); styl v `EDControlStyles.xaml`.
-- `EDInfoBar/` - info proužek (text + volitelná ikona + akční odkaz); prázdné → skryté,
-  styl v `EDControlStyles.xaml`, viditelnost řídí konzument.
-- `EDToolbar/` - ikonová tlačítka z `EDViewModel.Actions`; velikost ikon z tokenu
-  `EDTheme.IconSize.Default`; v design-time záměrně prázdný (Actions až za běhu), ne bug.
+- `EDSearchTextBox/`, `EDInfoBar/` - šablony v `EDControlStyles.xaml`.
+- `EDToolbar/` - ikonová tlačítka z `EDViewModel.Actions`; v design-time záměrně prázdný
+  (Actions až za běhu), ne bug.
 - `SessionState/` - `ISessionState`, slovník v paměti procesu pro stav, který má přežít zavření
   dialogu, ale ne restart (filtr v `EDInputForm`); co restart přežít má, patří do `UserPrefs/`.
 - `UserPrefs/` - `IUserPrefsService`; **default je no-op `NullUserPrefsService`** -
@@ -135,18 +130,15 @@ XAML všech konzumentů.
   selhání polykají a hlásí `ErrorReports.ReportBackground`. Scope je `"<App>"` pro sdílený
   stav aplikace, `"<App>.<Featura>"` když klíč škáluje s entitami; kolizím brání jen
   konvence, server blob neinterpretuje.
-- `EDSupportPanel/` - vysouvací panel Podpora u pravého okraje okna; připojuje se sám ke
-  **každému** oknu (class handler z `EDAppearance.Initialize`), karta žije v owned okně
-  (airspace). Vlastní `CLAUDE.md`.
+- `EDSupportPanel/` - vysouvací panel Podpora u pravého okraje každého okna. Vlastní `CLAUDE.md`.
 - `MiniApps/` - framework dlaždicových widgetů shellu. `EDMiniAppBar` = pruh nad obsahem
   (filtry, akce, status); mezeru a zarovnání filtrů rozdává code-behind, protože kontrolka je
   sama sobě kontejnerem a `ItemContainerStyle` na `ContentPresenter` na ni nesedne. Záměrně
-  není rozšířením `EDComponentToolbar` - ten věší window-level Ctrl+F (N panelů = N bindingů)
-  a kreslí brandový pruh, na kterém vsazené ComboBoxy vypadají rozbitě.
+  není rozšířením `EDComponentToolbar` - ten věší window-level Ctrl+F a kreslí brandový pruh,
+  na kterém vsazené ComboBoxy vypadají rozbitě.
 
 ## CACHE strana
 
 `CACHE/EDInputForm.inc` - `#define` konstanty wire kontraktu (typy polí, separátory,
-viditelnosti) - **musí sedět s C# stranou**. Třídy per control v `CACHE/ALVA/EDControls/`
-(`EDInputForm/`, `EDList/`, `UserData.cls`, `DesktopShortcuts.cls`) + testy v `Tests/` (viz root CLAUDE.md,
-sekce Testy).
+viditelnosti) - **musí sedět s C# stranou**. Třídy per control v `CACHE/ALVA/EDControls/`,
+testy v `Tests/` (viz root CLAUDE.md, sekce Testy).

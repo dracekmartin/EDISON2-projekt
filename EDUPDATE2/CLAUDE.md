@@ -60,7 +60,8 @@ v `CrcFileTests`.
 
 Hotfix nástroj: opravené binárky se nahrají na server zákazníka a v Caché se nastaví
 razítko (`^EDISON("System","Update","NucenyUpdateLocalClientu")`). Stanice s jinou
-lokální stopou spustí updater s `NucenyUpdate=1`; po úspěchu se razítko zapíše do
-`CliUp2.ini` vedle binárek. Per-instalace, ne per-user (jinak vlna běží za každého
+lokální stopou spustí updater s `NucenyUpdate=1`, i když zároveň přichází nová verze; shell
+spuštěný přímo ze serverové instalace vlnu vynechá (rozhoduje `Updater.Check` v EDISONMAIN2).
+Po úspěchu se razítko zapíše do `CliUp2.ini` vedle binárek. Per-instalace, ne per-user (jinak vlna běží za každého
 Windows uživatele zvlášť); vlastní soubor, ne legacy `CliUp.ini` (relativní cesta,
 čtení bez ochrany).

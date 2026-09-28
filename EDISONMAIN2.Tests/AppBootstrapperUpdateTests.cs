@@ -15,7 +15,7 @@ public class AppBootstrapperUpdateTests
 {
     private sealed class FakeUpdater : Updater
     {
-        public UpdateSettings Settings { get; set; } = new(true, "", @"\\server\Edison", "");
+        public UpdateSettings Settings { get; set; } = new("260825.1", @"\\server\Edison", "");
         public string LocalVersion { get; set; } = "260825.1";
         public string SourceVersion { get; set; } = "260825.1";
         public string StampSeen { get; set; } = "";
@@ -111,7 +111,7 @@ public class AppBootstrapperUpdateTests
     {
         var updater = new FakeUpdater
         {
-            Settings = new UpdateSettings(true, "", @"\\server\Edison", "", ForcedStamp: "66234,2"),
+            Settings = new UpdateSettings("260825.1", @"\\server\Edison", "", ForcedStamp: "66234,2"),
             StampSeen = "66230,1", // lokální stopa nesedí s razítkem z Caché
         };
         var (bootstrapper, popup, services) = Build(updater);

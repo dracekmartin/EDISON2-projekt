@@ -1,33 +1,11 @@
 # EDISONMAIN2 - poznámky pro vývojáře
 
 Hlavní WPF shell - login, výběr firmy, strom modulů, spouštění legacy `.exe` agend. Nahrazuje
-VB.NET `EDISONMAIN`.
+VB.NET `EDISONMAIN`. Bootstrap, login, připojení a session s ACTIVITY zámkem:
+[dotnet/Startup/CLAUDE.md](dotnet/Startup/CLAUDE.md).
 
-Bootstrap orchestruje `Startup/AppBootstrapper` (template method; vzhled/font záměrně před
-loginem, ať je login dialog themovaný; strom modulů načítá až shell VM asynchronně). `Run` má
-jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí v `DispatcherUnhandledException`
-(Handled) a app žije dál s `OnExplicitShutdown` a login oknem, které během progress fáze zavření
-ruší. Logout hook (`WireSessionLogout`) se zapojuje hned po `Accepted`, ne až se shellem, aby zámek
-uvolnil i exit kvůli updatu. **Po návratu z `Run` bootstrapper dožil** - co běží dál, má vlastní
-session-scoped objekt (`SessionSwitcher` = přihlášení jiného uživatele, `ShellShutdown` = vynucené
-ukončení); skládání session sdílí obě cesty přes `SessionFactory.Establish`.
-Login okno (jen Release dialog path) po OK zůstává jako progress podklad, zavírá se až na shell
-`ContentRendered`; `HandOffLoginWindow` musí dát `Application.MainWindow` na shell **před**
-restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo proces nemá konec.
-Geometrii sdílí se shellem (`ShellWindowStateStore`, local.json), ale jen ji **čte** - zapisuje ji
-shell a jednou bootstrapper hned po přihlášení (při zavření je pozdě, shell ji čte dřív).
 `Services/` složka neexistuje záměrně - single-consumer infrastruktura je ko-lokovaná se svým
 consumerem, cross-cutting věci jdou do `EDControls`.
-Připojení čte `SettingsLoader` z `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho roznáší
-ze serveru): **`connection@restport`, ne `@port`** (to je superserver); wizard zapisuje plnou
-legacy paritu (`initialized`/`forceChange`=1), uzly mimo ni (`securedMode`) zachovává. Dev kopii
-v repu **publish nesmí vydat** - v `C:\Edison\` leží živý soubor legacy aplikací
-(`CopyToPublishDirectory="Never"` v csproj). Argumenty `server=<host> restport=<port>`
-(`ConnectionOverride`) mají přednost a wizard přeskočí: menu „Připojit k databázi" jimi spouští
-**novou instanci** proti jinému serveru (session v procesu je na jeden server); uložená připojení
-jsou v `LocalPrefs.Connections`, výchozí z `EDISONini.xml` zůstává centrálně řízené (legacy `forceChange`).
-Před loginem shell opakuje brány EDLOADERu (`PassesPreLoginGates`: zákaz přihlašování přes `LoginGate`,
-`pending` serverové instalace z `LoadSettings`), protože zástupce přímo na exe EDLOADER obchází.
 
 ## Strom modulů = generovaný snapshot
 
@@ -46,52 +24,32 @@ třída (nebo volání metody, která ještě není nahraná) shodí start shell
 dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď compile endpointu -
 `compile-objectscript.sh` končí exit 0 i při selhaném uploadu a chyby píše jen na stderr.
 
-## Session / ACTIVITY zámek
+## Session na straně VM
 
-- Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - nezaniká se spojením, hard-kill
-  ho neuvolní (uklidí až server idle timeout). V dev to tlumí deterministický session GUID
-  (`#if DEBUG` v `SessionFactory.Establish`) - re-run přepíše týž klíč.
-- Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty obnovují
-  idle timer (jinak aktivní shell vypadá serveru jako idle) a detekují zaniklý zámek/verzi.
-  Přepnutí firmy jede s `CacheLocks=0` po dobu verify **i logoutu staré firmy** (zámek nové
-  firmy ještě/už neexistuje, LockExist by session shodil; `LicenceLoader` je taky request na
-  sdílené instanci). Version gate jen při Locks=1: update check proto jede na klonu s `Locks=0`
-  (po FULL vydání by jinak `LoadSettings` odmítl a updater se nespustil), DEBUG posílá prázdnou
-  `EdisonVersion` (dev verze `999999.9` by gate shodila; táž netriggeruje ani update check).
+- Session-scoped stav (`Modules/SessionDataLoader`) promítá `EdisonMainViewModel.ApplySessionData`
+  **synchronně** - guardy `_suppressXxx` neplatí přes `await` a selhání loadu nechá předchozí
+  stromy naživu. `InitializeAsync()` běží z `ContentRendered` **před** `OpenStartupWindowIfAny`
+  (výchozí okno se hledá ve stromu); před prvním initem je `_modulePrefs` null → save cesty null-safe.
+- **Podpora (`LoginName == UserID`, `_mline`) jede bez `VerifyLic` a zámku s `CacheLocks=0`** (parita
+  legacy `EDUsers.vb:287`: licenci nezabírá, server nekontroluje LockExist ani verzi); agendy pak
+  shell GUID nedostanou (`WindowNavigator.ShellGuidFor`), jinak by pod ním padaly na LockExist.
 - `SelectedCompanyIndex` musí odpovídat `MLRest.Idfa` - tam má bootstrapper zámek; jiná volba
-  rozbije koexistenci shell ↔ moduly. Startupní výběr: `CompanySwitcher.PickInitial`.
-- `SessionLogout.Logout` jede na **klonu** `IMLRest.With(...)` - odhlášení staré firmy/session
-  bez mutace sdílené instance. Kromě ACTIVITY zámku uklízí i **business zámky session**
-  (`ALWA.SYS.Lock.LockClearExt` dle GUID, parita s legacy `EDUsers.Logout` - pod shell GUID
-  zamykají i hostované moduly, zavírané killem). Úklid je **GUID-wide, ne per-IdFa**
-  (`^CacheTempSYSLock` drží i `ACTIVITY/<idfa>~…`) a shell GUID přepnutí firmy přežije, proto
-  `CompanySwitcher` po logoutu obnovuje zámek nové firmy (`LicenceVerifier.ReacquireLock`);
-  guard `Tests/SessionLockTest`.
-- `LogoutWatcher` pollí `maSeUkoncit` s `CacheLocks=2`, aby poll neobnovoval idle timer.
-- Session-scoped stav načítá `Modules/SessionDataLoader` jedním zátahem přes klony
-  (`RestCallRunner`); `EdisonMainViewModel.ApplySessionData` ho promítne **synchronně** - guardy
-  `_suppressXxx` neplatí přes `await` a selhání loadu nechá předchozí stromy naživu.
-  `InitializeAsync()` běží z `ContentRendered` **před** `OpenStartupWindowIfAny` (výchozí okno
-  se hledá ve stromu); před prvním initem je `_modulePrefs` null → save cesty null-safe.
-- Přepnutí firmy: index `SelectedCompanyIndex` se nastaví až po `Accepted` (`SelectedCompanyId`
-  setter jen spustí `SwitchCompanyCommand`). `CompanySwitcher.Switch` je synchronní (UI thread
-  na dialogy licenčního retry). Zavírání dvoufázově: WPF okna shellu **před** swapem Idfa (volají
-  server přes sdílený MLRest), legacy moduly až po `Accepted`. Veto okna (`e.Cancel` v Closing)
-  switch ruší - přeživší okno by mluvilo s cizí firmou; totéž switch user; confirm jen s moduly.
-- Zavření shellu (= ukončení aplikace i všech agend) se potvrzuje v `Closing` přes
-  `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu
-  musí jít přes `ShellShutdown.Force` / `SuppressCloseConfirm` na VM** - jinak force logout
-  nebo version gate uvízne na dialogu, který smí uživatel odmítnout.
+  rozbije koexistenci shell ↔ moduly. Při přepnutí firmy se index nastaví až po `Accepted`
+  (setter `SelectedCompanyId` jen spustí `SwitchCompanyCommand`).
+- Potvrzení zavření shellu (`ConfirmShellClose`) obchází jen `ShellShutdown.Force` /
+  `SuppressCloseConfirm` - programové ukončení musí jít přes ně (proč: Startup/CLAUDE.md).
 
 ## UI pasti
 
 - `EDFilterComboBox` (výběr firmy) **musí být mimo `<Menu>`** - WPF Menu krade fokus editovatelnému
   poli; horní lišta jsou proto dva `Menu` controly + combo v `DockPanel` mezi nimi (cena: šipkami
   se mezi menu nepřejde). `x:Name="TopMenu"` drží bindingy submenu (`ElementName`).
-- **Spuštěné moduly** se značí dlouhým názvem modulu, jinak cestou agendou (`BuildModuleLabels`,
-  klíč `exe|forma|param`; krátký název mají dvě agendy běžně shodný). Fallback = titulek bez
-  koncového `[IDFa]` (suffix si přidávají legacy okna sama, `clsForm.ShowIDFA`). **Firma v titulku
-  je jen u shellu**; titulek jde do jména tiketu v hlášení chyb (firma zvlášť polem `firma`).
+- **Spuštěné moduly** i seznam **Používané** se značí dlouhým názvem modulu, jinak cestou agendou
+  (krátký název mají agendy běžně shodný, „Doklady" jich má pět). Používané přepisují styl názvu
+  sdílené šablony stromu (`ModuleNameText`, proto `DynamicResource`). Fallback Spuštěných =
+  titulek bez koncového `[IDFa]` (suffix si přidávají legacy okna sama, `clsForm.ShowIDFA`).
+  **Firma v titulku je jen u shellu**; titulek jde do jména tiketu v hlášení chyb (firma zvlášť
+  polem `firma`).
 - Hledání ve stromu: shoda na názvu **skupiny** zpřístupní celý její podstrom, jinak by byl
   nález slepá ulička (skupinu spustit nejde a potomci hledané slovo v názvu nemají). Rozbalení
   vynucené hledáním je **přechodné**: snímek před hledáním se po vymazání textu obnoví a změny
@@ -105,68 +63,58 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
   nastavuje `Content` na datový record, lokální hodnota by přebila Setter ve stylu); stromy jsou
   sourozenci přepínaní dle `SelectedTab.Key` → všech pět žije pořád → do `Tag` datových šablon
   (most pro `ContextMenu`) nejde `AncestorType=TabControl`, jde tam `VmProxy`.
-- **Identita záložky = `Modules/TreeTab`** - jeden seznam `TreeTabs` drží pořadí, klíč (server
-  i persistence), ikonu, `Expandable`/`ServerLoaded`; přidání záložky = změna seznamu
-  (+ control v kartě). `Key` je persistovaný: **přejmenování = ztráta uložené volby**.
-- **Toolbar nad stromy**: Rozbalit/Sbalit cílí na aktivní záložku (`ActiveExpandableTree`); bulk
-  změna v `SuppressExpansionSave()` + jeden `SaveExpansionAsync` - scope je **refcountovaný**
-  (cesty se vnořují, plochý bool by vnitřní blok odemkl dřív). `SelectedModule` plní code-behind
-  (`TreeView.SelectedItem` nejde bindovat); VM ho drží per záložku, přestavba stromů ho zahazuje.
+- **Identita záložky = `Modules/TreeTab`** (seznam `TreeTabs`); `Key` je klíč serveru
+  i persistence: **přejmenování = ztráta uložené volby**.
+- **Toolbar nad stromy**: bulk změna rozbalení v `SuppressExpansionSave()` + jeden
+  `SaveExpansionAsync` - scope je **refcountovaný** (cesty se vnořují, plochý bool by vnitřní blok
+  odemkl dřív). `SelectedModule` plní code-behind (`TreeView.SelectedItem` nejde bindovat).
 
 Mini-apps (AvalonDock, pruh podpory, persistence layoutu): [dotnet/MiniApps/CLAUDE.md](dotnet/MiniApps/CLAUDE.md).
 
 ## Plocha se zástupci
 
-Plocha je **nadmnožina oblíbených**: `ModuleShortcutsService` drží `DesktopShortcut` všech
-`ShortcutKind`, ★ ve stromu umí jen `MenuModule`; identita = `Key` (`Kind|ElementId|Id`).
-Položka, kterou aktuální strom nezná (licence, `hidden`), se **nezobrazí, ale uloží zpátky** -
-jinak by ji první změna členství tiše smazala. Ostatní druhy (tiskové sestavy, pohledy DS)
-zapisují agendy přímo do Caché (`ALVA.EDControls.DesktopShortcuts`, týž blob, který shell čte)
-a spouští se 14. argem hosta; shell blob přenačte až po `LegacyModuleExited`. Typová matice,
-oba kanály a jejich pasti: [docs/zastupci-na-plose.md](docs/zastupci-na-plose.md). Název + cesta
-dlaždice se odvozují ze stromu, do `DesktopShortcutDto` se nepersistují; text zmenšuje `Viewbox`
-(`DownOnly`) a `MaxHeight` `TextBlocku` je jeho podlaha (z tokenu `FontSize` se spočítat nedá).
-Pozice = absolutní `Column`/`Row` na `TileGridPanel` (v DTO `Col`/`Row`) - mřížka se
-nepřeskládává, přesah řeší scroll; `ModuleShortcutsService.GridColumns` jen přiděluje pozice
-novým a Caché `Add` musí při přepisu zachovat **obě** složky, jinak shodí uživatelovo rozložení.
+Model, oba kanály k legacy modulům a jejich pasti: [docs/zastupci-na-plose.md](docs/zastupci-na-plose.md).
+Plocha je **nadmnožina oblíbených** (★ ve stromu umí jen `MenuModule`). Položka, kterou aktuální
+strom nezná (licence, `hidden`), se **nezobrazí, ale uloží zpátky** - jinak by ji první změna
+členství tiše smazala. Název + cesta dlaždice se odvozují ze stromu, do `DesktopShortcutDto` se
+nepersistují; text zmenšuje `Viewbox` (`DownOnly`) a `MaxHeight` `TextBlocku` je jeho podlaha
+(z tokenu `FontSize` se spočítat nedá). Pozice = absolutní `Column`/`Row` na `TileGridPanel`
+(v DTO `Col`/`Row`) - mřížka se nepřeskládává, přesah řeší scroll; `ModuleShortcutsService.GridColumns`
+jen přiděluje pozice novým a Caché `Add` musí při přepisu zachovat **obě** složky, jinak shodí
+uživatelovo rozložení.
 
 ## Výchozí okno (startup window)
 
-Modul auto-otevřený po loginu (per-uživatel × IDFa, Caché feature #25).
-`ExecutableModule.ElementId` = uložené `EDISFormEnum` id → picker/značení jede přes vlastní
-strom, ne legacy AccessTree. Okno `Windows/UserProfileWindow` je EDInputForm
-(`…EDInputForm.UserProfile`), ale **data drží klient, ne schema třída** - `Main.LoadUser/SaveUser`
-jsou samy MLRest metody, volat je ze schematu by kolidovalo na `^||ML`.
+Modul auto-otevřený po loginu (per-uživatel × IDFa, Caché feature #25). `ExecutableModule.ElementId`
+= uložené `EDISFormEnum` id → picker/značení jede přes vlastní strom, ne legacy AccessTree.
+`Windows/UserProfileWindow` je EDInputForm (`…EDInputForm.UserProfile`), ale **data drží klient,
+ne schema třída** - `Main.LoadUser/SaveUser` jsou samy MLRest metody, volat je ze schematu by
+kolidovalo na `^||ML`.
 
 ## Novinky (changelog agend)
 
 Auto-popup `Windows/ChangelogWindow` zrcadlí legacy infotexty: existence `<KLÍČ>_DIFF.INF` vedle
 binárek = „jsou nové změny". Modální a **blokuje otvírání**: v `OpenModule` funnelu před spuštěním
-agendy, shellový check před `OpenStartupWindowIfAny`; menu `LaunchModeless/Dialog` záměrně ne.
-Max 1x za session per INF klíč (kryje i re-focus dedup `ShowLegacyAsync`). Snooze (UserPrefs
-`ChangelogSnooze`) váže SHA-256 hash obsahu `_DIFF`, ne verzi - Caché-only patch nechává stale
-`_DIFF` na disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy
+agendy, shellový check před `OpenStartupWindowIfAny`; menu `LaunchModelessAsync`/`LaunchDialogAsync`
+záměrně ne. Max 1x za session per INF klíč (kryje i re-focus dedup `ShowLegacyAsync`). Snooze
+(UserPrefs `ChangelogSnooze`) váže SHA-256 hash obsahu `_DIFF`, ne verzi - Caché-only patch nechává
+stale `_DIFF` na disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy
 `EDConversion.Package.ToInformationFile` včetně výjimky NDMAIN. Vynucená cesta `ShowAlwaysAsync`
 (Nápověda, kontextová menu) obchází dedup i snooze, bez `_DIFF` dá celou historii a bez INF vrací
-`false` - volající to **musí** říct popupem, jinak klik nic neudělá; snooze checkbox je proto
-dvoucestný a bez `_DIFF` zakázaný. Pozice se nepersistuje (`PersistedFormId => null`), centruje
-`OwnerWindowCentering`.
+`false` - volající to **musí** říct popupem, jinak klik nic neudělá.
 
 ## Legacy moduly - EDISONMAIN2API
 
-Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET
+Most do legacy světa: `EDISONMAIN2API.exe` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET
 Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 17 polí (pořadí
-`WindowNavigator.BuildLauncherArguments`); [13] je Base64 XML zástupce - prázdné u běžného
-launche, s `CallType=Procedura` host místo formy spustí `ProcedureIO` agendy; [14] admin flag
-(`EDServices.IsAdmin` → `MLProps.UserIsAdmin`, klíč pro `CAccess(useAdmin)` bypass práv) a [15]
-právo update (`MayUpdate` → `MLProps.UserMayUpdate`, gate serverového update v legacy Nastavení);
-host bez pole defaultuje na **false**. [16] osobní adresář a [17] e-mail z loginu
-(`EDServices.UserDirectory`/`UserEmail` → `MLProps.UserDirectory`/`UserEmail`; bez nich agendy
-exportují do kořene disku). Host nastavuje i `EDFormID` formy - agendy přes něj čtou
-`AccessTable[EDFormID]`, bez něj jsou volby gate-ované právem zašedlé.
-Vstupy: `TryGetFormFromArgs` (typ reflexí ve volajícím
-assembly - retrofit `.exe`, jediný `EDISONMAIN/ApplicationEvents.vb`) a `TryRunFromArgs`
-(`Assembly.LoadFrom`, generický host).
+`WindowNavigator.BuildLauncherArguments`), host je mapuje do `MLProps`: [13] zástupce z plochy
+(viz `docs/zastupci-na-plose.md`), [14] admin → `UserIsAdmin` (klíč pro `CAccess(useAdmin)`
+bypass práv), [15] → `UserMayUpdate` (gate serverového update v legacy Nastavení) - host bez pole
+defaultuje na **false**; [16]/[17] osobní adresář a e-mail z loginu → `UserDirectory`/`UserEmail`
+(bez nich agendy exportují do kořene disku). Host nastavuje i `EDFormID` formy - agendy přes něj
+čtou `AccessTable[EDFormID]`, bez něj jsou volby gate-ované právem zašedlé. Vstupy:
+`TryGetFormFromArgs` (typ reflexí ve volajícím assembly - jediný retrofit
+`EDISONMAIN/ApplicationEvents.vb`) a `TryRunFromArgs` (`Assembly.LoadFrom`, generický host).
 
 Pasti:
 
@@ -176,18 +124,17 @@ Pasti:
   hlásí shell z exit kódu (`WindowNavigator.TrackExit` → `ReportLegacyExit`); kódy hosta 2 =
   launch fail, 3 = fatal po dialogu. Ověření bez pádu: Debug host + `EDISONMAIN2API_CRASHTEST=ui|bg`.
 - Non-prázdný `shellGuid` → modul sdílí shellův GUID + `CacheLocks=1` (zánik shell zámku shodí
-  i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks. Totéž
-  dělá **TemplateDesigner** (WPF, bez hosta - `LaunchesDirectly`, session přebírá
-  `CacheSchemaWiring`); requesty TD tak drží ACTIVITY historii shellu (F17). Legacy launchery TD
-  (ISYJR2, MHD2Linky, TISKJR stub) guid propagují jen při `CacheLocks==1`.
+  i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks.
+  TemplateDesigner totéž bez hosta (`LaunchesDirectly`, viz `TemplateDesigner/CLAUDE.md`); legacy
+  launchery TD (ISYJR2, MHD2Linky, TISKJR stub) guid propagují jen při `CacheLocks==1`.
 - `ConfigureForm` staví `MLProps.AccessTable` z `licensedElements` - bez nich moduly gate-ující
   obsah přes `RightGranted` (např. DSINPUT Plánování) nezobrazí data.
 - Host roztáčí formu přes **`ShowDialog`, ne `Application.Run`** (parita se starým `EDPROCESS`):
   legacy formy se zavírají samy - `DialogResult`, nebo `Close()` před otevřením sesterské formy
   přes `ShowEdisonForm` (ISYJR → ISYJR2) - a v `Application.Run` loopu tím umře proces.
 
-Shell strana: `WindowNavigator.ShowLegacy*` (viz [EDViewModel/CLAUDE.md](../EDControls/dotnet/EDViewModel/CLAUDE.md));
-admin override při out-of-license řeší `LicenceVerifier` (`ShowLegacyAndWait(..., shareShellSession: false)`).
+Shell strana: `WindowNavigator.ShowLegacy*` ([EDViewModel/CLAUDE.md](../EDControls/dotnet/EDViewModel/CLAUDE.md));
+admin override při out-of-license dělá `LicenceVerifier`.
 
 Nástroje → „Spustit starý shell": `EDISONMAIN.exe` s `reason=2` (`RunEdison`), bez něj se
 `frmNoMDI` odmítne spustit. Plain `Process.Start`, ne `ShowLegacy*` - starý shell nemá umřít

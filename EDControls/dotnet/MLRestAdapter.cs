@@ -44,6 +44,7 @@ public class MLRestAdapter(MLRest inner) : IMLRest
     public string Server    => Inner.Server;
     public int    Port      => Inner.Port;
     public string LoginName => Inner.LoginName;
+    public string UserID    => Inner.UserID;
     public string FullName  => Inner.FullName;
     public string Mlp       => Inner.Mlp;
     public string Guid      => Inner.GUID;

@@ -364,7 +364,7 @@ ClassMethod FillMain() [ Private ]
 			d ..AddExe("Doklady", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniDokladyList", "177004", 1, "", 0, "", 0, "ISYBUS Doklady")
 			d ..AddExe("Emise CO2", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniEmiseCO2Main", "177009", 1, "", 0, "", 0, "ISYBUS Emise CO2")
 			d ..AddExe("Fakturace", "FAKTURACEEX.exe", "ALVA.FAKTURACEEX.formFAKTURACEEXExterniDoklady", "108016", 1, "AD", 0, "", 0, "ISYBUS Fakturace")
-			d ..AddExe("Hromadný přepočet dokladů", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniHromadnyPrepocetDokladu", "177011", 1, "", 0, "", 0, "ISYBUS Hromadný přepočet dokladů")
+			d ..AddExe("Hromadný přepočet dokladů", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniHromadnyPrepocetDokladuMain", "177011", 1, "", 0, "", 0, "ISYBUS Hromadný přepočet dokladů")
 			d ..AddExe("Řidiči - Grafikon", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniRidiciGrafikonMain", "177006", 1, "", 0, "", 0, "ISYBUS Řidiči - Grafikon")
 			d ..AddExe("Řidiči - Odměny", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniRidiciOdmenyMain", "177010", 1, "", 0, "", 0, "ISYBUS Řidiči - Odměny")
 			d ..AddExe("Řidiči - Prémie", "ISYZpracovani.exe", "ALVA.ISY.ISYZpracovani.formISYZpracovaniRidiciPremieMain", "177001", 1, "", 0, "", 0, "ISYBUS Řidiči - Prémie")

@@ -8,7 +8,7 @@
 // ..AddFamily / ..AddExe / ..AddFamilyEnd) pro vložení do
 // EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls.
 //
-// formName (FQN) se odvozuje AUTOMATICKY z elementId - port legacy
+// formName (FQN) se odvozuje AUTOMATICKY z elementId (přednost před FQN v Tree.cls) - port legacy
 // EDConversion.Form.GetTypeString (clsConversion.vb) nad jmény členů enumů
 // EDISFormEnum / EDPackageEnum (parsované z EDFormInterfaceLic.vb). Stejná čistá
 // funkce, kterou legacy používá při spouštění formy, takže FQN je korektní všude,
@@ -46,9 +46,9 @@ string enumPath = Path.Combine(EdisonRoot, "EDCORE", "EDFormInterfaceLic.vb");
 string currentTreeCls = Path.Combine(Edison2Root, "EDISONMAIN2", "CACHE", "ALVA", "EDISONMAIN2", "API", "Tree.cls");
 
 // ---- override tabulka: elementId -> (exe, fqn, input) z aktuálního Tree.cls ----
-// Drží ručně ověřené launch info (přednost před auto-derivací - nikdy neregresuje).
+// exe a input mají přednost (z dat neodvoditelné), fqn jen jako fallback za derivací.
 var overrides = ExtractOverrides(File.ReadAllText(currentTreeCls));
-Console.Error.WriteLine($"// Override (ručně ověřené moduly) z Tree.cls: {overrides.Count}");
+Console.Error.WriteLine($"// Override (exe/input/fqn z minulého běhu) z Tree.cls: {overrides.Count}");
 
 // ---- enum mapy z EDFormInterfaceLic.vb: id -> formName, packageValue -> packageName ----
 var (formNames, packageNames) = ParseEnums(File.ReadAllText(enumPath));
@@ -137,7 +137,7 @@ WriteSourceFingerprint();
 Console.Error.WriteLine($"// Leaves: {leaves}, s formName: {withFqn}, s exePath: {withExe}, " +
                         $"oranžových stubů (bez exe): {leaves - withExe}");
 if (mismatchCount > 0)
-    Console.Error.WriteLine($"// POZOR: {mismatchCount} ručně ověřených FQN se liší od auto-derivace (viz výše).");
+    Console.Error.WriteLine($"// POZOR: {mismatchCount} FQN přepsáno podle legacy enumu (viz výše) - ověř exe a spuštění.");
 return 0;
 
 // Fingerprint legacy zdrojů pro tree-drift.sh - bez něj se stale snapshot pozná až tím,
@@ -223,15 +223,15 @@ void EmitNode(XElement node, int depth)
 
         overrides.TryGetValue(id2, out var ov);
 
-        // formName: auto-derivace z elementId; ručně ověřený override má přednost.
+        // formName: derivace z enumu má přednost - override je vlastní výstup minulého běhu,
+        // takže by přejmenování formy v legacy zamrazil navždy. Override jen když derivace mlčí.
         long.TryParse(id2, out long idNum);
         string derivedFqn = GetTypeString(idNum);
-        string fqn = !string.IsNullOrEmpty(ov.fqn) ? ov.fqn : derivedFqn;
+        string fqn = !string.IsNullOrEmpty(derivedFqn) ? derivedFqn : ov.fqn ?? "";
 
-        // Pojistka: hlas, když se ručně ověřené FQN liší od auto-derivace (drift v portu / enumech).
         if (!string.IsNullOrEmpty(ov.fqn) && !string.IsNullOrEmpty(derivedFqn) && ov.fqn != derivedFqn)
         {
-            Console.Error.WriteLine($"// MISMATCH id={id2}: override='{ov.fqn}' vs derived='{derivedFqn}'");
+            Console.Error.WriteLine($"// FQN ZMENA id={id2}: '{ov.fqn}' -> '{derivedFqn}'");
             mismatchCount++;
         }
 

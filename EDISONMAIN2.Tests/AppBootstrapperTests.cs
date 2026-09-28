@@ -20,7 +20,7 @@ public class AppBootstrapperTests
 {
     /// <remarks>Bezparametrický ctor → <c>Application</c> je null; nový krok v Run(), který na něj
     /// sáhne (dialog, Dispatcher, ShutdownMode), musí jít za <c>protected virtual</c> hook.</remarks>
-    private class TestableBootstrapper : AppBootstrapper
+    private class TestableBootstrapper(TestRunOptions? testRun = null) : AppBootstrapper(testRun)
     {
         public bool ShutdownCalled { get; private set; }
         public bool BuildShellCalled { get; private set; }
@@ -91,10 +91,12 @@ public class AppBootstrapperTests
         }
 
         public bool AutoLoginSucceeds { get; set; }
+        public bool TryAutoLoginCalled { get; private set; }
         public bool TryLoginCalled { get; private set; }
 
         protected override bool TryAutoLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
         {
+            TryAutoLoginCalled = true;
             if (AutoLoginSucceeds)
             {
                 login = new LoginResult(7, "auto", "Auto User", false, "", false, true, "");
@@ -434,6 +436,31 @@ public class AppBootstrapperTests
     {
         public void CallSave(ILocalPrefs prefs, string idfa, string? name)
             => SavePostLoginState(prefs, idfa, name);
+    }
+
+    private class PrefsBootstrapper(TestRunOptions? testRun) : AppBootstrapper(testRun)
+    {
+        public ILocalPrefs Load() => LoadLocalPrefs();
+    }
+
+    [Fact]
+    public void Run_TestRun_SkipsAutoLoginAndUsesDebugLogin()
+    {
+        var b = new TestableBootstrapper(TestRunOptions.Parse(["e2e=1"])) { AutoLoginSucceeds = true };
+
+        b.Run();
+
+        Assert.False(b.TryAutoLoginCalled);
+        Assert.True(b.TryLoginCalled);
+    }
+
+    [Fact]
+    public void LoadLocalPrefs_TestRun_KeepsPrefsInMemory()
+    {
+        var prefs = new PrefsBootstrapper(TestRunOptions.Parse(["e2e=1"])).Load();
+
+        Assert.IsType<TransientLocalPrefs>(prefs);
+        Assert.Null(prefs.LastIdfa);
     }
 
     [Fact]

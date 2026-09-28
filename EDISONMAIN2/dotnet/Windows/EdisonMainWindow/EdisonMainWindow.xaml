@@ -309,6 +309,17 @@
                         </StackPanel.ContextMenu>
                     </StackPanel>
                 </HierarchicalDataTemplate>
+                <!-- Barva z modelu (launchability); prázdná → themed Text.Primary z BasedOn
+                     implicit stylu (jinak by byla černá = neviditelná v dark). -->
+                <Style x:Key="ModuleNameText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                    <Setter Property="Text" Value="{Binding DisplayedName}"/>
+                    <Setter Property="Foreground" Value="{Binding Color, Converter={StaticResource HexToBrush}}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Color}" Value="">
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
                 <DataTemplate DataType="{x:Type modules:ExecutableModule}">
                     <!-- Tag = VM (přes VmProxy) - most pro ContextMenu, který není ve visual tree.
                          Transparent → hit-test i napravo od textu (ContextMenu na celém řádku). -->
@@ -317,21 +328,8 @@
                         <Image Source="{StaticResource EDIcons.Module}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"
                                Margin="0,0,6,0" VerticalAlignment="Center"
                                RenderOptions.BitmapScalingMode="HighQuality"/>
-                        <!-- Barva z modelu (launchability); prázdná → themed Text.Primary z BasedOn
-                             implicit stylu (jinak by byla černá = neviditelná v dark). -->
-                        <TextBlock Text="{Binding DisplayedName}" VerticalAlignment="Center">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                    <Setter Property="Foreground" Value="{Binding Color, Converter={StaticResource HexToBrush}}"/>
-                                    <Style.Triggers>
-                                        <!-- Prázdná barva → themed text (jinak by binding dal černou, v dark neviditelnou). -->
-                                        <DataTrigger Binding="{Binding Color}" Value="">
-                                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                        <!-- DynamicResource: seznam Používané styl přepisuje jiným textem (ListBox.Resources). -->
+                        <TextBlock Style="{DynamicResource ModuleNameText}" VerticalAlignment="Center"/>
                         <!-- Zlatá ★ na konci názvu, jen u oblíbených (prázdná se nezobrazuje). -->
                         <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="{DynamicResource EDTheme.Semantic.Favorite}" VerticalAlignment="Center"
                                    Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVis}}"/>
@@ -512,16 +510,23 @@
                         <TextBlock Visibility="{Binding HasNoFavorites, Converter={StaticResource BoolToVis}}"
                                    Margin="16" TextWrapping="Wrap" VerticalAlignment="Top"
                                    Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                   Text="Zatím nemáte oblíbené moduly. Klikněte pravým tlačítkem na modul a zvolte „Přidat do oblíbených“ (nebo ho připněte v záložce Používané) - zobrazí se jen ty, které opravdu potřebujete."/>
+                                   Text="Zatím nemáte oblíbené moduly. Klikněte pravým tlačítkem na modul a zvolte „Přidat do oblíbených“."/>
                     </Grid>
                     <ListBox x:Name="UsedModulesList" ItemsSource="{Binding UsedModules}" BorderThickness="0"
                              HorizontalContentAlignment="Stretch" Background="Transparent"
                              Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=used}">
+                        <ListBox.Resources>
+                            <!-- Seznam nemá kontext stromu a krátký název je napříč agendami shodný (Doklady). -->
+                            <Style x:Key="ModuleNameText" TargetType="TextBlock" BasedOn="{StaticResource ModuleNameText}">
+                                <Setter Property="Text" Value="{Binding DisplayedDistinctName}"/>
+                            </Style>
+                        </ListBox.Resources>
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                 <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="ToolTip" Value="{Binding TreePath}"/>
                                 <!-- Jako u stromu: bez toho jde do automation celý record modulu. -->
-                                <Setter Property="AutomationProperties.Name" Value="{Binding DisplayedName}"/>
+                                <Setter Property="AutomationProperties.Name" Value="{Binding DisplayedDistinctName}"/>
                                 <!-- Single-click spustí modul - konzistentní se stromy výše. -->
                                 <EventSetter Event="MouseLeftButtonUp" Handler="UsedModuleItem_MouseLeftButtonUp"/>
                             </Style>

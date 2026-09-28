@@ -249,4 +249,54 @@ public class LicenceVerifierTests
         clone.Received(1).QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
             Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 0));
     }
+
+    private static IMLRest SupportLogin()
+    {
+        var mlRest = MLRestMocks.Create();
+        mlRest.LoginName.Returns("_mline");
+        mlRest.UserID.Returns("_mline");
+        return mlRest;
+    }
+
+    [Fact]
+    public void SupportLogin_AcceptedWithoutVerifyLic_StaysWithoutLock()
+    {
+        // Parita s legacy EDUsers.VerifyLic:287 - podpora nezabírá licenci a nezakládá ACTIVITY zámek.
+        var mlRest = SupportLogin();
+        var licence = new Lic { CountsLOGIN = 5 };
+
+        var (outcome, returned) = LicenceVerifier.TryAcquireSession(
+            mlRest, () => licence, isAdmin: false,
+            Substitute.For<IPopupDisplayer>(), Substitute.For<IWindowNavigator>());
+
+        Assert.Equal(LicenceAcquireOutcome.Accepted, outcome);
+        Assert.Same(licence, returned);
+        Assert.Equal(0, mlRest.CacheLocks);
+        mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
+    }
+
+    [Fact]
+    public void SupportLogin_ReacquireLock_NoRequestNoLock()
+    {
+        var mlRest = SupportLogin();
+
+        Assert.True(LicenceVerifier.ReacquireLock(mlRest, new Lic { CountsLOGIN = 5 }));
+
+        Assert.Equal(0, mlRest.CacheLocks);
+        mlRest.DidNotReceiveWithAnyArgs().With();
+    }
+
+    [Theory]
+    [InlineData("jan.novak", "_mline", false)]
+    [InlineData("_MLINE", "_mline", false)] // legacy VB "=" porovnává binárně
+    [InlineData("", "", false)]            // před loginem / prázdný mock
+    [InlineData("_mline", "_mline", true)]
+    public void IsSupportLogin_OrdinalMatchOfLoginAndConnectionAccount(string login, string userId, bool expected)
+    {
+        var mlRest = MLRestMocks.Create();
+        mlRest.LoginName.Returns(login);
+        mlRest.UserID.Returns(userId);
+
+        Assert.Equal(expected, LicenceVerifier.IsSupportLogin(mlRest));
+    }
 }

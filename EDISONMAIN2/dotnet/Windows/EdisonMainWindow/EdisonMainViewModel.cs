@@ -489,6 +489,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         private bool _startupWindowOpened;
+
+        /// <summary>False = E2E běh: výchozí okno spouští legacy proces, na který test nečeká.</summary>
+        public bool OpensStartupWindow { get; set; } = true;
+
         /// <summary>
         /// Po prvním vykreslení shellu otevře uživatelův výchozí okno - jednou za běh (ne po
         /// přepnutí firmy). Nepovolený/chybějící modul (není ve stromu) se tiše přeskočí.
@@ -498,7 +502,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (_startupWindowOpened) return;
             _startupWindowOpened = true;
-            if (DefaultWindowId == 0) return;
+            if (!OpensStartupWindow || DefaultWindowId == 0) return;
             var module = AllExecutables().FirstOrDefault(e => e.ElementId == DefaultWindowId.ToString());
             if (module != null && OpenModuleCommand.CanExecute(module))
                 OpenModuleCommand.Execute(module);
@@ -1548,7 +1552,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        private const string PathSeparator = " › ";
+        private const string PathSeparator = ExecutableModule.PathSeparator;
 
         private static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
 

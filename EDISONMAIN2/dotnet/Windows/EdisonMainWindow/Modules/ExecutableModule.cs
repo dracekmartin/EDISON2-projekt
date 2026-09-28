@@ -16,6 +16,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>Dlouhý název pro plochu a menu spuštěných modulů; fallback krátký název.</summary>
         public string DisplayedLongName => LongName.Length > 0 ? LongName : DisplayedName;
 
+        public const string PathSeparator = " › ";
+
+        /// <summary>Názvy nadřazených rodin („Ekonomický systém › Servis"); <c>""</c> = modul v kořeni stromu.</summary>
+        public string FamilyPath { get; init; } = "";
+
+        /// <summary>Cesta stromem včetně listu. Z <see cref="DisplayedName"/>, takže nese i suffixy z filtru.</summary>
+        public string TreePath => FamilyPath.Length == 0 ? DisplayedName : FamilyPath + PathSeparator + DisplayedName;
+
+        /// <summary>
+        /// Název rozlišitelný bez kontextu stromu (seznam Používané): dlouhý název, jinak cesta stromem.
+        /// Stejné pravidlo jako <c>EdisonMainViewModel.ResolveRunningLabel</c>.
+        /// </summary>
+        public string DisplayedDistinctName => LongName.Length > 0 ? LongName : TreePath;
+
         public string ExecutablePath { get; init; } = "";
 
         public string FormName { get; init; } = "";
