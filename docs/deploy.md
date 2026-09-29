@@ -46,16 +46,18 @@ Nové jsou v sekci `PATCH~EDISON2` (řádky `PATCH~EDISON2~XML~<projekt>.prj`). 
 na REL Caché (Compiler DEV→REL), `.project` v repu je jen jméno:
 
 - `ALVA_EDISONMAIN2` - `ALVA.EDISONMAIN2.API.Tree`, `ALVA.EDISONMAIN2.EDInputForm.UserProfile`
+  a testy `ALVA.EDISONMAIN2.Tests.*`
 - `ALVA_EDControls` - `UserData`, `DesktopShortcuts`, `EDInputForm.{Form,Field,Group,Item}`,
-  `EDList.{List,Column}` **a include `EDInputForm.inc`** (bez něj se třídy nezkompilují)
-- `ALVA_EDTesting` - test framework, všechny Caché testy (členy jsou package `ALVA.EDISONMAIN2.Tests`,
-  `ALVA.EDControls.Tests`, `ALVA.TemplateDesigner.Tests`) a dema `EDIFExample`/`MockList`.
-  **Nevydávat**: nepatří do manifestu ani do záznamu Compileru. Nová testová třída je jeho členem
-  sama; do produkčního projektu (i `ALVA_TEMPLATE_DESIGNER`) patří jen produkční třída. Instalace
-  u zákazníka kompiluje projekty po jednom a končí na první chybě
-  (`EDISON/EDISONINS/CACHE/ALVA/SETUP/MainEx.cls`): testová třída ve vydaném projektu se bez
-  `MLTestCase` nezkompiluje a vydaný EDTesting by s příznakem `b` kompiloval všechny jeho podtřídy,
-  takže instalaci by zastavila jediná rozbitá testová třída.
+  `EDList.{List,Column}` **a include `EDInputForm.inc`** (bez něj se třídy nezkompilují); navíc
+  testy `ALVA.EDControls.Tests.*` a dema `EDIFExample`/`MockList`
+- `ALVA_EDTesting` - test framework (`MLTestCase`, `TestRunner`); testy obou projektů z něj dědí,
+  proto jde ve vydání s nimi.
+
+Past: instalace u zákazníka kompiluje projekty po jednom a končí na první chybě
+(`EDISON/EDISONINS/CACHE/ALVA/SETUP/MainEx.cls`). `ALVA_TEMPLATE_DESIGNER` nese testové třídy
+odvozené z `MLTestCase`, sekce `PATCH~TEMPLATEDESIGNER` ale `ALVA_EDTesting` nemá: patch TD
+u zákazníka, který EDTesting ještě nedostal, na kompilaci testů skončí. Stejně instalaci zastaví
+jediná nezkompilovatelná testová třída v kterémkoli vydávaném projektu.
 
 Existující, které shell volá (řádky jsou; verze musí nést změny pro shell): FULL `ALVA_SYS_Login`,
 `ALVA_SETUP` (řádek `newShell` v `LoadSettings` pro přepínač níže), `ALVA_SYSTEM`, `ALVA_EDISON`,
@@ -67,8 +69,7 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
 
 - `FILES_DESCRIPTION.INF` na Cloud2 (edituje se ručně) dostane řádky výše; bez nich nevznikne
   záznam v `EDISONCRC.bin` a updater soubor na stanice nikdy nezkopíruje.
-- Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty (bez `ALVA_EDTesting`), jinak
-  se do REL nic nepřenese.
+- Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty, jinak se do REL nic nepřenese.
 - Stanice: x64 Windows a WebView2 Evergreen runtime (bez něj se pruh podpory tiše nevyplní).
   .NET 10 instalovat nemusí: publish je framework-dependent, ale exe hledají runtime nejdřív
   v `dotnet\` vedle sebe (`SingleFilePublish.targets`) a EDLOADER ho tam rozbalí z `EDISONRUNTIME.zip`,
