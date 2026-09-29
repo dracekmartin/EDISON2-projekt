@@ -1398,7 +1398,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             var exe = CurrentExecutable();
             if (exe.Length == 0) return;
-            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+            Process.Start(EdisonCopyStartInfo(exe));
+        }
+
+        // Kopie startuje přímo jako legacy (frmNoMDI); bez značky by ji App poslal přes EDLOADER a jeho brány.
+        internal static ProcessStartInfo EdisonCopyStartInfo(string exe)
+        {
+            var info = new ProcessStartInfo(exe) { UseShellExecute = true };
+            info.ArgumentList.Add(App.LoaderMarker);
+            return info;
         }
 
         // Parita s legacy frmConnection: výchozí připojení řídí centrálně EDISONini.xml (jen pro čtení),

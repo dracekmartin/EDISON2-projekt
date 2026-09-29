@@ -22,13 +22,13 @@ předvyplní se jen když jméno v blobu == `LastLoginName`.
 
 `SettingsLoader` čte `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho roznáší ze
 serveru): **`connection@restport`, ne `@port`** (to je superserver); wizard zapisuje plnou legacy
-paritu (`initialized`/`forceChange`=1), uzly mimo ni (`securedMode`) zachovává. Dev kopii v repu
-**publish nesmí vydat** - v `C:\Edison\` leží živý soubor legacy (`CopyToPublishDirectory="Never"`).
-Argumenty `server=<host> restport=<port>` (`ConnectionOverride`) mají přednost a wizard přeskočí:
-„Připojit k databázi" jimi spouští **novou instanci** (session v procesu je na jeden server);
-uložená připojení žijí mimo `EDISONini.xml`, ten zůstává centrálně řízený (legacy `forceChange`).
-Před loginem shell opakuje brány EDLOADERu (`PassesPreLoginGates`: zákaz přihlašování přes
-`LoginGate`, `pending` serverové instalace), protože zástupce přímo na exe EDLOADER obchází.
+paritu (`initialized`/`forceChange`=1), uzly mimo ni (`securedMode`) zachovává. Argumenty
+`server=<host> restport=<port>` (`ConnectionOverride`) mají přednost a wizard přeskočí: „Připojit
+k databázi" jimi spouští **novou instanci** (session v procesu je na jeden server); uložená
+připojení žijí mimo `EDISONini.xml`, ten zůstává centrálně řízený (legacy `forceChange`).
+Start bez značky `reason=2` od EDLOADERu (pin na liště, zástupce na exe) `App` přesměruje přes
+`EDISON.exe` kvůli uzlu NewShell (`EDISONMAIN2_REDIRECTED` brání smyčce se starším EDLOADERem).
+Nepřesměrované starty (značka, připojení, `e2e=1`, `bin\`) kryjí brány `PassesPreLoginGates`.
 Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDATE2/CLAUDE.md).
 
 ## Session / ACTIVITY zámek

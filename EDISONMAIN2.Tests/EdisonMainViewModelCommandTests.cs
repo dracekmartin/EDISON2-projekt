@@ -90,6 +90,16 @@ public class EdisonMainViewModelCommandTests
     }
 
     [Fact]
+    public void EdisonCopyStartInfo_CarriesLoaderMarker()
+    {
+        // Bez značky by App kopii přesměroval přes EDLOADER (při výpadku LoadSettings by naskočil starý shell).
+        var info = EdisonMainViewModel.EdisonCopyStartInfo(@"C:\Edison\EDISONMAIN2.exe");
+
+        Assert.Equal(@"C:\Edison\EDISONMAIN2.exe", info.FileName);
+        Assert.False(App.ShouldRedirectToLoader(info.ArgumentList, loaderPresent: true, alreadyRedirected: false));
+    }
+
+    [Fact]
     public void ExitCommand_ConfirmGatesForceShutdown()
     {
         var popup = Substitute.For<IPopupDisplayer>();

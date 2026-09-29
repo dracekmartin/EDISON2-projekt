@@ -96,8 +96,8 @@ public class AppBootstrapper
 
         var prep = PrepareLogin(prefs);
 
-        // Brány legacy EDLOADERu (zákaz přihlašování, běžící instalace na serveru): zástupce přímo
-        // na EDISONMAIN2.exe je obchází, proto si je shell dělá sám.
+        // Brány legacy EDLOADERu (zákaz přihlašování, běžící instalace na serveru): start, který App
+        // nepřesměruje přes EDLOADER (značka reason=2, argumenty připojení), je obchází.
         if (!PassesPreLoginGates(prep.LoginRest, services))
         {
             Shutdown();

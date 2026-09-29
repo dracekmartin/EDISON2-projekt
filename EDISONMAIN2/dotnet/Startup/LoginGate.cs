@@ -10,8 +10,9 @@ public record LoginPermission(bool Allowed, bool CanAlter);
 
 /// <summary>
 /// Brána „smí se vůbec přihlašovat" (<c>^EDISON("System","Login","Deny")</c>, zapisuje legacy
-/// Nastavení). Legacy ji dělá EDLOADER před startem EDISONMAIN; zástupce přímo na EDISONMAIN2.exe
-/// ho obchází, proto si ji shell dělá sám na pre-login MLRest (bez firmy).
+/// Nastavení). Legacy ji dělá EDLOADER před startem EDISONMAIN; start, který <c>App</c> nepřesměruje
+/// přes EDLOADER (značka <c>reason=2</c>, argumenty připojení), ji obchází, proto si ji shell dělá sám
+/// na pre-login MLRest (bez firmy).
 /// </summary>
 public static class LoginGate
 {
