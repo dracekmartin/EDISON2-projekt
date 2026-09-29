@@ -531,8 +531,11 @@ public class PrintDialogViewModel : EDViewModel
 
     /// <summary>Imposice z exportních polí (sdílený dict) + rozměru stránky šablony.
     /// Null = vypnutá. ArgumentException = mřížka se na list nevejde (hláška pro uživatele).</summary>
-    private SheetLayoutOptions? BuildSheetOptions() =>
-        SheetComposer.FromParamValues(_paramValues, _template.PageSize);
+    /// <remarks>Bez panelu (jednostránková šablona) se neskládá - uložená volba je za agendu, takže
+    /// by jinak platila i tam, kde ji uživatel nevidí ani nemůže vypnout.</remarks>
+    private SheetLayoutOptions? BuildSheetOptions() => Usporadani.UkazatPanel
+        ? SheetComposer.FromParamValues(_paramValues, _template.PageSize)
+        : null;
 
     /// <summary>Měřítko tisku z exportních polí (1 = skutečná velikost).</summary>
     private float Meritko => SheetComposer.MeritkoZParamValues(_paramValues);

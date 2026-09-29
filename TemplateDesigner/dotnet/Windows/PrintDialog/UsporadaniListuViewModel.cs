@@ -60,15 +60,16 @@ public class UsporadaniListuViewModel : INotifyPropertyChanged
         if (Rezim == RezimListu.Oboustranne && !NabiziOboustranne) Rezim = RezimListu.ZaSebou;
         NabiziKopie = Rezim == RezimListu.Kopie;
         NabiziOrezoveZnacky = OrezoveZnacky;
-        UkazatPanel = PocetStranek >= 2 || JeZapnuto;
+        UkazatPanel = PocetStranek >= 2;
     }
 
     public int PocetStranek { get; }
 
     /// <summary>
     /// Panel se ukáže jen u šablony o víc stránkách (rozhodnutí Jan 28. 9.) - u jednostránkové
-    /// jen mate. Výjimka je už zapnuté uspořádání (dvě vývěsky na A4 z dřívějška): bez panelu by
-    /// platilo dál a nešlo by ho vidět ani vypnout.
+    /// jen mate. Bez výjimky pro už zapnuté uspořádání (rozhodnutí Jan 29. 9.): volba se ukládá
+    /// za agendu, takže ji stazka rozsvítila i u jednostránkové šablony téže agendy. Bez panelu
+    /// se uspořádání ani nepoužije (<c>PrintDialogViewModel.BuildSheetOptions</c>).
     /// </summary>
     public bool UkazatPanel { get; }
 

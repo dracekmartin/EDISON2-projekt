@@ -129,6 +129,7 @@ public class UsporadaniListuViewModelTests
         Assert.False(new UsporadaniListuViewModel([], 1, a4).UkazatPanel);                     // běžná A4
         Assert.True(new UsporadaniListuViewModel([], 2, a4).UkazatPanel);                      // doklad o dvou stránkách
         Assert.False(new UsporadaniListuViewModel([], 1, A5).UkazatPanel);                     // jednostránková i u A5
-        Assert.True(new UsporadaniListuViewModel(new() { [SheetLayoutKeys.Sheet] = "A3_LANDSCAPE" }, 1, a4).UkazatPanel);   // už zapnuté
+        // Uložené za agendu (třeba ze stazky) jednostránkovou šablonu panel neukáže (Jan 29. 9.).
+        Assert.False(new UsporadaniListuViewModel(new() { [SheetLayoutKeys.Sheet] = "A3_LANDSCAPE" }, 1, a4).UkazatPanel);
     }
 }

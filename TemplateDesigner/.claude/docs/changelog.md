@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-09-29 (3) - 🖨 uspořádání na list jen u šablony o víc stránkách
+
+Panel „Uspořádání na list" v okně Tisk se ukazoval i u jednostránkové šablony, když bylo
+uspořádání zapnuté z dřívějška. Volba se ale ukládá za agendu, takže ji rozsvítila stazka
+a uživatel ji pak viděl u šablony, kde nedává smysl, a nevěděl proč. Nově se panel řídí jen počtem
+stránek šablony a **jednostránková šablona se tiskne vždy stránka na list** - uložené uspořádání
+se u ní nepoužije (rozhodnutí Jan 29. 9.; skládání dvou vývěsek na A4 nemá doloženou poptávku).
+
 ## 2026-09-29 (2) - ↕ v Poznámkách jdou první dny platnosti
 
 Řazení „Dle typu" (výchozí) dávalo na začátek legendy negativní značky a vysvětlivky „jede

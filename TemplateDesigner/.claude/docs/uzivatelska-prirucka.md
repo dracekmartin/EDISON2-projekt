@@ -561,8 +561,8 @@ Nastavení výstupu je univerzální napříč agendami:
   výsledných souborů; při rozdělení výstupu na víc souborů se vybírá cílová složka, kolize jmen
   se řeší automaticky příponou `_2`, `_3`…
 - **Uspořádání na list** (panel pod formulářem) - víc stránek na jeden papír, který pak
-  rozříznete; jinak ho nechte vypnuté. Panel je vidět jen u šablony o víc stránkách, nebo
-  když je uspořádání už zapnuté z dřívějška. Zvolíte jen **papír** - kolik stránek se na něj vejde bez
+  rozříznete; jinak ho nechte vypnuté. Panel je vidět jen u šablony o víc stránkách;
+  jednostránková šablona se tiskne vždy stránka na list. Zvolíte jen **papír** - kolik stránek se na něj vejde bez
   zmenšování, spočítá návrhář sám (A5 na výšku: na A4 na šířku dvě, na A3 na výšku čtyři).
   Stránky jdou na místa po řadě. U šablony o víc stránkách se k tomu volí, kam jde **druhá stránka
   dokladu**:
