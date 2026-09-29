@@ -14,12 +14,15 @@ public class UpdaterTests
         public string LocalVersion { get; set; } = "";
         public string SourceVersion { get; set; } = "";
         public string StampSeen { get; set; } = "";
-        public bool ServerInstallation { get; set; }
+        public bool RunsFromSource { get; set; }
+        public bool LocalClient { get; set; } = true;
         public string? SourceDirSeen { get; private set; }
 
         protected override string GetLocalVersion() => LocalVersion;
 
-        protected override bool IsServerInstallation(string sourceDir) => ServerInstallation;
+        protected override bool RunsFromSourceDir(string sourceDir) => RunsFromSource;
+
+        protected override bool IsLocalClient(IReadOnlyList<string> localClients) => LocalClient;
 
         protected override string GetSourceVersion(string sourceDir)
         {
@@ -77,6 +80,52 @@ public class UpdaterTests
     {
         Assert.True(new Updater().LoadSettings(MockSettings("pending~1")).Pending);
         Assert.False(new Updater().LoadSettings(MockSettings("pending~0")).Pending);
+    }
+
+    [Fact]
+    public void LoadSettings_NoLocalClients_EveryInstallationIsServer()
+    {
+        // Legacy clsUpdate.IsServer: bez seznamu lokálních klientů jsou serverové všechny instalace.
+        Assert.True(new Updater().LoadSettings(MockSettings("version~260901.1")).ServerInstallation);
+    }
+
+    [Fact]
+    public void LoadSettings_OnlyOtherStationsListed_Server()
+    {
+        // Tvar řádku z DEV: localPath~<Pc>~<poznámka>.
+        Assert.True(new Updater().LoadSettings(MockSettings("localPath~XB-NEEXISTUJE~")).ServerInstallation);
+    }
+
+    [Fact]
+    public void LoadSettings_ThisStationListed_LocalClient()
+    {
+        var host = System.Net.Dns.GetHostName().ToLowerInvariant();
+
+        Assert.False(new Updater().LoadSettings(MockSettings("localPath~XB~", $"localPath~{host}~účtárna"))
+            .ServerInstallation);
+        Assert.False(new Updater().LoadSettings(MockSettings($@"localPath~\\{host}\Edison~"))
+            .ServerInstallation);
+    }
+
+    [Theory]
+    [InlineData("PC01", true)]
+    [InlineData(@"\\pc01\Edison", true)]
+    [InlineData(@"\\PC01", true)]
+    [InlineData(@"\\PC02\Edison", false)]
+    [InlineData("10.0.0.5", true)]
+    [InlineData(@"\\10.0.0.5\Edison", true)]
+    [InlineData("10.0.0.6", false)]
+    [InlineData("pc01.firma.local", false)] // tečka = IP, FQDN legacy nikdy nespáruje
+    [InlineData(@"C:\Edison", false)]
+    [InlineData("", false)]
+    public void IsListedClient_LegacyMatching(string entry, bool expected) =>
+        Assert.Equal(expected, Updater.IsListedClient([entry], "PC01", "10.0.0.5"));
+
+    [Fact]
+    public void IsListedClient_EmptyListOrUnknownIp_False()
+    {
+        Assert.False(Updater.IsListedClient([], "PC01", "10.0.0.5"));
+        Assert.False(Updater.IsListedClient(["10.0.0.5"], "PC01", ""));
     }
 
     [Fact]
@@ -237,17 +286,77 @@ public class UpdaterTests
     }
 
     [Fact]
-    public void Check_ForcedStampButShellRunsFromServerInstallation_None()
+    public void Check_ForcedStampButClientRunsFromSourceDir_None()
     {
-        // Legacy parita: shell na serveru / stanice ze share by kopíroval updater sám na sebe
+        // Legacy parita: klient spuštěný přímo ze zdroje by kopíroval updater sám na sebe
         // a při každém startu skončil na výjimce.
         var updater = new TestableUpdater
         {
             LocalVersion = "20260526.1", SourceVersion = "20260526.1", StampSeen = "65995,1",
-            ServerInstallation = true,
+            RunsFromSource = true,
         };
 
         var result = updater.Check(new UpdateSettings("20260526.1", @"\\edison", "", ForcedStamp: "66234,2"));
+
+        Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    [Fact]
+    public void Check_ShareStationWithEmptyLocalSourcePath_StartsWithoutReadingSource()
+    {
+        // Stanice ze share: zdroj = edisonPath serveru (D:\EDISON), ze stanice nečitelný - dřív
+        // „nelze zjistit serverovou verzi" při každém startu.
+        var updater = new TestableUpdater { LocalVersion = "260901.1", SourceVersion = "" };
+
+        var result = updater.Check(new UpdateSettings("260901.1", @"D:\EDISON", "") { ServerInstallation = true });
+
+        Assert.Equal(UpdateOutcome.None, result.Outcome);
+        Assert.Null(updater.SourceDirSeen);
+    }
+
+    [Fact]
+    public void Check_ServerInstallationCacheMismatch_Broken()
+    {
+        // Legacy VersionMismatch: serverová instalace s jinou verzí než Caché se nepřipojí.
+        var updater = new TestableUpdater { LocalVersion = "260901.1", SourceVersion = "260915.1" };
+
+        var result = updater.Check(new UpdateSettings("260915.1", @"D:\EDISON", "") { ServerInstallation = true });
+
+        Assert.Equal(UpdateOutcome.Broken, result.Outcome);
+        Assert.Contains("260901.1 -> 260915.1", result.Message);
+        Assert.Null(updater.SourceDirSeen);
+    }
+
+    [Fact]
+    public void Check_ServerInstallationDevBuild_None()
+    {
+        // Na DEV je v seznamu jen XB, vývojářský stroj je tedy serverový - DEBUG build nesmí skončit na Caché mismatchi.
+        var updater = new TestableUpdater { LocalVersion = VerzeInf.DevVersion };
+
+        var result = updater.Check(new UpdateSettings("260915.1", @"D:\EDISON", "") { ServerInstallation = true });
+
+        Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    [Fact]
+    public void Check_ServerInstallationPending_Broken()
+    {
+        // I serverová instalace se během instalace verze nepřihlásí (parita EDLOADER UpdateIsRunning).
+        var updater = new TestableUpdater { LocalVersion = "260915.1" };
+
+        var result = updater.Check(new UpdateSettings("260915.1", @"D:\EDISON", "", Pending: true)
+            { ServerInstallation = true });
+
+        Assert.Equal(UpdateOutcome.Broken, result.Outcome);
+        Assert.Contains("aktualizace systému", result.Message);
+    }
+
+    [Fact]
+    public void Check_ServerInstallationWithoutInstalledRelease_None()
+    {
+        var updater = new TestableUpdater { LocalVersion = "260901.1" };
+
+        var result = updater.Check(new UpdateSettings("", @"D:\EDISON", "") { ServerInstallation = true });
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
     }
@@ -442,6 +551,21 @@ public class UpdaterTests
         var result = updater.Check(new UpdateSettings("20260601.1", @"D:\Edison", "http://srv/edison"));
 
         Assert.Equal(UpdateOutcome.Broken, result.Outcome);
+    }
+
+    [Fact]
+    public void Check_ServerOrTerminalServerWithHttpSource_NeverLaunchesUpdater()
+    {
+        // Server / TS s http zdrojem: vynucená vlna ani novější verze na zdroji nesmí spustit EDUPDATE
+        // do instalace, ze které běží ostatní uživatelé.
+        var updater = new HttpSourceUpdater();
+        updater.Files["http://srv/edison/VERZE.INF"] = "LAST=20260601.1\r\n"u8.ToArray();
+
+        var result = updater.Check(new UpdateSettings("20260526.1", @"D:\Edison", "http://srv/edison",
+            ForcedStamp: "66234,2") { ServerInstallation = true });
+
+        Assert.Equal(UpdateOutcome.None, result.Outcome);
+        Assert.Empty(updater.Requested);
     }
 
     [Fact]

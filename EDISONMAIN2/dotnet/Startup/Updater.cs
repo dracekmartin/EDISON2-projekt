@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using EDControls;
@@ -21,6 +23,12 @@ public record UpdateSettings(string CacheVersion, string EdisonPath, string Loca
                              bool Pending = false)
 {
     public string SourceDir => string.IsNullOrEmpty(LocalSourcePath) ? EdisonPath : LocalSourcePath;
+
+    /// <summary>
+    /// Stanice není v seznamu lokálních klientů (legacy <c>clsUpdate.IsServer</c>): server, TS nebo
+    /// stanice spouštěná ze share. Prázdný seznam = serverová je každá instalace.
+    /// </summary>
+    public bool ServerInstallation { get; init; }
 }
 
 public enum UpdateOutcome
@@ -83,6 +91,7 @@ public class Updater
         bool pending = false;
         string version = "", edisonPath = "", localSourcePath = "", sourceServer = "", forcedStamp = "";
         int sourcePort = 0;
+        var localClients = new List<string>();
         for (int i = 1; i <= output.GetUpperBound(0); i++)
         {
             var parts = (output[i]?.ToString() ?? "").Split(del);
@@ -93,12 +102,47 @@ public class Updater
                 case "version": version = parts[1]; break;
                 case "edisonPath": edisonPath = parts[1]; break;
                 case "localSourcePath": localSourcePath = parts[1]; break;
+                case "localPath": localClients.Add(parts[1]); break; // localPath~<Pc>~<poznámka>
                 case "sourceServer": sourceServer = parts[1]; break;
                 case "sourcePort": int.TryParse(parts[1], out sourcePort); break;
                 case "NucenyUpdatClentu": forcedStamp = parts[1]; break;
             }
         }
-        return new UpdateSettings(version, edisonPath, localSourcePath, sourceServer, sourcePort, forcedStamp, pending);
+        return new UpdateSettings(version, edisonPath, localSourcePath, sourceServer, sourcePort, forcedStamp, pending)
+        {
+            ServerInstallation = !IsLocalClient(localClients),
+        };
+    }
+
+    protected virtual bool IsLocalClient(IReadOnlyList<string> localClients) =>
+        localClients.Count > 0 && IsListedClient(localClients, Dns.GetHostName(), LocalIPv4());
+
+    /// <summary>
+    /// Párování jako legacy <c>clsUpdate.IsServer</c>: záznam je jméno PC, <c>\\PC\...</c> nebo IP.
+    /// Záznam s tečkou se porovná s první IPv4 stanice, takže FQDN nikdy neprojde (legacy parita).
+    /// </summary>
+    internal static bool IsListedClient(IEnumerable<string> localClients, string hostName, string ipv4)
+    {
+        foreach (var entry in localClients)
+        {
+            var pc = entry.StartsWith(@"\\", StringComparison.Ordinal) ? entry[2..].Split('\\')[0] : entry;
+            if (string.Equals(pc, pc.Contains('.') ? ipv4 : hostName, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
+    }
+
+    private static string LocalIPv4()
+    {
+        try
+        {
+            return Dns.GetHostAddresses(Dns.GetHostName())
+                .FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)?.ToString() ?? "";
+        }
+        catch (SocketException)
+        {
+            return ""; // bez IP zbývá párování jménem PC
+        }
     }
 
     public UpdateCheckResult Check(UpdateSettings settings)
@@ -118,6 +162,13 @@ public class Updater
             return new(UpdateOutcome.Broken,
                 "Nelze zjistit verzi systému EDISON (chybí VERZE.INF). Kontaktujte Vašeho správce IS.");
 
+        // Serverovou instalaci aktualizuje serverový instalátor, ne EDUPDATE: zdroj stanic tu nemusí
+        // být čitelný (edisonPath je cesta na serveru) a kopie by šla do instalace, ze které běží ostatní.
+        if (settings.ServerInstallation)
+            return VerzeInf.IsSameVersion(settings.CacheVersion, local)
+                ? new(UpdateOutcome.None)
+                : CacheMismatch(local, settings.CacheVersion);
+
         var source = GetSourceVersion(settings.SourceDir);
         if (source == "")
             return new(UpdateOutcome.Broken,
@@ -125,9 +176,9 @@ public class Updater
 
         // Vynucená vlna: razítko z Caché nesedí s lokální stopou → plné stažení. Záměrně až
         // po dev guardu a Broken checcích a před Caché mismatchem (plná kopie ho může spravit).
-        // Ze serverové instalace ne (legacy parita): kopie updateru sama na sebe by shell ukončila při každém startu.
+        // Klient spuštěný přímo ze zdroje ne (legacy parita): kopie updateru sama na sebe by shell ukončila při každém startu.
         bool forcedPending = settings.ForcedStamp != "" && GetForcedStampSeen() != settings.ForcedStamp
-            && !IsServerInstallation(settings.SourceDir);
+            && !RunsFromSourceDir(settings.SourceDir);
 
         // I s novou verzí plná kopie: diff jde podle manifestu vydání a hotfix nahraný po instalaci by vynechal.
         if (VerzeInf.IsNewVersion(source, local))
@@ -137,11 +188,13 @@ public class Updater
             return new(UpdateOutcome.UpdateRequired, Version: source, Forced: true);
 
         if (!VerzeInf.IsSameVersion(settings.CacheVersion, local))
-            return new(UpdateOutcome.Broken,
-                $"Nesouhlasí verze programů a objektů [{local} -> {settings.CacheVersion}].");
+            return CacheMismatch(local, settings.CacheVersion);
 
         return new(UpdateOutcome.None);
     }
+
+    private static UpdateCheckResult CacheMismatch(string local, string cacheVersion) =>
+        new(UpdateOutcome.Broken, $"Nesouhlasí verze programů a objektů [{local} -> {cacheVersion}].");
 
     protected virtual string GetLocalVersion() => VerzeInf.Current;
 
@@ -176,8 +229,8 @@ public class Updater
         return client.GetByteArrayAsync(url).GetAwaiter().GetResult();
     }
 
-    /// <summary>Shell běží přímo ze serverové instalace (na serveru, stanice spouštěná ze share).</summary>
-    protected virtual bool IsServerInstallation(string sourceDir) =>
+    /// <summary>Shell běží přímo ze zdrojového adresáře stanic (legacy <c>clsUpdate.UpdateNeeded</c> sourcePath = targetPath).</summary>
+    protected virtual bool RunsFromSourceDir(string sourceDir) =>
         IsSameInstallation(AppContext.BaseDirectory, sourceDir);
 
     /// <summary>

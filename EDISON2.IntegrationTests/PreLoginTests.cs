@@ -43,4 +43,35 @@ public class PreLoginTests
         Assert.Equal(rows["version"][1], settings.CacheVersion);
         Assert.Equal(rows["edisonPath"][1], settings.EdisonPath);
     }
+
+    private sealed class LocalClientsCapture : Updater
+    {
+        public IReadOnlyList<string>? Seen { get; private set; }
+
+        protected override bool IsLocalClient(IReadOnlyList<string> localClients)
+        {
+            Seen = localClients;
+            return base.IsLocalClient(localClients);
+        }
+    }
+
+    [DevServerFact]
+    public void UpdaterLoadSettings_RealServer_ParserReadsLocalClientRows()
+    {
+        // Přejmenovaný řádek nebo posunuté pole by z každého lokálního klienta tiše udělal serverovou instalaci.
+        var rest = DevServer.Connect();
+        var raw = rest.QueryOrThrow("ALVA.SETUP.Main", "LoadSettings", new object[] { });
+        var localPaths = raw.Skip(1)
+            .Select(row => (row?.ToString() ?? "").Split(rest.Delimiter))
+            .Where(parts => parts[0] == "localPath")
+            .ToList();
+        Assert.True(localPaths.Count > 0,
+            "LoadSettings nevrátil žádný řádek 'localPath' - DEV má mít v seznamu lokálních klientů aspoň jeden počítač.");
+        Assert.All(localPaths, parts => Assert.Equal(3, parts.Length));
+
+        var updater = new LocalClientsCapture();
+        updater.LoadSettings(rest);
+
+        Assert.Equal(localPaths.Select(parts => parts[1]), updater.Seen);
+    }
 }

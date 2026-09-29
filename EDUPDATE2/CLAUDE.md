@@ -6,6 +6,10 @@ a spustí shell znovu. **Shell ho zatím nevolá:** `Updater.ActiveKind` (EDISON
 stopu vlny pak shell čte z jeho `CliUp.ini`. Přepnutí na EDUPDATE2 = změna konstanty a vydání
 shellu, `EDUPDATE2.exe` musí být ve zdrojovém adresáři serveru. Kontext: `docs/analyzy/update-mechanismus.md`.
 
+Updater (i vynucenou vlnu) shell spouští jen na stanici ze seznamu `localPath` v `LoadSettings`
+(legacy `IsServer`, shoda jménem PC, `\\PC\...` nebo IPv4). Každá jiná instalace (server, TS,
+stanice ze share) je serverová a kontroluje se jen proti Caché verzi; **prázdný seznam = serverové jsou všechny**.
+
 ## Invariant: žádné závislosti
 
 Žádná reference na EDControls, MLRest, EDLicence ani nic z `C:\Edison` - tyhle soubory
@@ -60,8 +64,8 @@ v `CrcFileTests`.
 
 Hotfix nástroj: opravené binárky se nahrají na server zákazníka a v Caché se nastaví
 razítko (`^EDISON("System","Update","NucenyUpdateLocalClientu")`). Stanice s jinou
-lokální stopou spustí updater s `NucenyUpdate=1`, i když zároveň přichází nová verze; shell
-spuštěný přímo ze serverové instalace vlnu vynechá (rozhoduje `Updater.Check` v EDISONMAIN2).
+lokální stopou spustí updater s `NucenyUpdate=1`, i když zároveň přichází nová verze; serverová
+instalace i klient spuštěný přímo ze zdroje vlnu vynechá (rozhoduje `Updater.Check` v EDISONMAIN2).
 Po úspěchu se razítko zapíše do `CliUp2.ini` vedle binárek. Per-instalace, ne per-user (jinak vlna běží za každého
 Windows uživatele zvlášť); vlastní soubor, ne legacy `CliUp.ini` (relativní cesta,
 čtení bez ochrany).
