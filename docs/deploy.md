@@ -71,14 +71,23 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
   záznam v `EDISONCRC.bin` a updater soubor na stanice nikdy nezkopíruje.
 - Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty, jinak se do REL nic nepřenese.
 - Stanice: x64 Windows a WebView2 Evergreen runtime (bez něj se pruh podpory tiše nevyplní).
+  Data WebView2 má každý uživatel Windows v `%LOCALAPPDATA%\m-line\EDISONMAIN2\WebView2`; složku
+  `EDISONMAIN2.exe.WebView2` vedle exe ze starších buildů lze smazat.
   .NET 10 instalovat nemusí: publish je framework-dependent, ale exe hledají runtime nejdřív
   v `dotnet\` vedle sebe (`SingleFilePublish.targets`) a EDLOADER ho tam rozbalí z `EDISONRUNTIME.zip`,
   když globální instalace chybí.
 - Serverový adresář (zdroj stanic: UNC share, nebo http URL jako u legacy) musí mít `VERZE.INF`
   a `EDUPDATE.EXE`; shell bez `VERZE.INF` vedle exe skončí hláškou, instaluje se tedy vždy
   do adresáře EDISONu, nikdy samostatně.
-- Stanice jde za serverovou instalací vždy, flag „update" v Nastavení na ni nemá vliv (legacy parita);
-  update check vynechá jen server bez nainstalovaného release (prázdné `^EDISON("System","Update",2)`, dev).
+- Klientský update (EDUPDATE i vynucenou vlnu) dostane jen stanice ze seznamu počítačů v Nastavení >
+  Aktualizace (`localPath`: jméno PC, `\\PC\...` nebo IPv4, plné doménové jméno nefunguje; legacy
+  `clsUpdate.IsServer`). Ostatní instalace (server, TS, stanice spouštěné ze share) shell bere jako
+  serverové a jen porovná `VERZE.INF` s verzí v Caché. Prázdný seznam znamená, že jsou serverové
+  všechny, lokální klienti proto v seznamu být musí. Flag „update" v Nastavení na to vliv nemá (legacy
+  parita); update check vynechá jen server bez nainstalovaného release (prázdné
+  `^EDISON("System","Update",2)`, dev).
+- Moduly v hostu posílají serveru verzi z `VERZE.INF` stanice (dev `999999.9` ne) a při nesouladu
+  skončí hláškou „Rozdílná verze Caché a verze EDISON, modul bude ukončen." stejně jako shell.
 - Setup wizard shellu nikdy nespouštět v serverovém instalačním adresáři: přepíše `EDISONini.xml`,
   který EDUPDATE roznáší na všechny stanice (a při updatu ho stejně vrátí).
 
@@ -87,8 +96,7 @@ Připojení shell čte z `EDISONini.xml` serverové instalace; dev kopii z repa 
 
 ## Terminálový server
 
-Klientský update dostane jen instalace ze seznamu `localPath` v Nastavení (jméno PC nebo IP, FQDN
-nesedí; legacy `clsUpdate.IsServer`). TS s vlastní instalací tam proto musí být, jinak ho update
+TS s vlastní instalací musí být v seznamu `localPath` (pravidlo v Ops prerekvizitách), jinak ho update
 přeskočí a po instalaci verze skončí hláškou „Nesouhlasí verze programů a objektů". TS, který běží
 přímo ze serverové instalace, v seznamu být nemá: soubory mu obnoví instalace verze na serveru.
 
@@ -121,9 +129,15 @@ Zástupce na ploše míří na `EDISON.exe` (EDLOADER). Ten místo `EDISONMAIN.E
   `ALVA.SETUP.Main.LoadSettings`, řádek `newShell`),
 - vedle `EDISON.exe` jsou `EDISONMAIN2.exe`, `EDControls.dll`, `EDISONMAIN2API.exe` a runtime:
   kompletní `dotnet\` vedle exe, nebo globální x64 .NET 10 Desktop Runtime (`%ProgramW6432%\dotnet`).
-  Globální chybí a je `EDISONRUNTIME.zip` → EDLOADER zip rozbalí do `dotnet\` (staging + atomický
-  přesun, mutex pro víc sezení na terminálovém serveru, nutné právo zápisu do adresáře EDISONu).
-  Existující, ale neúplný `dotnet\` = starý shell: exe by na globální runtime nepřešel.
+  `EDISONRUNTIME.zip` EDLOADER rozbalí do `dotnet\`, když globální chybí, a existující `dotnet\`
+  aktualizuje vždy (exe ho preferují i před globálním).
+
+Runtime se rozbaluje přes staging a atomický přesun pod zámkem `dotnet.lock\lock`. Zámek platí pro
+sezení TS i pro stanice spouštěné ze share a po pádu držitele ho uvolní systém; rozbalení potřebuje
+právo zápisu do adresáře EDISONu. Na zámek čeká jen první instalace, nejvýš 2 minuty, a když selže,
+spustí se starý shell. Záplatu existujícího `dotnet\` stanice buď provede, nebo, když zámek drží jiná
+stanice nebo záplata selže, rovnou spustí nový shell na stávající verzi. Existující, ale neúplný
+`dotnet\` znamená starý shell: exe by na globální runtime nepřešel.
 
 Jinak, i když selže `LoadSettings`, spustí starý shell; nedostupný server zastaví start už
 v `CheckLogin` (beze změny). Fallback končí spuštěním procesu: nový shell, který spadne hned po
@@ -139,7 +153,12 @@ z libovolného namespace:
 - zkontrolovat: `w ^|"MLINE"|EDISON("System","NewShell")`
 - vypnout: `k ^|"MLINE"|EDISON("System","NewShell")`
 
-Zapnutí i vypnutí platí od příštího startu přes zástupce, běžící shelly dojedou. Platí pro celou
-instalaci, tedy pro všechny firmy na serveru. Jedna stanice se ke starému shellu vrátí zástupcem
-na `EDISONMAIN.EXE reason=2` (obchází brány EDLOADERu). Na sdíleném dev serveru hodnota 1 přepne
+Zapnutí i vypnutí platí od příštího startu, běžící shelly dojedou. Platí i pro shell připnutý na hlavní
+panel nebo spuštěný přímo z `EDISONMAIN2.exe`: start bez značky `reason=2` shell přesměruje přes
+`EDISON.exe`. `EDISON.exe` a `EDISONMAIN2.exe` proto vydávej spolu; se starším EDLOADERem bez značky
+to funguje taky, jen s jedním přesměrováním navíc.
+
+Přepínač platí pro celou instalaci, tedy pro všechny firmy na serveru. Jedna stanice se vrátí ke
+starému shellu zástupcem `EDISONMAIN.EXE reason=2`, k novému shellu bez EDLOADERu vede zástupce
+`EDISONMAIN2.exe reason=2`; oba obcházejí brány EDLOADERu. Na sdíleném dev serveru hodnota 1 přepne
 každou stanici s novým EDLOADERem.

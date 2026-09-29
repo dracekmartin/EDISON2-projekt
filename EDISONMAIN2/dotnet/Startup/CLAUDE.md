@@ -27,8 +27,7 @@ paritu (`initialized`/`forceChange`=1), uzly mimo ni (`securedMode`) zachovává
 k databázi" jimi spouští **novou instanci** (session v procesu je na jeden server); uložená
 připojení žijí mimo `EDISONini.xml`, ten zůstává centrálně řízený (legacy `forceChange`).
 Start bez značky `reason=2` od EDLOADERu (pin na liště, zástupce na exe) `App` přesměruje přes
-`EDISON.exe` kvůli uzlu NewShell (`EDISONMAIN2_REDIRECTED` brání smyčce se starším EDLOADERem).
-Nepřesměrované starty (značka, připojení, `e2e=1`, `bin\`) kryjí brány `PassesPreLoginGates`.
+`EDISON.exe` kvůli uzlu NewShell (`EDISONMAIN2_REDIRECTED` brání smyčce); výjimky (připojení, `e2e=1`, `bin\`) kryjí brány `PassesPreLoginGates`.
 Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDATE2/CLAUDE.md).
 
 ## Session / ACTIVITY zámek
@@ -54,10 +53,8 @@ Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDA
   dvoufázově: WPF okna shellu **před** swapem Idfa (volají server přes sdílený MLRest), legacy
   moduly až po `Accepted`. Veto okna (`e.Cancel` v Closing) switch ruší - přeživší okno by
   mluvilo s cizí firmou; totéž switch user; confirm jen s moduly.
-- Zavření shellu (= konec aplikace i všech agend) potvrzuje v `Closing`
-  `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu
-  musí jít přes `ShellShutdown.Force` / `SuppressCloseConfirm` na VM** - jinak force logout
-  nebo version gate uvízne na dialogu, který smí uživatel odmítnout.
-- `TryAcquireSession` načítá licenci jednou (loader ukazuje hlášku `GetActiveLic`). `LogLogin` jde po
-  `Accepted` startu a switch user, **ne** po přepnutí firmy (parita). `SyncFromMline` smí na klon mimo UI
-  thread: EDLicence `Update` na rozdíl od `Activation` nesahá na modulový globál.
+- Zavření shellu (= konec aplikace i všech agend) potvrzuje v `Closing` `EdisonMainViewModel.ConfirmShellClose`,
+  takže **každé programové ukončení po vzniku shellu musí jít přes `ShellShutdown.Force` / `SuppressCloseConfirm`
+  na VM**, jinak force logout nebo version gate uvízne na dialogu, který smí uživatel odmítnout.
+- `LogLogin` jde po `Accepted` startu a switch user, **ne** po přepnutí firmy (parita). `SyncFromMline` smí
+  na klon mimo UI thread: EDLicence `Update` na rozdíl od `Activation` nesahá na modulový globál.
