@@ -106,12 +106,12 @@ stale `_DIFF` na disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy
 ## Legacy moduly - EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.exe` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET
-Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 17 polí (pořadí
+Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 20 polí (pořadí
 `WindowNavigator.BuildLauncherArguments`), host je mapuje do `MLProps`: [13] zástupce z plochy
 (viz `docs/zastupci-na-plose.md`), [14] admin → `UserIsAdmin` (klíč pro `CAccess(useAdmin)`
 bypass práv), [15] → `UserMayUpdate` (gate serverového update v legacy Nastavení) - host bez pole
 defaultuje na **false**; [16]/[17] osobní adresář a e-mail z loginu → `UserDirectory`/`UserEmail`
-(bez nich agendy exportují do kořene disku). Host nastavuje i `EDFormID` formy - agendy přes něj
+(bez nich agendy exportují do kořene disku); [18]-[20] verze, stav a konec platnosti licence shellu. Host nastavuje i `EDFormID` formy - agendy přes něj
 čtou `AccessTable[EDFormID]`, bez něj jsou volby gate-ované právem zašedlé. Vstupy:
 `TryGetFormFromArgs` (typ reflexí ve volajícím assembly - jediný retrofit
 `EDISONMAIN/ApplicationEvents.vb`) a `TryRunFromArgs` (`Assembly.LoadFrom`, generický host).
@@ -127,8 +127,9 @@ Pasti:
   i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks.
   TemplateDesigner totéž bez hosta (`LaunchesDirectly`, viz `TemplateDesigner/CLAUDE.md`); legacy
   launchery TD (ISYJR2, MHD2Linky, TISKJR stub) guid propagují jen při `CacheLocks==1`.
-- `ConfigureForm` staví `MLProps.AccessTable` z `licensedElements` - bez nich moduly gate-ující
-  obsah přes `RightGranted` (např. DSINPUT Plánování) nezobrazí data.
+- `ConfigureForm` skládá licenci z [12] a [18]-[20], jen je-li licence shellu v pořádku (E01) a ještě
+  platná; jinak (i za starším shellem) volá `GetActiveLic` (~1 s na DEV) včetně hlášky. Z ní `LicenseTable`,
+  `ReadOnlyMode` a `AccessTable`; bez `Version` editor práv v USERS obrátí filtr licencovaných práv a smaže je.
 - Host roztáčí formu přes **`ShowDialog`, ne `Application.Run`** (parita se starým `EDPROCESS`):
   legacy formy se zavírají samy - `DialogResult`, nebo `Close()` před otevřením sesterské formy
   přes `ShowEdisonForm` (ISYJR → ISYJR2) - a v `Application.Run` loopu tím umře proces.

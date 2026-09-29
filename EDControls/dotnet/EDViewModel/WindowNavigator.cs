@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -408,6 +409,8 @@ public class WindowNavigator : IWindowNavigator
         // formuláři přístupová práva (MLProps.AccessTable). Bez toho moduly, které gate-ují
         // obsah přes RightGranted (např. DSINPUT Plánování), nezobrazí data. Viz FormToRunGetter.
         var licence = EDServices.Current.ActiveLicence;
+        // Při retry nad limitem licencí během přepnutí firmy je to ještě licence původní firmy; spouští se
+        // tehdy jen okno aktivity pro admina, které licenci nekontroluje.
         string licensedElements = licence?.Elements is { } els ? string.Join(",", els) : "";
 
         var prc = Process.Start(new ProcessStartInfo
@@ -416,7 +419,9 @@ public class WindowNavigator : IWindowNavigator
             FileName = launcherPath,
             Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath,
                 licensedElements, EDServices.Current.IsAdmin, EDServices.Current.MayUpdate, shortcutPayload,
-                EDServices.Current.UserDirectory, EDServices.Current.UserEmail),
+                EDServices.Current.UserDirectory, EDServices.Current.UserEmail,
+                licence?.Version ?? "", licence is null ? "" : ((int)licence.State).ToString(CultureInfo.InvariantCulture),
+                licence?.ValidityTo ?? ""),
         });
         if (prc != null)
         {
@@ -434,6 +439,13 @@ public class WindowNavigator : IWindowNavigator
         || string.Equals(Path.GetFileName(exeName), "TemplateDesigner.exe", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Shell GUID = modul jede s Locks=1 pod shellovým zámkem; bez zámku (podpora, selhaný ReacquireLock)
+    /// by každý jeho request padl na LockExist, proto prázdný = vlastní GUID bez kontrol.
+    /// </summary>
+    internal static string ShellGuidFor(IMLRest mlRest, bool shareShellSession) =>
+        shareShellSession && mlRest.CacheLocks == 1 ? mlRest.Guid : "";
+
+    /// <summary>
     /// Složí payload pro generický host: značka + sys kontext + formFqn + shellGuid +
     /// inputParam + cesta k agendě + licencované elementy. Pozice 1–11 jsou shodné s legacy
     /// kontraktem (takže `FormToRunGetter.TryGetFormFromArgs` retrofitnutých agend zůstává
@@ -443,24 +455,25 @@ public class WindowNavigator : IWindowNavigator
     /// admin flag [14] a právo update [15] ("1"/"0" → MLProps.UserIsAdmin / UserMayUpdate; host bez pole
     /// defaultuje na false), osobní adresář [16] a e-mail [17] (→ MLProps.UserDirectory / UserEmail, parita
     /// s legacy frmNoMDI; host bez polí dá ""). Koncové zpětné lomítko adresáře se odřízne - `"C:\dir\"` by
-    /// argv parser četl jako escapovanou uvozovku a slil pole.
+    /// argv parser četl jako escapovanou uvozovku a slil pole. Verze [18], stav [19] a konec platnosti [20]
+    /// licence shellu (`Lic.Version`, `(int)Lic.State`, `Lic.ValidityTo`) doplní hostu k elementům [12]
+    /// celou licenci - host pak nevolá `GetActiveLic` (seznam všech licencí firmy, na DEV ~1 s) při každém
+    /// startu modulu, dokud je licence v pořádku a platná.
     /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
     /// argv-safe (bez uvozovek a mezer).
     /// </summary>
-    /// <summary>
-    /// Shell GUID = modul jede s Locks=1 pod shellovým zámkem; bez zámku (podpora, selhaný ReacquireLock)
-    /// by každý jeho request padl na LockExist, proto prázdný = vlastní GUID bez kontrol.
-    /// </summary>
-    internal static string ShellGuidFor(IMLRest mlRest, bool shareShellSession) =>
-        shareShellSession && mlRest.CacheLocks == 1 ? mlRest.Guid : "";
-
     internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
         string inputParam, string agendaPath, string licensedElements, bool isAdmin, bool mayUpdate,
-        string shortcutPayload = "", string userDirectory = "", string userEmail = "") =>
-        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\" \"{Dir(userDirectory)}\" \"{userEmail}\"";
+        string shortcutPayload = "", string userDirectory = "", string userEmail = "",
+        string licenceVersion = "", string licenceState = "", string licenceValidTo = "") =>
+        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\" \"{Dir(userDirectory)}\" \"{userEmail}\" \"{Version(licenceVersion)}\" \"{licenceState}\" \"{Plain(licenceValidTo)}\"";
 
     private static string Flag(bool value) => value ? "1" : "0";
     private static string Dir(string directory) => directory.TrimEnd('\\');
+    // Verze jde do legacy Val(): stačí číslice a tečka, cokoli dalšího by jen hrozilo rozbitím argv.
+    private static string Version(string version) => new(version.Where(c => char.IsDigit(c) || c == '.').ToArray());
+    // Uvozovka nebo koncové zpětné lomítko by pole slily s dalším, mezera uvnitř uvozovek nevadí.
+    private static string Plain(string value) => value.Replace("\"", "").TrimEnd('\\');
 
     public static string ResolveExecutablePath(string relativePath)
     {
