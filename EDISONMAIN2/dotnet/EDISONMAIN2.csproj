@@ -4,7 +4,7 @@
     <OutputType>WinExe</OutputType>
     <!-- Bez platform version: HWND WebView2 (FontZoomWebView) nepotřebuje WinRT projekce.
          Composition varianta vyžadovala windows10.0.17763 + 23 MB Microsoft.Windows.SDK.NET.dll
-         v single-file bundlu — HWND ji z buildu úplně vyřazuje. -->
+         v single-file bundlu - HWND ji z buildu úplně vyřazuje. -->
     <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -59,8 +59,9 @@
   <Import Project="..\..\SingleFilePublish.targets" />
 
   <!-- Transitivní závislosti EDLibrary (WinForms grid, přímý DB klient, mail), které shell
-       nenačítá — z single-file bundle ven jako loose soubory. V C:\Edison\ už leží z legacy
-       buildů, takže případná obskurní code path je vedle exe pořád najde. -->
+       nenačítá - z single-file bundle ven jako loose soubory. V C:\Edison\ už leží z legacy
+       buildů, takže případná obskurní code path je vedle exe pořád najde. Chybějící soubor start
+       neshodí: host .NET 10 existenci app-local assetů z deps.json nekontroluje. -->
   <ItemGroup>
     <LooseFromSingleFile Include="C1.Win.4.5.2" />
     <LooseFromSingleFile Include="C1.Win.C1FlexGrid.4.5.2" />
