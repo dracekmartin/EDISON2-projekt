@@ -30,23 +30,32 @@ Z repa EDISON (build do `C:\Edison`):
   detekci nové verze nenastartuje (`CopyUpdater` selže s popupem). `EDUPDATE2.exe` (repo EDISON2)
   jen po přepnutí shellu na něj (`Updater.ActiveKind`).
 
-Nové řádky `FILES_DESCRIPTION.INF` (FULL, typ EXE/DLL): `EDISONMAIN2.exe`, `EDControls.dll`,
-`EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`; řádek `EDISONMAIN2API.dll` zrušit. Ostatní
-soubory výše řádky už mají. `EDISONRUNTIME.zip` jen `FULL~~DLL~...`: řádek `PATCH~EDISON2` by 70 MB
-vezl v každém patchi shellu (a binární patch maže `EDISONCRC.bin`, stanice pak stahují vše), záplata
-runtime proto jde FULL verzí. Rozbalený strom runtime distribuce neunese (plochý SETUP.DAT, strop 999
+Řádky manifestu `FILES_DESCRIPTION.INF`: FULL `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`,
+`EDUPDATE2.exe` a `FULL~~DLL~...\EDISONRUNTIME.zip`; sekce `PATCH~EDISON2` `EDISONMAIN2.exe`,
+`EDControls.dll` a Caché projekty níže. Ostatní soubory výše mají řádky z legacy (`USERS.exe` v
+`PATCH~USERS`, `EDISONMAIN.exe.config` jen v `PATCH~MHD2Linky`). FULL bere řádky FULL i PATCH. Patch
+se staví jen jako XML PATCH a z řádků zaškrtnutých balíčků bere jen XML a INF
+(`EDISON/SETUPWIZARD/frmMain.vb`): všechny binárky shellu včetně `EDISONMAIN2.exe`, `EDControls.dll`
+a `EDISONRUNTIME.zip` (i záplata runtime) chodí k zákazníkovi jen FULL verzí, patch EDISON2 nese jen
+Caché projekty. Runtime jde zipem, rozbalený strom distribuce neunese (plochý SETUP.DAT, strop 999
 souborů, duplicitní jména `*.resources.dll`).
 
-## Caché projekty (řádky `FULL~~XML~<projekt>.prj`)
+## Caché projekty
 
-Nové - projekt musí existovat na REL Caché (Compiler DEV→REL), `.project` v repu je jen jméno:
+Nové jsou v sekci `PATCH~EDISON2` (řádky `PATCH~EDISON2~XML~<projekt>.prj`). Projekt musí existovat
+na REL Caché (Compiler DEV→REL), `.project` v repu je jen jméno:
 
-- `ALVA_EDISONMAIN2` - `ALVA.EDISONMAIN2.API.Tree`, `ALVA.EDISONMAIN2.EDInputForm.UserProfile`;
-  bez package `Tests`
+- `ALVA_EDISONMAIN2` - `ALVA.EDISONMAIN2.API.Tree`, `ALVA.EDISONMAIN2.EDInputForm.UserProfile`
 - `ALVA_EDControls` - `UserData`, `DesktopShortcuts`, `EDInputForm.{Form,Field,Group,Item}`,
-  `EDList.{List,Column}` **a include `EDInputForm.inc`** (bez něj se třídy nezkompilují); bez
-  `Tests` a bez demo `EDIFExample`/`MockList`
-- **Nevydávat** `ALVA_EDTesting` (test framework)
+  `EDList.{List,Column}` **a include `EDInputForm.inc`** (bez něj se třídy nezkompilují)
+- `ALVA_EDTesting` - test framework, všechny Caché testy (členy jsou package `ALVA.EDISONMAIN2.Tests`,
+  `ALVA.EDControls.Tests`, `ALVA.TemplateDesigner.Tests`) a dema `EDIFExample`/`MockList`.
+  **Nevydávat**: nepatří do manifestu ani do záznamu Compileru. Nová testová třída je jeho členem
+  sama; do produkčního projektu (i `ALVA_TEMPLATE_DESIGNER`) patří jen produkční třída. Instalace
+  u zákazníka kompiluje projekty po jednom a končí na první chybě
+  (`EDISON/EDISONINS/CACHE/ALVA/SETUP/MainEx.cls`): testová třída ve vydaném projektu se bez
+  `MLTestCase` nezkompiluje a vydaný EDTesting by s příznakem `b` kompiloval všechny jeho podtřídy,
+  takže instalaci by zastavila jediná rozbitá testová třída.
 
 Existující, které shell volá (řádky jsou; verze musí nést změny pro shell): FULL `ALVA_SYS_Login`,
 `ALVA_SETUP` (řádek `newShell` v `LoadSettings` pro přepínač níže), `ALVA_SYSTEM`, `ALVA_EDISON`,
@@ -58,7 +67,8 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
 
 - `FILES_DESCRIPTION.INF` na Cloud2 (edituje se ručně) dostane řádky výše; bez nich nevznikne
   záznam v `EDISONCRC.bin` a updater soubor na stanice nikdy nezkopíruje.
-- Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty, jinak se do REL nic nepřenese.
+- Compiler potřebuje záznam projektu s těmi binárkami a Caché projekty (bez `ALVA_EDTesting`), jinak
+  se do REL nic nepřenese.
 - Stanice: x64 Windows a WebView2 Evergreen runtime (bez něj se pruh podpory tiše nevyplní).
   .NET 10 instalovat nemusí: publish je framework-dependent, ale exe hledají runtime nejdřív
   v `dotnet\` vedle sebe (`SingleFilePublish.targets`) a EDLOADER ho tam rozbalí z `EDISONRUNTIME.zip`,
@@ -73,6 +83,33 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
 
 Připojení shell čte z `EDISONini.xml` serverové instalace; dev kopii z repa publish nevydává
 (`CopyToPublishDirectory="Never"` v csproj).
+
+## Terminálový server
+
+Klientský update dostane jen instalace ze seznamu `localPath` v Nastavení (jméno PC nebo IP, FQDN
+nesedí; legacy `clsUpdate.IsServer`). TS s vlastní instalací tam proto musí být, jinak ho update
+přeskočí a po instalaci verze skončí hláškou „Nesouhlasí verze programů a objektů". TS, který běží
+přímo ze serverové instalace, v seznamu být nemá: soubory mu obnoví instalace verze na serveru.
+
+Aktivní updater (legacy `EDUPDATE.EXE`) čeká bez limitu, až na stroji skončí všechny procesy
+`EDISONMAIN2`, `EDISONMAIN` a `EDTRAYMAIN`, i v sezeních ostatních uživatelů, a po dokončení čeká na
+potvrzení hlášky. Kdo mezitím spustí shell, dostane „Aktualizaci nelze spustit" (kopie běžícího
+`EDUPDATE.EXE` selže) a shell skončí. Soubor zamčený jiným procesem z adresáře EDISONu (agenda,
+TemplateDesigner, naplánovaná úloha) shodí kopii a updater vrátí starou verzi. Novou verzi i vynucenou
+vlnu proto na TS nasazuj mimo provoz:
+
+1. Zablokovat nová přihlášení (`change logon /drain`), přihlášené odhlásit; `query user` ukáže jen
+   vlastní sezení.
+2. Nainstalovat verzi na serveru.
+3. V PowerShellu spuštěném jako správce `Get-Process | ? Path -like '<adresář EDISONu>\*'` nic nevrátí
+   (pokrývá i `EDTRAYMAIN`, zbylý `EDUPDATE`, `EDISONMAIN2API` a `TemplateDesigner`).
+4. Správce v jediném sezení spustí EDISON zástupcem, u instalace pod Program Files jako správce
+   (`EDUPDATE.EXE` běží `asInvoker`, bez práva zápisu kopie selže). Updater doběhne, hlášku potvrdí,
+   shell znovu nastartuje a `VERZE.INF` v adresáři TS nese novou verzi.
+5. `change logon /enable`.
+
+`EDUPDATE2` (po přepnutí `Updater.ActiveKind`) nečeká donekonečna: po 2 minutách update vzdá. TS se
+tak ani s ním za provozu neaktualizuje, postup platí i pro něj.
 
 ## Zapnutí u zákazníka
 
