@@ -1,3 +1,4 @@
+using System.IO;
 using EDControls.EDSupportPanel;
 using EDControls.EDTheme;
 using EDControls.EDViewModel;
@@ -48,8 +49,16 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
     // Poslední URL, kterou si vyžádal hostitel - jen ta smí zůstat v pruhu (viz OnNavigationStarting).
     private string? _widgetUrl;
 
+    // Default je složka vedle exe: na TS, share a v Program Files do ní uživatel nezapíše (pruh zůstane
+    // prázdný) a na TS by v ní všichni uživatelé sdíleli cookies a sezení widgetu.
+    internal static string UserDataFolder { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "m-line", "EDISONMAIN2", "WebView2");
+
     public FontZoomWebView()
     {
+        // Jen před EnsureCoreWebView2Async - wrapper z nich volá CoreWebView2Environment.CreateAsync, později je ignoruje.
+        CreationProperties = new CoreWebView2CreationProperties { UserDataFolder = UserDataFolder };
         // Hodnota nastavená před inicializací CoreWebView2 se aplikuje po ní (WPF wrapper).
         ZoomFactor = FontService.BodySize / WidgetBaseFontPx;
         DefaultBackgroundColor = BackgroundFor(ThemeService.Current);

@@ -1,3 +1,4 @@
+using System.IO;
 using EDControls.EDTheme;
 using EDISONMAIN2.MiniApps;
 using Microsoft.Web.WebView2.Wpf;
@@ -25,6 +26,34 @@ public class FontZoomWebViewTests
         var map = typeof(FontZoomWebView).GetInterfaceMap(typeof(IDisposable));
         var target = Assert.Single(map.TargetMethods);
         Assert.Equal(typeof(FontZoomWebView), target.DeclaringType);
+    }
+
+    [Fact]
+    public void UserDataFolder_PerWindowsUser_NotNextToExe()
+    {
+        // Vedle exe na TS/share nejde zapisovat a na TS by cookies widgetu sdíleli všichni uživatelé.
+        var expected = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "m-line", "EDISONMAIN2", "WebView2");
+        Assert.Equal(expected, FontZoomWebView.UserDataFolder);
+        Assert.False(FontZoomWebView.UserDataFolder.StartsWith(AppContext.BaseDirectory, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void Constructor_SetsPerUserDataFolder()
+    {
+        // Login okno i pruh shellu vznikají přes new FontZoomWebView() - jiná inicializace WebView2 v shellu není.
+        EDTesting.Sta.RunOnAppThread(() =>
+        {
+            var widget = new FontZoomWebView();
+            try
+            {
+                Assert.Equal(FontZoomWebView.UserDataFolder, widget.CreationProperties?.UserDataFolder);
+            }
+            finally
+            {
+                widget.Dispose();
+            }
+        });
     }
 
     [Fact]
