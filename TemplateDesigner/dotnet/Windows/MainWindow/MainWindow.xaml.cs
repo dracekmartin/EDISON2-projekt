@@ -171,7 +171,7 @@ public partial class MainWindow : Window
         _vm.PredlohaZmenena = (predloha, zNahledu) =>
         {
             CanvasScrollViewer.ScrollToVerticalOffset(0);
-            if (!_vm.NahledCelyDoklad)
+            if (!_vm.NahledVsechStranek)
             {
                 // Náhled ukazuje jen stránky otevřené předlohy - po přepnutí jiné, jinak vysoký.
                 UpdatePreviewSize();
@@ -187,7 +187,7 @@ public partial class MainWindow : Window
         };
         PreviewScrollViewer.ScrollChanged += (_, e) =>
         {
-            if (_vm is null || !_vm.MaPredlohy || !_vm.NahledCelyDoklad || e.VerticalChange == 0) return;
+            if (_vm is null || !_vm.MaPredlohy || !_vm.NahledVsechStranek || e.VerticalChange == 0) return;
             if ((DateTime.UtcNow - _nahledPosunulProgram).TotalMilliseconds < 400) return;
             // Rozhoduje stránka v horní třetině okna náhledu - tu má uživatel před očima.
             float y = (float)(PreviewScrollViewer.VerticalOffset + PreviewScrollViewer.ViewportHeight / 3);
@@ -204,8 +204,9 @@ public partial class MainWindow : Window
         // Wire VM callbacks
         // UpdateCanvasSize (ne jen InvalidateVisual) - výška plátna roste s obsahem, takže po každé
         // změně (přidání/smazání/resize sekce či elementu) je třeba přepočítat velikost plátna.
-        _vm.RequestCanvasRefresh         = () => { UpdateCanvasSize(); InvalidatePreview(); };
-        _vm.RequestPreviewRefresh        = InvalidatePreview;
+        // Nabídka stránek dat závisí i na obsahu šablony (pole ve závorkách) - přepočet s náhledem.
+        _vm.RequestCanvasRefresh         = () => { UpdateCanvasSize(); InvalidatePreview(); _vm.ObnovStrankovaniDat(); };
+        _vm.RequestPreviewRefresh        = () => { InvalidatePreview(); _vm.ObnovStrankovaniDat(); };
         // Titulek se mění mj. při změně agendy → stejný signál řídí i kontextovou paletu JŘ elementů
         _vm.RequestTitleUpdate           = () => { UpdateTitle(); UpdatePaletteForAgenda(); };
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); UpdatePaletteForAgenda(); };
@@ -224,14 +225,6 @@ public partial class MainWindow : Window
         _vm.RequestParamsFieldSync       = SyncParamsTabField;
         // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
         _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);
-        // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
-        // Callbacky běží na background threadu nad snapshot šablonou - PreviewCanvas render
-        // je čistý SkiaSharp bez WPF a živá šablona se může mezitím editovat.
-        _vm.RenderPdfToFile = (filePath, pages, template, progress, sheets, meritko) =>
-            _previewCanvas!.RenderMultiDataToPdf(filePath, pages, template, progress, sheets, meritko);
-        _vm.RenderPngToFile = (filePath, pages, template, progress) =>
-            _previewCanvas!.RenderMultiDataToPng(filePath, pages, template: template, progress: progress);
-
         // Modální/souborové dialogy + schránka - WPF drží tato služba, ne VM (R4)
         _vm.Dialogs = new WpfDesignerDialogService(this);
 
@@ -1063,8 +1056,6 @@ public partial class MainWindow : Window
     private void MenuOpen_Click(object sender, RoutedEventArgs e)      => _vm!.OpenCommand.Execute(null);
     private void MenuSave_Click(object sender, RoutedEventArgs e)      => _vm!.SaveCommand.Execute(null);
     private void MenuSaveAs_Click(object sender, RoutedEventArgs e)    => _vm!.SaveAsCommand.Execute(null);
-    private void MenuExportPdf_Click(object sender, RoutedEventArgs e) => _vm!.ExportPdfCommand.Execute(null);
-    private void MenuExportPng_Click(object sender, RoutedEventArgs e) => _vm!.ExportPngCommand.Execute(null);
 
     // Re-entrance guard - modální ShowDialog otevírá vnořený dispatcher, který může
     // doručit dříve queueované Ctrl+P. Bez guardu by druhé pressnutí během už-otevřeného
@@ -1093,6 +1084,9 @@ public partial class MainWindow : Window
             // Snapshot na UI threadu - callback běží na threadpoolu a nesmí sahat na živou šablonu
             var columnsDefJson = _vm.CurrentColumnsDefinitionJson();
             var turnusy = _vm.CurrentTurnusyKeSpojum();
+            // Kultura šablony (formát dat, čísel) - bez ní by tisk formátoval podle nastavení
+            // Windows, zatímco náhled podle šablony, a slovenská šablona by vyšla jinak.
+            var kultura = _vm.GetTemplateCulture();
             buildRealData = (paramValues, prubeh) =>
             {
                 List<DataContext>? pages;
@@ -1114,7 +1108,7 @@ public partial class MainWindow : Window
                         // Linka ke každé stránce - kontrola v tiskovém okně z ní řekne, které lince
                         // hláška patří (`B178`).
                         var linka = new Dictionary<string, object?> { [TemplateDesigner.Models.KontrolaVystupu.LinkaKlic] = inst.Display };
-                        all.AddRange(instPages.Select(p => p.WithExtraValues(linka)));
+                        all.AddRange(instPages.Select(p => p.WithCulture(kultura).WithExtraValues(linka)));
                     }
                     pages = all.Count > 0 ? all : null;
                 }
@@ -1233,7 +1227,11 @@ public partial class MainWindow : Window
             _preferences,
             onParamsChanged: _vm.OnExternalParamsChanged,
             agendaClass: agendaClass,
-            ulozitUsporadaniDoSablony: _vm.UlozUsporadaniDoSablony);
+            maVybraneLinky: () => _vm.ActiveInstances.Count > 0);
+
+        vm.RequestRenderPng = (filePath, dataPages) =>
+            _previewCanvas!.RenderMultiDataToPng(filePath, dataPages,
+                template: Serialization.TemplateSerializer.DeepClone(_vm!.State.CurrentTemplate));
 
         vm.RequestRenderPdf = (filePath, data, sheets, meritko) =>
             _previewCanvas!.RenderToPdf(filePath, data, sheets, meritko);

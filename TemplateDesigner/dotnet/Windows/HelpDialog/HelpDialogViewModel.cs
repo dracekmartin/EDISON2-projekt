@@ -115,7 +115,6 @@ public class HelpDialogViewModel : EDViewModel
                 new("Import / export JSON souboru (přenos šablony)", "menu Soubor"),
                 new("Import existujícího PDF jako šablona", "menu Nástroje"),
                 new("Vlastnosti stránky (formát, orientace, okraje, jazyk)", "Ctrl+Shift+P"),
-                new("Export náhledu do PDF / PNG", "lišta nástrojů / menu Soubor"),
             ],
             Tip = "Změna formátu nebo orientace stránky založí novou prázdnou šablonu (s potvrzením) - " +
                   "úprava okrajů je běžná vratná změna.",
@@ -126,16 +125,16 @@ public class HelpDialogViewModel : EDViewModel
             Title = "🖨 Tisk a export (Ctrl+P)",
             Entries =
             [
-                new("Tisk s reálnými daty z databáze", "Ctrl+P"),
+                new("Vytvořit PDF / PNG - z vybraných linek, bez vybrané linky z ukázkových dat", "Ctrl+P → Vytvořit"),
                 new("Členění výstupu - vše do jednoho / po linkách / po zastávkách a směrech", "dialog tisku"),
                 new("Název souboru z dat - tokeny {CISLO_LINKY} apod.", "dialog tisku"),
-                new("Více vývěsek na list (imposice) - např. 2×A5 na A4", "dialog tisku → Uspořádání na list"),
-                new("Táž vývěska vícekrát na list (pro řezání)", "dialog tisku → Každá stránka na celý list"),
-                new("Ořezové značky", "dialog tisku"),
-                new("Varování přetečení - obsah se nevejde na stránku", "červený rámeček v náhledu"),
+                new("Víc stránek na jeden papír (šablona o víc stránkách)", "dialog tisku → Uspořádání na list"),
+                new("Druhá stránka dokladu vedle první, nebo na zadní stranu listu", "dialog tisku → Uspořádání na list"),
+                new("Kontrola všech vybraných linek bez tisku", "dialog tisku → Zkontrolovat, lupa na liště"),
+                new("Hlášky k tisku - informace, upozornění, problém", "blok vpravo ve stavovém řádku"),
             ],
-            Tip = "Volby imposice a členění si aplikace pamatuje pro každou agendu zvlášť. Návrat na 1 stránku = 1 list: " +
-                  "Uspořádání na list → Vypnuto.",
+            Tip = "Hlášky tisk nezastaví. Problém znamená, že se část obsahu na papír nedostane (ořízne se, " +
+                  "nevejde se); rada u hlášky říká, co upravit. Volby výstupu si aplikace pamatuje pro každou agendu zvlášť.",
         },
 
         new HelpSection
@@ -208,9 +207,9 @@ public class HelpDialogViewModel : EDViewModel
                 new("Vlastnosti / smazání sekce", "pravý klik"),
                 new("Uložit sekci jako šablonu pro opakované použití", "pravý klik → Uložit jako šablonu"),
             ],
-            Tip = "Sekce určuje KDY se tiskne (jednou / na každé stránce / jen první / jen poslední) " +
-                  "a JAK se chová při přetečení (držet pohromadě / rozdělit přes stránky). Role záhlaví/patička " +
-                  "kotví sekci k okraji stránky.",
+            Tip = "Typ sekce určuje, kde se tiskne: obsah jednou v pořadí šablony, hlavička a patička na " +
+                  "stránkách podle volby Tisknout na. U obsahu se volí přetečení (držet pohromadě / rozdělit " +
+                  "přes stránky) a Začít na nové stránce.",
         },
 
         new HelpSection

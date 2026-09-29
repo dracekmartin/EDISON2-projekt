@@ -101,8 +101,8 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
     s f.helpText = "1 = skutečná velikost. Zvětší se celá stránka včetně písma; počet stránek se nemění."
 
     // Uspořádání na list (formát listu, mřížka, oboustranný tisk, ořezové značky) už tu není -
-    // od `B186` ho tiskové okno kreslí v panelu pod formulářem (nákres přední a zadní strany).
-    // Dřívější klíče __EXPORT_SHEET* návrhář dál čte z uložených voleb a převede je na nákres.
+    // tiskové okno ho má v panelu pod formulářem (papír, co se skládá, nákres). Hodnoty jdou
+    // do týchž klíčů __EXPORT_SHEET*, takže dřív uložené volby platí dál.
 }
 
 /// Rozloží parametry do EDInputForm skupin dle `group` klíče (pořadí = první výskyt skupiny,

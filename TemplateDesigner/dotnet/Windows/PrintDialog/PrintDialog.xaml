@@ -39,15 +39,13 @@
                         Command="{Binding KontrolaCommand}"
                         Visibility="{Binding CanExportRealData, Converter={StaticResource BoolToVis}}"
                         ToolTip="Projde všechny vybrané linky bez tisku a ukáže, co se kde nevejde nebo vytiskne jinak"
-                        Margin="0,0,8,0"/>
-                <Button Content="Tisk všech vybraných" Padding="16,6"
-                        Command="{Binding ExportRealDataPdfCommand}"
-                        Visibility="{Binding CanExportRealData, Converter={StaticResource BoolToVis}}"
-                        ToolTip="Stáhne reálná data všech vybraných linek z databáze a vyexportuje dle nastavení Exportu (členění + název souboru)"
-                        Margin="0,0,8,0"/>
-                <Button Content="Export náhledu" Padding="16,6"
-                        Command="{Binding ExportPdfCommand}"
-                        ToolTip="Vyexportuje aktuální náhled (jedna zastávka/směr, nebo vzorek u nové šablony) do jednoho PDF"
+                        Margin="0,0,16,0"/>
+                <TextBlock Text="Formát:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <ComboBox ItemsSource="{Binding Formaty}" SelectedItem="{Binding Format}" Width="70"
+                          VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <Button Content="{Binding TlacitkoVytvorit}" Padding="16,6"
+                        Command="{Binding VytvoritCommand}"
+                        ToolTip="Z vybraných linek; když žádná vybraná není, z ukázkových dat"
                         Margin="0,0,8,0"/>
                 <!-- IsDefault + IsCancel na jednom tlačítku záměrně: dialog nemá OK/Storno pár -
                      tisk/export jsou samostatné akce a Zavřít je jediný způsob odchodu (Enter i Esc). -->
@@ -60,7 +58,8 @@
              při obnovení formuláře). -->
         <Border DockPanel.Dock="Bottom" Margin="0,10,0,0"
                 BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1"
-                CornerRadius="4" Padding="12" Background="{DynamicResource EDTheme.Bg.Footer}">
+                CornerRadius="4" Padding="12" Background="{DynamicResource EDTheme.Bg.Footer}"
+                Visibility="{Binding UkazatUsporadani, Converter={StaticResource BoolToVis}}">
             <controls:UsporadaniListuPanel x:Name="UsporadaniPanel"/>
         </Border>
 

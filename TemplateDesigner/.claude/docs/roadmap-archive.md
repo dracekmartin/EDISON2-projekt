@@ -1,5 +1,15 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B187` Doladění stránek šablony a uspořádání na list (hotovo 28. 9. 2026)
+
+Přepínač stránek „Stránka 1 z 2" nad plátnem i nad náhledem, „Náhled všech stránek" výchozí
+zapnuté. Nákres s přetahováním z `B186` nahradil panel se dvěma volbami: papír (mřížka se spočítá
+sama, i s měřítkem) a u šablony o víc stránkách, kam jde druhá stránka dokladu (vedle první /
+na zadní stranu listu). Panel jen u šablony o víc stránkách nebo s už zapnutým uspořádáním; zapisuje
+do klíčů před 25. 9. Ruby na listu na výšku se zrcadlí po sloupcích. PDF a PNG jen z okna Tisk
+jedním tlačítkem. PDF ověřené na zkušební A5 šabloně (28. 9.); **fyzický oboustranný tisk
+neověřený**, stejně jako zrcadlení na A3 na výšku. Detail changelog 2026-09-28.
+
 ## `B186` Uspořádání na list nákresem (hotovo 25. 9. 2026)
 
 Tiskové okno místo polí Mřížka / Každá stránka na celý list / Oboustranně ukazuje nákres přední

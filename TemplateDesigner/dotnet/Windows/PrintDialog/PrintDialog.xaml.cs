@@ -25,7 +25,7 @@ public partial class PrintDialog : Window
         InitializeComponent();
         vm.RequestClose += result => { DialogResult = result; Close(); };
         UsporadaniPanel.DataContext = vm.Usporadani;
-        UsporadaniPanel.UlozitDoSablony = vm.UlozitUsporadaniDoSablony;
+        vm.RequestApplyVisibility = ApplyVisibility;
         // Hlášky kontroly ve vlastním okně - nezavírá tiskové, jde mít otevřené obojí.
         vm.RequestShowHlaseni = (nadpis, hlaseni) =>
             new KontrolaVysledkuDialog(new KontrolaVysledkuDialogViewModel(nadpis, hlaseni)) { Owner = this }.Show();
@@ -67,17 +67,50 @@ public partial class PrintDialog : Window
         // Název souboru má smysl jen při členění na víc souborů (split != Single).
         var split = fields.FirstOrDefault(f => f.Key == PrintDialogViewModel.ExportSplitKey)?.Value ?? "SINGLE";
         bool isSplit = split != "SINGLE";
+        // PNG je obrázek za každou stránku - členění do souborů ani měřítko tisku se ho netýkají.
+        bool png = _vm.JePng;
 
         foreach (var field in fields)
         {
             bool visible = field.Key switch
             {
-                PrintDialogViewModel.ExportFileNameKey => isSplit,
+                PrintDialogViewModel.ExportFileNameKey => isSplit && !png,
+                PrintDialogViewModel.ExportSplitKey or SheetLayoutKeys.Meritko => !png,
                 _ => _vm.IsParamVisible(field.Key),
             };
             var target = visible ? ItemVisibility.Visible : ItemVisibility.Collapsed;
             // Guard - Item.Visibility setter nemá early-return, vyhneme se zbytečným notifikacím při každém stisku.
             if (field.Visibility != target) field.Visibility = target;
+        }
+
+        SchovejPrazdneSkupiny();
+    }
+
+    private readonly Dictionary<Group, ItemVisibility> _stavSkupinyPredSchovanim = [];
+
+    /// <summary>
+    /// Skupina bez jediného viditelného pole se schová i s nadpisem - u PNG by jinak zůstal prázdný
+    /// nadpis „Export". Při návratu dostane zpátky rozbalení, které měla.
+    /// </summary>
+    private void SchovejPrazdneSkupiny()
+    {
+        Group? skupina = null;
+        bool maPole = false;
+        foreach (var item in (ParamForm.Items ?? []).Append(null))
+        {
+            if (item is Field f) { maPole |= f.Visibility == ItemVisibility.Visible; continue; }
+            if (skupina is not null)
+            {
+                if (!maPole && skupina.Visibility != ItemVisibility.ProgrammerHidden)
+                {
+                    _stavSkupinyPredSchovanim[skupina] = skupina.Visibility;
+                    skupina.Visibility = ItemVisibility.ProgrammerHidden;
+                }
+                else if (maPole && _stavSkupinyPredSchovanim.Remove(skupina, out var puvodni))
+                    skupina.Visibility = puvodni;
+            }
+            skupina = item as Group;
+            maPole = false;
         }
     }
 }

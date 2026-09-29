@@ -522,8 +522,9 @@ public class TemplateDesignerViewModel : EDViewModel
         }
     }
 
-    /// <summary>Jediná strana se nehlásí - text, který nic neříká, jen zabírá lištu.</summary>
-    public bool HasPocetStranSazby => _pocetStranSazby > 1;
+    /// <summary>Jediná strana se nehlásí - text, který nic neříká, jen zabírá lištu.
+    /// Nehlásí se ani počet, který už říká přepínač stránek šablony („Stránka 1 z 2").</summary>
+    public bool HasPocetStranSazby => _pocetStranSazby > 1 && !(MaPredlohy && _pocetStranSazby == PocetPredloh);
 
     public string PocetStranSazbyText => _pocetStranSazby switch
     {
@@ -534,7 +535,23 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Viditelnost lišty stránkování dat - i pro jedinou stránku (combobox říká, CO preview
     /// zobrazuje - zastávka × směr); skrytá jen v mock módu (žádná reálná data).</summary>
-    public bool HasPageNavigation => RealPreviewPageCount > 0;
+    public bool HasPageNavigation => RealPreviewPageCount > 0 && _prepinaniDatMaSmysl;
+
+    private bool _prepinaniDatMaSmysl;
+
+    /// <summary>
+    /// Přepočítá, jestli nabídka stránek dat nad náhledem něco přepíná (`B187`). Volá se po výměně
+    /// dat i po každé změně šablony - pole ze závorek přibude třeba jen úpravou textu.
+    /// </summary>
+    public void ObnovStrankovaniDat()
+    {
+        bool ma = _realPreviewData is { Count: > 0 } data
+            && ZavislostNaDatech.PrepinaniMaSmysl(State.CurrentTemplate, data);
+        if (ma == _prepinaniDatMaSmysl) return;
+        _prepinaniDatMaSmysl = ma;
+        OnPropertyChanged(nameof(HasPageNavigation));
+        OnPropertyChanged(nameof(MaListuNadNahledem));
+    }
 
     /// <summary>
     /// Náhled kreslí ukázková data, ne data z databáze. Říká to **štítek instance** ve stavovém
@@ -560,6 +577,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     private void NotifyPreviewPagesChanged()
     {
+        _prepinaniDatMaSmysl = _realPreviewData is { Count: > 0 } data
+            && ZavislostNaDatech.PrepinaniMaSmysl(State.CurrentTemplate, data);
         _previewPagesSyncing = true;
         try
         {
@@ -569,6 +588,7 @@ public class TemplateDesignerViewModel : EDViewModel
             OnPropertyChanged(nameof(PageNavigationText));
             OnPropertyChanged(nameof(HasMultiplePages));
             OnPropertyChanged(nameof(HasPageNavigation));
+            OnPropertyChanged(nameof(MaListuNadNahledem));
             OnPropertyChanged(nameof(IsSampleDataPreview));
             OnPropertyChanged(nameof(PreviewItemNoun));
             OnPropertyChanged(nameof(PreviousPageTooltip));
@@ -918,7 +938,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Commands ──────────────────────────────────────────────────────────────
     private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _prevInstance, _nextInstance, _refreshData, _toggleParamsBar, _instanceList;
     private RelayCommand<int>? _selectInstance;
-    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda, _openInstancePicker;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _new, _changeAgenda, _openInstancePicker;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= Command(Redo,          () => CanRedo);
@@ -963,8 +983,6 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
     public RelayCommand RefreshDataCommand         => _refreshData    ??= Command(RefreshData);
     public RelayCommand ToggleParamsBarCommand     => _toggleParamsBar ??= Command(() => ParamsBarExpanded = !ParamsBarExpanded);
-    public AsyncRelayCommand ExportPdfCommand => _exportPdf ??= CommandAsync(ExportPreviewPdfAsync, () => !_exportRunning);
-    public AsyncRelayCommand ExportPngCommand => _exportPng ??= CommandAsync(ExportPreviewPngAsync, () => !_exportRunning);
     public new RelayCommand DeleteCommand => _delete    ??= Command(DeleteSelected);
     public RelayCommand CopyCommand     => _copy      ??= Command(CopySelected);
     public RelayCommand CutCommand      => _cut       ??= Command(CutSelected);
@@ -1340,37 +1358,24 @@ public class TemplateDesignerViewModel : EDViewModel
     /// řády) vypadá jako dřív (rozhodnutí Jan 25. 9.).</summary>
     public bool MaPredlohy => PocetPredloh > 1;
 
-    /// <summary>„Rub · 1 stránka (2/3)" - jméno předlohy a kolik stránek z ní vyjde.</summary>
-    public string PredlohaText
-    {
-        get
-        {
-            var stranky = DesignerPages.ObsahStranek(State.CurrentTemplate);
-            int i = OtevrenaPredloha;
-            string nazev = stranky[i].FirstOrDefault()?.Name ?? $"Stránka {i + 1}";
-            string kolik = DesignerPages.JePodleDat(stranky[i]) ? "podle dat" : "1 stránka";
-            return $"{nazev} · {kolik}  ({i + 1}/{stranky.Count})";
-        }
-    }
+    /// <summary>Lišta nad náhledem je vidět, když je co přepínat: stránky dat nebo stránky šablony.</summary>
+    public bool MaListuNadNahledem => HasPageNavigation || MaPredlohy;
 
-    /// <summary>Náhled ukazuje celý doklad (jinak jen otevřenou stránku šablony).</summary>
-    public bool NahledCelyDoklad
+    /// <summary>„Stránka 2 z 3". Jméno sekce ani „podle dat" se nepíše - dublovalo seznam sekcí
+    /// a náhled a přepínač se nedal přečíst (nález Jan 28. 9.).</summary>
+    public string PredlohaText => $"Stránka {OtevrenaPredloha + 1} z {PocetPredloh}";
+
+    /// <summary>Náhled ukazuje všechny stránky šablony (jinak jen otevřenou).</summary>
+    public bool NahledVsechStranek
     {
-        get => State.NahledCelyDoklad;
+        get => State.NahledVsechStranek;
         set
         {
-            if (State.NahledCelyDoklad == value) return;
-            State.NahledCelyDoklad = value;
+            if (State.NahledVsechStranek == value) return;
+            State.NahledVsechStranek = value;
             OnPropertyChanged();
-            OnPropertyChanged(nameof(NahledJenStranka));
             PredlohaZmenena?.Invoke(OtevrenaPredloha, false);
         }
-    }
-
-    public bool NahledJenStranka
-    {
-        get => !NahledCelyDoklad;
-        set => NahledCelyDoklad = !value;
     }
 
     /// <summary>Předloha se přepnula; true = přepnul ji posun náhledu (náhled už se neposouvá).</summary>
@@ -1410,6 +1415,8 @@ public class TemplateDesignerViewModel : EDViewModel
     private void OnPredlohyZmeneny()
     {
         OnPropertyChanged(nameof(MaPredlohy));
+        OnPropertyChanged(nameof(MaListuNadNahledem));
+        OnPropertyChanged(nameof(HasPocetStranSazby));
         OnPropertyChanged(nameof(PredlohaText));
         CommandManager.InvalidateRequerySuggested();
     }
@@ -2220,19 +2227,6 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Uloží nakreslené uspořádání na list jako výchozí pro šablonu (`B186`); null = šablona
-    /// výchozí uspořádání nemá. Tisk ho pak nabídne sám - dispečer nemusí vědět, jak se nastavuje.
-    /// </summary>
-    public void UlozUsporadaniDoSablony(string? json)
-    {
-        var tp = State.CurrentTemplate.PrintParameters is { } p ? new Dictionary<string, string>(p) : [];
-        if (json is null) tp.Remove(SheetLayoutKeys.Plan);
-        else tp[SheetLayoutKeys.Plan] = json;
-        State.CurrentTemplate.PrintParameters = tp.Count > 0 ? tp : null;
-        IsDirty = true;
-    }
-
-    /// <summary>
     /// Nové hodnoty přepíšou staré, **zbytek zůstane**. Vrací null, když by výsledek byl prázdný.
     /// </summary>
     /// <remarks>
@@ -2248,99 +2242,9 @@ public class TemplateDesignerViewModel : EDViewModel
         return vysledek.Count > 0 ? vysledek : null;
     }
 
-    /// <summary>True během běžícího exportu - blokuje druhý souběžný export (PDF i PNG),
-    /// jinak uživatel může dál normálně pracovat (export renderuje snapshot šablony).</summary>
-    private bool _exportRunning;
-
-    private async Task ExportPreviewPdfAsync()
-    {
-        var defaultName = (Path.GetFileNameWithoutExtension(CurrentFilePath)
-                         ?? (string.IsNullOrWhiteSpace(State.CurrentTemplate.Name)
-                             ? "sablona" : State.CurrentTemplate.Name)) + ".pdf";
-        var path = Dialogs?.PickSaveFile("Exportovat náhled jako PDF", "PDF soubory (*.pdf)|*.pdf", defaultName, "pdf");
-        if (path is null) return;
-        if (RenderPdfToFile is null) return;
-
-        // Imposice ze sdílených exportních polí (persistované per-agenda, editují se v PrintDialogu) -
-        // zachytit na UI threadu spolu se snapshotem. Chybná mřížka = uživatelská konfigurace → status bar.
-        SheetLayoutOptions? sheets;
-        try { sheets = SheetComposer.FromParamValues(PreviewParamValues, State.CurrentTemplate.PageSize); }
-        catch (ArgumentException ex) { StatusText = $"⚠ {ex.Message}"; return; }
-
-        // Měřítko tisku se drží ve stejných exportních polích jako imposice (editují se
-        // v tiskovém dialogu, persistují per agenda) - export z hlavního okna ho musí ctít taky,
-        // jinak dá jiný výstup než Ctrl+P.
-        float meritko = SheetComposer.MeritkoZParamValues(PreviewParamValues);
-
-        // Fetch (N× GetData přes MLRest) i render běží mimo UI thread (R1). UI zůstává
-        // plně interaktivní - render jede nad SNAPSHOTEM šablony (stav v okamžiku kliknutí),
-        // takže editace během exportu výstup neovlivní. Progress jde do status baru.
-        _exportRunning = true;
-        try
-        {
-            var snapshot = TemplateSerializer.DeepClone(State.CurrentTemplate);
-            var fetchProgress = new Progress<string>(s => StatusText = s);
-            var pages = await BuildAllPreviewDataPagesAsync(fetchProgress);
-
-            var renderProgress = new Progress<(int done, int total)>(p =>
-                StatusText = $"Generuji PDF: {p.done}/{p.total} datových stránek…");
-            await Task.Run(() => RenderPdfToFile(path, pages, snapshot, renderProgress, sheets, meritko));
-
-            var ps = State.CurrentTemplate.PageSize;
-            StatusText = $"PDF uloženo: {Path.GetFileName(path)} ({pages.Count} datových stránek)"
-                       + (sheets is null ? "" : $" · {sheets.ShortLabel}")
-                       + (Math.Abs(meritko - 1f) < 0.001f ? ""
-                          : $" · měřítko {meritko:0.##}× ({ps.Width * meritko:0.#}×{ps.Height * meritko:0.#} mm)");
-            OpenExportedFile(path);
-        }
-        finally { _exportRunning = false; }
-    }
-
     /// <summary>View vrstva (code-behind) napojí WPF implementaci - modální/souborové dialogy + schránka.
     /// Přes tuto abstrakci VM nereferencuje WPF (R4). Null v testech → dialogové akce se tiše přeskočí.</summary>
     public IDesignerDialogService? Dialogs { get; set; }
-
-    /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf. Voláno z background threadu
-    /// se snapshot šablonou (živá se může mezitím editovat). Poslední parametr = imposice (null = vypnutá).</summary>
-    public Action<string, IReadOnlyList<DataContext>, Template, IProgress<(int done, int total)>, SheetLayoutOptions?, float>? RenderPdfToFile { get; set; }
-
-    private async Task ExportPreviewPngAsync()
-    {
-        var defaultName = (Path.GetFileNameWithoutExtension(CurrentFilePath)
-                         ?? (string.IsNullOrWhiteSpace(State.CurrentTemplate.Name)
-                             ? "sablona" : State.CurrentTemplate.Name)) + ".png";
-        var path = Dialogs?.PickSaveFile("Exportovat náhled jako PNG", "PNG soubory (*.png)|*.png", defaultName, "png");
-        if (path is null) return;
-        if (RenderPngToFile is null) return;
-
-        _exportRunning = true;
-        try
-        {
-            var snapshot = TemplateSerializer.DeepClone(State.CurrentTemplate);
-            var fetchProgress = new Progress<string>(s => StatusText = s);
-            var pages = await BuildAllPreviewDataPagesAsync(fetchProgress);
-
-            var renderProgress = new Progress<(int done, int total)>(p =>
-                StatusText = $"Generuji PNG: {p.done}/{p.total} stránek…");
-            int count = await Task.Run(() => RenderPngToFile(path, pages, snapshot, renderProgress));
-
-            StatusText = count == 1
-                ? $"PNG uloženo: {Path.GetFileName(path)}"
-                : $"PNG uloženo: {count} souborů ({Path.GetFileNameWithoutExtension(path)}_001.png …)";
-            if (count == 1) OpenExportedFile(path);
-        }
-        finally { _exportRunning = false; }
-    }
-
-    /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPng. Voláno z background threadu
-    /// se snapshot šablonou (živá se může mezitím editovat).</summary>
-    public Func<string, IReadOnlyList<DataContext>, Template, IProgress<(int done, int total)>, int>? RenderPngToFile { get; set; }
-
-    private static void OpenExportedFile(string filePath)
-    {
-        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true }); }
-        catch { /* viewer nemusí být nainstalován */ }
-    }
 
     /// <summary>Potvrzení neuložených změn před destruktivní akcí (Nový/Otevřít/změna agendy/zavření).
     /// Ano → uloží do DB (stejná cesta jako Ctrl+S), Ne → pokračovat bez uložení, Storno → zrušit.
@@ -3494,34 +3398,6 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── Preview mock data (called by code-behind preview renderer) ────────────
 
-    /// <summary>
-    /// Vrátí všechny dostupné DataContexty pro export - všechny reálné stránky pokud jsou
-    /// načtené, jinak jeden mock context. Použito pro PDF/PNG export, aby se exportovaly
-    /// všechny zastávky/směry, ne jen aktuálně zobrazená. Fetch (N× GetData přes MLRest)
-    /// běží na threadpoolu (R1 - u velkých batchů jednotky sekund).
-    /// </summary>
-    public async Task<IReadOnlyList<DataContext>> BuildAllPreviewDataPagesAsync(IProgress<string>? progress = null)
-    {
-        // VEŠKERÝ UI stav zachytit na UI threadu před přechodem na threadpool - uživatel může
-        // během exportu dál pracovat (měnit instance v pickeru, parametry, přepnout preview data),
-        // background smyčka proto nesmí číst živé VM kolekce/pole.
-        var culture         = GetTemplateCulture();
-        var agendaCode      = State.CurrentTemplate.AgendaCode;
-        var instances       = _activeInstances.ToList();
-        var skupinaId       = _activeSkupinaId;
-        var printParams     = new Dictionary<string, object?>(_previewParams, StringComparer.OrdinalIgnoreCase);
-        var realPreviewData = _realPreviewData;   // reference swap-only pole - lokální kopie reference stačí
-        var suppression     = CurrentNoteSuppression();
-        var hideNaZnameni   = CurrentHideNaZnameniLegend();
-        var hidePrestup     = CurrentHidePrestupLegend();
-        var hiddenContent   = CurrentHiddenContent();
-        var columnsDefJson  = CurrentColumnsDefinitionJson();
-        var turnusy         = CurrentTurnusyKeSpojum();
-
-        return await Task.Run(() => BuildAllPreviewDataPagesCore(
-            culture, agendaCode, instances, skupinaId, printParams, realPreviewData, suppression, false, hideNaZnameni, hidePrestup, progress, hiddenContent, columnsDefJson, turnusy));
-    }
-
     /// <summary>Dvoumístný kód jazyka šablony pro server (`cs` / `sk`) - z kultury, kterou uživatel
     /// vybírá ve vlastnostech stránky. Tou se řídí i symbolový font, takže jazyk textů a piktogramů
     /// má jeden zdroj.</summary>
@@ -3735,49 +3611,6 @@ public class TemplateDesignerViewModel : EDViewModel
         return stringParams.Count == 0 ? pages : pages.Select(p => p.WithExtraValues(stringParams)).ToList();
     }
 
-    private IReadOnlyList<DataContext> BuildAllPreviewDataPagesCore(
-        CultureInfo culture, string? agendaCode, List<AgendaInstance> instances, string? skupinaId,
-        IReadOnlyDictionary<string, object?> printParams,
-        IReadOnlyList<DataContext?>? realPreviewData,
-        NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni, bool hidePrestup,
-        IProgress<string>? progress, IReadOnlySet<string>? hiddenContent = null,
-        string? columnsDefinitionJson = null, bool turnusyKeSpojum = false)
-    {
-        List<DataContext>? pages = null;
-
-        // Multi-instance batch: pro každou aktivní instanci fetch GetData a sloučit do flat seznamu.
-        // PDF export tak vygeneruje N×K stránek (N instancí × K stránek per instance, např. zastávka×směr).
-        if (instances.Count > 0 && CacheProvider is not null && !string.IsNullOrEmpty(agendaCode))
-        {
-            var paramName = InstanceParamName(agendaCode);
-            var all = new List<DataContext>(instances.Count * 4);
-            for (int i = 0; i < instances.Count; i++)
-            {
-                var inst = instances[i];
-                progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
-                var fetched = CacheProvider.GetData(
-                    agendaCode, ComposeGetDataParams(printParams, paramName, inst.Value, skupinaId,
-                        columnsDefinitionJson, turnusyKeSpojum,
-                        culture.TwoLetterISOLanguageName.ToLowerInvariant()));
-                if (fetched is null) continue;
-                foreach (var p in fetched) all.Add(p.WithCulture(culture));
-            }
-            if (all.Count > 0) pages = all;
-        }
-
-        pages ??= realPreviewData is { Count: > 0 }
-            ? realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList()
-            : null;
-
-        // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
-        // export musí přesto projít - vrátíme prázdný DataContext, aby se vyrenderovala
-        // jedna stránka s placeholdery beze změny. (Parametry si domíchá sám.)
-        if (pages is null) return [BuildPreviewMockData() ?? new DataContext()];
-
-        return NoteVisibilityFilter.Apply(MergeParamsIntoPages(pages, printParams),
-            suppression, hideAgg, hideNaZnameni, hidePrestupLegend: hidePrestup, hiddenContent: hiddenContent);
-    }
-
     /// <summary>
     /// Datová pole aktuální agendy pro nabídku „vložit pole" u textových vlastností - skaláry
     /// i pole kolekcí v jednom seznamu, u kolekce se do popisku připíše, odkud pole je.
@@ -3890,10 +3723,6 @@ public class TemplateDesignerViewModel : EDViewModel
         return NoteVisibilityFilter.Apply(mockData, suppressionMode, false, CurrentHideNaZnameniLegend(),
             CurrentHidePrestupLegend(), CurrentHiddenContent());
     }
-
-    /// <summary>Režim schování poznámek v rozsahu „nepoznámkovat" z aktuálního parametru sestavy.</summary>
-    private NoteRangeSuppression CurrentNoteSuppression() =>
-        NoteVisibilityFilter.ParseMode(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamName));
 
     /// <summary>Kategorie obsahu vypnuté v šabloně (kola, místenky, souhrn bezbariér) - dřív tři
     /// parametry sestavy. Zapíná se to na prvku, který obsah kreslí, aby to bylo na jednom místě.</summary>

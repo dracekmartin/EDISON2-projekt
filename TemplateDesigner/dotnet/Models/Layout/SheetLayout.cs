@@ -41,12 +41,6 @@ public sealed record SheetLayoutOptions
     /// </summary>
     public bool Oboustranne { get; init; }
 
-    /// <summary>
-    /// Nakreslené uspořádání (`B186`) - která stránka šablony jde do kterého pole přední a zadní
-    /// strany. Null = dřívější režimy (za sebou / opakovat / oboustranně) z uložených voleb.
-    /// </summary>
-    public UsporadaniListu? Plan { get; init; }
-
     /// <summary>Počet pozic na jednom listu.</summary>
     public int SlotsPerSheet => Rows * Cols;
 
@@ -112,15 +106,13 @@ public static class SheetLayoutKeys
     public const string Repeat = "__EXPORT_SHEET_REPEAT";
     public const string Marks = "__EXPORT_SHEET_MARKS";
     public const string Oboustranne = "__EXPORT_SHEET_DUPLEX";
-    /// <summary>Nakreslené uspořádání jako JSON (<see cref="UsporadaniListu"/>, `B186`).</summary>
-    public const string Plan = "__EXPORT_SHEET_PLAN";
     public const string Meritko = "__EXPORT_SCALE";
 
     public const string SheetNone = "NONE";
     public const string GridAuto = "AUTO";
 
     /// <summary>Všechny klíče - pro persistence restore (nejsou mezi agenda parametry).</summary>
-    public static readonly string[] All = [Sheet, Grid, Repeat, Marks, Oboustranne, Plan, Meritko];
+    public static readonly string[] All = [Sheet, Grid, Repeat, Marks, Oboustranne, Meritko];
 }
 
 /// <summary>
@@ -136,10 +128,6 @@ public static class SheetComposer
     /// </summary>
     public static SheetLayoutOptions? FromParamValues(IReadOnlyDictionary<string, object?> values, PageSize page)
     {
-        // Nakreslené uspořádání má přednost před dřívějšími poli (`B186`).
-        if (UsporadaniListu.FromJson(values.GetValueOrDefault(SheetLayoutKeys.Plan) as string) is { } plan)
-            return ZPlanu(plan, page, MeritkoZParamValues(values));
-
         var sheetKey = (values.GetValueOrDefault(SheetLayoutKeys.Sheet) as string) ?? SheetLayoutKeys.SheetNone;
         if (sheetKey is "" or SheetLayoutKeys.SheetNone) return null;
 
@@ -152,8 +140,9 @@ public static class SheetComposer
         float pageW = page.Width * meritko;
         float pageH = page.Height * meritko;
 
-        var gridKey = (values.GetValueOrDefault(SheetLayoutKeys.Grid) as string) ?? SheetLayoutKeys.GridAuto;
-        var (rows, cols) = ResolveGrid(gridKey, pageW, pageH, sheetW, sheetH);
+        // Mřížka se nevolí, je vždy největší, co se vejde (rozhodnutí Jan 28. 9.). Dřív uložená
+        // menší mřížka se proto ignoruje - neviditelná volba by měnila tisk bez vysvětlení.
+        var (rows, cols) = ResolveGrid(SheetLayoutKeys.GridAuto, pageW, pageH, sheetW, sheetH);
 
         return new SheetLayoutOptions
         {
@@ -169,73 +158,7 @@ public static class SheetComposer
         };
     }
 
-    /// <summary>Volby skládání z nakresleného uspořádání. Formát „Vypnuto" = null.</summary>
-    public static SheetLayoutOptions? ZPlanu(UsporadaniListu plan, PageSize page, float meritko = 1f)
-    {
-        if (plan.Format is "" or SheetLayoutKeys.SheetNone) return null;
-        var (sheetW, sheetH) = ParseSheetFormat(plan.Format)
-            ?? throw new ArgumentException($"Neznámý formát listu: {plan.Format}");
-        float pageW = page.Width * meritko, pageH = page.Height * meritko;
-        var (rows, cols) = ResolveGrid($"{plan.Radku}x{plan.Sloupcu}", pageW, pageH, sheetW, sheetH);
-        return new SheetLayoutOptions
-        {
-            SheetWidth = sheetW, SheetHeight = sheetH, Rows = rows, Cols = cols,
-            PageWidth = pageW, PageHeight = pageH,
-            DrawCutMarks = plan.OrezoveZnacky,
-            Plan = plan,
-        };
-    }
-
-    /// <summary>
-    /// Složí doklady na listy podle nakresleného uspořádání. Doklad = stránky jedné datové stránky
-    /// agendy, u každé stránka šablony, ze které vznikla. Strany PDF jdou za sebou: 1. strana,
-    /// a má-li plán 2. stranu, hned za ní 2. strana - oboustranný tisk si zapne tiskárna.
-    /// </summary>
-    /// <remarks>
-    /// <para>Pole bez stránky v dokladu (stránku skryla podmínka, doklady došly) zůstane prázdné.</para>
-    /// <para>⚠️ Stránka šablony „podle dat" vydá v jednom dokladu víc stránek a pole ji neumí vzít
-    /// po jedné. Pak se pole plní stránkami za sebou bez ohledu na nákres, jen vpředu - nic se tím
-    /// neztratí, jen se to neskládá oboustranně. U jízdních řádů (jedna stránka šablony, vývěsky
-    /// na A4) na to nedojde.</para>
-    /// </remarks>
-    public static List<Sheet> ComposeDle(IReadOnlyList<IReadOnlyList<(Page Page, int Stranka)>> doklady,
-        SheetLayoutOptions o)
-    {
-        var plan = (o.Plan ?? throw new ArgumentException("Chybí uspořádání listu")).Normalizuj();
-        var sloty = AllSlots(o).ToList();
-        var sheets = new List<Sheet>();
-        if (doklady.Count == 0) return sheets;
-
-        bool vicestrankove = doklady.Any(d => d.GroupBy(x => x.Stranka).Any(g => g.Count() > 1));
-        if (vicestrankove)
-            return Compose([.. doklady.SelectMany(d => d.Select(x => x.Page))], o with { Plan = null });
-
-        int naList = plan.DokladuNaList;
-        int kroku = (doklady.Count + naList - 1) / naList;
-        for (int k = 0; k < kroku; k++)
-        {
-            sheets.Add(Strana(zadni: false));
-            if (plan.DveStrany) sheets.Add(Strana(zadni: true));
-
-            Sheet Strana(bool zadni)
-            {
-                var placed = new List<PlacedPage>();
-                for (int i = 0; i < sloty.Count; i++)
-                {
-                    if (plan.Pole(zadni, i) is not { } pole) continue;
-                    int doklad = k * naList + pole.Doklad;
-                    if (doklad >= doklady.Count) continue;
-                    var stranka = doklady[doklad].FirstOrDefault(x => x.Stranka == pole.Stranka).Page;
-                    if (stranka is null) continue;
-                    placed.Add(new PlacedPage(stranka, sloty[i].X, sloty[i].Y));
-                }
-                return new Sheet(placed);
-            }
-        }
-        return sheets;
-    }
-
-    /// <summary>Nejmenší a největší povolené měřítko tisku - shodné s mezemi pole ve formuláři.</summary>
+    /// <summary>Nejmenší a největší povolené měřítko tisku    /// <summary>Nejmenší a největší povolené měřítko tisku - shodné s mezemi pole ve formuláři.</summary>
     public const float MeritkoMin = 0.1f, MeritkoMax = 10f;
 
     /// <summary>
@@ -345,8 +268,9 @@ public static class SheetComposer
         var slots = AllSlots(o).ToList();
         if (o.Oboustranne)
         {
-            // Rub jde na totéž místo jako jeho líc: při převracení listu na delší straně se list
-            // otočí kolem vodorovné osy a levá polovina zůstane vlevo (ověřeno jen úvahou, ne tiskem).
+            // Rub jde na místo zrcadlené podle převracení na delší straně (ověřeno jen úvahou, ne
+            // tiskem): list na šířku se převrací kolem vodorovné osy, takže se prohodí řádky, list
+            // na výšku kolem svislé, takže se prohodí sloupce.
             for (int i = 0; i < pages.Count; i += 2 * slots.Count)
             {
                 var lice = new List<PlacedPage>();
@@ -355,7 +279,7 @@ public static class SheetComposer
                 {
                     lice.Add(new PlacedPage(pages[i + 2 * s], slots[s].X, slots[s].Y));
                     if (i + 2 * s + 1 < pages.Count)
-                        ruby.Add(new PlacedPage(pages[i + 2 * s + 1], slots[s].X, slots[s].Y));
+                        ruby.Add(new PlacedPage(pages[i + 2 * s + 1], slots[ZadniPozice(s, o)].X, slots[ZadniPozice(s, o)].Y));
                 }
                 sheets.Add(new Sheet(lice));
                 // Rubová strana listu existuje, i když je prázdná - jinak by se další líc
@@ -373,6 +297,18 @@ public static class SheetComposer
             sheets.Add(new Sheet(placed));
         }
         return sheets;
+    }
+
+    /// <summary>
+    /// Kam na zadní straně listu padne rub stránky z pozice <paramref name="pozice"/> přední strany
+    /// (pozice po řádcích zleva), když se tiskne oboustranně s převracením na delší straně.
+    /// </summary>
+    public static int ZadniPozice(int pozice, SheetLayoutOptions o)
+    {
+        int r = pozice / o.Cols, c = pozice % o.Cols;
+        return o.SheetWidth >= o.SheetHeight
+            ? (o.Rows - 1 - r) * o.Cols + c
+            : r * o.Cols + (o.Cols - 1 - c);
     }
 
     private static IEnumerable<(float X, float Y)> AllSlots(SheetLayoutOptions o)

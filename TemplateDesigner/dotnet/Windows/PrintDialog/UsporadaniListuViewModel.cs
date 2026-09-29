@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using TemplateDesigner.Models;
@@ -6,220 +5,218 @@ using TemplateDesigner.Models.Layout;
 
 namespace TemplateDesigner;
 
-/// <summary>Položka výběru (wire klíč + popis).</summary>
+/// <summary>Položka nabídky papíru (wire klíč + popis s počtem míst).</summary>
 public sealed record VolbaListu(string Klic, string Popis);
 
-/// <summary>Stránka dokladu v paletě - přetahuje se do polí listu.</summary>
-public sealed record StrankaSablonyVM(int Index, string Nazev);
+/// <summary>Co se na list skládá.</summary>
+public enum RezimListu
+{
+    /// <summary>Stránky jdou na místa po řadě (1, 2, 3…).</summary>
+    ZaSebou,
+    /// <summary>Každá stránka vyplní celý list kopiemi.</summary>
+    Kopie,
+    /// <summary>První stránky dokladů na přední stranu listu, druhé na zadní.</summary>
+    Oboustranne,
+}
 
-/// <summary>Pole listu v nákresu.</summary>
-public sealed record PoleListuVM(bool Zadni, int Index, string Popis, bool JePrazdne);
+/// <summary>Místo na listu v nákresu.</summary>
+public sealed record MistoListuVM(string Popis, bool JePrazdne);
 
 /// <summary>
-/// Panel „Uspořádání na list" tiskového okna (`B186`): formát listu, mřížka, režim (jeden / víc
-/// dokladů na list) a nákres 1. a 2. strany PDF, do jejichž polí se přetahují stránky dokladu.
+/// Panel „Uspořádání na list" tiskového okna: uživatel volí jen papír a co se na něj skládá,
+/// počet míst se spočítá z velikosti stránky (rozhodnutí Jan 28. 9.). Nákres pod volbami jen
+/// ukazuje, co kam padne.
 /// </summary>
 /// <remarks>
-/// Mluví jen o stranách PDF, ne o lící a rubu papíru - vyrábí se PDF ve správném pořadí a
-/// oboustranný tisk si zapne tiskárna (rozhodnutí Jan 25. 9.).
+/// Hodnoty jdou do týchž klíčů jako dřív (<see cref="SheetLayoutKeys"/>) - staré uložené volby
+/// (za sebou / každá stránka na celý list / oboustranně) tak platí beze změny.
 /// </remarks>
 public class UsporadaniListuViewModel : INotifyPropertyChanged
 {
     private const float SirkaListuPx = 200f;
 
+    private static readonly (string Klic, string Popis)[] Papiry =
+    [
+        ("A4_PORTRAIT", "A4 na výšku"), ("A4_LANDSCAPE", "A4 na šířku"),
+        ("A3_PORTRAIT", "A3 na výšku"), ("A3_LANDSCAPE", "A3 na šířku"),
+    ];
+
+    private readonly Dictionary<string, object?> _hodnoty;
     private readonly PageSize _stranka;
-    private readonly Action<UsporadaniListu> _zmena;
-    private readonly int _pocetStranek;
-    private UsporadaniListu _plan;
+    private float _meritko = 1f;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public static IReadOnlyList<VolbaListu> Formaty { get; } =
-    [
-        new(SheetLayoutKeys.SheetNone, "Vypnuto (1 stránka = 1 list)"),
-        new("A4_PORTRAIT", "A4 na výšku"),
-        new("A4_LANDSCAPE", "A4 na šířku"),
-        new("A3_PORTRAIT", "A3 na výšku"),
-        new("A3_LANDSCAPE", "A3 na šířku"),
-    ];
-
-    public IReadOnlyList<StrankaSablonyVM> Stranky { get; }
-    public ObservableCollection<PoleListuVM> PredniPole { get; } = [];
-    public ObservableCollection<PoleListuVM> ZadniPole { get; } = [];
-    public ObservableCollection<VolbaListu> Mrizky { get; } = [];
-
-    /// <param name="plan">Uložené uspořádání; null = vypnuto.</param>
+    /// <param name="hodnoty">Sdílené hodnoty tisku - panel z nich čte i do nich zapisuje.</param>
     /// <param name="pocetStranek">Kolik stránek má doklad (stránek šablony).</param>
-    /// <param name="zmena">Každá změna - uspořádání s formátem „Vypnuto", když je vypnuté.</param>
-    public UsporadaniListuViewModel(UsporadaniListu? plan, int pocetStranek, PageSize stranka,
-        Action<UsporadaniListu> zmena)
+    public UsporadaniListuViewModel(Dictionary<string, object?> hodnoty, int pocetStranek, PageSize stranka, float meritko = 1f)
     {
+        _hodnoty = hodnoty;
         _stranka = stranka;
-        _zmena = zmena;
-        _pocetStranek = Math.Max(1, pocetStranek);
-        Stranky = [.. Enumerable.Range(0, _pocetStranek).Select(i => new StrankaSablonyVM(i, $"Stránka {i + 1}"))];
-        _plan = plan?.Normalizuj() ?? new UsporadaniListu
-        {
-            Format = SheetLayoutKeys.SheetNone, JedenDoklad = UsporadaniListu.VychoziJedenDoklad(_pocetStranek),
-        };
-        Obnov();
+        _meritko = meritko;
+        PocetStranek = Math.Max(1, pocetStranek);
+        // Mřížka se už nevolí - uložená menší by jinak tiše platila dál.
+        if (JeZapnuto) _hodnoty[SheetLayoutKeys.Grid] = SheetLayoutKeys.GridAuto;
+        if (Rezim == RezimListu.Oboustranne && !NabiziOboustranne) Rezim = RezimListu.ZaSebou;
+        NabiziKopie = Rezim == RezimListu.Kopie;
+        NabiziOrezoveZnacky = OrezoveZnacky;
+        UkazatPanel = PocetStranek >= 2 || JeZapnuto;
     }
 
-    public UsporadaniListu Plan => _plan;
+    public int PocetStranek { get; }
 
-    public bool JeZapnuto => _plan.Format is not ("" or SheetLayoutKeys.SheetNone);
+    /// <summary>
+    /// Panel se ukáže jen u šablony o víc stránkách (rozhodnutí Jan 28. 9.) - u jednostránkové
+    /// jen mate. Výjimka je už zapnuté uspořádání (dvě vývěsky na A4 z dřívějška): bez panelu by
+    /// platilo dál a nešlo by ho vidět ani vypnout.
+    /// </summary>
+    public bool UkazatPanel { get; }
+
+    /// <summary>Oboustranný tisk dává smysl jen u dokladu o víc stránkách (líc a rub).</summary>
+    public bool NabiziOboustranne => PocetStranek >= 2;
+
+    public bool JednaStranka => PocetStranek < 2;
+
+    /// <summary>
+    /// Kopie se nová volba nenabízí (rozhodnutí Jan 28. 9. - nebylo jasné, k čemu je). Zůstává
+    /// vidět jen u toho, kdo ji má uloženou z dřívějška („Každá stránka na celý list"), aby se mu
+    /// tisk tiše nezměnil.
+    /// </summary>
+    public bool NabiziKopie { get; }
+
+    /// <summary>Ořezové značky se nově nenabízejí (rozhodnutí Jan 28. 9. - panel má být hlavně
+    /// přehledný); vidí je jen ten, kdo je má zapnuté z dřívějška, aby o ně tiše nepřišel.</summary>
+    public bool NabiziOrezoveZnacky { get; }
+
+    // ── Papír ────────────────────────────────────────────────────────────────
+
+    private string Format => _hodnoty.GetValueOrDefault(SheetLayoutKeys.Sheet) as string is { Length: > 0 } f
+        ? f : SheetLayoutKeys.SheetNone;
+
+    public bool JeZapnuto => Format != SheetLayoutKeys.SheetNone && SheetComposer.ParseSheetFormat(Format) is not null;
+
+    /// <summary>Papíry. Papír, na který se vejde jen jedna stránka, se nenabízí - nic by neskládal
+    /// (#13158); zůstane jen, když je už zvolený.</summary>
+    public IReadOnlyList<VolbaListu> Formaty =>
+    [
+        new(SheetLayoutKeys.SheetNone, "Vypnuto (každá stránka na vlastní list)"),
+        .. Papiry.Select(p => (p, Mist: Mist(p.Klic)))
+            .Where(x => x.Mist > 1 || x.p.Klic == Format)
+            .Select(x => new VolbaListu(x.p.Klic, x.p.Popis)),
+    ];
 
     public VolbaListu VybranyFormat
     {
-        get => Formaty.FirstOrDefault(f => f.Klic == _plan.Format) ?? Formaty[0];
+        get => Formaty.FirstOrDefault(f => f.Klic == Format) ?? Formaty[0];
         set
         {
-            if (value is null || value.Klic == _plan.Format) return;
-            bool bylVypnuty = !JeZapnuto;
-            _plan.Format = value.Klic;
-            if (JeZapnuto)
-            {
-                var (r, c) = NejvetsiMrizka();
-                // Poprvé zapnuto, nebo se dosavadní mřížka na nový list nevejde: nejčastější tvar
-                // pro zvolený režim.
-                if (bylVypnuty || !Vejde(_plan.Radku, _plan.Sloupcu))
-                    _plan = Vychozi(_plan.JedenDoklad, value.Klic, r, c);
-            }
-            Zmeneno();
+            if (value is null || value.Klic == Format) return;
+            _hodnoty[SheetLayoutKeys.Sheet] = value.Klic;
+            _hodnoty[SheetLayoutKeys.Grid] = SheetLayoutKeys.GridAuto;
+            Obnov();
         }
     }
 
-    public VolbaListu? VybranaMrizka
+    // ── Co se skládá ─────────────────────────────────────────────────────────
+
+    public RezimListu Rezim
     {
-        get => Mrizky.FirstOrDefault(m => m.Klic == $"{_plan.Radku}x{_plan.Sloupcu}");
+        get => Zapnuto(SheetLayoutKeys.Repeat) ? RezimListu.Kopie
+             : Zapnuto(SheetLayoutKeys.Oboustranne) ? RezimListu.Oboustranne
+             : RezimListu.ZaSebou;
         set
         {
-            if (value is null || value.Klic == $"{_plan.Radku}x{_plan.Sloupcu}") return;
-            var casti = value.Klic.Split('x');
-            _plan = Vychozi(_plan.JedenDoklad, _plan.Format, int.Parse(casti[0]), int.Parse(casti[1]));
-            Zmeneno();
+            _hodnoty[SheetLayoutKeys.Repeat] = value == RezimListu.Kopie ? "true" : "false";
+            _hodnoty[SheetLayoutKeys.Oboustranne] = value == RezimListu.Oboustranne ? "true" : "false";
+            Obnov();
         }
     }
 
-    /// <summary>Jeden doklad na list (stejná stránka ve dvou polích = kopie).</summary>
-    public bool JedenDoklad
-    {
-        get => _plan.JedenDoklad;
-        set
-        {
-            if (value == _plan.JedenDoklad) return;
-            // Přepnutí režimu = nejčastější tvar nového režimu; pole z jiného režimu by v něm
-            // znamenala něco jiného (kopie × další doklad).
-            _plan = Vychozi(value, _plan.Format, _plan.Radku, _plan.Sloupcu);
-            Zmeneno();
-        }
-    }
-
-    /// <summary>Víc dokladů na list (další výskyt stránky = další doklad).</summary>
-    public bool VicDokladu
-    {
-        get => !JedenDoklad;
-        set => JedenDoklad = !value;
-    }
+    public bool ZaSebou     { get => Rezim == RezimListu.ZaSebou;     set { if (value) Rezim = RezimListu.ZaSebou; } }
+    public bool Kopie       { get => Rezim == RezimListu.Kopie;       set { if (value) Rezim = RezimListu.Kopie; } }
+    public bool Oboustranne { get => Rezim == RezimListu.Oboustranne; set { if (value) Rezim = RezimListu.Oboustranne; } }
 
     public bool OrezoveZnacky
     {
-        get => _plan.OrezoveZnacky;
-        set { _plan.OrezoveZnacky = value; Zmeneno(); }
+        get => Zapnuto(SheetLayoutKeys.Marks);
+        set { _hodnoty[SheetLayoutKeys.Marks] = value ? "true" : "false"; Obnov(); }
     }
 
-    public int Radku => _plan.Radku;
-    public int Sloupcu => _plan.Sloupcu;
+    /// <summary>Měřítko tisku se změnilo ve formuláři - počet míst se tím mění.</summary>
+    public void NastavMeritko(float meritko)
+    {
+        if (Math.Abs(meritko - _meritko) < 0.0001f) return;
+        _meritko = meritko;
+        Obnov();
+    }
 
-    // Rozměry nákresu: list 200 px široký, pole v poměru stránky k listu.
-    private (float W, float H) List => SheetComposer.ParseSheetFormat(_plan.Format) ?? (297f, 210f);
-    private float Meritko => SirkaListuPx / List.W;
-    public double ListSirkaPx => SirkaListuPx;
-    public double ListVyskaPx => List.H * Meritko;
-    public double PoleSirkaPx => _stranka.Width * Meritko;
-    public double PoleVyskaPx => _stranka.Height * Meritko;
+    // ── Nákres ───────────────────────────────────────────────────────────────
 
-    /// <summary>„Na list 2 doklady, 2 strany PDF" - co z nákresu vyjde, jednou větou.</summary>
-    public string Souhrn
+    private SheetLayoutOptions? Volby
     {
         get
         {
-            if (!JeZapnuto) return "Každá stránka na vlastní list.";
-            int n = _plan.DokladuNaList;
-            string doklady = n == 1 ? "1 doklad" : n <= 4 ? $"{n} doklady" : $"{n} dokladů";
-            return $"Na list {doklady}, {(_plan.DveStrany ? "2 strany PDF" : "1 strana PDF")}.";
+            try { return SheetComposer.FromParamValues(new Dictionary<string, object?>(_hodnoty) { [SheetLayoutKeys.Meritko] = _meritko }, _stranka); }
+            catch (ArgumentException) { return null; }
         }
     }
 
-    /// <summary>Dá stránku dokladu do pole (null = vyprázdní).</summary>
-    public void Umisti(bool zadni, int index, int? stranka)
+    public bool MaNakres => JeZapnuto && Volby is not null;
+    public int Radku => Volby?.Rows ?? 1;
+    public int Sloupcu => Volby?.Cols ?? 1;
+
+    private (float W, float H) List => SheetComposer.ParseSheetFormat(Format) ?? (297f, 210f);
+    private float PxNaMm => SirkaListuPx / List.W;
+    public double ListSirkaPx => SirkaListuPx;
+    public double ListVyskaPx => List.H * PxNaMm;
+    public double MistoSirkaPx => _stranka.Width * _meritko * PxNaMm;
+    public double MistoVyskaPx => _stranka.Height * _meritko * PxNaMm;
+
+    /// <summary>Co padne na přední stranu prvního listu.</summary>
+    public IReadOnlyList<MistoListuVM> PredniMista => Mista(zadni: false);
+
+    /// <summary>Co padne na zadní stranu (jen oboustranně) - už zrcadlené podle převracení listu.</summary>
+    public IReadOnlyList<MistoListuVM> ZadniMista => Mista(zadni: true);
+
+    private List<MistoListuVM> Mista(bool zadni)
     {
-        var strana = zadni ? _plan.Zadni : _plan.Predni;
-        if (index < 0 || index >= strana.Count) return;
-        strana[index] = stranka;
-        Zmeneno();
+        if (Volby is not { } o) return [];
+        int n = o.SlotsPerSheet;
+        var mista = new MistoListuVM[n];
+        for (int i = 0; i < n; i++)
+        {
+            string popis = Rezim switch
+            {
+                RezimListu.Kopie => "stránka 1",
+                RezimListu.Oboustranne => $"{i + 1}. doklad · {(zadni ? "rub" : "líc")}",
+                _ when PocetStranek == 1 => $"{i + 1}.",
+                _ => $"{i / PocetStranek + 1}. doklad · str. {i % PocetStranek + 1}",
+            };
+            mista[zadni ? SheetComposer.ZadniPozice(i, o) : i] = new MistoListuVM(popis, false);
+        }
+        return [.. mista];
     }
 
-    /// <summary>Přesune obsah pole do jiného pole (tažení mezi poli); obsahy se prohodí.</summary>
-    public void Presun(bool zZadni, int zIndex, bool naZadni, int naIndex)
+
+    // ── Pomocné ──────────────────────────────────────────────────────────────
+
+    private int Mist(string klic)
     {
-        var z = zZadni ? _plan.Zadni : _plan.Predni;
-        var na = naZadni ? _plan.Zadni : _plan.Predni;
-        if (zIndex < 0 || zIndex >= z.Count || naIndex < 0 || naIndex >= na.Count) return;
-        (z[zIndex], na[naIndex]) = (na[naIndex], z[zIndex]);
-        Zmeneno();
+        if (SheetComposer.ParseSheetFormat(klic) is not { } list) return 0;
+        float w = _stranka.Width * _meritko, h = _stranka.Height * _meritko;
+        return Math.Max(0, (int)(list.W / w)) * Math.Max(0, (int)(list.H / h));
     }
 
-    public void VycistiStranu(bool zadni)
-    {
-        var strana = zadni ? _plan.Zadni : _plan.Predni;
-        for (int i = 0; i < strana.Count; i++) strana[i] = null;
-        Zmeneno();
-    }
 
-    private UsporadaniListu Vychozi(bool jedenDoklad, string format, int radku, int sloupcu)
-    {
-        var u = UsporadaniListu.Vychozi(_pocetStranek, jedenDoklad, format, radku, sloupcu);
-        u.OrezoveZnacky = _plan.OrezoveZnacky;
-        return u;
-    }
-
-    private bool Vejde(int radku, int sloupcu)
-    {
-        try { SheetComposer.ResolveGrid($"{radku}x{sloupcu}", _stranka.Width, _stranka.Height, List.W, List.H); return true; }
-        catch (ArgumentException) { return false; }
-    }
-
-    private (int R, int C) NejvetsiMrizka()
-    {
-        try { return SheetComposer.ResolveGrid(SheetLayoutKeys.GridAuto, _stranka.Width, _stranka.Height, List.W, List.H); }
-        catch (ArgumentException) { return (1, 1); }
-    }
-
-    private void Zmeneno()
-    {
-        _plan.Normalizuj();
-        Obnov();
-        _zmena(_plan);
-    }
+    private bool Zapnuto(string klic) => _hodnoty.GetValueOrDefault(klic) is var v
+        && (v is true || (v is string s && (s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase))));
 
     private void Obnov()
     {
-        Mrizky.Clear();
-        if (JeZapnuto)
-            foreach (var (r, c) in new[] { (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 2), (3, 3) })
-                if (Vejde(r, c)) Mrizky.Add(new VolbaListu($"{r}x{c}", $"{r} × {c}"));
-
-        PredniPole.Clear();
-        ZadniPole.Clear();
-        for (int i = 0; i < _plan.PoliNaStranu; i++)
-        {
-            PredniPole.Add(new PoleListuVM(false, i, _plan.PopisPole(false, i), _plan.Pole(false, i) is null));
-            ZadniPole.Add(new PoleListuVM(true, i, _plan.PopisPole(true, i), _plan.Pole(true, i) is null));
-        }
-        foreach (var n in new[] { nameof(JeZapnuto), nameof(VybranyFormat), nameof(VybranaMrizka), nameof(Radku),
-                     nameof(Sloupcu), nameof(ListSirkaPx), nameof(ListVyskaPx), nameof(PoleSirkaPx), nameof(PoleVyskaPx),
-                     nameof(JedenDoklad), nameof(VicDokladu), nameof(OrezoveZnacky), nameof(Souhrn) })
+        foreach (var n in new[] { nameof(Formaty), nameof(VybranyFormat), nameof(JeZapnuto), nameof(MaNakres), nameof(Rezim),
+                     nameof(ZaSebou), nameof(Kopie), nameof(Oboustranne), nameof(OrezoveZnacky), nameof(Radku), nameof(Sloupcu),
+                     nameof(ListSirkaPx), nameof(ListVyskaPx), nameof(MistoSirkaPx), nameof(MistoVyskaPx),
+                     nameof(PredniMista), nameof(ZadniMista) })
             OnPropertyChanged(n);
     }
 

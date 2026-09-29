@@ -206,11 +206,7 @@ public class PreviewCanvas
             doklady.Add(Layout(dataPages[i], tpl).Pages);
             progress?.Report((i + 1, dataPages.Count));
         }
-        // Nakreslené uspořádání (`B186`) skládá podle stránek šablony, dřívější režimy za sebou.
-        var listy = o.Plan is not null
-            ? SheetComposer.ComposeDle([.. doklady.Select(d => (IReadOnlyList<(Page, int)>)
-                  [.. d.Zip(DesignerPages.StrankySablony(tpl, d), (page, stranka) => (page, stranka))])], o)
-            : SheetComposer.Compose(SheetComposer.StrankyDokladu(doklady, o), o);
+        var listy = SheetComposer.Compose(SheetComposer.StrankyDokladu(doklady, o), o);
 
         foreach (var sheet in listy)
         {
@@ -419,14 +415,14 @@ public class PreviewCanvas
         DesignerPages.StrankySablony(_state.CurrentTemplate, layout.Pages);
 
     /// <summary>
-    /// Které stránky sazby náhled ukáže: u šablony o víc stránkách v režimu „Tato stránka" jen ty,
+    /// Které stránky sazby náhled ukáže: u šablony o víc stránkách bez „Náhled všech stránek" jen ty,
     /// které vznikly z otevřené předlohy (u pevné jedna, u „podle dat" všechny její); jinak všechny.
     /// </summary>
     private List<int> ZobrazeneStranky(LayoutResult layout)
     {
         var vse = Enumerable.Range(0, layout.Pages.Count).ToList();
         int pocetPredloh = DesignerPages.ObsahStranek(_state.CurrentTemplate).Count;
-        if (pocetPredloh < 2 || _state.NahledCelyDoklad) return vse;
+        if (pocetPredloh < 2 || _state.NahledVsechStranek) return vse;
         int otevrena = Math.Clamp(_state.Predloha, 0, pocetPredloh - 1);
         var predlohy = PredlohyStranek(layout);
         return [.. vse.Where(i => predlohy[i] == otevrena)];
