@@ -12,13 +12,18 @@ Naživo jen čtení:
 
 Žádný build, žádné spuštění aplikací, žádné úpravy mimo tento soubor.
 
+**Oprava po vydání (2026-09-29):** I02 je přeřazený z „blokuje pilot" na riziko a jeho popis je přepsaný.
+Důvod: při ověřování rozsahu se ukázalo, že příznak licence má v repu jen 8 práv a v praxi se projeví
+jen 3 práva ECM, takže pilot zasáhne jen zákazníka s ECM ručním vstupem. Zároveň se ukázalo, že chyba
+práva při uložení aplikačního přístupu maže, což původní text neuváděl.
+
 ## 1. Souhrn
 
-- **Blokuje pilot (2).** V manifestu chybí `EDISONRUNTIME.zip`: stanice bez globálního .NET 10 tiše
-  zůstanou na starém shellu a FULL by ručně nahraný zip ze serveru smazal (I01). Hostovaný USERS zobrazuje
-  licencovaná přístupová práva obráceně, protože host skládá licenci bez `Version` (I02). Admin tak při
-  pilotu nastaví práva k jiným položkám, než vidí, a nepozná to.
-- **Nejvyšší rizika.** Vypnutí uzlu `NewShell`, tedy záchranná brzda pilotu, nezabere u uživatele, který si
+- **Blokuje pilot (1).** V manifestu chybí `EDISONRUNTIME.zip`: stanice bez globálního .NET 10 tiše
+  zůstanou na starém shellu a FULL by ručně nahraný zip ze serveru smazal (I01).
+- **Nejvyšší rizika.** Hostovaný USERS při uložení aplikačního přístupu smaže licencovaná práva, která
+  zákazník má, protože host skládá licenci bez `Version`. V praxi jde o tři práva ECM „Ruční vstup" (I02).
+  Vypnutí uzlu `NewShell`, tedy záchranná brzda pilotu, nezabere u uživatele, který si
   shell připne na hlavní panel (I03). Nový shell nečte stav licence: propadlá licence nevede k hlášce ani
   k režimu čtení v modulech (I04). Licence z M-line se nestahuje ani po „Nástroje > Obnovit licenci",
   přestože hláška tvrdí opak (I05).
@@ -38,7 +43,7 @@ Naživo jen čtení:
 | ID | Závažnost | Oblast | Co se stane (scénář pod novým shellem) | Důkaz | Návrh opravy | Odhad | Ověřeno |
 |---|---|---|---|---|---|---|---|
 | I01 | blokuje pilot | vydání | Stanice bez globálního x64 .NET 10 Desktop Runtime: EDLOADER nenajde runtime ani zip a spustí starý shell bez hlášky. Kdo zip nahraje na server ručně, přijde o něj při nejbližší FULL: EDISONINS smaže kořenové soubory a vrátí jen dva ini. | manifest: řádek `EDISONRUNTIME` neexistuje; `EDISON/EDLOADER/clsStartup.vb:361-366`, `:434-435`; FULL maže kořen `EDISON/EDISONAPI/clsUpdater.vb:3779-3818`, vrací `:3135-3139`; požadavek `EDISON2/docs/deploy.md:16-19`, `:35` | Přidat `FULL~~DLL~...\EDISONRUNTIME.zip` do manifestu a zip do Compileru; ověřit na stanici bez .NET 10. | 1 h | naživo (manifest) + kódem |
-| I02 | blokuje pilot | parita licence | Admin v USERS otevře strom práv (formEDISONMAINAccessTree). Host dává `License.Version=""`, `Val("")=0 < 1.003` → větev „odmítnutá práva" odebere licencovaná práva, která licence **má**, a nechá ta, která nemá. Týká se položek s příznakem licence v GetECL modulů. | host `EDISON/EDISONMAIN2API/FormToRunGetter.cs:150-153`; filtr `EDISON/EDISONMAIN/frmMain.vb:293-307`; volání `EDISON/EDISONMAIN/formEDISONMAINAccessTree.vb:263`, otevírá `EDISON/USERS/Users-v4/FrmUSERSRightAP.vb:194` (dále `FrmUSERSUser.vb:1157`); CreateForm kopíruje License `EDISON/EDLIBRARY/clsForm.vb:706`; USERS ve stromu `EDISON2/EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls:791` | Host si licenci načte sám (`Activation.GetActiveLic`) a nastaví License, LicenseTable a ReadOnlyMode jako legacy EDPROCESS cesta (`EDISON/EDLIBRARY/clsForm.vb:5019-5029`, `:5076-5092`); args[12] nechat jako fallback. Oprava zároveň řeší režim čtení z I04. | 0,5 d | kódem |
+| I02 | riziko (blokuje zákazníka s ECM ručním vstupem) | parita licence | Admin v USERS otevře práva aplikačního přístupu (formEDISONMAINAccessTree). Host dává `License.Version=""`, `Val("")=0 < 1.003` → filtr licencovaných položek použije starý výklad (licence = zakázaná práva) a skryje právě ta práva, která zákazník **má**. Po OK strom vrátí jen viditelné položky a `SetRightsAP` z nich profil složí znovu, skrytá práva se tedy z profilu smažou. „Kopírovat práva z jiné firmy" ukládá rovnou. Příznak licence mají v repu jen ECM Archiv dokumentů, Ruční vstup - zapisovat, měnit, rušit (47003051/53/55), a pět práv „Údržba" starých VOZIDEL (28001), která jsou jen ve starém stromu pro licence verze < 2. Za běhu modulu jsou práva správně, opačný směr (zaškrtnout nelicencované právo) nemá účinek. | host `EDISON/EDISONMAIN2API/FormToRunGetter.cs:150-153`; filtr `EDISON/EDISONMAIN/frmMain.vb:293-307`; OK `EDISON/EDISONMAIN/formEDISONMAINAccessTree.vb:1348`; přepis profilu `EDISON/USERS/CRights.vb:101-127`; kopie `EDISON/USERS/Users-v4/FrmUSERSRightAPCopyFromOtherIdfa.vb:185-189`; příznak `EDISON/ECM/CACHE/ALVA/ECM/Main.cls:13-15` (DEV shodný), `EDISON/VOZIDLA2/CACHE/ALVA/VOZIDLA/Main.cls:26-30`; strom podle verze licence `EDISON/EDISONMAIN/frmMain.vb:203-207`; za běhu `EDISON/EDUsers/EDUsers/EDUsers.vb:704-708`; CreateForm kopíruje License `EDISON/EDLIBRARY/clsForm.vb:706`; USERS ve stromu `EDISON2/EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls:791` | Host si licenci načte sám (`Activation.GetActiveLic`) a nastaví License, LicenseTable a ReadOnlyMode jako legacy EDPROCESS cesta (`EDISON/EDLIBRARY/clsForm.vb:5018-5029`, `:5076-5092`); args[12] nechat jako fallback. Oprava zároveň řeší režim čtení z I04. | 0,5 d | kódem |
 | I03 | riziko | vydání, rollback | Uživatel si běžící shell připne na hlavní panel. Windows pak spouští `EDISONMAIN2.exe` napřímo, mimo EDLOADER. Vypnutí uzlu `NewShell` na něj nepůsobí a nový zip runtime se mu nerozbalí. Starý shell přímý start odmítá. | legacy stráž `EDISON/EDISONMAIN/Rozhrani (mainform)/frmNoMDI.vb:4700-4705`; v EDISON2 není AppUserModelID ani relaunch (grep `AppUserModel`, `RelaunchCommand` bez výskytu); vypnutí `EDISON2/docs/deploy.md:100-104` | Nastavit AppUserModelID s relaunch příkazem na `EDISON.exe`, nebo start bez značky od EDLOADERu přesměrovat přes `EDISON.exe`. | 0,5-1 d | kódem, chování pinu odhad |
 | I04 | riziko | parita licence | Licence vyprší nebo má neplatný klíč. Nový shell zahodí hlášku z `GetActiveLic` a stav licence nečte, host nenastaví `ReadOnlyMode`. Moduly tak dál zapisují (legacy: hláška a režim čtení). Chybí i upozornění z nástěnky starého shellu: licence skončí za N dní, licence skončila, překročen počet vozidel nebo zaměstnanců, stará verze. | shell `EDISON2/EDISONMAIN2/dotnet/Startup/LicenceService.cs:31-32` (`info` se nepoužije), `State`/`ValidityTo` v EDISON2 grep bez výskytu; host `FormToRunGetter.cs:129-184`; legacy `frmNoMDI.vb:410-412`, `:1258-1259`, `EDISON/EDLIBRARY/clsForm.vb:5081-5082`, texty `EDISON/Licence/EDLicence/Activation.vb:268-284`; konzumenti např. `EDISON/MajorAPI/CAccess.cs:50-53`, `EDISON/ADSETTINGS/formADSETTINGSGrafikon.vb:97-101`; nástěnka `EDISON/EDISONMAIN/frmMain.vb:836-898` | Shell po načtení licence zobrazí `info` a v pruhu nástěnky upozorní na blížící se konec a překročené počty. Režim čtení v modulech dořeší I02. | 0,5-1 d | kódem |
 | I05 | riziko | parita licence | Zákazník dokoupí modul a podpora mu řekne „Nástroje > Obnovit licenci". Nový shell licenci jen znovu načte z Caché a ohlásí „Licence byla aktualizována", z M-line nic nestáhne. Přihlášení admina (a uživatele s právem UpdateEdison) navíc nestahuje licenci ani neposílá feedback do M-line (`ALVA.FEEDBACK.Update`). Stažení kryje jen `GetActiveLic` 15 dní před koncem platnosti a instalace verze. | shell `EDISON2/EDISONMAIN2/dotnet/Windows/EdisonMainWindow/EdisonMainViewModel.cs:1457-1461`, login přímo `EDISON2/EDISONMAIN2/dotnet/Windows/LoginWindow/UserAuthenticator.cs:34`; legacy `frmNoMDI.vb:3498-3505`, `EDISON/EDUsers/EDUsers/EDUsers.vb:170`, `:320-330`, `:344-365`; částečné krytí `Activation.vb:286-291`, `EDISON/EDISONAPI/clsUpdater.vb:2740` | V „Obnovit licenci" a po přihlášení admina nebo UpdateEdison volat `EDUsers.UpdateLicFromMlineServer` (EDUsers.dll je v bundlu), potom přestavět session jako dnes. | 0,5 d | kódem |
@@ -156,7 +161,8 @@ který host nevytváří (`clsForm.vb:2095-2112`, `:664`). `clsUpdate.StartUpdat
 - I01 předpokládá, že pilotní stanice nemají globální .NET 10. S admin instalací runtime I01 neblokuje.
 - Výchozí chování hostu .NET při chybějícím assetu z deps.json (I15) a sdílení WebView2 dat mezi uživateli
   (I12) znám z dokumentace platformy, nespouštěl jsem je.
-- Odhady jsou hrubé, bez testů šva a bez vydání.
+- Odhady jsou hrubé a odpovídají práci vývojáře bez AI (pochopení, oprava, testy), bez testů šva a bez
+  vydání. S AI chatem se zkrátí hlavně psaní kódu. Review, buildy a ruční ověření zůstávají.
 - Známé otevřené body (F10, F11, F17, A4, A12, zástupci bez filtru práv, hlášení se snímkem, fallback
   EDLOADERu, plná serverová aktualizace z Nastavení, vynucená vlna a HTTP smyčka legacy EDUPDATE) jsem
   neopakoval. Odkazuji na ně jen tam, kde nový nález na nich stojí.
@@ -169,7 +175,8 @@ který host nevytváří (`clsForm.vb:2095-2112`, `:664`). `clsUpdate.StartUpdat
   na TS a share, verze OS.
 - Konzumenty `ReadOnlyMode` (1344 výskytů) a `MLProps.UserName` jsem prošel jen vzorkem. Legacy plochu
   `frmMain.vb` jen po částech.
-- Kolik položek práv má příznak licence (5. díl definice v `GetECL` modulů), tedy rozsah dopadu I02.
+- Příznak licence u práv (I02) jsem hledal jen jako literál v definicích `GetECL` v `.cls` souborech repa.
+  Definici skládanou za běhu by hledání nenašlo.
 - Serverové zobrazení historie aktivity v USERS (I19). `EDTRANSFER2` a `UPDATERTR` jsem neprošel.
 - Kompilační stav jsem ověřil jen u vzorku tříd (shell, EDTesting, třídy DEV projektů mimo repo), ne
   u všech 74 členů `ALVA_TEMPLATE_DESIGNER`.
