@@ -17,6 +17,8 @@ Důvod: při ověřování rozsahu se ukázalo, že příznak licence má v repu
 jen 3 práva ECM, takže pilot zasáhne jen zákazníka s ECM ručním vstupem. Zároveň se ukázalo, že chyba
 práva při uložení aplikačního přístupu maže, což původní text neuváděl.
 
+Stav řešení nálezů je v sekci 6.
+
 ## 1. Souhrn
 
 - **Blokuje pilot (1).** V manifestu chybí `EDISONRUNTIME.zip`: stanice bez globálního .NET 10 tiše
@@ -183,3 +185,40 @@ který host nevytváří (`clsForm.vb:2095-2112`, `:664`). `clsUpdate.StartUpdat
 - Mimo rozsah, ale stojí za pozornost: `ALVA.SETUP.Main.LoadSettings` vrací řádek `admin` se jménem a
   heslem (`EDISON/EDISONINS/CACHE/ALVA/SETUP/Main.cls`, settings(102)). Metodu volá EDLOADER před
   přihlášením.
+
+## 6. Stav řešení (2026-09-29 odpoledne)
+
+Opravy dělalo pět paralelních chatů. Commity bez předpony repa jsou v EDISON2, s „EDISON" v legacy repu.
+
+| Nález | Stav | Commit |
+|---|---|---|
+| I01 | hotovo, zip je v manifestu TEST (ř. 358) | manifest na Cloud2 |
+| I02 | hotovo; host skládá licenci z polí shellu [12] a [18]-[20], když je v pořádku a platná, jinak volá `GetActiveLic` jako dřív | EDISON `e468ada4f`, EDISON `201f968ca`, `40684fe4` |
+| I03 | hotovo, start bez značky `reason=2` jde přes `EDISON.exe` | EDISON `c62c12ed2`, `3b8f3b0f` |
+| I04 | hotovo: hláška a upozornění v shellu, režim čtení v modulech s I02 | `c3804594`, EDISON `e468ada4f` |
+| I05 | hotovo | `c3804594` |
+| I06 | otevřené | - |
+| I07 | hotovo | EDISON `a06bedf95` |
+| I08 | hotovo; celé jméno z args[6], název firmy dotazem `ALVA.EDISON.Main.LoadSettings` (~90 ms) | EDISON `e468ada4f` |
+| I09 | hotovo | `c3804594` |
+| I10 | hotovo, parita s legacy `IsServer` | `e44439f0` |
+| I11 | hotovo, zámek `dotnet.lock\lock` | EDISON `c62c12ed2` |
+| I12 | hotovo, jeho test má výjimku v hlídači `MachineLocalStateGuardTests` | `c05b71c9`, `3479c228` |
+| I13 | odloženo, vydávání testů se teď nemění; deploy.md popisuje skutečný stav | `a7be0193` |
+| I14 | hotovo | `24b6ea6b` |
+| I15 | nepotvrdilo se: host .NET 10 chybějící volnou DLL při startu nekontroluje, změněn jen komentář | `73b017db` |
+| I16 | hotovo | EDISON `c62c12ed2` |
+| I17 | hotovo | EDISON `e468ada4f` |
+| I18 | hotovo | EDISON `240df31a1` |
+| I19 | hotovo | EDISON `e468ada4f` |
+| I20 | otevřené | - |
+| I21 | odloženo | - |
+| I22 | hotovo | `c3804594` |
+| I23 | odloženo s I13 | - |
+| I24 | vynecháno, Compiler se teď nemění | - |
+| I25 | hotovo | EDISON `96e8fba66` |
+
+Deploy.md k I03, I10, I11, I12, I16 a I19: `42acd48e`.
+
+Zbývá: ruční ověření podle checklistů chatů (strom práv a tisk MZDY2, TS a share, dvě stanice nad jedním
+share a připnutí na hlavní panel), push EDISON2 a I06 s I20.
