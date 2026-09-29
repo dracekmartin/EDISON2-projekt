@@ -27,6 +27,9 @@ public class MachineLocalStateGuardTests
         ["ElementRenderSnapshotTests.cs"] =
             "baseline odtisků kreslení je nástroj na vyžádání - porovnání běží jen s TD_RENDER_BASELINE=1, "
             + "bez proměnné se test souboru vůbec nedotkne",
+        ["FontZoomWebViewTests.cs"] =
+            "jen skládá očekávanou cestu z LocalApplicationData a porovná ji s konstantou widgetu, "
+            + "na soubor ani složku nesahá - na každém stroji dá stejný výsledek",
     };
 
     [Fact]
