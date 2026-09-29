@@ -58,3 +58,5 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   `Descendents()` vrací i ta v plovoucích oknech, filtruje se `IsHostedInFloatingWindow`.
   **Poslední document pane AvalonDock neodstraní** - po zavření všeho zbude prázdný přes celou
   plochu, takže bez obsazeného pod-okna picker volbu nenabídne a panel jde cestou `Fill`.
+  Horní pás sloupců po restore nemusí existovat (zahozené panely starého layoutu ho vyprázdní
+  a AvalonDock prázdný `LayoutPanel` smaže) - `InsertColumn` ho dohledá nebo založí.

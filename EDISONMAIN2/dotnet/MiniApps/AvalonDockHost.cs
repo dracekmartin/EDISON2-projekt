@@ -7,6 +7,8 @@ using System.Windows.Threading;
 using AvalonDock;
 using AvalonDock.Layout;
 using AvalonDock.Layout.Serialization;
+// WPF markup temp projekt (_wpftmp) importuje i System.Windows.Forms - holé Orientation je tam CS0104.
+using Orientation = System.Windows.Controls.Orientation;
 
 namespace EDISONMAIN2.MiniApps;
 
@@ -56,7 +58,7 @@ public sealed class AvalonDockHost : IMiniAppHost
                 _dock.Layout.RootPanel.Children.Add(new LayoutDocumentPane(document) { DockHeight = new GridLength(1, GridUnitType.Star) });
                 break;
             case MiniAppPlacementKind.NewColumn:
-                ColumnsPanel.Children.Add(new LayoutDocumentPane(document));
+                InsertColumn(_dock.Layout, new LayoutDocumentPane(document));
                 break;
             default:
                 DocumentPane.Children.Add(document);
@@ -127,18 +129,54 @@ public sealed class AvalonDockHost : IMiniAppHost
 
     public void ResetToDefaultSkeleton()
     {
-        // Plně kvalifikované - WPF markup temp projekt (_wpftmp) importuje i System.Windows.Forms,
-        // takže holé `Orientation` je tam dvojznačné (CS0104), i když hlavní compile projde.
-        var columns = new LayoutPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, DockHeight = new GridLength(2, GridUnitType.Star) };
+        var columns = new LayoutPanel { Orientation = Orientation.Horizontal, DockHeight = new GridLength(2, GridUnitType.Star) };
         columns.Children.Add(new LayoutDocumentPane());
-        var root = new LayoutPanel { Orientation = System.Windows.Controls.Orientation.Vertical };
+        var root = new LayoutPanel { Orientation = Orientation.Vertical };
         root.Children.Add(columns);
         _dock.Layout.RootPanel = root;
     }
 
-    // Vodorovný pás sloupců (výchozí skeleton). Fallback na root, kdyby skeleton nebyl (po restore).
-    private LayoutPanel ColumnsPanel =>
-        _dock.Layout.RootPanel.Children.OfType<LayoutPanel>().FirstOrDefault() ?? _dock.Layout.RootPanel;
+    // Nový sloupec vpravo v horním pásu. Pás tam být nemusí: restore zahodí panely, které katalog
+    // nezná, AvalonDock pak smaže prázdný LayoutPanel a pane zůstane přímo ve svislém rootu.
+    internal static void InsertColumn(LayoutRoot layout, LayoutDocumentPane pane)
+    {
+        var root = layout.RootPanel;
+        if (root.Orientation == Orientation.Horizontal)
+        {
+            root.Children.Add(pane);
+            return;
+        }
+        switch (root.Children.FirstOrDefault())
+        {
+            case LayoutPanel { Orientation: Orientation.Horizontal } strip:
+                strip.Children.Add(pane);
+                break;
+            case LayoutDocumentPaneGroup { Orientation: Orientation.Horizontal } group:
+                group.Children.Add(pane);
+                break;
+            case { } top:
+                // Pořadí ReplaceChild → Add(top) jako v DocumentPaneDropTarget AvalonDocku.
+                var wrapped = new LayoutPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    // Společné rozhraní s DockHeight má AvalonDock internal.
+                    DockHeight = top switch
+                    {
+                        LayoutDocumentPane p => p.DockHeight,
+                        LayoutDocumentPaneGroup g => g.DockHeight,
+                        LayoutPanel p => p.DockHeight,
+                        _ => new GridLength(1, GridUnitType.Star),
+                    },
+                };
+                root.ReplaceChild(top, wrapped);
+                wrapped.Children.Add(top);
+                wrapped.Children.Add(pane);
+                break;
+            default:
+                root.Children.Add(new LayoutPanel(pane) { Orientation = Orientation.Horizontal });
+                break;
+        }
+    }
 
     // První (levý) document pane - cíl pro taby a první sloupec. Když žádný není (všechny dokumenty
     // odtržené do plovoucích oken), vyrobit ho - otevření další mini-app nesmí spadnout.
@@ -149,7 +187,7 @@ public sealed class AvalonDockHost : IMiniAppHost
             if (_dock.Layout.Descendents().OfType<LayoutDocumentPane>().FirstOrDefault() is { } pane)
                 return pane;
             var created = new LayoutDocumentPane();
-            ColumnsPanel.Children.Add(created);
+            InsertColumn(_dock.Layout, created);
             return created;
         }
     }
