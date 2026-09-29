@@ -567,7 +567,7 @@ public class NotesLegendElement : StopScheduleElementBase
     };
 
     /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní - v rámci tieru/pořadí zachová pořadí z dat).</summary>
-    private List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) => Razeni switch
+    internal List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) => Razeni switch
     {
         LegendRazeni.DleTypu           => notes.OrderBy(TypPriorita).ToList(),
         LegendRazeni.DleDelkyVzestupne => notes.OrderBy(p => p.Text.Length).ToList(),
@@ -575,13 +575,17 @@ public class NotesLegendElement : StopScheduleElementBase
         _                              => notes,
     };
 
-    /// <summary>Priorita typu poznámky pro řazení „Dle typu": značky → atributy → text.</summary>
-    private static int TypPriorita(PoznamkaData p) => p.Typ switch
-    {
-        TypPoznamky.NegativniZnacka => 0,   // 1. negativní značky
-        TypPoznamky.SpecialniZnak   => 1,   // 2. atributy (na znamení, bezbariér)
-        _                           => 2,   // 3. text / ruční / zbytek
-    };
+    /// <summary>Priorita typu poznámky pro řazení „Dle typu": dny platnosti → značky → atributy → text.</summary>
+    /// <remarks>Týdenní platnost („jede v pracovních dnech") jde první, jako ve starém tisku (rozhodnutí
+    /// Jan 29. 9.). Zastávková AD ji pozná kategorií, linková druhem 1; MHD ji neoznačuje.</remarks>
+    private static int TypPriorita(PoznamkaData p) =>
+        p.Kategorie == NoteCategories.TydenniPlatnost || p.Druh == "1" ? 0
+        : p.Typ switch
+        {
+            TypPoznamky.NegativniZnacka => 1,
+            TypPoznamky.SpecialniZnak   => 2,   // atributy (na znamení, bezbariér)
+            _                           => 3,   // text / ruční / zbytek
+        };
 
     // ─── PropertyDescriptors ────────────────────────────────────────────────
 
@@ -615,7 +619,7 @@ public class NotesLegendElement : StopScheduleElementBase
         new EnumPropertyDescriptor   { FromImage = true, Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
             Options = [("Po sloupcích", (object)LegendWrap.PoSloupcich), ("Po řádcích", (object)LegendWrap.PoRadcich)] },
         new EnumPropertyDescriptor   { Label = "Řazení",             Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
-            Options = [("Dle typu (značky → atributy → text)", (object)LegendRazeni.DleTypu), ("Výchozí (dle dat)", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
+            Options = [("Dle typu (dny platnosti → značky → atributy → text)", (object)LegendRazeni.DleTypu), ("Výchozí (dle dat)", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
         new FloatPropertyDescriptor  { FromImage = true, Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },

@@ -36,6 +36,9 @@ public static class NoteCategories
     /// <summary>Atribut zastávky (na znamení a spol.).</summary>
     public const string AtributZastavky = "atribut-zastavky";
 
+    /// <summary>Týdenní platnost spoje (X, 6, 7, +) - zastávková AD; linková ji posílá jako druh 1.</summary>
+    public const string TydenniPlatnost = "tydenni-platnost";
+
     /// <summary>Souhrn „všechny spoje mají bezbariérově přístupné vozidlo".</summary>
     public const string BezbarierAgregat = "bezbarier-agregat";
 

@@ -1,6 +1,14 @@
 ﻿# Changelog
 
-## 2026-09-29 - 📑 systémová šablona s poznámkami vedle tabulky (#11373)
+## 2026-09-29 (2) - ↕ v Poznámkách jdou první dny platnosti
+
+Řazení „Dle typu" (výchozí) dávalo na začátek legendy negativní značky a vysvětlivky „jede
+v pracovních dnech / nejede v sobotu" až za ně. Nově jdou **dny platnosti první**, pak negativní
+značky, atributy zastávek a texty - jako ve starém tisku. Platí pro zastávkový i linkový JŘ AD;
+MHD dny platnosti v datech neoznačuje, tam se pořadí nemění. Popisek volby to říká:
+„Dle typu (dny platnosti → značky → atributy → text)".
+
+## 2026-09-29 (1) - 📑 systémová šablona s poznámkami vedle tabulky (#11373)
 
 Šablona **„Linkový JŘ (AD) - poznámky vedle tabulky A4"** jde s programem mezi systémové, aby si
 zákazník mohl vzhled z #11373 proklikat sám: postskriptový vzhled na A4 naležato, tabulka linky
