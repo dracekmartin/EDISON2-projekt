@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-09-29 - 📑 systémová šablona s poznámkami vedle tabulky (#11373)
+
+Šablona **„Linkový JŘ (AD) - poznámky vedle tabulky A4"** jde s programem mezi systémové, aby si
+zákazník mohl vzhled z #11373 proklikat sám: postskriptový vzhled na A4 naležato, tabulka linky
+vlevo, Poznámky s negativními značkami vpravo v jednom sloupci. Dosud ležela jen v repu jako
+soubor k importu. Dostala nové Id, aby se nepotkala s kopií, kterou si kdo z ní dřív importoval.
+⚠️ Neověřeno: u linky delší než stránka může zlom Poznámky přetnout.
+
 ## 2026-09-28 (2) - 🖨 PDF a PNG jen z okna Tisk
 
 Výstup šel udělat čtyřmi cestami: tlačítky PDF a PNG na liště, „Tisk všech vybraných" a „Export

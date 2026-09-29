@@ -55,6 +55,7 @@ public class SystemTemplateSeedTests
         Assert.Contains("zastavkovy-jr-ad.json", names);
         Assert.Contains("zastavkovy-jr-mhd.json", names);
         Assert.Contains("linkovy-jr-ad-postskript-a5.json", names);
+        Assert.Contains("linkovy-jr-ad-poznamky-vedle-a4.json", names);
     }
 
     /// <summary>Tohle je vlastní jádro `B92`: soubor ve složce ještě neznamená soubor v .exe.</summary>

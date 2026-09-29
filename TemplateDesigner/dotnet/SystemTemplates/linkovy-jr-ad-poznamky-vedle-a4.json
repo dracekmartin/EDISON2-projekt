@@ -1,8 +1,8 @@
 {
   "version": "1.15.0",
-  "id": "6b2b7881-617f-4a4d-b3f9-0456033d817e",
+  "id": "912e621f-3734-4f35-a1f6-fc5c85d01f24",
   "name": "Linkový JŘ (AD) - poznámky vedle tabulky A4",
-  "description": "Linkový jízdní řád (AD) ve vzhledu postskriptového tisku na A4 naležato: hlavička přes celou šířku, tabulka linky vlevo a poznámky s negativními značkami vpravo vedle ní.",
+  "description": "Systémová šablona linkového jízdního řádu (AD) ve vzhledu postskriptového tisku na A4 naležato: hlavička přes celou šířku, tabulka linky vlevo a poznámky s negativními značkami vpravo vedle ní.",
   "pageSize": {
     "width": 297,
     "height": 210,

@@ -99,7 +99,7 @@ poznámky na samostatném listu (podnět zákazníka). Zbylé hlášky převzal 
   (sekce Data linky), u knižního a vývěsního u linky. Kdyby chtěl krátké linky bez dorovnání
   a dlouhé s ním jednou šablonou: volba *Jen když se tabulka dělí na části* (odhad S).
 - **#11373** (KAD) - poznámky a negativní značky vedle tabulky: šablona
-  `templates/linkovy-jr-ad-poznamky-vedle-a4.json` (A4 naležato, tabulka 195 mm vlevo, Poznámky
+  `dotnet/SystemTemplates/linkovy-jr-ad-poznamky-vedle-a4.json` (od 29. 9. systémová; A4 naležato, tabulka 195 mm vlevo, Poznámky
   87 mm vpravo v jedné sekci), odvozená z postskriptové A5. Jan ji uložil a poslal zákazníkovi.
   Neověřeno: zlom stránky u linky delší než strana může Poznámky přetnout.
 - **#9088** (TRANSDEV, slovenská instalace) - osm bodů prošlo proti starému Win tisku: slévání stran
