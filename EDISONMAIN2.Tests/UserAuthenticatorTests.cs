@@ -39,6 +39,26 @@ public class UserAuthenticatorTests
         Assert.Equal("jan@x.cz", r.Email);             // parts[7]
     }
 
+    // Pořadí jako Login.cls:69 (repo EDISON): mlp, fullname, admin, dir, changePassword, updateEdison,
+    // startupForm, email, usernameEdison, password, un. Živý test šva kryje jen chybovou cestu
+    // (reálný účet by Login přepsal flagy 17/20), takže pořadí drží tenhle test.
+    [Theory]
+    [InlineData("1", "0", true, false)]
+    [InlineData("0", "1", false, true)]
+    public void Login_FieldOrderMatchesServer_AdminAndUpdateNotSwapped(string admin, string updateEdison, bool isAdmin, bool mayUpdate)
+    {
+        var ml = MockWithResponse(string.Join(D,
+            "201", "Jan Novák", admin, "C:\\dir", "0", updateEdison, "7", "jan@x.cz", "EDISON_JAN", "heslo", "jan.novak"));
+
+        var r = UserAuthenticator.Login(ml, "jan", "heslo");
+
+        Assert.Equal(isAdmin, r.IsAdmin);
+        Assert.Equal(mayUpdate, r.MayUpdate);
+        Assert.False(r.ChangePasswordNeeded);
+        Assert.Equal("jan@x.cz", r.Email);
+        Assert.Equal("jan.novak", r.UserName);
+    }
+
     // Legacy USERS ukládá boolean flagy jako VB True = -1; server je posílá surově ("-1" i "1").
     [Theory]
     [InlineData("-1", true)]

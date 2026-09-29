@@ -85,6 +85,7 @@ internal static class EdisonMainViewModelHarness
         Action? forceShutdown = null,
         ModuleShortcutsService? shortcuts = null,
         IChangelogSource? changelogSource = null,
+        Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null,
         bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
@@ -106,7 +107,9 @@ internal static class EdisonMainViewModelHarness
                                          switchUser ?? (() => new(SwitchUserResult.Cancelled, null)), p,
                                          getActiveModules ?? (() => []), close, forceShutdown ?? (() => { }),
                                          catalog, shortcuts ?? new ModuleShortcutsService(), changelogSource,
-                                         restRunner ?? new InlineRestCallRunner(mockMLRest));
+                                         restRunner ?? new InlineRestCallRunner(mockMLRest),
+                                         // Produkční sync volá EDUsers nad živým MLRest - v testech jen stub.
+                                         licenceSync ?? (_ => new(false, "")));
         }
         finally
         {

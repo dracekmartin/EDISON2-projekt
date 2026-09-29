@@ -624,4 +624,42 @@ public class AppBootstrapperTests
         Assert.False(b.SessionLogoutWired);
     }
 
+    // LogLogin = záznam do sestavy USERS „Přehled přihlášení" (legacy frmNoMDI.vb:4948).
+
+    private static void AssertLogLogin(TestableBootstrapper b, int times) =>
+        b.MLRest.Received(times).QueryOrThrow("ALVA.SYS.Login", "LogLogin",
+            Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == Environment.MachineName));
+
+    [Fact]
+    public void Run_Success_LogsLoginWithMachineName()
+    {
+        var b = new TestableBootstrapper();
+
+        b.Run();
+
+        AssertLogLogin(b, 1);
+    }
+
+    [Theory]
+    [InlineData(LicenceAcquireOutcome.Refused)]
+    [InlineData(LicenceAcquireOutcome.Cancelled)]
+    public void Run_LicenceNotAccepted_DoesNotLogLogin(LicenceAcquireOutcome outcome)
+    {
+        var b = new TestableBootstrapper { SessionOutcome = outcome };
+
+        b.Run();
+
+        AssertLogLogin(b, 0);
+    }
+
+    [Fact]
+    public void Run_UpdateTriggered_DoesNotLogLogin()
+    {
+        // Legacy start ukončený updatem (frmNoMDI.vb:4917) k LogLogin (:4948) nedošel.
+        var b = new TestableBootstrapper { UpdateTriggered = true };
+
+        b.Run();
+
+        AssertLogLogin(b, 0);
+    }
 }

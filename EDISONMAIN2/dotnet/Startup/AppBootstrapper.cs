@@ -149,6 +149,8 @@ public class AppBootstrapper
             Shutdown();
             return null;
         }
+        // Až po update checku: legacy start ukončený updatem přihlášení nezapsal (frmNoMDI.vb:4917 před :4948).
+        LicenceVerifier.LogLogin(session.MLRest);
 
         _startupLoginWindow?.ShowProgress("Spouštím aplikaci…");
         var wnd = BuildShellWindow(prep, session, licence, services, nav, popup, prefs, update.Notice);

@@ -41,6 +41,10 @@
     <Reference Include="EDLicence">
       <HintPath>C:\Edison\EDLicence.dll</HintPath>
     </Reference>
+    <!-- Stažení licence z M-line + feedback (UpdateLicFromMlineServer), parita se starým shellem. -->
+    <Reference Include="EDUsers">
+      <HintPath>C:\Edison\EDUsers.dll</HintPath>
+    </Reference>
     <Reference Include="MLRest">
       <HintPath>C:\Edison\MLRest.dll</HintPath>
     </Reference>

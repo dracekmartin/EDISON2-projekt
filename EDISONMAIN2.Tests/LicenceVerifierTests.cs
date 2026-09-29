@@ -142,12 +142,12 @@ public class LicenceVerifierTests
     }
 
     [Fact]
-    public void LicenceLoader_CalledFreshEachIteration()
+    public void LicenceLoader_CalledOnceAcrossRetries()
     {
-        // Důvod: mezi iteracemi mohl admin odhlásit jiného usera → CountsLOGIN se mohlo zvýšit,
-        // chceme čerstvou hodnotu pro další VerifyLic call.
+        // Loader ukazuje hlášku licence (prošlá, neplatný klíč) - per retry by ji admin viděl opakovaně.
+        // Okno aktivity jen odhlašuje uživatele, CountsLOGIN licence se jím nezmění.
         var mlRest = MLRestMocks.Create();
-        SetupVerifyLic(mlRest, -1, 1);
+        SetupVerifyLic(mlRest, -1, -1, 1);
         var popup = Substitute.For<IPopupDisplayer>();
         popup.Confirm(Arg.Any<string>()).Returns(true);
         var loader = Substitute.For<Func<Lic?>>();
@@ -156,7 +156,32 @@ public class LicenceVerifierTests
         LicenceVerifier.TryAcquireSession(
             mlRest, loader, isAdmin: true, popup, Substitute.For<IWindowNavigator>());
 
-        loader.Received(2).Invoke();
+        loader.Received(1).Invoke();
+        mlRest.Received(3).QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 5));
+    }
+
+    [Fact]
+    public void LogLogin_SendsMachineName()
+    {
+        // Parita s legacy EDUsers.LogLogin: IN(1) = Environment.MachineName (sestava USERS „Přehled přihlášení").
+        var mlRest = MLRestMocks.Create();
+
+        LicenceVerifier.LogLogin(mlRest);
+
+        mlRest.Received(1).QueryOrThrow("ALVA.SYS.Login", "LogLogin",
+            Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == Environment.MachineName));
+    }
+
+    [Fact]
+    public void LogLogin_ServerError_Swallowed()
+    {
+        // Legacy chybu jen uložil do EDUsers.Err - přihlášení na záznamu do sestavy nestojí.
+        var mlRest = MLRestMocks.Create();
+        mlRest.QueryOrThrow("ALVA.SYS.Login", "LogLogin", Arg.Any<object[]>())
+              .Returns(_ => throw new InvalidOperationException("boom"));
+
+        LicenceVerifier.LogLogin(mlRest);
     }
 
     [Fact]

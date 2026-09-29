@@ -212,4 +212,21 @@ public class SessionSwitcherTests
 
         Assert.Equal(SwitchUserResult.LicenceCancelled, outcome.Outcome);
     }
+
+    [Theory]
+    [InlineData(LicenceAcquireOutcome.Accepted, 1)]
+    [InlineData(LicenceAcquireOutcome.Refused, 0)]
+    [InlineData(LicenceAcquireOutcome.Cancelled, 0)]
+    public void Switch_LogsLoginOnlyWhenAccepted_OnNewSession(LicenceAcquireOutcome outcome, int expected)
+    {
+        // Legacy mnuPrgLogin_Click (frmNoMDI.vb:3347) zapisuje přihlášení nového uživatele do sestavy USERS.
+        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        s.PromptResult = ReauthLogin();
+        s.SessionOutcome = outcome;
+
+        s.Switch();
+
+        s.NewSessionMLRest.Received(expected).QueryOrThrow("ALVA.SYS.Login", "LogLogin",
+            Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == Environment.MachineName));
+    }
 }

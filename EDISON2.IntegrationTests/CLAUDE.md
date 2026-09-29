@@ -10,13 +10,16 @@ skutečnou odpovědí.
   Server `EDISON_IT_SERVER` / `EDISON_IT_PORT`, default `192.168.16.1:57770`. Třídy nesou
   `[Trait("Category", "Integration")]` (hlavní .NET běh je vyfiltruje) a `[DevServerFact]` / `[DevServerTheory]`.
 - **Identita je pevná** (`DevServer`), ne z `CACHE_USER`: čtení pod `CB_DP` / MLP 1, zápisy jen
-  pod `TEST_EDISON2_IT` / MLP 999 s úklidem ve `finally`.
+  pod `TEST_EDISON2_IT` / MLP 999 s úklidem ve `finally`. Výjimka `LogLogin`: záznam sestavy
+  přihlášení úklid přes MLRest nemá, každý běh přidá řádek pod touto firmou.
 - **Tolerantní parser** (chybějící řádek nebo pole = default) ověřuj i na surovém výstupu, jinak
   přejmenovaný řádek nebo posunuté pole projde. Vzor `ModuleTreeTests`.
 - **Surový výstup nelogovat** ani nedávat do assert zpráv: `Login` vrací heslo zpět, oba
   `LoadSettings` jméno a heslo admina.
 - **Nevolat** (mění session nebo stav celého serveru):
-  - `ALVA.SYS.Login.Login` s reálným účtem - resetuje uživatelské flagy 17 a 20,
+  - `ALVA.SYS.Login.Login` s reálným účtem - resetuje uživatelské flagy 17 a 20 (neexistující jméno
+    smí, `LoginContractTests`),
+  - `ALVA.MZDY2.MLAPI.gPocZam` - přepočítá a zapíše počet zaměstnanců do dat firmy a telemetrie,
   - `VerifyLic` - zakládá ACTIVITY zámek a počítá IP do licence,
   - `UkonciUzivatele` bez řádku GUID - odhlásí všechny shelly na serveru,
   - `LockClearExt` s prázdným nebo cizím GUID - prázdný smaže všechny zámky na serveru,

@@ -58,3 +58,6 @@ Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDA
   `EdisonMainViewModel.ConfirmShellClose`, takže **každé programové ukončení po vzniku shellu
   musí jít přes `ShellShutdown.Force` / `SuppressCloseConfirm` na VM** - jinak force logout
   nebo version gate uvízne na dialogu, který smí uživatel odmítnout.
+- `TryAcquireSession` načítá licenci jednou (loader ukazuje hlášku `GetActiveLic`). `LogLogin` jde po
+  `Accepted` startu a switch user, **ne** po přepnutí firmy (parita). `SyncFromMline` smí na klon mimo UI
+  thread: EDLicence `Update` na rozdíl od `Activation` nesahá na modulový globál.

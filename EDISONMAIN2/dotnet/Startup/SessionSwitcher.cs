@@ -75,6 +75,8 @@ public class SessionSwitcher(
         wireActivityFailed(session.MLRest);
 
         var (outcome, licence) = AcquireSession(session);
+        if (outcome == LicenceAcquireOutcome.Accepted)
+            LicenceVerifier.LogLogin(session.MLRest);
         return outcome switch
         {
             LicenceAcquireOutcome.Accepted => new(SwitchUserResult.Success, licence),

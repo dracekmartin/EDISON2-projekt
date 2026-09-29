@@ -138,6 +138,20 @@ public class CompanySwitcherTests
     }
 
     [Fact]
+    public void Switch_Accepted_DoesNotLogLogin()
+    {
+        // Parita: legacy SelectDatabaseHandler (frmNoMDI.vb:2934) do sestavy přihlášení nezapisuje.
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, 1);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "LogLogin", Arg.Any<object[]>());
+    }
+
+    [Fact]
     public void Switch_Accepted_ReleasesOldFirmLock()
     {
         // Po úspěšném přepnutí se uvolní ACTIVITY zámek staré firmy (jinak drží její licenční slot).

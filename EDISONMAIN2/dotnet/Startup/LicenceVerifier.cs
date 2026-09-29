@@ -30,15 +30,16 @@ public static class LicenceVerifier
         IPopupDisplayer popup,
         IWindowNavigator windowNavigator)
     {
-        Lic? licence;
+        // Jednou za tok, ne per retry: loader ukazuje hlášku licence (prošlá, neplatný klíč) a okno
+        // aktivity licenci nezmění - jen odhlašuje uživatele.
+        var licence = licenceLoader();
         // Parita s EDUsers.VerifyLic: podpora licenci nezabírá a jede bez zámku s CacheLocks=0 - server
         // pak nekontroluje LockExist ani verzi, agendy nedostanou shell GUID (WindowNavigator).
-        if (IsSupportLogin(mlRest)) return (LicenceAcquireOutcome.Accepted, licenceLoader());
+        if (IsSupportLogin(mlRest)) return (LicenceAcquireOutcome.Accepted, licence);
 
+        int countOfLicenses = licence?.CountsLOGIN ?? 0;
         while (true)
         {
-            licence = licenceLoader();
-            int countOfLicenses = licence?.CountsLOGIN ?? 0;
             // object[]: VerifyLic je legacy endpoint s numerickými subscripty (IN(1), OUT(1)).
             var output = mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", new object[] { countOfLicenses });
             int result = int.Parse(output[1]?.ToString() ?? "0");
@@ -95,6 +96,24 @@ public static class LicenceVerifier
         {
             Debug.WriteLine($"LicenceVerifier.ReacquireLock failed: {ex.Message}");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Záznam do sestavy USERS „Přehled přihlášení" (<c>ALVA.SYS.Login.LogLogin</c>, legacy
+    /// <c>EDUsers.LogLogin</c>). Jen po startu a přihlášení jiného uživatele, i u podpory - legacy
+    /// ho při přepnutí firmy nevolá. Best-effort: legacy chybu jen uložil, přihlášení na ní nestojí.
+    /// </summary>
+    public static void LogLogin(IMLRest mlRest)
+    {
+        try
+        {
+            // object[]: LogLogin je legacy endpoint s numerickým subscriptem IN(1)=název stanice.
+            mlRest.QueryOrThrow("ALVA.SYS.Login", "LogLogin", new object[] { Environment.MachineName });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"LicenceVerifier.LogLogin failed: {ex.Message}");
         }
     }
 

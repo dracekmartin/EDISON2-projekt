@@ -633,6 +633,20 @@
                                MaxWidth="320" TextTrimming="CharacterEllipsis"/>
                 </Border>
             </StatusBarItem>
+            <!-- Upozornění nástěnky starého shellu (konec licence, počty, stará verze). Oranžový je jen
+                 rámeček: text v Semantic.Warning by na panelu status baru byl málo čitelný. -->
+            <StatusBarItem DockPanel.Dock="Right"
+                           Visibility="{Binding LicenceNoticeText, Converter={StaticResource NonEmptyToVis}}">
+                <Border BorderBrush="{DynamicResource EDTheme.Semantic.Warning}" BorderThickness="1"
+                        CornerRadius="3" Padding="8,1">
+                    <Border.ToolTip>
+                        <TextBlock Text="{Binding LicenceNoticeTooltip}" TextWrapping="Wrap" MaxWidth="420"/>
+                    </Border.ToolTip>
+                    <TextBlock Text="{Binding LicenceNoticeText}" FontWeight="SemiBold"
+                               Foreground="{DynamicResource EDTheme.Text.Primary}"
+                               MaxWidth="320" TextTrimming="CharacterEllipsis"/>
+                </Border>
+            </StatusBarItem>
             <!-- Nápověda k dvojhmatu Ctrl+W+W. Prázdný text = neaktivní stav. -->
             <StatusBarItem DockPanel.Dock="Right"
                            Visibility="{Binding SecondKeyHintText, Converter={StaticResource NonEmptyToVis}}">

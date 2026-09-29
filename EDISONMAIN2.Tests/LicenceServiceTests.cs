@@ -61,13 +61,51 @@ public class LicenceServiceTests
     }
 
     // Seam kolem EDLicence.Activation - testuje se okolní logika GetActiveLicence.
-    private sealed class FakeLicenceService(Lic? lic, string err) : LicenceService(new MLRest("test-host", 9999, "", ""))
+    private sealed class FakeLicenceService(Lic? lic, string err, string info = "", Action<string>? showInfo = null)
+        : LicenceService(new MLRest("test-host", 9999, "", ""), showInfo ?? (_ => { }))
     {
-        protected override Lic? LoadActiveLic(out string error)
+        protected override Lic? LoadActiveLic(out string error, out string licenceInfo)
         {
             error = err;
+            licenceInfo = info;
             return lic;
         }
+    }
+
+    [Fact]
+    public void GetActiveLicence_Info_ShownOncePerLoad()
+    {
+        // Legacy frmNoMDI.GetActiveLicense: hláška GetActiveLic (prošlá licence, neplatný klíč) jde uživateli.
+        var shown = new List<string>();
+        var service = new FakeLicenceService(new Lic(), "", "Vypršela platnost licence!", shown.Add);
+
+        service.GetActiveLicence();
+
+        Assert.Equal(["Vypršela platnost licence!"], shown);
+    }
+
+    [Fact]
+    public void GetActiveLicence_NoInfo_NothingShown()
+    {
+        var shown = new List<string>();
+        var service = new FakeLicenceService(new Lic(), "", "", shown.Add);
+
+        service.GetActiveLicence();
+
+        Assert.Empty(shown);
+    }
+
+    [Fact]
+    public void GetActiveLicence_NoLicenceInfo_ShownWithFallback()
+    {
+        // „Nejsou žádné licence!" přichází bez licence - hláška i fallback, jako legacy.
+        var shown = new List<string>();
+        var service = new FakeLicenceService(null, "", "Nejsou žádné licence!", shown.Add);
+
+        var lic = service.GetActiveLicence();
+
+        Assert.Equal("Nezadána", lic!.Type);
+        Assert.Single(shown);
     }
 
     [Fact]
