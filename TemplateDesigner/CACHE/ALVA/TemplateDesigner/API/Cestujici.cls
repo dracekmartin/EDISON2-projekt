@@ -55,6 +55,7 @@ ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
             continue:key="ERR"
             s stranka = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
             d ..PridejOmezeni(dataDB, skupina, lin, stranka)
+            d ..PridejPolohy(dataDB, stranka)
             d stranky.%Push(stranka)
         }
         k ^||ML("IN"), ^||ML("OUT")
@@ -102,6 +103,36 @@ ClassMethod PridejOmezeni(dataDB As %String, sku As %String, lin As %String, str
             d omezeni.%Push({"druh":($case(omzId, 11:"jen", 12:"take", 13:"jede", :"nejede")),"useky":(useky)})
         }
         d spoj.%Set("OMEZENI", omezeni)
+    }
+}
+
+/// Souřadnice pro mapu: ke každému řádku zastávky `LAT`/`LON` z číselníku zastávek (`^JRZ` pole
+/// 12 a 13) a k zastávce výlepu `SLOUPKY` - sloupky s GPS (`^JRZ(czst,"Sloupek",id)` =
+/// `číslo~lat~lon~popis směru`). Sloupky má jen část zastávek, bez nich je známá jen zastávka.
+ClassMethod PridejPolohy(dataDB As %String, stranka As %DynamicObject)
+{
+    s zastavky = stranka.rows.%Get("ZASTAVKY")
+    q:'$isobject(zastavky)
+    s it = zastavky.%GetIterator()
+    while it.%GetNext(.i, .radek) {
+        s czst = radek.%Get("CZST")
+        continue:czst=""
+        s rec = $g(^[dataDB]JRZ(czst))
+        s lat = $p(rec,"$",12), lon = $p(rec,"$",13)
+        i $isvalidnum(lat) && $isvalidnum(lon) && (+lat '= 0) {
+            d radek.%Set("LAT", +lat), radek.%Set("LON", +lon)
+        }
+        continue:radek.%Get("AKTUALNI_ZASTAVKA")'="true"
+        s sloupky = ##class(%DynamicArray).%New(), id = ""
+        f {
+            s id = $o(^[dataDB]JRZ(czst,"Sloupek",id))
+            q:id=""
+            s sloupek = $g(^[dataDB]JRZ(czst,"Sloupek",id))
+            s sLat = $p(sloupek,"~",2), sLon = $p(sloupek,"~",3)
+            continue:'$isvalidnum(sLat)||'$isvalidnum(sLon)||(+sLat=0)
+            d sloupky.%Push({"cislo":($p(sloupek,"~",1)),"lat":(+sLat),"lon":(+sLon),"popis":($p(sloupek,"~",4))})
+        }
+        d radek.%Set("SLOUPKY", sloupky)
     }
 }
 
