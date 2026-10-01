@@ -6,9 +6,10 @@
 ## Co se po nás chce
 
 Cestující na zastávce načte QR z vytištěného **linkového jízdního řádu AD** a otevře se mu
-webová aplikace M-line. Vybere, odkud a kam jede, a aplikace mu řekne, za kolik minut jede
-nejbližší spoj, který tam opravdu dojede, a co k němu říká tištěný jízdní řád (bezbariérový
-spoj, kola, místenka, omezení).
+webová aplikace M-line. **Každý výlep je tištěný pro konkrétní zastávku (označník)**, takže
+aplikace ví, kde cestující stojí, a **ví, že chce jet dnes** - nic z toho nevybírá. Vybere jen
+cíl a aplikace mu řekne, za kolik minut jede nejbližší spoj, který tam opravdu dojede, a co
+k němu říká tištěný jízdní řád (bezbariérový spoj, kola, místenka, omezení).
 
 **Rozsah (rozhodnutí Jan 1. 10.):** demo jako proof of concept, ne hotový produkt.
 
@@ -48,8 +49,8 @@ u každé zastávky, takže odpověď „kdy jede spoj z A do B" se jen přečte
 ## Co už existuje a jen se nenapojilo
 
 - **QR prvek dosazuje datová pole** (`TemplateDesigner/dotnet/Models/Elements/BarcodeElement.cs:105`).
-  Adresu jde složit v šabloně, např. `http://localhost:<port>/linka/{CISLO_LINKY}/{SMER}`,
-  a každá stránka (směr) pak má svoje QR **bez úpravy kódu**.
+  Adresu jde složit v šabloně z polí stránky, např. `http://localhost:<port>/linka/{CISLO_LINKY}/...`,
+  a každý výlep pak má svoje QR bez úpravy návrháře.
 - **Pole `QR_KOD`** linkový JŘ už posílá (`LinkovyJrAd.cls:641`, z `PATCH,"QR_CODE"`),
   v dev datech je prázdné. Je to dnešní „obecné QR pro jednu adresu".
 - **EDISONKA web už volá Caché** - klient `edwcore/apps/edisonkaweb/backend/src/infrastructure/cache/cache-client.ts`
@@ -57,28 +58,50 @@ u každé zastávky, takže odpověď „kdy jede spoj z A do B" se jen přečte
 
 ## Mezera
 
-1. **Linkový JŘ nezná zastávku, kde cestující stojí.** Stránka linkového JŘ je stejná pro všechny
-   zastávky linky, takže QR nese jen linku a směr. Cestující si v demu vybere i „odkud".
-   Označník jako výchozí bod by šel až s QR tištěným pro jednotlivou zastávku.
+1. **Zastávka výlepu se nedostane do QR.** Výlep pro konkrétní zastávku linkový JŘ umí už dnes:
+   parametry sestavy „Zvýraznit zastávku" a „Zvýraznit tarifní číslo" (`LinkovyJrAd.cls:333-347`)
+   označí řádek zastávky jako aktuální (`:871`). Je to ale příznak v řádku tabulky a QR dosazuje
+   jen pole stránky. Chybí pole stránky s klíčem zvýrazněné zastávky (`CZST` + tarifní číslo) -
+   přidané pole, tisk se nezmění. Směr v QR být nemusí: ze zastávky jede linka oběma směry
+   a aplikace nabídne cíle tam i zpět.
 2. **Firma v adrese chybí** - výstup IdFa nenese. Pro lokální demo stačí firma v konfiguraci
    aplikace.
-3. **Wire tvar:** `GetData` zapisuje do `^||ML("OUT",n)` (CVar), kdežto klient v `edwcore` volá
+3. **Localhost z telefonu nedosáhne.** Pro zkoušení telefonem musí QR nést adresu počítače
+   v místní síti (např. `http://192.168.x.x:<port>`), proto má být začátek adresy v šabloně
+   snadno měnitelný.
+4. **Wire tvar:** `GetData` zapisuje do `^||ML("OUT",n)` (CVar), kdežto klient v `edwcore` volá
    JSON metody (`QueryJSON`, signatura `(sys, in, out)`). Je potřeba tenká Caché metoda,
    která `GetData` zavolá a vrátí JSON, nebo klient na CVar cestu.
-4. **„Jede to dnes?"** - pracovní den / sobota / neděle jde z kódů `PLATNOST`, svátky si aplikace
-   spočítá sama. Omezení jsou jen text; demo je ukáže, ale nevyhodnotí (nebo je zkusí rozparsovat).
-5. **Velikost:** linka je malá (2 stránky), načtení celé linky na jedno QR je pro demo v pořádku.
+5. **„Jede to dnes?"** - aplikace vezme dnešní datum: pracovní den / den v týdnu / neděle
+   a svátky jdou z kódů `PLATNOST` (`X`, `1`-`7`, `+`), státní svátky si spočítá sama a na svátek
+   se chová jako v neděli. Omezení jsou jen text; demo je u spoje ukáže a jednoduché tvary
+   („nejede 24.12.22") zkusí rozpoznat.
+6. **Dev data jsou prošlá** (platnost 11.12.2022-09.12.2023). Pro zkoušení musí jít aplikaci
+   podstrčit datum (parametr v adrese), jinak by „dnes" nikdy nic nejelo.
+7. **Velikost:** linka je malá (2 stránky), načtení celé linky na jedno QR je pro demo v pořádku.
 
-## Doporučená cesta pro demo
+## Postup po krocích
 
-1. **Šablona:** v linkovém JŘ AD přidat (nebo upravit) prvek QR s obsahem
-   `http://localhost:<port>/linka/{CISLO_LINKY}/{SMER}`. V TD se nic neprogramuje.
-2. **Caché:** tenká JSON metoda nad `LinkovyJrAd.GetData` (linka → stránky obou směrů).
-   Výstup agendy se nemění, takže tisk ani zlaté odtisky se nedotknou.
-3. **edwcore:** nová lokální aplikace (frontend + tenký backend s Caché klientem podle vzoru
-   EDISONKA webu). Obrazovky: linka a směr z adresy → výběr „odkud" a „kam" → nejbližší spoje
-   s minutami do odjezdu, časem příjezdu a poznámkami slovy.
+Každý krok končí něčím, co jde vyzkoušet. Byznysová logika („co jede dnes") je v backendu
+aplikace, Caché jen vydá data - stejné rozdělení jako u EDISONKA webu.
 
-Breaking change: žádná (nová metoda, nová aplikace, šablona jen jinak vyplněná).
-Nadstavby na později: označník z QR pro zastávku, omezení jako data, zastávkový JŘ a MHD,
-další linky ze stejné zastávky.
+1. **QR výlepu nese zastávku.** Pole stránky se zvýrazněnou zastávkou v `LinkovyJrAd.cls`,
+   v šabloně linkového JŘ AD prvek QR s adresou `<začátek adresy>/linka/{CISLO_LINKY}/<zastávka>`.
+   *Vyzkoušíš:* v návrháři zadáš „Zvýraznit zastávku" (Velešín), náhled ukáže QR, telefon
+   z něj přečte adresu s linkou a zastávkou. Jiná zastávka = jiné QR.
+2. **Aplikace ukáže, kde cestující stojí.** Tenká JSON metoda v Caché nad `GetData`, v `edwcore`
+   nová lokální aplikace (backend s Caché klientem podle EDISONKA webu, frontend). Stránka podle
+   adresy ukáže zastávku, linku, označník a seznam cílů v obou směrech.
+   *Vyzkoušíš:* načteš QR z kroku 1 a na telefonu vidíš „Velešín,aut.nádr. - linka 530" a kam
+   se odsud dá dojet.
+3. **Nejbližší spoj dnes.** Po výběru cíle nejbližší spoje, které dnes jedou a v cíli staví:
+   za kolik minut odjezd, kdy příjezd. Datum jde podstrčit adresou.
+   *Vyzkoušíš:* vybereš České Budějovice a porovnáš s tištěným JŘ pro zvolený den (pracovní
+   den, sobota, svátek).
+4. **Poznámky slovy.** U spoje bezbariérový vůz, kola, místenka, návaznost a text omezení;
+   spoj s rozpoznaným omezením na dnešek se vyřadí.
+   *Vyzkoušíš:* na 24. 12. zmizí spoj s „nejede 24.12." a u ostatních čteš poznámky.
+
+Breaking change: žádná (přidané pole, nová metoda, nová aplikace, šablona jen jinak vyplněná).
+Nadstavby na později: „odsud ne, jede to z označníku vedle" (označníky obou směrů už v datech
+jsou), omezení jako data místo textu, zastávkový JŘ a MHD, další linky ze stejné zastávky.
