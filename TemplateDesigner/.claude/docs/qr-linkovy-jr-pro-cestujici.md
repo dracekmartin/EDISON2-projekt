@@ -99,7 +99,12 @@ aplikace, Caché jen vydá data - stejné rozdělení jako u EDISONKA webu.
    *Vyzkoušíš:* na 24. 12. zmizí spoj s „nejede 24.12." a u ostatních čteš poznámky.
 
 Breaking change: žádná (přidané pole, nová metoda, nová aplikace, šablona jen jinak vyplněná).
-Nadstavby na později: zastávkový JŘ a MHD, další linky ze stejné zastávky, **mapka a jednoduchá
+**Jedno QR za označník, ne za linku** (Jan 1. 10., zatím jen zapsané): přes označník jezdí víc
+linek, takže by všechna QR na něm měla být stejná a aplikace by měla spojit všechno, co tudy jede.
+Pak by adresa nesla označník (zastávka + stanoviště), ne linku, a hlavička by nejmenovala jednu linku.
+Dnes QR nese linku a aplikace ukazuje jen ji.
+
+Nadstavby na později: zastávkový JŘ a MHD, **mapka a jednoduchá
 navigace k jinému označníku** (přání Jan 1. 10.; GPS má číselník sloupků AD, volný text označníku
 ne - viz `ad-data-mapa.md`, v `edwcore` je `EDMap` a mapové služby `apps/mapy`).
 
