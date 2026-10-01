@@ -22,8 +22,8 @@ k distribuci při vydání shellu (včetně těch z repa EDISON): `docs/deploy.m
 ## Struktura a pravidla pro CLAUDE.md
 
 `EDISONMAIN2/`, `EDControls/`, `TemplateDesigner/`, `ServiceGtfsRt/`, `EDUPDATE2/` (klientský
-updater nového shellu) a `EDISON2.IntegrationTests/` mají **vlastní `CLAUDE.md`**, EDControls
-a EDISONMAIN2 navíc per-komponenta (ACTIVITY zámek: `EDISONMAIN2/dotnet/Startup/`). `EDTesting/`
+updater nového shellu), `EDISON2.IntegrationTests/` a `EDISON2.E2ETests/` mají **vlastní `CLAUDE.md`**,
+EDControls a EDISONMAIN2 navíc per-komponenta (ACTIVITY zámek: `EDISONMAIN2/dotnet/Startup/`). `EDTesting/`
 = Caché test framework (`MLTestCase` + `TestRunner`), `docs/mlrest.md` = kompletní reference
 Caché architektury, `.husky/` = git hooks (auto-install při `dotnet restore`).
 
@@ -119,11 +119,11 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 ## Testy
 
 - **.NET**: `dotnet test EDISON2.sln` (xUnit + NSubstitute).
-- **Šev .NET ↔ Caché**: `EDISON2.IntegrationTests` (skutečné MLRest proti dev serveru, pravidla v jeho `CLAUDE.md`).
-- **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)`
-  pro `$$$FillParams` boilerplate), metody `TestXxx()`. Běh `pwsh -File
-  tools/run-cache-tests.ps1 [-Package ...]` proti dev serveru `192.168.16.1:57770` (VPN, user
-  `$env:USERNAME`, override `$env:CACHE_USER`); nový package mimo default list skriptu
+- **Šev .NET ↔ Caché**: `EDISON2.IntegrationTests` (skutečné MLRest proti dev serveru); **UI E2E**: `EDISON2.E2ETests`
+  (FlaUI nad DEBUG shellem s `e2e=1`, ručně s `EDISON_E2E=1`). Pravidla obou v jejich `CLAUDE.md`.
+- **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)` pro `$$$FillParams`),
+  metody `TestXxx()`. Běh `pwsh -File tools/run-cache-tests.ps1 [-Package ...]` proti dev serveru `192.168.16.1:57770`
+  (VPN, user `$env:USERNAME`, override `$env:CACHE_USER`); nový package mimo default list skriptu
   (EDISONMAIN2/EDControls/TemplateDesigner Tests) tam přidej, jinak ho pre-push hook nepokryje.
 - **Nasazení `.cls` na server dělá hook sám** (`.claude/hooks/compile-objectscript.sh`,
   PostToolUse na Edit/Write) - upload + compile, chyby na stderr. `cache_compile` (MCP) volej
@@ -133,7 +133,7 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
   a uložení nic neudělá" a **drift testy to nechytí, čtou `.cls` z repa**. Deploy pak vynuť
   `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`.
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - `.cs`→.NET
-  (bez `Category=Integration`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
+  (bez `Category=Integration`/`E2E`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
   sada (při `.cls/.inc` povinná). Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí
   všechny Caché balíčky, testovací `.cls` (EDControls `Tests/`) jen svůj - TD sada je nejdražší
   (~45 s). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.

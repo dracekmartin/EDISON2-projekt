@@ -464,6 +464,15 @@ public class AppBootstrapperTests
     }
 
     [Fact]
+    public void LoadLocalPrefs_TestRunWithIdfa_StartsInThatCompany()
+    {
+        // PickInitial bere LastIdfa jako preferovanou firmu - stejná cesta jako běžný start.
+        var prefs = new PrefsBootstrapper(TestRunOptions.Parse(["e2e=1", "idfa=CB_DP"])).Load();
+
+        Assert.Equal("CB_DP", prefs.LastIdfa);
+    }
+
+    [Fact]
     public void SavePostLoginState_Debug_DoesNotOverwriteLastLoginName()
     {
         var prefs = Substitute.For<ILocalPrefs>();

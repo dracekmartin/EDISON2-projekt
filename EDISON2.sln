@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDUPDATE2.Tests", "EDUPDATE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDISON2.IntegrationTests", "EDISON2.IntegrationTests\EDISON2.IntegrationTests.csproj", "{9352B38A-4542-4B59-A7E1-1BF146DC3756}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDISON2.E2ETests", "EDISON2.E2ETests\EDISON2.E2ETests.csproj", "{726D8709-356F-4C0F-B32E-3BD4E2459302}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -181,6 +183,18 @@ Global
 		{9352B38A-4542-4B59-A7E1-1BF146DC3756}.Release|x64.Build.0 = Release|Any CPU
 		{9352B38A-4542-4B59-A7E1-1BF146DC3756}.Release|x86.ActiveCfg = Release|Any CPU
 		{9352B38A-4542-4B59-A7E1-1BF146DC3756}.Release|x86.Build.0 = Release|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Debug|x64.Build.0 = Debug|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Debug|x86.Build.0 = Debug|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Release|Any CPU.Build.0 = Release|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Release|x64.ActiveCfg = Release|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Release|x64.Build.0 = Release|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Release|x86.ActiveCfg = Release|Any CPU
+		{726D8709-356F-4C0F-B32E-3BD4E2459302}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

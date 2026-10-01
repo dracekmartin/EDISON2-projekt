@@ -246,7 +246,7 @@ public class AppBootstrapper
     }
 
     protected virtual ILocalPrefs LoadLocalPrefs() =>
-        _testRun is null ? LocalPrefs.Load() : new TransientLocalPrefs();
+        _testRun is null ? LocalPrefs.Load() : new TransientLocalPrefs { LastIdfa = _testRun.StartIdfa };
 
     /// <summary>
     /// First-launch setup: když <c>EDISONini.xml</c> nemá vyplněné připojení, zobrazí

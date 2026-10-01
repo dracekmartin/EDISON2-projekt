@@ -17,7 +17,14 @@ public class TestRunOptionsTests
     [Fact]
     public void Parse_WithoutToken_ReturnsNull()
     {
-        Assert.Null(TestRunOptions.Parse(["server=host", "restport=57770", "e2e=0"]));
+        Assert.Null(TestRunOptions.Parse(["server=host", "restport=57770", "e2e=0", "idfa=CB_DP"]));
+    }
+
+    [Fact]
+    public void Parse_IdfaToken_SetsStartCompany()
+    {
+        Assert.Equal("CB_DP", TestRunOptions.Parse(["e2e=1", "idfa=CB_DP"])!.StartIdfa);
+        Assert.Null(TestRunOptions.Parse(["e2e=1"])!.StartIdfa);
     }
 
     [Fact]
