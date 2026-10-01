@@ -8,13 +8,15 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 5 / 45**
+**Hotovo: 5 / 47**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
 nevyřešil celý, A42 je napůl. Zhoršily se A5 (VM 1723 ř.), A7, A8, A12 (21 polí) a A36 (8 parserů),
 tvar změnily A9, A10 a A37. A44 jde z P3 na P2, protože brání plánovanému přepnutí na EDUPDATE2.
-Nový je A45 (víc instancí shellu nad jedním `local.json`).
+Nový je A45 (víc instancí shellu nad jedním `local.json`). Z nasazení a post mortemu vydání přibyly
+A46 (obsah exe shellu podle `C:\Edison` publikujícího stroje) a A47 (runtime se rozbaluje jen pro
+nový shell, TemplateDesigner na něm závisí taky).
 
 ## Jak s dokumentem zacházet
 
@@ -795,6 +797,56 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 - **Omezení:** nullable property kompatibilita `local.json` (root `CLAUDE.md`); `ShellWindowBounds`
   sdílí login okno (jen čte, `Startup/CLAUDE.md`); rozhodnutí o scope layoutu je A37.
 - Priorita P2, ne P1: je to chyba, ale ztrácí jen lokální preference, které jdou nastavit znovu.
+
+### A46 · Obsah exe shellu závisí na `C:\Edison` stroje, kde se publikuje 🔸
+
+- [ ] **Stav:** otevřeno
+- **P2 · S** (kontrola a pin SDK; vydávací stroj 🔸 M) · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01), incident při nasazení 29. 9.
+- **Problém:** Legacy knihovny jsou reference přes `HintPath` do `C:\Edison` a single-file publish je
+  zabalí do `EDISONMAIN2.exe`. Exe tak nese kopie, které na publikujícím stroji zrovna leží,
+  v jakékoli konfiguraci a verzi, a build to nijak neověřuje. SDK v repu není připnuté, takže dva
+  stroje ze stejného commitu vyrobí různé binárky.
+- **Důkaz:**
+  - `EDISONMAIN2/dotnet/EDISONMAIN2.csproj:37-51` `HintPath` `C:\Edison\EDISONAPI.dll`, `EDLicence.dll`, `EDUsers.dll`, `MLRest.dll`; `EDCore` a `EDLibrary` přicházejí tranzitivně a bundle je nese taky (ověřeno bajtově 29. 9.); `SingleFilePublish.targets:11-12` uvolňuje z bundlu jen `EDControls`.
+  - Při nasazení 29. 9. ležely v `C:\Edison` Debug buildy šesti legacy DLL (`DebuggableAttribute` 263). Shell z nich ukazoval dialogy `ERROR`/`IO ERROR` a licenci z M-line stahoval z `127.0.0.1:57772` (`EDISON/Licence/EDLicence/Update.vb:58-61`, `Api.vb:51-61`, `EDISON/EDUsers/EDUsers/MUtils.vb:27-35`). Zachyceno ručně před vydáním, publish proběhl bez varování.
+  - V kořeni repa chybí `global.json`; `EDControls.dll` téhož zdroje postavená jiným strojem nese WPF 10.0.11 proti 10.0.10 ([post mortem](2026-09-29-vydani-shellu-post-mortem.md) K3.7). Compiler Debug build single-file exe nepozná ([audit integrace](2026-09-29-integrace-shellu.md) I24).
+- **Dopad:** vydání může nést Debug legacy kód (jiné chování, hlášky, adresy) nebo jinou verzi legacy
+  knihovny, než jakou mají zákazníci vedle exe, a nikdo to nepozná. Vydaný build jde reprodukovat jen
+  na stejném stroji.
+- **Návrh opravy:** (1) target v `SingleFilePublish.targets` po `ComputeResolvedFilesToPublishList`,
+  který u referencí z `C:\Edison` přečte `DebuggableAttribute` (`System.Reflection.Metadata`) a při
+  `Configuration=Release` shodí publish se jménem DLL; (2) `global.json` s pinem SDK
+  (`rollForward: latestPatch`); (3) 🔸 jeden stroj nebo build server pro vydání shellu a EDControls,
+  zapsaný v `docs/deploy.md`.
+- **Hotovo když:** publish s Debug `EDLicence.dll` v `C:\Edison` skončí chybou; `global.json` v kořeni.
+- **Omezení:** legacy DLL staví repo EDISON do `C:\Edison` (`OutputPath`), do EDISON2 se nekopírují
+  a reference zůstává `HintPath`; volba vydávacího stroje je na vlastníkovi.
+
+### A47 · Runtime pro .NET 10 exe rozbaluje EDLOADER jen pro nový shell, TemplateDesigner na něm závisí taky 🔸
+
+- [ ] **Stav:** otevřeno, čeká na ověření (Windows Sandbox bez .NET 10, scénáře S1 a S4)
+- **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01)
+- **Problém:** Všechna exe ze `SingleFilePublish.targets` hledají runtime nejdřív v `dotnet\` vedle
+  sebe, pak globálně. `dotnet\` rozbaluje jen EDLOADER a jen při zapnutém novém shellu. TemplateDesigner
+  leží ve stejném adresáři a starý shell ho spouští přímo: na stanici bez globálního .NET 10 a bez
+  uzlu `NewShell` se nespustí, i když `EDISONRUNTIME.zip` leží vedle, a spouštěč chybu nepozná.
+- **Důkaz:**
+  - `SingleFilePublish.targets:20-21` `AppHostRelativeDotNet=dotnet`, `AppHostDotNetSearch=AppRelative;Global` (importují EDISONMAIN2, EDUPDATE2, TemplateDesigner a EDControls).
+  - `EDISON/EDLOADER/clsStartup.vb:759-760` `NewShellFilesPresent() AndAlso NewShellIsEnabled(connection) AndAlso EnsureLocalRuntime() ...`: rozbalení (`:436-456`) je až za uzlem.
+  - Spouštěče TD ve starém shellu runtime nekontrolují: `EDISON/TiskJR/formTISKJRTemplateDesigner.vb:67-70` `Process.Start(... UseShellExecute = True)`, `EDISON/ISYJR2/formISYJR2HlavniOkno.cs:3656`, `EDISON/MHD2Linky/formMHD2LinkyHlavniOkno.cs:2134`.
+  - Ostrá FULL 260929.0 nese `EDISONRUNTIME.zip` i `TemplateDesigner.exe` všem zákazníkům ([post mortem](2026-09-29-vydani-shellu-post-mortem.md) K4.8 a sekce 6).
+- **Dopad:** zákazník bez nového shellu má po FULL runtime na disku, TD ho ale nevyužije a bez ručně
+  nainstalovaného .NET 10 ukáže anglický dialog o chybějícím runtime. Po prvním zapnutí shellu
+  (rozbalený `dotnet\`) TD funguje i ze starého shellu a i po vypnutí uzlu: chování závisí na
+  historii stanice. Totéž čeká každé další .NET 10 exe vedle EDISONu.
+- **Návrh opravy:** 🔸 (a) EDLOADER rozbalí runtime nezávisle na uzlu, když vedle leží zip a některé
+  .NET 10 exe (cena: zápis 74 MB a zámek u všech zákazníků při prvním startu); (b) spouštěče TD
+  zkontrolují `dotnet\` nebo globální runtime a ukážou českou hlášku; (c) TD self-contained.
+  Rozhodnutí vlastníka vydání.
+- **Hotovo když:** v sandboxu bez .NET 10 a bez uzlu TD ze starého shellu naběhne nebo ukáže
+  srozumitelnou hlášku; `docs/deploy.md` popisuje, kdy TD potřebuje runtime.
+- **Omezení:** EDLOADER a spouštěče TD žijí v repu EDISON; TD je mimo scope review, nález se týká
+  sdíleného publish mechanismu a rozbalování runtime.
 
 ## P3
 
