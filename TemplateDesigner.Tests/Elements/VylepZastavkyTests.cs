@@ -4,7 +4,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Elements;
 
 /// <summary>
-/// Tisk linkového JŘ „Stránka pro každou zastávku": zastávka výlepu je v tabulce vždy tučně,
+/// Tisk linkového JŘ „Stránka pro každou zastávku": zastávka výlepu je v tabulce vždy inverzní,
 /// bez volby prvku. Bez toho parametru se vzhled zvýrazněné zastávky nemění.
 /// </summary>
 public class VylepZastavkyTests
@@ -13,7 +13,7 @@ public class VylepZastavkyTests
         new(pole.ToDictionary(p => p.Klic, p => (object?)p.Hodnota));
 
     [Fact]
-    public void ZastavkaVylepu_JeTucne()
+    public void ZastavkaVylepu_SePozna()
     {
         var stranka = Hodnoty(("VYLEP_ZASTAVKY", "true"));
         Assert.True(LineTableElement.JeZastavkaVylepu(stranka, Hodnoty(("AKTUALNI_ZASTAVKA", "true"))));
@@ -21,7 +21,18 @@ public class VylepZastavkyTests
     }
 
     [Fact]
-    public void ZvyrazneniBezVylepu_TucneNeni()
+    public void ZastavkaVylepu_JeInverzni_IPresBarvuAPodbarveni()
+    {
+        // jako starý modul (podbarvení 4 = inverzní řádek): bílé na černém, přebije podbarvení lichých TČ
+        var podbarvena = new ResolvedTextStyle() with { TextColor = "#FF112233", BackgroundColor = "#FFEEEEEE" };
+        var inverzni = LineTableElement.Inverze(podbarvena, true);
+        Assert.Equal("#FFFFFFFF", inverzni.TextColor);
+        Assert.Equal("#FF000000", inverzni.BackgroundColor);
+        Assert.Equal(podbarvena, LineTableElement.Inverze(podbarvena, false));
+    }
+
+    [Fact]
+    public void ZvyrazneniBezVylepu_InverzeNeni()
     {
         // „Zvýraznit zastávku" bez výlepů: vzhled dál určuje jen pravidlo zvýraznění šablony
         Assert.False(LineTableElement.JeZastavkaVylepu(Hodnoty(), Hodnoty(("AKTUALNI_ZASTAVKA", "true"))));

@@ -1554,11 +1554,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static bool MaTucneZTrasy(LineStopData s) =>
         s.Atributy.Contains("T") || s.Atributy.Contains("P");
 
-    /// <summary>Je řádek zastávkou výlepu při tisku „Stránka pro každou zastávku"? Ta je vždy tučně,
-    /// bez volby prvku (rozhodnutí Jan 1. 10.) - výlep visí na té zastávce a musí být vidět, kde to je.
-    /// Bez toho parametru rozhoduje o vzhledu zvýrazněné zastávky jen pravidlo zvýraznění šablony.</summary>
+    /// <summary>Je řádek zastávkou výlepu při tisku „Stránka pro každou zastávku"? Ta je vždy inverzní
+    /// (bílé na černém přes celý řádek), bez volby prvku (rozhodnutí Jan 1. 10.) - tak ji tiskl starý
+    /// modul (`JRapiLinPrtWin.mac:237` podbarvení 4 = inverzní řádek, nastavuje `:1211-1219`);
+    /// tučné písmo by splynulo s tučnými zastávkami z trasy. Bez toho parametru rozhoduje o vzhledu
+    /// zvýrazněné zastávky jen pravidlo zvýraznění šablony.</summary>
     internal static bool JeZastavkaVylepu(DataContext? stranka, DataContext? radek) =>
         stranka?.GetString("VYLEP_ZASTAVKY") == "true" && radek?.GetString("AKTUALNI_ZASTAVKA") == "true";
+
+    private const string InverzePozadi = "#FF000000";
+
+    /// <summary>Inverzní buňka zastávky výlepu: bílé písmo na černém, přebije barvu spoje i podbarvení
+    /// lichých tarifních čísel.</summary>
+    internal static ResolvedTextStyle Inverze(ResolvedTextStyle style, bool inverze) =>
+        inverze ? style with { TextColor = "#FFFFFFFF", BackgroundColor = InverzePozadi } : style;
 
     /// <summary>Má zastávka v trase vyžádanou čáru pod řádkem? Atribut trasy „p" nebo „o".</summary>
     private static bool MaCaruPod(LineStopData s) =>
@@ -2563,10 +2572,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
 
             bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
-            bool tucneVylep = JeZastavkaVylepu(ctx.Data, stop.SourceRow);
+            bool inverze = JeZastavkaVylepu(ctx.Data, stop.SourceRow);
 
             var specs = new List<ColumnRenderer.CellSpec>();
-            var tripCellStyle = OddTc(tripDataStyle, oddTc);
+            var tripCellStyle = Inverze(OddTc(tripDataStyle, oddTc), inverze);
             // Značka návaznosti se tiskne **vedle času** ve stejné buňce (doloženo tiskem staré
             // linky 330511). Buňka umí jen jeden font, takže se taková buňka nechá prázdná
             // a nakreslí se ručně - stejně jako řádek platnosti. Musí se to vědět **před** sázením
@@ -2579,7 +2588,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PridejZrcadlene(specs, mrizka, zrcadlene.Count, tripCellStyle, ti =>
             {
                 var tz = zrcadlene[ti];
-                var st = tz.ForeColor is null ? tripCellStyle : tripCellStyle with { TextColor = tz.ForeColor };
+                var st = tz.ForeColor is null || inverze ? tripCellStyle : tripCellStyle with { TextColor = tz.ForeColor };
                 string cas = znackyVBunceZrc.ContainsKey(ti) ? ""
                     : (siRadku < tz.Casy.Count ? tz.Casy[siRadku] : "");
                 if (cas == "" && !znackyVBunceZrc.ContainsKey(ti))
@@ -2591,8 +2600,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             for (int ci = 0; ci < fixedCols.Count; ci++)
             {
                 var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
-                if ((ci == nameIndex && TucneZastavkyDleTrasy && MaTucneZTrasy(stop)) || tucneVylep)
+                if (ci == nameIndex && TucneZastavkyDleTrasy && MaTucneZTrasy(stop))
                     bunkaStyl = bunkaStyl with { Bold = true };
+                bunkaStyl = Inverze(bunkaStyl, inverze);
                 if (ci == nameIndex && fontNazvu is not null)
                     bunkaStyl = bunkaStyl with { PaddingLeft = bunkaStyl.PaddingLeft
                         + DorovnaniNazvuMm(ZnackyZastavky(stop.Atributy), znackyLinky, fontNazvu, ctx.MmToPx) };
@@ -2620,7 +2630,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var t = trips[ti];
                 // Barva spoje z dat přebíjí barvu textu z kaskády - je to prezentační nápověda,
                 // kterou prvek smí respektovat (R3). Spoj bez barvy nechá kaskádu být.
-                var cellStyle = t.ForeColor is null ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor };
+                var cellStyle = t.ForeColor is null || inverze ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor };
                 string text = znackyVBunce.ContainsKey(ti) ? "" : (siRadku < t.Casy.Count ? t.Casy[siRadku] : "");
                 if (text == "" && !znackyVBunce.ContainsKey(ti))
                     text = VyplnBunky(mrizka.SirkaSpojeMm(ti), cellStyle, ctx);
@@ -2645,7 +2655,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                         && rozdvojenyRadek is not RozdvojenyRadek.Dolni;
             plan.Add(new(RowKind.Data, rowH, specs)
             {
-                Background = ColorHex.ParseOrNull(rowHl),
+                Background = inverze ? ColorHex.ParseOrNull(InverzePozadi) : ColorHex.ParseOrNull(rowHl),
                 VerticalLinePaint = sloupcovaCara,
                 LineAbovePaint = caraNad ? caraUseku : null,
                 LineBelowPaint = caraPod ? caraUseku : null,
@@ -2655,12 +2665,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 {
                     if (znackyRadku.Count > 0)
                         DrawBunkySeZnackou(ctx, rowY, rowH, ti => X + mrizka.XSpojeMm(ti),
-                            mrizka.SirkaSpojeMm, znackyRadku, ti => SBarvouSpoje(tripCellStyle, trips[ti]),
+                            mrizka.SirkaSpojeMm, znackyRadku, ti => inverze ? tripCellStyle : SBarvouSpoje(tripCellStyle, trips[ti]),
                             symbolFace, scale);
                     if (znackyVBunceZrc.Count > 0)
                         DrawBunkySeZnackou(ctx, rowY, rowH, ti => X + mrizka.XZrcadlenehoMm(ti),
                             mrizka.SirkaZrcadlenehoMm, znackyVBunceZrc,
-                            ti => SBarvouSpoje(tripCellStyle, zrcadlene[ti]), symbolFace, scale);
+                            ti => inverze ? tripCellStyle : SBarvouSpoje(tripCellStyle, zrcadlene[ti]), symbolFace, scale);
                     // Značka za názvem patří ke sloučené buňce, takže se musí vycentrovat přes oba
                     // řádky stejně jako název - jinak by stála u odjezdu a název byl nad ní.
                     if (znakZastavky.Count > 0 && nameIndex >= 0)
@@ -2668,7 +2678,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                             rozdvojenyRadek is RozdvojenyRadek.Dolni ? rowY - rowH : rowY,
                             rozdvojenyRadek is RozdvojenyRadek.Dolni ? rowH * 2 : rowH,
                             X, mrizka, nameIndex, znakZastavky,
-                            OddTc(fixedCols[nameIndex].DataStyle, oddTc), symbolFace, scale);
+                            Inverze(OddTc(fixedCols[nameIndex].DataStyle, oddTc), inverze), symbolFace, scale);
                     // ⚠️ Kreslí ji **dolní** řádek na své horní hraně, ne horní pod sebou: řádky jdou
                     // po sobě, takže úsečka nakreslená horním řádkem by zmizela pod pozadím dolního.
                     if (rozdvojenyRadek is RozdvojenyRadek.Dolni)

@@ -108,7 +108,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // Zastávka výlepu (parametr „Zvýraznit zastávku") jako pole stránky, aby ji šlo dosadit do QR.
     d ..AddField(fields, "AKTUALNI_ZASTAVKA_CZST", "Číslo aktuální zastávky",  "number")
     d ..AddField(fields, "AKTUALNI_ZASTAVKA_TC",   "Tarifní číslo aktuální zastávky", "number")
-    // Jen u tisku po zastávkách (parametr „Stránka pro každou zastávku"); prvek podle něj ztuční
+    // Jen u tisku po zastávkách (parametr „Stránka pro každou zastávku"); prvek podle něj zvýrazní inverzně
     // aktuální zastávku. Bez parametru pole na stránce není.
     d ..AddField(fields, "VYLEP_ZASTAVKY",         "Výlep pro zastávku",       "boolean")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
@@ -307,7 +307,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pVyl.group        = "Obecné"
     s pVyl.serverSide   = 1
     s pVyl.defaultValue = "false"
-    s pVyl.description  = "Každá zastávka, kde spoje odjíždějí, dostane vlastní stránku za každý směr a je na ní tučně. Zvýraznit zastávku a Zvýraznit tarifní číslo pak vyberou jen některé zastávky."
+    s pVyl.description  = "Každá zastávka, kde spoje odjíždějí, dostane vlastní stránku za každý směr a je na ní zvýrazněná inverzně (bílé na černém). Zvýraznit zastávku a Zvýraznit tarifní číslo pak vyberou jen některé zastávky."
 
     // ⚠️ **Turnusy ke spojům tu parametr NEJSOU** - je to volba prvku (šablony), stejně jako
     // v legacy, kde to je nastavení sekce v návrháři sestav. Klient posílá `TURNUSY_KE_SPOJUM`
@@ -561,7 +561,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 /// není tu jen výstup (značka „V") a dál po směru ještě někde staví (konečná tedy výlep nemá).
 /// Zadané „Zvýraznit zastávku/tarifní číslo" výlepy zúží na ty zastávky, které už stránka označila.
 /// Stránka nese `SMER` svého výlepu (i obousměrná - QR potřebuje směr) a `VYLEP_ZASTAVKY` = "true",
-/// podle kterého prvek aktuální zastávku vždy ztuční.
+/// podle kterého prvek aktuální zastávku vždy vytiskne inverzně (jako starý modul).
 ClassMethod VypisVylepy(page As %DynamicObject, smery As %String, obousmerne As %Boolean)
 {
     s zastavky = page.rows.%Get("ZASTAVKY"), spoje = page.rows.%Get("SPOJE")
