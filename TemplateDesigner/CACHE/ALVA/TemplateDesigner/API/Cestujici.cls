@@ -53,7 +53,9 @@ ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
             s key = $o(^||ML("OUT", key))
             q:key=""
             continue:key="ERR"
-            d stranky.%Push(##class(%DynamicObject).%FromJSON(^||ML("OUT", key)))
+            s stranka = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+            d ..PridejOmezeni(dataDB, skupina, lin, stranka)
+            d stranky.%Push(stranka)
         }
         k ^||ML("IN"), ^||ML("OUT")
         s out = {"success":true,"data":{"skupina":(skupina),"linka":(lin),"stranky":(stranky)}}
@@ -65,6 +67,50 @@ ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
         s out = {"success":false,"error":{"code":(code),"message":(err)}}
     }
     q $$$OK
+}
+
+/// Ke každému spoji stránky přidá `OMEZENI` - datumová omezení jako data, aby aplikace sama
+/// poznala, jestli spoj jede dnes. Tisk je má jen jako text (`SestavTextOmezeni`), který se skládá
+/// podle nastavení firmy a může být i bez roku, takže se z něj spolehlivě číst nedá.
+///   OMEZENI: [{"druh":"jen|jede|take|nejede","useky":[{"od":"2022-12-24","do":"2023-01-01"}]}]
+///   TYDNY:   "sude" | "liche" | ""  (dlouhodobá platnost spoje)
+ClassMethod PridejOmezeni(dataDB As %String, sku As %String, lin As %String, stranka As %DynamicObject)
+{
+    s spoje = stranka.rows.%Get("SPOJE")
+    q:'$isobject(spoje)
+    s it = spoje.%GetIterator()
+    while it.%GetNext(.i, .spoj) {
+        s smer = spoj.%Get("SMER"), sp = spoj.%Get("CISLO_SPOJE")
+        continue:(smer = "")||(sp = "")
+        s dlouhodoba = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8)
+        d spoj.%Set("TYDNY", $s(dlouhodoba = 4:"sude", dlouhodoba = 5:"liche", 1:""))
+        s omezeni = ##class(%DynamicArray).%New()
+        // Druhy omezení podle klíče pod spojem (význam viz `LinkovyJrAd.SestavTextOmezeni`).
+        f omzId=11,12,13,22 {
+            s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
+            continue:omz=""
+            s data = $s(omz["@":$p(omz,"@",2), 1:omz)
+            s useky = ##class(%DynamicArray).%New()
+            f j = 1:1:$l(data,"#") {
+                s polozka = $p(data,"#",j)
+                continue:polozka=""
+                s od = ..IsoDatum($p(polozka,":",1)), do = ..IsoDatum($p(polozka,":",2))
+                continue:od=""
+                d useky.%Push({"od":(od),"do":($s(do'="":do, 1:od))})
+            }
+            continue:useky.%Size()=0
+            d omezeni.%Push({"druh":($case(omzId, 11:"jen", 12:"take", 13:"jede", :"nejede")),"useky":(useky)})
+        }
+        d spoj.%Set("OMEZENI", omezeni)
+    }
+}
+
+/// `d.m.yyyy` → `yyyy-mm-dd`; neúplné datum → "".
+ClassMethod IsoDatum(datum As %String) As %String
+{
+    s d = +$p(datum,".",1), m = +$p(datum,".",2), r = $p(datum,".",3)
+    i (d = 0) || (m = 0) || ($l(r) '= 4) q ""
+    q r_"-"_$tr($j(m,2)," ","0")_"-"_$tr($j(d,2)," ","0")
 }
 
 /// Kontext ERP pro `$$$FillParams` agendy (opis `ALWA.EDISONKA.CACHE.Sys.Base.BuildSys`).
