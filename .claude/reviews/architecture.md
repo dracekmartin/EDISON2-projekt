@@ -22,7 +22,8 @@ nový shell, TemplateDesigner na něm závisí taky).
 
 - Jeden dokument na repo, žije napříč běhy review. ID `A1`, `A2`… jsou stabilní a nikdy se
   nepřidělují znovu; další běh přidá nová ID a u existujících jen ověří stav.
-- **Opravný chat řeší jedno ID.** Nález je samonosný: nemá kontext review chatu, všechno
+- **Opravný chat řeší jedno ID**, nebo jeden proud ID v pořadí ze sekce
+  „Proudy pro paralelní řešení". Nález je samonosný: nemá kontext review chatu, všechno
   potřebné (důkaz `path:line`, dopad, návrh, omezení) je u něj. Čísla řádků otevřených nálezů
   jsou ukotvená v commitu `19f62712`, u vyřešených platí důkaz z `c04d0d6f`; při posunu hledej
   podle jména symbolu.
@@ -51,6 +52,42 @@ nový shell, TemplateDesigner na něm závisí taky).
 | R10 | A24 | R13a | A25 | R13d | A27 |
 | N2 | A20 | N3 | A18 | N4 | A29 |
 | N5 | A30 | N7 | A28 | | |
+
+## Proudy pro paralelní řešení (2026-10-01)
+
+Proud řeší svá ID v uvedeném pořadí a mění jen své soubory. Proudy jedné vlny se v souborech
+nepřekrývají, takže můžou běžet současně.
+
+- **Worktree** pro každý proud, který builduje .NET (vlastní `bin/obj`, slití přes `/wtm`).
+  Sdílený strom jen pro proud bez buildu.
+- Proud začne, až jeho soubory nemají necommitnuté změny. Potřebuje soubor jiného proudu →
+  zastaví a řekne to; počká na vlnu, ve které soubor nikdo nedrží.
+- Jedno ID = jeden commit přes `/rwcm`. Po ID proud přepíše jeho `**Stav:**`; počítadlo **Hotovo**
+  a tuhle sekci mění jen koordinační chat po slití.
+- S1 drží ctor `EdisonMainViewModel` stabilní (nové třídy skládá uvnitř VM), protože ho skládá
+  `AppBootstrapper` ze S2. S4 nemění veřejné členy `Updater`, které volá `AppBootstrapper`.
+- Veřejné API EDControls (S5, S6, S8, S9) jen aditivně. Odebrání členů (A22, A25, A38) jde ve vlně 3
+  jedním koordinovaným publishem EDControls + TemplateDesigner + shell.
+- S6 a S8 sdílí Caché package `ALVA.EDControls` na dev serveru: jejich Caché testy můžou vidět
+  rozpracovanou třídu druhého proudu.
+
+| Proud | ID v pořadí | Vlastní soubory | Vlna | Forma |
+| --- | --- | --- | --- | --- |
+| S1 Shell VM a plocha | A4 → A20 → A28 → A5 kroky 1-3 | `EdisonMainViewModel.cs`, `EdisonMainWindow.xaml(.cs)`, `MiniApps/Desktop*`, `Modules/*` kromě `InternalDiagnostics.cs`, testy VM a harness | 1 | chat |
+| S2 Startup a login | A10 → A18 → A19 → A34 → A6 bod 3 | `App.xaml.cs`, `Startup/*` kromě `LocalPrefs`, `TransientLocalPrefs`, `Updater`, `VerzeInf`; `Modules/InternalDiagnostics.cs`, `LoginWindow/*`, `UserProfileWindow/*`, jejich testy | 1 | chat |
+| S3 Lokální preference | A45, sloučení v `LocalPrefs.Save` bez změny volajících (klíč `server\|idfa` až po A37) | `Startup/LocalPrefs.cs`, `Startup/TransientLocalPrefs.cs`, `LocalPrefsTests` | 1 | subagent |
+| S4 Update a vydání | A44 → A46 (`global.json` slít až na konci vlny, mění SDK všem) → A47 🔸 | `Startup/Updater.cs`, `Startup/VerzeInf.cs`, `EDUPDATE2/*`, nový projekt kontraktu, csproj, `EDISON2.sln`, `SingleFilePublish.targets`, `global.json`, `docs/deploy.md`, EDLOADER v repu EDISON | 1 | chat |
+| S5 Launch kontrakt EDControls | A7 → A8 → A12 body 1-2 → A6 body 1-2 | `EDViewModel/WindowNavigator.cs`, `IWindowNavigator.cs`, `EdisonLaunchArgs.cs`, `WindowStateStore.cs`, `EDViewModel/EDViewModel.cs`, `EDErrorPopup.xaml.cs`, `InfChangelogSource.cs`, TD `App.xaml.cs`, jejich testy, fixture u `FormToRunGetter` v repu EDISON | 1 | chat |
+| S6 EDList | A16 → A17 → A42 → A14 → A27 část EDList → A23 | `EDList/*`, `EDFilter/EDFilter.xaml.cs`, `EDControls/CACHE/.../EDList/*`, `ListTest.cls`, `MockList.cls`, jejich testy | 1 | chat |
+| S7 Kontrakty šva | A13 body 2-4 | `EDISON2.IntegrationTests/*`, `EDISONMAIN2/CACHE/.../Tests/*.cls` | 1 | subagent |
+| S8 EDInputForm | A15 🔸 → A27 část formulář (`Format`, `UserHidden`) | `EDInputForm/*`, `Form.cls`, `EDIFExample.cls`, jejich testy | 2 | chat |
+| S9 Infrastruktura EDControls | A39 → A40 → A41 🔸 | `UserFonts/*`, `EDTheme/UserThemePreference.cs`, `ErrorReporting/*`, `PopupDisplayer.cs`, `RelayCommand.cs`, `AsyncRelayCommand.cs`, jejich testy | 2 | chat |
+| S1 pokračuje | A9 (s S2) → A5 kroky 4-5 → A21 → A29 → A30 → A31 🔸 → A32 🔸 | VM, `Modules/*`, `MiniApps/Desktop*`; A9 i `SessionFactory`, `CompanySwitcher`, `LicenceVerifier` | 2 | chat |
+| Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4 | napříč | 3 | po slití vln 1 a 2 |
+
+Rozhodnutí vlastníka, na která proudy narazí: A47 (varianta a/b/c, konec S4), A12 bod 3 (politika
+escapování, mimo S5), A15 (kdy zahodit odpověď), A27 (implementovat, nebo označit rezervované),
+A41, A31, A32, A37, A25, A26, A46 bod 3 (vydávací stroj).
 
 ## Mapa repa (stav k 2026-10-01)
 
