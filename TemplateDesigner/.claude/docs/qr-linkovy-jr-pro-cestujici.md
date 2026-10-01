@@ -18,7 +18,9 @@ zkouší se na notebooku. Zastávkový JŘ, MHD a další linky ze zastávky až
 - **QR výlepu** nese linku, zastávku, tarifní číslo a směr:
   `http://localhost:5185/linka/{CISLO_LINKY}/{AKTUALNI_ZASTAVKA_CZST}/{AKTUALNI_ZASTAVKA_TC}/{SMER}`.
   Zastávku výlepu určí parametr sestavy „Zvýraznit zastávku" / „Zvýraznit tarifní číslo"; pole
-  stránky se vyplní jen při jednoznačné shodě. Ukázka: `templates/demo-qr-linkovy-jr-ad.json`.
+  stránky se vyplní jen při jednoznačné shodě. Parametr „Stránka pro každou zastávku" vytiskne
+  výlep pro každou zastávku a směr, každý se svým QR. Ukázka: `templates/demo-qr-linkovy-jr-ad.json`
+  (výlepy zapnuté).
 - **Aplikace „Vyhledávač odjezdů"** (`edwcore/apps/tisky-qr`): hlavička s linkou, zastávkou,
   označníkem a způsoby platby; pole „Kam chcete jet?" s našeptáváním přes celou linku; nejbližší
   spoj („za 12 min", odjezd, příjezd, doba jízdy) a další spoje; když dnes nic nejede, první spoj
@@ -60,8 +62,6 @@ v `LinkovyJrAd.cls` (s přebaselinovanými zlatými odtisky).
 
 - **QR z návrháře pro ZL_KOVED** (Babice) neověřené; adresa se zkoušela ručně.
 - **Telefon:** QR musí nést adresu počítače v síti místo `localhost`.
-- **Tisk linkového JŘ po stránce za každou zastávku** (jako vývěska) - dnes se zastávka volí
-  parametrem pro celý tisk, pro reálné výlepy je to nutné (zapsáno v roadmapě).
 - **Jedno QR za označník** místo za linku: přes označník jede víc linek, adresa by nesla označník
   a aplikace by spojila všechno, co tudy jede.
 - **Placení podle spoje** místo celé linky - prodeje nesou i číslo spoje, terminál má vozidlo.

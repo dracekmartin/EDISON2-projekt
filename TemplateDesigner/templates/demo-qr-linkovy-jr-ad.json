@@ -618,7 +618,8 @@
     "PISMENO_V_ZONE": "Automaticky (dle linky)",
     "BARVY_SPOJU": "Automaticky (dle linky)",
     "ZVYRAZNIT_ZASTAVKU": "",
-    "ZVYRAZNIT_TC": "14"
+    "ZVYRAZNIT_TC": "",
+    "STRANKA_PRO_ZASTAVKU": "true"
   },
   "defaultTextStyle": {
     "fontFamily": "Helvetica"

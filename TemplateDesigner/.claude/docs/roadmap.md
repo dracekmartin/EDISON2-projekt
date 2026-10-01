@@ -19,7 +19,7 @@
   a dozví se nejbližší spoj dnes, přechod na protější označník na mapě, způsoby platby; CZ/EN.
   Server dělá jednorázová třída `ALVA.TiskyQrDemo.Cestujici` (mimo návrhář). Čeká na rozhodnutí,
   co dál; otevřené body a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
-  ⚠️ Pro reálné výlepy chybí tisk linkového JŘ **po stránce za každou zastávku** (jako vývěska).
+  Výlepy po zastávkách tiskne parametr „Stránka pro každou zastávku" (1. 10.).
 
 ---
 

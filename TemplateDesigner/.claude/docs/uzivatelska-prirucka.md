@@ -1201,6 +1201,10 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 
 - **Obousměrný tisk** - oba směry v jedné tabulce, spoje opačného směru na druhé straně od
   zastávek. Vypnuté = každý směr na vlastní stránce.
+- **Stránka pro každou zastávku** - výlepy na zastávky: každá zastávka, ze které spoje odjíždějí,
+  dostane vlastní stránku za každý směr (i u obousměrného tisku) a její řádek je v tabulce tučně.
+  Konečná ani zastávka, kde se jen vystupuje, výlep nemá. **Zvýraznit zastávku** a **Zvýraznit
+  tarifní číslo** pak vyberou jen některé zastávky.
 - **Tvar názvu zastávky** - *Plný CIS* (výchozí, zachová dvojčárku podle číselníku, tak to tiskne
   starý modul), *Plný CIS s okresem*, *Zkrácený*, *Typograficky upravený* (mezera za čárkou a tečkou).
 - **Použít název pro MHD** - zastávka může mít v číselníku vedle názvu podle CIS ještě upravený

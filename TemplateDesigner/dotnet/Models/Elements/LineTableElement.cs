@@ -1554,6 +1554,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static bool MaTucneZTrasy(LineStopData s) =>
         s.Atributy.Contains("T") || s.Atributy.Contains("P");
 
+    /// <summary>Je řádek zastávkou výlepu při tisku „Stránka pro každou zastávku"? Ta je vždy tučně,
+    /// bez volby prvku (rozhodnutí Jan 1. 10.) - výlep visí na té zastávce a musí být vidět, kde to je.
+    /// Bez toho parametru rozhoduje o vzhledu zvýrazněné zastávky jen pravidlo zvýraznění šablony.</summary>
+    internal static bool JeZastavkaVylepu(DataContext? stranka, DataContext? radek) =>
+        stranka?.GetString("VYLEP_ZASTAVKY") == "true" && radek?.GetString("AKTUALNI_ZASTAVKA") == "true";
+
     /// <summary>Má zastávka v trase vyžádanou čáru pod řádkem? Atribut trasy „p" nebo „o".</summary>
     private static bool MaCaruPod(LineStopData s) =>
         s.Atributy.Contains("p") || s.Atributy.Contains("o");
@@ -2557,6 +2563,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
 
             bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
+            bool tucneVylep = JeZastavkaVylepu(ctx.Data, stop.SourceRow);
 
             var specs = new List<ColumnRenderer.CellSpec>();
             var tripCellStyle = OddTc(tripDataStyle, oddTc);
@@ -2584,7 +2591,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             for (int ci = 0; ci < fixedCols.Count; ci++)
             {
                 var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
-                if (ci == nameIndex && TucneZastavkyDleTrasy && MaTucneZTrasy(stop))
+                if ((ci == nameIndex && TucneZastavkyDleTrasy && MaTucneZTrasy(stop)) || tucneVylep)
                     bunkaStyl = bunkaStyl with { Bold = true };
                 if (ci == nameIndex && fontNazvu is not null)
                     bunkaStyl = bunkaStyl with { PaddingLeft = bunkaStyl.PaddingLeft

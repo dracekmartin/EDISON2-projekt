@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-01 (2) - 📌 linkový JŘ jako výlepy na zastávky
+
+Nový parametr linkového JŘ AD **„Stránka pro každou zastávku"** (skupina Obecné). Zapnutý vrátí
+místo stránky za směr stránku za každou zastávku a směr, ze které spoje odjíždějí - konečná
+a zastávka jen pro výstup výlep nemají. Na stránce je zastávka zvýrazněná a v Tabulce spojů
+**vždy tučně** (název, tarifní číslo, km, zóna; časy spojů ne, sloupce jsou úzké). Bez volby
+prvku, rozhodnutí Jan 1. 10.: jinak než u vývěsky, kde to řídí „Tučně aktuální zast.". Platí
+i pro obousměrný tisk (stejný počet stránek, stránka nese směr výlepu, ať má QR směr).
+„Zvýraznit zastávku" / „Zvýraznit tarifní číslo" výlepy zúží na vybrané zastávky.
+Stránky se nestaví znovu, server stránku směru zkopíruje a přenastaví zvýraznění: linka 330530
+dá 44 výlepů za 179 ms (bez parametru 79 ms). Bez parametru se výstup nemění (zlaté odtisky
+beze změny).
+
 ## 2026-10-01 - 📱 zastávka výlepu v datech linkového JŘ (demo QR pro cestující)
 
 Linkový JŘ AD nese v hlavičce stránky zastávku výlepu: **„Číslo aktuální zastávky"**
