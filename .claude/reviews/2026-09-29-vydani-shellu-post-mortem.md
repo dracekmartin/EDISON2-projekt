@@ -10,6 +10,9 @@ Stav rep: EDISON2 `origin/main` = `148dd4ba` (build `6b3a1c73` + 4 commity TD), 
 `FILES_DESCRIPTION.INF` staženy ve 13:57 a znovu v 18:22, beze změny (release 1160 řádků, TEST 1161);
 čísla řádků odkazují na ně.
 
+Doověření z 1. 10. je v sekci 6: mění výsledek K1.3, K1.4, K5.5 a K6 I13 a opravuje předpoklad
+o podepsaných souborech.
+
 ## 1. Verdikt
 
 **Ostrá FULL verze vznikla: `260929.0`, `TYPE=1`, v `edison/release/`.** Soubory verze mají čas
@@ -162,3 +165,37 @@ najít `1.0.0+6b3a1c73` (K1.4), vyhodnotit log verze, pokud ho někde má autor,
   dotazem (`clsStartup.vb:227`). Je to stávající chyba legacy kódu a neřešil jsem ji.
 - „Blokuje" v K6 znamená: rozbije ostrou verzi nebo zákazníka se starým shellem. Dopady na pilot
   s `NewShell=1` uvádím zvlášť.
+
+## 6. Doověření (2026-10-01)
+
+Staženo `release/260929.0/SETUP.zip` (231 MB, `Last-Modified` 29. 9. 15:34:59) a rozbaleno
+`C:\Edison\7za.exe`. `SETUP.DAT` (758 MB, čas 15:30) je rozparsovaný celý: 728 souborů, žádné zbylé
+bajty. Formát popisuje `EDISON/SETUPWIZARD/frmMain.vb:1251-1260`.
+
+| Kontrola | Dřív | Teď | Důkaz |
+|---|---|---|---|
+| K1.3 zápisy položek shellu | NEOVĚŘENO | OK | V `SETUP.DAT` jsou `EDISONMAIN2.exe`, `EDControls.dll`, `EDISONMAIN2API.exe` a `.config`, `EDISON.exe`, `EDISONMAIN.exe`, `EDUPDATE.exe`, `EDISONRUNTIME.zip`, `ALVA_EDISONMAIN2.XML`, `ALVA_EDControls.XML` a `ALVA_EDTesting.XML`. `EDUPDATE2.exe` chybí, souhlasí s ostrým manifestem (TEST 260929.3 měla 729 souborů). `EDISONMAIN.exe.config` je v balíku pod jménem s mezerou na konci, stejně jako 19 knihoven C1. |
+| K1.4 verze nese náš build | NEOVĚŘENO | OK | `EDISONMAIN2.exe`, `EDControls.dll`, `EDISONMAIN2API.exe`, `EDISON.exe`, `EDISONMAIN.exe` a `EDUPDATE.exe` jsou bajtově shodné s `C:\Edison` (md5 z K3.3). Shodné md5 má `EDISONRUNTIME.zip` (34d0943538dd) i oba configy. `EDControls.dll` nese `+6b3a1c73` a od kolegovy kopie na DEV share se liší. `TemplateDesigner.exe` je kolegův build z `0df681a0`. |
+| K1.2 log verze | NEOVĚŘENO | beze změny | Log se už nezíská. Obsah verze je ověřený přímo, log k tomu potřeba není; autora verze zná uživatel. |
+| K5.5 `newShell` v `ALVA_SETUP` | NEOVĚŘENO | OK | `ALVA_SETUP.XML` ve verzi: `ALVA.SETUP.Main` (TimeChanged 2026-09-23 13:32:59) plní `settings(13)` z `^[systemDB]EDISON("System","NewShell")` a vrací řádek `newShell`. `GetSystemDB` vrací napevno `"MLINE"` (`EDISON/EDISONMAIN/CACHE/ALVA/EDISON/Main.cls:7-10`), příkaz v `docs/deploy.md` tedy platí u každého zákazníka. |
+| K5.1, K5.2 Caché ve verzi | OK (DEV) | OK (verze) | TimeChanged všech 24 tříd ve verzi (`ALVA_EDISONMAIN2` 7, `ALVA_EDControls` 15 a include, `ALVA_EDTesting` 2) se shoduje s časy na DEV z K5.1. `Form` nese starý komentář `EValidationTrigger`, shodně s K5.2. |
+| K6 I13 pořadí kompilace | NEOVĚŘENO | pravděpodobně OK | Instalace nejdřív naimportuje všechny projekty bez kompilace (`EDISON/EDISONAPI/clsUpdater.vb:3480-3498`, `$system.OBJ.Load(file,"-d")` v `EDISON/EDISONINS/CACHE/ALVA/SETUP/MainEx.cls:150`) a teprve pak je kompiluje (`clsUpdater.vb:3500-3514`, `CompileProject(project,"c-dkfvb")` v `MainEx.cls:183`). `MLTestCase` je tedy při kompilaci `ALVA_EDControls` v databázi; nezkompilovanou nadtřídu kompilátor Caché přibere s podtřídou. Na čisté instalaci bez EDTesting neověřeno. |
+| K2.1 `deploy.md` a manifest | NÁLEZ | opraveno | `docs/deploy.md`: `EDUPDATE2.exe` má řádek jen v TEST manifestu, do ostrého patří před přepnutím `Updater.ActiveKind`. Doplněn i úplný seznam legacy DLL v bundlu `EDISONMAIN2.exe` a podmínka Release. |
+
+Oprava předpokladu ze sekce 5: soubory ve verzi **nejsou podepsané**. Žádný z porovnaných PE souborů
+nemá Authenticode podpis, i legacy (`MLRest.dll`, `EDLicence.dll`, `USERS.exe` a další), přestože log
+tvorby verze hlásí „Certifikace". Md5 se proto s `C:\Edison` shoduje. S novým shellem to nesouvisí,
+týká se celé distribuce.
+
+Legacy DLL ve verzi (`MLRest`, `EDLicence`, `EDUsers`, `EDISONAPI`, `EDCore`, `EDLibrary`, `USERS.exe`,
+`UTILITIES.exe`) jsou jiné buildy než v `C:\Edison`, do REL se 29. 9. nenahrávaly. Všechny jsou Release
+(`DebuggableAttribute` bez bitu 256). Do `EDISONMAIN2.exe` jsou zabalené Release kopie z `C:\Edison`.
+
+K předpokladu o `UpdateIsRunning` (`EDISON/EDLOADER/clsStartup.vb:227`): podmínka je obrácená od
+`66d953e7b79` (2021). Při funkčním spojení funkce vrátí false bez dotazu, hláška „Probíhá aktualizace
+systému, aplikace bude ukončena." se proto nikdy neukáže a stanice startují i během instalace verze na
+serveru. Stará chyba, oprava změní chování u všech zákazníků, patří do samostatného úkolu.
+
+Zbývá: infotext `EDISONMAIN.INF` (K5.4), kopie `EDControls.dll` na DEV share a připnutí SDK (K3.7),
+komentář v `Form.cls` (K5.2), členství `NewShellSwitchContractTest` v projektu (K5.3) a body, které
+bez člověka nejdou (sekce 4).
