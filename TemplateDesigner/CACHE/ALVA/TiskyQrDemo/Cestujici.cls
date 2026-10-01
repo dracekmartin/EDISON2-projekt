@@ -64,6 +64,8 @@ ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
         k ^||ML("IN"), ^||ML("OUT")
 
         s data = {"skupina":(skupina),"linka":(lin),"stranky":(stranky),"oznacniky":(oznacniky)}
+        s platby = ..Platby(dataDB, idfa, lin)
+        i $isobject(platby) d data.%Set("platby", platby)
         s tam = oznacniky.%Get("T"), zpet = oznacniky.%Get("Z")
         i $isobject(tam) && $isobject(zpet) && (tam.%Get("lat") '= "") && (zpet.%Get("lat") '= "") {
             d data.%Set("vzdalenostOznacnikuM", ..VzdalenostM(tam.lat, tam.lon, zpet.lat, zpet.lon), "number")
@@ -161,6 +163,63 @@ ClassMethod Oznacnik(dataDB As %String, czst As %String, id As %String) As %Dyna
         d oznacnik.%Set("lat", +lat, "number"), oznacnik.%Set("lon", +lon, "number")
     }
     q oznacnik
+}
+
+/// Jak cestující na lince skutečně platili - podle prodaných jízdenek (modul Tickets). EDISON
+/// nikde neeviduje „na lince lze platit kartou", tak se to vyvozuje z prodejů posledních dní.
+/// Ven jdou jen počty podle způsobu platby, žádné údaje o jednotlivých jízdenkách.
+///
+/// Prodeje: `^[db]LYOBD(idfa,rok,mes,den,"ly",lyId)` = denní index, `^[db]LY(lyId)` = `$lb` jízdenky,
+/// pole 11 = linka (licenční číslo bez úvodní nuly), pole 22 = způsob platby
+/// (`cash` / `bankcard` / `card` = čipová karta dopravce / `mobil` / `eshop` / `coupon`,
+/// viz `Tickets/CACHE/ALVATICKETS.inc`). Bere se nejvýš 3 posledních dnů s daty, a jen když
+/// nejsou starší než 30 dní - starší údaj by mohl lhát. Bez dat vrací "" (= nevíme).
+ClassMethod Platby(dataDB As %String, idfa As %String, lin As %String) As %DynamicObject
+{
+    s linka = +lin, dnu = 0, nejstarsi = +$h - 30, od = "", do = ""
+    k pocty
+    s rok = ""
+    f {
+        s rok = $o(^[dataDB]LYOBD(idfa,rok), -1)
+        q:rok=""
+        q:dnu>=3
+        s mes = ""
+        f {
+            s mes = $o(^[dataDB]LYOBD(idfa,rok,mes), -1)
+            q:mes=""
+            q:dnu>=3
+            s den = ""
+            f {
+                s den = $o(^[dataDB]LYOBD(idfa,rok,mes,den), -1)
+                q:den=""
+                q:dnu>=3
+                s datum = $zdh(rok_"-"_$tr($j(mes,2)," ","0")_"-"_$tr($j(den,2)," ","0"), 3, , , , , , , "")
+                continue:datum=""
+                i datum < nejstarsi s dnu = 3 q
+                s dnu = dnu + 1
+                s iso = $zd(datum, 3)
+                s do = $s(do = "":iso, 1:do), od = iso
+                s ly = ""
+                f {
+                    s ly = $o(^[dataDB]LYOBD(idfa,rok,mes,den,"ly",ly))
+                    q:ly=""
+                    s rec = $g(^[dataDB]LY(ly))
+                    continue:rec=""
+                    continue:+$lg(rec,11)'=linka
+                    s platba = $lg(rec,22)
+                    i platba '= "" s pocty(platba) = $g(pocty(platba)) + 1
+                }
+            }
+        }
+    }
+    q:'$d(pocty) ""
+    s vysledek = {"od":(od),"do":(do)}, zpusob = ""
+    f {
+        s zpusob = $o(pocty(zpusob))
+        q:zpusob=""
+        d vysledek.%Set(zpusob, pocty(zpusob), "number")
+    }
+    q vysledek
 }
 
 /// Vzdálenost dvou bodů v metrech (haversinova formule), zaokrouhlená na metry.
