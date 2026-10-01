@@ -118,20 +118,20 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 
 ## Testy
 
-- **.NET**: `dotnet test EDISON2.sln` (xUnit + NSubstitute).
+- **Změna chování přichází s testem** na nejlevnější úrovni, která regresi chytí: logika → unit, `.cls` → Caché,
+  hranice (odpověď serveru, formát, argumenty procesu) → navíc šev (mock dokazuje jen sám sebe), startup shellu → E2E.
+- **.NET**: `dotnet test EDISON2.sln` (xUnit + NSubstitute; šev jen s dostupným serverem, E2E jen s `EDISON_E2E=1`).
 - **Šev .NET ↔ Caché**: `EDISON2.IntegrationTests` (skutečné MLRest proti dev serveru); **UI E2E**: `EDISON2.E2ETests`
   (FlaUI nad DEBUG shellem s `e2e=1`, ručně s `EDISON_E2E=1`). Pravidla obou v jejich `CLAUDE.md`.
 - **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)` pro `$$$FillParams`),
   metody `TestXxx()`. Běh `pwsh -File tools/run-cache-tests.ps1 [-Package ...]` proti dev serveru `192.168.16.1:57770`
   (VPN, user `$env:USERNAME`, override `$env:CACHE_USER`); nový package mimo default list skriptu
   (EDISONMAIN2/EDControls/TemplateDesigner Tests) tam přidej, jinak ho pre-push hook nepokryje.
-- **Nasazení `.cls` na server dělá hook sám** (`.claude/hooks/compile-objectscript.sh`,
-  PostToolUse na Edit/Write) - upload + compile, chyby na stderr. `cache_compile` (MCP) volej
-  jen na to, co hook nepokryje; **ne na týž soubor po editaci** - dvojí nasazení si přepisuje
-  výsledek. ⚠️ **Úprava `.cls` mimo Edit/Write hook NESPUSTÍ** (hromadná změna skriptem): na
-  serveru zůstane stará třída, u EDInputForm formulářů se to projeví jako „pole je prázdné
-  a uložení nic neudělá" a **drift testy to nechytí, čtou `.cls` z repa**. Deploy pak vynuť
-  `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`.
+- **Nasazení `.cls` dělá hook sám** (`.claude/hooks/compile-objectscript.sh`, PostToolUse na Edit/Write,
+  chyby na stderr). MCP `cache_compile` jen na to, co hook nepokryje, **ne na týž soubor po editaci**
+  (dvojí nasazení si přepisuje výsledek). ⚠️ **Úprava `.cls` mimo Edit/Write hook nespustí**: na serveru
+  zůstane stará třída (EDInputForm: „pole je prázdné, uložení nic neudělá") a drift testy to nechytí, čtou
+  repo. Deploy vynuť `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`.
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - `.cs`→.NET
   (bez `Category=Integration`/`E2E`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
   sada (při `.cls/.inc` povinná). Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí
