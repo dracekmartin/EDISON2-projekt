@@ -431,7 +431,7 @@
       "elements": [
         {
           "type": "BarcodeElement",
-          "content": "http://localhost:5185/linka/{CISLO_LINKY}/{AKTUALNI_ZASTAVKA_CZST}/{AKTUALNI_ZASTAVKA_TC}",
+          "content": "http://localhost:5185/linka/{CISLO_LINKY}/{AKTUALNI_ZASTAVKA_CZST}/{AKTUALNI_ZASTAVKA_TC}/{SMER}",
           "barcodeType": "QR",
           "foreColor": "#FF000000",
           "id": "1e56515e-942c-42c1-90cb-de8c21b14cd1",
@@ -471,7 +471,7 @@
         },
         {
           "type": "TextElement",
-          "text": "Adresa: http://localhost:5185/linka/{CISLO_LINKY}/{AKTUALNI_ZASTAVKA_CZST}/{AKTUALNI_ZASTAVKA_TC}",
+          "text": "Adresa: http://localhost:5185/linka/{CISLO_LINKY}/{AKTUALNI_ZASTAVKA_CZST}/{AKTUALNI_ZASTAVKA_TC}/{SMER}",
           "style": {
             "fontSize": 7,
             "bold": false,
