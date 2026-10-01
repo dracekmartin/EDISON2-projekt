@@ -626,33 +626,37 @@
                                             Click="BtnAddPage_Click" HorizontalAlignment="Stretch" Padding="4,4" Margin="3,0,0,0"/>
                                 </UniformGrid>
                             </Border>
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <!-- Data-bound sections list -->
-                                <ListBox x:Name="SectionsList"
-                                         ItemsSource="{Binding Sections}"
-                                         ItemTemplate="{StaticResource SectionItemTemplate}"
-                                         Margin="6,4"
-                                         BorderThickness="0"
-                                         Background="Transparent"
-                                         SelectionChanged="SectionsList_SelectionChanged"
-                                         MouseDoubleClick="SectionsList_MouseDoubleClick">
-                                    <ListBox.ItemContainerStyle>
-                                        <Style TargetType="ListBoxItem">
-                                            <Setter Property="Padding"         Value="0"/>
-                                            <Setter Property="Margin"          Value="0"/>
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <!-- Remove default selection highlight - SectionVM.IsActive drives the visual -->
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="ListBoxItem">
-                                                        <ContentPresenter/>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </ListBox.ItemContainerStyle>
-                                </ListBox>
-                            </ScrollViewer>
+                            <!-- Data-bound sections list. Scrolluje ListBox sám: obalený ScrollViewerem
+                                 by kolečko myši spolkl jeho vnitřní scroller. CanContentScroll=False
+                                 = plynulý posun po pixelech a bez virtualizace, drag&drop sekcí
+                                 potřebuje kontejnery všech položek (ContainerFromIndex). -->
+                            <ListBox x:Name="SectionsList"
+                                     ItemsSource="{Binding Sections}"
+                                     ItemTemplate="{StaticResource SectionItemTemplate}"
+                                     Margin="6,4"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.CanContentScroll="False"
+                                     SelectionChanged="SectionsList_SelectionChanged"
+                                     MouseDoubleClick="SectionsList_MouseDoubleClick">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding"         Value="0"/>
+                                        <Setter Property="Margin"          Value="0"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <!-- Remove default selection highlight - SectionVM.IsActive drives the visual -->
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <ContentPresenter/>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
                         </DockPanel>
                     </TabItem>
 
@@ -757,10 +761,10 @@
                                  - stejný stack jako tiskový dialog, jen bez export skupiny. Skupiny (Seznam
                                  zastávek / Minuty odjezdů / Poznámky) řídí `group` z GetParameters.
                                  CacheClass + InitParams + FieldChanged/visibleWhen wiring je v code-behindu. -->
-                            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                          Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}">
-                                <eif:EDInputForm x:Name="ParamsTabForm" Margin="4"/>
-                            </ScrollViewer>
+                            <!-- Bez vnějšího ScrollVieweru: EDInputForm scrolluje sám. Vnější scroller by mu dal
+                                 nekonečnou výšku a vnitřní by kolečko myši spolkl, aniž by posunul. -->
+                            <eif:EDInputForm x:Name="ParamsTabForm" Margin="4"
+                                             Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}"/>
                             <!-- Empty-state: šablona bez parametrů (obecná / faktura) -->
                             <TextBlock Text="Tato šablona nemá parametry." TextWrapping="Wrap"
                                        Foreground="{DynamicResource EDTheme.Text.Secondary}"
