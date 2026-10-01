@@ -14,12 +14,11 @@
 
 ## 📱 QR na vývěsce - kam se odsud dostanu
 
-- **Webová aplikace pro cestující** [M] (záměr Jan 1. 10.). Cestující načte QR z vývěsky (jedna
-  linka, jeden směr) a otevře se aplikace M-line (`C:\DEV\edwcore`). Vybere zastávku, kam linka
-  odsud jede, a dozví se, za kolik minut jede nejbližší spoj a co k němu říká tištěný JŘ (místenka,
-  omezení). **Základ jen z dat vývěsky**; další zdroje (jiné linky a označníky na zastávce - „odsud
-  ne, jede to z označníku vedle") až jako nadstavba. Plánovač s přestupy ani mapy ne (tam vyhrává
-  IDOS). Další krok: analýza, co data vývěsky unesou (dnešní skupina dnů, svátky, kam spoj dojede).
+- **Webová aplikace pro cestující - demo** [M] (záměr Jan 1. 10.). Cestující načte QR z linkového
+  JŘ AD (jedna linka, jeden směr), otevře se lokální aplikace v `C:\DEV\edwcore`, vybere odkud
+  a kam a dozví se, za kolik minut jede nejbližší spoj a co k němu říká tištěný JŘ. Data jen
+  z `LinkovyJrAd.GetData`; zastávkový JŘ, MHD a další linky ze zastávky až jako nadstavba.
+  Plánovač s přestupy ani mapy ne. Podklad a postup: [`docs/analyzy/qr-linkovy-jr-pro-cestujici.md`](../../../docs/analyzy/qr-linkovy-jr-pro-cestujici.md).
 
 ---
 
