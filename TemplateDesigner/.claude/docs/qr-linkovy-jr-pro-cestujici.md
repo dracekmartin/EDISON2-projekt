@@ -111,5 +111,5 @@ ne - viz `ad-data-mapa.md`, v `edwcore` je `EDMap` a mapové služby `apps/mapy`
 **Stav 1. 10.:** kroky 1-4 v základu hotové. Cestující zadá cíl, aplikace najde spoje a u cíle
 opačným směrem pošle na protější označník (QR nese i směr výlepu). Omezení se nevyhodnocují
 z textu (skládá se podle nastavení firmy, někdy bez roku), ale z dat spoje
-`^JRL(sku,lin,smer,sp,11|12|13|22)`, která přidává `API.Cestujici`; spoj, který dnes nejede,
+`^JRL(sku,lin,smer,sp,11|12|13|22)`, která přidává `ALVA.TiskyQrDemo.Cestujici`; spoj, který dnes nejede,
 se cestujícímu neukáže a text omezení se nezobrazuje.

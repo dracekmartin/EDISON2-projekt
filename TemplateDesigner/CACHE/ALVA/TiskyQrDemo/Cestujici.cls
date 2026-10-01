@@ -1,25 +1,26 @@
 Include GENERAL
 
-/// Data linkového JŘ pro webovou aplikaci pro cestující (demo `edwcore/apps/tisky-qr`).
+/// ⚠️ **Jednorázová demo třída** pro `edwcore/apps/tisky-qr` (aplikace pro cestující z QR na výlepu
+/// linkového JŘ). Schválně mimo `ALVA.TemplateDesigner`, aby se nepletla s návrhářem a nevydala
+/// se s ním; v žádném Caché projektu není. Až se demo rozhodne, buď se smaže, nebo se přepíše
+/// do produkční podoby.
 ///
-/// Tenká JSON obálka nad `Agendy.LinkovyJrAd.GetData`, volaná přes MLRest `QueryJSON`
-/// (signatura `(sys, in, out)`). Výstup agendy se vrací **beze změny** - co jede dnes a kam,
-/// počítá aplikace. Tisk se touhle třídou nemění.
+/// Tenká JSON obálka nad `ALVA.TemplateDesigner.Agendy.LinkovyJrAd.GetData`, volaná přes MLRest
+/// `QueryJSON` (signatura `(sys, in, out)`). Stránky agendy vrací beze změny a doplní, co aplikace
+/// potřebuje navíc: omezení spojů jako data, polohu zastávek a označníků a vzdálenost mezi
+/// označníky obou směrů.
 ///
-/// IN:  {"idfa":"CB_CSADAD","linka":"330510","tc":"14"}
-/// OUT: {"success":true,"data":{"skupina":1,"linka":"0330510","stranky":[<stránka GetData>,...]}}
-///      chyba {"success":false,"error":{"code":"VSTUP|NENALEZENO|SYSTEM","message":"..."}}
-Class ALVA.TemplateDesigner.API.Cestujici Extends %RegisteredObject
+/// IN:  {"idfa":"ZL_KOVED","linka":"822995","tc":"14"}
+/// OUT: {"success":true,"data":{"skupina":1,"linka":"0822995","stranky":[...],
+///        "oznacniky":{"T":{...},"Z":{...}},"vzdalenostOznacnikuM":45}}
+Class ALVA.TiskyQrDemo.Cestujici Extends %RegisteredObject
 {
 
 /// Technická identita volajícího v kontextu ERP - `$$$FillParams` na prázdném jménu spadne.
 Parameter VOLAJICI = "TISKY-QR";
 
 /// Stránky linkového JŘ (oba směry) se zvýrazněnou zastávkou výlepu.
-///
-/// Skupina linek se do QR nedává (mění se s novým jízdním řádem), dohledá se tady:
-/// bere se **nejvyšší** skupina, ve které linka je. Pro demo to stačí; správně by rozhodla
-/// platnost vůči dnešku.
+/// Skupina linek se do QR nedává (mění se s novým JŘ): bere se nejvyšší, ve které linka je.
 ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
 {
     s err = "", code = ""
@@ -48,18 +49,26 @@ ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
         d ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetData(.sys)
         i $g(^||ML("ERR")) '= "" s code = "SYSTEM", err = ^||ML("ERR") ztrap
 
-        s stranky = ##class(%DynamicArray).%New(), key = ""
+        s stranky = ##class(%DynamicArray).%New(), oznacniky = {}, key = ""
         f {
             s key = $o(^||ML("OUT", key))
             q:key=""
             continue:key="ERR"
             s stranka = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
             d ..PridejOmezeni(dataDB, skupina, lin, stranka)
-            d ..PridejPolohy(dataDB, stranka)
+            s oznacnik = ..PridejPolohy(dataDB, skupina, lin, stranka)
+            s smer = stranka.values.%Get("SMER")
+            i $isobject(oznacnik) && (smer '= "") d oznacniky.%Set(smer, oznacnik)
             d stranky.%Push(stranka)
         }
         k ^||ML("IN"), ^||ML("OUT")
-        s out = {"success":true,"data":{"skupina":(skupina),"linka":(lin),"stranky":(stranky)}}
+
+        s data = {"skupina":(skupina),"linka":(lin),"stranky":(stranky),"oznacniky":(oznacniky)}
+        s tam = oznacniky.%Get("T"), zpet = oznacniky.%Get("Z")
+        i $isobject(tam) && $isobject(zpet) && (tam.%Get("lat") '= "") && (zpet.%Get("lat") '= "") {
+            d data.%Set("vzdalenostOznacnikuM", ..VzdalenostM(tam.lat, tam.lon, zpet.lat, zpet.lon), "number")
+        }
+        s out = {"success":true,"data":(data)}
     }
     catch ex {
         i err = "" s err = ex.DisplayString()
@@ -106,13 +115,17 @@ ClassMethod PridejOmezeni(dataDB As %String, sku As %String, lin As %String, str
     }
 }
 
-/// Souřadnice pro mapu: ke každému řádku zastávky `LAT`/`LON` z číselníku zastávek (`^JRZ` pole
-/// 12 a 13) a k zastávce výlepu `SLOUPKY` - sloupky s GPS (`^JRZ(czst,"Sloupek",id)` =
-/// `číslo~lat~lon~popis směru`). Sloupky má jen část zastávek, bez nich je známá jen zastávka.
-ClassMethod PridejPolohy(dataDB As %String, stranka As %DynamicObject)
+/// Poloha pro mapu. Každému řádku zastávky `LAT`/`LON` z číselníku zastávek (`^JRZ` pole 12 a 13).
+/// Řádku zastávky výlepu navíc `OZNACNIK` - označník, ze kterého v tomhle směru linka jede:
+/// trasa linky na něj odkazuje polem sloupku (`^JRL(sku,lin,"J",poradi)` "#"-pole 12 =
+/// `idTam:idZpet`), záznam je `^JRZ(czst,"Sloupek",id)` = `číslo~lat~lon~popis směru`.
+/// Vrací ten označník (nebo "", když trasa žádný neurčuje).
+ClassMethod PridejPolohy(dataDB As %String, sku As %String, lin As %String, stranka As %DynamicObject) As %DynamicObject
 {
+    s vysledek = ""
     s zastavky = stranka.rows.%Get("ZASTAVKY")
-    q:'$isobject(zastavky)
+    q:'$isobject(zastavky) vysledek
+    s jeTam = (stranka.values.%Get("SMER") = "T")
     s it = zastavky.%GetIterator()
     while it.%GetNext(.i, .radek) {
         s czst = radek.%Get("CZST")
@@ -120,20 +133,43 @@ ClassMethod PridejPolohy(dataDB As %String, stranka As %DynamicObject)
         s rec = $g(^[dataDB]JRZ(czst))
         s lat = $p(rec,"$",12), lon = $p(rec,"$",13)
         i $isvalidnum(lat) && $isvalidnum(lon) && (+lat '= 0) {
-            d radek.%Set("LAT", +lat), radek.%Set("LON", +lon)
+            d radek.%Set("LAT", +lat, "number"), radek.%Set("LON", +lon, "number")
         }
         continue:radek.%Get("AKTUALNI_ZASTAVKA")'="true"
-        s sloupky = ##class(%DynamicArray).%New(), id = ""
-        f {
-            s id = $o(^[dataDB]JRZ(czst,"Sloupek",id))
-            q:id=""
-            s sloupek = $g(^[dataDB]JRZ(czst,"Sloupek",id))
-            s sLat = $p(sloupek,"~",2), sLon = $p(sloupek,"~",3)
-            continue:'$isvalidnum(sLat)||'$isvalidnum(sLon)||(+sLat=0)
-            d sloupky.%Push({"cislo":($p(sloupek,"~",1)),"lat":(+sLat),"lon":(+sLon),"popis":($p(sloupek,"~",4))})
-        }
-        d radek.%Set("SLOUPKY", sloupky)
+        s idSloupku = $p($p($g(^[dataDB]JRL(sku,lin,"J",radek.%Get("PORADI"))),"#",12),":",$s(jeTam:1, 1:2))
+        continue:idSloupku=""
+        s oznacnik = ..Oznacnik(dataDB, czst, idSloupku)
+        continue:'$isobject(oznacnik)
+        d radek.%Set("OZNACNIK", oznacnik)
+        s vysledek = oznacnik
     }
+    q vysledek
+}
+
+/// Záznam označníku zastávky. Přednost má nejnovější časová varianta, která už platí
+/// (`^JRZ(czst,"CasoveVariantyUdaju",horolog,"Sloupek",id)` - tak to čte webová aplikace EDISONu),
+/// jinak základní uzel.
+ClassMethod Oznacnik(dataDB As %String, czst As %String, id As %String) As %DynamicObject
+{
+    s zaznam = "", den = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",+$h+1), -1)
+    i den '= "" s zaznam = $g(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",den,"Sloupek",id))
+    i zaznam = "" s zaznam = $g(^[dataDB]JRZ(czst,"Sloupek",id))
+    q:zaznam="" ""
+    s oznacnik = {"id":(id),"cislo":($p(zaznam,"~",1)),"popis":($p(zaznam,"~",4))}
+    s lat = $p(zaznam,"~",2), lon = $p(zaznam,"~",3)
+    i $isvalidnum(lat) && $isvalidnum(lon) && (+lat '= 0) {
+        d oznacnik.%Set("lat", +lat, "number"), oznacnik.%Set("lon", +lon, "number")
+    }
+    q oznacnik
+}
+
+/// Vzdálenost dvou bodů v metrech (haversinova formule), zaokrouhlená na metry.
+ClassMethod VzdalenostM(lat1 As %Numeric, lon1 As %Numeric, lat2 As %Numeric, lon2 As %Numeric) As %Integer
+{
+    s rad = $zpi / 180
+    s dLat = (lat2 - lat1) * rad, dLon = (lon2 - lon1) * rad
+    s a = ($zsin(dLat / 2) ** 2) + ($zcos(lat1 * rad) * $zcos(lat2 * rad) * ($zsin(dLon / 2) ** 2))
+    q $normalize(6371000 * 2 * $zarcsin($zsqr(a)), 0)
 }
 
 /// `d.m.yyyy` → `yyyy-mm-dd`; neúplné datum → "".
