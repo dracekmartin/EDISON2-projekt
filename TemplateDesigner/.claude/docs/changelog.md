@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-01 (3) - 🔎 hledání ve formuláři napoví Ctrl+F
+
+Pole hledání ve formuláři (a v seznamech) ukazuje „Hledat… (Ctrl+F)", jako už nápověda F1.
+Zkratku má jen jedno hledací pole v okně, proto ji ukazuje jen to, které ji opravdu obsluhuje
+(sdílený `EDComponentToolbar` v EDControls - týká se i shellu).
+
 ## 2026-10-01 (2) - 📌 linkový JŘ jako výlepy na zastávky
 
 Nový parametr linkového JŘ AD **„Stránka pro každou zastávku"** (skupina Obecné). Zapnutý vrátí

@@ -76,7 +76,7 @@
                  mezi výskyty nemá co. -->
             <edstx:EDSearchTextBox Grid.Column="1" x:Name="SearchTextBox"
                                    VerticalAlignment="Center" Margin="0,0,8,0"
-                                   Placeholder="{Binding SearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                   Placeholder="{Binding EffectiveSearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                    Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
                                    Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
 

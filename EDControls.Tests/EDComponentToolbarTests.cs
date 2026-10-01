@@ -74,6 +74,38 @@ public class EDComponentToolbarTests
         });
     }
 
+    /// <summary>Nápověda „(Ctrl+F)" v placeholderu jen u toolbaru, který zkratku v okně obsluhuje -
+    /// v shellu jich jsou desítky a ostatním by lhala.</summary>
+    [Fact]
+    public void Placeholder_CtrlFHintOnlyOnShortcutOwner()
+    {
+        RunSta(() =>
+        {
+            var prvni = new Toolbar();
+            var druhy = new Toolbar();
+            var window = new Window { Content = new StackPanel { Children = { prvni, druhy } } };
+            try
+            {
+                Assert.Equal("Hledat…", prvni.EffectiveSearchPlaceholder);
+
+                RaiseOn(prvni, FrameworkElement.LoadedEvent);
+                RaiseOn(druhy, FrameworkElement.LoadedEvent);
+                Assert.Equal("Hledat… (Ctrl+F)", prvni.EffectiveSearchPlaceholder);
+                Assert.Equal("Hledat…", druhy.EffectiveSearchPlaceholder);
+
+                prvni.SearchPlaceholder = "Hledat pole…";
+                Assert.Equal("Hledat pole… (Ctrl+F)", prvni.EffectiveSearchPlaceholder);
+
+                RaiseOn(prvni, FrameworkElement.UnloadedEvent);
+                Assert.Equal("Hledat pole…", prvni.EffectiveSearchPlaceholder);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
     private static void RaiseOn(Toolbar toolbar, RoutedEvent routedEvent) =>
         toolbar.RaiseEvent(new RoutedEventArgs(routedEvent, toolbar));
 

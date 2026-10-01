@@ -29,6 +29,12 @@ public partial class EDComponentToolbar : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        PrevezmiCtrlF();
+        AktualizujPlaceholder();
+    }
+
+    private void PrevezmiCtrlF()
+    {
         // Ctrl+F focusne search box (window-level binding, pokud parent Window existuje).
         // Unsubscribe nutný v OnUnloaded - jinak při re-load akumulují binding kopie.
         var parentWindow = Window.GetWindow(this);
@@ -52,7 +58,14 @@ public partial class EDComponentToolbar : UserControl
             _ctrlFBinding = null;
             _attachedWindow = null;
         }
+        AktualizujPlaceholder();
     }
+
+    // Nápověda „(Ctrl+F)" jen u toolbaru, který Ctrl+F v okně opravdu obsluhuje - ostatním
+    // (v shellu jsou jich desítky) by lhala.
+    private void AktualizujPlaceholder() =>
+        SetValue(EffectiveSearchPlaceholderPropertyKey,
+            _ctrlFBinding is null ? SearchPlaceholder : $"{SearchPlaceholder} (Ctrl+F)");
 
     private void FocusSearch()
     {
@@ -95,13 +108,24 @@ public partial class EDComponentToolbar : UserControl
 
     public static readonly DependencyProperty SearchPlaceholderProperty =
         DependencyProperty.Register(nameof(SearchPlaceholder), typeof(string), typeof(EDComponentToolbar),
-            new PropertyMetadata("Hledat…"));
+            new PropertyMetadata("Hledat…", (d, _) => ((EDComponentToolbar)d).AktualizujPlaceholder()));
 
     public string SearchPlaceholder
     {
         get => (string)GetValue(SearchPlaceholderProperty);
         set => SetValue(SearchPlaceholderProperty, value);
     }
+
+    private static readonly DependencyPropertyKey EffectiveSearchPlaceholderPropertyKey =
+        DependencyProperty.RegisterReadOnly(nameof(EffectiveSearchPlaceholder), typeof(string),
+            typeof(EDComponentToolbar), new PropertyMetadata("Hledat…"));
+
+    public static readonly DependencyProperty EffectiveSearchPlaceholderProperty =
+        EffectiveSearchPlaceholderPropertyKey.DependencyProperty;
+
+    /// <summary>Zobrazený placeholder hledání: <see cref="SearchPlaceholder"/>, u toolbaru se zkratkou
+    /// Ctrl+F doplněný o „(Ctrl+F)".</summary>
+    public string EffectiveSearchPlaceholder => (string)GetValue(EffectiveSearchPlaceholderProperty);
 
     public static readonly DependencyProperty ShowExportProperty =
         DependencyProperty.Register(nameof(ShowExport), typeof(bool), typeof(EDComponentToolbar),
