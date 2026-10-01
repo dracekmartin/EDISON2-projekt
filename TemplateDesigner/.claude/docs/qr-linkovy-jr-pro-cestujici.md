@@ -1,7 +1,7 @@
 # QR na linkovém JŘ - aplikace pro cestující (analýza 2026-10-01)
 
-> Snímek ke dni vzniku, neudržuje se. Záměr drží `TemplateDesigner/.claude/docs/roadmap.md`
-> (sekce „QR na vývěsce - kam se odsud dostanu").
+> Jednorázová analýza: až se demo postaví a zjištění se přenesou do trvalých docs, soubor se
+> smaže. Záměr drží [`roadmap.md`](roadmap.md) (sekce „QR na vývěsce - kam se odsud dostanu").
 
 ## Co se po nás chce
 
@@ -17,6 +17,7 @@ k němu říká tištěný jízdní řád (bezbariérový spoj, kola, místenka,
 - aplikace je **samostatná lokální aplikace v `C:\DEV\edwcore`** (localhost), ne veřejná služba,
 - dnešní QR s pevnou adresou se upraví tak, aby **každá stránka** vedla na svoji adresu v té
   aplikaci,
+- zkouší se na notebooku (telefon a adresa v místní síti později),
 - drobné nejistoty dat (staré dev data, parsování textů omezení) se v demu neřeší.
 
 ## Co data linkového JŘ umí
@@ -66,19 +67,14 @@ u každé zastávky, takže odpověď „kdy jede spoj z A do B" se jen přečte
    a aplikace nabídne cíle tam i zpět.
 2. **Firma v adrese chybí** - výstup IdFa nenese. Pro lokální demo stačí firma v konfiguraci
    aplikace.
-3. **Localhost z telefonu nedosáhne.** Pro zkoušení telefonem musí QR nést adresu počítače
-   v místní síti (např. `http://192.168.x.x:<port>`), proto má být začátek adresy v šabloně
-   snadno měnitelný.
-4. **Wire tvar:** `GetData` zapisuje do `^||ML("OUT",n)` (CVar), kdežto klient v `edwcore` volá
+3. **Wire tvar:** `GetData` zapisuje do `^||ML("OUT",n)` (CVar), kdežto klient v `edwcore` volá
    JSON metody (`QueryJSON`, signatura `(sys, in, out)`). Je potřeba tenká Caché metoda,
    která `GetData` zavolá a vrátí JSON, nebo klient na CVar cestu.
-5. **„Jede to dnes?"** - aplikace vezme dnešní datum: pracovní den / den v týdnu / neděle
+4. **„Jede to dnes?"** - aplikace vezme dnešní datum: pracovní den / den v týdnu / neděle
    a svátky jdou z kódů `PLATNOST` (`X`, `1`-`7`, `+`), státní svátky si spočítá sama a na svátek
    se chová jako v neděli. Omezení jsou jen text; demo je u spoje ukáže a jednoduché tvary
    („nejede 24.12.22") zkusí rozpoznat.
-6. **Dev data jsou prošlá** (platnost 11.12.2022-09.12.2023). Pro zkoušení musí jít aplikaci
-   podstrčit datum (parametr v adrese), jinak by „dnes" nikdy nic nejelo.
-7. **Velikost:** linka je malá (2 stránky), načtení celé linky na jedno QR je pro demo v pořádku.
+5. **Velikost:** linka je malá (2 stránky), načtení celé linky na jedno QR je pro demo v pořádku.
 
 ## Postup po krocích
 
@@ -87,15 +83,15 @@ aplikace, Caché jen vydá data - stejné rozdělení jako u EDISONKA webu.
 
 1. **QR výlepu nese zastávku.** Pole stránky se zvýrazněnou zastávkou v `LinkovyJrAd.cls`,
    v šabloně linkového JŘ AD prvek QR s adresou `<začátek adresy>/linka/{CISLO_LINKY}/<zastávka>`.
-   *Vyzkoušíš:* v návrháři zadáš „Zvýraznit zastávku" (Velešín), náhled ukáže QR, telefon
-   z něj přečte adresu s linkou a zastávkou. Jiná zastávka = jiné QR.
+   *Vyzkoušíš:* v návrháři zadáš „Zvýraznit zastávku" (Velešín), náhled ukáže QR s adresou
+   s linkou a zastávkou. Jiná zastávka = jiné QR.
 2. **Aplikace ukáže, kde cestující stojí.** Tenká JSON metoda v Caché nad `GetData`, v `edwcore`
    nová lokální aplikace (backend s Caché klientem podle EDISONKA webu, frontend). Stránka podle
    adresy ukáže zastávku, linku, označník a seznam cílů v obou směrech.
-   *Vyzkoušíš:* načteš QR z kroku 1 a na telefonu vidíš „Velešín,aut.nádr. - linka 530" a kam
-   se odsud dá dojet.
+   *Vyzkoušíš:* otevřeš adresu z QR z kroku 1 v prohlížeči a vidíš „Velešín,aut.nádr. - linka
+   530" a kam se odsud dá dojet.
 3. **Nejbližší spoj dnes.** Po výběru cíle nejbližší spoje, které dnes jedou a v cíli staví:
-   za kolik minut odjezd, kdy příjezd. Datum jde podstrčit adresou.
+   za kolik minut odjezd, kdy příjezd.
    *Vyzkoušíš:* vybereš České Budějovice a porovnáš s tištěným JŘ pro zvolený den (pracovní
    den, sobota, svátek).
 4. **Poznámky slovy.** U spoje bezbariérový vůz, kola, místenka, návaznost a text omezení;

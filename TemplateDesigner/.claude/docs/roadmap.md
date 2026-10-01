@@ -18,7 +18,7 @@
   JŘ AD (jedna linka, jeden směr), otevře se lokální aplikace v `C:\DEV\edwcore`, vybere odkud
   a kam a dozví se, za kolik minut jede nejbližší spoj a co k němu říká tištěný JŘ. Data jen
   z `LinkovyJrAd.GetData`; zastávkový JŘ, MHD a další linky ze zastávky až jako nadstavba.
-  Plánovač s přestupy ani mapy ne. Podklad a postup: [`docs/analyzy/qr-linkovy-jr-pro-cestujici.md`](../../../docs/analyzy/qr-linkovy-jr-pro-cestujici.md).
+  Plánovač s přestupy ani mapy ne. Podklad a postup: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
 
 ---
 
