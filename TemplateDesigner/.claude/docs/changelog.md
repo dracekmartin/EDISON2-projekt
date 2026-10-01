@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-01 - 📱 zastávka výlepu v datech linkového JŘ (demo QR pro cestující)
+
+Linkový JŘ AD nese v hlavičce stránky zastávku výlepu: **„Číslo aktuální zastávky"**
+a **„Tarifní číslo aktuální zastávky"**. Vyplní se, když parametr „Zvýraznit zastávku" nebo
+„Zvýraznit tarifní číslo" trefí právě jeden řádek. Kus názvu, který odpovídá víc zastávkám
+(„Velešín" na lince 330530 odpovídá čtyřem), nechá pole prázdná, aby QR nevedlo na náhodnou
+z nich. Pole jde dosadit do prvku Kód (QR, čárový), takže každý výlep dostane vlastní adresu.
+Ukázková šablona `templates/demo-qr-linkovy-jr-ad.json` má pod tabulkou QR s adresou demo
+aplikace (`localhost:5185`). Je to první krok dema podle `qr-linkovy-jr-pro-cestujici.md`.
+
 ## 2026-09-29 (3) - 🖨 uspořádání na list jen u šablony o víc stránkách
 
 Panel „Uspořádání na list" v okně Tisk se ukazoval i u jednostránkové šablony, když bylo

@@ -19,7 +19,7 @@ Include GENERAL
 ///
 ///   values: CISLO_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
 ///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), KONECNA_ZASTAVKA,
-///           VYCHOZI_ZASTAVKA
+///           VYCHOZI_ZASTAVKA, AKTUALNI_ZASTAVKA_CZST/TC (zvýrazněná zastávka, je-li jednoznačná)
 ///   rows.ZASTAVKY:    [{ PORADI, TYP ("zastavka" hlavní/odjezdový řádek | "prijezd" vložený
 ///                        příjezdový u zastávek s atributem P/J), CZST, NAZEV_ZASTAVKY, TC, ZONY,
 ///                        MHD, KM:[per km-sloupec směru], ATRIBUTY:[znaky], NASTUPISTE }]
@@ -105,6 +105,9 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
     d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
+    // Zastávka výlepu (parametr „Zvýraznit zastávku") jako pole stránky, aby ji šlo dosadit do QR.
+    d ..AddField(fields, "AKTUALNI_ZASTAVKA_CZST", "Číslo aktuální zastávky",  "number")
+    d ..AddField(fields, "AKTUALNI_ZASTAVKA_TC",   "Tarifní číslo aktuální zastávky", "number")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
@@ -691,6 +694,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu, spolecneKm)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
     k atributyZastavek                        // atributy z číselníku zastávek (^JRZ $8, CSV) - legenda druhu 7
+    k zvyraznene                              // tarifní číslo zvýrazněného řádku → CZST
     s maMhd = 0
     s idx = 0, poradi = ""
     f {
@@ -720,6 +724,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         s rowMeta(idx) = $lb(poradi, "O")
         s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm, obousmerne)
         d zastavky.%Push(z)
+        i z.%Get("AKTUALNI_ZASTAVKA") = "true" s zvyraznene(poradi) = czst
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
         // atributy z číselníku zastávek (^JRZ $8, CSV - např. "A,L" = přestup bus/vlak)
@@ -736,6 +741,13 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 
     d vals.%Set("VYCHOZI_ZASTAVKA", prvniNazev)
     d vals.%Set("KONECNA_ZASTAVKA",       posledniNazev)
+    // Zastávka výlepu pro adresu v QR: jen když je zvýrazněný právě jeden řádek, jinak by adresa
+    // ukázala na jedno z víc míst (kus názvu „Velešín" trefí čtyři zastávky). Pole jsou vždy,
+    // aby v QR nezůstal nedosazený `{…}`.
+    s zvTc = $o(zvyraznene(""))
+    s jednoznacna = (zvTc '= "") && ($o(zvyraznene(zvTc)) = "")
+    d vals.%Set("AKTUALNI_ZASTAVKA_CZST", $s(jednoznacna:zvyraznene(zvTc), 1:""))
+    d vals.%Set("AKTUALNI_ZASTAVKA_TC",   $s(jednoznacna:+zvTc, 1:""))
 
     // ── spoje směru: legacy mkPoradiSp řazení + zařazení do skupin dnů ──
     s spoje = ##class(%DynamicArray).%New()

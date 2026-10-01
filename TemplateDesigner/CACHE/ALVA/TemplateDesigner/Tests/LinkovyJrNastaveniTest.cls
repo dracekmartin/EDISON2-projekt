@@ -156,6 +156,52 @@ Method TestZvyrazneniZastavky()
 	}
 }
 
+/// **Zastávka výlepu jako pole stránky** (adresa v QR pro cestující): stránka ji nese jen tehdy,
+/// když je zvýrazněný právě jeden řádek. Kus názvu, který trefí víc zastávek, musí nechat pole
+/// prázdné - jinak by QR vedlo na náhodně vybranou z nich.
+Method TestZastavkaVylepu()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330530"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka pro zastávku výlepu není na tomto serveru - přeskočeno")
+		quit
+	}
+
+	// ── bez volby pole prázdné ──────────────────────────────────────────
+	kill parametry
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..ZastavkyVylepu(), "|", "bez volby nesmí stránka nést zastávku výlepu")
+
+	// ── víc shod → pole prázdné ─────────────────────────────────────────
+	kill parametry
+	set parametry("ZVYRAZNIT_ZASTAVKU") = "velešín"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..ZastavkyVylepu(), "|", "víc zvýrazněných zastávek nesmí dát zastávku výlepu")
+
+	// ── jednoznačné tarifní číslo → číslo zastávky i tarifní číslo na všech stránkách ──
+	kill parametry
+	set parametry("ZVYRAZNIT_TC") = 14
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..ZastavkyVylepu(), "38435|14", "tarifní číslo 14 = Velešín,,aut.nádr. na každé stránce")
+}
+
+/// Zastávka výlepu ze všech stránek jako `czst|tc`; když se stránky liší, vrátí je spojené „ / ".
+ClassMethod ZastavkyVylepu() As %String
+{
+	set vysledek = "", key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set jedna = page.values.%Get("AKTUALNI_ZASTAVKA_CZST") _ "|" _ page.values.%Get("AKTUALNI_ZASTAVKA_TC")
+		if vysledek = "" { set vysledek = jedna }
+		elseif (" / "_vysledek_" / ") '[ (" / "_jedna_" / ") { set vysledek = vysledek _ " / " _ jedna }
+	}
+	quit vysledek
+}
+
 /// Kolik řádků zastávek je označených jako zvýrazněné; `jmena` naplní jejich názvy.
 ClassMethod PocetZvyraznenych(ByRef jmena, ByRef tcecka) As %Integer
 {
