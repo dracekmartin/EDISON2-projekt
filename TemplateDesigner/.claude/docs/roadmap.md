@@ -19,6 +19,8 @@
   a kam a dozví se, za kolik minut jede nejbližší spoj a co k němu říká tištěný JŘ. Data jen
   z `LinkovyJrAd.GetData`; zastávkový JŘ, MHD a další linky ze zastávky až jako nadstavba.
   Plánovač s přestupy ani mapy ne. Podklad a postup: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
+  ⚠️ Pro reálné výlepy chybí tisk linkového JŘ **po stránce za každou zastávku** se zvýrazněným
+  řádkem (jako u zastávkového); dnes se zastávka volí parametrem pro celý tisk.
 
 ---
 
