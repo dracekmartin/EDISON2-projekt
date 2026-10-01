@@ -102,9 +102,10 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 ## Ostatní podsložky
 
 - `EDComponentToolbar/` - sdílený toolbar EDInputForm/EDList (search, export, ...).
-  Past: window-level **Ctrl+F** binding si v `OnLoaded` vezme jen první toolbar okna
-  (`CtrlFOwnerProperty`, v shellu jich jsou desítky) a v `OnUnloaded` ho musí uvolnit - jinak
-  se při re-loadu akumulují kopie. Kreslí si **vlastní** brandový pruh
+  Past: window-level **Ctrl+F** binding je **jeden na okno** (`CtrlFOknaProperty`, v shellu
+  jsou toolbarů desítky) a cíl vybírá až při stisku - hledání komponenty s fokusem, jinak první
+  viditelné. Dřív ho držel první načtený toolbar a zkratka mířila i do skryté záložky. Toolbar se
+  v `OnUnloaded` musí odregistrovat (s posledním zmizí binding) - jinak se při re-loadu akumulují. Kreslí si **vlastní** brandový pruh
   (`Accent.Header`, texty `OnAccent.*`) - hostitel ho nevsazuje do svého Borderu, jen ho
   položí nad obsah.
 - `EDFilterComboBox/` - logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
