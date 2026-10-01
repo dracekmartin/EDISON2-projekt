@@ -4,11 +4,22 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** QR na vývěsce (analýza dat vývěsky). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
+
+---
+
+## 📱 QR na vývěsce - kam se odsud dostanu
+
+- **Webová aplikace pro cestující** [M] (záměr Jan 1. 10.). Cestující načte QR z vývěsky (jedna
+  linka, jeden směr) a otevře se aplikace M-line (`C:\DEV\edwcore`). Vybere zastávku, kam linka
+  odsud jede, a dozví se, za kolik minut jede nejbližší spoj a co k němu říká tištěný JŘ (místenka,
+  omezení). **Základ jen z dat vývěsky**; další zdroje (jiné linky a označníky na zastávce - „odsud
+  ne, jede to z označníku vedle") až jako nadstavba. Plánovač s přestupy ani mapy ne (tam vyhrává
+  IDOS). Další krok: analýza, co data vývěsky unesou (dnešní skupina dnů, svátky, kam spoj dojede).
 
 ---
 
@@ -46,19 +57,16 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
-### Připravené k práci
-
-- **`#7487` Rozložení poznámek podle druhu** [M] (KORID; potvrzeno hovorem s kolegou 25. 9.).
-  Druhy jako ve starém win tisku (dny platnosti, negativní značky, návaznosti, atributy, textové
-  poznámky…): u každého **pořadí** a **počet sloupců** zvlášť, např. „všechno do 3 sloupců, negativní
-  značky do 1". Dnes jde jen jeden „Počet sloupců" pro celou legendu. Přesný tvar nastavení se
-  ještě upřesní s kolegou - nejdřív návrh formuláře, pak kód.
-
 ---
 
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`#7487` Rozložení poznámek podle druhu** [M] (KORID; odloženo Jan 1. 10., čeká na upřesnění
+  tvaru s kolegou). U každého druhu poznámek (dny platnosti, negativní značky, návaznosti,
+  atributy, texty) zvlášť **pořadí** a **počet sloupců**, např. „všechno do 3 sloupců, negativní
+  značky do 1". Dnes jde jeden „Počet sloupců" pro celou legendu. Nejdřív návrh formuláře, pak kód.
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
@@ -146,18 +154,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   lidé si v něm překážejí. Návrh: `partial` soubory přesně podle těch pruhů, beze změny chování;
   precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
   ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
-
-- **Jízdní řád ze zastávky na mobilu (QR na vývěsce)** (nápad Jan 22. 9., zatím bez poptávky).
-  Kód na vývěsce nese **linku, zastávku a stanoviště**, takže stránka ví, kde člověk fyzicky stojí -
-  to je jediná věc, kterou vyhledávač spojení neumí. Odpoví větou („nejbližší odjezd za 25 minut",
-  „dnes už odsud nic nejede, první zítra v 6:10", „z druhé strany jede za 6 minut"), pod tím výběr
-  cíle s dobou jízdy a texty poznámek místo značek. Papír navíc zastarává, odkaz ne.
-  ⚠️ **Nedělat plánovač s přestupy ani mapy** - tam vyhrává IDOS. Hranice je „co odsud jede přímo".
-  ⚠️ **Vidlička k rozhodnutí:** vývěska je jedna linka, cestující chce jednu cestu - silnější verze
-  je „odjezdy ze stanoviště za všechny linky", což je blíž relacím než vývěsce.
-  ⚠️ **Slabé místo je „jede to dnes"**: svátky a omezení dnes tiskneme jako text, ne jako datum,
-  které jde spočítat. Prototyp může jet na dni v týdnu a značky vypsat slovy.
-  Zpoždění v reálném čase by hodnotu zvedlo nejvíc, ale data živá nejsou (GTFS RT jen u DPCB).
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
