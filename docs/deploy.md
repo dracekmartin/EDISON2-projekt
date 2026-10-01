@@ -10,8 +10,9 @@ Z repa EDISON2 (publish profilem `SingleFileCEdison` do `C:\Edison\`, soubory vy
 složku nikdy nezipovat - leží tam stale `.pdb`/`.deps.json` a dev `VERZE.INF`):
 
 - `EDISONMAIN2.exe` - single-file bundle (obsahuje `EDISONMAIN2.LegacyMiniApps`, AvalonDock,
-  WebView2 i snapshot `MLRest.dll`/`EDLicence.dll`/`EDISONAPI.dll` ze stroje, kde se publikovalo -
-  publikovat jen tam, kde `C:\Edison\` odpovídá vydávané legacy verzi)
+  WebView2 i snapshot `MLRest`, `EDLicence`, `EDUsers`, `EDISONAPI`, `EDCore` a `EDLibrary` z `C:\Edison\`
+  stroje, kde se publikovalo - publikovat jen tam, kde `C:\Edison\` odpovídá vydávané legacy verzi
+  a je v Release: Debug `EDLicence` stahuje licenci z `127.0.0.1` a chyby ukazuje dialogem `ERROR`)
 - `EDControls.dll` - volná vedle exe
 - `EDISONRUNTIME.zip` - privátní .NET 10 runtime (`tools/build-runtime-zip.ps1`: oficiální
   `dotnet-runtime` + `windowsdesktop-runtime` win-x64 sloučené, SHA512 z metadat Microsoftu, ~70 MB).
@@ -30,9 +31,10 @@ Z repa EDISON (build do `C:\Edison`):
   detekci nové verze nenastartuje (`CopyUpdater` selže s popupem). `EDUPDATE2.exe` (repo EDISON2)
   jen po přepnutí shellu na něj (`Updater.ActiveKind`).
 
-Řádky manifestu `FILES_DESCRIPTION.INF`: FULL `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`,
-`EDUPDATE2.exe` a `FULL~~DLL~...\EDISONRUNTIME.zip`; sekce `PATCH~EDISON2` `EDISONMAIN2.exe`,
-`EDControls.dll` a Caché projekty níže. Ostatní soubory výše mají řádky z legacy (`USERS.exe` v
+Řádky manifestu `FILES_DESCRIPTION.INF`: FULL `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`
+a `FULL~~DLL~...\EDISONRUNTIME.zip`; sekce `PATCH~EDISON2` `EDISONMAIN2.exe`, `EDControls.dll`
+a Caché projekty níže. `FULL~~EXE~...\EDUPDATE2.exe` má jen TEST manifest, do ostrého patří před
+přepnutím `Updater.ActiveKind`. Ostatní soubory výše mají řádky z legacy (`USERS.exe` v
 `PATCH~USERS`, `EDISONMAIN.exe.config` jen v `PATCH~MHD2Linky`). FULL bere řádky FULL i PATCH. Patch
 se staví jen jako XML PATCH a z řádků zaškrtnutých balíčků bere jen XML a INF
 (`EDISON/SETUPWIZARD/frmMain.vb`): všechny binárky shellu včetně `EDISONMAIN2.exe`, `EDControls.dll`
