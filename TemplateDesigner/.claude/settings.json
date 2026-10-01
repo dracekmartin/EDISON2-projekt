@@ -8,7 +8,6 @@
       "Glob",
       "Grep",
       "WebFetch",
-
       "Bash(dotnet build *)",
       "Bash(dotnet test *)",
       "Bash(dotnet run *)",
@@ -16,7 +15,6 @@
       "Bash(dotnet add *)",
       "Bash(dotnet list *)",
       "Bash(dotnet format *)",
-
       "Bash(git status)",
       "Bash(git log *)",
       "Bash(git diff *)",
@@ -42,7 +40,6 @@
       "Bash(git remote -v)",
       "Bash(git tag *)",
       "Bash(git reflog *)",
-
       "Bash(ls *)",
       "Bash(find *)",
       "Bash(grep *)",
@@ -59,13 +56,6 @@
       "Bash(npx *)",
       "Bash(node *)"
     ],
-    "ask": [
-      "Bash(git checkout *)",
-      "Bash(git switch *)",
-      "Bash(git merge *)",
-      "Bash(git rebase *)",
-      "Bash(mv *)"
-    ],
     "deny": [
       "Bash(git reset --hard *)",
       "Bash(git clean *)",
@@ -75,6 +65,12 @@
       "Bash(curl *)",
       "Bash(wget *)",
       "Bash(dd *)"
+    ],
+    "ask": [
+      "Bash(git checkout *)",
+      "Bash(git switch *)",
+      "Bash(git merge *)",
+      "Bash(git rebase *)"
     ]
   }
 }
