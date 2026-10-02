@@ -182,6 +182,8 @@ public class AiVisionImportPipeline
             visionResult, firstPage, 0, 0, schema);
 
         ApplyElementSettings(visionResult, scheduleElements, scheduleType);
+        if (scheduleType == ScheduleImportType.LinkovyJr)
+            AddGraphicPlaceholders(scheduleElements, visionResult, firstPage);
         LogTextCoverage(visionResult, scheduleElements);
         LogElementSettings(scheduleElements);
 
@@ -231,7 +233,9 @@ public class AiVisionImportPipeline
                               + "a ty tiskne prvek Poznámky z dat.");
 
             bool notesFound = section.Elements.OfType<NotesLegendElement>().Any();
-            sections = SplitLineScheduleSections(section.Elements);
+            sections = SplitLineScheduleSections(section.Elements, contentHeight);
+            if (sections.Any(s => s.Role == SectionRole.Footer))
+                ImportLog.Add("Dole na stránce je patička - vložená jako sekce Patička na každé stránce.");
             if (!notesFound && section.Elements.OfType<LineTableElement>().Any())
                 ImportLog.Add("Poznámky na zvolené stránce nejsou - vložené s výchozím nastavením pod "
                               + "tabulku. Tisk je přesune na další stránku, když se nevejdou.");
@@ -304,7 +308,8 @@ public class AiVisionImportPipeline
     /// a bez prvku by se nevytiskly vysvětlivky ke značkám. Tabulka a poznámky dostanou prázdnou
     /// výšku (počítá ji tisk z dat); ostatní prvky se přepočítají vůči sekci, do které padnou.
     /// Bez tabulky zůstane jedna sekce. Shodu se systémovými šablonami hlídá test.</remarks>
-    internal static List<Section> SplitLineScheduleSections(List<TemplateElement> elements)
+    internal static List<Section> SplitLineScheduleSections(List<TemplateElement> elements,
+        float? contentHeightMm = null)
     {
         var table = elements.OfType<LineTableElement>().FirstOrDefault();
         if (table is null)
@@ -325,6 +330,14 @@ public class AiVisionImportPipeline
         var below = others.Where(e => !header.Contains(e) && e.Y >= tableBottom - LineSectionToleranceMm).ToList();
         var band = others.Where(e => !header.Contains(e) && !below.Contains(e)).ToList();
 
+        // Patička: co leží pod tabulkou ve spodní pětině stránky (pás log u 940 IDZK je dole na obou
+        // stránkách). Na každé stránce u spodku - ne jednou za poznámkami. Spodek poznámek se jako
+        // hranice nebere: oblast od modelu do pásu log zasahovala.
+        var footer = contentHeightMm is float ch
+            ? below.Where(e => e.Y >= ch * FooterZoneFrom).ToList()
+            : [];
+        below = [.. below.Except(footer)];
+
         var sections = new List<Section>();
         if (header.Count > 0)
             sections.Add(NewSection("Hlavička", SectionRole.Header, SectionPrintBehavior.OnEveryPage,
@@ -344,10 +357,74 @@ public class AiVisionImportPipeline
             sections.Add(NewSection("Poznámky", SectionRole.Body, SectionPrintBehavior.Once,
                 SectionOverflowBehavior.KeepTogether, [notes, .. below]));
         }
+        if (footer.Count > 0)
+            sections.Add(NewSection("Patička", SectionRole.Footer, SectionPrintBehavior.OnEveryPage,
+                SectionOverflowBehavior.KeepTogether, footer));
 
         table.Height = null;
         notes.Height = null;
         return sections;
+    }
+
+    /// <summary>Odkud (podíl výšky tiskové plochy) začíná pásmo patičky.</summary>
+    private const float FooterZoneFrom = 0.8f;
+
+    /// <summary>Nejmenší počet tvarů, ze kterých je grafika - jedna čára pod poznámkami obrázek není.</summary>
+    private const int MinShapesPerGraphic = 3;
+
+    /// <summary>
+    /// Grafika pod tabulkou spojů (pás log u 940 IDZK) jako prázdné obrázky o její velikosti -
+    /// obrázek z vektorové grafiky vytáhnout nejde, ale místo a rozměr ano, takže uživateli stačí
+    /// nahrát soubor. Tvary bez textu se seskupí po řádcích; změřené místo má přednost před
+    /// rámečkem, který ohlásil model (ten je jen odhad).
+    /// </summary>
+    internal static void AddGraphicPlaceholders(List<TemplateElement> elements, AiVisionResult vision, ExtractedPage page)
+    {
+        var table = vision.Elements.Where(e => e.Type.Equals("LineTable", StringComparison.OrdinalIgnoreCase)).ToList();
+        if (table.Count == 0) return;
+        float pod = table.Max(e => e.Bottom) * page.HeightMm;
+
+        bool NeseText(float l, float t, float r, float b) => page.Words.Any(w =>
+            w.X + w.Width > l && w.X < r && w.Y + w.Height > t && w.Y < b);
+
+        // Tvar zřetelně uvnitř poznámek (piktogram, rámeček značky) je jejich obsah, ne obrázek.
+        // Jen „zřetelně": oblast poznámek od modelu do pásu log u spodku zasahovala.
+        var poznamky = vision.Elements.Where(e => e.Type.Equals("NotesLegend", StringComparison.OrdinalIgnoreCase))
+            .Select(e => (L: e.Left * page.WidthMm, T: e.Top * page.HeightMm,
+                          R: e.Right * page.WidthMm, B: e.Bottom * page.HeightMm))
+            .ToList();
+        bool VPoznamkach(float cx, float cy) => poznamky.Any(p => cx > p.L && cx < p.R && cy > p.T && cy < p.B - 3f);
+
+        var tvary = page.Rectangles.Select(x => (L: x.X, T: x.Y, R: x.X + x.Width, B: x.Y + x.Height))
+            .Concat(page.Lines.Select(c => (L: Math.Min(c.X1, c.X2), T: Math.Min(c.Y1, c.Y2),
+                                            R: Math.Max(c.X1, c.X2), B: Math.Max(c.Y1, c.Y2))))
+            .Where(s => s.T >= pod && !NeseText(s.L, s.T, s.R, s.B)
+                        && !VPoznamkach((s.L + s.R) / 2, (s.T + s.B) / 2))
+            .OrderBy(s => s.T)
+            .ToList();
+
+        var shluky = new List<List<(float L, float T, float R, float B)>>();
+        foreach (var s in tvary)
+        {
+            if (shluky.Count > 0 && s.T <= shluky[^1].Max(x => x.B) + 1.5f) shluky[^1].Add(s);
+            else shluky.Add([s]);
+        }
+
+        foreach (var shluk in shluky.Where(sh => sh.Count >= MinShapesPerGraphic))
+        {
+            float l = shluk.Min(x => x.L), t = shluk.Min(x => x.T), r = shluk.Max(x => x.R), b = shluk.Max(x => x.B);
+            if (r - l < 10f || b - t < 1f) continue;
+
+            elements.RemoveAll(e => e is ImageElement { ImageBase64: null } im
+                && im.X < r && im.X + im.Width > l && im.Y < b && im.Y + (im.Height ?? 0f) > t);
+            elements.Add(new ImageElement
+            {
+                Id = Guid.NewGuid(),
+                X = l, Y = t, Width = r - l, Height = b - t,
+                ZIndex = elements.Count > 0 ? elements.Max(e => e.ZIndex) + 1 : 0,
+                ImageBase64 = null,
+            });
+        }
     }
 
     /// <summary>Poznámky s výchozím nastavením pod tabulkou, když je předloha na zvolené stránce nemá.</summary>

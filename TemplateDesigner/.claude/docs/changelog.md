@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-02 (5) - 🧩 import linkového JŘ: mezery skupin, poznámky, grafika, patička
+
+Podle prohlídky importu 940 IDZK (Jan): **mezera mezi skupinami sloupců** se měří z mezer mezi
+pruhy nadpisů skupin (bere se rozestup skupin dnů, prvek má jednu hodnotu na všechny mezery);
+**poznámky** převezmou barvu písma z PDF a model se ptá na jejich záhlaví (papír ho potvrdí -
+poznámky mají obsah vždy); **grafika pod tabulkou** (pás log, linka u spodku) se nahradí prázdnými
+obrázky o změřené velikosti - shluk aspoň tří tvarů bez textu, změřené místo má přednost před
+rámečkem odhadnutým modelem; co leží pod tabulkou ve spodní pětině stránky, jde do sekce
+**Patička** na každé stránce (u 940 je pás log na obou stránkách). Zóny v šabloně jsou - v náhledu
+chyběly, protože ukázková linka zóny nemá a prázdný sloupec se netiskne.
+
 ## 2026-10-02 (4) - 🎨 import linkového JŘ převezme barvy tabulky
 
 Barvy Tabulky spojů se měří z PDF, model se na ně neptá (ani na podbarvení lichých Tč - změřená

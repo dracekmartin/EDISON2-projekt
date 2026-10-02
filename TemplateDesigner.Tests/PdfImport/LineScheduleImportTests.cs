@@ -359,6 +359,59 @@ public class LineScheduleImportTests
         Assert.Equal([nadpis, tabulka, dopravce], elements);
     }
 
+    /// <summary>Mezera mezi skupinami dnů („Pracovní dny" | „Víkendy") z mezer mezi pruhy
+    /// nadpisů; za prvním pruhem (popisné sloupce) bývá jiná a prvek má hodnotu jen jednu.</summary>
+    [Fact]
+    public void MezeraMeziSkupinamiSeZmeriZPruhu()
+    {
+        ExtractedRectangle Pruh(float x, float w) => new(x, 21, w, 3.7f, "#FF162C66", null, 0);
+
+        Assert.Equal(5f, AiGuidedScheduleBuilder.MezeraMeziSkupinami([Pruh(10, 63), Pruh(76, 114), Pruh(195, 20)]));
+        Assert.Null(AiGuidedScheduleBuilder.MezeraMeziSkupinami([Pruh(10, 63), Pruh(73, 114)]));
+    }
+
+    /// <summary>Pás log u 940 IDZK je dole na obou stránkách - patička na každé stránce, ne
+    /// obrázek jednou za poznámkami.</summary>
+    [Fact]
+    public void GrafikaUSpodkuJeVPaticce()
+    {
+        var tabulka = new LineTableElement { X = 0, Y = 20, Width = 280, Height = 120 };
+        var poznamky = new NotesLegendElement { X = 0, Y = 142, Width = 280, Height = 20 };
+        var loga = new ImageElement { X = 10, Y = 190, Width = 260, Height = 5 };
+
+        var sections = AiVisionImportPipeline.SplitLineScheduleSections([Text(0), tabulka, poznamky, loga], 200f);
+
+        var paticka = sections[^1];
+        Assert.Equal(SectionRole.Footer, paticka.Role);
+        Assert.Equal(SectionPrintBehavior.OnEveryPage, paticka.PrintBehavior);
+        Assert.Equal([loga], paticka.Elements);
+    }
+
+    /// <summary>Vektorovou grafiku z PDF vytáhnout nejde, místo a velikost ano - uživatel jen nahraje
+    /// soubor. Jedna čára obrázek není a rámeček odhadnutý modelem ustoupí změřenému.</summary>
+    [Fact]
+    public void GrafikaPodTabulkouDostanePrazdnyObrazek()
+    {
+        var page = new ExtractedPage
+        {
+            WidthMm = 297, HeightMm = 210,
+            Rectangles = [.. Enumerable.Range(0, 6).Select(i => new ExtractedRectangle(20 + i * 40, 195, 30, 5, "#FF162C66", null, 0))],
+            Lines = [new ExtractedLine(10, 170, 280, 170, 0.2f, "#FF000000")],
+        };
+        var vision = new AiVisionResult
+        {
+            Elements = [new AiVisionElement { Type = "LineTable", Left = 0.03f, Top = 0.15f, Right = 0.97f, Bottom = 0.75f }],
+        };
+        var odhadModelu = new ImageElement { X = 15, Y = 193, Width = 70, Height = 10, ImageBase64 = null };
+        List<TemplateElement> elements = [odhadModelu];
+
+        AiVisionImportPipeline.AddGraphicPlaceholders(elements, vision, page);
+
+        var obrazek = Assert.IsType<ImageElement>(Assert.Single(elements));
+        Assert.Null(obrazek.ImageBase64);
+        Assert.Equal((20f, 195f, 230f, 5f), (obrazek.X, obrazek.Y, obrazek.Width, obrazek.Height ?? 0));
+    }
+
     // ── Co musí v odpovědi modelu být ───────────────────────────────────
 
     private static AiVisionResult Vision(params string[] types) =>

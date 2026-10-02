@@ -597,6 +597,9 @@ z právě otevřené agendy:
     stránku je tisk přesune sám, když se nevejdou. Má-li předloha pod sebou oba směry, převezme
     se horní tabulka; druhý směr sestava vytiskne na další stránce. Nastavení sestavy (obousměrný
     tisk, stránka pro každou zastávku…) se z předlohy nepřebírá - nastavte ho v okně tisku.
+    Barvy tabulky a poznámek se převezmou z předlohy. Grafiku pod tabulkou (loga) nahradí prázdné
+    obrázky o její velikosti, stačí do nich nahrát soubor; co je u spodku stránky, skončí
+    v patičce na každé stránce.
 - **Jiná agenda (Obecná, Faktury…)** → obecný import: texty, čáry a obrázky se převezmou 1:1
   jako prvky šablony (bez AI).
 

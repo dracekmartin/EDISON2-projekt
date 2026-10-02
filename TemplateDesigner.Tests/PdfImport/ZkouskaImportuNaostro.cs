@@ -21,7 +21,7 @@ namespace TemplateDesigner.Tests.PdfImport;
 /// Bez proměnné <c>TD_ZKOUSKA_IMPORTU_PDF</c> nic nedělá (pravidlo testů závislých na stroji).
 /// <code>
 /// TD_ZKOUSKA_IMPORTU_PDF=cesta.pdf TD_ZKOUSKA_VYSTUP=slozka [TD_ZKOUSKA_AGENDA=LINKOVY_JR_AD]
-/// [TD_ZKOUSKA_STRANA=1] dotnet test TemplateDesigner.Tests --filter ZkouskaImportuNaostro
+/// [TD_ZKOUSKA_STRANA=1] [TD_ZKOUSKA_JEN_OBRAZEK=1] dotnet test TemplateDesigner.Tests --filter ZkouskaImportuNaostro
 /// </code>
 /// Připojení bere z <c>templatedesigner.appsettings.local.json</c> (VPN). Každý běh je jedno
 /// placené volání modelu a odpovědi se mezi běhy liší.
@@ -44,6 +44,7 @@ public class ZkouskaImportuNaostro(ITestOutputHelper output)
             File.WriteAllBytes(Path.Combine(outDir, "stranka.png"),
                 Convert.FromBase64String(PdfPageRasterizer.RasterizeToBase64Png(page)));
         }
+        if (Environment.GetEnvironmentVariable("TD_ZKOUSKA_JEN_OBRAZEK") == "1") return;   // bez volání modelu
 
         var settings = AppSettings.Load();
         var mlRest = CacheSchemaWiring.TryCreateMlRest(settings) ?? throw new Exception("Caché není nakonfigurovaná");

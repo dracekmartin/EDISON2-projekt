@@ -315,8 +315,14 @@ public static class AiGuidedScheduleBuilder
 
         var np = ai.Properties;
 
+        // Barva písma poznámek z PDF (u 940 IDZK tmavě modrá) - model se na barvy neptá.
+        var slova = GetWordsInRegion(ai, page);
+        string? pismo = slova.Count > 0 ? PrevazujiciBarva(slova) : null;
+        if (pismo == "#FF000000") pismo = null;
+
         return new NotesLegendElement
         {
+            DataStyle = new TextStyle { TextColor = pismo },
             Id = Guid.NewGuid(),
             X = Math.Max(0, x),
             Y = Math.Max(0, y),
@@ -446,6 +452,12 @@ public static class AiGuidedScheduleBuilder
             if (slova.Count > 0)
                 el.HeaderStyle.TextColor = PrevazujiciBarva(slova);
             debug.Add($"LineTable záhlaví: pozadí {barva}, písmo {el.HeaderStyle.TextColor ?? "(beze změny)"}");
+
+            if (MezeraMeziSkupinami(pruhy.Where(x => x.FillColorHex == barva)) is float mezera)
+            {
+                el.MezeraMeziSkupinamiMm = mezera;
+                debug.Add($"LineTable mezera mezi skupinami: {mezera:0.#} mm");
+            }
         }
 
         // Podbarvení řádků - aspoň tři řádky stejné světlé barvy přes většinu šířky pod záhlavím.
@@ -485,6 +497,24 @@ public static class AiGuidedScheduleBuilder
             el.Grid.Color = cary.Key;
             debug.Add($"LineTable čáry: {cary.Key} ({cary.Count()}×)");
         }
+    }
+
+    /// <summary>
+    /// Mezera mezi skupinami sloupců podle mezer mezi pruhy nadpisů („Směr jízdy" | „Pracovní dny" |
+    /// „Víkendy"). Prvek má na všechny mezery jednu hodnotu, a viditelný je hlavně rozestup mezi
+    /// skupinami dnů - proto se bere z mezer za prvním pruhem (ten nese popisné sloupce), když jsou.
+    /// Null = pruhy na sebe navazují, mezera v předloze není.
+    /// </summary>
+    internal static float? MezeraMeziSkupinami(IEnumerable<ExtractedRectangle> pruhy)
+    {
+        var serazene = pruhy.OrderBy(x => x.X).ToList();
+        var mezery = serazene.Zip(serazene.Skip(1), (a, c) => c.X - (a.X + a.Width))
+            .Where(m => m >= 1f && m <= 20f)
+            .ToList();
+        if (mezery.Count == 0) return null;
+
+        var mezeryDnu = mezery.Count > 1 ? mezery.Skip(1).ToList() : mezery;
+        return MathF.Round(Median(mezeryDnu) * 2f) / 2f;
     }
 
     /// <summary>Barva, kterou je napsaná většina znaků.</summary>
