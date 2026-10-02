@@ -20,7 +20,7 @@ Class ALVA.TiskyQrDemo.Cestujici Extends %RegisteredObject
 Parameter VOLAJICI = "TISKY-QR";
 
 /// Stránky linkového JŘ (oba směry) se zvýrazněnou zastávkou výlepu.
-/// Skupina linek se do QR nedává (mění se s novým JŘ): bere se nejvyšší, ve které linka je.
+/// Skupina linek se do QR nedává (mění se s novým JŘ), dohledá ji `SkupinaLinky`.
 ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
 {
     s err = "", code = ""
@@ -34,12 +34,7 @@ ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
         s dataDB = sys("U","DATA")
         s lin = $tr($j(linka, 7), " ", "0")
 
-        s skupina = "", sku = ""
-        f {
-            s sku = $o(^[dataDB]JRL(sku), -1)
-            q:sku=""
-            i $isvalidnum(sku) && $d(^[dataDB]JRL(sku, lin, "I")) s skupina = sku q
-        }
+        s skupina = ..SkupinaLinky(dataDB, lin)
         i skupina = "" s code = "NENALEZENO", err = "Linka "_linka_" neexistuje" ztrap
 
         k ^||ML("IN"), ^||ML("OUT"), ^||ML("ERR")
@@ -79,6 +74,30 @@ ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
         s out = {"success":false,"error":{"code":(code),"message":(err)}}
     }
     q $$$OK
+}
+
+/// Skupina linek, podle které cestující jede dnes: ta, jejíž platnost linky
+/// (`^JRL(sku,lin,"PATCH","Plati")` = `od~do`, `d.m.yyyy`, prázdné „do" = bez konce) zahrnuje dnešek;
+/// při víc shodách ta s nejpozdějším začátkem. Nejvyšší číslo skupiny nestačí - firma v nich drží
+/// i pracovní a archivní kopie (CB_CSADAD 861 „Označníky - JH" s linkou 340313 z roku 2023).
+/// Když dnes neplatí žádná, bere se nejvyšší skupina s linkou (aplikace pak ukáže starý JŘ).
+ClassMethod SkupinaLinky(dataDB As %String, lin As %String) As %String
+{
+    s dnes = +$h, nejlepsi = "", nejlepsiOd = "", zaloha = "", sku = ""
+    f {
+        s sku = $o(^[dataDB]JRL(sku), -1)
+        q:sku=""
+        continue:'$isvalidnum(sku)
+        continue:'$d(^[dataDB]JRL(sku, lin, "I"))
+        i zaloha = "" s zaloha = sku
+        s plati = $g(^[dataDB]JRL(sku, lin, "PATCH", "Plati"))
+        s od = $zdh($tr($p(plati,"~",1),".","/"), 4, , , , , , , "")
+        s do = $zdh($tr($p(plati,"~",2),".","/"), 4, , , , , , , "")
+        continue:od=""
+        continue:(od > dnes)||((do '= "") && (do < dnes))
+        i (nejlepsi = "") || (od > nejlepsiOd) s nejlepsi = sku, nejlepsiOd = od
+    }
+    q $s(nejlepsi '= "":nejlepsi, 1:zaloha)
 }
 
 /// Ke každému spoji stránky přidá `OMEZENI` - datumová omezení jako data, aby aplikace sama
