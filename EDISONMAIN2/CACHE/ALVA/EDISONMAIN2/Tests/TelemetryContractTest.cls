@@ -26,7 +26,7 @@ Method KillTestData()
 /// Dávka se agreguje na čítač per (idfa, userid, form, control) + první/poslední horolog.
 Method TestLogUsageBatchAggregatesCounts()
 {
-	if '..HasISYCloud() { do $$$AssertTrue(1, "ISYCloud není na serveru - skip") quit }
+	if '..HasISYCloud() { do $$$AssertSkipped("ISYCloud není na serveru") quit }
 	do ..KillTestData()
 
 	do ..SetupSys(.sys, ..#TESTIDFA, "999")
@@ -52,7 +52,7 @@ Method TestLogUsageBatchAggregatesCounts()
 /// Záznamy bez prefixu "usage" metoda ignoruje (a nesmí spadnout).
 Method TestLogUsageBatchIgnoresNonUsageRecords()
 {
-	if '..HasISYCloud() { do $$$AssertTrue(1, "ISYCloud není na serveru - skip") quit }
+	if '..HasISYCloud() { do $$$AssertSkipped("ISYCloud není na serveru") quit }
 	do ..KillTestData()
 
 	do ..SetupSys(.sys, ..#TESTIDFA, "999")

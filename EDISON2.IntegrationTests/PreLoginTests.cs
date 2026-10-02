@@ -44,6 +44,46 @@ public class PreLoginTests
         Assert.Equal(rows["edisonPath"][1], settings.EdisonPath);
     }
 
+    [DevServerFact]
+    public void UpdaterLoadSettings_RealServer_ParserReadsForcedStampRow()
+    {
+        // Řádek posílá server, který má uzel razítka; ten po uložení nastavení updatu nebo první vlně zůstává
+        // (SetSettings ho založí i prázdný a přenáší přes clear) a DEV ho má, takže chybějící řádek = přejmenovaný klíč.
+        var rest = DevServer.Connect();
+        var rows = WireRows.ByKey(rest.QueryOrThrow("ALVA.SETUP.Main", "LoadSettings", new object[] { }), rest.Delimiter);
+
+        Assert.True(rows.TryGetValue("NucenyUpdatClentu", out var stamp),
+            "LoadSettings nevrátil řádek 'NucenyUpdatClentu' (překlep je kontrakt), Updater by vynucenou vlnu tiše přestal spouštět.");
+        Assert.True(stamp.Length > 1, "Řádek 'NucenyUpdatClentu' nemá pole hodnoty.");
+        // Prázdné razítko je legitimní (vlna ještě neproběhla); vyplněné je $h, jinak jde o posunuté pole.
+        if (stamp[1].Length > 0) Assert.Matches(@"^\d+,\d+$", stamp[1]);
+
+        Assert.Equal(stamp[1], new Updater().LoadSettings(rest).ForcedStamp);
+    }
+
+    [DevServerFact]
+    public void UpdaterLoadSettings_RealServer_LocalSourcePathRowMatchesSystemSettings()
+    {
+        // Řádek je podmíněný uloženým lokálním zdrojem stanic. ALVA.EDISON.Main.LoadSettings posílá
+        // tentýž údaj za stejné podmínky (GetSettings uzel 11) pod vlastním klíčem, takže
+        // přejmenování je vidět bez ohledu na to, jestli ho DEV zrovna má nastavený.
+        var rest = DevServer.Connect();
+        var del = rest.Delimiter;
+        var rows = WireRows.ByKey(rest.QueryOrThrow("ALVA.SETUP.Main", "LoadSettings", new object[] { }), del);
+        var reference = rest.QueryOrThrow("ALVA.EDISON.Main", "LoadSettings", new object[] { })
+            .Skip(1)
+            .Select(row => (row?.ToString() ?? "").Split(del))
+            .FirstOrDefault(parts => parts.Length >= 3 && parts[0] == "system" && parts[1] == "updateLocalSourcePath");
+
+        var hasRow = rows.ContainsKey("localSourcePath");
+        Assert.True(hasRow || reference is null,
+            "LoadSettings nevrátil řádek 'localSourcePath', ač server lokální zdroj stanic má - Updater by ho tiše nahradil edisonPath.");
+        Assert.True(!hasRow || reference is not null,
+            "ALVA.EDISON.Main.LoadSettings nevrátil řádek 'system/updateLocalSourcePath', test přišel o referenci.");
+
+        Assert.Equal(reference?[2] ?? "", new Updater().LoadSettings(rest).LocalSourcePath);
+    }
+
     private sealed class LocalClientsCapture : Updater
     {
         public IReadOnlyList<string>? Seen { get; private set; }

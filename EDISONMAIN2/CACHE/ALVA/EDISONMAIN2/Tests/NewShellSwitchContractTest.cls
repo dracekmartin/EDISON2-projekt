@@ -60,7 +60,7 @@ Method NewShellRows(Output rows) As %Integer
 /// Bez uzlu řádek chybí - totéž vrací server bez téhle změny, EDLOADER pak spustí starý shell.
 Method TestNodeMissingEmitsNoRow()
 {
-	if '..HasSetupMain() { do $$$AssertTrue(1, "ALVA.SETUP.Main není na serveru - skip") quit }
+	if '..HasSetupMain() { do $$$AssertSkipped("ALVA.SETUP.Main není na serveru") quit }
 
 	set ns = ..#SYSTEMDB
 	zkill ^[ns]EDISON("System","NewShell")
@@ -70,7 +70,7 @@ Method TestNodeMissingEmitsNoRow()
 /// Hodnota uzlu je druhé a poslední pole řádku; EDLOADER zapíná jen na "1" (Val(data(1)) = 1).
 Method TestNodeValueEmitted()
 {
-	if '..HasSetupMain() { do $$$AssertTrue(1, "ALVA.SETUP.Main není na serveru - skip") quit }
+	if '..HasSetupMain() { do $$$AssertSkipped("ALVA.SETUP.Main není na serveru") quit }
 
 	set ns = ..#SYSTEMDB
 	for value = 0, 1 {

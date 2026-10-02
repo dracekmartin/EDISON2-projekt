@@ -83,7 +83,7 @@ nepřekrývají, takže můžou běžet současně.
 | S8 EDInputForm | A15 🔸 → A27 část formulář (`Format`, `UserHidden`) | `EDInputForm/*`, `Form.cls`, `EDIFExample.cls`, jejich testy | 2 | chat |
 | S9 Infrastruktura EDControls | A39 → A40 → A41 🔸 | `UserFonts/*`, `EDTheme/UserThemePreference.cs`, `ErrorReporting/*`, `PopupDisplayer.cs`, `RelayCommand.cs`, `AsyncRelayCommand.cs`, jejich testy | 2 | chat |
 | S1 pokračuje | A9 (s S2) → A5 kroky 4-5 → A21 → A29 → A30 → A31 🔸 → A32 🔸 | VM, `Modules/*`, `MiniApps/Desktop*`; A9 i `SessionFactory`, `CompanySwitcher`, `LicenceVerifier` | 2 | chat |
-| Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4 | napříč | 3 | po slití vln 1 a 2 |
+| Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4, `ALVA.EDTesting.TestRunner` počítá skipped (status 2) zvlášť a vypíše důvod (dnes FAIL s prázdnou hláškou, brání `$$$AssertSkipped` v TD) | napříč | 3 | po slití vln 1 a 2 |
 
 Rozhodnutí vlastníka, na která proudy narazí: A47 (varianta a/b/c, konec S4), A12 bod 3 (politika
 escapování, mimo S5), A15 (kdy zahodit odpověď), A27 (implementovat, nebo označit rezervované),
@@ -546,7 +546,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   `update`, `pending`, `version`, `edisonPath`, `sourceServer`, `sourcePort`, řádky `localPath`),
   `GetEdisonAccess` (index 1 = apId), `GetUserDefaultForm`, `maSeUkoncit`,
   `ALVA.VOZIDLA.LCC.PocetProvozovanychVozidel`, `ALVA.LIBRARY.Form` Load/SaveParams, `Login` jen
-  chybovou cestu a `LogLogin` jako smoke. Zbývá viz Problém.
+  chybovou cestu a `LogLogin` jako smoke. Body 2-4 návrhu hotové 2026-10-01 (z výčtu v Problému
+  odpadají klíče `NucenyUpdatClentu`/`localSourcePath`, `LockClearExt` a skip-as-pass):
+  (2) `PreLoginTests`: `NucenyUpdatClentu` povinný na DEV (razítko vlny se po prvním spuštění nemaže),
+  `localSourcePath` proti řádku `system~updateLocalSourcePath` z `ALVA.EDISON.Main.LoadSettings` (táž podmínka).
+  (3) `SessionLockTest` uklízí přes `LockClearExt` s `^||ML("IN",1)=guid` jako `SessionLogout`, zámek cizího GUIDu musí přežít.
+  (4) skip je `$$$AssertSkipped` (stav skipped v %UnitTest); `ALVA.EDTesting.TestRunner` ho zatím počítá jako failed
+  s prázdnou hláškou (oprava ve vlně 3, sekce Proudy).
+  Bod 1 (úspěšný `Login`, testovací účet na DEV) zůstává otevřený. Zbývá viz Problém.
 - **P2 · M** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** Bez testu šva zůstává: úspěšný `ALVA.SYS.Login.Login` (pozice 1,2,3,4,5,7,10),
   `ChangePassword`, `VerifyLic`, `LoadUser/SaveUser`, `ALVA.EDISON.Main.LoadSettings`,

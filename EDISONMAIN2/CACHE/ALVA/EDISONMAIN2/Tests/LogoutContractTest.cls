@@ -17,7 +17,7 @@ Method HasSystemMain() As %Boolean
 /// tiše nahradí defaultem 60 s a admin-nastavený odpočet by se ztratil.
 Method TestMaSeUkoncitWireFormat()
 {
-	if '..HasSystemMain() { do $$$AssertTrue(1, "ALVA.SYSTEM.Main není na serveru - skip") quit }
+	if '..HasSystemMain() { do $$$AssertSkipped("ALVA.SYSTEM.Main není na serveru") quit }
 
 	do ..SetupSys(.sys)
 	set ret = ##class(ALVA.SYSTEM.Main).maSeUkoncit(.sys)
