@@ -341,6 +341,23 @@ public class LineScheduleImportTests
         Assert.True(pruh.ZIndex < 0, "plocha musí být za texty");
     }
 
+    /// <summary>Vysvětlivky pod tabulkou jsou poznámky linky - jako pevné texty by se tiskly
+    /// stejně u každé linky (nález Jan 2. 10. u 940 IDZK). Text s polem a hlavička zůstávají.</summary>
+    [Fact]
+    public void PevneTextyPodTabulkouSeNeprevezmou()
+    {
+        var nadpis = Text(0, "Linka 940");
+        var tabulka = new LineTableElement { X = 0, Y = 20, Width = 200, Height = 100 };
+        var vysvetlivka = Text(125, "D - spoj zastavuje jen na znamení");
+        var dopravce = Text(140, "Dopravce: {POPIS_DOPRAVCE}");
+        List<TemplateElement> elements = [nadpis, tabulka, vysvetlivka, dopravce];
+
+        int dropped = AiVisionImportPipeline.DropStaticTextsBelowTable(elements);
+
+        Assert.Equal(1, dropped);
+        Assert.Equal([nadpis, tabulka, dopravce], elements);
+    }
+
     // ── Co musí v odpovědi modelu být ───────────────────────────────────
 
     private static AiVisionResult Vision(params string[] types) =>

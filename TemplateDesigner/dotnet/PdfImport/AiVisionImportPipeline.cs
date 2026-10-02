@@ -225,6 +225,11 @@ public class AiVisionImportPipeline
 
         if (scheduleType == ScheduleImportType.LinkovyJr)
         {
+            int dropped = DropStaticTextsBelowTable(section.Elements);
+            if (dropped > 0)
+                ImportLog.Add($"Texty pod tabulkou ({dropped}) se nepřevzaly - jsou to poznámky linky "
+                              + "a ty tiskne prvek Poznámky z dat.");
+
             bool notesFound = section.Elements.OfType<NotesLegendElement>().Any();
             sections = SplitLineScheduleSections(section.Elements);
             if (!notesFound && section.Elements.OfType<LineTableElement>().Any())
@@ -263,6 +268,23 @@ public class AiVisionImportPipeline
     /// <summary>Svislá tolerance (mm), o kterou smí prvek hlavičky zasahovat do tabulky a pořád
     /// patřit nad ni - texty těsně nad tabulkou mají rámeček, který se s ní dotýká.</summary>
     private const float LineSectionToleranceMm = 1f;
+
+    /// <summary>
+    /// Odebere pevné texty pod tabulkou spojů. U linkového JŘ jsou to vysvětlivky značek a texty
+    /// o omezení spojů, tedy poznámky linky, které tiskne prvek Poznámky z dat; jako texty by se
+    /// vytiskly stejně u každé linky (nález Jan 2. 10. u 940 IDZK: model oblast poznámek nevrátil
+    /// a vysvětlivky skončily jako desítka textů). Text s datovým polem zůstává.
+    /// </summary>
+    internal static int DropStaticTextsBelowTable(List<TemplateElement> elements)
+    {
+        var table = elements.OfType<LineTableElement>().FirstOrDefault();
+        if (table is null) return 0;
+
+        float tableBottom = table.Y + (table.Height ?? 0f);
+        return elements.RemoveAll(e => e is TextElement t
+                                       && t.Y >= tableBottom - LineSectionToleranceMm
+                                       && !t.Text.Contains('{'));
+    }
 
     /// <summary>Mezera mezi tabulkou a poznámkami vedle ní (mm) - jako v systémové šabloně.</summary>
     private const float NotesBesideGapMm = 5f;

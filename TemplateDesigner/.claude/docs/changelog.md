@@ -10,6 +10,9 @@ pod sebou) se slévá do jedné; **text rozdělený na kusy** (trasa bez pomlče
 se složí do jednoho prvku; **krátký blok uvnitř dlouhého textu** („940" v „771940") už neplatí za
 shodu; **rámeček na obrázek** z hlášení modelu se nevloží do tabulky ani poznámek. Importovaný
 obdélník nedostane navíc černý rámeček. Kromě slévání tabulek platí všechno i pro zastávkový JŘ.
+**Pevné texty pod tabulkou se u linkového JŘ nepřevezmou** (nález Jan): jsou to vysvětlivky
+a texty poznámek linky, které tiskne prvek Poznámky z dat - jako texty by se tiskly stejně
+u každé linky. Stalo se to, když model oblast poznámek nevrátil; text s datovým polem zůstává.
 
 ## 2026-10-02 (2) - 🧪 import linkového JŘ vyzkoušený naostro
 

@@ -429,9 +429,11 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
             "6. Tabulka s časy spojů vlevo I vpravo od názvů zastávek (oba směry v jedné tabulce) je JEDNA LineTable. "
                 + "Skupiny dnů vedle sebe (Pracovní dny, Víkendy a svátky), i když je mezi nimi mezera, jsou "
                 + "taky JEDNA LineTable - oblast přes všechny skupiny.",
-            "7. Text, který je na obrázku na více řádcích pod sebou, vrať PO ŘÁDCÍCH - každý řádek jako "
+            "7. Vysvětlivky pod tabulkou (značka - význam), texty o omezení spojů a tarifní informace pod "
+                + "tabulkou jsou poznámky linky: patří do oblasti NotesLegend, v textMappings je NEVRACEJ.",
+            "8. Text, který je na obrázku na více řádcích pod sebou, vrať PO ŘÁDCÍCH - každý řádek jako "
                 + "samostatnou položku textMappings.",
-            "8. placeholderText je CELÝ text řádku s datovými poli nahrazenými {POLE}; pevný text kolem pole "
+            "9. placeholderText je CELÝ text řádku s datovými poli nahrazenými {POLE}; pevný text kolem pole "
                 + "ponech (\"Přepravu zajišťuje: {POPIS_DOPRAVCE}\", \"Platí od {DATUM_PLATNOSTI_OD}\"). "
                 + "Do dbField dej hlavní pole řádku."
         ],
