@@ -65,6 +65,10 @@ ClassMethod Linka(ByRef sys, ByRef in, ByRef out) As %Status
         i $isobject(tam) && $isobject(zpet) && (tam.%Get("lat") '= "") && (zpet.%Get("lat") '= "") {
             d data.%Set("vzdalenostOznacnikuM", ..VzdalenostM(tam.lat, tam.lon, zpet.lat, zpet.lon), "number")
         }
+        // Všechny označníky zastávky výlepu pro mapu - cestující má poznat, ke kterému z nich jít.
+        s czstVylepu = ""
+        i stranky.%Size() > 0 s czstVylepu = stranky.%Get(0).values.%Get("AKTUALNI_ZASTAVKA_CZST")
+        i czstVylepu '= "" d data.%Set("oznacnikyZastavky", ..OznacnikyZastavky(dataDB, czstVylepu))
         s out = {"success":true,"data":(data)}
     }
     catch ex {
@@ -237,6 +241,38 @@ ClassMethod Platby(dataDB As %String, idfa As %String, lin As %String) As %Dynam
         s zpusob = $o(pocty(zpusob))
         q:zpusob=""
         d vysledek.%Set(zpusob, pocty(zpusob), "number")
+    }
+    q vysledek
+}
+
+/// Všechny označníky zastávky s polohou (id ze základního uzlu i z platné časové varianty).
+ClassMethod OznacnikyZastavky(dataDB As %String, czst As %String) As %DynamicArray
+{
+    s vysledek = ##class(%DynamicArray).%New()
+    k ids
+    s id = ""
+    f {
+        s id = $o(^[dataDB]JRZ(czst,"Sloupek",id))
+        q:id=""
+        s ids(id) = ""
+    }
+    s den = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",+$h+1), -1)
+    i den '= "" {
+        s id = ""
+        f {
+            s id = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",den,"Sloupek",id))
+            q:id=""
+            s ids(id) = ""
+        }
+    }
+    s id = ""
+    f {
+        s id = $o(ids(id))
+        q:id=""
+        s oznacnik = ..Oznacnik(dataDB, czst, id)
+        continue:'$isobject(oznacnik)
+        continue:oznacnik.%Get("lat")=""
+        d vysledek.%Push(oznacnik)
     }
     q vysledek
 }
