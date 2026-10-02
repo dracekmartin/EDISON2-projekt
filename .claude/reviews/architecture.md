@@ -621,7 +621,16 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A16 · Pořadí `InitializeList → LoadList` v `EDList` nic nehlídá
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, kód beze změny)
+- [x] **Stav:** vyřešeno (2026-10-02) - bez sloupců `LoadList` hází `InvalidOperationException`
+  (text neviní hosta, vede k tomu i selhaný `InitializeListAsync`). Async cesta kontroluje až po
+  odpovědi, protože TD picker pouští `InitializeListAsync` a refresh `EDFilter`u souběžně a pořadí
+  drží `_queryGate`; sync `LoadList` frontu obchází, kontroluje před dotazem. Vedlejší efekt
+  z důkazu: přestavba sloupců řazení **drží** a šipky obnoví (`RestoreSortArrows`), spec zmizelého
+  sloupce zahodí; `ApplyLayout` nově před sortem z layoutu vynuluje všechny šipky (jinak by po
+  obnově svítila i šipka řazení, které layout přebil, a další save by ji zapsal). Testy
+  `EDListLoadTests` (sync i async bez init, souběh init a load), `EDListSetDataTests` (šipka
+  a pořadí po přepnutí `SelectionMode`, zahození řazení, layout s jiným sortem). **Publish
+  EDControls.dll** mění chování jen hostům bez init, v repu žádný.
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** `LoadList`/`LoadListAsync`/`SetData` bez předchozích sloupců projde bez chyby,
   řádky se naplní do `Rows`, ale `DataGrid.Columns` zůstane prázdný.

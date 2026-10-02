@@ -1,8 +1,12 @@
+using System.ComponentModel;
 using System.Globalization;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using EDControls.EDList;
 using EDControls.EDViewModel;
+using EDControls.UserPrefs;
 using EDTesting;
 using NSubstitute;
 using List = EDControls.EDList.EDList;
@@ -114,10 +118,79 @@ public class EDListSetDataTests
         });
     }
 
-    private static List NoRestList() => new()
+    /// <summary>Přestavba sloupců (SelectionMode) zahodila šipku, ale CustomSort řadil dál.</summary>
+    [Fact]
+    public void SelectionModeChange_KeepsSortArrowAndOrder()
+    {
+        RunSta(() =>
+        {
+            var list = NoRestList(PrefsReturning(SortLayout("mth")));
+            list.HostId = "Tests.EDList";
+            list.SetData(Columns, [Row("1", "A", "1"), Row("2", "B", "2")]);
+            Assert.Equal(ListSortDirection.Descending, ColumnByKey(list, "mth").SortDirection);
+
+            list.SelectionMode = ListSelectionMode.Check;
+
+            Assert.Equal(ListSortDirection.Descending, ColumnByKey(list, "mth").SortDirection);
+            Assert.Equal(["2", "1"], list.DataGrid.Items.OfType<EDListRow>().Select(r => r.Id));
+        });
+    }
+
+    [Fact]
+    public void SetData_WithoutSortedColumn_DropsSort()
+    {
+        RunSta(() =>
+        {
+            var list = NoRestList(PrefsReturning(SortLayout("mth"), (JsonNode?)null));
+            list.HostId = "Tests.EDList";
+            list.SetData(Columns, [Row("1", "A", "1"), Row("2", "B", "2")]);
+
+            list.SetData([Columns[0]], [Row("1", "A", "1"), Row("2", "B", "2")]);
+
+            var view = (ListCollectionView)CollectionViewSource.GetDefaultView(list.DataGrid.ItemsSource);
+            Assert.Null(view.CustomSort);
+        });
+    }
+
+    /// <summary>Řazení v paměti se liší od uloženého (debounce nedoběhl, uložení selhalo): po obnově
+    /// šipek dorazí uložený layout a šipka ze starého řazení nesmí zůstat svítit.</summary>
+    [Fact]
+    public void SetData_StoredLayoutWithOtherSort_LeavesOnlyItsArrow()
+    {
+        RunSta(() =>
+        {
+            var list = NoRestList(PrefsReturning(SortLayout("rz"), SortLayout("mth")));
+            list.HostId = "Tests.EDList";
+            list.SetData(Columns, [Row("1", "A", "1"), Row("2", "B", "2")]);
+
+            list.SetData(Columns, [Row("1", "A", "1"), Row("2", "B", "2")]);
+
+            Assert.Null(ColumnByKey(list, "rz").SortDirection);
+            Assert.Equal(ListSortDirection.Descending, ColumnByKey(list, "mth").SortDirection);
+        });
+    }
+
+    private static JsonNode SortLayout(string key) => ColumnLayoutSerializer.Serialize(new ColumnLayout
+    {
+        Sort = [new SortPref { Key = key, Direction = "desc" }],
+    });
+
+    private static IUserPrefsService PrefsReturning(JsonNode? first, params JsonNode?[] next)
+    {
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Task.FromResult(first), [.. next.Select(Task.FromResult)]);
+        return prefs;
+    }
+
+    private static DataGridColumn ColumnByKey(List list, string key) =>
+        list.DataGrid.Columns.Single(c => c.GetValue(FrameworkElement.TagProperty) as string == key);
+
+    private static List NoRestList(IUserPrefsService? prefs = null) => new()
     {
         ServicesOverride = new EDServices(null,
-            Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+            Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
+        { UserPrefs = prefs ?? new NullUserPrefsService() },
     };
 
     // EDList.xaml čte StaticResource EDIcons/EDStrings → Application se slovníky appky;

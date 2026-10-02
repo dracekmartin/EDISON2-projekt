@@ -291,8 +291,10 @@ namespace EDControls.EDList
         /// </summary>
         public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {
+            var mlRest = EnsureConfigured();
+            EnsureColumns();   // sync cesta frontu dotazů obchází, sloupce už nemůžou dorazit
             _loadGeneration++;   // sync načtení je autoritativní - případná async odpověď v letu se zahodí
-            ApplyRows(EnsureConfigured().QueryOrThrow(CacheClass, "LoadList", EDListParsing.BuildLoadInput(filter)));
+            ApplyRows(mlRest.QueryOrThrow(CacheClass, "LoadList", EDListParsing.BuildLoadInput(filter)));
         }
 
         public Task LoadListAsync() => LoadListAsync(filter: null);
@@ -351,9 +353,22 @@ namespace EDControls.EDList
             ApplyRows([.. rows.Select(r => EDListParsing.BuildRow(r, columns)).OfType<EDListRow>()]);
         }
 
+        // Kontrola až po dotazu, ne před ním: host smí pustit InitializeListAsync a LoadListAsync
+        // souběžně (TD picker + EDFilter), pořadí odpovědí drží _queryGate.
         // ToList: ParseRows je líný iterátor - druhý průchod by vyrobil jiné instance řádků
         // a odběr změn by visel mimo seznam.
-        private void ApplyRows(CVar output) => ApplyRows(EDListParsing.ParseRows(output, _columns).ToList());
+        private void ApplyRows(CVar output)
+        {
+            EnsureColumns();
+            ApplyRows(EDListParsing.ParseRows(output, _columns).ToList());
+        }
+
+        // Text nesmí vinit hosta: k tomuhle stavu vede i selhaný InitializeListAsync.
+        private void EnsureColumns()
+        {
+            if (_columns is null)
+                throw new InvalidOperationException("EDList: sloupce nejsou načtené (InitializeList neproběhl nebo selhal), seznam nejde naplnit.");
+        }
 
         private void ApplyRows(List<EDListRow> newRows)
         {
@@ -377,14 +392,22 @@ namespace EDControls.EDList
             DataGrid.Columns.Clear();
             if (SelectionMode == ListSelectionMode.Check)
                 DataGrid.Columns.Add(BuildCheckBoxColumn());
-            if (_columns is null) return;
-            foreach (var col in _columns.Where(c => c.Visible))
+            foreach (var col in _columns?.Where(c => c.Visible) ?? [])
             {
                 var dgCol = BuildDataGridColumn(col);
                 dgCol.SetValue(FrameworkElement.TagProperty, col.Key);  // mapping zpět při SnapshotLayout
                 DataGrid.Columns.Add(dgCol);
             }
+            RestoreSortArrows();
             HookColumnEvents();
+        }
+
+        // Nové sloupce šipky nemají, CustomSort ale řadí dál - bez obnovy by po přepnutí
+        // SelectionMode nebo dalším SetData byl seznam seřazený bez viditelného důvodu.
+        private void RestoreSortArrows()
+        {
+            if (_sortSpecs.RemoveAll(s => FindColumnByKey(s.Key) is null) > 0) ApplySort();
+            foreach (var (key, dir) in _sortSpecs) FindColumnByKey(key)!.SortDirection = dir;
         }
 
         private DataGridColumn BuildCheckBoxColumn()
@@ -688,7 +711,10 @@ namespace EDControls.EDList
                 // 3) Sort - vizuální šipka + typovaný CustomSort (viz OnDataGridSorting)
                 if (layout.Sort is { Count: > 0 })
                 {
+                    // Šipka sloupce mimo uložený layout by svítila dál, ale neřadila by
+                    // a příští uložení by ji zapsalo do sortu.
                     _sortSpecs.Clear();
+                    foreach (var col in DataGrid.Columns) col.SortDirection = null;
                     foreach (var sort in layout.Sort)
                     {
                         var col = FindColumnByKey(sort.Key);

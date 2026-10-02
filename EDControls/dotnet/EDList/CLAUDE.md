@@ -1,8 +1,8 @@
 # EDList - poznámky pro vývojáře
 
 Read-only tabulka řízená z Caché. Host nastaví `CacheClass`, zavolá `InitializeList()`
-(definice sloupců) a `LoadList()` / `LoadList(filter)` (data); služby čte z `EDServices.Current`
-(host **nemusí** mít VM dědící `EDViewModel`), více instancí v okně (master-detail) je
+(definice sloupců) a `LoadList()` / `LoadList(filter)` (data), **bez sloupců `LoadList` hází**.
+Služby čte z `EDServices.Current` (host **nemusí** mít VM dědící `EDViewModel`), více instancí v okně (master-detail) je
 standardní scénář. Caché builder `ALVA.EDControls.EDList.List`, referenční `MockList.cls`
 a testovací okno `EDISONMAIN2/dotnet/Windows/EDListTestWindow/`.
 
@@ -39,6 +39,7 @@ Detaily ve sdíleném `EDControls/docs/wire-formaty.md` - tam patří změny for
 
 - Řazení je **typové** - comparer (`EDListSort`) nad raw hodnotami přes `CustomSort`, ne
   `SortDescriptions` (ty řadí formátované stringy lexikograficky). Shift+klik = multi-sort.
+  Přestavba sloupců (`SelectionMode`, `SetData`) řazení i šipky drží, zmizelý sloupec vypadne.
 - **NUMBER bez `format` se nijak neformátuje** - v UI zůstane „142.5" s tečkou.
 - **IMAGE ani CODEBOOK nejsou v renderingu** - propadnou na text (raw název resource).
   Neparsovatelné datum se zobrazí raw, bez chyby. COLOR kreslí obdélník, ne podbarvení buňky.

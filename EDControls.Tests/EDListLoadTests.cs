@@ -35,12 +35,7 @@ public class EDListLoadTests
                 }
                 return RowsOutput("nova");
             });
-            var list = new List
-            {
-                CacheClass = "ALVA.MockList",
-                ServicesOverride = new EDServices(mock,
-                    Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
-            };
+            var list = InitializedList(mock);
 
             var first = list.LoadListAsync();
             Assert.True(firstQueryStarted.Wait(TimeSpan.FromSeconds(10)));
@@ -53,6 +48,89 @@ public class EDListLoadTests
             var row = Assert.Single(list.Rows);
             Assert.Equal("nova", row.Id);   // stará odpověď se zahodila
         });
+    }
+
+    /// <summary>Bez sloupců by se řádky naplnily, ale DataGrid zůstal prázdný - host to musí poznat hned.</summary>
+    [Fact]
+    public void LoadList_WithoutInitialize_Throws()
+    {
+        RunSta(() =>
+        {
+            var mock = MLRestMocks.Create();
+            mock.QueryOrThrow("ALVA.MockList", "LoadList", Arg.Any<CVar>()).Returns(RowsOutput("1"));
+            var list = NewList(mock);
+
+            Assert.Throws<InvalidOperationException>(() => list.LoadList());
+            Assert.Empty(list.Rows);
+            mock.DidNotReceive().QueryOrThrow("ALVA.MockList", "LoadList", Arg.Any<CVar>());   // sync cesta nečeká na server zbytečně
+        });
+    }
+
+    /// <summary>TD picker pouští InitializeListAsync a refresh EDFilteru souběžně - kontrola sloupců
+    /// před dotazem by tu hodila, přestože sloupce dorazí dřív než řádky.</summary>
+    [Fact]
+    public void LoadListAsync_ConcurrentWithInitializeListAsync_LandsRows()
+    {
+        RunSta(() =>
+        {
+            var mock = MLRestMocks.Create();
+            var releaseInit = new ManualResetEventSlim();
+            mock.QueryOrThrow("ALVA.MockList", "InitializeList", Arg.Any<CVar>()).Returns(_ =>
+            {
+                releaseInit.Wait(TimeSpan.FromSeconds(10));
+                return ColumnsOutput();
+            });
+            mock.QueryOrThrow("ALVA.MockList", "LoadList", Arg.Any<CVar>()).Returns(RowsOutput("1"));
+            var list = NewList(mock);
+
+            var init = list.InitializeListAsync();
+            var load = list.LoadListAsync();
+            releaseInit.Set();
+            PumpUntilCompleted(init, load);
+
+            Assert.True(init.IsCompletedSuccessfully);
+            Assert.True(load.IsCompletedSuccessfully);
+            Assert.Equal("1", Assert.Single(list.Rows).Id);
+        });
+    }
+
+    [Fact]
+    public void LoadListAsync_WithoutInitialize_Throws()
+    {
+        RunSta(() =>
+        {
+            var mock = MLRestMocks.Create();
+            mock.QueryOrThrow("ALVA.MockList", "LoadList", Arg.Any<CVar>()).Returns(RowsOutput("1"));
+            var list = NewList(mock);
+
+            var load = list.LoadListAsync();
+            PumpUntilCompleted(load);
+
+            Assert.IsType<InvalidOperationException>(load.Exception?.InnerException);
+            Assert.Empty(list.Rows);
+        });
+    }
+
+    private static List NewList(IMLRest mock) => new()
+    {
+        CacheClass = "ALVA.MockList",
+        ServicesOverride = new EDServices(mock,
+            Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+    };
+
+    private static List InitializedList(IMLRest mock)
+    {
+        mock.QueryOrThrow("ALVA.MockList", "InitializeList", Arg.Any<CVar>()).Returns(ColumnsOutput());
+        var list = NewList(mock);
+        list.InitializeList();
+        return list;
+    }
+
+    private static CVar ColumnsOutput()
+    {
+        var columns = new CVar();
+        columns["1"] = new CVar("""[{"key":"name","label":"Název","type":"TEXT"}]""");
+        return columns;
     }
 
     private static CVar RowsOutput(string id)
