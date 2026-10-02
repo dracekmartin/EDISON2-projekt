@@ -101,10 +101,10 @@ public class AiVisionImportPipeline
             AiDebugLog = visionService.DebugLog;
         }
 
-        // Klíčové JŘ elementy (StopList/DepartureGrid) model občas stochasticky vynechá -
+        // Klíčové JŘ elementy (StopList/DepartureGrid, LineTable) model občas stochasticky vynechá -
         // jeden opakovaný pokus to typicky spraví. Jinak se pokračuje s viditelným varováním.
         if (visionResult is not null && scheduleType != ScheduleImportType.None
-            && MissingCoreElements(visionResult) is { Length: > 0 } missingFirst)
+            && MissingCoreElements(visionResult, scheduleType) is { Length: > 0 } missingFirst)
         {
             setStatus($"AI nevrátilo: {missingFirst} - zkouším znovu...");
             try
@@ -114,7 +114,7 @@ public class AiVisionImportPipeline
                 ScheduleSettingsCatalog(scheduleType), ReportParametersCatalog());
                 AiDebugLog += "\n\n══ RETRY (chyběly klíčové elementy) ══\n" + visionService.DebugLog;
                 if (retryResult is not null
-                    && (MissingCoreElements(retryResult).Length == 0
+                    && (MissingCoreElements(retryResult, scheduleType).Length == 0
                         || retryResult.Elements.Count > visionResult.Elements.Count))
                     visionResult = retryResult;
             }
@@ -132,23 +132,24 @@ public class AiVisionImportPipeline
                 "Jízdní řád se nepodařilo rozpoznat - AI služba neodpověděla"
                 + (visionError is null ? "." : $": {visionError}")
                 + Environment.NewLine + Environment.NewLine
-                + "Import jízdního řádu bez ní nedává smysl (vznikla by hrubá šablona bez zastávek "
-                + "a odjezdů). Zkuste to prosím znovu; pokud potíž trvá, kontaktujte podporu M-line.");
+                + "Import jízdního řádu bez ní nedává smysl (vznikla by hrubá šablona bez jízdního "
+                + "řádu, jen z textů). Zkuste to prosím znovu; pokud potíž trvá, kontaktujte podporu M-line.");
 
         Template template;
         if (visionResult is not null && visionResult.Confidence >= 0.5f && visionResult.Elements.Count > 0)
         {
             template = await Task.Run(() => BuildTemplateFromVision(
                 visionResult, firstPage, pageWidthMm, pageHeightMm,
-                pdfPath, schema, visionService.DebugLog));
+                pdfPath, schema, visionService.DebugLog, scheduleType));
 
             int elCount = template.Sections.Sum(s => s.Elements.Count);
             int mappedFields = visionResult.TextMappings.Count(m => m.DbField is not null && m.Confidence >= 0.7f);
-            string missingWarn = MissingCoreElements(visionResult) is { Length: > 0 } m
-                ? $" · ⚠ AI nerozpoznalo: {m} - doplňte ručně z palety"
+            string missing = MissingCoreElements(visionResult, scheduleType);
+            string missingWarn = missing.Length > 0
+                ? $" · ⚠ AI nerozpoznalo: {missing} - doplňte ručně z palety"
                 : "";
             if (missingWarn.Length > 0)
-                ImportLog.Add($"⚠ Nerozpoznáno: {MissingCoreElements(visionResult)} - doplňte ručně z palety.");
+                ImportLog.Add($"⚠ Nerozpoznáno: {missing} - doplňte ručně z palety.");
             setStatus($"AI Vision: {visionResult.Elements.Count} JŘ elementů, {mappedFields} polí namapováno, celkem {elCount} elementů{missingWarn}");
         }
         else
@@ -157,7 +158,7 @@ public class AiVisionImportPipeline
             // s nízkou jistotou - tam je hrubý výsledek pořád lepší než nic.
             setStatus("AI rozpoznání nestačilo, skládám šablonu z rozvržení PDF...");
             ImportLog.Add("⚠ AI rozpoznání nestačilo - šablona vznikla jen z rozvržení PDF, "
-                          + "bez zastávek a odjezdů. Zkuste import zopakovat.");
+                          + "bez jízdního řádu. Zkuste import zopakovat.");
             template = await Task.Run(() =>
             {
                 var converter = new PdfToTemplateConverter
@@ -175,12 +176,12 @@ public class AiVisionImportPipeline
     private Template BuildTemplateFromVision(
         AiVisionResult visionResult, ExtractedPage firstPage,
         float pageWidthMm, float pageHeightMm,
-        string pdfPath, DataSchema? schema, string? visionDebugLog)
+        string pdfPath, DataSchema? schema, string? visionDebugLog, ScheduleImportType scheduleType)
     {
         var scheduleElements = AiGuidedScheduleBuilder.BuildFromVision(
             visionResult, firstPage, 0, 0, schema);
 
-        ApplyElementSettings(visionResult, scheduleElements);
+        ApplyElementSettings(visionResult, scheduleElements, scheduleType);
         LogTextCoverage(visionResult, scheduleElements);
         LogElementSettings(scheduleElements);
 
@@ -190,7 +191,7 @@ public class AiVisionImportPipeline
         var section = new Section
         {
             Id = Guid.NewGuid(),
-            Name = "JŘ Zastávkový",
+            Name = scheduleType == ScheduleImportType.LinkovyJr ? "Jízdní řád" : "JŘ Zastávkový",
             PrintBehavior = SectionPrintBehavior.Once,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether,
             Elements = scheduleElements
@@ -222,6 +223,9 @@ public class AiVisionImportPipeline
                 el.Width = Math.Max(printableWidth - el.X, 3f);
         }
 
+        if (scheduleType == ScheduleImportType.LinkovyJr)
+            sections = SplitLineScheduleSections(section.Elements);
+
         var templateParams = BuildTemplateParameters(visionResult);
         var printParams = BuildPrintParameters(visionResult);
 
@@ -247,13 +251,78 @@ public class AiVisionImportPipeline
         };
     }
 
+    /// <summary>Svislá tolerance (mm), o kterou smí prvek hlavičky zasahovat do tabulky a pořád
+    /// patřit nad ni - texty těsně nad tabulkou mají rámeček, který se s ní dotýká.</summary>
+    private const float LineSectionToleranceMm = 1f;
+
+    /// <summary>
+    /// Rozvrhne prvky linkového JŘ do sekcí tak, jak vypadají hotové šablony linkového JŘ (vzor
+    /// 940 IDZK): hlavička na každé stránce, pod ní tabulka spojů, která pokračuje přes stránky,
+    /// a pod tabulkou poznámky. Jedna pevná stránka jako u vývěsky by u delší linky tabulku
+    /// zmenšila nebo ořízla - linkový JŘ má proměnný počet zastávek i spojů.
+    /// </summary>
+    /// <remarks>Tabulka a poznámky dostanou prázdnou výšku (počítá ji engine z dat); souřadnice
+    /// ostatních prvků se přepočítají vůči sekci, do které padnou. Bez tabulky zůstane jedna sekce.</remarks>
+    internal static List<Section> SplitLineScheduleSections(List<TemplateElement> elements)
+    {
+        var table = elements.OfType<LineTableElement>().FirstOrDefault();
+        if (table is null)
+            return [NewSection("Jízdní řád", SectionRole.Body, SectionPrintBehavior.Once,
+                SectionOverflowBehavior.KeepTogether, elements)];
+
+        float tableTop = table.Y;
+        float tableBottom = table.Y + (table.Height ?? 0f);
+
+        var header = elements.Where(e => e != table && e.Y < tableTop - LineSectionToleranceMm).ToList();
+        var below = elements.Where(e => e != table && !header.Contains(e)
+                                        && (e is NotesLegendElement || e.Y >= tableBottom - LineSectionToleranceMm)).ToList();
+        var body = elements.Where(e => !header.Contains(e) && !below.Contains(e)).ToList();
+
+        var sections = new List<Section>();
+        if (header.Count > 0)
+            sections.Add(NewSection("Hlavička", SectionRole.Header, SectionPrintBehavior.OnEveryPage,
+                SectionOverflowBehavior.KeepTogether, header));
+        sections.Add(NewSection("Jízdní řád", SectionRole.Body, SectionPrintBehavior.Once,
+            SectionOverflowBehavior.SplitAcrossPages, body));
+        if (below.Count > 0)
+            sections.Add(NewSection("Poznámky", SectionRole.Body, SectionPrintBehavior.Once,
+                SectionOverflowBehavior.SplitAcrossPages, below));
+
+        foreach (var el in elements)
+            if (el is LineTableElement or NotesLegendElement)
+                el.Height = null;
+
+        return sections;
+    }
+
+    /// <summary>Sekce, jejíž první prvek leží u horní hrany: souřadnice se posunou o nejvyšší
+    /// prvek a výška sekce sedí na spodek nejnižšího (prázdná výška se bere z návrhové).</summary>
+    private static Section NewSection(string name, SectionRole role, SectionPrintBehavior print,
+        SectionOverflowBehavior overflow, List<TemplateElement> elements)
+    {
+        float top = elements.Count > 0 ? elements.Min(e => e.Y) : 0f;
+        foreach (var el in elements) el.Y = MmMath.Round(el.Y - top);
+        float bottom = elements.Count > 0 ? elements.Max(e => e.Y + (e.Height ?? 0f)) : 0f;
+
+        return new Section
+        {
+            Id = Guid.NewGuid(),
+            Name = name,
+            Role = role,
+            PrintBehavior = print,
+            OverflowBehavior = overflow,
+            DesignerHeight = Math.Max(MmMath.Round(bottom), 10f),
+            Elements = elements,
+        };
+    }
+
     /// <summary>
     /// Zapíše do prvků vzhled, který AI poznala z předlohy, a zaznamená to do protokolu importu.
-    /// Zatím jen seznam zastávek - na něm se ověřuje, co model zvládne poznat (rozhodnutí Jan 18. 8.).
     /// </summary>
-    private void ApplyElementSettings(AiVisionResult vision, List<TemplateElement> elements)
+    private void ApplyElementSettings(AiVisionResult vision, List<TemplateElement> elements,
+        ScheduleImportType scheduleType)
     {
-        foreach (var (typ, vzor) in SettingsTargets())
+        foreach (var (typ, vzor) in SettingsTargets(scheduleType))
         {
             var cil = elements.FirstOrDefault(e => e.GetType() == vzor.GetType());
             if (cil is null) continue;
@@ -327,7 +396,7 @@ public class AiVisionImportPipeline
         if (scheduleType == ScheduleImportType.None) return null;
 
         var sb = new System.Text.StringBuilder();
-        foreach (var (typ, prvek) in SettingsTargets())
+        foreach (var (typ, prvek) in SettingsTargets(scheduleType))
         {
             sb.AppendLine($"[{typ}] {ElementNazev(prvek)}:");
             sb.Append(ElementSettingsFromImage.BuildCatalog(prvek));
@@ -364,10 +433,17 @@ public class AiVisionImportPipeline
     }
 
     /// <summary>Prvky, na jejichž vzhled se model ptá - typ v odpovědi × čerstvý prvek jako vzor.</summary>
-    private static IEnumerable<(string Typ, TemplateElement Prvek)> SettingsTargets()
+    private static IEnumerable<(string Typ, TemplateElement Prvek)> SettingsTargets(ScheduleImportType scheduleType)
     {
-        yield return ("StopList", new StopListElement());
-        yield return ("DepartureGrid", new DepartureGridElement());
+        if (scheduleType == ScheduleImportType.LinkovyJr)
+        {
+            yield return ("LineTable", new LineTableElement());
+        }
+        else
+        {
+            yield return ("StopList", new StopListElement());
+            yield return ("DepartureGrid", new DepartureGridElement());
+        }
         yield return ("NotesLegend", new NotesLegendElement());
     }
 
@@ -477,16 +553,23 @@ public class AiVisionImportPipeline
     }
 
     /// <summary>
-    /// Vrátí čárkami oddělený seznam klíčových JŘ elementů, které ve vision výsledku chybí
-    /// (prázdný string = vše na místě). Řídí retry a varování uživateli.
+    /// Vrátí seznam klíčových JŘ elementů, které ve vision výsledku chybí (prázdný string = vše
+    /// na místě). Řídí retry a varování uživateli.
     /// </summary>
-    private static string MissingCoreElements(AiVisionResult vision)
+    internal static string MissingCoreElements(AiVisionResult vision, ScheduleImportType scheduleType)
     {
+        bool Has(string type) => vision.Elements.Any(e => e.Type.Equals(type, StringComparison.OrdinalIgnoreCase));
+
         var missing = new List<string>();
-        if (!vision.Elements.Any(e => e.Type.Equals("StopList", StringComparison.OrdinalIgnoreCase)))
-            missing.Add("seznam zastávek");
-        if (!vision.Elements.Any(e => e.Type.Equals("DepartureGrid", StringComparison.OrdinalIgnoreCase)))
-            missing.Add("mřížku odjezdů");
+        if (scheduleType == ScheduleImportType.LinkovyJr)
+        {
+            if (!Has("LineTable")) missing.Add("tabulku spojů");
+        }
+        else
+        {
+            if (!Has("StopList")) missing.Add("seznam zastávek");
+            if (!Has("DepartureGrid")) missing.Add("mřížku odjezdů");
+        }
         return string.Join(" a ", missing);
     }
 

@@ -584,11 +584,16 @@ Nastavení výstupu je univerzální napříč agendami:
 jednoduchý: vyberete **PDF soubor** (a u vícestránkového stránku) - všechno ostatní se odvodí
 z právě otevřené agendy:
 
-- **Agenda jízdního řádu** → import s **umělou inteligencí**: AI rozpozná strukturu vývěsky
-  (seznam zastávek, minuty odjezdů, poznámky, texty, loga) a rovnou namapuje datová
-  pole agendy - výsledkem je živá šablona napojená na data, ne statická kopie. Importuje se
-  vždy **jedna stránka** (jedna vývěska jako předloha). Vyžaduje aktivovanou AI službu u M-line;
-  bez ní je import u JŘ agend nedostupný.
+- **Agenda jízdního řádu** → import s **umělou inteligencí**: AI rozpozná strukturu předlohy
+  a rovnou namapuje datová pole agendy - výsledkem je živá šablona napojená na data, ne statická
+  kopie. Importuje se vždy **jedna stránka**. Vyžaduje aktivovanou AI službu u M-line; bez ní je
+  import u JŘ agend nedostupný.
+  - **Zastávkový JŘ** - seznam zastávek, minuty odjezdů, poznámky, texty a loga; šablona je jedna
+    pevná stránka jako vývěska.
+  - **Linkový JŘ** - Tabulka spojů (pořadí popisných sloupců a písmo podle předlohy), poznámky
+    a texty kolem. Šablona má **hlavičku na každé stránce**, pod ní tabulku, která pokračuje přes
+    stránky, a poznámky. Má-li předloha pod sebou oba směry, převezme se horní tabulka; druhý směr
+    sestava vytiskne na další stránce.
 - **Jiná agenda (Obecná, Faktury…)** → obecný import: texty, čáry a obrázky se převezmou 1:1
   jako prvky šablony (bez AI).
 

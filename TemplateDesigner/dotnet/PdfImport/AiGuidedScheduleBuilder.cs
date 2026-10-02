@@ -41,6 +41,8 @@ public static class AiGuidedScheduleBuilder
         var elements = new List<TemplateElement>();
         int zIndex = 0;
         var debugLines = new List<string>();
+        SkippedNumericBlocks = 0;
+        UserNotes.Clear();
         debugLines.Add($"Page: {pageW:0.#} × {pageH:0.#} mm, images: {page.Images.Count}, rectangles: {page.Rectangles.Count}, lines: {page.Lines.Count}, words: {page.Words.Count}");
         foreach (var img in page.Images)
             debugLines.Add($"  Image: X={img.X:0.#} Y={img.Y:0.#} W={img.Width:0.#} H={img.Height:0.#}");
@@ -85,9 +87,26 @@ public static class AiGuidedScheduleBuilder
                 elements.Add(notesEl);
         }
 
+        // 3b. LineTableElement (linkový JŘ). Šablona nese jen horní tabulku: druhá bývá opačný
+        //     směr a ten sestava vytiskne z téhož prvku na vlastní stránce. Její oblast ale dál
+        //     patří jízdnímu řádu, jinak by se její časy a zastávky doplnily jako stovky textů.
+        var lineTablesAi = vision.Elements
+            .Where(e => e.Type.Equals("LineTable", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(e => e.Top)
+            .ToList();
+        var otherScheduleRegions = new List<(float L, float T, float R, float B)>();
+        if (lineTablesAi.Count > 0)
+        {
+            elements.Add(BuildLineTable(lineTablesAi[0], page, marginLeft, marginTop, ref zIndex, debugLines));
+            foreach (var other in lineTablesAi.Skip(1))
+                otherScheduleRegions.Add((other.Left * pageW - marginLeft, other.Top * pageH - marginTop,
+                                          other.Right * pageW - marginLeft, other.Bottom * pageH - marginTop));
+            if (lineTablesAi.Count > 1)
+                UserNotes.Add("Předloha má víc tabulek spojů (nejspíš oba směry pod sebou). Šablona převzala "
+                              + "horní, druhý směr vytiskne sestava na další stránce.");
+        }
+
         // 4. Textové elementy z AI mapování
-        SkippedNumericBlocks = 0;
-        UserNotes.Clear();
         var consumedBlocks = new HashSet<ExtractedTextBlock>();
         var textElements = BuildTextElements(vision, page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks);
         elements.AddRange(textElements);
@@ -114,7 +133,7 @@ public static class AiGuidedScheduleBuilder
         // seznamu zastávek (v šabloně pak ležel název zastávky přes tabulku - nález Jan 18. 8.).
         var doplnene = BuildUnmappedTextElements(
             page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks,
-            [.. elements.OfType<TextElement>()], ScheduleRects(elements));
+            [.. elements.OfType<TextElement>()], [.. ScheduleRects(elements), .. otherScheduleRegions]);
         elements.AddRange(doplnene);
 
         debugLines.Add($"Final elements: {elements.Count}");
@@ -312,6 +331,80 @@ public static class AiGuidedScheduleBuilder
         };
     }
 
+    /// <summary>
+    /// Vytvoří LineTableElement z oblasti od modelu a písma změřeného v PDF. Zjednodušené proti
+    /// zastávkovému JŘ: šířky sloupců se neměří (sloupce spojů vznikají z dat a šířku si prvek
+    /// počítá sám), převezme se pořadí popisných sloupců a velikost písma.
+    /// </summary>
+    /// <remarks>Do stylu se zapisuje jen rodina a velikost písma. Zapečené tučné záhlaví by
+    /// přebilo ovladač prvku - stejná chyba jako u záhlaví odjezdů (14. 6.).</remarks>
+    private static LineTableElement BuildLineTable(
+        AiVisionElement ai, ExtractedPage page,
+        float marginLeft, float marginTop, ref int zIndex, List<string> debug)
+    {
+        float pageW = page.WidthMm;
+        float pageH = page.HeightMm;
+        float x = ai.Left * pageW - marginLeft;
+        float y = ai.Top * pageH - marginTop;
+        float w = (ai.Right - ai.Left) * pageW;
+        float h = (ai.Bottom - ai.Top) * pageH;
+
+        float estHeaderH = ai.HasHeader ? Math.Min(h * 0.15f, 10f) : 0;
+        var measure = MeasureRegionFont(ai, page, estHeaderH);
+        debug.Add($"LineTable measurements: dataFont={measure.DataFontSizePt:0.#}pt, "
+                  + $"headerFont={measure.HeaderFontSizePt:0.#}pt, rowH={measure.RowHeightMm:0.#}mm, "
+                  + $"columns=[{string.Join(", ", ai.Columns)}]");
+
+        var el = new LineTableElement
+        {
+            Id = Guid.NewGuid(),
+            X = Math.Max(0, x),
+            Y = Math.Max(0, y),
+            Width = w,
+            Height = h,
+            ZIndex = zIndex++,
+            Columns = BuildLineColumnsFromAi(ai.Columns),
+        };
+        // Velikost z PDF vychází s šumem (7,0004 pt) - ve formuláři by tak i stála.
+        if (measure.DataFontSizePt > 0)
+        {
+            el.DataStyle.FontFamily = measure.FontFamily;
+            el.DataStyle.FontSize = MathF.Round(measure.DataFontSizePt, 1);
+        }
+        if (measure.HeaderFontSizePt > 0)
+        {
+            el.HeaderStyle.FontFamily = measure.FontFamily;
+            el.HeaderStyle.FontSize = MathF.Round(measure.HeaderFontSizePt, 1);
+        }
+        if (measure.RowHeightMm > 0)
+            el.DataRowHeight = MmMath.Round(measure.RowHeightMm);
+        return el;
+    }
+
+    /// <summary>
+    /// Popisné sloupce v pořadí, v jakém je model na předloze viděl; ostatní za nimi ve výchozím
+    /// pořadí a sloupec spojů na konci.
+    /// </summary>
+    /// <remarks>⚠️ Sloupec, který model neviděl, se <b>neskrývá</b>: prázdný sloupec se netiskne
+    /// sám, takže na předloze chybí i tehdy, když linka hodnoty jen nemá (km, MHD, zóny). Skrytý
+    /// by u jiné linky schoval data, která tam patří. A dialog sloupců neumí sloupec přidat, takže
+    /// zůstat v seznamu musí všechny.</remarks>
+    internal static List<StopColumn> BuildLineColumnsFromAi(IReadOnlyList<string> seenKeys)
+    {
+        var defaults = LineTableElement.GetDefaultColumns();
+        var popisne = defaults.Where(c => c.Key != LineTableElement.TripKey).ToList();
+
+        var result = new List<StopColumn>();
+        foreach (string key in seenKeys)
+        {
+            var col = popisne.FirstOrDefault(c => c.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+            if (col is not null && !result.Contains(col)) result.Add(col);
+        }
+        result.AddRange(popisne.Where(c => !result.Contains(c)));
+        result.AddRange(defaults.Where(c => c.Key == LineTableElement.TripKey));
+        return result;
+    }
+
     /// <summary>Vytvoří TextElement-y z AI text mapování, přeskočí texty uvnitř schedule oblastí.</summary>
     private static List<TextElement> BuildTextElements(
         AiVisionResult vision, ExtractedPage page,
@@ -450,9 +543,13 @@ public static class AiGuidedScheduleBuilder
     private static List<(float L, float T, float R, float B)> ScheduleRects(List<TemplateElement> elements) =>
     [
         .. elements
-            .Where(e => e is StopListElement or DepartureGridElement or NotesLegendElement)
+            .Where(IsScheduleElement)
             .Select(e => (e.X, e.Y, e.X + e.Width, e.Y + (e.Height ?? 0)))
     ];
+
+    /// <summary>Prvek, který si obsah kreslí sám z dat - texty v jeho oblasti do šablony nepatří.</summary>
+    private static bool IsScheduleElement(TemplateElement e) =>
+        e is StopListElement or DepartureGridElement or NotesLegendElement or LineTableElement;
 
     /// <summary>
     /// Doplní texty, které v předloze prokazatelně jsou, ale model je nezmínil. Model vrací
@@ -619,7 +716,7 @@ public static class AiGuidedScheduleBuilder
 
             foreach (var el in elements)
             {
-                if (el is StopListElement or DepartureGridElement or NotesLegendElement)
+                if (IsScheduleElement(el))
                     el.Y += shift;
             }
         }

@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-02 - 📥 import z PDF rozpozná linkový JŘ (`B179`, první krok)
+
+Do dneška se v agendě linkového JŘ AI vůbec nevolala: dialog poznal jízdní řád jen podle kódu
+`ZASTAVKOVY_JR`, takže z PDF linky vznikly volné texty a čáry bez datových polí. Teď má linkový
+JŘ vlastní popis pro model (Tabulka spojů, poznámky, texty kolem) a import z něj skládá šablonu
+**podle vzorových šablon linkového JŘ**: hlavička na každé stránce, pod ní tabulka spojů
+s výškou z dat a pokračováním přes stránky, pod ní poznámky. Tabulka převezme pořadí popisných
+sloupců a změřené písmo; sloupec, který model na předloze neviděl, se neskrývá (prázdný sloupec
+se netiskne sám, chybí tedy i u linky, která hodnoty jen nemá). Model se navíc ptá na volby
+tabulky, které papír potvrdí (čísla spojů, formát času, tečky, popisné sloupce bez čar,
+podbarvení lichých Tč); na řádky platnosti, značek a přípojů ne. Dvě tabulky pod sebou (oba
+směry) = šablona vezme horní. Šířky sloupců se zatím neměří. Ověřeno testy nad PDF, které
+vyrobí náš tisk, s odpovědí modelu napsanou ručně; **skutečné volání modelu nad předlohou
+zákazníka zatím neproběhlo**.
+
 ## 2026-10-01 (3) - 🔎 hledání ve formuláři napoví Ctrl+F
 
 Pole hledání ve formuláři (a v seznamech) ukazuje „Hledat… (Ctrl+F)", jako už nápověda F1.

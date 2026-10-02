@@ -73,11 +73,10 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
   hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184`, `B186` a `B187` hotové, dál podle poptávky.
 
-- **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
-  prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není
-  (`PdfImport/` se jí nedotýká), takže linkový JŘ by skončil jako obecné tabulky a texty. Nejdřív
-  zkusit na zákazníkově PDF, jak se chová, a podle toho rozhodnout, jestli naučit import
-  rozpoznat tabulku spojů a nastavit její vzhled.
+- **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). První krok hotový
+  2. 10. (rozpoznání tabulky spojů, šablona ve třech sekcích, viz changelog); zákazník do té doby
+  dostal obecný import bez AI. **Zbývá:** pustit na PDF zákazníka a na vzoru 940 a podle výsledku
+  rozhodnout o měření šířek popisných sloupců a o otázkách na čáry mřížky.
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají

@@ -35,9 +35,7 @@ public class PdfImportDialogViewModel : EDViewModel
         SelectedAgendaCode = preferredAgendaCode is { Length: > 0 } pref
             && AvailableAgendas.Any(a => a.Code.Equals(pref, StringComparison.OrdinalIgnoreCase))
                 ? pref : "";
-        ScheduleImportType = SelectedAgendaCode.StartsWith("ZASTAVKOVY_JR", StringComparison.OrdinalIgnoreCase)
-            ? ScheduleImportType.ZastavkovyJrMhd
-            : ScheduleImportType.None;
+        ScheduleImportType = ScheduleImportTypes.ForAgenda(SelectedAgendaCode);
 
         // AI klíč: lokální dev, nebo vyzvednutý z mlweb/EDISONAI
         HasApiKey = !string.IsNullOrEmpty(apiKey);
@@ -84,9 +82,14 @@ public class PdfImportDialogViewModel : EDViewModel
         ?? "AI import není dostupný - kontaktujte podporu M-line.";
 
     /// <summary>Popis režimu importu pro info řádek v dialogu.</summary>
-    public string ImportModeInfo => IsScheduleImport
-        ? $"Zastávkový jízdní řád - AI rozpozná strukturu (zastávky, odjezdy, poznámky) a namapuje pole agendy {SelectedAgendaName}."
-        : "Obecný layout - texty a grafika se převezmou 1:1 jako elementy šablony.";
+    public string ImportModeInfo => ScheduleImportType switch
+    {
+        ScheduleImportType.ZastavkovyJrMhd =>
+            $"Zastávkový jízdní řád - AI rozpozná strukturu (zastávky, odjezdy, poznámky) a namapuje pole agendy {SelectedAgendaName}.",
+        ScheduleImportType.LinkovyJr =>
+            $"Linkový jízdní řád - AI rozpozná tabulku spojů, poznámky a texty v hlavičce a namapuje pole agendy {SelectedAgendaName}.",
+        _ => "Obecný layout - texty a grafika se převezmou 1:1 jako elementy šablony.",
+    };
 
     private string SelectedAgendaName =>
         AvailableAgendas.FirstOrDefault(a => a.Code.Equals(SelectedAgendaCode, StringComparison.OrdinalIgnoreCase))?.Name
@@ -181,8 +184,9 @@ public class PdfImportDialogViewModel : EDViewModel
             int[]? pages = null;
             if (IsScheduleImport)
             {
-                // Zastávkový JŘ = vždy právě jedna stránka (jedna vývěska). U vícestránkového
-                // PDF (celá linka) volí uživatel kterou; AI dostane jen tu - bez zahlcení.
+                // JŘ se rozpoznává z jedné stránky: u zastávkového je to jedna vývěska, u linkového
+                // rozvržení stránky, které sestava zopakuje pro každý směr. U vícestránkového PDF
+                // volí uživatel kterou; AI dostane jen tu - bez zahlcení.
                 pages = [Math.Clamp(PageFrom, 1, Math.Max(TotalPages, 1))];
             }
             else if (!ImportAllPages)
@@ -231,7 +235,7 @@ public class PdfImportDialogViewModel : EDViewModel
             if (!string.IsNullOrEmpty(SelectedAgendaCode))
                 template.AgendaCode = SelectedAgendaCode;
 
-            NormalizeImportedPage(template);
+            NormalizeImportedPage(template, fillBodySection: scheduleType != ScheduleImportType.LinkovyJr);
             ApplyDefaultImportBorders(template);
             ImportedTemplate = template;
 
@@ -316,8 +320,10 @@ public class PdfImportDialogViewModel : EDViewModel
     /// a nevypadá „posunutě": (1) rozměr stránky přichytí na nejbližší standardní formát
     /// (A5/A4/A3 × orientace) v toleranci, jinak zaokrouhlí; (2) nastaví malé jednotné výchozí okraje
     /// (1 mm, clampnuté ať neořežou obsah); (3) Body sekci dopočítá na tiskovou plochu.
-    /// Page-level - prvky se nehýbou vůči sobě (posun se sekcí je uniformní).</summary>
-    private static void NormalizeImportedPage(Template template)
+    /// Page-level - prvky se nehýbou vůči sobě (posun se sekcí je uniformní).
+    /// Linkový JŘ krok (3) vynechá: má sekce pod sebou (tabulka, poznámky) a každá na celou
+    /// plochu by je rozházela po stránkách.</summary>
+    private static void NormalizeImportedPage(Template template, bool fillBodySection = true)
     {
         var ps = template.PageSize;
 
@@ -349,6 +355,7 @@ public class PdfImportDialogViewModel : EDViewModel
         ps.MarginTop  = ps.MarginBottom = MmMath.Round(mv);
 
         // (3) Body sekce vyplní tiskovou plochu
+        if (!fillBodySection) return;
         foreach (var section in template.Sections)
             if (section.Role == SectionRole.Body)
                 section.DesignerHeight = ps.PrintableHeight;

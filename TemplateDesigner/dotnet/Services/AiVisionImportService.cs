@@ -224,6 +224,7 @@ Hodnotu, která je na obrázku NAPSANÁ (symbol v legendě, nadpis), přečti; n
     private static AgendaPromptContext GetAgendaPromptContext(ScheduleImportType type) => type switch
     {
         ScheduleImportType.ZastavkovyJrMhd => ZastavkovyJrMhdPromptContext(),
+        ScheduleImportType.LinkovyJr => LinkovyJrPromptContext(),
         _ => GenericPromptContext()
     };
 
@@ -389,6 +390,57 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
     { ""role"": ""qrCode"", ""description"": ""QR kód"", ""dbField"": ""QR_KOD"", ""x"": 0.9, ""y"": 0.01, ""w"": 0.08, ""h"": 0.08 }
   ],
   ""templateParameters"": { ""TISK_SIPKY"": ""true"", ""HODINY_OD"": ""4"", ""HODINY_DO"": ""23"" },
+  ""notes"": ""volitelné poznámky""
+}");
+
+    /// <summary>
+    /// Linkový JŘ: jedna tabulka celé linky (zastávky × spoje), vysvětlivky pod ní a hlavička nad
+    /// ní. Sloupce spojů vznikají z dat, takže se model ptá jen na popisné sloupce - jejich klíče
+    /// jsou <see cref="Models.ColumnKeys"/>, ať je builder nemusí překládat.
+    /// </summary>
+    private static AgendaPromptContext LinkovyJrPromptContext() => new(
+        RoleIntro: "Jsi expert na rozpoznávání linkových jízdních řádů (tabulka celé linky: zastávky × spoje) z obrázků.\n\nÚKOL: Analyzuj screenshot PDF a vrať sémantickou strukturu - jaké elementy kde jsou.",
+        StructureDescription: @"TYPICKÁ STRUKTURA LINKOVÉHO JŘ:
+1. **LineTable** - tabulka celé linky: ŘÁDKY = zastávky, SLOUPCE = spoje. Vlevo (nebo uprostřed) popisné
+   sloupce o zastávce (km, tarifní číslo, zóna, název zastávky, přestupy na MHD), vpravo sloupce spojů
+   s časy. Nad časy je pás záhlaví: nadpisy skupin dnů (Pracovní dny, Soboty…), čísla spojů, znaky
+   platnosti a značky omezení spojů.
+2. **NotesLegend** - vysvětlivky pod tabulkou: značky a jejich význam, texty o omezení spojů, dopravce.
+3. **Texty** mimo tabulku - číslo linky, trasa linky, dopravce, platnost od - do, poznámka nad linkou.
+4. **Obrázky** mimo tabulku - logo dopravce, QR kód, grafické prvky",
+        AdditionalRules:
+        [
+            "2. LineTable: v \"columns\" vyjmenuj popisné sloupce, které na obrázku VIDÍŠ, v pořadí zleva doprava: "
+                + "\"Arrow\" (značky př / od u zastávky rozdělené na příjezd a odjezd), \"Zone\" (tarifní zóna), "
+                + "\"Km\" (kilometry; víc sloupců km vedle sebe = jeden \"Km\"), \"Tc\" (tarifní číslo zastávky), "
+                + "\"StopName\" (název zastávky), \"Mhd\" (přestupy na MHD nebo IDS). Sloupce spojů s časy nevyjmenovávej.",
+            "3. POVINNÉ: tabulka spojů (LineTable) NESMÍ v odpovědi chybět, pokud je vidět.",
+            "4. Oblast LineTable MUSÍ zahrnovat celé záhlaví (nadpisy skupin dnů, čísla spojů, řádky značek) "
+                + "i poslední zastávku. NIKDY nevracej oblast, která začíná až u časů: co zůstane venku, skončí "
+                + "jako desítky samostatných textů.",
+            "5. Jsou-li na stránce dvě tabulky pod sebou (směr tam a směr zpět), vrať OBĚ jako LineTable. "
+                + "Jsou-li spoje obou směrů v JEDNÉ tabulce po obou stranách názvů zastávek, je to jedna LineTable."
+        ],
+        ElementProperties: [],
+        TemplateParameters: [],
+        JsonExample: @"{
+  ""scheduleType"": ""LinkovyJr"",
+  ""confidence"": 0.9,
+  ""elements"": [
+    {
+      ""type"": ""LineTable"",
+      ""left"": 0.02, ""top"": 0.14, ""right"": 0.98, ""bottom"": 0.78,
+      ""columns"": [""Km"", ""Tc"", ""StopName"", ""Zone""],
+      ""hasHeader"": true
+    },
+    { ""type"": ""NotesLegend"", ""left"": 0.02, ""top"": 0.8, ""right"": 0.98, ""bottom"": 0.97 }
+  ],
+  ""textMappings"": [
+    { ""text"": ""940"", ""role"": ""title"", ""dbField"": ""CISLO_LINKY"", ""placeholderText"": ""{CISLO_LINKY}"", ""x"": 0.02, ""y"": 0.01, ""w"": 0.1, ""h"": 0.05, ""approxFontSize"": 20, ""confidence"": 0.95 }
+  ],
+  ""imageMappings"": [],
+  ""templateParameters"": {},
+  ""elementSettings"": { ""LineTable"": { ""Řádky · Čísla spojů"": ""ano"" } },
   ""notes"": ""volitelné poznámky""
 }");
 
