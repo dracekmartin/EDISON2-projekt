@@ -426,8 +426,7 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
                 + "a zastávky ve STEJNÉM pořadí, jen nese další spoje. Taková tabulka je JEDNA LineTable - vrať "
                 + "oblast přes všechny části. Dvě LineTable vrať jen tehdy, když má druhá tabulka zastávky "
                 + "v OPAČNÉM pořadí (směr zpět).",
-            "6. Obousměrný tisk (parametr OBOUSMERNY_TISK) je JEDNA tabulka, kde jsou časy spojů vlevo I vpravo "
-                + "od názvů zastávek. Části nebo tabulky pod sebou obousměrný tisk NEJSOU.",
+            "6. Tabulka s časy spojů vlevo I vpravo od názvů zastávek (oba směry v jedné tabulce) je JEDNA LineTable.",
             "7. Text, který je na obrázku na více řádcích pod sebou, vrať PO ŘÁDCÍCH - každý řádek jako "
                 + "samostatnou položku textMappings.",
             "8. placeholderText je CELÝ text řádku s datovými poli nahrazenými {POLE}; pevný text kolem pole "
@@ -453,7 +452,6 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
     { ""text"": ""Platí od 1.1.2026"", ""role"": ""validity"", ""dbField"": ""DATUM_PLATNOSTI_OD"", ""placeholderText"": ""Platí od {DATUM_PLATNOSTI_OD}"", ""x"": 0.8, ""y"": 0.01, ""w"": 0.18, ""h"": 0.02, ""approxFontSize"": 8, ""confidence"": 0.9 }
   ],
   ""imageMappings"": [],
-  ""templateParameters"": {},
   ""elementSettings"": { ""LineTable"": { ""Řádky · Čísla spojů"": ""ano"" } },
   ""notes"": ""volitelné poznámky""
 }");

@@ -595,7 +595,8 @@ z právě otevřené agendy:
     stránce**, pod ní tabulku, která pokračuje přes stránky, a poznámky pod ní nebo vedle ní -
     podle předlohy. Poznámky jsou v šabloně vždy, i když na importované stránce nejsou; na další
     stránku je tisk přesune sám, když se nevejdou. Má-li předloha pod sebou oba směry, převezme
-    se horní tabulka; druhý směr sestava vytiskne na další stránce.
+    se horní tabulka; druhý směr sestava vytiskne na další stránce. Nastavení sestavy (obousměrný
+    tisk, stránka pro každou zastávku…) se z předlohy nepřebírá - nastavte ho v okně tisku.
 - **Jiná agenda (Obecná, Faktury…)** → obecný import: texty, čáry a obrázky se převezmou 1:1
   jako prvky šablony (bez AI).
 

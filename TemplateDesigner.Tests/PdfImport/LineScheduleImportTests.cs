@@ -265,6 +265,15 @@ public class LineScheduleImportTests
         Assert.Equal(jenKolemCisla, AiGuidedScheduleBuilder.FindEnclosingRectangle([jenKolemCisla], cislo, [cislo, nazev]));
     }
 
+    /// <summary>U linkového JŘ model volby sestavy hádal pokaždé jinak - hodnota v šabloně by
+    /// přebila nastavení uživatele. Zastávkový JŘ je bere dál.</summary>
+    [Fact]
+    public void VolbySestavySeZPredlohyBerouJenUZastavkovehoJr()
+    {
+        Assert.False(AiVisionImportPipeline.TakesReportParameters(ScheduleImportType.LinkovyJr));
+        Assert.True(AiVisionImportPipeline.TakesReportParameters(ScheduleImportType.ZastavkovyJrMhd));
+    }
+
     // ── Co musí v odpovědi modelu být ───────────────────────────────────
 
     private static AiVisionResult Vision(params string[] types) =>

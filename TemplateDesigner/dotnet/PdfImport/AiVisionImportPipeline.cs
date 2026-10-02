@@ -89,7 +89,7 @@ public class AiVisionImportPipeline
 
             visionResult = await visionService.AnalyzeAsync(
                 base64Png, firstPage, schema, scheduleType, _apiKey,
-                ScheduleSettingsCatalog(scheduleType), ReportParametersCatalog());
+                ScheduleSettingsCatalog(scheduleType), ReportParametersCatalog(scheduleType));
         }
         catch (Exception ex)
         {
@@ -111,7 +111,7 @@ public class AiVisionImportPipeline
             {
                 var retryResult = await visionService.AnalyzeAsync(
                     base64Png, firstPage, schema, scheduleType, _apiKey,
-                ScheduleSettingsCatalog(scheduleType), ReportParametersCatalog());
+                ScheduleSettingsCatalog(scheduleType), ReportParametersCatalog(scheduleType));
                 AiDebugLog += "\n\n══ RETRY (chyběly klíčové elementy) ══\n" + visionService.DebugLog;
                 if (retryResult is not null
                     && (MissingCoreElements(retryResult, scheduleType).Length == 0
@@ -232,8 +232,11 @@ public class AiVisionImportPipeline
                               + "tabulku. Tisk je přesune na další stránku, když se nevejdou.");
         }
 
-        var templateParams = BuildTemplateParameters(visionResult);
-        var printParams = BuildPrintParameters(visionResult);
+        bool takesParams = TakesReportParameters(scheduleType);
+        if (!takesParams)
+            ImportLog.Add("Nastavení sestavy se z předlohy nepřebírá - nastavte ho v okně tisku.");
+        var templateParams = takesParams ? BuildTemplateParameters(visionResult) : null;
+        var printParams = takesParams ? BuildPrintParameters(visionResult) : null;
 
         return new Template
         {
@@ -452,8 +455,9 @@ public class AiVisionImportPipeline
     /// Ručně psaný výčet v promptu uměl tři volby z patnácti a u druhé jízdněřádové agendy
     /// neplatil vůbec; agenda přitom každou volbu popisuje sama.
     /// </summary>
-    private string? ReportParametersCatalog()
+    private string? ReportParametersCatalog(ScheduleImportType scheduleType)
     {
+        if (!TakesReportParameters(scheduleType)) return null;
         if (_knownParameters is null || _knownParameters.Count == 0) return null;
 
         var sb = new System.Text.StringBuilder();
@@ -535,6 +539,15 @@ public class AiVisionImportPipeline
 
         return hodnoty.Count > 0 ? hodnoty : null;
     }
+
+    /// <summary>
+    /// Bere import volby sestavy z předlohy? U linkového JŘ ne (rozhodnutí Jan 2. 10.): ve třech
+    /// zkušebních bězích model pokaždé uhodl jiné volby a zčásti špatně (obousměrný tisk, název pro
+    /// MHD, stránka pro každou zastávku) - a hodnota v šabloně přebije nastavení uživatele (#12843).
+    /// Import linkového JŘ řeší jen rozvržení; volby si uživatel nastaví v okně tisku.
+    /// </summary>
+    internal static bool TakesReportParameters(ScheduleImportType scheduleType) =>
+        scheduleType != ScheduleImportType.LinkovyJr;
 
     /// <summary>Volba s výchozí možností „Automaticky (dle linky)" (konvence `ux-conventions §8`).</summary>
     private bool RidiSeLinkou(string name) =>

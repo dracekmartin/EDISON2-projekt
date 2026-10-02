@@ -14,6 +14,9 @@ pod výškou písma se zahodí; volby „Automaticky (dle linky)" se z předlohy
 skupin dnů a nadpis popisných sloupců se model už neptá - prázdný nadpis vypadá jako vypnutý.
 Poslední běh: hlavička do 2 mm od zdroje se správnými poli, sloupce i volby tabulky shodné.
 Tři opravy (shoda textu, rámeček, řádky bloku) platí i pro zastávkový JŘ.
+**Volby sestavy se u linkového JŘ z předlohy neberou vůbec** (rozhodnutí Jan 2. 10.): model je
+ve třech bězích hádal pokaždé jinak a zčásti špatně (obousměrný tisk, název pro MHD, stránka pro
+každou zastávku), a hodnota v šabloně přebije nastavení uživatele. Import řeší jen rozvržení.
 
 ## 2026-10-02 - 📥 import z PDF rozpozná linkový JŘ (`B179`, první krok)
 
