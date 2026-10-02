@@ -74,9 +74,9 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184`, `B186` a `B187` hotové, dál podle poptávky.
 
 - **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Rozvržení hotové
-  2. 10. a vyzkoušené naostro nad naším výtiskem (viz changelog). **Zbývá:** PDF ze starého modulu
-  nebo od zákazníka; podle výsledku měření šířek popisných sloupců, čáry mřížky a jestli brát
-  volby sestavy (dnes vědomě ne - model je hádal).
+  2. 10. včetně barev, vyzkoušené naostro nad 940 IDZK a naším výtiskem (viz changelog). **Zbývá:**
+  další předlohy (starý modul, zákazník); podle nich šířky popisných sloupců a jestli brát volby
+  sestavy (dnes vědomě ne - model je hádal). Zkouška bez návrháře: `ZkouskaImportuNaostro.cs`.
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají

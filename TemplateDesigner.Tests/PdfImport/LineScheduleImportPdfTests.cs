@@ -22,6 +22,10 @@ public class LineScheduleImportPdfTests(ITestOutputHelper output)
 {
     private const float PageW = 297f, PageH = 210f, Margin = 10f, HeaderH = 15f, FooterH = 10f;
 
+    // Barvy jako u výtisku 940 IDZK: tmavě modré záhlaví s bílým písmem, modré písmo buněk,
+    // světle modré liché řádky.
+    private const string Zahlavi = "#FF162C66", Pismo = "#FF1F3A80", LicheTc = "#FFDCE6F1";
+
     private static readonly string[] Zastavky =
         ["Kroměříž", "Hulín", "Břest", "Kojetín", "Chropyně", "Bochoř", "Věrovany", "Přerov"];
 
@@ -44,7 +48,9 @@ public class LineScheduleImportPdfTests(ITestOutputHelper output)
             {
                 Name = "Jízdní řád", OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages, DesignerHeight = 30,
                 Elements = [new LineTableElement { X = 0, Y = 0, Width = PageW - 2 * Margin,
-                                                   DataStyle = new TextStyle { FontSize = 7 } }],
+                                                   DataStyle = new TextStyle { FontSize = 7, TextColor = Pismo },
+                                                   HeaderStyle = new TextStyle { BackgroundColor = Zahlavi, TextColor = "#FFFFFFFF" },
+                                                   HighlightOddTc = true, OddTcBackColor = LicheTc }],
             },
             new Section
             {
@@ -60,7 +66,8 @@ public class LineScheduleImportPdfTests(ITestOutputHelper output)
         values: new Dictionary<string, object?> { ["CISLO_LINKY"] = "940" },
         rows: new Dictionary<string, IReadOnlyList<DataContext>>
         {
-            ["ZASTAVKY"] = [.. Zastavky.Select((n, i) => RenderSnapshot.Row(("NAZEV_ZASTAVKY", n), ("PORADI", (i + 1).ToString())))],
+            ["ZASTAVKY"] = [.. Zastavky.Select((n, i) => RenderSnapshot.Row(("NAZEV_ZASTAVKY", n),
+                ("PORADI", (i + 1).ToString()), ("TC", (i + 1).ToString())))],
             ["SPOJE"] = [.. Enumerable.Range(1, 8).Select(s => RenderSnapshot.Row(
                 ("CISLO_SPOJE", (s * 2 - 1).ToString()), ("SKUPINA", "1"), ("SMER", "T"),
                 ("CASY", new JsonArray([.. Zastavky.Select((_, i) => (JsonNode)$"{5 + s}:{i * 4:00}")]))))],
@@ -133,6 +140,32 @@ public class LineScheduleImportPdfTests(ITestOutputHelper output)
         Assert.Contains(sections[0].Elements, e => e is TextElement { Text: "Linka {CISLO_LINKY}" });
         Assert.IsType<LineTableElement>(Assert.Single(sections[1].Elements));
         Assert.Contains(sections[2].Elements, e => e is TextElement t && t.Text.Contains("Dopravce"));
+    }
+
+    /// <summary>Barvy tabulky se měří z PDF - musí vyjít ty, kterými ji vytiskl náš tisk.</summary>
+    [Fact]
+    public void BarvyTabulkySeZmeriZPdf()
+    {
+        var page = RenderAndExtract();
+        var table = AiGuidedScheduleBuilder.BuildFromVision(Vision(page), page, 0, 0)
+            .OfType<LineTableElement>().Single();
+        output.WriteLine($"záhlaví {table.HeaderStyle.BackgroundColor}/{table.HeaderStyle.TextColor}, "
+                         + $"písmo {table.DataStyle.TextColor}, liché Tč {table.HighlightOddTc} {table.OddTcBackColor}, čáry {table.Grid.Color}");
+
+        AssertBarva(Zahlavi, table.HeaderStyle.BackgroundColor);
+        AssertBarva("#FFFFFFFF", table.HeaderStyle.TextColor);
+        AssertBarva(Pismo, table.DataStyle.TextColor);
+        Assert.True(table.HighlightOddTc);
+        AssertBarva(LicheTc, table.OddTcBackColor);
+    }
+
+    /// <summary>Barva projde PDF s zaokrouhlením (#162C66 → #162B66) - tolerance dvě jednotky.</summary>
+    private static void AssertBarva(string expected, string? actual)
+    {
+        var e = ColorHex.Parse(expected, SkiaSharp.SKColors.Transparent);
+        var a = ColorHex.Parse(actual, SkiaSharp.SKColors.Transparent);
+        Assert.True(Math.Abs(e.Red - a.Red) <= 2 && Math.Abs(e.Green - a.Green) <= 2 && Math.Abs(e.Blue - a.Blue) <= 2,
+            $"čekal jsem {expected}, vyšlo {actual}");
     }
 
     [Fact]

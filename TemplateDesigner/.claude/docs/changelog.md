@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-02 (4) - 🎨 import linkového JŘ převezme barvy tabulky
+
+Barvy Tabulky spojů se měří z PDF, model se na ně neptá (ani na podbarvení lichých Tč - změřená
+barva je přesnější než jeho odhad): **záhlaví** podle pruhu nadpisů skupin dnů (pozadí i barva
+písma), **podbarvení řádků** podle aspoň tří stejně podbarvených řádků (pruh přes řádek i řada
+podbarvených buněk, tak kreslí náš tisk), **písmo buněk** a **čáry** podle převládající barvy.
+Záhlaví jde do stylu celé tabulky, ne po sloupcích - zapečená hodnota sloupce by přebila ovladač
+prvku, takže řádek čísel spojů dostane barvu pruhu skupin, i když ho předloha má bílý. Ověřeno
+oraclem: náš tisk ze šablony se známými barvami, import je musí změřit zpátky (test); nad 940
+IDZK vyšlo tmavě modré záhlaví s bílým písmem a světle modré řádky, nad demo výlepem šedé záhlaví
+jako ve zdroji. Navíc: jeden řádek rozdělený modelem na víc textů se spojí do jednoho, poloha
+bez společného slova s textem se nebere a grafika bez rozměru se nevloží. Ruční zkouška importu
+naostro bez návrháře je v repu (`TemplateDesigner.Tests/PdfImport/ZkouskaImportuNaostro.cs`,
+zapíná ji proměnná prostředí).
+
 ## 2026-10-02 (3) - 🧪 import linkového JŘ nad výtiskem 940 IDZK
 
 Zkouška nad skutečným výtiskem linky 940 (tmavě modrá hlavička, víkendy odsazené vpravo) ukázala

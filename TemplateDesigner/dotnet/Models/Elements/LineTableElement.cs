@@ -3416,7 +3416,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     // FromImage = import z PDF se na volbu ptá, protože ji papír potvrdí. Řádky platnosti, značek
     // a přípojů ne: na předloze chybí i tehdy, když je jen linka nemá. Nadpisy skupin dnů a nadpis
     // popisných sloupců taky ne - prázdný nadpis vypadá jako vypnutý a model četl záhlaví sloupce
-    // „Zastávka" jako nadpis skupiny (zkouška nad demo výlepem 2. 10.).
+    // „Zastávka" jako nadpis skupiny (zkouška nad demo výlepem 2. 10.). Podbarvení lichých Tč se
+    // měří z PDF (ApplyLineTableColors), změřená barva je přesnější než odhad modelu.
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new BoolPropertyDescriptor { FromImage = true, Label = "Čísla spojů", Group = "Řádky", Get = () => ShowTripNumbers, Set = v => ShowTripNumbers = v },
@@ -3484,8 +3485,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new FloatPropertyDescriptor { Label = "Mezera mezi skupinami sloupců", Group = SirkaGroup,
             Unit = "mm", Min = 0, Max = 20, Format = "0.#",
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
-        new BoolPropertyDescriptor { FromImage = true, Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
-        new ColorPropertyDescriptor { FromImage = true, Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
+        new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
+        new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
         // #8360: přípojný řádek se má dát odlišit od časů spojů. Prázdné = dědí se z buněk.
         new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 4, Max = 200,

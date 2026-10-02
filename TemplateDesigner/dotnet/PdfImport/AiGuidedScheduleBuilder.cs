@@ -407,8 +407,89 @@ public static class AiGuidedScheduleBuilder
             el.HeaderStyle.FontSize = MathF.Round(measure.HeaderFontSizePt, 1);
         }
         el.DataRowHeight = rowH;
+        ApplyLineTableColors(el, ai, page, headerBottom, debug);
         return el;
     }
+
+    /// <summary>
+    /// Barvy tabulky spojů změřené z PDF: záhlaví podle pruhu nadpisů skupin, podbarvení řádků
+    /// podle pruhů pod zastávkami, písmo buněk a čáry podle převládající barvy. Model se na ně
+    /// neptá - jeho odhad barvy je horší než změřená hodnota.
+    /// </summary>
+    /// <remarks>Barva záhlaví jde do stylu celé tabulky, ne po sloupcích: zapečená hodnota sloupce
+    /// by přebila ovladač prvku (táž chyba jako záhlaví odjezdů 14. 6.). Řádek čísel spojů proto
+    /// dostane barvu pruhu skupin, i když ho předloha může mít bílý.</remarks>
+    internal static void ApplyLineTableColors(LineTableElement el, AiVisionElement ai, ExtractedPage page,
+        float headerBottomMm, List<string> debug)
+    {
+        float l = ai.Left * page.WidthMm, t = ai.Top * page.HeightMm;
+        float r = ai.Right * page.WidthMm, b = ai.Bottom * page.HeightMm;
+
+        bool Vodorovne(ExtractedRectangle x) => x.X >= l - 2f && x.X + x.Width <= r + 2f;
+        static bool Barevna(string? hex) => ColorHex.ParseOrNull(hex) is { Alpha: > 0 } c
+                                            && !(c.Red > 0xF0 && c.Green > 0xF0 && c.Blue > 0xF0);
+        bool Uvnitr(ExtractedWord w, ExtractedRectangle x) =>
+            w.X + w.Width / 2 > x.X && w.X + w.Width / 2 < x.X + x.Width
+            && w.Y + w.Height / 2 > x.Y && w.Y + w.Height / 2 < x.Y + x.Height;
+
+        // Pruh nadpisů skupin („Pracovní dny") - v pásu nad tabulkou nebo v jejím záhlaví.
+        var pruhy = page.Rectangles
+            .Where(x => Vodorovne(x) && x.Width >= 10f && Barevna(x.FillColorHex)
+                        && x.Y + x.Height / 2 >= t - ZahlaviPasMm && x.Y + x.Height / 2 <= headerBottomMm)
+            .ToList();
+        if (pruhy.Count > 0)
+        {
+            string barva = pruhy.GroupBy(x => x.FillColorHex!)
+                .OrderByDescending(g => g.Sum(x => x.Width * x.Height)).First().Key;
+            el.HeaderStyle.BackgroundColor = barva;
+            var slova = page.Words.Where(w => pruhy.Any(x => x.FillColorHex == barva && Uvnitr(w, x))).ToList();
+            if (slova.Count > 0)
+                el.HeaderStyle.TextColor = PrevazujiciBarva(slova);
+            debug.Add($"LineTable záhlaví: pozadí {barva}, písmo {el.HeaderStyle.TextColor ?? "(beze změny)"}");
+        }
+
+        // Podbarvení řádků - aspoň tři řádky stejné světlé barvy přes většinu šířky pod záhlavím.
+        // Řádek může být jeden pruh i řada podbarvených buněk (tak ho kreslí náš tisk), proto se
+        // šířky sčítají po řádcích.
+        var radky = page.Rectangles
+            .Where(x => Vodorovne(x) && x.Height <= 8f
+                        && x.Y >= headerBottomMm - 1f && x.Y + x.Height <= b + 2f
+                        && Barevna(x.FillColorHex) && !JeTmava(x.FillColorHex))
+            .GroupBy(x => (Barva: x.FillColorHex!, Radek: MathF.Round(x.Y * 2f)))
+            .Where(g => g.Sum(x => x.Width) >= (r - l) * 0.3f)
+            .GroupBy(g => g.Key.Barva)
+            .OrderByDescending(g => g.Count())
+            .FirstOrDefault();
+        if (radky is not null && radky.Count() >= 3)
+        {
+            el.HighlightOddTc = true;
+            el.OddTcBackColor = radky.Key;
+            debug.Add($"LineTable podbarvení řádků: {radky.Key} ({radky.Count()} řádků)");
+        }
+
+        var slovaDat = page.Words.Where(w => w.X >= l - 2f && w.X <= r && w.Y >= headerBottomMm && w.Y <= b).ToList();
+        if (slovaDat.Count > 0 && PrevazujiciBarva(slovaDat) is var pismo && pismo != "#FF000000")
+        {
+            el.DataStyle.TextColor = pismo;
+            debug.Add($"LineTable písmo buněk: {pismo}");
+        }
+
+        var cary = page.Lines
+            .Where(c => Math.Min(c.X1, c.X2) >= l - 2f && Math.Max(c.X1, c.X2) <= r + 2f
+                        && Math.Min(c.Y1, c.Y2) >= t - 2f && Math.Max(c.Y1, c.Y2) <= b + 2f)
+            .GroupBy(c => c.ColorHex)
+            .OrderByDescending(g => g.Count())
+            .FirstOrDefault();
+        if (cary is not null && cary.Count() >= 5 && ColorHex.IsValid(cary.Key))
+        {
+            el.Grid.Color = cary.Key;
+            debug.Add($"LineTable čáry: {cary.Key} ({cary.Count()}×)");
+        }
+    }
+
+    /// <summary>Barva, kterou je napsaná většina znaků.</summary>
+    private static string PrevazujiciBarva(IEnumerable<ExtractedWord> words) =>
+        words.GroupBy(w => w.ColorHex).OrderByDescending(g => g.Sum(w => w.Text.Length)).First().Key;
 
     /// <summary>
     /// Popisné sloupce v pořadí, v jakém je model na předloze viděl; ostatní za nimi ve výchozím
@@ -444,6 +525,7 @@ public static class AiGuidedScheduleBuilder
         float pageH = page.HeightMm;
         var result = new List<TextElement>();
         var allTextBlocks = PdfTextGrouper.GroupWords(page.Words);
+        var textByBlock = new Dictionary<ExtractedTextBlock, TextElement>();
 
         // Přeskočit texty které leží uvnitř schedule elementu (řeší je schedule element sám)
         var scheduleBoxes = vision.Elements.Select(e => (
@@ -488,6 +570,16 @@ public static class AiGuidedScheduleBuilder
             // Model vrací texty po řádcích, PDF je ale může mít sloučené do jednoho bloku
             // („Platí od …" a „do …" pod sebou) - pak patří textu jen jeho řádek bloku.
             int? lineOfBlock = matchedBlock is null ? null : LineOfBlock(matchedBlock, mapping.Text);
+
+            // Model rozdělil jeden řádek PDF na víc textů („Linka 771940 | IDZK | …" u 940): na
+            // stejném bloku by ležely přes sebe, takže se připojí k už vloženému textu.
+            if (matchedBlock is not null && lineOfBlock is null
+                && textByBlock.TryGetValue(matchedBlock, out var sameBlock))
+            {
+                sameBlock.Text += " " + displayText;
+                debug.Add($"  Připojeno k textu na stejném bloku: \"{mapping.Text}\"");
+                continue;
+            }
 
             var pieces = matchedBlock is not null && lineOfBlock is null
                 ? SameLinePieces(allTextBlocks, matchedBlock, mapping.Text)
@@ -560,7 +652,7 @@ public static class AiGuidedScheduleBuilder
                 }
             }
 
-            result.Add(new TextElement
+            var textElement = new TextElement
             {
                 Id = Guid.NewGuid(),
                 X = Math.Max(0, elX),
@@ -583,7 +675,11 @@ public static class AiGuidedScheduleBuilder
                 BorderColor = borderColor,
                 BorderWidth = borderWidth,
                 BackgroundColor = bgColor,
-            });
+            };
+            result.Add(textElement);
+            if (matchedBlock is not null && lineOfBlock is null)
+                foreach (var blok in pieces.Count > 0 ? pieces : [matchedBlock])
+                    textByBlock[blok] = textElement;
         }
 
         return result;
@@ -884,6 +980,14 @@ public static class AiGuidedScheduleBuilder
             float imgH = imgMap.H > 0 ? imgMap.H * pageH : 15f;
 
             debug.Add($"  AI image: role={imgMap.Role}, pos=({imgX:0.#},{imgY:0.#}), size={imgW:0.#}×{imgH:0.#}");
+
+            // Hlášení bez rozměru je šum (u 940 přišlo „0, 0" bez šířky a výšky) - rámeček z něj
+            // by ležel v rohu stránky naslepo.
+            if (imgMap.W <= 0 || imgMap.H <= 0)
+            {
+                debug.Add("    → bez rozměru - skip");
+                continue;
+            }
 
             // Uvnitř tabulky nebo poznámek logo ani QR není - model tam „grafiku" ohlásil u 940 IDZK
             // a v šabloně z ní byl prázdný rámeček přes poznámky.
@@ -1640,11 +1744,15 @@ public static class AiGuidedScheduleBuilder
             if (bestWordMatch is not null) return bestWordMatch;
         }
 
-        // 4. Pozice - nejbližší blok k AI souřadnicím v mm (tolerance 25mm)
+        // 4. Pozice - nejbližší blok k AI souřadnicím v mm (tolerance 25mm). Blok bez jediného
+        //    společného slova je cizí text (u 940 malý popisek o řádek níž) - pak radši pozice
+        //    od modelu.
         if (mappingXMm > 0 || mappingYMm > 0)
         {
             var closest = textBlocks
                 .Where(b => Math.Abs(b.X - mappingXMm) < 25f && Math.Abs(b.Y - mappingYMm) < 25f)
+                .Where(b => NormalizeText(b.Text).Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Any(bw => bw.Length >= 3 && aiWords.Any(aw => aw.Equals(bw, StringComparison.OrdinalIgnoreCase))))
                 .OrderBy(b => Math.Abs(b.X - mappingXMm) + Math.Abs(b.Y - mappingYMm))
                 .FirstOrDefault();
             return closest;

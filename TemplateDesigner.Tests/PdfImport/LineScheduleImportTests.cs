@@ -33,7 +33,6 @@ public class LineScheduleImportTests
     [InlineData("Čísla spojů")]
     [InlineData("Formát času")]
     [InlineData("Popisné sloupce bez vnitřních čar")]
-    [InlineData("Podbarvit lichá Tč")]
     public void NaViditelneVolbyTabulkySeModelPta(string popisek)
     {
         Assert.Contains(popisek, ElementSettingsFromImage.BuildCatalog(new LineTableElement()));
@@ -51,6 +50,8 @@ public class LineScheduleImportTests
     [InlineData("Čáry u zastávek dle trasy")]
     [InlineData("Nadpisy skupin dnů")]
     [InlineData("Nadpis popisných sloupců")]
+    [InlineData("Podbarvit lichá Tč")]   // měří se z PDF
+    [InlineData("Barva lichých Tč")]
     public void NaVolbyNepotvrditelneZPapiruSeNeptame(string klic)
     {
         Assert.DoesNotContain(klic, ElementSettingsFromImage.BuildCatalog(new LineTableElement()));

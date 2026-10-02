@@ -432,7 +432,8 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
             "7. Vysvětlivky pod tabulkou (značka - význam), texty o omezení spojů a tarifní informace pod "
                 + "tabulkou jsou poznámky linky: patří do oblasti NotesLegend, v textMappings je NEVRACEJ.",
             "8. Text, který je na obrázku na více řádcích pod sebou, vrať PO ŘÁDCÍCH - každý řádek jako "
-                + "samostatnou položku textMappings.",
+                + "samostatnou položku textMappings. Naopak jeden řádek vrať jako JEDNU položku, i když obsahuje "
+                + "víc údajů oddělených \"|\" nebo čárkami.",
             "9. placeholderText je CELÝ text řádku s datovými poli nahrazenými {POLE}; pevný text kolem pole "
                 + "ponech (\"Přepravu zajišťuje: {POPIS_DOPRAVCE}\", \"Platí od {DATUM_PLATNOSTI_OD}\"). "
                 + "Do dbField dej hlavní pole řádku."
