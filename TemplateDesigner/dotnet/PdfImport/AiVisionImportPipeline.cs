@@ -224,7 +224,13 @@ public class AiVisionImportPipeline
         }
 
         if (scheduleType == ScheduleImportType.LinkovyJr)
+        {
+            bool notesFound = section.Elements.OfType<NotesLegendElement>().Any();
             sections = SplitLineScheduleSections(section.Elements);
+            if (!notesFound && section.Elements.OfType<LineTableElement>().Any())
+                ImportLog.Add("Poznámky na zvolené stránce nejsou - vložené s výchozím nastavením pod "
+                              + "tabulku. Tisk je přesune na další stránku, když se nevejdou.");
+        }
 
         var templateParams = BuildTemplateParameters(visionResult);
         var printParams = BuildPrintParameters(visionResult);
@@ -255,14 +261,24 @@ public class AiVisionImportPipeline
     /// patřit nad ni - texty těsně nad tabulkou mají rámeček, který se s ní dotýká.</summary>
     private const float LineSectionToleranceMm = 1f;
 
+    /// <summary>Mezera mezi tabulkou a poznámkami vedle ní (mm) - jako v systémové šabloně.</summary>
+    private const float NotesBesideGapMm = 5f;
+
     /// <summary>
-    /// Rozvrhne prvky linkového JŘ do sekcí tak, jak vypadají hotové šablony linkového JŘ (vzor
-    /// 940 IDZK): hlavička na každé stránce, pod ní tabulka spojů, která pokračuje přes stránky,
-    /// a pod tabulkou poznámky. Jedna pevná stránka jako u vývěsky by u delší linky tabulku
-    /// zmenšila nebo ořízla - linkový JŘ má proměnný počet zastávek i spojů.
+    /// Rozvrhne prvky linkového JŘ do pevné kostry systémových šablon linkového JŘ. Import z předlohy
+    /// nečte stránkování: kdy poznámky přejdou na další stránku, rozhodne tisk podle dat linky.
+    /// Z předlohy se bere jen to, jestli jsou poznámky pod tabulkou, nebo vedle ní.
+    /// <list type="bullet">
+    /// <item>Pod tabulkou (<c>linkovy-jr-ad-postskript-a5.json</c>): hlavička na každé stránce,
+    /// tabulka přes stránky, poznámky jednou za ní jako jeden celek.</item>
+    /// <item>Vedle tabulky (<c>linkovy-jr-ad-poznamky-vedle-a4.json</c>): hlavička na každé stránce,
+    /// tabulka a poznámky v jedné sekci vedle sebe.</item>
+    /// </list>
     /// </summary>
-    /// <remarks>Tabulka a poznámky dostanou prázdnou výšku (počítá ji engine z dat); souřadnice
-    /// ostatních prvků se přepočítají vůči sekci, do které padnou. Bez tabulky zůstane jedna sekce.</remarks>
+    /// <remarks>Poznámky v šabloně jsou vždy - na zvolené stránce chybívají (bývají až na další)
+    /// a bez prvku by se nevytiskly vysvětlivky ke značkám. Tabulka a poznámky dostanou prázdnou
+    /// výšku (počítá ji tisk z dat); ostatní prvky se přepočítají vůči sekci, do které padnou.
+    /// Bez tabulky zůstane jedna sekce. Shodu se systémovými šablonami hlídá test.</remarks>
     internal static List<Section> SplitLineScheduleSections(List<TemplateElement> elements)
     {
         var table = elements.OfType<LineTableElement>().FirstOrDefault();
@@ -273,27 +289,53 @@ public class AiVisionImportPipeline
         float tableTop = table.Y;
         float tableBottom = table.Y + (table.Height ?? 0f);
 
-        var header = elements.Where(e => e != table && e.Y < tableTop - LineSectionToleranceMm).ToList();
-        var below = elements.Where(e => e != table && !header.Contains(e)
-                                        && (e is NotesLegendElement || e.Y >= tableBottom - LineSectionToleranceMm)).ToList();
-        var body = elements.Where(e => !header.Contains(e) && !below.Contains(e)).ToList();
+        var notes = elements.OfType<NotesLegendElement>().FirstOrDefault()
+                    ?? DefaultNotes(table, tableBottom, elements);
+        bool beside = notes.X >= table.X + table.Width / 2 && notes.Y < tableBottom - LineSectionToleranceMm;
+        if (beside && table.X + table.Width > notes.X - NotesBesideGapMm)
+            table.Width = Math.Max(notes.X - NotesBesideGapMm - table.X, 10f);
+
+        var others = elements.Where(e => e != table && e != notes).ToList();
+        var header = others.Where(e => e.Y < tableTop - LineSectionToleranceMm).ToList();
+        var below = others.Where(e => !header.Contains(e) && e.Y >= tableBottom - LineSectionToleranceMm).ToList();
+        var band = others.Where(e => !header.Contains(e) && !below.Contains(e)).ToList();
 
         var sections = new List<Section>();
         if (header.Count > 0)
             sections.Add(NewSection("Hlavička", SectionRole.Header, SectionPrintBehavior.OnEveryPage,
                 SectionOverflowBehavior.KeepTogether, header));
-        sections.Add(NewSection("Jízdní řád", SectionRole.Body, SectionPrintBehavior.Once,
-            SectionOverflowBehavior.SplitAcrossPages, body));
-        if (below.Count > 0)
+        if (beside)
+        {
+            sections.Add(NewSection("Jízdní řád a poznámky", SectionRole.Body, SectionPrintBehavior.Once,
+                SectionOverflowBehavior.SplitAcrossPages, [table, notes, .. band]));
+            if (below.Count > 0)
+                sections.Add(NewSection("Pod tabulkou", SectionRole.Body, SectionPrintBehavior.Once,
+                    SectionOverflowBehavior.KeepTogether, below));
+        }
+        else
+        {
+            sections.Add(NewSection("Jízdní řád", SectionRole.Body, SectionPrintBehavior.Once,
+                SectionOverflowBehavior.SplitAcrossPages, [table, .. band]));
             sections.Add(NewSection("Poznámky", SectionRole.Body, SectionPrintBehavior.Once,
-                SectionOverflowBehavior.SplitAcrossPages, below));
+                SectionOverflowBehavior.KeepTogether, [notes, .. below]));
+        }
 
-        foreach (var el in elements)
-            if (el is LineTableElement or NotesLegendElement)
-                el.Height = null;
-
+        table.Height = null;
+        notes.Height = null;
         return sections;
     }
+
+    /// <summary>Poznámky s výchozím nastavením pod tabulkou, když je předloha na zvolené stránce nemá.</summary>
+    private static NotesLegendElement DefaultNotes(LineTableElement table, float tableBottom,
+        List<TemplateElement> elements) => new()
+    {
+        Id = Guid.NewGuid(),
+        X = table.X,
+        Y = tableBottom + 2f,
+        Width = table.Width,
+        Height = 10f,
+        ZIndex = elements.Count > 0 ? elements.Max(e => e.ZIndex) + 1 : 0,
+    };
 
     /// <summary>Sekce, jejíž první prvek leží u horní hrany: souřadnice se posunou o nejvyšší
     /// prvek a výška sekce sedí na spodek nejnižšího (prázdná výška se bere z návrhové).</summary>

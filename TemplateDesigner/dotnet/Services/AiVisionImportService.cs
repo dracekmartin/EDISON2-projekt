@@ -405,7 +405,9 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
    sloupce o zastávce (km, tarifní číslo, zóna, název zastávky, přestupy na MHD), vpravo sloupce spojů
    s časy. Nad časy je pás záhlaví: nadpisy skupin dnů (Pracovní dny, Soboty…), čísla spojů, znaky
    platnosti a značky omezení spojů.
-2. **NotesLegend** - vysvětlivky pod tabulkou: značky a jejich význam, texty o omezení spojů, dopravce.
+2. **NotesLegend** - vysvětlivky ke značkám a texty o omezení spojů. Bývají POD tabulkou NEBO VPRAVO
+   vedle ní - podívej se, kde skutečně jsou. Často jsou až na další stránce; když na obrázku nejsou,
+   NotesLegend nevracej.
 3. **Texty** mimo tabulku - číslo linky, trasa linky, dopravce, platnost od - do, poznámka nad linkou.
 4. **Obrázky** mimo tabulku - logo dopravce, QR kód, grafické prvky",
         AdditionalRules:
@@ -417,7 +419,7 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
             "3. POVINNÉ: tabulka spojů (LineTable) NESMÍ v odpovědi chybět, pokud je vidět.",
             "4. Oblast LineTable MUSÍ zahrnovat celé záhlaví (nadpisy skupin dnů, čísla spojů, řádky značek) "
                 + "i poslední zastávku. NIKDY nevracej oblast, která začíná až u časů: co zůstane venku, skončí "
-                + "jako desítky samostatných textů.",
+                + "jako desítky samostatných textů. Jsou-li poznámky vedle tabulky, oblast LineTable končí před nimi.",
             "5. Jsou-li na stránce dvě tabulky pod sebou (směr tam a směr zpět), vrať OBĚ jako LineTable. "
                 + "Jsou-li spoje obou směrů v JEDNÉ tabulce po obou stranách názvů zastávek, je to jedna LineTable."
         ],

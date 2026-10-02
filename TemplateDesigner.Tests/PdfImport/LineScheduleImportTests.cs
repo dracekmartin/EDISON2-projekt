@@ -1,3 +1,4 @@
+using System.IO;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.PdfImport;
@@ -122,19 +123,77 @@ public class LineScheduleImportTests
 
         var sections = AiVisionImportPipeline.SplitLineScheduleSections([nadpis, tabulka, poznamky, paticka]);
 
-        Assert.Equal(3, sections.Count);
-
-        Assert.Equal(SectionRole.Header, sections[0].Role);
-        Assert.Equal(SectionPrintBehavior.OnEveryPage, sections[0].PrintBehavior);
+        Assert.Equal(["Hlavička", "Jízdní řád", "Poznámky"], sections.Select(s => s.Name));
         Assert.Equal([nadpis], sections[0].Elements);
-
-        Assert.Equal(SectionOverflowBehavior.SplitAcrossPages, sections[1].OverflowBehavior);
         Assert.Equal([tabulka], sections[1].Elements);
         Assert.Equal(0f, tabulka.Y);
-
-        Assert.Equal(SectionOverflowBehavior.SplitAcrossPages, sections[2].OverflowBehavior);
         Assert.Equal(0f, poznamky.Y);
         Assert.Equal(25f, paticka.Y);
+    }
+
+    [Fact]
+    public void PoznamkyVpravoZustanouVedleTabulky()
+    {
+        var tabulka = new LineTableElement { X = 0, Y = 20, Width = 220, Height = 100 };
+        var poznamky = new NotesLegendElement { X = 200, Y = 20, Width = 80, Height = 60 };
+
+        var sections = AiVisionImportPipeline.SplitLineScheduleSections([Text(0), tabulka, poznamky]);
+
+        Assert.Equal(["Hlavička", "Jízdní řád a poznámky"], sections.Select(s => s.Name));
+        Assert.Equal([tabulka, poznamky], sections[1].Elements);
+        Assert.True(tabulka.X + tabulka.Width <= poznamky.X, "tabulka nesmí zasahovat pod poznámky");
+    }
+
+    /// <summary>Poznámky bývají až na druhé stránce předlohy. Bez prvku by se nevytiskly
+    /// vysvětlivky ke značkám - kostra je má vždy, kdy přejdou na další stránku, řeší tisk.</summary>
+    [Fact]
+    public void PoznamkyKtereNaStranceNejsouSeDoplniPodTabulku()
+    {
+        var tabulka = new LineTableElement { X = 5, Y = 20, Width = 200, Height = 100 };
+
+        var sections = AiVisionImportPipeline.SplitLineScheduleSections([Text(0), tabulka]);
+
+        Assert.Equal(["Hlavička", "Jízdní řád", "Poznámky"], sections.Select(s => s.Name));
+        var poznamky = Assert.IsType<NotesLegendElement>(Assert.Single(sections[2].Elements));
+        Assert.Equal(tabulka.X, poznamky.X);
+        Assert.Equal(tabulka.Width, poznamky.Width);
+    }
+
+    /// <summary>Soubor systémové šablony × kde na předloze leží poznámky (pod tabulkou / vedle ní).</summary>
+    public static TheoryData<string, float, float> SystemoveKostry => new()
+    {
+        { "linkovy-jr-ad-postskript-a5.json", 0f, 125f },
+        { "linkovy-jr-ad-poznamky-vedle-a4.json", 205f, 20f },
+    };
+
+    /// <summary>Kostra importu je táž jako u systémových šablon linkového JŘ - ty mají zákazníci
+    /// od vydání agendy a tisk je na nich vyladěný. Rozejde-li se jedno s druhým, padne tohle.</summary>
+    [Theory]
+    [MemberData(nameof(SystemoveKostry))]
+    public void KostraOdpovidaSystemoveSablone(string soubor, float poznamkyX, float poznamkyY)
+    {
+        var vzor = TemplateDesigner.Serialization.TemplateSerializer.Deserialize(
+            File.ReadAllText(Path.Combine(RepoRoot(), "TemplateDesigner", "dotnet", "SystemTemplates", soubor)))!;
+
+        var tabulka = new LineTableElement { X = 0, Y = 20, Width = 200, Height = 100 };
+        var poznamky = new NotesLegendElement { X = poznamkyX, Y = poznamkyY, Width = 60, Height = 30 };
+        var sections = AiVisionImportPipeline.SplitLineScheduleSections([Text(0), tabulka, poznamky]);
+
+        static object Tvar(Section s) => new
+        {
+            s.Name, s.Role, s.PrintBehavior, s.OverflowBehavior,
+            Prvky = string.Join(",", s.Elements.Where(e => e is LineTableElement or NotesLegendElement)
+                                               .Select(e => e.GetType().Name)),
+        };
+        Assert.Equal(vzor.Sections.Select(Tvar), sections.Select(Tvar));
+    }
+
+    private static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
+            dir = dir.Parent;
+        return dir?.FullName ?? throw new InvalidOperationException("Kořen repa (EDISON2.sln) nenalezen.");
     }
 
     /// <summary>Tabulka i poznámky mají výšku podle dat linky - pevná výška z předlohy by u delší
@@ -159,8 +218,7 @@ public class LineScheduleImportTests
 
         var sections = AiVisionImportPipeline.SplitLineScheduleSections([tabulka]);
 
-        Assert.Single(sections);
-        Assert.Equal(SectionRole.Body, sections[0].Role);
+        Assert.Equal(["Jízdní řád", "Poznámky"], sections.Select(s => s.Name));
     }
 
     [Fact]

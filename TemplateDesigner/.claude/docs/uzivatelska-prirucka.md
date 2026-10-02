@@ -591,9 +591,11 @@ z právě otevřené agendy:
   - **Zastávkový JŘ** - seznam zastávek, minuty odjezdů, poznámky, texty a loga; šablona je jedna
     pevná stránka jako vývěska.
   - **Linkový JŘ** - Tabulka spojů (pořadí popisných sloupců a písmo podle předlohy), poznámky
-    a texty kolem. Šablona má **hlavičku na každé stránce**, pod ní tabulku, která pokračuje přes
-    stránky, a poznámky. Má-li předloha pod sebou oba směry, převezme se horní tabulka; druhý směr
-    sestava vytiskne na další stránce.
+    a texty kolem. Šablona má rozvržení jako výchozí šablony linkového JŘ: **hlavičku na každé
+    stránce**, pod ní tabulku, která pokračuje přes stránky, a poznámky pod ní nebo vedle ní -
+    podle předlohy. Poznámky jsou v šabloně vždy, i když na importované stránce nejsou; na další
+    stránku je tisk přesune sám, když se nevejdou. Má-li předloha pod sebou oba směry, převezme
+    se horní tabulka; druhý směr sestava vytiskne na další stránce.
 - **Jiná agenda (Obecná, Faktury…)** → obecný import: texty, čáry a obrázky se převezmou 1:1
   jako prvky šablony (bez AI).
 

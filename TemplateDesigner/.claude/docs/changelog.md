@@ -5,8 +5,13 @@
 Do dneška se v agendě linkového JŘ AI vůbec nevolala: dialog poznal jízdní řád jen podle kódu
 `ZASTAVKOVY_JR`, takže z PDF linky vznikly volné texty a čáry bez datových polí. Teď má linkový
 JŘ vlastní popis pro model (Tabulka spojů, poznámky, texty kolem) a import z něj skládá šablonu
-**podle vzorových šablon linkového JŘ**: hlavička na každé stránce, pod ní tabulka spojů
-s výškou z dat a pokračováním přes stránky, pod ní poznámky. Tabulka převezme pořadí popisných
+do **pevné kostry systémových šablon linkového JŘ** (rozhodnutí Jan 2. 10.): hlavička na každé
+stránce, tabulka spojů s výškou z dat přes stránky a poznámky buď pod ní jako jeden celek
+(`linkovy-jr-ad-postskript-a5.json`), nebo vedle ní v téže sekci (`…-poznamky-vedle-a4.json`).
+Stránkování předlohy se nečte - kdy poznámky přejdou na další stránku, rozhodne tisk podle dat;
+z předlohy se bere jen pod/vedle, rozložení hlavičky, písmo a volby. Poznámky jsou v šabloně
+vždy, i když na zvolené stránce nejsou (bývají až na druhé). Shodu kostry se systémovými
+šablonami hlídá test. Tabulka převezme pořadí popisných
 sloupců a změřené písmo; sloupec, který model na předloze neviděl, se neskrývá (prázdný sloupec
 se netiskne sám, chybí tedy i u linky, která hodnoty jen nemá). Model se navíc ptá na volby
 tabulky, které papír potvrdí (čísla spojů, formát času, tečky, popisné sloupce bez čar,
