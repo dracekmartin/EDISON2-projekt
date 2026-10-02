@@ -271,6 +271,8 @@ public class PdfImportDialogViewModel : EDViewModel
             }
 
             SaveProtocolFile(pdfPath, enableDebug);
+            if (useVision)
+                SaveLastImportDiagnostics(pdfPath, aiDebugLog, template);
             CloseDialog(true);
         }
         catch (Exception ex)
@@ -315,6 +317,36 @@ public class PdfImportDialogViewModel : EDViewModel
             File.WriteAllLines(path, text);
         }
         catch (Exception) { /* protokol je pomůcka, ne brána */ }
+    }
+
+    private string? _lastPageImage;
+
+    /// <summary>Složka s výpisem posledního AI importu (přepisuje se).</summary>
+    internal static string LastImportDir => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "m-line", "TemplateDesigner", "posledni-import");
+
+    /// <summary>
+    /// Výpis posledního AI importu - vždy, do složky aplikace, ne vedle PDF: uživatele neobtěžuje
+    /// a vývojář se podívá, co model vrátil. Bez něj nešlo zpětně zjistit, proč import dopadl
+    /// hůř: odpovědi modelu se mezi běhy liší a volba Debug je jen s lokálním klíčem (nález 2. 10.).
+    /// Nezdaří-li se zápis, import to nesmí shodit.
+    /// </summary>
+    private void SaveLastImportDiagnostics(string pdfPath, string? aiDebugLog, Template template)
+    {
+        try
+        {
+            Directory.CreateDirectory(LastImportDir);
+            File.WriteAllText(Path.Combine(LastImportDir, "ai-debug.txt"),
+                $"PDF: {pdfPath}{Environment.NewLine}Čas: {DateTime.Now:d. M. yyyy H:mm:ss}{Environment.NewLine}{Environment.NewLine}"
+                + aiDebugLog);
+            File.WriteAllLines(Path.Combine(LastImportDir, "protokol.txt"), [.. ImportLog, "", .. DetailedLog]);
+            File.WriteAllText(Path.Combine(LastImportDir, "sablona.json"),
+                Serialization.TemplateSerializer.Serialize(template));
+            if (_lastPageImage is { Length: > 0 } png)
+                File.WriteAllBytes(Path.Combine(LastImportDir, "stranka.png"), Convert.FromBase64String(png));
+        }
+        catch (Exception) { /* výpis je pomůcka, ne brána */ }
     }
 
     /// <summary>Normalizuje stránku importované šablony, ať sekce po importu rozumně vyplní stránku
@@ -400,6 +432,7 @@ public class PdfImportDialogViewModel : EDViewModel
             pdfPath, pages, scheduleType, enableDebug, setStatus);
 
         setAiLog(pipeline.AiDebugLog);
+        _lastPageImage = pipeline.PageImageBase64;
         ImportLog.AddRange(pipeline.ImportLog);
         DetailedLog.AddRange(pipeline.DetailedLog);
         return template;

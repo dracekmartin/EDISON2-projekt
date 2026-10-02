@@ -19,6 +19,9 @@ public class AiVisionImportPipeline
 
     public string? AiDebugLog { get; private set; }
 
+    /// <summary>Obrázek stránky, který dostal model (PNG v base64) - pro výpis posledního importu.</summary>
+    public string? PageImageBase64 { get; private set; }
+
     /// <summary>Co import z předlohy nastavil a co nerozpoznal - pro uživatele, ne pro vývojáře.</summary>
     public List<string> ImportLog { get; } = [];
 
@@ -73,6 +76,7 @@ public class AiVisionImportPipeline
         // 2. Rasterizovat stránku na PNG
         setStatus("Rasterizuji PDF stránku...");
         string base64Png = await Task.Run(() => PdfPageRasterizer.RasterizeToBase64Png(firstPage));
+        PageImageBase64 = base64Png;
 
         // 3. AI Vision analýza
         setStatus("AI analyzuje strukturu...");
@@ -387,13 +391,17 @@ public class AiVisionImportPipeline
         bool NeseText(float l, float t, float r, float b) => page.Words.Any(w =>
             w.X + w.Width > l && w.X < r && w.Y + w.Height > t && w.Y < b);
 
-        // Tvar zřetelně uvnitř poznámek (piktogram, rámeček značky) je jejich obsah, ne obrázek.
-        // Jen „zřetelně": oblast poznámek od modelu do pásu log u spodku zasahovala.
+        // Tvar uvnitř poznámek (piktogram, rámeček značky) je jejich obsah, ne obrázek. Spodek
+        // poznámek je poslední řádek jejich textu, ne oblast od modelu - ta sahala až přes pás log
+        // u spodku stránky a obrázek pro něj pak nevznikl (třetí běh nad 940, 2. 10.).
         var poznamky = vision.Elements.Where(e => e.Type.Equals("NotesLegend", StringComparison.OrdinalIgnoreCase))
             .Select(e => (L: e.Left * page.WidthMm, T: e.Top * page.HeightMm,
                           R: e.Right * page.WidthMm, B: e.Bottom * page.HeightMm))
+            .Select(p => (p.L, p.T, p.R, B: page.Words
+                .Where(w => w.X + w.Width / 2 > p.L && w.X + w.Width / 2 < p.R && w.Y >= p.T && w.Y < p.B)
+                .Select(w => w.Y + w.Height).DefaultIfEmpty(p.T).Max()))
             .ToList();
-        bool VPoznamkach(float cx, float cy) => poznamky.Any(p => cx > p.L && cx < p.R && cy > p.T && cy < p.B - 3f);
+        bool VPoznamkach(float cx, float cy) => poznamky.Any(p => cx > p.L && cx < p.R && cy > p.T && cy < p.B);
 
         var tvary = page.Rectangles.Select(x => (L: x.X, T: x.Y, R: x.X + x.Width, B: x.Y + x.Height))
             .Concat(page.Lines.Select(c => (L: Math.Min(c.X1, c.X2), T: Math.Min(c.Y1, c.Y2),

@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-02 (6) - 🔍 výpis posledního AI importu se ukládá vždy
+
+Dialog po každém AI importu uloží do `%LOCALAPPDATA%\m-line\TemplateDesigner\posledni-import\`
+výpis s odpovědí modelu, protokol, obrázek stránky, který model dostal, a výslednou šablonu
+(přepisuje se). Vedle PDF se dál nic neukládá. Bez toho nešlo zpětně zjistit, proč import u Jana
+dopadl hůř: odpovědi se mezi běhy liší a volba Debug je jen s lokálním klíčem. Tři běhy nad 940
+vyšly strukturou stejně; ve třetím chyběl obrázek na pás log, protože oblast poznámek od modelu
+sahala přes něj - spodek poznámek je nově poslední řádek jejich textu.
+
 ## 2026-10-02 (5) - 🧩 import linkového JŘ: mezery skupin, poznámky, grafika, patička
 
 Podle prohlídky importu 940 IDZK (Jan): **mezera mezi skupinami sloupců** se měří z mezer mezi

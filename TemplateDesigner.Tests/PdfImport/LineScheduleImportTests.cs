@@ -412,6 +412,32 @@ public class LineScheduleImportTests
         Assert.Equal((20f, 195f, 230f, 5f), (obrazek.X, obrazek.Y, obrazek.Width, obrazek.Height ?? 0));
     }
 
+    /// <summary>Oblast poznámek od modelu sahala přes pás log - obsah poznámek končí posledním
+    /// řádkem jejich textu, grafika pod ním je obrázek.</summary>
+    [Fact]
+    public void PasLogPodTextemPoznamekJeObrazekIKdyzHoOblastPoznamekPrekryva()
+    {
+        var page = new ExtractedPage
+        {
+            WidthMm = 297, HeightMm = 210,
+            Words = [new("D - spoj zastavuje na znamení", 12, 160, 60, 3, "Arial", 7, false, false, "#FF162C66")],
+            Rectangles = [.. Enumerable.Range(0, 6).Select(i => new ExtractedRectangle(20 + i * 40, 195, 30, 5, "#FF162C66", null, 0))],
+        };
+        var vision = new AiVisionResult
+        {
+            Elements =
+            [
+                new AiVisionElement { Type = "LineTable", Left = 0.03f, Top = 0.15f, Right = 0.97f, Bottom = 0.7f },
+                new AiVisionElement { Type = "NotesLegend", Left = 0.03f, Top = 0.75f, Right = 0.97f, Bottom = 0.98f },
+            ],
+        };
+        List<TemplateElement> elements = [];
+
+        AiVisionImportPipeline.AddGraphicPlaceholders(elements, vision, page);
+
+        Assert.IsType<ImageElement>(Assert.Single(elements));
+    }
+
     // ── Co musí v odpovědi modelu být ───────────────────────────────────
 
     private static AiVisionResult Vision(params string[] types) =>
