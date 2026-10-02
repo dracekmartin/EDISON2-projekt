@@ -809,7 +809,17 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A45 · `local.json` sdílí víc instancí shellu, každý zápis přepíše celý soubor
 
-- [ ] **Stav:** otevřeno
+- [x] **Stav:** vyřešeno (2026-10-01) - oprava jen uvnitř `LocalPrefs`, bez `ILocalPrefs.Update` a beze změny
+  volajících: `Load` si drží snímek, `Save` pod pojmenovaným mutexem (`Local\` + hash cesty, bere ho i `Load`)
+  soubor znovu načte a tříbodově sloučí - property změněná proti snímku vyhrává naše, jinak disk; slovníky
+  (podle JSON kontraktu) po klíčích včetně smazaných, seznamy a objekty celé (`Connections` tedy dál vyhrává
+  celý seznam); klíče novější verze se zachovají; zápis přes dočasný soubor + `File.Move`; paměť i snímek pak
+  = výsledek. Poškozený disk zastoupí snímek (zapíše se celý náš stav); nečitelný (I/O, přístup) zápis
+  odloží na příští `Save`, `Load` vrátí defaulty s prázdným snímkem. Klíč `server|idfa` a jeho test
+  z „Hotovo když" nedělány, čekají na A37. Testy `LocalPrefsTests` (dvě instance nad jedním souborem, souběh
+  vláken, zamčený soubor). **Přijaté riziko:** `LastLoginName` a `RememberedPassword` se slučují zvlášť, takže
+  dvě instance přihlášené současně pod různými jmény můžou nechat jméno jedné a heslo druhé; následek je jen
+  nepředvyplněné heslo (blob je vázaný na jméno).
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01)
 - **Problém:** `LocalPrefs` se načte jednou při startu a `Save()` zapíše celý objekt. Shell přitom
   běží ve víc instancích pod jedním Windows účtem („Spustit kopii EDISONu", nově „Připojit

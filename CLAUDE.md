@@ -111,7 +111,7 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 
 - **Per Windows-uživatele (JSON)** - `LocalPrefs` shellu (`%APPDATA%\m-line\EDISONMAIN2\local.json`)
   přes injektovaný `ILocalPrefs`. Nové preference = nullable property (chybějící klíč zůstane
-  null - kompatibilní upgrade).
+  null - kompatibilní upgrade). Sdílí ho víc instancí shellu, `Save` slučuje jen vlastní změny (`LocalPrefs.Save`).
 - **Per-user × IDFa (Caché)** - stav agendových oken automaticky přes `EDViewModel` /
   `WindowStatePersistence` (vyměnitelné přes `IWindowStateStore`), viz `EDControls/dotnet/EDViewModel/CLAUDE.md`.
 - **Cross-process (font, theme)** - `%APPDATA%\m-line\common\`; viz `EDControls/CLAUDE.md`.
