@@ -851,6 +851,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Jméno v status baru; MLRest nemusí plné jméno vrátit, pak padáme na login.</summary>
         public string UserDisplay => string.IsNullOrEmpty(FullName) ? UserName : FullName;
 
+        /// <summary>
+        /// Widget pruhu podpory - podpora podle firmy, uživatele a e-mailu cílí sdělení, proto se
+        /// notifikuje po přepnutí firmy i po přihlášení jiného uživatele.
+        /// </summary>
+        public string SupportWidgetUrl => WidgetUrls.Edison2(Rest.Idfa, Rest.LoginName, _services.UserEmail);
+
         private ReleaseNoticeResult? _releaseNotice;
         /// <summary>Výsledek notice-only porovnání s release serverem M-line (plní AppBootstrapper po startu).</summary>
         public ReleaseNoticeResult? ReleaseNotice
@@ -1042,6 +1048,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OnPropertyChanged(nameof(WindowTitle));
             OnPropertyChanged(nameof(SelectedCompanyId));
             OnPropertyChanged(nameof(SelectedCompany));
+            OnPropertyChanged(nameof(SupportWidgetUrl));
         }
 
         // Pustí render (overlay) před blokující synchronní prací. Guard na běžící Application,
@@ -1490,6 +1497,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     _forceShutdown();
                     return;
                 case SwitchUserResult.Success:
+                    // Identita už patří novému MLRest - notifikovat před rebuildem, ať ji status bar ukáže
+                    // i tehdy, když load session selže (pruh podpory notifikuje ReplaceCompanies).
+                    OnPropertyChanged(nameof(UserName));
+                    OnPropertyChanged(nameof(FullName));
+                    OnPropertyChanged(nameof(Mlp));
+                    OnPropertyChanged(nameof(UserDisplay));
+                    // Admin-gated commandy (ShowUsersLocks/Activity) re-vyhodnotí CanExecute hned,
+                    // ne až na první input event po switch.
+                    CommandManager.InvalidateRequerySuggested();
                     // Do původní firmy nový uživatel smět nemusí a session pak běží v jiné, proto se dock
                     // ukládá a zavírá před posunem Idfa jako u přepnutí firmy (viz SwitchCompanyAsync).
                     var oldIdfa = Idfa;
@@ -1518,14 +1534,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                         // I po selhání: prázdný dock by se při zavření shellu uložil přes právě uložený layout.
                         RestoreMiniAppLayout(Idfa);
                     }
-                    // StatusBar identity bindings refreshne na novém MLRest.
-                    OnPropertyChanged(nameof(UserName));
-                    OnPropertyChanged(nameof(FullName));
-                    OnPropertyChanged(nameof(Mlp));
-                    OnPropertyChanged(nameof(UserDisplay));
-                    // Admin-gated commandy (ShowUsersLocks/Activity) re-vyhodnotí CanExecute hned,
-                    // ne až na první input event po switch.
-                    CommandManager.InvalidateRequerySuggested();
                     _ = SyncMlineLicenceAfterLoginAsync();
                     break;
             }

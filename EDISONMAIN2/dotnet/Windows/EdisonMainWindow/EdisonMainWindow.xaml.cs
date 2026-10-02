@@ -4,7 +4,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using AvalonDock.Themes;
 using EDControls.EDTheme;
-using EDControls.EDViewModel;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
@@ -41,12 +40,15 @@ namespace EDISONMAIN2
             ThemeService.Applied += ApplyDockTheme;
             Closing += OnShellClosing;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
-            FillSupportStrip();
-            // Widget nese IdFa → po přepnutí firmy se naviguje znovu (RaiseSessionPropertiesChanged).
+            // DataContext nastavuje BuildShellWindow hned po ctoru, pruh se tedy naplní ještě před zobrazením.
             DataContextChanged += (_, e) =>
             {
                 if (e.OldValue is EdisonMainViewModel old) old.PropertyChanged -= OnShellPropertyChanged;
-                if (e.NewValue is EdisonMainViewModel vm) vm.PropertyChanged += OnShellPropertyChanged;
+                if (e.NewValue is EdisonMainViewModel vm)
+                {
+                    vm.PropertyChanged += OnShellPropertyChanged;
+                    FillSupportStrip(vm.SupportWidgetUrl);
+                }
             };
             Closed += (_, _) =>
             {
@@ -60,17 +62,15 @@ namespace EDISONMAIN2
 
         private void OnShellPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(EdisonMainViewModel.Idfa)) FillSupportStrip();
+            if (e.PropertyName == nameof(EdisonMainViewModel.SupportWidgetUrl) && sender is EdisonMainViewModel vm)
+                FillSupportStrip(vm.SupportWidgetUrl);
         }
 
         // Widget v pruhu podpory. Drží statické Font/Theme eventy, takže se musí uklidit se
         // zavřením okna - jinak přežije shell. Nenačtení widgetu shell neblokuje (dekorace).
-        // Stejná URL (notifikace Idfa bez změny firmy) widget nepřestavuje.
-        private void FillSupportStrip()
+        // Stejná URL (notifikace bez změny firmy či uživatele) widget nepřestavuje.
+        private void FillSupportStrip(string url)
         {
-            var services = EDServices.Current;
-            var ml = services.MLRest;
-            var url = WidgetUrls.Edison2(ml?.Idfa ?? "", ml?.LoginName ?? "", services.UserEmail);
             if (url == _supportWidgetUrl) return;
             _supportWidgetUrl = url;
             _supportWidget?.Dispose();

@@ -583,6 +583,77 @@ public class EdisonMainViewModelTests
         Assert.Contains(nameof(vm.SelectedCompany), notified);
     }
 
+    // Okno čte URL přímo v handleru notifikace a stejnou URL zahodí jako duplicitní, takže
+    // rozhoduje hodnota v okamžiku notifikace, ne až po doběhnutí příkazu.
+    private static List<string> SupportWidgetUrlsAtNotification(EdisonMainViewModel vm)
+    {
+        var urls = new List<string>();
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(EdisonMainViewModel.SupportWidgetUrl)) urls.Add(vm.SupportWidgetUrl);
+        };
+        return urls;
+    }
+
+    [Fact]
+    public async Task SwitchCompany_NotifiesSupportWidgetUrlWithNewIdfa()
+    {
+        // Pruh podpory cílí sdělení podle firmy - po přepnutí musí widget dostat novou IdFa.
+        var vm = CreateVM();
+        var urls = SupportWidgetUrlsAtNotification(vm);
+
+        await vm.SwitchCompanyAsync(1);
+
+        Assert.Contains(urls, u => u.Contains("idfa=JI_DP&"));
+    }
+
+    // Login jiného uživatele s výměnou MLRest a e-mailu tak, jak ji dělá SessionFactory.Establish.
+    private static EdisonMainViewModel VmSwitchingNovakToSvoboda(IModuleTreeLoader? treeLoader = null)
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var services = MockServices(popup: mockPopup);
+        services.UserEmail = "novak@firma.cz";
+        var oldRest = MockMLRest();
+        oldRest.LoginName.Returns("novak");
+        var newRest = MockMLRest();
+        newRest.LoginName.Returns("svoboda");
+        var vm = CreateVM(services: services, mlRest: oldRest, treeLoader: treeLoader, switchUser: () =>
+        {
+            services.MLRest = newRest;
+            services.UserEmail = "svoboda@firma.cz";
+            return new(SwitchUserResult.Success, null);
+        });
+        Assert.Contains("user=novak&", vm.SupportWidgetUrl);   // předpoklad
+        return vm;
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_Success_NotifiesSupportWidgetUrlWithNewUser()
+    {
+        // Firma zůstává stejná, takže notifikace Idfa by widget nepřenačetla a nesl by starého uživatele.
+        var vm = VmSwitchingNovakToSvoboda();
+        var urls = SupportWidgetUrlsAtNotification(vm);
+
+        await vm.LoginAsAnotherUserAsync();
+
+        var url = Assert.Single(urls);
+        Assert.Contains("user=svoboda&", url);
+        Assert.EndsWith("email=svoboda%40firma.cz", url);
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_LoadFails_StillNotifiesSupportWidgetUrlWithNewUser()
+    {
+        // Session už patří novému uživateli i po selhaném loadu - pruh nesmí cílit na předchozího.
+        var vm = VmSwitchingNovakToSvoboda(TreeFailingOnSecondLoad());
+        var urls = SupportWidgetUrlsAtNotification(vm);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(vm.LoginAsAnotherUserAsync);
+
+        Assert.Contains("user=svoboda&", Assert.Single(urls));
+    }
+
     [Fact]
     public async Task SwitchCompany_ReappliesTreeSearch()
     {
