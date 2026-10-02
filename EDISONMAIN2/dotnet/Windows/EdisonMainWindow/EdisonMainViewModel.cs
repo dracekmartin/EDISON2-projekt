@@ -370,18 +370,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             _services.MLRest = mlRest;
 
-            // Změny plochy z miniaplikace (DnD add, remove, reorder) → přestav strom + persist.
-            // Seed při loadu je pod _suppressFavoritesSync (nemá znovu ukládat načtené).
-            _shortcuts.Items.CollectionChanged += (_, _) => { if (!_suppressFavoritesSync) SyncFavorites(); };
+            // Změny plochy ze stromu i z miniaplikace (★, DnD add, remove) → přestav Oblíbené + persist.
+            _shortcuts.MembershipChanged += SyncFavorites;
             // Přesun dlaždice (reorder v miniaplikaci) → persistuj pozice (bez změny členství).
             _shortcuts.PositionsChanged += PersistShortcuts;
             // Spuštění z dlaždice jde přes OpenModuleAsync (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
-            // Novinky z dlaždice: klíč nese sama položka (i u zástupců mimo strom), modul se nedohledává.
-            _shortcuts.ChangelogRequested += s => _ = ShowChangelogForAsync(s.ExecutablePath, s.DisplayedName);
-            // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení
-            // si blob přečteme znovu, jinak by dlaždice naskočila až po restartu shellu.
-            WindowNavigator.LegacyModuleExited += () => _ = ReloadShortcutsAsync();
+            _shortcuts.ChangelogRequested += ShowShortcutChangelog;
+            WindowNavigator.LegacyModuleExited += OnLegacyModuleExited;
 
             _initialLicence = initialLicence;
         }
@@ -594,21 +590,36 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // seed prázdnem by ho zahodil a další toggle prázdno zapsal do Caché.
             if (stored is null) return;
             SeedShortcuts(stored);
-            _shortcutsPersistable = true;
 
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
         }
 
-        private void SeedShortcuts(List<DesktopShortcutDto> stored)
+        // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení
+        // si blob přečteme znovu, jinak by dlaždice naskočila až po restartu shellu.
+        private void OnLegacyModuleExited() => _ = ReloadShortcutsAsync();
+
+        // Novinky z dlaždice: klíč nese sama položka (i u zástupců mimo strom), modul se nedohledává.
+        private void ShowShortcutChangelog(DesktopShortcut shortcut) =>
+            _ = ShowChangelogForAsync(shortcut.ExecutablePath, shortcut.DisplayedName);
+
+        // Při zavření shellu se zabíjejí agendy - bez odhlášení by každá spustila reload plochy.
+        private void DetachShortcutHandlers()
+        {
+            _shortcuts.MembershipChanged -= SyncFavorites;
+            _shortcuts.PositionsChanged -= PersistShortcuts;
+            _shortcuts.LaunchRequested -= LaunchShortcut;
+            _shortcuts.ChangelogRequested -= ShowShortcutChangelog;
+            WindowNavigator.LegacyModuleExited -= OnLegacyModuleExited;
+        }
+
+        // Null = load plochy selhal (služba zůstane prázdná a neuložitelná, viz IsLoaded).
+        private void SeedShortcuts(List<DesktopShortcutDto>? stored)
         {
             var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
-            // Seed pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
-            _suppressFavoritesSync = true;
             _shortcuts.Seed(AllExecutables(), stored, exe =>
                 labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
                     ? label.Path : "");
-            _suppressFavoritesSync = false;
         }
 
         private void ApplyPersonalization(SessionData data)
@@ -621,8 +632,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
             // Null = load plochy selhal: zobrazit prázdno (data předchozí session sem nepatří), ale
             // nepersistovat, dokud se blob nenačte - jinak by první toggle přepsal uživatelovu plochu.
-            SeedShortcuts(data.Shortcuts ?? []);
-            _shortcutsPersistable = data.Shortcuts is not null;
+            SeedShortcuts(data.Shortcuts);
 
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
@@ -995,8 +1005,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // než on, takže save cesty musí být null-safe (jinak NRE z TwoWay bindingu záložky).
         private ModulePreferencesService? _modulePrefs;
         private readonly ModuleShortcutsService _shortcuts;
-        // Guard: potlačí auto-sync handler kolekce plochy během Seed / hromadné změny (family toggle).
-        private bool _suppressFavoritesSync;
         private Dictionary<string, UsageEntry> _usage = [];
         // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
         private List<string>? _expansion;
@@ -1249,24 +1257,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         // Přepnutí oblíbeného přes sdílenou službu (stejný zdroj jako miniaplikace Oblíbené). EXE =
         // toggle jednoho; FAMILY = hromadně (přidá vše, pokud nejsou všechny oblíbené; jinak vše odebere).
-        // Změna se přes _shortcuts propíše i do miniaplikace; SyncFavorites přestaví strom + uloží.
+        // Služba ohlásí změnu členství (rodina jednou) a SyncFavorites přestaví strom + uloží.
         private void ToggleFavorite(IModule module)
         {
             switch (module)
             {
                 case ExecutableModule { ElementId: { Length: > 0 } id } exe:
-                    ApplyFavoritesChange(() =>
-                    {
-                        if (_shortcuts.Contains(id)) _shortcuts.Remove(exe);
-                        else _shortcuts.Add(exe);
-                    });
+                    if (_shortcuts.Contains(id)) _shortcuts.Remove(exe);
+                    else _shortcuts.Add(exe);
                     break;
 
                 case ModuleFamily family:
                     var exes = Flatten(family).Where(e => e.ElementId.Length > 0).ToList();
                     if (exes.Count == 0) return;
                     bool allFav = exes.All(e => _shortcuts.Contains(e.ElementId));
-                    ApplyFavoritesChange(() =>
+                    _shortcuts.Batch(() =>
                     {
                         foreach (var e in exes)
                             if (allFav) _shortcuts.Remove(e);
@@ -1276,17 +1281,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        // Hromadná změna oblíbených: potlač per-item auto-sync a přestav/ulož jednou na konci.
-        private void ApplyFavoritesChange(Action mutate)
-        {
-            _suppressFavoritesSync = true;
-            mutate();
-            _suppressFavoritesSync = false;
-            SyncFavorites();
-        }
-
         // Přestaví záložku Oblíbené + agregační flagy rodin a uloží plochu. Volá se po každé změně
-        // členství (tree toggle i změny z miniaplikace přes CollectionChanged).
+        // členství (tree toggle i změny z miniaplikace).
         private void SyncFavorites()
         {
             RefreshFamilyFavoriteFlags();
@@ -1294,13 +1290,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PersistShortcuts();
         }
 
-        /// <summary>Blob plochy se v této session podařilo načíst; do té doby se nesmí zapisovat (viz ApplyPersonalization).</summary>
-        private bool _shortcutsPersistable;
-
         // Uloží plochu (druh, identita, pozice). Volá se při změně členství i při přesunu dlaždice.
         private void PersistShortcuts()
         {
-            if (!_shortcutsPersistable) return;
+            if (!_shortcuts.IsLoaded) return;
             _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
         }
 
@@ -1477,6 +1470,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public void OnShellClosed()
         {
             PersistMiniAppLayout();
+            DetachShortcutHandlers();
             _closeAllWindows();
             _miniAppManager?.CloseAll();
         }

@@ -9,12 +9,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// Čistě in-memory: členství + pozice (<see cref="DesktopShortcut.Col"/>/<see cref="DesktopShortcut.Row"/>) + <b>sdílené</b>
     /// <see cref="ExecutableModule"/> instance (tytéž jako ve stromu → flip <c>IsFavorite</c> se
     /// projeví všude). Persistenci a spouštění NEřeší - obsluhuje <c>EdisonMainViewModel</c> přes
-    /// <see cref="LaunchRequested"/>, <see cref="ChangelogRequested"/>, <c>Items.CollectionChanged</c>
+    /// <see cref="LaunchRequested"/>, <see cref="ChangelogRequested"/>, <see cref="MembershipChanged"/>
     /// a <see cref="PositionsChanged"/>.
     /// </summary>
     public sealed class ModuleShortcutsService
     {
         private IReadOnlyList<ExecutableModule> _all = [];
+        private int _batchDepth;
+        private bool _batchChanged;
 
         // Cesta agendou do ToolTipu dlaždice. Delegát (ne mapa) - klíč `exe|forma|param` zná
         // EdisonMainViewModel, plocha ho nemusí umět skládat podruhé.
@@ -49,6 +51,35 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>Změna pozice dlaždice (<see cref="PlaceAt"/>) - shell persistuje.</summary>
         public event Action? PositionsChanged;
 
+        /// <summary>
+        /// Uživatel změnil členství plochy (<see cref="Add"/>, <see cref="Remove(DesktopShortcut)"/>) -
+        /// shell přestaví Oblíbené a persistuje. <see cref="Seed"/> ho nefíruje: načtené se znovu neukládá.
+        /// </summary>
+        public event Action? MembershipChanged;
+
+        /// <summary>
+        /// Blob plochy se v této session podařilo načíst. Do té doby se nesmí ukládat - plocha je
+        /// prázdná jen proto, že load selhal, a první změna by uživatelovu plochu přepsala.
+        /// </summary>
+        public bool IsLoaded { get; private set; }
+
+        /// <summary>Hromadná změna (★ celé rodiny): <see cref="MembershipChanged"/> jednou na konci, ne per položka.</summary>
+        public void Batch(Action mutate)
+        {
+            _batchDepth++;
+            try { mutate(); }
+            finally { _batchDepth--; }
+            if (_batchDepth > 0 || !_batchChanged) return;
+            _batchChanged = false;
+            MembershipChanged?.Invoke();
+        }
+
+        private void OnMembershipChanged()
+        {
+            if (_batchDepth > 0) _batchChanged = true;
+            else MembershipChanged?.Invoke();
+        }
+
         public void RequestLaunch(DesktopShortcut shortcut) => LaunchRequested?.Invoke(shortcut);
 
         public void RequestChangelog(DesktopShortcut shortcut) => ChangelogRequested?.Invoke(shortcut);
@@ -57,10 +88,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// Re-inicializace po (pře)stavbě stromů (login, přepnutí firmy). Moduly hlavní nabídky se
         /// dohledávají v aktuálních stromech (sdílené instance, ne kopie); ostatní druhy si nesou
         /// vše v uložené položce. Chybějící pozice (<c>Col</c>/<c>Row</c>) → z pořadí.
+        /// <paramref name="stored"/> <c>null</c> = load selhal: plocha zůstane prázdná a <see cref="IsLoaded"/> false.
         /// </summary>
-        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<DesktopShortcutDto> stored,
+        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<DesktopShortcutDto>? stored,
             Func<ExecutableModule, string>? treePathOf = null)
         {
+            IsLoaded = stored is not null;
+            stored ??= [];
             _all = allExecutables.ToList();
             _treePathOf = treePathOf;
             foreach (var item in Items)
@@ -149,6 +183,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             var shortcut = DesktopShortcut.ForModule(module, TreePathOf(module, module.DisplayedLongName));
             (shortcut.Col, shortcut.Row) = NextFreeCell();
             Items.Add(shortcut);
+            OnMembershipChanged();
         }
 
         /// <summary>Odebere z plochy zástupce daného modulu hlavní nabídky.</summary>
@@ -164,6 +199,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             if (Items.FirstOrDefault(i => i.Key == shortcut.Key) is not { } existing) return;
             if (existing.Module is { } module) module.IsFavorite = false;
             Items.Remove(existing);
+            OnMembershipChanged();
         }
 
         /// <summary>

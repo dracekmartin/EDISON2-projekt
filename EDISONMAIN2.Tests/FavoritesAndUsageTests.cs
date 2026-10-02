@@ -236,6 +236,41 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
+    public void DesktopRemove_ViaSharedService_RebuildsFavoritesAndPersists()
+    {
+        // Miniaplikace Plocha mění sdílenou službu přímo, strom o tom ví jen z jejího eventu.
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
+                """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A"}]""")));
+        var shortcuts = new ModuleShortcutsService();
+        var vm = EdisonMainViewModelHarness.CreateVM(companies: OneCompany, shortcuts: shortcuts,
+            treeLoader: TreeLoaderWith([Exe("100", "App")]), userPrefs: prefs);
+        Assert.Single(vm.FavoritesTree);   // předpoklad
+
+        shortcuts.Remove(shortcuts.Items.Single());
+
+        Assert.Empty(vm.FavoritesTree);
+        prefs.Received(1).SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
+    }
+
+    [Fact]
+    public void AfterShellClosed_LegacyModuleExit_DoesNotReloadDesktop()
+    {
+        // Zavření shellu zabíjí agendy - každý jejich exit by jinak četl blob plochy uprostřed ukončení.
+        var prefs = Substitute.For<IUserPrefsService>();
+        var nav = Substitute.For<IWindowNavigator>();
+        var vm = EdisonMainViewModelHarness.CreateVM(services: MockServices(nav: nav), companies: OneCompany,
+            treeLoader: TreeLoaderWith([Exe("100", "App")]), userPrefs: prefs);
+        prefs.ClearReceivedCalls();
+
+        vm.OnShellClosed();
+        nav.LegacyModuleExited += Raise.Event<Action>();
+
+        prefs.DidNotReceive().LoadAsync(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
     public async Task Prefs_LoadShortcuts_CorruptBlob_ReturnsEmpty()
     {
         var prefs = Substitute.For<IUserPrefsService>();
@@ -329,7 +364,8 @@ public class FavoritesAndUsageTests
         var favFamily = Assert.IsType<ModuleFamily>(Assert.Single(vm.FavoritesTree));
         Assert.Equal(2, favFamily.NestedModules.Count);
         Assert.All(family.NestedModules.OfType<ExecutableModule>(), m => Assert.True(m.IsFavorite));
-        prefs.Received().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
+        // Hromadná změna = jeden zápis plochy, ne jeden per modul rodiny.
+        prefs.Received(1).SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
 
         vm.ToggleFavoriteCommand.Execute(family);
 

@@ -56,6 +56,83 @@ public class ModuleShortcutsServiceTests
         Assert.Equal("SomethingNewer", Assert.Single(svc.Persistable()).Kind);
     }
 
+    [Fact]
+    public void Seed_DoesNotRaiseMembershipChanged()
+    {
+        // Načtená plocha se nesmí znovu ukládat - persistence visí na tomhle eventu.
+        var svc = new ModuleShortcutsService();
+        int changes = 0;
+        svc.MembershipChanged += () => changes++;
+
+        svc.Seed([Exe("100")], [Menu("100")]);
+
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
+    public void AddAndRemove_RaiseMembershipChanged_OnlyOnRealChange()
+    {
+        var a = Exe("100");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a], []);
+        int changes = 0;
+        svc.MembershipChanged += () => changes++;
+
+        svc.Add(a);
+        svc.Add(a);       // idempotentní - beze změny
+        svc.Remove(a);
+        svc.Remove(a);    // už není na ploše
+
+        Assert.Equal(2, changes);
+    }
+
+    [Fact]
+    public void Batch_RaisesMembershipChangedOnce_AfterAllMutations()
+    {
+        var a = Exe("100"); var b = Exe("200");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a, b], []);
+        int itemsAtEvent = -1, changes = 0;
+        svc.MembershipChanged += () => { changes++; itemsAtEvent = svc.Items.Count; };
+
+        svc.Batch(() =>
+        {
+            svc.Add(a);
+            svc.Batch(() => svc.Add(b));   // vnořený blok event nepouští
+        });
+
+        Assert.Equal(1, changes);
+        Assert.Equal(2, itemsAtEvent);
+    }
+
+    [Fact]
+    public void Batch_WithoutChange_RaisesNothing()
+    {
+        var a = Exe("100");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a], [Menu("100")]);
+        int changes = 0;
+        svc.MembershipChanged += () => changes++;
+
+        svc.Batch(() => svc.Add(a));   // už je na ploše
+
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
+    public void Seed_NullStored_EmptyAndNotLoaded_EmptyListIsLoaded()
+    {
+        // null = load selhal: prázdná plocha se nesmí uložit přes uživatelovu; [] = blob opravdu prázdný.
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([Exe("100")], null);
+        Assert.Empty(svc.Items);
+        Assert.False(svc.IsLoaded);
+
+        svc.Seed([Exe("100")], []);
+        Assert.True(svc.IsLoaded);
+    }
+
     [Theory]
     [InlineData("0")]    // Enum.TryParse bere číselné stringy → "0" by prošlo jako MenuModule
     [InlineData("7")]    // …a "7" jako nedefinovaná hodnota enumu, kterou by plocha vykreslila
