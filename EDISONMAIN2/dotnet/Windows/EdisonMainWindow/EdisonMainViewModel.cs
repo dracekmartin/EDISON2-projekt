@@ -50,6 +50,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
         private readonly Func<IReadOnlyList<RunningModuleInfo>> _getActiveModules;
+        private readonly Action _closeAllWindows;
         // Vynucené ukončení aplikace (ShellShutdown.Force) - obchází potvrzovací dialog shellu.
         private readonly Action _forceShutdown;
         private readonly MiniAppCatalog _miniAppCatalog;
@@ -80,7 +81,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public bool IsTestMenuVisible => InternalDiagnostics.Enabled;
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand OpenLegacyShellCommand { get; }
-        public ICommand CloseAllCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
         public ICommand CloseMiniAppsCommand { get; }
         public ICommand ResetMiniAppsCommand { get; }
@@ -178,14 +178,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 _miniAppManager.Open(desktop);
         }
 
-        // Po dobu výměny session (persist staré → CloseAll → async rebuild → restore nové) nesmí
-        // nikdo layout ukládat: dock je mezitím prázdný a Idfa už ukazuje na novou firmu, takže
-        // zavření shellu během rebuildu (nebo force logout) by jí přepsalo uložený layout.
-        private bool _sessionSwapInProgress;
+        // Firma, jejíž layout dock drží; null = dock vyprázdněný výměnou session. Persist jde sem,
+        // ne na aktuální Idfa: během rebuildu po přepnutí je Idfa už nová a dock prázdný, takže
+        // zavření shellu (nebo force logout) by jí přepsalo uložený layout.
+        private string? _dockIdfa;
 
-        private void PersistMiniAppLayout(string idfa)
+        private void PersistMiniAppLayout()
         {
-            if (_miniAppManager is null || _sessionSwapInProgress) return;
+            if (_miniAppManager is null || _dockIdfa is not { } idfa) return;
             // Best-effort: serializace layoutu nesmí zablokovat zavření shellu / přepnutí firmy.
             try
             {
@@ -202,6 +202,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void RestoreMiniAppLayout(string idfa)
         {
             if (_miniAppManager is null) return;
+            _dockIdfa = idfa;
             // Rozměry panelů (nezávislé na tom, zda je uložený layout miniaplikací) - bez uložené
             // hodnoty zůstane XAML default. Aplikovat před RestoreLayout, ať AvalonDock
             // deserializuje do už správně velké plochy a nepřepočítává pane dvakrát.
@@ -233,6 +234,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
+        // Výměna session: ulož layout firmy v docku a dock vyprázdni; obnovu dělá až volající po rebuildu.
+        private void CloseMiniAppSession()
+        {
+            if (_miniAppManager is null) return;
+            PersistMiniAppLayout();
+            _miniAppManager.CloseAll();
+            _dockIdfa = null;
+        }
+
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
             Func<IMLRest, IReadOnlyList<CompanyStruct>> loadAllowedCompanies,
@@ -256,6 +266,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _switchUser = switchUser;
             _prefs = prefs;
             _getActiveModules = getActiveModules;
+            _closeAllWindows = closeAllWindows;
             _forceShutdown = forceShutdown;
             _miniAppCatalog = miniAppCatalog;
             // Null = novinky vypnuté (testy); produkci dává InfChangelogSource AppBootstrapper.
@@ -275,7 +286,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             TriggerErrorCommand = Command(() => throw new InvalidOperationException("Testovací výjimka z toolbaru."));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
             OpenLegacyShellCommand = Command(OpenLegacyShell);
-            CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
             PickMiniAppCommand       = Command(PickMiniApp);
             // Plocha zůstává - zavřít ji nejde a prázdný dock nemá uživateli co dát.
@@ -1078,7 +1088,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 return;
 
             InvalidatePendingSessionWork();
-            var oldIdfa = Idfa;
             SwitchOutcome result;
             // Synchronní část (zavření oken, VerifyLic, logout staré firmy) blokuje UI thread -
             // overlay „Akce probíhá" se musí stihnout vykreslit před ní (yield). Scope nesmí
@@ -1103,11 +1112,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
 
             // Layout staré firmy ulož a dock zavři JEŠTĚ než se Idfa posune - mezi indexem a restore
-            // je await, během kterého jde shell zavřít (persist by dock staré firmy uložil pod novou).
-            PersistMiniAppLayout(oldIdfa);
-            _miniAppManager?.CloseAll();
+            // je await, během kterého jde shell zavřít; prázdný dock bez firmy se pak neukládá.
+            CloseMiniAppSession();
 
-            _sessionSwapInProgress = true;
             try
             {
                 SelectedCompanyIndex = index;
@@ -1120,10 +1127,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 // je jediný konzistentní stav (recovery: Aktualizovat licenci nebo restart).
                 ClearSessionState();
                 throw;
-            }
-            finally
-            {
-                _sessionSwapInProgress = false;
             }
             RestoreMiniAppLayout(Idfa);
             _ = ReloadAllowedCompaniesAsync();
@@ -1464,11 +1467,18 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public void SuppressCloseConfirm() => _closeConfirmSuppressed = true;
 
         /// <summary>Closing shellu: false = zavření zrušit.</summary>
-        public bool ConfirmShellClose()
+        public bool ConfirmShellClose() =>
+            _closeConfirmSuppressed || PopupDisplayer.Confirm(ExitConfirmMessage);
+
+        /// <summary>
+        /// Closed shellu (volá code-behind): jediné místo, které při zavření ukládá layout. Ne v Closing:
+        /// <c>Application.Shutdown</c> jeho zamítnutí ignoruje a okno by se zavřelo bez uloženého layoutu.
+        /// </summary>
+        public void OnShellClosed()
         {
-            if (!_closeConfirmSuppressed && !PopupDisplayer.Confirm(ExitConfirmMessage)) return false;
-            PersistMiniAppLayout(Idfa);
-            return true;
+            PersistMiniAppLayout();
+            _closeAllWindows();
+            _miniAppManager?.CloseAll();
         }
 
         private void ExitApplication()
@@ -1509,9 +1519,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     // Do původní firmy nový uživatel smět nemusí a session pak běží v jiné, proto se dock
                     // ukládá a zavírá před posunem Idfa jako u přepnutí firmy (viz SwitchCompanyAsync).
                     var oldIdfa = Idfa;
-                    PersistMiniAppLayout(oldIdfa);
-                    _miniAppManager?.CloseAll();
-                    _sessionSwapInProgress = true;
+                    CloseMiniAppSession();
                     try
                     {
                         ReplaceCompanies(outcome.Companies ?? [], Rest.Idfa);
@@ -1528,12 +1536,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                         ClearSessionState();
                         throw;
                     }
-                    finally
-                    {
-                        _sessionSwapInProgress = false;
-                        // I po selhání: prázdný dock by se při zavření shellu uložil přes právě uložený layout.
-                        RestoreMiniAppLayout(Idfa);
-                    }
+                    RestoreMiniAppLayout(Idfa);
                     _ = SyncMlineLicenceAfterLoginAsync();
                     break;
             }

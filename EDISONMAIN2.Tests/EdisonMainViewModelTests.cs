@@ -157,8 +157,7 @@ public class EdisonMainViewModelTests
     public async Task SwitchCompany_ShellClosedDuringLoad_DoesNotSaveOldLayoutUnderNewIdfa()
     {
         // Mezi posunem Idfa a restore layoutu je await, ve kterém je UI thread volný - zavření
-        // shellu (nebo force logout) tam volá PersistMiniAppLayout(Idfa), tedy už NOVOU firmu,
-        // zatímco dock drží ještě mini-apps té staré.
+        // shellu (nebo force logout) tam proběhne s Idfa už NOVÉ firmy a prázdným dockem.
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var prefs = Substitute.For<ILocalPrefs>();
@@ -174,7 +173,7 @@ public class EdisonMainViewModelTests
 
         runner.Gate = new TaskCompletionSource();
         var switching = vm.SwitchCompanyAsync(1);
-        Assert.True(vm.ConfirmShellClose());   // uživatel zavře shell během loadu
+        vm.OnShellClosed();   // uživatel zavře shell během loadu
         runner.Gate.SetResult();
         await switching;
 
@@ -182,6 +181,26 @@ public class EdisonMainViewModelTests
         Assert.Contains("CB_DP", layouts.Keys);
         Assert.DoesNotContain("JI_DP", heights.Keys);
         Assert.Contains("CB_DP", heights.Keys);
+    }
+
+    [Fact]
+    public async Task SwitchCompany_LoadFails_ThenShellClosed_KeepsNewCompanyLayout()
+    {
+        // Po selhaném rebuildu zůstává dock prázdný a Idfa už nová - zavření ho nesmí uložit
+        // přes platný layout cílové firmy.
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var layouts = new Dictionary<string, string> { ["JI_DP"] = "ulozeny-layout" };
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.MiniAppLayouts.Returns(layouts);
+        var vm = CreateVM(popup: mockPopup, prefs: prefs, treeLoader: TreeFailingOnSecondLoad());
+        vm.AttachMiniAppHost(new NullHost());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SwitchCompanyAsync(1));
+        vm.OnShellClosed();
+
+        Assert.Equal("ulozeny-layout", layouts["JI_DP"]);
+        Assert.Contains("CB_DP", layouts.Keys);
     }
 
     private static IModuleTreeLoader MainTreeWith(params ExecutableModule[] modules)
@@ -551,23 +570,26 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public async Task LoginAsAnotherUser_RebuildFails_RestoresDock()
+    public async Task LoginAsAnotherUser_RebuildFails_ThenShellClosed_KeepsSavedLayout()
     {
-        // Dock je před přestavbou zavřený; zůstal-li by prázdný, zavření shellu by ho uložilo přes platný layout.
+        // Dock je před přestavbou zavřený a po selhání zůstane prázdný - zavření shellu ho nesmí
+        // uložit přes layout, který se uložil při výměně.
         var popup = Substitute.For<IPopupDisplayer>();
         popup.Confirm(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
+        var layouts = new Dictionary<string, string>();
         var prefs = Substitute.For<ILocalPrefs>();
-        prefs.MiniAppLayouts.Returns(new Dictionary<string, string>());
+        prefs.MiniAppLayouts.Returns(layouts);
         var host = Substitute.For<IMiniAppHost>();
-        host.SaveLayout().Returns("<layout/>");
+        host.SaveLayout().Returns("<layout/>", "<prazdny-dock/>");
         var vm = CreateVM(services: svc, prefs: prefs, treeLoader: TreeFailingOnSecondLoad(),
                           switchUser: SwitchUserInto(svc, "CB_DP", Companies));
         vm.AttachMiniAppHost(host);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.LoginAsAnotherUserAsync());
+        vm.OnShellClosed();
 
-        host.Received().RestoreLayout("<layout/>", Arg.Any<Func<string, IMiniAppPane, RestoredContent?>>());
+        Assert.Equal("<layout/>", layouts["CB_DP"]);
     }
 
     [Fact]
@@ -1076,7 +1098,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void CloseAll_PersistsTreeWidthPerIdfa()
+    public void OnShellClosed_PersistsTreeWidthPerIdfa()
     {
         var widths = new Dictionary<string, double>();
         var prefs = Substitute.For<ILocalPrefs>();
@@ -1086,7 +1108,7 @@ public class EdisonMainViewModelTests
         vm.AttachTreeLayout(() => 275, _ => { });
         vm.AttachMiniAppHost(new NullHost());
 
-        vm.CloseAllCommand.Execute(null);
+        vm.OnShellClosed();
 
         Assert.Equal(275, widths["CB_DP"]);
         prefs.Received().Save();
@@ -1136,7 +1158,7 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void CloseAll_PersistsSupportHeightPerIdfa()
+    public void OnShellClosed_PersistsSupportHeightPerIdfa()
     {
         var heights = new Dictionary<string, double>();
         var prefs = Substitute.For<ILocalPrefs>();
@@ -1146,14 +1168,14 @@ public class EdisonMainViewModelTests
         vm.AttachSupportLayout(() => 520, _ => { });
         vm.AttachMiniAppHost(new NullHost());
 
-        vm.CloseAllCommand.Execute(null);
+        vm.OnShellClosed();
 
         Assert.Equal(520, heights["CB_DP"]);
         prefs.Received().Save();
     }
 
     [Fact]
-    public void CloseAll_WithoutAttachSupportLayout_PersistsNothingAndDoesNotThrow()
+    public void OnShellClosed_WithoutAttachSupportLayout_PersistsNothingAndDoesNotThrow()
     {
         // View nemusí rozměry napojit (testy, jiný hostitel) - save cesta musí přežít bez delegatů.
         var heights = new Dictionary<string, double>();
@@ -1162,7 +1184,7 @@ public class EdisonMainViewModelTests
         var vm = CreateVM(prefs: prefs);
         vm.AttachMiniAppHost(new NullHost());
 
-        vm.CloseAllCommand.Execute(null);
+        vm.OnShellClosed();
 
         Assert.Empty(heights);
     }
@@ -1251,22 +1273,26 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void ConfirmShellClose_Confirmed_PersistsMiniAppLayout()
+    public void ShellClose_ConfirmedThenClosed_SavesLayoutExactlyOnce_AndClosesWindows()
     {
+        // Closing jen potvrzuje, ukládá až Closed - dřív se layout zapisoval v obou.
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var widths = new Dictionary<string, double>();
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.TreeWidths.Returns(widths);
-        var vm = CreateVM(popup: mockPopup, prefs: prefs);
-
+        int windowsClosed = 0;
+        var vm = CreateVM(popup: mockPopup, prefs: prefs, closeAllWindows: () => windowsClosed++);
         vm.AttachTreeLayout(() => 275, _ => { });
         vm.AttachMiniAppHost(new NullHost());
+        prefs.ClearReceivedCalls();
 
         Assert.True(vm.ConfirmShellClose());
+        vm.OnShellClosed();
 
         Assert.Equal(275, widths["CB_DP"]);
-        prefs.Received().Save();
+        prefs.Received(1).Save();
+        Assert.Equal(1, windowsClosed);
     }
 
     // Regrese na force logout / version gate - vynucené ukončení se uživatele ptát nesmí.

@@ -52,6 +52,7 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   jinak není hit-testable a kolečko jde mimo ScrollViewer.
 - Layout per IDFa v `LocalPrefs.MiniAppLayouts` (šířka stromu v `TreeWidths`, výška pruhu
   podpory v `SupportStripHeights`); chybí-li nebo je poškozený → výchozí rozložení (jen Plocha).
+  Ukládá se jen v `Closed` shellu a při výměně session, pod firmu, jejíž layout dock drží.
 - Výběr miniaplikace je okno `Windows/MiniAppPickerWindow` s **jednoúrovňovým** seznamem;
   z `IMiniAppProvider.GroupTitle` (pořadí = registrace v `AppBootstrapper`) zbyl jen popisek řádku.
 - Picker vybírá i **umístění** (`MiniAppPlacement`). Cíle jsou **jen ukotvená** pod-okna:

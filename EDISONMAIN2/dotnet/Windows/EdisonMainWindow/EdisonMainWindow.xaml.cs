@@ -39,6 +39,7 @@ namespace EDISONMAIN2
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
             Closing += OnShellClosing;
+            Closed += OnShellClosed;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
             // DataContext nastavuje BuildShellWindow hned po ctoru, pruh se tedy naplní ještě před zobrazením.
             DataContextChanged += (_, e) =>
@@ -84,6 +85,11 @@ namespace EDISONMAIN2
         {
             if (DataContext is EdisonMainViewModel vm && !vm.ConfirmShellClose())
                 e.Cancel = true;
+        }
+
+        private void OnShellClosed(object? sender, EventArgs e)
+        {
+            if (DataContext is EdisonMainViewModel vm) vm.OnShellClosed();
         }
 
         // Vestavěný generic theme AvalonDocku má chrome (taby, bordery, pozadí dokumentů) natvrdo
