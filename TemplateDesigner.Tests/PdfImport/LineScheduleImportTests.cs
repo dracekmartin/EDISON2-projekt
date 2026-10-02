@@ -182,11 +182,14 @@ public class LineScheduleImportTests
         var poznamky = new NotesLegendElement { X = poznamkyX, Y = poznamkyY, Width = 60, Height = 30 };
         var sections = AiVisionImportPipeline.SplitLineScheduleSections([Text(0), tabulka, poznamky]);
 
+        // Návrhová výška se porovnává jen u sekcí s tabulkou a poznámkami - u nich ji tisk drží jako
+        // nejmenší výšku, takže velká by posouvala obsah na další stránku.
         static object Tvar(Section s) => new
         {
             s.Name, s.Role, s.PrintBehavior, s.OverflowBehavior,
             Prvky = string.Join(",", s.Elements.Where(e => e is LineTableElement or NotesLegendElement)
                                                .Select(e => e.GetType().Name)),
+            Vyska = s.Elements.Any(e => e is LineTableElement or NotesLegendElement) ? s.DesignerHeight : null,
         };
         Assert.Equal(vzor.Sections.Select(Tvar), sections.Select(Tvar));
     }
@@ -200,7 +203,9 @@ public class LineScheduleImportTests
     }
 
     /// <summary>Tabulka i poznámky mají výšku podle dat linky - pevná výška z předlohy by u delší
-    /// linky písmo zmenšila nebo tabulku ořízla.</summary>
+    /// linky písmo zmenšila nebo tabulku ořízla. Ani sekce si výšku z předlohy nedrží: tisk bere
+    /// větší z obsahu a návrhové výšky, a s výškou tabulky z předlohy přešly poznámky kratší linky
+    /// na další stránku, i když se vešly (nález Jan 2. 10.).</summary>
     [Fact]
     public void TabulkaAPoznamkyMajiVyskuZDat()
     {
@@ -211,7 +216,8 @@ public class LineScheduleImportTests
 
         Assert.Null(tabulka.Height);
         Assert.Null(poznamky.Height);
-        Assert.Equal(100f, sections[1].DesignerHeight);
+        Assert.Equal(20f, sections[1].DesignerHeight);
+        Assert.Equal(15f, sections[2].DesignerHeight);
     }
 
     [Fact]

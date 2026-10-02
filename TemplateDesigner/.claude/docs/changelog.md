@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-02 (7) - 📏 poznámky po importu linkového JŘ zbytečně přecházely na další stránku
+
+Import dával sekci s tabulkou spojů návrhovou výšku tabulky z předlohy (u 940 IDZK 140,7 mm)
+a poznámkám jejich výšku z předlohy. Tisk bere jako výšku sekce větší z obsahu a návrhové výšky,
+takže to místo držel i pro kratší linku a poznámky přešly na další stránku, i když se na první
+vešly (nález Jan). Sekce s tabulkou a s poznámkami mají nově návrhovou výšku jako systémové
+šablony (20 a 15 mm) a skutečnou určí data; kontrola kostry proti systémovým šablonám hlídá
+i tuhle výšku.
+
 ## 2026-10-02 (6) - 🔍 výpis posledního AI importu se ukládá vždy
 
 Dialog po každém AI importu uloží do `%LOCALAPPDATA%\m-line\TemplateDesigner\posledni-import\`

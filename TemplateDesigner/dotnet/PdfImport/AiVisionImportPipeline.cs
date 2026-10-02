@@ -447,14 +447,31 @@ public class AiVisionImportPipeline
         ZIndex = elements.Count > 0 ? elements.Max(e => e.ZIndex) + 1 : 0,
     };
 
-    /// <summary>Sekce, jejíž první prvek leží u horní hrany: souřadnice se posunou o nejvyšší
-    /// prvek a výška sekce sedí na spodek nejnižšího (prázdná výška se bere z návrhové).</summary>
+    /// <summary>Návrhová výška sekce s tabulkou spojů - jako v systémových šablonách.</summary>
+    private const float TableSectionDesignerHeightMm = 20f;
+
+    /// <summary>Návrhová výška sekce s poznámkami - jako v systémových šablonách.</summary>
+    private const float NotesSectionDesignerHeightMm = 15f;
+
+    /// <summary>
+    /// Sekce, jejíž první prvek leží u horní hrany: souřadnice se posunou o nejvyšší prvek a výška
+    /// sekce sedí na spodek nejnižšího prvku s pevnou výškou.
+    /// </summary>
+    /// <remarks>⚠️ Tabulka spojů a poznámky se do výšky sekce nepočítají. Tisk bere jako výšku sekce
+    /// větší z obsahu a návrhové výšky, takže výška tabulky z předlohy (140 mm) by se držela i pro
+    /// kratší linku a poznámky by přešly na další stránku, i když se vejdou (nález Jan 2. 10.).
+    /// Sekce s nimi má malou návrhovou výšku jako systémové šablony a skutečnou určí data.</remarks>
     private static Section NewSection(string name, SectionRole role, SectionPrintBehavior print,
         SectionOverflowBehavior overflow, List<TemplateElement> elements)
     {
         float top = elements.Count > 0 ? elements.Min(e => e.Y) : 0f;
         foreach (var el in elements) el.Y = MmMath.Round(el.Y - top);
-        float bottom = elements.Count > 0 ? elements.Max(e => e.Y + (e.Height ?? 0f)) : 0f;
+
+        var pevne = elements.Where(e => e is not (LineTableElement or NotesLegendElement)).ToList();
+        float bottom = pevne.Count > 0 ? pevne.Max(e => e.Y + (e.Height ?? 0f)) : 0f;
+        float minimum = elements.Any(e => e is LineTableElement) ? TableSectionDesignerHeightMm
+            : elements.Any(e => e is NotesLegendElement) ? NotesSectionDesignerHeightMm
+            : 10f;
 
         return new Section
         {
@@ -463,7 +480,7 @@ public class AiVisionImportPipeline
             Role = role,
             PrintBehavior = print,
             OverflowBehavior = overflow,
-            DesignerHeight = Math.Max(MmMath.Round(bottom), 10f),
+            DesignerHeight = Math.Max(MmMath.Round(bottom), minimum),
             Elements = elements,
         };
     }
