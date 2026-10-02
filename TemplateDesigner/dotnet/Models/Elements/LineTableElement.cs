@@ -3414,7 +3414,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     // FromImage = import z PDF se na volbu ptá, protože ji papír potvrdí. Řádky platnosti, značek
-    // a přípojů ne: na předloze chybí i tehdy, když je jen linka nemá.
+    // a přípojů ne: na předloze chybí i tehdy, když je jen linka nemá. Nadpisy skupin dnů a nadpis
+    // popisných sloupců taky ne - prázdný nadpis vypadá jako vypnutý a model četl záhlaví sloupce
+    // „Zastávka" jako nadpis skupiny (zkouška nad demo výlepem 2. 10.).
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new BoolPropertyDescriptor { FromImage = true, Label = "Čísla spojů", Group = "Řádky", Get = () => ShowTripNumbers, Set = v => ShowTripNumbers = v },
@@ -3472,8 +3474,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = PopisneGroup,
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
-        new BoolPropertyDescriptor { FromImage = true, Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
-        new StringPropertyDescriptor { FromImage = true, Label = "Nadpis popisných sloupců", Group = PopisneGroup,
+        new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
+        new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = PopisneGroup,
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },
         new BoolPropertyDescriptor { FromImage = true, Label = "Popisné sloupce bez vnitřních čar", Group = PopisneGroup,
             Get = () => PopisneSloupceBezVnitrnichCar, Set = v => PopisneSloupceBezVnitrnichCar = v },

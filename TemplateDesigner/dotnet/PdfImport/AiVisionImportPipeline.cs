@@ -515,6 +515,14 @@ public class AiVisionImportPipeline
                 ImportLog.Add($"⚠ Volbu {klic} tahle agenda nemá - přeskočena.");
                 continue;
             }
+
+            // Předloha ukazuje, jak to má nastavené její linka; pevná hodnota v šabloně by přebila
+            // nastavení všech ostatních linek (zkouška 2. 10.: „Sloupec tarifních čísel = Tisknout").
+            if (RidiSeLinkou(klic))
+            {
+                ImportLog.Add($"{PopisParametru(klic)} - ponecháno podle nastavení linky.");
+                continue;
+            }
             hodnoty[klic] = hodnota;
         }
 
@@ -527,6 +535,11 @@ public class AiVisionImportPipeline
 
         return hodnoty.Count > 0 ? hodnoty : null;
     }
+
+    /// <summary>Volba s výchozí možností „Automaticky (dle linky)" (konvence `ux-conventions §8`).</summary>
+    private bool RidiSeLinkou(string name) =>
+        _knownParameters?.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
+            ?.Options?.Any(o => o.StartsWith("Automaticky", StringComparison.OrdinalIgnoreCase)) == true;
 
     /// <summary>Popisek volby tak, jak ho zná uživatel z nastavení tisku; jinak holý klíč.</summary>
     private string PopisParametru(string name) =>
@@ -552,6 +565,7 @@ public class AiVisionImportPipeline
         var result = new List<TemplateParameter>();
         foreach (var (key, val) in visionResult.TemplateParameters)
         {
+            if (RidiSeLinkou(key)) continue;
             if (knownLookup.TryGetValue(key, out var known))
             {
                 // Agenda má definici - převzít typ, label, options

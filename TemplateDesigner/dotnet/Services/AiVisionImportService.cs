@@ -298,6 +298,8 @@ Volby tisku, které si jinak nastavuje uživatel. Vyplň JEN ty, jejichž hodnot
 poznáš (typicky jestli jsou u zastávek šipky směru, nebo v jakém rozsahu hodin jsou odjezdy).
 Volbu, která se na papíře nijak neprojeví, VYNECH - hodnota v šabloně přebije nastavení uživatele,
 takže špatný odhad je horší než nevyplněno.
+Volbu s možností ""Automaticky (dle linky)"" VYNECH vždy: předloha ukazuje, jak to má nastavené
+linka, a pevná hodnota by nastavení linky přebila u všech ostatních linek.
 Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možností, u ano/ne ""true"" nebo ""false"".
 " + catalog;
 
@@ -420,8 +422,17 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
             "4. Oblast LineTable MUSÍ zahrnovat celé záhlaví (nadpisy skupin dnů, čísla spojů, řádky značek) "
                 + "i poslední zastávku. NIKDY nevracej oblast, která začíná až u časů: co zůstane venku, skončí "
                 + "jako desítky samostatných textů. Jsou-li poznámky vedle tabulky, oblast LineTable končí před nimi.",
-            "5. Jsou-li na stránce dvě tabulky pod sebou (směr tam a směr zpět), vrať OBĚ jako LineTable. "
-                + "Jsou-li spoje obou směrů v JEDNÉ tabulce po obou stranách názvů zastávek, je to jedna LineTable."
+            "5. Tabulka s mnoha spoji bývá ROZDĚLENÁ NA ČÁSTI pod sebou: každá část zopakuje popisné sloupce "
+                + "a zastávky ve STEJNÉM pořadí, jen nese další spoje. Taková tabulka je JEDNA LineTable - vrať "
+                + "oblast přes všechny části. Dvě LineTable vrať jen tehdy, když má druhá tabulka zastávky "
+                + "v OPAČNÉM pořadí (směr zpět).",
+            "6. Obousměrný tisk (parametr OBOUSMERNY_TISK) je JEDNA tabulka, kde jsou časy spojů vlevo I vpravo "
+                + "od názvů zastávek. Části nebo tabulky pod sebou obousměrný tisk NEJSOU.",
+            "7. Text, který je na obrázku na více řádcích pod sebou, vrať PO ŘÁDCÍCH - každý řádek jako "
+                + "samostatnou položku textMappings.",
+            "8. placeholderText je CELÝ text řádku s datovými poli nahrazenými {POLE}; pevný text kolem pole "
+                + "ponech (\"Přepravu zajišťuje: {POPIS_DOPRAVCE}\", \"Platí od {DATUM_PLATNOSTI_OD}\"). "
+                + "Do dbField dej hlavní pole řádku."
         ],
         ElementProperties: [],
         TemplateParameters: [],
@@ -438,7 +449,8 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
     { ""type"": ""NotesLegend"", ""left"": 0.02, ""top"": 0.8, ""right"": 0.98, ""bottom"": 0.97 }
   ],
   ""textMappings"": [
-    { ""text"": ""940"", ""role"": ""title"", ""dbField"": ""CISLO_LINKY"", ""placeholderText"": ""{CISLO_LINKY}"", ""x"": 0.02, ""y"": 0.01, ""w"": 0.1, ""h"": 0.05, ""approxFontSize"": 20, ""confidence"": 0.95 }
+    { ""text"": ""940"", ""role"": ""title"", ""dbField"": ""CISLO_LINKY"", ""placeholderText"": ""{CISLO_LINKY}"", ""x"": 0.02, ""y"": 0.01, ""w"": 0.1, ""h"": 0.05, ""approxFontSize"": 20, ""confidence"": 0.95 },
+    { ""text"": ""Platí od 1.1.2026"", ""role"": ""validity"", ""dbField"": ""DATUM_PLATNOSTI_OD"", ""placeholderText"": ""Platí od {DATUM_PLATNOSTI_OD}"", ""x"": 0.8, ""y"": 0.01, ""w"": 0.18, ""h"": 0.02, ""approxFontSize"": 8, ""confidence"": 0.9 }
   ],
   ""imageMappings"": [],
   ""templateParameters"": {},

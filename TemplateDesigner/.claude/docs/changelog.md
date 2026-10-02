@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-02 (2) - 🧪 import linkového JŘ vyzkoušený naostro
+
+Import běžel proti dev serveru a skutečnému modelu nad PDF demo výlepu linky 330530, které
+vytiskl náš tisk ze šablony `templates/demo-qr-linkovy-jr-ad.json` - výsledek se tak dal
+porovnat se zdrojem. Opravy podle toho: tabulka rozdělená na části pod sebou je jedna tabulka,
+ne dva směry (model kvůli tomu zapnul obousměrný tisk); texty se vracejí po řádcích i s pevným
+textem kolem pole („Přepravu zajišťuje : {POPIS_DOPRAVCE}"); dva řádky z jednoho bloku PDF
+dostanou každý svůj řádek; rámeček s víc texty nepřevezme žádný z nich (název linky se
+roztáhl přes číslo); částečná shoda textu platí jen v okolí místa od modelu (platnost skončila
+o 100 mm vedle); písmo tabulky podle většiny znaků, ne mediánem (minuty jsou menší); výška řádku
+pod výškou písma se zahodí; volby „Automaticky (dle linky)" se z předlohy nepřebíjí. Na nadpisy
+skupin dnů a nadpis popisných sloupců se model už neptá - prázdný nadpis vypadá jako vypnutý.
+Poslední běh: hlavička do 2 mm od zdroje se správnými poli, sloupce i volby tabulky shodné.
+Tři opravy (shoda textu, rámeček, řádky bloku) platí i pro zastávkový JŘ.
+
 ## 2026-10-02 - 📥 import z PDF rozpozná linkový JŘ (`B179`, první krok)
 
 Do dneška se v agendě linkového JŘ AI vůbec nevolala: dialog poznal jízdní řád jen podle kódu

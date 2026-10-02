@@ -87,9 +87,9 @@ public static class AiGuidedScheduleBuilder
                 elements.Add(notesEl);
         }
 
-        // 3b. LineTableElement (linkový JŘ). Šablona nese jen horní tabulku: druhá bývá opačný
-        //     směr a ten sestava vytiskne z téhož prvku na vlastní stránce. Její oblast ale dál
-        //     patří jízdnímu řádu, jinak by se její časy a zastávky doplnily jako stovky textů.
+        // 3b. LineTableElement (linkový JŘ). Šablona nese jen horní tabulku: další bývá opačný
+        //     směr nebo další část téže tabulky a obojí sestava vytiskne z téhož prvku sama. Jejich
+        //     oblast ale dál patří jízdnímu řádu, jinak by se časy a zastávky doplnily jako texty.
         var lineTablesAi = vision.Elements
             .Where(e => e.Type.Equals("LineTable", StringComparison.OrdinalIgnoreCase))
             .OrderBy(e => e.Top)
@@ -102,8 +102,8 @@ public static class AiGuidedScheduleBuilder
                 otherScheduleRegions.Add((other.Left * pageW - marginLeft, other.Top * pageH - marginTop,
                                           other.Right * pageW - marginLeft, other.Bottom * pageH - marginTop));
             if (lineTablesAi.Count > 1)
-                UserNotes.Add("Předloha má víc tabulek spojů (nejspíš oba směry pod sebou). Šablona převzala "
-                              + "horní, druhý směr vytiskne sestava na další stránce.");
+                UserNotes.Add("Předloha má víc tabulek spojů pod sebou (části jedné tabulky nebo oba směry). "
+                              + "Šablona převzala jednu tabulku - další části i opačný směr vytiskne sestava sama.");
         }
 
         // 4. Textové elementy z AI mapování
@@ -351,9 +351,23 @@ public static class AiGuidedScheduleBuilder
 
         float estHeaderH = ai.HasHeader ? Math.Min(h * 0.15f, 10f) : 0;
         var measure = MeasureRegionFont(ai, page, estHeaderH);
-        debug.Add($"LineTable measurements: dataFont={measure.DataFontSizePt:0.#}pt, "
-                  + $"headerFont={measure.HeaderFontSizePt:0.#}pt, rowH={measure.RowHeightMm:0.#}mm, "
-                  + $"columns=[{string.Join(", ", ai.Columns)}]");
+
+        // Písmo buněk = písmo, kterým je vysázená většina znaků (názvy zastávek, hodiny). Medián
+        // sem netrefí: minuty jsou menším písmem (formát „hh mm") a stáhnou ho dolů - u demo výlepu
+        // vyšlo 4,3 pt místo 4,8 pt.
+        float headerBottom = ai.Top * page.HeightMm + estHeaderH;
+        var dataWords = GetWordsInRegion(ai, page).Where(wd => wd.Y >= headerBottom - 1).ToList();
+        float dataFont = dataWords.Count > 0 ? PrevazujiciVelikostPisma(dataWords) : measure.DataFontSizePt;
+
+        // Řádek nižší než písmo je chyba měření (hodiny a minuty mají jinou horní hranu, řádky
+        // značek jiné písmo) - pevná výška by tabulku stlačila; prázdná výška se počítá z písma.
+        float glyphMm = dataFont * ResolvedTextStyle.PtToMm;
+        float? rowH = measure.RowHeightMm >= glyphMm * 1.1f ? MmMath.Round(measure.RowHeightMm) : null;
+
+        debug.Add($"LineTable measurements: dataFont={dataFont:0.#}pt (median {measure.DataFontSizePt:0.#}), "
+                  + $"headerFont={measure.HeaderFontSizePt:0.#}pt, rowH={measure.RowHeightMm:0.#}mm"
+                  + (rowH is null ? " (pod výškou písma, nepoužito)" : "")
+                  + $", columns=[{string.Join(", ", ai.Columns)}]");
 
         var el = new LineTableElement
         {
@@ -366,18 +380,17 @@ public static class AiGuidedScheduleBuilder
             Columns = BuildLineColumnsFromAi(ai.Columns),
         };
         // Velikost z PDF vychází s šumem (7,0004 pt) - ve formuláři by tak i stála.
-        if (measure.DataFontSizePt > 0)
+        if (dataFont > 0)
         {
             el.DataStyle.FontFamily = measure.FontFamily;
-            el.DataStyle.FontSize = MathF.Round(measure.DataFontSizePt, 1);
+            el.DataStyle.FontSize = MathF.Round(dataFont, 1);
         }
         if (measure.HeaderFontSizePt > 0)
         {
             el.HeaderStyle.FontFamily = measure.FontFamily;
             el.HeaderStyle.FontSize = MathF.Round(measure.HeaderFontSizePt, 1);
         }
-        if (measure.RowHeightMm > 0)
-            el.DataRowHeight = MmMath.Round(measure.RowHeightMm);
+        el.DataRowHeight = rowH;
         return el;
     }
 
@@ -414,6 +427,7 @@ public static class AiGuidedScheduleBuilder
         float pageW = page.WidthMm;
         float pageH = page.HeightMm;
         var result = new List<TextElement>();
+        var allTextBlocks = PdfTextGrouper.GroupWords(page.Words);
 
         // Přeskočit texty které leží uvnitř schedule elementu (řeší je schedule element sám)
         var scheduleBoxes = vision.Elements.Select(e => (
@@ -455,6 +469,10 @@ public static class AiGuidedScheduleBuilder
             bool italic = false;
             string color = "#FF000000";
 
+            // Model vrací texty po řádcích, PDF je ale může mít sloučené do jednoho bloku
+            // („Platí od …" a „do …" pod sebou) - pak patří textu jen jeho řádek bloku.
+            int? lineOfBlock = matchedBlock is null ? null : LineOfBlock(matchedBlock, mapping.Text);
+
             if (matchedBlock is not null)
             {
                 float fontHeightMm = matchedBlock.FontSizePt * ResolvedTextStyle.PtToMm;
@@ -465,6 +483,11 @@ public static class AiGuidedScheduleBuilder
                 elW = Math.Max(matchedBlock.Width, fontHeightMm * 2);
                 // Výška z font size (ne z PdfPig bounding boxu, který může být nafouklý)
                 elH = fontHeightMm * 1.3f * lineCount;
+                if (lineOfBlock is int line)
+                {
+                    elY += matchedBlock.Height / lineCount * line;
+                    elH = fontHeightMm * 1.3f;
+                }
                 fontFamily = matchedBlock.FontFamily;
                 fontSize = matchedBlock.FontSizePt;
                 bold = matchedBlock.IsBold;
@@ -495,9 +518,10 @@ public static class AiGuidedScheduleBuilder
             float borderWidth = 0f;
             string bgColor = "#00FFFFFF";
 
-            if (matchedBlock is not null)
+            // Rámeček kolem víceřádkového bloku patří všem jeho řádkům, ne jednomu.
+            if (matchedBlock is not null && lineOfBlock is null)
             {
-                var enclosingRect = FindEnclosingRectangle(page.Rectangles, matchedBlock);
+                var enclosingRect = FindEnclosingRectangle(page.Rectangles, matchedBlock, allTextBlocks);
                 if (enclosingRect is not null)
                 {
                     elX = enclosingRect.X - marginLeft;
@@ -537,6 +561,28 @@ public static class AiGuidedScheduleBuilder
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Řádek víceřádkového bloku, kterému odpovídá text od modelu; null = blok má jeden řádek,
+    /// nebo text odpovídá celému bloku (pak se bere blok celý, jako dosud).
+    /// </summary>
+    internal static int? LineOfBlock(ExtractedTextBlock block, string mappingText)
+    {
+        var lines = block.Text.Split(NewLine);
+        if (lines.Length < 2) return null;
+
+        string text = NormalizeText(mappingText);
+        var normalized = lines.Select(NormalizeText).ToList();
+
+        int exact = normalized.FindIndex(l => l.Length > 0 && string.Equals(l, text, StringComparison.OrdinalIgnoreCase));
+        if (exact >= 0) return exact;
+
+        // Text přes víc řádků bloku (celý blok) = blok celý; jinak řádek, ve kterém text leží.
+        var hits = Enumerable.Range(0, lines.Length).Where(i => normalized[i].Length > 0
+            && (text.Contains(normalized[i], StringComparison.OrdinalIgnoreCase)
+                || normalized[i].Contains(text, StringComparison.OrdinalIgnoreCase))).ToList();
+        return hits.Count == 1 ? hits[0] : null;
     }
 
     /// <summary>Obdélníky jízdněřádových prvků tak, jak nakonec v šabloně leží (v mm).</summary>
@@ -1426,8 +1472,15 @@ public static class AiGuidedScheduleBuilder
             string.Equals(NormalizeText(b.Text), aiText, StringComparison.OrdinalIgnoreCase));
         if (exact is not null) return exact;
 
+        // Částečná shoda platí jen v okolí místa od modelu: krátká slova („od", „do", čísla) se
+        // najdou kdekoli na stránce a text pak skončil o 100 mm vedle (platnost u výlepu, 2. 10.).
+        bool hasPosition = mappingXMm > 0 || mappingYMm > 0;
+        var nearBlocks = textBlocks.Where(b => !hasPosition
+            || (Math.Abs(b.X - mappingXMm) < PartialMatchRadiusMm && Math.Abs(b.Y - mappingYMm) < PartialMatchRadiusMm))
+            .ToList();
+
         // 2. Obsahuje (obousměrně)
-        var contains = textBlocks.FirstOrDefault(b =>
+        var contains = nearBlocks.FirstOrDefault(b =>
         {
             string blockText = NormalizeText(b.Text);
             return blockText.Contains(aiText, StringComparison.OrdinalIgnoreCase)
@@ -1442,7 +1495,7 @@ public static class AiGuidedScheduleBuilder
             ExtractedTextBlock? bestWordMatch = null;
             float bestScore = 0;
 
-            foreach (var block in textBlocks)
+            foreach (var block in nearBlocks)
             {
                 var blockWords = NormalizeText(block.Text).Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 int commonWords = aiWords.Count(aw =>
@@ -1497,9 +1550,15 @@ public static class AiGuidedScheduleBuilder
         return v;
     }
 
+    /// <summary>Okruh (mm) kolem pozice od modelu, ve kterém platí částečná shoda textu.</summary>
+    private const float PartialMatchRadiusMm = 40f;
+
     /// <summary>Najde obdélník obklopující textový blok (rámeček).</summary>
-    private static ExtractedRectangle? FindEnclosingRectangle(
-        List<ExtractedRectangle> rectangles, ExtractedTextBlock block)
+    /// <remarks>Rámeček, ve kterém je i jiný text, patří skupině textů, ne tomuto - text by se
+    /// roztáhl přes sousední (název linky přes číslo linky v jednom rámečku, 2. 10.).</remarks>
+    internal static ExtractedRectangle? FindEnclosingRectangle(
+        List<ExtractedRectangle> rectangles, ExtractedTextBlock block,
+        IReadOnlyList<ExtractedTextBlock>? allBlocks = null)
     {
         const float tolerance = 2f;
         ExtractedRectangle? best = null;
@@ -1516,6 +1575,11 @@ public static class AiGuidedScheduleBuilder
             float rectArea = rect.Width * rect.Height;
             float textArea = Math.Max(block.Width, 1f) * Math.Max(block.Height, 1f);
             if (rectArea > textArea * 20f) continue;
+
+            bool sharedWithOtherText = allBlocks?.Any(o => o != block
+                && o.X + o.Width / 2 > rect.X && o.X + o.Width / 2 < rect.X + rect.Width
+                && o.Y + o.Height / 2 > rect.Y && o.Y + o.Height / 2 < rect.Y + rect.Height) == true;
+            if (sharedWithOtherText) continue;
 
             if (rectArea < bestArea) { best = rect; bestArea = rectArea; }
         }

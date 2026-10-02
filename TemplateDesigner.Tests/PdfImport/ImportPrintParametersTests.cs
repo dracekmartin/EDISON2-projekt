@@ -47,6 +47,26 @@ public class ImportPrintParametersTests
         Assert.Null(Pipeline("TISK_SIPKY").BuildPrintParameters(Vision()));
     }
 
+    /// <summary>Předloha ukazuje nastavení své linky - pevná hodnota by přebila všechny ostatní
+    /// linky (zkouška 2. 10.: model zapsal „Sloupec tarifních čísel = Tisknout").</summary>
+    [Fact]
+    public void VolbaDleLinkySeZPredlohyNeprebiji()
+    {
+        var pipeline = new AiVisionImportPipeline("klic", schemaProvider: null, agendaCode: "LINKOVY_JR_AD",
+            knownParameters:
+            [
+                new TemplateParameter { Name = "SLOUPEC_TC", Label = "Sloupec tarifních čísel", Type = "enum",
+                    Options = ["Automaticky (dle linky)", "Tisknout", "Netisknout"] },
+                new TemplateParameter { Name = "OBOUSMERNY_TISK", Label = "Obousměrný tisk", Type = "bool" },
+            ]);
+
+        var result = pipeline.BuildPrintParameters(Vision(("SLOUPEC_TC", "Tisknout"), ("OBOUSMERNY_TISK", "false")));
+
+        Assert.NotNull(result);
+        Assert.False(result.ContainsKey("SLOUPEC_TC"));
+        Assert.Equal("false", result["OBOUSMERNY_TISK"]);
+    }
+
     /// <summary>Volba, kterou agenda nemá, by se při tisku stejně zahodila - do šablony nepatří.</summary>
     [Fact]
     public void CiziVolbaSePreskoci()

@@ -33,7 +33,6 @@ public class LineScheduleImportTests
     [InlineData("Čísla spojů")]
     [InlineData("Formát času")]
     [InlineData("Popisné sloupce bez vnitřních čar")]
-    [InlineData("Nadpis popisných sloupců")]
     [InlineData("Podbarvit lichá Tč")]
     public void NaViditelneVolbyTabulkySeModelPta(string popisek)
     {
@@ -42,13 +41,16 @@ public class LineScheduleImportTests
 
     /// <summary>Tyhle řádky na předloze chybí i tehdy, když linka jen nemá platnost, značky nebo
     /// přípoje - vypnout je podle obrázku by je schovalo lince, která je má. Tučné zastávky a čáry
-    /// u zastávek jsou údaj z trasy linky, ne vzhled.</summary>
+    /// u zastávek jsou údaj z trasy linky, ne vzhled. Prázdný nadpis skupiny dnů vypadá jako
+    /// vypnutý a nadpis popisných sloupců model pletl se záhlavím sloupce (zkouška 2. 10.).</summary>
     [Theory]
     [InlineData("Řádek platnosti")]
     [InlineData("Řádek negativních značek")]
     [InlineData("Řádky · Přípojné řádky")]
     [InlineData("Tučné zastávky dle trasy")]
     [InlineData("Čáry u zastávek dle trasy")]
+    [InlineData("Nadpisy skupin dnů")]
+    [InlineData("Nadpis popisných sloupců")]
     public void NaVolbyNepotvrditelneZPapiruSeNeptame(string klic)
     {
         Assert.DoesNotContain(klic, ElementSettingsFromImage.BuildCatalog(new LineTableElement()));
@@ -228,6 +230,39 @@ public class LineScheduleImportTests
 
         Assert.Single(sections);
         Assert.Equal(2, sections[0].Elements.Count);
+    }
+
+    // ── Umístění textů z předlohy ───────────────────────────────────────
+
+    private static ExtractedTextBlock Blok(string text, float x, float y, float w = 30, float h = 3) =>
+        new(text, x, y, w, h, "Arial", 8, false, false, "#FF000000");
+
+    /// <summary>PDF drží „Platí od …" a „do …" jako jeden blok, model je vrací po řádcích -
+    /// bez rozlišení řádku padly oba texty na totéž místo (zkouška 2. 10.).</summary>
+    [Fact]
+    public void TextZVicerakovehoBlokuDostaneSvujRadek()
+    {
+        var blok = Blok("Platí od 11.12.2022\ndo 09.12.2023", 140, 5, h: 6);
+
+        Assert.Equal(0, AiGuidedScheduleBuilder.LineOfBlock(blok, "Platí od 11.12.2022"));
+        Assert.Equal(1, AiGuidedScheduleBuilder.LineOfBlock(blok, "do 09.12.2023"));
+        Assert.Null(AiGuidedScheduleBuilder.LineOfBlock(blok, "Platí od 11.12.2022 do 09.12.2023"));
+        Assert.Null(AiGuidedScheduleBuilder.LineOfBlock(Blok("Linka 940", 0, 0), "Linka 940"));
+    }
+
+    /// <summary>Rámeček kolem čísla i názvu linky patří oběma - název se přes něj roztáhl
+    /// a překryl číslo (zkouška 2. 10.).</summary>
+    [Fact]
+    public void RamecekSeDvemaTextyNepatriZadnemuZNich()
+    {
+        var ramecek = new ExtractedRectangle(0, 4, 200, 9, null, "#FF000000", 0.3f);
+        var cislo = Blok("330530", 2, 6, w: 14);
+        var nazev = Blok("Kaplice-Velešín", 25, 6, w: 70);
+
+        Assert.Null(AiGuidedScheduleBuilder.FindEnclosingRectangle([ramecek], nazev, [cislo, nazev]));
+
+        var jenKolemCisla = ramecek with { Width = 20 };
+        Assert.Equal(jenKolemCisla, AiGuidedScheduleBuilder.FindEnclosingRectangle([jenKolemCisla], cislo, [cislo, nazev]));
     }
 
     // ── Co musí v odpovědi modelu být ───────────────────────────────────
