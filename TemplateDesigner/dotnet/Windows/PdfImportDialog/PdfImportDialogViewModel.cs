@@ -236,7 +236,7 @@ public class PdfImportDialogViewModel : EDViewModel
             if (!string.IsNullOrEmpty(SelectedAgendaCode))
                 template.AgendaCode = SelectedAgendaCode;
 
-            NormalizeImportedPage(template, fillBodySection: scheduleType != ScheduleImportType.LinkovyJr);
+            NormalizeImportedPage(template, lineSchedule: scheduleType == ScheduleImportType.LinkovyJr);
             ApplyDefaultImportBorders(template);
             ImportedTemplate = template;
 
@@ -354,9 +354,10 @@ public class PdfImportDialogViewModel : EDViewModel
     /// (A5/A4/A3 × orientace) v toleranci, jinak zaokrouhlí; (2) nastaví malé jednotné výchozí okraje
     /// (1 mm, clampnuté ať neořežou obsah); (3) Body sekci dopočítá na tiskovou plochu.
     /// Page-level - prvky se nehýbou vůči sobě (posun se sekcí je uniformní).
-    /// Linkový JŘ krok (3) vynechá: má sekce pod sebou (tabulka, poznámky) a každá na celou
-    /// plochu by je rozházela po stránkách.</summary>
-    private static void NormalizeImportedPage(Template template, bool fillBodySection = true)
+    /// Linkový JŘ vynechá kroky (2) i (3): okraje zůstanou podle předlohy, protože jejich zmenšení
+    /// posune celý obsah doleva nahoru (u vzoru 940 o 9-12 mm, změřeno 2. 10.), a sekce pod sebou
+    /// (tabulka, poznámky) by každá na celou plochu rozházelo po stránkách.</summary>
+    internal static void NormalizeImportedPage(Template template, bool lineSchedule = false)
     {
         var ps = template.PageSize;
 
@@ -372,6 +373,12 @@ public class PdfImportDialogViewModel : EDViewModel
             if (snapped) break;
         }
         if (!snapped) { ps.Width = MmMath.Round(ps.Width); ps.Height = MmMath.Round(ps.Height); }
+        if (lineSchedule)
+        {
+            ps.MarginLeft = MmMath.Round(ps.MarginLeft); ps.MarginRight = MmMath.Round(ps.MarginRight);
+            ps.MarginTop = MmMath.Round(ps.MarginTop); ps.MarginBottom = MmMath.Round(ps.MarginBottom);
+            return;
+        }
 
         // (2) výchozí okraje - malé jednotné (1 mm), ale nikdy tak velké, aby ořízly obsah
         float maxRight = 0f, maxBottom = 0f;
@@ -388,7 +395,6 @@ public class PdfImportDialogViewModel : EDViewModel
         ps.MarginTop  = ps.MarginBottom = MmMath.Round(mv);
 
         // (3) Body sekce vyplní tiskovou plochu
-        if (!fillBodySection) return;
         foreach (var section in template.Sections)
             if (section.Role == SectionRole.Body)
                 section.DesignerHeight = ps.PrintableHeight;
@@ -397,7 +403,7 @@ public class PdfImportDialogViewModel : EDViewModel
     /// <summary>Dorovná importovaným elementům konzistentní výchozí rámeček (černý 0,1mm) tam, kde
     /// žádný nemají - shodně s novými elementy z palety (<c>CreateElementByType</c>). Import ho někdy
     /// nenastaví; rámeček detekovaný z PDF (šířka > 0) se nepřepisuje.</summary>
-    private static void ApplyDefaultImportBorders(Template template)
+    internal static void ApplyDefaultImportBorders(Template template)
     {
         foreach (var section in template.Sections)
             foreach (var el in section.Elements)

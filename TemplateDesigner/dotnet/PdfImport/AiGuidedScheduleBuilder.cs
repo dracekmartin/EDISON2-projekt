@@ -96,7 +96,10 @@ public static class AiGuidedScheduleBuilder
             .ToList();
         if (lineTablesAi.Count > 0)
         {
-            elements.Add(BuildLineTable(MergeRegions(lineTablesAi), page, marginLeft, marginTop, ref zIndex, debugLines));
+            var poznamkyAi = vision.Elements
+                .Where(e => e.Type.Equals("NotesLegend", StringComparison.OrdinalIgnoreCase)).ToList();
+            elements.Add(BuildLineTable(MergeRegions(lineTablesAi), page, marginLeft, marginTop, ref zIndex,
+                debugLines, poznamkyAi));
             bool podSebou = lineTablesAi.Any(a => lineTablesAi.Any(b => b.Top >= a.Bottom - 0.01f));
             if (podSebou)
                 UserNotes.Add("Předloha má víc tabulek spojů pod sebou (části jedné tabulky nebo oba směry). "
@@ -362,7 +365,8 @@ public static class AiGuidedScheduleBuilder
     /// přebilo ovladač prvku - stejná chyba jako u záhlaví odjezdů (14. 6.).</remarks>
     private static LineTableElement BuildLineTable(
         AiVisionElement ai, ExtractedPage page,
-        float marginLeft, float marginTop, ref int zIndex, List<string> debug)
+        float marginLeft, float marginTop, ref int zIndex, List<string> debug,
+        IReadOnlyList<AiVisionElement> jineOblasti)
     {
         float pageW = page.WidthMm;
         float pageH = page.HeightMm;
@@ -413,7 +417,7 @@ public static class AiGuidedScheduleBuilder
             el.HeaderStyle.FontSize = MathF.Round(measure.HeaderFontSizePt, 1);
         }
         el.DataRowHeight = rowH;
-        ApplyLineTableColors(el, ai, page, headerBottom, debug);
+        ApplyLineTableColors(el, ai, page, headerBottom, debug, jineOblasti);
         return el;
     }
 
@@ -426,12 +430,17 @@ public static class AiGuidedScheduleBuilder
     /// by přebila ovladač prvku (táž chyba jako záhlaví odjezdů 14. 6.). Řádek čísel spojů proto
     /// dostane barvu pruhu skupin, i když ho předloha může mít bílý.</remarks>
     internal static void ApplyLineTableColors(LineTableElement el, AiVisionElement ai, ExtractedPage page,
-        float headerBottomMm, List<string> debug)
+        float headerBottomMm, List<string> debug, IReadOnlyList<AiVisionElement>? jineOblasti = null)
     {
         float l = ai.Left * page.WidthMm, t = ai.Top * page.HeightMm;
         float r = ai.Right * page.WidthMm, b = ai.Bottom * page.HeightMm;
 
-        bool Vodorovne(ExtractedRectangle x) => x.X >= l - 2f && x.X + x.Width <= r + 2f;
+        // Pruh záhlaví poznámek vedle tabulky má tutéž barvu a výšku jako pruhy skupin - bez
+        // vyloučení se počítal jako skupina dnů a mezera vyšla 7 mm místo 0 (měření 2. 10.).
+        bool VJineOblasti(ExtractedRectangle x) => jineOblasti?.Any(o =>
+            x.X + x.Width / 2 > o.Left * page.WidthMm && x.X + x.Width / 2 < o.Right * page.WidthMm
+            && x.Y + x.Height / 2 > o.Top * page.HeightMm - ZahlaviPasMm && x.Y + x.Height / 2 < o.Bottom * page.HeightMm) == true;
+        bool Vodorovne(ExtractedRectangle x) => x.X >= l - 2f && x.X + x.Width <= r + 2f && !VJineOblasti(x);
         static bool Barevna(string? hex) => ColorHex.ParseOrNull(hex) is { Alpha: > 0 } c
                                             && !(c.Red > 0xF0 && c.Green > 0xF0 && c.Blue > 0xF0);
         bool Uvnitr(ExtractedWord w, ExtractedRectangle x) =>
@@ -477,6 +486,13 @@ public static class AiGuidedScheduleBuilder
             el.HighlightOddTc = true;
             el.OddTcBackColor = radky.Key;
             debug.Add($"LineTable podbarvení řádků: {radky.Key} ({radky.Count()} řádků)");
+        }
+        else
+        {
+            // Řádky jsou na papíře vždy, takže chybějící podbarvení je volba, ne prázdná data.
+            // Výchozí zapnuté by předloze bez podbarvení přidalo šedé pruhy (měření 2. 10.).
+            el.HighlightOddTc = false;
+            debug.Add("LineTable podbarvení řádků: žádné");
         }
 
         var slovaDat = page.Words.Where(w => w.X >= l - 2f && w.X <= r && w.Y >= headerBottomMm && w.Y <= b).ToList();

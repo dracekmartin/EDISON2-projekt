@@ -1,11 +1,6 @@
 using System.IO;
-using EDControls;
-using EDControls.EDViewModel;
-using NSubstitute;
-using TemplateDesigner.Config;
 using TemplateDesigner.PdfImport;
 using TemplateDesigner.Serialization;
-using TemplateDesigner.Services;
 using Xunit.Abstractions;
 
 namespace TemplateDesigner.Tests.PdfImport;
@@ -43,26 +38,22 @@ public class ZkouskaImportuNaostro(ITestOutputHelper output)
             var page = PdfPageExtractor.Extract(doc, strana);
             File.WriteAllBytes(Path.Combine(outDir, "stranka.png"),
                 Convert.FromBase64String(PdfPageRasterizer.RasterizeToBase64Png(page)));
+            // Rozbor stránky z PDF - podklad pro ručně psané očekávání (sada/*.ocekavani.json).
+            File.WriteAllLines(Path.Combine(outDir, "rozbor.txt"),
+            [
+                $"Stránka {page.WidthMm:0.0} × {page.HeightMm:0.0} mm",
+                "", "Bloky textu (x, y, šířka × výška mm, písmo, barva):",
+                .. PdfTextGrouper.GroupWords(page.Words).OrderBy(b => b.Y).ThenBy(b => b.X).Select(b =>
+                    $"  {b.X,6:0.0} {b.Y,6:0.0} {b.Width,6:0.0}×{b.Height,-5:0.0} {b.FontSizePt,4:0.0}pt {b.ColorHex}  {b.Text.Replace('\n', '⏎')}"),
+                "", "Barevné plochy (x, y, šířka × výška mm, výplň):",
+                .. page.Rectangles.Where(r => r.FillColorHex is not null && r.Width >= 5).OrderBy(r => r.Y).ThenBy(r => r.X).Select(r =>
+                    $"  {r.X,6:0.0} {r.Y,6:0.0} {r.Width,6:0.0}×{r.Height:0.0} {r.FillColorHex}"),
+            ]);
         }
         if (Environment.GetEnvironmentVariable("TD_ZKOUSKA_JEN_OBRAZEK") == "1") return;   // bez volání modelu
 
-        var settings = AppSettings.Load();
-        var mlRest = CacheSchemaWiring.TryCreateMlRest(settings) ?? throw new Exception("Caché není nakonfigurovaná");
-        EDServices.Initialize(new EDServices(new MLRestAdapter(mlRest),
-            Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
-
-        string key = await EdisonAiService.GetApiKeyAsync();
-        output.WriteLine($"Klíč k AI: {(string.IsNullOrEmpty(key) ? "NENÍ" : "je k dispozici")}");
-
-        var agendas = await new CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync();
-        var provider = CacheSchemaWiring.TryCreate(mlRest, agendas) ?? throw new Exception("Bez agend");
-        var knownParams = provider.GetParameters(agenda);
-        output.WriteLine($"Agenda {agenda}: {knownParams.Count} parametrů sestavy");
-
-        var pipeline = new AiVisionImportPipeline(key, provider, agenda, knownParams);
-        var template = await pipeline.ImportAsync(pdf, [strana], ScheduleImportTypes.ForAgenda(agenda), true,
+        var (template, pipeline) = await Kvalita.ImportNaostro.ImportujAsync(pdf, agenda, strana,
             st => output.WriteLine("  " + st));
-        template.AgendaCode = agenda;
 
         File.WriteAllText(Path.Combine(outDir, "ai-debug.txt"), pipeline.AiDebugLog ?? "");
         File.WriteAllLines(Path.Combine(outDir, "protokol.txt"), [.. pipeline.ImportLog, "", .. pipeline.DetailedLog]);

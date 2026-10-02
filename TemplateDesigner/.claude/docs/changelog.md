@@ -1,5 +1,24 @@
 ﻿# Changelog
 
+## 2026-10-02 (8) - 📐 měření kvality importu z PDF (`B179` krok 1)
+
+Import se dá změřit číslem místo okem: `TemplateDesigner.Tests/PdfImport/Kvalita/`. Sada předloh
+= náš tisk ze tří šablon (systémové A5 a A4 s poznámkami vedle, vzor 940; očekávání se odvodí ze
+zdroje a z výtisku) a skutečné 940 IDZK s ručně zapsaným očekáváním (`sada/940.ocekavani.json`,
+PDF mimo repo). Kontroluje texty hlavičky (nalezený, napojené pole, **střed textu** do 2 mm -
+import text vystředí, takže roh prvku srovnávat nejde), tabulku (okraje, šířka aspoň jako na
+papíře, pořadí sloupců, písmo, barvy, mezera), poznámky, kostru a patičku. Spouští se naostro
+proměnnou `TD_KVALITA_VYSTUP` a zapíše `kvalita.md`; bez modelu běží testy měření samého.
+
+Měření hned našlo chybu, kterou okem nešlo vidět: **dokončovací úprava dialogu zmenšila okraje
+stránky na 1 mm a obsah se tím posunul doleva nahoru** o okraj předlohy (u vzoru 940 o 9-12 mm).
+Linkový JŘ okraje nechává podle předlohy. Dál: podbarvení lichých Tč se vypne, když ho předloha
+nemá (výchozí zapnuté přidávalo šedé pruhy), a pruh záhlaví poznámek vedle tabulky se nepočítá
+jako skupina dnů. Výsledek (2 běhy): náš tisk A5 25-26/38 → 32-36/37-39 kontrol, odchylka textů
+4,9 → 2,7-3,1 mm; A4 vedle 25-26 → 34-35/39, 5,4 → 2,7 mm; vzor 940 26 → 38-39/40, 12,4 → 0,7 mm;
+skutečné 940 27-28/35 → 31-33/34, 2,7 → 0,4 mm. Co zbývá, je hlavně odhad oblastí modelem
+(u 940 poznámky na 171-208 mm místo 137-163) - to má řešit krok 2.
+
 ## 2026-10-02 (7) - 📏 poznámky po importu linkového JŘ zbytečně přecházely na další stránku
 
 Import dával sekci s tabulkou spojů návrhovou výšku tabulky z předlohy (u 940 IDZK 140,7 mm)

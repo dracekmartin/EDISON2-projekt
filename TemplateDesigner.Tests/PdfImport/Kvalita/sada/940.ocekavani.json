@@ -1,0 +1,31 @@
+{
+  "nazev": "940 IDZK (výtisk zákazníka, strana 1)",
+  "kostra": "pod",
+  "paticka": true,
+  "texty": [
+    { "obsah": "{CISLO_LINKY}", "doslovne": "940", "x": 35.7, "y": 10.5 },
+    { "obsah": "{POPIS_LINKY}", "doslovne": "Kroměříž – Kyselovice – Chropyně – Přerov", "x": 88.8, "y": 10.3 },
+    { "obsah": "Platnost:", "doslovne": "Platnost:", "x": 265.0, "y": 7.7 },
+    { "obsah": "od {DATUM_PLATNOSTI_OD}", "doslovne": "od 31.08.2025", "x": 265.0, "y": 10.4 },
+    { "obsah": "do {DATUM_PLATNOSTI_DO}", "doslovne": "do 13.12.2025", "x": 265.0, "y": 13.1 },
+    { "obsah": "Linka 771940 | Integrovaná doprava Zlínského kraje (IDZK)", "doslovne": "Linka 771940 | Integrovaná doprava Zlínského kraje (IDZK)", "x": 147.7, "y": 18.4 }
+  ],
+  "tabulka": {
+    "x": 10.6,
+    "y": 21.4,
+    "sirka": 204.9,
+    "sloupce": [ "Km", "StopName", "Zone" ],
+    "pismoBunekPt": 7.2,
+    "pozadiZahlavi": "#FF162C66",
+    "pismoZahlavi": "#FFFFFFFF",
+    "licheTc": "#FFBCD6ED",
+    "mezeraMeziSkupinami": 5.3
+  },
+  "poznamky": {
+    "x": 10.6,
+    "sirka": 275.5,
+    "sloupce": 2,
+    "zahlavi": false,
+    "pismo": "#FF162C66"
+  }
+}
