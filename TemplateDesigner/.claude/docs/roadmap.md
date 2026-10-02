@@ -73,10 +73,11 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
   hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184`, `B186` a `B187` hotové, dál podle poptávky.
 
-- **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Rozvržení hotové
-  2. 10. včetně barev, vyzkoušené naostro nad 940 IDZK a naším výtiskem (viz changelog). **Zbývá:**
-  další předlohy (starý modul, zákazník); podle nich šířky popisných sloupců a jestli brát volby
-  sestavy (dnes vědomě ne - model je hádal). Zkouška bez návrháře: `ZkouskaImportuNaostro.cs`.
+- **`B179` AI import z PDF pro linkový JŘ** [L] (Jan 24. 9.; první verze 2. 10., viz changelog).
+  Funguje, ale není použitelný: polohy tabulky a poznámek jsou odhad modelu. Další postup po
+  krocích, každý změřit: **(1)** měření kvality nad sadou předloh, **(2)** model pojmenuje
+  očíslované bloky z PDF místo odhadu souřadnic, **(3)** tabulka měřená z PDF celá. Proč a jak:
+  [`architecture.md §Import z PDF`](architecture.md). Zkouška bez návrháře: `ZkouskaImportuNaostro.cs`.
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
