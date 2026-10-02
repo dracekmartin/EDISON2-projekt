@@ -426,7 +426,9 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
                 + "a zastávky ve STEJNÉM pořadí, jen nese další spoje. Taková tabulka je JEDNA LineTable - vrať "
                 + "oblast přes všechny části. Dvě LineTable vrať jen tehdy, když má druhá tabulka zastávky "
                 + "v OPAČNÉM pořadí (směr zpět).",
-            "6. Tabulka s časy spojů vlevo I vpravo od názvů zastávek (oba směry v jedné tabulce) je JEDNA LineTable.",
+            "6. Tabulka s časy spojů vlevo I vpravo od názvů zastávek (oba směry v jedné tabulce) je JEDNA LineTable. "
+                + "Skupiny dnů vedle sebe (Pracovní dny, Víkendy a svátky), i když je mezi nimi mezera, jsou "
+                + "taky JEDNA LineTable - oblast přes všechny skupiny.",
             "7. Text, který je na obrázku na více řádcích pod sebou, vrať PO ŘÁDCÍCH - každý řádek jako "
                 + "samostatnou položku textMappings.",
             "8. placeholderText je CELÝ text řádku s datovými poli nahrazenými {POLE}; pevný text kolem pole "

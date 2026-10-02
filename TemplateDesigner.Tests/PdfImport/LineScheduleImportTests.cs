@@ -274,6 +274,73 @@ public class LineScheduleImportTests
         Assert.True(AiVisionImportPipeline.TakesReportParameters(ScheduleImportType.ZastavkovyJrMhd));
     }
 
+    // ── Zkouška nad 940 IDZK (2. 10.) ───────────────────────────────────
+
+    /// <summary>Víkendy odsazené vpravo vrátil model jako druhou tabulku - šablona vzala jen první
+    /// a tabulka vyšla úzká.</summary>
+    [Fact]
+    public void TabulkyVedleSebeSeSlijiDoJedne()
+    {
+        var merged = AiGuidedScheduleBuilder.MergeRegions(
+        [
+            new AiVisionElement { Type = "LineTable", Left = 0.03f, Top = 0.14f, Right = 0.69f, Bottom = 0.76f,
+                                  Columns = ["Km", "StopName", "Zone"] },
+            new AiVisionElement { Type = "LineTable", Left = 0.69f, Top = 0.14f, Right = 0.73f, Bottom = 0.32f },
+        ]);
+
+        Assert.Equal((0.03f, 0.14f, 0.73f, 0.76f), (merged.Left, merged.Top, merged.Right, merged.Bottom));
+        Assert.Equal(["Km", "StopName", "Zone"], merged.Columns);
+    }
+
+    /// <summary>Trasa „Kroměříž - Kyselovice - Chropyně - Přerov" nemá v textové vrstvě PDF
+    /// pomlčky, takže je ze tří bloků; číslo linky vedle do ní nepatří.</summary>
+    [Fact]
+    public void TextRozdelenyNaKusySeSlozi()
+    {
+        var cislo = Blok("940", 10, 5, w: 20);
+        var a = Blok("Kroměříž", 48, 5, w: 25);
+        var b = Blok("Kyselovice", 76, 5, w: 25);
+        var c = Blok("Chropyně Přerov", 104, 5, w: 40);
+
+        var kusy = AiGuidedScheduleBuilder.SameLinePieces([cislo, a, b, c], c,
+            "Kroměříž - Kyselovice - Chropyně - Přerov");
+
+        Assert.Equal([a, b, c], kusy);
+    }
+
+    /// <summary>Bílý text hlavičky na tmavém pruhu byl bez pruhu neviditelný. Pruh nadpisu skupiny
+    /// těsně nad tabulkou si ale kreslí tabulka sama a bílá plocha není pozadí.</summary>
+    [Fact]
+    public void BarevnaPlochaHlavickySePrevezme()
+    {
+        var page = new ExtractedPage
+        {
+            WidthMm = 297, HeightMm = 210,
+            Words =
+            [
+                new("940", 20, 8, 10, 6, "Arial", 20, true, false, "#FFFFFFFF"),
+                new("Pracovní", 100, 22, 15, 3, "Arial", 8, false, false, "#FFFFFFFF"),
+                new("Info", 20, 14, 10, 2, "Arial", 6, false, false, "#FF000000"),
+            ],
+            Rectangles =
+            [
+                new(10, 4, 275, 12, "#FF162C66", null, 0),     // pruh hlavičky
+                new(75, 21, 114, 3.7f, "#FF162C66", null, 0),  // nadpis skupiny dnů nad tabulkou
+                new(10, 13, 275, 3, "#FFFFFFFF", null, 0),     // bílá plocha
+            ],
+        };
+        var vision = new AiVisionResult
+        {
+            Elements = [new AiVisionElement { Type = "LineTable", Left = 0.03f, Top = 26f / 210, Right = 0.97f, Bottom = 0.8f }],
+        };
+
+        var plochy = AiGuidedScheduleBuilder.BuildHeaderBackgrounds(vision, page, 0, 0, []);
+
+        var pruh = Assert.Single(plochy);
+        Assert.Equal("#FF162C66", pruh.BackgroundColor);
+        Assert.True(pruh.ZIndex < 0, "plocha musí být za texty");
+    }
+
     // ── Co musí v odpovědi modelu být ───────────────────────────────────
 
     private static AiVisionResult Vision(params string[] types) =>

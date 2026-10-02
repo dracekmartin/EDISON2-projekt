@@ -1,6 +1,7 @@
 using System.IO;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.PdfImport;
 using TemplateDesigner.Services;
@@ -370,6 +371,7 @@ public class PdfImportDialogViewModel : EDViewModel
             foreach (var el in section.Elements)
             {
                 if (el.BorderWidth > 0f) continue;   // detekovaný / už nastavený rámeček nechat
+                if (el is RectangleElement) continue; // obdélník má vlastní okraj - černý navíc by orámoval i barevnou plochu hlavičky
                 el.BorderColor = "#FF000000";
                 el.BorderWidth = 0.1f;
             }

@@ -87,23 +87,20 @@ public static class AiGuidedScheduleBuilder
                 elements.Add(notesEl);
         }
 
-        // 3b. LineTableElement (linkový JŘ). Šablona nese jen horní tabulku: další bývá opačný
-        //     směr nebo další část téže tabulky a obojí sestava vytiskne z téhož prvku sama. Jejich
-        //     oblast ale dál patří jízdnímu řádu, jinak by se časy a zastávky doplnily jako texty.
+        // 3b. LineTableElement (linkový JŘ) - jedna tabulka přes všechny oblasti, které model
+        //     vrátil. Skupina dnů odsazená vedle (víkendy u 940 IDZK), část tabulky pod ní i opačný
+        //     směr vytiskne týž prvek sám; vzít jen jednu oblast by tabulku zúžilo a texty z ostatních
+        //     by se doplnily jako volné.
         var lineTablesAi = vision.Elements
             .Where(e => e.Type.Equals("LineTable", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(e => e.Top)
             .ToList();
-        var otherScheduleRegions = new List<(float L, float T, float R, float B)>();
         if (lineTablesAi.Count > 0)
         {
-            elements.Add(BuildLineTable(lineTablesAi[0], page, marginLeft, marginTop, ref zIndex, debugLines));
-            foreach (var other in lineTablesAi.Skip(1))
-                otherScheduleRegions.Add((other.Left * pageW - marginLeft, other.Top * pageH - marginTop,
-                                          other.Right * pageW - marginLeft, other.Bottom * pageH - marginTop));
-            if (lineTablesAi.Count > 1)
+            elements.Add(BuildLineTable(MergeRegions(lineTablesAi), page, marginLeft, marginTop, ref zIndex, debugLines));
+            bool podSebou = lineTablesAi.Any(a => lineTablesAi.Any(b => b.Top >= a.Bottom - 0.01f));
+            if (podSebou)
                 UserNotes.Add("Předloha má víc tabulek spojů pod sebou (části jedné tabulky nebo oba směry). "
-                              + "Šablona převzala jednu tabulku - další části i opačný směr vytiskne sestava sama.");
+                              + "Šablona má jednu tabulku - další části i opačný směr vytiskne sestava sama.");
         }
 
         // 4. Textové elementy z AI mapování
@@ -113,6 +110,9 @@ public static class AiGuidedScheduleBuilder
 
         // 4b. Korekce překryvu
         AdjustOverlaps(vision, page, elements, debugLines);
+
+        // 4c. Barevné plochy hlavičky za texty
+        elements.AddRange(BuildHeaderBackgrounds(vision, page, marginLeft, marginTop, debugLines));
 
         // 5–7. Obrázky (PdfPig + AI mapování + prázdné oblasti)
         var imageElements = BuildImageElements(vision, page, marginLeft, marginTop, elements, ref zIndex, debugLines);
@@ -133,7 +133,7 @@ public static class AiGuidedScheduleBuilder
         // seznamu zastávek (v šabloně pak ležel název zastávky přes tabulku - nález Jan 18. 8.).
         var doplnene = BuildUnmappedTextElements(
             page, marginLeft, marginTop, ref zIndex, debugLines, consumedBlocks,
-            [.. elements.OfType<TextElement>()], [.. ScheduleRects(elements), .. otherScheduleRegions]);
+            [.. elements.OfType<TextElement>()], ScheduleRects(elements));
         elements.AddRange(doplnene);
 
         debugLines.Add($"Final elements: {elements.Count}");
@@ -331,6 +331,22 @@ public static class AiGuidedScheduleBuilder
         };
     }
 
+    /// <summary>Jedna oblast přes všechny; sloupce z té, která jich vyjmenovala nejvíc (část bez
+    /// popisných sloupců, třeba odsazené víkendy, žádné nemá).</summary>
+    internal static AiVisionElement MergeRegions(IReadOnlyList<AiVisionElement> regions) => regions.Count == 1
+        ? regions[0]
+        : new AiVisionElement
+        {
+            Type = regions[0].Type,
+            Left = regions.Min(r => r.Left),
+            Top = regions.Min(r => r.Top),
+            Right = regions.Max(r => r.Right),
+            Bottom = regions.Max(r => r.Bottom),
+            HasHeader = regions.Any(r => r.HasHeader),
+            Columns = regions.MaxBy(r => r.Columns.Count)!.Columns,
+            Properties = regions[0].Properties,
+        };
+
     /// <summary>
     /// Vytvoří LineTableElement z oblasti od modelu a písma změřeného v PDF. Zjednodušené proti
     /// zastávkovému JŘ: šířky sloupců se neměří (sloupce spojů vznikají z dat a šířku si prvek
@@ -473,6 +489,11 @@ public static class AiGuidedScheduleBuilder
             // („Platí od …" a „do …" pod sebou) - pak patří textu jen jeho řádek bloku.
             int? lineOfBlock = matchedBlock is null ? null : LineOfBlock(matchedBlock, mapping.Text);
 
+            var pieces = matchedBlock is not null && lineOfBlock is null
+                ? SameLinePieces(allTextBlocks, matchedBlock, mapping.Text)
+                : [];
+            foreach (var piece in pieces) consumedBlocks?.Add(piece);
+
             if (matchedBlock is not null)
             {
                 float fontHeightMm = matchedBlock.FontSizePt * ResolvedTextStyle.PtToMm;
@@ -481,6 +502,11 @@ public static class AiGuidedScheduleBuilder
                 elX = matchedBlock.X - marginLeft;
                 elY = matchedBlock.Y - marginTop;
                 elW = Math.Max(matchedBlock.Width, fontHeightMm * 2);
+                if (pieces.Count > 1)
+                {
+                    elX = pieces.Min(p => p.X) - marginLeft;
+                    elW = pieces.Max(p => p.X + p.Width) - pieces.Min(p => p.X);
+                }
                 // Výška z font size (ne z PdfPig bounding boxu, který může být nafouklý)
                 elH = fontHeightMm * 1.3f * lineCount;
                 if (lineOfBlock is int line)
@@ -519,7 +545,7 @@ public static class AiGuidedScheduleBuilder
             string bgColor = "#00FFFFFF";
 
             // Rámeček kolem víceřádkového bloku patří všem jeho řádkům, ne jednomu.
-            if (matchedBlock is not null && lineOfBlock is null)
+            if (matchedBlock is not null && lineOfBlock is null && pieces.Count <= 1)
             {
                 var enclosingRect = FindEnclosingRectangle(page.Rectangles, matchedBlock, allTextBlocks);
                 if (enclosingRect is not null)
@@ -561,6 +587,35 @@ public static class AiGuidedScheduleBuilder
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Kusy, na které PDF rozdělilo jeden text na řádku - trasa „Kroměříž - Kyselovice - Chropyně
+    /// - Přerov" u 940 IDZK nemá pomlčky v textové vrstvě, takže z ní jsou tři bloky. Bere se souvislá
+    /// řada bloků kolem nalezeného, jejichž text je obsažen v textu od modelu; nalezený blok je
+    /// v řadě vždy. Jeden kus = text nerozdělený.
+    /// </summary>
+    internal static List<ExtractedTextBlock> SameLinePieces(
+        IReadOnlyList<ExtractedTextBlock> blocks, ExtractedTextBlock matched, string mappingText)
+    {
+        string text = NormalizeText(mappingText);
+        float maxGap = matched.FontSizePt * ResolvedTextStyle.PtToMm * 3f;   // pomlčka s mezerami
+
+        var row = blocks
+            .Where(b => b == matched
+                || (!b.Text.Contains(NewLine)
+                    && Math.Abs(b.Y - matched.Y) < Math.Max(matched.Height, b.Height) * 0.5f
+                    && NormalizeText(b.Text) is { Length: >= 2 } t
+                    && text.Contains(t, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(b => b.X)
+            .ToList();
+
+        int i = row.IndexOf(matched);
+        if (i < 0) return [matched];
+        int from = i, to = i;
+        while (from > 0 && row[from].X - (row[from - 1].X + row[from - 1].Width) <= maxGap) from--;
+        while (to < row.Count - 1 && row[to + 1].X - (row[to].X + row[to].Width) <= maxGap) to++;
+        return row.GetRange(from, to - from + 1);
     }
 
     /// <summary>
@@ -830,6 +885,16 @@ public static class AiGuidedScheduleBuilder
 
             debug.Add($"  AI image: role={imgMap.Role}, pos=({imgX:0.#},{imgY:0.#}), size={imgW:0.#}×{imgH:0.#}");
 
+            // Uvnitř tabulky nebo poznámek logo ani QR není - model tam „grafiku" ohlásil u 940 IDZK
+            // a v šabloně z ní byl prázdný rámeček přes poznámky.
+            float imgCenterX = imgMap.X * pageW + imgW / 2, imgCenterY = imgMap.Y * pageH + imgH / 2;
+            if (scheduleRegionsMm.Any(r => imgCenterX >= r.Left + 2 && imgCenterX <= r.Right - 2
+                                           && imgCenterY >= r.Top + 2 && imgCenterY <= r.Bottom - 2))
+            {
+                debug.Add("    → leží v oblasti jízdního řádu - skip");
+                continue;
+            }
+
             // Zkusit najít odpovídající obrázek z PdfPig (dle pozice v mm)
             float imgMapXMm = imgMap.X * pageW;
             float imgMapYMm = imgMap.Y * pageH;
@@ -935,6 +1000,67 @@ public static class AiGuidedScheduleBuilder
         // z předlohy, ale ze šířky stránky - v šabloně pak seděl jinde než logo na papíře.
         // Prázdný rámeček vzniká jen tam, kde model obrázek opravdu viděl (krok 6).
 
+        return result;
+    }
+
+    /// <summary>Nejmenší šířka barevné plochy hlavičky (mm) - užší bývá podbarvení jedné hodnoty.</summary>
+    private const float MinPozadiSirkaMm = 20f;
+
+    /// <summary>
+    /// Barevné plochy hlavičky (pruh pod číslem a trasou linky) jako obdélníky za texty. Bez nich
+    /// zůstane bílý text na bílém - u 940 IDZK byla celá hlavička neviditelná. Bere se plocha nad
+    /// jízdním řádem, která není bílá a leží na ní text (prázdná je rámeček na logo, viz krok 7).
+    /// </summary>
+    internal static List<RectangleElement> BuildHeaderBackgrounds(
+        AiVisionResult vision, ExtractedPage page, float marginLeft, float marginTop, List<string> debug)
+    {
+        float scheduleTop = vision.Elements.Count > 0
+            ? vision.Elements.Min(e => e.Top) * page.HeightMm
+            : page.HeightMm * 0.2f;
+        var scheduleBoxes = vision.Elements
+            .Select(e => (L: e.Left * page.WidthMm, T: e.Top * page.HeightMm,
+                          R: e.Right * page.WidthMm, B: e.Bottom * page.HeightMm))
+            .ToList();
+
+        // Pruh nadpisu skupiny („Pracovní dny") těsně nad tabulkou si kreslí tabulka sama - model
+        // její oblast často začne až pod ním, jako u textů záhlaví (ZahlaviPasMm).
+        bool vZahlaviTabulky(ExtractedRectangle r)
+        {
+            float cy = r.Y + r.Height / 2;
+            return scheduleBoxes.Any(b => r.X + r.Width > b.L && r.X < b.R
+                                          && cy >= b.T - ZahlaviPasMm && cy <= b.B);
+        }
+
+        var plochy = page.Rectangles
+            .Where(r => r.Width >= MinPozadiSirkaMm && r.Height >= MinHeaderRectHeightMm
+                        && r.Y + r.Height <= scheduleTop + 1f
+                        && !vZahlaviTabulky(r))
+            .Where(r => ColorHex.ParseOrNull(r.FillColorHex) is { Alpha: > 0 } c
+                        && !(c.Red > 0xF0 && c.Green > 0xF0 && c.Blue > 0xF0))
+            .Where(r => page.Words.Any(w =>
+                w.X + w.Width / 2 > r.X && w.X + w.Width / 2 < r.X + r.Width
+                && w.Y + w.Height / 2 > r.Y && w.Y + w.Height / 2 < r.Y + r.Height))
+            .OrderByDescending(r => r.Width * r.Height)   // větší plocha dospodu
+            .ToList();
+
+        var result = new List<RectangleElement>();
+        for (int i = 0; i < plochy.Count; i++)
+        {
+            var r = plochy[i];
+            result.Add(new RectangleElement
+            {
+                Id = Guid.NewGuid(),
+                X = Math.Max(0, r.X - marginLeft),
+                Y = Math.Max(0, r.Y - marginTop),
+                Width = r.Width,
+                Height = r.Height,
+                ZIndex = i - plochy.Count,   // za všemi texty (ty číslují od 0)
+                BackgroundColor = r.FillColorHex!,
+                StrokeColor = r.StrokeColorHex ?? r.FillColorHex!,
+                StrokeWidth = r.StrokeColorHex is null ? 0f : Math.Clamp(r.StrokeWidth, 0.1f, 0.5f),
+            });
+            debug.Add($"Pozadí hlavičky: ({r.X:0.#},{r.Y:0.#}) {r.Width:0.#}×{r.Height:0.#}mm {r.FillColorHex}");
+        }
         return result;
     }
 
@@ -1479,12 +1605,14 @@ public static class AiGuidedScheduleBuilder
             || (Math.Abs(b.X - mappingXMm) < PartialMatchRadiusMm && Math.Abs(b.Y - mappingYMm) < PartialMatchRadiusMm))
             .ToList();
 
-        // 2. Obsahuje (obousměrně)
+        // 2. Obsahuje (obousměrně). Blok uvnitř textu od modelu musí být aspoň jeho polovina -
+        //    jinak se dlouhý řádek s dopravcem přichytil k „940", protože je to kus „771940".
         var contains = nearBlocks.FirstOrDefault(b =>
         {
             string blockText = NormalizeText(b.Text);
             return blockText.Contains(aiText, StringComparison.OrdinalIgnoreCase)
-                   || aiText.Contains(blockText, StringComparison.OrdinalIgnoreCase);
+                   || (blockText.Length * 2 >= aiText.Length
+                       && aiText.Contains(blockText, StringComparison.OrdinalIgnoreCase));
         });
         if (contains is not null) return contains;
 

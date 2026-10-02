@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-02 (3) - 🧪 import linkového JŘ nad výtiskem 940 IDZK
+
+Zkouška nad skutečným výtiskem linky 940 (tmavě modrá hlavička, víkendy odsazené vpravo) ukázala
+pět chyb skládání, ne rozpoznání: **barevné plochy hlavičky** se nepřebíraly, takže bílé texty
+zůstaly na bílém (nově obdélník za texty; plocha s textem nad jízdním řádem, ne bílá, ne pruh
+nadpisu skupiny těsně nad tabulkou); **víc oblastí tabulky** od modelu (skupina dnů vedle, části
+pod sebou) se slévá do jedné; **text rozdělený na kusy** (trasa bez pomlček v textové vrstvě PDF)
+se složí do jednoho prvku; **krátký blok uvnitř dlouhého textu** („940" v „771940") už neplatí za
+shodu; **rámeček na obrázek** z hlášení modelu se nevloží do tabulky ani poznámek. Importovaný
+obdélník nedostane navíc černý rámeček. Kromě slévání tabulek platí všechno i pro zastávkový JŘ.
+
 ## 2026-10-02 (2) - 🧪 import linkového JŘ vyzkoušený naostro
 
 Import běžel proti dev serveru a skutečnému modelu nad PDF demo výlepu linky 330530, které
