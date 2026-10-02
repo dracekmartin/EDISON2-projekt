@@ -29,7 +29,7 @@ public class SessionSwitcherTests
 
         private TestableSessionSwitcher(EDServices services, WireSpy wire, Func<bool> closeAllWindows)
             : base(services, () => null, wire.Attach, closeAllWindows,
-                   Substitute.For<IWindowStateStore>()) => _wire = wire;
+                   Substitute.For<IWindowStateStore>(), new StartupOptions()) => _wire = wire;
 
         public static TestableSessionSwitcher Create(EDServices services, Func<bool> closeAllWindows)
             => new(services, new WireSpy(), closeAllWindows);
@@ -287,5 +287,25 @@ public class SessionSwitcherTests
         closeAll.DidNotReceiveWithAnyArgs().Invoke();
         Assert.Empty(s.Calls);
         Assert.Same(originalMLRest, services.MLRest);
+    }
+
+    /// <summary>Skutečný <c>EstablishSession</c> bez přepsání - jen skládá MLRest, na server nesahá.</summary>
+    private sealed class EstablishProbe(EDServices services, StartupOptions options)
+        : SessionSwitcher(services, () => null, _ => { }, () => true, Substitute.For<IWindowStateStore>(), options)
+    {
+        public SessionContext Establish(ConnectionInfo conn, LoginResult login) => EstablishSession(conn, login);
+    }
+
+    [Fact]
+    public void EstablishSession_UsesStartupOptions()
+    {
+        // Nová session musí mít GUID a verzi jako startovní - v dev jinak hromadí zámky, E2E by shodil vývojářův shell.
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var probe = new EstablishProbe(services, StartupOptions.Development(["e2e=1"], null));
+
+        var inner = ((MLRestAdapter)probe.Establish(new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"), ReauthLogin()).MLRest).Inner;
+
+        Assert.Equal($"{TestRunOptions.WindowMarker}-{Environment.MachineName}-{Environment.UserName}", inner.GUID);
+        Assert.Equal("", inner.EdisonVersion);
     }
 }

@@ -454,7 +454,15 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A10 · Režim startu rozhoduje `#if DEBUG` na devíti místech, runtime volby a settable statiky
 
-- [ ] **Stav:** otevřeno (2026-10-01: změna tvaru - přibyl runtime `TestRunOptions` a další statiky, `#if` neubylo)
+- [x] **Stav:** vyřešeno (2026-10-01) - `Startup/StartupOptions` (record, defaulty = Release): `DevLogin`,
+  `SessionGuidTag`, `SendsVersion`, `DevMiniApps`, `UseDevDefaults`, `InternalDiagnosticsEnabled`, `TestRun`;
+  `Development(args, EDISON2_DEVLOGIN)` / `Production()` vybírá jediný `#if` v `App.xaml.cs`, statiky
+  (`UseDevDefaults`, `InternalDiagnostics.Enabled`, E2E vypnutí hlášení/telemetrie) nastavuje jen
+  `ApplyToProcess`. `SessionFactory.Establish` i `SessionSwitcher` berou options, `SessionTag` zanikl;
+  `TestRunOptions` jen parsuje. Nad návrh: `EDISON2_DEVLOGIN=0` pustí v Debug login dialog (Release cestu).
+  **Výjimka:** `VerzeInf.Current` drží `#if` dál (soubor S4, source-link do EDUPDATE2). Testy
+  `StartupOptionsTests`, `SessionFactoryTests` a `AppBootstrapperTests` bez `#if`, `SessionSwitcherTests`
+  (GUID nové session podle options), `MiniAppProviders`.
 - **P2 · M** · Závisí na: - · Blokuje: regresní test pro A1 · Původ: nový (2026-09-20)
 - **Problém:** Debug a Release jsou dva různé programy: hardcoded login, deterministický GUID,
   prázdná `EdisonVersion`, `DevVersion`, neukládané `LastLoginName`, dev miniaplikace. Release

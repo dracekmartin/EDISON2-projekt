@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
-using EDControls.EDViewModel;
-using EDControls.ErrorReporting;
-using EDISONMAIN2.MiniApps;
 
 namespace EDISONMAIN2;
 
 /// <summary>
-/// Testovací běh pro UI E2E test (argument <c>e2e=1</c>, jen DEBUG build). Shell tak ovládá UI
-/// Automation na vývojářově stroji: nesmí sdílet session s jeho shellem, hlásit chyby na podporu,
-/// přepisovat jeho <c>local.json</c> ani otevírat okna, na která test nečeká.
+/// Testovací běh pro UI E2E test (argument <c>e2e=1</c>, parsuje jen <see cref="StartupOptions.Development"/>).
+/// Shell tak ovládá UI Automation na vývojářově stroji: nesmí sdílet session s jeho shellem, hlásit chyby
+/// na podporu, přepisovat jeho <c>local.json</c> ani otevírat okna, na která test nečeká.
 /// </summary>
 public sealed class TestRunOptions
 {
@@ -35,16 +32,5 @@ public sealed class TestRunOptions
                 idfa = token[IdfaKey.Length..];
         }
         return testRun ? new TestRunOptions { StartIdfa = idfa } : null;
-    }
-
-    /// <summary>Nastavení pro celý proces; volat jako první krok startupu.</summary>
-    public void ApplyProcessIsolation()
-    {
-        ErrorReports.Enabled = false;
-        EDUsageTelemetry.Enabled = false;
-        // Logout maže zámky podle GUID (LockClearExt) - se společným DEV GUID by E2E shodil vývojářův shell.
-        SessionFactory.SessionTag = WindowMarker;
-        // Widget podpory by pod vývojářovou identitou volal podpora.m-line.cz; čte se až při zobrazení.
-        Environment.SetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable, "1");
     }
 }

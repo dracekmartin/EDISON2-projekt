@@ -1,9 +1,9 @@
 # EDISON2.E2ETests - UI E2E shellu
 
 FlaUI (UI Automation) ovládá skutečný DEBUG `EDISONMAIN2.exe` spuštěný s `server=… restport=… e2e=1
-idfa=…`. Přepínač (`EDISONMAIN2/dotnet/Startup/TestRunOptions.cs`) dává běhu vlastní session GUID,
-vypne hlášení chyb, telemetrii a widget podpory, auto-login, changelog a výchozí okno a drží
-preference jen v paměti.
+idfa=…`. Přepínač (parsuje `TestRunOptions`, efekty `EDISONMAIN2/dotnet/Startup/StartupOptions.cs`) dává
+běhu vlastní session GUID, vypne hlášení chyb, telemetrii a widget podpory, auto-login, changelog
+a výchozí okno a drží preference jen v paměti.
 
 - **Běh ručně**: `EDISON_E2E=1 dotnet test EDISON2.E2ETests` (bez proměnné Skipped; pre-push ho
   vylučuje filtrem `Category!=E2E`). Potřebuje VPN, přihlášenou plochu a předem sestavený DEBUG

@@ -7,12 +7,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// </summary>
     internal static class InternalDiagnostics
     {
-        // Settable jen kvůli testům; Release rozhoduje doména stanice (kolegové validují Release build).
-        internal static bool Enabled { get; set; } =
-#if DEBUG
-            true;
-#else
-            ModuleTreeState.IsMlineDomainStation;
-#endif
+        // Nastavuje StartupOptions.ApplyToProcess; default vypnuto = chování stanice zákazníka.
+        internal static bool Enabled { get; set; }
     }
 }

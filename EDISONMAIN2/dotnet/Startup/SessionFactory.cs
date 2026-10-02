@@ -22,31 +22,20 @@ public record SessionContext(IMLRest MLRest, LoginResult Login, Func<Lic?> Licen
 /// </summary>
 public static class SessionFactory
 {
-    /// <summary>Prefix deterministického DEBUG GUID; E2E běh má vlastní (<see cref="TestRunOptions"/>).</summary>
-    internal static string SessionTag { get; set; } = "DEV";
-
-    public static SessionContext Establish(ConnectionInfo conn, LoginResult login, EDServices services)
+    /// <param name="options">Verze stanice a session GUID - stejné pro start i přihlášení jiného uživatele.</param>
+    public static SessionContext Establish(ConnectionInfo conn, LoginResult login, EDServices services,
+                                           StartupOptions options)
     {
         var inner = new MLRest(conn.Server, conn.Port, conn.Database, conn.Idfa)
         {
             LoginName = login.UserName,
             FullName = login.FullName,
             Mlp = login.Mlp.ToString(),
-#if DEBUG
-            // Dev verze 999999.9 nikdy nesedí s Caché → per-request version gate (Locks=1)
-            // by shodil každý request. Prázdná verze = gate na serveru neběží.
-            EdisonVersion = ""
-#else
-            // Aktivuje server-side per-request version gate (prázdná verze = gate neběží).
-            EdisonVersion = VerzeInf.Current
-#endif
+            EdisonVersion = options.SendsVersion ? VerzeInf.Current : ""
         };
-#if DEBUG
-        // Deterministický GUID v dev: Stop Debugging (hard-kill) ACTIVITY zámek neuvolní, ale
-        // příští spuštění reusne stejný klíč (idfa~ip~guid) → zámek se přepíše, neakumuluje se
-        // (a neroste falešně licenční počet). V produkci náhodný GUID per session (default).
-        inner.GUID = $"{SessionTag}-{Environment.MachineName}-{Environment.UserName}";
-#endif
+        // Bez tagu zůstává náhodný GUID per session (default MLRest).
+        if (options.SessionGuidTag is { } tag)
+            inner.GUID = $"{tag}-{Environment.MachineName}-{Environment.UserName}";
         var mlRest = new MLRestAdapter(inner);
 
         services.IsAdmin = login.IsAdmin;
