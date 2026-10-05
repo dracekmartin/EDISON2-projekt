@@ -1,7 +1,10 @@
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Threading;
 using ALWA.SYS;
+using EDControls.EDList;
 using EDControls.EDViewModel;
+using EDControls.UserPrefs;
 using EDTesting;
 using NSubstitute;
 using List = EDControls.EDList.EDList;
@@ -111,17 +114,43 @@ public class EDListLoadTests
         });
     }
 
-    private static List NewList(IMLRest mock) => new()
+    /// <summary>Nový dataset po LoadList: hledání i uložený layout platí dál (EDList/CLAUDE.md).</summary>
+    [Fact]
+    public void LoadList_ReappliesSearchAndLayout()
+    {
+        RunSta(() =>
+        {
+            var mock = MLRestMocks.Create();
+            var prefs = Substitute.For<IUserPrefsService>();
+            prefs.LoadAsync("EDControls.EDList", "Tests.EDList").Returns(Task.FromResult<JsonNode?>(
+                ColumnLayoutSerializer.Serialize(new ColumnLayout { Columns = [new ColumnPref { Key = "name", Width = 222 }] })));
+            var list = InitializedList(mock, prefs);
+            list.HostId = "Tests.EDList";
+            list.SearchText = "praha";
+            var output = new CVar();
+            output["1"] = new CVar("""{"id":"1","name":"Praha"}""");
+            output["2"] = new CVar("""{"id":"2","name":"Brno"}""");
+            mock.QueryOrThrow("ALVA.MockList", "LoadList", Arg.Any<CVar>()).Returns(output);
+
+            list.LoadList();
+
+            Assert.Equal(["1"], list.DataGrid.Items.OfType<EDListRow>().Select(r => r.Id));
+            Assert.Equal(222, list.DataGrid.Columns.Single().Width.Value);
+        });
+    }
+
+    private static List NewList(IMLRest mock, IUserPrefsService? prefs = null) => new()
     {
         CacheClass = "ALVA.MockList",
         ServicesOverride = new EDServices(mock,
-            Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+            Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
+        { UserPrefs = prefs ?? new NullUserPrefsService() },
     };
 
-    private static List InitializedList(IMLRest mock)
+    private static List InitializedList(IMLRest mock, IUserPrefsService? prefs = null)
     {
         mock.QueryOrThrow("ALVA.MockList", "InitializeList", Arg.Any<CVar>()).Returns(ColumnsOutput());
-        var list = NewList(mock);
+        var list = NewList(mock, prefs);
         list.InitializeList();
         return list;
     }

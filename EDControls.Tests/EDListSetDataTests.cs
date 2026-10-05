@@ -118,6 +118,27 @@ public class EDListSetDataTests
         });
     }
 
+    /// <summary>IMAGE a CODEBOOK jsou rezervované: textový sloupec s raw hodnotou, dokud je někdo nezačne kreslit.</summary>
+    [Fact]
+    public void SetData_ReservedTypes_RenderAsRawText()
+    {
+        RunSta(() =>
+        {
+            var list = NoRestList();
+            ListColumn[] reserved =
+            [
+                new() { Key = "logo", Type = ListColumnType.Image },
+                new() { Key = "druh", Type = ListColumnType.Codebook },
+            ];
+
+            list.SetData(reserved, [new Dictionary<string, string?> { ["id"] = "1", ["logo"] = "EDIcons.Bus", ["druh"] = "07" }]);
+
+            Assert.All(list.DataGrid.Columns, c => Assert.IsType<DataGridTextColumn>(c));
+            Assert.Equal("EDIcons.Bus", list.Rows[0]["logo"]);
+            Assert.Equal("07", list.Rows[0]["druh"]);
+        });
+    }
+
     /// <summary>Přestavba sloupců (SelectionMode) zahodila šipku, ale CustomSort řadil dál.</summary>
     [Fact]
     public void SelectionModeChange_KeepsSortArrowAndOrder()
@@ -167,6 +188,26 @@ public class EDListSetDataTests
 
             Assert.Null(ColumnByKey(list, "rz").SortDirection);
             Assert.Equal(ListSortDirection.Descending, ColumnByKey(list, "mth").SortDirection);
+        });
+    }
+
+    /// <summary>Poškozený blob (klíč null) by trefil checkbox sloupec bez Tagu a comparer by spadl na null klíči.</summary>
+    [Fact]
+    public void SetData_StoredLayoutWithNullKeys_IsIgnored()
+    {
+        RunSta(() =>
+        {
+            var broken = JsonNode.Parse("""{"columns":[{"key":null,"width":99}],"sort":[{"key":null,"direction":"desc"}]}""");
+            var list = NoRestList(PrefsReturning(broken));
+            list.HostId = "Tests.EDList";
+            list.SelectionMode = ListSelectionMode.Check;
+
+            list.SetData(Columns, [Row("1", "A", "1"), Row("2", "B", "2")]);
+
+            Assert.Equal(32, list.DataGrid.Columns[0].Width.Value);
+            Assert.Null(list.DataGrid.Columns[0].SortDirection);
+            var view = (ListCollectionView)CollectionViewSource.GetDefaultView(list.DataGrid.ItemsSource);
+            Assert.Null(view.CustomSort);
         });
     }
 

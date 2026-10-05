@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 22 / 47**
+**Hotovo: 24 / 47**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -278,11 +278,13 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A5 · `EdisonMainViewModel` je God class shellu
 
-- [ ] **Stav:** částečně (2026-10-05) - kroky 1-3 hotové: instanční `ModuleTreeState` (c113e3fb),
-  `FavoritesCoordinator` (d2b3c6b1, řeší i A28 ve VM), `MiniAppSessionController` (24f497ef, nese A20);
-  VM má 1253 ř. Zbývá krok 4 (licence session, `_sessionGeneration` a `SameSession()` v
-  `ReloadAllowedCompaniesAsync` z 569b3454, který přidal i ctor parametr `loadAllowedCompanies` a seznam
-  povolených firem) a krok 5 (menu commandy).
+- [ ] **Stav:** částečně (2026-10-05) - kroky 1-5 hotové: instanční `ModuleTreeState` (c113e3fb),
+  `FavoritesCoordinator` (d2b3c6b1, řeší i A28 ve VM), `MiniAppSessionController` (24f497ef, nese A20),
+  `SessionEpoch` + `SessionLicenceCoordinator` (335de75a, sjednocuje `_sessionGeneration` i `SameSession()`
+  z 569b3454), menu handlery v partial `EdisonMainViewModel.Menu.cs` (48ed0e77); k tomu oprava rychlého
+  přepnutí A→B→C, index firmy podle Id po `Accepted` (82e4c575). VM má 972 ř. (+ partial menu), cíl pod ~400
+  nesplněn: další extrakce (přepínání firem a uživatele, launch modulů, labely spuštěných modulů) zatím
+  nenaplánované.
 - **P1 · L** · Závisí na: - · Blokuje: A20, A21, A28 (řešit v rámci extrakcí) · Původ: [backlog R1](arch-backlog.md#r1---edisonmainviewmodel-je-god-class-shellu)
 - **Problém:** VM má 1723 řádků (2026-09-20: 1525) a 42 commandů, ctor 15 parametrů (13 povinných,
   volitelné `restRunner` a `licenceSync`; harness `EdisonMainViewModelHarness.cs:17` tvrdí 13). Statické
@@ -634,7 +636,16 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A14 · `EDList` nemá controller seam
 
-- [ ] **Stav:** otevřeno, částečně (wire vrstva vytažena; ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno 7f229e95 (2026-10-05) - `internal sealed EDListController` bez WPF drží sloupce,
+  řádky (`BulkObservableCollection`, view ji jen bindne), frontu dotazů a generation guard, lifecycle
+  řádků (odhlášení, kotva), zaškrtnutí včetně rozsahu Shift+klik a stavu záhlaví, specy řazení
+  a load/save layoutu přes `IUserPrefsService`. Místo `(IMLRest, cacheClass)` z návrhu bere
+  `Func<EDServices>` (MLRest per volání, přepnutí session neudrží starou instanci) a `cacheClass`/`HostId`
+  parametrem (DP čte view na UI vlákně). Tvorba sloupců v `EDListColumnFactory`, `RgbStringToBrushConverter`
+  ve vlastním souboru. Code-behind 729 → 434 ř. (k 400 po A23, kde odejde debounce). Veřejné API
+  beze změny. Navíc `FindColumnByKey` odmítne prázdný klíč (poškozený layout trefil checkbox sloupec
+  bez Tagu). Testy `EDListControllerTests` (15, bez STA), `EDListLoadTests.LoadList_ReappliesSearchAndLayout`,
+  `EDListSetDataTests.SetData_StoredLayoutWithNullKeys_IsIgnored`.
 - **P2 · M** · Závisí na: - · Blokuje: A16, A17, A27 (dělat spolu) · Původ: [backlog R3](arch-backlog.md#r3---edlist-nemá-controller-seam)
 - **Stav v kódu:** `EDListParsing` (commit d8a75403), `EDListSort`, `EDListFilter`, `ColumnLayout`
   jsou vytažené; `EDList.xaml.cs` má 729 řádků, volá MLRest přímo (`:269,:280,:295,:313`), stav
@@ -1061,7 +1072,11 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A27 · Wire deklaruje, co UI nerenderuje: `IMAGE`/`CODEBOOK`, `Field.Format`, `UserHidden` 🔸
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01; přestavba XAML formuláře `Format` nezapojila)
+- [ ] **Stav:** otevřeno, část EDList vyřešena 1e6bcc79 (2026-10-05) - rozhodnutí vlastníka: IMAGE a CODEBOOK
+  **rezervovat**, server je dál přijme (platné konstanty v `EDList.inc`) a klient je kreslí jako text;
+  `ListColumnType`, `EDListColumnFactory`, `Column.cls` a `EDList/CLAUDE.md` je tak označují, kreslení
+  až pro skutečného konzumenta. Test `EDListSetDataTests.SetData_ReservedTypes_RenderAsRawText`.
+  Zbývá část formulář (`Field.Format`, `UserHidden`), proud S8.
 - **Rozhodnutí vlastníka (2026-10-05):** rezervovat: `IMAGE`/`CODEBOOK` zůstávají platné konstanty, renderují se jako text a C# i `Column.cls` je označí jako rezervované; `Field.Format` a `UserHidden` označit jako rezervované a `format="N2"` vyřadit z `EDIFExample`. Implementace až pro skutečného konzumenta.
 - **P3 · S** · Závisí na: A14 (dělat v rámci nebo po) · Blokuje: - · Původ: [backlog R13d](arch-backlog.md#r13d---edlist-typy-image-a-codebook-bez-renderingu), rozšířeno
 - **Důkaz:** `EDListParsing.cs:54,57` parsuje IMAGE/CODEBOOK, `BuildDataGridColumn`
@@ -1293,7 +1308,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A40 · Statické test seamy ErrorReportingu a persistence drží ručně udržovaný seznam `[Collection]`
 
-- [x] **Stav:** vyřešeno (2026-10-05) - internal `ErrorReporting/ErrorReportingPipeline.cs` drží throttle,
+- [x] **Stav:** vyřešeno b5db882b (2026-10-05) - internal `ErrorReporting/ErrorReportingPipeline.cs` drží throttle,
   `HttpClient`, záložní log (`ErrorFallbackLog` je instance s cestou a prahem), `isInternal`, zdroj `EDServices`
   a snímek oken; `ErrorReports.Pipeline` je get-only výchozí instance, veřejné `ErrorReports.*`
   a `ErrorReporter.*` delegují beze změny API. Zmizely `Throttle` setter, `ClientOverride`,
