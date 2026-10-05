@@ -1166,7 +1166,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A34 · Dvě serverové cesty k „výchozí okno", jedna mrtvá
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno (2026-10-05) - `UserProfileData` bez `DefaultWindowId`, `UserProfileService.Load`
+  řádek `form` nečte (server ho posílá dál, čte ho legacy shell); věta o jediné cestě
+  `ApiEdison.Get/SetUserDefaultForm` v `EDISONMAIN2/CLAUDE.md`, sekce Výchozí okno.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `Windows/UserProfileWindow/UserProfileService.cs:11` record s `DefaultWindowId`,
   `:41-43` parsování řádku `form` z `ALVA.EDISON.Main.LoadUser`; okno (`UserProfileWindow.xaml.cs:37-44`)

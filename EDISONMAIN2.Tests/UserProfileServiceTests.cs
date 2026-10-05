@@ -31,18 +31,16 @@ public class UserProfileServiceTests
         new object[] { "" }.Concat(rows).ToArray();
 
     [Fact]
-    public void Load_ParsesPersonDirFormAndCentralDir()
+    public void Load_ParsesPersonDirAndCentralDir_IgnoresOtherRows()
     {
+        // Řádky email a form v odpovědi LoadUser jsou pro legacy shell.
         var ml = Mock(
             loadUser: Rows($"personDir{D}1{D}C:\\Users\\jan\\Export", $"email{D}jan@x.cz", $"form{D}17"),
             loadSettings: Rows($"system{D}database{D}CB_X{D}CB_X", $"system{D}export{D}\\\\srv\\central"));
 
         var p = UserProfileService.Load(ml);
 
-        Assert.True(p.UsePersonDir);
-        Assert.Equal("C:\\Users\\jan\\Export", p.PersonDir);
-        Assert.Equal(17, p.DefaultWindowId);
-        Assert.Equal("\\\\srv\\central", p.CentralExportDir);
+        Assert.Equal(new UserProfileData(true, "C:\\Users\\jan\\Export", "\\\\srv\\central"), p);
     }
 
     [Fact]
@@ -70,15 +68,6 @@ public class UserProfileServiceTests
         var ml = Mock(loadUser: Rows($"personDir{D}{flag}{D}C:\\x"));
 
         Assert.Equal(expected, UserProfileService.Load(ml).UsePersonDir);
-    }
-
-    [Fact]
-    public void Load_NoFormRow_DefaultWindowIdZero()
-    {
-        // Server řádek „form" pošle jen když ≠ 0; jeho absence = žádný výchozí okno.
-        var ml = Mock(loadUser: Rows($"personDir{D}0{D}"));
-
-        Assert.Equal(0, UserProfileService.Load(ml).DefaultWindowId);
     }
 
     [Fact]

@@ -90,6 +90,7 @@ uživatelovo rozložení.
 
 Modul auto-otevřený po loginu (per-uživatel × IDFa, Caché feature #25). `ExecutableModule.ElementId`
 = uložené `EDISFormEnum` id → picker/značení jede přes vlastní strom, ne legacy AccessTree.
+Čte a zapisuje se jen přes `ApiEdison.Get/SetUserDefaultForm`; řádek `form` z `Main.LoadUser` je pro legacy shell.
 `Windows/UserProfileWindow` je EDInputForm (`…EDInputForm.UserProfile`), ale **data drží klient,
 ne schema třída** - `Main.LoadUser/SaveUser` jsou samy MLRest metody, volat je ze schematu by
 kolidovalo na `^||ML`.

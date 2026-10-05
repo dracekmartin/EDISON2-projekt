@@ -4,11 +4,10 @@ using EDControls;
 namespace EDISONMAIN2.Windows.UserProfileWindow
 {
     /// <summary>
-    /// Profil uživatele ze serveru: osobní export adresář (+ příznak použití), centrální
-    /// export adresář a id výchozího okna. Výchozí okno je per-uživatel × IDFa
-    /// (Caché feature #25) - přepnutí firmy může vrátit jiný.
+    /// Profil uživatele ze serveru: osobní export adresář (+ příznak použití) a centrální
+    /// export adresář. Výchozí okno jen přes <see cref="UserProfileService.LoadDefaultWindow"/>.
     /// </summary>
-    public record UserProfileData(bool UsePersonDir, string PersonDir, string CentralExportDir, int DefaultWindowId);
+    public record UserProfileData(bool UsePersonDir, string PersonDir, string CentralExportDir);
 
     /// <summary>
     /// Wire vrstva okna „Vlastnosti uživatele". Legacy Caché metody čtou/píšou přes numerické
@@ -18,8 +17,8 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
     public static class UserProfileService
     {
         /// <summary>
-        /// <c>ALVA.EDISON.Main.LoadUser</c> (řádky <c>personDir~příznak~cesta</c>, <c>form~id</c>)
-        /// + <see cref="LoadCentralExportDir"/>. Řádek <c>form</c> server pošle jen když ≠ 0.
+        /// <c>ALVA.EDISON.Main.LoadUser</c> (řádek <c>personDir~příznak~cesta</c>) + <see cref="LoadCentralExportDir"/>.
+        /// Řádek <c>form</c> téže odpovědi čte jen legacy shell; výchozí okno je <see cref="LoadDefaultWindow"/>.
         /// </summary>
         public static UserProfileData Load(IMLRest mlRest)
         {
@@ -27,24 +26,18 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
 
             bool usePersonDir = false;
             string personDir = "";
-            int defaultWindowId = 0;
 
             foreach (var row in ParseRows(user, mlRest.Delimiter))
             {
-                switch (row[0])
+                if (row[0] == "personDir" && row.Length >= 3)
                 {
-                    case "personDir" when row.Length >= 3:
-                        // Příznak legacy ukládal i jako -1 (VB CInt(True)) → nenulové = true.
-                        usePersonDir = int.TryParse(row[1], out var flag) && flag != 0;
-                        personDir = row[2];
-                        break;
-                    case "form" when row.Length >= 2:
-                        int.TryParse(row[1], out defaultWindowId);
-                        break;
+                    // Příznak legacy ukládal i jako -1 (VB CInt(True)) → nenulové = true.
+                    usePersonDir = int.TryParse(row[1], out var flag) && flag != 0;
+                    personDir = row[2];
                 }
             }
 
-            return new UserProfileData(usePersonDir, personDir, LoadCentralExportDir(mlRest), defaultWindowId);
+            return new UserProfileData(usePersonDir, personDir, LoadCentralExportDir(mlRest));
         }
 
         /// <summary>
