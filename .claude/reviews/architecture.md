@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 5 / 47**
+**Hotovo: 19 / 47**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -83,7 +83,7 @@ nepřekrývají, takže můžou běžet současně.
 | S8 EDInputForm | A15 🔸 → A27 část formulář (`Format`, `UserHidden`) | `EDInputForm/*`, `Form.cls`, `EDIFExample.cls`, jejich testy | 2 | chat |
 | S9 Infrastruktura EDControls | A39 → A40 → A41 🔸 | `UserFonts/*`, `EDTheme/UserThemePreference.cs`, `ErrorReporting/*`, `PopupDisplayer.cs`, `RelayCommand.cs`, `AsyncRelayCommand.cs`, jejich testy | 2 | chat |
 | S1 pokračuje | A9 (s S2) → A5 kroky 4-5 → A21 → A29 → A30 → A31 🔸 → A32 🔸 | VM, `Modules/*`, `MiniApps/Desktop*`; A9 i `SessionFactory`, `CompanySwitcher`, `LicenceVerifier` | 2 | chat |
-| Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4, `ALVA.EDTesting.TestRunner` počítá skipped (status 2) zvlášť a vypíše důvod (dnes FAIL s prázdnou hláškou, brání `$$$AssertSkipped` v TD) | napříč | 3 | po slití vln 1 a 2 |
+| Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4, `ALVA.EDTesting.TestRunner` počítá skipped (status 2) zvlášť a vypíše důvod (dnes FAIL s prázdnou hláškou, brání `$$$AssertSkipped` v TD), mrtvý `OpenMiniAppCommand` ve VM (bez bindingu), `docs/zastupci-na-plose.md:62` odkazuje na zrušené `ReloadShortcutsAsync` | napříč | 3 | po slití vln 1 a 2 |
 
 Rozhodnutí vlastníka, na která proudy narazí: A47 (varianta a/b/c, konec S4), A12 bod 3 (politika
 escapování, mimo S5), A15 (kdy zahodit odpověď), A27 (implementovat, nebo označit rezervované),
@@ -257,7 +257,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A4 · Pruh podpory poslouchá jen `Idfa`; po přihlášení jiného uživatele nese widget starého
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno 64f22346 (2026-10-02) - VM vystavuje `SupportWidgetUrl` a notifikuje ho po přepnutí
+  firmy i před rebuildem po přihlášení jiného uživatele (od 569b3454 i přes `ReplaceCompanies` →
+  `RaiseSessionPropertiesChanged`); okno shellu `EDServices.Current` nečte.
 - **P1 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** View si skládá URL widgetu samo z `EDServices.Current` a přenačítá ho jen na
   notifikaci `Idfa`; VM neví, že na tom view závisí, a při switch user `Idfa` nenotifikuje.
@@ -278,7 +280,11 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A5 · `EdisonMainViewModel` je God class shellu
 
-- [ ] **Stav:** otevřeno (rozpracováno od 2026-08-17, příprava hotová; 2026-10-01 třída dál roste)
+- [ ] **Stav:** částečně (2026-10-05) - kroky 1-3 hotové: instanční `ModuleTreeState` (c113e3fb),
+  `FavoritesCoordinator` (d2b3c6b1, řeší i A28 ve VM), `MiniAppSessionController` (24f497ef, nese A20);
+  VM má 1253 ř. Zbývá krok 4 (licence session, `_sessionGeneration` a `SameSession()` v
+  `ReloadAllowedCompaniesAsync` z 569b3454, který přidal i ctor parametr `loadAllowedCompanies` a seznam
+  povolených firem) a krok 5 (menu commandy).
 - **P1 · L** · Závisí na: - · Blokuje: A20, A21, A28 (řešit v rámci extrakcí) · Původ: [backlog R1](arch-backlog.md#r1---edisonmainviewmodel-je-god-class-shellu)
 - **Problém:** VM má 1723 řádků (2026-09-20: 1525) a 42 commandů, ctor 15 parametrů (13 povinných,
   volitelné `restRunner` a `licenceSync`; harness `EdisonMainViewModelHarness.cs:17` tvrdí 13). Statické
@@ -369,7 +375,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A7 · `WindowNavigator` je tři třídy v jedné, polovina stavu je statická
 
-- [x] **Stav:** vyřešeno (2026-10-01, proud S5) - legacy část přešla do internal `LegacyModuleHost`
+- [x] **Stav:** vyřešeno cf2895fa (2026-10-05, proud S5) - legacy část přešla do internal `LegacyModuleHost`
   (launch, tracking, dedup, hlášení pádu, ztmavení, kill) se závislostmi v ctoru (`Func<EDServices>`,
   továrna procesu, `fileExists`, `reportExit`, `trackUsage`, UI marshal, owner dialogu, focus); proces
   za šev `ILegacyProcess`, `KilledByShell` je příznak spuštění místo statické `ConditionalWeakTable`.
@@ -404,7 +410,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A8 · EDControls zná deployment a branding EDISONMAIN2 natvrdo
 
-- [x] **Stav:** vyřešeno (2026-10-05, proud S5) - `C:\Edison` a `EDISONMAIN2API.exe` jsou jen jako
+- [x] **Stav:** vyřešeno 9c9ad8af (2026-10-05, proud S5) - `C:\Edison` a `EDISONMAIN2API.exe` jsou jen jako
   defaulty v `LegacyModuleHost`; launcher jde přebít internal parametrem ctoru, deploy adresář vědomě ne
   (launch a `WindowNavigator.ResolveExecutablePath` musí hledat na stejném místě). Veřejný setter není,
   žádná aplikace jinou hodnotu nepotřebuje. `WindowNavigator.EdisonDeployRoot` je `static readonly`. Argv
@@ -564,7 +570,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A13 · Kontrakty k legacy Caché endpointům: pozicní parsování, testy šva jen pro část
 
-- [ ] **Stav:** částečně (3c6a0e94, 52dff7b1, c3804594, e44439f0; ověřeno 2026-10-01) - integrační
+- [ ] **Stav:** částečně (3c6a0e94, 52dff7b1, c3804594, e44439f0, body 2-4 ef05128a; ověřeno 2026-10-01) - integrační
   testy šva (`EDISON2.IntegrationTests`, skutečné MLRest proti dev serveru, při nedostupném serveru
   skutečný skip) pokrývají `ALVA.SYSTEM.Main.LoginAllowed`, `ALVA.SETUP.Main.LoadSettings` (klíče
   `update`, `pending`, `version`, `edisonPath`, `sourceServer`, `sourcePort`, řádky `localPath`),
@@ -739,7 +745,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A19 · `UserProfileWindow` opakuje vzor A18: workflow v code-behind, VM dostává callback z okna
 
-- [x] **Stav:** vyřešeno (2026-10-05) - plnění formuláře (`FillForm`), uložení (`OnOk` → server validace →
+- [x] **Stav:** vyřešeno 2f23a5b2 (2026-10-05) - plnění formuláře (`FillForm`), uložení (`OnOk` → server validace →
   `ValidateExportDir` → `SaveExportDir` → `UserDirectory`) a validace složky jsou ve VM, singleton čte jen
   bezparametrický ctor VM. Místo delegátu `SaveRequested` port `IUserProfileForm` (`Save`, `Validate`,
   `Get`, `Set`), který okno implementuje nad `TheForm.Items`; okno jen mapuje pole a tlačítka formuláře.
@@ -765,7 +771,10 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A20 · Persistence layoutu mini-apps má tři vstupy; běžné zavření persistuje dvakrát
 
-- [ ] **Stav:** otevřeno, částečně posunuto (ověřeno 2026-10-01)
+- [x] **Stav:** vyřešeno bc42f82d (2026-10-02) - jinak než návrh: místo `BeginSessionSwap()` se layout ukládá
+  jen při `Closed` shellu a jen pod firmou, jejíž layout dock drží (`_dockIdfa`, null = dock vyprázdněný
+  výměnou session); `CloseAllCommand` a `_sessionSwapInProgress` zrušeny, přepnutí uživatele z 569b3454
+  jede stejnou cestou. Od 24f497ef v `MiniAppSessionController`.
 - **P2 · S** · Závisí na: - · Blokuje: A5 krok `MiniAppSessionController` · Původ: [backlog N2](arch-backlog.md#n2---persistence-layoutu-miniaplikací-má-tři-vstupy-a-guard-jen-v-jednom)
 - **Stav v kódu:** guard `_sessionSwapInProgress` je uvnitř `PersistMiniAppLayout`
   (`EdisonMainViewModel.cs:187`), takže kryje všechny vstupy. Vstupy zůstávají tři:
@@ -880,7 +889,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A45 · `local.json` sdílí víc instancí shellu, každý zápis přepíše celý soubor
 
-- [x] **Stav:** vyřešeno (2026-10-01) - oprava jen uvnitř `LocalPrefs`, bez `ILocalPrefs.Update` a beze změny
+- [x] **Stav:** vyřešeno a5774bd5 (2026-10-01) - oprava jen uvnitř `LocalPrefs`, bez `ILocalPrefs.Update` a beze změny
   volajících: `Load` si drží snímek, `Save` pod pojmenovaným mutexem (`Local\` + hash cesty, bere ho i `Load`)
   soubor znovu načte a tříbodově sloučí - property změněná proti snímku vyhrává naše, jinak disk; slovníky
   (podle JSON kontraktu) po klíčích včetně smazaných, seznamy a objekty celé (`Connections` tedy dál vyhrává
@@ -1049,7 +1058,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A28 · `ModuleShortcutsService` mutuje sdílený stav, guardy jsou ve VM, handlery se neodhlašují
 
-- [ ] **Stav:** otevřeno (2026-10-01: přibyl druhý guard ve VM)
+- [x] **Stav:** vyřešeno a759081a (2026-10-02) - guardy patří službě: `MembershipChanged` jen při skutečném
+  Add/Remove (ne při Seed), `Batch` sloučí toggle rodiny do jednoho eventu, `IsLoaded` nahrazuje persistable
+  flag VM; handlery VM jsou pojmenované a při zavření shellu se odhlásí (od d2b3c6b1 ve `FavoritesCoordinator`).
 - **P3 · S** · Závisí na: - · Blokuje: A5 krok `FavoritesCoordinator` · Původ: [backlog N7](arch-backlog.md#n7---moduleshortcutsservice-mutuje-sdílený-stav-guard-je-v-jiné-třídě)
 - **Důkaz:** `EdisonMainViewModel.cs:372-381` anonymní handlery na `_shortcuts.Items.CollectionChanged`,
   `PositionsChanged`, `LaunchRequested`, `ChangelogRequested` a `WindowNavigator.LegacyModuleExited`
@@ -1229,7 +1240,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A39 · Sdílená JSON preference s cross-process watcherem existuje dvakrát
 
-- [x] **Stav:** vyřešeno (2026-10-02) - `EDControls/dotnet/SharedJsonPreference.cs` (internal
+- [x] **Stav:** vyřešeno 76866634 (2026-10-02) - `EDControls/dotnet/SharedJsonPreference.cs` (internal
   `SharedJsonPreference<T>` instance: `FilePath`, `Current`, `Changed`, Load/Save/watcher, volitelná
   `afterLoad` migrace) a `MlineCommonPaths.cs` (`Folder`, `File(name)`); obě veřejné třídy drží
   statickou instanci a jen delegují (font předává `MigrateLegacy`, `Save` dál razítkuje `Version`).
@@ -1295,7 +1306,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A42 · Dva vyhledávací algoritmy pod stejným toolbarem
 
-- [x] **Stav:** vyřešeno (2026-10-05) - toolbar přišel o šipky a počítadlo nálezů už v 2e8d88fe;
+- [x] **Stav:** vyřešeno 3e6422a2 (2026-10-05) - toolbar přišel o šipky a počítadlo nálezů už v 2e8d88fe;
   teď `EDListFilter.Matches` normalizuje hledaný text i hodnoty přes `SearchNormalization` (jako
   formulář a `EDFilterComboBox`), takže „sablona" najde „Šablona". Test `EDListFilterTests.IgnoresDiacritics`.
   **Publish EDControls.dll** = hledání v TD pickerech nově ignoruje diakritiku.
