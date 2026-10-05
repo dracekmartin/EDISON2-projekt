@@ -454,7 +454,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A10 · Režim startu rozhoduje `#if DEBUG` na devíti místech, runtime volby a settable statiky
 
-- [x] **Stav:** vyřešeno f142a45c (2026-10-01) - `Startup/StartupOptions` (record, defaulty = Release): `DevLogin`,
+- [x] **Stav:** vyřešeno b4b4adf7 (2026-10-01) - `Startup/StartupOptions` (record, defaulty = Release): `DevLogin`,
   `SessionGuidTag`, `SendsVersion`, `DevMiniApps`, `UseDevDefaults`, `InternalDiagnosticsEnabled`, `TestRun`;
   `Development(args, EDISON2_DEVLOGIN)` / `Production()` vybírá jediný `#if` v `App.xaml.cs`, statiky
   (`UseDevDefaults`, `InternalDiagnostics.Enabled`, E2E vypnutí hlášení/telemetrie) nastavuje jen
@@ -678,7 +678,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A18 · Login workflow rozprostřený do čtyř míst, bez VM
 
-- [x] **Stav:** vyřešeno (2026-10-05) - `LoginWindow/LoginViewModel` (`EDViewModel`, `PersistedFormId` null):
+- [x] **Stav:** vyřešeno 8032163f (2026-10-05) - `LoginWindow/LoginViewModel` (`EDViewModel`, `PersistedFormId` null):
   režimy `ForStartup` (předvyplnění z prefs, zůstává jako progress podklad) a `ForReauth` (modální
   dialog), `Login(password)` a `ApplyRememberedPassword` (zapomenutí odmítnutého i uložení po úspěchu
   na jednom místě; do prefs až po uložení geometrie, ta ukládá celé `local.json`), `IsInProgress` (veto zavření), `ShowProgress`,
@@ -704,7 +704,11 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A19 · `UserProfileWindow` opakuje vzor A18: workflow v code-behind, VM dostává callback z okna
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno (2026-10-05) - plnění formuláře (`FillForm`), uložení (`OnOk` → server validace →
+  `ValidateExportDir` → `SaveExportDir` → `UserDirectory`) a validace složky jsou ve VM, singleton čte jen
+  bezparametrický ctor VM. Místo delegátu `SaveRequested` port `IUserProfileForm` (`Save`, `Validate`,
+  `Get`, `Set`), který okno implementuje nad `TheForm.Items`; okno jen mapuje pole a tlačítka formuláře.
+  Popup o neexistující složce má nově za ownera dialog profilu, ne shell. Testy `UserProfileViewModelTests`.
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** Okno drží load, validaci existence složky, persist a mutaci `EDServices`; VM je
   jen most a dostává `SaveRequested` delegát od okna (obrácená závislost). Testovatelná logika

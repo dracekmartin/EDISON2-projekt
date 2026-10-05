@@ -59,18 +59,6 @@ public class UserProfileServiceTests
         Assert.Equal("", UserProfileService.LoadCentralExportDir(Mock()));
     }
 
-    [Theory]
-    [InlineData(true, false, false)]   // osobní adresář zapnutý a neexistuje → blokovat
-    [InlineData(true, true, true)]
-    [InlineData(false, false, true)]   // vypnutý přepínač existenci neřeší
-    public void ValidateExportDir_BlocksSaveOnlyForMissingEnabledDir(bool use, bool exists, bool savable)
-    {
-        var error = UserProfileWindow.ValidateExportDir(use, @"C:\Export", _ => exists);
-
-        Assert.Equal(savable, error is null);
-        if (!savable) Assert.Equal("Zadaný osobní adresář neexistuje.", error);
-    }
-
     // Příznak osobního adresáře: legacy ho ukládal i jako -1 (VB True) → nenulové = true.
     [Theory]
     [InlineData("-1", true)]
