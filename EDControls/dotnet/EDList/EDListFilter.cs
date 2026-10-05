@@ -1,8 +1,8 @@
 namespace EDControls.EDList;
 
 /// <summary>
-/// Stateless helper pro client-side filter EDList řádků. Substring match (case-insensitive)
-/// napříč zadanými klíči sloupců.
+/// Stateless helper pro client-side filter EDList řádků. Substring match bez ohledu na velikost
+/// písmen a diakritiku (stejně jako hledání v EDInputFormu) napříč zadanými klíči sloupců.
 /// </summary>
 public static class EDListFilter
 {
@@ -13,12 +13,12 @@ public static class EDListFilter
     public static bool Matches(EDListRow row, string? searchText, IEnumerable<string> columnKeys)
     {
         if (string.IsNullOrWhiteSpace(searchText)) return true;
-        var needle = searchText.Trim();
+        var needle = SearchNormalization.NormalizeForSearch(searchText.Trim());
         foreach (var key in columnKeys)
         {
             var value = row[key];
             if (string.IsNullOrEmpty(value)) continue;
-            if (value.Contains(needle, StringComparison.OrdinalIgnoreCase)) return true;
+            if (SearchNormalization.NormalizeForSearch(value).Contains(needle, StringComparison.Ordinal)) return true;
         }
         return false;
     }

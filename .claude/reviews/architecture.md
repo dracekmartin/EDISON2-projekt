@@ -650,7 +650,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A17 · Wire slovník `EDList` nemá sdílenou definici ani parity test
 
-- [x] **Stav:** vyřešeno (2026-10-05) - nový `CACHE/EDList.inc` (`$$$ListColumnType*`, nad rámec
+- [x] **Stav:** vyřešeno 5f21bf27 (2026-10-05) - nový `CACHE/EDList.inc` (`$$$ListColumnType*`, nad rámec
   návrhu i `$$$ListAlign*`, protože `ParseAlign` padá na Auto stejně tiše) s výčty `$$$ListColumnTypes`/
   `$$$ListAligns`; `List` neznámý typ i zarovnání odmítne `$$$ThrowStatus` v `AddColumn` i ve
   `WriteColumnsToOut` (typ jde nastavit i přímo na vráceném sloupci), porovnání bez ohledu na velikost
@@ -1217,8 +1217,10 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A42 · Dva vyhledávací algoritmy pod stejným toolbarem
 
-- [ ] **Stav:** otevřeno, částečně (2e8d88fe, 2026-09-22) - toolbar přišel o šipky a počítadlo nálezů,
-  tooltipy „(Enter)"/„(Shift+Enter)" a přiznání v `EDInputForm/CLAUDE.md` zmizely; zbývá diakritika v seznamu.
+- [x] **Stav:** vyřešeno (2026-10-05) - toolbar přišel o šipky a počítadlo nálezů už v 2e8d88fe;
+  teď `EDListFilter.Matches` normalizuje hledaný text i hodnoty přes `SearchNormalization` (jako
+  formulář a `EDFilterComboBox`), takže „sablona" najde „Šablona". Test `EDListFilterTests.IgnoresDiacritics`.
+  **Publish EDControls.dll** = hledání v TD pickerech nově ignoruje diakritiku.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `EDControls/dotnet/EDList/EDListFilter.cs:21` `value.Contains(needle,
   StringComparison.OrdinalIgnoreCase)` (bez diakritiky) vs `EDInputForm.xaml.cs:348`

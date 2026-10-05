@@ -50,7 +50,7 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 ## Search, Check mode, persist layoutu
 
 - **Brandový pruh je bezpodmínečný** (shodně s `EDInputForm`em), host plní jen `Title`.
-- Search filtruje **formátované** hodnoty („8:30" najde „08:30", ne „830"); nepersistuje se.
+- Search filtruje **formátované** hodnoty bez diakritiky („8:30" najde „08:30", ne „830"); nepersistuje se.
 - `SelectionMode = Check` → checkbox sloupec. Binding checkboxů je záměrně **OneWay** +
   explicitní `Click` handler (TwoWay v CellTemplate je buggy; header `Click` brání rekurzi
   CheckAll→Sync). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik** na checkbox zaškrtne
