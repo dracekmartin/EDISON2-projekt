@@ -121,6 +121,18 @@ public class AppBootstrapper
             return null;
         }
 
+        // Předloginový seznam je úplný (server bez uživatele nefiltruje); shell nabízí jen povolené
+        // firmy a startuje v jedné z nich (legacy frmLoginEx.SelectedCompany).
+        if (CompanySwitcher.PickForSession(
+                new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
+                prefs.LastIdfa, conn => LoadAllowedCompanies(conn, login)) is not { } start)
+        {
+            services.PopupDisplayer.Info("Uživatel nemá přístup k žádné firmě.");
+            Shutdown();
+            return null;
+        }
+        prep = prep with { Companies = start.Allowed, StartCompany = start.Company };
+
         _startupLoginWindow?.ShowProgress("Ověřuji licenci…");
         var session = EstablishSession(
             new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
@@ -218,7 +230,8 @@ public class AppBootstrapper
     /// zavře ho <see cref="HandOffLoginWindow"/> po vykreslení shellu.</summary>
     private Windows.LoginWindow.LoginWindow? _startupLoginWindow = null;   // = null kvůli CS0649 v DEBUG (přiřazení je v #else větvi)
 
-    /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest).</summary>
+    /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest). Po loginu
+    /// <c>Companies</c>/<c>StartCompany</c> nahradí povolené firmy uživatele.</summary>
     protected record PreLoginContext(
         MLRest LoginRest,
         IReadOnlyList<CompanyStruct> Companies,
@@ -279,6 +292,7 @@ public class AppBootstrapper
         // Pre-login MLRest - potřebné aby GetCompanyList šla zavolat (vlastní fallback Idfa="").
         var loginRest = new MLRest(server, port, "", "");
 
+        // Bez uživatele úplný seznam - slouží jen k Idfa pro Login, povolené firmy načte Run po přihlášení.
         string errState = "";
         var companies = GetCompanyList(ref errState, loginRest, false);
         if (!string.IsNullOrEmpty(errState))
@@ -433,6 +447,9 @@ public class AppBootstrapper
         }
     }
 
+    protected virtual IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
+        => CompanySwitcher.LoadAllowed(conn, login);
+
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
         => SessionFactory.Establish(conn, login, services);
 
@@ -508,7 +525,7 @@ public class AppBootstrapper
         var sessionSwitcher = new SessionSwitcher(services, () => _application.MainWindow,
                                                   BuildActivityFailedWire(services), nav.TryCloseAll,
                                                   new ShellWindowStateStore(prefs));
-        var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeLoader,
+        var viewModel = new EdisonMainViewModel(prep.Companies, CompanySwitcher.LoadAllowed, session.MLRest, treeLoader,
                                                 licence, switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
                                                 miniAppCatalog, shortcuts,

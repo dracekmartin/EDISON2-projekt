@@ -97,6 +97,70 @@ public class CompanySwitcherTests
         Assert.Equal("CB_DP", pick.Id);
     }
 
+    // PickForSession: povolené firmy dotazované per firma (funkční omezení DB je per IDFa).
+
+    private static readonly ConnectionInfo QueryInCb = new("host", 1, "CB_DB", "CB_DP");
+
+    private static CompanyStruct Company(string id) => new() { Id = id, Database = id + "_DB" };
+
+    [Fact]
+    public void PickForSession_QueriedCompanyAllowed_SingleQuery()
+    {
+        var queries = new List<ConnectionInfo>();
+        CompanyStruct[] allowed = [Company("CB_DP"), Company("JI_DP")];
+
+        var picked = CompanySwitcher.PickForSession(QueryInCb, "CB_DP", q => { queries.Add(q); return allowed; });
+
+        Assert.Equal("CB_DP", picked?.Company.Id);
+        Assert.Same(allowed, picked?.Allowed);
+        Assert.Equal([QueryInCb], queries);
+    }
+
+    [Fact]
+    public void PickForSession_OtherCompanyPicked_ReloadsListInIt()
+    {
+        // Seznam z firmy dotazu by nesl funkční omezení cizí firmy (legacy CreateCompanyMenu až ve výsledné).
+        var queries = new List<ConnectionInfo>();
+        CompanyStruct[] inCb = [Company("JI_DP"), Company("PI_DP")];
+        CompanyStruct[] inJi = [Company("JI_DP")];
+
+        var picked = CompanySwitcher.PickForSession(QueryInCb, "CB_DP",
+            q => { queries.Add(q); return q.Idfa == "CB_DP" ? inCb : inJi; });
+
+        Assert.Equal("JI_DP", picked?.Company.Id);
+        Assert.Same(inJi, picked?.Allowed);
+        Assert.Equal([QueryInCb, QueryInCb with { Database = "JI_DP_DB", Idfa = "JI_DP" }], queries);
+    }
+
+    [Fact]
+    public void PickForSession_PickedCompanyMissingAfterReload_StaysInList()
+    {
+        // Index přepínače musí odpovídat MLRest.Idfa - firma session ze seznamu nezmizí.
+        CompanyStruct[] inCb = [Company("JI_DP")];
+        CompanyStruct[] inJi = [Company("PI_DP")];
+
+        var picked = CompanySwitcher.PickForSession(QueryInCb, null, q => q.Idfa == "CB_DP" ? inCb : inJi);
+
+        Assert.Equal(["PI_DP", "JI_DP"], picked?.Allowed.Select(c => c.Id));
+    }
+
+    [Fact]
+    public void PickForSession_NothingAllowed_Null()
+    {
+        Assert.Null(CompanySwitcher.PickForSession(QueryInCb, "CB_DP", _ => []));
+    }
+
+    [Fact]
+    public void LoginProbe_CarriesLoggedUserAndQueriedCompany()
+    {
+        var login = new EDISONMAIN2.Windows.LoginWindow.LoginResult(42, "novak", "Jan Novák", false, "", false, false, "");
+
+        var probe = CompanySwitcher.LoginProbe(QueryInCb, login);
+
+        Assert.Equal(("host", 1, "CB_DB", "CB_DP"), (probe.Server, probe.Port, probe.DataNamespace, probe.Idfa));
+        Assert.Equal(("42", "novak"), (probe.Mlp, probe.LoginName));
+    }
+
     [Fact]
     public void Switch_NullLicence_AutoAccepts_NoVerifyCall()
     {

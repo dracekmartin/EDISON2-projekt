@@ -36,6 +36,9 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
 - `SelectedCompanyIndex` musí odpovídat `MLRest.Idfa` - tam má bootstrapper zámek; jiná volba
   rozbije koexistenci shell ↔ moduly. Při přepnutí firmy se index nastaví až po `Accepted`
   (setter `SelectedCompanyId` jen spustí `SwitchCompanyCommand`).
+- **Přepínač nabízí jen povolené firmy** (`CompanySwitcher.LoadAllowed`, legacy `checkAccess=True`):
+  server filtruje jen se známým MLP, předloginový seznam je proto úplný a slouží jen k Idfa loginu.
+  Seznam se načítá znovu po přepnutí uživatele i firmy (funkční omezení DB je per IDFa).
 - Potvrzení zavření shellu (`ConfirmShellClose`) obchází jen `ShellShutdown.Force` /
   `SuppressCloseConfirm` - programové ukončení musí jít přes ně (proč: Startup/CLAUDE.md).
 

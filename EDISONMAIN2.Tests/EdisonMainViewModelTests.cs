@@ -325,6 +325,251 @@ public class EdisonMainViewModelTests
         Assert.True(CreateVM().HasMultipleCompanies);
     }
 
+    // Povolené firmy se mění s firmou (funkční omezení DB je per IDFa) i s uživatelem.
+
+    [Fact]
+    public async Task SwitchCompany_ReplacesCompaniesWithListAllowedInNewCompany()
+    {
+        CompanyStruct[] allowedInJi = [new() { Id = "JI_DP", Database = "JI_DP" }, new() { Id = "PI_DP", Database = "PI_DP" }];
+        var vm = CreateVM(loadAllowedCompanies: _ => allowedInJi);
+
+        await vm.SwitchCompanyAsync(1);
+
+        Assert.Equal(["JI_DP", "PI_DP"], vm.Companies.Select(c => c.Id));
+        Assert.Equal("JI_DP", vm.Idfa);
+        Assert.Equal(0, vm.SelectedCompanyIndex);
+    }
+
+    [Fact]
+    public async Task SwitchCompany_NewCompanyMissingInAllowedList_StaysSelected()
+    {
+        // Index musí odpovídat MLRest.Idfa - firma, ve které session běží, ze seznamu nezmizí.
+        var vm = CreateVM(loadAllowedCompanies: _ => OneCompany);
+
+        await vm.SwitchCompanyAsync(1);
+
+        Assert.Equal(["CB_DP", "JI_DP"], vm.Companies.Select(c => c.Id));
+        Assert.Equal("JI_DP", vm.Idfa);
+    }
+
+    [Fact]
+    public async Task SwitchCompany_ReplacedList_NotifiesSwitcherBindings()
+    {
+        var vm = CreateVM(loadAllowedCompanies: _ => OneCompany);
+        var notified = new List<string?>();
+        vm.PropertyChanged += (_, e) => notified.Add(e.PropertyName);
+
+        await vm.SwitchCompanyAsync(1);
+
+        Assert.Contains(nameof(vm.CompanySuggestions), notified);
+        Assert.Contains(nameof(vm.HasMultipleCompanies), notified);
+    }
+
+    [Fact]
+    public async Task SwitchCompany_LoadAllowedFails_ReportsAndKeepsSessionAndPreviousList()
+    {
+        // Seznam je doplněk hotové session: jeho selhání se ohlásí, ale shell nevyprázdní (legacy frmNoMDI.vb:3271).
+        var popup = Substitute.For<IPopupDisplayer>();
+        var vm = CreateVM(popup: popup,
+                          treeLoader: MainTreeWith(new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "" }),
+                          loadAllowedCompanies: _ => throw new InvalidOperationException("server je mimo"));
+
+        await vm.SwitchCompanyAsync(1);
+
+        popup.Received(1).Error(Arg.Any<InvalidOperationException>());
+        Assert.Single(vm.MainMenuTree);
+        Assert.Equal("JI_DP", vm.Idfa);
+        Assert.Equal(["CB_DP", "JI_DP"], vm.Companies.Select(c => c.Id));
+    }
+
+    /// <summary>Inline runner, jen seznam firem čeká na <see cref="Release"/> - pomalý server.</summary>
+    private sealed class GatedCompanyListRunner(IMLRest rest) : IRestCallRunner
+    {
+        private readonly TaskCompletionSource _gate = new();
+        public void Release() => _gate.TrySetResult();
+
+        public Task<T> RunAsync<T>(Func<IMLRest, T> call)
+        {
+            if (typeof(T) == typeof(IReadOnlyList<CompanyStruct>))
+                return _gate.Task.ContinueWith(_ => call(rest), CancellationToken.None,
+                                               TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            try { return Task.FromResult(call(rest)); }
+            catch (Exception ex) { return Task.FromException<T>(ex); }
+        }
+    }
+
+    [Fact]
+    public async Task SwitchCompany_DoesNotWaitForAllowedList()
+    {
+        // Přepínač je po dobu příkazu zablokovaný - pomalý pomocný dotaz by ho tiše vyřadil.
+        var ml = MockMLRest();
+        var runner = new GatedCompanyListRunner(ml);
+        var vm = CreateVM(mlRest: ml, restRunner: runner, loadAllowedCompanies: _ => OneCompany);
+
+        var switching = vm.SwitchCompanyAsync(1);
+
+        Assert.True(switching.IsCompleted);   // seznam ještě nedorazil
+        Assert.Equal("JI_DP", vm.Idfa);
+        runner.Release();
+        await switching;
+    }
+
+    [Fact]
+    public async Task SwitchCompany_LicenceRefreshDuringListLoad_KeepsList()
+    {
+        // Obnova licence session nemění - seznam nové firmy se nesmí zahodit.
+        CompanyStruct[] allowedInJi = [new() { Id = "JI_DP", Database = "JI_DP" }];
+        EdisonMainViewModel? vmRef = null;
+        var vm = CreateVM(loadAllowedCompanies: _ =>
+        {
+            vmRef!.RefreshLicenceCommand.Execute(null);
+            return allowedInJi;
+        });
+        vmRef = vm;
+
+        await vm.SwitchCompanyAsync(1);
+
+        Assert.Equal(["JI_DP"], vm.Companies.Select(c => c.Id));
+    }
+
+    [Fact]
+    public async Task SwitchCompany_ListLoadFailingAfterUserSwitch_NotReported()
+    {
+        // Chyba patří session starého uživatele (odhlášený GUID) - nad novou by byla matoucí.
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var svc = MockServices(popup: popup);
+        EdisonMainViewModel? vmRef = null;
+        var vm = CreateVM(services: svc,
+                          switchUser: SwitchUserInto(svc, "PI_DP", new CompanyStruct { Id = "PI_DP", Database = "PI_DP" }),
+                          loadAllowedCompanies: _ =>
+                          {
+                              vmRef!.LoginAsAnotherUserCommand.Execute(null);
+                              throw new InvalidOperationException("zámek neexistuje");
+                          });
+        vmRef = vm;
+
+        await vm.SwitchCompanyAsync(1);
+
+        popup.DidNotReceiveWithAnyArgs().Error(default!);
+        Assert.Equal(["PI_DP"], vm.Companies.Select(c => c.Id));
+    }
+
+    [Fact]
+    public async Task SwitchCompany_AllowedListArrivingAfterUserSwitch_IsDropped()
+    {
+        // Mezitím se přihlásil jiný uživatel - seznam starého by přepsal jeho povolené firmy.
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var svc = MockServices(popup: popup);
+        EdisonMainViewModel? vmRef = null;
+        var vm = CreateVM(services: svc,
+                          switchUser: SwitchUserInto(svc, "PI_DP", new CompanyStruct { Id = "PI_DP", Database = "PI_DP" }),
+                          loadAllowedCompanies: _ =>
+                          {
+                              vmRef!.LoginAsAnotherUserCommand.Execute(null);
+                              return OneCompany;
+                          });
+        vmRef = vm;
+
+        await vm.SwitchCompanyAsync(1);
+
+        Assert.Equal(["PI_DP"], vm.Companies.Select(c => c.Id));
+    }
+
+    private static Func<SwitchUserOutcome> SwitchUserInto(EDServices svc, string idfa, params CompanyStruct[] allowed) =>
+        () =>
+        {
+            svc.MLRest = MockMLRest(idfa);   // SessionFactory vymění MLRest služeb za session nového uživatele
+            return new(SwitchUserResult.Success, null, allowed);
+        };
+
+    [Fact]
+    public async Task LoginAsAnotherUser_ReplacesCompaniesWithNewUsersList()
+    {
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var svc = MockServices(popup: popup);
+        var vm = CreateVM(services: svc, switchUser: SwitchUserInto(svc, "JI_DP", new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }));
+
+        await vm.LoginAsAnotherUserAsync();
+
+        Assert.Equal(["JI_DP"], vm.Companies.Select(c => c.Id));
+        Assert.Equal("JI_DP", vm.Idfa);
+        Assert.False(vm.HasMultipleCompanies);
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_CompanyChanged_SavesLayoutUnderOldCompany()
+    {
+        // Session nového uživatele běží v jiné firmě: dock staré se nesmí uložit pod novou.
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var svc = MockServices(popup: popup);
+        var prefs = Substitute.For<ILocalPrefs>();
+        var layouts = new Dictionary<string, string>();
+        prefs.MiniAppLayouts.Returns(layouts);
+        var vm = CreateVM(services: svc, prefs: prefs,
+                          switchUser: SwitchUserInto(svc, "JI_DP", new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }));
+        vm.AttachMiniAppHost(Substitute.For<IMiniAppHost>());
+
+        await vm.LoginAsAnotherUserAsync();
+
+        Assert.Contains("CB_DP", layouts.Keys);
+        Assert.DoesNotContain("JI_DP", layouts.Keys);
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_CompanyChanged_RemembersItForNextStart()
+    {
+        // Jinak by další start zkusil firmu, do které poslední uživatel nesmí.
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var svc = MockServices(popup: popup);
+        var prefs = Substitute.For<ILocalPrefs>();
+        var vm = CreateVM(services: svc, prefs: prefs,
+                          switchUser: SwitchUserInto(svc, "JI_DP", new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }));
+
+        await vm.LoginAsAnotherUserAsync();
+
+        prefs.Received().LastIdfa = "JI_DP";
+        prefs.Received().Save();
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_SameCompany_DoesNotRewriteLastIdfa()
+    {
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var svc = MockServices(popup: popup);
+        var prefs = Substitute.For<ILocalPrefs>();
+        var vm = CreateVM(services: svc, prefs: prefs, switchUser: SwitchUserInto(svc, "CB_DP", Companies));
+
+        await vm.LoginAsAnotherUserAsync();
+
+        prefs.DidNotReceive().LastIdfa = Arg.Any<string?>();
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_RebuildFails_RestoresDock()
+    {
+        // Dock je před přestavbou zavřený; zůstal-li by prázdný, zavření shellu by ho uložilo přes platný layout.
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var svc = MockServices(popup: popup);
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.MiniAppLayouts.Returns(new Dictionary<string, string>());
+        var host = Substitute.For<IMiniAppHost>();
+        host.SaveLayout().Returns("<layout/>");
+        var vm = CreateVM(services: svc, prefs: prefs, treeLoader: TreeFailingOnSecondLoad(),
+                          switchUser: SwitchUserInto(svc, "CB_DP", Companies));
+        vm.AttachMiniAppHost(host);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => vm.LoginAsAnotherUserAsync());
+
+        host.Received().RestoreLayout("<layout/>", Arg.Any<Func<string, IMiniAppPane, RestoredContent?>>());
+    }
+
     [Fact]
     public async Task SwitchCompany_Prepnuti_NotifikujeSelectedCompany()
     {

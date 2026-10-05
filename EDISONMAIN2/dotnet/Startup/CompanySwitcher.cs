@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ALVA.LICENCE.EDLicence;
+using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Windows.LoginWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2;
@@ -42,6 +44,50 @@ public class CompanySwitcher(
         if (match.Id == null) match = companies[0];
         return match;
     }
+
+    /// <summary>
+    /// Firmy, do kterých smí přihlášený uživatel (legacy <c>GetCompanyList(checkAccess=True)</c>).
+    /// Server filtruje podle povolených databází uživatele a funkčního omezení DB v Idfa spojení,
+    /// obojí jen se známým MLP - bez uživatele vrací všechny firmy serveru.
+    /// </summary>
+    public static IReadOnlyList<CompanyStruct> LoadAllowed(IMLRest rest)
+    {
+        string errState = "";
+        var companies = GetCompanyList(ref errState, ((MLRestAdapter)rest).Inner, true);
+        if (!string.IsNullOrEmpty(errState))
+            throw new InvalidOperationException(errState);
+        return companies;
+    }
+
+    /// <summary>
+    /// Firma nové session a povolené firmy k ní; null = uživatel nesmí nikam. Funkční omezení DB je per IDFa,
+    /// proto se seznam z firmy dotazu po volbě jiné firmy načte znovu v ní (legacy CreateCompanyMenu až ve
+    /// výsledné firmě). Vybraná firma v seznamu zůstane i bez oprávnění - index přepínače odpovídá MLRest.Idfa.
+    /// </summary>
+    public static (CompanyStruct Company, IReadOnlyList<CompanyStruct> Allowed)? PickForSession(
+        ConnectionInfo query, string? preferredIdfa, Func<ConnectionInfo, IReadOnlyList<CompanyStruct>> loadAllowed)
+    {
+        var allowed = loadAllowed(query);
+        if (allowed.Count == 0) return null;
+        var company = PickInitial(allowed, preferredIdfa);
+        if (company.Id != query.Idfa)
+            allowed = loadAllowed(query with { Database = company.Database, Idfa = company.Id });
+        if (!allowed.Any(c => c.Id == company.Id))
+            allowed = [.. allowed, company];
+        return (company, allowed);
+    }
+
+    /// <summary>Povolené firmy právě přihlášeného uživatele, pro kterého session ještě nevznikla.</summary>
+    public static IReadOnlyList<CompanyStruct> LoadAllowed(ConnectionInfo conn, LoginResult login) =>
+        LoadAllowed(new MLRestAdapter(LoginProbe(conn, login)));
+
+    // Bez MLP a jména server nefiltruje a vrátí všechny firmy - identita z loginu musí jít s dotazem.
+    internal static MLRest LoginProbe(ConnectionInfo conn, LoginResult login) =>
+        new(conn.Server, conn.Port, conn.Database, conn.Idfa)
+        {
+            LoginName = login.UserName,
+            Mlp = login.Mlp.ToString(),
+        };
 
     /// <summary>
     /// Přepne firmu: WPF okna shellu se zavírají PŘED swapem Idfa, legacy moduly až po

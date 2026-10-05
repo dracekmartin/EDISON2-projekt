@@ -1,17 +1,20 @@
 using System;
+using System.Collections.Generic;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.LoginWindow;
+using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2;
 
 /// <summary>
 /// Výsledek pokusu o přepnutí uživatele. <see cref="Outcome"/> rozlišuje úspěch, zrušení
-/// v login dialogu a selhání licence pro nového uživatele.
+/// v login dialogu a selhání licence pro nového uživatele. <see cref="Companies"/> = povolené
+/// firmy nového uživatele, jen u <see cref="SwitchUserResult.Success"/>.
 /// </summary>
-public record SwitchUserOutcome(SwitchUserResult Outcome, Lic? Licence);
+public record SwitchUserOutcome(SwitchUserResult Outcome, Lic? Licence, IReadOnlyList<CompanyStruct>? Companies = null);
 
 public enum SwitchUserResult
 {
@@ -60,6 +63,17 @@ public class SessionSwitcher(
         var login = PromptLogin(current);
         if (login == null) return new(SwitchUserResult.Cancelled, null);
 
+        // Nový uživatel smí do jiných firem než starý; do nepovolené aktuální se nepřihlásí, session
+        // vznikne v povolené (legacy frmLoginEx.SelectedCompany). Bez povolené firmy switch neproběhne.
+        if (CompanySwitcher.PickForSession(
+                new ConnectionInfo(current.Server, current.Port, current.DataNamespace, current.Idfa),
+                current.Idfa, conn => LoadAllowedCompanies(conn, login)) is not { } picked)
+        {
+            services.PopupDisplayer.Info("Uživatel nemá přístup k žádné firmě.");
+            return new(SwitchUserResult.Cancelled, null);
+        }
+        var (company, companies) = picked;
+
         // Veto okna (neuložená data) ruší switch PŘED logoutem - přeživší okno by jinak
         // pracovalo pod session, která už na serveru neexistuje.
         if (!closeAllWindows()) return new(SwitchUserResult.Cancelled, null);
@@ -71,7 +85,7 @@ public class SessionSwitcher(
         LogoutOldSession(services.MLRest);
 
         var session = EstablishSession(
-            new ConnectionInfo(current.Server, current.Port, current.DataNamespace, current.Idfa), login);
+            new ConnectionInfo(current.Server, current.Port, company.Database, company.Id), login);
         wireActivityFailed(session.MLRest);
 
         var (outcome, licence) = AcquireSession(session);
@@ -79,7 +93,7 @@ public class SessionSwitcher(
             LicenceVerifier.LogLogin(session.MLRest);
         return outcome switch
         {
-            LicenceAcquireOutcome.Accepted => new(SwitchUserResult.Success, licence),
+            LicenceAcquireOutcome.Accepted => new(SwitchUserResult.Success, licence, companies),
             LicenceAcquireOutcome.Refused => new(SwitchUserResult.LicenceRefused, null),
             _ => new(SwitchUserResult.LicenceCancelled, null),
         };
@@ -100,6 +114,9 @@ public class SessionSwitcher(
     protected virtual void FlushTelemetry(IMLRest? mlRest) => EDUsageTelemetry.Flush(mlRest);
 
     protected virtual void LogoutOldSession(IMLRest? mlRest) => SessionLogout.Logout(mlRest);
+
+    protected virtual IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
+        => CompanySwitcher.LoadAllowed(conn, login);
 
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
         => SessionFactory.Establish(conn, login, services);

@@ -31,6 +31,9 @@
     <Reference Include="EDLicence">
       <HintPath>C:\Edison\EDLicence.dll</HintPath>
     </Reference>
+    <Reference Include="EDISONAPI">
+      <HintPath>C:\Edison\EDISONAPI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

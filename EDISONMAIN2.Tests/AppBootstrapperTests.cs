@@ -106,8 +106,22 @@ public class AppBootstrapperTests
             return false;
         }
 
+        public IReadOnlyList<CompanyStruct> AllowedCompanies { get; set; } = [new() { Id = "CB_DP", Database = "CB_DP" }];
+        public LoginResult? AllowedQueriedFor { get; private set; }
+
+        protected override IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
+        {
+            AllowedQueriedFor = login;
+            return AllowedCompanies;
+        }
+
+        public ConnectionInfo? EstablishedConnection { get; private set; }
+
         protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
-            => new(MLRest, login, () => null);
+        {
+            EstablishedConnection = conn;
+            return new(MLRest, login, () => null);
+        }
 
         public Exception? AcquireSessionThrows { get; set; }
 
@@ -144,6 +158,7 @@ public class AppBootstrapperTests
         }
 
         public Exception? BuildShellThrows { get; set; }
+        public IReadOnlyList<CompanyStruct>? ShellCompanies { get; private set; }
 
         protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep, SessionContext session, Lic? licence,
             EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
@@ -151,6 +166,7 @@ public class AppBootstrapperTests
         {
             if (BuildShellThrows is not null) throw BuildShellThrows;
             BuildShellCalled = true;
+            ShellCompanies = prep.Companies;
             return null!;
         }
 
@@ -670,5 +686,70 @@ public class AppBootstrapperTests
         b.Run();
 
         AssertLogLogin(b, 0);
+    }
+
+    // Seznam firem po loginu: předloginový je úplný, shell nabízí jen povolené (legacy frmLoginEx.vb:467).
+
+    private static readonly CompanyStruct[] TwoAllowed =
+    [
+        new() { Id = "CB_DP", Database = "CB_DP" },
+        new() { Id = "JI_DP", Database = "JI_DP" },
+    ];
+
+    [Fact]
+    public void Run_LastCompanyNotAllowed_StartsInFirstAllowed()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed };
+        b.Prefs.LastIdfa.Returns("PI_DP");
+
+        b.Run();
+
+        Assert.Equal(new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"), b.EstablishedConnection);
+    }
+
+    [Fact]
+    public void Run_LastCompanyAllowed_StartsThere()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed };
+        b.Prefs.LastIdfa.Returns("JI_DP");
+
+        b.Run();
+
+        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
+    }
+
+    [Fact]
+    public void Run_ShellGetsAllowedCompaniesOfLoggedUser()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed };
+
+        b.Run();
+
+        Assert.Same(TwoAllowed, b.ShellCompanies);
+        Assert.Equal("test", b.AllowedQueriedFor?.UserName);   // dotaz nese uživatele, jinak server nefiltruje
+    }
+
+    [Fact]
+    public void Run_NoAllowedCompany_InfoAndShutdown_NoSession()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = [] };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        b.Popup.Received(1).Info("Uživatel nemá přístup k žádné firmě.");
+        Assert.Null(b.EstablishedConnection);
+        Assert.False(b.AcquireSessionCalled);
+    }
+
+    [Fact]
+    public void Run_LoginCancelled_DoesNotQueryAllowedCompanies()
+    {
+        var b = new TestableBootstrapper { LoginSucceeds = false };
+
+        b.Run();
+
+        Assert.Null(b.AllowedQueriedFor);
     }
 }

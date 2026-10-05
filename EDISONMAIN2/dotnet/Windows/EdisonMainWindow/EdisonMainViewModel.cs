@@ -45,6 +45,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly Func<IMLRest, LicenceService.MlineSyncResult> _licenceSync;
         // Počítadlo změn session: výsledek pozadí, který doběhne po začátku další změny, patří cizí session.
         private int _sessionGeneration;
+        private readonly Func<IMLRest, IReadOnlyList<CompanyStruct>> _loadAllowedCompanies;
         private readonly CompanySwitcher _switcher;
         private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
@@ -232,17 +233,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        // Přepnutí session (firma/uživatel): ulož layout staré IDFa, zavři vše, obnov layout nové.
-        private void ReplaceMiniAppSession(string oldIdfa)
-        {
-            if (_miniAppManager is null) return;
-            PersistMiniAppLayout(oldIdfa);
-            _miniAppManager.CloseAll();
-            RestoreMiniAppLayout(Idfa);
-        }
-
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
+            Func<IMLRest, IReadOnlyList<CompanyStruct>> loadAllowedCompanies,
             IMLRest mlRest,
             IModuleTreeLoader treeLoader,
             Lic? initialLicence,
@@ -258,6 +251,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IRestCallRunner? restRunner = null,
             Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null)
         {
+            _loadAllowedCompanies = loadAllowedCompanies;
             _switcher = switcher;
             _switchUser = switchUser;
             _prefs = prefs;
@@ -360,8 +354,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _sessionLoader = new SessionDataLoader(_restRunner, treeLoader, [.. _sourceTrees.Select(t => t.Name)]);
             _licenceSync = licenceSync ?? (rest => LicenceService.SyncFromMline(((MLRestAdapter)rest).Inner));
 
-            // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
-            Companies = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
+            Companies = ToCompanyItems(companies);
             // Index musí odpovídat MLRest.Idfa - tam má AppBootstrapper vytvořený ACTIVITY zámek.
             _selectedCompanyIndex = Companies.Select((c, i) => (c, i)).First(x => x.c.Id == mlRest.Idfa).i;
 
@@ -1004,7 +997,30 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private IEnumerable<(string Name, ObservableCollection<IModule> Tree)> ExpandableTrees =>
             TreeTabs.Where(t => t.Expandable).Select(t => (t.Key, t.Tree!));
 
-        public ObservableCollection<CompanyItem> Companies { get; }
+        /// <summary>Firmy, do kterých smí přihlášený uživatel (a vždy ta aktuální).</summary>
+        public IReadOnlyList<CompanyItem> Companies { get; private set; }
+
+        // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
+        private static List<CompanyItem> ToCompanyItems(IReadOnlyList<CompanyStruct> companies) =>
+            [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
+
+        /// <summary>
+        /// Nový seznam povolených firem - mění se s uživatelem i s firmou (funkční omezení DB je per IDFa).
+        /// Aktuální firma v něm zůstane i bez oprávnění, protože index musí odpovídat MLRest.Idfa.
+        /// </summary>
+        private void ReplaceCompanies(IReadOnlyList<CompanyStruct> companies, string currentIdfa)
+        {
+            var items = ToCompanyItems(companies);
+            if (!items.Any(c => c.Id == currentIdfa))
+                items.Add(Companies.FirstOrDefault(c => c.Id == currentIdfa) ?? new CompanyItem(currentIdfa, "", Rest.DataNamespace));
+            Companies = items;
+            _selectedCompanyIndex = items.FindIndex(c => c.Id == currentIdfa);
+            OnPropertyChanged(nameof(Companies));
+            OnPropertyChanged(nameof(CompanySuggestions));
+            OnPropertyChanged(nameof(HasMultipleCompanies));
+            OnPropertyChanged(nameof(SelectedCompanyIndex));
+            RaiseSessionPropertiesChanged();
+        }
 
         private int _selectedCompanyIndex;
         /// <summary>Vybraná firma jako čistý stav - přepnutí dělá <see cref="SwitchCompanyCommand"/>.</summary>
@@ -1103,6 +1119,29 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 _sessionSwapInProgress = false;
             }
             RestoreMiniAppLayout(Idfa);
+            _ = ReloadAllowedCompaniesAsync();
+        }
+
+        /// <summary>
+        /// Funkční omezení DB je per IDFa, nová firma může povolovat jiné (legacy CreateCompanyMenu po přepnutí).
+        /// Na pozadí po přestavbě: přepínač na pomocný dotaz nečeká a selhání nechá funkční session se seznamem
+        /// z předchozí firmy. Výsledek i chyba platí jen pro session, ve které dotaz začal.
+        /// </summary>
+        private async Task ReloadAllowedCompaniesAsync()
+        {
+            // Jiný uživatel = nová instance MLRest, jiná firma = jiné Idfa; obnova licence session nemění.
+            var rest = Rest;
+            var idfa = Idfa;
+            bool SameSession() => ReferenceEquals(Rest, rest) && Idfa == idfa;
+            try
+            {
+                var allowed = await _restRunner.RunAsync(_loadAllowedCompanies);
+                if (SameSession()) ReplaceCompanies(allowed, idfa);
+            }
+            catch (Exception ex)
+            {
+                if (SameSession()) PopupDisplayer.Error(ex);
+            }
         }
 
         public CompanyItem SelectedCompany => Companies[_selectedCompanyIndex];
@@ -1451,11 +1490,34 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     _forceShutdown();
                     return;
                 case SwitchUserResult.Success:
-                    // Selhání loadu po výměně uživatele: viz ClearSessionState - preference jsou
-                    // per-user, takže stará data by se zapisovala pod nového uživatele.
-                    try { await RebuildSessionStateAsync(outcome.Licence); }
-                    catch { ClearSessionState(); throw; }
-                    ReplaceMiniAppSession(Idfa);   // přihlášení jiného uživatele: stejná firma, jiná data
+                    // Do původní firmy nový uživatel smět nemusí a session pak běží v jiné, proto se dock
+                    // ukládá a zavírá před posunem Idfa jako u přepnutí firmy (viz SwitchCompanyAsync).
+                    var oldIdfa = Idfa;
+                    PersistMiniAppLayout(oldIdfa);
+                    _miniAppManager?.CloseAll();
+                    _sessionSwapInProgress = true;
+                    try
+                    {
+                        ReplaceCompanies(outcome.Companies ?? [], Rest.Idfa);
+                        if (Idfa != oldIdfa)
+                        {
+                            _prefs.LastIdfa = Idfa;
+                            _prefs.Save();
+                        }
+                        await RebuildSessionStateAsync(outcome.Licence);
+                    }
+                    catch
+                    {
+                        // Preference jsou per-user, stará data by se zapisovala pod nového uživatele.
+                        ClearSessionState();
+                        throw;
+                    }
+                    finally
+                    {
+                        _sessionSwapInProgress = false;
+                        // I po selhání: prázdný dock by se při zavření shellu uložil přes právě uložený layout.
+                        RestoreMiniAppLayout(Idfa);
+                    }
                     // StatusBar identity bindings refreshne na novém MLRest.
                     OnPropertyChanged(nameof(UserName));
                     OnPropertyChanged(nameof(FullName));

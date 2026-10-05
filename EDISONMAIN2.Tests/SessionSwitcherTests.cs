@@ -6,6 +6,7 @@ using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.LoginWindow;
 using EDTesting;
 using NSubstitute;
+using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Tests;
 
@@ -54,6 +55,15 @@ public class SessionSwitcherTests
         }
 
         protected override void LogoutOldSession(IMLRest? mlRest) => Calls.Add("logout");
+
+        public IReadOnlyList<CompanyStruct> AllowedCompanies { get; set; } = [new() { Id = "CB_DP", Database = "CB_DP" }];
+        public (ConnectionInfo Conn, LoginResult Login)? AllowedQuery { get; private set; }
+
+        protected override IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
+        {
+            AllowedQuery = (conn, login);
+            return AllowedCompanies;
+        }
 
         protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
         {
@@ -130,7 +140,7 @@ public class SessionSwitcherTests
     [Fact]
     public void Switch_NewSessionKeepsCompanyAndConnection()
     {
-        // Mění se uživatel, ne firma - nová session musí zdědit server/port/namespace/idfa staré.
+        // Mění se uživatel - smí-li do aktuální firmy, nová session zdědí server/port/namespace/idfa staré.
         var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
         s.PromptResult = ReauthLogin();
 
@@ -228,5 +238,54 @@ public class SessionSwitcherTests
 
         s.NewSessionMLRest.Received(expected).QueryOrThrow("ALVA.SYS.Login", "LogLogin",
             Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == Environment.MachineName));
+    }
+
+    // Povolené firmy nového uživatele (legacy mnuPrgLogin_Click → frmLoginEx s checkAccess).
+
+    [Fact]
+    public void Switch_QueriesAllowedCompaniesAsNewUser_InCurrentCompany()
+    {
+        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        var login = ReauthLogin();
+        s.PromptResult = login;
+
+        s.Switch();
+
+        Assert.Equal(new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"), s.AllowedQuery?.Conn);
+        Assert.Same(login, s.AllowedQuery?.Login);
+    }
+
+    [Fact]
+    public void Switch_CurrentCompanyNotAllowed_SessionInFirstAllowed()
+    {
+        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        s.PromptResult = ReauthLogin();
+        s.AllowedCompanies = [new() { Id = "JI_DP", Database = "JI_DB" }, new() { Id = "PI_DP", Database = "PI_DB" }];
+
+        var outcome = s.Switch();
+
+        Assert.Equal(new ConnectionInfo("test-host", 9999, "JI_DB", "JI_DP"), s.CapturedConnection);
+        Assert.Same(s.AllowedCompanies, outcome.Companies);
+    }
+
+    [Fact]
+    public void Switch_NoAllowedCompany_CancelledBeforeClosingWindows()
+    {
+        // Odmítnutí až po zavření oken a logoutu by uživatele připravilo o session i rozdělanou práci.
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var originalMLRest = services.MLRest;
+        var closeAll = Substitute.For<Func<bool>>();
+        closeAll.Invoke().Returns(true);
+        var s = TestableSessionSwitcher.Create(services, closeAll);
+        s.PromptResult = ReauthLogin();
+        s.AllowedCompanies = [];
+
+        var outcome = s.Switch();
+
+        Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
+        services.PopupDisplayer.Received(1).Info("Uživatel nemá přístup k žádné firmě.");
+        closeAll.DidNotReceiveWithAnyArgs().Invoke();
+        Assert.Empty(s.Calls);
+        Assert.Same(originalMLRest, services.MLRest);
     }
 }

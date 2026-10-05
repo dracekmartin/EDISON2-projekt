@@ -86,6 +86,7 @@ internal static class EdisonMainViewModelHarness
         ModuleShortcutsService? shortcuts = null,
         IChangelogSource? changelogSource = null,
         Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null,
+        Func<IMLRest, IReadOnlyList<CompanyStruct>>? loadAllowedCompanies = null,
         bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
@@ -103,7 +104,9 @@ internal static class EdisonMainViewModelHarness
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(companies ?? Companies, mockMLRest, mockTree, initialLicence, switcher,
+            var allCompanies = companies ?? Companies;
+            vm = new EdisonMainViewModel(allCompanies, loadAllowedCompanies ?? (_ => allCompanies),
+                                         mockMLRest, mockTree, initialLicence, switcher,
                                          switchUser ?? (() => new(SwitchUserResult.Cancelled, null)), p,
                                          getActiveModules ?? (() => []), close, forceShutdown ?? (() => { }),
                                          catalog, shortcuts ?? new ModuleShortcutsService(), changelogSource,
