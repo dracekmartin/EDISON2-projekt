@@ -52,7 +52,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         private bool _isFavorite;
 
         /// <summary>
-        /// True když jsou VŠECHNY podřízené moduly oblíbené (agreguje VM přes RefreshFamilyFavoriteFlags).
+        /// True když jsou VŠECHNY podřízené moduly oblíbené (agreguje FavoritesCoordinator přes RefreshFamilyFavoriteFlags).
         /// Řídí text kontextového menu rodiny (Přidat/Odebrat vše). Observable kvůli live aktualizaci.
         /// </summary>
         public bool IsFavorite

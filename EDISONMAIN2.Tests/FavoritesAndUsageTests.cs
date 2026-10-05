@@ -16,8 +16,8 @@ using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy featury Oblíbené (ruční ★, ořezaný strom) + Používané (automatický žebříček).
-/// Statické buildery jsou čisté funkce (jako TryFilter); VM integrace ověřuje toggle + usage hook.
+/// Oblíbené a Používané z pohledu VM: toggle přes command, usage hook, session load (rozbalení,
+/// záložka, předpřipravené Oblíbené) a preference. Logiku plochy testuje <see cref="FavoritesCoordinatorTests"/>.
 /// </summary>
 public class FavoritesAndUsageTests
 {
@@ -29,54 +29,6 @@ public class FavoritesAndUsageTests
         var f = new ModuleFamily { DisplayedName = name };
         foreach (var c in children) f.NestedModules.Add(c);
         return f;
-    }
-
-    [Fact]
-    public void BuildFavoritesTree_KeepsOnlyFavoritedLeaves_PrunesEmptyFamilies()
-    {
-        var keep = Exe("100", "Keep");
-        var drop = Exe("200", "Drop");
-        var tree = new IModule[] { Family("A", keep, drop), Family("B", Exe("300")) };
-
-        var result = EdisonMainViewModel.BuildFavoritesTree([tree], new HashSet<string> { "100" });
-
-        // Jen rodina A zůstane (má oblíbené dítě), uvnitř jen "Keep". Rodina B i "Drop" zmizí.
-        var family = Assert.IsType<ModuleFamily>(Assert.Single(result));
-        Assert.Equal("A", family.DisplayedName);
-        var leaf = Assert.IsType<ExecutableModule>(Assert.Single(family.NestedModules));
-        Assert.Equal("100", leaf.ElementId);
-    }
-
-    [Fact]
-    public void BuildFavoritesTree_SharesLeafInstances_NotCopies()
-    {
-        var fav = Exe("100");
-        var tree = new IModule[] { Family("A", fav) };
-
-        var result = EdisonMainViewModel.BuildFavoritesTree([tree], new HashSet<string> { "100" });
-
-        var leaf = (ExecutableModule)((ModuleFamily)result[0]).NestedModules[0];
-        // Sdílená instance → přepnutí IsFavorite v jednom stromě se projeví ve druhém.
-        Assert.Same(fav, leaf);
-    }
-
-    [Fact]
-    public void BuildFavoritesTree_EmptyWhenNoFavorites()
-    {
-        var tree = new IModule[] { Family("A", Exe("100")) };
-
-        Assert.Empty(EdisonMainViewModel.BuildFavoritesTree([tree], new HashSet<string>()));
-    }
-
-    [Fact]
-    public void BuildFavoritesTree_SpansMultipleSourceTrees()
-    {
-        var main = new IModule[] { Exe("100") };
-        var system = new IModule[] { Exe("200") };
-
-        var result = EdisonMainViewModel.BuildFavoritesTree([main, system], new HashSet<string> { "100", "200" });
-
-        Assert.Equal(2, result.Count);
     }
 
     [Fact]
@@ -187,81 +139,18 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
-    public void ReloadAfterLegacyExit_LoadFails_KeepsDesktopAndDoesNotSave()
+    public void LegacyModuleExit_ReloadsDesktop_UntilShellClosed()
     {
-        // Exit agendy během výpadku dřív vyprázdnil plochu v paměti a první toggle prázdno zapsal.
+        // Agenda zapisuje zástupce přímo do Caché, shell si blob po jejím exitu přečte znovu. Zavření
+        // shellu ale zabíjí agendy - každý jejich exit by jinak četl blob uprostřed ukončení.
         var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
-            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
-                """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A"}]""")));
         var nav = Substitute.For<IWindowNavigator>();
         var vm = EdisonMainViewModelHarness.CreateVM(services: MockServices(nav: nav), companies: OneCompany,
             treeLoader: TreeLoaderWith([Exe("100", "App")]), userPrefs: prefs);
-        Assert.Single(vm.FavoritesTree);
+        prefs.ClearReceivedCalls();
 
-        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
-            .Returns(Task.FromException<JsonNode?>(new InvalidOperationException("server down")));
         nav.LegacyModuleExited += Raise.Event<Action>();
-
-        Assert.Single(vm.FavoritesTree);
-        prefs.DidNotReceive().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
-
-        vm.ToggleFavoriteCommand.Execute(vm.MainMenuTree.OfType<ExecutableModule>().Single());
-
-        // Blob se v této session načetl, změna z shellu se ukládat smí.
-        prefs.Received(1).SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
-    }
-
-    [Fact]
-    public void SessionLoad_ShortcutsFail_ToggleWorksInMemory_SaveResumesAfterSuccessfulReload()
-    {
-        var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
-            .Returns(Task.FromException<JsonNode?>(new InvalidOperationException("server down")));
-        var nav = Substitute.For<IWindowNavigator>();
-        var vm = EdisonMainViewModelHarness.CreateVM(services: MockServices(nav: nav), companies: OneCompany,
-            treeLoader: TreeLoaderWith([Exe("100", "App")]), userPrefs: prefs);
-        var module = vm.MainMenuTree.OfType<ExecutableModule>().Single();
-
-        vm.ToggleFavoriteCommand.Execute(module);
-
-        Assert.True(module.IsFavorite);   // v paměti plocha funguje
-        prefs.DidNotReceive().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());   // ale nepřepisuje neznámý blob
-
-        prefs.LoadAsync("EDISONMAIN2", "Shortcuts").Returns(Task.FromResult<JsonNode?>(new JsonArray()));
-        nav.LegacyModuleExited += Raise.Event<Action>();
-        vm.ToggleFavoriteCommand.Execute(module);
-
-        prefs.Received(1).SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
-    }
-
-    [Fact]
-    public void DesktopRemove_ViaSharedService_RebuildsFavoritesAndPersists()
-    {
-        // Miniaplikace Plocha mění sdílenou službu přímo, strom o tom ví jen z jejího eventu.
-        var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
-            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
-                """[{"Kind":"MenuModule","Id":"100","ElementId":"100","Name":"A"}]""")));
-        var shortcuts = new ModuleShortcutsService();
-        var vm = EdisonMainViewModelHarness.CreateVM(companies: OneCompany, shortcuts: shortcuts,
-            treeLoader: TreeLoaderWith([Exe("100", "App")]), userPrefs: prefs);
-        Assert.Single(vm.FavoritesTree);   // předpoklad
-
-        shortcuts.Remove(shortcuts.Items.Single());
-
-        Assert.Empty(vm.FavoritesTree);
-        prefs.Received(1).SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
-    }
-
-    [Fact]
-    public void AfterShellClosed_LegacyModuleExit_DoesNotReloadDesktop()
-    {
-        // Zavření shellu zabíjí agendy - každý jejich exit by jinak četl blob plochy uprostřed ukončení.
-        var prefs = Substitute.For<IUserPrefsService>();
-        var nav = Substitute.For<IWindowNavigator>();
-        var vm = EdisonMainViewModelHarness.CreateVM(services: MockServices(nav: nav), companies: OneCompany,
-            treeLoader: TreeLoaderWith([Exe("100", "App")]), userPrefs: prefs);
+        prefs.Received(1).LoadAsync("EDISONMAIN2", "Shortcuts");
         prefs.ClearReceivedCalls();
 
         vm.OnShellClosed();
@@ -349,31 +238,6 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
-    public void ToggleFavorite_Family_FavoritesAllChildren_AndAggregatesFlag()
-    {
-        var prefs = Substitute.For<IUserPrefsService>();
-        var vm = CreateVM(prefs, tree: [Family("MHD", Exe("1"), Exe("2"))]);
-        var family = vm.MainMenuTree.OfType<ModuleFamily>().Single();
-
-        Assert.False(family.IsFavorite);
-        Assert.Empty(vm.FavoritesTree);
-
-        vm.ToggleFavoriteCommand.Execute(family);
-
-        Assert.True(family.IsFavorite);
-        var favFamily = Assert.IsType<ModuleFamily>(Assert.Single(vm.FavoritesTree));
-        Assert.Equal(2, favFamily.NestedModules.Count);
-        Assert.All(family.NestedModules.OfType<ExecutableModule>(), m => Assert.True(m.IsFavorite));
-        // Hromadná změna = jeden zápis plochy, ne jeden per modul rodiny.
-        prefs.Received(1).SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
-
-        vm.ToggleFavoriteCommand.Execute(family);
-
-        Assert.False(family.IsFavorite);
-        Assert.Empty(vm.FavoritesTree);
-    }
-
-    [Fact]
     public void OpenModule_RecordsUsage_AppearsInUsedList_AndPersists()
     {
         var prefs = Substitute.For<IUserPrefsService>();
@@ -427,45 +291,6 @@ public class FavoritesAndUsageTests
         Assert.False(vm.HasNoFavorites);
         // Bez uložené volby vždy Hlavní nabídka - existující oblíbené default nepřebíjejí.
         Assert.Equal("main", vm.SelectedTab.Key);
-    }
-
-    [Fact]
-    public void NonMenuShortcut_NotInFavoritesTree_ButSurvivesFavoriteToggle()
-    {
-        // Tisková sestava na ploše není položkou hlavní nabídky → do záložky Oblíbené nepatří,
-        // ale změna oblíbených ji nesmí z uloženého blobu vyhodit.
-        JsonNode? written = null;
-        var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
-            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
-                """[{"Kind":"PrintReport","Id":"PrehledSkod","ElementId":"31001","Name":"Přehled škod"}]""")));
-        prefs.SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Do<JsonNode>(n => written = n));
-        var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
-
-        Assert.Empty(vm.FavoritesTree);
-
-        vm.ToggleFavoriteCommand.Execute(vm.MainMenuTree.OfType<ExecutableModule>().Single());
-
-        Assert.Contains("PrehledSkod", written!.ToJsonString());
-        Assert.Contains("\"100\"", written.ToJsonString());
-    }
-
-    [Fact]
-    public void ShortcutForModuleMissingFromTree_SurvivesFavoriteToggle()
-    {
-        // Modul, který strom aktuálně nezná (odebraná licence) - po toggle jiného modulu
-        // musí zůstat v uloženém blobu, jinak by o zástupce uživatel tiše přišel.
-        JsonNode? written = null;
-        var prefs = Substitute.For<IUserPrefsService>();
-        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
-            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse(
-                """[{"Kind":"MenuModule","Id":"999","ElementId":"999","Name":"Nelicencovaný"}]""")));
-        prefs.SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Do<JsonNode>(n => written = n));
-        var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
-
-        vm.ToggleFavoriteCommand.Execute(vm.MainMenuTree.OfType<ExecutableModule>().Single());
-
-        Assert.Contains("\"999\"", written!.ToJsonString());
     }
 
     [Fact]

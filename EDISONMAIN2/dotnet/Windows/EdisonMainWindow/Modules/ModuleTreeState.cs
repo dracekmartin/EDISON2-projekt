@@ -160,6 +160,48 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         internal static string ExpansionPathKey(string treeName, IReadOnlyList<int> path) =>
             treeName + ":" + string.Join(".", path);
 
+        /// <summary>
+        /// Mapa <c>exe|forma|param</c> → popisky modulu. Klíč je záměrně tentýž, kterým
+        /// <c>WindowNavigator</c> deduplikuje běžící procesy.
+        /// </summary>
+        internal static Dictionary<string, ModuleLabel> BuildModuleLabels(IEnumerable<IEnumerable<IModule>> trees)
+        {
+            var labels = new Dictionary<string, ModuleLabel>();
+            foreach (var tree in trees)
+                foreach (var root in tree)
+                    Collect(root, "");
+            return labels;
+
+            void Collect(IModule module, string prefix)
+            {
+                switch (module)
+                {
+                    case ModuleFamily family:
+                        var branch = prefix.Length == 0 ? family.DisplayedName : prefix + PathSeparator + family.DisplayedName;
+                        foreach (var child in family.NestedModules) Collect(child, branch);
+                        break;
+                    case ExecutableModule exe:
+                        // První nález vyhrává - týž modul může být ve stromě víckrát (např. i v Oblíbených).
+                        labels.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
+                            new ModuleLabel(
+                                prefix.Length == 0 ? exe.DisplayedName : prefix + PathSeparator + exe.DisplayedName,
+                                exe.LongName));
+                        break;
+                }
+            }
+        }
+
+        private const string PathSeparator = ExecutableModule.PathSeparator;
+
+        internal static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
+
+        /// <summary>
+        /// Popisky modulu ve stromu: <c>Path</c> = cesta agendou včetně listu
+        /// („Mzdy a personalistika › Zaměstnanci"), <c>LongName</c> = legacy <c>nameEx</c>
+        /// (může být prázdný - má ho jen pětina modulů).
+        /// </summary>
+        internal record ModuleLabel(string Path, string LongName);
+
         internal static IEnumerable<ExecutableModule> Flatten(IModule module) => module switch
         {
             ExecutableModule exe => [exe],

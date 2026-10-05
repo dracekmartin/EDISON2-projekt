@@ -27,7 +27,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void BuildModuleLabels_PrefixesModuleWithItsFamily()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels(
+        var labels = ModuleTreeState.BuildModuleLabels(
             [[Fam("Mzdy a personalistika", Exe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formZam"))]]);
 
         Assert.Equal("Mzdy a personalistika › Zaměstnanci", Assert.Single(labels).Value.Path);
@@ -36,7 +36,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void BuildModuleLabels_JoinsNestedFamilies()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels(
+        var labels = ModuleTreeState.BuildModuleLabels(
             [[Fam("MHD", Fam("Plánování", Exe("Turnusy", "MHD2.exe", "f")))]]);
 
         Assert.Equal("MHD › Plánování › Turnusy", Assert.Single(labels).Value.Path);
@@ -45,7 +45,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void BuildModuleLabels_RootLevelModule_HasNoPrefix()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels([[Exe("Nastavení", "SET.exe", "f")]]);
+        var labels = ModuleTreeState.BuildModuleLabels([[Exe("Nastavení", "SET.exe", "f")]]);
 
         Assert.Equal("Nastavení", Assert.Single(labels).Value.Path);
     }
@@ -53,7 +53,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void BuildModuleLabels_SameNameDifferentAgenda_KeptApart()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels([[
+        var labels = ModuleTreeState.BuildModuleLabels([[
             Fam("Mzdy a personalistika", Exe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formZam")),
             Fam("Zaměstnanci",           Exe("Zaměstnanci", "VOLNO.exe", "ALVA.VOLNO.formZam")),
         ]]);
@@ -67,7 +67,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void BuildModuleLabels_DuplicateModule_FirstWins()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels([
+        var labels = ModuleTreeState.BuildModuleLabels([
             [Fam("Hlavní nabídka", Exe("Turnusy", "MHD2.exe", "f"))],
             [Fam("Oblíbené",       Exe("Turnusy", "MHD2.exe", "f"))],
         ]);
@@ -79,7 +79,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void BuildModuleLabels_InputParamDistinguishesModules()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels([[
+        var labels = ModuleTreeState.BuildModuleLabels([[
             Fam("Doprava",
                 Exe("Plánování", "DS.exe", "f"),
                 Exe("Plánování (admin)", "DS.exe", "f", "AdminMode=1")),
@@ -92,7 +92,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void BuildModuleLabels_CarriesLongNameNextToPath()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels([[
+        var labels = ModuleTreeState.BuildModuleLabels([[
             Fam("Zpracování dopravy", Exe("Fakturace", "FAKT.exe", "f", longName: "Fakturace - zpracování AD")),
         ]]);
 
@@ -115,7 +115,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void ResolveRunningLabel_ModuleWithLongName_UsesLongName()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels([[
+        var labels = ModuleTreeState.BuildModuleLabels([[
             Fam("Zpracování dopravy", Exe("Fakturace", "FAKT.exe", "f", longName: "Fakturace - zpracování AD")),
         ]]);
 
@@ -128,7 +128,7 @@ public class RunningModulesLabelTests
     [Fact]
     public void ResolveRunningLabel_ModuleWithoutLongName_UsesAgendaPath()
     {
-        var labels = EdisonMainViewModel.BuildModuleLabels(
+        var labels = ModuleTreeState.BuildModuleLabels(
             [[Fam("Mzdy a personalistika", Exe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formZam"))]]);
 
         var label = EdisonMainViewModel.ResolveRunningLabel(
@@ -155,5 +155,5 @@ public class RunningModulesLabelTests
         Assert.Equal("Uživatelský profil", label);
     }
 
-    private static readonly Dictionary<string, EdisonMainViewModel.ModuleLabel> NoLabels = [];
+    private static readonly Dictionary<string, ModuleTreeState.ModuleLabel> NoLabels = [];
 }

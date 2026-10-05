@@ -272,12 +272,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Null = novinky vypnuté (testy); produkci dává InfChangelogSource AppBootstrapper.
             _changelogSource = changelogSource;
             _shortcuts = shortcuts;
-            // Lazy prefs: _modulePrefs vzniká až v session rebuildu, stromy ho čtou při každém save.
+            // Lazy prefs: _modulePrefs vzniká až v session rebuildu, stromy i plocha ho čtou při každém save.
             _trees = new ModuleTreeState(() => _modulePrefs);
+            _favorites = new FavoritesCoordinator(shortcuts, _trees, () => _modulePrefs, WindowNavigator,
+                () => OnPropertyChanged(nameof(HasNoFavorites)));
 
             OpenModuleCommand        = CommandAsync<IModule>(OpenModuleAsync);
             LaunchShortcutCommand    = CommandAsync<DesktopShortcut>(LaunchShortcutViaHostAsync);
-            ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
+            ToggleFavoriteCommand    = Command<IModule>(m => _favorites.Toggle(m));
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog(new EDCompTestWnd()));
@@ -358,14 +360,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             _services.MLRest = mlRest;
 
-            // Změny plochy ze stromu i z miniaplikace (★, DnD add, remove) → přestav Oblíbené + persist.
-            _shortcuts.MembershipChanged += SyncFavorites;
-            // Přesun dlaždice (reorder v miniaplikaci) → persistuj pozice (bez změny členství).
-            _shortcuts.PositionsChanged += PersistShortcuts;
             // Spuštění z dlaždice jde přes OpenModuleAsync (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
             _shortcuts.ChangelogRequested += ShowShortcutChangelog;
-            WindowNavigator.LegacyModuleExited += OnLegacyModuleExited;
 
             _initialLicence = initialLicence;
         }
@@ -561,30 +558,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 OpenModuleCommand.Execute(module);
         }
 
-        // Oblíbené + používanost jsou per-user × IDFa → aplikují se po (pře)stavbě stromů.
-        /// <summary>
-        /// Přenačte plochu z Caché. Agendy zapisují zástupce přímo na server (nemají na shell
-        /// spojení), takže po jejich ukončení může mít blob víc, než co drží tenhle shell.
-        /// Ticho při chybě je záměr - kvůli nedostupnému serveru nemá smysl obtěžovat uživatele,
-        /// který zrovna zavřel agendu.
-        /// </summary>
-        private async Task ReloadShortcutsAsync()
-        {
-            if (_modulePrefs is null) return;
-            var stored = await _modulePrefs.LoadShortcutsAsync();
-            // Selhání loadu: v paměti zůstává stav téže session (agenda mohla přidat, nikdy neubírá);
-            // seed prázdnem by ho zahodil a další toggle prázdno zapsal do Caché.
-            if (stored is null) return;
-            SeedShortcuts(stored);
-
-            RefreshFamilyFavoriteFlags();
-            RebuildFavoritesTree();
-        }
-
-        // Agenda mohla přidat zástupce na plochu (píše přímo do Caché) - po jejím ukončení
-        // si blob přečteme znovu, jinak by dlaždice naskočila až po restartu shellu.
-        private void OnLegacyModuleExited() => _ = ReloadShortcutsAsync();
-
         // Novinky z dlaždice: klíč nese sama položka (i u zástupců mimo strom), modul se nedohledává.
         private void ShowShortcutChangelog(DesktopShortcut shortcut) =>
             _ = ShowChangelogForAsync(shortcut.ExecutablePath, shortcut.DisplayedName);
@@ -592,33 +565,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Při zavření shellu se zabíjejí agendy - bez odhlášení by každá spustila reload plochy.
         private void DetachShortcutHandlers()
         {
-            _shortcuts.MembershipChanged -= SyncFavorites;
-            _shortcuts.PositionsChanged -= PersistShortcuts;
+            _favorites.Detach();
             _shortcuts.LaunchRequested -= LaunchShortcut;
             _shortcuts.ChangelogRequested -= ShowShortcutChangelog;
-            WindowNavigator.LegacyModuleExited -= OnLegacyModuleExited;
         }
 
-        // Null = load plochy selhal (služba zůstane prázdná a neuložitelná, viz IsLoaded).
-        private void SeedShortcuts(List<DesktopShortcutDto>? stored)
-        {
-            var labels = BuildModuleLabels(_trees.SourceTrees.Select(t => t.Tree));
-            _shortcuts.Seed(_trees.AllExecutables(), stored, exe =>
-                labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
-                    ? label.Path : "");
-        }
-
+        // Oblíbené + používanost jsou per-user × IDFa → aplikují se po (pře)stavbě stromů.
         private void ApplyPersonalization(SessionData data)
         {
             _usage = data.Usage;
-
-            // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
-            // Null = load plochy selhal: zobrazit prázdno (data předchozí session sem nepatří), ale
-            // nepersistovat, dokud se blob nenačte - jinak by první toggle přepsal uživatelovu plochu.
-            SeedShortcuts(data.Shortcuts);
-
-            RefreshFamilyFavoriteFlags();
-            RebuildFavoritesTree();
+            _favorites.Apply(data.Shortcuts);
             RebuildUsedList();
 
             _trees.ApplySavedExpansion();
@@ -627,12 +583,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _suppressTabSave = true;
             SelectedTab = data.SelectedTab is { } key ? _trees.TabByKey(key) : DefaultTreeTab();
             _suppressTabSave = false;
-        }
-
-        private void RebuildFavoritesTree()
-        {
-            _trees.ReplaceFavorites(BuildFavoritesTree(_trees.SourceTrees.Select(t => t.Tree), FavoriteIdSet()));
-            OnPropertyChanged(nameof(HasNoFavorites));
         }
 
         private void RebuildUsedList()
@@ -806,6 +756,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // než on, takže save cesty musí být null-safe (jinak NRE z TwoWay bindingu záložky).
         private ModulePreferencesService? _modulePrefs;
         private readonly ModuleShortcutsService _shortcuts;
+        private readonly FavoritesCoordinator _favorites;
         private Dictionary<string, UsageEntry> _usage = [];
         private const int UsedModulesCap = 20;
 
@@ -1043,48 +994,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
-        // Přepnutí oblíbeného přes sdílenou službu (stejný zdroj jako miniaplikace Oblíbené). EXE =
-        // toggle jednoho; FAMILY = hromadně (přidá vše, pokud nejsou všechny oblíbené; jinak vše odebere).
-        // Služba ohlásí změnu členství (rodina jednou) a SyncFavorites přestaví strom + uloží.
-        private void ToggleFavorite(IModule module)
-        {
-            switch (module)
-            {
-                case ExecutableModule { ElementId: { Length: > 0 } id } exe:
-                    if (_shortcuts.Contains(id)) _shortcuts.Remove(exe);
-                    else _shortcuts.Add(exe);
-                    break;
-
-                case ModuleFamily family:
-                    var exes = ModuleTreeState.Flatten(family).Where(e => e.ElementId.Length > 0).ToList();
-                    if (exes.Count == 0) return;
-                    bool allFav = exes.All(e => _shortcuts.Contains(e.ElementId));
-                    _shortcuts.Batch(() =>
-                    {
-                        foreach (var e in exes)
-                            if (allFav) _shortcuts.Remove(e);
-                            else _shortcuts.Add(e);
-                    });
-                    break;
-            }
-        }
-
-        // Přestaví záložku Oblíbené + agregační flagy rodin a uloží plochu. Volá se po každé změně
-        // členství (tree toggle i změny z miniaplikace).
-        private void SyncFavorites()
-        {
-            RefreshFamilyFavoriteFlags();
-            RebuildFavoritesTree();
-            PersistShortcuts();
-        }
-
-        // Uloží plochu (druh, identita, pozice). Volá se při změně členství i při přesunu dlaždice.
-        private void PersistShortcuts()
-        {
-            if (!_shortcuts.IsLoaded) return;
-            _ = _modulePrefs?.SaveShortcutsAsync(_shortcuts.Persistable());
-        }
-
         // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModuleAsync (usage + overlay); ostatní
         // druhy zástupců (tiskové sestavy, pohledy DS) pouští hostitelská agenda přes EDISONMAIN2API.
         private void LaunchShortcut(DesktopShortcut shortcut)
@@ -1109,39 +1018,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     ShortcutLaunchPayloadCodec.Encode(shortcut), inputParam: shortcut.InputParam);
         }
 
-        // Oblíbené = položky plochy, které jsou modulem hlavní nabídky (★ ve stromu jiné druhy nezná).
-        private HashSet<string> FavoriteIdSet() =>
-            [.. _shortcuts.Items.Where(i => i.Kind == ShortcutKind.MenuModule).Select(i => i.ElementId)];
-
-        // Nastaví ModuleFamily.IsFavorite = "všichni potomci oblíbení" napříč hlavními stromy (řídí text
-        // kontextového menu rodiny). Vrací, zda je uzel plně oblíbený (rekurzivní agregace).
-        private void RefreshFamilyFavoriteFlags()
-        {
-            foreach (var (_, tree) in _trees.SourceTrees)
-                foreach (var node in tree)
-                    UpdateFamilyFavorite(node);
-        }
-
-        private static bool UpdateFamilyFavorite(IModule module)
-        {
-            switch (module)
-            {
-                case ExecutableModule exe:
-                    return exe.IsFavorite;
-                case ModuleFamily family:
-                    bool any = false, all = true;
-                    foreach (var child in family.NestedModules)
-                    {
-                        any = true;
-                        if (!UpdateFamilyFavorite(child)) all = false;
-                    }
-                    family.IsFavorite = any && all;
-                    return family.IsFavorite;
-                default:
-                    return false;
-            }
-        }
-
         private void RecordUsage(ExecutableModule module)
         {
             if (module.ElementId.Length == 0) return;
@@ -1162,44 +1038,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Prázdné = nenastaveno (pole zůstane prázdné, kontext dá helpText pole).
         private string StartupWindowDisplayText() =>
             DefaultWindowId == 0 ? "" : ResolveModuleName(DefaultWindowId) ?? $"#{DefaultWindowId}";
-
-        /// <summary>
-        /// Ořezané stromy jen s oblíbenými listy (predikát <c>favoriteIds.Contains(ElementId)</c>).
-        /// Zachovává hierarchii, prázdné rodiny se vynechají. Listy se SDÍLEJÍ (ne kopírují) s hlavními
-        /// stromy - přepnutí IsFavorite se projeví v obou. Rodiny jsou nové (rozbalené pro přehled).
-        /// </summary>
-        internal static List<IModule> BuildFavoritesTree(
-            IEnumerable<IEnumerable<IModule>> sourceTrees, ISet<string> favoriteIds)
-        {
-            var roots = new List<IModule>();
-            foreach (var tree in sourceTrees)
-                foreach (var node in tree)
-                    if (PruneToFavorites(node, favoriteIds) is { } kept)
-                        roots.Add(kept);
-            return roots;
-        }
-
-        private static IModule? PruneToFavorites(IModule module, ISet<string> favoriteIds) => module switch
-        {
-            ExecutableModule exe => favoriteIds.Contains(exe.ElementId) ? exe : null,
-            ModuleFamily family  => PruneFamily(family, favoriteIds),
-            _                    => null,
-        };
-
-        private static ModuleFamily? PruneFamily(ModuleFamily family, ISet<string> favoriteIds)
-        {
-            var kept = family.NestedModules
-                .Select(child => PruneToFavorites(child, favoriteIds))
-                .Where(child => child != null)
-                .ToList();
-
-            if (kept.Count == 0) return null;
-
-            // V záložce Oblíbené rodina zobrazuje jen oblíbené potomky → je „plně oblíbená" (řídí text menu).
-            var pruned = new ModuleFamily { DisplayedName = family.DisplayedName, IsExpanded = true, Color = family.Color, IsFavorite = true };
-            foreach (var child in kept) pruned.NestedModules.Add(child!);
-            return pruned;
-        }
 
         /// <summary>
         /// Plochý žebříček nejpoužívanějších modulů: řazení dle počtu spuštění (desc), tie-break dle
@@ -1462,51 +1300,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             var modules = _getActiveModules();
             if (modules.Count == 0) { RunningModules = [EmptyPlaceholder]; return; }
 
-            var labels = BuildModuleLabels(_trees.SourceTrees.Select(t => t.Tree));
+            var labels = ModuleTreeState.BuildModuleLabels(_trees.SourceTrees.Select(t => t.Tree));
             RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, labels) })];
         }
-
-        /// <summary>
-        /// Mapa <c>exe|forma|param</c> → popisky modulu. Klíč je záměrně tentýž, kterým
-        /// <c>WindowNavigator</c> deduplikuje běžící procesy.
-        /// </summary>
-        internal static Dictionary<string, ModuleLabel> BuildModuleLabels(IEnumerable<IEnumerable<IModule>> trees)
-        {
-            var labels = new Dictionary<string, ModuleLabel>();
-            foreach (var tree in trees)
-                foreach (var root in tree)
-                    Collect(root, "");
-            return labels;
-
-            void Collect(IModule module, string prefix)
-            {
-                switch (module)
-                {
-                    case ModuleFamily family:
-                        var branch = prefix.Length == 0 ? family.DisplayedName : prefix + PathSeparator + family.DisplayedName;
-                        foreach (var child in family.NestedModules) Collect(child, branch);
-                        break;
-                    case ExecutableModule exe:
-                        // První nález vyhrává - týž modul může být ve stromě víckrát (např. i v Oblíbených).
-                        labels.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
-                            new ModuleLabel(
-                                prefix.Length == 0 ? exe.DisplayedName : prefix + PathSeparator + exe.DisplayedName,
-                                exe.LongName));
-                        break;
-                }
-            }
-        }
-
-        private const string PathSeparator = ExecutableModule.PathSeparator;
-
-        private static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
-
-        /// <summary>
-        /// Popisky modulu ve stromu: <c>Path</c> = cesta agendou včetně listu
-        /// („Mzdy a personalistika › Zaměstnanci"), <c>LongName</c> = legacy <c>nameEx</c>
-        /// (může být prázdný - má ho jen pětina modulů).
-        /// </summary>
-        internal record ModuleLabel(string Path, string LongName);
 
         /// <summary>
         /// Label do menu „Spuštěné moduly": dlouhý název modulu, jinak cesta agendou, jinak
@@ -1514,8 +1310,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// nestačí - dvě agendy ho mají běžně shodný (Zaměstnanci z MZDY2 vs. z Požadavků na
         /// volno). Firma je v položce zbytečná - při přepnutí firmy se otevřená okna zavírají.
         /// </summary>
-        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, ModuleLabel> labels) =>
-            labels.TryGetValue(ModuleKey(info.ExeName, info.FormFqn, info.InputParam), out var label)
+        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, ModuleTreeState.ModuleLabel> labels) =>
+            labels.TryGetValue(ModuleTreeState.ModuleKey(info.ExeName, info.FormFqn, info.InputParam), out var label)
                 ? (label.LongName.Length > 0 ? label.LongName : label.Path)
                 : StripIdfaSuffix(info.DisplayName);
 
