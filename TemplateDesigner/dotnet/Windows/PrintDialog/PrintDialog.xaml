@@ -31,7 +31,7 @@
                 <Button Content="Zobrazit hlášky" Command="{Binding ZobrazitHlaseniCommand}"
                         Visibility="{Binding HasHlaseni, Converter={StaticResource BoolToVis}}"
                         HorizontalAlignment="Left" Margin="0,4,0,0" Padding="8,2"
-                        ToolTip="Znovu otevře okno s hláškami poslední kontroly nebo tisku"/>
+                        ToolTip="Znovu otevře okno s hláškami poslední kontroly"/>
             </StackPanel>
 
             <!-- Vystředěno: po kontrole přibude vlevo „Zobrazit hlášky" a tlačítka by se natáhla na výšku obou řádků. -->

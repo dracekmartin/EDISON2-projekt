@@ -539,7 +539,7 @@ Hlášky mají tři úrovně a žádná tisk nezastaví:
 Náhled a blok hlášek se týkají jen linky, která je právě v náhledu. Tlačítkem **„Zkontrolovat"**
 v okně Tisk, lupou na liště nebo `Soubor → Zkontrolovat vybrané linky…` projdete **všechny vybrané
 linky** bez tisku. Okno kontroly ukazuje průběh a klik na hlášku přepne na její linku a vybere
-prvek. Stejný souhrn se ukáže i po vytvoření PDF.
+prvek. Samotné vytvoření PDF kontrolu nespouští.
 
 Tentýž prvek na víc stránkách je **jedna hláška**, ne výpis po stránkách. U sekcí nastavených na
 „Rozdělit přes stránky" se přetečení nehlásí - sekce se rozdělí a nic se neztratí.

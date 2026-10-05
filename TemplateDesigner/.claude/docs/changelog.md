@@ -21,6 +21,10 @@ nedodělaně (poslední se ukázala až při zkoušce podbarvení lichých Tč):
   pravou půlku svislé čáry a dolní půlku vodorovné. Svislé čáry se teď kreslí po všech buňkách
   řádku a čára pod řádkem až po buňkách řádku pod ní (`ColumnRenderer`, `RowPlanRenderer`).
   Týká se všech tabulek, viditelné hlavně v šedém záhlaví a podbarvených řádcích.
+- **Vytvořit PDF už nespouští kontrolu všech linek** (rozhodnutí Jan): PDF vznikne tak jako tak
+  a kontrola ho jen zdržela; po tisku se proto neotvírá ani okno s hláškami. Hlášky za všechny
+  linky dává tlačítko „Zkontrolovat". Mění tím rozhodnutí z 24. 9. (`B178`, část 3).
+- **Tlačítka v patičce okna Tisk se po kontrole natáhla** na výšku stavu s „Zobrazit hlášky".
 
 Neopraveno: tabulka minut odjezdů v rozestupu „podle obsahu" počítá šířku skupiny bez značek,
 takže hodina s mnoha označenými odjezdy přeteče do sousední skupiny (330530 ve 13 h, 330510 v 6 h).

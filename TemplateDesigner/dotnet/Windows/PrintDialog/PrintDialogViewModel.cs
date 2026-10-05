@@ -108,7 +108,7 @@ public class PrintDialogViewModel : EDViewModel
     /// <summary>Otevře okno s výsledkem kontroly (nadpis, hlášky) - hlášky nezabírají formulář.</summary>
     public Action<string, IReadOnlyList<Hlaseni>>? RequestShowHlaseni { get; set; }
 
-    /// <summary>Hlášky poslední kontroly nebo tisku, nejvážnější první.</summary>
+    /// <summary>Hlášky poslední kontroly, nejvážnější první.</summary>
     public IReadOnlyList<Hlaseni> Hlaseni { get; private set; } = [];
     public bool HasHlaseni => Hlaseni.Count > 0;
     private string _nadpisHlaseni = "";
@@ -151,14 +151,15 @@ public class PrintDialogViewModel : EDViewModel
     /// <summary>Hotová část 0-1.</summary>
     public double Prubeh { get => _prubeh; private set => Set(ref _prubeh, value); }
 
-    /// <summary>Hlášení průběhu načítání - vzniká na UI vlákně, takže hodnoty chodí zpátky na něj.</summary>
-    private IProgress<(int Hotovo, int Celkem, string Linka)> PrubehNacitani()
+    /// <summary>Hlášení průběhu načítání - vzniká na UI vlákně, takže hodnoty chodí zpátky na něj.
+    /// <paramref name="podil"/> = kolik pruhu načítání zabere (u kontroly polovinu, druhou kontrola).</summary>
+    private IProgress<(int Hotovo, int Celkem, string Linka)> PrubehNacitani(double podil = 1)
     {
         Probiha = true;
         Prubeh = 0;
         return new Progress<(int Hotovo, int Celkem, string Linka)>(p =>
         {
-            Prubeh = p.Celkem > 0 ? 0.5 * p.Hotovo / p.Celkem : 0;
+            Prubeh = p.Celkem > 0 ? podil * p.Hotovo / p.Celkem : 0;
             StatusText = $"Načítám data {p.Hotovo} z {p.Celkem} · {p.Linka}";
         });
     }
@@ -191,7 +192,7 @@ public class PrintDialogViewModel : EDViewModel
             PersistParams();
             StatusText = "Načítání dat z databáze…";
             var paramsSnapshot = new Dictionary<string, object?>(_paramValues);
-            var dataPages = await Task.Run(() => _buildRealData(paramsSnapshot, PrubehNacitani()));
+            var dataPages = await Task.Run(() => _buildRealData(paramsSnapshot, PrubehNacitani(podil: 0.5)));
             if (dataPages is null or { Count: 0 })
             {
                 StatusText = "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).";
@@ -461,17 +462,15 @@ public class PrintDialogViewModel : EDViewModel
                 return;
             }
 
-            // Hlášky za všechny vybrané linky (`B178`) - tisknout může jiná linka než ta v náhledu.
-            var hlaseniTisku = await ZkontrolujLinkyAsync(dataPages);
+            // Kontrolu všech linek tisk sám nespouští (rozhodnutí Jan 5. 10.): PDF vznikne tak jako
+            // tak a kontrola by ho jen zdržela. Kdo chce hlášky za všechny linky, má „Zkontrolovat".
             Probiha = false;
-            int totalPages = dataPages.Count;
 
             StatusText = "Generuji PDF…";
             // Skládání 1×1 papír jen zvětší (A5 šablona + list „A4 na výšku" = A4 s jednou vývěskou
             // uprostřed). Volba se persistuje per agenda, takže uživatel nemá jak zjistit proč -
             // zákazník to hlásil jako chybu tisku (#13158). Proto varování, ne neutrální popis.
             string sheetInfo = PopisUsporadani(sheets) + PopisMeritka();
-            string hlaseniInfo = hlaseniTisku.Count > 0 ? $" · {Souhrn(hlaseniTisku)}" : "";
 
             if (splitMode == ExportSplitMode.Single)
             {
@@ -479,8 +478,7 @@ public class PrintDialogViewModel : EDViewModel
                 // ve wiring), takže nekoliduje s preview renderem UI threadu.
                 await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets, Meritko));
                 OpenPdf(target);
-                StatusText = $"PDF uloženo: {Path.GetFileName(target)}{sheetInfo}{hlaseniInfo}";
-                NastavHlaseni(hlaseniTisku, $"Vytištěno {Linek(KontrolaVystupu.PoLinkach(dataPages).Count)}: {Souhrn(hlaseniTisku)}");
+                StatusText = $"PDF uloženo: {Path.GetFileName(target)}{sheetInfo}";
                 return;
             }
 
@@ -500,8 +498,7 @@ public class PrintDialogViewModel : EDViewModel
             });
 
             OpenFolder(target);
-            StatusText = $"{fileCount} PDF uloženo do složky{sheetInfo}{hlaseniInfo}";
-            NastavHlaseni(hlaseniTisku, $"Vytištěno {Linek(KontrolaVystupu.PoLinkach(dataPages).Count)}: {Souhrn(hlaseniTisku)}");
+            StatusText = $"{fileCount} PDF uloženo do složky{sheetInfo}";
         }
         catch (Exception ex)
         {
