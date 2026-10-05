@@ -76,8 +76,8 @@ nepřekrývají, takže můžou běžet současně.
 | S1 Shell VM a plocha | A4 → A20 → A28 → A5 kroky 1-3 | `EdisonMainViewModel.cs`, `EdisonMainWindow.xaml(.cs)`, `MiniApps/Desktop*`, `Modules/*` kromě `InternalDiagnostics.cs`, testy VM a harness | 1 | chat |
 | S2 Startup a login | A10 → A18 → A19 → A34 → A6 bod 3 | `App.xaml.cs`, `Startup/*` kromě `LocalPrefs`, `TransientLocalPrefs`, `Updater`, `VerzeInf`; `Modules/InternalDiagnostics.cs`, `LoginWindow/*`, `UserProfileWindow/*`, jejich testy | 1 | chat |
 | S3 Lokální preference | A45, sloučení v `LocalPrefs.Save` bez změny volajících (klíč `server\|idfa` až po A37) | `Startup/LocalPrefs.cs`, `Startup/TransientLocalPrefs.cs`, `LocalPrefsTests` | 1 | subagent |
-| S4 Update a vydání | A44 → A46 (`global.json` slít až na konci vlny, mění SDK všem) → A47 🔸 | `Startup/Updater.cs`, `Startup/VerzeInf.cs`, `EDUPDATE2/*`, nový projekt kontraktu, csproj, `EDISON2.sln`, `SingleFilePublish.targets`, `global.json`, `docs/deploy.md`, EDLOADER v repu EDISON | 1 | chat |
-| S5 Launch kontrakt EDControls | A7 → A8 → A12 body 1-2 → A6 body 1-2 | `EDViewModel/WindowNavigator.cs`, `IWindowNavigator.cs`, `EdisonLaunchArgs.cs`, `WindowStateStore.cs`, `EDViewModel/EDViewModel.cs`, `EDErrorPopup.xaml.cs`, `InfChangelogSource.cs`, TD `App.xaml.cs`, jejich testy, fixture u `FormToRunGetter` v repu EDISON | 1 | chat |
+| S4 Update a vydání | A44 → A46 (`global.json` slít až na konci vlny, mění SDK všem) → A47 varianta b | `Startup/Updater.cs`, `Startup/VerzeInf.cs`, `EDUPDATE2/*`, nový projekt kontraktu, csproj, `EDISON2.sln`, `SingleFilePublish.targets`, `global.json`, `docs/deploy.md`, EDLOADER v repu EDISON | 1 | chat |
+| S5 Launch kontrakt EDControls | A7 → A8 → A12 body 1-3 → A6 body 1-2 | `EDViewModel/WindowNavigator.cs`, `IWindowNavigator.cs`, `EdisonLaunchArgs.cs`, `WindowStateStore.cs`, `EDViewModel/EDViewModel.cs`, `EDErrorPopup.xaml.cs`, `InfChangelogSource.cs`, TD `App.xaml.cs`, jejich testy, fixture u `FormToRunGetter` v repu EDISON | 1 | chat |
 | S6 EDList | A16 → A17 → A42 → A14 → A27 část EDList → A23 | `EDList/*`, `EDFilter/EDFilter.xaml.cs`, `EDControls/CACHE/.../EDList/*`, `ListTest.cls`, `MockList.cls`, jejich testy | 1 | chat |
 | S7 Kontrakty šva | A13 body 2-4 | `EDISON2.IntegrationTests/*`, `EDISONMAIN2/CACHE/.../Tests/*.cls` | 1 | subagent |
 | S8 EDInputForm | A15 🔸 → A27 část formulář (`Format`, `UserHidden`) | `EDInputForm/*`, `Form.cls`, `EDIFExample.cls`, jejich testy | 2 | chat |
@@ -85,9 +85,8 @@ nepřekrývají, takže můžou běžet současně.
 | S1 pokračuje | A9 (s S2) → A5 kroky 4-5 → A21 → A29 → A30 → A31 🔸 → A32 🔸 | VM, `Modules/*`, `MiniApps/Desktop*`; A9 i `SessionFactory`, `CompanySwitcher`, `LicenceVerifier` | 2 | chat |
 | Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4, `ALVA.EDTesting.TestRunner` počítá skipped (status 2) zvlášť a vypíše důvod (dnes FAIL s prázdnou hláškou, brání `$$$AssertSkipped` v TD), mrtvý `OpenMiniAppCommand` ve VM (bez bindingu), `docs/zastupci-na-plose.md:62` odkazuje na zrušené `ReloadShortcutsAsync` | napříč | 3 | po slití vln 1 a 2 |
 
-Rozhodnutí vlastníka, na která proudy narazí: A47 (varianta a/b/c, konec S4), A12 bod 3 (politika
-escapování, mimo S5), A15 (kdy zahodit odpověď), A27 (implementovat, nebo označit rezervované),
-A41, A31, A32, A37, A25, A26, A46 bod 3 (vydávací stroj).
+Rozhodnutí vlastníka padla 2026-10-05, u každého dotčeného ID je řádek **Rozhodnutí vlastníka**.
+Otevřený zůstává jen konkrétní vydávací stroj (A46 bod 3).
 
 ## Mapa repa (stav k 2026-10-01)
 
@@ -539,6 +538,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A12 · Launch kontrakt shellu nemá jediný zdroj pravdy pro pozice polí
 
 - [ ] **Stav:** otevřeno (2026-10-01: kontrakt narostl na 21 tokenů, escapování jen u nových polí)
+- **Rozhodnutí vlastníka (2026-10-05):** bod 3 jednostranně v producentovi: `BuildLauncherArguments` odstraní `"` a koncové `\` ze všech textových polí (jako `Plain()` u [20]); host beze změny, kódování jako u [13] se nedělá. Patří do S5 spolu s body 1-2.
 - **P2 · M** (escapování s hostem L) · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** Pozice 21 tokenů (`[0]` značka + pole `[1]-[20]`) jsou literály ve třech souborech
   ve dvou repech (producent, WPF konzument, WinForms konzument + `ShortcutRunner`) a popsané na
@@ -637,6 +637,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A15 · `EDInputForm` je celý synchronní na UI vlákně, `EDList` má async cestu
 
 - [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- **Rozhodnutí vlastníka (2026-10-05):** aplikuje se jen odpověď posledního `ValidateAsync`/`InitAsync` (generation guard); hodnotu pole, které uživatel právě edituje, odpověď nepřepíše.
 - **P2 · M** · Závisí na: A3 · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** `EDList` má `InitializeListAsync/LoadListAsync` s gate a generation guardem,
   `EDInputForm` volá Caché výhradně synchronně včetně validace na každou změnu pole.
@@ -934,6 +935,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   pod MSBuildem z VS odmítne publish s legacy DLL; ventil `-p:AllowDebugLegacyAssemblies=true`, test
   `SingleFilePublishTargetsTests` s vyrobenou DLL a skutečným `dotnet publish`. `global.json` 10.0.302
   `latestPatch`. Bod 3 (vydávací stroj) vlastník 2026-10-01 odložil.
+- **Rozhodnutí vlastníka (2026-10-05):** bod 3: shell a EDControls se vydávají jen z jednoho stroje, který vlastník zapíše do `docs/deploy.md`.
 - **P2 · S** (kontrola a pin SDK; vydávací stroj 🔸 M) · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01), incident při nasazení 29. 9.
 - **Problém:** Legacy knihovny jsou reference přes `HintPath` do `C:\Edison` a single-file publish je
   zabalí do `EDISONMAIN2.exe`. Exe tak nese kopie, které na publikujícím stroji zrovna leží,
@@ -961,6 +963,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 - [ ] **Stav:** otevřeno, ověřeno 2026-10-02 ve Windows Sandbox (`tools/edloader-sandbox/`): bez uzlu
   a bez .NET 10 TD ze starého shellu ukáže dialog .NET (S1), po rozbalení `dotnet\` (S4) nebo instalaci
   .NET 10 (S1b) naběhne. Volbu varianty a/b/c vlastník 2026-10-05 odložil, proud „Update a vydání" ji nevyřešil.
+- **Rozhodnutí vlastníka (2026-10-05):** varianta b: spouštěče TD ve starém shellu (`TiskJR`, `ISYJR2`, `MHD2Linky`) ověří `dotnet\` nebo globální .NET 10 a ukážou českou hlášku; `docs/deploy.md` popíše, kdy TD runtime potřebuje.
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01)
 - **Problém:** Všechna exe ze `SingleFilePublish.targets` hledají runtime nejdřív v `dotnet\` vedle
   sebe, pak globálně. `dotnet\` rozbaluje jen EDLOADER a jen při zapnutém novém shellu. TemplateDesigner
@@ -989,6 +992,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A24 · `tools/GenerateTree` mimo sln, žádný parita test
 
 - [ ] **Stav:** otevřeno, částečně (advisory drift hook 2026-08-26, CI `tree-sync.yml` 2026-08-27)
+- **Rozhodnutí vlastníka (2026-10-05):** směr „master" (`Tree.cls` vs. XML) se teď nerozhoduje, parity test ani projekt v sln ho nepotřebují.
 - **P3 · M** · Závisí na: - · Blokuje: - · Původ: [backlog R10](arch-backlog.md#r10---toolsgeneratetree-mimo-build-žádný-drift-guard)
 - **Stav v kódu:** `tools/GenerateTree.cs` (461 ř.) je file-based app, v `EDISON2.sln` není. Drift
   hlídá `.github/workflows/tree-sync.yml` (`957e5f51`: generátor staví a pouští v CI podle cronu
@@ -1006,6 +1010,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A25 · Veřejný povrch EDControls bez konzumenta 🔸
 
 - [ ] **Stav:** otevřeno (2026-10-01: `2e8d88fe` odebral navigaci nálezů, zbytek beze změny)
+- **Rozhodnutí vlastníka (2026-10-05):** nepoužité veřejné členy odebrat (export v `EDList` se neplánuje) v jednom publishi s A22 a A38; opravit `EDControls/CLAUDE.md`.
 - **P3 · S** (evidence) / koordinovaný publish (odstranění) · Závisí na: - · Blokuje: - · Původ: [backlog R13a](arch-backlog.md#r13a---edcomponenttoolbar-export-a-print), rozšířeno
 - **Důkaz (grep přes EDISONMAIN2, LegacyMiniApps, TD, bez `/obj/`):**
   - `EDComponentToolbar`: `ShowExport` (`EDComponentToolbar.xaml.cs:106-114`), `ShowPrint` (`:116-124`), `ExportCommand` (`:146-155`), `PrintCommand` (`:157-165`), `SettingsCommand` (`:177-185`), `SearchPlaceholder` (`:96-104`), 0 konzumentů. `2e8d88fe` odebral `CurrentMatchIndex`, `TotalMatches`, `FindNext/FindPreviousCommand` a `IntZeroToCollapsedConverter` (konzument jen uvnitř EDControls, publish TD nebyl nutný).
@@ -1022,6 +1027,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A26 · Sdílená DLL nese aplikačně specifické ikony 🔸
 
 - [ ] **Stav:** otevřeno (ověřeno 2026-10-01, `EDIcons.xaml` beze změny)
+- **Rozhodnutí vlastníka (2026-10-05):** ikony jen pro TD přesunout do TD (`TDIcons.xaml`, zpočátku alias), ikony jen pro shell do shellu, v EDControls zůstane sdílený zbytek; odebrání z EDControls až v koordinovaném publishi.
 - **P3 · M** · Závisí na: - · Blokuje: - · Původ: [backlog R4b](arch-backlog.md#r4b---td-ikony-ve-sdílené-knihovně), upřesněno
 - **Důkaz (grep klíčů `EDIcons.xaml` do projektů):** z 64 ikon 39 jen TemplateDesigner nebo vnitřek
   EDControls (36 TD: New, Open, Save, Print, Undo, Redo, *Element, Align*, Distribute*, Z*, Sections,
@@ -1041,6 +1047,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A27 · Wire deklaruje, co UI nerenderuje: `IMAGE`/`CODEBOOK`, `Field.Format`, `UserHidden` 🔸
 
 - [ ] **Stav:** otevřeno (ověřeno 2026-10-01; přestavba XAML formuláře `Format` nezapojila)
+- **Rozhodnutí vlastníka (2026-10-05):** rezervovat: `IMAGE`/`CODEBOOK` zůstávají platné konstanty, renderují se jako text a C# i `Column.cls` je označí jako rezervované; `Field.Format` a `UserHidden` označit jako rezervované a `format="N2"` vyřadit z `EDIFExample`. Implementace až pro skutečného konzumenta.
 - **P3 · S** · Závisí na: A14 (dělat v rámci nebo po) · Blokuje: - · Původ: [backlog R13d](arch-backlog.md#r13d---edlist-typy-image-a-codebook-bez-renderingu), rozšířeno
 - **Důkaz:** `EDListParsing.cs:54,57` parsuje IMAGE/CODEBOOK, `BuildDataGridColumn`
   (`EDList.xaml.cs:427-501`) větví jen `IsLink` (`:435`) a `Color` (`:462`), fallback na text.
@@ -1075,6 +1082,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A29 · `DesktopMiniAppViewModel.LaunchCommand` nemá binding, view volá službu přímo 🔸
 
 - [ ] **Stav:** otevřeno (ověřeno 2026-10-01, beze změny)
+- **Rozhodnutí vlastníka (2026-10-05):** `LaunchCommand` smazat.
 - **P3 · S** · Původ: [backlog N4](arch-backlog.md#n4---desktopminiappviewmodellaunchcommand-nemá-ani-jeden-binding)
 - **Důkaz:** `MiniApps/DesktopMiniAppViewModel.cs:24,40` command definován; žádný XAML binding;
   `MiniApps/DesktopMiniAppView.xaml.cs:33` `Vm?.Shortcuts.RequestLaunch(s)`, zatímco sourozenecký
@@ -1097,6 +1105,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   (`- stub`, `- chybí exe`, `- rozbité`, `- stuby`) přidává `ModuleLaunchabilityCheck` jen pod
   `InternalDiagnostics.Enabled` (DEBUG / doména M-line), u zákazníka se do blobu nedostanou;
   mlineOnly suffix a oddělení `Name`/`DisplayedName` zůstávají 🔸. Ověřeno 2026-10-01, beze změny.
+- **Rozhodnutí vlastníka (2026-10-05):** oddělit `Name` (data, klíč) od `DisplayedName` (zobrazení). Ověřeno 2026-10-05: legacy host (`EDISON/EDISONMAIN2API/CacheShortcutSink.cs`) blob jen zapisuje (Add/Remove/Exists podle klíče `Kind|ElementId|Id`), `Name` zpět nečte; čte ho jen shell.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Problém:** dekorace pro zobrazení mutuje doménový model (`with { DisplayedName = ... }`),
   který dál slouží jako text hledání, zdroj persistovaného `Name` dlaždice a základ cesty stromem.
@@ -1122,6 +1131,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A32 · `ExecutableModule` je record s hodnotovou rovností a mutabilním observable stavem 🔸
 
 - [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- **Rozhodnutí vlastníka (2026-10-05):** `ExecutableModule` převést na třídu s referenční rovností (`Clone` místo `with`), oba workaroundy smazat.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `Modules/ExecutableModule.cs:5` `public record ExecutableModule : IModule,
   INotifyPropertyChanged` s mutabilními poli `:66,:84,:102` (`_isFavorite`, `_isStartupWindow`,
@@ -1210,6 +1220,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A37 · Lokální stav shellu je per Windows-účet × IDFa, ostatní per Edison-uživatel × IDFa 🔸
 
 - [ ] **Stav:** otevřeno (2026-10-01: změna tvaru, `local.json` přibral další klíče)
+- **Rozhodnutí vlastníka (2026-10-05):** lokální stav docku klíčovat `server|idfa|login` v `local.json` (navazuje na A45, starý klíč jako fallback při čtení); `ShellWindowBounds` zůstává per Windows účet.
 - **P3 · S** (rozhodnutí) až M (přesun) · Původ: nový (2026-09-20)
 - **Důkaz:** `Startup/LocalPrefs.cs:22-36` tři slovníky klíčované jen IDFa (`MiniAppLayouts`, `TreeWidths`,
   nově `SupportStripHeights`, `f821f574`) a nově `Connections` (`51112233`) a `ShellWindowBounds`
@@ -1290,6 +1301,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 ### A41 · Odeslání hlášení chyby je skryté v implementaci dialogu 🔸
 
 - [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- **Rozhodnutí vlastníka (2026-10-05):** jen kontrakt v dokumentaci `IPopupDisplayer.Error` (implementace hlásí do `ErrorReports`), chování beze změny.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `EDControls/dotnet/EDViewModel/PopupDisplayer.cs:26-33` `var refId =
   ErrorReports.Report(ex, resolvedOwner); EDErrorPopup.Show(...)`; dialog sám posílá i doplnění
