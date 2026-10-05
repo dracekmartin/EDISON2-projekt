@@ -104,13 +104,14 @@ public class SessionSwitcher(
     /// <summary>Login dialog pro user switch - owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
     protected virtual LoginResult? PromptLogin(MLRest connection)
     {
-        var loginWindow = new Windows.LoginWindow.LoginWindow(connection, showRemember: false)
+        var vm = LoginViewModel.ForReauth(services, new MLRestAdapter(connection));
+        var loginWindow = new Windows.LoginWindow.LoginWindow(vm)
         {
             Owner = ownerWindow(),
         };
         // Jen přebírá, ať naskočí na monitoru shellu; zapisovat sdílený záznam má shell.
         WindowStatePersistence.Attach(loginWindow, new ReadOnlyWindowStateStore(windowState));
-        return loginWindow.ShowDialog() == true ? loginWindow.Result : null;
+        return loginWindow.ShowDialog() == true ? vm.Result : null;
     }
 
     protected virtual void FlushTelemetry(IMLRest? mlRest) => EDUsageTelemetry.Flush(mlRest);

@@ -454,7 +454,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A10 · Režim startu rozhoduje `#if DEBUG` na devíti místech, runtime volby a settable statiky
 
-- [x] **Stav:** vyřešeno (2026-10-01) - `Startup/StartupOptions` (record, defaulty = Release): `DevLogin`,
+- [x] **Stav:** vyřešeno f142a45c (2026-10-01) - `Startup/StartupOptions` (record, defaulty = Release): `DevLogin`,
   `SessionGuidTag`, `SendsVersion`, `DevMiniApps`, `UseDevDefaults`, `InternalDiagnosticsEnabled`, `TestRun`;
   `Development(args, EDISON2_DEVLOGIN)` / `Production()` vybírá jediný `#if` v `App.xaml.cs`, statiky
   (`UseDevDefaults`, `InternalDiagnostics.Enabled`, E2E vypnutí hlášení/telemetrie) nastavuje jen
@@ -678,7 +678,15 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A18 · Login workflow rozprostřený do čtyř míst, bez VM
 
-- [ ] **Stav:** otevřeno, částečně (`LoginWindowLogic` vytažen; 2026-10-01 bootstrapper přibral geometrii login okna)
+- [x] **Stav:** vyřešeno (2026-10-05) - `LoginWindow/LoginViewModel` (`EDViewModel`, `PersistedFormId` null):
+  režimy `ForStartup` (předvyplnění z prefs, zůstává jako progress podklad) a `ForReauth` (modální
+  dialog), `Login(password)` a `ApplyRememberedPassword` (zapomenutí odmítnutého i uložení po úspěchu
+  na jednom místě; do prefs až po uložení geometrie, ta ukládá celé `local.json`), `IsInProgress` (veto zavření), `ShowProgress`,
+  `CompleteHandoff`, `Cancel`. Okno jen bindingy, `PasswordBox` a fokus. Bootstrapper drží VM
+  (progress, handoff) a okno už jen jako owner dialogů a pro geometrii; vykreslení progressu
+  (`Dispatcher.Invoke(Render)`) dělá on, protože blokuje UI thread. **Odchylka od návrhu:** login
+  synchronně, ne `LoginAsync` - pre-login MLRest není klon a async by otevřel souběh s Cancel.
+  Testy `LoginViewModelTests` (19); ručně Debug s `EDISON2_DEVLOGIN=0`: předvyplnění a Storno.
 - **P2 · M** · Závisí na: A10 · Blokuje: - · Původ: [backlog N3](arch-backlog.md#n3---login-workflow-rozprostřený-do-čtyř-míst-bez-vm)
 - **Stav v kódu:** `LoginWindowLogic.cs` (31 ř., rozhodnutí fokus/zapomenout heslo) vytažen;
   `LoginWindow.xaml.cs:105` provádí autentizaci, `:123-127` politiku zapamatovaného hesla,

@@ -72,7 +72,7 @@ public class AppBootstrapperTests
             new(LoginRest: null!, Companies: new List<CompanyStruct>(), StartCompany: default,
                 Server: "test-host", Port: 9999);
 
-        protected override bool TryLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
+        protected override bool TryLogin(MLRest loginRest, ILocalPrefs prefs, EDServices services, out LoginResult login)
         {
             TryLoginCalled = true;
             LoginDialogPrefill = prefs.LastLoginName;
@@ -457,7 +457,8 @@ public class AppBootstrapperTests
 
         public ILocalPrefs Load() => LoadLocalPrefs();
 
-        public bool CallTryLogin(out LoginResult login) => TryLogin(null!, Substitute.For<ILocalPrefs>(), out login);
+        public bool CallTryLogin(out LoginResult login) =>
+            TryLogin(null!, Substitute.For<ILocalPrefs>(), null!, out login);
     }
 
     private static StartupOptions E2E(params string[] args) => StartupOptions.Development(["e2e=1", .. args], null);
