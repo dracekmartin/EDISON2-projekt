@@ -20,7 +20,7 @@ Základní třída ViewModelů + infrastruktura (`EDServices` - DI singleton `Cu
 Panel Podpora ani usage telemetrie tu nejsou - visí na `Window.Loaded` z `EDAppearance.Initialize`
 (proč: [EDSupportPanel/CLAUDE.md](../EDSupportPanel/CLAUDE.md)). Telemetrie (`EDUsageTelemetryHook`)
 bere kliky jen na **pojmenované** controly a jen okna s `EDViewModel` a nenulovým `PersistedFormId`;
-guard `IsHooked` (`Loaded` fíruje opakovaně); legacy launch trackuje `WindowNavigator.LaunchLegacy`.
+guard `IsHooked` (`Loaded` fíruje opakovaně); legacy launch trackuje `LegacyModuleHost.Launch`.
 `PersistedFormId` default `"<FormIdPrefix>.<Window>"` (shell `EDISON2`, TD `TD`) - odděluje
 aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
 
@@ -43,11 +43,11 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
 
 ## WindowNavigator
 
-- `ShowDialog` ztmavuje ownera přes `WindowDimmer` (refcount), **ne** `IsEnabled=false` -
-  to by srazilo controly na 0.5 opacity.
-- Legacy launch kontrakt viz `BuildLauncherArguments` a EDISONMAIN2/CLAUDE.md; pre-login admin
-  override musí předat `shareShellSession=false`, jinak requesty padají na `LockExist`.
-- Modeless `ShowLegacy*` dedupují (`TryFocusExistingLegacy`, klíč `exe+forma+inputParam`),
+- Fasáda nad internal `LegacyModuleHost` (závislosti ctorem, testy s fake `ILegacyProcess`), TD bere `WpfOnly()`.
+  Konec procesu jen přes `ILegacyProcess.OnExited`: `Process.Exited` fíruje jednou, pozdní odběratel by ho minul.
+- `ShowDialog` ztmavuje ownera přes `WindowDimmer` (refcount), **ne** `IsEnabled=false` (controly na 0.5 opacity).
+- Legacy launch kontrakt viz `BuildLauncherArguments`; pre-login admin override předává `shareShellSession=false` (jinak `LockExist`).
+- Modeless `ShowLegacy*` dedupují (`TryFocusExisting`, klíč `exe+forma+inputParam`),
   dialogové ne (ztmavují shell). `GetActiveModules` vrací i `ExeName`/`FormFqn`/`InputParam` -
   `DisplayName` je doslovný `MainWindowTitle`, stejnojmenné moduly rozliší až tahle identita.
 - `CloseAll()` a fáze `CloseShellWindows()`/`CloseLegacyModules()` jsou záměrně jen na konkrétní

@@ -35,6 +35,12 @@ internal partial class EDErrorPopup : Window
         return string.IsNullOrWhiteSpace(root.Message) ? root.GetType().Name : root.Message;
     }
 
+    /// <summary>Název nese aplikaci (<c>EDServices.FormIdPrefix</c>), ať podpora pozná, odkud soubor je.</summary>
+    internal static string SuggestedFileName(string? appPrefix, DateTime now) =>
+        string.IsNullOrEmpty(appPrefix)
+            ? $"chyba-{now:yyyyMMdd-HHmmss}.txt"
+            : $"{appPrefix}-chyba-{now:yyyyMMdd-HHmmss}.txt";
+
     private void OkBtn_Click(object sender, RoutedEventArgs e) => Close();
 
     private void SendFollowUpBtn_Click(object sender, RoutedEventArgs e)
@@ -60,7 +66,7 @@ internal partial class EDErrorPopup : Window
             Title = "Uložit chybu do souboru",
             Filter = "Textové soubory (*.txt)|*.txt|Všechny soubory (*.*)|*.*",
             DefaultExt = "txt",
-            FileName = $"EDISON2-chyba-{DateTime.Now:yyyyMMdd-HHmmss}.txt"
+            FileName = SuggestedFileName(EDServices.CurrentOrNull?.FormIdPrefix, DateTime.Now)
         };
         if (dlg.ShowDialog(this) != true) return;
 

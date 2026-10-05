@@ -8,7 +8,7 @@ namespace EDControls;
 /// FormName a ShellGuid jsou součástí kontraktu kvůli legacy WinForms modulům -
 /// WPF aplikace (TemplateDesigner) je ignorují, stejně jako pole [11]-[20] hosta
 /// (cesta agendy, licencované elementy, zástupce, admin flag, právo update, osobní adresář, e-mail,
-/// verze, stav a platnost licence) - viz WindowNavigator.BuildLauncherArguments.
+/// verze, stav a platnost licence) - viz LegacyModuleHost.BuildLauncherArguments.
 /// </summary>
 public sealed record EdisonLaunchArgs(
     string Server,

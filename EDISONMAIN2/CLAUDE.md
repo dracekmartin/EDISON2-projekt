@@ -32,7 +32,7 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
   (výchozí okno se hledá ve stromu); před prvním initem je `_modulePrefs` null → save cesty null-safe.
 - **Podpora (`LoginName == UserID`, `_mline`) jede bez `VerifyLic` a zámku s `CacheLocks=0`** (parita
   legacy `EDUsers.vb:287`: licenci nezabírá, server nekontroluje LockExist ani verzi); agendy pak
-  shell GUID nedostanou (`WindowNavigator.ShellGuidFor`), jinak by pod ním padaly na LockExist.
+  shell GUID nedostanou (`LegacyModuleHost.ShellGuidFor`), jinak by pod ním padaly na LockExist.
 - `SelectedCompanyIndex` musí odpovídat `MLRest.Idfa` - tam má bootstrapper zámek; jiná volba
   rozbije koexistenci shell ↔ moduly. Při přepnutí firmy se index nastaví až po `Accepted`
   (setter `SelectedCompanyId` jen spustí `SwitchCompanyCommand`).
@@ -110,7 +110,7 @@ stale `_DIFF` na disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy
 
 Most do legacy světa: `EDISONMAIN2API.exe` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET
 Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 20 polí (pořadí
-`WindowNavigator.BuildLauncherArguments`), host je mapuje do `MLProps`: [13] zástupce z plochy
+`LegacyModuleHost.BuildLauncherArguments`), host je mapuje do `MLProps`: [13] zástupce z plochy
 (viz `docs/zastupci-na-plose.md`), [14] admin → `UserIsAdmin` (klíč pro `CAccess(useAdmin)`
 bypass práv), [15] → `UserMayUpdate` (gate serverového update v legacy Nastavení) - host bez pole
 defaultuje na **false**; [16]/[17] osobní adresář a e-mail z loginu → `UserDirectory`/`UserEmail`
@@ -124,7 +124,7 @@ Pasti:
 - Chyby hostované formy: `HostedErrorReporter` (host i `ApplicationEvents.vb`) → legacy
   `MLError.ShowError` (telemetrie až na tlačítko, source `EDISON`); výjimku z `Form.Load` na x64
   spolkne sám Windows (kernel callback), nevidí ji ani try/catch kolem `ShowDialog`. Tvrdý pád
-  hlásí shell z exit kódu (`WindowNavigator.TrackExit` → `ReportLegacyExit`); kódy hosta 2 =
+  hlásí shell z exit kódu (`LegacyModuleHost.Launch` → `ReportLegacyExit`); kódy hosta 2 =
   launch fail, 3 = fatal po dialogu. Ověření bez pádu: Debug host + `EDISONMAIN2API_CRASHTEST=ui|bg`.
 - Non-prázdný `shellGuid` → modul sdílí shellův GUID + `CacheLocks=1` (zánik shell zámku shodí
   i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks.

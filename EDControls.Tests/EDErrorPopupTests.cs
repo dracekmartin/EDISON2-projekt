@@ -29,4 +29,13 @@ public class EDErrorPopupTests
     {
         Assert.Equal(nameof(InvalidOperationException), EDErrorPopup.HeadlineFor(new InvalidOperationException("")));
     }
+
+    [Theory]
+    [InlineData("TD", "TD-chyba-20261005-143007.txt")]       // soubor z TemplateDesigneru nesmí tvrdit, že je ze shellu
+    [InlineData("EDISON2", "EDISON2-chyba-20261005-143007.txt")]
+    [InlineData(null, "chyba-20261005-143007.txt")]           // popup před EDServices.Initialize
+    public void SuggestedFileName_CarriesAppPrefix(string? prefix, string expected)
+    {
+        Assert.Equal(expected, EDErrorPopup.SuggestedFileName(prefix, new DateTime(2026, 10, 5, 14, 30, 7)));
+    }
 }

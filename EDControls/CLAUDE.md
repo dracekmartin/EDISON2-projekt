@@ -87,7 +87,7 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 - `MLRestJson` - JSON-envelope volání přes sdílený klíč `"payload"` (kontrakt na obou stranách).
 - `EdisonLaunchArgs` - parser launch kontraktu shellu; **zrcadlí
   `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) - pořadí
-  a počet polí musí zůstat synchronní. Producent je `WindowNavigator.BuildLauncherArguments`;
+  a počet polí musí zůstat synchronní. Producent je `LegacyModuleHost.BuildLauncherArguments`;
   nové pole se **přidává na konec** (starší host ho ignoruje) a hodnoty se jen obalují
   uvozovkami, **neescapují** - co může obsahovat mezeru či uvozovku, posílej zakódované
   (viz Base64 payload zástupce na ploše).
