@@ -414,29 +414,6 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
-    public void TreeExpansion_NestedSuppress_PersistsOnlyAfterOutermostScopeEnds()
-    {
-        // Cesty potlačující persistenci se vnořují (přestavba Oblíbených uvnitř session loadu,
-        // re-filtrace při hledání). Plochý bool by po konci vnitřního bloku zápis odemkl
-        // a rozbalení vynucené programově by se uložilo jako uživatelská volba.
-        var prefs = Substitute.For<IUserPrefsService>();
-        var vm = CreateVM(prefs, tree: [Family("MHD", Exe("1"))]);
-        var family = vm.MainMenuTree.OfType<ModuleFamily>().Single();
-        prefs.ClearReceivedCalls();
-
-        using (vm.SuppressExpansionSave())
-        {
-            using (vm.SuppressExpansionSave()) { }
-
-            family.IsExpanded = true;   // vnitřní scope skončil, vnější pořád platí
-            prefs.DidNotReceive().SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
-        }
-
-        family.IsExpanded = false;
-        prefs.Received().SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
-    }
-
-    [Fact]
     public void ShortcutsLoadedAtStartup_PrebuildsFavoritesTree()
     {
         var prefs = Substitute.For<IUserPrefsService>();
@@ -527,18 +504,6 @@ public class FavoritesAndUsageTests
 
         prefs.Received().SaveAsync("EDISONMAIN2", "SelectedTab", Arg.Any<JsonNode>());
         Assert.Equal("\"used\"", written!.ToJsonString());   // klíč, ne index - přeuspořádání záložek volbu nepřepne
-    }
-
-    [Fact]
-    public void TreeTabs_HaveUniqueKeys_AndExactlyOneNonExpandable()
-    {
-        // Identita záložky je persistovaný klíč; duplicita by tiše přepsala uloženou volbu.
-        // Používané jsou ListBox bez stromu - jediná záložka, kam Rozbalit/Sbalit vše necílí.
-        var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree: [Exe("100", "App")]);
-
-        Assert.Equal(vm.TreeTabs.Count, vm.TreeTabs.Select(t => t.Key).Distinct().Count());
-        Assert.Single(vm.TreeTabs, t => !t.Expandable);
-        Assert.All(vm.TreeTabs, t => Assert.Equal(t.Expandable, t.Tree != null));
     }
 
     [Fact]

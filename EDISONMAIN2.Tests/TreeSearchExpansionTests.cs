@@ -8,8 +8,8 @@ using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Rozbalení vynucené hledáním je přechodné: po vymazání textu se strom vrátí do stavu před
-/// hledáním (ne do stavu z loginu) a změny rozbalení během hledání se nepersistují.
+/// Hledání a rozbalení napříč změnou session: přepnutí firmy během hledání a přestavba Oblíbených.
+/// Samotné přechodné rozbalení hledáním testuje <see cref="ModuleTreeStateTests"/>.
 /// </summary>
 public class TreeSearchExpansionTests
 {
@@ -42,87 +42,6 @@ public class TreeSearchExpansionTests
     {
         vm.TreeSearchText = text;
         vm.FlushPendingSearch();
-    }
-
-    [Fact]
-    public void Clear_RestoresExpansionFromBeforeSearch_NotLoginState()
-    {
-        var prefs = PrefsWithExpansion("""["main:0"]""");
-        var vm = CreateVM(userPrefs: prefs, treeLoader: TreeLoaderWith(TwoFamilies()));
-        var families = vm.MainMenuTree.OfType<ModuleFamily>().ToList();
-        var (doprava, mzdy) = (families[0], families[1]);
-        Assert.True(doprava.IsExpanded);    // stav z loginu
-        Assert.False(mzdy.IsExpanded);
-
-        doprava.IsExpanded = false;         // uživatel po loginu změní obě
-        mzdy.IsExpanded = true;
-
-        Search(vm, "turnus");
-        Assert.True(doprava.IsExpanded);    // hledání rozbalí nálezy
-        Assert.True(mzdy.IsExpanded);
-
-        Search(vm, "");
-
-        Assert.False(doprava.IsExpanded);   // zpět do stavu před hledáním, ne z loginu
-        Assert.True(mzdy.IsExpanded);
-    }
-
-    [Fact]
-    public void Clear_WithoutSavedExpansion_RestoresServerDefault()
-    {
-        var prefs = PrefsWithExpansion(null);
-        var vm = CreateVM(userPrefs: prefs, treeLoader: TreeLoaderWith(TwoFamilies()));
-        var family = vm.MainMenuTree.OfType<ModuleFamily>().First();
-        Assert.False(family.IsExpanded);    // serverové výchozí = sbaleno
-        prefs.ClearReceivedCalls();
-
-        Search(vm, "turnus");
-        Assert.True(family.IsExpanded);
-
-        Search(vm, "");
-
-        Assert.False(family.IsExpanded);
-        prefs.DidNotReceive().SaveAsync(Scope, ExpansionKey, Arg.Any<JsonNode>());
-    }
-
-    [Fact]
-    public void DuringSearch_ExpansionChangesAreTransientAndNotPersisted()
-    {
-        var prefs = PrefsWithExpansion(null);
-        var vm = CreateVM(userPrefs: prefs, treeLoader: TreeLoaderWith(TwoFamilies()));
-        vm.SelectedTab = vm.TreeTabs.First(t => t.Expandable);
-        var family = vm.MainMenuTree.OfType<ModuleFamily>().First();
-        family.IsExpanded = true;           // uživatelská volba před hledáním (persistuje se)
-        prefs.ClearReceivedCalls();
-
-        Search(vm, "turnus");
-        family.IsExpanded = false;          // klik na rodinu během hledání
-        vm.ExpandAllCommand.Execute(null);  // Rozbalit vše během hledání
-        vm.CollapseAllCommand.Execute(null);
-        prefs.DidNotReceive().SaveAsync(Scope, ExpansionKey, Arg.Any<JsonNode>());
-
-        Search(vm, "");
-
-        Assert.True(family.IsExpanded);     // změny během hledání se zahodí
-        prefs.DidNotReceive().SaveAsync(Scope, ExpansionKey, Arg.Any<JsonNode>());
-    }
-
-    [Fact]
-    public void ClearWithinDebounce_LeavesExpansionUntouched()
-    {
-        var prefs = PrefsWithExpansion("""["main:0"]""");
-        var vm = CreateVM(userPrefs: prefs, treeLoader: TreeLoaderWith(TwoFamilies()));
-        var family = vm.MainMenuTree.OfType<ModuleFamily>().First();
-        family.IsExpanded = false;
-        prefs.ClearReceivedCalls();
-
-        vm.TreeSearchText = "turnus";       // napsáno a smazáno dřív, než debounce doběhne
-        vm.TreeSearchText = "";
-        vm.FlushPendingSearch();
-
-        Assert.False(family.IsExpanded);
-        Assert.All(vm.MainMenuTree, m => Assert.True(m.IsVisibleBySearch));
-        prefs.DidNotReceive().SaveAsync(Scope, ExpansionKey, Arg.Any<JsonNode>());
     }
 
     [Fact]

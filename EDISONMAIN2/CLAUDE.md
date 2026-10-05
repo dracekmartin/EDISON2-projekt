@@ -68,7 +68,7 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
   (most pro `ContextMenu`) nejde `AncestorType=TabControl`, jde tam `VmProxy`.
 - **Identita záložky = `Modules/TreeTab`** (seznam `TreeTabs`); `Key` je klíč serveru
   i persistence: **přejmenování = ztráta uložené volby**.
-- **Toolbar nad stromy**: bulk změna rozbalení v `SuppressExpansionSave()` + jeden
+- **Toolbar nad stromy**: bulk změna rozbalení v `ModuleTreeState.SuppressExpansionSave()` + jeden
   `SaveExpansionAsync` - scope je **refcountovaný** (cesty se vnořují, plochý bool by vnitřní blok
   odemkl dřív). `SelectedModule` plní code-behind (`TreeView.SelectedItem` nejde bindovat).
 

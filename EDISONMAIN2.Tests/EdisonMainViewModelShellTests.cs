@@ -176,26 +176,6 @@ public class EdisonMainViewModelShellTests
     }
 
     [Fact]
-    public void SuppressExpansionSave_RefCounts_InnerDisposeKeepsOuterSuppression()
-    {
-        var userPrefs = Substitute.For<IUserPrefsService>();
-        var vm = CreateVM(treeLoader: TreeLoaderWith([Fam("Rodina", Exe("23"))]), userPrefs: userPrefs);
-        var family = vm.MainMenuTree.OfType<ModuleFamily>().Single();
-        userPrefs.ClearReceivedCalls();
-
-        var outer = vm.SuppressExpansionSave();
-        var inner = vm.SuppressExpansionSave();
-        inner.Dispose();
-        inner.Dispose(); // dvojité Dispose nesmí odemknout vnější scope
-        family.IsExpanded = !family.IsExpanded;
-        userPrefs.DidNotReceive().SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
-
-        outer.Dispose();
-        family.IsExpanded = !family.IsExpanded;
-        userPrefs.Received(1).SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
-    }
-
-    [Fact]
     public void ActionOverlayVariants_DefaultFirst_LabelsUnique()
     {
         var vm = CreateVM();

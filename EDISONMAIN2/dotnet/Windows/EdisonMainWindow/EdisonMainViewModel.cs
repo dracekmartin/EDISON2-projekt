@@ -272,6 +272,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Null = novinky vypnuté (testy); produkci dává InfChangelogSource AppBootstrapper.
             _changelogSource = changelogSource;
             _shortcuts = shortcuts;
+            // Lazy prefs: _modulePrefs vzniká až v session rebuildu, stromy ho čtou při každém save.
+            _trees = new ModuleTreeState(() => _modulePrefs);
 
             OpenModuleCommand        = CommandAsync<IModule>(OpenModuleAsync);
             LaunchShortcutCommand    = CommandAsync<DesktopShortcut>(LaunchShortcutViaHostAsync);
@@ -316,8 +318,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ClearStartupWindowCommand       = Command(ClearStartupWindow);
             ExpandAllCommand                = Command(() => SetActiveTreeExpanded(true), () => ActiveExpandableTree() is not null);
             CollapseAllCommand              = Command(() => SetActiveTreeExpanded(false), () => ActiveExpandableTree() is not null);
-            ExpandSubtreeCommand            = Command<IModule>(m => SetSubtreeExpanded(m, true));
-            CollapseSubtreeCommand          = Command<IModule>(m => SetSubtreeExpanded(m, false));
+            ExpandSubtreeCommand            = Command<IModule>(m => _trees.SetSubtreeExpanded(m, true));
+            CollapseSubtreeCommand          = Command<IModule>(m => _trees.SetSubtreeExpanded(m, false));
 
             SwitchCompanyCommand          = CommandAsync<int>(SwitchCompanyAsync);
 
@@ -343,25 +345,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             RefreshRunningModulesCommand  = Command(RefreshRunningModules);
             ActivateModuleCommand         = Command<RunningModuleInfo>(m => m.Activate());
 
-            MainMenuTree = [];
-            SystemAdminTree = [];
-            PartnerSolutionsTree = [];
-            FavoritesTree = [];
             UsedModules = [];
-            // Pořadí = pořadí záložek v UI. Přidání záložky je změna jen tady (+ případný control v XAML).
-            TreeTabs =
-            [
-                new("main",      "Hlavní nabídka",     "EDIcons.Home",      MainMenuTree,         Expandable: true,  ServerLoaded: true),
-                new("system",    "Správa systému",     "EDIcons.Gears",     SystemAdminTree,      Expandable: true,  ServerLoaded: true),
-                new("partners",  "Partnerská řešení",  "EDIcons.Component", PartnerSolutionsTree, Expandable: true,  ServerLoaded: true),
-                new("favorites", "Oblíbené",           "EDIcons.Star",      FavoritesTree,        Expandable: true,  ServerLoaded: false),
-                new("used",      "Používané",          "EDIcons.History",   null,                 Expandable: false, ServerLoaded: false),
-            ];
             _selectedTab = TreeTabs[0];
-            _sourceTrees = [.. TreeTabs.Where(t => t.ServerLoaded).Select(t => (t.Key, t.Tree!))];
             // Runner drží politiku „klon per paralelní volání"; testy podstrčí sekvenční variantu.
             _restRunner = restRunner ?? new RestCallRunner(() => Rest);
-            _sessionLoader = new SessionDataLoader(_restRunner, treeLoader, [.. _sourceTrees.Select(t => t.Name)]);
+            _sessionLoader = new SessionDataLoader(_restRunner, treeLoader, [.. _trees.SourceTrees.Select(t => t.Name)]);
             _licenceSync = licenceSync ?? (rest => LicenceService.SyncFromMline(((MLRestAdapter)rest).Inner));
 
             Companies = ToCompanyItems(companies);
@@ -430,8 +418,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 ApplySessionData(data);
             }
 
-            // Nové instance uzlů mají IsVisibleBySearch=true - trvající hledaný text je nutné znovu aplikovat.
-            if (_treeSearchText.Trim().Length > 0) ApplySearch();
+            _trees.ReapplySearch();
         }
 
         /// <summary>
@@ -496,8 +483,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _services.AccessTable = data.AccessTable;
             // Uzly se nahradí novými instancemi, takže zapamatovaný výběr míří do prázdna.
             ForgetSelection();
-            foreach (var (name, tree) in _sourceTrees)
-                FillFilteredTree(tree, data.Trees[name]);
+            _trees.Load(data.Trees, _services.ActiveLicence, data.AccessTable, data.Expansion);
             ApplyPersonalization(data);
             ApplyStartupWindow(data.DefaultWindowId);
             _changelogPrompt?.SeedSnooze(data.ChangelogSnooze);
@@ -510,7 +496,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         private void ClearSessionState() => ApplySessionData(new SessionData(
             new AccessTable([], isAllAccess: false),
-            _sourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
+            _trees.SourceTrees.ToDictionary(t => t.Name, _ => (IReadOnlyList<IModule>)[]),
             Shortcuts: null, Usage: [], Expansion: null, SelectedTab: null, ChangelogSnooze: [], DefaultWindowId: 0));
 
         private void ForgetSelection()
@@ -534,7 +520,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ApplyStartupWindowMark()
         {
             var id = DefaultWindowId.ToString();
-            foreach (var exe in AllExecutables())
+            foreach (var exe in _trees.AllExecutables())
                 exe.IsStartupWindow = DefaultWindowId != 0 && exe.ElementId == id;
         }
 
@@ -570,7 +556,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (_startupWindowOpened) return;
             _startupWindowOpened = true;
             if (!OpensStartupWindow || DefaultWindowId == 0) return;
-            var module = AllExecutables().FirstOrDefault(e => e.ElementId == DefaultWindowId.ToString());
+            var module = _trees.AllExecutables().FirstOrDefault(e => e.ElementId == DefaultWindowId.ToString());
             if (module != null && OpenModuleCommand.CanExecute(module))
                 OpenModuleCommand.Execute(module);
         }
@@ -616,8 +602,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Null = load plochy selhal (služba zůstane prázdná a neuložitelná, viz IsLoaded).
         private void SeedShortcuts(List<DesktopShortcutDto>? stored)
         {
-            var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
-            _shortcuts.Seed(AllExecutables(), stored, exe =>
+            var labels = BuildModuleLabels(_trees.SourceTrees.Select(t => t.Tree));
+            _shortcuts.Seed(_trees.AllExecutables(), stored, exe =>
                 labels.TryGetValue(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
                     ? label.Path : "");
         }
@@ -625,9 +611,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ApplyPersonalization(SessionData data)
         {
             _usage = data.Usage;
-            _expansion = data.Expansion;
-            // Stromy jsou nové instance s persistovaným rozbalením; trvající hledání si vezme čerstvý snímek.
-            _expansionBeforeSearch = null;
 
             // Seed sdílené služby z uložených položek (nastaví IsFavorite na sdílených instancích).
             // Null = load plochy selhal: zobrazit prázdno (data předchozí session sem nepatří), ale
@@ -638,223 +621,44 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             RebuildFavoritesTree();
             RebuildUsedList();
 
-            // Obnoví uložené rozbalení a napojí persistenci na VŠECH stromech (vč. Oblíbených).
-            // Suppress brání zápisu během programového apply.
-            using (SuppressExpansionSave())
-                ApplyTreeExpansion(_expansion);
+            _trees.ApplySavedExpansion();
 
             // Poslední otevřená záložka (per-user × IDFa); bez uložené volby výchozí dle oblíbených.
             _suppressTabSave = true;
-            SelectedTab = data.SelectedTab is { } key ? TabByKey(key) : DefaultTreeTab();
+            SelectedTab = data.SelectedTab is { } key ? _trees.TabByKey(key) : DefaultTreeTab();
             _suppressTabSave = false;
         }
 
         private void RebuildFavoritesTree()
         {
-            FavoritesTree.Clear();
-            foreach (var root in BuildFavoritesTree(_sourceTrees.Select(t => t.Tree), FavoriteIdSet()))
-                FavoritesTree.Add(root);
-
-            // Po přestavbě (i mimo load - po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
-            using (SuppressExpansionSave())
-            {
-                ApplyExpansion(FavoritesTree, FavoritesTab.Key, _expansion);
-
-                // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) - při aktivním hledání přefiltrovat.
-                var searchText = _treeSearchText.Trim();
-                if (searchText.Length > 0)
-                    foreach (var root in FavoritesTree)
-                        ModuleTreeState.ApplySearchToModule(root, searchText);
-            }
-
+            _trees.ReplaceFavorites(BuildFavoritesTree(_trees.SourceTrees.Select(t => t.Tree), FavoriteIdSet()));
             OnPropertyChanged(nameof(HasNoFavorites));
         }
 
         private void RebuildUsedList()
         {
             UsedModules.Clear();
-            foreach (var module in BuildUsedList(_sourceTrees.Select(t => t.Tree), _usage, UsedModulesCap))
+            foreach (var module in BuildUsedList(_trees.SourceTrees.Select(t => t.Tree), _usage, UsedModulesCap))
                 UsedModules.Add(module);
-        }
-
-        // Klíč uzlu = "<tree>:<index-cesta>" (např. "main:5.2") - stabilní vůči přejmenování i suffixům
-        // z ModuleLaunchabilityCheck, na rozdíl od cesty přes DisplayedName. Save běží na každou změnu
-        // rozbalení (IDFa je tehdy stabilní), proto switch/close nepotřebují zvláštní obsluhu.
-
-        private void ApplyTreeExpansion(List<string>? keys)
-        {
-            foreach (var (name, tree) in ExpandableTrees)
-                ApplyExpansion(tree, name, keys);
-        }
-
-        /// <summary>
-        /// Potlačí persistenci rozbalení po dobu programové změny stromu. Refcount, ne bool:
-        /// cesty se vnořují (přestavba Oblíbených uvnitř session loadu, re-filtrace při hledání)
-        /// a plochý reset na false by vnitřní blok odemkl dřív, než skončí ten vnější.
-        /// <c>internal</c> kvůli testu na vnoření.
-        /// </summary>
-        internal IDisposable SuppressExpansionSave()
-        {
-            _expansionSaveSuppressed++;
-            return new ExpansionSaveScope(this);
-        }
-
-        private sealed class ExpansionSaveScope(EdisonMainViewModel vm) : IDisposable
-        {
-            private bool _disposed;
-
-            public void Dispose()
-            {
-                if (_disposed) return;
-                _disposed = true;
-                vm._expansionSaveSuppressed--;
-            }
         }
 
         // Strom aktivní záložky; Používané (ListBox) strom nemá → null.
         private ObservableCollection<IModule>? ActiveExpandableTree() =>
             SelectedTab.Expandable ? SelectedTab.Tree : null;
 
-        // Hromadné rozbalení/sbalení celého aktivního stromu. Suppress + jeden save na konci
-        // (jinak by každá rodina zvlášť triggerovala SaveExpansionAsync - vzor jako ApplySearch).
         private void SetActiveTreeExpanded(bool expanded)
         {
-            if (ActiveExpandableTree() is not { } tree) return;
-            using (SuppressExpansionSave())
-            {
-                foreach (var module in tree)
-                    ModuleTreeState.SetExpandedRecursive(module, expanded);
-            }
-            PersistExpansion();
+            if (ActiveExpandableTree() is { } tree) _trees.SetTreeExpanded(tree, expanded);
         }
 
-        // Rozbalit/sbalit rodinu i její potomky (kontextové menu „úroveň").
-        private void SetSubtreeExpanded(IModule module, bool expanded)
-        {
-            if (module is not ModuleFamily) return;
-            using (SuppressExpansionSave())
-                ModuleTreeState.SetExpandedRecursive(module, expanded);
-            PersistExpansion();
-        }
-
-        private void ApplyExpansion(IList<IModule> tree, string treeName, List<string>? keys)
-        {
-            for (int i = 0; i < tree.Count; i++)
-                ApplyExpansionNode(tree[i], treeName, [i], keys);
-        }
-
-        private void ApplyExpansionNode(IModule module, string treeName, List<int> path, List<string>? keys)
-        {
-            if (module is not ModuleFamily family) return;
-
-            // keys == null → nikdy neuloženo, ponech serverové výchozí rozbalení.
-            if (keys is { } saved)
-                family.IsExpanded = saved.Contains(ModuleTreeState.ExpansionPathKey(treeName, path));
-
-            family.PropertyChanged -= OnFamilyPropertyChanged;
-            family.PropertyChanged += OnFamilyPropertyChanged;
-
-            for (int i = 0; i < family.NestedModules.Count; i++)
-                ApplyExpansionNode(family.NestedModules[i], treeName, [.. path, i], keys);
-        }
-
-        private void OnFamilyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && _expansionSaveSuppressed == 0)
-                PersistExpansion();
-        }
-
-        // Během hledání je rozbalení přechodné (vynucené nálezy); po vymazání textu se obnoví snímek.
-        // _expansion drží poslední uložený stav, aby přestavba Oblíbených nevracela rozbalení z loginu.
-        private void PersistExpansion()
-        {
-            if (_expansionBeforeSearch != null) return;
-            _expansion = CollectExpandedKeys();
-            _ = _modulePrefs?.SaveExpansionAsync(_expansion);
-        }
-
-        private List<string> CollectExpandedKeys()
-        {
-            var keys = new List<string>();
-            foreach (var (name, tree) in ExpandableTrees)
-                ModuleTreeState.CollectExpanded(tree, name, keys);
-            return keys;
-        }
-
-        private DispatcherTimer? _searchDebouncer;
-
-        // Filtrace se pouští ~150 ms po posledním stisku - synchronní průchod všemi stromy
-        // na každý znak jinak sekal UI. Programový re-apply (po přepnutí firmy) volá ApplySearch přímo.
-        private void ScheduleSearch()
-        {
-            _searchDebouncer ??= CreateSearchDebouncer();
-            _searchDebouncer.Stop();
-            _searchDebouncer.Start();
-        }
-
-        private DispatcherTimer CreateSearchDebouncer()
-        {
-            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
-            timer.Tick += (_, _) => { timer.Stop(); ApplySearch(); };
-            return timer;
-        }
-
-        // Filtruje VŠECHNY stromy (vč. Oblíbených) dle TreeSearchText. Rozbalení vynucené hledáním
-        // se NEpersistuje; snímek ze začátku hledání se po vymazání textu obnoví.
-        private void ApplySearch()
-        {
-            var text = _treeSearchText.Trim();
-            if (text.Length > 0) _expansionBeforeSearch ??= CollectExpandedKeys();
-
-            using (SuppressExpansionSave())
-            {
-                foreach (var (_, tree) in ExpandableTrees)
-                    foreach (var root in tree)
-                        ModuleTreeState.ApplySearchToModule(root, text);
-
-                if (text.Length == 0 && _expansionBeforeSearch is { } before)
-                {
-                    _expansionBeforeSearch = null;
-                    ApplyTreeExpansion(before);
-                }
-            }
-        }
-
-        /// <summary>Aplikuje čekající hledání hned (debounce v testech netiká, Enter nesmí číst starý stav).</summary>
-        internal void FlushPendingSearch()
-        {
-            if (_searchDebouncer is not { IsEnabled: true }) return;
-            _searchDebouncer.Stop();
-            ApplySearch();
-        }
+        /// <summary>Aplikuje čekající hledání hned (debounce v testech netiká).</summary>
+        internal void FlushPendingSearch() => _trees.FlushPendingSearch();
 
         /// <summary>
-        /// První modul odpovídající hledání v aktivní záložce, nebo <c>null</c> (prázdné hledání,
-        /// záložka bez stromu, žádný nález). Okno na něj po Enteru v poli hledání přenese fokus.
+        /// První modul odpovídající hledání v aktivní záložce, nebo <c>null</c>. Okno na něj po Enteru
+        /// v poli hledání přenese fokus.
         /// </summary>
-        internal ExecutableModule? FirstSearchResult()
-        {
-            if (_treeSearchText.Trim().Length == 0) return null;
-            FlushPendingSearch();
-            return SelectedTab.Tree is { } tree ? ModuleTreeState.FirstVisibleExecutable(tree) : null;
-        }
-
-        // Clear až tady (po úspěšném loadu, ne před requestem) - selhání jinak nechá záložku
-        // trvale prázdnou a při přepnutí firmy zahodí i strom, který byl platný.
-        private void FillFilteredTree(ObservableCollection<IModule> target, IReadOnlyList<IModule> tree)
-        {
-            target.Clear();
-            foreach (var module in tree)
-            {
-                if (ModuleTreeState.TryFilter(module, _services.ActiveLicence, _services.AccessTable,
-                                              ModuleTreeState.IsMlineDomainStation) is { } filtered)
-                {
-                    // Obarvit moduly dle launchovatelnosti (stub / chybí exe).
-                    filtered = ModuleLaunchabilityCheck.Mark(filtered);
-                    target.Add(filtered);
-                }
-            }
-        }
+        internal ExecutableModule? FirstSearchResult() => _trees.FirstSearchResult(SelectedTab);
 
         // StatusBar - Identity props z MLRest (per session konstantní).
         public string Server    => Rest.Server;
@@ -913,12 +717,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OnPropertyChanged(nameof(LicenceNoticeTooltip));
         }
 
-        public ObservableCollection<IModule> MainMenuTree { get; }
-        public ObservableCollection<IModule> SystemAdminTree { get; }
-        public ObservableCollection<IModule> PartnerSolutionsTree { get; }
+        // Stromy, hledání a rozbalení launcher panelu; VM je vystavuje bindingům a orchestruje session.
+        private readonly ModuleTreeState _trees;
+
+        public ObservableCollection<IModule> MainMenuTree => _trees.MainMenuTree;
+        public ObservableCollection<IModule> SystemAdminTree => _trees.SystemAdminTree;
+        public ObservableCollection<IModule> PartnerSolutionsTree => _trees.PartnerSolutionsTree;
 
         /// <summary>Ořezaný strom jen s oblíbenými (ruční ★) - zachovává hierarchii hlavních stromů.</summary>
-        public ObservableCollection<IModule> FavoritesTree { get; }
+        public ObservableCollection<IModule> FavoritesTree => _trees.FavoritesTree;
 
         /// <summary>Žebříček nejpoužívanějších modulů (automaticky dle počtu spuštění × recency).</summary>
         public ObservableCollection<ExecutableModule> UsedModules { get; }
@@ -954,23 +761,23 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Lze vybraný uzel nastavit jako výchozí okno? (jen spustitelný modul s ElementId).</summary>
         public bool CanSetStartup => _selectedModule is ExecutableModule { ElementId.Length: > 0 };
 
-        private string _treeSearchText = "";
-
         /// <summary>Hledaný text pro filtrování stromů (napříč všemi záložkami). Prázdný = bez filtru.</summary>
         public string TreeSearchText
         {
-            get => _treeSearchText;
-            set { if (Set(ref _treeSearchText, value)) ScheduleSearch(); }
+            get => _trees.SearchText;
+            set
+            {
+                if (_trees.SearchText == value) return;
+                _trees.SearchText = value;
+                OnPropertyChanged();
+            }
         }
 
         private TreeTab _selectedTab = null!;   // plní ctor po vytvoření TreeTabs
         private bool _suppressTabSave;
 
-        /// <summary>
-        /// Pořadí i identita záložek launcher panelu - jediný seznam, ze kterého se odvozuje
-        /// tab strip, viditelnost obsahu, cíl Rozbalit/Sbalit vše i uložená volba.
-        /// </summary>
-        public IReadOnlyList<TreeTab> TreeTabs { get; }
+        /// <inheritdoc cref="ModuleTreeState.TreeTabs"/>
+        public IReadOnlyList<TreeTab> TreeTabs => _trees.TreeTabs;
 
         /// <summary>Aktivní záložka. TwoWay-bound; persistuje se per-user × IDFa (poslední otevřená).</summary>
         public TreeTab SelectedTab
@@ -988,13 +795,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         // Výchozí záložka při prvním spuštění (bez uložené volby) - vždy Hlavní nabídka; existující
         // oblíbené ji nepřebíjejí, protože skok jinam než do plné nabídky uživatele překvapil.
-        private TreeTab DefaultTreeTab() => TabByKey("main");
-
-        private TreeTab TabByKey(string? key) =>
-            TreeTabs.FirstOrDefault(t => t.Key == key) ?? TreeTabs[0];
-
-        // Oblíbené se nenačítají ze serveru, ale rozbalení se jim persistuje jako ostatním.
-        private TreeTab FavoritesTab => TabByKey("favorites");
+        private TreeTab DefaultTreeTab() => _trees.TabByKey("main");
 
         private readonly IChangelogSource? _changelogSource;
         // Auto-popup novinek (infotexty). Žije se session jako _modulePrefs; null = vypnuto (testy).
@@ -1006,20 +807,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private ModulePreferencesService? _modulePrefs;
         private readonly ModuleShortcutsService _shortcuts;
         private Dictionary<string, UsageEntry> _usage = [];
-        // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
-        private List<string>? _expansion;
-        // Snímek rozbalení před hledáním; non-null = stromy nesou rozbalení vynucené hledáním.
-        private List<string>? _expansionBeforeSearch;
-        private int _expansionSaveSuppressed;
         private const int UsedModulesCap = 20;
-
-        // Zdrojové stromy plněné ze serveru (per-IdFa). Jedna kolekce pro společné operace (load, filtrace,
-        // oblíbené/používané, family flagy). Odvozené z TreeTabs, inicializuje je ctor.
-        private readonly (string Name, ObservableCollection<IModule> Tree)[] _sourceTrees;
-
-        // Všechny rozbalovatelné stromy = zdrojové + odvozený Oblíbené (persistence rozbalení i nad Oblíbenými).
-        private IEnumerable<(string Name, ObservableCollection<IModule> Tree)> ExpandableTrees =>
-            TreeTabs.Where(t => t.Expandable).Select(t => (t.Key, t.Tree!));
 
         /// <summary>Firmy, do kterých smí přihlášený uživatel (a vždy ta aktuální).</summary>
         public IReadOnlyList<CompanyItem> Companies { get; private set; }
@@ -1268,7 +1056,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     break;
 
                 case ModuleFamily family:
-                    var exes = Flatten(family).Where(e => e.ElementId.Length > 0).ToList();
+                    var exes = ModuleTreeState.Flatten(family).Where(e => e.ElementId.Length > 0).ToList();
                     if (exes.Count == 0) return;
                     bool allFav = exes.All(e => _shortcuts.Contains(e.ElementId));
                     _shortcuts.Batch(() =>
@@ -1329,7 +1117,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // kontextového menu rodiny). Vrací, zda je uzel plně oblíbený (rekurzivní agregace).
         private void RefreshFamilyFavoriteFlags()
         {
-            foreach (var (_, tree) in _sourceTrees)
+            foreach (var (_, tree) in _trees.SourceTrees)
                 foreach (var node in tree)
                     UpdateFamilyFavorite(node);
         }
@@ -1365,27 +1153,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _ = _modulePrefs?.SaveUsageAsync(_usage);
         }
 
-        // Všechny EXE instance napříč hlavními stromy. FavoritesTree i UsedModules sdílí tytéž instance,
-        // takže stačí projít hlavní tři stromy (flip IsFavorite se projeví všude).
-        private IEnumerable<ExecutableModule> AllExecutables() =>
-            _sourceTrees.SelectMany(t => t.Tree).SelectMany(Flatten);
-
         // Startup window id (EDISFormEnum) → název modulu ve stromu. ElementId je totéž numerické
         // id jako uložené výchozí okno; pro značení stromu i dialog „Vlastnosti uživatele".
         private string? ResolveModuleName(int formId) =>
-            AllExecutables().FirstOrDefault(e => e.ElementId == formId.ToString())?.DisplayedName;
+            _trees.AllExecutables().FirstOrDefault(e => e.ElementId == formId.ToString())?.DisplayedName;
 
         // Text výchozího okna pro dialog (server ho nezná - dodáváme z modulového stromu).
         // Prázdné = nenastaveno (pole zůstane prázdné, kontext dá helpText pole).
         private string StartupWindowDisplayText() =>
             DefaultWindowId == 0 ? "" : ResolveModuleName(DefaultWindowId) ?? $"#{DefaultWindowId}";
-
-        private static IEnumerable<ExecutableModule> Flatten(IModule module) => module switch
-        {
-            ExecutableModule exe => [exe],
-            ModuleFamily family  => family.NestedModules.SelectMany(Flatten),
-            _                    => [],
-        };
 
         /// <summary>
         /// Ořezané stromy jen s oblíbenými listy (predikát <c>favoriteIds.Contains(ElementId)</c>).
@@ -1437,7 +1213,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             var byElementId = new Dictionary<string, ExecutableModule>();
             foreach (var tree in sourceTrees)
                 foreach (var node in tree)
-                    foreach (var exe in Flatten(node))
+                    foreach (var exe in ModuleTreeState.Flatten(node))
                         if (exe.ElementId.Length > 0)
                             byElementId.TryAdd(exe.ElementId, exe);
 
@@ -1686,7 +1462,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             var modules = _getActiveModules();
             if (modules.Count == 0) { RunningModules = [EmptyPlaceholder]; return; }
 
-            var labels = BuildModuleLabels(_sourceTrees.Select(t => t.Tree));
+            var labels = BuildModuleLabels(_trees.SourceTrees.Select(t => t.Tree));
             RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, labels) })];
         }
 
