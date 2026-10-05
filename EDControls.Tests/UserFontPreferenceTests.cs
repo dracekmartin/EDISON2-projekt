@@ -6,9 +6,8 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// UserFontPreference je shared-file-by-design (cross-process sync mezi shell a TD).
-/// FileSystemWatcher debounce je integration territory (FontService smoke test v produkci);
-/// tady se ověřuje wire kontrakt font.json - přesný camelCase tvar na disku - přes přesměrovanou
-/// <see cref="UserFontPreference.FilePath"/> (internal seam), ne přes reálné %APPDATA%.
+/// Watcher hlídá <see cref="SharedJsonPreferenceTests"/>; tady se ověřuje wire kontrakt font.json -
+/// přesný camelCase tvar na disku - přes přesměrovanou <see cref="UserFontPreference.FilePath"/> (internal seam), ne přes reálné %APPDATA%.
 /// </summary>
 public class UserFontPreferenceTests
 {

@@ -7,8 +7,7 @@ namespace EDControls.Tests;
 /// <summary>
 /// theme.json je cross-process kontrakt (shell ↔ TemplateDesigner) - hlídá se přesný camelCase
 /// tvar na disku a to, že poškozený soubor drží poslední známou hodnotu místo výjimky
-/// (Load běží ze startupu před prvním oknem). FileSystemWatcher je integration territory,
-/// stejně jako u <see cref="UserFontPreferenceTests"/>.
+/// (Load běží ze startupu před prvním oknem). Watcher hlídá <see cref="SharedJsonPreferenceTests"/>.
 /// </summary>
 public class UserThemePreferenceTests
 {

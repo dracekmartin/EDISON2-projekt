@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text.Json;
 
 namespace EDControls.UserFonts;
 
@@ -8,7 +7,8 @@ namespace EDControls.UserFonts;
 /// User-zvolený font (FontFamily + FontSize + toggle Apply) sdílený napříč všemi
 /// m-line WPF nástroji - uložen v <c>%APPDATA%\m-line\common\font.json</c>.
 /// Při změně shellem se přes <see cref="FileSystemWatcher"/> propaguje do otevřených
-/// procesů (TemplateDesigner atd.) - viz <see cref="Changed"/> event.
+/// procesů (TemplateDesigner atd.) - viz <see cref="Changed"/> event. Mechanismus
+/// (Load/Save/watcher) drží <see cref="SharedJsonPreference{T}"/>, tahle třída je jeho veřejný tvar.
 ///
 /// Storage je úmyslně v "common" složce (ne EDISONMAIN2-specific), aby preference
 /// nezůstala vázaná na konkrétní aplikaci. Nová m-line apka nic z toho nevolá přímo -
@@ -34,42 +34,30 @@ public class UserFontPreference
 
     internal const int CurrentVersion = 1;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-    };
+    private static readonly SharedJsonPreference<UserFontPreference> Store =
+        new(MlineCommonPaths.File("font.json"), MigrateLegacy);
 
     /// <summary>Cesta k <c>font.json</c>. Přepisovatelná (internal seam pro testy) - produkce
     /// používá default v <c>%APPDATA%\m-line\common</c>.</summary>
-    internal static string FilePath { get; set; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "m-line", "common", "font.json");
+    internal static string FilePath
+    {
+        get => Store.FilePath;
+        set => Store.FilePath = value;
+    }
 
-    private static string Dir => Path.GetDirectoryName(FilePath)!;
-
-    public static UserFontPreference Current { get; private set; } = new();
+    public static UserFontPreference Current => Store.Current;
 
     /// <summary>
     /// Vyvolá se po změně <c>font.json</c> z jiného procesu (typicky shell změnil user font).
     /// Marshal na UI thread je odpovědnost subscriberu - viz <see cref="FontService.Initialize"/>.
     /// </summary>
-    internal static event Action? Changed;
-
-    internal static void Load()
+    internal static event Action? Changed
     {
-        try
-        {
-            if (!File.Exists(FilePath)) return;
-            var json = File.ReadAllText(FilePath);
-            Current = MigrateLegacy(JsonSerializer.Deserialize<UserFontPreference>(json, JsonOptions) ?? new());
-        }
-        catch
-        {
-            // Poškozený soubor - držíme default, další Save() ho přepíše.
-        }
+        add => Store.Changed += value;
+        remove => Store.Changed -= value;
     }
+
+    internal static void Load() => Store.Load();
 
     /// <summary>
     /// Zahodí velikost uloženou verzí, která pt hodnotu vykreslovala jako px: uživatelé si ji
@@ -96,35 +84,12 @@ public class UserFontPreference
         // uloženou velikost při dalším startu zahodila MigrateLegacy. Max drží razítko
         // novějšího buildu, ať mu tenhle uložení nesrazí soubor na starší verzi.
         Version = Math.Max(Version ?? 0, CurrentVersion);
-        Directory.CreateDirectory(Dir);
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(this, JsonOptions));
+        Store.Save(this);
     }
-
-    private static FileSystemWatcher? _watcher;
 
     /// <summary>
-    /// Spustí <see cref="FileSystemWatcher"/> na adresáři. Při změně <c>font.json</c> načte aktuální
-    /// hodnoty a vyvolá <see cref="Changed"/>. Idempotentní - opakované volání nic neudělá.
-    /// Listener je odpovědný za marshal na UI thread (FileSystemWatcher používá thread pool).
+    /// Spustí watcher na <c>font.json</c>: při změně načte aktuální hodnoty a vyvolá <see cref="Changed"/>.
+    /// Idempotentní. Listener je odpovědný za marshal na UI thread (FileSystemWatcher používá thread pool).
     /// </summary>
-    internal static void BeginListening()
-    {
-        if (_watcher != null) return;
-        Directory.CreateDirectory(Dir);
-        _watcher = new FileSystemWatcher(Dir, Path.GetFileName(FilePath))
-        {
-            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime,
-            EnableRaisingEvents = true,
-        };
-        _watcher.Changed += OnFileChanged;
-        _watcher.Created += OnFileChanged;
-    }
-
-    private static void OnFileChanged(object sender, FileSystemEventArgs e)
-    {
-        // Krátká pauza - soubor může být ještě v půlce zápisu (truncate před content write).
-        // 50ms je heuristika; pokud reload selže, další event v sekvenci to dožene.
-        try { System.Threading.Thread.Sleep(50); Load(); Changed?.Invoke(); }
-        catch { /* sharing violation nebo poškozený JSON - ignorovat, příští event dožene */ }
-    }
+    internal static void BeginListening() => Store.BeginListening();
 }

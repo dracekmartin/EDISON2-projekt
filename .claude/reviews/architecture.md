@@ -1159,7 +1159,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A39 · Sdílená JSON preference s cross-process watcherem existuje dvakrát
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno (2026-10-02) - `EDControls/dotnet/SharedJsonPreference.cs` (internal
+  `SharedJsonPreference<T>` instance: `FilePath`, `Current`, `Changed`, Load/Save/watcher, volitelná
+  `afterLoad` migrace) a `MlineCommonPaths.cs` (`Folder`, `File(name)`); obě veřejné třídy drží
+  statickou instanci a jen delegují (font předává `MigrateLegacy`, `Save` dál razítkuje `Version`).
+  Veřejné API ověřené reflexí beze změny (zmizel jen privátní setter `Current`), `Save` staré
+  i nové DLL zapíše bajtově stejný soubor; `FilePath` seam zůstal, stávající testy beze změny smyslu,
+  nový `SharedJsonPreferenceTests` (watcher mezi dvěma instancemi, bez statiky a WPF).
+  `ErrorFallbackLog` bere cestu z `MlineCommonPaths`.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `EDControls/dotnet/UserFonts/UserFontPreference.cs:46-48` (FilePath), `:60-72`
   (Load), `:93-101` (Save), `:103-129` (watcher `:114` + `Thread.Sleep(50)` `:127`) vs

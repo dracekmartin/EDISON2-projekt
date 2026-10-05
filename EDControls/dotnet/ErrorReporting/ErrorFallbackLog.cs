@@ -17,9 +17,7 @@ internal static class ErrorFallbackLog
     /// <summary>Přebití cílového souboru pro testy.</summary>
     internal static string? PathOverride { get; set; }
 
-    private static string LogPath => PathOverride ?? Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "m-line", "common", "error-reports.log");
+    private static string LogPath => PathOverride ?? MlineCommonPaths.File("error-reports.log");
 
     internal static void Append(IReadOnlyList<ErrorReport> reports)
     {
