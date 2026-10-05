@@ -1,94 +1,27 @@
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows;
 
 namespace EDControls.EDViewModel;
 
 /// <summary>
-/// Otevírá WPF okna (caller předá instanci přes <c>new</c>) + legacy WinForms formuláře
-/// z externích .exe přes generický host <c>EDISONMAIN2API.exe</c> (12-arg kontrakt:
-/// host agendu načte přes <c>Assembly.LoadFrom</c> a roztočí formu - agenda nepotřebuje
-/// žádný retrofit). Trackuje child procesy, <see cref="CloseAll"/> kill při shell close.
+/// Otevírá WPF okna (caller předá instanci přes <c>new</c>) a legacy WinForms agendy, které deleguje
+/// na <see cref="LegacyModuleHost"/>. <see cref="CloseAll"/> zavře okna i legacy moduly při zavření shellu.
 /// </summary>
 public class WindowNavigator : IWindowNavigator
 {
-    /// <summary>
-    /// Cíl deploye legacy `.exe` agend (`USERS.exe`, `MHD2PlanDopravy.exe`, ...).
-    /// Single-file publish profiles tam zapisují, <see cref="ResolveExecutablePath"/>
-    /// odtud čte fallback, když relativní path nenajde v <see cref="AppContext.BaseDirectory"/>.
-    /// </summary>
+    /// <summary>Deploy legacy agend; fallback <see cref="ResolveExecutablePath"/>, když soubor není vedle exe.</summary>
     public const string EdisonDeployRoot = @"C:\Edison";
 
-    /// <summary>Generický host, který agendu načte a spustí (viz EDISONMAIN2API). Spouští se
-    /// místo agenda .exe; cesta k agendě jde do argů, takže agenda nemusí být retrofitnutá.</summary>
-    private const string LauncherExe = "EDISONMAIN2API.exe";
+    private readonly LegacyModuleHost? _legacy;
 
-    /// <summary>Sledování legacy child procesů - Process + původní spawn args (exe, formFqn).
-    /// FormFqn slouží jako fallback display label, když <c>Process.MainWindowTitle</c> je prázdný
-    /// (typicky brzy po startu child procesu, než se vytvoří window).</summary>
-    internal record LegacyProcessEntry(Process Process, string ExeName, string FormFqn, string InputParam);
+    /// <summary>Navigator shellu: legacy moduly berou session z <see cref="EDServices.Current"/> až při spuštění.</summary>
+    public WindowNavigator() : this(new LegacyModuleHost(() => EDServices.Current)) { }
 
-    private readonly List<LegacyProcessEntry> _legacyProcesses = [];
+    internal WindowNavigator(LegacyModuleHost? legacy) => _legacy = legacy;
 
-    /// <summary>Příznak „zabil ho shell sám" (<see cref="CloseLegacyModules"/>) - takový nenulový
-    /// exit kód není pád. Vázaný na objekt Process, ne na PID (reuse PID, žádný úklid).</summary>
-    private sealed class ExitWatch { public volatile bool KilledByShell; }
-
-    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Process, ExitWatch> _exitWatches = new();
-
-    public event Action? LegacyModuleExited;
-
-    /// <summary>
-    /// Napojí notifikaci o konci modulu. `EnableRaisingEvents` je nutné zapnout explicitně a až
-    /// **po** přihlášení handleru - u procesu, který mezitím skončil, vystřelí callback hned
-    /// a do prázdného delegátu by se ztratil. `Exited` chodí z thread poolu, takže se marshaluje
-    /// na UI vlákno (a při shutdownu, kdy `Application.Current` je null, se zahodí).
-    /// </summary>
-    private void WatchForExit(Process prc)
-    {
-        try
-        {
-            prc.Exited += (_, _) =>
-                Application.Current?.Dispatcher.BeginInvoke(() => LegacyModuleExited?.Invoke());
-            prc.EnableRaisingEvents = true;
-        }
-        catch { /* proces mohl skončit dřív, než jsme se stihli napojit */ }
-    }
-
-    /// <summary>
-    /// Hlídá tvrdý pád hosta: nenulový exit kód, který nezpůsobil shell killem, jde do hlášení
-    /// chyb shellu (host sám dosáhne jen na managed výjimky - viz FormToRunGetter v repu EDISON).
-    /// Pořadí subscribe → EnableRaisingEvents viz <see cref="WatchForExit"/>.
-    /// </summary>
-    private static void TrackExit(Process prc, string exeName, string formFqn)
-    {
-        try
-        {
-            var watch = _exitWatches.GetOrCreateValue(prc);
-            prc.Exited += (_, _) => ReportAbnormalExit(prc, watch, exeName, formFqn);
-            prc.EnableRaisingEvents = true;
-        }
-        catch { /* best-effort */ }
-    }
-
-    private static void ReportAbnormalExit(Process prc, ExitWatch watch, string exeName, string formFqn)
-    {
-        try
-        {
-            var exitCode = prc.ExitCode;
-            if (ShouldReportExit(exitCode, watch.KilledByShell))
-                ErrorReporting.ErrorReports.ReportLegacyExit(exeName, formFqn, exitCode);
-        }
-        catch { /* Process už může být disposed - hlášení pádu nesmí být druhá chyba */ }
-    }
-
-    /// <summary>0 = normální konec i `Application.Exit`; náš `Kill` dává -1, ale poznává se podle PID,
-    /// ne kódu - `taskkill /F` zvenku (kód 1) hlásit chceme.</summary>
-    internal static bool ShouldReportExit(int exitCode, bool killedByShell) =>
-        exitCode != 0 && !killedByShell;
+    /// <summary>Jen WPF okna - pro aplikaci, která legacy moduly nespouští (TemplateDesigner).</summary>
+    public static IWindowNavigator WpfOnly() => new WindowNavigator((LegacyModuleHost?)null);
 
     public void Show(Window window)
     {
@@ -104,164 +37,47 @@ public class WindowNavigator : IWindowNavigator
             return window.ShowDialog();
     }
 
-    public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
+    public event Action? LegacyModuleExited
     {
-        if (TryFocusExistingLegacy(exeName, formFqn, inputParam)) return;
-        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        if (prc == null) return;
-        _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
-        WatchForExit(prc);
+        add { if (_legacy is not null) _legacy.LegacyModuleExited += value; }
+        remove { if (_legacy is not null) _legacy.LegacyModuleExited -= value; }
     }
 
-    public async Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
-    {
-        // Už běžící modul (stejné exe+forma+param) neotvírej znovu - jen na něj přenes focus.
-        if (TryFocusExistingLegacy(exeName, formFqn, inputParam)) return;
-        // Launch synchronně (případný fail Process.Start faultne task → caller ho chytne v popup).
-        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        if (prc == null) return;
-        _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
-        WatchForExit(prc);
-        await WaitForModuleWindowAsync(prc);
-    }
+    public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "") =>
+        Legacy.ShowLegacy(exeName, formFqn, shareShellSession, inputParam);
 
-    /// <summary>
-    /// Spustí zástupce na ploše (tisková sestava, uložený pohled) - host místo formy zavolá
-    /// proceduru agendy. Záměrně **bez dedup přes <see cref="TryFocusExistingLegacy"/>**: dvě
-    /// spuštění téže sestavy jsou dva legitimní tisky, ne duplikát okna. Proces se z téhož důvodu
-    /// netrackuje mezi moduly - není to modul a v „Spuštěné moduly" nemá co dělat.
-    /// </summary>
-    public async Task ShowLegacyShortcutAsync(string exeName, string formFqn, string shortcutPayload,
-                                              bool shareShellSession = true, string inputParam = "")
-    {
-        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam, shortcutPayload);
-        if (prc == null) return;
-        await WaitForModuleWindowAsync(prc);
-    }
+    public Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "") =>
+        _legacy?.ShowLegacyAsync(exeName, formFqn, shareShellSession, inputParam) ?? Task.FromException(NoLegacyHost());
 
-    /// <summary>
-    /// Dedup pro modeless legacy launch: když už běží proces se stejným
-    /// <paramref name="exeName"/>+<paramref name="formFqn"/>+<paramref name="inputParam"/>,
-    /// přenese na jeho okno focus a vrátí <c>true</c> (duplikát se nespustí). Mrtvé procesy
-    /// z registru cestou vyčistí. Vrací <c>true</c> i když okno ještě nenaběhlo
-    /// (<c>MainWindowHandle == 0</c>) - duplikát se ani tak spustit nesmí, focus je best-effort.
-    /// </summary>
-    private bool TryFocusExistingLegacy(string exeName, string formFqn, string inputParam)
-    {
-        _legacyProcesses.RemoveAll(e => e.Process.HasExited);
-        var match = _legacyProcesses.FirstOrDefault(e => MatchesTarget(e, exeName, formFqn, inputParam));
-        if (match is null) return false;
-        var hwnd = match.Process.MainWindowHandle;
-        if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
-        return true;
-    }
+    public Task ShowLegacyShortcutAsync(string exeName, string formFqn, string shortcutPayload,
+                                        bool shareShellSession = true, string inputParam = "") =>
+        _legacy?.ShowLegacyShortcutAsync(exeName, formFqn, shortcutPayload, shareShellSession, inputParam)
+        ?? Task.FromException(NoLegacyHost());
 
-    /// <summary>Shoda tracked legacy procesu s cílovým launchem - „stejné okno" = stejné exe
-    /// (case-insensitive path), forma i EDParamIn.</summary>
-    internal static bool MatchesTarget(LegacyProcessEntry e, string exe, string form, string param) =>
-        string.Equals(e.ExeName, exe, StringComparison.OrdinalIgnoreCase)
-        && string.Equals(e.FormFqn, form, StringComparison.Ordinal)
-        && string.Equals(e.InputParam, param, StringComparison.Ordinal);
+    public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "") =>
+        Legacy.ShowLegacyAndWait(exeName, formFqn, shareShellSession, inputParam);
 
-    /// <summary>
-    /// Čeká (poll á 100 ms) až child proces vytvoří hlavní okno, nebo do timeoutu / ukončení
-    /// procesu. Await Task.Delay drží UI thread volný, takže overlay se stihne vykreslit.
-    /// Timeout kryje moduly, které skončí bez okna (chyba, background task).
-    /// </summary>
-    private static async Task WaitForModuleWindowAsync(Process prc, int timeoutMs = 20000)
-    {
-        for (int elapsed = 0; elapsed < timeoutMs; elapsed += 100)
-        {
-            if (prc.HasExited) return;
-            prc.Refresh();
-            if (prc.MainWindowHandle != IntPtr.Zero) return;
-            await Task.Delay(100);
-        }
-    }
+    public void ShowLegacyAsDialog(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "") =>
+        Legacy.ShowLegacyAsDialog(exeName, formFqn, shareShellSession, inputParam);
 
-    public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
-    {
-        // Bez using: Exited (hlášení pádu) chodí z poolu a mohl by přijít až po dispose.
-        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        prc?.WaitForExit();
-    }
+    public Task ShowLegacyAsDialogAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "") =>
+        _legacy?.ShowLegacyAsDialogAsync(exeName, formFqn, shareShellSession, inputParam) ?? Task.FromException(NoLegacyHost());
 
-    public void ShowLegacyAsDialog(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
-    {
-        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        if (prc == null) return;
-        _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
-        WireDialogBehavior(prc);
-    }
+    private LegacyModuleHost Legacy => _legacy ?? throw NoLegacyHost();
 
-    public async Task ShowLegacyAsDialogAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
-    {
-        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        if (prc == null) return;
-        _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
-        WireDialogBehavior(prc);
-        // Overlay (caller drží ActionInProgress) se schová jakmile okno modulu naběhne;
-        // shell zůstane ztmavený přes WireDialogBehavior až do zavření child okna.
-        await WaitForModuleWindowAsync(prc);
-    }
+    private static NotSupportedException NoLegacyHost() =>
+        new("Tato aplikace legacy moduly nespouští (WindowNavigator.WpfOnly).");
 
-    /// <summary>Modal-like chování pro child proces: ztmaví owner shell (WindowDimmer) po dobu
-    /// běhu childu a bounce jeho okna do popředí při kliku na ztmavený shell.</summary>
-    private void WireDialogBehavior(Process prc)
-    {
-        var owner = Application.Current.MainWindow;
-        var undim = WindowDimmer.Dim(owner);
-
-        // Klik na ztmavený shell → cross-process "bounce" child okna do popředí (modal-like UX).
-        // Dim adorner klik spolkne, ale window activation proběhne → Activated fire-uje.
-        EventHandler? bounce = null;
-        if (owner != null)
-        {
-            bounce = (_, _) =>
-            {
-                if (prc.HasExited) return;
-                var hwnd = prc.MainWindowHandle;
-                if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
-            };
-            owner.Activated += bounce;
-        }
-
-        prc.Exited += (_, _) =>
-        {
-            // Exited fire-uje na thread pool; Application.Current je null pokud shell už doběhl
-            // shutdown (typicky CloseAll killnul i tento proces). Nic dělat netřeba.
-            var app = Application.Current;
-            if (app is null) return;
-            app.Dispatcher.BeginInvoke(() =>
-            {
-                if (owner != null && bounce != null) owner.Activated -= bounce;
-                undim.Dispose();
-                if (owner is { IsLoaded: true }) owner.Activate();
-            });
-        };
-        prc.EnableRaisingEvents = true;
-    }
-
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
-
-    /// <summary>
-    /// Zavře všechna modeless WPF okna (kromě <c>MainWindow</c>) + kill tracked legacy
-    /// child procesy. Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> -
-    /// shell-only operace, agenda VMs ji nemají vidět. Případné veto okna ignoruje;
-    /// kde na něm záleží (výměna session), volej <see cref="TryCloseAll"/>.
-    /// </summary>
+    /// <summary>Modeless WPF okna (kromě <c>MainWindow</c>) + kill legacy modulů. Shell-only, proto ne na
+    /// <see cref="IWindowNavigator"/>. Veto okna ignoruje; při výměně session volej <see cref="TryCloseAll"/>.</summary>
     public void CloseAll()
     {
         CloseShellWindows();
         CloseLegacyModules();
     }
 
-    /// <summary>
-    /// Jako <see cref="CloseAll"/>, ale respektuje veto: když některé shell okno odmítne
-    /// zavření (<c>e.Cancel</c> v Closing), vrátí <c>false</c> a legacy moduly NEzabíjí -
-    /// caller musí výměnu session zrušit, přeživší okno by jinak mluvilo s cizí session.
-    /// </summary>
+    /// <summary>Při vetu okna (<c>e.Cancel</c> v Closing) vrátí <c>false</c> a moduly nezabíjí - caller musí
+    /// výměnu session zrušit, přeživší okno by jinak mluvilo s cizí session.</summary>
     public bool TryCloseAll()
     {
         if (!TryCloseShellWindows()) return false;
@@ -269,19 +85,12 @@ public class WindowNavigator : IWindowNavigator
         return true;
     }
 
-    /// <summary>
-    /// Jen WPF část <see cref="CloseAll"/>: modeless okna shellu (kromě <c>MainWindow</c>).
-    /// Oddělené kvůli přepnutí firmy - tato okna volají server přes sdílený MLRest, takže se
-    /// musí zavřít před swapem Idfa; legacy moduly (vlastní spojení) až po úspěchu.
-    /// Veto ignoruje (viz <see cref="TryCloseShellWindows"/>).
-    /// </summary>
+    /// <summary>Jen WPF část: tato okna volají server přes sdílený MLRest, při přepnutí firmy se proto
+    /// zavírají před swapem Idfa, legacy moduly (vlastní spojení) až po úspěchu. Veto ignoruje.</summary>
     public void CloseShellWindows() => TryCloseShellWindows();
 
-    /// <summary>
-    /// Jako <see cref="CloseShellWindows"/>, ale vrátí <c>false</c>, když některé okno
-    /// zavření odmítlo (<c>e.Cancel</c> v Closing - typicky dotaz na neuložená data).
-    /// Zbylá okna se přesto zkusí zavřít; rozhodnutí o abortu je na callerovi.
-    /// </summary>
+    /// <summary>Jako <see cref="CloseShellWindows"/>, ale vrátí <c>false</c>, když některé okno zavření
+    /// odmítlo (typicky dotaz na neuložená data). Zbylá okna se přesto zkusí zavřít.</summary>
     public bool TryCloseShellWindows()
     {
         var allClosed = true;
@@ -296,52 +105,15 @@ public class WindowNavigator : IWindowNavigator
     }
 
     /// <summary>Jen legacy část <see cref="CloseAll"/>: kill tracked child procesů.</summary>
-    public void CloseLegacyModules()
-    {
-        foreach (var entry in _legacyProcesses)
-        {
-            try
-            {
-                if (entry.Process.HasExited) continue;
-                if (_exitWatches.TryGetValue(entry.Process, out var watch)) watch.KilledByShell = true;
-                entry.Process.Kill();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error closing process: {ex.Message}");
-            }
-        }
-        _legacyProcesses.Clear();
-    }
+    public void CloseLegacyModules() => _legacy?.CloseAll();
 
-    /// <summary>
-    /// Snapshot právě běžících modulů - legacy child procesy + WPF okna (kromě shell
-    /// <c>MainWindow</c>). Pro menu "Spuštěné moduly" (binding přes refresh při open).
-    /// Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> - shell-only feature.
-    /// </summary>
+    /// <summary>Snapshot pro menu „Spuštěné moduly": legacy moduly + WPF okna kromě <c>MainWindow</c>.
+    /// Shell-only, proto ne na <see cref="IWindowNavigator"/>.</summary>
     public IReadOnlyList<RunningModuleInfo> GetActiveModules()
     {
-        var legacy = _legacyProcesses
-            .Where(e => !e.Process.HasExited)
-            .Select(e => new RunningModuleInfo(
-                DisplayName: FormatLegacyLabel(e),
-                Activate: () =>
-                {
-                    if (e.Process.HasExited) return;
-                    var hwnd = e.Process.MainWindowHandle;
-                    if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
-                })
-            {
-                ExeName = e.ExeName,
-                FormFqn = e.FormFqn,
-                InputParam = e.InputParam,
-            });
-
         var wpf = Application.Current.Windows
             .OfType<Window>()
-            .Where(w => w != Application.Current.MainWindow
-                        && w.IsLoaded
-                        && !IsInternalWindow(w))
+            .Where(w => w != Application.Current.MainWindow && w.IsLoaded && !IsInternalWindow(w))
             .Select(w => new RunningModuleInfo(
                 DisplayName: !string.IsNullOrEmpty(w.Title) ? w.Title : w.GetType().Name,
                 Activate: () =>
@@ -351,7 +123,7 @@ public class WindowNavigator : IWindowNavigator
                     w.Focus();
                 }));
 
-        return [.. legacy, .. wpf];
+        return [.. (_legacy?.GetRunningModules() ?? []), .. wpf];
     }
 
     /// <summary>Okno, které aplikace nevlastní: overlay okna EDControls (<see cref="IOverlayWindow"/> -
@@ -365,135 +137,11 @@ public class WindowNavigator : IWindowNavigator
     internal static bool ShouldClose(Window w, Window? mainWindow) =>
         w != mainWindow && !IsInternalWindow(w);
 
-    /// <summary>
-    /// Display label pro legacy proces: preferuje <c>MainWindowTitle</c> (text v záhlaví okna,
-    /// to co user vidí), fallback last segment z FormFqn (např. <c>formMHD2Main</c>), nebo
-    /// název EXE bez přípony, když ani jedno není dostupné.
-    /// </summary>
-    internal static string FormatLegacyLabel(LegacyProcessEntry entry)
-    {
-        var title = SafeGetTitle(entry.Process);
-        if (!string.IsNullOrEmpty(title)) return title;
-        var lastDot = entry.FormFqn.LastIndexOf('.');
-        if (lastDot >= 0 && lastDot < entry.FormFqn.Length - 1) return entry.FormFqn[(lastDot + 1)..];
-        if (!string.IsNullOrEmpty(entry.FormFqn)) return entry.FormFqn;
-        return Path.GetFileNameWithoutExtension(entry.ExeName);
-    }
+    public static string ResolveExecutablePath(string relativePath) =>
+        LegacyModuleHost.ResolvePath(relativePath, File.Exists);
 
-    private static string SafeGetTitle(Process process)
-    {
-        try { return process.MainWindowTitle ?? ""; }
-        catch { return ""; }
-    }
-
-    private static Process? LaunchLegacy(string exeName, string formFqn, bool shareShellSession,
-                                         string inputParam, string shortcutPayload = "")
-    {
-        var mlRest = EDServices.Current.MLRest
-            ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
-        // Launch modulu jako usage telemetrie shellu. Záměrně ne (formFqn, "OPEN") -
-        // hostovaná legacy forma si OPEN trackne sama přes EDForm, jinak by byl dvakrát.
-        EDUsageTelemetry.Track("EDISON2.LegacyLaunch", string.IsNullOrEmpty(formFqn) ? exeName : formFqn);
-        var shellGuid = ShellGuidFor(mlRest, shareShellSession);
-        var agendaPath = ResolveExecutablePath(exeName);
-
-        // EDISONMAIN se spouští napřímo (ne přes host): jeho ApplicationEvents.OnRun nastavuje
-        // per-forma default EDParamIn (ApplyDefaultInput), který generický host neumí dodat.
-        // Ostatní agendy jdou přes host, takže nepotřebují retrofit.
-        bool direct = LaunchesDirectly(exeName);
-        var launcherPath = direct ? agendaPath : ResolveExecutablePath(LauncherExe);
-        // Chybějící soubor by skončil Win32Exception bez jména souboru; správce IS potřebuje vědět, co chybí.
-        EnsureExecutableExists(agendaPath, Path.GetFileName(exeName));
-        if (!direct) EnsureExecutableExists(launcherPath, LauncherExe);
-        // Licencované elementy z aktivní licence shellu → host z nich postaví Lic a načte
-        // formuláři přístupová práva (MLProps.AccessTable). Bez toho moduly, které gate-ují
-        // obsah přes RightGranted (např. DSINPUT Plánování), nezobrazí data. Viz FormToRunGetter.
-        var licence = EDServices.Current.ActiveLicence;
-        // Při retry nad limitem licencí během přepnutí firmy je to ještě licence původní firmy; spouští se
-        // tehdy jen okno aktivity pro admina, které licenci nekontroluje.
-        string licensedElements = licence?.Elements is { } els ? string.Join(",", els) : "";
-
-        var prc = Process.Start(new ProcessStartInfo
-        {
-            UseShellExecute = true,
-            FileName = launcherPath,
-            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath,
-                licensedElements, EDServices.Current.IsAdmin, EDServices.Current.MayUpdate, shortcutPayload,
-                EDServices.Current.UserDirectory, EDServices.Current.UserEmail,
-                licence?.Version ?? "", licence is null ? "" : ((int)licence.State).ToString(CultureInfo.InvariantCulture),
-                licence?.ValidityTo ?? ""),
-        });
-        if (prc != null)
-        {
-            KillOnExit.Bind(prc);
-            TrackExit(prc, exeName, formFqn);
-        }
-        return prc;
-    }
-
-    /// <summary>Aplikace, které se spouští napřímo místo přes generický host: legacy shell
-    /// EDISONMAIN (vlastní retrofit, který host nereplikuje) a WPF TemplateDesigner
-    /// (kontrakt si parsuje sám, WinForms host na něj nejde použít).</summary>
-    internal static bool LaunchesDirectly(string exeName) =>
-        string.Equals(Path.GetFileName(exeName), "EDISONMAIN.exe", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(Path.GetFileName(exeName), "TemplateDesigner.exe", StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// Shell GUID = modul jede s Locks=1 pod shellovým zámkem; bez zámku (podpora, selhaný ReacquireLock)
-    /// by každý jeho request padl na LockExist, proto prázdný = vlastní GUID bez kontrol.
-    /// </summary>
-    internal static string ShellGuidFor(IMLRest mlRest, bool shareShellSession) =>
-        shareShellSession && mlRest.CacheLocks == 1 ? mlRest.Guid : "";
-
-    /// <summary>
-    /// Složí payload pro generický host: značka + sys kontext + formFqn + shellGuid +
-    /// inputParam + cesta k agendě + licencované elementy. Pozice 1–11 jsou shodné s legacy
-    /// kontraktem (takže `FormToRunGetter.TryGetFormFromArgs` retrofitnutých agend zůstává
-    /// kompatibilní); agendaPath (host ho čte pro <c>Assembly.LoadFrom</c>) je [11],
-    /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable - starší host je ignoruje),
-    /// zástupce na ploše [13] (opaque, host ho místo formy spustí jako proceduru; prázdné = běžný launch),
-    /// admin flag [14] a právo update [15] ("1"/"0" → MLProps.UserIsAdmin / UserMayUpdate; host bez pole
-    /// defaultuje na false), osobní adresář [16] a e-mail [17] (→ MLProps.UserDirectory / UserEmail, parita
-    /// s legacy frmNoMDI; host bez polí dá ""). Koncové zpětné lomítko adresáře se odřízne - `"C:\dir\"` by
-    /// argv parser četl jako escapovanou uvozovku a slil pole. Verze [18], stav [19] a konec platnosti [20]
-    /// licence shellu (`Lic.Version`, `(int)Lic.State`, `Lic.ValidityTo`) doplní hostu k elementům [12]
-    /// celou licenci - host pak nevolá `GetActiveLic` (seznam všech licencí firmy, na DEV ~1 s) při každém
-    /// startu modulu, dokud je licence v pořádku a platná.
-    /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
-    /// argv-safe (bez uvozovek a mezer).
-    /// </summary>
-    internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
-        string inputParam, string agendaPath, string licensedElements, bool isAdmin, bool mayUpdate,
-        string shortcutPayload = "", string userDirectory = "", string userEmail = "",
-        string licenceVersion = "", string licenceState = "", string licenceValidTo = "") =>
-        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\" \"{Dir(userDirectory)}\" \"{userEmail}\" \"{Version(licenceVersion)}\" \"{licenceState}\" \"{Plain(licenceValidTo)}\"";
-
-    private static string Flag(bool value) => value ? "1" : "0";
-    private static string Dir(string directory) => directory.TrimEnd('\\');
-    // Verze jde do legacy Val(): stačí číslice a tečka, cokoli dalšího by jen hrozilo rozbitím argv.
-    private static string Version(string version) => new(version.Where(c => char.IsDigit(c) || c == '.').ToArray());
-    // Uvozovka nebo koncové zpětné lomítko by pole slily s dalším, mezera uvnitř uvozovek nevadí.
-    private static string Plain(string value) => value.Replace("\"", "").TrimEnd('\\');
-
-    public static string ResolveExecutablePath(string relativePath)
-    {
-        var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
-        if (File.Exists(localPath)) return localPath;
-        return Path.Combine(EdisonDeployRoot, relativePath);
-    }
-
-    /// <summary>Pre-flight před spuštěním legacy procesu: hláška jmenuje chybějící soubor, ne jen „soubor nenalezen".</summary>
-    internal static void EnsureExecutableExists(string path, string displayName)
-    {
-        if (File.Exists(path)) return;
-        throw new FileNotFoundException(
-            $"Nelze spustit modul: v adresáři EDISONu chybí soubor {displayName}. Kontaktujte správce IS.", path);
-    }
-
-    // Sdílené wire-up před Show()/ShowDialog(): Owner + AttachToWindow VM-if. Firma v titulku
-    // záměrně není - jedno sezení = jedna firma, identitu nese titulek shellu a status bar.
-    // SourceInitialized fíruje synchronně uvnitř Show() před prvním paintem, restore stavu okna
-    // tedy stihne aplikovat hodnoty.
+    // Firma v titulku záměrně není - jedno sezení = jedna firma, identitu nese titulek shellu a status bar.
+    // AttachToWindow před Show(): SourceInitialized fíruje uvnitř Show() před prvním paintem (restore stavu).
     private static void WireUp(Window window)
     {
         window.Owner = Application.Current.MainWindow;

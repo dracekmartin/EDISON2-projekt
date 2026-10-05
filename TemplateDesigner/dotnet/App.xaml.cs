@@ -37,7 +37,7 @@ public partial class App : Application
             new RoutedEventHandler(OnAnyWindowLoaded));
 
         // FormIdPrefix odděluje okna TD od shellu ve sdílené usage telemetrii a v persistenci stavu oken.
-        EDServices.Initialize(new EDServices(null, new WindowNavigator(), new PopupDisplayer())
+        EDServices.Initialize(new EDServices(null, WindowNavigator.WpfOnly(), new PopupDisplayer())
         {
             FormIdPrefix = "TD"
         });

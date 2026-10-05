@@ -369,7 +369,15 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A7 · `WindowNavigator` je tři třídy v jedné, polovina stavu je statická
 
-- [ ] **Stav:** otevřeno (2026-10-01: třída narostla o launch helpery)
+- [x] **Stav:** vyřešeno (2026-10-01, proud S5) - legacy část přešla do internal `LegacyModuleHost`
+  (launch, tracking, dedup, hlášení pádu, ztmavení, kill) se závislostmi v ctoru (`Func<EDServices>`,
+  továrna procesu, `fileExists`, `reportExit`, `trackUsage`, UI marshal, owner dialogu, focus); proces
+  za šev `ILegacyProcess`, `KilledByShell` je příznak spuštění místo statické `ConditionalWeakTable`.
+  Navíc oprava závodu: `Process.Exited` fíruje jednou a `WatchForExit`/`WireDialogBehavior` se
+  přihlašovaly až po `TrackExit`, proces skončený mezi tím nechal shell ztmavený; `SystemLegacyProcess`
+  odebírá jednou a pozdní odběratel dostane konec hned. `WindowNavigator.cs` 152 ř. bez `Process`, veřejné
+  API beze změny, nové `WpfOnly()` používá TD. Testy `LegacyModuleHostTests` (fake proces: dedup,
+  `KilledByShell`, `ReportLegacyExit`, PSI kontrakt), `SystemLegacyProcessTests` (reálný `cmd /c exit`).
 - **P2 · M** · Závisí na: - · Blokuje: A6 · Původ: nový (2026-09-20)
 - **Problém:** WPF navigace (Show/ShowDialog/WireUp), launch legacy procesů (argv, resolve cest,
   pre-flight existence souborů, direct vs. host) a lifecycle child procesů (tracking, dedup, exit
