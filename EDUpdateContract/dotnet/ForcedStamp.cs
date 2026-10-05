@@ -1,6 +1,6 @@
 using System.IO;
 
-namespace EDUPDATE2;
+namespace EDUpdateContract;
 
 /// <summary>
 /// Stopa vynucené aktualizace vedle cílových binárek, per-instalace (per-user by na sdílené stanici

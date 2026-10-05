@@ -303,8 +303,8 @@ public class UpdateScenarioTests : IDisposable
         var (result, _) = _scenario.Run();
 
         Assert.Equal(UpdateEngine.ExitOk, result.ExitCode);
-        Assert.Equal(EDISONMAIN2.VerzeInf.ReadVersion(_scenario.Server),
-            EDISONMAIN2.VerzeInf.ReadVersion(_scenario.Station));
+        Assert.Equal(VerzeInf.ReadVersion(_scenario.Server),
+            VerzeInf.ReadVersion(_scenario.Station));
     }
 
     [Fact]

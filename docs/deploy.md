@@ -29,7 +29,7 @@ Z repa EDISON (build do `C:\Edison`):
 - `EDUPDATE.EXE` - klientský updater obou shellů, build ≥ 2026-06-17 (`WaitProcess`, `49d19295d9`),
   starší na zavření nového shellu nepočká. Bez něj ve zdrojovém adresáři serveru nový shell po
   detekci nové verze nenastartuje (`CopyUpdater` selže s popupem). `EDUPDATE2.exe` (repo EDISON2)
-  jen po přepnutí shellu na něj (`Updater.ActiveKind`).
+  jen po přepnutí shellu na něj (`Updater.ActiveKind`); bere UNC, lokální i http zdroj jako legacy.
 
 Řádky manifestu `FILES_DESCRIPTION.INF`: FULL `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`
 a `FULL~~DLL~...\EDISONRUNTIME.zip`; sekce `PATCH~EDISON2` `EDISONMAIN2.exe`, `EDControls.dll`
@@ -80,7 +80,8 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
   když globální instalace chybí.
 - Serverový adresář (zdroj stanic: UNC share, nebo http URL jako u legacy) musí mít `VERZE.INF`
   a `EDUPDATE.EXE`; shell bez `VERZE.INF` vedle exe skončí hláškou, instaluje se tedy vždy
-  do adresáře EDISONu, nikdy samostatně.
+  do adresáře EDISONu, nikdy samostatně. Http zdroj navíc `EDISONCRC.bin`: výpis adresáře přes http
+  není a oba updatery bez manifestu skončí chybou.
 - Klientský update (EDUPDATE i vynucenou vlnu) dostane jen stanice ze seznamu počítačů v Nastavení >
   Aktualizace (`localPath`: jméno PC, `\\PC\...` nebo IPv4, plné doménové jméno nefunguje; legacy
   `clsUpdate.IsServer`). Ostatní instalace (server, TS, stanice spouštěné ze share) shell bere jako

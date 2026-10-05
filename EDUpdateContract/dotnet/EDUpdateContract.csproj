@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Kontrakt shell ↔ klientský updater (argumenty, stopa vynucené vlny, VERZE.INF). Bez referencí:
+       EDUPDATE2 nesmí záviset na ničem z C:\Edison (vyměňuje to za běhu); single-file publish obou exe
+       knihovnu zabalí, volná vedle exe není. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

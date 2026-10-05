@@ -454,14 +454,21 @@ public class UpdaterTests
     [InlineData(@"D:\Edison", false)]
     [InlineData("", false)]
     public void IsUri_LegacyPathIsUriSemantics(string path, bool expected) =>
-        Assert.Equal(expected, Updater.IsUri(path));
+        Assert.Equal(expected, UpdaterContract.IsUri(path));
 
     [Theory]
     [InlineData("http://srv/edison", "http://srv/edison/VERZE.INF")]
     [InlineData("http://srv/edison/", "http://srv/edison/VERZE.INF")]
     [InlineData(@"http://srv/edison\release\", "http://srv/edison/release/VERZE.INF")]
-    public void SourceFileUrl_JoinsWithSingleSlash(string sourceDir, string expected) =>
-        Assert.Equal(expected, Updater.SourceFileUrl(sourceDir, VerzeInf.FileName));
+    public void FileUrl_JoinsWithSingleSlash(string sourceDir, string expected) =>
+        Assert.Equal(expected, UpdaterContract.FileUrl(sourceDir, VerzeInf.FileName));
+
+    [Theory]
+    [InlineData("EDFiles", "http://srv/edison/EDFiles/a.txt")]
+    [InlineData(@"EDFiles\", "http://srv/edison/EDFiles/a.txt")]
+    [InlineData(@"PS\sub", "http://srv/edison/PS/sub/a.txt")]
+    public void FileUrl_SubPathOfManifestRecord_JoinedWithForwardSlashes(string subPath, string expected) =>
+        Assert.Equal(expected, UpdaterContract.FileUrl("http://srv/edison/", "a.txt", subPath));
 
     [Fact]
     public void Check_HttpSource_VersionDownloaded()
@@ -493,7 +500,7 @@ public class UpdaterTests
         Directory.CreateDirectory(dir);
         try
         {
-            var exe = Updater.UpdaterExeFor(Updater.ActiveKind);
+            var exe = UpdaterContract.ExeFor(Updater.ActiveKind);
             File.WriteAllText(Path.Combine(dir, exe), "old");
             var updater = new HttpSourceUpdater();
             updater.Files[$"http://srv/edison/{exe}"] = [(byte)'M', (byte)'Z', 3];
@@ -516,7 +523,7 @@ public class UpdaterTests
         Directory.CreateDirectory(dir);
         try
         {
-            var exe = Updater.UpdaterExeFor(Updater.ActiveKind);
+            var exe = UpdaterContract.ExeFor(Updater.ActiveKind);
             File.WriteAllText(Path.Combine(dir, exe), "old");
 
             Assert.Throws<HttpRequestException>(() => new HttpSourceUpdater().CopyUpdaterTo("http://srv/edison", dir));
@@ -576,7 +583,7 @@ public class UpdaterTests
         Directory.CreateDirectory(dir);
         try
         {
-            var exe = Updater.UpdaterExeFor(Updater.ActiveKind);
+            var exe = UpdaterContract.ExeFor(Updater.ActiveKind);
             File.WriteAllText(Path.Combine(dir, exe), "old");
             var updater = new HttpSourceUpdater();
             updater.Files[$"http://srv/edison/{exe}"] = "<html>login</html>"u8.ToArray();
@@ -670,24 +677,25 @@ public class UpdaterTests
     [InlineData(ClientUpdaterKind.Edupdate2, "EDUPDATE2.exe", "CliUp2.ini")]
     public void UpdaterKind_PairsExeWithItsStampFile(ClientUpdaterKind kind, string exe, string stampFile)
     {
-        Assert.Equal(exe, Updater.UpdaterExeFor(kind));
-        Assert.Equal(stampFile, Updater.StampFileFor(kind));
+        Assert.Equal(exe, UpdaterContract.ExeFor(kind));
+        Assert.Equal(stampFile, UpdaterContract.StampFileFor(kind));
     }
+
+    private const string Station = @"C:\Program Files\Edison";
 
     [Fact]
     public void BuildArguments_Legacy_ComposesLegacyEdupdateContract()
     {
-        var args = Updater.BuildArguments(ClientUpdaterKind.LegacyEdupdate, @"\\server\Edison", "260901.1",
-            forced: true, forcedStamp: "66234,2");
+        var args = UpdaterContract.BuildArguments(ClientUpdaterKind.LegacyEdupdate, @"\\server\Edison", Station,
+            "260901.1", forced: true, forcedStamp: "66234,2");
 
-        var expectedTarget = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
         Assert.Equal(
         [
             "FormMode=1",
             "Async=1",
             "RunEdison=1",
             @"SourcePath=\\server\Edison",
-            $"TargetPath={expectedTarget}",
+            $"TargetPath={Station}",
             "Version=260901.1",
             "NucenyUpdate=True",
             "NucenyUpdateTime=66234,2",
@@ -700,8 +708,8 @@ public class UpdaterTests
     public void BuildArguments_Legacy_NotForced_SendsFalseAndStamp()
     {
         // Razítko jde i s běžným updatem - úspěch splní čekající vlnu bez druhého kola.
-        var args = Updater.BuildArguments(ClientUpdaterKind.LegacyEdupdate, @"\\s", "1", forced: false,
-            forcedStamp: "66234,2");
+        var args = UpdaterContract.BuildArguments(ClientUpdaterKind.LegacyEdupdate, @"\\s", Station, "1",
+            forced: false, forcedStamp: "66234,2");
 
         Assert.Contains("NucenyUpdate=False", args);
         Assert.Contains("NucenyUpdateTime=66234,2", args);
@@ -726,14 +734,14 @@ public class UpdaterTests
         // před Version) by si vzal cizí hodnotu; mezera v cestě musí projít celá.
         const string source = @"\\server\EDISON data\Účetní";
         var argv = new List<string> { @"C:\Edison\EDUPDATE.exe" };
-        argv.AddRange(Updater.BuildArguments(ClientUpdaterKind.LegacyEdupdate, source, "260901.1",
-            forced: true, forcedStamp: "66234,2"));
+        argv.AddRange(UpdaterContract.BuildArguments(ClientUpdaterKind.LegacyEdupdate, source, Station,
+            "260901.1", forced: true, forcedStamp: "66234,2"));
 
         Assert.Equal("1", LegacyGetArgument(argv, "FormMode"));
         Assert.Equal("1", LegacyGetArgument(argv, "Async"));
         Assert.Equal("1", LegacyGetArgument(argv, "RunEdison"));
         Assert.Equal(source, LegacyGetArgument(argv, "SourcePath"));
-        Assert.Equal(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), LegacyGetArgument(argv, "TargetPath"));
+        Assert.Equal(Station, LegacyGetArgument(argv, "TargetPath"));
         Assert.Equal("260901.1", LegacyGetArgument(argv, "Version"));
         Assert.Equal("True", LegacyGetArgument(argv, "NucenyUpdate"));
         Assert.Equal("66234,2", LegacyGetArgument(argv, "NucenyUpdateTime"));
@@ -744,14 +752,13 @@ public class UpdaterTests
     [Fact]
     public void BuildArguments_Edupdate2_ComposesEdupdate2Contract()
     {
-        var args = Updater.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\server\Edison", "260901.1",
-            forced: true, forcedStamp: "66234,2");
+        var args = UpdaterContract.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\server\Edison", Station,
+            "260901.1", forced: true, forcedStamp: "66234,2");
 
-        var expectedTarget = AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar);
         Assert.Equal(
         [
             @"SourcePath=\\server\Edison",
-            $"TargetPath={expectedTarget}",
+            $"TargetPath={Station}",
             "Version=260901.1",
             "WaitProcess=EDISONMAIN2",
             "RunExe=EDISON.exe",
@@ -763,8 +770,8 @@ public class UpdaterTests
     [Fact]
     public void BuildArguments_Edupdate2_NotForced_SendsZeroAndStamp()
     {
-        var args = Updater.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\s", "1", forced: false,
-            forcedStamp: "66234,2");
+        var args = UpdaterContract.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\s", Station, "1",
+            forced: false, forcedStamp: "66234,2");
 
         Assert.Contains("NucenyUpdate=0", args);
         Assert.Contains("NucenyUpdateTime=66234,2", args);
@@ -773,23 +780,47 @@ public class UpdaterTests
     [Fact]
     public void BuildArguments_Edupdate2_ParsedByUpdaterArgs_RoundTripsWithoutUnknownTokens()
     {
-        // Drift guard obou stran kontraktu: přejmenování klíče na jedné straně by prošlo
-        // oběma sadami zeleně - tady se producent a konzument (source-link) potkají.
+        // Producent (shell) a konzument (EDUPDATE2) kontraktu se tu potkají: klíč přidaný jen do
+        // jednoho směru by skončil jako neznámý token nebo ztracená hodnota.
         var unknown = new List<string>();
 
-        var parsed = EDUPDATE2.UpdaterArgs.Parse(
-            Updater.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\server\Edison", "260901.1",
+        var parsed = UpdaterArgs.Parse(
+            UpdaterContract.BuildArguments(ClientUpdaterKind.Edupdate2, @"\\server\Edison", Station, "260901.1",
                 forced: true, forcedStamp: "66234,2"),
             unknown.Add);
 
         Assert.Empty(unknown);
         Assert.Equal(@"\\server\Edison", parsed.SourcePath);
-        Assert.Equal(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar), parsed.TargetPath);
+        Assert.Equal(Station, parsed.TargetPath);
         Assert.Equal("260901.1", parsed.Version);
         Assert.Equal("EDISONMAIN2", parsed.WaitProcess);
         Assert.Equal("EDISON.exe", parsed.RunExe);
         Assert.True(parsed.NucenyUpdate);
         Assert.Equal("66234,2", parsed.NucenyUpdateTime);
+    }
+
+    [Theory]
+    [InlineData(@"\\server\Edison")]
+    [InlineData(@"D:\Edison")]
+    [InlineData("http://srv/edison")]
+    [InlineData("https://srv/edison")]
+    public void Check_SourceLetThroughToUpdate_ReachesEveryUpdaterUnchanged(string source)
+    {
+        // Updater zdroj, který shell pustí k updatu, musí přijmout: jinak ho shell spouští při každém
+        // startu znovu. Legacy EDUPDATE bere adresář i http (ValidateParameters), EDUPDATE2 obojí
+        // ověřuje EDUPDATE2.Tests (http sada UpdateEngineHttpTests).
+        var updater = new TestableUpdater { LocalVersion = "260825.1", SourceVersion = "260901.1" };
+
+        var result = updater.Check(new UpdateSettings("260825.1", @"D:\Edison", source));
+
+        Assert.Equal(UpdateOutcome.UpdateRequired, result.Outcome);
+        Assert.Equal(source, updater.SourceDirSeen);
+        foreach (var kind in Enum.GetValues<ClientUpdaterKind>())
+        {
+            var parsed = LegacyGetArgument(
+                UpdaterContract.BuildArguments(kind, source, Station, result.Version, result.Forced, ""), "SourcePath");
+            Assert.Equal(source, parsed);
+        }
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
-using EDISONMAIN2;
+using System.Net;
+using System.Net.Http;
 
 namespace EDUPDATE2;
 
@@ -55,11 +56,18 @@ public class UpdateEngine
     //   (bez toho by shell detekoval update donekonečna),
     // - EDISONCRC.bin: manifest samotný, lokální kopie pro diagnostiku (legacy parita).
     private static readonly string[] KeyFiles = ["MLServerConfig-data.xml", "EDISONini.xml", "VERZE.inf", "EDISONCRC.bin"];
+    // Http zdroj nemá výpis adresáře, klíčové soubory se stahují naslepo; tyhle dva legacy
+    // InstallEdisonFiles při jakékoli chybě stažení přeskočí, chybějící zbytek je vadný zdroj.
+    private static readonly string[] OptionalHttpKeyFiles = ["MLServerConfig-data.xml", "EDISONini.xml"];
     private const long RequiredFreeBytes = 300L * 1024 * 1024;
     private const int CopyRetries = 5;
+    // Timeout klienta hlídá jen hlavičky (ResponseHeadersRead), tělo hlídá BodyIdleTimeoutMs.
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
     internal int WaitTimeoutMs { get; init; } = 120_000;
     internal int WaitPollMs { get; init; } = 250;
+    /// <summary>Nejdelší pauza bez dat při stahování těla souboru, pak pokus selže.</summary>
+    internal int BodyIdleTimeoutMs { get; init; } = 60_000;
 
     private readonly UpdaterArgs _args;
     private readonly UpdateLog _log;
@@ -68,6 +76,8 @@ public class UpdateEngine
     // Autoritativní fáze pro okno - Progress<T> doručuje přes Dispatcher se zpožděním,
     // rozhodnutí "smí se zavřít?" nesmí stát na opožděné kopii.
     private volatile int _currentPhase;
+    // Soubory kořene http zdroje podle manifestu (normalizovaná jména) - jiný seznam zdroje neexistuje.
+    private HashSet<string>? _httpRootFiles;
 
     private sealed record Item(string Filename, string SubPath, string? ExpectedCrc);
 
@@ -81,6 +91,9 @@ public class UpdateEngine
     }
 
     public UpdatePhase CurrentPhase => (UpdatePhase)_currentPhase;
+
+    /// <summary>Zdroj jako URL (legacy <c>PathIsUri</c>): soubory se stahují, seznam dává jen manifest.</summary>
+    private bool HttpSource => UpdaterContract.IsUri(_args.SourcePath);
 
     public UpdateResult Run()
     {
@@ -100,7 +113,7 @@ public class UpdateEngine
                 return Fail(ExitBadParamsOrAborted,
                     $"Stále běží proces [{busyProcess}]. Zavřete ho a spusťte EDISON znovu.");
 
-            string sourceInfVersion = ReadVersion(_args.SourcePath);
+            string sourceInfVersion = ReadSourceVersion();
             // Bez zdrojové VERZE.INF by se lokální verze neposunula a shell by update
             // detekoval donekonečna; vynucenou vlnu ukončuje razítko, ta projít smí.
             if (!_args.NucenyUpdate && sourceInfVersion == "")
@@ -120,7 +133,8 @@ public class UpdateEngine
             items = SelectFiles();
             StageFiles(items, stagingDir);
         }
-        catch (OperationCanceledException)
+        // Timeout http přichází taky jako OperationCanceledException - zrušení je jen zavření okna.
+        catch (OperationCanceledException) when (_cancel.IsCancellationRequested)
         {
             TryDeleteDirectory(stagingDir);
             return Fail(ExitBadParamsOrAborted, "Aktualizace byla přerušena, EDISON zůstal beze změny.");
@@ -173,22 +187,22 @@ public class UpdateEngine
     {
         Report(UpdatePhase.Validation);
         if (_args.SourcePath == "") return "Chybí parametr SourcePath.";
-        if (_args.SourcePath.StartsWith("http:", StringComparison.OrdinalIgnoreCase)
-            || _args.SourcePath.StartsWith("https:", StringComparison.OrdinalIgnoreCase))
-            return "HTTP zdroj není podporován - SourcePath musí být adresář (síťový nebo lokální).";
-        if (!DirectoryExists(_args.SourcePath))
+        if (!HttpSource && !DirectoryExists(_args.SourcePath))
             return $"Zdrojová cesta \"{_args.SourcePath}\" neexistuje nebo není dostupná.";
         if (!DirectoryExists(_args.TargetPath))
             return $"Cílová cesta \"{_args.TargetPath}\" neexistuje.";
-        string fullSource = Path.GetFullPath(_args.SourcePath)
-            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        string fullTarget = Path.GetFullPath(_args.TargetPath)
-            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        if (string.Equals(fullSource, fullTarget, StringComparison.OrdinalIgnoreCase))
-            return "Zdroj a cíl jsou tentýž adresář - serverová instalace se tímto updaterem neaktualizuje.";
-        if (fullTarget.StartsWith(fullSource + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-            || fullSource.StartsWith(fullTarget + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-            return "Zdroj a cíl jsou vnořené adresáře - pracovní složky updateru by poškodily zdroj.";
+        if (!HttpSource)
+        {
+            string fullSource = Path.GetFullPath(_args.SourcePath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullTarget = Path.GetFullPath(_args.TargetPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(fullSource, fullTarget, StringComparison.OrdinalIgnoreCase))
+                return "Zdroj a cíl jsou tentýž adresář - serverová instalace se tímto updaterem neaktualizuje.";
+            if (fullTarget.StartsWith(fullSource + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                || fullSource.StartsWith(fullTarget + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                return "Zdroj a cíl jsou vnořené adresáře - pracovní složky updateru by poškodily zdroj.";
+        }
         if (_args.RunExe != "" && (_args.RunExe.IndexOfAny(['\\', '/', ':']) >= 0))
             return "RunExe musí být jen jméno souboru bez cesty.";
         if (_args.WaitProcess.IndexOfAny(['\\', '/', ':']) >= 0)
@@ -233,6 +247,7 @@ public class UpdateEngine
     private List<Item> SelectFiles()
     {
         Report(UpdatePhase.Selection);
+        if (HttpSource) return SelectHttpFiles();
         var items = new List<Item>();
         string crcPath = Path.Combine(_args.SourcePath, CrcFile.FileName);
         IReadOnlyList<CrcRecord>? records = null;
@@ -250,27 +265,8 @@ public class UpdateEngine
 
         if (records != null)
         {
-            // Dedup přes Win32 normalizaci ("B.dll" vs "B.dll " je na disku tentýž soubor) -
-            // druhá věta by ve swapu přesouvala už přesunutý staged soubor.
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var record in records)
-            {
-                if (IsOwnExe(record.Filename)) continue;
-                if (!seen.Add(record.SubPath + "|" + NormalizeName(record.Filename)))
-                {
-                    _log.Write("Varování", $"Duplicitní věta manifestu přeskočena: {record.SubPath}\\{record.Filename}");
-                    continue;
-                }
-                string target = Path.Combine(_args.TargetPath, record.SubPath, record.Filename);
-                if (FileExists(target) && ComputeSha256(target) == record.Crc) continue;
-                items.Add(new Item(record.Filename, record.SubPath, record.Crc));
-            }
-            foreach (var keyFile in KeyFiles)
-            {
-                if (!FileExists(Path.Combine(_args.SourcePath, keyFile))) continue;
-                if (items.Any(i => i.SubPath == "" && NameEquals(i.Filename, keyFile))) continue;
-                items.Add(new Item(keyFile, "", null));
-            }
+            AddManifestItems(items, records, useHashes: true);
+            AddKeyFiles(items, keyFile => FileExists(Path.Combine(_args.SourcePath, keyFile)));
             _log.Write("Výběr", $"Diferenční aktualizace, {items.Count} souborů.");
         }
         else
@@ -290,25 +286,96 @@ public class UpdateEngine
         return items;
     }
 
+    /// <summary>
+    /// Http zdroj nemá výpis adresáře: bez manifestu update skončí (legacy parita) a vynucená vlna
+    /// vezme všechny jeho věty bez hashe (legacy bere ListFiles.txt z release serveru, tentýž seznam vydání).
+    /// Hotfix se nahrává na server bez nového manifestu, hash by opravený soubor odmítl.
+    /// </summary>
+    private List<Item> SelectHttpFiles()
+    {
+        using var manifest = new MemoryStream();
+        if (!DownloadWithRetry(SourceUrl("", CrcFile.FileName), manifest))
+            throw new InvalidDataException(
+                $"Ve zdroji chybí {CrcFile.FileName} - bez něj nejde přes http zjistit seznam souborů.");
+        manifest.Position = 0;
+        var records = CrcFile.Read(manifest);
+        _httpRootFiles = records.Where(r => r.SubPath == "").Select(r => NormalizeName(r.Filename))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var items = new List<Item>();
+        AddManifestItems(items, records, useHashes: !_args.NucenyUpdate);
+        AddKeyFiles(items, _ => true);
+        _log.Write("Výběr", _args.NucenyUpdate
+            ? $"Plná kopie podle manifestu, {items.Count} souborů."
+            : $"Diferenční aktualizace, {items.Count} souborů.");
+        return items;
+    }
+
+    /// <summary>useHashes: přeskočit soubory shodné s cílem a stažené ověřit; bez něj vezme a nechá projít všechno.</summary>
+    private void AddManifestItems(List<Item> items, IReadOnlyList<CrcRecord> records, bool useHashes)
+    {
+        // Dedup přes Win32 normalizaci ("B.dll" vs "B.dll " je na disku tentýž soubor) -
+        // druhá věta by ve swapu přesouvala už přesunutý staged soubor.
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var record in records)
+        {
+            if (IsOwnExe(record.Filename)) continue;
+            if (!seen.Add(record.SubPath + "|" + NormalizeName(record.Filename)))
+            {
+                _log.Write("Varování", $"Duplicitní věta manifestu přeskočena: {record.SubPath}\\{record.Filename}");
+                continue;
+            }
+            string target = Path.Combine(_args.TargetPath, record.SubPath, record.Filename);
+            if (useHashes && FileExists(target) && ComputeSha256(target) == record.Crc) continue;
+            items.Add(new Item(record.Filename, record.SubPath, useHashes ? record.Crc : null));
+        }
+    }
+
+    private static void AddKeyFiles(List<Item> items, Func<string, bool> onSource)
+    {
+        foreach (var keyFile in KeyFiles)
+        {
+            if (!onSource(keyFile)) continue;
+            if (items.Any(i => i.SubPath == "" && NameEquals(i.Filename, keyFile))) continue;
+            items.Add(new Item(keyFile, "", null));
+        }
+    }
+
     private void StageFiles(List<Item> items, string stagingDir)
     {
         if (DirectoryExists(stagingDir)) DeleteDirectory(stagingDir);
+        var missingOnSource = new List<Item>();
         for (int i = 0; i < items.Count; i++)
         {
             _cancel.ThrowIfCancellationRequested();
             var item = items[i];
-            string source = Path.Combine(_args.SourcePath, item.SubPath, item.Filename);
+            string source = HttpSource
+                ? SourceUrl(item.SubPath, item.Filename)
+                : Path.Combine(_args.SourcePath, item.SubPath, item.Filename);
             string staged = Path.Combine(stagingDir, item.SubPath, item.Filename);
             CreateDirectory(Path.GetDirectoryName(staged)!);
             Report(UpdatePhase.Staging, item.Filename, Percent(i, items.Count, firstHalf: true));
-            CopyWithRetry(source, staged);
+            if (!HttpSource)
+            {
+                CopyWithRetry(source, staged);
+            }
+            else if (!DownloadToStaging(item, source, staged))
+            {
+                missingOnSource.Add(item);
+                continue;
+            }
             // Read-only ze serveru (robocopy/ACL konvence) by se jinak propagovalo do cíle
             // a příští update by na něm spadl.
             ClearReadOnly(staged);
             if (item.ExpectedCrc != null && ComputeSha256(staged) != item.ExpectedCrc)
                 throw new IOException($"Soubor {item.Filename} nesouhlasí s kontrolním součtem zdroje.");
+            // Chybová stránka proxy s HTTP 200 místo binárky: bez hashe (vynucená vlna) by se nainstalovala,
+            // razítko by vlnu splnilo a stanice by zůstala rozbitá.
+            if (HttpSource && item.ExpectedCrc == null && IsBinaryName(item.Filename) && !HasPeHeader(staged))
+                throw new InvalidDataException($"Ze zdroje nepřišel spustitelný soubor {item.Filename}.");
             _log.Write("Stahování", $"{source} -> {staged}");
         }
+        items.RemoveAll(missingOnSource.Contains);
     }
 
     private void SwapFiles(List<Item> items, string stagingDir, string backupDir,
@@ -354,7 +421,7 @@ public class UpdateEngine
         {
             if (!name.EndsWith(DiffInfSuffix, StringComparison.OrdinalIgnoreCase)) continue;
             if (!packages.Contains(name[..^DiffInfSuffix.Length].ToUpperInvariant())) continue;
-            if (FileExists(Path.Combine(_args.SourcePath, name))) continue;
+            if (SourceHasRootFile(name)) continue;
             string target = Path.Combine(_args.TargetPath, name);
             string backup = Path.Combine(backupDir, name);
             CopyFile(target, backup);
@@ -403,6 +470,91 @@ public class UpdateEngine
             }
         }
     }
+
+    // Přes http na stanici dojde jen to, co nese manifest; dotaz na server během výměny by ji zdržel.
+    private bool SourceHasRootFile(string name) => HttpSource
+        ? _httpRootFiles?.Contains(NormalizeName(name)) == true
+        : FileExists(Path.Combine(_args.SourcePath, name));
+
+    private string ReadSourceVersion()
+    {
+        if (!HttpSource) return ReadVersion(_args.SourcePath);
+        try
+        {
+            using var content = new MemoryStream();
+            if (!DownloadWithRetry(SourceUrl("", VerzeInf.FileName), content)) return "";
+            content.Position = 0;
+            // StreamReader kvůli BOM - klíč LAST by jinak nesedl.
+            using var reader = new StreamReader(content);
+            return VerzeInf.ParseLast(reader.ReadToEnd());
+        }
+        catch (Exception e) when (IsDownloadFailure(e))
+        {
+            _log.Write("Varování", $"{VerzeInf.FileName} ze zdroje nelze stáhnout: {e.Message}");
+            return "";
+        }
+    }
+
+    private string SourceUrl(string subPath, string fileName) =>
+        UpdaterContract.FileUrl(_args.SourcePath, fileName, subPath);
+
+    /// <summary>False = volitelný konfigurační soubor se nepodařilo stáhnout a přeskakuje se.</summary>
+    private bool DownloadToStaging(Item item, string url, string staged)
+    {
+        bool optional = item.SubPath == "" && OptionalHttpKeyFiles.Any(k => NameEquals(k, item.Filename));
+        try
+        {
+            if (DownloadToFile(url, staged)) return true;
+            if (!optional) throw new FileNotFoundException($"Ve zdroji chybí soubor {url}.");
+            _log.Write("Stahování", $"{url} na zdroji není, přeskočeno.");
+        }
+        catch (Exception e) when (optional && IsDownloadFailure(e))
+        {
+            _log.Write("Stahování", $"{url} nelze stáhnout, přeskočeno: {e.Message}");
+        }
+        return false;
+    }
+
+    private static bool IsBinaryName(string fileName) =>
+        NormalizeName(fileName).EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+        || NormalizeName(fileName).EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
+
+    // Každý PE soubor (nativní i .NET) začíná DOS hlavičkou "MZ".
+    private static bool HasPeHeader(string path)
+    {
+        using var file = File.OpenRead(path);
+        return file.ReadByte() == 'M' && file.ReadByte() == 'Z';
+    }
+
+    private bool DownloadToFile(string url, string target)
+    {
+        bool found;
+        using (var file = new FileStream(target, FileMode.Create, FileAccess.Write))
+            found = DownloadWithRetry(url, file);
+        if (!found) DeleteFile(target);
+        return found;
+    }
+
+    private bool DownloadWithRetry(string url, Stream destination)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                destination.SetLength(0);
+                return TryDownload(url, destination);
+            }
+            catch (Exception e) when (attempt < CopyRetries && IsDownloadFailure(e))
+            {
+                Sleep(1000);
+            }
+        }
+    }
+
+    // Timeout klienta se hlásí jako zrušení - od zavření okna ho dělí jen stav tokenu.
+    private bool IsDownloadFailure(Exception e) =>
+        e is HttpRequestException or IOException
+        || (e is OperationCanceledException && !_cancel.IsCancellationRequested);
 
     private UpdateResult Fail(int exitCode, string message)
     {
@@ -468,6 +620,26 @@ public class UpdateEngine
         return CrcFile.Read(stream);
     }
     protected virtual string ReadVersion(string directory) => VerzeInf.ReadVersion(directory);
+
+    /// <summary>Soubor http zdroje do <paramref name="destination"/>; false = 404, soubor na zdroji není.</summary>
+    protected virtual bool TryDownload(string url, Stream destination)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        using var response = Http.Send(request, HttpCompletionOption.ResponseHeadersRead, _cancel);
+        if (response.StatusCode == HttpStatusCode.NotFound) return false;
+        response.EnsureSuccessStatusCode();
+        using var body = response.Content.ReadAsStream(_cancel);
+        // Synchronní čtení těla token ignoruje: zaseknuté spojení by neukončilo zavření okna ani timeout.
+        using var idle = CancellationTokenSource.CreateLinkedTokenSource(_cancel);
+        var buffer = new byte[81920];
+        while (true)
+        {
+            idle.CancelAfter(BodyIdleTimeoutMs);
+            int read = body.ReadAsync(buffer, idle.Token).AsTask().GetAwaiter().GetResult();
+            if (read == 0) return true;
+            destination.Write(buffer, 0, read);
+        }
+    }
     protected virtual void WriteForcedStamp(string targetPath, string stamp) => ForcedStamp.Write(targetPath, stamp);
     protected virtual int GetProcessCount(string name) => Process.GetProcessesByName(name).Length;
     protected virtual void Sleep(int milliseconds) => Thread.Sleep(milliseconds);

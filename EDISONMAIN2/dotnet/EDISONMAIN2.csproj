@@ -21,10 +21,8 @@
     <InternalsVisibleTo Include="EDISONMAIN2.Tests" />
   </ItemGroup>
 
-  <!-- Sdílený zdroj s updaterem (obousměrně: EDUPDATE2 si linkuje VerzeInf.cs): čtení stopy
-       vynucené aktualizace musí být bit za bitem stejné jako zápis v EDUPDATE2. -->
   <ItemGroup>
-    <Compile Include="..\..\EDUPDATE2\dotnet\ForcedStamp.cs" Link="Startup\ForcedStamp.cs" />
+    <Using Include="EDUpdateContract" />
   </ItemGroup>
 
   <ItemGroup>
@@ -53,6 +51,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\EDControls\dotnet\EDControls.csproj" />
     <ProjectReference Include="..\..\EDISONMAIN2.LegacyMiniApps\dotnet\EDISONMAIN2.LegacyMiniApps.csproj" />
+    <ProjectReference Include="..\..\EDUpdateContract\dotnet\EDUpdateContract.csproj" />
   </ItemGroup>
 
   <ItemGroup>

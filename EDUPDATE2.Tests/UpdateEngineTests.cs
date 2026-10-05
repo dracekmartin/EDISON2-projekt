@@ -152,19 +152,6 @@ public class UpdateEngineTests : IDisposable
     }
 
     [Fact]
-    public void Run_HttpSource_Exit1()
-    {
-        var engine = new RecordingEngine(
-            new UpdaterArgs(SourcePath: "http://release.m-line.cz/edison", TargetPath: _tgt),
-            new UpdateLog(_tgt));
-
-        var result = engine.Run();
-
-        Assert.Equal(UpdateEngine.ExitBadParamsOrAborted, result.ExitCode);
-        Assert.Contains("HTTP", result.Message);
-    }
-
-    [Fact]
     public void Run_SourceEqualsTarget_Exit1()
     {
         var engine = new RecordingEngine(

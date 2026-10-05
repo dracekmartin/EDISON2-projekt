@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace EDISONMAIN2;
+namespace EDUpdateContract;
 
 /// <summary>
 /// Čtení <c>VERZE.INF</c> + porovnávání verzí. Port legacy algoritmů z
