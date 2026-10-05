@@ -1265,7 +1265,18 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A40 · Statické test seamy ErrorReportingu a persistence drží ručně udržovaný seznam `[Collection]`
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- [x] **Stav:** vyřešeno (2026-10-05) - internal `ErrorReporting/ErrorReportingPipeline.cs` drží throttle,
+  `HttpClient`, záložní log (`ErrorFallbackLog` je instance s cestou a prahem), `isInternal`, zdroj `EDServices`
+  a snímek oken; `ErrorReports.Pipeline` je get-only výchozí instance, veřejné `ErrorReports.*`
+  a `ErrorReporter.*` delegují beze změny API. Zmizely `Throttle` setter, `ClientOverride`,
+  `ErrorFallbackLog.PathOverride`/`MaxBytes` a `MlineEnvironment.OverrideForTests`; `ErrorReportsTests`
+  a `ErrorReporterTests` skládají vlastní instanci bez `[Collection]` a resetů. Návrh rozšířen
+  o preference: A39 seam `FilePath` ponechal, wrappery mají `CreateStore(path)` + `SaveTo(store)`
+  a testy font/theme jedou nad vlastním úložištěm v tempu (dřív v `finally` načítaly skutečný `font.json`).
+  a setter `SharedJsonPreference.FilePath` zmizel. Výchozí pipeline ve statickém inicializátoru drží jen
+  delegáty (klient a cesta logu vznikají při odeslání v `try`), jinak by chyba při jejich tvorbě
+  shodila i crash handlery. Zbylé statiky (`EDServices`, telemetry buffer v `SharedStaticStateCollection`)
+  jsou A6, shellové A10.
 - **P3 · M** · Závisí na: A39 · Původ: nový (2026-09-20)
 - **Důkaz:** seamy `ErrorReporting/ErrorReports.cs:15`, `ErrorReporter.cs:37`,
   `ErrorFallbackLog.cs:13,18`, `MlineEnvironment.cs:51`, `WindowStateStore.cs:62` (dříve

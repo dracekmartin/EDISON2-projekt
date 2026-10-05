@@ -11,12 +11,11 @@ using EDControls.ErrorReporting;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Vstupní bod hlášení (<see cref="ErrorReports"/>): co se ještě před odesláním zahodí
+/// Vstupní bod hlášení (<see cref="ErrorReportingPipeline"/> za fasádou <see cref="ErrorReports"/>): co se ještě před odesláním zahodí
 /// (vypnuto, deduplikace, prázdné doplnění) a čím se liší fatální cesta. Vrstvy pod ním
 /// mají vlastní testy - tady jde o rozhodování, ne o tvar payloadu. Odesílání odchytává
 /// fake HTTP handler; snímky oken tu nevznikají (bez Application vrací Capture prázdno).
 /// </summary>
-[Collection(SharedStaticStateCollection.Name)]
 public class ErrorReportsTests : IDisposable
 {
     private sealed class FakeHandler : HttpMessageHandler
@@ -37,23 +36,18 @@ public class ErrorReportsTests : IDisposable
 
     private readonly FakeHandler _handler = new();
     private readonly string _fallbackPath = Path.Combine(Path.GetTempPath(), $"ed-reports-{Guid.NewGuid():N}.log");
+    private readonly ErrorReportingPipeline _pipeline;
+    private bool _internal;
 
     public ErrorReportsTests()
     {
-        ErrorReporter.ClientOverride = new HttpClient(_handler);
-        ErrorFallbackLog.PathOverride = _fallbackPath;
-        MlineEnvironment.OverrideForTests(false);
-        ErrorReports.Throttle = new ErrorThrottle();   // statický stav by prosakoval mezi testy
-        ErrorReports.Enabled = true;
+        // Vlastní instance bez EDServices a snímků oken: statiku procesu test nemění, běží paralelně.
+        _pipeline = new ErrorReportingPipeline(() => new HttpClient(_handler), new ErrorFallbackLog(_fallbackPath),
+            () => _internal, () => null, () => []);
     }
 
     public void Dispose()
     {
-        ErrorReporter.ClientOverride = null;
-        ErrorFallbackLog.PathOverride = null;
-        MlineEnvironment.OverrideForTests(null);
-        ErrorReports.Throttle = new ErrorThrottle();
-        ErrorReports.Enabled = true;
         if (File.Exists(_fallbackPath)) File.Delete(_fallbackPath);
     }
 
@@ -84,25 +78,25 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void Report_Disabled_ReturnsNullAndSendsNothing()
     {
-        ErrorReports.Enabled = false;
+        _pipeline.Enabled = false;
 
-        Assert.Null(ErrorReports.Report(Thrown()));
+        Assert.Null(_pipeline.Report(Thrown()));
         AssertNothingSent();
     }
 
     [Fact]
     public void Report_NullException_ReturnsNull()
     {
-        Assert.Null(ErrorReports.Report(null!));
+        Assert.Null(_pipeline.Report(null!));
         AssertNothingSent();
     }
 
     [Fact]
     public void ReportBackground_Disabled_SendsNothing()
     {
-        ErrorReports.Enabled = false;
+        _pipeline.Enabled = false;
 
-        ErrorReports.ReportBackground(Thrown());
+        _pipeline.ReportBackground(Thrown());
 
         AssertNothingSent();
     }
@@ -110,9 +104,9 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void ReportFatal_Disabled_SendsNothing()
     {
-        ErrorReports.Enabled = false;
+        _pipeline.Enabled = false;
 
-        ErrorReports.ReportFatal(Thrown());
+        _pipeline.ReportFatal(Thrown());
 
         Assert.Equal(0, _handler.Count);
     }
@@ -120,8 +114,8 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void ReportFollowUp_BlankRefIdOrText_SendsNothing()
     {
-        ErrorReports.ReportFollowUp("", "něco");
-        ErrorReports.ReportFollowUp("xabc", "   ");
+        _pipeline.ReportFollowUp("", "něco");
+        _pipeline.ReportFollowUp("xabc", "   ");
 
         AssertNothingSent();
     }
@@ -129,7 +123,7 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void Report_FirstOccurrence_ReturnsRefIdAndSends()
     {
-        var refId = ErrorReports.Report(Thrown());
+        var refId = _pipeline.Report(Thrown());
 
         Assert.False(string.IsNullOrWhiteSpace(refId));
         WaitForRequests(1);
@@ -141,10 +135,10 @@ public class ErrorReportsTests : IDisposable
     {
         // Chyba v OnPaint / timeru se umí opakovat stokrát za minutu; druhý výskyt uvnitř okna
         // se jen počítá a číslo se nevrací (číslo, které nikam nedorazilo, plete podporu).
-        var first = ErrorReports.Report(Thrown());
+        var first = _pipeline.Report(Thrown());
         WaitForRequests(1);
 
-        var second = ErrorReports.Report(Thrown());
+        var second = _pipeline.Report(Thrown());
 
         Assert.NotNull(first);
         Assert.Null(second);
@@ -155,10 +149,10 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void ReportBackground_SecondIdenticalOccurrence_IsSuppressed()
     {
-        ErrorReports.ReportBackground(Thrown());
+        _pipeline.ReportBackground(Thrown());
         WaitForRequests(1);
 
-        ErrorReports.ReportBackground(Thrown());
+        _pipeline.ReportBackground(Thrown());
 
         Thread.Sleep(150);
         Assert.Equal(1, _handler.Count);
@@ -168,7 +162,7 @@ public class ErrorReportsTests : IDisposable
     public void ReportBackground_SendsErrorWithoutAttachments()
     {
         // Běží na cizím vlákně - snímek okna by tam nefungoval, takže se ani nezkouší.
-        ErrorReports.ReportBackground(Thrown());
+        _pipeline.ReportBackground(Thrown());
 
         WaitForRequests(1);
         var body = Body(0);
@@ -181,7 +175,7 @@ public class ErrorReportsTests : IDisposable
     {
         // Po AppDomain.UnhandledException runtime proces vzápětí ukončí - fire-and-forget by
         // se nestihl, takže request musí být odeslaný ještě před návratem z metody.
-        ErrorReports.ReportFatal(Thrown());
+        _pipeline.ReportFatal(Thrown());
 
         Assert.Equal(1, _handler.Count);
         Assert.True(Body(0)["data"]!["fatal"]!.GetValue<bool>());
@@ -191,8 +185,8 @@ public class ErrorReportsTests : IDisposable
     public void ReportFatal_IgnoresThrottle()
     {
         // Fatální chyba je poslední, co z běhu uvidíme - deduplikace ji zahodit nesmí.
-        ErrorReports.ReportFatal(Thrown());
-        ErrorReports.ReportFatal(Thrown());
+        _pipeline.ReportFatal(Thrown());
+        _pipeline.ReportFatal(Thrown());
 
         Assert.Equal(2, _handler.Count);
     }
@@ -200,7 +194,7 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void ReportFollowUp_SendsInfoRecordWithSameRefId()
     {
-        ErrorReports.ReportFollowUp("xabc", "  klikl jsem na Ulozit  ");
+        _pipeline.ReportFollowUp("xabc", "  klikl jsem na Ulozit  ");
 
         WaitForRequests(1);
         var body = Body(0);
@@ -213,8 +207,8 @@ public class ErrorReportsTests : IDisposable
     public void ReportFollowUp_NotThrottled()
     {
         // Doplnění posílá uživatel ručně; deduplikace patří automatickým hlášením.
-        ErrorReports.ReportFollowUp("xabc", "první");
-        ErrorReports.ReportFollowUp("xabc", "druhé");
+        _pipeline.ReportFollowUp("xabc", "první");
+        _pipeline.ReportFollowUp("xabc", "druhé");
 
         WaitForRequests(2);
     }
@@ -223,7 +217,7 @@ public class ErrorReportsTests : IDisposable
     public void Report_WithoutEDServices_FallsBackToEdison2Source()
     {
         // Hlášení musí odejít i před inicializací EDServices (chyba v bootstrapu).
-        ErrorReports.Report(Thrown());
+        _pipeline.Report(Thrown());
 
         WaitForRequests(1);
         Assert.Equal("EDISON2", Body(0)["source"]!.GetValue<string>());
@@ -232,9 +226,9 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void Report_InternalMachine_MarksSourceWithSuffix()
     {
-        MlineEnvironment.OverrideForTests(true);
+        _internal = true;
 
-        ErrorReports.Report(Thrown());
+        _pipeline.Report(Thrown());
 
         WaitForRequests(1);
         Assert.EndsWith("-internal", Body(0)["source"]!.GetValue<string>());
@@ -243,7 +237,7 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void ReportLegacyExit_ModuleIdentityAndExitCodeInPayload()
     {
-        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
+        _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
 
         WaitForRequests(1);
         var body = Body(0);
@@ -260,8 +254,8 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void ReportLegacyExit_SameModuleAndCode_SecondIsSuppressed()
     {
-        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);
-        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);
+        _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);
+        _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);
 
         WaitForRequests(1);
         AssertNothingMoreSent(1);
@@ -271,8 +265,8 @@ public class ErrorReportsTests : IDisposable
     public void ReportLegacyExit_DifferentModules_NotThrottledTogether()
     {
         // Syntetická výjimka nemá stack - klíč musí nést modul, jinak by druhý pád spadl do prvního.
-        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
-        ErrorReports.ReportLegacyExit("MZDY2.exe", "ALVA.MZDY2.formMZDY2Zam", 3);
+        _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
+        _pipeline.ReportLegacyExit("MZDY2.exe", "ALVA.MZDY2.formMZDY2Zam", 3);
 
         WaitForRequests(2);
     }
@@ -280,9 +274,9 @@ public class ErrorReportsTests : IDisposable
     [Fact]
     public void ReportLegacyExit_Disabled_SendsNothing()
     {
-        ErrorReports.Enabled = false;
+        _pipeline.Enabled = false;
 
-        ErrorReports.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
+        _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
 
         AssertNothingSent();
     }

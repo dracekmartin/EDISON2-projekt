@@ -7,25 +7,32 @@ namespace EDControls.ErrorReporting;
 /// NDJSON bez příloh v <c>%APPDATA%\m-line\common\error-reports.log</c> - nic se zpětně
 /// neodesílá, podpora si soubor vyžádá ručně. Best-effort: nikdy nehází.
 /// </summary>
-internal static class ErrorFallbackLog
+internal sealed class ErrorFallbackLog
 {
-    /// <summary>Práh rotace. Mutable jen kvůli testům (rotaci nelze testovat přes 1 MB zápisů).</summary>
-    internal static long MaxBytes = 1_000_000;
+    internal const long DefaultMaxBytes = 1_000_000;
 
+    // Soubor sdílí všechna okna procesu; zámek přes instance, kdyby jich na stejnou cestu vzniklo víc.
     private static readonly object Sync = new();
 
-    /// <summary>Přebití cílového souboru pro testy.</summary>
-    internal static string? PathOverride { get; set; }
+    private readonly Func<string> _path;
+    private readonly long _maxBytes;
 
-    private static string LogPath => PathOverride ?? MlineCommonPaths.File("error-reports.log");
+    /// <param name="path">Cesta se vyhodnotí až při zápisu, uvnitř ochrany - výchozí instance vzniká ve statickém inicializátoru.</param>
+    internal ErrorFallbackLog(Func<string> path, long maxBytes = DefaultMaxBytes)
+    {
+        _path = path;
+        _maxBytes = maxBytes;
+    }
 
-    internal static void Append(IReadOnlyList<ErrorReport> reports)
+    internal ErrorFallbackLog(string path, long maxBytes = DefaultMaxBytes) : this(() => path, maxBytes) { }
+
+    internal void Append(IReadOnlyList<ErrorReport> reports)
     {
         try
         {
             lock (Sync)
             {
-                var path = LogPath;
+                var path = _path();
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 Rotate(path);
                 using var writer = File.AppendText(path);
@@ -46,10 +53,10 @@ internal static class ErrorFallbackLog
     }
 
     /// <summary>Nad práh → přetočit do `.old` (přepíše starší). Drží historii mezi 1× a 2× prahu.</summary>
-    private static void Rotate(string path)
+    private void Rotate(string path)
     {
         var info = new FileInfo(path);
-        if (info.Exists && info.Length > MaxBytes)
+        if (info.Exists && info.Length > _maxBytes)
             File.Move(path, path + ".old", overwrite: true);
     }
 }

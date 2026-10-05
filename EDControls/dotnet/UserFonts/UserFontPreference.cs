@@ -34,16 +34,10 @@ public class UserFontPreference
 
     internal const int CurrentVersion = 1;
 
-    private static readonly SharedJsonPreference<UserFontPreference> Store =
-        new(MlineCommonPaths.File("font.json"), MigrateLegacy);
+    private static readonly SharedJsonPreference<UserFontPreference> Store = CreateStore(MlineCommonPaths.File("font.json"));
 
-    /// <summary>Cesta k <c>font.json</c>. Přepisovatelná (internal seam pro testy) - produkce
-    /// používá default v <c>%APPDATA%\m-line\common</c>.</summary>
-    internal static string FilePath
-    {
-        get => Store.FilePath;
-        set => Store.FilePath = value;
-    }
+    /// <summary>Úložiště s konfigurací <c>font.json</c> (migrace schématu); testy si ho skládají nad dočasným souborem.</summary>
+    internal static SharedJsonPreference<UserFontPreference> CreateStore(string filePath) => new(filePath, MigrateLegacy);
 
     public static UserFontPreference Current => Store.Current;
 
@@ -78,13 +72,15 @@ public class UserFontPreference
         return prefs;
     }
 
-    public void Save()
+    public void Save() => SaveTo(Store);
+
+    internal void SaveTo(SharedJsonPreference<UserFontPreference> store)
     {
         // Co zapisujeme, je podle definice aspoň aktuální schéma - bez razítka by čerstvě
         // uloženou velikost při dalším startu zahodila MigrateLegacy. Max drží razítko
         // novějšího buildu, ať mu tenhle uložení nesrazí soubor na starší verzi.
         Version = Math.Max(Version ?? 0, CurrentVersion);
-        Store.Save(this);
+        store.Save(this);
     }
 
     /// <summary>

@@ -8,108 +8,92 @@ namespace EDControls.Tests;
 /// theme.json je cross-process kontrakt (shell ↔ TemplateDesigner) - hlídá se přesný camelCase
 /// tvar na disku a to, že poškozený soubor drží poslední známou hodnotu místo výjimky
 /// (Load běží ze startupu před prvním oknem). Watcher hlídá <see cref="SharedJsonPreferenceTests"/>.
+/// Vlastní úložiště (<see cref="UserThemePreference.CreateStore"/>) v tempu, statika procesu se nemění.
 /// </summary>
-public class UserThemePreferenceTests
+public class UserThemePreferenceTests : IDisposable
 {
-    /// <summary>Spustí <paramref name="body"/> s <c>UserThemePreference.FilePath</c> v tempu;
-    /// po dokončení obnoví cestu i hodnotu <c>Current</c> (statický stav sdílený s ThemeService).</summary>
-    private static void WithTempThemeFile(string? initialContent, Action<string> body)
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), $"edtheme_{Guid.NewGuid():N}");
+
+    private string FilePath => Path.Combine(_dir, "theme.json");
+
+    public void Dispose()
     {
-        var dir = Path.Combine(Path.GetTempPath(), $"edtheme_{Guid.NewGuid():N}");
-        var file = Path.Combine(dir, "theme.json");
-        var savedPath = UserThemePreference.FilePath;
-        var savedDark = UserThemePreference.Current.DarkMode;
-        try
+        if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true);
+    }
+
+    private SharedJsonPreference<UserThemePreference> StoreWith(string? initialContent)
+    {
+        if (initialContent != null)
         {
-            Directory.CreateDirectory(dir);
-            if (initialContent != null) File.WriteAllText(file, initialContent);
-            UserThemePreference.FilePath = file;
-            body(file);
+            Directory.CreateDirectory(_dir);
+            File.WriteAllText(FilePath, initialContent);
         }
-        finally
-        {
-            UserThemePreference.FilePath = savedPath;
-            UserThemePreference.Current.DarkMode = savedDark;
-            if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
-        }
+        return UserThemePreference.CreateStore(FilePath);
     }
 
     [Fact]
     public void Load_DeserializesOnDiskCamelCaseShape()
     {
         // Pinned tvar - jméno klíče čte i druhý proces, přejmenování property ho rozbije.
-        WithTempThemeFile("""{"darkMode":true}""", _ =>
-        {
-            UserThemePreference.Load();
+        var store = StoreWith("""{"darkMode":true}""");
 
-            Assert.True(UserThemePreference.Current.DarkMode);
-        });
+        store.Load();
+
+        Assert.True(store.Current.DarkMode);
     }
 
     [Fact]
     public void Save_WritesCamelCaseKey()
     {
-        WithTempThemeFile(null, file =>
-        {
-            new UserThemePreference { DarkMode = true }.Save();
+        var store = StoreWith(null);
 
-            Assert.Contains("\"darkMode\": true", File.ReadAllText(file));
-        });
+        new UserThemePreference { DarkMode = true }.SaveTo(store);
+
+        Assert.Contains("\"darkMode\": true", File.ReadAllText(FilePath));
     }
 
     [Fact]
     public void SaveLoad_RoundTrip()
     {
-        WithTempThemeFile(null, _ =>
-        {
-            new UserThemePreference { DarkMode = true }.Save();
-            UserThemePreference.Load();
-            Assert.True(UserThemePreference.Current.DarkMode);
+        var store = StoreWith(null);
 
-            new UserThemePreference { DarkMode = false }.Save();
-            UserThemePreference.Load();
-            Assert.False(UserThemePreference.Current.DarkMode);
-        });
+        new UserThemePreference { DarkMode = true }.SaveTo(store);
+        store.Load();
+        Assert.True(store.Current.DarkMode);
+
+        new UserThemePreference { DarkMode = false }.SaveTo(store);
+        store.Load();
+        Assert.False(store.Current.DarkMode);
     }
 
     [Fact]
     public void Save_CreatesMissingDirectory()
     {
-        var dir = Path.Combine(Path.GetTempPath(), $"edtheme_{Guid.NewGuid():N}");
-        var savedPath = UserThemePreference.FilePath;
-        try
-        {
-            UserThemePreference.FilePath = Path.Combine(dir, "theme.json");
+        var store = StoreWith(null);
 
-            new UserThemePreference { DarkMode = true }.Save();
+        new UserThemePreference { DarkMode = true }.SaveTo(store);
 
-            Assert.True(File.Exists(UserThemePreference.FilePath));
-        }
-        finally
-        {
-            UserThemePreference.FilePath = savedPath;
-            if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
-        }
+        Assert.True(File.Exists(FilePath));
     }
 
     [Fact]
     public void Load_CorruptFile_KeepsLastKnownValue()
     {
-        WithTempThemeFile("""{"darkMode":true}""", file =>
-        {
-            UserThemePreference.Load();
-            File.WriteAllText(file, "{ tohle není JSON");
+        var store = StoreWith("""{"darkMode":true}""");
+        store.Load();
+        File.WriteAllText(FilePath, "{ tohle není JSON");
 
-            UserThemePreference.Load();
+        store.Load();
 
-            // Držíme poslední hodnotu; příští Save soubor přepíše.
-            Assert.True(UserThemePreference.Current.DarkMode);
-        });
+        // Držíme poslední hodnotu; příští Save soubor přepíše.
+        Assert.True(store.Current.DarkMode);
     }
 
     [Fact]
     public void Load_MissingFile_DoesNotThrow()
     {
-        WithTempThemeFile(null, _ => UserThemePreference.Load());
+        var store = StoreWith(null);
+
+        Assert.Null(Record.Exception(store.Load));
     }
 }
