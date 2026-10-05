@@ -41,6 +41,25 @@ public class WindowNavigatorTests
     }
 
     [Fact]
+    public void ServicesCtor_ReadsInjectedServicesOnlyAtLaunch()
+    {
+        // Shell skládá navigator dřív než EDServices; launch pak nesmí sáhnout na singleton EDServices.Current.
+        var calls = 0;
+        var services = new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+        var nav = new WindowNavigator(() =>
+        {
+            calls++;
+            return services;
+        });
+        Assert.Equal(0, calls);
+
+        var ex = Assert.Throws<InvalidOperationException>(() => nav.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSLocks"));
+
+        Assert.Equal(1, calls);
+        Assert.Contains("EDServices.MLRest", ex.Message);
+    }
+
+    [Fact]
     public void WpfOnly_LegacyLaunch_IsNotSupported()
     {
         var nav = WindowNavigator.WpfOnly();

@@ -17,7 +17,11 @@ public class WindowNavigator : IWindowNavigator
     private readonly LegacyModuleHost? _legacy;
 
     /// <summary>Navigator shellu: legacy moduly berou session z <see cref="EDServices.Current"/> až při spuštění.</summary>
-    public WindowNavigator() : this(new LegacyModuleHost(() => EDServices.Current)) { }
+    public WindowNavigator() : this(() => EDServices.Current) { }
+
+    /// <summary>Delegát, ne instance: composition root skládá navigator dřív než <see cref="EDServices"/>,
+    /// které ho dostávají konstruktorem. Volá se až při spuštění legacy modulu.</summary>
+    public WindowNavigator(Func<EDServices> services) : this(new LegacyModuleHost(services)) { }
 
     internal WindowNavigator(LegacyModuleHost? legacy) => _legacy = legacy;
 

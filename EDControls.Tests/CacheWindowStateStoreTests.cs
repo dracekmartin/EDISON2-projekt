@@ -1,5 +1,6 @@
 using System.Windows;
 using EDControls;
+using NSubstitute;
 
 namespace EDControls.Tests;
 
@@ -135,5 +136,37 @@ public class CacheWindowStateStoreTests
         Assert.Null(geometry.Left);
         Assert.Null(geometry.Top);
         Assert.True(geometry.Maximized);
+    }
+
+    [Fact]
+    public void LoadAndSave_GoThroughInjectedSession()
+    {
+        var mlRest = EDTesting.MLRestMocks.Create();
+        mlRest.Delimiter.Returns(D);
+        mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", Arg.Any<object[]>())
+            .Returns(EDTesting.MLRestMocks.Output($"param{D}size{D}400;300"));
+        var store = new CacheWindowStateStore("EDISON2.TestWindow", () => mlRest);
+
+        var geometry = store.Load();
+        store.Save(new Rect(1, 2, 3, 4), maximized: false);
+
+        Assert.Equal((400d, 300d), (geometry.Width, geometry.Height));
+        mlRest.Received(1).QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams",
+            Arg.Is<object[]>(a => (string)a[0] == $"formID{D}EDISON2.TestWindow"));
+    }
+
+    [Fact]
+    public void Load_NoSession_ReturnsNothingSaved()
+    {
+        // Okno otevřené před loginem: žádná session = XAML default, ne výjimka.
+        var asked = 0;
+        var store = new CacheWindowStateStore("EDISON2.TestWindow", () =>
+        {
+            asked++;
+            return null;
+        });
+
+        Assert.True(store.Load().IsEmpty);
+        Assert.Equal(1, asked);
     }
 }

@@ -332,7 +332,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A6 · `EDServices.Current` prosakuje do infrastruktury a vypnul paralelizaci `EDISONMAIN2.Tests`
 
-- [ ] **Stav:** otevřeno (2026-10-01: seam pro geometrii oken existuje, default čte dál singleton)
+- [ ] **Stav:** částečně (2026-10-05, proud S5) - body 1-2: `WindowNavigator(Func<EDServices>)` (host z A7
+  čte services delegátem až při launchi), TD má `WpfOnly()` bez services; `CacheWindowStateStore(formId,
+  Func<IMLRest?>)` a `EDViewModel.AttachToWindow` mu předá MLRest svých služeb. Zbývá: shell dál volá
+  bezparametrický ctor (napojení v `AppBootstrapper.InitializeServices` patří S2), statický
+  `CacheWindowStateStore.MLRestProvider` drží 1-arg ctor a `EDISON2.IntegrationTests` (S7), bod 3
+  `LicenceService`, bod 4 paralelizace `EDISONMAIN2.Tests`. Testy `WindowNavigatorTests.ServicesCtor_*`,
+  `CacheWindowStateStoreTests.LoadAndSave_GoThroughInjectedSession`,
+  `EDViewModelTests.AttachToWindow_RestoresGeometryThroughViewModelSession`.
 - **P2 · M** · Závisí na: A7 (stejný soubor, dělat před) · Blokuje: - · Původ: [backlog R5](arch-backlog.md#r5---edservicescurrent-prosakuje-do-infrastruktury-a-vypnul-paralelizaci-testů)
 - **Problém:** Singleton je záměr u controls (`EDList`, `EDInputForm`, `EDFilter` nesmí záviset
   na `Window.DataContext`), ale šíří se do infrastruktury a oken, a `EDISONMAIN2.Tests` proto
