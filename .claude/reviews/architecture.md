@@ -846,7 +846,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A46 · Obsah exe shellu závisí na `C:\Edison` stroje, kde se publikuje 🔸
 
-- [ ] **Stav:** otevřeno, částečně (2026-10-05) - body 1 a 2 hotové: target `RejectDebugLegacyAssemblies`
+- [ ] **Stav:** otevřeno, částečně (a4025673, 2026-10-05) - body 1 a 2 hotové: target `RejectDebugLegacyAssemblies`
   v `SingleFilePublish.targets` čte `DebuggableAttribute` legacy DLL z `C:\Edison` (inline task, bajty
   ve sběratelném `AssemblyLoadContext`, `System.Reflection.Metadata` factory nedostane) a Release
   publish s Debug buildem shodí, nepodepsanou DLL s nečitelnými atributy taky (podepsané cizí C1 přeskočí),
@@ -876,7 +876,8 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A47 · Runtime pro .NET 10 exe rozbaluje EDLOADER jen pro nový shell, TemplateDesigner na něm závisí taky 🔸
 
-- [ ] **Stav:** otevřeno, čeká na ověření (Windows Sandbox bez .NET 10, scénáře S1 a S4)
+- [ ] **Stav:** otevřeno, čeká na ověření (Windows Sandbox bez .NET 10, scénáře S1 a S4); volbu varianty
+  a/b/c vlastník 2026-10-05 odložil, proud „Update a vydání" ji nevyřešil
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01)
 - **Problém:** Všechna exe ze `SingleFilePublish.targets` hledají runtime nejdřív v `dotnet\` vedle
   sebe, pak globálně. `dotnet\` rozbaluje jen EDLOADER a jen při zapnutém novém shellu. TemplateDesigner
