@@ -233,15 +233,16 @@ jen se zapnutým Rámečkem.
 
 Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
 
-- **Text** - text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování (výchozí vypnuté), řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí
-- **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy
+- **Text** - text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování (výchozí vypnuté), řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí. Pole z dat na víc řádků (třeba popis dopravce: název, sídlo, telefon) se bez zalamování vypíše na jeden řádek a části oddělí čárka; se zalamováním zůstanou pod sebou
+- **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy. Obrázek bez souboru se netiskne - rámeček „IMG" je jen v návrháři
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
 - **Kód (QR, čárový)** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí.
   Kód vždy vyplní celý prvek. **Musí být dost velký, aby se dal sejmout z papíru** - potřebná
   velikost roste s délkou obsahu, takže dlouhý odkaz potřebuje víc místa než krátký. Když je
   prvek malý, aplikace po tisku napíše konkrétní čísla („QR kód je 10 mm, pro spolehlivé čtení
-  potřebuje 13,2 mm")
+  potřebuje 13,2 mm"). Kód bez obsahu (pole z dat bez hodnoty) se netiskne - rámeček „QR" je jen
+  v návrháři
 - **Tabulka (dynamická)** - řádky se generují automaticky z datové kolekce (viz níže)
 - **Tabulka (pevná)** - mřížku vyplňujete ručně přímo na plátně; náhrada za skládání hlaviček
   a bloků z jednotlivých textových prvků (viz níže)
@@ -1238,6 +1239,10 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
   a malá písmena) označí její řádek jako aktuální; vzhled zvýraznění si řeší šablona pravidlem
   nad polem „Zvýrazněná zastávka". Projíždí-li linka město víckrát, označí se všechny jeho
   zastávky - jednu z nich vybere tarifní číslo.
+- **Pole *Číslo aktuální zastávky* a *Tarifní číslo aktuální zastávky*** (do hlavičky stránky) -
+  nesou zastávku, pro kterou stránka je: na výlepech každá stránka tu svou, jinak ta, kterou
+  zvýraznění trefí. Hodí se do prvku Kód (QR, čárový), aby každý výlep vedl na svou zastávku.
+  Když kus názvu odpovídá víc zastávkám, zůstanou prázdná.
 
 **Výběr linek k tisku** i **tisk a export** fungují stejně jako u zastávkového JŘ (viz kapitoly
 „Výběr linek k tisku" a „Tisk a export" výše).
@@ -1247,8 +1252,9 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 ### 6. Postup krok za krokem (linkový JŘ)
 
 1. **Založte šablonu se správnou agendou** - `Nástroje → Změnit agendu` (Ctrl+Shift+A), Linkový JŘ.
-   Rychlejší start: otevřete výchozí šablonu ze sekce **Systémové M-line** (Ctrl+O) - je v podobě
-   starého postskriptového tisku na A5 na šířku.
+   Rychlejší start: otevřete jednu ze dvou výchozích šablon ze sekce **Systémové M-line** (Ctrl+O) -
+   *postskriptový vzhled A5* (A5 na šířku, poznámky pod tabulkou, jako starý postskriptový tisk)
+   nebo *poznámky vedle tabulky A4* (A4 na šířku, poznámky vpravo vedle tabulky).
 2. **Postavte hlavičku** - textové prvky s poli linky; sekci nechte „na každé stránce".
 3. **Vložte Tabulku spojů** do vlastní sekce nastavené na rozdělení přes stránky a roztáhněte ji
    přes celou šířku stránky.

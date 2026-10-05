@@ -38,6 +38,12 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
+### Týden od 5. 10. 2026 · Zastávkové JŘ - Parametry variant tras jen se sloupcem Varianty tras
+
+Parametry variant tras (řazení, nejvýš sloupců, slučování a písmena variant) se v nastavení
+sestavy ukážou, jen když má šablona v seznamu zastávek zapnutý sloupec **Varianty tras**. Bez něj
+na tisk nemají vliv, takže nastavení zbytečně nezaplňují. Po zapnutí sloupce se objeví hned.
+
 ### Týden od 28. 9. 2026 · Návrhář - Doklady o více stránkách, kontrola před tiskem
 
 - Šablona může mít víc stránek (např. líc a rub dokladu), přidávají se tlačítkem **„+ Stránka"**.
