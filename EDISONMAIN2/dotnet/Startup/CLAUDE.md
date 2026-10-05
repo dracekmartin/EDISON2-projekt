@@ -10,9 +10,10 @@ má jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí v `Dispat
 ruší. Logout hook (`WireSessionLogout`) se zapojuje hned po `Accepted`, ne až se shellem, aby
 zámek uvolnil i exit kvůli updatu. **Po návratu z `Run` bootstrapper dožil** - co běží dál, má
 vlastní session-scoped objekt (`SessionSwitcher`, `ShellShutdown`); session obou cest skládá
-`SessionFactory.Establish`.
+`SessionFactory.Establish`. Debug vs. Release rozhoduje **jen `StartupOptions`** z `App` (nový rozdíl
+patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login dialog (E2E ho ignoruje).
 
-Login okno (jen Release dialog path) po OK zůstává jako progress podklad, zavírá se až na shell
+Login okno (jen dialog cesta, ne `DevLogin`) po OK zůstává jako progress podklad, zavírá se až na shell
 `ContentRendered`; `HandOffLoginWindow` musí dát `Application.MainWindow` na shell **před**
 restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo proces nemá konec.
 `LocalPrefs.ShellWindowBounds` je **jedna geometrie shellu i login okna** (před loginem není
@@ -33,7 +34,7 @@ Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDA
 ## Session / ACTIVITY zámek
 
 - Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - hard-kill ho neuvolní (uklidí až idle
-  timeout). V dev ho re-run přepíše díky deterministickému GUID (`SessionFactory.SessionTag`); E2E běh
+  timeout). V dev ho re-run přepíše díky deterministickému GUID (`StartupOptions.SessionGuidTag`); E2E běh
   (`e2e=1`) má vlastní tag, jinak by jeho logout (maže zámky podle GUID) shodil vývojářův shell.
 - Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty obnovují
   idle timer (jinak aktivní shell vypadá serveru jako idle) a detekují zaniklý zámek/verzi.

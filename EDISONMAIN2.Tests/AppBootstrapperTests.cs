@@ -4,6 +4,7 @@ using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.EdisonMainWindow;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
 using EDTesting;
 using NSubstitute;
@@ -20,7 +21,7 @@ public class AppBootstrapperTests
 {
     /// <remarks>Bezparametrický ctor → <c>Application</c> je null; nový krok v Run(), který na něj
     /// sáhne (dialog, Dispatcher, ShutdownMode), musí jít za <c>protected virtual</c> hook.</remarks>
-    private class TestableBootstrapper(TestRunOptions? testRun = null) : AppBootstrapper(testRun)
+    private class TestableBootstrapper(StartupOptions? options = null) : AppBootstrapper(options ?? new StartupOptions())
     {
         public bool ShutdownCalled { get; private set; }
         public bool BuildShellCalled { get; private set; }
@@ -71,7 +72,7 @@ public class AppBootstrapperTests
             new(LoginRest: null!, Companies: new List<CompanyStruct>(), StartCompany: default,
                 Server: "test-host", Port: 9999);
 
-        protected override bool TryLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
+        protected override bool TryLogin(MLRest loginRest, ILocalPrefs prefs, EDServices services, out LoginResult login)
         {
             TryLoginCalled = true;
             LoginDialogPrefill = prefs.LastLoginName;
@@ -448,21 +449,24 @@ public class AppBootstrapperTests
         Assert.True(b.WireActivityCalled);
     }
 
-    private class RealSaveBootstrapper : AppBootstrapper
+    /// <summary>Volá skutečné kroky bez přepsání - jen ty, které na <c>Application</c> nesáhnou.</summary>
+    private class RealStepsBootstrapper(StartupOptions options) : AppBootstrapper(options)
     {
         public void CallSave(ILocalPrefs prefs, string idfa, string? name)
             => SavePostLoginState(prefs, idfa, name);
+
+        public ILocalPrefs Load() => LoadLocalPrefs();
+
+        public bool CallTryLogin(out LoginResult login) =>
+            TryLogin(null!, Substitute.For<ILocalPrefs>(), null!, out login);
     }
 
-    private class PrefsBootstrapper(TestRunOptions? testRun) : AppBootstrapper(testRun)
-    {
-        public ILocalPrefs Load() => LoadLocalPrefs();
-    }
+    private static StartupOptions E2E(params string[] args) => StartupOptions.Development(["e2e=1", .. args], null);
 
     [Fact]
-    public void Run_TestRun_SkipsAutoLoginAndUsesDebugLogin()
+    public void Run_TestRun_SkipsAutoLogin()
     {
-        var b = new TestableBootstrapper(TestRunOptions.Parse(["e2e=1"])) { AutoLoginSucceeds = true };
+        var b = new TestableBootstrapper(E2E()) { AutoLoginSucceeds = true };
 
         b.Run();
 
@@ -473,7 +477,7 @@ public class AppBootstrapperTests
     [Fact]
     public void LoadLocalPrefs_TestRun_KeepsPrefsInMemory()
     {
-        var prefs = new PrefsBootstrapper(TestRunOptions.Parse(["e2e=1"])).Load();
+        var prefs = new RealStepsBootstrapper(E2E()).Load();
 
         Assert.IsType<TransientLocalPrefs>(prefs);
         Assert.Null(prefs.LastIdfa);
@@ -483,26 +487,55 @@ public class AppBootstrapperTests
     public void LoadLocalPrefs_TestRunWithIdfa_StartsInThatCompany()
     {
         // PickInitial bere LastIdfa jako preferovanou firmu - stejná cesta jako běžný start.
-        var prefs = new PrefsBootstrapper(TestRunOptions.Parse(["e2e=1", "idfa=CB_DP"])).Load();
+        var prefs = new RealStepsBootstrapper(E2E("idfa=CB_DP")).Load();
 
         Assert.Equal("CB_DP", prefs.LastIdfa);
     }
 
     [Fact]
-    public void SavePostLoginState_Debug_DoesNotOverwriteLastLoginName()
+    public void TryLogin_DevLogin_ReturnsItWithoutDialog()
     {
+        // Bez Application: dialog větev by na ShutdownMode spadla, DevLogin na ni nesmí sáhnout.
+        var options = StartupOptions.Development([], null);
+
+        Assert.True(new RealStepsBootstrapper(options).CallTryLogin(out var login));
+        Assert.Same(options.DevLogin, login);
+    }
+
+    [Fact]
+    public void SavePostLoginState_DevLogin_DoesNotOverwriteLastLoginName()
+    {
+        // DevLogin je syntetický - jméno v local.json patří poslednímu ostrému přihlášení.
         var prefs = Substitute.For<ILocalPrefs>();
 
-        new RealSaveBootstrapper().CallSave(prefs, "CB_DP", "jan.novak");
+        new RealStepsBootstrapper(StartupOptions.Development([], null)).CallSave(prefs, "CB_DP", "jan.novak");
 
         prefs.Received().LastIdfa = "CB_DP";
         prefs.Received(1).Save();
-#if DEBUG
-        // Debug login je syntetický - jméno v local.json patří poslednímu ostrému přihlášení.
         prefs.DidNotReceive().LastLoginName = Arg.Any<string?>();
-#else
+    }
+
+    [Fact]
+    public void SavePostLoginState_DialogLogin_SavesLastLoginName()
+    {
+        var prefs = Substitute.For<ILocalPrefs>();
+
+        new RealStepsBootstrapper(StartupOptions.Production()).CallSave(prefs, "CB_DP", "jan.novak");
+
+        prefs.Received().LastIdfa = "CB_DP";
         prefs.Received().LastLoginName = "jan.novak";
-#endif
+        prefs.Received(1).Save();
+    }
+
+    [Theory]
+    [InlineData(false, 0)]
+    [InlineData(true, 1)]
+    public void MiniAppProviders_DevSamplesOnlyInDevelopment(bool devMiniApps, int devSamples)
+    {
+        var providers = AppBootstrapper.MiniAppProviders(new ModuleShortcutsService(), devMiniApps);
+
+        Assert.Equal(devSamples, providers.OfType<MiniApps.DevSampleMiniApps>().Count());
+        Assert.IsType<MiniApps.DesktopMiniAppProvider>(providers[0]);   // pořadí = pořadí skupin v menu
     }
 
     [Fact]

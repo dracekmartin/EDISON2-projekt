@@ -8,6 +8,9 @@
         Height="800" Width="1200" MinHeight="600" MinWidth="900"
         Background="{DynamicResource EDTheme.Bg.Base}"
         Icon="{StaticResource EDIcons.Molecule}">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="440"/>
@@ -34,16 +37,22 @@
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Width="360">
                     <TextBlock Text="Uživatel:" Foreground="{DynamicResource EDTheme.Text.Primary}"
                                Margin="0,0,0,4"/>
-                    <TextBox x:Name="UsernameBox" Margin="0,0,0,12"/>
+                    <!-- PropertyChanged: OK přes Enter (IsDefault) přijde, než pole ztratí fokus. -->
+                    <TextBox x:Name="UsernameBox" Margin="0,0,0,12"
+                             Text="{Binding UserName, UpdateSourceTrigger=PropertyChanged}"
+                             IsEnabled="{Binding IsEditable}"/>
 
                     <TextBlock Text="Heslo:" Foreground="{DynamicResource EDTheme.Text.Primary}"
                                Margin="0,0,0,4"/>
-                    <PasswordBox x:Name="PasswordBox" Margin="0,0,0,12"/>
+                    <PasswordBox x:Name="PasswordBox" Margin="0,0,0,12" IsEnabled="{Binding IsEditable}"/>
 
-                    <CheckBox x:Name="RememberBox" Content="Zapamatovat heslo" Margin="0,0,0,12"/>
+                    <CheckBox x:Name="RememberBox" Content="Zapamatovat heslo" Margin="0,0,0,12"
+                              IsChecked="{Binding RememberPassword}" IsEnabled="{Binding IsEditable}"
+                              Visibility="{Binding ShowRemember, Converter={StaticResource BoolToVis}}"/>
 
                     <TextBlock x:Name="ErrorText" Foreground="{DynamicResource EDTheme.Semantic.Danger}"
-                               TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,12"/>
+                               TextWrapping="Wrap" Margin="0,0,0,12" Text="{Binding ErrorMessage}"
+                               Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
 
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -54,12 +63,14 @@
                              zamrzl. Vlevo od tlačítek, ať zobrazení nehne layoutem. -->
                         <TextBlock x:Name="ProgressText" Grid.Column="0" VerticalAlignment="Center"
                                    Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                   TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,8,0"/>
+                                   TextWrapping="Wrap" Margin="0,0,8,0" Text="{Binding ProgressMessage}"
+                                   Visibility="{Binding HasProgress, Converter={StaticResource BoolToVis}}"/>
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
                             <Button x:Name="OkBtn" Content="{StaticResource EDStrings.Ok}" Width="90"
-                                    IsDefault="True" Click="OkBtn_Click" Margin="0,0,8,0"/>
+                                    IsDefault="True" Click="OkBtn_Click" Margin="0,0,8,0"
+                                    IsEnabled="{Binding IsEditable}"/>
                             <Button x:Name="CancelBtn" Content="{StaticResource EDStrings.Cancel}" Width="90"
-                                    IsCancel="True" Click="CancelBtn_Click"/>
+                                    IsCancel="True" Click="CancelBtn_Click" IsEnabled="{Binding IsEditable}"/>
                         </StackPanel>
                     </Grid>
                 </StackPanel>

@@ -1,48 +1,24 @@
-using System.IO;
 using System.Linq;
 using System.Windows;
 using EDControls.EDInputForm;
-using EDControls.EDViewModel;
 
 namespace EDISONMAIN2.Windows.UserProfileWindow;
 
-public partial class UserProfileWindow : Window
+public partial class UserProfileWindow : Window, IUserProfileForm
 {
     private readonly UserProfileViewModel _vm;
-
-    // Zobrazený název výchozího okna (server ho nezná - dodá shell z modulového stromu).
-    private readonly string _defaultWindowDisplay;
 
     /// <param name="defaultWindowDisplay">Název výchozího okna k zobrazení (prázdné = nenastaveno).</param>
     public UserProfileWindow(string defaultWindowDisplay)
     {
-        _defaultWindowDisplay = defaultWindowDisplay;
-        DataContext = _vm = new UserProfileViewModel();
+        DataContext = _vm = new UserProfileViewModel(defaultWindowDisplay);
         InitializeComponent();
 
-        _vm.SaveRequested = SaveForm;
-        TheForm.SchemaLoaded += OnFormInitialized;
+        _vm.Form = this;
+        TheForm.SchemaLoaded += _vm.FillForm;
         TheForm.ButtonClicked += OnFormButton;
-        // Auto-Init proběhne na Loaded (CacheClass je nastaven) → OnFormInitialized prefilne data.
+        // Auto-Init proběhne na Loaded (CacheClass je nastaven) → FillForm prefilne data.
         TheForm.CacheClass = "ALVA.EDISONMAIN2.EDInputForm.UserProfile";
-    }
-
-    // Po Init naplní hodnoty klientsky (přehled z MLRest, export adresář z UserProfileService),
-    // pak re-validace nastaví editovatelnost cesty dle přepínače „Použít osobní adresář".
-    private void OnFormInitialized()
-    {
-        var ml = EDServices.Current.MLRest;
-        if (ml is null) return;
-
-        var p = UserProfileService.Load(ml);
-        SetField("fullName", ml.FullName);
-        SetField("loginName", ml.LoginName);
-        SetField("mlp", ml.Mlp);
-        SetField("usePersonDir", p.UsePersonDir ? "1" : "0");
-        SetField("personDir", p.PersonDir);
-        SetField("centralDir", p.CentralExportDir);
-        SetField("defaultWindow", _defaultWindowDisplay);
-        TheForm.Validate();
     }
 
     private void OnFormButton(string key)
@@ -54,36 +30,16 @@ public partial class UserProfileWindow : Window
         }
     }
 
-    // OK: server BeforeSave validace (neprázdnost) → klientská kontrola existence složky → persist.
-    private bool SaveForm()
+    bool IUserProfileForm.Save() => TheForm.Save();
+
+    void IUserProfileForm.Validate() => TheForm.Validate();
+
+    string? IUserProfileForm.Get(string key) => FieldOf(key)?.Value;
+
+    void IUserProfileForm.Set(string key, string value)
     {
-        if (!TheForm.Save()) return false;
-
-        bool use = GetField("usePersonDir") == "1";
-        string dir = GetField("personDir") ?? "";
-        if (ValidateExportDir(use, dir, Directory.Exists) is { } error)
-        {
-            EDServices.Current.PopupDisplayer.Info(error);
-            return false;
-        }
-
-        UserProfileService.SaveExportDir(EDServices.Current.RequireMLRest, use, dir);
-        // Nově spouštěné legacy moduly dostanou adresář hned (legacy shell až po dalším loginu);
-        // surová cesta bez příznaku „použít" - stejně ji vrací i login.
-        EDServices.Current.UserDirectory = dir;
-        return true;
+        if (FieldOf(key) is { } field) field.Value = value;
     }
 
-    /// <summary>Klientský guard před persistem (server existenci složky nekontroluje); null = uložit.</summary>
-    internal static string? ValidateExportDir(bool usePersonDir, string personDir, Func<string, bool> directoryExists) =>
-        usePersonDir && !directoryExists(personDir) ? "Zadaný osobní adresář neexistuje." : null;
-
-    private void SetField(string key, string value)
-    {
-        if (TheForm.Items?.OfType<Field>().FirstOrDefault(x => x.Key == key) is { } f)
-            f.Value = value;
-    }
-
-    private string? GetField(string key) =>
-        TheForm.Items?.OfType<Field>().FirstOrDefault(x => x.Key == key)?.Value;
+    private Field? FieldOf(string key) => TheForm.Items?.OfType<Field>().FirstOrDefault(x => x.Key == key);
 }

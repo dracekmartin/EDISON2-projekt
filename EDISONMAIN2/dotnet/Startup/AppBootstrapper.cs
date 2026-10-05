@@ -34,25 +34,25 @@ public class AppBootstrapper
     private readonly Application _application;
     private readonly ShellShutdown _shutdown;
     private readonly ConnectionOverride? _connectionOverride;
-    private readonly TestRunOptions? _testRun;
+    private readonly StartupOptions _options;
 
-    public AppBootstrapper(Application application, ConnectionOverride? connectionOverride = null,
-                           TestRunOptions? testRun = null)
+    public AppBootstrapper(Application application, ConnectionOverride? connectionOverride,
+                           StartupOptions options)
     {
         _application = application;
         _shutdown = new ShellShutdown(application);
         _connectionOverride = connectionOverride;
-        _testRun = testRun;
+        _options = options;
     }
 
     /// <summary>Pro test-only subclassy - neinjektuje <see cref="Application"/>, takže
     /// derived class MUSÍ přepsat všechny metody co by ho použily (Shutdown, BuildShellWindow,
-    /// WireActivityFailedHandler, Release branch TryLogin).</summary>
-    protected AppBootstrapper() : this(null!)
+    /// WireActivityFailedHandler, dialog větev TryLogin).</summary>
+    protected AppBootstrapper() : this(new StartupOptions())
     {
     }
 
-    protected AppBootstrapper(TestRunOptions? testRun) : this(null!, null, testRun)
+    protected AppBootstrapper(StartupOptions options) : this(null!, null, options)
     {
     }
 
@@ -105,9 +105,9 @@ public class AppBootstrapper
         }
 
         // Auto-login (Windows SSO) má přednost; když neprojde, fallback na dialog. E2E běh ho vynechá:
-        // úspěšný Login pod Windows jménem nuluje uživatelské flagy a identitu testu dává DEBUG login.
-        if (!(_testRun is null && TryAutoLogin(prep.LoginRest, prefs, out var login))
-            && !TryLogin(prep.LoginRest, prefs, out login))
+        // úspěšný Login pod Windows jménem nuluje uživatelské flagy a identitu testu dává DevLogin.
+        if (!(_options.TestRun is null && TryAutoLogin(prep.LoginRest, prefs, out var login))
+            && !TryLogin(prep.LoginRest, prefs, services, out login))
         {
             Shutdown();
             return null;
@@ -133,7 +133,7 @@ public class AppBootstrapper
         }
         prep = prep with { Companies = start.Allowed, StartCompany = start.Company };
 
-        _startupLoginWindow?.ShowProgress("Ověřuji licenci…");
+        ShowStartupProgress("Ověřuji licenci…");
         var session = EstablishSession(
             new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
             login, services);
@@ -154,7 +154,7 @@ public class AppBootstrapper
         WireSessionLogout(services);
 
         // Až po SavePostLoginState - LastIdfa musí být uložená i když teď shell skončí updatem.
-        _startupLoginWindow?.ShowProgress("Kontroluji aktualizace…");
+        ShowStartupProgress("Kontroluji aktualizace…");
         var update = CheckForUpdate(session, services);
         if (update.ShouldExit)
         {
@@ -164,7 +164,7 @@ public class AppBootstrapper
         // Až po update checku: legacy start ukončený updatem přihlášení nezapsal (frmNoMDI.vb:4917 před :4948).
         LicenceVerifier.LogLogin(session.MLRest);
 
-        _startupLoginWindow?.ShowProgress("Spouštím aplikaci…");
+        ShowStartupProgress("Spouštím aplikaci…");
         var wnd = BuildShellWindow(prep, session, licence, services, nav, popup, prefs, update.Notice);
         HandOffLoginWindow(wnd);
         return wnd;
@@ -179,11 +179,22 @@ public class AppBootstrapper
     /// </summary>
     protected virtual void HandOffLoginWindow(EdisonMainWindow wnd)
     {
-        if (_startupLoginWindow is not { } loginWindow) return;
+        if (_startupLogin is not { } login) return;
         _application.MainWindow = wnd;
         _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        wnd.ContentRendered += (_, _) => loginWindow.CloseAfterHandoff();
+        wnd.ContentRendered += (_, _) => login.CompleteHandoff();
     }
+
+    private void ShowStartupProgress(string message)
+    {
+        if (_startupLogin is null) return;
+        _startupLogin.ShowProgress(message);
+        RenderStartupProgress();
+    }
+
+    // Další krok startupu zablokuje UI thread - progress login okna (text, zašedlá pole) vykreslit hned.
+    private void RenderStartupProgress() =>
+        _application.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
     /// <summary>
     /// Klientský update check - mandatory, bez user volby (stanice nemá co rozhodovat).
@@ -226,9 +237,10 @@ public class AppBootstrapper
 
     protected virtual Updater CreateUpdater() => new();
 
-    /// <summary>Login okno držené otevřené přes post-login kroky (jen Release dialog path);
-    /// zavře ho <see cref="HandOffLoginWindow"/> po vykreslení shellu.</summary>
-    private Windows.LoginWindow.LoginWindow? _startupLoginWindow = null;   // = null kvůli CS0649 v DEBUG (přiřazení je v #else větvi)
+    /// <summary>Login okno držené otevřené přes post-login kroky (jen dialog cesta, ne DevLogin):
+    /// progress a zavření po vykreslení shellu jdou přes VM, okno slouží jen jako owner dialogů.</summary>
+    private LoginViewModel? _startupLogin;
+    private Window? _startupLoginWindow;
 
     /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest). Po loginu
     /// <c>Companies</c>/<c>StartCompany</c> nahradí povolené firmy uživatele.</summary>
@@ -259,7 +271,7 @@ public class AppBootstrapper
     }
 
     protected virtual ILocalPrefs LoadLocalPrefs() =>
-        _testRun is null ? LocalPrefs.Load() : new TransientLocalPrefs { LastIdfa = _testRun.StartIdfa };
+        _options.TestRun is { } testRun ? new TransientLocalPrefs { LastIdfa = testRun.StartIdfa } : LocalPrefs.Load();
 
     /// <summary>
     /// First-launch setup: když <c>EDISONini.xml</c> nemá vyplněné připojení, zobrazí
@@ -346,62 +358,59 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Zobrazí login okno (release) nebo vrátí hardcoded dev login (DEBUG). Přepne
+    /// Zobrazí login okno, nebo vrátí <see cref="StartupOptions.DevLogin"/>. Přepne
     /// <c>ShutdownMode</c> na <c>OnExplicitShutdown</c> aby zavření okna nevypnulo aplikaci;
     /// restore dělá až <see cref="HandOffLoginWindow"/>. Okno po úspěchu zůstává otevřené
     /// (progress podklad pod dobíhajícím bootstrapem) - čekání řeší
     /// <see cref="System.Windows.Threading.DispatcherFrame"/> místo ShowDialog, aby návrat
     /// nevyžadoval zavření okna.
     /// </summary>
-    protected virtual bool TryLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
+    protected virtual bool TryLogin(MLRest loginRest, ILocalPrefs prefs, EDServices services, out LoginResult login)
     {
-#if DEBUG
-        login = new LoginResult(201, "martin.hubata", "martin.hubata", true, "", false, true, "");
-        return true;
-#else
+        if (_options.DevLogin is { } devLogin)
+        {
+            login = devLogin;
+            return true;
+        }
+
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-        // Zapamatované heslo předvyplní jen když patří k naposledy přihlášenému jménu (DPAPI).
-        string initialPassword = PasswordProtector.Unprotect(prefs.RememberedPassword, prefs.LastLoginName ?? "") ?? "";
-
-        var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, prefs.LastLoginName, initialPassword,
-                                                              keepOpenOnSuccess: true);
+        // Zapamatované heslo (předvyplnění i uložení) řeší VM nad prefs.
+        var vm = LoginViewModel.ForStartup(services, new MLRestAdapter(loginRest), prefs);
+        var loginWindow = new Windows.LoginWindow.LoginWindow(vm);
         // Geometrii sdílí se shellem, aby obě okna naskočila na monitoru, kde uživatel pracuje.
         // Okno ji jen přebírá - jediný zápis je níž, hned po úspěšném přihlášení.
         var windowState = new ShellWindowStateStore(prefs);
         WindowStatePersistence.Attach(loginWindow, new ReadOnlyWindowStateStore(windowState));
 
         var frame = new System.Windows.Threading.DispatcherFrame();
-        loginWindow.LoginSucceeded += (_, _) => frame.Continue = false;
+        vm.LoginSucceeded += (_, _) => frame.Continue = false;
         loginWindow.Closed += (_, _) => frame.Continue = false;
         loginWindow.Show();
         System.Windows.Threading.Dispatcher.PushFrame(frame);
 
-        if (loginWindow.Result == null)
+        if (vm.Result is not { } result)
         {
             // Zrušeno po odmítnutí zapamatovaného hesla → zapomeň ho (jinak příště zase auto-selže).
-            if (loginWindow.RememberedPasswordRejected)
+            if (vm.RememberedPasswordRejected)
             {
-                prefs.RememberedPassword = null;
+                vm.ApplyRememberedPassword();
                 prefs.Save();
             }
             login = null!;
             // ShutdownMode se nerestoruje - Run() hned volá explicitní Shutdown().
             return false;
         }
-        login = loginWindow.Result;
+        login = result;
+        _startupLogin = vm;
         _startupLoginWindow = loginWindow;
+        RenderStartupProgress();
         // Uložit tady: login okno se zavírá až po vykreslení shellu, který si geometrii čte dřív,
         // a v progress fázi ho uživatel může minimalizovat (stav při zavření už nic neříká).
         WindowStatePersistence.Save(loginWindow, windowState);
-
-        // Ulož / zapomeň. Při vynucené změně hesla (feature #17) heslo neukládej - za chvíli
-        // se změní a zapamatované by bylo neplatné. Persist proběhne v SavePostLoginState.
-        prefs.RememberedPassword = loginWindow.RememberPassword && !login.ChangePasswordNeeded
-            ? PasswordProtector.Protect(login.UserName, loginWindow.EnteredPassword)
-            : null;
+        // Až po uložení geometrie (ta ukládá celé prefs) - persist proběhne v SavePostLoginState.
+        vm.ApplyRememberedPassword();
         return true;
-#endif
     }
 
     /// <summary>
@@ -451,7 +460,7 @@ public class AppBootstrapper
         => CompanySwitcher.LoadAllowed(conn, login);
 
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
-        => SessionFactory.Establish(conn, login, services);
+        => SessionFactory.Establish(conn, login, services, _options);
 
     protected virtual (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session, EDServices services)
         => LicenceVerifier.TryAcquireSession(
@@ -461,11 +470,9 @@ public class AppBootstrapper
     protected virtual void SavePostLoginState(ILocalPrefs prefs, string idfa, string? loginName)
     {
         prefs.LastIdfa = idfa;
-#if !DEBUG
-        // Debug login je syntetický (TryLogin bez dialogu) - nesmí přepsat předvyplnění
-        // jména (a tím zneplatnit RememberedPassword) pro ostrý exe na témže stroji.
-        prefs.LastLoginName = loginName;
-#endif
+        // DevLogin je syntetický - nesmí přepsat předvyplnění jména (a tím zneplatnit
+        // RememberedPassword) pro ostrý exe na témže stroji.
+        if (_options.DevLogin is null) prefs.LastLoginName = loginName;
         prefs.Save();
     }
 
@@ -514,29 +521,24 @@ public class AppBootstrapper
         var switcher = new CompanySwitcher(services, prefs, nav.TryCloseShellWindows, nav.CloseLegacyModules);
         // Sdílená služba zástupců - strom (VM) i miniaplikace „Plocha" (provider) drží tutéž instanci.
         var shortcuts = new ModuleShortcutsService();
-        var miniAppCatalog = MiniAppCatalog.Build([
-            new DesktopMiniAppProvider(shortcuts),
-            new CoreMiniApps(), new LegacyMiniAppProvider(), new LegacyDashboardMiniAppProvider(),
-#if DEBUG
-            new DevSampleMiniApps(),
-#endif
-        ]);
+        var miniAppCatalog = MiniAppCatalog.Build(MiniAppProviders(shortcuts, _options.DevMiniApps));
         // Owner login dialogu se čte lazily - MainWindow ukazuje na shell až po HandOffLoginWindow.
         var sessionSwitcher = new SessionSwitcher(services, () => _application.MainWindow,
                                                   BuildActivityFailedWire(services), nav.TryCloseAll,
-                                                  new ShellWindowStateStore(prefs));
+                                                  new ShellWindowStateStore(prefs), _options);
+        bool testRun = _options.TestRun is not null;
         var viewModel = new EdisonMainViewModel(prep.Companies, CompanySwitcher.LoadAllowed, session.MLRest, treeLoader,
                                                 licence, switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
                                                 miniAppCatalog, shortcuts,
-                                                _testRun is null ? new InfChangelogSource() : null)
+                                                testRun ? null : new InfChangelogSource())
         {
-            OpensStartupWindow = _testRun is null
+            OpensStartupWindow = !testRun
         };
         _shutdown.AttachShell(viewModel.SuppressCloseConfirm);
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };
-        if (_testRun is not null) AutomationProperties.SetItemStatus(wnd, TestRunOptions.WindowMarker);
+        if (testRun) AutomationProperties.SetItemStatus(wnd, TestRunOptions.WindowMarker);
         popup.DefaultOwner = wnd;
         viewModel.AttachToWindow(wnd);
 
@@ -557,6 +559,18 @@ public class AppBootstrapper
         wnd.Closed += (_, _) => logoutWatcher.Stop();
 
         return wnd;
+    }
+
+    /// <summary>Pořadí providerů = pořadí skupin v menu „Miniaplikace".</summary>
+    internal static IReadOnlyList<IMiniAppProvider> MiniAppProviders(ModuleShortcutsService shortcuts, bool devMiniApps)
+    {
+        List<IMiniAppProvider> providers =
+        [
+            new DesktopMiniAppProvider(shortcuts),
+            new CoreMiniApps(), new LegacyMiniAppProvider(), new LegacyDashboardMiniAppProvider(),
+        ];
+        if (devMiniApps) providers.Add(new DevSampleMiniApps());
+        return providers;
     }
 
     /// <summary>

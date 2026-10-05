@@ -19,16 +19,18 @@ namespace EDISONMAIN2
 
         private void Application_Startup(object sender, System.Windows.StartupEventArgs e)
         {
-            TestRunOptions? testRun = null;
+            // Jediné rozhodnutí Debug vs. Release; dál se předávají options.
 #if DEBUG
-            // E2E test spouští DEBUG build; Release skrytý vypínač hlášení chyb nedostane.
-            testRun = TestRunOptions.Parse(e.Args);
-            testRun?.ApplyProcessIsolation();
+            var options = StartupOptions.Development(e.Args,
+                Environment.GetEnvironmentVariable(StartupOptions.DevLoginVariable));
+#else
+            var options = StartupOptions.Production();
 #endif
+            options.ApplyToProcess();
 
             bool redirected = TakeRedirectedFlag();
             // Start mimo EDLOADER (připnutí na lištu, zástupce na exe) by obešel uzel NewShell i rozbalení runtime.
-            if (testRun is null && RedirectToLoader(e.Args, redirected))
+            if (options.TestRun is null && RedirectToLoader(e.Args, redirected))
             {
                 Shutdown();
                 return;
@@ -45,7 +47,7 @@ namespace EDISONMAIN2
                 args.SetObserved();
             };
 
-            var window = new AppBootstrapper(this, ConnectionOverride.Parse(e.Args), testRun).Run();
+            var window = new AppBootstrapper(this, ConnectionOverride.Parse(e.Args), options).Run();
             window?.Show();
         }
 

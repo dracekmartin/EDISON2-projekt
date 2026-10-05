@@ -34,14 +34,9 @@ public class SettingsLoader
     /// <summary>
     /// Předvyplnit chybějící host adresou dev serveru M-line. Jen ve vývoji: u zákazníka by wizard
     /// nabídl cizí IP a přes VPN partnera ji mohl zapsat do souboru, který čtou i legacy aplikace.
-    /// Settable kvůli testům (Release větev jde ověřit i v Debug běhu).
+    /// Nastavuje <see cref="StartupOptions.ApplyToProcess"/>; default je chování stanice zákazníka.
     /// </summary>
-    internal static bool UseDevDefaults { get; set; } =
-#if DEBUG
-        true;
-#else
-        false;
-#endif
+    internal static bool UseDevDefaults { get; set; }
 
     public static SettingsLoader Load()
     {

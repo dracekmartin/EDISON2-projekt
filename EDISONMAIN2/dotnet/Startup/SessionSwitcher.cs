@@ -44,12 +44,14 @@ public enum SwitchUserResult
 /// <c>false</c> = okno zavření vetovalo a switch se musí zrušit.</param>
 /// <param name="windowState">Sdílená geometrie hlavního okna - login dialog z ní jen čte,
 /// ať naskočí na monitoru shellu, ne na primárním.</param>
+/// <param name="options">Režim startu - nová session musí mít stejný GUID a verzi jako startovní.</param>
 public class SessionSwitcher(
     EDServices services,
     Func<System.Windows.Window?> ownerWindow,
     Action<IMLRest> wireActivityFailed,
     Func<bool> closeAllWindows,
-    IWindowStateStore windowState)
+    IWindowStateStore windowState,
+    StartupOptions options)
 {
     /// <summary>
     /// Prompt → close all → <see cref="SessionFactory.Establish"/> (drží UserPrefs cache
@@ -102,13 +104,14 @@ public class SessionSwitcher(
     /// <summary>Login dialog pro user switch - owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
     protected virtual LoginResult? PromptLogin(MLRest connection)
     {
-        var loginWindow = new Windows.LoginWindow.LoginWindow(connection, showRemember: false)
+        var vm = LoginViewModel.ForReauth(services, new MLRestAdapter(connection));
+        var loginWindow = new Windows.LoginWindow.LoginWindow(vm)
         {
             Owner = ownerWindow(),
         };
         // Jen přebírá, ať naskočí na monitoru shellu; zapisovat sdílený záznam má shell.
         WindowStatePersistence.Attach(loginWindow, new ReadOnlyWindowStateStore(windowState));
-        return loginWindow.ShowDialog() == true ? loginWindow.Result : null;
+        return loginWindow.ShowDialog() == true ? vm.Result : null;
     }
 
     protected virtual void FlushTelemetry(IMLRest? mlRest) => EDUsageTelemetry.Flush(mlRest);
@@ -119,7 +122,7 @@ public class SessionSwitcher(
         => CompanySwitcher.LoadAllowed(conn, login);
 
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
-        => SessionFactory.Establish(conn, login, services);
+        => SessionFactory.Establish(conn, login, services, options);
 
     protected virtual (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session)
         => LicenceVerifier.TryAcquireSession(
