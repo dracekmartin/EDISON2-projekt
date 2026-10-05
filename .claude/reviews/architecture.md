@@ -863,6 +863,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 - **Důkaz:**
   - `EDISONMAIN2/dotnet/EDISONMAIN2.csproj:37-51` `HintPath` `C:\Edison\EDISONAPI.dll`, `EDLicence.dll`, `EDUsers.dll`, `MLRest.dll`; `EDCore` a `EDLibrary` přicházejí tranzitivně a bundle je nese taky (ověřeno bajtově 29. 9.); `SingleFilePublish.targets:11-12` uvolňuje z bundlu jen `EDControls`.
   - Při nasazení 29. 9. ležely v `C:\Edison` Debug buildy šesti legacy DLL (`DebuggableAttribute` 263). Shell z nich ukazoval dialogy `ERROR`/`IO ERROR` a licenci z M-line stahoval z `127.0.0.1:57772` (`EDISON/Licence/EDLicence/Update.vb:58-61`, `Api.vb:51-61`, `EDISON/EDUsers/EDUsers/MUtils.vb:27-35`). Zachyceno ručně před vydáním, publish proběhl bez varování.
+  - Bundle zastarává proti volným DLL vydání: TEST FULL 261002.0 (2. 10.) nese novější volnou `EDCore.dll`, `EDComponents.dll` a `EDAPI.dll` od kolegů, `EDISONMAIN2.exe` v ní je dál build z 29. 9. se zabalenou starší `EDCore` (ověřeno porovnáním instalace serveru se stanicí 260929.4.1).
   - V kořeni repa chybí `global.json`; `EDControls.dll` téhož zdroje postavená jiným strojem nese WPF 10.0.11 proti 10.0.10 ([post mortem](2026-09-29-vydani-shellu-post-mortem.md) K3.7). Compiler Debug build single-file exe nepozná ([audit integrace](2026-09-29-integrace-shellu.md) I24).
 - **Dopad:** vydání může nést Debug legacy kód (jiné chování, hlášky, adresy) nebo jinou verzi legacy
   knihovny, než jakou mají zákazníci vedle exe, a nikdo to nepozná. Vydaný build jde reprodukovat jen
@@ -878,7 +879,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A47 · Runtime pro .NET 10 exe rozbaluje EDLOADER jen pro nový shell, TemplateDesigner na něm závisí taky 🔸
 
-- [ ] **Stav:** otevřeno, čeká na ověření (Windows Sandbox bez .NET 10, scénáře S1 a S4)
+- [ ] **Stav:** otevřeno, ověřeno 2026-10-02 ve Windows Sandbox (`tools/edloader-sandbox/`): bez uzlu
+  a bez .NET 10 TD ze starého shellu ukáže dialog .NET (S1), po rozbalení `dotnet\` (S4) nebo instalaci
+  .NET 10 (S1b) naběhne
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01)
 - **Problém:** Všechna exe ze `SingleFilePublish.targets` hledají runtime nejdřív v `dotnet\` vedle
   sebe, pak globálně. `dotnet\` rozbaluje jen EDLOADER a jen při zapnutém novém shellu. TemplateDesigner

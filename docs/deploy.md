@@ -87,7 +87,13 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
   serverové a jen porovná `VERZE.INF` s verzí v Caché. Prázdný seznam znamená, že jsou serverové
   všechny, lokální klienti proto v seznamu být musí. Flag „update" v Nastavení na to vliv nemá (legacy
   parita); update check vynechá jen server bez nainstalovaného release (prázdné
-  `^EDISON("System","Update",2)`, dev).
+  `^EDISON("System","Update",2)`, dev). Stanice ze seznamu potřebuje čitelný zdroj: bez „Cesta pro
+  stažení dat:" (`localSourcePath`, `^EDISON("System","Update",11)`) čte `edisonPath`, tedy cestu na
+  serveru, a po přihlášení skončí hláškou „Z cesty … nelze zjistit serverovou verzi", než se shell otevře.
+- Starý shell bez `<IRIS>1</IRIS>` v `EDISONini.xml` otevírá vedle REST i spojení přes superserver
+  (`port`), nový shell jede jen přes REST (`restport`). Stanice mimo síť serveru se starým shellem proto
+  potřebují oba porty, nebo `<IRIS>1</IRIS>` v serverovém ini: EDUPDATE ho na stanice kopíruje vždy
+  (klíčový soubor, `UPDATERCL/clsAPI.vb`), takže úpravu na stanici další update přepíše.
 - Moduly v hostu posílají serveru verzi z `VERZE.INF` stanice (dev `999999.9` ne) a při nesouladu
   skončí hláškou „Rozdílná verze Caché a verze EDISON, modul bude ukončen." stejně jako shell.
 - Setup wizard shellu nikdy nespouštět v serverovém instalačním adresáři: přepíše `EDISONini.xml`,
@@ -140,6 +146,12 @@ právo zápisu do adresáře EDISONu. Na zámek čeká jen první instalace, nej
 spustí se starý shell. Záplatu existujícího `dotnet\` stanice buď provede, nebo, když zámek drží jiná
 stanice nebo záplata selže, rovnou spustí nový shell na stávající verzi. Existující, ale neúplný
 `dotnet\` znamená starý shell: exe by na globální runtime nepřešel.
+
+TemplateDesigner hledá runtime stejně, ale EDLOADER ho rozbaluje jen při zapnutém uzlu. Stanice bez
+globálního .NET 10, na které nový shell nikdy neběžel, proto TD ze starého shellu nespustí: ukáže
+anglický dialog .NET o chybějícím runtime, i když `EDISONRUNTIME.zip` leží vedle. Jakmile `dotnet\`
+jednou vznikne, TD funguje i po vypnutí uzlu. Ověření na čisté stanici (Windows Sandbox, scénáře
+a naměřené výsledky) dělá `tools/edloader-sandbox/`.
 
 Jinak, i když selže `LoadSettings`, spustí starý shell; nedostupný server zastaví start už
 v `CheckLogin` (beze změny). Fallback končí spuštěním procesu: nový shell, který spadne hned po
