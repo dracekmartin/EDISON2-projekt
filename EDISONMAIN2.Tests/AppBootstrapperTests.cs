@@ -539,6 +539,25 @@ public class AppBootstrapperTests
     }
 
     [Fact]
+    public void LicenceSyncFor_TestRun_NeverContactsMline()
+    {
+        // Sync zapisuje licenci do serveru a při výpadku M-line ukáže legacy okno ERROR, na kterém E2E skončí.
+        var sync = AppBootstrapper.LicenceSyncFor(E2E());
+        var rest = Substitute.For<IMLRest>();
+
+        Assert.NotNull(sync);
+        Assert.Equal(new LicenceService.MlineSyncResult(false, ""), sync(rest));
+        Assert.Empty(rest.ReceivedCalls());
+    }
+
+    [Fact]
+    public void LicenceSyncFor_RegularStart_KeepsViewModelDefault()
+    {
+        Assert.Null(AppBootstrapper.LicenceSyncFor(StartupOptions.Production()));
+        Assert.Null(AppBootstrapper.LicenceSyncFor(StartupOptions.Development([], null)));
+    }
+
+    [Fact]
     public void Run_Success_CallsHandOffAfterBuildShell()
     {
         var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Accepted };

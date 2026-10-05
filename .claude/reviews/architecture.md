@@ -340,8 +340,8 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   z A7 čte services delegátem až při launchi), TD má `WpfOnly()` bez services; `CacheWindowStateStore(formId,
   Func<IMLRest?>)` a `EDViewModel.AttachToWindow` mu předá MLRest svých služeb. Bod 3 (proud S2, fcd497d0):
   `LicenceService` má `showInfo` povinný bez fallbacku na `EDServices.Current`, `SessionFactory` předává popup
-  služeb session. Zbývá: shell dál volá bezparametrický ctor `WindowNavigator` (napojení v
-  `AppBootstrapper.InitializeServices` patří S2), statický `CacheWindowStateStore.MLRestProvider` drží 1-arg ctor
+  služeb session. `AppBootstrapper.InitializeServices` (S2, 2026-10-05) předává navigatoru delegát na
+  vlastní `EDServices`. Zbývá: statický `CacheWindowStateStore.MLRestProvider` drží 1-arg ctor
   a `EDISON2.IntegrationTests`, bod 4 paralelizace `EDISONMAIN2.Tests`. Testy `WindowNavigatorTests.ServicesCtor_*`,
   `CacheWindowStateStoreTests.LoadAndSave_GoThroughInjectedSession`,
   `EDViewModelTests.AttachToWindow_RestoresGeometryThroughViewModelSession`.

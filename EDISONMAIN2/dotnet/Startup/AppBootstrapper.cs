@@ -253,9 +253,11 @@ public class AppBootstrapper
 
     protected virtual (WindowNavigator Nav, PopupDisplayer Popup, EDServices Services) InitializeServices()
     {
-        var nav = new WindowNavigator();
+        // Navigator vzniká před službami, které ho dostávají konstruktorem; delegát se volá až při spuštění modulu.
+        EDServices? services = null;
+        var nav = new WindowNavigator(() => services!);
         var popup = new PopupDisplayer();
-        var services = new EDServices(null, nav, popup)
+        services = new EDServices(null, nav, popup)
         {
             // Pro „Informace o verzi" (panel Podpora, menu Nápověda) - verze assembly je
             // 1.0.0.0, jediná pravdivá je VERZE.INF vedle exe.
@@ -531,7 +533,8 @@ public class AppBootstrapper
                                                 licence, switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
                                                 miniAppCatalog, shortcuts,
-                                                testRun ? null : new InfChangelogSource())
+                                                testRun ? null : new InfChangelogSource(),
+                                                licenceSync: LicenceSyncFor(_options))
         {
             OpensStartupWindow = !testRun
         };
@@ -560,6 +563,13 @@ public class AppBootstrapper
 
         return wnd;
     }
+
+    /// <summary>
+    /// E2E běh licenci z M-line nestahuje: sync zapisuje do serveru a při chybě spojení ukáže legacy
+    /// okno ERROR, na kterém harness skončí. Null = výchozí sync VM.
+    /// </summary>
+    internal static Func<IMLRest, LicenceService.MlineSyncResult>? LicenceSyncFor(StartupOptions options) =>
+        options.TestRun is null ? null : _ => new LicenceService.MlineSyncResult(false, "");
 
     /// <summary>Pořadí providerů = pořadí skupin v menu „Miniaplikace".</summary>
     internal static IReadOnlyList<IMiniAppProvider> MiniAppProviders(ModuleShortcutsService shortcuts, bool devMiniApps)
