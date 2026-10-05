@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 19 / 47**
+**Hotovo: 20 / 47**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -86,7 +86,6 @@ nepřekrývají, takže můžou běžet současně.
 | Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4, `ALVA.EDTesting.TestRunner` počítá skipped (status 2) zvlášť a vypíše důvod (dnes FAIL s prázdnou hláškou, brání `$$$AssertSkipped` v TD), mrtvý `OpenMiniAppCommand` ve VM (bez bindingu), `docs/zastupci-na-plose.md:62` odkazuje na zrušené `ReloadShortcutsAsync` | napříč | 3 | po slití vln 1 a 2 |
 
 Rozhodnutí vlastníka padla 2026-10-05, u každého dotčeného ID je řádek **Rozhodnutí vlastníka**.
-Otevřený zůstává jen konkrétní vydávací stroj (A46 bod 3).
 
 ## Mapa repa (stav k 2026-10-01)
 
@@ -928,14 +927,15 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A46 · Obsah exe shellu závisí na `C:\Edison` stroje, kde se publikuje 🔸
 
-- [ ] **Stav:** otevřeno, částečně (a4025673, 2026-10-05) - body 1 a 2 hotové: target `RejectDebugLegacyAssemblies`
+- [x] **Stav:** vyřešeno a4025673 (2026-10-05) - body 1 a 2: target `RejectDebugLegacyAssemblies`
   v `SingleFilePublish.targets` čte `DebuggableAttribute` legacy DLL z `C:\Edison` (inline task, bajty
   ve sběratelném `AssemblyLoadContext`, `System.Reflection.Metadata` factory nedostane) a Release
   publish s Debug buildem shodí, nepodepsanou DLL s nečitelnými atributy taky (podepsané cizí C1 přeskočí),
   pod MSBuildem z VS odmítne publish s legacy DLL; ventil `-p:AllowDebugLegacyAssemblies=true`, test
   `SingleFilePublishTargetsTests` s vyrobenou DLL a skutečným `dotnet publish`. `global.json` 10.0.302
-  `latestPatch`. Bod 3 (vydávací stroj) vlastník 2026-10-01 odložil.
-- **Rozhodnutí vlastníka (2026-10-05):** bod 3: shell a EDControls se vydávají jen z jednoho stroje, který vlastník zapíše do `docs/deploy.md`.
+  `latestPatch`. Bod 3 přijat jako riziko: vydává se z libovolného stroje, jehož `C:\Edison` odpovídá vydávané
+  legacy verzi (`docs/deploy.md`); verzi legacy DLL build nehlídá.
+- **Rozhodnutí vlastníka (2026-10-05):** bod 3: pevný vydávací stroj nebude, vydává se z libovolného stroje; riziko kryjí body 1 a 2.
 - **P2 · S** (kontrola a pin SDK; vydávací stroj 🔸 M) · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01), incident při nasazení 29. 9.
 - **Problém:** Legacy knihovny jsou reference přes `HintPath` do `C:\Edison` a single-file publish je
   zabalí do `EDISONMAIN2.exe`. Exe tak nese kopie, které na publikujícím stroji zrovna leží,
