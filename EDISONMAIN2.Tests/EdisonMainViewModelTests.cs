@@ -435,6 +435,42 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
+    public Task SwitchCompany_PreviousCompanyListArrivingMidSwitch_StillSelectsTarget() => Task.Run(async () =>
+    {
+        // Rychle A→B→C: seznam povolených firem pro B doběhne až uvnitř přepínání na C (dialogy switche
+        // pumpují dispatcher). Index spočítaný ze starého seznamu by pak mířil jinam než MLRest.Idfa.
+        // Task.Run bez SynchronizationContext: doběhlý seznam se promítne hned při otevření brány.
+        CompanyStruct[] three =
+        [
+            new() { Id = "CB_DP", Database = "CB_DP" },
+            new() { Id = "JI_DP", Database = "JI_DP" },
+            new() { Id = "PI_DP", Database = "PI_DP" },
+        ];
+        var ml = MockMLRest();
+        var runner = new GatedCompanyListRunner(ml);
+        bool releaseOnClose = false;
+        EdisonMainViewModel? vmRef = null;
+        string[]? listMidSwitch = null;
+        var vm = CreateVM(companies: three, mlRest: ml, restRunner: runner,
+                          closeAllWindows: () =>
+                          {
+                              if (!releaseOnClose) return;
+                              runner.Release();
+                              listMidSwitch = [.. vmRef!.Companies.Select(c => c.Id)];
+                          },
+                          loadAllowedCompanies: _ => [new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }]);
+        vmRef = vm;
+
+        await vm.SwitchCompanyAsync(1);   // A→B, seznam pro B čeká na bránu
+        releaseOnClose = true;
+        await vm.SwitchCompanyAsync(2);   // B→C podle indexu z původního seznamu
+
+        Assert.Equal(["JI_DP"], listMidSwitch);   // předpoklad: seznam pro B se vyměnil uprostřed switche
+        Assert.Equal("PI_DP", vm.Idfa);
+        Assert.Contains("PI_DP", vm.Companies.Select(c => c.Id));
+    });
+
+    [Fact]
     public async Task SwitchCompany_LicenceRefreshDuringListLoad_KeepsList()
     {
         // Obnova licence session nemění - seznam nové firmy se nesmí zahodit.

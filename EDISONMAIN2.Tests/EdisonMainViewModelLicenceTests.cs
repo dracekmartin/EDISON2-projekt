@@ -9,8 +9,8 @@ using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Licence v hlavním okně: „Aktualizovat licenci" a login admina stahují z M-line (legacy
-/// <c>EDUsers.UpdateLicFromMlineServer</c>), chip upozornění nahrazuje nástěnku starého shellu.
+/// Licence v hlavním okně z pohledu VM: příkaz „Aktualizovat licenci", stažení po startu a po přihlášení
+/// jiného uživatele a souběh s přepnutím firmy. Logiku chipu a stažení testuje <see cref="SessionLicenceCoordinatorTests"/>.
 /// </summary>
 public class EdisonMainViewModelLicenceTests
 {
@@ -126,32 +126,12 @@ public class EdisonMainViewModelLicenceTests
     }
 
     [Fact]
-    public void Initialize_RegularUser_NoDownload()
-    {
-        var calls = new List<string>();
-
-        CreateVM(services: Services(calls), licenceSync: SyncSpy(calls));
-
-        Assert.Empty(calls);
-    }
-
-    [Fact]
     public void Initialize_NewLicenceFromMline_RebuildsSession()
     {
         var calls = new List<string>();
         var svc = Services(calls, isAdmin: true);
 
         CreateVM(services: svc, licenceSync: SyncSpy(calls, changed: true));
-
-        Assert.Equal(["sync", "load"], calls);
-    }
-
-    [Fact]
-    public void Initialize_NewLicenceDespiteFeedbackError_RebuildsSession()
-    {
-        var calls = new List<string>();
-
-        CreateVM(services: Services(calls, isAdmin: true), licenceSync: SyncSpy(calls, changed: true, error: "feedback selhal"));
 
         Assert.Equal(["sync", "load"], calls);
     }
@@ -217,19 +197,6 @@ public class EdisonMainViewModelLicenceTests
     }
 
     [Fact]
-    public void Initialize_DownloadFails_Swallowed()
-    {
-        // Legacy EDUsers.Login výsledek stažení nekontroloval; start se kvůli M-line nezastaví.
-        var popup = Substitute.For<IPopupDisplayer>();
-        var svc = Services([], isAdmin: true, popup: popup);
-
-        var vm = CreateVM(services: svc, licenceSync: _ => throw new InvalidOperationException("timeout"));
-
-        Assert.NotNull(vm);
-        popup.DidNotReceiveWithAnyArgs().Error(default!);
-    }
-
-    [Fact]
     public async Task LoginAsAnotherUser_Admin_DownloadsFromMline()
     {
         var calls = new List<string>();
@@ -246,6 +213,21 @@ public class EdisonMainViewModelLicenceTests
     }
 
     [Fact]
+    public async Task Notice_SetByInitialize_NotifiesBinding()
+    {
+        // Binding chipu čte hodnotu už při nastavení DataContextu, licence ale přijde až z InitializeAsync.
+        var licence = new Lic { ValidityTo = DateTime.Today.AddDays(3).ToString("yyyy-MM-dd") };
+        var vm = CreateVM(initialLicence: licence, initialize: false);
+        var notified = new List<string?>();
+        vm.PropertyChanged += (_, e) => notified.Add(e.PropertyName);
+
+        await vm.InitializeAsync();
+
+        Assert.Contains(nameof(vm.LicenceNoticeText), notified);
+        Assert.Contains(nameof(vm.LicenceNoticeTooltip), notified);
+    }
+
+    [Fact]
     public void Notice_LicenceEndingSoon_ShowsChip()
     {
         var licence = new Lic { ValidityTo = DateTime.Today.AddDays(3).ToString("yyyy-MM-dd") };
@@ -256,27 +238,4 @@ public class EdisonMainViewModelLicenceTests
         Assert.Equal("Licence EDISON skončí za 3 dny.", vm.LicenceNoticeTooltip);
     }
 
-    [Fact]
-    public void Notice_VehiclesOverLicence_ShowsChipAfterCount()
-    {
-        var mlRest = MockMLRest();
-        var d = mlRest.Delimiter;
-        mlRest.QueryOrThrow("ALVA.VOZIDLA.LCC", "PocetProvozovanychVozidel", Arg.Any<object[]>())
-              .Returns(MLRestMocks.Output($"celkem{d}11"));
-        var licence = new Lic { ValidityTo = DateTime.Today.AddYears(1).ToString("yyyy-MM-dd"), CountsRZ = 10 };
-
-        var vm = CreateVM(mlRest: mlRest, initialLicence: licence);
-
-        Assert.Equal("Překročen počet vozidel", vm.LicenceNoticeText);
-        // CountsZAM=0: licence zaměstnance neomezuje, počet se ani nezjišťuje.
-        mlRest.DidNotReceive().QueryOrThrow("ALVA.MZDY2.MLAPI", "gPocZam", Arg.Any<object[]>());
-    }
-
-    [Fact]
-    public void Notice_ValidLicence_NoChip()
-    {
-        var vm = CreateVM(initialLicence: new Lic { ValidityTo = DateTime.Today.AddYears(1).ToString("yyyy-MM-dd") });
-
-        Assert.Equal("", vm.LicenceNoticeText);
-    }
 }

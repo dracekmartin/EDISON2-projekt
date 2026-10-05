@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -10,13 +9,10 @@ using Application = System.Windows.Application;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
-using EDControls.EDSupportPanel;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
-using EDControls.UserFonts;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.ChangelogWindow;
-using EDISONMAIN2.Windows.ConnectionWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias - class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
@@ -25,7 +21,6 @@ using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
 using ChangelogWnd = EDISONMAIN2.Windows.ChangelogWindow.ChangelogWindow;
 using MiniAppPickerWnd = EDISONMAIN2.Windows.MiniAppPickerWindow.MiniAppPickerWindow;
-using ConnectionWnd = EDISONMAIN2.Windows.ConnectionWindow.ConnectionWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -37,14 +32,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string DisplayName => string.IsNullOrEmpty(Name) ? Id : $"{Id} - {Name}";
     }
 
-    class EdisonMainViewModel : EDViewModel
+    partial class EdisonMainViewModel : EDViewModel
     {
         private readonly ISessionDataLoader _sessionLoader;
         private readonly IRestCallRunner _restRunner;
-        // Stažení licence z M-line (testy podstrčí stub bez EDUsers).
-        private readonly Func<IMLRest, LicenceService.MlineSyncResult> _licenceSync;
-        // Počítadlo změn session: výsledek pozadí, který doběhne po začátku další změny, patří cizí session.
-        private int _sessionGeneration;
+        private readonly SessionEpoch _session;
+        private readonly SessionLicenceCoordinator _licence;
         private readonly Func<IMLRest, IReadOnlyList<CompanyStruct>> _loadAllowedCompanies;
         private readonly CompanySwitcher _switcher;
         private readonly Func<SwitchUserOutcome> _switchUser;
@@ -196,17 +189,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Uživatel menu
             LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUserAsync);
             ShowUserProfileCommand        = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText())));
-            ChangePasswordCommand         = Command(() =>
-            {
-                bool? changed = WindowNavigator.ShowDialog(
-                    new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(Rest, UserName));
-                // Změna hesla za běhu zneplatní zapamatované (uložené při loginu se starým heslem).
-                if (changed == true && _prefs.RememberedPassword != null)
-                {
-                    _prefs.RememberedPassword = null;
-                    _prefs.Save();
-                }
-            });
+            ChangePasswordCommand         = Command(ChangePassword);
             SetStartupWindowCommand         = Command<IModule>(SetStartupWindow);
             ClearStartupWindowCommand       = Command(ClearStartupWindow);
             ExpandAllCommand                = Command(() => SetActiveTreeExpanded(true), () => ActiveExpandableTree() is not null);
@@ -243,7 +226,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Runner drží politiku „klon per paralelní volání"; testy podstrčí sekvenční variantu.
             _restRunner = restRunner ?? new RestCallRunner(() => Rest);
             _sessionLoader = new SessionDataLoader(_restRunner, treeLoader, [.. _trees.SourceTrees.Select(t => t.Name)]);
-            _licenceSync = licenceSync ?? (rest => LicenceService.SyncFromMline(((MLRestAdapter)rest).Inner));
+            _session = new SessionEpoch(() => Rest, () => Idfa);
+            // Stažení licence z M-line: testy podstrčí stub bez EDUsers.
+            _licence = new SessionLicenceCoordinator(_restRunner,
+                licenceSync ?? (rest => LicenceService.SyncFromMline(((MLRestAdapter)rest).Inner)),
+                _session, RebuildSessionStateAsync, () => _services.LicenceLoader?.Invoke(),
+                () => _services.IsAdmin || _services.MayUpdate,
+                () => { OnPropertyChanged(nameof(LicenceNoticeText)); OnPropertyChanged(nameof(LicenceNoticeTooltip)); });
 
             Companies = ToCompanyItems(companies);
             // Index musí odpovídat MLRest.Idfa - tam má AppBootstrapper vytvořený ACTIVITY zámek.
@@ -289,10 +278,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         private async Task RebuildSessionStateAsync(Lic? licence)
         {
-            int generation = ++_sessionGeneration;
+            _session.Invalidate();
             _services.ActiveLicence = licence;
             // Před stromy: upozornění patří licenci session, i když load stromů selže.
-            _ = RefreshLicenceNoticeAsync(licence, generation);
+            _ = _licence.RefreshNoticeAsync(licence);
             // _modulePrefs se vytváří tady (ne v ctoru), aby reflektoval výměnu UserPrefs po switch-user.
             _modulePrefs = new ModulePreferencesService(UserPrefs);
             // Nová instance per session: resetuje per-session dedup popupů (snooze je per-user × IDFa).
@@ -309,57 +298,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _trees.ReapplySearch();
         }
 
-        /// <summary>
-        /// Upozornění nástěnky starého shellu do chipu status baru. Počty jsou requesty do agendových
-        /// balíků (VOZIDLA, MZDY2), proto na pozadí; do té doby chip ukáže jen datum a verzi.
-        /// </summary>
-        private async Task RefreshLicenceNoticeAsync(Lic? licence, int generation)
-        {
-            SetLicenceNotice(LicenceNotice.Build(licence, DateTime.Today, VerzeInf.Current, null, null));
-            if (licence == null || (licence.CountsRZ <= 0 && licence.CountsZAM <= 0)) return;
-            try
-            {
-                var vehicles = licence.CountsRZ > 0 ? _restRunner.RunAsync(LicenceNotice.LoadVehicleCount) : Task.FromResult<int?>(null);
-                var employees = licence.CountsZAM > 0 ? _restRunner.RunAsync(LicenceNotice.LoadEmployeeCount) : Task.FromResult<int?>(null);
-                await Task.WhenAll(vehicles, employees);
-                if (generation != _sessionGeneration) return;
-                SetLicenceNotice(LicenceNotice.Build(licence, DateTime.Today, VerzeInf.Current, vehicles.Result, employees.Result));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Licence notice counts failed: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Parita s legacy <c>EDUsers.Login</c> (<c>EDUsers.vb:170</c>): admin a uživatel s právem UpdateEdison
-        /// stahují při přihlášení licenci z M-line a posílají feedback. Na pozadí, spojení do M-line bývá
-        /// pomalé a start na něj nesmí čekat; nová licence se promítne tichou přestavbou session.
-        /// <c>internal</c> kvůli testům souběhu se změnou session.
-        /// </summary>
-        internal async Task SyncMlineLicenceAfterLoginAsync()
-        {
-            if (!_services.IsAdmin && !_services.MayUpdate) return;
-            int generation = _sessionGeneration;
-            try
-            {
-                var sync = await _restRunner.RunAsync(_licenceSync);
-                if (sync.Error.Length > 0) Debug.WriteLine($"M-line licence sync: {sync.Error}");
-                if (!sync.Changed || generation != _sessionGeneration) return;
-                await RebuildSessionStateAsync(_services.LicenceLoader?.Invoke());
-            }
-            catch (Exception ex)
-            {
-                // Legacy výsledek také nekontroloval; M-line vývojářům chybu ukáže sám EDUsers.
-                Debug.WriteLine($"M-line licence sync failed: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Změna session začíná prvním dialogem, ne až přestavbou: dialogy uvnitř synchronního switche pumpují
-        /// dispatcher a doběhlý sync by jinak přestavěl stav nad rozpracovanou firmou (MLRest už na cílové).
-        /// </summary>
-        private void InvalidatePendingSessionWork() => _sessionGeneration++;
+        /// <summary>Stažení licence z M-line po přihlášení; <c>internal</c> kvůli testům souběhu se změnou session.</summary>
+        internal Task SyncMlineLicenceAfterLoginAsync() => _licence.SyncAfterLoginAsync();
 
         /// <summary>
         /// Promítne načtená data do VM. Musí zůstat SYNCHRONNÍ: guardy <c>_suppressXxx</c> níž
@@ -545,18 +485,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string UpToDateText => _releaseNotice?.Outcome == ReleaseNoticeOutcome.UpToDate
             ? "Jde o nejnovější verzi." : "";
 
-        private LicenceNotice.Notice? _licenceNotice;
         /// <summary>Chip upozornění licence a verze (nástěnka starého shellu); prázdný = skrytý.</summary>
-        public string LicenceNoticeText => _licenceNotice?.Short ?? "";
-        public string LicenceNoticeTooltip => _licenceNotice?.Full ?? "";
-
-        private void SetLicenceNotice(LicenceNotice.Notice? notice)
-        {
-            if (notice == _licenceNotice) return;
-            _licenceNotice = notice;
-            OnPropertyChanged(nameof(LicenceNoticeText));
-            OnPropertyChanged(nameof(LicenceNoticeTooltip));
-        }
+        public string LicenceNoticeText => _licence.Notice?.Short ?? "";
+        public string LicenceNoticeTooltip => _licence.Notice?.Full ?? "";
 
         // Stromy, hledání a rozbalení launcher panelu; VM je vystavuje bindingům a orchestruje session.
         private readonly ModuleTreeState _trees;
@@ -725,7 +656,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 && !PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna i miniaplikace."))
                 return;
 
-            InvalidatePendingSessionWork();
+            _session.Invalidate();
             SwitchOutcome result;
             // Synchronní část (zavření oken, VerifyLic, logout staré firmy) blokuje UI thread -
             // overlay „Akce probíhá" se musí stihnout vykreslit před ní (yield). Scope nesmí
@@ -755,7 +686,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             try
             {
-                SelectedCompanyIndex = index;
+                SelectedCompanyIndex = IndexOfOrAppend(target);
                 await RebuildSessionStateAsync(result.Licence);
             }
             catch
@@ -770,6 +701,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _ = ReloadAllowedCompaniesAsync();
         }
 
+        // Seznam se mohl během dialogů switche vyměnit (doběhl seznam povolených firem předchozího
+        // přepnutí), takže index z doby před switchem by mířil jinam než MLRest.Idfa.
+        private int IndexOfOrAppend(CompanyItem company)
+        {
+            for (int i = 0; i < Companies.Count; i++)
+                if (Companies[i].Id == company.Id) return i;
+            Companies = [.. Companies, company];
+            OnPropertyChanged(nameof(Companies));
+            OnPropertyChanged(nameof(CompanySuggestions));
+            OnPropertyChanged(nameof(HasMultipleCompanies));
+            return Companies.Count - 1;
+        }
+
         /// <summary>
         /// Funkční omezení DB je per IDFa, nová firma může povolovat jiné (legacy CreateCompanyMenu po přepnutí).
         /// Na pozadí po přestavbě: přepínač na pomocný dotaz nečeká a selhání nechá funkční session se seznamem
@@ -777,18 +721,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         private async Task ReloadAllowedCompaniesAsync()
         {
-            // Jiný uživatel = nová instance MLRest, jiná firma = jiné Idfa; obnova licence session nemění.
-            var rest = Rest;
-            var idfa = Idfa;
-            bool SameSession() => ReferenceEquals(Rest, rest) && Idfa == idfa;
+            var started = _session.CaptureSession();
             try
             {
                 var allowed = await _restRunner.RunAsync(_loadAllowedCompanies);
-                if (SameSession()) ReplaceCompanies(allowed, idfa);
+                if (_session.IsSameSession(started)) ReplaceCompanies(allowed, started.Idfa);
             }
             catch (Exception ex)
             {
-                if (SameSession()) PopupDisplayer.Error(ex);
+                if (_session.IsSameSession(started)) PopupDisplayer.Error(ex);
             }
         }
 
@@ -838,14 +779,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
         }
 
-        // Test funkcí: overlay s vybranou variantou na 10 s - dost na posouzení animace,
-        // netřeba nic rušit ručně.
-        private async Task TestActionOverlayAsync(string? spriteKey)
-        {
-            using (ActionInProgress(spriteKey))
-                await Task.Delay(TimeSpan.FromSeconds(10));
-        }
-
         /// <summary>Novinky shellu po loginu (EDISONMAIN.INF - obsah sdílený s legacy shellem).</summary>
         public Task ShowShellChangelogIfAnyAsync() =>
             _changelogPrompt?.ShowIfNewAsync("EDISONMAIN", "EDISON") ?? Task.CompletedTask;
@@ -870,19 +803,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Modální: ShowIfNewAsync se vrátí až po zavření, volající tak čeká s dalším otvíráním.
             WindowNavigator.ShowDialog(wnd);
             onClosed(wnd.SnoozeChecked);
-        }
-
-        // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
-        private async Task LaunchModelessAsync(string exe, string formFqn)
-        {
-            using (ActionInProgress())
-                await WindowNavigator.ShowLegacyAsync(exe, formFqn);
-        }
-
-        private async Task LaunchDialogAsync(string exe, string formFqn)
-        {
-            using (ActionInProgress())
-                await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
         // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModuleAsync (usage + overlay); ostatní
@@ -992,7 +912,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (!PopupDisplayer.Confirm("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
                 return;
 
-            InvalidatePendingSessionWork();
+            _session.Invalidate();
             var outcome = _switchUser();
             switch (outcome.Outcome)
             {
@@ -1041,213 +961,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        private void ResetForms()
-        {
-            if (!PopupDisplayer.Confirm("Obnovit výchozí pozice a velikosti všech oken?"))
-                return;
-            // Reset persistovaných pozic/velikostí oken (per MLP × IDFa) - legacy endpoint.
-            Rest.QueryOrThrow("ALVA.LIBRARY.Form", "ResetSettings", new CVar());
-            PopupDisplayer.Info("Nastavení oken bylo obnoveno. Změna se projeví po jejich příštím otevření.");
-        }
-
-        private static void RunEdisonCopy()
-        {
-            var exe = CurrentExecutable();
-            if (exe.Length == 0) return;
-            Process.Start(EdisonCopyStartInfo(exe));
-        }
-
-        // Kopie startuje přímo jako legacy (frmNoMDI); bez značky by ji App poslal přes EDLOADER a jeho brány.
-        internal static ProcessStartInfo EdisonCopyStartInfo(string exe)
-        {
-            var info = new ProcessStartInfo(exe) { UseShellExecute = true };
-            info.ArgumentList.Add(App.LoaderMarker);
-            return info;
-        }
-
-        // Parita s legacy frmConnection: výchozí připojení řídí centrálně EDISONini.xml (jen pro čtení),
-        // další si uživatel ukládá lokálně. Jiný server = nová instance shellu - session v procesu
-        // je na jeden server (IMLRest.Server/Port jsou konstanty).
-        private void ConnectToDatabase()
-        {
-            var window = new ConnectionWnd(_prefs, DefaultConnection());
-            if (WindowNavigator.ShowDialog(window) != true || window.Picked is not { } picked) return;
-            var exe = CurrentExecutable();
-            if (exe.Length == 0) return;
-            Process.Start(ConnectionLaunchInfo(exe, picked));
-        }
-
-        // Bez EDISONini.xml (instance spuštěná s argumenty připojení) je výchozí aktuální session.
-        private ConnectionChoice DefaultConnection()
-        {
-            var ini = SettingsLoader.Load().Server;
-            return ini.Host.Length > 0
-                ? new ConnectionChoice(ini.Name.Length > 0 ? ini.Name : "EDISONini.xml", ini.Host, ini.Port, IsDefault: true)
-                : new ConnectionChoice("Aktuální", Rest.Server, Rest.Port, IsDefault: true);
-        }
-
-        /// <summary>Nová instance shellu proti vybranému serveru; argumenty čte <see cref="ConnectionOverride.Parse"/>.</summary>
-        internal static ProcessStartInfo ConnectionLaunchInfo(string exe, ConnectionChoice connection)
-        {
-            var info = new ProcessStartInfo(exe) { UseShellExecute = true };
-            foreach (var arg in new ConnectionOverride(connection.Server, connection.RestPort).ToArguments())
-                info.ArgumentList.Add(arg);
-            return info;
-        }
-
-        private static string CurrentExecutable() => Process.GetCurrentProcess().MainModule?.FileName ?? "";
-
-        // TD přebírá shell session z launch argumentů (GUID + CacheLocks=1) - jeho requesty tak
-        // drží ACTIVITY historii shellu (HD 13132/F17) a umírá se shellem jako agendové moduly.
-        private void OpenTemplateDesigner() => WindowNavigator.ShowLegacy("TemplateDesigner.exe", formFqn: "");
-
-        private const string LegacyShellExe = "EDISONMAIN.exe";
-        // reason=2 je EdisonLaunchReasonEnum.RunEdison; bez něj frmNoMDI ohlásí "nelze spustit
-        // samostatně" a zavře se (kontrola, že shell spustil loader, ne uživatel ručně).
-        private const string LegacyShellArgs = "reason=2";
-
-        // Starý shell zůstává dostupný i po přepnutí EDLOADERu na EDISONMAIN2. Záměrně plain
-        // Process.Start, ne WindowNavigator: ten child váže na KillOnExit job (starý shell by
-        // umřel s tímhle), ukazuje ho ve "Spuštěné moduly" a dedupuje modeless launche.
-        private static void OpenLegacyShell() => Process.Start(LegacyShellStartInfo());
-
-        internal static ProcessStartInfo LegacyShellStartInfo() =>
-            new(EDControls.EDViewModel.WindowNavigator.ResolveExecutablePath(LegacyShellExe))
-            {
-                Arguments = LegacyShellArgs,
-                UseShellExecute = true,
-            };
-
-        /// <summary>
-        /// Parita s legacy „Aktualizovat licenci" (<c>frmNoMDI.vb:3498-3505</c>): stažení z M-line smí každý
-        /// uživatel. Chybu EDUsers ukáže až po přestavbě - licence mohla být uložena a selhat až feedback.
-        /// </summary>
         private async Task RefreshLicenceAsync()
         {
-            InvalidatePendingSessionWork();
-            LicenceService.MlineSyncResult sync;
-            using (ActionInProgress())
-                sync = await _restRunner.RunAsync(_licenceSync);
-            await RebuildSessionStateAsync(_services.LicenceLoader?.Invoke());
+            var sync = await _licence.RefreshAsync(() => ActionInProgress());
             if (sync.Error.Length > 0)
                 throw new InvalidOperationException(sync.Error);
             PopupDisplayer.Info("Licence byla aktualizována.");
-        }
-
-        // Tmavý režim - sdílená preference (%APPDATA%\m-line\common\theme.json) přes ThemeService;
-        // přepne živě + propaguje do ostatních m-line procesů (TemplateDesigner) přes watcher.
-        public bool IsDarkMode
-        {
-            get => EDControls.EDTheme.ThemeService.IsDark;
-            set
-            {
-                if (EDControls.EDTheme.ThemeService.IsDark == value) return;
-                EDControls.EDTheme.ThemeService.SetDarkMode(value);
-                OnPropertyChanged();
-            }
-        }
-
-
-        // Nastavení → Nastavení fontu - dialog v EDControls (uložení i aplikaci řeší sám).
-        // Storage je shared font.json, takže ostatní m-line tooly (TemplateDesigner) přes
-        // FileSystemWatcher okamžitě reagují na změnu.
-        private static void ShowFontSettings()
-            => FontSettingsWindow.ShowDialogFor(Application.Current?.MainWindow);
-
-        private void OpenWebUrl(string url)
-        {
-            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
-        }
-
-        // Týž text jako tlačítko „Informace o verzi" v panelu Podpora - jeden zdroj pravdy.
-        private void ShowAppInfo() =>
-            PopupDisplayer.Info(SupportActions.BuildVersionInfo(
-                MLRest, _services.AppDisplayName, _services.AppVersion));
-
-        // Stálý text bez timer refreshe - shell se typicky spouští denně, půlnoční rollover neřešíme.
-        public string InformationText { get; } = BuildInformationText(DateOnly.FromDateTime(DateTime.Today));
-
-        internal static string BuildInformationText(DateOnly today)
-        {
-            var text = $"Dnes je {today:dd.MM.yyyy}";
-            var nameday = CzechNamedays.GetByDate(today);
-            if (!string.IsNullOrEmpty(nameday)) text += $", svátek má {nameday}";
-            return text;
-        }
-
-        // Initial = placeholder: WPF neotevře prázdný submenu, takže MouseEnter refresh by se nevyvolal.
-        private IReadOnlyList<RunningModuleInfo> _runningModules = [EmptyPlaceholder];
-        public IReadOnlyList<RunningModuleInfo> RunningModules
-        {
-            get => _runningModules;
-            private set => Set(ref _runningModules, value);
-        }
-
-        private static readonly RunningModuleInfo EmptyPlaceholder =
-            new("Žádné moduly nejsou spuštěné", () => { }, IsEnabled: false);
-
-        private void RefreshRunningModules()
-        {
-            var modules = _getActiveModules();
-            if (modules.Count == 0) { RunningModules = [EmptyPlaceholder]; return; }
-
-            var labels = ModuleTreeState.BuildModuleLabels(_trees.SourceTrees.Select(t => t.Tree));
-            RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, labels) })];
-        }
-
-        /// <summary>
-        /// Label do menu „Spuštěné moduly": dlouhý název modulu, jinak cesta agendou, jinak
-        /// (modul mimo strom) vlastní titulek okna bez koncového <c>[IDFa]</c>. Krátký název sám
-        /// nestačí - dvě agendy ho mají běžně shodný (Zaměstnanci z MZDY2 vs. z Požadavků na
-        /// volno). Firma je v položce zbytečná - při přepnutí firmy se otevřená okna zavírají.
-        /// </summary>
-        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, ModuleTreeState.ModuleLabel> labels) =>
-            labels.TryGetValue(ModuleTreeState.ModuleKey(info.ExeName, info.FormFqn, info.InputParam), out var label)
-                ? (label.LongName.Length > 0 ? label.LongName : label.Path)
-                : StripIdfaSuffix(info.DisplayName);
-
-        /// <summary>Odřízne jeden koncový <c>[...]</c> (suffix s firmou). Hranatá závorka uvnitř názvu zůstane.
-        /// Suffix přidávají legacy formy samy (<c>clsForm.ShowIDFA</c>), okna EDISON2 ho nemají.</summary>
-        internal static string StripIdfaSuffix(string title)
-        {
-            var trimmed = title.TrimEnd();
-            if (!trimmed.EndsWith(']')) return title;
-            var open = trimmed.LastIndexOf('[');
-            return open <= 0 ? title : trimmed[..open].TrimEnd();
-        }
-
-        // Ctrl+W+W (dvojhmat) - skrytá zkratka pro M-line utility.
-        // Stav perzistuje v UI threadu, není potřeba timeout - jakákoliv jiná klávesa čekání zruší.
-        private bool _isWaitingForSecondKey;
-        public bool IsWaitingForSecondKey
-        {
-            get => _isWaitingForSecondKey;
-            private set
-            {
-                if (Set(ref _isWaitingForSecondKey, value))
-                    OnPropertyChanged(nameof(SecondKeyHintText));
-            }
-        }
-        public string SecondKeyHintText => IsWaitingForSecondKey ? "Stisknuto Ctrl+W - čekám na druhý stisk…" : "";
-
-        public void HandleCtrlW()
-        {
-            if (IsWaitingForSecondKey)
-            {
-                IsWaitingForSecondKey = false;
-                // UTILITIES.exe ukáže vlastní FrmPassword (legacy date-dependent vzorec) -
-                // shell jen detekuje dvojhmat a spustí. Single source of truth pro formuli.
-                WindowNavigator.ShowLegacy("UTILITIES.exe", "ALVA.UTILITIES.formUTILITIESMain");
-            }
-            else
-            {
-                IsWaitingForSecondKey = true;
-            }
-        }
-
-        public void CancelSecondKeyWait()
-        {
-            if (IsWaitingForSecondKey) IsWaitingForSecondKey = false;
         }
     }
 }
