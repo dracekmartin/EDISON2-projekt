@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 20 / 47**
+**Hotovo: 21 / 47**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -336,7 +336,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A6 · `EDServices.Current` prosakuje do infrastruktury a vypnul paralelizaci `EDISONMAIN2.Tests`
 
-- [ ] **Stav:** otevřeno, částečně (bod 3 vyřešen 2026-10-05: `LicenceService` má `showInfo` povinný bez
+- [ ] **Stav:** otevřeno, částečně (bod 3 vyřešen fcd497d0, 2026-10-05: `LicenceService` má `showInfo` povinný bez
   fallbacku na `EDServices.Current`, `SessionFactory` předává popup služeb session; 2026-10-01: seam pro
   geometrii oken existuje, default čte dál singleton)
 - **P2 · M** · Závisí na: A7 (stejný soubor, dělat před) · Blokuje: - · Původ: [backlog R5](arch-backlog.md#r5---edservicescurrent-prosakuje-do-infrastruktury-a-vypnul-paralelizaci-testů)
@@ -1168,7 +1168,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A34 · Dvě serverové cesty k „výchozí okno", jedna mrtvá
 
-- [x] **Stav:** vyřešeno 91b2cbca (2026-10-05) - `UserProfileData` bez `DefaultWindowId`, `UserProfileService.Load`
+- [x] **Stav:** vyřešeno 922a5ec3 (2026-10-05) - `UserProfileData` bez `DefaultWindowId`, `UserProfileService.Load`
   řádek `form` nečte (server ho posílá dál, čte ho legacy shell); věta o jediné cestě
   `ApiEdison.Get/SetUserDefaultForm` v `EDISONMAIN2/CLAUDE.md`, sekce Výchozí okno.
 - **P3 · S** · Původ: nový (2026-09-20)
