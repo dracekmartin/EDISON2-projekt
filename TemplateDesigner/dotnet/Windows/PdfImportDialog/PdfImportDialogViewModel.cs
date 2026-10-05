@@ -1,6 +1,7 @@
 using System.IO;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.PdfImport;
 using TemplateDesigner.Services;
@@ -35,9 +36,7 @@ public class PdfImportDialogViewModel : EDViewModel
         SelectedAgendaCode = preferredAgendaCode is { Length: > 0 } pref
             && AvailableAgendas.Any(a => a.Code.Equals(pref, StringComparison.OrdinalIgnoreCase))
                 ? pref : "";
-        ScheduleImportType = SelectedAgendaCode.StartsWith("ZASTAVKOVY_JR", StringComparison.OrdinalIgnoreCase)
-            ? ScheduleImportType.ZastavkovyJrMhd
-            : ScheduleImportType.None;
+        ScheduleImportType = ScheduleImportTypes.ForAgenda(SelectedAgendaCode);
 
         // AI klíč: lokální dev, nebo vyzvednutý z mlweb/EDISONAI
         HasApiKey = !string.IsNullOrEmpty(apiKey);
@@ -84,9 +83,14 @@ public class PdfImportDialogViewModel : EDViewModel
         ?? "AI import není dostupný - kontaktujte podporu M-line.";
 
     /// <summary>Popis režimu importu pro info řádek v dialogu.</summary>
-    public string ImportModeInfo => IsScheduleImport
-        ? $"Zastávkový jízdní řád - AI rozpozná strukturu (zastávky, odjezdy, poznámky) a namapuje pole agendy {SelectedAgendaName}."
-        : "Obecný layout - texty a grafika se převezmou 1:1 jako elementy šablony.";
+    public string ImportModeInfo => ScheduleImportType switch
+    {
+        ScheduleImportType.ZastavkovyJrMhd =>
+            $"Zastávkový jízdní řád - AI rozpozná strukturu (zastávky, odjezdy, poznámky) a namapuje pole agendy {SelectedAgendaName}.",
+        ScheduleImportType.LinkovyJr =>
+            $"Linkový jízdní řád - AI rozpozná tabulku spojů, poznámky a texty v hlavičce a namapuje pole agendy {SelectedAgendaName}.",
+        _ => "Obecný layout - texty a grafika se převezmou 1:1 jako elementy šablony.",
+    };
 
     private string SelectedAgendaName =>
         AvailableAgendas.FirstOrDefault(a => a.Code.Equals(SelectedAgendaCode, StringComparison.OrdinalIgnoreCase))?.Name
@@ -181,8 +185,9 @@ public class PdfImportDialogViewModel : EDViewModel
             int[]? pages = null;
             if (IsScheduleImport)
             {
-                // Zastávkový JŘ = vždy právě jedna stránka (jedna vývěska). U vícestránkového
-                // PDF (celá linka) volí uživatel kterou; AI dostane jen tu - bez zahlcení.
+                // JŘ se rozpoznává z jedné stránky: u zastávkového je to jedna vývěska, u linkového
+                // rozvržení stránky, které sestava zopakuje pro každý směr. U vícestránkového PDF
+                // volí uživatel kterou; AI dostane jen tu - bez zahlcení.
                 pages = [Math.Clamp(PageFrom, 1, Math.Max(TotalPages, 1))];
             }
             else if (!ImportAllPages)
@@ -231,7 +236,7 @@ public class PdfImportDialogViewModel : EDViewModel
             if (!string.IsNullOrEmpty(SelectedAgendaCode))
                 template.AgendaCode = SelectedAgendaCode;
 
-            NormalizeImportedPage(template);
+            NormalizeImportedPage(template, lineSchedule: scheduleType == ScheduleImportType.LinkovyJr);
             ApplyDefaultImportBorders(template);
             ImportedTemplate = template;
 
@@ -266,6 +271,8 @@ public class PdfImportDialogViewModel : EDViewModel
             }
 
             SaveProtocolFile(pdfPath, enableDebug);
+            if (useVision)
+                SaveLastImportDiagnostics(pdfPath, aiDebugLog, template);
             CloseDialog(true);
         }
         catch (Exception ex)
@@ -312,12 +319,45 @@ public class PdfImportDialogViewModel : EDViewModel
         catch (Exception) { /* protokol je pomůcka, ne brána */ }
     }
 
+    private string? _lastPageImage;
+
+    /// <summary>Složka s výpisem posledního AI importu (přepisuje se).</summary>
+    internal static string LastImportDir => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "m-line", "TemplateDesigner", "posledni-import");
+
+    /// <summary>
+    /// Výpis posledního AI importu - vždy, do složky aplikace, ne vedle PDF: uživatele neobtěžuje
+    /// a vývojář se podívá, co model vrátil. Bez něj nešlo zpětně zjistit, proč import dopadl
+    /// hůř: odpovědi modelu se mezi běhy liší a volba Debug je jen s lokálním klíčem (nález 2. 10.).
+    /// Nezdaří-li se zápis, import to nesmí shodit.
+    /// </summary>
+    private void SaveLastImportDiagnostics(string pdfPath, string? aiDebugLog, Template template)
+    {
+        try
+        {
+            Directory.CreateDirectory(LastImportDir);
+            File.WriteAllText(Path.Combine(LastImportDir, "ai-debug.txt"),
+                $"PDF: {pdfPath}{Environment.NewLine}Čas: {DateTime.Now:d. M. yyyy H:mm:ss}{Environment.NewLine}{Environment.NewLine}"
+                + aiDebugLog);
+            File.WriteAllLines(Path.Combine(LastImportDir, "protokol.txt"), [.. ImportLog, "", .. DetailedLog]);
+            File.WriteAllText(Path.Combine(LastImportDir, "sablona.json"),
+                Serialization.TemplateSerializer.Serialize(template));
+            if (_lastPageImage is { Length: > 0 } png)
+                File.WriteAllBytes(Path.Combine(LastImportDir, "stranka.png"), Convert.FromBase64String(png));
+        }
+        catch (Exception) { /* výpis je pomůcka, ne brána */ }
+    }
+
     /// <summary>Normalizuje stránku importované šablony, ať sekce po importu rozumně vyplní stránku
     /// a nevypadá „posunutě": (1) rozměr stránky přichytí na nejbližší standardní formát
     /// (A5/A4/A3 × orientace) v toleranci, jinak zaokrouhlí; (2) nastaví malé jednotné výchozí okraje
     /// (1 mm, clampnuté ať neořežou obsah); (3) Body sekci dopočítá na tiskovou plochu.
-    /// Page-level - prvky se nehýbou vůči sobě (posun se sekcí je uniformní).</summary>
-    private static void NormalizeImportedPage(Template template)
+    /// Page-level - prvky se nehýbou vůči sobě (posun se sekcí je uniformní).
+    /// Linkový JŘ vynechá kroky (2) i (3): okraje zůstanou podle předlohy, protože jejich zmenšení
+    /// posune celý obsah doleva nahoru (u vzoru 940 o 9-12 mm, změřeno 2. 10.), a sekce pod sebou
+    /// (tabulka, poznámky) by každá na celou plochu rozházelo po stránkách.</summary>
+    internal static void NormalizeImportedPage(Template template, bool lineSchedule = false)
     {
         var ps = template.PageSize;
 
@@ -333,6 +373,12 @@ public class PdfImportDialogViewModel : EDViewModel
             if (snapped) break;
         }
         if (!snapped) { ps.Width = MmMath.Round(ps.Width); ps.Height = MmMath.Round(ps.Height); }
+        if (lineSchedule)
+        {
+            ps.MarginLeft = MmMath.Round(ps.MarginLeft); ps.MarginRight = MmMath.Round(ps.MarginRight);
+            ps.MarginTop = MmMath.Round(ps.MarginTop); ps.MarginBottom = MmMath.Round(ps.MarginBottom);
+            return;
+        }
 
         // (2) výchozí okraje - malé jednotné (1 mm), ale nikdy tak velké, aby ořízly obsah
         float maxRight = 0f, maxBottom = 0f;
@@ -357,12 +403,13 @@ public class PdfImportDialogViewModel : EDViewModel
     /// <summary>Dorovná importovaným elementům konzistentní výchozí rámeček (černý 0,1mm) tam, kde
     /// žádný nemají - shodně s novými elementy z palety (<c>CreateElementByType</c>). Import ho někdy
     /// nenastaví; rámeček detekovaný z PDF (šířka > 0) se nepřepisuje.</summary>
-    private static void ApplyDefaultImportBorders(Template template)
+    internal static void ApplyDefaultImportBorders(Template template)
     {
         foreach (var section in template.Sections)
             foreach (var el in section.Elements)
             {
                 if (el.BorderWidth > 0f) continue;   // detekovaný / už nastavený rámeček nechat
+                if (el is RectangleElement) continue; // obdélník má vlastní okraj - černý navíc by orámoval i barevnou plochu hlavičky
                 el.BorderColor = "#FF000000";
                 el.BorderWidth = 0.1f;
             }
@@ -391,6 +438,7 @@ public class PdfImportDialogViewModel : EDViewModel
             pdfPath, pages, scheduleType, enableDebug, setStatus);
 
         setAiLog(pipeline.AiDebugLog);
+        _lastPageImage = pipeline.PageImageBase64;
         ImportLog.AddRange(pipeline.ImportLog);
         DetailedLog.AddRange(pipeline.DetailedLog);
         return template;

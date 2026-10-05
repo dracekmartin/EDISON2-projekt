@@ -19,7 +19,7 @@ Include GENERAL
 ///
 ///   values: CISLO_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
 ///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), KONECNA_ZASTAVKA,
-///           VYCHOZI_ZASTAVKA
+///           VYCHOZI_ZASTAVKA, AKTUALNI_ZASTAVKA_CZST/TC (zvýrazněná zastávka, je-li jednoznačná)
 ///   rows.ZASTAVKY:    [{ PORADI, TYP ("zastavka" hlavní/odjezdový řádek | "prijezd" vložený
 ///                        příjezdový u zastávek s atributem P/J), CZST, NAZEV_ZASTAVKY, TC, ZONY,
 ///                        MHD, KM:[per km-sloupec směru], ATRIBUTY:[znaky], NASTUPISTE }]
@@ -105,6 +105,12 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
     d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
+    // Zastávka výlepu (parametr „Zvýraznit zastávku") jako pole stránky, aby ji šlo dosadit do QR.
+    d ..AddField(fields, "AKTUALNI_ZASTAVKA_CZST", "Číslo aktuální zastávky",  "number")
+    d ..AddField(fields, "AKTUALNI_ZASTAVKA_TC",   "Tarifní číslo aktuální zastávky", "number")
+    // Jen u tisku po zastávkách (parametr „Stránka pro každou zastávku"); prvek podle něj zvýrazní inverzně
+    // aktuální zastávku. Bez parametru pole na stránce není.
+    d ..AddField(fields, "VYLEP_ZASTAVKY",         "Výlep pro zastávku",       "boolean")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
@@ -291,6 +297,18 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pObou.defaultValue = "false"
     s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuté = každý směr na vlastní stránce."
 
+    // Výlepy na zastávky (Jan 1. 10.): místo stránky za směr stránka za každou zastávku a směr,
+    // na které je ta zastávka zvýrazněná - na výlep tak jde i QR s adresou své zastávky.
+    // „Obecné" ze stejného důvodu jako obousměrný tisk: mění složení celé sestavy.
+    s pVyl = ##class(%DynamicObject).%New()
+    s pVyl.name         = "STRANKA_PRO_ZASTAVKU"
+    s pVyl.label        = "Stránka pro každou zastávku"
+    s pVyl.type         = "bool"
+    s pVyl.group        = "Obecné"
+    s pVyl.serverSide   = 1
+    s pVyl.defaultValue = "false"
+    s pVyl.description  = "Každá zastávka, kde spoje odjíždějí, dostane vlastní stránku za každý směr a je na ní zvýrazněná inverzně (bílé na černém). Zvýraznit zastávku a Zvýraznit tarifní číslo pak vyberou jen některé zastávky."
+
     // ⚠️ **Turnusy ke spojům tu parametr NEJSOU** - je to volba prvku (šablony), stejně jako
     // v legacy, kde to je nastavení sekce v návrháři sestav. Klient posílá `TURNUSY_KE_SPOJUM`
     // podle prvku (jako `DEFINICE_SLOUPCU`), takže dotaz do modulu turnusů (40-550 ms na linku)
@@ -373,6 +391,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(pTvar)     // Obecné
     d arr.%Push(pMhd)
     d arr.%Push(pObou)
+    d arr.%Push(pVyl)
     d arr.%Push(pStr)
     d arr.%Push(p)         // Tabulka linky - dělení spojů je nejdůležitější volba agendy
     d arr.%Push(pTc)
@@ -510,22 +529,103 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // Bool parametry chodí jako "true"/"false", starší klienti posílali "True" - proto tolerantně.
         s obousmerne = ($zcvt($g(^||ML("IN","OBOUSMERNY_TISK")),"L") = "true")
         s sTurnusy = ($zcvt($g(^||ML("IN","TURNUSY_KE_SPOJUM")),"L") = "true")
+        s vylepy = ($zcvt($g(^||ML("IN","STRANKA_PRO_ZASTAVKU")),"L") = "true")
         i obousmerne {
             // Pořadí zastávek se bere ze směru „tam"; opačný směr se na tytéž řádky zarovná podle
             // pořadí zastávky. Linka obsluhovaná jen jedním směrem tím vyjde jako dnes - druhá
             // strana prostě nemá sloupce a prvek ji nenakreslí.
             s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 1, sTurnusy, volbaZony)
-            i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+            i page '= "" {
+                i vylepy { d ..VypisVylepy(page, "T,Z", 1) }
+                else { s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON() }
+            }
         }
         else {
             f smer = "T", "Z" {
                 s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 0, sTurnusy, volbaZony)
-                i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+                continue:page=""
+                i vylepy { d ..VypisVylepy(page, smer, 0) }
+                else { s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON() }
             }
         }
     }
     catch (ex) { $$$CatchErrRest }
     ret $$$OK
+}
+
+/// Výlepy na zastávky: ze stránky směru (nebo obousměrné) vypíše jednu stránku za každou zastávku
+/// výlepu. Stránka se nestaví znovu, jen se zkopíruje a přenastaví zvýraznění - na zvýraznění
+/// nezávisí nic jiného než příznak řádku a pole zastávky v hlavičce, a stavba tabulky je drahá.
+///
+/// Zastávka výlepu = hlavní řádek, ze kterého v daném směru aspoň jeden spoj odjíždí: má tu čas,
+/// není tu jen výstup (značka „V") a dál po směru ještě někde staví (konečná tedy výlep nemá).
+/// Zadané „Zvýraznit zastávku/tarifní číslo" výlepy zúží na ty zastávky, které už stránka označila.
+/// Stránka nese `SMER` svého výlepu (i obousměrná - QR potřebuje směr) a `VYLEP_ZASTAVKY` = "true",
+/// podle kterého prvek aktuální zastávku vždy vytiskne inverzně (jako starý modul).
+ClassMethod VypisVylepy(page As %DynamicObject, smery As %String, obousmerne As %Boolean)
+{
+    s zastavky = page.rows.%Get("ZASTAVKY"), spoje = page.rows.%Get("SPOJE")
+    q:'$isobject(zastavky)||'$isobject(spoje)
+    s filtr = ($g(^||TiskKnizni("zvyraznit","zastavka")) '= "") || ($g(^||TiskKnizni("zvyraznit","tc")) '= "")
+    s pocet = zastavky.%Size()
+    f si=1:1:$l(smery,",") {
+        s smer = $p(smery,",",si)
+        // Obousměrná stránka má řádky v pořadí směru „tam", opačný směr se čte odzadu.
+        s krok = $s(obousmerne && (smer = "Z"):-1, 1:1)
+        s i = $s(krok = 1:0, 1:pocet - 1)
+        while (i >= 0) && (i < pocet) {
+            s r = zastavky.%Get(i)
+            i (r.%Get("TYP") = "zastavka") && ('filtr || (r.%Get("AKTUALNI_ZASTAVKA") = "true")) && ..Odjizdi(zastavky, spoje, smer, i, krok, pocet) {
+                d ..VypisVylep(page, r.%Get("PORADI"), r.%Get("CZST"), smer)
+            }
+            s i = i + krok
+        }
+    }
+}
+
+/// Odjíždí z řádku `i` ve směru `smer` aspoň jeden spoj, který dál ještě někde staví? Vložený
+/// příjezdový řádek téže zastávky se za „dál" nepočítá (obousměrná stránka ho má u opačného směru
+/// po směru čtení).
+ClassMethod Odjizdi(zastavky As %DynamicArray, spoje As %DynamicArray, smer As %String, i As %Integer, krok As %Integer, pocet As %Integer) As %Boolean
+{
+    s poradi = zastavky.%Get(i).%Get("PORADI"), odjizdi = 0
+    s it = spoje.%GetIterator()
+    while 'odjizdi && it.%GetNext(.k, .spoj) {
+        continue:spoj.%Get("SMER")'=smer
+        s casy = spoj.%Get("CASY")
+        continue:'$isobject(casy)
+        continue:'..JeCas(casy.%Get(i))
+        s znacky = spoj.%Get("ZNACKY")
+        continue:$isobject(znacky)&&(znacky.%Get(i)["V")
+        s j = i + krok
+        while 'odjizdi && (j >= 0) && (j < pocet) {
+            i (zastavky.%Get(j).%Get("PORADI") '= poradi) && ..JeCas(casy.%Get(j)) s odjizdi = 1
+            s j = j + krok
+        }
+    }
+    q odjizdi
+}
+
+/// Je hodnota buňky času čas (`H:MM` / `HH:MM`), ne značka „|" / „<" ani prázdno?
+ClassMethod JeCas(hodnota As %String) As %Boolean
+{
+    q hodnota?1.2N1":"2N
+}
+
+/// Jedna stránka výlepu: kopie stránky se zvýrazněnou jen zastávkou `poradi` (hlavní i vložený
+/// příjezdový řádek mají totéž pořadí).
+ClassMethod VypisVylep(page As %DynamicObject, poradi As %String, czst As %String, smer As %String)
+{
+    s vylep = ##class(%DynamicObject).%FromJSON(page.%ToJSON())
+    s it = vylep.rows.ZASTAVKY.%GetIterator()
+    while it.%GetNext(.k, .r) {
+        d r.%Set("AKTUALNI_ZASTAVKA", $s(r.%Get("PORADI") = poradi:"true", 1:"false"))
+    }
+    d vylep.values.%Set("SMER", smer)
+    d vylep.values.%Set("AKTUALNI_ZASTAVKA_CZST", czst)
+    d vylep.values.%Set("AKTUALNI_ZASTAVKA_TC", +poradi)
+    d vylep.values.%Set("VYLEP_ZASTAVKY", "true")
+    s ^||ML("OUT", $i(^||ML("OUT"))) = vylep.%ToJSON()
 }
 
 /// Ukázková data pro live preview - živě z první linky aktuální firmy (DEV vzor).
@@ -691,6 +791,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu, spolecneKm)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
     k atributyZastavek                        // atributy z číselníku zastávek (^JRZ $8, CSV) - legenda druhu 7
+    k zvyraznene                              // tarifní číslo zvýrazněného řádku → CZST
     s maMhd = 0
     s idx = 0, poradi = ""
     f {
@@ -720,6 +821,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         s rowMeta(idx) = $lb(poradi, "O")
         s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm, obousmerne)
         d zastavky.%Push(z)
+        i z.%Get("AKTUALNI_ZASTAVKA") = "true" s zvyraznene(poradi) = czst
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
         // atributy z číselníku zastávek (^JRZ $8, CSV - např. "A,L" = přestup bus/vlak)
@@ -736,6 +838,13 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 
     d vals.%Set("VYCHOZI_ZASTAVKA", prvniNazev)
     d vals.%Set("KONECNA_ZASTAVKA",       posledniNazev)
+    // Zastávka výlepu pro adresu v QR: jen když je zvýrazněný právě jeden řádek, jinak by adresa
+    // ukázala na jedno z víc míst (kus názvu „Velešín" trefí čtyři zastávky). Pole jsou vždy,
+    // aby v QR nezůstal nedosazený `{…}`.
+    s zvTc = $o(zvyraznene(""))
+    s jednoznacna = (zvTc '= "") && ($o(zvyraznene(zvTc)) = "")
+    d vals.%Set("AKTUALNI_ZASTAVKA_CZST", $s(jednoznacna:zvyraznene(zvTc), 1:""))
+    d vals.%Set("AKTUALNI_ZASTAVKA_TC",   $s(jednoznacna:+zvTc, 1:""))
 
     // ── spoje směru: legacy mkPoradiSp řazení + zařazení do skupin dnů ──
     s spoje = ##class(%DynamicArray).%New()

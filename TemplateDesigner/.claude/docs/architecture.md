@@ -169,6 +169,23 @@ upozornění vpravo dole (`SazbaHlaseni`, `B178`).
 Podmínka, kterou nejde přečíst, se dál tiskne (fail-open), ale hlásí se jako upozornění.
 `Section.RowHeight` čte jen škálování šablony.
 
+### Import z PDF - jak funguje a kam směřuje (`B179`, 2. 10.)
+
+Dnes (`PdfImport/`): PdfPig vyčte slova s polohou, písmem a barvou, čáry, obdélníky a obrázky
+**přesně**; stránka se převede na obrázek a ten s rozměrem, poli agendy a katalogem voleb dostane
+model. **Rozbor z PDF model nedostane** - vrátí oblasti prvků a texty s polohou **odhadnutou
+z obrázku**. Builder pak bere polohu a velikost tabulky a poznámek z odhadu, měří písmo a barvy
+ze slov uvnitř odhadnuté oblasti a k textům od modelu hledá blok v PDF (najde = poloha z PDF,
+nenajde = odhad). Odhad tak rozhoduje o oblastech, o hranici „co patří tabulce" a o textech, které
+se nenašly - proto se běhy liší i nad stejným PDF a většina chyb ze zkoušek 2. 10. vznikla
+v hledání bloku k textu.
+
+Směr (rozhodnutí Jan 2. 10., krok po kroku a každý změřit): **(1)** měření kvality - sada předloh
+s očekáváním (náš tisk ze známé šablony, skutečné PDF s ručně zapsaným očekáváním) a porovnání
+výsledku; **(2)** import nejdřív sám rozdělí stránku z PDF na bloky, model dostane obrázek
+s očíslovanými bloky a jen je pojmenuje, polohy bere import z PDF; **(3)** tabulka spojů měřená
+z PDF celá (hranice popisných sloupců, šířka sloupce spoje, písma záhlaví a buněk).
+
 ---
 
 ## Architekturální rozhodnutí (MVVM hranice)

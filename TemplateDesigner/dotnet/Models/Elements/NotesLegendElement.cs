@@ -596,7 +596,9 @@ public class NotesLegendElement : StopScheduleElementBase
 
         // Zapínadlo do Obecného, jeho vzhled do Záhlaví - týž vzor jako u zastávek, kde „Záhlaví
         // sloupců" sedí v Obecném a barvy ve „Stylu záhlaví" (rozhodnutí Jan 1. 9.).
-        new BoolPropertyDescriptor   { Label = "Záhlaví",               Group = "Obecné",       Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
+        // Z papíru se pozná vždy: poznámky linky mají obsah pokaždé, takže chybějící pruh nadpisu je
+        // volba, ne prázdná data (u 940 IDZK záhlaví není).
+        new BoolPropertyDescriptor   { FromImage = true, Label = "Záhlaví", Group = "Obecné",       Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
         new StringPropertyDescriptor { FromImage = true, Label = "Text záhlaví",         Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
         // Datová zóna má velikost jako „Velikost poznámek" v Rozložení, záhlaví ji do 16. 9. nemělo

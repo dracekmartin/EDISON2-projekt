@@ -156,6 +156,130 @@ Method TestZvyrazneniZastavky()
 	}
 }
 
+/// **Zastávka výlepu jako pole stránky** (adresa v QR pro cestující): stránka ji nese jen tehdy,
+/// když je zvýrazněný právě jeden řádek. Kus názvu, který trefí víc zastávek, musí nechat pole
+/// prázdné - jinak by QR vedlo na náhodně vybranou z nich.
+Method TestZastavkaVylepu()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330530"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka pro zastávku výlepu není na tomto serveru - přeskočeno")
+		quit
+	}
+
+	// ── bez volby pole prázdné ──────────────────────────────────────────
+	kill parametry
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..ZastavkyVylepu(), "|", "bez volby nesmí stránka nést zastávku výlepu")
+
+	// ── víc shod → pole prázdné ─────────────────────────────────────────
+	kill parametry
+	set parametry("ZVYRAZNIT_ZASTAVKU") = "velešín"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..ZastavkyVylepu(), "|", "víc zvýrazněných zastávek nesmí dát zastávku výlepu")
+
+	// ── jednoznačné tarifní číslo → číslo zastávky i tarifní číslo na všech stránkách ──
+	kill parametry
+	set parametry("ZVYRAZNIT_TC") = 14
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..ZastavkyVylepu(), "38435|14", "tarifní číslo 14 = Velešín,,aut.nádr. na každé stránce")
+}
+
+/// **Stránka pro každou zastávku** (výlepy, Jan 1. 10.): stránka za každou zastávku a směr, ze které
+/// spoje odjíždějí, na každé zvýrazněná právě ta jedna. Tvrzení míří na to, co by šlo udělat špatně
+/// nenápadně: dvě zvýrazněné zastávky, výlep konečné, hlavička s jinou zastávkou než řádek,
+/// obousměrný tisk s jiným počtem výlepů a filtr, který nefiltruje.
+Method TestStrankaProZastavku()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330530"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(1, "linka pro výlepy není na tomto serveru - přeskočeno")
+		quit
+	}
+
+	kill parametry
+	set parametry("STRANKA_PRO_ZASTAVKU") = "true"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set chyby = ..ChybyVylepu(.stranek, .vylepy)
+	do $$$AssertEquals(chyby, "", "výlepy: "_chyby)
+	do $$$AssertTrue(stranek > 10, "výlepů má být víc než stránek za směr, je "_stranek)
+	do $$$AssertTrue('$data(vylepy("T", ..KonecnaTc(db, sku, lin, "T"))), "konečná směru tam nesmí mít výlep")
+
+	// obousměrný tisk: tytéž výlepy, jen každá stránka nese obě tabulky
+	kill parametry
+	set parametry("STRANKA_PRO_ZASTAVKU") = "true", parametry("OBOUSMERNY_TISK") = "true"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set chyby = ..ChybyVylepu(.stranekObou, .vylepyObou)
+	do $$$AssertEquals(chyby, "", "obousměrné výlepy: "_chyby)
+	do $$$AssertEquals(stranekObou, stranek, "obousměrný tisk má dát stejný počet výlepů")
+
+	// filtr tarifním číslem: jen výlepy té zastávky (v každém směru jeden)
+	kill parametry
+	set parametry("STRANKA_PRO_ZASTAVKU") = "true", parametry("ZVYRAZNIT_TC") = 14
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set chyby = ..ChybyVylepu(.stranekFiltr, .vylepyFiltr)
+	do $$$AssertEquals(chyby, "", "filtrované výlepy: "_chyby)
+	do $$$AssertEquals(stranekFiltr, 2, "tarifní číslo 14 = výlep tam a zpět")
+	do $$$AssertTrue($data(vylepyFiltr("T", 14)) && $data(vylepyFiltr("Z", 14)), "výlepy filtru mají být zastávky 14")
+
+	// bez parametru zůstává stránka za směr
+	kill parametry
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	set chyby = ..ChybyVylepu(.stranekBez, .vylepyBez)
+	do $$$AssertEquals(stranekBez, 2, "bez parametru dvě stránky (tam a zpět)")
+}
+
+/// Projde výlepy v `^||ML("OUT")`: každá stránka musí mít `VYLEP_ZASTAVKY`, právě jednu zvýrazněnou
+/// zastávku (podle pořadí) a v hlavičce totéž tarifní číslo. `vylepy(smer, tc)` = počet stránek.
+ClassMethod ChybyVylepu(ByRef stranek As %Integer, ByRef vylepy) As %String
+{
+	kill vylepy
+	set stranek = 0, chyby = "", key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set stranek = stranek + 1
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		continue:page.values.%Get("VYLEP_ZASTAVKY")'="true"
+		kill poradi
+		set it = page.rows.ZASTAVKY.%GetIterator()
+		while it.%GetNext(.i, .radek) {
+			if radek.%Get("AKTUALNI_ZASTAVKA") = "true" set poradi(radek.%Get("PORADI")) = ""
+		}
+		set prvni = $order(poradi("")), smer = page.values.%Get("SMER")
+		if (prvni = "") || ($order(poradi(prvni)) '= "") set chyby = chyby_" stránka "_key_" nemá právě jednu zastávku;"
+		if +page.values.%Get("AKTUALNI_ZASTAVKA_TC") '= +prvni set chyby = chyby_" stránka "_key_" má v hlavičce jinou zastávku;"
+		if (smer '= "T") && (smer '= "Z") set chyby = chyby_" stránka "_key_" nemá směr;"
+		set vylepy(smer, +prvni) = $get(vylepy(smer, +prvni)) + 1
+	}
+	quit chyby
+}
+
+/// Tarifní číslo konečné zastávky směru (poslední uzel trasy v pořadí směru).
+ClassMethod KonecnaTc(db As %String, sku As %String, lin As %String, smer As %String) As %Integer
+{
+	quit +$order(^[db]JRL(sku, lin, "J", ""), $select(smer = "T":-1, 1:1))
+}
+
+/// Zastávka výlepu ze všech stránek jako `czst|tc`; když se stránky liší, vrátí je spojené „ / ".
+ClassMethod ZastavkyVylepu() As %String
+{
+	set vysledek = "", key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:key="ERR"
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+		set jedna = page.values.%Get("AKTUALNI_ZASTAVKA_CZST") _ "|" _ page.values.%Get("AKTUALNI_ZASTAVKA_TC")
+		if vysledek = "" { set vysledek = jedna }
+		elseif (" / "_vysledek_" / ") '[ (" / "_jedna_" / ") { set vysledek = vysledek _ " / " _ jedna }
+	}
+	quit vysledek
+}
+
 /// Kolik řádků zastávek je označených jako zvýrazněné; `jmena` naplní jejich názvy.
 ClassMethod PocetZvyraznenych(ByRef jmena, ByRef tcecka) As %Integer
 {

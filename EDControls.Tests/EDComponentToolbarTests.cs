@@ -74,6 +74,59 @@ public class EDComponentToolbarTests
         });
     }
 
+    /// <summary>Nápověda „(Ctrl+F)" u každého toolbaru v okně - zkratka vede do hledání komponenty,
+    /// ve které uživatel je, takže z kteréhokoli platí. Mimo okno (bez zkratky) se neukazuje.</summary>
+    [Fact]
+    public void Placeholder_CtrlFHintOnEveryToolbarInWindow()
+    {
+        RunSta(() =>
+        {
+            var prvni = new Toolbar();
+            var druhy = new Toolbar();
+            var window = new Window { Content = new StackPanel { Children = { prvni, druhy } } };
+            try
+            {
+                Assert.Equal("Hledat…", prvni.EffectiveSearchPlaceholder);
+
+                RaiseOn(prvni, FrameworkElement.LoadedEvent);
+                RaiseOn(druhy, FrameworkElement.LoadedEvent);
+                Assert.Equal("Hledat… (Ctrl+F)", prvni.EffectiveSearchPlaceholder);
+                Assert.Equal("Hledat… (Ctrl+F)", druhy.EffectiveSearchPlaceholder);
+
+                prvni.SearchPlaceholder = "Hledat pole…";
+                Assert.Equal("Hledat pole… (Ctrl+F)", prvni.EffectiveSearchPlaceholder);
+
+                RaiseOn(prvni, FrameworkElement.UnloadedEvent);
+                Assert.Equal("Hledat pole…", prvni.EffectiveSearchPlaceholder);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    /// <summary>Ctrl+F jde do hledání komponenty s fokusem, jinak prvního viditelného - nikdy do
+    /// skrytého (dřív ho držel první načtený toolbar, třeba formulář na neaktivní záložce).</summary>
+    [Fact]
+    public void CtrlFTarget_FocusedComponentThenFirstVisible()
+    {
+        RunSta(() =>
+        {
+            var skryty = new Toolbar();
+            var viditelny = new Toolbar();
+            var sFokusem = new Toolbar();
+            var bezHledani = new Toolbar { ShowSearch = false };
+            var vsechny = new[] { skryty, viditelny, sFokusem, bezHledani };
+            bool JeVidet(Toolbar t) => t != skryty;
+
+            Assert.Same(sFokusem, Toolbar.CilCtrlF(vsechny, t => t == sFokusem, JeVidet));
+            Assert.Same(viditelny, Toolbar.CilCtrlF(vsechny, _ => false, JeVidet));
+            Assert.Same(viditelny, Toolbar.CilCtrlF(vsechny, t => t == skryty, JeVidet));
+            Assert.Null(Toolbar.CilCtrlF(vsechny, t => t == bezHledani, t => t == bezHledani));
+        });
+    }
+
     private static void RaiseOn(Toolbar toolbar, RoutedEvent routedEvent) =>
         toolbar.RaiseEvent(new RoutedEventArgs(routedEvent, toolbar));
 

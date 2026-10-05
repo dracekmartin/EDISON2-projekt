@@ -102,7 +102,7 @@
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Padding="6,4" VerticalContentAlignment="Center"
                              KeyDown="SearchBox_KeyDown"/>
-                    <TextBlock Text="Hledat…  (Ctrl+F)"
+                    <TextBlock Text="Hledat… (Ctrl+F)"
                                Margin="9,0,0,0" VerticalAlignment="Center"
                                Foreground="{DynamicResource EDTheme.Text.Muted}"
                                IsHitTestVisible="False">

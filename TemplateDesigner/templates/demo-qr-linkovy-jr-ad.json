@@ -1,0 +1,633 @@
+{
+  "version": "1.15.0",
+  "id": "2cdd8991-55d8-43dd-8cb7-671fe4f7c304",
+  "name": "Demo - linkový JŘ (AD) s QR pro cestující",
+  "description": "Ukázková šablona pro demo aplikace pro cestující: postskriptový linkový JŘ A5 a pod ním QR s adresou, která nese linku a zastávku výlepu (parametr Zvýraznit zastávku nebo Zvýraznit tarifní číslo). Není systémová, importuje se ručně.",
+  "pageSize": {
+    "width": 210,
+    "height": 148,
+    "marginTop": 4,
+    "marginBottom": 4,
+    "marginLeft": 5,
+    "marginRight": 5
+  },
+  "sections": [
+    {
+      "id": "4aff5f20-2a54-44b3-825b-124f2ff7e946",
+      "name": "Hlavička",
+      "designerHeight": 17,
+      "printBehavior": "OnEveryPage",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0,
+      "elements": [
+        {
+          "type": "RectangleElement",
+          "strokeColor": "#FF000000",
+          "strokeWidth": 0.35,
+          "id": "c20b0285-1cc3-401e-a5e9-1affdd80cd70",
+          "x": 0,
+          "y": 0,
+          "width": 46,
+          "height": 4.2,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POZNAMKA_NAD_LINKU}",
+          "style": {
+            "fontSize": 6.5,
+            "bold": true
+          },
+          "wordWrap": false,
+          "id": "53988355-32c7-4ad7-93d7-3a85935ff27e",
+          "x": 0.8,
+          "y": 0.3,
+          "width": 44,
+          "height": 3.6,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "RectangleElement",
+          "strokeColor": "#FF000000",
+          "strokeWidth": 0.5,
+          "id": "39864b8a-5042-40f2-9024-6c1af0633373",
+          "x": 0,
+          "y": 4.2,
+          "width": 200,
+          "height": 9.4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{CISLO_LINKY}",
+          "style": {
+            "fontSize": 12,
+            "bold": true
+          },
+          "wordWrap": false,
+          "id": "1fb1a7a3-d04a-46f1-9d9e-9f8b070ea96d",
+          "x": 1.5,
+          "y": 5.2,
+          "width": 22,
+          "height": 7,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POPIS_LINKY}",
+          "style": {
+            "fontSize": 12,
+            "bold": true
+          },
+          "wordWrap": false,
+          "id": "883aeeb7-9bef-42bc-a42d-5a0387fdf749",
+          "x": 24,
+          "y": 5.2,
+          "width": 110,
+          "height": 7,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Platí od {DATUM_PLATNOSTI_OD}",
+          "style": {
+            "fontSize": 7,
+            "bold": true,
+            "hAlign": "Right"
+          },
+          "wordWrap": false,
+          "id": "f664cbf6-a0cb-447c-b3d6-8e9ce88cbaa1",
+          "x": 140,
+          "y": 4.9,
+          "width": 60,
+          "height": 3.4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "do {DATUM_PLATNOSTI_DO}",
+          "style": {
+            "fontSize": 7,
+            "bold": true,
+            "hAlign": "Right"
+          },
+          "wordWrap": false,
+          "id": "eb4b3504-82c7-40ab-a723-e059e4420989",
+          "x": 140,
+          "y": 7.9,
+          "width": 60,
+          "height": 3.4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{TYP_JR}",
+          "style": {
+            "fontSize": 7,
+            "bold": true,
+            "hAlign": "Right"
+          },
+          "wordWrap": false,
+          "id": "a2875ad3-f5b1-4e8f-bba4-fb9928ee19f2",
+          "x": 140,
+          "y": 10.6,
+          "width": 60,
+          "height": 3.2,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Přepravu zajišťuje :   {POPIS_DOPRAVCE}",
+          "style": {
+            "fontSize": 6
+          },
+          "wordWrap": false,
+          "id": "26033cb8-68e0-45cf-bab0-71f72943eaed",
+          "x": 0.5,
+          "y": 14.2,
+          "width": 200,
+          "height": 3.2,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "6edd0120-08f0-4608-b6a6-5783a612f4b6",
+      "name": "Jízdní řád",
+      "designerHeight": 20,
+      "printBehavior": "Once",
+      "overflowBehavior": "SplitAcrossPages",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0,
+      "elements": [
+        {
+          "type": "LineTableElement",
+          "zastavkyDataSource": "ZASTAVKY",
+          "spojeDataSource": "SPOJE",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "columns": [
+            {
+              "key": "Zone",
+              "header": "TPZ",
+              "width": 5,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "Km",
+              "header": "km",
+              "width": 3.6,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "Tc",
+              "header": "Tč",
+              "width": 4,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "Arrow",
+              "header": "",
+              "width": 4,
+              "visible": false,
+              "alignment": "Center"
+            },
+            {
+              "key": "StopName",
+              "header": "",
+              "width": 40,
+              "visible": true,
+              "alignment": "Left"
+            },
+            {
+              "key": "Mhd",
+              "header": "MHD",
+              "width": 7,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "Trip",
+              "header": "Spoj",
+              "visible": true,
+              "alignment": "Center"
+            }
+          ],
+          "showPlatnostRow": true,
+          "showNzRow": true,
+          "showPripojeRows": false,
+          "pripojeSlucovani": "PodleSmeru",
+          "padEmptyColumns": true,
+          "jednotnaSirkaSpoju": true,
+          "vyplnitPrazdneBunkySpoju": true,
+          "teckyZaNazvemZastavky": true,
+          "pomerZnacek": 1.5,
+          "tucneZastavkyDleTrasy": true,
+          "caryZastavekDleTrasy": true,
+          "formatCasu": "HodinaVetsi",
+          "pomerMinuty": 0.75,
+          "rozdelitZonyDoSloupcu": false,
+          "showGroupHeaders": true,
+          "turnusyKeSpojum": false,
+          "popisneSloupceNadpis": "",
+          "popisneSloupceBezVnitrnichCar": false,
+          "sloucitPopisyRozdvojene": true,
+          "mezeraMeziSkupinamiMm": 0,
+          "highlightOddTc": false,
+          "customColumns": [
+            {
+              "id": "1",
+              "header": "",
+              "header2": "",
+              "days": "",
+              "includeMarks": "",
+              "excludeMarks": "",
+              "suppressedMarks": "",
+              "period": ""
+            }
+          ],
+          "pripojStyle": {
+            "fontSize": 4.6
+          },
+          "oddTcBackColor": "#00FFFFFF",
+          "dataStyle": {
+            "fontSize": 4.8
+          },
+          "headerStyle": {
+            "fontSize": 5,
+            "bold": true,
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "grid": {
+            "showRowLines": true,
+            "showColumnLines": true,
+            "color": "#FF000000",
+            "width": 0.08,
+            "style": "Solid"
+          },
+          "dataRowHeight": 1.8,
+          "id": "73da04bb-374b-429c-b5c6-eb8cb8c52f22",
+          "x": 0,
+          "y": 0.5,
+          "width": 200,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#FF000000",
+          "borderWidth": 0.3,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "7aab637d-8522-4105-a9eb-c7eb832cdc12",
+      "name": "Poznámky",
+      "designerHeight": 15,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0,
+      "elements": [
+        {
+          "type": "NotesLegendElement",
+          "headerText": "",
+          "showHeaderBar": false,
+          "noteSeparator": "   ",
+          "noteFontSize": 4,
+          "noteLineHeight": 2,
+          "columns": 3,
+          "wrapSmer": "PoRadcich",
+          "markerSirka": 5,
+          "razeni": "DleTypu",
+          "negativniZnackaBackColor": "#FF000000",
+          "negativniZnackaForeColor": "#FFFFFFFF",
+          "showNegativniZnacky": true,
+          "showSpecialniZnaky": true,
+          "showTextovePoznamky": true,
+          "vyluky": "Vcetne",
+          "showPoznamkyLinkyTarifni": false,
+          "showPoznamkyLinkyVseobecne": false,
+          "showPoznamkyLinkyRadiobus": false,
+          "showSouhrnBezbarier": true,
+          "showZnackaKola": false,
+          "showZnackaMistenky": false,
+          "showPokracujiciSpoje": false,
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontSize": 4
+          },
+          "headerStyle": {
+            "fontSize": 5,
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "grid": {
+            "showRowLines": true,
+            "showColumnLines": true,
+            "color": "#00FFFFFF",
+            "style": "Solid"
+          },
+          "id": "e09e34ee-89b4-4bec-9aea-26d0ff44fdb3",
+          "x": 0,
+          "y": 0.5,
+          "width": 200,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "93019fca-dcfa-42ca-ab74-3925c5c14c25",
+      "name": "QR pro cestující",
+      "designerHeight": 30,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0,
+      "elements": [
+        {
+          "type": "BarcodeElement",
+          "content": "http://localhost:5185/linka/{CISLO_LINKY}/{AKTUALNI_ZASTAVKA_CZST}/{AKTUALNI_ZASTAVKA_TC}/{SMER}",
+          "barcodeType": "QR",
+          "foreColor": "#FF000000",
+          "id": "1e56515e-942c-42c1-90cb-de8c21b14cd1",
+          "x": 0,
+          "y": 2,
+          "width": 25,
+          "height": 25,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#FFFFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Kam se odsud dostanete a kdy to jede?",
+          "style": {
+            "fontSize": 9,
+            "bold": true,
+            "hAlign": "Left"
+          },
+          "wordWrap": false,
+          "id": "8839c8dc-c644-48dc-aa7d-c7ec51c81083",
+          "x": 28,
+          "y": 4,
+          "width": 120,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Adresa: http://localhost:5185/linka/{CISLO_LINKY}/{AKTUALNI_ZASTAVKA_CZST}/{AKTUALNI_ZASTAVKA_TC}/{SMER}",
+          "style": {
+            "fontSize": 7,
+            "bold": false,
+            "hAlign": "Left"
+          },
+          "wordWrap": false,
+          "id": "a4bcbb0d-bfd7-46c4-ae20-24ef99f1954c",
+          "x": 28,
+          "y": 9,
+          "width": 170,
+          "height": 3.4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    }
+  ],
+  "agendaCode": "LINKOVY_JR_AD",
+  "parameters": [
+    {
+      "name": "TVAR_NAZVU_ZASTAVKY",
+      "label": "Tvar názvu zastávky",
+      "type": "enum",
+      "defaultValue": "Plný CIS",
+      "options": [
+        "Plný CIS",
+        "Plný CIS s okresem",
+        "Zkrácený",
+        "Typograficky upravený"
+      ],
+      "group": "Obecné",
+      "serverSide": true
+    },
+    {
+      "name": "NAZEV_PRO_MHD",
+      "label": "Použít název pro MHD",
+      "type": "bool",
+      "defaultValue": "true",
+      "group": "Obecné",
+      "serverSide": true
+    },
+    {
+      "name": "OBOUSMERNY_TISK",
+      "label": "Obousměrný tisk",
+      "type": "bool",
+      "defaultValue": "false",
+      "group": "Obecné",
+      "serverSide": true
+    },
+    {
+      "name": "DELENI_SLOUPCU",
+      "label": "Dělení spojů dle platnosti",
+      "type": "enum",
+      "defaultValue": "Pracovní dny / Soboty / Neděle+svátky",
+      "options": [
+        "Bez rozlišení",
+        "Pracovní dny / víkend+svátky",
+        "Pracovní dny / Soboty / Neděle+svátky",
+        "Vlastní rozložení"
+      ],
+      "group": "Tabulka linky",
+      "serverSide": true
+    },
+    {
+      "name": "SLOUPEC_TC",
+      "label": "Sloupec tarifních čísel",
+      "type": "enum",
+      "defaultValue": "Automaticky (dle linky)",
+      "options": [
+        "Automaticky (dle linky)",
+        "Tisknout",
+        "Netisknout"
+      ],
+      "group": "Tabulka linky",
+      "serverSide": true
+    },
+    {
+      "name": "ZASTAVKY_BEZ_ZASTAVENI",
+      "label": "Zastávky, kde žádný spoj nestaví",
+      "type": "enum",
+      "defaultValue": "Automaticky (dle linky)",
+      "options": [
+        "Automaticky (dle linky)",
+        "Tisknout",
+        "Netisknout"
+      ],
+      "group": "Tabulka linky",
+      "serverSide": true
+    },
+    {
+      "name": "PISMENO_V_ZONE",
+      "label": "Písmeno systému u zóny",
+      "type": "enum",
+      "defaultValue": "Automaticky (dle linky)",
+      "options": [
+        "Automaticky (dle linky)",
+        "Zobrazit",
+        "Skrýt"
+      ],
+      "group": "Tabulka linky",
+      "serverSide": true
+    },
+    {
+      "name": "BARVY_SPOJU",
+      "label": "Barvy spojů",
+      "type": "enum",
+      "defaultValue": "Automaticky (dle linky)",
+      "options": [
+        "Automaticky (dle linky)",
+        "Tisknout",
+        "Netisknout"
+      ],
+      "group": "Tabulka linky",
+      "serverSide": true
+    },
+    {
+      "name": "ZVYRAZNIT_ZASTAVKU",
+      "label": "Zvýraznit zastávku",
+      "type": "text",
+      "group": "Tabulka linky",
+      "serverSide": true
+    },
+    {
+      "name": "ZVYRAZNIT_TC",
+      "label": "Zvýraznit tarifní číslo",
+      "type": "text",
+      "group": "Tabulka linky",
+      "serverSide": true
+    }
+  ],
+  "printParameters": {
+    "TVAR_NAZVU_ZASTAVKY": "Plný CIS",
+    "NAZEV_PRO_MHD": "false",
+    "OBOUSMERNY_TISK": "false",
+    "DELENI_SLOUPCU": "Bez rozlišení",
+    "SLOUPEC_TC": "Automaticky (dle linky)",
+    "ZASTAVKY_BEZ_ZASTAVENI": "Automaticky (dle linky)",
+    "PISMENO_V_ZONE": "Automaticky (dle linky)",
+    "BARVY_SPOJU": "Automaticky (dle linky)",
+    "ZVYRAZNIT_ZASTAVKU": "",
+    "ZVYRAZNIT_TC": "",
+    "STRANKA_PRO_ZASTAVKU": "true"
+  },
+  "defaultTextStyle": {
+    "fontFamily": "Helvetica"
+  },
+  "editorPreferences": {
+    "gridSize": 5,
+    "snapToGrid": false,
+    "snapToElements": true,
+    "showGrid": false
+  }
+}

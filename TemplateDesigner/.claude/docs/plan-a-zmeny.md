@@ -46,6 +46,8 @@ Dílčí vylepšení a náměty.
 - Hlášky k tisku jsou vpravo dole v jednom bloku podle závažnosti (informace, upozornění,
   problém). Tisk nezastaví, co znamenají, popisuje příručka.
 - Tlačítko **„Zkontrolovat"** v okně Tisk projde všechny vybrané linky.
+- Linkový JŘ jde vytisknout jako výlepy na zastávky: volba **„Stránka pro každou zastávku"**
+  dá každé zastávce vlastní stránku za každý směr a zastávka je na ní zvýrazněná inverzně.
 
 ### Týden od 21. 9. 2026 · Linkové JŘ - Nová agenda
 

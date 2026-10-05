@@ -4,15 +4,32 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.PdfImport;
 
 /// <summary>
-/// Typ importu - uživatel volí apriorně v PdfImportDialog.
+/// Typ importu - odvozuje se z agendy, ve které import běží (<see cref="ScheduleImportTypes.ForAgenda"/>).
 /// Engine ví, jakou strukturu hledá, a použije odpovídající heuristiky.
 /// </summary>
 public enum ScheduleImportType
 {
     /// <summary>Obecný import - žádná JŘ detekce.</summary>
     None,
-    /// <summary>Zastávkový JŘ MHD (MinutesOnly) - StopList + DepartureGrid + NotesLegend.</summary>
-    ZastavkovyJrMhd
+    /// <summary>Zastávkový JŘ (AD i MHD) - StopList + DepartureGrid + NotesLegend.</summary>
+    ZastavkovyJrMhd,
+    /// <summary>Linkový JŘ (AD i MHD) - LineTable + NotesLegend, hlavička nad tabulkou.</summary>
+    LinkovyJr
+}
+
+public static class ScheduleImportTypes
+{
+    /// <summary>Kód agendy je stabilní persistovaný klíč, takže jeho začátek spolehlivě říká,
+    /// o jaký jízdní řád jde (MHD i AD varianta sdílí rozpoznávání).</summary>
+    public static ScheduleImportType ForAgenda(string? agendaCode)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return ScheduleImportType.None;
+        if (agendaCode.StartsWith("ZASTAVKOVY_JR", StringComparison.OrdinalIgnoreCase))
+            return ScheduleImportType.ZastavkovyJrMhd;
+        if (agendaCode.StartsWith("LINKOVY_JR", StringComparison.OrdinalIgnoreCase))
+            return ScheduleImportType.LinkovyJr;
+        return ScheduleImportType.None;
+    }
 }
 
 /// <summary>

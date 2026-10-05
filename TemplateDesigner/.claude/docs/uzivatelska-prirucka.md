@@ -584,11 +584,22 @@ Nastavení výstupu je univerzální napříč agendami:
 jednoduchý: vyberete **PDF soubor** (a u vícestránkového stránku) - všechno ostatní se odvodí
 z právě otevřené agendy:
 
-- **Agenda jízdního řádu** → import s **umělou inteligencí**: AI rozpozná strukturu vývěsky
-  (seznam zastávek, minuty odjezdů, poznámky, texty, loga) a rovnou namapuje datová
-  pole agendy - výsledkem je živá šablona napojená na data, ne statická kopie. Importuje se
-  vždy **jedna stránka** (jedna vývěska jako předloha). Vyžaduje aktivovanou AI službu u M-line;
-  bez ní je import u JŘ agend nedostupný.
+- **Agenda jízdního řádu** → import s **umělou inteligencí**: AI rozpozná strukturu předlohy
+  a rovnou namapuje datová pole agendy - výsledkem je živá šablona napojená na data, ne statická
+  kopie. Importuje se vždy **jedna stránka**. Vyžaduje aktivovanou AI službu u M-line; bez ní je
+  import u JŘ agend nedostupný.
+  - **Zastávkový JŘ** - seznam zastávek, minuty odjezdů, poznámky, texty a loga; šablona je jedna
+    pevná stránka jako vývěska.
+  - **Linkový JŘ** - Tabulka spojů (pořadí popisných sloupců a písmo podle předlohy), poznámky
+    a texty kolem. Šablona má rozvržení jako výchozí šablony linkového JŘ: **hlavičku na každé
+    stránce**, pod ní tabulku, která pokračuje přes stránky, a poznámky pod ní nebo vedle ní -
+    podle předlohy. Poznámky jsou v šabloně vždy, i když na importované stránce nejsou; na další
+    stránku je tisk přesune sám, když se nevejdou. Má-li předloha pod sebou oba směry, převezme
+    se horní tabulka; druhý směr sestava vytiskne na další stránce. Nastavení sestavy (obousměrný
+    tisk, stránka pro každou zastávku…) se z předlohy nepřebírá - nastavte ho v okně tisku.
+    Barvy tabulky a poznámek se převezmou z předlohy. Grafiku pod tabulkou (loga) nahradí prázdné
+    obrázky o její velikosti, stačí do nich nahrát soubor; co je u spodku stránky, skončí
+    v patičce na každé stránce.
 - **Jiná agenda (Obecná, Faktury…)** → obecný import: texty, čáry a obrázky se převezmou 1:1
   jako prvky šablony (bez AI).
 
@@ -1201,6 +1212,11 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 
 - **Obousměrný tisk** - oba směry v jedné tabulce, spoje opačného směru na druhé straně od
   zastávek. Vypnuté = každý směr na vlastní stránce.
+- **Stránka pro každou zastávku** - výlepy na zastávky: každá zastávka, ze které spoje odjíždějí,
+  dostane vlastní stránku za každý směr (i u obousměrného tisku) a její řádek je v tabulce
+  inverzní (bílé písmo na černém), jako ve starém tisku.
+  Konečná ani zastávka, kde se jen vystupuje, výlep nemá. **Zvýraznit zastávku** a **Zvýraznit
+  tarifní číslo** pak vyberou jen některé zastávky.
 - **Tvar názvu zastávky** - *Plný CIS* (výchozí, zachová dvojčárku podle číselníku, tak to tiskne
   starý modul), *Plný CIS s okresem*, *Zkrácený*, *Typograficky upravený* (mezera za čárkou a tečkou).
 - **Použít název pro MHD** - zastávka může mít v číselníku vedle názvu podle CIS ještě upravený

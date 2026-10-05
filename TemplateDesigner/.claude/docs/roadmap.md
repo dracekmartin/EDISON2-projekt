@@ -4,11 +4,22 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `#7487` (u něj nejdřív upřesnit tvar nastavení s kolegou). Zpětná vazba kolegy z 18. 9.
+> **Nejblíž na řadě:** QR na vývěsce (analýza dat vývěsky). Zpětná vazba kolegy z 18. 9.
 > i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
+
+---
+
+## 📱 QR na vývěsce - kam se odsud dostanu
+
+- **Vyhledávač odjezdů pro cestující - demo** [M] (Jan 1. 10., **základ hotový** týž den). QR
+  z výlepu linkového JŘ AD otevře lokální aplikaci `edwcore/apps/tisky-qr`: cestující zadá cíl
+  a dozví se nejbližší spoj dnes, přechod na protější označník na mapě, způsoby platby; CZ/EN.
+  Server dělá jednorázová třída `ALVA.TiskyQrDemo.Cestujici` (mimo návrhář). Čeká na rozhodnutí,
+  co dál; otevřené body a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
+  Výlepy po zastávkách tiskne parametr „Stránka pro každou zastávku" (1. 10.).
 
 ---
 
@@ -46,30 +57,27 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
 [`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
-### Připravené k práci
-
-- **`#7487` Rozložení poznámek podle druhu** [M] (KORID; potvrzeno hovorem s kolegou 25. 9.).
-  Druhy jako ve starém win tisku (dny platnosti, negativní značky, návaznosti, atributy, textové
-  poznámky…): u každého **pořadí** a **počet sloupců** zvlášť, např. „všechno do 3 sloupců, negativní
-  značky do 1". Dnes jde jen jeden „Počet sloupců" pro celou legendu. Přesný tvar nastavení se
-  ještě upřesní s kolegou - nejdřív návrh formuláře, pak kód.
-
 ---
 
 ## 📥 Backlog
 
 ### Ostatní
 
+- **`#7487` Rozložení poznámek podle druhu** [M] (KORID; odloženo Jan 1. 10., čeká na upřesnění
+  tvaru s kolegou). U každého druhu poznámek (dny platnosti, negativní značky, návaznosti,
+  atributy, texty) zvlášť **pořadí** a **počet sloupců**, např. „všechno do 3 sloupců, negativní
+  značky do 1". Dnes jde jeden „Počet sloupců" pro celou legendu. Nejdřív návrh formuláře, pak kód.
+
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
   stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
   hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184`, `B186` a `B187` hotové, dál podle poptávky.
 
-- **`B179` AI import z PDF pro linkový JŘ** [M] (Jan 24. 9., zkoušel to zákazník). Import dnes zná jen
-  prvky zastávkového JŘ (seznam zastávek, minuty odjezdů, poznámky); `Tabulka spojů` v něm není
-  (`PdfImport/` se jí nedotýká), takže linkový JŘ by skončil jako obecné tabulky a texty. Nejdřív
-  zkusit na zákazníkově PDF, jak se chová, a podle toho rozhodnout, jestli naučit import
-  rozpoznat tabulku spojů a nastavit její vzhled.
+- **`B179` AI import z PDF pro linkový JŘ** [L] (Jan 24. 9.; první verze 2. 10., viz changelog).
+  Funguje, ale není použitelný: polohy tabulky a poznámek jsou odhad modelu. Po krocích, každý
+  změřit: ~~(1) měření kvality~~ hotové 2. 10. (`PdfImport/Kvalita/`, výchozí stav v changelogu),
+  **(2)** model pojmenuje očíslované bloky z PDF místo odhadu souřadnic, **(3)** tabulka měřená
+  z PDF celá. Proč a jak: [`architecture.md §Import z PDF`](architecture.md).
 
 - **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
   JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
@@ -146,18 +154,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   lidé si v něm překážejí. Návrh: `partial` soubory přesně podle těch pruhů, beze změny chování;
   precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
   ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
-
-- **Jízdní řád ze zastávky na mobilu (QR na vývěsce)** (nápad Jan 22. 9., zatím bez poptávky).
-  Kód na vývěsce nese **linku, zastávku a stanoviště**, takže stránka ví, kde člověk fyzicky stojí -
-  to je jediná věc, kterou vyhledávač spojení neumí. Odpoví větou („nejbližší odjezd za 25 minut",
-  „dnes už odsud nic nejede, první zítra v 6:10", „z druhé strany jede za 6 minut"), pod tím výběr
-  cíle s dobou jízdy a texty poznámek místo značek. Papír navíc zastarává, odkaz ne.
-  ⚠️ **Nedělat plánovač s přestupy ani mapy** - tam vyhrává IDOS. Hranice je „co odsud jede přímo".
-  ⚠️ **Vidlička k rozhodnutí:** vývěska je jedna linka, cestující chce jednu cestu - silnější verze
-  je „odjezdy ze stanoviště za všechny linky", což je blíž relacím než vývěsce.
-  ⚠️ **Slabé místo je „jede to dnes"**: svátky a omezení dnes tiskneme jako text, ne jako datum,
-  které jde spočítat. Prototyp může jet na dni v týdnu a značky vypsat slovy.
-  Zpoždění v reálném čase by hodnotu zvedlo nejvíc, ale data živá nejsou (GTFS RT jen u DPCB).
 
 - **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
   bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.

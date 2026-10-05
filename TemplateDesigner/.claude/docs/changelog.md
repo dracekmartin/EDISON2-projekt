@@ -1,5 +1,152 @@
 ﻿# Changelog
 
+## 2026-10-02 (8) - 📐 měření kvality importu z PDF (`B179` krok 1)
+
+Import se dá změřit číslem místo okem: `TemplateDesigner.Tests/PdfImport/Kvalita/`. Sada předloh
+= náš tisk ze tří šablon (systémové A5 a A4 s poznámkami vedle, vzor 940; očekávání se odvodí ze
+zdroje a z výtisku) a skutečné 940 IDZK s ručně zapsaným očekáváním (`sada/940.ocekavani.json`,
+PDF mimo repo). Kontroluje texty hlavičky (nalezený, napojené pole, **střed textu** do 2 mm -
+import text vystředí, takže roh prvku srovnávat nejde), tabulku (okraje, šířka aspoň jako na
+papíře, pořadí sloupců, písmo, barvy, mezera), poznámky, kostru a patičku. Spouští se naostro
+proměnnou `TD_KVALITA_VYSTUP` a zapíše `kvalita.md`; bez modelu běží testy měření samého.
+
+Měření hned našlo chybu, kterou okem nešlo vidět: **dokončovací úprava dialogu zmenšila okraje
+stránky na 1 mm a obsah se tím posunul doleva nahoru** o okraj předlohy (u vzoru 940 o 9-12 mm).
+Linkový JŘ okraje nechává podle předlohy. Dál: podbarvení lichých Tč se vypne, když ho předloha
+nemá (výchozí zapnuté přidávalo šedé pruhy), a pruh záhlaví poznámek vedle tabulky se nepočítá
+jako skupina dnů. Výsledek (2 běhy): náš tisk A5 25-26/38 → 32-36/37-39 kontrol, odchylka textů
+4,9 → 2,7-3,1 mm; A4 vedle 25-26 → 34-35/39, 5,4 → 2,7 mm; vzor 940 26 → 38-39/40, 12,4 → 0,7 mm;
+skutečné 940 27-28/35 → 31-33/34, 2,7 → 0,4 mm. Co zbývá, je hlavně odhad oblastí modelem
+(u 940 poznámky na 171-208 mm místo 137-163) - to má řešit krok 2.
+
+## 2026-10-02 (7) - 📏 poznámky po importu linkového JŘ zbytečně přecházely na další stránku
+
+Import dával sekci s tabulkou spojů návrhovou výšku tabulky z předlohy (u 940 IDZK 140,7 mm)
+a poznámkám jejich výšku z předlohy. Tisk bere jako výšku sekce větší z obsahu a návrhové výšky,
+takže to místo držel i pro kratší linku a poznámky přešly na další stránku, i když se na první
+vešly (nález Jan). Sekce s tabulkou a s poznámkami mají nově návrhovou výšku jako systémové
+šablony (20 a 15 mm) a skutečnou určí data; kontrola kostry proti systémovým šablonám hlídá
+i tuhle výšku.
+
+## 2026-10-02 (6) - 🔍 výpis posledního AI importu se ukládá vždy
+
+Dialog po každém AI importu uloží do `%LOCALAPPDATA%\m-line\TemplateDesigner\posledni-import\`
+výpis s odpovědí modelu, protokol, obrázek stránky, který model dostal, a výslednou šablonu
+(přepisuje se). Vedle PDF se dál nic neukládá. Bez toho nešlo zpětně zjistit, proč import u Jana
+dopadl hůř: odpovědi se mezi běhy liší a volba Debug je jen s lokálním klíčem. Tři běhy nad 940
+vyšly strukturou stejně; ve třetím chyběl obrázek na pás log, protože oblast poznámek od modelu
+sahala přes něj - spodek poznámek je nově poslední řádek jejich textu.
+
+## 2026-10-02 (5) - 🧩 import linkového JŘ: mezery skupin, poznámky, grafika, patička
+
+Podle prohlídky importu 940 IDZK (Jan): **mezera mezi skupinami sloupců** se měří z mezer mezi
+pruhy nadpisů skupin (bere se rozestup skupin dnů, prvek má jednu hodnotu na všechny mezery);
+**poznámky** převezmou barvu písma z PDF a model se ptá na jejich záhlaví (papír ho potvrdí -
+poznámky mají obsah vždy); **grafika pod tabulkou** (pás log, linka u spodku) se nahradí prázdnými
+obrázky o změřené velikosti - shluk aspoň tří tvarů bez textu, změřené místo má přednost před
+rámečkem odhadnutým modelem; co leží pod tabulkou ve spodní pětině stránky, jde do sekce
+**Patička** na každé stránce (u 940 je pás log na obou stránkách). Zóny v šabloně jsou - v náhledu
+chyběly, protože ukázková linka zóny nemá a prázdný sloupec se netiskne.
+
+## 2026-10-02 (4) - 🎨 import linkového JŘ převezme barvy tabulky
+
+Barvy Tabulky spojů se měří z PDF, model se na ně neptá (ani na podbarvení lichých Tč - změřená
+barva je přesnější než jeho odhad): **záhlaví** podle pruhu nadpisů skupin dnů (pozadí i barva
+písma), **podbarvení řádků** podle aspoň tří stejně podbarvených řádků (pruh přes řádek i řada
+podbarvených buněk, tak kreslí náš tisk), **písmo buněk** a **čáry** podle převládající barvy.
+Záhlaví jde do stylu celé tabulky, ne po sloupcích - zapečená hodnota sloupce by přebila ovladač
+prvku, takže řádek čísel spojů dostane barvu pruhu skupin, i když ho předloha má bílý. Ověřeno
+oraclem: náš tisk ze šablony se známými barvami, import je musí změřit zpátky (test); nad 940
+IDZK vyšlo tmavě modré záhlaví s bílým písmem a světle modré řádky, nad demo výlepem šedé záhlaví
+jako ve zdroji. Navíc: jeden řádek rozdělený modelem na víc textů se spojí do jednoho, poloha
+bez společného slova s textem se nebere a grafika bez rozměru se nevloží. Ruční zkouška importu
+naostro bez návrháře je v repu (`TemplateDesigner.Tests/PdfImport/ZkouskaImportuNaostro.cs`,
+zapíná ji proměnná prostředí).
+
+## 2026-10-02 (3) - 🧪 import linkového JŘ nad výtiskem 940 IDZK
+
+Zkouška nad skutečným výtiskem linky 940 (tmavě modrá hlavička, víkendy odsazené vpravo) ukázala
+pět chyb skládání, ne rozpoznání: **barevné plochy hlavičky** se nepřebíraly, takže bílé texty
+zůstaly na bílém (nově obdélník za texty; plocha s textem nad jízdním řádem, ne bílá, ne pruh
+nadpisu skupiny těsně nad tabulkou); **víc oblastí tabulky** od modelu (skupina dnů vedle, části
+pod sebou) se slévá do jedné; **text rozdělený na kusy** (trasa bez pomlček v textové vrstvě PDF)
+se složí do jednoho prvku; **krátký blok uvnitř dlouhého textu** („940" v „771940") už neplatí za
+shodu; **rámeček na obrázek** z hlášení modelu se nevloží do tabulky ani poznámek. Importovaný
+obdélník nedostane navíc černý rámeček. Kromě slévání tabulek platí všechno i pro zastávkový JŘ.
+**Pevné texty pod tabulkou se u linkového JŘ nepřevezmou** (nález Jan): jsou to vysvětlivky
+a texty poznámek linky, které tiskne prvek Poznámky z dat - jako texty by se tiskly stejně
+u každé linky. Stalo se to, když model oblast poznámek nevrátil; text s datovým polem zůstává.
+
+## 2026-10-02 (2) - 🧪 import linkového JŘ vyzkoušený naostro
+
+Import běžel proti dev serveru a skutečnému modelu nad PDF demo výlepu linky 330530, které
+vytiskl náš tisk ze šablony `templates/demo-qr-linkovy-jr-ad.json` - výsledek se tak dal
+porovnat se zdrojem. Opravy podle toho: tabulka rozdělená na části pod sebou je jedna tabulka,
+ne dva směry (model kvůli tomu zapnul obousměrný tisk); texty se vracejí po řádcích i s pevným
+textem kolem pole („Přepravu zajišťuje : {POPIS_DOPRAVCE}"); dva řádky z jednoho bloku PDF
+dostanou každý svůj řádek; rámeček s víc texty nepřevezme žádný z nich (název linky se
+roztáhl přes číslo); částečná shoda textu platí jen v okolí místa od modelu (platnost skončila
+o 100 mm vedle); písmo tabulky podle většiny znaků, ne mediánem (minuty jsou menší); výška řádku
+pod výškou písma se zahodí; volby „Automaticky (dle linky)" se z předlohy nepřebíjí. Na nadpisy
+skupin dnů a nadpis popisných sloupců se model už neptá - prázdný nadpis vypadá jako vypnutý.
+Poslední běh: hlavička do 2 mm od zdroje se správnými poli, sloupce i volby tabulky shodné.
+Tři opravy (shoda textu, rámeček, řádky bloku) platí i pro zastávkový JŘ.
+**Volby sestavy se u linkového JŘ z předlohy neberou vůbec** (rozhodnutí Jan 2. 10.): model je
+ve třech bězích hádal pokaždé jinak a zčásti špatně (obousměrný tisk, název pro MHD, stránka pro
+každou zastávku), a hodnota v šabloně přebije nastavení uživatele. Import řeší jen rozvržení.
+
+## 2026-10-02 - 📥 import z PDF rozpozná linkový JŘ (`B179`, první krok)
+
+Do dneška se v agendě linkového JŘ AI vůbec nevolala: dialog poznal jízdní řád jen podle kódu
+`ZASTAVKOVY_JR`, takže z PDF linky vznikly volné texty a čáry bez datových polí. Teď má linkový
+JŘ vlastní popis pro model (Tabulka spojů, poznámky, texty kolem) a import z něj skládá šablonu
+do **pevné kostry systémových šablon linkového JŘ** (rozhodnutí Jan 2. 10.): hlavička na každé
+stránce, tabulka spojů s výškou z dat přes stránky a poznámky buď pod ní jako jeden celek
+(`linkovy-jr-ad-postskript-a5.json`), nebo vedle ní v téže sekci (`…-poznamky-vedle-a4.json`).
+Stránkování předlohy se nečte - kdy poznámky přejdou na další stránku, rozhodne tisk podle dat;
+z předlohy se bere jen pod/vedle, rozložení hlavičky, písmo a volby. Poznámky jsou v šabloně
+vždy, i když na zvolené stránce nejsou (bývají až na druhé). Shodu kostry se systémovými
+šablonami hlídá test. Tabulka převezme pořadí popisných
+sloupců a změřené písmo; sloupec, který model na předloze neviděl, se neskrývá (prázdný sloupec
+se netiskne sám, chybí tedy i u linky, která hodnoty jen nemá). Model se navíc ptá na volby
+tabulky, které papír potvrdí (čísla spojů, formát času, tečky, popisné sloupce bez čar,
+podbarvení lichých Tč); na řádky platnosti, značek a přípojů ne. Dvě tabulky pod sebou (oba
+směry) = šablona vezme horní. Šířky sloupců se zatím neměří. Ověřeno testy nad PDF, které
+vyrobí náš tisk, s odpovědí modelu napsanou ručně; **skutečné volání modelu nad předlohou
+zákazníka zatím neproběhlo**.
+
+## 2026-10-01 (3) - 🔎 hledání ve formuláři napoví Ctrl+F
+
+Pole hledání ve formuláři (a v seznamech) ukazuje „Hledat… (Ctrl+F)", jako už nápověda F1.
+Ctrl+F zároveň skočí do hledání toho formuláře nebo seznamu, ve kterém je kurzor, jinak do
+prvního viditelného. Dřív ho v okně držel první načtený formulář, takže v hlavním okně mířil
+třeba do Parametrů na skryté záložce (sdílený `EDComponentToolbar` v EDControls - týká se i shellu).
+
+## 2026-10-01 (2) - 📌 linkový JŘ jako výlepy na zastávky
+
+Nový parametr linkového JŘ AD **„Stránka pro každou zastávku"** (skupina Obecné). Zapnutý vrátí
+místo stránky za směr stránku za každou zastávku a směr, ze které spoje odjíždějí - konečná
+a zastávka jen pro výstup výlep nemají. Na stránce je zastávka zvýrazněná a v Tabulce spojů
+**vždy inverzní** - bílé na černém přes celý řádek, včetně časů. Tak ji tiskl starý modul
+(`JRapiLinPrtWin.mac:237`, podbarvení 4 = inverzní řádek; podle kódu, výtiskem neověřeno); tučné
+písmo by splynulo s tučnými zastávkami z trasy. Bez volby prvku, rozhodnutí Jan 1. 10.: jinak než
+u vývěsky, kde to řídí „Tučně aktuální zast.". Platí
+i pro obousměrný tisk (stejný počet stránek, stránka nese směr výlepu, ať má QR směr).
+„Zvýraznit zastávku" / „Zvýraznit tarifní číslo" výlepy zúží na vybrané zastávky.
+Stránky se nestaví znovu, server stránku směru zkopíruje a přenastaví zvýraznění: linka 330530
+dá 44 výlepů za 179 ms (bez parametru 79 ms). Bez parametru se výstup nemění (zlaté odtisky
+beze změny).
+
+## 2026-10-01 - 📱 zastávka výlepu v datech linkového JŘ (demo QR pro cestující)
+
+Linkový JŘ AD nese v hlavičce stránky zastávku výlepu: **„Číslo aktuální zastávky"**
+a **„Tarifní číslo aktuální zastávky"**. Vyplní se, když parametr „Zvýraznit zastávku" nebo
+„Zvýraznit tarifní číslo" trefí právě jeden řádek. Kus názvu, který odpovídá víc zastávkám
+(„Velešín" na lince 330530 odpovídá čtyřem), nechá pole prázdná, aby QR nevedlo na náhodnou
+z nich. Pole jde dosadit do prvku Kód (QR, čárový), takže každý výlep dostane vlastní adresu.
+Ukázková šablona `templates/demo-qr-linkovy-jr-ad.json` má pod tabulkou QR s adresou demo
+aplikace (`localhost:5185`). Je to první krok dema podle `qr-linkovy-jr-pro-cestujici.md`.
+
 ## 2026-09-29 (3) - 🖨 uspořádání na list jen u šablony o víc stránkách
 
 Panel „Uspořádání na list" v okně Tisk se ukazoval i u jednostránkové šablony, když bylo

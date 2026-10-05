@@ -224,6 +224,7 @@ Hodnotu, která je na obrázku NAPSANÁ (symbol v legendě, nadpis), přečti; n
     private static AgendaPromptContext GetAgendaPromptContext(ScheduleImportType type) => type switch
     {
         ScheduleImportType.ZastavkovyJrMhd => ZastavkovyJrMhdPromptContext(),
+        ScheduleImportType.LinkovyJr => LinkovyJrPromptContext(),
         _ => GenericPromptContext()
     };
 
@@ -297,6 +298,8 @@ Volby tisku, které si jinak nastavuje uživatel. Vyplň JEN ty, jejichž hodnot
 poznáš (typicky jestli jsou u zastávek šipky směru, nebo v jakém rozsahu hodin jsou odjezdy).
 Volbu, která se na papíře nijak neprojeví, VYNECH - hodnota v šabloně přebije nastavení uživatele,
 takže špatný odhad je horší než nevyplněno.
+Volbu s možností ""Automaticky (dle linky)"" VYNECH vždy: předloha ukazuje, jak to má nastavené
+linka, a pevná hodnota by nastavení linky přebila u všech ostatních linek.
 Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možností, u ano/ne ""true"" nebo ""false"".
 " + catalog;
 
@@ -389,6 +392,72 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
     { ""role"": ""qrCode"", ""description"": ""QR kód"", ""dbField"": ""QR_KOD"", ""x"": 0.9, ""y"": 0.01, ""w"": 0.08, ""h"": 0.08 }
   ],
   ""templateParameters"": { ""TISK_SIPKY"": ""true"", ""HODINY_OD"": ""4"", ""HODINY_DO"": ""23"" },
+  ""notes"": ""volitelné poznámky""
+}");
+
+    /// <summary>
+    /// Linkový JŘ: jedna tabulka celé linky (zastávky × spoje), vysvětlivky pod ní a hlavička nad
+    /// ní. Sloupce spojů vznikají z dat, takže se model ptá jen na popisné sloupce - jejich klíče
+    /// jsou <see cref="Models.ColumnKeys"/>, ať je builder nemusí překládat.
+    /// </summary>
+    private static AgendaPromptContext LinkovyJrPromptContext() => new(
+        RoleIntro: "Jsi expert na rozpoznávání linkových jízdních řádů (tabulka celé linky: zastávky × spoje) z obrázků.\n\nÚKOL: Analyzuj screenshot PDF a vrať sémantickou strukturu - jaké elementy kde jsou.",
+        StructureDescription: @"TYPICKÁ STRUKTURA LINKOVÉHO JŘ:
+1. **LineTable** - tabulka celé linky: ŘÁDKY = zastávky, SLOUPCE = spoje. Vlevo (nebo uprostřed) popisné
+   sloupce o zastávce (km, tarifní číslo, zóna, název zastávky, přestupy na MHD), vpravo sloupce spojů
+   s časy. Nad časy je pás záhlaví: nadpisy skupin dnů (Pracovní dny, Soboty…), čísla spojů, znaky
+   platnosti a značky omezení spojů.
+2. **NotesLegend** - vysvětlivky ke značkám a texty o omezení spojů. Bývají POD tabulkou NEBO VPRAVO
+   vedle ní - podívej se, kde skutečně jsou. Často jsou až na další stránce; když na obrázku nejsou,
+   NotesLegend nevracej.
+3. **Texty** mimo tabulku - číslo linky, trasa linky, dopravce, platnost od - do, poznámka nad linkou.
+4. **Obrázky** mimo tabulku - logo dopravce, QR kód, grafické prvky",
+        AdditionalRules:
+        [
+            "2. LineTable: v \"columns\" vyjmenuj popisné sloupce, které na obrázku VIDÍŠ, v pořadí zleva doprava: "
+                + "\"Arrow\" (značky př / od u zastávky rozdělené na příjezd a odjezd), \"Zone\" (tarifní zóna), "
+                + "\"Km\" (kilometry; víc sloupců km vedle sebe = jeden \"Km\"), \"Tc\" (tarifní číslo zastávky), "
+                + "\"StopName\" (název zastávky), \"Mhd\" (přestupy na MHD nebo IDS). Sloupce spojů s časy nevyjmenovávej.",
+            "3. POVINNÉ: tabulka spojů (LineTable) NESMÍ v odpovědi chybět, pokud je vidět.",
+            "4. Oblast LineTable MUSÍ zahrnovat celé záhlaví (nadpisy skupin dnů, čísla spojů, řádky značek) "
+                + "i poslední zastávku. NIKDY nevracej oblast, která začíná až u časů: co zůstane venku, skončí "
+                + "jako desítky samostatných textů. Jsou-li poznámky vedle tabulky, oblast LineTable končí před nimi.",
+            "5. Tabulka s mnoha spoji bývá ROZDĚLENÁ NA ČÁSTI pod sebou: každá část zopakuje popisné sloupce "
+                + "a zastávky ve STEJNÉM pořadí, jen nese další spoje. Taková tabulka je JEDNA LineTable - vrať "
+                + "oblast přes všechny části. Dvě LineTable vrať jen tehdy, když má druhá tabulka zastávky "
+                + "v OPAČNÉM pořadí (směr zpět).",
+            "6. Tabulka s časy spojů vlevo I vpravo od názvů zastávek (oba směry v jedné tabulce) je JEDNA LineTable. "
+                + "Skupiny dnů vedle sebe (Pracovní dny, Víkendy a svátky), i když je mezi nimi mezera, jsou "
+                + "taky JEDNA LineTable - oblast přes všechny skupiny.",
+            "7. Vysvětlivky pod tabulkou (značka - význam), texty o omezení spojů a tarifní informace pod "
+                + "tabulkou jsou poznámky linky: patří do oblasti NotesLegend, v textMappings je NEVRACEJ.",
+            "8. Text, který je na obrázku na více řádcích pod sebou, vrať PO ŘÁDCÍCH - každý řádek jako "
+                + "samostatnou položku textMappings. Naopak jeden řádek vrať jako JEDNU položku, i když obsahuje "
+                + "víc údajů oddělených \"|\" nebo čárkami.",
+            "9. placeholderText je CELÝ text řádku s datovými poli nahrazenými {POLE}; pevný text kolem pole "
+                + "ponech (\"Přepravu zajišťuje: {POPIS_DOPRAVCE}\", \"Platí od {DATUM_PLATNOSTI_OD}\"). "
+                + "Do dbField dej hlavní pole řádku."
+        ],
+        ElementProperties: [],
+        TemplateParameters: [],
+        JsonExample: @"{
+  ""scheduleType"": ""LinkovyJr"",
+  ""confidence"": 0.9,
+  ""elements"": [
+    {
+      ""type"": ""LineTable"",
+      ""left"": 0.02, ""top"": 0.14, ""right"": 0.98, ""bottom"": 0.78,
+      ""columns"": [""Km"", ""Tc"", ""StopName"", ""Zone""],
+      ""hasHeader"": true
+    },
+    { ""type"": ""NotesLegend"", ""left"": 0.02, ""top"": 0.8, ""right"": 0.98, ""bottom"": 0.97 }
+  ],
+  ""textMappings"": [
+    { ""text"": ""940"", ""role"": ""title"", ""dbField"": ""CISLO_LINKY"", ""placeholderText"": ""{CISLO_LINKY}"", ""x"": 0.02, ""y"": 0.01, ""w"": 0.1, ""h"": 0.05, ""approxFontSize"": 20, ""confidence"": 0.95 },
+    { ""text"": ""Platí od 1.1.2026"", ""role"": ""validity"", ""dbField"": ""DATUM_PLATNOSTI_OD"", ""placeholderText"": ""Platí od {DATUM_PLATNOSTI_OD}"", ""x"": 0.8, ""y"": 0.01, ""w"": 0.18, ""h"": 0.02, ""approxFontSize"": 8, ""confidence"": 0.9 }
+  ],
+  ""imageMappings"": [],
+  ""elementSettings"": { ""LineTable"": { ""Řádky · Čísla spojů"": ""ano"" } },
   ""notes"": ""volitelné poznámky""
 }");
 

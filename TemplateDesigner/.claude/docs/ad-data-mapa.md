@@ -116,8 +116,17 @@ J-věta segment **#12** (`sloupekTam:sloupekZpet`, legacy `dta14` - `JRapiLin` �
 **W pozice 13** (legacy `trs(14)` - `JRapiSp` ř.311/349), spoj přebíjí trasu (`JRapiExp6` ř.1961-1962,
 `JRapiExp10` ř.832-836). Hodnota je **odkaz do číselníku sloupků zastávky**
 `^JRZ(czst,"Sloupek",id)` = `číslo ~ GPS lat ~ GPS lon ~ popis směru` („směr Brno přes UH"); číslo
-1-255, legacy před exportem do CIS kontroluje číselnost (`+sloupek=sloupek`). Na rozdíl od označníku
-je vyplněný **systematicky** (ZL_KOVED i CB_CSADAD ho mají u všech zastávek testovaných linek).
+1-255, legacy před exportem do CIS kontroluje číselnost (`+sloupek=sloupek`). ⚠️ **Vyplněnost záleží
+na firmě**: ZL_KOVED ho má (linka 822995, Babice czst 204 = `1:2`, oba sloupky s GPS), kdežto
+CB_CSADAD na lince 330510 nemá pole sloupku vyplněné u žádné zastávky a číselník sloupků byl prázdný
+u všech kontrolovaných zastávek (ověřeno 1. 10.; do té doby tu stálo, že ho mají obě firmy u všech
+zastávek testovaných linek - pro CB_CSADAD to neplatí). `id` záznamu se nemusí rovnat jeho číslu
+(VS_CSAD czst 1 má záznamy 304 a 403, u 304 je číslo prázdné).
+Záznam má **časové varianty** `^JRZ(czst,"CasoveVariantyUdaju",horolog,"Sloupek",id)` - webová
+aplikace EDISONu čte jen je (`WebApp/CACHE/ALWA/EDISONWEB/Jr/Body.cls:851-861`), význam polí
+(1 číslo, 2/3 GPS, 4 popis, 5 provozovatel, 6 rádius, … 39 polygony) drží
+`ISYZastavky/CACHE/ALVA/ISY/ISYZastavky/API/ZastavkyOznacniky.cls:8-45`. Jinou polohu označníku
+než tuhle `^JRZ` nemá.
 
 **Označník (nástupiště)** = W pole **7** per spoj, fallback J-věta segment **#3** (`nastTam:nastZpet`)
 per zastávka a směr. Ověřeno 30. 7. na `CB_CSADAD` 0320680: J-věta nese `11`, W-trasa spoje `22` -

@@ -1,17 +1,18 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using EDControls.EDViewModel;
 
 namespace EDControls.EDComponentToolbar;
 
 /// <summary>
 /// Sdílený toolbar pro EDInputForm / EDList / tabulkové komponenty: brandový pruh s Title
-/// vlevo a search boxem + opt-in ikonami vpravo. Ctrl+F focusne search box. API viz DP níže.
+/// vlevo a search boxem + opt-in ikonami vpravo. Ctrl+F focusne search box komponenty, ve které
+/// je fokus (jinak prvního viditelného toolbaru v okně). API viz DP níže.
 /// </summary>
 public partial class EDComponentToolbar : UserControl
 {
-    private KeyBinding? _ctrlFBinding;
     private Window? _attachedWindow;
 
     public EDComponentToolbar()
@@ -21,38 +22,79 @@ public partial class EDComponentToolbar : UserControl
         Unloaded += OnUnloaded;
     }
 
-    // Jedno okno = jeden Ctrl+F binding. V hlavním okně shellu je toolbarů desítky (každá
-    // tabulka miniaplikace je EDList) a WPF stejně obslouží první shodný binding - ostatní by se
-    // jen hromadily v InputBindings.
-    private static readonly DependencyProperty CtrlFOwnerProperty =
-        DependencyProperty.RegisterAttached("CtrlFOwner", typeof(EDComponentToolbar), typeof(EDComponentToolbar));
+    // Jedno okno = jeden Ctrl+F binding (WPF obslouží první shodný, další by se jen hromadily
+    // v InputBindings), ale cíl se vybírá až při stisku: hledání komponenty, ve které je fokus,
+    // jinak první viditelné. Pevný „první načtený" toolbar posílal Ctrl+F třeba do formuláře
+    // na skryté záložce. V hlavním okně shellu je toolbarů desítky (každá tabulka miniaplikace).
+    private sealed class CtrlFOkna
+    {
+        public KeyBinding Binding = null!;
+        public readonly List<EDComponentToolbar> Toolbary = [];
+    }
+
+    private static readonly DependencyProperty CtrlFOknaProperty =
+        DependencyProperty.RegisterAttached("CtrlFOkna", typeof(CtrlFOkna), typeof(EDComponentToolbar));
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // Ctrl+F focusne search box (window-level binding, pokud parent Window existuje).
-        // Unsubscribe nutný v OnUnloaded - jinak při re-load akumulují binding kopie.
-        var parentWindow = Window.GetWindow(this);
-        if (parentWindow is null || _ctrlFBinding is not null) return;
-        if (parentWindow.GetValue(CtrlFOwnerProperty) is not null) return;
-
-        _ctrlFBinding = new KeyBinding(
-            new RelayCommand(FocusSearch),
-            new KeyGesture(Key.F, ModifierKeys.Control));
-        _attachedWindow = parentWindow;
-        parentWindow.SetValue(CtrlFOwnerProperty, this);
-        parentWindow.InputBindings.Add(_ctrlFBinding);
+        // Odregistrace v OnUnloaded je nutná - jinak by se při re-loadu bindingy hromadily.
+        var okno = Window.GetWindow(this);
+        if (okno is not null && _attachedWindow is null)
+        {
+            if (okno.GetValue(CtrlFOknaProperty) is not CtrlFOkna stav)
+            {
+                stav = new CtrlFOkna();
+                var cil = stav;
+                stav.Binding = new KeyBinding(new RelayCommand(() => FocusSearchIn(cil)),
+                    new KeyGesture(Key.F, ModifierKeys.Control));
+                okno.SetValue(CtrlFOknaProperty, stav);
+                okno.InputBindings.Add(stav.Binding);
+            }
+            stav.Toolbary.Add(this);
+            _attachedWindow = okno;
+        }
+        AktualizujPlaceholder();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        if (_ctrlFBinding is not null && _attachedWindow is not null)
+        if (_attachedWindow?.GetValue(CtrlFOknaProperty) is CtrlFOkna stav)
         {
-            _attachedWindow.InputBindings.Remove(_ctrlFBinding);
-            _attachedWindow.ClearValue(CtrlFOwnerProperty);   // uvolni slot dalšímu toolbaru
-            _ctrlFBinding = null;
-            _attachedWindow = null;
+            stav.Toolbary.Remove(this);
+            if (stav.Toolbary.Count == 0)
+            {
+                _attachedWindow.InputBindings.Remove(stav.Binding);
+                _attachedWindow.ClearValue(CtrlFOknaProperty);
+            }
         }
+        _attachedWindow = null;
+        AktualizujPlaceholder();
     }
+
+    private static void FocusSearchIn(CtrlFOkna stav) =>
+        CilCtrlF(stav.Toolbary, t => t.KomponentaMaFokus(), t => t.IsVisible)?.FocusSearch();
+
+    /// <summary>Kam Ctrl+F: hledání komponenty, ve které je fokus, jinak první viditelné.</summary>
+    internal static EDComponentToolbar? CilCtrlF(IReadOnlyList<EDComponentToolbar> toolbary,
+        Func<EDComponentToolbar, bool> maFokus, Func<EDComponentToolbar, bool> jeVidet)
+    {
+        var kandidati = toolbary.Where(t => t.ShowSearch && jeVidet(t)).ToList();
+        return kandidati.FirstOrDefault(maFokus) ?? kandidati.FirstOrDefault();
+    }
+
+    // Komponenta = nejbližší nadřazený UserControl (EDInputForm, EDList); toolbar je její hlavička.
+    private bool KomponentaMaFokus()
+    {
+        DependencyObject? d = VisualTreeHelper.GetParent(this);
+        while (d is not null and not UserControl) d = VisualTreeHelper.GetParent(d);
+        return (d as UIElement ?? this).IsKeyboardFocusWithin;
+    }
+
+    // Nápověda „(Ctrl+F)" u každého toolbaru v okně - zkratka vede do hledání komponenty,
+    // ve které uživatel je, takže z kteréhokoli z nich platí.
+    private void AktualizujPlaceholder() =>
+        SetValue(EffectiveSearchPlaceholderPropertyKey,
+            _attachedWindow is null ? SearchPlaceholder : $"{SearchPlaceholder} (Ctrl+F)");
 
     private void FocusSearch()
     {
@@ -95,13 +137,24 @@ public partial class EDComponentToolbar : UserControl
 
     public static readonly DependencyProperty SearchPlaceholderProperty =
         DependencyProperty.Register(nameof(SearchPlaceholder), typeof(string), typeof(EDComponentToolbar),
-            new PropertyMetadata("Hledat…"));
+            new PropertyMetadata("Hledat…", (d, _) => ((EDComponentToolbar)d).AktualizujPlaceholder()));
 
     public string SearchPlaceholder
     {
         get => (string)GetValue(SearchPlaceholderProperty);
         set => SetValue(SearchPlaceholderProperty, value);
     }
+
+    private static readonly DependencyPropertyKey EffectiveSearchPlaceholderPropertyKey =
+        DependencyProperty.RegisterReadOnly(nameof(EffectiveSearchPlaceholder), typeof(string),
+            typeof(EDComponentToolbar), new PropertyMetadata("Hledat…"));
+
+    public static readonly DependencyProperty EffectiveSearchPlaceholderProperty =
+        EffectiveSearchPlaceholderPropertyKey.DependencyProperty;
+
+    /// <summary>Zobrazený placeholder hledání: <see cref="SearchPlaceholder"/>, u toolbaru se zkratkou
+    /// Ctrl+F doplněný o „(Ctrl+F)".</summary>
+    public string EffectiveSearchPlaceholder => (string)GetValue(EffectiveSearchPlaceholderProperty);
 
     public static readonly DependencyProperty ShowExportProperty =
         DependencyProperty.Register(nameof(ShowExport), typeof(bool), typeof(EDComponentToolbar),
