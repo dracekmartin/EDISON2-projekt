@@ -5,9 +5,9 @@ Hlášení chyb na `podpora.m-line.cz/api/telemetry/ingest` - **přímý HTTPS P
 než slovo „telemetrie"). Náhrada legacy `frmMLErrorEx` (`EDISON/EDLIBRARY/`), ne doslovná
 parita - odchylky jsou vědomé a jsou níž.
 
-Vstup je `ErrorReports.Report/ReportBackground/ReportFatal`, volá je `PopupDisplayer.Error`
-a globální handlery v obou `App.xaml.cs`. Čistá jádra (`ErrorReport*`, `ErrorThrottle`) jsou
-bez WPF i HTTP, aby šla testovat přímo.
+Vstup je `ErrorReports.Report*` (volá je `PopupDisplayer.Error` a globální handlery v obou
+`App.xaml.cs`): statická fasáda nad výchozí `ErrorReportingPipeline`, která drží throttle, HTTP
+klienta, záložní log i zdroj kontextu. Testy skládají vlastní instanci a statiku nemění.
 
 ## Kontrakt serveru (ověřený v `edwcore/apps/mlweb/backend`)
 

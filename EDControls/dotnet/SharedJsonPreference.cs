@@ -32,8 +32,7 @@ internal sealed class SharedJsonPreference<T> : IDisposable where T : class, new
         _afterLoad = afterLoad ?? (value => value);
     }
 
-    /// <summary>Settable jen kvůli testům (jinak by šly proti reálnému %APPDATA%).</summary>
-    internal string FilePath { get; set; }
+    internal string FilePath { get; }
 
     internal T Current { get; private set; } = new();
 

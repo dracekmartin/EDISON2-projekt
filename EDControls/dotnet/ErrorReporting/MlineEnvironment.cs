@@ -47,6 +47,4 @@ public static class MlineEnvironment
     internal static bool IsTruthyRegistryValue(string? value) =>
         value is not null &&
         (value == "1" || value.Equals("true", StringComparison.OrdinalIgnoreCase));
-
-    internal static void OverrideForTests(bool? value) => _cached = value;
 }
