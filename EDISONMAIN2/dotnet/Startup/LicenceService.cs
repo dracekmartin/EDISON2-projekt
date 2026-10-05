@@ -3,7 +3,6 @@ using ALVA.LICENCE.EDLicence;
 using ALVA.USERS;
 using ALWA.SYS;
 using EDControls;
-using EDControls.EDViewModel;
 
 namespace EDISONMAIN2;
 
@@ -11,7 +10,8 @@ namespace EDISONMAIN2;
 /// Wrapper kolem legacy VB <see cref="Activation"/> z EDLicence.dll.
 /// Single-threaded - Activation přepisuje modul-level globál v EDLicence.
 /// </summary>
-public class LicenceService(MLRest mlRest, Action<string>? showInfo = null)
+/// <param name="showInfo">Hláška licence uživateli (popup session).</param>
+public class LicenceService(MLRest mlRest, Action<string> showInfo)
 {
     /// <summary>
     /// Vrátí aktivní licenci; bez licence na serveru vrátí fallback (<see cref="CreateFallbackLicence"/>).
@@ -24,7 +24,7 @@ public class LicenceService(MLRest mlRest, Action<string>? showInfo = null)
         if (!string.IsNullOrEmpty(err))
             throw new InvalidOperationException(err);
         if (!string.IsNullOrEmpty(info))
-            (showInfo ?? (message => EDServices.Current.PopupDisplayer.Info(message)))(info);
+            showInfo(info);
         return lic ?? CreateFallbackLicence();
     }
 

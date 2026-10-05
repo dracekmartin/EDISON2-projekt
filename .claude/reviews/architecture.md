@@ -336,7 +336,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A6 · `EDServices.Current` prosakuje do infrastruktury a vypnul paralelizaci `EDISONMAIN2.Tests`
 
-- [ ] **Stav:** otevřeno (2026-10-01: seam pro geometrii oken existuje, default čte dál singleton)
+- [ ] **Stav:** otevřeno, částečně (bod 3 vyřešen 2026-10-05: `LicenceService` má `showInfo` povinný bez
+  fallbacku na `EDServices.Current`, `SessionFactory` předává popup služeb session; 2026-10-01: seam pro
+  geometrii oken existuje, default čte dál singleton)
 - **P2 · M** · Závisí na: A7 (stejný soubor, dělat před) · Blokuje: - · Původ: [backlog R5](arch-backlog.md#r5---edservicescurrent-prosakuje-do-infrastruktury-a-vypnul-paralelizaci-testů)
 - **Problém:** Singleton je záměr u controls (`EDList`, `EDInputForm`, `EDFilter` nesmí záviset
   na `Window.DataContext`), ale šíří se do infrastruktury a oken, a `EDISONMAIN2.Tests` proto
@@ -1166,7 +1168,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A34 · Dvě serverové cesty k „výchozí okno", jedna mrtvá
 
-- [x] **Stav:** vyřešeno (2026-10-05) - `UserProfileData` bez `DefaultWindowId`, `UserProfileService.Load`
+- [x] **Stav:** vyřešeno 91b2cbca (2026-10-05) - `UserProfileData` bez `DefaultWindowId`, `UserProfileService.Load`
   řádek `form` nečte (server ho posílá dál, čte ho legacy shell); věta o jediné cestě
   `ApiEdison.Get/SetUserDefaultForm` v `EDISONMAIN2/CLAUDE.md`, sekce Výchozí okno.
 - **P3 · S** · Původ: nový (2026-09-20)
