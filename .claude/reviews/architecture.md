@@ -404,7 +404,15 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A8 · EDControls zná deployment a branding EDISONMAIN2 natvrdo
 
-- [ ] **Stav:** otevřeno, částečně (`FormIdPrefix` hotov; 2026-10-01 přibyl další literál)
+- [x] **Stav:** vyřešeno (2026-10-05, proud S5) - `C:\Edison` a `EDISONMAIN2API.exe` jsou jen jako
+  defaulty v `LegacyModuleHost`; launcher jde přebít internal parametrem ctoru, deploy adresář vědomě ne
+  (launch a `WindowNavigator.ResolveExecutablePath` musí hledat na stejném místě). Veřejný setter není,
+  žádná aplikace jinou hodnotu nepotřebuje. `WindowNavigator.EdisonDeployRoot` je `static readonly`. Argv
+  začíná `EdisonLaunchArgs.LaunchMarker`, telemetrie launche jde pod `FormIdPrefix` (shell dál
+  `EDISON2.LegacyLaunch`), uložené hlášení chyby `<FormIdPrefix>-chyba-…` (TD `TD-chyba-…`), hláška
+  o chybějícím souboru jmenuje místo „EDISONu" oba prohledané adresáře (vedle exe i deploy). Zbývá
+  fallback `"EDISON2"` v `ErrorReporting/ErrorReports.cs:141` (soubor proudu S9). Testy v
+  `LegacyModuleHostTests` (prefix, launcher z deploy adresáře, hláška) a `EDErrorPopupTests`.
 - **P2 · M** · Závisí na: - · Blokuje: - · Původ: [backlog R4](arch-backlog.md#r4---edcontrols-natvrdo-zná-deployment-a-branding-edisonmain2)
 - **Hotovo mezitím:** `EDServices.FormIdPrefix` (`EDControls/dotnet/EDViewModel/EDServices.cs:61`,
   TD nastavuje `"TD"` v `App.xaml.cs:42`, čte `EDViewModel.cs:146`).

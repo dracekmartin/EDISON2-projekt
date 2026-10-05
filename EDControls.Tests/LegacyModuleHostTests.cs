@@ -85,7 +85,8 @@ public class LegacyModuleHostTests
         public EDServices Services { get; }
         public LegacyModuleHost Host { get; }
 
-        public Harness(IMLRest? mlRest = null, bool noMlRest = false)
+        public Harness(IMLRest? mlRest = null, bool noMlRest = false,
+                       string launcherExe = LegacyModuleHost.DefaultLauncherExe)
         {
             Services = new EDServices(noMlRest ? null : mlRest ?? MakeMlRest(),
                 Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
@@ -95,7 +96,7 @@ public class LegacyModuleHostTests
                     Started.Add(psi);
                     return Last = CreateProcess();
                 },
-                fileExists: path => !MissingFiles.Contains(Path.GetFileName(path)),
+                fileExists: path => !MissingFiles.Contains(path) && !MissingFiles.Contains(Path.GetFileName(path)),
                 reportExit: (exe, form, code) => Reports.Add((exe, form, code)),
                 trackUsage: (form, control) => Usage.Add((form, control)),
                 postToUi: action =>
@@ -109,7 +110,8 @@ public class LegacyModuleHostTests
                     ActiveDims++;
                     return new Undim(() => ActiveDims--);
                 },
-                focus: hwnd => Focused.Add(hwnd));
+                focus: hwnd => Focused.Add(hwnd),
+                launcherExe: launcherExe);
             Host.LegacyModuleExited += () => ModuleExitedCount++;
         }
     }
@@ -524,6 +526,32 @@ public class LegacyModuleHostTests
         Assert.Equal([("EDISON2.LegacyLaunch", expectedControl)], h.Usage);
     }
 
+    [Fact]
+    public void Launch_TracksUsageUnderAppPrefix()
+    {
+        // Telemetrie jiné aplikace se nesmí míchat se shellem.
+        var h = new Harness();
+        h.Services.FormIdPrefix = "TD";
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        Assert.Equal([("TD.LegacyLaunch", Form)], h.Usage);
+    }
+
+    [Fact]
+    public void Launch_NothingNextToExe_UsesDeployRootAndConfiguredLauncher()
+    {
+        var h = new Harness(launcherExe: "HOST.exe");
+        h.MissingFiles.Add(Path.Combine(AppContext.BaseDirectory, Exe));
+        h.MissingFiles.Add(Path.Combine(AppContext.BaseDirectory, "HOST.exe"));
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        var psi = Assert.Single(h.Started);
+        Assert.Equal(Path.Combine(WindowNavigator.EdisonDeployRoot, "HOST.exe"), psi.FileName);
+        Assert.Contains($"\"{Path.Combine(WindowNavigator.EdisonDeployRoot, Exe)}\"", psi.Arguments);
+    }
+
     // --- statické helpery ---
 
     [Fact]
@@ -613,33 +641,44 @@ public class LegacyModuleHostTests
     [Fact]
     public void ResolvePath_ExistsNextToExe_ReturnsLocalPath()
     {
-        Assert.Equal(Path.Combine(AppContext.BaseDirectory, Exe), LegacyModuleHost.ResolvePath(Exe, _ => true));
+        Assert.Equal(Path.Combine(AppContext.BaseDirectory, Exe), LegacyModuleHost.ResolvePath(Exe, _ => true, @"D:\Deploy"));
     }
 
     [Fact]
     public void ResolvePath_Missing_FallsBackToDeployRoot()
     {
-        Assert.Equal(Path.Combine(WindowNavigator.EdisonDeployRoot, Exe), LegacyModuleHost.ResolvePath(Exe, _ => false));
+        Assert.Equal(Path.Combine(@"D:\Deploy", Exe), LegacyModuleHost.ResolvePath(Exe, _ => false, @"D:\Deploy"));
     }
 
     [Fact]
-    public void EnsureExecutableExists_ExistingFile_DoesNotThrow()
+    public void ResolveExistingPath_ExistingNextToExe_ReturnsIt()
     {
-        LegacyModuleHost.EnsureExecutableExists(typeof(LegacyModuleHost).Assembly.Location, "EDControls.dll", File.Exists);
+        var dll = Path.GetFileName(typeof(LegacyModuleHost).Assembly.Location);
+
+        Assert.Equal(Path.Combine(AppContext.BaseDirectory, dll), LegacyModuleHost.ResolveExistingPath(dll, File.Exists, @"D:\Deploy"));
     }
 
     [Fact]
-    public void EnsureExecutableExists_MissingFile_NamesItForTheAdmin()
+    public void ResolveExistingPath_MissingEverywhere_NamesFileAndBothDirectories()
     {
-        // Místo Win32Exception bez kontextu musí hláška říct, který soubor chybí.
-        var path = Path.Combine(WindowNavigator.EdisonDeployRoot, $"{Guid.NewGuid()}.exe");
-
+        // Shell z UNC sdílení hledá nejdřív vedle sebe - hláška jen s fallbackem by správce poslala jinam.
         var ex = Assert.Throws<FileNotFoundException>(
-            () => LegacyModuleHost.EnsureExecutableExists(path, "EDISONMAIN2API.exe", File.Exists));
+            () => LegacyModuleHost.ResolveExistingPath("EDISONMAIN2API.exe", _ => false, @"D:\Deploy"));
 
-        Assert.Contains("EDISONMAIN2API.exe", ex.Message);
+        var exeDir = Path.GetDirectoryName(Path.Combine(AppContext.BaseDirectory, "x"));
+        Assert.Contains($"soubor EDISONMAIN2API.exe chybí v adresáři {exeDir} i D:\\Deploy.", ex.Message);
         Assert.Contains("správce IS", ex.Message);
-        Assert.Equal(path, ex.FileName);
+        Assert.Equal(@"D:\Deploy\EDISONMAIN2API.exe", ex.FileName);
+    }
+
+    [Fact]
+    public void ResolveExistingPath_ShellRunsFromDeployRoot_NamesDirectoryOnce()
+    {
+        var ex = Assert.Throws<FileNotFoundException>(
+            () => LegacyModuleHost.ResolveExistingPath("USERS.exe", _ => false, AppContext.BaseDirectory));
+
+        var exeDir = Path.GetDirectoryName(Path.Combine(AppContext.BaseDirectory, "x"));
+        Assert.Contains($"soubor USERS.exe chybí v adresáři {exeDir}.", ex.Message);
     }
 
     // --- argv kontrakt ---

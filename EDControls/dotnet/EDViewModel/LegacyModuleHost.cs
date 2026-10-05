@@ -14,9 +14,14 @@ namespace EDControls.EDViewModel;
 /// </summary>
 internal sealed class LegacyModuleHost
 {
+    /// <summary>Cíl deploye legacy agend; single-file publish profily tam zapisují.</summary>
+    internal const string DefaultDeployRoot = @"C:\Edison";
+
     /// <summary>Generický host, který agendu načte a spustí (viz EDISONMAIN2API). Spouští se
     /// místo agenda .exe; cesta k agendě jde do argů, takže agenda nemusí být retrofitnutá.</summary>
-    private const string LauncherExe = "EDISONMAIN2API.exe";
+    internal const string DefaultLauncherExe = "EDISONMAIN2API.exe";
+
+    private readonly string _launcherExe;
 
     /// <summary>Jedno spuštění. FormFqn slouží i jako fallback label, když <c>MainWindowTitle</c> je
     /// prázdný (typicky brzy po startu, než child vytvoří okno).</summary>
@@ -52,9 +57,11 @@ internal sealed class LegacyModuleHost
         Action<Action>? postToUi = null,
         Func<Window?>? dialogOwner = null,
         Func<Window?, IDisposable>? dim = null,
-        Action<IntPtr>? focus = null)
+        Action<IntPtr>? focus = null,
+        string launcherExe = DefaultLauncherExe)
     {
         _services = services;
+        _launcherExe = launcherExe;
         _start = start ?? SystemLegacyProcess.Start;
         _fileExists = fileExists ?? File.Exists;
         _reportExit = reportExit ?? ErrorReporting.ErrorReports.ReportLegacyExit;
@@ -239,17 +246,15 @@ internal sealed class LegacyModuleHost
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.MLRest.");
         // Launch modulu jako usage telemetrie shellu. Záměrně ne (formFqn, "OPEN") -
         // hostovaná legacy forma si OPEN trackne sama přes EDForm, jinak by byl dvakrát.
-        _trackUsage("EDISON2.LegacyLaunch", string.IsNullOrEmpty(formFqn) ? exeName : formFqn);
+        _trackUsage($"{services.FormIdPrefix}.LegacyLaunch", string.IsNullOrEmpty(formFqn) ? exeName : formFqn);
         var shellGuid = ShellGuidFor(mlRest, shareShellSession);
-        var agendaPath = ResolvePath(exeName, _fileExists);
+        // Chybějící soubor by skončil Win32Exception bez jména souboru; správce IS potřebuje vědět, co chybí.
+        var agendaPath = ResolveExistingPath(exeName, _fileExists, DefaultDeployRoot);
 
         // EDISONMAIN se spouští napřímo (ne přes host): jeho ApplicationEvents.OnRun nastavuje
         // per-forma default EDParamIn (ApplyDefaultInput), který generický host neumí dodat.
         bool direct = LaunchesDirectly(exeName);
-        var launcherPath = direct ? agendaPath : ResolvePath(LauncherExe, _fileExists);
-        // Chybějící soubor by skončil Win32Exception bez jména souboru; správce IS potřebuje vědět, co chybí.
-        EnsureExecutableExists(agendaPath, Path.GetFileName(exeName), _fileExists);
-        if (!direct) EnsureExecutableExists(launcherPath, LauncherExe, _fileExists);
+        var launcherPath = direct ? agendaPath : ResolveExistingPath(_launcherExe, _fileExists, DefaultDeployRoot);
         // Licencované elementy z aktivní licence shellu → host z nich postaví Lic a načte
         // formuláři přístupová práva (MLProps.AccessTable). Bez toho moduly, které gate-ují
         // obsah přes RightGranted (např. DSINPUT Plánování), nezobrazí data. Viz FormToRunGetter.
@@ -320,7 +325,7 @@ internal sealed class LegacyModuleHost
         string inputParam, string agendaPath, string licensedElements, bool isAdmin, bool mayUpdate,
         string shortcutPayload = "", string userDirectory = "", string userEmail = "",
         string licenceVersion = "", string licenceState = "", string licenceValidTo = "") =>
-        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\" \"{Dir(userDirectory)}\" \"{userEmail}\" \"{Version(licenceVersion)}\" \"{licenceState}\" \"{Plain(licenceValidTo)}\"";
+        $"{EdisonLaunchArgs.LaunchMarker} \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\" \"{Dir(userDirectory)}\" \"{userEmail}\" \"{Version(licenceVersion)}\" \"{licenceState}\" \"{Plain(licenceValidTo)}\"";
 
     private static string Flag(bool value) => value ? "1" : "0";
     private static string Dir(string directory) => directory.TrimEnd('\\');
@@ -330,18 +335,26 @@ internal sealed class LegacyModuleHost
     private static string Plain(string value) => value.Replace("\"", "").TrimEnd('\\');
 
     /// <summary>Vedle exe (DEBUG běží z bin), jinak deploy adresář legacy agend.</summary>
-    internal static string ResolvePath(string relativePath, Func<string, bool> fileExists)
+    internal static string ResolvePath(string relativePath, Func<string, bool> fileExists, string deployRoot)
     {
         var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
-        return fileExists(localPath) ? localPath : Path.Combine(WindowNavigator.EdisonDeployRoot, relativePath);
+        return fileExists(localPath) ? localPath : Path.Combine(deployRoot, relativePath);
     }
 
-    /// <summary>Pre-flight před spuštěním legacy procesu: hláška jmenuje chybějící soubor, ne jen „soubor nenalezen".</summary>
-    internal static void EnsureExecutableExists(string path, string displayName, Func<string, bool> fileExists)
+    /// <summary>
+    /// <see cref="ResolvePath"/> s pre-flight kontrolou: hláška jmenuje soubor i oba prohledané adresáře -
+    /// shell běžící z UNC sdílení hledá nejdřív vedle sebe, samotný fallback by správce poslal jinam.
+    /// </summary>
+    internal static string ResolveExistingPath(string relativePath, Func<string, bool> fileExists, string deployRoot)
     {
-        if (fileExists(path)) return;
+        var path = ResolvePath(relativePath, fileExists, deployRoot);
+        if (fileExists(path)) return path;
+        var searched = new[] { Path.Combine(AppContext.BaseDirectory, relativePath), path }
+            .Select(Path.GetDirectoryName)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
         throw new FileNotFoundException(
-            $"Nelze spustit modul: v adresáři EDISONu chybí soubor {displayName}. Kontaktujte správce IS.", path);
+            $"Nelze spustit modul: soubor {Path.GetFileName(relativePath)} chybí v adresáři {string.Join(" i ", searched)}. " +
+            "Kontaktujte správce IS.", path);
     }
 
     /// <summary>Text v záhlaví okna, fallback poslední segment FormFqn (<c>formMHD2Main</c>), nebo EXE bez přípony.</summary>

@@ -10,8 +10,9 @@ namespace EDControls.EDViewModel;
 /// </summary>
 public class WindowNavigator : IWindowNavigator
 {
-    /// <summary>Deploy legacy agend; fallback <see cref="ResolveExecutablePath"/>, když soubor není vedle exe.</summary>
-    public const string EdisonDeployRoot = @"C:\Edison";
+    /// <summary>Deploy legacy agend; fallback <see cref="ResolveExecutablePath"/>, když soubor není vedle exe.
+    /// <c>static readonly</c>, ne <c>const</c> - konzument samostatně nasazené DLL by si hodnotu zapekl.</summary>
+    public static readonly string EdisonDeployRoot = LegacyModuleHost.DefaultDeployRoot;
 
     private readonly LegacyModuleHost? _legacy;
 
@@ -138,7 +139,7 @@ public class WindowNavigator : IWindowNavigator
         w != mainWindow && !IsInternalWindow(w);
 
     public static string ResolveExecutablePath(string relativePath) =>
-        LegacyModuleHost.ResolvePath(relativePath, File.Exists);
+        LegacyModuleHost.ResolvePath(relativePath, File.Exists, EdisonDeployRoot);
 
     // Firma v titulku záměrně není - jedno sezení = jedna firma, identitu nese titulek shellu a status bar.
     // AttachToWindow před Show(): SourceInitialized fíruje uvnitř Show() před prvním paintem (restore stavu).
