@@ -43,24 +43,26 @@ public static class ColumnRenderer
         SKPaint? gridPaint = null,
         float fontScale = 1f)
     {
+        var bunky = cells as IReadOnlyList<CellSpec> ?? cells.ToList();
         float x = xStartMm;
-        bool first = true;
-
-        foreach (var cell in cells)
+        foreach (var cell in bunky)
         {
-            // Sloučená buňka si svislou čáru kreslí přes celou svou výšku znovu: řádek nad ní ji
-            // sice nakreslil, ale pozadí sloučené buňky tu část přemaže.
-            if (!first && gridPaint is not null && !cell.SuppressLeadingLine)
-            {
-                var top = ctx.ToCanvas(x, yMm - cell.PresahNahoruMm);
-                var bot = ctx.ToCanvas(x, yMm + heightMm);
-                ctx.Canvas.DrawLine(top, bot, gridPaint);
-            }
-            first = false;
-
             var rect = new SKRect(x, yMm - cell.PresahNahoruMm, x + cell.WidthMm, yMm + heightMm);
             CellRenderer.DrawCell(ctx, rect, cell.Text, cell.Style, fontScale, cell.ShrinkReserveMm, cell.TrailingWidthMm);
+            x += cell.WidthMm;
+        }
+        if (gridPaint is null) return;
 
+        // ⚠️ Čáry až po všech buňkách: čára leží napůl v sousední buňce a její pozadí by jinak
+        // zakrylo pravou půlku (v podbarvených lichých Tč vyšly svislé čáry poloviční, nález Jan 5. 10.).
+        // Sloučená buňka si čáru kreslí přes celou svou výšku: řádek nad ní ji sice nakreslil,
+        // ale pozadí sloučené buňky tu část přemaže.
+        x = xStartMm;
+        for (int i = 0; i < bunky.Count; i++)
+        {
+            var cell = bunky[i];
+            if (i > 0 && !cell.SuppressLeadingLine)
+                ctx.Canvas.DrawLine(ctx.ToCanvas(x, yMm - cell.PresahNahoruMm), ctx.ToCanvas(x, yMm + heightMm), gridPaint);
             x += cell.WidthMm;
         }
     }

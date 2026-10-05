@@ -3,8 +3,8 @@
 ## 2026-10-05 - 🖨 příprava ukázky: tisk bez zástupných rámečků a zalomení v datech
 
 Při tisku výchozích šablon se skutečnými daty (`CB_CSADAD`, linky 330510/330511/330530; nová
-ruční zkouška `Rendering/ZkouskaTiskuNaostro.cs`) vyšly tři vady, které by na ukázce působily
-nedodělaně:
+ruční zkouška `Rendering/ZkouskaTiskuNaostro.cs`) vyšly vady, které by na ukázce působily
+nedodělaně (poslední se ukázala až při zkoušce podbarvení lichých Tč):
 
 - **Prázdný obrázek a kód se tiskly jako zástupné „IMG" a „QR".** Výchozí zastávková šablona
   má místo na logo a QR, které data nemusí naplnit. Rámeček je teď jen v návrháři
@@ -15,6 +15,12 @@ nedodělaně:
 - **Výchozí zastávková šablona AD měla popis dopravce dvakrát** - nahoře v úzkém rámečku přetékal
   a ořízl se. Nahoře je teď `{NAZEV_DOPRAVCE}`, dole celý popis. MHD šablona to má taky, agenda MHD
   ale název dopravce zvlášť nemá - nechaná.
+
+- **Čáry mřížky v podbarvených buňkách vyšly poloviční** (nález Jan u podbarvených lichých Tč).
+  Čára leží na hranici napůl v sousední buňce a její pozadí se kreslilo až po ní, takže zakrylo
+  pravou půlku svislé čáry a dolní půlku vodorovné. Svislé čáry se teď kreslí po všech buňkách
+  řádku a čára pod řádkem až po buňkách řádku pod ní (`ColumnRenderer`, `RowPlanRenderer`).
+  Týká se všech tabulek, viditelné hlavně v šedém záhlaví a podbarvených řádcích.
 
 Neopraveno: tabulka minut odjezdů v rozestupu „podle obsahu" počítá šířku skupiny bez značek,
 takže hodina s mnoha označenými odjezdy přeteče do sousední skupiny (330530 ve 13 h, 330510 v 6 h).

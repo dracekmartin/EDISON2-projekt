@@ -68,8 +68,8 @@ public readonly record struct RowSpec(
 /// Dřív měl každý tabulkový element svoji svislou smyčku, takže každá řádková featura se musela
 /// napsat N×; teď element jen tvaruje data (<see cref="RowSpec"/>).
 ///
-/// ⚠️ **Pořadí kreslení je součást kontraktu**: pozadí → buňky → vodorovné čáry. Čáry musí jít
-/// NAD buňky, jinak je pozadí buňky překryje (rozdíl v pixelech proti dosavadnímu chování).
+/// ⚠️ **Pořadí kreslení je součást kontraktu**: pozadí → buňky → čáry. Čáry musí jít NAD buňky
+/// obou sousedů, jinak pozadí buňky překryje jejich půlku.
 /// </summary>
 public static class RowPlanRenderer
 {
@@ -85,7 +85,9 @@ public static class RowPlanRenderer
         // ⚠️ Na jedné hranici jedna čára: čáru nad řádkem kreslí jen ten, pod kterým žádná není.
         // Dvě čáry přes sebe vyjdou o pixel silnější a v tabulce to vypadá jako vnější rám -
         // přesně tak vypadala čára úseku pod zastávkou proti tenké mřížce (nález Jan 22. 9.).
-        bool caraNaHranici = false;
+        // ⚠️ Čára pod řádkem se kreslí až po buňkách řádku pod ní - leží napůl v něm a jeho pozadí
+        // by jinak zakrylo její dolní půlku (nález Jan 5. 10. u podbarvených lichých Tč).
+        (SKPaint Pero, float Y, List<(float, float)> Mezery)? caraPodPredchozim = null;
 
         foreach (var row in rows)
         {
@@ -102,15 +104,17 @@ public static class RowPlanRenderer
 
             row.Decorate?.Invoke(y);
 
-            if (row.LineAbovePaint is { } above && !caraNaHranici)
+            if (caraPodPredchozim is { } hranice)
+                DrawHorizontalLine(ctx, xMm, hranice.Y, totalWidthMm, hranice.Pero, hranice.Mezery);
+            else if (row.LineAbovePaint is { } above)
                 DrawHorizontalLine(ctx, xMm, y, totalWidthMm, above, mezery);
-            if (row.LineBelowPaint is { } below)
-                DrawHorizontalLine(ctx, xMm, y + row.HeightMm, totalWidthMm, below, mezery);
 
-            caraNaHranici = row.LineBelowPaint is not null;
+            caraPodPredchozim = row.LineBelowPaint is { } below ? (below, y + row.HeightMm, mezery) : null;
             y += row.HeightMm;
         }
 
+        if (caraPodPredchozim is { } posledni)
+            DrawHorizontalLine(ctx, xMm, posledni.Y, totalWidthMm, posledni.Pero, posledni.Mezery);
         return y;
     }
 

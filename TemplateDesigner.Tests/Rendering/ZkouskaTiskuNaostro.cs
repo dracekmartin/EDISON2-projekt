@@ -18,7 +18,7 @@ namespace TemplateDesigner.Tests.Rendering;
 /// Bez proměnné <c>TD_TISK_VYSTUP</c> nic nedělá. Připojení z <c>templatedesigner.appsettings.local.json</c> (VPN).
 /// <code>
 /// TD_TISK_VYSTUP=slozka [TD_TISK_LINKY=330530,330510] [TD_TISK_SABLONY=cesta1.json,cesta2.json]
-/// [TD_TISK_STRAN=2] dotnet test TemplateDesigner.Tests --filter ZkouskaTiskuNaostro
+/// [TD_TISK_STRAN=2] [TD_TISK_DPI=110] dotnet test TemplateDesigner.Tests --filter ZkouskaTiskuNaostro
 /// </code>
 /// </remarks>
 public class ZkouskaTiskuNaostro(ITestOutputHelper output)
@@ -39,6 +39,7 @@ public class ZkouskaTiskuNaostro(ITestOutputHelper output)
         var sablony = Environment.GetEnvironmentVariable("TD_TISK_SABLONY")?
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? VychoziSablony;
         int stran = int.TryParse(Environment.GetEnvironmentVariable("TD_TISK_STRAN"), out var s) ? s : 2;
+        float dpi = float.TryParse(Environment.GetEnvironmentVariable("TD_TISK_DPI"), out var d) ? d : 110f;
         Directory.CreateDirectory(vystup);
 
         var (provider, _) = await ImportNaostro.PripojAsync();
@@ -86,7 +87,7 @@ public class ZkouskaTiskuNaostro(ITestOutputHelper output)
                 var canvas = new PreviewCanvas(new DesignerState { CurrentTemplate = sablona });
                 var vyber = stranky.Take(stran).ToList();
                 canvas.RenderMultiDataToPdf(Path.Combine(vystup, jmeno + ".pdf"), vyber);
-                int obrazku = canvas.RenderMultiDataToPng(Path.Combine(vystup, jmeno + ".png"), vyber, dpi: 110f);
+                int obrazku = canvas.RenderMultiDataToPng(Path.Combine(vystup, jmeno + ".png"), vyber, dpi: dpi);
                 var hlaseni = canvas.HlaseniSazby(vyber);
                 File.WriteAllLines(Path.Combine(vystup, jmeno + ".hlaseni.txt"),
                     hlaseni.Select(h => $"{h.Zavaznost}: {h.Kde} · {h.Co}{(h.Rada is null ? "" : " → " + h.Rada)}"));
