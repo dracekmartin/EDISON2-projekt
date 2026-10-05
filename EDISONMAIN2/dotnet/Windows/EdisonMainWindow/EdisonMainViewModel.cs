@@ -54,14 +54,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Vynucené ukončení aplikace (ShellShutdown.Force) - obchází potvrzovací dialog shellu.
         private readonly Action _forceShutdown;
         private readonly MiniAppCatalog _miniAppCatalog;
-        // Manager žije až po AttachMiniAppHost (potřebuje DockingManager z view) - do té doby null.
-        private MiniAppManager? _miniAppManager;
-        // Přístup k šířce stromu (ColumnDefinition ve view) - registruje code-behind přes AttachTreeLayout.
-        private Func<double>? _getTreeWidth;
-        private Action<double>? _applyTreeWidth;
-        // Výška pruhu podpory (RowDefinition ve view) - registruje code-behind přes AttachSupportLayout.
-        private Func<double>? _getSupportHeight;
-        private Action<double>? _applySupportHeight;
+        private readonly MiniAppSessionController _miniApps;
 
         public ICommand OpenModuleCommand { get; }
         /// <summary>Spuštění zástupce mimo hlavní nabídku (tisková sestava, pohled DS) přes hosta.</summary>
@@ -120,127 +113,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand PickMiniAppCommand { get; }
 
         /// <summary>
-        /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/> a obnoví
-        /// uložený layout aktuální firmy. Volá code-behind shellu po načtení okna.
+        /// Napojí docking host (z view vrstvy) a obnoví uložený layout aktuální firmy. Volá code-behind
+        /// shellu po načtení okna.
         /// </summary>
-        public void AttachMiniAppHost(IMiniAppHost host)
-        {
-            _miniAppManager = new MiniAppManager(host, _miniAppCatalog);
-            RestoreMiniAppLayout(Idfa);
-        }
+        public void AttachMiniAppHost(IMiniAppHost host) => _miniApps.AttachHost(host, Idfa);
 
-        /// <summary>
-        /// Napojí přístup k šířce stromu z view (ColumnDefinition). Šířka se persistuje per IDFa
-        /// společně s layoutem miniaplikací. Volat **před** <see cref="AttachMiniAppHost"/> - ten
-        /// spouští první restore, který už šířku aplikuje.
-        /// </summary>
-        public void AttachTreeLayout(Func<double> getWidth, Action<double> applyWidth)
-        {
-            _getTreeWidth = getWidth;
-            _applyTreeWidth = applyWidth;
-        }
+        /// <summary>Šířka stromu z view, persistuje se per IDFa s layoutem. Volat před <see cref="AttachMiniAppHost"/>.</summary>
+        public void AttachTreeLayout(Func<double> getWidth, Action<double> applyWidth) =>
+            _miniApps.AttachTreeLayout(getWidth, applyWidth);
 
-        /// <summary>
-        /// Napojí přístup k výšce pruhu podpory z view (RowDefinition). Výška se persistuje per IDFa
-        /// společně s layoutem miniaplikací. Volat **před** <see cref="AttachMiniAppHost"/> - ten
-        /// spouští první restore, který už výšku aplikuje.
-        /// </summary>
-        public void AttachSupportLayout(Func<double> getHeight, Action<double> applyHeight)
-        {
-            _getSupportHeight = getHeight;
-            _applySupportHeight = applyHeight;
-        }
+        /// <summary>Výška pruhu podpory z view, persistuje se per IDFa s layoutem. Volat před <see cref="AttachMiniAppHost"/>.</summary>
+        public void AttachSupportLayout(Func<double> getHeight, Action<double> applyHeight) =>
+            _miniApps.AttachSupportLayout(getHeight, applyHeight);
 
         // Výběr miniaplikace je vlastní okno, ne vnořené submenu - katalog roste a seskupení
         // per provider se v menu neosvědčilo (HD 13132/F2).
         private void PickMiniApp()
         {
-            var picker = new MiniAppPickerWnd(_miniAppCatalog, _miniAppManager?.Targets ?? []);
+            var picker = new MiniAppPickerWnd(_miniAppCatalog, _miniApps.Targets);
             if (WindowNavigator.ShowDialog(picker) == true && picker.Picked is { } descriptor)
-                _miniAppManager?.Open(descriptor, picker.Placed);
-        }
-
-        // Výchozí rozložení: Plocha jako jediný sloupec přes celou plochu docku. Podpora tu
-        // není - kanál IT → uživatelé nese fixní pruh v shellu, mimo dock.
-        private void OpenDefaultMiniApps()
-        {
-            var desktop = _miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId);
-            _miniAppManager?.OpenDefaultLayout(desktop is null ? [] : [desktop], bottomRow: null);
-        }
-
-        // Plocha musí být otevřená vždy - uložený layout ji mít nemusí (pochází z verze, kde šla
-        // zavřít). Bez ní by dock zůstal prázdný a uživatel by o dlaždice se zástupci přišel.
-        private void EnsureDesktopOpen()
-        {
-            if (_miniAppManager is null) return;
-            if (_miniAppManager.OpenInstances.Any(i => i.DescriptorId == DesktopMiniAppProvider.DesktopId)) return;
-            if (_miniAppCatalog.Find(DesktopMiniAppProvider.DesktopId) is { } desktop)
-                _miniAppManager.Open(desktop);
-        }
-
-        // Firma, jejíž layout dock drží; null = dock vyprázdněný výměnou session. Persist jde sem,
-        // ne na aktuální Idfa: během rebuildu po přepnutí je Idfa už nová a dock prázdný, takže
-        // zavření shellu (nebo force logout) by jí přepsalo uložený layout.
-        private string? _dockIdfa;
-
-        private void PersistMiniAppLayout()
-        {
-            if (_miniAppManager is null || _dockIdfa is not { } idfa) return;
-            // Best-effort: serializace layoutu nesmí zablokovat zavření shellu / přepnutí firmy.
-            try
-            {
-                (_prefs.MiniAppLayouts ??= new())[idfa] = _miniAppManager.SaveLayout();
-                if (_getTreeWidth is not null)
-                    (_prefs.TreeWidths ??= new())[idfa] = _getTreeWidth();
-                if (_getSupportHeight is not null)
-                    (_prefs.SupportStripHeights ??= new())[idfa] = _getSupportHeight();
-                _prefs.Save();
-            }
-            catch { }
-        }
-
-        private void RestoreMiniAppLayout(string idfa)
-        {
-            if (_miniAppManager is null) return;
-            _dockIdfa = idfa;
-            // Rozměry panelů (nezávislé na tom, zda je uložený layout miniaplikací) - bez uložené
-            // hodnoty zůstane XAML default. Aplikovat před RestoreLayout, ať AvalonDock
-            // deserializuje do už správně velké plochy a nepřepočítává pane dvakrát.
-            if (_applyTreeWidth is not null && _prefs.TreeWidths?.TryGetValue(idfa, out var width) == true && width > 0)
-                _applyTreeWidth(width);
-            if (_applySupportHeight is not null && _prefs.SupportStripHeights?.TryGetValue(idfa, out var height) == true && height > 0)
-                _applySupportHeight(height);
-            if (_prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) != true || string.IsNullOrWhiteSpace(xml))
-            {
-                // Žádný uložený layout (první spuštění / nová firma) → výchozí rozložení.
-                OpenDefaultMiniApps();
-                return;
-            }
-            try
-            {
-                _miniAppManager.RestoreLayout(xml);
-                EnsureDesktopOpen();
-            }
-            catch
-            {
-                // Poškozený / nekompatibilní uložený layout nesmí shodit start shellu (letí z Loaded).
-                // Zahodíme ho; další uložení (close/switch) zapíše čistý.
-                _prefs.MiniAppLayouts?.Remove(idfa);
-                _prefs.Save();
-                // Po zahozeném layoutu postavit výchozí, ať dock nezůstane prázdný. Vlastní guard -
-                // stav docku po nezdařeném Deserialize je nedefinovaný a druhý pád by shodil start.
-                try { OpenDefaultMiniApps(); }
-                catch { }
-            }
-        }
-
-        // Výměna session: ulož layout firmy v docku a dock vyprázdni; obnovu dělá až volající po rebuildu.
-        private void CloseMiniAppSession()
-        {
-            if (_miniAppManager is null) return;
-            PersistMiniAppLayout();
-            _miniAppManager.CloseAll();
-            _dockIdfa = null;
+                _miniApps.Open(descriptor, picker.Placed);
         }
 
         public EdisonMainViewModel(
@@ -269,6 +161,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _closeAllWindows = closeAllWindows;
             _forceShutdown = forceShutdown;
             _miniAppCatalog = miniAppCatalog;
+            _miniApps = new MiniAppSessionController(prefs, miniAppCatalog);
             // Null = novinky vypnuté (testy); produkci dává InfChangelogSource AppBootstrapper.
             _changelogSource = changelogSource;
             _shortcuts = shortcuts;
@@ -290,12 +183,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             TriggerErrorCommand = Command(() => throw new InvalidOperationException("Testovací výjimka z toolbaru."));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
             OpenLegacyShellCommand = Command(OpenLegacyShell);
-            OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
+            OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniApps.Open(d));
             PickMiniAppCommand       = Command(PickMiniApp);
-            // Plocha zůstává - zavřít ji nejde a prázdný dock nemá uživateli co dát.
-            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseClosable());
-            // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.
-            ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
+            CloseMiniAppsCommand     = Command(() => _miniApps.CloseClosable());
+            ResetMiniAppsCommand     = Command(() => _miniApps.Reset());
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(ConnectToDatabase);
@@ -860,7 +751,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Layout staré firmy ulož a dock zavři JEŠTĚ než se Idfa posune - mezi indexem a restore
             // je await, během kterého jde shell zavřít; prázdný dock bez firmy se pak neukládá.
-            CloseMiniAppSession();
+            _miniApps.CloseSession();
 
             try
             {
@@ -875,7 +766,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 ClearSessionState();
                 throw;
             }
-            RestoreMiniAppLayout(Idfa);
+            _miniApps.Restore(Idfa);
             _ = ReloadAllowedCompaniesAsync();
         }
 
@@ -1083,10 +974,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         public void OnShellClosed()
         {
-            PersistMiniAppLayout();
+            _miniApps.Persist();
             DetachShortcutHandlers();
             _closeAllWindows();
-            _miniAppManager?.CloseAll();
+            _miniApps.CloseAll();
         }
 
         private void ExitApplication()
@@ -1127,7 +1018,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     // Do původní firmy nový uživatel smět nemusí a session pak běží v jiné, proto se dock
                     // ukládá a zavírá před posunem Idfa jako u přepnutí firmy (viz SwitchCompanyAsync).
                     var oldIdfa = Idfa;
-                    CloseMiniAppSession();
+                    _miniApps.CloseSession();
                     try
                     {
                         ReplaceCompanies(outcome.Companies ?? [], Rest.Idfa);
@@ -1144,7 +1035,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                         ClearSessionState();
                         throw;
                     }
-                    RestoreMiniAppLayout(Idfa);
+                    _miniApps.Restore(Idfa);
                     _ = SyncMlineLicenceAfterLoginAsync();
                     break;
             }
