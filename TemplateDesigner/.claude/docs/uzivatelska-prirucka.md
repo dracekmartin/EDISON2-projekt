@@ -746,7 +746,8 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   poskládáte si jen to, co na vývěsce chcete, a nic se neopakuje dvakrát. Adresa je jedno pole
   včetně PSČ a obce - tak je uložená v číselníku dopravců. U linky s více dopravci nesou tato pole
   **prvního** z nich.
-- **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"):
+- **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"). Ukážou se, jen když má
+  šablona zapnutý sloupec „Varianty tras" - bez něj nemají na tisk vliv:
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
     zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
   - **Písmena variant tras** - varianty se označí písmeny v záhlaví sloupců a totéž písmeno se

@@ -361,7 +361,7 @@ public class PrintDialogViewModel : EDViewModel
     /// <summary>Vyhodnotí <c>visibleWhen</c> parametru proti aktuálním hodnotám (sdílený dict).
     /// Logika v <see cref="TemplateParameter.IsVisible"/> - jeden zdroj pro preview lištu i tisk.</summary>
     public bool IsParamVisible(string name) =>
-        _parameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_paramValues) ?? true;
+        _parameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_paramValues, _template) ?? true;
 
     private static string ToFieldString(object? v, string type) => type switch
     {

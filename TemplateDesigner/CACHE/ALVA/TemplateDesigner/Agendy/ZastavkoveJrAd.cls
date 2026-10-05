@@ -3566,15 +3566,18 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d optsRV.%Push("Dle délky jízdy (nejkratší první)")
     d optsRV.%Push("Dle délky jízdy (nejdelší první)")
     s pRazV.options = optsRV
+    d ..JenSeSloupcemVariant(pRazV)
     d arr.%Push(pRazV)
 
     // `B181`: hned pod řazením, protože ořezává podle něj.
     d ..AddNumberParam(arr, "MAX_SLOUPCU_VARIANT", "Nejvýš sloupců variant tras", "", "Seznam zastávek", "Kolik sloupců variant tras se nejvýš vytiskne. Prázdné = všechny. Vezmou se první podle řazení variant, ostatní se netisknou - jejich spoje pak ve sloupcích nemají svou trasu ani písmeno varianty. Zúží to seznam zastávek za cenu té informace.", 1)
+    d ..JenSeSloupcemVariant(arr.%Get(arr.%Size() - 1))
 
     // `B142`: vědomá výměna „méně sloupců za méně informace", proto výchozí vypnuto. Popisek i
     // nápověda musí říct, CO to schová - jinak si to zapne někdo, kdo variantní sloupce nasadil
     // právě kvůli detailu (KOVED #13048).
     d ..AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty, které jedou jen část jiné", "false", "Seznam zastávek", "Varianta, která jede jen souvislý úsek jiné trasy (od - do), dostane sloupec té delší. Ubere to sloupce na lince, kde část spojů jezdí jen kus trasy. Varianta, která uprostřed zajíždí jinam a část zastávek vynechá, si sloupec nechá - jinak by z vývěsky zmizelo, že tam spoj nejede.", 1)
+    d ..JenSeSloupcemVariant(arr.%Get(arr.%Size() - 1))
 
     // ⚠️ Následující dvě volby musí zůstat vedle sebe a v tomhle pořadí - obě jsou o písmenech
     // variant a slučování mezi ně nepatří (nález Jan 14. 9.).
@@ -3584,6 +3587,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // a zhasne anotaci u minuty), takže do allowlistu server-side parametrů nepatří - server
     // písmena posílá dál a nic se kvůli té volbě znovu nenačítá.
     d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant tras", "true", "Seznam zastávek", "Označení variantních sloupců jízdních dob - v záhlaví sloupců i u minut odjezdů. Vypnutím sloupce s časy zůstanou, jen bez písmen. Netýká se písmen rozdílů tras, ta se vypínají u linky.")
+    d ..JenSeSloupcemVariant(arr.%Get(arr.%Size() - 1))
 
     s pPrvB = ##class(%DynamicObject).%New()
     s pPrvB.name         = "PRVNI_BEZ_PISMENE"
@@ -3596,6 +3600,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // Bez písmen variant tato volba nemá co ovlivnit - schovat ji je míň matoucí než ji nechat
     // svítit jako mrtvé zaškrtávátko.
     s pPrvB.visibleWhen  = "PISMENA_VARIANT=true"
+    d ..JenSeSloupcemVariant(pPrvB)
     d arr.%Push(pPrvB)
 
     // Rozdělení sloupců typů provozu - override FTL (auto = dle linky MHD_TYP_R). 4 módy = kombinace
@@ -3669,6 +3674,14 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d optsNepoz.%Push("Obojí")
     s pNepoz.options = optsNepoz
     d arr.%Push(pNepoz)
+}
+
+/// Parametr variant tras má účinek jen se sloupcem Varianty tras v seznamu zastávek: bez něj se
+/// varianty netisknou ani u minut. Klient takový parametr schová (rozhodnutí Jan 5. 10.); klíč
+/// `visibleWhenColumn` je aditivní, starší klient ho ignoruje a parametr ukáže jako dřív.
+ClassMethod JenSeSloupcemVariant(param As %DynamicObject)
+{
+    d param.%Set("visibleWhenColumn", "CAS_JIZDY_VARIANTY")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

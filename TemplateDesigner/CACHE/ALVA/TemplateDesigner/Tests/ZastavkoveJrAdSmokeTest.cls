@@ -112,4 +112,23 @@ Method TestGetDataNeexistujiciLinka()
 	do $$$AssertEquals($get(^||ML("OUT")), "", "Neexistující linka nevrací stránky (chyba)")
 }
 
+/// Parametry variant tras se v návrháři ukážou, jen když šablona tiskne sloupec Varianty tras
+/// (rozhodnutí Jan 5. 10.). Závislost musí nést právě ty parametry, které bez sloupce nic nedělají:
+/// bez ní by parametr svítil naprázdno, u jiného parametru by ho návrhář schoval.
+Method TestParametryVariantJenSeSloupcemVariant()
+{
+	do ..SetupSys(.sys)
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetParameters(.sys)
+	set params = ##class(%DynamicAbstractObject).%FromJSON($get(^||ML("OUT",1)))
+	set variantni = $lb("RAZENI_VARIANT","MAX_SLOUPCU_VARIANT","SLUCOVAT_PODMNOZINY","PISMENA_VARIANT","PRVNI_BEZ_PISMENE")
+	set nalezeno = 0
+	set iter = params.%GetIterator()
+	while iter.%GetNext(.i, .p) {
+		set cekano = $select($listfind(variantni, p.name): "CAS_JIZDY_VARIANTY", 1: "")
+		set:cekano'="" nalezeno = nalezeno + 1
+		do $$$AssertEquals(p.%Get("visibleWhenColumn"), cekano, p.name_": závislost na sloupci variant")
+	}
+	do $$$AssertEquals(nalezeno, $listlength(variantni), "všechny parametry variant jsou v GetParameters")
+}
+
 }

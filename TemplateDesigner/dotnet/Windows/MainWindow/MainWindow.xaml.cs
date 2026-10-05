@@ -223,6 +223,7 @@ public partial class MainWindow : Window
         }), System.Windows.Threading.DispatcherPriority.Background);
         _vm.RequestParamsFormReload      = ReloadParamsTabForm;
         _vm.RequestParamsFieldSync       = SyncParamsTabField;
+        _vm.RequestParamsVisibilityRefresh = ApplyParamsTabVisibility;
         // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
         _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);
         // Modální/souborové dialogy + schránka - WPF drží tato služba, ne VM (R4)

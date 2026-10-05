@@ -292,6 +292,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                     Type         = item["type"]?.GetValue<string>() ?? "string",
                     DefaultValue = item["defaultValue"]?.GetValue<string>(),
                     VisibleWhen  = item["visibleWhen"]?.GetValue<string>(),
+                    VisibleWhenColumn = item["visibleWhenColumn"]?.GetValue<string>(),
                     Group        = item["group"]?.GetValue<string>(),
                     // Server posílá číslo (1); tolerantně bereme i "true" pro případ, že by
                     // některá agenda zapsala bool.

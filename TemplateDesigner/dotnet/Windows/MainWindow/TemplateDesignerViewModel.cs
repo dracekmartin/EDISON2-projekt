@@ -1147,6 +1147,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // prvku odjezdů) - definice se posílá do GetData, bez re-fetche by náhled ukazoval data
         // staré definice a tisk by vyjel jinak.
         RefetchIfColumnsDefinitionChanged();
+        RequestParamsVisibilityRefresh?.Invoke();
     }
 
     /// <summary>Vykoná seznam příkazů jako jeden undo krok (1 příkaz → přímo, víc → CompositeCommand).
@@ -1231,6 +1232,7 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasRefresh?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();
         RefetchIfColumnsDefinitionChanged();
+        RequestParamsVisibilityRefresh?.Invoke();
     }
 
     private void Redo()
@@ -1243,6 +1245,7 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasRefresh?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();
         RefetchIfColumnsDefinitionChanged();
+        RequestParamsVisibilityRefresh?.Invoke();
     }
 
     /// <summary>Definice vlastních sloupců je jediný kus šablony, na kterém závisí DATA (posílá se
@@ -3266,7 +3269,8 @@ public class TemplateDesignerViewModel : EDViewModel
             parameters: _agendaParameters,
             values:     _previewParams,
             onChanged:  OnAgendaParamChanged,
-            commitFactory: _ => null);
+            commitFactory: _ => null,
+            template:   () => State.CurrentTemplate);
 
         // Výchozí snapshot server-paramů, ať první změna client-paramu nespustí falešný re-fetch.
         _lastServerParamsSnapshot = ServerParamsSnapshot();
@@ -3369,9 +3373,13 @@ public class TemplateDesignerViewModel : EDViewModel
         OnAgendaParamChanged();
     }
 
-    /// <summary>visibleWhen parametru proti aktuálním hodnotám (jeden zdroj - TemplateParameter.IsVisible).</summary>
+    /// <summary>visibleWhen parametru proti aktuálním hodnotám a šabloně (jeden zdroj - TemplateParameter.IsVisible).</summary>
     public bool IsAgendaParamVisible(string name) =>
-        _agendaParameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_previewParams) ?? true;
+        _agendaParameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_previewParams, State.CurrentTemplate) ?? true;
+
+    /// <summary>Callback do code-behindu: přepočítej viditelnost polí v tabu parametrů. Volá se po
+    /// každé změně šablony - zapnutí sloupce v prvku může ukázat nebo schovat parametr.</summary>
+    public Action? RequestParamsVisibilityRefresh { get; set; }
 
     private static string ParamToFieldString(object? v, string type) => type switch
     {
@@ -4185,15 +4193,17 @@ public class ParameterControlVM : INotifyPropertyChanged
     private readonly Dictionary<string, object?> _values;
     private readonly Action?                     _onChanged;
     private readonly Action?                     _onCommit;
+    private readonly Func<Template?>?            _template;
     private bool                                 _isVisible = true;
 
     public ParameterControlVM(TemplateParameter param, Dictionary<string,object?> values,
-        Action? onChanged, Action? onCommit = null)
+        Action? onChanged, Action? onCommit = null, Func<Template?>? template = null)
     {
         _param     = param;
         _values    = values;
         _onChanged = onChanged;
         _onCommit  = onCommit;
+        _template  = template;
     }
 
     /// <summary>
@@ -4206,12 +4216,14 @@ public class ParameterControlVM : INotifyPropertyChanged
     /// <param name="values">Slovník hodnot - sdílený mezi VM (každá změna ho aktualizuje).</param>
     /// <param name="onChanged">Volitelný callback po změně hodnoty (např. invalidace cache + překreslení).</param>
     /// <param name="commitFactory">Volitelný factory - pro každý parametr může vrátit commit akci (Načíst tlačítko).</param>
+    /// <param name="template">Aktuální šablona pro parametry závislé na sloupci prvku (čte se při každém vyhodnocení).</param>
     public static void Init(
         ICollection<ParameterControlVM>      target,
         IEnumerable<TemplateParameter>       parameters,
         Dictionary<string, object?>          values,
         Action?                              onChanged     = null,
-        Func<TemplateParameter, Action?>?    commitFactory = null)
+        Func<TemplateParameter, Action?>?    commitFactory = null,
+        Func<Template?>?                     template      = null)
     {
         target.Clear();
         foreach (var p in parameters)
@@ -4223,7 +4235,7 @@ public class ParameterControlVM : INotifyPropertyChanged
                 foreach (var vm in target) vm.UpdateVisibility();
                 onChanged?.Invoke();
             };
-            target.Add(new ParameterControlVM(p, values, vmOnChanged, commitFactory?.Invoke(p)));
+            target.Add(new ParameterControlVM(p, values, vmOnChanged, commitFactory?.Invoke(p), template));
         }
 
         // Initial visibility check - proběhne až po naplnění kolekce, aby VisibleWhen vidělo všechny VM.
@@ -4257,7 +4269,7 @@ public class ParameterControlVM : INotifyPropertyChanged
     }
 
     /// <summary>Vyhodnotí VisibleWhen rule proti aktuálním hodnotám. Volá se po každé změně libovolného parametru.</summary>
-    public void UpdateVisibility() => IsVisible = _param.IsVisible(_values);
+    public void UpdateVisibility() => IsVisible = _param.IsVisible(_values, _template?.Invoke());
 
     /// <summary>Má se volat při potvrzení hodnoty (Enter/LostFocus) - spustí těžší operace (reload dat).</summary>
     public bool HasCommit => _onCommit is not null;

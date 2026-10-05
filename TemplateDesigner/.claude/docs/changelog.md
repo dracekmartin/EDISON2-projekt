@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-05 (2) - 🎛 parametry variant tras jen se sloupcem Varianty tras
+
+Řazení variant, Nejvýš sloupců variant, Slučování variant, Písmena variant a První varianta bez
+písmene se v parametrech sestavy ukážou, **jen když má šablona zapnutý sloupec „Varianty tras"**
+v seznamu zastávek - bez něj nemají na tisk vliv (rozhodnutí Jan: uživatel má vidět jen nastavení
+pro to, s čím pracuje). Lišta parametrů se přepočítá hned po zapnutí sloupce i po kroku zpět,
+okno Tisk při otevření. Server u parametru posílá nový klíč `visibleWhenColumn` (aditivně, starší
+návrhář parametry ukáže dál); pravidlo v `cache-api.md`.
+
 ## 2026-10-05 - 🖨 příprava ukázky: tisk bez zástupných rámečků a zalomení v datech
 
 Při tisku výchozích šablon se skutečnými daty (`CB_CSADAD`, linky 330510/330511/330530; nová

@@ -103,6 +103,17 @@ public class Template
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Ukazuje některý prvek šablony sloupec s tímto klíčem? Pro parametry sestavy, které
+    /// bez něj nemají účinek (<see cref="TemplateParameter.VisibleWhenColumn"/>).</summary>
+    public bool ShowsColumn(string key) => Sections.SelectMany(s => s.Elements)
+        .Select(e => e switch
+        {
+            Elements.StopListElement s => s.Columns,
+            Elements.LineTableElement l => l.Columns,
+            _ => null,
+        })
+        .Any(sloupce => sloupce?.Any(c => c.Visible && c.Key == key) == true);
 }
 
 /// <summary>

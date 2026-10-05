@@ -273,6 +273,13 @@ nedostane (patří do `InfrastructureKeys` v `ServerSideParamsDriftTests`) a **r
 uživatel nezmáčkne obnovení dat. Poznávací znak: „odpověď na tuhle otázku dává šablona, ne uživatel
 před tiskem."
 
+**Parametr, který má účinek jen s určitým sloupcem prvku**, nese `visibleWhenColumn` = klíč sloupce
+(dnes parametry variant tras → `CAS_JIZDY_VARIANTY`) a návrhář ho schová, když sloupec žádný prvek
+šablony neukazuje - uživatel má vidět jen nastavení pro to, s čím v šabloně pracuje (rozhodnutí Jan
+5. 10.). ⚠️ **Samostatný klíč, ne nový tvar `visibleWhen`**: starší klient by neznámou podmínku
+vyhodnotil jako nesplněnou a parametr schoval natrvalo, `visibleWhenColumn` jen ignoruje. Klíč sloupce
+musí prvky znát (`ParametrySloupcemVariantTests`), jinak by se parametr schoval navždy.
+
 ---
 
 ### Prezentační nápovědy (R3) - kolik vzhledu smějí nést data

@@ -326,7 +326,8 @@ public class CacheAgendaParsingTests
         var parameters = CacheAgendaProvider.ParseParameters("""
             [ { "name": "LINKA", "label": "Číslo linky", "type": "string", "defaultValue": "304",
                 "group": "Výběr", "visibleWhen": "REZIM=linka" },
-              { "name": "RAZENI_VARIANT", "type": "enum", "options": [ "Podle času", "Podle trasy", "" ] },
+              { "name": "RAZENI_VARIANT", "type": "enum", "options": [ "Podle času", "Podle trasy", "" ],
+                "visibleWhenColumn": "CAS_JIZDY_VARIANTY" },
               { "name": "BEZ_LABELU" } ]
             """);
 
@@ -337,6 +338,8 @@ public class CacheAgendaParsingTests
         Assert.Equal("REZIM=linka", parameters[0].VisibleWhen);
 
         Assert.Equal(["Podle času", "Podle trasy"], parameters[1].Options);   // prázdná volba se zahodí
+        Assert.Equal("CAS_JIZDY_VARIANTY", parameters[1].VisibleWhenColumn);
+        Assert.Null(parameters[0].VisibleWhenColumn);
         Assert.Equal("BEZ_LABELU", parameters[2].Label);                      // chybí label → název
         Assert.Equal("string", parameters[2].Type);                           // chybí typ → text
     }

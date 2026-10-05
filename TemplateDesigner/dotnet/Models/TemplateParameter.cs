@@ -41,6 +41,13 @@ public class TemplateParameter
     /// </summary>
     public bool ServerSide { get; set; }
 
+    /// <summary>
+    /// Klíč sloupce, bez kterého parametr nemá účinek: parametr se ukáže, jen když ho v šabloně
+    /// některý prvek ukazuje (dnes varianty tras v seznamu zastávek). Null = nezávisí na šabloně.
+    /// Aditivní klíč kontraktu (R3) - starší klient ho ignoruje a parametr ukáže vždy.
+    /// </summary>
+    public string? VisibleWhenColumn { get; set; }
+
     /// <summary>Vrátí DefaultValue převedenou na typovanou hodnotu dle Type.</summary>
     public object? GetDefaultTyped() => Type switch
     {
@@ -52,12 +59,16 @@ public class TemplateParameter
     };
 
     /// <summary>
-    /// Vyhodnotí <see cref="VisibleWhen"/> ("POLE=hodnota") proti aktuálním hodnotám parametrů.
-    /// Prázdné / neplatné pravidlo = vždy viditelný. Jediný zdroj pravdy pro viditelnost parametru
-    /// (preview lišta i tiskový dialog) - porovnání case-insensitive.
+    /// Vyhodnotí <see cref="VisibleWhenColumn"/> proti šabloně a <see cref="VisibleWhen"/>
+    /// ("POLE=hodnota") proti aktuálním hodnotám parametrů; platit musí obojí. Prázdné / neplatné
+    /// pravidlo = vždy viditelný. Jediný zdroj pravdy pro viditelnost parametru (preview lišta
+    /// i tiskový dialog) - porovnání case-insensitive.
     /// </summary>
-    public bool IsVisible(IReadOnlyDictionary<string, object?> values)
+    /// <param name="template">Šablona, ke které se parametry nastavují. Null = neznámá, sloupce se neposuzují.</param>
+    public bool IsVisible(IReadOnlyDictionary<string, object?> values, Template? template)
     {
+        if (!string.IsNullOrEmpty(VisibleWhenColumn) && template is not null && !template.ShowsColumn(VisibleWhenColumn))
+            return false;
         if (string.IsNullOrEmpty(VisibleWhen)) return true;
 
         var parts = VisibleWhen.Split('=', 2);
