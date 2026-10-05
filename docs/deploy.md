@@ -10,9 +10,12 @@ Z repa EDISON2 (publish profilem `SingleFileCEdison` do `C:\Edison\`, soubory vy
 složku nikdy nezipovat - leží tam stale `.pdb`/`.deps.json` a dev `VERZE.INF`):
 
 - `EDISONMAIN2.exe` - single-file bundle (obsahuje `EDISONMAIN2.LegacyMiniApps`, AvalonDock,
-  WebView2 i snapshot `MLRest`, `EDLicence`, `EDUsers`, `EDISONAPI`, `EDCore` a `EDLibrary` z `C:\Edison\`
-  stroje, kde se publikovalo - publikovat jen tam, kde `C:\Edison\` odpovídá vydávané legacy verzi
-  a je v Release: Debug `EDLicence` stahuje licenci z `127.0.0.1` a chyby ukazuje dialogem `ERROR`)
+  WebView2 i snapshot `MLRest`, `EDLicence`, `EDUsers`, `EDISONAPI`, `EDCore`, `EDLibrary`, `MLServer`
+  a `Newtonsoft.Json` z `C:\Edison\` stroje, kde se publikovalo - publikovat jen tam, kde `C:\Edison\`
+  odpovídá vydávané legacy verzi. Debug build některé z nich (Debug `EDLicence` stahuje licenci
+  z `127.0.0.1` a chyby ukazuje dialogem `ERROR`) Release publish odmítne (`SingleFilePublish.targets`;
+  kontrolu umí jen `dotnet publish`, publish z Visual Studia skončí chybou), verzi legacy nehlídá nic.
+  SDK připíná `global.json` v kořeni repa)
 - `EDControls.dll` - volná vedle exe
 - `EDISONRUNTIME.zip` - privátní .NET 10 runtime (`tools/build-runtime-zip.ps1`: oficiální
   `dotnet-runtime` + `windowsdesktop-runtime` win-x64 sloučené, SHA512 z metadat Microsoftu, ~70 MB).
