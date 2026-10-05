@@ -701,7 +701,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             try
             {
-                SelectedCompanyIndex = index;
+                SelectedCompanyIndex = IndexOfOrAppend(target);
                 await RebuildSessionStateAsync(result.Licence);
             }
             catch
@@ -714,6 +714,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
             _miniApps.Restore(Idfa);
             _ = ReloadAllowedCompaniesAsync();
+        }
+
+        // Seznam se mohl během dialogů switche vyměnit (doběhl seznam povolených firem předchozího
+        // přepnutí), takže index z doby před switchem by mířil jinam než MLRest.Idfa.
+        private int IndexOfOrAppend(CompanyItem company)
+        {
+            for (int i = 0; i < Companies.Count; i++)
+                if (Companies[i].Id == company.Id) return i;
+            Companies = [.. Companies, company];
+            OnPropertyChanged(nameof(Companies));
+            OnPropertyChanged(nameof(CompanySuggestions));
+            OnPropertyChanged(nameof(HasMultipleCompanies));
+            return Companies.Count - 1;
         }
 
         /// <summary>
