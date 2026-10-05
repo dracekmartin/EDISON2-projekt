@@ -41,7 +41,7 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
   `SortDescriptions` (ty řadí formátované stringy lexikograficky). Shift+klik = multi-sort.
   Přestavba sloupců (`SelectionMode`, `SetData`) řazení i šipky drží, zmizelý sloupec vypadne.
 - **NUMBER bez `format` se nijak neformátuje** - v UI zůstane „142.5" s tečkou.
-- **IMAGE ani CODEBOOK nejsou v renderingu** - propadnou na text (raw název resource).
+- **IMAGE a CODEBOOK jsou rezervované** - server je přijme, klient je kreslí jako text (raw hodnota).
   Neparsovatelné datum se zobrazí raw, bez chyby. COLOR kreslí obdélník, ne podbarvení buňky.
 - `align`/`isLink` jsou samostatné vlastnosti sloupce, ne součást typu - legacy typy
   (`Tc`, `NL`, ...) se mapují na TEXT/NUMBER + vlastnost.

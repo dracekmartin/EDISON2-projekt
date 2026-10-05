@@ -583,7 +583,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A14 · `EDList` nemá controller seam
 
-- [x] **Stav:** vyřešeno (2026-10-05) - `internal sealed EDListController` bez WPF drží sloupce,
+- [x] **Stav:** vyřešeno 7f229e95 (2026-10-05) - `internal sealed EDListController` bez WPF drží sloupce,
   řádky (`BulkObservableCollection`, view ji jen bindne), frontu dotazů a generation guard, lifecycle
   řádků (odhlášení, kotva), zaškrtnutí včetně rozsahu Shift+klik a stavu záhlaví, specy řazení
   a load/save layoutu přes `IUserPrefsService`. Místo `(IMLRest, cacheClass)` z návrhu bere
@@ -969,7 +969,11 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A27 · Wire deklaruje, co UI nerenderuje: `IMAGE`/`CODEBOOK`, `Field.Format`, `UserHidden` 🔸
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01; přestavba XAML formuláře `Format` nezapojila)
+- [ ] **Stav:** otevřeno, část EDList vyřešena (2026-10-05) - rozhodnutí vlastníka: IMAGE a CODEBOOK
+  **rezervovat**, server je dál přijme (platné konstanty v `EDList.inc`) a klient je kreslí jako text;
+  `ListColumnType`, `EDListColumnFactory`, `Column.cls` a `EDList/CLAUDE.md` je tak označují, kreslení
+  až pro skutečného konzumenta. Test `EDListSetDataTests.SetData_ReservedTypes_RenderAsRawText`.
+  Zbývá část formulář (`Field.Format`, `UserHidden`), proud S8.
 - **P3 · S** · Závisí na: A14 (dělat v rámci nebo po) · Blokuje: - · Původ: [backlog R13d](arch-backlog.md#r13d---edlist-typy-image-a-codebook-bez-renderingu), rozšířeno
 - **Důkaz:** `EDListParsing.cs:54,57` parsuje IMAGE/CODEBOOK, `BuildDataGridColumn`
   (`EDList.xaml.cs:427-501`) větví jen `IsLink` (`:435`) a `Color` (`:462`), fallback na text.

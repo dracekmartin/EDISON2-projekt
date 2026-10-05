@@ -101,6 +101,7 @@ internal static class EDListColumnFactory
             };
         }
 
+        // Sem padá i rezervovaný IMAGE a CODEBOOK - zobrazí raw hodnotu.
         var textCol = new DataGridTextColumn
         {
             Header = col.Label,

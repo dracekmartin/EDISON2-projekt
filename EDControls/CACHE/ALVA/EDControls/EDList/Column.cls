@@ -7,6 +7,7 @@ Property key As %String;
 Property label As %String;
 
 /// Datový typ: $$$ListColumnType* z EDList.inc (TEXT, NUMBER, DATE, ...); List neznámý odmítne (AddColumn i zápis).
+/// IMAGE a CODEBOOK jsou rezervované: projdou, ale klient je zatím kreslí jako text (raw hodnota).
 Property type As %String [ InitialExpression = "TEXT" ];
 
 /// NUMBER: "N0", "N2" apod.  DATE/DATETIME: "dd.MM.yyyy" apod.  Ostatní: prázdný.

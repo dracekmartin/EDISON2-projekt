@@ -118,6 +118,27 @@ public class EDListSetDataTests
         });
     }
 
+    /// <summary>IMAGE a CODEBOOK jsou rezervované: textový sloupec s raw hodnotou, dokud je někdo nezačne kreslit.</summary>
+    [Fact]
+    public void SetData_ReservedTypes_RenderAsRawText()
+    {
+        RunSta(() =>
+        {
+            var list = NoRestList();
+            ListColumn[] reserved =
+            [
+                new() { Key = "logo", Type = ListColumnType.Image },
+                new() { Key = "druh", Type = ListColumnType.Codebook },
+            ];
+
+            list.SetData(reserved, [new Dictionary<string, string?> { ["id"] = "1", ["logo"] = "EDIcons.Bus", ["druh"] = "07" }]);
+
+            Assert.All(list.DataGrid.Columns, c => Assert.IsType<DataGridTextColumn>(c));
+            Assert.Equal("EDIcons.Bus", list.Rows[0]["logo"]);
+            Assert.Equal("07", list.Rows[0]["druh"]);
+        });
+    }
+
     /// <summary>Přestavba sloupců (SelectionMode) zahodila šipku, ale CustomSort řadil dál.</summary>
     [Fact]
     public void SelectionModeChange_KeepsSortArrowAndOrder()
