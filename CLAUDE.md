@@ -120,9 +120,9 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 
 - **Změna chování přichází s testem** na nejlevnější úrovni, která regresi chytí: logika → unit, `.cls` → Caché,
   hranice (odpověď serveru, formát, argumenty procesu) → navíc šev (mock dokazuje jen sám sebe), startup shellu → E2E.
-- **.NET**: `dotnet test EDISON2.sln` (xUnit + NSubstitute; šev jen s dostupným serverem, E2E jen s `EDISON_E2E=1`).
-- **Šev .NET ↔ Caché**: `EDISON2.IntegrationTests` (skutečné MLRest proti dev serveru); **UI E2E**: `EDISON2.E2ETests`
-  (FlaUI nad DEBUG shellem s `e2e=1`, ručně s `EDISON_E2E=1`). Pravidla obou v jejich `CLAUDE.md`.
+- **.NET**: `dotnet test EDISON2.sln` (xUnit + NSubstitute). **Šev .NET ↔ Caché** `EDISON2.IntegrationTests` (skutečné MLRest)
+  běží jen se serverem, **UI E2E** `EDISON2.E2ETests` (FlaUI, DEBUG shell s `e2e=1`) jen s `EDISON_E2E=1`, test se skutečným
+  oknem (`[WindowFact]`, ne `[Fact]`) jen s `EDISON_WINDOW_TESTS=1` - nastavuje pre-push. Pravidla šva a E2E v jejich `CLAUDE.md`.
 - **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)` pro `$$$FillParams`),
   metody `TestXxx()`. Běh `pwsh -File tools/run-cache-tests.ps1 [-Package ...]` proti dev serveru `192.168.16.1:57770`
   (VPN, user `$env:USERNAME`, override `$env:CACHE_USER`); nový package mimo default list skriptu

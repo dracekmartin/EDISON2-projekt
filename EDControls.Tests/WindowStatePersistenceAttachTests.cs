@@ -61,7 +61,7 @@ public class WindowStatePersistenceAttachTests
         finally { CacheWindowStateStore.MLRestProvider = original; }
     }
 
-    [Fact]
+    [WindowFact]
     public void Attach_Store_RestoresSavedBoundsOnShow_SavesOnClose()
     {
         var store = new FakeStore(new(100, 120, 400, 300, false));
@@ -87,7 +87,7 @@ public class WindowStatePersistenceAttachTests
         });
     }
 
-    [Fact]
+    [WindowFact]
     public void Attach_Store_CancelledClosingDoesNotSave()
     {
         var store = new FakeStore();
@@ -109,7 +109,7 @@ public class WindowStatePersistenceAttachTests
         });
     }
 
-    [Fact]
+    [WindowFact]
     public void Attach_Store_FailingLoadKeepsDefaultsAndOpens()
     {
         var store = new FakeStore { LoadThrows = true };
@@ -132,7 +132,7 @@ public class WindowStatePersistenceAttachTests
         });
     }
 
-    [Fact]
+    [WindowFact]
     public void Attach_ReadOnlyStore_RestoresButNeverSaves()
     {
         // Přihlašovací okno sdílený záznam jen přebírá - zapsat ho smí shell, ne přetažený dialog.
@@ -154,7 +154,7 @@ public class WindowStatePersistenceAttachTests
         });
     }
 
-    [Fact]
+    [WindowFact]
     public void Save_WritesGeometryWithoutClosing()
     {
         // Login okno ukládá pozici hned po přihlášení - shell si ji čte dřív, než se zavře.
@@ -177,7 +177,7 @@ public class WindowStatePersistenceAttachTests
         });
     }
 
-    [Fact]
+    [WindowFact]
     public void Attach_FormId_RestoresSavedBoundsOnShow_SavesOnClose()
     {
         var mlRest = MockWithSavedState(
@@ -205,7 +205,7 @@ public class WindowStatePersistenceAttachTests
         }));
     }
 
-    [Fact]
+    [WindowFact]
     public void Attach_ServerFails_WindowKeepsDefaultsAndOpens()
     {
         var mlRest = MLRestMocks.Create();
@@ -231,7 +231,7 @@ public class WindowStatePersistenceAttachTests
         }));
     }
 
-    [Fact]
+    [WindowFact]
     public void Attach_MaximizedInXaml_RestoredWithoutSavedState()
     {
         // Attach sráží XAML Maximized na Normal kvůli HWND stylu; bez uloženého stavu

@@ -126,7 +126,7 @@ public class ShellSplitLimitsTests
         Assert.Equal(double.PositiveInfinity, support.MaxHeight);
     }
 
-    [Fact]
+    [WindowFact]
     public void SplitterDrag_StopsOnCeilingAndFloor()
     {
         // Jediný test se živým oknem: tažení děliče jde vyvolat jen jeho klávesovou obsluhou

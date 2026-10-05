@@ -104,7 +104,8 @@ if [ "$run_dotnet" = "1" ]; then
     echo "==> [.NET] dotnet test EDISON2.sln (log: $DOTNET_LOG)"
     set +e
     # E2E (UI) testy převezmou plochu - v hooku nikdy, ani s globálně nastaveným EDISON_E2E=1.
-    dotnet test EDISON2.sln --nologo --verbosity minimal --filter "Category!=Integration&Category!=E2E" > "$DOTNET_LOG" 2>&1
+    # Testy se skutečným oknem ([WindowFact]) při vývoji přeskakují a běží jen tady.
+    EDISON_WINDOW_TESTS=1 dotnet test EDISON2.sln --nologo --verbosity minimal --filter "Category!=Integration&Category!=E2E" > "$DOTNET_LOG" 2>&1
     dotnet_status=$?
     set -e
     if [ $dotnet_status -ne 0 ]; then
