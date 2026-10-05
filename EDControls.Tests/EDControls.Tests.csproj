@@ -21,6 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Fixtures\launch-args.fixture.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\EDControls\dotnet\EDControls.csproj" />
     <ProjectReference Include="..\EDTesting\dotnet\EDTesting.csproj" />
   </ItemGroup>

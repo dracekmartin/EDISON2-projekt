@@ -46,7 +46,7 @@ aplikace navzájem i od legacy ID z `EDISFormEnum`; override na `null` = opt-out
 - Fasáda nad internal `LegacyModuleHost` (závislosti ctorem, testy s fake `ILegacyProcess`), TD bere `WpfOnly()`.
   Konec procesu jen přes `ILegacyProcess.OnExited`: `Process.Exited` fíruje jednou, pozdní odběratel by ho minul.
 - `ShowDialog` ztmavuje ownera přes `WindowDimmer` (refcount), **ne** `IsEnabled=false` (controly na 0.5 opacity).
-- Legacy launch kontrakt viz `BuildLauncherArguments`; pre-login admin override předává `shareShellSession=false` (jinak `LockExist`).
+- Legacy launch kontrakt viz `EdisonLaunchArgs`; pre-login admin override předává `shareShellSession=false` (jinak `LockExist`).
 - Modeless `ShowLegacy*` dedupují (`TryFocusExisting`, klíč `exe+forma+inputParam`),
   dialogové ne (ztmavují shell). `GetActiveModules` vrací i `ExeName`/`FormFqn`/`InputParam` -
   `DisplayName` je doslovný `MainWindowTitle`, stejnojmenné moduly rozliší až tahle identita.

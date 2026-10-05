@@ -285,6 +285,28 @@ public class EDViewModelTests
         Assert.Same(second, services.RequireMLRest);
     }
 
+    [Fact]
+    public void AttachToWindow_RestoresGeometryThroughViewModelSession()
+    {
+        // Výchozí Caché úložiště jede přes MLRest služeb VM, ne přes singleton EDServices.Current.
+        var mlRest = EDTesting.MLRestMocks.Create();
+        mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", Arg.Any<object[]>())
+            .Returns(EDTesting.MLRestMocks.Output("param\0size\0400;300"));
+
+        EDTesting.Sta.RunOnAppThread(() =>
+        {
+            var window = new System.Windows.Window { ShowInTaskbar = false, ShowActivated = false };
+            new FooViewModel(MockServices(mlRest)).AttachToWindow(window);
+
+            window.Show();
+
+            Assert.Equal(400, window.Width);
+            window.Close();
+        });
+        mlRest.Received().QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams",
+            Arg.Is<object[]>(a => (string)a[0] == "formID\0EDISON2.FooWindow"));
+    }
+
     /// <summary>Konkrétní subclass která vystavuje protected členy pro testy.</summary>
     private class TestViewModel(EDServices services) : EDViewModel.EDViewModel(services)
     {

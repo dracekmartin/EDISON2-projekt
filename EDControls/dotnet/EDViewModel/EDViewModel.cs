@@ -173,7 +173,7 @@ public class EDViewModel : INotifyPropertyChanged
         _scopedPopupDisplayer = new WindowScopedPopupDisplayer(_services.PopupDisplayer, window);
         RegisterKeyBindings(window);
         if (PersistedFormId is { } formId)
-            WindowStatePersistence.Attach(window, WindowStateStore ?? new CacheWindowStateStore(formId));
+            WindowStatePersistence.Attach(window, WindowStateStore ?? new CacheWindowStateStore(formId, () => _services.MLRest));
     }
 
     /// <summary>

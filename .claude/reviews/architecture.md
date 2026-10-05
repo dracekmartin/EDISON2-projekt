@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 21 / 47**
+**Hotovo: 22 / 47**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -336,9 +336,15 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A6 · `EDServices.Current` prosakuje do infrastruktury a vypnul paralelizaci `EDISONMAIN2.Tests`
 
-- [ ] **Stav:** otevřeno, částečně (bod 3 vyřešen fcd497d0, 2026-10-05: `LicenceService` má `showInfo` povinný bez
-  fallbacku na `EDServices.Current`, `SessionFactory` předává popup služeb session; 2026-10-01: seam pro
-  geometrii oken existuje, default čte dál singleton)
+- [ ] **Stav:** částečně (2026-10-05) - body 1-2 (proud S5, 7ee54763): `WindowNavigator(Func<EDServices>)` (host
+  z A7 čte services delegátem až při launchi), TD má `WpfOnly()` bez services; `CacheWindowStateStore(formId,
+  Func<IMLRest?>)` a `EDViewModel.AttachToWindow` mu předá MLRest svých služeb. Bod 3 (proud S2, fcd497d0):
+  `LicenceService` má `showInfo` povinný bez fallbacku na `EDServices.Current`, `SessionFactory` předává popup
+  služeb session. Zbývá: shell dál volá bezparametrický ctor `WindowNavigator` (napojení v
+  `AppBootstrapper.InitializeServices` patří S2), statický `CacheWindowStateStore.MLRestProvider` drží 1-arg ctor
+  a `EDISON2.IntegrationTests`, bod 4 paralelizace `EDISONMAIN2.Tests`. Testy `WindowNavigatorTests.ServicesCtor_*`,
+  `CacheWindowStateStoreTests.LoadAndSave_GoThroughInjectedSession`,
+  `EDViewModelTests.AttachToWindow_RestoresGeometryThroughViewModelSession`.
 - **P2 · M** · Závisí na: A7 (stejný soubor, dělat před) · Blokuje: - · Původ: [backlog R5](arch-backlog.md#r5---edservicescurrent-prosakuje-do-infrastruktury-a-vypnul-paralelizaci-testů)
 - **Problém:** Singleton je záměr u controls (`EDList`, `EDInputForm`, `EDFilter` nesmí záviset
   na `Window.DataContext`), ale šíří se do infrastruktury a oken, a `EDISONMAIN2.Tests` proto
@@ -538,7 +544,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A12 · Launch kontrakt shellu nemá jediný zdroj pravdy pro pozice polí
 
-- [ ] **Stav:** otevřeno (2026-10-01: kontrakt narostl na 21 tokenů, escapování jen u nových polí)
+- [x] **Stav:** vyřešeno 9f193419 (2026-10-05, proud S5) - `EdisonLaunchArgs` je jediný kodek: tabulka pozic
+  `Field`, `Format` (producent) a `TryParse` (konzument), record aditivně o pole [11]-[20] jako init
+  properties (positional ctor pro TD beze změny); `LegacyModuleHost.LaunchArgsFor` jen mapuje session
+  shellu. Bod 3 podle rozhodnutí vlastníka z 2026-10-05: `Format` z každého textového pole odstraní `"`
+  a koncové `\`, host beze změny. Sdílená fixture `launch-args.fixture.txt` v `EDControls.Tests/Fixtures`
+  a vedle `FormToRunGetter.cs` v repu EDISON (tam jen referenční, repo nemá testovací projekt hosta).
+  Testy `EdisonLaunchArgsTests`: fixture ↔ `Format`, fixture přes `CommandLineToArgvW` → `TryParse`,
+  round-trip s uvozovkou ve `FullName` a koncovým `\` v adresáři.
 - **Rozhodnutí vlastníka (2026-10-05):** bod 3 jednostranně v producentovi: `BuildLauncherArguments` odstraní `"` a koncové `\` ze všech textových polí (jako `Plain()` u [20]); host beze změny, kódování jako u [13] se nedělá. Patří do S5 spolu s body 1-2.
 - **P2 · M** (escapování s hostem L) · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** Pozice 21 tokenů (`[0]` značka + pole `[1]-[20]`) jsou literály ve třech souborech

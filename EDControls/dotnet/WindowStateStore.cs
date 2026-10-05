@@ -53,17 +53,20 @@ public sealed class ReadOnlyWindowStateStore(IWindowStateStore inner) : IWindowS
 /// </summary>
 /// <remarks>
 /// FormID se default odvozuje z názvu VM (viz <see cref="EDViewModel.PersistedFormId"/>)
-/// a dostává prefix <c>"EDISON2."</c> - odděluje od starých numerických IDs z <c>EDISFormEnum</c>
-/// (tam VB moduly ukládají vlastní state).
+/// a dostává prefix <c>EDServices.FormIdPrefix</c> (shell <c>"EDISON2."</c>) - odděluje od starých
+/// numerických IDs z <c>EDISFormEnum</c> (tam VB moduly ukládají vlastní state).
 /// </remarks>
-public sealed class CacheWindowStateStore(string formId) : IWindowStateStore
+public sealed class CacheWindowStateStore(string formId, Func<IMLRest?> mlRestSource) : IWindowStateStore
 {
+    /// <summary>Session ze sdíleného <c>EDServices.Current</c>; okno s ViewModelem dostává MLRest jeho služeb.</summary>
+    public CacheWindowStateStore(string formId) : this(formId, () => MLRestProvider()) { }
+
     /// <summary>Settable jen kvůli testům - produkce čte sdílené <c>EDServices.Current</c>.</summary>
     internal static Func<IMLRest?> MLRestProvider { get; set; } = () => EDServices.Current.MLRest;
 
     public WindowGeometry Load()
     {
-        var mlRest = MLRestProvider();
+        var mlRest = mlRestSource();
         if (mlRest is null) return WindowGeometry.None;
         var del = mlRest.Delimiter;
 
@@ -77,7 +80,7 @@ public sealed class CacheWindowStateStore(string formId) : IWindowStateStore
 
     public void Save(Rect bounds, bool maximized)
     {
-        var mlRest = MLRestProvider();
+        var mlRest = mlRestSource();
         if (mlRest is null) return;
         var del = mlRest.Delimiter;
 
