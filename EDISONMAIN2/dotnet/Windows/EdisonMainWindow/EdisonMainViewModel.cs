@@ -41,10 +41,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     {
         private readonly ISessionDataLoader _sessionLoader;
         private readonly IRestCallRunner _restRunner;
-        // Stažení licence z M-line (testy podstrčí stub bez EDUsers).
-        private readonly Func<IMLRest, LicenceService.MlineSyncResult> _licenceSync;
-        // Počítadlo změn session: výsledek pozadí, který doběhne po začátku další změny, patří cizí session.
-        private int _sessionGeneration;
+        private readonly SessionEpoch _session;
+        private readonly SessionLicenceCoordinator _licence;
         private readonly Func<IMLRest, IReadOnlyList<CompanyStruct>> _loadAllowedCompanies;
         private readonly CompanySwitcher _switcher;
         private readonly Func<SwitchUserOutcome> _switchUser;
@@ -243,7 +241,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Runner drží politiku „klon per paralelní volání"; testy podstrčí sekvenční variantu.
             _restRunner = restRunner ?? new RestCallRunner(() => Rest);
             _sessionLoader = new SessionDataLoader(_restRunner, treeLoader, [.. _trees.SourceTrees.Select(t => t.Name)]);
-            _licenceSync = licenceSync ?? (rest => LicenceService.SyncFromMline(((MLRestAdapter)rest).Inner));
+            _session = new SessionEpoch(() => Rest, () => Idfa);
+            // Stažení licence z M-line: testy podstrčí stub bez EDUsers.
+            _licence = new SessionLicenceCoordinator(_restRunner,
+                licenceSync ?? (rest => LicenceService.SyncFromMline(((MLRestAdapter)rest).Inner)),
+                _session, RebuildSessionStateAsync, () => _services.LicenceLoader?.Invoke(),
+                () => _services.IsAdmin || _services.MayUpdate,
+                () => { OnPropertyChanged(nameof(LicenceNoticeText)); OnPropertyChanged(nameof(LicenceNoticeTooltip)); });
 
             Companies = ToCompanyItems(companies);
             // Index musí odpovídat MLRest.Idfa - tam má AppBootstrapper vytvořený ACTIVITY zámek.
@@ -289,10 +293,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         private async Task RebuildSessionStateAsync(Lic? licence)
         {
-            int generation = ++_sessionGeneration;
+            _session.Invalidate();
             _services.ActiveLicence = licence;
             // Před stromy: upozornění patří licenci session, i když load stromů selže.
-            _ = RefreshLicenceNoticeAsync(licence, generation);
+            _ = _licence.RefreshNoticeAsync(licence);
             // _modulePrefs se vytváří tady (ne v ctoru), aby reflektoval výměnu UserPrefs po switch-user.
             _modulePrefs = new ModulePreferencesService(UserPrefs);
             // Nová instance per session: resetuje per-session dedup popupů (snooze je per-user × IDFa).
@@ -309,57 +313,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _trees.ReapplySearch();
         }
 
-        /// <summary>
-        /// Upozornění nástěnky starého shellu do chipu status baru. Počty jsou requesty do agendových
-        /// balíků (VOZIDLA, MZDY2), proto na pozadí; do té doby chip ukáže jen datum a verzi.
-        /// </summary>
-        private async Task RefreshLicenceNoticeAsync(Lic? licence, int generation)
-        {
-            SetLicenceNotice(LicenceNotice.Build(licence, DateTime.Today, VerzeInf.Current, null, null));
-            if (licence == null || (licence.CountsRZ <= 0 && licence.CountsZAM <= 0)) return;
-            try
-            {
-                var vehicles = licence.CountsRZ > 0 ? _restRunner.RunAsync(LicenceNotice.LoadVehicleCount) : Task.FromResult<int?>(null);
-                var employees = licence.CountsZAM > 0 ? _restRunner.RunAsync(LicenceNotice.LoadEmployeeCount) : Task.FromResult<int?>(null);
-                await Task.WhenAll(vehicles, employees);
-                if (generation != _sessionGeneration) return;
-                SetLicenceNotice(LicenceNotice.Build(licence, DateTime.Today, VerzeInf.Current, vehicles.Result, employees.Result));
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Licence notice counts failed: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Parita s legacy <c>EDUsers.Login</c> (<c>EDUsers.vb:170</c>): admin a uživatel s právem UpdateEdison
-        /// stahují při přihlášení licenci z M-line a posílají feedback. Na pozadí, spojení do M-line bývá
-        /// pomalé a start na něj nesmí čekat; nová licence se promítne tichou přestavbou session.
-        /// <c>internal</c> kvůli testům souběhu se změnou session.
-        /// </summary>
-        internal async Task SyncMlineLicenceAfterLoginAsync()
-        {
-            if (!_services.IsAdmin && !_services.MayUpdate) return;
-            int generation = _sessionGeneration;
-            try
-            {
-                var sync = await _restRunner.RunAsync(_licenceSync);
-                if (sync.Error.Length > 0) Debug.WriteLine($"M-line licence sync: {sync.Error}");
-                if (!sync.Changed || generation != _sessionGeneration) return;
-                await RebuildSessionStateAsync(_services.LicenceLoader?.Invoke());
-            }
-            catch (Exception ex)
-            {
-                // Legacy výsledek také nekontroloval; M-line vývojářům chybu ukáže sám EDUsers.
-                Debug.WriteLine($"M-line licence sync failed: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Změna session začíná prvním dialogem, ne až přestavbou: dialogy uvnitř synchronního switche pumpují
-        /// dispatcher a doběhlý sync by jinak přestavěl stav nad rozpracovanou firmou (MLRest už na cílové).
-        /// </summary>
-        private void InvalidatePendingSessionWork() => _sessionGeneration++;
+        /// <summary>Stažení licence z M-line po přihlášení; <c>internal</c> kvůli testům souběhu se změnou session.</summary>
+        internal Task SyncMlineLicenceAfterLoginAsync() => _licence.SyncAfterLoginAsync();
 
         /// <summary>
         /// Promítne načtená data do VM. Musí zůstat SYNCHRONNÍ: guardy <c>_suppressXxx</c> níž
@@ -545,18 +500,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string UpToDateText => _releaseNotice?.Outcome == ReleaseNoticeOutcome.UpToDate
             ? "Jde o nejnovější verzi." : "";
 
-        private LicenceNotice.Notice? _licenceNotice;
         /// <summary>Chip upozornění licence a verze (nástěnka starého shellu); prázdný = skrytý.</summary>
-        public string LicenceNoticeText => _licenceNotice?.Short ?? "";
-        public string LicenceNoticeTooltip => _licenceNotice?.Full ?? "";
-
-        private void SetLicenceNotice(LicenceNotice.Notice? notice)
-        {
-            if (notice == _licenceNotice) return;
-            _licenceNotice = notice;
-            OnPropertyChanged(nameof(LicenceNoticeText));
-            OnPropertyChanged(nameof(LicenceNoticeTooltip));
-        }
+        public string LicenceNoticeText => _licence.Notice?.Short ?? "";
+        public string LicenceNoticeTooltip => _licence.Notice?.Full ?? "";
 
         // Stromy, hledání a rozbalení launcher panelu; VM je vystavuje bindingům a orchestruje session.
         private readonly ModuleTreeState _trees;
@@ -725,7 +671,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 && !PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna i miniaplikace."))
                 return;
 
-            InvalidatePendingSessionWork();
+            _session.Invalidate();
             SwitchOutcome result;
             // Synchronní část (zavření oken, VerifyLic, logout staré firmy) blokuje UI thread -
             // overlay „Akce probíhá" se musí stihnout vykreslit před ní (yield). Scope nesmí
@@ -777,18 +723,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         private async Task ReloadAllowedCompaniesAsync()
         {
-            // Jiný uživatel = nová instance MLRest, jiná firma = jiné Idfa; obnova licence session nemění.
-            var rest = Rest;
-            var idfa = Idfa;
-            bool SameSession() => ReferenceEquals(Rest, rest) && Idfa == idfa;
+            var started = _session.CaptureSession();
             try
             {
                 var allowed = await _restRunner.RunAsync(_loadAllowedCompanies);
-                if (SameSession()) ReplaceCompanies(allowed, idfa);
+                if (_session.IsSameSession(started)) ReplaceCompanies(allowed, started.Idfa);
             }
             catch (Exception ex)
             {
-                if (SameSession()) PopupDisplayer.Error(ex);
+                if (_session.IsSameSession(started)) PopupDisplayer.Error(ex);
             }
         }
 
@@ -992,7 +935,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (!PopupDisplayer.Confirm("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
                 return;
 
-            InvalidatePendingSessionWork();
+            _session.Invalidate();
             var outcome = _switchUser();
             switch (outcome.Outcome)
             {
@@ -1118,17 +1061,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 UseShellExecute = true,
             };
 
-        /// <summary>
-        /// Parita s legacy „Aktualizovat licenci" (<c>frmNoMDI.vb:3498-3505</c>): stažení z M-line smí každý
-        /// uživatel. Chybu EDUsers ukáže až po přestavbě - licence mohla být uložena a selhat až feedback.
-        /// </summary>
         private async Task RefreshLicenceAsync()
         {
-            InvalidatePendingSessionWork();
-            LicenceService.MlineSyncResult sync;
-            using (ActionInProgress())
-                sync = await _restRunner.RunAsync(_licenceSync);
-            await RebuildSessionStateAsync(_services.LicenceLoader?.Invoke());
+            var sync = await _licence.RefreshAsync(() => ActionInProgress());
             if (sync.Error.Length > 0)
                 throw new InvalidOperationException(sync.Error);
             PopupDisplayer.Info("Licence byla aktualizována.");
