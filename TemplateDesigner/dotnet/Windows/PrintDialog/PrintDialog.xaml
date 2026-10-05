@@ -34,7 +34,8 @@
                         ToolTip="Znovu otevře okno s hláškami poslední kontroly nebo tisku"/>
             </StackPanel>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
+            <!-- Vystředěno: po kontrole přibude vlevo „Zobrazit hlášky" a tlačítka by se natáhla na výšku obou řádků. -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Content="Zkontrolovat" Padding="16,6"
                         Command="{Binding KontrolaCommand}"
                         Visibility="{Binding CanExportRealData, Converter={StaticResource BoolToVis}}"
