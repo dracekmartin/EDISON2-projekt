@@ -17,15 +17,16 @@ nemusí dělat nic; ruční trigger je `EDFilter.RefreshAsync()`.
 `InvalidOperationException` („volající vlákno nemá přístup..."); hodnotu si vytáhni do lokální
 proměnné **před** přechodem na threadpool. Testy to nechytí (WPF kontroluje vlákno až za běhu).
 
-**Data zvenčí**: `SetData(columns, rows)` naplní seznam bez `CacheClass` a MLRest (host
-s vlastním transportem). Řádky jsou **raw** serverové hodnoty včetně `id`, formátování i sort
-klíče staví stejná cesta jako `LoadList`. Vzhled z dat řádku (barva textu) přes `CellStyle` a
-skrytý sloupec (`Visible = false`): projde indexerem, ale nerenderuje se ani nehledá.
-Referenční `EDISONMAIN2.LegacyMiniApps/dotnet/DashboardListSource.cs`.
+**Data zvenčí**: `SetData(columns, rows)` bez `CacheClass` a MLRest (vlastní transport hosta).
+Řádky jsou **raw** hodnoty včetně `id`, formátování i sort klíče jako u `LoadList`. Barva z dat
+řádku přes `CellStyle` + skrytý sloupec (`Visible = false`: projde indexerem, nerenderuje se ani
+nehledá). Reference `EDISONMAIN2.LegacyMiniApps/dotnet/DashboardListSource.cs`.
 
 ## Wire kontrakt (JSON přes `^||ML`)
 
-Detaily ve sdíleném `EDControls/docs/wire-formaty.md` - tam patří změny formátu.
+Detaily v `EDControls/docs/wire-formaty.md`. Literály `type`/`align` = `CACHE/EDList.inc` (zrcadlo
+`EDListParsing`, parita `ListTest` + `EDListParsingTests`), `List` neznámé odmítne. `.inc` musí být
+v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 
 - `InitializeList`: `OUT[1]` = **jedno** JSON pole definic sloupců (parser čte jen `OUT[1]`).
 - `LoadList`: `OUT[1..n]` = jeden JSON objekt na řádek; **každý řádek musí mít `id`** -

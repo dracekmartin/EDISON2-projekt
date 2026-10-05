@@ -621,7 +621,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A16 · Pořadí `InitializeList → LoadList` v `EDList` nic nehlídá
 
-- [x] **Stav:** vyřešeno (2026-10-02) - bez sloupců `LoadList` hází `InvalidOperationException`
+- [x] **Stav:** vyřešeno d6acfadd (2026-10-02) - bez sloupců `LoadList` hází `InvalidOperationException`
   (text neviní hosta, vede k tomu i selhaný `InitializeListAsync`). Async cesta kontroluje až po
   odpovědi, protože TD picker pouští `InitializeListAsync` a refresh `EDFilter`u souběžně a pořadí
   drží `_queryGate`; sync `LoadList` frontu obchází, kontroluje před dotazem. Vedlejší efekt
@@ -650,7 +650,17 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A17 · Wire slovník `EDList` nemá sdílenou definici ani parity test
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno (2026-10-05) - nový `CACHE/EDList.inc` (`$$$ListColumnType*`, nad rámec
+  návrhu i `$$$ListAlign*`, protože `ParseAlign` padá na Auto stejně tiše) s výčty `$$$ListColumnTypes`/
+  `$$$ListAligns`; `List` neznámý typ i zarovnání odmítne `$$$ThrowStatus` v `AddColumn` i ve
+  `WriteColumnsToOut` (typ jde nastavit i přímo na vráceném sloupci), porovnání bez ohledu na velikost
+  písmen (C# parsuje stejně), prázdné = default. `MockList` jede na makrech, `Column.cls` odkazuje na
+  `.inc`. C# literály v jedné mapě `EDListParsing.ColumnTypeWire`. Testy `ListTest` (parita konstant,
+  odmítnutí typu a zarovnání, typ nastavený přímo, přijetí všech konstant i malých písmen),
+  `EDListParsingTests` (`[Theory]` přes literály vč. fallbacku, každá hodnota enumu má literál,
+  `ParseAlign`). Nasazeno z worktree, voláním ověřené `MockList` i TD `EDList.Sablony`/`Instance`;
+  `EDList.inc` přidán do Caché projektu `ALVA_EDControls` na DEV (bez něj se patch u zákazníka
+  nezkompiluje), se souhlasem uživatele doplněn i do seznamu členů v `docs/deploy.md` (soubor S4).
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** Pro `EDInputForm` existuje `EDInputForm.inc`, `FormTest.TestWireConstantsMatchCSharp`
   a C# `[InlineData]`; pro `EDList` je jediným kontraktem komentář v `Column.cls` a `switch` v C#,

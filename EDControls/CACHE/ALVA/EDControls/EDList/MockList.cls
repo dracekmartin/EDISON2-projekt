@@ -1,3 +1,5 @@
+Include EDList
+
 /// Testovací třída s hardcoded daty pro ověření EDList bez reálné databáze.
 /// Pokrývá všechny aktuálně implementované datové typy + isLink flag,
 /// aby šlo testovat rendering v EDListTestWindow.
@@ -8,15 +10,15 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
 {
     s list = ##class(ALVA.EDControls.EDList.List).%New()
 
-    s col = list.AddColumn("rz", "RZ", "TEXT", 110)
+    s col = list.AddColumn("rz", "RZ", $$$ListColumnTypeText, 110)
     s col.isLink = 1                                              ; hyperlink test
-    d list.AddColumn("typ",          "Typ",        "TEXT",     130)
-    d list.AddColumn("aktivni",      "Aktivní",    "BOOL",      70)
-    d list.AddColumn("odjezd",       "Odjezd",     "HHMM",      75, "RIGHT")
-    d list.AddColumn("pocet",        "Počet km",   "NUMBER",    90, "RIGHT", 1, "N1")
-    d list.AddColumn("datum",        "Datum",      "DATE",     100)
-    d list.AddColumn("posledniZmena","Naposledy",  "DATETIME", 140) ; DATETIME test
-    d list.AddColumn("barva",        "Barva",      "COLOR",     60) ; COLOR test (R;G;B)
+    d list.AddColumn("typ",          "Typ",        $$$ListColumnTypeText,     130)
+    d list.AddColumn("aktivni",      "Aktivní",    $$$ListColumnTypeBool,      70)
+    d list.AddColumn("odjezd",       "Odjezd",     $$$ListColumnTypeHHMM,      75, $$$ListAlignRight)
+    d list.AddColumn("pocet",        "Počet km",   $$$ListColumnTypeNumber,    90, $$$ListAlignRight, 1, "N1")
+    d list.AddColumn("datum",        "Datum",      $$$ListColumnTypeDate,     100)
+    d list.AddColumn("posledniZmena","Naposledy",  $$$ListColumnTypeDateTime, 140) ; DATETIME test
+    d list.AddColumn("barva",        "Barva",      $$$ListColumnTypeColor,     60) ; COLOR test (R;G;B)
 
     d list.WriteColumnsToOut()
     q 1
