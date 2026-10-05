@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="EDUpdateContract" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,11 +25,6 @@
     <ProjectReference Include="..\EDISONMAIN2\dotnet\EDISONMAIN2.csproj" />
     <ProjectReference Include="..\EDControls\dotnet\EDControls.csproj" />
     <ProjectReference Include="..\EDTesting\dotnet\EDTesting.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- Source-link parseru updateru: round-trip test BuildArguments -> Parse hlídá drift kontraktu -->
-    <Compile Include="..\EDUPDATE2\dotnet\UpdaterArgs.cs" Link="UpdaterArgs.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,12 +13,12 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="EDUPDATE2.Tests" />
+    <Using Include="EDUpdateContract" />
   </ItemGroup>
 
-  <!-- Sdílený zdroj místo reference: updater nesmí záviset na žádné DLL z C:\Edison
-       (vyměňuje je za běhu) a dvě kopie porovnávání verzí by tiše divergovaly. -->
+  <!-- Jediná reference: kontrakt se shellem, sám bez závislostí (single-file ho zabalí do exe). -->
   <ItemGroup>
-    <Compile Include="..\..\EDISONMAIN2\dotnet\Startup\VerzeInf.cs" Link="VerzeInf.cs" />
+    <ProjectReference Include="..\..\EDUpdateContract\dotnet\EDUpdateContract.csproj" />
   </ItemGroup>
 
   <Import Project="..\..\SingleFilePublish.targets" />

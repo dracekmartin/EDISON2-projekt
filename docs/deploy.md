@@ -10,9 +10,12 @@ Z repa EDISON2 (publish profilem `SingleFileCEdison` do `C:\Edison\`, soubory vy
 složku nikdy nezipovat - leží tam stale `.pdb`/`.deps.json` a dev `VERZE.INF`):
 
 - `EDISONMAIN2.exe` - single-file bundle (obsahuje `EDISONMAIN2.LegacyMiniApps`, AvalonDock,
-  WebView2 i snapshot `MLRest`, `EDLicence`, `EDUsers`, `EDISONAPI`, `EDCore` a `EDLibrary` z `C:\Edison\`
-  stroje, kde se publikovalo - publikovat jen tam, kde `C:\Edison\` odpovídá vydávané legacy verzi
-  a je v Release: Debug `EDLicence` stahuje licenci z `127.0.0.1` a chyby ukazuje dialogem `ERROR`)
+  WebView2 i snapshot `MLRest`, `EDLicence`, `EDUsers`, `EDISONAPI`, `EDCore`, `EDLibrary`, `MLServer`
+  a `Newtonsoft.Json` z `C:\Edison\` stroje, kde se publikovalo - publikovat jen tam, kde `C:\Edison\`
+  odpovídá vydávané legacy verzi. Debug build některé z nich (Debug `EDLicence` stahuje licenci
+  z `127.0.0.1` a chyby ukazuje dialogem `ERROR`) Release publish odmítne (`SingleFilePublish.targets`;
+  kontrolu umí jen `dotnet publish`, publish z Visual Studia skončí chybou), verzi legacy nehlídá nic.
+  SDK připíná `global.json` v kořeni repa)
 - `EDControls.dll` - volná vedle exe
 - `EDISONRUNTIME.zip` - privátní .NET 10 runtime (`tools/build-runtime-zip.ps1`: oficiální
   `dotnet-runtime` + `windowsdesktop-runtime` win-x64 sloučené, SHA512 z metadat Microsoftu, ~70 MB).
@@ -29,7 +32,7 @@ Z repa EDISON (build do `C:\Edison`):
 - `EDUPDATE.EXE` - klientský updater obou shellů, build ≥ 2026-06-17 (`WaitProcess`, `49d19295d9`),
   starší na zavření nového shellu nepočká. Bez něj ve zdrojovém adresáři serveru nový shell po
   detekci nové verze nenastartuje (`CopyUpdater` selže s popupem). `EDUPDATE2.exe` (repo EDISON2)
-  jen po přepnutí shellu na něj (`Updater.ActiveKind`).
+  jen po přepnutí shellu na něj (`Updater.ActiveKind`); bere UNC, lokální i http zdroj jako legacy.
 
 Řádky manifestu `FILES_DESCRIPTION.INF`: FULL `EDISONMAIN2API.exe`, `EDISONMAIN2API.exe.config`
 a `FULL~~DLL~...\EDISONRUNTIME.zip`; sekce `PATCH~EDISON2` `EDISONMAIN2.exe`, `EDControls.dll`
@@ -80,7 +83,8 @@ PATCH `ALVA_USERS`, `ALVA_ISY_ISYCloud` (Telemetry), `ALVA_MHD2_PlanDopravy` (Di
   když globální instalace chybí.
 - Serverový adresář (zdroj stanic: UNC share, nebo http URL jako u legacy) musí mít `VERZE.INF`
   a `EDUPDATE.EXE`; shell bez `VERZE.INF` vedle exe skončí hláškou, instaluje se tedy vždy
-  do adresáře EDISONu, nikdy samostatně.
+  do adresáře EDISONu, nikdy samostatně. Http zdroj navíc `EDISONCRC.bin`: výpis adresáře přes http
+  není a oba updatery bez manifestu skončí chybou.
 - Klientský update (EDUPDATE i vynucenou vlnu) dostane jen stanice ze seznamu počítačů v Nastavení >
   Aktualizace (`localPath`: jméno PC, `\\PC\...` nebo IPv4, plné doménové jméno nefunguje; legacy
   `clsUpdate.IsServer`). Ostatní instalace (server, TS, stanice spouštěné ze share) shell bere jako

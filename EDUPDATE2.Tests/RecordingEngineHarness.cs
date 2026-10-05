@@ -22,6 +22,11 @@ internal sealed class RecordingEngine : UpdateEngine
     public Func<string, long>? FreeBytesFor;
     public bool ForcedStampWriteFails;
     public long FreeBytes = long.MaxValue;
+    /// <summary>Http zdroj nad lokálním adresářem: URL pod HttpSourceUrl se čte z HttpSourceDir, chybějící soubor = 404.</summary>
+    public string HttpSourceUrl = "";
+    public string HttpSourceDir = "";
+    public readonly List<string> Downloads = [];
+    public Func<string, Exception?>? DownloadFailure;
 
     public RecordingEngine(UpdaterArgs args, UpdateLog log,
         IProgress<UpdateProgress>? progress = null, CancellationToken cancellationToken = default)
@@ -82,6 +87,20 @@ internal sealed class RecordingEngine : UpdateEngine
         if (ForcedStampWriteFails) throw new IOException("testovací lock");
         Ops.Add(new("stamp", targetPath, stamp));
         base.WriteForcedStamp(targetPath, stamp);
+    }
+
+    protected override bool TryDownload(string url, Stream destination)
+    {
+        if (HttpSourceDir == "") return base.TryDownload(url, destination);
+        Downloads.Add(url);
+        if (DownloadFailure?.Invoke(url) is { } failure) throw failure;
+        Assert.StartsWith(HttpSourceUrl, url, StringComparison.OrdinalIgnoreCase);
+        var relative = url[HttpSourceUrl.Length..].TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+        var path = Path.Combine(HttpSourceDir, relative);
+        if (!File.Exists(path)) return false;
+        using var file = File.OpenRead(path);
+        file.CopyTo(destination);
+        return true;
     }
 }
 

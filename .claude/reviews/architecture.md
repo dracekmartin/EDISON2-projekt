@@ -783,7 +783,16 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A44 · Kontrakt update mechanismu nemá vlastní modul, žije v source-lincích a literálech dvou updaterů
 
-- [ ] **Stav:** otevřeno (2026-10-01: P3 → P2, kontrakt narostl o legacy EDUPDATE a brání přepnutí na EDUPDATE2)
+- [x] **Stav:** vyřešeno df49af95 (2026-10-05) - projekt `EDUpdateContract` bez referencí nese `VerzeInf`,
+  `ForcedStamp`, `UpdaterArgs` (+ `ToTokens`, klíče z `nameof`) a `UpdaterContract` (`ClientUpdaterKind`,
+  exe, soubor stopy, `IsUri`, `FileUrl`, `BuildArguments` obou variant); referencují ho obě exe, test projekty
+  přes ně (globální `using`), source-linky zmizely, publish obou exe ho zabalí. Změna návrhu u http:
+  vlastník zvolil, že se EDUPDATE2 naučí http zdroj, fallback na legacy proto není. Parita s legacy
+  `UPDATERCL`: manifest povinný, vynucená vlna = celý manifest bez kontroly hashe (hotfix manifest nemění),
+  chyba stažení `EDISONini.xml`/`MLServerConfig-data.xml` přeskočena; nad rámec legacy kontrola hlavičky `MZ`
+  u `.dll`/`.exe` vynucené vlny a tělo souboru čtené s tokenem a idle timeoutem 60 s. Test „pro každý `ClientUpdaterKind`" je dvojice `UpdaterTests.Check_SourceLetThroughToUpdate_*`
+  (UNC, lokální, http, https projdou `Check` beze změny do argumentů obou updaterů) a `UpdateEngineHttpTests`
+  se švem `HttpSourceSeamTests` proti lokálnímu HTTP serveru. Literál `"EDISON.exe"` v `App.xaml.cs` (S2) zůstal.
 - **P2 · M** · Závisí na: - · Blokuje: přepnutí `Updater.ActiveKind` na EDUPDATE2 · Původ: nový (2026-09-20)
 - **Problém:** Kontrakt shell ↔ updater žije ve vzájemných source-lincích dvou exe a v literálech.
   Od `b4ec0b3b` shell spouští legacy EDUPDATE (repo EDISON) a EDUPDATE2 drží jen pro budoucí přepnutí
@@ -854,7 +863,13 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A46 · Obsah exe shellu závisí na `C:\Edison` stroje, kde se publikuje 🔸
 
-- [ ] **Stav:** otevřeno
+- [ ] **Stav:** otevřeno, částečně (a4025673, 2026-10-05) - body 1 a 2 hotové: target `RejectDebugLegacyAssemblies`
+  v `SingleFilePublish.targets` čte `DebuggableAttribute` legacy DLL z `C:\Edison` (inline task, bajty
+  ve sběratelném `AssemblyLoadContext`, `System.Reflection.Metadata` factory nedostane) a Release
+  publish s Debug buildem shodí, nepodepsanou DLL s nečitelnými atributy taky (podepsané cizí C1 přeskočí),
+  pod MSBuildem z VS odmítne publish s legacy DLL; ventil `-p:AllowDebugLegacyAssemblies=true`, test
+  `SingleFilePublishTargetsTests` s vyrobenou DLL a skutečným `dotnet publish`. `global.json` 10.0.302
+  `latestPatch`. Bod 3 (vydávací stroj) vlastník 2026-10-01 odložil.
 - **P2 · S** (kontrola a pin SDK; vydávací stroj 🔸 M) · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01), incident při nasazení 29. 9.
 - **Problém:** Legacy knihovny jsou reference přes `HintPath` do `C:\Edison` a single-file publish je
   zabalí do `EDISONMAIN2.exe`. Exe tak nese kopie, které na publikujícím stroji zrovna leží,
@@ -881,7 +896,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 - [ ] **Stav:** otevřeno, ověřeno 2026-10-02 ve Windows Sandbox (`tools/edloader-sandbox/`): bez uzlu
   a bez .NET 10 TD ze starého shellu ukáže dialog .NET (S1), po rozbalení `dotnet\` (S4) nebo instalaci
-  .NET 10 (S1b) naběhne
+  .NET 10 (S1b) naběhne. Volbu varianty a/b/c vlastník 2026-10-05 odložil, proud „Update a vydání" ji nevyřešil.
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01)
 - **Problém:** Všechna exe ze `SingleFilePublish.targets` hledají runtime nejdřív v `dotnet\` vedle
   sebe, pak globálně. `dotnet\` rozbaluje jen EDLOADER a jen při zapnutém novém shellu. TemplateDesigner

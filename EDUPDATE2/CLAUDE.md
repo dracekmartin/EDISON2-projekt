@@ -14,16 +14,18 @@ stanice ze share) je serverová a kontroluje se jen proti Caché verzi; **prázd
 
 Žádná reference na EDControls, MLRest, EDLicence ani nic z `C:\Edison` - tyhle soubory
 updater vyměňuje a načtenou assembly Windows zamyká. Proto hardcoded barvy v okně
-(výjimka z theme pravidel) a `VerzeInf.cs` source-linkem z EDISONMAIN2, ne referencí.
+(výjimka z theme pravidel). Jediná reference je `EDUpdateContract` (sám bez závislostí,
+single-file ho zabalí do exe): `VerzeInf`, `ForcedStamp`, `UpdaterArgs` a `UpdaterContract`
+(exe, soubor stopy a argumenty obou updaterů) sdílí se shellem.
 
 ## Argumenty
 
-Tokeny `Key=value`, staví je `Updater.BuildArguments(ClientUpdaterKind.Edupdate2, ...)`
-v EDISONMAIN2 přes `ArgumentList`. Neznámý klíč se zaloguje a ignoruje.
+Tokeny `Key=value`, shell je skládá `UpdaterContract.BuildArguments(ClientUpdaterKind.Edupdate2, ...)`
+přes `ArgumentList`, čte je `UpdaterArgs.Parse`. Neznámý klíč se zaloguje a ignoruje.
 
 | Klíč | Default | Význam |
 |---|---|---|
-| `SourcePath` | povinný | adresář serverové instalace - síťová cesta `\\server\...` nebo lokální; `http*` odmítne validace |
+| `SourcePath` | povinný | adresář serverové instalace (`\\server\...` nebo lokální), nebo http(s) URL (sekce Zdroj http) |
 | `TargetPath` | adresář EDUPDATE2.exe | kam instalovat (shell updater kopíruje k sobě, default = instalace) |
 | `Version` | `VERZE.INF` ze zdroje | jen log a no-op pojistka: není-li novější než cíl, skončí se úspěchem bez kopírování |
 | `WaitProcess` | `EDISONMAIN2` | jméno procesu bez cesty (`.exe` se ořízne); navíc se čeká fixně na `EDISONMAIN`, `EDUPDATE`, `TemplateDesigner` (drží `EDControls.dll`) a `EDISONMAIN2API` (hostuje agendy) |
@@ -49,8 +51,8 @@ instalací (cíl beze změny), `100` chyba + rollback uspěl, `200` chyba + roll
 ## Výběr souborů - manifest EDISONCRC.bin
 
 Manifest kontrolních součtů (SHA-256 per soubor), na serveru zákazníka ho generuje
-legacy instalátor EDISONINS. Kopírují se jen soubory s neshodným hashem; bez manifestu
-nebo při vynucené aktualizaci všechno (root + `EDFiles`, `PS`, `locales`). Konfigurační
+legacy instalátor EDISONINS. Kopírují se jen soubory s neshodným hashem; u adresářového zdroje
+bez manifestu nebo při vynucené aktualizaci všechno (root + `EDFiles`, `PS`, `locales`). Konfigurační
 soubory (`MLServerConfig-data.xml`, `EDISONini.xml`, `VERZE.inf`, `EDISONCRC.bin`)
 se kopírují vždy - manifest je nenese (legacy parita).
 
@@ -59,6 +61,18 @@ bajtech je v hlavičce `dotnet/CrcFile.cs`. Dvě pasti: šifrovací klíč je kv
 bugu odvozený z doslovného textu `"System.Security.SecureString"` + pořadí věty,
 a jména souborů se netrimují. Bit-kompatibilitu jistí zlatý vektor z produkce
 v `CrcFileTests`.
+
+## Zdroj http
+
+Http nemá výpis adresáře, seznam souborů dává jen `EDISONCRC.bin`: bez něj (i nečitelného) update
+skončí exit 1. Vynucená vlna stáhne všechny jeho věty **bez kontroly hashe** - hotfix se nahrává bez
+nového manifestu (legacy bere `ListFiles.txt` z release serveru M-line, nový soubor mimo vydání tedy
+nedojde ani tam). Klíčové soubory se stahují naslepo; jakoukoli chybu stažení `EDISONini.xml`
+a `MLServerConfig-data.xml` updater přeskočí (legacy parita), jinde je to chyba před instalací.
+
+Chybovou stránku proxy s HTTP 200 chytí u běžného updatu hash, u vynucené vlny jen u `.dll`/`.exe`
+hlavička PE (`MZ`, nad rámec legacy); konfigurační soubory nechrání nic. Timeout 30 s hlídá hlavičky,
+60 s bez dat tělo; zavření okna ruší i rozběhnuté stahování. Stale `_DIFF.INF` se posuzuje proti manifestu.
 
 ## Vynucená aktualizace - stopa CliUp2.ini
 

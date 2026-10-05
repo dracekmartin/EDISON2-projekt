@@ -56,4 +56,97 @@
            Text="Allow-list nefunguje: do '$(PublishDir)' by šel '@(ResolvedFileToPublish->'%(Filename)%(Extension)')' místo '$(TargetFileName)'. Publish zastaven." />
   </Target>
 
+  <!-- Legacy knihovny (HintPath do C:\Edison) jdou do bundlu tak, jak na publikujícím stroji leží.
+       Debug EDLicence stahuje licenci z 127.0.0.1 a chyby ukazuje dialogem ERROR (vydání 29. 9.),
+       proto Release publish Debug build odmítne. Lokální publish proti Debug legacy:
+       -p:AllowDebugLegacyAssemblies=true. EdisonLegacyDir jde přepsat kvůli testu. -->
+  <PropertyGroup>
+    <EdisonLegacyDir Condition="'$(EdisonLegacyDir)' == ''">C:\Edison\</EdisonLegacyDir>
+  </PropertyGroup>
+
+  <UsingTask TaskName="FindDebugAssemblies" TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <Assemblies ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <DebugAssemblies ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+      <UnverifiedAssemblies ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+// Bajty do sběratelného kontextu: soubor v C:\Edison nezamkne (uzel MSBuildu žije dál) a po kontrole se uvolní.
+// Task se překládá proti netstandard 2.0 bez AssemblyLoadContext, v procesu MSBuildu ale typ je.
+var contextType = System.Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", throwOnError: true);
+var context = System.Activator.CreateInstance(contextType, "DebugLegacyCheck", true);
+var loadFromStream = contextType.GetMethod("LoadFromStream", new[] { typeof(System.IO.Stream) });
+var debug = new System.Collections.Generic.List<Microsoft.Build.Framework.ITaskItem>();
+var unverified = new System.Collections.Generic.List<Microsoft.Build.Framework.ITaskItem>();
+try
+{
+    foreach (var item in Assemblies)
+    {
+        System.Reflection.Assembly assembly = null;
+        try
+        {
+            assembly = (System.Reflection.Assembly)loadFromStream.Invoke(context,
+                new object[] { new System.IO.MemoryStream(System.IO.File.ReadAllBytes(item.ItemSpec)) });
+            foreach (var data in System.Reflection.CustomAttributeData.GetCustomAttributes(assembly))
+            {
+                if (data.AttributeType.FullName != "System.Diagnostics.DebuggableAttribute") continue;
+                var args = data.ConstructorArguments;
+                // Ctor (DebuggingModes): DisableOptimizations = 0x100; starší (bool, bool): druhý = optimalizace vypnuté.
+                bool optimizerDisabled = args.Count == 1
+                    ? (System.Convert.ToInt32(args[0].Value) & 0x100) != 0
+                    : args.Count == 2 && (bool)args[1].Value;
+                if (optimizerDisabled) debug.Add(item);
+            }
+        }
+        catch (System.Exception e)
+        {
+            var cause = e is System.Reflection.TargetInvocationException && e.InnerException != null ? e.InnerException : e;
+            var token = assembly?.GetName().GetPublicKeyToken();
+            // Nativní DLL atribut nemá a podepsané cizí knihovny (C1) se bez svých závislostí nenačtou;
+            // nepodepsanou knihovnu legacy repa ale kontrola bez ověření nepustí.
+            if (cause is System.BadImageFormatException || (token != null && token.Length > 0))
+            {
+                Log.LogMessage(Microsoft.Build.Framework.MessageImportance.Low, item.ItemSpec + ": " + cause.Message);
+                continue;
+            }
+            var failed = new Microsoft.Build.Utilities.TaskItem(item);
+            failed.SetMetadata("Reason", cause.Message);
+            unverified.Add(failed);
+        }
+    }
+}
+finally
+{
+    contextType.GetMethod("Unload").Invoke(context, null);
+}
+DebugAssemblies = debug.ToArray();
+UnverifiedAssemblies = unverified.ToArray();
+]]></Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="RejectDebugLegacyAssemblies" AfterTargets="ComputeResolvedFilesToPublishList"
+          Condition="'$(Configuration)' == 'Release' And '$(AllowDebugLegacyAssemblies)' != 'true' And '$(PublishOwnAssemblyOnly)' != 'true'">
+    <PropertyGroup>
+      <_EdisonLegacyDirFull>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::GetFullPath('$(EdisonLegacyDir)'))))</_EdisonLegacyDirFull>
+    </PropertyGroup>
+    <ItemGroup>
+      <_LegacyPublishAssembly Include="@(ResolvedFileToPublish)"
+          Condition="'%(Extension)' == '.dll' And $([System.String]::Copy('%(FullPath)').StartsWith('$(_EdisonLegacyDirFull)', System.StringComparison.OrdinalIgnoreCase))" />
+    </ItemGroup>
+    <!-- Task potřebuje AssemblyLoadContext z .NET; vydání jde stejně jen přes dotnet publish (root CLAUDE.md). -->
+    <Error Condition="'@(_LegacyPublishAssembly)' != '' And '$(MSBuildRuntimeType)' != 'Core'"
+           Text="Release publish jen přes dotnet publish: kontrolu Debug legacy knihoven z $(_EdisonLegacyDirFull) MSBuild z Visual Studia neumí. Bez kontroly: -p:AllowDebugLegacyAssemblies=true." />
+    <FindDebugAssemblies Assemblies="@(_LegacyPublishAssembly)" Condition="'@(_LegacyPublishAssembly)' != ''">
+      <Output TaskParameter="DebugAssemblies" ItemName="_DebugLegacyAssembly" />
+      <Output TaskParameter="UnverifiedAssemblies" ItemName="_UnverifiedLegacyAssembly" />
+    </FindDebugAssemblies>
+    <Error Condition="'@(_DebugLegacyAssembly)' != ''"
+           Text="Release publish by do exe zabalil Debug build z $(_EdisonLegacyDirFull): @(_DebugLegacyAssembly->'%(Filename)%(Extension)', ', '). Postav legacy repo v Release; lokální publish proti Debug legacy: -p:AllowDebugLegacyAssemblies=true." />
+    <Error Condition="'@(_UnverifiedLegacyAssembly)' != ''"
+           Text="Nelze ověřit, že legacy knihovny z $(_EdisonLegacyDirFull) jsou Release: @(_UnverifiedLegacyAssembly->'%(Filename)%(Extension) (%(Reason))', '; '). Bez kontroly: -p:AllowDebugLegacyAssemblies=true." />
+  </Target>
+
 </Project>
