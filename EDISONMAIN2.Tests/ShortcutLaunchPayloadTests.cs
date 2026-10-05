@@ -22,8 +22,8 @@ public class ShortcutLaunchPayloadTests
     [Fact]
     public void Encode_IsArgvSafe()
     {
-        // BuildLauncherArguments hodnoty jen obaluje uvozovkami a neescapuje je (viz jeho test
-        // EmbeddedQuote_NotEscaped) - payload proto nesmí obsahovat uvozovku, mezeru ani konec řádku.
+        // EdisonLaunchArgs.Format hodnoty jen obaluje uvozovkami a uvozovky z nich odstraní - payload
+        // proto nesmí obsahovat uvozovku, mezeru ani konec řádku.
         var encoded = ShortcutLaunchPayloadCodec.Encode(Report("1003"));
 
         Assert.DoesNotContain('"', encoded);

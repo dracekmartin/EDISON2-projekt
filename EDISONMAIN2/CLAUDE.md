@@ -107,7 +107,7 @@ stale `_DIFF` na disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy
 
 Most do legacy světa: `EDISONMAIN2API.exe` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET
 Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 20 polí (pořadí
-`LegacyModuleHost.BuildLauncherArguments`), host je mapuje do `MLProps`: [13] zástupce z plochy
+`EdisonLaunchArgs.Field`), host je mapuje do `MLProps`: [13] zástupce z plochy
 (viz `docs/zastupci-na-plose.md`), [14] admin → `UserIsAdmin` (klíč pro `CAccess(useAdmin)`
 bypass práv), [15] → `UserMayUpdate` (gate serverového update v legacy Nastavení) - host bez pole
 defaultuje na **false**; [16]/[17] osobní adresář a e-mail z loginu → `UserDirectory`/`UserEmail`

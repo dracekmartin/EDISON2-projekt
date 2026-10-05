@@ -33,8 +33,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
     /// <summary>
     /// Překlad zástupce plochy na 14. argument hosta a zpět. Base64 je tu proto, že
-    /// <c>BuildLauncherArguments</c> hodnoty jen obaluje uvozovkami a neescapuje je - syrové XML
-    /// (uvozovky, mezery, konce řádků) by rozbilo celý příkazový řádek.
+    /// <c>EdisonLaunchArgs.Format</c> hodnoty jen obaluje uvozovkami a uvozovky z nich odstraní - syrové XML
+    /// (uvozovky, konce řádků) by se poškodilo.
     /// </summary>
     public static class ShortcutLaunchPayloadCodec
     {

@@ -443,12 +443,12 @@ public class LegacyModuleHostTests
         var psi = Assert.Single(h.Started);
         Assert.True(psi.UseShellExecute);
         Assert.Equal("EDISONMAIN2API.exe", Path.GetFileName(psi.FileName));
-        Assert.Equal(
-            LegacyModuleHost.BuildLauncherArguments(h.Services.MLRest!, Form, "SHELLGUID", "AdminMode=1",
-                Path.Combine(AppContext.BaseDirectory, Exe), "26001,6001", isAdmin: true, mayUpdate: true, "",
-                @"C:\Mline\Data", "jan.novak@firma.cz", "2.001",
-                ((int)Lic.EStates.E01_OK).ToString(CultureInfo.InvariantCulture), "31.12.2026"),
-            psi.Arguments);
+        var parsed = EdisonLaunchArgs.TryParse(ProcessArgv.Split(psi.Arguments))!;
+        Assert.Equal((Form, "SHELLGUID", "AdminMode=1"), (parsed.FormName, parsed.ShellGuid, parsed.InputParam));
+        Assert.Equal(Path.Combine(AppContext.BaseDirectory, Exe), parsed.AgendaPath);
+        Assert.Equal((true, true), (parsed.IsAdmin, parsed.MayUpdate));
+        Assert.Equal((@"C:\Mline\Data", "jan.novak@firma.cz"), (parsed.UserDirectory, parsed.UserEmail));
+        Assert.Equal(("26001,6001", "2.001", "31.12.2026"), (parsed.LicensedElements, parsed.LicenceVersion, parsed.LicenceValidTo));
     }
 
     [Fact]
@@ -460,10 +460,8 @@ public class LegacyModuleHostTests
 
         var psi = Assert.Single(h.Started);
         Assert.Equal("EDISONMAIN.exe", Path.GetFileName(psi.FileName));
-        Assert.Equal(
-            LegacyModuleHost.BuildLauncherArguments(h.Services.MLRest!, "ALVA.EDISONMAIN.formX", "SHELLGUID", "",
-                "", "", isAdmin: false, mayUpdate: false),
-            psi.Arguments);
+        var parsed = EdisonLaunchArgs.TryParse(ProcessArgv.Split(psi.Arguments))!;
+        Assert.Equal(("ALVA.EDISONMAIN.formX", ""), (parsed.FormName, parsed.AgendaPath));
     }
 
     [Fact]
@@ -474,7 +472,7 @@ public class LegacyModuleHostTests
 
         h.Host.ShowLegacyAndWait(Exe, Form, false, "");
 
-        Assert.DoesNotContain("SHELLGUID", Assert.Single(h.Started).Arguments);
+        Assert.Equal("", EdisonLaunchArgs.TryParse(ProcessArgv.Split(Assert.Single(h.Started).Arguments))!.ShellGuid);
     }
 
     [Fact]
@@ -681,134 +679,55 @@ public class LegacyModuleHostTests
         Assert.Contains($"soubor USERS.exe chybí v adresáři {exeDir}.", ex.Message);
     }
 
-    // --- argv kontrakt ---
+    // --- session shellu → kontrakt (formát a sanitizaci testuje EdisonLaunchArgsTests) ---
+
+    private static EDServices SessionWithLicence() =>
+        new(MakeMlRest(), Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
+        {
+            IsAdmin = true,
+            UserDirectory = @"C:\Mline\Data",
+            UserEmail = "jan.novak@firma.cz",
+            ActiveLicence = new Lic
+            {
+                Elements = ["26001", "6001"], Version = "2.001", State = Lic.EStates.E01_OK, ValidityTo = "31.12.2026",
+            },
+        };
 
     [Fact]
-    public void BuildLauncherArguments_EmptyInputParam_StillOccupiesPositionalSlot()
+    public void LaunchArgsFor_MapsShellSessionToContract()
     {
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin: false, mayUpdate: false);
+        var services = SessionWithLicence();
 
-        // Prázdný inputParam zůstává jako "" na pozici [10] - pořadí polí se neposune.
-        Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"0\" \"0\" \"\" \"\" \"\" \"\" \"\"",
-            args);
-    }
-
-    [Fact]
-    public void BuildLauncherArguments_EmbeddedQuote_NotEscaped()
-    {
-        // Známý limit wire formátu: uvozovka uvnitř hodnoty se needukuje ani neescapuje.
-        // Legacy parser kontrakt je zmrazený - produkci NEměnit.
-        var m = MakeMlRest();
-        m.FullName.Returns("Jan \"Boss\" Novák");
-
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            m, "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin: false, mayUpdate: false);
-
-        Assert.Contains("\"Jan \"Boss\" Novák\"", args);
-    }
-
-    [Fact]
-    public void BuildLauncherArguments_OrderingMatchesContract()
-    {
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe", "26001,6001", isAdmin: true, mayUpdate: true);
+        var launch = LegacyModuleHost.LaunchArgsFor(services, services.MLRest!, Form, "SHELLGUID", "AdminMode=1",
+            @"C:\Edison\USERS.exe", "UEFZTE9BRA==");
 
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\" \"\" \"1\" \"1\" \"\" \"\" \"\" \"\" \"\"",
-            args);
+            new EdisonLaunchArgs("192.168.16.1", 57770, "MLINE", "CB_DP", "jan.novak", "Jan Novák", "157",
+                Form, "SHELLGUID", "AdminMode=1")
+            {
+                AgendaPath = @"C:\Edison\USERS.exe",
+                LicensedElements = "26001,6001",
+                ShortcutPayload = "UEFZTE9BRA==",
+                IsAdmin = true,
+                MayUpdate = false,
+                UserDirectory = @"C:\Mline\Data",
+                UserEmail = "jan.novak@firma.cz",
+                LicenceVersion = "2.001",
+                LicenceState = ((int)Lic.EStates.E01_OK).ToString(CultureInfo.InvariantCulture),
+                LicenceValidTo = "31.12.2026",
+            },
+            launch);
     }
 
     [Fact]
-    public void BuildLauncherArguments_ShortcutPayload_FollowsLicensedElements()
+    public void LaunchArgsFor_NoLicenceYet_LeavesLicenceFieldsEmpty()
     {
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", false, false, "UEFZTE9BRA==");
+        // Retry nad limitem licencí při prvním přihlášení: host si licenci načte sám (GetActiveLic).
+        var services = new EDServices(MakeMlRest(), Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
 
-        // Zástupce je [13] - až za licencovanými elementy, aby starší host kontrakt jen ignoroval.
-        Assert.EndsWith("\"26001,6001\" \"UEFZTE9BRA==\" \"0\" \"0\" \"\" \"\" \"\" \"\" \"\"", args);
-    }
+        var launch = LegacyModuleHost.LaunchArgsFor(services, services.MLRest!, Form, "", "", "", "");
 
-    [Theory]
-    [InlineData(true, false, "\"1\" \"0\"")]
-    [InlineData(false, true, "\"0\" \"1\"")]
-    public void BuildLauncherArguments_UserFlags_FollowShortcutPayload(bool isAdmin, bool mayUpdate, string expectedTail)
-    {
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", isAdmin, mayUpdate);
-
-        // Admin [14] a právo update [15] - host bez nich defaultuje na false, hodnota musí být
-        // explicitní a nezávislá (admin neimplikuje update). Za nimi prázdný adresář a e-mail [16]/[17]
-        // a prázdná pole licence [18]-[20].
-        Assert.EndsWith($"\"\" {expectedTail} \"\" \"\" \"\" \"\" \"\"", args);
-        Assert.Equal(21, args.Split(" \"").Length);
-    }
-
-    [Fact]
-    public void BuildLauncherArguments_UserDirectoryAndEmail_FollowUserFlags()
-    {
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", false, false,
-            userDirectory: @"C:\Mline\EdisonData", userEmail: "jan.novak@firma.cz");
-
-        // [16] osobní adresář a [17] e-mail → MLProps.UserDirectory / UserEmail; host bez polí dá "".
-        Assert.EndsWith("\"0\" \"0\" \"C:\\Mline\\EdisonData\" \"jan.novak@firma.cz\" \"\" \"\" \"\"", args);
-        Assert.Equal(21, args.Split(" \"").Length);
-    }
-
-    [Fact]
-    public void BuildLauncherArguments_LicenceFields_AreLastFields()
-    {
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001", false, false,
-            userEmail: "jan.novak@firma.cz", licenceVersion: "2.001", licenceState: "1", licenceValidTo: "31.12.2026");
-
-        // [18] verze, [19] stav a [20] konec platnosti - host z nich a z elementů [12] složí licenci bez GetActiveLic.
-        Assert.EndsWith("\"jan.novak@firma.cz\" \"2.001\" \"1\" \"31.12.2026\"", args);
-        Assert.Equal(21, args.Split(" \"").Length);
-    }
-
-    [Theory]
-    [InlineData("31.12.2026", "31.12.2026")]
-    [InlineData("31.12.2026 0:00:00", "31.12.2026 0:00:00")]
-    [InlineData("31.12.\"2026", "31.12.2026")]
-    [InlineData("31.12.2026\\", "31.12.2026")]
-    public void BuildLauncherArguments_LicenceValidTo_KeepsFieldBoundaries(string validTo, string expected)
-    {
-        // Mezera v uvozovkách pole nerozdělí, uvozovka a koncové zpětné lomítko ano.
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "", false, false,
-            licenceVersion: "2.001", licenceState: "1", licenceValidTo: validTo);
-
-        Assert.EndsWith($"\"2.001\" \"1\" \"{expected}\"", args);
-        Assert.Equal(21, args.Split(" \"").Length);
-    }
-
-    [Theory]
-    [InlineData("2.001", "2.001")]
-    [InlineData("1.003 beta", "1.003")]
-    [InlineData("2\" \"x", "2")]
-    [InlineData("", "")]
-    public void BuildLauncherArguments_LicenceVersion_KeepsOnlyDigitsAndDots(string version, string expected)
-    {
-        // Mezera nebo uvozovka ve verzi by posunula pole za ní (argv hosta se neescapuje).
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "", false, false,
-            licenceVersion: version, licenceState: "1");
-
-        Assert.EndsWith($"\"{expected}\" \"1\" \"\"", args);
-        Assert.Equal(21, args.Split(" \"").Length);
-    }
-
-    [Fact]
-    public void BuildLauncherArguments_UserDirectory_TrailingBackslashTrimmed()
-    {
-        // "C:\dir\" by argv parser hosta četl \" jako escapovanou uvozovku a slil pole [16] s [17].
-        var args = LegacyModuleHost.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "", false, false,
-            userDirectory: @"C:\Mline\EdisonData\");
-
-        Assert.EndsWith("\"C:\\Mline\\EdisonData\" \"\" \"\" \"\" \"\"", args);
+        Assert.Equal(("", "", "", ""), (launch.LicensedElements, launch.LicenceVersion, launch.LicenceState, launch.LicenceValidTo));
     }
 }
+

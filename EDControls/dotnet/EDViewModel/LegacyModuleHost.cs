@@ -255,23 +255,13 @@ internal sealed class LegacyModuleHost
         // per-forma default EDParamIn (ApplyDefaultInput), který generický host neumí dodat.
         bool direct = LaunchesDirectly(exeName);
         var launcherPath = direct ? agendaPath : ResolveExistingPath(_launcherExe, _fileExists, DefaultDeployRoot);
-        // Licencované elementy z aktivní licence shellu → host z nich postaví Lic a načte
-        // formuláři přístupová práva (MLProps.AccessTable). Bez toho moduly, které gate-ují
-        // obsah přes RightGranted (např. DSINPUT Plánování), nezobrazí data. Viz FormToRunGetter.
-        var licence = services.ActiveLicence;
-        // Při retry nad limitem licencí během přepnutí firmy je to ještě licence původní firmy; spouští se
-        // tehdy jen okno aktivity pro admina, které licenci nekontroluje.
-        string licensedElements = licence?.Elements is { } els ? string.Join(",", els) : "";
 
         var prc = _start(new ProcessStartInfo
         {
             UseShellExecute = true,
             FileName = launcherPath,
-            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath,
-                licensedElements, services.IsAdmin, services.MayUpdate, shortcutPayload,
-                services.UserDirectory, services.UserEmail,
-                licence?.Version ?? "", licence is null ? "" : ((int)licence.State).ToString(CultureInfo.InvariantCulture),
-                licence?.ValidityTo ?? ""),
+            Arguments = LaunchArgsFor(services, mlRest, formFqn, shellGuid, inputParam,
+                direct ? "" : agendaPath, shortcutPayload).Format(),
         });
         if (prc is null) return null;
 
@@ -304,35 +294,31 @@ internal sealed class LegacyModuleHost
     internal static string ShellGuidFor(IMLRest mlRest, bool shareShellSession) =>
         shareShellSession && mlRest.CacheLocks == 1 ? mlRest.Guid : "";
 
-    /// <summary>
-    /// Složí payload pro generický host: značka + sys kontext + formFqn + shellGuid +
-    /// inputParam + cesta k agendě + licencované elementy. Pozice 1–11 jsou shodné s legacy
-    /// kontraktem (takže `FormToRunGetter.TryGetFormFromArgs` retrofitnutých agend zůstává
-    /// kompatibilní); agendaPath (host ho čte pro <c>Assembly.LoadFrom</c>) je [11],
-    /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable - starší host je ignoruje),
-    /// zástupce na ploše [13] (opaque, host ho místo formy spustí jako proceduru; prázdné = běžný launch),
-    /// admin flag [14] a právo update [15] ("1"/"0" → MLProps.UserIsAdmin / UserMayUpdate; host bez pole
-    /// defaultuje na false), osobní adresář [16] a e-mail [17] (→ MLProps.UserDirectory / UserEmail, parita
-    /// s legacy frmNoMDI; host bez polí dá ""). Koncové zpětné lomítko adresáře se odřízne - `"C:\dir\"` by
-    /// argv parser četl jako escapovanou uvozovku a slil pole. Verze [18], stav [19] a konec platnosti [20]
-    /// licence shellu (`Lic.Version`, `(int)Lic.State`, `Lic.ValidityTo`) doplní hostu k elementům [12]
-    /// celou licenci - host pak nevolá `GetActiveLic` (seznam všech licencí firmy, na DEV ~1 s) při každém
-    /// startu modulu, dokud je licence v pořádku a platná.
-    /// Obsah [13] skládá shell (zná typ zástupce), sem přichází jako neprůhledný string - musí být
-    /// argv-safe (bez uvozovek a mezer).
-    /// </summary>
-    internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
-        string inputParam, string agendaPath, string licensedElements, bool isAdmin, bool mayUpdate,
-        string shortcutPayload = "", string userDirectory = "", string userEmail = "",
-        string licenceVersion = "", string licenceState = "", string licenceValidTo = "") =>
-        $"{EdisonLaunchArgs.LaunchMarker} \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\" \"{shortcutPayload}\" \"{Flag(isAdmin)}\" \"{Flag(mayUpdate)}\" \"{Dir(userDirectory)}\" \"{userEmail}\" \"{Version(licenceVersion)}\" \"{licenceState}\" \"{Plain(licenceValidTo)}\"";
-
-    private static string Flag(bool value) => value ? "1" : "0";
-    private static string Dir(string directory) => directory.TrimEnd('\\');
-    // Verze jde do legacy Val(): stačí číslice a tečka, cokoli dalšího by jen hrozilo rozbitím argv.
-    private static string Version(string version) => new(version.Where(c => char.IsDigit(c) || c == '.').ToArray());
-    // Uvozovka nebo koncové zpětné lomítko by pole slily s dalším, mezera uvnitř uvozovek nevadí.
-    private static string Plain(string value) => value.Replace("\"", "").TrimEnd('\\');
+    /// <summary>Session shellu → launch kontrakt; pozice, formát a sanitizace drží <see cref="EdisonLaunchArgs"/>.
+    /// Zástupce skládá shell (zná jeho typ), sem přichází jako neprůhledný payload.</summary>
+    internal static EdisonLaunchArgs LaunchArgsFor(EDServices services, IMLRest mlRest, string formFqn, string shellGuid,
+                                                   string inputParam, string agendaPath, string shortcutPayload)
+    {
+        // Licence shellu → host z ní postaví Lic a načte formuláři přístupová práva (MLProps.AccessTable); bez nich
+        // moduly gate-ující obsah přes RightGranted (DSINPUT Plánování) nezobrazí data. Viz FormToRunGetter.
+        // Při retry nad limitem licencí během přepnutí firmy je to ještě licence původní firmy; spouští se
+        // tehdy jen okno aktivity pro admina, které licenci nekontroluje.
+        var licence = services.ActiveLicence;
+        return new EdisonLaunchArgs(mlRest.Server, mlRest.Port, mlRest.DataNamespace, mlRest.Idfa, mlRest.LoginName,
+                                    mlRest.FullName, mlRest.Mlp, formFqn, shellGuid, inputParam)
+        {
+            AgendaPath = agendaPath,
+            LicensedElements = licence?.Elements is { } els ? string.Join(",", els) : "",
+            ShortcutPayload = shortcutPayload,
+            IsAdmin = services.IsAdmin,
+            MayUpdate = services.MayUpdate,
+            UserDirectory = services.UserDirectory,
+            UserEmail = services.UserEmail,
+            LicenceVersion = licence?.Version ?? "",
+            LicenceState = licence is null ? "" : ((int)licence.State).ToString(CultureInfo.InvariantCulture),
+            LicenceValidTo = licence?.ValidityTo ?? "",
+        };
+    }
 
     /// <summary>Vedle exe (DEBUG běží z bin), jinak deploy adresář legacy agend.</summary>
     internal static string ResolvePath(string relativePath, Func<string, bool> fileExists, string deployRoot)

@@ -524,7 +524,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A12 · Launch kontrakt shellu nemá jediný zdroj pravdy pro pozice polí
 
-- [ ] **Stav:** otevřeno (2026-10-01: kontrakt narostl na 21 tokenů, escapování jen u nových polí)
+- [x] **Stav:** vyřešeno (2026-10-05, proud S5) - `EdisonLaunchArgs` je jediný kodek: tabulka pozic
+  `Field`, `Format` (producent) a `TryParse` (konzument), record aditivně o pole [11]-[20] jako init
+  properties (positional ctor pro TD beze změny); `LegacyModuleHost.LaunchArgsFor` jen mapuje session
+  shellu. Bod 3 rozhodl vlastník 2026-10-01 variantou (a): `Format` z každého textového pole odstraní `"`
+  a koncové `\`, host beze změny. Sdílená fixture `launch-args.fixture.txt` v `EDControls.Tests/Fixtures`
+  a vedle `FormToRunGetter.cs` v repu EDISON (tam jen referenční, repo nemá testovací projekt hosta).
+  Testy `EdisonLaunchArgsTests`: fixture ↔ `Format`, fixture přes `CommandLineToArgvW` → `TryParse`,
+  round-trip s uvozovkou ve `FullName` a koncovým `\` v adresáři.
 - **P2 · M** (escapování s hostem L) · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** Pozice 21 tokenů (`[0]` značka + pole `[1]-[20]`) jsou literály ve třech souborech
   ve dvou repech (producent, WPF konzument, WinForms konzument + `ShortcutRunner`) a popsané na

@@ -85,12 +85,12 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
   (proč: root CLAUDE.md, sekce MLRest); instanci snapshotuje na volajícím threadu, takže celá
   dávka jede proti téže session.
 - `MLRestJson` - JSON-envelope volání přes sdílený klíč `"payload"` (kontrakt na obou stranách).
-- `EdisonLaunchArgs` - parser launch kontraktu shellu; **zrcadlí
-  `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) - pořadí
-  a počet polí musí zůstat synchronní. Producent je `LegacyModuleHost.BuildLauncherArguments`;
-  nové pole se **přidává na konec** (starší host ho ignoruje) a hodnoty se jen obalují
-  uvozovkami, **neescapují** - co může obsahovat mezeru či uvozovku, posílej zakódované
-  (viz Base64 payload zástupce na ploše).
+- `EdisonLaunchArgs` - jediný kodek launch kontraktu shellu (`Format` producent, `TryParse` konzument,
+  pozice `Field`); **zrcadlí `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) -
+  pořadí a počet polí musí zůstat synchronní, vzorový argv je `launch-args.fixture.txt` v obou repech
+  (`EDControls.Tests/Fixtures/` a vedle `FormToRunGetter.cs`). Nové pole se **přidává na konec** (starší
+  host ho ignoruje). Hodnoty se jen obalují uvozovkami, **neescapují**: `Format` z textových polí odstraní
+  `"` a koncové `\`, co je nést musí, posílej zakódované (viz Base64 payload zástupce na ploše).
 - `WindowDimmer` - ztmavení okna, refcount per okno; UI-thread only.
 - `OwnerWindowCentering` - vycentrování na klientskou oblast ownera (volat z `Loaded`).
   WPF `CenterOwner` u maximalizovaného ownera centruje podle restore bounds → mimo střed.

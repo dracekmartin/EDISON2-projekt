@@ -81,8 +81,8 @@ V EDISONMAIN2 nese zástupce **14. pole arg kontraktu** (`args[13]`, za licencov
 takže starší host ho jen ignoruje). Obsah je **Base64 nad XML** legacy
 `ALVA.LIBRARY.Remote.SerializableShortcut`:
 
-- **Base64** proto, že `LegacyModuleHost.BuildLauncherArguments` hodnoty jen obaluje uvozovkami
-  a neescapuje je (má na to vlastní test) - syrové XML by rozbilo příkazový řádek.
+- **Base64** proto, že `EdisonLaunchArgs.Format` hodnoty jen obaluje uvozovkami a uvozovky
+  i koncové `\` z nich odstraní (argv hosta se neescapuje) - syrové XML by o ně přišlo.
 - **`SerializableShortcut`** proto, že je to `XmlSerializer` nad veřejnými poli (ne
   BinaryFormatter), takže projde mezi .NET Frameworkem a .NET 10. Host ho deserializuje toutéž
   třídou → **jména polí jsou zmrazená**; shellová strana je zrcadlí v `ShortcutLaunchPayload`.
