@@ -94,7 +94,7 @@ public static class ContentShrinkWarnings
     {
         // Textový prvek si škálu počítá sám (výška i šířka, s mezí) - hláška musí dostat totéž
         // číslo jako render, jinak tvrdí jinou velikost, než se vytiskne.
-        TextElement text => text.ComputeShrinkScale(page?.ResolvePlaceholders(text.Text) ?? text.Text),
+        TextElement text => text.ComputeShrinkScale(text.TextKKresleni(page)),
         ScheduleElementBase schedule => ZmenseniJr(schedule, page),
         _ => 1f,
     };

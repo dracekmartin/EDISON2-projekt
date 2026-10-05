@@ -54,9 +54,9 @@ public class ImageElement : TemplateElement
                 DrawImageWithScaleMode(ctx.Canvas, image, rect, sampling, paint, ScaleMode);
             }
         }
-        else
+        else if (ctx.JeNavrh)
         {
-            // Placeholder: rámeček s křížem
+            // Placeholder: rámeček s křížem - jen v návrháři, do tisku nepatří
             using var border = new SKPaint { Color = new SKColor(0xFFAAAAAA), IsStroke = true, StrokeWidth = 1f };
             using var cross  = new SKPaint { Color = new SKColor(0xFFCCCCCC), StrokeWidth = 1f };
             ctx.Canvas.DrawRect(rect, border);

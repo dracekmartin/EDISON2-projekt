@@ -561,7 +561,7 @@ public class DesignerCanvas
 
             canvas.Save();
             canvas.ClipRect(contentRect);
-            var ctx = new RenderContext(canvas, MmToPx) { SectionOriginX = ox, SectionOriginY = oy };
+            var ctx = new RenderContext(canvas, MmToPx) { SectionOriginX = ox, SectionOriginY = oy, JeNavrh = true };
             foreach (var el in _state.GetElementsByZIndexAsc(section))
             {
                 el.RenderBackgroundPass(ctx);   // pozadí (respektuje rohy) hned před obsahem téhož elementu

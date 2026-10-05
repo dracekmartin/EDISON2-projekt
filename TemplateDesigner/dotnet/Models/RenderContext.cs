@@ -52,6 +52,12 @@ public class RenderContext
     /// </remarks>
     public bool SrovnatCaryNaPixel { get; init; }
 
+    /// <summary>Kreslí se plátno návrháře, ne náhled ani tisk.</summary>
+    /// <remarks>Jen tady patří zástupné rámečky prázdného obrázku a kódu: do 5. 10. se tiskly
+    /// do PDF jako „IMG" a „QR" (výchozí šablona zastávkového JŘ má místo na logo i QR, které data
+    /// nemusí naplnit). Podle chybějících dat to poznat nejde - šablona bez agendy tiskne bez dat.</remarks>
+    public bool JeNavrh { get; init; }
+
     public RenderContext(SKCanvas canvas, float mmToPx, DataContext? data = null)
     {
         Canvas = canvas;

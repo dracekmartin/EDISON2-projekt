@@ -1,5 +1,24 @@
 ﻿# Changelog
 
+## 2026-10-05 - 🖨 příprava ukázky: tisk bez zástupných rámečků a zalomení v datech
+
+Při tisku výchozích šablon se skutečnými daty (`CB_CSADAD`, linky 330510/330511/330530; nová
+ruční zkouška `Rendering/ZkouskaTiskuNaostro.cs`) vyšly tři vady, které by na ukázce působily
+nedodělaně:
+
+- **Prázdný obrázek a kód se tiskly jako zástupné „IMG" a „QR".** Výchozí zastávková šablona
+  má místo na logo a QR, které data nemusí naplnit. Rámeček je teď jen v návrháři
+  (`RenderContext.JeNavrh`); podle chybějících dat to poznat nejde, šablona bez agendy tiskne bez dat.
+- **Pole z dat na víc řádků v jednořádkovém textu** vyšlo se čtverečky místo zalomení („a.s.□Oblast"):
+  popis dopravce u zastávkového JŘ AD má od 31. 8. název, sídlo a telefon pod sebou. Text bez
+  zalamování řádky spojí čárkou (`TextElement.TextKKresleni`, totéž počítá i zmenšení písma).
+- **Výchozí zastávková šablona AD měla popis dopravce dvakrát** - nahoře v úzkém rámečku přetékal
+  a ořízl se. Nahoře je teď `{NAZEV_DOPRAVCE}`, dole celý popis. MHD šablona to má taky, agenda MHD
+  ale název dopravce zvlášť nemá - nechaná.
+
+Neopraveno: tabulka minut odjezdů v rozestupu „podle obsahu" počítá šířku skupiny bez značek,
+takže hodina s mnoha označenými odjezdy přeteče do sousední skupiny (330530 ve 13 h, 330510 v 6 h).
+
 ## 2026-10-02 (8) - 📐 měření kvality importu z PDF (`B179` krok 1)
 
 Import se dá změřit číslem místo okem: `TemplateDesigner.Tests/PdfImport/Kvalita/`. Sada předloh

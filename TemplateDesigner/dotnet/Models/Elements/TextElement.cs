@@ -38,7 +38,7 @@ public class TextElement : TemplateElement
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
-        var resolvedText = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
+        var resolvedText = TextKKresleni(ctx.Data);
         if (string.IsNullOrEmpty(resolvedText)) return;
 
         var rs = Style.Resolve();
@@ -238,11 +238,27 @@ public class TextElement : TemplateElement
         return Math.Max(potreba, Math.Max(MinScale, Math.Min(1f, dnoZVelikosti)));
     }
 
+    /// <summary>
+    /// Text, jak se nakreslí: s dosazenými poli, a bez zalamování na jednom řádku.
+    /// </summary>
+    /// <remarks>Pole z dat může nést víc řádků (popis dopravce u zastávkového JŘ má od 31. 8. název,
+    /// sídlo a telefon pod sebou). Jednořádkový prvek je kreslil jako jeden text a zalomení řádku
+    /// vyšlo jako čtvereček neznámého znaku („a.s.□Oblast…", nález 5. 10. na výchozí šabloně) -
+    /// spojí se proto čárkou, jako je popis dopravce v linkovém JŘ.</remarks>
+    internal string TextKKresleni(DataContext? data)
+    {
+        var text = data?.ResolvePlaceholders(Text) ?? Text;
+        if (WordWrap || string.IsNullOrEmpty(text) || text.IndexOfAny(['\n', '\r']) < 0) return text;
+        return string.Join(", ", text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(r => r.Trim().TrimEnd(',').Trim())
+            .Where(r => r.Length > 0));
+    }
+
     /// <summary>Text se vejde do prvku i po zmenšení? False = pod mezí se ořízne.</summary>
     public bool ContentOverflows(DataContext? data, float? sirkaMm = null)
     {
         float sirka = sirkaMm ?? Width;
-        var text = data?.ResolvePlaceholders(Text) ?? Text;
+        var text = TextKKresleni(data);
         if (string.IsNullOrEmpty(text) || sirka <= 0) return false;
 
         var rs = Style.Resolve();

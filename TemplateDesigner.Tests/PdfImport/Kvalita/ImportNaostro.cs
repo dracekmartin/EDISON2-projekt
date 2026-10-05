@@ -19,11 +19,19 @@ public static class ImportNaostro
     private static CacheAgendaProvider? _provider;
     private static string? _klic;
 
-    private static async Task<(CacheAgendaProvider Provider, string Klic)> PripojAsync()
+    /// <summary>Připojení k dev serveru a klíč k modelu - jednou za běh testů.</summary>
+    public static async Task<(CacheAgendaProvider Provider, string Klic)> PripojAsync()
     {
         if (_provider is not null && _klic is not null) return (_provider, _klic);
 
         var settings = AppSettings.Load();
+        // Jiná firma než v nastavení (TD_IDFA=ZL_KOVED, případně TD_NAMESPACE) - na dev serveru
+        // má každá jiné linky.
+        if (settings.Cache is { } cache)
+        {
+            if (Environment.GetEnvironmentVariable("TD_IDFA") is { Length: > 0 } idfa) cache.Idfa = idfa;
+            if (Environment.GetEnvironmentVariable("TD_NAMESPACE") is { Length: > 0 } ns) cache.Namespace = ns;
+        }
         var mlRest = CacheSchemaWiring.TryCreateMlRest(settings) ?? throw new Exception("Caché není nakonfigurovaná");
         EDServices.Initialize(new EDServices(new MLRestAdapter(mlRest),
             Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));

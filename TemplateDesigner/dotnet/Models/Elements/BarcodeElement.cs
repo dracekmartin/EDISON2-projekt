@@ -106,16 +106,17 @@ public class BarcodeElement : TemplateElement
 
         // Pozadí elementu kreslí base RenderBackgroundPass (respektuje rohy) před obsahem.
 
+        // Zástupný rámeček jen v návrháři - prázdný nebo nezakódovatelný obsah se netiskne.
         if (string.IsNullOrWhiteSpace(content))
         {
-            DrawPlaceholder(ctx.Canvas, rect);
+            if (ctx.JeNavrh) DrawPlaceholder(ctx.Canvas, rect);
             return;
         }
 
         var picture = GetBarcodePicture(content, rect.Width, rect.Height);
         if (picture is null)
         {
-            DrawPlaceholder(ctx.Canvas, rect);
+            if (ctx.JeNavrh) DrawPlaceholder(ctx.Canvas, rect);
             return;
         }
 
