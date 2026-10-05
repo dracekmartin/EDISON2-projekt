@@ -53,7 +53,7 @@ na REL Caché (Compiler DEV→REL), `.project` v repu je jen jméno:
 - `ALVA_EDISONMAIN2` - `ALVA.EDISONMAIN2.API.Tree`, `ALVA.EDISONMAIN2.EDInputForm.UserProfile`
   a testy `ALVA.EDISONMAIN2.Tests.*`
 - `ALVA_EDControls` - `UserData`, `DesktopShortcuts`, `EDInputForm.{Form,Field,Group,Item}`,
-  `EDList.{List,Column}` **a include `EDInputForm.inc`** (bez něj se třídy nezkompilují); navíc
+  `EDList.{List,Column}` **a include `EDInputForm.inc` a `EDList.inc`** (bez nich se třídy nezkompilují); navíc
   testy `ALVA.EDControls.Tests.*` a dema `EDIFExample`/`MockList`
 - `ALVA_EDTesting` - test framework (`MLTestCase`, `TestRunner`); testy obou projektů z něj dědí,
   proto jde ve vydání s nimi.

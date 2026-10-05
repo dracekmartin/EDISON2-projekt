@@ -1,8 +1,8 @@
 # EDList - poznámky pro vývojáře
 
 Read-only tabulka řízená z Caché. Host nastaví `CacheClass`, zavolá `InitializeList()`
-(definice sloupců) a `LoadList()` / `LoadList(filter)` (data); služby čte z `EDServices.Current`
-(host **nemusí** mít VM dědící `EDViewModel`), více instancí v okně (master-detail) je
+(definice sloupců) a `LoadList()` / `LoadList(filter)` (data), **bez sloupců `LoadList` hází**.
+Služby čte z `EDServices.Current` (host **nemusí** mít VM dědící `EDViewModel`), více instancí v okně (master-detail) je
 standardní scénář. Caché builder `ALVA.EDControls.EDList.List`, referenční `MockList.cls`
 a testovací okno `EDISONMAIN2/dotnet/Windows/EDListTestWindow/`.
 
@@ -17,15 +17,16 @@ nemusí dělat nic; ruční trigger je `EDFilter.RefreshAsync()`.
 `InvalidOperationException` („volající vlákno nemá přístup..."); hodnotu si vytáhni do lokální
 proměnné **před** přechodem na threadpool. Testy to nechytí (WPF kontroluje vlákno až za běhu).
 
-**Data zvenčí**: `SetData(columns, rows)` naplní seznam bez `CacheClass` a MLRest (host
-s vlastním transportem). Řádky jsou **raw** serverové hodnoty včetně `id`, formátování i sort
-klíče staví stejná cesta jako `LoadList`. Vzhled z dat řádku (barva textu) přes `CellStyle` a
-skrytý sloupec (`Visible = false`): projde indexerem, ale nerenderuje se ani nehledá.
-Referenční `EDISONMAIN2.LegacyMiniApps/dotnet/DashboardListSource.cs`.
+**Data zvenčí**: `SetData(columns, rows)` bez `CacheClass` a MLRest (vlastní transport hosta).
+Řádky jsou **raw** hodnoty včetně `id`, formátování i sort klíče jako u `LoadList`. Barva z dat
+řádku přes `CellStyle` + skrytý sloupec (`Visible = false`: projde indexerem, nerenderuje se ani
+nehledá). Reference `EDISONMAIN2.LegacyMiniApps/dotnet/DashboardListSource.cs`.
 
 ## Wire kontrakt (JSON přes `^||ML`)
 
-Detaily ve sdíleném `EDControls/docs/wire-formaty.md` - tam patří změny formátu.
+Detaily v `EDControls/docs/wire-formaty.md`. Literály `type`/`align` = `CACHE/EDList.inc` (zrcadlo
+`EDListParsing`, parita `ListTest` + `EDListParsingTests`), `List` neznámé odmítne. `.inc` musí být
+v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 
 - `InitializeList`: `OUT[1]` = **jedno** JSON pole definic sloupců (parser čte jen `OUT[1]`).
 - `LoadList`: `OUT[1..n]` = jeden JSON objekt na řádek; **každý řádek musí mít `id`** -
@@ -39,6 +40,7 @@ Detaily ve sdíleném `EDControls/docs/wire-formaty.md` - tam patří změny for
 
 - Řazení je **typové** - comparer (`EDListSort`) nad raw hodnotami přes `CustomSort`, ne
   `SortDescriptions` (ty řadí formátované stringy lexikograficky). Shift+klik = multi-sort.
+  Přestavba sloupců (`SelectionMode`, `SetData`) řazení i šipky drží, zmizelý sloupec vypadne.
 - **NUMBER bez `format` se nijak neformátuje** - v UI zůstane „142.5" s tečkou.
 - **IMAGE ani CODEBOOK nejsou v renderingu** - propadnou na text (raw název resource).
   Neparsovatelné datum se zobrazí raw, bez chyby. COLOR kreslí obdélník, ne podbarvení buňky.
@@ -48,7 +50,7 @@ Detaily ve sdíleném `EDControls/docs/wire-formaty.md` - tam patří změny for
 ## Search, Check mode, persist layoutu
 
 - **Brandový pruh je bezpodmínečný** (shodně s `EDInputForm`em), host plní jen `Title`.
-- Search filtruje **formátované** hodnoty („8:30" najde „08:30", ne „830"); nepersistuje se.
+- Search filtruje **formátované** hodnoty bez diakritiky („8:30" najde „08:30", ne „830"); nepersistuje se.
 - `SelectionMode = Check` → checkbox sloupec. Binding checkboxů je záměrně **OneWay** +
   explicitní `Click` handler (TwoWay v CellTemplate je buggy; header `Click` brání rekurzi
   CheckAll→Sync). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik** na checkbox zaškrtne

@@ -140,6 +140,46 @@ public class EDListParsingTests
         Assert.Equal(expected, EDListParsing.DefaultAlign(type));
     }
 
+    /// <summary>Parita s <c>$$$ListColumnType*</c> v CACHE/EDList.inc (ListTest.TestWireConstantsMatchCSharp
+    /// pinuje tytéž literály) - přejmenování na jedné straně build nechytí.</summary>
+    [Theory]
+    [InlineData("TEXT", ListColumnType.Text)]
+    [InlineData("NUMBER", ListColumnType.Number)]
+    [InlineData("DATE", ListColumnType.Date)]
+    [InlineData("DATETIME", ListColumnType.DateTime)]
+    [InlineData("BOOL", ListColumnType.Bool)]
+    [InlineData("IMAGE", ListColumnType.Image)]
+    [InlineData("COLOR", ListColumnType.Color)]
+    [InlineData("HHMM", ListColumnType.HoursMinutes)]
+    [InlineData("CODEBOOK", ListColumnType.Codebook)]
+    [InlineData("number", ListColumnType.Number)]
+    [InlineData("", ListColumnType.Text)]
+    [InlineData(null, ListColumnType.Text)]
+    [InlineData("DAET", ListColumnType.Text)]
+    public void ParseType_WireLiterals(string? wire, ListColumnType expected)
+    {
+        Assert.Equal(expected, EDListParsing.ParseType(wire));
+    }
+
+    /// <summary>Nová hodnota enumu bez literálu by na serveru neměla jak vzniknout.</summary>
+    [Fact]
+    public void ColumnTypeWire_CoversEveryEnumValue()
+    {
+        Assert.Equal(Enum.GetValues<ListColumnType>().Order(), EDListParsing.ColumnTypeWire.Values.Order());
+    }
+
+    [Theory]
+    [InlineData("LEFT", ListColumnAlign.Left)]
+    [InlineData("CENTER", ListColumnAlign.Center)]
+    [InlineData("RIGHT", ListColumnAlign.Right)]
+    [InlineData("right", ListColumnAlign.Right)]
+    [InlineData("", ListColumnAlign.Auto)]
+    [InlineData("RIHGT", ListColumnAlign.Auto)]
+    public void ParseAlign_WireLiterals(string wire, ListColumnAlign expected)
+    {
+        Assert.Equal(expected, EDListParsing.ParseAlign(wire));
+    }
+
     [Fact]
     public void RgbConverter_ParsesSemicolonTriplet_ElseTransparent()
     {

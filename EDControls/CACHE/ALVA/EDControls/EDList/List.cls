@@ -1,3 +1,5 @@
+Include (%occInclude, EDList)
+
 Class ALVA.EDControls.EDList.List Extends %RegisteredObject
 {
 
@@ -12,9 +14,11 @@ Method %OnNew() As %Status
 }
 
 /// Přidá sloupec a vrátí ho pro případné další nastavení (isLink apod.).
+/// type a align z EDList.inc; neznámou hodnotu odmítne, klient by ji tiše zobrazil jako TEXT / zarovnání dle typu.
 /// format: NUMBER → "N0"/"N2", DATE/DATETIME → "dd.MM.yyyy", ostatní prázdný.
 Method AddColumn(key As %String, label As %String, type As %String = "TEXT", width As %Integer = 0, align As %String = "", sortable As %Boolean = 0, format As %String = "") As ALVA.EDControls.EDList.Column
 {
+    d ..ValidateColumn(key, type, align)
     s col = ##class(ALVA.EDControls.EDList.Column).%New()
     s col.key      = key
     s col.label    = label
@@ -25,6 +29,25 @@ Method AddColumn(key As %String, label As %String, type As %String = "TEXT", wid
     s col.format   = format
     d ..columns.Insert(col)
     q col
+}
+
+/// Volá ji AddColumn i WriteColumnsToOut - type/align jdou nastavit i přímo na vráceném sloupci.
+ClassMethod ValidateColumn(key As %String, type As %String, align As %String) [ Private ]
+{
+    if '..IsKnownType(type) $$$ThrowStatus($$$ERROR($$$GeneralError, "EDList: neznámý typ sloupce '"_type_"' (sloupec '"_key_"')"))
+    if '..IsKnownAlign(align) $$$ThrowStatus($$$ERROR($$$GeneralError, "EDList: neznámé zarovnání '"_align_"' (sloupec '"_key_"')"))
+}
+
+/// Klient parsuje typ bez ohledu na velikost písmen, proto i tady; prázdný = TEXT.
+ClassMethod IsKnownType(type As %String) As %Boolean
+{
+    q (type = "") || ($lf($$$ListColumnTypes, $zcvt(type, "U")) > 0)
+}
+
+/// Prázdné zarovnání = podle typu sloupce.
+ClassMethod IsKnownAlign(align As %String) As %Boolean
+{
+    q (align = "") || ($lf($$$ListAligns, $zcvt(align, "U")) > 0)
 }
 
 /// Vytvoří nový řádek s daným id, přidá ho do interní %DynamicArray a vrátí ho.
@@ -43,6 +66,7 @@ Method WriteColumnsToOut()
     s arr = ##class(%DynamicArray).%New()
     f i=1:1:..columns.Count() {
         s col = ..columns.GetAt(i)
+        d ..ValidateColumn(col.key, col.type, col.align)
         s obj = ##class(%DynamicObject).%New()
         s obj.key      = col.key
         s obj.label    = col.label

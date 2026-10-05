@@ -45,20 +45,26 @@ namespace EDControls.EDList
             IsLink   = el.Bool("isLink"),
         };
 
-        private static ListColumnType ParseType(string? s) => s?.ToUpperInvariant() switch
-        {
-            "NUMBER"   => ListColumnType.Number,
-            "DATE"     => ListColumnType.Date,
-            "DATETIME" => ListColumnType.DateTime,
-            "BOOL"     => ListColumnType.Bool,
-            "IMAGE"    => ListColumnType.Image,
-            "COLOR"    => ListColumnType.Color,
-            "HHMM"     => ListColumnType.HoursMinutes,
-            "CODEBOOK" => ListColumnType.Codebook,
-            _          => ListColumnType.Text,
-        };
+        /// <summary>Literály typů sloupce = protokol, zrcadlí <c>$$$ListColumnType*</c> v <c>CACHE/EDList.inc</c>.</summary>
+        internal static readonly IReadOnlyDictionary<string, ListColumnType> ColumnTypeWire =
+            new Dictionary<string, ListColumnType>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["TEXT"]     = ListColumnType.Text,
+                ["NUMBER"]   = ListColumnType.Number,
+                ["DATE"]     = ListColumnType.Date,
+                ["DATETIME"] = ListColumnType.DateTime,
+                ["BOOL"]     = ListColumnType.Bool,
+                ["IMAGE"]    = ListColumnType.Image,
+                ["COLOR"]    = ListColumnType.Color,
+                ["HHMM"]     = ListColumnType.HoursMinutes,
+                ["CODEBOOK"] = ListColumnType.Codebook,
+            };
 
-        private static ListColumnAlign ParseAlign(string? s) => s?.ToUpperInvariant() switch
+        internal static ListColumnType ParseType(string? s) =>
+            s is not null && ColumnTypeWire.TryGetValue(s, out var type) ? type : ListColumnType.Text;
+
+        // Literály zrcadlí $$$ListAlign* v CACHE/EDList.inc.
+        internal static ListColumnAlign ParseAlign(string? s) => s?.ToUpperInvariant() switch
         {
             "LEFT"   => ListColumnAlign.Left,
             "CENTER" => ListColumnAlign.Center,

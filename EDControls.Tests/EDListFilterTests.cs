@@ -44,6 +44,16 @@ public class EDListFilterTests
         Assert.True(EDListFilter.Matches(row, "PrAhA", ["name"]));
     }
 
+    /// <summary>Stejně jako hledání ve formuláři: „sablona" najde „Šablona".</summary>
+    [Fact]
+    public void IgnoresDiacritics()
+    {
+        Assert.True(EDListFilter.Matches(Row(("name", "Šablona vývěsky")), "sablona", ["name"]));
+        Assert.True(EDListFilter.Matches(Row(("name", "sablona")), "ŠABLONA", ["name"]));
+        Assert.True(EDListFilter.Matches(Row(("name", "Žluťoučký kůň")), "zlutoucky kun", ["name"]));
+        Assert.False(EDListFilter.Matches(Row(("name", "Šablona")), "sablony", ["name"]));
+    }
+
     [Fact]
     public void NullCellValue_Skipped()
     {
