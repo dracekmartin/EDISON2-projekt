@@ -170,6 +170,26 @@ public class EDListSetDataTests
         });
     }
 
+    /// <summary>Poškozený blob (klíč null) by trefil checkbox sloupec bez Tagu a comparer by spadl na null klíči.</summary>
+    [Fact]
+    public void SetData_StoredLayoutWithNullKeys_IsIgnored()
+    {
+        RunSta(() =>
+        {
+            var broken = JsonNode.Parse("""{"columns":[{"key":null,"width":99}],"sort":[{"key":null,"direction":"desc"}]}""");
+            var list = NoRestList(PrefsReturning(broken));
+            list.HostId = "Tests.EDList";
+            list.SelectionMode = ListSelectionMode.Check;
+
+            list.SetData(Columns, [Row("1", "A", "1"), Row("2", "B", "2")]);
+
+            Assert.Equal(32, list.DataGrid.Columns[0].Width.Value);
+            Assert.Null(list.DataGrid.Columns[0].SortDirection);
+            var view = (ListCollectionView)CollectionViewSource.GetDefaultView(list.DataGrid.ItemsSource);
+            Assert.Null(view.CustomSort);
+        });
+    }
+
     private static JsonNode SortLayout(string key) => ColumnLayoutSerializer.Serialize(new ColumnLayout
     {
         Sort = [new SortPref { Key = key, Direction = "desc" }],

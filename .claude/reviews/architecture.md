@@ -583,7 +583,16 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A14 · `EDList` nemá controller seam
 
-- [ ] **Stav:** otevřeno, částečně (wire vrstva vytažena; ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno (2026-10-05) - `internal sealed EDListController` bez WPF drží sloupce,
+  řádky (`BulkObservableCollection`, view ji jen bindne), frontu dotazů a generation guard, lifecycle
+  řádků (odhlášení, kotva), zaškrtnutí včetně rozsahu Shift+klik a stavu záhlaví, specy řazení
+  a load/save layoutu přes `IUserPrefsService`. Místo `(IMLRest, cacheClass)` z návrhu bere
+  `Func<EDServices>` (MLRest per volání, přepnutí session neudrží starou instanci) a `cacheClass`/`HostId`
+  parametrem (DP čte view na UI vlákně). Tvorba sloupců v `EDListColumnFactory`, `RgbStringToBrushConverter`
+  ve vlastním souboru. Code-behind 729 → 434 ř. (k 400 po A23, kde odejde debounce). Veřejné API
+  beze změny. Navíc `FindColumnByKey` odmítne prázdný klíč (poškozený layout trefil checkbox sloupec
+  bez Tagu). Testy `EDListControllerTests` (15, bez STA), `EDListLoadTests.LoadList_ReappliesSearchAndLayout`,
+  `EDListSetDataTests.SetData_StoredLayoutWithNullKeys_IsIgnored`.
 - **P2 · M** · Závisí na: - · Blokuje: A16, A17, A27 (dělat spolu) · Původ: [backlog R3](arch-backlog.md#r3---edlist-nemá-controller-seam)
 - **Stav v kódu:** `EDListParsing` (commit d8a75403), `EDListSort`, `EDListFilter`, `ColumnLayout`
   jsou vytažené; `EDList.xaml.cs` má 729 řádků, volá MLRest přímo (`:269,:280,:295,:313`), stav
@@ -1217,7 +1226,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A42 · Dva vyhledávací algoritmy pod stejným toolbarem
 
-- [x] **Stav:** vyřešeno (2026-10-05) - toolbar přišel o šipky a počítadlo nálezů už v 2e8d88fe;
+- [x] **Stav:** vyřešeno 3e6422a2 (2026-10-05) - toolbar přišel o šipky a počítadlo nálezů už v 2e8d88fe;
   teď `EDListFilter.Matches` normalizuje hledaný text i hodnoty přes `SearchNormalization` (jako
   formulář a `EDFilterComboBox`), takže „sablona" najde „Šablona". Test `EDListFilterTests.IgnoresDiacritics`.
   **Publish EDControls.dll** = hledání v TD pickerech nově ignoruje diakritiku.

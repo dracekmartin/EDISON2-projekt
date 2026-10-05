@@ -13,9 +13,8 @@ nedosedne - rychlé přepínání filtru nezamíchá řádky. Filtrovaný seznam
 jeho `IEDFilterTarget` (`ApplyFilterAsync` → `LoadListAsync`), reload si řídí filtr sám a host
 nemusí dělat nic; ruční trigger je `EDFilter.RefreshAsync()`.
 
-⚠️ **`CacheClass` (a každá další DP) se nesmí číst uvnitř `Task.Run`** - skončí
-`InvalidOperationException` („volající vlákno nemá přístup..."); hodnotu si vytáhni do lokální
-proměnné **před** přechodem na threadpool. Testy to nechytí (WPF kontroluje vlákno až za běhu).
+Stav drží `EDListController` bez WPF; ⚠️ **DP (`CacheClass`, `HostId`) mu view předává parametrem**,
+čtení DP uvnitř `Task.Run` skončí `InvalidOperationException` a testy to nechytí (vlákno hlídá až WPF).
 
 **Data zvenčí**: `SetData(columns, rows)` bez `CacheClass` a MLRest (vlastní transport hosta).
 Řádky jsou **raw** hodnoty včetně `id`, formátování i sort klíče jako u `LoadList`. Barva z dat

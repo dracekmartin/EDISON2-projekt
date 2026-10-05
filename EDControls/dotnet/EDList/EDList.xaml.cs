@@ -1,24 +1,16 @@
-using ALWA.SYS;
-using EDControls.EDViewModel;
-using EDControls.UserPrefs;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Globalization;
 using System.Linq;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace EDControls.EDList
 {
+    /// <summary>View nad <see cref="EDListController"/>: mapuje stav na <c>DataGrid</c> a eventy na controller.</summary>
     public partial class EDList : UserControl, IEDFilterTarget
     {
 
@@ -28,8 +20,8 @@ namespace EDControls.EDList
         /// <summary>Settable jen kvůli testům - produkce čte sdílené <c>EDServices.Current</c>.</summary>
         internal EDViewModel.EDServices? ServicesOverride { get; set; }
         private EDViewModel.EDServices Services => ServicesOverride ?? EDViewModel.EDServices.Current;
-        private IMLRest? MLRest => Services.MLRest;
-        private IUserPrefsService UserPrefs => Services.UserPrefs;
+
+        private readonly EDListController _controller;
 
         public static readonly DependencyProperty CacheClassProperty =
             DependencyProperty.Register(nameof(CacheClass), typeof(string), typeof(EDList),
@@ -55,8 +47,6 @@ namespace EDControls.EDList
             get => (string?)GetValue(HostIdProperty);
             set => SetValue(HostIdProperty, value);
         }
-
-        private const string PrefsScope = "EDControls.EDList";
 
         /// <summary>
         /// Styl buňky (<c>DataGridCell</c>) - pro vzhled řízený daty řádku, který sloupcové typy
@@ -119,13 +109,10 @@ namespace EDControls.EDList
                 : row => row is EDListRow r && EDListFilter.Matches(r, search, searchableKeys);
         }
 
-        private IReadOnlyList<ListColumn>? _columns;
-        public IReadOnlyList<ListColumn>? Columns => _columns;
-
-        private readonly BulkObservableCollection<EDListRow> _rows = new();
+        public IReadOnlyList<ListColumn>? Columns => _controller.Columns;
 
         /// <summary>Aktuální načtené řádky (read-only pohled). Po <c>LoadList</c> obsahuje server data.</summary>
-        public IReadOnlyList<EDListRow> Rows => _rows;
+        public IReadOnlyList<EDListRow> Rows => _controller.Rows;
 
         public string? SelectedRowId =>
             DataGrid.SelectedItem is EDListRow row ? row.Id : null;
@@ -151,10 +138,8 @@ namespace EDControls.EDList
         /// V Single mode: vrátí <c>[SelectedRowId]</c> nebo prázdné.</summary>
         public IReadOnlyList<string> SelectedRowIds =>
             SelectionMode == ListSelectionMode.Check
-                ? _rows.Where(r => r.IsChecked).Select(r => r.Id).ToList()
+                ? _controller.CheckedRowIds
                 : SelectedRowId is { } id ? [id] : [];
-
-        private bool _suppressCheckedEvents;
 
         public event EventHandler<string>? RowDoubleClicked;
         public event EventHandler<string?>? SelectionChanged;
@@ -163,8 +148,12 @@ namespace EDControls.EDList
 
         public EDList()
         {
+            _controller = new EDListController(() => Services);
+            _controller.ColumnsChanged += RebuildColumns;
+            _controller.RowsReplaced += OnRowsReplaced;
+            _controller.CheckedRowsChanged += OnCheckedRowsChanged;
             InitializeComponent();
-            DataGrid.ItemsSource = _rows;
+            DataGrid.ItemsSource = _controller.Rows;
             DataGrid.Sorting += OnDataGridSorting;
             Unloaded += OnUnloaded;
         }
@@ -180,106 +169,16 @@ namespace EDControls.EDList
             UnhookColumnEvents();
         }
 
-        /// <summary>Nastaví checked stav konkrétního řádku.</summary>
-        public void SetChecked(string rowId, bool isChecked)
-        {
-            var row = _rows.FirstOrDefault(r => r.Id == rowId);
-            if (row is not null) row.IsChecked = isChecked;
-        }
+        // ── Veřejné API ───────────────────────────────────────────────────────
 
-        /// <summary>Zaškrtne všechny aktuálně viditelné řádky (po LoadList).</summary>
-        public void CheckAll() => SetAllChecked(true);
-
-        /// <summary>Odznačí všechny řádky.</summary>
-        public void UncheckAll() => SetAllChecked(false);
-
-        private void SetAllChecked(bool value)
-        {
-            _suppressCheckedEvents = true;
-            try
-            {
-                foreach (var row in _rows) row.IsChecked = value;
-            }
-            finally { _suppressCheckedEvents = false; }
-            FireCheckedRowsChanged();
-        }
-
-        private void FireCheckedRowsChanged()
-        {
-            SyncHeaderCheckState();
-            CheckedRowsChanged?.Invoke(this, SelectedRowIds);
-        }
-
-        private CheckBox? _headerCheckBox;
-
-        // Kotva pro Shift+klik výběr rozsahu (poslední řádek, na jehož checkbox se kliklo / dvojklik).
-        private EDListRow? _checkAnchor;
-
-        /// <summary>User klikl na CheckBox v řádku. Bez modifikátoru přepne jen daný řádek; se
-        /// Shiftem zaškrtne/odškrtne celý rozsah od kotvy po tento řádek (v zobrazeném pořadí).</summary>
-        private void OnRowCheckClick(object sender, RoutedEventArgs e)
-        {
-            if (sender is not CheckBox cb || cb.DataContext is not EDListRow row) return;
-            bool target = cb.IsChecked == true;
-
-            if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift && _checkAnchor is not null)
-            {
-                // Rozsah v zobrazeném pořadí (respektuje řazení i filtr).
-                var items = DataGrid.Items.OfType<EDListRow>().ToList();
-                int a = items.IndexOf(_checkAnchor);
-                int b = items.IndexOf(row);
-                if (a >= 0 && b >= 0)
-                {
-                    if (a > b) (a, b) = (b, a);
-                    _suppressCheckedEvents = true;
-                    try { for (int i = a; i <= b; i++) items[i].IsChecked = target; }
-                    finally { _suppressCheckedEvents = false; }
-                    FireCheckedRowsChanged();
-                }
-                else row.IsChecked = target;   // kotva mimo aktuální pohled → fallback na jeden řádek
-            }
-            else
-            {
-                row.IsChecked = target;
-            }
-            _checkAnchor = row;
-        }
-
-        /// <summary>Aktualizuje header CheckBox podle aggregate stavu (true / false / null = mixed).</summary>
-        private void SyncHeaderCheckState()
-        {
-            if (_headerCheckBox is null) return;
-            int total = _rows.Count;
-            int checkedCount = _rows.Count(r => r.IsChecked);
-            bool? state = total == 0 ? false
-                        : checkedCount == 0 ? false
-                        : checkedCount == total ? true
-                        : null;  // mixed
-            if (_headerCheckBox.IsChecked != state) _headerCheckBox.IsChecked = state;
-        }
-
-        private void OnRowPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (_suppressCheckedEvents) return;
-            if (e.PropertyName == nameof(EDListRow.IsChecked))
-                FireCheckedRowsChanged();
-        }
-
-        public void InitializeList() =>
-            ApplyColumns(EnsureConfigured().QueryOrThrow(CacheClass, "InitializeList", new CVar()));
+        public void InitializeList() => _controller.InitializeList(CacheClass);
 
         /// <summary>
         /// Async varianta <see cref="InitializeList"/> - dotaz běží na threadpoolu, výsledek dosedne
         /// na UI vlákně. Preferuj ji všude, kde host běží nad pomalou linkou: synchronní varianta
         /// zmrazí **celou aplikaci** na dobu round-tripu, ne jen hostující okno.
         /// </summary>
-        public async Task InitializeListAsync()
-        {
-            var mlRest = EnsureConfigured();
-            var cacheClass = CacheClass;   // DependencyProperty → čti na UI vlákně, ne uvnitř Task.Run
-            var output = await RunQueryAsync(() => mlRest.QueryOrThrow(cacheClass, "InitializeList", new CVar()));
-            ApplyColumns(output);
-        }
+        public Task InitializeListAsync() => _controller.InitializeListAsync(CacheClass);
 
         public void LoadList() => LoadList(filter: null);
 
@@ -289,13 +188,7 @@ namespace EDControls.EDList
         /// Caché endpoint čte přes <c>$g(^||ML("IN","filter","klic"))</c>. Detail viz
         /// <c>EDControls/docs/wire-formaty.md §Filter konvence</c>.
         /// </summary>
-        public void LoadList(IReadOnlyDictionary<string, string>? filter)
-        {
-            var mlRest = EnsureConfigured();
-            EnsureColumns();   // sync cesta frontu dotazů obchází, sloupce už nemůžou dorazit
-            _loadGeneration++;   // sync načtení je autoritativní - případná async odpověď v letu se zahodí
-            ApplyRows(mlRest.QueryOrThrow(CacheClass, "LoadList", EDListParsing.BuildLoadInput(filter)));
-        }
+        public void LoadList(IReadOnlyDictionary<string, string>? filter) => _controller.LoadList(CacheClass, filter);
 
         public Task LoadListAsync() => LoadListAsync(filter: null);
 
@@ -305,39 +198,10 @@ namespace EDControls.EDList
         /// (sdílený <c>MLRest</c> jede přes procesní globály <c>^||ML</c>, dva souběžné by si je přepsaly)
         /// a odpověď staršího dotazu už do seznamu nedosedne.
         /// </summary>
-        public async Task LoadListAsync(IReadOnlyDictionary<string, string>? filter)
-        {
-            var mlRest = EnsureConfigured();
-            var cacheClass = CacheClass;   // DependencyProperty → čti na UI vlákně, ne uvnitř Task.Run
-            var input = EDListParsing.BuildLoadInput(filter);
-            var generation = ++_loadGeneration;
-
-            var output = await RunQueryAsync(() => mlRest.QueryOrThrow(cacheClass, "LoadList", input));
-
-            if (generation != _loadGeneration) return;   // mezitím přišel novější požadavek
-            ApplyRows(output);
-        }
+        public Task LoadListAsync(IReadOnlyDictionary<string, string>? filter) => _controller.LoadListAsync(CacheClass, filter);
 
         /// <summary><c>IEDFilterTarget</c> - napojení na <c>EDFilter</c>. Prázdný slovník = bez filtru.</summary>
         public Task ApplyFilterAsync(IReadOnlyDictionary<string, string> filter) => LoadListAsync(filter);
-
-        // Serializace dotazů - sdílený MLRest komunikuje přes procesní globály ^||ML, takže dva
-        // souběžné dotazy z téhož EDListu by si vzájemně přepsaly vstup i výstup.
-        private readonly System.Threading.SemaphoreSlim _queryGate = new(1, 1);
-        private int _loadGeneration;
-
-        private async Task<CVar> RunQueryAsync(Func<CVar> query)
-        {
-            await _queryGate.WaitAsync();
-            try { return await Task.Run(query); }
-            finally { _queryGate.Release(); }
-        }
-
-        private void ApplyColumns(CVar output)
-        {
-            _columns = EDListParsing.ParseColumns(output);
-            RebuildColumns();
-        }
 
         /// <summary>
         /// Naplní seznam daty, která si sehnal host - EDList sám nic z Caché nečte, takže nepotřebuje
@@ -345,185 +209,63 @@ namespace EDControls.EDList
         /// request přes víc komponent, data z jiného API). Řádky jsou raw (serverové) hodnoty včetně
         /// klíče <c>id</c>; formátování i sort klíče staví stejná cesta jako <see cref="LoadList()"/>.
         /// </summary>
-        public void SetData(IReadOnlyList<ListColumn> columns, IEnumerable<IReadOnlyDictionary<string, string?>> rows)
+        public void SetData(IReadOnlyList<ListColumn> columns, IEnumerable<IReadOnlyDictionary<string, string?>> rows) =>
+            _controller.SetData(columns, rows);
+
+        /// <summary>Nastaví checked stav konkrétního řádku.</summary>
+        public void SetChecked(string rowId, bool isChecked) => _controller.SetChecked(rowId, isChecked);
+
+        /// <summary>Zaškrtne všechny aktuálně viditelné řádky (po LoadList).</summary>
+        public void CheckAll() => _controller.SetAllChecked(true);
+
+        /// <summary>Odznačí všechny řádky.</summary>
+        public void UncheckAll() => _controller.SetAllChecked(false);
+
+        // ── Reakce na controller ──────────────────────────────────────────────
+
+        private void OnRowsReplaced()
         {
-            _loadGeneration++;   // data zvenčí jsou autoritativní - async odpověď v letu se zahodí
-            _columns = columns;
-            RebuildColumns();
-            ApplyRows([.. rows.Select(r => EDListParsing.BuildRow(r, columns)).OfType<EDListRow>()]);
-        }
-
-        // Kontrola až po dotazu, ne před ním: host smí pustit InitializeListAsync a LoadListAsync
-        // souběžně (TD picker + EDFilter), pořadí odpovědí drží _queryGate.
-        // ToList: ParseRows je líný iterátor - druhý průchod by vyrobil jiné instance řádků
-        // a odběr změn by visel mimo seznam.
-        private void ApplyRows(CVar output)
-        {
-            EnsureColumns();
-            ApplyRows(EDListParsing.ParseRows(output, _columns).ToList());
-        }
-
-        // Text nesmí vinit hosta: k tomuhle stavu vede i selhaný InitializeListAsync.
-        private void EnsureColumns()
-        {
-            if (_columns is null)
-                throw new InvalidOperationException("EDList: sloupce nejsou načtené (InitializeList neproběhl nebo selhal), seznam nejde naplnit.");
-        }
-
-        private void ApplyRows(List<EDListRow> newRows)
-        {
-            // Unsubscribe stará data - žádné spying na zaniklé řádky
-            foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
-            _checkAnchor = null;
-
-            foreach (var row in newRows) row.PropertyChanged += OnRowPropertyChanged;
-            _rows.ReplaceAll(newRows);
-
-            FireCheckedRowsChanged();
             RefreshFilter();  // re-apply current search po LoadList (nový dataset)
             // Aplikuj persistent column layout asynchronně po data load - minor flicker (default
             // sloupce → persistované), ale UI neblokuje.
             _ = LoadLayoutAsync();
         }
 
+        private CheckBox? _headerCheckBox;
+
+        private void OnCheckedRowsChanged()
+        {
+            var state = _controller.HeaderCheckState;
+            if (_headerCheckBox is not null && _headerCheckBox.IsChecked != state) _headerCheckBox.IsChecked = state;
+            CheckedRowsChanged?.Invoke(this, SelectedRowIds);
+        }
+
         private void RebuildColumns()
         {
             UnhookColumnEvents();
             DataGrid.Columns.Clear();
+            _headerCheckBox = null;
             if (SelectionMode == ListSelectionMode.Check)
-                DataGrid.Columns.Add(BuildCheckBoxColumn());
-            foreach (var col in _columns?.Where(c => c.Visible) ?? [])
-            {
-                var dgCol = BuildDataGridColumn(col);
-                dgCol.SetValue(FrameworkElement.TagProperty, col.Key);  // mapping zpět při SnapshotLayout
-                DataGrid.Columns.Add(dgCol);
-            }
-            RestoreSortArrows();
+                DataGrid.Columns.Add(EDListColumnFactory.BuildCheckBoxColumn(OnRowCheckClick, _controller.ToggleAllFromHeader, out _headerCheckBox));
+            foreach (var col in _controller.Columns?.Where(c => c.Visible) ?? [])
+                DataGrid.Columns.Add(EDListColumnFactory.BuildDataColumn(col, (rowId, key) => CellLinkClicked?.Invoke(this, (rowId, key))));
+            // Nové sloupce šipky nemají, CustomSort ale řadí dál - bez obnovy by po přepnutí
+            // SelectionMode nebo dalším SetData byl seznam seřazený bez viditelného důvodu.
+            if (_controller.PruneSort(HasColumn)) ApplySort();
+            ShowSortArrows();
             HookColumnEvents();
         }
 
-        // Nové sloupce šipky nemají, CustomSort ale řadí dál - bez obnovy by po přepnutí
-        // SelectionMode nebo dalším SetData byl seznam seřazený bez viditelného důvodu.
-        private void RestoreSortArrows()
+        // ── Zaškrtnutí, řazení, výběr ─────────────────────────────────────────
+
+        /// <summary>User klikl na CheckBox v řádku; se Shiftem zaškrtne rozsah od kotvy v zobrazeném pořadí.</summary>
+        private void OnRowCheckClick(object sender, RoutedEventArgs e)
         {
-            if (_sortSpecs.RemoveAll(s => FindColumnByKey(s.Key) is null) > 0) ApplySort();
-            foreach (var (key, dir) in _sortSpecs) FindColumnByKey(key)!.SortDirection = dir;
+            if (sender is not CheckBox cb || cb.DataContext is not EDListRow row) return;
+            bool extend = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
+            _controller.CheckFromClick(row, cb.IsChecked == true,
+                extend ? [.. DataGrid.Items.OfType<EDListRow>()] : null);
         }
-
-        private DataGridColumn BuildCheckBoxColumn()
-        {
-            var checkBox = new FrameworkElementFactory(typeof(CheckBox));
-            checkBox.SetValue(CheckBox.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            checkBox.SetValue(CheckBox.VerticalAlignmentProperty, VerticalAlignment.Center);
-            // OneWay binding: source (EDListRow.IsChecked) → CheckBox (programmatic změny propagují
-            // do UI přes INotifyPropertyChanged). User click řeší explicit ClickEvent handler níže -
-            // DataGridTemplateColumn.CellTemplate má známé problémy s reverzní cestou TwoWay binding.
-            checkBox.SetBinding(CheckBox.IsCheckedProperty,
-                new Binding(nameof(EDListRow.IsChecked)) { Mode = BindingMode.OneWay });
-            checkBox.AddHandler(CheckBox.ClickEvent, new RoutedEventHandler(OnRowCheckClick));
-
-            _headerCheckBox = new CheckBox
-            {
-                ToolTip = "Označit / odznačit vše viditelné",
-                IsThreeState = true  // null = mixed state (zobrazí jako čtvereček)
-            };
-            // Click (ne Checked/Unchecked) fires jen z user akce, ne z programmatic IsChecked.
-            // Tím se vyhneme rekurzi: CheckAll → SyncHeaderCheckState → IsChecked set → Click NEFires.
-            _headerCheckBox.Click += (_, _) =>
-            {
-                int total = _rows.Count;
-                int checkedCount = _rows.Count(r => r.IsChecked);
-                if (checkedCount == total && total > 0) UncheckAll();
-                else CheckAll();
-            };
-
-            return new DataGridTemplateColumn
-            {
-                Header = _headerCheckBox,
-                Width = new DataGridLength(32),
-                CellTemplate = new DataTemplate { VisualTree = checkBox },
-                CanUserSort = false,
-                CanUserReorder = false,
-            };
-        }
-
-        private DataGridColumn BuildDataGridColumn(ListColumn col)
-        {
-            var width = col.Width > 0
-                ? new DataGridLength(col.Width)
-                : new DataGridLength(1, DataGridLengthUnitType.Auto);
-
-            var align = col.Align == ListColumnAlign.Auto ? EDListParsing.DefaultAlign(col.Type) : col.Align;
-
-            if (col.IsLink)
-            {
-                var tb = new FrameworkElementFactory(typeof(TextBlock));
-                tb.SetBinding(TextBlock.TextProperty, new Binding($"[{col.Key}]"));
-                tb.SetValue(TextBlock.TextDecorationsProperty, TextDecorations.Underline);
-                tb.SetValue(TextBlock.CursorProperty, Cursors.Hand);
-                // SetResourceReference (= DynamicResource): SystemColors.HotTrackBrush je
-                // systémová barva, kterou dark mode nepřepne.
-                tb.SetResourceReference(TextBlock.ForegroundProperty, "EDTheme.Accent.Blue");
-                if (align == ListColumnAlign.Right)
-                    tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
-                else if (align == ListColumnAlign.Center)
-                    tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-                tb.AddHandler(TextBlock.PreviewMouseLeftButtonUpEvent, new MouseButtonEventHandler((sender, _) =>
-                {
-                    if (sender is TextBlock el && el.DataContext is EDListRow row)
-                        CellLinkClicked?.Invoke(this, (row.Id, col.Key));
-                }));
-                return new DataGridTemplateColumn
-                {
-                    Header = col.Label,
-                    Width = width,
-                    CellTemplate = new DataTemplate { VisualTree = tb },
-                    CanUserSort = col.Sortable,
-                };
-            }
-
-            if (col.Type == ListColumnType.Color)
-            {
-                var rect = new FrameworkElementFactory(typeof(Rectangle));
-                rect.SetValue(Rectangle.HeightProperty, 16.0);
-                rect.SetValue(Rectangle.WidthProperty, 30.0);
-                rect.SetBinding(Rectangle.FillProperty,
-                    new Binding($"[{col.Key}]") { Converter = new RgbStringToBrushConverter() });
-                return new DataGridTemplateColumn
-                {
-                    Header = col.Label,
-                    Width = width,
-                    CellTemplate = new DataTemplate { VisualTree = rect },
-                    CanUserSort = col.Sortable,
-                };
-            }
-
-            var textCol = new DataGridTextColumn
-            {
-                Header = col.Label,
-                Binding = new Binding($"[{col.Key}]"),
-                Width = width,
-                CanUserSort = col.Sortable,
-            };
-
-            if (align != ListColumnAlign.Left)
-            {
-                var ha = align == ListColumnAlign.Right
-                    ? HorizontalAlignment.Right
-                    : HorizontalAlignment.Center;
-                // ElementStyle implicitní <Style TargetType="TextBlock"> nahrazuje, nedědí -
-                // bez BasedOn by zarovnané sloupce minuly typografii z EDControlStyles.
-                textCol.ElementStyle = new Style(typeof(TextBlock))
-                {
-                    BasedOn = Application.Current?.TryFindResource(typeof(TextBlock)) as Style,
-                    Setters = { new Setter(TextBlock.HorizontalAlignmentProperty, ha) }
-                };
-            }
-
-            return textCol;
-        }
-
-        private readonly List<(string Key, ListSortDirection Dir)> _sortSpecs = [];
 
         /// <summary>
         /// Vlastní řazení místo DataGrid defaultu - SortDescriptions by řadily formátované
@@ -534,37 +276,30 @@ namespace EDControls.EDList
         {
             if (e.Column.GetValue(FrameworkElement.TagProperty) is not string key) return;
             e.Handled = true;
-            var newDir = e.Column.SortDirection == ListSortDirection.Ascending
-                ? ListSortDirection.Descending
-                : ListSortDirection.Ascending;
-            if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
-            {
-                _sortSpecs.Clear();
+            bool additive = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+            if (!additive)
                 foreach (var col in DataGrid.Columns)
                     if (!ReferenceEquals(col, e.Column)) col.SortDirection = null;
-            }
-            _sortSpecs.RemoveAll(s => s.Key == key);
-            _sortSpecs.Add((key, newDir));
-            e.Column.SortDirection = newDir;   // vizuální šipka + trigger persist layoutu
+            // Vizuální šipka + trigger persist layoutu.
+            e.Column.SortDirection = _controller.ToggleSort(key, e.Column.SortDirection, additive);
             ApplySort();
         }
 
         private void ApplySort()
         {
-            if (CollectionViewSource.GetDefaultView(DataGrid.ItemsSource) is not ListCollectionView view) return;
-            view.CustomSort = _sortSpecs.Count == 0
-                ? null
-                : new EDListRowComparer([.. _sortSpecs.Select(s => (s.Key, s.Dir == ListSortDirection.Descending))]);
+            if (CollectionViewSource.GetDefaultView(DataGrid.ItemsSource) is ListCollectionView view)
+                view.CustomSort = _controller.SortComparer;
+        }
+
+        private void ShowSortArrows()
+        {
+            foreach (var (key, dir) in _controller.SortSpecs) FindColumnByKey(key)!.SortDirection = dir;
         }
 
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            // V Check mode dvojklik na řádek přepne zaškrtnutí (rychlejší než trefit úzký checkbox).
             if (SelectionMode == ListSelectionMode.Check && SelectedRow is EDListRow row)
-            {
-                row.IsChecked = !row.IsChecked;
-                _checkAnchor = row;
-            }
+                _controller.ToggleChecked(row);
             if (SelectedRowId is string id)
                 RowDoubleClicked?.Invoke(this, id);
         }
@@ -574,44 +309,27 @@ namespace EDControls.EDList
             SelectionChanged?.Invoke(this, SelectedRowId);
         }
 
-        /// <summary>Stráž pro veřejné API - vrací MLRest, aby ho volající nemusel dereferencovat sám.</summary>
-        private IMLRest EnsureConfigured()
-        {
-            if (MLRest is null || string.IsNullOrEmpty(CacheClass))
-                throw new InvalidOperationException("EDList: MLRest a CacheClass musí být nastaveny před použitím.");
-            return MLRest;
-        }
+        // ── Persist layoutu ───────────────────────────────────────────────────
 
         private DispatcherTimer? _saveDebouncer;
         private bool _suppressLayoutSave;  // true během ApplyLayout - eventy nesmí trigger save
 
+        private static readonly DependencyProperty[] LayoutProperties =
+            [DataGridColumn.ActualWidthProperty, DataGridColumn.DisplayIndexProperty, DataGridColumn.SortDirectionProperty];
+
         /// <summary>Subscribe na width/displayIndex/sort změny sloupců - trigger debounced save.</summary>
         private void HookColumnEvents()
         {
-            foreach (var col in DataGrid.Columns)
-            {
-                if (col.GetValue(FrameworkElement.TagProperty) is not string) continue;
-                DependencyPropertyDescriptor.FromProperty(DataGridColumn.ActualWidthProperty, typeof(DataGridColumn))
-                    ?.AddValueChanged(col, OnColumnPropertyChanged);
-                DependencyPropertyDescriptor.FromProperty(DataGridColumn.DisplayIndexProperty, typeof(DataGridColumn))
-                    ?.AddValueChanged(col, OnColumnPropertyChanged);
-                DependencyPropertyDescriptor.FromProperty(DataGridColumn.SortDirectionProperty, typeof(DataGridColumn))
-                    ?.AddValueChanged(col, OnColumnPropertyChanged);
-            }
+            foreach (var col in DataGrid.Columns.Where(c => c.GetValue(FrameworkElement.TagProperty) is string))
+                foreach (var dp in LayoutProperties)
+                    DependencyPropertyDescriptor.FromProperty(dp, typeof(DataGridColumn))?.AddValueChanged(col, OnColumnPropertyChanged);
         }
 
         private void UnhookColumnEvents()
         {
-            foreach (var col in DataGrid.Columns)
-            {
-                if (col.GetValue(FrameworkElement.TagProperty) is not string) continue;
-                DependencyPropertyDescriptor.FromProperty(DataGridColumn.ActualWidthProperty, typeof(DataGridColumn))
-                    ?.RemoveValueChanged(col, OnColumnPropertyChanged);
-                DependencyPropertyDescriptor.FromProperty(DataGridColumn.DisplayIndexProperty, typeof(DataGridColumn))
-                    ?.RemoveValueChanged(col, OnColumnPropertyChanged);
-                DependencyPropertyDescriptor.FromProperty(DataGridColumn.SortDirectionProperty, typeof(DataGridColumn))
-                    ?.RemoveValueChanged(col, OnColumnPropertyChanged);
-            }
+            foreach (var col in DataGrid.Columns.Where(c => c.GetValue(FrameworkElement.TagProperty) is string))
+                foreach (var dp in LayoutProperties)
+                    DependencyPropertyDescriptor.FromProperty(dp, typeof(DataGridColumn))?.RemoveValueChanged(col, OnColumnPropertyChanged);
         }
 
         private void OnColumnPropertyChanged(object? sender, EventArgs e)
@@ -639,52 +357,37 @@ namespace EDControls.EDList
             return timer;
         }
 
-        /// <summary>Sebere current layout z DataGridu a uloží přes UserPrefs.</summary>
         private async Task SaveLayoutAsync()
         {
             if (string.IsNullOrEmpty(HostId)) return;
-            try
-            {
-                var layout = SnapshotLayout();
-                await UserPrefs.SaveAsync(PrefsScope, HostId, ColumnLayoutSerializer.Serialize(layout));
-            }
-            catch { /* best-effort */ }
+            ColumnLayout layout;
+            try { layout = SnapshotLayout(); }
+            catch { return; /* best-effort */ }
+            await _controller.SaveLayoutAsync(HostId, layout);
         }
 
         private ColumnLayout SnapshotLayout()
         {
-            var columns = new List<ColumnPref>();
-            foreach (var col in DataGrid.Columns)
+            var keyed = DataGrid.Columns.Where(c => c.GetValue(FrameworkElement.TagProperty) is string).ToList();
+            var columns = keyed.Select(c => new ColumnPref
             {
-                if (col.GetValue(FrameworkElement.TagProperty) is not string key) continue;
-                columns.Add(new ColumnPref
-                {
-                    Key = key,
-                    Width = col.ActualWidth,
-                    DisplayIndex = col.DisplayIndex,
-                });
-            }
-            var sort = DataGrid.Columns
-                .Where(c => c.SortDirection.HasValue && c.GetValue(FrameworkElement.TagProperty) is string)
-                .Select(c => new SortPref
-                {
-                    Key = (string)c.GetValue(FrameworkElement.TagProperty),
-                    Direction = c.SortDirection == ListSortDirection.Descending ? "desc" : "asc",
-                }).ToList();
+                Key = (string)c.GetValue(FrameworkElement.TagProperty),
+                Width = c.ActualWidth,
+                DisplayIndex = c.DisplayIndex,
+            }).ToList();
+            var sort = keyed.Where(c => c.SortDirection.HasValue).Select(c => new SortPref
+            {
+                Key = (string)c.GetValue(FrameworkElement.TagProperty),
+                Direction = c.SortDirection == ListSortDirection.Descending ? "desc" : "asc",
+            }).ToList();
             return new ColumnLayout { Columns = columns, Sort = sort.Count > 0 ? sort : null };
         }
 
         /// <summary>Načte layout z UserPrefs a aplikuje na aktuální sloupce. Best-effort.</summary>
         private async Task LoadLayoutAsync()
         {
-            if (string.IsNullOrEmpty(HostId)) return;
-            try
-            {
-                var json = await UserPrefs.LoadAsync(PrefsScope, HostId);
-                var layout = ColumnLayoutSerializer.Deserialize(json);
-                if (layout is null) return;
-                ApplyLayout(layout);
-            }
+            if (await _controller.LoadLayoutAsync(HostId) is not { } layout) return;
+            try { ApplyLayout(layout); }
             catch { /* best-effort */ }
         }
 
@@ -713,43 +416,19 @@ namespace EDControls.EDList
                 {
                     // Šipka sloupce mimo uložený layout by svítila dál, ale neřadila by
                     // a příští uložení by ji zapsalo do sortu.
-                    _sortSpecs.Clear();
                     foreach (var col in DataGrid.Columns) col.SortDirection = null;
-                    foreach (var sort in layout.Sort)
-                    {
-                        var col = FindColumnByKey(sort.Key);
-                        if (col is null) continue;
-                        var dir = sort.Direction == "desc" ? ListSortDirection.Descending : ListSortDirection.Ascending;
-                        col.SortDirection = dir;
-                        _sortSpecs.Add((sort.Key, dir));
-                    }
+                    _controller.RestoreSort(layout.Sort, HasColumn);
+                    ShowSortArrows();
                     ApplySort();
                 }
             }
             finally { _suppressLayoutSave = false; }
         }
 
-        private DataGridColumn? FindColumnByKey(string key) =>
+        private bool HasColumn(string key) => FindColumnByKey(key) is not null;
+
+        // Prázdný klíč (poškozený uložený layout) by jinak trefil checkbox sloupec, který Tag nemá.
+        private DataGridColumn? FindColumnByKey(string? key) => string.IsNullOrEmpty(key) ? null :
             DataGrid.Columns.FirstOrDefault(c => c.GetValue(FrameworkElement.TagProperty) as string == key);
-    }
-
-    internal class RgbStringToBrushConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value is string s)
-            {
-                var parts = s.Split(';');
-                if (parts.Length == 3
-                    && byte.TryParse(parts[0], out byte r)
-                    && byte.TryParse(parts[1], out byte g)
-                    && byte.TryParse(parts[2], out byte b))
-                    return new SolidColorBrush(Color.FromRgb(r, g, b));
-            }
-            return Brushes.Transparent;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-            => throw new NotImplementedException();
     }
 }
