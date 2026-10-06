@@ -24,7 +24,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		// Helpery - jeden řádek per field
 		d form.AddText("text", "Text")
 		d form.AddNumber("number", "Celé číslo", "", "0", "999", "ks")
-		d form.AddDecimal("decimal", "Velikost fontu", "10", "4", "200", "pt", "N2")
+		d form.AddDecimal("decimal", "Velikost fontu", "10", "4", "200", "pt")
 
 		// Verbose - AddFieldToLastGroup + post-setting (Date nemá vlastní helper)
 		s f = form.AddFieldToLastGroup("date", "Datum", $$$FieldTypeDate, 0, 0)

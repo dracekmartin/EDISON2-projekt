@@ -4,6 +4,7 @@ namespace EDControls.EDInputForm
     {
         Visible,
         Collapsed,
+        /// <summary>Rezervováno: přenáší se a chová se jako skryté, ale žádné UI ho nenastavuje (uživatel formulář nekonfiguruje).</summary>
         UserHidden,
         ProgrammerHidden
     }

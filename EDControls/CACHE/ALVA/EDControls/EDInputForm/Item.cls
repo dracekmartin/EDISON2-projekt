@@ -6,8 +6,8 @@ Class ALVA.EDControls.EDInputForm.Item Extends %RegisteredObject [ Abstract ]
 /// Pořadové 1-based číslo, přiděluje automaticky Form.AddGroup / Form.AddField.
 Property number As %Integer [ InitialExpression = 0 ];
 
-/// $$$ItemVisibilityVisible (default), $$$ItemVisibilityCollapsed,
-/// $$$ItemVisibilityUserHidden, $$$ItemVisibilityProgrammerHidden.
+/// $$$ItemVisibilityVisible (default), $$$ItemVisibilityCollapsed, $$$ItemVisibilityProgrammerHidden;
+/// $$$ItemVisibilityUserHidden je rezervované (žádné UI ho nenastavuje).
 Property visibility As %String [ InitialExpression = {$$$ItemVisibilityVisible} ];
 
 /// Volitelná nápověda vedle položky. Prázdný řetězec = bez nápovědy.

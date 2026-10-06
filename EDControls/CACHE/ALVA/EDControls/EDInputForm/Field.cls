@@ -31,7 +31,8 @@ Property min As %String;
 /// Horní mez pro typ Number / Decimal. Prázdný řetězec = bez meze.
 Property max As %String;
 
-/// Formát zobrazení hodnoty Decimal (např. "N2", "0.##"); aplikuje se při ztrátě fokusu. Prázdné = bez formátu.
+/// Rezervováno: klient ho přenáší (pozice 17), ale hodnotu nijak neformátuje - nenastavovat.
+/// Implementace až pro skutečného konzumenta.
 Property format As %String;
 
 /// Jednotka jako suffix za polem (např. "mm", "pt"), jen vizuální. Prázdné = bez jednotky.

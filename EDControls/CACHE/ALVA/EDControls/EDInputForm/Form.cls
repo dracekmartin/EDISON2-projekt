@@ -81,8 +81,8 @@ Method AddNumber(key As %String, label As %String, value As %String = "", min As
 	q f
 }
 
-/// Decimal (float) field s volitelným rozsahem + jednotkou + formátem.
-/// format např. "0.0#", "N2", "0.00".
+/// Decimal (float) field s volitelným rozsahem + jednotkou.
+/// format je rezervovaný (klient ho nezobrazuje), parametr zůstává kvůli existujícím volajícím.
 Method AddDecimal(key As %String, label As %String, value As %String = "", min As %String = "", max As %String = "", unit As %String = "", format As %String = "", required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
 {
 	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeDecimal, 0, required)

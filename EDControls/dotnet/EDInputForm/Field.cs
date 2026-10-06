@@ -105,8 +105,8 @@ namespace EDControls.EDInputForm
         public decimal? Max { get; set; }
 
         /// <summary>
-        /// Formátovací string pro zobrazení Decimal hodnoty (např. <c>"N2"</c>, <c>"0.##"</c>).
-        /// Aplikuje se v UI při ztrátě focusu. Null/prázdné = bez formátování.
+        /// Rezervováno: na drátu se přenáší (pozice 17), ale UI hodnotu nijak neformátuje - nenastavovat.
+        /// Implementace až pro skutečného konzumenta.
         /// </summary>
         public string? Format { get; set; }
 

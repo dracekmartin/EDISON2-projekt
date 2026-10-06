@@ -9,10 +9,10 @@ Ukázka všech featur `CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` - **no
 
 - `FIELD`: `number, key, label, type, value, validateOnChange, required, validationError,
   editable, visibility, helpText, listItems, fileFilter, min, max, format, unit, placeholders`
-  (`Field.cls::Serialize` ⟷ `ParseItems`).
+  (`Field.cls::Serialize` ⟷ `ParseItems`). **`format` je rezervovaný** - přenáší se, UI ho nezobrazuje.
 - `GROUP`: `number, key, groupName, visibility, helpText`.
-- Visibility: `"0"`=Visible (default, i když chybí), `"1"`=Collapsed, `"2"`=UserHidden,
-  `"3"`=ProgrammerHidden. Konstanty v `EDControls/CACHE/EDInputForm.inc`.
+- Visibility: `"0"`=Visible (default, i když chybí), `"1"`=Collapsed, `"2"`=UserHidden (**rezervované**, žádné
+  UI ho nenastavuje), `"3"`=ProgrammerHidden. Konstanty v `EDControls/CACHE/EDInputForm.inc`.
 - ListItems: položky dělí `|`, klíč od popisku `~`; bez `~` popisek = klíč.
 - FileFilter: značka `"$FOLDER"` → výběr složky; jinak filtr pro OpenFileDialog.
 - Color: value `"#AARRGGBB"` (SkiaSharp ARGB). Validate posílá
