@@ -150,7 +150,7 @@ ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef pas
 					} else {
 						set failed = failed + 1
 						set failIdx = failIdx + 1
-						set selhani(failIdx) = $listbuild(case.Name, method.Name, ..AssertMessage(method, 0))
+						set selhani(failIdx) = $listbuild(case.Name, method.Name, ..FailureMessage(method))
 					}
 				}
 			}
@@ -202,6 +202,14 @@ ClassMethod FindTestClasses(packagePrefix As %String) As %List [ Internal ]
 ClassMethod Vysledek(status As %Integer) As %String [ Internal ]
 {
 	quit $case(status, 1:"passed", 2:"skipped", :"failed")
+}
+
+/// Hláška selhání: první neúspěšný assert, jinak text výjimky - tu %UnitTest zapisuje do metody
+/// (ErrorDescription), ne do assertu, takže by selhání výjimkou zůstalo bez hlášky.
+ClassMethod FailureMessage(method As %UnitTest.Result.TestMethod) As %String [ Internal ]
+{
+	set message = ..AssertMessage(method, 0)
+	quit $select(message'="":message, 1:method.ErrorDescription)
 }
 
 /// Description první assertion s daným stavem (0 = selhání, 2 = důvod přeskočení), jinak "".

@@ -28,6 +28,18 @@ Method TestVysledekByStatus()
 	do $$$AssertEquals(##class(ALVA.EDTesting.TestRunner).Vysledek(""), "failed")
 }
 
+/// Selhání výjimkou nemá neúspěšný assert - hláška je text výjimky z metody.
+Method TestFailureMessageFallsBackToErrorDescription()
+{
+	s method = ..Method(0, $lb(1, "ok"))
+	s method.ErrorDescription = "<DIVIDE>TestThrows+1^Fixture"
+	do $$$AssertEquals(##class(ALVA.EDTesting.TestRunner).FailureMessage(method), "<DIVIDE>TestThrows+1^Fixture")
+
+	s method = ..Method(0, $lb(0, "assert selhal"))
+	s method.ErrorDescription = "jiná chyba"
+	do $$$AssertEquals(##class(ALVA.EDTesting.TestRunner).FailureMessage(method), "assert selhal", "neúspěšný assert má přednost")
+}
+
 /// AssertMessage bez assertu hledaného stavu vrátí prázdný text, ne chybu.
 Method TestAssertMessageWithoutMatchingAssertIsEmpty()
 {
