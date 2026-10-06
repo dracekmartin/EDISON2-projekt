@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 38 / 48**
+**Hotovo: 39 / 48**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -279,13 +279,13 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A5 · `EdisonMainViewModel` je God class shellu
 
-- [ ] **Stav:** částečně (2026-10-05) - kroky 1-5 hotové: instanční `ModuleTreeState` (c113e3fb),
+- [x] **Stav:** vyřešeno 48ed0e77 (2026-10-06) - kroky 1-5: instanční `ModuleTreeState` (c113e3fb),
   `FavoritesCoordinator` (d2b3c6b1, řeší i A28 ve VM), `MiniAppSessionController` (24f497ef, nese A20),
   `SessionEpoch` + `SessionLicenceCoordinator` (335de75a, sjednocuje `_sessionGeneration` i `SameSession()`
   z 569b3454), menu handlery v partial `EdisonMainViewModel.Menu.cs` (48ed0e77); k tomu oprava rychlého
-  přepnutí A→B→C, index firmy podle Id po `Accepted` (82e4c575). VM má 972 ř. (+ partial menu), cíl pod ~400
-  nesplněn: další extrakce (přepínání firem a uživatele, launch modulů, labely spuštěných modulů) zatím
-  nenaplánované.
+  přepnutí A→B→C, index firmy podle Id po `Accepted` (82e4c575). VM má 973 ř. (+ partial menu 247 ř.).
+- **Rozhodnutí vlastníka (2026-10-06):** rozumný limit VM shellu je ~1000 řádků (jde o jádro aplikace),
+  cíl „pod ~400" z „Hotovo když" neplatí. Další extrakce jen při překročení limitu.
 - **P1 · L** · Závisí na: - · Blokuje: A20, A21, A28 (řešit v rámci extrakcí) · Původ: [backlog R1](arch-backlog.md#r1---edisonmainviewmodel-je-god-class-shellu)
 - **Problém:** VM má 1723 řádků (2026-09-20: 1525) a 42 commandů, ctor 15 parametrů (13 povinných,
   volitelné `restRunner` a `licenceSync`; harness `EdisonMainViewModelHarness.cs:17` tvrdí 13). Statické
