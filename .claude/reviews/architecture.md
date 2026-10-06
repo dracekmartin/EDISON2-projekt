@@ -1387,7 +1387,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A43 · Koncept „barva" má dva wire formáty a tři konvertory
 
-- [x] **Stav:** vyřešeno (2026-10-06) - `internal static ColorValue.TryParse` je jediná definice barvy na
+- [x] **Stav:** vyřešeno dd2b071a (2026-10-06) - `internal static ColorValue.TryParse` je jediná definice barvy na
   drátě: hex `#AARRGGBB`/`#RRGGBB` (`#` nepovinný) a legacy `R;G;B` (mezery kolem čísel jako dřív).
   Všechny tři konvertory jdou přes něj a liší se jen fallbackem: EDList `ListColorToBrushConverter`
   (přejmenovaný z `RgbStringToBrushConverter`, nově bere i hex) průhledná, shell `HexToBrushConverter`

@@ -18,7 +18,7 @@
 param(
     # Comma-separated list of Cache package prefixes where %UnitTest.TestCase subclasses live.
     # Default = all current test packages. Add new ones as more test projects appear.
-    [string]$Package = "ALVA.EDISONMAIN2.Tests,ALVA.EDControls.Tests,ALVA.TemplateDesigner.Tests",
+    [string]$Package = "ALVA.EDISONMAIN2.Tests,ALVA.EDControls.Tests,ALVA.TemplateDesigner.Tests,ALVA.EDTesting.Tests",
     [string]$Server = "192.168.16.1",
     [int]$Port = 57770,
     [string]$Idfa = "CB_DP",
@@ -68,26 +68,36 @@ $runOne = {
             }
         }
 
-        $failed = [int]$result["failed"].Value
-        $failures = @()
-        if ($failed -gt 0 -and $result["failures"]) {
-            for ($i = 1; $i -le $failed; $i++) {
-                $f = $result["failures"][[string]$i]
-                if ($null -eq $f) { continue }
-                $failures += [PSCustomObject]@{
-                    Class   = $f["class"].Value
-                    Method  = $f["method"].Value
-                    Message = $f["message"].Value
+        # failures / skips: OUT(node, i, "class"/"method"/"message"), i = 1..count
+        $readEntries = {
+            param($node, $count)
+            $entries = @()
+            if ($count -gt 0 -and $result[$node]) {
+                for ($i = 1; $i -le $count; $i++) {
+                    $e = $result[$node][[string]$i]
+                    if ($null -eq $e) { continue }
+                    $entries += [PSCustomObject]@{
+                        Class   = $e["class"].Value
+                        Method  = $e["method"].Value
+                        Message = $e["message"].Value
+                    }
                 }
             }
+            , $entries
         }
+
+        $failed = [int]$result["failed"].Value
+        # Skipped ($$$AssertSkipped) does not fail the run; an older runner without the key reports 0.
+        $skipped = [int]$result["skipped"].Value
 
         return [PSCustomObject]@{
             Package = $pkg; Ok = $true; Error = $null; Seconds = $sw.Elapsed.TotalSeconds
             Passed = [int]$result["passed"].Value
             Failed = $failed
+            Skipped = $skipped
             Total  = [int]$result["total"].Value
-            Failures = $failures
+            Failures = & $readEntries "failures" $failed
+            Skips = & $readEntries "skips" $skipped
         }
     } catch {
         return [PSCustomObject]@{
@@ -135,8 +145,10 @@ if ($Sequential -or $pkgs.Count -le 1) {
 # Report in the original package order, regardless of finish order.
 $totalPassed = 0
 $totalFailed = 0
+$totalSkipped = 0
 $infraError = $false
 $allFailures = New-Object System.Collections.Generic.List[object]
+$allSkips = New-Object System.Collections.Generic.List[object]
 
 foreach ($pkg in $pkgs) {
     $r = $results | Where-Object { $_.Package -eq $pkg } | Select-Object -First 1
@@ -153,15 +165,28 @@ foreach ($pkg in $pkgs) {
     }
     $totalPassed += $r.Passed
     $totalFailed += $r.Failed
+    $totalSkipped += $r.Skipped
     $color = if ($r.Failed -eq 0) { 'Green' } else { 'Red' }
-    Write-Host ("  {0}/{1} passed ({2:N1} s)" -f $r.Passed, $r.Total, $r.Seconds) -ForegroundColor $color
+    $skipNote = if ($r.Skipped -gt 0) { ", {0} skipped" -f $r.Skipped } else { "" }
+    Write-Host ("  {0}/{1} passed{2} ({3:N1} s)" -f $r.Passed, $r.Total, $skipNote, $r.Seconds) -ForegroundColor $color
     foreach ($f in $r.Failures) { $allFailures.Add($f) }
+    foreach ($s in $r.Skips) { $allSkips.Add($s) }
 }
 
 Write-Host ""
 Write-Host "-----------------------------------------"
 $summaryColor = if (($totalFailed -eq 0) -and (-not $infraError)) { 'Green' } else { 'Red' }
-Write-Host "  Total: $totalPassed passed, $totalFailed failed" -ForegroundColor $summaryColor
+Write-Host "  Total: $totalPassed passed, $totalFailed failed, $totalSkipped skipped" -ForegroundColor $summaryColor
+
+# Before Failures: pre-push extracts the failure report from "Failures:" to the end of the log.
+if ($totalSkipped -gt 0) {
+    Write-Host ""
+    Write-Host "Skipped:" -ForegroundColor DarkYellow
+    foreach ($s in $allSkips) {
+        Write-Host ("  [SKIP] {0}.{1}" -f $s.Class, $s.Method) -ForegroundColor DarkYellow
+        if ($s.Message) { Write-Host ("    {0}" -f $s.Message) -ForegroundColor DarkGray }
+    }
+}
 
 if ($totalFailed -gt 0) {
     Write-Host ""

@@ -125,8 +125,8 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
   oknem (`[WindowFact]`, ne `[Fact]`) jen s `EDISON_WINDOW_TESTS=1` - nastavuje pre-push. Pravidla šva a E2E v jejich `CLAUDE.md`.
 - **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)` pro `$$$FillParams`),
   metody `TestXxx()`. Běh `pwsh -File tools/run-cache-tests.ps1 [-Package ...]` proti dev serveru `192.168.16.1:57770`
-  (VPN, user `$env:USERNAME`, override `$env:CACHE_USER`); nový package mimo default list skriptu
-  (EDISONMAIN2/EDControls/TemplateDesigner Tests) tam přidej, jinak ho pre-push hook nepokryje.
+  (VPN, user `$env:USERNAME`, override `$env:CACHE_USER`); nový package mimo default list skriptu (`*.Tests`
+  EDISONMAIN2/EDControls/TemplateDesigner/EDTesting) přidej, jinak ho pre-push nepokryje. `$$$AssertSkipped` běh neshodí.
 - **Nasazení `.cls` dělá hook sám** (`.claude/hooks/compile-objectscript.sh`, PostToolUse na Edit/Write,
   chyby na stderr). MCP `cache_compile` jen na to, co hook nepokryje, **ne na týž soubor po editaci**
   (dvojí nasazení si přepisuje výsledek). ⚠️ **Úprava `.cls` mimo Edit/Write hook nespustí**: na serveru
@@ -135,7 +135,7 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - `.cs`→.NET
   (bez `Category=Integration`/`E2E`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
   sada (při `.cls/.inc` povinná). Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí
-  všechny Caché balíčky, testovací `.cls` (EDControls `Tests/`) jen svůj - TD sada je nejdražší
+  všechny Caché balíčky, testovací `.cls` (EDControls/EDTesting `Tests/`) jen svůj - TD sada je nejdražší
   (~45 s). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
 
 ## Typografie a komentáře
