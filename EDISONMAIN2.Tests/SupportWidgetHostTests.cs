@@ -2,6 +2,7 @@ using EDISONMAIN2.MiniApps;
 
 namespace EDISONMAIN2.Tests;
 
+[Collection(SharedStaticStateCollection.Name)]
 public class SupportWidgetHostTests
 {
     [Theory]

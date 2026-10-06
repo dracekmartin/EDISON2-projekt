@@ -12,6 +12,7 @@ namespace EDISONMAIN2.Tests;
 /// Licence v hlavním okně z pohledu VM: příkaz „Aktualizovat licenci", stažení po startu a po přihlášení
 /// jiného uživatele a souběh s přepnutím firmy. Logiku chipu a stažení testuje <see cref="SessionLicenceCoordinatorTests"/>.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class EdisonMainViewModelLicenceTests
 {
     private static EDServices Services(List<string> calls, bool isAdmin = false, bool mayUpdate = false,

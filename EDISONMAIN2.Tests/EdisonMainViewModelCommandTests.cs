@@ -13,6 +13,7 @@ namespace EDISONMAIN2.Tests;
 /// Delegující commandy menu: každý musí volat správnou metodu navigátoru se správným exe
 /// a plným názvem legacy formy - překlep v názvu by jinak prošel až do produkce.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class EdisonMainViewModelCommandTests
 {
     private static ICommand Cmd(EdisonMainViewModel vm, string name) => name switch

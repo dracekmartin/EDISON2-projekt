@@ -338,7 +338,13 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A6 · `EDServices.Current` prosakuje do infrastruktury a vypnul paralelizaci `EDISONMAIN2.Tests`
 
-- [ ] **Stav:** částečně (2026-10-05) - body 1-2 (proud S5, 7ee54763): `WindowNavigator(Func<EDServices>)` (host
+- [x] **Stav:** vyřešeno (2026-10-06) - bod 4: `EDISONMAIN2.Tests` běží paralelně (assembly
+  `DisableTestParallelization` zmizel), sériově jen `SharedStaticStateCollection`. Je širší než návrh: kromě
+  `EDServices.Initialize` (harness `CreateVM`, Changelog, LegacyDashboard provider) do ní patří i třídy měnící
+  statiky shellu (`InternalDiagnostics`, `SettingsLoader`, `LocalPrefs.FilePath`, `MlineDomainDetector`,
+  `ErrorReports`/`EDUsageTelemetry.Enabled`, proměnné prostředí, `StartupOptions.ApplyToProcess`), jinak by
+  se praly mezi sebou. Členství hlídá `SharedStaticStateGuardTests` (IL testové assembly včetně helperů,
+  lambd, async, iterátorů a fixture, seznam mutátorů tamtéž). Dřívější stav: body 1-2 (proud S5, 7ee54763): `WindowNavigator(Func<EDServices>)` (host
   z A7 čte services delegátem až při launchi), TD má `WpfOnly()` bez services; `CacheWindowStateStore(formId,
   Func<IMLRest?>)` a `EDViewModel.AttachToWindow` mu předá MLRest svých služeb. Bod 3 (proud S2, fcd497d0):
   `LicenceService` má `showInfo` povinný bez fallbacku na `EDServices.Current`, `SessionFactory` předává popup
@@ -346,7 +352,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   vlastní `EDServices`. Statický `CacheWindowStateStore.MLRestProvider` zmizel (0b8d1388, 2026-10-06): 1-arg ctor
   (veřejné API) čte `EDServices.Current` přímo až při Load/Save, `WindowStatePersistenceAttachTests` (už mimo
   `SharedStaticStateCollection`) a `EDISON2.IntegrationTests/WindowStateTests` předávají zdroj konstruktorem.
-  Zbývá bod 4 paralelizace `EDISONMAIN2.Tests`. Testy `WindowNavigatorTests.ServicesCtor_*`,
+  Testy `WindowNavigatorTests.ServicesCtor_*`,
   `CacheWindowStateStoreTests.LoadAndSave_GoThroughInjectedSession`,
   `EDViewModelTests.AttachToWindow_RestoresGeometryThroughViewModelSession`.
 - **P2 · M** · Závisí na: A7 (stejný soubor, dělat před) · Blokuje: - · Původ: [backlog R5](arch-backlog.md#r5---edservicescurrent-prosakuje-do-infrastruktury-a-vypnul-paralelizaci-testů)

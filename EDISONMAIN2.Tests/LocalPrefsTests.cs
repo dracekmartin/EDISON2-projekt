@@ -9,6 +9,7 @@ namespace EDISONMAIN2.Tests;
 /// takže výjimka by shodila start - a sloučení zápisů víc instancí shellu nad jedním souborem.
 /// Cesta se přesměrovává přes internal seam <see cref="LocalPrefs.FilePath"/>, ne přes reálné %APPDATA%.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class LocalPrefsTests
 {
     /// <summary>Spustí <paramref name="body"/> s persistencí přesměrovanou do temp adresáře.</summary>
