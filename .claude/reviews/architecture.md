@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 39 / 48**
+**Hotovo: 41 / 48**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -339,7 +339,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A6 · `EDServices.Current` prosakuje do infrastruktury a vypnul paralelizaci `EDISONMAIN2.Tests`
 
-- [x] **Stav:** vyřešeno (2026-10-06) - bod 4: `EDISONMAIN2.Tests` běží paralelně (assembly
+- [x] **Stav:** vyřešeno 504c5022 (2026-10-06) - bod 4: `EDISONMAIN2.Tests` běží paralelně (assembly
   `DisableTestParallelization` zmizel), sériově jen `SharedStaticStateCollection`. Je širší než návrh: kromě
   `EDServices.Initialize` (harness `CreateVM`, Changelog, LegacyDashboard provider) do ní patří i třídy měnící
   statiky shellu (`InternalDiagnostics`, `SettingsLoader`, `LocalPrefs.FilePath`, `MlineDomainDetector`,
@@ -457,7 +457,10 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A9 · Session stav v `EDServices` má několik zapisovatelů; licence a `LicenceLoader` putují dvěma kanály
 
-- [ ] **Stav:** otevřeno (2026-10-01: dopad širší, `ActiveLicence` nese i launch pole 18-20)
+- [x] **Stav:** vyřešeno dcd46df4 (2026-10-06) - každý údaj session v `EDServices` má jednoho zapisovatele:
+  `SessionFactory` nastaví `MLRest` a `LicenceLoader`, `LicenceVerifier` zapíše `ActiveLicence` při `Accepted`
+  i při znovunačtení, VM shellu je jen čte; `SessionContext`, `SwitchOutcome` a `SwitchUserOutcome` licenci
+  nenesou.
 - **P2 · M** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20), sloučeno ze dvou oblastí
 - **Problém:** Ambientní singleton plní bootstrap (`SessionFactory`), VM (`MLRest` znovu,
   `ActiveLicence`, `AccessTable`) i code-behind okna profilu (`UserDirectory`). `LicenceLoader`
