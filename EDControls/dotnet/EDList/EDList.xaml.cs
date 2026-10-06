@@ -191,9 +191,8 @@ namespace EDControls.EDList
 
         /// <summary>
         /// Async varianta <see cref="LoadList(IReadOnlyDictionary{string, string}?)"/> - viz
-        /// <see cref="InitializeListAsync"/>. Rychlé přepínání filtru je ošetřené: dotazy se serializují
-        /// (sdílený <c>MLRest</c> jede přes procesní globály <c>^||ML</c>, dva souběžné by si je přepsaly)
-        /// a odpověď staršího dotazu už do seznamu nedosedne.
+        /// <see cref="InitializeListAsync"/>. Dotaz jede na klonu MLRest (sdílenou instanci nesahá) a rychlé
+        /// přepínání filtru je ošetřené: dotazy téhož seznamu jdou po sobě a odpověď staršího už nedosedne.
         /// </summary>
         public Task LoadListAsync(IReadOnlyDictionary<string, string>? filter) => _controller.LoadListAsync(CacheClass, filter);
 

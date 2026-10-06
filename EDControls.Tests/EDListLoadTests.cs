@@ -114,6 +114,76 @@ public class EDListLoadTests
         });
     }
 
+    /// <summary>Dva seznamy na jedné obrazovce: async dotazy jdou jen na klony. Sdílenou instanci souběžně
+    /// drží i synchronní EDInputForm a RestStatus je per-instance - jinak by si prohodily chyby.</summary>
+    [Fact]
+    public void TwoLists_ConcurrentAsyncLoads_QueryOnlyClones()
+    {
+        RunSta(() =>
+        {
+            var shared = new CloningMLRest();
+            var services = new EDServices(shared, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+            List[] lists =
+            [
+                new() { CacheClass = "ALVA.MockList", ServicesOverride = services },
+                new() { CacheClass = "ALVA.MockList", ServicesOverride = services },
+            ];
+
+            var tasks = lists
+                .SelectMany(l => new[] { l.InitializeListAsync() }.Concat(Enumerable.Range(0, 5).Select(_ => l.LoadListAsync())))
+                .ToArray();
+            PumpUntilCompleted(tasks);
+
+            Assert.All(tasks, t => Assert.True(t.IsCompletedSuccessfully));
+            Assert.Equal(0, shared.SharedQueries);
+            Assert.Equal(12, shared.Clones);
+            Assert.Equal(12, shared.CloneQueries);
+            Assert.All(lists, l => Assert.Equal("1", Assert.Single(l.Rows).Id));
+        });
+    }
+
+    /// <summary>Thread-safe fake: počítá dotazy na sdílené instanci a na klonech z <c>With()</c>.</summary>
+    private sealed class CloningMLRest : IMLRest
+    {
+        private readonly CloningMLRest? _root;
+        private int _sharedQueries, _clones, _cloneQueries;
+
+        public CloningMLRest() { }
+        private CloningMLRest(CloningMLRest root) => _root = root;
+
+        public int SharedQueries => _sharedQueries;
+        public int Clones => _clones;
+        public int CloneQueries => _cloneQueries;
+
+        public CVar QueryOrThrow(string cacheClass, string method, CVar input)
+        {
+            if (_root is null) Interlocked.Increment(ref _sharedQueries);
+            else Interlocked.Increment(ref _root._cloneQueries);
+            return method == "InitializeList" ? ColumnsOutput() : RowsOutput("1");
+        }
+
+        public object[] QueryOrThrow(string cacheClass, string method, object[] input) => throw new NotSupportedException();
+
+        public IMLRest With(int? cacheLocks = null, string? idfa = null, string? dataNamespace = null)
+        {
+            var root = _root ?? this;
+            Interlocked.Increment(ref root._clones);
+            return new CloningMLRest(root);
+        }
+
+        public string DataNamespace { get; set; } = "";
+        public string Idfa { get; set; } = "";
+        public string Server => "";
+        public int Port => 0;
+        public string LoginName => "";
+        public string FullName => "";
+        public string UserID => "";
+        public string Mlp => "";
+        public string Guid => "";
+        public char Delimiter => '\0';
+        public int CacheLocks { get; set; }
+    }
+
     /// <summary>Nový dataset po LoadList: hledání i uložený layout platí dál (EDList/CLAUDE.md).</summary>
     [Fact]
     public void LoadList_ReappliesSearchAndLayout()
@@ -139,13 +209,18 @@ public class EDListLoadTests
         });
     }
 
-    private static List NewList(IMLRest mock, IUserPrefsService? prefs = null) => new()
+    private static List NewList(IMLRest mock, IUserPrefsService? prefs = null)
     {
-        CacheClass = "ALVA.MockList",
-        ServicesOverride = new EDServices(mock,
-            Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
-        { UserPrefs = prefs ?? new NullUserPrefsService() },
-    };
+        // Klon = tentýž mock: tyhle testy hlídají pořadí a starou odpověď, klonování má vlastní test.
+        mock.With(Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>()).Returns(mock);
+        return new()
+        {
+            CacheClass = "ALVA.MockList",
+            ServicesOverride = new EDServices(mock,
+                Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
+            { UserPrefs = prefs ?? new NullUserPrefsService() },
+        };
+    }
 
     private static List InitializedList(IMLRest mock, IUserPrefsService? prefs = null)
     {
