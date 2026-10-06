@@ -154,6 +154,66 @@ public class TreeGeneratorTests
         Assert.NotNull(result.Tree);
         Assert.Equal(treeCls.Replace("\r\n", "\n"), result.Tree.Replace("\r\n", "\n"));
     }
+
+    // Formulář EDISONAI leží v EDISONAIForms.dll, sonda ale najde EDISONAI.dll (legacy clsForm.LoadAssembly).
+    private static TreeGeneration GenerateEdisonAi(Func<string, string, bool?> typeExists) =>
+        TreeGenerator.Generate(
+            XDocument.Parse("""
+                <tree>
+                  <node id="-2" type="0"><name>H</name><node id="277002" type="1"><name>EDISON AI</name></node></node>
+                  <node id="-3" type="0"><name>S</name></node>
+                  <node id="-4" type="0"><name>P</name><node id="21" type="0"><name>Telmax</name></node></node>
+                </tree>
+                """),
+            XDocument.Parse("<tree/>"),
+            """
+            Public Enum EDPackageEnum
+                EDISONAI = 277000
+            End Enum
+            Public Enum EDISFormEnum
+                formEDISONAIChatHistory = EDPackageEnum.EDISONAI + 2
+            End Enum
+            """,
+            TreeCls(""), name => name is "EDISONAI.dll" or "EDISONAIForms.dll", typeExists);
+
+    [Fact]
+    public void Generate_TypeOnlyInSideFormsAssembly_EmitsFormsAssembly()
+    {
+        var result = GenerateEdisonAi((file, fqn) => fqn == "ALVA.EDISONAI.formEDISONAIChatHistory" && file == "EDISONAIForms.dll");
+
+        Assert.Contains("\td ..AddExe(\"EDISON AI\", \"EDISONAIForms.dll\", \"ALVA.EDISONAI.formEDISONAIChatHistory\", \"277002\"", result.Tree);
+    }
+
+    [Fact]
+    public void Generate_TypeCheckUnavailable_KeepsProbedAssembly()
+    {
+        var result = GenerateEdisonAi((_, _) => null);
+
+        Assert.Contains("\"EDISON AI\", \"EDISONAI.dll\", \"ALVA.EDISONAI.formEDISONAIChatHistory\"", result.Tree);
+    }
+
+    // Generátor přepisuje GetTypeString z clsConversion.vb: balíček, který legacy přidá jen u sebe, dá ve stromu
+    // uzel bez formuláře (EDISON AI jako oranžový stub, i když ho starý shell spustí).
+    [LegacyTreeSourcesFact]
+    public void PackageLists_MatchLegacyClsConversion()
+    {
+        string vb = File.ReadAllText(Path.Combine(LegacyTreeSources.Root!, "EDLIBRARY", "clsConversion.vb"));
+
+        Assert.Equal(CasePackages(vb, "Return \"ALVA.\" & package.ToString & \".\" & form.ToString"),
+                     TreeGenerator.ConventionPackages.Order());
+        Assert.Equal(CasePackages(vb, "Return \"ALVA.ISY.\" & package.ToString & \".\" & form.ToString"),
+                     TreeGenerator.IsyPackages.Order());
+    }
+
+    // Balíčky z Case větve, která končí daným Return (první výskyt v GetTypeString).
+    private static IOrderedEnumerable<string> CasePackages(string vb, string returnLine)
+    {
+        int ret = vb.IndexOf(returnLine, StringComparison.Ordinal);
+        Assert.True(ret > 0, $"V clsConversion.vb chybí '{returnLine}'");
+        int caseStart = vb.LastIndexOf("Case ", ret, StringComparison.Ordinal);
+        return System.Text.RegularExpressions.Regex.Matches(vb[caseStart..ret], @"EDPackageEnum\.(\w+)")
+            .Select(m => m.Groups[1].Value).Distinct().Order();
+    }
 }
 
 /// <summary>

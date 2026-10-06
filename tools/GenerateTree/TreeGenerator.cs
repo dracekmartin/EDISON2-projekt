@@ -39,8 +39,9 @@ internal sealed class TreeGenerator
     internal static readonly string[] SourceFiles =
         ["EDCORE/Resources/edisonnavbar.xml", "EDCORE/Resources/edisontree.xml", "EDCORE/EDFormInterfaceLic.vb"];
 
-    // Konvenční packages → "ALVA.<package>.<form>" (clsConversion.vb řádky 16-158).
-    private static readonly HashSet<string> ConventionPackages = new(StringComparer.Ordinal)
+    // Konvenční packages → "ALVA.<package>.<form>" (clsConversion.vb GetTypeString); shodu s legacy hlídá
+    // TreeGeneratorTests.PackageLists_MatchLegacyClsConversion.
+    internal static readonly HashSet<string> ConventionPackages = new(StringComparer.Ordinal)
     {
         "WFAPPLICATION", "MKTEST", "ZZTEST", "USERS", "USERS2", "FIRMA", "FIRMA2",
         "JRSETTINGS", "JRZAST", "JRLIC", "ZAKAZNICI2", "DOTACE", "ADDISPECING",
@@ -67,10 +68,13 @@ internal sealed class TreeGenerator
         "MHDZPRACOVANI", "PHLASENI", "OBJEDNAVKY", "VLAKY", "VLAKY2", "VLAKYPLAN",
         "VLAKYPLANY", "VLAKYSOUPRAVY", "VLAKYNASTAVENI", "DEKZ", "GENERAL", "EDISONX",
         "PREVODYAD2", "JIRA", "IMPORT", "MAPY", "KONTROLNISEZNAMY", "TRANSDEV",
+        "AUDO", "DISPECINK", "DOKUMENTY", "EDISONAI", "EKOSYSIISSP", "GISTEXPORT", "GTAB",
+        "JIKORDPOKLADNA", "MZDYEX", "NDMAIN", "PDFVIEWEREX", "PREMIE", "PREPRAVNIKONTROLA",
+        "PREPRAVNIKONTROLA2", "SKODY", "SUPPORT", "VOZIDLA", "ZAKAZNICI", "ZAKLISTY",
     };
 
     // ISY packages → "ALVA.ISY.<package>.<form>".
-    private static readonly HashSet<string> IsyPackages = new(StringComparer.Ordinal)
+    internal static readonly HashSet<string> IsyPackages = new(StringComparer.Ordinal)
     {
         "ISYZastavky", "ISYCiselniky", "ISYObehy", "ISYNavaznosti", "ISYJR",
         "ISYPlanDopravy", "ISYObjednavky", "ISYTurnusy", "ISYVlaky", "ISYZpracovani",
@@ -83,16 +87,18 @@ internal sealed class TreeGenerator
     private readonly Dictionary<long, string> _packageNames;
     private readonly Dictionary<string, (string exe, string fqn, string input)> _overrides;
     private readonly Func<string, bool> _deployFileExists;
+    private readonly Func<string, string, bool?> _deployTypeExists;
     private readonly StringBuilder _sb = new();
     private readonly List<string> _report = [];
     private int _leaves, _withFqn, _withExe, _mismatchCount;
 
     private TreeGenerator(XDocument navbar, XDocument tree, string enumVb, string currentTreeCls,
-                          Func<string, bool> deployFileExists)
+                          Func<string, bool> deployFileExists, Func<string, string, bool?> deployTypeExists)
     {
         // Kopie: přesun uzlu (MoveNode) nesmí měnit dokument volajícího.
         _navbar = new XDocument(navbar);
         _deployFileExists = deployFileExists;
+        _deployTypeExists = deployTypeExists;
 
         // ---- override tabulka: elementId -> (exe, fqn, input) z aktuálního Tree.cls ----
         // exe a input mají přednost (z dat neodvoditelné), fqn jen jako fallback za derivací.
@@ -113,12 +119,15 @@ internal sealed class TreeGenerator
 
     /// <summary>
     /// Vygeneruje Fill* metody a vloží je do <paramref name="currentTreeCls"/> místo bloku od prvního
-    /// <see cref="Marker"/> po konec třídy. <paramref name="deployFileExists"/> = sonda exe v deploy adresáři.
+    /// <see cref="Marker"/> po konec třídy. <paramref name="deployFileExists"/> = sonda exe v deploy adresáři,
+    /// <paramref name="deployTypeExists"/> = je typ (FQN) v daném souboru deploy adresáře; null = nejde zjistit.
     /// </summary>
     public static TreeGeneration Generate(XDocument navbar, XDocument tree, string enumVb, string currentTreeCls,
-                                          Func<string, bool> deployFileExists)
+                                          Func<string, bool> deployFileExists,
+                                          Func<string, string, bool?>? deployTypeExists = null)
     {
-        var gen = new TreeGenerator(navbar, tree, enumVb, currentTreeCls, deployFileExists);
+        var gen = new TreeGenerator(navbar, tree, enumVb, currentTreeCls, deployFileExists,
+                                    deployTypeExists ?? ((_, _) => null));
         return gen.Run(currentTreeCls);
     }
 
@@ -350,8 +359,20 @@ internal sealed class TreeGenerator
         foreach (var c in candidates)
             foreach (var ext in new[] { ".exe", ".dll" })
                 if (_deployFileExists(c + ext))
-                    return c + ext;
+                    return SideFormsAssembly(seg[1], c + ext, fqn);
         return "";
+    }
+
+    // Legacy clsForm.LoadAssembly hledá typ, který v nalezeném sestavení není, ještě v {oblast}Forms
+    // (formuláře EDISONAI leží v EDISONAIForms kvůli kruhu referencí). Host EDISONMAIN2API načte jen
+    // zadané sestavení, proto strom nese rovnou to vedlejší. Nejde-li typ ověřit, zůstává nalezené.
+    private string SideFormsAssembly(string area, string found, string fqn)
+    {
+        if (_deployTypeExists(found, fqn) != false) return found;
+        foreach (var ext in new[] { ".dll", ".exe" })
+            if (_deployFileExists(area + "Forms" + ext) && _deployTypeExists(area + "Forms" + ext, fqn) == true)
+                return area + "Forms" + ext;
+        return found;
     }
 
     // Vytáhne z Tree.cls override mapu: elementId -> (exe, fqn, input) jen pro neprázdné exe.

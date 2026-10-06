@@ -794,7 +794,7 @@ ClassMethod FillSystem() [ Private ]
 	d ..AddFamilyEnd()
 	d ..AddFamily("Kmenová evidence", 0, "1", 1, 0)
 		d ..AddExe("Archiv dokumentů", "ECM.exe", "ALVA.ECM.formECM2DokladyList", "47003", 1, "", 0, "", 0)
-		d ..AddExe("EDISON AI", "", "", "277002", 0, "", 0, "", 0)
+		d ..AddExe("EDISON AI", "EDISONAIForms.dll", "ALVA.EDISONAI.formEDISONAIChatHistory", "277002", 0, "", 0, "", 0)
 		d ..AddExe("Návrhář sestav", "REPORTGENERATOR.exe", "ALVA.REPORTGENERATOR.formREPORTGENERATORStromList", "36008", 0, "", 0, "", 0)
 		d ..AddExe("Online aplikace", "GENERAL.exe", "ALVA.GENERAL.formGENERALWebApps", "149002", 0, "", 0, "", 0)
 		d ..AddExe("Plánované výstupy", "GENERAL.exe", "ALVA.GENERAL.formGENERALPlanovaneVystupy", "149003", 0, "", 0, "", 0)

@@ -5,6 +5,8 @@
 // c:\MLineRepos ani C:\Edison neexistuje. EDISON_LEGACY_ROOT je záměrně stejná
 // proměnná, jakou čte .claude/hooks/tree-drift.sh a parity test.
 
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Xml.Linq;
 using GenerateTree;
@@ -18,7 +20,8 @@ string treeClsPath = Path.Combine(edison2Root, "EDISONMAIN2", "CACHE", "ALVA", "
 
 var result = TreeGenerator.Generate(
     XDocument.Load(sources[0]), XDocument.Load(sources[1]), File.ReadAllText(sources[2]),
-    File.ReadAllText(treeClsPath), name => File.Exists(Path.Combine(deployRoot, name)));
+    File.ReadAllText(treeClsPath), name => File.Exists(Path.Combine(deployRoot, name)),
+    (name, fqn) => TypeDefined(Path.Combine(deployRoot, name), fqn));
 
 foreach (var line in result.Report)
     Console.Error.WriteLine(line);
@@ -39,6 +42,23 @@ Console.Error.WriteLine($"// Leaves: {result.Leaves}, s formName: {result.WithFq
 if (result.FqnChanges > 0)
     Console.Error.WriteLine($"// POZOR: {result.FqnChanges} FQN přepsáno podle legacy enumu (viz výše) - ověř exe a spuštění.");
 return 0;
+
+// Typ se hledá v metadatech bez načtení sestavení (legacy DLL jsou .NET Framework). null = soubor nejde přečíst.
+static bool? TypeDefined(string path, string fqn)
+{
+    try
+    {
+        using var pe = new PEReader(File.OpenRead(path));
+        if (!pe.HasMetadata) return null;
+        var md = pe.GetMetadataReader();
+        return md.TypeDefinitions.Select(md.GetTypeDefinition)
+            .Any(t => md.GetString(t.Namespace) + "." + md.GetString(t.Name) == fqn);
+    }
+    catch (Exception e) when (e is IOException or UnauthorizedAccessException or BadImageFormatException)
+    {
+        return null;
+    }
+}
 
 // Fingerprint legacy zdrojů pro tree-drift.sh a parity test - bez něj se stale snapshot pozná až tím,
 // že modul chybí v aplikaci. Zapisuje se jen po úspěšném splicu, aby nelhal.
