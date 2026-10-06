@@ -63,6 +63,12 @@ if (-not $dirty) { Write-Host '    Tree.cls bez zmeny - snapshot uz byl srovnany
 
 if ($NoDeploy) { Step 'NoDeploy - konec'; exit 0 }
 
+# Deploy hook ve worktree nic nenasadi (sdileny server patri hlavni kopii) a skonci s kodem 0,
+# hlaseni "nasazen" by lhalo a testy by bezely proti stare tride.
+if ($repo -like '*\.claude\worktrees\*') {
+    Fail 'worktree: Tree.cls je zregenerovany, ale nasazuje se jen z hlavniho checkoutu - po slit tam spust sync-tree.ps1'
+}
+
 Step 'Deploy na Cache (vynuceny, hook na File.WriteAllText nefiruje)'
 $fwd = $treeCls.Replace('\', '/')
 $payload = '{"tool_input":{"file_path":"' + $fwd + '"}}'
