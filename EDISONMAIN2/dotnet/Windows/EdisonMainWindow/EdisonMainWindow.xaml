@@ -40,7 +40,7 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <!-- Strom modulů (launcher) | splitter | pruh podpory + plocha miniaplikací.
-                 Šířku stromu persistuje VM per IDFa (viz AttachTreeLayout) - restore ji přepíše na px.
+                 Šířku stromu persistuje VM per session (viz AttachTreeLayout) - restore ji přepíše na px.
                  Min. šířku plochy miniaplikací drží code-behind (ShellSplitLimits.ClampTreeWidth) -
                  GridSplitter MinWidth star sloupce u fixní px šířky stromu obchází, layout MinWidth
                  by přetékal. -->
@@ -188,7 +188,7 @@
 
         <!-- Pruh podpory + plocha miniaplikací pod ním, oddělené děličem. Vlastní Grid, ne řádky
              rootu: dělič se nesmí týkat stromu vlevo, který drží celou výšku obsahu, a root tím
-             zůstane bez jediného RowSpan. Výšku pruhu persistuje VM per IDFa
+             zůstane bez jediného RowSpan. Výšku pruhu persistuje VM per session
              (viz AttachSupportLayout), strop drží code-behind (ShellSplitLimits.ApplySupportCeiling). -->
         <Grid Grid.Column="2" Grid.Row="1">
             <Grid.RowDefinitions>

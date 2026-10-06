@@ -109,13 +109,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// Napojí docking host (z view vrstvy) a obnoví uložený layout aktuální firmy. Volá code-behind
         /// shellu po načtení okna.
         /// </summary>
-        public void AttachMiniAppHost(IMiniAppHost host) => _miniApps.AttachHost(host, Idfa);
+        public void AttachMiniAppHost(IMiniAppHost host) => _miniApps.AttachHost(host, DockScope);
 
-        /// <summary>Šířka stromu z view, persistuje se per IDFa s layoutem. Volat před <see cref="AttachMiniAppHost"/>.</summary>
+        /// <summary>Šířka stromu z view, persistuje se s layoutem per session (server, firma, uživatel). Volat před <see cref="AttachMiniAppHost"/>.</summary>
         public void AttachTreeLayout(Func<double> getWidth, Action<double> applyWidth) =>
             _miniApps.AttachTreeLayout(getWidth, applyWidth);
 
-        /// <summary>Výška pruhu podpory z view, persistuje se per IDFa s layoutem. Volat před <see cref="AttachMiniAppHost"/>.</summary>
+        /// <summary>Výška pruhu podpory z view, persistuje se s layoutem per session (server, firma, uživatel). Volat před <see cref="AttachMiniAppHost"/>.</summary>
         public void AttachSupportLayout(Func<double> getHeight, Action<double> applyHeight) =>
             _miniApps.AttachSupportLayout(getHeight, applyHeight);
 
@@ -647,7 +647,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             var target = Companies[index];
             // Potvrzení jen když je co ztratit - bez otevřených oken je přepnutí nedestruktivní
-            // (layout miniaplikací se persistuje per IDFa a při návratu obnoví).
+            // (layout miniaplikací se persistuje per session a při návratu obnoví).
             if (_getActiveModules().Count > 0
                 && !PopupDisplayer.Confirm($"Přepnout na firmu {target.DisplayName}? Zavřou se všechna otevřená okna i miniaplikace."))
                 return;
@@ -693,7 +693,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 ClearSessionState();
                 throw;
             }
-            _miniApps.Restore(Idfa);
+            _miniApps.Restore(DockScope);
             _ = ReloadAllowedCompaniesAsync();
         }
 
@@ -734,6 +734,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string Namespace => SelectedCompany.Database;
 
         public string Idfa => SelectedCompany.Id;
+
+        private DockScope DockScope => new(Rest.Server, Rest.Port, Idfa, Rest.LoginName);
 
         public string WindowTitle => $"M-line EDISON [{Idfa}]";
 
@@ -951,7 +953,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                         ClearSessionState();
                         throw;
                     }
-                    _miniApps.Restore(Idfa);
+                    _miniApps.Restore(DockScope);
                     _ = SyncMlineLicenceAfterLoginAsync();
                     break;
             }

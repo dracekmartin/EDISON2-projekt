@@ -50,9 +50,9 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - **Kolečko myši v panelu**: vnořený seznam si MouseWheel nechá i bez místa k rolování, na kraji ho
   předá ven `EDControls.ScrollWheelBubbling.IsEnabled`; prázdná plocha Plochy musí mít `Background`,
   jinak není hit-testable a kolečko jde mimo ScrollViewer.
-- Layout per IDFa v `LocalPrefs.MiniAppLayouts` (šířka stromu v `TreeWidths`, výška pruhu
-  podpory v `SupportStripHeights`); chybí-li nebo je poškozený → výchozí rozložení (jen Plocha).
-  Ukládá se jen v `Closed` shellu a při výměně session, pod firmu, jejíž layout dock drží.
+- Stav docku (`LocalPrefs.MiniAppLayouts`, šířka stromu `TreeWidths`, výška pruhu `SupportStripHeights`) má klíč
+  `server:port|idfa|login` (`DockScope`: sdílený terminál, uživatel nerozhází dock jinému), starý klíč jen IDFa se
+  čte jako fallback; chybí-li nebo je poškozený → jen Plocha. Ukládá se v `Closed` shellu a při výměně session, pod tu, jejíž dock je.
 - Výběr miniaplikace je okno `Windows/MiniAppPickerWindow` s **jednoúrovňovým** seznamem;
   z `IMiniAppProvider.GroupTitle` (pořadí = registrace v `AppBootstrapper`) zbyl jen popisek řádku.
 - Picker vybírá i **umístění** (`MiniAppPlacement`). Cíle jsou **jen ukotvená** pod-okna:
