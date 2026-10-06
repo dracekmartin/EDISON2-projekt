@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Threading;
+using EDControls.UserPrefs;
 
 namespace EDControls.EDList
 {
@@ -152,6 +152,8 @@ namespace EDControls.EDList
             _controller.ColumnsChanged += RebuildColumns;
             _controller.RowsReplaced += OnRowsReplaced;
             _controller.CheckedRowsChanged += OnCheckedRowsChanged;
+            _layoutWriter = new DebouncedUserPrefsWriter(() => Services.UserPrefs, EDListController.PrefsScope,
+                () => HostId, () => ColumnLayoutSerializer.Serialize(SnapshotLayout()));
             InitializeComponent();
             DataGrid.ItemsSource = _controller.Rows;
             DataGrid.Sorting += OnDataGridSorting;
@@ -160,12 +162,7 @@ namespace EDControls.EDList
 
         private async void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            // Force save layout - pokud byl debouncer ještě běžel, dokončit teď.
-            if (_saveDebouncer is { IsEnabled: true })
-            {
-                _saveDebouncer.Stop();
-                await SaveLayoutAsync();
-            }
+            await _layoutWriter.FlushAsync();
             UnhookColumnEvents();
         }
 
@@ -311,7 +308,7 @@ namespace EDControls.EDList
 
         // ── Persist layoutu ───────────────────────────────────────────────────
 
-        private DispatcherTimer? _saveDebouncer;
+        private readonly DebouncedUserPrefsWriter _layoutWriter;
         private bool _suppressLayoutSave;  // true během ApplyLayout - eventy nesmí trigger save
 
         private static readonly DependencyProperty[] LayoutProperties =
@@ -335,35 +332,7 @@ namespace EDControls.EDList
         private void OnColumnPropertyChanged(object? sender, EventArgs e)
         {
             if (_suppressLayoutSave) return;
-            ScheduleSaveLayout();
-        }
-
-        private void ScheduleSaveLayout()
-        {
-            if (string.IsNullOrEmpty(HostId)) return;
-            _saveDebouncer ??= CreateDebouncer();
-            _saveDebouncer.Stop();
-            _saveDebouncer.Start();
-        }
-
-        private DispatcherTimer CreateDebouncer()
-        {
-            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-            timer.Tick += async (_, _) =>
-            {
-                timer.Stop();
-                await SaveLayoutAsync();
-            };
-            return timer;
-        }
-
-        private async Task SaveLayoutAsync()
-        {
-            if (string.IsNullOrEmpty(HostId)) return;
-            ColumnLayout layout;
-            try { layout = SnapshotLayout(); }
-            catch { return; /* best-effort */ }
-            await _controller.SaveLayoutAsync(HostId, layout);
+            _layoutWriter.Schedule();
         }
 
         private ColumnLayout SnapshotLayout()
