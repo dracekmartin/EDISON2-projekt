@@ -90,12 +90,14 @@ report_failure() {
 }
 
 # A running EDISONMAIN2.exe locks its bin\Debug DLLs -> build fails (MSB3027).
+# Only shells started from this checkout lock its build output; installed ones (C:\Edison, test installs) keep running.
 shell_stopped=0
 stop_shell() {
     [ "$shell_stopped" = "1" ] && return
     shell_stopped=1
-    echo "==> Checking for a running EDISONMAIN2 (locks build DLLs)"
-    powershell -NoProfile -Command "\$p = Get-Process EDISONMAIN2 -ErrorAction SilentlyContinue; if (\$p) { \$p | Stop-Process -Force; Start-Sleep -Milliseconds 800; Write-Host '    EDISONMAIN2 was running - closed it.' } else { Write-Host '    not running - OK.' }" || true
+    echo "==> Checking for an EDISONMAIN2 running from this repo (locks build DLLs)"
+    repo_root=$(git rev-parse --show-toplevel)
+    powershell -NoProfile -Command "\$root = [IO.Path]::GetFullPath('$repo_root').TrimEnd('\\') + '\\'; \$p = Get-Process EDISONMAIN2 -ErrorAction SilentlyContinue | Where-Object { \$_.Path -and \$_.Path.StartsWith(\$root, [StringComparison]::OrdinalIgnoreCase) }; if (\$p) { \$p | Stop-Process -Force; Start-Sleep -Milliseconds 800; Write-Host '    EDISONMAIN2 from this repo was running - closed it.' } else { Write-Host '    not running from this repo - OK.' }" || true
 }
 
 # --- .NET ---------------------------------------------------------------------
