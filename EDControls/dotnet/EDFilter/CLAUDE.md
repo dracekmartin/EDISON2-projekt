@@ -7,11 +7,8 @@ tlačítko vpravo. Sám nic nenačítá - sebere hodnoty a předá je cíli. API
 
 Na konkrétní control **není vázaný**: `Target` je `IEDFilterTarget`
 (`ApplyFilterAsync(filter)`, root namespace `EDControls`), implementuje ho `EDList`, stejně
-tak může mapa nebo graf. Pro cíl řízený ViewModelem je tu `FilterCommand` (parametr =
-`IReadOnlyDictionary<string, string>`); nastavit jde obojí, zavolá se obojí.
-
-**Bez `Target` i bez `FilterCommand` je refresh no-op včetně `FilterChanged`** - host by
-jinak reagoval na načtení, které neproběhlo.
+tak může mapa nebo graf. Bez `Target` je refresh no-op. Každá změna pole načítá hned,
+tlačítko je jen pro vynucené znovunačtení (data se mohla změnit na serveru).
 
 ## Wire formát
 

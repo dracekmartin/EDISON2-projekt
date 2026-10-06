@@ -32,7 +32,6 @@
                                  x:Name="Toolbar"
                                  ShowSearch="True"
                                  ShowHelp="True"
-                                 ShowSettings="False"
                                  Title="{Binding Title, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"/>
 
         <!-- HorizontalScrollBarVisibility="Disabled" drží obsah v šířce viewportu. Default Hidden

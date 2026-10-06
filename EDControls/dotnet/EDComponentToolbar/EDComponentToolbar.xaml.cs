@@ -8,7 +8,7 @@ namespace EDControls.EDComponentToolbar;
 
 /// <summary>
 /// Sdílený toolbar pro EDInputForm / EDList / tabulkové komponenty: brandový pruh s Title
-/// vlevo a search boxem + opt-in ikonami vpravo. Ctrl+F focusne search box komponenty, ve které
+/// vlevo a search boxem + ikonou nápovědy vpravo. Ctrl+F focusne search box komponenty, ve které
 /// je fokus (jinak prvního viditelného toolbaru v okně). API viz DP níže.
 /// </summary>
 public partial class EDComponentToolbar : UserControl
@@ -135,46 +135,17 @@ public partial class EDComponentToolbar : UserControl
         set => SetValue(SearchTextProperty, value);
     }
 
-    public static readonly DependencyProperty SearchPlaceholderProperty =
-        DependencyProperty.Register(nameof(SearchPlaceholder), typeof(string), typeof(EDComponentToolbar),
-            new PropertyMetadata("Hledat…", (d, _) => ((EDComponentToolbar)d).AktualizujPlaceholder()));
-
-    public string SearchPlaceholder
-    {
-        get => (string)GetValue(SearchPlaceholderProperty);
-        set => SetValue(SearchPlaceholderProperty, value);
-    }
+    private const string SearchPlaceholder = "Hledat…";
 
     private static readonly DependencyPropertyKey EffectiveSearchPlaceholderPropertyKey =
         DependencyProperty.RegisterReadOnly(nameof(EffectiveSearchPlaceholder), typeof(string),
-            typeof(EDComponentToolbar), new PropertyMetadata("Hledat…"));
+            typeof(EDComponentToolbar), new PropertyMetadata(SearchPlaceholder));
 
     public static readonly DependencyProperty EffectiveSearchPlaceholderProperty =
         EffectiveSearchPlaceholderPropertyKey.DependencyProperty;
 
-    /// <summary>Zobrazený placeholder hledání: <see cref="SearchPlaceholder"/>, u toolbaru se zkratkou
-    /// Ctrl+F doplněný o „(Ctrl+F)".</summary>
+    /// <summary>Zobrazený placeholder hledání, u toolbaru se zkratkou Ctrl+F doplněný o „(Ctrl+F)".</summary>
     public string EffectiveSearchPlaceholder => (string)GetValue(EffectiveSearchPlaceholderProperty);
-
-    public static readonly DependencyProperty ShowExportProperty =
-        DependencyProperty.Register(nameof(ShowExport), typeof(bool), typeof(EDComponentToolbar),
-            new PropertyMetadata(false));
-
-    public bool ShowExport
-    {
-        get => (bool)GetValue(ShowExportProperty);
-        set => SetValue(ShowExportProperty, value);
-    }
-
-    public static readonly DependencyProperty ShowPrintProperty =
-        DependencyProperty.Register(nameof(ShowPrint), typeof(bool), typeof(EDComponentToolbar),
-            new PropertyMetadata(false));
-
-    public bool ShowPrint
-    {
-        get => (bool)GetValue(ShowPrintProperty);
-        set => SetValue(ShowPrintProperty, value);
-    }
 
     public static readonly DependencyProperty ShowHelpProperty =
         DependencyProperty.Register(nameof(ShowHelp), typeof(bool), typeof(EDComponentToolbar),
@@ -186,37 +157,6 @@ public partial class EDComponentToolbar : UserControl
         set => SetValue(ShowHelpProperty, value);
     }
 
-    public static readonly DependencyProperty ShowSettingsProperty =
-        DependencyProperty.Register(nameof(ShowSettings), typeof(bool), typeof(EDComponentToolbar),
-            new PropertyMetadata(true));
-
-    public bool ShowSettings
-    {
-        get => (bool)GetValue(ShowSettingsProperty);
-        set => SetValue(ShowSettingsProperty, value);
-    }
-
-    public static readonly DependencyProperty ExportCommandProperty =
-        DependencyProperty.Register(nameof(ExportCommand), typeof(ICommand), typeof(EDComponentToolbar),
-            new PropertyMetadata(null));
-
-    /// <summary>Host implementuje. Volitelně bere format string parametr (PDF/XLSX/CSV).</summary>
-    public ICommand? ExportCommand
-    {
-        get => (ICommand?)GetValue(ExportCommandProperty);
-        set => SetValue(ExportCommandProperty, value);
-    }
-
-    public static readonly DependencyProperty PrintCommandProperty =
-        DependencyProperty.Register(nameof(PrintCommand), typeof(ICommand), typeof(EDComponentToolbar),
-            new PropertyMetadata(null));
-
-    public ICommand? PrintCommand
-    {
-        get => (ICommand?)GetValue(PrintCommandProperty);
-        set => SetValue(PrintCommandProperty, value);
-    }
-
     public static readonly DependencyProperty HelpCommandProperty =
         DependencyProperty.Register(nameof(HelpCommand), typeof(ICommand), typeof(EDComponentToolbar),
             new PropertyMetadata(null));
@@ -225,16 +165,6 @@ public partial class EDComponentToolbar : UserControl
     {
         get => (ICommand?)GetValue(HelpCommandProperty);
         set => SetValue(HelpCommandProperty, value);
-    }
-
-    public static readonly DependencyProperty SettingsCommandProperty =
-        DependencyProperty.Register(nameof(SettingsCommand), typeof(ICommand), typeof(EDComponentToolbar),
-            new PropertyMetadata(null));
-
-    public ICommand? SettingsCommand
-    {
-        get => (ICommand?)GetValue(SettingsCommandProperty);
-        set => SetValue(SettingsCommandProperty, value);
     }
 }
 

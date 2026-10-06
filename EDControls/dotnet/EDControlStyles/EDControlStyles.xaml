@@ -3,8 +3,7 @@
                     xmlns:prim="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
                     xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox"
                     xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox"
-                    xmlns:edib="clr-namespace:EDControls.EDInfoBar"
-                    xmlns:edtb="clr-namespace:EDControls.EDToolbar">
+                    xmlns:edib="clr-namespace:EDControls.EDInfoBar">
 
     <!-- Implicitní styly WPF kontrolek nad tokeny z EDTheme.xaml; vše přes DynamicResource,
          aby runtime override tokenu (FontService, ThemeService) propadl do celé aplikace.
@@ -1403,9 +1402,7 @@
 
     <!-- ═══════════════════════════════════════════════════════════════════
          ToolBar - default WPF chrome je šedý gradient + overflow, netémovaný.
-         Flat themovaný template. Tlačítka uvnitř nejsou přímé ToolBar items
-         (EDToolbar je hostí přes vnitřní ItemsControl) → berou implicit Button styl,
-         ToolBar.ButtonStyleKey se neuplatní. Overflow vynechán (ikonové toolbary krátké).
+         Flat themovaný template. Overflow vynechán (ikonové toolbary krátké).
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="ToolBar">
         <Setter Property="Background"  Value="{DynamicResource EDTheme.Bg.Panel}"/>
@@ -1429,10 +1426,6 @@
             </Setter.Value>
         </Setter>
     </Style>
-
-    <!-- Implicitní styly se dědí dle PŘESNÉHO typu → EDToolbar (: ToolBar) by jinak
-         spadl zpět na default ToolBar theme template. Napojení na styl výše. -->
-    <Style TargetType="{x:Type edtb:EDToolbar}" BasedOn="{StaticResource {x:Type ToolBar}}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
          DatePicker / Calendar - defaultní WPF templaty mají zadrátované bílé pozadí

@@ -14,6 +14,5 @@ namespace EDControls.EDList
         public ListColumnAlign Align { get; set; } = ListColumnAlign.Auto;
         public bool Sortable { get; set; } = false;
         public bool Visible { get; set; } = true;
-        public bool IsLink { get; set; } = false;
     }
 }

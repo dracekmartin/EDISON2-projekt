@@ -143,7 +143,6 @@ namespace EDControls.EDList
 
         public event EventHandler<string>? RowDoubleClicked;
         public event EventHandler<string?>? SelectionChanged;
-        public event EventHandler<(string RowId, string ColKey)>? CellLinkClicked;
         public event EventHandler<IReadOnlyList<string>>? CheckedRowsChanged;
 
         public EDList()
@@ -211,12 +210,6 @@ namespace EDControls.EDList
         /// <summary>Nastaví checked stav konkrétního řádku.</summary>
         public void SetChecked(string rowId, bool isChecked) => _controller.SetChecked(rowId, isChecked);
 
-        /// <summary>Zaškrtne všechny aktuálně viditelné řádky (po LoadList).</summary>
-        public void CheckAll() => _controller.SetAllChecked(true);
-
-        /// <summary>Odznačí všechny řádky.</summary>
-        public void UncheckAll() => _controller.SetAllChecked(false);
-
         // ── Reakce na controller ──────────────────────────────────────────────
 
         private void OnRowsReplaced()
@@ -244,7 +237,7 @@ namespace EDControls.EDList
             if (SelectionMode == ListSelectionMode.Check)
                 DataGrid.Columns.Add(EDListColumnFactory.BuildCheckBoxColumn(OnRowCheckClick, _controller.ToggleAllFromHeader, out _headerCheckBox));
             foreach (var col in _controller.Columns?.Where(c => c.Visible) ?? [])
-                DataGrid.Columns.Add(EDListColumnFactory.BuildDataColumn(col, (rowId, key) => CellLinkClicked?.Invoke(this, (rowId, key))));
+                DataGrid.Columns.Add(EDListColumnFactory.BuildDataColumn(col));
             // Nové sloupce šipky nemají, CustomSort ale řadí dál - bez obnovy by po přepnutí
             // SelectionMode nebo dalším SetData byl seznam seřazený bez viditelného důvodu.
             if (_controller.PruneSort(HasColumn)) ApplySort();

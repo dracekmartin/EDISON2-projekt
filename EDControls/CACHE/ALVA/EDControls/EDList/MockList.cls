@@ -1,7 +1,7 @@
 Include EDList
 
 /// Testovací třída s hardcoded daty pro ověření EDList bez reálné databáze.
-/// Pokrývá všechny aktuálně implementované datové typy + isLink flag,
+/// Pokrývá všechny aktuálně implementované datové typy,
 /// aby šlo testovat rendering v EDListTestWindow.
 Class ALVA.EDControls.EDList.MockList Extends %RegisteredObject
 {
@@ -10,9 +10,8 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
 {
     s list = ##class(ALVA.EDControls.EDList.List).%New()
 
-    s col = list.AddColumn("rz", "RZ", $$$ListColumnTypeText, 110)
-    s col.isLink = 1                                              ; hyperlink test
-    d list.AddColumn("typ",          "Typ",        $$$ListColumnTypeText,     130)
+    d list.AddColumn("rz",           "RZ",         $$$ListColumnTypeText,     110)
+    d list.AddColumn("typ",         "Typ",        $$$ListColumnTypeText,     130)
     d list.AddColumn("aktivni",      "Aktivní",    $$$ListColumnTypeBool,      70)
     d list.AddColumn("odjezd",       "Odjezd",     $$$ListColumnTypeHHMM,      75, $$$ListAlignRight)
     d list.AddColumn("pocet",        "Počet km",   $$$ListColumnTypeNumber,    90, $$$ListAlignRight, 1, "N1")

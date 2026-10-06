@@ -5,7 +5,6 @@ using System.Collections.Specialized;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Markup;
 using EDControls.UserPrefs;
 
@@ -15,7 +14,7 @@ namespace EDControls.EDFilter;
 /// Container pro deklarativní filter pole nad zobrazovací komponentou. Filter pole jsou
 /// <see cref="EDFilterFieldBase"/> children. Při změně hodnoty kteréhokoliv pole
 /// (a při Loaded eventu) sebere hodnoty a předá je cíli - <see cref="Target"/>
-/// (<see cref="IEDFilterTarget"/>, implementuje ho např. EDList) nebo <see cref="FilterCommand"/>.
+/// (<see cref="IEDFilterTarget"/>, implementuje ho např. EDList).
 ///
 /// Wire formát komponent nad Caché: filter hodnoty jdou pod <c>^||ML("IN","filter",Key)</c>
 /// sub-subscript; detail v <c>EDControls/docs/wire-formaty.md §Filter konvence</c>.
@@ -47,8 +46,7 @@ public partial class EDFilter : UserControl
 
     /// <summary>
     /// Komponenta, na kterou se filter aplikuje (EDList, mapa, …). Volá se
-    /// <c>Target.ApplyFilterAsync(filter)</c>. Pro cíl řízený ViewModelem je tu
-    /// <see cref="FilterCommand"/>; nastavit jde obojí zároveň.
+    /// <c>Target.ApplyFilterAsync(filter)</c>.
     /// </summary>
     public static readonly DependencyProperty TargetProperty =
         DependencyProperty.Register(nameof(Target), typeof(IEDFilterTarget), typeof(EDFilter),
@@ -58,35 +56,6 @@ public partial class EDFilter : UserControl
     {
         get => (IEDFilterTarget?)GetValue(TargetProperty);
         set => SetValue(TargetProperty, value);
-    }
-
-    /// <summary>
-    /// Příkaz volaný při každém refreshi, parametrem je slovník hodnot
-    /// (<c>IReadOnlyDictionary&lt;string, string&gt;</c>). Pro hosty, kde filtr zpracovává
-    /// ViewModel, a ne komponenta.
-    /// </summary>
-    public static readonly DependencyProperty FilterCommandProperty =
-        DependencyProperty.Register(nameof(FilterCommand), typeof(ICommand), typeof(EDFilter),
-            new PropertyMetadata(null));
-
-    public ICommand? FilterCommand
-    {
-        get => (ICommand?)GetValue(FilterCommandProperty);
-        set => SetValue(FilterCommandProperty, value);
-    }
-
-    /// <summary>
-    /// Pokud <c>true</c> (default), změna hodnoty pole okamžitě vyvolá refresh.
-    /// Pokud <c>false</c>, refresh spustí až tlačítko nebo <see cref="RefreshAsync"/>.
-    /// </summary>
-    public static readonly DependencyProperty AutoTriggerProperty =
-        DependencyProperty.Register(nameof(AutoTrigger), typeof(bool), typeof(EDFilter),
-            new PropertyMetadata(true));
-
-    public bool AutoTrigger
-    {
-        get => (bool)GetValue(AutoTriggerProperty);
-        set => SetValue(AutoTriggerProperty, value);
     }
 
     /// <summary>
@@ -101,29 +70,6 @@ public partial class EDFilter : UserControl
     {
         get => (string?)GetValue(HostIdProperty);
         set => SetValue(HostIdProperty, value);
-    }
-
-    /// <summary>Popisek tlačítka vpravo.</summary>
-    public static readonly DependencyProperty RefreshTextProperty =
-        DependencyProperty.Register(nameof(RefreshText), typeof(string), typeof(EDFilter),
-            new PropertyMetadata("Načíst"));
-
-    public string RefreshText
-    {
-        get => (string)GetValue(RefreshTextProperty);
-        set => SetValue(RefreshTextProperty, value);
-    }
-
-    /// <summary>Viditelnost tlačítka vpravo. Default <c>true</c> i při zapnutém auto-triggeru -
-    /// data se mohla změnit na serveru, uživatel si vynutí znovunačtení.</summary>
-    public static readonly DependencyProperty ShowRefreshProperty =
-        DependencyProperty.Register(nameof(ShowRefresh), typeof(bool), typeof(EDFilter),
-            new PropertyMetadata(true));
-
-    public bool ShowRefresh
-    {
-        get => (bool)GetValue(ShowRefreshProperty);
-        set => SetValue(ShowRefreshProperty, value);
     }
 
     /// <summary>Běží refresh. Po tu dobu je tlačítko zakázané - cizí cíl nemusí mít
@@ -142,9 +88,6 @@ public partial class EDFilter : UserControl
 
     /// <summary>Filter pole - typicky vyplněná v XAML přes &lt;edf:EDFilterCombo/&gt; atd.</summary>
     public ObservableCollection<EDFilterFieldBase> Fields { get; }
-
-    /// <summary>Vyvoláno před každým předáním filtru cíli. Host může observovat pro vlastní logiku.</summary>
-    public event EventHandler<IReadOnlyDictionary<string, string>>? FilterChanged;
 
     private bool _initialLoadDone;
     private bool _suppressAutoTrigger;
@@ -198,7 +141,7 @@ public partial class EDFilter : UserControl
     {
         if (_suppressAutoTrigger) return;
         _prefsWriter.Schedule();
-        if (AutoTrigger) AutoRefresh();
+        AutoRefresh();
     }
 
     private void OnRefreshClick(object sender, RoutedEventArgs e) => AutoRefresh();
@@ -222,7 +165,7 @@ public partial class EDFilter : UserControl
     }
 
     /// <summary>Sebere hodnoty ze všech filter polí a vrátí dict neprázdných hodnot.</summary>
-    public Dictionary<string, string> BuildFilterDict()
+    internal Dictionary<string, string> BuildFilterDict()
     {
         var dict = new Dictionary<string, string>();
         foreach (var field in Fields)
@@ -236,24 +179,18 @@ public partial class EDFilter : UserControl
     }
 
     /// <summary>
-    /// Sebere aktuální hodnoty a předá je cíli. Bez <see cref="Target"/> i bez
-    /// <see cref="FilterCommand"/> je to no-op včetně <see cref="FilterChanged"/> - host
-    /// by jinak reagoval na refresh, který neproběhl.
+    /// Sebere aktuální hodnoty a předá je cíli. Bez <see cref="Target"/> je to no-op.
     /// </summary>
     public async Task RefreshAsync()
     {
         var target = Target;
-        var command = FilterCommand;
-        if (target is null && command is null) return;
+        if (target is null) return;
 
         var filter = BuildFilterDict();
-        FilterChanged?.Invoke(this, filter);
-
         IsBusy = true;
         try
         {
-            if (target is not null) await target.ApplyFilterAsync(filter);
-            if (command is not null && command.CanExecute(filter)) command.Execute(filter);
+            await target.ApplyFilterAsync(filter);
         }
         finally
         {

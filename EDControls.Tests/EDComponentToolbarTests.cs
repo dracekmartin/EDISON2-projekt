@@ -93,11 +93,9 @@ public class EDComponentToolbarTests
                 Assert.Equal("Hledat… (Ctrl+F)", prvni.EffectiveSearchPlaceholder);
                 Assert.Equal("Hledat… (Ctrl+F)", druhy.EffectiveSearchPlaceholder);
 
-                prvni.SearchPlaceholder = "Hledat pole…";
-                Assert.Equal("Hledat pole… (Ctrl+F)", prvni.EffectiveSearchPlaceholder);
-
                 RaiseOn(prvni, FrameworkElement.UnloadedEvent);
-                Assert.Equal("Hledat pole…", prvni.EffectiveSearchPlaceholder);
+                Assert.Equal("Hledat…", prvni.EffectiveSearchPlaceholder);
+                Assert.Equal("Hledat… (Ctrl+F)", druhy.EffectiveSearchPlaceholder);
             }
             finally
             {

@@ -26,16 +26,15 @@ public class EDListHeaderTests
         });
     }
 
-    /// <summary>EDList nemá per-komponentu help ani nastavení - ikony musí zůstat vypnuté.</summary>
+    /// <summary>EDList nemá per-komponentu nápovědu - ikona musí zůstat vypnutá.</summary>
     [Fact]
-    public void Header_HidesHelpAndSettings()
+    public void Header_HidesHelp()
     {
         RunSta(() =>
         {
             var list = new List();
 
             Assert.False(list.HeaderToolbar.ShowHelp);
-            Assert.False(list.HeaderToolbar.ShowSettings);
         });
     }
 

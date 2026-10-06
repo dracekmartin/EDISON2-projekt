@@ -42,7 +42,6 @@ namespace EDControls.EDList
             Align    = ParseAlign(el.Str("align")),
             Sortable = el.Bool("sortable"),
             Visible  = el.Bool("visible", defaultValue: true),
-            IsLink   = el.Bool("isLink"),
         };
 
         /// <summary>Literály typů sloupce = protokol, zrcadlí <c>$$$ListColumnType*</c> v <c>CACHE/EDList.inc</c>.</summary>

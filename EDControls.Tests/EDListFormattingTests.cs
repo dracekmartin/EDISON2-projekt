@@ -98,7 +98,7 @@ public class EDListFormattingTests
     [Fact]
     public void ParseColumns_SingleColumn_ParsesAllProperties()
     {
-        string json = """[{"key":"rz","label":"RZ","type":"TEXT","format":"","width":110,"align":"LEFT","sortable":true,"visible":true,"isLink":false}]""";
+        string json = """[{"key":"rz","label":"RZ","type":"TEXT","format":"","width":110,"align":"LEFT","sortable":true,"visible":true}]""";
         var output = new CVar();
         output["1"] = new CVar(json);
 
@@ -112,7 +112,6 @@ public class EDListFormattingTests
         Assert.Equal(ListColumnAlign.Left, col.Align);
         Assert.True(col.Sortable);
         Assert.True(col.Visible);
-        Assert.False(col.IsLink);
     }
 
     [Fact]
@@ -120,11 +119,11 @@ public class EDListFormattingTests
     {
         string json = """
         [
-            {"key":"a","label":"A","type":"NUMBER","format":"N2","width":80,"align":"RIGHT","sortable":false,"visible":true,"isLink":false},
-            {"key":"b","label":"B","type":"BOOL","format":"","width":60,"align":"CENTER","sortable":false,"visible":true,"isLink":false},
-            {"key":"c","label":"C","type":"DATE","format":"dd.MM.yyyy","width":100,"align":"","sortable":true,"visible":false,"isLink":true},
-            {"key":"d","label":"D","type":"HHMM","format":"","width":75,"align":"","sortable":false,"visible":true,"isLink":false},
-            {"key":"e","label":"E","type":"COLOR","format":"","width":60,"align":"","sortable":false,"visible":true,"isLink":false}
+            {"key":"a","label":"A","type":"NUMBER","format":"N2","width":80,"align":"RIGHT","sortable":false,"visible":true},
+            {"key":"b","label":"B","type":"BOOL","format":"","width":60,"align":"CENTER","sortable":false,"visible":true},
+            {"key":"c","label":"C","type":"DATE","format":"dd.MM.yyyy","width":100,"align":"","sortable":true,"visible":false},
+            {"key":"d","label":"D","type":"HHMM","format":"","width":75,"align":"","sortable":false,"visible":true},
+            {"key":"e","label":"E","type":"COLOR","format":"","width":60,"align":"","sortable":false,"visible":true}
         ]
         """;
         var output = new CVar();
@@ -136,7 +135,6 @@ public class EDListFormattingTests
         Assert.Equal("N2", cols[0].Format);
         Assert.Equal(ListColumnType.Bool, cols[1].Type);
         Assert.Equal(ListColumnType.Date, cols[2].Type);
-        Assert.True(cols[2].IsLink);
         Assert.False(cols[2].Visible);
         Assert.Equal(ListColumnType.HoursMinutes, cols[3].Type);
         Assert.Equal(ListColumnType.Color, cols[4].Type);

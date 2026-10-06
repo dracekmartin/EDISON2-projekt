@@ -4,7 +4,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls"
-        xmlns:et="clr-namespace:EDControls.EDToolbar;assembly=EDControls"
         xmlns:edif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
         xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
         mc:Ignorable="d"
@@ -14,8 +13,6 @@
     <Grid>
 
         <DockPanel>
-
-            <et:EDToolbar DockPanel.Dock="Top"/>
 
             <ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel">
                 <ef:EDFooter.LeftContent>

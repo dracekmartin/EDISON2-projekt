@@ -70,7 +70,7 @@
                        TextTrimming="CharacterEllipsis"
                        Visibility="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
 
-            <!-- Hledání - vpravo, vedle standardních ikon. Placeholder, křížek i Esc
+            <!-- Hledání - vpravo, vedle ikony nápovědy. Placeholder, křížek i Esc
                  řeší EDSearchTextBox interně. Navigace mezi nálezy tu není záměrně:
                  konzumenti hledáním filtrují (nematchující položky zmizí), takže skákat
                  mezi výskyty nemá co. -->
@@ -80,18 +80,7 @@
                                    Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
                                    Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
 
-            <!-- Standardní akční ikony (opt-in přes ShowX props) -->
             <StackPanel Grid.Column="2" Orientation="Horizontal">
-                <Button Content="📊" FontSize="{DynamicResource EDTheme.FontSize.Header}"
-                        Style="{StaticResource ToolbarButtonStyle}"
-                        ToolTip="Export"
-                        Command="{Binding ExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        Visibility="{Binding ShowExport, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
-                <Button Content="🖨" FontSize="{DynamicResource EDTheme.FontSize.Header}"
-                        Style="{StaticResource ToolbarButtonStyle}"
-                        ToolTip="Tisk"
-                        Command="{Binding PrintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        Visibility="{Binding ShowPrint, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
                 <Button x:Name="HelpButton" Style="{StaticResource ToolbarButtonStyle}"
                         ToolTip="Nápověda"
                         Command="{Binding HelpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -101,11 +90,6 @@
                            Height="{DynamicResource EDTheme.IconSize.Default}"
                            RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
-                <Button Content="⚙" FontSize="{DynamicResource EDTheme.FontSize.Title}"
-                        Style="{StaticResource ToolbarButtonStyle}"
-                        ToolTip="Nastavení"
-                        Command="{Binding SettingsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        Visibility="{Binding ShowSettings, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
         </Grid>
     </Border>

@@ -16,7 +16,6 @@ namespace EDISONMAIN2
 
             TheList.SelectionChanged    += (_, id) => StatusText.Text  = $"Výběr: {id ?? "(žádný)"}";
             TheList.RowDoubleClicked    += (_, id) => StatusText.Text  = $"Dvojklik: {id}";
-            TheList.CellLinkClicked     += (_, e)  => LinkText.Text    = $"Link: {e.ColKey} = {e.RowId}";
             TheList.CheckedRowsChanged  += (_, ids) => CheckedText.Text = $"Checked: {string.Join(", ", ids)}";
         }
 
@@ -40,8 +39,5 @@ namespace EDISONMAIN2
                 ? ListSelectionMode.Check
                 : ListSelectionMode.Single;
         }
-
-        private void CheckAll_Click(object sender, RoutedEventArgs e)   => TheList.CheckAll();
-        private void UncheckAll_Click(object sender, RoutedEventArgs e) => TheList.UncheckAll();
     }
 }
