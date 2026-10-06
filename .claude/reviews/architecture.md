@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 42 / 49**
+**Hotovo: 43 / 49**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -1140,7 +1140,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A25 · Veřejný povrch EDControls bez konzumenta 🔸
 
-- [x] **Stav:** vyřešeno v kódu (2026-10-06) - odebráno:
+- [x] **Stav:** vyřešeno e815da60 (2026-10-06) - odebráno:
   - `EDComponentToolbar`: export, tisk a nastavení (`Show*`, `*Command`, tlačítka); `SearchPlaceholder` je privátní konstanta.
   - `EDFilter`: `FilterCommand`, `FilterChanged`, `AutoTrigger` (změna pole načítá vždy), `RefreshText` (text z nového
     `EDStrings.Load`), `ShowRefresh`; `BuildFilterDict` je internal.
