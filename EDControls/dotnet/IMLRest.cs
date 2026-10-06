@@ -60,7 +60,8 @@ public interface IMLRest
     /// <paramref name="dataNamespace"/> (null = ponechat). Pro jednorázové requesty, které nesmí
     /// měnit sdílenou instanci ani se prát se souběžnými voláními: poll bez obnovy aktivity
     /// (<c>CacheLocks=2</c>), logout cizí firmy (<c>idfa</c>). MLRest dělá HTTP per-call, takže
-    /// samostatný klon (se stejným GUID = pro server tatáž session) je bezpečný.
+    /// samostatný klon (se stejným GUID = pro server tatáž session) je bezpečný. Klon bez přepsaných
+    /// parametrů je táž session: konec session a nesoulad verze hlásí dál přes události původní instance.
     /// </summary>
     IMLRest With(int? cacheLocks = null, string? idfa = null, string? dataNamespace = null);
 }

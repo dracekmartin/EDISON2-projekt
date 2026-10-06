@@ -83,11 +83,11 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 
 - `IMLRest` / `MLRestAdapter` - abstrakce nad MLRest. `With(...)` vrací klon pro
   jednorázové requesty; **ručně kopíruje pole identity** - nové pole v MLRest doplň
-  i tam (hlídá reflection test `MLRestAdapterWithTests`).
+  i tam (hlídá reflection test `MLRestAdapterWithTests`). Klon téže session (`With()` bez parametrů)
+  přeposílá `EdisonActivityFailed`/`EdisonVersionFailed` sdílené instanci (ukončení aplikace), ostatní klony ne.
 - `IRestCallRunner` / `RestCallRunner` - blokující MLRest volání mimo UI thread, vždy na **klonu**
   (proč: root CLAUDE.md, sekce MLRest); instanci snapshotuje na volajícím threadu, takže celá
-  dávka jede proti téže session. ⚠️ Klon nemá odběratele `EdisonActivityFailed`/`EdisonVersionFailed`
-  (visí na sdílené instanci): zánik session na klonu aplikaci neukončí, jen vyhodí výjimku (architecture.md A49).
+  dávka jede proti téže session.
 - `LegacyOutput` - jediné místo produkčního kódu, které zná `object[]` výstup legacy endpointů (index 0 =
   ERR slot, řádky `klíč{del}…` od 1); nový legacy endpoint ho použije místo vlastní smyčky.
 - `ColorValue` - jediná definice barvy na drátě (hex `#AARRGGBB`, legacy `R;G;B` EDListu; formulář jen

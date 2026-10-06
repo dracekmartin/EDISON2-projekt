@@ -1063,12 +1063,12 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A48 · Async EDList a služby TD volají MLRest přes `Task.Run` na sdílené instanci bez klonu
 
-- [ ] **Stav:** otevřeno, část EDControls vyřešena (2026-10-06) - `EDListController` dostal volitelný `IRestCallRunner`
+- [ ] **Stav:** otevřeno, část EDControls vyřešena f2cdf2a7 (2026-10-06) - `EDListController` dostal volitelný `IRestCallRunner`
   (default `RestCallRunner` nad aktuálním `EDServices.MLRest`), `InitializeListAsync`/`LoadListAsync` jedou na klonu;
   `_queryGate` zůstal kvůli pořadí (sloupce před řádky souběžného `LoadListAsync`), generation guard beze změny,
   sync varianty dál na UI vlákně nad sdílenou instancí. Veřejné API beze změny. Test `EDListLoadTests.TwoLists_ConcurrentAsyncLoads_QueryOnlyClones`
   (thread-safe fake, 2 seznamy × init + 5 loadů: 12 klonů, 0 dotazů na sdílené instanci; ověřeno mutací). Klon tím
-  přebírá mezeru vzoru `RestCallRunner` (zánik session na klonu aplikaci neukončí), vlastník ji přijal, zapsáno jako A49.
+  přebíral mezeru vzoru `RestCallRunner` (zánik session na klonu aplikaci neukončil), zapsáno a vyřešeno jako A49.
   Zbývá část TD (`CacheTemplateService`, `CacheAgendaRegistry`, pravidlo R1) u vlastníka TD.
 - **P2 · S** (EDControls) / M (TD) · Závisí na: - · Blokuje: - · Původ: nový (2026-10-06), skeptik u A38, ověřeno v kódu
 - **Problém:** Pravidlo „souběžné requesty jen na klonech" (root `CLAUDE.md`, `RestStatus` je per-instance) drží
@@ -1091,7 +1091,17 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A49 · Klon z `RestCallRunner` nespustí ukončení při zániku session ani nesouladu verze
 
-- [ ] **Stav:** otevřeno (2026-10-06, skeptik u A48, ověřeno v kódu; vlastník přijal A48 s touto mezerou)
+- [ ] **Stav:** otevřeno, varianta (a) hotová (2026-10-06) - `MLRestAdapter.With()` bez přepsaných parametrů (klon téže
+  session, tedy `RestCallRunner`) odebere na klonu `EdisonActivityFailed`/`EdisonVersionFailed` a vyvolá odběratele
+  původní instance (reflexe do backing fieldu field-like eventu `MLRest`, sender = původní instance; chybějící field
+  = bez přeposílání, ne pád). Klony s `cacheLocks`/`idfa`/`dataNamespace` nepřeposílají. Klon klonu přepošle řetězem až
+  na sdílenou instanci. Rozhoduje se až při chybě: jen když má sdílená instance pořád firmu, namespace i `CacheLocks`
+  klonu (dávka přežívající přepnutí firmy hlásí zámek, který jsme zrušili sami), a jen jednou na instanci (souběžné
+  klony by vrstvily dialog ukončení). TD ani shell se nemění, odběr dál na sdílené instanci. Testy `MLRestAdapterWithTests`
+  na skutečném `MLRest` (vyvolání stejnou cestou jako chyba requestu: obě hlášky zámku, verze, klon klonu, přepsané
+  klony, přepnutí firmy během i po, jedno přeposlání; ověřeno mutací). Kontrakt v doc `IMLRest.With` a `EDControls/CLAUDE.md`.
+  **Zbývá:** dávka na klonu běžící přes přepnutí uživatele přepošle na starou instanci (firma i `CacheLocks` beze změny)
+  a její handler v shellu (`SessionSwitcher` ho neodpojí) aplikaci ukončí; adaptér to nepozná, oprava je v shellu.
 - **P2 · S-M** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-06)
 - **Problém:** `MLRest` vyvolává `EdisonActivityFailed` (zaniklý ACTIVITY zámek) a `EdisonVersionFailed` na instanci,
   která request poslala. Ukončení aplikace ale visí jen na sdílené instanci; klon z `With()` (`RestCallRunner`)
