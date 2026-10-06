@@ -131,9 +131,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
             Func<IMLRest, IReadOnlyList<CompanyStruct>> loadAllowedCompanies,
-            IMLRest mlRest,
             IModuleTreeLoader treeLoader,
-            Lic? initialLicence,
             CompanySwitcher switcher,
             Func<SwitchUserOutcome> switchUser,
             ILocalPrefs prefs,
@@ -231,21 +229,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Stažení licence z M-line: testy podstrčí stub bez EDUsers.
             _licence = new SessionLicenceCoordinator(_restRunner,
                 licenceSync ?? (rest => LicenceService.SyncFromMline(((MLRestAdapter)rest).Inner)),
-                _session, RebuildSessionStateAsync, () => _services.LicenceLoader?.Invoke(),
+                _session, RebuildSessionStateAsync, () => LicenceVerifier.ReloadActiveLicence(_services),
                 () => _services.IsAdmin || _services.MayUpdate,
                 () => { OnPropertyChanged(nameof(LicenceNoticeText)); OnPropertyChanged(nameof(LicenceNoticeTooltip)); });
 
             Companies = ToCompanyItems(companies);
             // Index musí odpovídat MLRest.Idfa - tam má AppBootstrapper vytvořený ACTIVITY zámek.
-            _selectedCompanyIndex = Companies.Select((c, i) => (c, i)).First(x => x.c.Id == mlRest.Idfa).i;
-
-            _services.MLRest = mlRest;
+            _selectedCompanyIndex = Companies.Select((c, i) => (c, i)).First(x => x.c.Id == Rest.Idfa).i;
 
             // Spuštění z dlaždice jde přes OpenModuleAsync (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += LaunchShortcut;
             _shortcuts.ChangelogRequested += ShowShortcutChangelog;
-
-            _initialLicence = initialLicence;
         }
 
         /// <summary>
@@ -255,7 +249,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         protected override IWindowStateStore? WindowStateStore => new ShellWindowStateStore(_prefs);
 
-        private readonly Lic? _initialLicence;
         private Task? _initialization;
 
         /// <summary>
@@ -267,7 +260,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private async Task InitializeCoreAsync()
         {
-            await RebuildSessionStateAsync(_initialLicence);
+            await RebuildSessionStateAsync();
             _ = SyncMlineLicenceAfterLoginAsync();
         }
 
@@ -275,12 +268,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// Po změně session state (initial load, switch firmy, switch uživatele, manual refresh
         /// licence) přebuduje VEŠKERÝ session-scoped derived state. Jediný bod rozšíření pro budoucí
         /// session-scoped data (ECL, user settings, font scheme per firma, …) - přidá se sem,
-        /// callsity nepotřebují vědět.
+        /// callsity nepotřebují vědět. Licenci session už zapsal <see cref="LicenceVerifier"/>.
         /// </summary>
-        private async Task RebuildSessionStateAsync(Lic? licence)
+        private async Task RebuildSessionStateAsync()
         {
             _session.Invalidate();
-            _services.ActiveLicence = licence;
+            var licence = _services.ActiveLicence;
             // Před stromy: upozornění patří licenci session, i když load stromů selže.
             _ = _licence.RefreshNoticeAsync(licence);
             // _modulePrefs se vytváří tady (ne v ctoru), aby reflektoval výměnu UserPrefs po switch-user.
@@ -309,6 +302,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         private void ApplySessionData(SessionData data)
         {
+            // Jediný zapisovatel AccessTable: načítá se až s daty session, takže mezi Accepted a loadem
+            // platí tabulka předchozí firmy - okna shellu jsou v tu chvíli zavřená.
             _services.AccessTable = data.AccessTable;
             // Uzly se nahradí novými instancemi, takže zapamatovaný výběr míří do prázdna.
             ForgetSelection();
@@ -658,7 +653,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 return;
 
             _session.Invalidate();
-            SwitchOutcome result;
+            LicenceAcquireOutcome result;
             // Synchronní část (zavření oken, VerifyLic, logout staré firmy) blokuje UI thread -
             // overlay „Akce probíhá" se musí stihnout vykreslit před ní (yield). Scope nesmí
             // přesáhnout do RebuildSessionStateAsync (má vlastní; IsActionInProgress není
@@ -669,14 +664,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
             }
 
-            if (result.Outcome != LicenceAcquireOutcome.Accepted)
+            if (result != LicenceAcquireOutcome.Accepted)
             {
                 // Combobox si drží cílovou firmu z vlastního editu → notifikací ho vrať na platnou.
                 RaiseSessionPropertiesChanged();
                 // Cancelled bez hlášky záměrně: admin odmítl licenční retry dialog, nebo okno
                 // s neuloženými daty vetovalo zavření - obojí aktivní volba uživatele,
                 // další popup by byl jen friction.
-                if (result.Outcome == LicenceAcquireOutcome.Refused)
+                if (result == LicenceAcquireOutcome.Refused)
                     PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 return;
             }
@@ -688,7 +683,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             try
             {
                 SelectedCompanyIndex = IndexOfOrAppend(target);
-                await RebuildSessionStateAsync(result.Licence);
+                await RebuildSessionStateAsync();
             }
             catch
             {
@@ -948,7 +943,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                             _prefs.LastIdfa = Idfa;
                             _prefs.Save();
                         }
-                        await RebuildSessionStateAsync(outcome.Licence);
+                        await RebuildSessionStateAsync();
                     }
                     catch
                     {

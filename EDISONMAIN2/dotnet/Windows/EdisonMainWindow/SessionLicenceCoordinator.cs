@@ -9,14 +9,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 {
     /// <summary>
     /// Licence session: chip upozornění (nástěnka starého shellu), stažení licence z M-line po
-    /// přihlášení a ruční „Aktualizovat licenci". Přestavbu session dělá VM přes <c>rebuild</c>.
+    /// přihlášení a ruční „Aktualizovat licenci". Novou licenci načte <c>reloadLicence</c>,
+    /// přestavbu session dělá VM přes <c>rebuild</c>.
     /// </summary>
     internal sealed class SessionLicenceCoordinator(
         IRestCallRunner runner,
         Func<IMLRest, LicenceService.MlineSyncResult> licenceSync,
         SessionEpoch session,
-        Func<Lic?, Task> rebuild,
-        Func<Lic?> loadLicence,
+        Func<Task> rebuild,
+        Action reloadLicence,
         Func<bool> syncsAfterLogin,
         Action noticeChanged)
     {
@@ -67,7 +68,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 var sync = await runner.RunAsync(licenceSync);
                 if (sync.Error.Length > 0) Debug.WriteLine($"M-line licence sync: {sync.Error}");
                 if (!sync.Changed || !session.IsCurrent(token)) return;
-                await rebuild(loadLicence());
+                reloadLicence();
+                await rebuild();
             }
             catch (Exception ex)
             {
@@ -87,7 +89,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             LicenceService.MlineSyncResult sync;
             using (busy())
                 sync = await runner.RunAsync(licenceSync);
-            await rebuild(loadLicence());
+            reloadLicence();
+            await rebuild();
             return sync;
         }
     }

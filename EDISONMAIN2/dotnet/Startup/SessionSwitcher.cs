@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
@@ -12,9 +11,10 @@ namespace EDISONMAIN2;
 /// <summary>
 /// Výsledek pokusu o přepnutí uživatele. <see cref="Outcome"/> rozlišuje úspěch, zrušení
 /// v login dialogu a selhání licence pro nového uživatele. <see cref="Companies"/> = povolené
-/// firmy nového uživatele, jen u <see cref="SwitchUserResult.Success"/>.
+/// firmy nového uživatele, jen u <see cref="SwitchUserResult.Success"/>. Licenci nové session
+/// nese <see cref="EDServices.ActiveLicence"/>.
 /// </summary>
-public record SwitchUserOutcome(SwitchUserResult Outcome, Lic? Licence, IReadOnlyList<CompanyStruct>? Companies = null);
+public record SwitchUserOutcome(SwitchUserResult Outcome, IReadOnlyList<CompanyStruct>? Companies = null);
 
 public enum SwitchUserResult
 {
@@ -63,7 +63,7 @@ public class SessionSwitcher(
     {
         var current = ((MLRestAdapter)services.RequireMLRest).Inner;
         var login = PromptLogin(current);
-        if (login == null) return new(SwitchUserResult.Cancelled, null);
+        if (login == null) return new(SwitchUserResult.Cancelled);
 
         // Nový uživatel smí do jiných firem než starý; do nepovolené aktuální se nepřihlásí, session
         // vznikne v povolené (legacy frmLoginEx.SelectedCompany). Bez povolené firmy switch neproběhne.
@@ -72,13 +72,13 @@ public class SessionSwitcher(
                 current.Idfa, conn => LoadAllowedCompanies(conn, login)) is not { } picked)
         {
             services.PopupDisplayer.Info("Uživatel nemá přístup k žádné firmě.");
-            return new(SwitchUserResult.Cancelled, null);
+            return new(SwitchUserResult.Cancelled);
         }
         var (company, companies) = picked;
 
         // Veto okna (neuložená data) ruší switch PŘED logoutem - přeživší okno by jinak
         // pracovalo pod session, která už na serveru neexistuje.
-        if (!closeAllWindows()) return new(SwitchUserResult.Cancelled, null);
+        if (!closeAllWindows()) return new(SwitchUserResult.Cancelled);
 
         // Odhlásit starého uživatele - jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
         // do server-side timeoutu. Až po confirmu (login != null), před swapem session.
@@ -90,14 +90,14 @@ public class SessionSwitcher(
             new ConnectionInfo(current.Server, current.Port, company.Database, company.Id), login);
         wireActivityFailed(session.MLRest);
 
-        var (outcome, licence) = AcquireSession(session);
+        var outcome = AcquireSession(session);
         if (outcome == LicenceAcquireOutcome.Accepted)
             LicenceVerifier.LogLogin(session.MLRest);
         return outcome switch
         {
-            LicenceAcquireOutcome.Accepted => new(SwitchUserResult.Success, licence, companies),
-            LicenceAcquireOutcome.Refused => new(SwitchUserResult.LicenceRefused, null),
-            _ => new(SwitchUserResult.LicenceCancelled, null),
+            LicenceAcquireOutcome.Accepted => new(SwitchUserResult.Success, companies),
+            LicenceAcquireOutcome.Refused => new(SwitchUserResult.LicenceRefused),
+            _ => new(SwitchUserResult.LicenceCancelled),
         };
     }
 
@@ -124,8 +124,6 @@ public class SessionSwitcher(
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
         => SessionFactory.Establish(conn, login, services, options);
 
-    protected virtual (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session)
-        => LicenceVerifier.TryAcquireSession(
-            session.MLRest, session.LicenceLoader, services.IsAdmin,
-            services.PopupDisplayer, services.WindowNavigator);
+    protected virtual LicenceAcquireOutcome AcquireSession(SessionContext session)
+        => LicenceVerifier.TryAcquireSession(session.MLRest, services);
 }

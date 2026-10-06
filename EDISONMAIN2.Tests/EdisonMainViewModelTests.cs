@@ -567,7 +567,7 @@ public class EdisonMainViewModelTests
         () =>
         {
             svc.MLRest = MockMLRest(idfa);   // SessionFactory vymění MLRest služeb za session nového uživatele
-            return new(SwitchUserResult.Success, null, allowed);
+            return new(SwitchUserResult.Success, allowed);
         };
 
     [Fact]
@@ -711,7 +711,7 @@ public class EdisonMainViewModelTests
         {
             services.MLRest = newRest;
             services.UserEmail = "svoboda@firma.cz";
-            return new(SwitchUserResult.Success, null);
+            return new(SwitchUserResult.Success);
         });
         Assert.Contains("user=novak&", vm.SupportWidgetUrl);   // předpoklad
         return vm;
@@ -1124,7 +1124,7 @@ public class EdisonMainViewModelTests
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var shutdown = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown,
-                          switchUser: () => new(SwitchUserResult.Cancelled, null));
+                          switchUser: () => new(SwitchUserResult.Cancelled));
 
         await vm.LoginAsAnotherUserAsync();
 

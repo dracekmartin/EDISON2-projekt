@@ -26,8 +26,8 @@ public class SessionLicenceCoordinatorTests
         new(runner ?? new InlineRestCallRunner(_rest),
             sync ?? Sync(changed: false),
             _session,
-            _ => { _calls.Add("rebuild"); return Task.CompletedTask; },
-            () => { _calls.Add("load"); return new Lic(); },
+            () => { _calls.Add("rebuild"); return Task.CompletedTask; },
+            () => _calls.Add("load"),
             () => syncsAfterLogin,
             () => _noticeChanges++);
 
@@ -182,8 +182,8 @@ public class SessionLicenceCoordinatorTests
         var coordinator = new SessionLicenceCoordinator(new InlineRestCallRunner(_rest),
             _ => { invalidatedBeforeDownload = !_session.IsCurrent(stamp); return new(false, ""); },
             _session,
-            _ => { busyReleasedBeforeRebuild = !busyOpen; return Task.CompletedTask; },
-            () => new Lic(), () => true, () => { });
+            () => { busyReleasedBeforeRebuild = !busyOpen; return Task.CompletedTask; },
+            () => { }, () => true, () => { });
 
         await coordinator.RefreshAsync(() => { busyOpen = true; return new Scope(() => busyOpen = false); });
 

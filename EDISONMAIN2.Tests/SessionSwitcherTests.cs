@@ -69,13 +69,12 @@ public class SessionSwitcherTests
         {
             Calls.Add("establish");
             CapturedConnection = conn;
-            return new SessionContext(NewSessionMLRest, login, () => null);
+            return new SessionContext(NewSessionMLRest, login);
         }
 
         public ConnectionInfo? CapturedConnection { get; private set; }
 
-        protected override (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session)
-            => (SessionOutcome, null);
+        protected override LicenceAcquireOutcome AcquireSession(SessionContext session) => SessionOutcome;
     }
 
     private static EDServices ServicesWith(string server, int port, string db, string idfa, string loginName)
@@ -100,7 +99,6 @@ public class SessionSwitcherTests
         var outcome = s.Switch();
 
         Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
-        Assert.Null(outcome.Licence);
         closeAll.DidNotReceiveWithAnyArgs().Invoke();
         Assert.Same(originalMLRest, services.MLRest);
         Assert.Null(s.WiredMLRest);
@@ -208,7 +206,6 @@ public class SessionSwitcherTests
         var outcome = s.Switch();
 
         Assert.Equal(SwitchUserResult.LicenceRefused, outcome.Outcome);
-        Assert.Null(outcome.Licence);
     }
 
     [Fact]

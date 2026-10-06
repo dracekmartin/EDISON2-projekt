@@ -32,6 +32,62 @@ public class LicenceVerifierTests
         Assert.Same(licence, returned);
     }
 
+    private static EDServices ServicesWith(IMLRest mlRest, Func<Lic?>? loader, Lic? active) =>
+        new(mlRest, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
+        {
+            LicenceLoader = loader,
+            ActiveLicence = active,
+        };
+
+    // Licence session patří do služeb hned s ACTIVITY zámkem - čtou ji launch argumenty agend.
+    [Fact]
+    public void OverServices_Accepted_WritesActiveLicence()
+    {
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, 1);
+        var fresh = new Lic { CountsLOGIN = 5 };
+        var services = ServicesWith(mlRest, () => fresh, active: new Lic());
+
+        var outcome = LicenceVerifier.TryAcquireSession(mlRest, services);
+
+        Assert.Equal(LicenceAcquireOutcome.Accepted, outcome);
+        Assert.Same(fresh, services.ActiveLicence);
+    }
+
+    [Fact]
+    public void OverServices_Refused_KeepsActiveLicence()
+    {
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, -1);
+        var current = new Lic();
+        var services = ServicesWith(mlRest, () => new Lic { CountsLOGIN = 5 }, active: current);
+
+        var outcome = LicenceVerifier.TryAcquireSession(mlRest, services);
+
+        Assert.Equal(LicenceAcquireOutcome.Refused, outcome);
+        Assert.Same(current, services.ActiveLicence);
+    }
+
+    [Fact]
+    public void OverServices_WithoutLoader_Throws()
+    {
+        var mlRest = MLRestMocks.Create();
+
+        Assert.Throws<InvalidOperationException>(() =>
+            LicenceVerifier.TryAcquireSession(mlRest, ServicesWith(mlRest, loader: null, active: null)));
+    }
+
+    [Fact]
+    public void ReloadActiveLicence_ReplacesWithLoaderResult()
+    {
+        var reloaded = new Lic();
+        var services = ServicesWith(MLRestMocks.Create(), () => reloaded, active: new Lic());
+
+        LicenceVerifier.ReloadActiveLicence(services);
+
+        Assert.Same(reloaded, services.ActiveLicence);
+    }
+
     [Fact]
     public void Accepted_SetsCacheLocksOne()
     {

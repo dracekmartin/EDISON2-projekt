@@ -11,15 +11,6 @@ using static ALVA.EDISONAPI.Database;
 namespace EDISONMAIN2;
 
 /// <summary>
-/// Výsledek pokusu o přepnutí firmy. <see cref="LicenceAcquireOutcome.Accepted"/> značí, že
-/// MLRest má novou Idfa+Namespace a <see cref="Licence"/> je platná pro cílovou firmu.
-/// Při neúspěchu je MLRest vrácen na původní firmu, ale <see cref="Licence"/> nese čerstvě
-/// načtenou licenci CÍLOVÉ firmy (z LicenceLoaderu), ne původní - caller ji na non-Accepted
-/// ignoruje.
-/// </summary>
-public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
-
-/// <summary>
 /// Sdílená logika pro výběr a přepnutí firmy. <see cref="PickInitial"/> řeší startup
 /// (<see cref="AppBootstrapper"/>), <see cref="Switch"/> runtime přepnutí ve VM. Drift mezi oběma cestami
 /// (priorita firmy, ACTIVITY zámek, licenční retry, rollback) byl historicky zdrojem
@@ -94,12 +85,13 @@ public class CompanySwitcher(
     /// <see cref="LicenceAcquireOutcome.Accepted"/> - neúspěch tak nezabije rozpracovanou práci.
     /// Veto v Closing → <see cref="LicenceAcquireOutcome.Cancelled"/> ještě před swapem (přeživší
     /// okno by přes sdílený MLRest mluvilo s cizí firmou); při neúspěchu rollback MLRest na
-    /// původní hodnoty. Confirm popup je odpovědnost callsite.
+    /// původní hodnoty. Confirm popup je odpovědnost callsite. <see cref="LicenceAcquireOutcome.Accepted"/>
+    /// = MLRest má novou Idfa+Namespace a <see cref="EDServices.ActiveLicence"/> licenci cílové firmy.
     /// </summary>
     /// <param name="newIdfa">Cílová Idfa.</param>
     /// <param name="newNamespace">Cílový DataNamespace.</param>
     /// <param name="currentLicence">Aktuální licence; null = bez verify (testy / pre-licence stav).</param>
-    public SwitchOutcome Switch(string newIdfa, string newNamespace, Lic? currentLicence)
+    public LicenceAcquireOutcome Switch(string newIdfa, string newNamespace, Lic? currentLicence)
     {
         var mlRest = services.RequireMLRest;
         var originalIdfa = mlRest.Idfa;
@@ -109,7 +101,7 @@ public class CompanySwitcher(
         // (save při zavření, refresh) šly do cizí firmy, proto se zavírají před ním. Legacy
         // moduly mají vlastní spojení (Idfa v launch args), swap se jich netýká → až po Accepted.
         if (!closeShellWindows())
-            return new SwitchOutcome(LicenceAcquireOutcome.Cancelled, currentLicence);
+            return LicenceAcquireOutcome.Cancelled;
 
         // Requesty pod novou Idfa (licenceLoader, VerifyLic) běží PŘED vznikem jejího ACTIVITY
         // zámku - LockExist při CacheLocks=1 by session shodil. Po dobu switche tedy bez kontrol;
@@ -123,12 +115,9 @@ public class CompanySwitcher(
         // licenci cílové firmy, ne původní (jinak bychom kontrolovali špatný limit).
         // Při překročení licencí + admin nabídne LicenceVerifier okno aktivity uživatelů.
         // Null currentLicence (typicky testy) → skip verify, switch je auto-accept.
-        Lic? newLicence = currentLicence;
-        var outcome = LicenceAcquireOutcome.Accepted;
-        if (currentLicence != null)
-            (outcome, newLicence) = LicenceVerifier.TryAcquireSession(
-                mlRest, services.LicenceLoader!, services.IsAdmin,
-                services.PopupDisplayer, services.WindowNavigator);
+        var outcome = currentLicence != null
+            ? LicenceVerifier.TryAcquireSession(mlRest, services)
+            : LicenceAcquireOutcome.Accepted;
 
         if (outcome == LicenceAcquireOutcome.Accepted)
         {
@@ -152,17 +141,17 @@ public class CompanySwitcher(
                 // vrátí Locks=1 sám, při selhání zůstane 0 - bez zámku se nemá co kontrolovat.
                 mlRest.CacheLocks = 0;
                 SessionLogout.Logout(mlRest, originalIdfa, originalNamespace);
-                LicenceVerifier.ReacquireLock(mlRest, newLicence);
+                LicenceVerifier.ReacquireLock(mlRest, services.ActiveLicence);
             }
 
             localPrefs.LastIdfa = newIdfa;
             localPrefs.Save();
-            return new SwitchOutcome(outcome, newLicence);
+            return outcome;
         }
 
         mlRest.Idfa = originalIdfa;
         mlRest.DataNamespace = originalNamespace;
         mlRest.CacheLocks = originalCacheLocks;   // zámek staré firmy pořád existuje
-        return new SwitchOutcome(outcome, newLicence);
+        return outcome;
     }
 }

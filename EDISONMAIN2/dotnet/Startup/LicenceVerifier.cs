@@ -23,7 +23,27 @@ public enum LicenceAcquireOutcome
 /// </summary>
 public static class LicenceVerifier
 {
-    public static (LicenceAcquireOutcome Outcome, Lic? Licence) TryAcquireSession(
+    /// <summary>
+    /// Získání session nad sdílenými službami (start, přihlášení jiného uživatele, přepnutí firmy):
+    /// loader a závislosti dialogů bere z <paramref name="services"/> a licenci zapíše do
+    /// <see cref="EDServices.ActiveLicence"/> hned při <see cref="LicenceAcquireOutcome.Accepted"/>,
+    /// aby od té chvíle odpovídala <c>MLRest.Idfa</c> (čtou ji launch argumenty agend).
+    /// </summary>
+    public static LicenceAcquireOutcome TryAcquireSession(IMLRest mlRest, EDServices services)
+    {
+        var loader = services.LicenceLoader
+            ?? throw new InvalidOperationException("LicenceLoader není nastavený - session nezaložila SessionFactory.");
+        var (outcome, licence) = TryAcquireSession(mlRest, loader, services.IsAdmin,
+                                                   services.PopupDisplayer, services.WindowNavigator);
+        if (outcome == LicenceAcquireOutcome.Accepted) services.ActiveLicence = licence;
+        return outcome;
+    }
+
+    /// <summary>Znovu načte licenci beze změny session (po stažení licence z M-line).</summary>
+    public static void ReloadActiveLicence(EDServices services) =>
+        services.ActiveLicence = services.LicenceLoader?.Invoke();
+
+    internal static (LicenceAcquireOutcome Outcome, Lic? Licence) TryAcquireSession(
         IMLRest mlRest,
         Func<Lic?> licenceLoader,
         bool isAdmin,

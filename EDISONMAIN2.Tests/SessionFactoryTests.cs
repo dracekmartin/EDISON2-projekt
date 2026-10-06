@@ -76,9 +76,20 @@ public class SessionFactoryTests
 
         Assert.Same(ctx.MLRest, services.MLRest);
         Assert.IsType<EDControls.UserPrefs.CacheUserPrefsService>(services.UserPrefs);
-        Assert.NotNull(services.LicenceLoader);
-        // Method-group konverze dává dvě instance delegátu - identita session = sdílený Target.
-        Assert.Same(ctx.LicenceLoader.Target, services.LicenceLoader.Target);
+        // Loader nese jen služby - kontext session ho nevrací (jediný kanál).
+        Assert.IsType<LicenceService>(services.LicenceLoader?.Target);
+    }
+
+    [Fact]
+    public void Establish_SwitchUser_ReplacesLicenceLoader()
+    {
+        var services = NewServices();
+        SessionFactory.Establish(Conn, Bob(), services, new StartupOptions());
+        var first = services.LicenceLoader?.Target;
+
+        SessionFactory.Establish(Conn, Bob(), services, new StartupOptions());
+
+        Assert.NotSame(first, services.LicenceLoader?.Target);
     }
 
     [Fact]

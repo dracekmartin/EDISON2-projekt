@@ -25,9 +25,21 @@ public class CompanySwitcherTests
         IWindowNavigator? nav = null,
         ILocalPrefs? prefs = null,
         Func<bool>? closeShellWindows = null,
+        Action? closeLegacyModules = null) =>
+        CreateSwitcher(mlRest, licenceLoader, out _, isAdmin, popup, nav, prefs, closeShellWindows, closeLegacyModules);
+
+    private static CompanySwitcher CreateSwitcher(
+        IMLRest mlRest,
+        Func<Lic?> licenceLoader,
+        out EDServices services,
+        bool isAdmin = false,
+        IPopupDisplayer? popup = null,
+        IWindowNavigator? nav = null,
+        ILocalPrefs? prefs = null,
+        Func<bool>? closeShellWindows = null,
         Action? closeLegacyModules = null)
     {
-        var services = new EDServices(
+        services = new EDServices(
             mlRest,
             nav ?? Substitute.For<IWindowNavigator>(),
             popup ?? Substitute.For<IPopupDisplayer>())
@@ -169,7 +181,7 @@ public class CompanySwitcherTests
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
 
-        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result);
         mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
     }
 
@@ -185,18 +197,22 @@ public class CompanySwitcherTests
         Assert.Equal("JI_DP", mlRest.DataNamespace);
     }
 
+    // Licence cílové firmy je ve službách hned po Accepted, ne až po přestavbě shellu - launch
+    // argumenty agend a HasAccess ji čtou spolu s MLRest.Idfa.
     [Fact]
-    public void Switch_VerifyAccepted_ReturnsAccepted()
+    public void Switch_VerifyAccepted_ActiveLicenceIsTargetFirms()
     {
         var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, 1);
-        var licence = new Lic { CountsLOGIN = 5 };
-        var switcher = CreateSwitcher(mlRest, () => licence);
+        var currentLicence = new Lic { CountsLOGIN = 5 };
+        var targetLicence = new Lic { CountsLOGIN = 9 };
+        var switcher = CreateSwitcher(mlRest, () => targetLicence, out var services);
+        services.ActiveLicence = currentLicence;
 
-        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence);
 
-        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
-        Assert.Same(licence, result.Licence);
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result);
+        Assert.Same(targetLicence, services.ActiveLicence);
         Assert.Equal("JI_DP", mlRest.Idfa);
         Assert.Equal("JI_DP", mlRest.DataNamespace);
     }
@@ -243,7 +259,7 @@ public class CompanySwitcherTests
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
-        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result);
         Assert.Equal(0, mlRest.CacheLocks);
         mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
     }
@@ -260,7 +276,7 @@ public class CompanySwitcherTests
 
         var result = switcher.Switch("CB_DP", "CB_DP", currentLicence: licence);
 
-        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result);
         mlRest.DidNotReceive().With(Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>());
     }
 
@@ -287,7 +303,7 @@ public class CompanySwitcherTests
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
-        Assert.Equal(LicenceAcquireOutcome.Refused, result.Outcome);
+        Assert.Equal(LicenceAcquireOutcome.Refused, result);
         popup.DidNotReceive().Confirm(Arg.Any<string>());
     }
 
@@ -306,21 +322,20 @@ public class CompanySwitcherTests
     }
 
     [Fact]
-    public void Switch_Refused_CarriesFreshTargetLicence()
+    public void Switch_Refused_KeepsCurrentLicence()
     {
-        // Na Refused vrací SwitchOutcome čerstvě načtenou licenci CÍLOVÉ firmy (z loaderu),
-        // ne původní currentLicence - LicenceVerifier vrací licenceLoader() i při odmítnutí.
+        // Loader už načetl licenci cílové firmy, ale session zůstala na původní - licence s ní.
         var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
         SetupVerifyLic(mlRest, -1);
         var currentLicence = new Lic { CountsLOGIN = 5 };
         var freshLicence = new Lic { CountsLOGIN = 99 };
-        var switcher = CreateSwitcher(mlRest, () => freshLicence, isAdmin: false);
+        var switcher = CreateSwitcher(mlRest, () => freshLicence, out var services, isAdmin: false);
+        services.ActiveLicence = currentLicence;
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence);
 
-        Assert.Equal(LicenceAcquireOutcome.Refused, result.Outcome);
-        Assert.Same(freshLicence, result.Licence);
-        Assert.NotSame(currentLicence, result.Licence);
+        Assert.Equal(LicenceAcquireOutcome.Refused, result);
+        Assert.Same(currentLicence, services.ActiveLicence);
     }
 
     [Fact]
@@ -336,7 +351,7 @@ public class CompanySwitcherTests
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
-        Assert.Equal(LicenceAcquireOutcome.Cancelled, result.Outcome);
+        Assert.Equal(LicenceAcquireOutcome.Cancelled, result);
         nav.DidNotReceive().ShowLegacyAndWait(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>());
     }
 
@@ -369,7 +384,7 @@ public class CompanySwitcherTests
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
-        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result);
         nav.Received(1).ShowLegacyAndWait("USERS.exe", "ALVA.USERS.formUSERSActivity", shareShellSession: false);
         Assert.Equal("JI_DP", mlRest.Idfa);
     }
@@ -461,7 +476,7 @@ public class CompanySwitcherTests
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
-        Assert.Equal(LicenceAcquireOutcome.Cancelled, result.Outcome);
+        Assert.Equal(LicenceAcquireOutcome.Cancelled, result);
         Assert.Equal("CB_DP", mlRest.Idfa);
         Assert.Equal("CB_DP", mlRest.DataNamespace);
         mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
@@ -599,16 +614,18 @@ public class CompanySwitcherTests
         SetupVerifyLic(reacquireClone, 1);
         mlRest.With(cacheLocks: 0, idfa: "CB_DP", dataNamespace: "CB_DP").Returns(oldClone);
         mlRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(reacquireClone);
-        var licence = new Lic { CountsLOGIN = 5 };
+        var currentLicence = new Lic { CountsLOGIN = 5 };
+        var targetLicence = new Lic { CountsLOGIN = 9 };
         int loaderCalls = 0;
-        var switcher = CreateSwitcher(mlRest, () => { loaderCalls++; return licence; });
+        var switcher = CreateSwitcher(mlRest, () => { loaderCalls++; return targetLicence; });
 
-        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+        switcher.Switch("JI_DP", "JI_DP", currentLicence);
 
-        // Jediné čtení licence je to v TryAcquireSession, které běží ještě s Locks=0.
+        // Jediné čtení licence je to v TryAcquireSession, které běží ještě s Locks=0; zámek se
+        // obnovuje s počtem licencí CÍLOVÉ firmy (limit je per IdFa).
         Assert.Equal(1, loaderCalls);
         reacquireClone.Received(1).QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
-            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 5));
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 9));
     }
 
     [Fact]
@@ -627,7 +644,7 @@ public class CompanySwitcherTests
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
-        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);   // přepnutí platí dál
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result);   // přepnutí platí dál
         Assert.Equal(0, mlRest.CacheLocks);
     }
 
