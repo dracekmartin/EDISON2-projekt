@@ -60,7 +60,7 @@
                                  podlaha zmenšení: Viewbox neklesne pod ~0,76 a delší text se ořízne (celý je v ToolTipu).
                                  Fixní hodnota - z tokenu FontSize se přes DynamicResource spočítat nedá. -->
                             <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                                <TextBlock Text="{Binding DisplayedLongName}" Width="114" MaxHeight="76"
+                                <TextBlock Text="{Binding DisplayedDistinctName}" Width="114" MaxHeight="76"
                                            TextWrapping="Wrap" TextAlignment="Center" TextTrimming="CharacterEllipsis"
                                            Foreground="{DynamicResource EDTheme.Text.Primary}"/>
                             </Viewbox>

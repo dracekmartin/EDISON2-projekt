@@ -169,19 +169,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             var modules = _getActiveModules();
             if (modules.Count == 0) { RunningModules = [EmptyPlaceholder]; return; }
 
-            var labels = ModuleTreeState.BuildModuleLabels(_trees.SourceTrees.Select(t => t.Tree));
+            var labels = _trees.ModuleLabels;
             RunningModules = [.. modules.Select(m => m with { DisplayName = ResolveRunningLabel(m, labels) })];
         }
 
         /// <summary>
-        /// Label do menu „Spuštěné moduly": dlouhý název modulu, jinak cesta agendou, jinak
-        /// (modul mimo strom) vlastní titulek okna bez koncového <c>[IDFa]</c>. Krátký název sám
-        /// nestačí - dvě agendy ho mají běžně shodný (Zaměstnanci z MZDY2 vs. z Požadavků na
-        /// volno). Firma je v položce zbytečná - při přepnutí firmy se otevřená okna zavírají.
+        /// Label do menu „Spuštěné moduly": jednoznačný popisek modulu ze stromu (týž jako v Používaných),
+        /// jinak (modul mimo strom) vlastní titulek okna bez koncového <c>[IDFa]</c>. Titulek nestačí -
+        /// dvě agendy mají běžně shodný (Zaměstnanci z MZDY2 vs. z Požadavků na volno). Firma je
+        /// v položce zbytečná - při přepnutí firmy se otevřená okna zavírají.
         /// </summary>
-        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, ModuleTreeState.ModuleLabel> labels) =>
+        internal static string ResolveRunningLabel(RunningModuleInfo info, IReadOnlyDictionary<string, string> labels) =>
             labels.TryGetValue(ModuleTreeState.ModuleKey(info.ExeName, info.FormFqn, info.InputParam), out var label)
-                ? (label.LongName.Length > 0 ? label.LongName : label.Path)
+                ? label
                 : StripIdfaSuffix(info.DisplayName);
 
         /// <summary>Odřízne jeden koncový <c>[...]</c> (suffix s firmou). Hranatá závorka uvnitř názvu zůstane.

@@ -162,27 +162,68 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             treeName + ":" + string.Join(".", path);
 
         /// <summary>
-        /// Mapa <c>exe|forma|param</c> → popisky modulu. Klíč je záměrně tentýž, kterým
-        /// <c>WindowNavigator</c> deduplikuje běžící procesy.
+        /// Mapa <c>exe|forma|param</c> → jednoznačný popisek modulu (Spuštěné moduly, Používané, plocha): dlouhý
+        /// název, je-li ve stromech jedinečný, jinak krátký, je-li jedinečný, jinak „krátký - agenda".
+        /// Klíč je identita běžícího modulu z <c>RunningModuleInfo</c> (exe, forma, parametr).
         /// </summary>
-        internal static Dictionary<string, ModuleLabel> BuildModuleLabels(IEnumerable<IEnumerable<IModule>> trees)
+        internal static Dictionary<string, string> BuildModuleLabels(IEnumerable<IEnumerable<IModule>> trees)
         {
-            var labels = new Dictionary<string, ModuleLabel>();
-            // První nález vyhrává - týž modul může být ve stromě víckrát (např. i v Oblíbených).
+            // Týž modul bývá ve stromu víckrát (Číselné řady v osmi agendách, Oblíbené) - počítá se jednou, první výskyt vyhrává.
+            // Uzel bez exe popisek nedostane: spustit nejde a prázdný klíč „||" mají i WPF okna ve Spuštěných.
+            var modules = new Dictionary<string, ExecutableModule>();
+            var order = new List<string>();
+            var stubs = new List<ExecutableModule>();
             foreach (var exe in trees.SelectMany(tree => tree).SelectMany(Flatten))
-                labels.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
-                    new ModuleLabel(exe.TreePath, exe.LongName));
+            {
+                if (exe.ExecutablePath.Length == 0) stubs.Add(exe);
+                else if (modules.TryAdd(KeyOf(exe), exe)) order.Add(KeyOf(exe));
+            }
+
+            var nodes = modules.Values.Concat(stubs).ToList();
+            var longNames = nodes.Where(m => m.LongName.Length > 0).CountBy(m => m.LongName).ToDictionary();
+            var shortNames = nodes.CountBy(m => m.Name).ToDictionary();
+            var labels = order.ToDictionary(key => key, key => modules[key] switch
+            {
+                var m when m.LongName.Length > 0 && longNames[m.LongName] == 1 => m.LongName,
+                var m when shortNames[m.Name] == 1                             => m.Name,
+                var m                                                          => AgendaLabel(m),
+            });
+
+            // Dlouhý název jednoho modulu se může krýt s krátkým jiného (zvlášť ve stromu ořezaném licencí) nebo s cestou
+            // stubu, kterou ukazuje jeho dlaždice - pak rozhodne cesta stromem.
+            var stubPaths = stubs.Select(s => s.TreePath).ToHashSet();
+            var escalated = order
+                .GroupBy(key => labels[key])
+                .Where(g => g.Count() > 1 || stubPaths.Contains(g.Key))
+                .SelectMany(g => g)
+                .ToHashSet();
+            foreach (var key in escalated)
+                labels[key] = modules[key].TreePath;
+
+            // Shodnou cestu (týž název v téže rodině s jiným parametrem, kořen ve dvou záložkách) rozliší až pořadové
+            // číslo. Nekolidující popisky si název berou první, číslo dostane jen modul převedený na cestu.
+            var taken = new HashSet<string>(stubPaths);
+            foreach (var key in order.OrderBy(escalated.Contains))
+            {
+                var label = labels[key];
+                for (var n = 2; !taken.Add(label); n++)
+                    label = $"{labels[key]} ({n})";
+                labels[key] = label;
+            }
             return labels;
+        }
+
+        // Agenda = rodina nejvyšší úrovně; kořeny Správy systému za běhu nesou „EDISON" a název firmy (GetTree).
+        private static string AgendaLabel(ExecutableModule module)
+        {
+            if (module.FamilyPath.Length == 0) return module.Name;
+            var end = module.FamilyPath.IndexOf(ExecutableModule.PathSeparator, StringComparison.Ordinal);
+            return $"{module.Name} - {(end < 0 ? module.FamilyPath : module.FamilyPath[..end])}";
         }
 
         internal static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
 
-        /// <summary>
-        /// Popisky modulu ve stromu: <c>Path</c> = cesta agendou včetně listu
-        /// („Mzdy a personalistika › Zaměstnanci"), <c>LongName</c> = legacy <c>nameEx</c>
-        /// (může být prázdný - má ho jen pětina modulů).
-        /// </summary>
-        internal record ModuleLabel(string Path, string LongName);
+        private static string KeyOf(ExecutableModule exe) => ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam);
 
         internal static IEnumerable<ExecutableModule> Flatten(IModule module) => module switch
         {
@@ -250,25 +291,33 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         internal void Load(IReadOnlyDictionary<string, IReadOnlyList<IModule>> trees, Lic? licence,
                            AccessTable? access, List<string>? expansion)
         {
-            foreach (var (name, tree) in SourceTrees)
-                FillFilteredTree(tree, trees[name], licence, access);
+            var filtered = SourceTrees.Select(t => (Target: t.Tree, Roots: FilterTree(trees[t.Name], licence, access))).ToList();
+
+            // Jedinečnost popisku závisí na všech záložkách najednou, proto až po filtraci a dřív, než uzly uvidí UI.
+            ModuleLabels = BuildModuleLabels(filtered.Select(f => f.Roots));
+            foreach (var exe in filtered.SelectMany(f => f.Roots).SelectMany(Flatten))
+                exe.DistinctName = ModuleLabels.GetValueOrDefault(KeyOf(exe), "");
+
+            // Clear až tady (po úspěšném loadu, ne před requestem) - selhání jinak nechá záložku
+            // trvale prázdnou a při přepnutí firmy zahodí i strom, který byl platný.
+            foreach (var (target, roots) in filtered)
+            {
+                target.Clear();
+                foreach (var root in roots)
+                    target.Add(root);
+            }
             _expansion = expansion;
             // Stromy jsou nové instance s persistovaným rozbalením; trvající hledání si vezme čerstvý snímek.
             _expansionBeforeSearch = null;
         }
 
-        // Clear až tady (po úspěšném loadu, ne před requestem) - selhání jinak nechá záložku
-        // trvale prázdnou a při přepnutí firmy zahodí i strom, který byl platný.
-        private void FillFilteredTree(ObservableCollection<IModule> target, IReadOnlyList<IModule> tree,
-                                      Lic? licence, AccessTable? access)
-        {
-            target.Clear();
-            foreach (var module in tree)
-            {
-                if (TryFilter(module, licence, access, _station.IsMlineDomain) is { } filtered)
-                    target.Add(_station.Decorate(filtered));
-            }
-        }
+        /// <summary>Popisky modulů načtených stromů (<see cref="BuildModuleLabels"/>), klíč <see cref="ModuleKey"/>.</summary>
+        internal IReadOnlyDictionary<string, string> ModuleLabels { get; private set; } = new Dictionary<string, string>();
+
+        private List<IModule> FilterTree(IReadOnlyList<IModule> tree, Lic? licence, AccessTable? access) =>
+            [.. tree.Select(module => TryFilter(module, licence, access, _station.IsMlineDomain))
+                    .OfType<IModule>()
+                    .Select(_station.Decorate)];
 
         /// <summary>
         /// Nové kořeny záložky Oblíbené. Rodinné wrappery jsou nové instance, takže si znovu

@@ -55,15 +55,15 @@ namespace EDISONMAIN2.Desktop
         public string Name { get; init; } = "";
 
         /// <summary>
-        /// Text dlaždice - dlouhý název modulu (legacy `nameEx`), fallback krátký název.
-        /// Na ploše chybí kontext stromu, takže krátký název sám je nejednoznačný.
+        /// Text dlaždice - jednoznačný popisek modulu, tentýž jako ve Spuštěných a Používaných
+        /// (na ploše chybí kontext stromu, krátký název sám je nejednoznačný). U položek mimo strom název zástupce.
         /// Odvozené ze stromu, nepersistuje se.
         /// </summary>
-        public string DisplayedLongName { get; init; } = "";
+        public string DisplayedDistinctName { get; init; } = "";
 
         /// <summary>
         /// Cesta agendou do ToolTipu dlaždice. U položek, které strom nezná (sestavy, pohledy DS),
-        /// padá na <see cref="DisplayedLongName"/> - prázdný ToolTip by byl jen prázdný rámeček.
+        /// padá na <see cref="DisplayedDistinctName"/> - prázdný ToolTip by byl jen prázdný rámeček.
         /// Odvozené ze stromu, nepersistuje se.
         /// </summary>
         public string TreePath { get; init; } = "";
@@ -126,7 +126,7 @@ namespace EDISONMAIN2.Desktop
             Id = module.ElementId,
             ElementId = module.ElementId,
             Name = module.Name,
-            DisplayedLongName = module.DisplayedLongName,
+            DisplayedDistinctName = module.DisplayedDistinctName,
             TreePath = module.TreePath,
             ExecutablePath = module.ExecutablePath,
             FormName = module.FormName,
