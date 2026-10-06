@@ -79,4 +79,100 @@ public class MLRestAdapterWithTests
         Assert.Equal(1, source.CacheLocks);
         Assert.Equal("IDFA", source.Idfa);
     }
+
+    /// <summary>Klon téže session (RestCallRunner) dostane od serveru zaniklý zámek nebo jinou verzi - ukončení
+    /// aplikace (shell, TD) ale odebírá jen sdílená instance. Bez přeposlání by se aplikace neukončila.</summary>
+    [Theory]
+    [InlineData("OnEdisonActivityFailed", "ACTIVITY: Lock exist failed!")]
+    [InlineData("OnEdisonActivityFailed", "ACTIVITY: Lock set failed!")]
+    [InlineData("OnEdisonVersionFailed", "EdisonVersionFailed!")]
+    public void With_SameSessionClone_ForwardsSessionEndToSharedInstance(string raise, string serverError)
+    {
+        var source = new MLRest("srv", 1234, "NS", "IDFA") { CacheLocks = 1 };
+        var (activity, version) = Subscribe(source);
+
+        var clone = ((MLRestAdapter)new MLRestAdapter(source).With()).Inner;
+        RaiseAsServerError(clone, raise, serverError);
+
+        Assert.Equal(raise == "OnEdisonActivityFailed" ? 1 : 0, activity());
+        Assert.Equal(raise == "OnEdisonVersionFailed" ? 1 : 0, version());
+    }
+
+    /// <summary>Klon klonu přepošle až na sdílenou instanci (řetěz přes mezilehlé přeposílání).</summary>
+    [Fact]
+    public void With_CloneOfClone_ForwardsToSharedInstance()
+    {
+        var source = new MLRest("srv", 1234, "NS", "IDFA") { CacheLocks = 1 };
+        var (activity, _) = Subscribe(source);
+
+        var nested = ((MLRestAdapter)new MLRestAdapter(source).With().With()).Inner;
+        RaiseAsServerError(nested, "OnEdisonActivityFailed", "ACTIVITY: Lock exist failed!");
+
+        Assert.Equal(1, activity());
+    }
+
+    /// <summary>Dávka na klonu přežije přepnutí firmy: zámek staré firmy jsme zrušili sami, ukončení by shodilo
+    /// shell hned po úspěšném přepnutí. Během switche má sdílená instance CacheLocks=0, po něm jinou firmu.</summary>
+    [Theory]
+    [InlineData(0, "IDFA", "NS")]
+    [InlineData(1, "OTHER", "NS2")]
+    public void With_SharedInstanceSwitchedSinceClone_DoesNotForward(int sharedLocks, string sharedIdfa, string sharedNamespace)
+    {
+        var source = new MLRest("srv", 1234, "NS", "IDFA") { CacheLocks = 1 };
+        var (activity, _) = Subscribe(source);
+        var clone = ((MLRestAdapter)new MLRestAdapter(source).With()).Inner;
+
+        source.CacheLocks = sharedLocks;
+        source.Idfa = sharedIdfa;
+        source.DataNamespace = sharedNamespace;
+        RaiseAsServerError(clone, "OnEdisonActivityFailed", "ACTIVITY: Lock exist failed!");
+
+        Assert.Equal(0, activity());
+    }
+
+    /// <summary>Souběžné klony (SessionDataLoader pouští 9 najednou) by jinak vrstvily dialog „aplikace bude ukončena".</summary>
+    [Fact]
+    public void With_SeveralClonesFail_ForwardsOnce()
+    {
+        var source = new MLRest("srv", 1234, "NS", "IDFA") { CacheLocks = 1 };
+        var (activity, version) = Subscribe(source);
+        var adapter = new MLRestAdapter(source);
+
+        RaiseAsServerError(((MLRestAdapter)adapter.With()).Inner, "OnEdisonActivityFailed", "ACTIVITY: Lock exist failed!");
+        RaiseAsServerError(((MLRestAdapter)adapter.With()).Inner, "OnEdisonActivityFailed", "ACTIVITY: Lock exist failed!");
+        RaiseAsServerError(((MLRestAdapter)adapter.With()).Inner, "OnEdisonVersionFailed", "EdisonVersionFailed!");
+
+        Assert.Equal(1, activity() + version());
+    }
+
+    /// <summary>Klony s přepsanými parametry (poll s CacheLocks=2, logout cizí firmy) ukončení spouštět nemají.</summary>
+    [Theory]
+    [InlineData(0, null)]
+    [InlineData(2, null)]
+    [InlineData(null, "OTHER")]
+    public void With_OverriddenClone_DoesNotForward(int? cacheLocks, string? idfa)
+    {
+        var source = new MLRest("srv", 1234, "NS", "IDFA") { CacheLocks = 1 };
+        var (activity, version) = Subscribe(source);
+
+        var clone = ((MLRestAdapter)new MLRestAdapter(source).With(cacheLocks: cacheLocks, idfa: idfa)).Inner;
+        RaiseAsServerError(clone, "OnEdisonActivityFailed", "ACTIVITY: Lock exist failed!");
+        RaiseAsServerError(clone, "OnEdisonVersionFailed", "EdisonVersionFailed!");
+
+        Assert.Equal(0, activity());
+        Assert.Equal(0, version());
+    }
+
+    private static (Func<int> Activity, Func<int> Version) Subscribe(MLRest source)
+    {
+        int activity = 0, version = 0;
+        source.EdisonActivityFailed += (sender, _) => { Assert.Same(source, sender); activity++; };
+        source.EdisonVersionFailed += (sender, _) => { Assert.Same(source, sender); version++; };
+        return (() => activity, () => version);
+    }
+
+    // Stejná cesta jako MLRest při chybě requestu (catch volá OnEdison*Failed(err)), jen bez sítě.
+    private static void RaiseAsServerError(MLRest instance, string method, string serverError) =>
+        typeof(MLRest).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(instance, [serverError]);
 }

@@ -16,9 +16,9 @@ internal static class SessionLogout
 {
     /// <summary>
     /// Odhlásí session. Volá se na klonu (<see cref="IMLRest.With"/>) s <c>CacheLocks=0</c> (request
-    /// nesmí padnout na LockExist) - sdílenou instanci nemutuje. <paramref name="idfa"/> /
-    /// <paramref name="dataNamespace"/> přepíší cílovou firmu (company switch uvolňuje zámky staré
-    /// firmy mid-session); null = aktuální session (close / switch-user).
+    /// nesmí padnout na LockExist). <paramref name="idfa"/> / <paramref name="dataNamespace"/> přepíší
+    /// cílovou firmu (company switch uvolňuje zámky staré firmy mid-session, sdílenou instanci nemění);
+    /// null = aktuální session (close / switch-user), ta se předem označí <c>CacheLocks=0</c>.
     /// </summary>
     internal static void Logout(IMLRest? mlRest, string? idfa = null, string? dataNamespace = null)
     {
@@ -26,6 +26,10 @@ internal static class SessionLogout
         try
         {
             var clone = mlRest.With(cacheLocks: 0, idfa: idfa, dataNamespace: dataNamespace);
+            // Před requestem: klon téže session, který zrovna běží na pozadí, by zánik zámku po logoutu
+            // přeposlal jako konec aplikace (MLRestAdapter.With) - u switch-user by shodil nového uživatele.
+            // Až po With(): když klon nevznikne, logout neproběhne a session má dál hlídat zámek.
+            if (idfa is null && dataNamespace is null) mlRest.CacheLocks = 0;
             try
             {
                 // object[]: legacy endpoint bez vstupních parametrů (identita jde v sys kontextu).
