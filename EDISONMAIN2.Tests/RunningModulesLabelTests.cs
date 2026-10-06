@@ -18,7 +18,7 @@ public class RunningModulesLabelTests
     private static ModuleFamily Fam(string name, params ExecutableModule[] kids)
     {
         var f = new ModuleFamily { Name = name };
-        foreach (var k in kids) f.NestedModules.Add(k with { FamilyPath = name });
+        foreach (var k in kids) f.NestedModules.Add(new ExecutableModule(k) { FamilyPath = name });
         return f;
     }
 
@@ -40,7 +40,7 @@ public class RunningModulesLabelTests
     {
         var fam = Fam("Interní", Exe("Turnusy", "MHD2.exe", "f"));
         fam.DisplaySuffix = " [### M-line ###] - rozbité";
-        fam.NestedModules[0] = (ExecutableModule)fam.NestedModules[0] with { DisplaySuffix = " - chybí exe" };
+        fam.NestedModules[0] = new ExecutableModule((ExecutableModule)fam.NestedModules[0]) { DisplaySuffix = " - chybí exe" };
 
         var label = Assert.Single(ModuleTreeState.BuildModuleLabels([[fam]])).Value;
 

@@ -73,7 +73,7 @@ public class ModuleLaunchabilityCheckTests : IDisposable
     [Fact]
     public void MissingExe_ShortcutDtoKeepsOriginalName()
     {
-        var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(Broken("Zaměstnanci") with { ElementId = "100" });
+        var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(new ExecutableModule(Broken("Zaměstnanci")) { ElementId = "100" });
 
         Assert.EndsWith(" - chybí exe", marked.DisplayedName);
         Assert.Equal("Zaměstnanci", marked.Name);

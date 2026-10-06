@@ -75,7 +75,7 @@ public class EdisonMainViewModelTests
             new ExecutableModule { Name = "B", ExecutablePath = "b.exe" });
 
         var vm = CreateVM(treeLoader: mockTree,
-                          station: NeutralStation with { Decorate = m => ((ExecutableModule)m) with { Color = "#123456" } });
+                          station: NeutralStation with { Decorate = m => new ExecutableModule((ExecutableModule)m) { Color = "#123456" } });
 
         Assert.All(vm.MainMenuTree, m => Assert.Equal("#123456", ((ExecutableModule)m).Color));
     }

@@ -272,7 +272,7 @@ public class ModuleShortcutsServiceTests
     [Fact]
     public void Add_TakesTreePathFromModule()
     {
-        var a = Exe("100", "Objednávky") with { FamilyPath = "Autobusová doprava" };
+        var a = new ExecutableModule(Exe("100", "Objednávky")) { FamilyPath = "Autobusová doprava" };
         var svc = new ModuleShortcutsService();
         svc.Seed([a], []);
 
@@ -286,7 +286,7 @@ public class ModuleShortcutsServiceTests
     [Fact]
     public void Add_DecoratedModule_PersistsAndShowsUndecoratedName()
     {
-        var a = Exe("100", "Zaměstnanci") with { FamilyPath = "Mzdy", DisplaySuffix = " - chybí exe" };
+        var a = new ExecutableModule(Exe("100", "Zaměstnanci")) { FamilyPath = "Mzdy", DisplaySuffix = " - chybí exe" };
         var svc = new ModuleShortcutsService();
         svc.Seed([a], []);
 

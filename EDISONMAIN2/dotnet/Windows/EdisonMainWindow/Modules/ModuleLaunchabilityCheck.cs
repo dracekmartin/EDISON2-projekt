@@ -82,8 +82,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         private static (IModule, Category) MarkExe(ExecutableModule exe) => Evaluate(exe) switch
         {
             State.Launchable => (exe, Category.Launchable),
-            State.Stub => (exe with { Color = StubColor, DisplaySuffix = exe.DisplaySuffix + Suffix(" - stub") }, Category.Stub),
-            _ => (exe with { Color = BrokenColor, DisplaySuffix = exe.DisplaySuffix + Suffix(" - chybí exe") }, Category.Broken),
+            State.Stub => (new ExecutableModule(exe) { Color = StubColor, DisplaySuffix = exe.DisplaySuffix + Suffix(" - stub") }, Category.Stub),
+            _ => (new ExecutableModule(exe) { Color = BrokenColor, DisplaySuffix = exe.DisplaySuffix + Suffix(" - chybí exe") }, Category.Broken),
         };
 
         private static string Suffix(string text) => InternalDiagnostics.Enabled ? text : "";

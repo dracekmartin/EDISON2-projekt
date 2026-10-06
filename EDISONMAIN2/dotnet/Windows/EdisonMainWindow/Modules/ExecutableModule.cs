@@ -2,8 +2,38 @@ using System.ComponentModel;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
-    public record ExecutableModule : IModule, INotifyPropertyChanged
+    /// <summary>
+    /// Spustitelný uzel stromu. Třída s referenční rovností, ne record: instance se sdílí mezi stromy,
+    /// Oblíbenými, Používanými i dlaždicí a nese pozorovatelný stav, takže dva shodně vyplněné uzly
+    /// nesmí splynout (kontejnery WPF, výběr, <c>List.Remove</c>).
+    /// </summary>
+    public sealed class ExecutableModule : IModule, INotifyPropertyChanged
     {
+        public ExecutableModule() { }
+
+        /// <summary>
+        /// Kopie uzlu pro dekoraci (filtr, launchovatelnost); změny doplní initializer
+        /// (<c>new ExecutableModule(exe) { Color = ... }</c>). Odběratelé <see cref="PropertyChanged"/> se nekopírují.
+        /// </summary>
+        public ExecutableModule(ExecutableModule source)
+        {
+            Name = source.Name;
+            DisplaySuffix = source.DisplaySuffix;
+            LongName = source.LongName;
+            FamilyPath = source.FamilyPath;
+            ExecutablePath = source.ExecutablePath;
+            FormName = source.FormName;
+            ElementId = source.ElementId;
+            IsLicensed = source.IsLicensed;
+            InputParam = source.InputParam;
+            Hidden = source.Hidden;
+            MlineOnly = source.MlineOnly;
+            Color = source.Color;
+            _isFavorite = source._isFavorite;
+            _isStartupWindow = source._isStartupWindow;
+            _isVisibleBySearch = source._isVisibleBySearch;
+        }
+
         /// <summary>Název z dat stromu: hledání, cesta stromem i uložený zástupce. Dekorace sem nepatří.</summary>
         public string Name { get; init; } = "";
 

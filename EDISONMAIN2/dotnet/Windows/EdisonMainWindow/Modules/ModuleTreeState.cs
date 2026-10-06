@@ -28,7 +28,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         internal static IModule? TryFilter(IModule module, Lic? licence, AccessTable? access = null, bool isMlineDomain = false) => module switch
         {
             ExecutableModule exe => IsAllowed(exe, licence, access, isMlineDomain)
-                ? (exe.MlineOnly ? exe with { DisplaySuffix = exe.DisplaySuffix + MlineDomainDetector.Suffix } : exe)
+                ? (exe.MlineOnly ? new ExecutableModule(exe) { DisplaySuffix = exe.DisplaySuffix + MlineDomainDetector.Suffix } : exe)
                 : null,
             ModuleFamily family  => FilterFamily(family, licence, access, isMlineDomain),
             _                    => module,
