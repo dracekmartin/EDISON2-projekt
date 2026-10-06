@@ -236,6 +236,7 @@ public class ChangelogPromptServiceTests
 }
 
 /// <summary>Přepínání změny/historie ve ViewModelu okna (EDServices nutné pro EDViewModel base).</summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class ChangelogViewModelTests
 {
     private static ChangelogViewModel Create(ChangelogContent content, bool snoozed = false)
@@ -290,6 +291,7 @@ public class ChangelogViewModelTests
 /// Vstupní body vynucených novinek v shellu (menu Nápověda, kontextové menu stromu, dlaždice
 /// plochy). Testuje se jen cesta bez INF - zobrazení okna vyžaduje STA vlákno.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class ChangelogEntryPointTests
 {
     private readonly IChangelogSource _source = Substitute.For<IChangelogSource>();

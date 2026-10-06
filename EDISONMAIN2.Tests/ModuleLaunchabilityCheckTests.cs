@@ -8,6 +8,7 @@ namespace EDISONMAIN2.Tests;
 /// (EDISONMAIN2API.exe) je každá existující exe launchovatelná - odpadl stav „neretrofitnuto".
 /// Suffixy v názvu jsou jen diagnostika M-line; testy je zapínají explicitně a stav obnovují.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class ModuleLaunchabilityCheckTests : IDisposable
 {
     private readonly bool _originalDiagnostics = InternalDiagnostics.Enabled;

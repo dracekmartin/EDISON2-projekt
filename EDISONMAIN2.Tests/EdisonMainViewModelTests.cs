@@ -15,6 +15,7 @@ using static EDISONMAIN2.Tests.MiniAppTestDoubles;
 
 namespace EDISONMAIN2.Tests;
 
+[Collection(SharedStaticStateCollection.Name)]
 public class EdisonMainViewModelTests
 {
     // Confirm před přepnutím firmy se ukazuje jen když je otevřený aspoň jeden modul.

@@ -8,6 +8,7 @@ namespace EDISONMAIN2.Tests;
 /// hodnotou <c>MlineDomain</c>: <c>"1"</c>/<c>"True"</c>/nenulové číslo → true, jinak false.
 /// Legacy parita - dev override viditelnosti mlineOnly uzlů závisí na těchto edge-casech.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class MlineDomainDetectorTests
 {
     [Theory]

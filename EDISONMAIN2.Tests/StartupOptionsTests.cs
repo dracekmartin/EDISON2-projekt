@@ -8,6 +8,7 @@ namespace EDISONMAIN2.Tests;
 /// <summary>
 /// Režim startu: obě varianty jdou ověřit v jakémkoli buildu, <c>#if DEBUG</c> v App jen vybírá.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class StartupOptionsTests
 {
     [Fact]

@@ -8,6 +8,7 @@ namespace EDISONMAIN2.Tests;
 /// Čtení/zápis EDISONini.xml + IsConfigured() (first-launch detekce). Cesta se přesměruje
 /// do temp adresáře (seam SettingsLoader.FilePath) - bin adresář sdílí běžící exe.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class SettingsLoaderTests : IDisposable
 {
     private readonly string _dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());

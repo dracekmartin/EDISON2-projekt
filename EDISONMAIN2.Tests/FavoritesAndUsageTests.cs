@@ -19,6 +19,7 @@ namespace EDISONMAIN2.Tests;
 /// Oblíbené a Používané z pohledu VM: toggle přes command, usage hook, session load (rozbalení,
 /// záložka, předpřipravené Oblíbené) a preference. Logiku plochy testuje <see cref="FavoritesCoordinatorTests"/>.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class FavoritesAndUsageTests
 {
     private static ExecutableModule Exe(string id, string name = "M") =>

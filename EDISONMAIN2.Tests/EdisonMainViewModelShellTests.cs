@@ -12,6 +12,7 @@ namespace EDISONMAIN2.Tests;
 /// Shell chování VM mimo strom samotný: Ctrl+W dvojhmat, titulek, toolbar gating,
 /// výchozí okno po loginu, spuštění zástupce přes hosta a hromadné rozbalení.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class EdisonMainViewModelShellTests
 {
     private static ExecutableModule Exe(string id, string exe = "a.exe", string form = "ALVA.A.frm") =>

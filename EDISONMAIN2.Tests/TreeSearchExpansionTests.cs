@@ -11,6 +11,7 @@ namespace EDISONMAIN2.Tests;
 /// Hledání a rozbalení napříč změnou session: přepnutí firmy během hledání a přestavba Oblíbených.
 /// Samotné přechodné rozbalení hledáním testuje <see cref="ModuleTreeStateTests"/>.
 /// </summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class TreeSearchExpansionTests
 {
     private const string Scope = "EDISONMAIN2";

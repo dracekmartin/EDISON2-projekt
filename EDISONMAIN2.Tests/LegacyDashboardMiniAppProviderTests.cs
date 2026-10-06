@@ -6,6 +6,7 @@ using NSubstitute;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>Testy provideru 15 legacy dashboardových miniaplikací (id + titulek + factory).</summary>
+[Collection(SharedStaticStateCollection.Name)]
 public class LegacyDashboardMiniAppProviderTests
 {
     [Fact]
