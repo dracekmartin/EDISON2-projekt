@@ -104,7 +104,7 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 
 ## Ostatní podsložky
 
-- `EDComponentToolbar/` - sdílený toolbar EDInputForm/EDList (search, export, ...).
+- `EDComponentToolbar/` - sdílená hlavička EDInputForm/EDList (titulek, hledání, nápověda).
   Past: window-level **Ctrl+F** binding je **jeden na okno** (`CtrlFOknaProperty`, v shellu
   jsou toolbarů desítky) a cíl vybírá až při stisku - hledání komponenty s fokusem, jinak první
   viditelné. Dřív ho držel první načtený toolbar a zkratka mířila i do skryté záložky. Toolbar se
@@ -122,8 +122,6 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 - `EDFilter/` - pruh filtračních polí; cíl je `IEDFilterTarget` (root namespace), ne konkrétní
   control. Vlastní `CLAUDE.md`.
 - `EDSearchTextBox/`, `EDInfoBar/` - šablony v `EDControlStyles.xaml`.
-- `EDToolbar/` - ikonová tlačítka z `EDViewModel.Actions`; v design-time záměrně prázdný
-  (Actions až za běhu), ne bug.
 - `SessionState/` - `ISessionState`, slovník v paměti procesu pro stav, který má přežít zavření
   dialogu, ale ne restart (filtr v `EDInputForm`); co restart přežít má, patří do `UserPrefs/`.
 - `UserPrefs/` - `IUserPrefsService`; **default je no-op `NullUserPrefsService`** -

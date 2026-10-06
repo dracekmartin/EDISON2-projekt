@@ -1103,7 +1103,15 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A25 · Veřejný povrch EDControls bez konzumenta 🔸
 
-- [ ] **Stav:** otevřeno (2026-10-01: `2e8d88fe` odebral navigaci nálezů, zbytek beze změny)
+- [x] **Stav:** vyřešeno v kódu (2026-10-06) - odebráno:
+  - `EDComponentToolbar`: export, tisk a nastavení (`Show*`, `*Command`, tlačítka); `SearchPlaceholder` je privátní konstanta.
+  - `EDFilter`: `FilterCommand`, `FilterChanged`, `AutoTrigger` (změna pole načítá vždy), `RefreshText` (text z nového
+    `EDStrings.Load`), `ShowRefresh`; `BuildFilterDict` je internal.
+  - `EDList`: `CheckAll/UncheckAll` a odkazy celé (`CellLinkClicked`, `ListColumn.IsLink`, Caché `Column.isLink` a jeho
+    zápis v `List.cls`, `MockList`, `ListTest`); `EDToolbar` se stylem a `ValidationContext` smazané.
+  Testovací okna shellu bez dotčených tlačítek, `EDControls/CLAUDE.md` opravené. Testy EDControls, shell i TD zelené.
+  **Caché:** hook ve worktree nenasazuje, po slití nasadit `MockList`, `List`, `ListTest` a **`Column` poslední** (dřív
+  by starý `List`/`MockList` padal na `<PROPERTY DOES NOT EXIST>` u každého `InitializeList`), pak `ALVA.EDControls.Tests`. **Vydání:** EDControls jen s TD a shellem ze stejného commitu, dávka s A22 a A38.
 - **Rozhodnutí vlastníka (2026-10-05):** nepoužité veřejné členy odebrat (export v `EDList` se neplánuje) v jednom publishi s A22 a A38; opravit `EDControls/CLAUDE.md`.
 - **P3 · S** (evidence) / koordinovaný publish (odstranění) · Závisí na: - · Blokuje: - · Původ: [backlog R13a](arch-backlog.md#r13a---edcomponenttoolbar-export-a-print), rozšířeno
 - **Důkaz (grep přes EDISONMAIN2, LegacyMiniApps, TD, bez `/obj/`):**

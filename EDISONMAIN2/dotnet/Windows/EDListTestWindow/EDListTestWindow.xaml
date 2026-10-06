@@ -18,14 +18,9 @@
                 <ComboBoxItem>Single</ComboBoxItem>
                 <ComboBoxItem>Check</ComboBoxItem>
             </ComboBox>
-            <Separator/>
-            <Button Content="Check all"   Click="CheckAll_Click"   ToolTip="Označit všechny řádky"/>
-            <Button Content="Uncheck all" Click="UncheckAll_Click" ToolTip="Odznačit"/>
         </ToolBar>
         <StatusBar DockPanel.Dock="Bottom">
             <TextBlock x:Name="StatusText"/>
-            <Separator/>
-            <TextBlock x:Name="LinkText" Foreground="DarkBlue"/>
             <Separator/>
             <TextBlock x:Name="CheckedText" Foreground="{DynamicResource EDTheme.Semantic.Success}"/>
         </StatusBar>

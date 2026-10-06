@@ -51,8 +51,8 @@ public class EDViewModel : INotifyPropertyChanged
     public bool ConfirmOnCancel { get; protected set; }
 
     /// <summary>
-    /// Akce dostupné v okně (Přidat, Upravit, Smazat, …). <c>EDToolbar</c> a <c>EDFooter</c>
-    /// je čtou automaticky. Nastav v konstruktoru subclass.
+    /// Akce dostupné v okně (Přidat, Upravit, Smazat, …). <c>EDFooter</c> je čte automaticky
+    /// (menu „Akce"). Nastav v konstruktoru subclass.
     /// </summary>
     public IReadOnlyList<EDAction>? Actions { get; protected set; }
 

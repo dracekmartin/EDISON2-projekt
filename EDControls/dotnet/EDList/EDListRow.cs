@@ -6,7 +6,7 @@ namespace EDControls.EDList;
 /// <summary>
 /// Jeden řádek v <see cref="EDList"/>. Drží Id + sloupcová data + checked state.
 /// Indexer <c>row[col.Key]</c> propustí binding <c>"[col.Key]"</c> jako dřív s Dictionary;
-/// <see cref="IsChecked"/> notifikuje, aby CheckBox chytil i programové změny (CheckAll).
+/// <see cref="IsChecked"/> notifikuje, aby CheckBox chytil i programové změny (header checkbox, SetChecked).
 /// </summary>
 public sealed class EDListRow : INotifyPropertyChanged
 {

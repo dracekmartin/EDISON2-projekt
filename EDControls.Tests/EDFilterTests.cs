@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using EDControls.EDFilter;
 using EDControls.EDViewModel;
 using EDControls.UserPrefs;
@@ -13,8 +12,8 @@ using NSubstitute;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Kontrakt filtru: co se posílá cíli (^||ML("IN","filter",Key) u Caché komponent),
-/// že cíl může být komponenta i příkaz VM, a že obnovené hodnoty načtou data právě jednou.
+/// Kontrakt filtru: co se posílá cíli (^||ML("IN","filter",Key) u Caché komponent)
+/// a že obnovené hodnoty načtou data právě jednou.
 /// </summary>
 public class EDFilterTests
 {
@@ -51,16 +50,6 @@ public class EDFilterTests
             Calls.Add(new Dictionary<string, string>(filter));
             return Task.CompletedTask;
         }
-    }
-
-    private sealed class FakeCommand : ICommand
-    {
-        public List<object?> Executed { get; } = [];
-        public bool CanRun { get; set; } = true;
-
-        public bool CanExecute(object? parameter) => CanRun;
-        public void Execute(object? parameter) => Executed.Add(parameter);
-        public event EventHandler? CanExecuteChanged { add { } remove { } }
     }
 
     /// <summary>Prefs v paměti. <c>Stored</c> = co filtr uložil, <c>Seed</c> = co najde při startu.</summary>
@@ -130,67 +119,33 @@ public class EDFilterTests
         });
     }
 
-    /// <summary>Cíl řízený ViewModelem (mapa) se napojuje příkazem, ne komponentou.</summary>
+    /// <summary>Změna pole načítá hned; tlačítko slouží jen k vynucenému znovunačtení.</summary>
     [Fact]
-    public void RefreshAsync_InvokesFilterCommandWithDict()
-    {
-        RunSta(() =>
-        {
-            var command = new FakeCommand();
-            var filter = new EDFilter.EDFilter { FilterCommand = command };
-            filter.Fields.Add(new FakeFilterField { Key = "linka", Value = "7" });
-
-            filter.RefreshAsync().GetAwaiter().GetResult();
-
-            var param = Assert.IsAssignableFrom<IReadOnlyDictionary<string, string>>(Assert.Single(command.Executed));
-            Assert.Equal("7", param["linka"]);
-        });
-    }
-
-    [Fact]
-    public void RefreshAsync_TargetAndCommandTogether_BothGetCalled()
+    public void FieldChange_RefreshesTargetImmediately()
     {
         RunSta(() =>
         {
             var target = new FakeTarget();
-            var command = new FakeCommand();
-            var filter = new EDFilter.EDFilter { Target = target, FilterCommand = command };
+            var field = new FakeFilterField { Key = "linka" };
+            var filter = Arrange(new EDFilter.EDFilter { Target = target }, new FakePrefs());
+            filter.Fields.Add(field);
 
-            filter.RefreshAsync().GetAwaiter().GetResult();
+            field.Change("7");
 
-            Assert.Single(target.Calls);
-            Assert.Single(command.Executed);
+            Assert.Equal("7", Assert.Single(target.Calls)["linka"]);
         });
     }
 
+    /// <summary>Target se v TD váže přes ElementName a nemusí být dosazený, když refresh přijde.</summary>
     [Fact]
-    public void RefreshAsync_CommandCannotExecute_IsSkipped()
+    public void RefreshAsync_WithoutTarget_DoesNotThrow()
     {
-        RunSta(() =>
-        {
-            var command = new FakeCommand { CanRun = false };
-            var filter = new EDFilter.EDFilter { FilterCommand = command };
-
-            filter.RefreshAsync().GetAwaiter().GetResult();
-
-            Assert.Empty(command.Executed);
-        });
-    }
-
-    [Fact]
-    public void RefreshAsync_WithoutTargetOrCommand_NoOpWithoutFilterChanged()
-    {
-        // Bez cíle se nesmí ani střílet FilterChanged - host by reagoval na refresh,
-        // který neproběhne.
         RunSta(() =>
         {
             var filter = new EDFilter.EDFilter();
-            bool raised = false;
-            filter.FilterChanged += (_, _) => raised = true;
+            filter.Fields.Add(new FakeFilterField { Key = "linka", Value = "7" });
 
             filter.RefreshAsync().GetAwaiter().GetResult();
-
-            Assert.False(raised);
         });
     }
 

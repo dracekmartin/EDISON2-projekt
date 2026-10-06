@@ -13,7 +13,7 @@ Method %OnNew() As %Status
     q 1
 }
 
-/// Přidá sloupec a vrátí ho pro případné další nastavení (isLink apod.).
+/// Přidá sloupec a vrátí ho pro případné další nastavení (visible apod.).
 /// type a align z EDList.inc; neznámou hodnotu odmítne, klient by ji tiše zobrazil jako TEXT / zarovnání dle typu.
 /// format: NUMBER → "N0"/"N2", DATE/DATETIME → "dd.MM.yyyy", ostatní prázdný.
 Method AddColumn(key As %String, label As %String, type As %String = "TEXT", width As %Integer = 0, align As %String = "", sortable As %Boolean = 0, format As %String = "") As ALVA.EDControls.EDList.Column
@@ -76,7 +76,6 @@ Method WriteColumnsToOut()
         s obj.align    = col.align
         s obj.sortable = col.sortable
         s obj.visible  = col.visible
-        s obj.isLink   = col.isLink
         d arr.%Push(obj)
     }
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()

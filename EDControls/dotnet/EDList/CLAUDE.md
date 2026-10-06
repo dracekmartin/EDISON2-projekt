@@ -43,7 +43,7 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 - **NUMBER bez `format` se nijak neformátuje** - v UI zůstane „142.5" s tečkou.
 - **IMAGE a CODEBOOK jsou rezervované** - server je přijme, klient je kreslí jako text (raw hodnota).
   Neparsovatelné datum se zobrazí raw, bez chyby. COLOR kreslí obdélník, ne podbarvení buňky.
-- `align`/`isLink` jsou samostatné vlastnosti sloupce, ne součást typu - legacy typy
+- `align` je samostatná vlastnost sloupce, ne součást typu - legacy typy
   (`Tc`, `NL`, ...) se mapují na TEXT/NUMBER + vlastnost.
 
 ## Search, Check mode, persist layoutu
@@ -52,7 +52,7 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 - Search filtruje **formátované** hodnoty bez diakritiky („8:30" najde „08:30", ne „830"); nepersistuje se.
 - `SelectionMode = Check` → checkbox sloupec. Binding checkboxů je záměrně **OneWay** +
   explicitní `Click` handler (TwoWay v CellTemplate je buggy; header `Click` brání rekurzi
-  CheckAll→Sync). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik** na checkbox zaškrtne
+  SetAllChecked→Sync). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik** na checkbox zaškrtne
   rozsah od kotvy (posledního kliku) v zobrazeném pořadí.
 - Persist layoutu (šířky, pořadí, sort): nastav `HostId` (konvence `"<Projekt>.<Consumer>"`;
   prázdný = off). Storage `^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)`,

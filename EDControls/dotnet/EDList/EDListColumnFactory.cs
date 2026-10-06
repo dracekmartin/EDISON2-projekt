@@ -2,7 +2,6 @@ using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Input;
 using System.Windows.Shapes;
 
 namespace EDControls.EDList;
@@ -29,7 +28,7 @@ internal static class EDListColumnFactory
             IsThreeState = true  // null = mixed state (zobrazí jako čtvereček)
         };
         // Click (ne Checked/Unchecked) fires jen z user akce, ne z programmatic IsChecked.
-        // Tím se vyhneme rekurzi: CheckAll → SyncHeaderCheckState → IsChecked set → Click NEFires.
+        // Tím se vyhneme rekurzi: SetAllChecked → OnCheckedRowsChanged → IsChecked set → Click NEFires.
         header.Click += (_, _) => onHeaderClick();
 
         return new DataGridTemplateColumn
@@ -43,47 +42,20 @@ internal static class EDListColumnFactory
     }
 
     /// <summary>Datový sloupec; <c>Tag</c> nese klíč sloupce (mapování zpět při snapshotu layoutu a hledání).</summary>
-    public static DataGridColumn BuildDataColumn(ListColumn col, Action<string, string> onLinkClick)
+    public static DataGridColumn BuildDataColumn(ListColumn col)
     {
-        var column = BuildByType(col, onLinkClick);
+        var column = BuildByType(col);
         column.SetValue(FrameworkElement.TagProperty, col.Key);
         return column;
     }
 
-    private static DataGridColumn BuildByType(ListColumn col, Action<string, string> onLinkClick)
+    private static DataGridColumn BuildByType(ListColumn col)
     {
         var width = col.Width > 0
             ? new DataGridLength(col.Width)
             : new DataGridLength(1, DataGridLengthUnitType.Auto);
 
         var align = col.Align == ListColumnAlign.Auto ? EDListParsing.DefaultAlign(col.Type) : col.Align;
-
-        if (col.IsLink)
-        {
-            var tb = new FrameworkElementFactory(typeof(TextBlock));
-            tb.SetBinding(TextBlock.TextProperty, new Binding($"[{col.Key}]"));
-            tb.SetValue(TextBlock.TextDecorationsProperty, TextDecorations.Underline);
-            tb.SetValue(TextBlock.CursorProperty, Cursors.Hand);
-            // SetResourceReference (= DynamicResource): SystemColors.HotTrackBrush je
-            // systémová barva, kterou dark mode nepřepne.
-            tb.SetResourceReference(TextBlock.ForegroundProperty, "EDTheme.Accent.Blue");
-            if (align == ListColumnAlign.Right)
-                tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
-            else if (align == ListColumnAlign.Center)
-                tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            tb.AddHandler(TextBlock.PreviewMouseLeftButtonUpEvent, new MouseButtonEventHandler((sender, _) =>
-            {
-                if (sender is TextBlock el && el.DataContext is EDListRow row)
-                    onLinkClick(row.Id, col.Key);
-            }));
-            return new DataGridTemplateColumn
-            {
-                Header = col.Label,
-                Width = width,
-                CellTemplate = new DataTemplate { VisualTree = tb },
-                CanUserSort = col.Sortable,
-            };
-        }
 
         if (col.Type == ListColumnType.Color)
         {

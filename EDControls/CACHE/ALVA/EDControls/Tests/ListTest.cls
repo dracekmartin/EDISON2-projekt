@@ -39,22 +39,21 @@ Method TestRowsJson()
 	do $$$AssertEquals(o2.nazev, "Brno")
 }
 
-/// isLink + visible se serializují do JSON sloupce (List.cls:62-63) - live featura (MockList isLink=1).
-/// Defaulty: visible=1, sortable=0, width=0.
-Method TestColumnLinkAndVisibleFlags()
+/// Defaulty sloupce v JSON: visible=1, sortable=0, width=0; skrytý sloupec se serializuje taky.
+Method TestColumnVisibleAndDefaultFlags()
 {
 	s list = ##class(ALVA.EDControls.EDList.List).%New()
-	s linkCol = list.AddColumn("odkaz", "Odkaz", "TEXT")
-	s linkCol.isLink = 1
+	s hidden = list.AddColumn("skryty", "Skrytý", "TEXT")
+	s hidden.visible = 0
 	d list.AddColumn("plain", "Plain", "TEXT")
 	d list.WriteColumnsToOut()
 
 	s arr = ##class(%DynamicArray).%FromJSON(^||ML("OUT", 1))
-	do $$$AssertEquals(arr.%Get(0).isLink, 1, "isLink=1 se serializuje")
-	do $$$AssertEquals(arr.%Get(0).visible, 1, "visible default = 1")
-	do $$$AssertEquals(arr.%Get(1).isLink, 0, "plain sloupec isLink default = 0")
+	do $$$AssertEquals(arr.%Get(0).visible, 0, "visible=0 se serializuje")
+	do $$$AssertEquals(arr.%Get(1).visible, 1, "visible default = 1")
 	do $$$AssertEquals(arr.%Get(1).sortable, 0, "sortable default = 0")
 	do $$$AssertEquals(arr.%Get(1).width, 0, "width default = 0")
+	do $$$AssertNotTrue(arr.%Get(1).%IsDefined("isLink"), "odkazy v EDListu nejsou, klíč se neposílá")
 }
 
 /// Reálný protokol: sloupce i řádky v JEDNÉ odpovědi přes sdílený $i(^||ML("OUT")) čítač.
@@ -130,7 +129,7 @@ Method TestAddColumnRejectsUnknownType()
 	do $$$AssertEquals(list.columns.Count(), 0, "odmítnutý sloupec se nepřidá")
 }
 
-/// Typ nastavený přímo na sloupci (vzor s col.isLink = 1) obejde AddColumn - zachytit ho musí zápis.
+/// Typ nastavený přímo na vráceném sloupci obejde AddColumn - zachytit ho musí zápis.
 Method TestWriteColumnsRejectsTypeSetDirectly()
 {
 	s list = ##class(ALVA.EDControls.EDList.List).%New()

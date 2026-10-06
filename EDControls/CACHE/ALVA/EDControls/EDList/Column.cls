@@ -24,7 +24,4 @@ Property sortable As %Boolean [ InitialExpression = 0 ];
 
 Property visible As %Boolean [ InitialExpression = 1 ];
 
-/// Pokud true, buňka se zobrazí jako odkaz a vyvolá event CellLinkClicked.
-Property isLink As %Boolean [ InitialExpression = 0 ];
-
 }
