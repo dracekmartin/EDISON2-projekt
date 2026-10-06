@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 25 / 47**
+**Hotovo: 31 / 47**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -80,7 +80,7 @@ nepřekrývají, takže můžou běžet současně.
 | S5 Launch kontrakt EDControls | A7 → A8 → A12 body 1-3 → A6 body 1-2 | `EDViewModel/WindowNavigator.cs`, `IWindowNavigator.cs`, `EdisonLaunchArgs.cs`, `WindowStateStore.cs`, `EDViewModel/EDViewModel.cs`, `EDErrorPopup.xaml.cs`, `InfChangelogSource.cs`, TD `App.xaml.cs`, jejich testy, fixture u `FormToRunGetter` v repu EDISON | 1 | chat |
 | S6 EDList | A16 → A17 → A42 → A14 → A27 část EDList → A23 | `EDList/*`, `EDFilter/EDFilter.xaml.cs`, `EDControls/CACHE/.../EDList/*`, `ListTest.cls`, `MockList.cls`, jejich testy | 1 | chat |
 | S7 Kontrakty šva | A13 body 2-4 | `EDISON2.IntegrationTests/*`, `EDISONMAIN2/CACHE/.../Tests/*.cls` | 1 | subagent |
-| S8 EDInputForm | A15 🔸 → A27 část formulář (`Format`, `UserHidden`) | `EDInputForm/*`, `Form.cls`, `EDIFExample.cls`, jejich testy | 2 | chat |
+| S8 EDInputForm | A15 odloženo k diskusi (implementace ve větvi `odlozeno/a15-async-edinputform`) → A27 část formulář (`Format`, `UserHidden`) | `EDInputForm/*`, `Form.cls`, `EDIFExample.cls`, jejich testy | 2 | chat |
 | S9 Infrastruktura EDControls | A39 → A40 → A41 🔸 | `UserFonts/*`, `EDTheme/UserThemePreference.cs`, `ErrorReporting/*`, `PopupDisplayer.cs`, `RelayCommand.cs`, `AsyncRelayCommand.cs`, jejich testy | 2 | chat |
 | S1 pokračuje | A9 (s S2) → A5 kroky 4-5 → A21 → A29 → A30 → A31 🔸 → A32 🔸 | VM, `Modules/*`, `MiniApps/Desktop*`; A9 i `SessionFactory`, `CompanySwitcher`, `LicenceVerifier` | 2 | chat |
 | Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4, `ALVA.EDTesting.TestRunner` počítá skipped (status 2) zvlášť a vypíše důvod (dnes FAIL s prázdnou hláškou, brání `$$$AssertSkipped` v TD), mrtvý `OpenMiniAppCommand` ve VM (bez bindingu), `docs/zastupci-na-plose.md:62` odkazuje na zrušené `ReloadShortcutsAsync` | napříč | 3 | po slití vln 1 a 2 |
@@ -342,8 +342,8 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   z A7 čte services delegátem až při launchi), TD má `WpfOnly()` bez services; `CacheWindowStateStore(formId,
   Func<IMLRest?>)` a `EDViewModel.AttachToWindow` mu předá MLRest svých služeb. Bod 3 (proud S2, fcd497d0):
   `LicenceService` má `showInfo` povinný bez fallbacku na `EDServices.Current`, `SessionFactory` předává popup
-  služeb session. `AppBootstrapper.InitializeServices` (S2, 2026-10-05) předává navigatoru delegát na
-  vlastní `EDServices`. Statický `CacheWindowStateStore.MLRestProvider` zmizel (2026-10-06): 1-arg ctor
+  služeb session. `AppBootstrapper.InitializeServices` (S2, f2d6e639, 2026-10-05) předává navigatoru delegát na
+  vlastní `EDServices`. Statický `CacheWindowStateStore.MLRestProvider` zmizel (0b8d1388, 2026-10-06): 1-arg ctor
   (veřejné API) čte `EDServices.Current` přímo až při Load/Save, `WindowStatePersistenceAttachTests` (už mimo
   `SharedStaticStateCollection`) a `EDISON2.IntegrationTests/WindowStateTests` předávají zdroj konstruktorem.
   Zbývá bod 4 paralelizace `EDISONMAIN2.Tests`. Testy `WindowNavigatorTests.ServicesCtor_*`,
@@ -843,7 +843,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A21 · Strom modulů závisí na ambientních faktech stanice bez injekce
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01; přibyla statika `InternalDiagnostics.Enabled`)
+- [x] **Stav:** vyřešeno d5b25de0 (2026-10-06) - fakta stanice (doména M-line a dekorace spustitelnosti) nese
+  injektovatelný `ModuleTreeStation` s produkčním defaultem; testy shellu dostávají neutrální stanici a asertují
+  přesné názvy modulů.
 - **P2 · S** · Závisí na: A5 (ideálně součást extrakce) · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** `FillFilteredTree` míchá do datového modelu výsledky `File.Exists` a DNS/registry
   detekce domény; ani jedno nejde přes ctor VM podstrčit.
@@ -1145,7 +1147,8 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A29 · `DesktopMiniAppViewModel.LaunchCommand` nemá binding, view volá službu přímo 🔸
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno cecce7b5 (2026-10-06) - `LaunchCommand` smazán podle rozhodnutí, dlaždice spouští
+  přes službu zástupců z view jako dosud.
 - **Rozhodnutí vlastníka (2026-10-05):** `LaunchCommand` smazat.
 - **P3 · S** · Původ: [backlog N4](arch-backlog.md#n4---desktopminiappviewmodellaunchcommand-nemá-ani-jeden-binding)
 - **Důkaz:** `MiniApps/DesktopMiniAppViewModel.cs:24,40` command definován; žádný XAML binding;
@@ -1155,7 +1158,8 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A30 · Drag&drop vzor ve dvou code-behindech
 
-- [ ] **Stav:** otevřeno, částečně (práh sdílený; ověřeno 2026-10-01)
+- [x] **Stav:** vyřešeno 6c339c97 (2026-10-06) - tažení ze stromu na plochu i přeskládání dlaždic sdílí jeden
+  testovaný `DesktopDragGesture` (stisk, jednou přes práh, polknutí kliku po tažení) místo dvou kopií v code-behind.
 - **P3 · S** · Původ: [backlog N5](arch-backlog.md#n5---duplikované-dragdrop-workflow-ve-dvou-code-behindech)
 - **Důkaz:** práh je sdílený (`DesktopDragFormats.ThresholdExceeded`, commit ef11e045); zbývá
   `_dragStart`/`_dragModule`/flag „potlač klik po tažení" + `DoDragDrop` v
@@ -1266,7 +1270,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A36 · Parsování legacy delimited výstupů zdvojené v osmi třídách se třemi konvencemi
 
-- [x] **Stav:** vyřešeno (2026-10-06, vlna 3) - veřejný `EDControls.LegacyOutput` (`Values`, `Rows`, `Named`)
+- [x] **Stav:** vyřešeno 41b7eed0 (2026-10-06, vlna 3) - veřejný `EDControls.LegacyOutput` (`Values`, `Rows`, `Named`)
   zná konvenci ERR slot 0 / data od 1 na jednom místě; smyčky v `Updater`, `LogoutWatcher` (dřív četl
   i ERR slot), `LoginGate`, `LicenceService.ParseNamedCount`, `AccessLoader`, `SetupWindow`,
   `UserProfileService`, `CacheWindowStateStore.ParseOutput` a nalezený devátý `DashboardData.ParseAll`
