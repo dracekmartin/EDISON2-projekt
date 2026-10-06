@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 24 / 47**
+**Hotovo: 25 / 47**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -76,7 +76,7 @@ nepřekrývají, takže můžou běžet současně.
 | S1 Shell VM a plocha | A4 → A20 → A28 → A5 kroky 1-3 | `EdisonMainViewModel.cs`, `EdisonMainWindow.xaml(.cs)`, `MiniApps/Desktop*`, `Modules/*` kromě `InternalDiagnostics.cs`, testy VM a harness | 1 | chat |
 | S2 Startup a login | A10 → A18 → A19 → A34 → A6 bod 3 | `App.xaml.cs`, `Startup/*` kromě `LocalPrefs`, `TransientLocalPrefs`, `Updater`, `VerzeInf`; `Modules/InternalDiagnostics.cs`, `LoginWindow/*`, `UserProfileWindow/*`, jejich testy | 1 | chat |
 | S3 Lokální preference | A45, sloučení v `LocalPrefs.Save` bez změny volajících (klíč `server\|idfa` až po A37) | `Startup/LocalPrefs.cs`, `Startup/TransientLocalPrefs.cs`, `LocalPrefsTests` | 1 | subagent |
-| S4 Update a vydání | A44 → A46 (`global.json` slít až na konci vlny, mění SDK všem) → A47 varianta b | `Startup/Updater.cs`, `Startup/VerzeInf.cs`, `EDUPDATE2/*`, nový projekt kontraktu, csproj, `EDISON2.sln`, `SingleFilePublish.targets`, `global.json`, `docs/deploy.md`, EDLOADER v repu EDISON | 1 | chat |
+| S4 Update a vydání | A44 → A46 (`global.json` slít až na konci vlny, mění SDK všem) → A47 přijato | `Startup/Updater.cs`, `Startup/VerzeInf.cs`, `EDUPDATE2/*`, nový projekt kontraktu, csproj, `EDISON2.sln`, `SingleFilePublish.targets`, `global.json`, `docs/deploy.md`, EDLOADER v repu EDISON | 1 | chat |
 | S5 Launch kontrakt EDControls | A7 → A8 → A12 body 1-3 → A6 body 1-2 | `EDViewModel/WindowNavigator.cs`, `IWindowNavigator.cs`, `EdisonLaunchArgs.cs`, `WindowStateStore.cs`, `EDViewModel/EDViewModel.cs`, `EDErrorPopup.xaml.cs`, `InfChangelogSource.cs`, TD `App.xaml.cs`, jejich testy, fixture u `FormToRunGetter` v repu EDISON | 1 | chat |
 | S6 EDList | A16 → A17 → A42 → A14 → A27 část EDList → A23 | `EDList/*`, `EDFilter/EDFilter.xaml.cs`, `EDControls/CACHE/.../EDList/*`, `ListTest.cls`, `MockList.cls`, jejich testy | 1 | chat |
 | S7 Kontrakty šva | A13 body 2-4 | `EDISON2.IntegrationTests/*`, `EDISONMAIN2/CACHE/.../Tests/*.cls` | 1 | subagent |
@@ -986,10 +986,12 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A47 · Runtime pro .NET 10 exe rozbaluje EDLOADER jen pro nový shell, TemplateDesigner na něm závisí taky 🔸
 
-- [ ] **Stav:** otevřeno, ověřeno 2026-10-02 ve Windows Sandbox (`tools/edloader-sandbox/`): bez uzlu
-  a bez .NET 10 TD ze starého shellu ukáže dialog .NET (S1), po rozbalení `dotnet\` (S4) nebo instalaci
-  .NET 10 (S1b) naběhne. Volbu varianty a/b/c vlastník 2026-10-05 odložil, proud „Update a vydání" ji nevyřešil.
-- **Rozhodnutí vlastníka (2026-10-05):** varianta b: spouštěče TD ve starém shellu (`TiskJR`, `ISYJR2`, `MHD2Linky`) ověří `dotnet\` nebo globální .NET 10 a ukážou českou hlášku; `docs/deploy.md` popíše, kdy TD runtime potřebuje.
+- [x] **Stav:** přijato (2026-10-06) - vlastník odložil schválně: TD spuštěný ze starého shellu na stanici bez
+  .NET 10 ukáže nativní dialog Windows/.NET o chybějícím runtime, což stačí. Ověřeno 2026-10-02 ve Windows
+  Sandbox (`tools/edloader-sandbox/`): bez uzlu a bez .NET 10 dialog .NET (S1), po rozbalení `dotnet\` (S4)
+  nebo instalaci .NET 10 (S1b) TD naběhne.
+- **Rozhodnutí vlastníka (2026-10-06):** nic neměnit, nativní hláška o chybějícím runtime je v pořádku
+  (nahrazuje variantu b z 2026-10-05).
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-01)
 - **Problém:** Všechna exe ze `SingleFilePublish.targets` hledají runtime nejdřív v `dotnet\` vedle
   sebe, pak globálně. `dotnet\` rozbaluje jen EDLOADER a jen při zapnutém novém shellu. TemplateDesigner
