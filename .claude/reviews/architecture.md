@@ -1120,8 +1120,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A26 · Sdílená DLL nese aplikačně specifické ikony 🔸
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, `EDIcons.xaml` beze změny)
-- **Rozhodnutí vlastníka (2026-10-05):** ikony jen pro TD přesunout do TD (`TDIcons.xaml`, zpočátku alias), ikony jen pro shell do shellu, v EDControls zůstane sdílený zbytek; odebrání z EDControls až v koordinovaném publishi.
+- [ ] **Stav:** odloženo (2026-10-06) - vlastník: ikony zatím zůstávají na jednom místě v EDControls, sada
+  ikon se ještě může měnit. Přepočet konzumentů 2026-10-06 (z 64 klíčů, literální výskyty v `.xaml`/`.cs`,
+  dynamicky skládané klíče nejsou): 36 jen TD, všechny v `TemplateDesigner/dotnet/Windows/MainWindow/MainWindow.xaml`
+  (38 odkazů); 19 jen shell (nově i `MlineLogo`, `Car` jen testovací okno); 3 jen `EDViewModel` StandardActions
+  (Add, Edit, Delete); sdílené jen `Help` (EDControls + shell) a `Molecule` (shell + TD); 4 bez konzumenta
+  (`AddElement`, `Barcode`, `PageProperties`, `Snap`). Poznámka zapsaná v `EDControls/CLAUDE.md` (sekce EDIcons).
+- **Rozhodnutí vlastníka (2026-10-06):** zatím nepřesouvat, ikony nechat v `EDIcons.xaml`; nahrazuje rozhodnutí z 2026-10-05.
+- **Rozhodnutí vlastníka (2026-10-05, nahrazeno):** ikony jen pro TD přesunout do TD (`TDIcons.xaml`, zpočátku alias), ikony jen pro shell do shellu, v EDControls zůstane sdílený zbytek; odebrání z EDControls až v koordinovaném publishi.
 - **P3 · M** · Závisí na: - · Blokuje: - · Původ: [backlog R4b](arch-backlog.md#r4b---td-ikony-ve-sdílené-knihovně), upřesněno
 - **Důkaz (grep klíčů `EDIcons.xaml` do projektů):** z 64 ikon 39 jen TemplateDesigner nebo vnitřek
   EDControls (36 TD: New, Open, Save, Print, Undo, Redo, *Element, Align*, Distribute*, Z*, Sections,

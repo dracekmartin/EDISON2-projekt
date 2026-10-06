@@ -70,6 +70,9 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 
 ## EDIcons
 
+- **Jeden katalog ikon pro shell i TD záměrně**, dokud se nerozhodne o sadě (2026-10-06). Z 64 klíčů je 36 jen TD
+  (`MainWindow.xaml`), 19 jen shell, 3 jen `StandardActions`, sdílené Help a Molecule, 4 bez konzumenta (A26).
+  Jde se přes `StaticResource`: odebraný klíč shodí starší exe při načtení okna, odebírat jen s publishem obou.
 - Nová ikona: PNG do `EDIcons/png/` + **explicitní** `<Resource>` v csproj (jen PNG -
   `.xaml` SDK zahrnuje sám, ruční `<Page>` = duplikát) + `BitmapImage` v `EDIcons.xaml`
   se sémantickým klíčem (`EDIcons.MyName`, ne název souboru).
