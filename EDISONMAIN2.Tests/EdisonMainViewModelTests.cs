@@ -686,7 +686,7 @@ public class EdisonMainViewModelTests
         var vm = CreateVM(services: svc, mlRest: Session("novak"), prefs: prefs, switchUser: () =>
         {
             svc.MLRest = Session("svoboda");
-            return new(SwitchUserResult.Success, null, Companies);
+            return new(SwitchUserResult.Success, Companies);
         });
         vm.AttachMiniAppHost(host);
 
