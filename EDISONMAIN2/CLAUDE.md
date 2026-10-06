@@ -10,10 +10,12 @@ consumerem, cross-cutting věci jdou do `EDControls`.
 ## Strom modulů = generovaný snapshot
 
 `Fill*` v `CACHE/ALVA/EDISONMAIN2/API/Tree.cls` **needitovat ručně** - generuje je
-`tools/GenerateTree.cs` z legacy XML (`edisontree`/`edisonnavbar`) + `EDFormInterfaceLic.vb`
+`tools/GenerateTree` (projekt v sln) z legacy XML (`edisontree`/`edisonnavbar`) + `EDFormInterfaceLic.vb`
 v repu EDISON; sync i **vynucený** deploy dělá `tools/sync-tree.ps1` (generátor zapisuje mimo
 Edit/Write, takže `compile-objectscript.sh` sám nefiruje). Splice anchor je komentář
 `/// Generováno z legacy edisonnavbar.xml id=` - smazat ho znamená tiše rozbitý generátor.
+Ruční zásah do struktury a odvozených hodnot chytí parity test `TreeGeneratorTests` (s `EDISON_LEGACY_ROOT`,
+pre-push ji nastaví; při driftu Skipped) - exe a input bere generátor z `Tree.cls` jako override, ty nehlídá.
 
 Kořeny package 0/1 přejmenovává `GetTree` až za běhu (`"EDISON"` / název IdFa přes
 `$$gIdFa^MlJFapi`) - parita s legacy `ApplicationTree.UpdateXmlTree`; do generovaných dat

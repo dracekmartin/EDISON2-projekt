@@ -35,7 +35,8 @@ it_required=1
 if [ -n "$RANGE" ]; then
     CHANGED=$(git diff --name-only "$RANGE" 2>/dev/null || true)
     if [ -n "$CHANGED" ]; then
-        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln)$'         && run_dotnet=1  || run_dotnet=0
+        # Tree.cls a jeho fingerprint: parity test generátoru stromu (TreeGeneratorTests) jede v .NET sadě.
+        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln)$|Tree\.cls$|tree-sources\.sha256$' && run_dotnet=1 || run_dotnet=0
         echo "$CHANGED" | grep -qiE '\.cls$'                     && run_cache=1   || run_cache=0
         echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|cls|inc)$' && run_it=1      || run_it=0
         echo "$CHANGED" | grep -qiE '\.(cls|inc)$'               && it_required=1 || it_required=0
@@ -105,6 +106,10 @@ if [ "$run_dotnet" = "1" ]; then
     set +e
     # E2E (UI) testy převezmou plochu - v hooku nikdy, ani s globálně nastaveným EDISON_E2E=1.
     # Testy se skutečným oknem ([WindowFact]) při vývoji přeskakují a běží jen tady.
+    # Parita generátoru stromu s Tree.cls potřebuje legacy repo EDISON; bez něj se přeskočí.
+    if [ -z "$EDISON_LEGACY_ROOT" ] && [ -d "C:/MLineRepos/EDISON" ]; then
+        export EDISON_LEGACY_ROOT="C:/MLineRepos/EDISON"
+    fi
     EDISON_WINDOW_TESTS=1 dotnet test EDISON2.sln --nologo --verbosity minimal --filter "Category!=Integration&Category!=E2E" > "$DOTNET_LOG" 2>&1
     dotnet_status=$?
     set -e
