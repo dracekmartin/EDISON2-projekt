@@ -1387,7 +1387,16 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A43 · Koncept „barva" má dva wire formáty a tři konvertory
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- [x] **Stav:** vyřešeno (2026-10-06) - `internal static ColorValue.TryParse` je jediná definice barvy na
+  drátě: hex `#AARRGGBB`/`#RRGGBB` (`#` nepovinný) a legacy `R;G;B` (mezery kolem čísel jako dřív).
+  Všechny tři konvertory jdou přes něj a liší se jen fallbackem: EDList `ListColorToBrushConverter`
+  (přejmenovaný z `RgbStringToBrushConverter`, nově bere i hex) průhledná, shell `HexToBrushConverter`
+  `UnsetValue` a navíc dál syntaxe WPF (pojmenované barvy, `#RGB`). Formulář bere jen hex
+  (`ColorValue.TryParseHex`, hostitel TD `R;G;B` neumí): náhled (šrafování pro `{X}`, jinak průhledná)
+  i validace `Field.IsHexColor` teď jdou přes stejnou metodu. Veřejné třídy zůstávají, API beze změny. Nové seznamy posílají hex (`Column.cls`,
+  `EDList/CLAUDE.md`, `MockList` 4 řádky hex + 1 legacy). `LegacyForeColorConverter` (LegacyMiniApps,
+  úprava pro dark mode) nález nezahrnoval, zůstává. Testy `ColorValueTests`, `EDListParsingTests`,
+  `HexToBrushConverterTests`, stávající `EDInputFormConverterTests` zelené.
 - **P3 · M** · Původ: nový (2026-09-20)
 - **Důkaz:** `EDList.xaml.cs:710-728` `RgbStringToBrushConverter` (`R;G;B`);
   `EDInputForm/ColorPreviewHexToBrushConverter.cs:12` (`#AARRGGBB`);

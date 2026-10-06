@@ -8,6 +8,7 @@ Property label As %String;
 
 /// Datový typ: $$$ListColumnType* z EDList.inc (TEXT, NUMBER, DATE, ...); List neznámý odmítne (AddColumn i zápis).
 /// IMAGE a CODEBOOK jsou rezervované: projdou, ale klient je zatím kreslí jako text (raw hodnota).
+/// COLOR hodnota v řádku: hex #AARRGGBB / #RRGGBB jako EDInputForm; starší R;G;B klient čte dál.
 Property type As %String [ InitialExpression = "TEXT" ];
 
 /// NUMBER: "N0", "N2" apod.  DATE/DATETIME: "dd.MM.yyyy" apod.  Ostatní: prázdný.

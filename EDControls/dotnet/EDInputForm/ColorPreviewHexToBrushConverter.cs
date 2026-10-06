@@ -6,8 +6,8 @@ using System.Windows.Media;
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Converter pro barevný náhled u Color pole - parsuje hex string `"#AARRGGBB"` (SkiaSharp formát)
-/// na <see cref="SolidColorBrush"/>. Neplatný / null input → transparent brush.
+/// Converter pro barevný náhled u Color pole - hex `"#AARRGGBB"` (<see cref="ColorValue.TryParseHex"/>,
+/// totéž co validace pole) na <see cref="SolidColorBrush"/>. Neplatný / null input → transparent brush.
 /// </summary>
 public class ColorPreviewHexToBrushConverter : IValueConverter
 {
@@ -22,31 +22,7 @@ public class ColorPreviewHexToBrushConverter : IValueConverter
         if (trimmed.Length > 2 && trimmed[0] == '{' && trimmed[^1] == '}')
             return DataBoundBrush;
 
-        string h = hex.TrimStart('#');
-        byte a = 0xFF, r, g, b;
-        try
-        {
-            if (h.Length == 8)
-            {
-                a = System.Convert.ToByte(h.Substring(0, 2), 16);
-                r = System.Convert.ToByte(h.Substring(2, 2), 16);
-                g = System.Convert.ToByte(h.Substring(4, 2), 16);
-                b = System.Convert.ToByte(h.Substring(6, 2), 16);
-            }
-            else if (h.Length == 6)
-            {
-                r = System.Convert.ToByte(h.Substring(0, 2), 16);
-                g = System.Convert.ToByte(h.Substring(2, 2), 16);
-                b = System.Convert.ToByte(h.Substring(4, 2), 16);
-            }
-            else
-            {
-                return Brushes.Transparent;
-            }
-        }
-        catch { return Brushes.Transparent; }
-
-        return new SolidColorBrush(Color.FromArgb(a, r, g, b));
+        return ColorValue.TryParseHex(trimmed, out var color) ? new SolidColorBrush(color) : Brushes.Transparent;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

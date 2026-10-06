@@ -20,6 +20,17 @@ public class HexToBrushConverterTests
         Assert.Equal(Colors.Red, brush.Color);
     }
 
+    /// <summary>Sdílený formát barvy (ColorValue) i zbytek syntaxe WPF, kterou převodník bral i dřív.</summary>
+    [Theory]
+    [InlineData("255;0;0")]
+    [InlineData("Red")]
+    [InlineData("#F00")]
+    public void Convert_RgbTripletAndWpfSyntax_ReturnsBrush(string value)
+    {
+        var brush = Assert.IsType<SolidColorBrush>(Convert(value));
+        Assert.Equal(Colors.Red, brush.Color);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

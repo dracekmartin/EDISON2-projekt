@@ -47,6 +47,7 @@ public class EDInputFormConverterTests
     [InlineData("   ")]
     [InlineData("#ABC")]
     [InlineData("xxyyzz")]
+    [InlineData("255;128;0")]   // legacy EDList formát - validace pole ho odmítne, náhled taky
     [InlineData(42)]
     public void ColorPreview_Invalid_Transparent(object? value)
     {

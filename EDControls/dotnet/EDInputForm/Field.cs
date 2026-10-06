@@ -247,14 +247,7 @@ namespace EDControls.EDInputForm
         /// <summary>Barva ve tvaru <c>#RRGGBB</c> / <c>#AARRGGBB</c> (mřížka nepovinná) - tedy to,
         /// co umí <see cref="ColorPreviewHexToBrushConverter"/> i barevný dialog. Bez této kontroly by se do
         /// hostitelské aplikace dostal libovolný text z pole a spadla by až při vykreslování barvy.</summary>
-        private static bool IsHexColor(string value)
-        {
-            var hex = value.Trim().TrimStart('#');
-            if (hex.Length != 6 && hex.Length != 8) return false;
-            foreach (var c in hex)
-                if (!Uri.IsHexDigit(c)) return false;
-            return true;
-        }
+        private static bool IsHexColor(string value) => ColorValue.TryParseHex(value, out _);
 
         /// <summary>Odkaz na datové pole ve tvaru <c>{NAZEV}</c> - hodnotu dosadí hostitelská
         /// aplikace ze svých dat (např. barva podle záznamu, ne pevná barva). Jen samotný odkaz,
