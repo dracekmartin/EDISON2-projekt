@@ -10,9 +10,9 @@ namespace EDISONMAIN2.MiniApps;
 /// <summary>
 /// Miniaplikace „Plocha" - osobní launcher zástupců jako dlaždice. Data bere ze sdílené
 /// <see cref="ModuleShortcutsService"/>, kam ★ ve stromu přidává moduly hlavní nabídky a agendy
-/// samy tiskové sestavy a pohledy DS. Spuštění deleguje na službu
-/// (<see cref="ModuleShortcutsService.RequestLaunch"/>) → obsluhuje shell (usage + overlay),
-/// miniaplikace launch logiku neduplikuje. Drag&amp;drop přidání/reorder viz View.
+/// samy tiskové sestavy a pohledy DS. Spuštění z dlaždice volá View přímo na službě
+/// (<see cref="ModuleShortcutsService.RequestLaunch"/>, klik po tažení se nespouští) a obsluhuje
+/// ho shell (usage + overlay), miniaplikace launch logiku neduplikuje. Drag&amp;drop přidání/reorder viz View.
 /// </summary>
 public sealed class DesktopMiniAppViewModel : EDMiniAppViewModel
 {
@@ -21,7 +21,6 @@ public sealed class DesktopMiniAppViewModel : EDMiniAppViewModel
     public DesktopMiniAppViewModel(EDServices services, ModuleShortcutsService shortcuts) : base(services)
     {
         Shortcuts = shortcuts;
-        LaunchCommand = Command<DesktopShortcut>(s => Shortcuts.RequestLaunch(s));
         RemoveCommand = Command<DesktopShortcut>(s => Shortcuts.Remove(s));
         ShowChangelogCommand = Command<DesktopShortcut>(s => Shortcuts.RequestChangelog(s));
         Shortcuts.Items.CollectionChanged += OnItemsChanged;
@@ -37,7 +36,6 @@ public sealed class DesktopMiniAppViewModel : EDMiniAppViewModel
     /// <summary>Prázdno → View ukáže výzvu „přetáhněte sem moduly".</summary>
     public bool HasItems => Items.Count > 0;
 
-    public ICommand LaunchCommand { get; }
     public ICommand RemoveCommand { get; }
     public ICommand ShowChangelogCommand { get; }
 

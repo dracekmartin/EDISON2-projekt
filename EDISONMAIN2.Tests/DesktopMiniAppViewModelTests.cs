@@ -7,7 +7,7 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Testy miniaplikace Plocha - VM je tenká vrstva nad <see cref="ModuleShortcutsService"/>
-/// (launch conduit, remove, empty-state). Sdílení se stromem pokrývá <c>ModuleShortcutsServiceTests</c>.
+/// (remove, novinky, empty-state). Sdílení se stromem pokrývá <c>ModuleShortcutsServiceTests</c>.
 /// </summary>
 public class DesktopMiniAppViewModelTests
 {
@@ -48,20 +48,6 @@ public class DesktopMiniAppViewModelTests
 
         Assert.True(vm.HasItems);
         Assert.True(raised);
-    }
-
-    [Fact]
-    public void LaunchCommand_RequestsLaunchThroughService()
-    {
-        var svc = new ModuleShortcutsService();
-        svc.Seed([Exe("100")], [Menu("100")]);
-        var vm = Vm(svc);
-        DesktopShortcut? launched = null;
-        svc.LaunchRequested += s => launched = s;
-
-        vm.LaunchCommand.Execute(svc.Items[0]);
-
-        Assert.Same(svc.Items[0], launched);
     }
 
     [Fact]

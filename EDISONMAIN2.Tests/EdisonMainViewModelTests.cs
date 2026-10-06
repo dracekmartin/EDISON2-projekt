@@ -44,11 +44,40 @@ public class EdisonMainViewModelTests
 
         var vm = CreateVM(treeLoader: mockTree);
 
-        // StartsWith - ModuleLaunchabilityCheck připojuje k názvu suffix (" - chybí exe" apod.);
-        // test ověřuje routing stromů do správných kolekcí, ne přesný label.
-        Assert.StartsWith("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
-        Assert.StartsWith("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
-        Assert.StartsWith("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
+        // Harness dává neutrální stanici (bez dekorace launchovatelnosti), název je tedy přesný.
+        Assert.Equal("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
+        Assert.Equal("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
+        Assert.Equal("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void MlineOnlyModule_FollowsStationDomain_NotTheMachineRunningTheTest(bool isMlineDomain)
+    {
+        var mockTree = MainTreeWith(
+            new ExecutableModule { DisplayedName = "Pro M-line", ElementId = "1", ExecutablePath = "m.exe", MlineOnly = true },
+            new ExecutableModule { DisplayedName = "Pro všechny", ElementId = "2", ExecutablePath = "a.exe" });
+
+        var vm = CreateVM(treeLoader: mockTree, station: NeutralStation with { IsMlineDomain = isMlineDomain });
+
+        var names = vm.MainMenuTree.Select(m => m.DisplayedName).ToList();
+        Assert.Equal(isMlineDomain ? 2 : 1, names.Count);
+        Assert.Contains("Pro všechny", names);
+    }
+
+    [Fact]
+    public void StationDecoration_AppliesToEveryFilteredRoot()
+    {
+        // Produkčně tu ModuleLaunchabilityCheck.Mark obarví stub a chybějící exe; dekorace patří stanici.
+        var mockTree = MainTreeWith(
+            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe" },
+            new ExecutableModule { DisplayedName = "B", ExecutablePath = "b.exe" });
+
+        var vm = CreateVM(treeLoader: mockTree,
+                          station: NeutralStation with { Decorate = m => ((ExecutableModule)m) with { Color = "#123456" } });
+
+        Assert.All(vm.MainMenuTree, m => Assert.Equal("#123456", ((ExecutableModule)m).Color));
     }
 
     /// <summary>
@@ -133,7 +162,7 @@ public class EdisonMainViewModelTests
 
         vm.RefreshLicenceCommand.Execute(null);
 
-        Assert.StartsWith("Turnusy", Assert.Single(vm.MainMenuTree).DisplayedName);
+        Assert.Equal("Turnusy", Assert.Single(vm.MainMenuTree).DisplayedName);
         mockPopup.Received(1).Error(Arg.Any<InvalidOperationException>());
     }
 
@@ -465,6 +494,7 @@ public class EdisonMainViewModelTests
         releaseOnClose = true;
         await vm.SwitchCompanyAsync(2);   // B→C podle indexu z původního seznamu
 
+        Assert.NotNull(listMidSwitch);
         Assert.Equal(["JI_DP"], listMidSwitch);   // předpoklad: seznam pro B se vyměnil uprostřed switche
         Assert.Equal("PI_DP", vm.Idfa);
         Assert.Contains("PI_DP", vm.Companies.Select(c => c.Id));
@@ -731,10 +761,9 @@ public class EdisonMainViewModelTests
 
         await vm.SwitchCompanyAsync(vm.SelectedCompanyIndex == 0 ? 1 : 0);
 
-        // StartsWith - ModuleLaunchabilityCheck může připojit suffix k názvu.
         var modules = vm.MainMenuTree.Cast<ExecutableModule>().ToList();
-        Assert.True(modules.Single(m => m.DisplayedName.StartsWith("Turnusy")).IsVisibleBySearch);
-        Assert.False(modules.Single(m => m.DisplayedName.StartsWith("Objednávky")).IsVisibleBySearch);
+        Assert.True(modules.Single(m => m.DisplayedName == "Turnusy").IsVisibleBySearch);
+        Assert.False(modules.Single(m => m.DisplayedName == "Objednávky").IsVisibleBySearch);
     }
 
     // FirstSearchResult - cíl Enteru v poli „Hledat modul" (HD 13132/F15).
@@ -755,7 +784,7 @@ public class EdisonMainViewModelTests
         vm.SelectedTab = vm.TreeTabs.Single(t => t.Key == "main");
         vm.TreeSearchText = "turnus";
 
-        Assert.StartsWith("Turnusy", vm.FirstSearchResult()!.DisplayedName);
+        Assert.Equal("Turnusy", vm.FirstSearchResult()!.DisplayedName);
     }
 
     [Fact]

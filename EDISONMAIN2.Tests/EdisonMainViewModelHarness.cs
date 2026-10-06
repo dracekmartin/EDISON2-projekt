@@ -50,6 +50,9 @@ internal static class EdisonMainViewModelHarness
         return mock;
     }
 
+    /// <summary>Stanice mimo doménu M-line bez dekorace - stromy nezávisí na stroji, kde test běží.</summary>
+    internal static readonly ModuleTreeStation NeutralStation = new(IsMlineDomain: false, Decorate: m => m);
+
     internal static IModuleTreeLoader EmptyTreeLoader()
     {
         var mock = Substitute.For<IModuleTreeLoader>();
@@ -87,6 +90,7 @@ internal static class EdisonMainViewModelHarness
         IChangelogSource? changelogSource = null,
         Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null,
         Func<IMLRest, IReadOnlyList<CompanyStruct>>? loadAllowedCompanies = null,
+        ModuleTreeStation? station = null,
         bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
@@ -112,7 +116,8 @@ internal static class EdisonMainViewModelHarness
                                          catalog, shortcuts ?? new ModuleShortcutsService(), changelogSource,
                                          restRunner ?? new InlineRestCallRunner(mockMLRest),
                                          // Produkční sync volá EDUsers nad živým MLRest - v testech jen stub.
-                                         licenceSync ?? (_ => new(false, "")));
+                                         licenceSync ?? (_ => new(false, "")),
+                                         station ?? NeutralStation);
         }
         finally
         {
