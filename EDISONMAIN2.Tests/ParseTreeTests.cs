@@ -312,9 +312,9 @@ public class ParseTreeTests
     [Fact]
     public void DisplayedDistinctName_IsAssignedLabel()
     {
-        var exe = new ExecutableModule { Name = "Doklady", LongName = "Doklady fakturace", FamilyPath = "Sklady", DistinctName = "Doklady - Sklady" };
+        var exe = new ExecutableModule { Name = "Doklady", LongName = "Doklady fakturace", FamilyPath = "Sklady", DistinctName = "Sklady › Doklady" };
 
-        Assert.Equal("Doklady - Sklady", exe.DisplayedDistinctName);
+        Assert.Equal("Sklady › Doklady", exe.DisplayedDistinctName);
     }
 
     [Fact]
@@ -339,9 +339,9 @@ public class ParseTreeTests
     [Fact]
     public void CopyConstructor_KeepsDistinctName()
     {
-        var exe = new ExecutableModule { Name = "Doklady", DistinctName = "Doklady - Sklady" };
+        var exe = new ExecutableModule { Name = "Doklady", DistinctName = "Sklady › Doklady" };
 
-        Assert.Equal("Doklady - Sklady", new ExecutableModule(exe) { Color = "#FF0000" }.DistinctName);
+        Assert.Equal("Sklady › Doklady", new ExecutableModule(exe) { Color = "#FF0000" }.DistinctName);
     }
 
     [Fact]

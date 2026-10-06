@@ -278,7 +278,7 @@ public class ModuleShortcutsServiceTests
     [Fact]
     public void Add_DecoratedModule_PersistsUndecoratedName_ShowsUsedListText()
     {
-        var a = new ExecutableModule(Exe("100", "Zaměstnanci")) { FamilyPath = "Mzdy", DisplaySuffix = " - chybí exe", DistinctName = "Zaměstnanci - Mzdy" };
+        var a = new ExecutableModule(Exe("100", "Zaměstnanci")) { FamilyPath = "Mzdy", DisplaySuffix = " - chybí exe", DistinctName = "Mzdy › Zaměstnanci" };
         var svc = new ModuleShortcutsService();
         svc.Seed([a], []);
 
@@ -288,7 +288,7 @@ public class ModuleShortcutsServiceTests
         Assert.Equal("Zaměstnanci", Assert.Single(svc.Persistable()).Name);
         Assert.Equal(a.TreePath, tile.TreePath);
         Assert.Equal("Mzdy › Zaměstnanci", tile.TreePath);
-        Assert.Equal("Zaměstnanci - Mzdy - chybí exe", tile.DisplayedDistinctName);
+        Assert.Equal("Mzdy › Zaměstnanci - chybí exe", tile.DisplayedDistinctName);
         Assert.Equal(a.DisplayedDistinctName, tile.DisplayedDistinctName);
     }
 

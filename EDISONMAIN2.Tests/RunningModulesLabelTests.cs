@@ -9,7 +9,7 @@ namespace EDISONMAIN2.Tests;
 /// různé agendy se shodným názvem (Zaměstnanci z MZDY2 vs. z Požadavků na volno) nešlo rozlišit
 /// a `[IDFa]` v položce byl navíc zbytečný (okna jsou vždy z aktuální firmy). Spuštěné i Používané
 /// proto nesou jeden popisek ze stromu: dlouhý název, je-li jedinečný, jinak krátký, je-li
-/// jedinečný, jinak „krátký - agenda".
+/// jedinečný, jinak cesta stromem.
 /// </summary>
 public class RunningModulesLabelTests
 {
@@ -49,9 +49,9 @@ public class RunningModulesLabelTests
         Assert.Equal("Fakturace - zpracování AD", Assert.Single(labels).Value);
     }
 
-    // Agenda = rodina nejvyšší úrovně, ne nejbližší („Nastavení a číselníky" je skoro v každé agendě).
+    // Celá cesta i s mezilehlou rodinou, ne jen agenda.
     [Fact]
-    public void BuildModuleLabels_SameShortNameDifferentAgenda_AppendsTopFamily()
+    public void BuildModuleLabels_SameShortNameDifferentAgenda_UsesTreePath()
     {
         var labels = ModuleTreeState.BuildModuleLabels([[
             Fam("Mzdy a personalistika",
@@ -59,8 +59,8 @@ public class RunningModulesLabelTests
             Fam("Požadavky na volno", Exe("Zaměstnanci", "VOLNO.exe", "ALVA.VOLNO.formZam")),
         ]]);
 
-        Assert.Equal("Zaměstnanci - Mzdy a personalistika", Label(labels, "MZDY2.exe", "ALVA.MZDY2.formZam"));
-        Assert.Equal("Zaměstnanci - Požadavky na volno", Label(labels, "VOLNO.exe", "ALVA.VOLNO.formZam"));
+        Assert.Equal("Mzdy a personalistika › Pracovní poměr › Zaměstnanci", Label(labels, "MZDY2.exe", "ALVA.MZDY2.formZam"));
+        Assert.Equal("Požadavky na volno › Zaměstnanci", Label(labels, "VOLNO.exe", "ALVA.VOLNO.formZam"));
     }
 
     // Ve stromu vidí uživatel krátké názvy - „Doklady" je nejednoznačné, i když druhý modul má dlouhý název.
@@ -72,7 +72,7 @@ public class RunningModulesLabelTests
             Fam("Fakturace", Exe("Doklady", "FAKT.exe", "f", longName: "Doklady fakturace")),
         ]]);
 
-        Assert.Equal("Doklady - Sklady", Label(labels, "SKLAD.exe", "f"));
+        Assert.Equal("Sklady › Doklady", Label(labels, "SKLAD.exe", "f"));
         Assert.Equal("Doklady fakturace", Label(labels, "FAKT.exe", "f"));
     }
 
@@ -207,7 +207,7 @@ public class RunningModulesLabelTests
             Fam("Sklady", Exe("Události", "SKLAD.exe", "f")),
         ]]);
 
-        Assert.Equal("Události - Sklady", Assert.Single(labels).Value);
+        Assert.Equal("Sklady › Události", Assert.Single(labels).Value);
         Assert.Equal("Uživatelský profil", EdisonMainViewModel.ResolveRunningLabel(Running("Uživatelský profil"), labels));
     }
 
@@ -226,8 +226,8 @@ public class RunningModulesLabelTests
 
         var main = (ExecutableModule)((ModuleFamily)state.MainMenuTree[0]).NestedModules[0];
         var system = (ExecutableModule)((ModuleFamily)state.SystemAdminTree[0]).NestedModules[0];
-        Assert.Equal("Události - Sklady", main.DistinctName);
-        Assert.Equal("Události - EDISON", system.DistinctName);
+        Assert.Equal("Sklady › Události", main.DistinctName);
+        Assert.Equal("EDISON › Události", system.DistinctName);
         Assert.Equal(main.DistinctName, state.ModuleLabels[ModuleTreeState.ModuleKey("SKLAD.exe", "f", "")]);
     }
 
@@ -252,7 +252,7 @@ public class RunningModulesLabelTests
         var label = EdisonMainViewModel.ResolveRunningLabel(
             Running("Zaměstnanci [CKSCHWAN]", "MZDY2.exe", "ALVA.MZDY2.formZam"), labels);
 
-        Assert.Equal("Zaměstnanci - Mzdy a personalistika", label);
+        Assert.Equal("Mzdy a personalistika › Zaměstnanci", label);
     }
 
     [Fact]

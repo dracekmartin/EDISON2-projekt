@@ -163,7 +163,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         /// <summary>
         /// Mapa <c>exe|forma|param</c> → jednoznačný popisek modulu (Spuštěné moduly, Používané, plocha): dlouhý
-        /// název, je-li ve stromech jedinečný, jinak krátký, je-li jedinečný, jinak „krátký - agenda".
+        /// název, je-li ve stromech jedinečný, jinak krátký, je-li jedinečný, jinak cesta stromem.
         /// Klíč je identita běžícího modulu z <c>RunningModuleInfo</c> (exe, forma, parametr).
         /// </summary>
         internal static Dictionary<string, string> BuildModuleLabels(IEnumerable<IEnumerable<IModule>> trees)
@@ -186,7 +186,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             {
                 var m when m.LongName.Length > 0 && longNames[m.LongName] == 1 => m.LongName,
                 var m when shortNames[m.Name] == 1                             => m.Name,
-                var m                                                          => AgendaLabel(m),
+                var m                                                          => m.TreePath,
             });
 
             // Dlouhý název jednoho modulu se může krýt s krátkým jiného (zvlášť ve stromu ořezaném licencí) nebo s cestou
@@ -211,14 +211,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 labels[key] = label;
             }
             return labels;
-        }
-
-        // Agenda = rodina nejvyšší úrovně; kořeny Správy systému za běhu nesou „EDISON" a název firmy (GetTree).
-        private static string AgendaLabel(ExecutableModule module)
-        {
-            if (module.FamilyPath.Length == 0) return module.Name;
-            var end = module.FamilyPath.IndexOf(ExecutableModule.PathSeparator, StringComparison.Ordinal);
-            return $"{module.Name} - {(end < 0 ? module.FamilyPath : module.FamilyPath[..end])}";
         }
 
         internal static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
