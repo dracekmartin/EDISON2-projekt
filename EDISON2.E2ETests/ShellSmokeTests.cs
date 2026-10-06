@@ -9,7 +9,7 @@ public class ShellSmokeTests
     {
         using var shell = ShellSession.Start();
 
-        shell.InvokeMenu("TopMenu", "Uživatel", "Aktuální uživatel");
+        shell.InvokeMenu("TopMenu", "Uživatel", "Vlastnosti uživatele");
         var profile = shell.WaitForWindow("Vlastnosti uživatele");
         // Skupina ze serverového schématu formuláře - důkaz round tripu přes celé UI.
         shell.WaitFor(() => profile.FindFirstDescendant(cf => cf.ByName("Export dokumentů")), "skupina „Export dokumentů\"");
