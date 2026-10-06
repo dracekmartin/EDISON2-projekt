@@ -1318,7 +1318,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A38 · `MLRestJson` je veřejný wire kontrakt bez serverové ani klientské strany
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, beze změny)
+- [x] **Stav:** vyřešeno v kódu (2026-10-06) - `MLRestJson` i jeho testy smazané (varianta „smazat",
+  konzument žádný), řádek v `EDControls/CLAUDE.md` pryč. `docs/wire-formaty.md` Styl 4 bez helperu: IN
+  pojmenované klíče, composite response v `"payload"`, volání přes `IRestCallRunner`; checklist bod 9
+  místo `Task.Run` nad sdílenou instancí odkazuje na runner. **Vydání:** odebraný veřejný člen, EDControls
+  jen spolu s TD a shellem ze stejného commitu (jedna dávka s A22 a A25). Dopad „poslední cesta" neplatil,
+  nový nález mimo A38: `EDListController.RunQueryAsync` (`:110-113`) pouští `InitializeList`/`LoadList`
+  přes `Task.Run` nad sdílenou `services().MLRest`, `_queryGate` řadí jen volání téhož listu; TD má totéž
+  (`CacheTemplateService`, pravidlo R1 v `TemplateDesigner/.claude/rules/architecture-rules.md` velí holý `Task.Run`).
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `EDControls/dotnet/MLRestJson.cs:28-30` `input["payload"] = ...; CVar output =
   await Task.Run(() => mlRest.QueryOrThrow(cacheClass, method, input));` bez klonu; volající
@@ -1446,7 +1453,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   `LicenceVerifier.ReacquireLock` jedou na klonech, od `5fcfa28e` i `IUserPrefsService`; nové
   pozaďové requesty deploye (počty vozidel a zaměstnanců, stažení licence z M-line) jdou přes
   `RestCallRunner` (`EdisonMainViewModel.cs:448,472`) a update check na klonu `Locks=0`
-  (`AppBootstrapper.cs:187`). Mimo UI thread na sdílené instanci zbývá jen `MLRestJson` (A38).
+  (`AppBootstrapper.cs:187`). Mimo UI thread na sdílené instanci zůstává EDList (viz Stav A38).
 - `ApplySessionData` je synchronní, guardy uvnitř neawaitují; `CompanySwitcher.Switch`
   a `SessionSwitcher.Switch` drží dokumentované pořadí včetně veta okna a rollbacku.
 - `HandOffLoginWindow` nastaví `MainWindow` před `OnMainWindowClose`; `ForcePasswordChange`

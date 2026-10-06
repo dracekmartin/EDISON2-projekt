@@ -161,8 +161,7 @@ ClassMethod GetForm(ByRef sys As %String) As %Status
     $$$Init
     try {
         $$$FillParams
-        s req = ##class(%DynamicObject).%FromJSON(^||ML("IN","payload"))
-        s elementType = req.%Get("elementType")
+        s elementType = $g(^||ML("IN","elementType"))
 
         s resp = ##class(%DynamicObject).%New()
         s resp.title = "Vlastnosti " _ elementType
@@ -182,18 +181,23 @@ ClassMethod GetForm(ByRef sys As %String) As %Status
 ```
 
 ```csharp
-public record GetFormRequest(string ElementType);
 public record FormField(string Key, string Label, string Type, float? Min, float? Max);
 public record FormGroup(string Name, List<FormField> Fields);
 public record FormDefinition(string Title, List<FormGroup> Groups);
 
-var resp = await MLRestJson.CallAsync<GetFormRequest, FormDefinition>(
-    mlRest, "ALVA.X.FormAPI", "GetForm", new GetFormRequest("TextElement"));
+var runner = new RestCallRunner(() => services.RequireMLRest);   // v testu fake IRestCallRunner
+var input = new CVar();
+input["elementType"] = new CVar("TextElement");
+var output = await runner.RunAsync(rest => rest.QueryOrThrow("ALVA.X.FormAPI", "GetForm", input));
+
+var json = output["payload"]?.Value?.ToString() ?? "{}";
+var form = JsonSerializer.Deserialize<FormDefinition>(json, JsonOpts);
 ```
 
-`MLRestJson.CallAsync<TReq, TResp>` (EDControls) zabaluje serialize/deserialize přes sdílený
-klíč `"payload"` na obou stranách. Použít **jen pro composite endpointy** - u běžných listů
-a entit zůstaň u Stylu 2/3, na Caché straně je to míň boilerplate.
+IN zůstává u pojmenovaných klíčů jako u ostatních stylů, celý composite response jde jedním
+slotem `"payload"`. EDControls na to helper nemá: volání mimo UI thread jde přes `IRestCallRunner`
+(klon), ne přes `Task.Run` nad sdílenou instancí. Použít **jen pro composite endpointy** - u běžných
+listů a entit zůstaň u Stylu 2/3, na Caché straně je to míň boilerplate.
 
 ## Filter konvence - kde žijí filter hodnoty
 
@@ -275,4 +279,5 @@ to spojí bez `[JsonPropertyName]` na každé property. Underscore se takhle nem
 6. ☐ Pro list endpointy zvážit helper `ALVA.EDControls.EDList.List`
 7. ☐ Žádné `_` v dot-notation - `obj.KEY_NAME` nefunguje, použít `obj.%Set("KEY_NAME", v)`
 8. ☐ .NET strana má `record` per typ, parsuje `JsonSerializer.Deserialize<T>(json, JsonOpts)`
-9. ☐ Žádný synchronní `mlRest.Query(...)` v UI threadu - vždy přes `Task.Run` nebo async API
+9. ☐ Pomalé volání ne synchronně v UI threadu - mimo něj přes `IRestCallRunner` (klon), nikdy holý
+   `Task.Run` nad sdílenou instancí (souběžná volání si prohodí `RestStatus`)
