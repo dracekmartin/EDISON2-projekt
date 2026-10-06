@@ -96,8 +96,10 @@ internal static class EdisonMainViewModelHarness
         var mockMLRest = mlRest ?? MockMLRest();
         var mockTree = treeLoader ?? EmptyTreeLoader();
         var svc = services ?? MockServices(popup: popup);
-        // CompanySwitcher i VM čtou MLRest z services lazily - musí být v services před konstrukcí.
+        // V produkci session zakládá SessionFactory a licenci zapíše LicenceVerifier při Accepted;
+        // VM i CompanySwitcher obojí jen čtou ze services.
         svc.MLRest = mockMLRest;
+        if (initialLicence != null) svc.ActiveLicence = initialLicence;
         if (userPrefs != null) svc.UserPrefs = userPrefs;
         var close = closeAllWindows ?? (() => { });
         var p = prefs ?? Substitute.For<ILocalPrefs>();
@@ -110,8 +112,8 @@ internal static class EdisonMainViewModelHarness
         {
             var allCompanies = companies ?? Companies;
             vm = new EdisonMainViewModel(allCompanies, loadAllowedCompanies ?? (_ => allCompanies),
-                                         mockMLRest, mockTree, initialLicence, switcher,
-                                         switchUser ?? (() => new(SwitchUserResult.Cancelled, null)), p,
+                                         mockTree, switcher,
+                                         switchUser ?? (() => new(SwitchUserResult.Cancelled)), p,
                                          getActiveModules ?? (() => []), close, forceShutdown ?? (() => { }),
                                          catalog, shortcuts ?? new ModuleShortcutsService(), changelogSource,
                                          restRunner ?? new InlineRestCallRunner(mockMLRest),

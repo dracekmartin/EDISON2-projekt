@@ -138,7 +138,7 @@ public class AppBootstrapper
             new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
             login, services);
 
-        var (outcome, licence) = AcquireSession(session, services);
+        var outcome = AcquireSession(session, services);
         if (outcome != LicenceAcquireOutcome.Accepted)
         {
             if (outcome == LicenceAcquireOutcome.Refused)
@@ -165,7 +165,7 @@ public class AppBootstrapper
         LicenceVerifier.LogLogin(session.MLRest);
 
         ShowStartupProgress("Spouštím aplikaci…");
-        var wnd = BuildShellWindow(prep, session, licence, services, nav, popup, prefs, update.Notice);
+        var wnd = BuildShellWindow(prep, services, nav, popup, prefs, update.Notice);
         HandOffLoginWindow(wnd);
         return wnd;
     }
@@ -464,10 +464,8 @@ public class AppBootstrapper
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
         => SessionFactory.Establish(conn, login, services, _options);
 
-    protected virtual (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session, EDServices services)
-        => LicenceVerifier.TryAcquireSession(
-            session.MLRest, session.LicenceLoader, services.IsAdmin,
-            services.PopupDisplayer, services.WindowNavigator);
+    protected virtual LicenceAcquireOutcome AcquireSession(SessionContext session, EDServices services)
+        => LicenceVerifier.TryAcquireSession(session.MLRest, services);
 
     protected virtual void SavePostLoginState(ILocalPrefs prefs, string idfa, string? loginName)
     {
@@ -515,7 +513,7 @@ public class AppBootstrapper
     }
 
     protected virtual EdisonMainWindow BuildShellWindow(
-        PreLoginContext prep, SessionContext session, Lic? licence,
+        PreLoginContext prep,
         EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
         Task<ReleaseNoticeResult>? releaseNotice)
     {
@@ -529,8 +527,8 @@ public class AppBootstrapper
                                                   BuildActivityFailedWire(services), nav.TryCloseAll,
                                                   new ShellWindowStateStore(prefs), _options);
         bool testRun = _options.TestRun is not null;
-        var viewModel = new EdisonMainViewModel(prep.Companies, CompanySwitcher.LoadAllowed, session.MLRest, treeLoader,
-                                                licence, switcher, sessionSwitcher.Switch,
+        var viewModel = new EdisonMainViewModel(prep.Companies, CompanySwitcher.LoadAllowed, treeLoader,
+                                                switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
                                                 miniAppCatalog, shortcuts,
                                                 testRun ? null : new InfChangelogSource(),

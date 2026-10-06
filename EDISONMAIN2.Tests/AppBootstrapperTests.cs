@@ -121,16 +121,16 @@ public class AppBootstrapperTests
         protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
         {
             EstablishedConnection = conn;
-            return new(MLRest, login, () => null);
+            return new(MLRest, login);
         }
 
         public Exception? AcquireSessionThrows { get; set; }
 
-        protected override (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session, EDServices services)
+        protected override LicenceAcquireOutcome AcquireSession(SessionContext session, EDServices services)
         {
             AcquireSessionCalled = true;
             if (AcquireSessionThrows is not null) throw AcquireSessionThrows;
-            return (SessionOutcome, null);
+            return SessionOutcome;
         }
 
         protected override void SavePostLoginState(ILocalPrefs prefs, string idfa, string? loginName)
@@ -161,7 +161,7 @@ public class AppBootstrapperTests
         public Exception? BuildShellThrows { get; set; }
         public IReadOnlyList<CompanyStruct>? ShellCompanies { get; private set; }
 
-        protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep, SessionContext session, Lic? licence,
+        protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep,
             EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
             Task<ReleaseNoticeResult>? releaseNotice)
         {

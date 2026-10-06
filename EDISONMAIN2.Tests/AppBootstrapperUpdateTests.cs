@@ -50,7 +50,7 @@ public class AppBootstrapperUpdateTests
             EDControls.IMLRest? sessionRest = null) =>
             CheckForUpdate(
                 new SessionContext(sessionRest ?? MLRestMocks.Create(),
-                    new LoginResult(7, "bob", "Bob", false, "", false, true, ""), () => null),
+                    new LoginResult(7, "bob", "Bob", false, "", false, true, "")),
                 services);
     }
 

@@ -35,6 +35,9 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
 - **Podpora (`LoginName == UserID`, `_mline`) jede bez `VerifyLic` a zámku s `CacheLocks=0`** (parita
   legacy `EDUsers.vb:287`: licenci nezabírá, server nekontroluje LockExist ani verzi); agendy pak
   shell GUID nedostanou (`LegacyModuleHost.ShellGuidFor`), jinak by pod ním padaly na LockExist.
+- **Session údaje v `EDServices` mají jednoho zapisovatele**: `MLRest` a `LicenceLoader` `SessionFactory`, `ActiveLicence`
+  `LicenceVerifier` (při `Accepted` a obnově licence), `AccessTable` VM po loadu session. VM licenci jen čte - zápis
+  až v přestavbě nechával launch argumentům agend licenci jiné firmy, než je `MLRest.Idfa`.
 - `SelectedCompanyIndex` musí odpovídat `MLRest.Idfa` - tam má bootstrapper zámek; jiná volba
   rozbije koexistenci shell ↔ moduly. Při přepnutí firmy se index nastaví až po `Accepted`
   (setter `SelectedCompanyId` jen spustí `SwitchCompanyCommand`).

@@ -171,7 +171,7 @@ public class EdisonMainViewModelLicenceTests
         var runner = new GatedSyncRunner(ml);
         var svc = Services(calls, popup: popup);
         var vm = CreateVM(services: svc, mlRest: ml, restRunner: runner, licenceSync: SyncSpy(calls, changed: true),
-                          switchUser: () => new(SwitchUserResult.Cancelled, null));
+                          switchUser: () => new(SwitchUserResult.Cancelled));
         svc.IsAdmin = true;
         var sync = vm.SyncMlineLicenceAfterLoginAsync();
 
@@ -196,6 +196,28 @@ public class EdisonMainViewModelLicenceTests
         Assert.Equal("", vm.LicenceNoticeText);
     }
 
+    // Licenci cílové firmy zapisuje LicenceVerifier při Accepted, ne až přestavba shellu: legacy
+    // moduly se zabíjejí hned po Accepted a launch argumenty agend musí sedět s MLRest.Idfa.
+    [Fact]
+    public async Task SwitchCompany_Accepted_TargetLicenceBeforeRebuild()
+    {
+        var ml = MockMLRest();
+        ml.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>()).Returns(MLRestMocks.Output("1"));
+        var ending = new Lic { ValidityTo = DateTime.Today.AddDays(3).ToString("yyyy-MM-dd") };
+        var target = new Lic { ValidityTo = DateTime.Today.AddDays(365).ToString("yyyy-MM-dd") };
+        var svc = MockServices();
+        svc.LicenceLoader = () => target;
+        Lic? atAccepted = null;
+        var vm = CreateVM(services: svc, mlRest: ml, initialLicence: ending,
+                          closeLegacyModules: () => atAccepted = svc.ActiveLicence);
+        Assert.Equal("Licence skončí za 3 dny", vm.LicenceNoticeText);   // předpoklad
+
+        await vm.SwitchCompanyAsync(1);
+
+        Assert.Same(target, atAccepted);
+        Assert.Equal("", vm.LicenceNoticeText);   // přestavba čte licenci ze služeb
+    }
+
     [Fact]
     public async Task LoginAsAnotherUser_Admin_DownloadsFromMline()
     {
@@ -204,7 +226,7 @@ public class EdisonMainViewModelLicenceTests
         popup.Confirm(Arg.Any<string>()).Returns(true);
         var svc = Services(calls, popup: popup);
         var vm = CreateVM(services: svc, licenceSync: SyncSpy(calls),
-                          switchUser: () => { svc.IsAdmin = true; return new(SwitchUserResult.Success, new Lic()); });
+                          switchUser: () => { svc.IsAdmin = true; svc.ActiveLicence = new Lic(); return new(SwitchUserResult.Success); });
         Assert.Empty(calls);   // předpoklad: původní uživatel nestahoval
 
         await vm.LoginAsAnotherUserAsync();

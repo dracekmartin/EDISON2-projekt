@@ -1,5 +1,4 @@
 using System;
-using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
@@ -11,8 +10,8 @@ namespace EDISONMAIN2;
 /// <summary>Connection info - vstup do <see cref="SessionFactory.Establish"/>. Sdílí initial bootstrap a user switch.</summary>
 public record ConnectionInfo(string Server, int Port, string Database, string Idfa);
 
-/// <summary>Postlogin kontext (real MLRest + licence loader factory).</summary>
-public record SessionContext(IMLRest MLRest, LoginResult Login, Func<Lic?> LicenceLoader);
+/// <summary>Postlogin kontext. Loader licence nese jen <see cref="EDServices.LicenceLoader"/>.</summary>
+public record SessionContext(IMLRest MLRest, LoginResult Login);
 
 /// <summary>
 /// Vytvoření session pro přihlášeného uživatele - jediné místo, kde se skládá real MLRest
@@ -49,6 +48,6 @@ public static class SessionFactory
 
         var licenceService = new LicenceService(mlRest.Inner, message => services.PopupDisplayer.Info(message));
         services.LicenceLoader = licenceService.GetActiveLicence;
-        return new SessionContext(mlRest, login, licenceService.GetActiveLicence);
+        return new SessionContext(mlRest, login);
     }
 }
