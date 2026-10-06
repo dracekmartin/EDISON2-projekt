@@ -58,11 +58,11 @@ public sealed class ReadOnlyWindowStateStore(IWindowStateStore inner) : IWindowS
 /// </remarks>
 public sealed class CacheWindowStateStore(string formId, Func<IMLRest?> mlRestSource) : IWindowStateStore
 {
-    /// <summary>Session ze sdíleného <c>EDServices.Current</c>; okno s ViewModelem dostává MLRest jeho služeb.</summary>
-    public CacheWindowStateStore(string formId) : this(formId, () => MLRestProvider()) { }
-
-    /// <summary>Settable jen kvůli testům - produkce čte sdílené <c>EDServices.Current</c>.</summary>
-    internal static Func<IMLRest?> MLRestProvider { get; set; } = () => EDServices.Current.MLRest;
+    /// <summary>
+    /// Session ze sdíleného <c>EDServices.Current</c>, čtená až při Load/Save. Veřejné API pro starší
+    /// konzumenty; okno s ViewModelem a testy předávají zdroj druhým konstruktorem.
+    /// </summary>
+    public CacheWindowStateStore(string formId) : this(formId, () => EDServices.Current.MLRest) { }
 
     public WindowGeometry Load()
     {

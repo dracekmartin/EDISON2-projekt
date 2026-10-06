@@ -343,8 +343,10 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   Func<IMLRest?>)` a `EDViewModel.AttachToWindow` mu předá MLRest svých služeb. Bod 3 (proud S2, fcd497d0):
   `LicenceService` má `showInfo` povinný bez fallbacku na `EDServices.Current`, `SessionFactory` předává popup
   služeb session. `AppBootstrapper.InitializeServices` (S2, 2026-10-05) předává navigatoru delegát na
-  vlastní `EDServices`. Zbývá: statický `CacheWindowStateStore.MLRestProvider` drží 1-arg ctor
-  a `EDISON2.IntegrationTests`, bod 4 paralelizace `EDISONMAIN2.Tests`. Testy `WindowNavigatorTests.ServicesCtor_*`,
+  vlastní `EDServices`. Statický `CacheWindowStateStore.MLRestProvider` zmizel (2026-10-06): 1-arg ctor
+  (veřejné API) čte `EDServices.Current` přímo až při Load/Save, `WindowStatePersistenceAttachTests` (už mimo
+  `SharedStaticStateCollection`) a `EDISON2.IntegrationTests/WindowStateTests` předávají zdroj konstruktorem.
+  Zbývá bod 4 paralelizace `EDISONMAIN2.Tests`. Testy `WindowNavigatorTests.ServicesCtor_*`,
   `CacheWindowStateStoreTests.LoadAndSave_GoThroughInjectedSession`,
   `EDViewModelTests.AttachToWindow_RestoresGeometryThroughViewModelSession`.
 - **P2 · M** · Závisí na: A7 (stejný soubor, dělat před) · Blokuje: - · Původ: [backlog R5](arch-backlog.md#r5---edservicescurrent-prosakuje-do-infrastruktury-a-vypnul-paralelizaci-testů)

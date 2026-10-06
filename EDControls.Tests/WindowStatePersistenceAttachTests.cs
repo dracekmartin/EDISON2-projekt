@@ -7,10 +7,8 @@ namespace EDControls.Tests;
 
 /// <summary>
 /// Celá cesta Attach → restore při SourceInitialized → save při Closing, jednou přes fake
-/// úložiště a jednou přes legacy Caché seam <see cref="CacheWindowStateStore.MLRestProvider"/>.
-/// Statický provider → kolekce bez paralelizace.
+/// úložiště a jednou přes legacy Caché úložiště s podstrčeným MLRest.
 /// </summary>
-[Collection(SharedStaticStateCollection.Name)]
 public class WindowStatePersistenceAttachTests
 {
     private const char D = '\0';
@@ -53,13 +51,7 @@ public class WindowStatePersistenceAttachTests
         return mlRest;
     }
 
-    private static void WithProvider(IMLRest mlRest, Action action)
-    {
-        var original = CacheWindowStateStore.MLRestProvider;
-        CacheWindowStateStore.MLRestProvider = () => mlRest;
-        try { action(); }
-        finally { CacheWindowStateStore.MLRestProvider = original; }
-    }
+    private static CacheWindowStateStore CacheStore(IMLRest mlRest) => new("EDISON2.TestWindow", () => mlRest);
 
     [WindowFact]
     public void Attach_Store_RestoresSavedBoundsOnShow_SavesOnClose()
@@ -178,17 +170,17 @@ public class WindowStatePersistenceAttachTests
     }
 
     [WindowFact]
-    public void Attach_FormId_RestoresSavedBoundsOnShow_SavesOnClose()
+    public void Attach_CacheStore_RestoresSavedBoundsOnShow_SavesOnClose()
     {
         var mlRest = MockWithSavedState(
             $"param{D}location{D}100;120",
             $"param{D}size{D}400;300",
             $"param{D}state{D}0");
 
-        Sta.RunOnAppThread(() => WithProvider(mlRest, () =>
+        Sta.RunOnAppThread(() =>
         {
             var window = new Window { ShowInTaskbar = false, ShowActivated = false };
-            WindowStatePersistence.Attach(window, "EDISON2.TestWindow");
+            WindowStatePersistence.Attach(window, CacheStore(mlRest));
 
             window.Show();
 
@@ -202,7 +194,7 @@ public class WindowStatePersistenceAttachTests
 
             mlRest.Received(1).QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams", Arg.Is<object[]>(a =>
                 a.Length == 5 && (string)a[0] == $"formID{D}EDISON2.TestWindow"));
-        }));
+        });
     }
 
     [WindowFact]
@@ -212,14 +204,14 @@ public class WindowStatePersistenceAttachTests
         mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", Arg.Any<object[]>())
             .Returns(_ => throw new InvalidOperationException("server down"));
 
-        Sta.RunOnAppThread(() => WithProvider(mlRest, () =>
+        Sta.RunOnAppThread(() =>
         {
             var window = new Window
             {
                 ShowInTaskbar = false, ShowActivated = false,
                 Width = 222, Height = 111,
             };
-            WindowStatePersistence.Attach(window, "EDISON2.TestWindow");
+            WindowStatePersistence.Attach(window, CacheStore(mlRest));
 
             window.Show();   // best-effort: chyba nesmí otevření zablokovat
 
@@ -228,7 +220,7 @@ public class WindowStatePersistenceAttachTests
             Assert.Equal(222, window.Width, tolerance: 1.0);
             Assert.Equal(111, window.Height, tolerance: 1.0);
             window.Close();
-        }));
+        });
     }
 
     [WindowFact]
@@ -238,20 +230,20 @@ public class WindowStatePersistenceAttachTests
         // ho restore musí vrátit - jinak by okno zůstalo omylem odmaximalizované.
         var mlRest = MockWithSavedState();   // nic uloženého
 
-        Sta.RunOnAppThread(() => WithProvider(mlRest, () =>
+        Sta.RunOnAppThread(() =>
         {
             var window = new Window
             {
                 ShowInTaskbar = false, ShowActivated = false,
                 WindowState = WindowState.Maximized,
             };
-            WindowStatePersistence.Attach(window, "EDISON2.TestWindow");
+            WindowStatePersistence.Attach(window, CacheStore(mlRest));
             Assert.Equal(WindowState.Normal, window.WindowState);   // sraženo před HWND
 
             window.Show();
 
             Assert.Equal(WindowState.Maximized, window.WindowState);
             window.Close();
-        }));
+        });
     }
 }
