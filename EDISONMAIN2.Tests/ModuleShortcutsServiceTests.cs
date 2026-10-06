@@ -507,4 +507,54 @@ public class ModuleShortcutsServiceTests
         Assert.Same(svc.Items[0], launched);
         Assert.Same(a, launched!.Module);
     }
+
+    // Převody AD a MHD sdílí ElementId i formu, liší se parametrem: každá varianta je vlastní dlaždice.
+    private static ExecutableModule Prevod(string input) =>
+        new() { Name = "Převody " + input, ElementId = "146016", ExecutablePath = "MZDY2.exe", InputParam = input };
+
+    private static DesktopShortcutDto MenuVariant(string input) =>
+        new(nameof(ShortcutKind.MenuModule), "146016", "146016", "Převody " + input, Input: input);
+
+    [Fact]
+    public void Seed_VariantsOfOneElementId_EachTileGetsItsVariant()
+    {
+        var ad = Prevod("AD"); var mhd = Prevod("MHD");
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([ad, mhd], [MenuVariant("MHD"), MenuVariant("AD")]);
+
+        Assert.Equal([mhd, ad], svc.Items.Select(i => i.Module));
+        Assert.True(ad.IsFavorite && mhd.IsFavorite);
+    }
+
+    [Fact]
+    public void AddAndRemove_Variant_TouchOnlyThatVariant()
+    {
+        var ad = Prevod("AD"); var mhd = Prevod("MHD");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([ad, mhd], []);
+
+        svc.Add(mhd);
+        svc.Add(ad);
+        Assert.Equal(2, svc.Items.Count);
+
+        svc.Remove(mhd);
+
+        Assert.Same(ad, Assert.Single(svc.Items).Module);
+        Assert.False(svc.Contains(mhd));
+        Assert.True(svc.Contains(ad));
+    }
+
+    // Agenda může zapsat modul bez parametru - dlaždice pak dostane první variantu, nezmizí.
+    [Fact]
+    public void Seed_ItemWithoutKnownVariant_FallsBackToFirstOfElementId()
+    {
+        var ad = Prevod("AD"); var mhd = Prevod("MHD");
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([ad, mhd], [Menu("146016")]);
+
+        Assert.Same(ad, Assert.Single(svc.Items).Module);
+        Assert.Equal("AD", svc.Items[0].InputParam);
+    }
 }

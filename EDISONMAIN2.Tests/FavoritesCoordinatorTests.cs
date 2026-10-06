@@ -238,4 +238,23 @@ public class FavoritesCoordinatorTests
         fx.Prefs.DidNotReceive().LoadAsync(Arg.Any<string>(), Arg.Any<string>());
         fx.Prefs.DidNotReceive().SaveAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<JsonNode>());
     }
+
+    // ★ u Převodů MHD nesmí označit ani přidat do Oblíbených Převody AD (týž ElementId, jiný parametr).
+    [Fact]
+    public void Toggle_Variant_FavoritesOnlyThatVariant()
+    {
+        var fx = new Fixture(Family("Mzdy",
+            new ExecutableModule { Name = "Převody AD", ElementId = "146016", ExecutablePath = "MZDY2.exe", InputParam = "AD" },
+            new ExecutableModule { Name = "Převody MHD", ElementId = "146016", ExecutablePath = "MZDY2.exe", InputParam = "MHD" }));
+        fx.Coordinator.Apply([]);
+        var mhd = fx.Trees.AllExecutables().Single(e => e.InputParam == "MHD");
+        var ad = fx.Trees.AllExecutables().Single(e => e.InputParam == "AD");
+
+        fx.Coordinator.Toggle(mhd);
+
+        Assert.True(mhd.IsFavorite);
+        Assert.False(ad.IsFavorite);
+        var family = Assert.IsType<ModuleFamily>(Assert.Single(fx.Trees.FavoritesTree));
+        Assert.Same(mhd, Assert.Single(family.NestedModules));
+    }
 }

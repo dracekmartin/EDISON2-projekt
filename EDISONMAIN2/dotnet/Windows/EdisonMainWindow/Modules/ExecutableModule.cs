@@ -86,6 +86,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// </summary>
         public string InputParam { get; init; } = "";
 
+        /// <summary>
+        /// Klíč varianty pro používanost, plochu a Oblíbené: varianty téže formy sdílí <see cref="ElementId"/>
+        /// a liší se parametrem (Převody AD/MHD, Události agd=...). Bez parametru holé ElementId, uložené záznamy platí dál.
+        /// </summary>
+        public string VariantKey => VariantKeyOf(ElementId, InputParam);
+
+        internal static string VariantKeyOf(string elementId, string inputParam) =>
+            inputParam.Length == 0 ? elementId : elementId + "|" + inputParam;
+
         /// <summary>Když true, modul se ve stromu nezobrazí. Legacy `hidden="1"` ekvivalent.</summary>
         public bool Hidden { get; init; } = false;
 

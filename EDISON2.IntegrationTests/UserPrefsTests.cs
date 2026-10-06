@@ -71,4 +71,38 @@ public class UserPrefsTests
         }
         Assert.Empty(_failures);
     }
+
+    // Varianty modulu menu (Převody AD/MHD) mají shodné ElementId i Id: server je nesmí slít a shell každou
+    // dlaždici přiřadí její variantě (klíč DesktopShortcuts.KeyOf = DesktopShortcut.Key).
+    [DevServerFact]
+    public async Task DesktopShortcutAdd_MenuModuleVariants_ServerKeepsBoth_ShellResolvesEach()
+    {
+        var prefs = CreatePrefs();
+        static string Item(string input) =>
+            $$"""{"Kind":"MenuModule","Id":"146016","ElementId":"146016","Name":"Převody {{input}}","Exe":"MZDY2.exe","Form":"ALVA.MZDY2.formMZDY2Prevod","Input":"{{input}}"}""";
+        try
+        {
+            await prefs.DeleteAsync("EDISONMAIN2", "Shortcuts");
+            foreach (var input in new[] { "AD", "MHD", "AD" })
+            {
+                var cvar = new CVar();
+                cvar["item"] = new CVar(Item(input));
+                _rest.QueryOrThrow("ALVA.EDControls.DesktopShortcuts", "Add", cvar);
+            }
+
+            var stored = await new ModulePreferencesService(prefs).LoadShortcutsAsync();
+            ExecutableModule Prevod(string input) => new()
+                { Name = "Převody " + input, ElementId = "146016", ExecutablePath = "MZDY2.exe", FormName = "ALVA.MZDY2.formMZDY2Prevod", InputParam = input };
+            var ad = Prevod("AD"); var mhd = Prevod("MHD");
+            var svc = new ModuleShortcutsService();
+            svc.Seed([ad, mhd], stored);
+
+            Assert.Equal([ad, mhd], svc.Items.Select(i => i.Module));
+        }
+        finally
+        {
+            await prefs.DeleteAsync("EDISONMAIN2", "Shortcuts");
+        }
+        Assert.Empty(_failures);
+    }
 }

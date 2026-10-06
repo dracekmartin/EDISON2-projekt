@@ -831,8 +831,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (module.ElementId.Length == 0) return;
 
-            var entry = _usage.TryGetValue(module.ElementId, out var prev) ? prev : new UsageEntry();
-            _usage[module.ElementId] = entry with { Count = entry.Count + 1, LastUsedUtc = DateTime.UtcNow };
+            var entry = _usage.TryGetValue(module.VariantKey, out var prev) ? prev : new UsageEntry();
+            _usage[module.VariantKey] = entry with { Count = entry.Count + 1, LastUsedUtc = DateTime.UtcNow };
 
             RebuildUsedList();
             _ = _modulePrefs?.SaveUsageAsync(_usage);
@@ -852,24 +852,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// Plochý žebříček nejpoužívanějších modulů: řazení dle počtu spuštění (desc), tie-break dle
         /// posledního použití (desc), cap na <paramref name="cap"/>. Mapuje na EXISTUJÍCÍ leaf instance
         /// z hlavních stromů - tím respektuje aktuální licenci/přístup (nezobrazený modul se přeskočí)
-        /// a sdílí IsFavorite. Každý ElementId právě jednou.
+        /// a sdílí IsFavorite. Každá varianta (<see cref="ExecutableModule.VariantKey"/>) právě jednou.
         /// </summary>
         internal static List<ExecutableModule> BuildUsedList(
             IEnumerable<IEnumerable<IModule>> sourceTrees, IReadOnlyDictionary<string, UsageEntry> usage, int cap)
         {
-            var byElementId = new Dictionary<string, ExecutableModule>();
+            var byVariant = new Dictionary<string, ExecutableModule>();
             foreach (var tree in sourceTrees)
                 foreach (var node in tree)
                     foreach (var exe in ModuleTreeState.Flatten(node))
                         if (exe.ElementId.Length > 0)
-                            byElementId.TryAdd(exe.ElementId, exe);
+                            byVariant.TryAdd(exe.VariantKey, exe);
 
             return usage
-                .Where(kv => byElementId.ContainsKey(kv.Key))
+                .Where(kv => byVariant.ContainsKey(kv.Key))
                 .OrderByDescending(kv => kv.Value.Count)
                 .ThenByDescending(kv => kv.Value.LastUsedUtc)
                 .Take(cap)
-                .Select(kv => byElementId[kv.Key])
+                .Select(kv => byVariant[kv.Key])
                 .ToList();
         }
 

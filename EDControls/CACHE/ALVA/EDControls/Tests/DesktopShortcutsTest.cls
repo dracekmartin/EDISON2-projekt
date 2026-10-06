@@ -138,7 +138,28 @@ Method TestKeyOfIdentity()
 Method TestKeyOfToleratesMissingProperties()
 {
 	set obj = ##class(%DynamicObject).%FromJSON("{""Kind"":""MenuModule""}")
-	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(obj), "MenuModule||")
+	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(obj), "MenuModule|")
+	set obj = ##class(%DynamicObject).%FromJSON("{""Kind"":""PrintReport""}")
+	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(obj), "PrintReport||")
+}
+
+/// Modul menu nese variantu v Input (Převody AD/MHD) - klíč jako ExecutableModule.VariantKey na klientovi.
+Method TestKeyOfMenuModuleVariant()
+{
+	set obj = ##class(%DynamicObject).%FromJSON("{""Kind"":""MenuModule"",""Id"":""146016"",""ElementId"":""146016"",""Input"":""MHD""}")
+	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(obj), "MenuModule|146016|MHD")
+	set obj = ##class(%DynamicObject).%FromJSON("{""Kind"":""MenuModule"",""Id"":""146016"",""ElementId"":""146016""}")
+	do $$$AssertEquals(##class(ALVA.EDControls.DesktopShortcuts).KeyOf(obj), "MenuModule|146016", "Bez Input holé ElementId")
+}
+
+Method TestMenuModuleVariantsCoexist()
+{
+	do ..Cleanup()
+	do ..Call("Add", ..Item("MenuModule", "145008", "N", ",""Input"":""AD"""), "count")
+	do $$$AssertEquals(..Call("Add", ..Item("MenuModule", "145008", "N", ",""Input"":""MHD"""), "count"), 2, "Dvě varianty téže formy jsou dvě dlaždice")
+	do $$$AssertEquals(..Call("Remove", ..Item("MenuModule", "145008", "N", ",""Input"":""MHD"""), "count"), 1, "Odebrání varianty nechá druhou")
+	do $$$AssertEquals(..Call("Exists", ..Item("MenuModule", "145008", "N", ",""Input"":""AD"""), "exists"), 1, "Zůstala varianta AD")
+	do ..Cleanup()
 }
 
 /// Bez Kind není identita - položka se nesmí tvářet jako platná.

@@ -8,7 +8,7 @@ Include GENERAL
 /// protože přidání jedné položky je read-modify-write a přes generické Save by si souběžné
 /// zápisy modulu a shellu přepisovaly celý blob. Tady proběhne v jednom Caché jobu.
 ///
-/// Identita položky = "Kind|ElementId|Id" (mirror DesktopShortcut.Key na klientovi).
+/// Identita položky = "Kind|ElementId|Id", u MenuModule "MenuModule|ElementId" a "|Input", má-li parametr (mirror DesktopShortcut.Key na klientovi).
 /// Pozici ("Col"/"Row") server záměrně **nepřiděluje** - klient chybějící pozici doplní při
 /// načtení (viz ModuleShortcutsService.Seed), takže server nemusí znát rozložení mřížky.
 Class ALVA.EDControls.DesktopShortcuts Extends %RegisteredObject
@@ -111,6 +111,11 @@ ClassMethod KeyOf(obj As %DynamicObject) As %String
     if '$isobject(obj) ret ""
     s kind = obj.%Get("Kind")
     if (kind = "") ret ""
+    // Varianty modulu menu (Převody AD/MHD) mají shodné ElementId i Id, liší je jen Input.
+    if (kind = "MenuModule") {
+        s input = obj.%Get("Input")
+        ret kind_"|"_obj.%Get("ElementId")_$s(input'="":"|"_input, 1:"")
+    }
     ret kind_"|"_obj.%Get("ElementId")_"|"_obj.%Get("Id")
 }
 

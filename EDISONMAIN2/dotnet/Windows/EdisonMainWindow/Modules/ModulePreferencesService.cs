@@ -56,7 +56,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public Task SaveShortcutsAsync(IEnumerable<DesktopShortcutDto> shortcuts) =>
             SaveBlobAsync(ShortcutsKey, shortcuts.ToList());
 
-        /// <summary>Používanost per ElementId (počet spuštění + čas posledního). Prázdná mapa při chybě.</summary>
+        /// <summary>Používanost per <see cref="ExecutableModule.VariantKey"/> (počet spuštění + čas posledního). Prázdná mapa při chybě.</summary>
         public async Task<Dictionary<string, UsageEntry>> LoadUsageAsync() =>
             await LoadBlobAsync<Dictionary<string, UsageEntry>>(UsageKey) ?? [];
 

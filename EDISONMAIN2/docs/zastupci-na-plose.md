@@ -18,7 +18,9 @@ tady jsou jejich kontrakty a pasti, ať se legacy strana nemusí dohledávat zno
 
 Identita zástupce je legacy čtveřice `(Form, ID, CallType, ItemType)`
 (`EDISONMAIN/frmMain.vb` `DesktopShortcut.IsEqual`) - v EDISON2 `DesktopShortcut.Key`
-(`Kind|ElementId|Id`; `CallType` je odvoditelný z `Kind`). Payload sestav
+(`Kind|ElementId|Id`; `CallType` je odvoditelný z `Kind`). Modul hlavní nabídky má klíč
+`MenuModule|ElementId` a `|Input`, má-li parametr: varianty téže formy (Převody AD/MHD) se liší jen parametrem, legacy
+čtveřice by je slila. Server (`ALVA.EDControls.DesktopShortcuts.KeyOf`) počítá týž klíč. Payload sestav
 (`Agenda/Oblast/TypSestavy/Sestava/Predvolba/JeVerejny`) drží `ReportPayload`, protože z něj
 server dohledává uložené parametry tisku (`TISK/frmReportShow.vb`
 `GetIndexGlobaluPodleUlozenychParametru`).

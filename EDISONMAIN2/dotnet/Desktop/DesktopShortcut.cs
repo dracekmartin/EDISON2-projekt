@@ -84,8 +84,19 @@ namespace EDISONMAIN2.Desktop
         /// </summary>
         public ExecutableModule? Module { get; init; }
 
-        /// <summary>Identita položky napříč druhy (dva různé druhy nad týmž modulem koexistují).</summary>
-        public string Key => $"{Kind}|{ElementId}|{Id}";
+        /// <summary>
+        /// Identita položky napříč druhy (dva různé druhy nad týmž modulem koexistují). Modul hlavní nabídky
+        /// rozlišuje i variantu - Převody AD a MHD mají shodné ElementId i Id.
+        /// </summary>
+        public string Key => KeyOf(Kind, ElementId, Id, InputParam);
+
+        /// <summary>Varianta modulu hlavní nabídky (<see cref="ExecutableModule.VariantKey"/>).</summary>
+        public string VariantKey => ExecutableModule.VariantKeyOf(ElementId, InputParam);
+
+        internal static string KeyOf(ShortcutKind kind, string elementId, string id, string inputParam) =>
+            kind == ShortcutKind.MenuModule
+                ? $"{kind}|{ExecutableModule.VariantKeyOf(elementId, inputParam)}"
+                : $"{kind}|{elementId}|{id}";
 
         private int _col;
         private int _row;

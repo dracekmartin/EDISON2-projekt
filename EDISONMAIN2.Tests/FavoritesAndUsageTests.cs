@@ -104,6 +104,42 @@ public class FavoritesAndUsageTests
         Assert.Same(a, Assert.Single(result));
     }
 
+    // Převody AD/MHD sdílí ElementId i formu, liší se parametrem: žebříček ukáže a spustí tu použitou, ne první ve stromu.
+    [Fact]
+    public void BuildUsedList_VariantsOfOneElementId_KeptApart()
+    {
+        var ad = new ExecutableModule { Name = "Převody AD", ElementId = "146016", ExecutablePath = "MZDY2.exe", InputParam = "AD" };
+        var mhd = new ExecutableModule(ad) { Name = "Převody MHD", InputParam = "MHD" };
+        var usage = new Dictionary<string, UsageEntry> { [mhd.VariantKey] = new(2, default), [ad.VariantKey] = new(1, default) };
+
+        var result = EdisonMainViewModel.BuildUsedList([new IModule[] { ad, mhd }], usage, cap: 10);
+
+        Assert.Equal([mhd, ad], result);
+    }
+
+    [Fact]
+    public void OpenModule_Variant_RecordsUsageUnderItsVariant()
+    {
+        var vm = CreateVM(Substitute.For<IUserPrefsService>(), tree:
+        [
+            new ExecutableModule { Name = "Převody AD", ElementId = "146016", ExecutablePath = "MZDY2.exe", InputParam = "AD" },
+            new ExecutableModule { Name = "Převody MHD", ElementId = "146016", ExecutablePath = "MZDY2.exe", InputParam = "MHD" },
+        ]);
+        var mhd = vm.MainMenuTree.OfType<ExecutableModule>().Single(m => m.InputParam == "MHD");
+
+        vm.OpenModuleCommand.Execute(mhd);
+
+        Assert.Same(mhd, Assert.Single(vm.UsedModules));
+    }
+
+    // Bez parametru zůstává klíč holé ElementId - záznamy uložené před rozlišením variant platí dál.
+    [Fact]
+    public void VariantKey_WithoutInputParam_IsElementId()
+    {
+        Assert.Equal("100", Exe("100").VariantKey);
+        Assert.Equal("146016|MHD", new ExecutableModule { ElementId = "146016", InputParam = "MHD" }.VariantKey);
+    }
+
     [Fact]
     public async Task Prefs_LoadShortcuts_ParsesList()
     {

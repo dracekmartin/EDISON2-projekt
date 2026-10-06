@@ -111,13 +111,14 @@ namespace EDISONMAIN2.Desktop
                 }
                 var kind = Enum.Parse<ShortcutKind>(dto.Kind);
 
-                var module = kind == ShortcutKind.MenuModule ? Resolve(dto.ElementId) : null;
+                var module = kind == ShortcutKind.MenuModule ? Resolve(dto.ElementId, dto.Input) : null;
                 if (kind == ShortcutKind.MenuModule && module is null)
                 {
                     _unresolved.Add(dto);
                     continue;
                 }
-                if (!keys.Add($"{kind}|{dto.ElementId}|{dto.Id}")) continue;
+                // Variantu modulu bere dlaždice z dohledaného uzlu, ne z uložené položky (viz Resolve).
+                if (!keys.Add(DesktopShortcut.KeyOf(kind, dto.ElementId, dto.Id, module?.InputParam ?? dto.Input))) continue;
                 shown.Add((dto, kind, module));
             }
 
@@ -155,18 +156,24 @@ namespace EDISONMAIN2.Desktop
         public IEnumerable<DesktopShortcutDto> Persistable() =>
             Items.Select(i => i.ToDto()).Concat(_unresolved);
 
-        /// <summary>Je modul hlavní nabídky na ploše? (řídí ★ ve stromu)</summary>
-        public bool Contains(string elementId) =>
-            Items.Any(i => i.Kind == ShortcutKind.MenuModule && i.ElementId == elementId);
+        /// <summary>Je tahle varianta modulu hlavní nabídky na ploše? (řídí ★ ve stromu)</summary>
+        public bool Contains(ExecutableModule module) =>
+            Items.Any(i => i.Kind == ShortcutKind.MenuModule && i.VariantKey == module.VariantKey);
 
-        /// <summary>Najde instanci modulu podle ElementId napříč všemi stromy (pro DnD drop).</summary>
-        public ExecutableModule? Resolve(string elementId) =>
-            _all.FirstOrDefault(e => e.ElementId == elementId);
+        /// <summary>
+        /// Najde instanci modulu napříč všemi stromy podle varianty. Položka, jejíž parametr strom nezná
+        /// (zápis agendy bez parametru, změněný parametr ve stromu), padne na první uzel téhož ElementId.
+        /// </summary>
+        public ExecutableModule? Resolve(string elementId, string inputParam = "")
+        {
+            var key = ExecutableModule.VariantKeyOf(elementId, inputParam);
+            return _all.FirstOrDefault(e => e.VariantKey == key) ?? _all.FirstOrDefault(e => e.ElementId == elementId);
+        }
 
         /// <summary>Přidá modul hlavní nabídky na plochu (idempotentní).</summary>
         public void Add(ExecutableModule module)
         {
-            if (module.ElementId.Length == 0 || Contains(module.ElementId)) return;
+            if (module.ElementId.Length == 0 || Contains(module)) return;
             module.IsFavorite = true;
             var shortcut = DesktopShortcut.ForModule(module);
             (shortcut.Col, shortcut.Row) = NextFreeCell();
@@ -177,7 +184,7 @@ namespace EDISONMAIN2.Desktop
         /// <summary>Odebere z plochy zástupce daného modulu hlavní nabídky.</summary>
         public void Remove(ExecutableModule module)
         {
-            if (Items.FirstOrDefault(i => i.Kind == ShortcutKind.MenuModule && i.ElementId == module.ElementId)
+            if (Items.FirstOrDefault(i => i.Kind == ShortcutKind.MenuModule && i.VariantKey == module.VariantKey)
                 is not { } existing) return;
             Remove(existing);
         }

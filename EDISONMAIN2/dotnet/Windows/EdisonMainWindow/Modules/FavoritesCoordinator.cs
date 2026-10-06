@@ -90,15 +90,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         {
             switch (module)
             {
-                case ExecutableModule { ElementId: { Length: > 0 } id } exe:
-                    if (_shortcuts.Contains(id)) _shortcuts.Remove(exe);
+                case ExecutableModule { ElementId.Length: > 0 } exe:
+                    if (_shortcuts.Contains(exe)) _shortcuts.Remove(exe);
                     else _shortcuts.Add(exe);
                     break;
 
                 case ModuleFamily family:
                     var exes = ModuleTreeState.Flatten(family).Where(e => e.ElementId.Length > 0).ToList();
                     if (exes.Count == 0) return;
-                    bool allFav = exes.All(e => _shortcuts.Contains(e.ElementId));
+                    bool allFav = exes.All(_shortcuts.Contains);
                     _shortcuts.Batch(() =>
                     {
                         foreach (var e in exes)
@@ -133,7 +133,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         // Oblíbené = položky plochy, které jsou modulem hlavní nabídky (★ ve stromu jiné druhy nezná).
         private HashSet<string> FavoriteIdSet() =>
-            [.. _shortcuts.Items.Where(i => i.Kind == ShortcutKind.MenuModule).Select(i => i.ElementId)];
+            [.. _shortcuts.Items.Where(i => i.Kind == ShortcutKind.MenuModule).Select(i => i.VariantKey)];
 
         // Nastaví ModuleFamily.IsFavorite = "všichni potomci oblíbení" napříč hlavními stromy (řídí text
         // kontextového menu rodiny). Vrací, zda je uzel plně oblíbený (rekurzivní agregace).
@@ -165,7 +165,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         }
 
         /// <summary>
-        /// Ořezané stromy jen s oblíbenými listy (predikát <c>favoriteIds.Contains(ElementId)</c>).
+        /// Ořezané stromy jen s oblíbenými listy (predikát <c>favoriteIds.Contains(VariantKey)</c>).
         /// Zachovává hierarchii, prázdné rodiny se vynechají. Listy se SDÍLEJÍ (ne kopírují) s hlavními
         /// stromy - přepnutí IsFavorite se projeví v obou. Rodiny jsou nové (rozbalené pro přehled).
         /// </summary>
@@ -182,7 +182,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         private static IModule? PruneToFavorites(IModule module, ISet<string> favoriteIds) => module switch
         {
-            ExecutableModule exe => favoriteIds.Contains(exe.ElementId) ? exe : null,
+            ExecutableModule exe => favoriteIds.Contains(exe.VariantKey) ? exe : null,
             ModuleFamily family  => PruneFamily(family, favoriteIds),
             _                    => null,
         };
