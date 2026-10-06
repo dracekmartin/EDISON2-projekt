@@ -21,11 +21,10 @@ Ukázka všech featur `CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` - **no
 
 ## Round-trip pravidlo
 
-Každá property se musí round-tripovat (`Serialize`/`WriteToOut` ⟷ `ParseItems` /
-`SerializeItemsCVar` ⟷ `ReadFromIn`), jinak ji server po prvním round-tripu ztratí.
-**Výjimka: Image** - Base64 value se na server neposílá (limit MLRest) a preservuje se
-client-side v controlleru. Save rozlišuje „server vrátil form" vs. no-op podle číselných
-subscriptů v OUT (`HasFormItems`) - bez nich zachová klientské Items.
+Každá property se musí round-tripovat (`Serialize`/`WriteToOut` ⟷ `ParseItems` / `SerializeItemsCVar` ⟷
+`ReadFromIn`), jinak ji server po prvním round-tripu ztratí. **Výjimka: Image** - Base64 value se na server
+neposílá (limit MLRest) a preservuje se client-side v controlleru. Save rozlišuje „server vrátil form" vs. no-op
+podle číselných subscriptů v OUT (`HasFormItems`) - bez nich zachová klientské Items.
 
 ## Pasti
 
@@ -34,6 +33,9 @@ subscriptů v OUT (`HasFormItems`) - bez nich zachová klientské Items.
 - Eventy: `FieldChanged` při **každé** změně Value bez ohledu na `ValidateOnChange`, `ButtonClicked`
   při každém kliku (roundtrip jen s `ValidateOnChange=1`). `Initialized` = deprekovaný alias
   `SchemaLoaded` (stínil `FrameworkElement.Initialized`), smaže se až s koordinovaným publish obou aplikací.
+- ⚠️ **Validace je záměrně synchronní** (na změnu jen odložená za handlery hosta): odpověď nahrazuje celé Items, takže
+  asynchronní odpověď by zahodila fokus i rozepsaný text a echo by vracelo úpravy hosta. Async je **odložené k diskusi**:
+  pasti `.claude/reviews/architecture.md` A15, hotová implementace větev `odlozeno/a15-async-edinputform`. Nezavádět bez vlastníka.
 - Klientská validace: type-error má prioritu před required; type-check běží hned při setu Value.
 - **Číselné pole mění při setu `Value` čárku na tečku** (uvnitř i na drátě vždy tečka). Čárka je
   **vždy desetinná**, nikdy oddělovač tisíců (`NumberStyles.Float`, ne `Number` - jinak „1.500"

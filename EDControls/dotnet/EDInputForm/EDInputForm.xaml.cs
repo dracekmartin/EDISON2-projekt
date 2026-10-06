@@ -714,6 +714,8 @@ namespace EDControls.EDInputForm
             FieldChanged?.Invoke(field.Key);
 
             if (!field.ValidateOnChange) return;
+            // Záměrně synchronně, jen odloženě za handlery hosta: odpověď nahrazuje Items, asynchronní by zahodila
+            // fokus i rozepsaný text. Async je odložené k diskusi - pasti v CLAUDE.md komponenty, ne „jen přidat await".
             Dispatcher.BeginInvoke(new Action(() => Controller.Validate(field.Key)));
         }
     }

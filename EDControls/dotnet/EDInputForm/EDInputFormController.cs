@@ -102,6 +102,8 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
         }
     }
 
+    // Nahrazuje Items novými objekty (view přestaví controly) - proto controller nemá async variantu: pozdní odpověď
+    // by zahodila rozepsaný text. Async je odložené k diskusi, pasti v CLAUDE.md komponenty.
     private void ApplyOutput(CVar output)
     {
         // Image pole se na server neposílají (viz SerializeItemsCVar) - server by je echem

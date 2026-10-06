@@ -661,8 +661,30 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A15 · `EDInputForm` je celý synchronní na UI vlákně, `EDList` má async cestu
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- [ ] **Stav:** ⏸️ **ODLOŽENO K DISKUSI (2026-10-06), v kódu nic není.** Implementace vznikla, prošla testy
+  i skeptikem, ale vlastník neví, jestli asynchronní validaci formuláře vůbec chce; probere s kolegou.
+  Celá implementace s testy je ve větvi **`odlozeno/a15-async-edinputform`** (commit `66ee715e` nad `e2bbea7d`;
+  controller `InitAsync`/`ValidateAsync` přes `IRestCallRunner` + generation guard, merge odpovědi, view,
+  notifikace `Field`/`Item`/`Group`, 16 testů). Při obnově smazat poznámky o odložení v `EDInputForm/CLAUDE.md`
+  a v kódu. Proud S8 pokračuje A27.
 - **Rozhodnutí vlastníka (2026-10-05):** aplikuje se jen odpověď posledního `ValidateAsync`/`InitAsync` (generation guard); hodnotu pole, které uživatel právě edituje, odpověď nepřepíše.
+- **Rozhodnutí vlastníka (2026-10-06):** odpověď zapisovat do existujících objektů (merge), ne nahrazovat Items. Následně
+  celé A15 odloženo - asynchronnost zatím nezavádět.
+- **Co pokus zjistil (pro diskusi, platí pro jakoukoli async variantu):**
+  - **Odpověď validace dnes nahrazuje celé `Items`** novými objekty a view přegeneruje všechny controly. Synchronně to
+    nevadí (uživatel během dotazu nepíše), asynchronně by pozdní odpověď zahodila fokus i rozepsaný text - textová pole
+    zapisují `Value` až na `LostFocus`. Bez merge do existujících objektů async nejde; merge ale mění i sync `Validate`.
+  - **Echo serveru přepisuje klientské úpravy hosta:** host reaguje na změnu pole vlastním handlerem (TD `PrintDialog`
+    skrývá/ukazuje pole podle `__EXPORT_SPLIT`, `ElementFormBinder` mění `Required`, klient doplňuje `ListItems`).
+    Serializace musí zůstat odložená za handlery hosta (dnešní `BeginInvoke`) a merge musí hlídat proti snapshotu
+    odeslaného stavu všechny vlastnosti, ne jen hodnotu.
+  - **„Pole s fokusem" ≠ „uživatel edituje":** tlačítko, checkbox, seznam i datum po kliknutí drží fokus, hodnotu už
+    zapsaly. Chránit jen `TextBox` s nezapsaným textem (`BindingExpression.IsDirty`), jinak se nepřepne např. popisek
+    tlačítka v `EDIFExample` (`htToggle`).
+  - Chyba ze serveru u hodnoty, kterou server v téže odpovědi změnil, se musí zachovat (jinak projde `Save`).
+  - Sync `Save()` (OK) musí běžící async odpověď zneplatnit, jinak pozdní echo přepíše stav po uložení.
+- **Otevřené otázky:** stojí zisk (TD u zákazníka nezamrzá na pomalé lince) za merge a jeho složitost? Auto-init na
+  `Loaded` i `Save` z OK by dál blokovaly; souběh dvou odložených `Validate` na sdílené instanci (Dopad níže) trvá.
 - **P2 · M** · Závisí na: A3 · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** `EDList` má `InitializeListAsync/LoadListAsync` s gate a generation guardem,
   `EDInputForm` volá Caché výhradně synchronně včetně validace na každou změnu pole.
