@@ -118,6 +118,25 @@ public class EDListSetDataTests
         });
     }
 
+    /// <summary>Změna sloupce čeká na odložený zápis; zavření okna ho dokončí pod scope EDListu.</summary>
+    [Fact]
+    public void Unload_WithPendingLayoutChange_FlushesUnderEDListScope()
+    {
+        RunSta(() =>
+        {
+            var prefs = Substitute.For<IUserPrefsService>();
+            var list = NoRestList(prefs);
+            list.HostId = "Tests.EDList";
+            list.SetData(Columns, [Row("1", "A", "1")]);
+
+            ColumnByKey(list, "mth").SortDirection = ListSortDirection.Descending;
+            list.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+
+            prefs.Received(1).SaveAsync("EDControls.EDList", "Tests.EDList",
+                Arg.Is<JsonNode>(n => n["sort"]![0]!["key"]!.GetValue<string>() == "mth"));
+        });
+    }
+
     /// <summary>IMAGE a CODEBOOK jsou rezervované: textový sloupec s raw hodnotou, dokud je někdo nezačne kreslit.</summary>
     [Fact]
     public void SetData_ReservedTypes_RenderAsRawText()

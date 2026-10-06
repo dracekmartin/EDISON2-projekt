@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Text.Json.Nodes;
 using ALWA.SYS;
 using EDControls.EDList;
 using EDControls.EDViewModel;
@@ -195,14 +194,6 @@ public class EDListControllerTests
         _prefs.LoadAsync(EDListController.PrefsScope, "Host").ThrowsAsync(new InvalidOperationException("síť"));
 
         Assert.Null(await _controller.LoadLayoutAsync("Host"));
-    }
-
-    [Fact]
-    public async Task SaveLayoutAsync_WritesUnderEDListScope()
-    {
-        await _controller.SaveLayoutAsync("Host", new ColumnLayout { Columns = [new ColumnPref { Key = "name", Width = 120 }] });
-
-        await _prefs.Received(1).SaveAsync("EDControls.EDList", "Host", Arg.Is<JsonNode>(n => n["columns"]![0]!["key"]!.GetValue<string>() == "name"));
     }
 
     private void Init() => _controller.InitializeList(Cls);

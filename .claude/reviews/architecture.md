@@ -589,7 +589,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   a load/save layoutu přes `IUserPrefsService`. Místo `(IMLRest, cacheClass)` z návrhu bere
   `Func<EDServices>` (MLRest per volání, přepnutí session neudrží starou instanci) a `cacheClass`/`HostId`
   parametrem (DP čte view na UI vlákně). Tvorba sloupců v `EDListColumnFactory`, `RgbStringToBrushConverter`
-  ve vlastním souboru. Code-behind 729 → 434 ř. (k 400 po A23, kde odejde debounce). Veřejné API
+  ve vlastním souboru. Code-behind 729 → 434 ř., po A23 403 ř. Veřejné API
   beze změny. Navíc `FindColumnByKey` odmítne prázdný klíč (poškozený layout trefil checkbox sloupec
   bez Tagu). Testy `EDListControllerTests` (15, bez STA), `EDListLoadTests.LoadList_ReappliesSearchAndLayout`,
   `EDListSetDataTests.SetData_StoredLayoutWithNullKeys_IsIgnored`.
@@ -785,7 +785,15 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A23 · Mechanismus persistence preferencí zkopírovaný v `EDList` a `EDFilter`
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01, kód beze změny)
+- [x] **Stav:** vyřešeno (2026-10-05) - `internal sealed UserPrefs/DebouncedUserPrefsWriter` (služba,
+  scope, klíč a snapshot jako delegáty, injektovatelný odpočet): `Schedule()` restartuje 500 ms odpočet,
+  `FlushAsync()` uloží jen čekající změnu, prázdný klíč = no-op, chyba zápisu i snapshotu best-effort
+  na jednom místě. Místo `DispatcherTimer` `Task.Delay` s `CancellationTokenSource`; pokračuje na UI
+  kontextu, snapshot tak dál čte DataGrid a pole filtru na UI vlákně. Používá ho EDList (layout,
+  `EDListController.SaveLayoutAsync` zanikl) i EDFilter (hodnoty), `Unloaded` → `FlushAsync`. Formát
+  blobů beze změny. Testy `DebouncedUserPrefsWriterTests` (6, bez WPF; snapshot běží na kontextu volajícího,
+  ověřeno mutací `ConfigureAwait(false)`), `EDListSetDataTests.Unload_WithPendingLayoutChange_FlushesUnderEDListScope`,
+  stávající `EDFilterTests` zelené. `ServicesOverride` seamy (tři kopie) návrh neřešil, zůstávají.
 - **P2 · S** · Závisí na: - · Blokuje: - · Původ: nový (2026-09-20)
 - **Problém:** identický kód (500 ms `DispatcherTimer`, `Stop/Start`, `await Save` v `Unloaded`,
   `catch { /* best-effort */ }`) ve dvou controls, každý s vlastním `PrefsScope` a vlastním
@@ -969,7 +977,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A27 · Wire deklaruje, co UI nerenderuje: `IMAGE`/`CODEBOOK`, `Field.Format`, `UserHidden` 🔸
 
-- [ ] **Stav:** otevřeno, část EDList vyřešena (2026-10-05) - rozhodnutí vlastníka: IMAGE a CODEBOOK
+- [ ] **Stav:** otevřeno, část EDList vyřešena 1e6bcc79 (2026-10-05) - rozhodnutí vlastníka: IMAGE a CODEBOOK
   **rezervovat**, server je dál přijme (platné konstanty v `EDList.inc`) a klient je kreslí jako text;
   `ListColumnType`, `EDListColumnFactory`, `Column.cls` a `EDList/CLAUDE.md` je tak označují, kreslení
   až pro skutečného konzumenta. Test `EDListSetDataTests.SetData_ReservedTypes_RenderAsRawText`.

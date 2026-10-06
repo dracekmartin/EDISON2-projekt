@@ -7,7 +7,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Markup;
-using System.Windows.Threading;
 using EDControls.UserPrefs;
 
 namespace EDControls.EDFilter;
@@ -35,6 +34,8 @@ public partial class EDFilter : UserControl
         FieldsHost.ItemsSource = Fields;
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
+        _prefsWriter = new DebouncedUserPrefsWriter(() => UserPrefs, PrefsScope, () => HostId,
+            () => EDFilterPrefsSerializer.Serialize(new EDFilterPrefs { Values = BuildFilterDict() }));
     }
 
     // UserPrefs ze sdíleného EDServices.Current - host nemusí mít VM dědící z EDViewModel
@@ -147,7 +148,7 @@ public partial class EDFilter : UserControl
 
     private bool _initialLoadDone;
     private bool _suppressAutoTrigger;
-    private DispatcherTimer? _saveDebouncer;
+    private readonly DebouncedUserPrefsWriter _prefsWriter;
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
@@ -181,16 +182,7 @@ public partial class EDFilter : UserControl
         await RefreshAsync();
     }
 
-    private async void OnUnloaded(object sender, RoutedEventArgs e)
-    {
-        // Dokončit jen rozdělané uložení - bezpodmínečný save by poslal request při každém
-        // zavření okna, i když uživatel filtrem nehnul.
-        if (_saveDebouncer is { IsEnabled: true })
-        {
-            _saveDebouncer.Stop();
-            await SavePrefsAsync();
-        }
-    }
+    private async void OnUnloaded(object sender, RoutedEventArgs e) => await _prefsWriter.FlushAsync();
 
     private void OnFieldsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -205,7 +197,7 @@ public partial class EDFilter : UserControl
     private void OnFieldValueChanged(object? sender, EventArgs e)
     {
         if (_suppressAutoTrigger) return;
-        SchedulePrefsSave();
+        _prefsWriter.Schedule();
         if (AutoTrigger) AutoRefresh();
     }
 
@@ -295,37 +287,6 @@ public partial class EDFilter : UserControl
             {
                 _suppressAutoTrigger = false;
             }
-        }
-        catch { /* best-effort */ }
-    }
-
-    private void SchedulePrefsSave()
-    {
-        if (string.IsNullOrEmpty(HostId)) return;
-        _saveDebouncer ??= CreateDebouncer();
-        _saveDebouncer.Stop();
-        _saveDebouncer.Start();
-    }
-
-    private DispatcherTimer CreateDebouncer()
-    {
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
-        timer.Tick += async (_, _) =>
-        {
-            timer.Stop();
-            await SavePrefsAsync();
-        };
-        return timer;
-    }
-
-    private async Task SavePrefsAsync()
-    {
-        var hostId = HostId;
-        if (string.IsNullOrEmpty(hostId)) return;
-        try
-        {
-            var prefs = new EDFilterPrefs { Values = BuildFilterDict() };
-            await UserPrefs.SaveAsync(PrefsScope, hostId, EDFilterPrefsSerializer.Serialize(prefs));
         }
         catch { /* best-effort */ }
     }

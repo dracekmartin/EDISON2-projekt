@@ -11,9 +11,9 @@ using EDControls.EDViewModel;
 namespace EDControls.EDList;
 
 /// <summary>
-/// Stav EDListu bez WPF: sloupce, řádky, zaškrtnutí, řazení a uložený layout. View z něj
-/// staví <c>DataGrid</c> a napojuje eventy. Služby čte per volání (<c>EDServices.Current</c>
-/// se mění s přepnutím session), hodnoty DP dostává parametrem - čte je view na UI vlákně.
+/// Stav EDListu bez WPF: sloupce, řádky, zaškrtnutí, řazení, načtení layoutu (zápis odkládá view).
+/// Služby čte per volání (<c>EDServices.Current</c> se mění s přepnutím session), hodnoty DP
+/// dostává parametrem - čte je view na UI vlákně.
 /// </summary>
 internal sealed class EDListController(Func<EDServices> services)
 {
@@ -245,15 +245,5 @@ internal sealed class EDListController(Func<EDServices> services)
             return ColumnLayoutSerializer.Deserialize(await services().UserPrefs.LoadAsync(PrefsScope, hostId));
         }
         catch { return null; /* best-effort */ }
-    }
-
-    public async Task SaveLayoutAsync(string? hostId, ColumnLayout layout)
-    {
-        if (string.IsNullOrEmpty(hostId)) return;
-        try
-        {
-            await services().UserPrefs.SaveAsync(PrefsScope, hostId, ColumnLayoutSerializer.Serialize(layout));
-        }
-        catch { /* best-effort */ }
     }
 }
