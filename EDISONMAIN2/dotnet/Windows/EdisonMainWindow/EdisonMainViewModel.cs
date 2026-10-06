@@ -67,7 +67,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand TriggerErrorCommand { get; }
         /// <summary>Menu „Test funkcí" jen pro vývoj a stanice M-line - u zákazníka by „Vyvolat chybu" založilo tiket.</summary>
         public bool IsTestMenuVisible => InternalDiagnostics.Enabled;
-        public ICommand OpenTemplateDesignerCommand { get; }
+        /// <summary>Starý shell jen pro admina a stanice M-line - běžný uživatel má zůstat v novém shellu.</summary>
+        public bool IsLegacyShellVisible => _services.IsAdmin || InternalDiagnostics.Enabled;
         public ICommand OpenLegacyShellCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
         public ICommand CloseMiniAppsCommand { get; }
@@ -95,7 +96,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand ShowUsersLocksCommand { get; }
         public ICommand ShowUsersActivityCommand { get; }
         public ICommand FontSettingsCommand { get; }
-        public ICommand ShowLanguageSettingsCommand { get; }
         public ICommand ResetFormsCommand { get; }
         public ICommand ShowInfoCommand { get; }
         public ICommand ShowShellChangelogCommand { get; }
@@ -175,8 +175,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             TestActionOverlayCommand = CommandAsync<OverlayTestVariant>(v => TestActionOverlayAsync(v.SpriteKey));
             // Test trigger pro error popup - výjimka projde RelayCommand handlerem do EDErrorPopup.
             TriggerErrorCommand = Command(() => throw new InvalidOperationException("Testovací výjimka z toolbaru."));
-            OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
-            OpenLegacyShellCommand = Command(OpenLegacyShell);
+            OpenLegacyShellCommand = Command(OpenLegacyShell, () => IsLegacyShellVisible);
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniApps.Open(d));
             PickMiniAppCommand       = Command(PickMiniApp);
             CloseMiniAppsCommand     = Command(() => _miniApps.CloseClosable());
@@ -209,8 +208,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Nastavení menu
             FontSettingsCommand           = Command(ShowFontSettings);
-            ShowLanguageSettingsCommand   = CommandAsync(() => LaunchDialogAsync("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
-            ResetFormsCommand             = Command(ResetForms);
+            ResetFormsCommand            = Command(ResetForms);
 
             // Nápověda menu
             ShowInfoCommand               = Command(ShowAppInfo);
@@ -932,6 +930,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     OnPropertyChanged(nameof(FullName));
                     OnPropertyChanged(nameof(Mlp));
                     OnPropertyChanged(nameof(UserDisplay));
+                    OnPropertyChanged(nameof(IsLegacyShellVisible));
                     // Admin-gated commandy (ShowUsersLocks/Activity) re-vyhodnotí CanExecute hned,
                     // ne až na první input event po switch.
                     CommandManager.InvalidateRequerySuggested();

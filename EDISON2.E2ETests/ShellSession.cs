@@ -110,10 +110,32 @@ internal sealed class ShellSession : IDisposable
 
     public T WaitFor<T>(Func<T?> probe, string what) where T : class => WaitFor(probe, what, StepTimeout);
 
-    /// <summary>„EDISON" → „Konec" → „Ano" a čekání na konec procesu (logout uvolní E2E zámek).</summary>
+    /// <summary>Hlavní okno pod minimum; WPF ho zastaví na MinWidth × MinHeight. Vrací se po ustálení velikosti.</summary>
+    public void ShrinkToMinimumSize()
+    {
+        Main.Patterns.Window.Pattern.SetWindowVisualState(WindowVisualState.Normal);
+        Main.Patterns.Transform.Pattern.Resize(1, 1);
+        var last = System.Drawing.Rectangle.Empty;
+        WaitUntil(() =>
+        {
+            var now = Main.BoundingRectangle;
+            bool stable = now == last;
+            last = now;
+            return stable;
+        }, "ustálení velikosti okna", StepTimeout);
+    }
+
+    /// <summary>Položky první úrovně obou menu lišty (EDISON a hlavní menu) s jejich obdélníky na obrazovce.</summary>
+    public IReadOnlyList<(string Name, System.Drawing.Rectangle Bounds)> MenuBarItems() =>
+        [.. new[] { "EdisonMenu", "TopMenu" }
+            .Select(id => WaitFor(() => Main.FindFirstDescendant(cf => cf.ByAutomationId(id)), $"menu {id}"))
+            .SelectMany(menu => menu.FindAllChildren(cf => cf.ByControlType(ControlType.MenuItem)))
+            .Select(item => (item.Name, item.BoundingRectangle))];
+
+    /// <summary>„EDISON" → „Ukončit program" → „Ano" a čekání na konec procesu (logout uvolní E2E zámek).</summary>
     public void ExitViaMenu()
     {
-        InvokeMenu("EdisonMenu", "EDISON", "Konec");
+        InvokeMenu("EdisonMenu", "EDISON", "Ukončit program");
         var popup = WaitForWindow("Potvrzení");
         var message = WaitFor(() => popup.FindFirstDescendant(cf => cf.ByAutomationId("MessageText")), "text potvrzení").Name;
         // Titulek „Potvrzení" a „Ano" má i brána přihlášení - její Ano by povolilo přihlašování celému serveru.

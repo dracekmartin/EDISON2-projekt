@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using AvalonDock.Themes;
 using EDControls.EDTheme;
+using EDControls.UserFonts;
 using EDISONMAIN2.Desktop;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
@@ -16,6 +17,7 @@ using DataObject = System.Windows.DataObject;
 using DragDrop = System.Windows.DragDrop;
 using DragDropEffects = System.Windows.DragDropEffects;
 using TreeView = System.Windows.Controls.TreeView;
+using Size = System.Windows.Size;
 
 namespace EDISONMAIN2
 {
@@ -27,6 +29,11 @@ namespace EDISONMAIN2
         public EdisonMainWindow()
         {
             InitializeComponent();
+            // Na notebooku s FHD a 150 % má pracovní plocha 1280 × 688 DIP: maximalizované okno by obsah
+            // rozložilo na MinHeight a stavový řádek by skončil pod okrajem obrazovky.
+            var min = MinSizeWithinWorkArea(new Size(MinWidth, MinHeight), SystemParameters.WorkArea.Size);
+            MinWidth = min.Width;
+            MinHeight = min.Height;
             PreviewKeyDown += OnPreviewKeyDown;
             // Výběr uzlu i Enter řešíme jednou na kartě, ne per strom - obojí bublá, takže
             // přidání záložky nevyžaduje další wiring. SelectedItem TreeView nelze bindovat.
@@ -39,9 +46,12 @@ namespace EDISONMAIN2
             DockManager.SizeChanged += MiniAppArea_SizeChanged;
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
+            CompanyCombo.Loaded += (_, _) => FitCompanyCombo();
+            FontService.Applied += FitCompanyCombo;
             Closing += OnShellClosing;
             Closed += OnShellClosed;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
+            Closed += (_, _) => FontService.Applied -= FitCompanyCombo;
             // DataContext nastavuje BuildShellWindow hned po ctoru, pruh se tedy naplní ještě před zobrazením.
             DataContextChanged += (_, e) =>
             {
@@ -66,7 +76,39 @@ namespace EDISONMAIN2
         {
             if (e.PropertyName == nameof(EdisonMainViewModel.SupportWidgetUrl) && sender is EdisonMainViewModel vm)
                 FillSupportStrip(vm.SupportWidgetUrl);
+            if (e.PropertyName == nameof(EdisonMainViewModel.Companies))
+                FitCompanyCombo();
         }
+
+        internal static Size MinSizeWithinWorkArea(Size min, Size workArea) =>
+            new(Math.Min(min.Width, workArea.Width), Math.Min(min.Height, workArea.Height));
+
+        // Šířka přepínače firem je pevná podle nejdelší firmy: rostla by s psaným filtrem i se
+        // šipkami a posouvala menu za sebou. Strop drží menu na jednom řádku v minimální šířce
+        // okna při výchozím písmu; zvětšené písmo ho zalomit může.
+        internal const double CompanyComboMaxWidth = 360;
+        // Caret a vnitřní okraj TextBoxu, které rozdíl šířky comba a editačního pole nezahrne.
+        private const double CompanyComboTextSlack = 6;
+
+        private void FitCompanyCombo()
+        {
+            if (DataContext is not EdisonMainViewModel vm
+                || CompanyCombo.Template?.FindName("PART_EditableTextBox", CompanyCombo) is not System.Windows.Controls.TextBox edit
+                || edit.ActualWidth <= 0)
+                return;
+            var typeface = new System.Windows.Media.Typeface(CompanyCombo.FontFamily, CompanyCombo.FontStyle,
+                CompanyCombo.FontWeight, CompanyCombo.FontStretch);
+            double pixelsPerDip = System.Windows.Media.VisualTreeHelper.GetDpi(CompanyCombo).PixelsPerDip;
+            double chrome = CompanyCombo.ActualWidth - edit.ActualWidth + CompanyComboTextSlack;
+            CompanyCombo.Width = CompanyComboWidth(vm.Companies.Select(c => c.DisplayName),
+                text => new System.Windows.Media.FormattedText(text, System.Globalization.CultureInfo.CurrentCulture,
+                    System.Windows.FlowDirection.LeftToRight, typeface, CompanyCombo.FontSize,
+                    System.Windows.Media.Brushes.Black, pixelsPerDip).WidthIncludingTrailingWhitespace,
+                chrome);
+        }
+
+        internal static double CompanyComboWidth(IEnumerable<string> texts, Func<string, double> measure, double chrome) =>
+            Math.Min(texts.Select(measure).DefaultIfEmpty(0).Max() + chrome, CompanyComboMaxWidth);
 
         // Widget v pruhu podpory. Drží statické Font/Theme eventy, takže se musí uklidit se
         // zavřením okna - jinak přežije shell. Nenačtení widgetu shell neblokuje (dekorace).

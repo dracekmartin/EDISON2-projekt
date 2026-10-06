@@ -21,7 +21,6 @@ public class EdisonMainViewModelCommandTests
         "BgTasks"          => vm.ShowBgTasksCommand,
         "UsersLocks"       => vm.ShowUsersLocksCommand,
         "UsersActivity"    => vm.ShowUsersActivityCommand,
-        "LanguageSettings" => vm.ShowLanguageSettingsCommand,
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
@@ -40,7 +39,6 @@ public class EdisonMainViewModelCommandTests
 
     [Theory]
     [InlineData("BgTasks", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList")]
-    [InlineData("LanguageSettings", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList")]
     public void DialogLegacyCommands_LaunchCorrectForm(string command, string exe, string form)
     {
         var nav = Substitute.For<IWindowNavigator>();
@@ -65,17 +63,6 @@ public class EdisonMainViewModelCommandTests
         services.IsAdmin = true;
         Assert.True(vm.ShowUsersLocksCommand.CanExecute(null));
         Assert.True(vm.ShowUsersActivityCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public void OpenTemplateDesignerCommand_LaunchesTdWithoutForm()
-    {
-        var nav = Substitute.For<IWindowNavigator>();
-        var vm = CreateVM(services: MockServices(nav: nav));
-
-        vm.OpenTemplateDesignerCommand.Execute(null);
-
-        nav.Received(1).ShowLegacy("TemplateDesigner.exe", formFqn: "");
     }
 
     [Fact]
