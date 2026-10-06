@@ -1,6 +1,7 @@
 using System.Windows.Media;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.MiniApps;
 using NSubstitute;
 

@@ -1,5 +1,5 @@
 using EDControls.MiniApps;
-using EDISONMAIN2.MiniApps;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using NSubstitute;
 using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
@@ -43,7 +43,7 @@ public class MiniAppSessionControllerTests
     {
         var services = MockServices();
         var desktop = new MiniAppDescriptor(DesktopMiniAppProvider.DesktopId, "Plocha",
-            () => new StubMiniApp(services));
+            () => new StubMiniApp(services), Pinned: true);
         var extra = new MiniAppDescriptor("Extra", "Extra", () => new StubMiniApp(services));
         var controller = Controller(catalog: MiniAppCatalog.Build([new SingleProvider(desktop, extra)]));
         var host = new RecordingHost();
@@ -71,6 +71,21 @@ public class MiniAppSessionControllerTests
         var desktop = Assert.Single(host.Panes);
         Assert.StartsWith(DesktopMiniAppProvider.DesktopId + "#", desktop.ContentId);
         Assert.False(desktop.CanClose);
+    }
+
+    // Controller Plochu pozná podle Pinned, id zná jen provider, který ji registruje.
+    [Fact]
+    public void DefaultLayout_OpensPinnedOnly_WhateverTheirId()
+    {
+        var services = MockServices();
+        var pinned = new MiniAppDescriptor("Jine.Pripnute", "Připnutá", () => new StubMiniApp(services), Pinned: true);
+        var other = new MiniAppDescriptor("Bezna", "Běžná", () => new StubMiniApp(services));
+        var controller = Controller(catalog: MiniAppCatalog.Build([new SingleProvider(other, pinned)]));
+        var host = new RecordingHost();
+
+        controller.AttachHost(host, Idfa);
+
+        Assert.StartsWith("Jine.Pripnute#", Assert.Single(host.Panes).ContentId);
     }
 
     [Fact]
@@ -112,7 +127,7 @@ public class MiniAppSessionControllerTests
         // (ThrowingHost.AddPane), start shellu to shodit nesmí.
         var services = MockServices();
         var desktop = new MiniAppDescriptor(DesktopMiniAppProvider.DesktopId, "Plocha",
-            () => new StubMiniApp(services));
+            () => new StubMiniApp(services), Pinned: true);
         var layouts = new Dictionary<string, string> { [Scope.Key] = "bad-xml" };
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.MiniAppLayouts.Returns(layouts);

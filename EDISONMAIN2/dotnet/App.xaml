@@ -14,6 +14,7 @@
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDStrings/EDStrings.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/MiniApps/MiniApps.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDISONMAIN2;component/MiniApps/DevMiniAppTemplates.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/EDISONMAIN2;component/Desktop/DesktopMiniAppTemplates.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDISONMAIN2.LegacyMiniApps;component/LegacyMiniAppTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>

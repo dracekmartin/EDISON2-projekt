@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Desktop;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {

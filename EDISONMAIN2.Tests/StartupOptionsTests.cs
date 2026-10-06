@@ -1,7 +1,7 @@
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
-using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
 
 namespace EDISONMAIN2.Tests;
 

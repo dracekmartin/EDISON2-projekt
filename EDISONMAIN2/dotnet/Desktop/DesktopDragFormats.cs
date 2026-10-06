@@ -2,7 +2,7 @@ using System.Windows;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using Point = System.Windows.Point;
 
-namespace EDISONMAIN2.MiniApps;
+namespace EDISONMAIN2.Desktop;
 
 /// <summary>
 /// DataObject formáty pro drag&drop na plochu. In-process (nese přímo instance).

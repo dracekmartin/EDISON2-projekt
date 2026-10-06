@@ -85,22 +85,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Při zavření shellu: zavře miniaplikace bez uložení (to dělá <see cref="Persist"/> předem).</summary>
         internal void CloseAll() => _manager?.CloseAll();
 
-        // Výchozí rozložení: Plocha jako jediný sloupec přes celou plochu docku. Podpora tu
-        // není - kanál IT → uživatelé nese fixní pruh v shellu, mimo dock.
-        private void OpenDefault()
-        {
-            var desktop = catalog.Find(DesktopMiniAppProvider.DesktopId);
-            _manager?.OpenDefaultLayout(desktop is null ? [] : [desktop], bottomRow: null);
-        }
+        // Připnuté miniaplikace (Plocha) v pořadí registrace; id zná jen jejich provider.
+        private IEnumerable<MiniAppDescriptor> Pinned => catalog.Groups.SelectMany(g => g.Apps).Where(d => d.Pinned);
 
-        // Plocha musí být otevřená vždy - uložený layout ji mít nemusí (pochází z verze, kde šla
+        // Výchozí rozložení: připnuté (dnes jen Plocha) přes celou plochu docku. Podpora tu
+        // není - kanál IT → uživatelé nese fixní pruh v shellu, mimo dock.
+        private void OpenDefault() => _manager?.OpenDefaultLayout([.. Pinned], bottomRow: null);
+
+        // Připnuté musí být otevřené vždy - uložený layout je mít nemusí (pochází z verze, kde Plocha šla
         // zavřít). Bez ní by dock zůstal prázdný a uživatel by o dlaždice se zástupci přišel.
-        private void EnsureDesktopOpen()
+        private void EnsurePinnedOpen()
         {
             if (_manager is null) return;
-            if (_manager.OpenInstances.Any(i => i.DescriptorId == DesktopMiniAppProvider.DesktopId)) return;
-            if (catalog.Find(DesktopMiniAppProvider.DesktopId) is { } desktop)
-                _manager.Open(desktop);
+            foreach (var pinned in Pinned)
+                if (!_manager.OpenInstances.Any(i => i.DescriptorId == pinned.Id))
+                    _manager.Open(pinned);
         }
 
         /// <summary>Uloží layout docku (a rozměry panelů) pod session, jejíž layout dock drží.</summary>
@@ -141,7 +140,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             try
             {
                 _manager.RestoreLayout(xml);
-                EnsureDesktopOpen();
+                EnsurePinnedOpen();
             }
             catch
             {

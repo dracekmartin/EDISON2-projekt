@@ -5,7 +5,7 @@ using Size = System.Windows.Size;
 using Point = System.Windows.Point;
 using Rect = System.Windows.Rect;
 
-namespace EDISONMAIN2.MiniApps;
+namespace EDISONMAIN2.Desktop;
 
 /// <summary>
 /// Mřížka dlaždic s <b>absolutní</b> pozicí: každé dítě jde na svůj

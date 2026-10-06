@@ -11,9 +11,11 @@ using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
 using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias - class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;

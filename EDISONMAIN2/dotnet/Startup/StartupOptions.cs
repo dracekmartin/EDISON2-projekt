@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
-using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
 using EDISONMAIN2.Windows.LoginWindow;
 
 namespace EDISONMAIN2;

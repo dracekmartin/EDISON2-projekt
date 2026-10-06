@@ -1,5 +1,5 @@
 using EDControls.EDViewModel;
-using EDISONMAIN2.MiniApps;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using NSubstitute;
 
@@ -76,6 +76,32 @@ public class DesktopMiniAppViewModelTests
         vm.ShowChangelogCommand.Execute(svc.Items[0]);
 
         Assert.Same(svc.Items[0], requested);
+    }
+
+    // Dock vykreslí Plochu jen přes DataTemplate ze slovníku mergnutého v App.xaml (pack URI build
+    // neověří); bez něj panel ukáže název typu VM.
+    [Fact]
+    public void TemplatesDictionary_HasTemplateForViewModel()
+    {
+        _ = System.Windows.Application.ResourceAssembly;   // bez WPF Application se pack:// jinak nezaregistruje
+        EDTesting.Sta.Run(() =>
+        {
+            var templates = new System.Windows.ResourceDictionary
+            {
+                Source = new Uri("pack://application:,,,/EDISONMAIN2;component/Desktop/DesktopMiniAppTemplates.xaml"),
+            };
+
+            Assert.IsType<System.Windows.DataTemplate>(
+                templates[new System.Windows.DataTemplateKey(typeof(DesktopMiniAppViewModel))]);
+        });
+    }
+
+    [Fact]
+    public void AppXaml_MergesTemplatesDictionary()
+    {
+        var app = System.IO.File.ReadAllText(LegacyTreeSources.RepoPath(System.IO.Path.Combine("EDISONMAIN2", "dotnet", "App.xaml")));
+
+        Assert.Contains("component/Desktop/DesktopMiniAppTemplates.xaml", app);
     }
 
     [Fact]

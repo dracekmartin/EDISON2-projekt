@@ -4,9 +4,11 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using AvalonDock.Themes;
 using EDControls.EDTheme;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;

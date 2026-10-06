@@ -3,9 +3,8 @@ using System.Collections.Specialized;
 using System.Windows.Input;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
-namespace EDISONMAIN2.MiniApps;
+namespace EDISONMAIN2.Desktop;
 
 /// <summary>
 /// Miniaplikace „Plocha" - osobní launcher zástupců jako dlaždice. Data bere ze sdílené

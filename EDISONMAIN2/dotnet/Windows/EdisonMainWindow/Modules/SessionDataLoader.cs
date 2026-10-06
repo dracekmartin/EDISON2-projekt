@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.Windows.UserProfileWindow;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules

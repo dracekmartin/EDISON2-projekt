@@ -1,7 +1,7 @@
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using Point = System.Windows.Point;
 
-namespace EDISONMAIN2.MiniApps;
+namespace EDISONMAIN2.Desktop;
 
 /// <summary>
 /// Gesto tažení položky ze stromu nebo dlaždice plochy: stisk si zapamatuje bod a položku, tah přes
