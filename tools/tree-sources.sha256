@@ -1,5 +1,5 @@
-# Fingerprint legacy zdroju, ze kterych je generovan Tree.cls (tools/GenerateTree.cs).
-# Kontroluje .claude/hooks/tree-drift.sh pri startu chatu. Needitovat rucne.
+# Fingerprint legacy zdroju, ze kterych je generovan Tree.cls (tools/GenerateTree).
+# Kontroluje .claude/hooks/tree-drift.sh pri startu chatu a parity test. Needitovat rucne.
 # Hash je pres obsah BEZ CR (kvuli CRLF/LF rozdilu Windows vs CI): tr -d '\r' | sha256sum
 e8164c4f19594d2e0dfef30bbe492298ddfbf2914077e97c66c2eadada6a28a0  EDCORE/Resources/edisonnavbar.xml
 3dced1ae3368f25eb49f5762b7b6ad6616233fd29cdfa0e76583f9a54ec5a3f4  EDCORE/Resources/edisontree.xml

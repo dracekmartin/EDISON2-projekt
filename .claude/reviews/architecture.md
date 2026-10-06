@@ -1017,7 +1017,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A24 · `tools/GenerateTree` mimo sln, žádný parita test
 
-- [ ] **Stav:** otevřeno, částečně (advisory drift hook 2026-08-26, CI `tree-sync.yml` 2026-08-27)
+- [x] **Stav:** vyřešeno (2026-10-06, vlna 3) - generátor je projekt `tools/GenerateTree` v `EDISON2.sln`
+  (logika `TreeGenerator` bez IO, `Program` čte prostředí a zapisuje); `sync-tree.ps1` a CI `tree-sync.yml`
+  volají `dotnet run --project tools/GenerateTree`. `EDISONMAIN2.Tests/TreeGeneratorTests`: jednotkové testy
+  nad syntetickými zdroji (FQN z enumu, override exe/input, type=4, přesun Telmaxu, chybějící marker,
+  fingerprint bez CR) a parity test výstup = `Tree.cls` nad legacy zdroji, bez sondy deploy adresáře.
+  Parita se zapíná `EDISON_LEGACY_ROOT` (pre-push ji nastaví, je-li `C:\MLineRepos\EDISON`), drift proti
+  `tools/tree-sources.sha256` = Skipped. Ověřeno nad verzemi zdrojů z fingerprintu (zelené) i nad driftem
+  (Skipped). Text splice markeru zůstal `(tools/GenerateTree.cs)`: jeho změna mění `Tree.cls` = deploy stromu.
 - **Rozhodnutí vlastníka (2026-10-05):** směr „master" (`Tree.cls` vs. XML) se teď nerozhoduje, parity test ani projekt v sln ho nepotřebují.
 - **P3 · M** · Závisí na: - · Blokuje: - · Původ: [backlog R10](arch-backlog.md#r10---toolsgeneratetree-mimo-build-žádný-drift-guard)
 - **Stav v kódu:** `tools/GenerateTree.cs` (461 ř.) je file-based app, v `EDISON2.sln` není. Drift

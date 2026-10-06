@@ -65,7 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           # Generator vraci nenulovy kod, kdyz nezapsal (napr. smazany splice anchor).
-          dotnet run tools/GenerateTree.cs 2> gen-report.txt
+          dotnet run --project tools/GenerateTree 2> gen-report.txt
           echo "--- report generatoru ---"
           cat gen-report.txt
           # Vzor zachytava jen ASCII cast - generator pise "oranzovych stubu" s diakritikou.

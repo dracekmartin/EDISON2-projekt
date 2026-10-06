@@ -49,7 +49,9 @@ if ($Pull) {
 
 Step 'Regenerace Tree.cls z legacy XML'
 Push-Location $repo
-try { dotnet run tools/GenerateTree.cs } finally { Pop-Location }
+# Generator jinak zapise do c:\MLineRepos\EDISON2 - z worktree by prepsal hlavni checkout a nasadil starou tridu.
+$env:EDISON2_ROOT = $repo
+try { dotnet run --project tools/GenerateTree } finally { Pop-Location }
 # Generator vraci nenulovy kod, kdyz nezapsal (napr. smazany splice marker) - nesmi se
 # pokracovat na deploy, jinak bychom nasadili starou tridu a hlasili uspech.
 if ($LASTEXITCODE -ne 0) { Fail 'generator selhal, Tree.cls NEZAPSAN - deploy preskocen' }
