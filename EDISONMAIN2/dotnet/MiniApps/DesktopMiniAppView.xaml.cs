@@ -4,7 +4,6 @@ using System.Windows.Media;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 // Aliasy proti ambient System.Windows.Forms (UseWindowsForms zapnuté pro WinForms color picker; _wpftmp importuje WinForms).
 using UserControl = System.Windows.Controls.UserControl;
-using Point = System.Windows.Point;
 using DragEventArgs = System.Windows.DragEventArgs;
 using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using DataObject = System.Windows.DataObject;
@@ -18,36 +17,26 @@ public partial class DesktopMiniAppView : UserControl
     private const double TileCellWidth = 140;   // shodné s TileGridPanel.CellWidth (default v šabloně panelu)
     private const double TilesHostMargin = 12;  // Margin="6" ItemsControlu na obou stranách
 
-    private Point _dragStart;
-    private DesktopShortcut? _dragTile;
-    private bool _suppressClick;   // po reorder tažení potlačí následný klik (jinak by dlaždice i spustila)
+    // Přeuspořádání dlaždic tažením; klik hned po tažení dlaždici nespustí.
+    private readonly DesktopDragGesture<DesktopShortcut> _tileDrag = new();
 
     public DesktopMiniAppView() => InitializeComponent();
 
     private DesktopMiniAppViewModel? Vm => DataContext as DesktopMiniAppViewModel;
 
-    // Klik na dlaždici → spuštění zástupce (přeskočeno, pokud právě proběhlo přetažení).
     private void Tile_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (_suppressClick) { _suppressClick = false; return; }
+        if (!_tileDrag.TakeClick()) return;
         if (((FrameworkElement)sender).DataContext is DesktopShortcut s) Vm?.Shortcuts.RequestLaunch(s);
     }
 
-    private void Tile_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        _dragStart = e.GetPosition(null);
-        _dragTile = ((FrameworkElement)sender).DataContext as DesktopShortcut;
-    }
+    private void Tile_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) =>
+        _tileDrag.Press(e.GetPosition(null), ((FrameworkElement)sender).DataContext as DesktopShortcut);
 
     private void Tile_MouseMove(object sender, MouseEventArgs e)
     {
-        if (e.LeftButton != MouseButtonState.Pressed || _dragTile is null) return;
-        if (!DesktopDragFormats.ThresholdExceeded(_dragStart, e.GetPosition(null))) return;
-
-        var tile = _dragTile;
-        _dragTile = null;
-        _suppressClick = true;
-        DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(DesktopDragFormats.ReorderTile, tile), DragDropEffects.Move);
+        if (_tileDrag.Move(e.GetPosition(null), e.LeftButton == MouseButtonState.Pressed) is { } tile)
+            DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(DesktopDragFormats.ReorderTile, tile), DragDropEffects.Move);
     }
 
     private void Desktop_DragOver(object sender, DragEventArgs e)
