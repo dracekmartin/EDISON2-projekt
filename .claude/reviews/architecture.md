@@ -1108,11 +1108,13 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A27 · Wire deklaruje, co UI nerenderuje: `IMAGE`/`CODEBOOK`, `Field.Format`, `UserHidden` 🔸
 
-- [ ] **Stav:** otevřeno, část EDList vyřešena 1e6bcc79 (2026-10-05) - rozhodnutí vlastníka: IMAGE a CODEBOOK
-  **rezervovat**, server je dál přijme (platné konstanty v `EDList.inc`) a klient je kreslí jako text;
-  `ListColumnType`, `EDListColumnFactory`, `Column.cls` a `EDList/CLAUDE.md` je tak označují, kreslení
-  až pro skutečného konzumenta. Test `EDListSetDataTests.SetData_ReservedTypes_RenderAsRawText`.
-  Zbývá část formulář (`Field.Format`, `UserHidden`), proud S8.
+- [x] **Stav:** vyřešeno - část EDList 1e6bcc79 (2026-10-05): IMAGE a CODEBOOK **rezervovat**, server je dál
+  přijme (platné konstanty v `EDList.inc`) a klient je kreslí jako text; `ListColumnType`, `EDListColumnFactory`,
+  `Column.cls` a `EDList/CLAUDE.md` je tak označují, kreslení až pro skutečného konzumenta. Test
+  `EDListSetDataTests.SetData_ReservedTypes_RenderAsRawText`. Část formulář 48a1fdf8 (2026-10-06):
+  `Field.Format` a `ItemVisibility.UserHidden` označené jako rezervované v C# (`Field.cs`, `ItemVisibility.cs`)
+  i na serveru (`Field.cls`, `Form.AddDecimal`, `Item.cls`) a v `EDInputForm/CLAUDE.md`; `EDIFExample` už
+  nevolá `AddDecimal` s `"N2"`. Protokol (pozice 17, konstanta v `.inc`) i jeho round-trip testy beze změny.
 - **Rozhodnutí vlastníka (2026-10-05):** rezervovat: `IMAGE`/`CODEBOOK` zůstávají platné konstanty, renderují se jako text a C# i `Column.cls` je označí jako rezervované; `Field.Format` a `UserHidden` označit jako rezervované a `format="N2"` vyřadit z `EDIFExample`. Implementace až pro skutečného konzumenta.
 - **P3 · S** · Závisí na: A14 (dělat v rámci nebo po) · Blokuje: - · Původ: [backlog R13d](arch-backlog.md#r13d---edlist-typy-image-a-codebook-bez-renderingu), rozšířeno
 - **Důkaz:** `EDListParsing.cs:54,57` parsuje IMAGE/CODEBOOK, `BuildDataGridColumn`
