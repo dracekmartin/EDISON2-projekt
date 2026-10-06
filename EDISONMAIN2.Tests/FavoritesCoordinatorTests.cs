@@ -41,13 +41,13 @@ public class FavoritesCoordinatorTests
         public Fixture(params IModule[] main)
         {
             var modulePrefs = new ModulePreferencesService(Prefs);
-            Trees = new ModuleTreeState(() => modulePrefs);
+            Trees = new ModuleTreeState(() => modulePrefs, EdisonMainViewModelHarness.NeutralStation);
             Trees.Load(new Dictionary<string, IReadOnlyList<IModule>> { ["main"] = main, ["system"] = [], ["partners"] = [] },
                        licence: null, access: null, expansion: null);
             Coordinator = new FavoritesCoordinator(Shortcuts, Trees, () => modulePrefs, Nav, () => Rebuilds++);
         }
 
-        // Load staví filtrované instance (launchability suffix), proto se modul hledá až ve stromu.
+        // Load staví filtrované instance, proto se modul hledá až ve stromu.
         public ExecutableModule Module(string id) => Trees.AllExecutables().Single(e => e.ElementId == id);
     }
 

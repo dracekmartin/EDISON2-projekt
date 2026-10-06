@@ -36,7 +36,7 @@ public class ModuleTreeStateTests
     {
         var prefs = Substitute.For<IUserPrefsService>();
         var modulePrefs = new ModulePreferencesService(prefs);
-        var state = new ModuleTreeState(() => modulePrefs);
+        var state = new ModuleTreeState(() => modulePrefs, EdisonMainViewModelHarness.NeutralStation);
         state.Load(new Dictionary<string, IReadOnlyList<IModule>> { ["main"] = main, ["system"] = [], ["partners"] = [] },
                    licence: null, access: null, savedExpansion);
         state.ApplySavedExpansion();

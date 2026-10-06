@@ -144,7 +144,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ModuleShortcutsService shortcuts,
             IChangelogSource? changelogSource,
             IRestCallRunner? restRunner = null,
-            Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null)
+            Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null,
+            ModuleTreeStation? station = null)
         {
             _loadAllowedCompanies = loadAllowedCompanies;
             _switcher = switcher;
@@ -159,7 +160,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _changelogSource = changelogSource;
             _shortcuts = shortcuts;
             // Lazy prefs: _modulePrefs vzniká až v session rebuildu, stromy i plocha ho čtou při každém save.
-            _trees = new ModuleTreeState(() => _modulePrefs);
+            _trees = new ModuleTreeState(() => _modulePrefs, station);
             _favorites = new FavoritesCoordinator(shortcuts, _trees, () => _modulePrefs, WindowNavigator,
                 () => OnPropertyChanged(nameof(HasNoFavorites)));
 

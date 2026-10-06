@@ -211,10 +211,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         // Per-user × IDFa preference se re-vytváří v každém session rebuildu a do prvního jsou null.
         private readonly Func<ModulePreferencesService?> _prefs;
+        private readonly ModuleTreeStation _station;
 
-        internal ModuleTreeState(Func<ModulePreferencesService?> prefs)
+        internal ModuleTreeState(Func<ModulePreferencesService?> prefs, ModuleTreeStation? station = null)
         {
             _prefs = prefs;
+            _station = station ?? ModuleTreeStation.Production;
             // Pořadí = pořadí záložek v UI. Přidání záložky je změna jen tady (+ případný control v XAML).
             TreeTabs =
             [
@@ -275,18 +277,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         // Clear až tady (po úspěšném loadu, ne před requestem) - selhání jinak nechá záložku
         // trvale prázdnou a při přepnutí firmy zahodí i strom, který byl platný.
-        private static void FillFilteredTree(ObservableCollection<IModule> target, IReadOnlyList<IModule> tree,
-                                             Lic? licence, AccessTable? access)
+        private void FillFilteredTree(ObservableCollection<IModule> target, IReadOnlyList<IModule> tree,
+                                      Lic? licence, AccessTable? access)
         {
             target.Clear();
             foreach (var module in tree)
             {
-                if (TryFilter(module, licence, access, IsMlineDomainStation) is { } filtered)
-                {
-                    // Obarvit moduly dle launchovatelnosti (stub / chybí exe).
-                    filtered = ModuleLaunchabilityCheck.Mark(filtered);
-                    target.Add(filtered);
-                }
+                if (TryFilter(module, licence, access, _station.IsMlineDomain) is { } filtered)
+                    target.Add(_station.Decorate(filtered));
             }
         }
 
