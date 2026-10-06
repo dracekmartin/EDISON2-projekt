@@ -230,13 +230,13 @@ public class ModuleShortcutsServiceTests
         Assert.Equal(["200"], svc.Items.Select(i => i.ElementId));
     }
 
-    // Dlaždice nemá kontext stromu → text = dlouhý název, cesta agendou jde do ToolTipu.
+    // Dlaždice nemá kontext stromu → text = jednoznačný popisek jako ve Spuštěných, cesta agendou jde do ToolTipu.
     [Fact]
-    public void Seed_TileShowsLongName_AndTreePathForToolTip()
+    public void Seed_TileShowsDistinctName_AndTreePathForToolTip()
     {
         var a = new ExecutableModule {
             Name = "Nastavení", ElementId = "100", ExecutablePath = "VOZ.exe",
-            FormName = "f", LongName = "Nastavení vozidel", FamilyPath = "Vozidla › Číselníky"
+            FormName = "f", LongName = "Nastavení vozidel", FamilyPath = "Vozidla › Číselníky", DistinctName = "Nastavení vozidel"
         };
         var svc = new ModuleShortcutsService();
 
@@ -244,30 +244,21 @@ public class ModuleShortcutsServiceTests
 
         var tile = Assert.Single(svc.Items);
         Assert.Equal("Nastavení", tile.Name);
-        Assert.Equal("Nastavení vozidel", tile.DisplayedLongName);
+        Assert.Equal("Nastavení vozidel", tile.DisplayedDistinctName);
         Assert.Equal("Vozidla › Číselníky › Nastavení", tile.TreePath);
     }
 
+    // Položka mimo strom (sestava) cestu ani popisek nemá - prázdný ToolTip by byl jen prázdný rámeček.
     [Fact]
-    public void Seed_ModuleWithoutLongName_TileFallsBackToShortName()
-    {
-        var a = Exe("100", "Objednávky");
-        var svc = new ModuleShortcutsService();
-
-        svc.Seed([a], [Menu("100")]);
-
-        Assert.Equal("Objednávky", Assert.Single(svc.Items).DisplayedLongName);
-    }
-
-    // Položka mimo strom (sestava) cestu nemá - prázdný ToolTip by byl jen prázdný rámeček.
-    [Fact]
-    public void Seed_ItemOutsideTree_ToolTipFallsBackToName()
+    public void Seed_ItemOutsideTree_TextAndToolTipFallBackToName()
     {
         var svc = new ModuleShortcutsService();
 
         svc.Seed([], [new DesktopShortcutDto(nameof(ShortcutKind.PrintReport), "PrehledSkod", "31001", "Přehled škod")]);
 
-        Assert.Equal("Přehled škod", Assert.Single(svc.Items).TreePath);
+        var tile = Assert.Single(svc.Items);
+        Assert.Equal("Přehled škod", tile.DisplayedDistinctName);
+        Assert.Equal("Přehled škod", tile.TreePath);
     }
 
     [Fact]
@@ -283,11 +274,11 @@ public class ModuleShortcutsServiceTests
     }
 
     // Dekorace zobrazení (mlineOnly, stav exe) se nesmí dostat do blobu, který čtou i agendy,
-    // a ToolTip dlaždice má říkat totéž co cesta modulu v Používaných.
+    // ToolTip dlaždice má říkat totéž co cesta modulu v Používaných a text totéž co Používané.
     [Fact]
-    public void Add_DecoratedModule_PersistsAndShowsUndecoratedName()
+    public void Add_DecoratedModule_PersistsUndecoratedName_ShowsUsedListText()
     {
-        var a = new ExecutableModule(Exe("100", "Zaměstnanci")) { FamilyPath = "Mzdy", DisplaySuffix = " - chybí exe" };
+        var a = new ExecutableModule(Exe("100", "Zaměstnanci")) { FamilyPath = "Mzdy", DisplaySuffix = " - chybí exe", DistinctName = "Zaměstnanci - Mzdy" };
         var svc = new ModuleShortcutsService();
         svc.Seed([a], []);
 
@@ -297,6 +288,8 @@ public class ModuleShortcutsServiceTests
         Assert.Equal("Zaměstnanci", Assert.Single(svc.Persistable()).Name);
         Assert.Equal(a.TreePath, tile.TreePath);
         Assert.Equal("Mzdy › Zaměstnanci", tile.TreePath);
+        Assert.Equal("Zaměstnanci - Mzdy - chybí exe", tile.DisplayedDistinctName);
+        Assert.Equal(a.DisplayedDistinctName, tile.DisplayedDistinctName);
     }
 
     [Fact]

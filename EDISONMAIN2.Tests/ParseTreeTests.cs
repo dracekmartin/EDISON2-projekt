@@ -105,7 +105,7 @@ public class ParseTreeTests
         Assert.False(mod.IsLicensed);
     }
 
-    // Dlouhý název (legacy nameEx) je 11. pole; nemá ho většina modulů → fallback na krátký.
+    // Dlouhý název (legacy nameEx) je 11. pole; nemá ho většina modulů.
     [Fact]
     public void ParseTree_ReadsLongName()
     {
@@ -117,12 +117,11 @@ public class ParseTreeTests
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("Fakturace - zpracování AD", mod.LongName);
-        Assert.Equal("Fakturace - zpracování AD", mod.DisplayedLongName);
         Assert.Equal("Fakturace", mod.DisplayedName);
     }
 
     [Fact]
-    public void ParseTree_EmptyLongName_DisplayedLongNameFallsBackToShortName()
+    public void ParseTree_EmptyLongName_StaysEmpty()
     {
         var data = new CVar();
         data["1"] = new CList("EXE", "Objednávky", "ADOBJEDNAVKY.exe", "ALVA.ADOBJEDNAVKY.formList",
@@ -132,7 +131,7 @@ public class ParseTreeTests
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("", mod.LongName);
-        Assert.Equal("Objednávky", mod.DisplayedLongName);
+        Assert.Equal("Objednávky", mod.Name);
     }
 
     // Řádek bez 11. pole (starší server) nesmí shodit parser.
@@ -147,7 +146,7 @@ public class ParseTreeTests
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("", mod.LongName);
-        Assert.Equal("Turnusy", mod.DisplayedLongName);
+        Assert.Equal("Turnusy", mod.Name);
     }
 
     [Fact]
@@ -309,16 +308,17 @@ public class ParseTreeTests
         Assert.Equal("", Assert.IsType<ExecutableModule>(tree[1]).FamilyPath);
     }
 
+    // Popisek přiděluje ModuleTreeState.Load (pravidlo v RunningModulesLabelTests), uzel ho jen zobrazí.
     [Fact]
-    public void DisplayedDistinctName_PrefersLongName()
+    public void DisplayedDistinctName_IsAssignedLabel()
     {
-        var exe = new ExecutableModule { Name = "Doklady", LongName = "Doklady fakturace", FamilyPath = "Fakturace" };
+        var exe = new ExecutableModule { Name = "Doklady", LongName = "Doklady fakturace", FamilyPath = "Sklady", DistinctName = "Doklady - Sklady" };
 
-        Assert.Equal("Doklady fakturace", exe.DisplayedDistinctName);
+        Assert.Equal("Doklady - Sklady", exe.DisplayedDistinctName);
     }
 
     [Fact]
-    public void DisplayedDistinctName_WithoutLongName_IsTreePath()
+    public void DisplayedDistinctName_WithoutAssignedLabel_IsTreePath()
     {
         var exe = new ExecutableModule { Name = "Doklady", FamilyPath = "Provozní pokladna" };
 
@@ -327,21 +327,21 @@ public class ParseTreeTests
 
     // Používané jsou pohled jako strom - dekorace listu zůstává, cesta pro ToolTip je bez ní.
     [Fact]
-    public void DisplayedDistinctName_WithoutLongName_KeepsDisplaySuffix()
+    public void DisplayedDistinctName_KeepsDisplaySuffix()
     {
-        var exe = new ExecutableModule { Name = "Doklady OLD", FamilyPath = "Sklady", DisplaySuffix = " [### M-line ###]" };
+        var exe = new ExecutableModule { Name = "Doklady OLD", FamilyPath = "Sklady", DisplaySuffix = " [### M-line ###]", DistinctName = "Doklady OLD" };
 
-        Assert.Equal("Sklady › Doklady OLD [### M-line ###]", exe.DisplayedDistinctName);
+        Assert.Equal("Doklady OLD [### M-line ###]", exe.DisplayedDistinctName);
         Assert.Equal("Sklady › Doklady OLD", exe.TreePath);
     }
 
+    // Dekorace (filtr, launchovatelnost) vzniká kopií uzlu - přidělený popisek nesmí ztratit.
     [Fact]
-    public void DisplayedDistinctName_RootModuleWithoutLongName_IsShortName()
+    public void CopyConstructor_KeepsDistinctName()
     {
-        var exe = new ExecutableModule { Name = "Doklady" };
+        var exe = new ExecutableModule { Name = "Doklady", DistinctName = "Doklady - Sklady" };
 
-        Assert.Equal("Doklady", exe.TreePath);
-        Assert.Equal("Doklady", exe.DisplayedDistinctName);
+        Assert.Equal("Doklady - Sklady", new ExecutableModule(exe) { Color = "#FF0000" }.DistinctName);
     }
 
     [Fact]

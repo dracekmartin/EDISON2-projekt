@@ -21,6 +21,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             DisplaySuffix = source.DisplaySuffix;
             LongName = source.LongName;
             FamilyPath = source.FamilyPath;
+            DistinctName = source.DistinctName;
             ExecutablePath = source.ExecutablePath;
             FormName = source.FormName;
             ElementId = source.ElementId;
@@ -45,12 +46,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>
         /// Disambiguovaný název (legacy `nameEx`) - krátký název je ve stromu nejednoznačný
         /// (dvoje „Zaměstnanci", troje „Události"). <c>""</c> = legacy data ho nemají.
-        /// Ke zobrazení používej <see cref="DisplayedLongName"/>.
+        /// Ke zobrazení používej <see cref="DisplayedDistinctName"/>.
         /// </summary>
         public string LongName { get; init; } = "";
-
-        /// <summary>Dlouhý název pro plochu a menu spuštěných modulů; fallback krátký název.</summary>
-        public string DisplayedLongName => LongName.Length > 0 ? LongName : DisplayedName;
 
         public const string PathSeparator = " › ";
 
@@ -61,11 +59,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public string TreePath => FamilyPath.Length == 0 ? Name : FamilyPath + PathSeparator + Name;
 
         /// <summary>
-        /// Název rozlišitelný bez kontextu stromu (seznam Používané): dlouhý název, jinak cesta stromem
-        /// s dekorací listu (mlineOnly nemá barvu, bez suffixu by značka interního nástroje zmizela).
-        /// Pravidlo výběru jako <c>EdisonMainViewModel.ResolveRunningLabel</c>.
+        /// Popisek jednoznačný v celém načteném stromu (<c>ModuleTreeState.BuildModuleLabels</c>), tentýž
+        /// jako v menu Spuštěné moduly. Přiděluje ho <c>ModuleTreeState.Load</c>; <c>""</c> = uzel mimo load nebo bez exe.
         /// </summary>
-        public string DisplayedDistinctName => LongName.Length > 0 ? LongName : TreePath + DisplaySuffix;
+        public string DistinctName { get; internal set; } = "";
+
+        /// <summary>
+        /// Název rozlišitelný bez kontextu stromu (Používané, dlaždice plochy) s dekorací listu (mlineOnly nemá
+        /// barvu, bez suffixu by značka interního nástroje zmizela). Uzel mimo load padá na cestu stromem.
+        /// </summary>
+        public string DisplayedDistinctName => (DistinctName.Length > 0 ? DistinctName : TreePath) + DisplaySuffix;
 
         public string ExecutablePath { get; init; } = "";
 

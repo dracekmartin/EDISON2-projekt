@@ -137,7 +137,7 @@ namespace EDISONMAIN2.Desktop
                     Id = dto.Id,
                     ElementId = dto.ElementId,
                     Name = module?.Name ?? dto.Name,
-                    DisplayedLongName = module?.DisplayedLongName ?? dto.Name,
+                    DisplayedDistinctName = module?.DisplayedDistinctName ?? dto.Name,
                     TreePath = module?.TreePath ?? dto.Name,
                     ExecutablePath = module?.ExecutablePath ?? dto.Exe,
                     FormName = module?.FormName ?? dto.Form,
