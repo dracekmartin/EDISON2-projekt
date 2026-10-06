@@ -7,7 +7,20 @@ using EDISONMAIN2.MiniApps;
 namespace EDISONMAIN2.Windows.EdisonMainWindow
 {
     /// <summary>
-    /// Miniaplikace shellu napříč session: docking host, layout per IDFa v <see cref="ILocalPrefs"/>
+    /// Čí je stav docku v <c>local.json</c>: stanice (Windows účet) × server × firma × uživatel EDISONu - jinak
+    /// by na sdíleném terminálu jeden uživatel rozházel dock druhému. Soubory z dřívějška mají klíč jen IDFa.
+    /// </summary>
+    internal readonly record struct DockScope(string Server, int Port, string Idfa, string Login)
+    {
+        // Malá písmena: host i login se píšou v různé velikosti a pořád jde o tutéž session.
+        public string Key => $"{Server}:{Port}|{Idfa}|{Login}".ToLowerInvariant();
+
+        /// <summary>Klíč z doby, kdy byl stav docku jen per IDFa - čte se jako fallback, nezapisuje.</summary>
+        public string LegacyKey => Idfa;
+    }
+
+    /// <summary>
+    /// Miniaplikace shellu napříč session: docking host, layout per <see cref="DockScope"/> v <see cref="ILocalPrefs"/>
     /// (spolu s šířkou stromu a výškou pruhu podpory) a výměna docku při přepnutí firmy nebo uživatele.
     /// </summary>
     internal sealed class MiniAppSessionController(ILocalPrefs prefs, MiniAppCatalog catalog)
@@ -21,19 +34,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private Func<double>? _getSupportHeight;
         private Action<double>? _applySupportHeight;
 
-        // Firma, jejíž layout dock drží; null = dock vyprázdněný výměnou session. Persist jde sem,
-        // ne na aktuální Idfa: během rebuildu po přepnutí je Idfa už nová a dock prázdný, takže
+        // Session, jejíž layout dock drží; null = dock vyprázdněný výměnou session. Persist jde sem,
+        // ne na aktuální session: během rebuildu po přepnutí je Idfa už nová a dock prázdný, takže
         // zavření shellu (nebo force logout) by jí přepsalo uložený layout.
-        private string? _dockIdfa;
+        private DockScope? _dockScope;
 
         /// <summary>Pod-okna docku, do kterých jde nová miniaplikace umístit (výběr v pickeru).</summary>
         internal IReadOnlyList<MiniAppTarget> Targets => _manager?.Targets ?? [];
 
-        /// <summary>Napojí docking host z view a obnoví uložený layout firmy.</summary>
-        internal void AttachHost(IMiniAppHost host, string idfa)
+        /// <summary>Napojí docking host z view a obnoví uložený layout session.</summary>
+        internal void AttachHost(IMiniAppHost host, DockScope scope)
         {
             _manager = new MiniAppManager(host, catalog);
-            Restore(idfa);
+            Restore(scope);
         }
 
         /// <summary>
@@ -90,36 +103,36 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 _manager.Open(desktop);
         }
 
-        /// <summary>Uloží layout docku (a rozměry panelů) pod firmu, jejíž layout dock drží.</summary>
+        /// <summary>Uloží layout docku (a rozměry panelů) pod session, jejíž layout dock drží.</summary>
         internal void Persist()
         {
-            if (_manager is null || _dockIdfa is not { } idfa) return;
+            if (_manager is null || _dockScope is not { } scope) return;
             // Best-effort: serializace layoutu nesmí zablokovat zavření shellu / přepnutí firmy.
             try
             {
-                (prefs.MiniAppLayouts ??= new())[idfa] = _manager.SaveLayout();
+                (prefs.MiniAppLayouts ??= new())[scope.Key] = _manager.SaveLayout();
                 if (_getTreeWidth is not null)
-                    (prefs.TreeWidths ??= new())[idfa] = _getTreeWidth();
+                    (prefs.TreeWidths ??= new())[scope.Key] = _getTreeWidth();
                 if (_getSupportHeight is not null)
-                    (prefs.SupportStripHeights ??= new())[idfa] = _getSupportHeight();
+                    (prefs.SupportStripHeights ??= new())[scope.Key] = _getSupportHeight();
                 prefs.Save();
             }
             catch { }
         }
 
-        /// <summary>Obnoví uložený layout firmy; bez něj (nebo s poškozeným) výchozí rozložení.</summary>
-        internal void Restore(string idfa)
+        /// <summary>Obnoví uložený layout session; bez něj (nebo s poškozeným) výchozí rozložení.</summary>
+        internal void Restore(DockScope scope)
         {
             if (_manager is null) return;
-            _dockIdfa = idfa;
+            _dockScope = scope;
             // Rozměry panelů (nezávislé na tom, zda je uložený layout miniaplikací) - bez uložené
             // hodnoty zůstane XAML default. Aplikovat před RestoreLayout, ať AvalonDock
             // deserializuje do už správně velké plochy a nepřepočítává pane dvakrát.
-            if (_applyTreeWidth is not null && prefs.TreeWidths?.TryGetValue(idfa, out var width) == true && width > 0)
+            if (_applyTreeWidth is not null && Find(prefs.TreeWidths, scope, out var width, out _) && width > 0)
                 _applyTreeWidth(width);
-            if (_applySupportHeight is not null && prefs.SupportStripHeights?.TryGetValue(idfa, out var height) == true && height > 0)
+            if (_applySupportHeight is not null && Find(prefs.SupportStripHeights, scope, out var height, out _) && height > 0)
                 _applySupportHeight(height);
-            if (prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) != true || string.IsNullOrWhiteSpace(xml))
+            if (!Find(prefs.MiniAppLayouts, scope, out var xml, out var xmlKey) || string.IsNullOrWhiteSpace(xml))
             {
                 // Žádný uložený layout (první spuštění / nová firma) → výchozí rozložení.
                 OpenDefault();
@@ -133,8 +146,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             catch
             {
                 // Poškozený / nekompatibilní uložený layout nesmí shodit start shellu (letí z Loaded).
-                // Zahodíme ho; další uložení (close/switch) zapíše čistý.
-                prefs.MiniAppLayouts?.Remove(idfa);
+                // Zahodíme ho (i ten ze starého klíče); další uložení (close/switch) zapíše čistý.
+                prefs.MiniAppLayouts?.Remove(xmlKey);
                 prefs.Save();
                 // Po zahozeném layoutu postavit výchozí, ať dock nezůstane prázdný. Vlastní guard -
                 // stav docku po nezdařeném Deserialize je nedefinovaný a druhý pád by shodil start.
@@ -143,13 +156,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        /// <summary>Výměna session: uloží layout firmy v docku a dock vyprázdní; obnovu dělá volající po rebuildu.</summary>
+        /// <summary>Výměna session: uloží layout session v docku a dock vyprázdní; obnovu dělá volající po rebuildu.</summary>
         internal void CloseSession()
         {
             if (_manager is null) return;
             Persist();
             _manager.CloseAll();
-            _dockIdfa = null;
+            _dockScope = null;
+        }
+
+        // Nový klíč, jinak starý per IDFa (soubor z doby před klíčem session) - po prvním uložení platí nový.
+        private static bool Find<T>(Dictionary<string, T>? map, DockScope scope, out T value, out string key)
+        {
+            key = scope.Key;
+            if (map is not null && map.TryGetValue(key, out value!)) return true;
+            key = scope.LegacyKey;
+            if (map is not null && map.TryGetValue(key, out value!)) return true;
+            value = default!;
+            return false;
         }
     }
 }

@@ -1336,7 +1336,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A37 · Lokální stav shellu je per Windows-účet × IDFa, ostatní per Edison-uživatel × IDFa 🔸
 
-- [ ] **Stav:** otevřeno (2026-10-01: změna tvaru, `local.json` přibral další klíče)
+- [x] **Stav:** vyřešeno (2026-10-06, vlna 3) - stav docku (`MiniAppLayouts`, `TreeWidths`, `SupportStripHeights`)
+  má klíč `server:port|idfa|login` malými písmeny (`DockScope` v `MiniAppSessionController`, VM ho skládá z `Rest`);
+  čtení padá zpět na starý klíč jen IDFa, zapisuje se jen nový (starý zůstává ostatním uživatelům stanice jako
+  fallback, poškozený se smaže). Port je v klíči, „Připojit k databázi" rozlišuje i REST port. `ShellWindowBounds`
+  a `Connections` beze změny, `LocalPrefs` ani `LocalPrefsTests` se neměnily (slovníky po klíčích slučuje už A45).
+  Zapsáno v `EDISONMAIN2/dotnet/MiniApps/CLAUDE.md`. Testy `MiniAppSessionControllerTests` (fallback, přednost
+  nového klíče, zápis jen nového, jiný login, poškozený starý klíč, velikost písmen) a
+  `EdisonMainViewModelTests.LoginAsAnotherUser_SameCompany_KeepsDockPerUser`.
 - **Rozhodnutí vlastníka (2026-10-05):** lokální stav docku klíčovat `server|idfa|login` v `local.json` (navazuje na A45, starý klíč jako fallback při čtení); `ShellWindowBounds` zůstává per Windows účet.
 - **P3 · S** (rozhodnutí) až M (přesun) · Původ: nový (2026-09-20)
 - **Důkaz:** `Startup/LocalPrefs.cs:22-36` tři slovníky klíčované jen IDFa (`MiniAppLayouts`, `TreeWidths`,

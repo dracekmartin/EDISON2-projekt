@@ -23,13 +23,13 @@ public interface ILocalPrefs
     /// Null = nezapamatováno. Předvyplní se jen když jméno uložené v blobu == <see cref="LastLoginName"/>.</summary>
     string? RememberedPassword { get; set; }
 
-    /// <summary>Uložený layout miniaplikací (AvalonDock XML) per IDFa. Null = žádný uložený.</summary>
+    /// <summary>Uložený layout miniaplikací (AvalonDock XML) per session, klíč viz <c>DockScope</c>. Null = žádný uložený.</summary>
     Dictionary<string, string>? MiniAppLayouts { get; set; }
 
-    /// <summary>Uložená šířka stromu modulů (px) per IDFa. Null = žádná uložená.</summary>
+    /// <summary>Uložená šířka stromu modulů (px) per session, klíč viz <c>DockScope</c>. Null = žádná uložená.</summary>
     Dictionary<string, double>? TreeWidths { get; set; }
 
-    /// <summary>Uložená výška pruhu podpory (px) per IDFa. Null = žádná uložená.</summary>
+    /// <summary>Uložená výška pruhu podpory (px) per session, klíč viz <c>DockScope</c>. Null = žádná uložená.</summary>
     Dictionary<string, double>? SupportStripHeights { get; set; }
 
     /// <summary>Uživatelem uložená připojení pro „Připojit k databázi" (výchozí z EDISONini.xml sem nepatří). Null = žádná.</summary>

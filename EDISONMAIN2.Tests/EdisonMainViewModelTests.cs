@@ -207,10 +207,10 @@ public class EdisonMainViewModelTests
         runner.Gate.SetResult();
         await switching;
 
-        Assert.DoesNotContain("JI_DP", layouts.Keys);
-        Assert.Contains("CB_DP", layouts.Keys);
-        Assert.DoesNotContain("JI_DP", heights.Keys);
-        Assert.Contains("CB_DP", heights.Keys);
+        Assert.DoesNotContain(DockKey("JI_DP"), layouts.Keys);
+        Assert.Contains(DockKey("CB_DP"), layouts.Keys);
+        Assert.DoesNotContain(DockKey("JI_DP"), heights.Keys);
+        Assert.Contains(DockKey("CB_DP"), heights.Keys);
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class EdisonMainViewModelTests
         // přes platný layout cílové firmy.
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var layouts = new Dictionary<string, string> { ["JI_DP"] = "ulozeny-layout" };
+        var layouts = new Dictionary<string, string> { [DockKey("JI_DP")] = "ulozeny-layout" };
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.MiniAppLayouts.Returns(layouts);
         var vm = CreateVM(popup: mockPopup, prefs: prefs, treeLoader: TreeFailingOnSecondLoad());
@@ -229,8 +229,8 @@ public class EdisonMainViewModelTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SwitchCompanyAsync(1));
         vm.OnShellClosed();
 
-        Assert.Equal("ulozeny-layout", layouts["JI_DP"]);
-        Assert.Contains("CB_DP", layouts.Keys);
+        Assert.Equal("ulozeny-layout", layouts[DockKey("JI_DP")]);
+        Assert.Contains(DockKey("CB_DP"), layouts.Keys);
     }
 
     private static IModuleTreeLoader MainTreeWith(params ExecutableModule[] modules)
@@ -601,8 +601,8 @@ public class EdisonMainViewModelTests
 
         await vm.LoginAsAnotherUserAsync();
 
-        Assert.Contains("CB_DP", layouts.Keys);
-        Assert.DoesNotContain("JI_DP", layouts.Keys);
+        Assert.Contains(DockKey("CB_DP"), layouts.Keys);
+        Assert.DoesNotContain(DockKey("JI_DP"), layouts.Keys);
     }
 
     [Fact]
@@ -656,7 +656,44 @@ public class EdisonMainViewModelTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.LoginAsAnotherUserAsync());
         vm.OnShellClosed();
 
-        Assert.Equal("<layout/>", layouts["CB_DP"]);
+        Assert.Equal("<layout/>", layouts[DockKey("CB_DP")]);
+    }
+
+    // Mock MLRest vrací pro Server a LoginName "" a pro Port 0.
+    private static string DockKey(string idfa, string login = "") => new DockScope("", 0, idfa, login).Key;
+
+    [Fact]
+    public async Task LoginAsAnotherUser_SameCompany_KeepsDockPerUser()
+    {
+        // Sdílený terminál: další uživatel v téže firmě má vlastní dock, předchozímu ho nepřepíše.
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var svc = MockServices(popup: popup);
+        IMLRest Session(string login)
+        {
+            var ml = MockMLRest();
+            ml.Server.Returns("dev");
+            ml.Port.Returns(57770);
+            ml.LoginName.Returns(login);
+            return ml;
+        }
+        var layouts = new Dictionary<string, string>();
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.MiniAppLayouts.Returns(layouts);
+        var host = Substitute.For<IMiniAppHost>();
+        host.SaveLayout().Returns("<novak/>", "<svoboda/>");
+        var vm = CreateVM(services: svc, mlRest: Session("novak"), prefs: prefs, switchUser: () =>
+        {
+            svc.MLRest = Session("svoboda");
+            return new(SwitchUserResult.Success, null, Companies);
+        });
+        vm.AttachMiniAppHost(host);
+
+        await vm.LoginAsAnotherUserAsync();
+        vm.OnShellClosed();
+
+        Assert.Equal("<novak/>", layouts[new DockScope("dev", 57770, "CB_DP", "novak").Key]);
+        Assert.Equal("<svoboda/>", layouts[new DockScope("dev", 57770, "CB_DP", "svoboda").Key]);
     }
 
     [Fact]
@@ -1055,7 +1092,7 @@ public class EdisonMainViewModelTests
         Assert.True(vm.ConfirmShellClose());
         vm.OnShellClosed();
 
-        Assert.Equal(275, widths["CB_DP"]);
+        Assert.Equal(275, widths[DockKey("CB_DP")]);
         prefs.Received(1).Save();
         Assert.Equal(1, windowsClosed);
     }
