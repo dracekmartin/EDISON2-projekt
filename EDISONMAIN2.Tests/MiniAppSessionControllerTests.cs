@@ -1,5 +1,6 @@
 using EDControls.MiniApps;
 using EDISONMAIN2.Desktop;
+using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using NSubstitute;
 using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
@@ -83,7 +84,7 @@ public class MiniAppSessionControllerTests
         var controller = Controller(catalog: MiniAppCatalog.Build([new SingleProvider(other, pinned)]));
         var host = new RecordingHost();
 
-        controller.AttachHost(host, Idfa);
+        controller.AttachHost(host, Scope);
 
         Assert.StartsWith("Jine.Pripnute#", Assert.Single(host.Panes).ContentId);
     }
