@@ -31,8 +31,8 @@ podle číselných subscriptů v OUT (`HasFormItems`) - bez nich zachová klient
 - Host hooky: color/image picker dodává host přes static `PickColorImpl` /
   `PickImageImpl` (EDControls je WPF-only, dialog nemá). Null → tlačítko nic nedělá.
 - Eventy: `FieldChanged` při **každé** změně Value bez ohledu na `ValidateOnChange`, `ButtonClicked`
-  při každém kliku (roundtrip jen s `ValidateOnChange=1`). `Initialized` = deprekovaný alias
-  `SchemaLoaded` (stínil `FrameworkElement.Initialized`), smaže se až s koordinovaným publish obou aplikací.
+  při každém kliku (roundtrip jen s `ValidateOnChange=1`). Konec načtení schématu hlásí `SchemaLoaded`;
+  zděděný `Initialized` je `FrameworkElement` event (konec XAML parse), se schématem nesouvisí.
 - ⚠️ **Validace je záměrně synchronní** (na změnu jen odložená za handlery hosta): odpověď nahrazuje celé Items, takže
   asynchronní odpověď by zahodila fokus i rozepsaný text a echo by vracelo úpravy hosta. Async je **odložené k diskusi**:
   pasti `.claude/reviews/architecture.md` A15, hotová implementace větev `odlozeno/a15-async-edinputform`. Nezavádět bez vlastníka.

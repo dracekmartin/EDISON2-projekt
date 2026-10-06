@@ -871,7 +871,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A22 · Dokončit odstranění `EDInputForm.Initialized`
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- [x] **Stav:** vyřešeno v kódu (2026-10-06) - event i jeho vyvolání v `Init()` jsou pryč, test hlídá
+  jen `SchemaLoaded`; build celé solution (TD, shell) bez odběratele. **Vydání:** odebraný veřejný člen,
+  EDControls publikovat jen spolu s TD a shellem ze stejného commitu (jedna dávka s A38 a A25).
 - **P2 · S** · Závisí na: koordinovaný publish obou aplikací · Blokuje: - · Původ: [backlog R6b](arch-backlog.md#r6b---dokončit-odstranění-edinputforminitialized)
 - **Stav v kódu:** `EDInputForm.xaml.cs:367-368` `[Obsolete] public new event Action? Initialized;`,
   fíruje `:390-392`; jediný odběratel je `EDControls.Tests/EDInputFormViewTests.cs:61`, TD ani shell

@@ -1,7 +1,7 @@
 Include (GENERAL, EDInputForm)
 
 /// EDInputForm schema pro okno „Vlastnosti uživatele" (self-service profil).
-/// Data drží .NET klient: prefill hodnot v Initialized (přehled z MLRest, export adresář
+/// Data drží .NET klient: prefill hodnot po SchemaLoaded (přehled z MLRest, export adresář
 /// z ALVA.EDISON.Main.LoadUser/LoadSettings) a persist osobního adresáře po OK
 /// (Main.SaveUser). Tato třída definuje jen strukturu formuláře a validaci
 /// (editovatelnost cesty dle přepínače, neprázdnost při ukládání) - nevolá legacy

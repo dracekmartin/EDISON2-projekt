@@ -43,7 +43,7 @@ public class EDInputFormViewTests
     }
 
     [Fact]
-    public void Init_FiresSchemaLoadedAndDeprecatedAlias_CacheClassChangeResetsController()
+    public void Init_FiresSchemaLoaded_CacheClassChangeResetsController()
     {
         RunSta(() =>
         {
@@ -55,16 +55,12 @@ public class EDInputFormViewTests
                 ServicesOverride = new EDServices(mock,
                     Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
             };
-            int schemaLoaded = 0, deprecatedAlias = 0;
+            int schemaLoaded = 0;
             form.SchemaLoaded += () => schemaLoaded++;
-#pragma warning disable CS0618 // dokud deprekovaný alias existuje, musí fajrovat spolu se SchemaLoaded
-            form.Initialized += () => deprecatedAlias++;
-#pragma warning restore CS0618
 
             form.Init();
 
             Assert.Equal(1, schemaLoaded);
-            Assert.Equal(1, deprecatedAlias);
             mock.Received(1).QueryOrThrow("ALVA.A", "Init", Arg.Any<CVar>());
 
             form.CacheClass = "ALVA.B";   // dokumentovaná past: setter zahodí controller
