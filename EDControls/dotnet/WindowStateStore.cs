@@ -100,13 +100,9 @@ public sealed class CacheWindowStateStore(string formId, Func<IMLRest?> mlRestSo
     internal static Dictionary<string, string> ParseOutput(object[] output, char del)
     {
         var dict = new Dictionary<string, string>();
-        for (int i = 1; i < output.Length; i++)
-        {
-            var s = output[i]?.ToString() ?? "";
-            var parts = s.Split(del);
+        foreach (var parts in LegacyOutput.Rows(output, del))
             if (parts.Length >= 3 && parts[0] == "param")
                 dict[parts[1]] = parts[2];
-        }
         return dict;
     }
 

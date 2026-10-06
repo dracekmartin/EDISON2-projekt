@@ -1232,7 +1232,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A36 · Parsování legacy delimited výstupů zdvojené v osmi třídách se třemi konvencemi
 
-- [ ] **Stav:** otevřeno (2026-10-01: deploy přidal dvě další kopie)
+- [x] **Stav:** vyřešeno (2026-10-06, vlna 3) - veřejný `EDControls.LegacyOutput` (`Values`, `Rows`, `Named`)
+  zná konvenci ERR slot 0 / data od 1 na jednom místě; smyčky v `Updater`, `LogoutWatcher` (dřív četl
+  i ERR slot), `LoginGate`, `LicenceService.ParseNamedCount`, `AccessLoader`, `SetupWindow`,
+  `UserProfileService`, `CacheWindowStateStore.ParseOutput` a nalezený devátý `DashboardData.ParseAll`
+  (LegacyMiniApps) ho volají; `WireRows` v `EDISON2.IntegrationTests` parsuje drát záměrně nezávisle. Poziční čtení `output[1]`
+  u jednohodnotových endpointů (`UserAuthenticator`, `LicenceVerifier`, apId v `AccessLoader`) zůstává
+  vědomě: chybějící hodnota tam má dál končit výjimkou, ne tichou nulou. Testy `LegacyOutputTests`,
+  stávající testy volajících zelené.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `Startup/Updater.cs:95-97` (`for i=1..GetUpperBound(0)`), `Startup/LogoutWatcher.cs:76-78`
   (`for i=0..Length`, projde i ERR slot), `UserProfileService.cs:93-96` a `SetupWindow.xaml.cs:71-73`

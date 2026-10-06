@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using EDControls;
 
 namespace EDISONMAIN2.LegacyMiniApps;
 
@@ -92,9 +93,9 @@ public sealed record DashboardData(string? LastUpdated, IReadOnlyList<DashboardS
             tableIndex = 0;
         }
 
-        foreach (var raw in output)
+        foreach (var line in LegacyOutput.Values(output))
         {
-            if (raw is not string line || line.Length == 0) continue;
+            if (line.Length == 0) continue;
             var t = line.Split(delimiter);
 
             switch (t[0])

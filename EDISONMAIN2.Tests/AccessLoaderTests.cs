@@ -42,6 +42,7 @@ public class AccessLoaderTests
         Assert.True(access.Contains("12"));
         Assert.True(access.Contains("29"));
         Assert.False(access.Contains("99999"));
+        Assert.False(access.Contains("1"));   // apId (první datový řádek) není element
     }
 
     [Fact]

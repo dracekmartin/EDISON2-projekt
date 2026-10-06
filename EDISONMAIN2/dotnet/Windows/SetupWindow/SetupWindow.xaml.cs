@@ -65,16 +65,8 @@ namespace EDISONMAIN2.Windows.SetupWindow
             return ParseDatabaseRows(output, rest.Delimiter);
         }
 
-        internal static List<string> ParseDatabaseRows(object[] output, char delimiter)
-        {
-            var databases = new List<string>();
-            for (int i = 1; i < output.Length; i++)
-            {
-                var parts = (output[i]?.ToString() ?? "").Split(delimiter);
-                if (parts.Length > 1 && parts[0] == "database") databases.Add(parts[1]);
-            }
-            return databases;
-        }
+        internal static List<string> ParseDatabaseRows(object[] output, char delimiter) =>
+            LegacyOutput.Rows(output, delimiter).Where(r => r.Length > 1 && r[0] == "database").Select(r => r[1]).ToList();
 
         // Změna serveru/REST portu po úspěšném testu → pole závislá na spojení zamknout,
         // dokud se znovu neotestuje (seznam databází patří k jinému serveru).

@@ -79,9 +79,8 @@ public class Updater
         string version = "", edisonPath = "", localSourcePath = "", sourceServer = "", forcedStamp = "";
         int sourcePort = 0;
         var localClients = new List<string>();
-        for (int i = 1; i <= output.GetUpperBound(0); i++)
+        foreach (var parts in LegacyOutput.Rows(output, del))
         {
-            var parts = (output[i]?.ToString() ?? "").Split(del);
             if (parts.Length < 2) continue;
             switch (parts[0])
             {

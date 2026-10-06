@@ -73,14 +73,10 @@ public class LogoutWatcher
     /// </summary>
     public static LogoutSignal Parse(object[] output, char delimiter)
     {
-        for (int i = 0; i < output.Length; i++)
-        {
-            var parts = (output[i]?.ToString() ?? "").Split(delimiter);
-            if (parts.Length < 2 || parts[0] != "ukoncit") continue;
-            bool shouldClose = parts[1] is "1";
-            int seconds = parts.Length >= 3 && int.TryParse(parts[2], out int s) ? s : MinSeconds;
-            return new LogoutSignal(shouldClose, Math.Max(MinSeconds, seconds));
-        }
-        return new LogoutSignal(false, MinSeconds);
+        var parts = LegacyOutput.Rows(output, delimiter).FirstOrDefault(r => r.Length >= 2 && r[0] == "ukoncit");
+        if (parts is null) return new LogoutSignal(false, MinSeconds);
+        bool shouldClose = parts[1] is "1";
+        int seconds = parts.Length >= 3 && int.TryParse(parts[2], out int s) ? s : MinSeconds;
+        return new LogoutSignal(shouldClose, Math.Max(MinSeconds, seconds));
     }
 }
