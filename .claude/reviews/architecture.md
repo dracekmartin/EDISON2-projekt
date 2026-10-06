@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 44 / 49**
+**Hotovo: 45 / 49**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -1299,7 +1299,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A33 · Složka `dotnet/MiniApps` drží infrastrukturu pruhu podpory a docku; namespace cyklické
 
-- [ ] **Stav:** otevřeno (2026-10-01: složka přibrala `DockThemeBrushes.cs`)
+- [x] **Stav:** vyřešeno 41d26c84 (2026-10-06) - kód pruhu podpory je ve `Windows/EdisonMainWindow/SupportStrip`,
+  plocha v `Desktop/`; shell drží připnuté miniaplikace otevřené podle příznaku `Pinned`, takže id Plochy zná jen
+  `DesktopMiniAppProvider`, a `MiniApps` už neodkazuje na `Modules`.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `EDISONMAIN2/dotnet/MiniApps/SupportWidgetHost.cs`, `FontZoomWebView.cs`, `WidgetUrls.cs`
   používá jen `EdisonMainWindow.xaml.cs:73,77`, `LoginWindow.xaml.cs:75-76` a nově
