@@ -1091,7 +1091,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A49 · Klon z `RestCallRunner` nespustí ukončení při zániku session ani nesouladu verze
 
-- [ ] **Stav:** otevřeno, varianta (a) hotová (2026-10-06) - `MLRestAdapter.With()` bez přepsaných parametrů (klon téže
+- [x] **Stav:** vyřešeno 1e59f083 + switch-user (2026-10-06) variantou (a) - `MLRestAdapter.With()` bez přepsaných parametrů (klon téže
   session, tedy `RestCallRunner`) odebere na klonu `EdisonActivityFailed`/`EdisonVersionFailed` a vyvolá odběratele
   původní instance (reflexe do backing fieldu field-like eventu `MLRest`, sender = původní instance; chybějící field
   = bez přeposílání, ne pád). Klony s `cacheLocks`/`idfa`/`dataNamespace` nepřeposílají. Klon klonu přepošle řetězem až
@@ -1100,8 +1100,11 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   klony by vrstvily dialog ukončení). TD ani shell se nemění, odběr dál na sdílené instanci. Testy `MLRestAdapterWithTests`
   na skutečném `MLRest` (vyvolání stejnou cestou jako chyba requestu: obě hlášky zámku, verze, klon klonu, přepsané
   klony, přepnutí firmy během i po, jedno přeposlání; ověřeno mutací). Kontrakt v doc `IMLRest.With` a `EDControls/CLAUDE.md`.
-  **Zbývá:** dávka na klonu běžící přes přepnutí uživatele přepošle na starou instanci (firma i `CacheLocks` beze změny)
-  a její handler v shellu (`SessionSwitcher` ho neodpojí) aplikaci ukončí; adaptér to nepozná, oprava je v shellu.
+  Přepnutí uživatele: stará instance zůstávala beze změny a její handler v shellu napojený, takže dávka na klonu
+  běžící přes switch by ukončila aplikaci nového uživatele. `SessionLogout.Logout` proto při odhlášení vlastní session
+  (bez `idfa`) nastaví instanci `CacheLocks=0` po vzniku klonu a ještě před requestem (klon nevznikne = logout
+  neproběhne, session dál hlídá zámek); logout cizí firmy (company switch) ji nemění. Testy `SessionLogoutTests`
+  (značka před requestem, selhání klonu beze značky, cizí firma beze změny).
 - **P2 · S-M** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-06)
 - **Problém:** `MLRest` vyvolává `EdisonActivityFailed` (zaniklý ACTIVITY zámek) a `EdisonVersionFailed` na instanci,
   která request poslala. Ukončení aplikace ale visí jen na sdílené instanci; klon z `With()` (`RestCallRunner`)
