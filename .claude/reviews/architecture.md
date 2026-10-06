@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 45 / 49**
+**Hotovo: 46 / 49**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -1092,7 +1092,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A49 · Klon z `RestCallRunner` nespustí ukončení při zániku session ani nesouladu verze
 
-- [x] **Stav:** vyřešeno 1e59f083 + switch-user (2026-10-06) variantou (a) - `MLRestAdapter.With()` bez přepsaných parametrů (klon téže
+- [x] **Stav:** vyřešeno 1e59f083 + cd6ee3ce (2026-10-06) variantou (a) - `MLRestAdapter.With()` bez přepsaných parametrů (klon téže
   session, tedy `RestCallRunner`) odebere na klonu `EdisonActivityFailed`/`EdisonVersionFailed` a vyvolá odběratele
   původní instance (reflexe do backing fieldu field-like eventu `MLRest`, sender = původní instance; chybějící field
   = bez přeposílání, ne pád). Klony s `cacheLocks`/`idfa`/`dataNamespace` nepřeposílají. Klon klonu přepošle řetězem až
