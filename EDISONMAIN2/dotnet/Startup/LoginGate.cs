@@ -30,13 +30,8 @@ public static class LoginGate
     /// <summary>Řádek <c>login{del}{isAllowed}{del}{allowAlter}</c>; bez řádku = povoleno (server nic nezakázal).</summary>
     public static LoginPermission Parse(object[] output, char delimiter)
     {
-        for (int i = 1; i < output.Length; i++)
-        {
-            var parts = (output[i]?.ToString() ?? "").Split(delimiter);
-            if (parts.Length < 3 || parts[0] != "login") continue;
-            return new LoginPermission(parts[1] == "1", parts[2] == "1");
-        }
-        return new LoginPermission(true, false);
+        var parts = LegacyOutput.Rows(output, delimiter).FirstOrDefault(r => r.Length >= 3 && r[0] == "login");
+        return parts is null ? new LoginPermission(true, false) : new LoginPermission(parts[1] == "1", parts[2] == "1");
     }
 
     /// <summary>Zruší zákaz (legacy <c>ChangeLoginState</c>); server si zapíše, kdo to udělal.</summary>

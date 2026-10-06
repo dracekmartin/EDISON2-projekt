@@ -27,7 +27,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
             bool usePersonDir = false;
             string personDir = "";
 
-            foreach (var row in ParseRows(user, mlRest.Delimiter))
+            foreach (var row in LegacyOutput.Rows(user, mlRest.Delimiter))
             {
                 if (row[0] == "personDir" && row.Length >= 3)
                 {
@@ -47,7 +47,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         public static string LoadCentralExportDir(IMLRest mlRest)
         {
             var settings = mlRest.QueryOrThrow("ALVA.EDISON.Main", "LoadSettings", new object[] { });
-            foreach (var row in ParseRows(settings, mlRest.Delimiter))
+            foreach (var row in LegacyOutput.Rows(settings, mlRest.Delimiter))
                 if (row.Length >= 3 && row[0] == "system" && row[1] == "export")
                     return row[2];
             return "";
@@ -70,7 +70,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         public static int LoadDefaultWindow(IMLRest mlRest)
         {
             var output = mlRest.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", new object[] { });
-            return output is { Length: > 1 } && int.TryParse(output[1]?.ToString(), out var id) ? id : 0;
+            return int.TryParse(LegacyOutput.Values(output).FirstOrDefault(), out var id) ? id : 0;
         }
 
         /// <summary>
@@ -79,15 +79,5 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         /// </summary>
         public static void SetDefaultWindow(IMLRest mlRest, int formId) =>
             mlRest.QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm", new object[] { formId });
-
-        // OUT: index 0 = errorState (přeskoč), 1.. = datové řádky "klíč~v1~v2".
-        private static IEnumerable<string[]> ParseRows(object[] output, char delimiter)
-        {
-            for (int i = 1; i < output.Length; i++)
-            {
-                var s = output[i]?.ToString();
-                if (!string.IsNullOrEmpty(s)) yield return s.Split(delimiter);
-            }
-        }
     }
 }

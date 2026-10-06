@@ -38,13 +38,7 @@ public static class AccessLoader
         bool isAllAccess = apId == ApIdAdmin;
 
         if (!isAllAccess)
-        {
-            for (int i = 2; i <= output.GetUpperBound(0); i++)
-            {
-                var id = output[i]?.ToString();
-                if (!string.IsNullOrEmpty(id)) allowed.Add(id);
-            }
-        }
+            allowed.UnionWith(LegacyOutput.Values(output).Skip(1).Where(id => id.Length > 0));
 
         // Admin fallback - viz frmMain.AddAdminRights. Aplikuje se i pokud
         // user není apId=3, ale je IsAdmin (např. lokálně označený admin jinou cestou).

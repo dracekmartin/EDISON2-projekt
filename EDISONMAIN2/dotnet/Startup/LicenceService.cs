@@ -188,14 +188,6 @@ public static class LicenceNotice
     }
 
     /// <summary>Číslo z řádku <c>klíč{D}n</c>; chybějící řádek nebo nečíselná hodnota = null.</summary>
-    internal static int? ParseNamedCount(object[] raw, char delimiter, string key)
-    {
-        for (int i = 1; i < raw.Length; i++)
-        {
-            var parts = (raw[i]?.ToString() ?? "").Split(delimiter);
-            if (parts.Length > 1 && parts[0] == key && int.TryParse(parts[1], out var count))
-                return count;
-        }
-        return null;
-    }
+    internal static int? ParseNamedCount(object[] raw, char delimiter, string key) =>
+        int.TryParse(LegacyOutput.Named(raw, delimiter, key), out var count) ? count : null;
 }
