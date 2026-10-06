@@ -20,6 +20,10 @@ public interface IPopupDisplayer
     /// </summary>
     bool? ConfirmYesNoCancel(string message, string? title = null, Window? owner = null);
 
-    /// <summary>Scrollovatelný error dialog s plným textem výjimky.</summary>
+    /// <summary>
+    /// Scrollovatelný error dialog s plným textem výjimky. Implementace musí chybu nejdřív nahlásit přes
+    /// <see cref="ErrorReporting.ErrorReports.Report"/> (před dialogem kvůli snímku okna) a vrácené číslo ukázat
+    /// v dialogu: <c>RelayCommand</c>/<c>AsyncRelayCommand</c> chytají výjimky jen přes displayer, jinak se hlášení ztratí.
+    /// </summary>
     void Error(Exception ex, Window? owner = null);
 }

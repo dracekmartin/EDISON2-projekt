@@ -1345,7 +1345,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A41 · Odeslání hlášení chyby je skryté v implementaci dialogu 🔸
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- [x] **Stav:** vyřešeno (2026-10-06) - podle rozhodnutí vlastníka jen kontrakt v dokumentaci
+  `IPopupDisplayer.Error`: implementace nejdřív hlásí přes `ErrorReports.Report` a ukáže vrácené číslo,
+  protože `RelayCommand`/`AsyncRelayCommand` chytají výjimky jen přes displayer. Chování beze změny.
 - **Rozhodnutí vlastníka (2026-10-05):** jen kontrakt v dokumentaci `IPopupDisplayer.Error` (implementace hlásí do `ErrorReports`), chování beze změny.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `EDControls/dotnet/EDViewModel/PopupDisplayer.cs:26-33` `var refId =
