@@ -15,7 +15,7 @@
         xmlns:edct="clr-namespace:EDControls.EDComponentToolbar;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
-        Title="{Binding WindowTitle}" Height="800" Width="1200" MinHeight="600" MinWidth="900" Icon="{StaticResource EDIcons.Molecule}" WindowStartupLocation="CenterScreen" WindowState="Maximized">
+        Title="{Binding WindowTitle}" Height="800" Width="1280" MinHeight="720" MinWidth="1280" Icon="{StaticResource EDIcons.Molecule}" WindowStartupLocation="CenterScreen" WindowState="Maximized">
     <!-- Skryté klávesové zkratky. Ctrl+W+W (dvojhmat) řeší
          PreviewKeyDown v code-behind (víc-krokový stav, nelze přes KeyBinding). -->
     <Window.InputBindings>
@@ -59,7 +59,7 @@
         </Grid.RowDefinitions>
 
         <!-- Top-level menu - obsah vychází z legacy frmNoMDI.mnuMain, seskupení je vlastní:
-             Uživatel = jen identita/session, Nastavení konsoliduje preference (font, jazyk,
+             Uživatel = jen identita/session, Nastavení konsoliduje preference (font, tmavý režim,
              okna), support diagnostika pod Nápovědou, Nápověda předposlední (Windows konvence).
              Combobox firem nahrazuje legacy "Firma" label (původně jen statický).
              "Test funkcí" je jen pro vývoj a stanice M-line (IsTestMenuVisible), v legacy je tam "Test funkcí (M-line)".
@@ -69,8 +69,6 @@
                 BorderBrush="{DynamicResource EDTheme.Border.Light}"
                 BorderThickness="0,0,0,1">
         <DockPanel>
-            <TextBlock Text="{Binding InformationText}" DockPanel.Dock="Right"
-                       VerticalAlignment="Center" Margin="8,0,8,0"/>
             <!-- Menu je rozdělené na dva controly, aby přepínač firem stál hned za položkou EDISON
                  (hlavní nabídka patří na začátek lišty). Cena: šipkami se mezi oběma menu nepřejde. -->
             <Menu x:Name="EdisonMenu" DockPanel.Dock="Left" BorderThickness="0">
@@ -79,14 +77,15 @@
                 <MenuItem Header="Připojit k databázi"   Command="{Binding ConnectToDatabaseCommand}"/>
                 <MenuItem Header="Spustit další EDISON"  Command="{Binding RunEdisonCopyCommand}"/>
                 <Separator/>
-                <MenuItem Header="Konec"                 Command="{Binding ExitCommand}"/>
+                <MenuItem Header="Ukončit program"       Command="{Binding ExitCommand}"/>
             </MenuItem>
             </Menu>
             <!-- Přepínač firem MUSÍ být mimo <Menu>: Menu si přebírá fokus/myš pro navigaci a
                  editovatelnému comboboxu uvnitř kradlo fokus (klik do textu "odkliknul").
                  ToolTip nese plný název firmy - editovatelný TextBox dlouhý text jen ořízne
-                 (TextTrimming neumí) a jinde v UI plný název není. -->
-            <edfc:EDFilterComboBox DockPanel.Dock="Left" StrictSelection="True"
+                 (TextTrimming neumí) a jinde v UI plný název není. Šířku nastavuje code-behind
+                 (FitCompanyCombo), MinWidth je spodní mez. -->
+            <edfc:EDFilterComboBox x:Name="CompanyCombo" DockPanel.Dock="Left" StrictSelection="True"
                                    Suggestions="{Binding CompanySuggestions}"
                                    SelectedKey="{Binding SelectedCompanyId, Mode=TwoWay}"
                                    ToolTip="{Binding SelectedCompany.DisplayName}"
@@ -105,11 +104,11 @@
                     </Style>
                 </edfc:EDFilterComboBox.Style>
             </edfc:EDFilterComboBox>
-            <Menu x:Name="TopMenu" BorderThickness="0">
+            <Menu x:Name="TopMenu" DockPanel.Dock="Left" BorderThickness="0">
             <MenuItem Header="Uživatel">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.User}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Přihlásit jiného uživatele" Command="{Binding LoginAsAnotherUserCommand}"/>
-                <MenuItem Header="Aktuální uživatel"          Command="{Binding ShowUserProfileCommand}"/>
+                <MenuItem Header="Vlastnosti uživatele"       Command="{Binding ShowUserProfileCommand}"/>
                 <MenuItem Header="Změnit heslo"               Command="{Binding ChangePasswordCommand}"/>
             </MenuItem>
             <MenuItem Header="Spuštěné moduly" ItemsSource="{Binding RunningModules}">
@@ -142,9 +141,10 @@
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Tools}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Úlohy na pozadí"      Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenceCommand}"/>
-                <Separator/>
-                <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
-                <MenuItem Header="Spustit starý shell (EDISONMAIN)" Command="{Binding OpenLegacyShellCommand}"/>
+                <!-- Separator se skrývá s položkou, jinak by běžnému uživateli zůstaly dva pod sebou. -->
+                <Separator Visibility="{Binding IsLegacyShellVisible, Converter={StaticResource BoolToVis}}"/>
+                <MenuItem Header="Spustit starý shell (EDISONMAIN)" Command="{Binding OpenLegacyShellCommand}"
+                          Visibility="{Binding IsLegacyShellVisible, Converter={StaticResource BoolToVis}}"/>
                 <Separator/>
                 <!-- Admin-only (command gate přes IsAdmin) - separator je odděluje od běžných nástrojů. -->
                 <MenuItem Header="Správa zámků"         Command="{Binding ShowUsersLocksCommand}"/>
@@ -154,8 +154,6 @@
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Settings}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Nastavení písma" Command="{Binding FontSettingsCommand}"/>
                 <MenuItem Header="Tmavý režim"  IsCheckable="True" IsChecked="{Binding IsDarkMode}"/>
-                <Separator/>
-                <MenuItem Header="Nastavení jazyka" Command="{Binding ShowLanguageSettingsCommand}"/>
                 <Separator/>
                 <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
             </MenuItem>
@@ -183,6 +181,11 @@
                 <MenuItem Header="Vyvolat chybu" Command="{Binding TriggerErrorCommand}"/>
             </MenuItem>
             </Menu>
+            <!-- Poslední = vyplní jen zbylé místo a v úzkém okně se zkrátí. Ukotvený napravo
+                 by dostal šířku dřív než menu a to by se zalomilo. -->
+            <TextBlock Text="{Binding InformationText}" ToolTip="{Binding InformationText}"
+                       TextAlignment="Right" TextTrimming="CharacterEllipsis"
+                       VerticalAlignment="Center" Margin="8,0,8,0"/>
         </DockPanel>
         </Border>
 

@@ -96,10 +96,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private static string CurrentExecutable() => Process.GetCurrentProcess().MainModule?.FileName ?? "";
 
-        // TD přebírá shell session z launch argumentů (GUID + CacheLocks=1) - jeho requesty tak
-        // drží ACTIVITY historii shellu (HD 13132/F17) a umírá se shellem jako agendové moduly.
-        private void OpenTemplateDesigner() => WindowNavigator.ShowLegacy("TemplateDesigner.exe", formFqn: "");
-
         private const string LegacyShellExe = "EDISONMAIN.exe";
         // reason=2 je EdisonLaunchReasonEnum.RunEdison; bez něj frmNoMDI ohlásí "nelze spustit
         // samostatně" a zavře se (kontrola, že shell spustil loader, ne uživatel ručně).

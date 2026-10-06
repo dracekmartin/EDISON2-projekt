@@ -147,6 +147,6 @@ Pasti:
 Shell strana: `WindowNavigator.ShowLegacy*` ([EDViewModel/CLAUDE.md](../EDControls/dotnet/EDViewModel/CLAUDE.md));
 admin override při out-of-license dělá `LicenceVerifier`.
 
-Nástroje → „Spustit starý shell": `EDISONMAIN.exe` s `reason=2` (`RunEdison`), bez něj se
+Nástroje → „Spustit starý shell" (jen admin a stanice M-line): `EDISONMAIN.exe` s `reason=2`, bez něj se
 `frmNoMDI` odmítne spustit. Plain `Process.Start`, ne `ShowLegacy*` - starý shell nemá umřít
 s tímhle (KillOnExit) ani být ve „Spuštěné moduly"; přes EDLOADER se k němu už nedostaneš.

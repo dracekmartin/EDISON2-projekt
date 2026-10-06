@@ -1169,13 +1169,47 @@ public class EdisonMainViewModelTests
         shutdown.DidNotReceiveWithAnyArgs().Invoke();
     }
 
-    [Fact]
-    public void OpenLegacyShellCommand_IsWired()
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    public void LegacyShell_OnlyForAdminOrMlineStation(bool isAdmin, bool mlineStation, bool expected)
     {
-        var vm = CreateVM();
+        bool original = InternalDiagnostics.Enabled;
+        try
+        {
+            var services = MockServices();
+            var vm = CreateVM(services: services);
+            services.IsAdmin = isAdmin;
+            InternalDiagnostics.Enabled = mlineStation;
 
-        Assert.NotNull(vm.OpenLegacyShellCommand);
-        Assert.True(vm.OpenLegacyShellCommand.CanExecute(null));
+            Assert.Equal(expected, vm.IsLegacyShellVisible);
+            Assert.Equal(expected, vm.OpenLegacyShellCommand.CanExecute(null));
+        }
+        finally
+        {
+            InternalDiagnostics.Enabled = original;
+        }
+    }
+
+    [Fact]
+    public async Task LoginAsAnotherUser_Success_NotifiesLegacyShellVisibility()
+    {
+        // Admin se mění s uživatelem - bez notifikace by položka zůstala skrytá nebo vidět podle předchozího.
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var services = MockServices(popup: popup);
+        var vm = CreateVM(services: services, switchUser: () =>
+        {
+            services.IsAdmin = true;
+            return new(SwitchUserResult.Success);
+        });
+        var notified = new List<string?>();
+        vm.PropertyChanged += (_, e) => notified.Add(e.PropertyName);
+
+        await vm.LoginAsAnotherUserAsync();
+
+        Assert.Contains(nameof(EdisonMainViewModel.IsLegacyShellVisible), notified);
     }
 
     [Fact]
