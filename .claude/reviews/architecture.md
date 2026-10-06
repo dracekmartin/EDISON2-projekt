@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 41 / 48**
+**Hotovo: 42 / 49**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -83,7 +83,7 @@ nepřekrývají, takže můžou běžet současně.
 | S8 EDInputForm | A15 odloženo k diskusi (implementace ve větvi `odlozeno/a15-async-edinputform`) → A27 část formulář (`Format`, `UserHidden`) | `EDInputForm/*`, `Form.cls`, `EDIFExample.cls`, jejich testy | 2 | chat |
 | S9 Infrastruktura EDControls | A39 → A40 → A41 🔸 | `UserFonts/*`, `EDTheme/UserThemePreference.cs`, `ErrorReporting/*`, `PopupDisplayer.cs`, `RelayCommand.cs`, `AsyncRelayCommand.cs`, jejich testy | 2 | chat |
 | S1 pokračuje | A9 (s S2) → A5 kroky 4-5 → A21 → A29 → A30 → A31 🔸 → A32 🔸 | VM, `Modules/*`, `MiniApps/Desktop*`; A9 i `SessionFactory`, `CompanySwitcher`, `LicenceVerifier` | 2 | chat |
-| S6 pokračuje | A48 část EDControls (`EDListController` přes `IRestCallRunner`); část TD a pravidlo R1 patří TD | `EDList/EDListController.cs`, jeho testy | 3 | chat |
+| S6 pokračuje | A48 část EDControls (hotová, část TD předaná Janovi) → A49 varianta (a) (`MLRestAdapter.With()` přepošle události na původní instanci, TD beze změny) | `MLRestAdapter.cs`, `EDList/EDListController.cs`, jejich testy | 3 | chat |
 | Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4, `ALVA.EDTesting.TestRunner` počítá skipped (status 2) zvlášť a vypíše důvod (dnes FAIL s prázdnou hláškou, brání `$$$AssertSkipped` v TD), mrtvý `OpenMiniAppCommand` ve VM (bez bindingu), `docs/zastupci-na-plose.md:62` odkazuje na zrušené `ReloadShortcutsAsync` | napříč | 3 | po slití vln 1 a 2 |
 
 Rozhodnutí vlastníka padla 2026-10-05, u každého dotčeného ID je řádek **Rozhodnutí vlastníka**.
@@ -1063,13 +1063,14 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A48 · Async EDList a služby TD volají MLRest přes `Task.Run` na sdílené instanci bez klonu
 
-- [ ] **Stav:** otevřeno, část EDControls vyřešena (2026-10-06) - `EDListController` dostal volitelný `IRestCallRunner`
+- [x] **Stav:** vyřešeno f2cdf2a7 v rozsahu EDISON2 (2026-10-06) - `EDListController` dostal volitelný `IRestCallRunner`
   (default `RestCallRunner` nad aktuálním `EDServices.MLRest`), `InitializeListAsync`/`LoadListAsync` jedou na klonu;
   `_queryGate` zůstal kvůli pořadí (sloupce před řádky souběžného `LoadListAsync`), generation guard beze změny,
   sync varianty dál na UI vlákně nad sdílenou instancí. Veřejné API beze změny. Test `EDListLoadTests.TwoLists_ConcurrentAsyncLoads_QueryOnlyClones`
   (thread-safe fake, 2 seznamy × init + 5 loadů: 12 klonů, 0 dotazů na sdílené instanci; ověřeno mutací). Klon tím
   přebírá mezeru vzoru `RestCallRunner` (zánik session na klonu aplikaci neukončí), vlastník ji přijal, zapsáno jako A49.
-  Zbývá část TD (`CacheTemplateService`, `CacheAgendaRegistry`, pravidlo R1) u vlastníka TD.
+  Část TD (`CacheTemplateService`, `CacheAgendaRegistry`, pravidlo R1) je předaná vlastníkovi TD.
+- **Rozhodnutí vlastníka (2026-10-06):** TemplateDesigner je projekt kolegy (Jan Miesbauer), jeho část A48 řeší on.
 - **P2 · S** (EDControls) / M (TD) · Závisí na: - · Blokuje: - · Původ: nový (2026-10-06), skeptik u A38, ověřeno v kódu
 - **Problém:** Pravidlo „souběžné requesty jen na klonech" (root `CLAUDE.md`, `RestStatus` je per-instance) drží
   `RestCallRunner`, ale async cesta EDListu a služby TemplateDesigneru volají `Query` přes holý `Task.Run` nad
