@@ -11,13 +11,14 @@ namespace EDISONMAIN2.Tests;
 /// </summary>
 public class RunningModulesLabelTests
 {
+    // Cestu agendou skládá loader do FamilyPath (ParseTreeTests); tady ji Fam jen předá listům.
     private static ExecutableModule Exe(string name, string exe, string form, string input = "", string longName = "") =>
-        new() { DisplayedName = name, ExecutablePath = exe, FormName = form, InputParam = input, LongName = longName };
+        new() { Name = name, ExecutablePath = exe, FormName = form, InputParam = input, LongName = longName };
 
-    private static ModuleFamily Fam(string name, params IModule[] kids)
+    private static ModuleFamily Fam(string name, params ExecutableModule[] kids)
     {
-        var f = new ModuleFamily { DisplayedName = name };
-        foreach (var k in kids) f.NestedModules.Add(k);
+        var f = new ModuleFamily { Name = name };
+        foreach (var k in kids) f.NestedModules.Add(new ExecutableModule(k) { FamilyPath = name });
         return f;
     }
 
@@ -25,7 +26,7 @@ public class RunningModulesLabelTests
         new(title, () => { }) { ExeName = exe, FormFqn = form, InputParam = input };
 
     [Fact]
-    public void BuildModuleLabels_PrefixesModuleWithItsFamily()
+    public void BuildModuleLabels_PathIsModuleTreePath()
     {
         var labels = ModuleTreeState.BuildModuleLabels(
             [[Fam("Mzdy a personalistika", Exe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formZam"))]]);
@@ -33,13 +34,18 @@ public class RunningModulesLabelTests
         Assert.Equal("Mzdy a personalistika › Zaměstnanci", Assert.Single(labels).Value.Path);
     }
 
+    // Label spuštěného modulu, ToolTip dlaždice i Používané mají říkat totéž - dekorace do cesty nepatří.
     [Fact]
-    public void BuildModuleLabels_JoinsNestedFamilies()
+    public void BuildModuleLabels_PathWithoutDisplaySuffixes()
     {
-        var labels = ModuleTreeState.BuildModuleLabels(
-            [[Fam("MHD", Fam("Plánování", Exe("Turnusy", "MHD2.exe", "f")))]]);
+        var fam = Fam("Interní", Exe("Turnusy", "MHD2.exe", "f"));
+        fam.DisplaySuffix = " [### M-line ###] - rozbité";
+        fam.NestedModules[0] = new ExecutableModule((ExecutableModule)fam.NestedModules[0]) { DisplaySuffix = " - chybí exe" };
 
-        Assert.Equal("MHD › Plánování › Turnusy", Assert.Single(labels).Value.Path);
+        var label = Assert.Single(ModuleTreeState.BuildModuleLabels([[fam]])).Value;
+
+        Assert.Equal("Interní › Turnusy", label.Path);
+        Assert.Equal(((ExecutableModule)fam.NestedModules[0]).TreePath, label.Path);
     }
 
     [Fact]

@@ -392,7 +392,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         // Novinky z dlaždice: klíč nese sama položka (i u zástupců mimo strom), modul se nedohledává.
         private void ShowShortcutChangelog(DesktopShortcut shortcut) =>
-            _ = ShowChangelogForAsync(shortcut.ExecutablePath, shortcut.DisplayedName);
+            _ = ShowChangelogForAsync(shortcut.ExecutablePath, shortcut.Name);
 
         // Při zavření shellu se zabíjejí agendy - bez odhlášení by každá spustila reload plochy.
         private void DetachShortcutHandlers()
@@ -773,7 +773,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             RecordUsage(em);
             // Novinky blokují otevření agendy: modální dialog před launchem, ať změny nezapadnou.
             if (_changelogPrompt is { } prompt)
-                await prompt.ShowIfNewAsync(path, em.DisplayedName);
+                await prompt.ShowIfNewAsync(path, em.Name);
 
             // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces - čekáme na jeho okno).
             using (ActionInProgress())
@@ -787,7 +787,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Novinky agendy na vyžádání (kontextové menu stromu). Rodina modulů nemá exe - žádný INF.
         private Task ShowModuleChangelogAsync(IModule module) =>
             module is ExecutableModule { ExecutablePath: { Length: > 0 } path } em
-                ? ShowChangelogForAsync(path, em.DisplayedName)
+                ? ShowChangelogForAsync(path, em.Name)
                 : Task.CompletedTask;
 
         // Vynucené novinky: obcházejí snooze i session dedup, protože si o ně uživatel řekl sám.
@@ -821,7 +821,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (shortcut.ExecutablePath.Length == 0 || shortcut.FormName.Length == 0)
             {
-                PopupDisplayer.Info($"Zástupce „{shortcut.DisplayedName}\" nemá uloženou agendu ani formulář, "
+                PopupDisplayer.Info($"Zástupce „{shortcut.Name}\" nemá uloženou agendu ani formulář, "
                                     + "nelze ho spustit. Vytvořte ho znovu z modulu.");
                 return;
             }
@@ -844,7 +844,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Startup window id (EDISFormEnum) → název modulu ve stromu. ElementId je totéž numerické
         // id jako uložené výchozí okno; pro značení stromu i dialog „Vlastnosti uživatele".
         private string? ResolveModuleName(int formId) =>
-            _trees.AllExecutables().FirstOrDefault(e => e.ElementId == formId.ToString())?.DisplayedName;
+            _trees.AllExecutables().FirstOrDefault(e => e.ElementId == formId.ToString())?.Name;
 
         // Text výchozího okna pro dialog (server ho nezná - dodáváme z modulového stromu).
         // Prázdné = nenastaveno (pole zůstane prázdné, kontext dá helpText pole).

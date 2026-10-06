@@ -319,7 +319,7 @@ public class ChangelogEntryPointTests
         var vm = CreateVM(popup);
 
         vm.ShowModuleChangelogCommand.Execute(
-            new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" });
+            new ExecutableModule { Name = "Turnusy", ExecutablePath = "t.exe", FormName = "" });
 
         await _source.Received().LoadAsync("t.exe");
         popup.Received().Info(Arg.Is<string>(m => m.Contains("Turnusy")));
@@ -332,7 +332,7 @@ public class ChangelogEntryPointTests
         var popup = Substitute.For<IPopupDisplayer>();
         var vm = CreateVM(popup);
 
-        vm.ShowModuleChangelogCommand.Execute(new ModuleFamily { DisplayedName = "MHD" });
+        vm.ShowModuleChangelogCommand.Execute(new ModuleFamily { Name = "MHD" });
 
         _source.DidNotReceive().LoadAsync(Arg.Any<string>());
         popup.DidNotReceive().Info(Arg.Any<string>());
@@ -345,7 +345,7 @@ public class ChangelogEntryPointTests
         var shortcuts = new ModuleShortcutsService();
         CreateVM(popup, shortcuts);
 
-        shortcuts.RequestChangelog(new DesktopShortcut { ExecutablePath = "t.exe", DisplayedName = "Turnusy" });
+        shortcuts.RequestChangelog(new DesktopShortcut { ExecutablePath = "t.exe", Name = "Turnusy" });
 
         await _source.Received().LoadAsync("t.exe");
     }

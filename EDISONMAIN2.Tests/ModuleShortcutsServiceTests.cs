@@ -10,7 +10,7 @@ namespace EDISONMAIN2.Tests;
 public class ModuleShortcutsServiceTests
 {
     private static ExecutableModule Exe(string id, string name = "M") =>
-        new() { DisplayedName = name, ElementId = id, ExecutablePath = id + ".exe" };
+        new() { Name = name, ElementId = id, ExecutablePath = id + ".exe" };
 
     // Uložený zástupce modulu hlavní nabídky (jak ho zapíše ★ / DnD ze stromu).
     private static DesktopShortcutDto Menu(string elementId, int? col = null, int? row = null) =>
@@ -196,7 +196,7 @@ public class ModuleShortcutsServiceTests
 
         var item = Assert.Single(svc.Items);
         Assert.Equal(ShortcutKind.PrintReport, item.Kind);
-        Assert.Equal("Přehled škod", item.DisplayedName);
+        Assert.Equal("Přehled škod", item.Name);
         Assert.Null(item.Module);
         Assert.Equal(report, item.Report);
         Assert.Equal(report, Assert.Single(svc.Persistable()).Report);
@@ -234,15 +234,15 @@ public class ModuleShortcutsServiceTests
     public void Seed_TileShowsLongName_AndTreePathForToolTip()
     {
         var a = new ExecutableModule {
-            DisplayedName = "Nastavení", ElementId = "100", ExecutablePath = "VOZ.exe",
-            FormName = "f", LongName = "Nastavení vozidel"
+            Name = "Nastavení", ElementId = "100", ExecutablePath = "VOZ.exe",
+            FormName = "f", LongName = "Nastavení vozidel", FamilyPath = "Vozidla › Číselníky"
         };
         var svc = new ModuleShortcutsService();
 
-        svc.Seed([a], [Menu("100")], _ => "Vozidla › Číselníky › Nastavení");
+        svc.Seed([a], [Menu("100")]);
 
         var tile = Assert.Single(svc.Items);
-        Assert.Equal("Nastavení", tile.DisplayedName);
+        Assert.Equal("Nastavení", tile.Name);
         Assert.Equal("Nastavení vozidel", tile.DisplayedLongName);
         Assert.Equal("Vozidla › Číselníky › Nastavení", tile.TreePath);
     }
@@ -253,33 +253,49 @@ public class ModuleShortcutsServiceTests
         var a = Exe("100", "Objednávky");
         var svc = new ModuleShortcutsService();
 
-        svc.Seed([a], [Menu("100")], _ => "Autobusová doprava › Objednávky");
+        svc.Seed([a], [Menu("100")]);
 
         Assert.Equal("Objednávky", Assert.Single(svc.Items).DisplayedLongName);
     }
 
-    // Bez znalosti cesty (položka mimo strom) by prázdný ToolTip byl jen prázdný rámeček.
+    // Položka mimo strom (sestava) cestu nemá - prázdný ToolTip by byl jen prázdný rámeček.
     [Fact]
-    public void Seed_WithoutPathProvider_ToolTipFallsBackToName()
+    public void Seed_ItemOutsideTree_ToolTipFallsBackToName()
     {
-        var a = Exe("100", "Objednávky");
         var svc = new ModuleShortcutsService();
 
-        svc.Seed([a], [Menu("100")]);
+        svc.Seed([], [new DesktopShortcutDto(nameof(ShortcutKind.PrintReport), "PrehledSkod", "31001", "Přehled škod")]);
 
-        Assert.Equal("Objednávky", Assert.Single(svc.Items).TreePath);
+        Assert.Equal("Přehled škod", Assert.Single(svc.Items).TreePath);
     }
 
     [Fact]
-    public void Add_UsesPathProviderFromLastSeed()
+    public void Add_TakesTreePathFromModule()
     {
-        var a = Exe("100", "Objednávky");
+        var a = new ExecutableModule(Exe("100", "Objednávky")) { FamilyPath = "Autobusová doprava" };
         var svc = new ModuleShortcutsService();
-        svc.Seed([a], [], _ => "Autobusová doprava › Objednávky");
+        svc.Seed([a], []);
 
         svc.Add(a);
 
         Assert.Equal("Autobusová doprava › Objednávky", Assert.Single(svc.Items).TreePath);
+    }
+
+    // Dekorace zobrazení (mlineOnly, stav exe) se nesmí dostat do blobu, který čtou i agendy,
+    // a ToolTip dlaždice má říkat totéž co cesta modulu v Používaných.
+    [Fact]
+    public void Add_DecoratedModule_PersistsAndShowsUndecoratedName()
+    {
+        var a = new ExecutableModule(Exe("100", "Zaměstnanci")) { FamilyPath = "Mzdy", DisplaySuffix = " - chybí exe" };
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a], []);
+
+        svc.Add(a);
+
+        var tile = Assert.Single(svc.Items);
+        Assert.Equal("Zaměstnanci", Assert.Single(svc.Persistable()).Name);
+        Assert.Equal(a.TreePath, tile.TreePath);
+        Assert.Equal("Mzdy › Zaměstnanci", tile.TreePath);
     }
 
     [Fact]

@@ -257,17 +257,13 @@ namespace EDISONMAIN2
 
         // Kontejner uzlu se hledá shora dolů - potomci vzniknou až když je rodič rozbalený
         // a proběhl jeho layout (hledání rodiče na cestě rozbalí, generátor je ale líný).
-        // Přes index, ne ContainerFromItem: moduly jsou record s hodnotovou rovností, takže
-        // dva shodně vyplněné uzly by si kontejnery prohodily.
         private static TreeViewItem? ContainerFor(ItemsControl parent, IModule target)
         {
             parent.UpdateLayout();
-            for (int i = 0; i < parent.Items.Count; i++)
-            {
-                if (parent.ItemContainerGenerator.ContainerFromIndex(i) is not TreeViewItem container) continue;
-                if (ReferenceEquals(parent.Items[i], target)) return container;
-                if (parent.Items[i] is ModuleFamily && ContainerFor(container, target) is { } hit) return hit;
-            }
+            if (parent.ItemContainerGenerator.ContainerFromItem(target) is TreeViewItem direct) return direct;
+            foreach (var family in parent.Items.OfType<ModuleFamily>())
+                if (parent.ItemContainerGenerator.ContainerFromItem(family) is TreeViewItem container
+                    && ContainerFor(container, target) is { } hit) return hit;
             return null;
         }
 

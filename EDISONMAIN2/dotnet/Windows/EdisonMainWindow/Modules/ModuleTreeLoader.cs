@@ -36,7 +36,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 {
                     case "FAMILY":
                         var family = new ModuleFamily {
-                            DisplayedName = row.GetString(2),
+                            Name          = row.GetString(2),
                             IsExpanded    = row.GetString(3) == "1",
                             ElementId     = row.Count >= 4 ? row.GetString(4) : "",
                             IsLicensed    = row.Count >= 5 && row.GetString(5) == "1",
@@ -44,12 +44,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                         };
                         currentList.Add(family);
                         familyStack.Push(currentList);
-                        familyNames.Add(family.DisplayedName);
+                        familyNames.Add(family.Name);
                         currentList = family.NestedModules;
                         break;
                     case "EXE":
                         currentList.Add(new ExecutableModule {
-                            DisplayedName  = row.GetString(2),
+                            Name           = row.GetString(2),
                             ExecutablePath = row.GetString(3),
                             FormName       = row.GetString(4),
                             ElementId      = row.Count >= 5 ? row.GetString(5) : "",

@@ -50,10 +50,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>Hostitelská forma (legacy <c>Form</c>) = numerické EDISFormEnum id; zároveň klíč licenčního gate.</summary>
         public string ElementId { get; init; } = "";
 
-        public string DisplayedName { get; init; } = "";
+        /// <summary>Název bez dekorací zobrazení - jde do blobu <c>Shortcuts</c> a launch payloadu agendy.</summary>
+        public string Name { get; init; } = "";
 
         /// <summary>
-        /// Text dlaždice - dlouhý název modulu (legacy `nameEx`), fallback <see cref="DisplayedName"/>.
+        /// Text dlaždice - dlouhý název modulu (legacy `nameEx`), fallback krátký název.
         /// Na ploše chybí kontext stromu, takže krátký název sám je nejednoznačný.
         /// Odvozené ze stromu, nepersistuje se.
         /// </summary>
@@ -118,21 +119,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public event PropertyChangedEventHandler? PropertyChanged;
 
         /// <summary>Zástupce modulu hlavní nabídky (přidání přes ★ nebo tažením ze stromu).</summary>
-        public static DesktopShortcut ForModule(ExecutableModule module, string treePath = "") => new()
+        public static DesktopShortcut ForModule(ExecutableModule module) => new()
         {
             Kind = ShortcutKind.MenuModule,
             Id = module.ElementId,
             ElementId = module.ElementId,
-            DisplayedName = module.DisplayedName,
+            Name = module.Name,
             DisplayedLongName = module.DisplayedLongName,
-            TreePath = treePath.Length > 0 ? treePath : module.DisplayedLongName,
+            TreePath = module.TreePath,
             ExecutablePath = module.ExecutablePath,
             FormName = module.FormName,
             InputParam = module.InputParam,
             Module = module,
         };
 
-        public DesktopShortcutDto ToDto() => new(Kind.ToString(), Id, ElementId, DisplayedName,
+        public DesktopShortcutDto ToDto() => new(Kind.ToString(), Id, ElementId, Name,
             ExecutablePath, FormName, InputParam, Col, Row, Report);
     }
 

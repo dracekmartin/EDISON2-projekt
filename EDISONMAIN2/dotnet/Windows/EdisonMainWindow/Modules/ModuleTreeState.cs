@@ -28,7 +28,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         internal static IModule? TryFilter(IModule module, Lic? licence, AccessTable? access = null, bool isMlineDomain = false) => module switch
         {
             ExecutableModule exe => IsAllowed(exe, licence, access, isMlineDomain)
-                ? (exe.MlineOnly ? exe with { DisplayedName = exe.DisplayedName + MlineDomainDetector.Suffix } : exe)
+                ? (exe.MlineOnly ? new ExecutableModule(exe) { DisplaySuffix = exe.DisplaySuffix + MlineDomainDetector.Suffix } : exe)
                 : null,
             ModuleFamily family  => FilterFamily(family, licence, access, isMlineDomain),
             _                    => module,
@@ -68,7 +68,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
             var filtered = new ModuleFamily
             {
-                DisplayedName = family.DisplayedName + (family.MlineOnly ? MlineDomainDetector.Suffix : ""),
+                Name          = family.Name,
+                DisplaySuffix = family.DisplaySuffix + (family.MlineOnly ? MlineDomainDetector.Suffix : ""),
                 IsExpanded    = family.IsExpanded,
                 ElementId     = family.ElementId,
                 IsLicensed    = family.IsLicensed,
@@ -89,7 +90,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         {
             var needle = SearchNormalization.NormalizeForSearch(text);
             bool selfMatch = needle.Length == 0
-                || SearchNormalization.NormalizeForSearch(module.DisplayedName).Contains(needle);
+                || SearchNormalization.NormalizeForSearch(module.Name).Contains(needle);
 
             if (module is ModuleFamily family)
             {
@@ -132,8 +133,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             return null;
         }
 
-        // Klíč uzlu = "<tree>:<index-cesta>" (např. "main:5.2") - stabilní vůči přejmenování i suffixům
-        // z ModuleLaunchabilityCheck, na rozdíl od cesty přes DisplayedName.
+        // Klíč uzlu = "<tree>:<index-cesta>" (např. "main:5.2") - stabilní vůči přejmenování,
+        // na rozdíl od cesty přes názvy.
 
         internal static void SetExpandedRecursive(IModule module, bool expanded)
         {
@@ -167,31 +168,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         internal static Dictionary<string, ModuleLabel> BuildModuleLabels(IEnumerable<IEnumerable<IModule>> trees)
         {
             var labels = new Dictionary<string, ModuleLabel>();
-            foreach (var tree in trees)
-                foreach (var root in tree)
-                    Collect(root, "");
+            // První nález vyhrává - týž modul může být ve stromě víckrát (např. i v Oblíbených).
+            foreach (var exe in trees.SelectMany(tree => tree).SelectMany(Flatten))
+                labels.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
+                    new ModuleLabel(exe.TreePath, exe.LongName));
             return labels;
-
-            void Collect(IModule module, string prefix)
-            {
-                switch (module)
-                {
-                    case ModuleFamily family:
-                        var branch = prefix.Length == 0 ? family.DisplayedName : prefix + PathSeparator + family.DisplayedName;
-                        foreach (var child in family.NestedModules) Collect(child, branch);
-                        break;
-                    case ExecutableModule exe:
-                        // První nález vyhrává - týž modul může být ve stromě víckrát (např. i v Oblíbených).
-                        labels.TryAdd(ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam),
-                            new ModuleLabel(
-                                prefix.Length == 0 ? exe.DisplayedName : prefix + PathSeparator + exe.DisplayedName,
-                                exe.LongName));
-                        break;
-                }
-            }
         }
-
-        private const string PathSeparator = ExecutableModule.PathSeparator;
 
         internal static string ModuleKey(string exe, string form, string inputParam) => $"{exe}|{form}|{inputParam}";
 

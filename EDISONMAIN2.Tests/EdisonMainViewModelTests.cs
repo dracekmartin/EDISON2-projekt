@@ -36,11 +36,11 @@ public class EdisonMainViewModelTests
     {
         var mockTree = Substitute.For<IModuleTreeLoader>();
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main")
-            .Returns([new ExecutableModule { DisplayedName = "MainApp", ExecutablePath = "app.exe", FormName = "" }]);
+            .Returns([new ExecutableModule { Name = "MainApp", ExecutablePath = "app.exe", FormName = "" }]);
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "system")
-            .Returns([new ExecutableModule { DisplayedName = "SysTool", ExecutablePath = "sys.exe", FormName = "" }]);
+            .Returns([new ExecutableModule { Name = "SysTool", ExecutablePath = "sys.exe", FormName = "" }]);
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "partners")
-            .Returns([new ExecutableModule { DisplayedName = "Partner", ExecutablePath = "p.exe", FormName = "" }]);
+            .Returns([new ExecutableModule { Name = "Partner", ExecutablePath = "p.exe", FormName = "" }]);
 
         var vm = CreateVM(treeLoader: mockTree);
 
@@ -56,8 +56,8 @@ public class EdisonMainViewModelTests
     public void MlineOnlyModule_FollowsStationDomain_NotTheMachineRunningTheTest(bool isMlineDomain)
     {
         var mockTree = MainTreeWith(
-            new ExecutableModule { DisplayedName = "Pro M-line", ElementId = "1", ExecutablePath = "m.exe", MlineOnly = true },
-            new ExecutableModule { DisplayedName = "Pro všechny", ElementId = "2", ExecutablePath = "a.exe" });
+            new ExecutableModule { Name = "Pro M-line", ElementId = "1", ExecutablePath = "m.exe", MlineOnly = true },
+            new ExecutableModule { Name = "Pro všechny", ElementId = "2", ExecutablePath = "a.exe" });
 
         var vm = CreateVM(treeLoader: mockTree, station: NeutralStation with { IsMlineDomain = isMlineDomain });
 
@@ -71,11 +71,11 @@ public class EdisonMainViewModelTests
     {
         // Produkčně tu ModuleLaunchabilityCheck.Mark obarví stub a chybějící exe; dekorace patří stanici.
         var mockTree = MainTreeWith(
-            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe" },
-            new ExecutableModule { DisplayedName = "B", ExecutablePath = "b.exe" });
+            new ExecutableModule { Name = "A", ExecutablePath = "a.exe" },
+            new ExecutableModule { Name = "B", ExecutablePath = "b.exe" });
 
         var vm = CreateVM(treeLoader: mockTree,
-                          station: NeutralStation with { Decorate = m => ((ExecutableModule)m) with { Color = "#123456" } });
+                          station: NeutralStation with { Decorate = m => new ExecutableModule((ExecutableModule)m) { Color = "#123456" } });
 
         Assert.All(vm.MainMenuTree, m => Assert.Equal("#123456", ((ExecutableModule)m).Color));
     }
@@ -98,7 +98,7 @@ public class EdisonMainViewModelTests
     [Fact]
     public void Constructor_LeavesTreesEmpty_UntilInitializeAsync()
     {
-        var mockTree = MainTreeWith(new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "" });
+        var mockTree = MainTreeWith(new ExecutableModule { Name = "A", ExecutablePath = "a.exe", FormName = "" });
 
         var vm = CreateVM(treeLoader: mockTree, initialize: false);
 
@@ -110,7 +110,7 @@ public class EdisonMainViewModelTests
     [Fact]
     public async Task InitializeAsync_IsIdempotent()
     {
-        var mockTree = MainTreeWith(new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "" });
+        var mockTree = MainTreeWith(new ExecutableModule { Name = "A", ExecutablePath = "a.exe", FormName = "" });
         var vm = CreateVM(treeLoader: mockTree, initialize: false);
 
         await vm.InitializeAsync();
@@ -144,7 +144,7 @@ public class EdisonMainViewModelTests
         int mainCalls = 0;
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(_ =>
             ++mainCalls == 1
-                ? [new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" }]
+                ? [new ExecutableModule { Name = "Turnusy", ExecutablePath = "t.exe", FormName = "" }]
                 : throw new InvalidOperationException("server je mimo"));
         return mockTree;
     }
@@ -248,8 +248,8 @@ public class EdisonMainViewModelTests
         ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
             .Returns(MLRestMocks.Output("17"));
         var tree = MainTreeWith(
-            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "17" },
-            new ExecutableModule { DisplayedName = "B", ExecutablePath = "b.exe", FormName = "", ElementId = "9" });
+            new ExecutableModule { Name = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "17" },
+            new ExecutableModule { Name = "B", ExecutablePath = "b.exe", FormName = "", ElementId = "9" });
 
         var vm = CreateVM(treeLoader: tree, mlRest: ml);
 
@@ -264,7 +264,7 @@ public class EdisonMainViewModelTests
     {
         var ml = MockMLRest();   // GetUserDefaultForm nenastaven → start 0
         var tree = MainTreeWith(
-            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
+            new ExecutableModule { Name = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
         var vm = CreateVM(treeLoader: tree, mlRest: ml);
         var module = vm.MainMenuTree.Cast<ExecutableModule>().Single();
 
@@ -283,7 +283,7 @@ public class EdisonMainViewModelTests
         ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
             .Returns(MLRestMocks.Output("23"));
         var tree = MainTreeWith(
-            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
+            new ExecutableModule { Name = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
         var vm = CreateVM(treeLoader: tree, mlRest: ml);
         var module = vm.MainMenuTree.Cast<ExecutableModule>().Single();
         Assert.True(module.IsStartupWindow);   // předpoklad
@@ -420,7 +420,7 @@ public class EdisonMainViewModelTests
         // Seznam je doplněk hotové session: jeho selhání se ohlásí, ale shell nevyprázdní (legacy frmNoMDI.vb:3271).
         var popup = Substitute.For<IPopupDisplayer>();
         var vm = CreateVM(popup: popup,
-                          treeLoader: MainTreeWith(new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "" }),
+                          treeLoader: MainTreeWith(new ExecutableModule { Name = "A", ExecutablePath = "a.exe", FormName = "" }),
                           loadAllowedCompanies: _ => throw new InvalidOperationException("server je mimo"));
 
         await vm.SwitchCompanyAsync(1);
@@ -753,8 +753,8 @@ public class EdisonMainViewModelTests
         // Čerstvé instance při každém volání - simuluje přestavbu stromu při přepnutí firmy.
         mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(_ => new IModule[]
         {
-            new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
-            new ExecutableModule { DisplayedName = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
+            new ExecutableModule { Name = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
+            new ExecutableModule { Name = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
         });
         var vm = CreateVM(popup: mockPopup, treeLoader: mockTree);
         vm.TreeSearchText = "turnus";
@@ -771,8 +771,8 @@ public class EdisonMainViewModelTests
     private static EdisonMainViewModel SearchableVM() =>
         CreateVM(treeLoader: TreeLoaderWith(
         [
-            new ExecutableModule { DisplayedName = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
-            new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
+            new ExecutableModule { Name = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
+            new ExecutableModule { Name = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
         ]));
 
     [Fact]

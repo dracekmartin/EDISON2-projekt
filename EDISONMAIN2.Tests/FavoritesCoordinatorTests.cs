@@ -16,11 +16,11 @@ public class FavoritesCoordinatorTests
     private const string ShortcutsKey = "Shortcuts";
 
     private static ExecutableModule Exe(string id, string name = "M") =>
-        new() { DisplayedName = name, ElementId = id, ExecutablePath = id + ".exe" };
+        new() { Name = name, ElementId = id, ExecutablePath = id + ".exe" };
 
     private static ModuleFamily Family(string name, params IModule[] children)
     {
-        var f = new ModuleFamily { DisplayedName = name };
+        var f = new ModuleFamily { Name = name };
         foreach (var c in children) f.NestedModules.Add(c);
         return f;
     }

@@ -373,8 +373,7 @@
                     <!-- Skryje uzly nevyhovující vyhledávání (VM nastaví IsVisibleBySearch). -->
                     <Setter Property="Visibility" Value="{Binding IsVisibleBySearch, Converter={StaticResource BoolToVis}}"/>
                     <Setter Property="Cursor" Value="Hand"/>
-                    <!-- Bez toho hlásí WPF do automation Content, tedy celý record modulu
-                         („ExecutableModule { DisplayedName = …, FormName = …, ElementId = … }"). -->
+                    <!-- Bez toho hlásí WPF do automation ToString() datové položky, tedy jméno typu modulu. -->
                     <Setter Property="AutomationProperties.Name" Value="{Binding DisplayedName}"/>
                     <!-- Single-click: složka toggle expand, modul spustí (handler v code-behind). -->
                     <EventSetter Event="MouseLeftButtonUp" Handler="TreeItem_MouseLeftButtonUp"/>

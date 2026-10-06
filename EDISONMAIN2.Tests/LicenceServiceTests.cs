@@ -36,9 +36,9 @@ public class LicenceServiceTests
             .Returns(MLRestMocks.Output("1"));   // žádná AP
         var access = AccessLoader.Load(mlRest, lic, isAdmin: true);
 
-        var edison = new ExecutableModule { DisplayedName = "EDISON", ElementId = "2002", IsLicensed = false };
-        var orgStruktura = new ExecutableModule { DisplayedName = "Organizační struktura", ElementId = "147002", IsLicensed = false };
-        var users = new ExecutableModule { DisplayedName = "Uživatelé", ElementId = "5001", IsLicensed = false };
+        var edison = new ExecutableModule { Name = "EDISON", ElementId = "2002", IsLicensed = false };
+        var orgStruktura = new ExecutableModule { Name = "Organizační struktura", ElementId = "147002", IsLicensed = false };
+        var users = new ExecutableModule { Name = "Uživatelé", ElementId = "5001", IsLicensed = false };
 
         Assert.True(ModuleTreeState.IsAllowed(edison, lic, access));
         Assert.False(ModuleTreeState.IsAllowed(orgStruktura, lic, access));
@@ -48,11 +48,11 @@ public class LicenceServiceTests
         // Na úrovni složek (Správa systému): Společná evidence (package 0, ve fallback
         // Elements i v admin access) zůstane s EDISONem; Kmenová evidence (package 1)
         // je mimo licenci i AP → celá skrytá včetně Správce úloh z admin fallbacku.
-        var spolecna = new ModuleFamily { DisplayedName = "Společná evidence", ElementId = "0", IsLicensed = true };
+        var spolecna = new ModuleFamily { Name = "Společná evidence", ElementId = "0", IsLicensed = true };
         spolecna.NestedModules.Add(edison);
         spolecna.NestedModules.Add(orgStruktura);
-        var kmenova = new ModuleFamily { DisplayedName = "Kmenová evidence", ElementId = "1", IsLicensed = true };
-        kmenova.NestedModules.Add(new ExecutableModule { DisplayedName = "Správce úloh", ElementId = "40001", IsLicensed = false });
+        var kmenova = new ModuleFamily { Name = "Kmenová evidence", ElementId = "1", IsLicensed = true };
+        kmenova.NestedModules.Add(new ExecutableModule { Name = "Správce úloh", ElementId = "40001", IsLicensed = false });
 
         var filtered = ModuleTreeState.FilterFamily(spolecna, lic, access);
         Assert.NotNull(filtered);

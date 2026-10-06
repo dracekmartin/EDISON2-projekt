@@ -61,7 +61,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 // Pozor: ID je u sestav ČÍSLO (legacy GC<enum>.FromTypeToString dělá ((int)v).ToString()
                 // a zpětný převod nečíselný text tiše degraduje na 0 = tichý no-op tisku).
                 ID = shortcut.Id,
-                Name = shortcut.DisplayedName,
+                Name = shortcut.Name,
                 Form = int.TryParse(shortcut.ElementId, out var form) ? form : -1,
                 InputProFrm = shortcut.InputParam,
                 CallType = CallTypeOf(shortcut.Kind),

@@ -18,10 +18,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         private int _batchDepth;
         private bool _batchChanged;
 
-        // Cesta agendou do ToolTipu dlaždice. Delegát (ne mapa) - klíč `exe|forma|param` zná
-        // EdisonMainViewModel, plocha ho nemusí umět skládat podruhé.
-        private Func<ExecutableModule, string>? _treePathOf;
-
         // Uložené položky, které v aktuálním stromě neexistují (odebraná licence, hidden, mlineOnly).
         // Nezobrazují se, ale musí se uložit zpátky - jinak by je první změna členství tiše smazala.
         private readonly List<DesktopShortcutDto> _unresolved = [];
@@ -90,13 +86,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// vše v uložené položce. Chybějící pozice (<c>Col</c>/<c>Row</c>) → z pořadí.
         /// <paramref name="stored"/> <c>null</c> = load selhal: plocha zůstane prázdná a <see cref="IsLoaded"/> false.
         /// </summary>
-        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<DesktopShortcutDto>? stored,
-            Func<ExecutableModule, string>? treePathOf = null)
+        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<DesktopShortcutDto>? stored)
         {
             IsLoaded = stored is not null;
             stored ??= [];
             _all = allExecutables.ToList();
-            _treePathOf = treePathOf;
             foreach (var item in Items)
                 if (item.Module is { } module) module.IsFavorite = false;
             Items.Clear();
@@ -141,9 +135,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                     Kind = kind,
                     Id = dto.Id,
                     ElementId = dto.ElementId,
-                    DisplayedName = module?.DisplayedName ?? dto.Name,
+                    Name = module?.Name ?? dto.Name,
                     DisplayedLongName = module?.DisplayedLongName ?? dto.Name,
-                    TreePath = TreePathOf(module, module?.DisplayedLongName ?? dto.Name),
+                    TreePath = module?.TreePath ?? dto.Name,
                     ExecutablePath = module?.ExecutablePath ?? dto.Exe,
                     FormName = module?.FormName ?? dto.Form,
                     InputParam = module?.InputParam ?? dto.Input,
@@ -168,19 +162,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public ExecutableModule? Resolve(string elementId) =>
             _all.FirstOrDefault(e => e.ElementId == elementId);
 
-        // Cesta agendou pro ToolTip dlaždice; položka mimo strom (sestavy) padá na svůj název.
-        private string TreePathOf(ExecutableModule? module, string fallback)
-        {
-            var path = module is null || _treePathOf is null ? "" : _treePathOf(module);
-            return path.Length > 0 ? path : fallback;
-        }
-
         /// <summary>Přidá modul hlavní nabídky na plochu (idempotentní).</summary>
         public void Add(ExecutableModule module)
         {
             if (module.ElementId.Length == 0 || Contains(module.ElementId)) return;
             module.IsFavorite = true;
-            var shortcut = DesktopShortcut.ForModule(module, TreePathOf(module, module.DisplayedLongName));
+            var shortcut = DesktopShortcut.ForModule(module);
             (shortcut.Col, shortcut.Row) = NextFreeCell();
             Items.Add(shortcut);
             OnMembershipChanged();
