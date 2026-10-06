@@ -15,12 +15,18 @@ namespace EDControls.EDList;
 /// Služby čte per volání (<c>EDServices.Current</c> se mění s přepnutím session), hodnoty DP
 /// dostává parametrem - čte je view na UI vlákně.
 /// </summary>
-internal sealed class EDListController(Func<EDServices> services)
+internal sealed class EDListController(Func<EDServices> services, IRestCallRunner? runner = null)
 {
     internal const string PrefsScope = "EDControls.EDList";
+    private const string NotConfigured = "EDList: MLRest a CacheClass musí být nastaveny před použitím.";
 
-    // Serializace dotazů - sdílený MLRest komunikuje přes procesní globály ^||ML, takže dva
-    // souběžné dotazy z téhož EDListu by si vzájemně přepsaly vstup i výstup.
+    // Async dotazy na klonu: sdílenou instanci souběžně používají jiné seznamy i synchronní
+    // EDInputForm a RestStatus je per-instance (prohozená chyba / cizí výjimka).
+    private readonly IRestCallRunner _runner = runner
+        ?? new RestCallRunner(() => services().MLRest ?? throw new InvalidOperationException(NotConfigured));
+
+    // Řadí async dotazy téhož listu: sloupce souběžného InitializeListAsync musí dosednout
+    // dřív než řádky LoadListAsync (TD picker + EDFilter).
     private readonly SemaphoreSlim _queryGate = new(1, 1);
     private int _loadGeneration;
 
@@ -67,8 +73,8 @@ internal sealed class EDListController(Func<EDServices> services)
 
     public async Task InitializeListAsync(string cacheClass)
     {
-        var mlRest = EnsureConfigured(cacheClass);
-        ApplyColumns(await RunQueryAsync(() => mlRest.QueryOrThrow(cacheClass, "InitializeList", new CVar())));
+        EnsureConfigured(cacheClass);
+        ApplyColumns(await RunQueryAsync(rest => rest.QueryOrThrow(cacheClass, "InitializeList", new CVar())));
     }
 
     public void LoadList(string cacheClass, IReadOnlyDictionary<string, string>? filter)
@@ -81,11 +87,11 @@ internal sealed class EDListController(Func<EDServices> services)
 
     public async Task LoadListAsync(string cacheClass, IReadOnlyDictionary<string, string>? filter)
     {
-        var mlRest = EnsureConfigured(cacheClass);
+        EnsureConfigured(cacheClass);
         var input = EDListParsing.BuildLoadInput(filter);
         var generation = ++_loadGeneration;
 
-        var output = await RunQueryAsync(() => mlRest.QueryOrThrow(cacheClass, "LoadList", input));
+        var output = await RunQueryAsync(rest => rest.QueryOrThrow(cacheClass, "LoadList", input));
 
         if (generation != _loadGeneration) return;   // mezitím přišel novější požadavek
         ApplyRows(output);
@@ -103,14 +109,14 @@ internal sealed class EDListController(Func<EDServices> services)
     {
         var mlRest = services().MLRest;
         if (mlRest is null || string.IsNullOrEmpty(cacheClass))
-            throw new InvalidOperationException("EDList: MLRest a CacheClass musí být nastaveny před použitím.");
+            throw new InvalidOperationException(NotConfigured);
         return mlRest;
     }
 
-    private async Task<CVar> RunQueryAsync(Func<CVar> query)
+    private async Task<CVar> RunQueryAsync(Func<IMLRest, CVar> query)
     {
         await _queryGate.WaitAsync();
-        try { return await Task.Run(query); }
+        try { return await _runner.RunAsync(query); }
         finally { _queryGate.Release(); }
     }
 

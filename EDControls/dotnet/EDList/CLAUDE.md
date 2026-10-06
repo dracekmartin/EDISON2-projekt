@@ -7,8 +7,8 @@ standardní scénář. Caché builder `ALVA.EDControls.EDList.List`, referenčn�
 a testovací okno `EDISONMAIN2/dotnet/Windows/EDListTestWindow/`.
 
 ⚠️ **Preferuj `InitializeListAsync()` / `LoadListAsync(filter)`.** Synchronní varianty drží UI
-vlákno po celý round-trip - na pomalé lince zmrazí **celou aplikaci**. Async varianty navíc
-serializují souběžné dotazy (sdílený `MLRest` jede přes `^||ML`) a odpověď staršího dotazu už
+vlákno po celý round-trip - na pomalé lince zmrazí **celou aplikaci**. Async varianty jedou na **klonu**
+MLRest (`IRestCallRunner`), dotazy téhož listu řadí (sloupce před řádky) a odpověď staršího dotazu už
 nedosedne - rychlé přepínání filtru nezamíchá řádky. Filtrovaný seznam přes `EDFilter`: EDList je
 jeho `IEDFilterTarget` (`ApplyFilterAsync` → `LoadListAsync`), reload si řídí filtr sám a host
 nemusí dělat nic; ruční trigger je `EDFilter.RefreshAsync()`.

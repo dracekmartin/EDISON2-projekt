@@ -1054,7 +1054,13 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A48 · Async EDList a služby TD volají MLRest přes `Task.Run` na sdílené instanci bez klonu
 
-- [ ] **Stav:** otevřeno
+- [ ] **Stav:** otevřeno, část EDControls vyřešena (2026-10-06) - `EDListController` dostal volitelný `IRestCallRunner`
+  (default `RestCallRunner` nad aktuálním `EDServices.MLRest`), `InitializeListAsync`/`LoadListAsync` jedou na klonu;
+  `_queryGate` zůstal kvůli pořadí (sloupce před řádky souběžného `LoadListAsync`), generation guard beze změny,
+  sync varianty dál na UI vlákně nad sdílenou instancí. Veřejné API beze změny. Test `EDListLoadTests.TwoLists_ConcurrentAsyncLoads_QueryOnlyClones`
+  (thread-safe fake, 2 seznamy × init + 5 loadů: 12 klonů, 0 dotazů na sdílené instanci; ověřeno mutací). Klon tím
+  přebírá mezeru vzoru `RestCallRunner` (zánik session na klonu aplikaci neukončí), vlastník ji přijal, zapsáno jako A49.
+  Zbývá část TD (`CacheTemplateService`, `CacheAgendaRegistry`, pravidlo R1) u vlastníka TD.
 - **P2 · S** (EDControls) / M (TD) · Závisí na: - · Blokuje: - · Původ: nový (2026-10-06), skeptik u A38, ověřeno v kódu
 - **Problém:** Pravidlo „souběžné requesty jen na klonech" (root `CLAUDE.md`, `RestStatus` je per-instance) drží
   `RestCallRunner`, ale async cesta EDListu a služby TemplateDesigneru volají `Query` přes holý `Task.Run` nad
@@ -1073,6 +1079,27 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 - **Hotovo když:** test controlleru s thread-safe fake `IMLRest`: N souběžných `LoadListAsync` dvou listů → `With()` per
   dotaz, nula `Query` na sdílené instanci; v TD totéž pro `CacheTemplateService`.
 - **Omezení:** veřejné API EDList jen aditivně; TD je mimo scope review, jeho část a pravidlo R1 patří vlastníkovi TD.
+
+### A49 · Klon z `RestCallRunner` nespustí ukončení při zániku session ani nesouladu verze
+
+- [ ] **Stav:** otevřeno (2026-10-06, skeptik u A48, ověřeno v kódu; vlastník přijal A48 s touto mezerou)
+- **P2 · S-M** · Závisí na: - · Blokuje: - · Původ: nový (2026-10-06)
+- **Problém:** `MLRest` vyvolává `EdisonActivityFailed` (zaniklý ACTIVITY zámek) a `EdisonVersionFailed` na instanci,
+  která request poslala. Ukončení aplikace ale visí jen na sdílené instanci; klon z `With()` (`RestCallRunner`)
+  odběratele nemá a zdědí `CacheLocks=1`, takže server mu zámek kontroluje a chybu vrátí do prázdna.
+- **Důkaz:**
+  - `EDControls/dotnet/MLRestAdapter.cs:53-74` `With()` = nový `MLRest` bez přenesených událostí; `RestCallRunner.cs:23` `call(current.With())`.
+  - Odběr jen na sdílené instanci: `TemplateDesigner/dotnet/App.xaml.cs:78-89`, `EDISONMAIN2/dotnet/Startup/AppBootstrapper.cs:501-512`.
+  - Vyvolání v legacy `MLRest` (repo EDISON) `MLRest/MLRest/MLRest.cs:25-35,368-369`.
+  - Klon téže session (bez explicitního `cacheLocks`) používají `EDListController` (A48), `CacheUserPrefsService`, `EdisonMainViewModel._restRunner`.
+- **Dopad:** session shellu skončí, TD hostovaný ze shellu otevře picker: `InitializeListAsync` vyhodí obecnou výjimku
+  „ACTIVITY: Lock exist failed!" místo hlášky „Spojení se serverem bylo přerušeno" a ukončení; TD skončí až při
+  dalším dotazu na sdílené instanci. V shellu totéž pro pozaďové dotazy a preference (zánik zámku jinak hlídá `LogoutWatcher`).
+- **Návrh opravy:** (a) `MLRestAdapter.With()` bez explicitních parametrů přepošle obě události na původní instanci
+  (reflexe do `MLRest`, test na skutečném `MLRest`); (b) události na úrovni `IMLRest`/adapteru a odběr v TD a shellu
+  přes adapter; (c) nechat a spoléhat na další dotaz na sdílené instanci. Klony s `cacheLocks: 0/2` (`SessionLogout`,
+  `LicenceVerifier`, `LogoutWatcher`) zůstávají beze změny, server u nich zámek nekontroluje.
+- **Omezení:** `MLRest` je knihovna z repa EDISON (`C:\Edison\MLRest.dll`); varianta (b) mění odběr v TD (u vlastníka TD).
 
 ## P3
 

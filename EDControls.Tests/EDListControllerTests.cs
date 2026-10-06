@@ -26,6 +26,7 @@ public class EDListControllerTests
         var services = new EDServices(_mock, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>())
         { UserPrefs = _prefs };
         _controller = new EDListController(() => services);
+        _mock.With(Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>()).Returns(_mock);   // klon = tentýž mock
         _mock.QueryOrThrow(Cls, "InitializeList", Arg.Any<CVar>()).Returns(Output("""[{"key":"name","label":"Název"}]"""));
     }
 
