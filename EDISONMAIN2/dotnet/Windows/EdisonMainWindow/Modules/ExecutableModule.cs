@@ -105,7 +105,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>
         /// Uživatelovo „oblíbené" označení (★). Přepíná se in-place, takže nevyžaduje rebuild stromu.
         /// Instance se sdílí mezi hlavním stromem, záložkou Oblíbené, žebříčkem Používané i dlaždicí
-        /// na ploše (<see cref="DesktopShortcut.Module"/>) → přepnutí jednou se projeví všude.
+        /// na ploše (<see cref="EDISONMAIN2.Desktop.DesktopShortcut.Module"/>) → přepnutí jednou se projeví všude.
         /// </summary>
         public bool IsFavorite
         {

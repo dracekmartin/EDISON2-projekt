@@ -1,4 +1,4 @@
-namespace EDISONMAIN2.MiniApps;
+namespace EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
 
 /// <summary>
 /// URL widgetu podpora.m-line.cz na jednom místě - sdílí ho fixní pruh podpory v shellu

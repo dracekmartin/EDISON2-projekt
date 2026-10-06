@@ -4,6 +4,7 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDControls.UserPrefs;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;

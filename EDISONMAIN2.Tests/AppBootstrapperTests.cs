@@ -3,6 +3,7 @@ using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
@@ -535,7 +536,7 @@ public class AppBootstrapperTests
         var providers = AppBootstrapper.MiniAppProviders(new ModuleShortcutsService(), devMiniApps);
 
         Assert.Equal(devSamples, providers.OfType<MiniApps.DevSampleMiniApps>().Count());
-        Assert.IsType<MiniApps.DesktopMiniAppProvider>(providers[0]);   // pořadí = pořadí skupin v menu
+        Assert.IsType<DesktopMiniAppProvider>(providers[0]);   // pořadí = pořadí skupin v menu
     }
 
     [Fact]

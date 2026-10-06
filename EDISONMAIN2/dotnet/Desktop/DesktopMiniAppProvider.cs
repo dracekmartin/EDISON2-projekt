@@ -1,7 +1,6 @@
 using EDControls.MiniApps;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
-namespace EDISONMAIN2.MiniApps;
+namespace EDISONMAIN2.Desktop;
 
 /// <summary>
 /// Registruje miniaplikaci „Plocha" (launcher zástupců). Sdílí

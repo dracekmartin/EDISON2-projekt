@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Desktop
 {
     /// <summary>
     /// Sdílený zdroj pravdy pro plochu (dlaždice zástupců) - používá ho miniaplikace „Plocha"

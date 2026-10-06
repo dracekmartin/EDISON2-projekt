@@ -9,19 +9,11 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - **Plocha je `MiniAppDescriptor.Pinned`**: bez křížku a bez odtržení (`CanClose/CanFloat/CanMove`),
   picker ji nenabízí, `CloseClosable` ji přeskočí (`CloseAll` pro shutdown/reset ne - programové
   `Close()` dock pustí i tak). `CanClose` se při restore bere z deskriptoru, ne z uloženého XML,
-  a shell Plochu po obnově **doplní** (`EnsureDesktopOpen`) - starý layout ji mít nemusí.
-- Widgety `podpora.m-line.cz` v docku **nejsou** - kanál IT → uživatelé nese pruh v shellu
-  (`EdisonMainWindow`, `SupportStrip`) mimo dock, aby ho nešlo zavřít; garanci drží podlaha
-  `SupportRow.MinHeight`, plochu naopak `ShellSplitLimits`. `EDISON_SCREENSHOT_MODE=1` nahradí
-  widgety neutrálním popiskem (anonymizované screenshoty, WebView2 se vůbec nevytvoří). Hostí se
-  přes `FontZoomWebView : WebView2` - **HWND, ne composition**, ta crashuje na dragu tabu do
-  plovoucího okna. Airspace: WPF veil dimu HWND nepokryje, kartu „Akce probíhá" nad ním kreslí
-  owned okno ([EDActionInProgress/CLAUDE.md](../../../EDControls/dotnet/EDActionInProgress/CLAUDE.md)).
-- Font widgetu: `ZoomFactor = FontService.BodySize / 14` (základní text je 14 CSS px), rodina
-  se do HTML nepropaguje. Dark mode widget sám neumí (natvrdo `bg-white`) - injektuje se
-  inverzní CSS filtr (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému
-  záblesku. Chrome docku EDTheme tokeny nečte: dark řeší swap `DockManager.Theme` na VS2013
-  Light/Dark, tab strip navrch dotahuje `DockThemeBrushes`.
+  a shell připnuté po obnově **doplní** (`EnsurePinnedOpen`) - starý layout je mít nemusí. Shell je
+  pozná podle `Pinned`, id Plochy zná jen `Desktop/DesktopMiniAppProvider`, který ji registruje.
+- Widgety `podpora.m-line.cz` v docku **nejsou**, pruh podpory má vlastní
+  [CLAUDE.md](../Windows/EdisonMainWindow/SupportStrip/CLAUDE.md). Chrome docku EDTheme tokeny
+  nečte: dark řeší swap `DockManager.Theme` na VS2013 Light/Dark, tab strip navrch dotahuje `DockThemeBrushes`.
 - **Vlastní okna docku (overlay s drop terči, plovoucí okna) nikdo zvenčí nesmí zavírat ani
   k nim věšet owned okna** (proč: `FrameworkWindows`, [EDViewModel/CLAUDE.md](../../../EDControls/dotnet/EDViewModel/CLAUDE.md)).
   Odtržené mini-apps zavírej přes `document.Close()` (`MiniAppManager`), ne přes okno.

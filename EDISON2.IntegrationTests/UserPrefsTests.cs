@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using ALWA.SYS;
 using EDControls;
 using EDControls.UserPrefs;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
 namespace EDISON2.IntegrationTests;

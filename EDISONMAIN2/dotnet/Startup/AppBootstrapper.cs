@@ -10,6 +10,7 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDControls.UserFonts;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.LegacyMiniApps;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.ChangelogWindow;

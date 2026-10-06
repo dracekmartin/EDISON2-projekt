@@ -77,11 +77,11 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
   `SaveExpansionAsync` - scope je **refcountovaný** (cesty se vnořují, plochý bool by vnitřní blok
   odemkl dřív). `SelectedModule` plní code-behind (`TreeView.SelectedItem` nejde bindovat).
 
-Mini-apps (AvalonDock, pruh podpory, persistence layoutu): [dotnet/MiniApps/CLAUDE.md](dotnet/MiniApps/CLAUDE.md).
+Mini-apps (AvalonDock, layout): [MiniApps](dotnet/MiniApps/CLAUDE.md), pruh podpory: [SupportStrip](dotnet/Windows/EdisonMainWindow/SupportStrip/CLAUDE.md).
 
 ## Plocha se zástupci
 
-Model, oba kanály k legacy modulům a jejich pasti: [docs/zastupci-na-plose.md](docs/zastupci-na-plose.md).
+Kód v `dotnet/Desktop/`. Model, oba kanály k legacy modulům a jejich pasti: [docs/zastupci-na-plose.md](docs/zastupci-na-plose.md).
 Plocha je **nadmnožina oblíbených** (★ ve stromu umí jen `MenuModule`). Položka, kterou aktuální
 strom nezná (licence, `hidden`), se **nezobrazí, ale uloží zpátky** - jinak by ji první změna
 členství tiše smazala. Název + cesta dlaždice se odvozují ze stromu, do `DesktopShortcutDto` se

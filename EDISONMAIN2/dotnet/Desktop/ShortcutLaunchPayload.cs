@@ -2,7 +2,7 @@ using System.IO;
 using System.Text;
 using System.Xml.Serialization;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Desktop
 {
     /// <summary>
     /// Wire tvar zástupce pro 14. argument launch kontraktu.

@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using EDISONMAIN2.MiniApps;
+using EDISONMAIN2.Desktop;
 using EDTesting;
 using Size = System.Windows.Size;
 using Point = System.Windows.Point;

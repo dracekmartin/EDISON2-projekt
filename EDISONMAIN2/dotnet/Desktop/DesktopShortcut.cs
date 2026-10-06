@@ -1,6 +1,7 @@
 using System.ComponentModel;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Desktop
 {
     /// <summary>
     /// Druh položky plochy. Zrcadlí legacy <c>DesktopShortcutItemType</c>

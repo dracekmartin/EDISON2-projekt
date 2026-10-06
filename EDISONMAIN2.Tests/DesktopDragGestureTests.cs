@@ -1,4 +1,4 @@
-using EDISONMAIN2.MiniApps;
+using EDISONMAIN2.Desktop;
 using Point = System.Windows.Point;
 
 namespace EDISONMAIN2.Tests;

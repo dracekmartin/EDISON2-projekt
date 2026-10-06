@@ -10,7 +10,7 @@ using DataObject = System.Windows.DataObject;
 using DragDrop = System.Windows.DragDrop;
 using DragDropEffects = System.Windows.DragDropEffects;
 
-namespace EDISONMAIN2.MiniApps;
+namespace EDISONMAIN2.Desktop;
 
 public partial class DesktopMiniAppView : UserControl
 {
