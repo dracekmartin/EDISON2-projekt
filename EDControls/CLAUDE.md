@@ -86,6 +86,8 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
   dávka jede proti téže session.
 - `LegacyOutput` - jediné místo produkčního kódu, které zná `object[]` výstup legacy endpointů (index 0 =
   ERR slot, řádky `klíč{del}…` od 1); nový legacy endpoint ho použije místo vlastní smyčky.
+- `ColorValue` - jediná definice barvy na drátě (hex `#AARRGGBB`, legacy `R;G;B` EDListu; formulář jen
+  hex, TD jiný tvar neumí); konvertory se liší jen fallbackem. Nový formát patří sem, ne do konvertoru.
 - `EdisonLaunchArgs` - jediný kodek launch kontraktu shellu (`Format` producent, `TryParse` konzument,
   pozice `Field`); **zrcadlí `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) -
   pořadí a počet polí musí zůstat synchronní, vzorový argv je `launch-args.fixture.txt` v obou repech

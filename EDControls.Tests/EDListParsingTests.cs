@@ -180,14 +180,18 @@ public class EDListParsingTests
         Assert.Equal(expected, EDListParsing.ParseAlign(wire));
     }
 
+    /// <summary>COLOR sloupec bere hex jako formulář (nové seznamy) i legacy R;G;B (stávající LoadList).</summary>
     [Fact]
-    public void RgbConverter_ParsesSemicolonTriplet_ElseTransparent()
+    public void ColorConverter_ParsesHexAndSemicolonTriplet_ElseTransparent()
     {
-        var converter = new RgbStringToBrushConverter();
+        var converter = new ListColorToBrushConverter();
 
         var brush = Assert.IsType<SolidColorBrush>(
             converter.Convert("255;128;0", typeof(Brush), null!, CultureInfo.InvariantCulture));
         Assert.Equal(Color.FromRgb(255, 128, 0), brush.Color);
+        var hex = Assert.IsType<SolidColorBrush>(
+            converter.Convert("#80FF8000", typeof(Brush), null!, CultureInfo.InvariantCulture));
+        Assert.Equal(Color.FromArgb(0x80, 255, 128, 0), hex.Color);
 
         Assert.Same(Brushes.Transparent,
             converter.Convert("255;128", typeof(Brush), null!, CultureInfo.InvariantCulture));

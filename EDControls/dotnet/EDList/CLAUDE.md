@@ -33,7 +33,7 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 - Filtr: pojmenované klíče `^||ML("IN","filter","klíč")`, ne poziční (viz EDFilter/CLAUDE.md).
 - Hodnoty vždy interní formát jako string: NUMBER s **tečkou**, DATE ISO-8601,
   DATETIME `yyyy-MM-ddTHH:mm:ss`, BOOL `"1"`/`"0"`, HHMM int (`830` = 08:30),
-  COLOR `"R;G;B"`. Zobrazení řídí `type` + `format` na klientovi.
+  COLOR hex `#AARRGGBB` jako formulář (legacy `"R;G;B"` klient čte dál). Zobrazení řídí `type` + `format`.
 
 ## Pasti
 

@@ -45,7 +45,7 @@ fi
 
 # Narrow the Cache run to the packages whose sources changed.
 # Dependency-aware: production .cls in shared EDControls/EDTesting can break any
-# downstream suite -> run all. Test-only .cls (EDControls Tests/ folder) can't break
+# downstream suite -> run all. Test-only .cls (EDControls/EDTesting Tests/ folder) can't break
 # anyone else -> just its own package (the TemplateDesigner suite costs minutes).
 # EDISONMAIN2/TemplateDesigner are leaves -> only their own.
 # CACHE_ARGS empty => run-cache-tests.ps1 default (all packages) = safe fallback.
@@ -59,6 +59,7 @@ if [ "$run_cache" = "1" ] && [ -n "$CHANGED" ]; then
     for f in $(echo "$CHANGED" | grep -iE '\.cls$'); do
         case "$f" in
             EDControls/CACHE/ALVA/EDControls/Tests/*) add_pkg "ALVA.EDControls.Tests" ;;
+            EDTesting/CACHE/ALVA/EDTesting/Tests/*)   add_pkg "ALVA.EDTesting.Tests" ;;
             EDISONMAIN2/*)      add_pkg "ALVA.EDISONMAIN2.Tests" ;;
             TemplateDesigner/*) add_pkg "ALVA.TemplateDesigner.Tests" ;;
             *)                  run_all_cache=1 ;;
@@ -137,6 +138,11 @@ if [ "$run_cache" = "1" ]; then
         report_failure "Cache tests" "$CACHE_LOG" "sed -n '/^Failures:/,\$p' '$CACHE_LOG'"
     fi
     echo "    Cache tests passed."
+    # Skipped tests ($$$AssertSkipped) don't block the push - at least show which and why.
+    if grep -q '^Skipped:' "$CACHE_LOG"; then
+        echo "    Skipped (push continues):"
+        sed -n '/^Skipped:/,/^$/p' "$CACHE_LOG" | grep -v '^Skipped:' | sed 's/^/  /'
+    fi
 else
     echo "==> [Cache] skipped (no .cls in pushed range)"
 fi

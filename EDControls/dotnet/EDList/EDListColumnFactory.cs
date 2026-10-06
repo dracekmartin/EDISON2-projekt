@@ -91,7 +91,7 @@ internal static class EDListColumnFactory
             rect.SetValue(Rectangle.HeightProperty, 16.0);
             rect.SetValue(Rectangle.WidthProperty, 30.0);
             rect.SetBinding(Rectangle.FillProperty,
-                new Binding($"[{col.Key}]") { Converter = new RgbStringToBrushConverter() });
+                new Binding($"[{col.Key}]") { Converter = new ListColorToBrushConverter() });
             return new DataGridTemplateColumn
             {
                 Header = col.Label,

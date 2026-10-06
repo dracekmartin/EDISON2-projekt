@@ -18,7 +18,7 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
     d list.AddColumn("pocet",        "Počet km",   $$$ListColumnTypeNumber,    90, $$$ListAlignRight, 1, "N1")
     d list.AddColumn("datum",        "Datum",      $$$ListColumnTypeDate,     100)
     d list.AddColumn("posledniZmena","Naposledy",  $$$ListColumnTypeDateTime, 140) ; DATETIME test
-    d list.AddColumn("barva",        "Barva",      $$$ListColumnTypeColor,     60) ; COLOR test (R;G;B)
+    d list.AddColumn("barva",        "Barva",      $$$ListColumnTypeColor,     60) ; COLOR test (hex, poslední řádek legacy R;G;B)
 
     d list.WriteColumnsToOut()
     q 1
@@ -36,7 +36,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
     s row.pocet          = "142.5"
     s row.datum          = "2024-03-15"
     s row.posledniZmena  = "2024-03-15T08:30:00"
-    s row.barva          = "255;128;0"                            ; oranžová
+    s row.barva          = "#FFFF8000"                            ; oranžová
 
     s row = list.AddRow("2")
     s row.rz             = "2C3 7890"
@@ -46,7 +46,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
     s row.pocet          = "98"
     s row.datum          = "2024-03-16"
     s row.posledniZmena  = "2024-03-16T14:22:15"
-    s row.barva          = "0;128;255"                            ; modrá
+    s row.barva          = "#FF0080FF"                            ; modrá
 
     s row = list.AddRow("3")
     s row.rz             = "3D4 1122"
@@ -56,7 +56,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
     s row.pocet          = "210.75"
     s row.datum          = "2024-03-17"
     s row.posledniZmena  = "2024-03-17T19:05:48"
-    s row.barva          = "128;0;128"                            ; fialová
+    s row.barva          = "#FF800080"                            ; fialová
 
     s row = list.AddRow("4")
     s row.rz             = "4E5 9988"
@@ -66,7 +66,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
     s row.pocet          = "45.2"
     s row.datum          = "2024-03-18"
     s row.posledniZmena  = "2024-03-18T11:15:33"
-    s row.barva          = "0;180;0"                              ; zelená
+    s row.barva          = "#FF00B400"                            ; zelená
 
     s row = list.AddRow("5")
     s row.rz             = "5F6 4433"
@@ -76,7 +76,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
     s row.pocet          = "0"
     s row.datum          = "2024-03-19"
     s row.posledniZmena  = "2024-03-19T22:00:00"
-    s row.barva          = "200;200;200"                          ; šedá
+    s row.barva          = "200;200;200"                          ; šedá, legacy R;G;B
 
     d list.WriteRowsToOut()
     q 1

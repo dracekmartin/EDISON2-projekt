@@ -6,8 +6,9 @@ Class ALVA.EDTesting.TestRunner Extends %RegisteredObject
 {
 
 /// IN:  package — name nebo prefix (např. "ALVA.EDISONMAIN2.Tests")
-/// OUT: passed (count), failed (count), total (count),
-///      failures(i, "class"/"method"/"message") pro každý failing test
+/// OUT: passed (count), failed (count), skipped (count), total (count),
+///      failures(i, "class"/"method"/"message") pro každý failing test,
+///      skips(i, "class"/"method"/"message") pro každý přeskočený ($$$AssertSkipped, message = důvod)
 ClassMethod RunPackage(ByRef sys As %String) As %Status
 {
 	$$$Init
@@ -42,36 +43,44 @@ ClassMethod RunPackage(ByRef sys As %String) As %Status
 		// stojí desetinu sekundy. Poslední kandidát je prázdné jméno, tedy původní běh přes
 		// všechny složky: pomalý, ale správný, takže runner nikdy neskončí tichým 0/0.
 		set kandidati = ..Sady($get(^UnitTestRoot))_$listbuild("")
-		set (passed, failed) = 0
-		kill selhani
+		set (passed, failed, skipped) = 0
+		kill selhani, preskoceno
 		set kptr = 0
 		while $listnext(kandidati, kptr, sada) {
 			set sada = $get(sada)
-			kill selhani
-			set (passed, failed) = 0
-			do ..SpustSadu(classList, sada, .nase, .passed, .failed, .selhani)
-			quit:(passed+failed)>0
+			kill selhani, preskoceno
+			set (passed, failed, skipped) = 0
+			do ..SpustSadu(classList, sada, .nase, .passed, .failed, .skipped, .selhani, .preskoceno)
+			quit:(passed+failed+skipped)>0
 		}
 
 		set ^||ML("OUT","passed") = passed
 		set ^||ML("OUT","failed") = failed
-		set ^||ML("OUT","total") = (passed + failed)
-		set fi = ""
-		for {
-			set fi = $order(selhani(fi))
-			quit:fi=""
-			set ^||ML("OUT","failures",fi,"class") = $listget(selhani(fi), 1)
-			set ^||ML("OUT","failures",fi,"method") = $listget(selhani(fi), 2)
-			set ^||ML("OUT","failures",fi,"message") = $listget(selhani(fi), 3)
-		}
+		set ^||ML("OUT","skipped") = skipped
+		set ^||ML("OUT","total") = (passed + failed + skipped)
+		do ..ZapisVysledky("failures", .selhani)
+		do ..ZapisVysledky("skips", .preskoceno)
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret ret
 }
 
+/// OUT(uzel, i, "class"/"method"/"message") z $listbuild(třída, metoda, hláška).
+ClassMethod ZapisVysledky(uzel As %String, ByRef vysledky) [ Internal ]
+{
+	set i = ""
+	for {
+		set i = $order(vysledky(i))
+		quit:i=""
+		set ^||ML("OUT",uzel,i,"class") = $listget(vysledky(i), 1)
+		set ^||ML("OUT",uzel,i,"method") = $listget(vysledky(i), 2)
+		set ^||ML("OUT",uzel,i,"message") = $listget(vysledky(i), 3)
+	}
+}
+
 /// Spustí všechny třídy v jedné %UnitTest sadě a sečte výsledky, které tím vznikly.
 /// Prázdná `sada` = běh přes všechny složky pod kořenem (původní, mnohonásobně dražší chování).
-ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef passed, ByRef failed, ByRef selhani) [ Internal ]
+ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef passed, ByRef failed, ByRef skipped, ByRef selhani, ByRef preskoceno) [ Internal ]
 {
 	set baseIndex = +$order(^UnitTest.Result(""), -1)
 
@@ -97,7 +106,7 @@ ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef pas
 	// Pojistka: kdyby RunTest přesto něco do ^||ML zapsal.
 	kill ^||ML
 
-	set failIdx = 0
+	set (failIdx, skipIdx) = 0
 	kill seen
 
 	// Iteruj všechny TestInstance indexy vytvořené naším batch.
@@ -131,12 +140,17 @@ ClassMethod SpustSadu(classList As %List, sada As %String, ByRef nase, ByRef pas
 					continue:$data(seen(key))
 					set seen(key) = ""
 
-					if (method.Status = 1) {
+					set vysledek = ..Vysledek(method.Status)
+					if (vysledek = "passed") {
 						set passed = passed + 1
+					} elseif (vysledek = "skipped") {
+						set skipped = skipped + 1
+						set skipIdx = skipIdx + 1
+						set preskoceno(skipIdx) = $listbuild(case.Name, method.Name, ..AssertMessage(method, 2))
 					} else {
 						set failed = failed + 1
 						set failIdx = failIdx + 1
-						set selhani(failIdx) = $listbuild(case.Name, method.Name, ..FirstFailureMessage(method))
+						set selhani(failIdx) = $listbuild(case.Name, method.Name, ..FailureMessage(method))
 					}
 				}
 			}
@@ -183,16 +197,30 @@ ClassMethod FindTestClasses(packagePrefix As %String) As %List [ Internal ]
 	quit list
 }
 
-/// Najde první failing assertion v TestMethod a vrátí její Description.
-ClassMethod FirstFailureMessage(method As %UnitTest.Result.TestMethod) As %String [ Internal ]
+/// Stav TestMethod → "passed" (1) / "skipped" (2, $$$AssertSkipped) / "failed" (0 i cokoli neznámého -
+/// pochybný stav nesmí pustit push). Selhaný assert i výjimka mají v %UnitTest přednost před skipem.
+ClassMethod Vysledek(status As %Integer) As %String [ Internal ]
 {
-	set assertCount = method.TestAsserts.Count()
-	for a = 1:1:assertCount {
+	quit $case(status, 1:"passed", 2:"skipped", :"failed")
+}
+
+/// Hláška selhání: první neúspěšný assert, jinak text výjimky - tu %UnitTest zapisuje do metody
+/// (ErrorDescription), ne do assertu, takže by selhání výjimkou zůstalo bez hlášky.
+ClassMethod FailureMessage(method As %UnitTest.Result.TestMethod) As %String [ Internal ]
+{
+	set message = ..AssertMessage(method, 0)
+	quit $select(message'="":message, 1:method.ErrorDescription)
+}
+
+/// Description první assertion s daným stavem (0 = selhání, 2 = důvod přeskočení), jinak "".
+ClassMethod AssertMessage(method As %UnitTest.Result.TestMethod, status As %Integer) As %String [ Internal ]
+{
+	set message = ""
+	for a = 1:1:method.TestAsserts.Count() {
 		set assert = method.TestAsserts.GetAt(a)
-		if (assert.Status = 0) { quit }
+		if (assert.Status = status) { set message = assert.Description  quit }
 	}
-	if ('$data(assert) || (assert.Status '= 0)) { quit "" }
-	quit assert.Description
+	quit message
 }
 
 }
