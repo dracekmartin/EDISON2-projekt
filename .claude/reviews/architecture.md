@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 43 / 49**
+**Hotovo: 44 / 49**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -1381,7 +1381,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A37 · Lokální stav shellu je per Windows-účet × IDFa, ostatní per Edison-uživatel × IDFa 🔸
 
-- [x] **Stav:** vyřešeno (2026-10-06, vlna 3) - stav docku (`MiniAppLayouts`, `TreeWidths`, `SupportStripHeights`)
+- [x] **Stav:** vyřešeno 8bb667bb (2026-10-06, vlna 3) - stav docku (`MiniAppLayouts`, `TreeWidths`, `SupportStripHeights`)
   má klíč `server:port|idfa|login` malými písmeny (`DockScope` v `MiniAppSessionController`, VM ho skládá z `Rest`);
   čtení padá zpět na starý klíč jen IDFa, zapisuje se jen nový (starý zůstává ostatním uživatelům stanice jako
   fallback, poškozený se smaže). Port je v klíči, „Připojit k databázi" rozlišuje i REST port. `ShellWindowBounds`
