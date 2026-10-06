@@ -8,7 +8,7 @@
 | **Mimo scope** | `TemplateDesigner*` (jen jako konzument EDControls), `ServiceGtfsRt`, `EDTesting`, `tools/`, `EDISON2.IntegrationTests` (jen jako pokrytí kontraktů) |
 | **Odvozeno** | 2026-10-01: otevřené nálezy ověřili 3 read-only subagenti (shell, EDControls, kontrakty a update) proti HEAD, nový kód deploye (Startup, licence, updater, připojení) prošel ručně; každá změna stavu ověřena citací kódu. 2026-09-20: 4 subagenti na ~220 souborů, EDUPDATE2 ručně. |
 
-**Hotovo: 31 / 47**
+**Hotovo: 38 / 48**
 
 **Běh 2026-10-01.** Od `c04d0d6f` přibylo 213 commitů, většinou deploy shellu (nálezy I01-I25
 v [2026-09-29-integrace-shellu.md](2026-09-29-integrace-shellu.md)). Žádný otevřený nález se
@@ -83,6 +83,7 @@ nepřekrývají, takže můžou běžet současně.
 | S8 EDInputForm | A15 odloženo k diskusi (implementace ve větvi `odlozeno/a15-async-edinputform`) → A27 část formulář (`Format`, `UserHidden`) | `EDInputForm/*`, `Form.cls`, `EDIFExample.cls`, jejich testy | 2 | chat |
 | S9 Infrastruktura EDControls | A39 → A40 → A41 🔸 | `UserFonts/*`, `EDTheme/UserThemePreference.cs`, `ErrorReporting/*`, `PopupDisplayer.cs`, `RelayCommand.cs`, `AsyncRelayCommand.cs`, jejich testy | 2 | chat |
 | S1 pokračuje | A9 (s S2) → A5 kroky 4-5 → A21 → A29 → A30 → A31 🔸 → A32 🔸 | VM, `Modules/*`, `MiniApps/Desktop*`; A9 i `SessionFactory`, `CompanySwitcher`, `LicenceVerifier` | 2 | chat |
+| S6 pokračuje | A48 část EDControls (`EDListController` přes `IRestCallRunner`); část TD a pravidlo R1 patří TD | `EDList/EDListController.cs`, jeho testy | 3 | chat |
 | Úklid | A36, A33, A22 + A25 🔸 + A38 (jeden publish), A26 🔸, A24, A43, A37 🔸 (klíče z A45), A6 bod 4, `ALVA.EDTesting.TestRunner` počítá skipped (status 2) zvlášť a vypíše důvod (dnes FAIL s prázdnou hláškou, brání `$$$AssertSkipped` v TD), mrtvý `OpenMiniAppCommand` ve VM (bez bindingu), `docs/zastupci-na-plose.md:62` odkazuje na zrušené `ReloadShortcutsAsync` | napříč | 3 | po slití vln 1 a 2 |
 
 Rozhodnutí vlastníka padla 2026-10-05, u každého dotčeného ID je řádek **Rozhodnutí vlastníka**.
@@ -871,7 +872,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A22 · Dokončit odstranění `EDInputForm.Initialized`
 
-- [x] **Stav:** vyřešeno v kódu (2026-10-06) - event i jeho vyvolání v `Init()` jsou pryč, test hlídá
+- [x] **Stav:** vyřešeno 0c32f8ff (2026-10-06) - event i jeho vyvolání v `Init()` jsou pryč, test hlídá
   jen `SchemaLoaded`; build celé solution (TD, shell) bez odběratele. **Vydání:** odebraný veřejný člen,
   EDControls publikovat jen spolu s TD a shellem ze stejného commitu (jedna dávka s A38 a A25).
 - **P2 · S** · Závisí na: koordinovaný publish obou aplikací · Blokuje: - · Původ: [backlog R6b](arch-backlog.md#r6b---dokončit-odstranění-edinputforminitialized)
@@ -1051,11 +1052,33 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 - **Omezení:** EDLOADER a spouštěče TD žijí v repu EDISON; TD je mimo scope review, nález se týká
   sdíleného publish mechanismu a rozbalování runtime.
 
+### A48 · Async EDList a služby TD volají MLRest přes `Task.Run` na sdílené instanci bez klonu
+
+- [ ] **Stav:** otevřeno
+- **P2 · S** (EDControls) / M (TD) · Závisí na: - · Blokuje: - · Původ: nový (2026-10-06), skeptik u A38, ověřeno v kódu
+- **Problém:** Pravidlo „souběžné requesty jen na klonech" (root `CLAUDE.md`, `RestStatus` je per-instance) drží
+  `RestCallRunner`, ale async cesta EDListu a služby TemplateDesigneru volají `Query` přes holý `Task.Run` nad
+  sdílenou instancí. Pravidlo R1 v TD navíc tenhle vzor přímo předepisuje.
+- **Důkaz:**
+  - `EDControls/dotnet/EDList/EDListController.cs:110-115` `RunQueryAsync` = `await _queryGate.WaitAsync(); ... await Task.Run(query)`; dotaz jde na `EnsureConfigured` → `services().MLRest` (`:102-108`), ne na klon. `_queryGate` řadí jen volání téhož listu.
+  - `TemplateDesigner/dotnet/Services/CacheTemplateService.cs:35,71,111,149,165` `Task.Run(() => ...Sync(...))` nad `_mlRest`, `:216` čte `_mlRest.RestStatus` až po `Query`.
+  - `TemplateDesigner/dotnet/App.xaml.cs:135-150`: při startu běží `CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync()` a fire-and-forget `SystemTemplateSeeder.SeedAsync(new CacheTemplateService(mlRest))` souběžně nad toutéž instancí.
+  - `TemplateDesigner/.claude/rules/architecture-rules.md:10` (R1) velí `await Task.Run(() => mlRest.Query(...))`.
+- **Dopad:** dva seznamy na jedné obrazovce, nebo seznam a synchronní `EDInputForm.Save`, si prohodí `RestStatus`:
+  chyba jednoho dotazu se spolkne, nebo druhý dostane cizí výjimku. V TD totéž při startu (agendy vs. seed šablon)
+  a při každé souběžné operaci se šablonami.
+- **Návrh opravy:** `EDListController` dostane `IRestCallRunner` (default `new RestCallRunner(() => services().RequireMLRest)`),
+  async dotazy jdou na klon, `_queryGate` a generation guard zůstávají. TD: `CacheTemplateService` a `CacheAgendaRegistry`
+  přes `IRestCallRunner`, R1 přepsat na „async přes `IRestCallRunner`".
+- **Hotovo když:** test controlleru s thread-safe fake `IMLRest`: N souběžných `LoadListAsync` dvou listů → `With()` per
+  dotaz, nula `Query` na sdílené instanci; v TD totéž pro `CacheTemplateService`.
+- **Omezení:** veřejné API EDList jen aditivně; TD je mimo scope review, jeho část a pravidlo R1 patří vlastníkovi TD.
+
 ## P3
 
 ### A24 · `tools/GenerateTree` mimo sln, žádný parita test
 
-- [x] **Stav:** vyřešeno (2026-10-06, vlna 3) - generátor je projekt `tools/GenerateTree` v `EDISON2.sln`
+- [x] **Stav:** vyřešeno d7ebfb12 (2026-10-06, vlna 3) - generátor je projekt `tools/GenerateTree` v `EDISON2.sln`
   (logika `TreeGenerator` bez IO, `Program` čte prostředí a zapisuje); `sync-tree.ps1` a CI `tree-sync.yml`
   volají `dotnet run --project tools/GenerateTree`. `EDISONMAIN2.Tests/TreeGeneratorTests`: jednotkové testy
   nad syntetickými zdroji (FQN z enumu, override exe/input, type=4, přesun Telmaxu, chybějící marker,
@@ -1180,10 +1203,9 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A31 · `DisplayedName` nese tři věci a persistuje se do blobu 🔸
 
-- [ ] **Stav:** otevřeno, částečně (860b9ffe, 2026-09-21) - suffixy stavu modulu
-  (`- stub`, `- chybí exe`, `- rozbité`, `- stuby`) přidává `ModuleLaunchabilityCheck` jen pod
-  `InternalDiagnostics.Enabled` (DEBUG / doména M-line), u zákazníka se do blobu nedostanou;
-  mlineOnly suffix a oddělení `Name`/`DisplayedName` zůstávají 🔸. Ověřeno 2026-10-01, beze změny.
+- [x] **Stav:** vyřešeno 7c559f56 (2026-10-06) - moduly oddělují `Name` (data stromu) od `DisplaySuffix`
+  (mlineOnly a dekorace spustitelnosti); hledání, `TreePath`, labely spuštěných modulů, tooltip dlaždice, blob
+  `Shortcuts` i launch payload nesou nedekorovaný název, strom a Používané dekoraci dál ukazují.
 - **Rozhodnutí vlastníka (2026-10-05):** oddělit `Name` (data, klíč) od `DisplayedName` (zobrazení). Ověřeno 2026-10-05: legacy host (`EDISON/EDISONMAIN2API/CacheShortcutSink.cs`) blob jen zapisuje (Add/Remove/Exists podle klíče `Kind|ElementId|Id`), `Name` zpět nečte; čte ho jen shell.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Problém:** dekorace pro zobrazení mutuje doménový model (`with { DisplayedName = ... }`),
@@ -1209,7 +1231,8 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A32 · `ExecutableModule` je record s hodnotovou rovností a mutabilním observable stavem 🔸
 
-- [ ] **Stav:** otevřeno (ověřeno 2026-10-01)
+- [x] **Stav:** vyřešeno 6de2da75 (2026-10-06) - `ExecutableModule` je sealed třída s referenční rovností,
+  kopie copy konstruktorem místo `with`; workaroundy s `ReferenceEquals` ve stromu a při dropu na plochu pryč.
 - **Rozhodnutí vlastníka (2026-10-05):** `ExecutableModule` převést na třídu s referenční rovností (`Clone` místo `with`), oba workaroundy smazat.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `Modules/ExecutableModule.cs:5` `public record ExecutableModule : IModule,
@@ -1325,14 +1348,11 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
 
 ### A38 · `MLRestJson` je veřejný wire kontrakt bez serverové ani klientské strany
 
-- [x] **Stav:** vyřešeno v kódu (2026-10-06) - `MLRestJson` i jeho testy smazané (varianta „smazat",
+- [x] **Stav:** vyřešeno 320d9fbd (2026-10-06) - `MLRestJson` i jeho testy smazané (varianta „smazat",
   konzument žádný), řádek v `EDControls/CLAUDE.md` pryč. `docs/wire-formaty.md` Styl 4 bez helperu: IN
   pojmenované klíče, composite response v `"payload"`, volání přes `IRestCallRunner`; checklist bod 9
   místo `Task.Run` nad sdílenou instancí odkazuje na runner. **Vydání:** odebraný veřejný člen, EDControls
-  jen spolu s TD a shellem ze stejného commitu (jedna dávka s A22 a A25). Dopad „poslední cesta" neplatil,
-  nový nález mimo A38: `EDListController.RunQueryAsync` (`:110-113`) pouští `InitializeList`/`LoadList`
-  přes `Task.Run` nad sdílenou `services().MLRest`, `_queryGate` řadí jen volání téhož listu; TD má totéž
-  (`CacheTemplateService`, pravidlo R1 v `TemplateDesigner/.claude/rules/architecture-rules.md` velí holý `Task.Run`).
+  jen spolu s TD a shellem ze stejného commitu (jedna dávka s A22 a A25). Dopad „poslední cesta" neplatil: async EDList a služby TD jedou na sdílené instanci taky, viz A48.
 - **P3 · S** · Původ: nový (2026-09-20)
 - **Důkaz:** `EDControls/dotnet/MLRestJson.cs:28-30` `input["payload"] = ...; CVar output =
   await Task.Run(() => mlRest.QueryOrThrow(cacheClass, method, input));` bez klonu; volající
@@ -1469,7 +1489,7 @@ Největší soubory: `EDControlStyles.xaml` 1887 ř., `EdisonMainViewModel.cs` 1
   `LicenceVerifier.ReacquireLock` jedou na klonech, od `5fcfa28e` i `IUserPrefsService`; nové
   pozaďové requesty deploye (počty vozidel a zaměstnanců, stažení licence z M-line) jdou přes
   `RestCallRunner` (`EdisonMainViewModel.cs:448,472`) a update check na klonu `Locks=0`
-  (`AppBootstrapper.cs:187`). Mimo UI thread na sdílené instanci zůstává EDList (viz Stav A38).
+  (`AppBootstrapper.cs:187`). Mimo UI thread na sdílené instanci zůstává async EDList a služby TD (A48).
 - `ApplySessionData` je synchronní, guardy uvnitř neawaitují; `CompanySwitcher.Switch`
   a `SessionSwitcher.Switch` drží dokumentované pořadí včetně veta okna a rollbacku.
 - `HandOffLoginWindow` nastaví `MainWindow` před `OnMainWindowClose`; `ForcePasswordChange`
