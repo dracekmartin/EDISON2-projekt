@@ -5,7 +5,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     class ModuleFamily : IModule, INotifyPropertyChanged
     {
-        public string DisplayedName { get; set; } = "";
+        /// <summary>Název z dat stromu (hledání, cesta stromem). Dekorace sem nepatří.</summary>
+        public string Name { get; set; } = "";
+
+        /// <summary>Dekorace jen pro zobrazení (mlineOnly, agregovaný stav launchovatelnosti).</summary>
+        public string DisplaySuffix { get; set; } = "";
+
+        public string DisplayedName => Name + DisplaySuffix;
 
         /// <summary>
         /// Package ID (EDPackageEnum / EDMainPackageEnum) z legacy `id` atributu skupiny;

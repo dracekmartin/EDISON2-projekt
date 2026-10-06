@@ -16,7 +16,7 @@ public class ModuleTreeStateFilterTests
         new() { Elements = elements };
 
     private static ExecutableModule Exe(string id, bool licensed, string name = "M") =>
-        new() { DisplayedName = name, ElementId = id, IsLicensed = licensed };
+        new() { Name = name, ElementId = id, IsLicensed = licensed };
 
     private static AccessTable Access(params string[] allowed) =>
         new([.. allowed], isAllAccess: false);
@@ -93,7 +93,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_AllChildrenAllowed_ReturnsFamilyWithAll()
     {
-        var family = new ModuleFamily { DisplayedName = "F", IsExpanded = true };
+        var family = new ModuleFamily { Name = "F", IsExpanded = true };
         family.NestedModules.Add(Exe("1", licensed: false));
         family.NestedModules.Add(Exe("2", licensed: false));
 
@@ -108,7 +108,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_SomeChildrenAllowed_ReturnsFamilyWithSubset()
     {
-        var family = new ModuleFamily { DisplayedName = "F" };
+        var family = new ModuleFamily { Name = "F" };
         family.NestedModules.Add(Exe("100", licensed: true, name: "Hidden"));
         family.NestedModules.Add(Exe("200", licensed: true, name: "Visible"));
 
@@ -122,7 +122,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_AllChildrenHidden_ReturnsNull()
     {
-        var family = new ModuleFamily { DisplayedName = "F" };
+        var family = new ModuleFamily { Name = "F" };
         family.NestedModules.Add(Exe("100", licensed: true));
         family.NestedModules.Add(Exe("200", licensed: true));
 
@@ -134,9 +134,9 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_NestedFamilyAllChildrenHidden_OuterRemoved()
     {
-        var inner = new ModuleFamily { DisplayedName = "Inner" };
+        var inner = new ModuleFamily { Name = "Inner" };
         inner.NestedModules.Add(Exe("100", licensed: true));
-        var outer = new ModuleFamily { DisplayedName = "Outer" };
+        var outer = new ModuleFamily { Name = "Outer" };
         outer.NestedModules.Add(inner);
 
         var filtered = ModuleTreeState.FilterFamily(outer, Licence("999"));
@@ -148,10 +148,10 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_NestedFamilyKeepsOuterIfAnyDescendantAllowed()
     {
-        var inner = new ModuleFamily { DisplayedName = "Inner" };
+        var inner = new ModuleFamily { Name = "Inner" };
         inner.NestedModules.Add(Exe("100", licensed: true));
         inner.NestedModules.Add(Exe("200", licensed: false));
-        var outer = new ModuleFamily { DisplayedName = "Outer" };
+        var outer = new ModuleFamily { Name = "Outer" };
         outer.NestedModules.Add(inner);
 
         var filtered = ModuleTreeState.FilterFamily(outer, Licence("999"));
@@ -210,7 +210,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_AccessHidesAllChildren_FamilyDropped()
     {
-        var family = new ModuleFamily { DisplayedName = "F" };
+        var family = new ModuleFamily { Name = "F" };
         family.NestedModules.Add(Exe("100", licensed: false));
         family.NestedModules.Add(Exe("101", licensed: false));
 
@@ -223,7 +223,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_LicensedFamilyNotInWhitelist_DroppedWithAllowedChildren()
     {
-        var family = new ModuleFamily { DisplayedName = "Kmenová evidence", ElementId = "1", IsLicensed = true };
+        var family = new ModuleFamily { Name = "Kmenová evidence", ElementId = "1", IsLicensed = true };
         family.NestedModules.Add(Exe("40001", licensed: false));
 
         Assert.Null(ModuleTreeState.FilterFamily(family, Licence("999")));
@@ -233,7 +233,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_LicensedFamilyInWhitelist_Kept()
     {
-        var family = new ModuleFamily { DisplayedName = "F", ElementId = "1", IsLicensed = true };
+        var family = new ModuleFamily { Name = "F", ElementId = "1", IsLicensed = true };
         family.NestedModules.Add(Exe("40001", licensed: false));
 
         var filtered = ModuleTreeState.FilterFamily(family, Licence("1"));
@@ -248,7 +248,7 @@ public class ModuleTreeStateFilterTests
     {
         // Případ „Správce úloh": 40001 v accessTable (admin fallback), ale package 1 ne
         // → celá složka skrytá, dítě se nesmí zobrazit.
-        var family = new ModuleFamily { DisplayedName = "Kmenová evidence", ElementId = "1" };
+        var family = new ModuleFamily { Name = "Kmenová evidence", ElementId = "1" };
         family.NestedModules.Add(Exe("40001", licensed: false));
 
         Assert.Null(ModuleTreeState.FilterFamily(family, licence: null, Access("40001")));
@@ -257,7 +257,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_FamilyInAccess_KeptWithAllowedChildren()
     {
-        var family = new ModuleFamily { DisplayedName = "F", ElementId = "1" };
+        var family = new ModuleFamily { Name = "F", ElementId = "1" };
         family.NestedModules.Add(Exe("40001", licensed: false));
 
         var filtered = ModuleTreeState.FilterFamily(family, licence: null, Access("1", "40001"));
@@ -270,7 +270,7 @@ public class ModuleTreeStateFilterTests
     public void FilterFamily_EmptyElementId_SkipsAccessGate()
     {
         // Syntetické složky (bez package ID) access gate nemají - filtrují se jen přes děti.
-        var family = new ModuleFamily { DisplayedName = "F", ElementId = "" };
+        var family = new ModuleFamily { Name = "F", ElementId = "" };
         family.NestedModules.Add(Exe("100", licensed: false));
 
         var filtered = ModuleTreeState.FilterFamily(family, licence: null, Access("100"));
@@ -283,7 +283,7 @@ public class ModuleTreeStateFilterTests
     public void FilterFamily_AllAccess_BypassesFamilyAccessGate()
     {
         var allAccess = new AccessTable([], isAllAccess: true);
-        var family = new ModuleFamily { DisplayedName = "F", ElementId = "1" };
+        var family = new ModuleFamily { Name = "F", ElementId = "1" };
         family.NestedModules.Add(Exe("100", licensed: false));
 
         var filtered = ModuleTreeState.FilterFamily(family, licence: null, allAccess);
@@ -298,7 +298,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void TryFilter_MlineOnlyExe_OutsideDomain_Hidden()
     {
-        var exe = new ExecutableModule { DisplayedName = "Doklady OLD", ElementId = "92101", MlineOnly = true };
+        var exe = new ExecutableModule { Name = "Doklady OLD", ElementId = "92101", MlineOnly = true };
 
         Assert.Null(ModuleTreeState.TryFilter(exe, licence: null, access: null, isMlineDomain: false));
     }
@@ -306,7 +306,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void TryFilter_MlineOnlyExe_InDomain_VisibleWithSuffix()
     {
-        var exe = new ExecutableModule { DisplayedName = "Doklady OLD", ElementId = "92101", MlineOnly = true };
+        var exe = new ExecutableModule { Name = "Doklady OLD", ElementId = "92101", MlineOnly = true };
 
         var filtered = ModuleTreeState.TryFilter(exe, licence: null, access: null, isMlineDomain: true);
 
@@ -314,14 +314,16 @@ public class ModuleTreeStateFilterTests
         Assert.Equal("Doklady OLD [### M-line ###]", filtered.DisplayedName);
     }
 
+    // Suffix je jen pohled - cesta jde do ToolTipů a plochy, kde by se lišila od téhož modulu jinde.
     [Fact]
-    public void TryFilter_MlineOnlyExe_InDomain_TreePathKeepsFamilyPathAndSuffix()
+    public void TryFilter_MlineOnlyExe_InDomain_TreePathAndNameWithoutSuffix()
     {
-        var exe = new ExecutableModule { DisplayedName = "Doklady OLD", ElementId = "92101", MlineOnly = true, FamilyPath = "Sklady" };
+        var exe = new ExecutableModule { Name = "Doklady OLD", ElementId = "92101", MlineOnly = true, FamilyPath = "Sklady" };
 
         var filtered = Assert.IsType<ExecutableModule>(ModuleTreeState.TryFilter(exe, licence: null, access: null, isMlineDomain: true));
 
-        Assert.Equal("Sklady › Doklady OLD [### M-line ###]", filtered.TreePath);
+        Assert.Equal("Sklady › Doklady OLD", filtered.TreePath);
+        Assert.Equal("Doklady OLD", filtered.Name);
     }
 
     [Fact]
@@ -338,7 +340,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_MlineOnly_OutsideDomain_DroppedWithChildren()
     {
-        var family = new ModuleFamily { DisplayedName = "Interní", MlineOnly = true };
+        var family = new ModuleFamily { Name = "Interní", MlineOnly = true };
         family.NestedModules.Add(Exe("100", licensed: false));
 
         Assert.Null(ModuleTreeState.FilterFamily(family, licence: null, access: null, isMlineDomain: false));
@@ -347,7 +349,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void FilterFamily_MlineOnly_InDomain_KeptWithSuffix()
     {
-        var family = new ModuleFamily { DisplayedName = "Interní", MlineOnly = true };
+        var family = new ModuleFamily { Name = "Interní", MlineOnly = true };
         family.NestedModules.Add(Exe("100", licensed: false));
 
         var filtered = ModuleTreeState.FilterFamily(family, licence: null, access: null, isMlineDomain: true);
@@ -362,8 +364,8 @@ public class ModuleTreeStateFilterTests
     public void FilterFamily_MlineOnlyChild_OutsideDomain_OnlyChildDropped()
     {
         // mlineOnly dítě zmizí, sourozenec i rodina zůstávají.
-        var family = new ModuleFamily { DisplayedName = "F" };
-        family.NestedModules.Add(new ExecutableModule { DisplayedName = "Interní", ElementId = "1", MlineOnly = true });
+        var family = new ModuleFamily { Name = "F" };
+        family.NestedModules.Add(new ExecutableModule { Name = "Interní", ElementId = "1", MlineOnly = true });
         family.NestedModules.Add(Exe("2", licensed: false, name: "Veřejný"));
 
         var filtered = ModuleTreeState.FilterFamily(family, licence: null, access: null, isMlineDomain: false);
@@ -384,7 +386,7 @@ public class ModuleTreeStateFilterTests
     [Fact]
     public void TryFilter_Family_RoutesToFilterFamily()
     {
-        var family = new ModuleFamily { DisplayedName = "F" };
+        var family = new ModuleFamily { Name = "F" };
         family.NestedModules.Add(Exe("100", licensed: true));
 
         Assert.NotNull(ModuleTreeState.TryFilter(family, Licence("100")));

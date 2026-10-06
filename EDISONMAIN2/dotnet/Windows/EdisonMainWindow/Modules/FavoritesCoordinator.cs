@@ -77,10 +77,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         private void Seed(List<DesktopShortcutDto>? stored)
         {
-            var labels = ModuleTreeState.BuildModuleLabels(_trees.SourceTrees.Select(t => t.Tree));
-            _shortcuts.Seed(_trees.AllExecutables(), stored, exe =>
-                labels.TryGetValue(ModuleTreeState.ModuleKey(exe.ExecutablePath, exe.FormName, exe.InputParam), out var label)
-                    ? label.Path : "");
+            _shortcuts.Seed(_trees.AllExecutables(), stored);
         }
 
         /// <summary>
@@ -199,7 +196,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             if (kept.Count == 0) return null;
 
             // V záložce Oblíbené rodina zobrazuje jen oblíbené potomky → je „plně oblíbená" (řídí text menu).
-            var pruned = new ModuleFamily { DisplayedName = family.DisplayedName, IsExpanded = true, Color = family.Color, IsFavorite = true };
+            var pruned = new ModuleFamily
+            {
+                Name = family.Name, DisplaySuffix = family.DisplaySuffix, IsExpanded = true, Color = family.Color, IsFavorite = true,
+            };
             foreach (var child in kept) pruned.NestedModules.Add(child!);
             return pruned;
         }

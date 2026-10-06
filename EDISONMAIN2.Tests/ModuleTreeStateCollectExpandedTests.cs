@@ -9,11 +9,11 @@ namespace EDISONMAIN2.Tests;
 public class ModuleTreeStateCollectExpandedTests
 {
     private static ExecutableModule Exe(string name = "A") =>
-        new() { DisplayedName = name, ExecutablePath = "a.exe" };
+        new() { Name = name, ExecutablePath = "a.exe" };
 
     private static ModuleFamily Fam(string name, bool expanded, params IModule[] kids)
     {
-        var f = new ModuleFamily { DisplayedName = name, IsExpanded = expanded };
+        var f = new ModuleFamily { Name = name, IsExpanded = expanded };
         foreach (var k in kids) f.NestedModules.Add(k);
         return f;
     }

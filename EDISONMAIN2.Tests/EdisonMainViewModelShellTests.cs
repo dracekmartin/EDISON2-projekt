@@ -15,11 +15,11 @@ namespace EDISONMAIN2.Tests;
 public class EdisonMainViewModelShellTests
 {
     private static ExecutableModule Exe(string id, string exe = "a.exe", string form = "ALVA.A.frm") =>
-        new() { DisplayedName = "A", ExecutablePath = exe, FormName = form, ElementId = id };
+        new() { Name = "A", ExecutablePath = exe, FormName = form, ElementId = id };
 
     private static ModuleFamily Fam(string name, params IModule[] kids)
     {
-        var f = new ModuleFamily { DisplayedName = name };
+        var f = new ModuleFamily { Name = name };
         foreach (var k in kids) f.NestedModules.Add(k);
         return f;
     }
@@ -79,7 +79,7 @@ public class EdisonMainViewModelShellTests
         vm.SelectedModule = family.NestedModules.OfType<ExecutableModule>().Single();
         Assert.True(vm.CanSetStartup);
 
-        vm.SelectedModule = new ExecutableModule { DisplayedName = "bez id", ExecutablePath = "x.exe" };
+        vm.SelectedModule = new ExecutableModule { Name = "bez id", ExecutablePath = "x.exe" };
         Assert.False(vm.CanSetStartup);   // bez ElementId nejde uložit
     }
 
@@ -129,7 +129,7 @@ public class EdisonMainViewModelShellTests
         var popup = Substitute.For<IPopupDisplayer>();
         var vm = CreateVM(services: MockServices(nav: nav, popup: popup));
 
-        vm.LaunchShortcutCommand.Execute(new DesktopShortcut { DisplayedName = "Sestava" });
+        vm.LaunchShortcutCommand.Execute(new DesktopShortcut { Name = "Sestava" });
 
         popup.Received(1).Info(Arg.Is<string>(s => s.Contains("nelze ho spustit")));
         nav.DidNotReceive().ShowLegacyShortcutAsync(Arg.Any<string>(), Arg.Any<string>(),
@@ -145,7 +145,7 @@ public class EdisonMainViewModelShellTests
         vm.LaunchShortcutCommand.Execute(new DesktopShortcut
         {
             Kind = ShortcutKind.PrintReport,
-            Id = "42", ElementId = "660", DisplayedName = "Sestava",
+            Id = "42", ElementId = "660", Name = "Sestava",
             ExecutablePath = "r.exe", FormName = "ALVA.R.frm", InputParam = "vstup",
         });
 

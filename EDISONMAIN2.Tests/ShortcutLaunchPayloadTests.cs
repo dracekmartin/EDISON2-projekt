@@ -14,7 +14,7 @@ public class ShortcutLaunchPayloadTests
         Kind = kind,
         Id = id,
         ElementId = "145008",
-        DisplayedName = "Výpis typů vozidel",
+        Name = "Výpis typů vozidel",
         ExecutablePath = "VOZIDLA2.exe",
         FormName = "ALVA.VOZIDLA2.formVOZIDLA2List",
     };
@@ -75,7 +75,7 @@ public class ShortcutLaunchPayloadTests
             Kind = ShortcutKind.SelectReport,
             Id = "1003",
             ElementId = "145008",
-            DisplayedName = "Sestava",
+            Name = "Sestava",
             Report = new ReportPayload("ES", "EkonomickySystem", "1", "S12", "P7", JeVerejny: true),
         };
 
@@ -105,7 +105,7 @@ public class ShortcutLaunchPayloadTests
         var shortcut = new DesktopShortcut
         {
             Kind = ShortcutKind.PackageForm, Id = "9", ElementId = "660",
-            DisplayedName = "F", ExecutablePath = "x.exe", FormName = "ALVA.X.frm", InputParam = "APM=1",
+            Name = "F", ExecutablePath = "x.exe", FormName = "ALVA.X.frm", InputParam = "APM=1",
         };
 
         var payload = ShortcutLaunchPayloadCodec.Decode(ShortcutLaunchPayloadCodec.Encode(shortcut));

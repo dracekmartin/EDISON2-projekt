@@ -11,13 +11,13 @@ public class ModuleTreeStateExpansionTests
 {
     private static ModuleFamily Family(string name, bool expanded, params IModule[] children)
     {
-        var f = new ModuleFamily { DisplayedName = name, IsExpanded = expanded };
+        var f = new ModuleFamily { Name = name, IsExpanded = expanded };
         foreach (var c in children) f.NestedModules.Add(c);
         return f;
     }
 
     private static ExecutableModule Exe(string name = "M") =>
-        new() { DisplayedName = name };
+        new() { Name = name };
 
     [Fact]
     public void SetExpandedRecursive_Expand_SetsFamilyAndAllNestedFamilies()

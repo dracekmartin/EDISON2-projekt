@@ -7,7 +7,7 @@ namespace EDISONMAIN2.Tests;
 public class UsedListOrderingTests
 {
     private static ExecutableModule Exe(string id) =>
-        new() { DisplayedName = id, ElementId = id, ExecutablePath = id + ".exe" };
+        new() { Name = id, ElementId = id, ExecutablePath = id + ".exe" };
 
     [Fact]
     public void BuildUsedList_OrdersByCountThenLastUsed_CapsAndSkipsModulesOutsideTree()

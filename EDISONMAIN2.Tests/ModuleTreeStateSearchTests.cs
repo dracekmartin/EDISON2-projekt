@@ -6,11 +6,11 @@ namespace EDISONMAIN2.Tests;
 /// <summary>Testy filtrování stromu podle hledaného textu (ModuleTreeState.ApplySearchToModule).</summary>
 public class ModuleTreeStateSearchTests
 {
-    private static ExecutableModule Exe(string name) => new() { DisplayedName = name };
+    private static ExecutableModule Exe(string name) => new() { Name = name };
 
     private static ModuleFamily Fam(string name, params IModule[] kids)
     {
-        var f = new ModuleFamily { DisplayedName = name };
+        var f = new ModuleFamily { Name = name };
         foreach (var k in kids) f.NestedModules.Add(k);
         return f;
     }
@@ -36,6 +36,18 @@ public class ModuleTreeStateSearchTests
         var exe = Exe(name);
         Assert.Equal(expected, ModuleTreeState.ApplySearchToModule(exe, text));
         Assert.Equal(expected, exe.IsVisibleBySearch);
+    }
+
+    // Suffix stavu nebo mlineOnly je jen pohled - hledání „stub" nemá vracet moduly podle dekorace.
+    [Fact]
+    public void DisplaySuffix_NotSearched()
+    {
+        var exe = new ExecutableModule { Name = "Turnusy", DisplaySuffix = " - stub" };
+        var fam = new ModuleFamily { Name = "Interní", DisplaySuffix = " [### M-line ###]" };
+
+        Assert.False(ModuleTreeState.ApplySearchToModule(exe, "stub"));
+        Assert.True(ModuleTreeState.ApplySearchToModule(exe, "turnus"));
+        Assert.False(ModuleTreeState.ApplySearchToModule(fam, "m-line"));
     }
 
     [Fact]

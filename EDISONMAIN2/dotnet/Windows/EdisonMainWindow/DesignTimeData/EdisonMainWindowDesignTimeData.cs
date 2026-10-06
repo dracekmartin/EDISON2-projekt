@@ -9,20 +9,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
         [
             new ModuleFamily
             {
-                DisplayedName = "MHD",
+                Name = "MHD",
                 IsExpanded = true,
                 NestedModules =
                 [
-                    new ExecutableModule { DisplayedName = "Plán dopravy" },
-                    new ExecutableModule { DisplayedName = "Dispečink" },
+                    new ExecutableModule { Name = "Plán dopravy" },
+                    new ExecutableModule { Name = "Dispečink" },
                     new ModuleFamily
                     {
-                        DisplayedName = "Číselníky",
+                        Name = "Číselníky",
                         IsExpanded = true,
                         NestedModules =
                         [
-                            new ExecutableModule { DisplayedName = "Typy provozů" },
-                            new ExecutableModule { DisplayedName = "Pracoviště" },
+                            new ExecutableModule { Name = "Typy provozů" },
+                            new ExecutableModule { Name = "Pracoviště" },
                         ]
                     },
                 ]
@@ -31,39 +31,39 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 
         public ObservableCollection<IModule> SystemAdminTree { get; } =
         [
-            new ExecutableModule { DisplayedName = "EDISON" },
+            new ExecutableModule { Name = "EDISON" },
             new ModuleFamily
             {
-                DisplayedName = "DPmCB",
+                Name = "DPmCB",
                 IsExpanded = false,
                 NestedModules =
                 [
-                    new ExecutableModule { DisplayedName = "Návrhář sestav" },
-                    new ExecutableModule { DisplayedName = "Správce úloh" },
+                    new ExecutableModule { Name = "Návrhář sestav" },
+                    new ExecutableModule { Name = "Správce úloh" },
                 ]
             },
-            new ExecutableModule { DisplayedName = "Systémové nástroje" },
+            new ExecutableModule { Name = "Systémové nástroje" },
         ];
 
         public ObservableCollection<IModule> PartnerSolutionsTree { get; } =
         [
             new ModuleFamily
             {
-                DisplayedName = "AURIS",
+                Name = "AURIS",
                 IsExpanded = false,
-                NestedModules = [ new ExecutableModule { DisplayedName = "AURIS" } ]
+                NestedModules = [ new ExecutableModule { Name = "AURIS" } ]
             },
             new ModuleFamily
             {
-                DisplayedName = "BC Dopravní systémy",
+                Name = "BC Dopravní systémy",
                 IsExpanded = false,
                 NestedModules =
                 [
-                    new ExecutableModule { DisplayedName = "Cena jízdného" },
-                    new ExecutableModule { DisplayedName = "Clearing" },
+                    new ExecutableModule { Name = "Cena jízdného" },
+                    new ExecutableModule { Name = "Clearing" },
                 ]
             },
-            new ExecutableModule { DisplayedName = "Telmax" },
+            new ExecutableModule { Name = "Telmax" },
         ];
 
         public ObservableCollection<IModule> FavoritesTree { get; } = [];

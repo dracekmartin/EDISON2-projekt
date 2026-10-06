@@ -71,7 +71,7 @@ public class SessionDataLoaderTests
         {
             log.Add(((FakeMLRest)mlRest).Instance, $"GetTree.{treeName}");
             if (treeName == failOnTree) throw new InvalidOperationException($"strom {treeName} selhal");
-            return [new ExecutableModule { DisplayedName = treeName, ExecutablePath = $"{treeName}.exe", FormName = "" }];
+            return [new ExecutableModule { Name = treeName, ExecutablePath = $"{treeName}.exe", FormName = "" }];
         }
     }
 

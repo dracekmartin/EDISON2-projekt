@@ -38,7 +38,7 @@ public class ModuleLaunchabilityCheckTests : IDisposable
     [Fact]
     public void ExistingExe_IsLaunchable_NoColorNoSuffix()
     {
-        var module = new ExecutableModule { DisplayedName = "Agenda", ExecutablePath = ExistingExeName, FormName = "X" };
+        var module = new ExecutableModule { Name = "Agenda", ExecutablePath = ExistingExeName, FormName = "X" };
 
         var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
 
@@ -50,7 +50,7 @@ public class ModuleLaunchabilityCheckTests : IDisposable
     [Fact]
     public void EmptyPath_MarkedAsStub()
     {
-        var module = new ExecutableModule { DisplayedName = "Stub", ExecutablePath = "", FormName = "" };
+        var module = new ExecutableModule { Name = "Stub", ExecutablePath = "", FormName = "" };
 
         var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
 
@@ -61,7 +61,7 @@ public class ModuleLaunchabilityCheckTests : IDisposable
     [Fact]
     public void MissingExe_MarkedAsBroken()
     {
-        var module = new ExecutableModule { DisplayedName = "Chybí", ExecutablePath = "neexistuje_xyz.exe", FormName = "X" };
+        var module = new ExecutableModule { Name = "Chybí", ExecutablePath = "neexistuje_xyz.exe", FormName = "X" };
 
         var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
 
@@ -69,12 +69,23 @@ public class ModuleLaunchabilityCheckTests : IDisposable
         Assert.EndsWith(" - chybí exe", marked.DisplayedName);
     }
 
+    // Suffix stavu je jen pohled: zástupce na ploše (blob sdílený s agendami) nese původní název.
+    [Fact]
+    public void MissingExe_ShortcutDtoKeepsOriginalName()
+    {
+        var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(Broken("Zaměstnanci") with { ElementId = "100" });
+
+        Assert.EndsWith(" - chybí exe", marked.DisplayedName);
+        Assert.Equal("Zaměstnanci", marked.Name);
+        Assert.Equal("Zaměstnanci", DesktopShortcut.ForModule(marked).ToDto().Name);
+    }
+
     [Fact]
     public void MissingExe_DiagnosticsOff_ColorWithoutSuffix()
     {
-        // U zákazníka: červená zůstane, název ne - přetažením na plochu by se suffix uložil do Caché blobu.
+        // U zákazníka: červená zůstane, diagnostický suffix ne.
         InternalDiagnostics.Enabled = false;
-        var module = new ExecutableModule { DisplayedName = "Chybí", ExecutablePath = "neexistuje_xyz.exe", FormName = "X" };
+        var module = new ExecutableModule { Name = "Chybí", ExecutablePath = "neexistuje_xyz.exe", FormName = "X" };
 
         var marked = (ExecutableModule)ModuleLaunchabilityCheck.Mark(module);
 
@@ -86,7 +97,7 @@ public class ModuleLaunchabilityCheckTests : IDisposable
     public void MarkFamily_DiagnosticsOff_ColorWithoutSuffix()
     {
         InternalDiagnostics.Enabled = false;
-        var family = new ModuleFamily { DisplayedName = "F" };
+        var family = new ModuleFamily { Name = "F" };
         family.NestedModules.Add(Stub("A"));
         family.NestedModules.Add(Broken("B"));
 
@@ -98,21 +109,21 @@ public class ModuleLaunchabilityCheckTests : IDisposable
     }
 
     private static ExecutableModule Launchable(string name = "Live") =>
-        new() { DisplayedName = name, ExecutablePath = ExistingExeName, FormName = "X" };
+        new() { Name = name, ExecutablePath = ExistingExeName, FormName = "X" };
 
     private static ExecutableModule Stub(string name = "Stub") =>
-        new() { DisplayedName = name, ExecutablePath = "", FormName = "" };
+        new() { Name = name, ExecutablePath = "", FormName = "" };
 
     private static ExecutableModule Broken(string name = "Broken") =>
-        new() { DisplayedName = name, ExecutablePath = "neexistuje_xyz.exe", FormName = "X" };
+        new() { Name = name, ExecutablePath = "neexistuje_xyz.exe", FormName = "X" };
 
     [Fact]
     public void MarkFamily_BrokenGrandchild_PropagatesRedToFamilyAndGrandparent()
     {
         // Rozbité vnouče → červená „rozbité" propaguje na rodinu i prarodiče (sbalená větev signalizuje).
-        var parent = new ModuleFamily { DisplayedName = "P" };
+        var parent = new ModuleFamily { Name = "P" };
         parent.NestedModules.Add(Broken());
-        var grandparent = new ModuleFamily { DisplayedName = "GP" };
+        var grandparent = new ModuleFamily { Name = "GP" };
         grandparent.NestedModules.Add(parent);
 
         var markedGp = (ModuleFamily)ModuleLaunchabilityCheck.Mark(grandparent);
@@ -127,7 +138,7 @@ public class ModuleLaunchabilityCheckTests : IDisposable
     [Fact]
     public void MarkFamily_LaunchableWinsOverStub_NoColorNoSuffix()
     {
-        var family = new ModuleFamily { DisplayedName = "F" };
+        var family = new ModuleFamily { Name = "F" };
         family.NestedModules.Add(Launchable());
         family.NestedModules.Add(Stub());
 
@@ -140,7 +151,7 @@ public class ModuleLaunchabilityCheckTests : IDisposable
     [Fact]
     public void MarkFamily_OnlyStubs_MarkedOrangeStuby()
     {
-        var family = new ModuleFamily { DisplayedName = "F" };
+        var family = new ModuleFamily { Name = "F" };
         family.NestedModules.Add(Stub("A"));
         family.NestedModules.Add(Stub("B"));
 
@@ -157,7 +168,7 @@ public class ModuleLaunchabilityCheckTests : IDisposable
         // stromu ztratil ElementId / licenční / mlineOnly flag. Launchovatelné dítě → beze suffixu.
         var family = new ModuleFamily
         {
-            DisplayedName = "Kmenová evidence",
+            Name = "Kmenová evidence",
             IsExpanded    = true,
             ElementId     = "42",
             IsLicensed    = true,

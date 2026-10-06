@@ -15,7 +15,7 @@ public class DesktopMiniAppViewModelTests
         new(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
 
     private static ExecutableModule Exe(string id, string name = "M") =>
-        new() { DisplayedName = name, ElementId = id, ExecutablePath = id + ".exe" };
+        new() { Name = name, ElementId = id, ExecutablePath = id + ".exe" };
 
     private static DesktopShortcutDto Menu(string elementId) =>
         new(nameof(ShortcutKind.MenuModule), elementId, elementId, "M");

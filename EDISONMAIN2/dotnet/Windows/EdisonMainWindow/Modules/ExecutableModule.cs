@@ -4,7 +4,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     public record ExecutableModule : IModule, INotifyPropertyChanged
     {
-        public string DisplayedName { get; init; } = "";
+        /// <summary>Název z dat stromu: hledání, cesta stromem i uložený zástupce. Dekorace sem nepatří.</summary>
+        public string Name { get; init; } = "";
+
+        /// <summary>Dekorace jen pro zobrazení (mlineOnly, stav launchovatelnosti).</summary>
+        public string DisplaySuffix { get; init; } = "";
+
+        public string DisplayedName => Name + DisplaySuffix;
 
         /// <summary>
         /// Disambiguovaný název (legacy `nameEx`) - krátký název je ve stromu nejednoznačný
@@ -21,14 +27,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>Názvy nadřazených rodin („Ekonomický systém › Servis"); <c>""</c> = modul v kořeni stromu.</summary>
         public string FamilyPath { get; init; } = "";
 
-        /// <summary>Cesta stromem včetně listu. Z <see cref="DisplayedName"/>, takže nese i suffixy z filtru.</summary>
-        public string TreePath => FamilyPath.Length == 0 ? DisplayedName : FamilyPath + PathSeparator + DisplayedName;
+        /// <summary>Cesta stromem včetně listu, bez dekorací zobrazení.</summary>
+        public string TreePath => FamilyPath.Length == 0 ? Name : FamilyPath + PathSeparator + Name;
 
         /// <summary>
-        /// Název rozlišitelný bez kontextu stromu (seznam Používané): dlouhý název, jinak cesta stromem.
-        /// Stejné pravidlo jako <c>EdisonMainViewModel.ResolveRunningLabel</c>.
+        /// Název rozlišitelný bez kontextu stromu (seznam Používané): dlouhý název, jinak cesta stromem
+        /// s dekorací listu (mlineOnly nemá barvu, bez suffixu by značka interního nástroje zmizela).
+        /// Pravidlo výběru jako <c>EdisonMainViewModel.ResolveRunningLabel</c>.
         /// </summary>
-        public string DisplayedDistinctName => LongName.Length > 0 ? LongName : TreePath;
+        public string DisplayedDistinctName => LongName.Length > 0 ? LongName : TreePath + DisplaySuffix;
 
         public string ExecutablePath { get; init; } = "";
 

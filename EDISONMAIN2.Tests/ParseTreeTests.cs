@@ -312,7 +312,7 @@ public class ParseTreeTests
     [Fact]
     public void DisplayedDistinctName_PrefersLongName()
     {
-        var exe = new ExecutableModule { DisplayedName = "Doklady", LongName = "Doklady fakturace", FamilyPath = "Fakturace" };
+        var exe = new ExecutableModule { Name = "Doklady", LongName = "Doklady fakturace", FamilyPath = "Fakturace" };
 
         Assert.Equal("Doklady fakturace", exe.DisplayedDistinctName);
     }
@@ -320,15 +320,25 @@ public class ParseTreeTests
     [Fact]
     public void DisplayedDistinctName_WithoutLongName_IsTreePath()
     {
-        var exe = new ExecutableModule { DisplayedName = "Doklady", FamilyPath = "Provozní pokladna" };
+        var exe = new ExecutableModule { Name = "Doklady", FamilyPath = "Provozní pokladna" };
 
         Assert.Equal("Provozní pokladna › Doklady", exe.DisplayedDistinctName);
+    }
+
+    // Používané jsou pohled jako strom - dekorace listu zůstává, cesta pro ToolTip je bez ní.
+    [Fact]
+    public void DisplayedDistinctName_WithoutLongName_KeepsDisplaySuffix()
+    {
+        var exe = new ExecutableModule { Name = "Doklady OLD", FamilyPath = "Sklady", DisplaySuffix = " [### M-line ###]" };
+
+        Assert.Equal("Sklady › Doklady OLD [### M-line ###]", exe.DisplayedDistinctName);
+        Assert.Equal("Sklady › Doklady OLD", exe.TreePath);
     }
 
     [Fact]
     public void DisplayedDistinctName_RootModuleWithoutLongName_IsShortName()
     {
-        var exe = new ExecutableModule { DisplayedName = "Doklady" };
+        var exe = new ExecutableModule { Name = "Doklady" };
 
         Assert.Equal("Doklady", exe.TreePath);
         Assert.Equal("Doklady", exe.DisplayedDistinctName);

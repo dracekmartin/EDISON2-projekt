@@ -2,6 +2,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     public interface IModule
     {
+        /// <summary>Název z dat stromu - na něm stojí hledání a cesty; <see cref="DisplayedName"/> je jen pohled.</summary>
+        string Name { get; }
+
         string DisplayedName { get; }
 
         /// <summary>Hex barva (<c>"#RRGGBB"</c>) pro Foreground uzlu ve stromu; "" = výchozí barva tématu.</summary>

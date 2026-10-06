@@ -17,11 +17,11 @@ public class TreeSearchExpansionTests
     private const string ExpansionKey = "TreeExpansion";
 
     private static ExecutableModule Exe(string id, string name) =>
-        new() { DisplayedName = name, ElementId = id, ExecutablePath = id + ".exe", FormName = "ALVA.A.frm" };
+        new() { Name = name, ElementId = id, ExecutablePath = id + ".exe", FormName = "ALVA.A.frm" };
 
     private static ModuleFamily Fam(string name, params IModule[] kids)
     {
-        var f = new ModuleFamily { DisplayedName = name };
+        var f = new ModuleFamily { Name = name };
         foreach (var k in kids) f.NestedModules.Add(k);
         return f;
     }

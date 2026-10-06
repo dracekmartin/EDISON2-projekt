@@ -5,9 +5,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
     /// Kontrola launchovatelnosti modulů. Tree.cls neautoruje barvu - odvozuje se zde z exe
-    /// a promítá do barvy (vždy) a textového suffixu v názvu (jen <see cref="InternalDiagnostics"/>:
-    /// kolegové validují stav stromu na Release buildu, u zákazníka by se suffix přetažením
-    /// na plochu uložil do Caché blobu sdíleného s legacy agendami).
+    /// a promítá do barvy (vždy) a do <c>DisplaySuffix</c> (jen <see cref="InternalDiagnostics"/>:
+    /// diagnostika pro kolegy, kteří validují stav stromu na Release buildu).
     ///
     /// Stavy: prázdné exe = autorský stub (oranžová); exe vyplněné ale soubor chybí = červená
     /// (rozchod, který má být vidět); existující exe = launchovatelné (generický host
@@ -51,7 +50,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         {
             var marked = new ModuleFamily
             {
-                DisplayedName = family.DisplayedName,
+                Name          = family.Name,
+                DisplaySuffix = family.DisplaySuffix,
                 IsExpanded    = family.IsExpanded,
                 ElementId     = family.ElementId,
                 IsLicensed    = family.IsLicensed,
@@ -69,21 +69,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             if (anyBroken)
             {
                 marked.Color = BrokenColor;
-                marked.DisplayedName += Suffix(" - rozbité");
+                marked.DisplaySuffix += Suffix(" - rozbité");
                 return (marked, Category.Broken);
             }
             if (anyLaunchable) return (marked, Category.Launchable);
 
             marked.Color = StubColor;
-            marked.DisplayedName += Suffix(" - stuby");
+            marked.DisplaySuffix += Suffix(" - stuby");
             return (marked, Category.Stub);
         }
 
         private static (IModule, Category) MarkExe(ExecutableModule exe) => Evaluate(exe) switch
         {
             State.Launchable => (exe, Category.Launchable),
-            State.Stub => (exe with { Color = StubColor, DisplayedName = exe.DisplayedName + Suffix(" - stub") }, Category.Stub),
-            _ => (exe with { Color = BrokenColor, DisplayedName = exe.DisplayedName + Suffix(" - chybí exe") }, Category.Broken),
+            State.Stub => (exe with { Color = StubColor, DisplaySuffix = exe.DisplaySuffix + Suffix(" - stub") }, Category.Stub),
+            _ => (exe with { Color = BrokenColor, DisplaySuffix = exe.DisplaySuffix + Suffix(" - chybí exe") }, Category.Broken),
         };
 
         private static string Suffix(string text) => InternalDiagnostics.Enabled ? text : "";
