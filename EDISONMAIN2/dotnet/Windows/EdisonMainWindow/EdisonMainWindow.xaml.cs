@@ -44,6 +44,7 @@ namespace EDISONMAIN2
             ContentRendered += OnContentRendered;
             // Drží plochu miniaplikací nad minimem při zúžení i snížení (splittery i okno) - viz handler.
             DockManager.SizeChanged += MiniAppArea_SizeChanged;
+            DockTabHeader.Register();
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
             CompanyCombo.Loaded += (_, _) => FitCompanyCombo();

@@ -14,6 +14,8 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - Widgety `podpora.m-line.cz` v docku **nejsou**, pruh podpory má vlastní
   [CLAUDE.md](../Windows/EdisonMainWindow/SupportStrip/CLAUDE.md). Chrome docku EDTheme tokeny
   nečte: dark řeší swap `DockManager.Theme` na VS2013 Light/Dark, tab strip navrch dotahuje `DockThemeBrushes`.
+  Záložka dokumentu má v tématu VS2013 pevných 19 px, s písmem ji uvolňuje `DockTabHeader` class handlerem
+  na `Border.SizeChanged`. `Loaded` nejde: WPF ho do větve bez instančního handleru nepošle, class handler se nepočítá.
 - **Vlastní okna docku (overlay s drop terči, plovoucí okna) nikdo zvenčí nesmí zavírat ani
   k nim věšet owned okna** (proč: `FrameworkWindows`, [EDViewModel/CLAUDE.md](../../../EDControls/dotnet/EDViewModel/CLAUDE.md)).
   Odtržené mini-apps zavírej přes `document.Close()` (`MiniAppManager`), ne přes okno.
