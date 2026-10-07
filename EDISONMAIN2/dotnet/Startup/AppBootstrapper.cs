@@ -583,7 +583,7 @@ public class AppBootstrapper
     internal static Func<IMLRest, LicenceService.MlineSyncResult>? LicenceSyncFor(StartupOptions options) =>
         options.TestRun is null ? null : _ => new LicenceService.MlineSyncResult(false, "");
 
-    /// <summary>Pořadí providerů = pořadí skupin v menu „Miniaplikace".</summary>
+    /// <summary>Providery miniaplikací shellu; výběr je řadí abecedně, pořadí registrace platí jen pro shodné titulky.</summary>
     internal static IReadOnlyList<IMiniAppProvider> MiniAppProviders(ModuleShortcutsService shortcuts, bool devMiniApps)
     {
         List<IMiniAppProvider> providers =

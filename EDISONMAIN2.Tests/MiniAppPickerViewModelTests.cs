@@ -36,13 +36,25 @@ public class MiniAppPickerViewModelTests
         new(new object(), titles, isActive);
 
     [Fact]
-    public void Flattens_AllGroups_KeepingRegistrationOrder()
+    public void Flattens_AllGroups_SortedByTitle()
     {
         var vm = Build(new Provider("MHD", App("a", "Dispečink"), App("b", "Vozidla")),
                        new Provider("Nástroje", App("c", "Obnova")));
 
-        Assert.Equal(["Dispečink", "Vozidla", "Obnova"], vm.Choices.Select(c => c.Title));
-        Assert.Equal(["MHD", "MHD", "Nástroje"], vm.Choices.Select(c => c.GroupTitle));
+        Assert.Equal(["Dispečink", "Obnova", "Vozidla"], vm.Choices.Select(c => c.Title));
+        Assert.Equal(["MHD", "Nástroje", "MHD"], vm.Choices.Select(c => c.GroupTitle));
+    }
+
+    /// <summary>Řadí se česky bez ohledu na kulturu stanice: Ch až za H, Š až za S.</summary>
+    [Fact]
+    public void Choices_UseCzechAlphabet()
+    {
+        var vm = Build(new Provider("Přehledy",
+            App("a", "Školení zaměstnanců"), App("b", "Chyby"), App("c", "Sklady MTZ"),
+            App("d", "Hlášení"), App("e", "Údržba vozidel"), App("f", "Cesty")));
+
+        Assert.Equal(["Cesty", "Hlášení", "Chyby", "Sklady MTZ", "Školení zaměstnanců", "Údržba vozidel"],
+                     vm.Choices.Select(c => c.Title));
     }
 
     [Fact]

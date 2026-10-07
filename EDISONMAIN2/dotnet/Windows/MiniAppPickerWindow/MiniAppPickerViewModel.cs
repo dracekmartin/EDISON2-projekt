@@ -1,3 +1,4 @@
+using System.Globalization;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDISONMAIN2.MiniApps;
@@ -31,14 +32,19 @@ namespace EDISONMAIN2.Windows.MiniAppPickerWindow
         {
             // Pinned ven - co uživatel nezavře, není co otvírat (Plocha).
             Choices = [.. catalog.Groups.SelectMany(g => g.Apps.Where(a => !a.Pinned)
-                                                               .Select(a => new MiniAppChoice(a, g.Title)))];
+                                                               .Select(a => new MiniAppChoice(a, g.Title)))
+                                        .OrderBy(c => c.Title, TitleOrder)];
             Selected = Choices.FirstOrDefault();
             Placements = BuildPlacements(targets);
             SelectedPlacement = Placements.FirstOrDefault(p => p.Placement.Target?.IsActive == true)
                                 ?? Placements.FirstOrDefault();
         }
 
-        /// <summary>Pořadí = pořadí registrace providerů, uvnitř skupiny pořadí deskriptorů.</summary>
+        // Česky natvrdo: Č, Ř, Š, Ž a Ch jsou samostatná písmena i na stanici s anglickým Windows.
+        private static readonly StringComparer TitleOrder =
+            StringComparer.Create(CultureInfo.GetCultureInfo("cs-CZ"), ignoreCase: true);
+
+        /// <summary>Abecedně podle titulku; stejné titulky drží pořadí registrace.</summary>
         public IReadOnlyList<MiniAppChoice> Choices { get; }
 
         public MiniAppChoice? Selected { get; set; }

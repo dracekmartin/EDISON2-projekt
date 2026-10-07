@@ -1,8 +1,11 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Threading;
 using EDISONMAIN2.LegacyMiniApps;
 
 namespace EDISONMAIN2.Tests;
@@ -47,7 +50,40 @@ public class LegacyDashboardMiniAppViewTests
     [Fact]
     public void TableTemplate_IsBareEDListWithCellColors()
     {
-        RunSta(() => Assert.NotNull(TableList().CellStyle));
+        RunSta(() =>
+        {
+            var host = TableHost();
+            Assert.Null(host.Background);
+            Assert.Equal(new Thickness(0), host.BorderThickness);
+            Assert.NotNull(Assert.IsType<EDControls.EDList.EDList>(host.Child).CellStyle);
+        });
+    }
+
+    /// <summary>
+    /// Tabulka s neomezenou výškou (uvnitř ScrollVieweru panelu) nevirtualizuje: DataGrid postaví
+    /// všechny řádky při načtení i při každém seřazení a „Údržba vozidel" s tisíci řádky se vleče.
+    /// Strop musí platit už při prvním měření - postavené řádky DataGrid potom neuklidí.
+    /// </summary>
+    [Fact]
+    public void LongTable_BuildsOnlyRowsAroundViewport()
+    {
+        RunSta(() =>
+        {
+            var table = new DashboardTable(
+                [new DashboardColumn("Rz", 'T', ""), new DashboardColumn("Km", 'N', "")],
+                [.. Enumerable.Range(1, 2000).Select(i =>
+                    new DashboardRow([$"RZ{i}", i.ToString(CultureInfo.InvariantCulture)], null, 0))],
+                "EDISONMAIN2.LegacyMiniApp.52006.0", "Údržba vozidel");
+            var view = new LegacyDashboardMiniAppView { DataContext = new SectionsOnly([table]) };
+
+            Layout(view, new Size(600, 400));
+            Assert.InRange(Descendants<DataGridRow>(view).Count(), 1, 200);
+
+            // Řazení obnoví pohled na řádky a DataGrid kontejnery staví znovu.
+            Descendants<DataGrid>(view).Single().Items.Refresh();
+            Layout(view, new Size(600, 400));
+            Assert.InRange(Descendants<DataGridRow>(view).Count(), 1, 200);
+        });
     }
 
     /// <summary>Tabulka se do EDListu dostane attached property, ne bindingem na data - ta jdou SetData.</summary>
@@ -93,11 +129,39 @@ public class LegacyDashboardMiniAppViewTests
         RunSta(() => Assert.NotNull(new LegacyDashboardMiniAppView().Content));
     }
 
-    private static EDControls.EDList.EDList TableList()
+    private static Border TableHost()
     {
         var view = new LegacyDashboardMiniAppView();
         var template = (DataTemplate)view.Resources[new DataTemplateKey(typeof(DashboardTable))];
-        return Assert.IsType<EDControls.EDList.EDList>(template.LoadContent());
+        return Assert.IsType<Border>(template.LoadContent());
+    }
+
+    private static EDControls.EDList.EDList TableList() =>
+        Assert.IsType<EDControls.EDList.EDList>(TableHost().Child);
+
+    /// <summary>DataContext bez VM: ostatní bindingy view tiše nic nenajdou, sekce ano.</summary>
+    private sealed record SectionsOnly(ObservableCollection<DashboardSection> Sections);
+
+    // Strop tabulky se váže na ViewportHeight, který ScrollViewer nastaví až po prvním layoutu.
+    private static void Layout(FrameworkElement root, Size size)
+    {
+        for (int pass = 0; pass < 3; pass++)
+        {
+            root.Measure(size);
+            root.Arrange(new Rect(size));
+            root.UpdateLayout();
+            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+        }
+    }
+
+    private static IEnumerable<T> Descendants<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match) yield return match;
+            foreach (var nested in Descendants<T>(child)) yield return nested;
+        }
     }
 
     private static void EnsureApplication()

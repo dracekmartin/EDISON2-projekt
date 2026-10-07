@@ -33,4 +33,13 @@ public partial class LegacyDashboardMiniAppView : UserControl
     }
 
     private void RefreshSections() => SectionsHost.Items.Refresh();
+
+    // Strop tabulky jde přes DynamicResource, ne binding na ScrollViewer: ten se v šabloně vyhodnotí
+    // až po prvním měření a DataGrid by mezitím postavil všechny řádky. ScrollChanged probublá
+    // i z vnitřního ScrollVieweru tabulky, ten má viewport v řádcích.
+    private void OnScrollChanged(object sender, ScrollChangedEventArgs e)
+    {
+        if (e.OriginalSource != sender || e.ViewportHeightChange == 0) return;
+        Resources["TableMaxHeight"] = e.ViewportHeight;
+    }
 }

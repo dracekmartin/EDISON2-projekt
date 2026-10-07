@@ -47,8 +47,11 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - Stav docku (`LocalPrefs.MiniAppLayouts`, šířka stromu `TreeWidths`, výška pruhu `SupportStripHeights`) má klíč
   `server:port|idfa|login` (`DockScope`: sdílený terminál, uživatel nerozhází dock jinému), starý klíč jen IDFa se
   čte jako fallback; chybí-li nebo je poškozený → jen Plocha. Ukládá se v `Closed` shellu a při výměně session, pod tu, jejíž dock je.
-- Výběr miniaplikace je okno `Windows/MiniAppPickerWindow` s **jednoúrovňovým** seznamem;
-  z `IMiniAppProvider.GroupTitle` (pořadí = registrace v `AppBootstrapper`) zbyl jen popisek řádku.
+- Výběr miniaplikace je okno `Windows/MiniAppPickerWindow` s **jednoúrovňovým** seznamem seřazeným
+  abecedně podle titulku (česky, nezávisle na kultuře stanice); z `IMiniAppProvider.GroupTitle` zbyl jen popisek řádku.
+- **Tabulka legacy dashboardu má strop na výšku panelu**: s neomezenou výškou DataGrid nevirtualizuje a „Údržba
+  vozidel" (tisíce řádků) se staví při načtení i seřazení. Strop je `DynamicResource` plněný ze `ScrollChanged`, ne binding
+  na `ViewportHeight` předka - ten se v šabloně vyhodnotí až po prvním měření a postavené řádky DataGrid už neuklidí.
 - Picker vybírá i **umístění** (`MiniAppPlacement`). Cíle jsou **jen ukotvená** pod-okna:
   `Descendents()` vrací i ta v plovoucích oknech, filtruje se `IsHostedInFloatingWindow`.
   **Poslední document pane AvalonDock neodstraní** - po zavření všeho zbude prázdný přes celou
