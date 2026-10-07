@@ -316,6 +316,8 @@ ClassMethod VydatStrankyZastavky(dataDB As %String, sku As %String, lin As %Stri
 ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %String, currentPoradi As %String = "", smer As %String = "T", filtrOznacnik As %String = "", IdFa As %String = "", zdrojSt As %String = "OZN") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
+    // B188: údaje zastávek z registru k „platí od" linky (časové varianty), jako starý tisk
+    s ^||TiskAd("zastavky","hrl") = ..HorologPlatnostiOdLinky(dataDB, sku, lin)
     s slJakoStanoviste = (zdrojSt = "SL")            // #13088: stanoviště = sloupek, ne označník
 
     // currentPoradi nezadáno → první zastávka trasy
@@ -1357,6 +1359,12 @@ ClassMethod PoziceStanoviste(zdroj As %String) As %String
 ClassMethod PopisSloupku(dataDB As %String, czst As %String, sloupek As %String) As %String
 {
     i (czst = "") || (sloupek = "") ret ""
+    // Sloupky má každá časová varianta zastávky vlastní (registr je tak ukládá); varianta bez nich
+    // dědí hlavní záznam, jinak by k novému názvu patřil starý popis směru.
+    d ..ZaznamZastavky(dataDB, czst, .od)
+    i (od '= "") && $d(^[dataDB]JRZ(czst, "CasoveVariantyUdaju", od, "Sloupek")) {
+        ret $p($g(^[dataDB]JRZ(czst, "CasoveVariantyUdaju", od, "Sloupek", sloupek)), "~", 4)
+    }
     ret $p($g(^[dataDB]JRZ(czst, "Sloupek", sloupek)), "~", 4)
 }
 
@@ -2263,7 +2271,7 @@ ClassMethod TrasaBitmapaZPole(dataDB As %String, sku As %String, lin As %String,
 ClassMethod AtributyZastavky(dataDB As %String, czst As %String, atributyTrasy As %String) As %String
 {
     i czst = "" ret atributyTrasy
-    s atributyRegistru = $p($g(^[dataDB]JRZ(czst)),"$",8)
+    s atributyRegistru = $p(..ZaznamZastavky(dataDB, czst),"$",8)
     i atributyRegistru = "" ret atributyTrasy
     s vysledek = atributyTrasy
     f i=1:1:$l(atributyRegistru) {
@@ -2284,7 +2292,7 @@ ClassMethod ZonyZastavky(dataDB As %String, veta As %String, czst As %String, zo
 {
     s zonyTrasy = $tr($p(veta,"#",9), ",", ";")
     i zonyTrasy = "", czst '= "" {
-        s poleRegistru = $p($g(^[dataDB]JRZ(czst)),"$",11)
+        s poleRegistru = $p(..ZaznamZastavky(dataDB, czst),"$",11)
         s zonaRegistru = $p(poleRegistru,"~",1)
         // Hraniční zastávka (příznak) leží ve dvou zónách - druhá je v témže poli.
         i +$p(poleRegistru,"~",2) {
@@ -3121,7 +3129,7 @@ ClassMethod BuildDopravci(dataDB As %String, sku As %String, lin As %String) As 
 ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 {
     i czst = "" q ""                 // prázdný subscript (^JRZ("")) = <SUBSCRIPT>
-    s rec = $g(^[dataDB]JRZ(czst))
+    s rec = ..ZaznamZastavky(dataDB, czst)
     // Pole 7 = „upravený název pro MHD" (legacy JRapiZst dta13). Má přednost, ale parametrem
     // sestavy ho lze vypnout - KOVED ho u některých zastávek má a na vývěsce chce CIS název.
     s nazev = ""
@@ -3273,7 +3281,15 @@ ClassMethod NactiNastaveniNazvu()
 ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 {
     i czst = "" q ""          // prázdný czst → prázdný subscript (^JRZ("")) = <SUBSCRIPT>; ošetřit
-    q $p($g(^[dataDB]JRZ(czst)), "$", 2)
+    q $p(..ZaznamZastavky(dataDB, czst), "$", 2)
+}
+
+/// Záznam zastávky z registru k „platí od" linky, pro kterou se stránka staví (`B188`, časové
+/// varianty) - datum nastaví `BuildStrankaZastavky`. Mimo sestavu stránky (bez data) platí
+/// dnešek jako v legacy `gZst`. `variantaOd` = začátek vybrané varianty (sloupky).
+ClassMethod ZaznamZastavky(dataDB As %String, czst As %String, ByRef variantaOd As %String = "") As %String
+{
+    ret ..ZaznamZastavkyKDatu(dataDB, czst, $g(^||TiskAd("zastavky","hrl")), .variantaOd)
 }
 
 /// Číslo zastávky dle celostátního registru (CIS) - `^JRZ(czst)` `$`-pole **9** (legacy `JRapiZst`
@@ -3284,7 +3300,7 @@ ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 ClassMethod CisloZastavkyCis(dataDB As %String, czst As %String) As %String
 {
     i czst = "" ret ""        // prázdný subscript → <SUBSCRIPT>
-    ret $p($g(^[dataDB]JRZ(czst)), "$", 9)
+    ret $p(..ZaznamZastavky(dataDB, czst), "$", 9)
 }
 
 /// Vrátí ukázková data pro live preview v designeru.

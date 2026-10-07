@@ -33,16 +33,6 @@
 
 ---
 
-## 🏷 Názvy zastávek podle časové platnosti
-
-- **`B188` Názvy zastávek k datu platnosti linky (AD)** [M] (Jan 7. 10.). Zastávkový i linkový JŘ AD
-  tisknou název z hlavního záznamu zastávky a časové varianty (přejmenování od data) nečtou; MHD
-  ano. **Čeká na domluvu Jana s kolegou, ke kterému datu název brát** (návrh: platí od linky, ne
-  dřív než dnes). Návrh, otevřené otázky a co ověřit předem:
-  [`ad-data-mapa.md` §Časové varianty zastávek](ad-data-mapa.md).
-
----
-
 ## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
 
 > ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -

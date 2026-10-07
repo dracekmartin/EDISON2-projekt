@@ -481,4 +481,49 @@ ClassMethod DnySpoje(plk As %String) As %String
     q $s(dny="":"-", 1:dny)
 }
 
+/// „Platí od" jízdního řádu linky jako horolog (`^JRL(sku,lin,"PATCH","Plati")` = „od~do:…").
+/// 1:1 legacy `gLinHrlOd^JRapiLinUtl`; prázdné, když linka datum platnosti nemá.
+ClassMethod HorologPlatnostiOdLinky(dataDB As %String, sku As %String, lin As %String) As %String
+{
+    i (sku = "") || (lin = "") ret ""
+    s datum = $p($p($g(^[dataDB]JRL(sku,lin,"PATCH","Plati")),":",1),"~",1)
+    i datum = "" ret ""
+    s hrl = ""
+    try { s hrl = ##class(ALVA.GENERALAPI.Date).DateToHor(datum) } catch (ex) { s hrl = "" }
+    ret hrl
+}
+
+/// Záznam zastávky z registru (`$`-věta jako `^JRZ(czst)`) **platný k datu** `hrl` (horolog,
+/// prázdné = dnešek). Zastávka může mít časové varianty `^JRZ(czst,"CasoveVariantyUdaju",od)`:
+/// platí ta s nejpozdějším začátkem ≤ hrl, jejíž konec (`$`-pole 42) je prázdný nebo ≥ hrl;
+/// skončená se přeskočí a zkouší se předchozí. Žádná neplatí → hlavní záznam; je-li prázdný
+/// a datum leží před první variantou, první varianta.
+/// 1:1 legacy `gZst^JRapiZst` (`JRapiZst.mac:123-147`), kterým starý tisk AD čte každou zastávku
+/// k „platí od" linky (`JRapiLinPrtMhd.mac:78`, `JRapiLinPrtPS1.mac:26`). `variantaOd` = začátek
+/// vybrané varianty, prázdné u hlavního záznamu (podle něj se hledají sloupky zastávky).
+ClassMethod ZaznamZastavkyKDatu(dataDB As %String, czst As %String, hrl As %String = "", ByRef variantaOd As %String = "") As %String
+{
+    s variantaOd = ""
+    i czst = "" ret ""
+    s zaznam = $g(^[dataDB]JRZ(czst))
+    i hrl = "" s hrl = +$h
+    s od = hrl + 0.1
+    f {
+        s od = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",od),-1,varianta)
+        q:od=""
+        s konec = $p(varianta,"$",42)
+        i (konec = "") || (konec >= hrl) {
+            s zaznam = varianta, variantaOd = od
+            q
+        }
+    }
+    i zaznam = "" {
+        s prvni = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",""))
+        i (prvni '= "") && (hrl < prvni) {
+            s zaznam = $g(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",prvni)), variantaOd = prvni
+        }
+    }
+    ret zaznam
+}
+
 }
