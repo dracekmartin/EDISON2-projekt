@@ -28,6 +28,11 @@
 3. **`B191` Linkový (knižní) JŘ MHD - dodělat a vydat** [L]. Městská varianta je dnes skrytá,
    dokud neprojde porovnáním se starým modulem. Co se z kódu nepozná (zastávkové řádky dorovnat
    jako první, licenční × veřejné číslo linky, vlastní sada voleb): sekce Linkové a knižní JŘ níž.
+4. **`B192` Vizuální „diff" jízdního řádu** [M] (nápad Jan 7. 10., někomu by se líbil; **nejdřív
+   krátký rozbor**). Linkový JŘ proti předchozí verzi: nový / změněný spoj barvou, zrušený šedě,
+   legenda to vysvětlí - přes dnešní barvy spojů ze serveru a parametr „Porovnat s". Otevřené: s čím
+   porovnávat (archiv platných linek `^JRAPL`, nebo jiná skupina linek) a jestli stačí celé spoje;
+   zvýraznit jednotlivé změněné časy je dražší (tabulka nemá barvy buněk).
 
 > 📞 **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze **starých šablon**
 > (starý tisk JŘ a jeho návrhář sestav), jak totéž udělat po novu v Návrháři šablon - převést
