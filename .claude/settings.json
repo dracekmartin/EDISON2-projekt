@@ -1,4 +1,7 @@
 {
+  "worktree": {
+    "baseRef": "head"
+  },
   "hooks": {
     "SessionStart": [
       {
@@ -6,12 +9,12 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/tree-drift.sh",
-            "timeout": 10000
+            "timeout": 10
           },
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-brief.sh",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
@@ -23,7 +26,7 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard.sh",
-            "timeout": 10000
+            "timeout": 10
           }
         ]
       }
@@ -35,17 +38,17 @@
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/drift-report.sh",
-            "timeout": 15000
+            "timeout": 15
           },
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/compile-objectscript.sh",
-            "timeout": 30000
+            "timeout": 30
           },
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dotnet-build.sh",
-            "timeout": 60000
+            "timeout": 300
           }
         ]
       }
