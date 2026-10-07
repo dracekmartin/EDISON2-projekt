@@ -38,7 +38,10 @@ public static class AccessLoader
         bool isAllAccess = apId == ApIdAdmin;
 
         if (!isAllAccess)
+        {
             allowed.UnionWith(LegacyOutput.Values(output).Skip(1).Where(id => id.Length > 0));
+            LegacyDerivedAccess.AddTo(allowed);
+        }
 
         // Admin fallback - viz frmMain.AddAdminRights. Aplikuje se i pokud
         // user není apId=3, ale je IsAdmin (např. lokálně označený admin jinou cestou).
