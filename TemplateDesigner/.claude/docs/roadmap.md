@@ -12,6 +12,16 @@
 
 ---
 
+## 📨 Poslat šablonu jinému uživateli
+
+- **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
+  dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),
+  mezi firmami jen *Exportovat do souboru* / *Importovat ze souboru*, a M-line rozesílá systémové
+  šablony kanálem z helpdesku (`SystemTemplateChannelSync`). Otevřené: mezi firmami, nebo uvnitř
+  firmy (sdílet / nabídnout konkrétnímu kolegovi)?
+
+---
+
 ## 📱 QR na vývěsce - kam se odsud dostanu
 
 - **Vyhledávač odjezdů pro cestující - demo** [M] (Jan 1. 10., **základ hotový** týž den). QR
