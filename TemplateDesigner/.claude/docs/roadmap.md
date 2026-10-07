@@ -4,11 +4,23 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** QR na vývěsce (analýza dat vývěsky). Zpětná vazba kolegy z 18. 9.
-> i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
+> **Nejblíž na řadě:** `B190` tisk jízdních řádů z nového okna JŘ bez návrháře (priorita Jan
+> 7. 10.). Zpětná vazba kolegy z 18. 9. i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je
+> obecná věc formuláře v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
+
+---
+
+## 🖨 Tisk z okna jízdních řádů (priorita)
+
+- **`B190` Tisk JŘ z nového okna jízdních řádů bez návrháře** [L] (priorita Jan 7. 10.). Uživatel
+  v novém okně JŘ vybere linky a dostane PDF, aniž otevře návrhář; šablona jednoduchou volbou
+  výchozí šablony (nebo podobně, doladí se). Navazuje na dřívější A3 headless tisk: R4 doporučuje
+  pro začátek spouštět návrhář z EDISONu s parametry (launch kontrakt už je) a render oddělit
+  fasádou. **Před začátkem rozhodnout:** odkud se bere výchozí šablona a jak ji uživatel volí.
+  Podklad [`architektonicka-rozhodnuti-agendy.md` R4/R7](architektonicka-rozhodnuti-agendy.md).
 
 ---
 
@@ -164,9 +176,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   lidé si v něm překážejí. Návrh: `partial` soubory přesně podle těch pruhů, beze změny chování;
   precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
   ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
-
-- **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
-  bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
 
 - **Externí datové zdroje** (na poptávku) - architektura je připravená, engine zná jen
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
