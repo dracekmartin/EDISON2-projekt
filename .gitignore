@@ -21,6 +21,8 @@
 bld/
 [Bb]in/
 [Oo]bj/
+# WPF markup compilation temp project, left next to the csproj by an interrupted build
+*_wpftmp.csproj
 
 # Visual Studio 2015 cache/options directory
 .vs/
