@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-07 - 🏷 názvy zastávek k datu platnosti linky (`B188`)
+
+Zastávkový i linkový JŘ AD četly název a ostatní údaje zastávky z hlavního záznamu číselníku
+a časové varianty (přejmenování od data) ignorovaly. Teď je berou z varianty platné k „platí od"
+linky - rozhodnutí Jan s kolegou 7. 10. Je to **shoda se starým modulem**: starý tisk AD čte každou
+zastávku přes `gZst^JRapi` k `linHrlOd` (`JRapiLinPrtMhd.mac:78`, `JRapiLinPrtPS1.mac:26`) a pravidlo
+výběru varianty je 1:1 `gZst^JRapiZst` (`BaseAgenda.ZaznamZastavkyKDatu`). Týká se názvu, názvu pro
+MHD, okresu, CIS, atributů, zón registru a popisu sloupku (sloupky z varianty, neověřeno proti
+starému tisku). Zastávky bez variant beze změny; Caché testy 181/181 včetně zlatých odtisků beze
+změny, nový `ZastavkyKDatuTest` (7 testů nad syntetickou zastávkou). Kolik zastávek v datech má
+víc variant s různým názvem, změřené není.
+
 ## 2026-10-05 (2) - 🎛 parametry variant tras jen se sloupcem Varianty tras
 
 Řazení variant, Nejvýš sloupců variant, Slučování variant, Písmena variant a První varianta bez

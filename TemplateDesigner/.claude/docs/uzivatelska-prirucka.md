@@ -1223,6 +1223,10 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
   starý modul), *Plný CIS s okresem*, *Zkrácený*, *Typograficky upravený* (mezera za čárkou a tečkou).
 - **Použít název pro MHD** - zastávka může mít v číselníku vedle názvu podle CIS ještě upravený
   název pro MHD; vypnutím se všude použije název podle CIS.
+- **Název zastávky k datu platnosti linky** (bez nastavení) - název i ostatní údaje zastávky
+  z číselníku se berou k datu „platí od" linky. Přejmenuje-li se zastávka od určitého data
+  (časová varianta v číselníku zastávek), jízdní řád platný od dřívějška vytiskne ještě původní
+  název, jako starý tisk. Platí i pro zastávkový JŘ AD.
 - **Počet stran** - *1 strana* / *2 strany*: na kolik stran se má vejít každý směr linky. Když se
   nevejde, zmenší se nejdřív poznámky, pak tabulka; nejde-li to ani tak, ozve se hláška.
   *Automaticky (dle linky)* zatím počet stran neomezuje.

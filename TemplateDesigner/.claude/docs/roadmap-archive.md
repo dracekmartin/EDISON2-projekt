@@ -1,5 +1,13 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B188` Názvy zastávek k datu platnosti linky (hotovo 7. 10. 2026)
+
+Zastávkový i linkový JŘ AD čtou údaje zastávky z registru (název, název pro MHD, okres, CIS,
+atributy, zóny, popis sloupku) z časové varianty platné k „platí od" linky - rozhodnutí Jan
+s kolegou 7. 10. Starý tisk AD to dělá stejně (`gZst^JRapiZst` s `linHrlOd`), takže jde o shodu
+se starým modulem, odchylka byla u nás. Zastávky bez variant beze změny, zlaté odtisky beze změny.
+Detail changelog 2026-10-07, pravidlo `ad-data-mapa.md` §Časové varianty zastávek v tisku.
+
 ## `B187` Doladění stránek šablony a uspořádání na list (hotovo 28. 9. 2026)
 
 Přepínač stránek „Stránka 1 z 2" nad plátnem i nad náhledem, „Náhled všech stránek" výchozí

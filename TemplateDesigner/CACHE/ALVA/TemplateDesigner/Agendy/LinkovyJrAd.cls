@@ -705,6 +705,8 @@ ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integ
 ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String, smer As %String, deleni As %Integer, volbaTc As %String = "", volbaBezZastaveni As %String = "", volbaBarvy As %String = "", ByRef defSloupcu, obousmerne As %Boolean = 0, sTurnusy As %Boolean = 0, volbaZony As %String = "") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
+    // B188: údaje zastávek z registru k „platí od" linky (časové varianty), jako starý tisk
+    s ^||TiskKnizni("zastavky","hrl") = ..HorologPlatnostiOdLinky(dataDB, sku, lin)
     // U obousměrné stránky stačí spoje v jednom ze směrů - kdyby se ptalo jen na `smer`, linka
     // obsluhovaná pouze zpět by nevrátila nic.
     i obousmerne {
@@ -825,7 +827,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
         // atributy z číselníku zastávek (^JRZ $8, CSV - např. "A,L" = přestup bus/vlak)
-        s atrZst = $p($g(^[dataDB]JRZ(czst)),"$",8)
+        s atrZst = $p(..ZaznamZastavky(dataDB, czst),"$",8)
         f ai=1:1:$l(atrZst,",") {
             s znakZst = $p(atrZst,",",ai)
             i znakZst '= "" s atributyZastavek(znakZst) = ""
@@ -2313,7 +2315,15 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
 ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 {
     i czst = "" q ""
-    q ..FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), $p($g(^[dataDB]JRZ(czst)), "$", 3), $g(^||TiskKnizni("nazev","tvar")), ..Jazyk(dataDB))
+    q ..FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), $p(..ZaznamZastavky(dataDB, czst), "$", 3), $g(^||TiskKnizni("nazev","tvar")), ..Jazyk(dataDB))
+}
+
+/// Záznam zastávky z registru k „platí od" linky, pro kterou se stránka staví (`B188`, časové
+/// varianty) - datum nastaví `BuildStrankaLinky`. Mimo sestavu stránky (bez data) platí dnešek
+/// jako v legacy `gZst`.
+ClassMethod ZaznamZastavky(dataDB As %String, czst As %String) As %String
+{
+    ret ..ZaznamZastavkyKDatu(dataDB, czst, $g(^||TiskKnizni("zastavky","hrl")))
 }
 
 /// Označení navazující linky do textu poznámky. U autobusu je to číslo a vede se bez vodicích nul
@@ -2368,7 +2378,7 @@ ClassMethod JeZvyraznena(nazevZastavky As %String, poradi As %String) As %Boolea
 ClassMethod ZdrojNazvuZastavky(dataDB As %String, czst As %String) As %String
 {
     i czst = "" q ""
-    s rec = $g(^[dataDB]JRZ(czst))
+    s rec = ..ZaznamZastavky(dataDB, czst)
     s nazev = ""
     i $g(^||TiskKnizni("nazev","mhd")) s nazev = $p(rec, "$", 7)
     i nazev = "" s nazev = $p(rec, "$", 2)
