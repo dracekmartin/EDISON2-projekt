@@ -4,7 +4,7 @@
 # Pre-push: run .NET (xUnit), Cache (%UnitTest) and integration (.NET <-> Cache seam) suites.
 #
 # Change-aware: only runs the suite whose sources changed in the pushed range
-#   (.cs/.csproj/.sln -> .NET, .cls -> Cache, any of those or .inc -> integration).
+#   (.cs/.csproj/.sln/.xaml and build files -> .NET, .cls -> Cache, .cs/.csproj/.sln/.cls/.inc -> integration).
 #   If the range can't be resolved, all run (safe default).
 # Integration = real MLRest against the dev server. Required when the server side
 #   changed (.cls/.inc); a .cs-only push without VPN reports it skipped and goes on.
@@ -36,7 +36,7 @@ if [ -n "$RANGE" ]; then
     CHANGED=$(git diff --name-only "$RANGE" 2>/dev/null || true)
     if [ -n "$CHANGED" ]; then
         # Tree.cls a jeho fingerprint: parity test generátoru stromu (TreeGeneratorTests) jede v .NET sadě.
-        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln)$|Tree\.cls$|tree-sources\.sha256$' && run_dotnet=1 || run_dotnet=0
+        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|xaml|props|targets)$|(^|/)global\.json$|Tree\.cls$|tree-sources\.sha256$' && run_dotnet=1 || run_dotnet=0
         echo "$CHANGED" | grep -qiE '\.cls$'                     && run_cache=1   || run_cache=0
         echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|cls|inc)$' && run_it=1      || run_it=0
         echo "$CHANGED" | grep -qiE '\.(cls|inc)$'               && it_required=1 || it_required=0
@@ -121,7 +121,7 @@ if [ "$run_dotnet" = "1" ]; then
     fi
     echo "    .NET tests passed."
 else
-    echo "==> [.NET] skipped (no .cs/.csproj/.sln in pushed range)"
+    echo "==> [.NET] skipped (no .cs/.csproj/.sln/.xaml or build file in pushed range)"
 fi
 
 # --- Cache --------------------------------------------------------------------
