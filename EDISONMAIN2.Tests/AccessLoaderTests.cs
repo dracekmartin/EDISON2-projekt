@@ -46,6 +46,16 @@ public class AccessLoaderTests
     }
 
     [Fact]
+    public void NonAdmin_LegacyDerivedAccess_Added()
+    {
+        // JRMAIN v AP zpřístupní nové JŘ jako legacy EDUsers.GetEdisonAccess (LegacyDerivedAccess).
+        var mlRest = MockAccessCall(apId: 4, "6001");
+        var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
+
+        Assert.True(access.Contains("276001"));
+    }
+
+    [Fact]
     public void AdminRole_AddsFallbackElements()
     {
         // Server vrátil apId<3 (např. user není SuperUser), ale klient ho zná jako admin.

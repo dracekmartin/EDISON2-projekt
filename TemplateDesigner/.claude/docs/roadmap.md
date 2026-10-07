@@ -12,6 +12,16 @@
 
 ---
 
+## 📨 Poslat šablonu jinému uživateli
+
+- **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
+  dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),
+  mezi firmami jen *Exportovat do souboru* / *Importovat ze souboru*, a M-line rozesílá systémové
+  šablony kanálem z helpdesku (`SystemTemplateChannelSync`). Otevřené: mezi firmami, nebo uvnitř
+  firmy (sdílet / nabídnout konkrétnímu kolegovi)?
+
+---
+
 ## 📱 QR na vývěsce - kam se odsud dostanu
 
 - **Vyhledávač odjezdů pro cestující - demo** [M] (Jan 1. 10., **základ hotový** týž den). QR
@@ -20,6 +30,16 @@
   Server dělá jednorázová třída `ALVA.TiskyQrDemo.Cestujici` (mimo návrhář). Čeká na rozhodnutí,
   co dál; otevřené body a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
   Výlepy po zastávkách tiskne parametr „Stránka pro každou zastávku" (1. 10.).
+
+---
+
+## 🏷 Názvy zastávek podle časové platnosti
+
+- **`B188` Názvy zastávek k datu platnosti linky (AD)** [M] (Jan 7. 10.). Zastávkový i linkový JŘ AD
+  tisknou název z hlavního záznamu zastávky a časové varianty (přejmenování od data) nečtou; MHD
+  ano. **Čeká na domluvu Jana s kolegou, ke kterému datu název brát** (návrh: platí od linky, ne
+  dřív než dnes). Návrh, otevřené otázky a co ověřit předem:
+  [`ad-data-mapa.md` §Časové varianty zastávek](ad-data-mapa.md).
 
 ---
 

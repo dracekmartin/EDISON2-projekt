@@ -143,6 +143,29 @@ je to poznat na první pohled; heuristika „vypadá to jako označník" se věd
 **Časové varianty:** `^JRZ(czst,"CasoveVariantyUdaju",horolog)` - vybírá se poslední
 varianta platná k datu (horolog = dny od 31.12.1840). Analogie MHD `ZastavkyFce.GetNazevHrl`.
 
+#### Časové varianty zastávek v tisku (`B188`, stav 7. 10. 2026)
+
+**Dnes:** AD agendy (`ZastavkoveJrAd.NazevZastavky`, `LinkovyJrAd.NazevZastavky` /
+`ZdrojNazvuZastavky`) čtou jen hlavní uzel `^JRZ(czst)`, varianty ne. MHD agendy berou název
+k „platí od" přes `ALVA.MHD.ZastavkyFce.GetNazevHrl`. Varianta má tutéž `$`-strukturu jako hlavní
+uzel (na CB_CSADAD czst 13906 jediná varianta od horologu 58074) a sloupky mají vlastní varianty
+(`…,horolog,"Sloupek",id`).
+
+**Návrh k domluvě (Jan + kolega):**
+- **Datum:** platnost linky je `^JRL(sku,lin,"PATCH","Plati")` = `od~do`. Návrh: platí od, ale ne
+  dřív než dnes a ne později než platí do - dopředu tištěný JŘ dostane názvy od začátku platnosti,
+  dotisk po přejmenování uprostřed platnosti nový název. Alternativa: čistě platí od (jako MHD).
+- **Výběr:** varianta s nejpozdějším začátkem ≤ datum, bez konce nebo s koncem ≥ datum; žádná
+  nevyhoví nebo zastávka varianty nemá → hlavní uzel (dnešní chování).
+- **Rozsah:** celý záznam zastávky z varianty (název, název pro MHD, okres, CIS, atributy, zóny,
+  sloupky), jinak se potká nový název se starou zónou nebo označníkem. Jedno čtení „záznam
+  zastávky k datu" s mezipamětí na požadavek v obou AD agendách.
+
+**Ověřit před psaním:** pravidlo výběru k datu v registru zastávek (`ISYZastavky`; `ZastavkyFce.nactiNazev`
+bere jen přesný horolog varianty, `overitPlatnost` drží od/do), jak to dělal starý AD tisk (R6 -
+nečetl-li varianty, je to nová featura, ne parita) a kolik zastávek má víc variant s různými názvy
+(na ně Caché test).
+
 ### `^JRSET(...)` - číselníky a nastavení
 
 | Uzel | Obsah |
