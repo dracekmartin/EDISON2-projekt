@@ -126,7 +126,7 @@ public class AppBootstrapper
         // firmy a startuje v jedné z nich (legacy frmLoginEx.SelectedCompany).
         if (CompanySwitcher.PickForSession(
                 new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
-                prefs.LastIdfa, conn => LoadAllowedCompanies(conn, login)) is not { } start)
+                PreferredIdfa(prefs, prep.Companies, prep.Server, prep.Port), conn => LoadAllowedCompanies(conn, login)) is not { } start)
         {
             services.PopupDisplayer.Info("Uživatel nemá přístup k žádné firmě.");
             Shutdown();
@@ -313,12 +313,25 @@ public class AppBootstrapper
         if (!string.IsNullOrEmpty(errState))
             throw new InvalidOperationException(errState);
 
-        var startCompany = CompanySwitcher.PickInitial(companies, prefs.LastIdfa);
+        var startCompany = CompanySwitcher.PickInitial(companies, PreferredIdfa(prefs, companies, server, port));
         // Idfa potřebné aby ALVA.SYS.Login.Login uměl resolvovat user's startupForm.
         loginRest.Idfa = startCompany.Id;
 
         return new PreLoginContext(loginRest, companies, startCompany, server, port);
     }
+
+    // Vlastní poslední firma, když na serveru je. Jinak (první start nového shellu, LastIdfa z jiného serveru -
+    // je jedna pro všechny) navazuje na starý shell, než by začal ve výchozí firmě serveru.
+    private string? PreferredIdfa(ILocalPrefs prefs, IReadOnlyList<CompanyStruct> companies, string server, int port)
+    {
+        var last = prefs.LastIdfa;
+        if (!string.IsNullOrEmpty(last) && companies.Any(c => c.Id == last)) return last;
+        return ReadLegacyLastCompany(server, port) ?? last;
+    }
+
+    // E2E běh startuje v zadané firmě, registr vývojářské stanice by mu ji nesměl přebít.
+    protected virtual string? ReadLegacyLastCompany(string server, int port) =>
+        _options.TestRun is null ? LegacyLastCompany.Read(server, port) : null;
 
     /// <summary>
     /// Parita s EDLOADER <c>CheckLogin</c> + <c>UpdateIsRunning</c>: zákaz přihlašování (kdo ho zadal,

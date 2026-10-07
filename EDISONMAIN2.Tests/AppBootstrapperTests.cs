@@ -69,9 +69,22 @@ public class AppBootstrapperTests
 
         protected override ILocalPrefs LoadLocalPrefs() => Prefs;
 
+        /// <summary>Všechny firmy serveru (předloginový seznam) - podle něj se pozná LastIdfa z jiného serveru.</summary>
+        public IReadOnlyList<CompanyStruct> ServerCompanies { get; set; } = [];
+
         protected override PreLoginContext PrepareLogin(ILocalPrefs prefs) =>
-            new(LoginRest: null!, Companies: new List<CompanyStruct>(), StartCompany: default,
+            new(LoginRest: null!, Companies: ServerCompanies, StartCompany: default,
                 Server: "test-host", Port: 9999);
+
+        /// <summary>Poslední firma starého shellu - test nesmí číst registr stanice.</summary>
+        public string? LegacyIdfa { get; set; }
+        public (string Server, int Port)? LegacyQueriedFor { get; private set; }
+
+        protected override string? ReadLegacyLastCompany(string server, int port)
+        {
+            LegacyQueriedFor = (server, port);
+            return LegacyIdfa;
+        }
 
         protected override bool TryLogin(MLRest loginRest, ILocalPrefs prefs, EDServices services, out LoginResult login)
         {
@@ -460,6 +473,8 @@ public class AppBootstrapperTests
 
         public bool CallTryLogin(out LoginResult login) =>
             TryLogin(null!, Substitute.For<ILocalPrefs>(), null!, out login);
+
+        public string? CallReadLegacy(string server, int port) => ReadLegacyLastCompany(server, port);
     }
 
     private static StartupOptions E2E(params string[] args) => StartupOptions.Development(["e2e=1", .. args], null);
@@ -770,6 +785,46 @@ public class AppBootstrapperTests
 
         Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
     }
+
+    // První start nového shellu: local.json nemá LastIdfa, shell naváže na firmu starého shellu, ne na výchozí firmu serveru.
+    [Fact]
+    public void Run_FirstStartWithoutLastCompany_StartsInLegacyShellCompany()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, LegacyIdfa = "JI_DP" };
+        b.Prefs.LastIdfa.Returns((string?)null);
+
+        b.Run();
+
+        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
+        Assert.Equal(("test-host", 9999), b.LegacyQueriedFor);
+    }
+
+    [Fact]
+    public void Run_OwnLastCompany_WinsOverLegacyShellCompany()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, ServerCompanies = TwoAllowed, LegacyIdfa = "CB_DP" };
+        b.Prefs.LastIdfa.Returns("JI_DP");
+
+        b.Run();
+
+        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
+    }
+
+    // LastIdfa je jedna pro všechny servery: po „Připojit k databázi" ukazuje na firmu jiného serveru.
+    [Fact]
+    public void Run_LastCompanyFromOtherServer_StartsInLegacyShellCompany()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, ServerCompanies = TwoAllowed, LegacyIdfa = "JI_DP" };
+        b.Prefs.LastIdfa.Returns("PI_DP");
+
+        b.Run();
+
+        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
+    }
+
+    [Fact]
+    public void ReadLegacyLastCompany_TestRun_DoesNotReadRegistry() =>
+        Assert.Null(new RealStepsBootstrapper(E2E()).CallReadLegacy("192.168.16.1", 57770));
 
     [Fact]
     public void Run_ShellGetsAllowedCompaniesOfLoggedUser()
