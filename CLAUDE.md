@@ -29,17 +29,13 @@ Caché architektury, `.husky/` = git hooks (auto-install při `dotnet restore`).
 
 **Krátké a výstižné**: root i projektový doc ≤ ~150 řádků, komponentový ≤ ~60. Při překročení škrtej.
 
-- **Patří sem**: neodvoditelné invarianty, wire kontrakty, pasti, workaroundy, netriviální
-  WHY, pořadí volání, na kterém záleží.
-- **Nepatří sem**: opisy API a signatur, kopie kódu, tutoriály, changelogy / roadmapy /
-  ✅ stavy (patří do commitů), dlouhé usage příklady (odkaž na referenční implementaci).
-- Když měníš chování popsané v CLAUDE.md, **aktualizuj doc v témže commitu**; stale
-  tvrzení maž bez milosti. Nový vnořený CLAUDE.md zakládej jen pro komponentu s vlastními
-  neodvoditelnými kontrakty; jinak patří poznámka do nadřazeného.
-- **Nový samostatný doc nezakládej** - neodvoditelná poznámka patří do `CLAUDE.md`. Co už mimo
-  něj žije, sedí v `docs/` (malými) kořene nebo projektu, jméno kebab-case česky bez číselných
-  prefixů. `docs/analyzy/` a `.claude/reviews/` jsou datované výstupy skillů - **neudržují se**,
-  ber je jako snímek ke dni vzniku.
+- **Patří sem**: neodvoditelné invarianty, wire kontrakty, pasti, workaroundy, netriviální WHY, pořadí volání. **Nepatří**:
+  opisy API, kopie kódu, tutoriály, changelogy, roadmapy a stavy (patří do commitů), dlouhé příklady (odkaž na referenci).
+- Když měníš chování popsané v CLAUDE.md, **aktualizuj doc v témže commitu**; stale tvrzení maž bez milosti. Nový vnořený
+  CLAUDE.md zakládej jen pro komponentu s vlastními neodvoditelnými kontrakty, jinak patří poznámka do nadřazeného.
+- **Nový samostatný doc nezakládej** - neodvoditelná poznámka patří do `CLAUDE.md`. Co už mimo něj žije, sedí v `docs/`
+  (malými) kořene nebo projektu, jméno kebab-case česky bez číselných prefixů. `docs/analyzy/` a `.claude/reviews/` jsou
+  datované výstupy skillů - **neudržují se**, ber je jako snímek ke dni vzniku.
 
 ## MLRest - použití v .NET
 
@@ -120,13 +116,13 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 
 - **Změna chování přichází s testem** na nejlevnější úrovni, která regresi chytí: logika → unit, `.cls` → Caché,
   hranice (odpověď serveru, formát, argumenty procesu) → navíc šev (mock dokazuje jen sám sebe), startup shellu → E2E.
-- **.NET**: `dotnet test EDISON2.sln` (xUnit + NSubstitute). **Šev .NET ↔ Caché** `EDISON2.IntegrationTests` (skutečné MLRest)
-  běží jen se serverem, **UI E2E** `EDISON2.E2ETests` (FlaUI, DEBUG shell s `e2e=1`) jen s `EDISON_E2E=1`, test se skutečným
-  oknem (`[WindowFact]`, ne `[Fact]`) jen s `EDISON_WINDOW_TESTS=1` - nastavuje pre-push. Pravidla šva a E2E v jejich `CLAUDE.md`.
-- **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)` pro `$$$FillParams`),
-  metody `TestXxx()`. Běh `pwsh -File tools/run-cache-tests.ps1 [-Package ...]` proti dev serveru `192.168.16.1:57770`
-  (VPN, user `$env:USERNAME`, override `$env:CACHE_USER`); nový package mimo default list skriptu (`*.Tests`
-  EDISONMAIN2/EDControls/TemplateDesigner/EDTesting) přidej, jinak ho pre-push nepokryje. `$$$AssertSkipped` běh neshodí.
+- **.NET**: `dotnet build EDISON2.sln`, `dotnet test EDISON2.sln` (xUnit + NSubstitute). **Šev .NET ↔ Caché** `EDISON2.IntegrationTests`
+  (skutečné MLRest) běží jen se serverem, **UI E2E** `EDISON2.E2ETests` (FlaUI, DEBUG shell s `e2e=1`) jen s `EDISON_E2E=1`,
+  test se skutečným oknem (`[WindowFact]`, ne `[Fact]`) jen s `EDISON_WINDOW_TESTS=1` - nastavuje pre-push.
+- **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)` pro `$$$FillParams`), metody
+  `TestXxx()`. Běh `powershell -File tools/run-cache-tests.ps1 [-Package ...]` (`pwsh` tu není) proti dev serveru
+  `192.168.16.1:57770` (VPN, user `$env:USERNAME`, override `$env:CACHE_USER`). Nový package mimo default list skriptu
+  (`*.Tests` EDISONMAIN2/EDControls/TemplateDesigner/EDTesting) přidej, jinak ho pre-push nepokryje. `$$$AssertSkipped` běh neshodí.
 - **Nasazení `.cls` dělá hook sám** (`.claude/hooks/compile-objectscript.sh`, PostToolUse na Edit/Write,
   chyby na stderr). MCP `cache_compile` jen na to, co hook nepokryje, **ne na týž soubor po editaci**
   (dvojí nasazení si přepisuje výsledek). ⚠️ **Úprava `.cls` mimo Edit/Write hook nespustí**: na serveru
@@ -138,15 +134,18 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
   všechny Caché balíčky, testovací `.cls` (EDControls/EDTesting `Tests/`) jen svůj - TD sada je nejdražší
   (~45 s). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
 
+## Commity
+
+Jeden řádek anglicky, bez těla: `PROJEKT - popis`. PROJEKT je jméno editované složky (`EDISONMAIN2`, `EDControls`, ...),
+víc projektů čárkou (`EDISONMAIN2, EDControls - ...`), dokumentace a nástroje pro celé repo mají `EDISON2`. TemplateDesigner
+má `TD` a za ním Conventional Commits (`TD - feat: ...`). ID položek plánu (C3, H4) do nadpisu nepatří.
+
 ## Typografie a komentáře
 
-**Nepoužívat dlouhou pomlčku** (em dash, U+2014) - v kódu, UI textech, dokumentaci i odpovědích
-vždy běžná „-". Pravidlo znak záměrně nezobrazuje, aby šlo hlídat grepem; v TemplateDesigneru
-hlídají UI labely drift testy.
+**Nepoužívat dlouhou pomlčku** (em dash, U+2014) v kódu, UI textech, dokumentaci ani odpovědích, vždy běžná „-".
+Pravidlo znak záměrně nezobrazuje, aby šlo hlídat grepem; v TemplateDesigneru hlídají UI labely drift testy.
 
-Komentáře v `EDISONMAIN2/` a `EDControls/` jsou **česky** (výjimka: stock VS šablony).
-Defaultně nekomentovat; přidávej jen netriviální WHY (skrytá invarianta, workaround bugu)
-a sémantiku legacy systému (Caché global, ACTIVITY zámek, licenční flag). Nekomentovat WHAT
-ani odkazy na task/commit/plánovací položku - plánovací docy a „feature #N" odkazy jsou zakázané;
+Komentáře v `EDISONMAIN2/` a `EDControls/` jsou **česky** (výjimka: stock VS šablony). Defaultně nekomentovat, jen
+netriviální WHY (skrytá invarianta, workaround bugu) a sémantika legacy systému (Caché global, ACTIVITY zámek, licenční
+flag), 1 řádek, max 2-3. Nekomentovat WHAT ani odkazy na task, commit nebo plánovací položku („feature #N");
 číslované Caché user flagy (feature #17/#23) jsou naopak doménová sémantika a zůstávají.
-Délka 1 řádek, max 2-3; multi-paragraph `<remarks>` je špatně.
