@@ -37,12 +37,11 @@
             </StackPanel>
         </DockPanel>
 
-        <!-- NoWrap: položky INF drží odsazení pokračovacích řádků, zalomení by ho rozbilo. -->
         <TextBox Margin="12,0,12,4"
                  IsReadOnly="True"
                  Text="{Binding DisplayText, Mode=OneWay}"
-                 TextWrapping="NoWrap"
+                 TextWrapping="Wrap"
                  VerticalScrollBarVisibility="Auto"
-                 HorizontalScrollBarVisibility="Auto"/>
+                 HorizontalScrollBarVisibility="Disabled"/>
     </DockPanel>
 </Window>
