@@ -71,4 +71,20 @@ public class AgendaCapabilitiesTests
         // by u linkových zmizela bez chyby - jen by byla prázdná.
         Assert.Equal("POZNAMKY", new NotesLegendElement().PoznamkyDataSource);
     }
+
+    /// <summary>Vkládání do hotové šablony se řídí stejnou vazbou jako paleta: prvek jízdního řádu
+    /// jen do své agendy, obecné prvky všude, neznámá agenda nic neblokuje.</summary>
+    [Fact]
+    public void VlozitJdeJenDoSveAgendy()
+    {
+        Assert.False(AgendaCapabilities.Allows("LINE", new StopListElement()));
+        Assert.False(AgendaCapabilities.Allows("LINE", new DepartureGridElement()));
+        Assert.False(AgendaCapabilities.Allows("STOP", new LineTableElement()));
+        Assert.False(AgendaCapabilities.Allows("", new StopListElement()));   // obecná agenda bez JŘ
+
+        Assert.True(AgendaCapabilities.Allows("STOP", new StopListElement()));
+        Assert.True(AgendaCapabilities.Allows("LINE", new NotesLegendElement()));
+        Assert.True(AgendaCapabilities.Allows("LINE", new TextElement()));
+        Assert.True(AgendaCapabilities.Allows(null, new StopListElement()));  // registr agend chybí
+    }
 }

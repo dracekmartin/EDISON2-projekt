@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-08 (2) - 🚫 prvek jízdního řádu jen do šablony své agendy
+
+Paleta nabízela prvky jízdních řádů jen podle agendy šablony, ale **vložení ze schránky a vlastní
+šablona sekce agendu nekontrolovaly** - tak se Seznam zastávek dostal do linkového JŘ u POVEDu
+(rozhodnutí Jan: má to být zakázané). Teď platí jedno pravidlo `AgendaCapabilities.Allows` pro
+paletu i vkládání: prvek jízdního řádu jen do agendy, která ho podporuje, obecné prvky všude;
+neznámá agenda (registr se nenačetl) nic neblokuje. Vynechané prvky návrhář vyjmenuje.
+**Hotové šablony** s takovým prvkem nemaže, ale ukáže hlášku vpravo dole a klik prvek vybere.
+Šablona z AI asistenta nebo importu z PDF s jinou agendou navíc nově zahodí data a vybrané linky
+předchozí agendy, jako otevření z databáze nebo souboru. Testy `PrvkyJineAgendyTests`,
+`AgendaCapabilitiesTests.VlozitJdeJenDoSveAgendy`.
+
 ## 2026-10-08 - 🩹 prvky zastávkového JŘ nespadnou nad daty linkového JŘ
 
 Seznam zastávek v šabloně nad daty linkového JŘ shodil náhled při každém překreslení (POVED 8. 10.,

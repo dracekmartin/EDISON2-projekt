@@ -43,4 +43,23 @@ public static class AgendaCapabilities
     /// <summary>Podporuje daný druh agendy tento typ elementu? (řízení menu/palety).</summary>
     public static bool Supports(string? elementKind, string elementType) =>
         ScheduleElementTypes(elementKind).Contains(elementType);
+
+    private static readonly HashSet<string> AllScheduleTypes = [.. StopTypes, .. LineTypes];
+
+    /// <summary>
+    /// Smí prvek do šablony agendy daného druhu? Obecné prvky (text, tabulka, kód…) všude, prvky
+    /// jízdních řádů jen do agendy, která je podporuje. Neznámý druh (<c>null</c> - registr agend
+    /// se nenačetl) nic neblokuje.
+    /// </summary>
+    /// <remarks>
+    /// Platí pro každé vložení do hotové šablony, nejen pro paletu: Seznam zastávek vložený ze
+    /// schránky do linkového JŘ kreslil náhled nad daty jiného tvaru a shodil ho (POVED 8. 10.).
+    /// Typ prvku = jméno třídy, stejně jako diskriminátor v JSON šablony (<see cref="ElementTypes"/>).
+    /// </remarks>
+    public static bool Allows(string? elementKind, TemplateElement element)
+    {
+        if (elementKind is null) return true;
+        var typ = element.GetType().Name;
+        return !AllScheduleTypes.Contains(typ) || Supports(elementKind, typ);
+    }
 }
