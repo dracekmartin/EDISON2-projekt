@@ -525,6 +525,7 @@
                                 <!-- Jako u stromu: bez toho jde do automation celý record modulu. -->
                                 <Setter Property="AutomationProperties.Name" Value="{Binding DisplayedDistinctName}"/>
                                 <!-- Single-click spustí modul - konzistentní se stromy výše. -->
+                                <EventSetter Event="PreviewMouseLeftButtonDown" Handler="UsedModuleItem_PreviewMouseLeftButtonDown"/>
                                 <EventSetter Event="MouseLeftButtonUp" Handler="UsedModuleItem_MouseLeftButtonUp"/>
                             </Style>
                         </ListBox.ItemContainerStyle>

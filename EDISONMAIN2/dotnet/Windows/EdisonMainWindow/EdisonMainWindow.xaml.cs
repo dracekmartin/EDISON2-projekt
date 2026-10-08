@@ -216,7 +216,7 @@ namespace EDISONMAIN2
         {
             var item = (TreeViewItem)sender;
             e.Handled = true;
-            if (!_treeDrag.TakeClick()) return;
+            if (!Gesture.TakeClick(item.DataContext)) return;
             switch (item.DataContext)
             {
                 case ModuleFamily:
@@ -228,15 +228,25 @@ namespace EDISONMAIN2
             }
         }
 
-        // Tažení modulu ze stromu na plochu (přidání zástupce).
-        private readonly DesktopDragGesture<ExecutableModule> _treeDrag = new();
+        // Tažení modulu ze stromu na plochu (přidání zástupce). Gesto sdílí strom, Používané i plocha.
+        private static DesktopDragGesture Gesture => DesktopDragGesture.Shared;
 
-        private void TreeItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) =>
-            _treeDrag.Press(e.GetPosition(null), ((TreeViewItem)sender).DataContext as ExecutableModule);
+        // Tunneling: okno dostane stisk dřív než položka, stisk mimo položky tak zahodí ten předchozí.
+        protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            Gesture.Reset();
+            base.OnPreviewMouseLeftButtonDown(e);
+        }
+
+        private void TreeItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var item = (TreeViewItem)sender;
+            Gesture.Press(e.GetPosition(null), item.DataContext as ExecutableModule, item.DataContext);
+        }
 
         private void TreeItem_MouseMove(object sender, MouseEventArgs e)
         {
-            if (_treeDrag.Move(e.GetPosition(null), e.LeftButton == MouseButtonState.Pressed) is { } module)
+            if (Gesture.Move<ExecutableModule>(e.GetPosition(null), e.LeftButton == MouseButtonState.Pressed) is { } module)
                 DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(DesktopDragFormats.FromTree, module), DragDropEffects.Copy);
         }
 
@@ -312,10 +322,13 @@ namespace EDISONMAIN2
             return null;
         }
 
+        private void UsedModuleItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) =>
+            Gesture.Press(e.GetPosition(null), null, ((ListBoxItem)sender).DataContext);
+
         private void UsedModuleItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
-            if (((ListBoxItem)sender).DataContext is ExecutableModule module)
+            if (((ListBoxItem)sender).DataContext is ExecutableModule module && Gesture.TakeClick(module))
                 OpenModule(module);
         }
 

@@ -17,25 +17,30 @@ public partial class DesktopMiniAppView : UserControl
     private const double TileCellWidth = 140;   // shodné s TileGridPanel.CellWidth (default v šabloně panelu)
     private const double TilesHostMargin = 12;  // Margin="6" ItemsControlu na obou stranách
 
-    // Přeuspořádání dlaždic tažením; klik hned po tažení dlaždici nespustí.
-    private readonly DesktopDragGesture<DesktopShortcut> _tileDrag = new();
+    // Přeuspořádání dlaždic tažením; dlaždici spustí jen klik bez tažení (stisk i uvolnění na ní).
+    private static DesktopDragGesture Gesture => DesktopDragGesture.Shared;
 
     public DesktopMiniAppView() => InitializeComponent();
 
     private DesktopMiniAppViewModel? Vm => DataContext as DesktopMiniAppViewModel;
 
+    // Plovoucí nebo vysunutá plocha není v hlavním okně, její stisky by hlavní okno neviděla.
+    private void Desktop_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) => Gesture.Reset();
+
     private void Tile_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
-        if (!_tileDrag.TakeClick()) return;
-        if (((FrameworkElement)sender).DataContext is DesktopShortcut s) Vm?.Shortcuts.RequestLaunch(s);
+        if (((FrameworkElement)sender).DataContext is DesktopShortcut s && Gesture.TakeClick(s.Key))
+            Vm?.Shortcuts.RequestLaunch(s);
     }
 
-    private void Tile_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) =>
-        _tileDrag.Press(e.GetPosition(null), ((FrameworkElement)sender).DataContext as DesktopShortcut);
+    private void Tile_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (((FrameworkElement)sender).DataContext is DesktopShortcut s) Gesture.Press(e.GetPosition(null), s, s.Key);
+    }
 
     private void Tile_MouseMove(object sender, MouseEventArgs e)
     {
-        if (_tileDrag.Move(e.GetPosition(null), e.LeftButton == MouseButtonState.Pressed) is { } tile)
+        if (Gesture.Move<DesktopShortcut>(e.GetPosition(null), e.LeftButton == MouseButtonState.Pressed) is { } tile)
             DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(DesktopDragFormats.ReorderTile, tile), DragDropEffects.Move);
     }
 
