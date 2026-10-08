@@ -1,3 +1,4 @@
+using System.Globalization;
 using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
@@ -45,16 +46,28 @@ public class MiniAppPickerViewModelTests
         Assert.Equal(["MHD", "Nástroje", "MHD"], vm.Choices.Select(c => c.GroupTitle));
     }
 
-    /// <summary>Řadí se česky bez ohledu na kulturu stanice: Ch až za H, Š až za S.</summary>
+    /// <summary>
+    /// Řadí se česky bez ohledu na kulturu stanice: Ch až za H, Š až za S. Běží pod en-US -
+    /// na české stanici by prošlo i řazení podle aktuální kultury.
+    /// </summary>
     [Fact]
-    public void Choices_UseCzechAlphabet()
+    public void Choices_UseCzechAlphabet_OnEnglishStation()
     {
-        var vm = Build(new Provider("Přehledy",
-            App("a", "Školení zaměstnanců"), App("b", "Chyby"), App("c", "Sklady MTZ"),
-            App("d", "Hlášení"), App("e", "Údržba vozidel"), App("f", "Cesty")));
+        var original = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+        try
+        {
+            var vm = Build(new Provider("Přehledy",
+                App("a", "Školení zaměstnanců"), App("b", "Chyby"), App("c", "Sklady MTZ"),
+                App("d", "Hlášení"), App("e", "Údržba vozidel"), App("f", "Cesty")));
 
-        Assert.Equal(["Cesty", "Hlášení", "Chyby", "Sklady MTZ", "Školení zaměstnanců", "Údržba vozidel"],
-                     vm.Choices.Select(c => c.Title));
+            Assert.Equal(["Cesty", "Hlášení", "Chyby", "Sklady MTZ", "Školení zaměstnanců", "Údržba vozidel"],
+                         vm.Choices.Select(c => c.Title));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
     }
 
     [Fact]

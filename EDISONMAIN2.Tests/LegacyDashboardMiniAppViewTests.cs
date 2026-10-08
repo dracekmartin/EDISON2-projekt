@@ -78,6 +78,11 @@ public class LegacyDashboardMiniAppViewTests
 
             Layout(view, new Size(600, 400));
             Assert.InRange(Descendants<DataGridRow>(view).Count(), 1, 200);
+            // Strop je výška panelu, ne nula: tabulka s nulovým stropem by aserci výš prošla taky.
+            var panel = Descendants<ScrollViewer>(view).First();
+            var host = Descendants<Border>(view).Single(b => b.Child is EDControls.EDList.EDList);
+            Assert.True(panel.ViewportHeight > 100, $"viewport {panel.ViewportHeight}");
+            Assert.Equal(panel.ViewportHeight, host.ActualHeight, precision: 1);
 
             // Řazení obnoví pohled na řádky a DataGrid kontejnery staví znovu.
             Descendants<DataGrid>(view).Single().Items.Refresh();
