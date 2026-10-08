@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-08 - 🩹 prvky zastávkového JŘ nespadnou nad daty linkového JŘ
+
+Seznam zastávek v šabloně nad daty linkového JŘ shodil náhled při každém překreslení (POVED 8. 10.,
+telemetrie `x52662a0868`). Linkový JŘ posílá atributy zastávky jako texty značek (`["L","x"]`),
+zastávkový jako objekty `{ZNAK, POPIS}`, a prvek četl rovnou pole objektu. Atributy, poznámky
+zastávky i značky u odjezdů teď čte tolerantně (`StopScheduleElementBase.PoleZaznamu`): text se
+vezme jako značka, cokoli jiného jako prázdné. Test `ZastavkovePrvkyNadLinkovymiDatyTests`.
+
 ## 2026-10-07 - 🏷 názvy zastávek k datu platnosti linky (`B188`)
 
 Zastávkový i linkový JŘ AD četly název a ostatní údaje zastávky z hlavního záznamu číselníku

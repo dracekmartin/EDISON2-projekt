@@ -127,8 +127,8 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                     .Where(n => n is not null)
                     .Select(n => new AtributData
                     {
-                        Znak  = n!["ZNAK"]?.ToString() ?? "",
-                        Popis = n!["POPIS"]?.ToString() ?? ""
+                        Znak  = PoleZaznamu(n, "ZNAK"),
+                        Popis = PoleZaznamu(n, "POPIS")
                     }).ToList();
 
             if (row.GetValue("POZNAMKY_ZASTAVKY") is JsonArray pozArr)
@@ -136,9 +136,9 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                     .Where(n => n is not null)
                     .Select(n => new PoznamkaZastavkyData
                     {
-                        Znak = n!["ZNAK"]?.ToString() ?? "",
-                        Typ  = ParseTypPoznamky(n!["TYP"]?.ToString()),
-                        Text = n!["TEXT"]?.ToString() ?? ""
+                        Znak = PoleZaznamu(n, "ZNAK"),
+                        Typ  = ParseTypPoznamky(NullIfEmpty(PoleZaznamu(n, "TYP"))),
+                        Text = PoleZaznamu(n, "TEXT")
                     }).ToList();
 
             // časy per varianta trasy (dynamické TrasaMin) - číslo / „<" / "" jako string
@@ -207,11 +207,11 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                     .Where(n => n is not null)
                     .Select(n => new AnotaceData
                     {
-                        Typ       = ParseTypAnotace(n!["TYP"]?.ToString()),
-                        Znak      = n!["ZNAK"]?.ToString() ?? "",
-                        Kategorie = n!["KATEGORIE"]?.ToString() ?? "",
-                        ForeColor = NullIfEmpty(n!["FORE_COLOR"]?.ToString()),
-                        BackColor = NullIfEmpty(n!["BACK_COLOR"]?.ToString())
+                        Typ       = ParseTypAnotace(NullIfEmpty(PoleZaznamu(n, "TYP"))),
+                        Znak      = PoleZaznamu(n, "ZNAK"),
+                        Kategorie = PoleZaznamu(n, "KATEGORIE"),
+                        ForeColor = NullIfEmpty(PoleZaznamu(n, "FORE_COLOR")),
+                        BackColor = NullIfEmpty(PoleZaznamu(n, "BACK_COLOR"))
                     }).ToList();
 
             if (!result.TryGetValue(odjezd.SkupinaDnuId, out var byHour))
@@ -293,6 +293,17 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
     /// </remarks>
     internal static readonly string[] ZnameTypyPoznamky =
         ["nz", "negativniznacka", "specialni", "specialniznak", "znak", "text"];
+
+    /// <summary>Pole vnořeného záznamu (atribut, poznámka zastávky, značka u odjezdu).</summary>
+    /// <remarks>Agendy posílají záznamy různě: zastávková jako objekt `{ZNAK, POPIS…}`, linková jen
+    /// jako text značky - ten se bere jako značka, ostatní pole zůstanou prázdná. Bez toho prvek
+    /// zastávek v šabloně linkového JŘ padal při každém překreslení náhledu (POVED 8. 10.).</remarks>
+    private static string PoleZaznamu(JsonNode? n, string klic) => n switch
+    {
+        JsonObject o           => o[klic]?.ToString() ?? "",
+        JsonValue v when klic == "ZNAK" => v.ToString(),
+        _                      => "",
+    };
 
     protected static TypPoznamky ParseTypPoznamky(string? s) => s?.ToLowerInvariant() switch
     {
