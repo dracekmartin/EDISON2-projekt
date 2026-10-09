@@ -76,6 +76,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("DleTypu", "Dle typu (dny platnosti → značky → atributy → text)"), f.AddListItem("Vychozi", "Výchozí (dle dat)")
         d f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
         s f.value = "DleTypu"
+        // Linkový JŘ: pořadí, tisk a sloupce po druzích poznámek (#7487) v okně návrháře. Sedí tady,
+        // ne v obsahu, aby bylo rozložení na jednom místě (rozhodnutí Jan 9. 10.). Návrhář ho
+        // ukazuje jen u linkového, jinde nemá co dělit - druh poznámky posílá jen linková agenda.
+        s f = form.AddFieldToLastGroup("__skupinyPoznamek", "Druhy poznámek", $$$FieldTypeButton, 0, 0)
+        s f.value = "Upravit…"
+        s f.helpText = "Pořadí druhů poznámek, které se tisknou, a počet sloupců každého druhu. Každý druh začíná na novém řádku."
         d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
 
         // ── Co blok tiskne ────────────────────────────────────────────────
@@ -83,16 +89,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // poznámky blok bere, co si bere z poznámek zadaných u linky, a značky u odjezdů (ty
         // uživatelé hledají nejčastěji, protože do července byly parametrem tisku). Klíče polí
         // se NEMĚNÍ - rozpad je jen vizuální.
-        // Linkový JŘ: pořadí, tisk a sloupce po druzích poznámek (#7487) v okně návrháře. Návrhář
-        // u linkového ukazuje z téhle a dvou dalších skupin jen tlačítko - ostatní volby jsou
-        // vývěskové (linkový neposílá kategorie poznámek) a okno je nahrazuje.
+        // U linkového JŘ návrhář tuhle i obě další skupiny schová celé: přepínače typů nahrazuje
+        // okno Druhy poznámek a kategorie poznámek linkový neposílá.
         d form.AddGroup("filter", "Obsah poznámek")
         d form.AddBool("ShowNegativniZnacky", "Negativní značky", 1)
         d form.AddBool("ShowSpecialniZnaky", "Speciální znaky", 1)
         d form.AddBool("ShowTextovePoznamky", "Textové poznámky", 1)
-        s f = form.AddFieldToLastGroup("__skupinyPoznamek", "Druhy poznámek", $$$FieldTypeButton, 0, 0)
-        s f.value = "Upravit…"
-        s f.helpText = "Pořadí druhů poznámek, které se tisknou, a počet sloupců každého druhu. Každý druh začíná na novém řádku."
 
         // ── Poznámky zadané u linky ───────────────────────────────────────
         d form.AddGroup("filterline", "Poznámky linky")
