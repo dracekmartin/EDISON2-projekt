@@ -136,6 +136,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("PripojStyle.Bold", "Tučné", 0)
         d form.AddBool("PripojStyle.Italic", "Kurzíva", 0)
         s f = form.AddFieldToLastGroup("PripojStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
+        // Pozadí celého řádku - s bílým písmem dá inverzní řádek, o který si KU HK řekl vedle
+        // velikosti a řezu (#8360). Prázdné = jako datové buňky.
+        s f = form.AddFieldToLastGroup("PripojStyle.BackgroundColor", "Pozadí řádku", $$$FieldTypeColor, 0, 0)
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)

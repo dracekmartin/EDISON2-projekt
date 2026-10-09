@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-09 (2) - 🅰️ přípojný řádek i s vlastním pozadím (#8360)
+
+Skupina **Přípojné řádky** u tabulky spojů má vedle velikosti, tučného, kurzívy a barvy textu
+i **Pozadí řádku** - s bílým písmem dá inverzní řádek, který KU HK v tiketu zmiňuje. Kreslení
+pozadí přípojného řádku umělo od 24. 8., jen ho formulář nenabízel. Test `PripojnyRadekVzhledTests`
+(celý řádek včetně popisných sloupců).
+
 ## 2026-10-09 - 🗂 poznámky linkového JŘ po druzích (`#7487`)
 
 KORID chce u legendy linkového JŘ nastavit každý druh poznámek zvlášť („všechno do tří sloupců,

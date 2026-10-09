@@ -1162,8 +1162,9 @@ buňky a tyhle volby:
 - **Podbarvit lichá Tč** a **Barva lichých Tč** - střídavé podbarvení podle tarifního čísla.
 
 **Přípojné řádky** - **Slučovat přípoje** (*Ne* / *Podle směru* / *Podle směru a linky*) a vlastní
-písmo řádku. Sloučený řádek nese časy víc spojů a v popisku má směr („ze směru Trhové Sviny"),
-takže šetří místo.
+vzhled řádku: velikost, tučné, kurzíva, barva textu a pozadí řádku. Sloučený řádek nese časy víc
+spojů a v popisku má směr („ze směru Trhové Sviny"), takže šetří místo. Menší kurzíva odliší přípoj
+od časů spojů i na černobílém tisku; tmavé pozadí s bílým písmem dá inverzní řádek.
 
 **Data** - kolekce, ze kterých prvek čte, **Viditelnost řádku** (výraz nad poli zastávky, např.
 `{ZONA} == "1"`) a **Zvýraznění řádků** (seznam pravidel podmínka → barva pozadí, první splněné
