@@ -51,11 +51,25 @@ public class MLRestAdapter(MLRest inner) : IMLRest
     public string Guid      => Inner.GUID;
     public char   Delimiter => Inner.Delimiter;
 
-    public IMLRest With(int? cacheLocks = null, string? idfa = null, string? dataNamespace = null)
+    public IMLRest With(int? cacheLocks = null, string? idfa = null, string? dataNamespace = null) =>
+        Clone(cacheLocks ?? Inner.CacheLocks, idfa ?? Inner.Idfa, dataNamespace ?? Inner.DataNamespace,
+              sameSession: cacheLocks is null && idfa is null && dataNamespace is null);
+
+    /// <summary>
+    /// Klon téže session jako <see cref="With"/> bez parametrů, ale hodnoty, které přepnutí firmy mění na sdílené
+    /// instanci na místě, čte hned. Klon postaví až volání výsledku: konstruktor MLRest dělá DNS dotaz (RestCallRunner).
+    /// </summary>
+    internal Func<IMLRest> SnapshotSession()
+    {
+        var (cacheLocks, idfa, dataNamespace) = (Inner.CacheLocks, Inner.Idfa, Inner.DataNamespace);
+        return () => Clone(cacheLocks, idfa, dataNamespace, sameSession: true);
+    }
+
+    private MLRestAdapter Clone(int cacheLocks, string idfa, string dataNamespace, bool sameSession)
     {
         // Věrný klon identity přes konstruktor (ClientIP + SysNamespace se dopočítají) + zkopírování
         // ostatních polí; přepíšeme jen požadované. Žádná mutace Inner → bez race se sdílenou instancí.
-        var clone = new MLRest(Inner.Server, Inner.Port, dataNamespace ?? Inner.DataNamespace, idfa ?? Inner.Idfa)
+        var clone = new MLRest(Inner.Server, Inner.Port, dataNamespace, idfa)
         {
             ClassNamespace = Inner.ClassNamespace,
             UserID = Inner.UserID,
@@ -68,14 +82,14 @@ public class MLRestAdapter(MLRest inner) : IMLRest
             Locale = Inner.Locale,
             EdisonVersion = Inner.EdisonVersion,
             GUID = Inner.GUID,
-            CacheLocks = cacheLocks ?? Inner.CacheLocks,
+            CacheLocks = cacheLocks,
             // Secured-mode web credentials - legacy je při klonech kopíruje taky (EETMonitor, frmNoMDI)
             CacheWebLoginAndPassword = Inner.CacheWebLoginAndPassword,
         };
         // Klon téže session (RestCallRunner) dědí CacheLocks, server mu hlídá zámek i verzi, ale ukončení
         // aplikace visí na událostech sdílené instance. Klony s přepsanými parametry jsou jiný režim nebo
         // jiná firma (poll, logout, update check) a ukončení spouštět nemají.
-        if (cacheLocks is null && idfa is null && dataNamespace is null)
+        if (sameSession)
         {
             clone.EdisonActivityFailed += (_, e) => ForwardSessionEnd(clone, ActivityFailedField, e);
             clone.EdisonVersionFailed += (_, e) => ForwardSessionEnd(clone, VersionFailedField, e);

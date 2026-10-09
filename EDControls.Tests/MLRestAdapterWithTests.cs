@@ -6,7 +6,7 @@ namespace EDControls.Tests;
 /// <summary>
 /// <see cref="MLRestAdapter.With"/> kopíruje identitu ručně - na novou property MLRest se snadno
 /// zapomene a hodnota se tiše ztratí v klonech (poll, logout jiné firmy). Reflection test hlídá,
-/// že každá public settable property je po With() shodná, nebo je vyjmenovaná níž.
+/// že každá public settable property je po With() i po snímku session shodná, nebo je vyjmenovaná níž.
 /// </summary>
 public class MLRestAdapterWithTests
 {
@@ -19,8 +19,10 @@ public class MLRestAdapterWithTests
         "UserStatus",    // stav posledního requestu (MLRStatus) - klon začíná čistý
     ];
 
-    [Fact]
-    public void With_CopiesEveryPublicSettableProperty()
+    [Theory]
+    [InlineData(nameof(MLRestAdapter.With))]
+    [InlineData(nameof(MLRestAdapter.SnapshotSession))]
+    public void SameSessionClone_CopiesEveryPublicSettableProperty(string via)
     {
         var source = new MLRest("srv", 1234, "NS", "IDFA");
 
@@ -52,7 +54,7 @@ public class MLRestAdapterWithTests
         }
         Assert.NotEmpty(covered);
 
-        var clone = ((MLRestAdapter)new MLRestAdapter(source).With()).Inner;
+        var clone = SameSessionClone(new MLRestAdapter(source), via);
 
         var missed = covered
             .Where(p => !Equals(p.GetValue(source), p.GetValue(clone)))
@@ -96,6 +98,38 @@ public class MLRestAdapterWithTests
 
         Assert.Equal(raise == "OnEdisonActivityFailed" ? 1 : 0, activity());
         Assert.Equal(raise == "OnEdisonVersionFailed" ? 1 : 0, version());
+    }
+
+    /// <summary>Snímek runneru je klon téže session: konec session přepošle stejně jako With().</summary>
+    [Fact]
+    public void SnapshotSession_ForwardsSessionEndToSharedInstance()
+    {
+        var source = new MLRest("srv", 1234, "NS", "IDFA") { CacheLocks = 1 };
+        var (activity, _) = Subscribe(source);
+
+        var clone = SameSessionClone(new MLRestAdapter(source), nameof(MLRestAdapter.SnapshotSession));
+        RaiseAsServerError(clone, "OnEdisonActivityFailed", "ACTIVITY: Lock exist failed!");
+
+        Assert.Equal(1, activity());
+    }
+
+    /// <summary>Snímek pořízený před přepnutím firmy a postavený po něm nese starou firmu, zámek staré firmy
+    /// jsme zrušili sami a ukončení aplikace se spustit nesmí.</summary>
+    [Fact]
+    public void SnapshotSession_TakenBeforeCompanySwitch_KeepsOldCompanyAndDoesNotForward()
+    {
+        var source = new MLRest("srv", 1234, "NS", "IDFA") { CacheLocks = 1 };
+        var (activity, _) = Subscribe(source);
+        var snapshot = new MLRestAdapter(source).SnapshotSession();
+
+        source.CacheLocks = 0;
+        source.Idfa = "OTHER";
+        source.DataNamespace = "NS2";
+        var clone = ((MLRestAdapter)snapshot()).Inner;
+        RaiseAsServerError(clone, "OnEdisonActivityFailed", "ACTIVITY: Lock exist failed!");
+
+        Assert.Equal(("IDFA", "NS", 1), (clone.Idfa, clone.DataNamespace, clone.CacheLocks));
+        Assert.Equal(0, activity());
     }
 
     /// <summary>Klon klonu přepošle až na sdílenou instanci (řetěz přes mezilehlé přeposílání).</summary>
@@ -162,6 +196,9 @@ public class MLRestAdapterWithTests
         Assert.Equal(0, activity());
         Assert.Equal(0, version());
     }
+
+    private static MLRest SameSessionClone(MLRestAdapter adapter, string via) =>
+        ((MLRestAdapter)(via == nameof(MLRestAdapter.With) ? adapter.With() : adapter.SnapshotSession()())).Inner;
 
     private static (Func<int> Activity, Func<int> Version) Subscribe(MLRest source)
     {

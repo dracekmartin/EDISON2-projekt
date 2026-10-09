@@ -7,19 +7,39 @@ public interface IRestCallRunner
 }
 
 /// <summary>
-/// Produkční runner: <c>Task.Run</c> nad **klonem** sdílené instance. Klon je nutný, ne kosmetika -
+/// Produkční runner: volání na pool threadu nad **klonem** sdílené instance. Klon je nutný, ne kosmetika -
 /// <c>MLRestAdapter.QueryOrThrow</c> čte <c>RestStatus</c> až po <c>Query</c>, takže dvě souběžná
 /// volání na téže instanci si stavy prohodí (spolknutá chyba / cizí výjimka). Klon má stejný GUID,
 /// pro server je to tatáž session; ověřeno, že každý souběžný request obsluhuje jiný Caché proces,
 /// takže si nešlapou ani po process-private <c>^||ML</c>.
+/// Instanci i její Idfa, DataNamespace a CacheLocks čte na volajícím threadu: přepnutí firmy je
+/// přepisuje na sdílené instanci na místě a zápis by jinak odešel pod firmou, na kterou uživatel přepnul.
 /// </summary>
-public sealed class RestCallRunner(Func<IMLRest> rest) : IRestCallRunner
+public sealed class RestCallRunner : IRestCallRunner
 {
+    private readonly Func<IMLRest> _rest;
+    private readonly TaskScheduler _scheduler;
+
+    public RestCallRunner(Func<IMLRest> rest) : this(rest, TaskScheduler.Default) { }
+
+    internal RestCallRunner(Func<IMLRest> rest, TaskScheduler scheduler)
+    {
+        _rest = rest;
+        _scheduler = scheduler;
+    }
+
     public Task<T> RunAsync<T>(Func<IMLRest, T> call)
     {
-        // Snapshot instance na volajícím (UI) threadu - celá dávka pak jede proti téže session
-        // i kdyby mezitím proběhl switch firmy nebo uživatele.
-        var current = rest();
-        return Task.Run(() => call(current.With()));
+        var clone = Snapshot(_rest());
+        return Task.Factory.StartNew(() => call(clone()), CancellationToken.None,
+            TaskCreationOptions.DenyChildAttach, _scheduler);
+    }
+
+    // Jiná implementace než adaptér je testovací fake: hodnoty session od stavby klonu neoddělí, klon proto vzniká hned.
+    private static Func<IMLRest> Snapshot(IMLRest current)
+    {
+        if (current is MLRestAdapter adapter) return adapter.SnapshotSession();
+        var clone = current.With();
+        return () => clone;
     }
 }
