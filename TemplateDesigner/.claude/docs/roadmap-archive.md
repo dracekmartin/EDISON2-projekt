@@ -1,5 +1,16 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `#7487` Rozložení poznámek podle druhu, KORID (hotovo 9. 10. 2026)
+
+Legenda linkového JŘ se tiskne po šesti skupinách druhů (týdenní platnost, negativní značky,
+vyčká/navazuje/pokračuje, atributy spojů, místenky a stálé značky, poznámky linky), každá od
+nového řádku jako starý TiskJR. Okno „Druhy poznámek" (první ve skupině Rozložení) nastavuje
+u každé skupiny tisk, počet sloupců 1-4 a pořadí - KORID chtěl 4 negativní značky na řádek.
+Společný Počet sloupců, přepínače typů, vývěskové skupiny a řazení „Dle typu" formulář
+u linkového neukazuje; nové Poznámky začínají na 3 sloupcích. **Nedoděláno:** přetečení dlouhé
+poznámky do vedlejšího sloupce, které měl starý modul - zákazník ho nežádal, vzhled si ladí
+nastavením (rozhodnutí Jan 9. 10.). Detail changelog 2026-10-09.
+
 ## `B188` Názvy zastávek k datu platnosti linky (hotovo 7. 10. 2026)
 
 Zastávkový i linkový JŘ AD čtou údaje zastávky z registru (název, název pro MHD, okres, CIS,

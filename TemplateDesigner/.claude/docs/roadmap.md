@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** v pořadí `#7487` rozložení poznámek podle druhu → `B190` tisk z modulu
-> jízdních řádů bez návrháře → `B191` linkový JŘ MHD (Priority níž, Jan 7. 10.). Zpětná vazba
+> **Nejblíž na řadě:** v pořadí `B190` tisk z modulu jízdních řádů bez návrháře → `B191` linkový
+> JŘ MHD (Priority níž, Jan 7. 10.; `#7487` hotový 9. 10.). Zpětná vazba
 > kolegy z 18. 9. i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře
 > v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
@@ -16,18 +16,15 @@
 
 ## 🎯 Priority (pořadí Jan 7. 10.)
 
-1. **`#7487` Rozložení poznámek podle druhu** [M] (KORID) - **návrh hotový 9. 10., ladí se**.
-   Legenda linkového JŘ po druzích + okno „Druhy poznámek" (changelog 9. 10.). Otevřené:
-   vyzkoušet na KORID linkách, dlouhá poznámka přes sloupce.
-2. **`B190` Tisk z modulu jízdních řádů bez návrháře** [L]. Uživatel v jízdních řádech (nové okno
+1. **`B190` Tisk z modulu jízdních řádů bez návrháře** [L]. Uživatel v jízdních řádech (nové okno
    JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
    (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch
    kontrakt už je) a render oddělit fasádou. **Před začátkem rozhodnout**, odkud se bere výchozí
    šablona a jak ji uživatel volí. Podklad [`R4/R7`](architektonicka-rozhodnuti-agendy.md).
-3. **`B191` Linkový (knižní) JŘ MHD - dodělat a vydat** [L]. Městská varianta je dnes skrytá,
+2. **`B191` Linkový (knižní) JŘ MHD - dodělat a vydat** [L]. Městská varianta je dnes skrytá,
    dokud neprojde porovnáním se starým modulem. Co se z kódu nepozná (zastávkové řádky dorovnat
    jako první, licenční × veřejné číslo linky, vlastní sada voleb): sekce Linkové a knižní JŘ níž.
-4. **`B192` Vizuální „diff" jízdního řádu** [M] (nápad Jan 7. 10., někomu by se líbil; **nejdřív
+3. **`B192` Vizuální „diff" jízdního řádu** [M] (nápad Jan 7. 10., někomu by se líbil; **nejdřív
    krátký rozbor**). Linkový JŘ proti předchozí verzi: nový / změněný spoj barvou, zrušený šedě,
    legenda to vysvětlí - přes dnešní barvy spojů ze serveru a parametr „Porovnat s". Otevřené: s čím
    porovnávat (archiv platných linek `^JRAPL`, nebo jiná skupina linek) a jestli stačí celé spoje;

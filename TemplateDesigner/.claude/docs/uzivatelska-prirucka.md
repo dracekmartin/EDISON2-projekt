@@ -855,10 +855,12 @@ Vysvětlivky pod odjezdy.
   a aplikace to oznámí ve stavovém řádku
 - **Výška řádku** - prázdné = podle velikosti písma (mezera pak roste s písmem). Vlastní hodnotu
   zadejte, jen když chcete legendu vzdušnější nebo stlačenější
-- **Počet sloupců (1–4) + Směr plnění** - „Po sloupcích" (jako noviny) nebo „Po řádcích"
-- **Řazení** - Dle typu (dny platnosti → značky → atributy → text; výchozí) / Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně
+- **Druhy poznámek** (jen linkový JŘ, první ve skupině Rozložení) - viz *Poznámky po druzích* níže
+- **Počet sloupců (1–4) + Směr plnění** - „Po sloupcích" (jako noviny) nebo „Po řádcích". U linkového
+  JŘ je jen Směr plnění, sloupce se nastavují po druzích
+- **Řazení** - Dle typu (dny platnosti → značky → atributy → text; výchozí) / Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně. U linkového JŘ platí uvnitř každého druhu a volba Dle typu tam není
 - **Šířka buňky značky** - pevná šířka sloupce se značkou, aby byly texty svisle zarovnané (0 = značka inline před textem)
-- **Negativní značky / Speciální znaky / Textové poznámky** - přepínače, které typy poznámek se v legendě vůbec zobrazí
+- **Negativní značky / Speciální znaky / Textové poznámky** (skupina Obsah poznámek, jen vývěska) - přepínače, které typy poznámek se v legendě vůbec zobrazí
 - **NZ pozadí / NZ barva** - barvy invertovaného boxu u negativních značek
 
 **Co se na vývěsce ukáže** (jen zastávkový JŘ z AD dat) - všechno se zapíná tady, v jednom seznamu:
@@ -1093,6 +1095,20 @@ Obvyklá šablona má tři sekce pod sebou:
   stránky", jinak se dlouhá linka nevytiskne celá.
 - **Poznámky** - prvek **Poznámky**, tentýž jako u vývěsky: vysvětlí značky, které tabulka
   použila. Bez něj se značky v tabulce vytisknou, ale čtenář se nedozví, co znamenají.
+
+**Poznámky po druzích.** V linkovém JŘ se poznámky tisknou po druzích jako ve starém tisku a každý
+druh začíná na novém řádku: týdenní platnost, negativní značky, vyčká / navazuje / pokračuje,
+atributy spojů, místenky a stálé značky, poznámky linky. Tlačítko **Druhy poznámek → Upravit…**
+(první ve skupině Rozložení) otevře okno, kde u každého druhu nastavíte:
+
+- **Tisknout** - vypnutý druh se v legendě nevytiskne (značky v tabulce zůstanou)
+- **Sloupců** (1-4) - kolik poznámek toho druhu je vedle sebe. Krátké poznámky (negativní značky,
+  týdenní platnost) se vejdou po čtyřech, dlouhé texty (návaznosti, poznámky linky) se lépe čtou
+  v jednom sloupci. Nové Poznámky začínají na třech sloupcích u všech druhů
+- **pořadí** - tlačítky Nahoru / Dolů
+
+Dlouhá poznámka se zalomí uvnitř svého sloupce. Pořadí uvnitř druhu řídí **Řazení** a **Směr
+plnění** ve skupině Rozložení.
 
 Data, se kterými tabulka pracuje: zastávky (zóna, kilometry, tarifní číslo, název, MHD, atributy
 trasy), spoje (číslo, časy na zastávkách, značky platnosti, negativní značky, barva), skupiny dnů,

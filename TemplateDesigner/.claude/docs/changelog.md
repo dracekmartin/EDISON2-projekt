@@ -1,6 +1,6 @@
 ﻿# Changelog
 
-## 2026-10-09 - 🗂 poznámky linkového JŘ po druzích (`#7487`, návrh)
+## 2026-10-09 - 🗂 poznámky linkového JŘ po druzích (`#7487`)
 
 KORID chce u legendy linkového JŘ nastavit každý druh poznámek zvlášť („všechno do tří sloupců,
 negativní značky do jednoho"). Legenda linkového JŘ se teď **vždy rozkládá po druzích** jako starý
