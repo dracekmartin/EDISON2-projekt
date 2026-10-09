@@ -29,8 +29,6 @@ public class SharedStaticStateGuardTests
         typeof(SettingsLoader).GetMethod(nameof(SettingsLoader.Load), Declared)!,
         typeof(SettingsLoader).GetMethod(nameof(SettingsLoader.Save), Declared)!,
         Setter(typeof(LocalPrefs), nameof(LocalPrefs.FilePath)),
-        Setter(typeof(MlineDomainDetector), nameof(MlineDomainDetector.DomainNameProvider)),
-        Setter(typeof(MlineDomainDetector), nameof(MlineDomainDetector.VirtualDomainFlagProvider)),
         Setter(typeof(ErrorReports), nameof(ErrorReports.Enabled)),
         Setter(typeof(EDUsageTelemetry), nameof(EDUsageTelemetry.Enabled)),
         typeof(StartupOptions).GetMethod(nameof(StartupOptions.ApplyToProcess), Declared)!,

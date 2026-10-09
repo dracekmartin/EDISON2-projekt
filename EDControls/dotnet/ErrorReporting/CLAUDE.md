@@ -37,9 +37,9 @@ EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_Ca
   přílohy nemají jak dostat. Legacy sešívá všechny monitory. Důsledek: **HWND obsah se
   nevykreslí**, takže WebView2 miniaplikace shellu zůstanou v snímku prázdné a snímek nikdy
   není přesně to, co uživatel viděl.
-- **Interní běh se označí, nezahodí** - `source` dostane suffix `-internal`
-  (`MlineEnvironment`, zrcadlí legacy `IsDomainMline` včetně registru
-  `HKCU\Software\Edison\MlineDomain`). Legacy z m-line domény neposílá nic a přichází
+- **Interní běh se označí, nezahodí** - `source` dostane suffix `-internal` (`MlineEnvironment`,
+  zrcadlí legacy `IsDomainMline` včetně registru `HKCU\Software\Edison\MlineDomain` čteného jako VB
+  `CBool`, týmž pravidlem skrývá strom shellu mlineOnly uzly). Legacy z m-line domény neposílá nic a přichází
   o vlastní dogfooding; zahodit se dá vždy na serveru, vrátit nikdy. Suffix ve `source` (ne
   příznak v `data`) proto, že Přehled telemetrie filtruje podle sloupce Zdroj a volby bere
   z dat - nová hodnota se ve filtru objeví sama. Pozor: `source` jde i do předmětu tiketu.
