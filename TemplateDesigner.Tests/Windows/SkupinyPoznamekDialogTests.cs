@@ -24,7 +24,7 @@ public class SkupinyPoznamekDialogTests
         vm.OkCommand.Execute(null);
 
         Assert.Equal(
-            el.EfektivniSkupiny().Select(s => (s.Skupina, s.Tisknout, s.Sloupcu)),
+            el.EfektivniSkupiny().Select(s => (s.Skupina, s.Tisknout, (int?)3)),
             vm.Vysledek.Select(s => (s.Skupina, s.Tisknout, s.Sloupcu)));
     }
 
@@ -40,13 +40,14 @@ public class SkupinyPoznamekDialogTests
 
         Assert.Equal(SkupinaPoznamek.NegativniZnacky, vm.Vysledek[0].Skupina);
         Assert.Equal(1, vm.Vysledek[0].Sloupcu);
-        Assert.All(vm.Vysledek.Skip(1), s => Assert.Null(s.Sloupcu));
+        Assert.All(vm.Vysledek.Skip(1), s => Assert.Equal(3, s.Sloupcu));
     }
 
-    /// <summary>Okno nabízí jen čísla; skupina bez vlastního počtu ukáže počet sloupců prvku
-    /// a když ho uživatel nechá, dál ho sleduje (změna Počtu sloupců prvku ji posune s sebou).</summary>
+    /// <summary>Okno nabízí jen čísla a skupinu bez vlastního počtu předvyplní počtem sloupců
+    /// prvku. Uloží se napevno - společný počet formulář u linkového neukazuje, takže by na něm
+    /// skupina visela neviditelně.</summary>
     [Fact]
-    public void BezVlastnihoPoctu_UkazeASledujePocetSloupcuPrvku()
+    public void BezVlastnihoPoctu_PredvyplniPocetPrvkuAUloziHoNapevno()
     {
         var vm = new SkupinyPoznamekDialogViewModel(new NotesLegendElement().EfektivniSkupiny(), 3);
 
@@ -57,7 +58,7 @@ public class SkupinyPoznamekDialogTests
         vm.OkCommand.Execute(null);
 
         Assert.Equal(1, vm.Vysledek[1].Sloupcu);
-        Assert.Null(vm.Vysledek[0].Sloupcu);
+        Assert.Equal(3, vm.Vysledek[0].Sloupcu);
     }
 
     [Theory]
@@ -70,7 +71,9 @@ public class SkupinyPoznamekDialogTests
     [InlineData(true, nameof(NotesLegendElement.ShowNegativniZnacky), false)]
     [InlineData(true, nameof(NotesLegendElement.ShowTextovePoznamky), false)]
     [InlineData(false, nameof(NotesLegendElement.ShowSpecialniZnaky), true)]
-    [InlineData(true, nameof(NotesLegendElement.Columns), true)]
+    [InlineData(true, nameof(NotesLegendElement.Columns), false)]
+    [InlineData(false, nameof(NotesLegendElement.Columns), true)]
+    [InlineData(true, nameof(NotesLegendElement.WrapSmer), true)]
     public void FormularUkazeJenTo_CoAgendaPouzije(bool linkovy, string klic, bool viditelne) =>
         Assert.Equal(viditelne, NotesLegendElement.PoleFormulareViditelne(klic, linkovy));
 

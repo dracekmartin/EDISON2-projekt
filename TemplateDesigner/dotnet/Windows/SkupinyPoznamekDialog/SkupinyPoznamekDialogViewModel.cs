@@ -11,7 +11,6 @@ public class SkupinaPoznamekVM : INotifyPropertyChanged
 {
     private bool _tisknout;
     private int _sloupcu;
-    private readonly int _sloupcuPrvku;
 
     /// <param name="sloupcuPrvku">Počet sloupců prvku - tolik ukáže skupina bez vlastního počtu.</param>
     public SkupinaPoznamekVM(NastaveniSkupinyPoznamek model, int sloupcuPrvku)
@@ -19,8 +18,7 @@ public class SkupinaPoznamekVM : INotifyPropertyChanged
         Skupina = model.Skupina;
         Nazev = NotesLegendElement.NazevSkupiny(model.Skupina);
         _tisknout = model.Tisknout;
-        _sloupcuPrvku = sloupcuPrvku;
-        _sloupcu = model.Sloupcu ?? sloupcuPrvku;
+        _sloupcu = Math.Clamp(model.Sloupcu ?? sloupcuPrvku, 1, 4);
     }
 
     public SkupinaPoznamek Skupina { get; }
@@ -38,12 +36,9 @@ public class SkupinaPoznamekVM : INotifyPropertyChanged
         set { _sloupcu = value; OnChanged(); }
     }
 
-    /// <summary>Počet shodný s prvkem se uloží jako „jako prvek", takže skupina dál sleduje jeho
-    /// Počet sloupců; odlišný počet se uloží napevno.</summary>
-    public NastaveniSkupinyPoznamek ToModel() => new()
-    {
-        Skupina = Skupina, Tisknout = Tisknout, Sloupcu = Sloupcu == _sloupcuPrvku ? null : Sloupcu,
-    };
+    /// <summary>Počet se ukládá vždy napevno: společný Počet sloupců prvku formulář u linkového
+    /// neukazuje, takže by na něm skupina visela neviditelně.</summary>
+    public NastaveniSkupinyPoznamek ToModel() => new() { Skupina = Skupina, Tisknout = Tisknout, Sloupcu = Sloupcu };
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([CallerMemberName] string? p = null) =>
