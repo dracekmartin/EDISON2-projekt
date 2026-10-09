@@ -6,8 +6,8 @@ KORID chce u legendy linkového JŘ nastavit každý druh poznámek zvlášť (�
 negativní značky do jednoho"). Legenda linkového JŘ se teď **vždy rozkládá po druzích** jako starý
 tisk: šest skupin (týdenní platnost, negativní značky, vyčká/navazuje/pokračuje, atributy spojů,
 místenky a stálé značky, poznámky linky), každá od nového řádku (rozhodnutí Jan 9. 10.; u šablon
-s víc sloupci poznámek se tím mění výstup, u jednoho sloupce nanejvýš pořadí). Ve skupině Rozložení
-je tlačítko **Druhy poznámek**: u každé skupiny Tisknout a počet sloupců 1-4 předvyplněný Počtem
+s víc sloupci poznámek se tím mění výstup, u jednoho sloupce nanejvýš pořadí). Na začátku skupiny
+Rozložení je tlačítko **Druhy poznámek**: u každé skupiny Tisknout a počet sloupců 1-4 předvyplněný Počtem
 sloupců prvku (necháný počet prvek dál sleduje), pořadí šipkami. Bez nastavení platí výchozí
 pořadí a tisk podle dřívějších přepínačů typů, takže starší šablona nic neztratí. Formulář
 u linkového JŘ neukazuje přepínače typů (nahrazuje je okno), vývěskové skupiny „Poznámky linky"
