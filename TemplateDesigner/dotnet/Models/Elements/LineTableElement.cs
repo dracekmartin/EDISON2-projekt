@@ -2618,7 +2618,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 if (cas == "" && !znackyVBunceZrc.ContainsKey(ti))
                     cas = VyplnBunky(mrizka.SirkaZrcadlenehoMm(ti), st, ctx);
                 return (cas, st);
-            }, vyplnPrazdneho: VyplnBunky(mrizka.SirkaPrazdnehoMm, tripCellStyle, ctx));
+            }, stylPrazdne: tripCellStyle, vyplnPrazdneho: VyplnBunky(mrizka.SirkaPrazdnehoMm, tripCellStyle, ctx));
             var znakZastavkyPro = SymbolRunRenderer.BuildRuns(
                 stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveZastavka);
             for (int ci = 0; ci < fixedCols.Count; ci++)
@@ -2663,7 +2663,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // ⚠️ Tečky patří i do prázdných sloupců dorovnání: starý postskript jimi drží
                 // svislé vodicí pruhy přes celou šířku tabulky, a sloupec bez nich by v té řadě
                 // vypadal jako díra (rozhodnutí Jan 22. 9.).
-            }, vyplnPrazdneho: VyplnBunky(mrizka.SirkaPrazdnehoMm, tripCellStyle, ctx));
+                // Prázdný sloupec dorovnání ale nepatří spoji před sebou - styl řádku, ne spoje,
+                // jinak by převzal podbarvení rozdílu (rozdílový JŘ, nález Jan 9. 10.).
+            }, stylPrazdne: tripCellStyle, vyplnPrazdneho: VyplnBunky(mrizka.SirkaPrazdnehoMm, tripCellStyle, ctx));
 
             // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
             string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);

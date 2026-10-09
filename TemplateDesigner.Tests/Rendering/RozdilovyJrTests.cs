@@ -82,6 +82,43 @@ public class RozdilovyJrTests
         Assert.True(Pixelu(prvek, data, prvek.RozdilNovaBackColor) > 200, "nová verze není podbarvená");
     }
 
+    /// <summary>Prázdný sloupec dorovnání za spojem nepatří spoji - podbarvení rozdílu nepřebírá
+    /// (nález Jan 9. 10.: zelený prázdný sloupec za novou verzí spoje).</summary>
+    [Fact]
+    public void PrazdnySloupecDorovnaniSeNepodbarvi()
+    {
+        // Nová verze spoje je poslední sloupec a za ní jsou prázdné sloupce až k okraji tabulky:
+        // zelená musí skončit u spoje, ne u okraje.
+        var prvek = Prvek();
+        prvek.PadEmptyColumns = true;
+        var (zelenaVpravo, tabulkaVpravo) = PraveOkraje(prvek, Linka(sVerzemi: true), prvek.RozdilNovaBackColor);
+
+        Assert.True(tabulkaVpravo - zelenaVpravo > 3 * MmToPx,
+            $"zelená končí {zelenaVpravo} px, tabulka {tabulkaVpravo} px - prázdný sloupec je podbarvený");
+    }
+
+    /// <summary>Nejpravější pixel barvy <paramref name="hex"/> a nejpravější tmavý pixel (čáry, text).</summary>
+    private static (int Barva, int Tabulka) PraveOkraje(LineTableElement prvek, DataContext data, string hex)
+    {
+        var barva = SKColor.Parse(hex);
+        float vyska = prvek.CalculateHeightFromData(data);
+        using var bitmap = new SKBitmap((int)(120 * MmToPx), (int)((vyska + 2) * MmToPx), SKColorType.Rgba8888, SKAlphaType.Premul);
+        using (var canvas = new SKCanvas(bitmap))
+        {
+            canvas.Clear(SKColors.White);
+            prvek.Render(new RenderContext(canvas, MmToPx, data));
+        }
+        int barvaX = -1, tabulkaX = -1;
+        for (int x = 0; x < bitmap.Width; x++)
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                var p = bitmap.GetPixel(x, y);
+                if (Math.Abs(p.Red - barva.Red) < 8 && Math.Abs(p.Green - barva.Green) < 8 && Math.Abs(p.Blue - barva.Blue) < 8) barvaX = x;
+                else if (p.Red < 230 && p.Green < 230 && p.Blue < 230) tabulkaX = Math.Max(tabulkaX, x);
+            }
+        return (barvaX, tabulkaX);
+    }
+
     [Fact]
     public void BezVerziSeNicNepodbarvi()
     {
