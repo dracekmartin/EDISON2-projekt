@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Threading;
 using ALWA.SYS;
 using EDControls.EDInputForm;
 using EDControls.EDViewModel;
@@ -125,6 +127,85 @@ public class EDInputFormViewTests
 
             mock.DidNotReceiveWithAnyArgs().QueryOrThrow(default!, default!, default(CVar)!);
         });
+    }
+
+    [Fact]
+    public void FieldValueChange_RaisesFieldChanged_OnlyForCurrentItems()
+    {
+        RunSta(() =>
+        {
+            var old = new Field { Number = 1, Key = "stare", Label = "Staré" };
+            var current = new Field { Number = 1, Key = "nove", Label = "Nové" };
+            var form = new Form { Items = new List<Item> { old } };
+            form.Items = new List<Item> { current };
+            var changed = new List<string>();
+            form.FieldChanged += changed.Add;
+
+            old.Value = "x";
+            current.Value = "y";
+
+            Assert.Equal(["nove"], changed);
+        });
+    }
+
+    /// <summary>Napojení hledání toolbaru i odběr změn polí držely formulář (a s ním okno dialogu) do konce procesu.</summary>
+    [Fact]
+    public void Form_WithItems_IsCollected()
+    {
+        RunSta(() =>
+        {
+            var form = CreateWeak(() => new Form { Items = new List<Item> { new Field { Number = 1, Key = "f", Label = "Pole" } } });
+
+            CollectGarbage();
+
+            Assert.False(form.IsAlive);
+        });
+    }
+
+    /// <summary>Dialog: Init na Loaded naplní pole ze serveru, uživatel okno zavře.</summary>
+    [WindowFact]
+    public void Form_InClosedWindow_IsCollected()
+    {
+        RunSta(() =>
+        {
+            var form = CreateWeak(() =>
+            {
+                var mock = MLRestMocks.Create();
+                var schema = new CVar();
+                schema["1"] = new CList("FIELD", "1", "font", "Font", "TEXT", "Arial", "0", "0");
+                mock.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>()).Returns(_ => schema);
+                var f = new Form
+                {
+                    CacheClass = "ALVA.A",
+                    ServicesOverride = new EDServices(mock,
+                        Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+                };
+                var window = new Window { Content = f, ShowInTaskbar = false, ShowActivated = false, Width = 400, Height = 300 };
+                window.Show();
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);   // Loaded → Init
+                Assert.NotEmpty(f.Items!);
+                window.Close();
+                return f;
+            });
+
+            CollectGarbage();
+
+            Assert.False(form.IsAlive);
+        });
+    }
+
+    // Instance vznikne mimo volající metodu, jinak by ji JIT v Debug držel lokální proměnnou.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference CreateWeak(Func<object> create) => new(create());
+
+    // Unloaded po zavření okna i odložené bindingy (RelativeSource bez layoutu) drží instanci,
+    // dokud je dispatcher nezpracuje.
+    private static void CollectGarbage()
+    {
+        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
     }
 
     private static void RaiseLoaded(Form form) =>

@@ -132,6 +132,27 @@ namespace EDControls.EDInputForm
 
         private const string SearchMemoryScope = "EDInputForm.Search";
 
+        /// <summary>Hledaný výraz v toolbaru formuláře (filtruje pole a skupiny).</summary>
+        public static readonly DependencyProperty SearchTextProperty =
+            DependencyProperty.Register(nameof(SearchText), typeof(string), typeof(EDInputForm),
+                new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnSearchTextChanged));
+
+        public string SearchText
+        {
+            get => (string)GetValue(SearchTextProperty);
+            set => SetValue(SearchTextProperty, value);
+        }
+
+        private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not EDInputForm form) return;
+            var searchText = e.NewValue as string ?? "";
+            form.ApplySearchFilter(searchText);
+            if (form.SearchMemoryKey is { Length: > 0 } memoryKey)
+                form.Services.SessionState.Set(SearchMemoryScope, memoryKey,
+                    string.IsNullOrWhiteSpace(searchText) ? null : searchText);
+        }
+
         private static readonly DependencyPropertyKey IsNarrowLayoutPropertyKey =
             DependencyProperty.RegisterReadOnly(
                 nameof(IsNarrowLayout),
@@ -165,7 +186,10 @@ namespace EDControls.EDInputForm
         public EDInputForm()
         {
             InitializeComponent();
-            WireToolbarSearch();
+            // Binding se Source místo RelativeSource v XAML: ten se naváže až po layoutu a hledání má platit od konstrukce.
+            Toolbar.SetBinding(EDComponentToolbar.EDComponentToolbar.SearchTextProperty,
+                new System.Windows.Data.Binding(nameof(SearchText)) { Source = this, Mode = System.Windows.Data.BindingMode.TwoWay });
+            Toolbar.HelpCommand = new RelayCommand(ShowShortcutsHelp);
             SizeChanged += (_, e) => UpdateNarrowLayout(e.NewSize.Width);
             // Loaded fíruje při každém návratu do vizuálního stromu (přepnutí TabItem) - Init je
             // synchronní Caché round-trip a reset hodnot, smí proběhnout jednou per CacheClass.
@@ -178,22 +202,6 @@ namespace EDControls.EDInputForm
 
         /// <summary>Stav rozbalení skupin před začátkem hledání - pro obnovení po smazání dotazu.</summary>
         private Dictionary<Group, bool>? _expandStateBeforeSearch;
-
-        private void WireToolbarSearch()
-        {
-            var dpd = DependencyPropertyDescriptor.FromProperty(
-                EDComponentToolbar.EDComponentToolbar.SearchTextProperty,
-                typeof(EDComponentToolbar.EDComponentToolbar));
-            dpd.AddValueChanged(Toolbar, (_, _) =>
-            {
-                ApplySearchFilter(Toolbar.SearchText);
-                if (SearchMemoryKey is { Length: > 0 } memoryKey)
-                    Services.SessionState.Set(SearchMemoryScope, memoryKey,
-                        string.IsNullOrWhiteSpace(Toolbar.SearchText) ? null : Toolbar.SearchText);
-            });
-
-            Toolbar.HelpCommand = new RelayCommand(ShowShortcutsHelp);
-        }
 
         /// <summary>Jediný zdroj pravdy pro popup nápovědy - vypisují se jen reálně nadrátované zkratky.</summary>
         internal static readonly (string Keys, string Description)[] KeyboardShortcuts =
@@ -395,8 +403,8 @@ namespace EDControls.EDInputForm
             if (SearchMemoryKey is not { Length: > 0 } memoryKey) return;
             if (Services.SessionState.Get(SearchMemoryScope, memoryKey) is not { Length: > 0 } remembered) return;
 
-            if (Toolbar.SearchText == remembered) ApplySearchFilter(remembered);   // nová Items, týž výraz
-            else Toolbar.SearchText = remembered;
+            if (SearchText == remembered) ApplySearchFilter(remembered);   // nová Items, týž výraz
+            else SearchText = remembered;
         }
 
         /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>
@@ -688,13 +696,14 @@ namespace EDControls.EDInputForm
         {
             if (d is not EDInputForm control) return;
 
+            // Slabý odběr: WPF drží view nad List<Item> v ItemsSource napořád a silný odběr by přes pole držel i formulář s oknem.
             if (e.OldValue is IEnumerable<Item> oldItems)
                 foreach (var field in oldItems.OfType<Field>())
-                    field.PropertyChanged -= control.Field_PropertyChanged;
+                    PropertyChangedEventManager.RemoveHandler(field, control.Field_PropertyChanged, "");
 
             if (e.NewValue is IEnumerable<Item> newItems)
                 foreach (var field in newItems.OfType<Field>())
-                    field.PropertyChanged += control.Field_PropertyChanged;
+                    PropertyChangedEventManager.AddHandler(field, control.Field_PropertyChanged, "");
 
         }
 

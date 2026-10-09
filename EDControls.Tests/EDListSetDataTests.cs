@@ -1,9 +1,11 @@
 using System.ComponentModel;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Threading;
 using EDControls.EDList;
 using EDControls.EDViewModel;
 using EDControls.UserPrefs;
@@ -128,14 +130,66 @@ public class EDListSetDataTests
             var list = NoRestList(prefs);
             list.HostId = "Tests.EDList";
             list.SetData(Columns, [Row("1", "A", "1")]);
+            Raise(list, FrameworkElement.LoadedEvent);
 
             ColumnByKey(list, "mth").SortDirection = ListSortDirection.Descending;
-            list.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+            Raise(list, FrameworkElement.UnloadedEvent);
 
             prefs.Received(1).SaveAsync("EDControls.EDList", "Tests.EDList",
                 Arg.Is<JsonNode>(n => n["sort"]![0]!["key"]!.GetValue<string>() == "mth"));
         });
     }
+
+    /// <summary>Přepnutí záložky: po návratu do stromu musí změna sloupce dál končit uložením.</summary>
+    [Fact]
+    public void Reload_AfterUnload_StillSavesLayout()
+    {
+        RunSta(() =>
+        {
+            var prefs = Substitute.For<IUserPrefsService>();
+            var list = NoRestList(prefs);
+            list.HostId = "Tests.EDList";
+            list.SetData(Columns, [Row("1", "A", "1")]);
+            Raise(list, FrameworkElement.LoadedEvent);
+            Raise(list, FrameworkElement.UnloadedEvent);
+
+            Raise(list, FrameworkElement.LoadedEvent);
+            ColumnByKey(list, "mth").SortDirection = ListSortDirection.Descending;
+            Raise(list, FrameworkElement.UnloadedEvent);
+
+            prefs.Received(1).SaveAsync("EDControls.EDList", "Tests.EDList", Arg.Any<JsonNode>());
+        });
+    }
+
+    /// <summary>Odběr změn sloupců drží list ve statické tabulce WPF, mimo vizuální strom nesmí viset.</summary>
+    [Fact]
+    public void NeverLoadedList_IsCollected()
+    {
+        RunSta(() =>
+        {
+            var list = CreateWeak(() =>
+            {
+                var l = NoRestList();
+                l.SetData(Columns, [Row("1", "A", "1")]);
+                return l;
+            });
+
+            // Odložené bindingy toolbaru (RelativeSource bez layoutu) drží list, dokud je dispatcher nezpracuje.
+            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ApplicationIdle);
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            Assert.False(list.IsAlive);
+        });
+    }
+
+    // Instance vznikne mimo volající metodu, jinak by ji JIT v Debug držel lokální proměnnou.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference CreateWeak(Func<object> create) => new(create());
+
+    private static void Raise(List list, RoutedEvent routedEvent) =>
+        list.RaiseEvent(new RoutedEventArgs(routedEvent, list));
 
     /// <summary>IMAGE a CODEBOOK jsou rezervované: textový sloupec s raw hodnotou, dokud je někdo nezačne kreslit.</summary>
     [Fact]

@@ -160,13 +160,15 @@ namespace EDControls.EDList
             InitializeComponent();
             DataGrid.ItemsSource = _controller.Rows;
             DataGrid.Sorting += OnDataGridSorting;
+            Loaded += (_, _) => HookColumnEvents();
             Unloaded += OnUnloaded;
         }
 
+        // Odhlásit před awaitem: rychlý návrat do stromu (přepnutí záložky) mezitím znovu přihlásí.
         private async void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            await _layoutWriter.FlushAsync();
             UnhookColumnEvents();
+            await _layoutWriter.FlushAsync();
         }
 
         // ── Veřejné API ───────────────────────────────────────────────────────
@@ -241,6 +243,7 @@ namespace EDControls.EDList
 
         private void RebuildColumns()
         {
+            bool hooked = _columnEventsHooked;
             UnhookColumnEvents();
             DataGrid.Columns.Clear();
             _headerCheckBox = null;
@@ -253,7 +256,7 @@ namespace EDControls.EDList
             // SelectionMode nebo dalším SetData byl seznam seřazený bez viditelného důvodu.
             if (_controller.PruneSort(HasColumn)) ApplySort();
             ShowSortArrows();
-            HookColumnEvents();
+            if (hooked) HookColumnEvents();
         }
 
         // ── Zaškrtnutí, řazení, výběr ─────────────────────────────────────────
@@ -316,9 +319,14 @@ namespace EDControls.EDList
         private static readonly DependencyProperty[] LayoutProperties =
             [DataGridColumn.ActualWidthProperty, DataGridColumn.DisplayIndexProperty, DataGridColumn.SortDirectionProperty];
 
+        // Odběr drží list ve statické tabulce WPF, proto platí jen mezi Loaded a Unloaded.
+        private bool _columnEventsHooked;
+
         /// <summary>Subscribe na width/displayIndex/sort změny sloupců - trigger debounced save.</summary>
         private void HookColumnEvents()
         {
+            if (_columnEventsHooked) return;
+            _columnEventsHooked = true;
             foreach (var col in DataGrid.Columns.Where(c => c.GetValue(FrameworkElement.TagProperty) is string))
                 foreach (var dp in LayoutProperties)
                     DependencyPropertyDescriptor.FromProperty(dp, typeof(DataGridColumn))?.AddValueChanged(col, OnColumnPropertyChanged);
@@ -326,6 +334,8 @@ namespace EDControls.EDList
 
         private void UnhookColumnEvents()
         {
+            if (!_columnEventsHooked) return;
+            _columnEventsHooked = false;
             foreach (var col in DataGrid.Columns.Where(c => c.GetValue(FrameworkElement.TagProperty) is string))
                 foreach (var dp in LayoutProperties)
                     DependencyPropertyDescriptor.FromProperty(dp, typeof(DataGridColumn))?.RemoveValueChanged(col, OnColumnPropertyChanged);

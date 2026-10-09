@@ -26,8 +26,7 @@
         </Grid.RowDefinitions>
 
         <!-- Brandový pruh - shodný s EDListem: týž EDComponentToolbar v plné šířce,
-             hledání vpravo. Ikona nápovědy otevírá popup zkratek přes HelpCommand
-             (WireToolbarSearch). -->
+             hledání vpravo. Hledání a popup zkratek (HelpCommand) napojuje konstruktor. -->
         <edct:EDComponentToolbar Grid.Row="0"
                                  x:Name="Toolbar"
                                  ShowSearch="True"
