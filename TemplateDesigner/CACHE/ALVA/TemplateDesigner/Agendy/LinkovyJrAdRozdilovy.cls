@@ -154,10 +154,17 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         d ..NactiStranky(.sys, .vstup, "", "", .nove)
 
+        s skuNova = $g(vstup("SKUPINA_LINEK_ID")), linNova = $g(vstup("LINKA_ID"))
+        i linNova = "" s linNova = $g(vstup("INSTANCE_ID"))
         i (skuPuvodni '= "") || (linPuvodni '= "") {
-            i skuPuvodni = "" s skuPuvodni = $g(vstup("SKUPINA_LINEK_ID"))
-            i linPuvodni = "" s linPuvodni = $g(vstup("LINKA_ID"))
-            i linPuvodni = "" s linPuvodni = $g(vstup("INSTANCE_ID"))
+            i skuPuvodni = "" s skuPuvodni = skuNova
+            i linPuvodni = "" s linPuvodni = linNova
+            // Linka ve skupině chybět může (parametr zůstal z jiné linky) - říct to rovnou, ne
+            // až chybou stavby jízdního řádu.
+            s linPuvodni = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NormalizLinku(linPuvodni)
+            i '$d(^[dataDB]JRL(skuPuvodni, linPuvodni, "I")) {
+                $$$ThrowStatus($$$ERROR($$$GeneralError, "Původní verze: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" není. Zkontrolujte parametry Porovnat se skupinou JŘ a Porovnat s linkou."))
+            }
             d ..NactiStranky(.sys, .vstup, skuPuvodni, linPuvodni, .puvodni)
         }
 
@@ -166,7 +173,15 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         f i=1:1:$g(nove) {
             s stranka = nove(i)
             s protejsek = ..ProtejsiStranka(stranka, i, .puvodni)
-            i protejsek '= "" s stranka = ..SlucStranky(stranka, protejsek)
+            i protejsek '= "" {
+                try {
+                    s stranka = ..SlucStranky(stranka, protejsek)
+                } catch exSlouceni {
+                    // Hláška musí říct, co s čím se porovnávalo - jinak parametr, který zůstal
+                    // z jiné linky, vypadá jako chyba porovnání (nález Jan 9. 10.).
+                    $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_(+linNova)_" (skupina "_skuNova_") a původní verze - linka "_(+linPuvodni)_" (skupina "_skuPuvodni_") - mají jiné zastávky. Porovnání zatím umí jen dvě verze se stejnou trasou."))
+                }
+            }
             s ^||ML("OUT", $i(^||ML("OUT"))) = stranka.%ToJSON()
         }
     } catch (ex) {
@@ -191,7 +206,9 @@ ClassMethod NactiStranky(ByRef sys As %String, ByRef vstup, sku As %String, lin 
     s chyba = $g(^||ML("ERR"))
     k ^||ML("ERR")
     i chyba '= "" {
-        s text = $p($e(chyba, $f(chyba, "~"), $l(chyba)), $c(13,10), 1)
+        // Tvar „1~<err>CRLF<popis výjimky>" - <err> bývá prázdné, text je až za CRLF.
+        s text = $zstrip($replace($e(chyba, $f(chyba, "~"), $l(chyba)), $c(13,10), " "), "<>W")
+        i $e(text, 1, 13) = "ERROR #5001: " s text = $e(text, 14, $l(text))
         i (sku '= "") || (lin '= "") s text = "Původní verze (skupina "_sku_", linka "_lin_"): "_text
         $$$ThrowStatus($$$ERROR($$$GeneralError, text))
     }
