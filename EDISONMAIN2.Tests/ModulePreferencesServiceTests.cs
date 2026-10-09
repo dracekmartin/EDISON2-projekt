@@ -111,6 +111,163 @@ public class ModulePreferencesServiceTests
         Assert.Null(await _service.LoadSelectedTabAsync());
     }
 
+    // Zápisy jdou na klonech v různých Caché procesech: dva souběžné téhož klíče nemají pořadí
+    // a starší hodnota by mohla doběhnout poslední.
+    [Fact]
+    public async Task Save_WhileWriteInFlight_SendsOnlyLatestAfterIt()
+    {
+        var writes = HoldWrites();
+
+        var first = _service.SaveExpansionAsync(["v1"]);
+        var second = _service.SaveExpansionAsync(["v2"]);
+        var third = _service.SaveExpansionAsync(["v3"]);
+
+        Assert.Equal(["""["v1"]"""], writes.Sent("TreeExpansion"));
+
+        writes.Complete(0);
+        await first;
+
+        Assert.Equal(["""["v1"]""", """["v3"]"""], writes.Sent("TreeExpansion", atLeast: 2));
+        Assert.False(second.IsCompleted);   // jeho hodnotu nese až zápis v3
+
+        writes.Complete(1);
+        await Task.WhenAll(second, third);
+
+        Assert.Equal(2, writes.Sent("TreeExpansion").Count);
+    }
+
+    [Fact]
+    public void Save_OtherKeyWhileWriteInFlight_IsNotBlocked()
+    {
+        var writes = HoldWrites();
+
+        _ = _service.SaveExpansionAsync(["v1"]);
+        _ = _service.SaveSelectedTabAsync("desktop");
+        _ = _service.SaveUsageAsync(new Dictionary<string, UsageEntry>());
+
+        Assert.Single(writes.Sent("TreeExpansion"));
+        Assert.Single(writes.Sent("SelectedTab"));
+        Assert.Single(writes.Sent("ModuleUsage"));
+    }
+
+    [Fact]
+    public async Task Save_FailedWriteInFlight_StillSendsPending()
+    {
+        var writes = HoldWrites();
+
+        var first = _service.SaveSelectedTabAsync("main");
+        var second = _service.SaveSelectedTabAsync("desktop");
+        writes.Fail(0);
+        await first;
+
+        Assert.Equal(["\"main\"", "\"desktop\""], writes.Sent("SelectedTab", atLeast: 2));
+        writes.Complete(1);
+        await second;
+    }
+
+    // MLRest čeká na odpověď hodiny: po výpadku sítě by visící zápis zablokoval klíč do konce session.
+    [Fact]
+    public async Task Save_HungWriteInFlight_PendingGoesAfterLimit()
+    {
+        var writes = HoldWrites(holdOnlyFirst: true);
+        var service = new ModulePreferencesService(_prefs) { InFlightLimit = TimeSpan.FromMilliseconds(50) };
+
+        _ = service.SaveSelectedTabAsync("main");
+        var second = service.SaveSelectedTabAsync("desktop");
+        await second.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal(["\"main\"", "\"desktop\""], writes.Sent("SelectedTab"));
+    }
+
+    // Při zavření shellu UI vlákno už nepumpuje, čekající zápis na něm nesmí záviset.
+    [Fact]
+    public void Save_PendingWrite_DoesNotNeedCallerContext()
+    {
+        var writes = HoldWrites();
+        var previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new StoppedContext());
+        try
+        {
+            _ = _service.SaveSelectedTabAsync("main");
+            _ = _service.SaveSelectedTabAsync("desktop");
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+
+        writes.Complete(0);
+
+        Assert.Equal(["\"main\"", "\"desktop\""], writes.Sent("SelectedTab", atLeast: 2));
+    }
+
+    // VM staví instanci znovu při každé přestavbě session nad týmž úložištěm (obnova licence, přepnutí firmy).
+    [Fact]
+    public void Save_RebuiltInstanceOverSameStore_KeepsOrder()
+    {
+        var writes = HoldWrites();
+        var rebuilt = new ModulePreferencesService(_prefs);
+
+        _ = _service.SaveExpansionAsync(["v1"]);
+        _ = _service.SaveExpansionAsync(["v2"]);
+        _ = rebuilt.SaveExpansionAsync(["v3"]);
+        Assert.Single(writes.Sent("TreeExpansion"));
+        writes.Complete(0);
+
+        Assert.Equal(["""["v1"]""", """["v3"]"""], writes.Sent("TreeExpansion", atLeast: 2));
+    }
+
+    private sealed class StoppedContext : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback d, object? state) { }
+    }
+
+    // SaveAsync substitutu vrací task, který dokončí až test - zápis tak zůstane „v letu".
+    private HeldWrites HoldWrites(bool holdOnlyFirst = false)
+    {
+        var held = new HeldWrites(holdOnlyFirst);
+        _prefs.SaveAsync(Scope, Arg.Any<string>(), Arg.Any<JsonNode>())
+            .Returns(call => held.Add(call.ArgAt<string>(1), call.ArgAt<JsonNode>(2)));
+        return held;
+    }
+
+    private sealed class HeldWrites(bool holdOnlyFirst)
+    {
+        private readonly List<(string Key, string Json, TaskCompletionSource Done)> _writes = [];
+
+        public Task Add(string key, JsonNode node)
+        {
+            var done = new TaskCompletionSource();
+            lock (_writes)
+            {
+                if (holdOnlyFirst && _writes.Count > 0) done.SetResult();
+                _writes.Add((key, node.ToJsonString(null), done));
+            }
+            return done.Task;
+        }
+
+        // Další zápis odchází z pokračování na poolu, ne synchronně v Complete.
+        public List<string> Sent(string key, int atLeast = 0)
+        {
+            SpinWait.SpinUntil(() => Snapshot(key).Count >= atLeast, TimeSpan.FromSeconds(10));
+            return Snapshot(key);
+        }
+
+        private List<string> Snapshot(string key)
+        {
+            lock (_writes) return [.. _writes.Where(w => w.Key == key).Select(w => w.Json)];
+        }
+
+        public void Complete(int index) => At(index).TrySetResult();
+
+        public void Fail(int index) => At(index).TrySetException(new InvalidOperationException("server down"));
+
+        private TaskCompletionSource At(int index)
+        {
+            lock (_writes) return _writes[index].Done;
+        }
+    }
+
     [Fact]
     public async Task Save_PrefsThrow_Swallowed()
     {

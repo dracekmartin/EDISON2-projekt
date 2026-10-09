@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using EDControls.UserPrefs;
 using EDISONMAIN2.Desktop;
@@ -25,9 +27,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         private const string SelectedTabKey    = "SelectedTab";
         private const string ChangelogSnoozeKey = "ChangelogSnooze";
 
-        private readonly IUserPrefsService _prefs;
+        // Fronta patří úložišti, ne instanci: VM staví instanci znovu při každé přestavbě session nad týmiž UserPrefs.
+        private static readonly ConditionalWeakTable<IUserPrefsService, Dictionary<string, PendingWrite?>> Queues = new();
 
-        public ModulePreferencesService(IUserPrefsService prefs) => _prefs = prefs;
+        private readonly IUserPrefsService _prefs;
+        // Klíč = zápis v letu, hodnota = čekající zápis (null = žádný).
+        private readonly Dictionary<string, PendingWrite?> _pending;
+
+        public ModulePreferencesService(IUserPrefsService prefs)
+        {
+            _prefs = prefs;
+            _pending = Queues.GetValue(prefs, _ => []);
+        }
+
+        // MLRest čeká na odpověď hodiny: visící zápis by bez limitu zablokoval klíč do konce session.
+        internal TimeSpan InFlightLimit { get; init; } = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Položky plochy v pořadí připnutí (druh, identita, pozice). Chybějící nebo poškozený blob
@@ -114,19 +128,68 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             }
         }
 
-        private async Task SaveBlobAsync<T>(string key, T value)
+        // Zápis jednoho klíče v letu: každý jde na klonu v jiném Caché procesu, souběžné by neměly pořadí.
+        // Čekající hodnotu nahradí novější, task volajícího skončí zápisem jeho nebo novější hodnoty.
+        private Task SaveBlobAsync<T>(string key, T value)
         {
+            JsonNode? node;
             try
             {
-                var node = JsonSerializer.SerializeToNode(value);
-                if (node is null) return;
-                await _prefs.SaveAsync(Scope, key, node);
+                node = JsonSerializer.SerializeToNode(value);
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[ModulePrefs] Save failed ({key}): {ex.Message}");
+                return Task.CompletedTask;
+            }
+            if (node is null) return Task.CompletedTask;
+
+            PendingWrite write;
+            lock (_pending)
+            {
+                if (_pending.TryGetValue(key, out var waiting))
+                {
+                    _pending[key] = write = new PendingWrite(node, waiting?.Done ?? NewDone());
+                    return write.Done.Task;
+                }
+                _pending[key] = null;
+            }
+            write = new PendingWrite(node, NewDone());
+            _ = WriteInOrderAsync(key, write);
+            return write.Done.Task;
+        }
+
+        private async Task WriteInOrderAsync(string key, PendingWrite write)
+        {
+            while (true)
+            {
+                try
+                {
+                    // Bez UI vlákna: při zavření shellu už nepumpuje a čekající zápis by neodešel.
+                    await _prefs.SaveAsync(Scope, key, write.Node).WaitAsync(InFlightLimit).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[ModulePrefs] Save failed ({key}): {ex.Message}");
+                }
+                write.Done.TrySetResult();
+
+                lock (_pending)
+                {
+                    if (_pending[key] is not { } next)
+                    {
+                        _pending.Remove(key);
+                        return;
+                    }
+                    write = next;
+                    _pending[key] = null;
+                }
             }
         }
+
+        private static TaskCompletionSource NewDone() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private sealed record PendingWrite(JsonNode Node, TaskCompletionSource Done);
     }
 
     /// <summary>Záznam používanosti modulu - počet spuštění + čas posledního (UTC). Defaults pro backward-compat.</summary>
