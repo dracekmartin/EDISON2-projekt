@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** v pořadí `B190` tisk z modulu jízdních řádů bez návrháře → `B191` linkový
-> JŘ MHD (Priority níž, Jan 7. 10.; `#7487` hotový 9. 10.). Zpětná vazba
+> **Nejblíž na řadě:** `B191` linkový JŘ MHD; `B190` tisk z modulu jízdních řádů čeká na kolegy
+> (spíš další verze). Pořadí Jan 9. 10.; `#7487` hotový, rozdílový JŘ `B192` po ukázce v Backlogu. Zpětná vazba
 > kolegy z 18. 9. i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře
 > v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
@@ -14,21 +14,16 @@
 
 ---
 
-## 🎯 Priority (pořadí Jan 7. 10.)
+## 🎯 Priority (pořadí Jan 9. 10.)
 
-1. **`B190` Tisk z modulu jízdních řádů bez návrháře** [L]. Uživatel v jízdních řádech (nové okno
+1. **`B191` Linkový (knižní) JŘ MHD - dodělat a vydat** [L]. Městská varianta je dnes skrytá,
+   dokud neprojde porovnáním se starým modulem. Co se z kódu nepozná (zastávkové řádky dorovnat
+   jako první, licenční × veřejné číslo linky, vlastní sada voleb): sekce Linkové a knižní JŘ níž.
+2. **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze). Uživatel v jízdních řádech (nové okno
    JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
    (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch
    kontrakt už je) a render oddělit fasádou. **Před začátkem rozhodnout**, odkud se bere výchozí
    šablona a jak ji uživatel volí. Podklad [`R4/R7`](architektonicka-rozhodnuti-agendy.md).
-2. **`B191` Linkový (knižní) JŘ MHD - dodělat a vydat** [L]. Městská varianta je dnes skrytá,
-   dokud neprojde porovnáním se starým modulem. Co se z kódu nepozná (zastávkové řádky dorovnat
-   jako první, licenční × veřejné číslo linky, vlastní sada voleb): sekce Linkové a knižní JŘ níž.
-3. **`B192` Rozdílový linkový JŘ** [M] (nápad Jan 7. 10., předloha z výtisku zákazníka) - **základ
-   9. 10.**: nezveřejněná agenda „Linkový JŘ / AD - rozdílový" porovná vybranou linku s jinou verzí
-   (parametry skupina, linka); změněný spoj je dvakrát vedle sebe s podbarvenými odlišnými časy.
-   Otevřené: šablona na ukázku, tlačítko z okna linek (`B190`), zrušené spoje jako sloupce, rozdíly
-   v platnosti, jiná trasa. Ukázková dvojice: CB_CSADAD linka 380760, skupina 307 proti 207.
 
 > 📞 **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze **starých šablon**
 > (starý tisk JŘ a jeho návrhář sestav), jak totéž udělat po novu v Návrháři šablon - převést
@@ -96,6 +91,12 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B192` Rozdílový linkový JŘ** [M] (základ 9. 10., **čeká na ukázku zákazníkům**, podle ní se
+  rozhodne, co dál). Nezveřejněná agenda „Linkový JŘ / AD - rozdílový" + šablona
+  `templates/rozdilovy-linkovy-jr-a4.json`. Otevřené: tlačítko z okna linek (`B190`), zrušené spoje
+  jako sloupce, rozdíly v platnosti a značkách, jiná trasa. Dvojice na ukázku: CB_CSADAD 340351
+  (842 proti 203), 380760 (307 proti 207); další najde `RozdilovyJrProbe.NajdiDvojice`.
 
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
