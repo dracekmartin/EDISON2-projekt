@@ -792,7 +792,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Hlášky vpravo dole (`B178`) ─────────────────────────────────────────
 
     /// <summary>Odkud hláška přišla - každý zdroj se přepočítává v jinou chvíli, proto zvlášť.</summary>
-    public enum ZdrojHlaseni { Data, Font, Preteceni, Orez, Sloupce, Sazba }
+    public enum ZdrojHlaseni { Data, Font, Preteceni, Orez, Sloupce, Sazba, Agenda }
 
     private readonly Dictionary<ZdrojHlaseni, IReadOnlyList<Hlaseni>> _hlaseniZeZdroju = [];
 
@@ -1012,6 +1012,7 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             NastavHlaseni(ZdrojHlaseni.Font,
                 FontWarnings.Hlaska(State.CurrentTemplate) is { } font ? [font] : []);
+            ZkontrolujPrvkyAgendy();
         };
 
         Preferences = preferences;
@@ -1148,6 +1149,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // staré definice a tisk by vyjel jinak.
         RefetchIfColumnsDefinitionChanged();
         RequestParamsVisibilityRefresh?.Invoke();
+        ZkontrolujPrvkyAgendy();
     }
 
     /// <summary>Vykoná seznam příkazů jako jeden undo krok (1 příkaz → přímo, víc → CompositeCommand).
@@ -1233,6 +1235,7 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPropertiesPanelUpdate?.Invoke();
         RefetchIfColumnsDefinitionChanged();
         RequestParamsVisibilityRefresh?.Invoke();
+        ZkontrolujPrvkyAgendy();
     }
 
     private void Redo()
@@ -1246,6 +1249,7 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPropertiesPanelUpdate?.Invoke();
         RefetchIfColumnsDefinitionChanged();
         RequestParamsVisibilityRefresh?.Invoke();
+        ZkontrolujPrvkyAgendy();
     }
 
     /// <summary>Definice vlastních sloupců je jediný kus šablony, na kterém závisí DATA (posílá se
@@ -1676,8 +1680,55 @@ public class TemplateDesignerViewModel : EDViewModel
     public IReadOnlyList<string> GetCustomSectionTemplateNames() =>
         _sectionTemplates.GetAvailableTemplates();
 
-    public Section? LoadCustomSectionTemplate(string name) =>
-        _sectionTemplates.Load(name)?.Clone();
+    /// <summary>Uložená šablona sekce - ukládá se mimo šablonu, takže ji jde vložit do jakékoli
+    /// agendy; prvky jízdních řádů jiné agendy se z ní vynechají.</summary>
+    public Section? LoadCustomSectionTemplate(string name)
+    {
+        var sekce = _sectionTemplates.Load(name)?.Clone();
+        if (sekce is not null) OdeberPrvkyJineAgendy(sekce);
+        return sekce;
+    }
+
+    /// <summary>Druh JŘ prvků agendy šablony; null = agenda v registru není (registr se nenačetl,
+    /// šablona bez agendy) a pak se nic neblokuje.</summary>
+    private string? ZnamyDruhAgendy => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind;
+
+    /// <summary>Rozdělí prvky na ty, které do šablony téhle agendy smí, a řekne uživateli, které
+    /// vynechal (<see cref="AgendaCapabilities.Allows"/>).</summary>
+    private List<TemplateElement> JenPrvkyAgendy(IEnumerable<TemplateElement> prvky)
+    {
+        var druh = ZnamyDruhAgendy;
+        var povolene = new List<TemplateElement>();
+        var vynechane = new List<string>();
+        foreach (var prvek in prvky)
+        {
+            if (AgendaCapabilities.Allows(druh, prvek)) povolene.Add(prvek);
+            else vynechane.Add(ElementNames.ForUser(prvek));
+        }
+        if (vynechane.Count > 0)
+            PopupDisplayer.Info($"Vynecháno, patří k jiné agendě než tato šablona: {string.Join(", ", vynechane.Distinct())}.");
+        return povolene;
+    }
+
+    internal void OdeberPrvkyJineAgendy(Section sekce)
+    {
+        var povolene = JenPrvkyAgendy(sekce.Elements);
+        sekce.Elements.Clear();
+        sekce.Elements.AddRange(povolene);
+    }
+
+    /// <summary>Upozorní na prvky jízdních řádů, které k agendě šablony nepatří - hotová šablona
+    /// je může mít z doby, kdy vložení agendu nekontrolovalo. Sám je nemaže; klik na hlášku prvek
+    /// vybere.</summary>
+    private void ZkontrolujPrvkyAgendy()
+    {
+        var druh = ZnamyDruhAgendy;
+        NastavHlaseni(ZdrojHlaseni.Agenda, [.. State.CurrentTemplate.Sections
+            .SelectMany(s => s.Elements)
+            .Where(p => !AgendaCapabilities.Allows(druh, p))
+            .Select(p => new Hlaseni(ZavaznostHlaseni.Upozorneni, ElementNames.ForUser(p),
+                "patří k jiné agendě než šablona, data se v něm nezobrazí správně", "prvek smažte", p.Id))]);
+    }
 
     // ── File operations ───────────────────────────────────────────────────────
     private async Task NewTemplateAsync()
@@ -2022,7 +2073,12 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public void LoadGeneratedTemplate(Template template)
     {
+        var puvodniAgenda = State.CurrentTemplate.AgendaCode;
         State.CurrentTemplate = template;
+        // Data a vybrané linky patří agendě předchozí šablony - jako u otevření z databáze nebo
+        // souboru. Jinak se nová šablona do přenačtení kreslí nad daty jiného tvaru.
+        if (!string.Equals(puvodniAgenda, template.AgendaCode, StringComparison.OrdinalIgnoreCase))
+            ClearActiveInstances();
         State.SelectedElements.Clear();
         State.UndoStack.Clear();
         State.RedoStack.Clear();
@@ -2306,9 +2362,13 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
+        // Schránka přežije otevření jiné šablony - prvek jízdního řádu jiné agendy se nevloží.
+        var vlozitelne = JenPrvkyAgendy(_clipboard);
+        if (vlozitelne.Count == 0) return;
+
         // Mapování starý GroupId → nový GroupId (klony nedědí skupinu originálu)
         var groupIdMap = new Dictionary<string, string>();
-        var newElements = _clipboard.Select(el =>
+        var newElements = vlozitelne.Select(el =>
         {
             var clone = el.Clone();
             clone.X = Math.Min(clone.X + 5f,

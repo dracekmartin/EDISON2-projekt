@@ -4,11 +4,39 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** QR na vývěsce (analýza dat vývěsky). Zpětná vazba kolegy z 18. 9.
-> i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře v Backlogu.
+> **Nejblíž na řadě:** v pořadí `#7487` rozložení poznámek podle druhu → `B190` tisk z modulu
+> jízdních řádů bez návrháře → `B191` linkový JŘ MHD (Priority níž, Jan 7. 10.). Zpětná vazba
+> kolegy z 18. 9. i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře
+> v Backlogu.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
+
+---
+
+## 🎯 Priority (pořadí Jan 7. 10.)
+
+1. **`#7487` Rozložení poznámek podle druhu** [M] (KORID). U každého druhu poznámek (dny
+   platnosti, negativní značky, návaznosti, atributy, texty) zvlášť **pořadí** a **počet sloupců**,
+   např. „všechno do 3 sloupců, negativní značky do 1". Dnes jde jeden „Počet sloupců" pro celou
+   legendu. Nejdřív návrh formuláře k odsouhlasení, pak kód.
+2. **`B190` Tisk z modulu jízdních řádů bez návrháře** [L]. Uživatel v jízdních řádech (nové okno
+   JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
+   (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch
+   kontrakt už je) a render oddělit fasádou. **Před začátkem rozhodnout**, odkud se bere výchozí
+   šablona a jak ji uživatel volí. Podklad [`R4/R7`](architektonicka-rozhodnuti-agendy.md).
+3. **`B191` Linkový (knižní) JŘ MHD - dodělat a vydat** [L]. Městská varianta je dnes skrytá,
+   dokud neprojde porovnáním se starým modulem. Co se z kódu nepozná (zastávkové řádky dorovnat
+   jako první, licenční × veřejné číslo linky, vlastní sada voleb): sekce Linkové a knižní JŘ níž.
+4. **`B192` Vizuální „diff" jízdního řádu** [M] (nápad Jan 7. 10., někomu by se líbil; **nejdřív
+   krátký rozbor**). Linkový JŘ proti předchozí verzi: nový / změněný spoj barvou, zrušený šedě,
+   legenda to vysvětlí - přes dnešní barvy spojů ze serveru a parametr „Porovnat s". Otevřené: s čím
+   porovnávat (archiv platných linek `^JRAPL`, nebo jiná skupina linek) a jestli stačí celé spoje;
+   zvýraznit jednotlivé změněné časy je dražší (tabulka nemá barvy buněk).
+
+> 📞 **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze **starých šablon**
+> (starý tisk JŘ a jeho návrhář sestav), jak totéž udělat po novu v Návrháři šablon - převést
+> jejich vzhled do nové šablony a ukázat postup. Nejdřív sepsat, kdo staré šablony reálně používá.
 
 ---
 
@@ -44,8 +72,8 @@ dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku b
 (rozhodnutí Jan 31. 8.). Městská varianta zůstává skrytá, dokud neprojde porovnáním se starým
 modulem; jak se agenda skrývá, popisuje komentář u `Released` v `LinkovyJrAd.cls`.
 
-**Když přijde na řadu MHD** (dnes se neřeší, rozhodnutí Jan 28. 8.), platí čtyři věci, které se z kódu
-nepoznají:
+**MHD varianta je na řadě jako `B191`** (Priority, Jan 7. 10.; do té doby odložená od 28. 8.). Platí
+čtyři věci, které se z kódu nepoznají:
 
 - **Vlastní inventář a vlastní porovnání se starým modulem.** „Dodělám AD a MHD spadne samo" neplatí -
   AD je nadmnožina v obsahu tabulky, ne v pojmech (licenční × veřejné číslo linky, typ provozu jako
@@ -73,10 +101,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
-- **`#7487` Rozložení poznámek podle druhu** [M] (KORID; odloženo Jan 1. 10., čeká na upřesnění
-  tvaru s kolegou). U každého druhu poznámek (dny platnosti, negativní značky, návaznosti,
-  atributy, texty) zvlášť **pořadí** a **počet sloupců**, např. „všechno do 3 sloupců, negativní
-  značky do 1". Dnes jde jeden „Počet sloupců" pro celou legendu. Nejdřív návrh formuláře, pak kód.
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
@@ -164,9 +188,6 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   lidé si v něm překážejí. Návrh: `partial` soubory přesně podle těch pruhů, beze změny chování;
   precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
   ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
-
-- **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF
-  bez stavu editoru). Dnes tisk jen v návrháři. Gate R4/R7.
 
 - **Externí datové zdroje** (na poptávku) - architektura je připravená, engine zná jen
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
