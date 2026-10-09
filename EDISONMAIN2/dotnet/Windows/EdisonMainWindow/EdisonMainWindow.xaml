@@ -389,9 +389,10 @@
 
                 <!-- Název nese jen aktivní záložka (ItemTemplate), neaktivní ho mají v ToolTipu -
                      pět popisků vedle sebe by se do panelu nevešlo. BasedOn povinné (theming
-                     + FocusVisual žijí v implicitním stylu). -->
+                     + FocusVisual žijí v implicitním stylu). Padding dává záložce s jedinou
+                     ikonou plochu, kterou jde trefit myší. -->
                 <Style x:Key="TreeTab" TargetType="TabItem" BasedOn="{StaticResource {x:Type TabItem}}">
-                    <Setter Property="Padding" Value="4,6"/>
+                    <Setter Property="Padding" Value="12,6"/>
                 </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>
