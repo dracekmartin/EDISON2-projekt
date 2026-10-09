@@ -1917,6 +1917,7 @@ public partial class MainWindow : Window
         {
             bool linkovy = _vm.JeLinkovyJr;
             dlg.ViditelnostPole = (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy);
+            dlg.UpravaPoli = pole => NastavVolbyRazeni(pole, linkovy);
             // Okno vlastností zapisuje až s Uložit - rozpracované druhy si proto drží samo,
             // aby druhé otevření ukázalo první úpravu.
             var rozpracovane = poznamky.EfektivniSkupiny();
@@ -2044,6 +2045,16 @@ public partial class MainWindow : Window
             nameof(Section.OverflowBehavior) or nameof(Section.ZacitNaNoveStrance) => obsah,
             _ => true,
         };
+    }
+
+    /// <summary>Nabídka „Řazení poznámek" podle agendy šablony (<see cref="NotesLegendElement.VolbyRazeni"/>).
+    /// Nastavuje se vždy celá, protože panel drží týž formulář i pro prvek z jiné šablony.</summary>
+    internal static void NastavVolbyRazeni(IEnumerable<Item>? pole, bool linkovyJr)
+    {
+        if ((pole ?? []).OfType<Field>().FirstOrDefault(f => f.Key == nameof(NotesLegendElement.Razeni)) is not { } razeni)
+            return;
+        razeni.ListItems = [.. NotesLegendElement.VolbyRazeni(linkovyJr, razeni.Value ?? "")
+            .Select(v => new EDControls.ListItem(v.Hodnota, v.Popis))];
     }
 
     /// <summary>Klik na hlášku vpravo dole vybere její prvek na plátně (`B178`).</summary>
@@ -2188,9 +2199,11 @@ public partial class MainWindow : Window
                 // Nabídka „vložit pole" - seznam zná jen návrhář (ze schématu agendy), Caché ne.
                 InlineElementForm.PlaceholderFields = _vm.PlaceholderFieldItems();
                 bool linkovy = _vm.JeLinkovyJr;
-                InlineElementForm.ViditelnostPole = selected[0] is NotesLegendElement
+                bool poznamky = selected[0] is NotesLegendElement;
+                InlineElementForm.ViditelnostPole = poznamky
                     ? (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy)
                     : null;
+                InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : null;
                 InlineElementForm.ShowElement(selected[0], panelSchema);
                 ShowInlineFormPanel(true);
             }

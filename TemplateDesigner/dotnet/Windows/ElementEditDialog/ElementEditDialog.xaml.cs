@@ -59,6 +59,13 @@ public partial class ElementEditDialog : Window
     public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
 
     /// <summary>
+    /// Úprava polí po naplnění z cíle, kterou schéma z Caché neumí, protože nezná agendu šablony
+    /// (dnes nabídka řazení poznámek u linkového JŘ). Běží před serverovou validací, která
+    /// nabídky polí vrací beze změny.
+    /// </summary>
+    public Action<IEnumerable<Item>?>? UpravaPoli { get; set; }
+
+    /// <summary>
     /// Tlačítko ve formuláři (klíč „__…"): host otevře svůj editor a vrátí vratný příkaz, nebo null.
     /// Příkaz se provede až s Uložit, takže Storno zahodí i změnu z editoru; opakovaný klik nahradí
     /// předchozí příkaz téhož tlačítka.
@@ -102,6 +109,7 @@ public partial class ElementEditDialog : Window
         // Řez (váhy) z reálných řezů rodiny - nastavit PŘED Validate, aby items přežily round-trip
         // (Validate serializuje aktuální items a Caché je echuje zpět).
         ElementFormBinder.PopulateFontWeightFields(TheForm);
+        UpravaPoli?.Invoke(TheForm.Items);
         TheForm.Validate();
         PouzijViditelnost();
     }

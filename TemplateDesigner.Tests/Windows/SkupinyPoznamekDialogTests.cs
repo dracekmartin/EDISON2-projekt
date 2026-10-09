@@ -97,4 +97,28 @@ public class SkupinyPoznamekDialogTests
         ElementFormBinder.PouzijViditelnost(polozky, (k, _) => NotesLegendElement.PoleFormulareViditelne(k, false));
         Assert.Equal(ItemVisibility.Visible, linka.Visibility);
     }
+
+    [Theory]
+    [InlineData("DleTypu", "DleTypu")]
+    [InlineData("Vychozi", "Vychozi")]
+    [InlineData("DleDelkyVzestupne", "DleTypu")]
+    public void Linkovy_RazeniBezDleTypu_PoleNezustanePrazdne(string ulozene, string hodnotaDleDat)
+    {
+        var volby = NotesLegendElement.VolbyRazeni(linkovyJr: true, ulozene);
+
+        Assert.Equal([hodnotaDleDat, "DleDelkyVzestupne", "DleDelkySestupne"], volby.Select(v => v.Hodnota));
+        Assert.Equal("Výchozí (dle dat)", volby[0].Popis);
+        Assert.Contains(volby, v => v.Hodnota == ulozene);
+    }
+
+    [Fact]
+    public void Vyveska_MaVsechnyVolbyRazeni()
+    {
+        var volby = new Field { Key = nameof(NotesLegendElement.Razeni), Value = "DleTypu" };
+
+        TemplateDesigner.MainWindow.NastavVolbyRazeni([volby], linkovyJr: false);
+
+        Assert.Equal(["DleTypu", "Vychozi", "DleDelkyVzestupne", "DleDelkySestupne"], volby.ListItems.Select(i => i.Key));
+        Assert.Equal("DleTypu", volby.Value);
+    }
 }

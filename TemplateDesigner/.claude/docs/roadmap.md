@@ -17,9 +17,8 @@
 ## 🎯 Priority (pořadí Jan 7. 10.)
 
 1. **`#7487` Rozložení poznámek podle druhu** [M] (KORID) - **návrh hotový 9. 10., ladí se**.
-   Okno „Druhy poznámek" u linkového JŘ (pořadí, tisk a sloupce šesti skupin, changelog 9. 10.).
-   Otevřené: vyzkoušet na KORID linkách, návrat k jedné mřížce (dnes jen Ctrl+Z), dlouhá poznámka
-   přes sloupce.
+   Legenda linkového JŘ po druzích + okno „Druhy poznámek" (changelog 9. 10.). Otevřené:
+   vyzkoušet na KORID linkách, dlouhá poznámka přes sloupce.
 2. **`B190` Tisk z modulu jízdních řádů bez návrháře** [L]. Uživatel v jízdních řádech (nové okno
    JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
    (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch

@@ -8,7 +8,8 @@ namespace TemplateDesigner.Tests.Elements;
 /// <summary>
 /// Rozložení poznámek linkového JŘ podle druhů (`#7487`, KORID): každá skupina druhů je vlastní
 /// blok na novém řádku, se svým počtem sloupců, v pořadí, které si uživatel nastaví - „všechno do
-/// tří sloupců, negativní značky do jednoho". Bez nastavení zůstává jedna společná mřížka.
+/// tří sloupců, negativní značky do jednoho". Linkový JŘ se tak rozkládá vždy (jako starý tisk),
+/// vývěska bez druhů zůstává jednou mřížkou.
 /// </summary>
 public class PoznamkyPodleDruhuTests
 {
@@ -49,16 +50,44 @@ public class PoznamkyPodleDruhuTests
         return skupiny;
     }
 
-    // ── Bez nastavení se nic nemění ─────────────────────────────────────────
+    /// <summary>Tytéž poznámky bez druhu - jak je pošle vývěska.</summary>
+    private static DataContext BezDruhu(params DataContext[] poznamky) => Linkova(
+        [.. poznamky.Select(p => Poznamka("", p.GetString("TYP"), p.GetString("ZNAK"), p.GetString("TEXT")))]);
+
+    // ── Bez nastavení ───────────────────────────────────────────────────────
 
     [Fact]
-    public void BezNastaveni_JeLegendaJedenBlok()
+    public void BezNastaveni_RozkladaPoDruzichVychozimPoradim()
     {
         var el = new NotesLegendElement { Columns = 3 };
 
-        var blok = Assert.Single(Bloky(el, TypickaLinka()));
-        Assert.Equal(3, blok.Sloupcu);
-        Assert.Equal(8, blok.Poznamky.Count);
+        var bloky = Bloky(el, TypickaLinka());
+
+        Assert.Equal(["1", "2", "3", "5", "6", "9"], bloky.Select(b => b.Poznamky[0].Druh));
+        Assert.All(bloky, b => Assert.Equal(3, b.Sloupcu));
+    }
+
+    [Fact]
+    public void BezNastaveni_VypnutyTypDruhNetiskne()
+    {
+        // Starší šablona s vypnutými negativními značkami je po rozložení na druhy dál nemá.
+        var el = new NotesLegendElement { ShowNegativniZnacky = false };
+
+        Assert.DoesNotContain(Bloky(el, TypickaLinka()).SelectMany(b => b.Poznamky), p => p.Druh == "2");
+    }
+
+    [Fact]
+    public void DleTypuUvnitrDruhu_JePoradiZDat()
+    {
+        // U linkového nabízí formulář „Dle typu" jako „Výchozí (dle dat)" - pořadí typů drží skupiny.
+        var data = Linkova(
+            Poznamka("7", "text", "MHD", "platí tarif MHD"),
+            Poznamka("7", "znak", "x", "zastávka na znamení"));
+        var el = new NotesLegendElement { Razeni = LegendRazeni.DleTypu };
+
+        var blok = Assert.Single(Bloky(el, data));
+
+        Assert.Equal(["MHD", "x"], blok.Poznamky.Select(p => p.Znak));
     }
 
     [Fact]
@@ -172,12 +201,12 @@ public class PoznamkyPodleDruhuTests
     [Fact]
     public void KazdaSkupinaZacinaNaNovemRadku()
     {
-        // Dvě poznámky ve dvou sloupcích: společná mřížka = jeden řádek, dvě skupiny = dva řádky.
-        var data = Linkova(Poznamka("2", "nz", "10", "nejede"), Poznamka("9", "text", "", "tarif"));
-        var spolecna = new NotesLegendElement { Width = 190f, Columns = 2, ShowHeaderBar = false };
-        var poDruzich = new NotesLegendElement { Width = 190f, Columns = 2, ShowHeaderBar = false, Skupiny = Vychozi() };
+        // Dvě poznámky ve dvou sloupcích: vývěska (bez druhů) = jeden řádek, dvě skupiny = dva řádky.
+        DataContext[] poznamky = [Poznamka("2", "nz", "10", "nejede"), Poznamka("9", "text", "", "tarif")];
+        var el = new NotesLegendElement { Width = 190f, Columns = 2, ShowHeaderBar = false };
 
-        float rozdil = poDruzich.CalculateHeightFromData(data) - spolecna.CalculateHeightFromData(data);
+        float rozdil = el.CalculateHeightFromData(Linkova(poznamky)) - el.CalculateHeightFromData(BezDruhu(poznamky));
+        var spolecna = el;
 
         Assert.Equal(spolecna.EffectiveNoteLineHeight, rozdil, 2);
     }
@@ -201,14 +230,13 @@ public class PoznamkyPodleDruhuTests
     [Fact]
     public void KresliDruhouSkupinuPodPrvni()
     {
-        // Ve společné mřížce stojí druhá poznámka vpravo vedle první; po druzích pod ní a vpravo
-        // nezůstane nic.
-        var data = Linkova(Poznamka("2", "nz", "10", "nejede"), Poznamka("9", "text", "", "tarif platí"));
-        var spolecna = new NotesLegendElement { X = 0, Y = 0, Width = 120f, Height = 30f, Columns = 2, ShowHeaderBar = false };
-        var poDruzich = new NotesLegendElement { X = 0, Y = 0, Width = 120f, Height = 30f, Columns = 2, ShowHeaderBar = false, Skupiny = Vychozi() };
+        // Ve společné mřížce vývěsky stojí druhá poznámka vpravo vedle první; po druzích pod ní
+        // a vpravo nezůstane nic.
+        DataContext[] poznamky = [Poznamka("2", "nz", "10", "nejede"), Poznamka("9", "text", "", "tarif platí")];
+        NotesLegendElement Prvek() => new() { X = 0, Y = 0, Width = 120f, Height = 30f, Columns = 2, ShowHeaderBar = false };
 
-        Assert.True(InkoustVpravo(spolecna, data));
-        Assert.False(InkoustVpravo(poDruzich, data));
+        Assert.True(InkoustVpravo(Prvek(), BezDruhu(poznamky)));
+        Assert.False(InkoustVpravo(Prvek(), Linkova(poznamky)));
     }
 
     private static bool InkoustVpravo(NotesLegendElement el, DataContext data)

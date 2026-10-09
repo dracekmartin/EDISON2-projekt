@@ -75,15 +75,16 @@ public class NotesLegendElement : StopScheduleElementBase
 
     /// <summary>
     /// Rozložení podle druhů poznámek linkového JŘ (`#7487`): pořadí skupin, co se z nich tiskne
-    /// a kolik mají sloupců. <b>Null = jedna společná mřížka</b> jako dřív.
+    /// a kolik mají sloupců. <b>Null = výchozí pořadí</b>, tisk podle přepínačů typů a sloupce prvku.
     /// </summary>
     /// <remarks>
-    /// Každá skupina začíná na novém řádku, stejně jako druh ve starém tisku (TiskJR
-    /// <c>stDL_PoznamkyPoradiDruh</c> + <c>stDL_PoznamkyDruh*Tisknout</c>). Druh posílá jen linková
-    /// agenda; u poznámek bez druhu se nic nedělí.
-    /// <para>⚠️ S nastavenými skupinami o tisku poznámky s druhem rozhoduje skupina, ne přepínače
-    /// Negativní značky / Speciální znaky / Textové poznámky - ty u linkového JŘ formulář neukazuje
-    /// a dvě sady vypínačů téhož by si odporovaly.</para>
+    /// Linkový JŘ se po skupinách rozkládá vždy a každá skupina začíná na novém řádku, stejně jako
+    /// druh ve starém tisku (TiskJR <c>stDL_PoznamkyPoradiDruh</c> + <c>stDL_PoznamkyDruh*Tisknout</c>);
+    /// jednu společnou mřížku zrušilo rozhodnutí Jan 9. 10. Druh posílá jen linková agenda,
+    /// poznámky bez druhu (vývěska) jsou dál jeden blok.
+    /// <para>⚠️ O tisku poznámky s druhem rozhoduje skupina, ne přepínače Negativní značky / Speciální
+    /// znaky / Textové poznámky - ty u linkového JŘ formulář neukazuje a dvě sady vypínačů téhož by
+    /// si odporovaly. Bez nastavení se z nich jen odvodí výchozí „Tisknout" skupin.</para>
     /// </remarks>
     public List<NastaveniSkupinyPoznamek>? Skupiny { get; set; }
 
@@ -470,14 +471,14 @@ public class NotesLegendElement : StopScheduleElementBase
     internal sealed record BlokPoznamek(List<PoznamkaData> Poznamky, int Sloupcu);
 
     /// <summary>
-    /// Rozdělí poznámky na bloky podle <see cref="Skupiny"/>: skupiny v nastaveném pořadí, každá se
-    /// svým počtem sloupců, vypnuté a prázdné vynechá. Bez skupin (nebo bez druhů v datech) je celá
-    /// legenda jeden blok jako dřív. Prázdný vstup = žádný blok.
+    /// Rozdělí poznámky s druhem na bloky podle <see cref="EfektivniSkupiny"/>: skupiny v nastaveném
+    /// pořadí, každá se svým počtem sloupců, vypnuté a prázdné vynechá. Poznámky bez druhu (vývěska)
+    /// jsou jeden blok. Prázdný vstup = žádný blok.
     /// </summary>
     internal List<BlokPoznamek> RozdelDoBloku(List<PoznamkaData> poznamky)
     {
         if (poznamky.Count == 0) return [];
-        if (Skupiny is null || poznamky.All(p => p.Druh == ""))
+        if (poznamky.All(p => p.Druh == ""))
             return [new(OrderNotes(poznamky), Math.Max(1, Columns))];
 
         var bloky = new List<BlokPoznamek>();
@@ -486,7 +487,7 @@ public class NotesLegendElement : StopScheduleElementBase
             if (!s.Tisknout) continue;
             var skupiny = poznamky.Where(p => SkupinaDruhu(p.Druh) == s.Skupina).ToList();
             if (skupiny.Count > 0)
-                bloky.Add(new(OrderNotes(skupiny), Math.Clamp(s.Sloupcu ?? Columns, 1, 4)));
+                bloky.Add(new(OrderNotes(skupiny, uvnitrDruhu: true), Math.Clamp(s.Sloupcu ?? Columns, 1, 4)));
         }
         return bloky;
     }
@@ -525,6 +526,30 @@ public class NotesLegendElement : StopScheduleElementBase
             or nameof(ShowZnackaMistenky) or nameof(ShowPokracujiciSpoje) => !linkovyJr,
         _ => true,
     };
+
+    /// <summary>
+    /// Volby „Řazení poznámek" ve formuláři (hodnota, popisek). Vývěska má všechny jako ve schématu
+    /// <c>NotesLegendElementEdit.cls</c>; linkový JŘ bez „Dle typu" - pořadí typů tam určuje okno
+    /// Druhy poznámek a uvnitř druhu znamená „Dle typu" totéž co pořadí z dat.
+    /// </summary>
+    /// <remarks>
+    /// U linkového nese „Výchozí (dle dat)" tu z obou hodnot, kterou šablona má (výchozí prvku je
+    /// „Dle typu"). Pole tak u starší šablony nezůstane prázdné a otevření formuláře nic nezapíše.
+    /// </remarks>
+    public static IReadOnlyList<(string Hodnota, string Popis)> VolbyRazeni(bool linkovyJr, string aktualni)
+    {
+        const string dleDat = "Výchozí (dle dat)";
+        (string, string)[] delka =
+        [
+            (nameof(LegendRazeni.DleDelkyVzestupne), "Délka vzestupně"),
+            (nameof(LegendRazeni.DleDelkySestupne), "Délka sestupně"),
+        ];
+        if (!linkovyJr)
+            return [(nameof(LegendRazeni.DleTypu), "Dle typu (dny platnosti → značky → atributy → text)"),
+                    (nameof(LegendRazeni.Vychozi), dleDat), .. delka];
+        var dleDatHodnota = aktualni == nameof(LegendRazeni.Vychozi) ? nameof(LegendRazeni.Vychozi) : nameof(LegendRazeni.DleTypu);
+        return [(dleDatHodnota, dleDat), .. delka];
+    }
 
     /// <summary>Popisek skupiny v okně „Druhy poznámek".</summary>
     public static string NazevSkupiny(SkupinaPoznamek skupina) => skupina switch
@@ -583,7 +608,7 @@ public class NotesLegendElement : StopScheduleElementBase
     {
         return poznamky.Where(p =>
             // U poznámky s druhem rozhoduje o tisku její skupina (RozdelDoBloku), ne přepínače typů.
-            ((Skupiny is not null && p.Druh != "") ||
+            (p.Druh != "" ||
              (p.Typ == TypPoznamky.NegativniZnacka && ShowNegativniZnacky) ||
              (p.Typ == TypPoznamky.SpecialniZnak && ShowSpecialniZnaky) ||
              (p.Typ == TypPoznamky.Text && ShowTextovePoznamky))
@@ -698,8 +723,11 @@ public class NotesLegendElement : StopScheduleElementBase
     };
 
     /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní - v rámci tieru/pořadí zachová pořadí z dat).</summary>
-    internal List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) => Razeni switch
+    /// <param name="uvnitrDruhu">Řadí se jedna skupina druhů linkového JŘ: pořadí typů tam určuje
+    /// pořadí skupin, takže „Dle typu" znamená pořadí z dat (formulář ho tak u linkového i nazývá).</param>
+    internal List<PoznamkaData> OrderNotes(List<PoznamkaData> notes, bool uvnitrDruhu = false) => Razeni switch
     {
+        LegendRazeni.DleTypu when uvnitrDruhu => notes,
         LegendRazeni.DleTypu           => notes.OrderBy(TypPriorita).ToList(),
         LegendRazeni.DleDelkyVzestupne => notes.OrderBy(p => p.Text.Length).ToList(),
         LegendRazeni.DleDelkySestupne  => notes.OrderByDescending(p => p.Text.Length).ToList(),

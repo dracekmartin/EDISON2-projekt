@@ -59,6 +59,10 @@ public partial class InlinePropertiesForm : UserControl
     /// </summary>
     public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
 
+    /// <summary>Úprava polí po naplnění z cíle (nabídka voleb podle agendy) - viz
+    /// <see cref="ElementEditDialog.UpravaPoli"/>; nastavit před <see cref="ShowElement"/>.</summary>
+    public Action<IEnumerable<EDControls.EDInputForm.Item>?>? UpravaPoli { get; set; }
+
     /// <summary>Napojí undo executor + canvas invalidaci (volá host jednou).</summary>
     public void SetContext(Action<IDesignerCommand> execute, Action invalidate)
     {
@@ -98,6 +102,7 @@ public partial class InlinePropertiesForm : UserControl
             _preFilled = ElementFormBinder.Prefill(TheForm, _target);
             // Řez (váhy) - plní se z reálných řezů rodiny až po prefillu (kdy je hodnota rodiny známá).
             ElementFormBinder.PopulateFontWeightFields(TheForm);
+            UpravaPoli?.Invoke(TheForm.Items);
         }
         finally { _suppress = false; }
         PouzijViditelnost();
