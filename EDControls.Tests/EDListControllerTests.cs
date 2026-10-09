@@ -93,13 +93,13 @@ public class EDListControllerTests
     }
 
     [Fact]
-    public void SetAllChecked_RaisesOnce()
+    public void ToggleAllFromHeader_RaisesOnce()
     {
-        Load("1", "2", "3");
+        var rows = Load("1", "2", "3");
         int raised = 0;
         _controller.CheckedRowsChanged += () => raised++;
 
-        _controller.SetAllChecked(true);
+        _controller.ToggleAllFromHeader(rows);
 
         Assert.Equal(1, raised);
         Assert.Equal(["1", "2", "3"], _controller.CheckedRowIds);
@@ -109,11 +109,23 @@ public class EDListControllerTests
     public void HeaderCheckState_NoneSomeAll()
     {
         var rows = Load("1", "2");
-        Assert.False(_controller.HeaderCheckState);
+        Assert.False(_controller.HeaderCheckState(rows));
         rows[0].IsChecked = true;
-        Assert.Null(_controller.HeaderCheckState);
+        Assert.Null(_controller.HeaderCheckState(rows));
         rows[1].IsChecked = true;
-        Assert.True(_controller.HeaderCheckState);
+        Assert.True(_controller.HeaderCheckState(rows));
+    }
+
+    [Fact]
+    public void HeaderCheckState_CountsOnlyDisplayed()
+    {
+        var rows = Load("1", "2", "3");
+        rows[2].IsChecked = true;   // skrytý hledáním
+        Assert.False(_controller.HeaderCheckState([rows[0], rows[1]]));
+
+        rows[0].IsChecked = true;
+        rows[1].IsChecked = true;
+        Assert.True(_controller.HeaderCheckState([rows[0], rows[1]]));
     }
 
     [Fact]
@@ -122,11 +134,25 @@ public class EDListControllerTests
         var rows = Load("1", "2");
         rows[0].IsChecked = true;
 
-        _controller.ToggleAllFromHeader();
-        Assert.True(_controller.HeaderCheckState);
+        _controller.ToggleAllFromHeader(rows);
+        Assert.True(_controller.HeaderCheckState(rows));
 
-        _controller.ToggleAllFromHeader();
-        Assert.False(_controller.HeaderCheckState);
+        _controller.ToggleAllFromHeader(rows);
+        Assert.False(_controller.HeaderCheckState(rows));
+    }
+
+    [Fact]
+    public void ToggleAllFromHeader_ChecksOnlyDisplayed_KeepsHiddenChecked()
+    {
+        var rows = Load("1", "2", "3", "4");
+        rows[3].IsChecked = true;   // skrytý hledáním
+        IReadOnlyList<EDListRow> displayed = [rows[0], rows[1]];
+
+        _controller.ToggleAllFromHeader(displayed);
+        Assert.Equal(["1", "2", "4"], _controller.CheckedRowIds);
+
+        _controller.ToggleAllFromHeader(displayed);
+        Assert.Equal(["4"], _controller.CheckedRowIds);
     }
 
     [Fact]

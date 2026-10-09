@@ -52,8 +52,9 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 - Search filtruje **formátované** hodnoty bez diakritiky („8:30" najde „08:30", ne „830"); nepersistuje se.
 - `SelectionMode = Check` → checkbox sloupec. Binding checkboxů je záměrně **OneWay** +
   explicitní `Click` handler (TwoWay v CellTemplate je buggy; header `Click` brání rekurzi
-  SetAllChecked→Sync). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik** na checkbox zaškrtne
+  ToggleAllFromHeader→Sync). **Dvojklik na řádek** přepne zaškrtnutí, **Shift+klik** na checkbox zaškrtne
   rozsah od kotvy (posledního kliku) v zobrazeném pořadí.
+- **Záhlaví (klik i stav) pracuje jen s řádky, které ukazuje hledání.** Skryté zaškrtnuté zůstávají v `SelectedRowIds`.
 - Persist layoutu (šířky, pořadí, sort): nastav `HostId` (konvence `"<Projekt>.<Consumer>"`;
   prázdný = off). Storage `^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)`,
   save debounce 500 ms + force na Unload, load async po `LoadList`, best-effort.

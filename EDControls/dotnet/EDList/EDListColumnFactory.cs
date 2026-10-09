@@ -28,7 +28,7 @@ internal static class EDListColumnFactory
             IsThreeState = true  // null = mixed state (zobrazí jako čtvereček)
         };
         // Click (ne Checked/Unchecked) fires jen z user akce, ne z programmatic IsChecked.
-        // Tím se vyhneme rekurzi: SetAllChecked → OnCheckedRowsChanged → IsChecked set → Click NEFires.
+        // Tím se vyhneme rekurzi: ToggleAllFromHeader → OnCheckedRowsChanged → IsChecked set → Click NEFires.
         header.Click += (_, _) => onHeaderClick();
 
         return new DataGridTemplateColumn

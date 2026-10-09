@@ -49,17 +49,14 @@ internal sealed class EDListController(Func<EDServices> services, IRestCallRunne
 
     public IReadOnlyList<string> CheckedRowIds => Rows.Where(r => r.IsChecked).Select(r => r.Id).ToList();
 
-    /// <summary>true / false / null = část zaškrtnutá.</summary>
-    public bool? HeaderCheckState
+    /// <summary>Stav záhlaví nad zobrazenými řádky: true / false / null = část zaškrtnutá.</summary>
+    public bool? HeaderCheckState(IReadOnlyList<EDListRow> displayedRows)
     {
-        get
-        {
-            int total = Rows.Count;
-            int checkedCount = Rows.Count(r => r.IsChecked);
-            return total == 0 || checkedCount == 0 ? false
-                 : checkedCount == total ? true
-                 : null;
-        }
+        int total = displayedRows.Count;
+        int checkedCount = displayedRows.Count(r => r.IsChecked);
+        return total == 0 || checkedCount == 0 ? false
+             : checkedCount == total ? true
+             : null;
     }
 
     public event Action? ColumnsChanged;
@@ -163,10 +160,12 @@ internal sealed class EDListController(Func<EDServices> services, IRestCallRunne
         if (row is not null) row.IsChecked = isChecked;
     }
 
-    public void SetAllChecked(bool value) => CheckBatch(Rows, value);
-
-    /// <summary>Klik na checkbox v záhlaví: všechno zaškrtnuté → odškrtnout, jinak zaškrtnout vše.</summary>
-    public void ToggleAllFromHeader() => SetAllChecked(HeaderCheckState != true);
+    /// <summary>
+    /// Klik na checkbox v záhlaví: zobrazené vše zaškrtnuté → odškrtnout, jinak zaškrtnout. Řádky skryté
+    /// hledáním nemění, zaškrtnuté zůstanou ve výběru.
+    /// </summary>
+    public void ToggleAllFromHeader(IReadOnlyList<EDListRow> displayedRows) =>
+        CheckBatch(displayedRows, HeaderCheckState(displayedRows) != true);
 
     /// <summary>
     /// Klik na checkbox řádku. S <paramref name="displayedRows"/> (Shift) zaškrtne rozsah od kotvy

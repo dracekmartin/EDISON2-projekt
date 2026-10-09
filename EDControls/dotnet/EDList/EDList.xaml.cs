@@ -107,7 +107,11 @@ namespace EDControls.EDList
             view.Filter = string.IsNullOrWhiteSpace(search)
                 ? null
                 : row => row is EDListRow r && EDListFilter.Matches(r, search, searchableKeys);
+            SyncHeaderCheckState();
         }
+
+        /// <summary>Řádky v pořadí a s filtrem view - hledání skryté řádky do nich nepatří.</summary>
+        private IReadOnlyList<EDListRow> DisplayedRows => [.. DataGrid.Items.OfType<EDListRow>()];
 
         public IReadOnlyList<ListColumn>? Columns => _controller.Columns;
 
@@ -224,9 +228,15 @@ namespace EDControls.EDList
 
         private void OnCheckedRowsChanged()
         {
-            var state = _controller.HeaderCheckState;
-            if (_headerCheckBox is not null && _headerCheckBox.IsChecked != state) _headerCheckBox.IsChecked = state;
+            SyncHeaderCheckState();
             CheckedRowsChanged?.Invoke(this, SelectedRowIds);
+        }
+
+        private void SyncHeaderCheckState()
+        {
+            if (_headerCheckBox is null) return;
+            var state = _controller.HeaderCheckState(DisplayedRows);
+            if (_headerCheckBox.IsChecked != state) _headerCheckBox.IsChecked = state;
         }
 
         private void RebuildColumns()
@@ -235,7 +245,8 @@ namespace EDControls.EDList
             DataGrid.Columns.Clear();
             _headerCheckBox = null;
             if (SelectionMode == ListSelectionMode.Check)
-                DataGrid.Columns.Add(EDListColumnFactory.BuildCheckBoxColumn(OnRowCheckClick, _controller.ToggleAllFromHeader, out _headerCheckBox));
+                DataGrid.Columns.Add(EDListColumnFactory.BuildCheckBoxColumn(OnRowCheckClick,
+                    () => _controller.ToggleAllFromHeader(DisplayedRows), out _headerCheckBox));
             foreach (var col in _controller.Columns?.Where(c => c.Visible) ?? [])
                 DataGrid.Columns.Add(EDListColumnFactory.BuildDataColumn(col));
             // Nové sloupce šipky nemají, CustomSort ale řadí dál - bez obnovy by po přepnutí
@@ -252,8 +263,7 @@ namespace EDControls.EDList
         {
             if (sender is not CheckBox cb || cb.DataContext is not EDListRow row) return;
             bool extend = (Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift;
-            _controller.CheckFromClick(row, cb.IsChecked == true,
-                extend ? [.. DataGrid.Items.OfType<EDListRow>()] : null);
+            _controller.CheckFromClick(row, cb.IsChecked == true, extend ? DisplayedRows : null);
         }
 
         /// <summary>
