@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using EDControls;
-using EDControls.EDViewModel;
 
 namespace EDISONMAIN2.Windows.LoginWindow
 {
@@ -11,10 +9,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
     /// </summary>
     internal static class PasswordChange
     {
-        /// <summary>Dialog změny hesla; true = server heslo změnil.</summary>
-        internal static bool Run(IWindowNavigator nav, IMLRest rest, string userName, ILocalPrefs prefs) =>
-            Run(() => nav.ShowDialog(new ChangePasswordWindow(rest, userName)) == true, rest.Server, rest.Port, userName, prefs);
-
+        /// <summary>Dialog změny hesla (true = server heslo změnil) a po změně zapamatované heslo serveru.</summary>
         internal static bool Run(Func<bool> showDialog, string server, int port, string userName, ILocalPrefs prefs)
         {
             if (!showDialog()) return false;

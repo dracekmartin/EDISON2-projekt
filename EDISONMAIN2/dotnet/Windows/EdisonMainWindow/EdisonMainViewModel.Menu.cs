@@ -12,7 +12,6 @@ using EDControls.EDViewModel;
 using EDControls.UserFonts;
 using EDISONMAIN2.Windows.ConnectionWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using ConnectionWnd = EDISONMAIN2.Windows.ConnectionWindow.ConnectionWindow;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
 {
@@ -69,11 +68,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // je na jeden server (IMLRest.Server/Port jsou konstanty).
         private void ConnectToDatabase()
         {
-            var window = new ConnectionWnd(_prefs, DefaultConnection());
-            if (WindowNavigator.ShowDialog(window) != true || window.Picked is not { } picked) return;
+            if (_dialogs.PickConnection(_prefs, DefaultConnection()) is not { } picked) return;
             var exe = CurrentExecutable();
             if (exe.Length == 0) return;
-            Process.Start(ConnectionLaunchInfo(exe, picked));
+            _startProcess(ConnectionLaunchInfo(exe, picked));
         }
 
         // Bez EDISONini.xml (instance spuštěná s argumenty připojení) je výchozí aktuální session.
@@ -230,6 +228,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         // Menu i Vlastnosti uživatele (delegát) - zapamatované heslo řeší jedno pravidlo.
         private bool ChangePassword() =>
-            EDISONMAIN2.Windows.LoginWindow.PasswordChange.Run(WindowNavigator, Rest, UserName, _prefs);
+            EDISONMAIN2.Windows.LoginWindow.PasswordChange.Run(() => _dialogs.ChangePassword(Rest, UserName), Rest.Server, Rest.Port, UserName, _prefs);
     }
 }

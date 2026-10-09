@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
@@ -15,7 +16,7 @@ using static ALVA.EDISONAPI.Database;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Jediná konstrukce <see cref="EdisonMainViewModel"/> pro testy. Ctor má 13 parametrů a statický
+/// Jediná konstrukce <see cref="EdisonMainViewModel"/> pro testy. Ctor má přes patnáct parametrů a statický
 /// <c>EDServices.Initialize/Reset</c> kolem sebe, takže každá kopie harnessu znamenala opravovat
 /// totéž na několika místech; proto jedno místo pro všechny test soubory.
 /// </summary>
@@ -92,6 +93,8 @@ internal static class EdisonMainViewModelHarness
         Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null,
         Func<IMLRest, IReadOnlyList<CompanyStruct>>? loadAllowedCompanies = null,
         ModuleTreeStation? station = null,
+        IShellDialogs? dialogs = null,
+        Action<ProcessStartInfo>? startProcess = null,
         bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
@@ -120,7 +123,10 @@ internal static class EdisonMainViewModelHarness
                                          restRunner ?? new InlineRestCallRunner(mockMLRest),
                                          // Produkční sync volá EDUsers nad živým MLRest - v testech jen stub.
                                          licenceSync ?? (_ => new(false, "")),
-                                         station ?? NeutralStation);
+                                         station ?? NeutralStation,
+                                         dialogs,
+                                         // Testy nikdy nespouští skutečný proces (druhou instanci shellu).
+                                         startProcess ?? (_ => { }));
         }
         finally
         {

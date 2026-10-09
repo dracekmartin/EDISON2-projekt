@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -19,10 +20,7 @@ using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
 using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias - class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
-using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
-using ChangelogWnd = EDISONMAIN2.Windows.ChangelogWindow.ChangelogWindow;
-using MiniAppPickerWnd = EDISONMAIN2.Windows.MiniAppPickerWindow.MiniAppPickerWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -50,6 +48,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly Action _forceShutdown;
         private readonly MiniAppCatalog _miniAppCatalog;
         private readonly MiniAppSessionController _miniApps;
+        private readonly IShellDialogs _dialogs;
+        // Start další instance shellu. Testy ho podstrčí, aby nespouštěly skutečný proces.
+        private readonly Action<ProcessStartInfo> _startProcess;
 
         public ICommand OpenModuleCommand { get; }
         /// <summary>Spuštění zástupce mimo hlavní nabídku (tisková sestava, pohled DS) přes hosta.</summary>
@@ -125,9 +126,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // per provider se v menu neosvědčilo (HD 13132/F2).
         private void PickMiniApp()
         {
-            var picker = new MiniAppPickerWnd(_miniAppCatalog, _miniApps.Targets);
-            if (WindowNavigator.ShowDialog(picker) == true && picker.Picked is { } descriptor)
-                _miniApps.Open(descriptor, picker.Placed);
+            if (_dialogs.PickMiniApp(_miniAppCatalog, _miniApps.Targets) is { } picked)
+                _miniApps.Open(picked.Descriptor, picked.Placement);
         }
 
         public EdisonMainViewModel(
@@ -145,7 +145,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IChangelogSource? changelogSource,
             IRestCallRunner? restRunner = null,
             Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null,
-            ModuleTreeStation? station = null)
+            ModuleTreeStation? station = null,
+            IShellDialogs? dialogs = null,
+            Action<ProcessStartInfo>? startProcess = null)
         {
             _loadAllowedCompanies = loadAllowedCompanies;
             _switcher = switcher;
@@ -156,6 +158,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _forceShutdown = forceShutdown;
             _miniAppCatalog = miniAppCatalog;
             _miniApps = new MiniAppSessionController(prefs, miniAppCatalog);
+            _dialogs = dialogs ?? new ShellDialogs(() => WindowNavigator);
+            _startProcess = startProcess ?? (info => Process.Start(info));
             // Null = novinky vypnuté (testy); produkci dává InfChangelogSource AppBootstrapper.
             _changelogSource = changelogSource;
             _shortcuts = shortcuts;
@@ -188,7 +192,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Uživatel menu
             LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUserAsync);
-            ShowUserProfileCommand        = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText(), ChangePassword)));
+            ShowUserProfileCommand        = Command(() => _dialogs.ShowUserProfile(StartupWindowDisplayText(), ChangePassword));
             ChangePasswordCommand         = Command(() => ChangePassword());
             SetStartupWindowCommand         = Command<IModule>(SetStartupWindow);
             ClearStartupWindowCommand       = Command(ClearStartupWindow);
@@ -805,13 +809,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PopupDisplayer.Info($"Pro „{displayName}\" nejsou k dispozici informace o změnách.");
         }
 
-        private void ShowChangelogWindow(string title, ChangelogContent content, bool snoozed, Action<bool> onClosed)
-        {
-            var wnd = new ChangelogWnd(title, content, snoozed);
-            // Modální: ShowIfNewAsync se vrátí až po zavření, volající tak čeká s dalším otvíráním.
-            WindowNavigator.ShowDialog(wnd);
-            onClosed(wnd.SnoozeChecked);
-        }
+        // Modální: ShowIfNewAsync se vrátí až po zavření, volající tak čeká s dalším otvíráním.
+        private void ShowChangelogWindow(string title, ChangelogContent content, bool snoozed, Action<bool> onClosed) =>
+            onClosed(_dialogs.ShowChangelog(title, content, snoozed));
 
         // Spuštění z dlaždice. Modul hlavní nabídky jde přes OpenModuleAsync (usage + overlay); ostatní
         // druhy zástupců (tiskové sestavy, pohledy DS) pouští hostitelská agenda přes EDISONMAIN2API.
