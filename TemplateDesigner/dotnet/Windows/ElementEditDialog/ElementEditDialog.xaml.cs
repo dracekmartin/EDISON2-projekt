@@ -91,13 +91,7 @@ public partial class ElementEditDialog : Window
     private void PouzijViditelnost()
     {
         if (ViditelnostPole is null) return;
-        var pole = (TheForm.Items ?? []).OfType<Field>().ToList();
-        var hodnoty = pole.ToDictionary(f => f.Key, f => f.Value ?? "");
-        foreach (var f in pole)
-        {
-            var cil = ViditelnostPole(f.Key, hodnoty) ? ItemVisibility.Visible : ItemVisibility.Collapsed;
-            if (f.Visibility != cil) f.Visibility = cil;
-        }
+        ElementFormBinder.PouzijViditelnost(TheForm.Items, ViditelnostPole);
     }
 
     private void OnFormInitialized()

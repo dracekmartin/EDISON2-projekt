@@ -17,8 +17,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{DynamicResource EDTheme.Text.Secondary}">
-            Každý druh začíná v legendě na novém řádku, v pořadí shora dolů. Výchozí počet sloupců
-            je Počet sloupců prvku.
+            Každý druh začíná v legendě na novém řádku, v pořadí shora dolů.
         </TextBlock>
 
         <!-- Záhlaví sloupců seznamu - šířky shodné s šablonou řádku -->
@@ -55,16 +54,29 @@
                             <CheckBox Grid.Column="1" IsChecked="{Binding Tisknout}" VerticalAlignment="Center"/>
                             <ComboBox Grid.Column="2"
                                       ItemsSource="{Binding DataContext.VolbySloupcu, RelativeSource={RelativeSource AncestorType=Window}}"
-                                      SelectedItem="{Binding Sloupcu}"
-                                      DisplayMemberPath="Popis"/>
+                                      SelectedItem="{Binding Sloupcu}"/>
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 
             <StackPanel Grid.Column="1" Margin="8,0,0,0" Width="96">
-                <Button Content="▲ Nahoru" Command="{Binding NahoruCommand}" Padding="6,3" Margin="0,0,0,4"/>
-                <Button Content="▼ Dolů"   Command="{Binding DoluCommand}"   Padding="6,3"/>
+                <!-- Šipky jako tvar, ne znak: ▲ a ▼ mají ve fontu jinou velikost i výšku a vedle sebe
+                     vypadají nezarovnaně (nález Jan 9. 10.). -->
+                <Button Command="{Binding NahoruCommand}" Padding="6,3" Margin="0,0,0,4" HorizontalContentAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M0,6 L4.5,0 L9,6 Z" Width="9" Height="6" Margin="0,0,6,0" VerticalAlignment="Center"
+                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        <TextBlock Text="Nahoru" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding DoluCommand}" Padding="6,3" HorizontalContentAlignment="Left">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="M0,0 L4.5,6 L9,0 Z" Width="9" Height="6" Margin="0,0,6,0" VerticalAlignment="Center"
+                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                        <TextBlock Text="Dolů" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
 

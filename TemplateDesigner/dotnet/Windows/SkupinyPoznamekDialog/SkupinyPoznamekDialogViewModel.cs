@@ -6,21 +6,21 @@ using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner;
 
-/// <summary>Volba počtu sloupců skupiny; <c>Hodnota = null</c> = jako celý prvek.</summary>
-public sealed record VolbaSloupcu(int? Hodnota, string Popis);
-
 /// <summary>Řádek okna „Druhy poznámek" - jedna skupina druhů.</summary>
 public class SkupinaPoznamekVM : INotifyPropertyChanged
 {
     private bool _tisknout;
-    private VolbaSloupcu _sloupcu;
+    private int _sloupcu;
+    private readonly int _sloupcuPrvku;
 
-    public SkupinaPoznamekVM(NastaveniSkupinyPoznamek model, IReadOnlyList<VolbaSloupcu> volby)
+    /// <param name="sloupcuPrvku">Počet sloupců prvku - tolik ukáže skupina bez vlastního počtu.</param>
+    public SkupinaPoznamekVM(NastaveniSkupinyPoznamek model, int sloupcuPrvku)
     {
         Skupina = model.Skupina;
         Nazev = NotesLegendElement.NazevSkupiny(model.Skupina);
         _tisknout = model.Tisknout;
-        _sloupcu = volby.FirstOrDefault(v => v.Hodnota == model.Sloupcu) ?? volby[0];
+        _sloupcuPrvku = sloupcuPrvku;
+        _sloupcu = model.Sloupcu ?? sloupcuPrvku;
     }
 
     public SkupinaPoznamek Skupina { get; }
@@ -32,13 +32,18 @@ public class SkupinaPoznamekVM : INotifyPropertyChanged
         set { _tisknout = value; OnChanged(); }
     }
 
-    public VolbaSloupcu Sloupcu
+    public int Sloupcu
     {
         get => _sloupcu;
         set { _sloupcu = value; OnChanged(); }
     }
 
-    public NastaveniSkupinyPoznamek ToModel() => new() { Skupina = Skupina, Tisknout = Tisknout, Sloupcu = Sloupcu.Hodnota };
+    /// <summary>Počet shodný s prvkem se uloží jako „jako prvek", takže skupina dál sleduje jeho
+    /// Počet sloupců; odlišný počet se uloží napevno.</summary>
+    public NastaveniSkupinyPoznamek ToModel() => new()
+    {
+        Skupina = Skupina, Tisknout = Tisknout, Sloupcu = Sloupcu == _sloupcuPrvku ? null : Sloupcu,
+    };
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([CallerMemberName] string? p = null) =>
@@ -52,7 +57,7 @@ public class SkupinaPoznamekVM : INotifyPropertyChanged
 public class SkupinyPoznamekDialogViewModel : EDViewModel
 {
     public ObservableCollection<SkupinaPoznamekVM> Skupiny { get; } = [];
-    public IReadOnlyList<VolbaSloupcu> VolbySloupcu { get; }
+    public IReadOnlyList<int> VolbySloupcu { get; } = [1, 2, 3, 4];
 
     private SkupinaPoznamekVM? _vybrana;
     public SkupinaPoznamekVM? Vybrana
@@ -68,16 +73,11 @@ public class SkupinyPoznamekDialogViewModel : EDViewModel
     public List<NastaveniSkupinyPoznamek> Vysledek { get; private set; } = [];
 
     /// <param name="skupiny">Všechny skupiny v pořadí tisku (<see cref="NotesLegendElement.EfektivniSkupiny"/>).</param>
-    /// <param name="sloupcuPrvku">Počet sloupců prvku - ukáže se u výchozí volby.</param>
+    /// <param name="sloupcuPrvku">Počet sloupců prvku - předvyplní se skupinám bez vlastního počtu.</param>
     public SkupinyPoznamekDialogViewModel(IReadOnlyList<NastaveniSkupinyPoznamek> skupiny, int sloupcuPrvku)
     {
-        VolbySloupcu =
-        [
-            new(null, $"Výchozí ({sloupcuPrvku})"),
-            .. Enumerable.Range(1, 4).Select(n => new VolbaSloupcu(n, n.ToString())),
-        ];
         foreach (var s in skupiny)
-            Skupiny.Add(new SkupinaPoznamekVM(s, VolbySloupcu));
+            Skupiny.Add(new SkupinaPoznamekVM(s, sloupcuPrvku));
         Vybrana = Skupiny.FirstOrDefault();
 
         NahoruCommand = Command(() => Posun(-1));

@@ -103,18 +103,7 @@ public partial class InlinePropertiesForm : UserControl
         PouzijViditelnost();
     }
 
-    private void PouzijViditelnost()
-    {
-        var pole = (TheForm.Items ?? []).OfType<EDControls.EDInputForm.Field>().ToList();
-        var hodnoty = pole.ToDictionary(f => f.Key, f => f.Value ?? "");
-        foreach (var f in pole)
-        {
-            var cil = ViditelnostPole is null || ViditelnostPole(f.Key, hodnoty)
-                ? EDControls.EDInputForm.ItemVisibility.Visible
-                : EDControls.EDInputForm.ItemVisibility.Collapsed;
-            if (f.Visibility != cil) f.Visibility = cil;
-        }
-    }
+    private void PouzijViditelnost() => ElementFormBinder.PouzijViditelnost(TheForm.Items, ViditelnostPole);
 
     private void OnFieldChanged(string key)
     {

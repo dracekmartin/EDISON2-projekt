@@ -508,12 +508,21 @@ public class NotesLegendElement : StopScheduleElementBase
 
     /// <summary>
     /// Které pole formuláře prvku je vidět podle druhu agendy: okno druhů jen u linkového JŘ (jen
-    /// ten posílá druh poznámky), přepínače typů naopak jen jinde - u linkového je nahrazuje okno.
+    /// ten posílá druh poznámky), vývěskové volby naopak jen jinde.
     /// </summary>
+    /// <remarks>
+    /// U linkového by dělaly totéž co okno druhů, nebo nic: přepínače typů okno nahrazuje
+    /// a kategorie poznámek linky, výluky ani značky u odjezdů linková agenda neposílá
+    /// (`KATEGORIE` je prázdná). Uživatel vedle sebe viděl „Poznámky linky - radiobus" jako
+    /// zaškrtávátko i jako skupinu v okně (nález Jan 9. 10.).
+    /// </remarks>
     public static bool PoleFormulareViditelne(string klic, bool linkovyJr) => klic switch
     {
         SkupinyPoznamekKlic => linkovyJr,
-        nameof(ShowNegativniZnacky) or nameof(ShowSpecialniZnaky) or nameof(ShowTextovePoznamky) => !linkovyJr,
+        nameof(ShowNegativniZnacky) or nameof(ShowSpecialniZnaky) or nameof(ShowTextovePoznamky)
+            or nameof(Vyluky) or nameof(ShowPoznamkyLinkyTarifni) or nameof(ShowPoznamkyLinkyVseobecne)
+            or nameof(ShowPoznamkyLinkyRadiobus) or nameof(ShowSouhrnBezbarier) or nameof(ShowZnackaKola)
+            or nameof(ShowZnackaMistenky) or nameof(ShowPokracujiciSpoje) => !linkovyJr,
         _ => true,
     };
 
