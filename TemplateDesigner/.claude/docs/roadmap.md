@@ -16,10 +16,10 @@
 
 ## 🎯 Priority (pořadí Jan 7. 10.)
 
-1. **`#7487` Rozložení poznámek podle druhu** [M] (KORID). U každého druhu poznámek (dny
-   platnosti, negativní značky, návaznosti, atributy, texty) zvlášť **pořadí** a **počet sloupců**,
-   např. „všechno do 3 sloupců, negativní značky do 1". Dnes jde jeden „Počet sloupců" pro celou
-   legendu. Nejdřív návrh formuláře k odsouhlasení, pak kód.
+1. **`#7487` Rozložení poznámek podle druhu** [M] (KORID) - **návrh hotový 9. 10., ladí se**.
+   Okno „Druhy poznámek" u linkového JŘ (pořadí, tisk a sloupce šesti skupin, changelog 9. 10.).
+   Otevřené: vyzkoušet na KORID linkách, návrat k jedné mřížce (dnes jen Ctrl+Z), skrýt u linkového
+   i skupiny „Poznámky linky" a „Značky u odjezdů" (vývěskové), dlouhá poznámka přes sloupce.
 2. **`B190` Tisk z modulu jízdních řádů bez návrháře** [L]. Uživatel v jízdních řádech (nové okno
    JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
    (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch

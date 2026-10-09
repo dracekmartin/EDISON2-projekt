@@ -52,6 +52,13 @@ public partial class InlinePropertiesForm : UserControl
         set => TheForm.PlaceholderFields = value;
     }
 
+    /// <summary>
+    /// Které pole je vidět podle hodnot ostatních (klíč pole, hodnoty formuláře → viditelné).
+    /// Null = vidět je všechno. Totéž pravidlo jako <see cref="ElementEditDialog.ViditelnostPole"/>;
+    /// nastavit před <see cref="ShowElement"/>.
+    /// </summary>
+    public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
+
     /// <summary>Napojí undo executor + canvas invalidaci (volá host jednou).</summary>
     public void SetContext(Action<IDesignerCommand> execute, Action invalidate)
     {
@@ -93,11 +100,26 @@ public partial class InlinePropertiesForm : UserControl
             ElementFormBinder.PopulateFontWeightFields(TheForm);
         }
         finally { _suppress = false; }
+        PouzijViditelnost();
+    }
+
+    private void PouzijViditelnost()
+    {
+        var pole = (TheForm.Items ?? []).OfType<EDControls.EDInputForm.Field>().ToList();
+        var hodnoty = pole.ToDictionary(f => f.Key, f => f.Value ?? "");
+        foreach (var f in pole)
+        {
+            var cil = ViditelnostPole is null || ViditelnostPole(f.Key, hodnoty)
+                ? EDControls.EDInputForm.ItemVisibility.Visible
+                : EDControls.EDInputForm.ItemVisibility.Collapsed;
+            if (f.Visibility != cil) f.Visibility = cil;
+        }
     }
 
     private void OnFieldChanged(string key)
     {
         if (_suppress || _target is null || _execute is null) return;
+        PouzijViditelnost();
 
         // Změna rodiny písma → přepočítat nabídku řezů (a zahodit řez, který rodina nemá) PŘED
         // porovnáním hodnot, jinak by se zahození řezu neprojevilo jako změna a zápis do modelu

@@ -87,6 +87,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowNegativniZnacky", "Negativní značky", 1)
         d form.AddBool("ShowSpecialniZnaky", "Speciální znaky", 1)
         d form.AddBool("ShowTextovePoznamky", "Textové poznámky", 1)
+        // Linkový JŘ: pořadí, tisk a sloupce po druzích poznámek (#7487) v okně návrháře. Návrhář
+        // tlačítko ukazuje jen u linkového a tři přepínače výše naopak jen jinde - nahrazuje je.
+        s f = form.AddFieldToLastGroup("__skupinyPoznamek", "Druhy poznámek", $$$FieldTypeButton, 0, 0)
+        s f.value = "Upravit…"
+        s f.helpText = "Pořadí druhů poznámek, které se tisknou, a počet sloupců každého druhu. Každý druh začíná na novém řádku."
 
         // ── Poznámky zadané u linky ───────────────────────────────────────
         d form.AddGroup("filterline", "Poznámky linky")

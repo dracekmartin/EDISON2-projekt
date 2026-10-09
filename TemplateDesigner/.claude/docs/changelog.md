@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-09 - 🗂 poznámky linkového JŘ po druzích (`#7487`, návrh)
+
+KORID chce u legendy linkového JŘ nastavit každý druh poznámek zvlášť („všechno do tří sloupců,
+negativní značky do jednoho"). Prvek Poznámky má u linkového JŘ ve skupině „Co se tiskne"
+tlačítko **Druhy poznámek**: okno se šesti skupinami (týdenní platnost, negativní značky,
+vyčká/navazuje/pokračuje, atributy spojů, místenky a stálé značky, poznámky linky), u každé
+Tisknout a počet sloupců (výchozí = Počet sloupců prvku), pořadí šipkami. Každá skupina začíná
+na novém řádku jako druh ve starém tisku. Přepínače Negativní značky / Speciální znaky / Textové
+poznámky formulář u linkového JŘ neukazuje - okno je nahrazuje a při prvním otevření se z nich
+naplní, takže potvrzení beze změny obsah nezmění. Bez nastavení (`Skupiny = null`) zůstává jedna
+společná mřížka, šablony se nemění. Druh posílá jen linková agenda, vývěsky se tím nedotknou.
+Panel vlastností nově umí schovávat pole jako okno vlastností. Testy `PoznamkyPodleDruhuTests`,
+`SkupinyPoznamekDialogTests`.
+
 ## 2026-10-08 (2) - 🚫 prvek jízdního řádu jen do šablony své agendy
 
 Paleta nabízela prvky jízdních řádů jen podle agendy šablony, ale **vložení ze schránky a vlastní

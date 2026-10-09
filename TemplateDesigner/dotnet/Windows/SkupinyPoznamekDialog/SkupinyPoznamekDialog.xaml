@@ -1,0 +1,76 @@
+<Window x:Class="TemplateDesigner.SkupinyPoznamekDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Druhy poznámek"
+        Width="560" Height="400"
+        MinWidth="460" MinHeight="340"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="CanResizeWithGrip">
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{DynamicResource EDTheme.Text.Secondary}">
+            Každý druh začíná v legendě na novém řádku, v pořadí shora dolů. Výchozí počet sloupců
+            je Počet sloupců prvku.
+        </TextBlock>
+
+        <!-- Záhlaví sloupců seznamu - šířky shodné s šablonou řádku -->
+        <Grid Grid.Row="1" Margin="6,0,104,2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="100"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Druh poznámek" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+            <TextBlock Grid.Column="1" Text="Tisknout" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+            <TextBlock Grid.Column="2" Text="Sloupců" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <ListBox Grid.Column="0"
+                     ItemsSource="{Binding Skupiny}"
+                     SelectedItem="{Binding Vybrana}"
+                     HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="100"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Nazev}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            <CheckBox Grid.Column="1" IsChecked="{Binding Tisknout}" VerticalAlignment="Center"/>
+                            <ComboBox Grid.Column="2"
+                                      ItemsSource="{Binding DataContext.VolbySloupcu, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedItem="{Binding Sloupcu}"
+                                      DisplayMemberPath="Popis"/>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <StackPanel Grid.Column="1" Margin="8,0,0,0" Width="96">
+                <Button Content="▲ Nahoru" Command="{Binding NahoruCommand}" Padding="6,3" Margin="0,0,0,4"/>
+                <Button Content="▼ Dolů"   Command="{Binding DoluCommand}"   Padding="6,3"/>
+            </StackPanel>
+        </Grid>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="{StaticResource EDStrings.Ok}"     Width="80" IsDefault="True" Command="{Binding OkCommand}" Padding="10,3" Margin="0,0,6,0"/>
+            <Button Content="{StaticResource EDStrings.Cancel}" Width="80" IsCancel="True"  Padding="10,3"/>
+        </StackPanel>
+    </Grid>
+</Window>

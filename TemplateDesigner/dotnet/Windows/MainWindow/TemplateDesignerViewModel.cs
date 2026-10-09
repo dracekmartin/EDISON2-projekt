@@ -1192,6 +1192,11 @@ public class TemplateDesignerViewModel : EDViewModel
             v => element.HighlightRules = (List<HighlightRule>?)v));
     }
 
+    /// <summary>Okno „Druhy poznámek" jako jeden vratný krok (`#7487`).</summary>
+    public static IDesignerCommand SkupinyPoznamekCommand(NotesLegendElement element, List<NastaveniSkupinyPoznamek> skupiny) =>
+        new SetPropertyCommand("Druhy poznámek", element.Skupiny, skupiny,
+            v => element.Skupiny = (List<NastaveniSkupinyPoznamek>?)v);
+
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
     public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
     {
@@ -1692,6 +1697,9 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Druh JŘ prvků agendy šablony; null = agenda v registru není (registr se nenačetl,
     /// šablona bez agendy) a pak se nic neblokuje.</summary>
     private string? ZnamyDruhAgendy => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind;
+
+    /// <summary>Je šablona linkového JŘ? Řídí, co formulář poznámek nabízí (`#7487`).</summary>
+    public bool JeLinkovyJr => string.Equals(ZnamyDruhAgendy, "LINE", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Rozdělí prvky na ty, které do šablony téhle agendy smí, a řekne uživateli, které
     /// vynechal (<see cref="AgendaCapabilities.Allows"/>).</summary>

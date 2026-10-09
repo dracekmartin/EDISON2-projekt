@@ -73,6 +73,20 @@ public class NotesLegendElement : StopScheduleElementBase
     /// <summary>Řazení poznámek: výchozí (pořadí z dat) / podle délky textu. Legacy „Uspořádat dle délky".</summary>
     public LegendRazeni Razeni { get; set; } = LegendRazeni.DleTypu;
 
+    /// <summary>
+    /// Rozložení podle druhů poznámek linkového JŘ (`#7487`): pořadí skupin, co se z nich tiskne
+    /// a kolik mají sloupců. <b>Null = jedna společná mřížka</b> jako dřív.
+    /// </summary>
+    /// <remarks>
+    /// Každá skupina začíná na novém řádku, stejně jako druh ve starém tisku (TiskJR
+    /// <c>stDL_PoznamkyPoradiDruh</c> + <c>stDL_PoznamkyDruh*Tisknout</c>). Druh posílá jen linková
+    /// agenda; u poznámek bez druhu se nic nedělí.
+    /// <para>⚠️ S nastavenými skupinami o tisku poznámky s druhem rozhoduje skupina, ne přepínače
+    /// Negativní značky / Speciální znaky / Textové poznámky - ty u linkového JŘ formulář neukazuje
+    /// a dvě sady vypínačů téhož by si odporovaly.</para>
+    /// </remarks>
+    public List<NastaveniSkupinyPoznamek>? Skupiny { get; set; }
+
     // ═══════════════════════════════════════════
     // Negativní značky
     // ═══════════════════════════════════════════
@@ -146,8 +160,8 @@ public class NotesLegendElement : StopScheduleElementBase
         if (Width <= 0) return;
 
         var poznamky = BuildPoznamky(ctx.Data);
-        var filtered = JenZnackyStranky(FilterPoznamky(poznamky), ctx.Data);
-        bool hasData = filtered.Count > 0;
+        var bloky = RozdelDoBloku(JenZnackyStranky(FilterPoznamky(poznamky), ctx.Data));
+        bool hasData = bloky.Count > 0;
 
         // Prázdný výsledek filtru s reálnými daty = blok se netiskne vůbec, ani nadpis.
         // Šablona s blokem „Jen výluky" se tiskne i pro linky bez výluk - osiřelý nadpis
@@ -207,57 +221,68 @@ public class NotesLegendElement : StopScheduleElementBase
         }
         else
         {
-            var ordered = OrderNotes(filtered);
-            int cols = Math.Max(1, Columns);
-            int rowsPerCol = Math.Max(1, (int)Math.Ceiling(ordered.Count / (double)cols));
-            float colW = Width / cols;
             float markerCell = MarkerSirka * scale;   // 0 = inline (jako dnes)
             if (markerCell > 0)
-                markerCell = MathF.Max(markerCell, NejsirsiZnackaMm(ordered, boldFont, symbolFont, noteFont, ctx.MmToPx));
-            float headerBottom = currentY;
+                markerCell = MathF.Max(markerCell,
+                    NejsirsiZnackaMm([.. bloky.SelectMany(b => b.Poznamky)], boldFont, symbolFont, noteFont, ctx.MmToPx));
+            float blokY = currentY;
 
-            // Y kurzor per sloupec - poznámky mohou být víceřádkové (text se zalamuje na šířku
-            // sloupce), proto výšku akumulujeme místo pevné mřížky řádků.
-            var colY = new float[cols];
-            for (int c = 0; c < cols; c++) colY[c] = headerBottom;
-
-            for (int i = 0; i < ordered.Count; i++)
-            {
-                var pozn = ordered[i];
-
-                // Přiřazení do sloupce dle směru plnění.
-                int col = WrapSmer == LegendWrap.PoSloupcich
-                    ? Math.Min(cols - 1, i / rowsPerCol)
-                    : i % cols;
-
-                float colX     = X + col * colW;
-                float colRight = colX + colW;
-                float noteY    = colY[col];
-                float lineX    = colX + 1f;
-                // Pevná marker buňka → text všech řádků zarovnán na colX+markerCell; jinak inline.
-                float? textStartX = markerCell > 0 ? colX + markerCell : null;
-
-                int lines = pozn.Typ switch
-                {
-                    TypPoznamky.NegativniZnacka =>
-                        RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, paints.Text, colRight, textStartX),
-                    TypPoznamky.SpecialniZnak =>
-                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
-                            JePiktogramPoznamky(pozn) ? symbolFont : boldFont, noteFont, paints.Text, false, colRight, textStartX,
-                            JePiktogramPoznamky(pozn)),
-                    _ when pozn.Znak.Length > 0 =>
-                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, paints.Text, true, colRight, textStartX,
-                            piktogram: false),
-                    _ =>
-                        DrawWrappedBody(ctx, pozn.Text, textStartX ?? lineX, noteY, colRight, noteFont, paints.Text, scaledNoteLineH),
-                };
-
-                colY[col] = noteY + Math.Max(1, lines) * scaledNoteLineH;
-            }
+            foreach (var blok in bloky)
+                blokY = RenderBlok(ctx, blok, blokY, markerCell, scaledNoteLineH, noteFont, boldFont, symbolFont, paints.Text);
         }
 
         // Outer border je řízen TemplateElement.BorderColor/BorderWidth (druhý průchod);
         // sjednocená cesta s ostatními elementy.
+    }
+
+    /// <summary>Vykreslí blok poznámek od <paramref name="top"/> a vrátí, kde blok skončil.</summary>
+    private float RenderBlok(RenderContext ctx, BlokPoznamek blok, float top, float markerCell, float scaledNoteLineH,
+        SKFont noteFont, SKFont boldFont, SKFont symbolFont, SKPaint textPaint)
+    {
+        var ordered = blok.Poznamky;
+        int cols = blok.Sloupcu;
+        int rowsPerCol = Math.Max(1, (int)Math.Ceiling(ordered.Count / (double)cols));
+        float colW = Width / cols;
+
+        // Y kurzor per sloupec - poznámky mohou být víceřádkové (text se zalamuje na šířku
+        // sloupce), proto výšku akumulujeme místo pevné mřížky řádků.
+        var colY = new float[cols];
+        for (int c = 0; c < cols; c++) colY[c] = top;
+
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            var pozn = ordered[i];
+
+            // Přiřazení do sloupce dle směru plnění.
+            int col = WrapSmer == LegendWrap.PoSloupcich
+                ? Math.Min(cols - 1, i / rowsPerCol)
+                : i % cols;
+
+            float colX     = X + col * colW;
+            float colRight = colX + colW;
+            float noteY    = colY[col];
+            float lineX    = colX + 1f;
+            // Pevná marker buňka → text všech řádků zarovnán na colX+markerCell; jinak inline.
+            float? textStartX = markerCell > 0 ? colX + markerCell : null;
+
+            int lines = pozn.Typ switch
+            {
+                TypPoznamky.NegativniZnacka =>
+                    RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, textPaint, colRight, textStartX),
+                TypPoznamky.SpecialniZnak =>
+                    RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
+                        JePiktogramPoznamky(pozn) ? symbolFont : boldFont, noteFont, textPaint, false, colRight, textStartX,
+                        JePiktogramPoznamky(pozn)),
+                _ when pozn.Znak.Length > 0 =>
+                    RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, textPaint, true, colRight, textStartX,
+                        piktogram: false),
+                _ =>
+                    DrawWrappedBody(ctx, pozn.Text, textStartX ?? lineX, noteY, colRight, noteFont, textPaint, scaledNoteLineH),
+            };
+
+            colY[col] = noteY + Math.Max(1, lines) * scaledNoteLineH;
+        }
+        return colY.Max();
     }
 
     /// <summary>
@@ -393,16 +418,10 @@ public class NotesLegendElement : StopScheduleElementBase
     public override float CalculateHeightFromData(DataContext? data)
     {
         var poznamky = BuildPoznamky(data);
-        var filtered = FilterPoznamky(poznamky);
+        var bloky = RozdelDoBloku(FilterPoznamky(poznamky));
         // S reálnými daty se prázdný blok zcela složí (0 mm) - elementy pod ním se posunou
         // nahoru; placeholder výška patří jen designeru bez dat.
-        if (filtered.Count == 0) return data is null ? DesignerPlaceholderHeight : 0f;
-
-        // Výška = záhlaví + nejvyšší sloupec (poznámky se zalamují → akumulujeme řádky per sloupec).
-        var ordered = OrderNotes(filtered);
-        int cols = Math.Max(1, Columns);
-        int rowsPerCol = Math.Max(1, (int)Math.Ceiling(ordered.Count / (double)cols));
-        float colW = Width / cols;
+        if (bloky.Count == 0) return data is null ? DesignerPlaceholderHeight : 0f;
 
         const float refMmToPx = 96f / 25.4f;
         // Měření musí trefit stejný font jako render (vč. řezu) - jinak se počet zalomených řádků rozejde.
@@ -417,24 +436,125 @@ public class NotesLegendElement : StopScheduleElementBase
             var boldResolved = DataStyle.Bold is null ? dataResolved with { Bold = true } : dataResolved;
             using var boldFont = new SKFont(GetTypeface(boldResolved), velikost);
             using var symbolFont = new SKFont(GetTypeface(FontResolver.SymbolFontFamily(data?.Culture)), velikost);
-            bunkaZnacky = MathF.Max(MarkerSirka * LayoutZmenseni, NejsirsiZnackaMm(ordered, boldFont, symbolFont, font, refMmToPx));
+            bunkaZnacky = MathF.Max(MarkerSirka * LayoutZmenseni,
+                NejsirsiZnackaMm([.. bloky.SelectMany(b => b.Poznamky)], boldFont, symbolFont, font, refMmToPx));
         }
-        float availMm = colW - bunkaZnacky - 0.5f;
 
-        var colLines = new int[cols];
-        for (int i = 0; i < ordered.Count; i++)
+        // Výška = záhlaví + součet bloků; blok je vysoký jako jeho nejvyšší sloupec (poznámky se
+        // zalamují → akumulujeme řádky per sloupec). Musí sedět s RenderBlok.
+        int radku = 0;
+        foreach (var blok in bloky)
         {
-            int col = WrapSmer == LegendWrap.PoSloupcich ? Math.Min(cols - 1, i / rowsPerCol) : i % cols;
-            int lines = 1;
-            var txt = ordered[i].Text;
-            if (!string.IsNullOrEmpty(txt) && availMm > 1f)
-                lines = Math.Max(1, TextWrapHelper.WrapText(txt, font, availMm * refMmToPx).Count);
-            colLines[col] += lines;
+            var ordered = blok.Poznamky;
+            int cols = blok.Sloupcu;
+            int rowsPerCol = Math.Max(1, (int)Math.Ceiling(ordered.Count / (double)cols));
+            float availMm = Width / cols - bunkaZnacky - 0.5f;
+
+            var colLines = new int[cols];
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                int col = WrapSmer == LegendWrap.PoSloupcich ? Math.Min(cols - 1, i / rowsPerCol) : i % cols;
+                int lines = 1;
+                var txt = ordered[i].Text;
+                if (!string.IsNullOrEmpty(txt) && availMm > 1f)
+                    lines = Math.Max(1, TextWrapHelper.WrapText(txt, font, availMm * refMmToPx).Count);
+                colLines[col] += lines;
+            }
+            radku += Math.Max(1, colLines.Max());
         }
-        int maxLines = 1;
-        foreach (var n in colLines) if (n > maxLines) maxLines = n;
         float headerH = ShowHeaderBar ? ComputeHeaderH((HeaderStyle.FontSize ?? 9f) * LayoutZmenseni) : 0f;
-        return headerH + maxLines * EffectiveNoteLineHeight * LayoutZmenseni;
+        return headerH + radku * EffectiveNoteLineHeight * LayoutZmenseni;
+    }
+
+    /// <summary>Poznámky, které se kreslí pohromadě v jedné mřížce sloupců.</summary>
+    internal sealed record BlokPoznamek(List<PoznamkaData> Poznamky, int Sloupcu);
+
+    /// <summary>
+    /// Rozdělí poznámky na bloky podle <see cref="Skupiny"/>: skupiny v nastaveném pořadí, každá se
+    /// svým počtem sloupců, vypnuté a prázdné vynechá. Bez skupin (nebo bez druhů v datech) je celá
+    /// legenda jeden blok jako dřív. Prázdný vstup = žádný blok.
+    /// </summary>
+    internal List<BlokPoznamek> RozdelDoBloku(List<PoznamkaData> poznamky)
+    {
+        if (poznamky.Count == 0) return [];
+        if (Skupiny is null || poznamky.All(p => p.Druh == ""))
+            return [new(OrderNotes(poznamky), Math.Max(1, Columns))];
+
+        var bloky = new List<BlokPoznamek>();
+        foreach (var s in EfektivniSkupiny())
+        {
+            if (!s.Tisknout) continue;
+            var skupiny = poznamky.Where(p => SkupinaDruhu(p.Druh) == s.Skupina).ToList();
+            if (skupiny.Count > 0)
+                bloky.Add(new(OrderNotes(skupiny), Math.Clamp(s.Sloupcu ?? Columns, 1, 4)));
+        }
+        return bloky;
+    }
+
+    /// <summary>Do které skupiny patří druh poznámky z číselníku linkového JŘ (1-10).</summary>
+    /// <remarks>Druh 4 linková agenda neposílá; neznámý druh jde k dalším značkám, aby nezmizel.</remarks>
+    internal static SkupinaPoznamek SkupinaDruhu(string druh) => druh switch
+    {
+        "1"                => SkupinaPoznamek.TydenniPlatnost,
+        "2"                => SkupinaPoznamek.NegativniZnacky,
+        "3"                => SkupinaPoznamek.Navaznosti,
+        "5"                => SkupinaPoznamek.AtributySpoju,
+        "8" or "9" or "10" => SkupinaPoznamek.PoznamkyLinky,
+        _                  => SkupinaPoznamek.DalsiZnacky,   // 6 místenky, 7 stálé značky
+    };
+
+    /// <summary>Klíč tlačítka „Druhy poznámek" ve formuláři prvku (<c>NotesLegendElementEdit.cls</c>).</summary>
+    public const string SkupinyPoznamekKlic = "__skupinyPoznamek";
+
+    /// <summary>
+    /// Které pole formuláře prvku je vidět podle druhu agendy: okno druhů jen u linkového JŘ (jen
+    /// ten posílá druh poznámky), přepínače typů naopak jen jinde - u linkového je nahrazuje okno.
+    /// </summary>
+    public static bool PoleFormulareViditelne(string klic, bool linkovyJr) => klic switch
+    {
+        SkupinyPoznamekKlic => linkovyJr,
+        nameof(ShowNegativniZnacky) or nameof(ShowSpecialniZnaky) or nameof(ShowTextovePoznamky) => !linkovyJr,
+        _ => true,
+    };
+
+    /// <summary>Popisek skupiny v okně „Druhy poznámek".</summary>
+    public static string NazevSkupiny(SkupinaPoznamek skupina) => skupina switch
+    {
+        SkupinaPoznamek.TydenniPlatnost => "Týdenní platnost",
+        SkupinaPoznamek.NegativniZnacky => "Negativní značky",
+        SkupinaPoznamek.Navaznosti      => "Vyčká, navazuje, pokračuje",
+        SkupinaPoznamek.AtributySpoju   => "Atributy spojů",
+        SkupinaPoznamek.DalsiZnacky     => "Místenky a stálé značky",
+        SkupinaPoznamek.PoznamkyLinky   => "Poznámky linky (tarifní, všeobecné, radiobus)",
+        _                               => skupina.ToString(),
+    };
+
+    /// <summary>
+    /// Všechny skupiny v pořadí, v jakém se tisknou: nastavené první, chybějící za nimi ve výchozím
+    /// pořadí. Bez nastavení se „Tisknout" odvodí z přepínačů typů, takže první otevření okna druhů
+    /// ukáže, co prvek tiskne dnes, a potvrzení beze změny obsah nezmění.
+    /// </summary>
+    public List<NastaveniSkupinyPoznamek> EfektivniSkupiny()
+    {
+        var vysledek = (Skupiny ?? [])
+            .DistinctBy(s => s.Skupina)
+            .Select(s => s.Clone())
+            .ToList();
+        foreach (var skupina in Enum.GetValues<SkupinaPoznamek>())
+        {
+            if (vysledek.Any(s => s.Skupina == skupina)) continue;
+            vysledek.Add(new NastaveniSkupinyPoznamek
+            {
+                Skupina = skupina,
+                Tisknout = Skupiny is not null || skupina switch
+                {
+                    SkupinaPoznamek.NegativniZnacky => ShowNegativniZnacky,
+                    SkupinaPoznamek.PoznamkyLinky   => ShowTextovePoznamky,
+                    _                               => ShowSpecialniZnaky,
+                },
+            });
+        }
+        return vysledek;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -453,7 +573,9 @@ public class NotesLegendElement : StopScheduleElementBase
     private List<PoznamkaData> FilterPoznamky(List<PoznamkaData> poznamky)
     {
         return poznamky.Where(p =>
-            ((p.Typ == TypPoznamky.NegativniZnacka && ShowNegativniZnacky) ||
+            // U poznámky s druhem rozhoduje o tisku její skupina (RozdelDoBloku), ne přepínače typů.
+            ((Skupiny is not null && p.Druh != "") ||
+             (p.Typ == TypPoznamky.NegativniZnacka && ShowNegativniZnacky) ||
              (p.Typ == TypPoznamky.SpecialniZnak && ShowSpecialniZnaky) ||
              (p.Typ == TypPoznamky.Text && ShowTextovePoznamky))
             && VylukaProjde(p)
@@ -677,6 +799,7 @@ public class NotesLegendElement : StopScheduleElementBase
             WrapSmer                 = WrapSmer,
             MarkerSirka              = MarkerSirka,
             Razeni                   = Razeni,
+            Skupiny                  = Skupiny?.Select(s => s.Clone()).ToList(),
             NegativniZnackaBackColor = NegativniZnackaBackColor,
             NegativniZnackaForeColor = NegativniZnackaForeColor,
             ShowNegativniZnacky      = ShowNegativniZnacky,

@@ -24,8 +24,7 @@ public static class AgendaCapabilities
     /// TYP `nz` / `znak` / `text`, což prvek mapuje na negativní značku, speciální znak a text.
     /// ⚠️ Filtry na **kategorie** (bezbariér, na znamení, přestupy, písmena variant) zůstanou
     /// u linkových nečinné - to jsou zastávkové pojmy a linkový posílá kategorii prázdnou.
-    /// Nastavení „počet poznámek na řádek per druh", které má starý modul, prvek zatím neumí
-    /// vůbec (`#7487`).</para>
+    /// Pořadí, tisk a sloupce po druzích poznámek drží okno „Druhy poznámek" (`#7487`).</para>
     /// </remarks>
     private static readonly string[] LineTypes =
         [ElementTypes.LineTable, ElementTypes.NotesLegend];

@@ -1913,6 +1913,21 @@ public partial class MainWindow : Window
     {
         var dlg = new ElementEditDialog(element, cacheClass, title)
             { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey };
+        if (element is NotesLegendElement poznamky)
+        {
+            bool linkovy = _vm.JeLinkovyJr;
+            dlg.ViditelnostPole = (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy);
+            // Okno vlastností zapisuje až s Uložit - rozpracované druhy si proto drží samo,
+            // aby druhé otevření ukázalo první úpravu.
+            var rozpracovane = poznamky.EfektivniSkupiny();
+            dlg.AkceTlacitka = klic =>
+            {
+                if (klic != NotesLegendElement.SkupinyPoznamekKlic
+                    || VyberSkupinyPoznamek(poznamky, rozpracovane, dlg) is not { } skupiny) return null;
+                rozpracovane = skupiny;
+                return TemplateDesignerViewModel.SkupinyPoznamekCommand(poznamky, skupiny);
+            };
+        }
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);
@@ -1943,9 +1958,29 @@ public partial class MainWindow : Window
         // Z formuláře buňky zpátky na nastavení celé tabulky (= odchod z buňky, jako Esc).
         if (key == "__tableSettings") { ExitToTableSettings(); return; }
 
+        if (key == NotesLegendElement.SkupinyPoznamekKlic)
+        {
+            if (_vm!.State.SelectedElements is [NotesLegendElement poznamky]
+                && VyberSkupinyPoznamek(poznamky, poznamky.EfektivniSkupiny()) is { } skupiny)
+            {
+                _vm.Execute(TemplateDesignerViewModel.SkupinyPoznamekCommand(poznamky, skupiny));
+                InvalidateCanvas();
+                InvalidatePreview();
+            }
+            return;
+        }
+
         if (key != "__highlightRules") return;
         if (_vm!.State.SelectedElements is [IRowHighlightable h])
             OpenHighlightRulesDialog(h);
+    }
+
+    /// <summary>Okno „Druhy poznámek"; null = Storno.</summary>
+    private List<NastaveniSkupinyPoznamek>? VyberSkupinyPoznamek(NotesLegendElement poznamky,
+        IReadOnlyList<NastaveniSkupinyPoznamek> vychozi, Window? owner = null)
+    {
+        var dlg = new SkupinyPoznamekDialog(vychozi, poznamky.Columns) { Owner = owner ?? this };
+        return dlg.ShowDialog() == true ? dlg.Vysledek : null;
     }
 
     private void OpenHighlightRulesDialog(IRowHighlightable element)
@@ -2152,6 +2187,10 @@ public partial class MainWindow : Window
             {
                 // Nabídka „vložit pole" - seznam zná jen návrhář (ze schématu agendy), Caché ne.
                 InlineElementForm.PlaceholderFields = _vm.PlaceholderFieldItems();
+                bool linkovy = _vm.JeLinkovyJr;
+                InlineElementForm.ViditelnostPole = selected[0] is NotesLegendElement
+                    ? (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy)
+                    : null;
                 InlineElementForm.ShowElement(selected[0], panelSchema);
                 ShowInlineFormPanel(true);
             }

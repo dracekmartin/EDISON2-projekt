@@ -58,6 +58,15 @@ public partial class ElementEditDialog : Window
     /// </summary>
     public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
 
+    /// <summary>
+    /// Tlačítko ve formuláři (klíč „__…"): host otevře svůj editor a vrátí vratný příkaz, nebo null.
+    /// Příkaz se provede až s Uložit, takže Storno zahodí i změnu z editoru; opakovaný klik nahradí
+    /// předchozí příkaz téhož tlačítka.
+    /// </summary>
+    public Func<string, IDesignerCommand?>? AkceTlacitka { get; set; }
+
+    private readonly Dictionary<string, IDesignerCommand> _prikazyTlacitek = [];
+
     /// <param name="target">Editovaný objekt (element, sekce, stránka - in-memory model).</param>
     /// <param name="cacheClass">Caché schema class (např. "ALVA.TemplateDesigner.EDInputForm.TextElementEdit").</param>
     /// <param name="title">Titulek okna.</param>
@@ -72,6 +81,10 @@ public partial class ElementEditDialog : Window
         // pak re-validuj (Init validace běžela na prázdných / default hodnotách).
         TheForm.SchemaLoaded += OnFormInitialized;
         TheForm.FieldChanged += _ => PouzijViditelnost();
+        TheForm.ButtonClicked += key =>
+        {
+            if (AkceTlacitka?.Invoke(key) is { } prikaz) _prikazyTlacitek[key] = prikaz;
+        };
         ElementFormBinder.HookFontWeightRefresh(TheForm);
     }
 
@@ -105,6 +118,7 @@ public partial class ElementEditDialog : Window
 
         FinalValues = ElementFormBinder.Snapshot(TheForm);
         var commands = ElementFormBinder.ExtractCommands(TheForm, _target, _preFilled);
+        commands.AddRange(_prikazyTlacitek.Values);
         ResultCommand = commands.Count switch
         {
             0 => null,
