@@ -135,7 +135,7 @@ public class TreeGeneratorTests
     [Fact]
     public void Fingerprint_IgnoresCarriageReturns()
     {
-        // Git dává legacy soubory na Windows jako CRLF a na CI jako LF - hash se musí shodnout.
+        // Git dává legacy soubory podle autocrlf jako CRLF i LF - hash se musí shodnout.
         Assert.Equal(TreeGenerator.Fingerprint("a\nb\n"u8.ToArray()), TreeGenerator.Fingerprint("a\r\nb\r\n"u8.ToArray()));
     }
 
@@ -218,7 +218,7 @@ public class TreeGeneratorTests
 
 /// <summary>
 /// Parita s Tree.cls potřebuje legacy repo EDISON: zapíná ji <c>EDISON_LEGACY_ROOT</c> (pre-push ji nastaví,
-/// když repo na stroji je). Drift legacy zdrojů proti <c>tools/tree-sources.sha256</c> = Skipped, ten hlásí hook a CI.
+/// když repo na stroji je). Drift legacy zdrojů proti <c>tools/tree-sources.sha256</c> = Skipped, ten hlásí hook a řeší úloha tree-sync.
 /// </summary>
 public sealed class LegacyTreeSourcesFactAttribute : FactAttribute
 {

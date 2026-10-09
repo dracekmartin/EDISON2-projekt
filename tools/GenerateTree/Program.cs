@@ -1,8 +1,8 @@
 // Regenerace Tree.cls z legacy XML: dotnet run --project tools/GenerateTree
-// (sync-tree.ps1 navíc vynutí deploy, CI workflow tree-sync otevře PR).
+// (sync-tree.ps1 navíc vynutí deploy, tools/tree-sync-task.ps1 ho pouští při změně legacy XML).
 //
-// Cesty jde přepsat prostředím, aby generátor šel pustit i na CI runneru, kde žádné
-// c:\MLineRepos ani C:\Edison neexistuje. EDISON_LEGACY_ROOT je záměrně stejná
+// Cesty jde přepsat prostředím: sync-tree.ps1 tak generuje do svého checkoutu (worktree, klon
+// úlohy tree-sync) a úloha čte legacy ze svého klonu. EDISON_LEGACY_ROOT je záměrně stejná
 // proměnná, jakou čte .claude/hooks/tree-drift.sh a parity test.
 
 using System.Reflection.Metadata;
@@ -28,7 +28,7 @@ foreach (var line in result.Report)
 
 if (result.Tree is null)
 {
-    // Nenulový kód zastaví sync-tree.ps1 před deployem i CI krok - nasadila by se stará třída.
+    // Nenulový kód zastaví sync-tree.ps1 před deployem - nasadila by se stará třída.
     Console.Write(result.FillMethods);
     return 1;
 }
@@ -67,8 +67,8 @@ void WriteSourceFingerprint()
     var lines = new List<string>
     {
         "# Fingerprint legacy zdroju, ze kterych je generovan Tree.cls (tools/GenerateTree).",
-        "# Kontroluje .claude/hooks/tree-drift.sh pri startu chatu a parity test. Needitovat rucne.",
-        "# Hash je pres obsah BEZ CR (kvuli CRLF/LF rozdilu Windows vs CI): tr -d '\\r' | sha256sum",
+        "# Kontroluje .claude/hooks/tree-drift.sh, uloha tree-sync a parity test. Needitovat rucne.",
+        "# Hash je pres obsah BEZ CR (checkouty se lisi CRLF/LF podle autocrlf): tr -d '\\r' | sha256sum",
     };
     foreach (var rel in TreeGenerator.SourceFiles)
         lines.Add($"{TreeGenerator.Fingerprint(File.ReadAllBytes(Path.Combine(edisonRoot, rel)))}  {rel}");

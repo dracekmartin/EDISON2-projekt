@@ -14,7 +14,9 @@ param(
     # Po nasazeni pusti Cache testy dotcene package.
     [switch]$Test,
     # Jen regeneruj a ukaz diff, nenasazuj.
-    [switch]$NoDeploy
+    [switch]$NoDeploy,
+    # Nenasazuj, kdyz nejaky modul vysel bez exe. Pro tree-sync-task.ps1: tam se oranzovy stub nema kdo vsimnout.
+    [switch]$RejectStubs
 )
 
 $ErrorActionPreference = 'Stop'
@@ -55,6 +57,15 @@ try { dotnet run --project tools/GenerateTree } finally { Pop-Location }
 # Generator vraci nenulovy kod, kdyz nezapsal (napr. smazany splice marker) - nesmi se
 # pokracovat na deploy, jinak bychom nasadili starou tridu a hlasili uspech.
 if ($LASTEXITCODE -ne 0) { Fail 'generator selhal, Tree.cls NEZAPSAN - deploy preskocen' }
+
+if ($RejectStubs) {
+    # Prazdny 2. argument AddExe = exe se nenaslo v deploy adresari (nova agenda, kterou C:\Edison jeste nema).
+    $stubs = @(Select-String -LiteralPath $treeCls -Encoding UTF8 -Pattern '\.\.AddExe\("((?:[^"]|"")*)", ""')
+    if ($stubs.Count -gt 0) {
+        $names = ($stubs | Select-Object -First 5 | ForEach-Object { $_.Matches[0].Groups[1].Value }) -join ', '
+        Fail "$($stubs.Count) modulu bez exe, deploy preskocen (chybi v C:\Edison?): $names"
+    }
+}
 
 Step 'Zmeny v repu'
 git -C $repo diff --stat -- EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls tools/tree-sources.sha256

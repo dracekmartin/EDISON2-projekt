@@ -9,11 +9,12 @@ consumerem, cross-cutting věci jdou do `EDControls`.
 
 ## Strom modulů = generovaný snapshot
 
-`Fill*` v `CACHE/ALVA/EDISONMAIN2/API/Tree.cls` **needitovat ručně** - generuje je
-`tools/GenerateTree` (projekt v sln) z legacy XML (`edisontree`/`edisonnavbar`) + `EDFormInterfaceLic.vb`
-v repu EDISON; sync i **vynucený** deploy dělá `tools/sync-tree.ps1` (generátor zapisuje mimo
-Edit/Write, takže `compile-objectscript.sh` sám nefiruje). Splice anchor je komentář
-`/// Generováno z legacy edisonnavbar.xml id=` - smazat ho znamená tiše rozbitý generátor.
+`Fill*` v `CACHE/ALVA/EDISONMAIN2/API/Tree.cls` **needitovat ručně** - generuje je `tools/GenerateTree` z legacy
+XML (`edisontree`/`edisonnavbar`) + `EDFormInterfaceLic.vb` v repu EDISON; sync i **vynucený** deploy dělá
+`tools/sync-tree.ps1` (generátor zapisuje mimo Edit/Write, hook sám nefiruje). Na DEV i do main ho po 10 min
+dotahuje úloha Plánovače `tools/tree-sync-task.ps1` (commity autora `tree-sync`, stav a připomínku vydání
+EDISONMAIN2 na REL ukáže `tree-drift.sh`): **před ruční úpravou `Tree.cls` pullni**, deploy starší kopie vrátí DEV.
+Splice anchor je komentář `/// Generováno z legacy edisonnavbar.xml id=` - smazat ho = tiše rozbitý generátor.
 Ruční zásah do struktury a odvozených hodnot chytí parity test `TreeGeneratorTests` (s `EDISON_LEGACY_ROOT`,
 pre-push ji nastaví; při driftu Skipped) - exe a input bere generátor z `Tree.cls` jako override, ty nehlídá.
 

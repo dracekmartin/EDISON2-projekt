@@ -131,7 +131,7 @@ internal sealed class TreeGenerator
         return gen.Run(currentTreeCls);
     }
 
-    /// <summary>SHA-256 obsahu bez CR - git checkoutuje legacy soubory na Windows jako CRLF a na CI jako LF.</summary>
+    /// <summary>SHA-256 obsahu bez CR - git checkoutuje legacy soubory podle autocrlf jako CRLF i LF.</summary>
     public static string Fingerprint(byte[] content) =>
         Convert.ToHexString(SHA256.HashData(content.Where(b => b != (byte)'\r').ToArray())).ToLowerInvariant();
 

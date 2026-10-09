@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Kratke shrnuti zmen ve Tree.cls pro telo PR: pribyle / upravene / smazane uzly.
+"""Kratke shrnuti zmen ve Tree.cls: pribyle / upravene / smazane uzly.
 
-Cte dve verze Tree.cls a porovnava uzly podle elementId. Pouziva ho
-.github/workflows/tree-sync.yml; samostatne:
+Cte dve verze Tree.cls a porovnava uzly podle elementId. S --oneline vypise jeden
+anglicky radek pro commit zpravu (tools/tree-sync-task.ps1), bez nej markdown prehled:
 
     git show HEAD:<cesta>/Tree.cls > old.cls
     python3 tools/tree-diff-summary.py old.cls <cesta>/Tree.cls
@@ -46,16 +46,45 @@ def parse(path):
     return nodes
 
 
+def oneline(old, new, added, changed, removed, limit=6):
+    """Commit zprava je jeden radek, proto jen prvnich `limit` uzlu a pocet zbytku."""
+    groups = [
+        ("adds", [f"{new[k][0]} ({k})" for k in added]),
+        ("changes", [f"{change_label(old, new, k)} ({k})" for k in changed]),
+        ("removes", [f"{old[k][0]} ({k})" for k in removed]),
+    ]
+    parts, shown = [], 0
+    for verb, items in groups:
+        take = items[: max(0, limit - shown)]
+        if take:
+            parts.append(f"{verb} {', '.join(take)}")
+            shown += len(take)
+    if not parts:
+        return "no node changed, only the source fingerprint"
+    rest = len(added) + len(changed) + len(removed) - shown
+    return "; ".join(parts) + (f" and {rest} more" if rest else "")
+
+
+def change_label(old, new, k):
+    # Prejmenovani je nejcastejsi zmena, tak at je videt z ceho na co.
+    return new[k][0] if old[k][0] == new[k][0] else f"{old[k][0]} -> {new[k][0]}"
+
+
 def main():
     # Nazvy uzlu maji diakritiku; Windows python pise defaultne v cp1252 a spadl by.
     sys.stdout.reconfigure(encoding="utf-8")
-    old, new = parse(sys.argv[1]), parse(sys.argv[2])
+    args = [a for a in sys.argv[1:] if a != "--oneline"]
+    old, new = parse(args[0]), parse(args[1])
     added = sorted(set(new) - set(old), key=lambda k: new[k][0])
     removed = sorted(set(old) - set(new), key=lambda k: old[k][0])
     changed = sorted(
         (k for k in set(old) & set(new) if old[k][1] != new[k][1]),
         key=lambda k: new[k][0],
     )
+
+    if "--oneline" in sys.argv[1:]:
+        print(oneline(old, new, added, changed, removed))
+        return
 
     out = []
     if added:
@@ -64,10 +93,7 @@ def main():
         out.append("")
     if changed:
         out.append(f"**Upraveno ({len(changed)}):**")
-        for k in changed:
-            # Prejmenovani je nejcastejsi zmena, tak at je videt z ceho na co.
-            label = new[k][0] if old[k][0] == new[k][0] else f"{old[k][0]} -> {new[k][0]}"
-            out.append(f"- `{k}` {label}")
+        out += [f"- `{k}` {change_label(old, new, k)}" for k in changed]
         out.append("")
     if removed:
         out.append(f"**Smazano ({len(removed)}):**")
