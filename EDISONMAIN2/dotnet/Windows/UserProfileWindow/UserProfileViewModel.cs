@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Windows.LoginWindow;
 
 namespace EDISONMAIN2.Windows.UserProfileWindow
 {
@@ -31,16 +30,20 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
     {
         private readonly string _defaultWindowDisplay;
         private readonly Func<string, bool> _directoryExists;
+        private readonly Func<bool> _changePassword;
 
         /// <param name="defaultWindowDisplay">Název výchozího okna (server ho nezná - dodá shell z modulového stromu).</param>
-        public UserProfileViewModel(string defaultWindowDisplay)
-            : this(EDServices.Current, defaultWindowDisplay, Directory.Exists) { }
+        /// <param name="changePassword">Změna hesla shellu, zapamatované heslo drží jeho preference; true = změněno.</param>
+        public UserProfileViewModel(string defaultWindowDisplay, Func<bool> changePassword)
+            : this(EDServices.Current, defaultWindowDisplay, Directory.Exists, changePassword) { }
 
-        internal UserProfileViewModel(EDServices services, string defaultWindowDisplay, Func<string, bool> directoryExists)
+        internal UserProfileViewModel(EDServices services, string defaultWindowDisplay, Func<string, bool> directoryExists,
+                                      Func<bool> changePassword)
             : base(services)
         {
             _defaultWindowDisplay = defaultWindowDisplay;
             _directoryExists = directoryExists;
+            _changePassword = changePassword;
             ChangePasswordCommand   = Command(OpenChangePassword);
             ShowCertificatesCommand = CommandAsync(ShowCertificatesAsync);
         }
@@ -98,8 +101,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
 
         private void OpenChangePassword()
         {
-            bool? changed = WindowNavigator.ShowDialog(new ChangePasswordWindow(Rest, Rest.LoginName));
-            if (changed == true) PopupDisplayer.Info("Heslo bylo změněno.");
+            if (_changePassword()) PopupDisplayer.Info("Heslo bylo změněno.");
         }
 
         private async Task ShowCertificatesAsync()

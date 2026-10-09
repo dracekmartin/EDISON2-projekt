@@ -228,16 +228,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (IsWaitingForSecondKey) IsWaitingForSecondKey = false;
         }
 
-        private void ChangePassword()
-        {
-            bool? changed = WindowNavigator.ShowDialog(
-                new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(Rest, UserName));
-            // Změna hesla za běhu zneplatní zapamatované (uložené při loginu se starým heslem).
-            if (changed == true && _prefs.RememberedPasswordFor(Rest.Server, Rest.Port) != null)
-            {
-                _prefs.SetRememberedPassword(Rest.Server, Rest.Port, null);
-                _prefs.Save();
-            }
-        }
+        // Menu i Vlastnosti uživatele (delegát) - zapamatované heslo řeší jedno pravidlo.
+        private bool ChangePassword() =>
+            EDISONMAIN2.Windows.LoginWindow.PasswordChange.Run(WindowNavigator, Rest, UserName, _prefs);
     }
 }

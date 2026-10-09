@@ -188,8 +188,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Uživatel menu
             LoginAsAnotherUserCommand     = CommandAsync(LoginAsAnotherUserAsync);
-            ShowUserProfileCommand        = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText())));
-            ChangePasswordCommand         = Command(ChangePassword);
+            ShowUserProfileCommand        = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText(), ChangePassword)));
+            ChangePasswordCommand         = Command(() => ChangePassword());
             SetStartupWindowCommand         = Command<IModule>(SetStartupWindow);
             ClearStartupWindowCommand       = Command(ClearStartupWindow);
             ExpandAllCommand                = Command(() => SetActiveTreeExpanded(true), () => ActiveExpandableTree() is not null);

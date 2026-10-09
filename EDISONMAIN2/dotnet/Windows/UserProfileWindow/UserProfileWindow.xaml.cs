@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Windows;
 using EDControls.EDInputForm;
@@ -9,9 +10,10 @@ public partial class UserProfileWindow : Window, IUserProfileForm
     private readonly UserProfileViewModel _vm;
 
     /// <param name="defaultWindowDisplay">Název výchozího okna k zobrazení (prázdné = nenastaveno).</param>
-    public UserProfileWindow(string defaultWindowDisplay)
+    /// <param name="changePassword">Změna hesla shellu (dialog + zapamatované heslo); true = změněno.</param>
+    public UserProfileWindow(string defaultWindowDisplay, Func<bool> changePassword)
     {
-        DataContext = _vm = new UserProfileViewModel(defaultWindowDisplay);
+        DataContext = _vm = new UserProfileViewModel(defaultWindowDisplay, changePassword);
         InitializeComponent();
 
         _vm.Form = this;

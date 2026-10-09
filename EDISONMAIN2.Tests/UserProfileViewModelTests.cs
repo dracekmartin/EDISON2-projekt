@@ -1,5 +1,6 @@
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Windows.LoginWindow;
 using EDISONMAIN2.Windows.UserProfileWindow;
 using NSubstitute;
 
@@ -46,11 +47,12 @@ public class UserProfileViewModelTests
     }
 
     private static (UserProfileViewModel Vm, FakeForm Form, EDServices Services) Create(
-        IMLRest? session, bool directoryExists = true)
+        IMLRest? session, bool directoryExists = true, Func<bool>? changePassword = null)
     {
         var services = new EDServices(session, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
         var form = new FakeForm();
-        var vm = new UserProfileViewModel(services, "Plán dopravy", _ => directoryExists) { Form = form };
+        var vm = new UserProfileViewModel(services, "Plán dopravy", _ => directoryExists, changePassword ?? (() => false))
+            { Form = form };
         return (vm, form, services);
     }
 
@@ -183,6 +185,30 @@ public class UserProfileViewModelTests
             Arg.Is<object[]>(a => (string)a[0] == $"personDir{D}0{D}"));
         Assert.Equal("", services.UserDirectory);
         Assert.Equal([true], closes);
+    }
+
+    [Fact]
+    public void ChangePassword_Changed_ForgetsOwnRememberedPasswordAndConfirms()
+    {
+        // Profil dřív zapamatované heslo nechal a příští start předvyplnil staré.
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.SetRememberedPassword("dev", 57770, PasswordProtector.Protect("jan.novak", "stare"));
+        var (vm, _, services) = Create(Session(), changePassword: () => PasswordChange.Run(() => true, "dev", 57770, "jan.novak", prefs));
+
+        vm.ChangePasswordCommand.Execute(null);
+
+        Assert.Null(prefs.RememberedPasswordFor("dev", 57770));
+        services.PopupDisplayer.Received(1).Info("Heslo bylo změněno.");
+    }
+
+    [Fact]
+    public void ChangePassword_Cancelled_NoConfirmation()
+    {
+        var (vm, _, services) = Create(Session(), changePassword: () => false);
+
+        vm.ChangePasswordCommand.Execute(null);
+
+        services.PopupDisplayer.DidNotReceiveWithAnyArgs().Info(default!);
     }
 
     [Theory]
