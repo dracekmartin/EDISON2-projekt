@@ -103,15 +103,8 @@ internal sealed partial class SupportPanelWindow : Window, IOverlayWindow
     }
 
     private void Feedback_Click(object sender, RoutedEventArgs e) => Guarded(() =>
-    {
-        var ownerType = _owner.GetType();
-        var version = ownerType.Assembly.GetName().Version?.ToString();
-        SupportActions.OpenUrl(SupportActions.BuildFeedbackUrl(
-            _services.MLRest?.Idfa,
-            _services.MLRest?.LoginName,
-            ownerType.Assembly.GetName().Name,
-            SupportActions.BuildContext(ownerType.Name, _owner.Title, ownerType.Namespace, version)));
-    });
+        SupportActions.OpenUrl(SupportActions.BuildWindowFeedbackUrl(
+            _services, _owner.GetType(), _owner.Title, Assembly.GetEntryAssembly())));
 
     private void Portal_Click(object sender, RoutedEventArgs e) =>
         Guarded(() => SupportActions.OpenUrl(SupportActions.PortalUrl));

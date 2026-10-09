@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Windows;
 using EDControls.EDSupportPanel;
 using EDControls.EDViewModel;
@@ -67,6 +68,34 @@ public class SupportPanelTests
     }
 
     [Fact]
+    public void FeedbackUrlFromWindow_CarriesAppVersionFromServices()
+    {
+        // Verze assembly okna je všude 1.0.0.0 (žádný csproj nemá <Version>), podpora z ní build nepozná.
+        var services = MockServices(MockMLRest());
+        services.AppVersion = "25.7.30";
+
+        var url = SupportActions.BuildWindowFeedbackUrl(
+            services, typeof(SupportPanelTests), "Titulek", typeof(SupportPanelTests).Assembly);
+
+        Assert.Contains("v%3D25.7.30", url);
+        Assert.Contains("&idfa=001", url);
+        Assert.Contains("&user=mhubata", url);
+        Assert.Contains("&agenda=EDControls.Tests", url);
+    }
+
+    [Fact]
+    public void FeedbackUrlFromWindow_ServicesWithoutVersion_CarriesEntryAssemblyVersion()
+    {
+        // TemplateDesigner AppVersion nenastavuje - v= nese verzi exe, ne verzi assembly okna.
+        var entry = typeof(SupportPanelTests).Assembly;
+        var informational = entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
+
+        var url = SupportActions.BuildWindowFeedbackUrl(MockServices(), typeof(SupportPanelTests), null, entry);
+
+        Assert.EndsWith(Uri.EscapeDataString("|v=" + AppIdentity.ShortenBuildMetadata(informational)), url);
+    }
+
+    [Fact]
     public void Context_JoinsPartsWithPipe()
     {
         var ctx = SupportActions.BuildContext("UserProfileWindow", "Uživatelský profil",
@@ -129,6 +158,18 @@ public class SupportPanelTests
         Assert.StartsWith("TemplateDesigner\n\nVerze: ", info);
         Assert.DoesNotContain("Verze: \n", info);
         Assert.DoesNotMatch(@"Verze:\s*$", info);
+    }
+
+    [Fact]
+    public void VersionInfo_MissingVersion_ShowsEntryAssemblyInformationalVersion()
+    {
+        // TemplateDesigner verzi nenastavuje. Dřív dialog ukázal AssemblyVersion 1.0.0.0 bez hashe buildu.
+        var entry = typeof(SupportPanelTests).Assembly;
+        var informational = entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
+
+        var info = SupportActions.BuildVersionInfo(null, "TemplateDesigner", null, entry);
+
+        Assert.Equal($"TemplateDesigner\n\nVerze: {AppIdentity.ShortenBuildMetadata(informational)}", info);
     }
 
     [Fact]

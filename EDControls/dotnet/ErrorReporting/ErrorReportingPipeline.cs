@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Windows;
 using EDControls.EDViewModel;
@@ -19,16 +20,20 @@ internal sealed class ErrorReportingPipeline
     private readonly Func<bool> _isInternal;
     private readonly Func<EDServices?> _services;
     private readonly Func<IReadOnlyList<ErrorAttachment>> _captureWindows;
+    private readonly Func<Assembly?> _entryAssembly;
 
     /// <param name="client">Volá se až při prvním odeslání, uvnitř ochrany.</param>
+    /// <param name="entryAssembly">Jméno a verze aplikace, dokud je služby nenesou. Default entry assembly procesu.</param>
     internal ErrorReportingPipeline(Func<HttpClient> client, ErrorFallbackLog fallbackLog, Func<bool> isInternal,
-        Func<EDServices?> services, Func<IReadOnlyList<ErrorAttachment>> captureWindows)
+        Func<EDServices?> services, Func<IReadOnlyList<ErrorAttachment>> captureWindows,
+        Func<Assembly?>? entryAssembly = null)
     {
         _client = new Lazy<HttpClient>(client);
         _fallbackLog = fallbackLog;
         _isInternal = isInternal;
         _services = services;
         _captureWindows = captureWindows;
+        _entryAssembly = entryAssembly ?? Assembly.GetEntryAssembly;
     }
 
     /// <summary>
@@ -208,16 +213,17 @@ internal sealed class ErrorReportingPipeline
     {
         var services = _services();
         var mlRest = services?.MLRest;
+        var app = AppIdentity.Resolve(services, _entryAssembly());
 
         return new ErrorContext
         {
-            AppId = services?.FormIdPrefix ?? "EDISON2",
+            AppId = app.Prefix,
             IsInternal = _isInternal(),
             Idfa = mlRest?.Idfa,
             LoginName = mlRest?.LoginName,
             FullName = mlRest?.FullName,
             Mlp = mlRest?.Mlp,
-            AppVersion = services?.AppVersion,
+            AppVersion = app.Version,
             WindowNamespace = owner?.GetType().FullName,
             WindowTitle = owner?.Title,
             MachineName = SafeMachineName(),

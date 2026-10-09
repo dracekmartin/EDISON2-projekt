@@ -5,7 +5,10 @@ namespace EDControls.ErrorReporting;
 /// <summary>Kontext hlášení - prosté hodnoty, ať jde jádro testovat bez MLRestu a bez WPF.</summary>
 public sealed record ErrorContext
 {
-    /// <summary>Identita aplikace (<c>EDServices.FormIdPrefix</c>): <c>EDISON2</c> / <c>TD</c>.</summary>
+    /// <summary>
+    /// Identita aplikace (<c>AppIdentity.Prefix</c>): <c>EDISON2</c> / <c>TD</c>, před
+    /// <c>EDServices.Initialize</c> jméno entry assembly.
+    /// </summary>
     public required string AppId { get; init; }
 
     /// <summary>Běh na m-line doméně - záznam se označí, nezahodí.</summary>

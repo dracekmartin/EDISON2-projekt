@@ -20,7 +20,7 @@ klienta, záložní log i zdroj kontextu. Testy skládají vlastní instanci a s
 **Past: `applyEdisonVersions`.** Server přepíše firmě „poslední hlášenou verzi EDISONu"
 podle `data.version`, když je záznam instalační událost (`module="EDISON"` **a**
 `name="Instalace verze"`) nebo nese klíč `pocty` / `ad_pocetRZ` / `mhd_pocetRZ` /
-`zam_pocetZam`. `data.version` posíláme (bez ní je hlášení k ničemu), takže se těm dvěma
+`zam_pocetZam`. `data.version` posíláme vždy (viz Identita níž), takže se těm dvěma
 vzorům musíme vyhýbat - jinak by každá chyba z EDISON2 přepsala zákazníkovi verzi legacy
 EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_CarriesUnitMetricKeys`.
 
@@ -46,6 +46,8 @@ EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_Ca
 
 ## Drobné
 
+- **Identita** (`source`, `data.version`) z `AppIdentity` (`EDViewModel/EDServices.cs`): `EDServices` → entry assembly
+  (`1.0.0+<8 znaků hashe>`) → `nezjištěna`. Pád před `Initialize` jde se `source` = jméno exe, ne `FormIdPrefix`.
 - **Neodeslaná hlášení** (offline, VPN, 500) zachytí `ErrorFallbackLog`:
   `%APPDATA%\m-line\common\error-reports.log`, NDJSON **bez příloh**, rotace nad ~1 MB
   do `.old`. Nic se zpětně neodesílá - podpora si soubor vyžádá ručně.

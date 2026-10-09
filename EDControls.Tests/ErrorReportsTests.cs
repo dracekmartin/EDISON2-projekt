@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
+using NSubstitute;
 
 namespace EDControls.Tests;
 
@@ -38,12 +41,14 @@ public class ErrorReportsTests : IDisposable
     private readonly string _fallbackPath = Path.Combine(Path.GetTempPath(), $"ed-reports-{Guid.NewGuid():N}.log");
     private readonly ErrorReportingPipeline _pipeline;
     private bool _internal;
+    private EDServices? _services;
+    private static readonly Assembly Entry = typeof(ErrorReportsTests).Assembly;
 
     public ErrorReportsTests()
     {
         // Vlastní instance bez EDServices a snímků oken: statiku procesu test nemění, smí běžet paralelně.
         _pipeline = new ErrorReportingPipeline(() => new HttpClient(_handler), new ErrorFallbackLog(_fallbackPath),
-            () => _internal, () => null, () => []);
+            () => _internal, () => _services, () => [], () => Entry);
     }
 
     public void Dispose()
@@ -211,12 +216,27 @@ public class ErrorReportsTests : IDisposable
     }
 
     [Fact]
-    public async Task Report_WithoutEDServices_FallsBackToEdison2Source()
+    public async Task Report_WithoutEDServices_SourceIsEntryAssemblyName()
     {
-        // Hlášení musí odejít i před inicializací EDServices (chyba v bootstrapu).
+        // Hlášení musí odejít i před inicializací EDServices (chyba v bootstrapu). TD věší handlery
+        // v konstruktoru App, takže jeho pád nesmí přijít jako EDISON2.
         _pipeline.Report(Thrown());
 
         await WaitForRequests(1);
+        Assert.Equal("EDControls.Tests", Body(0)["source"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Report_ServicesWithoutAppVersion_SendsEntryAssemblyVersion()
+    {
+        // TD nastavuje jen FormIdPrefix - bez fallbacku chodilo version: null a podpora nepoznala build.
+        _services = new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+
+        _pipeline.Report(Thrown());
+
+        await WaitForRequests(1);
+        var informational = Entry.GetCustomAttribute<AssemblyInformationalVersionAttribute>()!.InformationalVersion;
+        Assert.Equal(AppIdentity.ShortenBuildMetadata(informational), Body(0)["data"]!["version"]?.GetValue<string>());
         Assert.Equal("EDISON2", Body(0)["source"]!.GetValue<string>());
     }
 

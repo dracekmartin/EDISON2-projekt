@@ -1,3 +1,4 @@
+using System.Reflection;
 using ALVA.LICENCE.EDLicence;
 using EDControls.SessionState;
 using EDControls.UserPrefs;
@@ -46,19 +47,20 @@ public class EDServices(
     public string UserEmail { get; set; } = "";
 
     /// <summary>
-    /// Jméno a verze aplikace pro „Informace o verzi" (panel Podpora, menu Nápověda).
-    /// Nastavuje composition-root; EDControls na verzi nedosáhne sama (<c>VERZE.INF</c>
-    /// čte shell). Nenastaveno → fallback na entry assembly, tedy nepravdivá 1.0.0.0.
+    /// Jméno a verze aplikace pro „Informace o verzi" (panel Podpora, menu Nápověda), feedback
+    /// a hlášení chyb. Nastavuje composition-root; EDControls na verzi nedosáhne sama (<c>VERZE.INF</c>
+    /// čte shell). Nenastaveno → <see cref="AppIdentity"/> vezme jméno a verzi entry assembly.
     /// </summary>
     public string? AppDisplayName { get; set; }
     public string? AppVersion { get; set; }
 
     /// <summary>
-    /// Prefix form ID (persistence stavu okna, usage telemetrie) - odděluje okna jednotlivých
-    /// m-line aplikací od sebe i od legacy numerických ID z <c>EDISFormEnum</c>. Nastavuje
-    /// composition-root (TemplateDesigner <c>"TD"</c>), default patří shellu.
+    /// Prefix form ID (persistence stavu okna, usage telemetrie) a <c>source</c> hlášení chyb -
+    /// odděluje okna jednotlivých m-line aplikací od sebe i od legacy numerických ID z
+    /// <c>EDISFormEnum</c>. Nastavuje composition-root (TemplateDesigner <c>"TD"</c>), default
+    /// patří shellu a je součástí uložených formID, proto se nemění.
     /// </summary>
-    public string FormIdPrefix { get; set; } = "EDISON2";
+    public string FormIdPrefix { get; set; } = AppIdentity.DefaultPrefix;
 
     /// <summary>
     /// Persistent per-user state (column layouty, hidden položky, ...). Default je
@@ -95,4 +97,43 @@ public class EDServices(
 
     /// <summary>Smaže static singleton. Pouze pro testy - zabraňuje úniku stavu mezi testy.</summary>
     internal static void Reset() => _current = null;
+}
+
+/// <summary>
+/// Prefix, jméno a verze aplikace, jak je vidí hlášení chyb, „Informace o verzi" a feedback panelu
+/// Podpora. Všechna tři místa doplňují chybějící hodnotu stejně: hodnota z <see cref="EDServices"/>,
+/// pak entry assembly, pak konstanta. Entry assembly kryje aplikace, které hodnotu nenastaví (TD
+/// verzi), a pád před <see cref="EDServices.Initialize"/>.
+/// </summary>
+internal sealed record AppIdentity(string Prefix, string DisplayName, string Version)
+{
+    internal const string DefaultPrefix = "EDISON2";
+    internal const string DefaultDisplayName = "M-line";
+    internal const string UnknownVersion = "nezjištěna";
+
+    // SDK přidá za "+" celý hash commitu, na dohledání buildu stačí začátek.
+    private const int BuildMetadataLength = 8;
+
+    internal static AppIdentity Resolve(EDServices? services, Assembly? entry) =>
+        Resolve(services?.FormIdPrefix, services?.AppDisplayName, services?.AppVersion, entry);
+
+    internal static AppIdentity Resolve(string? prefix, string? displayName, string? version, Assembly? entry)
+    {
+        var entryName = Blank(entry?.GetName().Name);
+        var entryVersion = Blank(entry?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion);
+
+        return new AppIdentity(
+            Blank(prefix) ?? entryName ?? DefaultPrefix,
+            Blank(displayName) ?? entryName ?? DefaultDisplayName,
+            Blank(version) ?? (entryVersion is null ? UnknownVersion : ShortenBuildMetadata(entryVersion)));
+    }
+
+    /// <summary><c>1.0.0+3a7b99dff455…</c> → <c>1.0.0+3a7b99df</c>, verze bez metadat zůstane.</summary>
+    internal static string ShortenBuildMetadata(string version)
+    {
+        var end = version.IndexOf('+') + 1 + BuildMetadataLength;
+        return version.Contains('+') && version.Length > end ? version[..end] : version;
+    }
+
+    private static string? Blank(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
 }

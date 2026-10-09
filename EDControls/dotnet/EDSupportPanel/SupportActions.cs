@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using EDControls.EDViewModel;
 
 namespace EDControls.EDSupportPanel;
 
@@ -40,6 +41,17 @@ public static class SupportActions
     }
 
     /// <summary>
+    /// URL feedbacku z okna <paramref name="ownerType"/>: uživatel ze služeb, <c>agenda</c> = assembly
+    /// okna, <c>v=</c> = verze aplikace z <see cref="AppIdentity"/>. Verze assembly okna je všude 1.0.0.0.
+    /// </summary>
+    internal static string BuildWindowFeedbackUrl(EDServices services, Type ownerType, string? ownerTitle, Assembly? entry) =>
+        BuildFeedbackUrl(
+            services.MLRest?.Idfa,
+            services.MLRest?.LoginName,
+            ownerType.Assembly.GetName().Name,
+            BuildContext(ownerType.Name, ownerTitle, ownerType.Namespace, AppIdentity.Resolve(services, entry).Version));
+
+    /// <summary>
     /// Kontext okna pro feedback widget: <c>form=…|title=…|ns=…|v=…</c>. Svislítko je
     /// oddělovač, proto se z titulku nahrazuje lomítkem.
     /// </summary>
@@ -57,15 +69,18 @@ public static class SupportActions
 
     /// <summary>
     /// Text dialogu „Informace o verzi". Bez <paramref name="mlRest"/> (pre-login) vypíše
-    /// jen aplikaci a verzi. Prázdné <paramref name="appVersion"/> → verze assembly,
-    /// což je fallback pro aplikace bez VERZE.INF (TemplateDesigner).
+    /// jen aplikaci a verzi. Prázdné <paramref name="appName"/> / <paramref name="appVersion"/>
+    /// doplní <see cref="AppIdentity"/> z entry assembly, což je fallback pro aplikace bez
+    /// VERZE.INF (TemplateDesigner).
     /// </summary>
-    public static string BuildVersionInfo(IMLRest? mlRest, string? appName, string? appVersion)
-    {
-        var name = string.IsNullOrWhiteSpace(appName) ? DefaultAppName() : appName;
-        var version = string.IsNullOrWhiteSpace(appVersion) ? DefaultAppVersion() : appVersion;
+    public static string BuildVersionInfo(IMLRest? mlRest, string? appName, string? appVersion) =>
+        BuildVersionInfo(mlRest, appName, appVersion, Assembly.GetEntryAssembly());
 
-        var info = $"{name}\n\nVerze: {version}";
+    internal static string BuildVersionInfo(IMLRest? mlRest, string? appName, string? appVersion, Assembly? entry)
+    {
+        var app = AppIdentity.Resolve(null, appName, appVersion, entry);
+
+        var info = $"{app.DisplayName}\n\nVerze: {app.Version}";
         if (mlRest is null) return info;
 
         return info +
@@ -81,10 +96,4 @@ public static class SupportActions
 
     private static string Param(string name, string? value) =>
         string.IsNullOrEmpty(value) ? "" : $"&{name}={Uri.EscapeDataString(value)}";
-
-    private static string DefaultAppName() =>
-        Assembly.GetEntryAssembly()?.GetName().Name ?? "M-line";
-
-    private static string DefaultAppVersion() =>
-        Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "nezjištěna";
 }
