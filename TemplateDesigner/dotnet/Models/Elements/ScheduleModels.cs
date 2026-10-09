@@ -18,6 +18,37 @@ public enum LegendRazeni { Vychozi, DleTypu, DleDelkyVzestupne, DleDelkySestupne
 public enum VylukyFiltr { Vcetne, Bez, Jen }
 
 /// <summary>
+/// Skupina druhů poznámek linkového JŘ, kterou legenda kreslí jako samostatný blok (`#7487`).
+/// Hodnota se ukládá do šablony jménem - nepřejmenovávat.
+/// </summary>
+/// <remarks>
+/// Starý modul nastavuje každý z deseti druhů zvlášť. Druhy, které spolu na papíře vždy sousedí
+/// a mají podobně dlouhé texty, jsou tu sloučené (rozhodnutí Jan 8. 10.): místenky se stálými
+/// značkami a tři kategorie poznámek linky.
+/// </remarks>
+public enum SkupinaPoznamek
+{
+    TydenniPlatnost,
+    NegativniZnacky,
+    Navaznosti,
+    AtributySpoju,
+    DalsiZnacky,
+    PoznamkyLinky,
+}
+
+/// <summary>Jak legenda tiskne jednu skupinu druhů poznámek.</summary>
+public class NastaveniSkupinyPoznamek
+{
+    public SkupinaPoznamek Skupina { get; set; }
+    public bool Tisknout { get; set; } = true;
+
+    /// <summary>Počet sloupců bloku. Null = jako celý prvek (<see cref="NotesLegendElement.Columns"/>).</summary>
+    public int? Sloupcu { get; set; }
+
+    public NastaveniSkupinyPoznamek Clone() => new() { Skupina = Skupina, Tisknout = Tisknout, Sloupcu = Sloupcu };
+}
+
+/// <summary>
 /// Režim časové osy odjezdů v DepartureGrid. Paralelní s legacy „Časová osa odjezdů" comboboxem.
 /// </summary>
 public enum TimeAxisMode

@@ -38,11 +38,15 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
-### Týden od 5. 10. 2026 · Zastávkové JŘ - Parametry variant tras jen se sloupcem Varianty tras
+### Týden od 5. 10. 2026 · Poznámky linkového JŘ po druzích, parametry variant tras
 
-Parametry variant tras (řazení, nejvýš sloupců, slučování a písmena variant) se v nastavení
-sestavy ukážou, jen když má šablona v seznamu zastávek zapnutý sloupec **Varianty tras**. Bez něj
-na tisk nemají vliv, takže nastavení zbytečně nezaplňují. Po zapnutí sloupce se objeví hned.
+- **Linkové JŘ:** poznámky se tisknou po druzích (týdenní platnost, negativní značky, návaznosti,
+  atributy spojů…) a každý druh začíná na novém řádku. U každého druhu jde nastavit, jestli se
+  tiskne a kolik poznámek je vedle sebe - například negativní značky po čtyřech na řádek, což
+  ušetří místo pod tabulkou. Nastavení je v prvku Poznámky pod tlačítkem **Druhy poznámek**.
+- **Zastávkové JŘ:** parametry variant tras (řazení, nejvýš sloupců, slučování a písmena variant)
+  se v nastavení sestavy ukážou, jen když má šablona v seznamu zastávek zapnutý sloupec
+  **Varianty tras**. Bez něj na tisk nemají vliv.
 
 ### Týden od 28. 9. 2026 · Návrhář - Doklady o více stránkách, kontrola před tiskem
 

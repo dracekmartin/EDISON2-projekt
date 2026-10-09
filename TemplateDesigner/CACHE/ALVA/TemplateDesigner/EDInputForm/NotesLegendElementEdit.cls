@@ -63,6 +63,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Velikost a výška řádku patří sem, ne mezi barvy buněk - uživatel je hledá spolu s počtem
         // sloupců (nález Pavel 1. 9.). Popisky i skupina musí souhlasit s C# descriptory (drift test).
         d form.AddGroup("layout", "Rozložení")
+        // Linkový JŘ: pořadí, tisk a sloupce po druzích poznámek (#7487) v okně návrháře. Sedí tady,
+        // ne v obsahu, aby bylo rozložení na jednom místě, a první, protože je ze skupiny nejdůležitější
+        // (rozhodnutí Jan 9. 10.). Návrhář ho ukazuje jen u linkového - druh posílá jen linková agenda.
+        s f = form.AddFieldToLastGroup("__skupinyPoznamek", "Druhy poznámek", $$$FieldTypeButton, 0, 0)
+        s f.value = "Upravit…"
+        s f.helpText = "Pořadí druhů poznámek, které se tisknou, a počet sloupců každého druhu. Každý druh začíná na novém řádku."
         s f = form.AddDecimal("NoteFontSize", "Velikost poznámek", 7, 4, 20, "pt", "0.#")
         s f.helpText = "Velikost písma poznámek. Nevejdou-li se poznámky do prvku, písmo se zmenší a aplikace to oznámí ve stavovém řádku."
         s f = form.AddDecimal("NoteLineHeight", "Výška řádku", "", 2, 15, "mm")
@@ -83,7 +89,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // poznámky blok bere, co si bere z poznámek zadaných u linky, a značky u odjezdů (ty
         // uživatelé hledají nejčastěji, protože do července byly parametrem tisku). Klíče polí
         // se NEMĚNÍ - rozpad je jen vizuální.
-        d form.AddGroup("filter", "Co se tiskne")
+        // U linkového JŘ návrhář tuhle i obě další skupiny schová celé: přepínače typů nahrazuje
+        // okno Druhy poznámek a kategorie poznámek linkový neposílá.
+        d form.AddGroup("filter", "Obsah poznámek")
         d form.AddBool("ShowNegativniZnacky", "Negativní značky", 1)
         d form.AddBool("ShowSpecialniZnaky", "Speciální znaky", 1)
         d form.AddBool("ShowTextovePoznamky", "Textové poznámky", 1)

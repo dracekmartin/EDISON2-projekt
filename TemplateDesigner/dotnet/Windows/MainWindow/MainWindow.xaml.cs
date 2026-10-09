@@ -1648,7 +1648,7 @@ public partial class MainWindow : Window
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
             Add("Tabulka spojů (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
-            Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
+            Add("Poznámky",           () => _vm.CreateElementInteractive(ElementTypes.NotesLegend, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;
@@ -1913,6 +1913,22 @@ public partial class MainWindow : Window
     {
         var dlg = new ElementEditDialog(element, cacheClass, title)
             { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey };
+        if (element is NotesLegendElement poznamky)
+        {
+            bool linkovy = _vm.JeLinkovyJr;
+            dlg.ViditelnostPole = (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy);
+            dlg.UpravaPoli = pole => NastavVolbyRazeni(pole, linkovy);
+            // Okno vlastností zapisuje až s Uložit - rozpracované druhy si proto drží samo,
+            // aby druhé otevření ukázalo první úpravu.
+            var rozpracovane = poznamky.EfektivniSkupiny();
+            dlg.AkceTlacitka = klic =>
+            {
+                if (klic != NotesLegendElement.SkupinyPoznamekKlic
+                    || VyberSkupinyPoznamek(poznamky, rozpracovane, dlg) is not { } skupiny) return null;
+                rozpracovane = skupiny;
+                return TemplateDesignerViewModel.SkupinyPoznamekCommand(poznamky, skupiny);
+            };
+        }
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);
@@ -1943,9 +1959,29 @@ public partial class MainWindow : Window
         // Z formuláře buňky zpátky na nastavení celé tabulky (= odchod z buňky, jako Esc).
         if (key == "__tableSettings") { ExitToTableSettings(); return; }
 
+        if (key == NotesLegendElement.SkupinyPoznamekKlic)
+        {
+            if (_vm!.State.SelectedElements is [NotesLegendElement poznamky]
+                && VyberSkupinyPoznamek(poznamky, poznamky.EfektivniSkupiny()) is { } skupiny)
+            {
+                _vm.Execute(TemplateDesignerViewModel.SkupinyPoznamekCommand(poznamky, skupiny));
+                InvalidateCanvas();
+                InvalidatePreview();
+            }
+            return;
+        }
+
         if (key != "__highlightRules") return;
         if (_vm!.State.SelectedElements is [IRowHighlightable h])
             OpenHighlightRulesDialog(h);
+    }
+
+    /// <summary>Okno „Druhy poznámek"; null = Storno.</summary>
+    private List<NastaveniSkupinyPoznamek>? VyberSkupinyPoznamek(NotesLegendElement poznamky,
+        IReadOnlyList<NastaveniSkupinyPoznamek> vychozi, Window? owner = null)
+    {
+        var dlg = new SkupinyPoznamekDialog(vychozi, poznamky.Columns) { Owner = owner ?? this };
+        return dlg.ShowDialog() == true ? dlg.Vysledek : null;
     }
 
     private void OpenHighlightRulesDialog(IRowHighlightable element)
@@ -2009,6 +2045,16 @@ public partial class MainWindow : Window
             nameof(Section.OverflowBehavior) or nameof(Section.ZacitNaNoveStrance) => obsah,
             _ => true,
         };
+    }
+
+    /// <summary>Nabídka „Řazení poznámek" podle agendy šablony (<see cref="NotesLegendElement.VolbyRazeni"/>).
+    /// Nastavuje se vždy celá, protože panel drží týž formulář i pro prvek z jiné šablony.</summary>
+    internal static void NastavVolbyRazeni(IEnumerable<Item>? pole, bool linkovyJr)
+    {
+        if ((pole ?? []).OfType<Field>().FirstOrDefault(f => f.Key == nameof(NotesLegendElement.Razeni)) is not { } razeni)
+            return;
+        razeni.ListItems = [.. NotesLegendElement.VolbyRazeni(linkovyJr, razeni.Value ?? "")
+            .Select(v => new EDControls.ListItem(v.Hodnota, v.Popis))];
     }
 
     /// <summary>Klik na hlášku vpravo dole vybere její prvek na plátně (`B178`).</summary>
@@ -2152,6 +2198,12 @@ public partial class MainWindow : Window
             {
                 // Nabídka „vložit pole" - seznam zná jen návrhář (ze schématu agendy), Caché ne.
                 InlineElementForm.PlaceholderFields = _vm.PlaceholderFieldItems();
+                bool linkovy = _vm.JeLinkovyJr;
+                bool poznamky = selected[0] is NotesLegendElement;
+                InlineElementForm.ViditelnostPole = poznamky
+                    ? (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy)
+                    : null;
+                InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : null;
                 InlineElementForm.ShowElement(selected[0], panelSchema);
                 ShowInlineFormPanel(true);
             }

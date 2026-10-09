@@ -276,7 +276,7 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Které poznámky se tisknou (negativní značky, speciální znaky, textové, poznámky linky)",
-                    "prvek Poznámky → Co se tiskne"),
+                    "prvek Poznámky → Obsah poznámek"),
                 new("Značky u odjezdů: přeprava kol, místenky, pokračující spoje",
                     "prvek Poznámky → Značky u odjezdů"),
                 new("Souhrn bezbariérových spojů (jedna věta místo značky u každého odjezdu)",

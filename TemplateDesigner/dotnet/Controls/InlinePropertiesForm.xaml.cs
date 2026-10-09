@@ -52,6 +52,17 @@ public partial class InlinePropertiesForm : UserControl
         set => TheForm.PlaceholderFields = value;
     }
 
+    /// <summary>
+    /// Které pole je vidět podle hodnot ostatních (klíč pole, hodnoty formuláře → viditelné).
+    /// Null = vidět je všechno. Totéž pravidlo jako <see cref="ElementEditDialog.ViditelnostPole"/>;
+    /// nastavit před <see cref="ShowElement"/>.
+    /// </summary>
+    public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
+
+    /// <summary>Úprava polí po naplnění z cíle (nabídka voleb podle agendy) - viz
+    /// <see cref="ElementEditDialog.UpravaPoli"/>; nastavit před <see cref="ShowElement"/>.</summary>
+    public Action<IEnumerable<EDControls.EDInputForm.Item>?>? UpravaPoli { get; set; }
+
     /// <summary>Napojí undo executor + canvas invalidaci (volá host jednou).</summary>
     public void SetContext(Action<IDesignerCommand> execute, Action invalidate)
     {
@@ -91,13 +102,18 @@ public partial class InlinePropertiesForm : UserControl
             _preFilled = ElementFormBinder.Prefill(TheForm, _target);
             // Řez (váhy) - plní se z reálných řezů rodiny až po prefillu (kdy je hodnota rodiny známá).
             ElementFormBinder.PopulateFontWeightFields(TheForm);
+            UpravaPoli?.Invoke(TheForm.Items);
         }
         finally { _suppress = false; }
+        PouzijViditelnost();
     }
+
+    private void PouzijViditelnost() => ElementFormBinder.PouzijViditelnost(TheForm.Items, ViditelnostPole);
 
     private void OnFieldChanged(string key)
     {
         if (_suppress || _target is null || _execute is null) return;
+        PouzijViditelnost();
 
         // Změna rodiny písma → přepočítat nabídku řezů (a zahodit řez, který rodina nemá) PŘED
         // porovnáním hodnot, jinak by se zahození řezu neprojevilo jako změna a zápis do modelu

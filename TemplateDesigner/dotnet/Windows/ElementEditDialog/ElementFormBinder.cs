@@ -124,6 +124,44 @@ public static class ElementFormBinder
     private static bool IsInvalidColor(string? value) =>
         !string.IsNullOrWhiteSpace(value) && !Models.ColorHex.IsValid(value);
 
+    /// <summary>
+    /// Schová pole, která podle pravidla hostitele nic nedělají, a s nimi skupinu, ve které žádné
+    /// viditelné pole nezbylo - jinak by po ní zůstal prázdný nadpis. Null pravidlo = vše vidět.
+    /// </summary>
+    /// <remarks>Pole patří ke skupině, která je ve schématu před ním (formulář přijde z Caché
+    /// v pořadí skupina, její pole, další skupina). Skupinu, kterou si uživatel sbalil, nechá
+    /// sbalenou; rozbalí jen tu, kterou dřív schovalo pravidlo.</remarks>
+    public static void PouzijViditelnost(IEnumerable<Item>? items,
+        Func<string, IReadOnlyDictionary<string, string>, bool>? pravidlo)
+    {
+        var seznam = (items ?? []).ToList();
+        var hodnoty = seznam.OfType<Field>().ToDictionary(f => f.Key, f => f.Value ?? "");
+        Group? skupina = null;
+        var skupiny = new Dictionary<Group, (int Poli, int Viditelnych)>();
+
+        foreach (var item in seznam)
+        {
+            if (item is Group g) { skupina = g; skupiny.TryAdd(g, (0, 0)); continue; }
+            if (item is not Field f) continue;
+            bool viditelne = pravidlo is null || pravidlo(f.Key, hodnoty);
+            var cil = viditelne ? ItemVisibility.Visible : ItemVisibility.Collapsed;
+            if (f.Visibility != cil) f.Visibility = cil;
+            if (skupina is not null)
+            {
+                var (poli, vid) = skupiny[skupina];
+                skupiny[skupina] = (poli + 1, vid + (viditelne ? 1 : 0));
+            }
+        }
+
+        foreach (var (g, (poli, viditelnych)) in skupiny)
+        {
+            if (poli > 0 && viditelnych == 0)
+                g.Visibility = ItemVisibility.ProgrammerHidden;
+            else if (g.Visibility == ItemVisibility.ProgrammerHidden)
+                g.Visibility = ItemVisibility.Visible;
+        }
+    }
+
     /// <summary>Snapshot aktuálních hodnot polí formuláře (bez zápisu do cíle) - pro update
     /// change-detection baseline po živém write-backu v inline panelu.</summary>
     public static Dictionary<string, string> Snapshot(EDInputForm form)

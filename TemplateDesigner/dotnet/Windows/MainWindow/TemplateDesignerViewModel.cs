@@ -1192,6 +1192,11 @@ public class TemplateDesignerViewModel : EDViewModel
             v => element.HighlightRules = (List<HighlightRule>?)v));
     }
 
+    /// <summary>Okno „Druhy poznámek" jako jeden vratný krok (`#7487`).</summary>
+    public static IDesignerCommand SkupinyPoznamekCommand(NotesLegendElement element, List<NastaveniSkupinyPoznamek> skupiny) =>
+        new SetPropertyCommand("Druhy poznámek", element.Skupiny, skupiny,
+            v => element.Skupiny = (List<NastaveniSkupinyPoznamek>?)v);
+
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
     public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
     {
@@ -1692,6 +1697,9 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Druh JŘ prvků agendy šablony; null = agenda v registru není (registr se nenačetl,
     /// šablona bez agendy) a pak se nic neblokuje.</summary>
     private string? ZnamyDruhAgendy => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind;
+
+    /// <summary>Je šablona linkového JŘ? Řídí, co formulář poznámek nabízí (`#7487`).</summary>
+    public bool JeLinkovyJr => string.Equals(ZnamyDruhAgendy, "LINE", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Rozdělí prvky na ty, které do šablony téhle agendy smí, a řekne uživateli, které
     /// vynechal (<see cref="AgendaCapabilities.Allows"/>).</summary>
@@ -2612,14 +2620,15 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Vytvoří prvek k vložení; u pevné tabulky se **nejdřív zeptá na rozměr** (rychlý formulář,
+    /// Vytvoří prvek k vložení s výchozími hodnotami agendy šablony; u pevné tabulky se **nejdřív
+    /// zeptá na rozměr** (rychlý formulář,
     /// předvyplněný 3 × 3). Vrací null, když uživatel vkládání zrušil - dřív se vždycky vložila
     /// mřížka 3 × 3 a na 12 × 10 se muselo proklikat devatenáct vložení sloupce a řádku.
     /// Bez dialogové služby (testy) se chová jako dřív, takže se nic nezablokuje.
     /// </summary>
     public TemplateElement? CreateElementInteractive(string type, float x, float y)
     {
-        if (type != ElementTypes.Table || Dialogs is null) return CreateElementByType(type, x, y);
+        if (type != ElementTypes.Table || Dialogs is null) return SVychozimiAgendy(CreateElementByType(type, x, y));
 
         var size = new TableGridSize();
         if (!Dialogs.ShowQuickForm(size, "ALVA.TemplateDesigner.EDInputForm.TableInsertEdit", "Vložit tabulku"))
@@ -2627,6 +2636,17 @@ public class TemplateDesignerViewModel : EDViewModel
 
         var (w, h) = GetDefaultElementSize(type);
         return NewFixedTable(x, y, w, h, size.Columns, size.Rows);
+    }
+
+    /// <summary>
+    /// Poznámky linkového JŘ začínají na třech sloupcích u každého druhu (rozhodnutí Jan 9. 10.):
+    /// krátké poznámky (negativní značky, týdenní platnost) by v jednom sloupci zabraly zbytečně
+    /// místa pod tabulkou (KORID #7487). Vývěska zůstává na jednom sloupci.
+    /// </summary>
+    private TemplateElement SVychozimiAgendy(TemplateElement prvek)
+    {
+        if (prvek is NotesLegendElement poznamky && JeLinkovyJr) poznamky.Columns = 3;
+        return prvek;
     }
 
     /// <summary>

@@ -58,6 +58,22 @@ public partial class ElementEditDialog : Window
     /// </summary>
     public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
 
+    /// <summary>
+    /// Úprava polí po naplnění z cíle, kterou schéma z Caché neumí, protože nezná agendu šablony
+    /// (dnes nabídka řazení poznámek u linkového JŘ). Běží před serverovou validací, která
+    /// nabídky polí vrací beze změny.
+    /// </summary>
+    public Action<IEnumerable<Item>?>? UpravaPoli { get; set; }
+
+    /// <summary>
+    /// Tlačítko ve formuláři (klíč „__…"): host otevře svůj editor a vrátí vratný příkaz, nebo null.
+    /// Příkaz se provede až s Uložit, takže Storno zahodí i změnu z editoru; opakovaný klik nahradí
+    /// předchozí příkaz téhož tlačítka.
+    /// </summary>
+    public Func<string, IDesignerCommand?>? AkceTlacitka { get; set; }
+
+    private readonly Dictionary<string, IDesignerCommand> _prikazyTlacitek = [];
+
     /// <param name="target">Editovaný objekt (element, sekce, stránka - in-memory model).</param>
     /// <param name="cacheClass">Caché schema class (např. "ALVA.TemplateDesigner.EDInputForm.TextElementEdit").</param>
     /// <param name="title">Titulek okna.</param>
@@ -72,19 +88,17 @@ public partial class ElementEditDialog : Window
         // pak re-validuj (Init validace běžela na prázdných / default hodnotách).
         TheForm.SchemaLoaded += OnFormInitialized;
         TheForm.FieldChanged += _ => PouzijViditelnost();
+        TheForm.ButtonClicked += key =>
+        {
+            if (AkceTlacitka?.Invoke(key) is { } prikaz) _prikazyTlacitek[key] = prikaz;
+        };
         ElementFormBinder.HookFontWeightRefresh(TheForm);
     }
 
     private void PouzijViditelnost()
     {
         if (ViditelnostPole is null) return;
-        var pole = (TheForm.Items ?? []).OfType<Field>().ToList();
-        var hodnoty = pole.ToDictionary(f => f.Key, f => f.Value ?? "");
-        foreach (var f in pole)
-        {
-            var cil = ViditelnostPole(f.Key, hodnoty) ? ItemVisibility.Visible : ItemVisibility.Collapsed;
-            if (f.Visibility != cil) f.Visibility = cil;
-        }
+        ElementFormBinder.PouzijViditelnost(TheForm.Items, ViditelnostPole);
     }
 
     private void OnFormInitialized()
@@ -95,6 +109,7 @@ public partial class ElementEditDialog : Window
         // Řez (váhy) z reálných řezů rodiny - nastavit PŘED Validate, aby items přežily round-trip
         // (Validate serializuje aktuální items a Caché je echuje zpět).
         ElementFormBinder.PopulateFontWeightFields(TheForm);
+        UpravaPoli?.Invoke(TheForm.Items);
         TheForm.Validate();
         PouzijViditelnost();
     }
@@ -105,6 +120,7 @@ public partial class ElementEditDialog : Window
 
         FinalValues = ElementFormBinder.Snapshot(TheForm);
         var commands = ElementFormBinder.ExtractCommands(TheForm, _target, _preFilled);
+        commands.AddRange(_prikazyTlacitek.Values);
         ResultCommand = commands.Count switch
         {
             0 => null,

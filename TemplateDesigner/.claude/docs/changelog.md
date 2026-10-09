@@ -1,5 +1,30 @@
 ﻿# Changelog
 
+## 2026-10-09 (2) - 🅰️ přípojný řádek i s vlastním pozadím (#8360)
+
+Skupina **Přípojné řádky** u tabulky spojů má vedle velikosti, tučného, kurzívy a barvy textu
+i **Pozadí řádku** - s bílým písmem dá inverzní řádek, který KU HK v tiketu zmiňuje. Kreslení
+pozadí přípojného řádku umělo od 24. 8., jen ho formulář nenabízel. Test `PripojnyRadekVzhledTests`
+(celý řádek včetně popisných sloupců).
+
+## 2026-10-09 - 🗂 poznámky linkového JŘ po druzích (`#7487`)
+
+KORID chce u legendy linkového JŘ nastavit každý druh poznámek zvlášť („všechno do tří sloupců,
+negativní značky do jednoho"). Legenda linkového JŘ se teď **vždy rozkládá po druzích** jako starý
+tisk: šest skupin (týdenní platnost, negativní značky, vyčká/navazuje/pokračuje, atributy spojů,
+místenky a stálé značky, poznámky linky), každá od nového řádku (rozhodnutí Jan 9. 10.; u šablon
+s víc sloupci poznámek se tím mění výstup, u jednoho sloupce nanejvýš pořadí). Na začátku skupiny
+Rozložení je tlačítko **Druhy poznámek**: u každé skupiny Tisknout a počet sloupců 1-4
+(předvyplněný dosavadním Počtem sloupců prvku), pořadí šipkami. Společný Počet sloupců formulář
+u linkového JŘ neukazuje - sloupce se nastavují jen po druzích jako ve starém modulu. Nové
+Poznámky v linkovém JŘ začínají na třech sloupcích, vývěska na jednom. Bez nastavení platí výchozí
+pořadí a tisk podle dřívějších přepínačů typů, takže starší šablona nic neztratí. Formulář
+u linkového JŘ neukazuje přepínače typů (nahrazuje je okno), vývěskové skupiny „Poznámky linky"
+a „Značky u odjezdů" (kategorie linková agenda neposílá) ani řazení „Dle typu" (pořadí typů drží
+skupiny; uvnitř druhu znamená pořadí z dat). Skupina „Co se tiskne" se přejmenovala na „Obsah
+poznámek" a skupina formuláře bez viditelného pole se schová celá. Vývěsky (poznámky bez druhu)
+se nemění. Testy `PoznamkyPodleDruhuTests`, `SkupinyPoznamekDialogTests`.
+
 ## 2026-10-08 (2) - 🚫 prvek jízdního řádu jen do šablony své agendy
 
 Paleta nabízela prvky jízdních řádů jen podle agendy šablony, ale **vložení ze schránky a vlastní
