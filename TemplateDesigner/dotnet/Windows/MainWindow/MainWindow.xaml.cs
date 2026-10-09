@@ -118,14 +118,13 @@ public partial class MainWindow : Window
         // pozice a velikost hlavního okna nepersistovaly (musí být před Show()).
         _vm.AttachToWindow(this);
 
-        // AI generátor šablon zatím jen pro vývojáře (lokální dev klíč) - před produkcí skrytý;
-        // Import PDF zůstává pro všechny.
-        MenuAiAssistant.Visibility =
+        // AI generátor šablon zatím jen pro vývojáře (lokální dev klíč) - před produkcí skrytý.
+        MenuAiAssistant.Visibility = MenuAiSep.Visibility =
             string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey)
                 ? Visibility.Collapsed : Visibility.Visible;
 
-        // DEV přepínač firem - stejný gate jako AI generátor (lokální dev klíč). Naplní se
-        // z pevného seznamu ve VM; v produkci zůstává skrytý.
+        // DEV nástroje (přepínač firem, import z PDF) - každý vlastním klíčem v lokálním configu,
+        // který se do publish nekopíruje; v produkci zůstávají skryté.
         BuildDevFirmMenu();
 
         // Aplikuj UI-side prefs (splittery, tab, preview pane viditelnost) až po InitializeComponent.
@@ -1387,7 +1386,10 @@ public partial class MainWindow : Window
     {
         bool devMode = AppSettings.Current?.Dev.FirmSwitch == true;
         bool show = devMode && _vm?.CurrentFirmIdfa is not null;
-        MenuDevSep.Visibility = MenuDevSwitchFirm.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        bool importPdf = AppSettings.Current?.Dev.PdfImport == true;
+        MenuDevSwitchFirm.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        MenuImportPdf.Visibility = importPdf ? Visibility.Visible : Visibility.Collapsed;
+        MenuDevSep.Visibility = show || importPdf ? Visibility.Visible : Visibility.Collapsed;
         if (!show) return;
 
         MenuDevSwitchFirm.Items.Clear();

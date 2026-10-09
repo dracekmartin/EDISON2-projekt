@@ -103,7 +103,7 @@ Zleva doprava:
   Použít výchozí font u všech prvků
 - **Zobrazit** - Mřížka, Přichytit na mřížku, Přichytit k elementům, Záhlaví sekcí, Pravítka,
   Panel sekcí, Živý náhled (zaškrtávací položky)
-- **Nástroje** - Změnit agendu… · Šablony v databázi… · AI Asistent šablon… · Import PDF…
+- **Nástroje** - Změnit agendu… · Šablony v databázi…
 - **Nápověda** - Klávesové zkratky a ovládání (F1) - s fulltextovým hledáním (Ctrl+F)
 
 Titulek okna má formát `[KÓD_AGENDY] [DB nebo neuloženo] Název šablony [*]` - hvězdička značí
@@ -321,7 +321,7 @@ je za tlačítkem **„Nastavení celé tabulky"** v prvním řádku panelu (neb
 ### Seskupování
 Ctrl+G spojí vybrané prvky do skupiny; Ctrl+Shift+G skupinu zruší. Klik vybere celou skupinu,
 Alt+klik jen jeden prvek uvnitř. Skupina má vizuální odznak a ohraničující rámeček, ve stromu se
-zobrazí jako samostatná úroveň. Import z PDF prvky automaticky seskupuje.
+zobrazí jako samostatná úroveň.
 
 ---
 
@@ -581,31 +581,10 @@ Nastavení výstupu je univerzální napříč agendami:
 
 ## 10. Import z PDF
 
-`Nástroje → Import PDF…` - z existujícího PDF vytvoří editovatelnou šablonu. Dialog je záměrně
-jednoduchý: vyberete **PDF soubor** (a u vícestránkového stránku) - všechno ostatní se odvodí
-z právě otevřené agendy:
-
-- **Agenda jízdního řádu** → import s **umělou inteligencí**: AI rozpozná strukturu předlohy
-  a rovnou namapuje datová pole agendy - výsledkem je živá šablona napojená na data, ne statická
-  kopie. Importuje se vždy **jedna stránka**. Vyžaduje aktivovanou AI službu u M-line; bez ní je
-  import u JŘ agend nedostupný.
-  - **Zastávkový JŘ** - seznam zastávek, minuty odjezdů, poznámky, texty a loga; šablona je jedna
-    pevná stránka jako vývěska.
-  - **Linkový JŘ** - Tabulka spojů (pořadí popisných sloupců a písmo podle předlohy), poznámky
-    a texty kolem. Šablona má rozvržení jako výchozí šablony linkového JŘ: **hlavičku na každé
-    stránce**, pod ní tabulku, která pokračuje přes stránky, a poznámky pod ní nebo vedle ní -
-    podle předlohy. Poznámky jsou v šabloně vždy, i když na importované stránce nejsou; na další
-    stránku je tisk přesune sám, když se nevejdou. Má-li předloha pod sebou oba směry, převezme
-    se horní tabulka; druhý směr sestava vytiskne na další stránce. Nastavení sestavy (obousměrný
-    tisk, stránka pro každou zastávku…) se z předlohy nepřebírá - nastavte ho v okně tisku.
-    Barvy tabulky a poznámek se převezmou z předlohy. Grafiku pod tabulkou (loga) nahradí prázdné
-    obrázky o její velikosti, stačí do nich nahrát soubor; co je u spodku stránky, skončí
-    v patičce na každé stránce.
-- **Jiná agenda (Obecná, Faktury…)** → obecný import: texty, čáry a obrázky se převezmou 1:1
-  jako prvky šablony (bez AI).
-
-**Berte to jako rychlý start, ne záruku přesné shody s originálem** - výsledek zkontrolujte
-a dolaďte; AI rozpoznání se může u netypických rozvržení splést (import lze spustit znovu).
+Import šablony z PDF je zatím **interní nástroj M-line** a v návrháři ho nenajdete. Chcete-li
+převést svou dosavadní předlohu (PDF, starou šablonu) do nové šablony, obraťte se na podporu -
+převod pro vás připravíme. Do té doby začněte z výchozí šablony v sekci **Systémové M-line**
+(Ctrl+O) a upravte ji.
 
 ---
 
@@ -1045,8 +1024,7 @@ zmenšení pomůže, k varování nedojde.
 
 1. **Založte šablonu se správnou agendou** - nová šablona přes `Nástroje → Změnit agendu`
    (Ctrl+Shift+A) a výběr Zastávkový JŘ AD nebo MHD. Alternativa: otevřete výchozí šablonu
-   ze sekce **Systémové M-line** (Ctrl+O), nebo naimportujte existující PDF vývěsku
-   s AI rozpoznáním (`Nástroje → Import PDF…`) a jen ji dolaďte.
+   ze sekce **Systémové M-line** (Ctrl+O) a jen ji dolaďte.
 2. **Přidejte prvky** - z palety nebo lišty nástrojů vložte Tabulku zastávek (typicky vlevo), jednu
    nebo víc prvků Minuty odjezdů (typicky vedle sebe, rozdělené podle skupiny dnů) a volitelně
    Poznámky (pod odjezdy).

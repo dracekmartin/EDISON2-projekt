@@ -272,10 +272,10 @@
                           Command="{Binding ChangeAgendaCommand}"/>
                 <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v databázi…"
                           Command="{Binding OpenFromCacheCommand}"/>
-                <Separator/>
+                <Separator x:Name="MenuAiSep"/>
                 <MenuItem x:Name="MenuAiAssistant" Header="AI Asistent šablon…" Click="MenuAiAssistant_Click"/>
-                <MenuItem x:Name="MenuImportPdf" Header="Import PDF…" Click="MenuImportPdf_Click"/>
                 <Separator x:Name="MenuDevSep" Visibility="Collapsed"/>
+                <MenuItem x:Name="MenuImportPdf" Header="Import PDF… (DEV)" Click="MenuImportPdf_Click" Visibility="Collapsed"/>
                 <MenuItem x:Name="MenuDevSwitchFirm" Header="Přepnout firmu (DEV)" Visibility="Collapsed"/>
             </MenuItem>
             <MenuItem Header="Nápověda">

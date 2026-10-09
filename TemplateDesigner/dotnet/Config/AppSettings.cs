@@ -127,6 +127,7 @@ public class AppSettings
             target.TemplateChannel.Enabled = local.TemplateChannel.Enabled;
 
         if (local.Dev.FirmSwitch) target.Dev.FirmSwitch = true;
+        if (local.Dev.PdfImport) target.Dev.PdfImport = true;
     }
 }
 
@@ -151,6 +152,13 @@ public class DevSettings
 {
     /// <summary>Zobrazit v Nástrojích přepínání datové firmy (Idfa).</summary>
     public bool FirmSwitch { get; set; }
+
+    /// <summary>
+    /// Zobrazit v Nástrojích import šablony z PDF. Je to interní nástroj M-line pro převod předloh
+    /// zákazníků (rozhodnutí Jan 9. 10.): polohy prvků zatím odhaduje model, takže výsledek kolísá
+    /// a zákazník, který ho našel, ztrácel čas ručním opravováním (KAD #11373).
+    /// </summary>
+    public bool PdfImport { get; set; }
 }
 
 /// <summary>Nastavení připojení k Caché / IRIS serveru přes MLRest.</summary>

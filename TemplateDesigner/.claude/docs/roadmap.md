@@ -104,7 +104,9 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
   hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184`, `B186` a `B187` hotové, dál podle poptávky.
 
 - **`B179` AI import z PDF pro linkový JŘ** [L] (Jan 24. 9.; první verze 2. 10., viz changelog).
-  Funguje, ale není použitelný: polohy tabulky a poznámek jsou odhad modelu. Po krocích, každý
+  **Od 9. 10. jen interní nástroj** (`dev.pdfImport` v lokálním configu) - převody předloh dělá
+  M-line; dál až se při nich ukáže, že šetří čas. Funguje, ale není použitelný: polohy tabulky
+  a poznámek jsou odhad modelu. Po krocích, každý
   změřit: ~~(1) měření kvality~~ hotové 2. 10. (`PdfImport/Kvalita/`, výchozí stav v changelogu),
   **(2)** model pojmenuje očíslované bloky z PDF místo odhadu souřadnic, **(3)** tabulka měřená
   z PDF celá. Proč a jak: [`architecture.md §Import z PDF`](architecture.md).

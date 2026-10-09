@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-09 (3) - 🔒 import z PDF jen pro M-line
+
+Import šablony z PDF zákazník v menu Nástroje už neuvidí - je to interní nástroj na převody
+předloh (rozhodnutí Jan 9. 10.). Polohy prvků zatím odhaduje model, takže výsledek kolísá,
+a zákazník, který import našel, pak ručně opravoval poznámky (KAD #11373). Zapíná se klíčem
+`dev.pdfImport` v lokálním configu (`templatedesigner.appsettings.local.json`, do publish se
+nekopíruje) jako přepínání firem; položka má v menu „(DEV)". Zmínky zmizely z nápovědy F1,
+z AI průvodce (ten odkáže na podporu) i z příručky. Test `AppSettingsLocalMergeTests`.
+
 ## 2026-10-09 (2) - 🅰️ přípojný řádek i s vlastním pozadím (#8360)
 
 Skupina **Přípojné řádky** u tabulky spojů má vedle velikosti, tučného, kurzívy a barvy textu

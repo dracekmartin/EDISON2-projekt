@@ -87,6 +87,20 @@ public class AppSettingsLocalMergeTests
         Assert.False(target.Dev.FirmSwitch);
     }
 
+    /// <summary>Import z PDF je interní nástroj - zapíná se vlastním klíčem v lokálním configu,
+    /// který se do publish nekopíruje, takže ho zákazník neuvidí (rozhodnutí Jan 9. 10.).</summary>
+    [Fact]
+    public void ImportZPdfJeVychoziVypnutyAZapinaSeLokalne()
+    {
+        var (target, local) = Dvojice();
+        AppSettings.MergeLocal(target, local);
+        Assert.False(target.Dev.PdfImport);
+
+        local.Dev.PdfImport = true;
+        AppSettings.MergeLocal(target, local);
+        Assert.True(target.Dev.PdfImport);
+    }
+
     /// <summary>Klíč k AI se slučoval už dřív - ať se to nerozbije při přidávání dalších oddílů.</summary>
     [Fact]
     public void KlicKAiSePoradPrenese()

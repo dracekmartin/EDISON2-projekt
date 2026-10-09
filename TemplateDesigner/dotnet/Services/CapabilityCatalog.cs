@@ -144,9 +144,9 @@ s daty z agendy → PDF.
 - F5 - obnovit data z databáze; F1 - nápověda; Esc - zrušit probíhající akci
 
 ## Menu Nástroje
-Změnit agendu, Šablony v databázi (správce), Import PDF (z existujícího PDF vznikne
-editovatelná šablona - u jízdních řádů rozpozná strukturu AI), AI průvodce (tento chat).
-(Generátor šablon z popisu je zatím skrytý, nenabízej ho.)
+Změnit agendu, Šablony v databázi (správce), AI průvodce (tento chat).
+(Generátor šablon z popisu i import z PDF jsou zatím jen interní nástroje M-line, nenabízej je.
+Kdo chce převést svou dosavadní předlohu do šablony, ať se obrátí na podporu M-line.)
 
 ## Písmo
 - Nabídka fontů = rodiny nainstalované v tomhle počítači (+ pár vestavěných). Font, který

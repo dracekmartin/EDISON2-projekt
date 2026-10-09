@@ -356,7 +356,6 @@ public class HelpDialogViewModel : EDViewModel
                 new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
                 new("Výška „auto“ - element roste podle obsahu (text se zalamuje)", "Výška prázdná"),
                 new("JŘ element s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),
-                new("Import PDF - AI rozpozná strukturu JŘ a namapuje pole", "menu Nástroje → Import PDF"),
                 new("AI průvodce - zeptejte se, kde co v aplikaci najdete", "záložka Pomocník"),
             ],
         },
