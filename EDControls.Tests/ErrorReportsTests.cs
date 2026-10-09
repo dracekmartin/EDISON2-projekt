@@ -58,47 +58,46 @@ public class ErrorReportsTests : IDisposable
         catch (Exception ex) { return ex; }
     }
 
-    /// <summary>Send je fire-and-forget (Task.Run), takže se na dorazivší request čeká.</summary>
-    private void WaitForRequests(int expected)
+    /// <summary>
+    /// Send je fire-and-forget: Task.Run z vlákna threadpoolu jde do lokální fronty téhož vlákna,
+    /// takže čekat se musí přes await. Blokující čekání by odeslání pod zátěží nepustilo k běhu.
+    /// </summary>
+    private async Task WaitForRequests(int expected)
     {
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-        while (_handler.Count < expected && DateTime.UtcNow < deadline) Thread.Sleep(10);
+        while (_handler.Count < expected && DateTime.UtcNow < deadline) await Task.Delay(10);
         Assert.Equal(expected, _handler.Count);
     }
 
     /// <summary>Krátká lhůta pro důkaz, že se nic neodeslalo.</summary>
-    private void AssertNothingSent()
-    {
-        Thread.Sleep(150);
-        Assert.Equal(0, _handler.Count);
-    }
+    private Task AssertNothingSent() => AssertNothingMoreSent(0);
 
     private JsonObject Body(int index) => JsonNode.Parse(_handler.Bodies[index])!.AsObject();
 
     [Fact]
-    public void Report_Disabled_ReturnsNullAndSendsNothing()
+    public async Task Report_Disabled_ReturnsNullAndSendsNothing()
     {
         _pipeline.Enabled = false;
 
         Assert.Null(_pipeline.Report(Thrown()));
-        AssertNothingSent();
+        await AssertNothingSent();
     }
 
     [Fact]
-    public void Report_NullException_ReturnsNull()
+    public async Task Report_NullException_ReturnsNull()
     {
         Assert.Null(_pipeline.Report(null!));
-        AssertNothingSent();
+        await AssertNothingSent();
     }
 
     [Fact]
-    public void ReportBackground_Disabled_SendsNothing()
+    public async Task ReportBackground_Disabled_SendsNothing()
     {
         _pipeline.Enabled = false;
 
         _pipeline.ReportBackground(Thrown());
 
-        AssertNothingSent();
+        await AssertNothingSent();
     }
 
     [Fact]
@@ -112,59 +111,57 @@ public class ErrorReportsTests : IDisposable
     }
 
     [Fact]
-    public void ReportFollowUp_BlankRefIdOrText_SendsNothing()
+    public async Task ReportFollowUp_BlankRefIdOrText_SendsNothing()
     {
         _pipeline.ReportFollowUp("", "něco");
         _pipeline.ReportFollowUp("xabc", "   ");
 
-        AssertNothingSent();
+        await AssertNothingSent();
     }
 
     [Fact]
-    public void Report_FirstOccurrence_ReturnsRefIdAndSends()
+    public async Task Report_FirstOccurrence_ReturnsRefIdAndSends()
     {
         var refId = _pipeline.Report(Thrown());
 
         Assert.False(string.IsNullOrWhiteSpace(refId));
-        WaitForRequests(1);
+        await WaitForRequests(1);
         Assert.Equal(refId, Body(0)["data"]!["refId"]!.GetValue<string>());
     }
 
     [Fact]
-    public void Report_SecondIdenticalOccurrence_IsSuppressed()
+    public async Task Report_SecondIdenticalOccurrence_IsSuppressed()
     {
         // Chyba v OnPaint / timeru se umí opakovat stokrát za minutu; druhý výskyt uvnitř okna
         // se jen počítá a číslo se nevrací (číslo, které nikam nedorazilo, plete podporu).
         var first = _pipeline.Report(Thrown());
-        WaitForRequests(1);
+        await WaitForRequests(1);
 
         var second = _pipeline.Report(Thrown());
 
         Assert.NotNull(first);
         Assert.Null(second);
-        Thread.Sleep(150);
-        Assert.Equal(1, _handler.Count);
+        await AssertNothingMoreSent(1);
     }
 
     [Fact]
-    public void ReportBackground_SecondIdenticalOccurrence_IsSuppressed()
+    public async Task ReportBackground_SecondIdenticalOccurrence_IsSuppressed()
     {
         _pipeline.ReportBackground(Thrown());
-        WaitForRequests(1);
+        await WaitForRequests(1);
 
         _pipeline.ReportBackground(Thrown());
 
-        Thread.Sleep(150);
-        Assert.Equal(1, _handler.Count);
+        await AssertNothingMoreSent(1);
     }
 
     [Fact]
-    public void ReportBackground_SendsErrorWithoutAttachments()
+    public async Task ReportBackground_SendsErrorWithoutAttachments()
     {
         // Běží na cizím vlákně - snímek okna by tam nefungoval, takže se ani nezkouší.
         _pipeline.ReportBackground(Thrown());
 
-        WaitForRequests(1);
+        await WaitForRequests(1);
         var body = Body(0);
         Assert.Equal("error", body["type"]!.GetValue<string>());
         Assert.True(body["attachments"] is null || body["attachments"]!.AsArray().Count == 0);
@@ -192,11 +189,11 @@ public class ErrorReportsTests : IDisposable
     }
 
     [Fact]
-    public void ReportFollowUp_SendsInfoRecordWithSameRefId()
+    public async Task ReportFollowUp_SendsInfoRecordWithSameRefId()
     {
         _pipeline.ReportFollowUp("xabc", "  klikl jsem na Ulozit  ");
 
-        WaitForRequests(1);
+        await WaitForRequests(1);
         var body = Body(0);
         Assert.Equal("info", body["type"]!.GetValue<string>());
         Assert.Equal("xabc", body["data"]!["refId"]!.GetValue<string>());
@@ -204,42 +201,42 @@ public class ErrorReportsTests : IDisposable
     }
 
     [Fact]
-    public void ReportFollowUp_NotThrottled()
+    public async Task ReportFollowUp_NotThrottled()
     {
         // Doplnění posílá uživatel ručně; deduplikace patří automatickým hlášením.
         _pipeline.ReportFollowUp("xabc", "první");
         _pipeline.ReportFollowUp("xabc", "druhé");
 
-        WaitForRequests(2);
+        await WaitForRequests(2);
     }
 
     [Fact]
-    public void Report_WithoutEDServices_FallsBackToEdison2Source()
+    public async Task Report_WithoutEDServices_FallsBackToEdison2Source()
     {
         // Hlášení musí odejít i před inicializací EDServices (chyba v bootstrapu).
         _pipeline.Report(Thrown());
 
-        WaitForRequests(1);
+        await WaitForRequests(1);
         Assert.Equal("EDISON2", Body(0)["source"]!.GetValue<string>());
     }
 
     [Fact]
-    public void Report_InternalMachine_MarksSourceWithSuffix()
+    public async Task Report_InternalMachine_MarksSourceWithSuffix()
     {
         _internal = true;
 
         _pipeline.Report(Thrown());
 
-        WaitForRequests(1);
+        await WaitForRequests(1);
         Assert.EndsWith("-internal", Body(0)["source"]!.GetValue<string>());
     }
 
     [Fact]
-    public void ReportLegacyExit_ModuleIdentityAndExitCodeInPayload()
+    public async Task ReportLegacyExit_ModuleIdentityAndExitCodeInPayload()
     {
         _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
 
-        WaitForRequests(1);
+        await WaitForRequests(1);
         var body = Body(0);
         // Přehled seskupuje podle module/name - musí to být modul, ne shell.
         Assert.Equal("ALVA.USERS.formUSERSActivity", body["module"]!.GetValue<string>());
@@ -252,38 +249,38 @@ public class ErrorReportsTests : IDisposable
     }
 
     [Fact]
-    public void ReportLegacyExit_SameModuleAndCode_SecondIsSuppressed()
+    public async Task ReportLegacyExit_SameModuleAndCode_SecondIsSuppressed()
     {
         _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);
         _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);
 
-        WaitForRequests(1);
-        AssertNothingMoreSent(1);
+        await WaitForRequests(1);
+        await AssertNothingMoreSent(1);
     }
 
     [Fact]
-    public void ReportLegacyExit_DifferentModules_NotThrottledTogether()
+    public async Task ReportLegacyExit_DifferentModules_NotThrottledTogether()
     {
         // Syntetická výjimka nemá stack - klíč musí nést modul, jinak by druhý pád spadl do prvního.
         _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
         _pipeline.ReportLegacyExit("MZDY2.exe", "ALVA.MZDY2.formMZDY2Zam", 3);
 
-        WaitForRequests(2);
+        await WaitForRequests(2);
     }
 
     [Fact]
-    public void ReportLegacyExit_Disabled_SendsNothing()
+    public async Task ReportLegacyExit_Disabled_SendsNothing()
     {
         _pipeline.Enabled = false;
 
         _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
 
-        AssertNothingSent();
+        await AssertNothingSent();
     }
 
-    private void AssertNothingMoreSent(int expected)
+    private async Task AssertNothingMoreSent(int expected)
     {
-        Thread.Sleep(150);
+        await Task.Delay(150);
         Assert.Equal(expected, _handler.Count);
     }
 }
