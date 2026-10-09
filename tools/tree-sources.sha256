@@ -2,5 +2,5 @@
 # Kontroluje .claude/hooks/tree-drift.sh, uloha tree-sync a parity test. Needitovat rucne.
 # Hash je pres obsah BEZ CR (checkouty se lisi CRLF/LF podle autocrlf): tr -d '\r' | sha256sum
 e8164c4f19594d2e0dfef30bbe492298ddfbf2914077e97c66c2eadada6a28a0  EDCORE/Resources/edisonnavbar.xml
-38e9915072c028c8259951ed3cbe7bd351dbe772407073316a009deb84d45380  EDCORE/Resources/edisontree.xml
+fcca516494a3923099f6d7898b09eccef42b5defb734855921fa5d09751f009f  EDCORE/Resources/edisontree.xml
 405a9eec1999043534c0cbd7e6d8943a90eef07780c2fd0d5def067c80297eb6  EDCORE/EDFormInterfaceLic.vb
