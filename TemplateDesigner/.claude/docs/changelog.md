@@ -9,7 +9,8 @@ místenky a stálé značky, poznámky linky), každá od nového řádku (rozho
 s víc sloupci poznámek se tím mění výstup, u jednoho sloupce nanejvýš pořadí). Na začátku skupiny
 Rozložení je tlačítko **Druhy poznámek**: u každé skupiny Tisknout a počet sloupců 1-4
 (předvyplněný dosavadním Počtem sloupců prvku), pořadí šipkami. Společný Počet sloupců formulář
-u linkového JŘ neukazuje - sloupce se nastavují jen po druzích jako ve starém modulu. Bez nastavení platí výchozí
+u linkového JŘ neukazuje - sloupce se nastavují jen po druzích jako ve starém modulu. Nové
+Poznámky v linkovém JŘ začínají na třech sloupcích, vývěska na jednom. Bez nastavení platí výchozí
 pořadí a tisk podle dřívějších přepínačů typů, takže starší šablona nic neztratí. Formulář
 u linkového JŘ neukazuje přepínače typů (nahrazuje je okno), vývěskové skupiny „Poznámky linky"
 a „Značky u odjezdů" (kategorie linková agenda neposílá) ani řazení „Dle typu" (pořadí typů drží

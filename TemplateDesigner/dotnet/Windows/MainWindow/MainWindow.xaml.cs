@@ -1648,7 +1648,7 @@ public partial class MainWindow : Window
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
             Add("Tabulka spojů (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
-            Add("Poznámky",           () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
+            Add("Poznámky",           () => _vm.CreateElementInteractive(ElementTypes.NotesLegend, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;

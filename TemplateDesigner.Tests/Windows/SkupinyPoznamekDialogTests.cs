@@ -2,7 +2,9 @@ using EDControls;
 using EDControls.EDInputForm;
 using EDControls.EDViewModel;
 using NSubstitute;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Windows;
 
@@ -123,5 +125,20 @@ public class SkupinyPoznamekDialogTests
 
         Assert.Equal(["DleTypu", "Vychozi", "DleDelkyVzestupne", "DleDelkySestupne"], volby.ListItems.Select(i => i.Key));
         Assert.Equal("DleTypu", volby.Value);
+    }
+
+    /// <summary>Nové Poznámky linkového JŘ začínají na třech sloupcích, vývěska na jednom.</summary>
+    [Theory]
+    [InlineData("LINE", 3)]
+    [InlineData("STOP", 1)]
+    public void NovyPrvekPoznamek_ZacinaPodleAgendy(string druh, int sloupcu)
+    {
+        var agenda = new AgendaRegistryEntry("TEST_" + druh, "Test", "ALVA.Test", ElementKind: druh);
+        var vm = new TemplateDesignerViewModel(null, null, [agenda], agenda.Code);
+        vm.State.CurrentTemplate = new Template { AgendaCode = agenda.Code, Sections = [new Section()] };
+
+        var prvek = Assert.IsType<NotesLegendElement>(vm.CreateElementInteractive(ElementTypes.NotesLegend, 0, 0));
+
+        Assert.Equal(sloupcu, prvek.Columns);
     }
 }
