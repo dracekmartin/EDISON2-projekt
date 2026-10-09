@@ -16,6 +16,13 @@ Ověřeno na CB_CSADAD 380760 (skupina 307 proti 207: spoj 21 Tam) a 380735 (spo
 Nezveřejněné agendy nabízí „Změnit agendu" vývojáři s `dev.hiddenAgendas` v lokálním configu.
 Testy `LinkovyJrRozdilovyTest` (Caché), `RozdilovyJrTests`.
 
+Doladění týž den (nález Jan): porovnání, které nejde udělat (srovnávací skupina linku nemá, jiná
+trasa), sestavu neshodí - vytiskne se vybraná verze a důvod ukáže hlavička (`{POROVNANI_HLASENI}`).
+„Porovnat s linkou" má příznak `perInstance` (aditivní klíč parametru): návrhář ho nepamatuje
+v předvolbách ani v šabloně a při výběru jiné linky ho vyprázdní, protože z minula ukazoval na
+jinou trasu. Prázdné sloupce dorovnání už nepřebírají podbarvení spoje před sebou. Platnosti
+v hlavičce šablony jsou podbarvené stejně jako časy. Test `ParametryInstanceTests`.
+
 ## 2026-10-09 (3) - 🔒 import z PDF jen pro M-line
 
 Import šablony z PDF zákazník v menu Nástroje už neuvidí - je to interní nástroj na převody

@@ -296,7 +296,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                     Group        = item["group"]?.GetValue<string>(),
                     // Server posílá číslo (1); tolerantně bereme i "true" pro případ, že by
                     // některá agenda zapsala bool.
-                    ServerSide   = item["serverSide"]?.ToString() is "1" or "true"
+                    ServerSide   = item["serverSide"]?.ToString() is "1" or "true",
+                    PerInstance  = item["perInstance"]?.ToString() is "1" or "true",
                 };
 
                 if (item["options"] is JsonArray opts)

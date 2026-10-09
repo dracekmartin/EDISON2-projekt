@@ -48,6 +48,13 @@ public class TemplateParameter
     /// </summary>
     public string? VisibleWhenColumn { get; set; }
 
+    /// <summary>
+    /// Hodnota patří vybrané instanci (lince), ne sestavě: nepamatuje se v předvolbách ani v šabloně
+    /// a při výběru jiné instance se vrátí na výchozí. Dnes srovnávací linka rozdílového JŘ - z minula
+    /// by ukazovala na jinou trasu (nález Jan 9. 10.). Aditivní klíč (R3), starší klient ji pamatuje.
+    /// </summary>
+    public bool PerInstance { get; set; }
+
     /// <summary>Vrátí DefaultValue převedenou na typovanou hodnotu dle Type.</summary>
     public object? GetDefaultTyped() => Type switch
     {

@@ -215,6 +215,30 @@
           "cornerStyle": "None",
           "cornerSize": 0,
           "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POROVNANI_HLASENI}",
+          "style": {
+            "fontSize": 7,
+            "bold": true,
+            "hAlign": "Right",
+            "textColor": "#FFC00000"
+          },
+          "wordWrap": false,
+          "id": "361eb86f-d93a-4c77-9030-3ca5d539930f",
+          "x": 127,
+          "y": 0.3,
+          "width": 160,
+          "height": 3.6,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
         }
       ]
     },

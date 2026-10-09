@@ -14,13 +14,15 @@ Include GENERAL
 /// (`AgendyRegistr.ListAgendy`).
 ///
 /// Wire navíc proti linkovému JŘ (jen přidané klíče, R3):
-///   values: PUVODNI_DATUM_PLATNOSTI_OD/DO, PUVODNI_POPIS_PLATNOSTI, ZRUSENE_SPOJE
+///   values: PUVODNI_DATUM_PLATNOSTI_OD/DO, PUVODNI_POPIS_PLATNOSTI, ZRUSENE_SPOJE,
+///           POROVNANI_HLASENI (proč se neporovnávalo; prázdné = porovnáno nebo bez porovnání)
 ///   rows.SPOJE[]: VERZE ("puvodni" / "nova" / "" beze změny), ROZDILY: [0/1 zarovnané na CASY]
 ///   rows.POZNAMKY: poznámka „Zrušené spoje: …" (druh 10), když nějaké jsou
 /// Barvu rozdílu určuje šablona (prvek Tabulka spojů), data říkají jen, která buňka se liší.
 ///
 /// Zatím vědomě: porovnávají se jen časy spojů (ne platnost ani značky) a obě verze musí mít
-/// stejné zastávky - jinak sestava skončí srozumitelnou chybou (rozhodnutí Jan 9. 10.).
+/// stejné zastávky (rozhodnutí Jan 9. 10.). Když porovnání nejde, vytiskne se vybraná verze
+/// a důvod nese POROVNANI_HLASENI - chyba by místo náhledu jen překážela.
 Class ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
@@ -62,6 +64,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
         d ..AddField(fields, "PUVODNI_DATUM_PLATNOSTI_DO", "Platnost do (původní verze)", "date")
         d ..AddField(fields, "PUVODNI_POPIS_PLATNOSTI", "Popis platnosti (původní verze)", "text")
         d ..AddField(fields, "ZRUSENE_SPOJE", "Zrušené spoje", "text")
+        d ..AddField(fields, "POROVNANI_HLASENI", "Proč se neporovnávalo", "text")
 
         s it = def.%Get("fieldCollections").%GetIterator()
         while it.%GetNext(.k, .kolekce) {
@@ -128,7 +131,10 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
         s pLin.group = "Obecné"
         s pLin.serverSide = 1
         s pLin.defaultValue = ""
-        s pLin.description = "Číslo linky původní verze. Prázdné = táž linka jako vybraná. Bez skupiny i linky se tiskne jen vybraná verze."
+        s pLin.description = "Číslo linky původní verze. Prázdné = táž linka jako vybraná. Bez skupiny i linky se tiskne jen vybraná verze. Patří k vybrané lince - při výběru jiné se vyprázdní."
+        // Hodnota patří vybrané lince: návrhář ji nepamatuje a při výběru jiné linky vyprázdní -
+        // jinak by z minula ukazovala na jinou trasu (nález Jan 9. 10.).
+        s pLin.perInstance = 1
         d arr.%Push(pLin)
 
         // Převzaté parametry mají skupiny u sebe (kontroluje je drift test nad LinkovyJrAd), proto
@@ -154,18 +160,22 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         d ..NactiStranky(.sys, .vstup, "", "", .nove)
 
+        // Porovnání, které nejde udělat (srovnávací skupina linku nemá, jiná trasa), sestavu
+        // neshodí: vytiskne se vybraná verze a důvod jde do POROVNANI_HLASENI, které šablona ukáže
+        // v hlavičce. Parametr typicky zůstal z jiné linky a chyba místo náhledu jen překážela
+        // (nález Jan 9. 10.).
+        s hlaseni = ""
         s skuNova = $g(vstup("SKUPINA_LINEK_ID")), linNova = $g(vstup("LINKA_ID"))
         i linNova = "" s linNova = $g(vstup("INSTANCE_ID"))
         i (skuPuvodni '= "") || (linPuvodni '= "") {
             i skuPuvodni = "" s skuPuvodni = skuNova
             i linPuvodni = "" s linPuvodni = linNova
-            // Linka ve skupině chybět může (parametr zůstal z jiné linky) - říct to rovnou, ne
-            // až chybou stavby jízdního řádu.
             s linPuvodni = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NormalizLinku(linPuvodni)
-            i '$d(^[dataDB]JRL(skuPuvodni, linPuvodni, "I")) {
-                $$$ThrowStatus($$$ERROR($$$GeneralError, "Původní verze: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" není. Zkontrolujte parametry Porovnat se skupinou JŘ a Porovnat s linkou."))
+            i $d(^[dataDB]JRL(skuPuvodni, linPuvodni, "I")) {
+                d ..NactiStranky(.sys, .vstup, skuPuvodni, linPuvodni, .puvodni)
+            } else {
+                s hlaseni = "Neporovnáno: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" není."
             }
-            d ..NactiStranky(.sys, .vstup, skuPuvodni, linPuvodni, .puvodni)
         }
 
         k ^||ML("IN") m ^||ML("IN") = vstup
@@ -177,11 +187,10 @@ ClassMethod GetData(ByRef sys As %String) As %Status
                 try {
                     s stranka = ..SlucStranky(stranka, protejsek)
                 } catch exSlouceni {
-                    // Hláška musí říct, co s čím se porovnávalo - jinak parametr, který zůstal
-                    // z jiné linky, vypadá jako chyba porovnání (nález Jan 9. 10.).
-                    $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_(+linNova)_" (skupina "_skuNova_") a původní verze - linka "_(+linPuvodni)_" (skupina "_skuPuvodni_") - mají jiné zastávky. Porovnání zatím umí jen dvě verze se stejnou trasou."))
+                    s hlaseni = "Neporovnáno: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" má jiné zastávky než linka "_(+linNova)_" (skupina "_skuNova_")."
                 }
             }
+            d stranka.%Get("values").%Set("POROVNANI_HLASENI", hlaseni)
             s ^||ML("OUT", $i(^||ML("OUT"))) = stranka.%ToJSON()
         }
     } catch (ex) {

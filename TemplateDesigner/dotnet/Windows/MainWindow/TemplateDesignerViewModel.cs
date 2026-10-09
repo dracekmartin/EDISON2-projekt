@@ -1898,8 +1898,11 @@ public class TemplateDesignerViewModel : EDViewModel
         _activeSkupinaLabel = vm.SelectedSkupinaLabel;
         _activeInstances = vm.SelectedInstances.ToList();
         _activeInstanceIndex = 0;
+        // Před načtením dat: hodnota vázaná na předchozí linku by šla do GetData nové.
+        bool vynulovano = VynulujParametryInstance();
         // Výběr z pickeru = táž šablona, jiné linky → nechat stará data do dosednutí (bez mock bliku).
         OnActiveInstancesChanged(reloadData: true, clearRealData: false);
+        if (vynulovano) RebuildParametersPanel();
         OnPropertyChanged(nameof(ActiveSkupinaText));
         OnPropertyChanged(nameof(HasActiveSkupina));
 
@@ -2293,7 +2296,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // se sem záměrně nedostanou (nejsou mezi agenda parametry).
         var nove = new Dictionary<string, string>();
         foreach (var p in _agendaParameters)
-            if (_previewParams.TryGetValue(p.Name, out var v))
+            if (!p.PerInstance && _previewParams.TryGetValue(p.Name, out var v))
                 nove[p.Name] = ParamToFieldString(v, p.Type);
 
         State.CurrentTemplate.PrintParameters =
@@ -3231,6 +3234,7 @@ public class TemplateDesignerViewModel : EDViewModel
         bool changed = false;
         foreach (var p in _agendaParameters)
         {
+            if (p.PerInstance) continue;   // patří vybrané lince, ne předvolbě (starší uložená hodnota se nepoužije)
             if (!saved.TryGetValue(p.Name, out var node) || node is null) continue;
             try
             {
@@ -3270,6 +3274,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (tp is null || tp.Count == 0) return;
         foreach (var p in _agendaParameters)
         {
+            if (p.PerInstance) continue;
             if (!tp.TryGetValue(p.Name, out var s) || s is null) continue;
             _previewParams[p.Name] = p.Type switch
             {
@@ -3326,6 +3331,22 @@ public class TemplateDesignerViewModel : EDViewModel
         RefreshPreviewAfterParamChange();
     }
 
+    /// <summary>Parametry vázané na vybranou instanci (<see cref="TemplateParameter.PerInstance"/>) vrátí
+    /// na výchozí - jinak by srovnávací linka z minula ukazovala na jinou trasu (rozdílový JŘ).</summary>
+    internal bool VynulujParametryInstance()
+    {
+        bool zmena = false;
+        foreach (var p in _agendaParameters.Where(p => p.PerInstance))
+        {
+            var vychozi = p.GetDefaultTyped();
+            if (Equals(_previewParams.GetValueOrDefault(p.Name), vychozi)) continue;
+            _previewParams[p.Name] = vychozi;
+            zmena = true;
+        }
+        if (zmena) _cachedParamValues = null;
+        return zmena;
+    }
+
     /// <summary>Uloží aktuální <see cref="_previewParams"/> pro tuto agendu (fire-and-forget).</summary>
     public Task SavePrintParamsAsync()
     {
@@ -3334,7 +3355,8 @@ public class TemplateDesignerViewModel : EDViewModel
         if (string.IsNullOrEmpty(agendaCode)) return Task.CompletedTask;
         // Rozvržení sloupců je vlastnost ŠABLONY (odvozuje se z definice sloupců prvku), ne
         // předvolba agendy - uložené napříč šablonami by u každé další lhalo.
-        var perAgenda = _previewParams.Where(kv => kv.Key != LayoutParamName)
+        var perInstance = _agendaParameters.Where(p => p.PerInstance).Select(p => p.Name).ToHashSet();
+        var perAgenda = _previewParams.Where(kv => kv.Key != LayoutParamName && !perInstance.Contains(kv.Key))
             .ToDictionary(kv => kv.Key, kv => kv.Value);
         return Preferences.SavePrintParamsAsync(agendaCode, perAgenda);
     }
