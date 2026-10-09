@@ -45,6 +45,10 @@ public static class AgendaCapabilities
 
     private static readonly HashSet<string> AllScheduleTypes = [.. StopTypes, .. LineTypes];
 
+    /// <summary>Kód agendy rozdílového linkového JŘ (`B192`) - dvě verze linky v jedné tabulce.
+    /// Persistovaný klíč (šablony), nikdy neměnit.</summary>
+    public const string RozdilovyLinkovyJr = "LINKOVY_JR_AD_ROZDILOVY";
+
     /// <summary>
     /// Smí prvek do šablony agendy daného druhu? Obecné prvky (text, tabulka, kód…) všude, prvky
     /// jízdních řádů jen do agendy, která je podporuje. Neznámý druh (<c>null</c> - registr agend

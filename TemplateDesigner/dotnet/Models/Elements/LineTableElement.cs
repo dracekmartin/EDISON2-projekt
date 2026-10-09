@@ -344,6 +344,22 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     public TextStyle PripojStyle { get; set; } = new();
     public string OddTcBackColor { get; set; } = "#FFEEEEEE";
 
+    /// <summary>
+    /// Podbarvení buněk, ve kterých se původní podoba spoje liší od nové - rozdílový linkový JŘ
+    /// (`B192`, předloha z výtisku zákazníka: původní červeně, nová zeleně).
+    /// </summary>
+    /// <remarks>Server u spoje řekne jen verzi a které buňky se liší, jak to vypadá, určuje šablona
+    /// (R3, sémantika před barvou). Jinde než v rozdílové agendě data verzi nenesou a barva se
+    /// nepoužije.</remarks>
+    public string RozdilPuvodniBackColor { get; set; } = "#FFF08080";
+
+    /// <inheritdoc cref="RozdilPuvodniBackColor"/>
+    public string RozdilNovaBackColor { get; set; } = "#FF92D36E";
+
+    /// <summary>Barvy rozdílů ukazuje formulář jen v rozdílovém linkovém JŘ - jinde data verze nenesou.</summary>
+    public static bool PoleFormulareViditelne(string klic, bool rozdilovyJr) =>
+        rozdilovyJr || klic is not (nameof(RozdilPuvodniBackColor) or nameof(RozdilNovaBackColor));
+
     // Podmíněné řádkové featury (sdílené přes RowConditions, výraz nad daty zastávky = stop.SourceRow).
     // Prázdný výraz = vypnuto (nulová změna chování).
     /// <summary>Zastávka, kde výraz neplatí, se nevykreslí (řádek + její přípojné řádky; nezapočítá do výšky).</summary>
@@ -441,6 +457,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// <summary>Jména dopravců spoje (týž tvar jako v <c>POPIS_DOPRAVCE</c>) - pro dopravce
         /// jen za spoje na stránce (#9417).</summary>
         public List<string> Dopravci = [];
+        /// <summary>Rozdílový JŘ: „puvodni" / „nova" u spoje, který se mezi verzemi liší; prázdné
+        /// u spoje beze změny a mimo rozdílovou agendu.</summary>
+        public string Verze = "";
+        /// <summary>Které buňky se liší od druhé verze spoje, stejně indexované jako <see cref="Casy"/>.</summary>
+        public List<bool> Rozdily = [];
     }
 
     public sealed class LineSkupinaData
@@ -512,6 +533,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Znacky = ParseStringArray(row.GetValue("ZNACKY")),
             Pripoje = ParsePripoje(row.GetValue("PRIPOJE")),
             Dopravci = ParseStringArray(row.GetValue("DOPRAVCI")),
+            Verze = row.GetString("VERZE"),
+            Rozdily = [.. ParseStringArray(row.GetValue("ROZDILY")).Select(x => x == "1")],
         })];
 
         RozdelPodleSmeru();
@@ -2588,7 +2611,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PridejZrcadlene(specs, mrizka, zrcadlene.Count, tripCellStyle, ti =>
             {
                 var tz = zrcadlene[ti];
-                var st = tz.ForeColor is null || inverze ? tripCellStyle : tripCellStyle with { TextColor = tz.ForeColor };
+                var st = SRozdilem(tz.ForeColor is null || inverze ? tripCellStyle : tripCellStyle with { TextColor = tz.ForeColor },
+                    tz, siRadku);
                 string cas = znackyVBunceZrc.ContainsKey(ti) ? ""
                     : (siRadku < tz.Casy.Count ? tz.Casy[siRadku] : "");
                 if (cas == "" && !znackyVBunceZrc.ContainsKey(ti))
@@ -2630,7 +2654,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var t = trips[ti];
                 // Barva spoje z dat přebíjí barvu textu z kaskády - je to prezentační nápověda,
                 // kterou prvek smí respektovat (R3). Spoj bez barvy nechá kaskádu být.
-                var cellStyle = t.ForeColor is null || inverze ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor };
+                var cellStyle = SRozdilem(t.ForeColor is null || inverze ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor },
+                    t, siRadku);
                 string text = znackyVBunce.ContainsKey(ti) ? "" : (siRadku < t.Casy.Count ? t.Casy[siRadku] : "");
                 if (text == "" && !znackyVBunce.ContainsKey(ti))
                     text = VyplnBunky(mrizka.SirkaSpojeMm(ti), cellStyle, ctx);
@@ -3052,6 +3077,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
     }
 
+    /// <summary>Buňka, ve které se verze spoje liší od druhé (rozdílový JŘ), dostane barvu své verze.</summary>
+    private ResolvedTextStyle SRozdilem(ResolvedTextStyle style, LineTripData spoj, int radek) =>
+        spoj.Verze is "puvodni" or "nova" && radek < spoj.Rozdily.Count && spoj.Rozdily[radek]
+            ? style with { BackgroundColor = spoj.Verze == "puvodni" ? RozdilPuvodniBackColor : RozdilNovaBackColor }
+            : style;
+
     /// <summary>Styl buňky času s barvou spoje z dat - ručně kreslená buňka ji musí nést stejně
     /// jako ta, kterou sází <c>CellRenderer</c>.</summary>
     private static ResolvedTextStyle SBarvouSpoje(ResolvedTextStyle style, LineTripData spoj) =>
@@ -3392,6 +3423,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             MezeraMeziSkupinamiMm = MezeraMeziSkupinamiMm,
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
+            RozdilPuvodniBackColor = RozdilPuvodniBackColor,
+            RozdilNovaBackColor = RozdilNovaBackColor,
             RowVisibilityExpression = RowVisibilityExpression,
             HighlightRules = HighlightRules?.Select(r => r.Clone()).ToList(),
             PripojStyle = PripojStyle.Clone(),
@@ -3487,6 +3520,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
+        new ColorPropertyDescriptor { Label = "Původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
+        new ColorPropertyDescriptor { Label = "Nová verze", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor, Set = v => RozdilNovaBackColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
         // #8360: přípojný řádek se má dát odlišit od časů spojů. Prázdné = dědí se z buněk.
         new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 4, Max = 200,

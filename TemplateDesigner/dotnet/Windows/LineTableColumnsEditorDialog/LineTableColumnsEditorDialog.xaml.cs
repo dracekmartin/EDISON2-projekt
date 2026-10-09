@@ -20,6 +20,10 @@ public partial class LineTableColumnsEditorDialog : Window
     private readonly LineTableElement _element;
     private Dictionary<string, string> _preFilled = [];
 
+    /// <summary>Které pole formuláře „Obecné" je vidět - viz <see cref="ElementEditDialog.ViditelnostPole"/>.
+    /// Null = vše; nastavit před zobrazením.</summary>
+    public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
+
     /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
     public List<Models.Elements.StopColumn> ResultColumns => _vm.ResultColumns;
 
@@ -64,6 +68,7 @@ public partial class LineTableColumnsEditorDialog : Window
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
         ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
         GeneralForm.Validate();
+        if (ViditelnostPole is not null) ElementFormBinder.PouzijViditelnost(GeneralForm.Items, ViditelnostPole);
     }
 
     private void OkButton_Click(object sender, RoutedEventArgs e)

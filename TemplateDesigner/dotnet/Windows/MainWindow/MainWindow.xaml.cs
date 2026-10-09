@@ -2000,7 +2000,12 @@ public partial class MainWindow : Window
 
     private void OpenLineTableColumnsDialog(LineTableElement element)
     {
-        var dlg = new LineTableColumnsEditorDialog(element) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
+        bool rozdilovy = _vm!.JeRozdilovyJr;
+        var dlg = new LineTableColumnsEditorDialog(element)
+        {
+            Owner = this, SearchMemoryKey = ElementDialogSearchKey,
+            ViditelnostPole = (klic, _) => LineTableElement.PoleFormulareViditelne(klic, rozdilovy),
+        };
 
         if (dlg.ShowDialog() == true)
         {
@@ -2202,9 +2207,13 @@ public partial class MainWindow : Window
                 InlineElementForm.PlaceholderFields = _vm.PlaceholderFieldItems();
                 bool linkovy = _vm.JeLinkovyJr;
                 bool poznamky = selected[0] is NotesLegendElement;
-                InlineElementForm.ViditelnostPole = poznamky
-                    ? (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy)
-                    : null;
+                bool rozdilovy = _vm.JeRozdilovyJr;
+                InlineElementForm.ViditelnostPole = selected[0] switch
+                {
+                    NotesLegendElement => (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy),
+                    LineTableElement   => (klic, _) => LineTableElement.PoleFormulareViditelne(klic, rozdilovy),
+                    _                  => null,
+                };
                 InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : null;
                 InlineElementForm.ShowElement(selected[0], panelSchema);
                 ShowInlineFormPanel(true);

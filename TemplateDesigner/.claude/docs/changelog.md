@@ -1,5 +1,21 @@
 ﻿# Changelog
 
+## 2026-10-09 (4) - 🔀 rozdílový linkový JŘ - základ (`B192`)
+
+Nová agenda **Linkový JŘ / AD - rozdílový** (`LINKOVY_JR_AD_ROZDILOVY`, zatím nezveřejněná) tiskne
+dvě verze téže linky v jedné tabulce podle předlohy z výtisku zákazníka: spoj, jehož časy se
+liší, stojí dvakrát vedle sebe (původní a nová podoba) a odlišné buňky jsou podbarvené, původní
+červeně a nová zeleně; spoj beze změny je jednou, nový spoj je celý zelený a zrušené spoje se
+vypíšou do poznámek („Zrušené spoje: …") a pole `{ZRUSENE_SPOJE}`. Nová verze je vybraná linka,
+původní se zadá parametry „Porovnat se skupinou JŘ" a „Porovnat s linkou" (prázdné = táž);
+hlavička má i `{PUVODNI_POPIS_PLATNOSTI}`. Server staví data beze změny linkovým JŘ a jen sloučí
+spoje (`LinkovyJrAdRozdilovy.SlucStranky`); data říkají verzi a odlišné buňky, barvy jsou
+v šabloně (Tabulka spojů → Porovnání verzí, ukazuje se jen v této agendě). Porovnávají se jen
+časy a trasa musí být stejná, jinak sestava skončí srozumitelnou chybou (rozhodnutí Jan 9. 10.).
+Ověřeno na CB_CSADAD 380760 (skupina 307 proti 207: spoj 21 Tam) a 380735 (spoje 14 a 18 Zpět).
+Nezveřejněné agendy nabízí „Změnit agendu" vývojáři s `dev.hiddenAgendas` v lokálním configu.
+Testy `LinkovyJrRozdilovyTest` (Caché), `RozdilovyJrTests`.
+
 ## 2026-10-09 (3) - 🔒 import z PDF jen pro M-line
 
 Import šablony z PDF zákazník v menu Nástroje už neuvidí - je to interní nástroj na převody

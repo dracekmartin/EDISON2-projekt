@@ -128,6 +128,7 @@ public class AppSettings
 
         if (local.Dev.FirmSwitch) target.Dev.FirmSwitch = true;
         if (local.Dev.PdfImport) target.Dev.PdfImport = true;
+        if (local.Dev.HiddenAgendas) target.Dev.HiddenAgendas = true;
     }
 }
 
@@ -159,6 +160,10 @@ public class DevSettings
     /// a zákazník, který ho našel, ztrácel čas ručním opravováním (KAD #11373).
     /// </summary>
     public bool PdfImport { get; set; }
+
+    /// <summary>Nabízet ve „Změnit agendu" i nezveřejněné agendy (rozpracované, např. rozdílový
+    /// linkový JŘ). Zákazník je nevidí, protože klíč je jen v lokálním configu.</summary>
+    public bool HiddenAgendas { get; set; }
 }
 
 /// <summary>Nastavení připojení k Caché / IRIS serveru přes MLRest.</summary>

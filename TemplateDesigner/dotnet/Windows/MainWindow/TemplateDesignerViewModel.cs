@@ -1701,6 +1701,10 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Je šablona linkového JŘ? Řídí, co formulář poznámek nabízí (`#7487`).</summary>
     public bool JeLinkovyJr => string.Equals(ZnamyDruhAgendy, "LINE", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Je šablona rozdílového linkového JŘ? Řídí, jestli formulář tabulky ukáže barvy rozdílů.</summary>
+    public bool JeRozdilovyJr => string.Equals(State.CurrentTemplate.AgendaCode, AgendaCapabilities.RozdilovyLinkovyJr,
+        StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Rozdělí prvky na ty, které do šablony téhle agendy smí, a řekne uživateli, které
     /// vynechal (<see cref="AgendaCapabilities.Allows"/>).</summary>
     private List<TemplateElement> JenPrvkyAgendy(IEnumerable<TemplateElement> prvky)
@@ -1913,8 +1917,11 @@ public class TemplateDesignerViewModel : EDViewModel
         // ZVEŘEJNĚNÝCH agend (Released; pilotní jako Linkový JŘ / Faktury se uživatelům nenabízí).
         // Aktuální agenda šablony se ukáže vždy - i nezveřejněná (interní/vývojová šablona).
         var current = State.CurrentTemplate.AgendaCode;
+        // Vývojář (lokální `dev.hiddenAgendas`) vidí i nezveřejněné agendy - jinak by šablonu
+        // v rozpracované agendě nešlo založit jinak než spuštěním ze shellu.
+        bool skryte = AppSettings.Current?.Dev.HiddenAgendas == true;
         var visible = _agendaEntries
-            .Where(a => a.Released || a.Code.Equals(current, StringComparison.OrdinalIgnoreCase))
+            .Where(a => a.Released || skryte || a.Code.Equals(current, StringComparison.OrdinalIgnoreCase))
             .ToList();
         if (visible.Count == 0)
         {

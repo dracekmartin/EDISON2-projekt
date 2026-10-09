@@ -140,6 +140,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // velikosti a řezu (#8360). Prázdné = jako datové buňky.
         s f = form.AddFieldToLastGroup("PripojStyle.BackgroundColor", "Pozadí řádku", $$$FieldTypeColor, 0, 0)
 
+        // ── Skupina "Porovnání verzí" (B192) ──────────────────────────────
+        // Jen rozdílový linkový JŘ: změněný spoj stojí dvakrát vedle sebe a odlišné časy se podbarví.
+        // Data říkají, která buňka se liší, barvu určuje šablona. Návrhář skupinu jinde schová.
+        d form.AddGroup("verze", "Porovnání verzí")
+        s f = form.AddFieldToLastGroup("RozdilPuvodniBackColor", "Původní verze", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FFF08080"
+        s f.helpText = "Podbarvení časů původní verze spoje, které se v nové verzi změnily."
+        s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF92D36E"
+        s f.helpText = "Podbarvení časů nové verze spoje, které se proti původní změnily, a všech časů nového spoje."
+
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 1, 1, 1)
