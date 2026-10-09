@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using EDControls.EDViewModel;
+using EDTesting;
 using NSubstitute;
 
 namespace EDControls.Tests;
@@ -53,6 +54,95 @@ public class EDUsageTelemetryTests
         Assert.Matches(new Regex(@"^usage~EDISON2\.TestWindow~BtnSave~\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"),
             (string)batch[1]);
     }
+
+    [Fact]
+    public void Flush_AfterCompanySwitch_RecordsGoToCompanyTheyWereTrackedIn()
+    {
+        // Legacy agendy spuštěné ve firmě A a přepnutí na B: statistiky je nesmí připsat firmě B.
+        var shared = SharedSession("A", "NS-A");
+        var cloneA = Substitute.For<IMLRest>();
+        shared.With(0, "A", "NS-A").Returns(cloneA);
+        try
+        {
+            EDUsageTelemetry.Track("EDISON2.LegacyLaunch", "AgendaA");
+            SwitchCompany(shared, "B", "NS-B");
+            EDUsageTelemetry.Track("EDISON2.LegacyLaunch", "AgendaB");
+
+            EDUsageTelemetry.Flush(shared);
+
+            cloneA.Received(1).QueryOrThrow(TelemetryClass, "LogUsageBatch", Arg.Is<object[]>(b => IsBatchOf(b, "AgendaA")));
+            shared.Received(1).QueryOrThrow(TelemetryClass, "LogUsageBatch", Arg.Is<object[]>(b => IsBatchOf(b, "AgendaB")));
+        }
+        finally
+        {
+            EDServices.Reset();
+        }
+    }
+
+    [Fact]
+    public void Flush_SameIdfaOtherNamespace_GoesToCloneOfTrackedNamespace()
+    {
+        var shared = SharedSession("A", "NS-1");
+        var clone = Substitute.For<IMLRest>();
+        shared.With(0, "A", "NS-1").Returns(clone);
+        try
+        {
+            EDUsageTelemetry.Track("EDISON2.LegacyLaunch", "Agenda1");
+            SwitchCompany(shared, "A", "NS-2");
+
+            EDUsageTelemetry.Flush(shared);
+
+            clone.Received(1).QueryOrThrow(TelemetryClass, "LogUsageBatch", Arg.Is<object[]>(b => IsBatchOf(b, "Agenda1")));
+            shared.DidNotReceive().QueryOrThrow(TelemetryClass, "LogUsageBatch", Arg.Any<object[]>());
+        }
+        finally
+        {
+            EDServices.Reset();
+        }
+    }
+
+    [Fact]
+    public void Flush_OldCompanyFails_CurrentCompanyBatchStillSent()
+    {
+        // Klon staré firmy nevznikne (DNS, server): dávka aktuální firmy kvůli tomu nesmí propadnout.
+        var shared = SharedSession("A", "NS-A");
+        shared.With(0, "A", "NS-A").Returns(_ => throw new InvalidOperationException("server down"));
+        try
+        {
+            EDUsageTelemetry.Track("EDISON2.LegacyLaunch", "AgendaA");
+            SwitchCompany(shared, "B", "NS-B");
+            EDUsageTelemetry.Track("EDISON2.LegacyLaunch", "AgendaB");
+
+            EDUsageTelemetry.Flush(shared);
+
+            shared.Received(1).QueryOrThrow(TelemetryClass, "LogUsageBatch", Arg.Is<object[]>(b => IsBatchOf(b, "AgendaB")));
+            Assert.Equal(0, EDUsageTelemetry.BufferCountForTests);
+        }
+        finally
+        {
+            EDServices.Reset();
+        }
+    }
+
+    private const string TelemetryClass = "ALVA.ISY.ISYCloud.APIdotNet.Telemetry";
+
+    private static IMLRest SharedSession(string idfa, string dataNamespace)
+    {
+        var shared = MLRestMocks.Create(idfa: idfa, dataNamespace: dataNamespace);
+        shared.Delimiter.Returns('~');
+        EDServices.Initialize(new EDServices(shared, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
+        return shared;
+    }
+
+    // Přepnutí firmy přepisuje sdílenou instanci na místě (CompanySwitcher).
+    private static void SwitchCompany(IMLRest shared, string idfa, string dataNamespace)
+    {
+        shared.Idfa.Returns(idfa);
+        shared.DataNamespace.Returns(dataNamespace);
+    }
+
+    private static bool IsBatchOf(object[] batch, string control) =>
+        batch.Length == 1 && ((string)batch[0]).StartsWith($"usage~EDISON2.LegacyLaunch~{control}~");
 
     [Fact]
     public void Flush_ClearsBuffer_SecondFlushSendsNothing()
