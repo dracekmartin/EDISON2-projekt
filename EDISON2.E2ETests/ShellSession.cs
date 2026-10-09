@@ -44,7 +44,13 @@ internal sealed class ShellSession : IDisposable
 
     public int ExitCode => _process.ExitCode;
 
-    public static ShellSession Start()
+    public static ShellSession Start() => Launch([], waitUntilReady: true);
+
+    /// <summary>Shell s dalšími argumenty bez čekání na hlavní okno: okna před shellem obslouží test
+    /// (<see cref="WaitForStartupWindow"/>) a pak zavolá <see cref="WaitUntilReady"/>.</summary>
+    public static ShellSession StartBeforeShell(params string[] extraArgs) => Launch(extraArgs, waitUntilReady: false);
+
+    private static ShellSession Launch(IEnumerable<string> extraArgs, bool waitUntilReady)
     {
         var exe = ShellExe();
         var (host, port) = Server();
@@ -66,12 +72,13 @@ internal sealed class ShellSession : IDisposable
         // Výchozí firma serveru nemusí mít pro DEBUG uživatele žádné moduly (na DEV má prázdný strom).
         var idfa = Environment.GetEnvironmentVariable("EDISON_E2E_IDFA") is { Length: > 0 } custom ? custom : "CB_DP";
         psi.ArgumentList.Add($"idfa={idfa}");
+        foreach (var arg in extraArgs) psi.ArgumentList.Add(arg);
 
         ShellSession? session = null;
         try
         {
             session = new ShellSession(runLock, Process.Start(psi)!);
-            session.WaitUntilReady();
+            if (waitUntilReady) session.WaitUntilReady();
             return session;
         }
         catch
@@ -93,10 +100,15 @@ internal sealed class ShellSession : IDisposable
         target.Invoke();
     }
 
-    public Window WaitForWindow(string title)
+    public Window WaitForWindow(string title) => WaitForWindow(title, StepTimeout);
+
+    /// <summary>Okno, které shell ukáže během startu: před ním běží dotazy na server, čeká se jako na hlavní okno.</summary>
+    public Window WaitForStartupWindow(string title) => WaitForWindow(title, StartupTimeout);
+
+    private Window WaitForWindow(string title, TimeSpan timeout)
     {
         _allowedWindows.Add(title);
-        return WaitFor(() => Windows().FirstOrDefault(w => w.Name == title)?.AsWindow(), $"okno „{title}\"");
+        return WaitFor(() => Windows().FirstOrDefault(w => w.Name == title)?.AsWindow(), $"okno „{title}\"", timeout);
     }
 
     public void WaitUntilClosed(string title)
@@ -104,6 +116,10 @@ internal sealed class ShellSession : IDisposable
         WaitUntil(() => !Windows().Any(w => w.Name == title), $"zavření okna „{title}\"", StepTimeout);
         _allowedWindows.Remove(title);
     }
+
+    /// <summary>Text EDPopupu.</summary>
+    public string PopupMessage(Window popup) =>
+        WaitFor(() => popup.FindFirstDescendant(cf => cf.ByAutomationId("MessageText")), "text popupu").Name;
 
     public Button Button(AutomationElement scope, string automationId) =>
         WaitFor(() => scope.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.AsButton(), $"tlačítko {automationId}");
@@ -137,7 +153,7 @@ internal sealed class ShellSession : IDisposable
     {
         InvokeMenu("EdisonMenu", "EDISON", "Ukončit program");
         var popup = WaitForWindow("Potvrzení");
-        var message = WaitFor(() => popup.FindFirstDescendant(cf => cf.ByAutomationId("MessageText")), "text potvrzení").Name;
+        var message = PopupMessage(popup);
         // Titulek „Potvrzení" a „Ano" má i brána přihlášení - její Ano by povolilo přihlašování celému serveru.
         if (message != ExitConfirmText) Fail($"Potvrzení s nečekaným textem: „{message}\".", popup);
         Button(popup, "PositiveBtn").Invoke();
@@ -161,7 +177,8 @@ internal sealed class ShellSession : IDisposable
         _runLock.Dispose();
     }
 
-    private void WaitUntilReady()
+    /// <summary>Hlavní okno shellu se stromem ze serveru; skončený proces nebo nečekané okno test shodí.</summary>
+    public void WaitUntilReady()
     {
         Main = WaitFor(FindMainWindow, "hlavní okno shellu", StartupTimeout);
         // Starý build e2e=1 nezná a běží s DEV GUID: jeho čistý konec by smazal zámky vývojářova shellu.

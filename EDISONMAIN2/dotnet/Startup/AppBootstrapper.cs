@@ -47,8 +47,8 @@ public class AppBootstrapper
     }
 
     /// <summary>Pro test-only subclassy - neinjektuje <see cref="Application"/>, takže
-    /// derived class MUSÍ přepsat všechny metody co by ho použily (Shutdown, BuildShellWindow,
-    /// WireActivityFailedHandler, dialog větev TryLogin).</summary>
+    /// derived class MUSÍ přepsat všechny metody co by ho použily (Shutdown, HoldShutdownUntilHandOff,
+    /// HandOffLoginWindow, BuildShellWindow, WireActivityFailedHandler, dialog větev TryLogin).</summary>
     protected AppBootstrapper() : this(new StartupOptions())
     {
     }
@@ -81,6 +81,7 @@ public class AppBootstrapper
 
     private EdisonMainWindow? RunCore()
     {
+        HoldShutdownUntilHandOff();
         var (nav, popup, services) = InitializeServices();
         var prefs = LoadLocalPrefs();
 
@@ -153,6 +154,8 @@ public class AppBootstrapper
         // Od Accepted existuje ACTIVITY zámek - logout musí proběhnout při každém ukončení odteď,
         // včetně exitu kvůli updatu a výjimky níž, ne až od vzniku shellu.
         WireSessionLogout(services);
+        // Popup před shellem jako hlášky licence; nastavuje ho jen E2E přepínač.
+        if (_options.PreShellNotice is { } notice) services.PopupDisplayer.Info(notice);
 
         // Až po SavePostLoginState - LastIdfa musí být uložená i když teď shell skončí updatem.
         ShowStartupProgress("Kontroluji aktualizace…");
@@ -172,18 +175,25 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Předání role hlavního okna z login okna na shell. MainWindow se musí přiřadit explicitně -
-    /// implicitní WPF pravidlo ho dalo login oknu (první zkonstruované) a dokud je otevřené,
-    /// shell by roli nezískal; pořadí (MainWindow → OnMainWindowClose) chrání před shutdownem
-    /// při pozdějším zavření login okna. To se zavře až po prvním vykreslení shellu, aby
-    /// v přechodu nebyla vidět plocha.
+    /// Do předání shellu ukončuje aplikaci jen <see cref="Shutdown"/>. Výchozí <c>OnLastWindowClose</c>
+    /// by ji ukončil zavřením jediného okna před shellem: wizardu, login okna nebo popupu při auto-loginu.
+    /// </summary>
+    protected virtual void HoldShutdownUntilHandOff() =>
+        _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
+    /// <summary>
+    /// Předání role hlavního okna na shell, ve všech cestách loginu. MainWindow se musí přiřadit
+    /// explicitně - v dialog cestě ho drží otevřené login okno (WPF ho dá oknu vytvořenému, když
+    /// žádný MainWindow není) a shell by roli nezískal; pořadí (MainWindow → OnMainWindowClose)
+    /// chrání před shutdownem při pozdějším zavření login okna. To se zavře až po prvním
+    /// vykreslení shellu, aby v přechodu nebyla vidět plocha.
     /// </summary>
     protected virtual void HandOffLoginWindow(EdisonMainWindow wnd)
     {
-        if (_startupLogin is not { } login) return;
         _application.MainWindow = wnd;
         _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        wnd.ContentRendered += (_, _) => login.CompleteHandoff();
+        if (_startupLogin is { } login)
+            wnd.ContentRendered += (_, _) => login.CompleteHandoff();
     }
 
     private void ShowStartupProgress(string message)
@@ -289,15 +299,7 @@ public class AppBootstrapper
         if (SettingsLoader.IsConfigured()) return true;
 
         SettingsLoader.Load();   // naplní Current pro předvyplnění polí (dev server jen v DEBUG)
-        _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-        try
-        {
-            return new Windows.SetupWindow.SetupWindow().ShowDialog() == true;
-        }
-        finally
-        {
-            _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        }
+        return new Windows.SetupWindow.SetupWindow().ShowDialog() == true;
     }
 
     protected virtual PreLoginContext PrepareLogin(ILocalPrefs prefs)
@@ -374,9 +376,7 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Zobrazí login okno, nebo vrátí <see cref="StartupOptions.DevLogin"/>. Přepne
-    /// <c>ShutdownMode</c> na <c>OnExplicitShutdown</c> aby zavření okna nevypnulo aplikaci;
-    /// restore dělá až <see cref="HandOffLoginWindow"/>. Okno po úspěchu zůstává otevřené
+    /// Zobrazí login okno, nebo vrátí <see cref="StartupOptions.DevLogin"/>. Okno po úspěchu zůstává otevřené
     /// (progress podklad pod dobíhajícím bootstrapem) - čekání řeší
     /// <see cref="System.Windows.Threading.DispatcherFrame"/> místo ShowDialog, aby návrat
     /// nevyžadoval zavření okna.
@@ -388,8 +388,6 @@ public class AppBootstrapper
             login = devLogin;
             return true;
         }
-
-        _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         // Zapamatované heslo (předvyplnění i uložení) řeší VM nad prefs.
         var vm = LoginViewModel.ForStartup(services, new MLRestAdapter(loginRest), prefs);
@@ -414,7 +412,6 @@ public class AppBootstrapper
                 prefs.Save();
             }
             login = null!;
-            // ShutdownMode se nerestoruje - Run() hned volá explicitní Shutdown().
             return false;
         }
         login = result;
@@ -432,24 +429,11 @@ public class AppBootstrapper
     /// <summary>
     /// Vynucená změna hesla (feature #17). Dialog si sám ověří změnu proti serveru a zavře se
     /// jen při úspěchu; vrací true = změněno, false = uživatel zrušil (→ abort loginu).
-    /// ShutdownMode toggle jako u <see cref="TryLogin"/> - dialog běží před existencí shell okna.
     /// </summary>
     protected virtual bool ForcePasswordChange(MLRest loginRest, string username)
-    {
-        // Restore na předchozí mode, ne hardcoded - po dialog loginu je OnExplicitShutdown v platnosti až do handoffu.
-        var previousMode = _application.ShutdownMode;
-        _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-        try
-        {
-            return new Windows.LoginWindow.ChangePasswordWindow(new MLRestAdapter(loginRest), username)
-                { Owner = _startupLoginWindow }
-                .ShowDialog() == true;
-        }
-        finally
-        {
-            _application.ShutdownMode = previousMode;
-        }
-    }
+        => new Windows.LoginWindow.ChangePasswordWindow(new MLRestAdapter(loginRest), username)
+            { Owner = _startupLoginWindow }
+            .ShowDialog() == true;
 
     /// <summary>
     /// Windows SSO auto-login (legacy-style): login na <c>Environment.UserName</c> s prázdným

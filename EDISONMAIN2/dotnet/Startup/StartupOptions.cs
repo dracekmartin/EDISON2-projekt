@@ -40,6 +40,10 @@ public sealed record StartupOptions
     /// <summary>UI E2E běh (<c>e2e=1</c>); null = běžný start.</summary>
     public TestRunOptions? TestRun { get; init; }
 
+    /// <summary>Hláška po přihlášení a před vznikem shellu; null = žádná. E2E jí ověřuje,
+    /// že zavření okna před shellem aplikaci neukončí.</summary>
+    public string? PreShellNotice { get; init; }
+
     public static StartupOptions Development(IReadOnlyList<string> args, string? devLoginSwitch)
     {
         var testRun = TestRunOptions.Parse(args);
@@ -58,6 +62,7 @@ public sealed record StartupOptions
             UseDevDefaults = true,
             InternalDiagnosticsEnabled = true,
             TestRun = testRun,
+            PreShellNotice = testRun is { PreShellPopup: true } ? TestRunOptions.PreShellPopupText : null,
         };
     }
 

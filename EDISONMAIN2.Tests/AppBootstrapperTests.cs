@@ -36,6 +36,9 @@ public class AppBootstrapperTests
         public bool Configured { get; set; } = true;
         public bool EnsureConfiguredCalled { get; private set; }
         public bool LoginSucceeds { get; set; } = true;
+        public bool ShutdownHeldBeforeSetup { get; private set; }
+
+        protected override void HoldShutdownUntilHandOff() => ShutdownHeldBeforeSetup = !EnsureConfiguredCalled;
 
         protected override bool EnsureConfigured()
         {
@@ -214,6 +217,45 @@ public class AppBootstrapperTests
         Assert.True(b.ShutdownCalled);
         Assert.False(b.TryLoginCalled);   // setup zrušen → ani login se nezkouší
         Assert.False(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_HoldsShutdownBeforeFirstWindow()
+    {
+        // Wizard je první okno, které může vzniknout; jeho zavření nesmí aplikaci ukončit dřív, než rozhodne Run.
+        var b = new TestableBootstrapper();
+
+        b.Run();
+
+        Assert.True(b.ShutdownHeldBeforeSetup);
+    }
+
+    [Fact]
+    public void Run_PreShellNotice_ShownOnceAfterLogoutWired_ShellStillBuilt()
+    {
+        // Ukončení během hlášky musí uvolnit zámek jako každé ukončení po Accepted.
+        var b = new TestableBootstrapper(new StartupOptions { PreShellNotice = "hláška" });
+        bool? logoutWiredAtNotice = null;
+        b.Popup.When(p => p.Info("hláška")).Do(_ => logoutWiredAtNotice = b.SessionLogoutWired);
+
+        b.Run();
+
+        b.Popup.Received(1).Info("hláška");
+        Assert.True(logoutWiredAtNotice);
+        Assert.True(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_LicenceRefused_NoPreShellNotice()
+    {
+        var b = new TestableBootstrapper(new StartupOptions { PreShellNotice = "hláška" })
+        {
+            SessionOutcome = LicenceAcquireOutcome.Refused
+        };
+
+        b.Run();
+
+        b.Popup.DidNotReceive().Info("hláška");
     }
 
     [Fact]
@@ -514,7 +556,7 @@ public class AppBootstrapperTests
     [Fact]
     public void TryLogin_DevLogin_ReturnsItWithoutDialog()
     {
-        // Bez Application: dialog větev by na ShutdownMode spadla, DevLogin na ni nesmí sáhnout.
+        // Bez Application: dialog větev by na login okně spadla, DevLogin ho nesmí otevřít.
         var options = StartupOptions.Development([], null);
 
         Assert.True(new RealStepsBootstrapper(options).CallTryLogin(out var login));

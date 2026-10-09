@@ -22,4 +22,12 @@ public class TestRunOptionsTests
         Assert.Equal("CB_DP", TestRunOptions.Parse(["e2e=1", "idfa=CB_DP"])!.StartIdfa);
         Assert.Null(TestRunOptions.Parse(["e2e=1"])!.StartIdfa);
     }
+
+    [Fact]
+    public void Parse_PreShellPopupToken_OnlyWithTestRun()
+    {
+        Assert.True(TestRunOptions.Parse(["e2e=1", "preshellpopup=1"])!.PreShellPopup);
+        Assert.False(TestRunOptions.Parse(["e2e=1"])!.PreShellPopup);
+        Assert.Null(TestRunOptions.Parse(["preshellpopup=1"]));
+    }
 }

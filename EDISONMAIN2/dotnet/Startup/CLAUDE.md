@@ -4,18 +4,19 @@ Bootstrap, login, připojení a session shellu; zbytek shellu v [../../CLAUDE.md
 
 ## Bootstrap, login, připojení
 
-`AppBootstrapper` nastavuje vzhled/font záměrně před loginem, ať je login dialog themovaný. `Run`
-má jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí v `DispatcherUnhandledException`
-(Handled) a app žije dál s `OnExplicitShutdown` a login oknem, které během progress fáze zavření
-ruší. Logout hook (`WireSessionLogout`) se zapojuje hned po `Accepted`, ne až se shellem, aby
-zámek uvolnil i exit kvůli updatu. **Po návratu z `Run` bootstrapper dožil** - co běží dál, má
-vlastní session-scoped objekt (`SessionSwitcher`, `ShellShutdown`); session obou cest skládá
-`SessionFactory.Establish`. Debug vs. Release rozhoduje **jen `StartupOptions`** z `App` (nový rozdíl
-patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login dialog (E2E ho ignoruje).
+`AppBootstrapper` nastavuje vzhled/font záměrně před loginem, ať je login dialog themovaný. Od prvního kroku `RunCore`
+platí `OnExplicitShutdown`: zavření wizardu, popupu ani login okna před shellem aplikaci neukončí (při auto-loginu je
+popup licence jediné okno). Proto má `Run` jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí
+v `DispatcherUnhandledException` (Handled) a app žije dál s login oknem, které během progress fáze zavření ruší.
+Logout hook (`WireSessionLogout`) se zapojuje hned po `Accepted`, ne až se shellem, aby zámek uvolnil i exit kvůli
+updatu. **Po návratu z `Run` bootstrapper dožil** - co běží dál, má vlastní session-scoped objekt (`SessionSwitcher`,
+`ShellShutdown`); session obou cest skládá `SessionFactory.Establish`. Debug vs. Release rozhoduje **jen
+`StartupOptions`** z `App` (nový rozdíl patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login
+dialog (E2E ho ignoruje).
 
 Login okno (jen dialog cesta, ne `DevLogin`) po OK zůstává jako progress podklad, zavírá se až na shell
-`ContentRendered`; `HandOffLoginWindow` musí dát `Application.MainWindow` na shell **před**
-restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo proces nemá konec.
+`ContentRendered`; `HandOffLoginWindow` (všechny cesty) musí dát `Application.MainWindow` na shell **před**
+`OnMainWindowClose` (v dialog cestě ho drží otevřené login okno) - jinak app umře, nebo proces nemá konec.
 `LocalPrefs.ShellWindowBounds` je **jedna geometrie shellu i login okna** (před loginem není
 session, do které by šlo ukládat): login ji jen **čte**, zapisuje ji shell a jednou bootstrapper
 hned po přihlášení (při zavření je pozdě, shell ji čte dřív). Jméno a heslo (DPAPI blob) se pamatují

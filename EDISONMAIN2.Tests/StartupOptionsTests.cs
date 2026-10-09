@@ -49,6 +49,16 @@ public class StartupOptionsTests
     }
 
     [Fact]
+    public void Development_PreShellNotice_OnlyForTestRunWithSwitch()
+    {
+        Assert.Equal(TestRunOptions.PreShellPopupText,
+            StartupOptions.Development(["e2e=1", "preshellpopup=1"], devLoginSwitch: null).PreShellNotice);
+        Assert.Null(StartupOptions.Development(["e2e=1"], devLoginSwitch: null).PreShellNotice);
+        Assert.Null(StartupOptions.Development(["preshellpopup=1"], devLoginSwitch: null).PreShellNotice);
+        Assert.Null(StartupOptions.Production().PreShellNotice);
+    }
+
+    [Fact]
     public void Development_TestRun_IgnoresDevLoginSwitch()
     {
         // Harness předává shellu prostředí terminálu; login okno by E2E shodilo na „nečekané okno".
