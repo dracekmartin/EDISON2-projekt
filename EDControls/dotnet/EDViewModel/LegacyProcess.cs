@@ -5,6 +5,8 @@ namespace EDControls.EDViewModel;
 /// <summary>Spuštěný legacy proces, jak ho vidí <see cref="LegacyModuleHost"/> - šev pro testy bez skutečného procesu.</summary>
 internal interface ILegacyProcess
 {
+    int Id { get; }
+
     bool HasExited { get; }
 
     /// <summary>Cachovaná hodnota jako u <see cref="Process"/> - čerstvou dá až <see cref="Refresh"/>.</summary>
@@ -46,6 +48,16 @@ internal sealed class SystemLegacyProcess : ILegacyProcess
             if (process.HasExited) _exit.TrySetResult(ReadExitCode());
         }
         catch { /* best-effort: bez exit watche jen nepřijde hlášení pádu */ }
+    }
+
+    /// <summary>0 = nezjistitelný; slouží jen k dohledání detailu pádu, launch kvůli němu padat nesmí.</summary>
+    public int Id
+    {
+        get
+        {
+            try { return _process.Id; }
+            catch { return 0; }
+        }
     }
 
     public bool HasExited => _process.HasExited;

@@ -249,6 +249,31 @@ public class ErrorReportsTests : IDisposable
     }
 
     [Fact]
+    public async Task ReportLegacyExit_HostDetail_CarriesCauseAndHostStack()
+    {
+        const string detail = "\r\nSystem.InvalidOperationException: CRASHTEST bg\r\n   at ALVA.USERS.formUSERSActivity.OnShown()";
+
+        _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3, detail);
+
+        await WaitForRequests(1);
+        var body = Body(0);
+        Assert.Contains("Příčina: System.InvalidOperationException: CRASHTEST bg", body["description"]!.GetValue<string>());
+        Assert.Contains("CRASHTEST bg", body["data"]!["message"]!.GetValue<string>());
+        Assert.Equal(detail, body["data"]!["stack"]!.GetValue<string>());
+        Assert.Equal(3, body["data"]!["exitCode"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public async Task ReportLegacyExit_WithoutHostDetail_KeepsExitCodeOnly()
+    {
+        _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3, "  ");
+
+        await WaitForRequests(1);
+        Assert.DoesNotContain("Příčina", Body(0)["description"]!.GetValue<string>());
+        Assert.Contains(nameof(LegacyHostCrashedException), Body(0)["data"]!["stack"]!.GetValue<string>());
+    }
+
+    [Fact]
     public async Task ReportLegacyExit_SameModuleAndCode_SecondIsSuppressed()
     {
         _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", -532462766);

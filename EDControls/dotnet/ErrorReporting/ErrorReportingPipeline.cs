@@ -106,7 +106,7 @@ internal sealed class ErrorReportingPipeline
     }
 
     /// <inheritdoc cref="ErrorReports.ReportLegacyExit"/>
-    internal void ReportLegacyExit(string exeName, string formFqn, int exitCode)
+    internal void ReportLegacyExit(string exeName, string formFqn, int exitCode, string? hostDetail = null)
     {
         try
         {
@@ -116,11 +116,14 @@ internal sealed class ErrorReportingPipeline
             if (decision.Action == ThrottleAction.Suppress) return;
 
             var ctx = BuildContext(null) with { WindowNamespace = formFqn, WindowTitle = exeName };
+            var cause = string.IsNullOrWhiteSpace(hostDetail) ? null : FirstLine(hostDetail);
             var report = ErrorReportBuilder.Build(
-                new LegacyHostCrashedException(exeName, formFqn, exitCode), ctx, null, decision.RepeatCount);
+                new LegacyHostCrashedException(exeName, formFqn, exitCode, cause), ctx, null, decision.RepeatCount);
             report.Data["legacyHost"] = true;
             report.Data["exitCode"] = exitCode;
             report.Data["exitCodeHex"] = $"0x{exitCode:X8}";
+            // Stack syntetické výjimky by ukazoval do shellu, skutečný je ve výpisu hosta.
+            if (cause is not null) report.Data["stack"] = hostDetail;
             Send(report);
         }
         catch
@@ -220,6 +223,9 @@ internal sealed class ErrorReportingPipeline
             MachineName = SafeMachineName(),
         };
     }
+
+    private static string FirstLine(string text) =>
+        text.TrimStart().Split('\n', 2)[0].Trim();
 
     private static string? SafeMachineName()
     {

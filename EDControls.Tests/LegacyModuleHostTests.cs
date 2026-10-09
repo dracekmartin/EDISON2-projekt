@@ -24,6 +24,7 @@ public class LegacyModuleHostTests
         private readonly List<Action<int?>> _callbacks = [];
         private int? _exitCode;
 
+        public int Id { get; set; }
         public bool HasExited { get; private set; }
         public IntPtr MainWindowHandle { get; set; }
         /// <summary>Okno, které se objeví až po <see cref="Refresh"/> (jako u <c>Process</c>).</summary>
@@ -71,6 +72,10 @@ public class LegacyModuleHostTests
     {
         public List<ProcessStartInfo> Started { get; } = [];
         public List<(string Exe, string Form, int Code)> Reports { get; } = [];
+        public List<string?> ReportedDetails { get; } = [];
+        /// <summary>Detail pádu, který „zapsal host", podle pid.</summary>
+        public Dictionary<int, string> CrashDetails { get; } = [];
+        public List<(int Pid, DateTime StartedUtc)> TakenDetails { get; } = [];
         public List<(string Form, string Control)> Usage { get; } = [];
         public List<IntPtr> Focused { get; } = [];
         public HashSet<string> MissingFiles { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -97,7 +102,16 @@ public class LegacyModuleHostTests
                     return Last = CreateProcess();
                 },
                 fileExists: path => !MissingFiles.Contains(path) && !MissingFiles.Contains(Path.GetFileName(path)),
-                reportExit: (exe, form, code) => Reports.Add((exe, form, code)),
+                reportExit: (exe, form, code, detail) =>
+                {
+                    Reports.Add((exe, form, code));
+                    ReportedDetails.Add(detail);
+                },
+                takeCrashDetail: (pid, startedUtc) =>
+                {
+                    TakenDetails.Add((pid, startedUtc));
+                    return CrashDetails.Remove(pid, out var detail) ? detail : null;
+                },
                 trackUsage: (form, control) => Usage.Add((form, control)),
                 postToUi: action =>
                 {
@@ -316,6 +330,37 @@ public class LegacyModuleHostTests
         h.Last!.Exit(3);
 
         Assert.Equal([(Exe, Form, 3)], h.Reports);
+    }
+
+    [Fact]
+    public void Exit_NonZero_PassesHostCrashDetailOfThatProcess()
+    {
+        var before = DateTime.UtcNow;
+        var h = new Harness { CreateProcess = () => new FakeProcess { Id = 4242 } };
+        h.CrashDetails[4242] = "System.InvalidOperationException: boom";
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        h.Last!.Exit(3);
+
+        Assert.Equal(["System.InvalidOperationException: boom"], h.ReportedDetails);
+        // Čas startu odfiltruje soubor, který zbyl po dřívějším procesu se stejným pid.
+        var taken = Assert.Single(h.TakenDetails);
+        Assert.Equal(4242, taken.Pid);
+        Assert.InRange(taken.StartedUtc, before, DateTime.UtcNow);
+    }
+
+    [Fact]
+    public void Exit_KilledByShell_TakesDetailWithoutReporting()
+    {
+        // Shell zabil modul uprostřed chybového dialogu hosta: soubor se uklidí, pád se nehlásí.
+        var h = new Harness { CreateProcess = () => new FakeProcess { Id = 7 } };
+        h.CrashDetails[7] = "System.Exception: x";
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        h.Host.CloseAll();
+
+        Assert.Empty(h.Reports);
+        Assert.Empty(h.CrashDetails);
     }
 
     [Fact]

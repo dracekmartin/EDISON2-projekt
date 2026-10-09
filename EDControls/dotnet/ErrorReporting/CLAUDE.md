@@ -51,9 +51,9 @@ EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_Ca
   do `.old`. Nic se zpětně neodesílá - podpora si soubor vyžádá ručně.
 - `ReportLegacyExit` (pád hostovaného legacy modulu podle exit kódu, volá `LegacyModuleHost`):
   kontext okna = forma/exe modulu a **stabilní throttle klíč** `LegacyExit|exe|forma|kód` - syntetická
-  výjimka nemá stack, `BuildKey` by slepil pády všech modulů do jednoho záznamu.
-- `IngestUrl` / `ApiKey` jsou `static readonly`, ne `const` - pravidlo samostatně nasazené
-  DLL, viz `EDControls/CLAUDE.md`.
+  výjimka nemá stack, `BuildKey` by slepil pády všech modulů do jednoho záznamu. Výjimku zná jen host:
+  před pádem ji zapíše do `%TEMP%\m-line\legacy-crash\<pid>.txt` (`LegacyCrashDetail`, cestu zrcadlí
+  `HostedErrorReporter` v repu EDISON) a shell ji po konci procesu přiloží (`data.stack`, příčina v popisu).
 - `ReportFatal` posílá **synchronně** s 5s timeoutem: po `AppDomain.UnhandledException`
   runtime proces vzápětí ukončí a fire-and-forget by se nestihl.
 - `TryCapture` bere `FrameworkElement`, ne `Window` - nezobrazené okno má nulovou

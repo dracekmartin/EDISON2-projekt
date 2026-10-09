@@ -47,8 +47,13 @@ public static class ErrorReports
     /// crash, host po fatal chybě). Kontext okna nese forma a exe modulu, ne shell - Přehled
     /// telemetrie tak seskupí podle modulu. Throttle klíč je stabilní (výjimka se nikdy nehodila,
     /// takže <see cref="ErrorThrottle.BuildKey"/> by bez stacku slepil všechny moduly do jednoho).
+    /// <paramref name="hostDetail"/> je výjimka, kterou host zapsal před pádem (<see cref="LegacyCrashDetail"/>).
     /// Volatelné z libovolného vlákna. Nikdy nehází.
     /// </summary>
+    public static void ReportLegacyExit(string exeName, string formFqn, int exitCode, string? hostDetail) =>
+        Pipeline.ReportLegacyExit(exeName, formFqn, exitCode, hostDetail);
+
+    /// <summary>Původní signatura pro exe přeložené proti starší samostatně nasazené EDControls.dll.</summary>
     public static void ReportLegacyExit(string exeName, string formFqn, int exitCode) =>
         Pipeline.ReportLegacyExit(exeName, formFqn, exitCode);
 

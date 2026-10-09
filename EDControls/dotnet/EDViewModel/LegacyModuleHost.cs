@@ -40,7 +40,8 @@ internal sealed class LegacyModuleHost
     private readonly Func<EDServices> _services;
     private readonly Func<ProcessStartInfo, ILegacyProcess?> _start;
     private readonly Func<string, bool> _fileExists;
-    private readonly Action<string, string, int> _reportExit;
+    private readonly Action<string, string, int, string?> _reportExit;
+    private readonly Func<int, DateTime, string?> _takeCrashDetail;
     private readonly Action<string, string> _trackUsage;
     private readonly Action<Action> _postToUi;
     private readonly Func<Window?> _dialogOwner;
@@ -52,7 +53,8 @@ internal sealed class LegacyModuleHost
         Func<EDServices> services,
         Func<ProcessStartInfo, ILegacyProcess?>? start = null,
         Func<string, bool>? fileExists = null,
-        Action<string, string, int>? reportExit = null,
+        Action<string, string, int, string?>? reportExit = null,
+        Func<int, DateTime, string?>? takeCrashDetail = null,
         Action<string, string>? trackUsage = null,
         Action<Action>? postToUi = null,
         Func<Window?>? dialogOwner = null,
@@ -65,6 +67,7 @@ internal sealed class LegacyModuleHost
         _start = start ?? SystemLegacyProcess.Start;
         _fileExists = fileExists ?? File.Exists;
         _reportExit = reportExit ?? ErrorReporting.ErrorReports.ReportLegacyExit;
+        _takeCrashDetail = takeCrashDetail ?? ErrorReporting.LegacyCrashDetail.Take;
         _trackUsage = trackUsage ?? EDUsageTelemetry.Track;
         // Konec procesu chodí z thread poolu; při shutdownu (Application.Current null) se zahodí.
         _postToUi = postToUi ?? (action => Application.Current?.Dispatcher.BeginInvoke(action));
@@ -256,6 +259,7 @@ internal sealed class LegacyModuleHost
         bool direct = LaunchesDirectly(exeName);
         var launcherPath = direct ? agendaPath : ResolveExistingPath(_launcherExe, _fileExists, DefaultDeployRoot);
 
+        var startedUtc = DateTime.UtcNow;
         var prc = _start(new ProcessStartInfo
         {
             UseShellExecute = true,
@@ -266,11 +270,14 @@ internal sealed class LegacyModuleHost
         if (prc is null) return null;
 
         var launch = new LegacyLaunch(prc, exeName, formFqn, inputParam);
+        var pid = prc.Id;
         // Tvrdý pád hosta (host sám dosáhne jen na managed výjimky - viz FormToRunGetter v repu EDISON).
         prc.OnExited(code =>
         {
+            // Detail se odebere při každém konci, i nehlášeném (kill shellem uprostřed chybového dialogu).
+            var crashDetail = _takeCrashDetail(pid, startedUtc);
             if (code is { } exitCode && ShouldReportExit(exitCode, launch.KilledByShell))
-                _reportExit(exeName, formFqn, exitCode);
+                _reportExit(exeName, formFqn, exitCode, crashDetail);
         });
         return launch;
     }
