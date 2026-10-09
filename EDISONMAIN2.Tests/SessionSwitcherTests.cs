@@ -48,6 +48,16 @@ public class SessionSwitcherTests
             return PromptResult;
         }
 
+        public bool PasswordChanged { get; set; } = true;
+        public (MLRest Connection, string UserName)? PasswordChange { get; private set; }
+
+        protected override bool ForcePasswordChange(MLRest connection, string userName)
+        {
+            Calls.Add("password");
+            PasswordChange = (connection, userName);
+            return PasswordChanged;
+        }
+
         protected override void FlushTelemetry(IMLRest? mlRest)
         {
             Calls.Add("flush");
@@ -194,6 +204,43 @@ public class SessionSwitcherTests
         vetoed.PromptResult = ReauthLogin();
         vetoed.Switch();
         Assert.Empty(vetoed.Calls);
+    }
+
+    // Vynucená změna hesla (feature #17) platí i pro přihlášení jiného uživatele (legacy frmNoMDI.vb:3320 → :734).
+
+    [Fact]
+    public void Switch_PasswordChangeCancelled_Cancelled_WindowsStayOpen()
+    {
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var originalMLRest = services.MLRest;
+        var closeAll = Substitute.For<Func<bool>>();
+        closeAll.Invoke().Returns(true);
+        var s = TestableSessionSwitcher.Create(services, closeAll);
+        s.PromptResult = ReauthLogin() with { ChangePasswordNeeded = true };
+        s.PasswordChanged = false;
+
+        var outcome = s.Switch();
+
+        Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
+        closeAll.DidNotReceiveWithAnyArgs().Invoke();
+        Assert.Equal(["password"], s.Calls);
+        Assert.Null(s.AllowedQuery);
+        Assert.Same(originalMLRest, services.MLRest);
+        Assert.Null(s.WiredMLRest);
+    }
+
+    [Fact]
+    public void Switch_PasswordChanged_ContinuesAsNewUser()
+    {
+        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        s.PromptResult = ReauthLogin() with { ChangePasswordNeeded = true };
+
+        var outcome = s.Switch();
+
+        Assert.Equal(SwitchUserResult.Success, outcome.Outcome);
+        Assert.Equal(["password", "flush", "logout", "establish"], s.Calls);
+        Assert.Same(s.CapturedPromptConnection, s.PasswordChange?.Connection);
+        Assert.Equal("bob", s.PasswordChange?.UserName);
     }
 
     [Fact]

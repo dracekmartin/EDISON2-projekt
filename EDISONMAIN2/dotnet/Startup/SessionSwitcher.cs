@@ -18,7 +18,7 @@ public record SwitchUserOutcome(SwitchUserResult Outcome, IReadOnlyList<CompanyS
 
 public enum SwitchUserResult
 {
-    /// <summary>Uživatel zrušil login dialog, nebo okno s neuloženými daty odmítlo zavření.
+    /// <summary>Uživatel zrušil login dialog nebo vynucenou změnu hesla, nebo okno s neuloženými daty odmítlo zavření.
     /// Shell pokračuje s původním session beze změny.</summary>
     Cancelled,
     /// <summary>Licence pro nového uživatele přesáhla limit (admin retry / non-admin). Caller obvykle ukončí app.</summary>
@@ -54,9 +54,9 @@ public class SessionSwitcher(
     StartupOptions options)
 {
     /// <summary>
-    /// Prompt → close all → <see cref="SessionFactory.Establish"/> (drží UserPrefs cache
+    /// Prompt → vynucená změna hesla → close all → <see cref="SessionFactory.Establish"/> (drží UserPrefs cache
     /// + LicenceService synchronně s MLRest) → wire activity → acquire licence. Při zrušení
-    /// v login dialogu nic neudělá; při selhání licence je MLRest už swapnut, caller obvykle
+    /// v login dialogu nebo změně hesla nic neudělá; při selhání licence je MLRest už swapnut, caller obvykle
     /// volí shutdown (rollback nelze: closeAllWindows už proběhlo).
     /// </summary>
     public SwitchUserOutcome Switch()
@@ -64,6 +64,11 @@ public class SessionSwitcher(
         var current = ((MLRestAdapter)services.RequireMLRest).Inner;
         var login = PromptLogin(current);
         if (login == null) return new(SwitchUserResult.Cancelled);
+
+        // Feature #17 jako při startu: zrušená změna hesla zruší přepnutí a okna staré session zůstanou.
+        // Server příznak nuluje už v Login, další pokus po zrušení proto projde bez změny (stejně jako start).
+        if (login.ChangePasswordNeeded && !ForcePasswordChange(current, login.UserName))
+            return new(SwitchUserResult.Cancelled);
 
         // Nový uživatel smí do jiných firem než starý; do nepovolené aktuální se nepřihlásí, session
         // vznikne v povolené (legacy frmLoginEx.SelectedCompany). Bez povolené firmy switch neproběhne.
@@ -113,6 +118,13 @@ public class SessionSwitcher(
         WindowStatePersistence.Attach(loginWindow, new ReadOnlyWindowStateStore(windowState));
         return loginWindow.ShowDialog() == true ? vm.Result : null;
     }
+
+    /// <summary>Vynucená změna hesla (feature #17) - dialog jako při startu, owner je shell okno.
+    /// True = heslo změněno, false = uživatel zrušil.</summary>
+    protected virtual bool ForcePasswordChange(MLRest connection, string userName)
+        => new Windows.LoginWindow.ChangePasswordWindow(new MLRestAdapter(connection), userName)
+            { Owner = ownerWindow() }
+            .ShowDialog() == true;
 
     protected virtual void FlushTelemetry(IMLRest? mlRest) => EDUsageTelemetry.Flush(mlRest);
 
