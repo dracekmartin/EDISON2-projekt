@@ -636,9 +636,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         /// <summary>
-        /// Přepnutí firmy: potvrzení → <see cref="CompanySwitcher"/> (zavře okna, vymění Idfa,
-        /// licence) → async rebuild session state → výměna layoutu miniaplikací. Index se nastaví
-        /// teprve po <c>Accepted</c>, takže odmítnutí ani cancel nepotřebují rollback.
+        /// Přepnutí firmy: potvrzení → zavření miniaplikací → <see cref="CompanySwitcher"/> (zavře okna,
+        /// vymění Idfa, licence) → async rebuild session state → layout miniaplikací nové firmy. Index se
+        /// nastaví teprve po <c>Accepted</c>, takže odmítnutí ani cancel jen vrátí miniaplikace staré firmy.
         /// <c>internal</c> kvůli testům - <see cref="AsyncRelayCommand"/> nemá awaitovatelný Execute.
         /// </summary>
         internal async Task SwitchCompanyAsync(int index)
@@ -653,6 +653,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 return;
 
             _session.Invalidate();
+            // Dashboardy v Unloaded ukládají layout přes sdílený MLRest. WPF jim Unloaded doručí během
+            // yieldu níž, tedy ještě před výměnou Idfa.
+            _miniApps.CloseSession();
             LicenceAcquireOutcome result;
             // Synchronní část (zavření oken, VerifyLic, logout staré firmy) blokuje UI thread -
             // overlay „Akce probíhá" se musí stihnout vykreslit před ní (yield). Scope nesmí
@@ -661,11 +664,22 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             using (ActionInProgress())
             {
                 await YieldToRenderAsync();
-                result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
+                try
+                {
+                    result = _switcher.Switch(target.Id, target.Database, _services.ActiveLicence);
+                }
+                catch
+                {
+                    // Po výměně Idfa ji CompanySwitcher při výjimce nevrací, dock staré firmy by mluvil s cizí.
+                    if (Rest.Idfa == Idfa) _miniApps.Restore(DockScope);
+                    throw;
+                }
             }
 
             if (result != LicenceAcquireOutcome.Accepted)
             {
+                // CompanySwitcher vrátil MLRest na starou firmu, dock patří zase jí.
+                _miniApps.Restore(DockScope);
                 // Combobox si drží cílovou firmu z vlastního editu → notifikací ho vrať na platnou.
                 RaiseSessionPropertiesChanged();
                 // Cancelled bez hlášky záměrně: admin odmítl licenční retry dialog, nebo okno
@@ -675,10 +689,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 return;
             }
-
-            // Layout staré firmy ulož a dock zavři JEŠTĚ než se Idfa posune - mezi indexem a restore
-            // je await, během kterého jde shell zavřít; prázdný dock bez firmy se pak neukládá.
-            _miniApps.CloseSession();
 
             try
             {
@@ -911,10 +921,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 return;
 
             _session.Invalidate();
-            var outcome = _switchUser();
+            // Dock zavřít ještě nad starou session, jako u přepnutí firmy (viz SwitchCompanyAsync). Po selhání
+            // licence zůstane zavřený: MLRest už patří novému uživateli a shell končí.
+            _miniApps.CloseSession();
+            var oldSession = Rest;
+            SwitchUserOutcome outcome;
+            try
+            {
+                outcome = _switchUser();
+            }
+            catch
+            {
+                if (ReferenceEquals(Rest, oldSession)) _miniApps.Restore(DockScope);
+                throw;
+            }
             switch (outcome.Outcome)
             {
                 case SwitchUserResult.Cancelled:
+                    _miniApps.Restore(DockScope);
                     return;
                 case SwitchUserResult.LicenceRefused:
                     PopupDisplayer.Info("Pro nového uživatele byl překročen počet licencí. Aplikace bude ukončena.");
@@ -934,10 +958,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     // Admin-gated commandy (ShowUsersLocks/Activity) re-vyhodnotí CanExecute hned,
                     // ne až na první input event po switch.
                     CommandManager.InvalidateRequerySuggested();
-                    // Do původní firmy nový uživatel smět nemusí a session pak běží v jiné, proto se dock
-                    // ukládá a zavírá před posunem Idfa jako u přepnutí firmy (viz SwitchCompanyAsync).
                     var oldIdfa = Idfa;
-                    _miniApps.CloseSession();
                     try
                     {
                         ReplaceCompanies(outcome.Companies ?? [], Rest.Idfa);

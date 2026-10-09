@@ -82,8 +82,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenDefault();
         }
 
-        /// <summary>Při zavření shellu: zavře miniaplikace bez uložení (to dělá <see cref="Persist"/> předem).</summary>
-        internal void CloseAll() => _manager?.CloseAll();
+        /// <summary>
+        /// Při zavření shellu: zavře miniaplikace bez uložení (to dělá <see cref="Persist"/> předem) a odpojí host,
+        /// takže pozdější <see cref="Restore"/> nic neotevře.
+        /// </summary>
+        internal void CloseAll()
+        {
+            // Shell se dá zavřít i uprostřed přepnutí (force logout během login dialogu), které pak dock obnovuje.
+            _manager?.CloseAll();
+            _manager = null;
+        }
 
         // Připnuté miniaplikace (Plocha) v pořadí registrace; id zná jen jejich provider.
         private IEnumerable<MiniAppDescriptor> Pinned => catalog.Groups.SelectMany(g => g.Apps).Where(d => d.Pinned);

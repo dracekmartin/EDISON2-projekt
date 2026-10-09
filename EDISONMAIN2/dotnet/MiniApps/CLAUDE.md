@@ -47,6 +47,7 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
 - Stav docku (`LocalPrefs.MiniAppLayouts`, šířka stromu `TreeWidths`, výška pruhu `SupportStripHeights`) má klíč
   `server:port|idfa|login` (`DockScope`: sdílený terminál, uživatel nerozhází dock jinému), starý klíč jen IDFa se
   čte jako fallback; chybí-li nebo je poškozený → jen Plocha. Ukládá se v `Closed` shellu a při výměně session, pod tu, jejíž dock je.
+  Přepnutí firmy i uživatele dock zavře **před** výměnou session (dashboardy v `Unloaded` ukládají přes sdílený MLRest).
 - Výběr miniaplikace je okno `Windows/MiniAppPickerWindow` s **jednoúrovňovým** seznamem seřazeným
   abecedně podle titulku (česky, nezávisle na kultuře stanice); z `IMiniAppProvider.GroupTitle` zbyl jen popisek řádku.
 - **Tabulka legacy dashboardu má strop na výšku panelu**: s neomezenou výškou DataGrid nevirtualizuje a „Údržba
