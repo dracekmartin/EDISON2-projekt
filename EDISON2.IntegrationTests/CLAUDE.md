@@ -24,6 +24,8 @@ skutečnou odpovědí.
   - `ALVA.SYS.Login.Login` s reálným účtem - resetuje uživatelské flagy 17 a 20 (neexistující jméno
     smí, `LoginContractTests`),
   - `ALVA.MZDY2.MLAPI.gPocZam` - přepočítá a zapíše počet zaměstnanců do dat firmy a telemetrie,
+  - `ALVA.EDISON.MiniAplikaceAPI.LoadData` s `refresh=1` - přepočítá a přepíše Přehledy (miniaplikace),
+    test si data zapíše přes `ALVA.EDTesting.ITDashboard` pod testovací firmu,
   - `VerifyLic` - zakládá ACTIVITY zámek a počítá IP do licence,
   - `UkonciUzivatele` bez řádku GUID - odhlásí všechny shelly na serveru,
   - `LockClearExt` s prázdným nebo cizím GUID - prázdný smaže všechny zámky na serveru,
