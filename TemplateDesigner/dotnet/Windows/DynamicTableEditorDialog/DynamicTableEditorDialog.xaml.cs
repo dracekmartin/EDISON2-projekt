@@ -26,11 +26,9 @@ public partial class DynamicTableEditorDialog : Window
     private readonly DynamicTableElement _element;
     private readonly IReadOnlyList<DataFieldCollection> _collections;
     private Dictionary<string, string> _preFilled = [];
-    private Field? _dataSourceField;
 
-    // Dialog-scoped transient stav vybraného zdroje. EDInputForm se re-Inituje při každém návratu na
-    // tab (auto-Init na Loaded) → Prefill by ho přepsal hodnotou z elementu (u nové tabulky prázdnou).
-    // Držíme ho tady a po každém Prefillu znovu aplikujeme, ať výběr přežije přepínání tabů.
+    // Vybraný zdroj pro seed sloupců. Kdyby se formulář načetl znovu, Prefill by výběr přepsal hodnotou
+    // z elementu, proto se po Prefillu dosadí zpět.
     private string? _selectedDataSource;
 
     /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
@@ -94,13 +92,10 @@ public partial class DynamicTableEditorDialog : Window
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
         ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
 
-        _dataSourceField = (GeneralForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == "DataSource");
-
-        // Po Prefillu (který nastavil hodnotu z elementu) znovu aplikuj vybraný zdroj z transient stavu,
-        // ať re-Init při přepnutí tabu výběr nevymaže. _preFilled zůstává na hodnotě z elementu, takže
-        // ExtractCommands správně detekuje změnu proti uloženému stavu.
-        if (_dataSourceField is not null && _selectedDataSource is not null)
-            _dataSourceField.Value = _selectedDataSource;
+        // Po Prefillu (hodnota z elementu) dosaď vybraný zdroj. _preFilled zůstává na hodnotě z elementu,
+        // takže ExtractCommands správně detekuje změnu proti uloženému stavu.
+        if (_selectedDataSource is not null && GeneralForm.GetField("DataSource") is { } dataSource)
+            dataSource.Value = _selectedDataSource;
 
         GeneralForm.Validate();
     }
@@ -150,12 +145,8 @@ public partial class DynamicTableEditorDialog : Window
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {
-        // Zajisti aktuální zdroj v poli (ComboBox ho mohl při přepnutí tabu vynulovat) - ať Save/
-        // ExtractCommands uloží zvolený zdroj, i když uživatel nebyl naposledy na tabu Obecné.
-        if (_dataSourceField is not null && _selectedDataSource is not null)
-            _dataSourceField.Value = _selectedDataSource;
-
-        // EDInputForm validace „Obecné" - při chybě zůstat v dialogu.
+        // EDInputForm validace „Obecné" - při chybě zůstat v dialogu. Zvolený zdroj v poli už je (SelectedValue
+        // je s Value svázaný obousměrně), znovu ho nedosazovat: prázdný výběr dialog nepamatuje a vrátil by smazaný zdroj.
         if (!GeneralForm.Save()) return;
 
         // Pojistka: kdyby uživatel vybral zdroj, ale nepřepnul na tab Sloupce, naseeduj teď.
