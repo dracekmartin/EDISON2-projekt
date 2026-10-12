@@ -8,8 +8,9 @@ using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Assembly běží paralelně, takže třída, která (i přes helper jako <see cref="EdisonMainViewModelHarness.CreateVM"/>)
-/// mění stav procesu, musí být v <see cref="SharedStaticStateCollection"/> - jinak náhodně shazuje jiné testy.
+/// Třída, která (i přes helper jako <see cref="EdisonMainViewModelHarness.CreateVM"/>) mění stav procesu, musí být
+/// v <see cref="SharedStaticStateCollection"/> - při paralelním běhu by náhodně shazovala jiné testy. Assembly dnes
+/// běží sekvenčně (xunit.runner.json), guard drží izolaci pro případ, že se paralelní běh vrátí.
 /// Hledá volání mutátorů v IL testové assembly včetně lambd, async, iterátorů, helperů a fixture.
 /// </summary>
 public class SharedStaticStateGuardTests

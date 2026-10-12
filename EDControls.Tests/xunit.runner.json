@@ -1,0 +1,8 @@
+{
+  "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
+
+  "//": "Sada běží sekvenčně. Studená inicializace WPF na dvou STA vláknech zároveň uvázne (zámek BAML",
+  "//2": "schématu proti statickému konstruktoru ScrollViewer) a testhost visí bez konce. Cena asi 4 s.",
+
+  "parallelizeTestCollections": false
+}

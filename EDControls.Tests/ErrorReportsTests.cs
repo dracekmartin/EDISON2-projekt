@@ -41,7 +41,7 @@ public class ErrorReportsTests : IDisposable
 
     public ErrorReportsTests()
     {
-        // Vlastní instance bez EDServices a snímků oken: statiku procesu test nemění, běží paralelně.
+        // Vlastní instance bez EDServices a snímků oken: statiku procesu test nemění, smí běžet paralelně.
         _pipeline = new ErrorReportingPipeline(() => new HttpClient(_handler), new ErrorFallbackLog(_fallbackPath),
             () => _internal, () => null, () => []);
     }

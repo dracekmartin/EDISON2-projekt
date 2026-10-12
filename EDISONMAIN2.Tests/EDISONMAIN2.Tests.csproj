@@ -29,6 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="MLRest">
       <HintPath>C:\Edison\MLRest.dll</HintPath>
     </Reference>

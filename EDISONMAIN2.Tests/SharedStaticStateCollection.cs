@@ -1,8 +1,9 @@
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Testy běží paralelně; sériově jen třídy, které mění stav procesu (<c>EDServices.Initialize</c>, i přes
-/// <see cref="EdisonMainViewModelHarness.CreateVM"/>, a statiky shellu). Členství hlídá
+/// Třídy, které mění stav procesu (<c>EDServices.Initialize</c>, i přes
+/// <see cref="EdisonMainViewModelHarness.CreateVM"/>, a statiky shellu). Assembly dnes běží celá sekvenčně
+/// (xunit.runner.json), kolekce drží izolaci pro případ, že se paralelní běh vrátí. Členství hlídá
 /// <see cref="SharedStaticStateGuardTests"/>.
 /// </summary>
 [CollectionDefinition(Name, DisableParallelization = true)]
