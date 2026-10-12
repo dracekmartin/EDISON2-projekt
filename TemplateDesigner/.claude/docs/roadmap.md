@@ -43,11 +43,6 @@ Rozbor (`B191a`) a oprava dat (`B191b`) hotové 12. 10.; oracle, mezery a testov
 
 ### Ostatní
 
-- **Zastávkový JŘ MHD vynechává automaticky přidělené negativní značky** [S, **vada**] (nález
-  12. 10.). Text omezení počítá bez kroku `mkOmzFromOnlyTwoBitmaps` (`ZastavkoveJrMhd.cls:556-599`),
-  takže vyjde prázdný a značka v poznámkách chybí. Porovnání se starým tiskem (`MhdLegacyOracle`):
-  CB_DP 11350 chybí „31 nejede 31. 12.", 11018 značky 18/19/24/31. Oprava vzorem `LinkovyJrMhd.OmezeniSpoje`.
-
 - **Sjednotit nastavení skupin spojů mezi agendami JŘ** [S] (Jan 12. 10.: stejný pojem = stejný
   název). Zastávkový AD má „Rozdělení sloupců (typy provozu)" s volbou „Automaticky (dle linky)",
   linkový AD „Dělení spojů dle platnosti" bez ní. Název parametru jde změnit volně, popisky voleb

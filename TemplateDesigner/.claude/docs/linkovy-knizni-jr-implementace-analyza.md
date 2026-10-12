@@ -1992,7 +1992,7 @@ Tři chyby z §18.2 jsou opravené a značky spojů porovnává se starým tiske
 - **Text omezení u negativní značky byl vždy prázdný** - agenda volala funkce kalendáře s jinými
   argumenty než starý modul (a bez kroku `mkOmzFromOnlyTwoBitmaps`) a chybu polykal catch.
   Zastávkový JŘ MHD má týž výpočet bez toho kroku (`ZastavkoveJrMhd.cls:556-599`); porovnání
-  `MhdLegacyOracle` na CB_DP 11350 a 11018 ukazuje chybějící značky v poznámkách. Zapsané v backlogu.
+  `MhdLegacyOracle` na CB_DP 11350 a 11018 ukazovalo chybějící značky v poznámkách. Opraveno týž den.
 - **Značky zastávky bere starý tisk i z atributů bodu trasy** (`AtributyTam/Zpet`, legacy :442-483),
   ne jen z číselníku zastávek. Na KV_DP 1073 je tak „na znamení".
 

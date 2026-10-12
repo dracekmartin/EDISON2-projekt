@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-12 (3) - 🐛 vývěsky MHD: chyběly automaticky přidělené negativní značky
+
+Zastávkový JŘ MHD u linky s auto-poznámkováním rozdílů platností nevytiskl negativní značky,
+které se přidělují spojům s ručně zadanou platností (a jejich řádky v poznámkách). Text omezení
+se počítal bez kroku `mkOmzFromOnlyTwoBitmaps`, který starý tisk dělá (`LinkyPrintFormatMHD.cls:458`),
+takže vyšel prázdný a spoj značku nedostal. Porovnání se starým tiskem (`MhdLegacyOracle`): CB_DP
+11350 poznámky 94 → 133 ze 133, 11018 chybějící značky 18/19/24/31 doplněné. Linky 1001-1006
+v dosavadní sadě tuhle cestu nemají, proto to žádný test nechytil; nové testy
+`TestParita11350AutoZnacky`, `TestPokryti11018AutoZnacky`. Nalezeno při `B191b`.
+
 ## 2026-10-12 (2) - 🚌 linkový JŘ MHD: data jako starý tisk, volba směru (`B191b`)
 
 Agenda `LinkovyJrMhd` (zatím nezveřejněná) posílá data, jaká tiskl starý modul MHD:

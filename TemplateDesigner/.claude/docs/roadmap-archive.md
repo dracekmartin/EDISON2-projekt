@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Zastávkový JŘ MHD: automaticky přidělené negativní značky (hotovo 12. 10. 2026)
+
+Vývěsky MHD vynechávaly negativní značky přidělené z porovnání platností (text omezení vycházel
+prázdný, chyběl krok `mkOmzFromOnlyTwoBitmaps`). Nalezeno při `B191b`, doloženo `MhdLegacyOracle`
+na CB_DP 11350 a 11018. Detail changelog 2026-10-12 (3).
+
 ## `B191b` Data linkového JŘ MHD jako starý tisk + směr pro tisk (hotovo 12. 10. 2026)
 
 Číslo spoje z dat, poznámky a atributy spoje jen pro knižní tisk, negativní značky přidělené jako
