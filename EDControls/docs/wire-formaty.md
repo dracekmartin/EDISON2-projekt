@@ -118,7 +118,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
         s i = 0
         for každá linka {
             s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value",    LinkaID)
+            d obj.%Set("value",    LinkaID, "string")   // ID z $order by %ToJSON zapsal jako číslo
             d obj.%Set("display",  cisloLinky_" "_nazevLinky)
             d obj.%Set("subtitle", "Platnost od "_platiOd)
             s i = $i(i)
@@ -139,7 +139,7 @@ var output = mlRest.QueryOrThrow("ALVA.X.InstancesList", "LoadList", input);
 var rows = new List<AgendaInstance>();
 foreach (var kvp in output)
 {
-    if (kvp.Key == "ERR") continue;          // MLRest metadata, ne data
+    if (!int.TryParse(kvp.Key, out _)) continue;   // řádky jen na číselných subscriptech, ERR a jiné pojmenované klíče ne
     var json = kvp.Value?.Value?.ToString();
     if (string.IsNullOrEmpty(json)) continue;
     var row = JsonSerializer.Deserialize<AgendaInstance>(json, JsonOpts);

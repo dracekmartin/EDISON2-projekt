@@ -49,13 +49,11 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
         return true;
     }
 
-    /// <summary>True pokud OUT obsahuje form items na číselných subscriptech (1, 2, ...).
-    /// Metadata klíče (ERR, helpTextMode, ...) se ignorují automaticky díky whitelist
-    /// na číselné subscripty.</summary>
+    /// <summary>True pokud OUT obsahuje form items na číselných subscriptech (1, 2, ...).</summary>
     private static bool HasFormItems(CVar output)
     {
         foreach (var kvp in output)
-            if (int.TryParse(kvp.Key, out _)) return true;
+            if (EDInputFormWire.IsItemKey(kvp.Key)) return true;
         return false;
     }
 

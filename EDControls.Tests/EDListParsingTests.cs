@@ -49,6 +49,46 @@ public class EDListParsingTests
         Assert.Equal("1", Assert.Single(rows).Id);
     }
 
+    /// <summary>Pojmenovaný výstup serveru (souhrn, stránkování) nesmí shodit starší klient.</summary>
+    [Fact]
+    public void ParseRows_NamedOutputKey_Skipped()
+    {
+        var output = Output("""{"id":"1","name":"A"}""");
+        output["total"] = new CVar("142");
+
+        var rows = EDListParsing.ParseRows(output, Columns()).ToList();
+
+        Assert.Equal("1", Assert.Single(rows).Id);
+    }
+
+    /// <summary>Server zapíše číslo nebo bool, kdykoli volající plní pole z $order nebo výpočtu.</summary>
+    [Fact]
+    public void ParseRows_NumberBoolAndNullValues_ReadAsWireStrings()
+    {
+        var rows = EDListParsing.ParseRows(
+            Output("""{"id":1,"pocet":142.5,"aktivni":true,"zruseno":false,"name":null}"""), Columns()).ToList();
+
+        var row = Assert.Single(rows);
+        Assert.Equal("1", row.Id);
+        Assert.Equal("142.5", row["pocet"]);
+        Assert.Equal("1", row["aktivni"]);
+        Assert.Equal("0", row["zruseno"]);
+        Assert.Null(row["name"]);
+    }
+
+    /// <summary>Popisek sloupce z $order (rok) zapíše %ToJSON jako číslo.</summary>
+    [Fact]
+    public void ParseColumns_NumberLabel_ReadAsText()
+    {
+        var output = new CVar();
+        output["1"] = new CVar("""[{"key":"r2026","label":2026,"type":"NUMBER"}]""");
+
+        var column = Assert.Single(EDListParsing.ParseColumns(output));
+
+        Assert.Equal("2026", column.Label);
+        Assert.Equal(ListColumnType.Number, column.Type);
+    }
+
     [Fact]
     public void ParseRows_FormatsValuesByColumnType()
     {

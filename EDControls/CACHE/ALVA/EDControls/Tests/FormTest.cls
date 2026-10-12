@@ -261,6 +261,18 @@ Method TestHelpTextModeRoundTrip()
 	do $$$AssertEquals(##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn().helpTextMode, $$$HelpTextModeTooltip, "bez subscriptu default tooltip")
 }
 
+/// Pojmenovaný klíč v IN, který server nezná (novější klient), ReadFromIn přeskočí a položky přečte dál.
+Method TestReadFromInSkipsUnknownNamedKeys()
+{
+	s ^||ML("IN",1) = $lb("FIELD",1,"k","L",$$$FieldTypeText,"v",0,0,"")
+	s ^||ML("IN","x") = "neznámý klíč"
+
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()
+
+	do $$$AssertEquals(form.items.Count(), 1, "jen položka z číselného subscriptu")
+	do $$$AssertEquals(form.GetField("k").value, "v")
+}
+
 /// Zpětná kompatibilita: starší klient pošle krátký $lb (GROUP 4 prvky, FIELD 9 prvků) -
 /// ReadFromIn nesmí spadnout a chybějící pozice dostanou defaulty ($ll>=N větve se přeskočí).
 Method TestShortLegacyListsGetDefaults()

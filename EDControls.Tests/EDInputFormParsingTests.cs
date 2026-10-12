@@ -24,6 +24,19 @@ public class EDInputFormParsingTests
         Assert.Empty(items);
     }
 
+    /// <summary>Nový pojmenovaný výstup serveru nesmí shodit starší klient.</summary>
+    [Fact]
+    public void ParseItems_SkipsNamedOutputKeys()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0");
+        data["title"] = new CVar("Vlastnosti prvku");
+
+        var items = EDInputForm.EDInputFormWire.ParseItems(data);
+
+        Assert.Equal("k", Assert.IsType<Field>(Assert.Single(items)).Key);
+    }
+
     [Fact]
     public void ParseItems_ParsesGroup()
     {

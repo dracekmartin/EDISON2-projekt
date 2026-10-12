@@ -235,9 +235,8 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 	f {
 		s idx = $o(^||ML("IN",idx))
 		q:idx=""
-		i idx="trigger" continue
-		i idx="changedKey" continue
-		i idx="helpTextMode" continue
+		// Položky jen z číselných subscriptů: pojmenovaný klíč od novějšího klienta by $li shodil.
+		continue:idx'=+idx
 		s listVal = ^||ML("IN",idx)
 		s type = $li(listVal,1)
 		i type="GROUP" {

@@ -57,7 +57,7 @@ internal static class EDInputFormWire
         Group? currentGroup = null;
         foreach (KeyValuePair<string, CVar> kvp in output)
         {
-            if (kvp.Key is "ERR" or "helpTextMode") continue;
+            if (!IsItemKey(kvp.Key)) continue;
             CList row = kvp.Value;
             string type = row.GetString(1);
             if (type == "GROUP")
@@ -116,6 +116,10 @@ internal static class EDInputFormWire
         }
         return items;
     }
+
+    /// <summary>Položky jsou jen na číselných subscriptech; pojmenované klíče (ERR, helpTextMode, nový výstup
+    /// serveru) se přeskočí, aby je starší klient snesl.</summary>
+    internal static bool IsItemKey(string key) => int.TryParse(key, out _);
 
     internal static HelpTextMode ParseHelpTextMode(CVar output)
     {

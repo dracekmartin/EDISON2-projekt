@@ -29,9 +29,9 @@ v Caché projektu `ALVA_EDControls`, jinak se `List` u zákazníka nezkompiluje.
 
 - `InitializeList`: `OUT[1]` = **jedno** JSON pole definic sloupců (parser čte jen `OUT[1]`).
 - `LoadList`: `OUT[1..n]` = jeden JSON objekt na řádek; **každý řádek musí mít `id`** -
-  bez něj se tiše zahodí. Klíč `"ERR"` parser přeskakuje.
+  bez něj se tiše zahodí. Parser bere jen číselné subscripty (starší DLL přeskočí jen `ERR`).
 - Filtr: pojmenované klíče `^||ML("IN","filter","klíč")`, ne poziční (viz EDFilter/CLAUDE.md).
-- Hodnoty vždy interní formát jako string: NUMBER s **tečkou**, DATE ISO-8601,
+- Hodnoty vždy interní formát jako string (starší DLL na JSON čísle padá): NUMBER s **tečkou**, DATE ISO-8601,
   DATETIME `yyyy-MM-ddTHH:mm:ss`, BOOL `"1"`/`"0"`, HHMM int (`830` = 08:30),
   COLOR hex `#AARRGGBB` jako formulář (legacy `"R;G;B"` klient čte dál). Zobrazení řídí `type` + `format`.
 

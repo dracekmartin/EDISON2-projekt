@@ -75,18 +75,29 @@ namespace EDControls.EDList
         {
             foreach (KeyValuePair<string, CVar> kvp in output)
             {
-                if (kvp.Key == "ERR") continue;
+                // Řádky jsou jen na číselných subscriptech, pojmenovaný klíč (ERR, nový výstup serveru) nenese data.
+                if (!int.TryParse(kvp.Key, out _)) continue;
                 var json = kvp.Value?.Value?.ToString();
                 if (string.IsNullOrWhiteSpace(json)) continue;
 
                 using var doc = JsonDocument.Parse(json);
                 var raw = new Dictionary<string, string?>();
                 foreach (var prop in doc.RootElement.EnumerateObject())
-                    raw[prop.Name] = prop.Value.GetString();
+                    raw[prop.Name] = WireValue(prop.Value);
 
                 if (BuildRow(raw, columns) is { } row) yield return row;
             }
         }
+
+        // Kontrakt jsou stringy, server ale zapíše číslo nebo bool, když volající plní pole z $order či výpočtu.
+        internal static string? WireValue(JsonElement value) => value.ValueKind switch
+        {
+            JsonValueKind.String => value.GetString(),
+            JsonValueKind.True   => "1",
+            JsonValueKind.False  => "0",
+            JsonValueKind.Null   => null,
+            _                    => value.GetRawText(),
+        };
 
         /// <summary>
         /// Postaví řádek z raw (serverových) hodnot - naformátuje je podle sloupce a zvlášť si drží
@@ -164,7 +175,7 @@ namespace EDControls.EDList
     internal static class JsonElementExtensions
     {
         public static string Str(this JsonElement el, string key) =>
-            el.TryGetProperty(key, out var p) ? p.GetString() ?? "" : "";
+            el.TryGetProperty(key, out var p) ? EDListParsing.WireValue(p) ?? "" : "";
 
         public static int Int(this JsonElement el, string key) =>
             el.TryGetProperty(key, out var p) && p.TryGetInt32(out int v) ? v : 0;
