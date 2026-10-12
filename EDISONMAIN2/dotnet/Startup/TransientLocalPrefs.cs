@@ -7,8 +7,10 @@ namespace EDISONMAIN2;
 internal sealed class TransientLocalPrefs : ILocalPrefs
 {
     public string? LastIdfa { get; set; }
-    public string? LastLoginName { get; set; }
-    public string? RememberedPassword { get; set; }
+    public Dictionary<string, string>? LoginNames { get; set; }
+    public Dictionary<string, string>? RememberedPasswords { get; set; }
+    [Obsolete(ServerLogins.LegacyLoginObsolete)] public string? LastLoginName { get; init; }
+    [Obsolete(ServerLogins.LegacyLoginObsolete)] public string? RememberedPassword { get; init; }
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }
     public Dictionary<string, double>? SupportStripHeights { get; set; }

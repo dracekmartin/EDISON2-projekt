@@ -36,9 +36,11 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
         public static LoginViewModel ForStartup(EDServices services, IMLRest rest, ILocalPrefs prefs)
         {
+            prefs.AdoptLegacyLogin(rest.Server, rest.Port);
             // Zapamatované heslo předvyplní jen když patří k naposledy přihlášenému jménu (DPAPI).
-            var lastName = prefs.LastLoginName ?? "";
-            return new(services, rest, prefs, lastName, PasswordProtector.Unprotect(prefs.RememberedPassword, lastName) ?? "");
+            var lastName = prefs.LoginNameFor(rest.Server, rest.Port) ?? "";
+            var remembered = prefs.RememberedPasswordFor(rest.Server, rest.Port);
+            return new(services, rest, prefs, lastName, PasswordProtector.Unprotect(remembered, lastName) ?? "");
         }
 
         public static LoginViewModel ForReauth(EDServices services, IMLRest rest) => new(services, rest, null, "", "");
@@ -140,7 +142,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
         /// <summary>
         /// Zapamatované heslo do prefs v paměti. Volat až po uložení geometrie okna (ukládá celé prefs):
-        /// na disk smí blob jen spolu s <c>LastLoginName</c> v SavePostLoginState, jinak by předčasný konec
+        /// na disk smí blob jen spolu se jménem v SavePostLoginState, jinak by předčasný konec
         /// startupu (licence, změna hesla) nechal blob jiného jména a uživatel by o heslo přišel.
         /// </summary>
         internal void ApplyRememberedPassword()
@@ -149,14 +151,14 @@ namespace EDISONMAIN2.Windows.LoginWindow
             if (Result is { } result)
             {
                 // Při vynucené změně hesla (feature #17) heslo neukládej - za chvíli se změní a zapamatované by bylo neplatné.
-                _prefs.RememberedPassword = RememberPassword && !result.ChangePasswordNeeded
+                _prefs.SetRememberedPassword(_rest.Server, _rest.Port, RememberPassword && !result.ChangePasswordNeeded
                     ? PasswordProtector.Protect(result.UserName, _acceptedPassword)
-                    : null;
+                    : null);
                 _acceptedPassword = "";
             }
             else if (RememberedPasswordRejected)
             {
-                _prefs.RememberedPassword = null;
+                _prefs.SetRememberedPassword(_rest.Server, _rest.Port, null);
             }
         }
 

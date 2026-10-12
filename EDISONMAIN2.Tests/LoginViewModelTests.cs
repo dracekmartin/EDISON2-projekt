@@ -24,13 +24,25 @@ public class LoginViewModelTests
         var ml = Substitute.For<IMLRest>();
         ml.Delimiter.Returns(D);
         ml.Idfa.Returns("CB_DP");
+        ml.Server.Returns(Dev.Server);
+        ml.Port.Returns(Dev.Port);
         var outputs = responses.Select(r => new object[] { "", r }).ToArray();
         ml.QueryOrThrow("ALVA.SYS.Login", "Login", Arg.Any<object[]>()).Returns(outputs[0], outputs[1..]);
         return ml;
     }
 
-    private static TransientLocalPrefs RememberedPrefs(string name, string password) =>
-        new() { LastLoginName = name, RememberedPassword = PasswordProtector.Protect(name, password) };
+    private static readonly (string Server, int Port) Dev = ("DEV-host", 57772), Cloud = ("cloud1-host", 57773);
+
+    private static TransientLocalPrefs RememberedPrefs(string name, string password, (string Server, int Port)? server = null)
+    {
+        var (host, port) = server ?? Dev;
+        var prefs = new TransientLocalPrefs();
+        prefs.SetLoginName(host, port, name);
+        prefs.SetRememberedPassword(host, port, PasswordProtector.Protect(name, password));
+        return prefs;
+    }
+
+    private static string? DevPassword(ILocalPrefs prefs) => prefs.RememberedPasswordFor(Dev.Server, Dev.Port);
 
     private static LoginViewModel Startup(IMLRest rest, ILocalPrefs? prefs = null) =>
         LoginViewModel.ForStartup(Services(), rest, prefs ?? new TransientLocalPrefs());
@@ -130,7 +142,7 @@ public class LoginViewModelTests
         vm.ApplyRememberedPassword();
 
         Assert.True(vm.RememberedPasswordRejected);
-        Assert.Null(prefs.RememberedPassword);
+        Assert.Null(DevPassword(prefs));
     }
 
     [Fact]
@@ -139,33 +151,33 @@ public class LoginViewModelTests
         // Geometrie login okna ukládá celé prefs ještě před SavePostLoginState; kdyby tam už byl blob
         // nového jména a start skončil (licence, změna hesla), přišel by předchozí uživatel o heslo.
         var prefs = RememberedPrefs("jan.novak", "heslo");
-        var remembered = prefs.RememberedPassword;
+        var remembered = DevPassword(prefs);
         var vm = Startup(Server(Accepted()), prefs);
         vm.UserName = "petr";
 
         vm.Login("petrovo");
 
-        Assert.Equal(remembered, prefs.RememberedPassword);
+        Assert.Equal(remembered, DevPassword(prefs));
     }
 
     [Fact]
     public void TypedPasswordRejected_KeepsRememberedOne()
     {
         var prefs = RememberedPrefs("jan.novak", "stare");
-        var remembered = prefs.RememberedPassword;
+        var remembered = DevPassword(prefs);
         var vm = Startup(Server("-107"), prefs);
 
         Assert.Equal(LoginAttempt.Failed, vm.Login("prepsane"));
         vm.ApplyRememberedPassword();
 
         Assert.False(vm.RememberedPasswordRejected);
-        Assert.Equal(remembered, prefs.RememberedPassword);
+        Assert.Equal(remembered, DevPassword(prefs));
     }
 
     [Fact]
     public void Success_RememberChecked_StoresPasswordUnderServerUserName()
     {
-        // Předvyplnění čte blob pod LastLoginName = jméno ze serveru, ne napsané.
+        // Předvyplnění čte blob pod uloženým jménem = jméno ze serveru, ne napsané.
         var prefs = new TransientLocalPrefs();
         var vm = Startup(Server(Accepted()), prefs);
         vm.UserName = "jan";
@@ -174,7 +186,7 @@ public class LoginViewModelTests
         vm.Login("heslo");
         vm.ApplyRememberedPassword();
 
-        Assert.Equal("heslo", PasswordProtector.Unprotect(prefs.RememberedPassword, "jan.novak"));
+        Assert.Equal("heslo", PasswordProtector.Unprotect(DevPassword(prefs), "jan.novak"));
     }
 
     [Fact]
@@ -189,7 +201,7 @@ public class LoginViewModelTests
         vm.Login("heslo");
         vm.ApplyRememberedPassword();
 
-        Assert.Null(prefs.RememberedPassword);
+        Assert.Null(DevPassword(prefs));
     }
 
     [Fact]
@@ -202,7 +214,7 @@ public class LoginViewModelTests
         vm.Login(vm.InitialPassword);
         vm.ApplyRememberedPassword();
 
-        Assert.Null(prefs.RememberedPassword);
+        Assert.Null(DevPassword(prefs));
     }
 
     [Fact]
@@ -222,7 +234,7 @@ public class LoginViewModelTests
     public void ForStartup_PasswordOfOtherUser_IsNotPrefilled()
     {
         var prefs = RememberedPrefs("petr", "heslo");
-        prefs.LastLoginName = "jan.novak";
+        prefs.SetLoginName(Dev.Server, Dev.Port, "jan.novak");
 
         var vm = Startup(Server(Accepted()), prefs);
 
@@ -230,6 +242,101 @@ public class LoginViewModelTests
         Assert.False(vm.RememberPassword);
         Assert.Equal(LoginFocus.Password, vm.InitialFocus);
     }
+
+    [Fact]
+    public void ForStartup_LoginOfOtherServer_IsNotPrefilled()
+    {
+        // Dvě instalace na stanici: přihlášení na CLOUD1 se nesmí nabízet na DEV.
+        var vm = Startup(Server(Accepted()), RememberedPrefs("jan.novak", "heslo", Cloud));
+
+        Assert.Equal("", vm.UserName);
+        Assert.Equal("", vm.InitialPassword);
+        Assert.False(vm.RememberPassword);
+    }
+
+    [Fact]
+    public void ForStartup_ServerKeyIgnoresCase()
+    {
+        var vm = Startup(Server(Accepted()), RememberedPrefs("jan.novak", "heslo", (Dev.Server.ToLowerInvariant(), Dev.Port)));
+
+        Assert.Equal("jan.novak", vm.UserName);
+        Assert.Equal("heslo", vm.InitialPassword);
+    }
+
+    [Fact]
+    public void Success_RememberChecked_LeavesOtherServerLogin()
+    {
+        var prefs = RememberedPrefs("petr", "cloudove", Cloud);
+        var vm = Startup(Server(Accepted()), prefs);
+        vm.UserName = "jan";
+        vm.RememberPassword = true;
+
+        vm.Login("heslo");
+        vm.ApplyRememberedPassword();
+
+        Assert.Equal("heslo", PasswordProtector.Unprotect(DevPassword(prefs), "jan.novak"));
+        Assert.Equal("cloudove", PasswordProtector.Unprotect(prefs.RememberedPasswordFor(Cloud.Server, Cloud.Port), "petr"));
+    }
+
+#pragma warning disable CS0618 // převzetí přihlášení starší verze
+    private static TransientLocalPrefs LegacyPrefs(string name, string password) =>
+        new() { LastLoginName = name, RememberedPassword = PasswordProtector.Protect(name, password) };
+
+    [Fact]
+    public void ForStartup_ServerWithoutOwnLogin_AdoptsLegacyLogin()
+    {
+        // Po aktualizaci uživatel jméno a heslo znovu nezadává.
+        var prefs = LegacyPrefs("jan.novak", "heslo");
+
+        var vm = Startup(Server(Accepted()), prefs);
+
+        Assert.Equal("jan.novak", vm.UserName);
+        Assert.Equal("heslo", vm.InitialPassword);
+        Assert.Equal("jan.novak", prefs.LoginNameFor(Dev.Server, Dev.Port));
+    }
+
+    [Fact]
+    public void ForStartup_ServerWithOwnLogin_IgnoresLegacyLogin()
+    {
+        // Na tomhle serveru už se přihlásil petr bez zapamatování - staré heslo se vracet nesmí.
+        var prefs = LegacyPrefs("jan.novak", "heslo");
+        prefs.SetLoginName(Dev.Server, Dev.Port, "petr");
+
+        var vm = Startup(Server(Accepted()), prefs);
+
+        Assert.Equal("petr", vm.UserName);
+        Assert.Equal("", vm.InitialPassword);
+    }
+
+    [Fact]
+    public void ForStartup_OtherServerHasOwnLogin_DoesNotAdoptLegacyLogin()
+    {
+        // Převzetí jen jednou na stanici: jinak by „Připojit k databázi" vrátilo heslo, které uživatel zapomněl.
+        var prefs = LegacyPrefs("jan.novak", "heslo");
+        prefs.SetLoginName(Cloud.Server, Cloud.Port, "jan.novak");
+
+        var vm = Startup(Server(Accepted()), prefs);
+
+        Assert.Equal("", vm.UserName);
+        Assert.Equal("", vm.InitialPassword);
+    }
+
+    [Fact]
+    public void LegacyPasswordRejected_IsNotOfferedAgainOnThatServer()
+    {
+        var prefs = LegacyPrefs("jan.novak", "stare");
+        var vm = Startup(Server("-107"), prefs);
+        vm.Login(vm.InitialPassword);
+        vm.ApplyRememberedPassword();
+
+        var next = Startup(Server(Accepted()), prefs);
+
+        Assert.Equal("jan.novak", next.UserName);
+        Assert.Equal("", next.InitialPassword);
+        // Staré klíče zůstávají jiným serverům a starší verzi shellu.
+        Assert.NotNull(prefs.RememberedPassword);
+    }
+#pragma warning restore CS0618
 
     [Fact]
     public void ForReauth_StartsEmptyWithoutRemember()

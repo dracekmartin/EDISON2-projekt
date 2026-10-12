@@ -28,6 +28,7 @@ public class AppBootstrapperTests
         public bool BuildShellCalled { get; private set; }
         public string? SavedIdfa { get; private set; }
         public string? SavedLoginName { get; private set; }
+        public (string Server, int Port)? SavedLoginServer { get; private set; }
         public string? LoginDialogPrefill { get; private set; }
         public bool WireActivityCalled { get; private set; }
         public bool AcquireSessionCalled { get; private set; }
@@ -89,7 +90,7 @@ public class AppBootstrapperTests
         protected override bool TryLogin(MLRest loginRest, ILocalPrefs prefs, EDServices services, out LoginResult login)
         {
             TryLoginCalled = true;
-            LoginDialogPrefill = prefs.LastLoginName;
+            LoginDialogPrefill = prefs.LoginNameFor("test-host", 9999);
             login = new LoginResult(42, "test", "Test User", true, "",
                 ChangePasswordNeeded: LoginRequiresPasswordChange, MayUpdate: true, Email: "");
             return LoginSucceeds;
@@ -147,10 +148,11 @@ public class AppBootstrapperTests
             return SessionOutcome;
         }
 
-        protected override void SavePostLoginState(ILocalPrefs prefs, string idfa, string? loginName)
+        protected override void SavePostLoginState(ILocalPrefs prefs, string server, int port, string idfa, string? loginName)
         {
             SavedIdfa = idfa;
             SavedLoginName = loginName;
+            SavedLoginServer = (server, port);
         }
 
         protected override void WireActivityFailedHandler(SessionContext session, EDServices services)
@@ -424,6 +426,7 @@ public class AppBootstrapperTests
 
         Assert.Equal("JI_DP", b.SavedIdfa);
         Assert.Equal("test", b.SavedLoginName);   // jméno z úspěšného loginu
+        Assert.Equal(("test-host", 9999), b.SavedLoginServer);   // server, na který se přihlásil
     }
 
     [Fact]
@@ -467,7 +470,7 @@ public class AppBootstrapperTests
     private class RealStepsBootstrapper(StartupOptions options) : AppBootstrapper(options)
     {
         public void CallSave(ILocalPrefs prefs, string idfa, string? name)
-            => SavePostLoginState(prefs, idfa, name);
+            => SavePostLoginState(prefs, "DEV-host", 57772, idfa, name);
 
         public ILocalPrefs Load() => LoadLocalPrefs();
 
@@ -519,7 +522,7 @@ public class AppBootstrapperTests
     }
 
     [Fact]
-    public void SavePostLoginState_DevLogin_DoesNotOverwriteLastLoginName()
+    public void SavePostLoginState_DevLogin_DoesNotOverwriteLoginName()
     {
         // DevLogin je syntetický - jméno v local.json patří poslednímu ostrému přihlášení.
         var prefs = Substitute.For<ILocalPrefs>();
@@ -528,18 +531,18 @@ public class AppBootstrapperTests
 
         prefs.Received().LastIdfa = "CB_DP";
         prefs.Received(1).Save();
-        prefs.DidNotReceive().LastLoginName = Arg.Any<string?>();
+        prefs.DidNotReceive().LoginNames = Arg.Any<Dictionary<string, string>?>();
     }
 
     [Fact]
-    public void SavePostLoginState_DialogLogin_SavesLastLoginName()
+    public void SavePostLoginState_DialogLogin_SavesLoginNameForServer()
     {
         var prefs = Substitute.For<ILocalPrefs>();
 
         new RealStepsBootstrapper(StartupOptions.Production()).CallSave(prefs, "CB_DP", "jan.novak");
 
         prefs.Received().LastIdfa = "CB_DP";
-        prefs.Received().LastLoginName = "jan.novak";
+        Assert.Equal("jan.novak", prefs.LoginNameFor("dev-host", 57772));
         prefs.Received(1).Save();
     }
 

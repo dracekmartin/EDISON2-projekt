@@ -18,8 +18,8 @@ Login okno (jen dialog cesta, ne `DevLogin`) po OK zůstává jako progress podk
 restore `OnMainWindowClose` (implicitní je login okno) - jinak app umře, nebo proces nemá konec.
 `LocalPrefs.ShellWindowBounds` je **jedna geometrie shellu i login okna** (před loginem není
 session, do které by šlo ukládat): login ji jen **čte**, zapisuje ji shell a jednou bootstrapper
-hned po přihlášení (při zavření je pozdě, shell ji čte dřív). `RememberedPassword` je DPAPI blob,
-předvyplní se jen když jméno v blobu == `LastLoginName`.
+hned po přihlášení (při zavření je pozdě, shell ji čte dřív). Jméno a heslo (DPAPI blob) se pamatují
+**per server** (`LoginNames`/`RememberedPasswords`, klíč `server:port`), heslo se předvyplní jen ke jménu z blobu.
 
 `SettingsLoader` čte `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho roznáší ze
 serveru): **`connection@restport`, ne `@port`** (to je superserver); wizard zapisuje plnou legacy

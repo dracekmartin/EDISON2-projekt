@@ -16,12 +16,23 @@ public interface ILocalPrefs
 {
     string? LastIdfa { get; set; }
 
-    /// <summary>Poslední přihlašovací jméno - předvyplní se v login dialogu. Null = žádné.</summary>
-    string? LastLoginName { get; set; }
+    /// <summary>Poslední přihlašovací jméno per server (klíč <see cref="ServerLogins.Key"/>) - předvyplní se v login
+    /// dialogu. Dvě instalace na stanici (nebo „Připojit k databázi") míří na různé servery. Null = žádné.</summary>
+    Dictionary<string, string>? LoginNames { get; set; }
 
-    /// <summary>Zapamatované heslo posledního uživatele - DPAPI blob (viz <see cref="PasswordProtector"/>).
-    /// Null = nezapamatováno. Předvyplní se jen když jméno uložené v blobu == <see cref="LastLoginName"/>.</summary>
-    string? RememberedPassword { get; set; }
+    /// <summary>Zapamatované heslo per server - DPAPI blob (viz <see cref="PasswordProtector"/>). Předvyplní se jen když
+    /// jméno v blobu == jméno z <see cref="LoginNames"/>. Null = žádné.</summary>
+    /// <remarks>Odděleně od jména, aby je Save slučoval zvlášť: zapomenutí hesla v jedné instanci nesmí vrátit
+    /// jméno, které na tomtéž serveru mezitím uložila jiná.</remarks>
+    Dictionary<string, string>? RememberedPasswords { get; set; }
+
+    /// <summary>Poslední přihlašovací jméno starší verze, jedno pro všechny servery.</summary>
+    [Obsolete(ServerLogins.LegacyLoginObsolete)]
+    string? LastLoginName { get; }
+
+    /// <summary>Zapamatované heslo starší verze (DPAPI blob ke <see cref="LastLoginName"/>), jedno pro všechny servery.</summary>
+    [Obsolete(ServerLogins.LegacyLoginObsolete)]
+    string? RememberedPassword { get; }
 
     /// <summary>Uložený layout miniaplikací (AvalonDock XML) per session, klíč viz <c>DockScope</c>. Null = žádný uložený.</summary>
     Dictionary<string, string>? MiniAppLayouts { get; set; }
@@ -52,6 +63,57 @@ public class WindowBoundsPrefs
     public bool Maximized { get; set; }
 }
 
+/// <summary>Přihlašovací jméno a zapamatované heslo serveru v <see cref="ILocalPrefs"/>.</summary>
+public static class ServerLogins
+{
+    /// <summary>Text <see cref="ObsoleteAttribute"/> u přihlášení starší verze.</summary>
+    public const string LegacyLoginObsolete =
+        "Přihlášení verze před ukládáním per server. Čte ho jen AdoptLegacyLogin a nikdo ho nezapisuje: "
+        + "starší verze shellu na téže stanici z něj dál předvyplňuje. Odebrat, až ji žádná stanice nemá.";
+
+    // Malá písmena: host se v EDISONini.xml i v argumentech píše v různé velikosti a pořád jde o týž server.
+    public static string Key(string server, int port) => $"{server}:{port}".ToLowerInvariant();
+
+#pragma warning disable CS0618 // jediné místo, které přihlášení starší verze čte
+    /// <summary>
+    /// Dokud žádný server nemá vlastní záznam (první start po aktualizaci), převezme přihlášení starší verze
+    /// (jen v paměti, uloží ho příští Save): uživatel tak jméno a heslo znovu nezadává.
+    /// </summary>
+    /// <remarks>Jen jednou na stanici: později by jinému serveru vrátilo heslo, které uživatel mezitím zapomněl nebo změnil.</remarks>
+    public static void AdoptLegacyLogin(this ILocalPrefs prefs, string server, int port)
+    {
+        if (prefs.LoginNames is { Count: > 0 } || prefs.LastLoginName is not { } name) return;
+        prefs.SetLoginName(server, port, name);
+        prefs.SetRememberedPassword(server, port, prefs.RememberedPassword);
+    }
+#pragma warning restore CS0618
+
+    public static string? LoginNameFor(this ILocalPrefs prefs, string server, int port) =>
+        prefs.LoginNames?.GetValueOrDefault(Key(server, port));
+
+    public static void SetLoginName(this ILocalPrefs prefs, string server, int port, string? name) =>
+        prefs.LoginNames = Put(prefs.LoginNames, Key(server, port), name);
+
+    public static string? RememberedPasswordFor(this ILocalPrefs prefs, string server, int port) =>
+        prefs.RememberedPasswords?.GetValueOrDefault(Key(server, port));
+
+    public static void SetRememberedPassword(this ILocalPrefs prefs, string server, int port, string? blob) =>
+        prefs.RememberedPasswords = Put(prefs.RememberedPasswords, Key(server, port), blob);
+
+    // Null hodnota klíč maže: ve slovníku by ji JSON zapsal jako "klíč": null.
+    private static Dictionary<string, string>? Put(Dictionary<string, string>? map, string key, string? value)
+    {
+        if (value is null)
+        {
+            map?.Remove(key);
+            return map;
+        }
+        map ??= new();
+        map[key] = value;
+        return map;
+    }
+}
+
 /// <summary>Alternativní připojení k jinému Caché serveru; spouští se jako nová instance shellu (<see cref="ConnectionOverride"/>).</summary>
 public class SavedConnection
 {
@@ -69,8 +131,10 @@ public class SavedConnection
 public class LocalPrefs : ILocalPrefs
 {
     public string? LastIdfa { get; set; }
-    public string? LastLoginName { get; set; }
-    public string? RememberedPassword { get; set; }
+    public Dictionary<string, string>? LoginNames { get; set; }
+    public Dictionary<string, string>? RememberedPasswords { get; set; }
+    [Obsolete(ServerLogins.LegacyLoginObsolete)] public string? LastLoginName { get; init; }
+    [Obsolete(ServerLogins.LegacyLoginObsolete)] public string? RememberedPassword { get; init; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }

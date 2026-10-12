@@ -148,7 +148,7 @@ public class AppBootstrapper
             return null;
         }
 
-        SavePostLoginState(prefs, session.MLRest.Idfa, login.UserName);
+        SavePostLoginState(prefs, prep.Server, prep.Port, session.MLRest.Idfa, login.UserName);
         WireActivityFailedHandler(session, services);
         // Od Accepted existuje ACTIVITY zámek - logout musí proběhnout při každém ukončení odteď,
         // včetně exitu kvůli updatu a výjimky níž, ne až od vzniku shellu.
@@ -481,12 +481,12 @@ public class AppBootstrapper
     protected virtual LicenceAcquireOutcome AcquireSession(SessionContext session, EDServices services)
         => LicenceVerifier.TryAcquireSession(session.MLRest, services);
 
-    protected virtual void SavePostLoginState(ILocalPrefs prefs, string idfa, string? loginName)
+    protected virtual void SavePostLoginState(ILocalPrefs prefs, string server, int port, string idfa, string? loginName)
     {
         prefs.LastIdfa = idfa;
         // DevLogin je syntetický - nesmí přepsat předvyplnění jména (a tím zneplatnit
-        // RememberedPassword) pro ostrý exe na témže stroji.
-        if (_options.DevLogin is null) prefs.LastLoginName = loginName;
+        // zapamatované heslo) pro ostrý exe na témže stroji.
+        if (_options.DevLogin is null) prefs.SetLoginName(server, port, loginName);
         prefs.Save();
     }
 

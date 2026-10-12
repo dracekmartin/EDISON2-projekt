@@ -233,9 +233,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             bool? changed = WindowNavigator.ShowDialog(
                 new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(Rest, UserName));
             // Změna hesla za běhu zneplatní zapamatované (uložené při loginu se starým heslem).
-            if (changed == true && _prefs.RememberedPassword != null)
+            if (changed == true && _prefs.RememberedPasswordFor(Rest.Server, Rest.Port) != null)
             {
-                _prefs.RememberedPassword = null;
+                _prefs.SetRememberedPassword(Rest.Server, Rest.Port, null);
                 _prefs.Save();
             }
         }

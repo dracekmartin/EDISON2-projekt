@@ -19,7 +19,7 @@ public sealed record StartupOptions
     /// <summary><c>EDISON2_DEVLOGIN=0</c> vypne v DEBUG syntetický login - login dialog pak jde ověřit bez Release buildu.</summary>
     public const string DevLoginVariable = "EDISON2_DEVLOGIN";
 
-    /// <summary>Přihlášení bez dialogu. Zároveň neukládá <c>LastLoginName</c>: jméno v local.json
+    /// <summary>Přihlášení bez dialogu. Zároveň neukládá přihlašovací jméno: jméno v local.json
     /// patří poslednímu ostrému přihlášení (předvyplnění a zapamatované heslo exe na témže stroji).</summary>
     public LoginResult? DevLogin { get; init; }
 

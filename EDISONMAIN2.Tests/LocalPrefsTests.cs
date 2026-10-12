@@ -35,6 +35,8 @@ public class LocalPrefsTests
         }
     }
 
+    private static string? DevName(ILocalPrefs prefs) => prefs.LoginNameFor("dev-host", 57772);
+
     [Fact]
     public void Load_MissingFile_ReturnsDefaults()
     {
@@ -43,8 +45,8 @@ public class LocalPrefsTests
             var prefs = LocalPrefs.Load();
 
             Assert.Null(prefs.LastIdfa);
-            Assert.Null(prefs.LastLoginName);
-            Assert.Null(prefs.RememberedPassword);
+            Assert.Null(prefs.LoginNames);
+            Assert.Null(prefs.RememberedPasswords);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
             Assert.Null(prefs.SupportStripHeights);
@@ -80,7 +82,7 @@ public class LocalPrefsTests
             var prefs = LocalPrefs.Load();
 
             Assert.Equal("CB_DP", prefs.LastIdfa);
-            Assert.Null(prefs.LastLoginName);
+            Assert.Null(prefs.LoginNames);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
             Assert.Null(prefs.SupportStripHeights);
@@ -92,7 +94,7 @@ public class LocalPrefsTests
     {
         WithTempPrefs(
             """
-            {"lastIdfa":"CB_DP","lastLoginName":"tester","rememberedPassword":"blob",
+            {"lastIdfa":"CB_DP","loginNames":{"dev-host:57772":"tester"},"rememberedPasswords":{"dev-host:57772":"blob"},
              "miniAppLayouts":{"CB_DP":"<xml/>"},
              "treeWidths":{"CB_DP":321.5},
              "supportStripHeights":{"CB_DP":512.5}}
@@ -101,8 +103,8 @@ public class LocalPrefsTests
             var prefs = LocalPrefs.Load();
 
             Assert.Equal("CB_DP", prefs.LastIdfa);
-            Assert.Equal("tester", prefs.LastLoginName);
-            Assert.Equal("blob", prefs.RememberedPassword);
+            Assert.Equal("tester", DevName(prefs));
+            Assert.Equal("blob", prefs.RememberedPasswordFor("DEV-host", 57772));
             Assert.Equal("<xml/>", prefs.MiniAppLayouts!["CB_DP"]);
             Assert.Equal(321.5, prefs.TreeWidths!["CB_DP"]);
             Assert.Equal(512.5, prefs.SupportStripHeights!["CB_DP"]);
@@ -130,7 +132,7 @@ public class LocalPrefsTests
             new LocalPrefs
             {
                 LastIdfa = "CB_DP",
-                LastLoginName = "tester",
+                LoginNames = new() { [ServerLogins.Key("dev-host", 57772)] = "tester" },
                 MiniAppLayouts = new() { ["CB_DP"] = "<xml/>", ["CB_MLINEAS"] = "<xml2/>" },
                 TreeWidths = new() { ["CB_DP"] = 280 },
                 SupportStripHeights = new() { ["CB_DP"] = 520 },
@@ -138,7 +140,7 @@ public class LocalPrefsTests
 
             var loaded = LocalPrefs.Load();
 
-            Assert.Equal("tester", loaded.LastLoginName);
+            Assert.Equal("tester", DevName(loaded));
             Assert.Equal(2, loaded.MiniAppLayouts!.Count);
             Assert.Equal("<xml2/>", loaded.MiniAppLayouts["CB_MLINEAS"]);
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
@@ -196,8 +198,8 @@ public class LocalPrefsTests
 
             Assert.Contains("\"lastIdfa\"", json);
             // Nulls se nezapisují - jinak by je příští Load nešel odlišit od "nenastaveno".
-            Assert.DoesNotContain("lastLoginName", json);
-            Assert.DoesNotContain("rememberedPassword", json);
+            Assert.DoesNotContain("loginNames", json);
+            Assert.DoesNotContain("rememberedPasswords", json);
         });
     }
 
@@ -240,6 +242,80 @@ public class LocalPrefsTests
             Assert.Equal(250, widths["CB_MLINEAS"]);
         });
     }
+
+    [Fact]
+    public void Save_TwoInstancesOnDifferentServers_KeepBothLogins()
+    {
+        // Dvě instalace na stanici (DEV a CLOUD1) běží zároveň a sdílí local.json.
+        WithTempPrefs(null, _ =>
+        {
+            var dev = LocalPrefs.Load();
+            var cloud = LocalPrefs.Load();
+
+            dev.SetLoginName("dev-host", 57772, "jan.novak");
+            dev.Save();
+            cloud.SetLoginName("cloud1-host", 57773, "petr");
+            cloud.Save();
+
+            var loaded = LocalPrefs.Load();
+            Assert.Equal("jan.novak", DevName(loaded));
+            Assert.Equal("petr", loaded.LoginNameFor("cloud1-host", 57773));
+        });
+    }
+
+    [Fact]
+    public void Save_PasswordForgottenInOneInstance_KeepsNameSavedByOther()
+    {
+        // Jméno a heslo se slučují zvlášť: „Změnit heslo" ve starší instanci nesmí vrátit jméno,
+        // pod kterým se na tomtéž serveru mezitím přihlásila jiná.
+        WithTempPrefs("""{"loginNames":{"dev-host:57772":"jan"},"rememberedPasswords":{"dev-host:57772":"blob-jan"}}""", _ =>
+        {
+            var a = LocalPrefs.Load();
+            var b = LocalPrefs.Load();
+
+            b.SetLoginName("dev-host", 57772, "petr");
+            b.Save();
+            a.SetRememberedPassword("dev-host", 57772, null);
+            a.Save();
+
+            Assert.Equal("petr", DevName(LocalPrefs.Load()));
+        });
+    }
+
+    [Fact]
+    public void SetRememberedPassword_Null_RemovesOnlyThatServer()
+    {
+        WithTempPrefs("""{"rememberedPasswords":{"dev-host:57772":"blob","cloud1-host:57773":"blob2"}}""", file =>
+        {
+            var prefs = LocalPrefs.Load();
+            prefs.SetRememberedPassword("dev-host", 57772, null);
+            prefs.Save();
+
+            // Null hodnota ve slovníku by se zapsala jako "klíč": null.
+            Assert.DoesNotContain("null", File.ReadAllText(file));
+            var loaded = LocalPrefs.Load();
+            Assert.Null(loaded.RememberedPasswordFor("dev-host", 57772));
+            Assert.Equal("blob2", loaded.RememberedPasswordFor("cloud1-host", 57773));
+        });
+    }
+
+#pragma warning disable CS0618 // přihlášení starší verze
+    [Fact]
+    public void Save_AfterAdoptingLegacyLogin_KeepsLegacyKeys()
+    {
+        // Starší verze shellu na téže stanici z nich dál předvyplňuje.
+        WithTempPrefs("""{"lastLoginName":"jan","rememberedPassword":"blob"}""", _ =>
+        {
+            var prefs = LocalPrefs.Load();
+            prefs.AdoptLegacyLogin("dev-host", 57772);
+            prefs.Save();
+
+            var loaded = LocalPrefs.Load();
+            Assert.Equal(("jan", "blob"), (loaded.LastLoginName, loaded.RememberedPassword));
+            Assert.Equal(("jan", "blob"), (DevName(loaded), loaded.RememberedPasswordFor("dev-host", 57772)));
+        });
+    }
+#pragma warning restore CS0618
 
     [Fact]
     public void Save_KeyRemovedByOneInstance_StaysRemoved()
@@ -332,7 +408,7 @@ public class LocalPrefsTests
     public void Save_FileCorruptedSinceLoad_WritesWholeOwnState()
     {
         // Nečitelný disk zastoupí báze instance: zapíše se celý její stav, ne jen poslední změna.
-        WithTempPrefs("""{"lastLoginName":"tester","treeWidths":{"CB_DP":280}}""", file =>
+        WithTempPrefs("""{"loginNames":{"dev-host:57772":"tester"},"treeWidths":{"CB_DP":280}}""", file =>
         {
             var prefs = LocalPrefs.Load();
             File.WriteAllText(file, "{ tohle není JSON");
@@ -340,7 +416,7 @@ public class LocalPrefsTests
             prefs.Save();
 
             var loaded = LocalPrefs.Load();
-            Assert.Equal(("CB_DP", "tester"), (loaded.LastIdfa, loaded.LastLoginName));
+            Assert.Equal(("CB_DP", "tester"), (loaded.LastIdfa, DevName(loaded)));
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
         });
     }
@@ -352,7 +428,7 @@ public class LocalPrefsTests
         WithTempPrefs("""{"lastIdfa":"CB_DP","treeWidths":{"CB_DP":280}}""", file =>
         {
             var prefs = LocalPrefs.Load();
-            prefs.LastLoginName = "tester";
+            prefs.SetLoginName("dev-host", 57772, "tester");
             using (new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 prefs.Save();
@@ -363,7 +439,7 @@ public class LocalPrefsTests
 
             prefs.Save();
             var loaded = LocalPrefs.Load();
-            Assert.Equal(("tester", "CB_DP"), (loaded.LastLoginName, loaded.LastIdfa));
+            Assert.Equal(("tester", "CB_DP"), (DevName(loaded), loaded.LastIdfa));
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
         });
     }
@@ -371,20 +447,20 @@ public class LocalPrefsTests
     [Fact]
     public void Load_FileUnreadable_ReturnsDefaultsAndLaterSaveKeepsDisk()
     {
-        WithTempPrefs("""{"lastLoginName":"tester","treeWidths":{"CB_DP":280}}""", file =>
+        WithTempPrefs("""{"loginNames":{"dev-host:57772":"tester"},"treeWidths":{"CB_DP":280}}""", file =>
         {
             LocalPrefs prefs;
             using (new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 prefs = LocalPrefs.Load();
             }
-            Assert.Null(prefs.LastLoginName);
+            Assert.Null(prefs.LoginNames);
 
             prefs.LastIdfa = "CB_DP";
             prefs.Save();
 
             var loaded = LocalPrefs.Load();
-            Assert.Equal(("CB_DP", "tester"), (loaded.LastIdfa, loaded.LastLoginName));
+            Assert.Equal(("CB_DP", "tester"), (loaded.LastIdfa, DevName(loaded)));
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
         });
     }
@@ -396,11 +472,11 @@ public class LocalPrefsTests
         WithTempPrefs("""{"lastIdfa":"CB_DP","futurePref":{"x":1}}""", file =>
         {
             var prefs = LocalPrefs.Load();
-            prefs.LastLoginName = "tester";
+            prefs.SetLoginName("dev-host", 57772, "tester");
             prefs.Save();
 
             Assert.Contains("\"futurePref\"", File.ReadAllText(file));
-            Assert.Equal("tester", LocalPrefs.Load().LastLoginName);
+            Assert.Equal("tester", DevName(LocalPrefs.Load()));
         });
     }
 
