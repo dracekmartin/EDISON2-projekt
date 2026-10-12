@@ -77,6 +77,26 @@ public class VykonNahleduNaostro(ITestOutputHelper output)
             output.WriteLine($"   hlášky sazby (rozložení) {sazba} ms, úzké sloupce {uzkeMs} ms, překreslení náhledu {string.Join(" / ", casy)} ms");
             output.WriteLine($"   alokováno {alokace / 1024 / 1024} MB, drženo navíc {pamet / 1024 / 1024} MB, hlášek {hlaseni.Count}, úzkých {uzke.Count}");
             output.WriteLine($"   stran sazby (první strana dat) {canvas.CountOverflowingPages([data]).Total}");
+
+            // Krok zoomu v návrháři: výška plochy (sazba) + překreslení celé plochy v té velikosti.
+            // „nová data" = jako dnes návrhář (data se skládají znovu, tabulka spoje čte znovu).
+            foreach (float zoom in new[] { 1f, 2f, 3f })
+            {
+                sw.Restart();
+                float vyska = canvas.CalculatePageHeightPx(zoom, data);
+                long vyskaMs = sw.ElapsedMilliseconds;
+                int sirka = (int)canvas.ComputePageWidthPx(zoom);
+                using var plocha = SKSurface.Create(new SKImageInfo(sirka, (int)vyska));
+                sw.Restart();
+                canvas.Render(plocha.Canvas, sirka, vyska, data);
+                long kresleniMs = sw.ElapsedMilliseconds;
+                var noveData = data.WithCulture(data.Culture);
+                sw.Restart();
+                canvas.CalculatePageHeightPx(zoom, noveData);
+                canvas.Render(plocha.Canvas, sirka, vyska, noveData);
+                long noveMs = sw.ElapsedMilliseconds;
+                output.WriteLine($"   zoom {zoom * 100:0} % ({sirka}x{(int)vyska} px): výška plochy {vyskaMs} ms, kreslení {kresleniMs} ms, krok s novými daty {noveMs} ms");
+            }
         }
     }
 

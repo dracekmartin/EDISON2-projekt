@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-12 (8) - ⚡ plynulejší zoom náhledu
+
+Zoom kolečkem (Ctrl) v náhledu během otáčení jen zvětšuje hotový obraz a ostrý náhled nakreslí
+až po pauze 200 ms - dřív každý krok sázel a kreslil všechny strany (městská linka se 7 stranami:
+0,3-0,4 s na krok). Náhled si navíc pamatuje sestavená data a sazbu, dokud se nezmění šablona,
+data, strana nebo parametry: jeden krok zoomu dřív sázel stránky třikrát (výška plochy, její
+změna, kreslení) a data skládal dvakrát. Pamatovaná sazba se zahodí i po jakékoli jiné sazbě
+mezitím, protože sazba mění prvkům sdílený stav (zmenšení). Test `PamatovanaSazbaTests`; vlastní
+plynulost zoomu test nevidí.
+
 ## 2026-10-12 (7) - ⚡ náhled linkové tabulky přes víc stran až čtyřikrát rychlejší
 
 Tabulka spojů rozřezaná na víc stran se při kreslení každé strany skládala a kreslila celá a ořez
