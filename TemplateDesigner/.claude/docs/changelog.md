@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-12 - 🔎 linkový JŘ MHD: rozbor proti AD a starému modulu (`B191a`)
+
+Bez změny tisku. Rozbor našel oracle starého tisku (`ALVA.MHD.LinkyPrintFormatJR.MakeData`, roadmapa
+do té doby uváděla jinou cestu) a tři chyby v datech agendy `LinkovyJrMhd`: číslo spoje je interní
+ID, poznámky a atributy spoje se nepřečtou nikdy (čtení o úroveň hlouběji, než pomocník vrací)
+a negativní značky jsou jen z pole spoje, kdežto starý modul je přiděluje. Agenda je skrytá, takže
+to zákazník nevidí; opravy jsou `B191b`. Testovací linky vybrala sonda `Tests/LinkovyJrMhdProbe`
+(CB_DP 11350/11341/11354/11018, KV_DP 1073). Detail analýza linkového JŘ `§18`.
+
 ## 2026-10-09 (4) - 🔀 rozdílový linkový JŘ - základ (`B192`)
 
 Nová agenda **Linkový JŘ / AD - rozdílový** (`LINKOVY_JR_AD_ROZDILOVY`, zatím nezveřejněná) tiskne

@@ -22,21 +22,22 @@ v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva n
 bere jen to, co mění data.* Rozhodnutí po položkách, důvody a výskyt v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md).
 Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R2/R5`](architektonicka-rozhodnuti-agendy.md).
 
-1. **`B191a` Rozbor stavu MHD proti AD** [S]. Co agenda posílá a co chybí (dnes bez sloupců Km, Tč,
-   MHD a bez návazností - zdroj je nemá), výběr testovacích linek MHD a oracle ve starém modulu
-   (`WinTiskMhd^JRapi`, `JRapiLinPrtWin.mac`); vzor 940 IDZK je AD, MHD potřebuje vlastní. Výstup:
-   soupis do analýzy linkového JŘ, ne kód.
-2. **`B191b` Řádky zastávek dorovnat na AD** [M]. MHD posílá jen pořadí, typ, název a zóny, AD navíc
-   `CZST, AKTUALNI_ZASTAVKA, TC, MHD, NASTUPISTE` (`LinkovyJrMhd.cls:73-81` × `LinkovyJrAd.cls:100-116`).
-   Bez toho nemá zvýraznění zastávky kam zapsat příznak a část voleb by šla udělat jen naoko.
-3. **`B191c` Porovnání se starým modulem** [M]. Oracle a test jako `LinkovyJrAdLegacyTest`; parita
-   jen doložená porovnáním, co oracle nekryje, psát jako neověřené (R6).
-4. **`B191d` Volby pro městské linky** [M, **rozhodnutí Jan**]. Starý modul u MHD čte 3 z 11 voleb
+Rozbor stavu (`B191a`, 12. 10.): oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
+
+1. **`B191b` Data dorovnat** [M]. Tři chyby: číslo spoje je interní ID, poznámky a atributy spoje
+   se nečtou vůbec, negativní značky jen z pole spoje (starý modul je přiděluje). Plus filtr poznámek
+   pro knižní tisk a pole zastávek jako AD (`AKTUALNI_ZASTAVKA, TC, NASTUPISTE`, `CZST` jako číslo).
+   Detail a odkazy [`§18.2`](linkovy-knizni-jr-implementace-analyza.md).
+2. **`B191c` Porovnání se starým modulem** [M]. Oracle `ALVA.MHD.LinkyPrintFormatJR.MakeData` po
+   dvojicích směr × typ provozu, linky CB_DP 11350/11341/11354/11018 a KV_DP 1073 ([`§18.1`, `§18.3`](linkovy-knizni-jr-implementace-analyza.md)).
+   Co oracle nekryje (příjezd/odjezd, atributy B/C - na dev datech nejsou), psát jako neověřené (R6).
+3. **`B191d` Volby pro městské linky** [M, **rozhodnutí Jan**]. Starý modul u MHD čte 3 z 11 voleb
    (kam legenda, rámečky kolem čísel spojů, typy provozu a směry), takže je to nová featura, ne
    dorovnání. Návrh: tutéž sadu jako AD, kde má smysl ([`§13.4` bod 4](linkovy-knizni-jr-implementace-analyza.md)).
-5. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
+   Otevřené: starý modul má pro každý typ provozu vlastní seznam zastávek, my jeden společný.
+4. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
    `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
-6. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
+5. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
    v `LinkovyJrAd.cls`), Novinky a příručka.
 
 ---

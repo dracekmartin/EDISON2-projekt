@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B191a` Rozbor linkového JŘ MHD proti AD a starému modulu (hotovo 12. 10. 2026)
+
+Soupis bez změny agendy: oracle je `ALVA.MHD.LinkyPrintFormatJR.MakeData` (ne `WinTiskMhd^JRapi`,
+jak stálo v roadmapě), agenda má tři chyby v datech (číslo spoje, poznámky spoje, negativní
+značky) a testovací linky jsou na CB_DP a KV_DP. Detail analýza linkového JŘ `§18`, sonda
+`Tests/LinkovyJrMhdProbe`.
+
 ## `#7487` Rozložení poznámek podle druhu, KORID (hotovo 9. 10. 2026)
 
 Legenda linkového JŘ se tiskne po šesti skupinách druhů (týdenní platnost, negativní značky,
