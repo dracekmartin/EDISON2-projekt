@@ -2,7 +2,7 @@
   "version": "1.15.0",
   "id": "1beb2687-9d97-4a6a-be2d-b34a203bf482",
   "name": "Linkový JŘ (MHD) - zkouška postskriptového vzhledu A5",
-  "description": "Zkušební šablona pro linkový JŘ MHD odvozená ze systémové šablony AD v podobě postskriptového tisku: veřejné číslo linky, bez řádku dopravce (MHD ho neposílá). Ne systémová šablona - ta je B191e.",
+  "description": "Zkušební šablona pro linkový JŘ MHD odvozená ze systémové šablony AD v podobě postskriptového tisku: veřejné číslo linky, bez řádku dopravce (MHD ho neposílá).",
   "pageSize": {
     "width": 210,
     "height": 148,
