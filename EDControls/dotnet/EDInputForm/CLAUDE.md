@@ -22,9 +22,9 @@ Ukázka všech featur `CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` - **no
 ## Round-trip pravidlo
 
 Každá property se musí round-tripovat (`Serialize`/`WriteToOut` ⟷ `ParseItems` / `SerializeItemsCVar` ⟷
-`ReadFromIn`), jinak ji server po prvním round-tripu ztratí. **Výjimka: Image** - Base64 value se na server
-neposílá (limit MLRest) a preservuje se client-side v controlleru. Položky se čtou jen z číselných subscriptů (Save
-tak pozná vrácený form). ⚠️ **Nový pojmenovaný klíč do IN až po vydání Caché balíčku, do OUT až po vydání DLL.**
+`ReadFromIn`), jinak ji server po prvním round-tripu ztratí (hlídají testy idempotence). **Výjimky:** `validationError`
+`ReadFromIn` vědomě nečte (chybu počítá znovu), Image value se na server neposílá (limit MLRest), drží ji controller.
+Položky se čtou jen z číselných subscriptů. ⚠️ **Nový pojmenovaný klíč do IN až po vydání Caché balíčku, do OUT až po vydání DLL.**
 
 ## Pasti
 

@@ -273,6 +273,7 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 		}
 
 		// ── Dynamická editovatelnost ─────────────────────────────────────────
+		// Integrační InputFormTests sem posílá Init jen s těmito pomocnými klíči: další pole tu čti s kontrolou na "".
 
 		// editToggle checkbox → přepíná readonlyText.editable
 		s toggle = form.GetField("editToggle")

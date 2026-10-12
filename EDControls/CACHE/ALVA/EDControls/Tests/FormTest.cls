@@ -261,6 +261,50 @@ Method TestHelpTextModeRoundTrip()
 	do $$$AssertEquals(##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn().helpTextMode, $$$HelpTextModeTooltip, "bez subscriptu default tooltip")
 }
 
+/// ReadFromIn → WriteToOut vrátí řádky z IN beze změny, pro pole každého typu. Každá pozice ze Serialize dostane
+/// jinou hodnotu, takže pozici, kterou Serialize zapíše a ReadFromIn nepřečte (B44: pozice 19) nebo přečte
+/// z vedlejší pozice, test shodí bez úprav. Výjimka: validationError (pozice 9) ReadFromIn vědomě nečte.
+Method TestReadFromInWriteToOutKeepsEveryPosition()
+{
+	s types = $lb($$$FieldTypeText,$$$FieldTypeNumber,$$$FieldTypeDate,$$$FieldTypeDecimal,$$$FieldTypeBool,$$$FieldTypeButton,$$$FieldTypeList,$$$FieldTypeFile,$$$FieldTypeColor,$$$FieldTypeComboBox,$$$FieldTypeImage)
+	s groupLen = $ll(##class(ALVA.EDControls.EDInputForm.Group).%New().Serialize())
+	s fieldLen = $ll(##class(ALVA.EDControls.EDInputForm.Field).%New().Serialize())
+	s row = $lb("GROUP", 0, "g")
+	f p=4:1:groupLen s $li(row,p) = "g"_p
+	s ^||ML("IN",1) = row
+	f i=1:1:$ll(types) {
+		s row = $lb("FIELD", i, "pole"_i)
+		f p=4:1:fieldLen s $li(row,p) = "v"_i_"_"_p
+		// Typ musí být platný literál, listItems ve tvaru, který Serialize zapíše zpět beze změny.
+		s $li(row,5) = $li(types,i), $li(row,13) = "a~A"_i_"|b~B"_i
+		s ^||ML("IN",i+1) = row
+	}
+
+	d ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn().WriteToOut()
+
+	s idx = "", rows = 0
+	f {
+		s idx = $o(^||ML("IN",idx))
+		q:idx=""
+		s rows = rows + 1
+		s a = ^||ML("IN",idx), b = $g(^||ML("OUT",idx))
+		i $li(a,1)="FIELD" {
+			do $$$AssertEquals($li(b,9), "", "řádek "_idx_": validationError se ze vstupu nečte")
+			s $li(a,9) = "", $li(b,9) = ""
+		}
+		do $$$AssertTrue($listsame(a,b), "řádek "_idx_" ("_$li(a,3)_") se po round-tripu liší")
+	}
+	s idx = "", out = 0
+	f {
+		s idx = $o(^||ML("OUT",idx))
+		q:idx=""
+		continue:idx'=+idx
+		s out = out + 1
+	}
+	do $$$AssertEquals(rows, 1+$ll(types), "skupina + pole každého typu")
+	do $$$AssertEquals(out, rows, "OUT má stejně řádků jako IN")
+}
+
 /// Pojmenovaný klíč v IN, který server nezná (novější klient), ReadFromIn přeskočí a položky přečte dál.
 Method TestReadFromInSkipsUnknownNamedKeys()
 {

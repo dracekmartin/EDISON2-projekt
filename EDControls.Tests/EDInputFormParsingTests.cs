@@ -165,6 +165,71 @@ public class EDInputFormParsingTests
         Assert.Null(f.ParentGroup);
     }
 
+    /// <summary>
+    /// Přečtené a znovu zapsané řádky jsou stejné jako na drátě, pro plně vyplněné pole každého typu.
+    /// Atribut, který kodek zapíše a nepřečte (B44: pozice 19) nebo přečte z vedlejší pozice, test shodí.
+    /// </summary>
+    [Fact]
+    public void SerializeItemsCVar_OfParsedWire_EqualsWire()
+    {
+        var wire = new CVar();
+        wire["1"] = new CList("GROUP", "0", "g", "Skupina", "1", "Nápověda skupiny");
+        int number = 0;
+        foreach (var type in Enum.GetValues<FieldType>())
+        {
+            number++;
+            // Booleovské pozice a viditelnost se mezi řádky střídají, aby čtení ze sousední pozice neprošlo.
+            wire[(number + 1).ToString()] = new CList(
+                "FIELD", number.ToString(), "pole" + number, "Pole " + number, type.ToWire(), SampleValue(type),
+                Bit(number, 0), Bit(number, 1), "chyba", Bit(number, 2), (number % 4).ToString(), "nápověda",
+                type is FieldType.List or FieldType.ComboBox ? "a~Áčko|b" : "",
+                type == FieldType.File ? "Text|*.txt" : "",
+                "2", "9", "0.00", "ks", Bit(number, 3));
+        }
+
+        var again = EDInputForm.EDInputFormWire.SerializeItemsCVar(EDInputForm.EDInputFormWire.ParseItems(wire));
+
+        Assert.Equal(Rows(wire), Rows(again));
+        AssertEveryPositionFilled(wire);
+    }
+
+    private static string Bit(int number, int bit) => ((number >> bit) & 1).ToString();
+
+    // Nová pozice musí v ukázce dostat jinou než výchozí hodnotu, jinak by její nečtení prošlo.
+    private static void AssertEveryPositionFilled(CVar wire)
+    {
+        CList empty = EDInputForm.EDInputFormWire.SerializeItemsCVar([new Field()])["1"];
+        var fields = wire.Select(kvp => { CList row = kvp.Value; return row; }).Where(r => r.GetString(1) == "FIELD").ToList();
+        for (int p = 3; p <= empty.Length; p++)
+            Assert.True(fields.Any(r => r.GetString(p) != empty.GetString(p)), $"Pozice {p} má ve všech řádcích výchozí hodnotu.");
+    }
+
+    // Image hodnota na server nikdy nejde (limit MLRest), proto prázdná.
+    private static string SampleValue(FieldType type) => type switch
+    {
+        FieldType.Text     => "hodnota",
+        FieldType.Number   => "5",
+        FieldType.Date     => "2026-10-12",
+        FieldType.Decimal  => "3.5",
+        FieldType.Bool     => "1",
+        FieldType.Button   => "Klikni",
+        FieldType.List     => "b",
+        FieldType.File     => @"C:\a.txt",
+        FieldType.Color    => "#FF112233",
+        FieldType.ComboBox => "vlastní",
+        FieldType.Image    => "",
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Nový typ pole: doplň ukázkovou hodnotu."),
+    };
+
+    private static List<string> Rows(CVar wire) =>
+    [
+        .. wire.Select(kvp =>
+        {
+            CList row = kvp.Value;
+            return kvp.Key + ": " + string.Join(" ¦ ", Enumerable.Range(1, row.Length).Select(row.GetString));
+        }),
+    ];
+
     [Fact]
     public void SerializeItemsCVar_RoundTripsGroupAndField()
     {

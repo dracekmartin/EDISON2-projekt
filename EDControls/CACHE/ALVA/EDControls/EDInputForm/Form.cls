@@ -204,13 +204,8 @@ Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 	q ..GetField(..changedKey)
 }
 
-/// Zapíše všechny položky do ^||ML("OUT",...) jako CList ($lb) hodnoty na subscriptech
-/// 1, 2, ... (na .NET CVar["1"], CVar["2"]). Formát položky (number je vždy pozice 2):
-///   GROUP → $lb("GROUP", number, key, groupName, visibility, helpText)
-///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required,
-///                validationError, editable, visibility, helpText, listItems, fileFilter,
-///                min, max, format, unit)
-/// helpTextMode se zapíše na string subscript "helpTextMode".
+/// Zapíše položky do ^||ML("OUT",1..n) jako $lb z Group.Serialize / Field.Serialize (pořadí pozic je tam,
+/// na .NET CVar["1"], CVar["2"]) a helpTextMode na pojmenovaný subscript "helpTextMode".
 Method WriteToOut()
 {
 	s i = 0
@@ -221,10 +216,9 @@ Method WriteToOut()
 	s ^||ML("OUT","helpTextMode") = ..helpTextMode
 }
 
-/// Přečte ^||ML("IN",...) a vrátí naplněný Form. Trigger je na string subscriptu
-/// "trigger"; položky na subscriptech 1, 2, ... jako CList ($lb):
-///   $lb("GROUP", number, key, groupName, visibility, helpText)   ; number round-tripovaný, po insertu přečíslován
-///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
+/// Přečte ^||ML("IN",...) a vrátí naplněný Form: trigger, changedKey a helpTextMode z pojmenovaných subscriptů,
+/// položky z číselných v pořadí pozic Group.Serialize / Field.Serialize. Number (pozice 2) se nečte, AddGroup
+/// a AddField přečíslují. ValidationError (pozice 9 u FIELD) se vědomě nečte, chybu počítá server znovu.
 ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
