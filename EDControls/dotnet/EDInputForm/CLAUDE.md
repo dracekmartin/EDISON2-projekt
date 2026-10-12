@@ -36,6 +36,8 @@ Položky se čtou jen z číselných subscriptů. ⚠️ **Nový pojmenovaný kl
 - ⚠️ **Validace je záměrně synchronní** (na změnu jen odložená za handlery hosta): odpověď nahrazuje celé Items, takže
   asynchronní odpověď by zahodila fokus i rozepsaný text a echo by vracelo úpravy hosta. Async je **odložené k diskusi**:
   pasti `.claude/reviews/architecture.md` A15, hotová implementace větev `odlozeno/a15-async-edinputform`. Nezavádět bez vlastníka.
+- **`Field` platí jen do příštího dotazu na server** (Init, Validate i Save nahradí Items novými objekty): pole hledej
+  `GetField(key)` až v místě použití, nedrž si ho. Items nastavené hostem pošle příští Validate nebo Save.
 - Klientská validace: type-error má prioritu před required; type-check běží hned při setu Value.
 - **Číselné pole mění při setu `Value` čárku na tečku** (uvnitř i na drátě vždy tečka). Čárka je
   **vždy desetinná**, nikdy oddělovač tisíců (`NumberStyles.Float`, ne `Number` - jinak „1.500"
@@ -45,9 +47,6 @@ Položky se čtou jen z číselných subscriptů. ⚠️ **Nový pojmenovaný kl
   `List` = strict enum. Renderuje se sdíleným `EDFilterComboBox`.
 - Kořen: brandový `EDComponentToolbar` (týž jako EDList), pod ním rovnou `ScrollViewer` - **toolbar
   nesmí spadnout dovnitř scrolleru**, scrollbar ukrojí pravý konec hledání (`EDInputFormHeaderTests`).
-  `IsSharedSizeScope` na vnějším Gridu sjednocuje šířku popisků;
-  `HorizontalScrollBarVisibility="Disabled"` drží obsah v šířce viewportu (`Hidden` měří na
-  nekonečné šířce a úzký formulář ořízne).
 - **Pod 380 px jde popisek nad hodnotu** (`IsNarrowLayout`, zpět nad 400 px - hystereze proti
   kmitání). Dvousloupcová minima se do `MinWidth=240` nevejdou, proto dvě šablony řádku místo
   přepínání `ColumnDefinition`. **Hostitel nesmí formulář rozměrovat podle obsahu** - šířka řídí

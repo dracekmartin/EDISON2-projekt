@@ -60,6 +60,24 @@ public class EDInputFormControllerTests
         Assert.Equal("jmeno", f.Key);
     }
 
+    /// <summary>Každý dotaz na server položky vymění, host proto pole hledá podle klíče až v místě použití.</summary>
+    [Fact]
+    public void GetField_FindsCurrentFieldByKey()
+    {
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "0", "jmeno", "Skupina se stejným klíčem");
+        data["2"] = new CList("FIELD", "1", "jmeno", "Jméno", "TEXT", "Jan", "0", "0");
+        var controller = new EDInputFormController(MockMLRest(data), CacheClass);
+        controller.Init();
+        var before = controller.GetField("jmeno");
+
+        controller.Validate();
+
+        Assert.Equal("Jan", controller.GetField("jmeno")?.Value);
+        Assert.NotSame(before, controller.GetField("jmeno"));
+        Assert.Null(controller.GetField("neni"));
+    }
+
     [Fact]
     public void Validate_ReturnsTrueWhenNoErrors()
     {

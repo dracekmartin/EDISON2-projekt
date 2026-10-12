@@ -15,6 +15,12 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
     public HelpTextMode HelpTextMode { get; private set; } = HelpTextMode.Tooltip;
 
+    /// <summary>Pole aktuálních <see cref="Items"/> podle klíče, nebo null. Platí jen do příštího dotazu na server.</summary>
+    public Field? GetField(string key) => Items.OfType<Field>().FirstOrDefault(f => f.Key == key);
+
+    /// <summary>Položky, které host nastavil formuláři zvenku: příští Validate nebo Save je pošle.</summary>
+    internal void SetItems(IEnumerable<Item> items) => Items = items as List<Item> ?? [.. items];
+
     /// <summary>Vyvoláno po každém Caché roundtripu který aktualizuje Items/HelpTextMode.</summary>
     public event Action? StateChanged;
 

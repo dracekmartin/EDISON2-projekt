@@ -72,6 +72,20 @@ namespace EDControls.EDInputForm
             }
         }
 
+        /// <summary>Items nastavil host, ne odpověď serveru (ta je po změně CacheClass položkami staré třídy).</summary>
+        private bool _itemsFromHost;
+
+        // Položky od hosta převezme controller až před dotazem: kolekci mohl host mezitím upravit (ObservableCollection).
+        private EDInputFormController SyncedController
+        {
+            get
+            {
+                var controller = Controller;
+                if (_itemsFromHost) controller.SetItems(Items ?? []);
+                return controller;
+            }
+        }
+
         /// <summary>Titulek v levé části brandového pruhu. Prázdný se skryje (toolbar sám).</summary>
         public static readonly DependencyProperty TitleProperty =
             DependencyProperty.Register(
@@ -98,6 +112,12 @@ namespace EDControls.EDInputForm
             get => (IEnumerable<Item>?)GetValue(ItemsProperty);
             set => SetValue(ItemsProperty, value);
         }
+
+        /// <summary>
+        /// Pole, které formulář právě ukazuje, podle klíče, nebo null. Init, Validate i Save položky nahradí
+        /// novými objekty, pole proto hledej až v místě použití a nedrž si ho.
+        /// </summary>
+        public Field? GetField(string key) => Items?.OfType<Field>().FirstOrDefault(f => f.Key == key);
 
         public static readonly DependencyProperty HelpTextModeProperty =
             DependencyProperty.Register(
@@ -411,7 +431,7 @@ namespace EDControls.EDInputForm
         public bool Validate()
         {
             EnsureConfigured();
-            return Controller.Validate();
+            return SyncedController.Validate();
         }
 
         /// <summary>
@@ -421,7 +441,7 @@ namespace EDControls.EDInputForm
         public bool Save()
         {
             EnsureConfigured();
-            bool result = Controller.Save();
+            bool result = SyncedController.Save();
             if (!result)
             {
                 var message = EDInputFormController.FormatValidationErrors(Controller.Items);
@@ -559,7 +579,7 @@ namespace EDControls.EDInputForm
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
             ButtonClicked?.Invoke(field.Key);                 // client-side akce (host)
-            if (field.ValidateOnChange) Controller.Validate(field.Key);   // server-side akce
+            if (field.ValidateOnChange) SyncedController.Validate(field.Key);   // server-side akce
         }
 
         internal const string FolderModeMarker = "$FOLDER";
@@ -705,6 +725,8 @@ namespace EDControls.EDInputForm
                 foreach (var field in newItems.OfType<Field>())
                     PropertyChangedEventManager.AddHandler(field, control.Field_PropertyChanged, "");
 
+            control._itemsFromHost = control._controller is null || !ReferenceEquals(control._controller.Items, e.NewValue);
+
         }
 
         private void Field_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -718,7 +740,7 @@ namespace EDControls.EDInputForm
             if (!field.ValidateOnChange) return;
             // Záměrně synchronně, jen odloženě za handlery hosta: odpověď nahrazuje Items, asynchronní by zahodila
             // fokus i rozepsaný text. Async je odložené k diskusi - pasti v CLAUDE.md komponenty, ne „jen přidat await".
-            Dispatcher.BeginInvoke(new Action(() => Controller.Validate(field.Key)));
+            Dispatcher.BeginInvoke(new Action(() => SyncedController.Validate(field.Key)));
         }
     }
 }

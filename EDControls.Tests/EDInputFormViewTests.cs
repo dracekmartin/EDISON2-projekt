@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Threading;
@@ -127,6 +128,112 @@ public class EDInputFormViewTests
 
             mock.DidNotReceiveWithAnyArgs().QueryOrThrow(default!, default!, default(CVar)!);
         });
+    }
+
+    [Fact]
+    public void GetField_FindsFieldShownByForm()
+    {
+        RunSta(() =>
+        {
+            var field = new Field { Number = 1, Key = "k", Label = "Pole" };
+            var form = new Form { Items = new List<Item> { new Group { Key = "k", GroupName = "Skupina" }, field } };
+
+            Assert.Same(field, form.GetField("k"));
+            Assert.Null(form.GetField("neni"));
+        });
+    }
+
+    /// <summary>Host nastaví Items po Init: Save musí poslat to, co formulář ukazuje, ne položky z Init.</summary>
+    [Fact]
+    public void ItemsSetByHostAfterInit_SaveSendsThem()
+    {
+        RunSta(() =>
+        {
+            var mock = EchoingMLRest();
+            var form = FormWith(mock);
+            form.Init();
+
+            form.Items = new List<Item> { new Field { Number = 1, Key = "novy", Label = "Nové", Value = "x" } };
+            Assert.True(form.Save());
+
+            mock.Received(1).QueryOrThrow("ALVA.A", "Save", Arg.Is<CVar>(c => RowKey(c, "1") == "novy"));
+        });
+    }
+
+    [Fact]
+    public void ItemsSetByHostBeforeFirstQuery_ValidateSendsThem()
+    {
+        RunSta(() =>
+        {
+            var mock = EchoingMLRest();
+            var form = FormWith(mock);
+            form.Items = new List<Item> { new Field { Number = 1, Key = "novy", Label = "Nové", Value = "x" } };
+
+            form.Validate();
+
+            mock.Received(1).QueryOrThrow("ALVA.A", "Validate", Arg.Is<CVar>(c => RowKey(c, "1") == "novy"));
+        });
+    }
+
+    /// <summary>Kolekce s notifikacemi: pole, které host přidá po nastavení Items, musí jít na server taky.</summary>
+    [Fact]
+    public void ItemsAsObservableCollection_FieldAddedLater_ValidateSendsIt()
+    {
+        RunSta(() =>
+        {
+            var mock = EchoingMLRest();
+            var form = FormWith(mock);
+            form.Init();
+            var items = new ObservableCollection<Item> { new Field { Number = 1, Key = "novy", Label = "Nové" } };
+            form.Items = items;
+
+            items.Add(new Field { Number = 2, Key = "pridany", Label = "Přidané" });
+            form.Validate();
+
+            mock.Received().QueryOrThrow("ALVA.A", "Validate", Arg.Is<CVar>(c => RowKey(c, "2") == "pridany"));
+        });
+    }
+
+    /// <summary>Položky ze serveru staré třídy nejsou od hosta: nová třída je nesmí dostat.</summary>
+    [Fact]
+    public void CacheClassChange_DoesNotSendPreviousClassItems()
+    {
+        RunSta(() =>
+        {
+            var mock = EchoingMLRest();
+            var form = FormWith(mock);
+            form.Init();
+
+            form.CacheClass = "ALVA.B";
+            form.Validate();
+
+            mock.Received(1).QueryOrThrow("ALVA.B", "Validate", Arg.Is<CVar>(c => RowKey(c, "1") == ""));
+        });
+    }
+
+    // Init vrátí jedno pole, Validate a Save vrátí, co dostaly (server bez vlastní logiky).
+    private static IMLRest EchoingMLRest()
+    {
+        var mock = MLRestMocks.Create();
+        var schema = new CVar();
+        schema["1"] = new CList("FIELD", "1", "puvodni", "Původní", "TEXT", "", "0", "0");
+        mock.QueryOrThrow(Arg.Any<string>(), "Init", Arg.Any<CVar>()).Returns(_ => schema);
+        mock.QueryOrThrow(Arg.Any<string>(), "Validate", Arg.Any<CVar>()).Returns(ci => ci.ArgAt<CVar>(2));
+        mock.QueryOrThrow(Arg.Any<string>(), "Save", Arg.Any<CVar>()).Returns(new CVar());
+        return mock;
+    }
+
+    private static Form FormWith(IMLRest mock) => new()
+    {
+        CacheClass = "ALVA.A",
+        ServicesOverride = new EDServices(mock, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+    };
+
+    private static string RowKey(CVar input, string subscript)
+    {
+        foreach (var kvp in input)
+            if (kvp.Key == subscript) { CList row = kvp.Value; return row.GetString(3); }
+        return "";
     }
 
     [Fact]
