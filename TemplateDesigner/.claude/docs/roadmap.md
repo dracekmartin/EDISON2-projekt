@@ -16,11 +16,16 @@
 
 Městská varianta linkového JŘ: agenda `LinkovyJrMhd` existuje, ale je skrytá - neprošla porovnáním
 se starým modulem. „Dodělám AD a MHD spadne samo" neplatí: AD je nadmnožina v obsahu tabulky, ne
-v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva nastavení). Kroky shora dolů:
+v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva nastavení). Kroky shora dolů.
+
+🧭 **Nastavení starého modulu:** *jak je výstup složený, patří do návrháře; z nastavení u linky se
+bere jen to, co mění data.* Rozhodnutí po položkách, důvody a výskyt v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md).
+Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R2/R5`](architektonicka-rozhodnuti-agendy.md).
 
 1. **`B191a` Rozbor stavu MHD proti AD** [S]. Co agenda posílá a co chybí (dnes bez sloupců Km, Tč,
    MHD a bez návazností - zdroj je nemá), výběr testovacích linek MHD a oracle ve starém modulu
-   (`WinTiskMhd^JRapi`, `JRapiLinPrtWin.mac`). Výstup: soupis do analýzy linkového JŘ, ne kód.
+   (`WinTiskMhd^JRapi`, `JRapiLinPrtWin.mac`); vzor 940 IDZK je AD, MHD potřebuje vlastní. Výstup:
+   soupis do analýzy linkového JŘ, ne kód.
 2. **`B191b` Řádky zastávek dorovnat na AD** [M]. MHD posílá jen pořadí, typ, název a zóny, AD navíc
    `CZST, AKTUALNI_ZASTAVKA, TC, MHD, NASTUPISTE` (`LinkovyJrMhd.cls:73-81` × `LinkovyJrAd.cls:100-116`).
    Bez toho nemá zvýraznění zastávky kam zapsat příznak a část voleb by šla udělat jen naoko.
@@ -33,30 +38,6 @@ v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva n
    `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
 6. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
    v `LinkovyJrAd.cls`), Novinky a příručka.
-
----
-
-## 🚆 Linkové a knižní JŘ (náhrada TiskJR)
-
-> ⚠️ **Gate: R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti), R5 (embedded fonty)** -
-> [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
-
-**Stav: linkový JŘ z AD dat je od 22. 9. vydaný zákazníkům** a je výchozí agendou pro novou
-šablonu. Zbývá jeden výtisk k ověření a věci, u kterých je první krok dotaz ven. Sloučení
-dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku bez přírůstku pro uživatele
-(rozhodnutí Jan 31. 8.). Městská varianta zůstává skrytá, dokud neprojde porovnáním se starým
-modulem; jak se agenda skrývá, popisuje komentář u `Released` v `LinkovyJrAd.cls`.
-
-**MHD varianta je v Priority jako `B191`** (kroky `B191a`-`B191f`).
-
-📄 **Zkušební vzor pro celý track: linka 940 Kroměříž-Přerov (IDZK)** - reálné zadání zákazníka,
-které starý modul nedokázal vyrobit. Novou práci na linkovém JŘ ověřuj proti němu.
-
-🧭 **Jak se nakládá s nastavením starého modulu:** *to, jak je výstup složený, patří do návrháře;
-z nastavení u linky se bere jen to, co mění data.* Sporné případy řeš směrem do šablony. Rozhodnutí
-položku po položce, jejich důvody a změřený výskyt v datech drží
-[`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md), pozastavené tikety helpdesku
-[`§14`](linkovy-knizni-jr-implementace-analyza.md).
 
 ---
 
