@@ -47,31 +47,18 @@ public static class EDUsageTelemetry
 
     /// <summary>
     /// Odešle nasbírané záznamy do Caché a vyprázdní buffer. Záznamy jiné firmy než <paramref name="mlRest"/>
-    /// jdou na její klon. Best-effort: případnou chybu polkne a záznamy zahodí (neblokuje zavření okna).
+    /// jdou na její klon. Nejdřív počká na rozjeté zápisy na pozadí (nejvýš <see cref="BackgroundWrites.Timeout"/>):
+    /// shell volá Flush při ukončení a přepnutí uživatele těsně před odhlášením session.
+    /// Best-effort: případnou chybu polkne a záznamy zahodí.
     /// </summary>
     public static void Flush(IMLRest? mlRest)
     {
-        List<UsageRecord> records;
-        try
-        {
-            if (mlRest is null) return;
-            lock (Sync)
-            {
-                if (Buffer.Count == 0) return;
-                records = [.. Buffer];
-                Buffer.Clear();
-            }
-        }
-        catch
-        {
-            return;
-        }
-
-        foreach (var batch in records.GroupBy(r => (r.Idfa, r.DataNamespace)))
+        BackgroundWrites.WaitPending(BackgroundWrites.Timeout);
+        foreach (var (idfa, dataNamespace, input) in TakeBatches(mlRest))
         {
             try
             {
-                Send(TargetFor(mlRest, batch.Key.Idfa, batch.Key.DataNamespace), mlRest.Delimiter, batch);
+                Send(IsSession(mlRest!, idfa, dataNamespace) ? mlRest! : OtherCompany(mlRest!, idfa, dataNamespace), input);
             }
             catch
             {
@@ -80,19 +67,60 @@ public static class EDUsageTelemetry
         }
     }
 
-    // Přepnutí firmy odhlásilo zámek staré firmy, s CacheLocks=1 by server dávku odmítl (LockExist).
-    private static IMLRest TargetFor(IMLRest mlRest, string? idfa, string? dataNamespace) =>
-        idfa is null || (idfa == mlRest.Idfa && dataNamespace == mlRest.DataNamespace)
-            ? mlRest
-            : mlRest.With(cacheLocks: 0, idfa: idfa, dataNamespace: dataNamespace);
-
-    private static void Send(IMLRest target, char del, IEnumerable<UsageRecord> batch)
+    /// <summary>Jako <see cref="Flush"/>, ale dávky jdou na pozadí: zavření okna nečeká na síť.</summary>
+    internal static void FlushInBackground(IMLRest? mlRest)
     {
-        // object[] záměrně (ne CVar): legacy Caché metoda čte numerické subscripty ^||ML("IN",i).
-        object[] input = [.. batch.Select(r =>
-            $"usage{del}{r.Form}{del}{r.Control}{del}{r.Ts.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}")];
-        target.QueryOrThrow("ALVA.ISY.ISYCloud.APIdotNet.Telemetry", "LogUsageBatch", input);
+        foreach (var (idfa, dataNamespace, input) in TakeBatches(mlRest))
+        {
+            try
+            {
+                BackgroundWrites.Register(IsSession(mlRest!, idfa, dataNamespace)
+                    ? new RestCallRunner(() => mlRest!).RunAsync(rest => Send(rest, input))
+                    : Task.Run(() => Send(OtherCompany(mlRest!, idfa, dataNamespace), input)));
+            }
+            catch
+            {
+                // Volá se z Window.Closed, výjimka by propadla až do DispatcherUnhandledException.
+            }
+        }
     }
+
+    /// <summary>Vybere buffer a rozdělí ho po firmách. Bez session nic nevybere, záznamy počkají na další flush.</summary>
+    private static List<(string? Idfa, string? DataNamespace, object[] Input)> TakeBatches(IMLRest? mlRest)
+    {
+        try
+        {
+            if (mlRest is null) return [];
+            List<UsageRecord> records;
+            lock (Sync)
+            {
+                if (Buffer.Count == 0) return [];
+                records = [.. Buffer];
+                Buffer.Clear();
+            }
+            char del = mlRest.Delimiter;
+            return [.. records.GroupBy(r => (r.Idfa, r.DataNamespace))
+                .Select(batch => (batch.Key.Idfa, batch.Key.DataNamespace, Input(batch, del)))];
+        }
+        catch
+        {
+            return [];
+        }
+    }
+
+    private static bool IsSession(IMLRest mlRest, string? idfa, string? dataNamespace) =>
+        idfa is null || (idfa == mlRest.Idfa && dataNamespace == mlRest.DataNamespace);
+
+    // Přepnutí firmy odhlásilo zámek staré firmy, s CacheLocks=1 by server dávku odmítl (LockExist).
+    private static IMLRest OtherCompany(IMLRest mlRest, string? idfa, string? dataNamespace) =>
+        mlRest.With(cacheLocks: 0, idfa: idfa, dataNamespace: dataNamespace);
+
+    // object[] záměrně (ne CVar): legacy Caché metoda čte numerické subscripty ^||ML("IN",i).
+    private static object[] Input(IEnumerable<UsageRecord> batch, char del) => [.. batch.Select(r =>
+        $"usage{del}{r.Form}{del}{r.Control}{del}{r.Ts.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)}")];
+
+    private static object[] Send(IMLRest target, object[] input) =>
+        target.QueryOrThrow("ALVA.ISY.ISYCloud.APIdotNet.Telemetry", "LogUsageBatch", input);
 
     internal static void ResetForTests()
     {

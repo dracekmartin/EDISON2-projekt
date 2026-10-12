@@ -139,20 +139,79 @@ public class CacheWindowStateStoreTests
     }
 
     [Fact]
-    public void LoadAndSave_GoThroughInjectedSession()
+    public void LoadAndSave_GoThroughCloneOfInjectedSession()
     {
-        var mlRest = EDTesting.MLRestMocks.Create();
-        mlRest.Delimiter.Returns(D);
-        mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", Arg.Any<object[]>())
-            .Returns(EDTesting.MLRestMocks.Output($"param{D}size{D}400;300"));
-        var store = new CacheWindowStateStore("EDISON2.TestWindow", () => mlRest);
+        // Klon: Save jde na pozadí souběžně s UI threadem a RestStatus sdílené instance je per request.
+        var shared = new GatedMLRest { SavedState = [$"param{D}size{D}400;300"] };
+        var store = new CacheWindowStateStore("EDISON2.TestWindow", () => shared);
 
         var geometry = store.Load();
         store.Save(new Rect(1, 2, 3, 4), maximized: false);
 
         Assert.Equal((400d, 300d), (geometry.Width, geometry.Height));
-        mlRest.Received(1).QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams",
-            Arg.Is<object[]>(a => (string)a[0] == $"formID{D}EDISON2.TestWindow"));
+        Assert.True(BackgroundWrites.WaitPending(TimeSpan.FromSeconds(10)));
+        Assert.True(shared.Received("LoadParams", onClone: true));
+        Assert.True(shared.Received("SaveParams", onClone: true));
+        Assert.False(shared.Received("SaveParams", onClone: false));
+    }
+
+    [Fact]
+    public void Load_ServerHangs_ReturnsNothingSavedWithinLimit()
+    {
+        // Otevření okna při výpadku VPN nečeká na TCP timeout, okno dostane XAML default.
+        var shared = new GatedMLRest("LoadParams") { SavedState = [$"param{D}size{D}400;300"] };
+        try
+        {
+            var store = new CacheWindowStateStore("EDISON2.TestWindow", () => shared) { LoadTimeout = TimeSpan.FromMilliseconds(100) };
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+
+            var geometry = store.Load();
+
+            Assert.True(watch.Elapsed < TimeSpan.FromSeconds(3), $"Load čekal {watch.Elapsed}.");
+            Assert.True(geometry.IsEmpty);
+        }
+        finally
+        {
+            shared.Gate.Set();
+        }
+    }
+
+    [Fact]
+    public void Save_AfterLoadPastLimit_KeepsSavedGeometry()
+    {
+        // Pomalé otevření dalo oknu XAML default, zavření ho nesmí uložit přes geometrii uživatele.
+        var shared = new GatedMLRest("LoadParams");
+        try
+        {
+            var store = new CacheWindowStateStore("EDISON2.TestWindow", () => shared) { LoadTimeout = TimeSpan.FromMilliseconds(100) };
+            store.Load();
+
+            store.Save(new Rect(0, 0, 222, 111), maximized: false);
+            shared.Gate.Set();
+
+            Assert.True(BackgroundWrites.WaitPending(TimeSpan.FromSeconds(10)));
+            Assert.False(shared.Received("SaveParams", onClone: true));
+        }
+        finally
+        {
+            shared.Gate.Set();
+        }
+    }
+
+    [Fact]
+    public void Save_AfterFailedLoad_KeepsSavedGeometry()
+    {
+        var mlRest = EDTesting.MLRestMocks.Create();
+        mlRest.With().Returns(mlRest);
+        mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", Arg.Any<object[]>())
+            .Returns(_ => throw new InvalidOperationException("server down"));
+        var store = new CacheWindowStateStore("EDISON2.TestWindow", () => mlRest);
+        Assert.ThrowsAny<Exception>(() => store.Load());   // TryRestore ji spolkne a okno dostane XAML default
+
+        store.Save(new Rect(0, 0, 222, 111), maximized: false);
+
+        Assert.True(BackgroundWrites.WaitPending(TimeSpan.FromSeconds(10)));
+        mlRest.DidNotReceive().QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams", Arg.Any<object[]>());
     }
 
     [Fact]

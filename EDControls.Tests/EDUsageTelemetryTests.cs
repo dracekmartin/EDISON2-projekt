@@ -145,6 +145,15 @@ public class EDUsageTelemetryTests
         batch.Length == 1 && ((string)batch[0]).StartsWith($"usage~EDISON2.LegacyLaunch~{control}~");
 
     [Fact]
+    public void FlushInBackground_CloneFails_DoesNotThrowFromWindowClose()
+    {
+        _mlRest.With().Returns(_ => throw new InvalidOperationException("klon nevznikl"));
+        EDUsageTelemetry.Track("EDISON2.TestWindow", "OPEN");
+
+        Assert.Null(Record.Exception(() => EDUsageTelemetry.FlushInBackground(_mlRest)));
+    }
+
+    [Fact]
     public void Flush_ClearsBuffer_SecondFlushSendsNothing()
     {
         EDUsageTelemetry.Track("EDISON2.TestWindow", "OPEN");

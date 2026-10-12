@@ -290,6 +290,7 @@ public class EDViewModelTests
     {
         // Výchozí Caché úložiště jede přes MLRest služeb VM, ne přes singleton EDServices.Current.
         var mlRest = EDTesting.MLRestMocks.Create();
+        mlRest.With().Returns(mlRest);   // úložiště volá klon
         mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", Arg.Any<object[]>())
             .Returns(EDTesting.MLRestMocks.Output("param\0size\0400;300"));
 
@@ -303,6 +304,7 @@ public class EDViewModelTests
             Assert.Equal(400, window.Width);
             window.Close();
         });
+        Assert.True(BackgroundWrites.WaitPending(TimeSpan.FromSeconds(10)));   // uložení při zavření jde na pozadí
         mlRest.Received().QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams",
             Arg.Is<object[]>(a => (string)a[0] == "formID\0EDISON2.FooWindow"));
     }

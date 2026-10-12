@@ -46,6 +46,7 @@ public class WindowStatePersistenceAttachTests
     private static IMLRest MockWithSavedState(params string[] rows)
     {
         var mlRest = MLRestMocks.Create();
+        mlRest.With().Returns(mlRest);   // úložiště volá klon
         mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", Arg.Any<object[]>())
             .Returns(MLRestMocks.Output(rows.Cast<object>().ToArray()));
         return mlRest;
@@ -192,6 +193,7 @@ public class WindowStatePersistenceAttachTests
 
             window.Close();
 
+            Assert.True(BackgroundWrites.WaitPending(TimeSpan.FromSeconds(10)));   // Save jde na pozadí
             mlRest.Received(1).QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams", Arg.Is<object[]>(a =>
                 a.Length == 5 && (string)a[0] == $"formID{D}EDISON2.TestWindow"));
         });
@@ -201,6 +203,7 @@ public class WindowStatePersistenceAttachTests
     public void Attach_ServerFails_WindowKeepsDefaultsAndOpens()
     {
         var mlRest = MLRestMocks.Create();
+        mlRest.With().Returns(mlRest);
         mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", Arg.Any<object[]>())
             .Returns(_ => throw new InvalidOperationException("server down"));
 

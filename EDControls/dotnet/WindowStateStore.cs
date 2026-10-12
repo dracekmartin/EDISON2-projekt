@@ -64,6 +64,15 @@ public sealed class CacheWindowStateStore(string formId, Func<IMLRest?> mlRestSo
     /// </summary>
     public CacheWindowStateStore(string formId) : this(formId, () => EDServices.Current.MLRest) { }
 
+    /// <summary>
+    /// Jak dlouho okno při otevření čeká na uloženou geometrii, pak platí XAML default. MLRest má timeout 8 h,
+    /// při výpadku spojení by jinak rozhodoval TCP timeout. 3 s pokryjí studený start Caché při startu TD.
+    /// </summary>
+    internal TimeSpan LoadTimeout { get; init; } = TimeSpan.FromSeconds(3);
+
+    private bool _loadUnanswered;
+
+    /// <summary>Synchronně kvůli blikání (volá se před prvním vykreslením), ale na klonu a nejvýš <see cref="LoadTimeout"/>.</summary>
     public WindowGeometry Load()
     {
         var mlRest = mlRestSource();
@@ -75,17 +84,29 @@ public sealed class CacheWindowStateStore(string formId, Func<IMLRest?> mlRestSo
             $"formID{del}{formId}",
             $"ciselnik{del}state",
         };
-        return ToGeometry(ParseOutput(mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", input), del));
+        _loadUnanswered = true;
+        var load = new RestCallRunner(() => mlRest).RunAsync(rest => rest.QueryOrThrow("ALVA.LIBRARY.Form", "LoadParams", input));
+        // Nedočkaný load může selhat později a nepozorovanou výjimku by aplikace hlásila jako chybu.
+        load.ContinueWith(t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+        if (!load.Wait(LoadTimeout)) return WindowGeometry.None;
+        var geometry = ToGeometry(ParseOutput(load.Result, del));
+        _loadUnanswered = false;
+        return geometry;
     }
 
+    /// <summary>
+    /// Vrací se hned, zápis jde na pozadí (zavření okna nečeká na síť). Po <see cref="Load"/> bez odpovědi
+    /// (limit, chyba) neukládá: okno má XAML default a ten by uloženou geometrii přepsal.
+    /// </summary>
     public void Save(Rect bounds, bool maximized)
     {
+        if (_loadUnanswered) return;
         var mlRest = mlRestSource();
         if (mlRest is null) return;
-        var del = mlRest.Delimiter;
+        var input = BuildSaveParams(formId, bounds, maximized ? 1 : 0, mlRest.Delimiter);
 
-        mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams",
-                            BuildSaveParams(formId, bounds, maximized ? 1 : 0, del));
+        BackgroundWrites.Register(new RestCallRunner(() => mlRest).RunAsync(rest =>
+            rest.QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams", input)));
     }
 
     internal static object[] BuildSaveParams(string formId, Rect bounds, int stateInt, char del) =>

@@ -63,6 +63,6 @@ internal static class EDUsageTelemetryHook
         window.AddHandler(MenuItem.ClickEvent, onClick, handledEventsToo: true);
 
         // CurrentOrNull: infrastruktura na každé okno nesmí spadnout kvůli pořadí startupu.
-        window.Closed += (_, _) => EDUsageTelemetry.Flush(EDServices.CurrentOrNull?.MLRest);
+        window.Closed += (_, _) => EDUsageTelemetry.FlushInBackground(EDServices.CurrentOrNull?.MLRest);
     }
 }

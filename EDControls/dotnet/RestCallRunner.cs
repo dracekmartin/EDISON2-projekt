@@ -43,3 +43,41 @@ public sealed class RestCallRunner : IRestCallRunner
         return () => clone;
     }
 }
+
+/// <summary>
+/// Zápisy na pozadí, na jejichž výsledek nikdo nečeká (geometrie okna, telemetrie, preference). Pool thread konec
+/// procesu nepřežije, proto se na ně čeká při ukončení procesu a v synchronním <c>EDUsageTelemetry.Flush</c>, který
+/// shell volá při ukončení a přepnutí uživatele před odhlášením session (po něm by klon s <c>CacheLocks=1</c> server odmítl).
+/// </summary>
+internal static class BackgroundWrites
+{
+    /// <summary>Při výpadku spojení proces po zavření oken čeká nejvýš tak dlouho, pak zápis zahodí.</summary>
+    internal static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
+
+    private static readonly object Sync = new();
+    private static readonly HashSet<Task> Pending = [];
+
+    // TD žádný Exit hook nemá, ProcessExit pokryje každou aplikaci nad EDControls.
+    static BackgroundWrites() => AppDomain.CurrentDomain.ProcessExit += (_, _) => WaitPending(Timeout);
+
+    /// <summary>Zápis se drží, dokud nedoběhne. Selhání se zahodí: zápis je best-effort a nikdo ho nečeká.</summary>
+    internal static Task<T> Register<T>(Task<T> write)
+    {
+        lock (Sync) Pending.Add(write);
+        write.ContinueWith(t =>
+        {
+            _ = t.Exception;
+            lock (Sync) Pending.Remove(t);
+        }, TaskScheduler.Default);
+        return write;
+    }
+
+    /// <summary>False = limit vypršel a některý zápis ještě běží.</summary>
+    internal static bool WaitPending(TimeSpan timeout)
+    {
+        Task[] pending;
+        lock (Sync) pending = [.. Pending];
+        try { return Task.WaitAll(pending, timeout); }
+        catch (AggregateException) { return true; }
+    }
+}

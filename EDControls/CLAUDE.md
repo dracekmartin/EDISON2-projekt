@@ -88,6 +88,8 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 - `IRestCallRunner` / `RestCallRunner` - blokující MLRest volání mimo UI thread, vždy na **klonu** (proč: root
   CLAUDE.md, sekce MLRest). `Idfa`, `DataNamespace` a `CacheLocks` čte na volajícím threadu, klon staví na pool threadu
   (DNS dotaz): zápis nespadne do firmy, na kterou uživatel přepnul (po odhlášení staré firmy ho server odmítne).
+- `BackgroundWrites` - zápisy, na které nikdo nečeká (geometrie, telemetrie, preference): na rozjeté čeká
+  konec procesu a synchronní `EDUsageTelemetry.Flush` (shell při ukončení a přepnutí uživatele), nejvýš 5 s.
 - `LegacyOutput` - jediné místo produkčního kódu, které zná `object[]` výstup legacy endpointů (index 0 =
   ERR slot, řádky `klíč{del}…` od 1); nový legacy endpoint ho použije místo vlastní smyčky.
 - `ColorValue` - jediná definice barvy na drátě (hex `#AARRGGBB`, legacy `R;G;B` EDListu; formulář jen
@@ -128,14 +130,12 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 - `EDSearchTextBox/`, `EDInfoBar/` - šablony v `EDControlStyles.xaml`.
 - `SessionState/` - `ISessionState`, slovník v paměti procesu pro stav, který má přežít zavření
   dialogu, ale ne restart (filtr v `EDInputForm`); co restart přežít má, patří do `UserPrefs/`.
-- `UserPrefs/` - `IUserPrefsService`; **default je no-op `NullUserPrefsService`** -
-  dokud composition root nenastaví `CacheUserPrefsService` (po vzniku MLRest),
-  preference se tiše neukládají. Služba volá **klon per request** (`IRestCallRunner`) a
-  `Load` při selhání transportu **hází**, null = jen chybějící klíč: volající, který výpadek
-  nerozliší od prázdna, by uživatelova data přepsal prázdnem (plocha shellu). Save/Delete
-  selhání polykají a hlásí `ErrorReports.ReportBackground`. Scope je `"<App>"` pro sdílený
-  stav aplikace, `"<App>.<Featura>"` když klíč škáluje s entitami; kolizím brání jen
-  konvence, server blob neinterpretuje.
+- `UserPrefs/` - `IUserPrefsService`; **default je no-op `NullUserPrefsService`** - dokud composition root
+  nenastaví `CacheUserPrefsService` (po vzniku MLRest), preference se tiše neukládají. Služba volá **klon per
+  request** (`IRestCallRunner`) a `Load` při selhání transportu **hází**, null = jen chybějící klíč: volající,
+  který výpadek nerozliší od prázdna, by uživatelova data přepsal prázdnem (plocha shellu). Save/Delete
+  selhání polykají a hlásí `ErrorReports.ReportBackground`. Scope je `"<App>"` pro sdílený stav aplikace,
+  `"<App>.<Featura>"` když klíč škáluje s entitami; kolizím brání jen konvence, server blob neinterpretuje.
 - `EDSupportPanel/` - vysouvací panel Podpora u pravého okraje každého okna. Vlastní `CLAUDE.md`.
 - `MiniApps/` - framework dlaždicových widgetů shellu. `EDMiniAppBar` = pruh nad obsahem
   (filtry, akce, status); mezeru a zarovnání filtrů rozdává code-behind, protože kontrolka je

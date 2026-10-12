@@ -13,7 +13,7 @@ namespace EDControls.UserPrefs;
 /// souběžně s requesty UI threadu, a <c>RestStatus</c> je per-instance (root CLAUDE.md).
 /// Load při selhání transportu **hází** - null znamená jen „klíč neexistuje" (bez toho volající
 /// nerozliší výpadek od prázdna a přepíše uživatelova data prázdnem). Save / Delete selhání
-/// hlásí do telemetrie a polykají (persistence nesmí shodit UI).
+/// hlásí do telemetrie a polykají (persistence nesmí shodit UI), na rozjeté čeká ukončení aplikace (BackgroundWrites).
 /// </summary>
 public class CacheUserPrefsService : IUserPrefsService
 {
@@ -74,26 +74,26 @@ public class CacheUserPrefsService : IUserPrefsService
     public Task SaveAsync(string scope, string key, JsonNode data)
     {
         ValidateArgs(scope, key);
-        return _runner.RunAsync(rest =>
+        return BackgroundWrites.Register(_runner.RunAsync(rest =>
         {
             var inVar = new CVar();
             inVar["scope"] = new CVar(scope);
             inVar["key"]   = new CVar(key);
             inVar["data"]  = new CVar(data.ToJsonString());
             return TryQuery(rest, "Save", inVar);
-        });
+        }));
     }
 
     public Task DeleteAsync(string scope, string key)
     {
         ValidateArgs(scope, key);
-        return _runner.RunAsync(rest =>
+        return BackgroundWrites.Register(_runner.RunAsync(rest =>
         {
             var inVar = new CVar();
             inVar["scope"] = new CVar(scope);
             inVar["key"]   = new CVar(key);
             return TryQuery(rest, "Delete", inVar);
-        });
+        }));
     }
 
     private bool TryQuery(IMLRest rest, string method, CVar inVar)

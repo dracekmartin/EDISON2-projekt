@@ -19,6 +19,7 @@ public class WindowStateTests
 
             // Záporná souřadnice = monitor vlevo; zlomky se při uložení zaokrouhlují.
             store.Save(new Rect(-1280, 40, 1024.4, 768.6), maximized: true);
+            Assert.True(BackgroundWrites.WaitPending(TimeSpan.FromSeconds(10)));   // Save jde na pozadí
 
             Assert.Equal(new WindowGeometry(-1280, 40, 1024, 769, true), store.Load());
         }
