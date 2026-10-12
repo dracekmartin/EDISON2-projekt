@@ -91,6 +91,83 @@ public class DebouncedUserPrefsWriterTests
         }
     }
 
+    private (DebouncedUserPrefsWriter Writer, GatedMLRest Shared) CompanyWriter()
+    {
+        var shared = new GatedMLRest { Idfa = "A", DataNamespace = "NS-A" };
+        var prefs = new CacheUserPrefsService(() => shared, _ => { });
+        var writer = new DebouncedUserPrefsWriter(() => prefs, "Scope", () => _key, () => JsonValue.Create(_state), _ =>
+        {
+            var delay = new TaskCompletionSource();
+            _delays.Add(delay);
+            return delay.Task;
+        });
+        return (writer, shared);
+    }
+
+    // Přepnutí firmy přepisuje sdílenou instanci na místě (CompanySwitcher).
+    private static void SwitchCompany(GatedMLRest shared)
+    {
+        shared.Idfa = "B";
+        shared.DataNamespace = "NS-B";
+    }
+
+    private static string[] SavedUnder(GatedMLRest shared) =>
+        [.. SavedWith(shared).Select(c => c.Idfa).Order()];
+
+    private static (string Idfa, int CacheLocks)[] SavedWith(GatedMLRest shared)
+    {
+        Assert.True(BackgroundWrites.WaitPending(TimeSpan.FromSeconds(10)));
+        return [.. shared.Calls.Where(c => c.Method == "Save").Select(c => (c.Idfa, c.CacheLocks))];
+    }
+
+    [Fact]
+    public void ChangeBeforeCompanySwitch_DelayedSave_GoesToCompanyOfChangeWithoutLockCheck()
+    {
+        // Zámek staré firmy přepnutí odhlásí, se CacheLocks=1 by server zápis odmítl.
+        Run(() =>
+        {
+            var (writer, shared) = CompanyWriter();
+            writer.Schedule();
+            SwitchCompany(shared);
+
+            _delays[0].SetResult();
+
+            Assert.Equal([("A", 0)], SavedWith(shared));
+        });
+    }
+
+    /// <summary>WPF pustí Unloaded zavřeného okna až po návratu CompanySwitcher.Switch.</summary>
+    [Fact]
+    public void ChangeBeforeCompanySwitch_FlushFromUnloaded_GoesToCompanyOfChange()
+    {
+        Run(() =>
+        {
+            var (writer, shared) = CompanyWriter();
+            writer.Schedule();
+            SwitchCompany(shared);
+
+            writer.FlushAsync().GetAwaiter().GetResult();
+
+            Assert.Equal(["A"], SavedUnder(shared));
+        });
+    }
+
+    [Fact]
+    public void ChangesUnderTwoCompanies_EachSavedUnderItsOwn()
+    {
+        Run(() =>
+        {
+            var (writer, shared) = CompanyWriter();
+            writer.Schedule();
+            SwitchCompany(shared);
+            writer.Schedule();
+
+            _delays[1].SetResult();
+
+            Assert.Equal(["A", "B"], SavedUnder(shared));
+        });
+    }
+
     /// <summary>Zavření okna, kde se nic nezměnilo, nemá posílat request.</summary>
     [Fact]
     public void FlushAsync_WithoutPending_SavesNothing()

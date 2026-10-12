@@ -29,6 +29,65 @@ public class RestCallRunnerTests
     }
 
     [Fact]
+    public async Task Capture_CompanySwitchBeforeCall_RunsUnderCapturedCompanyWithoutLockCheck()
+    {
+        // Odložený zápis (debounce, flush v Unloaded) odejde až po přepnutí firmy a odhlášení té staré:
+        // patří staré firmě a se zděděným CacheLocks=1 by ho server odmítl.
+        var adapter = new MLRestAdapter(new ALWA.SYS.MLRest("srv", 1234, "NS-A", "IDFA-A") { CacheLocks = 1 });
+        var gate = new GateScheduler();
+        var captured = new RestCallRunner(() => adapter, gate).Capture();
+
+        adapter.Idfa = "IDFA-B";
+        adapter.DataNamespace = "NS-B";
+        var task = captured.RunAsync(rest => (rest.Idfa, rest.DataNamespace, rest.CacheLocks));
+        gate.RunQueued();
+
+        Assert.Equal(("IDFA-A", "NS-A", 0), await task);
+    }
+
+    [Fact]
+    public async Task Capture_LogoutBeforeCall_RunsWithoutLockCheck()
+    {
+        // Přepnutí uživatele: odhlášení nechá firmu stejnou a sdílené instanci jen nastaví CacheLocks=0.
+        var adapter = new MLRestAdapter(new ALWA.SYS.MLRest("srv", 1234, "NS-A", "IDFA-A") { CacheLocks = 1 });
+        var gate = new GateScheduler();
+        var captured = new RestCallRunner(() => adapter, gate).Capture();
+
+        adapter.CacheLocks = 0;
+        var task = captured.RunAsync(rest => (rest.Idfa, rest.CacheLocks));
+        gate.RunQueued();
+
+        Assert.Equal(("IDFA-A", 0), await task);
+    }
+
+    [Fact]
+    public async Task Capture_SessionUnchanged_RunsOnCloneOfSameSession()
+    {
+        var adapter = new MLRestAdapter(new ALWA.SYS.MLRest("srv", 1234, "NS-A", "IDFA-A") { CacheLocks = 1 });
+        var gate = new GateScheduler();
+        var captured = new RestCallRunner(() => adapter, gate).Capture();
+
+        var task = captured.RunAsync(rest => (rest.Idfa, rest.DataNamespace, rest.CacheLocks, Same: ReferenceEquals(rest, adapter)));
+        gate.RunQueued();
+
+        Assert.Equal(("IDFA-A", "NS-A", 1, false), await task);
+    }
+
+    [Fact]
+    public void Capture_SameObjectUntilSessionChanges()
+    {
+        // Zapisovač podle totožnosti pozná, že změna přišla pod jinou firmou.
+        var adapter = new MLRestAdapter(new ALWA.SYS.MLRest("srv", 1234, "NS-A", "IDFA-A") { CacheLocks = 1 });
+        var runner = new RestCallRunner(() => adapter);
+
+        var first = runner.Capture();
+        Assert.Same(first, runner.Capture());
+
+        adapter.Idfa = "IDFA-B";
+        Assert.NotSame(first, runner.Capture());
+    }
+
+    [Fact]
     public async Task RunAsync_RealAdapter_BuildsCloneInTaskNotOnCaller()
     {
         // Konstruktor MLRest dělá DNS dotaz, na UI threadu nemá co dělat. Pole mimo snímek proto čte až úloha.

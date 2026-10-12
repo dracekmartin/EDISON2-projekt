@@ -22,3 +22,14 @@ public interface IUserPrefsService
     /// <summary>Smaže klíč. No-op pokud neexistoval.</summary>
     Task DeleteAsync(string scope, string key);
 }
+
+/// <summary>Snímek session pro odložený zápis přes libovolnou <see cref="IUserPrefsService"/>.</summary>
+public static class UserPrefsSession
+{
+    /// <summary>
+    /// Odložený zápis bere snímek při změně, ne při odeslání: přepnutí firmy mezi nimi by ho poslalo pod novou
+    /// firmou. Dokud se session nezmění, vrací týž objekt. Služba bez session (no-op, testovací) vrací sama sebe.
+    /// </summary>
+    public static IUserPrefsService Capture(this IUserPrefsService prefs) =>
+        prefs is CacheUserPrefsService cache ? cache.Capture() : prefs;
+}

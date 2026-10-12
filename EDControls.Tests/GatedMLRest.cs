@@ -32,7 +32,7 @@ internal sealed class GatedMLRest : IMLRest
 
     public ManualResetEventSlim Gate { get; } = new();
 
-    public ConcurrentQueue<(string Method, bool OnClone, string Idfa)> Calls { get; } = new();
+    public ConcurrentQueue<(string Method, bool OnClone, string Idfa, int CacheLocks)> Calls { get; } = new();
 
     /// <summary>Odpověď <c>LoadParams</c> bez ERR slotu.</summary>
     public string[] SavedState { get; init; } = [];
@@ -55,7 +55,7 @@ internal sealed class GatedMLRest : IMLRest
     private void Record(string method)
     {
         if (_gated.Contains(method)) _root.Gate.Wait(GateLimit);
-        _root.Calls.Enqueue((method, !ReferenceEquals(this, _root), Idfa));
+        _root.Calls.Enqueue((method, !ReferenceEquals(this, _root), Idfa, CacheLocks));
     }
 
     public IMLRest With(int? cacheLocks = null, string? idfa = null, string? dataNamespace = null) =>

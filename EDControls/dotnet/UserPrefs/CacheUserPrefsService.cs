@@ -21,6 +21,7 @@ public class CacheUserPrefsService : IUserPrefsService
 
     private readonly IRestCallRunner _runner;
     private readonly Action<Exception> _reportFailure;
+    private CacheUserPrefsService? _captured;
 
     public CacheUserPrefsService(IRestCallRunner runner, Action<Exception>? reportFailure = null)
     {
@@ -33,6 +34,18 @@ public class CacheUserPrefsService : IUserPrefsService
         : this(new RestCallRunner(rest), reportFailure) { }
 
     public CacheUserPrefsService(IMLRest mlRest) : this(() => mlRest) { }
+
+    /// <summary>
+    /// Služba vázaná na session z okamžiku volání, pro odložený zápis (<see cref="IRestCallRunner.Capture"/>).
+    /// Dokud se session nezmění, vrací týž objekt.
+    /// </summary>
+    public IUserPrefsService Capture()
+    {
+        var runner = _runner.Capture();
+        if (ReferenceEquals(runner, _runner)) return this;
+        if (_captured is { } captured && ReferenceEquals(captured._runner, runner)) return captured;
+        return _captured = new CacheUserPrefsService(runner, _reportFailure);
+    }
 
     public Task<JsonNode?> LoadAsync(string scope, string key)
     {

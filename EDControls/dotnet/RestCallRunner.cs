@@ -4,6 +4,13 @@ namespace EDControls;
 public interface IRestCallRunner
 {
     Task<T> RunAsync<T>(Func<IMLRest, T> call);
+
+    /// <summary>
+    /// Runner vázaný na session z okamžiku volání, pro odložený zápis (debounce, fronta): přepnutí firmy mezi
+    /// změnou a odesláním by ho jinak poslalo pod novou firmou. Dokud se session nezmění, vrací týž objekt.
+    /// Výchozí implementace session nedrží a vrací sama sebe (testovací runner nad pevnou instancí).
+    /// </summary>
+    IRestCallRunner Capture() => this;
 }
 
 /// <summary>
@@ -19,6 +26,7 @@ public sealed class RestCallRunner : IRestCallRunner
 {
     private readonly Func<IMLRest> _rest;
     private readonly TaskScheduler _scheduler;
+    private CapturedRunner? _captured;
 
     public RestCallRunner(Func<IMLRest> rest) : this(rest, TaskScheduler.Default) { }
 
@@ -28,12 +36,17 @@ public sealed class RestCallRunner : IRestCallRunner
         _scheduler = scheduler;
     }
 
-    public Task<T> RunAsync<T>(Func<IMLRest, T> call)
+    public Task<T> RunAsync<T>(Func<IMLRest, T> call) => Start(Snapshot(_rest()), call, _scheduler);
+
+    public IRestCallRunner Capture()
     {
-        var clone = Snapshot(_rest());
-        return Task.Factory.StartNew(() => call(clone()), CancellationToken.None,
-            TaskCreationOptions.DenyChildAttach, _scheduler);
+        var current = _rest();
+        if (_captured is { } captured && captured.Matches(current)) return captured;
+        return _captured = new CapturedRunner(current, Snapshot(current), _scheduler);
     }
+
+    private static Task<T> Start<T>(Func<IMLRest> clone, Func<IMLRest, T> call, TaskScheduler scheduler) =>
+        Task.Factory.StartNew(() => call(clone()), CancellationToken.None, TaskCreationOptions.DenyChildAttach, scheduler);
 
     // Jiná implementace než adaptér je testovací fake: hodnoty session od stavby klonu neoddělí, klon proto vzniká hned.
     private static Func<IMLRest> Snapshot(IMLRest current)
@@ -41,6 +54,26 @@ public sealed class RestCallRunner : IRestCallRunner
         if (current is MLRestAdapter adapter) return adapter.SnapshotSession();
         var clone = current.With();
         return () => clone;
+    }
+
+    /// <summary>Session sdílené instance <paramref name="instance"/> ve chvíli <see cref="Capture"/>.</summary>
+    private sealed class CapturedRunner(IMLRest instance, Func<IMLRest> snapshot, TaskScheduler scheduler) : IRestCallRunner
+    {
+        private readonly string _idfa = instance.Idfa;
+        private readonly string _dataNamespace = instance.DataNamespace;
+        private readonly int _cacheLocks = instance.CacheLocks;
+
+        internal bool Matches(IMLRest current) =>
+            ReferenceEquals(current, instance) && current.Idfa == _idfa
+            && current.DataNamespace == _dataNamespace && current.CacheLocks == _cacheLocks;
+
+        // Sdílená instance už je jinde (přepnutí firmy, odhlášení): zámek zachycené firmy mohl zaniknout
+        // a s CacheLocks=1 by server zápis odmítl (LockExist).
+        public Task<T> RunAsync<T>(Func<IMLRest, T> call) => Start(
+            Matches(instance) ? snapshot : () => instance.With(cacheLocks: 0, idfa: _idfa, dataNamespace: _dataNamespace),
+            call, scheduler);
+
+        public IRestCallRunner Capture() => this;
     }
 }
 
