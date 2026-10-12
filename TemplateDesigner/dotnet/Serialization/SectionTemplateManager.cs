@@ -13,19 +13,21 @@ public class SectionTemplateManager
     private readonly string _templatesDir;
 
     public SectionTemplateManager()
+        : this(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "section-templates"))
     {
-        _templatesDir = Path.Combine(
-            AppDomain.CurrentDomain.BaseDirectory,
-            "section-templates"
-        );
+    }
 
-        // Vytvoř složku pokud neexistuje
-        Directory.CreateDirectory(_templatesDir);
+    internal SectionTemplateManager(string templatesDir)
+    {
+        // Složka se zakládá až při uložení: program bývá na síťovém disku bez práva zápisu
+        // a založení při startu návrhář shodilo (HO_CSAD 9. 10.).
+        _templatesDir = templatesDir;
     }
 
     /// <summary>Uloží sekci jako šablonu pod zadaným názvem.</summary>
     public void Save(Section section, string name)
     {
+        Directory.CreateDirectory(_templatesDir);
         var fileName = SanitizeFileName(name) + ".json";
         var path = Path.Combine(_templatesDir, fileName);
 

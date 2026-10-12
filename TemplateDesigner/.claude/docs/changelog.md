@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-12 (5) - 🐛 návrhář se nespustil bez práva zápisu do složky programu
+
+Při startu se zakládala složka šablon sekcí `section-templates` vedle programu. Program je u zákazníka
+často na síťovém disku, kam uživatel nemá právo zápisu (`\\srv\edison` u HO_CSAD 9. 10.), a návrhář
+pak spadl hned při spuštění (`UnauthorizedAccessException`). Složka teď vzniká až při prvním uložení
+šablony sekce; bez práva zápisu dostane uživatel hlášku jen tehdy. Test `SectionTemplateManagerTests`.
+
 ## 2026-10-12 (4) - 🚌 linkový JŘ MHD: tabulka jako starý tisk (`B191c`)
 
 Porovnání se starým tiskem (`LinkovyJrMhdLegacyOracle`) teď kryje celou tabulku: časy po
