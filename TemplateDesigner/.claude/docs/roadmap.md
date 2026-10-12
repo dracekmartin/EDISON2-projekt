@@ -4,51 +4,35 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B191` linkový JŘ MHD; `B190` tisk z modulu jízdních řádů čeká na kolegy
-> (spíš další verze). Pořadí Jan 9. 10.; `#7487` hotový, rozdílový JŘ `B192` po ukázce v Backlogu. Zpětná vazba
-> kolegy z 18. 9. i TRANSDEV z 16. 9. jsou vyřízené; co z nich zbylo, je obecná věc formuláře
-> v Backlogu.
+> **Nejblíž na řadě:** linkový JŘ MHD (`B191`) po krocích v Priority, shora dolů (Jan 12. 10.).
+> Ostatní je v Backlogu - `B190` tisk z modulu JŘ čeká na kolegy, `B192` rozdílový JŘ na ukázku.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
 
 ---
 
-## 🎯 Priority (pořadí Jan 9. 10.)
+## 🎯 Priority - linkový (knižní) JŘ MHD (`B191`, pořadí Jan 12. 10.)
 
-1. **`B191` Linkový (knižní) JŘ MHD - dodělat a vydat** [L]. Městská varianta je dnes skrytá,
-   dokud neprojde porovnáním se starým modulem. Co se z kódu nepozná (zastávkové řádky dorovnat
-   jako první, licenční × veřejné číslo linky, vlastní sada voleb): sekce Linkové a knižní JŘ níž.
-2. **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze). Uživatel v jízdních řádech (nové okno
-   JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
-   (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch
-   kontrakt už je) a render oddělit fasádou. **Před začátkem rozhodnout**, odkud se bere výchozí
-   šablona a jak ji uživatel volí. Podklad [`R4/R7`](architektonicka-rozhodnuti-agendy.md).
+Městská varianta linkového JŘ: agenda `LinkovyJrMhd` existuje, ale je skrytá - neprošla porovnáním
+se starým modulem. „Dodělám AD a MHD spadne samo" neplatí: AD je nadmnožina v obsahu tabulky, ne
+v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva nastavení). Kroky shora dolů:
 
-> 📞 **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze **starých šablon**
-> (starý tisk JŘ a jeho návrhář sestav), jak totéž udělat po novu v Návrháři šablon - převést
-> jejich vzhled do nové šablony a ukázat postup. Nejdřív sepsat, kdo staré šablony reálně používá.
-
----
-
-## 📨 Poslat šablonu jinému uživateli
-
-- **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
-  dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),
-  mezi firmami jen *Exportovat do souboru* / *Importovat ze souboru*, a M-line rozesílá systémové
-  šablony kanálem z helpdesku (`SystemTemplateChannelSync`). Otevřené: mezi firmami, nebo uvnitř
-  firmy (sdílet / nabídnout konkrétnímu kolegovi)?
-
----
-
-## 📱 QR na vývěsce - kam se odsud dostanu
-
-- **Vyhledávač odjezdů pro cestující - demo** [M] (Jan 1. 10., **základ hotový** týž den). QR
-  z výlepu linkového JŘ AD otevře lokální aplikaci `edwcore/apps/tisky-qr`: cestující zadá cíl
-  a dozví se nejbližší spoj dnes, přechod na protější označník na mapě, způsoby platby; CZ/EN.
-  Server dělá jednorázová třída `ALVA.TiskyQrDemo.Cestujici` (mimo návrhář). Čeká na rozhodnutí,
-  co dál; otevřené body a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
-  Výlepy po zastávkách tiskne parametr „Stránka pro každou zastávku" (1. 10.).
+1. **`B191a` Rozbor stavu MHD proti AD** [S]. Co agenda posílá a co chybí (dnes bez sloupců Km, Tč,
+   MHD a bez návazností - zdroj je nemá), výběr testovacích linek MHD a oracle ve starém modulu
+   (`WinTiskMhd^JRapi`, `JRapiLinPrtWin.mac`). Výstup: soupis do analýzy linkového JŘ, ne kód.
+2. **`B191b` Řádky zastávek dorovnat na AD** [M]. MHD posílá jen pořadí, typ, název a zóny, AD navíc
+   `CZST, AKTUALNI_ZASTAVKA, TC, MHD, NASTUPISTE` (`LinkovyJrMhd.cls:73-81` × `LinkovyJrAd.cls:100-116`).
+   Bez toho nemá zvýraznění zastávky kam zapsat příznak a část voleb by šla udělat jen naoko.
+3. **`B191c` Porovnání se starým modulem** [M]. Oracle a test jako `LinkovyJrAdLegacyTest`; parita
+   jen doložená porovnáním, co oracle nekryje, psát jako neověřené (R6).
+4. **`B191d` Volby pro městské linky** [M, **rozhodnutí Jan**]. Starý modul u MHD čte 3 z 11 voleb
+   (kam legenda, rámečky kolem čísel spojů, typy provozu a směry), takže je to nová featura, ne
+   dorovnání. Návrh: tutéž sadu jako AD, kde má smysl ([`§13.4` bod 4](linkovy-knizni-jr-implementace-analyza.md)).
+5. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
+   `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
+6. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
+   v `LinkovyJrAd.cls`), Novinky a příručka.
 
 ---
 
@@ -63,19 +47,7 @@ dvou Caché tiskových enginů drží `B56` v Backlogu - je to úklid vnitřku b
 (rozhodnutí Jan 31. 8.). Městská varianta zůstává skrytá, dokud neprojde porovnáním se starým
 modulem; jak se agenda skrývá, popisuje komentář u `Released` v `LinkovyJrAd.cls`.
 
-**MHD varianta je na řadě jako `B191`** (Priority, Jan 7. 10.; do té doby odložená od 28. 8.). Platí
-čtyři věci, které se z kódu nepoznají:
-
-- **Vlastní inventář a vlastní porovnání se starým modulem.** „Dodělám AD a MHD spadne samo" neplatí -
-  AD je nadmnožina v obsahu tabulky, ne v pojmech (licenční × veřejné číslo linky, typ provozu jako
-  datový pojem, vlastní vrstva nastavení).
-- **Sada voleb pro městské linky je nová featura, ne dorovnání** - starý modul jich u MHD čte tři
-  z jedenácti, takže parita tam nemá čím se řídit.
-- **V šabloně je `{CISLO_LINKY}` licenční číslo**; veřejné je `{LOKALNI_OZNACENI_LINKY}`.
-- **Zastávkové řádky se musí dorovnat jako první** (audit 31. 8.): MHD dnes posílá jen pořadí, typ,
-  název a zóny, kdežto AD navíc `CZST, AKTUALNI_ZASTAVKA, TC, MHD, NASTUPISTE`
-  (`LinkovyJrMhd.cls:73-81` × `LinkovyJrAd.cls:100-116`). Zvýraznění zastávky tak u MHD **nemá kam
-  zapsat příznak**, i kdyby přibyl parametr - a bez toho půjde část voleb udělat jen naoko.
+**MHD varianta je v Priority jako `B191`** (kroky `B191a`-`B191f`).
 
 📄 **Zkušební vzor pro celý track: linka 940 Kroměříž-Přerov (IDZK)** - reálné zadání zákazníka,
 které starý modul nedokázal vyrobit. Novou práci na linkovém JŘ ověřuj proti němu.
@@ -92,12 +64,34 @@ položku po položce, jejich důvody a změřený výskyt v datech drží
 
 ### Ostatní
 
+- **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
+  Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
+  (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch
+  kontrakt už je) a render oddělit fasádou. **Před začátkem rozhodnout**, odkud se bere výchozí
+  šablona a jak ji uživatel volí. Podklad [`R4/R7`](architektonicka-rozhodnuti-agendy.md).
+
+- **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
+  dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),
+  mezi firmami jen *Exportovat do souboru* / *Importovat ze souboru*, a M-line rozesílá systémové
+  šablony kanálem z helpdesku (`SystemTemplateChannelSync`). Otevřené: mezi firmami, nebo uvnitř
+  firmy (sdílet / nabídnout konkrétnímu kolegovi)?
+
+- **Vyhledávač odjezdů pro cestující - demo** [M] (Jan 1. 10., **základ hotový** týž den). QR
+  z výlepu linkového JŘ AD otevře lokální aplikaci `edwcore/apps/tisky-qr`: cestující zadá cíl
+  a dozví se nejbližší spoj dnes, přechod na protější označník na mapě, způsoby platby; CZ/EN.
+  Server dělá jednorázová třída `ALVA.TiskyQrDemo.Cestujici` (mimo návrhář). Čeká na rozhodnutí,
+  co dál; otevřené body a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
+  Výlepy po zastávkách tiskne parametr „Stránka pro každou zastávku" (1. 10.).
+
+- **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze **starých šablon**
+  (starý tisk JŘ a jeho návrhář sestav), jak totéž udělat po novu v Návrháři šablon - převést
+  jejich vzhled do nové šablony a ukázat postup. Nejdřív sepsat, kdo staré šablony reálně používá.
+
 - **`B192` Rozdílový linkový JŘ** [M] (základ 9. 10., **čeká na ukázku zákazníkům**, podle ní se
   rozhodne, co dál). Nezveřejněná agenda „Linkový JŘ / AD - rozdílový" + šablona
   `templates/rozdilovy-linkovy-jr-a4.json`. Otevřené: tlačítko z okna linek (`B190`), zrušené spoje
   jako sloupce, rozdíly v platnosti a značkách, jiná trasa. Dvojice na ukázku: CB_CSADAD 340351
   (842 proti 203), 380760 (307 proti 207); další najde `RozdilovyJrProbe.NajdiDvojice`.
-
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
