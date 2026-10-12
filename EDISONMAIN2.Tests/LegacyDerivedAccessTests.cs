@@ -6,16 +6,6 @@ namespace EDISONMAIN2.Tests;
 public class LegacyDerivedAccessTests
 {
     [Fact]
-    public void Jrmain_AddsNewTimetablesAndTheirGroups()
-    {
-        var allowed = new HashSet<string> { "6001" };
-
-        LegacyDerivedAccess.AddTo(allowed);
-
-        Assert.Superset(new HashSet<string> { "276001", "276005", "60", "60.4", "60.1" }, allowed);
-    }
-
-    [Fact]
     public void Auris_AddsAurisGroup()
     {
         var allowed = new HashSet<string> { "38001" };

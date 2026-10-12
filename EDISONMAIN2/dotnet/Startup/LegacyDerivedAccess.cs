@@ -8,8 +8,6 @@ internal static class LegacyDerivedAccess
 {
     internal static readonly IReadOnlyDictionary<string, string[]> Rules = new Dictionary<string, string[]>
     {
-        // JRMAIN → nové JŘ ISYJR2, dokud je převod práv ISYJR2 nezapíše do AP
-        ["6001"] = ["276001", "276005", "60", "60.4", "60.1"],
         // AURIS → skupina AURIS, kterou AP z doby před jejím vznikem nemá
         ["38001"] = ["30"],
     };

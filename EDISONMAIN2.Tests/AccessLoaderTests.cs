@@ -48,11 +48,11 @@ public class AccessLoaderTests
     [Fact]
     public void NonAdmin_LegacyDerivedAccess_Added()
     {
-        // JRMAIN v AP zpřístupní nové JŘ jako legacy EDUsers.GetEdisonAccess (LegacyDerivedAccess).
-        var mlRest = MockAccessCall(apId: 4, "6001");
+        // AURIS v AP zpřístupní skupinu AURIS jako legacy EDUsers.GetEdisonAccess (LegacyDerivedAccess).
+        var mlRest = MockAccessCall(apId: 4, "38001");
         var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
 
-        Assert.True(access.Contains("276001"));
+        Assert.True(access.Contains("30"));
     }
 
     [Fact]
