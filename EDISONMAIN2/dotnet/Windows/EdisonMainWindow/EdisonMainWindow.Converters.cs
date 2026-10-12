@@ -10,8 +10,7 @@ namespace EDISONMAIN2
 {
     /// <summary>
     /// Viditelnost obsahu podle klíče aktivní záložky (<c>ConverterParameter</c> = klíč té které
-    /// záložky). Nahrazuje pětici <c>Is*TabActive</c> properties, které kódovaly identitu záložky
-    /// počtvrté - viz <see cref="Windows.EdisonMainWindow.Modules.TreeTab"/>.
+    /// záložky). Jen pro Používané, ty strom nemají; stromy jdou přes <see cref="ActiveTreeToVisibilityConverter"/>.
     /// </summary>
     public sealed class TabKeyToVisibilityConverter : IValueConverter
     {
@@ -19,6 +18,21 @@ namespace EDISONMAIN2
             Equals(value as string, parameter as string) ? Visibility.Visible : Visibility.Collapsed;
 
         public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+            throw new NotSupportedException();
+    }
+
+    /// <summary>
+    /// Strom je vidět, když jeho kolekce je strom aktivní záložky (hodnoty: <c>SelectedTab.Tree</c>, kolekce
+    /// stromu). Klíč záložky tak v XAML nefiguruje a nová záložka nepotřebuje literál.
+    /// </summary>
+    public sealed class ActiveTreeToVisibilityConverter : IMultiValueConverter
+    {
+        public object Convert(object?[] values, Type targetType, object? parameter, CultureInfo culture) =>
+            values is [System.Collections.IEnumerable active, var tree] && ReferenceEquals(active, tree)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        public object[] ConvertBack(object? value, Type[] targetTypes, object? parameter, CultureInfo culture) =>
             throw new NotSupportedException();
     }
 

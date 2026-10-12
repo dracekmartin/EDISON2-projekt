@@ -199,8 +199,7 @@ public class EdisonMainViewModelTests
         var ml = MockMLRest();
         var runner = new SwitchableGateRunner(ml);
         var vm = CreateVM(popup: mockPopup, prefs: prefs, mlRest: ml, restRunner: runner);
-        vm.AttachSupportLayout(() => 520, _ => { });
-        vm.AttachMiniAppHost(Substitute.For<IMiniAppHost>());
+        vm.AttachShell(Substitute.For<IMiniAppHost>(), supportHeight: new(() => 520, _ => { }));
 
         runner.Gate = new TaskCompletionSource();
         var switching = vm.SwitchCompanyAsync(1);
@@ -225,7 +224,7 @@ public class EdisonMainViewModelTests
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.MiniAppLayouts.Returns(layouts);
         var vm = CreateVM(popup: mockPopup, prefs: prefs, treeLoader: TreeFailingOnSecondLoad());
-        vm.AttachMiniAppHost(new NullHost());
+        vm.AttachShell(new NullHost());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SwitchCompanyAsync(1));
         vm.OnShellClosed();
@@ -598,7 +597,7 @@ public class EdisonMainViewModelTests
         prefs.MiniAppLayouts.Returns(layouts);
         var vm = CreateVM(services: svc, prefs: prefs,
                           switchUser: SwitchUserInto(svc, "JI_DP", new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }));
-        vm.AttachMiniAppHost(Substitute.For<IMiniAppHost>());
+        vm.AttachShell(Substitute.For<IMiniAppHost>());
 
         await vm.LoginAsAnotherUserAsync();
 
@@ -652,7 +651,7 @@ public class EdisonMainViewModelTests
         host.SaveLayout().Returns("<layout/>", "<prazdny-dock/>");
         var vm = CreateVM(services: svc, prefs: prefs, treeLoader: TreeFailingOnSecondLoad(),
                           switchUser: SwitchUserInto(svc, "CB_DP", Companies));
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.LoginAsAnotherUserAsync());
         vm.OnShellClosed();
@@ -688,7 +687,7 @@ public class EdisonMainViewModelTests
             svc.MLRest = Session("svoboda");
             return new(SwitchUserResult.Success, Companies);
         });
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await vm.LoginAsAnotherUserAsync();
         vm.OnShellClosed();
@@ -981,7 +980,7 @@ public class EdisonMainViewModelTests
         var services = MockServices();
         var vm = CreateVM(services: services, miniAppCatalog: PinnedDesktopCatalog(services));
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
         var desktop = host.Panes.Single();
 
         vm.CloseMiniAppsCommand.Execute(null);
@@ -1067,8 +1066,7 @@ public class EdisonMainViewModelTests
         prefs.TreeWidths.Returns(new Dictionary<string, double>());
         var vm = CreateVM(popup: mockPopup, prefs: prefs);
 
-        vm.AttachTreeLayout(() => 275, _ => { });
-        vm.AttachMiniAppHost(new NullHost());
+        vm.AttachShell(new NullHost(), treeWidth: new(() => 275, _ => { }));
         prefs.ClearReceivedCalls();
 
         Assert.False(vm.ConfirmShellClose());
@@ -1086,8 +1084,7 @@ public class EdisonMainViewModelTests
         prefs.TreeWidths.Returns(widths);
         int windowsClosed = 0;
         var vm = CreateVM(popup: mockPopup, prefs: prefs, closeAllWindows: () => windowsClosed++);
-        vm.AttachTreeLayout(() => 275, _ => { });
-        vm.AttachMiniAppHost(new NullHost());
+        vm.AttachShell(new NullHost(), treeWidth: new(() => 275, _ => { }));
         prefs.ClearReceivedCalls();
 
         Assert.True(vm.ConfirmShellClose());

@@ -19,6 +19,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string LegacyKey => Idfa;
     }
 
+    /// <summary>Rozměr panelu ve view: čte se při uložení layoutu, nastavuje při obnově.</summary>
+    internal readonly record struct PanelSize(Func<double> Get, Action<double> Apply);
+
     /// <summary>
     /// Miniaplikace shellu napříč session: docking host, layout per <see cref="DockScope"/> v <see cref="ILocalPrefs"/>
     /// (spolu s šířkou stromu a výškou pruhu podpory) a výměna docku při přepnutí firmy nebo uživatele.
@@ -27,12 +30,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     {
         // Manager žije až po AttachHost (potřebuje DockingManager z view) - do té doby null.
         private MiniAppManager? _manager;
-        // Přístup k šířce stromu (ColumnDefinition ve view) - registruje code-behind přes AttachTreeLayout.
-        private Func<double>? _getTreeWidth;
-        private Action<double>? _applyTreeWidth;
-        // Výška pruhu podpory (RowDefinition ve view) - registruje code-behind přes AttachSupportLayout.
-        private Func<double>? _getSupportHeight;
-        private Action<double>? _applySupportHeight;
+        // Šířka stromu (ColumnDefinition) a výška pruhu podpory (RowDefinition) ve view.
+        private PanelSize? _treeWidth;
+        private PanelSize? _supportHeight;
 
         // Session, jejíž layout dock drží; null = dock vyprázdněný výměnou session. Persist jde sem,
         // ne na aktuální session: během rebuildu po přepnutí je Idfa už nová a dock prázdný, takže
@@ -42,31 +42,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Pod-okna docku, do kterých jde nová miniaplikace umístit (výběr v pickeru).</summary>
         internal IReadOnlyList<MiniAppTarget> Targets => _manager?.Targets ?? [];
 
-        /// <summary>Napojí docking host z view a obnoví uložený layout session.</summary>
-        internal void AttachHost(IMiniAppHost host, DockScope scope)
+        /// <summary>
+        /// Napojí docking host a rozměry panelů z view a obnoví uložený layout session. Rozměry se persistují
+        /// s layoutem, bez nich zůstane XAML default.
+        /// </summary>
+        internal void AttachHost(IMiniAppHost host, DockScope scope, PanelSize? treeWidth = null, PanelSize? supportHeight = null)
         {
+            // Před prvním restore, který rozměry hned aplikuje.
+            _treeWidth = treeWidth;
+            _supportHeight = supportHeight;
             _manager = new MiniAppManager(host, catalog);
             Restore(scope);
-        }
-
-        /// <summary>
-        /// Přístup k šířce stromu z view. Volat <b>před</b> <see cref="AttachHost"/> - ten spouští
-        /// první restore, který už šířku aplikuje.
-        /// </summary>
-        internal void AttachTreeLayout(Func<double> getWidth, Action<double> applyWidth)
-        {
-            _getTreeWidth = getWidth;
-            _applyTreeWidth = applyWidth;
-        }
-
-        /// <summary>
-        /// Přístup k výšce pruhu podpory z view. Volat <b>před</b> <see cref="AttachHost"/> - ten
-        /// spouští první restore, který už výšku aplikuje.
-        /// </summary>
-        internal void AttachSupportLayout(Func<double> getHeight, Action<double> applyHeight)
-        {
-            _getSupportHeight = getHeight;
-            _applySupportHeight = applyHeight;
         }
 
         internal void Open(MiniAppDescriptor descriptor, MiniAppPlacement? placement = null) =>
@@ -118,10 +104,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             try
             {
                 (prefs.MiniAppLayouts ??= new())[scope.Key] = _manager.SaveLayout();
-                if (_getTreeWidth is not null)
-                    (prefs.TreeWidths ??= new())[scope.Key] = _getTreeWidth();
-                if (_getSupportHeight is not null)
-                    (prefs.SupportStripHeights ??= new())[scope.Key] = _getSupportHeight();
+                if (_treeWidth is { } tree)
+                    (prefs.TreeWidths ??= new())[scope.Key] = tree.Get();
+                if (_supportHeight is { } support)
+                    (prefs.SupportStripHeights ??= new())[scope.Key] = support.Get();
                 prefs.Save();
             }
             catch { }
@@ -135,10 +121,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Rozměry panelů (nezávislé na tom, zda je uložený layout miniaplikací) - bez uložené
             // hodnoty zůstane XAML default. Aplikovat před RestoreLayout, ať AvalonDock
             // deserializuje do už správně velké plochy a nepřepočítává pane dvakrát.
-            if (_applyTreeWidth is not null && Find(prefs.TreeWidths, scope, out var width, out _) && width > 0)
-                _applyTreeWidth(width);
-            if (_applySupportHeight is not null && Find(prefs.SupportStripHeights, scope, out var height, out _) && height > 0)
-                _applySupportHeight(height);
+            if (_treeWidth is { } tree && Find(prefs.TreeWidths, scope, out var width, out _) && width > 0)
+                tree.Apply(width);
+            if (_supportHeight is { } support && Find(prefs.SupportStripHeights, scope, out var height, out _) && height > 0)
+                support.Apply(height);
             if (!Find(prefs.MiniAppLayouts, scope, out var xml, out var xmlKey) || string.IsNullOrWhiteSpace(xml))
             {
                 // Žádný uložený layout (první spuštění / nová firma) → výchozí rozložení.

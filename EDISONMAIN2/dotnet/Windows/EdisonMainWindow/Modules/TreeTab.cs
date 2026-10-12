@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
@@ -21,5 +22,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         string IconKey,
         ObservableCollection<IModule>? Tree,
         bool Expandable,
-        bool ServerLoaded);
+        bool ServerLoaded)
+    {
+        /// <summary>
+        /// Záložky launcher panelu v pořadí UI nad kolekcemi stromů. Okno stromy zobrazuje i dohledává podle
+        /// <see cref="Tree"/>, ne podle klíče: nová záložka se stromem je změna tady, kolekce ve VM a <c>TreeView</c>
+        /// se stylem <c>TabTree</c> nad ní v kartě okna.
+        /// </summary>
+        public static IReadOnlyList<TreeTab> Launcher(
+            ObservableCollection<IModule> main,
+            ObservableCollection<IModule> system,
+            ObservableCollection<IModule> partners,
+            ObservableCollection<IModule> favorites) =>
+        [
+            new("main",      "Hlavní nabídka",     "EDIcons.Home",      main,      Expandable: true,  ServerLoaded: true),
+            new("system",    "Správa systému",     "EDIcons.Gears",     system,    Expandable: true,  ServerLoaded: true),
+            new("partners",  "Partnerská řešení",  "EDIcons.Component", partners,  Expandable: true,  ServerLoaded: true),
+            new("favorites", "Oblíbené",           "EDIcons.Star",      favorites, Expandable: true,  ServerLoaded: false),
+            new("used",      "Používané",          "EDIcons.History",   null,      Expandable: false, ServerLoaded: false),
+        ];
+    }
 }

@@ -88,7 +88,7 @@ public class EdisonMainViewModelDialogTests
         var vm = CreateVM(services: svc, miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(desktop, app)]),
                           dialogs: dialogs);
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);   // výchozí rozložení otevře Plochu
+        vm.AttachShell(host);   // výchozí rozložení otevře Plochu
 
         vm.PickMiniAppCommand.Execute(null);
 
@@ -106,7 +106,7 @@ public class EdisonMainViewModelDialogTests
         var vm = CreateVM(services: svc, miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(app)]),
                           dialogs: new FakeDialogs());
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         vm.PickMiniAppCommand.Execute(null);
 

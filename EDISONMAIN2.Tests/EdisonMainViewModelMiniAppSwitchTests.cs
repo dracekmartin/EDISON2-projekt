@@ -66,7 +66,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
         var closed = new List<ClosedUnder>();
         var vm = CreateVM(services: svc, prefs: Prefs(), miniAppCatalog: ProbeCatalog(svc, closed));
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await vm.SwitchCompanyAsync(1);
 
@@ -90,7 +90,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
         var vm = CreateVM(services: svc, mlRest: ml, initialLicence: licence, prefs: Prefs(),
                           miniAppCatalog: ProbeCatalog(svc, closed));
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await vm.SwitchCompanyAsync(1);
 
@@ -112,7 +112,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
         svc.IsAdmin = false;
         var prefs = Prefs();
         var vm = CreateVM(services: svc, mlRest: ml, initialLicence: licence, prefs: prefs);
-        vm.AttachMiniAppHost(HostSaving("<pred-prepnutim/>", "<po-zruseni/>"));
+        vm.AttachShell(HostSaving("<pred-prepnutim/>", "<po-zruseni/>"));
 
         await vm.SwitchCompanyAsync(1);
         vm.OnShellClosed();
@@ -129,7 +129,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
         var vm = CreateVM(services: svc, prefs: Prefs(), miniAppCatalog: ProbeCatalog(svc, []),
                           closeAllWindows: () => throw new InvalidOperationException("okno"));
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SwitchCompanyAsync(1));
 
@@ -151,7 +151,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
         var vm = CreateVM(services: svc, mlRest: ml, initialLicence: licence, prefs: Prefs(),
                           miniAppCatalog: ProbeCatalog(svc, []));
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.SwitchCompanyAsync(1));
 
@@ -172,7 +172,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
                               return new(SwitchUserResult.Success, [new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }]);
                           });
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await vm.LoginAsAnotherUserAsync();
 
@@ -195,7 +195,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
                               openDuringLogin = OpenPanes(host);
                               return new(SwitchUserResult.Cancelled);
                           });
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await vm.LoginAsAnotherUserAsync();
 
@@ -209,7 +209,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
         var svc = MockServices(popup: ConfirmingPopup());
         var prefs = Prefs();
         var vm = CreateVM(services: svc, prefs: prefs, switchUser: () => new(SwitchUserResult.Cancelled));
-        vm.AttachMiniAppHost(HostSaving("<pred-prepnutim/>", "<po-zruseni/>"));
+        vm.AttachShell(HostSaving("<pred-prepnutim/>", "<po-zruseni/>"));
 
         await vm.LoginAsAnotherUserAsync();
         vm.OnShellClosed();
@@ -225,7 +225,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
         var vm = CreateVM(services: svc, prefs: Prefs(), miniAppCatalog: ProbeCatalog(svc, []),
                           switchUser: () => throw new InvalidOperationException("síť"));
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => vm.LoginAsAnotherUserAsync());
 
@@ -246,7 +246,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
                               return new(SwitchUserResult.Cancelled);
                           });
         vmRef = vm;
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await vm.LoginAsAnotherUserAsync();
 
@@ -264,7 +264,7 @@ public class EdisonMainViewModelMiniAppSwitchTests
         var vm = CreateVM(services: svc, prefs: Prefs(), miniAppCatalog: ProbeCatalog(svc, []),
                           forceShutdown: shutdown, switchUser: () => new(result));
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);
+        vm.AttachShell(host);
 
         await vm.LoginAsAnotherUserAsync();
 

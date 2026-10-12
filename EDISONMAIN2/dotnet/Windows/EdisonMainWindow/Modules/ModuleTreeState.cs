@@ -232,15 +232,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         {
             _prefs = prefs;
             _station = station ?? ModuleTreeStation.Production;
-            // Pořadí = pořadí záložek v UI. Přidání záložky je změna jen tady (+ případný control v XAML).
-            TreeTabs =
-            [
-                new("main",      "Hlavní nabídka",     "EDIcons.Home",      MainMenuTree,         Expandable: true,  ServerLoaded: true),
-                new("system",    "Správa systému",     "EDIcons.Gears",     SystemAdminTree,      Expandable: true,  ServerLoaded: true),
-                new("partners",  "Partnerská řešení",  "EDIcons.Component", PartnerSolutionsTree, Expandable: true,  ServerLoaded: true),
-                new("favorites", "Oblíbené",           "EDIcons.Star",      FavoritesTree,        Expandable: true,  ServerLoaded: false),
-                new("used",      "Používané",          "EDIcons.History",   null,                 Expandable: false, ServerLoaded: false),
-            ];
+            TreeTabs = TreeTab.Launcher(MainMenuTree, SystemAdminTree, PartnerSolutionsTree, FavoritesTree);
             SourceTrees = [.. TreeTabs.Where(t => t.ServerLoaded).Select(t => (t.Key, t.Tree!))];
         }
 

@@ -148,30 +148,14 @@ namespace EDISONMAIN2
             DockManager.Theme = dark ? new Vs2013DarkTheme() : new Vs2013LightTheme();
         }
 
-        // Po prvním vykreslení (WPF analog legacy frmMain_Shown) načti session state a otevři
-        // uživatelův výchozí okno. ContentRendered fíruje jednou po prvním paintu; okno se tedy
-        // ukáže hned a stromy dorazí pod overlayem. Pořadí je invariant - výchozí okno se hledá
-        // ve stromu, takže init musí dobíhnout první.
+        // ContentRendered fíruje jednou po prvním paintu: okno se ukáže hned a stromy dorazí pod overlayem.
         private async void OnContentRendered(object? sender, System.EventArgs e)
         {
             ContentRendered -= OnContentRendered;
             // Až teď je okno v cílové (maximalizované) velikosti a restore šířky stromu proběhl -
             // od teď smí šířkový clamp zasahovat (dřív by přepsal restorovanou šířku).
             _layoutReady = true;
-            if (DataContext is not EdisonMainViewModel vm) return;
-            try
-            {
-                await vm.InitializeAsync();
-            }
-            catch (Exception ex)
-            {
-                // async void z eventu - bez catch by výjimka letěla na DispatcherUnhandledException.
-                vm.PopupDisplayer.Error(ex);
-                return;
-            }
-            // Novinky shellu před výchozím oknem - modální, otevírání pokračuje až po zavření.
-            await vm.ShowShellChangelogIfAnyAsync();
-            vm.OpenStartupWindowIfAny();
+            if (DataContext is EdisonMainViewModel vm) await vm.StartAsync();
         }
 
         // MiniAppManager (ve VM) potřebuje DockingManager z view → host injektneme po načtení okna,
@@ -180,16 +164,9 @@ namespace EDISONMAIN2
         {
             Loaded -= WireMiniAppHost;
             if (DataContext is EdisonMainViewModel vm)
-            {
-                // Před AttachMiniAppHost - ten spouští první restore, který už rozměry panelů aplikuje.
-                vm.AttachTreeLayout(
-                    () => TreeColumn.ActualWidth,
-                    w => TreeColumn.Width = new GridLength(w));
-                vm.AttachSupportLayout(
-                    () => SupportRow.ActualHeight,
-                    h => SupportRow.Height = new GridLength(h));
-                vm.AttachMiniAppHost(new AvalonDockHost(DockManager));
-            }
+                vm.AttachShell(new AvalonDockHost(DockManager),
+                    treeWidth: new(() => TreeColumn.ActualWidth, w => TreeColumn.Width = new GridLength(w)),
+                    supportHeight: new(() => SupportRow.ActualHeight, h => SupportRow.Height = new GridLength(h)));
         }
 
         // Minimální rozměry plochy miniaplikací (aby ji strom ani pruh podpory nezakryly).
@@ -298,17 +275,21 @@ namespace EDISONMAIN2
             e.Handled = true;
         }
 
-        // Klíče záložek drží VM.TreeTabs; stromy jsou pojmenovaní sourozenci v kartě (Používané
-        // je ListBox mimo filtr hledání, proto null).
-        private TreeView? ActiveTreeView() =>
-            (DataContext as EdisonMainViewModel)?.SelectedTab.Key switch
+        // TreeView v kartě nad kolekcí aktivní záložky (TreeTab.Tree). Používané strom nemá (ListBox
+        // mimo filtr hledání), proto null.
+        internal TreeView? ActiveTreeView() =>
+            (DataContext as EdisonMainViewModel)?.SelectedTab.Tree is { } tree
+                ? TreeViewsIn(TreeCard).FirstOrDefault(t => ReferenceEquals(t.ItemsSource, tree))
+                : null;
+
+        private static IEnumerable<TreeView> TreeViewsIn(DependencyObject parent)
+        {
+            foreach (var child in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>())
             {
-                "main"      => MainMenuTreeView,
-                "system"    => SystemAdminTreeView,
-                "partners"  => PartnerSolutionsTreeView,
-                "favorites" => FavoritesTreeView,
-                _           => null,
-            };
+                if (child is TreeView tree) yield return tree;
+                else foreach (var nested in TreeViewsIn(child)) yield return nested;
+            }
+        }
 
         // Kontejner uzlu se hledá shora dolů - potomci vzniknou až když je rodič rozbalený
         // a proběhl jeho layout (hledání rodiče na cestě rozbalí, generátor je ale líný).

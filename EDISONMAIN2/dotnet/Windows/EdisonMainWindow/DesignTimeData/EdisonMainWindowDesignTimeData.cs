@@ -70,21 +70,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 
         public ObservableCollection<ExecutableModule> UsedModules { get; } = [];
 
-        // Zrcadlí TreeTabs ve VM - bez nich by designer ukázal prázdný pruh záložek.
+        // Bez záložek by designer ukázal prázdný pruh.
         public IReadOnlyList<TreeTab> TreeTabs { get; }
 
         public TreeTab SelectedTab { get; set; }
 
         public EdisonMainWindowDesignTimeData()
         {
-            TreeTabs =
-            [
-                new("main",      "Hlavní nabídka",    "EDIcons.Home",      MainMenuTree,         Expandable: true,  ServerLoaded: true),
-                new("system",    "Správa systému",    "EDIcons.Gears",     SystemAdminTree,      Expandable: true,  ServerLoaded: true),
-                new("partners",  "Partnerská řešení", "EDIcons.Component", PartnerSolutionsTree, Expandable: true,  ServerLoaded: true),
-                new("favorites", "Oblíbené",          "EDIcons.Star",      FavoritesTree,        Expandable: true,  ServerLoaded: false),
-                new("used",      "Používané",         "EDIcons.History",   null,                 Expandable: false, ServerLoaded: false),
-            ];
+            TreeTabs = TreeTab.Launcher(MainMenuTree, SystemAdminTree, PartnerSolutionsTree, FavoritesTree);
             SelectedTab = TreeTabs[0];
         }
 

@@ -148,8 +148,7 @@ public class MiniAppSessionControllerTests
         var controller = Controller(prefs);
 
         double? applied = null;
-        controller.AttachTreeLayout(() => 0, w => applied = w);
-        controller.AttachHost(new NullHost(), Scope);
+        controller.AttachHost(new NullHost(), Scope, treeWidth: new(() => 0, w => applied = w));
 
         Assert.Equal(320, applied);
     }
@@ -160,8 +159,7 @@ public class MiniAppSessionControllerTests
         var controller = Controller();   // ILocalPrefs substitute → TreeWidths null
 
         bool applied = false;
-        controller.AttachTreeLayout(() => 0, _ => applied = true);
-        controller.AttachHost(new NullHost(), Scope);
+        controller.AttachHost(new NullHost(), Scope, treeWidth: new(() => 0, _ => applied = true));
 
         Assert.False(applied);
     }
@@ -173,8 +171,7 @@ public class MiniAppSessionControllerTests
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.TreeWidths.Returns(widths);
         var controller = Controller(prefs);
-        controller.AttachTreeLayout(() => 275, _ => { });
-        controller.AttachHost(new NullHost(), Scope);
+        controller.AttachHost(new NullHost(), Scope, treeWidth: new(() => 275, _ => { }));
 
         controller.Persist();
 
@@ -190,8 +187,7 @@ public class MiniAppSessionControllerTests
         var controller = Controller(prefs);
 
         double? applied = null;
-        controller.AttachSupportLayout(() => 0, h => applied = h);
-        controller.AttachHost(new NullHost(), Scope);
+        controller.AttachHost(new NullHost(), Scope, supportHeight: new(() => 0, h => applied = h));
 
         Assert.Equal(520, applied);
     }
@@ -202,8 +198,7 @@ public class MiniAppSessionControllerTests
         var controller = Controller();   // ILocalPrefs substitute → SupportStripHeights null
 
         bool applied = false;
-        controller.AttachSupportLayout(() => 0, _ => applied = true);
-        controller.AttachHost(new NullHost(), Scope);
+        controller.AttachHost(new NullHost(), Scope, supportHeight: new(() => 0, _ => applied = true));
 
         Assert.False(applied);
     }
@@ -219,8 +214,7 @@ public class MiniAppSessionControllerTests
         var controller = Controller(prefs);
 
         bool applied = false;
-        controller.AttachSupportLayout(() => 0, _ => applied = true);
-        controller.AttachHost(new NullHost(), Scope);
+        controller.AttachHost(new NullHost(), Scope, supportHeight: new(() => 0, _ => applied = true));
 
         Assert.False(applied);
     }
@@ -232,8 +226,7 @@ public class MiniAppSessionControllerTests
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.SupportStripHeights.Returns(heights);
         var controller = Controller(prefs);
-        controller.AttachSupportLayout(() => 520, _ => { });
-        controller.AttachHost(new NullHost(), Scope);
+        controller.AttachHost(new NullHost(), Scope, supportHeight: new(() => 520, _ => { }));
 
         controller.Persist();
 
@@ -242,7 +235,7 @@ public class MiniAppSessionControllerTests
     }
 
     [Fact]
-    public void Persist_WithoutAttachSupportLayout_PersistsNothingAndDoesNotThrow()
+    public void Persist_WithoutSupportHeight_PersistsNothingAndDoesNotThrow()
     {
         // View nemusí rozměry napojit (testy, jiný hostitel) - save cesta musí přežít bez delegatů.
         var heights = new Dictionary<string, double>();
@@ -292,10 +285,8 @@ public class MiniAppSessionControllerTests
         var controller = Controller(prefs);
         var host = Substitute.For<IMiniAppHost>();
         double? width = null, height = null;
-        controller.AttachTreeLayout(() => 0, w => width = w);
-        controller.AttachSupportLayout(() => 0, h => height = h);
 
-        controller.AttachHost(host, Scope);
+        controller.AttachHost(host, Scope, treeWidth: new(() => 0, w => width = w), supportHeight: new(() => 0, h => height = h));
 
         host.Received().RestoreLayout("stary-layout", Arg.Any<Func<string, IMiniAppPane, RestoredContent?>>());
         Assert.Equal((320d, 520d), (width, height));

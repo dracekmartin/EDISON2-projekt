@@ -29,10 +29,9 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
 
 ## Session na straně VM
 
-- Session-scoped stav (`Modules/SessionDataLoader`) promítá `EdisonMainViewModel.ApplySessionData`
-  **synchronně** - guardy `_suppressXxx` neplatí přes `await` a selhání loadu nechá předchozí
-  stromy naživu. `InitializeAsync()` běží z `ContentRendered` **před** `OpenStartupWindowIfAny`
-  (výchozí okno se hledá ve stromu); před prvním initem je `_modulePrefs` null → save cesty null-safe.
+- Session-scoped stav (`Modules/SessionDataLoader`) promítá `EdisonMainViewModel.ApplySessionData` **synchronně** - guardy
+  `_suppressXxx` neplatí přes `await` a selhání loadu nechá předchozí stromy naživu. `StartAsync()` z `ContentRendered` drží
+  pořadí session → novinky shellu → výchozí okno (hledá se ve stromu); před prvním initem je `_modulePrefs` null → save null-safe.
 - **Podpora (`LoginName == UserID`, `_mline`) jede bez `VerifyLic` a zámku s `CacheLocks=0`** (parita
   legacy `EDUsers.vb:287`: licenci nezabírá, server nekontroluje LockExist ani verzi); agendy pak
   shell GUID nedostanou (`LegacyModuleHost.ShellGuidFor`), jinak by pod ním padaly na LockExist.
@@ -67,13 +66,12 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
 - **Status bar** = segmenty ikona + hodnota, technika jen v ToolTipu. `DockPanel.Dock="Right"`
   i `Visibility="Collapsed"` fungují jen na **explicitním `<StatusBarItem>`** (na surový
   `TextBlock` se nepropíší); `<Separator/>` jen mezi vždy viditelné (u sbalitelného by visel).
-- **Launcher panel**: zapuštěná plocha (`EDTheme.Bg.Sunken`) + jedna spojitá karta z `Bg.Surface` -
-  v light je `Bg.Base` == `Bg.Surface`, bez zapuštění panel splyne s obsahem. `TreeTabControl`
-  nese jen tab strip a content skrývá **prázdný `ContentTemplate`** (generátor kontejnerů
-  nastavuje `Content` na datový record, lokální hodnota by přebila Setter ve stylu); stromy jsou
-  sourozenci přepínaní dle `SelectedTab.Key` → všech pět žije pořád → do `Tag` datových šablon
-  (most pro `ContextMenu`) nejde `AncestorType=TabControl`, jde tam `VmProxy`.
-- **Identita záložky = `Modules/TreeTab`** (seznam `TreeTabs`); `Key` je klíč serveru
+- **Launcher panel**: zapuštěná plocha (`EDTheme.Bg.Sunken`) + jedna karta z `Bg.Surface` (v light je `Bg.Base` == `Bg.Surface`,
+  bez zapuštění panel splyne). `TreeTabControl` nese jen tab strip, content skrývá **prázdný `ContentTemplate`** (generátor
+  kontejnerů nastavuje `Content` na datový record, lokální hodnota by přebila Setter ve stylu); obsah karty jsou sourozenci
+  (stromy dle `SelectedTab.Tree`, Používané dle klíče) → všech pět žije pořád → do `Tag` datových šablon (most pro `ContextMenu`) nejde
+  `AncestorType=TabControl`, jde tam `VmProxy`.
+- **Záložky = `TreeTab.Launcher`**, okno k záložce hledá strom podle kolekce (`Tree`), ne klíče. `Key` je klíč serveru
   i persistence: **přejmenování = ztráta uložené volby**.
 - **Toolbar nad stromy**: bulk změna rozbalení v `ModuleTreeState.SuppressExpansionSave()` + jeden
   `SaveExpansionAsync` - scope je **refcountovaný** (cesty se vnořují, plochý bool by vnitřní blok

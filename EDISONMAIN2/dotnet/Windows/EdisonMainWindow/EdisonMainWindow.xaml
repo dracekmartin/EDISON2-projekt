@@ -40,7 +40,7 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <!-- Strom modulů (launcher) | splitter | pruh podpory + plocha miniaplikací.
-                 Šířku stromu persistuje VM per session (viz AttachTreeLayout) - restore ji přepíše na px.
+                 Šířku stromu persistuje VM per session (viz AttachShell) - restore ji přepíše na px.
                  Min. šířku plochy miniaplikací drží code-behind (ShellSplitLimits.ClampTreeWidth) -
                  GridSplitter MinWidth star sloupce u fixní px šířky stromu obchází, layout MinWidth
                  by přetékal. -->
@@ -192,7 +192,7 @@
         <!-- Pruh podpory + plocha miniaplikací pod ním, oddělené děličem. Vlastní Grid, ne řádky
              rootu: dělič se nesmí týkat stromu vlevo, který drží celou výšku obsahu, a root tím
              zůstane bez jediného RowSpan. Výšku pruhu persistuje VM per session
-             (viz AttachSupportLayout), strop drží code-behind (ShellSplitLimits.ApplySupportCeiling). -->
+             (viz AttachShell), strop drží code-behind (ShellSplitLimits.ApplySupportCeiling). -->
         <Grid Grid.Column="2" Grid.Row="1">
             <Grid.RowDefinitions>
                 <!-- MinHeight = garance kanálu IT → uživatelé: pruh jde zvětšit, zmenšit pod tuhle
@@ -249,8 +249,21 @@
             <Grid.Resources>
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-                <!-- Obsah záložky je vidět, když se ConverterParameter shoduje s klíčem aktivní záložky. -->
+                <!-- Používané (bez stromu): vidět, když se ConverterParameter shoduje s klíčem aktivní záložky. -->
                 <local:TabKeyToVisibilityConverter x:Key="TabKeyToVis"/>
+                <!-- Strom je vidět, když je jeho kolekce stromem aktivní záložky (TreeTab.Tree) - bez klíčů v XAML. -->
+                <local:ActiveTreeToVisibilityConverter x:Key="ActiveTreeToVis"/>
+                <Style x:Key="TabTree" TargetType="TreeView" BasedOn="{StaticResource {x:Type TreeView}}">
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Visibility">
+                        <Setter.Value>
+                            <MultiBinding Converter="{StaticResource ActiveTreeToVis}">
+                                <Binding Path="SelectedTab.Tree"/>
+                                <Binding Path="ItemsSource" RelativeSource="{RelativeSource Self}"/>
+                            </MultiBinding>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
                 <local:ResourceKeyConverter x:Key="ResourceKey"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
                     <!-- Tag = VM (přes VmProxy) - most pro ContextMenu mimo visual tree. Proxy, ne
@@ -404,7 +417,7 @@
             <!-- Řádek 0 je celý tab strip: aktivní záložka ukazuje ikonu i název, takže se do řady
                  s akcemi nevejde - akce sedí o řádek níž vedle hledání. TabControl tu drží jen tab
                  strip: content skrývá prázdný ContentTemplate (stromy jsou pod hledáním v kartě níž,
-                 přepínané dle SelectedTab.Key) - content row tak zkolabuje na nulu.
+                 přepínané dle SelectedTab.Tree) - content row tak zkolabuje na nulu.
                  Přetemplatovat TabControl lokálně nelze, viz EDControls/CLAUDE.md. -->
             <Border Grid.Row="0" HorizontalAlignment="Left" Margin="4,4,0,0" CornerRadius="3,3,0,0"
                     Background="{DynamicResource EDTheme.Bg.Surface}"
@@ -496,14 +509,17 @@
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,1,1">
                 <!-- Výběr uzlu a Enter obsluhuje code-behind jedním handlerem na téhle kartě. -->
                 <Grid x:Name="TreeCard">
-                    <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0"
-                              Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=main}"/>
-                    <TreeView x:Name="SystemAdminTreeView" ItemsSource="{Binding SystemAdminTree}" BorderThickness="0"
-                              Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=system}"/>
-                    <TreeView x:Name="PartnerSolutionsTreeView" ItemsSource="{Binding PartnerSolutionsTree}" BorderThickness="0"
-                              Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=partners}"/>
-                    <Grid Visibility="{Binding SelectedTab.Key, Converter={StaticResource TabKeyToVis}, ConverterParameter=favorites}">
-                        <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0"/>
+                    <TreeView ItemsSource="{Binding MainMenuTree}" Style="{StaticResource TabTree}"/>
+                    <TreeView ItemsSource="{Binding SystemAdminTree}" Style="{StaticResource TabTree}"/>
+                    <TreeView ItemsSource="{Binding PartnerSolutionsTree}" Style="{StaticResource TabTree}"/>
+                    <Grid>
+                        <Grid.Visibility>
+                            <MultiBinding Converter="{StaticResource ActiveTreeToVis}">
+                                <Binding Path="SelectedTab.Tree"/>
+                                <Binding Path="FavoritesTree"/>
+                            </MultiBinding>
+                        </Grid.Visibility>
+                        <TreeView ItemsSource="{Binding FavoritesTree}" BorderThickness="0"/>
                         <!-- Empty-state coaching - nenucená pobídka k používání oblíbených. -->
                         <TextBlock Visibility="{Binding HasNoFavorites, Converter={StaticResource BoolToVis}}"
                                    Margin="16" TextWrapping="Wrap" VerticalAlignment="Top"

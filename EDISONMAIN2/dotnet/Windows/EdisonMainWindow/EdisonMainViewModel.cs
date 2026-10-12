@@ -109,18 +109,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand PickMiniAppCommand { get; }
 
         /// <summary>
-        /// Napojí docking host (z view vrstvy) a obnoví uložený layout aktuální firmy. Volá code-behind
-        /// shellu po načtení okna.
+        /// Napojí view: docking host miniaplikací, šířku stromu a výšku pruhu podpory (persistují se s layoutem
+        /// per session: server, firma, uživatel). Pak obnoví uložený layout. Volá code-behind po načtení okna.
         /// </summary>
-        public void AttachMiniAppHost(IMiniAppHost host) => _miniApps.AttachHost(host, DockScope);
-
-        /// <summary>Šířka stromu z view, persistuje se s layoutem per session (server, firma, uživatel). Volat před <see cref="AttachMiniAppHost"/>.</summary>
-        public void AttachTreeLayout(Func<double> getWidth, Action<double> applyWidth) =>
-            _miniApps.AttachTreeLayout(getWidth, applyWidth);
-
-        /// <summary>Výška pruhu podpory z view, persistuje se s layoutem per session (server, firma, uživatel). Volat před <see cref="AttachMiniAppHost"/>.</summary>
-        public void AttachSupportLayout(Func<double> getHeight, Action<double> applyHeight) =>
-            _miniApps.AttachSupportLayout(getHeight, applyHeight);
+        public void AttachShell(IMiniAppHost host, PanelSize? treeWidth = null, PanelSize? supportHeight = null) =>
+            _miniApps.AttachHost(host, DockScope, treeWidth, supportHeight);
 
         // Výběr miniaplikace je vlastní okno, ne vnořené submenu - katalog roste a seskupení
         // per provider se v menu neosvědčilo (HD 13132/F2).
@@ -253,12 +246,32 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// </summary>
         protected override IWindowStateStore? WindowStateStore => new ShellWindowStateStore(_prefs);
 
+        /// <summary>
+        /// Start po prvním vykreslení shellu (WPF analog legacy <c>frmMain_Shown</c>), volá ho code-behind
+        /// z <c>ContentRendered</c>: načtení session → novinky shellu → výchozí okno. Výchozí okno se hledá
+        /// ve stromu a modální novinky blokují otvírání, proto přesně v tomhle pořadí. Chybu loadu ukáže
+        /// popupem a dál nepokračuje: volající je <c>async void</c> handler.
+        /// </summary>
+        public async Task StartAsync()
+        {
+            try
+            {
+                await InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                PopupDisplayer.Error(ex);
+                return;
+            }
+            await ShowShellChangelogIfAnyAsync();
+            OpenStartupWindowIfAny();
+        }
+
         private Task? _initialization;
 
         /// <summary>
         /// První naplnění session-scoped stavu. Ctor ho záměrně nedělá - shell se ukáže hned
-        /// a data dorazí pod overlayem. Volá code-behind z <c>ContentRendered</c> PŘED
-        /// <see cref="OpenStartupWindowIfAny"/> (to potřebuje hotové stromy). Idempotentní.
+        /// a data dorazí pod overlayem. Jede jako první krok <see cref="StartAsync"/>. Idempotentní.
         /// </summary>
         public Task InitializeAsync() => _initialization ??= InitializeCoreAsync();
 
@@ -377,9 +390,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>
         /// Po prvním vykreslení shellu otevře uživatelův výchozí okno - jednou za běh (ne po
         /// přepnutí firmy). Nepovolený/chybějící modul (není ve stromu) se tiše přeskočí.
-        /// Volá code-behind shellu z <c>ContentRendered</c>.
+        /// Poslední krok <see cref="StartAsync"/>.
         /// </summary>
-        public void OpenStartupWindowIfAny()
+        internal void OpenStartupWindowIfAny()
         {
             if (_startupWindowOpened) return;
             _startupWindowOpened = true;
@@ -791,8 +804,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
         }
 
-        /// <summary>Novinky shellu po loginu (EDISONMAIN.INF - obsah sdílený s legacy shellem).</summary>
-        public Task ShowShellChangelogIfAnyAsync() =>
+        /// <summary>Novinky shellu po loginu (EDISONMAIN.INF - obsah sdílený s legacy shellem), krok <see cref="StartAsync"/>.</summary>
+        internal Task ShowShellChangelogIfAnyAsync() =>
             _changelogPrompt?.ShowIfNewAsync("EDISONMAIN", "EDISON") ?? Task.CompletedTask;
 
         // Novinky agendy na vyžádání (kontextové menu stromu). Rodina modulů nemá exe - žádný INF.
