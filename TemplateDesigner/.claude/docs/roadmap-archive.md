@@ -1,5 +1,14 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B191c` Linkový JŘ MHD proti starému tisku (hotovo 12. 10. 2026)
+
+Porovnání se starým tiskem kryje celou tabulku: značky a legendu, časy po zastávkách, seznam
+zastávek s pásmem a značkami, rozdělení spojů do typů provozu i jejich pořadí. Shoda na 27 linkách
+CB_DP a 38 KV_DP (`LinkovyJrMhdLegacyOracle.SouhrnSady`), v testu 7 linek. Opravené rozdíly: pořadí
+spojů, „jede jinudy" ve směru zpět a za poslední zastávkou, název zastávky k datu platnosti.
+**Neověřeno** (na dev datech nejsou): příjezd/odjezd, poznámky z trasy u názvu zastávky.
+Detail changelog 2026-10-12 (4).
+
 ## Zastávkový JŘ MHD: automaticky přidělené negativní značky (hotovo 12. 10. 2026)
 
 Vývěsky MHD vynechávaly negativní značky přidělené z porovnání platností (text omezení vycházel

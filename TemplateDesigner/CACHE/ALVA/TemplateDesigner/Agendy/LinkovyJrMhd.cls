@@ -321,7 +321,9 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     // ── trasa: body → zastávkové řádky (kategorie 1001, slučování sousedů, odjezd/příjezd) ──
     s trasaId = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, linkaId)
     i trasaId = "" q ""
-    s hrlod = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiOd"))
+    // Název zastávky k datu platnosti linky chce $h, LSO drží ISO text (legacy $$$EDDN, :327).
+    // Do 12. 10. tu šel text a vybral se jiný název (KV_DP 1438: „KV Arena" místo „MATTONI Arena").
+    s hrlod = $zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiOd")),3,,,,,,,-1)
     s idsId = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"IDSID"))
     s smerpar = $s(smerId=0:1, 1:-1)
 
@@ -394,7 +396,8 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     // ── spoje směru: MakeTableSpoj → časy per řádek; skupiny = TypProvozu ──
     d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)
 
-    // seřazení: (poradiProvozu, výchozí čas, spoj) - MHD legacy řadí uvnitř bloku TypProvozu
+    // seřazení: (poradiProvozu, výchozí čas, spoj) - MHD legacy řadí uvnitř bloku TypProvozu;
+    // čas po půlnoci se bere jako ráno (#1440, legacy :931), doladění pořadí viz SeradJakoLegacy
     k razeni
     s spojId = ""
     f {
@@ -406,7 +409,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         d ##class(ALVA.MHD.SpojeFce).MakeTableSpoj(.sys, spojId, "", .arrtbsp)
         s prvniCnt = $o(arrtbsp("arr",1,""), smerpar)
         i prvniCnt = "" continue
-        s vychoziCas = +$lg($g(arrtbsp("arr",1,prvniCnt)), 4)
+        s vychoziCas = +$lg($g(arrtbsp("arr",1,prvniCnt)), 4) # 1440
         s razeni($g(provozPoradi(typProvozu), 999), typProvozu, vychoziCas, spojId) = ""
         m spojTabulka(spojId) = arrtbsp("arr",1)   // cache pro BuildSpojMhd
     }
@@ -427,6 +430,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
             q:typProvozu=""
             s skupinaIdx = skupinaIdx + 1
             d skupinyDnu.%Push(..BuildSkupina(skupinaIdx, $g(provozNadpis(typProvozu))))
+            k poradi
             s cas = ""
             f {
                 s cas = $o(razeni(pp, typProvozu, cas))
@@ -435,9 +439,13 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
                 f {
                     s spojId = $o(razeni(pp, typProvozu, cas, spojId))
                     q:spojId=""
-                    s spojObj = ..BuildSpojMhd(.sys, IdFa, dataDB, spojId, skupinaIdx, pocetRadku, .rowMeta, .body, .bodyMapa, .spojTabulka, .znacky, .nzSeen, .poznSpoju, .pocetPoznSpoju, .atributSeen, .markerSeen)
-                    i spojObj '= "" d spoje.%Push(spojObj)
+                    s poradi($i(poradi)) = spojId
                 }
+            }
+            d ..SeradJakoLegacy(.poradi, .spojTabulka, .bodyMapa, pocetBodu)
+            f i=1:1:poradi {
+                s spojObj = ..BuildSpojMhd(.sys, IdFa, dataDB, poradi(i), skupinaIdx, pocetRadku, .rowMeta, .body, .bodyMapa, .spojTabulka, .znacky, .nzSeen, .poznSpoju, .pocetPoznSpoju, .atributSeen, .markerSeen)
+                i spojObj '= "" d spoje.%Push(spojObj)
             }
         }
     }
@@ -574,34 +582,18 @@ ClassMethod BuildSpojMhd(ByRef sys As %String, IdFa As %String, dataDB As %Strin
     // přeložil na autobus a kolo.
     i texty.%Size() d o.%Set("TEXTOVE_ZNACKY", texty)
 
-    // časy per řádek z MakeTableSpoj tabulky: $lb(ZastavkaID,Kategorie,CasPrijezdMM,CasOdjezdMM,isPrujezd,VzdalenostMM)
     // markery: "|" staví-nestaví (projíždí), "<" bod mezi začátkem a koncem jízdy kde spoj nejede
-    k casyBodu                                   // casyBodu(radekBodu) = $lb(prijezdMM, odjezdMM, prujezd)
-    s prvniRadek = "", posledniRadek = ""
-    s tcnt = ""
-    f {
-        s tcnt = $o(spojTabulka(spojId, tcnt))
-        q:tcnt=""
-        s veta = spojTabulka(spojId, tcnt)
-        s radek = $g(bodyMapa(tcnt))
-        i radek = "" continue
-        i $lg(veta,5) {
-            i '$d(casyBodu(radek)) s casyBodu(radek) = $lb("", "", 1)   // projíždí
-        }
-        else {
-            s casyBodu(radek) = $lb($lg(veta,3), $lg(veta,4), 0)
-            i prvniRadek = "" s prvniRadek = radek
-            s posledniRadek = radek
-        }
-    }
-    i prvniRadek = "" q ""
+    i '..CasyBodu(spojId, .spojTabulka, .bodyMapa, .casyBodu, .prvniRadek, .posledniRadek, .bodOd, .bodDo) q ""
 
     s casy = ##class(%DynamicArray).%New()
     f i=1:1:pocetRadku {
         s radekBodu = $lg(rowMeta(i),1), typRadku = $lg(rowMeta(i),2)
         i '$d(casyBodu(radekBodu)) {
-            // mimo jízdu spoje: mezi začátkem a koncem = "<" (jede jinudy), jinak prázdno
-            i (radekBodu > prvniRadek) && (radekBodu < posledniRadek) { d casy.%Push("<")  s markerSeen("<") = "" }
+            // mimo jízdu spoje: mezi krajními body jeho trasy = "<" (jede jinudy), jinak prázdno.
+            // Měří se body trasy, ne zastávky, kde spoj staví - jinak by na konci, kde spoj projíždí
+            // body mimo seznam zastávek, „<" chybělo (KV_DP 1438, 1520).
+            s bod = $lg(body(radekBodu),1)
+            i (bod > bodOd) && (bod < bodDo) { d casy.%Push("<")  s markerSeen("<") = "" }
             else { d casy.%Push("") }
             continue
         }
@@ -621,6 +613,79 @@ ClassMethod BuildSpojMhd(ByRef sys As %String, IdFa As %String, dataDB As %Strin
     d o.%Set("PRIPOJE", ##class(%DynamicArray).%New())   // MHD zdroj návaznosti nemá (1:1 legacy)
 
     q o
+}
+
+/// Časy spoje po řádcích zastávek z MakeTableSpoj tabulky ($lb(ZastavkaID,Kategorie,CasPrijezdMM,
+/// CasOdjezdMM,isPrujezd,VzdalenostMM) po bodech trasy). casyBodu(radekBodu) = $lb(prijezdMM,
+/// odjezdMM, projizdi); prvniRadek/posledniRadek = krajní řádky, kde spoj staví. 0 = nestaví nikde.
+/// bodOd/bodDo = krajní body trasy, kterými spoj jede - i ty, kde nestaví nebo které nejsou
+/// zastávkou; mezi nimi je „jede jinudy" (legacy begcnt/endcnt, :705-757).
+ClassMethod CasyBodu(spojId As %String, ByRef spojTabulka, ByRef bodyMapa, ByRef casyBodu, ByRef prvniRadek, ByRef posledniRadek, ByRef bodOd, ByRef bodDo) As %Boolean
+{
+    k casyBodu
+    s prvniRadek = "", posledniRadek = ""
+    s bodOd = $o(spojTabulka(spojId, "")), bodDo = $o(spojTabulka(spojId, ""), -1)
+    s tcnt = ""
+    f {
+        s tcnt = $o(spojTabulka(spojId, tcnt))
+        q:tcnt=""
+        s veta = spojTabulka(spojId, tcnt)
+        s radek = $g(bodyMapa(tcnt))
+        i radek = "" continue
+        i $lg(veta,5) {
+            i '$d(casyBodu(radek)) s casyBodu(radek) = $lb("", "", 1)   // projíždí
+        }
+        else {
+            s casyBodu(radek) = $lb($lg(veta,3), $lg(veta,4), 0)
+            i prvniRadek = "" s prvniRadek = radek
+            s posledniRadek = radek
+        }
+    }
+    q:prvniRadek="" 0
+    // Body se procházejí podle ID, ale směr zpět má řádky v opačném pořadí - první a poslední
+    // zastávka spoje jsou tedy krajní řádky, ne první a poslední nalezený. Do 12. 10. tu byly
+    // prohozené a ve směru zpět chyběly „jede jinudy" i krajní příjezd a odjezd.
+    i prvniRadek > posledniRadek s x = prvniRadek, prvniRadek = posledniRadek, posledniRadek = x
+    q 1
+}
+
+/// Pořadí spojů v bloku jako legacy (:951-990): od poslední zastávky trasy k první se v každém
+/// řádku prohodí soused, který tam má dřívější čas (po půlnoci jako ráno), dokud se něco mění,
+/// nejvýš 101 kol. Spoje začínající uprostřed trasy se tak zařadí podle společných zastávek,
+/// ne podle času, kdy vyjely. poradi(i) = SpojID, na vstupu seřazené podle výchozího času.
+ClassMethod SeradJakoLegacy(ByRef poradi, ByRef spojTabulka, ByRef bodyMapa, pocetRadku As %Integer)
+{
+    s pocet = $g(poradi)
+    q:pocet<2
+    k cas
+    f i=1:1:pocet {
+        s spojId = poradi(i)
+        continue:'..CasyBodu(spojId, .spojTabulka, .bodyMapa, .casyBodu, .prvni, .posledni, .bodOd, .bodDo)
+        s radek = ""
+        f {
+            s radek = $o(casyBodu(radek), 1, cb)
+            q:radek=""
+            i $lg(cb,3) continue
+            s cas(spojId, radek) = $s(+$lg(cb,2) > +$lg(cb,1):+$lg(cb,2), 1:+$lg(cb,1)) # 1440
+        }
+    }
+    f cyklus=1:1:101 {
+        s zmena = 0
+        f radek=pocetRadku:-1:1 {
+            f i=1:1:pocet-1 {
+                i '$d(cas(poradi(i), radek)) continue
+                s j = 0
+                f k=i+1:1:pocet {
+                    i $d(cas(poradi(k), radek)) s j = k  q
+                }
+                i 'j continue
+                i cas(poradi(i), radek) > cas(poradi(j), radek) {
+                    s x = poradi(i), poradi(i) = poradi(j), poradi(j) = x, zmena = 1
+                }
+            }
+        }
+        i 'zmena q
+    }
 }
 
 /// Negativní značky celé linky naráz, jako legacy MakeData (:490-649) - čísla přidělená

@@ -1,5 +1,24 @@
 ﻿# Changelog
 
+## 2026-10-12 (4) - 🚌 linkový JŘ MHD: tabulka jako starý tisk (`B191c`)
+
+Porovnání se starým tiskem (`LinkovyJrMhdLegacyOracle`) teď kryje celou tabulku: časy po
+zastávkách, seznam zastávek s pásmem a značkami, rozdělení spojů do bloků po typech provozu
+a pořadí spojů. Našly se a opravily čtyři rozdíly v agendě `LinkovyJrMhd`:
+- **pořadí spojů** - starý tisk po seřazení podle výchozího času prohazuje sousedy, dokud časy
+  v každém řádku nerostou (od konce trasy), a čas po půlnoci bere jako ráno; spoje začínající
+  uprostřed trasy tak stojí podle společných zastávek, ne podle času výjezdu (KV_DP 1073: 1, 5, 7
+  místo 1, 7, 5),
+- **„jede jinudy" ve směru zpět** chybělo úplně - první a poslední zastávka spoje byly prohozené,
+- **„jede jinudy" za poslední zastávkou**, kudy spoj ještě jede mimo seznam zastávek, chybělo -
+  rozsah jízdy se bere z bodů trasy jako ve starém tisku (KV_DP 1438, 1520),
+- **název zastávky k datu platnosti linky** - datum šlo jako text místo data, takže se vybral jiný
+  název (KV_DP 1438: „KV Arena" místo „MATTONI Arena").
+Shoda na 27 linkách CB_DP a 38 linkách KV_DP; dvě linky KV_DP (1105, 1106) starý tisk nevytiskne
+vůbec (chyba starého modulu), naše agenda pro ně vrátí prázdný výstup. Neověřeno, protože na dev
+datech nejsou: příjezd a odjezd na jedné zastávce, poznámky z trasy u názvu zastávky. Test
+`LinkovyJrMhdTest` (7 linek, všechny kategorie).
+
 ## 2026-10-12 (3) - 🐛 vývěsky MHD: chyběly automaticky přidělené negativní značky
 
 Zastávkový JŘ MHD u linky s auto-poznámkováním rozdílů platností nevytiskl negativní značky,

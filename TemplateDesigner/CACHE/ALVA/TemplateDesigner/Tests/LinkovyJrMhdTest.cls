@@ -1,15 +1,18 @@
 Include %occInclude
 
-/// `B191b`: linkový JŘ MHD skládá značky spojů jako starý tisk a obě linkové agendy tisknou
-/// zvolený směr. Značky se porovnávají se starým modulem (`LinkovyJrMhdLegacyOracle`), ne s naším
+/// `B191b`/`B191c`: linkový JŘ MHD dává tutéž tabulku jako starý tisk a obě linkové agendy tisknou
+/// zvolený směr. Porovnává se se starým modulem (`LinkovyJrMhdLegacyOracle`), ne s naším
 /// odtiskem. Firma nebo starý modul, který na serveru není, se přeskočí.
 Class ALVA.TemplateDesigner.Tests.LinkovyJrMhdTest Extends ALVA.EDTesting.MLTestCase
 {
 
-/// Linky `firma:linka`, výběr v analýze linkového JŘ §18.3.
-Parameter LINKY = "CB_DP:11350,CB_DP:11341,CB_DP:11354,CB_DP:11018,KV_DP:1073";
+/// Linky `firma:linka`, výběr v analýze linkového JŘ §18.3; KV_DP 1438 a 1520 přidané 12. 10. -
+/// název zastávky k datu platnosti a „jede jinudy" za poslední zastávkou spoje.
+Parameter LINKY = "CB_DP:11350,CB_DP:11341,CB_DP:11354,CB_DP:11018,KV_DP:1073,KV_DP:1438,KV_DP:1520";
 
-Method TestZnackySpojuJakoStaryModul()
+/// Celá tabulka proti starému tisku: značky spojů a legenda, časy po zastávkách, seznam zastávek
+/// (název k datu platnosti, pásmo, značky), rozdělení spojů do bloků po typech provozu a pořadí.
+Method TestTabulkaJakoStaryModul()
 {
 	set porovnano = 0, nz = 0, texty = 0
 	for i=1:1:$length(..#LINKY, ",") {
@@ -20,6 +23,10 @@ Method TestZnackySpojuJakoStaryModul()
 		do $$$AssertTrue(res("pocet") > 0, idfa_" "_lin_": starý tisk nevrátil žádný spoj")
 		do $$$AssertTrue(res("spoj"), idfa_" "_lin_": spoje se liší ("_res("spoj","pocet")_") "_res("spoj","rozdil"))
 		do $$$AssertTrue(res("pozn"), idfa_" "_lin_": legenda se liší ("_res("pozn","pocet")_") "_res("pozn","rozdil"))
+		do $$$AssertTrue(res("cas"), idfa_" "_lin_": časy se liší ("_res("cas","pocet")_") "_res("cas","rozdil"))
+		do $$$AssertTrue(res("zast"), idfa_" "_lin_": zastávky se liší ("_res("zast","pocet")_") "_res("zast","rozdil"))
+		do $$$AssertTrue(res("blok"), idfa_" "_lin_": spoje jsou jinak rozdělené do typů provozu "_res("blok","rozdil"))
+		do $$$AssertTrue(res("poradi"), idfa_" "_lin_": pořadí spojů se liší "_res("poradi","rozdil"))
 	}
 	if 'porovnano {
 		do $$$AssertTrue(1, "starý tisk MHD nebo firmy na serveru nejsou - přeskočeno")

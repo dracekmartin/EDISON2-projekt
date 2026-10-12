@@ -1998,3 +1998,11 @@ Tři chyby z §18.2 jsou opravené a značky spojů porovnává se starým tiske
 
 Atributy spoje kromě B/C starý tisk posílá jako id znaku, které klient převádí - u nás se netisknou
 (v datech dev serveru nejsou, neověřeno).
+
+### 18.7 Stav po `B191c` (12. 10. 2026)
+
+Oracle porovnává celou tabulku a na 27 linkách CB_DP a 38 KV_DP je shoda. Co zbývá neověřené,
+protože to dev data nemají: příjezd/odjezd na jedné zastávce (atribut trasy 1011, sloupec „od/př"
+starého tisku nahrazený podřádky) a poznámky z trasy (`PoznamkyTam/Zpet` pro knižní tisk), které
+starý tisk připisuje k názvu zastávky - ty agenda zatím nečte vůbec. Linky KV_DP 1105 a 1106 starý
+tisk nevytiskne (chyba starého modulu); naše agenda pro ně vrátí prázdný výstup bez hlášky.
