@@ -293,6 +293,104 @@ public class ModulePreferencesServiceTests
         rest.Received(1).QueryOrThrow("ALVA.EDControls.DesktopShortcuts", "Remove", Arg.Any<CVar>());
     }
 
+    // Přepnutí firmy mezi změnou a odesláním: čekající zápis staré firmy patří staré firmě, hodnota nové jde zvlášť.
+    [Fact]
+    public async Task Save_PendingDuringCompanySwitch_GoesUnderCompanyOfChange()
+    {
+        using var rest = new SwitchingRest("A");
+        var service = new ModulePreferencesService(new CacheUserPrefsService(() => rest.Shared, _ => { }),
+            new InlineRestCallRunner(Substitute.For<IMLRest>()), _ => { });
+
+        _ = service.SaveExpansionAsync(["a1"]);
+        rest.WaitForCalls(1);
+        _ = service.SaveExpansionAsync(["a2"]);
+        _ = service.SaveExpansionAsync(["a3"]);   // táž session: mezistav a2 se přeskočí
+        rest.Shared.Idfa = "B";
+        var underB = service.SaveExpansionAsync(["b1"]);
+        rest.ReleaseFirst();
+        await underB.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal([("A", """["a1"]"""), ("A", """["a3"]"""), ("B", """["b1"]""")],
+                     rest.Calls.Select(c => (c.Idfa, c.Payload)));
+    }
+
+    // Persistence nesmí shodit UI: volající jsou fire-and-forget z UI vlákna.
+    [Fact]
+    public async Task Save_SessionCaptureThrows_DoesNotThrowToCaller()
+    {
+        var prefs = new CacheUserPrefsService(() => throw new InvalidOperationException("no session"), _ => { });
+        var service = new ModulePreferencesService(prefs, new InlineRestCallRunner(Substitute.For<IMLRest>()), _ => { });
+
+        await service.SaveExpansionAsync(["x"]).WaitAsync(TimeSpan.FromSeconds(10));
+    }
+
+    [Fact]
+    public async Task DesktopCall_QueuedDuringCompanySwitch_GoesUnderCompanyOfChange()
+    {
+        using var rest = new SwitchingRest("A");
+        var service = new ModulePreferencesService(_prefs, new RestCallRunner(() => rest.Shared), _ => { });
+        var tile = new DesktopShortcutDto(Id: "100", ElementId: "100");
+
+        _ = service.AddShortcutAsync(tile);
+        rest.WaitForCalls(1);
+        _ = service.PlaceShortcutsAsync([tile]);
+        rest.Shared.Idfa = "B";
+        var underB = service.RemoveShortcutAsync(tile);
+        rest.ReleaseFirst();
+        await underB.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal([("A", "Add"), ("A", "Place"), ("B", "Remove")], rest.Calls.Select(c => (c.Idfa, c.Method)));
+    }
+
+    // Sdílená instance, které přepnutí firmy mění Idfa na místě (CompanySwitcher); klon nese firmu z okamžiku With().
+    // První dotaz drží, dokud ho test nepustí, aby zápis zůstal v letu.
+    private sealed class SwitchingRest : IDisposable
+    {
+        private readonly List<(string Idfa, string Method, string Payload)> _calls = [];
+        private readonly ManualResetEventSlim _releaseFirst = new(false);
+
+        public IMLRest Shared { get; } = Substitute.For<IMLRest>();
+
+        public SwitchingRest(string idfa)
+        {
+            Shared.Idfa = idfa;
+            Shared.With(Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>())
+                .Returns(call => Clone(call.ArgAt<string?>(1) ?? Shared.Idfa));
+        }
+
+        public List<(string Idfa, string Method, string Payload)> Calls
+        {
+            get { lock (_calls) return [.. _calls]; }
+        }
+
+        public void WaitForCalls(int count) =>
+            SpinWait.SpinUntil(() => Calls.Count >= count, TimeSpan.FromSeconds(10));
+
+        public void ReleaseFirst() => _releaseFirst.Set();
+
+        public void Dispose() => _releaseFirst.Set();
+
+        private IMLRest Clone(string idfa)
+        {
+            var clone = Substitute.For<IMLRest>();
+            clone.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>()).Returns(call =>
+            {
+                var method = call.ArgAt<string>(1);
+                var input = call.ArgAt<CVar>(2);
+                var payload = input[method == "Save" ? "data" : method == "Place" ? "items" : "item"].Value?.ToString() ?? "";
+                bool first;
+                lock (_calls)
+                {
+                    _calls.Add((idfa, method, payload));
+                    first = _calls.Count == 1;
+                }
+                if (first) _releaseFirst.Wait(TimeSpan.FromSeconds(10));
+                return new CVar();
+            });
+            return clone;
+        }
+    }
+
     // Runner, jehož volání dokončí až test.
     private sealed class HeldRunner : IRestCallRunner
     {

@@ -159,7 +159,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         }
 
         // Zápis jednoho klíče v letu: každý jde na klonu v jiném Caché procesu, souběžné by neměly pořadí.
-        // Čekající hodnotu nahradí novější, task volajícího skončí zápisem jeho nebo novější hodnoty.
+        // Čekající hodnotu nahradí novější téže session, task volajícího skončí zápisem jeho nebo novější hodnoty.
         private Task SaveBlobAsync<T>(string key, T value)
         {
             JsonNode? node;
@@ -174,19 +174,37 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             }
             if (node is null) return Task.CompletedTask;
 
+            var session = CaptureSession();
             PendingWrite write;
             lock (_queues)
             {
                 if (_queues.Pending.TryGetValue(key, out var waiting))
                 {
-                    _queues.Pending[key] = write = new PendingWrite(node, waiting?.Done ?? NewDone());
+                    if (waiting.Count > 0 && ReferenceEquals(waiting[^1].Session, session))
+                        return (waiting[^1] = waiting[^1] with { Node = node }).Done.Task;
+                    waiting.Add(write = new PendingWrite(node, NewDone(), session));
                     return write.Done.Task;
                 }
-                _queues.Pending[key] = null;
+                _queues.Pending[key] = [];
             }
-            write = new PendingWrite(node, NewDone());
+            write = new PendingWrite(node, NewDone(), session);
             _ = WriteInOrderAsync(key, write);
             return write.Done.Task;
+        }
+
+        // Snímek session při změně: přepnutí firmy před odesláním by zápis poslalo pod novou firmou.
+        // Bez snímku jde zápis přes službu tak, jak je (jako debouncer v EDControls), UI shodit nesmí.
+        private IUserPrefsService CaptureSession()
+        {
+            try
+            {
+                return _prefs.Capture();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ModulePrefs] Session capture failed: {ex.Message}");
+                return _prefs;
+            }
         }
 
         private async Task WriteInOrderAsync(string key, PendingWrite write)
@@ -196,7 +214,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 try
                 {
                     // Bez UI vlákna: při zavření shellu už nepumpuje a čekající zápis by neodešel.
-                    await _prefs.SaveAsync(Scope, key, write.Node).WaitAsync(InFlightLimit).ConfigureAwait(false);
+                    await write.Session.SaveAsync(Scope, key, write.Node).WaitAsync(InFlightLimit).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -206,19 +224,32 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
                 lock (_queues)
                 {
-                    if (_queues.Pending[key] is not { } next)
+                    var waiting = _queues.Pending[key];
+                    if (waiting.Count == 0)
                     {
                         _queues.Pending.Remove(key);
                         return;
                     }
-                    write = next;
-                    _queues.Pending[key] = null;
+                    write = waiting[0];
+                    waiting.RemoveAt(0);
                 }
             }
         }
 
         private Task<bool> EnqueueDesktop(string method, string inKey, string json)
         {
+            IRestCallRunner session;
+            try
+            {
+                // Snímek session při změně: zařazené volání by po přepnutí firmy odešlo pod novou firmou.
+                session = _desktop.Capture();
+            }
+            catch (Exception ex)
+            {
+                // Bez session se nic neodešle a není se s čím srovnávat.
+                Debug.WriteLine($"[ModulePrefs] {DesktopClass}.{method} skipped: {ex.Message}");
+                return Task.FromResult(true);
+            }
             var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             Task previous;
             lock (_queues)
@@ -226,28 +257,25 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 previous = _queues.DesktopTail;
                 _queues.DesktopTail = done.Task;
             }
-            _ = CallDesktopAfterAsync(previous, done, method, inKey, json);
+            _ = CallDesktopAfterAsync(previous, done, session, method, inKey, json);
             return done.Task;
         }
 
-        private async Task CallDesktopAfterAsync(Task previous, TaskCompletionSource<bool> done, string method, string inKey, string json)
+        private async Task CallDesktopAfterAsync(Task previous, TaskCompletionSource<bool> done, IRestCallRunner session,
+            string method, string inKey, string json)
         {
             var accepted = true;
             try
             {
                 await previous.ConfigureAwait(false);
-                accepted = await _desktop.RunAsync(rest => QueryDesktop(rest, method, inKey, json))
+                accepted = await session.RunAsync(rest => QueryDesktop(rest, method, inKey, json))
                     .WaitAsync(InFlightLimit).ConfigureAwait(false);
-            }
-            catch (TimeoutException ex)
-            {
-                accepted = false;
-                _reportFailure(ex);
             }
             catch (Exception ex)
             {
-                // Bez session se nic neodeslalo a není se s čím srovnávat.
-                Debug.WriteLine($"[ModulePrefs] {DesktopClass}.{method} failed: {ex.Message}");
+                // Timeout nebo selhání stavby klonu: server změnu nedostal.
+                accepted = false;
+                _reportFailure(ex);
             }
             finally
             {
@@ -273,12 +301,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         private static TaskCompletionSource NewDone() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private sealed record PendingWrite(JsonNode Node, TaskCompletionSource Done);
+        private sealed record PendingWrite(JsonNode Node, TaskCompletionSource Done, IUserPrefsService Session);
 
         private sealed class WriteQueues
         {
-            // Klíč = zápis blobu v letu, hodnota = čekající zápis (null = žádný).
-            public readonly Dictionary<string, PendingWrite?> Pending = [];
+            // Klíč = zápis blobu v letu, hodnota = čekající zápisy v pořadí změn. Po sobě jdoucí téže session se slučují.
+            public readonly Dictionary<string, List<PendingWrite>> Pending = [];
             // Volání plochy jdou za sebou: dvě souběžná read-modify-write na serveru by si blob přepsala.
             public Task DesktopTail = Task.CompletedTask;
         }
