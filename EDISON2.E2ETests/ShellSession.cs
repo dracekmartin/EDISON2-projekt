@@ -95,7 +95,15 @@ internal sealed class ShellSession : IDisposable
         var menu = WaitFor(() => Main.FindFirstDescendant(cf => cf.ByAutomationId(menuId)), $"menu {menuId}");
         var topItem = WaitFor(() => menu.FindFirstChild(cf => cf.ByName(top))?.AsMenuItem(), $"položka „{top}\"");
         topItem.Expand();
-        var target = WaitFor(() => FindMenuItem(topItem, item)?.AsMenuItem(), $"položka „{item}\"");
+        var target = WaitFor(() =>
+        {
+            if (FindMenuItem(topItem, item) is { } found) return found.AsMenuItem();
+            // Podmenu se při souběžných oknech jiných procesů (okenní testy jiných kopií repa) samo zavře.
+            if (topItem.Patterns.ExpandCollapse.PatternOrDefault?.ExpandCollapseState.ValueOrDefault
+                == ExpandCollapseState.Collapsed)
+                topItem.Expand();
+            return null;
+        }, $"položka „{item}\"");
         // Invoke, ne Click: nepotřebuje myš ani fokus a modální okno, které otevře, ho nezablokuje.
         target.Invoke();
     }
