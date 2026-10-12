@@ -39,6 +39,11 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
 
 ### Ostatní
 
+- **Barva linky v linkovém JŘ** [S] (slíbeno TRANSDEV v `#13606` 12. 10., „v některé z příštích verzí").
+  Zastávkový JŘ AD posílá `BARVA_LINKY` / `BARVA_LINKY_2` (`ZastavkoveJrAd.cls:352-355`, přes
+  `ALVA.ISY.ISYJR2.API.Linky.GetBarvaLinky`), linkové agendy ne. AD: stejné pole do `LinkovyJrAd`.
+  MHD: nejdřív zjistit, jestli modul MHD barvu linky vůbec má.
+
 - **Vývěsky MHD: značka zastávky u názvu** [S] (nález 12. 10., `MhdLegacyOracle`). Starý tisk
   připisuje značku zastávky k názvu („Areál VŠTE, A" na CB_DP 11350), my ne - linkový JŘ MHD už
   značky bere i z bodu trasy (`LinkovyJrMhd.ZnackyBodu`), vývěsky ne. Ověřit proti starému tisku.
