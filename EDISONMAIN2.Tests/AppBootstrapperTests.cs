@@ -573,6 +573,19 @@ public class AppBootstrapperTests
     }
 
     [Theory]
+    [InlineData("", null)]
+    [InlineData("260901.1", "260901.1")]
+    public void CreateServices_VersionFromVerzeInf_OtherwiseLeftToAppIdentity(string installed, string? expected)
+    {
+        // Bez VERZE.INF rozhoduje AppIdentity (verze exe s hashem buildu), pevný text by ji přebil.
+        var services = AppBootstrapper.CreateServices(new WindowNavigator(), new PopupDisplayer(), installed);
+
+        Assert.Equal(expected, services.AppVersion);
+        Assert.Equal("M-line EDISON 2", services.AppDisplayName);
+        Assert.Equal("EDISON2", services.FormIdPrefix);   // součást uložených formID
+    }
+
+    [Theory]
     [InlineData(false, 0)]
     [InlineData(true, 1)]
     public void MiniAppProviders_DevSamplesOnlyInDevelopment(bool devMiniApps, int devSamples)

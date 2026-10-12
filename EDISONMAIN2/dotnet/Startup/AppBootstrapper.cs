@@ -187,13 +187,7 @@ public class AppBootstrapper
         EDServices? services = null;
         var nav = new WindowNavigator(() => services!);
         var popup = new PopupDisplayer();
-        services = new EDServices(null, nav, popup)
-        {
-            // Pro „Informace o verzi" (panel Podpora, menu Nápověda) - verze assembly je
-            // 1.0.0.0, jediná pravdivá je VERZE.INF vedle exe.
-            AppDisplayName = "M-line EDISON 2",
-            AppVersion = VerzeInf.Current == "" ? "nezjištěna" : VerzeInf.Current
-        };
+        services = CreateServices(nav, popup, VerzeInf.Current);
         EDServices.Initialize(services);
 
         // EDInputForm pole Color - jako picker registrujeme prostý WinForms ColorDialog.
@@ -201,6 +195,18 @@ public class AppBootstrapper
 
         return (nav, popup, services);
     }
+
+    /// <summary>Služby shellu s identitou aplikace (hlášení chyb, „Informace o verzi"). <paramref name="installedVersion"/>
+    /// je obsah VERZE.INF, "" = soubor chybí.</summary>
+    internal static EDServices CreateServices(WindowNavigator nav, PopupDisplayer popup, string installedVersion) =>
+        new(null, nav, popup)
+        {
+            // Součást uložených formID (ALVA.LIBRARY.Form): jiný prefix by uživatelům zahodil uložený stav oken.
+            FormIdPrefix = "EDISON2",
+            AppDisplayName = "M-line EDISON 2",
+            // Bez VERZE.INF vezme AppIdentity verzi exe (s hashem buildu), řekne víc než pevný text.
+            AppVersion = installedVersion == "" ? null : installedVersion,
+        };
 
     protected virtual ILocalPrefs LoadLocalPrefs() =>
         _options.TestRun is { } testRun ? new TransientLocalPrefs { LastIdfa = testRun.StartIdfa } : LocalPrefs.Load();
