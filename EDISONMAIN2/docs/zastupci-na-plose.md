@@ -45,10 +45,12 @@ kontejner, který samostatné okno nemá).
 týmž uživatelem, takže píše do stejného blobu, který shell čte. Mezi procesy tak neexistuje
 žádné živé spojení, které by mohlo vypadnout.
 
-- `ALVA.EDControls.DesktopShortcuts` (`Add` / `Remove` / `Exists`) je **doménová operace nad
+- `ALVA.EDControls.DesktopShortcuts` (`Add` / `Remove` / `Exists` / `Place`) je **doménová operace nad
   blobem** `UserData(scope "EDISONMAIN2", key "Shortcuts")`. Read-modify-write proběhne
   v jednom Caché jobu - přes generické `UserData.Save` by si souběžný zápis modulu a shellu
-  přepsal celý seznam.
+  přepsal celý seznam. Proto přes ni píše i shell: ★ a drop ze stromu jako `Add`, odebrání
+  jako `Remove`, přesun dlaždice jako `Place` (mění jen `Col`/`Row` existující položky).
+  Celý blob shell neposílá nikdy.
 - **Slot server nepřiděluje** (klient chybějící pozici doplní v `Seed`), ale při přepisu
   existujícího klíče ho **zachová** - jinak by aktualizace z modulu přestěhovala dlaždici.
 - `EDLIBRARY` dostala **jen aditivní seam** - `EDFormInterface.IShortcutSink` a
@@ -61,7 +63,7 @@ týmž uživatelem, takže píše do stejného blobu, který shell čte. Mezi pr
   JSON skládá ručně, aby host nepotřeboval JSON knihovnu.
 
 **Cena: dlaždice nenaskočí okamžitě.** Shell si blob přenačte, až agenda skončí
-(`IWindowNavigator.LegacyModuleExited` → `ReloadShortcutsAsync`).
+(`IWindowNavigator.LegacyModuleExited` → `FavoritesCoordinator.ReloadAsync`).
 
 ### Proč ne named pipe
 
@@ -119,8 +121,9 @@ V EDISON2 to pro `MenuModule` zajišťuje strom (server ho vrací už profiltrov
 druhů musí příznak dorazit s položkou - `Kind`-specifické právo shell nezná.
 
 Pozor na past, kterou už řeší `ModuleShortcutsService`: položka, kterou aktuální strom nezná
-(odebraná licence, `hidden`, `mlineOnly`), se **nezobrazí, ale uloží zpátky**. Filtrovat při
-ukládání by uživateli tiše smazalo zástupce, které jen v této session nevidí.
+(odebraná licence, `hidden`, `mlineOnly`), se **nezobrazí a na serveru zůstane**. Shell posílá
+jen změny zobrazených dlaždic, takže na ni nesáhne. Smazat ji by uživateli tiše vzalo zástupce,
+které jen v této session nevidí.
 
 ## Katalog pro picker
 
