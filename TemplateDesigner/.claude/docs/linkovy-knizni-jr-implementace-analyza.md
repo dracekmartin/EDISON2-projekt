@@ -1983,3 +1983,18 @@ názvu parametru dělení mezi zastávkovým a linkovým AD jde udělat zvláš�
 zamčené (persistuje se text), název parametru ne.
 
 **Neověřeno:** jak editor sloupců dnes skládá dialog podle agendy, a tedy kolik stojí bod 3.
+
+### 18.6 Stav po `B191b` (12. 10. 2026)
+
+Tři chyby z §18.2 jsou opravené a značky spojů porovnává se starým tiskem `LinkovyJrMhdTest`
+(oracle `Tests/LinkovyJrMhdLegacyOracle`). Při opravě vyšly najevo další dvě věci:
+
+- **Text omezení u negativní značky byl vždy prázdný** - agenda volala funkce kalendáře s jinými
+  argumenty než starý modul (a bez kroku `mkOmzFromOnlyTwoBitmaps`) a chybu polykal catch.
+  Zastávkový JŘ MHD má týž výpočet bez toho kroku (`ZastavkoveJrMhd.cls:556-599`); porovnání
+  `MhdLegacyOracle` na CB_DP 11350 a 11018 ukazuje chybějící značky v poznámkách. Zapsané v backlogu.
+- **Značky zastávky bere starý tisk i z atributů bodu trasy** (`AtributyTam/Zpet`, legacy :442-483),
+  ne jen z číselníku zastávek. Na KV_DP 1073 je tak „na znamení".
+
+Atributy spoje kromě B/C starý tisk posílá jako id znaku, které klient převádí - u nás se netisknou
+(v datech dev serveru nejsou, neověřeno).

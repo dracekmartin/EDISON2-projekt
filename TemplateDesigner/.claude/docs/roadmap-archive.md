@@ -1,5 +1,14 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B191b` Data linkového JŘ MHD jako starý tisk + směr pro tisk (hotovo 12. 10. 2026)
+
+Číslo spoje z dat, poznámky a atributy spoje jen pro knižní tisk, negativní značky přidělené jako
+starý modul (i text omezení, který byl vždy prázdný), značky zastávky z číselníku i z trasy, číslo
+zastávky a označník. Textové poznámky prvek kreslí písmem (`TEXTOVE_ZNACKY`). Nový parametr „Směr
+pro tisk" (Oba / Tam / Zpět) pro linkový AD i MHD. Doloženo porovnáním se starým tiskem
+(`LinkovyJrMhdTest`, 5 linek). **Nedoděláno:** Zvýraznit zastávku a tarifní čísla (patří k volbám
+`B191d`), poznámky z trasy u názvu zastávky (na dev datech nejsou). Detail changelog 2026-10-12 (2).
+
 ## `B191a` Rozbor linkového JŘ MHD proti AD a starému modulu (hotovo 12. 10. 2026)
 
 Soupis bez změny agendy: oracle je `ALVA.MHD.LinkyPrintFormatJR.MakeData` (ne `WinTiskMhd^JRapi`,

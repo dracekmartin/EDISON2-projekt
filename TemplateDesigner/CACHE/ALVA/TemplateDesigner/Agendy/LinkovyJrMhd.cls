@@ -16,11 +16,11 @@ Include GENERAL
 /// SKUPINY_DNU.NADPIS z TypyProvozu NadpisSMOPrvni/Druhy. Bez sloupců Km/Tč/MHD a bez
 /// vyčká/navazuje (MHD zdroj je nemá - 1:1 s legacy MakeData).
 /// 
-/// ── Rozdíly/mezery vůči legacy MakeData (první řez) ──
+/// ── Rozdíly/mezery vůči legacy MakeData ──
 /// - sloupec „OdjezdPříjezd" (typ 5, texty př/od) nahrazen ZASTAVKY.TYP="prijezd" podřádky
-/// - výběr TypProvozu/Směru (arr,11) zatím bez parametru - tiskne vše
-/// - NZ auto-poznámkování rozdílů platností (GetJede vs ProvozBitMapa → MakeOmezeniTXT) 1:1;
-///   speciální znaky spoje (SpecZnak dny) a atributy B/C v řádku platnosti
+/// - výběr typů provozu (arr,11) zatím bez parametru - tiskne všechny; směr volí SMER_TISKU
+/// - značky spoje a negativní značky skládá jako legacy (:490-695), porovnání viz
+///   `Tests/LinkovyJrMhdTest`; z atributů spoje jen B/C, ostatní legacy tiskne id znaku (neověřeno)
 Class ALVA.TemplateDesigner.Agendy.LinkovyJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
@@ -75,8 +75,10 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s gf = ##class(%DynamicArray).%New()
     d ..AddField(gf, "PORADI",         "Pořadí",             "number")
     d ..AddField(gf, "TYP",            "Typ řádku",          "text")
+    d ..AddField(gf, "CZST",           "Číslo zastávky",     "number")
     d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
     d ..AddField(gf, "ZONY",           "Zóny",               "text")
+    d ..AddField(gf, "NASTUPISTE",     "Označník",           "text")
     s g.fields = gf
     d collections.%Push(g)
 
@@ -127,10 +129,13 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Parametry sestavy - zatím žádné (výběr typů provozu/směrů = budoucí rozšíření dle arr,11).
+/// Parametry sestavy. Směr pro tisk je týž parametr jako u AD varianty (definici drží ona).
+/// Výběr typů provozu (legacy arr,11) zatím není.
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
+    s arr = ##class(%DynamicArray).%New()
+    d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
+    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
 }
 
@@ -217,7 +222,7 @@ ClassMethod DefaultSkupinaLinek(IdFa As %String, dataDB As %String) As %Integer
     q +skupina
 }
 
-/// Vrátí data pro tisk: 1 stránka per (linka × směr) - směr 0 (T), pak 1 (Z).
+/// Vrátí data pro tisk: 1 stránka per (linka × směr) - směr 0 (T), pak 1 (Z); `SMER_TISKU` vybere jen jeden.
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -230,8 +235,11 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i linkaId = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
         i '$d(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId)) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_linkaId_" neexistuje v ALVA.MHD.LSO"))
 
-        f smerId = 0, 1 {
-            s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, smerId)
+        s smery = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).SmeryKTisku($g(^||ML("IN","SMER_TISKU")))
+        d ..PriradNegativniZnacky(.sys, IdFa, dataDB, linkaId, smery, .znacky)
+        f si = 1:1:$l(smery, ",") {
+            s smerId = $s($p(smery, ",", si) = "Z":1, 1:0)
+            s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, smerId, .znacky)
             i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
@@ -250,7 +258,10 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         s skupinaLinek = ..DefaultSkupinaLinek(IdFa, dataDB)
         s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,""))
         s page = ""
-        i linkaId '= "" s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, 0)
+        i linkaId '= "" {
+            d ..PriradNegativniZnacky(.sys, IdFa, dataDB, linkaId, "T", .znacky)
+            s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, 0, .znacky)
+        }
 
         i page = "" {
             s page = ##class(%DynamicObject).%New()
@@ -272,8 +283,8 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 }
 
 /// Sestaví JSON stránku knižního MHD JŘ pro jednu linku a směr (0=T, 1=Z).
-/// "" když směr nemá spoje. 1:1 datová část legacy MakeData (bez layout mechaniky).
-ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %String, linkaId As %String, smerId As %Integer) As %DynamicObject
+/// "" když směr nemá spoje. `znacky` = výsledek `PriradNegativniZnacky` pro celou linku.
+ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %String, linkaId As %String, smerId As %Integer, ByRef znacky) As %DynamicObject
 {
     // ── hlavička linky ──────────────────────────────────────────────
     s vals = ##class(%DynamicObject).%New()
@@ -315,7 +326,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     s smerpar = $s(smerId=0:1, 1:-1)
 
     // 1. průchod: body → seznam (bod, zastávka, název, zóna, odjPri); filtr kategorie 1001
-    k body                                       // body(i) = $lb(BodID, ZastavkaID, Nazev, Zona, odjPri)
+    k body, popisyZnacek                         // body(i) = $lb(BodID, ZastavkaID, Nazev, Zona, odjPri, Cislo, Oznacnik, ZnackyBodu)
     s pocetBodu = 0, bodId = ""
     f {
         s bodId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasaId,"DTA",1,"ModelTrasaBodDetail",bodId), smerpar)
@@ -347,13 +358,17 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
             i $g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasaId,"DTA",1,"ModelTrasaBodDetail",bodId,"Val",$s(smerId=0:"AtributyTam",1:"AtributyZpet"),atrCnt,"Itm")) = 1011 s odjPri = 1
         }
 
-        // slučování sousedních shodných zastávek (dle čísla zastávky, 1:1 legacy)
+        s znackyBodu = ..ZnackyBodu(IdFa, dataDB, zastavkaId, trasaId, bodId, smerId, .popisyZnacek)
+
+        // slučování sousedních shodných zastávek (dle čísla zastávky, 1:1 legacy); značky
+        // sloučených bodů trasy patří řádku, do kterého se sloučily (legacy :421-483)
         i (pocetBodu > 0) && ($lg(body(pocetBodu),6) = cislo) && (cislo '= "") {
             s bodyMapa(bodId) = pocetBodu           // sloučený bod → řádek předchůdce
+            s $li(body(pocetBodu),8) = ..SlouceneZnacky($lg(body(pocetBodu),8), znackyBodu)
             continue
         }
         s pocetBodu = pocetBodu + 1
-        s body(pocetBodu) = $lb(bodId, zastavkaId, nazev, zona, odjPri, cislo)
+        s body(pocetBodu) = $lb(bodId, zastavkaId, nazev, zona, odjPri, cislo, $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Oznacnik")), znackyBodu)
         s bodyMapa(bodId) = pocetBodu
     }
     i pocetBodu = 0 q ""
@@ -399,7 +414,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
 
     s spoje = ##class(%DynamicArray).%New()
     s skupinyDnu = ##class(%DynamicArray).%New()
-    k nzSeen, poznSpoju, atributSeen, markerSeen
+    k nzSeen, poznSpoju, atributSeen, markerSeen   // nzSeen(nz) = text do legendy, jen NZ spojů této stránky
     s pocetPoznSpoju = 0
     s skupinaIdx = 0
     s pp = ""
@@ -420,7 +435,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
                 f {
                     s spojId = $o(razeni(pp, typProvozu, cas, spojId))
                     q:spojId=""
-                    s spojObj = ..BuildSpojMhd(.sys, IdFa, dataDB, linkaId, spojId, skupinaIdx, smerId, pocetRadku, .rowMeta, .body, .bodyMapa, .spojTabulka, .nzSeen, .poznSpoju, .pocetPoznSpoju, .atributSeen, .markerSeen)
+                    s spojObj = ..BuildSpojMhd(.sys, IdFa, dataDB, spojId, skupinaIdx, pocetRadku, .rowMeta, .body, .bodyMapa, .spojTabulka, .znacky, .nzSeen, .poznSpoju, .pocetPoznSpoju, .atributSeen, .markerSeen)
                     i spojObj '= "" d spoje.%Push(spojObj)
                 }
             }
@@ -434,7 +449,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     d ..PridatPoznamkyNZMhd(IdFa, dataDB, poznamky, .nzSeen)
     d ..PridatPoznamkyAtributuMhd(poznamky, .atributSeen)
     d ..PridatStaleZnackyMhd(poznamky, .markerSeen)
-    d ..PridatAtributyZastavekMhd(IdFa, dataDB, .body, pocetBodu, poznamky)
+    d ..PridatAtributyZastavekMhd(.body, pocetBodu, poznamky, .popisyZnacek)
 
     // ── sestavení stránky ───────────────────────────────────────────
     s out = ##class(%DynamicObject).%New()
@@ -454,12 +469,18 @@ ClassMethod BuildZastavkaRadek(bodVeta As %List, typ As %String, poradi As %Inte
     s z = ##class(%DynamicObject).%New()
     d z.%Set("PORADI",  poradi)
     d z.%Set("TYP",     typ)
-    d z.%Set("CZST",    $lg(bodVeta,2))
+    // Číslo zastávky z číselníku MHD, ne interní ID - stejný význam jako CZST u AD.
+    d z.%Set("CZST",    $lg(bodVeta,6))
     d z.%Set("NAZEV_ZASTAVKY", $s(typ="prijezd":"", 1:$lg(bodVeta,3)))
     // Klíč je množné ZONY jako u zastávkového JŘ; tam je to pole zón, tady jedna hodnota -
     // klient obojí čte přes GetString (pole spojí "/"), takže se binding chová stejně.
     d z.%Set("ZONY",    $lg(bodVeta,4))
-    d z.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
+    // Označník jako u zastávkového JŘ MHD (ZST Oznacnik).
+    d z.%Set("NASTUPISTE", $lg(bodVeta,7))
+    // Značky zastávky u názvu - písmena jako u AD (prvek je kreslí piktogramem), legacy :1218-1225.
+    s atributy = ##class(%DynamicArray).%New(), znacky = $s(typ="prijezd":"", 1:$lg(bodVeta,8))
+    f i=1:1:$l(znacky) d atributy.%Push($e(znacky,i), "string")
+    d z.%Set("ATRIBUTY", atributy)
     d z.%Set("KM",      ##class(%DynamicArray).%New())
     q z
 }
@@ -480,69 +501,78 @@ ClassMethod NactiSkupinyProvozu(IdFa As %String, dataDB As %String, ByRef provoz
     }
 }
 
-/// Sestaví JSON objekt jednoho MHD spoje: platnost (spec znaky + atributy), NZ, časy per řádek.
-ClassMethod BuildSpojMhd(ByRef sys As %String, IdFa As %String, dataDB As %String, linkaId As %String, spojId As %String, skupina As %Integer, smerId As %Integer, pocetRadku As %Integer, ByRef rowMeta, ByRef body, ByRef bodyMapa, ByRef spojTabulka, ByRef nzSeen, ByRef poznSpoju, ByRef pocetPoznSpoju, ByRef atributSeen, ByRef markerSeen) As %DynamicObject
+/// Sestaví JSON objekt jednoho MHD spoje: značky platnosti, NZ, časy per řádek.
+/// Značky skládá jako legacy MakeData (:536-695): dny z porovnání bitmap, poznámky spoje
+/// určené pro knižní tisk, atributy B/C. Textové poznámky jdou za symboly (legacy je tiskne
+/// samostatným řádkem pod nimi) a jejich výčet nese `TEXTOVE_ZNACKY`.
+ClassMethod BuildSpojMhd(ByRef sys As %String, IdFa As %String, dataDB As %String, spojId As %String, skupina As %Integer, pocetRadku As %Integer, ByRef rowMeta, ByRef body, ByRef bodyMapa, ByRef spojTabulka, ByRef znacky, ByRef nzSeen, ByRef poznSpoju, ByRef pocetPoznSpoju, ByRef atributSeen, ByRef markerSeen) As %DynamicObject
 {
     s o = ##class(%DynamicObject).%New()
-    d o.%Set("CISLO_SPOJE", +spojId)
+    // Tiskne se číslo spoje z dat, ne interní ID (legacy :536, :1167).
+    s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"CisloSpoje"))
+    i cislo = "" s cislo = spojId
+    d o.%Set("CISLO_SPOJE", cislo, $s(cislo = +cislo:"number", 1:"string"))
     d o.%Set("SKUPINA", skupina)
 
-    // NZ: přiřazená negativní značka + auto-poznámkování rozdílů platností (1:1 MakeData ř.496-527)
-    s nz = ..NzSpoje(.sys, IdFa, dataDB, linkaId, spojId, .nzSeen)
+    // NZ 0 = nepřidělená (legacy podmínka `i spojnz`, :866)
+    s nz = $g(znacky("spoj", spojId))
+    i 'nz s nz = ""
+    i (nz '= "") && ('$d(nzSeen(nz))) s nzSeen(nz) = $g(znacky("text", nz))
     d o.%Set("NZ", nz)
 
-    // řádek platnosti: speciální znaky spoje (dny ze SpecZnak) + atributy (B→BEV, C→CBE);
-    // textové poznámky spoje → druh 4 legendy
-    s platnost = ##class(%DynamicArray).%New()
+    s platnost = ##class(%DynamicArray).%New(), texty = ##class(%DynamicArray).%New()
+    s dny = $g(znacky("dny", spojId))
+    f i=1:1:$l(dny) {
+        s den = $e(dny, i)
+        i (den < 1) || (den > 7) continue
+        d platnost.%Push(den, "string")
+        d ..PridatPoznamkuSpoje(.poznSpoju, .pocetPoznSpoju, 1, "znak", den, ..TextDne(den))
+    }
     k arrPozn
     d ##class(ALVA.MHD.SpojeFce).GetPoznamkySpoj(.sys, spojId, "", .arrPozn)
-    s pcnt = ""
+    s poznId = ""
     f {
-        s pcnt = $o(arrPozn("arr",1,pcnt))
-        q:pcnt=""
-        s poznId = ""
-        f {
-            s poznId = $o(arrPozn("arr",1,pcnt,poznId))
-            q:poznId=""
-            s typPozn = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznId,"TypPoznamkyID"))
-            s text    = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznId,"Text"))
-            s popis   = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznId,"PopisPoznamky"))
-            i +typPozn {
-                // speciální symbol - SpecZnak 1-7 = dny (Po-Ne), jinak ASCII znak
-                s znak = ..ConvertSpecialniZnak($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznId,"SpecZnak")))
-                i znak '= "" {
-                    d platnost.%Push(znak)
-                    d ..PridatPoznamkuSpoje(.poznSpoju, .pocetPoznSpoju,1, "znak", znak, popis)
-                }
+        s poznId = $o(arrPozn("arr",1,poznId))
+        q:poznId=""
+        i '$g(arrPozn("arr",1,poznId,"TiskJRMHDKnizni")) continue
+        s typPozn = +$g(arrPozn("arr",1,poznId,"TypPoznamkyID"))
+        // Speciální znaky a NZ při auto-poznámkování nahrazuje porovnání bitmap (legacy :540-548).
+        i $g(znacky("auto")) && ((typPozn = 1) || (typPozn = 2)) continue
+        s popis = $g(arrPozn("arr",1,poznId,"PopisPoznamky"))
+        i typPozn = 0 {
+            s text = $g(arrPozn("arr",1,poznId,"Text"))
+            i text '= "" {
+                d texty.%Push(text, "string")
+                d ..PridatPoznamkuSpoje(.poznSpoju, .pocetPoznSpoju, 4, "text", text, popis)
             }
-            elseif text '= "" {
-                d platnost.%Push(text)
-                d ..PridatPoznamkuSpoje(.poznSpoju, .pocetPoznSpoju,4, "znak", text, popis)
+        }
+        elseif typPozn = 1 {
+            s znak = ..ZnakSpecialni($g(arrPozn("arr",1,poznId,"SpecZnak")))
+            i znak '= "" {
+                d platnost.%Push(znak, "string")
+                d ..PridatPoznamkuSpoje(.poznSpoju, .pocetPoznSpoju, 1, "znak", znak, popis)
             }
         }
     }
-    // atributy spoje: B = bezbariérový (BEV), C = částečně bezbariérový (CBE)
+    // Atributy spoje i jeho oběhu: B = bezbariérový (BEV), C = částečně bezbariérový (CBE).
     k arrAtr
     d ##class(ALVA.MHD.SpojeFce).GetAtributySpoj(.sys, spojId, "", .arrAtr)
-    s acnt = ""
+    s atrId = ""
     f {
-        s acnt = $o(arrAtr("arr",1,acnt))
-        q:acnt=""
-        s atrId = ""
-        f {
-            s atrId = $o(arrAtr("arr",1,acnt,atrId))
-            q:atrId=""
-            s znakAtr = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atrId,"Znak"))
-            s popisAtr = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atrId,"Popis"))
-            s klic = $case(znakAtr, "B":"BEV", "C":"CBE", :"")
-            i klic '= "" {
-                d platnost.%Push(klic)
-                s atributSeen(klic) = ""
-            }
+        s atrId = $o(arrAtr("arr",1,atrId))
+        q:atrId=""
+        s klic = $case($g(arrAtr("arr",1,atrId,"Znak")), "B":"BEV", "C":"CBE", :"")
+        i klic '= "" {
+            d platnost.%Push(klic, "string")
+            s atributSeen(klic) = ""
         }
     }
-    i nz '= "" d platnost.%Push(nz)
+    s it = texty.%GetIterator()
+    while it.%GetNext(.k, .text) { d platnost.%Push(text, "string") }
     d o.%Set("PLATNOST", platnost)
+    // Volný text zákazníka se kreslí písmem, ne piktogramem - „A" nebo „K" by jinak prvek
+    // přeložil na autobus a kolo.
+    i texty.%Size() d o.%Set("TEXTOVE_ZNACKY", texty)
 
     // časy per řádek z MakeTableSpoj tabulky: $lb(ZastavkaID,Kategorie,CasPrijezdMM,CasOdjezdMM,isPrujezd,VzdalenostMM)
     // markery: "|" staví-nestaví (projíždí), "<" bod mezi začátkem a koncem jízdy kde spoj nejede
@@ -593,38 +623,125 @@ ClassMethod BuildSpojMhd(ByRef sys As %String, IdFa As %String, dataDB As %Strin
     q o
 }
 
-/// Negativní značka spoje + text omezení do legendy. RucniZadani spoje s bitmapou odlišnou od
-/// kalendáře TypProvozu → OmezeniTXT (1:1 MakeData auto-poznámkování, GetJede + MakeOmezeniTXT).
-ClassMethod NzSpoje(ByRef sys As %String, IdFa As %String, dataDB As %String, linkaId As %String, spojId As %String, ByRef nzSeen) As %String
+/// Negativní značky celé linky naráz, jako legacy MakeData (:490-649) - čísla přidělená
+/// z rozsahu musí být táž v obou směrech a pořadí přidělování jde po ID spoje přes celou linku.
+/// OUT znacky("spoj",SpojID) = NZ, ("text",NZ) = text do legendy, ("dny",SpojID) = dny týdenní
+/// platnosti ("1".."7"), ("auto") = linka má auto-poznámkování rozdílů platností.
+/// - auto: spoj s ručně zadanou platností dostane NZ podle textu omezení - nejdřív z NZ zadaných
+///   u spojů linky, pak z už přidělených, jinak první volná od `RozsahNegativnichZnacekOd`
+/// - jinak: NZ z první poznámky spoje typu 2 určené pro knižní tisk
+ClassMethod PriradNegativniZnacky(ByRef sys As %String, IdFa As %String, dataDB As %String, linkaId As %String, smery As %String, ByRef znacky)
 {
-    s nz = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"NegativniZnacka"))
-    i nz = "" q ""
-    i $d(nzSeen(nz)) q nz
+    k znacky
+    s auto = +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"AutomatickyPoznamkovatOdlisnostiVPlatnostechSpoju"))
+    s znacky("auto") = auto
+    s nzOd = +$g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekOd"))
 
-    // text omezení: rozdíl bitmapy spoje vs kalendář typu provozu
-    s txt = ""
-    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"AutomatickyPoznamkovatOdlisnostiVPlatnostechSpoju")) {
-        try {
-            s provozBitmapa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"ProvozBitMapa"))
-            s typProvozu = +$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"TypProvozuID"))
-            s p1 = $p(provozBitmapa,"~",1), p2 = $p(provozBitmapa,"~",2), bmp = $p(provozBitmapa,"~",3)
-            i bmp '= "" {
-                k arrKal
-                d ##class(ALVA.MHD.KalendarFce).GetJede(IdFa, dataDB, p1, p2, typProvozu, "", .arrKal)
-                s cbmp = $lg($g(arrKal("dta",1)), 3)
-                i (cbmp '= "") && (cbmp '= bmp) {
-                    k arri, arrRozpis
-                    d ##class(ALVA.MHD.KalendarFce).MakeRozpisTplProTypProvozuID(IdFa, dataDB, typProvozu, .arrRozpis)
-                    s arri("dta",1) = p1, arri("dta",2) = p2, arri("dta",3) = cbmp, arri("dta",4) = bmp
-                    d mkOmzFromOnlyTwoBitmaps^JRapi(.arri)
-                    k arrTxt
-                    d ##class(ALVA.MHD.KalendarFce).MakeOmezeniTXT(.arri, .arrTxt)
-                    s txt = $g(arrTxt("dta",1))
+    // Číselník textů z NZ zadaných u spojů - bere celou linku, oba směry (legacy :497-528).
+    k ciselnik
+    i auto {
+        s spojId = ""
+        f {
+            s spojId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,linkaId,spojId))
+            q:spojId=""
+            s nz = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"NegativniZnacka"))
+            i nz = "" continue
+            i '$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"RucniZadani")) continue
+            s txt = ..OmezeniSpoje(IdFa, dataDB, spojId, .dny)
+            i txt '= "" s ciselnik(nz) = txt
+        }
+    }
+
+    s spojId = ""
+    f {
+        s spojId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,linkaId,spojId))
+        q:spojId=""
+        s smer = $s(+$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"SmerID")):"Z", 1:"T")
+        i (","_smery_",") '[ (","_smer_",") continue
+        s nz = "", txt = ""
+        i auto {
+            i '$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"RucniZadani")) continue
+            s txt = ..OmezeniSpoje(IdFa, dataDB, spojId, .dny)
+            i dny '= "" s znacky("dny", spojId) = dny
+            i txt = "" continue
+            s k = ""
+            f {
+                s k = $o(ciselnik(k))
+                q:(k="")||(nz'="")
+                i ciselnik(k) = txt s nz = k
+            }
+            i nz = "" {
+                s k = ""
+                f {
+                    s k = $o(znacky("text", k))
+                    q:(k="")||(nz'="")
+                    i znacky("text", k) = txt s nz = k
                 }
             }
-        } catch (exNz) { s txt = "" }              // auto-poznámkování je best-effort; NZ znak zůstává
+            i nz = "" s nz = ..VolnaZnacka(IdFa, dataDB, nzOd, .ciselnik, .znacky)
+        }
+        else {
+            k arrPozn
+            d ##class(ALVA.MHD.SpojeFce).GetPoznamkySpoj(.sys, spojId, "", .arrPozn)
+            s poznId = ""
+            f {
+                s poznId = $o(arrPozn("arr",1,poznId))
+                q:(poznId="")||(nz'="")
+                i +$g(arrPozn("arr",1,poznId,"TypPoznamkyID")) '= 2 continue
+                i $g(arrPozn("arr",1,poznId,"NZ")) = "" continue
+                i '$g(arrPozn("arr",1,poznId,"TiskJRMHDKnizni")) continue
+                s nz = arrPozn("arr",1,poznId,"NZ")
+                s txt = $s($g(arrPozn("arr",1,poznId,"TiskJRMHDKnizniPouzeZnacku")):"", 1:$g(arrPozn("arr",1,poznId,"PopisPoznamky")))
+            }
+            i nz = "" continue
+        }
+        s znacky("text", nz) = txt, znacky("spoj", spojId) = nz
     }
-    s nzSeen(nz) = txt
+}
+
+/// Text omezení spoje s ručně zadanou platností proti kalendáři jeho typu provozu; "" = neliší se.
+/// `dny` = dny týdenní platnosti, které z porovnání vyšly. Volání a pořadí 1:1 legacy :550-583 -
+/// do 12. 10. se tu funkce volaly s jinými argumenty a chybu polykal catch, takže text byl vždy prázdný.
+ClassMethod OmezeniSpoje(IdFa As %String, dataDB As %String, spojId As %String, ByRef dny As %String) As %String
+{
+    s dny = ""
+    s provozBitmapa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"ProvozBitMapa"))
+    s typProvozu = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"TypProvozuID"))
+    s bmp = $p(provozBitmapa,"~",3)
+    k arr
+    s isok = ##class(ALVA.MHD.KalendarFce).GetJede(IdFa, dataDB, $p(provozBitmapa,"~",1), $p(provozBitmapa,"~",2), typProvozu, "", "", .arr)
+    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Kalendář typu provozu spoje "_spojId_": "_isok))
+    s cbmp = $lg($g(arr("dta",1)), 3)
+    i cbmp = bmp q ""
+
+    k arri, arr
+    s arri("dta",1) = $p(provozBitmapa,"~",1), arri("dta",2) = $p(provozBitmapa,"~",2)
+    s arri("dta",3) = bmp, arri("dta",4) = cbmp
+    s isok = ##class(ALVA.MHD.KalendarFce).MakeRozpisTplProTypProvozuID(IdFa, dataDB, typProvozu, .arri)
+    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Rozpis typu provozu spoje "_spojId_": "_isok))
+    s chyba = $$mkOmzFromOnlyTwoBitmaps^JRapi(IdFa, dataDB, .arri, .arr)
+    i +chyba $$$ThrowStatus($$$ERROR($$$GeneralError, "Omezení spoje "_spojId_": "_chyba))
+    s dny = $g(arr("dta",1))
+    k arri m arri = arr s arri("par",1) = 0 k arr
+    s isok = ##class(ALVA.MHD.KalendarFce).MakeOmezeniTXT(IdFa, dataDB, .arri, .arr)
+    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Text omezení spoje "_spojId_": "_isok))
+    q $g(arr("dta",1))
+}
+
+/// První NZ od `od`, kterou nemá žádný typ provozu, číselník ani už přidělený text (legacy :606-618).
+ClassMethod VolnaZnacka(IdFa As %String, dataDB As %String, od As %Integer, ByRef ciselnik, ByRef znacky) As %Integer
+{
+    f nz = od:1 {
+        s obsazena = 0, tp = ""
+        f {
+            s tp = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp))
+            q:tp=""
+            i $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"NegativniZnacka")) = nz s obsazena = 1
+        }
+        i obsazena continue
+        i $d(ciselnik(nz)) || $d(znacky("text", nz)) continue
+        q
+    }
     q nz
 }
 
@@ -637,7 +754,7 @@ ClassMethod PridatPoznamkuSpoje(ByRef poznSpoju, ByRef pocet, druh As %Integer, 
     s poznSpoju(pocet) = ..BuildPoznamka(druh, typ, znak, text)
 }
 
-/// Poznámky druhu 2 - NZ s textem omezení (nasbírané v NzSpoje).
+/// Poznámky druhu 2 - NZ spojů stránky s textem omezení; NZ bez textu se nevypisuje (legacy :1384).
 ClassMethod PridatPoznamkyNZMhd(IdFa As %String, dataDB As %String, poznamky As %DynamicArray, ByRef nzSeen)
 {
     s nz = ""
@@ -653,7 +770,7 @@ ClassMethod PridatPoznamkyNZMhd(IdFa As %String, dataDB As %String, poznamky As 
 ClassMethod PridatPoznamkyAtributuMhd(poznamky As %DynamicArray, ByRef atributSeen)
 {
     i $d(atributSeen("BEV")) d poznamky.%Push(..BuildPoznamka(5, "znak", "BEV", "spoj s bezbariérově přístupným vozidlem"))
-    i $d(atributSeen("CBE")) d poznamky.%Push(..BuildPoznamka(5, "znak", "CBE", "spoj s částečne bezbariérově přístupným vozidlem, nutná dopomoc průvodce"))
+    i $d(atributSeen("CBE")) d poznamky.%Push(..BuildPoznamka(5, "znak", "CBE", "spoj s částečně bezbariérově přístupným vozidlem, nutná dopomoc průvodce"))
 }
 
 /// Poznámky druhu 7 - markery matice.
@@ -663,26 +780,70 @@ ClassMethod PridatStaleZnackyMhd(poznamky As %DynamicArray, ByRef markerSeen)
     i $d(markerSeen("<")) d poznamky.%Push(..BuildPoznamka(7, "znak", "<", "spoj jede po jiné trase"))
 }
 
-/// Atributy zastávek (ZST Atributy → ENUMS Atribut, filtr znaků N/V/x/A jako legacy) → legenda druhu 7
-/// + znak k zastávce se v MHD tiskne u názvu (v prvním řezu jen legenda).
-ClassMethod PridatAtributyZastavekMhd(IdFa As %String, dataDB As %String, ByRef body, pocetBodu As %Integer, poznamky As %DynamicArray)
+/// Značky bodu trasy k názvu zastávky jako řetězec písmen seřazený podle písmene: atributy
+/// zastávky v číselníku a atributy bodu trasy ve směru, jen N/V/x/A jako legacy (:403-416,
+/// :442-483; vlak „L" tam vyřadil zákazník). popisy(znak) = text do legendy.
+ClassMethod ZnackyBodu(IdFa As %String, dataDB As %String, zastavkaId As %String, trasaId As %String, bodId As %String, smerId As %Integer, ByRef popisy) As %String
+{
+    k seen
+    s atrCnt = ""
+    f {
+        s atrCnt = $o(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Atributy",atrCnt))
+        q:atrCnt=""
+        d ..PridatZnackuBodu(IdFa, dataDB, $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Atributy",atrCnt,"Itm")), .seen, .popisy)
+    }
+    s klic = $s(smerId=0:"AtributyTam", 1:"AtributyZpet"), atrCnt = ""
+    f {
+        s atrCnt = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasaId,"DTA",1,"ModelTrasaBodDetail",bodId,"Val",klic,atrCnt))
+        q:atrCnt=""
+        d ..PridatZnackuBodu(IdFa, dataDB, $g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasaId,"DTA",1,"ModelTrasaBodDetail",bodId,"Val",klic,atrCnt,"Itm")), .seen, .popisy)
+    }
+    s out = "", znak = ""
+    f {
+        s znak = $o(seen(znak))
+        q:znak=""
+        s out = out_znak
+    }
+    q out
+}
+
+ClassMethod PridatZnackuBodu(IdFa As %String, dataDB As %String, atrId As %String, ByRef seen, ByRef popisy)
+{
+    q:atrId=""
+    s znak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atrId,"Znak"))
+    q:",N,V,x,A,"'[(","_znak_",")
+    s seen(znak) = "", popisy(znak) = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atrId,"Popis"))
+}
+
+/// Sjednocení dvou řetězců značek, seřazené podle písmene.
+ClassMethod SlouceneZnacky(a As %String, b As %String) As %String
+{
+    k seen
+    s spolu = a_b
+    f i=1:1:$l(spolu) s seen($e(spolu,i)) = ""
+    s out = "", znak = ""
+    f {
+        s znak = $o(seen(znak))
+        q:znak=""
+        s out = out_znak
+    }
+    q out
+}
+
+/// Značky zastávek stránky → legenda druhu 7. Druh 7 jako u AD; starý MHD tisk je řadí
+/// k atributům (druh 5) - vědomá odchylka, druh řídí skupinu legendy.
+ClassMethod PridatAtributyZastavekMhd(ByRef body, pocetBodu As %Integer, poznamky As %DynamicArray, ByRef popisy)
 {
     k seen
     f i=1:1:pocetBodu {
-        s zastavkaId = $lg(body(i),2)
-        s atrCnt = ""
-        f {
-            s atrCnt = $o(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Atributy",atrCnt))
-            q:atrCnt=""
-            s atrId = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Atributy",atrCnt,"Itm"))
-            i atrId = "" continue
-            s znak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atrId,"Znak"))
-            i ",N,V,x,A," '[ (","_znak_",") continue     // legacy filtr - jen tyto se tisknou
-            i $d(seen(znak)) continue
-            s seen(znak) = ""
-            s popis = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atrId,"Popis"))
-            d poznamky.%Push(..BuildPoznamka(7, "znak", znak, popis))
-        }
+        s znacky = $lg(body(i),8)
+        f j=1:1:$l(znacky) s seen($e(znacky,j)) = ""
+    }
+    s znak = ""
+    f {
+        s znak = $o(seen(znak))
+        q:znak=""
+        d poznamky.%Push(..BuildPoznamka(7, "znak", znak, $g(popisy(znak))))
     }
 }
 
@@ -712,13 +873,22 @@ ClassMethod FormatCas(minuty As %Integer) As %String
     q $tr($j(hod,2)," ",0)_":"_$tr($j(min,2)," ",0)
 }
 
-/// SpecZnak → zobrazovaný znak: 1-7 = dny Po-Ne, >31 = ASCII znak (1:1 ZastavkoveJrMhd).
-ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
+/// SpecZnak poznámky spoje → klíč značky v řádku platnosti, tytéž klíče jako u AD varianty.
+/// Legacy (:666-675) posílá SpecZnak jako id číselníku znaků a dny 1-7 posouvá na id 8-14
+/// (týdenní platnost 1-7); id 15/16/22/56 = „+", „X", BEV, CBE (hlavička legacy :155-190).
+/// Ostatní id zůstávají, jak přišla - v datech dev serveru žádné nejsou (neověřeno).
+ClassMethod ZnakSpecialni(id As %String) As %String
 {
-    i cislo = "" q ""
-    i (cislo >= 1) && (cislo <= 7) q $p("Po,Út,St,Čt,Pá,So,Ne", ",", cislo)
-    i cislo > 31 q $c(cislo)
-    q cislo
+    i id = "" q ""
+    i (id >= 1) && (id <= 7) q id
+    i (id >= 8) && (id <= 14) q id - 7
+    q $case(id, 15:"+", 16:"X", 22:"BEV", 56:"CBE", :id)
+}
+
+/// Text legendy ke dni týdenní platnosti z porovnání bitmap (legacy :570-577).
+ClassMethod TextDne(den As %Integer) As %String
+{
+    q $p("jede v pondělí,jede v úterý,jede ve středu,jede ve čtvrtek,jede v pátek,jede v sobotu,jede v neděli", ",", den)
 }
 
 }

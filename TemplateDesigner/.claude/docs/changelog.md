@@ -1,5 +1,21 @@
 ﻿# Changelog
 
+## 2026-10-12 (2) - 🚌 linkový JŘ MHD: data jako starý tisk, volba směru (`B191b`)
+
+Agenda `LinkovyJrMhd` (zatím nezveřejněná) posílá data, jaká tiskl starý modul MHD:
+číslo spoje z dat místo interního ID, poznámky a atributy spojů (dřív se nečetly vůbec, čtení šlo
+o úroveň hlouběji, než pomocník vrací) jen ty určené pro knižní tisk, a negativní značky přidělené
+jako starý modul - z poznámky spoje, nebo při auto-poznámkování podle textu omezení z rozsahu firmy,
+jednou pro celou linku, aby měla značka v obou směrech stejné číslo. Text omezení byl dosud vždy
+prázdný: funkce kalendáře se volaly s jinými argumenty a chybu tiše polykal catch. Zastávky nesou
+číslo zastávky a označník a značky N/V/x/A z číselníku zastávek i z bodu trasy (dřív jen z číselníku).
+Volný text poznámky („A", „K") se v řádku platnosti kreslí písmem, ne piktogramem - nový klíč spoje
+`TEXTOVE_ZNACKY` (aditivní). Nový parametr **Směr pro tisk** (Oba / Tam / Zpět) u linkového AD
+i MHD; s jedním směrem se obousměrný tisk neuplatní. Doloženo porovnáním se starým tiskem
+(`LinkovyJrMhdLegacyOracle`, test `LinkovyJrMhdTest`): CB_DP 11350/11341/11354/11018 a KV_DP 1073
+bez rozdílu v číslech spojů, negativních značkách, značkách platnosti a legendě. Vědomá odchylka:
+značky zastávky jsou v legendě druh 7 jako u AD (starý MHD tisk druh 5). Test `TextoveZnackyTests`.
+
 ## 2026-10-12 - 🔎 linkový JŘ MHD: rozbor proti AD a starému modulu (`B191a`)
 
 Bez změny tisku. Rozbor našel oracle starého tisku (`ALVA.MHD.LinkyPrintFormatJR.MakeData`, roadmapa

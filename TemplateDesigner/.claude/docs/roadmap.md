@@ -22,22 +22,19 @@ v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva n
 bere jen to, co mění data.* Rozhodnutí po položkách, důvody a výskyt v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md).
 Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R2/R5`](architektonicka-rozhodnuti-agendy.md).
 
-Rozbor stavu (`B191a`, 12. 10.): oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
+Rozbor (`B191a`) a oprava dat (`B191b`) hotové 12. 10.; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B191b` Data dorovnat** [M]. Tři chyby: číslo spoje je interní ID, poznámky a atributy spoje
-   se nečtou vůbec, negativní značky jen z pole spoje (starý modul je přiděluje). Plus filtr poznámek
-   pro knižní tisk a pole zastávek jako AD (`AKTUALNI_ZASTAVKA, TC, NASTUPISTE`, `CZST` jako číslo).
-   Detail a odkazy [`§18.2`](linkovy-knizni-jr-implementace-analyza.md).
-2. **`B191c` Porovnání se starým modulem** [M]. Oracle `ALVA.MHD.LinkyPrintFormatJR.MakeData` po
-   dvojicích směr × typ provozu, linky CB_DP 11350/11341/11354/11018 a KV_DP 1073 ([`§18.1`, `§18.3`](linkovy-knizni-jr-implementace-analyza.md)).
-   Co oracle nekryje (příjezd/odjezd, atributy B/C - na dev datech nejsou), psát jako neověřené (R6).
-3. **`B191d` Volby pro městské linky** [M-L]. Cíl (Jan 12. 10.): minimum = co šlo ve starém modulu
-   (výběr typů provozu a směrů, kam legenda, rámečky kolem čísel spojů); cílový stav = skupiny spojů
-   (dny u AD, typy provozu u MHD) se nastavují stejně ve všech čtyřech agendách JŘ. Návrh
-   společného modelu **čeká na potvrzení Jana**: [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
-4. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
+1. **`B191c` Porovnání se starým modulem - zbytek** [M]. Značky spojů a legendu už porovnává
+   `LinkovyJrMhdTest` (5 linek, shoda). Zbývá: časy, zastávky po typech provozu, pořadí spojů
+   (starý modul řadí po zastávkách), poznámky z trasy u názvu zastávky a příjezd/odjezd - poslední
+   dvě na dev datech nejsou, psát jako neověřené (R6). Podklad [`§18`](linkovy-knizni-jr-implementace-analyza.md).
+2. **`B191d` Volby pro městské linky** [M-L]. Cíl (Jan 12. 10.): minimum = co šlo ve starém modulu
+   (výběr typů provozu, kam legenda, rámečky kolem čísel spojů; směr hotový 12. 10.), k tomu
+   Zvýraznit zastávku jako u AD; cílový stav = skupiny spojů se nastavují stejně ve všech čtyřech
+   agendách JŘ. Návrh **čeká na potvrzení Jana**: [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
+3. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
    `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
-5. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
+4. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
    v `LinkovyJrAd.cls`), Novinky a příručka.
 
 ---
@@ -45,6 +42,11 @@ Rozbor stavu (`B191a`, 12. 10.): oracle, mezery a testovací linky v [`§18`](li
 ## 📥 Backlog
 
 ### Ostatní
+
+- **Zastávkový JŘ MHD vynechává automaticky přidělené negativní značky** [S, **vada**] (nález
+  12. 10.). Text omezení počítá bez kroku `mkOmzFromOnlyTwoBitmaps` (`ZastavkoveJrMhd.cls:556-599`),
+  takže vyjde prázdný a značka v poznámkách chybí. Porovnání se starým tiskem (`MhdLegacyOracle`):
+  CB_DP 11350 chybí „31 nejede 31. 12.", 11018 značky 18/19/24/31. Oprava vzorem `LinkovyJrMhd.OmezeniSpoje`.
 
 - **Sjednotit nastavení skupin spojů mezi agendami JŘ** [S] (Jan 12. 10.: stejný pojem = stejný
   název). Zastávkový AD má „Rozdělení sloupců (typy provozu)" s volbou „Automaticky (dle linky)",

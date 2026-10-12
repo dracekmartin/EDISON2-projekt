@@ -446,6 +446,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// Server ji posílá jen u spoje, který barvu skutečně má, a jen když ji linka nepotlačila.</summary>
         public string? ForeColor;
         public List<string> Platnost = [];
+        /// <summary>Které značky z <see cref="Platnost"/> jsou volný text zákazníka (MHD poznámky
+        /// spoje) - kreslí se písmem, ne piktogramem. Prázdné = všechny jdou přes mapu značek.</summary>
+        public HashSet<string> TextoveZnacky = [];
         /// <summary>Označení turnusů, ve kterých spoj jede („110.01"). Posílá je server jen
         /// se zapnutým parametrem „Turnusy ke spojům" - jinak je seznam prázdný a řádky nevzniknou.</summary>
         public List<string> Turnusy = [];
@@ -528,6 +531,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Nz = row.GetString("NZ"),
             ForeColor = row.GetString("FORE_COLOR") is { Length: > 0 } fc ? fc : null,
             Platnost = ParseStringArray(row.GetValue("PLATNOST")),
+            TextoveZnacky = [.. ParseStringArray(row.GetValue("TEXTOVE_ZNACKY"))],
             Turnusy = ParseStringArray(row.GetValue("TURNUSY")),
             Casy = ParseStringArray(row.GetValue("CASY")),
             Znacky = ParseStringArray(row.GetValue("ZNACKY")),
@@ -824,7 +828,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             for (int r = 0; r < radku; r++)
             {
                 float sirka = StopaPt(SymbolRunRenderer.BuildRuns(
-                    ZnackyRadku(spoj, r), SymbolMap.ResolveLinkovy, MezeraMeziZnackamiMm),
+                    ZnackyRadku(spoj, r), ResolverZnacek(spoj), MezeraMeziZnackamiMm),
                     run => run.Symbol ? symbol : normal);
                 if (sirka * PtToMm <= potreba) continue;
                 potreba = sirka * PtToMm;
@@ -1756,6 +1760,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static List<string> ZnackyRadku(LineTripData trip, int radek) =>
         [.. trip.Platnost.Skip(radek * ZnacekNaRadekPlatnosti).Take(ZnacekNaRadekPlatnosti)];
 
+    /// <summary>Jak nakreslit značku platnosti tohoto spoje: volný text zákazníka písmem, zbytek
+    /// mapou linkového JŘ. Bez rozlišení by z poznámky „A" byl piktogram autobusu (`B191b`).</summary>
+    internal static Func<string, (SymbolRenderMode Mode, string Value)> ResolverZnacek(LineTripData trip) =>
+        trip.TextoveZnacky.Count == 0
+            ? SymbolMap.ResolveLinkovy
+            : z => trip.TextoveZnacky.Contains(z) ? (SymbolRenderMode.Text, z) : SymbolMap.ResolveLinkovy(z);
+
     /// <summary>Kolik řádků turnusů tabulka má = nejvíc turnusů u jednoho spoje (0 = žádné).</summary>
     /// <remarks>
     /// Řídí se **nejbohatším spojem**, ne každým sloupcem zvlášť - jinak by řádky nesedly na sebe.
@@ -2529,13 +2540,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // Značky se kreslí ručně nad hotovým řádkem, aby šel v jedné buňce střídat symbolový
             // a běžný font („⚒ BEV"). Buňky proto zůstávají prázdné - jinak by se text zdvojil.
             var platnostRuns = trips
-                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy,
+                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), ResolverZnacek(t),
                     MezeraMeziZnackamiMm))
                 .ToList();
             // Zrcadlený blok má svoje značky platnosti - bez nich by jeho sloupce neřekly, ve které
             // dny spoj jede, a to je informace, ne ozdoba.
             var platnostRunsZrc = zrcadlene
-                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), SymbolMap.ResolveLinkovy,
+                .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), ResolverZnacek(t),
                     MezeraMeziZnackamiMm))
                 .ToList();
             var prazdne = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
