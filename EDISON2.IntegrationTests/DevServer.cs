@@ -15,6 +15,9 @@ internal static class DevServer
     public const string ReadIdfa = DevServerConnection.ReadIdfa;
     public const string ReadMlp = DevServerConnection.ReadMlp;
 
+    // Data agend (MHD, ...) leží v datovém namespace firmy, výchozí namespace MLRest je nemá.
+    public const string ReadDataNamespace = "CB_DP";
+
     // Zápisy jen pod vymyšlenou firmou a uživatelem, ať test nepřepíše nic sdíleného.
     public const string WriteIdfa = "TEST_EDISON2_IT";
     public const string WriteMlp = "999";
@@ -31,11 +34,11 @@ internal static class DevServer
     /// <summary>Testovací účet DEV (<see cref="TestAccount"/>), null = není nastavený nebo server nedostupný.</summary>
     public static TestAccount? Account => LazyAccount.Value;
 
-    public static IMLRest Connect(string idfa = ReadIdfa, string mlp = ReadMlp)
+    public static IMLRest Connect(string idfa = ReadIdfa, string mlp = ReadMlp, string? dataNamespace = null)
     {
         if (!IsReachable)
             throw new InvalidOperationException($"{Unreachable} EDISON_IT_REQUIRED=1, test se nepřeskakuje.");
 
-        return DevServerConnection.Connect(idfa, mlp);
+        return DevServerConnection.Connect(idfa, mlp, dataNamespace: dataNamespace);
     }
 }

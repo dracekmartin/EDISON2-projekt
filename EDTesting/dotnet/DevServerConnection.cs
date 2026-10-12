@@ -28,17 +28,21 @@ public static class DevServerConnection
     public const string ReadMlp = "1";
     public const string LoginName = "test";
 
-    public static IMLRest Connect(string idfa = ReadIdfa, string mlp = ReadMlp, string loginName = LoginName)
+    /// <param name="dataNamespace">Datový namespace firmy jako v shellu po výběru firmy, null = výchozí MLRest.</param>
+    public static IMLRest Connect(string idfa = ReadIdfa, string mlp = ReadMlp, string loginName = LoginName,
+        string? dataNamespace = null)
     {
         // false = bez GetConfig: vadný MLRestConfig-data.xml by ukázal WinForms MessageBox a běh by visel.
         // CacheLocks zůstává 0 - s 1 server spouští version gate a kontrolu ACTIVITY zámku.
-        return new MLRestAdapter(new MLRest(Host, Port, false)
+        var rest = new MLRest(Host, Port, false)
         {
             Idfa = idfa,
             Mlp = mlp,
             LoginName = loginName,
             FullName = "EDISON2 IntegrationTests",
-        });
+        };
+        if (dataNamespace is not null) rest.DataNamespace = dataNamespace;
+        return new MLRestAdapter(rest);
     }
 
     private static bool Probe()
