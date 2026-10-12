@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-12 (6) - 🐛 výpadek spojení nenechá panel vlastností prázdný
+
+Panel vlastností prvku se načítá ze serveru. Když spojení při výběru prvku vypadlo (PL_POVED 12. 10.),
+uživatel dostal chybu a panel si přitom typ prvku zapamatoval, jako by se načetl - při dalším výběru
+prvku téhož typu se už nenačítal a zůstal prázdný až do výběru prvku jiného typu. Panel si teď typ
+pamatuje až po úspěšném načtení, takže další výběr to zkusí znovu, a při chybě ukáže jednodušší seznam
+vlastností, aby šlo s prvkem pracovat dál. Chyba se dál hlásí stejným oknem. Bez automatického testu:
+ovládací prvek nejde vytvořit mimo běžící aplikaci (sdílené ikony a texty).
+
 ## 2026-10-12 (5) - 🐛 návrhář se nespustil bez práva zápisu do složky programu
 
 Při startu se zakládala složka šablon sekcí `section-templates` vedle programu. Program je u zákazníka

@@ -2215,8 +2215,19 @@ public partial class MainWindow : Window
                     _                  => null,
                 };
                 InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : null;
-                InlineElementForm.ShowElement(selected[0], panelSchema);
-                ShowInlineFormPanel(true);
+                try
+                {
+                    InlineElementForm.ShowElement(selected[0], panelSchema);
+                    ShowInlineFormPanel(true);
+                }
+                catch (Exception ex)
+                {
+                    // Formulář se načítá ze serveru; při výpadku spojení zůstane panel u jednoduchého
+                    // seznamu vlastností, ať jde s prvkem pracovat dál (PL_POVED 12. 10.).
+                    InlinePropertiesPanel.ShowDescriptors(descriptors);
+                    ShowInlineFormPanel(false);
+                    _vm.PopupDisplayer.Error(ex);
+                }
             }
             else
             {
