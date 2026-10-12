@@ -1851,13 +1851,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private readonly record struct RadekBloku(float VyskaMm, bool KonecZastavky);
 
     private (List<float> Hlava, List<RadekBloku> Radky) VyskyRadkuBloku(
-        IReadOnlyList<LineTripData> spojeBloku, IReadOnlyList<LineTripData>? zrcadleneBloku = null)
+        IReadOnlyList<LineTripData> spojeBloku, IReadOnlyList<LineTripData>? zrcadleneBloku = null,
+        float? meritko = null)
     {
         var trips = _cachedTrips!;
         // ⚠️ `LayoutZmenseni` se musí promítnout SEM, ne až do kreslení - výška prvku i místa řezu
         // vycházejí odtud, takže jinak by engine počítal s jednou výškou a tisklo se v jiné.
-        float headerH = ComputeHeaderH(MaxHeaderFontPt()) * LayoutZmenseni;
-        float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * LayoutZmenseni;
+        // Kreslení sem dává své celé měřítko, aby výšky vyšly bit po bitu jako v jeho řádcích.
+        float m = meritko ?? LayoutZmenseni;
+        float headerH = ComputeHeaderH(MaxHeaderFontPt()) * m;
+        float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * m;
 
         // ⚠️ Značkové řádky se řídí spoji **tohoto bloku**, ne celé linky: blok, ve kterém žádný
         // spoj druhý řádek platnosti nemá, by jinak nesl prázdný pás přes celou šířku tabulky
@@ -1902,7 +1905,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // a jejím přípojem by nechal „navazuje" viset na další straně bez zastávky.
             radky.Add(new RadekBloku(rowH, posledniZastavky && pripoju == 0));
             for (int i = 0; i < pripoju; i++)
-                radky.Add(new RadekBloku(PripojRowH() * LayoutZmenseni, posledniZastavky && i == pripoju - 1));
+                radky.Add(new RadekBloku(PripojRowH() * m, posledniZastavky && i == pripoju - 1));
         }
         return (hlava, radky);
     }
@@ -2198,9 +2201,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         // `CalculateHeightFromData` už `LayoutZmenseni` obsahuje (je ve výškách řádků), takže
         // `ComputeFontScale` vrátí u prvku bez pevné výšky 1 - a scale je pak přesně to zmenšení.
-        float scale = ComputeFontScale(CalculateHeightFromData(ctx.Data)) * LayoutZmenseni;
+        float vyskaDat = CalculateHeightFromData(ctx.Data);
+        float zmenseniPisma = ComputeFontScale(vyskaDat);
+        float scale = zmenseniPisma * LayoutZmenseni;
 
-        float vyskaObsahu = Height ?? CalculateHeightFromData(ctx.Data);
+        float vyskaObsahu = Height ?? vyskaDat;
 
         // ⚠️ Kreslí-li stránka zopakovanou hlavičku, je obsah posunutý o její výšku dolů - a tím
         // by se do viditelného pásu dostal **konec předchozí stránky** a prosvítal zpod hlavičky
@@ -2222,12 +2227,31 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             int naBlok = bloky.Max(b => b.Pocet);
             int sloupcuNaSlot = SloupcuNaSlot();
             float rezervaMezer = RezervaMezerMm(trips);
+            // Pás sekce viditelný na téhle stránce (týž výpočet jako u rámečků, `RenderBorderPass`).
+            float pasOd = ctx.ClipTopMm - ctx.OpakovanaHlavickaMm;
+            float pasDo = ctx.ViditelnyPasMm > 0f ? pasOd + ctx.ViditelnyPasMm : float.MaxValue;
             float y = Y;
             foreach (var blok in bloky)
             {
+                var (spojeBloku, zrcadleneBloku) = SpojeBloku(blok);
+                // Blok celý mimo pás se přeskočí ještě před skládáním řádků, které stojí víc než
+                // samo kreslení. Výšky jsou tytéž, podle kterých engine láme stránky
+                // (`VyskyRadkuBloku`), s měřítkem kreslení a sčítané po řádcích jako `DrawRows` -
+                // pozice dalšího bloku pak vyjde bit po bitu stejně (ověřeno porovnáním PNG 12. 10.).
+                if (ctx.ViditelnyPasMm > 0f)
+                {
+                    var (hlavaBloku, radkyBloku) = VyskyRadkuBloku(spojeBloku, zrcadleneBloku, scale);
+                    float konecOdhad = y;
+                    foreach (var h in hlavaBloku) konecOdhad += h;
+                    foreach (var r in radkyBloku) konecOdhad += r.VyskaMm;
+                    if (konecOdhad < pasOd - 1f || y > pasDo + 1f)
+                    {
+                        y = konecOdhad + MezeraMeziBlokyMm;
+                        continue;
+                    }
+                }
                 var (fixedCols, tripW, nameIndex) =
                     BuildColumns(stops, kmCount, naBlok * sloupcuNaSlot, rezervaMezer);
-                var (spojeBloku, zrcadleneBloku) = SpojeBloku(blok);
                 // Hranice skupin se berou ze spojů **tohoto** bloku - mezera se kreslí tam, kde
                 // v bloku opravdu začíná nová skupina. Rezerva na šířku je naopak z celé linky.
                 // Dorovnání prázdnými sloupci (#8372) se počítá **pro každou stranu zvlášť** -
@@ -2276,7 +2300,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     tripHeaderStyle, tripDataStyle,
                     ctx, GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), scale);
 
-                float konecBloku = y + plan.Sum(r => r.HeightMm);
+                // Sčítá se po řádcích jako v `DrawRows` - přeskočený blok musí posunout pozici
+                // o bit stejně, jinak se čára na hranici pixelu posune o pixel.
+                float konecBloku = y;
+                foreach (var r in plan) konecBloku += r.HeightMm;
 
                 // Řez padl doprostřed tohohle bloku → jeho hlavu zopakovat nad pokračováním.
                 // Kreslí se až po obsahu, mimo jeho ořez - viz `orezOd` výše.
@@ -2284,6 +2311,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     hlavaKZopakovani = [.. plan.Take(VyskyRadkuBloku(SpojeBloku(blok).Hlavni, SpojeBloku(blok).Zrcadlene).Hlava.Count)];
 
                 float yBloku = y;
+                // Blok mimo pás téhle stránky se nekreslí - ořez by ho stejně schoval. Tabulka
+                // rozřezaná na víc stran se jinak kreslila celá na každé z nich (městská linka
+                // s 200 spoji na směr: 7 stran, náhled přes sekundu, nález Jan 12. 10.).
+                if (konecBloku < pasOd || yBloku > pasDo)
+                {
+                    y = konecBloku + MezeraMeziBlokyMm;
+                    continue;
+                }
                 y = RowPlanRenderer.DrawRows(ctx, X, y, SirkaTabulkyMm(plan), plan, scale)
                     + MezeraMeziBlokyMm;
                 KresliSipkuSmeru(ctx, mrizka, plan, yBloku);

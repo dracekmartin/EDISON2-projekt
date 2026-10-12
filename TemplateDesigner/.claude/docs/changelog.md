@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-12 (7) - ⚡ náhled linkové tabulky přes víc stran až čtyřikrát rychlejší
+
+Tabulka spojů rozřezaná na víc stran se při kreslení každé strany skládala a kreslila celá a ořez
+z ní ukázal jen kousek. U městské linky (KV_DP linka 1: 205 spojů a 42 zastávek na směr, 7 stran)
+trvalo jedno překreslení náhledu 0,6-1 s a vyrobilo stovky MB krátkodobé paměti. Bloky mimo
+stranu se teď přeskočí ještě před skládáním řádků; výšky se berou tytéž, podle kterých engine láme
+stránky, a sčítají se po řádcích jako při kreslení, takže výstup je bit po bitu stejný (porovnáno
+PNG 35 stran MHD a AD). Linka 1073: 165-171 ms a 184 MB místo 580-990 ms a 482 MB. Měření
+`VykonNahleduNaostro` (ruční, `TD_VYKON=1`).
+
 ## 2026-10-12 (6) - 🐛 výpadek spojení nenechá panel vlastností prázdný
 
 Panel vlastností prvku se načítá ze serveru. Když spojení při výběru prvku vypadlo (PL_POVED 12. 10.),
