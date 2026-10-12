@@ -34,7 +34,6 @@ Rozbor stavu (`B191a`, 12. 10.): oracle, mezery a testovací linky v [`§18`](li
 3. **`B191d` Volby pro městské linky** [M, **rozhodnutí Jan**]. Starý modul u MHD čte 3 z 11 voleb
    (kam legenda, rámečky kolem čísel spojů, typy provozu a směry), takže je to nová featura, ne
    dorovnání. Návrh: tutéž sadu jako AD, kde má smysl ([`§13.4` bod 4](linkovy-knizni-jr-implementace-analyza.md)).
-   Otevřené: starý modul má pro každý typ provozu vlastní seznam zastávek, my jeden společný.
 4. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
    `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
 5. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`

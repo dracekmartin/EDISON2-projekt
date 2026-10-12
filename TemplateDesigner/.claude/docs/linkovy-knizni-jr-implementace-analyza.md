@@ -1872,9 +1872,12 @@ Cesty bez prefixu jsou `CACHE/ALVA/TemplateDesigner/Agendy/LinkovyJrMhd.cls`, �
 - **Pasti pro oracle:**
   - `in("A",2,"arr",11)` musí vyjmenovat všechny typy provozu a oba směry jako zapnuté
     (`TypProvozuID#id~1`, `SmerID#0~1`, `SmerID#1~1`). Bez toho starý modul nevytiskne nic (`:534`, `:538`).
-  - Tabulku dělí na **bloky po typu provozu** a každý blok má vlastní seznam zastávek - jen ty, kde
-    některý spoj bloku jede (`:807-823`). My máme jeden seznam zastávek na směr. Porovnávat se musí
-    po dvojicích směr × typ provozu.
+  - Tabulku dělí na **bloky po typu provozu**, stejně jako AD po skupinách dnů. Každý blok nese
+    celý seznam zastávek trasy ve směru (`:723-834`, přidání zastávky leží uvnitř smyčky přes
+    všechny body trasy), seznam je tedy ve všech blocích týž. Typ provozu je u MHD to, co je u AD
+    skupina dnů. Porovnávat se musí po dvojicích směr × typ provozu.
+  - Spoje v bloku řadí bublinkově podle časů na jednotlivých zastávkách (`:951-990`), my podle
+    výchozího času. Na lince, kde spoje začínají na různých zastávkách, se pořadí může lišit.
   - Plocha a měřicí řetězce jako u AD oracle (`LinkovyJrLegacyOracle.SpustLegacy`).
 - Hlavička starého modulu nese jako číslo linky **veřejné číslo** (`CisloVerejne`, legacy `:1084`),
   což potvrzuje zadání `B191e`.
@@ -1939,5 +1942,4 @@ pro knižní tisk. Tyto cesty oracle neověří a v dokladech parity se píšou 
 
 - `B191b` je větší, než stálo v roadmapě: kromě polí zastávek tři chyby z §18.2.
 - `B191c`: oracle po dvojicích směr × typ provozu, `arr,11` vše zapnuto.
-- **Otevřené pro Jana (`B191d`):** starý modul má pro každý typ provozu vlastní seznam zastávek,
-  my jeden společný. Dorovnat, nebo nechat jako vědomou odchylku.
+- Bloky po typu provozu nejsou nová věc: prvek je kreslí jako skupiny dnů u AD.
