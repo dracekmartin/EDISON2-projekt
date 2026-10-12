@@ -82,11 +82,11 @@ Mini-apps (AvalonDock, layout): [MiniApps](dotnet/MiniApps/CLAUDE.md), pruh podp
 ## Plocha se zástupci
 
 Kód v `dotnet/Desktop/`. Model, oba kanály k legacy modulům a jejich pasti: [docs/zastupci-na-plose.md](docs/zastupci-na-plose.md).
-Plocha je **nadmnožina oblíbených** (★ ve stromu umí jen `MenuModule`). Položka, kterou aktuální
-strom nezná (licence, `hidden`), se **nezobrazí, ale uloží zpátky** - jinak by ji první změna
-členství tiše smazala. Název + cesta dlaždice se odvozují ze stromu, do `DesktopShortcutDto` se
-nepersistují; text zmenšuje `Viewbox` (`DownOnly`) a `MaxHeight` `TextBlocku` je jeho podlaha
-(z tokenu `FontSize` se spočítat nedá). Pozice = absolutní `Column`/`Row` na `TileGridPanel`
+Plocha je **nadmnožina oblíbených** (★ ve stromu umí jen `MenuModule`). Shell ji posílá **po změnách**
+přes `DesktopShortcuts.Add/Remove/Place`, celý blob nikdy (zapisují do něj i agendy). Položku, kterou
+strom nezná (licence, `hidden`), nezobrazí a na serveru ji nechá. Název + cesta dlaždice se odvozují
+ze stromu, do `DesktopShortcutDto` se nepersistují; text zmenšuje `Viewbox` (`DownOnly`) a `MaxHeight`
+`TextBlocku` je jeho podlaha (z tokenu `FontSize` se spočítat nedá). Pozice = absolutní `Column`/`Row` na `TileGridPanel`
 (v DTO `Col`/`Row`) - mřížka se nepřeskládává, přesah řeší scroll; `ModuleShortcutsService.GridColumns`
 jen přiděluje pozice novým a Caché `Add` musí při přepisu zachovat **obě** složky, jinak shodí
 uživatelovo rozložení.
