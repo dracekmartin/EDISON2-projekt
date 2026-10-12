@@ -9,13 +9,13 @@ platí `OnExplicitShutdown`: zavření wizardu, popupu ani login okna před shel
 jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí v `DispatcherUnhandledException` (Handled) a app žije
 dál s login oknem, které během progress fáze zavření ruší. Logout hook (`WireSessionLogout`) se zapojuje hned po
 `Accepted`, ne až se shellem, aby zámek uvolnil i exit kvůli updatu. **Po návratu z `Run` bootstrapper dožil** - co
-běží dál, má vlastní session-scoped objekt (`SessionSwitcher`, `ShellShutdown`). Cestu po loginu (změna hesla →
-firma → session → licence → update check → `LogLogin`) mají start i přihlášení jiného uživatele **jen
-v `SessionOpener`**: nový krok po loginu patří tam. Debug vs. Release rozhoduje **jen `StartupOptions`** z `App`
-(nový rozdíl patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login dialog (E2E ho ignoruje).
+běží dál, má vlastní session-scoped objekt (`SessionSwitcher`, `ShellShutdown`). Cestu po loginu mají start i přihlášení
+jiného uživatele **jen v `SessionOpener`**: nový krok po loginu patří tam. Debug vs. Release rozhoduje **jen `StartupOptions`**
+z `App` (nový rozdíl patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login dialog (E2E ho ignoruje).
 
-Login okno (jen dialog cesta, ne `DevLogin`) po OK zůstává jako progress podklad, zavírá se až na shell
-`ContentRendered`; `HandOffLoginWindow` (všechny cesty) musí dát `Application.MainWindow` na shell **před**
+WPF stranu startu (okna před shellem, `ShutdownMode`/`MainWindow`, dispečer, konec) dělá **jen `IStartupHost`**, testy
+bootstrapperu jedou s falešným. Login okno (jen dialog cesta, ne `DevLogin`) po OK zůstává jako progress podklad, zavírá
+se až na shell `ContentRendered`; `HandOff` (všechny cesty) musí dát `Application.MainWindow` na shell **před**
 `OnMainWindowClose` (v dialog cestě ho drží otevřené login okno) - jinak app umře, nebo proces nemá konec.
 `LocalPrefs.ShellWindowBounds` je **jedna geometrie shellu i login okna** (před loginem není session, do které by šlo
 ukládat): login ji jen **čte**, zapisuje ji shell a jednou bootstrapper hned po přihlášení (při zavření je pozdě, shell

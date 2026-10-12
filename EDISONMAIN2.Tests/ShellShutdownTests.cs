@@ -26,4 +26,17 @@ public class ShellShutdownTests
 
         Assert.Equal(["suppress", "shutdown"], calls);
     }
+
+    [Fact]
+    public void AttachShell_AfterForce_SuppressesCloseConfirmAtOnce()
+    {
+        // Force logout během stavby shellu: WPF ukončení zavře i shell napojený pozdě, potvrzení se ukázat nesmí.
+        var calls = new List<string>();
+        var shutdown = new ShellShutdown(() => calls.Add("shutdown"));
+        shutdown.Force();
+
+        shutdown.AttachShell(() => calls.Add("suppress"));
+
+        Assert.Equal(["shutdown", "suppress"], calls);
+    }
 }

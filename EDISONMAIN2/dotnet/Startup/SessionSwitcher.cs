@@ -41,7 +41,7 @@ public enum SwitchUserResult
 /// Kroky sahající na WPF a na starou session jsou <c>protected virtual</c> kvůli testům.
 /// </summary>
 /// <param name="services">Session služby; <see cref="EDServices.MLRest"/> se při úspěchu swapne.</param>
-/// <param name="ownerWindow">Owner login dialogu - shell okno; čte se lazily, po startu se mění.</param>
+/// <param name="ownerWindow">Owner login dialogu - shell okno; čte se až při přepnutí, okno vzniká po switcheru.</param>
 /// <param name="opener">Cesta po loginu sdílená se startem.</param>
 /// <param name="closeAllWindows">Zavření všech oken a legacy modulů staré session;
 /// <c>false</c> = okno zavření vetovalo a switch se musí zrušit.</param>

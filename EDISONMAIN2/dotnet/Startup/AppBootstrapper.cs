@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Automation;
 using ALVA.EDISONAPI;
 using ALVA.LICENCE.EDLicence;
@@ -27,35 +26,29 @@ namespace EDISONMAIN2;
 /// Pojmenované kroky startup workflow s jasnými error/cancel exit pointy (login zrušený,
 /// licence Refused/Cancelled, connection error); null z <see cref="Run"/> = Shutdown už proběhl.
 /// Po návratu bootstrapper dožil - co běží dál, dostane vlastní objekt
-/// (<see cref="SessionSwitcher"/>, <see cref="ShellShutdown"/>). Kroky jsou
-/// <c>protected virtual</c> kvůli testovatelným subclassům.
+/// (<see cref="SessionSwitcher"/>, <see cref="ShellShutdown"/>). WPF stranu (okna před shellem,
+/// dispečer, konec aplikace) dělá <see cref="IStartupHost"/>; <c>protected virtual</c> zůstávají
+/// jen hranice ven (server, soubory, registr) a stavba shellu.
 /// </summary>
 public class AppBootstrapper
 {
-    private readonly Application _application;
+    private readonly IStartupHost _host;
     private readonly ShellShutdown _shutdown;
     private readonly ConnectionOverride? _connectionOverride;
     private readonly StartupOptions _options;
 
     public AppBootstrapper(Application application, ConnectionOverride? connectionOverride,
                            StartupOptions options)
+        : this(new ApplicationStartupHost(application), connectionOverride, options)
     {
-        _application = application;
-        _shutdown = new ShellShutdown(application);
+    }
+
+    internal AppBootstrapper(IStartupHost host, ConnectionOverride? connectionOverride, StartupOptions options)
+    {
+        _host = host;
+        _shutdown = new ShellShutdown(host.Shutdown);
         _connectionOverride = connectionOverride;
         _options = options;
-    }
-
-    /// <summary>Pro test-only subclassy - neinjektuje <see cref="Application"/>, takže
-    /// derived class MUSÍ přepsat všechny metody co by ho použily (Shutdown, HoldShutdownUntilHandOff,
-    /// HandOffLoginWindow, BuildShellWindow, dialog větev TryLogin). Run navíc potřebuje přepsat
-    /// CreateSessionOpener, jinak volá server.</summary>
-    protected AppBootstrapper() : this(new StartupOptions())
-    {
-    }
-
-    protected AppBootstrapper(StartupOptions options) : this(null!, null, options)
-    {
     }
 
     /// <summary>
@@ -74,7 +67,7 @@ public class AppBootstrapper
             // Bez explicitního Shutdown by výjimka skončila v DispatcherUnhandledException (Handled)
             // a aplikace žila dál s OnExplicitShutdown a login oknem, které během progress fáze
             // každé zavření ruší - proces by šel ukončit jen Task Managerem.
-            ReportStartupFailure(ex);
+            _host.ReportFailure(ex);
             Shutdown();
             return null;
         }
@@ -82,13 +75,14 @@ public class AppBootstrapper
 
     private EdisonMainWindow? RunCore()
     {
-        HoldShutdownUntilHandOff();
+        // Výchozí OnLastWindowClose by aplikaci ukončil zavřením jediného okna před shellem:
+        // wizardu, login okna nebo popupu při auto-loginu.
+        _host.HoldShutdown();
         var (nav, popup, services) = InitializeServices();
         var prefs = LoadLocalPrefs();
 
-        // Sdílený vzhled (font + světlý/tmavý režim) - jedna registrace, čte %APPDATA%\m-line\common
-        // a propaguje mezi procesy (TemplateDesigner). Před login dialogem, ať ho téma taky pokryje.
-        EDControls.EDAppearance.Initialize(_application);
+        // Před login dialogem, ať ho téma taky pokryje.
+        _host.InitializeAppearance();
 
         // First-launch setup: EDISONini.xml bez připojení → wizard. Zrušení = konec.
         if (!EnsureConfigured())
@@ -109,8 +103,9 @@ public class AppBootstrapper
 
         // Auto-login (Windows SSO) má přednost; když neprojde, fallback na dialog. E2E běh ho vynechá:
         // úspěšný Login pod Windows jménem nuluje uživatelské flagy a identitu testu dává DevLogin.
-        if (!(_options.TestRun is null && TryAutoLogin(prep.LoginRest, prefs, out var login))
-            && !TryLogin(prep.LoginRest, prefs, services, out login))
+        var login = (_options.TestRun is null ? TryAutoLogin(prep.LoginRest) : null)
+                    ?? TryLogin(prep.LoginRest, prefs, services);
+        if (login is null)
         {
             Shutdown();
             return null;
@@ -123,7 +118,7 @@ public class AppBootstrapper
             PreferredIdfa(prefs, prep.Companies, prep.Server, prep.Port),
             new SessionOpenSteps
             {
-                ChangePassword = l => ForcePasswordChange(prep.LoginRest, l.UserName),
+                ChangePassword = l => _host.ShowChangePassword(prep.LoginRest, l.UserName),
                 BeforeEstablish = () =>
                 {
                     ShowStartupProgress("Ověřuji licenci…");
@@ -152,60 +147,35 @@ public class AppBootstrapper
         prep = prep with { Companies = opened.Companies! };
 
         ShowStartupProgress("Spouštím aplikaci…");
+        // Force logout nebo version gate během startu už aplikaci ukončuje. Postavený shell by WPF při ukončení
+        // zavíral s potvrzením, které nejde ukázat, a odhlášení by neproběhlo.
+        if (_host.ShutdownRequested) return null;
         var wnd = BuildShellWindow(prep, services, nav, popup, prefs, opener, opened.ReleaseNotice);
-        HandOffLoginWindow(wnd);
-        return wnd;
+        return _host.HandOff(wnd) ? wnd : null;
     }
 
     /// <summary>Cesta po loginu sdílená s přihlášením jiného uživatele; tatáž instance jde do <see cref="SessionSwitcher"/>.</summary>
     protected virtual SessionOpener CreateSessionOpener(EDServices services) =>
         new(services, _options, BuildActivityFailedWire(services));
 
-    /// <summary>
-    /// Do předání shellu ukončuje aplikaci jen <see cref="Shutdown"/>. Výchozí <c>OnLastWindowClose</c>
-    /// by ji ukončil zavřením jediného okna před shellem: wizardu, login okna nebo popupu při auto-loginu.
-    /// </summary>
-    protected virtual void HoldShutdownUntilHandOff() =>
-        _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
-
-    /// <summary>
-    /// Předání role hlavního okna na shell, ve všech cestách loginu. MainWindow se musí přiřadit
-    /// explicitně - v dialog cestě ho drží otevřené login okno (WPF ho dá oknu vytvořenému, když
-    /// žádný MainWindow není) a shell by roli nezískal; pořadí (MainWindow → OnMainWindowClose)
-    /// chrání před shutdownem při pozdějším zavření login okna. To se zavře až po prvním
-    /// vykreslení shellu, aby v přechodu nebyla vidět plocha.
-    /// </summary>
-    protected virtual void HandOffLoginWindow(EdisonMainWindow wnd)
-    {
-        _application.MainWindow = wnd;
-        _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
-        if (_startupLogin is { } login)
-            wnd.ContentRendered += (_, _) => login.CompleteHandoff();
-    }
-
     private void ShowStartupProgress(string message)
     {
         if (_startupLogin is null) return;
         _startupLogin.ShowProgress(message);
-        RenderStartupProgress();
+        // Další krok startupu zablokuje UI thread - progress login okna (text, zašedlá pole) vykreslit hned.
+        _host.RenderNow();
     }
-
-    // Další krok startupu zablokuje UI thread - progress login okna (text, zašedlá pole) vykreslit hned.
-    private void RenderStartupProgress() =>
-        _application.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
     // Jen pro brány před loginem; update check po loginu má SessionOpener.
     protected virtual Updater CreateUpdater() => new();
 
-    /// <summary>Login okno držené otevřené přes post-login kroky (jen dialog cesta, ne DevLogin):
-    /// progress a zavření po vykreslení shellu jdou přes VM, okno slouží jen jako owner dialogů.</summary>
+    /// <summary>VM login okna dialog cesty (ne DevLogin): progress post-login kroků.</summary>
     private LoginViewModel? _startupLogin;
-    private Window? _startupLoginWindow;
 
     /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest). Po loginu
     /// <c>Companies</c> nahradí povolené firmy uživatele.</summary>
     protected record PreLoginContext(
-        MLRest LoginRest,
+        IMLRest LoginRest,
         IReadOnlyList<CompanyStruct> Companies,
         CompanyStruct StartCompany,
         string Server,
@@ -241,34 +211,38 @@ public class AppBootstrapper
     /// Vrací false = uživatel zrušil → shutdown. DEBUG má config v repu → wizard se přeskočí.
     /// Greenfield server-init (firma/licence/admin) je mimo scope - zůstává na legacy frmSetup.
     /// </summary>
-    protected virtual bool EnsureConfigured()
-    {
-        // Připojení z příkazové řádky (Připojit k databázi) - EDISONini.xml stanice se nepoužije.
-        if (_connectionOverride is not null) return true;
-        if (SettingsLoader.IsConfigured()) return true;
+    private bool EnsureConfigured() => IsConfigured() || _host.ShowSetup();
 
-        SettingsLoader.Load();   // naplní Current pro předvyplnění polí (dev server jen v DEBUG)
-        return new Windows.SetupWindow.SetupWindow().ShowDialog() == true;
-    }
+    // Připojení z příkazové řádky (Připojit k databázi) - EDISONini.xml stanice se nepoužije.
+    protected virtual bool IsConfigured() => _connectionOverride is not null || SettingsLoader.IsConfigured();
 
-    protected virtual PreLoginContext PrepareLogin(ILocalPrefs prefs)
+    private PreLoginContext PrepareLogin(ILocalPrefs prefs)
     {
         var (server, port) = ResolveConnection(_connectionOverride, () => SettingsLoader.Load().Server);
 
-        // Pre-login MLRest - potřebné aby GetCompanyList šla zavolat (vlastní fallback Idfa="").
-        var loginRest = new MLRest(server, port, "", "");
-
+        var loginRest = OpenLoginConnection(server, port);
         // Bez uživatele úplný seznam - slouží jen k Idfa pro Login, povolené firmy načte Run po přihlášení.
-        string errState = "";
-        var companies = GetCompanyList(ref errState, loginRest, false);
-        if (!string.IsNullOrEmpty(errState))
-            throw new InvalidOperationException(errState);
+        var companies = LoadServerCompanies(loginRest);
 
         var startCompany = CompanySwitcher.PickInitial(companies, PreferredIdfa(prefs, companies, server, port));
         // Idfa potřebné aby ALVA.SYS.Login.Login uměl resolvovat user's startupForm.
         loginRest.Idfa = startCompany.Id;
 
         return new PreLoginContext(loginRest, companies, startCompany, server, port);
+    }
+
+    /// <summary>Pre-login MLRest - bez uživatele a firmy (vlastní fallback Idfa="").</summary>
+    protected virtual IMLRest OpenLoginConnection(string server, int port) =>
+        new MLRestAdapter(new MLRest(server, port, "", ""));
+
+    // Legacy GetCompanyList chce konkrétní MLRest; jediné místo startu, kde se bere Inner.
+    protected virtual IReadOnlyList<CompanyStruct> LoadServerCompanies(IMLRest loginRest)
+    {
+        string errState = "";
+        var companies = GetCompanyList(ref errState, ((MLRestAdapter)loginRest).Inner, false);
+        if (!string.IsNullOrEmpty(errState))
+            throw new InvalidOperationException(errState);
+        return companies;
     }
 
     // Vlastní poslední firma, když na serveru je. Jinak (první start nového shellu, LastIdfa z jiného serveru -
@@ -288,9 +262,8 @@ public class AppBootstrapper
     /// Parita s EDLOADER <c>CheckLogin</c> + <c>UpdateIsRunning</c>: zákaz přihlašování (kdo ho zadal,
     /// smí ho zrušit) a <c>pending</c> serverové instalace. False = shell se má ukončit.
     /// </summary>
-    protected virtual bool PassesPreLoginGates(MLRest loginRest, EDServices services)
+    private bool PassesPreLoginGates(IMLRest rest, EDServices services)
     {
-        var rest = new MLRestAdapter(loginRest);
         string ip = LoginGate.StationIp(), user = Environment.UserName;
         var permission = LoginGate.Query(rest, ip, user);
         if (!permission.Allowed)
@@ -325,34 +298,16 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Zobrazí login okno, nebo vrátí <see cref="StartupOptions.DevLogin"/>. Okno po úspěchu zůstává otevřené
-    /// (progress podklad pod dobíhajícím bootstrapem) - čekání řeší
-    /// <see cref="System.Windows.Threading.DispatcherFrame"/> místo ShowDialog, aby návrat
-    /// nevyžadoval zavření okna.
+    /// Zobrazí login okno, nebo vrátí <see cref="StartupOptions.DevLogin"/>; null = uživatel zavřel okno.
+    /// Okno po úspěchu zůstává otevřené jako progress podklad pod dobíhajícím bootstrapem.
     /// </summary>
-    protected virtual bool TryLogin(MLRest loginRest, ILocalPrefs prefs, EDServices services, out LoginResult login)
+    private LoginResult? TryLogin(IMLRest loginRest, ILocalPrefs prefs, EDServices services)
     {
-        if (_options.DevLogin is { } devLogin)
-        {
-            login = devLogin;
-            return true;
-        }
+        if (_options.DevLogin is { } devLogin) return devLogin;
 
         // Zapamatované heslo (předvyplnění i uložení) řeší VM nad prefs.
-        var vm = LoginViewModel.ForStartup(services, new MLRestAdapter(loginRest), prefs);
-        var loginWindow = new Windows.LoginWindow.LoginWindow(vm);
-        // Geometrii sdílí se shellem, aby obě okna naskočila na monitoru, kde uživatel pracuje.
-        // Okno ji jen přebírá - jediný zápis je níž, hned po úspěšném přihlášení.
-        var windowState = new ShellWindowStateStore(prefs);
-        WindowStatePersistence.Attach(loginWindow, new ReadOnlyWindowStateStore(windowState));
-
-        var frame = new System.Windows.Threading.DispatcherFrame();
-        vm.LoginSucceeded += (_, _) => frame.Continue = false;
-        loginWindow.Closed += (_, _) => frame.Continue = false;
-        loginWindow.Show();
-        System.Windows.Threading.Dispatcher.PushFrame(frame);
-
-        if (vm.Result is not { } result)
+        var vm = LoginViewModel.ForStartup(services, loginRest, prefs);
+        if (_host.ShowLogin(vm, new ShellWindowStateStore(prefs)) is not { } result)
         {
             // Zrušeno po odmítnutí zapamatovaného hesla → zapomeň ho (jinak příště zase auto-selže).
             if (vm.RememberedPasswordRejected)
@@ -360,52 +315,34 @@ public class AppBootstrapper
                 vm.ApplyRememberedPassword();
                 prefs.Save();
             }
-            login = null!;
-            return false;
+            return null;
         }
-        login = result;
         _startupLogin = vm;
-        _startupLoginWindow = loginWindow;
-        RenderStartupProgress();
-        // Uložit tady: login okno se zavírá až po vykreslení shellu, který si geometrii čte dřív,
-        // a v progress fázi ho uživatel může minimalizovat (stav při zavření už nic neříká).
-        WindowStatePersistence.Save(loginWindow, windowState);
         // Až po uložení geometrie (ta ukládá celé prefs) - persist proběhne v SavePostLoginState.
         vm.ApplyRememberedPassword();
-        return true;
+        return result;
     }
-
-    /// <summary>
-    /// Vynucená změna hesla (feature #17). Dialog si sám ověří změnu proti serveru a zavře se
-    /// jen při úspěchu; vrací true = změněno, false = uživatel zrušil (→ abort loginu).
-    /// </summary>
-    protected virtual bool ForcePasswordChange(MLRest loginRest, string username)
-        => new Windows.LoginWindow.ChangePasswordWindow(new MLRestAdapter(loginRest), username)
-            { Owner = _startupLoginWindow }
-            .ShowDialog() == true;
 
     /// <summary>
     /// Windows SSO auto-login (legacy-style): login na <c>Environment.UserName</c> s prázdným
     /// heslem - server tak přihlásí jen LDAP-AUTO uživatele. Neúspěch (jiný mód / nepovoleno)
-    /// → false → fallback na <see cref="TryLogin"/> dialog. Vrací true = přihlášeno bez dialogu.
+    /// → null → fallback na <see cref="TryLogin"/> dialog.
     /// </summary>
 /// <remarks>Zkouší se vždy - server při neprázdném heslu překlopí LDAP-AUTO účet na plný LDAP
 /// bind (<c>ALVA.SYS.Login:1138</c>), takže dialogem se takový účet přihlásit nedá.</remarks>
-    protected virtual bool TryAutoLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
+    protected virtual LoginResult? TryAutoLogin(IMLRest loginRest)
     {
-        login = null!;
         try
         {
-            login = Windows.LoginWindow.UserAuthenticator.Login(new MLRestAdapter(loginRest), Environment.UserName, "");
-            return true;
+            return UserAuthenticator.Login(loginRest, Environment.UserName, "");
         }
-        catch (Windows.LoginWindow.LoginException)
+        catch (LoginException)
         {
-            return false;   // ne LDAP-AUTO / nepovoleno → dialog
+            return null;   // ne LDAP-AUTO / nepovoleno → dialog
         }
     }
 
-    protected virtual void SavePostLoginState(ILocalPrefs prefs, string server, int port, string idfa, string? loginName)
+    private void SavePostLoginState(ILocalPrefs prefs, string server, int port, string idfa, string? loginName)
     {
         prefs.LastIdfa = idfa;
         // DevLogin je syntetický - nesmí přepsat předvyplnění jména (a tím zneplatnit
@@ -422,20 +359,20 @@ public class AppBootstrapper
     private Action<IMLRest> BuildActivityFailedWire(EDServices services)
     {
         // Lokální kopie polí: delegát žije po celou session, closure na bootstrapper by ho držela taky.
-        var app = _application;
+        var host = _host;
         var shutdown = _shutdown;
         return mlRest =>
         {
             if (mlRest is not MLRestAdapter adapter) return;
             adapter.Inner.EdisonActivityFailed += (_, _) =>
-                app.Dispatcher.Invoke(() =>
+                host.Dispatch(() =>
                 {
                     services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
                     shutdown.Force();
                 });
             // Server per-request version gate (date+full segmenty).
             adapter.Inner.EdisonVersionFailed += (_, _) =>
-                app.Dispatcher.Invoke(() =>
+                host.Dispatch(() =>
                 {
                     services.PopupDisplayer.Info("Rozdílná verze Caché a verze Edison, aplikace bude ukončena.");
                     shutdown.Force();
@@ -453,10 +390,9 @@ public class AppBootstrapper
         // Sdílená služba zástupců - strom (VM) i miniaplikace „Plocha" (provider) drží tutéž instanci.
         var shortcuts = new ModuleShortcutsService();
         var miniAppCatalog = MiniAppCatalog.Build(MiniAppProviders(shortcuts, _options.DevMiniApps));
-        // Owner login dialogu se čte lazily - MainWindow ukazuje na shell až po HandOffLoginWindow.
-        // Lokální kopie: switcher žije celou session, closure na bootstrapper by ho držela taky.
-        var app = _application;
-        var sessionSwitcher = new SessionSwitcher(services, () => app.MainWindow, opener,
+        // Owner login dialogu: shell okno vzniká až pod VM, který switcher potřebuje.
+        EdisonMainWindow? shell = null;
+        var sessionSwitcher = new SessionSwitcher(services, () => shell, opener,
                                                   nav.TryCloseAll, new ShellWindowStateStore(prefs), _shutdown.Force);
         bool testRun = _options.TestRun is not null;
         var viewModel = new EdisonMainViewModel(prep.Companies, CompanySwitcher.LoadAllowed, treeLoader,
@@ -470,7 +406,7 @@ public class AppBootstrapper
         };
         _shutdown.AttachShell(viewModel.SuppressCloseConfirm);
 
-        var wnd = new EdisonMainWindow { DataContext = viewModel };
+        var wnd = shell = new EdisonMainWindow { DataContext = viewModel };
         if (testRun) AutomationProperties.SetItemStatus(wnd, TestRunOptions.WindowMarker);
         popup.DefaultOwner = wnd;
         viewModel.AttachToWindow(wnd);
@@ -519,18 +455,12 @@ public class AppBootstrapper
     /// Před logoutem flush usage telemetrie - pojistka na záznamy po posledním zavření okna
     /// (typicky legacy launche); potřebuje živou session kvůli userID.
     /// </summary>
-    protected virtual void WireSessionLogout(EDServices services)
-    {
-        _application.Exit += (_, _) =>
+    private void WireSessionLogout(EDServices services) =>
+        _host.OnExit(() =>
         {
             EDUsageTelemetry.Flush(services.MLRest);
             SessionLogout.Logout(services.MLRest);
-        };
-    }
+        });
 
-    /// <summary>Chyba startup workflow: hlášení + dialog nad login oknem (pokud je), jinak top-level.</summary>
-    protected virtual void ReportStartupFailure(Exception ex) =>
-        new PopupDisplayer(_startupLoginWindow).Error(ex);
-
-    protected virtual void Shutdown() => _shutdown.Force();
+    private void Shutdown() => _shutdown.Force();
 }

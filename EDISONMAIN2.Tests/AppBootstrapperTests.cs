@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
@@ -21,38 +22,66 @@ namespace EDISONMAIN2.Tests;
 /// </summary>
 public class AppBootstrapperTests
 {
-    /// <remarks>Bezparametrický ctor → <c>Application</c> je null; nový krok v Run(), který na něj
-    /// sáhne (dialog, Dispatcher, ShutdownMode), musí jít za <c>protected virtual</c> hook.</remarks>
-    private class TestableBootstrapper(StartupOptions? options = null) : AppBootstrapper(options ?? new StartupOptions())
+    /// <summary>
+    /// Bootstrapper nad falešným hostem a mockem předlogin spojení. Přepisuje jen hranice ven (soubory,
+    /// registr, legacy seznam firem, procesové statiky) a stavbu shellu. Brány před loginem, PrepareLogin
+    /// i ukládání preferencí běží skutečné. Kroky hosta i openeru jdou do jednoho <see cref="Calls"/>.
+    /// </summary>
+    private class TestableBootstrapper : AppBootstrapper
     {
-        public bool ShutdownCalled { get; private set; }
-        public bool BuildShellCalled { get; private set; }
-        public string? SavedIdfa { get; private set; }
-        public string? SavedLoginName { get; private set; }
-        public (string Server, int Port)? SavedLoginServer { get; private set; }
-        public string? LoginDialogPrefill { get; private set; }
+        private TestableBootstrapper(FakeStartupHost host, StartupOptions options)
+            : base(host, new ConnectionOverride("test-host", 9999), options)
+        {
+            Host = host;
+            host.DialogLogin = () => LoginSucceeds
+                ? new LoginResult(42, "test", "Test User", true, "",
+                                  ChangePasswordNeeded: LoginRequiresPasswordChange, MayUpdate: true, Email: "")
+                : null;
+            LoginRest.Delimiter.Returns('~');
+            LoginRest.Server.Returns("test-host");
+            LoginRest.Port.Returns(9999);
+        }
+
+        public TestableBootstrapper(StartupOptions? options = null) : this(new FakeStartupHost(), options ?? new StartupOptions())
+        {
+        }
+
+        public FakeStartupHost Host { get; }
+        public List<string> Calls => Host.Calls;
+        public bool ShutdownCalled => Host.ShutdownCalled;
+        public Exception? ReportedFailure => Host.ReportedFailure;
+        public bool TryLoginCalled => Calls.Contains("login dialog");
+        public bool HandOffCalled => Calls.Contains("handoff");
+        public bool ShellBuiltBeforeHandOff => Calls.IndexOf("shell") is >= 0 and var shell && shell < Calls.IndexOf("handoff");
+        public bool SessionLogoutWired => Host.ExitHandlers.Count > 0;
+        public bool LogoutWiredBeforeUpdateCheck =>
+            Calls.IndexOf("logout hook") is >= 0 and var hook && hook < Calls.IndexOf("update");
+        public bool ForcePasswordChangeCalled => Host.PasswordChange is not null;
+        public bool ForcePasswordChangeResult { set => Host.PasswordChanged = value; }
+        public bool SetupCompleted { set => Host.SetupCompleted = value; }
+
+        public bool LoginSucceeds { get; set; } = true;
+        public bool LoginRequiresPasswordChange { get; set; }
 
         public bool Configured { get; set; } = true;
         public bool EnsureConfiguredCalled { get; private set; }
-        public bool LoginSucceeds { get; set; } = true;
-        public bool ShutdownHeldBeforeSetup { get; private set; }
 
-        protected override void HoldShutdownUntilHandOff() => ShutdownHeldBeforeSetup = !EnsureConfiguredCalled;
-
-        protected override bool EnsureConfigured()
+        protected override bool IsConfigured()
         {
             EnsureConfiguredCalled = true;
             return Configured;
         }
 
-        public bool PreLoginGatesPass { get; set; } = true;
-        public bool PreLoginGatesCalled { get; private set; }
+        /// <summary>Předlogin spojení: brány a dialog s ním mluví skutečně, odpovědi nastavuje test.</summary>
+        public IMLRest LoginRest { get; } = MLRestMocks.Create();
 
-        protected override bool PassesPreLoginGates(MLRest loginRest, EDServices services)
-        {
-            PreLoginGatesCalled = true;
-            return PreLoginGatesPass;
-        }
+        /// <summary>Všechny firmy serveru (předloginový seznam) - podle něj se pozná LastIdfa z jiného serveru.</summary>
+        public IReadOnlyList<CompanyStruct> ServerCompanies { get; set; } = [new() { Id = "CB_DP", Database = "CB_DP" }];
+
+        protected override IMLRest OpenLoginConnection(string server, int port) => LoginRest;
+
+        protected override IReadOnlyList<CompanyStruct> LoadServerCompanies(IMLRest loginRest) => ServerCompanies;
+
         public LicenceAcquireOutcome SessionOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
         public IPopupDisplayer Popup { get; set; } = Substitute.For<IPopupDisplayer>();
         public IWindowNavigator Nav { get; set; } = Substitute.For<IWindowNavigator>();
@@ -72,12 +101,11 @@ public class AppBootstrapperTests
 
         protected override ILocalPrefs LoadLocalPrefs() => Prefs;
 
-        /// <summary>Všechny firmy serveru (předloginový seznam) - podle něj se pozná LastIdfa z jiného serveru.</summary>
-        public IReadOnlyList<CompanyStruct> ServerCompanies { get; set; } = [];
+        /// <summary>LastIdfa z posledního zápisu (Returns na getteru ho nepřebije).</summary>
+        public string? SavedIdfa => Prefs.ReceivedCalls()
+            .LastOrDefault(c => c.GetMethodInfo().Name == "set_LastIdfa")?.GetArguments()[0] as string;
 
-        protected override PreLoginContext PrepareLogin(ILocalPrefs prefs) =>
-            new(LoginRest: null!, Companies: ServerCompanies, StartCompany: default,
-                Server: "test-host", Port: 9999);
+        public string? SavedLoginName => Prefs.LoginNameFor("test-host", 9999);
 
         /// <summary>Poslední firma starého shellu - test nesmí číst registr stanice.</summary>
         public string? LegacyIdfa { get; set; }
@@ -89,39 +117,13 @@ public class AppBootstrapperTests
             return LegacyIdfa;
         }
 
-        protected override bool TryLogin(MLRest loginRest, ILocalPrefs prefs, EDServices services, out LoginResult login)
-        {
-            TryLoginCalled = true;
-            LoginDialogPrefill = prefs.LoginNameFor("test-host", 9999);
-            login = new LoginResult(42, "test", "Test User", true, "",
-                ChangePasswordNeeded: LoginRequiresPasswordChange, MayUpdate: true, Email: "");
-            return LoginSucceeds;
-        }
-
-        public bool LoginRequiresPasswordChange { get; set; }
-        public bool ForcePasswordChangeResult { get; set; } = true;
-        public bool ForcePasswordChangeCalled { get; private set; }
-
-        protected override bool ForcePasswordChange(MLRest loginRest, string username)
-        {
-            ForcePasswordChangeCalled = true;
-            return ForcePasswordChangeResult;
-        }
-
         public bool AutoLoginSucceeds { get; set; }
         public bool TryAutoLoginCalled { get; private set; }
-        public bool TryLoginCalled { get; private set; }
 
-        protected override bool TryAutoLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
+        protected override LoginResult? TryAutoLogin(IMLRest loginRest)
         {
             TryAutoLoginCalled = true;
-            if (AutoLoginSucceeds)
-            {
-                login = new LoginResult(7, "auto", "Auto User", false, "", false, true, "");
-                return true;
-            }
-            login = null!;
-            return false;
+            return AutoLoginSucceeds ? new LoginResult(7, "auto", "Auto User", false, "", false, true, "") : null;
         }
 
         public IReadOnlyList<CompanyStruct> AllowedCompanies { get; set; } = [new() { Id = "CB_DP", Database = "CB_DP" }];
@@ -129,11 +131,11 @@ public class AppBootstrapperTests
         public bool UpdateTriggered { get; set; }
         public Exception? UpdateCheckThrows { get; set; }
 
-        /// <summary>Opener se skutečným pořadím kroků; kroky startu se zapisují do jeho <c>Calls</c>.</summary>
+        /// <summary>Opener se skutečným pořadím kroků, kroky zapisuje do <see cref="Calls"/>.</summary>
         public TestableSessionOpener? Opener { get; private set; }
 
         protected override SessionOpener CreateSessionOpener(EDServices services) =>
-            Opener = new TestableSessionOpener(services)
+            Opener = new TestableSessionOpener(services, calls: Calls)
             {
                 AllowedCompanies = AllowedCompanies,
                 NewSessionMLRest = MLRest,
@@ -143,29 +145,12 @@ public class AppBootstrapperTests
                 UpdateCheckThrows = UpdateCheckThrows,
             };
 
-        public bool AcquireSessionCalled => Opener?.Calls.Contains("acquire") == true;
+        public bool AcquireSessionCalled => Calls.Contains("acquire");
         public ConnectionInfo? EstablishedConnection => Opener?.EstablishedConnection;
         public LoginResult? AllowedQueriedFor => Opener?.AllowedQuery?.Login;
 
-        protected override void SavePostLoginState(ILocalPrefs prefs, string server, int port, string idfa, string? loginName)
-        {
-            SavedIdfa = idfa;
-            SavedLoginName = loginName;
-            SavedLoginServer = (server, port);
-        }
-
-        public bool SessionLogoutWired { get; private set; }
-
-        protected override void WireSessionLogout(EDServices services)
-        {
-            SessionLogoutWired = true;
-            Opener?.Calls.Add("logout hook");
-        }
-
-        public bool LogoutWiredBeforeUpdateCheck =>
-            Opener?.Calls.IndexOf("logout hook") is >= 0 and var hook && hook < Opener!.Calls.IndexOf("update");
-
         public Exception? BuildShellThrows { get; set; }
+        public bool BuildShellCalled { get; private set; }
         public IReadOnlyList<CompanyStruct>? ShellCompanies { get; private set; }
 
         protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep,
@@ -174,24 +159,20 @@ public class AppBootstrapperTests
         {
             if (BuildShellThrows is not null) throw BuildShellThrows;
             BuildShellCalled = true;
+            Calls.Add("shell");
             ShellCompanies = prep.Companies;
-            return null!;
+            return Shell;
         }
 
-        public Exception? ReportedFailure { get; private set; }
+        /// <summary>Atrapa shellu bez konstruktoru (skutečné okno potřebuje STA a resource), host ji jen předává.</summary>
+        public EdisonMainWindow Shell { get; } = UninitializedShell();
 
-        protected override void ReportStartupFailure(Exception ex) => ReportedFailure = ex;
-
-        public bool HandOffCalled { get; private set; }
-        public bool ShellBuiltBeforeHandOff { get; private set; }
-
-        protected override void HandOffLoginWindow(EdisonMainWindow wnd)
+        private static EdisonMainWindow UninitializedShell()
         {
-            HandOffCalled = true;
-            ShellBuiltBeforeHandOff = BuildShellCalled;
+            var shell = (EdisonMainWindow)RuntimeHelpers.GetUninitializedObject(typeof(EdisonMainWindow));
+            GC.SuppressFinalize(shell);
+            return shell;
         }
-
-        protected override void Shutdown() => ShutdownCalled = true;
     }
 
     [Fact]
@@ -211,11 +192,23 @@ public class AppBootstrapperTests
     public void Run_HoldsShutdownBeforeFirstWindow()
     {
         // Wizard je první okno, které může vzniknout; jeho zavření nesmí aplikaci ukončit dřív, než rozhodne Run.
-        var b = new TestableBootstrapper();
+        var b = new TestableBootstrapper { Configured = false, SetupCompleted = true };
 
         b.Run();
 
-        Assert.True(b.ShutdownHeldBeforeSetup);
+        Assert.Equal("hold", b.Calls[0]);
+        Assert.Contains("setup", b.Calls);
+    }
+
+    [Fact]
+    public void Run_SetupCompleted_ProceedsToShell()
+    {
+        var b = new TestableBootstrapper { Configured = false, SetupCompleted = true };
+
+        b.Run();
+
+        Assert.True(b.BuildShellCalled);
+        Assert.False(b.ShutdownCalled);
     }
 
     [Fact]
@@ -246,19 +239,52 @@ public class AppBootstrapperTests
         b.Popup.DidNotReceive().Info("hláška");
     }
 
+    // Brány legacy EDLOADERu (parita CheckLogin + UpdateIsRunning) - konec ještě před loginem.
+
     [Fact]
-    public void Run_PreLoginGateRefuses_ShutsDown_BeforeLogin()
+    public void Run_ServerInstallationPending_InfoAndShutdown_BeforeLogin()
     {
-        // Zákaz přihlašování / běžící instalace na serveru (parita s EDLOADER) - konec ještě před loginem.
-        var b = new TestableBootstrapper { PreLoginGatesPass = false };
+        var b = new TestableBootstrapper();
+        b.LoginRest.QueryOrThrow("ALVA.SETUP.Main", "LoadSettings", Arg.Any<object[]>())
+                   .Returns(MLRestMocks.Output("pending~1"));
 
         var result = b.Run();
 
         Assert.Null(result);
-        Assert.True(b.PreLoginGatesCalled);
+        b.Popup.Received(1).Info("Probíhá aktualizace systému, aplikace bude ukončena.");
         Assert.True(b.ShutdownCalled);
         Assert.False(b.TryLoginCalled);
         Assert.False(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_LoginForbiddenWithoutRight_InfoAndShutdown_BeforeLogin()
+    {
+        var b = new TestableBootstrapper();
+        b.LoginRest.QueryOrThrow("ALVA.SYSTEM.Main", "LoginAllowed", Arg.Any<object[]>())
+                   .Returns(MLRestMocks.Output("login~0~0"));
+
+        b.Run();
+
+        b.Popup.DidNotReceiveWithAnyArgs().Confirm(default!);
+        b.Popup.Received(1).Info("Je zakázáno přihlašování uživatelů, aplikace bude ukončena.");
+        Assert.True(b.ShutdownCalled);
+        Assert.False(b.TryLoginCalled);
+    }
+
+    [Fact]
+    public void Run_LoginForbidden_AllowedByUser_ContinuesToLogin()
+    {
+        // Kdo zákaz zadal, smí ho zrušit (legacy EDLOADER CheckLogin) - server dostane ChangeLoginState.
+        var b = new TestableBootstrapper();
+        b.LoginRest.QueryOrThrow("ALVA.SYSTEM.Main", "LoginAllowed", Arg.Any<object[]>())
+                   .Returns(MLRestMocks.Output("login~0~1"));
+        b.Popup.Confirm(Arg.Any<string>()).Returns(true);
+
+        b.Run();
+
+        b.LoginRest.Received(1).QueryOrThrow("ALVA.SYSTEM.Main", "ChangeLoginState", Arg.Any<object[]>());
+        Assert.True(b.BuildShellCalled);
     }
 
     [Fact]
@@ -313,6 +339,9 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.True(b.ForcePasswordChangeCalled);
+        // Dialog nad login oknem mluví s předlogin spojením, session ještě nevznikla.
+        Assert.Same(b.LoginRest, b.Host.PasswordChange?.LoginRest);
+        Assert.Equal("test", b.Host.PasswordChange?.UserName);
         Assert.True(b.BuildShellCalled);
     }
 
@@ -405,13 +434,33 @@ public class AppBootstrapperTests
     }
 
     [Fact]
-    public void Run_Success_DoesNotCallShutdown()
+    public void Run_Success_ReturnsHandedOffShell_NoShutdown()
     {
         var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Accepted };
 
+        var result = b.Run();
+
+        Assert.Same(b.Shell, result);
+        Assert.Same(b.Shell, b.Host.HandedOff);
+        Assert.False(b.ShutdownCalled);
+    }
+
+    [Fact]
+    public void Run_RememberedPasswordRejected_DialogClosed_ForgetsIt()
+    {
+        // Jinak by příští start předvyplnil totéž heslo a server ho zase odmítl.
+        var b = new TestableBootstrapper { LoginSucceeds = false };
+        b.Prefs.SetLoginName("test-host", 9999, "jan");
+        b.Prefs.SetRememberedPassword("test-host", 9999, PasswordProtector.Protect("jan", "stare"));
+        b.LoginRest.QueryOrThrow("ALVA.SYS.Login", "Login", Arg.Any<object[]>()).Returns(MLRestMocks.Output("-1"));
+        b.Host.InDialog = vm => vm.Login(vm.InitialPassword);
+
         b.Run();
 
-        Assert.False(b.ShutdownCalled);
+        Assert.Equal("stare", b.Host.ShownLogin?.InitialPassword);
+        Assert.Null(b.Prefs.RememberedPasswordFor("test-host", 9999));
+        b.Prefs.Received().Save();
+        Assert.True(b.ShutdownCalled);
     }
 
     [Fact]
@@ -427,8 +476,24 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.Equal("JI_DP", b.SavedIdfa);
-        Assert.Equal("test", b.SavedLoginName);   // jméno z úspěšného loginu
-        Assert.Equal(("test-host", 9999), b.SavedLoginServer);   // server, na který se přihlásil
+        Assert.Equal("test", b.SavedLoginName);   // jméno z úspěšného loginu, pod serverem, na který se přihlásil
+        b.Prefs.Received().Save();
+    }
+
+    [Fact]
+    public void Run_DevLogin_SkipsDialog_KeepsLoginName()
+    {
+        // DevLogin je syntetický - jméno v local.json patří poslednímu ostrému přihlášení.
+        var options = StartupOptions.Development([], null);
+        var b = new TestableBootstrapper(options);
+
+        b.Run();
+
+        Assert.False(b.TryLoginCalled);
+        Assert.Same(options.DevLogin, b.AllowedQueriedFor);
+        Assert.Equal("CB_DP", b.SavedIdfa);
+        b.Prefs.DidNotReceive().LoginNames = Arg.Any<Dictionary<string, string>?>();
+        b.Prefs.Received(1).Save();
     }
 
     [Fact]
@@ -467,16 +532,10 @@ public class AppBootstrapperTests
         Assert.NotNull(b.SavedIdfa);
     }
 
-    /// <summary>Volá skutečné kroky bez přepsání - jen ty, které na <c>Application</c> nesáhnou.</summary>
-    private class RealStepsBootstrapper(StartupOptions options) : AppBootstrapper(options)
+    /// <summary>Volá skutečné hranice ven bez přepsání - jen ty, které v E2E běhu nesahají na disk ani registr.</summary>
+    private class RealStepsBootstrapper(StartupOptions options) : AppBootstrapper(new FakeStartupHost(), null, options)
     {
-        public void CallSave(ILocalPrefs prefs, string idfa, string? name)
-            => SavePostLoginState(prefs, "DEV-host", 57772, idfa, name);
-
         public ILocalPrefs Load() => LoadLocalPrefs();
-
-        public bool CallTryLogin(out LoginResult login) =>
-            TryLogin(null!, Substitute.For<ILocalPrefs>(), null!, out login);
 
         public string? CallReadLegacy(string server, int port) => ReadLegacyLastCompany(server, port);
     }
@@ -486,12 +545,13 @@ public class AppBootstrapperTests
     [Fact]
     public void Run_TestRun_SkipsAutoLogin()
     {
-        var b = new TestableBootstrapper(E2E()) { AutoLoginSucceeds = true };
+        var options = E2E();
+        var b = new TestableBootstrapper(options) { AutoLoginSucceeds = true };
 
         b.Run();
 
         Assert.False(b.TryAutoLoginCalled);
-        Assert.True(b.TryLoginCalled);
+        Assert.Same(options.DevLogin, b.AllowedQueriedFor);   // identitu E2E dává DevLogin
     }
 
     [Fact]
@@ -510,41 +570,6 @@ public class AppBootstrapperTests
         var prefs = new RealStepsBootstrapper(E2E("idfa=CB_DP")).Load();
 
         Assert.Equal("CB_DP", prefs.LastIdfa);
-    }
-
-    [Fact]
-    public void TryLogin_DevLogin_ReturnsItWithoutDialog()
-    {
-        // Bez Application: dialog větev by na login okně spadla, DevLogin ho nesmí otevřít.
-        var options = StartupOptions.Development([], null);
-
-        Assert.True(new RealStepsBootstrapper(options).CallTryLogin(out var login));
-        Assert.Same(options.DevLogin, login);
-    }
-
-    [Fact]
-    public void SavePostLoginState_DevLogin_DoesNotOverwriteLoginName()
-    {
-        // DevLogin je syntetický - jméno v local.json patří poslednímu ostrému přihlášení.
-        var prefs = Substitute.For<ILocalPrefs>();
-
-        new RealStepsBootstrapper(StartupOptions.Development([], null)).CallSave(prefs, "CB_DP", "jan.novak");
-
-        prefs.Received().LastIdfa = "CB_DP";
-        prefs.Received(1).Save();
-        prefs.DidNotReceive().LoginNames = Arg.Any<Dictionary<string, string>?>();
-    }
-
-    [Fact]
-    public void SavePostLoginState_DialogLogin_SavesLoginNameForServer()
-    {
-        var prefs = Substitute.For<ILocalPrefs>();
-
-        new RealStepsBootstrapper(StartupOptions.Production()).CallSave(prefs, "CB_DP", "jan.novak");
-
-        prefs.Received().LastIdfa = "CB_DP";
-        Assert.Equal("jan.novak", prefs.LoginNameFor("dev-host", 57772));
-        prefs.Received(1).Save();
     }
 
     [Theory]
@@ -586,6 +611,41 @@ public class AppBootstrapperTests
 
         Assert.True(b.HandOffCalled);
         Assert.True(b.ShellBuiltBeforeHandOff);   // handoff váže ContentRendered na hotové okno
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Run_AutoLoginAndDialog_HoldShutdownFirst_HandOffShellOnce(bool autoLogin)
+    {
+        // Při auto-loginu chybělo předání i držení ukončení: popup před shellem byl jediné okno a jeho zavření
+        // aplikaci ukončilo. Obě cesty musí jít stejně.
+        var b = new TestableBootstrapper { AutoLoginSucceeds = autoLogin };
+
+        b.Run();
+
+        Assert.Equal(autoLogin, !b.TryLoginCalled);
+        Assert.Equal("hold", b.Calls[0]);
+        Assert.Equal(["shell", "handoff"], b.Calls[^2..]);
+        Assert.Single(b.Calls, c => c == "handoff");
+    }
+
+    [Fact]
+    public void Run_ShutdownDuringStartup_NoShellNoFailureReport()
+    {
+        // Force logout během startu (tady při hlášce před shellem) už aplikaci ukončuje. Postavený shell by WPF
+        // při ukončení zavíral s potvrzením, které nejde ukázat: odhlášení by neproběhlo a odešlo by hlášení chyby.
+        var b = new TestableBootstrapper(new StartupOptions { PreShellNotice = "hláška" });
+        b.Popup.When(p => p.Info("hláška")).Do(_ => b.Host.Shutdown());
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.False(b.BuildShellCalled);
+        Assert.False(b.HandOffCalled);
+        Assert.Null(b.ReportedFailure);
+        Assert.Single(b.Calls, c => c == "shutdown");   // start ho neopakuje
+        Assert.True(b.SessionLogoutWired);
     }
 
     [Fact]

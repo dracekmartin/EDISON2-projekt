@@ -1,6 +1,4 @@
 using System;
-// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
-using Application = System.Windows.Application;
 
 namespace EDISONMAIN2;
 
@@ -13,15 +11,19 @@ namespace EDISONMAIN2;
 public class ShellShutdown(Action shutdown)
 {
     private Action? _suppressCloseConfirm;
-
-    /// <summary>Produkční cesta. Lazy lambda - test-only ctor AppBootstrapperu předává null Application.</summary>
-    public ShellShutdown(Application application) : this(() => application.Shutdown()) { }
+    private bool _forced;
 
     /// <summary>Napojí suppress hook shellu. Před jeho vznikem není co potlačovat (dialog neexistuje).</summary>
-    public void AttachShell(Action suppressCloseConfirm) => _suppressCloseConfirm = suppressCloseConfirm;
+    public void AttachShell(Action suppressCloseConfirm)
+    {
+        _suppressCloseConfirm = suppressCloseConfirm;
+        // Shell vzniklý až po Force (force logout během stavby) WPF při ukončení zavírá taky.
+        if (_forced) suppressCloseConfirm();
+    }
 
     public void Force()
     {
+        _forced = true;
         _suppressCloseConfirm?.Invoke();
         shutdown();
     }
