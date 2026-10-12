@@ -12,6 +12,10 @@ skutečnou odpovědí.
 - **Identita je pevná** (`DevServer`), ne z `CACHE_USER`: čtení pod `CB_DP` / MLP 1, zápisy jen
   pod `TEST_EDISON2_IT` / MLP 999 s úklidem ve `finally`. Výjimka `LogLogin`: záznam sestavy
   přihlášení úklid přes MLRest nemá, každý běh přidá řádek pod touto firmou.
+- **Testovací účet** (`TestAccount` v `EDTesting`, jde použít i z E2E): jméno a heslo nejsou v gitu, drží je DEV
+  v globálu `^EDTesting("ITAccount","login")` a `("password")` v namespace MLINE (nastavuje vlastník v terminálu
+  Caché, čte `ALVA.EDTesting.ITAccount`). Proměnné `EDISON_IT_LOGIN` + `EDISON_IT_PASSWORD` ho přepíšou.
+  Chybí = `[TestAccountFact]` Skipped. Heslo nelogovat, `TestAccount.ToString()` ho neukazuje.
 - **Tolerantní parser** (chybějící řádek nebo pole = default) ověřuj i na surovém výstupu, jinak
   přejmenovaný řádek nebo posunuté pole projde. Vzor `ModuleTreeTests`.
 - **Surový výstup nelogovat** ani nedávat do assert zpráv: `Login` vrací heslo zpět, oba
