@@ -46,6 +46,11 @@ Rozbor stavu (`B191a`, 12. 10.): oracle, mezery a testovací linky v [`§18`](li
 
 ### Ostatní
 
+- **Sjednotit nastavení skupin spojů mezi agendami JŘ** [S] (Jan 12. 10.: stejný pojem = stejný
+  název). Zastávkový AD má „Rozdělení sloupců (typy provozu)" s volbou „Automaticky (dle linky)",
+  linkový AD „Dělení spojů dle platnosti" bez ní. Název parametru jde změnit volně, popisky voleb
+  jsou zamčené (ukládá se text) - jen se stabilním kódem vedle. Podklad [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
+
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
   (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch
