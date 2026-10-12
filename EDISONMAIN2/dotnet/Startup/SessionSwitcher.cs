@@ -9,8 +9,8 @@ using static ALVA.EDISONAPI.Database;
 namespace EDISONMAIN2;
 
 /// <summary>
-/// Výsledek pokusu o přepnutí uživatele. <see cref="Outcome"/> rozlišuje úspěch, zrušení
-/// v login dialogu a selhání licence pro nového uživatele. <see cref="Companies"/> = povolené
+/// Výsledek pokusu o přepnutí uživatele. <see cref="Outcome"/> rozlišuje úspěch, zrušení,
+/// selhání licence a vynucenou aktualizaci nového uživatele. <see cref="Companies"/> = povolené
 /// firmy nového uživatele, jen u <see cref="SwitchUserResult.Success"/>. Licenci nové session
 /// nese <see cref="EDServices.ActiveLicence"/>.
 /// </summary>
@@ -18,8 +18,8 @@ public record SwitchUserOutcome(SwitchUserResult Outcome, IReadOnlyList<CompanyS
 
 public enum SwitchUserResult
 {
-    /// <summary>Uživatel zrušil login dialog nebo vynucenou změnu hesla, nebo okno s neuloženými daty odmítlo zavření.
-    /// Shell pokračuje s původním session beze změny.</summary>
+    /// <summary>Uživatel zrušil login dialog nebo vynucenou změnu hesla, nesmí do žádné firmy, nebo okno
+    /// s neuloženými daty odmítlo zavření. Shell pokračuje s původním session beze změny.</summary>
     Cancelled,
     /// <summary>Licence pro nového uživatele přesáhla limit (admin retry / non-admin). Caller obvykle ukončí app.</summary>
     LicenceRefused,
@@ -27,37 +27,40 @@ public enum SwitchUserResult
     LicenceCancelled,
     /// <summary>Nový uživatel přihlášen, MLRest swapnut, licence platná.</summary>
     Success,
+    /// <summary>Update check nového uživatele spustil aktualizaci a <see cref="SessionSwitcher"/> aplikaci
+    /// už ukončuje (jako start). Caller nic dalšího nedělá.</summary>
+    UpdateRequired,
 }
 
 /// <summary>
 /// Přihlášení jiného uživatele do běžícího shellu ("Přihlásit jiného uživatele") - paralela
 /// ke <see cref="CompanySwitcher"/>, jen swapuje uživatele místo firmy. Žije po dobu session,
-/// takže bootstrap po startu aplikace nemusí zůstat naživu.
+/// takže bootstrap po startu aplikace nemusí zůstat naživu. Cestu po loginu sdílí se startem
+/// (<see cref="SessionOpener"/>), sám přidává login dialog a zavření staré session.
 ///
-/// Testovatelnost stejná jako u <see cref="AppBootstrapper"/>: kroky sahající na server / WPF
-/// jsou <c>protected virtual</c>.
+/// Kroky sahající na WPF a na starou session jsou <c>protected virtual</c> kvůli testům.
 /// </summary>
 /// <param name="services">Session služby; <see cref="EDServices.MLRest"/> se při úspěchu swapne.</param>
 /// <param name="ownerWindow">Owner login dialogu - shell okno; čte se lazily, po startu se mění.</param>
-/// <param name="wireActivityFailed">Napojení force-logout / version gate handlerů na nový MLRest.</param>
+/// <param name="opener">Cesta po loginu sdílená se startem.</param>
 /// <param name="closeAllWindows">Zavření všech oken a legacy modulů staré session;
 /// <c>false</c> = okno zavření vetovalo a switch se musí zrušit.</param>
 /// <param name="windowState">Sdílená geometrie hlavního okna - login dialog z ní jen čte,
 /// ať naskočí na monitoru shellu, ne na primárním.</param>
-/// <param name="options">Režim startu - nová session musí mít stejný GUID a verzi jako startovní.</param>
+/// <param name="shutdown">Ukončení aplikace bez potvrzení (<see cref="ShellShutdown.Force"/>).</param>
 public class SessionSwitcher(
     EDServices services,
     Func<System.Windows.Window?> ownerWindow,
-    Action<IMLRest> wireActivityFailed,
+    SessionOpener opener,
     Func<bool> closeAllWindows,
     IWindowStateStore windowState,
-    StartupOptions options)
+    Action shutdown)
 {
     /// <summary>
-    /// Prompt → vynucená změna hesla → close all → <see cref="SessionFactory.Establish"/> (drží UserPrefs cache
-    /// + LicenceService synchronně s MLRest) → wire activity → acquire licence. Při zrušení
-    /// v login dialogu nebo změně hesla nic neudělá; při selhání licence je MLRest už swapnut, caller obvykle
-    /// volí shutdown (rollback nelze: closeAllWindows už proběhlo).
+    /// Prompt → <see cref="SessionOpener.Open"/>, který před založením session zavře okna a odhlásí starou
+    /// session. Při zrušení v login dialogu, změně hesla nebo vetu okna nic neudělá; při selhání licence
+    /// je MLRest už swapnut, caller obvykle volí shutdown (rollback nelze: closeAllWindows už proběhlo).
+    /// Výjimka po odhlášení staré session aplikaci ukončí a projde dál k hlášení chyby.
     /// </summary>
     public SwitchUserOutcome Switch()
     {
@@ -65,45 +68,52 @@ public class SessionSwitcher(
         var login = PromptLogin(current);
         if (login == null) return new(SwitchUserResult.Cancelled);
 
-        // Feature #17 jako při startu: zrušená změna hesla zruší přepnutí a okna staré session zůstanou.
-        // Server příznak nuluje už v Login, další pokus po zrušení proto projde bez změny (stejně jako start).
-        if (login.ChangePasswordNeeded && !ForcePasswordChange(current, login.UserName))
-            return new(SwitchUserResult.Cancelled);
-
-        // Nový uživatel smí do jiných firem než starý; do nepovolené aktuální se nepřihlásí, session
-        // vznikne v povolené (legacy frmLoginEx.SelectedCompany). Bez povolené firmy switch neproběhne.
-        if (CompanySwitcher.PickForSession(
-                new ConnectionInfo(current.Server, current.Port, current.DataNamespace, current.Idfa),
-                current.Idfa, conn => LoadAllowedCompanies(conn, login)) is not { } picked)
+        bool oldSessionClosed = false;
+        SessionOpenResult opened;
+        try
         {
-            services.PopupDisplayer.Info("Uživatel nemá přístup k žádné firmě.");
-            return new(SwitchUserResult.Cancelled);
+            // Firmy nového uživatele se zjistí v aktuální firmě, do ní se přihlásí, smí-li.
+            opened = opener.Open(login,
+                new ConnectionInfo(current.Server, current.Port, current.DataNamespace, current.Idfa), current.Idfa,
+                new SessionOpenSteps
+                {
+                    ChangePassword = l => ForcePasswordChange(current, l.UserName),
+                    BeforeEstablish = () => oldSessionClosed = CloseOldSession(),
+                });
         }
-        var (company, companies) = picked;
+        catch when (oldSessionClosed)
+        {
+            // Stará session je odhlášená a okna zavřená, shell nemá s čím pokračovat; konec jako chyba startu.
+            shutdown();
+            throw;
+        }
+        switch (opened.Outcome)
+        {
+            case SessionOpenOutcome.Opened:
+                return new(SwitchUserResult.Success, opened.Companies);
+            case SessionOpenOutcome.LicenceRefused:
+                return new(SwitchUserResult.LicenceRefused);
+            case SessionOpenOutcome.LicenceCancelled:
+                return new(SwitchUserResult.LicenceCancelled);
+            case SessionOpenOutcome.UpdateRequired:
+                shutdown();
+                return new(SwitchUserResult.UpdateRequired);
+            default:
+                return new(SwitchUserResult.Cancelled);
+        }
+    }
 
+    private bool CloseOldSession()
+    {
         // Veto okna (neuložená data) ruší switch PŘED logoutem - přeživší okno by jinak
         // pracovalo pod session, která už na serveru neexistuje.
-        if (!closeAllWindows()) return new(SwitchUserResult.Cancelled);
+        if (!closeAllWindows()) return false;
 
         // Odhlásit starého uživatele - jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
-        // do server-side timeoutu. Až po confirmu (login != null), před swapem session.
-        // Flush telemetrie ještě pod starou session - server bere userID z ní.
+        // do server-side timeoutu. Flush telemetrie ještě pod starou session - server bere userID z ní.
         FlushTelemetry(services.MLRest);
         LogoutOldSession(services.MLRest);
-
-        var session = EstablishSession(
-            new ConnectionInfo(current.Server, current.Port, company.Database, company.Id), login);
-        wireActivityFailed(session.MLRest);
-
-        var outcome = AcquireSession(session);
-        if (outcome == LicenceAcquireOutcome.Accepted)
-            LicenceVerifier.LogLogin(session.MLRest);
-        return outcome switch
-        {
-            LicenceAcquireOutcome.Accepted => new(SwitchUserResult.Success, companies),
-            LicenceAcquireOutcome.Refused => new(SwitchUserResult.LicenceRefused),
-            _ => new(SwitchUserResult.LicenceCancelled),
-        };
+        return true;
     }
 
     /// <summary>Login dialog pro user switch - owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
@@ -129,13 +139,4 @@ public class SessionSwitcher(
     protected virtual void FlushTelemetry(IMLRest? mlRest) => EDUsageTelemetry.Flush(mlRest);
 
     protected virtual void LogoutOldSession(IMLRest? mlRest) => SessionLogout.Logout(mlRest);
-
-    protected virtual IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
-        => CompanySwitcher.LoadAllowed(conn, login);
-
-    protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
-        => SessionFactory.Establish(conn, login, services, options);
-
-    protected virtual LicenceAcquireOutcome AcquireSession(SessionContext session)
-        => LicenceVerifier.TryAcquireSession(session.MLRest, services);
 }

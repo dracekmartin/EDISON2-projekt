@@ -5,22 +5,22 @@ Bootstrap, login, připojení a session shellu; zbytek shellu v [../../CLAUDE.md
 ## Bootstrap, login, připojení
 
 `AppBootstrapper` nastavuje vzhled/font záměrně před loginem, ať je login dialog themovaný. Od prvního kroku `RunCore`
-platí `OnExplicitShutdown`: zavření wizardu, popupu ani login okna před shellem aplikaci neukončí (při auto-loginu je
-popup licence jediné okno). Proto má `Run` jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí
-v `DispatcherUnhandledException` (Handled) a app žije dál s login oknem, které během progress fáze zavření ruší.
-Logout hook (`WireSessionLogout`) se zapojuje hned po `Accepted`, ne až se shellem, aby zámek uvolnil i exit kvůli
-updatu. **Po návratu z `Run` bootstrapper dožil** - co běží dál, má vlastní session-scoped objekt (`SessionSwitcher`,
-`ShellShutdown`); session obou cest skládá `SessionFactory.Establish`. Debug vs. Release rozhoduje **jen
-`StartupOptions`** z `App` (nový rozdíl patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login
-dialog (E2E ho ignoruje).
+platí `OnExplicitShutdown`: zavření wizardu, popupu ani login okna před shellem aplikaci neukončí. Proto má `Run`
+jednu chybovou hranici → `Shutdown()`: bez ní výjimka skončí v `DispatcherUnhandledException` (Handled) a app žije
+dál s login oknem, které během progress fáze zavření ruší. Logout hook (`WireSessionLogout`) se zapojuje hned po
+`Accepted`, ne až se shellem, aby zámek uvolnil i exit kvůli updatu. **Po návratu z `Run` bootstrapper dožil** - co
+běží dál, má vlastní session-scoped objekt (`SessionSwitcher`, `ShellShutdown`). Cestu po loginu (změna hesla →
+firma → session → licence → update check → `LogLogin`) mají start i přihlášení jiného uživatele **jen
+v `SessionOpener`**: nový krok po loginu patří tam. Debug vs. Release rozhoduje **jen `StartupOptions`** z `App`
+(nový rozdíl patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login dialog (E2E ho ignoruje).
 
 Login okno (jen dialog cesta, ne `DevLogin`) po OK zůstává jako progress podklad, zavírá se až na shell
 `ContentRendered`; `HandOffLoginWindow` (všechny cesty) musí dát `Application.MainWindow` na shell **před**
 `OnMainWindowClose` (v dialog cestě ho drží otevřené login okno) - jinak app umře, nebo proces nemá konec.
-`LocalPrefs.ShellWindowBounds` je **jedna geometrie shellu i login okna** (před loginem není
-session, do které by šlo ukládat): login ji jen **čte**, zapisuje ji shell a jednou bootstrapper
-hned po přihlášení (při zavření je pozdě, shell ji čte dřív). Jméno a heslo (DPAPI blob) se pamatují
-**per server** (`LoginNames`/`RememberedPasswords`, klíč `server:port`), heslo se předvyplní jen ke jménu z blobu.
+`LocalPrefs.ShellWindowBounds` je **jedna geometrie shellu i login okna** (před loginem není session, do které by šlo
+ukládat): login ji jen **čte**, zapisuje ji shell a jednou bootstrapper hned po přihlášení (při zavření je pozdě, shell
+ji čte dřív). Jméno a heslo (DPAPI blob) se pamatují **per server** (`LoginNames`/`RememberedPasswords`, klíč
+`server:port`), heslo se předvyplní jen ke jménu z blobu.
 
 `SettingsLoader` čte `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho roznáší ze
 serveru): **`connection@restport`, ne `@port`** (to je superserver); wizard zapisuje plnou legacy
@@ -58,5 +58,5 @@ Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDA
 - Zavření shellu (= konec aplikace i všech agend) potvrzuje v `Closing` `EdisonMainViewModel.ConfirmShellClose`,
   takže **každé programové ukončení po vzniku shellu musí jít přes `ShellShutdown.Force` / `SuppressCloseConfirm`
   na VM**, jinak force logout nebo version gate uvízne na dialogu, který smí uživatel odmítnout.
-- `LogLogin` jde po `Accepted` startu a switch user, **ne** po přepnutí firmy (parita). `SyncFromMline` smí
+- `LogLogin` jde po startu a switch user, **ne** po přepnutí firmy (parita). `SyncFromMline` smí
   na klon mimo UI thread: EDLicence `Update` na rozdíl od `Activation` nesahá na modulový globál.

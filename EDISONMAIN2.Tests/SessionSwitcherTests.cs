@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
@@ -11,8 +12,9 @@ using static ALVA.EDISONAPI.Database;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Přihlášení jiného uživatele: 4 výsledky (cancel v dialogu, licence Refused/Cancelled, success)
-/// a co při nich smí / nesmí proběhnout. Test subclass přepisuje hooky sahající na server a WPF.
+/// Přihlášení jiného uživatele: login dialog, zavření staré session před založením nové a mapování
+/// výsledku <see cref="SessionOpener"/>. Cestu po loginu ověřuje <see cref="SessionOpenerTests"/>;
+/// tady běží skutečná s nahrazenými kroky na serveru.
 /// </summary>
 public class SessionSwitcherTests
 {
@@ -27,19 +29,25 @@ public class SessionSwitcherTests
     {
         private readonly WireSpy _wire;
 
-        private TestableSessionSwitcher(EDServices services, WireSpy wire, Func<bool> closeAllWindows)
-            : base(services, () => null, wire.Attach, closeAllWindows,
-                   Substitute.For<IWindowStateStore>(), new StartupOptions()) => _wire = wire;
+        private TestableSessionSwitcher(EDServices services, WireSpy wire, TestableSessionOpener opener,
+                                        Func<bool> closeAllWindows, Action shutdown)
+            : base(services, () => null, opener, closeAllWindows, Substitute.For<IWindowStateStore>(), shutdown)
+        {
+            _wire = wire;
+            Opener = opener;
+        }
 
-        public static TestableSessionSwitcher Create(EDServices services, Func<bool> closeAllWindows)
-            => new(services, new WireSpy(), closeAllWindows);
+        public static TestableSessionSwitcher Create(EDServices services, Func<bool> closeAllWindows, Action? shutdown = null)
+        {
+            var wire = new WireSpy();
+            return new(services, wire, new TestableSessionOpener(services, wire.Attach), closeAllWindows, shutdown ?? (() => { }));
+        }
 
+        public TestableSessionOpener Opener { get; }
+        public List<string> Calls => Opener.Calls;
         public IMLRest? WiredMLRest => _wire.Wired;
         public LoginResult? PromptResult { get; set; }
         public MLRest? CapturedPromptConnection { get; private set; }
-        public LicenceAcquireOutcome SessionOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
-        public IMLRest NewSessionMLRest { get; set; } = MLRestMocks.Create();
-        public readonly List<string> Calls = [];
         public IMLRest? FlushedWith { get; private set; }
 
         protected override LoginResult? PromptLogin(MLRest connection)
@@ -49,12 +57,14 @@ public class SessionSwitcherTests
         }
 
         public bool PasswordChanged { get; set; } = true;
+        public Exception? PasswordThrows { get; set; }
         public (MLRest Connection, string UserName)? PasswordChange { get; private set; }
 
         protected override bool ForcePasswordChange(MLRest connection, string userName)
         {
             Calls.Add("password");
             PasswordChange = (connection, userName);
+            if (PasswordThrows is not null) throw PasswordThrows;
             return PasswordChanged;
         }
 
@@ -65,26 +75,6 @@ public class SessionSwitcherTests
         }
 
         protected override void LogoutOldSession(IMLRest? mlRest) => Calls.Add("logout");
-
-        public IReadOnlyList<CompanyStruct> AllowedCompanies { get; set; } = [new() { Id = "CB_DP", Database = "CB_DP" }];
-        public (ConnectionInfo Conn, LoginResult Login)? AllowedQuery { get; private set; }
-
-        protected override IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
-        {
-            AllowedQuery = (conn, login);
-            return AllowedCompanies;
-        }
-
-        protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login)
-        {
-            Calls.Add("establish");
-            CapturedConnection = conn;
-            return new SessionContext(NewSessionMLRest, login);
-        }
-
-        public ConnectionInfo? CapturedConnection { get; private set; }
-
-        protected override LicenceAcquireOutcome AcquireSession(SessionContext session) => SessionOutcome;
     }
 
     private static EDServices ServicesWith(string server, int port, string db, string idfa, string loginName)
@@ -94,12 +84,14 @@ public class SessionSwitcherTests
                               Substitute.For<IPopupDisplayer>());
     }
 
+    private static EDServices Services() => ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+
     private static LoginResult ReauthLogin() => new(7, "bob", "Bob", false, "", false, true, "");
 
     [Fact]
     public void Switch_PromptReturnsNull_ReturnsCancelled_NoSideEffects()
     {
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var services = Services();
         var originalMLRest = services.MLRest;
         var closeAll = Substitute.For<Func<bool>>();
         closeAll.Invoke().Returns(true);
@@ -110,6 +102,7 @@ public class SessionSwitcherTests
 
         Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
         closeAll.DidNotReceiveWithAnyArgs().Invoke();
+        Assert.Empty(s.Calls);
         Assert.Same(originalMLRest, services.MLRest);
         Assert.Null(s.WiredMLRest);
     }
@@ -117,7 +110,7 @@ public class SessionSwitcherTests
     [Fact]
     public void Switch_PromptReceivesCurrentConnection()
     {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        var s = TestableSessionSwitcher.Create(Services(), () => true);
         s.PromptResult = null;
 
         s.Switch();
@@ -134,27 +127,30 @@ public class SessionSwitcherTests
     {
         var closeAll = Substitute.For<Func<bool>>();
         closeAll.Invoke().Returns(true);
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), closeAll);
+        var s = TestableSessionSwitcher.Create(Services(), closeAll);
         s.PromptResult = ReauthLogin();
-        s.SessionOutcome = LicenceAcquireOutcome.Accepted;
 
         var outcome = s.Switch();
 
         Assert.Equal(SwitchUserResult.Success, outcome.Outcome);
         closeAll.Received(1).Invoke();
-        Assert.Same(s.NewSessionMLRest, s.WiredMLRest);   // force-logout handler musí viset na nové session
+        Assert.Same(s.Opener.NewSessionMLRest, s.WiredMLRest);   // force-logout handler musí viset na nové session
+        Assert.Same(s.Opener.AllowedCompanies, outcome.Companies);
     }
 
     [Fact]
-    public void Switch_NewSessionKeepsCompanyAndConnection()
+    public void Switch_QueriesNewUserInCurrentCompany_SessionKeepsConnection()
     {
         // Mění se uživatel - smí-li do aktuální firmy, nová session zdědí server/port/namespace/idfa staré.
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
-        s.PromptResult = ReauthLogin();
+        var s = TestableSessionSwitcher.Create(Services(), () => true);
+        var login = ReauthLogin();
+        s.PromptResult = login;
 
         s.Switch();
 
-        Assert.Equal(new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"), s.CapturedConnection);
+        Assert.Equal(new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"), s.Opener.AllowedQuery?.Conn);
+        Assert.Same(login, s.Opener.AllowedQuery?.Login);
+        Assert.Equal(new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"), s.Opener.EstablishedConnection);
     }
 
     [Fact]
@@ -162,7 +158,7 @@ public class SessionSwitcherTests
     {
         // Veto okna (neuložená data) ruší switch před logoutem staré session - přeživší okno
         // by jinak pracovalo pod session, která už na serveru neexistuje.
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var services = Services();
         var originalMLRest = services.MLRest;
         var s = TestableSessionSwitcher.Create(services, () => false);
         s.PromptResult = ReauthLogin();
@@ -170,8 +166,9 @@ public class SessionSwitcherTests
         var outcome = s.Switch();
 
         Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
+        Assert.Equal(["allowed"], s.Calls);   // bez flush, logoutu i nové session
         Assert.Same(originalMLRest, services.MLRest);
-        Assert.Null(s.WiredMLRest);   // nová session nevznikla
+        Assert.Null(s.WiredMLRest);
     }
 
     [Fact]
@@ -179,31 +176,35 @@ public class SessionSwitcherTests
     {
         // Deklarované pořadí: flush jde pod starou session (server bere userID z ní),
         // logout uvolní ACTIVITY zámek starého uživatele, teprve pak vzniká nová session.
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var services = Services();
         var originalMLRest = services.MLRest;
         var s = TestableSessionSwitcher.Create(services, () => true);
         s.PromptResult = ReauthLogin();
 
         s.Switch();
 
-        Assert.Equal(["flush", "logout", "establish"], s.Calls);
+        Assert.Equal(["allowed", "flush", "logout", "establish", "acquire", "update"], s.Calls);
         Assert.Same(originalMLRest, s.FlushedWith);
     }
 
     [Fact]
-    public void Switch_CancelledPromptOrVeto_NoFlushNoLogout()
+    public void Switch_NoAllowedCompany_CancelledBeforeClosingWindows()
     {
-        var cancelled = TestableSessionSwitcher.Create(
-            ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
-        cancelled.PromptResult = null;
-        cancelled.Switch();
-        Assert.Empty(cancelled.Calls);
+        // Odmítnutí až po zavření oken a logoutu by uživatele připravilo o session i rozdělanou práci.
+        var services = Services();
+        var originalMLRest = services.MLRest;
+        var closeAll = Substitute.For<Func<bool>>();
+        closeAll.Invoke().Returns(true);
+        var s = TestableSessionSwitcher.Create(services, closeAll);
+        s.PromptResult = ReauthLogin();
+        s.Opener.AllowedCompanies = [];
 
-        var vetoed = TestableSessionSwitcher.Create(
-            ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => false);
-        vetoed.PromptResult = ReauthLogin();
-        vetoed.Switch();
-        Assert.Empty(vetoed.Calls);
+        var outcome = s.Switch();
+
+        Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
+        closeAll.DidNotReceiveWithAnyArgs().Invoke();
+        Assert.Equal(["allowed"], s.Calls);
+        Assert.Same(originalMLRest, services.MLRest);
     }
 
     // Vynucená změna hesla (feature #17) platí i pro přihlášení jiného uživatele (legacy frmNoMDI.vb:3320 → :734).
@@ -211,7 +212,7 @@ public class SessionSwitcherTests
     [Fact]
     public void Switch_PasswordChangeCancelled_Cancelled_WindowsStayOpen()
     {
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var services = Services();
         var originalMLRest = services.MLRest;
         var closeAll = Substitute.For<Func<bool>>();
         closeAll.Invoke().Returns(true);
@@ -224,7 +225,6 @@ public class SessionSwitcherTests
         Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
         closeAll.DidNotReceiveWithAnyArgs().Invoke();
         Assert.Equal(["password"], s.Calls);
-        Assert.Null(s.AllowedQuery);
         Assert.Same(originalMLRest, services.MLRest);
         Assert.Null(s.WiredMLRest);
     }
@@ -232,124 +232,89 @@ public class SessionSwitcherTests
     [Fact]
     public void Switch_PasswordChanged_ContinuesAsNewUser()
     {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        var s = TestableSessionSwitcher.Create(Services(), () => true);
         s.PromptResult = ReauthLogin() with { ChangePasswordNeeded = true };
 
         var outcome = s.Switch();
 
         Assert.Equal(SwitchUserResult.Success, outcome.Outcome);
-        Assert.Equal(["password", "flush", "logout", "establish"], s.Calls);
+        Assert.Equal("password", s.Calls[0]);
         Assert.Same(s.CapturedPromptConnection, s.PasswordChange?.Connection);
         Assert.Equal("bob", s.PasswordChange?.UserName);
     }
 
-    [Fact]
-    public void Switch_LicenceRefused_MapsToLicenceRefused()
+    [Theory]
+    [InlineData(LicenceAcquireOutcome.Refused, SwitchUserResult.LicenceRefused)]
+    [InlineData(LicenceAcquireOutcome.Cancelled, SwitchUserResult.LicenceCancelled)]
+    public void Switch_LicenceNotAccepted_MapsOutcome_ShutdownLeftToCaller(
+        LicenceAcquireOutcome licence, SwitchUserResult expected)
     {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        var shutdown = Substitute.For<Action>();
+        var s = TestableSessionSwitcher.Create(Services(), () => true, shutdown);
         s.PromptResult = ReauthLogin();
-        s.SessionOutcome = LicenceAcquireOutcome.Refused;
+        s.Opener.LicenceOutcome = licence;
 
         var outcome = s.Switch();
 
-        Assert.Equal(SwitchUserResult.LicenceRefused, outcome.Outcome);
+        Assert.Equal(expected, outcome.Outcome);
+        shutdown.DidNotReceive().Invoke();   // hlášku a ukončení volí VM
     }
 
     [Fact]
-    public void Switch_LicenceCancelled_MapsToLicenceCancelled()
+    public void Switch_UpdateRequired_ShutsDownLikeStart()
     {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        // Legacy mnuPrgLogin_Click (frmNoMDI.vb:3324) po přepnutí kontroluje aktualizace a při vynucené končí.
+        var shutdown = Substitute.For<Action>();
+        var s = TestableSessionSwitcher.Create(Services(), () => true, shutdown);
         s.PromptResult = ReauthLogin();
-        s.SessionOutcome = LicenceAcquireOutcome.Cancelled;
+        s.Opener.UpdateRequired = true;
 
         var outcome = s.Switch();
 
-        Assert.Equal(SwitchUserResult.LicenceCancelled, outcome.Outcome);
+        Assert.Equal(SwitchUserResult.UpdateRequired, outcome.Outcome);
+        shutdown.Received(1).Invoke();
+    }
+
+    [Fact]
+    public void Switch_DoesNotStartReleaseNotice()
+    {
+        // Notice čte jen status bar nového shellu; po přepnutí by dotaz na release server přišel nazmar.
+        var s = TestableSessionSwitcher.Create(Services(), () => true);
+        s.PromptResult = ReauthLogin();
+
+        s.Switch();
+
+        Assert.False(s.Opener.NoticeRequested);
     }
 
     [Theory]
-    [InlineData(LicenceAcquireOutcome.Accepted, 1)]
-    [InlineData(LicenceAcquireOutcome.Refused, 0)]
-    [InlineData(LicenceAcquireOutcome.Cancelled, 0)]
-    public void Switch_LogsLoginOnlyWhenAccepted_OnNewSession(LicenceAcquireOutcome outcome, int expected)
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Switch_ThrowsAfterOldSessionClosed_ShutsDownAndRethrows(bool inUpdateCheck)
     {
-        // Legacy mnuPrgLogin_Click (frmNoMDI.vb:3347) zapisuje přihlášení nového uživatele do sestavy USERS.
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
+        // Okna jsou zavřená a stará session odhlášená: VM by zůstal se stromem a právy starého uživatele.
+        var shutdown = Substitute.For<Action>();
+        var s = TestableSessionSwitcher.Create(Services(), () => true, shutdown);
         s.PromptResult = ReauthLogin();
-        s.SessionOutcome = outcome;
+        var failure = new InvalidOperationException("server");
+        if (inUpdateCheck) s.Opener.UpdateCheckThrows = failure;
+        else s.Opener.AcquireThrows = failure;
 
-        s.Switch();
-
-        s.NewSessionMLRest.Received(expected).QueryOrThrow("ALVA.SYS.Login", "LogLogin",
-            Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == Environment.MachineName));
-    }
-
-    // Povolené firmy nového uživatele (legacy mnuPrgLogin_Click → frmLoginEx s checkAccess).
-
-    [Fact]
-    public void Switch_QueriesAllowedCompaniesAsNewUser_InCurrentCompany()
-    {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
-        var login = ReauthLogin();
-        s.PromptResult = login;
-
-        s.Switch();
-
-        Assert.Equal(new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"), s.AllowedQuery?.Conn);
-        Assert.Same(login, s.AllowedQuery?.Login);
+        Assert.Same(failure, Assert.Throws<InvalidOperationException>(s.Switch));
+        shutdown.Received(1).Invoke();
     }
 
     [Fact]
-    public void Switch_CurrentCompanyNotAllowed_SessionInFirstAllowed()
+    public void Switch_ThrowsBeforeOldSessionClosed_KeepsShellRunning()
     {
-        var s = TestableSessionSwitcher.Create(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => true);
-        s.PromptResult = ReauthLogin();
-        s.AllowedCompanies = [new() { Id = "JI_DP", Database = "JI_DB" }, new() { Id = "PI_DP", Database = "PI_DB" }];
-
-        var outcome = s.Switch();
-
-        Assert.Equal(new ConnectionInfo("test-host", 9999, "JI_DB", "JI_DP"), s.CapturedConnection);
-        Assert.Same(s.AllowedCompanies, outcome.Companies);
-    }
-
-    [Fact]
-    public void Switch_NoAllowedCompany_CancelledBeforeClosingWindows()
-    {
-        // Odmítnutí až po zavření oken a logoutu by uživatele připravilo o session i rozdělanou práci.
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
-        var originalMLRest = services.MLRest;
+        var shutdown = Substitute.For<Action>();
         var closeAll = Substitute.For<Func<bool>>();
-        closeAll.Invoke().Returns(true);
-        var s = TestableSessionSwitcher.Create(services, closeAll);
-        s.PromptResult = ReauthLogin();
-        s.AllowedCompanies = [];
+        var s = TestableSessionSwitcher.Create(Services(), closeAll, shutdown);
+        s.PromptResult = ReauthLogin() with { ChangePasswordNeeded = true };
+        s.PasswordThrows = new InvalidOperationException("server");
 
-        var outcome = s.Switch();
-
-        Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
-        services.PopupDisplayer.Received(1).Info("Uživatel nemá přístup k žádné firmě.");
+        Assert.Throws<InvalidOperationException>(s.Switch);
+        shutdown.DidNotReceive().Invoke();
         closeAll.DidNotReceiveWithAnyArgs().Invoke();
-        Assert.Empty(s.Calls);
-        Assert.Same(originalMLRest, services.MLRest);
-    }
-
-    /// <summary>Skutečný <c>EstablishSession</c> bez přepsání - jen skládá MLRest, na server nesahá.</summary>
-    private sealed class EstablishProbe(EDServices services, StartupOptions options)
-        : SessionSwitcher(services, () => null, _ => { }, () => true, Substitute.For<IWindowStateStore>(), options)
-    {
-        public SessionContext Establish(ConnectionInfo conn, LoginResult login) => EstablishSession(conn, login);
-    }
-
-    [Fact]
-    public void EstablishSession_UsesStartupOptions()
-    {
-        // Nová session musí mít GUID a verzi jako startovní - v dev jinak hromadí zámky, E2E by shodil vývojářův shell.
-        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
-        var probe = new EstablishProbe(services, StartupOptions.Development(["e2e=1"], null));
-
-        var inner = ((MLRestAdapter)probe.Establish(new ConnectionInfo("test-host", 9999, "CB_DP", "CB_DP"), ReauthLogin()).MLRest).Inner;
-
-        Assert.Equal($"{TestRunOptions.WindowMarker}-{Environment.MachineName}-{Environment.UserName}", inner.GUID);
-        Assert.Equal("", inner.EdisonVersion);
     }
 }

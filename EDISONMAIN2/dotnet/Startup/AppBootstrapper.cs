@@ -48,7 +48,8 @@ public class AppBootstrapper
 
     /// <summary>Pro test-only subclassy - neinjektuje <see cref="Application"/>, takže
     /// derived class MUSÍ přepsat všechny metody co by ho použily (Shutdown, HoldShutdownUntilHandOff,
-    /// HandOffLoginWindow, BuildShellWindow, WireActivityFailedHandler, dialog větev TryLogin).</summary>
+    /// HandOffLoginWindow, BuildShellWindow, dialog větev TryLogin). Run navíc potřebuje přepsat
+    /// CreateSessionOpener, jinak volá server.</summary>
     protected AppBootstrapper() : this(new StartupOptions())
     {
     }
@@ -115,64 +116,50 @@ public class AppBootstrapper
             return null;
         }
 
-        // Feature #17 (vynucená změna hesla): server přihlásí, ale s příznakem změnit heslo.
-        // Nezměněné → zrušení loginu (uživatel nemá jak dovnitř bez změny).
-        if (login.ChangePasswordNeeded && !ForcePasswordChange(prep.LoginRest, login.UserName))
-        {
-            Shutdown();
-            return null;
-        }
-
-        // Předloginový seznam je úplný (server bez uživatele nefiltruje); shell nabízí jen povolené
-        // firmy a startuje v jedné z nich (legacy frmLoginEx.SelectedCompany).
-        if (CompanySwitcher.PickForSession(
-                new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
-                PreferredIdfa(prefs, prep.Companies, prep.Server, prep.Port), conn => LoadAllowedCompanies(conn, login)) is not { } start)
-        {
-            services.PopupDisplayer.Info("Uživatel nemá přístup k žádné firmě.");
-            Shutdown();
-            return null;
-        }
-        prep = prep with { Companies = start.Allowed, StartCompany = start.Company };
-
-        ShowStartupProgress("Ověřuji licenci…");
-        var session = EstablishSession(
+        // Předloginový seznam je úplný (server bez uživatele nefiltruje); povolené firmy uživatele vybere opener.
+        var opener = CreateSessionOpener(services);
+        var opened = opener.Open(login,
             new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
-            login, services);
-
-        var outcome = AcquireSession(session, services);
-        if (outcome != LicenceAcquireOutcome.Accepted)
+            PreferredIdfa(prefs, prep.Companies, prep.Server, prep.Port),
+            new SessionOpenSteps
+            {
+                ChangePassword = l => ForcePasswordChange(prep.LoginRest, l.UserName),
+                BeforeEstablish = () =>
+                {
+                    ShowStartupProgress("Ověřuji licenci…");
+                    return true;
+                },
+                AfterAccepted = session =>
+                {
+                    // Před update checkem - LastIdfa musí být uložená i když teď shell skončí updatem.
+                    SavePostLoginState(prefs, prep.Server, prep.Port, session.MLRest.Idfa, login.UserName);
+                    // Od Accepted existuje ACTIVITY zámek - logout musí proběhnout při každém ukončení odteď,
+                    // včetně exitu kvůli updatu a výjimky níž, ne až od vzniku shellu.
+                    WireSessionLogout(services);
+                    // Popup před shellem jako hlášky licence; nastavuje ho jen E2E přepínač.
+                    if (_options.PreShellNotice is { } notice) services.PopupDisplayer.Info(notice);
+                    ShowStartupProgress("Kontroluji aktualizace…");
+                },
+                StartsReleaseNotice = true,
+            });
+        if (opened.Outcome != SessionOpenOutcome.Opened)
         {
-            if (outcome == LicenceAcquireOutcome.Refused)
+            if (opened.Outcome == SessionOpenOutcome.LicenceRefused)
                 services.PopupDisplayer.Info("Nelze se přihlásit, byl překročen počet licencí.");
             Shutdown();
             return null;
         }
-
-        SavePostLoginState(prefs, prep.Server, prep.Port, session.MLRest.Idfa, login.UserName);
-        WireActivityFailedHandler(session, services);
-        // Od Accepted existuje ACTIVITY zámek - logout musí proběhnout při každém ukončení odteď,
-        // včetně exitu kvůli updatu a výjimky níž, ne až od vzniku shellu.
-        WireSessionLogout(services);
-        // Popup před shellem jako hlášky licence; nastavuje ho jen E2E přepínač.
-        if (_options.PreShellNotice is { } notice) services.PopupDisplayer.Info(notice);
-
-        // Až po SavePostLoginState - LastIdfa musí být uložená i když teď shell skončí updatem.
-        ShowStartupProgress("Kontroluji aktualizace…");
-        var update = CheckForUpdate(session, services);
-        if (update.ShouldExit)
-        {
-            Shutdown();
-            return null;
-        }
-        // Až po update checku: legacy start ukončený updatem přihlášení nezapsal (frmNoMDI.vb:4917 před :4948).
-        LicenceVerifier.LogLogin(session.MLRest);
+        prep = prep with { Companies = opened.Companies! };
 
         ShowStartupProgress("Spouštím aplikaci…");
-        var wnd = BuildShellWindow(prep, services, nav, popup, prefs, update.Notice);
+        var wnd = BuildShellWindow(prep, services, nav, popup, prefs, opener, opened.ReleaseNotice);
         HandOffLoginWindow(wnd);
         return wnd;
     }
+
+    /// <summary>Cesta po loginu sdílená s přihlášením jiného uživatele; tatáž instance jde do <see cref="SessionSwitcher"/>.</summary>
+    protected virtual SessionOpener CreateSessionOpener(EDServices services) =>
+        new(services, _options, BuildActivityFailedWire(services));
 
     /// <summary>
     /// Do předání shellu ukončuje aplikaci jen <see cref="Shutdown"/>. Výchozí <c>OnLastWindowClose</c>
@@ -207,45 +194,7 @@ public class AppBootstrapper
     private void RenderStartupProgress() =>
         _application.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Render);
 
-    /// <summary>
-    /// Klientský update check - mandatory, bez user volby (stanice nemá co rozhodovat).
-    /// <c>ShouldExit</c> = shell se má ukončit (spawnutý EDUPDATE / rozbitý stav);
-    /// <c>Notice</c> = běžící notice-only kontrola release serveru pro status bar.
-    /// </summary>
-    protected virtual (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) CheckForUpdate(
-        SessionContext session, EDServices services)
-    {
-        var updater = CreateUpdater();
-        // Klon s Locks=0: session nese verzi stanice a po FULL vydání by ji server version gate
-        // odmítl dřív, než se update spustí (legacy shell kontroluje ještě před nastavením verze).
-        var settings = updater.LoadSettings(session.MLRest.With(cacheLocks: 0));
-        var result = updater.Check(settings);
-        switch (result.Outcome)
-        {
-            case UpdateOutcome.UpdateRequired:
-                services.PopupDisplayer.Info(
-                    $"K dispozici je nová verze programu [{result.Version}]. Aplikace se nyní zaktualizuje a bude ukončena.");
-                try
-                {
-                    updater.CopyUpdater(settings.SourceDir);
-                    updater.LaunchUpdate(settings.SourceDir, result.Version, result.Forced, settings.ForcedStamp);
-                }
-                catch (Exception ex)
-                {
-                    services.PopupDisplayer.Info(
-                        $"Aktualizaci nelze spustit ({ex.Message}). Kontaktujte Vašeho správce IS.");
-                }
-                return (true, null);
-            case UpdateOutcome.Broken:
-                services.PopupDisplayer.Info(result.Message);
-                return (true, null);
-            default:
-                // Notice-only kontrola release serveru M-line běží paralelně se stavbou shellu;
-                // výsledek napojí BuildShellWindow do status baru.
-                return (false, Task.Run(() => updater.GetReleaseNotice(settings, VerzeInf.Current)));
-        }
-    }
-
+    // Jen pro brány před loginem; update check po loginu má SessionOpener.
     protected virtual Updater CreateUpdater() => new();
 
     /// <summary>Login okno držené otevřené přes post-login kroky (jen dialog cesta, ne DevLogin):
@@ -254,7 +203,7 @@ public class AppBootstrapper
     private Window? _startupLoginWindow;
 
     /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest). Po loginu
-    /// <c>Companies</c>/<c>StartCompany</c> nahradí povolené firmy uživatele.</summary>
+    /// <c>Companies</c> nahradí povolené firmy uživatele.</summary>
     protected record PreLoginContext(
         MLRest LoginRest,
         IReadOnlyList<CompanyStruct> Companies,
@@ -456,15 +405,6 @@ public class AppBootstrapper
         }
     }
 
-    protected virtual IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
-        => CompanySwitcher.LoadAllowed(conn, login);
-
-    protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
-        => SessionFactory.Establish(conn, login, services, _options);
-
-    protected virtual LicenceAcquireOutcome AcquireSession(SessionContext session, EDServices services)
-        => LicenceVerifier.TryAcquireSession(session.MLRest, services);
-
     protected virtual void SavePostLoginState(ILocalPrefs prefs, string server, int port, string idfa, string? loginName)
     {
         prefs.LastIdfa = idfa;
@@ -475,16 +415,9 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Wire-up server force-logout - když server odstraní ACTIVITY zámek (timeout, výpadek,
-    /// admin disconnect), graceful shutdown s informační hláškou.
-    /// </summary>
-    protected virtual void WireActivityFailedHandler(SessionContext session, EDServices services)
-        => BuildActivityFailedWire(services)(session.MLRest);
-
-    /// <summary>
-    /// Factory pro delegát který napojí EdisonActivityFailed handler na daný MLRest. Použito
-    /// pro initial bootstrap (<see cref="WireActivityFailedHandler"/>) i pro user switch
-    /// (<see cref="SessionSwitcher"/> swapuje MLRest a musí napojit handler znovu).
+    /// Delegát, který napojí force-logout na MLRest každé nové session (start i přihlášení jiného
+    /// uživatele, <see cref="SessionOpener"/>): když server odstraní ACTIVITY zámek (timeout, výpadek,
+    /// admin disconnect) nebo nesedí verze, aplikace skončí s informační hláškou.
     /// </summary>
     private Action<IMLRest> BuildActivityFailedWire(EDServices services)
     {
@@ -513,7 +446,7 @@ public class AppBootstrapper
     protected virtual EdisonMainWindow BuildShellWindow(
         PreLoginContext prep,
         EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
-        Task<ReleaseNoticeResult>? releaseNotice)
+        SessionOpener opener, Task<ReleaseNoticeResult>? releaseNotice)
     {
         var treeLoader = new ModuleTreeLoader();
         var switcher = new CompanySwitcher(services, prefs, nav.TryCloseShellWindows, nav.CloseLegacyModules);
@@ -521,9 +454,10 @@ public class AppBootstrapper
         var shortcuts = new ModuleShortcutsService();
         var miniAppCatalog = MiniAppCatalog.Build(MiniAppProviders(shortcuts, _options.DevMiniApps));
         // Owner login dialogu se čte lazily - MainWindow ukazuje na shell až po HandOffLoginWindow.
-        var sessionSwitcher = new SessionSwitcher(services, () => _application.MainWindow,
-                                                  BuildActivityFailedWire(services), nav.TryCloseAll,
-                                                  new ShellWindowStateStore(prefs), _options);
+        // Lokální kopie: switcher žije celou session, closure na bootstrapper by ho držela taky.
+        var app = _application;
+        var sessionSwitcher = new SessionSwitcher(services, () => app.MainWindow, opener,
+                                                  nav.TryCloseAll, new ShellWindowStateStore(prefs), _shutdown.Force);
         bool testRun = _options.TestRun is not null;
         var viewModel = new EdisonMainViewModel(prep.Companies, CompanySwitcher.LoadAllowed, treeLoader,
                                                 switcher, sessionSwitcher.Switch,

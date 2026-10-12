@@ -7,11 +7,11 @@ using NSubstitute;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Reálné tělo <c>AppBootstrapper.CheckForUpdate</c> (mapování výsledku Check na popup +
-/// copy/launch + exit) - FakeUpdater řídí verze přes seamy Updateru, bootstrapper přepisuje
+/// Reálné tělo <c>SessionOpener.CheckForUpdate</c> (mapování výsledku Check na popup +
+/// copy/launch + exit) - FakeUpdater řídí verze přes seamy Updateru, opener přepisuje
 /// jen CreateUpdater.
 /// </summary>
-public class AppBootstrapperUpdateTests
+public class SessionOpenerUpdateTests
 {
     private sealed class FakeUpdater : Updater
     {
@@ -42,33 +42,33 @@ public class AppBootstrapperUpdateTests
             Calls.Add($"launch:{version}|forced={forced}|stamp={forcedStamp}");
     }
 
-    private sealed class UpdateCheckBootstrapper(Updater updater) : AppBootstrapper
+    private sealed class UpdateCheckOpener(EDServices services, Updater updater)
+        : SessionOpener(services, new StartupOptions(), _ => { })
     {
         protected override Updater CreateUpdater() => updater;
 
-        public (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) Call(EDServices services,
-            EDControls.IMLRest? sessionRest = null) =>
+        public (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) Call(EDControls.IMLRest? sessionRest = null,
+                                                                         bool startNotice = true) =>
             CheckForUpdate(
                 new SessionContext(sessionRest ?? MLRestMocks.Create(),
                     new LoginResult(7, "bob", "Bob", false, "", false, true, "")),
-                services);
+                startNotice);
     }
 
-    private static (UpdateCheckBootstrapper Bootstrapper, IPopupDisplayer Popup, EDServices Services) Build(
-        FakeUpdater updater)
+    private static (UpdateCheckOpener Opener, IPopupDisplayer Popup) Build(FakeUpdater updater)
     {
         var popup = Substitute.For<IPopupDisplayer>();
         var services = new EDServices(null, Substitute.For<IWindowNavigator>(), popup);
-        return (new UpdateCheckBootstrapper(updater), popup, services);
+        return (new UpdateCheckOpener(services, updater), popup);
     }
 
     [Fact]
     public void UpdateRequired_InformsCopiesLaunchesAndExits()
     {
         var updater = new FakeUpdater { SourceVersion = "260901.1" };
-        var (bootstrapper, popup, services) = Build(updater);
+        var (opener, popup) = Build(updater);
 
-        var (shouldExit, notice) = bootstrapper.Call(services);
+        var (shouldExit, notice) = opener.Call();
 
         Assert.True(shouldExit);
         Assert.Null(notice);
@@ -82,12 +82,12 @@ public class AppBootstrapperUpdateTests
         // Session po licenci má Locks=1 a verzi stanice - po FULL vydání by LoadSettings odmítl
         // server version gate a shell by skončil dřív, než spustí updater.
         var updater = new FakeUpdater { SourceVersion = "260901.1" };
-        var (bootstrapper, _, services) = Build(updater);
+        var (opener, _) = Build(updater);
         var sessionRest = MLRestMocks.Create();
         var clone = MLRestMocks.Create();
         sessionRest.With(cacheLocks: 0, idfa: null, dataNamespace: null).Returns(clone);
 
-        bootstrapper.Call(services, sessionRest);
+        opener.Call(sessionRest);
 
         Assert.Same(clone, updater.LoadedFrom);
     }
@@ -97,9 +97,9 @@ public class AppBootstrapperUpdateTests
     {
         // Bez copy/launch by se shell točil v detekci - exit platí, uživatel dostane hlášku.
         var updater = new FakeUpdater { SourceVersion = "260901.1", CopyThrows = true };
-        var (bootstrapper, popup, services) = Build(updater);
+        var (opener, popup) = Build(updater);
 
-        var (shouldExit, _) = bootstrapper.Call(services);
+        var (shouldExit, _) = opener.Call();
 
         Assert.True(shouldExit);
         popup.Received(1).Info(Arg.Is<string>(s => s.Contains("Aktualizaci nelze spustit")));
@@ -114,9 +114,9 @@ public class AppBootstrapperUpdateTests
             Settings = new UpdateSettings("260825.1", @"\\server\Edison", "", ForcedStamp: "66234,2"),
             StampSeen = "66230,1", // lokální stopa nesedí s razítkem z Caché
         };
-        var (bootstrapper, popup, services) = Build(updater);
+        var (opener, popup) = Build(updater);
 
-        var (shouldExit, _) = bootstrapper.Call(services);
+        var (shouldExit, _) = opener.Call();
 
         Assert.True(shouldExit);
         Assert.Equal(["copy", "launch:260825.1|forced=True|stamp=66234,2"], updater.Calls);
@@ -126,9 +126,9 @@ public class AppBootstrapperUpdateTests
     public void Broken_InformsAndExitsWithoutLaunching()
     {
         var updater = new FakeUpdater { SourceVersion = "" }; // zdrojová verze nečitelná
-        var (bootstrapper, popup, services) = Build(updater);
+        var (opener, popup) = Build(updater);
 
-        var (shouldExit, notice) = bootstrapper.Call(services);
+        var (shouldExit, notice) = opener.Call();
 
         Assert.True(shouldExit);
         Assert.Null(notice);
@@ -140,9 +140,9 @@ public class AppBootstrapperUpdateTests
     public async Task NoUpdate_StartsNoticeOnlyCheckAndContinues()
     {
         var updater = new FakeUpdater(); // verze shodné → None
-        var (bootstrapper, popup, services) = Build(updater);
+        var (opener, popup) = Build(updater);
 
-        var (shouldExit, notice) = bootstrapper.Call(services);
+        var (shouldExit, notice) = opener.Call();
 
         Assert.False(shouldExit);
         Assert.NotNull(notice);
@@ -150,5 +150,17 @@ public class AppBootstrapperUpdateTests
         Assert.Equal(ReleaseNoticeOutcome.Unknown, (await notice).Outcome);
         popup.DidNotReceiveWithAnyArgs().Info(default!);
         Assert.Empty(updater.Calls);
+    }
+
+    [Fact]
+    public void NoUpdate_WithoutNoticeRequest_StartsNoNoticeCheck()
+    {
+        // Přihlášení jiného uživatele status bar nepřestaví, dotaz na release server by byl zbytečný.
+        var (opener, _) = Build(new FakeUpdater());
+
+        var (shouldExit, notice) = opener.Call(startNotice: false);
+
+        Assert.False(shouldExit);
+        Assert.Null(notice);
     }
 }

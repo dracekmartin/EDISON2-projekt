@@ -14,8 +14,9 @@ using static ALVA.EDISONAPI.Database;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// 4 exit pathy z <see cref="AppBootstrapper.Run"/>: login cancel, licence Refused,
-/// licence Cancelled, success. Test subclass přepisuje virtual hooky aby se obešel
+/// Start z pohledu <see cref="AppBootstrapper.Run"/>: kroky před loginem, kroky startu kolem
+/// <see cref="SessionOpener"/> a mapování jeho výsledku na shell nebo Shutdown. Cestu po loginu
+/// ověřuje <see cref="SessionOpenerTests"/>. Test subclass přepisuje virtual hooky, aby se obešel
 /// MLRest/WPF window initialization (vyžaduje real server / STA thread).
 /// </summary>
 public class AppBootstrapperTests
@@ -30,8 +31,6 @@ public class AppBootstrapperTests
         public string? SavedLoginName { get; private set; }
         public (string Server, int Port)? SavedLoginServer { get; private set; }
         public string? LoginDialogPrefill { get; private set; }
-        public bool WireActivityCalled { get; private set; }
-        public bool AcquireSessionCalled { get; private set; }
 
         public bool Configured { get; set; } = true;
         public bool EnsureConfiguredCalled { get; private set; }
@@ -126,30 +125,27 @@ public class AppBootstrapperTests
         }
 
         public IReadOnlyList<CompanyStruct> AllowedCompanies { get; set; } = [new() { Id = "CB_DP", Database = "CB_DP" }];
-        public LoginResult? AllowedQueriedFor { get; private set; }
-
-        protected override IReadOnlyList<CompanyStruct> LoadAllowedCompanies(ConnectionInfo conn, LoginResult login)
-        {
-            AllowedQueriedFor = login;
-            return AllowedCompanies;
-        }
-
-        public ConnectionInfo? EstablishedConnection { get; private set; }
-
-        protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
-        {
-            EstablishedConnection = conn;
-            return new(MLRest, login);
-        }
-
         public Exception? AcquireSessionThrows { get; set; }
+        public bool UpdateTriggered { get; set; }
+        public Exception? UpdateCheckThrows { get; set; }
 
-        protected override LicenceAcquireOutcome AcquireSession(SessionContext session, EDServices services)
-        {
-            AcquireSessionCalled = true;
-            if (AcquireSessionThrows is not null) throw AcquireSessionThrows;
-            return SessionOutcome;
-        }
+        /// <summary>Opener se skutečným pořadím kroků; kroky startu se zapisují do jeho <c>Calls</c>.</summary>
+        public TestableSessionOpener? Opener { get; private set; }
+
+        protected override SessionOpener CreateSessionOpener(EDServices services) =>
+            Opener = new TestableSessionOpener(services)
+            {
+                AllowedCompanies = AllowedCompanies,
+                NewSessionMLRest = MLRest,
+                LicenceOutcome = SessionOutcome,
+                AcquireThrows = AcquireSessionThrows,
+                UpdateRequired = UpdateTriggered,
+                UpdateCheckThrows = UpdateCheckThrows,
+            };
+
+        public bool AcquireSessionCalled => Opener?.Calls.Contains("acquire") == true;
+        public ConnectionInfo? EstablishedConnection => Opener?.EstablishedConnection;
+        public LoginResult? AllowedQueriedFor => Opener?.AllowedQuery?.Login;
 
         protected override void SavePostLoginState(ILocalPrefs prefs, string server, int port, string idfa, string? loginName)
         {
@@ -158,31 +154,23 @@ public class AppBootstrapperTests
             SavedLoginServer = (server, port);
         }
 
-        protected override void WireActivityFailedHandler(SessionContext session, EDServices services)
-            => WireActivityCalled = true;
-
         public bool SessionLogoutWired { get; private set; }
-        public bool LogoutWiredBeforeUpdateCheck { get; private set; }
 
-        protected override void WireSessionLogout(EDServices services) => SessionLogoutWired = true;
-
-        public bool UpdateTriggered { get; set; }
-        public Exception? UpdateCheckThrows { get; set; }
-
-        protected override (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) CheckForUpdate(
-            SessionContext session, EDServices services)
+        protected override void WireSessionLogout(EDServices services)
         {
-            LogoutWiredBeforeUpdateCheck = SessionLogoutWired;
-            if (UpdateCheckThrows is not null) throw UpdateCheckThrows;
-            return (UpdateTriggered, null);
+            SessionLogoutWired = true;
+            Opener?.Calls.Add("logout hook");
         }
+
+        public bool LogoutWiredBeforeUpdateCheck =>
+            Opener?.Calls.IndexOf("logout hook") is >= 0 and var hook && hook < Opener!.Calls.IndexOf("update");
 
         public Exception? BuildShellThrows { get; set; }
         public IReadOnlyList<CompanyStruct>? ShellCompanies { get; private set; }
 
         protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep,
             EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
-            Task<ReleaseNoticeResult>? releaseNotice)
+            SessionOpener opener, Task<ReleaseNoticeResult>? releaseNotice)
         {
             if (BuildShellThrows is not null) throw BuildShellThrows;
             BuildShellCalled = true;
@@ -346,21 +334,6 @@ public class AppBootstrapperTests
     }
 
     [Fact]
-    public void Run_NoPasswordChangeNeeded_SkipsForce()
-    {
-        var b = new TestableBootstrapper
-        {
-            LoginSucceeds = true,
-            SessionOutcome = LicenceAcquireOutcome.Accepted,
-            MLRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP"),
-        };
-
-        b.Run();
-
-        Assert.False(b.ForcePasswordChangeCalled);
-    }
-
-    [Fact]
     public void Run_LoginCancelled_CallsShutdown_ReturnsNull()
     {
         var b = new TestableBootstrapper { LoginSucceeds = false };
@@ -382,7 +355,6 @@ public class AppBootstrapperTests
         // Sledujeme přes AcquireSession (volá se po EstablishSession).
         Assert.False(b.AcquireSessionCalled);
         Assert.False(b.BuildShellCalled);
-        Assert.False(b.WireActivityCalled);
     }
 
     [Fact]
@@ -405,7 +377,6 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.False(b.BuildShellCalled);
-        Assert.False(b.WireActivityCalled);
         Assert.Null(b.SavedIdfa);
     }
 
@@ -430,7 +401,6 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.False(b.BuildShellCalled);
-        Assert.False(b.WireActivityCalled);
         Assert.Null(b.SavedIdfa);
     }
 
@@ -442,16 +412,6 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.False(b.ShutdownCalled);
-    }
-
-    [Fact]
-    public void Run_Success_WiresActivityFailedHandler()
-    {
-        var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Accepted };
-
-        b.Run();
-
-        Assert.True(b.WireActivityCalled);
     }
 
     [Fact]
@@ -505,7 +465,6 @@ public class AppBootstrapperTests
 
         Assert.True(b.AcquireSessionCalled);
         Assert.NotNull(b.SavedIdfa);
-        Assert.True(b.WireActivityCalled);
     }
 
     /// <summary>Volá skutečné kroky bez přepsání - jen ty, které na <c>Application</c> nesáhnou.</summary>
@@ -707,6 +666,16 @@ public class AppBootstrapperTests
     }
 
     [Fact]
+    public void Run_Success_RequestsReleaseNoticeForShell()
+    {
+        var b = new TestableBootstrapper();
+
+        b.Run();
+
+        Assert.True(b.Opener?.NoticeRequested);
+    }
+
+    [Fact]
     public void Run_Success_DoesNotReportFailure()
     {
         var b = new TestableBootstrapper();
@@ -760,45 +729,6 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.False(b.SessionLogoutWired);
-    }
-
-    // LogLogin = záznam do sestavy USERS „Přehled přihlášení" (legacy frmNoMDI.vb:4948).
-
-    private static void AssertLogLogin(TestableBootstrapper b, int times) =>
-        b.MLRest.Received(times).QueryOrThrow("ALVA.SYS.Login", "LogLogin",
-            Arg.Is<object[]>(a => a.Length == 1 && (string)a[0] == Environment.MachineName));
-
-    [Fact]
-    public void Run_Success_LogsLoginWithMachineName()
-    {
-        var b = new TestableBootstrapper();
-
-        b.Run();
-
-        AssertLogLogin(b, 1);
-    }
-
-    [Theory]
-    [InlineData(LicenceAcquireOutcome.Refused)]
-    [InlineData(LicenceAcquireOutcome.Cancelled)]
-    public void Run_LicenceNotAccepted_DoesNotLogLogin(LicenceAcquireOutcome outcome)
-    {
-        var b = new TestableBootstrapper { SessionOutcome = outcome };
-
-        b.Run();
-
-        AssertLogLogin(b, 0);
-    }
-
-    [Fact]
-    public void Run_UpdateTriggered_DoesNotLogLogin()
-    {
-        // Legacy start ukončený updatem (frmNoMDI.vb:4917) k LogLogin (:4948) nedošel.
-        var b = new TestableBootstrapper { UpdateTriggered = true };
-
-        b.Run();
-
-        AssertLogLogin(b, 0);
     }
 
     // Seznam firem po loginu: předloginový je úplný, shell nabízí jen povolené (legacy frmLoginEx.vb:467).
