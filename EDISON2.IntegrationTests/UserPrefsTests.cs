@@ -72,6 +72,86 @@ public class UserPrefsTests
         Assert.Empty(_failures);
     }
 
+    // Agenda zapíše sestavu na plochu, zatímco shell drží svůj snímek z načtení. ★ v shellu ji nesmí přepsat.
+    [DevServerFact]
+    public async Task DesktopStar_AfterAgendaAdd_BlobKeepsBoth()
+    {
+        var prefs = CreatePrefs();
+        var modulePrefs = CreateModulePrefs(prefs);
+        var module = MenuModule("145009");
+        try
+        {
+            await prefs.DeleteAsync("EDISONMAIN2", "Shortcuts");
+            var shell = new ModuleShortcutsService();
+            shell.Seed([module], await modulePrefs.LoadShortcutsAsync());
+            AgendaAdd(SinkReportItem);
+
+            shell.Add(module);
+            await modulePrefs.AddShortcutAsync(shell.Items.Single().ToDto());
+
+            var stored = Assert.IsType<List<DesktopShortcutDto>>(await modulePrefs.LoadShortcutsAsync());
+            Assert.Equal([("PrintReport", "1003"), ("MenuModule", "145009")], stored.Select(s => (s.Kind, s.Id)));
+        }
+        finally
+        {
+            await prefs.DeleteAsync("EDISONMAIN2", "Shortcuts");
+        }
+        Assert.Empty(_failures);
+    }
+
+    // Drop na obsazenou buňku pošle Add nové dlaždice a Place té vytlačené: různé klíče, na pořadí nesmí záležet.
+    [DevServerTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DesktopDropOnOccupiedCell_TilesLoadOnTheirCells_InEitherOrder(bool placeFirst)
+    {
+        var prefs = CreatePrefs();
+        var modulePrefs = CreateModulePrefs(prefs);
+        var a = MenuModule("145009");
+        var b = MenuModule("145010");
+        try
+        {
+            await prefs.DeleteAsync("EDISONMAIN2", "Shortcuts");
+            var shell = new ModuleShortcutsService();
+            shell.Seed([a, b], []);
+            shell.Add(a);
+            await modulePrefs.AddShortcutAsync(Tile(shell, a).ToDto());
+
+            shell.Add(b, (0, 0));
+            if (placeFirst) await modulePrefs.PlaceShortcutsAsync([Tile(shell, a).ToDto()]);
+            await modulePrefs.AddShortcutAsync(Tile(shell, b).ToDto());
+            if (!placeFirst) await modulePrefs.PlaceShortcutsAsync([Tile(shell, a).ToDto()]);
+
+            var restarted = new ModuleShortcutsService();
+            restarted.Seed([a, b], await modulePrefs.LoadShortcutsAsync());
+            Assert.Equal((0, 0), (Tile(restarted, b).Col, Tile(restarted, b).Row));
+            Assert.Equal((1, 0), (Tile(restarted, a).Col, Tile(restarted, a).Row));
+        }
+        finally
+        {
+            await prefs.DeleteAsync("EDISONMAIN2", "Shortcuts");
+        }
+        Assert.Empty(_failures);
+    }
+
+    private ModulePreferencesService CreateModulePrefs(CacheUserPrefsService prefs) =>
+        new(prefs, new RestCallRunner(() => _rest), _failures.Add);
+
+    private static ExecutableModule MenuModule(string elementId) =>
+        new() { Name = "Test " + elementId, ElementId = elementId, ExecutablePath = "TEST.exe", FormName = "ALVA.TEST.formTEST" };
+
+    private static DesktopShortcut Tile(ModuleShortcutsService shell, ExecutableModule module) =>
+        shell.Items.Single(i => i.Module == module);
+
+    private const string SinkReportItem = """{"Kind":"PrintReport","Id":"1003","ElementId":"145008","Name":"Test","Exe":"EDISONMAIN2API.exe","Form":"ALVA.TEST.formTEST","Input":""}""";
+
+    private void AgendaAdd(string item)
+    {
+        var input = new CVar();
+        input["item"] = new CVar(item);
+        _rest.QueryOrThrow("ALVA.EDControls.DesktopShortcuts", "Add", input);
+    }
+
     // Varianty modulu menu (Převody AD/MHD) mají shodné ElementId i Id: server je nesmí slít a shell každou
     // dlaždici přiřadí její variantě (klíč DesktopShortcuts.KeyOf = DesktopShortcut.Key).
     [DevServerFact]

@@ -57,6 +57,78 @@ Method Item(pKind As %String, pId As %String, pName As %String = "N", pExtra As 
 	ret "{""Kind"":"""_pKind_""",""Id"":"""_pId_""",""ElementId"":""145008"",""Name"":"""_pName_""""_pExtra_"}"
 }
 
+/// Zavolá Place s JSON polem položek a vrátí OUT["placed"].
+Method PlaceItems(pItems As %String) As %String
+{
+	do ..SetupSys(.sys)
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","items") = pItems
+	set ..lastRet = ##class(ALVA.EDControls.DesktopShortcuts).Place(.sys)
+	ret $get(^||ML("OUT","placed"))
+}
+
+/// Agenda přidá zástupce a shell mezitím přesune svou dlaždici - v blobu musí zůstat obě.
+Method TestAddThenPlaceOtherKeepsBoth()
+{
+	do ..Cleanup()
+	do ..Call("Add", ..Item("MenuModule", "145008", "Modul", ",""Col"":0,""Row"":0"), "count")
+	do ..Call("Add", ..Item("PrintReport", "1003"), "count")
+	do $$$AssertEquals(..PlaceItems("["_..Item("MenuModule", "145008", "Jine", ",""Col"":4,""Row"":2")_"]"), 1, "Přesune se jen shodná položka")
+	do $$$AssertEquals($get(^||ML("ERR")), "", "Place nesmí nahlásit chybu")
+
+	set arr = ..Desktop()
+	do $$$AssertEquals(arr.%Size(), 2, "Zástupce agendy zůstal")
+	do $$$AssertEquals(arr.%Get(0).Col_","_arr.%Get(0).Row, "4,2", "Dlaždice má novou buňku")
+	do $$$AssertEquals(arr.%Get(0).Name, "Modul", "Place mění jen pozici")
+	do $$$AssertEquals(arr.%Get(1).Kind, "PrintReport", "Druhá položka beze změny")
+	do $$$AssertEquals(arr.%Get(1).%IsDefined("Col"), 0, "Druhá položka nedostala pozici")
+	do ..Cleanup()
+}
+
+/// Pozice bez členství by na ploše vyrobila položku, kterou nikdo nepřidal.
+Method TestPlaceUnknownCreatesNothing()
+{
+	do ..Cleanup()
+	do ..Call("Add", ..Item("PrintReport", "1003"), "count")
+	do $$$AssertEquals(..PlaceItems("["_..Item("PrintReport", "9999", "N", ",""Col"":1,""Row"":1")_"]"), 0, "Neznámá položka se nepřesune")
+	do $$$AssertEquals(..Desktop().%Size(), 1, "Place nic nezaloží")
+	do $$$AssertEquals(..Call("Exists", ..Item("PrintReport", "9999"), "exists"), 0, "Neznámá položka na ploše není")
+	do ..Cleanup()
+}
+
+/// Varianty modulu menu se liší jen Input - přesun jedné nesmí pohnout druhou.
+Method TestPlaceMovesOnlyThatVariant()
+{
+	do ..Cleanup()
+	do ..Call("Add", ..Item("MenuModule", "145008", "N", ",""Input"":""AD"",""Col"":0,""Row"":0"), "count")
+	do ..Call("Add", ..Item("MenuModule", "145008", "N", ",""Input"":""MHD"",""Col"":1,""Row"":0"), "count")
+	do ..PlaceItems("["_..Item("MenuModule", "145008", "N", ",""Input"":""MHD"",""Col"":5,""Row"":3")_"]")
+
+	set arr = ..Desktop()
+	do $$$AssertEquals(arr.%Get(0).Col_","_arr.%Get(0).Row, "0,0", "Varianta AD zůstala")
+	do $$$AssertEquals(arr.%Get(1).Col_","_arr.%Get(1).Row, "5,3", "Varianta MHD se přesunula")
+	do ..Cleanup()
+}
+
+Method TestPlaceMissingItemsIsError()
+{
+	do ..Cleanup()
+	do ..PlaceItems("")
+	do $$$AssertEquals($p(..lastRet, "~"), 1, "Chybějící items -> ret začíná 1~")
+	do ..Cleanup()
+}
+
+/// Drop ze stromu na buňku je jedno Add s cílovou buňkou - nová položka ji musí dostat.
+Method TestAddNewItemKeepsGivenCell()
+{
+	do ..Cleanup()
+	do ..Call("Add", ..Item("MenuModule", "145008", "N", ",""Col"":3,""Row"":2"), "count")
+
+	set arr = ..Desktop()
+	do $$$AssertEquals(arr.%Get(0).Col_","_arr.%Get(0).Row, "3,2", "Nová položka sedí na zadané buňce")
+	do ..Cleanup()
+}
+
 Method TestAddThenExists()
 {
 	do ..Cleanup()

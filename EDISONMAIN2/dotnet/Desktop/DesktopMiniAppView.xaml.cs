@@ -67,11 +67,7 @@ public partial class DesktopMiniAppView : UserControl
         }
         else if (e.Data.GetData(DesktopDragFormats.FromTree) is ExecutableModule fromTree)
         {
-            svc.Add(fromTree);                       // přidá (na první volnou buňku) - idempotentní
-            // …a přesune na místo dropu; instanci dlaždice zná až služba (Add ji vytvořila).
-            if (cell is { } target
-                && svc.Items.FirstOrDefault(i => i.Module == fromTree) is { } tile)
-                svc.PlaceAt(tile, target.Column, target.Row);
+            svc.Add(fromTree, cell);
         }
         e.Handled = true;
     }

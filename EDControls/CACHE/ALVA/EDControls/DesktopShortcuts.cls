@@ -1,12 +1,12 @@
 Include GENERAL
 
-/// Zástupci na ploše shellu EDISONMAIN2 - registrační kanál pro legacy agendy.
+/// Zástupci na ploše shellu EDISONMAIN2 - jediný zápisový kanál pro legacy agendy i shell.
 ///
 /// Agenda běží jako samostatný proces bez spojení na shell, takže si o zástupce řekne sem;
-/// shell tentýž blob čte. Data leží v <class>ALVA.EDControls.UserData</class>
-/// (scope "EDISONMAIN2", klíč "Shortcuts") - tahle třída je jen **doménová operace nad ním**,
-/// protože přidání jedné položky je read-modify-write a přes generické Save by si souběžné
-/// zápisy modulu a shellu přepisovaly celý blob. Tady proběhne v jednom Caché jobu.
+/// shell tentýž blob čte a své změny (★, přesun dlaždice) posílá taky sem. Data leží v
+/// <class>ALVA.EDControls.UserData</class> (scope "EDISONMAIN2", klíč "Shortcuts") - tahle třída
+/// je jen **doménová operace nad ním**, protože změna jedné položky je read-modify-write a přes
+/// generické Save by si souběžné zápisy modulu a shellu přepisovaly celý blob. Tady proběhne v jednom Caché jobu.
 ///
 /// Identita položky = "Kind|ElementId|Id", u MenuModule "MenuModule|ElementId" a "|Input", má-li parametr (mirror DesktopShortcut.Key na klientovi).
 /// Pozici ("Col"/"Row") server záměrně **nepřiděluje** - klient chybějící pozici doplní při
@@ -77,6 +77,42 @@ ClassMethod Remove(ByRef sys As %String) As %Status
 
         d ..Store(IdFa, userID, out)
         s ^||ML("OUT","count") = out.%Size()
+    } catch (ex) { $$$CatchErrRest }
+    ret ret
+}
+
+/// Přesune dlaždice: položce se shodným klíčem nastaví Col/Row, ostatní pole nechá.
+/// Neznámou položku nezaloží - shell posílá jen pozice, členství mění Add/Remove.
+/// IN["items"] = JSON pole objektů (stačí Kind, ElementId, Id, Input, Col, Row); OUT["placed"] = počet přesunutých
+ClassMethod Place(ByRef sys As %String) As %Status
+{
+    $$$Init
+    try {
+        $$$FillParams
+
+        s items = $g(^||ML("IN","items"))
+        if items = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "items is required"))
+
+        s it = ##class(%DynamicArray).%FromJSON(items).%GetIterator()
+        while it.%GetNext(.i, .item) {
+            s key = ..KeyOf(item)
+            if (key '= "") && item.%IsDefined("Col") && item.%IsDefined("Row") s cell(key) = item
+        }
+
+        s placed = 0
+        s arr = ..Load(IdFa, userID)
+        s it = arr.%GetIterator()
+        while it.%GetNext(.i, .existing) {
+            s key = ..KeyOf(existing)
+            if (key '= "") && $d(cell(key)) {
+                s target = cell(key)
+                s existing.Col = target.Col, existing.Row = target.Row
+                s placed = placed + 1
+            }
+        }
+
+        d:placed ..Store(IdFa, userID, arr)
+        s ^||ML("OUT","placed") = placed
     } catch (ex) { $$$CatchErrRest }
     ret ret
 }

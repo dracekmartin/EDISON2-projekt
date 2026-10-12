@@ -75,6 +75,13 @@ namespace EDISONMAIN2.Desktop
         /// <summary>Legacy <c>InputProFrm</c> - parametr předaný formě jako <c>EDParamIn</c>.</summary>
         public string InputParam { get; init; } = "";
 
+        /// <summary>
+        /// Input, pod kterým položku zná server (<c>null</c> = <see cref="InputParam"/>). Liší se, když
+        /// <see cref="ModuleShortcutsService.Resolve"/> přiřadil uložené položce jinou variantu ze stromu:
+        /// Remove a Place by ji jinak na serveru minuly.
+        /// </summary>
+        public string? StoredInput { get; init; }
+
         /// <summary>Jen pro sestavy a pohledy DS; u ostatních druhů <c>null</c>.</summary>
         public ReportPayload? Report { get; init; }
 
@@ -146,7 +153,7 @@ namespace EDISONMAIN2.Desktop
         };
 
         public DesktopShortcutDto ToDto() => new(Kind.ToString(), Id, ElementId, Name,
-            ExecutablePath, FormName, InputParam, Col, Row, Report);
+            ExecutablePath, FormName, StoredInput ?? InputParam, Col, Row, Report);
     }
 
     /// <summary>

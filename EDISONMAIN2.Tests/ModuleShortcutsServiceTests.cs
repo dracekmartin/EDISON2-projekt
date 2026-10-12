@@ -33,28 +33,26 @@ public class ModuleShortcutsServiceTests
         Assert.False(b.IsFavorite);
     }
 
+    // Modul zmizel ze stromu (odebraná licence / hidden / mlineOnly): nezobrazí se, na serveru zůstává.
     [Fact]
-    public void Seed_ModuleMissingFromTree_HiddenButKeptForPersistence()
+    public void Seed_ModuleMissingFromTree_IsHidden()
     {
-        // Modul zmizel ze stromu (odebraná licence / hidden / mlineOnly) - nesmí se tiše smazat.
         var a = Exe("100");
         var svc = new ModuleShortcutsService();
 
         svc.Seed([a], [Menu("999"), Menu("100")]);
 
         Assert.Equal(["100"], svc.Items.Select(i => i.ElementId));
-        Assert.Equal(["100", "999"], svc.Persistable().Select(d => d.ElementId));   // zobrazené + přenesené
     }
 
     [Fact]
-    public void Seed_UnknownKind_KeptForPersistence()
+    public void Seed_UnknownKind_IsHidden()
     {
         var svc = new ModuleShortcutsService();
 
         svc.Seed([], [new DesktopShortcutDto("SomethingNewer", "5", "31001", "X")]);
 
         Assert.Empty(svc.Items);
-        Assert.Equal("SomethingNewer", Assert.Single(svc.Persistable()).Kind);
     }
 
     [Fact]
@@ -146,7 +144,6 @@ public class ModuleShortcutsServiceTests
 
         Assert.Empty(svc.Items);
         Assert.False(a.IsFavorite);
-        Assert.Equal(kind, Assert.Single(svc.Persistable()).Kind);
     }
 
     [Fact]
@@ -200,7 +197,7 @@ public class ModuleShortcutsServiceTests
         Assert.Equal("Přehled škod", item.Name);
         Assert.Null(item.Module);
         Assert.Equal(report, item.Report);
-        Assert.Equal(report, Assert.Single(svc.Persistable()).Report);
+        Assert.Equal(report, item.ToDto().Report);
     }
 
     [Fact]
@@ -285,7 +282,7 @@ public class ModuleShortcutsServiceTests
         svc.Add(a);
 
         var tile = Assert.Single(svc.Items);
-        Assert.Equal("Zaměstnanci", Assert.Single(svc.Persistable()).Name);
+        Assert.Equal("Zaměstnanci", tile.ToDto().Name);
         Assert.Equal(a.TreePath, tile.TreePath);
         Assert.Equal("Mzdy › Zaměstnanci", tile.TreePath);
         Assert.Equal("Mzdy › Zaměstnanci - chybí exe", tile.DisplayedDistinctName);
@@ -456,6 +453,90 @@ public class ModuleShortcutsServiceTests
 
         Assert.Equal((0, 0), Cell(svc.Items.Single(i => i.ElementId == "300")));
         Assert.Equal((1, 0), Cell(svc.Items.Single(i => i.ElementId == "200")));
+    }
+
+    // Drop ze stromu na buňku: dlaždice vznikne rovnou tam, server pak dostane jedno Add s cílovou buňkou.
+    [Fact]
+    public void Add_WithCell_CreatesTileOnThatCell_OneMembershipChange()
+    {
+        var a = Exe("100");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a], []);
+        int membership = 0, positions = 0;
+        svc.MembershipChanged += () => membership++;
+        svc.PositionsChanged += () => positions++;
+
+        svc.Add(a, (4, 2));
+
+        Assert.Equal((4, 2), Cell(Assert.Single(svc.Items)));
+        Assert.Equal((1, 0), (membership, positions));
+    }
+
+    [Fact]
+    public void Add_WithOccupiedCell_MovesOccupantToFreeCell()
+    {
+        var a = Exe("100"); var b = Exe("200");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a, b], [Menu("100", col: 0, row: 0)]);
+
+        svc.Add(b, (0, 0));
+
+        Assert.Equal((0, 0), Cell(svc.Items.Single(i => i.ElementId == "200")));
+        Assert.Equal((1, 0), Cell(svc.Items.Single(i => i.ElementId == "100")));
+    }
+
+    [Fact]
+    public void Add_WithCell_ModuleAlreadyOnDesktop_MovesIt()
+    {
+        var a = Exe("100");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a], [Menu("100", col: 0, row: 0)]);
+        int membership = 0;
+        svc.MembershipChanged += () => membership++;
+
+        svc.Add(a, (3, 1));
+
+        Assert.Equal((3, 1), Cell(Assert.Single(svc.Items)));
+        Assert.Equal(0, membership);
+    }
+
+    // Buňku přidělenou při načtení musí shell poslat na server, jinak by ji příští načtení mohlo dát jinam.
+    [Fact]
+    public void Seed_ReturnsTilesWhoseCellDiffersFromStored()
+    {
+        var a = Exe("100"); var b = Exe("200"); var c = Exe("300");
+        var svc = new ModuleShortcutsService();
+
+        var replaced = svc.Seed([a, b, c], [Menu("100", col: 0, row: 0), Menu("200", col: 0, row: 0), Menu("300")]);
+
+        Assert.Equal(["200", "300"], replaced.Select(s => s.ElementId));
+    }
+
+    // Agenda připíše zástupce bez pozice za konec blobu. Nesmí vytlačit dlaždici, kterou uživatel na buňku dal.
+    [Fact]
+    public void Seed_StoredCell_WinsOverEarlierItemWithoutPosition()
+    {
+        var a = Exe("100"); var b = Exe("200"); var c = Exe("300");
+        var svc = new ModuleShortcutsService();
+
+        var replaced = svc.Seed([a, b, c], [Menu("100", col: 0, row: 0), Menu("200"), Menu("300", col: 1, row: 0)]);
+
+        Assert.Equal((1, 0), Cell(svc.Items.Single(i => i.ElementId == "300")));
+        Assert.Equal((2, 0), Cell(svc.Items.Single(i => i.ElementId == "200")));
+        Assert.Equal(["200"], replaced.Select(s => s.ElementId));
+    }
+
+    // Remove a Place hledají položku na serveru podle Input, pod kterým ji tam agenda zapsala.
+    [Fact]
+    public void Seed_FallbackVariant_ToDtoKeepsStoredInput()
+    {
+        var ad = Prevod("AD"); var mhd = Prevod("MHD");
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([ad, mhd], [Menu("146016")]);
+
+        Assert.Equal("AD", svc.Items[0].InputParam);
+        Assert.Equal("", svc.Items[0].ToDto().Input);
     }
 
     [Fact]

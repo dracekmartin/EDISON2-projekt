@@ -6,6 +6,10 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using ALWA.SYS;
+using EDControls;
+using EDControls.EDViewModel;
+using EDControls.ErrorReporting;
 using EDControls.UserPrefs;
 using EDISONMAIN2.Desktop;
 
@@ -17,6 +21,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// IdFa izolace je automatická - server klíčuje z sys kontextu MLRest, instance se používá per session.
     /// Load i Save jsou async (nesmí blokovat UI thread - session rebuild jich dělá pět);
     /// chyby se logují a degradují na prázdno, persistence nesmí shodit UI.
+    /// Plocha se ukládá po změnách přes <c>ALVA.EDControls.DesktopShortcuts</c>, nikdy celým blobem:
+    /// do téhož blobu za běhu zapisují i agendy a celý snímek shellu by jejich zástupce přepsal.
     /// </summary>
     public class ModulePreferencesService
     {
@@ -26,18 +32,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         private const string ExpansionKey      = "TreeExpansion";
         private const string SelectedTabKey    = "SelectedTab";
         private const string ChangelogSnoozeKey = "ChangelogSnooze";
+        private const string DesktopClass      = "ALVA.EDControls.DesktopShortcuts";
 
         // Fronta patří úložišti, ne instanci: VM staví instanci znovu při každé přestavbě session nad týmiž UserPrefs.
-        private static readonly ConditionalWeakTable<IUserPrefsService, Dictionary<string, PendingWrite?>> Queues = new();
+        private static readonly ConditionalWeakTable<IUserPrefsService, WriteQueues> Queues = new();
 
         private readonly IUserPrefsService _prefs;
-        // Klíč = zápis v letu, hodnota = čekající zápis (null = žádný).
-        private readonly Dictionary<string, PendingWrite?> _pending;
+        private readonly IRestCallRunner _desktop;
+        private readonly Action<Exception> _reportFailure;
+        private readonly WriteQueues _queues;
 
+        /// <summary>Plocha jde přes MLRest aktuální session (<see cref="EDServices.Current"/>), čte se až při volání.</summary>
         public ModulePreferencesService(IUserPrefsService prefs)
+            : this(prefs, new RestCallRunner(() => EDServices.Current.RequireMLRest)) { }
+
+        public ModulePreferencesService(IUserPrefsService prefs, IRestCallRunner desktop, Action<Exception>? reportFailure = null)
         {
             _prefs = prefs;
-            _pending = Queues.GetValue(prefs, _ => []);
+            _desktop = desktop;
+            _reportFailure = reportFailure ?? ErrorReports.ReportBackground;
+            _queues = Queues.GetValue(prefs, _ => new WriteQueues());
         }
 
         // MLRest čeká na odpověď hodiny: visící zápis by bez limitu zablokoval klíč do konce session.
@@ -50,6 +64,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// </summary>
         public async Task<List<DesktopShortcutDto>?> LoadShortcutsAsync()
         {
+            Task pending;
+            lock (_queues) pending = _queues.DesktopTail;
+            // Přenačtení nesmí předběhnout změnu plochy, kterou shell ještě posílá - dlaždice by zmizela.
+            await pending;
             try
             {
                 var node = await _prefs.LoadAsync(Scope, ShortcutsKey);
@@ -67,8 +85,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             }
         }
 
-        public Task SaveShortcutsAsync(IEnumerable<DesktopShortcutDto> shortcuts) =>
-            SaveBlobAsync(ShortcutsKey, shortcuts.ToList());
+        /// <summary>
+        /// Přidá položku plochy, nebo přepíše stejný klíč (pozici si server u existující ponechá).
+        /// Výsledek <c>false</c> u volání plochy: server změnu nepřijal (chyba, timeout) a shell se s ním rozešel.
+        /// </summary>
+        public Task<bool> AddShortcutAsync(DesktopShortcutDto item) =>
+            EnqueueDesktop("Add", "item", JsonSerializer.Serialize(item));
+
+        /// <summary>Odebere položku plochy podle klíče <c>Kind|ElementId|Id</c> (u modulu menu i <c>Input</c>).</summary>
+        public Task<bool> RemoveShortcutAsync(DesktopShortcutDto item) =>
+            EnqueueDesktop("Remove", "item", JsonSerializer.Serialize(item));
+
+        /// <summary>Nastaví pozice položkám, které na serveru jsou; neznámou nezaloží.</summary>
+        public Task<bool> PlaceShortcutsAsync(IReadOnlyCollection<DesktopShortcutDto> items) =>
+            EnqueueDesktop("Place", "items", JsonSerializer.Serialize(items));
 
         /// <summary>Používanost per <see cref="ExecutableModule.VariantKey"/> (počet spuštění + čas posledního). Prázdná mapa při chybě.</summary>
         public async Task<Dictionary<string, UsageEntry>> LoadUsageAsync() =>
@@ -145,14 +175,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             if (node is null) return Task.CompletedTask;
 
             PendingWrite write;
-            lock (_pending)
+            lock (_queues)
             {
-                if (_pending.TryGetValue(key, out var waiting))
+                if (_queues.Pending.TryGetValue(key, out var waiting))
                 {
-                    _pending[key] = write = new PendingWrite(node, waiting?.Done ?? NewDone());
+                    _queues.Pending[key] = write = new PendingWrite(node, waiting?.Done ?? NewDone());
                     return write.Done.Task;
                 }
-                _pending[key] = null;
+                _queues.Pending[key] = null;
             }
             write = new PendingWrite(node, NewDone());
             _ = WriteInOrderAsync(key, write);
@@ -174,22 +204,84 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 }
                 write.Done.TrySetResult();
 
-                lock (_pending)
+                lock (_queues)
                 {
-                    if (_pending[key] is not { } next)
+                    if (_queues.Pending[key] is not { } next)
                     {
-                        _pending.Remove(key);
+                        _queues.Pending.Remove(key);
                         return;
                     }
                     write = next;
-                    _pending[key] = null;
+                    _queues.Pending[key] = null;
                 }
+            }
+        }
+
+        private Task<bool> EnqueueDesktop(string method, string inKey, string json)
+        {
+            var done = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Task previous;
+            lock (_queues)
+            {
+                previous = _queues.DesktopTail;
+                _queues.DesktopTail = done.Task;
+            }
+            _ = CallDesktopAfterAsync(previous, done, method, inKey, json);
+            return done.Task;
+        }
+
+        private async Task CallDesktopAfterAsync(Task previous, TaskCompletionSource<bool> done, string method, string inKey, string json)
+        {
+            var accepted = true;
+            try
+            {
+                await previous.ConfigureAwait(false);
+                accepted = await _desktop.RunAsync(rest => QueryDesktop(rest, method, inKey, json))
+                    .WaitAsync(InFlightLimit).ConfigureAwait(false);
+            }
+            catch (TimeoutException ex)
+            {
+                accepted = false;
+                _reportFailure(ex);
+            }
+            catch (Exception ex)
+            {
+                // Bez session se nic neodeslalo a není se s čím srovnávat.
+                Debug.WriteLine($"[ModulePrefs] {DesktopClass}.{method} failed: {ex.Message}");
+            }
+            finally
+            {
+                done.TrySetResult(accepted);
+            }
+        }
+
+        private bool QueryDesktop(IMLRest rest, string method, string inKey, string json)
+        {
+            var input = new CVar();
+            input[inKey] = new CVar(json);
+            try
+            {
+                rest.QueryOrThrow(DesktopClass, method, input);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _reportFailure(ex);
+                return false;
             }
         }
 
         private static TaskCompletionSource NewDone() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private sealed record PendingWrite(JsonNode Node, TaskCompletionSource Done);
+
+        private sealed class WriteQueues
+        {
+            // Klíč = zápis blobu v letu, hodnota = čekající zápis (null = žádný).
+            public readonly Dictionary<string, PendingWrite?> Pending = [];
+            // Volání plochy jdou za sebou: dvě souběžná read-modify-write na serveru by si blob přepsala.
+            public Task DesktopTail = Task.CompletedTask;
+        }
     }
 
     /// <summary>Záznam používanosti modulu - počet spuštění + čas posledního (UTC). Defaults pro backward-compat.</summary>

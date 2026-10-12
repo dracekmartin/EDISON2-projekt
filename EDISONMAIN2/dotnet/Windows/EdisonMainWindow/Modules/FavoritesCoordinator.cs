@@ -21,6 +21,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         private readonly IWindowNavigator _navigator;
         private readonly Action _favoritesRebuilt;
 
+        // Plocha, jak ji zná server: shell posílá jen rozdíl proti ní, protože do blobu zapisují i agendy.
+        private Dictionary<string, DesktopShortcutDto> _sent = [];
+        // Počet odeslaných změn; přenačtení podle něj pozná, že ho předběhla změna z shellu.
+        private int _sentChanges;
+
         internal FavoritesCoordinator(ModuleShortcutsService shortcuts, ModuleTreeState trees,
             Func<ModulePreferencesService?> prefs, IWindowNavigator navigator, Action favoritesRebuilt)
         {
@@ -51,7 +56,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// </summary>
         internal void Apply(List<DesktopShortcutDto>? stored)
         {
-            Seed(stored);
+            var replaced = _shortcuts.Seed(_trees.AllExecutables(), stored);
+            _sent = SnapshotDesktop();
+            // Buňku přidělenou při načtení (zástupce agendy bez pozice) server nezná, po restartu by dlaždice mohla skočit jinam.
+            // Bez srovnání po chybě: přenačtení by Place poslalo znovu a server bez Place by se načítal dokola.
+            if (_shortcuts.IsLoaded && replaced.Count > 0)
+                _ = _prefs()?.PlaceShortcutsAsync([.. replaced.Select(s => s.ToDto())]);
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
         }
@@ -69,16 +79,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         private async Task ReloadAsync()
         {
             if (_prefs() is not { } prefs) return;
-            var stored = await prefs.LoadShortcutsAsync();
-            // Selhání loadu: v paměti zůstává stav téže session (agenda mohla přidat, nikdy neubírá);
-            // seed prázdnem by ho zahodil a další toggle prázdno zapsal do Caché.
-            if (stored is null) return;
+            List<DesktopShortcutDto>? stored;
+            int sentBefore;
+            do
+            {
+                sentBefore = _sentChanges;
+                stored = await prefs.LoadShortcutsAsync();
+                // Selhání loadu: v paměti zůstává stav téže session (agenda mohla přidat, nikdy neubírá),
+                // seed prázdnem by ho zahodil.
+                if (stored is null) return;
+            }
+            // Změna odeslaná během načtení v blobu být nemusí, Apply by ji v shellu zahodil.
+            while (sentBefore != _sentChanges);
             Apply(stored);
-        }
-
-        private void Seed(List<DesktopShortcutDto>? stored)
-        {
-            _shortcuts.Seed(_trees.AllExecutables(), stored);
         }
 
         /// <summary>
@@ -118,11 +131,45 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             PersistShortcuts();
         }
 
-        // Uloží plochu (druh, identita, pozice). Volá se při změně členství i při přesunu dlaždice.
+        // Pošle změny plochy proti stavu serveru: odebrané, přidané (s buňkou) a přesunuté jedním voláním.
+        // Položky, které strom nezná, v Items nejsou, a shell na ně proto nesahá.
         private void PersistShortcuts()
         {
-            if (!_shortcuts.IsLoaded) return;
-            _ = _prefs()?.SaveShortcutsAsync(_shortcuts.Persistable());
+            if (!_shortcuts.IsLoaded || _prefs() is not { } prefs) return;
+            var now = SnapshotDesktop();
+            foreach (var (key, before) in _sent)
+            {
+                if (now.ContainsKey(key)) continue;
+                Send(prefs.RemoveShortcutAsync(before));
+                foreach (var duplicate in _shortcuts.DuplicatesOf(key)) Send(prefs.RemoveShortcutAsync(duplicate));
+            }
+            var moved = new List<DesktopShortcutDto>();
+            foreach (var (key, item) in now)
+            {
+                if (!_sent.TryGetValue(key, out var before)) Send(prefs.AddShortcutAsync(item));
+                else if ((before.Col, before.Row) != (item.Col, item.Row)) moved.Add(item);
+            }
+            if (moved.Count > 0) Send(prefs.PlaceShortcutsAsync(moved));
+            _sent = now;
+        }
+
+        // Změnu, kterou server nepřijal, by dalšímu rozdílu nikdo nepřipomněl: shell se srovná se serverem.
+        private void Send(Task<bool> call)
+        {
+            _sentChanges++;
+            _ = ReloadIfRejectedAsync(call);
+        }
+
+        private async Task ReloadIfRejectedAsync(Task<bool> call)
+        {
+            if (!await call) await ReloadAsync();
+        }
+
+        private Dictionary<string, DesktopShortcutDto> SnapshotDesktop()
+        {
+            var snapshot = new Dictionary<string, DesktopShortcutDto>();
+            foreach (var item in _shortcuts.Items) snapshot[item.Key] = item.ToDto();
+            return snapshot;
         }
 
         private void RebuildFavoritesTree()

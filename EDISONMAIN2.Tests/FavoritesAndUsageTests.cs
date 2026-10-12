@@ -213,16 +213,18 @@ public class FavoritesAndUsageTests
     {
         // Zástupce tiskové sestavy (mimo hlavní nabídku) musí přežít uložení i načtení
         // včetně report payloadu - jinak by ho plocha po restartu neumožnila spustit.
-        JsonNode? written = null;
+        // Server položku z Add vloží do blobu beze změny.
+        var rest = Substitute.For<IMLRest>();
         var prefs = Substitute.For<IUserPrefsService>();
-        await prefs.SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Do<JsonNode>(n => written = n));
-        var svc = new ModulePreferencesService(prefs);
+        var svc = new ModulePreferencesService(prefs, new InlineRestCallRunner(rest), _ => { });
         var report = new ReportPayload("AD", "EkonomickySystem", "1", "S12", "P7", JeVerejny: true);
 
-        await svc.SaveShortcutsAsync([new DesktopShortcutDto(nameof(ShortcutKind.PrintReport), "PrehledSkod",
-            "31001", "Přehled škod", "VOZIDLA2.exe", Col: 2, Row: 1, Report: report)]);
+        await svc.AddShortcutAsync(new DesktopShortcutDto(nameof(ShortcutKind.PrintReport), "PrehledSkod",
+            "31001", "Přehled škod", "VOZIDLA2.exe", Col: 2, Row: 1, Report: report));
 
-        prefs.LoadAsync("EDISONMAIN2", "Shortcuts").Returns(Task.FromResult(written));
+        var item = (CVar)rest.ReceivedCalls().Single().GetArguments()[2]!;
+        prefs.LoadAsync("EDISONMAIN2", "Shortcuts")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse($"[{item["item"].Value}]")));
         var dto = Assert.Single((await svc.LoadShortcutsAsync())!);
         Assert.Equal(nameof(ShortcutKind.PrintReport), dto.Kind);
         Assert.Equal("PrehledSkod", dto.Id);
@@ -242,19 +244,9 @@ public class FavoritesAndUsageTests
         Assert.Equal(5, usage["100"].Count);
     }
 
+    // Plocha jde na server po změnách (FavoritesCoordinatorTests), celý blob by přepsal zástupce agend.
     [Fact]
-    public async Task Prefs_SaveShortcuts_WritesScopedBlob()
-    {
-        var prefs = Substitute.For<IUserPrefsService>();
-        var svc = new ModulePreferencesService(prefs);
-
-        await svc.SaveShortcutsAsync([new DesktopShortcutDto(nameof(ShortcutKind.MenuModule), "100", "100", "A", Col: 2, Row: 0)]);
-
-        await prefs.Received().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
-    }
-
-    [Fact]
-    public void ToggleFavorite_AddsAndRemoves_FromFavoritesTree_AndPersists()
+    public void ToggleFavorite_AddsAndRemoves_FromFavoritesTree_WithoutSavingWholeBlob()
     {
         var prefs = Substitute.For<IUserPrefsService>();
         var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
@@ -267,7 +259,7 @@ public class FavoritesAndUsageTests
 
         Assert.True(module.IsFavorite);
         Assert.Same(module, Assert.Single(vm.FavoritesTree));
-        prefs.Received().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
+        prefs.DidNotReceive().SaveAsync("EDISONMAIN2", "Shortcuts", Arg.Any<JsonNode>());
 
         vm.ToggleFavoriteCommand.Execute(module);
 

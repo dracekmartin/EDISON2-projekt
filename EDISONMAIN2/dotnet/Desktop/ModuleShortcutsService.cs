@@ -20,8 +20,11 @@ namespace EDISONMAIN2.Desktop
         private bool _batchChanged;
 
         // Uložené položky, které v aktuálním stromě neexistují (odebraná licence, hidden, mlineOnly).
-        // Nezobrazují se, ale musí se uložit zpátky - jinak by je první změna členství tiše smazala.
+        // Nezobrazují se a na serveru zůstávají; drží se jen kvůli rezervaci jejich buněk.
         private readonly List<DesktopShortcutDto> _unresolved = [];
+
+        // Uložené položky, které ukazuje už jiná dlaždice (varianta ze shellu i zápis agendy bez parametru).
+        private readonly Dictionary<string, List<DesktopShortcutDto>> _duplicates = [];
 
         /// <summary>Položky plochy v pořadí připnutí. Pozici dlaždice drží <c>Col</c>/<c>Row</c>.</summary>
         public ObservableCollection<DesktopShortcut> Items { get; } = [];
@@ -86,8 +89,9 @@ namespace EDISONMAIN2.Desktop
         /// dohledávají v aktuálních stromech (sdílené instance, ne kopie); ostatní druhy si nesou
         /// vše v uložené položce. Chybějící pozice (<c>Col</c>/<c>Row</c>) → z pořadí.
         /// <paramref name="stored"/> <c>null</c> = load selhal: plocha zůstane prázdná a <see cref="IsLoaded"/> false.
+        /// Vrací dlaždice, které dostaly jinou buňku, než nesla uložená položka (chybějící nebo obsazená).
         /// </summary>
-        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<DesktopShortcutDto>? stored)
+        public IReadOnlyList<DesktopShortcut> Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<DesktopShortcutDto>? stored)
         {
             IsLoaded = stored is not null;
             stored ??= [];
@@ -96,6 +100,7 @@ namespace EDISONMAIN2.Desktop
                 if (item.Module is { } module) module.IsFavorite = false;
             Items.Clear();
             _unresolved.Clear();
+            _duplicates.Clear();
 
             var shown = new List<(DesktopShortcutDto Dto, ShortcutKind Kind, ExecutableModule? Module)>();
             var keys = new HashSet<string>();
@@ -118,21 +123,34 @@ namespace EDISONMAIN2.Desktop
                     continue;
                 }
                 // Variantu modulu bere dlaždice z dohledaného uzlu, ne z uložené položky (viz Resolve).
-                if (!keys.Add(DesktopShortcut.KeyOf(kind, dto.ElementId, dto.Id, module?.InputParam ?? dto.Input))) continue;
+                var key = DesktopShortcut.KeyOf(kind, dto.ElementId, dto.Id, module?.InputParam ?? dto.Input);
+                if (!keys.Add(key))
+                {
+                    if (!_duplicates.TryGetValue(key, out var same)) _duplicates[key] = same = [];
+                    same.Add(dto);
+                    continue;
+                }
                 shown.Add((dto, kind, module));
             }
 
             // 2) pozice: nejdřív rezervuj pozice skrytých položek, ať je zobrazené nepřeberou - jinak
-            // by po návratu licence seděly dvě dlaždice na sobě (mřížka kolize neřeší).
+            // by po návratu licence seděly dvě dlaždice na sobě (mřížka kolize neřeší). Pak uložené buňky
+            // zobrazených: zástupce agendy bez pozice (konec blobu) nesmí vytlačit dlaždici, kterou tam dal uživatel.
             var used = new HashSet<(int Col, int Row)>(_unresolved.Select(CellOf).OfType<(int, int)>());
+            var cells = shown.Select(s => CellOf(s.Dto) is { } c && used.Add(c) ? c : ((int Col, int Row)?)null).ToList();
+            var replaced = new List<DesktopShortcut>();
             int order = 0;
             foreach (var (dto, kind, module) in shown)
             {
-                var cell = CellOf(dto) ?? CellOfOrder(order);
-                while (!used.Add(cell)) cell = Next(cell);
+                var storedCell = CellOf(dto);
+                if (cells[order] is not { } cell)
+                {
+                    cell = storedCell ?? CellOfOrder(order);
+                    while (!used.Add(cell)) cell = Next(cell);
+                }
 
                 if (module is not null) module.IsFavorite = true;
-                Items.Add(new DesktopShortcut
+                var shortcut = new DesktopShortcut
                 {
                     Kind = kind,
                     Id = dto.Id,
@@ -143,18 +161,22 @@ namespace EDISONMAIN2.Desktop
                     ExecutablePath = module?.ExecutablePath ?? dto.Exe,
                     FormName = module?.FormName ?? dto.Form,
                     InputParam = module?.InputParam ?? dto.Input,
+                    StoredInput = dto.Input,
                     Report = dto.Report,
                     Module = module,
                     Col = cell.Col,
                     Row = cell.Row,
-                });
+                };
+                Items.Add(shortcut);
+                if (storedCell != cell) replaced.Add(shortcut);
                 order++;
             }
+            return replaced;
         }
 
-        /// <summary>Vše k uložení: zobrazené položky + uložené, které aktuální strom nezná.</summary>
-        public IEnumerable<DesktopShortcutDto> Persistable() =>
-            Items.Select(i => i.ToDto()).Concat(_unresolved);
+        /// <summary>Uložené položky, které ukazuje dlaždice s klíčem <paramref name="key"/> navíc ke své (z posledního <see cref="Seed"/>).</summary>
+        public IReadOnlyList<DesktopShortcutDto> DuplicatesOf(string key) =>
+            _duplicates.TryGetValue(key, out var same) ? same : [];
 
         /// <summary>Je tahle varianta modulu hlavní nabídky na ploše? (řídí ★ ve stromu)</summary>
         public bool Contains(ExecutableModule module) =>
@@ -170,13 +192,29 @@ namespace EDISONMAIN2.Desktop
             return _all.FirstOrDefault(e => e.VariantKey == key) ?? _all.FirstOrDefault(e => e.ElementId == elementId);
         }
 
-        /// <summary>Přidá modul hlavní nabídky na plochu (idempotentní).</summary>
-        public void Add(ExecutableModule module)
+        /// <summary>
+        /// Přidá modul hlavní nabídky na plochu (idempotentní). S <paramref name="cell"/> (drop ze stromu)
+        /// vznikne dlaždice rovnou na ní a obsazenou buňku uvolní jako <see cref="PlaceAt"/>: na server
+        /// pak jde jedno Add s cílovou buňkou, ne Add a přesun, jejichž pořadí doběhnutí nikdo nehlídá.
+        /// Modul, který už na ploše je, se jen přesune.
+        /// </summary>
+        public void Add(ExecutableModule module, (int Col, int Row)? cell = null)
         {
-            if (module.ElementId.Length == 0 || Contains(module)) return;
+            if (module.ElementId.Length == 0) return;
+            if (Items.FirstOrDefault(i => i.Kind == ShortcutKind.MenuModule && i.VariantKey == module.VariantKey) is { } existing)
+            {
+                if (cell is { } moveTo) PlaceAt(existing, moveTo.Col, moveTo.Row);
+                return;
+            }
             module.IsFavorite = true;
             var shortcut = DesktopShortcut.ForModule(module);
             (shortcut.Col, shortcut.Row) = NextFreeCell();
+            if (cell is { Col: >= 0, Row: >= 0 } target)
+            {
+                if (Items.FirstOrDefault(i => i.Col == target.Col && i.Row == target.Row) is { } occupant)
+                    (occupant.Col, occupant.Row) = (shortcut.Col, shortcut.Row);
+                (shortcut.Col, shortcut.Row) = target;
+            }
             Items.Add(shortcut);
             OnMembershipChanged();
         }

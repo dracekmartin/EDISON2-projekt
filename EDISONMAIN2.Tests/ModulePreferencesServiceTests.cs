@@ -1,6 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ALWA.SYS;
+using EDControls;
 using EDControls.UserPrefs;
+using EDISONMAIN2.Desktop;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using NSubstitute;
 
@@ -8,7 +11,7 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Kontrakty persistence stavu stromu: chybějící blob vs. uložené prázdno (na tom stojí
-/// "ponech serverové výchozí rozbalení"), degradace staré hodnoty a polykání chyb.
+/// "ponech serverové výchozí rozbalení"), degradace staré hodnoty, polykání chyb a pořadí zápisů.
 /// </summary>
 public class ModulePreferencesServiceTests
 {
@@ -215,6 +218,102 @@ public class ModulePreferencesServiceTests
         writes.Complete(0);
 
         Assert.Equal(["""["v1"]""", """["v3"]"""], writes.Sent("TreeExpansion", atLeast: 2));
+    }
+
+    [Fact]
+    public async Task DesktopCalls_SendItemJsonToDesktopShortcuts()
+    {
+        var rest = Substitute.For<IMLRest>();
+        var service = new ModulePreferencesService(_prefs, new InlineRestCallRunner(rest), _ => { });
+        var tile = new DesktopShortcutDto(nameof(ShortcutKind.MenuModule), "100", "100", "A", Input: "MHD", Col: 2, Row: 1);
+
+        await service.AddShortcutAsync(tile);
+        await service.RemoveShortcutAsync(tile);
+        await service.PlaceShortcutsAsync([tile]);
+
+        rest.Received(1).QueryOrThrow("ALVA.EDControls.DesktopShortcuts", "Add",
+            Arg.Is<CVar>(c => JsonSerializer.Deserialize<DesktopShortcutDto>(c["item"].Value!.ToString()!) == tile));
+        rest.Received(1).QueryOrThrow("ALVA.EDControls.DesktopShortcuts", "Remove",
+            Arg.Is<CVar>(c => JsonSerializer.Deserialize<DesktopShortcutDto>(c["item"].Value!.ToString()!) == tile));
+        rest.Received(1).QueryOrThrow("ALVA.EDControls.DesktopShortcuts", "Place",
+            Arg.Is<CVar>(c => JsonSerializer.Deserialize<List<DesktopShortcutDto>>(c["items"].Value!.ToString()!)!.Single() == tile));
+        await _prefs.DidNotReceive().SaveAsync(Scope, "Shortcuts", Arg.Any<JsonNode>());
+    }
+
+    // Každé volání je read-modify-write v jiném Caché procesu: souběžná dvě by si blob přepsala.
+    [Fact]
+    public async Task DesktopCalls_NextStartsAfterPreviousFinished()
+    {
+        var runner = new HeldRunner();
+        var service = new ModulePreferencesService(_prefs, runner, _ => { });
+        var tile = new DesktopShortcutDto(Id: "100", ElementId: "100");
+
+        var add = service.AddShortcutAsync(tile);
+        var place = service.PlaceShortcutsAsync([tile]);
+
+        Assert.Equal(1, runner.Started);
+        runner.Complete(0);
+        await add;
+        SpinWait.SpinUntil(() => runner.Started == 2, TimeSpan.FromSeconds(10));
+        Assert.Equal(2, runner.Started);
+        runner.Complete(1);
+        await place;
+    }
+
+    // Přenačtení po exitu agendy nesmí předběhnout změnu, kterou shell ještě posílá: dlaždice by zmizela.
+    [Fact]
+    public async Task LoadShortcuts_WaitsForPendingDesktopCalls()
+    {
+        var runner = new HeldRunner();
+        var service = new ModulePreferencesService(_prefs, runner, _ => { });
+        _ = service.AddShortcutAsync(new DesktopShortcutDto(Id: "100", ElementId: "100"));
+
+        var load = service.LoadShortcutsAsync();
+
+        await _prefs.DidNotReceive().LoadAsync(Scope, "Shortcuts");
+        runner.Complete(0);
+        await load.WaitAsync(TimeSpan.FromSeconds(10));
+        await _prefs.Received(1).LoadAsync(Scope, "Shortcuts");
+    }
+
+    [Fact]
+    public async Task DesktopCall_ServerError_IsReported_AndNextStillRuns()
+    {
+        var rest = Substitute.For<IMLRest>();
+        rest.QueryOrThrow("ALVA.EDControls.DesktopShortcuts", "Add", Arg.Any<CVar>())
+            .Returns(_ => throw new InvalidOperationException("server down"));
+        var reported = new List<Exception>();
+        var service = new ModulePreferencesService(_prefs, new InlineRestCallRunner(rest), reported.Add);
+        var tile = new DesktopShortcutDto(Id: "100", ElementId: "100");
+
+        await service.AddShortcutAsync(tile);
+        await service.RemoveShortcutAsync(tile);
+
+        Assert.Single(reported);
+        rest.Received(1).QueryOrThrow("ALVA.EDControls.DesktopShortcuts", "Remove", Arg.Any<CVar>());
+    }
+
+    // Runner, jehož volání dokončí až test.
+    private sealed class HeldRunner : IRestCallRunner
+    {
+        private readonly List<TaskCompletionSource> _calls = [];
+
+        public int Started
+        {
+            get { lock (_calls) return _calls.Count; }
+        }
+
+        public Task<T> RunAsync<T>(Func<IMLRest, T> call)
+        {
+            var done = new TaskCompletionSource();
+            lock (_calls) _calls.Add(done);
+            return done.Task.ContinueWith(_ => default(T)!, TaskScheduler.Default);
+        }
+
+        public void Complete(int index)
+        {
+            lock (_calls) _calls[index].TrySetResult();
+        }
     }
 
     private sealed class StoppedContext : SynchronizationContext
