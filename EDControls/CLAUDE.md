@@ -10,7 +10,7 @@ v `docs/wire-formaty.md` (wire formáty Caché ↔ .NET).
 takže odebraný člen je hned compile error - API se měnit smí; `tools/ThemeRender` stojí mimo sln
 a buildí se zvlášť. Nebezpečné je samostatné vydání
 `EDControls.dll` (`PublishOwnAssemblyOnly`, viz root CLAUDE.md): ta potká starý exe a shodí ho
-až za běhu. **TemplateDesigner běží u zákazníků**, EDISONMAIN2 zatím ne. Hodnoty sdílené přes
+až za běhu. **TemplateDesigner i EDISONMAIN2 běží u zákazníků.** Hodnoty sdílené přes
 samostatně nasazenou DLL proto drž jako **`static readonly`, ne `const`** - `const` se inlinuje
 do konzumenta a nepřebuildovaný exe změnu nedostane (`SupportActions`, `ErrorReporter`).
 
