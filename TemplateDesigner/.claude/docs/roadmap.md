@@ -31,9 +31,10 @@ Rozbor stavu (`B191a`, 12. 10.): oracle, mezery a testovací linky v [`§18`](li
 2. **`B191c` Porovnání se starým modulem** [M]. Oracle `ALVA.MHD.LinkyPrintFormatJR.MakeData` po
    dvojicích směr × typ provozu, linky CB_DP 11350/11341/11354/11018 a KV_DP 1073 ([`§18.1`, `§18.3`](linkovy-knizni-jr-implementace-analyza.md)).
    Co oracle nekryje (příjezd/odjezd, atributy B/C - na dev datech nejsou), psát jako neověřené (R6).
-3. **`B191d` Volby pro městské linky** [M, **rozhodnutí Jan**]. Starý modul u MHD čte 3 z 11 voleb
-   (kam legenda, rámečky kolem čísel spojů, typy provozu a směry), takže je to nová featura, ne
-   dorovnání. Návrh: tutéž sadu jako AD, kde má smysl ([`§13.4` bod 4](linkovy-knizni-jr-implementace-analyza.md)).
+3. **`B191d` Volby pro městské linky** [M-L]. Cíl (Jan 12. 10.): minimum = co šlo ve starém modulu
+   (výběr typů provozu a směrů, kam legenda, rámečky kolem čísel spojů); cílový stav = skupiny spojů
+   (dny u AD, typy provozu u MHD) se nastavují stejně ve všech čtyřech agendách JŘ. Návrh
+   společného modelu **čeká na potvrzení Jana**: [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
 4. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
    `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
 5. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`

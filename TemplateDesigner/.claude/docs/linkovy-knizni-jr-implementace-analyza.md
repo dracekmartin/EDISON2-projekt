@@ -1943,3 +1943,43 @@ pro knižní tisk. Tyto cesty oracle neověří a v dokladech parity se píšou 
 - `B191b` je větší, než stálo v roadmapě: kromě polí zastávek tři chyby z §18.2.
 - `B191c`: oracle po dvojicích směr × typ provozu, `arr,11` vše zapnuto.
 - Bloky po typu provozu nejsou nová věc: prvek je kreslí jako skupiny dnů u AD.
+
+### 18.5 Skupiny spojů jednotně ve všech agendách - návrh pro `B191d` (12. 10. 2026)
+
+**Cíl (Jan 12. 10.):** minimum je pokrýt, co uživatelé mohli dělat ve starém modulu. Cílový stav je,
+aby se se skupinami spojů (časové platnosti u AD, typy provozu u MHD) pracovalo stejně v zastávkovém
+i linkovém JŘ a v obou datových zdrojích.
+
+**Dnešní stav:**
+
+| Agenda | Z čeho jsou skupiny | Co volí uživatel |
+|---|---|---|
+| Zastávkový AD | dny v týdnu z kalendáře spoje | „Rozdělení sloupců (typy provozu)": Automaticky (dle linky), 4 vzory, Vlastní rozložení |
+| Linkový AD | dny v týdnu z kalendáře spoje | „Dělení spojů dle platnosti": 3 vzory, Vlastní rozložení (bez „Automaticky") |
+| Zastávkový MHD | typy provozu, sloučené do nejvýš 4 sloupců podle pole SMO v číselníku (`ZastavkoveJrMhd.cls:612-617`) | nic |
+| Linkový MHD | typ provozu = blok, pořadí z číselníku (`LinkovyJrMhd.cls:380-428`) | nic |
+
+Vlastní rozložení u AD je jeden mechanismus pro obě agendy: prvek drží definici sloupců
+(`DepartureColumnDefinition`: dny, značky, období, nadpis), klient ji posílá jako `DEFINICE_SLOUPCU`
+(`TemplateDesignerViewModel.ComposeGetDataParams`) a parametr dělení ji jen zrcadlí. Spoj, který
+nesedne do žádného sloupce, se netiskne - tím jde zároveň skupinu vynechat. MHD agendy
+`DEFINICE_SLOUPCU` nečtou.
+
+Starý linkový MHD před tiskem nabízel zaškrtávátka typů provozu a směrů
+(`LinkyPrintBIGFilterED.cls:111-123`, všechny typy firmy, ne jen linky).
+
+**Návrh:** jeden model skupin, jiné kritérium podle datového zdroje.
+
+1. `DepartureColumnDefinition` dostane další kritérium **typy provozu** (seznam ID). U AD zůstává
+   prázdné, u MHD nahradí dny. Aditivní změna šablony i wire.
+2. Obě MHD agendy začnou číst `DEFINICE_SLOUPCU` a posílat vzory a seznam typů provozu linky.
+   Výchozí rozložení odpovídá starému tisku: linkový blok na typ provozu, zastávkový sloučení podle SMO.
+3. Editor sloupců a parametr dělení jsou tytéž jako u AD; u MHD editor místo dnů ukáže typy provozu.
+   Vynechání typu provozu (minimum ze starého modulu) = odebrat ho z rozložení.
+4. Směr tisku je samostatná volba linkového JŘ („Oba / Tam / Zpět"), pro AD i MHD stejná.
+
+**Pořadí:** linkový MHD v `B191d` (body 1-4), zastávkový MHD jako samostatný krok po něm. Sjednocení
+názvu parametru dělení mezi zastávkovým a linkovým AD jde udělat zvlášť - popisky voleb jsou
+zamčené (persistuje se text), název parametru ne.
+
+**Neověřeno:** jak editor sloupců dnes skládá dialog podle agendy, a tedy kolik stojí bod 3.
