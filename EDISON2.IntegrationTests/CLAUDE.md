@@ -10,20 +10,22 @@ skutečnou odpovědí.
   Server `EDISON_IT_SERVER` / `EDISON_IT_PORT`, default `192.168.16.1:57770`. Třídy nesou
   `[Trait("Category", "Integration")]` (hlavní .NET běh je vyfiltruje) a `[DevServerFact]` / `[DevServerTheory]`.
 - **Identita je pevná** (`DevServer`), ne z `CACHE_USER`: čtení pod `CB_DP` / MLP 1, zápisy jen
-  pod `TEST_EDISON2_IT` / MLP 999 s úklidem ve `finally`. Výjimka `LogLogin`: záznam sestavy
-  přihlášení úklid přes MLRest nemá, každý běh přidá řádek pod touto firmou. Data agend (MHD, ...)
+  pod `TEST_EDISON2_IT` / MLP 999 s úklidem ve `finally`. Výjimky: `LogLogin` (záznam sestavy
+  přihlášení úklid přes MLRest nemá, každý běh přidá řádek pod touto firmou) a `Login` testovacího
+  účtu (nuluje jeho uživatelské flagy 17 a 20). Data agend (MHD, ...)
   leží v datovém namespace firmy: `Connect(dataNamespace: DevServer.ReadDataNamespace)`, výchozí je nemá.
 - **Testovací účet** (`TestAccount` v `EDTesting`, jde použít i z E2E): jméno a heslo nejsou v gitu, drží je DEV
   v globálu `^EDTesting("ITAccount","login")` a `("password")` v namespace MLINE (nastavuje vlastník v terminálu
-  Caché, čte `ALVA.EDTesting.ITAccount`). Proměnné `EDISON_IT_LOGIN` + `EDISON_IT_PASSWORD` ho přepíšou.
-  Chybí = `[TestAccountFact]` Skipped. Heslo nelogovat, `TestAccount.ToString()` ho neukazuje.
+  Caché, čte `ALVA.EDTesting.ITAccount`). Proměnné `EDISON_IT_LOGIN` + `EDISON_IT_PASSWORD` ho přepíšou,
+  jen jiným vyhrazeným účtem: testy s ním volají `Login`. Chybí = `[TestAccountFact]` Skipped. Heslo
+  nelogovat, `TestAccount.ToString()` ho neukazuje.
 - **Tolerantní parser** (chybějící řádek nebo pole = default) ověřuj i na surovém výstupu, jinak
   přejmenovaný řádek nebo posunuté pole projde. Vzor `ModuleTreeTests`.
 - **Surový výstup nelogovat** ani nedávat do assert zpráv: `Login` vrací heslo zpět, oba
   `LoadSettings` jméno a heslo admina.
 - **Nevolat** (mění session nebo stav celého serveru):
   - `ALVA.SYS.Login.Login` s reálným účtem - resetuje uživatelské flagy 17 a 20 (neexistující jméno
-    smí, `LoginContractTests`),
+    a testovací účet smí, `LoginContractTests`),
   - `ALVA.MZDY2.MLAPI.gPocZam` - přepočítá a zapíše počet zaměstnanců do dat firmy a telemetrie,
   - `ALVA.EDISON.MiniAplikaceAPI.LoadData` s `refresh=1` - přepočítá a přepíše Přehledy (miniaplikace),
     test si data zapíše přes `ALVA.EDTesting.ITDashboard` pod testovací firmu,
