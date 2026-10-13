@@ -1,0 +1,432 @@
+{
+  "version": "1.11.0",
+  "id": "8bb306cb-6a93-47bb-bd54-d01bd79f66f8",
+  "name": "Demo QR - zastávkový JŘ (AD), odjezdy online",
+  "description": "Ukázka na demo: zastávkový JŘ AD s QR kódem na veřejnou tabuli odjezdů ISYCloud (https://isycloud.cz/odjezdy/<CIS číslo zastávky>). QR se schová, když zastávka nemá CIS číslo. Základ je výchozí šablona zastávkového JŘ AD.",
+  "pageSize": {
+    "width": 210,
+    "height": 148,
+    "marginTop": 1,
+    "marginBottom": 1,
+    "marginLeft": 0.5,
+    "marginRight": 0.5
+  },
+  "sections": [
+    {
+      "id": "ad000000-0000-4000-8000-0000000000a0",
+      "name": "JR zastavkovy AD",
+      "designerHeight": 146,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "{POPIS_ZASTAVKA}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 11,
+            "bold": true,
+            "hAlign": "Left",
+            "vAlign": "Middle"
+          },
+          "wordWrap": false,
+          "id": "ad000000-0000-4000-8000-0000000000b1",
+          "x": 0.5,
+          "y": 0.5,
+          "width": 90,
+          "height": 7,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Linka {CISLO_LINKY}: {POPIS_LINKY}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": false,
+            "hAlign": "Left",
+            "vAlign": "Middle"
+          },
+          "wordWrap": false,
+          "id": "ad000000-0000-4000-8000-0000000000b2",
+          "x": 0.5,
+          "y": 8,
+          "width": 140,
+          "height": 5,
+          "zIndex": 1,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Směr: {KONECNA_ZASTAVKA}    •    {POPIS_PLATNOSTI}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 7,
+            "italic": true,
+            "hAlign": "Left",
+            "vAlign": "Middle"
+          },
+          "wordWrap": false,
+          "id": "ad000000-0000-4000-8000-0000000000b3",
+          "x": 0.5,
+          "y": 13,
+          "width": 188,
+          "height": 4,
+          "zIndex": 2,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "StopListElement",
+          "columns": [
+            {
+              "key": "CAS_JIZDY",
+              "header": "min.",
+              "width": 8,
+              "visible": true,
+              "alignment": "Right"
+            },
+            {
+              "key": "CAS_JIZDY_VARIANTY",
+              "header": "",
+              "width": 6,
+              "visible": true,
+              "alignment": "Right"
+            },
+            {
+              "key": "NAZEV_ZASTAVKY",
+              "header": "Zastávky",
+              "width": 37,
+              "visible": true,
+              "alignment": "Left"
+            }
+          ],
+          "partCount": 1,
+          "partGap": 3,
+          "showStopIndentation": true,
+          "showSignalStopIndicator": true,
+          "signalStopSymbol": "×",
+          "showStopAttributes": true,
+          "showTransferAttributes": false,
+          "showStopNotes": true,
+          "showSubMinuteTravel": false,
+          "markersPosition": "AfterName",
+          "multiPlatformMode": "FromRoute",
+          "directionArrowColor": "#FF000000",
+          "directionArrowPosition": "Right",
+          "directionArrowWidth": 0.2,
+          "directionArrowHeadSize": 1.2,
+          "directionArrowHead": "Filled",
+          "directionArrowLineStyle": "Solid",
+          "showHeader": true,
+          "currentStopUnderline": true,
+          "currentStopBold": true,
+          "passedStopsForeColor": "#FF999999",
+          "passedStopsTime": "Hide",
+          "excludedAttributeIds": [],
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 7.5
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true,
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "grid": {
+            "showRowLines": false,
+            "showColumnLines": true,
+            "color": "#FFD0D0D0",
+            "style": "Solid"
+          },
+          "dataRowHeight": 4,
+          "id": "ad000000-0000-4000-8000-0000000000c1",
+          "x": 0.5,
+          "y": 18,
+          "width": 47,
+          "height": 128,
+          "zIndex": 3,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "DepartureGridElement",
+          "skupinaDnuId": "",
+          "showSkupinaDnuHeader": true,
+          "skupinaDnuHeaderLineHeight": 3,
+          "headerVerticalAlignment": "Bottom",
+          "hourColumnWidth": 7,
+          "minuteWidth": 7,
+          "minuteSpacing": "ByContent",
+          "minuteFontSize": 9,
+          "minuteStyle": {},
+          "anotaceSymbolStyle": {},
+          "anotaceTextStyle": {},
+          "anotaceGap": 0,
+          "anotaceInterGap": 0,
+          "odjezdGap": 0,
+          "groupSeparatorWidth": 0.4,
+          "hourColumnPerGroup": true,
+          "maxGroupCount": 0,
+          "minuteBold": true,
+          "alternatingRowColor": "#FFF5F5F5",
+          "showAnotace": true,
+          "anotaceFontSize": 5,
+          "negativniZnackaBackColor": "#FF000000",
+          "negativniZnackaForeColor": "#FFFFFFFF",
+          "hourColumnStyle": {
+            "header": {
+              "fontFamily": "Arial",
+              "fontSize": 6,
+              "bold": true
+            },
+            "data": {
+              "fontFamily": "Arial",
+              "fontSize": 9
+            }
+          },
+          "hourColumnHeader": "",
+          "groupColumns": [
+            {
+              "skupinaDnuId": "1",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFD8EFD8"
+                },
+                "data": {}
+              }
+            },
+            {
+              "skupinaDnuId": "2",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFDFDFDF"
+                },
+                "data": {}
+              }
+            },
+            {
+              "skupinaDnuId": "3",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFD8D8EF"
+                },
+                "data": {}
+              }
+            }
+          ],
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 9
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 6,
+            "bold": true,
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "grid": {
+            "showRowLines": true,
+            "showColumnLines": true,
+            "color": "#FFD0D0D0",
+            "style": "Solid"
+          },
+          "dataRowHeight": 5,
+          "id": "ad000000-0000-4000-8000-0000000000c2",
+          "x": 48,
+          "y": 18,
+          "width": 98.7,
+          "height": 128,
+          "zIndex": 4,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "NotesLegendElement",
+          "headerText": "Poznámky",
+          "showHeaderBar": true,
+          "noteSeparator": " — ",
+          "noteFontSize": 7,
+          "noteLineHeight": 3,
+          "columns": 1,
+          "wrapSmer": "PoSloupcich",
+          "markerSirka": 0,
+          "razeni": "Vychozi",
+          "negativniZnackaBackColor": "#FF000000",
+          "negativniZnackaForeColor": "#FFFFFFFF",
+          "showNegativniZnacky": true,
+          "showSpecialniZnaky": true,
+          "showTextovePoznamky": true,
+          "vyluky": "Vcetne",
+          "showPoznamkyLinkyTarifni": false,
+          "showPoznamkyLinkyVseobecne": false,
+          "showPoznamkyLinkyRadiobus": false,
+          "showSouhrnBezbarier": true,
+          "showZnackaKola": false,
+          "showZnackaMistenky": false,
+          "showPokracujiciSpoje": false,
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 7
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true,
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "grid": {
+            "showRowLines": true,
+            "showColumnLines": true,
+            "color": "#FFD0D0D0",
+            "style": "Solid"
+          },
+          "id": "ad000000-0000-4000-8000-0000000000c3",
+          "x": 146.7,
+          "y": 18,
+          "width": 62.3,
+          "zIndex": 5,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "BarcodeElement",
+          "content": "https://isycloud.cz/odjezdy/{CISLO_ZASTAVKA_CIS}",
+          "barcodeType": "QR",
+          "foreColor": "#FF000000",
+          "id": "b5e724fc-ba37-4dde-9d24-127bed8817d3",
+          "x": 190.5,
+          "y": 0.5,
+          "width": 17,
+          "height": 17,
+          "zIndex": 6,
+          "isLocked": false,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}",
+          "backgroundColor": "#FFFFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Odjezdy v reálném čase",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true,
+            "hAlign": "Right",
+            "vAlign": "Middle"
+          },
+          "wordWrap": false,
+          "id": "1b5d87a3-55a1-44b7-90d8-ef7c7f782642",
+          "x": 141,
+          "y": 1,
+          "width": 48,
+          "height": 4,
+          "zIndex": 7,
+          "isLocked": false,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}",
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Načtěte QR kód telefonem",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 7,
+            "bold": false,
+            "hAlign": "Right",
+            "vAlign": "Middle"
+          },
+          "wordWrap": false,
+          "id": "103341f4-30ed-427d-b384-7c6402d3cabf",
+          "x": 141,
+          "y": 5,
+          "width": 48,
+          "height": 4,
+          "zIndex": 8,
+          "isLocked": false,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}",
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        }
+      ]
+    }
+  ],
+  "agendaCode": "ZASTAVKOVY_JR_AD",
+  "editorPreferences": {
+    "gridSize": 1,
+    "snapToGrid": true,
+    "snapToElements": true,
+    "showGrid": false
+  },
+  "createdAt": "2026-10-13T08:00:00Z",
+  "modifiedAt": "2026-10-13T08:00:00Z"
+}

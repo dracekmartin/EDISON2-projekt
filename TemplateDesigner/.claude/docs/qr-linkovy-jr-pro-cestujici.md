@@ -60,6 +60,15 @@ v `LinkovyJrAd.cls` (s přebaselinovanými zlatými odtisky).
   (`^LYOBD` denní index, `^LY` pole 11 linka, 22 způsob platby) za poslední tři dny s daty.
   Ven jdou jen počty. Bez dat o prodejích (ZL_KOVED) se blok neukáže - znamená to „nevíme".
 
+## Tabule odjezdů ISYCloud (12. 10.)
+
+Veřejná stránka ISYCloud `https://isycloud.cz/odjezdy/<CIS číslo zastávky>` bez přihlášení:
+nejbližší odjezdy všech linek ze zastávky s odpočtem minut, klik na odjezd rozbalí trasu spoje.
+Data jsou z celostátního registru (import JDF z CIS), ne z EDISONu, takže MHD a linky mimo CIS
+v ní nejsou. Na zastávkový JŘ AD vede QR bez změny kódu: pole `{CISLO_ZASTAVKA_CIS}` agenda už
+má. Ukázka `templates/demo-qr-zastavkovy-jr-ad.json` (v DB CB_CSADAD), QR se schová u zastávky
+bez CIS čísla. U CB_CSADAD se číslo zastávky shoduje s CIS číslem (linka 330510).
+
 ## Co zůstává otevřené
 
 - **QR z návrháře pro ZL_KOVED** (Babice) neověřené; adresa se zkoušela ručně.
@@ -67,6 +76,7 @@ v `LinkovyJrAd.cls` (s přebaselinovanými zlatými odtisky).
   (poloha přes hotspot jen s výjimkou „insecure origins" v prohlížeči).
 - **Zpoždění polohy** několik sekund (hlavně v Brave, který nedává ani kompas) - neřešeno.
 - **Jedno QR za označník** místo za linku: přes označník jede víc linek, adresa by nesla označník
-  a aplikace by spojila všechno, co tudy jede.
+  a aplikace by spojila všechno, co tudy jede. Za zastávku (ne za označník) to dnes dělá tabule
+  ISYCloud výše.
 - **Placení podle spoje** místo celé linky - prodeje nesou i číslo spoje, terminál má vozidlo.
 - **Poloha označníků** chybí u CB_CSADAD; bez ní přechod na mapě nejde ukázat.
