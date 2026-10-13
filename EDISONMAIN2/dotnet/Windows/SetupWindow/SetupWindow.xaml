@@ -6,15 +6,18 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Icon="{StaticResource EDIcons.Molecule}">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
     <StackPanel Margin="20" Width="340">
         <TextBlock Text="Tato stanice ještě není nastavena. Zadejte připojení k serveru."
                    TextWrapping="Wrap" Margin="0,0,0,16"/>
 
         <TextBlock Text="Název připojení:" Margin="0,0,0,4"/>
-        <TextBox x:Name="NameBox" Margin="0,0,0,12"/>
+        <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
 
         <TextBlock Text="Server:" Margin="0,0,0,4"/>
-        <TextBox x:Name="ServerBox" Margin="0,0,0,12" TextChanged="ConnectionInput_Changed"/>
+        <TextBox Text="{Binding Server, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,12"/>
 
         <Grid Margin="0,0,0,12">
             <Grid.ColumnDefinitions>
@@ -24,31 +27,45 @@
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
                 <TextBlock Text="Port:" Margin="0,0,0,4"/>
-                <TextBox x:Name="SuperPortBox"/>
+                <TextBox Text="{Binding SuperPort, UpdateSourceTrigger=PropertyChanged}"/>
             </StackPanel>
             <StackPanel Grid.Column="2">
                 <TextBlock Text="REST port:" Margin="0,0,0,4"/>
-                <TextBox x:Name="RestPortBox" TextChanged="ConnectionInput_Changed"/>
+                <TextBox Text="{Binding RestPort, UpdateSourceTrigger=PropertyChanged}"/>
             </StackPanel>
         </Grid>
 
-        <CheckBox x:Name="IrisBox" Content="Server běží na IRIS" Margin="0,0,0,12"/>
+        <CheckBox IsChecked="{Binding Iris}" Content="Server běží na IRIS" Margin="0,0,0,12"/>
 
-        <Button x:Name="TestBtn" Content="Test připojení" Width="120"
-                HorizontalAlignment="Left" Click="TestBtn_Click" Margin="0,0,0,12"/>
+        <Button Content="Test připojení" Width="120"
+                HorizontalAlignment="Left" Command="{Binding TestCommand}" Margin="0,0,0,12"/>
 
-        <TextBlock x:Name="StatusText" TextWrapping="Wrap"
-                   Visibility="Collapsed" Margin="0,0,0,12"/>
+        <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" Margin="0,0,0,12"
+                   Visibility="{Binding HasStatus, Converter={StaticResource BoolToVis}}">
+            <TextBlock.Style>
+                <!-- BasedOn povinné - theming (font, dark mode) žije v implicitním stylu. -->
+                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Semantic.Success}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Semantic.Danger}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
 
         <TextBlock Text="Databáze:" Margin="0,0,0,4"/>
-        <ComboBox x:Name="DatabaseCombo" IsEnabled="False" Margin="0,0,0,12"/>
+        <ComboBox ItemsSource="{Binding Databases}" SelectedItem="{Binding SelectedDatabase}"
+                  IsEnabled="{Binding IsConnectionTested}" Margin="0,0,0,12"/>
 
         <TextBlock Text="IDFa firmy:" Margin="0,0,0,4"/>
-        <TextBox x:Name="IdfaBox" IsEnabled="False" Margin="0,0,0,16"/>
+        <TextBox Text="{Binding Idfa, UpdateSourceTrigger=PropertyChanged}"
+                 IsEnabled="{Binding IsConnectionTested}" Margin="0,0,0,16"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="SaveBtn" Content="{StaticResource EDStrings.Ok}" Width="80"
-                    IsDefault="True" IsEnabled="False" Click="SaveBtn_Click" Margin="0,0,8,0"/>
+            <Button Content="{StaticResource EDStrings.Ok}" Width="80"
+                    IsDefault="True" IsEnabled="{Binding CanSave}" Command="{Binding SaveCommand}" Margin="0,0,8,0"/>
             <Button Content="{StaticResource EDStrings.Cancel}" Width="80" IsCancel="True"/>
         </StackPanel>
     </StackPanel>

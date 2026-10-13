@@ -75,9 +75,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Bez EDISONini.xml (instance spuštěná s argumenty připojení) je výchozí aktuální session.
+        // Dev server se nepředvyplňuje: výchozí je jen to, co v souboru opravdu je.
         private ConnectionChoice DefaultConnection()
         {
-            var ini = SettingsLoader.Load().Server;
+            var ini = SettingsLoader.Load(devDefaults: false).Server;
             return ini.Host.Length > 0
                 ? new ConnectionChoice(ini.Name.Length > 0 ? ini.Name : "EDISONini.xml", ini.Host, ini.Port, IsDefault: true)
                 : new ConnectionChoice("Aktuální", Rest.Server, Rest.Port, IsDefault: true);

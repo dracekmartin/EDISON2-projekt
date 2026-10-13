@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.LoginWindow;
+using EDISONMAIN2.Windows.SetupWindow;
 
 namespace EDISONMAIN2.Tests;
 
@@ -15,6 +16,7 @@ internal sealed class FakeStartupHost(List<string>? calls = null) : IStartupHost
     public List<string> Calls { get; } = calls ?? [];
 
     public bool SetupCompleted { get; set; }
+    public SetupWizardViewModel? ShownSetup { get; private set; }
     /// <summary>Výsledek login okna; null = uživatel okno zavřel. Čte se až při zobrazení okna.</summary>
     public Func<LoginResult?> DialogLogin { get; set; } = () => null;
     public bool PasswordChanged { get; set; } = true;
@@ -29,9 +31,10 @@ internal sealed class FakeStartupHost(List<string>? calls = null) : IStartupHost
 
     public void InitializeAppearance() => Calls.Add("appearance");
 
-    public bool ShowSetup()
+    public bool ShowSetup(SetupWizardViewModel vm)
     {
         Calls.Add("setup");
+        ShownSetup = vm;
         return SetupCompleted;
     }
 

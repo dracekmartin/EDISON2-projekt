@@ -72,6 +72,10 @@ public class AppBootstrapperTests
             return Configured;
         }
 
+        // Neexistující soubor: wizard předvyplní jen výchozí hodnoty, ne EDISONini.xml z bin adresáře testů.
+        protected override string SettingsFilePath { get; } =
+            System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"EDISONini-{Guid.NewGuid():N}.xml");
+
         /// <summary>Předlogin spojení: brány a dialog s ním mluví skutečně, odpovědi nastavuje test.</summary>
         public IMLRest LoginRest { get; } = MLRestMocks.Create();
 
@@ -198,6 +202,20 @@ public class AppBootstrapperTests
 
         Assert.Equal("hold", b.Calls[0]);
         Assert.Contains("setup", b.Calls);
+    }
+
+    [Theory]
+    [InlineData(true, "192.168.16.1")]
+    [InlineData(false, "")]
+    public void Run_NotConfigured_WizardPrefillsDevServerOnlyWithDevDefaults(bool devDefaults, string server)
+    {
+        // U zákazníka by wizard nabídl cizí IP a mohl ji zapsat do souboru sdíleného s legacy.
+        var b = new TestableBootstrapper(new StartupOptions { UseDevDefaults = devDefaults }) { Configured = false };
+
+        b.Run();
+
+        Assert.Equal(server, b.Host.ShownSetup?.Server);
+        Assert.Equal(ServerSettings.DefaultRestPort.ToString(), b.Host.ShownSetup?.RestPort);
     }
 
     [Fact]

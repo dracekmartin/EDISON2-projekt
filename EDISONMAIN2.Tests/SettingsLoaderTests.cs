@@ -5,15 +5,12 @@ using System.Xml;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Čtení/zápis EDISONini.xml + IsConfigured() (first-launch detekce). Cesta se přesměruje
-/// do temp adresáře (seam SettingsLoader.FilePath) - bin adresář sdílí běžící exe.
+/// Čtení/zápis EDISONini.xml + IsConfigured() (first-launch detekce). Soubor leží v temp adresáři,
+/// bin adresář sdílí běžící exe.
 /// </summary>
-[Collection(SharedStaticStateCollection.Name)]
 public class SettingsLoaderTests : IDisposable
 {
     private readonly string _dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString());
-    private readonly string _originalFilePath;
-    private readonly bool _originalDevDefaults;
 
     private string Path => System.IO.Path.Combine(_dir, "EDISONini.xml");
 
@@ -30,33 +27,20 @@ public class SettingsLoaderTests : IDisposable
         </edison>
         """;
 
-    public SettingsLoaderTests()
-    {
-        Directory.CreateDirectory(_dir);
-        _originalFilePath = SettingsLoader.FilePath;
-        _originalDevDefaults = SettingsLoader.UseDevDefaults;
-        SettingsLoader.FilePath = Path;
-    }
+    public SettingsLoaderTests() => Directory.CreateDirectory(_dir);
 
-    public void Dispose()
-    {
-        SettingsLoader.FilePath = _originalFilePath;
-        SettingsLoader.UseDevDefaults = _originalDevDefaults;
-        Directory.Delete(_dir, recursive: true);
-    }
+    public void Dispose() => Directory.Delete(_dir, recursive: true);
 
     [Fact]
     public void IsConfigured_NoFile_False()
     {
-        Assert.False(SettingsLoader.IsConfigured());
+        Assert.False(SettingsLoader.IsConfigured(Path));
     }
 
     [Fact]
     public void Load_NoFile_DevDefaults_PrefillsDevServer()
     {
-        SettingsLoader.UseDevDefaults = true;
-
-        var loaded = SettingsLoader.Load();
+        var loaded = SettingsLoader.Load(devDefaults: true, Path);
 
         Assert.Equal("192.168.16.1", loaded.Server.Host);
         Assert.Equal(57770, loaded.Server.Port);
@@ -66,13 +50,11 @@ public class SettingsLoaderTests : IDisposable
     public void Load_NoFile_Release_HostEmptyPortDefault()
     {
         // U zákazníka nesmí wizard nabídnout dev server M-line; REST port má rozumný default.
-        SettingsLoader.UseDevDefaults = false;
-
-        var loaded = SettingsLoader.Load();
+        var loaded = SettingsLoader.Load(devDefaults: false, Path);
 
         Assert.Equal("", loaded.Server.Host);
         Assert.Equal(57770, loaded.Server.Port);
-        Assert.False(SettingsLoader.IsConfigured());
+        Assert.False(SettingsLoader.IsConfigured(Path));
     }
 
     [Fact]
@@ -80,9 +62,10 @@ public class SettingsLoaderTests : IDisposable
     {
         File.WriteAllText(Path, LegacyXml);
 
-        var loaded = SettingsLoader.Load();
+        // Dev předvyplnění vyplněný soubor nepřebije.
+        var loaded = SettingsLoader.Load(devDefaults: true, Path);
 
-        Assert.True(SettingsLoader.IsConfigured());
+        Assert.True(SettingsLoader.IsConfigured(Path));
         Assert.Equal("10.0.0.5", loaded.Server.Host);
         Assert.Equal(12345, loaded.Server.Port);       // @restport, ne @port
         Assert.Equal(51972, loaded.Server.SuperPort);
@@ -97,7 +80,7 @@ public class SettingsLoaderTests : IDisposable
     {
         File.WriteAllText(Path, "<edison><initialized>1</initialized></edison>");
 
-        Assert.False(SettingsLoader.IsConfigured());
+        Assert.False(SettingsLoader.IsConfigured(Path));
     }
 
     [Fact]
@@ -105,7 +88,7 @@ public class SettingsLoaderTests : IDisposable
     {
         File.WriteAllText(Path, """<edison><connection server="10.0.0.5" restport="abc" /></edison>""");
 
-        Assert.False(SettingsLoader.IsConfigured());
+        Assert.False(SettingsLoader.IsConfigured(Path));
     }
 
     [Fact]
@@ -120,7 +103,7 @@ public class SettingsLoaderTests : IDisposable
                 Name = "NOVE", Host = "10.9.9.9", SuperPort = 51973, Port = 55555,
                 Iris = false, Database = "JINA_DB", IdFa = "JINA_FA",
             }
-        }.Save();
+        }.Save(Path);
 
         var xmlDoc = new XmlDocument();
         xmlDoc.Load(Path);
@@ -149,9 +132,9 @@ public class SettingsLoaderTests : IDisposable
                 Name = "CACHE", Host = "10.0.0.5", SuperPort = 51972, Port = 12345,
                 Iris = true, Database = "DB", IdFa = "FA",
             }
-        }.Save();
+        }.Save(Path);
 
-        var loaded = SettingsLoader.Load();
+        var loaded = SettingsLoader.Load(devDefaults: false, Path);
         Assert.Equal("10.0.0.5", loaded.Server.Host);
         Assert.Equal(12345, loaded.Server.Port);
         Assert.Equal(51972, loaded.Server.SuperPort);

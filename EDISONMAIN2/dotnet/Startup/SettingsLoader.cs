@@ -13,41 +13,34 @@ public class SettingsLoader
 {
     public ServerSettings Server { get; set; } = new();
 
-    public static SettingsLoader? Current { get; private set; }
-
     private const string FileName = "EDISONini.xml";
 
-    /// <summary>Settable jen kvůli testům - produkce čte EDISONini.xml vedle exe.</summary>
-    internal static string FilePath { get; set; } = Path.Combine(AppContext.BaseDirectory, FileName);
+    /// <summary>Soubor vedle exe. Testy předávají vlastní cestu: bin adresář sdílí běžící exe.</summary>
+    internal static string DefaultFilePath { get; } = Path.Combine(AppContext.BaseDirectory, FileName);
 
     /// <summary>
     /// First-launch indikátor: bez souboru s vyplněnou <c>connection</c> (server + restport)
     /// není stanice nakonfigurovaná → ukázat setup wizard. Legacy soubor bez connection sem
     /// spadne taky - prázdné připojení má poslat uživatele do wizardu, ne do pádu loginu.
     /// </summary>
-    public static bool IsConfigured()
+    public static bool IsConfigured(string? filePath = null)
     {
-        var settings = Read();
+        var settings = Read(filePath ?? DefaultFilePath);
         return !string.IsNullOrEmpty(settings.Server.Host) && settings.Server.Port > 0;
     }
 
-    /// <summary>
-    /// Předvyplnit chybějící host adresou dev serveru M-line. Jen ve vývoji: u zákazníka by wizard
-    /// nabídl cizí IP a přes VPN partnera ji mohl zapsat do souboru, který čtou i legacy aplikace.
-    /// Nastavuje <see cref="StartupOptions.ApplyToProcess"/>; default je chování stanice zákazníka.
-    /// </summary>
-    internal static bool UseDevDefaults { get; set; }
-
-    public static SettingsLoader Load()
+    /// <param name="devDefaults">Předvyplnit chybějící host adresou dev serveru M-line. Jen ve vývoji
+    /// (<see cref="StartupOptions.UseDevDefaults"/>): u zákazníka by wizard nabídl cizí IP a přes VPN partnera
+    /// ji mohl zapsat do souboru, který čtou i legacy aplikace.</param>
+    /// <param name="filePath">Null = <c>EDISONini.xml</c> vedle exe.</param>
+    public static SettingsLoader Load(bool devDefaults, string? filePath = null)
     {
-        var settings = Read();
+        var settings = Read(filePath ?? DefaultFilePath);
 
         // Bez použitelné connection: REST port má rozumný default vždy, host jen ve vývoji.
-        if (UseDevDefaults && string.IsNullOrEmpty(settings.Server.Host)) settings.Server.Host = ServerSettings.DevHost;
+        if (devDefaults && string.IsNullOrEmpty(settings.Server.Host)) settings.Server.Host = ServerSettings.DevHost;
         if (settings.Server.Port <= 0) settings.Server.Port = ServerSettings.DefaultRestPort;
-
-        Current = settings;
-        return Current;
+        return settings;
     }
 
     /// <summary>
@@ -55,11 +48,13 @@ public class SettingsLoader
     /// <c>initialized=1</c> + <c>forceChange=1</c>, <c>IRIS</c>, celá <c>connection</c>
     /// a <c>database</c>; uzly mimo tuhle množinu (např. <c>securedMode</c>) zachová.
     /// </summary>
-    public void Save()
+    /// <param name="filePath">Null = <c>EDISONini.xml</c> vedle exe.</param>
+    public void Save(string? filePath = null)
     {
+        filePath ??= DefaultFilePath;
         var xmlDoc = new XmlDocument();
-        if (File.Exists(FilePath))
-            xmlDoc.Load(FilePath);
+        if (File.Exists(filePath))
+            xmlDoc.Load(filePath);
 
         var edison = xmlDoc.DocumentElement;
         if (edison is null || edison.Name != "edison")
@@ -82,8 +77,7 @@ public class SettingsLoader
         database.SetAttribute("name", Server.Database);
         database.SetAttribute("idfa", Server.IdFa);
 
-        xmlDoc.Save(FilePath);
-        Current = this;
+        xmlDoc.Save(filePath);
     }
 
     private static XmlElement SetElement(XmlElement parent, string name, string? innerText)
@@ -99,14 +93,14 @@ public class SettingsLoader
 
     /// <summary>Tolerantní čtení jako legacy EDLOADER: chybějící soubor, nevalidní XML
     /// i chybějící uzel vrací prázdno, rozhodne se z toho až volající.</summary>
-    private static SettingsLoader Read()
+    private static SettingsLoader Read(string filePath)
     {
         var settings = new SettingsLoader { Server = { Host = "", Port = 0 } };
-        if (!File.Exists(FilePath)) return settings;
+        if (!File.Exists(filePath)) return settings;
         try
         {
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(FilePath);
+            xmlDoc.Load(filePath);
             var server = settings.Server;
 
             if (xmlDoc.SelectSingleNode("edison/connection") is XmlElement connection)
@@ -141,7 +135,7 @@ public class SettingsLoader
 /// shell, zbytek nese wizard kvůli paritě souboru s legacy setupem.</summary>
 public class ServerSettings
 {
-    /// <summary>Dev server M-line - jen pro předvyplnění ve vývoji (<see cref="SettingsLoader.UseDevDefaults"/>).</summary>
+    /// <summary>Dev server M-line - jen pro předvyplnění ve vývoji (<see cref="StartupOptions.UseDevDefaults"/>).</summary>
     internal const string DevHost = "192.168.16.1";
     public const int DefaultRestPort = 57770;
 

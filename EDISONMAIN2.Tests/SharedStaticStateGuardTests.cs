@@ -24,18 +24,12 @@ public class SharedStaticStateGuardTests
         typeof(EDServices).GetMethod(nameof(EDServices.Initialize), Declared)!,
         typeof(EDServices).GetMethod(nameof(EDServices.Reset), Declared)!,
         Setter(typeof(InternalDiagnostics), nameof(InternalDiagnostics.Enabled)),
-        Setter(typeof(SettingsLoader), nameof(SettingsLoader.FilePath)),
-        Setter(typeof(SettingsLoader), nameof(SettingsLoader.UseDevDefaults)),
-        typeof(SettingsLoader).GetMethod(nameof(SettingsLoader.Load), Declared)!,
-        typeof(SettingsLoader).GetMethod(nameof(SettingsLoader.Save), Declared)!,
         Setter(typeof(LocalPrefs), nameof(LocalPrefs.FilePath)),
         Setter(typeof(ErrorReports), nameof(ErrorReports.Enabled)),
         Setter(typeof(EDUsageTelemetry), nameof(EDUsageTelemetry.Enabled)),
         typeof(StartupOptions).GetMethod(nameof(StartupOptions.ApplyToProcess), Declared)!,
-        // Skutečné kroky bootstrapperu (testy je jinak přepisují): Initialize služeb a SettingsLoader.Current.
+        // Skutečný krok bootstrapperu (testy ho jinak přepisují): Initialize služeb.
         typeof(AppBootstrapper).GetMethod("InitializeServices", Declared)!,
-        typeof(AppBootstrapper).GetMethod("EnsureConfigured", Declared)!,
-        typeof(AppBootstrapper).GetMethod("PrepareLogin", Declared)!,
         .. typeof(Environment).GetMethods().Where(m => m.Name == nameof(Environment.SetEnvironmentVariable)),
     ];
 

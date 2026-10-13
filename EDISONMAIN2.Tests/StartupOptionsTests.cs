@@ -98,7 +98,6 @@ public class StartupOptionsTests
         Assert.False(ErrorReports.Enabled);
         Assert.False(EDUsageTelemetry.Enabled);
         Assert.True(SupportWidgetHost.ScreenshotMode);
-        Assert.True(SettingsLoader.UseDevDefaults);
         Assert.True(InternalDiagnostics.Enabled);
     }
 
@@ -108,13 +107,12 @@ public class StartupOptionsTests
         using var _ = new ProcessStatics();
         ErrorReports.Enabled = true;
         EDUsageTelemetry.Enabled = true;
-        SettingsLoader.UseDevDefaults = true;
+        InternalDiagnostics.Enabled = true;
 
         (StartupOptions.Production() with { InternalDiagnosticsEnabled = false }).ApplyToProcess();
 
         Assert.True(ErrorReports.Enabled);
         Assert.True(EDUsageTelemetry.Enabled);
-        Assert.False(SettingsLoader.UseDevDefaults);
         Assert.False(InternalDiagnostics.Enabled);
     }
 
@@ -123,7 +121,6 @@ public class StartupOptionsTests
     {
         private readonly bool _reports = ErrorReports.Enabled;
         private readonly bool _telemetry = EDUsageTelemetry.Enabled;
-        private readonly bool _devDefaults = SettingsLoader.UseDevDefaults;
         private readonly bool _diagnostics = InternalDiagnostics.Enabled;
         private readonly string? _screenshot = Environment.GetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable);
 
@@ -131,7 +128,6 @@ public class StartupOptionsTests
         {
             ErrorReports.Enabled = _reports;
             EDUsageTelemetry.Enabled = _telemetry;
-            SettingsLoader.UseDevDefaults = _devDefaults;
             InternalDiagnostics.Enabled = _diagnostics;
             Environment.SetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable, _screenshot);
         }

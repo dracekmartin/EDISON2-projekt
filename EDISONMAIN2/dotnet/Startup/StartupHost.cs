@@ -4,6 +4,7 @@ using System.Windows.Threading;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.LoginWindow;
+using EDISONMAIN2.Windows.SetupWindow;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using Application = System.Windows.Application;
 
@@ -22,7 +23,7 @@ internal interface IStartupHost
     void InitializeAppearance();
 
     /// <summary>Setup wizard připojení; false = uživatel zrušil.</summary>
-    bool ShowSetup();
+    bool ShowSetup(SetupWizardViewModel vm);
 
     /// <summary>Login okno; vrátí se po přihlášení (okno zůstává jako progress podklad) nebo po zavření (null).</summary>
     LoginResult? ShowLogin(LoginViewModel vm, IWindowStateStore windowState);
@@ -63,11 +64,7 @@ internal sealed class ApplicationStartupHost(Application application) : IStartup
     // Sdílený vzhled čte %APPDATA%\m-line\common a propaguje mezi procesy (TemplateDesigner).
     public void InitializeAppearance() => EDAppearance.Initialize(application);
 
-    public bool ShowSetup()
-    {
-        SettingsLoader.Load();   // naplní Current pro předvyplnění polí (dev server jen v DEBUG)
-        return new Windows.SetupWindow.SetupWindow().ShowDialog() == true;
-    }
+    public bool ShowSetup(SetupWizardViewModel vm) => new Windows.SetupWindow.SetupWindow(vm).ShowDialog() == true;
 
     /// <summary>
     /// Okno se ukazuje bez ShowDialog a čeká se na <see cref="DispatcherFrame"/>: po přihlášení zůstává

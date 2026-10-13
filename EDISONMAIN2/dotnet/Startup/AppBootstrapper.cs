@@ -16,6 +16,7 @@ using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
+using EDISONMAIN2.Windows.SetupWindow;
 using static ALVA.EDISONAPI.Database;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
 using Application = System.Windows.Application;
@@ -85,7 +86,7 @@ public class AppBootstrapper
         _host.InitializeAppearance();
 
         // First-launch setup: EDISONini.xml bez připojení → wizard. Zrušení = konec.
-        if (!EnsureConfigured())
+        if (!EnsureConfigured(services))
         {
             Shutdown();
             return null;
@@ -217,14 +218,21 @@ public class AppBootstrapper
     /// Vrací false = uživatel zrušil → shutdown. DEBUG má config v repu → wizard se přeskočí.
     /// Greenfield server-init (firma/licence/admin) je mimo scope - zůstává na legacy frmSetup.
     /// </summary>
-    private bool EnsureConfigured() => IsConfigured() || _host.ShowSetup();
+    private bool EnsureConfigured(EDServices services) => IsConfigured() || _host.ShowSetup(new SetupWizardViewModel(
+        services, SettingsLoader.Load(_options.UseDevDefaults, SettingsFilePath).Server,
+        PreLoginConnection.Probe, PreLoginConnection.LoadDatabases,
+        settings => new SettingsLoader { Server = settings }.Save(SettingsFilePath)));
+
+    /// <summary><c>EDISONini.xml</c> stanice; testy podstrčí vlastní, bin adresář sdílí běžící exe.</summary>
+    protected virtual string SettingsFilePath => SettingsLoader.DefaultFilePath;
 
     // Připojení z příkazové řádky (Připojit k databázi) - EDISONini.xml stanice se nepoužije.
-    protected virtual bool IsConfigured() => _connectionOverride is not null || SettingsLoader.IsConfigured();
+    protected virtual bool IsConfigured() => _connectionOverride is not null || SettingsLoader.IsConfigured(SettingsFilePath);
 
     private PreLoginContext PrepareLogin(ILocalPrefs prefs)
     {
-        var (server, port) = ResolveConnection(_connectionOverride, () => SettingsLoader.Load().Server);
+        var (server, port) = ResolveConnection(_connectionOverride,
+                                               () => SettingsLoader.Load(_options.UseDevDefaults, SettingsFilePath).Server);
 
         var loginRest = OpenLoginConnection(server, port);
         // Bez uživatele úplný seznam - slouží jen k Idfa pro Login, povolené firmy načte Run po přihlášení.

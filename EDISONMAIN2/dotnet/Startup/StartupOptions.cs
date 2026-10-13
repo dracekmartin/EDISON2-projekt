@@ -31,7 +31,7 @@ public sealed record StartupOptions
 
     public bool DevMiniApps { get; init; }
 
-    /// <summary>Předvyplnění setup wizardu dev serverem (<see cref="SettingsLoader.UseDevDefaults"/>).</summary>
+    /// <summary>Předvyplnění setup wizardu dev serverem (<see cref="SettingsLoader.Load"/>).</summary>
     public bool UseDevDefaults { get; init; }
 
     /// <summary>Menu „Test funkcí" (konstruktor VM shellu) a diagnostické značky stromu (<see cref="InternalDiagnostics"/>).</summary>
@@ -74,7 +74,6 @@ public sealed record StartupOptions
     /// <summary>Procesové statiky; jediné místo, které je nastavuje. Volat jako první krok startupu.</summary>
     public void ApplyToProcess()
     {
-        SettingsLoader.UseDevDefaults = UseDevDefaults;
         InternalDiagnostics.Enabled = InternalDiagnosticsEnabled;
         if (TestRun is null) return;
 
