@@ -8,12 +8,21 @@
     <!-- Úzký gate místo TreatWarningsAsErrors: WPF si generuje _wpftmp projekty zvlášť
          a umí v generovaném kódu překvapit. Rozšiřuj po kategoriích, ne naráz. -->
     <WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>
+    <!-- Veřejné API proti PublicAPI.*.txt: samostatně vydaná DLL nesmí starému exe
+         odebrat ani změnit člen (MissingMethodException až u zákazníka). -->
+    <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017</WarningsAsErrors>
+    <!-- Nullabilita v podpisu binárně nic nemění, hlídání by jen hlásilo neškodné změny. -->
+    <NoWarn>$(NoWarn);RS0037</NoWarn>
     <!-- EDControls se vydává samostatně (jedna volná DLL v C:\Edison\) — publish smí
          zapsat jen její vlastní assembly, ne celý uzávěr závislostí. -->
     <PublishOwnAssemblyOnly>true</PublishOwnAssemblyOnly>
   </PropertyGroup>
 
   <Import Project="..\..\SingleFilePublish.targets" />
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="EDControls.Tests" />

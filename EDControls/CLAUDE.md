@@ -5,14 +5,18 @@ prvky, base třída ViewModelů a infrastruktura. `.NET` strana v `dotnet/`, ser
 Caché strana v `CACHE/` (ALVA projekt `ALVA_EDControls`), hlubší dokumentace
 v `docs/wire-formaty.md` (wire formáty Caché ↔ .NET).
 
-**Breaking change veřejného API ⇒ publikovat i konzumenty.** Konzumenti v `EDISON2.sln`
-(EDISONMAIN2, TemplateDesigner, EDISONMAIN2.LegacyMiniApps, EDTesting a testy) se buildí spolu,
-takže odebraný člen je hned compile error - API se měnit smí; `tools/ThemeRender` stojí mimo sln
-a buildí se zvlášť. Nebezpečné je samostatné vydání
-`EDControls.dll` (`PublishOwnAssemblyOnly`, viz root CLAUDE.md): ta potká starý exe a shodí ho
-až za běhu. **TemplateDesigner i EDISONMAIN2 běží u zákazníků.** Hodnoty sdílené přes
-samostatně nasazenou DLL proto drž jako **`static readonly`, ne `const`** - `const` se inlinuje
-do konzumenta a nepřebuildovaný exe změnu nedostane (`SupportActions`, `ErrorReporter`).
+**Breaking change veřejného API ⇒ publikovat i konzumenty.** Samostatně vydaná `EDControls.dll` (`PublishOwnAssemblyOnly`,
+viz root CLAUDE.md) potká nepřebuildovaný TemplateDesigner nebo EDISONMAIN2 (**oba běží u zákazníků**) a změněný člen
+je shodí až za běhu `MissingMethodException`. Build sln to nepozná, konzumenti se v něm přeloží znovu (`tools/ThemeRender`
+stojí mimo sln a buildí se zvlášť). Podpisy hlídá build EDControls (`PublicApiAnalyzers`) proti `dotnet/PublicAPI.Shipped.txt`
+(vydaný povrch) a `PublicAPI.Unshipped.txt` (přidané od vydání): nový veřejný i chráněný člen je řádek v `Unshipped`
+(RS0016, VS nabídne code fix), řádek bez členu hlásí RS0017. Změna řádku v `Shipped` je breaking, kromě jména a výchozí
+hodnoty parametru (tu má starý exe ve volání): nepovinný parametr dostane nové přetížení, staré přijde o výchozí hodnoty
+(jinak jsou volání nejednoznačná). Odebrání jen s publishem konzumentů, jako `*REMOVED*<řádek>` v `Unshipped`. **Řádek
+nenese** přístupnost (`public` → `protected`), `sealed`/`abstract`, bázi, rozhraní ani omezení generik: tyhle změny build
+pustí a starý exe shodí, stejně jako nový člen rozhraní nebo abstraktní člen. S každým vydáním DLL (FULL shell, TD,
+samostatně) se `Unshipped` přesune do `Shipped` (`*REMOVED*` zmizí i s protějškem). Hodnoty sdílené přes DLL drž jako
+**`static readonly`, ne `const`** - `const` se inlinuje do konzumenta a nepřebuildovaný exe změnu nedostane (`SupportActions`).
 
 **Klíče `EDTheme.*` / `EDIcons.*` / `EDStrings.*` měň aditivně.** Ty nezachytí ani plný
 rebuild - `{DynamicResource}` na neznámý klíč tiše nevrátí nic. Přejmenování = ruční grep
@@ -111,21 +115,17 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 
 ## Ostatní podsložky
 
-- `EDComponentToolbar/` - sdílená hlavička EDInputForm/EDList (titulek, hledání, nápověda).
-  Past: window-level **Ctrl+F** binding je **jeden na okno** (`CtrlFOknaProperty`, v shellu
-  jsou toolbarů desítky) a cíl vybírá až při stisku - hledání komponenty s fokusem, jinak první
-  viditelné. Dřív ho držel první načtený toolbar a zkratka mířila i do skryté záložky. Toolbar se
-  v `OnUnloaded` musí odregistrovat (s posledním zmizí binding) - jinak se při re-loadu akumulují. Kreslí si **vlastní** brandový pruh
-  (`Accent.Header`, texty `OnAccent.*`) - hostitel ho nevsazuje do svého Borderu, jen ho
-  položí nad obsah.
-- `EDFilterComboBox/` - logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
-  WPF). **Jediné místo pro filtrovaný editovatelný ComboBox - vlastní nepsat**; drží pasti
-  pořadí WPF eventů (viz remarks třídy) a invariant „napsaný text = filtr, klidová hodnota
-  filtr NE" (šipka proto nabídne celý seznam, ne jen nastavenou položku).
-  Šipky/Enter/Esc obsluhuje **override `OnPreviewKeyDown`**: `ComboBox` je značí `Handled`
-  už ve fázi class handlerů, takže instance handler by se s otevřeným dropdownem nikdy
-  nezavolal. Navigace jede přes `SelectedIndex` (ne přes interní zvýraznění WPF), aby pick
-  zachytil `SelectionChanged`.
+- `EDComponentToolbar/` - sdílená hlavička EDInputForm/EDList (titulek, hledání, nápověda). Past: window-level
+  **Ctrl+F** binding je **jeden na okno** (`CtrlFOknaProperty`, v shellu jsou toolbarů desítky) a cíl vybírá až při
+  stisku - hledání komponenty s fokusem, jinak první viditelné. Toolbar se v `OnUnloaded` musí odregistrovat (s posledním
+  zmizí binding) - jinak se při re-loadu akumulují. Kreslí si **vlastní** brandový pruh (`Accent.Header`, texty
+  `OnAccent.*`) - hostitel ho nevsazuje do svého Borderu, jen ho položí nad obsah.
+- `EDFilterComboBox/` - logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez WPF). **Jediné místo pro
+  filtrovaný editovatelný ComboBox - vlastní nepsat**; drží pasti pořadí WPF eventů (viz remarks třídy) a invariant
+  „napsaný text = filtr, klidová hodnota filtr NE" (šipka proto nabídne celý seznam, ne jen nastavenou položku).
+  Šipky/Enter/Esc obsluhuje **override `OnPreviewKeyDown`**: `ComboBox` je značí `Handled` už ve fázi class handlerů,
+  takže instance handler by se s otevřeným dropdownem nikdy nezavolal. Navigace jede přes `SelectedIndex` (ne přes
+  interní zvýraznění WPF), aby pick zachytil `SelectionChanged`.
 - `EDFilter/` - pruh filtračních polí; cíl je `IEDFilterTarget` (root namespace), ne konkrétní
   control. Vlastní `CLAUDE.md`.
 - `EDSearchTextBox/`, `EDInfoBar/` - šablony v `EDControlStyles.xaml`.
