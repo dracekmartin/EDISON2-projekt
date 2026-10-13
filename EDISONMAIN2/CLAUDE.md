@@ -139,9 +139,9 @@ Pasti:
 - `ConfigureForm` skládá licenci z [12] a [18]-[20], jen je-li licence shellu v pořádku (E01) a ještě
   platná; jinak (i za starším shellem) volá `GetActiveLic` (~1 s na DEV) včetně hlášky. Z ní `LicenseTable`,
   `ReadOnlyMode` a `AccessTable`; bez `Version` editor práv v USERS obrátí filtr licencovaných práv a smaže je.
-- Host roztáčí formu přes **`ShowDialog`, ne `Application.Run`** (parita se starým `EDPROCESS`):
-  legacy formy se zavírají samy - `DialogResult`, nebo `Close()` před otevřením sesterské formy
-  přes `ShowEdisonForm` (ISYJR → ISYJR2) - a v `Application.Run` loopu tím umře proces.
+- Host roztáčí formu přes **`ShowDialog`, ne `Application.Run`** (parita s `EDPROCESS`): legacy formy se zavírají samy
+  (`DialogResult`, `Close()` před sesterskou formou přes `ShowEdisonForm`, ISYJR → ISYJR2), v `Application.Run` by umřel proces.
+  Po `ShowDialog` host proces ukončí se svým exit kódem (EDPROCESS ho zabíjel v `OnFormClosed`), jinak modul visí ve Spuštěných bez okna.
 
 Shell strana: `WindowNavigator.ShowLegacy*` ([EDViewModel/CLAUDE.md](../EDControls/dotnet/EDViewModel/CLAUDE.md));
 admin override při out-of-license dělá `LicenceVerifier`.

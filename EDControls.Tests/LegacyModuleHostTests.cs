@@ -26,24 +26,23 @@ public class LegacyModuleHostTests
 
         public int Id { get; set; }
         public bool HasExited { get; private set; }
-        public IntPtr MainWindowHandle { get; set; }
-        /// <summary>Okno, které se objeví až po <see cref="Refresh"/> (jako u <c>Process</c>).</summary>
-        public IntPtr WindowAfterRefresh { get; set; }
+        /// <summary>Viditelné okno procesu, jak ho najde <see cref="FindWindow"/> (0 = žádné).</summary>
+        public IntPtr Window { get; set; }
         public string MainWindowTitle { get; set; } = "";
         public int? ExitCodeOnWait { get; set; }
-        public int RefreshCount { get; private set; }
+        /// <summary>Kill selže (přístup odepřen) a proces běží dál. Na skončený proces Process.Kill nehází.</summary>
+        public bool ThrowOnKill { get; set; }
         public int KillCount { get; private set; }
 
-        public void Refresh()
-        {
-            RefreshCount++;
-            if (WindowAfterRefresh != IntPtr.Zero) MainWindowHandle = WindowAfterRefresh;
-        }
+        public IntPtr FindWindow() => Window;
+
+        public void Refresh() { }
 
         // Synchronně jako nejhorší případ: příznak „zabil shell" musí být nastavený před kill.
         public void Kill()
         {
             KillCount++;
+            if (ThrowOnKill) throw new InvalidOperationException("No process is associated with this object.");
             Exit(-1);
         }
 
@@ -87,14 +86,28 @@ public class LegacyModuleHostTests
         /// <summary>Nenull = práce pro UI vlákno se jen řadí, provede ji až test (jako dispatcher).</summary>
         public List<Action>? UiQueue { get; init; }
         public Window? Owner { get; init; }
+        /// <summary>Hodiny hostu, default skutečný čas (test času startu ho porovnává s <c>DateTime.UtcNow</c>).</summary>
+        public DateTime? Now { get; set; }
+        /// <summary>Odpověď uživatele na dotaz „ukončit modul bez okna".</summary>
+        public bool ConfirmAnswer { get; set; }
+        public List<string> Questions { get; } = [];
+        /// <summary>Co se stane, zatímco dotaz visí (modul mezitím naběhne).</summary>
+        public Action? WhileAsking { get; set; }
         public EDServices Services { get; }
         public LegacyModuleHost Host { get; }
 
         public Harness(IMLRest? mlRest = null, bool noMlRest = false,
                        string launcherExe = LegacyModuleHost.DefaultLauncherExe)
         {
+            var popups = Substitute.For<IPopupDisplayer>();
+            popups.Confirm(Arg.Any<string>(), Arg.Any<Window?>()).Returns(ci =>
+            {
+                Questions.Add(ci.Arg<string>());
+                WhileAsking?.Invoke();
+                return ConfirmAnswer;
+            });
             Services = new EDServices(noMlRest ? null : mlRest ?? MakeMlRest(),
-                Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+                Substitute.For<IWindowNavigator>(), popups);
             Host = new LegacyModuleHost(() => Services,
                 start: psi =>
                 {
@@ -125,7 +138,8 @@ public class LegacyModuleHostTests
                     return new Undim(() => ActiveDims--);
                 },
                 focus: hwnd => Focused.Add(hwnd),
-                launcherExe: launcherExe);
+                launcherExe: launcherExe,
+                utcNow: () => Now ?? DateTime.UtcNow);
             Host.LegacyModuleExited += () => ModuleExitedCount++;
         }
     }
@@ -161,7 +175,7 @@ public class LegacyModuleHostTests
     {
         var h = new Harness();
         h.Host.ShowLegacy(Exe, Form, true, "");
-        h.Last!.MainWindowHandle = 42;
+        h.Last!.Window = 42;
 
         h.Host.ShowLegacy(Exe, Form, true, "");
 
@@ -183,6 +197,122 @@ public class LegacyModuleHostTests
     }
 
     [Fact]
+    public void ShowLegacy_SameTargetRunning_FocusesCurrentWindowNotFirstOne()
+    {
+        // Agenda může okno vyměnit (dialog, sesterská forma) - cachovaný handle by mířil na zavřené okno.
+        var h = new Harness();
+        h.Host.ShowLegacy(Exe, Form, true, "");
+        h.Last!.Window = 42;
+        h.Host.ShowLegacy(Exe, Form, true, "");
+        h.Last.Window = 43;
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        Assert.Equal([(IntPtr)42, (IntPtr)43], h.Focused);
+    }
+
+    [Fact]
+    public void ShowLegacy_WindowlessWhileStarting_NeitherAsksNorStarts()
+    {
+        var h = new Harness { Now = new DateTime(2026, 10, 13, 8, 0, 0, DateTimeKind.Utc), ConfirmAnswer = true };
+        h.Host.ShowLegacy(Exe, Form, true, "");
+        h.Now += LegacyModuleHost.ModuleWindowTimeout - TimeSpan.FromSeconds(1);
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        Assert.Single(h.Started);
+        Assert.Empty(h.Questions);
+        Assert.Equal(0, h.Last!.KillCount);
+    }
+
+    [Fact]
+    public void ShowLegacy_WindowlessAfterTimeout_Confirmed_KillsWithoutReportAndStartsNew()
+    {
+        var h = new Harness { Now = new DateTime(2026, 10, 13, 8, 0, 0, DateTimeKind.Utc), ConfirmAnswer = true };
+        h.Host.ShowLegacy(Exe, Form, true, "");
+        var stuck = h.Last!;
+        h.Now += LegacyModuleHost.ModuleWindowTimeout;
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        Assert.Equal(1, stuck.KillCount);
+        Assert.Empty(h.Reports);
+        Assert.Equal(2, h.Started.Count);
+        Assert.Single(h.Host.GetRunningModules());
+        Assert.EndsWith("Ukončit ho a spustit znovu?", Assert.Single(h.Questions));
+    }
+
+    [Fact]
+    public void ShowLegacy_WindowlessAfterTimeout_Declined_KeepsProcessAndStartsNothing()
+    {
+        var h = new Harness { Now = new DateTime(2026, 10, 13, 8, 0, 0, DateTimeKind.Utc), ConfirmAnswer = false };
+        h.Host.ShowLegacy(Exe, Form, true, "");
+        h.Now += LegacyModuleHost.ModuleWindowTimeout;
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        Assert.Single(h.Started);
+        Assert.Equal(0, h.Last!.KillCount);
+        Assert.Single(h.Host.GetRunningModules());
+    }
+
+    [Fact]
+    public void ShowLegacy_WindowlessAfterTimeout_KillFails_KeepsProcessAndStartsNoDuplicate()
+    {
+        // Proces, který zabít nešlo, běží dál: zůstane ve Spuštěných, CloseAll ho zabije a jeho pád se nahlásí.
+        var h = new Harness
+        {
+            Now = new DateTime(2026, 10, 13, 8, 0, 0, DateTimeKind.Utc),
+            ConfirmAnswer = true,
+            CreateProcess = () => new FakeProcess { ThrowOnKill = true },
+        };
+        h.Host.ShowLegacy(Exe, Form, true, "");
+        var stuck = h.Last!;
+        h.Now += LegacyModuleHost.ModuleWindowTimeout;
+
+        Assert.Throws<InvalidOperationException>(() => h.Host.ShowLegacy(Exe, Form, true, ""));
+
+        Assert.Single(h.Started);
+        Assert.Single(h.Host.GetRunningModules());
+        stuck.Exit(3);
+        Assert.Equal([(Exe, Form, 3)], h.Reports);
+    }
+
+    [Fact]
+    public void ShowLegacy_WindowAppearsWhileAsking_FocusesItInsteadOfKilling()
+    {
+        var h = new Harness { Now = new DateTime(2026, 10, 13, 8, 0, 0, DateTimeKind.Utc), ConfirmAnswer = true };
+        h.Host.ShowLegacy(Exe, Form, true, "");
+        var loading = h.Last!;
+        h.Now += LegacyModuleHost.ModuleWindowTimeout;
+        h.WhileAsking = () => loading.Window = 77;
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        Assert.Equal(0, loading.KillCount);
+        Assert.Single(h.Started);
+        Assert.Equal([(IntPtr)77], h.Focused);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void RunningModuleActivate_WindowlessAfterTimeout_KillsOnlyIfConfirmedAndNeverStarts(bool confirmed)
+    {
+        var h = new Harness { Now = new DateTime(2026, 10, 13, 8, 0, 0, DateTimeKind.Utc), ConfirmAnswer = confirmed };
+        h.Host.ShowLegacyAsDialog(Exe, Form, true, "");
+        h.Now += LegacyModuleHost.ModuleWindowTimeout;
+
+        Assert.Single(h.Host.GetRunningModules()).Activate();
+
+        Assert.Equal(confirmed ? 1 : 0, h.Last!.KillCount);
+        Assert.Single(h.Started);
+        Assert.Empty(h.Focused);
+        Assert.EndsWith("Ukončit ho?", Assert.Single(h.Questions));
+        Assert.Equal(confirmed ? 0 : 1, h.Host.GetRunningModules().Count);
+    }
+
+    [Fact]
     public void ShowLegacyAsDialog_DoesNotDedup()
     {
         // Dialogový launch ztmavuje shell - druhé spuštění není re-focus, ale nový modul.
@@ -198,7 +328,7 @@ public class LegacyModuleHostTests
     [Fact]
     public async Task ShowLegacyAsDialog_DimsShellUntilModuleExits()
     {
-        var h = new Harness { CreateProcess = () => new FakeProcess { MainWindowHandle = 1 } };
+        var h = new Harness { CreateProcess = () => new FakeProcess { Window = 1 } };
 
         await h.Host.ShowLegacyAsDialogAsync(Exe, Form, true, "");
         Assert.Equal(1, h.ActiveDims);
@@ -253,7 +383,7 @@ public class LegacyModuleHostTests
         // Klik na ztmavený shell ho aktivuje; okno modulu musí přeskočit dopředu (modal-like UX).
         Sta.RunOnAppThread(() =>
         {
-            var h = new Harness { Owner = new Window(), CreateProcess = () => new FakeProcess { MainWindowHandle = 5 } };
+            var h = new Harness { Owner = new Window(), CreateProcess = () => new FakeProcess { Window = 5 } };
             h.Host.ShowLegacyAsDialog(Exe, Form, true, "");
 
             RaiseActivated(h.Owner!);
@@ -269,7 +399,7 @@ public class LegacyModuleHostTests
     [Fact]
     public async Task ShowLegacyAsync_SameTargetRunning_FocusesAndDoesNotStart()
     {
-        var h = new Harness { CreateProcess = () => new FakeProcess { MainWindowHandle = 42 } };
+        var h = new Harness { CreateProcess = () => new FakeProcess { Window = 42 } };
 
         await h.Host.ShowLegacyAsync(Exe, Form, true, "");
         await h.Host.ShowLegacyAsync(Exe, Form, true, "");
@@ -282,7 +412,7 @@ public class LegacyModuleHostTests
     public async Task ShowLegacyShortcut_NeitherDedupedNorTracked()
     {
         // Dvě spuštění téže sestavy jsou dva tisky; zástupce není modul, shell ho nezabíjí.
-        var h = new Harness { CreateProcess = () => new FakeProcess { MainWindowHandle = 1 } };
+        var h = new Harness { CreateProcess = () => new FakeProcess { Window = 1 } };
 
         await h.Host.ShowLegacyShortcutAsync(Exe, Form, "UEFZTE9BRA==", true, "");
         await h.Host.ShowLegacyShortcutAsync(Exe, Form, "UEFZTE9BRA==", true, "");
@@ -308,7 +438,7 @@ public class LegacyModuleHostTests
     [Fact]
     public void GetRunningModules_CarriesIdentityAndActivatesWindow()
     {
-        var h = new Harness { CreateProcess = () => new FakeProcess { MainWindowTitle = "Uživatelé", MainWindowHandle = 9 } };
+        var h = new Harness { CreateProcess = () => new FakeProcess { MainWindowTitle = "Uživatelé", Window = 9 } };
         h.Host.ShowLegacy(Exe, Form, true, "AdminMode=1");
 
         var module = Assert.Single(h.Host.GetRunningModules());
@@ -440,7 +570,7 @@ public class LegacyModuleHostTests
         var processes = new List<FakeProcess>();
         h.CreateProcess = () =>
         {
-            var p = new FakeProcess { MainWindowHandle = 1 };
+            var p = new FakeProcess { Window = 1 };
             processes.Add(p);
             return p;
         };
@@ -459,12 +589,11 @@ public class LegacyModuleHostTests
     [Fact]
     public async Task ShowLegacyAsync_CompletesOnceWindowAppears()
     {
-        var h = new Harness { CreateProcess = () => new FakeProcess { WindowAfterRefresh = 7 } };
+        var h = new Harness { CreateProcess = () => new FakeProcess { Window = 7 } };
 
         var task = h.Host.ShowLegacyAsync(Exe, Form, true, "");
 
-        Assert.True(task.IsCompletedSuccessfully);   // bez Task.Delay - okno je po prvním Refresh
-        Assert.True(h.Last!.RefreshCount >= 1);
+        Assert.True(task.IsCompletedSuccessfully);   // bez Task.Delay - okno je tu hned
         await task;
     }
 

@@ -25,7 +25,7 @@ public interface IWindowNavigator
 
     /// <summary>
     /// Jako <see cref="ShowLegacy"/>, ale vrací Task, který doběhne až se objeví okno modulu
-    /// (<c>Process.MainWindowHandle</c> != 0) nebo po timeoutu / předčasném ukončení procesu.
+    /// (libovolné viditelné okno procesu, i dialog) nebo po timeoutu / předčasném ukončení procesu.
     /// Caller (shell) tím může držet „akce probíhá" overlay po dobu náběhu modulu.
     /// </summary>
     Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");

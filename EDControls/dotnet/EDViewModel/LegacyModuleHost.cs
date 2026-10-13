@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows;
 
 namespace EDControls.EDViewModel;
@@ -23,14 +22,19 @@ internal sealed class LegacyModuleHost
 
     private readonly string _launcherExe;
 
+    /// <summary>Jak dlouho shell čeká na první okno modulu. Teprve potom smí proces bez okna nabídnout ukončit.</summary>
+    internal static readonly TimeSpan ModuleWindowTimeout = TimeSpan.FromSeconds(20);
+
     /// <summary>Jedno spuštění. FormFqn slouží i jako fallback label, když <c>MainWindowTitle</c> je
     /// prázdný (typicky brzy po startu, než child vytvoří okno).</summary>
-    internal sealed class LegacyLaunch(ILegacyProcess process, string exeName, string formFqn, string inputParam)
+    internal sealed class LegacyLaunch(ILegacyProcess process, string exeName, string formFqn, string inputParam,
+                                       DateTime startedUtc = default)
     {
         public ILegacyProcess Process { get; } = process;
         public string ExeName { get; } = exeName;
         public string FormFqn { get; } = formFqn;
         public string InputParam { get; } = inputParam;
+        public DateTime StartedUtc { get; } = startedUtc;
 
         /// <summary>Zabil ho shell sám (<see cref="CloseAll"/>) - takový nenulový exit kód není pád.</summary>
         public volatile bool KilledByShell;
@@ -47,6 +51,7 @@ internal sealed class LegacyModuleHost
     private readonly Func<Window?> _dialogOwner;
     private readonly Func<Window?, IDisposable> _dim;
     private readonly Action<IntPtr> _focus;
+    private readonly Func<DateTime> _utcNow;
 
     /// <summary>Ctor nic nevolá - services se čtou až při launchi (shell je skládá po navigatoru).</summary>
     internal LegacyModuleHost(
@@ -60,7 +65,8 @@ internal sealed class LegacyModuleHost
         Func<Window?>? dialogOwner = null,
         Func<Window?, IDisposable>? dim = null,
         Action<IntPtr>? focus = null,
-        string launcherExe = DefaultLauncherExe)
+        string launcherExe = DefaultLauncherExe,
+        Func<DateTime>? utcNow = null)
     {
         _services = services;
         _launcherExe = launcherExe;
@@ -74,7 +80,8 @@ internal sealed class LegacyModuleHost
         // Během startu shellu je MainWindow ještě login okno.
         _dialogOwner = dialogOwner ?? (() => Application.Current?.MainWindow);
         _dim = dim ?? WindowDimmer.Dim;
-        _focus = focus ?? (hwnd => SetForegroundWindow(hwnd));
+        _focus = focus ?? ProcessWindows.Activate;
+        _utcNow = utcNow ?? (() => DateTime.UtcNow);
     }
 
     public event Action? LegacyModuleExited;
@@ -161,8 +168,10 @@ internal sealed class LegacyModuleHost
                 Activate: () =>
                 {
                     if (e.Process.HasExited) return;
-                    var hwnd = e.Process.MainWindowHandle;
+                    var hwnd = e.Process.FindWindow();
                     if (hwnd != IntPtr.Zero) _focus(hwnd);
+                    // Bez nového spuštění: záznam nenese shareShellSession ani to, zda šlo o dialogový launch.
+                    else if (IsPastWindowTimeout(e)) KillIfConfirmed(e, "Ukončit ho?");
                 })
             {
                 ExeName = e.ExeName,
@@ -181,14 +190,58 @@ internal sealed class LegacyModuleHost
     /// <summary>
     /// Dedup modeless launche: běží-li už stejné exe+forma+param, přenese focus a vrátí <c>true</c>.
     /// Mrtvé procesy cestou vyčistí. <c>true</c> i když okno ještě nenaběhlo - duplikát se spustit nesmí.
+    /// Proces bez okna i po <see cref="ModuleWindowTimeout"/> nabídne ukončit, po souhlasu vrátí <c>false</c>
+    /// a volající spustí nový.
     /// </summary>
     private bool TryFocusExisting(string exeName, string formFqn, string inputParam)
     {
         _tracked.RemoveAll(e => e.Process.HasExited);
         var match = _tracked.FirstOrDefault(e => MatchesTarget(e, exeName, formFqn, inputParam));
         if (match is null) return false;
-        var hwnd = match.Process.MainWindowHandle;
-        if (hwnd != IntPtr.Zero) _focus(hwnd);
+        var hwnd = match.Process.FindWindow();
+        if (hwnd != IntPtr.Zero)
+        {
+            _focus(hwnd);
+            return true;
+        }
+        return !IsPastWindowTimeout(match) || !KillIfConfirmed(match, "Ukončit ho a spustit znovu?");
+    }
+
+    private bool IsPastWindowTimeout(LegacyLaunch launch) => _utcNow() - launch.StartedUtc >= ModuleWindowTimeout;
+
+    /// <summary>
+    /// Legacy proces může přežít svůj formulář nebo čekat na dialog, který uživatel nenajde. Bez ukončení
+    /// by modul nešel otevřít až do restartu shellu. Vrátí <c>true</c>, když uživatel souhlasil.
+    /// </summary>
+    private bool KillIfConfirmed(LegacyLaunch launch, string question)
+    {
+        if (!_services().PopupDisplayer.Confirm(
+                "Modul je spuštěný, ale nemá žádné okno. Možná se ještě načítá, nebo se zasekl." +
+                Environment.NewLine + Environment.NewLine + question))
+            return false;
+        // Modul mohl naběhnout, zatímco dotaz visel.
+        var hwnd = launch.Process.FindWindow();
+        if (hwnd != IntPtr.Zero)
+        {
+            _focus(hwnd);
+            return false;
+        }
+        if (!launch.Process.HasExited)
+        {
+            launch.KilledByShell = true;
+            try
+            {
+                launch.Process.Kill();
+            }
+            catch
+            {
+                // Kill na skončený proces nehází, výjimka = proces běží dál a jeho pád se hlásit musí.
+                launch.KilledByShell = false;
+                throw;
+            }
+        }
+        // Po Kill proces ještě chvíli nemá HasExited, dedup by ho jinak našel znovu.
+        _tracked.Remove(launch);
         return true;
     }
 
@@ -199,16 +252,15 @@ internal sealed class LegacyModuleHost
         && string.Equals(e.InputParam, param, StringComparison.Ordinal);
 
     /// <summary>
-    /// Čeká (poll á 100 ms), až child vytvoří hlavní okno, nebo do timeoutu / ukončení procesu. Await drží
+    /// Čeká (poll á 100 ms), až child ukáže první okno, nebo do timeoutu / ukončení procesu. Await drží
     /// UI thread volný, overlay se stihne vykreslit. Timeout kryje moduly, které skončí bez okna.
     /// </summary>
-    private static async Task WaitForModuleWindowAsync(ILegacyProcess prc, int timeoutMs = 20000)
+    private static async Task WaitForModuleWindowAsync(ILegacyProcess prc)
     {
-        for (int elapsed = 0; elapsed < timeoutMs; elapsed += 100)
+        for (int elapsed = 0; elapsed < ModuleWindowTimeout.TotalMilliseconds; elapsed += 100)
         {
             if (prc.HasExited) return;
-            prc.Refresh();
-            if (prc.MainWindowHandle != IntPtr.Zero) return;
+            if (prc.FindWindow() != IntPtr.Zero) return;
             await Task.Delay(100);
         }
     }
@@ -227,7 +279,7 @@ internal sealed class LegacyModuleHost
             bounce = (_, _) =>
             {
                 if (prc.HasExited) return;
-                var hwnd = prc.MainWindowHandle;
+                var hwnd = prc.FindWindow();
                 if (hwnd != IntPtr.Zero) _focus(hwnd);
             };
             owner.Activated += bounce;
@@ -259,7 +311,7 @@ internal sealed class LegacyModuleHost
         bool direct = LaunchesDirectly(exeName);
         var launcherPath = direct ? agendaPath : ResolveExistingPath(_launcherExe, _fileExists, DefaultDeployRoot);
 
-        var startedUtc = DateTime.UtcNow;
+        var startedUtc = _utcNow();
         var prc = _start(new ProcessStartInfo
         {
             UseShellExecute = true,
@@ -269,7 +321,7 @@ internal sealed class LegacyModuleHost
         });
         if (prc is null) return null;
 
-        var launch = new LegacyLaunch(prc, exeName, formFqn, inputParam);
+        var launch = new LegacyLaunch(prc, exeName, formFqn, inputParam, startedUtc);
         var pid = prc.Id;
         // Tvrdý pád hosta (host sám dosáhne jen na managed výjimky - viz FormToRunGetter v repu EDISON).
         prc.OnExited(code =>
@@ -361,12 +413,14 @@ internal sealed class LegacyModuleHost
         return Path.GetFileNameWithoutExtension(entry.ExeName);
     }
 
+    /// <summary><c>Process</c> si titulek přečtený před vznikem okna uloží prázdný, čerstvý dá až <c>Refresh</c>.</summary>
     private static string SafeGetTitle(ILegacyProcess process)
     {
-        try { return process.MainWindowTitle; }
+        try
+        {
+            process.Refresh();
+            return process.MainWindowTitle;
+        }
         catch { return ""; }
     }
-
-    [DllImport("user32.dll")]
-    private static extern bool SetForegroundWindow(IntPtr hWnd);
 }

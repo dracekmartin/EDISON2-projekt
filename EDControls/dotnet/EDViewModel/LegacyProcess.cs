@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace EDControls.EDViewModel;
 
@@ -9,9 +10,10 @@ internal interface ILegacyProcess
 
     bool HasExited { get; }
 
-    /// <summary>Cachovaná hodnota jako u <see cref="Process"/> - čerstvou dá až <see cref="Refresh"/>.</summary>
-    IntPtr MainWindowHandle { get; }
+    /// <summary>Okno, které má shell vytáhnout dopředu (<see cref="ProcessWindows.Find"/>), 0 = proces žádné viditelné nemá.</summary>
+    IntPtr FindWindow();
 
+    /// <summary>Cachovaná hodnota jako u <see cref="Process"/> - čerstvou dá až <see cref="Refresh"/>.</summary>
     string MainWindowTitle { get; }
 
     void Refresh();
@@ -61,7 +63,7 @@ internal sealed class SystemLegacyProcess : ILegacyProcess
     }
 
     public bool HasExited => _process.HasExited;
-    public IntPtr MainWindowHandle => _process.MainWindowHandle;
+    public IntPtr FindWindow() => ProcessWindows.Find(Id);
     public string MainWindowTitle => _process.MainWindowTitle ?? "";
     public void Refresh() => _process.Refresh();
     public void Kill() => _process.Kill();
@@ -88,4 +90,63 @@ internal sealed class SystemLegacyProcess : ILegacyProcess
         KillOnExit.Bind(process);
         return new SystemLegacyProcess(process);
     }
+}
+
+/// <summary>
+/// Okna cizího procesu bez cache <see cref="Process"/>. <c>Process.MainWindowHandle</c> nestačí: bere jen okno
+/// bez vlastníka, takže dialog, který legacy agenda otevře ještě před svým formulářem (vlastník skrytý nebo
+/// neviditelný), shell nenajde a modul zůstane ve „Spuštěných" bez okna. Parita s <c>AppActivate(pid)</c> starého shellu.
+/// </summary>
+internal static class ProcessWindows
+{
+    private const int SW_RESTORE = 9;
+
+    /// <summary>Nejvyšší viditelné povolené okno procesu (modální dialog před zablokovaným formulářem),
+    /// jinak nejvyšší viditelné, jinak 0. <c>EnumWindows</c> jde v Z-pořadí shora.</summary>
+    public static IntPtr Find(int pid)
+    {
+        if (pid == 0) return IntPtr.Zero;
+        IntPtr enabled = IntPtr.Zero, visible = IntPtr.Zero;
+        EnumWindows((hwnd, _) =>
+        {
+            GetWindowThreadProcessId(hwnd, out var owner);
+            if (owner != (uint)pid || !IsWindowVisible(hwnd)) return true;
+            if (visible == IntPtr.Zero) visible = hwnd;
+            if (!IsWindowEnabled(hwnd)) return true;
+            enabled = hwnd;
+            return false;
+        }, IntPtr.Zero);
+        return enabled != IntPtr.Zero ? enabled : visible;
+    }
+
+    /// <summary>Samotné <c>SetForegroundWindow</c> minimalizované okno jen aktivuje, na ploše zůstane schované.
+    /// Obnova přes <c>ShowWindowAsync</c>: synchronní <c>ShowWindow</c> čeká na UI vlákno modulu a zaseknutý modul by zamrazil shell.</summary>
+    public static void Activate(IntPtr hwnd)
+    {
+        if (IsIconic(hwnd)) ShowWindowAsync(hwnd, SW_RESTORE);
+        SetForegroundWindow(hwnd);
+    }
+
+    private delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowEnabled(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsIconic(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindowAsync(IntPtr hwnd, int cmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hwnd);
 }
