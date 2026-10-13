@@ -8,9 +8,9 @@ using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Třída, která (i přes helper jako <see cref="EdisonMainViewModelHarness.CreateVM"/>) mění stav procesu, musí být
-/// v <see cref="SharedStaticStateCollection"/> - při paralelním běhu by náhodně shazovala jiné testy. Assembly dnes
-/// běží sekvenčně (xunit.runner.json), guard drží izolaci pro případ, že se paralelní běh vrátí.
+/// Třída, která (i přes helper) mění stav procesu, musí být v <see cref="SharedStaticStateCollection"/> - při
+/// paralelním běhu by náhodně shazovala jiné testy. Assembly dnes běží sekvenčně (xunit.runner.json), guard drží
+/// izolaci pro případ, že se paralelní běh vrátí.
 /// Hledá volání mutátorů v IL testové assembly včetně lambd, async, iterátorů, helperů a fixture.
 /// </summary>
 public class SharedStaticStateGuardTests
@@ -56,12 +56,11 @@ public class SharedStaticStateGuardTests
     }
 
     [Fact]
-    public void Guard_FindsHarnessUsersAndDirectMutators_NotPureTests()
+    public void Guard_FindsDirectAndIndirectMutators_NotPureTests()
     {
         // Pojistka hlídače: kdyby čtení IL přestalo fungovat, předchozí test by tiše prošel.
         var mutating = MutatingTestClasses().ToHashSet();
 
-        Assert.Contains(typeof(EdisonMainViewModelTests), mutating);   // přes CreateVM
         Assert.Contains(typeof(LocalPrefsTests), mutating);            // přímo setter
         Assert.Contains(typeof(StartupOptionsTests), mutating);        // přes ApplyToProcess
         Assert.DoesNotContain(typeof(VerzeInfTests), mutating);

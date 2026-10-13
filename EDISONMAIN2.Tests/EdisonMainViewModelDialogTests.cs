@@ -14,6 +14,7 @@ using static EDISONMAIN2.Tests.MiniAppTestDoubles;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>Kód shellu po dialogu: falešné dialogy vrací výsledek, jaký by vrátilo okno.</summary>
+// ConnectToDatabase čte EDISONini.xml přes SettingsLoader.Load, který plní statiku Current; guard volání přes příkaz nevidí.
 [Collection(SharedStaticStateCollection.Name)]
 public class EdisonMainViewModelDialogTests
 {

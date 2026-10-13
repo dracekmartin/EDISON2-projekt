@@ -10,7 +10,6 @@ using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>Start shellu po prvním vykreslení: načtení session → novinky shellu → výchozí okno.</summary>
-[Collection(SharedStaticStateCollection.Name)]
 public class EdisonMainViewModelStartTests
 {
     // Load session čeká, dokud test bránu neotevře.

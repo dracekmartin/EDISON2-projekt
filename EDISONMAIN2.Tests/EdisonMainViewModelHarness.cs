@@ -16,9 +16,8 @@ using static ALVA.EDISONAPI.Database;
 namespace EDISONMAIN2.Tests;
 
 /// <summary>
-/// Jediná konstrukce <see cref="EdisonMainViewModel"/> pro testy. Ctor má přes patnáct parametrů a statický
-/// <c>EDServices.Initialize/Reset</c> kolem sebe, takže každá kopie harnessu znamenala opravovat
-/// totéž na několika místech; proto jedno místo pro všechny test soubory.
+/// Jediná konstrukce <see cref="EdisonMainViewModel"/> pro testy. Ctor má přes patnáct parametrů, takže každá
+/// kopie harnessu znamenala opravovat totéž na několika místech; proto jedno místo pro všechny test soubory.
 /// </summary>
 internal static class EdisonMainViewModelHarness
 {
@@ -95,6 +94,7 @@ internal static class EdisonMainViewModelHarness
         ModuleTreeStation? station = null,
         IShellDialogs? dialogs = null,
         Action<ProcessStartInfo>? startProcess = null,
+        bool internalDiagnostics = false,
         bool initialize = true)
     {
         var mockMLRest = mlRest ?? MockMLRest();
@@ -110,16 +110,13 @@ internal static class EdisonMainViewModelHarness
         var switcher = new CompanySwitcher(svc, p, () => { close(); return true; }, closeLegacyModules ?? (() => { }));
         var catalog = miniAppCatalog ?? MiniAppCatalog.Build([]);
 
-        EDServices.Initialize(svc);
-        EdisonMainViewModel vm;
-        try
-        {
-            var allCompanies = companies ?? Companies;
-            vm = new EdisonMainViewModel(allCompanies, loadAllowedCompanies ?? (_ => allCompanies),
+        var allCompanies = companies ?? Companies;
+        var vm = new EdisonMainViewModel(svc, allCompanies, loadAllowedCompanies ?? (_ => allCompanies),
                                          mockTree, switcher,
                                          switchUser ?? (() => new(SwitchUserResult.Cancelled)), p,
                                          getActiveModules ?? (() => []), close, forceShutdown ?? (() => { }),
                                          catalog, shortcuts ?? new ModuleShortcutsService(), changelogSource,
+                                         internalDiagnostics,
                                          restRunner ?? new InlineRestCallRunner(mockMLRest),
                                          // Produkční sync volá EDUsers nad živým MLRest - v testech jen stub.
                                          licenceSync ?? (_ => new(false, "")),
@@ -127,11 +124,6 @@ internal static class EdisonMainViewModelHarness
                                          dialogs,
                                          // Testy nikdy nespouští skutečný proces (druhou instanci shellu).
                                          startProcess ?? (_ => { }));
-        }
-        finally
-        {
-            EDServices.Reset();
-        }
         // Session state se plní až v InitializeAsync (v produkci z ContentRendered). S inline
         // runnerem je load synchronní, takže GetResult tady nemá na co čekat ani na čem uváznout.
         if (initialize) vm.InitializeAsync().GetAwaiter().GetResult();

@@ -34,7 +34,7 @@ public sealed record StartupOptions
     /// <summary>Předvyplnění setup wizardu dev serverem (<see cref="SettingsLoader.UseDevDefaults"/>).</summary>
     public bool UseDevDefaults { get; init; }
 
-    /// <summary>Menu „Test funkcí" a diagnostické značky stromu (<see cref="InternalDiagnostics"/>).</summary>
+    /// <summary>Menu „Test funkcí" (konstruktor VM shellu) a diagnostické značky stromu (<see cref="InternalDiagnostics"/>).</summary>
     public bool InternalDiagnosticsEnabled { get; init; }
 
     /// <summary>UI E2E běh (<c>e2e=1</c>); null = běžný start.</summary>

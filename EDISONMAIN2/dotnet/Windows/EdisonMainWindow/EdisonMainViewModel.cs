@@ -51,6 +51,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly IShellDialogs _dialogs;
         // Start další instance shellu. Testy ho podstrčí, aby nespouštěly skutečný proces.
         private readonly Action<ProcessStartInfo> _startProcess;
+        private readonly bool _internalDiagnostics;
 
         public ICommand OpenModuleCommand { get; }
         /// <summary>Spuštění zástupce mimo hlavní nabídku (tisková sestava, pohled DS) přes hosta.</summary>
@@ -67,9 +68,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
              .. AgendaSprites.AllSets.Select(s => new OverlayTestVariant(AgendaSprites.LabelFor(s), s))];
         public ICommand TriggerErrorCommand { get; }
         /// <summary>Menu „Test funkcí" jen pro vývoj a stanice M-line - u zákazníka by „Vyvolat chybu" založilo tiket.</summary>
-        public bool IsTestMenuVisible => InternalDiagnostics.Enabled;
+        public bool IsTestMenuVisible => _internalDiagnostics;
         /// <summary>Starý shell jen pro admina a stanice M-line - běžný uživatel má zůstat v novém shellu.</summary>
-        public bool IsLegacyShellVisible => _services.IsAdmin || InternalDiagnostics.Enabled;
+        public bool IsLegacyShellVisible => _services.IsAdmin || _internalDiagnostics;
         public ICommand OpenLegacyShellCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
         public ICommand CloseMiniAppsCommand { get; }
@@ -124,6 +125,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         public EdisonMainViewModel(
+            EDServices services,
             IReadOnlyList<CompanyStruct> companies,
             Func<IMLRest, IReadOnlyList<CompanyStruct>> loadAllowedCompanies,
             IModuleTreeLoader treeLoader,
@@ -136,12 +138,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             MiniAppCatalog miniAppCatalog,
             ModuleShortcutsService shortcuts,
             IChangelogSource? changelogSource,
+            bool internalDiagnostics,
             IRestCallRunner? restRunner = null,
             Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null,
             ModuleTreeStation? station = null,
             IShellDialogs? dialogs = null,
             Action<ProcessStartInfo>? startProcess = null)
+            : base(services)
         {
+            _internalDiagnostics = internalDiagnostics;
             _loadAllowedCompanies = loadAllowedCompanies;
             _switcher = switcher;
             _switchUser = switchUser;

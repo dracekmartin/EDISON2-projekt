@@ -15,7 +15,6 @@ using static EDISONMAIN2.Tests.MiniAppTestDoubles;
 
 namespace EDISONMAIN2.Tests;
 
-[Collection(SharedStaticStateCollection.Name)]
 public class EdisonMainViewModelTests
 {
     // Confirm před přepnutím firmy se ukazuje jen když je otevřený aspoň jeden modul.
@@ -1172,21 +1171,12 @@ public class EdisonMainViewModelTests
     [InlineData(false, true, true)]
     public void LegacyShell_OnlyForAdminOrMlineStation(bool isAdmin, bool mlineStation, bool expected)
     {
-        bool original = InternalDiagnostics.Enabled;
-        try
-        {
-            var services = MockServices();
-            var vm = CreateVM(services: services);
-            services.IsAdmin = isAdmin;
-            InternalDiagnostics.Enabled = mlineStation;
+        var services = MockServices();
+        var vm = CreateVM(services: services, internalDiagnostics: mlineStation);
+        services.IsAdmin = isAdmin;
 
-            Assert.Equal(expected, vm.IsLegacyShellVisible);
-            Assert.Equal(expected, vm.OpenLegacyShellCommand.CanExecute(null));
-        }
-        finally
-        {
-            InternalDiagnostics.Enabled = original;
-        }
+        Assert.Equal(expected, vm.IsLegacyShellVisible);
+        Assert.Equal(expected, vm.OpenLegacyShellCommand.CanExecute(null));
     }
 
     [Fact]
@@ -1213,21 +1203,8 @@ public class EdisonMainViewModelTests
     public void IsTestMenuVisible_FollowsInternalDiagnostics()
     {
         // Menu „Test funkcí" (Vyvolat chybu, mock formuláře) nesmí být u zákazníka vidět.
-        bool original = InternalDiagnostics.Enabled;
-        try
-        {
-            var vm = CreateVM();
-
-            InternalDiagnostics.Enabled = false;
-            Assert.False(vm.IsTestMenuVisible);
-
-            InternalDiagnostics.Enabled = true;
-            Assert.True(vm.IsTestMenuVisible);
-        }
-        finally
-        {
-            InternalDiagnostics.Enabled = original;
-        }
+        Assert.False(CreateVM(internalDiagnostics: false).IsTestMenuVisible);
+        Assert.True(CreateVM(internalDiagnostics: true).IsTestMenuVisible);
     }
 
     [Fact]

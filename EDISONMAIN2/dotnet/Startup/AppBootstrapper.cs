@@ -401,11 +401,12 @@ public class AppBootstrapper
         var sessionSwitcher = new SessionSwitcher(services, () => shell, opener,
                                                   nav.TryCloseAll, new ShellWindowStateStore(prefs), _shutdown.Force);
         bool testRun = _options.TestRun is not null;
-        var viewModel = new EdisonMainViewModel(prep.Companies, CompanySwitcher.LoadAllowed, treeLoader,
+        var viewModel = new EdisonMainViewModel(services, prep.Companies, CompanySwitcher.LoadAllowed, treeLoader,
                                                 switcher, sessionSwitcher.Switch,
                                                 prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
                                                 miniAppCatalog, shortcuts,
                                                 testRun ? null : new InfChangelogSource(),
+                                                internalDiagnostics: _options.InternalDiagnosticsEnabled,
                                                 licenceSync: LicenceSyncFor(_options))
         {
             OpensStartupWindow = !testRun

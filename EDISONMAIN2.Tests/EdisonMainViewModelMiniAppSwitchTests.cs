@@ -16,7 +16,6 @@ namespace EDISONMAIN2.Tests;
 /// Dashboardy při zavření ukládají layout EDListu přes sdílený MLRest, takže se dock musí zavřít ještě
 /// nad starou session (jinak zápis odejde pod novou firmu nebo uživatele) a po zrušeném přepnutí vrátit.
 /// </summary>
-[Collection(SharedStaticStateCollection.Name)]
 public class EdisonMainViewModelMiniAppSwitchTests
 {
     private sealed class ClosingProbe(EDServices services, Action onClosed) : EDMiniAppViewModel(services)
