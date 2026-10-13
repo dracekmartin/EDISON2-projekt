@@ -117,8 +117,8 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
 - **Změna chování přichází s testem** na nejlevnější úrovni, která regresi chytí: logika → unit, `.cls` → Caché,
   hranice (odpověď serveru, formát, argumenty procesu) → navíc šev (mock dokazuje jen sám sebe), startup shellu → E2E.
 - **.NET**: `dotnet build EDISON2.sln`, `dotnet test EDISON2.sln` (xUnit + NSubstitute). **Šev .NET ↔ Caché** `EDISON2.IntegrationTests`
-  (skutečné MLRest) běží jen se serverem, **UI E2E** `EDISON2.E2ETests` (FlaUI, DEBUG shell s `e2e=1`) jen s `EDISON_E2E=1`,
-  test se skutečným oknem (`[WindowFact]`, ne `[Fact]`) jen s `EDISON_WINDOW_TESTS=1` - nastavuje pre-push.
+  (skutečné MLRest) běží jen se serverem, **UI E2E** `EDISON2.E2ETests` (FlaUI, DEBUG shell s `e2e=1`) jen s `EDISON_E2E=1`
+  (pre-push při změně shellu), test se skutečným oknem (`[WindowFact]`, ne `[Fact]`) jen s `EDISON_WINDOW_TESTS=1` - nastavuje pre-push.
 - **Caché**: test class dědí `ALVA.EDTesting.MLTestCase` (cleanup `^||ML` + `SetupSys(.sys)` pro `$$$FillParams`), metody
   `TestXxx()`. Běh `powershell -File tools/run-cache-tests.ps1 [-Package ...]` (`pwsh` tu není) proti dev serveru
   `192.168.16.1:57770` (VPN, user `$env:USERNAME`, override `$env:CACHE_USER`). Nový package mimo default list skriptu
@@ -130,9 +130,9 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
   repo. Deploy vynuť `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`.
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - `.cs`→.NET
   (bez `Category=Integration`/`E2E`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
-  sada (při `.cls/.inc` povinná). Produkční `.cls` ve sdíleném `EDControls`/`EDTesting` spustí
-  všechny Caché balíčky, testovací `.cls` (EDControls/EDTesting `Tests/`) jen svůj - TD sada je nejdražší
-  (~45 s). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
+  sada (při `.cls/.inc` povinná), změna shellu→E2E (cesty `EDISON2.E2ETests/CLAUDE.md`). Produkční `.cls`
+  ve sdíleném `EDControls`/`EDTesting` spustí všechny Caché balíčky, testovací `.cls` (EDControls/EDTesting
+  `Tests/`) jen svůj - TD sada je nejdražší (~45 s). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
 
 ## Commity
 

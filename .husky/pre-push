@@ -1,16 +1,19 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-# Pre-push: run .NET (xUnit), Cache (%UnitTest) and integration (.NET <-> Cache seam) suites.
+# Pre-push: run .NET (xUnit), Cache (%UnitTest), integration (.NET <-> Cache seam) and UI E2E suites.
 #
 # Change-aware: only runs the suite whose sources changed in the pushed range
-#   (.cs/.csproj/.sln/.xaml and build files -> .NET, .cls -> Cache, .cs/.csproj/.sln/.cls/.inc -> integration).
-#   If the range can't be resolved, all run (safe default).
+#   (.cs/.csproj/.sln/.xaml and build files -> .NET, .cls -> Cache, .cs/.csproj/.sln/.cls/.inc -> integration,
+#   shell sources -> E2E). If the range can't be resolved, all run (safe default).
 # Integration = real MLRest against the dev server. Required when the server side
 #   changed (.cls/.inc); a .cs-only push without VPN reports it skipped and goes on.
-# Visibility: full per-suite output goes to .husky/{dotnet,cache,integration}-tests.log and a
+# E2E = the DEBUG shell driven on the desktop; without VPN or on a locked desktop it is skipped.
+# Visibility: full per-suite output goes to .husky/{dotnet,cache,integration,e2e}-tests.log and a
 #   short failure summary to .husky/last-test-run.log. On failure the paths are
 #   printed in a banner so they're clickable from the VSCode Git output panel.
+# Dry run: PRE_PUSH_RANGE=<range> PRE_PUSH_DRY_RUN=1 sh .husky/pre-push prints the suites it would run
+#   (only when started by hand, without git's remote/URL arguments).
 # Emergency bypass: git push --no-verify (don't make a habit).
 
 set -e
@@ -18,11 +21,20 @@ set -e
 DOTNET_LOG=".husky/dotnet-tests.log"
 CACHE_LOG=".husky/cache-tests.log"
 IT_LOG=".husky/integration-tests.log"
+E2E_LOG=".husky/e2e-tests.log"
 SUMMARY=".husky/last-test-run.log"
 
 # --- Resolve the range being pushed, then decide which suites to run ----------
+# Suché proměnné jen při ručním spuštění: git hooku předá remote a URL, zapomenutá proměnná v terminálu tak push neobejde.
+dry_run=0
+if [ $# -eq 0 ] && [ "$PRE_PUSH_DRY_RUN" = "1" ]; then dry_run=1; fi
+
 RANGE=""
-if git rev-parse --verify '@{push}' >/dev/null 2>&1; then
+if [ "$dry_run" = "1" ] && [ -n "$PRE_PUSH_RANGE" ]; then
+    RANGE="$PRE_PUSH_RANGE"
+    # Chybný rozsah by dal prázdný seznam změn a suchý běh by hlásil všechny sady.
+    git diff --name-only "$RANGE" >/dev/null 2>&1 || { echo "PRE_PUSH_RANGE=$RANGE: git diff ho nezná."; exit 1; }
+elif git rev-parse --verify '@{push}' >/dev/null 2>&1; then
     RANGE="@{push}..HEAD"
 elif git rev-parse --verify origin/main >/dev/null 2>&1; then
     RANGE="origin/main..HEAD"
@@ -32,14 +44,20 @@ run_dotnet=1
 run_cache=1
 run_it=1
 it_required=1
+run_e2e=1
 if [ -n "$RANGE" ]; then
-    CHANGED=$(git diff --name-only "$RANGE" 2>/dev/null || true)
+    # --no-renames: přesun souboru ven z projektu by jinak ukázal jen cílovou cestu.
+    CHANGED=$(git diff --name-only --no-renames "$RANGE" 2>/dev/null || true)
     if [ -n "$CHANGED" ]; then
         # Tree.cls a jeho fingerprint: parity test generátoru stromu (TreeGeneratorTests) jede v .NET sadě.
         echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|xaml|props|targets)$|(^|/)global\.json$|Tree\.cls$|tree-sources\.sha256$' && run_dotnet=1 || run_dotnet=0
         echo "$CHANGED" | grep -qiE '\.cls$'                     && run_cache=1   || run_cache=0
         echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|cls|inc)$' && run_it=1      || run_it=0
         echo "$CHANGED" | grep -qiE '\.(cls|inc)$'               && it_required=1 || it_required=0
+        # E2E převezmou plochu na minuty a zavřou shell z checkoutu: jen když se mění shell, projekty, na které odkazuje,
+        # nebo E2E samy. Serverová část (CACHE) a dokumentace shell nemění; Tree.cls pushuje každých 10 min úloha tree-sync.
+        echo "$CHANGED" | grep -vE '^(EDControls|EDISONMAIN2)/CACHE/|\.md$' \
+            | grep -qE '^(EDISONMAIN2|EDISONMAIN2\.LegacyMiniApps|EDControls|EDUpdateContract|EDISON2\.E2ETests)/' && run_e2e=1 || run_e2e=0
     fi
 fi
 
@@ -66,6 +84,11 @@ if [ "$run_cache" = "1" ] && [ -n "$CHANGED" ]; then
         esac
     done
     [ "$run_all_cache" = "0" ] && [ -n "$pkgs" ] && CACHE_ARGS="-Package ${pkgs#,}"
+fi
+
+if [ "$dry_run" = "1" ]; then
+    echo "range=${RANGE:-(unresolved)} dotnet=$run_dotnet cache=$run_cache${CACHE_ARGS:+ ($CACHE_ARGS)} integration=$run_it required=$it_required e2e=$run_e2e"
+    exit 0
 fi
 
 report_failure() {
@@ -102,13 +125,14 @@ dotnet_failures() {
 
 # A running EDISONMAIN2.exe locks its bin\Debug DLLs -> build fails (MSB3027).
 # Only shells started from this checkout lock its build output; installed ones (C:\Edison, test installs) keep running.
+# Worktrees leží pod .claude\worktrees hlavní kopie: jejich shell (i E2E jiného pushe) zámky téhle kopie nedrží.
 shell_stopped=0
 stop_shell() {
     [ "$shell_stopped" = "1" ] && return
     shell_stopped=1
     echo "==> Checking for an EDISONMAIN2 running from this repo (locks build DLLs)"
     repo_root=$(git rev-parse --show-toplevel)
-    powershell -NoProfile -Command "\$root = [IO.Path]::GetFullPath('$repo_root').TrimEnd('\\') + '\\'; \$p = Get-Process EDISONMAIN2 -ErrorAction SilentlyContinue | Where-Object { \$_.Path -and \$_.Path.StartsWith(\$root, [StringComparison]::OrdinalIgnoreCase) }; if (\$p) { \$p | Stop-Process -Force; Start-Sleep -Milliseconds 800; Write-Host '    EDISONMAIN2 from this repo was running - closed it.' } else { Write-Host '    not running from this repo - OK.' }" || true
+    powershell -NoProfile -Command "\$root = [IO.Path]::GetFullPath('$repo_root').TrimEnd('\\') + '\\'; \$p = Get-Process EDISONMAIN2 -ErrorAction SilentlyContinue | Where-Object { \$_.Path -and \$_.Path.StartsWith(\$root, [StringComparison]::OrdinalIgnoreCase) -and -not \$_.Path.StartsWith(\$root + '.claude\\worktrees\\', [StringComparison]::OrdinalIgnoreCase) }; if (\$p) { \$p | Stop-Process -Force; Start-Sleep -Milliseconds 800; Write-Host '    EDISONMAIN2 from this repo was running - closed it.' } else { Write-Host '    not running from this repo - OK.' }" || true
 }
 
 # --- .NET ---------------------------------------------------------------------
@@ -118,7 +142,7 @@ if [ "$run_dotnet" = "1" ]; then
     echo ""
     echo "==> [.NET] dotnet test EDISON2.sln (log: $DOTNET_LOG)"
     set +e
-    # E2E (UI) testy převezmou plochu - v hooku nikdy, ani s globálně nastaveným EDISON_E2E=1.
+    # E2E (UI) běží samostatně níž, jen při změně shellu: filtr je drží venku i s globálním EDISON_E2E=1.
     # Testy se skutečným oknem ([WindowFact]) při vývoji přeskakují a běží jen tady.
     # Parita generátoru stromu s Tree.cls potřebuje legacy repo EDISON; bez něj se přeskočí.
     if [ -z "$EDISON_LEGACY_ROOT" ] && [ -d "C:/MLineRepos/EDISON" ]; then
@@ -182,6 +206,43 @@ if [ "$run_it" = "1" ]; then
     fi
 else
     echo "==> [Integration] skipped (no .cs/.cls/.inc in pushed range)"
+fi
+
+# --- E2E (UI shellu) ----------------------------------------------------------
+if [ "$run_e2e" = "1" ]; then
+    # Bez VPN by shell visel na loginu, na zamčené ploše (LogonUI v téže session) UI Automation okna neovládne
+    # a běžící E2E drží mutex harnessu: to není chyba změny, E2E se přeskočí a push jde dál. Port jako harness.
+    e2e_env=$(powershell -NoProfile -Command "\$h = if (\$env:EDISON_IT_SERVER) { \$env:EDISON_IT_SERVER } else { '192.168.16.1' }; \$p = 0; if (-not [int]::TryParse(\$env:EDISON_IT_PORT, [ref]\$p)) { \$p = 57770 }; \$c = New-Object Net.Sockets.TcpClient; try { \$ok = \$c.ConnectAsync(\$h, \$p).Wait(2000) } catch { \$ok = \$false } finally { \$c.Dispose() }; \$sid = (Get-Process -Id \$PID).SessionId; \$m = \$null; if (-not \$ok) { 'unreachable' } elseif (Get-Process LogonUI -ErrorAction SilentlyContinue | Where-Object { \$_.SessionId -eq \$sid }) { 'locked' } elseif ([Threading.Mutex]::TryOpenExisting('Local\EDISON2.E2E', [ref]\$m)) { \$m.Dispose(); 'busy' } else { 'ok' }" 2>/dev/null | tr -d '\r')
+    case "$e2e_env" in
+        unreachable)
+            echo ""
+            echo "==> [E2E] skipped (dev server unreachable - VPN?)" ;;
+        locked)
+            echo ""
+            echo "==> [E2E] skipped (desktop is locked)" ;;
+        busy)
+            echo ""
+            echo "==> [E2E] skipped (another E2E run holds the desktop)" ;;
+        *)
+            stop_shell
+            echo ""
+            echo "==> [E2E] dotnet test EDISON2.E2ETests (log: $E2E_LOG)"
+            set +e
+            # E2E nemá ProjectReference na shell (zamčené DLL), DEBUG exe se proto staví zvlášť.
+            dotnet build EDISONMAIN2/dotnet/EDISONMAIN2.csproj -c Debug --nologo --verbosity minimal > "$E2E_LOG" 2>&1
+            e2e_status=$?
+            if [ $e2e_status -eq 0 ]; then
+                EDISON_E2E=1 dotnet test EDISON2.E2ETests/EDISON2.E2ETests.csproj --nologo --verbosity minimal $HANG_ARGS >> "$E2E_LOG" 2>&1
+                e2e_status=$?
+            fi
+            set -e
+            if [ $e2e_status -ne 0 ]; then
+                report_failure "E2E tests" "$E2E_LOG" "dotnet_failures '$E2E_LOG'"
+            fi
+            echo "    E2E tests passed." ;;
+    esac
+else
+    echo "==> [E2E] skipped (no shell change in pushed range)"
 fi
 
 echo ""

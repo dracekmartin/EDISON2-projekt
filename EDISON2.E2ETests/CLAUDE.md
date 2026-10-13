@@ -6,9 +6,11 @@ běhu vlastní session GUID, vypne hlášení chyb, telemetrii a widget podpory,
 a výchozí okno a drží preference jen v paměti. `preshellpopup=1` navíc ukáže po přihlášení popup před
 shellem (`ShellSession.StartBeforeShell`).
 
-- **Běh ručně**: `EDISON_E2E=1 dotnet test EDISON2.E2ETests` (bez proměnné Skipped; pre-push ho
-  vylučuje filtrem `Category!=E2E`). Potřebuje VPN, přihlášenou plochu a předem sestavený DEBUG
-  shell. ProjectReference na EDISONMAIN2 záměrně není: build by padal na zamčených DLL, když
+- **Běh ručně**: `EDISON_E2E=1 dotnet test EDISON2.E2ETests` (bez proměnné Skipped). Pre-push je pustí
+  sám, jen když pushovaný rozsah mění shell (`EDISONMAIN2/`, `EDISONMAIN2.LegacyMiniApps/`, `EDControls/`,
+  `EDUpdateContract/`, `EDISON2.E2ETests/`, vždy mimo `CACHE/` a `.md`: `Tree.cls` pushuje úloha tree-sync);
+  předtím sestaví DEBUG shell. Bez VPN, na zamčené ploše nebo při běžícím jiném E2E je přeskočí.
+  Potřebuje VPN, přihlášenou plochu a předem sestavený DEBUG shell. ProjectReference na EDISONMAIN2 záměrně není: build by padal na zamčených DLL, když
   z `bin\Debug` běží vývojářův shell (`EDTesting` smí, staví do vlastního `bin`). Přepsání:
   `EDISON_E2E_EXE`, `EDISON_IT_SERVER` / `EDISON_IT_PORT`, `EDISON_E2E_IDFA` (výchozí `CB_DP`; výchozí
   firma DEV serveru má pro DEBUG uživatele prázdný strom).
