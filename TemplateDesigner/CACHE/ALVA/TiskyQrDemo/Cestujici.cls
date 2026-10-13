@@ -277,6 +277,114 @@ ClassMethod OznacnikyZastavky(dataDB As %String, czst As %String) As %DynamicArr
     q vysledek
 }
 
+/// Export sloupků firmy pro vyhledávač v ISYCloud (zadání 13. 10.): jízdní řády tam jsou z CIS,
+/// který sloupky zná jen jako číslo stanoviště u zastavení spoje - polohu a popis směru nemá.
+/// Linky se berou ve skupině platné dnes (`SkupinaLinky`), sloupek z trasy linky
+/// (J-věta `#12` = `idTam:idZpet`, odkaz do `^JRZ(czst,"Sloupek",id)`).
+///
+/// IN:  {"idfa":"ZL_KOVED"}
+/// OUT: {"success":true,"data":{"firma":..,"vytvoreno":..,
+///        "zastavky":[{"cisloCIS":4963,"nazev":..,"sloupky":[{"id","cislo","popis","lat","lon"}]}],
+///        "linky":[{"linka":"822995","T":{"<cisloCIS>":"<číslo sloupku>"},"Z":{..}}]}}
+ClassMethod ExportSloupku(ByRef sys, ByRef in, ByRef out) As %Status
+{
+    s err = "", code = ""
+    try {
+        i $isobject(in) && in.%IsA("%DynamicAbstractObject") { s req = in }
+        else { s req = ##class(%DynamicObject).%FromJSON(in) }
+        s idfa = req.%Get("idfa")
+        i idfa = "" s code = "VSTUP", err = "Chybí idfa" ztrap
+        d ..BuildSys(idfa, .sys)
+        s dataDB = sys("U","DATA")
+
+        k linky
+        s sku = ""
+        f {
+            s sku = $o(^[dataDB]JRL(sku))
+            q:sku=""
+            s lin = ""
+            f {
+                s lin = $o(^[dataDB]JRL(sku,lin))
+                q:lin=""
+                i $d(^[dataDB]JRL(sku,lin,"I")) s linky(lin) = ""
+            }
+        }
+
+        k zastavky
+        s vystupLinky = ##class(%DynamicArray).%New(), lin = ""
+        f {
+            s lin = $o(linky(lin))
+            q:lin=""
+            s skupina = ..SkupinaLinky(dataDB, lin)
+            continue:skupina=""
+            s tam = {}, zpet = {}, poradi = ""
+            f {
+                s poradi = $o(^[dataDB]JRL(skupina,lin,"J",poradi))
+                q:poradi=""
+                s veta = $g(^[dataDB]JRL(skupina,lin,"J",poradi))
+                s czst = $p(veta,":",1)
+                continue:czst=""
+                s cis = +$p($g(^[dataDB]JRZ(czst)),"$",9)
+                continue:cis=0
+                s sloupky = $p(veta,"#",12)
+                f smer = 1, 2 {
+                    s id = $p(sloupky,":",smer)
+                    continue:id=""
+                    s sloupek = ..Oznacnik(dataDB, czst, id)
+                    continue:'$isobject(sloupek)
+                    continue:sloupek.cislo=""
+                    s cilSmer = $s(smer = 1:tam, 1:zpet)
+                    d cilSmer.%Set(cis, sloupek.cislo)
+                    s zastavky(czst) = cis
+                }
+            }
+            continue:((tam.%Size() = 0) && (zpet.%Size() = 0))
+            d vystupLinky.%Push({"linka":(+lin),"T":(tam),"Z":(zpet)})
+        }
+
+        s vystupZastavky = ##class(%DynamicArray).%New(), czst = ""
+        f {
+            s czst = $o(zastavky(czst))
+            q:czst=""
+            s sloupky = ##class(%DynamicArray).%New()
+            k ids
+            s id = ""
+            f {
+                s id = $o(^[dataDB]JRZ(czst,"Sloupek",id))
+                q:id=""
+                s ids(id) = ""
+            }
+            s den = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",+$h+1), -1)
+            i den '= "" {
+                s id = ""
+                f {
+                    s id = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",den,"Sloupek",id))
+                    q:id=""
+                    s ids(id) = ""
+                }
+            }
+            s id = ""
+            f {
+                s id = $o(ids(id))
+                q:id=""
+                s sloupek = ..Oznacnik(dataDB, czst, id)
+                i $isobject(sloupek) && (sloupek.cislo '= "") d sloupky.%Push(sloupek)
+            }
+            d vystupZastavky.%Push({"cisloCIS":(zastavky(czst)),"czst":(czst),"nazev":($p($g(^[dataDB]JRZ(czst)),"$",1)),"sloupky":(sloupky)})
+        }
+
+        s data = {"firma":(idfa),"vytvoreno":($zdt($h,3)),"zastavky":(vystupZastavky),"linky":(vystupLinky)}
+        s out = {"success":true,"data":(data)}
+    }
+    catch ex {
+        i err = "" s err = ex.DisplayString()
+        i code = "" s code = "SYSTEM"
+        i $isobject($g(%response)) s %response.Status = $s(code = "SYSTEM":500, 1:400)
+        s out = {"success":false,"error":{"code":(code),"message":(err)}}
+    }
+    q $$$OK
+}
+
 /// Vzdálenost dvou bodů v metrech (haversinova formule), zaokrouhlená na metry.
 ClassMethod VzdalenostM(lat1 As %Numeric, lon1 As %Numeric, lat2 As %Numeric, lon2 As %Numeric) As %Integer
 {

@@ -33,6 +33,10 @@ naskenuje QR u sloupku a hned má informace o zastávce, kde stojí.
 - **Do budoucna:** zpoždění z dispečinku, okolní zastávky, MHD (v CIS není).
 - **Proti demu z 1. 10. odpadá:** platby (z prodejů v EDISONu) a mapa označníků (CIS je nemá).
 
+**Otevřené rozhodnutí:** nabídka cílů je ze **všech sloupků zastávky** (jinak by „jede z protějšího
+sloupku" nešlo říct) a z jízd **do konce zítřka** - cíl obsluhovaný jen o víkendu se ve středu
+nenabídne. Natáhnout na 7 dní jako hledání nejbližšího spoje? Pro demo zůstává (Jan 13. 10.).
+
 **K ověření:**
 
 - **Stanoviště v datech CIS.** Tabule odjezdů ho u odjezdu ukazuje (JDF `Zasspoje`), ale nemusí
