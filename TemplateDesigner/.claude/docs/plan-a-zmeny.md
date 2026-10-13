@@ -38,6 +38,11 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
+### Týden od 12. 10. 2026 · Linkové JŘ - tisk jen jednoho směru
+
+- **Linkové JŘ:** v nastavení sestavy přibyla volba **Směr pro tisk** (Oba / Tam / Zpět), takže
+  jde vytisknout jen jeden směr linky. S jedním směrem se obousměrný tisk neuplatní.
+
 ### Týden od 5. 10. 2026 · Poznámky linkového JŘ po druzích, parametry variant tras
 
 - **Linkové JŘ:** poznámky se tisknou po druzích (týdenní platnost, negativní značky, návaznosti,
