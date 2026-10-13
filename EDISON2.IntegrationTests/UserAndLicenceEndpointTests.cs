@@ -1,5 +1,5 @@
 using EDControls;
-using EDISONMAIN2.Windows.SetupWindow;
+using EDISONMAIN2;
 using EDISONMAIN2.Windows.UserProfileWindow;
 
 namespace EDISON2.IntegrationTests;
@@ -60,7 +60,7 @@ public class UserAndLicenceEndpointTests
 
         var rows = LegacyOutput.Rows(output, rest.Delimiter).ToList();
         Assert.All(rows, row => Assert.True(row.Length == 2 && row[0] == "database", $"Řádek '{row[0]}' není database{{D}}název."));
-        var databases = SetupWindow.ParseDatabaseRows(output, rest.Delimiter);
+        var databases = PreLoginConnection.LoadDatabases(rest);
         Assert.Equal(rows.Select(row => row[1]), databases);
         Assert.Contains("MLINE", databases);
         Assert.Contains(DevServer.ReadDataNamespace, databases);
