@@ -37,15 +37,28 @@ naskenuje QR u sloupku a hned má informace o zastávce, kde stojí.
 sloupku" nešlo říct) a z jízd **do konce zítřka** - cíl obsluhovaný jen o víkendu se ve středu
 nenabídne. Natáhnout na 7 dní jako hledání nejbližšího spoje? Pro demo zůstává (Jan 13. 10.).
 
-**K ověření:**
+## Stav 13. 10. - nasazeno v ISYCloud 0.37.1
 
-- **Stanoviště v datech CIS.** Tabule odjezdů ho u odjezdu ukazuje (JDF `Zasspoje`), ale nemusí
-  být vyplněné všude; označníky (`Oznacniky.txt`) CIS neplní vůbec. Bez stanoviště jde lokalizace
-  jen na zastávku a „jede odjinud" aplikace neřekne.
-- **Shoda označení stanoviště** mezi tím, co tiskne návrhář z EDISONu, a CIS - jinak QR z návrháře
-  ponese hodnotu, kterou aplikace v datech CIS nenajde.
-- **Limit veřejné části ISYCloud** 120 požadavků za minutu z jedné IP adresy; sál na jedné wifi
-  ho při předvádění vyčerpá.
+- **Aplikace:** `https://isycloud.cz/qr-vyhledavac/<CIS číslo>?sloupek=<id sloupku>` (edwcore
+  `apps/isycloud`, stránka `pages/QrVyhledavac`, služba `qrVyhledavacService.ts`), CZ/EN/DE/PL.
+  Ladicí parametry adresy: `&datum=&cas=` (jiné „teď"), `&cil=o:Brno` (hotový výsledek), `&lang=`.
+- **Sloupky CIS nezná** (Zlín i UH nádraží: 0 stanovišť u tisíců zastavení), proto doplněk
+  z EDISONu: tabulka `bus_qr_doplnek`, nahrává admin (`POST /api/portal/autobusy/qr-doplnky/:zdroj`).
+  Na produkci nahrané ZL_KOVED (sloupky, **bez** zástupných plateb) a IDZK (převod na místa e-shopu).
+  Export z EDISONu: `ALVA.TiskyQrDemo.Cestujici.ExportSloupku`.
+- **Místenka:** odkaz z textu dopravce v CIS (`bus_mistenky`), nebo e-shop z doplňku pro linky, které
+  e-shop prodává, i když to dopravce v CIS neuvedl. E-shop IDZK (Bileto) jde předvyplnit
+  `#/search-results?from=&to=&datetime=`, ale místa čísluje po svém - převodní tabulka je pro demo
+  ruční (Zlín, Brno, Vsetín, Luhačovice, Uherský Brod); do provozu ji má dodat KOVED/Bileto.
+- **Opravena chyba ISYCloud:** časový kód „jede od-do" (typ 1) se četl jako dny navíc, sezónní
+  a prázdninové spoje jezdily celý rok (tabule, vyhledávač spojení, GTFS). Kolegovi oznámit.
+- **Šablony v ZL_KOVED:** „QR na zastávku - vyhledávač pro cestující (A5 na výšku)"
+  (`templates/qr-zastavka-vyhledavac-a5.json`, list pro každý sloupek) a „Demo QR - vyhledávač pro
+  cestující (zastávkový JŘ AD)". Ukázka místenky: linka 823955, Zlín aut. nádr. sloupek 1, cíl Brno.
+
+**Otevřené:** samostatná agenda „QR zastávek" (dnes tisk po linkách, sloupek na více linkách vyjde
+vícekrát); doplněk do provozu pravidelným exportem z EDISONu místo jednorázového nahrání; kdo
+zadává platby; limit veřejné části 120 požadavků/min z jedné IP (sál na jedné wifi ho vyčerpá).
 
 ## Tabule odjezdů ISYCloud (12. 10.)
 
