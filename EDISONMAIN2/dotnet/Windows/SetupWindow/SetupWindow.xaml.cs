@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
-using ALVA.EDISONAPI;
-using ALWA.SYS;
-using EDControls;
 // UseWindowsForms zapnuté → System.Drawing.Brushes koliduje s WPF.
 using Brushes = System.Windows.Media.Brushes;
 
@@ -13,9 +10,8 @@ namespace EDISONMAIN2.Windows.SetupWindow
     /// First-launch setup: parita polí s legacy frmSetup - připojení (název, server, oba
     /// porty, IRIS), po testu připojení databáze (seznam ze serveru) a IDFa firmy; zápis
     /// <c>EDISONini.xml</c>. Běží před loginem, žádná session ještě neexistuje - proto
-    /// code-behind a vlastní pre-login <see cref="MLRest"/> z napsaných polí
-    /// (mirror <see cref="LoginWindow.LoginWindow"/>). Greenfield server-init
-    /// (firma/licence/admin) je mimo scope - zůstává na legacy frmSetup.
+    /// code-behind a spojení před loginem z napsaných polí (<see cref="PreLoginConnection"/>).
+    /// Greenfield server-init (firma/licence/admin) je mimo scope - zůstává na legacy frmSetup.
     /// </summary>
     public partial class SetupWindow : Window
     {
@@ -26,8 +22,8 @@ namespace EDISONMAIN2.Windows.SetupWindow
         public SetupWindow(Func<string, int, bool>? probe = null,
                            Func<string, int, IReadOnlyList<string>>? databaseLoader = null)
         {
-            _probe = probe ?? DefaultProbe;
-            _databaseLoader = databaseLoader ?? DefaultDatabaseLoader;
+            _probe = probe ?? PreLoginConnection.Probe;
+            _databaseLoader = databaseLoader ?? PreLoginConnection.LoadDatabases;
             InitializeComponent();
 
             var server = (SettingsLoader.Current ?? new SettingsLoader()).Server;
@@ -40,33 +36,6 @@ namespace EDISONMAIN2.Windows.SetupWindow
             DatabaseCombo.SelectedIndex = DatabaseCombo.Items.Count > 0 ? 0 : -1;
             IdfaBox.Text = server.IdFa;
         }
-
-        /// <summary>Připojení projde, když server bez chyby vrátí seznam firem.</summary>
-        private static bool DefaultProbe(string server, int port)
-        {
-            try
-            {
-                var rest = new MLRest(server, port, "", "");
-                string errState = "";
-                Database.GetCompanyList(ref errState, rest, false);
-                return string.IsNullOrEmpty(errState);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private static IReadOnlyList<string> DefaultDatabaseLoader(string server, int port)
-        {
-            var rest = new MLRest(server, port, "", "");
-            // Legacy delimited API: object[] výstup, řádky "database~<název>" od indexu 1.
-            var output = rest.QueryOrThrow("ALVA.EDISON.Main", "LoadDatabaseList", new object[] { });
-            return ParseDatabaseRows(output, rest.Delimiter);
-        }
-
-        internal static List<string> ParseDatabaseRows(object[] output, char delimiter) =>
-            LegacyOutput.Rows(output, delimiter).Where(r => r.Length > 1 && r[0] == "database").Select(r => r[1]).ToList();
 
         // Změna serveru/REST portu po úspěšném testu → pole závislá na spojení zamknout,
         // dokud se znovu neotestuje (seznam databází patří k jinému serveru).

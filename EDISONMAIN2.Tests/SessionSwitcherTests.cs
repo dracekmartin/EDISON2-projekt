@@ -47,10 +47,10 @@ public class SessionSwitcherTests
         public List<string> Calls => Opener.Calls;
         public IMLRest? WiredMLRest => _wire.Wired;
         public LoginResult? PromptResult { get; set; }
-        public MLRest? CapturedPromptConnection { get; private set; }
+        public IMLRest? CapturedPromptConnection { get; private set; }
         public IMLRest? FlushedWith { get; private set; }
 
-        protected override LoginResult? PromptLogin(MLRest connection)
+        protected override LoginResult? PromptLogin(IMLRest connection)
         {
             CapturedPromptConnection = connection;
             return PromptResult;
@@ -58,9 +58,9 @@ public class SessionSwitcherTests
 
         public bool PasswordChanged { get; set; } = true;
         public Exception? PasswordThrows { get; set; }
-        public (MLRest Connection, string UserName)? PasswordChange { get; private set; }
+        public (IMLRest Connection, string UserName)? PasswordChange { get; private set; }
 
-        protected override bool ForcePasswordChange(MLRest connection, string userName)
+        protected override bool ForcePasswordChange(IMLRest connection, string userName)
         {
             Calls.Add("password");
             PasswordChange = (connection, userName);
@@ -77,14 +77,14 @@ public class SessionSwitcherTests
         protected override void LogoutOldSession(IMLRest? mlRest) => Calls.Add("logout");
     }
 
-    private static EDServices ServicesWith(string server, int port, string db, string idfa, string loginName)
+    private static EDServices Services()
     {
-        var inner = new MLRest(server, port, db, idfa) { LoginName = loginName };
-        return new EDServices(new MLRestAdapter(inner), Substitute.For<IWindowNavigator>(),
-                              Substitute.For<IPopupDisplayer>());
+        var rest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
+        rest.Server.Returns("test-host");
+        rest.Port.Returns(9999);
+        rest.LoginName.Returns("alice");
+        return new EDServices(rest, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
     }
-
-    private static EDServices Services() => ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
 
     private static LoginResult ReauthLogin() => new(7, "bob", "Bob", false, "", false, true, "");
 
@@ -110,16 +110,13 @@ public class SessionSwitcherTests
     [Fact]
     public void Switch_PromptReceivesCurrentConnection()
     {
-        var s = TestableSessionSwitcher.Create(Services(), () => true);
+        var services = Services();
+        var s = TestableSessionSwitcher.Create(services, () => true);
         s.PromptResult = null;
 
         s.Switch();
 
-        Assert.NotNull(s.CapturedPromptConnection);
-        Assert.Equal("test-host", s.CapturedPromptConnection!.Server);
-        Assert.Equal(9999, s.CapturedPromptConnection.Port);
-        Assert.Equal("CB_DP", s.CapturedPromptConnection.DataNamespace);
-        Assert.Equal("CB_DP", s.CapturedPromptConnection.Idfa);
+        Assert.Same(services.MLRest, s.CapturedPromptConnection);
     }
 
     [Fact]

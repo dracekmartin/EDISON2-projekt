@@ -139,8 +139,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ModuleShortcutsService shortcuts,
             IChangelogSource? changelogSource,
             bool internalDiagnostics,
+            Func<IMLRest, LicenceService.MlineSyncResult> licenceSync,
             IRestCallRunner? restRunner = null,
-            Func<IMLRest, LicenceService.MlineSyncResult>? licenceSync = null,
             ModuleTreeStation? station = null,
             IShellDialogs? dialogs = null,
             Action<ProcessStartInfo>? startProcess = null)
@@ -228,10 +228,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _restRunner = restRunner ?? new RestCallRunner(() => Rest);
             _sessionLoader = new SessionDataLoader(_restRunner, treeLoader, [.. _trees.SourceTrees.Select(t => t.Name)]);
             _session = new SessionEpoch(() => Rest, () => Idfa);
-            // Stažení licence z M-line: testy podstrčí stub bez EDUsers.
-            _licence = new SessionLicenceCoordinator(_restRunner,
-                licenceSync ?? (rest => LicenceService.SyncFromMline(((MLRestAdapter)rest).Inner)),
-                _session, RebuildSessionStateAsync, () => LicenceVerifier.ReloadActiveLicence(_services),
+            _licence = new SessionLicenceCoordinator(_restRunner, licenceSync, _session,
+                RebuildSessionStateAsync, () => LicenceVerifier.ReloadActiveLicence(_services),
                 () => _services.IsAdmin || _services.MayUpdate,
                 () => { OnPropertyChanged(nameof(LicenceNoticeText)); OnPropertyChanged(nameof(LicenceNoticeTooltip)); });
 

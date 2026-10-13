@@ -238,18 +238,10 @@ public class AppBootstrapper
     }
 
     /// <summary>Pre-login MLRest - bez uživatele a firmy (vlastní fallback Idfa="").</summary>
-    protected virtual IMLRest OpenLoginConnection(string server, int port) =>
-        new MLRestAdapter(new MLRest(server, port, "", ""));
+    protected virtual IMLRest OpenLoginConnection(string server, int port) => PreLoginConnection.Open(server, port);
 
-    // Legacy GetCompanyList chce konkrétní MLRest; jediné místo startu, kde se bere Inner.
-    protected virtual IReadOnlyList<CompanyStruct> LoadServerCompanies(IMLRest loginRest)
-    {
-        string errState = "";
-        var companies = GetCompanyList(ref errState, ((MLRestAdapter)loginRest).Inner, false);
-        if (!string.IsNullOrEmpty(errState))
-            throw new InvalidOperationException(errState);
-        return companies;
-    }
+    protected virtual IReadOnlyList<CompanyStruct> LoadServerCompanies(IMLRest loginRest) =>
+        LegacyApi.CompanyList(loginRest, checkAccess: false);
 
     // Vlastní poslední firma, když na serveru je. Jinak (první start nového shellu, LastIdfa z jiného serveru -
     // je jedna pro všechny) navazuje na starý shell, než by začal ve výchozí firmě serveru.
@@ -367,23 +359,14 @@ public class AppBootstrapper
         // Lokální kopie polí: delegát žije po celou session, closure na bootstrapper by ho držela taky.
         var host = _host;
         var shutdown = _shutdown;
-        return mlRest =>
+        void End(string message) => host.Dispatch(() =>
         {
-            if (mlRest is not MLRestAdapter adapter) return;
-            adapter.Inner.EdisonActivityFailed += (_, _) =>
-                host.Dispatch(() =>
-                {
-                    services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
-                    shutdown.Force();
-                });
-            // Server per-request version gate (date+full segmenty).
-            adapter.Inner.EdisonVersionFailed += (_, _) =>
-                host.Dispatch(() =>
-                {
-                    services.PopupDisplayer.Info("Rozdílná verze Caché a verze Edison, aplikace bude ukončena.");
-                    shutdown.Force();
-                });
-        };
+            services.PopupDisplayer.Info(message);
+            shutdown.Force();
+        });
+        return mlRest => LegacyApi.OnSessionEnd(mlRest,
+            activityLost: () => End("Spojení se serverem bylo přerušeno. Aplikace bude ukončena."),
+            versionMismatch: () => End("Rozdílná verze Caché a verze Edison, aplikace bude ukončena."));
     }
 
     protected virtual EdisonMainWindow BuildShellWindow(
@@ -391,26 +374,12 @@ public class AppBootstrapper
         EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs,
         SessionOpener opener, Task<ReleaseNoticeResult>? releaseNotice)
     {
-        var treeLoader = new ModuleTreeLoader();
-        var switcher = new CompanySwitcher(services, prefs, nav.TryCloseShellWindows, nav.CloseLegacyModules);
-        // Sdílená služba zástupců - strom (VM) i miniaplikace „Plocha" (provider) drží tutéž instanci.
-        var shortcuts = new ModuleShortcutsService();
-        var miniAppCatalog = MiniAppCatalog.Build(MiniAppProviders(shortcuts, _options.DevMiniApps));
         // Owner login dialogu: shell okno vzniká až pod VM, který switcher potřebuje.
         EdisonMainWindow? shell = null;
         var sessionSwitcher = new SessionSwitcher(services, () => shell, opener,
                                                   nav.TryCloseAll, new ShellWindowStateStore(prefs), _shutdown.Force);
         bool testRun = _options.TestRun is not null;
-        var viewModel = new EdisonMainViewModel(services, prep.Companies, CompanySwitcher.LoadAllowed, treeLoader,
-                                                switcher, sessionSwitcher.Switch,
-                                                prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
-                                                miniAppCatalog, shortcuts,
-                                                testRun ? null : new InfChangelogSource(),
-                                                internalDiagnostics: _options.InternalDiagnosticsEnabled,
-                                                licenceSync: LicenceSyncFor(_options))
-        {
-            OpensStartupWindow = !testRun
-        };
+        var viewModel = CreateShellViewModel(prep.Companies, services, nav, prefs, sessionSwitcher.Switch);
         _shutdown.AttachShell(viewModel.SuppressCloseConfirm);
 
         var wnd = shell = new EdisonMainWindow { DataContext = viewModel };
@@ -437,12 +406,33 @@ public class AppBootstrapper
         return wnd;
     }
 
+    /// <summary>VM shellu podle voleb startu; bez okna, aby šlo zapojení voleb otestovat.</summary>
+    internal EdisonMainViewModel CreateShellViewModel(IReadOnlyList<CompanyStruct> companies, EDServices services,
+        WindowNavigator nav, ILocalPrefs prefs, Func<SwitchUserOutcome> switchUser)
+    {
+        var switcher = new CompanySwitcher(services, prefs, nav.TryCloseShellWindows, nav.CloseLegacyModules);
+        // Sdílená služba zástupců - strom (VM) i miniaplikace „Plocha" (provider) drží tutéž instanci.
+        var shortcuts = new ModuleShortcutsService();
+        var miniAppCatalog = MiniAppCatalog.Build(MiniAppProviders(shortcuts, _options.DevMiniApps));
+        bool testRun = _options.TestRun is not null;
+        return new EdisonMainViewModel(services, companies, CompanySwitcher.LoadAllowed, new ModuleTreeLoader(),
+                                       switcher, switchUser,
+                                       prefs, nav.GetActiveModules, nav.CloseAll, _shutdown.Force,
+                                       miniAppCatalog, shortcuts,
+                                       testRun ? null : new InfChangelogSource(),
+                                       _options.InternalDiagnosticsEnabled,
+                                       LicenceSyncFor(_options))
+        {
+            OpensStartupWindow = !testRun
+        };
+    }
+
     /// <summary>
     /// E2E běh licenci z M-line nestahuje: sync zapisuje do serveru a při chybě spojení ukáže legacy
-    /// okno ERROR, na kterém harness skončí. Null = výchozí sync VM.
+    /// okno ERROR, na kterém harness skončí.
     /// </summary>
-    internal static Func<IMLRest, LicenceService.MlineSyncResult>? LicenceSyncFor(StartupOptions options) =>
-        options.TestRun is null ? null : _ => new LicenceService.MlineSyncResult(false, "");
+    internal static Func<IMLRest, LicenceService.MlineSyncResult> LicenceSyncFor(StartupOptions options) =>
+        options.TestRun is null ? LegacyApi.SyncFromMline : _ => new LicenceService.MlineSyncResult(false, "");
 
     /// <summary>Providery miniaplikací shellu. Pořadí registrace řídí pořadí připnutých miniaplikací; výběr je řadí abecedně.</summary>
     internal static IReadOnlyList<IMiniAppProvider> MiniAppProviders(ModuleShortcutsService shortcuts, bool devMiniApps)

@@ -28,6 +28,24 @@ public class PreLoginTests
     }
 
     [DevServerFact]
+    public void SetupDatabaseList_RealServer_ParserReadsEveryDatabaseRow()
+    {
+        // Seznam databází setup wizardu; tolerantní parser by přejmenovaný řádek tiše zahodil.
+        var rest = DevServer.Connect();
+        var rows = rest.QueryOrThrow("ALVA.EDISON.Main", "LoadDatabaseList", new object[] { })
+            .Skip(1)
+            .Select(row => (row?.ToString() ?? "").Split(rest.Delimiter))
+            .ToList();
+        Assert.NotEmpty(rows);
+        Assert.All(rows, parts => Assert.Equal(("database", 2), (parts[0], parts.Length)));
+
+        var databases = PreLoginConnection.LoadDatabases(rest);
+
+        Assert.Equal(rows.Select(parts => parts[1]), databases);
+        Assert.Contains(DevServer.ReadDataNamespace, databases);
+    }
+
+    [DevServerFact]
     public void UpdaterLoadSettings_RealServer_ParserReadsServerRows()
     {
         var rest = DevServer.Connect();

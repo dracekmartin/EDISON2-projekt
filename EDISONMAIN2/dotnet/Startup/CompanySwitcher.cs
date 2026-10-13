@@ -41,14 +41,7 @@ public class CompanySwitcher(
     /// Server filtruje podle povolených databází uživatele a funkčního omezení DB v Idfa spojení,
     /// obojí jen se známým MLP - bez uživatele vrací všechny firmy serveru.
     /// </summary>
-    public static IReadOnlyList<CompanyStruct> LoadAllowed(IMLRest rest)
-    {
-        string errState = "";
-        var companies = GetCompanyList(ref errState, ((MLRestAdapter)rest).Inner, true);
-        if (!string.IsNullOrEmpty(errState))
-            throw new InvalidOperationException(errState);
-        return companies;
-    }
+    public static IReadOnlyList<CompanyStruct> LoadAllowed(IMLRest rest) => LegacyApi.CompanyList(rest, checkAccess: true);
 
     /// <summary>
     /// Firma nové session a povolené firmy k ní; null = uživatel nesmí nikam. Funkční omezení DB je per IDFa,

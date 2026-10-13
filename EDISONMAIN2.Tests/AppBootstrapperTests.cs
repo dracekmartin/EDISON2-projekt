@@ -609,10 +609,35 @@ public class AppBootstrapperTests
     }
 
     [Fact]
-    public void LicenceSyncFor_RegularStart_KeepsViewModelDefault()
+    public void LicenceSyncFor_RegularStart_SyncsThroughLegacyApi()
     {
-        Assert.Null(AppBootstrapper.LicenceSyncFor(StartupOptions.Production()));
-        Assert.Null(AppBootstrapper.LicenceSyncFor(StartupOptions.Development([], null)));
+        Assert.Equal(nameof(LegacyApi.SyncFromMline), AppBootstrapper.LicenceSyncFor(StartupOptions.Production()).Method.Name);
+        Assert.Equal(nameof(LegacyApi.SyncFromMline),
+                     AppBootstrapper.LicenceSyncFor(StartupOptions.Development([], null)).Method.Name);
+    }
+
+    private static EdisonMainViewModel ShellViewModelFor(StartupOptions options) =>
+        new TestableBootstrapper(options).CreateShellViewModel(
+            [new() { Id = "CB_DP", Database = "CB_DP" }],
+            new EDServices(MLRestMocks.Create(), Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+            new WindowNavigator(), Substitute.For<ILocalPrefs>(), () => new(SwitchUserResult.Cancelled));
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CreateShellViewModel_TestMenuFollowsStartupOptions(bool diagnostics)
+    {
+        // U zákazníka by „Vyvolat chybu" z menu Test funkcí založilo tiket.
+        var vm = ShellViewModelFor(StartupOptions.Production() with { InternalDiagnosticsEnabled = diagnostics });
+
+        Assert.Equal(diagnostics, vm.IsTestMenuVisible);
+    }
+
+    [Fact]
+    public void CreateShellViewModel_TestRun_DoesNotOpenStartupWindow()
+    {
+        Assert.True(ShellViewModelFor(StartupOptions.Production()).OpensStartupWindow);
+        Assert.False(ShellViewModelFor(E2E()).OpensStartupWindow);
     }
 
     [Fact]

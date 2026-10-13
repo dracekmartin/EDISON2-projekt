@@ -117,9 +117,9 @@ internal static class EdisonMainViewModelHarness
                                          getActiveModules ?? (() => []), close, forceShutdown ?? (() => { }),
                                          catalog, shortcuts ?? new ModuleShortcutsService(), changelogSource,
                                          internalDiagnostics,
-                                         restRunner ?? new InlineRestCallRunner(mockMLRest),
                                          // Produkční sync volá EDUsers nad živým MLRest - v testech jen stub.
                                          licenceSync ?? (_ => new(false, "")),
+                                         restRunner ?? new InlineRestCallRunner(mockMLRest),
                                          station ?? NeutralStation,
                                          dialogs,
                                          // Testy nikdy nespouští skutečný proces (druhou instanci shellu).

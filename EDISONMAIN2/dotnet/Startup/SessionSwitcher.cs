@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.LoginWindow;
@@ -64,7 +63,7 @@ public class SessionSwitcher(
     /// </summary>
     public SwitchUserOutcome Switch()
     {
-        var current = ((MLRestAdapter)services.RequireMLRest).Inner;
+        var current = services.RequireMLRest;
         var login = PromptLogin(current);
         if (login == null) return new(SwitchUserResult.Cancelled);
 
@@ -117,9 +116,9 @@ public class SessionSwitcher(
     }
 
     /// <summary>Login dialog pro user switch - owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
-    protected virtual LoginResult? PromptLogin(MLRest connection)
+    protected virtual LoginResult? PromptLogin(IMLRest connection)
     {
-        var vm = LoginViewModel.ForReauth(services, new MLRestAdapter(connection));
+        var vm = LoginViewModel.ForReauth(services, connection);
         var loginWindow = new Windows.LoginWindow.LoginWindow(vm)
         {
             Owner = ownerWindow(),
@@ -131,8 +130,8 @@ public class SessionSwitcher(
 
     /// <summary>Vynucená změna hesla (feature #17) - dialog jako při startu, owner je shell okno.
     /// True = heslo změněno, false = uživatel zrušil.</summary>
-    protected virtual bool ForcePasswordChange(MLRest connection, string userName)
-        => new Windows.LoginWindow.ChangePasswordWindow(new MLRestAdapter(connection), userName)
+    protected virtual bool ForcePasswordChange(IMLRest connection, string userName)
+        => new Windows.LoginWindow.ChangePasswordWindow(connection, userName)
             { Owner = ownerWindow() }
             .ShowDialog() == true;
 
