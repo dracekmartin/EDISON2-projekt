@@ -20,6 +20,14 @@ naskenuje QR u sloupku a hned má informace o zastávce, kde stojí.
 - **Bez přestupů** - papírový JŘ je taky nezná.
 - **Data z CIS** (import JDF v ISYCloud): platná, všichni dopravci. QR není součást výlepu
   konkrétního dopravce, proto ne EDISON.
+- **Doplněk z EDISONu** tam, kde je dopravce u nás: **označníky** (ze kterého jede linka v daném
+  směru, poloha) a **způsoby platby**. QR z návrháře nese i označník, na kterém visí, a aplikace
+  řekne „jede z protějšího označníku 16, 40 m". Spoj z CIS se páruje přes číslo linky a směr
+  (JDF: liché číslo spoje tam, sudé zpět). Do ISYCloud jde **exportem**, ne živým dotazem
+  (veřejná aplikace nesmí záviset na serverech dopravců za VPN); pro demo jednorázově.
+- **Platby** nejsou v CIS a EDISON je jako nastavení nemá. Pro demo **zástupná data**; zadávat
+  je má dopravce nebo organizátor (kdo a kde, se rozhodne).
+- **Demo na ZL_KOVED** (Uherské Hradiště, polohy označníků v EDISONu jsou), platby zástupné.
 - **Umístění:** aplikace v ISYCloud vedle tabule odjezdů (např. `/qr-vyhledavac/<CIS číslo>`),
   nasazení se doladí. Čeština a angličtina podle jazyka telefonu.
 - **Do budoucna:** zpoždění z dispečinku, okolní zastávky, MHD (v CIS není).
