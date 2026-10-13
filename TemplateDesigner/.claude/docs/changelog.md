@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-13 - 🐛 hledání v okně vlastností jen pro svůj druh prvku
+
+Okna vlastností otevřená dvojklikem na prvek si pamatovala jedno společné hledání, takže text
+napsaný u tabulky spojů se objevil i v poznámkách (nález Jan 13. 10.). Paměť je teď pro každý druh
+prvku zvlášť: přežije zavření okna a přepnutí na jiný prvek téhož druhu, jak bylo rozhodnuto 23. 9.
+Test `HledaniOkenPrvkuTests`.
+
 ## 2026-10-12 (8) - ⚡ plynulejší zoom náhledu
 
 Zoom kolečkem (Ctrl) v náhledu během otáčení jen zvětšuje hotový obraz a ostrý náhled nakreslí

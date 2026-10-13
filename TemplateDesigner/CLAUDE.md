@@ -42,9 +42,10 @@ Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživate
 - **Persistované hodnoty parametrů sestavy se aplikují jednou cestou** -
   `ApplyPersistedPrintParamsAsync()` nastaví hodnoty i UI pohromadě. Dvě cesty vedly k tomu,
   že se tisklo jiné nastavení, než UI ukazovalo, a nikdo si toho nevšiml.
-- **Okna vlastností prvku otevřená z plátna sdílí jeden `SearchMemoryKey`** (`ElementDialogSearchKey`
-  v `MainWindow`, nastavuje se při otevření, ne v XAML) - filtr hledání přežije zavření okna kvůli
-  náhledu i přepnutí prvku. Panel vlastností, sekce, stránka ani buňka ho nesdílí (rozhodnutí Jan 23. 9.).
+- **Okna vlastností prvku otevřená z plátna si pamatují hledání pro každý druh prvku zvlášť**
+  (`ElementDialogSearchKey(element)` v `MainWindow`, nastavuje se při otevření, ne v XAML) - filtr
+  přežije zavření okna kvůli náhledu i přepnutí na jiný prvek téhož druhu (rozhodnutí Jan 23. 9.),
+  mezi různými druhy se nesdílí (Jan 13. 10.). Panel vlastností, sekce, stránka ani buňka ho nemají.
 - **Signál „nastavení mění obsah vývěsky" ve stavovém řádku už neexistuje** (zrušen 5. 8.,
   rozhodnutí Jan). Vznikl jako obklad na chybu `B24` (uložený parametr zapnutý, UI ho ukazovalo
   vypnutý, z vývěsky tiše zmizely odjezdy) - ale obklad není oprava a nikdo z hlášky nepoznal, co

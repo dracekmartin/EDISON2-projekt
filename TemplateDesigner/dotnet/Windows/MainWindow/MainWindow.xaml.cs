@@ -1863,9 +1863,11 @@ public partial class MainWindow : Window
 
     /// <summary>Filtr hledání, který si pamatují okna vlastností prvku otevřená z plátna.</summary>
     /// <remarks>Uživatel ladí jednu vlastnost: vyhledá ji, změní, zavře okno kvůli náhledu a otevře
-    /// znovu - bez paměti by hledal pokaždé znovu (Jan 23. 9.). Jen tady: panel vlastností, sekce,
-    /// stránka ani buňka tabulky ho nesdílí.</remarks>
-    private const string ElementDialogSearchKey = "TemplateDesigner.ElementDialog";
+    /// znovu - bez paměti by hledal pokaždé znovu (Jan 23. 9.). Paměť je pro každý druh prvku zvlášť:
+    /// do 13. 10. byla společná a hledání z tabulky spojů se objevilo i v poznámkách (Jan 13. 10.).
+    /// Panel vlastností, sekce, stránka ani buňka tabulky ji nemají.</remarks>
+    internal static string ElementDialogSearchKey(TemplateElement element) =>
+        $"TemplateDesigner.ElementDialog.{element.GetType().Name}";
 
     private void OpenPropertiesForElement(TemplateElement element)
     {
@@ -1917,7 +1919,7 @@ public partial class MainWindow : Window
         var dlg = new DepartureGroupEditorDialog(
             element, availableGroups, element.GroupColumns, element.HourColumnStyle,
             element.CustomColumns, presetsJson)
-            { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
+            { Owner = this, SearchMemoryKey = ElementDialogSearchKey(element) };
 
         if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)
 
@@ -1966,7 +1968,7 @@ public partial class MainWindow : Window
     private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
         var dlg = new ElementEditDialog(element, cacheClass, title)
-            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey };
+            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey(element) };
         if (element is NotesLegendElement poznamky)
         {
             bool linkovy = _vm.JeLinkovyJr;
@@ -1994,7 +1996,7 @@ public partial class MainWindow : Window
 
     private void OpenStopColumnsDialog(StopListElement element)
     {
-        var dlg = new StopColumnsEditorDialog(element) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
+        var dlg = new StopColumnsEditorDialog(element) { Owner = this, SearchMemoryKey = ElementDialogSearchKey(element) };
 
         if (dlg.ShowDialog() == true)
         {
@@ -2055,7 +2057,7 @@ public partial class MainWindow : Window
         bool rozdilovy = _vm!.JeRozdilovyJr;
         var dlg = new LineTableColumnsEditorDialog(element)
         {
-            Owner = this, SearchMemoryKey = ElementDialogSearchKey,
+            Owner = this, SearchMemoryKey = ElementDialogSearchKey(element),
             ViditelnostPole = (klic, _) => LineTableElement.PoleFormulareViditelne(klic, rozdilovy),
         };
 
@@ -2073,7 +2075,7 @@ public partial class MainWindow : Window
     private void OpenDynamicTableDialog(DynamicTableElement element)
     {
         var collections = _vm!.GetAvailableGroups();
-        var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this, SearchMemoryKey = ElementDialogSearchKey };
+        var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this, SearchMemoryKey = ElementDialogSearchKey(element) };
 
         if (dlg.ShowDialog() == true)
         {
