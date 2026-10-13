@@ -54,6 +54,10 @@ public class LoginContractTests
 
         // GetUserInfo čte tytéž vlastnosti uživatele bez hesla: pole se ověří podle významu, ne jen podle tvaru.
         var info = UserInfo(rest, account.Login);
+        // Shodné hodnoty by prohození polí 1↔10 a 3↔7 skryly.
+        Assert.True(!string.Equals(info["FullName"], account.Login, StringComparison.OrdinalIgnoreCase)
+                    && info["Dir"].Length > 0 && info["Email"].Length > 0 && info["Dir"] != info["Email"],
+            "Testovací účet nemá odlišné celé jméno, adresář a e-mail (EDISON2.IntegrationTests/CLAUDE.md).");
         Assert.True(parts[1] == info["FullName"], "Pole 1 není celé jméno.");
         Assert.True(parts[2] == info["SuperUser"], "Pole 2 není příznak admina.");
         Assert.True(parts[3] == info["Dir"], "Pole 3 není adresář.");

@@ -18,7 +18,8 @@ skutečnou odpovědí.
   v globálu `^EDTesting("ITAccount","login")` a `("password")` v namespace MLINE (nastavuje vlastník v terminálu
   Caché, čte `ALVA.EDTesting.ITAccount`). Proměnné `EDISON_IT_LOGIN` + `EDISON_IT_PASSWORD` ho přepíšou,
   jen jiným vyhrazeným účtem: testy s ním volají `Login`. Chybí = `[TestAccountFact]` Skipped. Heslo
-  nelogovat, `TestAccount.ToString()` ho neukazuje.
+  nelogovat, `TestAccount.ToString()` ho neukazuje. Účet musí mít celé jméno jiné než přihlašovací, osobní
+  adresář se zaškrtnutým použitím a e-mail: s výchozími hodnotami by testy `Login` a `LoadUser` posun pole nepoznaly.
 - **Tolerantní parser** (chybějící řádek nebo pole = default) ověřuj i na surovém výstupu, jinak
   přejmenovaný řádek nebo posunuté pole projde. Vzor `ModuleTreeTests`.
 - **Surový výstup nelogovat** ani nedávat do assert zpráv: `Login` vrací heslo zpět, oba

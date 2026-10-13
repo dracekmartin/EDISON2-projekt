@@ -34,11 +34,13 @@ internal static class DevServer
     /// <summary>Testovací účet DEV (<see cref="TestAccount"/>), null = není nastavený nebo server nedostupný.</summary>
     public static TestAccount? Account => LazyAccount.Value;
 
-    public static IMLRest Connect(string idfa = ReadIdfa, string mlp = ReadMlp, string? dataNamespace = null)
+    /// <param name="loginName">Přihlašovací jméno v sys, podle něj čtou profil uživatele metody jako <c>LoadUser</c>.</param>
+    public static IMLRest Connect(string idfa = ReadIdfa, string mlp = ReadMlp, string? dataNamespace = null,
+        string loginName = LoginName)
     {
         if (!IsReachable)
             throw new InvalidOperationException($"{Unreachable} EDISON_IT_REQUIRED=1, test se nepřeskakuje.");
 
-        return DevServerConnection.Connect(idfa, mlp, dataNamespace: dataNamespace);
+        return DevServerConnection.Connect(idfa, mlp, loginName, dataNamespace);
     }
 }
