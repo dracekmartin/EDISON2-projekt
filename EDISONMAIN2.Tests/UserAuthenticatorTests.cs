@@ -40,8 +40,8 @@ public class UserAuthenticatorTests
     }
 
     // Pořadí jako Login.cls:69 (repo EDISON): mlp, fullname, admin, dir, changePassword, updateEdison,
-    // startupForm, email, usernameEdison, password, un. Živý test šva kryje jen chybovou cestu
-    // (reálný účet by Login přepsal flagy 17/20), takže pořadí drží tenhle test.
+    // startupForm, email, usernameEdison, password, un. Živý šev (LoginContractTests) má testovací účet
+    // s oběma příznaky 0, prohození admin a updateEdison proto drží tenhle test.
     [Theory]
     [InlineData("1", "0", true, false)]
     [InlineData("0", "1", false, true)]
