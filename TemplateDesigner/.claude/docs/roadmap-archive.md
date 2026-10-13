@@ -1,5 +1,36 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B191c` Linkový JŘ MHD proti starému tisku (hotovo 12. 10. 2026)
+
+Porovnání se starým tiskem kryje celou tabulku: značky a legendu, časy po zastávkách, seznam
+zastávek s pásmem a značkami, rozdělení spojů do typů provozu i jejich pořadí. Shoda na 27 linkách
+CB_DP a 38 KV_DP (`LinkovyJrMhdLegacyOracle.SouhrnSady`), v testu 7 linek. Opravené rozdíly: pořadí
+spojů, „jede jinudy" ve směru zpět a za poslední zastávkou, název zastávky k datu platnosti.
+**Neověřeno** (na dev datech nejsou): příjezd/odjezd, poznámky z trasy u názvu zastávky.
+Detail changelog 2026-10-12 (4).
+
+## Zastávkový JŘ MHD: automaticky přidělené negativní značky (hotovo 12. 10. 2026)
+
+Vývěsky MHD vynechávaly negativní značky přidělené z porovnání platností (text omezení vycházel
+prázdný, chyběl krok `mkOmzFromOnlyTwoBitmaps`). Nalezeno při `B191b`, doloženo `MhdLegacyOracle`
+na CB_DP 11350 a 11018. Detail changelog 2026-10-12 (3).
+
+## `B191b` Data linkového JŘ MHD jako starý tisk + směr pro tisk (hotovo 12. 10. 2026)
+
+Číslo spoje z dat, poznámky a atributy spoje jen pro knižní tisk, negativní značky přidělené jako
+starý modul (i text omezení, který byl vždy prázdný), značky zastávky z číselníku i z trasy, číslo
+zastávky a označník. Textové poznámky prvek kreslí písmem (`TEXTOVE_ZNACKY`). Nový parametr „Směr
+pro tisk" (Oba / Tam / Zpět) pro linkový AD i MHD. Doloženo porovnáním se starým tiskem
+(`LinkovyJrMhdTest`, 5 linek). **Nedoděláno:** Zvýraznit zastávku a tarifní čísla (patří k volbám
+`B191d`), poznámky z trasy u názvu zastávky (na dev datech nejsou). Detail changelog 2026-10-12 (2).
+
+## `B191a` Rozbor linkového JŘ MHD proti AD a starému modulu (hotovo 12. 10. 2026)
+
+Soupis bez změny agendy: oracle je `ALVA.MHD.LinkyPrintFormatJR.MakeData` (ne `WinTiskMhd^JRapi`,
+jak stálo v roadmapě), agenda má tři chyby v datech (číslo spoje, poznámky spoje, negativní
+značky) a testovací linky jsou na CB_DP a KV_DP. Detail analýza linkového JŘ `§18`, sonda
+`Tests/LinkovyJrMhdProbe`.
+
 ## `#7487` Rozložení poznámek podle druhu, KORID (hotovo 9. 10. 2026)
 
 Legenda linkového JŘ se tiskne po šesti skupinách druhů (týdenní platnost, negativní značky,

@@ -1854,3 +1854,155 @@ se **místo řezu**, ne počet stran (ten se lišit bude a je to v pořádku, vi
 seznam výšek a význam řádku se ztratí - musí ho začít nést. `Zlom` (`INedelitelneDily.cs:19`)
 potřebuje třetí stupeň místo `bool Silny` a `PageLayoutEngine.PosledniZlomDo` (`:164-174`) musí umět
 počítat zastávky, ne jen milimetry.
+
+---
+
+## 18. Linkový JŘ MHD proti AD a proti starému modulu - rozbor `B191a` (12. 10. 2026)
+
+Cesty bez prefixu jsou `CACHE/ALVA/TemplateDesigner/Agendy/LinkovyJrMhd.cls`, „legacy" je
+`C:\DEV\EDISON\MHD\CACHE\ALVA\MHD\LinkyPrintFormatJR.cls`. Měřeno na dev serveru 12. 10.
+
+### 18.1 Čím porovnávat
+
+- **Starý tisk je `ALVA.MHD.LinkyPrintFormatJR.MakeData(idfa,nmsp,LinkaID,outglb,.in,.out)`**
+  (legacy `:6`), volá ho `ALVA.TISKJR.Data` ve větvi `VolanoZ="MHD"` (`TISKJR/.../Data.cls:216`).
+  Na dev serveru je a shoduje se s diskem. Vrací 1 = v pořádku.
+- `WinTiskMhd^JRapi`, který do 12. 10. uváděla roadmapa, je jiná cesta: tisk městských linek
+  vedených v modulu JŘ (AD data). Pro `LinkovyJrMhd` se nehodí.
+- **Pasti pro oracle:**
+  - `in("A",2,"arr",11)` musí vyjmenovat všechny typy provozu a oba směry jako zapnuté
+    (`TypProvozuID#id~1`, `SmerID#0~1`, `SmerID#1~1`). Bez toho starý modul nevytiskne nic (`:534`, `:538`).
+  - Tabulku dělí na **bloky po typu provozu**, stejně jako AD po skupinách dnů. Každý blok nese
+    celý seznam zastávek trasy ve směru (`:723-834`, přidání zastávky leží uvnitř smyčky přes
+    všechny body trasy), seznam je tedy ve všech blocích týž. Typ provozu je u MHD to, co je u AD
+    skupina dnů. Porovnávat se musí po dvojicích směr × typ provozu.
+  - Spoje v bloku řadí bublinkově podle časů na jednotlivých zastávkách (`:951-990`), my podle
+    výchozího času. Na lince, kde spoje začínají na různých zastávkách, se pořadí může lišit.
+  - Plocha a měřicí řetězce jako u AD oracle (`LinkovyJrLegacyOracle.SpustLegacy`).
+- Hlavička starého modulu nese jako číslo linky **veřejné číslo** (`CisloVerejne`, legacy `:1084`),
+  což potvrzuje zadání `B191e`.
+
+### 18.2 Co agenda posílá a co chybí
+
+**Tři chyby v datech** (oracle by na nich spadl hned, patří do `B191b`):
+
+1. **Číslo spoje je interní ID.** `CISLO_SPOJE` = `SpojID` (`:487`), starý modul tiskne pole
+   `CisloSpoje` (legacy `:536`, `:1167`). CB_DP 11350: posíláme 2036117.
+2. **Poznámky a atributy spoje se nepřečtou nikdy.** Pomocník `GetPoznamkySpoj` vrací
+   `out("arr",1,PoznamkaSpojID,pole)`, agenda ale prochází o úroveň hlouběji a za ID poznámky bere
+   jméno pole (`:500-522`, atributy `:527-543`). Zastávkový JŘ MHD to čte správně
+   (`ZastavkoveJrMhd.cls:774-775`). Následek: řádek platnosti je prázdný, v legendě chybí druh 4 a 5.
+   CB_DP 11350 má 10 spojů s poznámkou pro knižní tisk, výstup žádnou.
+3. **Negativní značky jen z pole spoje.** Agenda čte `NegativniZnacka` (`:600`). Starý modul
+   bez auto-poznámkování bere NZ z poznámky spoje typu 2 s `TiskJRMHDKnizni` (legacy `:625-645`);
+   s ním spojům s `RucniZadani` NZ **přidělí** z rozsahu `RozsahNegativnichZnacekOd/Do` a poznámky
+   typu 1 a 2 zahodí (legacy `:540-624`). CB_DP 11350: 10 ručně zadaných spojů, NZ máme u jednoho.
+
+**Mezery proti starému modulu:**
+
+- Starý modul tiskne jen poznámky s příznakem `TiskJRMHDKnizni` a u `TiskJRMHDKnizniPouzeZnacku`
+  bez textu v legendě (legacy `:427-432`, `:636`). Agenda filtr nemá: po opravě bodu 2 by tiskla
+  i poznámky určené jen pro zastávkový JŘ (např. KV_DP poznámka 1002 „nejede do zastávky Globus").
+- Značky zastávky (atributy N/V/x/A a poznámky z trasy `PoznamkyTam/Zpet`) starý modul připíše
+  za název zastávky (legacy `:403-440`, `:812-821`). My atributy dáváme jen do legendy (`:668-687`)
+  a poznámky z trasy nečteme.
+- Zóna: starý modul bere poslední zónu v IDS linky, my první (`:331-340` × legacy `:353-358`).
+  Liší se jen u zastávky s víc zónami téhož IDS.
+
+**Proti AD** (rozsah `B191b`):
+
+- Zastávky: MHD posílá `PORADI, TYP, CZST, NAZEV_ZASTAVKY, ZONY` a prázdné `ATRIBUTY, KM`.
+  AD navíc `AKTUALNI_ZASTAVKA, TC, MHD, NASTUPISTE`. `CZST` nese interní `ZastavkaID`, ne číslo
+  zastávky (`:457`); číslo agenda má (`body` pozice 6) a nepošle. Schéma `CZST` nevyhlašuje (`:76-79`).
+- Spoje: AD navíc `SMER, ZNACKY, DOPRAVCI, FORE_COLOR`. Barvu spoje ani turnusy starý MHD modul
+  netiskne.
+- Hodnoty: MHD nemá `POZNAMKA_POD_DOPRAVCE`, `AKTUALNI_ZASTAVKA_CZST/TC`, `VYLEP_ZASTAVKY`.
+  Typ linky (legacy `out("dta",3)`) neposílá žádná agenda.
+- Parametry: MHD žádné (`:131-135`), AD jich má 12. Starý MHD modul čte `arr` 4, 11 a 12 (§13.2 A).
+
+### 18.3 Testovací linky (sonda `Tests/LinkovyJrMhdProbe`)
+
+Data modulu MHD na dev serveru mají **CB_DP** a **KV_DP**. CK_SCHWAN, TA_COMET a VS_CSAD mají po
+1-2 linkách s jedním či dvěma spoji. Linky CB_DP 11xxx jsou kopie plánu s platností do 2026/2027,
+starší 1001-1024 platily v roce 2018.
+
+| Linka | Co na ní je |
+|---|---|
+| CB_DP 11350 (linka 18, 122 spojů) | NZ z poznámky i ruční zadání, IDS, auto-poznámkování - hlavní případ NZ |
+| CB_DP 11341 (linka 1, 318 spojů) | 51 ručně zadaných spojů - přidělování NZ z rozsahu |
+| CB_DP 11354 (linka 23, 411 spojů) | 205 spojů s poznámkou pro knižní tisk |
+| CB_DP 11018 (linka 13, 228 spojů) | 9 typů provozu - bloky po typu provozu |
+| CB_DP 11338 (linka 33, 24 spojů) | malá linka s poznámkami, rychlý test |
+| KV_DP 1073 (205 spojů) | 7 typů provozu, „jede jinudy"; bez NZ, poznámek a IDS |
+
+**Na dev datech chybí** příjezd a odjezd (atribut trasy 1011), atribut spoje B/C a poznámka z trasy
+pro knižní tisk. Tyto cesty oracle neověří a v dokladech parity se píšou jako neověřené (R6).
+
+### 18.4 Co z toho plyne
+
+- `B191b` je větší, než stálo v roadmapě: kromě polí zastávek tři chyby z §18.2.
+- `B191c`: oracle po dvojicích směr × typ provozu, `arr,11` vše zapnuto.
+- Bloky po typu provozu nejsou nová věc: prvek je kreslí jako skupiny dnů u AD.
+
+### 18.5 Skupiny spojů jednotně ve všech agendách - návrh pro `B191d` (12. 10. 2026)
+
+**Cíl (Jan 12. 10.):** minimum je pokrýt, co uživatelé mohli dělat ve starém modulu. Cílový stav je,
+aby se se skupinami spojů (časové platnosti u AD, typy provozu u MHD) pracovalo stejně v zastávkovém
+i linkovém JŘ a v obou datových zdrojích.
+
+**Dnešní stav:**
+
+| Agenda | Z čeho jsou skupiny | Co volí uživatel |
+|---|---|---|
+| Zastávkový AD | dny v týdnu z kalendáře spoje | „Rozdělení sloupců (typy provozu)": Automaticky (dle linky), 4 vzory, Vlastní rozložení |
+| Linkový AD | dny v týdnu z kalendáře spoje | „Dělení spojů dle platnosti": 3 vzory, Vlastní rozložení (bez „Automaticky") |
+| Zastávkový MHD | typy provozu, sloučené do nejvýš 4 sloupců podle pole SMO v číselníku (`ZastavkoveJrMhd.cls:612-617`) | nic |
+| Linkový MHD | typ provozu = blok, pořadí z číselníku (`LinkovyJrMhd.cls:380-428`) | nic |
+
+Vlastní rozložení u AD je jeden mechanismus pro obě agendy: prvek drží definici sloupců
+(`DepartureColumnDefinition`: dny, značky, období, nadpis), klient ji posílá jako `DEFINICE_SLOUPCU`
+(`TemplateDesignerViewModel.ComposeGetDataParams`) a parametr dělení ji jen zrcadlí. Spoj, který
+nesedne do žádného sloupce, se netiskne - tím jde zároveň skupinu vynechat. MHD agendy
+`DEFINICE_SLOUPCU` nečtou.
+
+Starý linkový MHD před tiskem nabízel zaškrtávátka typů provozu a směrů
+(`LinkyPrintBIGFilterED.cls:111-123`, všechny typy firmy, ne jen linky).
+
+**Návrh:** jeden model skupin, jiné kritérium podle datového zdroje.
+
+1. `DepartureColumnDefinition` dostane další kritérium **typy provozu** (seznam ID). U AD zůstává
+   prázdné, u MHD nahradí dny. Aditivní změna šablony i wire.
+2. Obě MHD agendy začnou číst `DEFINICE_SLOUPCU` a posílat vzory a seznam typů provozu linky.
+   Výchozí rozložení odpovídá starému tisku: linkový blok na typ provozu, zastávkový sloučení podle SMO.
+3. Editor sloupců a parametr dělení jsou tytéž jako u AD; u MHD editor místo dnů ukáže typy provozu.
+   Vynechání typu provozu (minimum ze starého modulu) = odebrat ho z rozložení.
+4. Směr tisku je samostatná volba linkového JŘ („Oba / Tam / Zpět"), pro AD i MHD stejná.
+
+**Pořadí:** linkový MHD v `B191d` (body 1-4), zastávkový MHD jako samostatný krok po něm. Sjednocení
+názvu parametru dělení mezi zastávkovým a linkovým AD jde udělat zvlášť - popisky voleb jsou
+zamčené (persistuje se text), název parametru ne.
+
+**Neověřeno:** jak editor sloupců dnes skládá dialog podle agendy, a tedy kolik stojí bod 3.
+
+### 18.6 Stav po `B191b` (12. 10. 2026)
+
+Tři chyby z §18.2 jsou opravené a značky spojů porovnává se starým tiskem `LinkovyJrMhdTest`
+(oracle `Tests/LinkovyJrMhdLegacyOracle`). Při opravě vyšly najevo další dvě věci:
+
+- **Text omezení u negativní značky byl vždy prázdný** - agenda volala funkce kalendáře s jinými
+  argumenty než starý modul (a bez kroku `mkOmzFromOnlyTwoBitmaps`) a chybu polykal catch.
+  Zastávkový JŘ MHD má týž výpočet bez toho kroku (`ZastavkoveJrMhd.cls:556-599`); porovnání
+  `MhdLegacyOracle` na CB_DP 11350 a 11018 ukazovalo chybějící značky v poznámkách. Opraveno týž den.
+- **Značky zastávky bere starý tisk i z atributů bodu trasy** (`AtributyTam/Zpet`, legacy :442-483),
+  ne jen z číselníku zastávek. Na KV_DP 1073 je tak „na znamení".
+
+Atributy spoje kromě B/C starý tisk posílá jako id znaku, které klient převádí - u nás se netisknou
+(v datech dev serveru nejsou, neověřeno).
+
+### 18.7 Stav po `B191c` (12. 10. 2026)
+
+Oracle porovnává celou tabulku a na 27 linkách CB_DP a 38 KV_DP je shoda. Co zbývá neověřené,
+protože to dev data nemají: příjezd/odjezd na jedné zastávce (atribut trasy 1011, sloupec „od/př"
+starého tisku nahrazený podřádky) a poznámky z trasy (`PoznamkyTam/Zpet` pro knižní tisk), které
+starý tisk připisuje k názvu zastávky - ty agenda zatím nečte vůbec. Linky KV_DP 1105 a 1106 starý
+tisk nevytiskne (chyba starého modulu); naše agenda pro ně vrátí prázdný výstup bez hlášky.

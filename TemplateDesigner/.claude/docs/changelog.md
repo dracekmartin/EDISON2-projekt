@@ -1,5 +1,95 @@
 ﻿# Changelog
 
+## 2026-10-12 (8) - ⚡ plynulejší zoom náhledu
+
+Zoom kolečkem (Ctrl) v náhledu během otáčení jen zvětšuje hotový obraz a ostrý náhled nakreslí
+až po pauze 200 ms - dřív každý krok sázel a kreslil všechny strany (městská linka se 7 stranami:
+0,3-0,4 s na krok). Náhled si navíc pamatuje sestavená data a sazbu, dokud se nezmění šablona,
+data, strana nebo parametry: jeden krok zoomu dřív sázel stránky třikrát (výška plochy, její
+změna, kreslení) a data skládal dvakrát. Pamatovaná sazba se zahodí i po jakékoli jiné sazbě
+mezitím, protože sazba mění prvkům sdílený stav (zmenšení). Test `PamatovanaSazbaTests`; vlastní
+plynulost zoomu test nevidí.
+
+## 2026-10-12 (7) - ⚡ náhled linkové tabulky přes víc stran až čtyřikrát rychlejší
+
+Tabulka spojů rozřezaná na víc stran se při kreslení každé strany skládala a kreslila celá a ořez
+z ní ukázal jen kousek. U městské linky (KV_DP linka 1: 205 spojů a 42 zastávek na směr, 7 stran)
+trvalo jedno překreslení náhledu 0,6-1 s a vyrobilo stovky MB krátkodobé paměti. Bloky mimo
+stranu se teď přeskočí ještě před skládáním řádků; výšky se berou tytéž, podle kterých engine láme
+stránky, a sčítají se po řádcích jako při kreslení, takže výstup je bit po bitu stejný (porovnáno
+PNG 35 stran MHD a AD). Linka 1073: 165-171 ms a 184 MB místo 580-990 ms a 482 MB. Měření
+`VykonNahleduNaostro` (ruční, `TD_VYKON=1`).
+
+## 2026-10-12 (6) - 🐛 výpadek spojení nenechá panel vlastností prázdný
+
+Panel vlastností prvku se načítá ze serveru. Když spojení při výběru prvku vypadlo (PL_POVED 12. 10.),
+uživatel dostal chybu a panel si přitom typ prvku zapamatoval, jako by se načetl - při dalším výběru
+prvku téhož typu se už nenačítal a zůstal prázdný až do výběru prvku jiného typu. Panel si teď typ
+pamatuje až po úspěšném načtení, takže další výběr to zkusí znovu, a při chybě ukáže jednodušší seznam
+vlastností, aby šlo s prvkem pracovat dál. Chyba se dál hlásí stejným oknem. Bez automatického testu:
+ovládací prvek nejde vytvořit mimo běžící aplikaci (sdílené ikony a texty).
+
+## 2026-10-12 (5) - 🐛 návrhář se nespustil bez práva zápisu do složky programu
+
+Při startu se zakládala složka šablon sekcí `section-templates` vedle programu. Program je u zákazníka
+často na síťovém disku, kam uživatel nemá právo zápisu (`\\srv\edison` u HO_CSAD 9. 10.), a návrhář
+pak spadl hned při spuštění (`UnauthorizedAccessException`). Složka teď vzniká až při prvním uložení
+šablony sekce; bez práva zápisu dostane uživatel hlášku jen tehdy. Test `SectionTemplateManagerTests`.
+
+## 2026-10-12 (4) - 🚌 linkový JŘ MHD: tabulka jako starý tisk (`B191c`)
+
+Porovnání se starým tiskem (`LinkovyJrMhdLegacyOracle`) teď kryje celou tabulku: časy po
+zastávkách, seznam zastávek s pásmem a značkami, rozdělení spojů do bloků po typech provozu
+a pořadí spojů. Našly se a opravily čtyři rozdíly v agendě `LinkovyJrMhd`:
+- **pořadí spojů** - starý tisk po seřazení podle výchozího času prohazuje sousedy, dokud časy
+  v každém řádku nerostou (od konce trasy), a čas po půlnoci bere jako ráno; spoje začínající
+  uprostřed trasy tak stojí podle společných zastávek, ne podle času výjezdu (KV_DP 1073: 1, 5, 7
+  místo 1, 7, 5),
+- **„jede jinudy" ve směru zpět** chybělo úplně - první a poslední zastávka spoje byly prohozené,
+- **„jede jinudy" za poslední zastávkou**, kudy spoj ještě jede mimo seznam zastávek, chybělo -
+  rozsah jízdy se bere z bodů trasy jako ve starém tisku (KV_DP 1438, 1520),
+- **název zastávky k datu platnosti linky** - datum šlo jako text místo data, takže se vybral jiný
+  název (KV_DP 1438: „KV Arena" místo „MATTONI Arena").
+Shoda na 27 linkách CB_DP a 38 linkách KV_DP; dvě linky KV_DP (1105, 1106) starý tisk nevytiskne
+vůbec (chyba starého modulu), naše agenda pro ně vrátí prázdný výstup. Neověřeno, protože na dev
+datech nejsou: příjezd a odjezd na jedné zastávce, poznámky z trasy u názvu zastávky. Test
+`LinkovyJrMhdTest` (7 linek, všechny kategorie).
+
+## 2026-10-12 (3) - 🐛 vývěsky MHD: chyběly automaticky přidělené negativní značky
+
+Zastávkový JŘ MHD u linky s auto-poznámkováním rozdílů platností nevytiskl negativní značky,
+které se přidělují spojům s ručně zadanou platností (a jejich řádky v poznámkách). Text omezení
+se počítal bez kroku `mkOmzFromOnlyTwoBitmaps`, který starý tisk dělá (`LinkyPrintFormatMHD.cls:458`),
+takže vyšel prázdný a spoj značku nedostal. Porovnání se starým tiskem (`MhdLegacyOracle`): CB_DP
+11350 poznámky 94 → 133 ze 133, 11018 chybějící značky 18/19/24/31 doplněné. Linky 1001-1006
+v dosavadní sadě tuhle cestu nemají, proto to žádný test nechytil; nové testy
+`TestParita11350AutoZnacky`, `TestPokryti11018AutoZnacky`. Nalezeno při `B191b`.
+
+## 2026-10-12 (2) - 🚌 linkový JŘ MHD: data jako starý tisk, volba směru (`B191b`)
+
+Agenda `LinkovyJrMhd` (zatím nezveřejněná) posílá data, jaká tiskl starý modul MHD:
+číslo spoje z dat místo interního ID, poznámky a atributy spojů (dřív se nečetly vůbec, čtení šlo
+o úroveň hlouběji, než pomocník vrací) jen ty určené pro knižní tisk, a negativní značky přidělené
+jako starý modul - z poznámky spoje, nebo při auto-poznámkování podle textu omezení z rozsahu firmy,
+jednou pro celou linku, aby měla značka v obou směrech stejné číslo. Text omezení byl dosud vždy
+prázdný: funkce kalendáře se volaly s jinými argumenty a chybu tiše polykal catch. Zastávky nesou
+číslo zastávky a označník a značky N/V/x/A z číselníku zastávek i z bodu trasy (dřív jen z číselníku).
+Volný text poznámky („A", „K") se v řádku platnosti kreslí písmem, ne piktogramem - nový klíč spoje
+`TEXTOVE_ZNACKY` (aditivní). Nový parametr **Směr pro tisk** (Oba / Tam / Zpět) u linkového AD
+i MHD; s jedním směrem se obousměrný tisk neuplatní. Doloženo porovnáním se starým tiskem
+(`LinkovyJrMhdLegacyOracle`, test `LinkovyJrMhdTest`): CB_DP 11350/11341/11354/11018 a KV_DP 1073
+bez rozdílu v číslech spojů, negativních značkách, značkách platnosti a legendě. Vědomá odchylka:
+značky zastávky jsou v legendě druh 7 jako u AD (starý MHD tisk druh 5). Test `TextoveZnackyTests`.
+
+## 2026-10-12 - 🔎 linkový JŘ MHD: rozbor proti AD a starému modulu (`B191a`)
+
+Bez změny tisku. Rozbor našel oracle starého tisku (`ALVA.MHD.LinkyPrintFormatJR.MakeData`, roadmapa
+do té doby uváděla jinou cestu) a tři chyby v datech agendy `LinkovyJrMhd`: číslo spoje je interní
+ID, poznámky a atributy spoje se nepřečtou nikdy (čtení o úroveň hlouběji, než pomocník vrací)
+a negativní značky jsou jen z pole spoje, kdežto starý modul je přiděluje. Agenda je skrytá, takže
+to zákazník nevidí; opravy jsou `B191b`. Testovací linky vybrala sonda `Tests/LinkovyJrMhdProbe`
+(CB_DP 11350/11341/11354/11018, KV_DP 1073). Detail analýza linkového JŘ `§18`.
+
 ## 2026-10-09 (4) - 🔀 rozdílový linkový JŘ - základ (`B192`)
 
 Nová agenda **Linkový JŘ / AD - rozdílový** (`LINKOVY_JR_AD_ROZDILOVY`, zatím nezveřejněná) tiskne

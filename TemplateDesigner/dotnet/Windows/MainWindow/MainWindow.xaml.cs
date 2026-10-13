@@ -138,7 +138,7 @@ public partial class MainWindow : Window
         SectionsSplitter.DragDelta += (_, _) => OrizniSirkuNahledu();
 
         _canvas        = new DesignerCanvas(_vm.State);
-        _previewCanvas = new PreviewCanvas(_vm.State);
+        _previewCanvas = new PreviewCanvas(_vm.State) { PamatovatSazbu = true };   // zapomíná v InvalidatePreview
         _previewCanvas.OverflowChanged = h => _vm?.NastavHlaseni(TemplateDesignerViewModel.ZdrojHlaseni.Preteceni, h);
 
         _previewCanvas.PocetStranSazbyChanged = pocet =>
@@ -154,7 +154,8 @@ public partial class MainWindow : Window
         // Wire SkiaSharp (must be code-behind - not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;
         skPreview.PaintSurface       += OnPreviewPaintSurface;
-        skPreview.SizeChanged        += (_, _) => InvalidatePreview();
+        // Změna velikosti plochy (zoom, okno) data ani šablonu nemění - jen překreslit.
+        skPreview.SizeChanged        += (_, _) => PrekresliNahled();
         skCanvas.MouseLeftButtonDown  += OnCanvasMouseDown;
         skCanvas.MouseMove            += OnCanvasMouseMove;
         skCanvas.MouseLeftButtonUp    += OnCanvasMouseUp;
@@ -675,7 +676,38 @@ public partial class MainWindow : Window
         var dpi = VisualTreeHelper.GetDpi(skPreview);
         skPreview.Width  = NaCelePixely(_previewCanvas.ComputePageWidthPx(zoom), dpi.DpiScaleX);
         skPreview.Height = NaCelePixely(
-            _previewCanvas.CalculatePageHeightPx(zoom, _vm.BuildPreviewMockData()) + 40f, dpi.DpiScaleY);
+            _previewCanvas.CalculatePageHeightPx(zoom, NahledData()) + 40f, dpi.DpiScaleY);
+    }
+
+    // Data náhledu se skládají jednou za `InvalidatePreview` (změna šablony, dat, strany, parametrů).
+    // Dřív se skládala při každém výpočtu velikosti i kreslení - a tabulka spojů, která si přečtená
+    // data pamatuje podle objektu, je pak četla znovu a sazba se nedala pamatovat.
+    private DataContext? _nahledData;
+    private bool _nahledDataPlatna;
+
+    private DataContext? NahledData()
+    {
+        if (!_nahledDataPlatna)
+        {
+            _nahledData = _vm!.BuildPreviewMockData();
+            _nahledDataPlatna = true;
+        }
+        return _nahledData;
+    }
+
+    // Zoom kolečkem: během otáčení se jen zvětšuje hotový obraz (okamžitě), ostrý náhled se
+    // nakreslí až po krátké pauze. Každý krok jinak znamenal sazbu a kreslení všech stran
+    // (městská linka se 7 stranami: 0,3-0,4 s na krok, nález Jan 12. 10.).
+    private static readonly TimeSpan ZoomPauza = TimeSpan.FromMilliseconds(200);
+    private System.Windows.Threading.DispatcherTimer? _zoomCasovac;
+    private float? _zoomVykresleny;   // zoom, ve kterém je nakreslený zvětšovaný obraz; null = gesto neběží
+
+    private void DokonciZoomGesto()
+    {
+        _zoomCasovac?.Stop();
+        _zoomVykresleny = null;
+        skPreview.LayoutTransform = Transform.Identity;
+        PrekresliNahled();
     }
 
     /// <summary>Rozměr plochy Skia zaokrouhlený nahoru na celý pixel obrazovky.</summary>
@@ -702,7 +734,18 @@ public partial class MainWindow : Window
         float oldZoom = ZoomLevels[Math.Clamp(CmbPreviewZoom.SelectedIndex, 0, ZoomLevels.Length - 1)];
         float scale = ZoomLevels[newIdx] / oldZoom;
 
-        CmbPreviewZoom.SelectedIndex = newIdx;   // SelectionChanged → InvalidatePreview → UpdatePreviewSize
+        // Gesto: obraz nakreslený ve výchozím zoomu se jen zvětší, SelectionChanged nekreslí.
+        _zoomVykresleny ??= oldZoom;
+        CmbPreviewZoom.SelectedIndex = newIdx;
+        float pomer = ZoomLevels[newIdx] / _zoomVykresleny.Value;
+        skPreview.LayoutTransform = new ScaleTransform(pomer, pomer);
+        if (_zoomCasovac is null)
+        {
+            _zoomCasovac = new System.Windows.Threading.DispatcherTimer { Interval = ZoomPauza };
+            _zoomCasovac.Tick += (_, _) => DokonciZoomGesto();
+        }
+        _zoomCasovac.Stop();
+        _zoomCasovac.Start();
 
         Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
         {
@@ -714,7 +757,7 @@ public partial class MainWindow : Window
     private void CmbPreviewZoom_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_vm is null || _previewCanvas is null) return;
-        InvalidatePreview();
+        PrekresliNahled();   // zoom data ani šablonu nemění; během gesta kolečkem nekreslí
     }
 
     /// <summary>„1:1" - skutečná velikost 100 % (designer i náhled). Tlačítko i Ctrl+1.</summary>
@@ -730,9 +773,18 @@ public partial class MainWindow : Window
         if (CmbPreviewZoom is not null) CmbPreviewZoom.SelectedIndex = defaultIdx;
     }
 
+    /// <summary>Šablona, data, strana nebo parametry se změnily - složit data a sazbu znovu a překreslit.</summary>
     private void InvalidatePreview()
     {
-        if (BtnPreview?.IsChecked != true) return;
+        _nahledDataPlatna = false;
+        _previewCanvas?.ZapomenSazbu();
+        PrekresliNahled();
+    }
+
+    /// <summary>Překreslit náhled se stejnými daty i sazbou (zoom, velikost plochy).</summary>
+    private void PrekresliNahled()
+    {
+        if (BtnPreview?.IsChecked != true || _zoomVykresleny is not null) return;   // gesto dokreslí po pauze
         UpdatePreviewSize();
         skPreview.InvalidateVisual();
     }
@@ -744,7 +796,7 @@ public partial class MainWindow : Window
         SKSurface surface = args.Surface;
         float w = (float)args.Info.Width;
         float h = (float)args.Info.Height;
-        var previewData = _vm.BuildPreviewMockData();
+        var previewData = NahledData();
         _vm.State.CurrentPreviewData = previewData;
         _previewCanvas.Render(surface.Canvas, w, h, previewData);
     }
@@ -2215,8 +2267,19 @@ public partial class MainWindow : Window
                     _                  => null,
                 };
                 InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : null;
-                InlineElementForm.ShowElement(selected[0], panelSchema);
-                ShowInlineFormPanel(true);
+                try
+                {
+                    InlineElementForm.ShowElement(selected[0], panelSchema);
+                    ShowInlineFormPanel(true);
+                }
+                catch (Exception ex)
+                {
+                    // Formulář se načítá ze serveru; při výpadku spojení zůstane panel u jednoduchého
+                    // seznamu vlastností, ať jde s prvkem pracovat dál (PL_POVED 12. 10.).
+                    InlinePropertiesPanel.ShowDescriptors(descriptors);
+                    ShowInlineFormPanel(false);
+                    _vm.PopupDisplayer.Error(ex);
+                }
             }
             else
             {

@@ -390,6 +390,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // do 31. 8. (`L12`).
     d arr.%Push(pTvar)     // Obecné
     d arr.%Push(pMhd)
+    d arr.%Push(..ParametrSmeruTisku())
     d arr.%Push(pObou)
     d arr.%Push(pVyl)
     d arr.%Push(pStr)
@@ -403,6 +404,33 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
+}
+
+/// Směr pro tisk (legacy MHD `arr,11` „SmerID#", Jan 12. 10.): které směry linky se vytisknou.
+/// Jediná definice pro AD i MHD variantu - musí se v obou jmenovat a chovat stejně.
+/// ⚠️ Popisky voleb jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
+ClassMethod ParametrSmeruTisku() As %DynamicObject
+{
+    s pSmer = ##class(%DynamicObject).%New()
+    s pSmer.name         = "SMER_TISKU"
+    s pSmer.label        = "Směr pro tisk"
+    s pSmer.type         = "enum"
+    // „Obecné": rozhoduje o složení celé sestavy (které stránky vyjdou), ne o jednom prvku.
+    s pSmer.group        = "Obecné"
+    s pSmer.serverSide   = 1
+    s pSmer.defaultValue = "Oba"
+    s pSmer.description  = "Které směry linky se vytisknou. S jedním směrem se obousměrný tisk neuplatní."
+    s opts = ##class(%DynamicArray).%New()
+    d opts.%Push("Oba"), opts.%Push("Tam"), opts.%Push("Zpět")
+    s pSmer.options = opts
+    q pSmer
+}
+
+/// Hodnota parametru `SMER_TISKU` → směry k tisku ("T,Z" / "T" / "Z"). Neznámá hodnota (i starší
+/// klient, který parametr nezná) = oba směry, tedy chování před zavedením volby.
+ClassMethod SmeryKTisku(volba As %String) As %String
+{
+    q $case(volba, "Tam":"T", "Zpět":"Z", :"T,Z")
 }
 
 /// Třístavová volba „Automaticky (dle linky) / Tisknout / Netisknout" → 1 tiskne, 0 netiskne.
@@ -530,7 +558,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s obousmerne = ($zcvt($g(^||ML("IN","OBOUSMERNY_TISK")),"L") = "true")
         s sTurnusy = ($zcvt($g(^||ML("IN","TURNUSY_KE_SPOJUM")),"L") = "true")
         s vylepy = ($zcvt($g(^||ML("IN","STRANKA_PRO_ZASTAVKU")),"L") = "true")
-        i obousmerne {
+        s smery = ..SmeryKTisku($g(^||ML("IN","SMER_TISKU")))
+        i obousmerne && (smery = "T,Z") {
             // Pořadí zastávek se bere ze směru „tam"; opačný směr se na tytéž řádky zarovná podle
             // pořadí zastávky. Linka obsluhovaná jen jedním směrem tím vyjde jako dnes - druhá
             // strana prostě nemá sloupce a prvek ji nenakreslí.
@@ -541,7 +570,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
             }
         }
         else {
-            f smer = "T", "Z" {
+            f si = 1:1:$l(smery, ",") {
+                s smer = $p(smery, ",", si)
                 s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 0, sTurnusy, volbaZony)
                 continue:page=""
                 i vylepy { d ..VypisVylepy(page, smer, 0) }

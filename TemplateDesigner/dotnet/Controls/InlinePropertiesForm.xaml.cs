@@ -77,11 +77,15 @@ public partial class InlinePropertiesForm : UserControl
         _target = target;
         if (cacheClass != _currentCacheClass)
         {
-            _currentCacheClass = cacheClass;
+            // Typ si panel pamatuje až po úspěšném načtení. Když načtení ze serveru selže (výpadek
+            // sítě), musí ho další výběr zkusit znovu - do 12. 10. zůstal panel pro ten typ prvku
+            // prázdný až do výběru jiného typu (PL_POVED 12. 10.).
+            _currentCacheClass = null;
             TheForm.CacheClass = cacheClass;
             // CacheClass je plain property (Init jinak jede jen na Loaded) → reload schématu ručně.
             // Init() po dokončení vyvolá SchemaLoaded → OnInitialized → Prefill z cíle.
             TheForm.Init();
+            _currentCacheClass = cacheClass;
         }
         else
         {

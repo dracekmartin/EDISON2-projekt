@@ -98,8 +98,32 @@ public class PreviewCanvas
     private LayoutResult Layout(DataContext? data, Template template)
     {
         DocumentDefaults.Style = template.DefaultTextStyle;
-        return _engine.Layout(template, data);
+        if (PamatovatSazbu && _pamatovanaSazba is { } p && ReferenceEquals(p.Data, data)
+            && ReferenceEquals(p.Sablona, template) && p.Sazba == PageLayoutEngine.PocetSazeb)
+            return p.Vysledek;
+        var vysledek = _engine.Layout(template, data);
+        if (PamatovatSazbu) _pamatovanaSazba = (data, template, PageLayoutEngine.PocetSazeb, vysledek);
+        return vysledek;
     }
+
+    /// <summary>
+    /// Pamatovat si poslední sazbu pro tatáž data a šablonu - jen náhled návrháře, kde jeden krok
+    /// zoomu sázel stránky třikrát (výška plochy, její změna, kreslení).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Změnu <b>obsahu</b> šablony sazba nepozná (objekt je týž), proto ji hostitel musí ohlásit
+    /// <see cref="ZapomenSazbu"/> - náhled návrháře to dělá v každém `InvalidatePreview`. Jiná sazba
+    /// mezitím (export, jiná strana dat) pamatovanou zneplatní sama: mění prvkům sdílený stav.
+    /// </remarks>
+    public bool PamatovatSazbu { get; set; }
+
+    private (DataContext? Data, Template Sablona, int Sazba, LayoutResult Vysledek)? _pamatovanaSazba;
+
+    /// <summary>Zahodí pamatovanou sazbu - šablona nebo data se změnily.</summary>
+    public void ZapomenSazbu() => _pamatovanaSazba = null;
+
+    /// <summary>Sazba, jak ji vidí náhled (pro testy pamatování).</summary>
+    internal LayoutResult SazbaProTest(DataContext? data) => Layout(data);
 
     /// <summary>Výška všech stránek v px při daném zoomu - pro nastavení výšky SKElement.</summary>
     public float CalculatePageHeightPx(float zoom, DataContext? data = null)

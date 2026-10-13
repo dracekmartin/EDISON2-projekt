@@ -577,6 +577,10 @@ ClassMethod PorovnatBitmapyPlatnosti(ByRef sys As %String, SpojID As %String, Ty
     s arri("dta",4) = bitmapTypuProvozu
     s isok = ##class(ALVA.MHD.KalendarFce).MakeRozpisTplProTypProvozuID(IdFa,dataDB,TypProvozuID,.arri)
     i 'isok q 0
+    // Omezení ze dvou bitmap (legacy LinkyPrintFormatMHD :458). Do 12. 10. tu chybělo, takže
+    // text omezení vyšel prázdný a automaticky přidělené negativní značky ve vývěskách chyběly.
+    s chyba = $$mkOmzFromOnlyTwoBitmaps^JRapi(IdFa,dataDB,.arri,.arr)
+    i +chyba q 0
 
     s tydenniPlatnost = $g(arr("dta",1))
 
