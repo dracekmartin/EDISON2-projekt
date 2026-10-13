@@ -2,7 +2,7 @@
   "version": "1.11.0",
   "id": "5f0c2a8e-3b1d-4e57-9a62-7c41d2b9e3a1",
   "name": "Demo QR - vyhledávač pro cestující (zastávkový JŘ AD)",
-  "description": "Ukázka na demo 14. 10.: vývěska zastávkového JŘ AD pro každý sloupek zvlášť s QR kódem na vyhledávač pro cestující (ISYCloud, lokálně http://localhost:5183/qr-vyhledavac/<CIS číslo zastávky>?sloupek=<sloupek>). Cestující zadá cíl a dozví se, kdy a z kterého sloupku tam přímo jede. QR se schová, když zastávka nemá CIS číslo.",
+  "description": "Ukázka na demo 14. 10.: vývěska zastávkového JŘ AD pro každý sloupek zvlášť s QR kódem na vyhledávač pro cestující (ISYCloud, https://isycloud.cz/qr-vyhledavac/<CIS číslo zastávky>?sloupek=<sloupek>). Cestující zadá cíl a dozví se, kdy a z kterého sloupku tam přímo jede. QR se schová, když zastávka nemá CIS číslo.",
   "pageSize": {
     "width": 210,
     "height": 148,
@@ -353,7 +353,7 @@
         },
         {
           "type": "BarcodeElement",
-          "content": "http://localhost:5183/qr-vyhledavac/{CISLO_ZASTAVKA_CIS}?sloupek={SLOUPEK}",
+          "content": "https://isycloud.cz/qr-vyhledavac/{CISLO_ZASTAVKA_CIS}?sloupek={SLOUPEK}",
           "barcodeType": "QR",
           "foreColor": "#FF000000",
           "id": "b5e724fc-ba37-4dde-9d24-127bed8817d3",
