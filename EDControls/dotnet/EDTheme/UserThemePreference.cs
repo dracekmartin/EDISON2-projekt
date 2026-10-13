@@ -13,7 +13,7 @@ namespace EDControls.EDTheme;
 /// Storage je úmyslně v "common" (ne app-specific), aby dark mode nebyl vázaný na jednu aplikaci.
 /// Registruje se přes <see cref="ThemeService.Initialize"/>.
 /// </summary>
-public class UserThemePreference
+internal class UserThemePreference
 {
     /// <summary>Tmavý režim UI. Default false = světlý.</summary>
     public bool DarkMode { get; set; }

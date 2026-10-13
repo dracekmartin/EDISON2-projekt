@@ -13,7 +13,7 @@ namespace EDControls.EDFilter;
 /// Pojmenované varianty filtru přibudou jako sourozenecké klíče, čtení
 /// <see cref="Values"/> se tím nemění.
 /// </summary>
-public sealed class EDFilterPrefs
+internal sealed class EDFilterPrefs
 {
     /// <summary>Verze JSON schématu - informativní, čtení je best-effort.</summary>
     [JsonPropertyName("version")]
@@ -28,7 +28,7 @@ public sealed class EDFilterPrefs
 /// JSON serializace pro <see cref="EDFilterPrefs"/>. Best-effort čtení - neznámá pole
 /// se ignorují, malformed JSON vrátí null.
 /// </summary>
-public static class EDFilterPrefsSerializer
+internal static class EDFilterPrefsSerializer
 {
     private static readonly JsonSerializerOptions Options = new()
     {

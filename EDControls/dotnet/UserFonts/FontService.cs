@@ -107,7 +107,7 @@ public static class FontService
     /// Volá se po startupu a po user change (toggle Apply font / Select font). Idempotentní -
     /// opakované volání se stejnou hodnotou je no-op.
     /// </summary>
-    public static void Apply(UserFontPreference prefs)
+    internal static void Apply(UserFontPreference prefs)
     {
         var resources = Application.Current.Resources;
         var settings = ComputeFromPrefs(prefs);

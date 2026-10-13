@@ -8,13 +8,13 @@ namespace EDControls.UserFonts;
 /// m-line WPF nástroji - uložen v <c>%APPDATA%\m-line\common\font.json</c>.
 /// Při změně shellem se přes <see cref="FileSystemWatcher"/> propaguje do otevřených
 /// procesů (TemplateDesigner atd.) - viz <see cref="Changed"/> event. Mechanismus
-/// (Load/Save/watcher) drží <see cref="SharedJsonPreference{T}"/>, tahle třída je jeho veřejný tvar.
+/// (Load/Save/watcher) drží <see cref="SharedJsonPreference{T}"/>, tahle třída je jeho tvar pro font.
 ///
 /// Storage je úmyslně v "common" složce (ne EDISONMAIN2-specific), aby preference
 /// nezůstala vázaná na konkrétní aplikaci. Nová m-line apka nic z toho nevolá přímo -
 /// stačí <c>EDAppearance.Initialize(app)</c>.
 /// </summary>
-public class UserFontPreference
+internal class UserFontPreference
 {
     /// <summary>Pokud true, <see cref="FontFamily"/> a <see cref="FontSize"/> se aplikují přes <see cref="FontService"/>.</summary>
     public bool FontApplied { get; set; }

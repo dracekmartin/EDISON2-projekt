@@ -9,7 +9,7 @@ namespace EDControls.EDInputForm
         ProgrammerHidden
     }
 
-    public static class ItemVisibilityWire
+    internal static class ItemVisibilityWire
     {
         private const string VisibleWire = "0";
         private const string CollapsedWire = "1";

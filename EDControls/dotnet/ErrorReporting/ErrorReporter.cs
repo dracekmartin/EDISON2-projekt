@@ -1,18 +1,11 @@
 namespace EDControls.ErrorReporting;
 
 /// <summary>
-/// Odeslání hlášení na <c>podpora.m-line.cz/api/telemetry/ingest</c>. Best-effort:
-/// nikdy nehází a nikdy neblokuje UI vlákno - selhání hlášení nesmí být druhá chyba
-/// nad tou první. Neodeslané hlášení zachytí <see cref="ErrorFallbackLog"/>; uživateli
-/// navíc zbývá tlačítko „Uložit do souboru" v chybovém dialogu. Odesílá výchozí
-/// <see cref="ErrorReportingPipeline"/>.
+/// Adresa, klíč a limit dávky ingest endpointu <c>podpora.m-line.cz/api/telemetry/ingest</c>. Posílá na něj
+/// <see cref="ErrorReportingPipeline.Send(ErrorReport)"/> na pozadí, neodeslané dávky zachytí <see cref="ErrorFallbackLog"/>.
 /// </summary>
-public static class ErrorReporter
+internal static class ErrorReporter
 {
-    // Záměrně static readonly, ne const - stejný důvod jako u SupportActions.WidgetKey:
-    // const se inlinuje do konzumenta, takže samostatně nasazená EDControls.dll by hodnotu
-    // nezměnila exe, které se nepřebuildilo.
-
     /// <summary>Ingest endpoint telemetrie (přijímá jeden záznam i dávku do 100).</summary>
     public static readonly string IngestUrl = "https://podpora.m-line.cz/api/telemetry/ingest";
 
@@ -25,10 +18,4 @@ public static class ErrorReporter
 
     /// <summary>Ingest odmítne dávku nad 100 záznamů (<c>MAX_BATCH_SIZE</c>).</summary>
     internal const int MaxBatchSize = 100;
-
-    /// <summary>Odešle hlášení na pozadí. Vrací se okamžitě, výsledek nikoho nezajímá.</summary>
-    public static void Send(ErrorReport report) => ErrorReports.Pipeline.Send(report);
-
-    /// <summary>Odešle dávku na pozadí. Delší než limit se rozdělí na víc requestů.</summary>
-    public static void Send(IReadOnlyList<ErrorReport> reports) => ErrorReports.Pipeline.Send(reports);
 }

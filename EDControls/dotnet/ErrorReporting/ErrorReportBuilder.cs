@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 namespace EDControls.ErrorReporting;
 
 /// <summary>Kontext hlášení - prosté hodnoty, ať jde jádro testovat bez MLRestu a bez WPF.</summary>
-public sealed record ErrorContext
+internal sealed record ErrorContext
 {
     /// <summary>
     /// Identita aplikace (<c>AppIdentity.Prefix</c>): <c>EDISON2</c> / <c>TD</c>, před
@@ -30,7 +30,7 @@ public sealed record ErrorContext
 }
 
 /// <summary>Překlad výjimky a kontextu na <see cref="ErrorReport"/>. Čistá funkce, bez I/O.</summary>
-public static class ErrorReportBuilder
+internal static class ErrorReportBuilder
 {
     /// <summary>
     /// Klíče v <c>data</c>, kterými heartbeat hlásí počty jednotek. Server podle nich pozná

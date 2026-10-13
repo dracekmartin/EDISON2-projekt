@@ -32,7 +32,7 @@ namespace EDControls.EDInputForm
         Image
     }
 
-    public static class FieldTypeWire
+    internal static class FieldTypeWire
     {
         private const string TextWire = "TEXT";
         private const string NumberWire = "NUMBER";

@@ -11,7 +11,7 @@ namespace EDControls.ErrorReporting;
 /// takže cizí aplikace se do přílohy nemají jak dostat - ale HWND obsah (WebView2 miniaplikace)
 /// zůstane prázdný, snímek proto nikdy není přesně to, co uživatel viděl.
 /// </summary>
-public static class WindowSnapshot
+internal static class WindowSnapshot
 {
     /// <summary>Delší strana snímku v pixelech - drží přílohu v rozumné velikosti.</summary>
     private const double MaxDimension = 1600;

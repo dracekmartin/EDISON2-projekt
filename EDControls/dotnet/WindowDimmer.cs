@@ -14,7 +14,7 @@ namespace EDControls;
 /// HWND obsah (WebView2 widgety) závoj kvůli airspace nepokryje - záměr: zůstávají při čekání
 /// čitelné (kartu „Akce probíhá" nad nimi řeší owned okno, viz EDActionInProgress).
 /// </summary>
-public static class WindowDimmer
+internal static class WindowDimmer
 {
     /// <summary>Single source of truth pro závoj - míra ztmavení se mění na jednom místě.</summary>
     public static readonly SolidColorBrush TintBrush = CreateTint();

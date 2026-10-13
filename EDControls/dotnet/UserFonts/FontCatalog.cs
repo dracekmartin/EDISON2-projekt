@@ -10,7 +10,7 @@ namespace EDControls.UserFonts;
 /// a uživatel, který si takový font nastaví, přijde o čitelné UI včetně cesty zpátky.
 /// Logika je oddělená od WPF, aby šla testovat bez <c>Application</c>.
 /// </summary>
-public static class FontCatalog
+internal static class FontCatalog
 {
     /// <summary>Výchozí rodina - shodná s tokenem <c>EDTheme.FontFamily</c>, drží ji i legacy EDISON.</summary>
     public const string DefaultFamily = "Segoe UI";

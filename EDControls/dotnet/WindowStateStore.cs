@@ -56,11 +56,11 @@ public sealed class ReadOnlyWindowStateStore(IWindowStateStore inner) : IWindowS
 /// a dostává prefix <c>EDServices.FormIdPrefix</c> (shell <c>"EDISON2."</c>) - odděluje od starých
 /// numerických IDs z <c>EDISFormEnum</c> (tam VB moduly ukládají vlastní state).
 /// </remarks>
-public sealed class CacheWindowStateStore(string formId, Func<IMLRest?> mlRestSource) : IWindowStateStore
+internal sealed class CacheWindowStateStore(string formId, Func<IMLRest?> mlRestSource) : IWindowStateStore
 {
     /// <summary>
-    /// Session ze sdíleného <c>EDServices.Current</c>, čtená až při Load/Save. Veřejné API pro starší
-    /// konzumenty; okno s ViewModelem a testy předávají zdroj druhým konstruktorem.
+    /// Session ze sdíleného <c>EDServices.Current</c>, čtená až při Load/Save. Pro veřejné
+    /// <see cref="WindowStatePersistence.Attach(System.Windows.Window, string)"/>; okno s ViewModelem a testy předávají zdroj druhým konstruktorem.
     /// </summary>
     public CacheWindowStateStore(string formId) : this(formId, () => EDServices.Current.MLRest) { }
 

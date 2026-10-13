@@ -7,7 +7,7 @@ namespace EDControls.SessionState;
 /// konfigurovat ani co selhat (žádný transport), proto na rozdíl od UserPrefs nemá no-op
 /// variantu a je rovnou defaultem v <c>EDServices</c>.
 /// </summary>
-public sealed class InMemorySessionState : ISessionState
+internal sealed class InMemorySessionState : ISessionState
 {
     private readonly ConcurrentDictionary<(string Scope, string Key), string> _values = new();
 

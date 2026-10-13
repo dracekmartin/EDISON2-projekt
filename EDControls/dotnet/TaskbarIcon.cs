@@ -15,7 +15,7 @@ namespace EDControls;
 /// a výchozí ikona zůstane, dokud se nezmění titulek nebo ikona. Registruje se z
 /// <see cref="EDAppearance.Initialize"/> jako class handler na <c>Window.Loaded</c>.
 /// </summary>
-public static class TaskbarIcon
+internal static class TaskbarIcon
 {
     private const int WM_GETICON = 0x007F;
     private const int ICON_SMALL = 0;

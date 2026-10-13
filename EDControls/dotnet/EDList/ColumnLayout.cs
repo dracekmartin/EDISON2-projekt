@@ -9,7 +9,7 @@ namespace EDControls.EDList;
 /// <see cref="UserPrefs.IUserPrefsService"/> jako JSON blob pod klíčem
 /// (scope="EDControls.EDList", key=EDList.HostId).
 /// </summary>
-public sealed class ColumnLayout
+internal sealed class ColumnLayout
 {
     /// <summary>Verze JSON schématu - informativní, čtení je best-effort.</summary>
     [JsonPropertyName("version")]
@@ -23,7 +23,7 @@ public sealed class ColumnLayout
     public List<SortPref>? Sort { get; set; }
 }
 
-public sealed class ColumnPref
+internal sealed class ColumnPref
 {
     [JsonPropertyName("key")]
     public string Key { get; set; } = "";
@@ -37,7 +37,7 @@ public sealed class ColumnPref
     public int DisplayIndex { get; set; }
 }
 
-public sealed class SortPref
+internal sealed class SortPref
 {
     [JsonPropertyName("key")]
     public string Key { get; set; } = "";
@@ -51,7 +51,7 @@ public sealed class SortPref
 /// JSON serializace pro <see cref="ColumnLayout"/>. Best-effort čtení - neznámá pole
 /// se ignorují, malformed JSON vrátí null.
 /// </summary>
-public static class ColumnLayoutSerializer
+internal static class ColumnLayoutSerializer
 {
     private static readonly JsonSerializerOptions Options = new()
     {

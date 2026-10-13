@@ -3,13 +3,13 @@ using System.Text.Json.Nodes;
 namespace EDControls.ErrorReporting;
 
 /// <summary>Příloha hlášení (snímek okna). Base64 v <see cref="Data"/> - tak to chce ingest API.</summary>
-public sealed record ErrorAttachment(string FileName, string MimeType, string Data);
+internal sealed record ErrorAttachment(string FileName, string MimeType, string Data);
 
 /// <summary>
 /// Jedno hlášení chyby pro <c>podpora.m-line.cz/api/telemetry/ingest</c>. Čistý překlad
 /// výjimky na payload - bez WPF a bez HTTP, aby šel testovat přímo.
 /// </summary>
-public sealed class ErrorReport
+internal sealed class ErrorReport
 {
     /// <summary>Fáze hlášení: automatický záznam vs. dobrovolné doplnění od uživatele.</summary>
     public const string StageAuto = "auto";

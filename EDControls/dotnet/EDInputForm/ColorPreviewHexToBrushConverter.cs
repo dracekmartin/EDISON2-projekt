@@ -9,7 +9,7 @@ namespace EDControls.EDInputForm;
 /// Converter pro barevný náhled u Color pole - hex `"#AARRGGBB"` (<see cref="ColorValue.TryParseHex"/>,
 /// totéž co validace pole) na <see cref="SolidColorBrush"/>. Neplatný / null input → transparent brush.
 /// </summary>
-public class ColorPreviewHexToBrushConverter : IValueConverter
+internal class ColorPreviewHexToBrushConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {

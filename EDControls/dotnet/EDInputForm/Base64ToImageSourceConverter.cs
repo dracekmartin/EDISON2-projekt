@@ -11,7 +11,7 @@ namespace EDControls.EDInputForm;
 /// <see cref="BitmapImage"/>. Null / prázdný / neplatný input → null (Image se nezobrazí).
 /// Jednosměrný. Obrázek se načítá celý do paměti (CacheOption.OnLoad), aby se neuzamkl stream.
 /// </summary>
-public class Base64ToImageSourceConverter : IValueConverter
+internal class Base64ToImageSourceConverter : IValueConverter
 {
     public object? Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {

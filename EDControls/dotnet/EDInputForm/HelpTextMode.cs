@@ -6,7 +6,7 @@ namespace EDControls.EDInputForm
         Column
     }
 
-    public static class HelpTextModeWire
+    internal static class HelpTextModeWire
     {
         private const string TooltipWire = "tooltip";
         private const string ColumnWire = "column";

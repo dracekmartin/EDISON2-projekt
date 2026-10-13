@@ -9,7 +9,7 @@ namespace EDControls;
 /// <summary>
 /// JSON preference v souboru, který čte a píše víc procesů najednou (shell, TemplateDesigner):
 /// Load, Save a <see cref="FileSystemWatcher"/>, který po zápisu souboru znovu načte
-/// <see cref="Current"/> a vyvolá <see cref="Changed"/>. Veřejné API nad ní drží tenké wrappery
+/// <see cref="Current"/> a vyvolá <see cref="Changed"/>. Nad ní stojí tenké wrappery
 /// <c>UserFontPreference</c> (font.json) a <c>UserThemePreference</c> (theme.json).
 /// </summary>
 internal sealed class SharedJsonPreference<T> : IDisposable where T : class, new()

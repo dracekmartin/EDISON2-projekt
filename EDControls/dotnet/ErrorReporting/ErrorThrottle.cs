@@ -1,7 +1,7 @@
 namespace EDControls.ErrorReporting;
 
 /// <summary>Co se má s chybou stát: poslat hned, jen započítat, nebo poslat souhrn opakování.</summary>
-public enum ThrottleAction
+internal enum ThrottleAction
 {
     /// <summary>První výskyt v okně - poslat.</summary>
     Send,
@@ -11,7 +11,7 @@ public enum ThrottleAction
     SendSummary,
 }
 
-public readonly record struct ThrottleDecision(ThrottleAction Action, int RepeatCount);
+internal readonly record struct ThrottleDecision(ThrottleAction Action, int RepeatCount);
 
 /// <summary>
 /// Deduplikace hlášení. Bez ní je automatické odesílání zahlcení vlastní podpory: chyba
@@ -19,7 +19,7 @@ public readonly record struct ThrottleDecision(ThrottleAction Action, int Repeat
 /// vědomě nemáme, takže projde i běžný provozní stav typu <c>Lock exist failed!</c>.
 /// Čas se předává zvenčí, aby šlo testovat bez čekání.
 /// </summary>
-public sealed class ErrorThrottle
+internal sealed class ErrorThrottle
 {
     public const int DefaultMaxReports = 50;
     private static readonly TimeSpan DefaultWindow = TimeSpan.FromMinutes(5);

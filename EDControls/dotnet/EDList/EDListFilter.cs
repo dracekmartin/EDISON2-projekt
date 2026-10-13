@@ -4,7 +4,7 @@ namespace EDControls.EDList;
 /// Stateless helper pro client-side filter EDList řádků. Substring match bez ohledu na velikost
 /// písmen a diakritiku (stejně jako hledání v EDInputFormu) napříč zadanými klíči sloupců.
 /// </summary>
-public static class EDListFilter
+internal static class EDListFilter
 {
     /// <summary>
     /// Vrátí true pokud řádek odpovídá search textu - alespoň jeden ze zadaných klíčů obsahuje
