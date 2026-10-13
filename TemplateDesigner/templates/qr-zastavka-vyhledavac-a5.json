@@ -1,0 +1,253 @@
+{
+  "version": "1.11.0",
+  "id": "3c1e0a10-0001-4a5b-9c01-0000000000a0",
+  "name": "QR na zastávku - vyhledávač pro cestující (A5 na výšku)",
+  "description": "Jen QR kód na zastávku místo papírového jízdního řádu: pro každý sloupek jeden list A5 s názvem zastávky, číslem a směrem sloupku a QR kódem na vyhledávač pro cestující (https://isycloud.cz/qr-vyhledavac/<CIS číslo zastávky>?sloupek=<sloupek>). Kód se nemění, jízdní řády za ním jsou vždy aktuální. Tiskne se po linkách (agenda zastávkového JŘ), stejný sloupek na více linkách vyjde vícekrát. QR se schová u zastávky bez CIS čísla.",
+  "pageSize": {
+    "width": 148,
+    "height": 210,
+    "marginTop": 8,
+    "marginBottom": 8,
+    "marginLeft": 8,
+    "marginRight": 8
+  },
+  "sections": [
+    {
+      "id": "3c1e0a10-0001-4a5b-9c01-0000000000b0",
+      "name": "QR zastávky",
+      "designerHeight": 194,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "{POPIS_ZASTAVKA}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 20,
+            "bold": true,
+            "hAlign": "Center",
+            "vAlign": "Middle"
+          },
+          "wordWrap": true,
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000001",
+          "x": 0,
+          "y": 0,
+          "width": 132,
+          "height": 14,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Sloupek {SLOUPEK} · {SLOUPEK_POPIS}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 11,
+            "bold": false,
+            "hAlign": "Center",
+            "vAlign": "Middle"
+          },
+          "wordWrap": true,
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000002",
+          "x": 0,
+          "y": 14,
+          "width": 132,
+          "height": 7,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0,
+          "visibilityExpression": "{SLOUPEK}"
+        },
+        {
+          "type": "TextElement",
+          "text": "Kam odsud pojedete?",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 18,
+            "bold": true,
+            "hAlign": "Center",
+            "vAlign": "Middle"
+          },
+          "wordWrap": true,
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000003",
+          "x": 0,
+          "y": 26,
+          "width": 132,
+          "height": 10,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}"
+        },
+        {
+          "type": "TextElement",
+          "text": "Načtěte QR kód telefonem a zadejte cíl cesty.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 11,
+            "bold": false,
+            "hAlign": "Center",
+            "vAlign": "Middle"
+          },
+          "wordWrap": true,
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000004",
+          "x": 0,
+          "y": 36,
+          "width": 132,
+          "height": 7,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}"
+        },
+        {
+          "type": "BarcodeElement",
+          "content": "https://isycloud.cz/qr-vyhledavac/{CISLO_ZASTAVKA_CIS}?sloupek={SLOUPEK}",
+          "barcodeType": "QR",
+          "foreColor": "#FF000000",
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000005",
+          "x": 21,
+          "y": 46,
+          "width": 90,
+          "height": 90,
+          "zIndex": 1,
+          "isLocked": false,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}",
+          "backgroundColor": "#FFFFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Where to? Scan the code and enter your destination.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 9,
+            "bold": false,
+            "hAlign": "Center",
+            "vAlign": "Middle",
+            "italic": true
+          },
+          "wordWrap": true,
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000006",
+          "x": 0,
+          "y": 139,
+          "width": 132,
+          "height": 5,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}"
+        },
+        {
+          "type": "TextElement",
+          "text": "Wohin? Code scannen und Ziel eingeben.  ·  Dokąd? Zeskanuj kod i wpisz cel.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 9,
+            "bold": false,
+            "hAlign": "Center",
+            "vAlign": "Middle",
+            "italic": true
+          },
+          "wordWrap": true,
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000007",
+          "x": 0,
+          "y": 144,
+          "width": 132,
+          "height": 5,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}"
+        },
+        {
+          "type": "TextElement",
+          "text": "Odjezdy všech linek z této zastávky podle platného jízdního řádu. Kód se nemění, jízdní řády v něm jsou vždy aktuální.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 9,
+            "bold": false,
+            "hAlign": "Center",
+            "vAlign": "Middle"
+          },
+          "wordWrap": true,
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000008",
+          "x": 0,
+          "y": 155,
+          "width": 132,
+          "height": 12,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}"
+        },
+        {
+          "type": "TextElement",
+          "text": "isycloud.cz/qr-vyhledavac/{CISLO_ZASTAVKA_CIS}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 9,
+            "bold": true,
+            "hAlign": "Center",
+            "vAlign": "Middle"
+          },
+          "wordWrap": true,
+          "id": "3c1e0a10-0001-4a5b-9c01-000000000009",
+          "x": 0,
+          "y": 170,
+          "width": 132,
+          "height": 6,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0,
+          "visibilityExpression": "{CISLO_ZASTAVKA_CIS}"
+        }
+      ]
+    }
+  ],
+  "agendaCode": "ZASTAVKOVY_JR_AD",
+  "editorPreferences": {
+    "gridSize": 1,
+    "snapToGrid": true,
+    "snapToElements": true,
+    "showGrid": false
+  },
+  "createdAt": "2026-10-13T13:00:00Z",
+  "modifiedAt": "2026-10-13T13:00:00Z",
+  "printParameters": {
+    "ROZDELIT_PER_OZNACNIK": "true",
+    "ZDROJ_STANOVISTE": "Sloupek"
+  }
+}
