@@ -1,9 +1,52 @@
-# QR na linkovém JŘ - vyhledávač odjezdů pro cestující (demo, stav 2026-10-01)
+# QR vyhledávač pro cestující na zastávce (zadání 13. 10., předchozí demo 1. 10.)
 
-> Jednorázový podklad k demu: až se rozhodne, co s ním dál, zjištění se přenesou do trvalých docs
-> a soubor se smaže. Záměr drží [`roadmap.md`](roadmap.md) (sekce „QR na vývěsce").
+> Jednorázový podklad: až aplikace vznikne v ISYCloud, zadání se přenese k ní do edwcore a soubor
+> se smaže. Položka v [`roadmap.md`](roadmap.md) („Vyhledávač odjezdů pro cestující").
 
-## Záměr
+## Zadání (rozhodnutí Jan 13. 10.)
+
+Náhrada papírového JŘ na zastávce v jeho hlavní otázce: **kam se odsud teď dostanu**. Cestující
+nemyslí v linkách, spojích ani značkách, zadává cíl. Přínos je i pro cizince, který IDOS nezná:
+naskenuje QR u sloupku a hned má informace o zastávce, kde stojí.
+
+- **QR je lokalizované:** nese zastávku (CIS číslo) a stanoviště nebo označník, pokud je zadané.
+  Jeden tvar QR pro všechny vývěsky; poloha z GPS se nepoužívá.
+- **Cestující zadá jen cíl.** Pro demo jednoduchý výběr z obcí a zastávek, kam odsud dnes přímo
+  něco jede. Místa typu „nemocnice" až později.
+- **Odpověď:** nejbližší přímé spoje do cíle - za kolik minut, odjezd a příjezd, doba jízdy;
+  linka jen drobně ke kontrole u autobusu. Platnost (dny, svátky, poznámky) vyhodnotí aplikace,
+  značky cestující nevidí. Čas je „teď"; když už dnes nic nejede, první spoj dalšího dne.
+- **Jede z jiného stanoviště téže zastávky** - aplikace řekne odkud. Okolní zastávky až nadstavba.
+- **Bez přestupů** - papírový JŘ je taky nezná.
+- **Data z CIS** (import JDF v ISYCloud): platná, všichni dopravci. QR není součást výlepu
+  konkrétního dopravce, proto ne EDISON.
+- **Umístění:** aplikace v ISYCloud vedle tabule odjezdů (např. `/qr-vyhledavac/<CIS číslo>`),
+  nasazení se doladí. Čeština a angličtina podle jazyka telefonu.
+- **Do budoucna:** zpoždění z dispečinku, okolní zastávky, MHD (v CIS není).
+- **Proti demu z 1. 10. odpadá:** platby (z prodejů v EDISONu) a mapa označníků (CIS je nemá).
+
+**K ověření:**
+
+- **Stanoviště v datech CIS.** Tabule odjezdů ho u odjezdu ukazuje (JDF `Zasspoje`), ale nemusí
+  být vyplněné všude; označníky (`Oznacniky.txt`) CIS neplní vůbec. Bez stanoviště jde lokalizace
+  jen na zastávku a „jede odjinud" aplikace neřekne.
+- **Shoda označení stanoviště** mezi tím, co tiskne návrhář z EDISONu, a CIS - jinak QR z návrháře
+  ponese hodnotu, kterou aplikace v datech CIS nenajde.
+- **Limit veřejné části ISYCloud** 120 požadavků za minutu z jedné IP adresy; sál na jedné wifi
+  ho při předvádění vyčerpá.
+
+## Tabule odjezdů ISYCloud (12. 10.)
+
+Veřejná stránka ISYCloud `https://isycloud.cz/odjezdy/<CIS číslo zastávky>` bez přihlášení:
+nejbližší odjezdy všech linek ze zastávky s odpočtem minut, klik na odjezd rozbalí trasu spoje.
+Data jsou z celostátního registru (import JDF z CIS), ne z EDISONu, takže MHD a linky mimo CIS
+v ní nejsou. Na zastávkový JŘ AD vede QR bez změny kódu: pole `{CISLO_ZASTAVKA_CIS}` agenda už
+má. Ukázka `templates/demo-qr-zastavkovy-jr-ad.json` (v DB CB_CSADAD), QR se schová u zastávky
+bez CIS čísla. U CB_CSADAD se číslo zastávky shoduje s CIS číslem (linka 330510).
+
+## Předchozí demo (1. 10.) - lokální aplikace nad EDISONem
+
+### Záměr
 
 Cestující na zastávce načte QR z výlepu **linkového JŘ AD**. Výlep je tištěný pro konkrétní
 zastávku a směr, takže aplikace ví, kde cestující stojí, a předpokládá, že chce jet **dnes**.
@@ -13,7 +56,7 @@ Hranice: jen „co odsud jede přímo", žádný plánovač s přestupy (tam vyh
 Rozsah (rozhodnutí Jan 1. 10.): demo jako proof of concept, lokální aplikace v `C:\DEV\edwcore`,
 zkouší se na notebooku. Zastávkový JŘ, MHD a další linky ze zastávky až později.
 
-## Co demo umí
+### Co demo umí
 
 - **QR výlepu** nese linku, zastávku, tarifní číslo a směr:
   `http://localhost:5185/linka/{CISLO_LINKY}/{AKTUALNI_ZASTAVKA_CZST}/{AKTUALNI_ZASTAVKA_TC}/{SMER}`.
@@ -40,7 +83,7 @@ Vyzkoušení: `/linka/330510/13906/14/T` (CB_CSADAD, s placením), přechod ozna
 `/linka/822995/37411/18/T?firma=ZL_KOVED&cas=07:00` (Uherské Hradiště, 33 označníků) a cíl
 opačným směrem (Babice).
 
-## Odkud jsou data
+### Odkud jsou data
 
 Všechno přes jednorázovou třídu **`ALVA.TiskyQrDemo.Cestujici`** (`CACHE/ALVA/TiskyQrDemo/`) -
 schválně mimo `ALVA.TemplateDesigner` a mimo Caché projekt, takže se nevydává s návrhářem.
@@ -60,23 +103,11 @@ v `LinkovyJrAd.cls` (s přebaselinovanými zlatými odtisky).
   (`^LYOBD` denní index, `^LY` pole 11 linka, 22 způsob platby) za poslední tři dny s daty.
   Ven jdou jen počty. Bez dat o prodejích (ZL_KOVED) se blok neukáže - znamená to „nevíme".
 
-## Tabule odjezdů ISYCloud (12. 10.)
-
-Veřejná stránka ISYCloud `https://isycloud.cz/odjezdy/<CIS číslo zastávky>` bez přihlášení:
-nejbližší odjezdy všech linek ze zastávky s odpočtem minut, klik na odjezd rozbalí trasu spoje.
-Data jsou z celostátního registru (import JDF z CIS), ne z EDISONu, takže MHD a linky mimo CIS
-v ní nejsou. Na zastávkový JŘ AD vede QR bez změny kódu: pole `{CISLO_ZASTAVKA_CIS}` agenda už
-má. Ukázka `templates/demo-qr-zastavkovy-jr-ad.json` (v DB CB_CSADAD), QR se schová u zastávky
-bez CIS čísla. U CB_CSADAD se číslo zastávky shoduje s CIS číslem (linka 330510).
-
-## Co zůstává otevřené
+### Co zůstává otevřené
 
 - **QR z návrháře pro ZL_KOVED** (Babice) neověřené; adresa se zkoušela ručně.
 - **Telefon:** ve firemní wifi se zařízení nevidí; funguje kabel s `adb reverse` nebo hotspot
   (poloha přes hotspot jen s výjimkou „insecure origins" v prohlížeči).
 - **Zpoždění polohy** několik sekund (hlavně v Brave, který nedává ani kompas) - neřešeno.
-- **Jedno QR za označník** místo za linku: přes označník jede víc linek, adresa by nesla označník
-  a aplikace by spojila všechno, co tudy jede. Za zastávku (ne za označník) to dnes dělá tabule
-  ISYCloud výše.
 - **Placení podle spoje** místo celé linky - prodeje nesou i číslo spoje, terminál má vozidlo.
 - **Poloha označníků** chybí u CB_CSADAD; bez ní přechod na mapě nejde ukázat.

@@ -65,12 +65,10 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
   šablony kanálem z helpdesku (`SystemTemplateChannelSync`). Otevřené: mezi firmami, nebo uvnitř
   firmy (sdílet / nabídnout konkrétnímu kolegovi)?
 
-- **Vyhledávač odjezdů pro cestující - demo** [M] (Jan 1. 10., **základ hotový** týž den). QR
-  z výlepu linkového JŘ AD otevře lokální aplikaci `edwcore/apps/tisky-qr`: cestující zadá cíl
-  a dozví se nejbližší spoj dnes, přechod na protější označník na mapě, způsoby platby; CZ/EN.
-  Server dělá jednorázová třída `ALVA.TiskyQrDemo.Cestujici` (mimo návrhář). Čeká na rozhodnutí,
-  co dál; otevřené body a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
-  Výlepy po zastávkách tiskne parametr „Stránka pro každou zastávku" (1. 10.).
+- **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
+  otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.
+  Nahrazuje lokální demo z 1. 10. (`edwcore/apps/tisky-qr` nad EDISONem). Zadání, k ověření
+  a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
 
 - **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze **starých šablon**
   (starý tisk JŘ a jeho návrhář sestav), jak totéž udělat po novu v Návrháři šablon - převést
