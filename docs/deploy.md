@@ -16,7 +16,10 @@ složku nikdy nezipovat - leží tam stale `.pdb`/`.deps.json` a dev `VERZE.INF`
   z `127.0.0.1` a chyby ukazuje dialogem `ERROR`) Release publish odmítne (`SingleFilePublish.targets`;
   kontrolu umí jen `dotnet publish`, publish z Visual Studia skončí chybou), verzi legacy nehlídá nic.
   SDK připíná `global.json` v kořeni repa)
-- `EDControls.dll` - volná vedle exe
+- `EDControls.dll` - volná vedle exe. S každým vydáním nové DLL (FULL shell, TD i samostatně) přesuň obsah
+  `EDControls/dotnet/PublicAPI.Unshipped.txt` do `PublicAPI.Shipped.txt` a commitni: řádek `*REMOVED*X` zmizí
+  spolu s řádkem `X` ve `Shipped`. Řádek `*REMOVED*` v `Unshipped` znamená, že vydání odebírá API a DLL
+  musí jít spolu s TD i shellem (`EDControls/CLAUDE.md`).
 - `EDISONRUNTIME.zip` - privátní .NET 10 runtime (`tools/build-runtime-zip.ps1`: oficiální
   `dotnet-runtime` + `windowsdesktop-runtime` win-x64 sloučené, SHA512 z metadat Microsoftu, ~70 MB).
   Záplaty runtime vydáváme **my** (Microsoft Update ho nevidí): nová patch verze = nový zip + verze

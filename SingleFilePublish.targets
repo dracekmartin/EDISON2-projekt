@@ -6,8 +6,9 @@
   <!-- EDControls je sdílená knihovna obou aplikací — vedle exe jako volná DLL, ať jde
        nasadit samostatně (nové pole v EDInputFormu → do produkce stačí DLL + exe, který
        ho používá; druhý exe se nepřebuildí a novou DLL jen převezme).
-       Cena: veřejné API a klíče theme resource se musí měnit ADITIVNĚ — starý exe načte
-       novou DLL a odebraný/přejmenovaný člen by shodil až za běhu, build to nezachytí. -->
+       Cena: veřejné API a klíče theme resource se musí měnit ADITIVNĚ: starý exe načte
+       novou DLL a odebraný/přejmenovaný člen by shodil až za běhu. Členy API hlídá build
+       EDControls (PublicAPI.*.txt), klíče theme nezachytí žádný build. -->
   <ItemGroup>
     <LooseFromSingleFile Include="EDControls" />
   </ItemGroup>
