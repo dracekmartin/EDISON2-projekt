@@ -129,6 +129,29 @@ internal sealed class ShellSession : IDisposable
     public string PopupMessage(Window popup) =>
         WaitFor(() => popup.FindFirstDescendant(cf => cf.ByAutomationId("MessageText")), "text popupu").Name;
 
+    /// <summary>Vyplní pole přes ValuePattern - bez klávesnice a fokusu (i PasswordBox). Hodnota se nikam nevypisuje.</summary>
+    public void SetValue(AutomationElement scope, string automationId, string value) =>
+        WaitFor(() => scope.FindFirstDescendant(cf => cf.ByAutomationId(automationId)), $"pole {automationId}")
+            .Patterns.Value.Pattern.SetValue(value);
+
+    /// <summary>Texty status baru hlavního okna (firma, uživatel, server, ...); prázdné = status bar zatím není.</summary>
+    public IReadOnlyList<string> StatusBarTexts() =>
+        [.. Main.FindFirstDescendant(cf => cf.ByControlType(ControlType.StatusBar))
+            ?.FindAllChildren(cf => cf.ByControlType(ControlType.Text))
+            .Select(t => t.Name) ?? []];
+
+    /// <summary>UIA runtime id prvního uzlu stromu modulů; null = strom je prázdný.</summary>
+    public int[]? FirstTreeItemId() =>
+        Main.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem))?.Properties.RuntimeId.ValueOrDefault;
+
+    /// <summary>
+    /// Počká, až shell znovu načte session (přepnutí uživatele): uzly stromu jsou nové instance, nebo strom
+    /// zmizel. Identita ve status baru se mění dřív, ještě před načtením.
+    /// </summary>
+    public void WaitForTreeReload(int[] before) =>
+        WaitUntil(() => FirstTreeItemId() is not { } now || !now.SequenceEqual(before),
+                  "nové načtení stromu modulů", StartupTimeout);
+
     public Button Button(AutomationElement scope, string automationId) =>
         WaitFor(() => scope.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.AsButton(), $"tlačítko {automationId}");
 

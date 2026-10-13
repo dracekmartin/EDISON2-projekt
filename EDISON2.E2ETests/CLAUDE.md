@@ -9,11 +9,12 @@ shellem (`ShellSession.StartBeforeShell`).
 - **Běh ručně**: `EDISON_E2E=1 dotnet test EDISON2.E2ETests` (bez proměnné Skipped; pre-push ho
   vylučuje filtrem `Category!=E2E`). Potřebuje VPN, přihlášenou plochu a předem sestavený DEBUG
   shell. ProjectReference na EDISONMAIN2 záměrně není: build by padal na zamčených DLL, když
-  z `bin\Debug` běží vývojářův shell. Přepsání: `EDISON_E2E_EXE`, `EDISON_IT_SERVER` /
-  `EDISON_IT_PORT`, `EDISON_E2E_IDFA` (výchozí `CB_DP`; výchozí firma DEV serveru má pro DEBUG
-  uživatele prázdný strom).
+  z `bin\Debug` běží vývojářův shell (`EDTesting` smí, staví do vlastního `bin`). Přepsání:
+  `EDISON_E2E_EXE`, `EDISON_IT_SERVER` / `EDISON_IT_PORT`, `EDISON_E2E_IDFA` (výchozí `CB_DP`; výchozí
+  firma DEV serveru má pro DEBUG uživatele prázdný strom).
 - **Pokrývá jen DEBUG kompozici**: identita je DEBUG login `martin.hubata` (MLP 201, admin), bez
-  login okna, update checku, version gate a publish.
+  login okna, update checku, version gate a publish. Jen „Přihlásit jiného uživatele" se přihlašuje
+  testovacím účtem DEV (`TestAccount` z `EDTesting`, bez účtu Skipped). Heslo do výpisu nepatří.
 - **Starý build bez přepínače** se pozná podle chybějícího ItemStatus `E2E` na hlavním okně a
   harness ho zabije. Čistý konec by s DEV GUID přes `LockClearExt` smazal zámky vývojářova shellu.
 - **Neklikat** (zapisuje Martinova data nebo stav celého serveru): moduly a uzly stromu, přepínání
