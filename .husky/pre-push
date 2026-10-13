@@ -50,13 +50,15 @@ if [ -n "$RANGE" ]; then
     CHANGED=$(git diff --name-only --no-renames "$RANGE" 2>/dev/null || true)
     if [ -n "$CHANGED" ]; then
         # Tree.cls a jeho fingerprint: parity test generátoru stromu (TreeGeneratorTests) jede v .NET sadě.
-        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|xaml|props|targets)$|(^|/)global\.json$|Tree\.cls$|tree-sources\.sha256$' && run_dotnet=1 || run_dotnet=0
+        # PublicAPI.*.txt: build EDControls podle nich hlídá veřejné API, změna seznamu bez kódu ho může shodit.
+        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|xaml|props|targets)$|(^|/)global\.json$|Tree\.cls$|tree-sources\.sha256$|(^|/)(Public|Internal)API\.[^/]*\.txt$' && run_dotnet=1 || run_dotnet=0
         echo "$CHANGED" | grep -qiE '\.cls$'                     && run_cache=1   || run_cache=0
         echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|cls|inc)$' && run_it=1      || run_it=0
         echo "$CHANGED" | grep -qiE '\.(cls|inc)$'               && it_required=1 || it_required=0
         # E2E převezmou plochu na minuty a zavřou shell z checkoutu: jen když se mění shell, projekty, na které odkazuje,
-        # nebo E2E samy. Serverová část (CACHE) a dokumentace shell nemění; Tree.cls pushuje každých 10 min úloha tree-sync.
-        echo "$CHANGED" | grep -vE '^(EDControls|EDISONMAIN2)/CACHE/|\.md$' \
+        # nebo E2E samy. Serverová část (CACHE), dokumentace a seznamy veřejného API shell nemění; Tree.cls pushuje
+        # každých 10 min úloha tree-sync.
+        echo "$CHANGED" | grep -viE '^(EDControls|EDISONMAIN2)/CACHE/|\.md$|(^|/)(Public|Internal)API\.[^/]*\.txt$' \
             | grep -qE '^(EDISONMAIN2|EDISONMAIN2\.LegacyMiniApps|EDControls|EDUpdateContract|EDISON2\.E2ETests)/' && run_e2e=1 || run_e2e=0
     fi
 fi

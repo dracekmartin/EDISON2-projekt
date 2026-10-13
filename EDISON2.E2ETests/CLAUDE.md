@@ -8,7 +8,8 @@ shellem (`ShellSession.StartBeforeShell`).
 
 - **Běh ručně**: `EDISON_E2E=1 dotnet test EDISON2.E2ETests` (bez proměnné Skipped). Pre-push je pustí
   sám, jen když pushovaný rozsah mění shell (`EDISONMAIN2/`, `EDISONMAIN2.LegacyMiniApps/`, `EDControls/`,
-  `EDUpdateContract/`, `EDISON2.E2ETests/`, vždy mimo `CACHE/` a `.md`: `Tree.cls` pushuje úloha tree-sync);
+  `EDUpdateContract/`, `EDISON2.E2ETests/`, vždy mimo `CACHE/`, `.md` a seznamy API `PublicAPI.*.txt`: `Tree.cls`
+  pushuje úloha tree-sync);
   předtím sestaví DEBUG shell. Bez VPN, na zamčené ploše nebo při běžícím jiném E2E je přeskočí.
   Potřebuje VPN, přihlášenou plochu a předem sestavený DEBUG shell. ProjectReference na EDISONMAIN2 záměrně není: build by padal na zamčených DLL, když
   z `bin\Debug` běží vývojářův shell (`EDTesting` smí, staví do vlastního `bin`). Přepsání:
