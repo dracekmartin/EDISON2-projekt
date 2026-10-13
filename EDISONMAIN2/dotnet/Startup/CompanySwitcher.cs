@@ -17,12 +17,16 @@ namespace EDISONMAIN2;
 /// bugů - proto společný service. Čte MLRest/LicenceLoader/IsAdmin/Popup/Nav lazily z
 /// <see cref="EDServices"/>, takže po user switch automaticky vidí novou session.
 /// </summary>
+/// <param name="flushTelemetry">Dopsání zápisů na pozadí a telemetrie staré firmy; null = <see cref="EDUsageTelemetry.Flush"/>.</param>
 public class CompanySwitcher(
     EDServices services,
     ILocalPrefs localPrefs,
     Func<bool> closeShellWindows,
-    Action closeLegacyModules)
+    Action closeLegacyModules,
+    Action<IMLRest?>? flushTelemetry = null)
 {
+    private readonly Action<IMLRest?> _flushTelemetry = flushTelemetry ?? EDUsageTelemetry.Flush;
+
     /// <summary>
     /// Vybere výchozí firmu pro startup: priorita <paramref name="preferredIdfa"/> →
     /// <c>IsDefault</c> flag → <c>companies[0]</c>. Stateless, volá se v <see cref="AppBootstrapper"/>
@@ -95,6 +99,10 @@ public class CompanySwitcher(
         // moduly mají vlastní spojení (Idfa v launch args), swap se jich netýká → až po Accepted.
         if (!closeShellWindows())
             return LicenceAcquireOutcome.Cancelled;
+
+        // Zavřená okna ještě dopisují na pozadí (geometrie, telemetrie, preference) pod starou firmou. Po jejím
+        // odhlášení by je server odmítl (LockExist), proto počkat a dopsat ještě před výměnou Idfa.
+        _flushTelemetry(mlRest);
 
         // Requesty pod novou Idfa (licenceLoader, VerifyLic) běží PŘED vznikem jejího ACTIVITY
         // zámku - LockExist při CacheLocks=1 by session shodil. Po dobu switche tedy bez kontrol;

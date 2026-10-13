@@ -52,10 +52,10 @@ Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDA
   přepnutí firmy přežije, proto `CompanySwitcher` po logoutu obnovuje zámek nové firmy
   (`LicenceVerifier.ReacquireLock`); guard `Tests/SessionLockTest`.
 - `LogoutWatcher` pollí `maSeUkoncit` s `CacheLocks=2`, aby poll neobnovoval idle timer.
-- `CompanySwitcher.Switch` je synchronní (UI thread na dialogy licenčního retry). Zavírání
-  dvoufázově: WPF okna shellu **před** swapem Idfa (volají server přes sdílený MLRest), legacy
-  moduly až po `Accepted`. Veto okna (`e.Cancel` v Closing) switch ruší - přeživší okno by
-  mluvilo s cizí firmou; totéž switch user; confirm jen s moduly.
+- `CompanySwitcher.Switch` je synchronní (UI thread na dialogy licenčního retry). Zavírání dvoufázově: WPF okna
+  shellu **před** swapem Idfa (volají server přes sdílený MLRest), hned po nich `EDUsageTelemetry.Flush` (zápisy zavřených
+  oken na pozadí musí dojít pod starou firmou, po jejím logoutu LockExist), legacy moduly až po `Accepted`. Veto okna
+  (`e.Cancel` v Closing) switch ruší - přeživší okno by mluvilo s cizí firmou; totéž switch user; confirm jen s moduly.
 - Zavření shellu (= konec aplikace i všech agend) potvrzuje v `Closing` `EdisonMainViewModel.ConfirmShellClose`,
   takže **každé programové ukončení po vzniku shellu musí jít přes `ShellShutdown.Force` / `SuppressCloseConfirm`
   na VM**, jinak force logout nebo version gate uvízne na dialogu, který smí uživatel odmítnout.

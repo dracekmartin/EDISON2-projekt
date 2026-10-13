@@ -107,7 +107,8 @@ internal static class EdisonMainViewModelHarness
         if (userPrefs != null) svc.UserPrefs = userPrefs;
         var close = closeAllWindows ?? (() => { });
         var p = prefs ?? Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(svc, p, () => { close(); return true; }, closeLegacyModules ?? (() => { }));
+        // Flush telemetrie čeká na zápisy na pozadí ze sdíleného bufferu celého procesu testů.
+        var switcher = new CompanySwitcher(svc, p, () => { close(); return true; }, closeLegacyModules ?? (() => { }), _ => { });
         var catalog = miniAppCatalog ?? MiniAppCatalog.Build([]);
 
         var allCompanies = companies ?? Companies;

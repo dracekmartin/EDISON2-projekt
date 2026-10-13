@@ -25,8 +25,10 @@ public class CompanySwitcherTests
         IWindowNavigator? nav = null,
         ILocalPrefs? prefs = null,
         Func<bool>? closeShellWindows = null,
-        Action? closeLegacyModules = null) =>
-        CreateSwitcher(mlRest, licenceLoader, out _, isAdmin, popup, nav, prefs, closeShellWindows, closeLegacyModules);
+        Action? closeLegacyModules = null,
+        Action<IMLRest?>? flushTelemetry = null) =>
+        CreateSwitcher(mlRest, licenceLoader, out _, isAdmin, popup, nav, prefs, closeShellWindows, closeLegacyModules,
+                       flushTelemetry);
 
     private static CompanySwitcher CreateSwitcher(
         IMLRest mlRest,
@@ -37,7 +39,8 @@ public class CompanySwitcherTests
         IWindowNavigator? nav = null,
         ILocalPrefs? prefs = null,
         Func<bool>? closeShellWindows = null,
-        Action? closeLegacyModules = null)
+        Action? closeLegacyModules = null,
+        Action<IMLRest?>? flushTelemetry = null)
     {
         services = new EDServices(
             mlRest,
@@ -50,7 +53,9 @@ public class CompanySwitcherTests
         return new CompanySwitcher(services,
             prefs ?? Substitute.For<ILocalPrefs>(),
             closeShellWindows ?? (() => true),
-            closeLegacyModules ?? (() => { }));
+            closeLegacyModules ?? (() => { }),
+            // Skutečný flush čeká na zápisy na pozadí ze sdíleného bufferu celého procesu testů.
+            flushTelemetry ?? (_ => { }));
     }
 
     [Fact]
@@ -405,6 +410,28 @@ public class CompanySwitcherTests
     }
 
     [Fact]
+    public void Switch_FlushesBackgroundWritesAfterClosingWindows_UnderOldCompany()
+    {
+        // Zavřená okna dopisují na pozadí pod starou firmou; po jejím odhlášení by server zápis odmítl (LockExist).
+        var mlRest = MLRestMocks.Create();   // start Idfa = CB_DP
+        mlRest.CacheLocks = 1;
+        var calls = new List<string>();
+        IMLRest? flushed = null;
+        var switcher = CreateSwitcher(mlRest, () => null,
+            closeShellWindows: () => { calls.Add("close"); return true; },
+            flushTelemetry: rest =>
+            {
+                flushed = rest;
+                calls.Add($"flush {rest?.Idfa} locks={rest?.CacheLocks}");
+            });
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
+
+        Assert.Equal(["close", "flush CB_DP locks=1"], calls);
+        Assert.Same(mlRest, flushed);
+    }
+
+    [Fact]
     public void Switch_Refused_LeavesLegacyModulesRunning()
     {
         // Neúspěšné přepnutí nesmí zabít rozpracovanou práci v legacy modulech - mají vlastní
@@ -471,8 +498,10 @@ public class CompanySwitcherTests
         var licence = new Lic { CountsLOGIN = 5 };
         var closeLegacy = Substitute.For<Action>();
         var prefs = Substitute.For<ILocalPrefs>();
+        var flush = Substitute.For<Action<IMLRest?>>();
         var switcher = CreateSwitcher(mlRest, () => licence, prefs: prefs,
-                                      closeShellWindows: () => false, closeLegacyModules: closeLegacy);
+                                      closeShellWindows: () => false, closeLegacyModules: closeLegacy,
+                                      flushTelemetry: flush);
 
         var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
@@ -482,6 +511,7 @@ public class CompanySwitcherTests
         mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
         closeLegacy.DidNotReceive().Invoke();
         prefs.DidNotReceive().Save();
+        flush.DidNotReceiveWithAnyArgs().Invoke(default);
     }
 
     [Fact]
