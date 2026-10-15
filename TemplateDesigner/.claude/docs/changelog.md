@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-15 (4) - 📏 plný blok už nemá podivně široký poslední spoj
+
+Na 410110 (KV_DP) s formátem „hh.mm" vyšel poslední spoj v plném bloku skoro dvojnásobně široký (nález Jan 15. 10.).
+Se zapnutým dorovnáním tabulka končí na hraně prvku; když se do zbytku nevešel celý prázdný sloupec, dostal celý zbytek poslední spoj (rozhodnutí 21. 9.).
+Kolik zbude, nezávisí na počtu spojů, ale na šířce prvku, popisných sloupců (počet km sloupců) a sloupce spoje, takže se to opakovalo v každém plném bloku linky.
+Nové pravidlo (rozhodnutí Jan 15. 10.): spoj má vždy svou šířku a zbytek patří prázdným sloupcům.
+Zbývá-li aspoň půl sloupce, vznikne na konci jeden užší prázdný sloupec; menší zbytek se rozdělí rovnoměrně mezi spoje bloku (desetiny milimetru), aby nevznikl proužek mezi dvěma čarami.
+Bloky, které už prázdné sloupce mají, se nemění.
+Testy `DorovnaniZbytkuTests` (měří polohu čar mřížky; s dosavadním chováním oba padaly).
+
 ## 2026-10-15 (3) - 🐛 falešná hláška o oříznuté buňce
 
 „11,12" v úzkém sloupci TPZ se vytisklo celé, a návrhář přesto hlásil, že se ořízlo (nález Jan 15. 10.).

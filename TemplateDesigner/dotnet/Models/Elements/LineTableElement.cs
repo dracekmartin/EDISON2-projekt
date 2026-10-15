@@ -1206,9 +1206,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// <remarks>
         /// ⚠️ Počty sloupců vycházejí z celých sloupců, takže po nich zbude kus šířky - a ten se bez
         /// rozpuštění projeví jako <b>useknutý pruh</b> za posledním sloupcem, který vypadá jako
-        /// chyba sazby (nález Jan 21. 9.). Zbytek dostanou přednostně prázdné sloupce, protože jsou
-        /// to výplň; když žádný nevyšel, rozšíří se poslední sloupec spoje (rozhodnutí Jan 21. 9.:
-        /// širší poslední sloupec je lepší než useknutý pruh).
+        /// chyba sazby (nález Jan 21. 9.).
+        /// <para>Pravidlo: <b>spoj má vždy svou šířku, zbytek patří prázdným sloupcům</b>
+        /// (rozhodnutí Jan 15. 10.). V plném bloku, kam se celý prázdný sloupec nevešel, vznikne
+        /// jeden užší na konci, když zbývá aspoň půl sloupce; menší zbytek se rozdělí mezi spoje,
+        /// protože tak úzký prázdný sloupec by vypadal jako proužek mezi dvěma čarami. Do 15. 10.
+        /// celý zbytek dostal poslední spoj a na 410110 (KV_DP) vyšel skoro dvojnásobný.</para>
         /// <para>Volá se <b>jen se zapnutým dorovnáním</b> - bez něj tabulka končí tam, kde ji
         /// skončí sloupce, a to je dosavadní chování.</para>
         /// </remarks>
@@ -1218,7 +1221,18 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (zbytek <= 0.01f) return;
             int prazdnych = PrazdnychCelkem;
             if (prazdnych > 0) { SirkaPrazdnehoMm += zbytek / prazdnych; return; }
-            if (_sirkySpoju.Length > 0) _sirkySpoju[^1] += zbytek;
+            // Jiný prázdný sloupec v bloku není, takže šířka prázdných platí jen pro tenhle jeden.
+            if (zbytek >= ZakladSpojeMm / 2f && _prazdnePoSpoji.Length > 0)
+            {
+                _prazdnePoSpoji[^1] = 1;
+                SirkaPrazdnehoMm = zbytek;
+                return;
+            }
+            int spoju = _sirkySpoju.Length + _sirkyZrcadlene.Length;
+            if (spoju == 0) return;
+            float kazdemu = zbytek / spoju;
+            for (int i = 0; i < _sirkySpoju.Length; i++) _sirkySpoju[i] += kazdemu;
+            for (int i = 0; i < _sirkyZrcadlene.Length; i++) _sirkyZrcadlene[i] += kazdemu;
         }
 
         /// <summary>Kolik prázdných sloupců stojí <b>za</b> sloupcem spoje.</summary>
