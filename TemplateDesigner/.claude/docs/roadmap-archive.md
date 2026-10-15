@@ -5,7 +5,8 @@
 Dotaz Jan 13. 10., požadavek KOVED v `#13610`. Tabulka spojů psala „km" nad každý km sloupec.
 Nová volba „Jedno záhlaví nad km sloupci" ve skupině Popisné sloupce, výchozí vypnutá, aby se
 nezměnily hotové sestavy. Sloučení záhlaví funguje stejně jako u zón rozdělených do sloupců.
-Omezení počtu km sloupců v šabloně se nedělá, řídí ho nastavení linky. Detail changelog 2026-10-15 (5).
+Ze stejného tiketu přibylo pole „Nejvýš km sloupců" (prvních N, ostatní se netisknou).
+Detail changelog 2026-10-15 (5) a (6).
 
 ## `B191c` Linkový JŘ MHD proti starému tisku (hotovo 12. 10. 2026)
 

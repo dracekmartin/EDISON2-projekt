@@ -1120,6 +1120,8 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
 - **Každá zóna ve vlastním sloupci** - zastávka na hranici zón má víc zón; buď jsou za sebou
   v jednom sloupci, nebo každá ve vlastním jako kilometry.
 - **Jedno záhlaví nad km sloupci** - místo „km" nad každým km sloupcem jedno společné přes všechny.
+- **Nejvýš km sloupců** - kolik km sloupců se nejvýš vytiskne; prázdné = všechny. Ostatní se
+  netisknou a jejich spoje pak v tabulce kilometry nemají.
 - **Nadpis popisných sloupců** - jeden společný text nad zónou, km, Tč, zastávkou a MHD.
 - **Sloučit popis u příjezdu a odjezdu** - zastávka s příjezdem i odjezdem zabírá dva řádky.
   Vypnuté zopakuje název a km na obou (tvar windowsového tisku), zapnuté je vypíše jednou

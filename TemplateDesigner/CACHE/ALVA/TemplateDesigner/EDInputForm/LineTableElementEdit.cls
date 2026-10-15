@@ -68,6 +68,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Zastávka na hranici zón má víc zón. Vypnuté = všechny v jednom sloupci za sebou, zapnuté = každá ve vlastním sloupci vedle sebe (jako kilometry). Sloupec zón se tím rozšíří o tolik dílů, kolik zón má nejbohatší zastávka."
         s f = form.AddBool("JednoZahlaviKm", "Jedno záhlaví nad km sloupci", 0)
         s f.helpText = "Vypnuté = nad každým km sloupcem je vlastní záhlaví ""km"", zapnuté = jedno společné přes všechny. Kilometry zůstávají v samostatných sloupcích."
+        s f = form.AddNumber("MaxKmSloupcu", "Nejvýš km sloupců", "", 1, 20)
+        s f.helpText = "Kolik km sloupců se nejvýš vytiskne. Prázdné = všechny. Vezmou se první v pořadí, ve kterém je linka má, ostatní se netisknou - jejich spoje pak v tabulce kilometry nemají. Zúží to tabulku za cenu té informace."
         // Jeden nadpis nad celou skupinou a jeden slitý blok bez vnitřních čar. Změřeno na vzoru IDZK 940.
         s f = form.AddText("PopisneSloupceNadpis", "Nadpis popisných sloupců")
         s f.helpText = "Text nad zónou, km, Tč, zastávkou a MHD - všechny mají jeden společný nadpis. Prázdné = bez nadpisu."

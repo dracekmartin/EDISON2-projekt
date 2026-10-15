@@ -1,12 +1,21 @@
 ﻿# Changelog
 
+## 2026-10-15 (6) - ✂️ nejvýš N km sloupců (#13610)
+
+KOVED chce tabulku zúžit omezením počtu km sloupců a vědomě přijímá, že část spojů pak kilometry nemá („km dnes nejsou tak důležité").
+Tabulka spojů má ve skupině Popisné sloupce pole **Nejvýš km sloupců**: prázdné = všechny, jinak se vytiskne prvních N v pořadí, v jakém je linka posílá, a ostatní se netisknou.
+Chová se jako „Nejvýš sloupců variant tras" u zastávkového JŘ; volba je u prvku, ne v parametrech sestavy, aby byla všechna nastavení km pohromadě (rozhodnutí Jan 15. 10.).
+Je to řez navíc k filtru u linky: ten profily při uložení linky slučuje (výchozí práh 10), tohle je prostě nevytiskne.
+Omezení platí na jednom místě (`MaxKmCount`), takže ho bere sazba, šířky i jedno záhlaví nad km stejně.
+Testy `MaxKmSloupcu_NechaPrvniVPoradi`, `MaxKmSloupcu_JednoZahlaviJenPresVytistene`; pole ve formuláři ověřené voláním `Init` na serveru.
+
 ## 2026-10-15 (5) - 🔠 jedno záhlaví nad km sloupci (#13610)
 
 KOVED chce nad km sloupci jeden popisek místo „km" nad každým.
 Tabulka spojů má ve skupině Popisné sloupce volbu **Jedno záhlaví nad km sloupci**: zapnutá vypíše jedno záhlaví přes všechny km sloupce, hodnoty zůstávají v samostatných sloupcích.
 Výchozí je vypnutá, aby se nezměnily hotové sestavy - na rozdíl od zón nese každý km sloupec jinou hodnotu, takže samostatné záhlaví tam smysl má.
 Sloučení jde stejnou cestou jako u zón rozdělených do sloupců (`NadpisyPopisnychSloupcu`), takže v řádku záhlaví zmizí i čáry mezi km sloupci.
-Druhou půlku požadavku (omezit počet km sloupců) šablona neřeší: počet řídí nastavení linky (filtr km sloupců, výchozí 10), viz changelog 2026-09-07 (13).
+Druhou půlku požadavku (omezit počet km sloupců) řeší záznam (6).
 Test `JednoZahlaviKm_JedenNadpisPresVsechnyKmSloupce`; volba ve formuláři ověřená voláním `Init` na serveru.
 
 ## 2026-10-15 (4) - 📏 plný blok už nemá podivně široký poslední spoj

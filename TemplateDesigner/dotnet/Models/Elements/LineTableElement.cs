@@ -266,6 +266,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </remarks>
     public bool JednoZahlaviKm { get; set; }
 
+    /// <summary>Kolik km sloupců se nejvýš vytiskne - první podle pořadí z dat; null (i 0) = všechny.</summary>
+    /// <remarks>
+    /// KOVED chce tabulku zúžit a vědomě přijímá, že spoje vynechaných km profilů pak kilometry nemají
+    /// (#13610, „km dnes nejsou tak důležité"). Chová se jako „Nejvýš sloupců variant tras" u zastávkového
+    /// JŘ (`ZastavkoveJrAd.cls:596`). Starý modul filtruje počet jinak - slučuje profily při uložení linky
+    /// (prah u linky, výchozí 10), a to dostáváme hotové; tohle je řez navíc podle šablony.
+    /// </remarks>
+    public int? MaxKmSloupcu { get; set; }
+
     /// <summary>Pás názvů skupin dnů (Pracovní dny / Soboty / …) nad čísly spojů.</summary>
     public bool ShowGroupHeaders { get; set; } = true;
 
@@ -1762,8 +1771,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             ? stops.Max(s => s.Zony.Count)
             : 0;
 
-    private int MaxKmCount(List<LineStopData> stops) =>
-        Columns.Any(c => c.Visible && c.Key == ColumnKeys.Km) && stops.Count > 0 ? stops.Max(s => s.Km.Count) : 0;
+    private int MaxKmCount(List<LineStopData> stops)
+    {
+        if (!Columns.Any(c => c.Visible && c.Key == ColumnKeys.Km) || stops.Count == 0) return 0;
+        int vDatech = stops.Max(s => s.Km.Count);
+        return MaxKmSloupcu is int strop && strop > 0 ? Math.Min(vDatech, strop) : vDatech;
+    }
 
     private bool HasNzRow(List<LineTripData> trips) => ShowNzRow && trips.Any(t => t.Nz.Length > 0);
 
@@ -3509,6 +3522,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             TeckyZaNazvemZastavky = TeckyZaNazvemZastavky,
             RozdelitZonyDoSloupcu = RozdelitZonyDoSloupcu,
             JednoZahlaviKm = JednoZahlaviKm,
+            MaxKmSloupcu = MaxKmSloupcu,
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
             PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
@@ -3604,6 +3618,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
         new BoolPropertyDescriptor { Label = "Jedno záhlaví nad km sloupci", Group = PopisneGroup,
             Get = () => JednoZahlaviKm, Set = v => JednoZahlaviKm = v },
+        // Panel nepozná prázdné číslo, takže tam „všechny" nese 0 - stejně jako ve formuláři prázdné pole.
+        new FloatPropertyDescriptor { Label = "Nejvýš km sloupců", Group = PopisneGroup,
+            Get = () => MaxKmSloupcu ?? 0, Set = v => MaxKmSloupcu = v >= 1 ? (int)v : null,
+            Min = 0, Max = 20, Format = "0" },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = PopisneGroup,
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },

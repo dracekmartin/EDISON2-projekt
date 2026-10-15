@@ -162,6 +162,38 @@ public class ZonyDoSloupcuTests
         Assert.Equal(2, prvek.PopisneSloupceProTest(DataSKm()).Count(c => c.Klic == ColumnKeys.Km));
     }
 
+    /// <summary>
+    /// „Nejvýš km sloupců" nechá první sloupce v pořadí z dat a zbytek nevytiskne (#13610, KOVED).
+    /// Chová se jako „Nejvýš sloupců variant tras" u zastávkového JŘ: prázdné i 0 = všechny.
+    /// </summary>
+    [Theory]
+    [InlineData(null, new[] { "0", "5" })]
+    [InlineData(0, new[] { "0", "5" })]
+    [InlineData(1, new[] { "0" })]
+    [InlineData(5, new[] { "0", "5" })]
+    public void MaxKmSloupcu_NechaPrvniVPoradi(int? strop, string[] ocekavane)
+    {
+        var prvek = Prvek(rozdelit: false);
+        prvek.MaxKmSloupcu = strop;
+
+        var km = prvek.PopisneSloupceProTest(DataSKm()).Where(c => c.Klic == ColumnKeys.Km).Select(c => c.Hodnota);
+
+        Assert.Equal(ocekavane, km);
+    }
+
+    /// <summary>Jedno záhlaví nad km je po omezení široké jen přes vytištěné sloupce.</summary>
+    [Fact]
+    public void MaxKmSloupcu_JednoZahlaviJenPresVytistene()
+    {
+        var prvek = Prvek(rozdelit: false);
+        prvek.JednoZahlaviKm = true;
+        prvek.MaxKmSloupcu = 1;
+
+        var km = Assert.Single(prvek.NadpisyProTest(DataSKm()), n => n.Text == "km");
+
+        Assert.Equal(6f, km.Sirka, 3);
+    }
+
     private static DataContext DataSKm() => RenderSnapshot.Data(
         ("ZASTAVKY",
         [
