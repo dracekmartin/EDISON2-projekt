@@ -106,8 +106,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
         d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
         d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")
+        d f.AddListItem("STeckou", "Celý čas stejně (hh.mm)")
         s f.value = "HodinaVetsi"
-        s f.helpText = "Starý tisk sází hodinu větším písmem a minutu menším, oddělené mezerou bez dvojtečky. Druhá volba vypíše celý čas jednou velikostí."
+        s f.helpText = "Starý tisk sází hodinu větším písmem a minutu menším, oddělené mezerou bez dvojtečky. Ostatní volby vypíší celý čas jednou velikostí: s dvojtečkou (04:20), nebo s tečkou a hodinou bez nuly (4.20)."
         s f = form.AddDecimal("PomerMinuty", "Velikost minut", 0.75, 0.3, 1)
         s f.helpText = "Podíl velikosti minut vůči hodině. 1 = obojí stejně velké. Uplatní se jen u formátu s hodinou větším písmem."
         s f = form.AddBool("VyplnitPrazdneBunkySpoju", "Tečky v prázdných buňkách", 0)

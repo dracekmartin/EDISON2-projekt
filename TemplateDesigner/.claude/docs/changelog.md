@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-15 - 🕐 formát času s tečkou v Tabulce spojů (#13610)
+
+KOVED píše časy jako „9.05" a „14.05" a v linkovém JŘ to nešlo nastavit.
+„Formát času" má proto třetí volbu **Celý čas stejně (hh.mm)**: jedna velikost písma, tečka místo dvojtečky a hodina bez vedoucí nuly.
+Volby oddělovače a nuly se záměrně nezobecňují do samostatných polí (rozhodnutí Jan 15. 10.); kdyby formátů přibylo víc, předělá se to.
+Server dál posílá „hh:mm", přepis dělá prvek, takže platí pro linkový JŘ AD i MHD a i pro časy v přípojných řádcích.
+Sloupec spoje se nezužuje: dolní práh drží dvoumístnou hodinu („00.00"), stejně jako u dvojtečky.
+Výchozí formát se nemění.
+
+Testy ve `FormatCasuSpojeTests` (převod a dvě vykreslovací zkoušky - buňka spoje a přípojný řádek; obě ověřené mutací).
+Nová volba ve formuláři ověřená voláním `Init` na serveru.
+
 ## 2026-10-13 - 🐛 hledání v okně vlastností jen pro svůj druh prvku
 
 Okna vlastností otevřená dvojklikem na prvek si pamatovala jedno společné hledání, takže text

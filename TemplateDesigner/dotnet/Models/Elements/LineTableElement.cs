@@ -18,6 +18,9 @@ public enum FormatCasuSpoje
     HodinaVetsi,
     /// <summary>Celý čas jednou velikostí, oddělený dvojtečkou: „16:15".</summary>
     SDvojteckou,
+    /// <summary>Celý čas jednou velikostí, oddělený tečkou, hodina bez vedoucí nuly: „9.05".
+    /// Tvar, se kterým pracuje KOVED (#13610).</summary>
+    STeckou,
 }
 
 /// <summary>
@@ -871,6 +874,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// dolní hranice sloupce o utaženou mezeru nesnížila.</remarks>
     private List<SymbolRunRenderer.Run> NejsirsiCasRuns()
     {
+        // Nejširší je dvoumístná hodina, takže ani formát bez vedoucí nuly sloupec nezúží.
+        if (FormatCasu == FormatCasuSpoje.STeckou) return [new("00.00", false)];
         if (FormatCasu != FormatCasuSpoje.HodinaVetsi) return [new("00:00", false)];
         float pomer = Math.Clamp(PomerMinuty, 0.3f, 1f);
         return [new("23", false), SymbolRunRenderer.Mezera(MezeraHodinaMinutaMm, pomer), new("59", false, pomer)];
@@ -2660,7 +2665,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var st = SRozdilem(tz.ForeColor is null || inverze ? tripCellStyle : tripCellStyle with { TextColor = tz.ForeColor },
                     tz, siRadku);
                 string cas = znackyVBunceZrc.ContainsKey(ti) ? ""
-                    : (siRadku < tz.Casy.Count ? tz.Casy[siRadku] : "");
+                    : (siRadku < tz.Casy.Count ? TextCasu(tz.Casy[siRadku]) : "");
                 if (cas == "" && !znackyVBunceZrc.ContainsKey(ti))
                     cas = VyplnBunky(mrizka.SirkaZrcadlenehoMm(ti), st, ctx);
                 return (cas, st);
@@ -2702,7 +2707,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 // kterou prvek smí respektovat (R3). Spoj bez barvy nechá kaskádu být.
                 var cellStyle = SRozdilem(t.ForeColor is null || inverze ? tripCellStyle : tripCellStyle with { TextColor = t.ForeColor },
                     t, siRadku);
-                string text = znackyVBunce.ContainsKey(ti) ? "" : (siRadku < t.Casy.Count ? t.Casy[siRadku] : "");
+                string text = znackyVBunce.ContainsKey(ti) ? "" : (siRadku < t.Casy.Count ? TextCasu(t.Casy[siRadku]) : "");
                 if (text == "" && !znackyVBunce.ContainsKey(ti))
                     text = VyplnBunky(mrizka.SirkaSpojeMm(ti), cellStyle, ctx);
                 return (text, cellStyle);
@@ -2777,7 +2782,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var runyZrc = CasoveRuny(casyZrc);
                 PridejZrcadlene(prSpecs, mrizka, zrcadlene.Count, pripojStyle,
                     ti => (runyZrc.ContainsKey(ti) ? ""
-                        : casyZrc.TryGetValue(ti, out var cas) ? cas : "", pripojStyle));
+                        : casyZrc.TryGetValue(ti, out var cas) ? TextCasu(cas) : "", pripojStyle));
                 for (int ci = 0; ci < fixedCols.Count; ci++)
                     prSpecs.Add(new(fixedCols[ci].Width,
                         ci == nameIndex ? radek.Popisek : "", pripojStyle,
@@ -2786,7 +2791,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 var runy = CasoveRuny(casy);
                 PridejSpoje(prSpecs, mrizka, trips.Count, pripojStyle,
                     ti => (runy.ContainsKey(ti) ? ""
-                        : casy.TryGetValue(ti, out var cas) ? cas : "", pripojStyle));
+                        : casy.TryGetValue(ti, out var cas) ? TextCasu(cas) : "", pripojStyle));
 
                 plan.Add(new(RowKind.SubRow, pripojRowH, prSpecs)
                 {
@@ -2937,7 +2942,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         bool maZnacku = runs.Count > 0;
 
         var casRuns = CasRuns(cas);
-        if (casRuns is null) runs.Add(new(cas, false));
+        if (casRuns is null) runs.Add(new(TextCasu(cas), false));
         else runs.AddRange(casRuns);
         return (runs, maZnacku, casRuns is not null);
     }
@@ -3067,6 +3072,20 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         float volno = sirkaSloupceMm - styl.PaddingLeft - styl.PaddingRight - obsazenoMm;
         string tecky = Tecky(volno, font, ctx.MmToPx);
         return tecky == "" ? nazev : nazev + " " + tecky;
+    }
+
+    /// <summary>Čas tak, jak ho vypíše formát jednou velikostí. Server posílá vždy „hh:mm"; jen
+    /// <see cref="FormatCasuSpoje.STeckou"/> ho přepíše na „h.mm". Co není čas, zůstane beze změny.</summary>
+    internal string TextCasu(string cas)
+    {
+        if (FormatCasu != FormatCasuSpoje.STeckou) return cas;
+        int dvojtecka = cas.IndexOf(':');
+        if (dvojtecka <= 0 || dvojtecka == cas.Length - 1) return cas;
+        string hodina = cas[..dvojtecka];
+        string minuta = cas[(dvojtecka + 1)..];
+        if (!hodina.All(char.IsDigit) || !minuta.All(char.IsDigit)) return cas;
+        hodina = hodina.TrimStart('0');
+        return (hodina == "" ? "0" : hodina) + "." + minuta;
     }
 
     internal List<SymbolRunRenderer.Run>? CasRuns(string cas)
@@ -3536,6 +3555,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             [
                 ("Minuty menším písmem (hh mm)", (object)FormatCasuSpoje.HodinaVetsi),
                 ("Celý čas stejně (hh:mm)",      (object)FormatCasuSpoje.SDvojteckou),
+                ("Celý čas stejně (hh.mm)",      (object)FormatCasuSpoje.STeckou),
             ],
         },
         new FloatPropertyDescriptor

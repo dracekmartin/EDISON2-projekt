@@ -1129,7 +1129,8 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
 **Záhlaví** a **Datové buňky** - velikost písma, pozadí a barva textu obou zón, vnitřní okraje
 buňky a tyhle volby:
 
-- **Formát času** - *Minuty menším písmem (hh mm)* jako starý tisk, nebo *Celý čas stejně (hh:mm)*.
+- **Formát času** - *Minuty menším písmem (hh mm)* jako starý tisk, *Celý čas stejně (hh:mm)*
+  s dvojtečkou („04:20"), nebo *Celý čas stejně (hh.mm)* s tečkou a hodinou bez nuly („4.20").
   **Velikost minut** říká, o kolik jsou minuty menší.
 - **Tečky v prázdných buňkách** - buňka bez času se vyplní tečkami, takže tabulka drží svislé
   vodicí pruhy jako starý tisk. Dostanou je i prázdné sloupce dorovnání.

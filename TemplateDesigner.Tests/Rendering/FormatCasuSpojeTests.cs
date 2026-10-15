@@ -198,9 +198,118 @@ public class FormatCasuSpojeTests
         Assert.Null(prvek.CasRuns("16:15"));
     }
 
+    // ── Formát s tečkou (#13610, KOVED) ─────────────────────────────────────
+
+    /// <summary>Zákazník píše časy „9.05" a „14.05": tečka místo dvojtečky a hodina bez nuly.</summary>
+    [Theory]
+    [InlineData("09:05", "9.05")]
+    [InlineData("14:05", "14.05")]
+    [InlineData("00:20", "0.20")]
+    [InlineData("24:10", "24.10")]
+    public void STeckou_PrepiseCas(string cas, string ocekavano)
+    {
+        var prvek = Prvek();
+        prvek.FormatCasu = FormatCasuSpoje.STeckou;
+
+        Assert.Equal(ocekavano, prvek.TextCasu(cas));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("<")]
+    [InlineData("|")]
+    [InlineData("16:")]
+    [InlineData("od:do")]
+    public void STeckou_CoNeniCas_NechaBezeZmeny(string obsah)
+    {
+        var prvek = Prvek();
+        prvek.FormatCasu = FormatCasuSpoje.STeckou;
+
+        Assert.Equal(obsah, prvek.TextCasu(obsah));
+    }
+
+    /// <summary>Ostatní formáty čas nepřepisují - výstup existujících šablon se nesmí změnit.</summary>
+    [Theory]
+    [InlineData(FormatCasuSpoje.HodinaVetsi)]
+    [InlineData(FormatCasuSpoje.SDvojteckou)]
+    public void OstatniFormaty_CasNeprepisuji(FormatCasuSpoje format)
+    {
+        var prvek = Prvek();
+        prvek.FormatCasu = format;
+
+        Assert.Equal("09:05", prvek.TextCasu("09:05"));
+    }
+
+    [Fact]
+    public void STeckou_SeNedeliNaUseky()
+    {
+        var prvek = Prvek();
+        prvek.FormatCasu = FormatCasuSpoje.STeckou;
+
+        Assert.Null(prvek.CasRuns("16:15"));
+    }
+
+    /// <summary>
+    /// Přepis se musí dostat až do kreslení: „7.10" má o nulu a o jednu tečku dvojtečky méně
+    /// inkoustu než „07:10". Převod jen v pomocné metodě by test nechal zelený, tenhle ne.
+    /// </summary>
+    [Fact]
+    public void STeckou_SeNakresliBezNulyATeckou()
+    {
+        var data = DataSCasy("07:10", "07:35");
+        var dvojtecka = Prvek();
+        dvojtecka.FormatCasu = FormatCasuSpoje.SDvojteckou;
+        var tecka = Prvek();
+        tecka.FormatCasu = FormatCasuSpoje.STeckou;
+
+        using var bmpDvojtecka = Vykresli(dvojtecka, data);
+        using var bmpTecka = Vykresli(tecka, data);
+
+        Assert.True(Inkoust(bmpTecka) < Inkoust(bmpDvojtecka),
+            "čas s tečkou nezabral míň inkoustu - formát se nepropsal do buňky spoje");
+    }
+
+    /// <summary>
+    /// Čas přípoje se sází stejným tvarem jako čas spoje (nález Jan 8. 9.), takže formát s tečkou
+    /// musí platit i v přípojném řádku. Spoje tu časy nemají - inkoust ve sloupcích spojů je jen přípoj.
+    /// </summary>
+    [Fact]
+    public void STeckou_PlatiIVPripojnemRadku()
+    {
+        var data = RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("ID", "1"), ("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
+                RenderSnapshot.Row(("ID", "2"), ("NAZEV_ZASTAVKY", "Přerov"), ("PORADI", "2")),
+            ]),
+            ("SPOJE",
+            [
+                RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"),
+                    ("PRIPOJE", RenderSnapshot.Nested(
+                        [[("TYP", "vycka"), ("PORADI", "2"), ("RADEK", "1"),
+                          ("CAS", "08:25"), ("LINKA", "330520"), ("TEXT", "Hulín")]]))),
+            ]),
+            ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1"))]));
+        LineTableElement SPripoji(FormatCasuSpoje format)
+        {
+            var prvek = Prvek();
+            prvek.ShowPripojeRows = true;
+            prvek.FormatCasu = format;
+            return prvek;
+        }
+
+        using var bmpDvojtecka = Vykresli(SPripoji(FormatCasuSpoje.SDvojteckou), data);
+        using var bmpTecka = Vykresli(SPripoji(FormatCasuSpoje.STeckou), data);
+
+        Assert.True(Inkoust(bmpTecka) < Inkoust(bmpDvojtecka),
+            "čas přípoje s tečkou nezabral míň inkoustu - formát se nepropsal do přípojného řádku");
+    }
+
     // ── Že se to opravdu nakreslí ───────────────────────────────────────────
 
-    private static DataContext Data() => RenderSnapshot.Data(
+    private static DataContext Data() => DataSCasy("16:15", "16:40");
+
+    private static DataContext DataSCasy(string prvni, string druhy) => RenderSnapshot.Data(
         ("ZASTAVKY",
         [
             RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kroměříž"), ("PORADI", "1")),
@@ -209,12 +318,12 @@ public class FormatCasuSpojeTests
         ("SPOJE",
         [
             RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"),
-                ("CASY", new JsonArray("16:15", "16:40"))),
+                ("CASY", new JsonArray(prvni, druhy))),
         ]),
         ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "PD"), ("PORADI", "1"))]));
 
     /// <summary>
-    /// Kouřová zkouška: v obou formátech je ve sloupci spoje vidět čas.
+    /// Kouřová zkouška: ve všech formátech je ve sloupci spoje vidět čas.
     /// </summary>
     /// <remarks>
     /// ⚠️ **Nechytne vypadlou ruční cestu.** Čas se při tomhle formátu vyjímá z buňky a kreslí
@@ -225,7 +334,8 @@ public class FormatCasuSpojeTests
     [Theory]
     [InlineData(FormatCasuSpoje.HodinaVetsi)]
     [InlineData(FormatCasuSpoje.SDvojteckou)]
-    public void CasSeNakresliObemaFormaty(FormatCasuSpoje format)
+    [InlineData(FormatCasuSpoje.STeckou)]
+    public void CasSeNakresliVeVsechFormatech(FormatCasuSpoje format)
     {
         var prvek = Prvek();
         prvek.FormatCasu = format;
