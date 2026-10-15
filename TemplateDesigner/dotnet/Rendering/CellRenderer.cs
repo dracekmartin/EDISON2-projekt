@@ -135,7 +135,7 @@ public static class CellRenderer
             && MeasureWidestPx(font, lines) + trailingWidthMm * ctx.MmToPx > contentMm.Width * ctx.MmToPx;
         if (oriznout)
         {
-            ctx.ClippedCells?.Report();
+            ctx.ClippedCells?.Report(text);
             ctx.Canvas.Save();
             ctx.Canvas.ClipRect(ctx.ToCanvasRect(rectMm.Left, rectMm.Top, rectMm.Width, rectMm.Height));
         }

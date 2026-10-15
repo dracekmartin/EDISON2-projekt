@@ -18,21 +18,101 @@ public class OriznuteBunkyHlaskaTests
     public void JednaBunka_HlaskaJmenujePrvek()
     {
         var log = new ClippedCells { CurrentElement = "Seznam zastávek" };
-        log.Report();
+        log.Report("Kroměříž");
 
         string? hlaska = log.Summarize();
         Assert.NotNull(hlaska);
         Assert.Contains("Seznam zastávek", hlaska);
-        Assert.Contains("jedné buňky", hlaska);
+    }
+
+    /// <summary>
+    /// Samotné jméno prvku nestačí: v tabulce spojů jsou tisíce buněk a bez textu nejde poznat,
+    /// která se ořízla, ani jestli je hláška oprávněná (nález Jan 15. 10.).
+    /// </summary>
+    [Fact]
+    public void JednaBunka_HlaskaRekneTextBunky()
+    {
+        var log = new ClippedCells { CurrentElement = "Tabulka spojů" };
+        log.Report("14.05");
+
+        Assert.Contains("obsah buňky „14.05“", log.Summarize());
+    }
+
+    [Fact]
+    public void BunkaBezTextu_HlaskaZustaneObecna()
+    {
+        var log = new ClippedCells { CurrentElement = "Tabulka spojů" };
+        log.Report("");
+
+        Assert.Contains("obsah jedné buňky", log.Summarize());
+    }
+
+    [Fact]
+    public void HlaskaRekneStranu()
+    {
+        var log = new ClippedCells { CurrentElement = "Tabulka spojů", CurrentPage = 2 };
+        log.Report("14.05");
+
+        Assert.Contains("Tabulka spojů · strana 2", log.Summarize());
+    }
+
+    [Fact]
+    public void ViceStran_VypiseVsechny()
+    {
+        var log = new ClippedCells { CurrentElement = "Tabulka spojů", CurrentPage = 3 };
+        log.Report("14.05");
+        log.CurrentPage = 1;
+        log.Report("15.10");
+        log.Report("15.40");
+
+        Assert.Contains("strany 1, 3", log.Summarize());
+    }
+
+    [Fact]
+    public void ViceBunek_VyjmenujeTriTextyAZbytekShrne()
+    {
+        var log = new ClippedCells { CurrentElement = "Tabulka spojů" };
+        foreach (var text in new[] { "A1", "B2", "C3", "D4", "E5" }) log.Report(text);
+
+        string? hlaska = log.Summarize();
+        Assert.Contains("obsah 5 buněk", hlaska);
+        Assert.Contains("„A1“, „B2“, „C3“ a další", hlaska);
+        Assert.DoesNotContain("D4", hlaska);
+    }
+
+    [Fact]
+    public void ViceBunekSeStejnymTextem_TextJenJednou()
+    {
+        var log = new ClippedCells { CurrentElement = "Tabulka spojů" };
+        log.Report("14.05");
+        log.Report("14.05");
+
+        string? hlaska = log.Summarize();
+        Assert.Contains("obsah 2 buněk", hlaska);
+        Assert.Contains("(„14.05“)", hlaska);
+    }
+
+    [Fact]
+    public void DlouhyAViceradkovyText_SeZkratiDoJednohoRadku()
+    {
+        var log = new ClippedCells { CurrentElement = "Seznam zastávek" };
+        log.Report("Zastávka\nStop");
+        log.CurrentElement = "Tabulka spojů";
+        log.Report(new string('x', 100));
+
+        string? hlaska = log.Summarize();
+        Assert.Contains("„Zastávka / Stop“", hlaska);
+        Assert.Contains(new string('x', 39) + "…“", hlaska);
+        Assert.DoesNotContain(new string('x', 40), hlaska);
     }
 
     [Fact]
     public void ViceBunekTehozPrvku_SeSecte()
     {
         var log = new ClippedCells { CurrentElement = "Seznam zastávek" };
-        log.Report();
-        log.Report();
-        log.Report();
+        log.Report("a");
+        log.Report("b");
+        log.Report("c");
 
         Assert.Contains("3 buněk", log.Summarize());
     }
@@ -41,9 +121,9 @@ public class OriznuteBunkyHlaskaTests
     public void VicePrvku_KazdyMaSvouCast()
     {
         var log = new ClippedCells { CurrentElement = "Minuty odjezdů" };
-        log.Report();
+        log.Report("12");
         log.CurrentElement = "Seznam zastávek";
-        log.Report();
+        log.Report("Kroměříž");
 
         string? hlaska = log.Summarize();
         Assert.NotNull(hlaska);
@@ -53,10 +133,10 @@ public class OriznuteBunkyHlaskaTests
     }
 
     [Fact]
-    public void UzkaBunka_PriKresleniOhlasiOriznuti()
+    public void UzkaBunka_PriKresleniOhlasiOriznutiSTextem()
     {
-        var log = KresliBunku("České Budějovice,U Zelené ratolesti rozc. 1.0", sirkaMm: 6f);
-        Assert.NotNull(log.Summarize());
+        var log = KresliBunku("Dolní Dvořiště", sirkaMm: 3f);
+        Assert.Contains("„Dolní Dvořiště“", log.Summarize());
     }
 
     [Fact]

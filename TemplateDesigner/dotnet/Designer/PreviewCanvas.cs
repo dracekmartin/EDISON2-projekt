@@ -408,6 +408,7 @@ public class PreviewCanvas
         var zobrazene = ZobrazeneStranky(layout).ToHashSet();
         for (int i = 0; i < layout.Pages.Count; i++)
         {
+            _oriznuteBunky.CurrentPage = i + 1;
             if (!zobrazene.Contains(i))
             {
                 // Skrytá stránka (jiná předloha) se vykreslí naprázdno, jen aby hláška

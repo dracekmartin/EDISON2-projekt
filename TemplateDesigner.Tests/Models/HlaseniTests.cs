@@ -70,7 +70,7 @@ public class HlaseniTests
     {
         var id = Guid.NewGuid();
         var log = new ClippedCells { CurrentElement = "Seznam zastávek", CurrentElementId = id };
-        log.Report();
+        log.Report("Kroměříž");
 
         var h = Assert.Single(log.Seznam());
         Assert.Equal(ZavaznostHlaseni.Chyba, h.Zavaznost);

@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-15 (2) - 🔎 hláška o oříznuté buňce řekne, o kterou buňku jde
+
+Hláška „obsah jedné buňky se nevejde ani po zmenšení písma, ořízl se" jmenovala jen prvek.
+V tabulce spojů s tisíci buněk z ní nešlo poznat, kterou buňku hledat, ani jestli je oprávněná (nález Jan 15. 10.).
+Teď nese text oříznuté buňky a strany: „Tabulka spojů · strana 2: obsah buňky „14.05“ se nevejde…".
+U víc buněk vyjmenuje první tři různé texty a zbytek shrne „a další"; dlouhý text zkrátí a víc řádků slije do jednoho.
+Strany vypisuje stejně jako hláška o přetečení stránky (`OverflowWarnings.PopisStranek`).
+Náhled se kvůli tomu nevyznačuje - zrcadlí výstup bez pomůcek navíc.
+Testy `OriznuteBunkyHlaskaTests`; že kreslení buňky text opravdu předá, hlídá kreslicí test (ověřeno mutací).
+
 ## 2026-10-15 - 🕐 formát času s tečkou v Tabulce spojů (#13610)
 
 KOVED píše časy jako „9.05" a „14.05" a v linkovém JŘ to nešlo nastavit.

@@ -93,7 +93,7 @@ public static class OverflowWarnings
     /// Které stránky to potkalo. Čísla se vypisují do tří stránek; nad to je užitečnější počet
     /// a první výskyt, protože „strany 1, 2, 3, 4, 5, 6, …“ v jednom řádku stavu nikdo nepřečte.
     /// </summary>
-    private static string PopisStranek(List<int> stranky, int celkemStranek)
+    internal static string PopisStranek(List<int> stranky, int celkemStranek)
     {
         if (stranky.Count == 1) return $"strana {stranky[0]}";
         if (stranky.Count <= 3) return "strany " + string.Join(", ", stranky);
