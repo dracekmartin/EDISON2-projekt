@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Jedno záhlaví „km" nad všemi km sloupci (hotovo 15. 10. 2026)
+
+Dotaz Jan 13. 10., požadavek KOVED v `#13610`. Tabulka spojů psala „km" nad každý km sloupec.
+Nová volba „Jedno záhlaví nad km sloupci" ve skupině Popisné sloupce, výchozí vypnutá, aby se
+nezměnily hotové sestavy. Sloučení záhlaví funguje stejně jako u zón rozdělených do sloupců.
+Omezení počtu km sloupců v šabloně se nedělá, řídí ho nastavení linky. Detail changelog 2026-10-15 (5).
+
 ## `B191c` Linkový JŘ MHD proti starému tisku (hotovo 12. 10. 2026)
 
 Porovnání se starým tiskem kryje celou tabulku: značky a legendu, časy po zastávkách, seznam

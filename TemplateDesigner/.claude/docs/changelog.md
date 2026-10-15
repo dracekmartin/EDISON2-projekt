@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-15 (5) - 🔠 jedno záhlaví nad km sloupci (#13610)
+
+KOVED chce nad km sloupci jeden popisek místo „km" nad každým.
+Tabulka spojů má ve skupině Popisné sloupce volbu **Jedno záhlaví nad km sloupci**: zapnutá vypíše jedno záhlaví přes všechny km sloupce, hodnoty zůstávají v samostatných sloupcích.
+Výchozí je vypnutá, aby se nezměnily hotové sestavy - na rozdíl od zón nese každý km sloupec jinou hodnotu, takže samostatné záhlaví tam smysl má.
+Sloučení jde stejnou cestou jako u zón rozdělených do sloupců (`NadpisyPopisnychSloupcu`), takže v řádku záhlaví zmizí i čáry mezi km sloupci.
+Druhou půlku požadavku (omezit počet km sloupců) šablona neřeší: počet řídí nastavení linky (filtr km sloupců, výchozí 10), viz changelog 2026-09-07 (13).
+Test `JednoZahlaviKm_JedenNadpisPresVsechnyKmSloupce`; volba ve formuláři ověřená voláním `Init` na serveru.
+
 ## 2026-10-15 (4) - 📏 plný blok už nemá podivně široký poslední spoj
 
 Na 410110 (KV_DP) s formátem „hh.mm" vyšel poslední spoj v plném bloku skoro dvojnásobně široký (nález Jan 15. 10.).

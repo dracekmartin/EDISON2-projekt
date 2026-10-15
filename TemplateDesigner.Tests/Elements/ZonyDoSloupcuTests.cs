@@ -130,27 +130,45 @@ public class ZonyDoSloupcuTests
     }
 
     /// <summary>
-    /// Kilometry se <b>neslučují</b> - jejich díly jsou různé hodnoty se stejným názvem.
+    /// Kilometry se ve výchozím stavu <b>neslučují</b> - jejich díly jsou různé hodnoty se stejným názvem.
     /// </summary>
     /// <remarks>
     /// ⚠️ Není to opomenutí: sloučení nadpisu km by změnilo hotové sestavy všem, kdo km sloupce mají,
-    /// a na rozdíl od zón tam každý díl znamená něco jiného (km jednotlivých úseků).
+    /// a na rozdíl od zón tam každý díl znamená něco jiného (km jednotlivých úseků). Sloučit je jde
+    /// jen volbou <see cref="LineTableElement.JednoZahlaviKm"/>.
     /// </remarks>
     [Fact]
     public void Kilometry_SeNeslucuji()
     {
-        var data = RenderSnapshot.Data(
-            ("ZASTAVKY",
-            [
-                RenderSnapshot.Row(("PORADI", "1"), ("TYP", "zastavka"), ("NAZEV_ZASTAVKY", "A"),
-                    ("ZONY", "037"), ("KM", new JsonArray("0", "5"))),
-            ]),
-            ("SPOJE", [RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"), ("SMER", "T"))]));
-
-        var nadpisy = Prvek(rozdelit: true).NadpisyProTest(data);
+        var nadpisy = Prvek(rozdelit: true).NadpisyProTest(DataSKm());
 
         Assert.Equal(2, nadpisy.Count(n => n.Text == "km"));
     }
+
+    /// <summary>
+    /// Se zapnutou volbou je nad km sloupci jedno záhlaví přes všechny (#13610, KOVED) - široké jako
+    /// všechny km sloupce dohromady, jinak by nesedělo nad hodnoty.
+    /// </summary>
+    [Fact]
+    public void JednoZahlaviKm_JedenNadpisPresVsechnyKmSloupce()
+    {
+        var prvek = Prvek(rozdelit: false);
+        prvek.JednoZahlaviKm = true;
+
+        var nadpisy = prvek.NadpisyProTest(DataSKm());
+
+        var km = Assert.Single(nadpisy, n => n.Text == "km");
+        Assert.Equal(6f * 2, km.Sirka, 3);   // výchozí šířka km sloupce je 6 mm
+        Assert.Equal(2, prvek.PopisneSloupceProTest(DataSKm()).Count(c => c.Klic == ColumnKeys.Km));
+    }
+
+    private static DataContext DataSKm() => RenderSnapshot.Data(
+        ("ZASTAVKY",
+        [
+            RenderSnapshot.Row(("PORADI", "1"), ("TYP", "zastavka"), ("NAZEV_ZASTAVKY", "A"),
+                ("ZONY", "037"), ("KM", new JsonArray("0", "5"))),
+        ]),
+        ("SPOJE", [RenderSnapshot.Row(("CISLO_SPOJE", "1"), ("SKUPINA", "1"), ("SMER", "T"))]));
 
     /// <summary>Prázdná zóna nevyrobí sloupec s prázdným textem navíc.</summary>
     [Fact]

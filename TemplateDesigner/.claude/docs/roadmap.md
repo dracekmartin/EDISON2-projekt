@@ -44,11 +44,6 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
   `ALVA.ISY.ISYJR2.API.Linky.GetBarvaLinky`), linkové agendy ne. AD: stejné pole do `LinkovyJrAd`.
   MHD: nejdřív zjistit, jestli modul MHD barvu linky vůbec má.
 
-- **Jedno záhlaví „km" nad všemi km sloupci** [S] (dotaz Jan 13. 10. při přípravě školení).
-  Tabulka spojů píše „km" nad každý km sloupec. Rozdělené zóny mají společné záhlaví a km ho záměrně
-  nemají (`LineTableElement.cs:1677`, změnilo by to hotové sestavy). Návrh: volba u popisných
-  sloupců, výchozí vypnutá.
-
 - **Vývěsky MHD: značka zastávky u názvu** [S] (nález 12. 10., `MhdLegacyOracle`). Starý tisk
   připisuje značku zastávky k názvu („Areál VŠTE, A" na CB_DP 11350), my ne - linkový JŘ MHD už
   značky bere i z bodu trasy (`LinkovyJrMhd.ZnackyBodu`), vývěsky ne. Ověřit proti starému tisku.

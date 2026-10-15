@@ -257,6 +257,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// hotove sestavy i tem, kdo o nej nezadali. Stary modul to neumi vubec, neni to tedy parita.
     /// </remarks>
     public bool RozdelitZonyDoSloupcu { get; set; }
+
+    /// <summary>Jedno záhlaví „km" přes všechny km sloupce místo jednoho nad každým (výchozí vypnuto).</summary>
+    /// <remarks>
+    /// KOVED chce jeden popisek nad celou skupinou km (#13610). ⚠️ <b>Výchozí je vypnuto záměrně</b> -
+    /// sloučení by překreslilo hotové sestavy všem, kdo km sloupce mají, a na rozdíl od zón nese každý
+    /// díl jinou hodnotu (km jednotlivých profilů), takže samostatné záhlaví tam smysl má.
+    /// </remarks>
+    public bool JednoZahlaviKm { get; set; }
+
     /// <summary>Pás názvů skupin dnů (Pracovní dny / Soboty / …) nad čísly spojů.</summary>
     public bool ShowGroupHeaders { get; set; } = true;
 
@@ -1693,8 +1702,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// „Zona" nad kazdym dilem vypadala jako nekolik ruznych sloupcu, prestoze je to porad tataz vec,
     /// jen rozlozena (rozhodnuti Jan 1. 9. po vyzkouseni). Slouceni znamena jednu sirsi bunku misto
     /// nekolika, takze v radku nadpisu zaroven zmizi cary mezi dily.
-    /// <para>⚠️ Kilometry se **zamerne** neslucuji: jejich dily jsou km jednotlivych useku, tedy ruzne
-    /// hodnoty se stejnym nazvem, a slouceni by zmenilo hotove sestavy vsem, kdo km sloupce maji.</para>
+    /// <para>⚠️ Kilometry se slucuji **jen na vyzadani** (<see cref="JednoZahlaviKm"/>): jejich dily
+    /// jsou km jednotlivych useku, tedy ruzne hodnoty se stejnym nazvem, a slouceni ve vychozim stavu
+    /// by zmenilo hotove sestavy vsem, kdo km sloupce maji.</para>
     /// </remarks>
     private List<(int Index, float Sirka, string Text, ResolvedTextStyle Styl)> NadpisyPopisnychSloupcu(
         IReadOnlyList<RenderCol> fixedCols)
@@ -1703,8 +1713,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         for (int ci = 0; ci < fixedCols.Count; ci++)
         {
             int span = 1;
-            if (fixedCols[ci].Key == ColumnKeys.Zone && RozdelitZonyDoSloupcu)
-                while (ci + span < fixedCols.Count && fixedCols[ci + span].Key == ColumnKeys.Zone) span++;
+            string klic = fixedCols[ci].Key;
+            if ((klic == ColumnKeys.Zone && RozdelitZonyDoSloupcu) || (klic == ColumnKeys.Km && JednoZahlaviKm))
+                while (ci + span < fixedCols.Count && fixedCols[ci + span].Key == klic) span++;
             float sirka = 0f;
             for (int k = 0; k < span; k++) sirka += fixedCols[ci + k].Width;
             vysledek.Add((ci, sirka, fixedCols[ci].Header, fixedCols[ci].HeaderStyle));
@@ -3497,6 +3508,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             VyplnitPrazdneBunkySpoju = VyplnitPrazdneBunkySpoju,
             TeckyZaNazvemZastavky = TeckyZaNazvemZastavky,
             RozdelitZonyDoSloupcu = RozdelitZonyDoSloupcu,
+            JednoZahlaviKm = JednoZahlaviKm,
             ShowGroupHeaders = ShowGroupHeaders,
             PopisneSloupceNadpis = PopisneSloupceNadpis,
             PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
@@ -3590,6 +3602,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = PopisneGroup,
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
+        new BoolPropertyDescriptor { Label = "Jedno záhlaví nad km sloupci", Group = PopisneGroup,
+            Get = () => JednoZahlaviKm, Set = v => JednoZahlaviKm = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = PopisneGroup,
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },
