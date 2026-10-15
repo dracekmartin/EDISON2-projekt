@@ -1,3 +1,4 @@
+using TemplateDesigner.Models;
 using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Tests.Rendering;
@@ -147,6 +148,40 @@ public class OriznuteBunkyHlaskaTests
     }
 
     /// <summary>
+    /// Text po zmenšení začíná u levého vnitřního okraje a hrana buňky ho usekne až za pravým.
+    /// Když zabere jen pravý vnitřní okraj, je celý vidět a hlásit se nesmí - „11,12" v úzkém
+    /// sloupci TPZ (nález Jan 15. 10.).
+    /// </summary>
+    [Fact]
+    public void TextVPravemVnitrnimOkraji_NehlasiOriznuti()
+    {
+        var (styl, sirkaTextu) = NezmensitelnyStyl("11,12");
+
+        // Obsah bez okrajů je o půl pravého okraje užší než text, buňka o půl okraje širší.
+        var log = KresliBunku("11,12", styl.PaddingLeft + sirkaTextu + styl.PaddingRight / 2f, styl);
+
+        Assert.Null(log.Summarize());
+    }
+
+    [Fact]
+    public void TextPresHranuBunky_HlasiOriznuti()
+    {
+        var (styl, sirkaTextu) = NezmensitelnyStyl("11,12");
+
+        var log = KresliBunku("11,12", styl.PaddingLeft + sirkaTextu - 0.2f, styl);
+
+        Assert.Contains("„11,12“", log.Summarize());
+    }
+
+    /// <summary>Styl, který už zmenšit nejde (4 body = dno zmenšování), a šířka textu v něm (mm).</summary>
+    private static (ResolvedTextStyle Styl, float SirkaMm) NezmensitelnyStyl(string text)
+    {
+        var styl = CellDefaults.Default with { FontSize = CellRenderer.MinFontPt, PaddingLeft = 0.5f, PaddingRight = 1f };
+        using var font = styl.CreateFont(1f, MmToPx);
+        return (styl, font.MeasureText(text) / MmToPx);
+    }
+
+    /// <summary>
     /// Textový prvek s nízkou pevnou výškou, kterému se zalomený text nevejde ani po zmenšení -
     /// hlásí se při kreslení s daty stránky, protože pole jako dopravci stránky plní až sazba.
     /// </summary>
@@ -203,14 +238,16 @@ public class OriznuteBunkyHlaskaTests
         return log;
     }
 
+    private const float MmToPx = 96f / 25.4f;
+
     /// <summary>Nakreslí jednu buňku dané šířky a vrátí sběrač, aby šlo zkontrolovat, co ohlásila.</summary>
-    private static ClippedCells KresliBunku(string text, float sirkaMm)
+    private static ClippedCells KresliBunku(string text, float sirkaMm, ResolvedTextStyle? styl = null)
     {
         var log = new ClippedCells { CurrentElement = "Seznam zastávek" };
         using var bitmap = new SkiaSharp.SKBitmap(400, 100);
         using var canvas = new SkiaSharp.SKCanvas(bitmap);
-        var ctx = new TemplateDesigner.Models.RenderContext(canvas, 96f / 25.4f) { ClippedCells = log };
-        CellRenderer.DrawCell(ctx, new SkiaSharp.SKRect(0, 0, sirkaMm, 5f), text, CellDefaults.Default);
+        var ctx = new TemplateDesigner.Models.RenderContext(canvas, MmToPx) { ClippedCells = log };
+        CellRenderer.DrawCell(ctx, new SkiaSharp.SKRect(0, 0, sirkaMm, 5f), text, styl ?? CellDefaults.Default);
         return log;
     }
 }

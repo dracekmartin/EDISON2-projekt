@@ -131,8 +131,13 @@ public static class CellRenderer
         // Na mezi zmenšování se text do buňky vejít nemusí. Ořízne se na její hranu, aby nelezl
         // do sousedního sloupce - půlka písmene je vidět, že je něco špatně, kdežto text přes
         // sousedku vypadá jako správný obsah jiné buňky.
+        // ⚠️ Přetékající text začíná u levého vnitřního okraje (`CellLayout.TextAnchorPx`) a hrana
+        // buňky ho usekne až za pravým vnitřním okrajem. Text, který jen zabere pravý okraj, je celý
+        // vidět - dokud se srovnával s obsahem bez okrajů, hlásil se jako oříznutý („11,12" v úzkém
+        // sloupci TPZ, nález Jan 15. 10.).
         bool oriznout = effScale <= MinShrinkScale(style, fontScale)
-            && MeasureWidestPx(font, lines) + trailingWidthMm * ctx.MmToPx > contentMm.Width * ctx.MmToPx;
+            && MeasureWidestPx(font, lines) + trailingWidthMm * ctx.MmToPx
+               > (rectMm.Right - contentMm.Left) * ctx.MmToPx;
         if (oriznout)
         {
             ctx.ClippedCells?.Report(text);

@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-15 (3) - 🐛 falešná hláška o oříznuté buňce
+
+„11,12" v úzkém sloupci TPZ se vytisklo celé, a návrhář přesto hlásil, že se ořízlo (nález Jan 15. 10.).
+Přetékající text začíná u levého vnitřního okraje a hrana buňky ho usekne až za pravým vnitřním okrajem.
+Kontrola ho ale srovnávala s obsahem buňky bez okrajů, takže hlásila i text, který jen zabral pravý okraj.
+Teď se srovnává s tím, co hrana buňky opravdu usekne. Výstup se nemění, jen hláška.
+Testy `OriznuteBunkyHlaskaTests` (text v pravém okraji se nehlásí, text přes hranu ano; ověřeno mutací).
+
 ## 2026-10-15 (2) - 🔎 hláška o oříznuté buňce řekne, o kterou buňku jde
 
 Hláška „obsah jedné buňky se nevejde ani po zmenšení písma, ořízl se" jmenovala jen prvek.
