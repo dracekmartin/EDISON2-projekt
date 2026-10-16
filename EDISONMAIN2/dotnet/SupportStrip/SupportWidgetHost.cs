@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
+namespace EDISONMAIN2.SupportStrip;
 
 /// <summary>
 /// Plní hostitelský <see cref="Border"/> webovým widgetem podpora.m-line.cz - jediný funnel

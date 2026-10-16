@@ -3,7 +3,7 @@ using ALWA.SYS;
 using EDControls;
 using EDControls.UserPrefs;
 using EDISONMAIN2.Desktop;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 
 namespace EDISON2.IntegrationTests;
 

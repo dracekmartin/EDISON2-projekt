@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Windows.LoginWindow;
 using EDTesting;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;

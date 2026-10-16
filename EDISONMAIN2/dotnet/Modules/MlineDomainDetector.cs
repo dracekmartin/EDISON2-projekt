@@ -1,6 +1,6 @@
 using EDControls.ErrorReporting;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     /// <summary>
     /// Gate pro mlineOnly uzly stromu (legacy <c>ALVA.CORE.Network.IsDomainMline</c>, EDCORE/clsCore.vb):

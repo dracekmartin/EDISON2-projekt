@@ -1,6 +1,6 @@
 using ALWA.SYS;
 using EDControls;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 
 namespace EDISON2.IntegrationTests;
 

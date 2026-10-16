@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     class ModuleFamily : IModule, INotifyPropertyChanged
     {

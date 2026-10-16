@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Modules;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
@@ -15,9 +16,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// </summary>
     internal sealed class ModuleTreeState
     {
-        /// <summary>Per stanice konstantní (DNS doména / registry override) - stačí vyhodnotit jednou.</summary>
-        internal static readonly bool IsMlineDomainStation = MlineDomainDetector.IsDomainMline();
-
         /// <summary>
         /// Filtrace stromu: licence (<see cref="ExecutableModule.IsLicensed"/> ∈ <see cref="Lic.Elements"/>),
         /// <see cref="ExecutableModule.Hidden"/>, mlineOnly a aplikační přístup (<c>AccessTable</c>);

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace EDISONMAIN2;
+namespace EDISONMAIN2.Modules;
 
 // Kódy, které legacy EDUsers.GetEdisonAccess (repo EDISON, EDUsers.vb) doplňuje k AP ze serveru - jen pravidla
 // s cílem ve stromu. Zmizí-li pravidlo z legacy masteru, smaže se i tady (hlídá LegacyDerivedAccessTests); prázdná tabulka = smazat soubor.

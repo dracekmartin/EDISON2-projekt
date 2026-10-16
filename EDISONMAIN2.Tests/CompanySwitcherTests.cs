@@ -170,7 +170,7 @@ public class CompanySwitcherTests
     [Fact]
     public void LoginProbe_CarriesLoggedUserAndQueriedCompany()
     {
-        var login = new EDISONMAIN2.Windows.LoginWindow.LoginResult(42, "novak", "Jan Novák", false, "", false, false, "");
+        var login = new LoginResult(42, "novak", "Jan Novák", false, "", false, false, "");
 
         var probe = CompanySwitcher.LoginProbe(QueryInCb, login);
 

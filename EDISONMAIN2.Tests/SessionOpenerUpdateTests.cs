@@ -1,6 +1,5 @@
 using System.IO;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Windows.LoginWindow;
 using EDTesting;
 using NSubstitute;
 

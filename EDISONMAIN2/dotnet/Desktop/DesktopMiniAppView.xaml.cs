@@ -1,7 +1,7 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 // Aliasy proti ambient System.Windows.Forms (UseWindowsForms zapnuté pro WinForms color picker; _wpftmp importuje WinForms).
 using UserControl = System.Windows.Controls.UserControl;
 using DragEventArgs = System.Windows.DragEventArgs;

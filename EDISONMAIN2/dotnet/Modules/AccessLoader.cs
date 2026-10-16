@@ -4,7 +4,7 @@ using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
 
-namespace EDISONMAIN2;
+namespace EDISONMAIN2.Modules;
 
 /// <summary>
 /// Načte aplikační přístup uživatele přes <c>ALVA.SYS.Login.GetEdisonAccess</c>

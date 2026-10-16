@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 
 namespace EDISONMAIN2.Windows.ChangelogWindow
 {

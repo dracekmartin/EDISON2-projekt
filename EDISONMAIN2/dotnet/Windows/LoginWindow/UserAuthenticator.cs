@@ -3,16 +3,6 @@ using EDControls;
 
 namespace EDISONMAIN2.Windows.LoginWindow
 {
-    public record LoginResult(
-        int Mlp,
-        string UserName,
-        string FullName,
-        bool IsAdmin,
-        string Directory,
-        bool ChangePasswordNeeded,
-        bool MayUpdate,
-        string Email);
-
     public class LoginException(string message) : Exception(message);
 
     /// <summary>Výsledek změny hesla - úspěch, nebo chybová hláška k zobrazení uživateli.</summary>

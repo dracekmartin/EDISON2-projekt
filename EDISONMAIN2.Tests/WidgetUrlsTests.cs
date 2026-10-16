@@ -1,4 +1,4 @@
-using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
+using EDISONMAIN2.SupportStrip;
 
 namespace EDISONMAIN2.Tests;
 

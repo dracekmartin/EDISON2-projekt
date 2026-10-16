@@ -5,7 +5,7 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDISONMAIN2.MiniApps;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDTesting;
 using NSubstitute;

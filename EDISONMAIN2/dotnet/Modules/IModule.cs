@@ -1,4 +1,4 @@
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     public interface IModule
     {

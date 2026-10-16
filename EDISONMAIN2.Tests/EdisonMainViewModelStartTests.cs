@@ -1,8 +1,8 @@
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Modules;
 using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDTesting;
 using NSubstitute;
 using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;

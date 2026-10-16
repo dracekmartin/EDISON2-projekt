@@ -1,7 +1,7 @@
 using System.IO;
 using EDControls.EDViewModel;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     /// <summary>
     /// Kontrola launchovatelnosti modulů. Tree.cls neautoruje barvu - odvozuje se zde z exe

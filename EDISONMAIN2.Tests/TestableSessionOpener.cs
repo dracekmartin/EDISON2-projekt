@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Windows.LoginWindow;
 using EDTesting;
 using static ALVA.EDISONAPI.Database;
 

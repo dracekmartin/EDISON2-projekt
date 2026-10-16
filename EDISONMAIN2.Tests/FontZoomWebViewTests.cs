@@ -1,6 +1,6 @@
 using System.IO;
 using EDControls.EDTheme;
-using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
+using EDISONMAIN2.SupportStrip;
 using Microsoft.Web.WebView2.Wpf;
 
 namespace EDISONMAIN2.Tests;

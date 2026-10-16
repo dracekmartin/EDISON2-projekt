@@ -1,7 +1,7 @@
 using EDControls;
 using System.Collections.Generic;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     public interface IModuleTreeLoader
     {

@@ -14,10 +14,10 @@ using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDISONMAIN2.Desktop;
 using EDISONMAIN2.MiniApps;
+using EDISONMAIN2.Modules;
+using EDISONMAIN2.SupportStrip;
 using EDISONMAIN2.Windows.ChangelogWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
-using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias - class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
@@ -374,7 +374,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (module is not ExecutableModule { ElementId: { Length: > 0 } elementId }) return;
             if (!int.TryParse(elementId, out var formId) || formId == 0) return;
-            UserProfileService.SetDefaultWindow(Rest, formId);
+            DefaultWindowService.Set(Rest, formId);
             DefaultWindowId = formId;
             ApplyStartupWindowMark();
         }
@@ -382,7 +382,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void ClearStartupWindow()
         {
             if (DefaultWindowId == 0) return;
-            UserProfileService.SetDefaultWindow(Rest, 0);
+            DefaultWindowService.Set(Rest, 0);
             DefaultWindowId = 0;
             ApplyStartupWindowMark();
         }

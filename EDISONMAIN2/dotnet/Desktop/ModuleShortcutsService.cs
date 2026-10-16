@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 
 namespace EDISONMAIN2.Desktop
 {

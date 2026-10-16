@@ -1,4 +1,4 @@
-using EDISONMAIN2;
+using EDISONMAIN2.Windows.EdisonMainWindow;
 
 namespace EDISON2.IntegrationTests;
 

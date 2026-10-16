@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using EDISONMAIN2.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData

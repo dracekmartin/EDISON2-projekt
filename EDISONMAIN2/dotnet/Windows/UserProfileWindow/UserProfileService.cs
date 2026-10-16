@@ -5,7 +5,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
 {
     /// <summary>
     /// Profil uživatele ze serveru: osobní export adresář (+ příznak použití) a centrální
-    /// export adresář. Výchozí okno jen přes <see cref="UserProfileService.LoadDefaultWindow"/>.
+    /// export adresář. Výchozí okno jen přes <see cref="EDISONMAIN2.Modules.DefaultWindowService.Load"/>.
     /// </summary>
     public record UserProfileData(bool UsePersonDir, string PersonDir, string CentralExportDir);
 
@@ -18,7 +18,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
     {
         /// <summary>
         /// <c>ALVA.EDISON.Main.LoadUser</c> (řádek <c>personDir~příznak~cesta</c>) + <see cref="LoadCentralExportDir"/>.
-        /// Řádek <c>form</c> téže odpovědi čte jen legacy shell; výchozí okno je <see cref="LoadDefaultWindow"/>.
+        /// Řádek <c>form</c> téže odpovědi čte jen legacy shell; výchozí okno je <see cref="EDISONMAIN2.Modules.DefaultWindowService.Load"/>.
         /// </summary>
         public static UserProfileData Load(IMLRest mlRest)
         {
@@ -62,22 +62,5 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
             var row = string.Join(mlRest.Delimiter, "personDir", usePersonDir ? "1" : "0", personDir);
             mlRest.QueryOrThrow("ALVA.EDISON.Main", "SaveUser", new object[] { row });
         }
-
-        /// <summary>
-        /// <c>ALVA.USERS.ApiEdison.GetUserDefaultForm</c> - id výchozího okna (0 = žádný),
-        /// per-uživatel × aktuální IDFa. Dedikovaná metoda pro startup-form logiku shellu.
-        /// </summary>
-        public static int LoadDefaultWindow(IMLRest mlRest)
-        {
-            var output = mlRest.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", new object[] { });
-            return int.TryParse(LegacyOutput.Values(output).FirstOrDefault(), out var id) ? id : 0;
-        }
-
-        /// <summary>
-        /// <c>ALVA.USERS.ApiEdison.SetUserDefaultForm</c> - nastaví (0 = zruší) výchozí okno
-        /// pro aktuální IDFa.
-        /// </summary>
-        public static void SetDefaultWindow(IMLRest mlRest, int formId) =>
-            mlRest.QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm", new object[] { formId });
     }
 }

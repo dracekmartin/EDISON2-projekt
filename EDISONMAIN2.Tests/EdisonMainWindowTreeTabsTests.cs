@@ -1,5 +1,5 @@
 using System.Windows;
-using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
+using EDISONMAIN2.SupportStrip;
 using EDTesting;
 using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;
 

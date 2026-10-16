@@ -1,5 +1,4 @@
-using EDISONMAIN2;
-using EDISONMAIN2.Windows.UserProfileWindow;
+using EDISONMAIN2.Modules;
 
 namespace EDISON2.IntegrationTests;
 
@@ -24,7 +23,7 @@ public class SessionDataTests
     }
 
     [DevServerFact]
-    public void LoadDefaultWindow_RealServer_ReturnsServerFormId()
+    public void DefaultWindowLoad_RealServer_ReturnsServerFormId()
     {
         var rest = DevServer.Connect();
         var raw = rest.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", new object[] { });
@@ -33,6 +32,6 @@ public class SessionDataTests
         Assert.True(raw.Length > 1, "GetUserDefaultForm nevrátil řádek s id okna.");
         Assert.True(int.TryParse(raw[1]?.ToString(), out var formId), "Id výchozího okna (index 1) není číslo.");
 
-        Assert.Equal(formId, UserProfileService.LoadDefaultWindow(rest));
+        Assert.Equal(formId, DefaultWindowService.Load(rest));
     }
 }

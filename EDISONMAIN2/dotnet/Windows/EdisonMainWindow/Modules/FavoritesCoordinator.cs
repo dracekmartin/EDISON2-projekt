@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Desktop;
+using EDISONMAIN2.Modules;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {

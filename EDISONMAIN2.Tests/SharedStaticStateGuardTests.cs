@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 
 namespace EDISONMAIN2.Tests;
 

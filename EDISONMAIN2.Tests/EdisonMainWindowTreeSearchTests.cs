@@ -1,8 +1,8 @@
 using System.Windows;
 using System.Windows.Input;
 using EDControls;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
+using EDISONMAIN2.Modules;
+using EDISONMAIN2.SupportStrip;
 using EDTesting;
 using NSubstitute;
 using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;

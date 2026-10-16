@@ -1,7 +1,7 @@
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
+using EDISONMAIN2.Modules;
+using EDISONMAIN2.SupportStrip;
 
 namespace EDISONMAIN2.Tests;
 
@@ -78,7 +78,7 @@ public class StartupOptionsTests
         Assert.False(options.DevMiniApps);
         Assert.False(options.UseDevDefaults);
         Assert.Null(options.TestRun);
-        Assert.Equal(ModuleTreeState.IsMlineDomainStation, options.InternalDiagnosticsEnabled);
+        Assert.Equal(ModuleTreeStation.IsMlineDomainStation, options.InternalDiagnosticsEnabled);
     }
 
     [Fact]

@@ -11,9 +11,8 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
 using EDControls.UserPrefs;
-using EDISONMAIN2.Desktop;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     /// <summary>
     /// Per-user × IDFa stav stromu modulů (oblíbené + používanost) přes <see cref="IUserPrefsService"/>.
@@ -124,7 +123,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             SaveBlobAsync(ChangelogSnoozeKey, snooze);
 
         /// <summary>
-        /// Klíč naposledy otevřené záložky stromu (<see cref="TreeTab.Key"/>), nebo <c>null</c>
+        /// Klíč naposledy otevřené záložky stromu (<c>TreeTab.Key</c>), nebo <c>null</c>
         /// když nebylo uloženo. Dřív se ukládal index - starou číselnou hodnotu shodí
         /// <c>GetValue&lt;string&gt;</c> a catch ji degraduje na null (= výchozí záložka).
         /// </summary>

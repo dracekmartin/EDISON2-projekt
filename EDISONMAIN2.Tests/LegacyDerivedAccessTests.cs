@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.RegularExpressions;
+using EDISONMAIN2.Modules;
 
 namespace EDISONMAIN2.Tests;
 

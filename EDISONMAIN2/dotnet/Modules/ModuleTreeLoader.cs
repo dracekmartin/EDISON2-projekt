@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using ALWA.SYS;
 using EDControls;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     public class ModuleTreeLoader : IModuleTreeLoader
     {

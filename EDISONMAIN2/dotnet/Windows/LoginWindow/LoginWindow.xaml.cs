@@ -1,6 +1,6 @@
 using System.Windows;
 using EDControls.EDSupportPanel;
-using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
+using EDISONMAIN2.SupportStrip;
 
 namespace EDISONMAIN2.Windows.LoginWindow
 {

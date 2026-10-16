@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using EDControls.UserPrefs;
+using EDISONMAIN2.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using NSubstitute;
 

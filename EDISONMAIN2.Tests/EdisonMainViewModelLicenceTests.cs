@@ -1,7 +1,7 @@
 using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 using EDTesting;
 using NSubstitute;
 using static EDISONMAIN2.Tests.EdisonMainViewModelHarness;

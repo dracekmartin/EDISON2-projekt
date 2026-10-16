@@ -1,5 +1,6 @@
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
+using EDISONMAIN2.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDTesting;

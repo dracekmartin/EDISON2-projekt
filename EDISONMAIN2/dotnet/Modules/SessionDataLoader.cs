@@ -4,10 +4,8 @@ using System.Threading.Tasks;
 using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Desktop;
-using EDISONMAIN2.Windows.UserProfileWindow;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     /// <summary>
     /// Session-scoped data ze serveru, ještě nepromítnutá do VM: surové (nefiltrované) stromy
@@ -46,7 +44,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             var trees = treeNames
                 .Select(name => (Name: name, Task: runner.RunAsync(rest => treeLoader.GetModuleTree(rest, name))))
                 .ToList();
-            var defaultWindow = runner.RunAsync(UserProfileService.LoadDefaultWindow);
+            var defaultWindow = runner.RunAsync(DefaultWindowService.Load);
             var preferences = LoadPreferencesAsync(prefs);
 
             // WhenAll (ne postupné awaity) - dokončí všechny větve a označí jejich výjimky za

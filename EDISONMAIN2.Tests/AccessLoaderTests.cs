@@ -1,6 +1,7 @@
 using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Modules;
 using EDTesting;
 using NSubstitute;
 

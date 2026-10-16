@@ -1,4 +1,5 @@
 using ALVA.LICENCE.EDLicence;
+using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDTesting;
 using NSubstitute;
 

@@ -1,3 +1,4 @@
+using EDISONMAIN2.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 

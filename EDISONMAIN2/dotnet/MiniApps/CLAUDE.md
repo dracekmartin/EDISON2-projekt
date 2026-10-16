@@ -12,7 +12,7 @@ jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   a shell připnuté po obnově **doplní** (`EnsurePinnedOpen`) - starý layout je mít nemusí. Shell je
   pozná podle `Pinned`, id Plochy zná jen `Desktop/DesktopMiniAppProvider`, který ji registruje.
 - Widgety `podpora.m-line.cz` v docku **nejsou**, pruh podpory má vlastní
-  [CLAUDE.md](../Windows/EdisonMainWindow/SupportStrip/CLAUDE.md). Chrome docku EDTheme tokeny
+  [CLAUDE.md](../SupportStrip/CLAUDE.md). Chrome docku EDTheme tokeny
   nečte: dark řeší swap `DockManager.Theme` na VS2013 Light/Dark, tab strip navrch dotahuje `DockThemeBrushes`.
   Záložka dokumentu má v tématu VS2013 pevných 19 px, s písmem ji uvolňuje `DockTabHeader` class handlerem
   na `Border.SizeChanged`. `Loaded` nejde: WPF ho do větve bez instančního handleru nepošle, class handler se nepočítá.

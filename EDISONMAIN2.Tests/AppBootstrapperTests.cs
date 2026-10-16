@@ -6,7 +6,6 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Desktop;
 using EDISONMAIN2.Windows.EdisonMainWindow;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
 using EDTesting;
 using NSubstitute;

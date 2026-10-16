@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
-using EDISONMAIN2.Windows.LoginWindow;
+using EDISONMAIN2.Modules;
+using EDISONMAIN2.SupportStrip;
 
 namespace EDISONMAIN2;
 
@@ -69,7 +68,7 @@ public sealed record StartupOptions
     /// <summary>Release nečte argumenty ani prostředí - stanice zákazníka nesmí dostat skrytý vypínač.</summary>
     public static StartupOptions Production() =>
         // Kolegové M-line validují Release build, proto diagnostika i na stanicích jejich domény.
-        new() { InternalDiagnosticsEnabled = ModuleTreeState.IsMlineDomainStation };
+        new() { InternalDiagnosticsEnabled = ModuleTreeStation.IsMlineDomainStation };
 
     /// <summary>Procesové statiky; jediné místo, které je nastavuje. Volat jako první krok startupu.</summary>
     public void ApplyToProcess()

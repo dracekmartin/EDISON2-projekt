@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using EDISONMAIN2.Modules;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {

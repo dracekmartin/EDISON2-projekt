@@ -1,5 +1,4 @@
 using EDControls;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
 namespace EDISONMAIN2.Tests;
 

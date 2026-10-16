@@ -7,14 +7,13 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Testy wire vrstvy okna „Vlastnosti uživatele" - parsování delimited object[] z
-/// Main.LoadUser / Main.LoadSettings a odesílané payloady SaveUser / (Set|Get)UserDefaultForm.
+/// Main.LoadUser / Main.LoadSettings a odesílaný payload SaveUser.
 /// </summary>
 public class UserProfileServiceTests
 {
     private const char D = '~';
 
-    private static IMLRest Mock(object[]? loadUser = null, object[]? loadSettings = null,
-        object[]? getDefaultWindow = null)
+    private static IMLRest Mock(object[]? loadUser = null, object[]? loadSettings = null)
     {
         var ml = Substitute.For<IMLRest>();
         ml.Delimiter.Returns(D);
@@ -22,8 +21,6 @@ public class UserProfileServiceTests
             .Returns(loadUser ?? new object[] { "" });
         ml.QueryOrThrow("ALVA.EDISON.Main", "LoadSettings", Arg.Any<object[]>())
             .Returns(loadSettings ?? new object[] { "" });
-        ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
-            .Returns(getDefaultWindow ?? new object[] { "", "0" });
         return ml;
     }
 
@@ -98,35 +95,5 @@ public class UserProfileServiceTests
 
         ml.Received().QueryOrThrow("ALVA.EDISON.Main", "SaveUser",
             Arg.Is<object[]>(a => (string)a[0] == $"personDir{D}0{D}"));
-    }
-
-    [Theory]
-    [InlineData("17", 17)]
-    [InlineData("0", 0)]
-    [InlineData("", 0)]
-    public void LoadDefaultWindow_ParsesOutput(string value, int expected)
-    {
-        var ml = Mock(getDefaultWindow: new object[] { "", value });
-
-        Assert.Equal(expected, UserProfileService.LoadDefaultWindow(ml));
-    }
-
-    [Fact]
-    public void LoadDefaultWindow_EmptyOutput_Zero()
-    {
-        var ml = Mock(getDefaultWindow: new object[] { "" });
-
-        Assert.Equal(0, UserProfileService.LoadDefaultWindow(ml));
-    }
-
-    [Fact]
-    public void SetDefaultWindow_SendsFormId()
-    {
-        var ml = Mock();
-
-        UserProfileService.SetDefaultWindow(ml, 23);
-
-        ml.Received().QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm",
-            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 23));
     }
 }

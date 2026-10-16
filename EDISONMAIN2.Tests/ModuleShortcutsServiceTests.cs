@@ -1,5 +1,5 @@
 using EDISONMAIN2.Desktop;
-using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Modules;
 
 namespace EDISONMAIN2.Tests;
 

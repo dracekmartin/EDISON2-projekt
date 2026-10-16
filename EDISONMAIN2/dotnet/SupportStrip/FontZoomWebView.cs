@@ -6,7 +6,7 @@ using EDControls.UserFonts;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.SupportStrip;
+namespace EDISONMAIN2.SupportStrip;
 
 /// <summary>
 /// WebView2 respektující user velikost fontu přes <see cref="WebView2.ZoomFactor"/> -

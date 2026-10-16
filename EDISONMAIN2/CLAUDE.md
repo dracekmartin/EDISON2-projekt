@@ -1,11 +1,11 @@
 # EDISONMAIN2 - poznámky pro vývojáře
 
-Hlavní WPF shell - login, výběr firmy, strom modulů, spouštění legacy `.exe` agend. Nahrazuje
-VB.NET `EDISONMAIN`. Bootstrap, login, připojení a session s ACTIVITY zámkem:
-[dotnet/Startup/CLAUDE.md](dotnet/Startup/CLAUDE.md).
+Hlavní WPF shell - login, výběr firmy, strom modulů, spouštění legacy `.exe` agend. Nahrazuje VB.NET `EDISONMAIN`.
 
-`Services/` složka neexistuje záměrně - single-consumer infrastruktura je ko-lokovaná se svým
-consumerem, cross-cutting věci jdou do `EDControls`.
+Složka = vrstva: `Startup/` bootstrap, login a session s ACTIVITY zámkem ([CLAUDE.md](dotnet/Startup/CLAUDE.md)), `Modules/`
+model modulů a data session (strom, per-user bloby, výchozí okno, fakta stanice), `Desktop/` plocha, `MiniApps/` dock,
+`SupportStrip/` pruh podpory, `Windows/*` okna. `Modules` na zbytku shellu nezávisí a `Desktop` jen na `Modules`. Služba
+s jedním konzumentem leží u něj (proto není `Services/`), cross-cutting věci jdou do `EDControls`.
 
 ## Strom modulů = generovaný snapshot
 
@@ -77,7 +77,7 @@ dev serveru**. Nikdy nenasazovat po částech a vždy si přečíst odpověď co
   `SaveExpansionAsync` - scope je **refcountovaný** (cesty se vnořují, plochý bool by vnitřní blok
   odemkl dřív). `SelectedModule` plní code-behind (`TreeView.SelectedItem` nejde bindovat).
 
-Mini-apps (AvalonDock, layout): [MiniApps](dotnet/MiniApps/CLAUDE.md), pruh podpory: [SupportStrip](dotnet/Windows/EdisonMainWindow/SupportStrip/CLAUDE.md).
+Mini-apps (AvalonDock, layout): [MiniApps](dotnet/MiniApps/CLAUDE.md), pruh podpory: [SupportStrip](dotnet/SupportStrip/CLAUDE.md).
 
 ## Plocha se zástupci
 

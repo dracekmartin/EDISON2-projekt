@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
+namespace EDISONMAIN2.Modules
 {
     /// <summary>
     /// Spustitelný uzel stromu. Třída s referenční rovností, ne record: instance se sdílí mezi stromy,
@@ -117,7 +117,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>
         /// Uživatelovo „oblíbené" označení (★). Přepíná se in-place, takže nevyžaduje rebuild stromu.
         /// Instance se sdílí mezi hlavním stromem, záložkou Oblíbené, žebříčkem Používané i dlaždicí
-        /// na ploše (<see cref="EDISONMAIN2.Desktop.DesktopShortcut.Module"/>) → přepnutí jednou se projeví všude.
+        /// na ploše (<c>DesktopShortcut.Module</c>) → přepnutí jednou se projeví všude.
         /// </summary>
         public bool IsFavorite
         {
