@@ -127,7 +127,7 @@ public class AppBootstrapper
                 },
                 AfterAccepted = session =>
                 {
-                    // Před update checkem - LastIdfa musí být uložená i když teď shell skončí updatem.
+                    // Před update checkem - firma serveru musí být uložená i když teď shell skončí updatem.
                     SavePostLoginState(prefs, prep.Server, prep.Port, session.MLRest.Idfa, login.UserName);
                     // Od Accepted existuje ACTIVITY zámek - logout musí proběhnout při každém ukončení odteď,
                     // včetně exitu kvůli updatu a výjimky níž, ne až od vzniku shellu.
@@ -210,7 +210,7 @@ public class AppBootstrapper
         };
 
     protected virtual ILocalPrefs LoadLocalPrefs() =>
-        _options.TestRun is { } testRun ? new TransientLocalPrefs { LastIdfa = testRun.StartIdfa } : LocalPrefs.Load();
+        _options.TestRun is not null ? new TransientLocalPrefs() : LocalPrefs.Load();
 
     /// <summary>
     /// First-launch setup: když <c>EDISONini.xml</c> nemá vyplněné připojení, zobrazí
@@ -251,11 +251,12 @@ public class AppBootstrapper
     protected virtual IReadOnlyList<CompanyStruct> LoadServerCompanies(IMLRest loginRest) =>
         LegacyApi.CompanyList(loginRest, checkAccess: false);
 
-    // Vlastní poslední firma, když na serveru je. Jinak (první start nového shellu, LastIdfa z jiného serveru -
-    // je jedna pro všechny) navazuje na starý shell, než by začal ve výchozí firmě serveru.
+    // Vlastní poslední firma serveru, když na něm je. Jinak (první start nového shellu, firma mezitím zrušená)
+    // navazuje na starý shell, než by začal ve výchozí firmě serveru. E2E běh startuje v zadané firmě.
     private string? PreferredIdfa(ILocalPrefs prefs, IReadOnlyList<CompanyStruct> companies, string server, int port)
     {
-        var last = prefs.LastIdfa;
+        if (_options.TestRun?.StartIdfa is { } start) return start;
+        var last = prefs.LastIdfaOrLegacyFor(server, port);
         if (!string.IsNullOrEmpty(last) && companies.Any(c => c.Id == last)) return last;
         return ReadLegacyLastCompany(server, port) ?? last;
     }
@@ -313,7 +314,7 @@ public class AppBootstrapper
 
         // Zapamatované heslo (předvyplnění i uložení) řeší VM nad prefs.
         var vm = LoginViewModel.ForStartup(services, loginRest, prefs);
-        if (_host.ShowLogin(vm, new ShellWindowStateStore(prefs)) is not { } result)
+        if (_host.ShowLogin(vm, new ShellWindowStateStore(prefs, loginRest.Server, loginRest.Port)) is not { } result)
         {
             // Zrušeno po odmítnutí zapamatovaného hesla → zapomeň ho (jinak příště zase auto-selže).
             if (vm.RememberedPasswordRejected)
@@ -350,7 +351,7 @@ public class AppBootstrapper
 
     private void SavePostLoginState(ILocalPrefs prefs, string server, int port, string idfa, string? loginName)
     {
-        prefs.LastIdfa = idfa;
+        prefs.SetLastIdfa(server, port, idfa);
         // DevLogin je syntetický - nesmí přepsat předvyplnění jména (a tím zneplatnit
         // zapamatované heslo) pro ostrý exe na témže stroji.
         if (_options.DevLogin is null) prefs.SetLoginName(server, port, loginName);
@@ -385,7 +386,8 @@ public class AppBootstrapper
         // Owner login dialogu: shell okno vzniká až pod VM, který switcher potřebuje.
         EdisonMainWindow? shell = null;
         var sessionSwitcher = new SessionSwitcher(services, () => shell, opener,
-                                                  nav.TryCloseAll, new ShellWindowStateStore(prefs), _shutdown.Force);
+                                                  nav.TryCloseAll, new ShellWindowStateStore(prefs, prep.Server, prep.Port),
+                                                  _shutdown.Force);
         bool testRun = _options.TestRun is not null;
         var viewModel = CreateShellViewModel(prep.Companies, services, nav, prefs, sessionSwitcher.Switch);
         _shutdown.AttachShell(viewModel.SuppressCloseConfirm);

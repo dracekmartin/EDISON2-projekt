@@ -18,10 +18,10 @@ WPF stranu startu (okna před shellem, `ShutdownMode`/`MainWindow`, dispečer, k
 bootstrapperu jedou s falešným. Login okno (jen dialog cesta, ne `DevLogin`) po OK zůstává jako progress podklad, zavírá
 se až na shell `ContentRendered`; `HandOff` (všechny cesty) musí dát `Application.MainWindow` na shell **před**
 `OnMainWindowClose` (v dialog cestě ho drží otevřené login okno) - jinak app umře, nebo proces nemá konec.
-`LocalPrefs.ShellWindowBounds` je **jedna geometrie shellu i login okna** (před loginem není session, do které by šlo
-ukládat): login ji jen **čte**, zapisuje ji shell a jednou bootstrapper hned po přihlášení (při zavření je pozdě, shell
-ji čte dřív). Jméno a heslo (DPAPI blob) se pamatují **per server** (`LoginNames`/`RememberedPasswords`, klíč
-`server:port`), heslo se předvyplní jen ke jménu z blobu.
+Geometrie (`ShellWindowBoundsByServer`) je **jedna pro shell i login okno** (před loginem není session): login ji jen
+**čte**, zapisuje ji shell a jednou bootstrapper hned po přihlášení (při zavření je pozdě, shell ji čte dřív). Ona,
+firma, jméno i heslo (DPAPI blob, předvyplní se jen ke jménu z blobu) jsou **per server** (`ServerPrefs`, `server:port`).
+Globální hodnoty starší verze se jen čtou: geometrie pro server bez záznamu, firma, dokud žádný server nemá vlastní.
 
 `SettingsLoader` čte `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho roznáší ze
 serveru): **`connection@restport`, ne `@port`** (to je superserver); wizard zapisuje plnou legacy

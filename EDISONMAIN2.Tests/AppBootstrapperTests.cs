@@ -79,7 +79,7 @@ public class AppBootstrapperTests
         /// <summary>Předlogin spojení: brány a dialog s ním mluví skutečně, odpovědi nastavuje test.</summary>
         public IMLRest LoginRest { get; } = MLRestMocks.Create();
 
-        /// <summary>Všechny firmy serveru (předloginový seznam) - podle něj se pozná LastIdfa z jiného serveru.</summary>
+        /// <summary>Všechny firmy serveru (předloginový seznam) - podle něj se pozná uložená firma, která na serveru není.</summary>
         public IReadOnlyList<CompanyStruct> ServerCompanies { get; set; } = [new() { Id = "CB_DP", Database = "CB_DP" }];
 
         protected override IMLRest OpenLoginConnection(string server, int port) => LoginRest;
@@ -103,11 +103,14 @@ public class AppBootstrapperTests
 
         public ILocalPrefs Prefs { get; set; } = Substitute.For<ILocalPrefs>();
 
-        protected override ILocalPrefs LoadLocalPrefs() => Prefs;
+        protected override ILocalPrefs LoadLocalPrefs()
+        {
+            Prefs.When(p => p.Save()).Do(_ => SavedIdfa = Prefs.LastIdfaFor("test-host", 9999));
+            return Prefs;
+        }
 
-        /// <summary>LastIdfa z posledního zápisu (Returns na getteru ho nepřebije).</summary>
-        public string? SavedIdfa => Prefs.ReceivedCalls()
-            .LastOrDefault(c => c.GetMethodInfo().Name == "set_LastIdfa")?.GetArguments()[0] as string;
+        /// <summary>Firma serveru při posledním Save - hodnota nastavená bez Save se na disk nedostane.</summary>
+        public string? SavedIdfa { get; private set; }
 
         public string? SavedLoginName => Prefs.LoginNameFor("test-host", 9999);
 
@@ -517,7 +520,7 @@ public class AppBootstrapperTests
     [Fact]
     public void Run_LoginCancelled_DoesNotSavePrefs()
     {
-        // Důvod: dokud nemáme úspěšný login + accepted licenci, nemá smysl ukládat LastIdfa.
+        // Důvod: dokud nemáme úspěšný login + accepted licenci, nemá smysl ukládat firmu.
         var b = new TestableBootstrapper { LoginSucceeds = false };
 
         b.Run();
@@ -540,7 +543,7 @@ public class AppBootstrapperTests
     [Fact]
     public void Run_UpdateTriggered_RunsAfterSavePrefs()
     {
-        // Update check je až po SavePostLoginState - LastIdfa musí být uložená
+        // Update check je až po SavePostLoginState - firma musí být uložená
         // i když shell hned skončí updatem (příští start ji načte).
         var b = new TestableBootstrapper { UpdateTriggered = true };
 
@@ -578,16 +581,19 @@ public class AppBootstrapperTests
         var prefs = new RealStepsBootstrapper(E2E()).Load();
 
         Assert.IsType<TransientLocalPrefs>(prefs);
-        Assert.Null(prefs.LastIdfa);
+        Assert.Null(prefs.LastIdfaByServer);
     }
 
     [Fact]
-    public void LoadLocalPrefs_TestRunWithIdfa_StartsInThatCompany()
+    public void Run_TestRunWithIdfa_StartsInThatCompany()
     {
-        // PickInitial bere LastIdfa jako preferovanou firmu - stejná cesta jako běžný start.
-        var prefs = new RealStepsBootstrapper(E2E("idfa=CB_DP")).Load();
+        // Zadaná firma vyhraje i nad uloženou firmou serveru.
+        var b = new TestableBootstrapper(E2E("idfa=JI_DP")) { AllowedCompanies = TwoAllowed, ServerCompanies = TwoAllowed };
+        b.Prefs.SetLastIdfa("test-host", 9999, "CB_DP");
 
-        Assert.Equal("CB_DP", prefs.LastIdfa);
+        b.Run();
+
+        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
     }
 
     [Theory]
@@ -859,7 +865,7 @@ public class AppBootstrapperTests
     public void Run_LastCompanyNotAllowed_StartsInFirstAllowed()
     {
         var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed };
-        b.Prefs.LastIdfa.Returns("PI_DP");
+        b.Prefs.SetLastIdfa("test-host", 9999, "PI_DP");
 
         b.Run();
 
@@ -870,19 +876,18 @@ public class AppBootstrapperTests
     public void Run_LastCompanyAllowed_StartsThere()
     {
         var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed };
-        b.Prefs.LastIdfa.Returns("JI_DP");
+        b.Prefs.SetLastIdfa("test-host", 9999, "JI_DP");
 
         b.Run();
 
         Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
     }
 
-    // První start nového shellu: local.json nemá LastIdfa, shell naváže na firmu starého shellu, ne na výchozí firmu serveru.
+    // První start nového shellu: local.json firmu nemá, shell naváže na firmu starého shellu, ne na výchozí firmu serveru.
     [Fact]
     public void Run_FirstStartWithoutLastCompany_StartsInLegacyShellCompany()
     {
         var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, LegacyIdfa = "JI_DP" };
-        b.Prefs.LastIdfa.Returns((string?)null);
 
         b.Run();
 
@@ -894,6 +899,31 @@ public class AppBootstrapperTests
     public void Run_OwnLastCompany_WinsOverLegacyShellCompany()
     {
         var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, ServerCompanies = TwoAllowed, LegacyIdfa = "CB_DP" };
+        b.Prefs.SetLastIdfa("test-host", 9999, "JI_DP");
+
+        b.Run();
+
+        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
+    }
+
+    // Dvě instalace na stanici (Dev a Local) mají stejná IDFa: firma druhé instalace se nepoužije, i když na serveru je.
+    [Fact]
+    public void Run_LastCompanyOfOtherServer_StartsInLegacyShellCompany()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, ServerCompanies = TwoAllowed, LegacyIdfa = "JI_DP" };
+        b.Prefs.SetLastIdfa("other-host", 9999, "CB_DP");
+
+        b.Run();
+
+        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
+    }
+
+#pragma warning disable CS0618 // firma starší verze
+    // První start po aktualizaci: firma starší verze vyhraje i nad firmou starého shellu, jako dřív.
+    [Fact]
+    public void Run_FirstStartAfterUpdate_StartsInCompanyOfOlderVersion()
+    {
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, ServerCompanies = TwoAllowed, LegacyIdfa = "CB_DP" };
         b.Prefs.LastIdfa.Returns("JI_DP");
 
         b.Run();
@@ -901,16 +931,42 @@ public class AppBootstrapperTests
         Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
     }
 
-    // LastIdfa je jedna pro všechny servery: po „Připojit k databázi" ukazuje na firmu jiného serveru.
     [Fact]
-    public void Run_LastCompanyFromOtherServer_StartsInLegacyShellCompany()
+    public void Run_FirstStartAfterUpdate_LicenceRefused_StoresNoCompanyForServer()
     {
-        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, ServerCompanies = TwoAllowed, LegacyIdfa = "JI_DP" };
-        b.Prefs.LastIdfa.Returns("PI_DP");
+        // Login okno ukládá prefs už po OK: firma starší verze se nesmí přiřadit serveru, kam se uživatel nedostal.
+        var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Refused };
+        b.Prefs.LastIdfa.Returns("CB_DP");
 
         b.Run();
 
-        Assert.Equal("JI_DP", b.EstablishedConnection?.Idfa);
+        Assert.Null(b.Prefs.LastIdfaByServer);
+    }
+
+    [Fact]
+    public void Run_OtherServerHasOwnCompany_IgnoresCompanyOfOlderVersion()
+    {
+        // Firmu starší verze dostal první server, druhá instalace začne ve výchozí firmě.
+        var b = new TestableBootstrapper { AllowedCompanies = TwoAllowed, ServerCompanies = TwoAllowed };
+        b.Prefs.LastIdfa.Returns("JI_DP");
+        b.Prefs.SetLastIdfa("other-host", 9999, "PI_DP");
+
+        b.Run();
+
+        Assert.Equal("CB_DP", b.EstablishedConnection?.Idfa);
+    }
+#pragma warning restore CS0618
+
+    [Fact]
+    public void Run_LoginWindow_GetsGeometryOfConnectionServer()
+    {
+        var b = new TestableBootstrapper();
+        b.Prefs.SetShellWindowBounds("other-host", 9999, new WindowBoundsPrefs { Left = 1920, Width = 1024, Height = 768 });
+        b.Prefs.SetShellWindowBounds("test-host", 9999, new WindowBoundsPrefs { Left = 10, Top = 20, Width = 800, Height = 600 });
+
+        b.Run();
+
+        Assert.Equal(new WindowGeometry(10, 20, 800, 600, false), b.Host.ShownLoginWindowState?.Load());
     }
 
     [Fact]

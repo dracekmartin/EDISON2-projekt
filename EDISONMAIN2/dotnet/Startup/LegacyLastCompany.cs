@@ -9,7 +9,7 @@ namespace EDISONMAIN2;
 /// <summary>
 /// Poslední firma starého shellu pro dané připojení (legacy <c>frmNoMDI.GetConnectionCompany</c>): klíč
 /// <c>HKCU\Software\ALVA\EDISONMAIN\ConnectionList\&lt;připojení&gt;</c>, hodnota <c>idfa</c>. Nový shell ji bere,
-/// když jeho vlastní <c>LastIdfa</c> na serveru není (první start) - jinak by začal ve výchozí firmě serveru.
+/// když vlastní poslední firmu serveru nemá nebo na serveru není (první start) - jinak by začal ve výchozí firmě serveru.
 /// </summary>
 internal static class LegacyLastCompany
 {

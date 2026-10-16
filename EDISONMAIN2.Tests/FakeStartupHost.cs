@@ -22,6 +22,7 @@ internal sealed class FakeStartupHost(List<string>? calls = null) : IStartupHost
     public bool PasswordChanged { get; set; } = true;
     public (IMLRest LoginRest, string UserName)? PasswordChange { get; private set; }
     public LoginViewModel? ShownLogin { get; private set; }
+    public IWindowStateStore? ShownLoginWindowState { get; private set; }
     public EdisonMainWindow? HandedOff { get; private set; }
     public bool ShutdownCalled { get; private set; }
     public Exception? ReportedFailure { get; private set; }
@@ -45,6 +46,7 @@ internal sealed class FakeStartupHost(List<string>? calls = null) : IStartupHost
     {
         Calls.Add("login dialog");
         ShownLogin = vm;
+        ShownLoginWindowState = windowState;
         InDialog(vm);
         return DialogLogin();
     }

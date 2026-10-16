@@ -243,11 +243,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         /// <summary>
-        /// Geometrii shellu drží local.json, ne Caché: týž záznam čte i přihlašovací okno,
+        /// Geometrii shellu drží local.json per server, ne Caché: týž záznam čte i přihlašovací okno,
         /// které před loginem na serverové úložiště (per uživatel × IDFa) nedosáhne. Obě okna
         /// tak naskočí na stejném monitoru.
         /// </summary>
-        protected override IWindowStateStore? WindowStateStore => new ShellWindowStateStore(_prefs);
+        protected override IWindowStateStore? WindowStateStore => ShellWindowState;
+
+        internal ShellWindowStateStore ShellWindowState => new(_prefs, Rest.Server, Rest.Port);
 
         /// <summary>
         /// Start po prvním vykreslení shellu (WPF analog legacy <c>frmMain_Shown</c>), volá ho code-behind
@@ -980,7 +982,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                         ReplaceCompanies(outcome.Companies ?? [], Rest.Idfa);
                         if (Idfa != oldIdfa)
                         {
-                            _prefs.LastIdfa = Idfa;
+                            _prefs.SetLastIdfa(Rest.Server, Rest.Port, Idfa);
                             _prefs.Save();
                         }
                         await RebuildSessionStateAsync();

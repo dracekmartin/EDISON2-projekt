@@ -612,17 +612,23 @@ public class EdisonMainViewModelTests
         popup.Confirm(Arg.Any<string>()).Returns(true);
         var svc = MockServices(popup: popup);
         var prefs = Substitute.For<ILocalPrefs>();
-        var vm = CreateVM(services: svc, prefs: prefs,
-                          switchUser: SwitchUserInto(svc, "JI_DP", new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }));
+        var vm = CreateVM(services: svc, prefs: prefs, switchUser: () =>
+        {
+            var session = MockMLRest("JI_DP");
+            session.Server.Returns("dev-host");
+            session.Port.Returns(57772);
+            svc.MLRest = session;
+            return new(SwitchUserResult.Success, [new CompanyStruct { Id = "JI_DP", Database = "JI_DP" }]);
+        });
 
         await vm.LoginAsAnotherUserAsync();
 
-        prefs.Received().LastIdfa = "JI_DP";
+        Assert.Equal("JI_DP", prefs.LastIdfaFor("dev-host", 57772));
         prefs.Received().Save();
     }
 
     [Fact]
-    public async Task LoginAsAnotherUser_SameCompany_DoesNotRewriteLastIdfa()
+    public async Task LoginAsAnotherUser_SameCompany_DoesNotRewriteCompany()
     {
         var popup = Substitute.For<IPopupDisplayer>();
         popup.Confirm(Arg.Any<string>()).Returns(true);
@@ -632,7 +638,22 @@ public class EdisonMainViewModelTests
 
         await vm.LoginAsAnotherUserAsync();
 
-        prefs.DidNotReceive().LastIdfa = Arg.Any<string?>();
+        prefs.DidNotReceive().LastIdfaByServer = Arg.Any<Dictionary<string, string>?>();
+    }
+
+    [Fact]
+    public void ShellWindowState_SavesUnderSessionServer()
+    {
+        // Login okno čte záznam serveru z EDISONini.xml - shell ho musí zapsat pod týmž klíčem.
+        var mlRest = MockMLRest();
+        mlRest.Server.Returns("dev-host");
+        mlRest.Port.Returns(57772);
+        var prefs = Substitute.For<ILocalPrefs>();
+        var vm = CreateVM(mlRest: mlRest, prefs: prefs);
+
+        vm.ShellWindowState.Save(new System.Windows.Rect(10, 20, 800, 600), maximized: false);
+
+        Assert.Equal(800, prefs.ShellWindowBoundsFor("dev-host", 57772)!.Width);
     }
 
     [Fact]

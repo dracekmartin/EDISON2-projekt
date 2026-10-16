@@ -569,12 +569,14 @@ public class CompanySwitcherTests
     public void Switch_Accepted_SavesLastIdfaToPrefs()
     {
         var mlRest = MLRestMocks.Create();
+        mlRest.Server.Returns("dev-host");
+        mlRest.Port.Returns(57772);
         var prefs = Substitute.For<ILocalPrefs>();
         var switcher = CreateSwitcher(mlRest, () => null, prefs: prefs);
 
         switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
 
-        prefs.Received().LastIdfa = "JI_DP";
+        Assert.Equal("JI_DP", prefs.LastIdfaFor("dev-host", 57772));
         prefs.Received(1).Save();
     }
 

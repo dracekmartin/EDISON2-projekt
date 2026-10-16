@@ -37,6 +37,8 @@ public class LocalPrefsTests
 
     private static string? DevName(ILocalPrefs prefs) => prefs.LoginNameFor("dev-host", 57772);
 
+    private static string? DevIdfa(ILocalPrefs prefs) => prefs.LastIdfaFor("dev-host", 57772);
+
     [Fact]
     public void Load_MissingFile_ReturnsDefaults()
     {
@@ -44,14 +46,14 @@ public class LocalPrefsTests
         {
             var prefs = LocalPrefs.Load();
 
-            Assert.Null(prefs.LastIdfa);
+            Assert.Null(prefs.LastIdfaByServer);
             Assert.Null(prefs.LoginNames);
             Assert.Null(prefs.RememberedPasswords);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
             Assert.Null(prefs.SupportStripHeights);
             Assert.Null(prefs.Connections);
-            Assert.Null(prefs.ShellWindowBounds);
+            Assert.Null(prefs.ShellWindowBoundsByServer);
         });
     }
 
@@ -62,14 +64,14 @@ public class LocalPrefsTests
         {
             var prefs = LocalPrefs.Load();
 
-            Assert.Null(prefs.LastIdfa);
+            Assert.Null(prefs.LastIdfaByServer);
         });
     }
 
     [Fact]
     public void Load_EmptyFile_ReturnsDefaults()
     {
-        WithTempPrefs("", _ => Assert.Null(LocalPrefs.Load().LastIdfa));
+        WithTempPrefs("", _ => Assert.Null(LocalPrefs.Load().LastIdfaByServer));
     }
 
     [Fact]
@@ -77,11 +79,11 @@ public class LocalPrefsTests
     {
         // Kompatibilní upgrade: starší soubor nezná nové klíče a nesmí je dostat "prázdné"
         // hodnoty - null je signál "uživatel nic nenastavil".
-        WithTempPrefs("""{"lastIdfa":"CB_DP"}""", _ =>
+        WithTempPrefs("""{"lastIdfaByServer":{"dev-host:57772":"CB_DP"}}""", _ =>
         {
             var prefs = LocalPrefs.Load();
 
-            Assert.Equal("CB_DP", prefs.LastIdfa);
+            Assert.Equal("CB_DP", DevIdfa(prefs));
             Assert.Null(prefs.LoginNames);
             Assert.Null(prefs.MiniAppLayouts);
             Assert.Null(prefs.TreeWidths);
@@ -94,7 +96,9 @@ public class LocalPrefsTests
     {
         WithTempPrefs(
             """
-            {"lastIdfa":"CB_DP","loginNames":{"dev-host:57772":"tester"},"rememberedPasswords":{"dev-host:57772":"blob"},
+            {"lastIdfaByServer":{"dev-host:57772":"CB_DP"},"loginNames":{"dev-host:57772":"tester"},
+             "rememberedPasswords":{"dev-host:57772":"blob"},
+             "shellWindowBoundsByServer":{"dev-host:57772":{"left":10,"top":20,"width":800,"height":600,"maximized":true}},
              "miniAppLayouts":{"CB_DP":"<xml/>"},
              "treeWidths":{"CB_DP":321.5},
              "supportStripHeights":{"CB_DP":512.5}}
@@ -102,9 +106,10 @@ public class LocalPrefsTests
         {
             var prefs = LocalPrefs.Load();
 
-            Assert.Equal("CB_DP", prefs.LastIdfa);
+            Assert.Equal("CB_DP", prefs.LastIdfaFor("DEV-host", 57772));
             Assert.Equal("tester", DevName(prefs));
             Assert.Equal("blob", prefs.RememberedPasswordFor("DEV-host", 57772));
+            Assert.Equal(800, prefs.ShellWindowBoundsFor("dev-host", 57772)!.Width);
             Assert.Equal("<xml/>", prefs.MiniAppLayouts!["CB_DP"]);
             Assert.Equal(321.5, prefs.TreeWidths!["CB_DP"]);
             Assert.Equal(512.5, prefs.SupportStripHeights!["CB_DP"]);
@@ -116,8 +121,8 @@ public class LocalPrefsTests
     {
         WithTempPrefs(null, file =>
         {
-            new LocalPrefs { LastIdfa = "CB_DP" }.Save();
-            new LocalPrefs { LastIdfa = "CB_MLINEAS" }.Save();
+            new LocalPrefs { TreeWidths = new() { ["CB_DP"] = 280 } }.Save();
+            new LocalPrefs { TreeWidths = new() { ["CB_MLINEAS"] = 300 } }.Save();
 
             // Jen cílový soubor - dočasný soubor atomického zápisu nesmí zůstat ležet.
             Assert.Equal([file], Directory.GetFiles(Path.GetDirectoryName(file)!));
@@ -131,8 +136,8 @@ public class LocalPrefsTests
         {
             new LocalPrefs
             {
-                LastIdfa = "CB_DP",
-                LoginNames = new() { [ServerLogins.Key("dev-host", 57772)] = "tester" },
+                LastIdfaByServer = new() { [ServerPrefs.Key("dev-host", 57772)] = "CB_DP" },
+                LoginNames = new() { [ServerPrefs.Key("dev-host", 57772)] = "tester" },
                 MiniAppLayouts = new() { ["CB_DP"] = "<xml/>", ["CB_MLINEAS"] = "<xml2/>" },
                 TreeWidths = new() { ["CB_DP"] = 280 },
                 SupportStripHeights = new() { ["CB_DP"] = 520 },
@@ -140,7 +145,7 @@ public class LocalPrefsTests
 
             var loaded = LocalPrefs.Load();
 
-            Assert.Equal("tester", DevName(loaded));
+            Assert.Equal(("CB_DP", "tester"), (DevIdfa(loaded), DevName(loaded)));
             Assert.Equal(2, loaded.MiniAppLayouts!.Count);
             Assert.Equal("<xml2/>", loaded.MiniAppLayouts["CB_MLINEAS"]);
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
@@ -168,20 +173,19 @@ public class LocalPrefsTests
     [Fact]
     public void SaveLoad_RoundTripsShellWindowBounds()
     {
-        // Geometrie hlavního okna: sdílí ji shell i přihlašovací okno, takže se čte hned
+        // Geometrie hlavního okna: záznam serveru sdílí shell i přihlašovací okno, takže se čte hned
         // při startu, ještě před loginem.
         WithTempPrefs(null, _ =>
         {
-            new LocalPrefs
+            var prefs = new LocalPrefs();
+            // Monitor vlevo od primárního má zápornou pozici - nesmí se cestou ztratit.
+            prefs.SetShellWindowBounds("dev-host", 57772, new WindowBoundsPrefs
             {
-                // Monitor vlevo od primárního má zápornou pozici - nesmí se cestou ztratit.
-                ShellWindowBounds = new WindowBoundsPrefs
-                {
-                    Left = -1800, Top = -120, Width = 1600, Height = 900, Maximized = true,
-                },
-            }.Save();
+                Left = -1800, Top = -120, Width = 1600, Height = 900, Maximized = true,
+            });
+            prefs.Save();
 
-            var bounds = LocalPrefs.Load().ShellWindowBounds!;
+            var bounds = LocalPrefs.Load().ShellWindowBoundsFor("dev-host", 57772)!;
 
             Assert.Equal((-1800, -120, 1600, 900), (bounds.Left, bounds.Top, bounds.Width, bounds.Height));
             Assert.True(bounds.Maximized);
@@ -193,13 +197,18 @@ public class LocalPrefsTests
     {
         WithTempPrefs(null, file =>
         {
-            new LocalPrefs { LastIdfa = "CB_DP" }.Save();
+            var prefs = new LocalPrefs();
+            prefs.SetLastIdfa("dev-host", 57772, "CB_DP");
+            prefs.Save();
             var json = File.ReadAllText(file);
 
-            Assert.Contains("\"lastIdfa\"", json);
+            Assert.Contains("\"lastIdfaByServer\"", json);
             // Nulls se nezapisují - jinak by je příští Load nešel odlišit od "nenastaveno".
             Assert.DoesNotContain("loginNames", json);
             Assert.DoesNotContain("rememberedPasswords", json);
+            // Globální hodnoty starší verze nový shell nezapisuje.
+            Assert.DoesNotContain("\"lastIdfa\"", json);
+            Assert.DoesNotContain("\"shellWindowBounds\"", json);
         });
     }
 
@@ -207,7 +216,7 @@ public class LocalPrefsTests
     public void Save_TwoInstances_KeepEachOthersChanges()
     {
         // Instance B uloží připojení, A se pak zavře a uloží layout ze snímku, ve kterém připojení chybí.
-        WithTempPrefs("""{"lastIdfa":"CB_DP"}""", _ =>
+        WithTempPrefs("""{"lastIdfaByServer":{"dev-host:57772":"CB_DP"}}""", _ =>
         {
             var a = LocalPrefs.Load();
             var b = LocalPrefs.Load();
@@ -220,7 +229,7 @@ public class LocalPrefsTests
             var loaded = LocalPrefs.Load();
             Assert.Equal("Test", Assert.Single(loaded.Connections!).Name);
             Assert.Equal("<xml/>", loaded.MiniAppLayouts!["CB_DP"]);
-            Assert.Equal("CB_DP", loaded.LastIdfa);
+            Assert.Equal("CB_DP", DevIdfa(loaded));
         });
     }
 
@@ -264,6 +273,29 @@ public class LocalPrefsTests
     }
 
     [Fact]
+    public void Save_TwoInstancesOnDifferentServers_KeepBothCompaniesAndWindows()
+    {
+        // Instalace Dev a Local mají stejná IDFa: firma ani okno jedné nesmí přepsat druhou.
+        WithTempPrefs(null, _ =>
+        {
+            var dev = LocalPrefs.Load();
+            var local = LocalPrefs.Load();
+
+            dev.SetLastIdfa("dev-host", 57772, "CB_DP");
+            dev.SetShellWindowBounds("dev-host", 57772, new WindowBoundsPrefs { Left = 0, Width = 800 });
+            dev.Save();
+            local.SetLastIdfa("localhost", 57772, "JI_DP");
+            local.SetShellWindowBounds("localhost", 57772, new WindowBoundsPrefs { Left = 1920, Width = 1024 });
+            local.Save();
+
+            var loaded = LocalPrefs.Load();
+            Assert.Equal(("CB_DP", "JI_DP"), (DevIdfa(loaded), loaded.LastIdfaFor("localhost", 57772)));
+            Assert.Equal(0, loaded.ShellWindowBoundsFor("dev-host", 57772)!.Left);
+            Assert.Equal(1920, loaded.ShellWindowBoundsFor("localhost", 57772)!.Left);
+        });
+    }
+
+    [Fact]
     public void Save_PasswordForgottenInOneInstance_KeepsNameSavedByOther()
     {
         // Jméno a heslo se slučují zvlášť: „Změnit heslo" ve starší instanci nesmí vrátit jméno,
@@ -299,7 +331,7 @@ public class LocalPrefsTests
         });
     }
 
-#pragma warning disable CS0618 // přihlášení starší verze
+#pragma warning disable CS0618 // přihlášení, firma a geometrie okna starší verze
     [Fact]
     public void Save_AfterAdoptingLegacyLogin_KeepsLegacyKeys()
     {
@@ -315,6 +347,48 @@ public class LocalPrefsTests
             Assert.Equal(("jan", "blob"), (DevName(loaded), loaded.RememberedPasswordFor("dev-host", 57772)));
         });
     }
+
+    [Fact]
+    public void Save_WithServerValues_KeepsLegacyKeys()
+    {
+        // Starší verze shellu na téže stanici z nich dál čte firmu a geometrii okna.
+        WithTempPrefs("""{"lastIdfa":"CB_DP","shellWindowBounds":{"left":10,"width":800}}""", _ =>
+        {
+            var prefs = LocalPrefs.Load();
+            prefs.SetLastIdfa("dev-host", 57772, "JI_DP");
+            prefs.SetShellWindowBounds("dev-host", 57772, new WindowBoundsPrefs { Left = 50, Width = 900 });
+            prefs.Save();
+
+            var loaded = LocalPrefs.Load();
+            Assert.Equal(("CB_DP", "JI_DP"), (loaded.LastIdfa, DevIdfa(loaded)));
+            Assert.Equal((10, 800), (loaded.ShellWindowBounds!.Left, loaded.ShellWindowBounds.Width));
+        });
+    }
+
+    [Fact]
+    public void LastIdfaOrLegacyFor_NoServerHasOwnCompany_ReturnsLegacyWithoutStoringIt()
+    {
+        // Firma serveru se uloží až po přijetí session, ne už při čtení před loginem.
+        var prefs = new TransientLocalPrefs { LastIdfa = "CB_DP" };
+
+        Assert.Equal("CB_DP", prefs.LastIdfaOrLegacyFor("dev-host", 57772));
+        Assert.Null(prefs.LastIdfaByServer);
+    }
+
+    [Fact]
+    public void LastIdfaOrLegacyFor_OtherServerHasOwnCompany_IgnoresLegacy()
+    {
+        // Firmu starší verze dostane jen první server, druhá instalace by jinak startovala ve firmě té první.
+        var prefs = new TransientLocalPrefs { LastIdfa = "CB_DP" };
+        prefs.SetLastIdfa("localhost", 57772, "JI_DP");
+
+        Assert.Null(prefs.LastIdfaOrLegacyFor("dev-host", 57772));
+        Assert.Equal("JI_DP", prefs.LastIdfaOrLegacyFor("localhost", 57772));
+    }
+
+    [Fact]
+    public void LastIdfaOrLegacyFor_EmptyLegacyCompany_ReturnsNull() =>
+        Assert.Null(new TransientLocalPrefs { LastIdfa = "" }.LastIdfaOrLegacyFor("dev-host", 57772));
 #pragma warning restore CS0618
 
     [Fact]
@@ -339,20 +413,20 @@ public class LocalPrefsTests
     [Fact]
     public void Save_SameKeyInBothInstances_LastWriterWins()
     {
-        WithTempPrefs("""{"lastIdfa":"CB_DP","treeWidths":{"CB_DP":280}}""", _ =>
+        WithTempPrefs("""{"treeWidths":{"CB_DP":280}}""", _ =>
         {
             var a = LocalPrefs.Load();
             var b = LocalPrefs.Load();
 
-            a.LastIdfa = "CB_A";
+            a.Connections = [new SavedConnection { Name = "A" }];
             a.TreeWidths!["CB_DP"] = 300;
             a.Save();
-            b.LastIdfa = "CB_B";
+            b.Connections = [new SavedConnection { Name = "B" }];
             b.TreeWidths!["CB_DP"] = 320;
             b.Save();
 
             var loaded = LocalPrefs.Load();
-            Assert.Equal("CB_B", loaded.LastIdfa);
+            Assert.Equal("B", Assert.Single(loaded.Connections!).Name);
             Assert.Equal(320, loaded.TreeWidths!["CB_DP"]);
         });
     }
@@ -373,7 +447,7 @@ public class LocalPrefsTests
             b.Save();
             Assert.Equal(280, b.TreeWidths!["CB_A"]);
 
-            b.LastIdfa = "CB_B";
+            b.SetLastIdfa("dev-host", 57772, "CB_B");
             b.Save();
             Assert.Equal(280, LocalPrefs.Load().TreeWidths!["CB_A"]);
 
@@ -397,10 +471,10 @@ public class LocalPrefsTests
         WithTempPrefs(content, _ =>
         {
             var prefs = LocalPrefs.Load();
-            prefs.LastIdfa = "CB_DP";
+            prefs.SetLastIdfa("dev-host", 57772, "CB_DP");
             prefs.Save();
 
-            Assert.Equal("CB_DP", LocalPrefs.Load().LastIdfa);
+            Assert.Equal("CB_DP", DevIdfa(LocalPrefs.Load()));
         });
     }
 
@@ -412,11 +486,11 @@ public class LocalPrefsTests
         {
             var prefs = LocalPrefs.Load();
             File.WriteAllText(file, "{ tohle není JSON");
-            prefs.LastIdfa = "CB_DP";
+            prefs.SetLastIdfa("dev-host", 57772, "CB_DP");
             prefs.Save();
 
             var loaded = LocalPrefs.Load();
-            Assert.Equal(("CB_DP", "tester"), (loaded.LastIdfa, DevName(loaded)));
+            Assert.Equal(("CB_DP", "tester"), (DevIdfa(loaded), DevName(loaded)));
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
         });
     }
@@ -425,7 +499,7 @@ public class LocalPrefsTests
     public void Save_FileUnreadable_KeepsDiskAndWritesOnNextSave()
     {
         // Nečitelný soubor (síť, zámek jiného procesu) není poškozený: zápis vlastního stavu by smazal cizí změny.
-        WithTempPrefs("""{"lastIdfa":"CB_DP","treeWidths":{"CB_DP":280}}""", file =>
+        WithTempPrefs("""{"lastIdfaByServer":{"dev-host:57772":"CB_DP"},"treeWidths":{"CB_DP":280}}""", file =>
         {
             var prefs = LocalPrefs.Load();
             prefs.SetLoginName("dev-host", 57772, "tester");
@@ -439,7 +513,7 @@ public class LocalPrefsTests
 
             prefs.Save();
             var loaded = LocalPrefs.Load();
-            Assert.Equal(("tester", "CB_DP"), (DevName(loaded), loaded.LastIdfa));
+            Assert.Equal(("tester", "CB_DP"), (DevName(loaded), DevIdfa(loaded)));
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
         });
     }
@@ -456,11 +530,11 @@ public class LocalPrefsTests
             }
             Assert.Null(prefs.LoginNames);
 
-            prefs.LastIdfa = "CB_DP";
+            prefs.SetLastIdfa("dev-host", 57772, "CB_DP");
             prefs.Save();
 
             var loaded = LocalPrefs.Load();
-            Assert.Equal(("CB_DP", "tester"), (loaded.LastIdfa, DevName(loaded)));
+            Assert.Equal(("CB_DP", "tester"), (DevIdfa(loaded), DevName(loaded)));
             Assert.Equal(280, loaded.TreeWidths!["CB_DP"]);
         });
     }

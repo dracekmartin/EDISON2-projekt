@@ -6,16 +6,18 @@ namespace EDISONMAIN2;
 /// </summary>
 internal sealed class TransientLocalPrefs : ILocalPrefs
 {
-    public string? LastIdfa { get; set; }
+    public Dictionary<string, string>? LastIdfaByServer { get; set; }
+    [Obsolete(ServerPrefs.LegacyGlobalObsolete)] public string? LastIdfa { get; init; }
     public Dictionary<string, string>? LoginNames { get; set; }
     public Dictionary<string, string>? RememberedPasswords { get; set; }
-    [Obsolete(ServerLogins.LegacyLoginObsolete)] public string? LastLoginName { get; init; }
-    [Obsolete(ServerLogins.LegacyLoginObsolete)] public string? RememberedPassword { get; init; }
+    [Obsolete(ServerPrefs.LegacyLoginObsolete)] public string? LastLoginName { get; init; }
+    [Obsolete(ServerPrefs.LegacyLoginObsolete)] public string? RememberedPassword { get; init; }
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }
     public Dictionary<string, double>? SupportStripHeights { get; set; }
     public List<SavedConnection>? Connections { get; set; }
-    public WindowBoundsPrefs? ShellWindowBounds { get; set; }
+    public Dictionary<string, WindowBoundsPrefs>? ShellWindowBoundsByServer { get; set; }
+    [Obsolete(ServerPrefs.LegacyGlobalObsolete)] public WindowBoundsPrefs? ShellWindowBounds { get; init; }
 
     public void Save() { }
 }

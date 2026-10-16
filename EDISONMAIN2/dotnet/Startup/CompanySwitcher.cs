@@ -145,7 +145,7 @@ public class CompanySwitcher(
                 LicenceVerifier.ReacquireLock(mlRest, services.ActiveLicence);
             }
 
-            localPrefs.LastIdfa = newIdfa;
+            localPrefs.SetLastIdfa(mlRest.Server, mlRest.Port, newIdfa);
             localPrefs.Save();
             return outcome;
         }

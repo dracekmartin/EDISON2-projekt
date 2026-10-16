@@ -14,9 +14,14 @@ namespace EDISONMAIN2;
 /// </summary>
 public interface ILocalPrefs
 {
-    string? LastIdfa { get; set; }
+    /// <summary>Poslední firma per server (klíč <see cref="ServerPrefs.Key"/>) - shell v ní příště startuje. Null = žádná.</summary>
+    Dictionary<string, string>? LastIdfaByServer { get; set; }
 
-    /// <summary>Poslední přihlašovací jméno per server (klíč <see cref="ServerLogins.Key"/>) - předvyplní se v login
+    /// <summary>Poslední firma starší verze, jedna pro všechny servery.</summary>
+    [Obsolete(ServerPrefs.LegacyGlobalObsolete)]
+    string? LastIdfa { get; }
+
+    /// <summary>Poslední přihlašovací jméno per server (klíč <see cref="ServerPrefs.Key"/>) - předvyplní se v login
     /// dialogu. Dvě instalace na stanici (nebo „Připojit k databázi") míří na různé servery. Null = žádné.</summary>
     Dictionary<string, string>? LoginNames { get; set; }
 
@@ -27,11 +32,11 @@ public interface ILocalPrefs
     Dictionary<string, string>? RememberedPasswords { get; set; }
 
     /// <summary>Poslední přihlašovací jméno starší verze, jedno pro všechny servery.</summary>
-    [Obsolete(ServerLogins.LegacyLoginObsolete)]
+    [Obsolete(ServerPrefs.LegacyLoginObsolete)]
     string? LastLoginName { get; }
 
     /// <summary>Zapamatované heslo starší verze (DPAPI blob ke <see cref="LastLoginName"/>), jedno pro všechny servery.</summary>
-    [Obsolete(ServerLogins.LegacyLoginObsolete)]
+    [Obsolete(ServerPrefs.LegacyLoginObsolete)]
     string? RememberedPassword { get; }
 
     /// <summary>Uložený layout miniaplikací (AvalonDock XML) per session, klíč viz <c>DockScope</c>. Null = žádný uložený.</summary>
@@ -46,9 +51,13 @@ public interface ILocalPrefs
     /// <summary>Uživatelem uložená připojení pro „Připojit k databázi" (výchozí z EDISONini.xml sem nepatří). Null = žádná.</summary>
     List<SavedConnection>? Connections { get; set; }
 
-    /// <summary>Geometrie hlavního okna; jeden záznam sdílí shell i přihlašovací okno
+    /// <summary>Geometrie hlavního okna per server; záznam serveru sdílí shell i přihlašovací okno
     /// (<see cref="ShellWindowStateStore"/>). Null = nic uloženo.</summary>
-    WindowBoundsPrefs? ShellWindowBounds { get; set; }
+    Dictionary<string, WindowBoundsPrefs>? ShellWindowBoundsByServer { get; set; }
+
+    /// <summary>Geometrie hlavního okna starší verze, jedna pro všechny servery.</summary>
+    [Obsolete(ServerPrefs.LegacyGlobalObsolete)]
+    WindowBoundsPrefs? ShellWindowBounds { get; }
 
     void Save();
 }
@@ -63,18 +72,23 @@ public class WindowBoundsPrefs
     public bool Maximized { get; set; }
 }
 
-/// <summary>Přihlašovací jméno a zapamatované heslo serveru v <see cref="ILocalPrefs"/>.</summary>
-public static class ServerLogins
+/// <summary>Údaje v <see cref="ILocalPrefs"/> vázané na server: přihlášení, poslední firma a geometrie hlavního okna.</summary>
+public static class ServerPrefs
 {
     /// <summary>Text <see cref="ObsoleteAttribute"/> u přihlášení starší verze.</summary>
     public const string LegacyLoginObsolete =
         "Přihlášení verze před ukládáním per server. Čte ho jen AdoptLegacyLogin a nikdo ho nezapisuje: "
         + "starší verze shellu na téže stanici z něj dál předvyplňuje. Odebrat, až ji žádná stanice nemá.";
 
+    /// <summary>Text <see cref="ObsoleteAttribute"/> u firmy a geometrie okna starší verze.</summary>
+    public const string LegacyGlobalObsolete =
+        "Hodnota verze před ukládáním per server. Čte ji jen LastIdfaOrLegacyFor a ShellWindowStateStore a nikdo "
+        + "ji nezapisuje: starší verze shellu na téže stanici z ní dál čte. Odebrat, až ji žádná stanice nemá.";
+
     // Malá písmena: host se v EDISONini.xml i v argumentech píše v různé velikosti a pořád jde o týž server.
     public static string Key(string server, int port) => $"{server}:{port}".ToLowerInvariant();
 
-#pragma warning disable CS0618 // jediné místo, které přihlášení starší verze čte
+#pragma warning disable CS0618 // jediné místo, které přihlášení a firmu starší verze čte
     /// <summary>
     /// Dokud žádný server nemá vlastní záznam (první start po aktualizaci), převezme přihlášení starší verze
     /// (jen v paměti, uloží ho příští Save): uživatel tak jméno a heslo znovu nezadává.
@@ -86,7 +100,28 @@ public static class ServerLogins
         prefs.SetLoginName(server, port, name);
         prefs.SetRememberedPassword(server, port, prefs.RememberedPassword);
     }
+
+    /// <summary>
+    /// Poslední firma serveru. Dokud žádný server nemá vlastní (první start po aktualizaci), firma starší verze.
+    /// </summary>
+    /// <remarks>Nic nezapisuje: firmu serveru uloží až přijatá session, ne login, který licence odmítne.
+    /// Po prvním uložení už firmu starší verze nedostane žádný server, druhá instalace by jinak startovala ve firmě té první.</remarks>
+    public static string? LastIdfaOrLegacyFor(this ILocalPrefs prefs, string server, int port) =>
+        prefs.LastIdfaByServer is { Count: > 0 } ? prefs.LastIdfaFor(server, port)
+        : string.IsNullOrEmpty(prefs.LastIdfa) ? null : prefs.LastIdfa;
 #pragma warning restore CS0618
+
+    public static string? LastIdfaFor(this ILocalPrefs prefs, string server, int port) =>
+        prefs.LastIdfaByServer?.GetValueOrDefault(Key(server, port));
+
+    public static void SetLastIdfa(this ILocalPrefs prefs, string server, int port, string? idfa) =>
+        prefs.LastIdfaByServer = Put(prefs.LastIdfaByServer, Key(server, port), idfa);
+
+    public static WindowBoundsPrefs? ShellWindowBoundsFor(this ILocalPrefs prefs, string server, int port) =>
+        prefs.ShellWindowBoundsByServer?.GetValueOrDefault(Key(server, port));
+
+    public static void SetShellWindowBounds(this ILocalPrefs prefs, string server, int port, WindowBoundsPrefs? bounds) =>
+        prefs.ShellWindowBoundsByServer = Put(prefs.ShellWindowBoundsByServer, Key(server, port), bounds);
 
     public static string? LoginNameFor(this ILocalPrefs prefs, string server, int port) =>
         prefs.LoginNames?.GetValueOrDefault(Key(server, port));
@@ -101,7 +136,7 @@ public static class ServerLogins
         prefs.RememberedPasswords = Put(prefs.RememberedPasswords, Key(server, port), blob);
 
     // Null hodnota klíč maže: ve slovníku by ji JSON zapsal jako "klíč": null.
-    private static Dictionary<string, string>? Put(Dictionary<string, string>? map, string key, string? value)
+    private static Dictionary<string, T>? Put<T>(Dictionary<string, T>? map, string key, T? value) where T : class
     {
         if (value is null)
         {
@@ -130,17 +165,19 @@ public class SavedConnection
 /// </summary>
 public class LocalPrefs : ILocalPrefs
 {
-    public string? LastIdfa { get; set; }
+    public Dictionary<string, string>? LastIdfaByServer { get; set; }
+    [Obsolete(ServerPrefs.LegacyGlobalObsolete)] public string? LastIdfa { get; init; }
     public Dictionary<string, string>? LoginNames { get; set; }
     public Dictionary<string, string>? RememberedPasswords { get; set; }
-    [Obsolete(ServerLogins.LegacyLoginObsolete)] public string? LastLoginName { get; init; }
-    [Obsolete(ServerLogins.LegacyLoginObsolete)] public string? RememberedPassword { get; init; }
+    [Obsolete(ServerPrefs.LegacyLoginObsolete)] public string? LastLoginName { get; init; }
+    [Obsolete(ServerPrefs.LegacyLoginObsolete)] public string? RememberedPassword { get; init; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }
     public Dictionary<string, double>? SupportStripHeights { get; set; }
     public List<SavedConnection>? Connections { get; set; }
-    public WindowBoundsPrefs? ShellWindowBounds { get; set; }
+    public Dictionary<string, WindowBoundsPrefs>? ShellWindowBoundsByServer { get; set; }
+    [Obsolete(ServerPrefs.LegacyGlobalObsolete)] public WindowBoundsPrefs? ShellWindowBounds { get; init; }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
