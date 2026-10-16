@@ -20,10 +20,9 @@ ve tvaru vzoru z CIS JŘ. Šablona i logika porovnání jsou naše, agenda zůst
 slouží jen k testování. Výběr dvou linek v hlavním okně jde cestou `B190`. Každý krok se ověří na
 skutečných linkách. Vzor, pravidla, mezery a testovací linky: [`§19`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B192d` Změna trasy** [M-L]. Sloučený seznam zastávek, přidaná zastávka zelený řádek, zrušená
-   červený. Teprve od tohoto kroku jdou porovnat linky ze vzorů.
-2. **`B192e` Původní pásmo a Tč** [S-M]. Dva sloupce navíc vedle dnešních.
-3. **`B192f` Dopravci podle verze** [S-M]. Platnost hotová 16. 10. Zbývá řádek dopravců: každý
+1. **`B192e` Původní pásmo a Tč** [S-M]. Dva sloupce navíc vedle dnešních. Po změně trasy se Tč
+   za přidanou zastávkou posunou a dnes je vidět jen nové (0380724, `§19.4`).
+2. **`B192f` Dopravci podle verze** [S-M]. Platnost hotová 16. 10. Zbývá řádek dopravců: každý
    na svém řádku se spoji, jen v původní verzi přeškrtnutý, jen v nové zeleně. Data mají jen
    dopravce chybějícího v jedné verzi (`§19.4`). Kdyžtak srovnat i světlé barvy se vzorem.
 

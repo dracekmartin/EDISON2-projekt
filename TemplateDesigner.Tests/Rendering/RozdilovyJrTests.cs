@@ -211,6 +211,36 @@ public class RozdilovyJrTests
         Assert.Equal("#FF445566", kopie.RozdilNovaZnackaColor);
     }
 
+    /// <summary>Zastávka, kterou má jen nová verze trasy, má barvu nové verze celý řádek - i přes
+    /// zvýraznění lichého Tč (`B192d`, vzor ARRIVA Ludvíkov,pošta).</summary>
+    [Fact]
+    public void ZastavkaJenVNoveVerziMaBarevnyRadek()
+    {
+        static DataContext Trasa(string? verze) => RenderSnapshot.Data(
+            ("ZASTAVKY",
+            [
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Strakonice"), ("PORADI", "1"), ("TC", "2")),
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Kejnice,rozc."), ("PORADI", "2"), ("TC", "3"), ("VERZE", verze)),
+                RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Blatná"), ("PORADI", "3"), ("TC", "4")),
+            ]),
+            ("SPOJE",
+            [
+                RenderSnapshot.Row(("CISLO_SPOJE", "21"), ("SKUPINA", "1"), ("SMER", "T"),
+                    ("CASY", System.Text.Json.Nodes.JsonNode.Parse("[\"14:15\",\"14:18\",\"14:20\"]"))),
+            ]),
+            ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1"))]));
+
+        var prvek = Prvek();
+        prvek.HighlightOddTc = true;
+        // Pruh aspoň 40 mm široký a 4 mm vysoký - víc, než kolik zabere jedna buňka.
+        int radekPx = (int)(40 * MmToPx * 4f * MmToPx);
+
+        int nova = Pixelu(prvek, Trasa("nova"), prvek.RozdilNovaBackColor);
+        Assert.True(nova > radekPx, $"řádek nové zastávky nemá barvu verze ({nova} px, čekáno přes {radekPx})");
+        Assert.True(Pixelu(prvek, Trasa("puvodni"), prvek.RozdilPuvodniBackColor) > radekPx, "řádek zrušené zastávky nemá barvu verze");
+        Assert.Equal(0, Pixelu(prvek, Trasa(null), prvek.RozdilNovaBackColor));
+    }
+
     /// <summary>Kolik pixelů má (zhruba) barvu <paramref name="hex"/>.</summary>
     private static int Pixelu(LineTableElement prvek, DataContext data, string hex)
     {

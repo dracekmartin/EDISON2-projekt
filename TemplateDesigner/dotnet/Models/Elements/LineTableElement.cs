@@ -457,6 +457,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// <summary>Zdrojový řádek dat zastávky - pro vyhodnocení řádkových podmínek (zvýraznění). Neserializuje se.</summary>
         public DataContext? SourceRow;
 
+        /// <summary>Rozdílový JŘ: „puvodni" / „nova" u zastávky, kterou má jen jedna verze trasy (`B192d`).</summary>
+        public string Verze = "";
+
         public bool JePrijezdovy => Typ == "prijezd";
     }
 
@@ -567,6 +570,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Atributy = ParseStringArray(row.GetValue("ATRIBUTY")),
             Km = ParseStringArray(row.GetValue("KM")),
             SourceRow = row,
+            Verze = row.GetString("VERZE"),
         })];
 
         _cachedTrips = [.. data.GetRows(SpojeDataSource).Select(row => new LineTripData
@@ -2745,7 +2749,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // index si → zarovnání časů spojů (Casy[si]) zůstane zachováno; jen tuto zastávku nekreslíme.
             if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
 
-            bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
+            // Zastávka jen v jedné verzi trasy má barvu verze celý řádek - lichá Tč by ji v buňkách překryla.
+            bool oddTc = stop.Verze == "" && HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
             bool inverze = JeZastavkaVylepu(ctx.Data, stop.SourceRow);
 
             var specs = new List<ColumnRenderer.CellSpec>();
@@ -2819,7 +2824,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             }, stylPrazdne: tripCellStyle, vyplnPrazdneho: VyplnBunky(mrizka.SirkaPrazdnehoMm, tripCellStyle, ctx));
 
             // Podmíněné zvýraznění řádku zastávky (celá šířka, pod sloupci) - sdílené s DynamicTable/StopList.
-            string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
+            // Zastávka jen v jedné verzi trasy (rozdílový JŘ, `B192d`) má barvu verze přednostně.
+            string? rowHl = stop.Verze switch
+            {
+                "puvodni" => RozdilPuvodniBackColor,
+                "nova" => RozdilNovaBackColor,
+                _ => RowConditions.HighlightColor(HighlightRules, stop.SourceRow),
+            };
             var znackyRadku = znackyVBunce;
             // Piktogram zastávky (přestup na linkovou dopravu) se v původním tisku kreslí
             // **vpravo ve sloupci zastávek**, za názvem - proto overlay, ne předsazení před název.

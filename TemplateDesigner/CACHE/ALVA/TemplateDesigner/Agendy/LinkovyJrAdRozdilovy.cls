@@ -30,9 +30,12 @@ Include GENERAL
 /// Do 16. 10. se zrušené spoje jen vypsaly poznámkou „Zrušené spoje: …" (druh 10) - ta už nevzniká,
 /// ZRUSENE_SPOJE zůstává.
 ///
-/// Zatím vědomě: porovnávají se jen časy spojů (ne platnost ani značky) a obě verze musí mít
-/// stejné zastávky (rozhodnutí Jan 9. 10.). Když porovnání nejde, vytiskne se vybraná verze
-/// a důvod nese POROVNANI_HLASENI - chyba by místo náhledu jen překážela.
+///   rows.ZASTAVKY[]: zastávky obou verzí jedním seznamem (`B192d`), VERZE "puvodni" / "nova"
+///                 u zastávky jen v jedné verzi; PORADI přečíslované od 1, přípoje spojů
+///                 přečíslované podle verze spoje; CASY a ZNACKY spojů zarovnané na tenhle seznam
+///
+/// Když porovnání nejde (srovnávací skupina linku nemá), vytiskne se vybraná verze a důvod nese
+/// POROVNANI_HLASENI - chyba by místo náhledu jen překážela. Do 16. 10. tak skončila i jiná trasa.
 Class ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
@@ -170,7 +173,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         d ..NactiStranky(.sys, .vstup, "", "", .nove)
 
-        // Porovnání, které nejde udělat (srovnávací skupina linku nemá, jiná trasa), sestavu
+        // Porovnání, které nejde udělat (srovnávací skupina linku nemá, sloučení selže), sestavu
         // neshodí: vytiskne se vybraná verze a důvod jde do POROVNANI_HLASENI, které šablona ukáže
         // v hlavičce. Parametr typicky zůstal z jiné linky a chyba místo náhledu jen překážela
         // (nález Jan 9. 10.).
@@ -197,7 +200,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
                 try {
                     s stranka = ..SlucStranky(stranka, protejsek)
                 } catch exSlouceni {
-                    s hlaseni = "Neporovnáno: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" má jiné zastávky než linka "_(+linNova)_" (skupina "_skuNova_")."
+                    s hlaseni = "Neporovnáno: linku "_(+linPuvodni)_" ze skupiny "_skuPuvodni_" se nepodařilo sloučit s linkou "_(+linNova)_" (skupina "_skuNova_"): "_exSlouceni.DisplayString()
                 }
             }
             d stranka.%Get("values").%Set("POROVNANI_HLASENI", hlaseni)
@@ -263,11 +266,15 @@ ClassMethod ProtejsiStranka(stranka As %DynamicObject, poradi As %Integer, ByRef
 ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %DynamicObject
 {
     s radkyNove = nova.%Get("rows"), radkyPuvodni = puvodni.%Get("rows")
-    i '..StejneZastavky(radkyNove.%Get("ZASTAVKY"), radkyPuvodni.%Get("ZASTAVKY")) {
-        $$$ThrowStatus($$$ERROR($$$GeneralError, "Verze linky se liší v zastávkách - porovnání zatím umí jen dvě verze se stejnou trasou."))
-    }
-
+    // Zastávky obou verzí jedním seznamem (`B192d`); časy všech spojů se na něj přerovnají, takže
+    // dál se porovnává buňka po buňce jako u stejné trasy.
+    d ..SlucZastavky(radkyNove, radkyPuvodni, nova.%Get("values").%Get("SMER"), .mapa)
+    s it = radkyNove.%Get("SPOJE").%GetIterator()
+    while it.%GetNext(.k, .spoj) { d ..Prerovnej(spoj, "n", .mapa) }
     s spojePuvodni = radkyPuvodni.%Get("SPOJE")
+    s it = spojePuvodni.%GetIterator()
+    while it.%GetNext(.k, .spoj) { d ..Prerovnej(spoj, "o", .mapa) }
+
     s it = spojePuvodni.%GetIterator()
     while it.%GetNext(.k, .spoj) { s indexPuvodnich(..KlicSpoje(spoj)) = k }
 
@@ -283,8 +290,8 @@ ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %D
             continue
         }
         s spojPuvodni = spojePuvodni.%Get(indexPuvodnich(klic))
-        s rozdily = ..Rozdily(spoj, spojPuvodni, .pocet)
-        i 'pocet d ..ZnackyVerzi(spoj, spojPuvodni)
+        s rozdily = ..Rozdily(spoj, spojPuvodni, .pocet, .mapa)
+        i 'pocet d ..ZnackyVerzi(spoj, spojPuvodni), ..DoplnPuvodni(spoj, spojPuvodni, .mapa)
         i pocet {
             d spojPuvodni.%Set("VERZE", "puvodni")
             d spojPuvodni.%Set("ROZDILY", rozdily)
@@ -507,33 +514,160 @@ ClassMethod CelySloupec(spoj As %DynamicObject) As %DynamicArray
     q rozdily
 }
 
-/// Které buňky spoje se liší od jeho původní podoby (1 = liší se), zarovnané na CASY.
-ClassMethod Rozdily(spoj As %DynamicObject, puvodni As %DynamicObject, ByRef pocet As %Integer) As %DynamicArray
+/// Které buňky spoje se liší od jeho původní podoby (1 = liší se), zarovnané na sloučené CASY.
+/// Porovnávají se jen zastávky, které mají obě verze - zastávka jen v jedné verzi dvojici nedělá,
+/// má barvu celý řádek.
+ClassMethod Rozdily(spoj As %DynamicObject, puvodni As %DynamicObject, ByRef pocet As %Integer, ByRef mapa) As %DynamicArray
 {
     s pocet = 0
     s casy = spoj.%Get("CASY"), casyPuvodni = puvodni.%Get("CASY")
     s rozdily = ##class(%DynamicArray).%New()
-    f i=0:1:casy.%Size()-1 {
-        s jinak = (casy.%Get(i) '= casyPuvodni.%Get(i))
+    f k=0:1:casy.%Size()-1 {
+        s spolecny = ($g(mapa("o", k)) '= "") && ($g(mapa("n", k)) '= "")
+        s jinak = spolecny && (casy.%Get(k) '= casyPuvodni.%Get(k))
         d rozdily.%Push(jinak, "number")
         s pocet = pocet + jinak
     }
-    // Původní podoba s víc řádky (nemělo by nastat - zastávky jsou stejné) se počítá jako rozdíl.
-    i casyPuvodni.%Size() > casy.%Size() s pocet = pocet + 1
     q rozdily
 }
 
-/// Mají obě verze tytéž řádky zastávek (stejné zastávky v témž pořadí a stejného druhu)?
-ClassMethod StejneZastavky(nove As %DynamicArray, puvodni As %DynamicArray) As %Boolean
+/// Spoj v jednom sloupci (na společných zastávkách beze změny) nese u zastávky, kterou má jen
+/// původní verze, svůj původní čas - jako vzor FTL (spoj 17 u zrušené Olomouc,Nedvězí).
+ClassMethod DoplnPuvodni(spoj As %DynamicObject, puvodni As %DynamicObject, ByRef mapa)
 {
-    q:('$isobject(nove))||('$isobject(puvodni)) 0
-    q:nove.%Size()'=puvodni.%Size() 0
-    s stejne = 1
-    f i=0:1:nove.%Size()-1 {
-        s a = nove.%Get(i), b = puvodni.%Get(i)
-        i (a.%Get("CZST") '= b.%Get("CZST")) || (a.%Get("TYP") '= b.%Get("TYP")) s stejne = 0 q
+    s casy = spoj.%Get("CASY"), casyPuvodni = puvodni.%Get("CASY")
+    s znacky = spoj.%Get("ZNACKY"), znackyPuvodni = puvodni.%Get("ZNACKY")
+    f k=0:1:$g(mapa("K"))-1 {
+        continue:$g(mapa("n", k))'=""
+        d casy.%Set(k, casyPuvodni.%Get(k))
+        d:$isobject(znacky)&&$isobject(znackyPuvodni) znacky.%Set(k, znackyPuvodni.%Get(k))
     }
-    q stejne
+}
+
+/// Sloučí zastávky obou verzí do jednoho seznamu (`B192d`): nejdelší společná posloupnost řádků
+/// zůstane společná, ostatní dostanou VERZE "puvodni" / "nova" a stojí mezi společnými sousedy.
+/// V úseku, kde se verze liší, jde ve směru tam původní před novou a zpět obráceně - vzor FTL čte
+/// trasu v opačném směru odzadu, takže fyzicky totéž místo stojí v obou směrech stejně.
+/// Pořadí zastávek se přečísluje od 1; příjezdový a odjezdový řádek téže zastávky ho sdílejí.
+/// mapa("K") = počet řádků, mapa("o"/"n", k) = index řádku v původní / nové verzi ("" = tam není),
+/// mapa("po"/"pn", pořadí) = sloučené pořadí zastávky dané verze.
+ClassMethod SlucZastavky(radkyNove As %DynamicObject, radkyPuvodni As %DynamicObject, smer As %String, ByRef mapa)
+{
+    k mapa
+    s mapa("K") = 0, mapa("P") = 0
+    s nove = radkyNove.%Get("ZASTAVKY"), stare = radkyPuvodni.%Get("ZASTAVKY")
+    i '$isobject(nove) s nove = ##class(%DynamicArray).%New()
+    i '$isobject(stare) s stare = ##class(%DynamicArray).%New()
+    s n = stare.%Size(), m = nove.%Size()
+    f i=1:1:n s a(i) = ..KlicZastavky(stare.%Get(i-1))
+    f j=1:1:m s b(j) = ..KlicZastavky(nove.%Get(j-1))
+
+    // Délka nejdelší společné posloupnosti od (i, j) do konce.
+    f i=n:-1:1 {
+        f j=m:-1:1 {
+            i a(i) = b(j) { s lcs(i, j) = $g(lcs(i+1, j+1)) + 1 continue }
+            s x = $g(lcs(i+1, j)), y = $g(lcs(i, j+1))
+            s lcs(i, j) = $s(x >= y: x, 1: y)
+        }
+    }
+
+    s vysledek = ##class(%DynamicArray).%New()
+    s i = 1, j = 1
+    while (i <= n) || (j <= m) {
+        i (i <= n) && (j <= m) && ($g(a(i)) = $g(b(j))) {
+            d ..VylozUsek(vysledek, stare, nove, .jenStare, .jenNove, smer, .mapa)
+            d ..PridejZastavku(vysledek, nove.%Get(j-1), "", i-1, stare.%Get(i-1).%Get("PORADI"), j-1, nove.%Get(j-1).%Get("PORADI"), .mapa)
+            s i = i + 1, j = j + 1
+            continue
+        }
+        i (j > m) || ((i <= n) && ($g(lcs(i+1, j)) >= $g(lcs(i, j+1)))) {
+            s jenStare($i(jenStare)) = i, i = i + 1
+        } else {
+            s jenNove($i(jenNove)) = j, j = j + 1
+        }
+    }
+    d ..VylozUsek(vysledek, stare, nove, .jenStare, .jenNove, smer, .mapa)
+    d radkyNove.%Set("ZASTAVKY", vysledek)
+}
+
+/// Vypíše zastávky úseku, ve kterém se verze liší, a úsek vyprázdní.
+ClassMethod VylozUsek(vysledek As %DynamicArray, stare As %DynamicArray, nove As %DynamicArray, ByRef jenStare, ByRef jenNove, smer As %String, ByRef mapa)
+{
+    f krok=1,2 {
+        s staraNapred = (smer '= "Z")
+        i (krok = 1) = staraNapred {
+            f x=1:1:$g(jenStare) {
+                s i = jenStare(x)
+                d ..PridejZastavku(vysledek, stare.%Get(i-1), "puvodni", i-1, stare.%Get(i-1).%Get("PORADI"), "", "", .mapa)
+            }
+        } else {
+            f x=1:1:$g(jenNove) {
+                s j = jenNove(x)
+                d ..PridejZastavku(vysledek, nove.%Get(j-1), "nova", "", "", j-1, nove.%Get(j-1).%Get("PORADI"), .mapa)
+            }
+        }
+    }
+    k jenStare, jenNove
+}
+
+/// Přidá řádek zastávky do sloučeného seznamu a zapíše, odkud je.
+ClassMethod PridejZastavku(vysledek As %DynamicArray, radek As %DynamicObject, verze As %String, indexStary As %String, poradiStare As %String, indexNovy As %String, poradiNove As %String, ByRef mapa)
+{
+    s k = mapa("K"), mapa("o", k) = indexStary, mapa("n", k) = indexNovy, mapa("K") = k + 1
+    s cislo = ""
+    s:poradiNove'="" cislo = $g(mapa("pn", poradiNove))
+    s:(cislo="")&&(poradiStare'="") cislo = $g(mapa("po", poradiStare))
+    i cislo = "" s (cislo, mapa("P")) = mapa("P") + 1
+    s:poradiNove'="" mapa("pn", poradiNove) = cislo
+    s:poradiStare'="" mapa("po", poradiStare) = cislo
+    d radek.%Set("PORADI", cislo, "number")
+    d:verze'="" radek.%Set("VERZE", verze)
+    d vysledek.%Push(radek)
+}
+
+/// Klíč řádku zastávky pro sloučení verzí: zastávka a druh řádku (odjezdový / příjezdový).
+ClassMethod KlicZastavky(radek As %DynamicObject) As %String
+{
+    q radek.%Get("CZST")_"~"_radek.%Get("TYP")
+}
+
+/// Přerovná časy a značky spoje na sloučený seznam zastávek a přečísluje jeho přípoje.
+/// Zastávka, kterou verze spoje nemá, dostane „jede jinudy", když spoj tím úsekem projíždí (má
+/// vlastní údaj před ní i za ní), jinak nic - jako vzor z CIS JŘ.
+ClassMethod Prerovnej(spoj As %DynamicObject, verze As %String, ByRef mapa)
+{
+    s casy = spoj.%Get("CASY"), znacky = spoj.%Get("ZNACKY")
+    i '$isobject(casy) s casy = ##class(%DynamicArray).%New()
+    s prvni = "", posledni = ""
+    f k=0:1:mapa("K")-1 {
+        s i = $g(mapa(verze, k))
+        continue:i=""
+        continue:casy.%Get(i)=""
+        s:prvni="" prvni = k
+        s posledni = k
+    }
+    s noveCasy = ##class(%DynamicArray).%New(), noveZnacky = ##class(%DynamicArray).%New()
+    f k=0:1:mapa("K")-1 {
+        s i = $g(mapa(verze, k))
+        i i '= "" {
+            d noveCasy.%Push(casy.%Get(i))
+            d noveZnacky.%Push($s($isobject(znacky): znacky.%Get(i), 1: ""))
+            continue
+        }
+        s jinudy = (prvni '= "") && (k > prvni) && (k < posledni)
+        d noveCasy.%Push($s(jinudy: "<", 1: "")), noveZnacky.%Push("")
+    }
+    d spoj.%Set("CASY", noveCasy)
+    d:$isobject(znacky) spoj.%Set("ZNACKY", noveZnacky)
+
+    s pripoje = spoj.%Get("PRIPOJE")
+    q:'$isobject(pripoje)
+    s it = pripoje.%GetIterator()
+    while it.%GetNext(.k, .pr) {
+        s poradi = pr.%Get("PORADI")
+        continue:poradi=""
+        d:$d(mapa("p"_verze, poradi)) pr.%Set("PORADI", mapa("p"_verze, poradi), "number")
+    }
 }
 
 }

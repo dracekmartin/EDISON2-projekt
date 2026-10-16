@@ -9,14 +9,15 @@ Parameter AGENDA = "ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy";
 
 /// Stránka se třemi zastávkami a zadanými spoji:
 /// spoje(n) = "číslo|čas1,čas2,čas3[|skupina dnů[|značky platnosti oddělené ;[|negativní značka]]]"
-/// (bez skupiny = 1). Skupiny dnů stránky jsou ty, které spoje používají.
-ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C") As %DynamicObject
+/// (bez skupiny = 1). Skupiny dnů stránky jsou ty, které spoje používají. Zastávky mají pořadí
+/// podle pozice (1, 2, 3…), jako trasa linky.
+ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C", smer As %String = "T") As %DynamicObject
 {
-	set stranka = {"values":{"SMER":"T","DATUM_PLATNOSTI_OD":"1.1.2026","POPIS_PLATNOSTI":"Platí od 1.1.2026"},"rows":{}}
+	set stranka = {"values":{"SMER":(smer),"DATUM_PLATNOSTI_OD":"1.1.2026","POPIS_PLATNOSTI":"Platí od 1.1.2026"},"rows":{}}
 	set radky = stranka.%Get("rows")
 	set zast = []
 	for i=1:1:$length(zastavky,",") {
-		do zast.%Push({"CZST":($piece(zastavky,",",i)),"TYP":"zastavka"})
+		do zast.%Push({"CZST":($piece(zastavky,",",i)),"TYP":"zastavka","PORADI":(i)})
 	}
 	do radky.%Set("ZASTAVKY", zast)
 	set arr = []
@@ -28,7 +29,7 @@ ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C") As %DynamicObjec
 		set skupina = +$piece(spoje(i),"|",3)
 		set:skupina=0 skupina = 1
 		set skupiny(skupina) = ""
-		set spoj = {"CISLO_SPOJE":(+$piece(spoje(i),"|",1)),"SKUPINA":(skupina),"SMER":"T","CASY":(casy)}
+		set spoj = {"CISLO_SPOJE":(+$piece(spoje(i),"|",1)),"SKUPINA":(skupina),"SMER":(smer),"CASY":(casy)}
 		set platnost = [], znacky = $piece(spoje(i),"|",4)
 		for j=1:1:$length(znacky,";") { do:$piece(znacky,";",j)'="" platnost.%Push($piece(znacky,";",j)) }
 		do spoj.%Set("PLATNOST", platnost), spoj.%Set("NZ", $piece(spoje(i),"|",5))
@@ -44,6 +45,26 @@ ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C") As %DynamicObjec
 	do radky.%Set("SKUPINY_DNU", dny)
 	do radky.%Set("POZNAMKY", [])
 	quit stranka
+}
+
+/// Zastávky výsledku jako „značka[+|-]:pořadí" (+ jen v nové verzi, - jen v původní).
+ClassMethod PrehledZastavek(stranka As %DynamicObject) As %String
+{
+	set out = ""
+	set it = stranka.%Get("rows").%Get("ZASTAVKY").%GetIterator()
+	while it.%GetNext(.k, .z) {
+		set verze = $case(z.%Get("VERZE"), "nova":"+", "puvodni":"-", :"")
+		set out = out_$select(out="":"",1:",")_z.%Get("CZST")_verze_":"_z.%Get("PORADI")
+	}
+	quit out
+}
+
+/// Časy spoje výsledku na pozici n (0-based) jako text oddělený čárkou.
+ClassMethod Casy(stranka As %DynamicObject, n As %Integer) As %String
+{
+	set out = "", casy = stranka.%Get("rows").%Get("SPOJE").%Get(n).%Get("CASY")
+	for i=0:1:casy.%Size()-1 { set out = out_$select(i=0:"",1:",")_casy.%Get(i) }
+	quit out
 }
 
 /// Přidá stránce poznámky: poznamky(n) = "druh|typ|značka|text".
@@ -228,18 +249,82 @@ Method TestStejneZnackyBezVerze()
 	do $$$AssertEquals(spoj.%Get("PLATNOST_VERZE")_spoj.%Get("NZ_VERZE")_spoj.%Get("NZ_PUVODNI"), "", "beze změny")
 }
 
-/// Verze s jinými zastávkami se zatím neporovnávají - srozumitelná chyba místo nesmyslných řádků.
-Method TestJinaTrasaJeChyba()
+/// Přidaná zastávka (`B192d`): řádek jen v nové verzi. Spoj, který se na společných zastávkách
+/// nemění, zůstane jeden sloupec a u nové zastávky má svůj nový čas (vzor ARRIVA, spoj 27).
+Method TestPridanaZastavka()
 {
 	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
-	set nov = 1, nov(1) = "1|6:00,6:10,6:20"
-	set chyba = ""
-	try {
-		do $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,B,D"), ..Stranka(.puv))
-	} catch ex {
-		set chyba = ex.DisplayString()
-	}
-	do $$$AssertTrue(chyba [ "liší v zastávkách", "chyba říká, co je špatně: "_chyba)
+	set nov = 1, nov(1) = "1|6:00,6:10,6:15,6:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,B,X,C"), ..Stranka(.puv))
+
+	do $$$AssertEquals(..PrehledZastavek(vysledek), "A:1,B:2,X+:3,C:4", "nová zastávka mezi svými sousedy")
+	do $$$AssertEquals(..Prehled(vysledek), "1:", "jeden sloupec")
+	do $$$AssertEquals(..Casy(vysledek, 0), "6:00,6:10,6:15,6:20", "čas u nové zastávky")
+}
+
+/// Zrušená zastávka: řádek jen v původní verzi a spoj v jednom sloupci u ní nese svůj starý čas
+/// (vzor FTL, spoj 17).
+Method TestZrusenaZastavka()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
+	set nov = 1, nov(1) = "1|6:00,6:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,C"), ..Stranka(.puv))
+
+	do $$$AssertEquals(..PrehledZastavek(vysledek), "A:1,B-:2,C:3", "zrušená zastávka zůstane na svém místě")
+	do $$$AssertEquals(..Casy(vysledek, 0), "6:00,6:10,6:20", "starý čas u zrušené zastávky")
+}
+
+/// Zastávka nahrazená jinou jsou dva řádky: ve směru tam původní nad novou, zpět obráceně - jako
+/// vzor FTL (Olomouc,Nedvězí a Nedvězí,křiž.), kde se trasa v opačném směru čte odzadu.
+Method TestNahrazenaZastavka()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
+	set nov = 1, nov(1) = "1|6:00,6:11,6:20"
+	set tam = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,X,C"), ..Stranka(.puv))
+	do $$$AssertEquals(..PrehledZastavek(tam), "A:1,B-:2,X+:3,C:4", "tam: původní, pak nová")
+	do $$$AssertEquals(..Casy(tam, 0), "6:00,6:10,6:11,6:20", "jeden sloupec s oběma časy")
+
+	set zpet = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,X,C", "Z"), ..Stranka(.puv, "A,B,C", "Z"))
+	do $$$AssertEquals(..PrehledZastavek(zpet), "A:1,X+:2,B-:3,C:4", "zpět: nová, pak původní")
+}
+
+/// Spoj, kterému se změnil čas na společné zastávce, je dvojice. Původní podoba u zastávky, kterou
+/// její verze nemá, „jede jinudy" - projíždí tím úsekem (vzor ARRIVA, dvojice 3).
+Method TestDvojiceSPridanouZastavkou()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
+	set nov = 1, nov(1) = "1|6:00,6:12,6:15,6:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,B,X,C"), ..Stranka(.puv))
+
+	do $$$AssertEquals(..Prehled(vysledek), "1:puvodni,1:nova", "dvojice")
+	do $$$AssertEquals(..Casy(vysledek, 0), "6:00,6:10,<,6:20", "původní jede u nové zastávky jinudy")
+	do $$$AssertEquals(vysledek.%Get("rows").%Get("SPOJE").%Get(0).%Get("ROZDILY").%ToJSON(), "[0,1,0,0]", "odlišný jen společný řádek")
+}
+
+/// Zrušený spoj, který končí před novou zastávkou, tam nemá nic - tím úsekem nejel.
+Method TestMimoUsekSpojeNicNeni()
+{
+	set puv = 2, puv(1) = "1|6:00,6:10,6:20", puv(2) = "3|7:00,7:10,"
+	set nov = 1, nov(1) = "1|6:00,6:10,6:15,6:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,B,X,C"), ..Stranka(.puv))
+
+	do $$$AssertEquals(..Prehled(vysledek), "1:,3:puvodni", "zrušený spoj")
+	do $$$AssertEquals(..Casy(vysledek, 1), "7:00,7:10,,", "mimo úsek prázdné")
+}
+
+/// Přípoj se k zastávce váže jejím pořadím v trase. Po sloučení se pořadí přečíslují, takže se
+/// přípoj musí přečíslovat podle verze, ze které spoj je - jinak by visel u cizí zastávky.
+Method TestPripojPodlePoradiVerze()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
+	set nov = 1, nov(1) = "1|6:00,6:12,6:15,6:20"
+	set puvodni = ..Stranka(.puv), nova = ..Stranka(.nov, "A,B,X,C")
+	do puvodni.%Get("rows").%Get("SPOJE").%Get(0).%Set("PRIPOJE", [{"TYP":"navazuje","PORADI":3}])
+	do nova.%Get("rows").%Get("SPOJE").%Get(0).%Set("PRIPOJE", [{"TYP":"navazuje","PORADI":4}])
+	set spoje = $classmethod(..#AGENDA, "SlucStranky", nova, puvodni).%Get("rows").%Get("SPOJE")
+
+	do $$$AssertEquals(spoje.%Get(0).%Get("PRIPOJE").%Get(0).%Get("PORADI"), 4, "původní: zastávka C byla 3., ve sloučeném je 4.")
+	do $$$AssertEquals(spoje.%Get(1).%Get("PRIPOJE").%Get(0).%Get("PORADI"), 4, "nová: C je 4. v obou")
 }
 
 }

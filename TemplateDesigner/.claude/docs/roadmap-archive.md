@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B192d` Rozdílový JŘ: změna trasy (hotovo 16. 10. 2026)
+
+Zastávky obou verzí jedním seznamem, zastávka jen v jedné verzi celý řádek v barvě verze, nahrazená
+zastávka dva řádky. Dvojici dělá jen změna času na společné zastávce. Ověřeno výtiskem CB_CSADAD
+0380724, 0380730 a 0370617 proti skupině 2. Detail changelog 2026-10-16 (6).
+
 ## `B192c` Rozdílový JŘ: značky spoje podle verze (hotovo 16. 10. 2026)
 
 Spoj se stejnými časy a jinými značkami zůstává v jednom sloupci a nese značky obou verzí

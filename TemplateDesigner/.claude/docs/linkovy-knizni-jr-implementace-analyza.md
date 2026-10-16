@@ -2065,8 +2065,9 @@ a 380715/37, 39, 46 (skupina 207 proti 2) nesou značku 93, kterou legenda nové
 ### 19.4 Testovací linky
 
 Dvojice hledá sonda `Tests/RozdilovyJrProbe.NajdiDvojice` (vstup `NOVE` a `PUVODNI` = skupiny JŘ).
-Zatím vrací jen dvojice se stejnou trasou; pro `B192d` ji rozšířit o změnu zastávek. Pořadí spojů
-jedné dvojice vypíše `PrehledDvojice` (`NOVA`, `PUVODNI`, `LINKA`). Výtisk se skutečnými daty dělá
+Vrací i dvojice se změnou trasy (od `B192d`, počet `zastavky`) a dopravce (`dopravci`). Pořadí spojů,
+zastávky jen v jedné verzi a dopravce obou verzí jedné dvojice vypíše `PrehledDvojice` (`NOVA`,
+`PUVODNI`, `LINKA`). Změny trasy jsou hlavně v objížďkových skupinách (306-321). Výtisk se skutečnými daty dělá
 `ZkouskaTiskuNaostro` nad kopií šablony, která má v parametrech `SKUPINA_LINEK_ID` a `POROVNAT_SKUPINU`
 (`TD_IDFA=CB_CSADAD`, `TD_NAMESPACE=CB_CSADAD`). Skupina 2 je verze z let 2022-2023, 207 od 14. 12. 2025.
 
@@ -2078,6 +2079,9 @@ jedné dvojice vypíše `PrehledDvojice` (`NOVA`, `PUVODNI`, `LINKA`). Výtisk s
 | 380756, skupina 207 proti 2 | 16 jen se změnou značek | `c` (výtisk 16. 10.) |
 | 380717, skupina 207 proti 2 | 8 změněných, 7 jen se změnou značek | `c` (výtisk 16. 10.) |
 | 380742, skupina 207 bez porovnání | jen nová platnost | `f` platnost (výtisk 16. 10.) |
+| 0380724, skupina 306 proti 2 | přidaná zastávka Kejnice,rozc. | `d`, `e` (výtisk 16. 10.) |
+| 0380730, skupina 308 proti 2 | nahrazené Hlupín → Hlupín,rozc. a Blatná,Boženy Němcové → Blatná,Palackého | `d` (výtisk 16. 10.) |
+| 0370617, skupina 309 proti 2 | nahrazený Písek,aut.nádr. → Písek,U autobusového nádraží | `d` (výtisk 16. 10.) |
 | 0320167, skupina 141 proti 127 | dopravce GW BUS jen v původní verzi (v nové spoje dopravce nemají), 72 spojů | `f` dopravci |
 | 0132400, skupina 141 proti 127 | dopravce Jan Kukla jen v nové verzi | `f` dopravci |
 | 380760, skupina 307 proti 207 | změněný spoj 21 Tam | základ z 9. 10. |

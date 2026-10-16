@@ -1,14 +1,15 @@
 Include GENERAL
 
 /// Sonda (`B192`): hledá dvojice verzí téže linky, na kterých je rozdílový linkový JŘ vidět -
-/// stejná trasa a nějaké změněné, nové nebo zrušené spoje. Jen čte; spouští se ručně přes MLRest.
+/// změněné, nové nebo zrušené spoje, jiné značky, dopravci nebo trasa. Jen čte; spouští se ručně
+/// přes MLRest.
 Class ALVA.TemplateDesigner.Tests.RozdilovyJrProbe Extends %RegisteredObject
 {
 
 /// IN: NOVE = skupiny nových verzí („306,307"), PUVODNI = skupiny, kde hledat původní verzi.
-/// OUT(n) = JSON { nova, puvodni, linka, zmenene, nove, zrusene, znacky } za dvojici se stejnou
-/// trasou a aspoň jedním rozdílem; dvojice s jinou trasou se přeskočí. `znacky` = spoje se stejnými
-/// časy a jinými značkami, `dopravci` = spoje z obou verzí, které jede v každé jiný dopravce.
+/// OUT(n) = JSON { nova, puvodni, linka, zmenene, nove, zrusene, znacky, dopravci, zastavky } za
+/// dvojici s aspoň jedním rozdílem. `znacky` = spoje se stejnými časy a jinými značkami, `dopravci` = spoje z obou verzí, které jede v každé jiný dopravce,
+/// `zastavky` = řádky zastávek jen v jedné verzi (změna trasy, `B192d`).
 ClassMethod NajdiDvojice(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -67,18 +68,23 @@ ClassMethod PrehledDvojice(ByRef sys As %String) As %Status
                 s verze = $s(spoj.%Get("VERZE") = "puvodni": "p", spoj.%Get("VERZE") = "nova": "n", ..JenZnacky(spoj): "z", 1: "")
                 s radek = radek_$s(radek = "": "", 1: ", ")_spoj.%Get("CISLO_SPOJE")_":"_verze
             }
-            s ^||ML("OUT", i) = stranka.%Get("values").%Get("SMER")_": "_radek_" | zrušené "_stranka.%Get("values").%Get("ZRUSENE_SPOJE")_dopravci
+            s trasa = "", it = stranka.%Get("rows").%Get("ZASTAVKY").%GetIterator()
+            while it.%GetNext(.k, .z) {
+                continue:z.%Get("VERZE")=""
+                s trasa = trasa_" "_$s(z.%Get("VERZE") = "nova": "+", 1: "-")_z.%Get("NAZEV_ZASTAVKY")
+            }
+            s ^||ML("OUT", i) = stranka.%Get("values").%Get("SMER")_": "_radek_" | zrušené "_stranka.%Get("values").%Get("ZRUSENE_SPOJE")_" | trasa"_trasa_dopravci
         }
     } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
-/// Porovná jednu dvojici; "" = jiná trasa, chyba nebo žádný rozdíl.
+/// Porovná jednu dvojici; "" = chyba nebo žádný rozdíl.
 ClassMethod Porovnej(ByRef sys As %String, skuN As %String, skuP As %String, lin As %String) As %String
 {
     s agenda = "ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy"
     s vstup("SKUPINA_LINEK_ID") = skuN, vstup("LINKA_ID") = lin, vstup("DELENI_SLOUPCU") = "Bez rozlišení"
-    s (zmenene, nove, zrusene, znacky, dopravci) = 0
+    s (zmenene, nove, zrusene, znacky, dopravci, zastavky) = 0
     try {
         d $classmethod(agenda, "NactiStranky", .sys, .vstup, "", "", .stranky)
         d $classmethod(agenda, "NactiStranky", .sys, .vstup, skuP, lin, .puvodni)
@@ -94,6 +100,8 @@ ClassMethod Porovnej(ByRef sys As %String, skuN As %String, skuP As %String, lin
                 i $d(dopPuvodni(cislo)) && (dopPuvodni(cislo) '= text) { s dopravci = dopravci + 1 }
             }
             s stranka = $classmethod(agenda, "SlucStranky", stranky(i), protejsek)
+            s it = stranka.%Get("rows").%Get("ZASTAVKY").%GetIterator()
+            while it.%GetNext(.k, .z) { s:z.%Get("VERZE")'="" zastavky = zastavky + 1 }
             // Změněný spoj = původní hned před novou podobou téhož čísla. Samotná původní verze je
             // od `B192a` i zrušený spoj, ten se počítá ze ZRUSENE_SPOJE.
             s it = stranka.%Get("rows").%Get("SPOJE").%GetIterator(), predchozi = ""
@@ -114,11 +122,11 @@ ClassMethod Porovnej(ByRef sys As %String, skuN As %String, skuP As %String, lin
     } catch (ex) {
         ret ""
     }
-    q:(zmenene + nove + zrusene + znacky + dopravci)=0 ""
+    q:(zmenene + nove + zrusene + znacky + dopravci + zastavky)=0 ""
     s o = ##class(%DynamicObject).%New()
     d o.%Set("nova", skuN), o.%Set("puvodni", skuP), o.%Set("linka", lin)
     d o.%Set("zmenene", zmenene, "number"), o.%Set("nove", nove, "number"), o.%Set("zrusene", zrusene, "number")
-    d o.%Set("znacky", znacky, "number"), o.%Set("dopravci", dopravci, "number")
+    d o.%Set("znacky", znacky, "number"), o.%Set("dopravci", dopravci, "number"), o.%Set("zastavky", zastavky, "number")
     q o.%ToJSON()
 }
 

@@ -1,5 +1,24 @@
 ﻿# Changelog
 
+## 2026-10-16 (6) - 🔀 rozdílový linkový JŘ: změna trasy (`B192d`)
+
+Verze s jinými zastávkami se do 16. 10. neporovnaly: vytiskla se nová verze s hláškou „Neporovnáno".
+Teď server sloučí zastávky obou verzí do jednoho seznamu (nejdelší společná posloupnost řádků zůstane
+společná) a zastávka jen v jedné verzi má celý řádek v barvě své verze, jako vzor z CIS JŘ.
+Nahrazená zastávka jsou dva řádky: ve směru tam původní nad novou, zpět obráceně (vzor FTL čte
+opačný směr odzadu). Časy, značky u zastávek a přípoje spojů se na sloučený seznam přerovnají
+a pořadí zastávek se přečísluje. Dvojici dělá jen změna času na společné zastávce; spoj v jednom
+sloupci nese u zrušené zastávky starý čas a u nové nový (vzor FTL spoj 17, ARRIVA spoj 27). Ve
+dvojici a u nového nebo zrušeného spoje dostane zastávka, kterou jeho verze nemá, „jede jinudy",
+když spoj tím úsekem projíždí, jinak nic. Zvýraznění lichých Tč na takovém řádku ustoupí barvě verze.
+
+Ověřeno výtiskem CB_CSADAD proti skupině 2: 0380724 (skupina 306, přidaná Kejnice,rozc.), 0380730
+(308, nahrazené Hlupín a Blatná,Boženy Němcové) a 0370617 (309, Písek). Sonda `NajdiDvojice`
+počítá řádky zastávek jen v jedné verzi, `PrehledDvojice` je vypíše. Testy `LinkovyJrRozdilovyTest`
+(přidaná, zrušená a nahrazená zastávka v obou směrech, dvojice s přidanou zastávkou, spoj mimo úsek,
+přípoje podle pořadí verze), `RozdilovyJrTests` (barva řádku, ověřeno mutací). Linky ze vzorů
+(Olomoucký kraj) v datech dev serveru nejsou, přímo s nimi porovnat nejde.
+
 ## 2026-10-16 (5) - 🔀 rozdílový linkový JŘ: platnost v hlavičce jako ve vzoru (`B192f`, část)
 
 Šablona `rozdilovy-linkovy-jr-a4.json` tiskne obě platnosti bez podbarvení: původní přeškrtnutou
