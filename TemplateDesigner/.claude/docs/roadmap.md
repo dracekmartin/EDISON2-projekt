@@ -20,12 +20,11 @@ ve tvaru vzoru z CIS JŘ. Šablona i logika porovnání jsou naše, agenda zůst
 slouží jen k testování. Výběr dvou linek v hlavním okně jde cestou `B190`. Každý krok se ověří na
 skutečných linkách. Vzor, pravidla, mezery a testovací linky: [`§19`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B192c` Značky spoje** [S]. Značka jen v jedné verzi se obarví přímo ve sloupci, dvojici nedělá.
-   Legenda už původní značku vysvětluje, ale spoj se stejnými časy ji ve sloupci nemá (`§19.5`).
-2. **`B192d` Změna trasy** [M-L]. Sloučený seznam zastávek, přidaná zastávka zelený řádek, zrušená
+1. **`B192d` Změna trasy** [M-L]. Sloučený seznam zastávek, přidaná zastávka zelený řádek, zrušená
    červený. Teprve od tohoto kroku jdou porovnat linky ze vzorů.
-3. **`B192e` Původní pásmo a Tč** [S-M]. Dva sloupce navíc vedle dnešních.
-4. **`B192f` Hlavička** [S]. Původní platnost přeškrtnutá, dopravci podle verze.
+2. **`B192e` Původní pásmo a Tč** [S-M]. Dva sloupce navíc vedle dnešních.
+3. **`B192f` Hlavička** [S]. Původní platnost přeškrtnutá, dopravci podle verze. Spolu s tím
+   srovnat světlé barvy podbarvení se vzorem (`#FF8080` / `#A6DB73`, dnes `#F08080` / `#92D36E`).
 
 ---
 

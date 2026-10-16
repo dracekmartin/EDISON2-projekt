@@ -22,6 +22,10 @@ Include GENERAL
 ///   rows.SKUPINY_DNU: navíc skupiny, které má jen zrušený spoj
 ///   rows.POZNAMKY[]: poznámky obou verzí (`B192b`), VERZE "puvodni" / "nova" / "" stejná v obou;
 ///                 původní podoba značky stojí těsně před novou
+///   rows.SPOJE[] se stejnými časy a jinými značkami (`B192c`) - jeden sloupec bez VERZE, navíc:
+///                 PLATNOST obou verzí (původní na konci), PLATNOST_VERZE ["" / "nova" / "puvodni"]
+///                 zarovnané na PLATNOST, NZ_PUVODNI (negativní značka původní verze, liší-li se)
+///                 a NZ_VERZE ("nova", když NZ má jen nová verze)
 /// Barvu rozdílu určuje šablona (prvek Tabulka spojů), data říkají jen, která buňka se liší.
 /// Do 16. 10. se zrušené spoje jen vypsaly poznámkou „Zrušené spoje: …" (druh 10) - ta už nevzniká,
 /// ZRUSENE_SPOJE zůstává.
@@ -280,6 +284,7 @@ ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %D
         }
         s spojPuvodni = spojePuvodni.%Get(indexPuvodnich(klic))
         s rozdily = ..Rozdily(spoj, spojPuvodni, .pocet)
+        i 'pocet d ..ZnackyVerzi(spoj, spojPuvodni)
         i pocet {
             d spojPuvodni.%Set("VERZE", "puvodni")
             d spojPuvodni.%Set("ROZDILY", rozdily)
@@ -378,6 +383,50 @@ ClassMethod PrevezmiSkupinyDnu(radkyNove As %DynamicObject, radkyPuvodni As %Dyn
         continue:(id = "")||$d(maNova(id))||('$d(skupinyZrusenych(id)))
         d nove.%Push(skupina)
     }
+}
+
+/// Spoj se stejnými časy, kterému se změnily značky (`B192c`): zůstane jeden sloupec, jen nese
+/// i značky původní verze a u každé, ke které verzi patří - prvek je obarví přímo ve sloupci. Dvojice
+/// sloupců jen kvůli značce by tabulku rozšířila, aniž by ukázala víc (vzor z CIS JŘ to tak má).
+ClassMethod ZnackyVerzi(spoj As %DynamicObject, puvodni As %DynamicObject)
+{
+    s nove = spoj.%Get("PLATNOST"), stare = puvodni.%Get("PLATNOST")
+    i '$isobject(nove) s nove = ##class(%DynamicArray).%New()
+    i '$isobject(stare) s stare = ##class(%DynamicArray).%New()
+    s it = nove.%GetIterator()
+    while it.%GetNext(.k, .znak) { s:znak'="" veNove(znak) = "" }
+    s it = stare.%GetIterator()
+    while it.%GetNext(.k, .znak) { s:znak'="" veStare(znak) = "" }
+
+    s znacky = ##class(%DynamicArray).%New(), verze = ##class(%DynamicArray).%New(), zmena = 0
+    s it = nove.%GetIterator()
+    while it.%GetNext(.k, .znak) {
+        s jenNova = (znak '= "") && '$d(veStare(znak))
+        d znacky.%Push(znak), verze.%Push($s(jenNova: "nova", 1: ""))
+        s:jenNova zmena = 1
+    }
+    s it = stare.%GetIterator()
+    while it.%GetNext(.k, .znak) {
+        continue:(znak = "")||$d(veNove(znak))
+        d znacky.%Push(znak), verze.%Push("puvodni")
+        s zmena = 1, jenStara(znak) = ""
+    }
+    i zmena {
+        d spoj.%Set("PLATNOST", znacky), spoj.%Set("PLATNOST_VERZE", verze)
+        // Volný text zákazníka z původní verze se musí kreslit písmem i u nového spoje.
+        s textove = puvodni.%Get("TEXTOVE_ZNACKY")
+        i $isobject(textove) {
+            s cil = spoj.%Get("TEXTOVE_ZNACKY")
+            i '$isobject(cil) s cil = ##class(%DynamicArray).%New() d spoj.%Set("TEXTOVE_ZNACKY", cil)
+            s it = textove.%GetIterator()
+            while it.%GetNext(.k, .znak) { d:(znak '= "")&&$d(jenStara(znak)) cil.%Push(znak) }
+        }
+    }
+
+    s nzNova = spoj.%Get("NZ"), nzStara = puvodni.%Get("NZ")
+    q:nzNova=nzStara
+    d:nzStara'="" spoj.%Set("NZ_PUVODNI", nzStara)
+    d:nzNova'="" spoj.%Set("NZ_VERZE", "nova")
 }
 
 /// Poznámky obou verzí do legendy (`B192b`). Poznámka stejná v obou zůstane jednou bez verze.

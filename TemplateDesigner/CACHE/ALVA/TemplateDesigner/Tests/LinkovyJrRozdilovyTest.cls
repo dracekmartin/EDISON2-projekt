@@ -7,7 +7,8 @@ Class ALVA.TemplateDesigner.Tests.LinkovyJrRozdilovyTest Extends ALVA.EDTesting.
 
 Parameter AGENDA = "ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy";
 
-/// Stránka se třemi zastávkami a zadanými spoji: spoje(n) = "číslo|čas1,čas2,čas3[|skupina dnů]"
+/// Stránka se třemi zastávkami a zadanými spoji:
+/// spoje(n) = "číslo|čas1,čas2,čas3[|skupina dnů[|značky platnosti oddělené ;[|negativní značka]]]"
 /// (bez skupiny = 1). Skupiny dnů stránky jsou ty, které spoje používají.
 ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C") As %DynamicObject
 {
@@ -27,7 +28,11 @@ ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C") As %DynamicObjec
 		set skupina = +$piece(spoje(i),"|",3)
 		set:skupina=0 skupina = 1
 		set skupiny(skupina) = ""
-		do arr.%Push({"CISLO_SPOJE":(+$piece(spoje(i),"|",1)),"SKUPINA":(skupina),"SMER":"T","CASY":(casy)})
+		set spoj = {"CISLO_SPOJE":(+$piece(spoje(i),"|",1)),"SKUPINA":(skupina),"SMER":"T","CASY":(casy)}
+		set platnost = [], znacky = $piece(spoje(i),"|",4)
+		for j=1:1:$length(znacky,";") { do:$piece(znacky,";",j)'="" platnost.%Push($piece(znacky,";",j)) }
+		do spoj.%Set("PLATNOST", platnost), spoj.%Set("NZ", $piece(spoje(i),"|",5))
+		do arr.%Push(spoj)
 	}
 	do radky.%Set("SPOJE", arr)
 	set dny = [], skupina = ""
@@ -185,6 +190,42 @@ Method TestStejnaLegendaBezVerzi()
 	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..SPoznamkami(..Stranka(.spoje), .pozn), ..SPoznamkami(..Stranka(.spoje), .pozn))
 
 	do $$$AssertEquals(..PrehledPoznamek(vysledek), "17:,X:", "beze změny")
+}
+
+/// Spoj se stejnými časy a jinými značkami zůstane jeden sloupec (`B192c`), ale nese i značky
+/// původní verze a u každé řekne, ke které verzi patří - jako ve vzoru z CIS JŘ.
+Method TestZmenaZnacekSpojZustaneJednou()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20|1|X;R|31"
+	set nov = 1, nov(1) = "1|6:00,6:10,6:20|1|X;H|"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv))
+
+	do $$$AssertEquals(..Prehled(vysledek), "1:", "jeden sloupec bez verze")
+	set spoj = vysledek.%Get("rows").%Get("SPOJE").%Get(0)
+	do $$$AssertEquals(spoj.%Get("PLATNOST").%ToJSON(), "[""X"",""H"",""R""]", "značky obou verzí, původní na konci")
+	do $$$AssertEquals(spoj.%Get("PLATNOST_VERZE").%ToJSON(), "["""",""nova"",""puvodni""]", "verze značek")
+	do $$$AssertEquals(spoj.%Get("NZ_PUVODNI"), "31", "negativní značka, kterou má jen původní verze")
+	do $$$AssertEquals(spoj.%Get("NZ_VERZE"), "", "nová verze negativní značku nemá")
+}
+
+/// Změněná negativní značka (38 → 37): nová zůstane v NZ, původní jde vedle ní.
+Method TestZmenaNegativniZnacky()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20|1|X|38"
+	set nov = 1, nov(1) = "1|6:00,6:10,6:20|1|X|37"
+	set spoj = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv)).%Get("rows").%Get("SPOJE").%Get(0)
+
+	do $$$AssertEquals(spoj.%Get("NZ")_"/"_spoj.%Get("NZ_VERZE")_"/"_spoj.%Get("NZ_PUVODNI"), "37/nova/38", "obě negativní značky s verzí")
+	do $$$AssertEquals(spoj.%Get("PLATNOST_VERZE"), "", "značky platnosti se nezměnily, verzi nenesou")
+}
+
+/// Spoj se stejnými časy i značkami nic navíc nenese.
+Method TestStejneZnackyBezVerze()
+{
+	set spoje = 1, spoje(1) = "1|6:00,6:10,6:20|1|X;R|31"
+	set spoj = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.spoje), ..Stranka(.spoje)).%Get("rows").%Get("SPOJE").%Get(0)
+
+	do $$$AssertEquals(spoj.%Get("PLATNOST_VERZE")_spoj.%Get("NZ_VERZE")_spoj.%Get("NZ_PUVODNI"), "", "beze změny")
 }
 
 /// Verze s jinými zastávkami se zatím neporovnávají - srozumitelná chyba místo nesmyslných řádků.

@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-10-16 (4) - 🔀 rozdílový linkový JŘ: značky spoje podle verze (`B192c`)
+
+Spoj se stejnými časy a jinými značkami se tiskl jen v nové podobě, takže změnu značky nebylo
+vidět a legenda vysvětlovala původní značku, kterou žádný sloupec nenesl. Podle vzoru z CIS JŘ
+zůstává takový spoj v jednom sloupci bez dvojice, jen nese značky obou verzí: ta, která ubyla,
+je v barvě „Značky původní verze" (`#960000`), ta, která přibyla, v barvě „Značky nové verze"
+(`#009600`). Platí pro značky platnosti i negativní značky. Změněná negativní značka (23 → 21)
+je ve sloupci dvakrát pod sebou, původní nad novou - sloupec se kvůli ní nerozšíří, přibude řádek
+jen v bloku, kde takový spoj je. Obě barvy jsou ve skupině Porovnání verzí u Tabulky spojů
+a formulář je ukazuje jen v rozdílové agendě. Server posílá navíc `PLATNOST_VERZE`, `NZ_PUVODNI`
+a `NZ_VERZE` (jen přidané klíče) a převezme i volný text značky z původní verze.
+
+Ověřeno výtiskem 380742 (spoje 7 a 13), 380756 a 380717 (skupina 207 proti 2) a voláním `Init`
+formuláře na serveru. Sonda `NajdiDvojice` počítá i spoje se změněnými značkami, `PrehledDvojice`
+je značí „z". Testy `LinkovyJrRozdilovyTest` (značky obou verzí, změněná negativní značka, beze
+změny), `RozdilovyJrTests` (barva značky platnosti i negativní značky, dva řádky; ověřeno mutací).
+
 ## 2026-10-16 (3) - 🔀 rozdílový linkový JŘ: legenda z obou verzí (`B192b`)
 
 Legenda nesla jen poznámky nové verze, takže značka, kterou má jen původní nebo zrušený spoj,

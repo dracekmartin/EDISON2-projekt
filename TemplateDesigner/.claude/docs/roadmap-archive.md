@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B192c` Rozdílový JŘ: značky spoje podle verze (hotovo 16. 10. 2026)
+
+Spoj se stejnými časy a jinými značkami zůstává v jednom sloupci a nese značky obou verzí
+v barvách verzí; změněná negativní značka je dvakrát pod sebou. Ověřeno výtiskem CB_CSADAD
+380742, 380756 a 380717 (skupina 207 proti 2). Detail changelog 2026-10-16 (4).
+
 ## `B192b` Rozdílový JŘ: legenda z obou verzí (hotovo 16. 10. 2026)
 
 Legenda nese poznámky obou verzí linky: stejná jednou, původní přeškrtnutá se značkou v barvě

@@ -2074,7 +2074,9 @@ jedné dvojice vypíše `PrehledDvojice` (`NOVA`, `PUVODNI`, `LINKA`). Výtisk s
 |---|---|---|
 | 380715, skupina 207 proti 2 | 2 změněné, 3 zrušené spoje | `a` (výtisk 16. 10.) |
 | 380738, skupina 207 proti 2 | 3 změněné, 1 nový, 1 zrušený | `a` (výtisk 16. 10.) |
-| 380742, skupina 207 proti 2 | 2 nové, 1 zrušený | `a` (výtisk 16. 10.) |
+| 380742, skupina 207 proti 2 | 2 nové, 1 zrušený, 5 jen se změnou značek | `a`, `b`, `c` (výtisk 16. 10.) |
+| 380756, skupina 207 proti 2 | 16 jen se změnou značek | `c` (výtisk 16. 10.) |
+| 380717, skupina 207 proti 2 | 8 změněných, 7 jen se změnou značek | `c` (výtisk 16. 10.) |
 | 380760, skupina 307 proti 207 | změněný spoj 21 Tam | základ z 9. 10. |
 | 380735, skupina 307 proti 207 | změněné spoje 14 a 18 Zpět | základ z 9. 10. |
 
@@ -2083,9 +2085,8 @@ jedné dvojice vypíše `PrehledDvojice` (`NOVA`, `PUVODNI`, `LINKA`). Výtisk s
 - **Mezi dvojici se vkládal prázdný sloupec dorovnání** (380715 Zpět, spoj 6). Opraveno týž den:
   prázdný sloupec jde za dvojici (rozhodnutí Jan: porovnávané sloupce stojí u sebe, i za cenu výjimky
   z rozložení starého tisku).
-- **Po `B192b` vysvětluje legenda i značky, které v tabulce nejsou.** Spoj se stejnými časy se
-  tiskne jen v nové podobě, takže jeho původní značka (380742: 11 a 23) je v legendě přeškrtnutá,
-  ale žádný sloupec ji nenese. Zmizí s `B192c`, kdy se původní značka ukáže přímo ve sloupci.
+- **Po `B192b` vysvětlovala legenda i značky, které v tabulce nebyly** (380742: 11 a 23 u spojů
+  se stejnými časy). Vyřešeno `B192c`: původní značka je teď přímo ve sloupci.
 - **Neřešeno: dvojici může rozdělit hranice bloku.** Když se spoje nevejdou na šířku a tabulka se
   láme do bloků pod sebou, může původní podoba skončit na konci bloku a nová začít další blok.
   Na výtiscích 16. 10. se to nestalo; ověřit na lince s víc změněnými spoji.

@@ -377,9 +377,27 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <inheritdoc cref="RozdilPuvodniBackColor"/>
     public string RozdilNovaBackColor { get; set; } = "#FF92D36E";
 
+    /// <summary>Značka spoje, kterou má jen původní verze linky (`B192c`) - u spoje se stejnými
+    /// časy, kterému se změnily jen značky.</summary>
+    /// <remarks>Tmavší než podbarvení, protože barví značku samotnou; výchozí barvy jsou ze vzoru
+    /// z CIS JŘ, stejné jako v legendě.</remarks>
+    public string RozdilPuvodniZnackaColor { get; set; } = "#FF960000";
+
+    /// <summary>Značka spoje, kterou má jen nová verze linky.</summary>
+    public string RozdilNovaZnackaColor { get; set; } = "#FF009600";
+
     /// <summary>Barvy rozdílů ukazuje formulář jen v rozdílovém linkovém JŘ - jinde data verze nenesou.</summary>
     public static bool PoleFormulareViditelne(string klic, bool rozdilovyJr) =>
-        rozdilovyJr || klic is not (nameof(RozdilPuvodniBackColor) or nameof(RozdilNovaBackColor));
+        rozdilovyJr || klic is not (nameof(RozdilPuvodniBackColor) or nameof(RozdilNovaBackColor)
+            or nameof(RozdilPuvodniZnackaColor) or nameof(RozdilNovaZnackaColor));
+
+    /// <summary>Barva značky podle její verze; null = značka je v obou verzích (nebo jiná agenda).</summary>
+    private string? BarvaZnackyVerze(string verze) => verze switch
+    {
+        "puvodni" => RozdilPuvodniZnackaColor,
+        "nova" => RozdilNovaZnackaColor,
+        _ => null,
+    };
 
     // Podmíněné řádkové featury (sdílené přes RowConditions, výraz nad daty zastávky = stop.SourceRow).
     // Prázdný výraz = vypnuto (nulová změna chování).
@@ -486,6 +504,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         public string Verze = "";
         /// <summary>Které buňky se liší od druhé verze spoje, stejně indexované jako <see cref="Casy"/>.</summary>
         public List<bool> Rozdily = [];
+        /// <summary>Rozdílový JŘ, spoj se stejnými časy a jinými značkami (`B192c`): verze každé
+        /// značky z <see cref="Platnost"/> („puvodni" / „nova"; prázdné = v obou). Jinak prázdný.</summary>
+        public List<string> PlatnostVerze = [];
+        /// <summary>Dtto: negativní značka původní verze, když se liší od <see cref="Nz"/>.</summary>
+        public string NzPuvodni = "";
+        /// <summary>Dtto: „nova", když <see cref="Nz"/> má jen nová verze.</summary>
+        public string NzVerze = "";
     }
 
     public sealed class LineSkupinaData
@@ -560,6 +585,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Dopravci = ParseStringArray(row.GetValue("DOPRAVCI")),
             Verze = row.GetString("VERZE"),
             Rozdily = [.. ParseStringArray(row.GetValue("ROZDILY")).Select(x => x == "1")],
+            PlatnostVerze = ParseStringArray(row.GetValue("PLATNOST_VERZE")),
+            NzPuvodni = row.GetString("NZ_PUVODNI"),
+            NzVerze = row.GetString("NZ_VERZE"),
         })];
 
         RozdelPodleSmeru();
@@ -856,12 +884,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 kde = $"značky platnosti u spoje {spoj.CisloSpoje}";
             }
         }
-        if (ShowNzRow && spoj.Nz.Length > 0)
+        if (ShowNzRow)
         {
-            float box = normal.MeasureText(spoj.Nz)
-                + velikost * NegativniZnackaRenderer.PomerVnitrniMezery * 2f;
-            if (box * PtToMm > potreba)
+            foreach (var (znak, _) in NzSpoje(spoj))
             {
+                float box = normal.MeasureText(znak)
+                    + velikost * NegativniZnackaRenderer.PomerVnitrniMezery * 2f;
+                if (box * PtToMm <= potreba) continue;
                 potreba = box * PtToMm;
                 kde = $"negativní značka u spoje {spoj.CisloSpoje}";
             }
@@ -1804,7 +1833,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return MaxKmSloupcu is int strop && strop > 0 ? Math.Min(vDatech, strop) : vDatech;
     }
 
-    private bool HasNzRow(List<LineTripData> trips) => ShowNzRow && trips.Any(t => t.Nz.Length > 0);
+    /// <summary>Kolik řádků negativních značek blok potřebuje = nejvíc značek u jednoho spoje (0-2).</summary>
+    private int PocetRadkuNz(List<LineTripData> trips) =>
+        ShowNzRow && trips.Count > 0 ? trips.Max(t => NzSpoje(t).Count) : 0;
 
     /// <summary>Kolik značek platnosti se vejde na jeden řádek, než se zalomí pod něj.</summary>
     /// <remarks>Strop starého modulu (`POCETZNAKUPLATNOSTI`, `JRapiLinPrtWin.mac:25`).</remarks>
@@ -1944,7 +1975,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         for (int tr = 0; tr < PocetTurnusovychRadku(spojeTohotoBloku); tr++) hlava.Add(rowH);
         float znackaH = VyskaRadkuZnacek(rowH);
         for (int pr = 0; pr < PocetRadkuPlatnosti(spojeTohotoBloku); pr++) hlava.Add(znackaH);
-        if (HasNzRow(spojeTohotoBloku)) hlava.Add(znackaH);
+        for (int nr = 0; nr < PocetRadkuNz(spojeTohotoBloku); nr++) hlava.Add(znackaH);
 
         // Jen viditelné zastávky a jejich přípojné řádky (matched na Poradi zastávky - jako render).
         var visibleStops = RowConditions.VisibleRows(_cachedStops!, s => s.SourceRow, RowVisibilityExpression);
@@ -1994,7 +2025,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         var znacky = new HashSet<string>(StringComparer.Ordinal);
         foreach (var spoj in SpojeVUseku(data, odMm, doMm))
         {
-            if (spoj.Nz.Length > 0) znacky.Add(spoj.Nz);
+            foreach (var (znak, _) in NzSpoje(spoj)) znacky.Add(znak);
             foreach (var p in spoj.Platnost) if (p.Length > 0) znacky.Add(p);
         }
         return znacky;
@@ -2647,13 +2678,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             // a běžný font („⚒ BEV"). Buňky proto zůstávají prázdné - jinak by se text zdvojil.
             var platnostRuns = trips
                 .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), ResolverZnacek(t),
-                    MezeraMeziZnackamiMm))
+                    MezeraMeziZnackamiMm, BarvyZnacekRadku(t, pr)))
                 .ToList();
             // Zrcadlený blok má svoje značky platnosti - bez nich by jeho sloupce neřekly, ve které
             // dny spoj jede, a to je informace, ne ozdoba.
             var platnostRunsZrc = zrcadlene
                 .Select(t => SymbolRunRenderer.BuildRuns(ZnackyRadku(t, pr), ResolverZnacek(t),
-                    MezeraMeziZnackamiMm))
+                    MezeraMeziZnackamiMm, BarvyZnacekRadku(t, pr)))
                 .ToList();
             var prazdne = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, znackaRowH, prazdne)
@@ -2670,20 +2701,23 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             });
         }
 
-        // řádek NZ (negativní značky) - kreslí se ručně, protože jde o inverzní box, ne o text
-        if (HasNzRow(spojeTohotoBloku))
+        // řádky NZ (negativní značky) - kreslí se ručně, protože jde o inverzní box, ne o text.
+        // Obvykle jeden; druhý jen v rozdílovém JŘ, když se spoji značka změnila (původní nad novou).
+        int nzRadku = PocetRadkuNz(spojeTohotoBloku);
+        for (int nr = 0; nr < nzRadku; nr++)
         {
+            int radekNz = nr;
             var prazdneNz = TripTextRow(mrizka, trips, zrcadlene, tripDataStyle, _ => "");
             plan.Add(new(RowKind.HeaderExtra, znackaRowH, prazdneNz)
             {
                 VerticalLinePaint = sloupcovaCara,
-                LineBelowPaint = radkovaCara,
+                LineBelowPaint = nr == nzRadku - 1 ? radkovaCara : null,
                 Decorate = rowY =>
                 {
                     DrawNegativniZnacky(ctx, rowY, znackaRowH, ti => X + mrizka.XSpojeMm(ti),
-                        mrizka.SirkaSpojeMm, trips, tripDataStyle, znackaScale);
+                        mrizka.SirkaSpojeMm, trips, tripDataStyle, znackaScale, radekNz);
                     DrawNegativniZnacky(ctx, rowY, znackaRowH, ti => X + mrizka.XZrcadlenehoMm(ti),
-                        mrizka.SirkaZrcadlenehoMm, zrcadlene, tripDataStyle, znackaScale);
+                        mrizka.SirkaZrcadlenehoMm, zrcadlene, tripDataStyle, znackaScale, radekNz);
                 },
             });
         }
@@ -3252,19 +3286,39 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     /// <summary>Nakreslí negativní značky do sloupců spojů - inverzně, viz
     /// <see cref="NegativniZnackaRenderer"/>.</summary>
-    private static void DrawNegativniZnacky(RenderContext ctx, float rowTopMm, float rowH,
+    private void DrawNegativniZnacky(RenderContext ctx, float rowTopMm, float rowH,
         Func<int, float> xSpojeMm, Func<int, float> sirkaSpojeMm,
-        List<LineTripData> trips, ResolvedTextStyle style, float scale)
+        List<LineTripData> trips, ResolvedTextStyle style, float scale, int radek)
     {
         for (int i = 0; i < trips.Count; i++)
         {
-            if (trips[i].Nz.Length == 0) continue;
+            var znacky = NzSpoje(trips[i]);
+            if (radek >= znacky.Count) continue;
+            var (znak, verze) = znacky[radek];
+            // Box se kreslí barvou textu, znak v něm barvou pozadí - barva verze tedy jde do textu.
+            var styl = BarvaZnackyVerze(verze) is { } barva ? style with { TextColor = barva } : style;
             float leftMm = xSpojeMm(i);
             var cellMm = new SKRect(leftMm, rowTopMm, leftMm + sirkaSpojeMm(i), rowTopMm + rowH);
-            NegativniZnackaRenderer.DrawCell(
-                ctx, CellLayout.ApplyPadding(cellMm, style), trips[i].Nz, style, scale);
+            NegativniZnackaRenderer.DrawCell(ctx, CellLayout.ApplyPadding(cellMm, styl), znak, styl, scale);
         }
     }
+
+    /// <summary>Negativní značky ve sloupci spoje shora dolů, s verzí. Spoj se stejnými časy, kterému
+    /// se značka změnila, nese obě - původní nad novou, jako vzor z CIS JŘ (`B192c`). Pod sebou, ne
+    /// vedle sebe, aby se kvůli značce nerozšířil sloupec.</summary>
+    private static List<(string Znak, string Verze)> NzSpoje(LineTripData spoj)
+    {
+        var znacky = new List<(string, string)>(2);
+        if (spoj.NzPuvodni.Length > 0) znacky.Add((spoj.NzPuvodni, "puvodni"));
+        if (spoj.Nz.Length > 0) znacky.Add((spoj.Nz, spoj.NzVerze));
+        return znacky;
+    }
+
+    /// <summary>Barva značky na řádku platnosti podle její verze; index je pořadí v řádku.</summary>
+    private Func<int, string?>? BarvyZnacekRadku(LineTripData trip, int radek) =>
+        trip.PlatnostVerze.Count == 0
+            ? null
+            : i => BarvaZnackyVerze(trip.PlatnostVerze.ElementAtOrDefault(radek * ZnacekNaRadekPlatnosti + i) ?? "");
 
     private List<ColumnRenderer.CellSpec> TripTextRow(
         SloupcovaMrizka mrizka, List<LineTripData> trips, List<LineTripData> zrcadlene,
@@ -3569,6 +3623,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             OddTcBackColor = OddTcBackColor,
             RozdilPuvodniBackColor = RozdilPuvodniBackColor,
             RozdilNovaBackColor = RozdilNovaBackColor,
+            RozdilPuvodniZnackaColor = RozdilPuvodniZnackaColor,
+            RozdilNovaZnackaColor = RozdilNovaZnackaColor,
             RowVisibilityExpression = RowVisibilityExpression,
             HighlightRules = HighlightRules?.Select(r => r.Clone()).ToList(),
             PripojStyle = PripojStyle.Clone(),
@@ -3673,6 +3729,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
         new ColorPropertyDescriptor { Label = "Původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
         new ColorPropertyDescriptor { Label = "Nová verze", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor, Set = v => RozdilNovaBackColor = v },
+        new ColorPropertyDescriptor { Label = "Značky původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniZnackaColor, Set = v => RozdilPuvodniZnackaColor = v },
+        new ColorPropertyDescriptor { Label = "Značky nové verze", Group = "Porovnání verzí", Get = () => RozdilNovaZnackaColor, Set = v => RozdilNovaZnackaColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
         // #8360: přípojný řádek se má dát odlišit od časů spojů. Prázdné = dědí se z buněk.
         new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 4, Max = 200,

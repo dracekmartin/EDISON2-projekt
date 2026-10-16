@@ -155,6 +155,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF92D36E"
         s f.helpText = "Podbarvení časů nové verze spoje, které se proti původní změnily, a všech časů nového spoje."
+        s f = form.AddFieldToLastGroup("RozdilPuvodniZnackaColor", "Značky původní verze", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF960000"
+        s f.helpText = "Barva značky, kterou spoj měl jen v původní verzi. Platí pro spoj, kterému se změnily jen značky - ten zůstává v jednom sloupci."
+        s f = form.AddFieldToLastGroup("RozdilNovaZnackaColor", "Značky nové verze", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF009600"
+        s f.helpText = "Barva značky, kterou spoj má jen v nové verzi."
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)

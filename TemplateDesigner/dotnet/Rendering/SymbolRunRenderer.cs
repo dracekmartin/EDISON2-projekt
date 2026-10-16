@@ -27,21 +27,27 @@ public static class SymbolRunRenderer
     /// <param name="MezeraMm">Úsek je <b>mezera dané šířky</b> (mm) a nic se v něm nekreslí.
     /// Null = běžný text. Slouží k nastavitelným odstupům mezi značkami a časem, které se jinak
     /// řídí mezerou z písma a nejdou utáhnout.</param>
+    /// <param name="Barva">Vlastní barva úseku (`#AARRGGBB`); null = barva textu buňky. Slouží
+    /// značce, která patří jen jedné verzi linky v rozdílovém JŘ.</param>
     public readonly record struct Run(string Text, bool Symbol, float Zmenseni = 1f,
-        float? MezeraMm = null);
+        float? MezeraMm = null, string? Barva = null);
 
     /// <summary>Rozdělí značky na úseky podle fontu a mezerou je oddělí, jako by to byl jeden text.
     /// Vrací prázdný seznam, když není co kreslit.</summary>
+    /// <param name="barva">Vlastní barva značky podle jejího pořadí v <paramref name="znacky"/>; null = bez.</param>
     public static List<Run> BuildRuns(IEnumerable<string> znacky,
-        Func<string, (SymbolRenderMode Mode, string Value)> resolve, float? mezeraMm = null)
+        Func<string, (SymbolRenderMode Mode, string Value)> resolve, float? mezeraMm = null,
+        Func<int, string?>? barva = null)
     {
         var runs = new List<Run>();
+        int poradi = -1;
         foreach (var znak in znacky)
         {
+            poradi++;
             if (string.IsNullOrEmpty(znak)) continue;
             if (runs.Count > 0) runs.Add(Mezera(mezeraMm));
             var (mode, value) = resolve(znak);
-            runs.Add(new(value, mode == SymbolRenderMode.FontGlyf));
+            runs.Add(new(value, mode == SymbolRenderMode.FontGlyf, Barva: barva?.Invoke(poradi)));
         }
         return runs;
     }
@@ -100,6 +106,14 @@ public static class SymbolRunRenderer
                     r.Symbol ? symbolFace : normalFont.Typeface, normalFont.Size * r.Zmenseni);
             return f;
         }
+        var barevne = new Dictionary<string, SKPaint>(StringComparer.Ordinal);
+        SKPaint Paint(Run r)
+        {
+            if (r.Barva is null) return paint;
+            if (!barevne.TryGetValue(r.Barva, out var p))
+                barevne[r.Barva] = p = new SKPaint { Color = ColorHex.ParseOrBlack(r.Barva), IsAntialias = true };
+            return p;
+        }
 
         try
         {
@@ -125,13 +139,14 @@ public static class SymbolRunRenderer
             {
                 if (r.MezeraMm is float mm) { xPx += mm * ctx.MmToPx; continue; }
                 var f = Font(r);
-                ctx.Canvas.DrawText(r.Text, xPx, baselineY, f, paint);
+                ctx.Canvas.DrawText(r.Text, xPx, baselineY, f, Paint(r));
                 xPx += f.MeasureText(r.Text);
             }
         }
         finally
         {
             foreach (var f in zmensene.Values) f.Dispose();
+            foreach (var p in barevne.Values) p.Dispose();
         }
     }
 }

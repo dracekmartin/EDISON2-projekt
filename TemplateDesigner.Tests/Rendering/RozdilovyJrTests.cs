@@ -107,6 +107,89 @@ public class RozdilovyJrTests
         return kraj;
     }
 
+    /// <summary>Linka s jedním spojem, jehož pole jsou doplněná o <paramref name="pole"/> - značky
+    /// spoje se stejnými časy, jak je pošle server (`B192c`).</summary>
+    private static DataContext SpojSeZnackami(params (string, object?)[] pole) => RenderSnapshot.Data(
+        ("ZASTAVKY",
+        [
+            RenderSnapshot.Row(("ID", "1"), ("NAZEV_ZASTAVKY", "Strakonice"), ("PORADI", "1")),
+            RenderSnapshot.Row(("ID", "2"), ("NAZEV_ZASTAVKY", "Blatná"), ("PORADI", "2")),
+        ]),
+        ("SPOJE",
+        [
+            RenderSnapshot.Row([("CISLO_SPOJE", "21"), ("SKUPINA", "1"), ("SMER", "T"),
+                ("CASY", System.Text.Json.Nodes.JsonNode.Parse("[\"14:15\",\"14:20\"]")), .. pole]),
+        ]),
+        ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1"))]));
+
+    private static LineTableElement PrvekSeZnackami()
+    {
+        var prvek = Prvek();
+        prvek.ShowNzRow = true;
+        prvek.ShowPlatnostRow = true;
+        return prvek;
+    }
+
+    /// <summary>Negativní značka, kterou spoj měl jen v původní verzi, je ve sloupci v barvě původní verze.</summary>
+    [Fact]
+    public void NegativniZnackaPuvodniVerzeMaSvouBarvu()
+    {
+        var prvek = PrvekSeZnackami();
+        var data = SpojSeZnackami(("NZ", ""), ("NZ_PUVODNI", "31"));
+
+        Assert.True(Pixelu(prvek, data, prvek.RozdilPuvodniZnackaColor) > 30, "značka původní verze nemá barvu");
+        Assert.Equal(0, Pixelu(prvek, data, prvek.RozdilNovaZnackaColor));
+    }
+
+    /// <summary>Změněná negativní značka (38 → 37) je ve sloupci dvakrát pod sebou, původní nad novou -
+    /// sloupec se kvůli ní nerozšíří, přibude řádek.</summary>
+    [Fact]
+    public void ZmenenaNegativniZnackaJePodSebou()
+    {
+        var prvek = PrvekSeZnackami();
+        var obe = SpojSeZnackami(("NZ", "37"), ("NZ_VERZE", "nova"), ("NZ_PUVODNI", "38"));
+        var jen = SpojSeZnackami(("NZ", "37"));
+
+        Assert.True(Pixelu(prvek, obe, prvek.RozdilPuvodniZnackaColor) > 30, "původní značka chybí");
+        Assert.True(Pixelu(prvek, obe, prvek.RozdilNovaZnackaColor) > 30, "nová značka nemá barvu nové verze");
+        Assert.True(prvek.CalculateHeightFromData(obe) > prvek.CalculateHeightFromData(jen) + 1f,
+            "druhá značka nepřidala řádek");
+    }
+
+    /// <summary>Značka platnosti jen v nové verzi má ve sloupci barvu nové verze, ostatní zůstávají.</summary>
+    [Fact]
+    public void ZnackaPlatnostiNoveVerzeMaSvouBarvu()
+    {
+        var prvek = PrvekSeZnackami();
+        var data = SpojSeZnackami(
+            ("PLATNOST", System.Text.Json.Nodes.JsonNode.Parse("[\"X\",\"R\"]")),
+            ("PLATNOST_VERZE", System.Text.Json.Nodes.JsonNode.Parse("[\"\",\"nova\"]")));
+
+        Assert.True(Pixelu(prvek, data, prvek.RozdilNovaZnackaColor) > 10, "značka nové verze nemá barvu");
+        Assert.Equal(0, Pixelu(prvek, data, prvek.RozdilPuvodniZnackaColor));
+    }
+
+    [Theory]
+    [InlineData(nameof(LineTableElement.RozdilPuvodniZnackaColor))]
+    [InlineData(nameof(LineTableElement.RozdilNovaZnackaColor))]
+    public void BarvyZnacekJenVRozdiloveAgende(string klic)
+    {
+        Assert.True(LineTableElement.PoleFormulareViditelne(klic, true));
+        Assert.False(LineTableElement.PoleFormulareViditelne(klic, false));
+    }
+
+    [Fact]
+    public void KopiePrvkuNeseBarvyZnacek()
+    {
+        var prvek = Prvek();
+        prvek.RozdilPuvodniZnackaColor = "#FF112233";
+        prvek.RozdilNovaZnackaColor = "#FF445566";
+        var kopie = (LineTableElement)prvek.Clone();
+
+        Assert.Equal("#FF112233", kopie.RozdilPuvodniZnackaColor);
+        Assert.Equal("#FF445566", kopie.RozdilNovaZnackaColor);
+    }
+
     /// <summary>Kolik pixelů má (zhruba) barvu <paramref name="hex"/>.</summary>
     private static int Pixelu(LineTableElement prvek, DataContext data, string hex)
     {
