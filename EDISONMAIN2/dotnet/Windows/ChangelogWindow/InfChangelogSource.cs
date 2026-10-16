@@ -82,6 +82,9 @@ namespace EDISONMAIN2.Windows.ChangelogWindow
                 case "ISYCISELNIKY": return "ISY";
                 case "ZAUCTOVANIMZDY": return "ZAUCTOVANI";
                 case "DISPECINK2": return "DISPECINK";
+                // Exe pojmenované jinak než balíček: legacy hledá novinky podle balíčku formuláře.
+                case "ZAUMZDY": return "ZAUCTOVANI";
+                case "EDISONAIFORMS": return "EDISONAI";
             }
             if (name.StartsWith("JR")) return "JR";
             if (name.StartsWith("DS")) return "DS";

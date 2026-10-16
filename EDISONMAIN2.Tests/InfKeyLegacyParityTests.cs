@@ -6,7 +6,8 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Parita <see cref="InfChangelogSource.InfKeyFor"/> s legacy <c>Package.ToInformationFile</c> (EDLIBRARY/clsConversion.vb)
-/// pro každý člen EDPackageEnum: nový alias v legacy shodí test dřív, než agenda ukáže cizí nebo žádné novinky.
+/// pro každý člen EDPackageEnum a pro každou agendu stromu: nový alias v legacy nebo exe pojmenované jinak než balíček
+/// shodí test dřív, než agenda ukáže cizí nebo žádné novinky.
 /// </summary>
 public class InfKeyLegacyParityTests
 {
@@ -15,17 +16,60 @@ public class InfKeyLegacyParityTests
     {
         string enumPath = Path.Combine(LegacyTreeSources.Root!, "EDCORE", "EDFormInterfaceLic.vb");
         string conversionPath = Path.Combine(LegacyTreeSources.Root!, "EDLIBRARY", "clsConversion.vb");
-        var (packages, unknownEnum) = PackageNames(File.ReadAllText(enumPath));
+        var (packages, unknownEnum) = Packages(File.ReadAllText(enumPath));
         var (mapped, unknown) = ParseToInformationFile(File.ReadAllText(conversionPath));
         Assert.True(unknownEnum.Count == 0, $"Nerozpoznané řádky EDPackageEnum v {enumPath} - rozšiř parser testu:\n{string.Join("\n", unknownEnum)}");
         Assert.True(unknown.Count == 0, $"Nerozpoznané řádky ToInformationFile v {conversionPath} - rozšiř parser testu:\n{string.Join("\n", unknown)}");
         Assert.NotEmpty(mapped);
 
-        var differences = Differences(packages, mapped);
+        var differences = Differences(packages.Keys, mapped);
 
         Assert.True(differences.Count == 0,
             $"InfKeyFor se liší od {conversionPath}. Nejdřív git pull legacy repa, teprve aktuální legacy je důvod InfKeyFor měnit.\n" +
             string.Join("\n", differences));
+    }
+
+    // Legacy shell hledá novinky podle formuláře uzlu (Version.ToInformationFile, balíček = formId \ 1000 * 1000),
+    // shell podle exe. Exe pojmenované jinak než balíček (ZauMzdy.exe v ZAUCTOVANIMzdy) by bez aliasu novinky neukázalo.
+    // Formuláře Tree.cls drží EDFormInterfaceLic.vb, proto se při jeho driftu test přeskočí jako parita stromu.
+    [LegacyTreeSourcesFact]
+    public void InfKeyFor_MatchesLegacyFormLookup_ForEveryTreeModule()
+    {
+        string enumPath = Path.Combine(LegacyTreeSources.Root!, "EDCORE", "EDFormInterfaceLic.vb");
+        string conversionPath = Path.Combine(LegacyTreeSources.Root!, "EDLIBRARY", "clsConversion.vb");
+        var (packages, unknownEnum) = Packages(File.ReadAllText(enumPath));
+        var (mapped, unknown) = ParseToInformationFile(File.ReadAllText(conversionPath));
+        Assert.True(unknownEnum.Count == 0, $"Nerozpoznané řádky EDPackageEnum v {enumPath} - rozšiř parser testu:\n{string.Join("\n", unknownEnum)}");
+        Assert.True(unknown.Count == 0, $"Nerozpoznané řádky ToInformationFile v {conversionPath} - rozšiř parser testu:\n{string.Join("\n", unknown)}");
+        var modules = TreeModules(File.ReadAllText(LegacyTreeSources.RepoPath("EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls")));
+        Assert.True(modules.Count > 100, $"Tree.cls dal jen {modules.Count} agend - rozšiř parser testu.");
+
+        var differences = TreeDifferences(modules, packages, mapped);
+
+        Assert.True(differences.Count == 0,
+            $"InfKeyFor(exe) se liší od legacy novinek podle formuláře ({conversionPath}). Nejdřív git pull legacy repa.\n" +
+            string.Join("\n", differences));
+    }
+
+    [Fact]
+    public void TreeDifferences_ExeNamedOtherThanPackage_IsReported()
+    {
+        var packages = new Dictionary<string, int> { ["ZAUCTOVANIMzdy"] = 168000, ["MZDY2"] = 146000 };
+        var mapped = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["ZAUCTOVANIMzdy"] = "ZAUCTOVANI" };
+        var modules = TreeModules("""
+            		d ..AddExe("Zaměstnanci", "MZDY2.exe", "ALVA.MZDY2.formMZDY2Main", "146001", 1, "", 0, "", 0)
+            		d ..AddExe("Zaúčtování", "Obcasny.exe", "ALVA.ZAUCTOVANI.ZauMzdy.formZAUMZDYMain", "168001", 0, "", 0, "", 0)
+            		d ..AddExe("Stub", "", "ALVA.TISK.frmReportShow", "99001", 0, "", 0, "", 0)
+            		d ..AddExe("Cizí", "X.exe", "ALVA.X.formX", "999001", 0, "", 0, "", 0)
+            """);
+
+        var differences = TreeDifferences(modules, packages, mapped);
+
+        Assert.Equal(new[]
+        {
+            "Obcasny.exe (form 168001, ZAUCTOVANIMzdy): legacy ZAUCTOVANI, shell OBCASNY",
+            "X.exe (form 999001): balíček 999000 v EDPackageEnum chybí",
+        }, differences);
     }
 
     [Fact]
@@ -130,9 +174,7 @@ public class InfKeyLegacyParityTests
         var differences = new List<string>();
         foreach (var package in packages)
         {
-            // Case Else legacy: AD* sdílí AD.INF, ostatní mají soubor podle jména balíčku.
-            string legacy = mapped.TryGetValue(package, out var file) ? file
-                : package.StartsWith("AD", StringComparison.Ordinal) ? package[..2] : package;
+            string legacy = LegacyFile(package, mapped);
             // Windows jména souborů nerozlišují velikost písmen, legacy píše ToString enumu (ISYCiselniky).
             string shell = InfChangelogSource.InfKeyFor(package + ".exe");
             if (!string.Equals(legacy, shell, StringComparison.OrdinalIgnoreCase))
@@ -141,25 +183,59 @@ public class InfKeyLegacyParityTests
         return differences;
     }
 
+    // Case Else legacy: AD* sdílí AD.INF, ostatní mají soubor podle jména balíčku.
+    private static string LegacyFile(string package, Dictionary<string, string> mapped) =>
+        mapped.TryGetValue(package, out var file) ? file
+            : package.StartsWith("AD", StringComparison.Ordinal) ? package[..2] : package;
+
+    private static List<string> TreeDifferences(IEnumerable<(string Exe, int FormId)> modules,
+        Dictionary<string, int> packages, Dictionary<string, string> mapped)
+    {
+        var byValue = packages.ToDictionary(p => p.Value, p => p.Key);
+        var differences = new List<string>();
+        foreach (var (exe, formId) in modules)
+        {
+            int value = formId / 1000 * 1000;
+            if (!byValue.TryGetValue(value, out var package))
+            {
+                differences.Add($"{exe} (form {formId}): balíček {value} v EDPackageEnum chybí");
+                continue;
+            }
+            string legacy = LegacyFile(package, mapped);
+            string shell = InfChangelogSource.InfKeyFor(exe);
+            if (!string.Equals(legacy, shell, StringComparison.OrdinalIgnoreCase))
+                differences.Add($"{exe} (form {formId}, {package}): legacy {legacy.ToUpperInvariant()}, shell {shell}");
+        }
+        return differences.Distinct().ToList();
+    }
+
+    // Agendy stromu s exe a formulářem; stub bez exe novinky nemá (shell je hledá jen u spustitelného modulu).
+    private static List<(string Exe, int FormId)> TreeModules(string treeCls) =>
+        Regex.Matches(treeCls, @"d \.\.AddExe\(""(?:[^""]|"""")*"",\s*""([^""]+)"",\s*""(?:[^""]|"""")*"",\s*""(\d+)""")
+            .Select(m => (m.Groups[1].Value, int.Parse(m.Groups[2].Value)))
+            .ToList();
+
     // Řádky bez komentářů (VB komentář začíná ') a bez prázdných, ořezané.
     private static IEnumerable<string> CodeLines(string vb) =>
         vb.Split('\n').Select(raw => Regex.Replace(raw.Trim(), @"\s*'.*$", "")).Where(line => line.Length > 0);
 
-    private static (List<string> names, List<string> unknown) PackageNames(string vb)
+    private static (Dictionary<string, int> packages, List<string> unknown) Packages(string vb)
     {
         int start = vb.IndexOf("Enum EDPackageEnum", StringComparison.Ordinal);
         int end = start < 0 ? -1 : vb.IndexOf("End Enum", start, StringComparison.Ordinal);
         Assert.True(end > start && start >= 0, "V EDFormInterfaceLic.vb chybí Enum EDPackageEnum");
 
-        var names = new List<string>();
+        var packages = new Dictionary<string, int>();
         var unknown = new List<string>();
         foreach (var line in CodeLines(vb[start..end]).Skip(1))
         {
-            var m = Regex.Match(line, @"^(\w+)\s*=");
-            if (m.Success) names.Add(m.Groups[1].Value);
+            var m = Regex.Match(line, @"^(\w+)\s*=\s*(-?\d+)$");
+            // Dva členy se stejnou hodnotou by formuláři nedaly jednoznačný balíček.
+            if (m.Success && !packages.ContainsValue(int.Parse(m.Groups[2].Value)))
+                packages.Add(m.Groups[1].Value, int.Parse(m.Groups[2].Value));
             else unknown.Add(line);
         }
-        return (names, unknown);
+        return (packages, unknown);
     }
 
     // Řádkový parser funkce s výčtem povolených tvarů: jiný tvar přiřazení nebo kód mimo Select Case by test

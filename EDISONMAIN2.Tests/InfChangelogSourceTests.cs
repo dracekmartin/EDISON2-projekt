@@ -47,6 +47,8 @@ public class InfChangelogSourceTests : IDisposable
     [InlineData("AUTOOPRAVNA2.exe", "AUTOOPRAVNA")]
     [InlineData("ZAKAZNICI2.exe", "ZAKAZNICI")]
     [InlineData("ZAUCTOVANIMzdy.exe", "ZAUCTOVANI")]
+    [InlineData("ZauMzdy.exe", "ZAUCTOVANI")]
+    [InlineData("EDISONAIForms.dll", "EDISONAI")]
     [InlineData("DISPECINK2.exe", "DISPECINK")]
     [InlineData("ISYCiselniky.exe", "ISY")]
     [InlineData("ISYObehy.exe", "ISYOBEHY")]

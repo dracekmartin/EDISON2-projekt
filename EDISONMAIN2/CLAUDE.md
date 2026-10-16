@@ -107,9 +107,9 @@ binárek = „jsou nové změny". Modální a **blokuje otvírání**: v `OpenMo
 agendy, shellový check před `OpenStartupWindowIfAny`; menu `LaunchModelessAsync`/`LaunchDialogAsync`
 záměrně ne. Max 1x za session per INF klíč (kryje i re-focus dedup `ShowLegacyAsync`). Snooze
 (UserPrefs `ChangelogSnooze`) váže SHA-256 hash obsahu `_DIFF`, ne verzi - Caché-only patch nechává
-stale `_DIFF` na disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy
-`EDConversion.Package.ToInformationFile` včetně výjimky NDMAIN. Vynucená cesta `ShowAlwaysAsync`
-(Nápověda, kontextová menu) obchází dedup i snooze, bez `_DIFF` dá celou historii a bez INF vrací
+stale `_DIFF` na disku a DEBUG verze je konstantní. `InfKeyFor` zrcadlí legacy `Package.ToInformationFile` (i výjimku
+NDMAIN), ale klíčem je exe, legacy bere balíček formuláře: exe s jiným jménem (ZauMzdy) potřebuje alias. Vynucená
+cesta `ShowAlwaysAsync` (Nápověda, kontextová menu) obchází dedup i snooze, bez `_DIFF` dá celou historii a bez INF vrací
 `false` - volající to **musí** říct popupem, jinak klik nic neudělá.
 
 ## Legacy moduly - EDISONMAIN2API
