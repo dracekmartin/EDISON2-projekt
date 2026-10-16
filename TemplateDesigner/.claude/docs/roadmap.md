@@ -23,8 +23,9 @@ skutečných linkách. Vzor, pravidla, mezery a testovací linky: [`§19`](linko
 1. **`B192d` Změna trasy** [M-L]. Sloučený seznam zastávek, přidaná zastávka zelený řádek, zrušená
    červený. Teprve od tohoto kroku jdou porovnat linky ze vzorů.
 2. **`B192e` Původní pásmo a Tč** [S-M]. Dva sloupce navíc vedle dnešních.
-3. **`B192f` Hlavička** [S]. Původní platnost přeškrtnutá, dopravci podle verze. Spolu s tím
-   srovnat světlé barvy podbarvení se vzorem (`#FF8080` / `#A6DB73`, dnes `#F08080` / `#92D36E`).
+3. **`B192f` Dopravci podle verze** [S-M]. Platnost hotová 16. 10. Zbývá řádek dopravců: každý
+   na svém řádku se spoji, jen v původní verzi přeškrtnutý, jen v nové zeleně. Data mají jen
+   dopravce chybějícího v jedné verzi (`§19.4`). Kdyžtak srovnat i světlé barvy se vzorem.
 
 ---
 

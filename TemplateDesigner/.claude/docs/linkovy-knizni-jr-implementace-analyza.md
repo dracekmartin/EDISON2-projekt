@@ -2077,6 +2077,9 @@ jedné dvojice vypíše `PrehledDvojice` (`NOVA`, `PUVODNI`, `LINKA`). Výtisk s
 | 380742, skupina 207 proti 2 | 2 nové, 1 zrušený, 5 jen se změnou značek | `a`, `b`, `c` (výtisk 16. 10.) |
 | 380756, skupina 207 proti 2 | 16 jen se změnou značek | `c` (výtisk 16. 10.) |
 | 380717, skupina 207 proti 2 | 8 změněných, 7 jen se změnou značek | `c` (výtisk 16. 10.) |
+| 380742, skupina 207 bez porovnání | jen nová platnost | `f` platnost (výtisk 16. 10.) |
+| 0320167, skupina 141 proti 127 | dopravce GW BUS jen v původní verzi (v nové spoje dopravce nemají), 72 spojů | `f` dopravci |
+| 0132400, skupina 141 proti 127 | dopravce Jan Kukla jen v nové verzi | `f` dopravci |
 | 380760, skupina 307 proti 207 | změněný spoj 21 Tam | základ z 9. 10. |
 | 380735, skupina 307 proti 207 | změněné spoje 14 a 18 Zpět | základ z 9. 10. |
 

@@ -8,7 +8,7 @@ Class ALVA.TemplateDesigner.Tests.RozdilovyJrProbe Extends %RegisteredObject
 /// IN: NOVE = skupiny nových verzí („306,307"), PUVODNI = skupiny, kde hledat původní verzi.
 /// OUT(n) = JSON { nova, puvodni, linka, zmenene, nove, zrusene, znacky } za dvojici se stejnou
 /// trasou a aspoň jedním rozdílem; dvojice s jinou trasou se přeskočí. `znacky` = spoje se stejnými
-/// časy a jinými značkami.
+/// časy a jinými značkami, `dopravci` = spoje z obou verzí, které jede v každé jiný dopravce.
 ClassMethod NajdiDvojice(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -55,6 +55,7 @@ ClassMethod PrehledDvojice(ByRef sys As %String) As %Status
         f i=1:1:$g(stranky) {
             s protejsek = $classmethod(agenda, "ProtejsiStranka", stranky(i), i, .puvodni)
             i protejsek = "" { s ^||ML("OUT", i) = "bez protějšku" continue }
+            s dopravci = " | dopravci nová: "_..JmenaDopravcu(stranky(i))_" | původní: "_..JmenaDopravcu(protejsek)
             try {
                 s stranka = $classmethod(agenda, "SlucStranky", stranky(i), protejsek)
             } catch exSlouceni {
@@ -66,7 +67,7 @@ ClassMethod PrehledDvojice(ByRef sys As %String) As %Status
                 s verze = $s(spoj.%Get("VERZE") = "puvodni": "p", spoj.%Get("VERZE") = "nova": "n", ..JenZnacky(spoj): "z", 1: "")
                 s radek = radek_$s(radek = "": "", 1: ", ")_spoj.%Get("CISLO_SPOJE")_":"_verze
             }
-            s ^||ML("OUT", i) = stranka.%Get("values").%Get("SMER")_": "_radek_" | zrušené "_stranka.%Get("values").%Get("ZRUSENE_SPOJE")
+            s ^||ML("OUT", i) = stranka.%Get("values").%Get("SMER")_": "_radek_" | zrušené "_stranka.%Get("values").%Get("ZRUSENE_SPOJE")_dopravci
         }
     } catch (ex) { $$$CatchErrRest }
     ret $$$OK
@@ -77,13 +78,21 @@ ClassMethod Porovnej(ByRef sys As %String, skuN As %String, skuP As %String, lin
 {
     s agenda = "ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy"
     s vstup("SKUPINA_LINEK_ID") = skuN, vstup("LINKA_ID") = lin, vstup("DELENI_SLOUPCU") = "Bez rozlišení"
-    s (zmenene, nove, zrusene, znacky) = 0
+    s (zmenene, nove, zrusene, znacky, dopravci) = 0
     try {
         d $classmethod(agenda, "NactiStranky", .sys, .vstup, "", "", .stranky)
         d $classmethod(agenda, "NactiStranky", .sys, .vstup, skuP, lin, .puvodni)
         f i=1:1:$g(stranky) {
             s protejsek = $classmethod(agenda, "ProtejsiStranka", stranky(i), i, .puvodni)
             continue:protejsek=""
+            k dopNove, dopPuvodni
+            d ..DopravciSpoju(stranky(i), .dopNove), ..DopravciSpoju(protejsek, .dopPuvodni)
+            s cislo = ""
+            f {
+                s cislo = $o(dopNove(cislo), 1, text)
+                q:cislo=""
+                i $d(dopPuvodni(cislo)) && (dopPuvodni(cislo) '= text) { s dopravci = dopravci + 1 }
+            }
             s stranka = $classmethod(agenda, "SlucStranky", stranky(i), protejsek)
             // Změněný spoj = původní hned před novou podobou téhož čísla. Samotná původní verze je
             // od `B192a` i zrušený spoj, ten se počítá ze ZRUSENE_SPOJE.
@@ -105,12 +114,46 @@ ClassMethod Porovnej(ByRef sys As %String, skuN As %String, skuP As %String, lin
     } catch (ex) {
         ret ""
     }
-    q:(zmenene + nove + zrusene + znacky)=0 ""
+    q:(zmenene + nove + zrusene + znacky + dopravci)=0 ""
     s o = ##class(%DynamicObject).%New()
     d o.%Set("nova", skuN), o.%Set("puvodni", skuP), o.%Set("linka", lin)
     d o.%Set("zmenene", zmenene, "number"), o.%Set("nove", nove, "number"), o.%Set("zrusene", zrusene, "number")
-    d o.%Set("znacky", znacky, "number")
+    d o.%Set("znacky", znacky, "number"), o.%Set("dopravci", dopravci, "number")
     q o.%ToJSON()
+}
+
+/// Různá jména dopravců spojů stránky, oddělená „; ".
+ClassMethod JmenaDopravcu(stranka As %DynamicObject) As %String
+{
+    d ..DopravciSpoju(stranka, .poSpojich)
+    s cislo = ""
+    f {
+        s cislo = $o(poSpojich(cislo), 1, text)
+        q:cislo=""
+        s:text'="" jmena(text) = ""
+    }
+    s out = "", text = ""
+    f {
+        s text = $o(jmena(text))
+        q:text=""
+        s out = out_$s(out = "": "", 1: "; ")_$e(text, 2, $l(text))
+    }
+    q out
+}
+
+/// Dopravci stránky po spojích: poSpojich(číslo spoje) = jména dopravců. Liší-li se u spoje, který
+/// je v obou verzích, je co porovnat v hlavičce (`B192f`).
+ClassMethod DopravciSpoju(stranka As %DynamicObject, ByRef poSpojich)
+{
+    s it = stranka.%Get("rows").%Get("SPOJE").%GetIterator()
+    while it.%GetNext(.k, .spoj) {
+        s dopravci = spoj.%Get("DOPRAVCI"), text = ""
+        i $isobject(dopravci) {
+            s it2 = dopravci.%GetIterator()
+            while it2.%GetNext(.k2, .nazev) { s text = text_"/"_nazev }
+        }
+        s poSpojich(+spoj.%Get("CISLO_SPOJE")) = text
+    }
 }
 
 /// Spoj se stejnými časy, kterému se změnily jen značky (`B192c`)?

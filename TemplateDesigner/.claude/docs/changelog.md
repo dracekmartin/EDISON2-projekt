@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-16 (5) - 🔀 rozdílový linkový JŘ: platnost v hlavičce jako ve vzoru (`B192f`, část)
+
+Šablona `rozdilovy-linkovy-jr-a4.json` tiskne obě platnosti bez podbarvení: původní přeškrtnutou
+nad novou, jako vzor z CIS JŘ. Původní platnost se ukáže, jen když se opravdu porovnává
+(podmínka viditelnosti `{PUVODNI_DATUM_PLATNOSTI_OD}`); bez porovnání do 16. 10. visel prázdný
+přeškrtnutý řádek „Platí od do". Ověřeno výtiskem 380742 s porovnáním proti skupině 2 i bez něj.
+Sonda `NajdiDvojice` počítá spoje, které jede v každé verzi jiný dopravce, a `PrehledDvojice`
+vypíše dopravce obou verzí - podklad pro druhou část kroku (dopravci podle verze).
+
 ## 2026-10-16 (4) - 🔀 rozdílový linkový JŘ: značky spoje podle verze (`B192c`)
 
 Spoj se stejnými časy a jinými značkami se tiskl jen v nové podobě, takže změnu značky nebylo
