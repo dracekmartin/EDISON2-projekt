@@ -43,8 +43,9 @@
                  Šířku stromu persistuje VM per session (viz AttachShell) - restore ji přepíše na px.
                  Min. šířku plochy miniaplikací drží code-behind (ShellSplitLimits.ClampTreeWidth) -
                  GridSplitter MinWidth star sloupce u fixní px šířky stromu obchází, layout MinWidth
-                 by přetékal. -->
-            <ColumnDefinition x:Name="TreeColumn" Width="*" MinWidth="150"/>
+                 by přetékal. MinWidth drží záložky nad stromem v jedné řadě i s nejdelším názvem
+                 aktivní záložky, jen při výchozím písmu: zvětšené písmo je zalomit může. -->
+            <ColumnDefinition x:Name="TreeColumn" Width="*" MinWidth="330"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>

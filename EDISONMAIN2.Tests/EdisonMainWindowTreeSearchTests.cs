@@ -32,7 +32,7 @@ public class EdisonMainWindowTreeSearchTests
     }
 
     // Application je jedna na proces a mohl ji založit jiný test: chybějící slovníky se doplní i do ní.
-    private static void EnsureApplication()
+    internal static void EnsureApplication()
     {
         var app = Application.Current ?? new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         foreach (var dict in new[] { "EDTheme/EDTheme.xaml", "EDControlStyles/EDControlStyles.xaml",
