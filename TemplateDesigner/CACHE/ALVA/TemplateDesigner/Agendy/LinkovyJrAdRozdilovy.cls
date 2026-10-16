@@ -20,6 +20,8 @@ Include GENERAL
 ///                 - nový i zrušený spoj má ROZDILY samé 1 (celý sloupec v barvě verze, jako
 ///                   ve vzoru z CIS JŘ); zrušený stojí tam, kde byl v původní verzi (`B192a`)
 ///   rows.SKUPINY_DNU: navíc skupiny, které má jen zrušený spoj
+///   rows.POZNAMKY[]: poznámky obou verzí (`B192b`), VERZE "puvodni" / "nova" / "" stejná v obou;
+///                 původní podoba značky stojí těsně před novou
 /// Barvu rozdílu určuje šablona (prvek Tabulka spojů), data říkají jen, která buňka se liší.
 /// Do 16. 10. se zrušené spoje jen vypsaly poznámkou „Zrušené spoje: …" (druh 10) - ta už nevzniká,
 /// ZRUSENE_SPOJE zůstává.
@@ -318,6 +320,7 @@ ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %D
     }
     d radkyNove.%Set("SPOJE", spoje)
     d ..PrevezmiSkupinyDnu(radkyNove, radkyPuvodni, .skupinyZrusenych)
+    d ..SlucPoznamky(radkyNove, radkyPuvodni)
 
     // Číslo jen jednou, i když spoj byl ve víc skupinách dnů.
     s seznam = "", cislo = ""
@@ -375,6 +378,76 @@ ClassMethod PrevezmiSkupinyDnu(radkyNove As %DynamicObject, radkyPuvodni As %Dyn
         continue:(id = "")||$d(maNova(id))||('$d(skupinyZrusenych(id)))
         d nove.%Push(skupina)
     }
+}
+
+/// Poznámky obou verzí do legendy (`B192b`). Poznámka stejná v obou zůstane jednou bez verze.
+/// Ostatní dostanou verzi: původní podoba značky stojí těsně před novou (jako dvojice spoje),
+/// původní poznámka, jejíž značka v nové verzi není, za poslední poznámkou svého druhu.
+/// Bez toho by legenda nevysvětlila značku, kterou nese jen původní nebo zrušený spoj.
+ClassMethod SlucPoznamky(radkyNove As %DynamicObject, radkyPuvodni As %DynamicObject)
+{
+    s nove = radkyNove.%Get("POZNAMKY"), puvodni = radkyPuvodni.%Get("POZNAMKY")
+    q:'$isobject(puvodni)
+    i '$isobject(nove) s nove = ##class(%DynamicArray).%New()
+
+    s it = nove.%GetIterator()
+    while it.%GetNext(.k, .pozn) { s veNove(..KlicPoznamky(pozn)) = "" }
+    s it = puvodni.%GetIterator(), zbyva = 0
+    while it.%GetNext(.k, .pozn) {
+        s klic = ..KlicPoznamky(pozn), vePuvodni(klic) = ""
+        continue:$d(veNove(klic))
+        d pozn.%Set("VERZE", "puvodni")
+        s zbyva = zbyva + 1, jenPuvodni(zbyva) = pozn
+    }
+
+    s poradi = 0
+    s it = nove.%GetIterator()
+    while it.%GetNext(.k, .pozn) {
+        i '$d(vePuvodni(..KlicPoznamky(pozn))) {
+            d pozn.%Set("VERZE", "nova")
+            s znacka = ..ZnackaPoznamky(pozn)
+            f i=1:1:zbyva {
+                continue:'$d(jenPuvodni(i))
+                continue:(..ZnackaPoznamky(jenPuvodni(i)) '= znacka)
+                s poradi = poradi + 1000, serazene(poradi) = jenPuvodni(i)
+                k jenPuvodni(i)
+            }
+        }
+        s poradi = poradi + 1000, serazene(poradi) = pozn, posledniDruhu(..DruhPoznamky(pozn)) = poradi
+    }
+    f i=1:1:zbyva {
+        continue:'$d(jenPuvodni(i))
+        s druh = ..DruhPoznamky(jenPuvodni(i))
+        s misto = $s($d(posledniDruhu(druh)): posledniDruhu(druh) + 1, 1: $o(serazene(""), -1) + 1000)
+        s serazene(misto) = jenPuvodni(i), posledniDruhu(druh) = misto
+    }
+
+    s vysledek = ##class(%DynamicArray).%New(), misto = ""
+    f {
+        s misto = $o(serazene(misto), 1, pozn)
+        q:misto=""
+        d vysledek.%Push(pozn)
+    }
+    d radkyNove.%Set("POZNAMKY", vysledek)
+}
+
+/// Celá poznámka pro porovnání verzí. Text jde jako kontrolní součet a délka - tarifní poznámky
+/// bývají delší, než unese index lokálního pole.
+ClassMethod KlicPoznamky(pozn As %DynamicObject) As %String
+{
+    s text = pozn.%Get("TEXT")
+    q ..ZnackaPoznamky(pozn)_"~"_$zcrc($zcvt(text, "O", "UTF8"), 7)_"~"_$l(text)
+}
+
+/// Značka poznámky v jejím druhu - podle ní se páruje původní a nová podoba.
+ClassMethod ZnackaPoznamky(pozn As %DynamicObject) As %String
+{
+    q ..DruhPoznamky(pozn)_"~"_pozn.%Get("TYP")_"~"_pozn.%Get("ZNAK")
+}
+
+ClassMethod DruhPoznamky(pozn As %DynamicObject) As %String
+{
+    q "~"_pozn.%Get("DRUH")
 }
 
 /// Celý sloupec v barvě verze (nový nebo zrušený spoj) - 1 u každé buňky, i mimo trasu.

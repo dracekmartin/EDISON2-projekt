@@ -2083,6 +2083,9 @@ jedné dvojice vypíše `PrehledDvojice` (`NOVA`, `PUVODNI`, `LINKA`). Výtisk s
 - **Mezi dvojici se vkládal prázdný sloupec dorovnání** (380715 Zpět, spoj 6). Opraveno týž den:
   prázdný sloupec jde za dvojici (rozhodnutí Jan: porovnávané sloupce stojí u sebe, i za cenu výjimky
   z rozložení starého tisku).
+- **Po `B192b` vysvětluje legenda i značky, které v tabulce nejsou.** Spoj se stejnými časy se
+  tiskne jen v nové podobě, takže jeho původní značka (380742: 11 a 23) je v legendě přeškrtnutá,
+  ale žádný sloupec ji nenese. Zmizí s `B192c`, kdy se původní značka ukáže přímo ve sloupci.
 - **Neřešeno: dvojici může rozdělit hranice bloku.** Když se spoje nevejdou na šířku a tabulka se
   láme do bloků pod sebou, může původní podoba skončit na konci bloku a nová začít další blok.
   Na výtiscích 16. 10. se to nestalo; ověřit na lince s víc změněnými spoji.

@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B192b` Rozdílový JŘ: legenda z obou verzí (hotovo 16. 10. 2026)
+
+Legenda nese poznámky obou verzí linky: stejná jednou, původní přeškrtnutá se značkou v barvě
+původní verze, nová v barvě nové verze; původní podoba značky stojí před novou. Ověřeno výtiskem
+CB_CSADAD 380742, 380715 a 380738 (skupina 207 proti 2). Detail changelog 2026-10-16 (3).
+
 ## `B192a` Rozdílový JŘ: zrušený spoj a čísla spojů (hotovo 16. 10. 2026)
 
 První krok rozdílového linkového JŘ podle vzoru z CIS JŘ. Zrušený spoj je celý červený sloupec na

@@ -41,6 +41,30 @@ ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C") As %DynamicObjec
 	quit stranka
 }
 
+/// Přidá stránce poznámky: poznamky(n) = "druh|typ|značka|text".
+ClassMethod SPoznamkami(stranka As %DynamicObject, ByRef poznamky) As %DynamicObject
+{
+	set arr = []
+	for i=1:1:$get(poznamky) {
+		set p = poznamky(i)
+		do arr.%Push({"DRUH":($piece(p,"|",1)),"TYP":($piece(p,"|",2)),"ZNAK":($piece(p,"|",3)),"TEXT":($piece(p,"|",4))})
+	}
+	do stranka.%Get("rows").%Set("POZNAMKY", arr)
+	quit stranka
+}
+
+/// Poznámky výsledku jako „značka:verze" oddělené čárkou (text bez značky jako „T").
+ClassMethod PrehledPoznamek(stranka As %DynamicObject) As %String
+{
+	set out = ""
+	set it = stranka.%Get("rows").%Get("POZNAMKY").%GetIterator()
+	while it.%GetNext(.k, .pozn) {
+		set znak = pozn.%Get("ZNAK")
+		set out = out_$select(out="":"",1:",")_$select(znak="":"T",1:znak)_":"_pozn.%Get("VERZE")
+	}
+	quit out
+}
+
 /// ID skupin dnů výsledku oddělená čárkou.
 ClassMethod SkupinyDnu(stranka As %DynamicObject) As %String
 {
@@ -135,6 +159,32 @@ Method TestZrusenaCelaSkupinaDnu()
 
 	do $$$AssertEquals(..Prehled(vysledek), "1:,2:puvodni", "zrušená skupina na konci")
 	do $$$AssertEquals(..SkupinyDnu(vysledek), "1,2", "nadpis zrušené skupiny se převezme z původní verze")
+}
+
+/// Legenda nese poznámky obou verzí (`B192b`): stejná poznámka jednou beze změny, jiný text téže
+/// značky jako dvojice (původní před novou), poznámka jen z jedné verze s její verzí. Původní
+/// poznámka, jejíž značka v nové verzi není, jde za poslední poznámku svého druhu.
+Method TestLegendaZObouVerzi()
+{
+	set spoje = 1, spoje(1) = "1|6:00,6:10,6:20"
+	set pp = 3, pp(1) = "2|nz|17|jede od 30.6.25", pp(2) = "2|nz|31|nejede 31.12.24", pp(3) = "9|text||Na lince platí tarif IDS."
+	set pn = 3, pn(1) = "2|nz|17|jede od 10.7.26", pn(2) = "2|nz|18|jede od 10.7.26 do 28.9.26", pn(3) = "9|text||Na lince platí tarif IDS."
+	set puvodni = ..SPoznamkami(..Stranka(.spoje), .pp)
+	set nova = ..SPoznamkami(..Stranka(.spoje), .pn)
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", nova, puvodni)
+
+	do $$$AssertEquals(..PrehledPoznamek(vysledek), "17:puvodni,17:nova,18:nova,31:puvodni,T:", "pořadí a verze poznámek")
+	do $$$AssertEquals(vysledek.%Get("rows").%Get("POZNAMKY").%Get(0).%Get("TEXT"), "jede od 30.6.25", "původní text značky 17")
+}
+
+/// Poznámky stejné v obou verzích zůstanou, jak jsou - bez verze a bez zdvojení.
+Method TestStejnaLegendaBezVerzi()
+{
+	set spoje = 1, spoje(1) = "1|6:00,6:10,6:20"
+	set pozn = 2, pozn(1) = "2|nz|17|jede od 10.7.26", pozn(2) = "1|znak|X|jede v pracovních dnech"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..SPoznamkami(..Stranka(.spoje), .pozn), ..SPoznamkami(..Stranka(.spoje), .pozn))
+
+	do $$$AssertEquals(..PrehledPoznamek(vysledek), "17:,X:", "beze změny")
 }
 
 /// Verze s jinými zastávkami se zatím neporovnávají - srozumitelná chyba místo nesmyslných řádků.

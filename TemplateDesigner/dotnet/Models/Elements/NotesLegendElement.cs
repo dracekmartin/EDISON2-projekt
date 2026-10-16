@@ -95,6 +95,17 @@ public class NotesLegendElement : StopScheduleElementBase
     public string NegativniZnackaForeColor { get; set; } = "#FFFFFFFF";
 
     // ═══════════════════════════════════════════
+    // Porovnání verzí (rozdílový linkový JŘ, B192b)
+    // ═══════════════════════════════════════════
+    /// <summary>Značka poznámky, která je jen v původní verzi linky; text se přeškrtne.</summary>
+    /// <remarks>Výchozí barvy jsou ze vzoru z CIS JŘ. Proti podbarvení časů v Tabulce spojů jsou
+    /// tmavší, protože nesou text, ne pozadí.</remarks>
+    public string RozdilPuvodniColor { get; set; } = "#FF960000";
+
+    /// <summary>Značka i text poznámky, která je jen v nové verzi linky.</summary>
+    public string RozdilNovaColor { get; set; } = "#FF009600";
+
+    // ═══════════════════════════════════════════
     // Filtrování
     // ═══════════════════════════════════════════
     public bool ShowNegativniZnacky { get; set; } = true;
@@ -227,9 +238,12 @@ public class NotesLegendElement : StopScheduleElementBase
                 markerCell = MathF.Max(markerCell,
                     NejsirsiZnackaMm([.. bloky.SelectMany(b => b.Poznamky)], boldFont, symbolFont, noteFont, ctx.MmToPx));
             float blokY = currentY;
+            using var novaTextPaint = paints.Text.Clone();
+            novaTextPaint.Color = ColorHex.Parse(RozdilNovaColor, "#FF009600");
 
             foreach (var blok in bloky)
-                blokY = RenderBlok(ctx, blok, blokY, markerCell, scaledNoteLineH, noteFont, boldFont, symbolFont, paints.Text);
+                blokY = RenderBlok(ctx, blok, blokY, markerCell, scaledNoteLineH, noteFont, boldFont, symbolFont,
+                    paints.Text, novaTextPaint);
         }
 
         // Outer border je řízen TemplateElement.BorderColor/BorderWidth (druhý průchod);
@@ -238,7 +252,7 @@ public class NotesLegendElement : StopScheduleElementBase
 
     /// <summary>Vykreslí blok poznámek od <paramref name="top"/> a vrátí, kde blok skončil.</summary>
     private float RenderBlok(RenderContext ctx, BlokPoznamek blok, float top, float markerCell, float scaledNoteLineH,
-        SKFont noteFont, SKFont boldFont, SKFont symbolFont, SKPaint textPaint)
+        SKFont noteFont, SKFont boldFont, SKFont symbolFont, SKPaint obycejnyTextPaint, SKPaint novaTextPaint)
     {
         var ordered = blok.Poznamky;
         int cols = blok.Sloupcu;
@@ -265,6 +279,9 @@ public class NotesLegendElement : StopScheduleElementBase
             float lineX    = colX + 1f;
             // Pevná marker buňka → text všech řádků zarovnán na colX+markerCell; jinak inline.
             float? textStartX = markerCell > 0 ? colX + markerCell : null;
+            // Rozdílový JŘ: nová poznámka v barvě nové verze, původní přeškrtnutá (vzor z CIS JŘ).
+            var textPaint = pozn.Verze == "nova" ? novaTextPaint : obycejnyTextPaint;
+            bool preskrtnout = pozn.Verze == "puvodni";
 
             int lines = pozn.Typ switch
             {
@@ -278,7 +295,7 @@ public class NotesLegendElement : StopScheduleElementBase
                     RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, textPaint, true, colRight, textStartX,
                         piktogram: false),
                 _ =>
-                    DrawWrappedBody(ctx, pozn.Text, textStartX ?? lineX, noteY, colRight, noteFont, textPaint, scaledNoteLineH),
+                    DrawWrappedBody(ctx, pozn.Text, textStartX ?? lineX, noteY, colRight, noteFont, textPaint, scaledNoteLineH, preskrtnout),
             };
 
             colY[col] = noteY + Math.Max(1, lines) * scaledNoteLineH;
@@ -323,7 +340,7 @@ public class NotesLegendElement : StopScheduleElementBase
         ref float lineX, float currentY, float lineH, SKFont noteFont, SKFont boldFont, SKPaint textPaint,
         float colRight, float? textStartX = null)
     {
-        var nzBgColor = ColorHex.ParseOrBlack(NegativniZnackaBackColor);
+        var nzBgColor = ColorHex.ParseOrBlack(BarvaVerze(pozn) ?? NegativniZnackaBackColor);
         var nzFgColor = ColorHex.Parse(NegativniZnackaForeColor, "#FFFFFFFF");
 
         // Invertovaný obdélník se znakem. Okraje se zmenšují s poznámkami - pevné by při zmenšení
@@ -347,8 +364,17 @@ public class NotesLegendElement : StopScheduleElementBase
         // za znakem. ⚠️ Nikdy ne dřív, než rámeček skončí: široká značka („70") by jinak text
         // překryla, když je buňka značky užší než ona.
         float textX = textStartX is float start ? MathF.Max(start, lineX) : lineX;
-        return DrawWrappedBody(ctx, pozn.Text, textX, currentY, colRight, noteFont, textPaint, lineH);
+        return DrawWrappedBody(ctx, pozn.Text, textX, currentY, colRight, noteFont, textPaint, lineH,
+            preskrtnout: pozn.Verze == "puvodni");
     }
+
+    /// <summary>Barva značky poznámky, která je jen v jedné verzi linky (rozdílový JŘ); jinak null.</summary>
+    private string? BarvaVerze(PoznamkaData pozn) => pozn.Verze switch
+    {
+        "puvodni" => RozdilPuvodniColor,
+        "nova" => RozdilNovaColor,
+        _ => null,
+    };
 
     /// <summary>
     /// Vykreslí symbol (znak) ve volitelné barvě z DB (<c>pozn.ForeColor</c>),
@@ -364,9 +390,11 @@ public class NotesLegendElement : StopScheduleElementBase
         // Symbol - pokud má pozn.ForeColor z DB, použij ji; jinak default textPaint barva.
         SKPaint symbolPaint = textPaint;
         SKPaint? customSymbolPaint = null;
-        if (!string.IsNullOrEmpty(pozn.ForeColor))
+        // Barva verze (rozdílový JŘ) přebije barvu z DB - říká, ke které verzi poznámka patří.
+        string? barvaZnaku = BarvaVerze(pozn) ?? pozn.ForeColor;
+        if (!string.IsNullOrEmpty(barvaZnaku))
         {
-            customSymbolPaint = new SKPaint { Color = ColorHex.ParseOrBlack(pozn.ForeColor), IsAntialias = true };
+            customSymbolPaint = new SKPaint { Color = ColorHex.ParseOrBlack(barvaZnaku), IsAntialias = true };
             symbolPaint = customSymbolPaint;
         }
 
@@ -386,7 +414,8 @@ public class NotesLegendElement : StopScheduleElementBase
             // Nikdy ale přes znak, když je širší než buňka (týž důvod jako u negativní značky).
             float textX = textStartX is float start ? MathF.Max(start, lineX) : lineX;
             string displayText = (suffixSeparator && textStartX is null) ? $"{NoteSeparator}{pozn.Text}" : pozn.Text;
-            return DrawWrappedBody(ctx, displayText, textX, currentY, colRight, textFont, textPaint, lineH);
+            return DrawWrappedBody(ctx, displayText, textX, currentY, colRight, textFont, textPaint, lineH,
+                preskrtnout: pozn.Verze == "puvodni");
         }
         finally
         {
@@ -399,7 +428,7 @@ public class NotesLegendElement : StopScheduleElementBase
     /// začínají na stejném xMm (visutý odsazený blok). Vrací počet vykreslených řádků (min 1).
     /// </summary>
     private static int DrawWrappedBody(RenderContext ctx, string text, float xMm, float yMm, float colRightMm,
-        SKFont font, SKPaint paint, float lineH)
+        SKFont font, SKPaint paint, float lineH, bool preskrtnout = false)
     {
         if (string.IsNullOrEmpty(text)) return 1;
         float availMm = colRightMm - xMm - 0.5f;
@@ -410,9 +439,14 @@ public class NotesLegendElement : StopScheduleElementBase
         {
             var pt = ctx.ToCanvas(xMm, yMm + lineH * 0.75f + k * lineH);
             ctx.Canvas.DrawText(lines[k], pt.X, pt.Y, font, paint);
+            if (preskrtnout)
+                Preskrtnuti.DrawTextDecorations(ctx.Canvas, pt.X, pt.Y, font.MeasureText(lines[k]), font, paint);
         }
         return Math.Max(1, lines.Count);
     }
+
+    /// <summary>Styl, který kreslí jen přeškrtnutí - poznámka původní verze (rozdílový JŘ).</summary>
+    private static readonly ResolvedTextStyle Preskrtnuti = new() { Strikethrough = true };
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────
 
@@ -521,9 +555,11 @@ public class NotesLegendElement : StopScheduleElementBase
     /// (`KATEGORIE` je prázdná). Uživatel vedle sebe viděl „Poznámky linky - radiobus" jako
     /// zaškrtávátko i jako skupinu v okně (nález Jan 9. 10.).</para>
     /// </remarks>
-    public static bool PoleFormulareViditelne(string klic, bool linkovyJr) => klic switch
+    public static bool PoleFormulareViditelne(string klic, bool linkovyJr, bool rozdilovyJr = false) => klic switch
     {
         SkupinyPoznamekKlic => linkovyJr,
+        // Barvy verzí mají smysl jen tam, kde data verzi nesou (rozdílový linkový JŘ).
+        nameof(RozdilPuvodniColor) or nameof(RozdilNovaColor) => rozdilovyJr,
         nameof(Columns) or nameof(ShowNegativniZnacky) or nameof(ShowSpecialniZnaky) or nameof(ShowTextovePoznamky)
             or nameof(Vyluky) or nameof(ShowPoznamkyLinkyTarifni) or nameof(ShowPoznamkyLinkyVseobecne)
             or nameof(ShowPoznamkyLinkyRadiobus) or nameof(ShowSouhrnBezbarier) or nameof(ShowZnackaKola)
@@ -811,6 +847,8 @@ public class NotesLegendElement : StopScheduleElementBase
 
         new ColorPropertyDescriptor { FromImage = true, Label = "Pozadí značky",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { FromImage = true, Label = "Barva textu značky", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
+        new ColorPropertyDescriptor { Label = "Původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniColor, Set = v => RozdilPuvodniColor = v },
+        new ColorPropertyDescriptor { Label = "Nová verze",    Group = "Porovnání verzí", Get = () => RozdilNovaColor,    Set = v => RozdilNovaColor = v },
 
         .. GetPositionDescriptors()
     ];
@@ -843,6 +881,8 @@ public class NotesLegendElement : StopScheduleElementBase
             Skupiny                  = Skupiny?.Select(s => s.Clone()).ToList(),
             NegativniZnackaBackColor = NegativniZnackaBackColor,
             NegativniZnackaForeColor = NegativniZnackaForeColor,
+            RozdilPuvodniColor       = RozdilPuvodniColor,
+            RozdilNovaColor          = RozdilNovaColor,
             ShowNegativniZnacky      = ShowNegativniZnacky,
             Vyluky                   = Vyluky,
             ShowSpecialniZnaky       = ShowSpecialniZnaky,

@@ -1971,8 +1971,8 @@ public partial class MainWindow : Window
             { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey(element) };
         if (element is NotesLegendElement poznamky)
         {
-            bool linkovy = _vm.JeLinkovyJr;
-            dlg.ViditelnostPole = (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy);
+            bool linkovy = _vm.JeLinkovyJr, rozdilovy = _vm.JeRozdilovyJr;
+            dlg.ViditelnostPole = (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy, rozdilovy);
             dlg.UpravaPoli = pole => NastavVolbyRazeni(pole, linkovy);
             // Okno vlastností zapisuje až s Uložit - rozpracované druhy si proto drží samo,
             // aby druhé otevření ukázalo první úpravu.
@@ -2264,7 +2264,7 @@ public partial class MainWindow : Window
                 bool rozdilovy = _vm.JeRozdilovyJr;
                 InlineElementForm.ViditelnostPole = selected[0] switch
                 {
-                    NotesLegendElement => (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy),
+                    NotesLegendElement => (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy, rozdilovy),
                     LineTableElement   => (klic, _) => LineTableElement.PoleFormulareViditelne(klic, rozdilovy),
                     _                  => null,
                 };

@@ -128,6 +128,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva textu značky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
 
+        // ── Skupina "Porovnání verzí" (B192b) ─────────────────────────────
+        // Jen rozdílový linkový JŘ: legenda nese poznámky obou verzí linky. Data říkají verzi,
+        // barvu určuje šablona. Návrhář skupinu jinde schová.
+        d form.AddGroup("verze", "Porovnání verzí")
+        s f = form.AddFieldToLastGroup("RozdilPuvodniColor", "Původní verze", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF960000"
+        s f.helpText = "Barva značky poznámky, která je jen v původní verzi linky. Její text se přeškrtne."
+        s f = form.AddFieldToLastGroup("RozdilNovaColor", "Nová verze", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF009600"
+        s f.helpText = "Barva značky i textu poznámky, která je jen v nové verzi linky."
+
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 0)

@@ -198,6 +198,10 @@ public class PoznamkaData
     /// Wire-format zatím rendering ignoruje (rezervováno, klient zatím chce jen barvu znaku).
     /// </summary>
     public string? BackColor { get; set; }
+
+    /// <summary>Rozdílový JŘ: „puvodni" / „nova", když je poznámka jen v jedné verzi linky;
+    /// prázdné = stejná v obou nebo jiná agenda (`B192b`).</summary>
+    public string Verze { get; set; } = "";
 }
 
 // ─── Generický per-column styling ────────────────────────────────────────────

@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-10-16 (3) - 🔀 rozdílový linkový JŘ: legenda z obou verzí (`B192b`)
+
+Legenda nesla jen poznámky nové verze, takže značka, kterou má jen původní nebo zrušený spoj,
+zůstala bez vysvětlení (na 380742 značka 93 u zrušeného spoje 15). Server teď sloučí poznámky obou
+verzí: stejná zůstane jednou bez označení, poznámka jen z jedné verze nese svou verzi. Původní podoba
+značky stojí těsně před novou, jinak za poslední poznámkou svého druhu, takže stejné číslo s jiným
+textem je v legendě dvakrát (ve vzoru ARRIVA 17, na 380742 čísla 16, 46 a 71). Prvek Poznámky kreslí
+původní poznámku přeškrtnutou se značkou v barvě „Původní verze" (výchozí `#960000` jako vzor)
+a novou celou v barvě „Nová verze" (`#009600`). Obě volby jsou ve skupině Porovnání verzí a formulář
+je ukazuje jen v rozdílové agendě; barva verze přebije barvu značky z dat.
+
+Ověřeno výtiskem 380742, 380715 a 380738 (skupina 207 proti 2) a voláním `Init` formuláře na
+serveru. Testy `LinkovyJrRozdilovyTest` (legenda z obou verzí, stejná legenda bez verze),
+`RozdilovaLegendaTests` (barvy a přeškrtnutí ověřené mutací, viditelnost voleb, kopie prvku).
+Zbývá: poznámka jen z původní verze se vypíše, i když její značku žádný sloupec nenese - spoj
+se stejnými časy a jinou značkou se tiskne jen v nové podobě. Řeší `B192c`.
+
 ## 2026-10-16 (2) - 🔀 dvojice spoje v rozdílovém JŘ stojí vždy vedle sebe
 
 Prázdné sloupce dorovnání se rozdávají za spoje střídavě zleva a zprava (parita starého tisku),
