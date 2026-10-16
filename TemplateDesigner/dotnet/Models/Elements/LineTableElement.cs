@@ -1394,6 +1394,32 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
+    /// Prázdné sloupce, které padly dovnitř dvojice (rozdílový JŘ: původní a hned za ní nová podoba
+    /// téhož spoje), přesune za ni. Počet ani šířka tabulky se nemění.
+    /// </summary>
+    /// <remarks>
+    /// Dvojice stojí vždy těsně vedle sebe jako ve vzoru z CIS JŘ, i za cenu výjimky z rozložení
+    /// starého tisku (rozhodnutí Jan 16. 10.: prázdný sloupec uprostřed ji rozbíjel).
+    /// </remarks>
+    /// <param name="pocty">Počet prázdných u každého spoje, z <see cref="RozlozeniPrazdnych"/>.</param>
+    /// <param name="predSpojem">Zrcadlená strana čte počty jako prázdné <b>před</b> spojem, hlavní za ním.</param>
+    internal static int[] BezPrazdnychVeDvojici(int[] pocty, IReadOnlyList<LineTripData> spoje, bool predSpojem)
+    {
+        for (int i = 0; i + 1 < pocty.Length && i + 1 < spoje.Count; i++)
+        {
+            if (!JeDvojice(spoje[i], spoje[i + 1])) continue;
+            if (predSpojem) { pocty[i] += pocty[i + 1]; pocty[i + 1] = 0; }
+            else { pocty[i + 1] += pocty[i]; pocty[i] = 0; }
+        }
+        return pocty;
+    }
+
+    /// <summary>Původní a hned za ní nová podoba téhož spoje (rozdílový JŘ).</summary>
+    private static bool JeDvojice(LineTripData puvodni, LineTripData nova) =>
+        puvodni.Verze == "puvodni" && nova.Verze == "nova"
+        && puvodni.CisloSpoje == nova.CisloSpoje && puvodni.Skupina == nova.Skupina;
+
+    /// <summary>
     /// Indexy sloupců spojů, před kterými začíná nová skupina sloupců. <b>0 je vždy uvnitř</b> -
     /// je to hranice mezi popisným blokem a spoji.
     /// </summary>
@@ -2321,10 +2347,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                     sirkySpoju, tripW,
                     MezeraMeziSkupinamiMm * SirkaMeritko, HraniceSkupin(spojeBloku),
                     sirkyZrcadlenych,
-                    RozlozeniPrazdnych(spojeBloku.Count, prazdnychVpravo),
+                    BezPrazdnychVeDvojici(RozlozeniPrazdnych(spojeBloku.Count, prazdnychVpravo),
+                        spojeBloku, predSpojem: false),
                     // Zrcadlená strana čte rozložení zrcadlově - první prázdný patří k jejímu
                     // spoji u zastávek, ne k tomu na vnějším okraji.
-                    [.. RozlozeniPrazdnych(zrcadleneBloku.Count, prazdnychVlevo).Reverse()]);
+                    BezPrazdnychVeDvojici([.. RozlozeniPrazdnych(zrcadleneBloku.Count, prazdnychVlevo).Reverse()],
+                        zrcadleneBloku, predSpojem: true));
                 // Zbytek šířky se rozpustí, ať tabulka končí na hraně prvku a ne kousek před ní.
                 if (PadEmptyColumns) mrizka.RozpustitZbytek(Width);
 

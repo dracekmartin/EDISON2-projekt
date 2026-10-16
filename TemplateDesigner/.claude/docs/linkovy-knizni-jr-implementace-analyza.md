@@ -2080,6 +2080,9 @@ jedné dvojice vypíše `PrehledDvojice` (`NOVA`, `PUVODNI`, `LINKA`). Výtisk s
 
 ### 19.5 Zjištěno na výtiscích po `B192a` (16. 10.)
 
-- **Mezi dvojici se vkládá prázdný sloupec dorovnání.** Prázdné sloupce se rozdělují za první spoje
-  bloku, takže na 380715 Zpět stojí mezi původní a novou podobou spoje 6 prázdný sloupec a dvojice
-  přestane být vedle sebe. Ve vzoru dvojice stojí vždy těsně vedle sebe.
+- **Mezi dvojici se vkládal prázdný sloupec dorovnání** (380715 Zpět, spoj 6). Opraveno týž den:
+  prázdný sloupec jde za dvojici (rozhodnutí Jan: porovnávané sloupce stojí u sebe, i za cenu výjimky
+  z rozložení starého tisku).
+- **Neřešeno: dvojici může rozdělit hranice bloku.** Když se spoje nevejdou na šířku a tabulka se
+  láme do bloků pod sebou, může původní podoba skončit na konci bloku a nová začít další blok.
+  Na výtiscích 16. 10. se to nestalo; ověřit na lince s víc změněnými spoji.

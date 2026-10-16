@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-16 (2) - 🔀 dvojice spoje v rozdílovém JŘ stojí vždy vedle sebe
+
+Prázdné sloupce dorovnání se rozdávají za spoje střídavě zleva a zprava (parita starého tisku),
+takže jeden mohl padnout mezi původní a novou podobu téhož spoje a dvojici rozdělit (380715 Zpět,
+spoj 6). Rozhodnutí Jan 16. 10.: porovnávané sloupce mají stát u sebe, i když je to výjimka
+z rozložení. Prázdný sloupec, který by padl dovnitř dvojice, jde za ni; počet ani šířka tabulky se
+nemění. Platí i pro zrcadlenou stranu obousměrného tisku. Ověřeno výtiskem 380715 a 380738 (skupina
+207 proti 2). Testy `PrazdneSloupceNestojiUvnitrDvojice` (měří mezeru mezi barvami verzí, ověřeno
+mutací) a `PrazdnyVeDvojiciJdeZaNi`.
+
 ## 2026-10-16 - 🔀 rozdílový linkový JŘ: zrušený spoj jako sloupec, záhlaví v barvě verze (`B192a`)
 
 První krok podle vzoru z CIS JŘ (rozbor v analýze linkového JŘ `§19`). Zrušený spoj už není jen

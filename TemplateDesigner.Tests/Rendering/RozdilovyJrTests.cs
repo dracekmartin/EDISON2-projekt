@@ -52,6 +52,61 @@ public class RozdilovyJrTests
         ShowGroupHeaders = false,
     };
 
+    /// <summary>Dvojice stojí těsně vedle sebe: prázdný sloupec dorovnání, který by padl mezi původní
+    /// a novou podobu spoje, jde až za ni (rozhodnutí Jan 16. 10., vzor z CIS JŘ).</summary>
+    [Fact]
+    public void PrazdneSloupceNestojiUvnitrDvojice()
+    {
+        var prvek = Prvek();
+        prvek.PadEmptyColumns = true;
+        var bitmapa = Vykresli(prvek, Linka(sVerzemi: true));
+        int cervenaVpravo = KrajBarvy(bitmapa, prvek.RozdilPuvodniBackColor, vpravo: true);
+        int zelenaVlevo = KrajBarvy(bitmapa, prvek.RozdilNovaBackColor, vpravo: false);
+
+        Assert.True(zelenaVlevo - cervenaVpravo < MmToPx,
+            $"původní končí {cervenaVpravo} px, nová začíná {zelenaVlevo} px - mezi nimi je prázdný sloupec");
+    }
+
+    [Theory]
+    [InlineData(false, new[] { 1, 0, 0, 1 }, new[] { 0, 1, 0, 1 })]   // za spojem: z původní za novou
+    [InlineData(true, new[] { 0, 1, 0, 0 }, new[] { 1, 0, 0, 0 })]    // zrcadlená strana: před spojem
+    public void PrazdnyVeDvojiciJdeZaNi(bool predSpojem, int[] pocty, int[] cekane)
+    {
+        var spoje = new List<LineTableElement.LineTripData>
+        {
+            new() { CisloSpoje = "21", Verze = "puvodni" },
+            new() { CisloSpoje = "21", Verze = "nova" },
+            new() { CisloSpoje = "23" },
+            new() { CisloSpoje = "25" },
+        };
+        Assert.Equal(cekane, LineTableElement.BezPrazdnychVeDvojici(pocty, spoje, predSpojem));
+    }
+
+    private static SKBitmap Vykresli(LineTableElement prvek, DataContext data)
+    {
+        float vyska = prvek.CalculateHeightFromData(data);
+        var bitmap = new SKBitmap((int)(120 * MmToPx), (int)((vyska + 2) * MmToPx), SKColorType.Rgba8888, SKAlphaType.Premul);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.White);
+        prvek.Render(new RenderContext(canvas, MmToPx, data));
+        return bitmap;
+    }
+
+    /// <summary>Nejpravější (nebo nejlevější) sloupec pixelů s barvou <paramref name="hex"/>.</summary>
+    private static int KrajBarvy(SKBitmap bitmap, string hex, bool vpravo)
+    {
+        var barva = SKColor.Parse(hex);
+        int kraj = vpravo ? -1 : int.MaxValue;
+        for (int x = 0; x < bitmap.Width; x++)
+            for (int y = 0; y < bitmap.Height; y++)
+            {
+                var p = bitmap.GetPixel(x, y);
+                if (Math.Abs(p.Red - barva.Red) < 8 && Math.Abs(p.Green - barva.Green) < 8 && Math.Abs(p.Blue - barva.Blue) < 8)
+                    kraj = vpravo ? Math.Max(kraj, x) : Math.Min(kraj, x);
+            }
+        return kraj;
+    }
+
     /// <summary>Kolik pixelů má (zhruba) barvu <paramref name="hex"/>.</summary>
     private static int Pixelu(LineTableElement prvek, DataContext data, string hex)
     {
