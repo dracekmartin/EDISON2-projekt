@@ -14,7 +14,8 @@ Opravný chat řeší jedno ID a čte jen jeho sekci: `grep -n '^##' .claude/rev
 dá začátek sekce i další nadpis, pak Read s `offset` a `limit`. Po opravě přepíše **Stav** na
 `vyřešeno <commit> (datum) - co se udělalo`, přijaté riziko dostane `přijato <důvod>`. Další běh
 review sbalí uzavřenou sekci do tabulky Uzavřené. ID se nikdy nepřidělují znovu. Čísla řádků
-platí pro `559e9803`, při posunu hledej podle symbolu.
+platí pro `559e9803`, u A72-A75 (přidané 2026-10-16 mimo běh review) pro `d292a9ce`, při posunu
+hledej podle symbolu.
 
 🔸 = rozhodnutí vlastníka. **Omezení** = co se bez vlastníka měnit nesmí: veřejné API
 `EDControls.dll` (vydává se i samostatně, TemplateDesigner běží u zákazníků, breaking change =
@@ -29,6 +30,7 @@ Starší snímky `arch-EDISONMAIN2-EDControls-2026-07-29.md` a `arch-backlog.md`
 - A56 určí, jak se odebírá veřejný povrch. Odebrání jen jedním publishem EDControls + TD + shell.
 - A58-A61 mění controls EDControls, k TD se chování dostane publishem samotné DLL.
 - A64, A65, A66 mění konstruktor a code-behind okna shellu, jeden chat. A69 jen v klidném okně (přesun souborů).
+- A74 a A75 v jednom chatu: oba mění `BackgroundWrites` a `EDUsageTelemetry.Flush`.
 
 ## Mapa repa (2026-10-07)
 
@@ -60,7 +62,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A50 Přihlášení jiného uživatele obchází vynucenou změnu hesla, cesta login → session je napsaná dvakrát
 
-- **Stav:** otevřeno · **P1 · S** (díra), M (sdílený krok)
+- **Stav:** vyřešeno 1e51027b, 31297d64, 5262d9f5 (2026-10-13) - přepnutí uživatele vyžaduje vynucenou změnu hesla před zavřením oken, start i přepnutí jdou po loginu jednou cestou `SessionOpener` včetně update checku po přepnutí (rozhodnutí vlastníka 2026-10-09), E2E přepne shell na testovací účet DEV.
+- **P1 · S** (díra), M (sdílený krok)
 - **Problém:** Start (`AppBootstrapper.RunCore`) a „Přihlásit jiného uživatele" (`SessionSwitcher.Switch`) skládají login → výběr firmy → `SessionFactory` → `LicenceVerifier` → `LogLogin` každý zvlášť, se stejnými virtual obaly. Vynucená změna hesla (Caché flag #17) se dostala jen do startu.
 - **Důkaz:** `EDISONMAIN2/dotnet/Startup/AppBootstrapper.cs:119` `if (login.ChangePasswordNeeded && !ForcePasswordChange(...))`. `Startup/SessionSwitcher.cs:65-95` jde po `PromptLogin` rovnou na `PickForSession` → `closeAllWindows` → `EstablishSession`. `ChangePasswordNeeded` čte jen `AppBootstrapper.cs:119` a `LoginViewModel.cs:152`. Zdvojené kroky `AppBootstrapper.cs:127-134` / `SessionSwitcher.cs:70-76` (i text hlášky), obaly `AppBootstrapper.cs:475-482` / `SessionSwitcher.cs:121-128`. Legacy vynucuje i po přepnutí: `C:\MLineRepos\EDISON\EDISONMAIN\Rozhrani (mainform)\frmNoMDI.vb:3320` → `:734`.
 - **Dopad:** Admin nastaví „změnit heslo při přihlášení". Uživatel se přes Přihlásit jiného uživatele dostane do shellu se starým heslem. Každý nový krok po loginu se přidává na dvě místa a do dvou testovacích podtříd.
@@ -70,7 +73,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A51 Při auto-loginu zůstane výchozí ShutdownMode, první dialog před shellem aplikaci ukončí
 
-- **Stav:** otevřeno · **P1 · S**
+- **Stav:** vyřešeno 63f5a50e (2026-10-12) - start drží `OnExplicitShutdown` až do předání shellu, zavření popupu před shellem při auto-loginu aplikaci neukončí. Režim od b02cf85e přepíná jen `StartupHost`.
+- **P1 · S**
 - **Problém:** `App.xaml` `ShutdownMode` nenastavuje, platí WPF výchozí `OnLastWindowClose`. Bootstrapper režim přepíná jen kolem setup wizardu, login dialogu a změny hesla a `MainWindow` na shell předává jen po dialogovém loginu. Při auto-loginu (Windows SSO) a `DevLogin` je popup před shellem jediné okno a jeho zavřením WPF naplánuje `Shutdown`. Po wizardu platí `OnMainWindowClose` (`:299`) a popup se stane `MainWindow`, výsledek je stejný.
 - **Důkaz:** `EDISONMAIN2/dotnet/App.xaml:1-7`. `Startup/AppBootstrapper.cs:110` auto-login přeskočí `TryLogin`, jediné `OnExplicitShutdown` pro login je `:392`. `:183` `if (_startupLogin is not { } login) return;` = handoff jen po dialogu. Popupy před shellem: `:347-354` (zákaz přihlašování), `Startup/LicenceService.cs:26-27` (hláška licence), `Startup/LicenceVerifier.cs:77` (admin retry). `EDControls/dotnet/EDViewModel/EDPopup.xaml.cs:52-53` `ShowDialog` s ownerem null.
 - **Dopad:** LDAP-AUTO uživatel na instalaci s hláškou licence („Nejsou žádné licence!", prošlá aktivace) nebo admin po licenčním dotazu: shell se ukáže a hned skončí. Start přes „Připojit k databázi" na server se zákazem přihlašování: „Ano" povolí přihlašování a aplikace skončí. E2E jede s `DevLogin` bez popupů a test to nechytí.
@@ -80,7 +84,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A52 Zaškrtávací záhlaví EDListu označí i řádky skryté hledáním
 
-- **Stav:** otevřeno · **P1 · S** 🔸
+- **Stav:** vyřešeno 8e401ca4 (2026-10-12) - zaškrtávací záhlaví EDListu pracuje jen s řádky, které hledání ukazuje (rozhodnutí vlastníka 2026-10-09).
+- **P1 · S** 🔸
 - **Problém:** Hledání filtruje jen view (`CollectionView.Filter`), zaškrtávání drží `EDListController` a zobrazené řádky nezná. Klik na záhlaví („Označit / odznačit vše viditelné") zaškrtne všechny řádky včetně skrytých. Shift+klik přitom zobrazené řádky od view dostává, jeden control má pro rozsah dvě pravidla.
 - **Důkaz:** `EDControls/dotnet/EDList/EDListColumnFactory.cs:27,32`. `EDList.xaml.cs:238` předá `_controller.ToggleAllFromHeader` bez řádků, `:256` Shift+klik předá `[.. DataGrid.Items.OfType<EDListRow>()]`. `EDListController.cs:166,169` `SetAllChecked` nad `Rows`, `HeaderCheckState` `:53-63` a `CheckedRowIds` `:50` ze všech `Rows`. `EDList.xaml.cs:96-110` filtr jen ve view. TD `InstancePickerDialog.xaml:34-38` (`SelectionMode="Check"` + hledání), výsledek `InstancePickerDialog.xaml.cs:108` `TheList.SelectedRowIds`.
 - **Dopad:** Uživatel TD v pickeru linek napíše „12", klikne na záhlaví a šablona dostane všechny linky agendy. Po ručním zaškrtnutí všech nalezených ukazuje záhlaví „část".
@@ -90,7 +95,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A53 Shell zapisuje bloby preferencí celé a bez pořadí, přepíše zástupce, které mezitím zapsala agenda
 
-- **Stav:** otevřeno · **P2 · M** (bod 1 je S)
+- **Stav:** vyřešeno c11814a6, adaa8329, eb4c3719, a95ce554, 4fa31f0b (2026-10-12) - zápisy jednoho klíče jdou za sebou se snímkem session z okamžiku změny, plocha posílá změny přes `DesktopShortcuts.Add/Remove` a nové `Place`, drop jde jedním `Add` s cílovou buňkou, `SaveShortcutsAsync` zmizel. `DesktopShortcuts.cls` je na DEV od 2026-10-12 a k zákazníkům musí dřív než shell.
+- **P2 · M** (bod 1 je S)
 - **Problém:** Shell drží snímek blobu `Shortcuts` a po každé změně plochy (★, přesun dlaždice) pošle celý seznam generickým `UserData.Save`. Agenda do téhož blobu za běhu zapisuje přes `DesktopShortcuts.Add/Remove` (read-modify-write na serveru) a shell blob znovu načte až po jejím skončení. Zápisy shellu jdou fire-and-forget, každý na vlastním klonu v jiném Caché procesu, takže pořadí nemají ani mezi sebou.
 - **Důkaz:** `EDControls/CACHE/ALVA/EDControls/UserData.cls:29`. `DesktopShortcuts.cls:6-9` („přes generické Save by si souběžné zápisy modulu a shellu přepisovaly celý blob"). `EDISONMAIN2/dotnet/Windows/EdisonMainWindow/Modules/FavoritesCoordinator.cs:122-126` `_ = _prefs()?.SaveShortcutsAsync(_shortcuts.Persistable())` ze `SyncFavorites` i `PositionsChanged` (`:34-36`), reload jen na `LegacyModuleExited` (`:59-61`). `Desktop/DesktopMiniAppView.xaml.cs:63-69` drop = `svc.Add` + `svc.PlaceAt`, dva souběžné zápisy. `EDControls/dotnet/RestCallRunner.cs:22-23`. Stejný vzor má `TreeExpansion`, `ModuleUsage` a `SelectedTab`.
 - **Dopad:** Uživatel v agendě dá sestavu na plochu, agendu nechá otevřenou a v shellu klikne ★. Sestava zmizí i z Caché. Drop na buňku: když `Add` doběhne po `PlaceAt`, sedí dlaždice po restartu na první volné buňce. Dva shelly téhož uživatele (Spustit další EDISON) si bloby přepisují. P2, ne P1: ztratí se položka, kterou jde přidat znovu (jako u A45).
@@ -100,7 +106,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A54 Zápisy na pozadí během přepnutí firmy odejdou pod novou firmu
 
-- **Stav:** otevřeno · **P2 · S-M**
+- **Stav:** vyřešeno d9f3cddb, 5afaa985, 879f2a90 (2026-10-12) - runner čte `Idfa`, `DataNamespace` a `CacheLocks` na volajícím vlákně a klon staví až v úloze, odložený zápis (debounce, fronta) bere snímek session při změně, miniaplikace se zavírají před výměnou session a po zrušeném přepnutí se obnoví.
+- **P2 · S-M**
 - **Problém:** `RestCallRunner` si na volajícím vlákně vezme jen referenci na sdílenou instanci. Klon `With()` vzniká až v `Task.Run` a čte `Idfa`, `DataNamespace` a `CacheLocks` v tu chvíli. Přepnutí firmy tutéž instanci přepisuje na místě, takže zápis založený těsně před přepnutím odejde pod novou firmou. Druhá cesta: miniaplikace (dashboardy s EDListem) se zavírají až po `Accepted`, kdy je `Idfa` už nová.
 - **Důkaz:** `EDControls/dotnet/RestCallRunner.cs:20-23` (komentář slibuje snímek session). `MLRestAdapter.cs:58,71`. `EDISONMAIN2/dotnet/Startup/CompanySwitcher.cs:103-112`: `closeShellWindows()` a hned `mlRest.Idfa = newIdfa; mlRest.DataNamespace = newNamespace;`. Snímek slibuje i `EDControls/CLAUDE.md:88-90` a `EDControls.Tests/RestCallRunnerTests.cs:8-10`, test `:39-59` ověřuje jen výměnu instance. `EDList.xaml.cs:162-165` a `EDFilter.xaml.cs:128` volají `FlushAsync` v `Unloaded`. `EdisonMainViewModel.cs:679-681` `_miniApps.CloseSession()` až po switchi.
 - **Dopad:** Uživatel změní šířku sloupce nebo filtr a do 500 ms přepne firmu. Layout se uloží pod IdFa cizí firmy (`UserData.cls:29`). Okno je úzké, ale dokumentovaný kontrakt neplatí a zdědí ho každý další zápis přes runner (A55).
@@ -110,7 +117,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A55 Geometrie okna a usage telemetrie se ukládají synchronně na UI vlákně přes sdílenou instanci
 
-- **Stav:** otevřeno · **P2 · S-M** · až po A54
+- **Stav:** vyřešeno 8af2b9dc (2026-10-12) - geometrie a telemetrie se při zavření okna ukládají na pozadí, otevření okna čeká na uloženou geometrii nejvýš 3 s a po nedočkaném `Load` geometrii neuloží (limit 1 s by u studené Caché geometrii TD skoro nikdy neobnovil), konec procesu čeká na rozjeté zápisy nejvýš 5 s.
+- **P2 · S-M** · až po A54
 - **Problém:** Uložení geometrie okna (`Closing`) a odeslání telemetrie (`Closed`) jdou synchronně přes sdílený MLRest na UI vlákně. Výsledek nikoho nezajímá a chyba se polyká, uživatel přesto čeká na síť. `MLRest` má timeout 8 h, při výpadku rozhoduje TCP timeout. Preference stejného druhu přitom jdou na pozadí přes `RestCallRunner`.
 - **Důkaz:** `EDControls/dotnet/WindowStatePersistence.cs:43` → `WindowStateStore.cs:87-88` `QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams", ...)`, load `:78` synchronně v `SourceInitialized`. `EDViewModel/EDViewModel.cs:176` store nad `_services.MLRest`. `EDViewModel/EDUsageTelemetryHook.cs:66` → `EDUsageTelemetry.cs:74`, doc `:11` „nesmí ... blokovat zavření okna". `C:\MLineRepos\EDISON\MLRest\MLRest\MLRest.cs:2194-2195` `req.Timeout = 28800000`.
 - **Dopad:** Při výpadku VPN každé zavření agendového okna zmrazí shell na dva pokusy o spojení (SaveParams, LogUsageBatch), otevření okna na jeden.
@@ -120,7 +128,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A56 Binární kompatibilitu samostatně vydávané EDControls.dll nic nehlídá, veřejný povrch je větší, než konzumenti potřebují
 
-- **Stav:** otevřeno · **P2 · M**
+- **Stav:** otevřeno, opraveno c36f6e58, 904820ee, bc7803d5, 3a8c2481 (2026-10-13), chybí ruční kontrola designeru `EDInputForm.xaml` ve VS: `904820ee` převedl na `internal` i konvertory a `EDNumericInput`, které `EDInputForm.xaml` používá. Build EDControls hlídá `PublicApiAnalyzers` s baseline (RS0016/RS0017 jako chyby), 28 typů bez konzumenta je `internal`, `docs/deploy.md` má krok přesunu `PublicAPI.Unshipped.txt` do `Shipped` a pre-push builduje i změnu jen v `PublicAPI.*.txt`. Příští vydání EDControls jen s TD a shellem ze stejného commitu. 🔸 Zúžení přístupnosti, `sealed`, změnu báze ani omezení generik analyzer nevidí, ApiCompat proti vydané DLL rozhoduje vlastník.
+- **P2 · M**
 - **Problém:** Starý exe TD potká novou `EDControls.dll`. Build sln to nezachytí, protože TD se v něm přeloží znovu. Co je pro starý exe binárně breaking (nepovinný parametr navíc, změna návratového typu, chráněný člen `EDViewModel`), posuzuje jen člověk. Veřejných typů bez konzumenta mimo knihovnu a testy jsou přitom desítky a každý je stejný závazek.
 - **Důkaz:** `EDControls/CLAUDE.md:8-15`. `EDControls/dotnet/EDControls.csproj:13` `PublishOwnAssemblyOnly`, v repu není `PublicAPI.*.txt` ani ApiCompat. Bez konzumenta v EDISONMAIN2, LegacyMiniApps, TD a EDTesting (grep): `ErrorReporter`, `ErrorReport`, `ErrorReportBuilder`, `ErrorContext`, `ErrorThrottle`, `MlineEnvironment`, `WindowDimmer`, `TaskbarIcon`, `CacheWindowStateStore`, `UserThemePreference`, `UserFontPreference`, `FontCatalog`, `InMemorySessionState`, `NullUserPrefsService`, `FieldTypeWire` (`EDInputForm/FieldType.cs:35`), `ColumnLayout`, `EDFilterPrefs`, `EDListFilter`, `EDNumericInput`, konvertory `EDInputForm`. Pravidlo `static readonly` se drží naprázdno (`ErrorReporting/ErrorReporter.cs:12-24`).
 - **Dopad:** Někdo přidá parametr do `IPopupDisplayer.Info` nebo `EDViewModel.Command`. Sln, testy i pre-push zůstanou zelené a samostatně vydaná DLL shodí TD u zákazníků `MissingMethodException` při otevření okna.
@@ -130,7 +139,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A57 Identita aplikace nemá jedno místo, TemplateDesigner posílá hlášení chyb bez verze
 
-- **Stav:** otevřeno · **P2 · S**
+- **Stav:** vyřešeno 4fdc6ca7, 5dc4363a (2026-10-12) - hlášení chyb, Informace o verzi a feedback berou prefix, jméno a verzi z jedné `AppIdentity` (služby, pak entry assembly, pak konstanta), pád TD před `OnStartup` se ohlásí jménem entry assembly. TD hlásí `1.0.0+hash`, `<Version>` v csproj TD podle uživatele netřeba. Shell nastavuje `FormIdPrefix = "EDISON2"` explicitně a bez `VERZE.INF` nechá verzi na `AppIdentity`.
+- **P2 · S**
 - **Problém:** `EDServices` nese `FormIdPrefix` (default `"EDISON2"`), `AppDisplayName` a `AppVersion` jako nepovinné settery. Chybějící hodnotu každé místo knihovny řeší jinak: hlášení chyb nijak, „Informace o verzi" bere entry assembly, feedback panelu Podpora verzi assembly okna. Aplikace, která hodnotu nenastaví, se to nedozví.
 - **Důkaz:** `EDControls/dotnet/EDViewModel/EDServices.cs:53-54,61`. `ErrorReporting/ErrorReportingPipeline.cs:211` `AppId = services?.FormIdPrefix ?? "EDISON2"`, `:217` `AppVersion = services?.AppVersion`. `ErrorReporting/CLAUDE.md:23` („bez ní je hlášení k ničemu"). `EDSupportPanel/SupportActions.cs:65-66,88-89`. `EDSupportPanel/SupportPanelWindow.xaml.cs:107-113` `v=` z verze assembly (1.0.0.0, žádný csproj nemá `<Version>`). `TemplateDesigner/dotnet/App.xaml.cs:40-43` nastaví jen `FormIdPrefix = "TD"`, handlery chyb visí už v konstruktoru (`:18-26`).
 - **Dopad:** TD u zákazníků posílá každé hlášení chyby s `version: null` a podpora nepozná build. Pád TD před `OnStartup` přijde se `source="EDISON2"`. Feedback obou aplikací nese `v=1.0.0.0`.
@@ -140,7 +150,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A58 EDInputForm drží každou instanci v paměti, EDList po návratu do vizuálního stromu přestane ukládat layout
 
-- **Stav:** otevřeno · **P2 · S**
+- **Stav:** vyřešeno bf271d70 (2026-10-12) - hledání toolbaru jde přes DP `SearchText` s bindingem místo descriptoru, změny polí formulář odebírá slabě, takže zavřený formulář se uvolní i s oknem. EDList po návratu do vizuálního stromu znovu přihlásí události sloupců a ukládá layout. Seznam polí zavřeného formuláře v paměti zůstává (A72).
+- **P2 · S**
 - **Problém:** `EDInputForm` napojuje hledání toolbaru v konstruktoru přes `DependencyPropertyDescriptor.AddValueChanged` a nikdy ho neodhlásí. WPF registraci drží ve statické tabulce se silnou referencí na toolbar, přes rodiče tedy i formulář a okno. A3 odstranil hromadění handlerů, únik instance zůstal. `EDList` odhlásí události sloupců v `Unloaded`, znovu je přihlásí jen při přestavbě sloupců.
 - **Důkaz:** `EDControls/dotnet/EDInputForm/EDInputForm.xaml.cs:168` `WireToolbarSearch()` v konstruktoru, `:187` `dpd.AddValueChanged(Toolbar, ...)`, žádné `RemoveValueChanged` ani `Unloaded`. EDList váže tentýž toolbar bindingem (`EDList/EDList.xaml:16`). `EDList.xaml.cs:159-166` jen `Unloaded` → `UnhookColumnEvents()`, `HookColumnEvents()` (`:245`) volá jen `RebuildColumns`.
 - **Dopad:** Každé otevření dialogu s formulářem v TD (`ElementEditDialog`, `PrintDialog`, `DynamicTableEditorDialog` a další) nechá okno a VM v paměti do konce procesu. EDList s `HostId` v `TabItem` nebo doku po prvním přepnutí přestane ukládat šířky a řazení (dnes latentní, takový host není). P2, ne P1: velikost úniku nikdo neměřil.
@@ -150,7 +161,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A59 Čtečky drátu EDListu a EDInputFormu padají na tvaru, který kontrakt nevylučuje
 
-- **Stav:** otevřeno · **P2 · S**
+- **Stav:** vyřešeno a76bf644 (2026-10-12) - EDList a EDInputForm (C# i `Form.cls`) čtou řádky a položky jen z číselných subscriptů, EDList přijme JSON číslo a boolean. `Form.cls` je na DEV od 2026-10-12, u zákazníka tolerance platí až s vydaným Caché balíčkem EDControls.
+- **P2 · S**
 - **Problém:** Hodnoty řádků EDListu čte `GetString()`, který na JSON čísle hází. Server číslo zapíše, kdykoli volající nastaví pole z `$order` nebo z výpočtu. Řádky formuláře i seznamu se navíc poznávají vylučovacím seznamem pojmenovaných klíčů, takže nový pojmenovaný klíč na jedné straně shodí starší verzi druhé strany. `HasFormItems` ve stejném kodeku přitom bere jen číselné subscripty.
 - **Důkaz:** `EDControls/dotnet/EDList/EDListParsing.cs:84-85` `raw[prop.Name] = prop.Value.GetString();`, `:78` přeskočí jen `"ERR"`. `CACHE/ALVA/EDControls/EDList/List.cls:54-60` („Volající nastaví pole přímo"). TD to obchází `%Set(..., "string")` (`TemplateDesigner/CACHE/ALVA/TemplateDesigner/EDList/Instance.cls:74-77`, commit `8eccd6b9`). `EDInputForm/EDInputFormWire.cs:60-61` `if (kvp.Key is "ERR" or "helpTextMode") continue; CList row = kvp.Value;` proti `EDInputFormController.cs:55-60` (`int.TryParse(kvp.Key, ...)`). `CACHE/ALVA/EDControls/EDInputForm/Form.cls:238-242` vyjmenuje `trigger`/`changedKey`/`helpTextMode`, jinak `$li` → `<LIST>`.
 - **Dopad:** Nový `LoadList` s číselným ID skončí `InvalidOperationException` a prázdným seznamem, ladí se na serveru, kde je JSON v pořádku. Nový pojmenovaný výstup `Form.WriteToOut` shodí `Init` všem TD se starší DLL, nový vstup z nové DLL shodí starší `Form.cls`.
@@ -160,7 +172,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A60 Pozice řádku FIELD jsou ručně zrcadlené na čtyřech místech, round-trip nehlídá žádný obecný test
 
-- **Stav:** otevřeno · **P2 · S**
+- **Stav:** vyřešeno 2ddf85a4 (2026-10-12) - testy idempotence kontrolují každou pozici FIELD v Caché, v C# kodeku i přes DEV server, výjimky (`validationError`, Image value) zapsané v `EDControls/dotnet/EDInputForm/CLAUDE.md`. Ověřeno mutací: bez čtení pozice 19 v `ReadFromIn` spadnou Caché i integrační test.
+- **P2 · S**
 - **Problém:** Pořadí 19 pozic je ručně zapsané ve čtyřech metodách (zápis a čtení v Caché i v C#) a paritu hlídají asserty po jednotlivých pozicích. Caché čtení vědomě vynechává pozici 9 (`validationError`), což `EDInputForm/CLAUDE.md` nezmiňuje.
 - **Důkaz:** `EDControls/CACHE/ALVA/EDControls/EDInputForm/Field.cls:67`. `Form.cls:249-277` čte podle `$ll>=N`, pozici 9 ne, zastaralé komentáře `:207-212` a `:224-227`. `EDControls/dotnet/EDInputForm/EDInputFormWire.cs:26-45` zápis, `:77-113` čtení. Commit `be6683f8` (B44: pozice 19 se ztrácela na zpáteční cestě, statické kontroly to nechytily). `EDISON2.IntegrationTests/InputFormTests.cs:41,44` hlídá jen `Assert.Equal(19, row.Length)`.
 - **Dopad:** Další atribut pole znamená čtyři úpravy. Zapomenuté čtení v `ReadFromIn` zopakuje B44: hodnota zmizí po prvním `Validate` a všechny testy projdou.
@@ -170,7 +183,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A61 Objekty Field platí jen do dalšího dotazu na server, control nenabízí přístup podle klíče
 
-- **Stav:** otevřeno · **P2 · S** (API + oprava TD), M (merge)
+- **Stav:** vyřešeno 0ee38dbf, 0c6484ea (2026-10-12) - `GetField(key)` na formuláři i controlleru, `Items` nastavené hostem pošle příští `Validate` nebo `Save` (setter se nezužuje), platnost `Field` popsaná v CLAUDE.md komponenty. Editor tabulky TD hledá pole zdroje přes `GetField` a nefunkční pojistku v OK zrušil (rozhodnutí uživatele 2026-10-12). Merge odpovědi do existujících objektů zůstává u A15.
+- **P2 · S** (API + oprava TD), M (merge)
 - **Problém:** Každý `Init`, `Validate` a `Save` s položkami nahradí `Items` novými objekty a control nemá přístup k poli podle klíče. Hosté si `Field` hledají sami a podrží si ho. Veřejnou DP `Items` jde nastavit zvenku, controller o tom neví a serializuje svoje položky.
 - **Důkaz:** `EDControls/dotnet/EDInputForm/EDInputFormController.cs:115` `Items = EDInputFormWire.ParseItems(output);`, serializace `:64`. `EDInputForm.xaml.cs:89-100` settable DP. Konzument prochází položky sám na 20 místech (19 TD, 1 shell), např. `TemplateDesigner/dotnet/Windows/ElementEditDialog/ElementFormBinder.cs:38`. `TemplateDesigner/dotnet/Windows/DynamicTableEditorDialog/DynamicTableEditorDialog.xaml.cs:97` uloží `_dataSourceField`, `:105` `Validate()` položky vymění a pojistka `:155-156` před `Save` zapisuje do objektu, který už ve formuláři není.
 - **Dopad:** Pojistka zdroje dat v editoru tabulky TD se do `Save` nedostane. Zda uživatel o volbu přijde, záleží na ComboBoxu (neověřeno). Každý další host píše vlastní hledání a vlastní tichý no-op.
@@ -180,7 +194,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A62 Testovací šev bootstrapperu je null Application a přepsání většiny kroků
 
-- **Stav:** otevřeno · **P2 · M**
+- **Stav:** vyřešeno b02cf85e (2026-10-12) - WPF strana startu je za `IStartupHost`, testy bootstrapperu jedou se skutečnými branami a loginem nad falešným hostem, `null!` konstruktor zmizel a `PreLoginContext.LoginRest` je `IMLRest`. Vynucené odhlášení během startu už shell nepostaví.
+- **P2 · M**
 - **Problém:** Testovací konstruktor předává `null!` místo `Application` a testovací podtřída přepisuje většinu kroků, unit testy tak ověřují pořadí stubů. Kroky, které sahají na `Application` (ShutdownMode, `MainWindow`, dialogy) nebo dostávají konkrétní `MLRest`, nemají automatický test a E2E je nepokrývá. Větve pro null Application prosakují do produkčního kódu i do veřejného API EDControls.
 - **Důkaz:** `EDISONMAIN2/dotnet/Startup/AppBootstrapper.cs:49-58` („derived class MUSÍ přepsat všechny metody"), `:56` `this(null!, null, options)`. `EDControls/dotnet/EDAppearance.cs:24` `if (app is null) return;`. `Startup/ShellShutdown.cs:17`. `EDISONMAIN2.Tests/AppBootstrapperTests.cs:23-24` (20 `protected override`). `PreLoginContext(MLRest LoginRest, ...)` `AppBootstrapper.cs:248-253`, `PassesPreLoginGates(MLRest ...)` `:340-342`.
 - **Dopad:** A51 ani past ze `Startup/CLAUDE.md` („jinak app umře, nebo proces nemá konec") nemají regresní test. Nový krok, který sáhne na WPF, v testu skončí NRE, chytí ho hranice `Run` a test padne na jiném assertu.
@@ -190,7 +205,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A63 Změna hesla má tři vstupy, zapamatované heslo každý řeší jinak
 
-- **Stav:** otevřeno · **P2 · S** · patří do chatu s A50
+- **Stav:** vyřešeno d505aaa6 (2026-10-12) - změna hesla z menu i z Vlastností uživatele jde přes jedno místo, které zapomene zapamatované heslo, jen když patří přihlášenému uživateli, i když ho uložila jiná instance shellu. Po 0763cc9e drží heslo per server.
+- **P2 · S** · patří do chatu s A50
 - **Problém:** `ChangePasswordWindow` volá server sám a každý ze tří vstupů řeší zapamatované heslo po svém. Menu ho po změně maže, i když patří jinému uživateli. Vlastnosti uživatele ho nechají.
 - **Důkaz:** `EDISONMAIN2/dotnet/Windows/EdisonMainWindow/EdisonMainViewModel.Menu.cs:230-240` `if (changed == true && _prefs.RememberedPassword != null) { _prefs.RememberedPassword = null; ... }`. `Windows/UserProfileWindow/UserProfileViewModel.cs:99-103` jen `Info("Heslo bylo změněno.")`. Vynucená změna `Startup/AppBootstrapper.cs:437-452`. Blob patří `LastLoginName` (`Windows/LoginWindow/PasswordProtector.cs:29-36`), přihlášení jiného uživatele `LastLoginName` nemění.
 - **Dopad:** Po změně hesla ve Vlastnostech uživatele se při dalším startu předvyplní staré heslo, login spadne na „Špatné heslo." a blob se zahodí. Po Přihlásit jiného uživatele smaže změna hesla z menu zapamatované heslo uživatele ze startu. P2: náprava je jeden neúspěšný login.
@@ -200,7 +216,7 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A13 Kontrakty k legacy endpointům: test šva jen pro část
 
-- **Stav:** otevřeno, částečně (3c6a0e94, 52dff7b1, c3804594, e44439f0, ef05128a). Šev kryje `LoginAllowed`, `ALVA.SETUP.Main.LoadSettings` (všechny čtené klíče včetně `NucenyUpdatClentu` a `localSourcePath`), `GetEdisonAccess`, `GetUserDefaultForm`, `maSeUkoncit`, `PocetProvozovanychVozidel`, `ALVA.LIBRARY.Form` Load/SaveParams, chybovou cestu `Login` a `LogLogin`. `SessionLockTest` uklízí přes `LockClearExt`, skip je `$$$AssertSkipped` a runner ho počítá zvlášť (cc03e2ef). `LegacyDerivedAccess` má parity test proti legacy (fb72e3e5).
+- **Stav:** vyřešeno 550efe89, a37657f6, 60759d47, 640570c7, 3a5612f0, b12a68ee, 32fda4b6, 3c834015 (2026-10-16) - testovací účet na DEV (`ITAccount`, `TestAccount`, rozhodnutí vlastníka 2026-10-09), šev pro úspěšný `Login` po polích, `LoadData` přes fixture `ITDashboard`, `GetPracoviste`/`GetJizdy` po polích, `LoadUser`, `LoadDatabaseList` a `Activation.GetList` přes produkční parsery. Parity test `InfKeyFor` porovná jména balíčků s legacy `ToInformationFile` a od `3c834015` i každou agendu stromu s legacy novinkami podle formuláře, chybějící aliasy `ZAUMZDY` a `EDISONAIFORMS` jsou doplněné. Endpointy s vedlejšími efekty (`ChangePassword`, `SaveUser`, `SetUserDefaultForm`, `VerifyLic`, `ResetSettings`, `ChangeLoginState`) testy záměrně nevolají a šev nemají. Dřívější stav: částečně (3c6a0e94, 52dff7b1, c3804594, e44439f0, ef05128a). Šev kryje `LoginAllowed`, `ALVA.SETUP.Main.LoadSettings` (všechny čtené klíče včetně `NucenyUpdatClentu` a `localSourcePath`), `GetEdisonAccess`, `GetUserDefaultForm`, `maSeUkoncit`, `PocetProvozovanychVozidel`, `ALVA.LIBRARY.Form` Load/SaveParams, chybovou cestu `Login` a `LogLogin`. `SessionLockTest` uklízí přes `LockClearExt`, skip je `$$$AssertSkipped` a runner ho počítá zvlášť (cc03e2ef). `LegacyDerivedAccess` má parity test proti legacy (fb72e3e5).
 - **P2 · M**
 - **Problém:** Šev chybí pro úspěšný `ALVA.SYS.Login.Login` (pozice 1,2,3,4,5,7,10), `ChangePassword`, `VerifyLic`, `LoadUser/SaveUser`, `LoadDatabaseList`, `SetUserDefaultForm`, `ResetSettings`, `ChangeLoginState` a `ALVA.LICENCE.Activation.GetList`. Nově (2026-10-07): miniaplikace čtou legacy endpointy podle pozic bez švu a mapování agenda → INF klíč má test jen proti opsaným hodnotám, i když testy umí legacy zdroj číst (`TreeGeneratorTests`, `LegacyDerivedAccessTests` pod `EDISON_LEGACY_ROOT`).
 - **Důkaz:** `EDISON2.IntegrationTests/LoginContractTests.cs:5-8` („vyhrazený IT účet není"). `EDISONMAIN2/dotnet/Windows/LoginWindow/UserAuthenticator.cs:45-53`. `EDISONMAIN2.LegacyMiniApps/dotnet/LegacyDashboardLoader.cs:82-90` (`LoadData`), `DispecinkMiniAppViewModel.cs:70,89` (`GetPracoviste`, `GetJizdy`), pole 1-10 podle pozic `:95-98`. `EDISONMAIN2/dotnet/Windows/ChangelogWindow/InfChangelogSource.cs:64-91` zrcadlí `EDLIBRARY/clsConversion.vb`. Grep `Dispecink|LoadData|InfKeyFor` v `EDISON2.IntegrationTests` = 0.
@@ -221,7 +237,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A64 VM shellu bere služby ze singletonu a ze statik, testy VM běží sériově
 
-- **Stav:** otevřeno · **P3 · S**
+- **Stav:** vyřešeno 7fe0ba32 (2026-10-13) - VM shellu dostává `EDServices` a příznak diagnostiky konstruktorem, harness neinicializuje `EDServices.Current` a testy VM běží mimo sériovou kolekci.
+- **P3 · S**
 - **Problém:** `EdisonMainViewModel` nemá konstruktor s `EDServices` a implicitně volá `EDViewModel()` → `EDServices.Current`. Viditelnost menu čte settable statiku `InternalDiagnostics.Enabled`. Ostatní VM oblasti konstruktor s `EDServices` mají.
 - **Důkaz:** `EDControls/dotnet/EDViewModel/EDViewModel.cs:119` `public EDViewModel() : this(EDServices.Current)`, konstruktor s `EDServices` `:125`. `EDISONMAIN2/dotnet/Windows/EdisonMainWindow/EdisonMainViewModel.cs:133-148` bez `EDServices`, `Startup/AppBootstrapper.cs:544-549` je má v rozsahu. Harness `EDISONMAIN2.Tests/EdisonMainViewModelHarness.cs:110-127` `EDServices.Initialize(svc); ... finally { EDServices.Reset(); }`. `EdisonMainViewModel.cs:69,71` `InternalDiagnostics.Enabled`.
 - **Dopad:** Testové třídy VM (122 volání `CreateVM`) běží sériově v `SharedStaticStateCollection` a každá nová musí do kolekce, jinak náhodně padá (hlídá `SharedStaticStateGuardTests`).
@@ -231,7 +248,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A65 Dialogy shellu vznikají ve VM, kód po dialogu nejde testovat
 
-- **Stav:** otevřeno · **P3 · S-M**
+- **Stav:** vyřešeno 7de5bbee (2026-10-12) - dialogy shellu (picker miniaplikací, novinky, vlastnosti uživatele, připojení, změna hesla) jdou přes `IShellDialogs`, start další instance přes šev, kód po dialogu má testy VM.
+- **P3 · S-M**
 - **Problém:** `IWindowNavigator.ShowDialog` bere instanci `Window`, VM shellu proto dělá `new XxxWindow(...)` a výsledek čte z okna. Okno potřebuje STA vlákno a aplikační resources, takže kód po dialogu nemá test na úrovni VM.
 - **Důkaz:** `EDControls/dotnet/EDViewModel/IWindowNavigator.cs:8-15`. `EDISONMAIN2/dotnet/Windows/EdisonMainWindow/EdisonMainViewModel.cs:126-131` (picker miniaplikací, `picker.Picked`/`Placed`), `:798-804` (novinky, `wnd.SnoozeChecked`), `:191` (profil). `EdisonMainViewModel.Menu.cs:70-77` (připojení, `window.Picked` → `Process.Start`), `:230-240` (změna hesla, A63).
 - **Dopad:** Umístění nové miniaplikace, zápis odložení novinek, mazání zapamatovaného hesla a start instance proti vybranému serveru nemají test VM. Každý další dialog shellu tuhle část zvětší.
@@ -241,7 +259,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A66 Code-behind shellu řídí pořadí startu okna a mapuje klíče záložek
 
-- **Stav:** otevřeno · **P3 · S**
+- **Stav:** vyřešeno 1873332c (2026-10-12) - pořadí startu okna (session, novinky, výchozí okno) řídí VM, dock s velikostmi panelů se napojí jedním voláním a okno hledá strom aktivní záložky podle kolekce.
+- **P3 · S**
 - **Problém:** Pořadí po vykreslení (načtení session → novinky shellu → výchozí okno) a pořadí napojení panelů na dock řídí code-behind a hlídají ho jen komentáře. Klíč záložky převádí na `TreeView` switch v code-behind a literály v XAML, i když `TreeTab` je deklarovaný jako jediný zdroj.
 - **Důkaz:** `EDISONMAIN2/dotnet/Windows/EdisonMainWindow/EdisonMainWindow.xaml.cs:155-175` („Pořadí je invariant"). `EdisonMainViewModel.cs:378-386` nastaví `_startupWindowOpened = true` před hledáním ve stromu. Napojení `EdisonMainWindow.xaml.cs:179-193`, `EdisonMainViewModel.cs:116,120` („Volat před AttachMiniAppHost"). Klíče `EdisonMainWindow.xaml.cs:293-301`, `EdisonMainWindow.xaml:499-514`, `DesignTimeData/EdisonMainWindowDesignTimeData.cs:80-87` proti `Modules/ModuleTreeState.cs:235` („Přidání záložky je změna jen tady").
 - **Dopad:** Přeskládaný code-behind nebo nový krok po přihlášení rozbije start a žádný test nezčervená (E2E jede s `OpensStartupWindow=false`). Prohozené `Attach*` tiše zahodí obnovenou šířku stromu a výšku pruhu. Na nové záložce Enter v hledání nic neudělá.
@@ -251,7 +270,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A67 Hranice k legacy DLL nemá jedno místo: přetypování na MLRestAdapter a GetCompanyList třikrát
 
-- **Stav:** otevřeno · **P3 · M**
+- **Stav:** vyřešeno 3438bd19, 32fda4b6 (2026-10-13) - legacy DLL a události konce session jdou jen přes `LegacyApi` (jediné `.Inner`, jiný typ než adaptér hodí výjimku), setup okno nestaví vlastní `MLRest` (`PreLoginConnection`), `SessionSwitcherTests` jedou s `MLRestMocks` a integrační test seznamu databází volá veřejné `PreLoginConnection`.
+- **P3 · M**
 - **Problém:** EDISONAPI, EDLicence a EDUsers chtějí konkrétní `MLRest`. Shell proto na několika místech přetypovává `IMLRest` na `MLRestAdapter` a pre-login část pracuje s `MLRest` přímo. `GetCompanyList` je obalený třikrát se dvěma způsoby hlášení chyb.
 - **Důkaz:** Přetypování `EDISONMAIN2/dotnet/Startup/SessionSwitcher.cs:64`, `Startup/CompanySwitcher.cs:47`, `Windows/EdisonMainWindow/EdisonMainViewModel.cs:231` (výchozí `licenceSync`), `Startup/SessionFactory.cs:49` (`.Inner`). `Startup/AppBootstrapper.cs:512` `if (mlRest is not MLRestAdapter adapter) return;`, force-logout se pro jiný `IMLRest` tiše nenapojí. `GetCompanyList`: `AppBootstrapper.cs:311-314` a `CompanySwitcher.cs:46-50` hází, `Windows/SetupWindow/SetupWindow.xaml.cs:49-52` vrací bool. `new MLRest(` v `AppBootstrapper.cs:308`, `SessionFactory.cs:28` a v okně `SetupWindow.xaml.cs:49,62` (proti root CLAUDE.md).
 - **Dopad:** `CompanySwitcher.LoadAllowed(IMLRest)` s mockem hodí `InvalidCastException`, proto ho VM dostává jako `Func` a bootstrapper i `SessionSwitcher` ho obalují virtual metodou. `SessionSwitcherTests` staví skutečný `MLRest`. VM složené bez `licenceSync` nad mockem spadne a `SessionLicenceCoordinator` výjimku spolkne. Změna hlášky nedostupného serveru = tři místa.
@@ -261,7 +281,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A68 Setup wizard: data předává statika SettingsLoader, logika je v code-behind
 
-- **Stav:** otevřeno · **P3 · M**
+- **Stav:** vyřešeno 15e610dd (2026-10-13) - pravidla wizardu drží `SetupWizardViewModel` (uložit jde jen otestované připojení), `SettingsLoader.Load` dostane dev předvyplnění ze `StartupOptions`, statiky `Current` a `UseDevDefaults` zmizely a seznam mutátorů v `SharedStaticStateGuardTests` je kratší.
+- **P3 · M**
 - **Problém:** Bootstrapper volá `SettingsLoader.Load()` jen kvůli naplnění statiky `Current`, kterou čte konstruktor `SetupWindow`. Dev předvyplnění je statický přepínač procesu `SettingsLoader.UseDevDefaults`. Logika wizardu (uložit až po úspěšném testu, změna serveru uložení zamkne) je v code-behind a parametry konstruktoru „pro testy" nikdo nepoužívá. A11 tohle oddělení odložil, protože bez A10 by šlo jen o přesun. A10 je hotový.
 - **Důkaz:** `EDISONMAIN2/dotnet/Startup/AppBootstrapper.cs:291` `SettingsLoader.Load();   // naplní Current ...`. `Windows/SetupWindow/SetupWindow.xaml.cs:33` `(SettingsLoader.Current ?? new SettingsLoader()).Server`, konstruktor `:22-31`, logika `:73-152`. `Startup/SettingsLoader.cs:16,39,49,86`. `Startup/StartupOptions.cs:72` `SettingsLoader.UseDevDefaults = UseDevDefaults;`. `EdisonMainViewModel.Menu.cs:82` volá `Load()` za běhu. `EDISONMAIN2.Tests/SharedStaticStateGuardTests.cs:26-29` je vede jako mutátory.
 - **Dopad:** Wizard zapisuje `EDISONini.xml` sdílený s EDLOADERem a legacy. Pravidlo „uložit jen otestované připojení" nemá test a bez STA okna ho napsat nejde. Testy nad `SettingsLoader.Load` musí do sériové kolekce.
@@ -271,7 +292,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A69 Adresářová struktura shellu neodpovídá vrstvám
 
-- **Stav:** otevřeno · **P3 · S-M**
+- **Stav:** otevřeno, čeká na převzetí staré plochy (rozhodnutí vlastníka 2026-10-16). Přesun souborů by rozbil rozdělanou práci ve worktree `prevzeti-stare-plochy`.
+- **P3 · S-M**
 - **Problém:** `Windows/EdisonMainWindow/Modules` drží model modulů, službu per-user blobů, načítání session dat a fakta stanice, které používá Startup, plocha i okno novinek. `Desktop` a `Modules` na sebe odkazují oboustranně, stejný cyklus A33 odstranil mezi `MiniApps` a `Modules`. Naopak `Startup/` drží služby, jejichž jediný konzument je okno shellu, proti pravidlu `EDISONMAIN2/CLAUDE.md:7-8`.
 - **Důkaz:** `Desktop/ModuleShortcutsService.cs:2`, `Desktop/DesktopShortcut.cs:2`, `Desktop/DesktopMiniAppView.xaml.cs:4` → `Modules`. `Modules/FavoritesCoordinator.cs:6`, `Modules/ModulePreferencesService.cs:8`, `Modules/SessionDataLoader.cs:7` → `Desktop`. `Modules` dál používá `Startup/AppBootstrapper.cs`, `Startup/StartupOptions.cs`, `Windows/ChangelogWindow/ChangelogPromptService.cs`, `SupportStrip` i `Windows/LoginWindow/LoginWindow.xaml.cs`. Opačně: `Startup/AccessLoader.cs` a `LegacyDerivedAccess.cs` (konzument jen `SessionDataLoader.cs:45`), `LicenceNotice` v `Startup/LicenceService.cs:85-193` (jen `SessionLicenceCoordinator`), `UserProfileService.LoadDefaultWindow/SetDefaultWindow` (jen `SessionDataLoader` a VM), `LoginResult` v `Windows/LoginWindow/UserAuthenticator.cs:6-14` (identita session pro `SessionFactory`, `CompanySwitcher`, `StartupOptions`).
 - **Dopad:** Plochu nejde vyjmout do samostatného projektu (jako `EDISONMAIN2.LegacyMiniApps`). Podle složky se nedá poznat, co patří jen oknu, a `Startup/CLAUDE.md` pokrývá kód, který s bootstrapem nesouvisí. Chybu to nezpůsobí.
@@ -281,7 +303,8 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A70 Buffer usage telemetrie nezná session, firmu drží jen ruční flush shellu
 
-- **Stav:** otevřeno · **P3 · S**
+- **Stav:** vyřešeno 9f29f84d, ab8ac199 (2026-10-13) - záznam telemetrie si pamatuje firmu a `Flush` pošle záznamy jiné firmy na její klon s `CacheLocks=0`. Přepnutí firmy navíc po zavření oken a před výměnou `Idfa` počká na zápisy na pozadí a pošle telemetrii staré firmy. Zastaralé zmínky o `Flush` jsou A74.
+- **P3 · S**
 - **Problém:** Záznamy jdou do statického bufferu bez identity session a odejdou se session aktuální při flushi, server z ní doplní IdFa a uživatele. Knihovna flushuje jen při zavření okna. Shell flushuje ručně při přepnutí uživatele a při ukončení, při přepnutí firmy ne.
 - **Důkaz:** `EDControls/dotnet/EDViewModel/EDUsageTelemetry.cs:8-9,15,50-74`. `EDUsageTelemetryHook.cs:66`. `EDViewModel/LegacyModuleHost.cs:249` (launch agendy jde do téhož bufferu). `EDISONMAIN2/dotnet/Startup/SessionSwitcher.cs:85-86` a `AppBootstrapper.cs:606-610` flushují, `CompanySwitcher.Switch` ne.
 - **Dopad:** Uživatel ve firmě A spustí několik legacy agend bez WPF okna a přepne na B. Záznamy odejdou pod B a statistiky ISYCloud připíšou použití firmě B.
@@ -291,13 +314,54 @@ EDLOADER, soubory v `C:\Edison`, registry (`LegacyLastCompany`, `MlineDomain`). 
 
 ### A71 Detekce interní stanice M-line existuje dvakrát a pokaždé jinak
 
-- **Stav:** otevřeno · **P3 · S**
+- **Stav:** vyřešeno 7c012961 (2026-10-12) - jedna detekce v `MlineEnvironment` čte registr jako VB `CBool`, shell na ni deleguje (`MlineDomainDetector.IsDomainMline()` a `Suffix` zůstaly) a testy jsou v EDControls.
+- **P3 · S**
 - **Problém:** Legacy `IsDomainMline` je portovaný dvakrát: v knihovně pro hlášení chyb a v shellu pro skryté uzly stromu. Registrovou hodnotu každá kopie čte jinak.
 - **Důkaz:** `EDControls/dotnet/ErrorReporting/MlineEnvironment.cs:47-49` bere jen `"1"`/`"true"`. `EDISONMAIN2/dotnet/Windows/EdisonMainWindow/Modules/MlineDomainDetector.cs:45-50` bere i nenulové číslo jako VB `CBool`, stejně jako legacy `C:\MLineRepos\EDISON\EDCORE\clsCore.vb:642-655`. Použití `ErrorReportingPipeline.cs:41` a `ModuleTreeState.cs:19`.
 - **Dopad:** Hodnota `-1` zapne v shellu interní uzly, ale hlášení chyb z téhož stroje přijdou bez `-internal` mezi zákaznická data. Změna pravidla = dvě místa a dvě sady testů.
 - **Návrh opravy:** Jedna implementace v EDControls (injektovatelné zdroje, parsování podle `CBool`, statická fasáda `IsInternal` zůstane). Shell ji použije a `Suffix` si nechá.
 - **Jak ověřit:** Testy z `MlineDomainDetectorTests` na sdílené implementaci, `grep IPGlobalProperties EDISONMAIN2` prázdný.
 - **Omezení:** `MlineEnvironment.IsInternal` je veřejné, registrový klíč zapisuje legacy.
+
+### A72 Seznam polí zavřeného EDInputFormu zůstává v paměti
+
+- **Stav:** otevřeno · **P3 · S**
+- **Problém:** Po A58 se zavřený formulář uvolní i s oknem, jeho seznam polí ale zůstane v paměti do konce procesu. Podle S3 drží WPF view nad `List<Item>` z `ItemsSource`. Formulář s oknem se uvolní jen proto, že změny polí odebírá slabě.
+- **Důkaz:** `EDControls/dotnet/EDInputForm/EDInputForm.xaml:41` `ItemsSource="{Binding Items, ...}"`. `EDInputForm.xaml.cs:719` (komentář „WPF drží view nad `List<Item>` v ItemsSource napořád"), slabý odběr `:720-726`. `EDInputFormController.cs:119` a `EDInputFormWire.cs:54` vytvoří nový `List<Item>` po každém `Init`, `Validate` i `Save`. `EDControls.Tests/EDInputFormViewTests.cs` `Form_InClosedWindow_IsCollected` hlídá jen formulář. Podklad deník S3 2026-10-09 14:27.
+- **Dopad:** Každý zavřený dialog s formulářem v TD nechá v paměti svá pole (hodnoty, položky číselníků). Okno a VM se uvolní, únik je proto menší než před A58. Velikost nikdo neměřil a neověřilo se ani, zda zůstávají i seznamy nahrazené za života formuláře.
+- **Návrh opravy:** Nejdřív zjistit, co view drží (test s `WeakReference` na seznam, profiler). Pak např. dát `ItemsControl` kolekci s `INotifyCollectionChanged`, nebo `ItemsSource` uvolnit v `Unloaded` a vrátit v `Loaded` (přepnutí `TabItem`).
+- **Jak ověřit:** STA test jako `Form_InClosedWindow_IsCollected` s `WeakReference` na `Items`: po zavření okna a `GC.Collect()` je seznam pryč (dnes živý).
+- **Omezení:** Typ DP `Items` (`IEnumerable<Item>`) je veřejné API, mění se jen aditivně.
+
+### A73 Komentář v TD slibuje re-Init formuláře při návratu na záložku
+
+- **Stav:** otevřeno · **P3 · S** · vlastník TD (Jan Miesbauer)
+- **Problém:** Komentář u pole „Zdroj dat" ve schématu editoru dynamické tabulky tvrdí, že se formulář re-Inituje při každém návratu na záložku (auto-Init na `Loaded`) a dialog proto po Prefillu znovu aplikuje vybraný zdroj. `EDInputForm` od A3 volá auto-Init jen jednou per `CacheClass`. Dialog svůj komentář opravil v `0c6484ea`, schéma v Caché ne.
+- **Důkaz:** `TemplateDesigner/CACHE/ALVA/TemplateDesigner/EDInputForm/DynamicTableElementEdit.cls:26-28`. `EDControls/dotnet/EDInputForm/EDInputForm.xaml.cs:214-220` („smí proběhnout jednou per CacheClass", `_autoInitDone`). `TemplateDesigner/dotnet/Windows/DynamicTableEditorDialog/DynamicTableEditorDialog.xaml.cs` po `0c6484ea`: „Kdyby se formulář načetl znovu". Podklad deník S3 2026-10-12 12:30.
+- **Dopad:** Kdo ladí ztrátu vybraného zdroje, hledá příčinu v re-Initu, který nenastává. Chybu to nezpůsobí.
+- **Návrh opravy:** Komentář zkrátit na to, co platí: položky plní klient (`PopulateDataSourceField`), dialog po Prefillu dosadí vybraný zdroj.
+- **Jak ověřit:** Komentář v `DynamicTableElementEdit.cls` re-Init nezmiňuje.
+- **Omezení:** Kód TD, opravu dělá vlastník TD. Jen komentář, chování beze změny.
+
+### A74 Zmínky o Flush nejmenují přepnutí firmy
+
+- **Stav:** otevřeno · **P3 · S**
+- **Problém:** Dokumentace a komentáře k `BackgroundWrites` a `EDUsageTelemetry.Flush` uvádějí, že shell flushuje při ukončení a přepnutí uživatele. Od `ab8ac199` flushuje i při přepnutí firmy, po zavření oken a před výměnou `Idfa`.
+- **Důkaz:** `EDControls/CLAUDE.md:96-97` („shell při ukončení a přepnutí uživatele"), `EDControls/dotnet/RestCallRunner.cs:81-83`, `EDControls/dotnet/EDViewModel/EDUsageTelemetry.cs:49-51`. Shell `EDISONMAIN2/dotnet/Startup/CompanySwitcher.cs:103-105`, popsané jen v `EDISONMAIN2/dotnet/Startup/CLAUDE.md:55-57`. Podklad deník S8 2026-10-13 12:09.
+- **Dopad:** Kdo mění čekání v `Flush` nebo `BackgroundWrites`, podle textu neví, že na něm stojí i přepnutí firmy (zápisy zavřených oken musí odejít před odhlášením staré firmy). Chybu to nezpůsobí.
+- **Návrh opravy:** Doplnit přepnutí firmy na všechna tři místa.
+- **Jak ověřit:** `grep -n 'přepnutí uživatele' EDControls/CLAUDE.md EDControls/dotnet/RestCallRunner.cs EDControls/dotnet/EDViewModel/EDUsageTelemetry.cs`: každý výskyt jmenuje i přepnutí firmy.
+- **Omezení:** Jen text, kód ani API beze změny.
+
+### A75 Flush nepočká na zápisy, které vzniknou až během čekání
+
+- **Stav:** otevřeno · **P3 · S**
+- **Problém:** `BackgroundWrites.WaitPending` si seznam rozjetých zápisů vezme jednou na začátku. Fronta preferencí shellu pošle další zápis téhož klíče až z continuation předchozího, tedy často právě během čekání `Flush`. Takový zápis `Flush` nevidí. Zápisy plochy (`DesktopShortcuts.*`) do `BackgroundWrites` nejdou vůbec.
+- **Důkaz:** `EDControls/dotnet/RestCallRunner.cs:109-115` (`lock (Sync) pending = [.. Pending];` na `:112`). `EDISONMAIN2/dotnet/Windows/EdisonMainWindow/Modules/ModulePreferencesService.cs:210-237` `WriteInOrderAsync`: po doběhnutí zápisu vezme další čekající a zavolá `SaveAsync`, který se registruje až teď (`EDControls/dotnet/UserPrefs/CacheUserPrefsService.cs:90`). Plocha `ModulePreferencesService.cs:239-284` (`EnqueueDesktop`, `CallDesktopAfterAsync`) jde přes `IRestCallRunner` bez `BackgroundWrites.Register`. `Flush` a hned logout: `Startup/AppBootstrapper.cs:466-467`, `Startup/SessionSwitcher.cs:113-114`. Podklad deník S8 2026-10-16 09:36.
+- **Dopad:** Plocha: uživatel změní plochu a hned zavře shell. Na zápis plochy nečeká `Flush` ani `ProcessExit` (`RestCallRunner.cs:94`), konec procesu zápis, který ještě neodešel, zahodí. Preference: druhý zápis téhož klíče, který zavolá `RunAsync` mezi koncem `Flush` a `SessionLogout.cs:32`, nese snímek s `CacheLocks=1`, a když ho server zpracuje až po Logoutu, odmítne ho (LockExist). Zápis zavolaný po `:32` jde s `CacheLocks=0` a projde (`RestCallRunnerTests.Capture_LogoutBeforeCall_RunsWithoutLockCheck`). Okno je úzké: před zavřením shellu i přepnutím uživatele čeká uživatel na dialog.
+- **Návrh opravy:** `WaitPending` čeká v rámci jednoho limitu, dokud se seznam nevyprázdní. Fronta klíče se registruje jako celek (od prvního zápisu do vyprázdnění), aby mezi dvěma zápisy nebyl seznam prázdný. Zápisy plochy jdou přes totéž.
+- **Jak ověřit:** Unit test s ručně dokončovanými tasky: zápis v letu, druhý zápis téhož klíče čeká, `Flush` se vrátí až po druhém zápisu. Totéž pro dvě změny plochy.
+- **Omezení:** `BackgroundWrites` je internal v EDControls, shell potřebuje veřejný vstup (jen aditivně, publish s TD). Limit 5 s pro konec procesu zůstává.
 
 ### A26 Sdílená DLL nese aplikačně specifické ikony 🔸
 
