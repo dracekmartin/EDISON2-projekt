@@ -17,8 +17,12 @@ Include GENERAL
 ///   values: PUVODNI_DATUM_PLATNOSTI_OD/DO, PUVODNI_POPIS_PLATNOSTI, ZRUSENE_SPOJE,
 ///           POROVNANI_HLASENI (proč se neporovnávalo; prázdné = porovnáno nebo bez porovnání)
 ///   rows.SPOJE[]: VERZE ("puvodni" / "nova" / "" beze změny), ROZDILY: [0/1 zarovnané na CASY]
-///   rows.POZNAMKY: poznámka „Zrušené spoje: …" (druh 10), když nějaké jsou
+///                 - nový i zrušený spoj má ROZDILY samé 1 (celý sloupec v barvě verze, jako
+///                   ve vzoru z CIS JŘ); zrušený stojí tam, kde byl v původní verzi (`B192a`)
+///   rows.SKUPINY_DNU: navíc skupiny, které má jen zrušený spoj
 /// Barvu rozdílu určuje šablona (prvek Tabulka spojů), data říkají jen, která buňka se liší.
+/// Do 16. 10. se zrušené spoje jen vypsaly poznámkou „Zrušené spoje: …" (druh 10) - ta už nevzniká,
+/// ZRUSENE_SPOJE zůstává.
 ///
 /// Zatím vědomě: porovnávají se jen časy spojů (ne platnost ani značky) a obě verze musí mít
 /// stejné zastávky (rozhodnutí Jan 9. 10.). Když porovnání nejde, vytiskne se vybraná verze
@@ -246,8 +250,9 @@ ClassMethod ProtejsiStranka(stranka As %DynamicObject, poradi As %Integer, ByRef
 }
 
 /// Sloučí spoje nové stránky s původní: změněný spoj dostane vlevo vedle sebe svou původní podobu,
-/// obě s příznakem verze a se seznamem odlišných buněk; nový spoj je celý odlišný; spoj, který
-/// v nové verzi chybí, se jen vypíše. Spoj beze změny zůstane, jak je.
+/// obě s příznakem verze a se seznamem odlišných buněk. Nový spoj má barvu nové verze celý sloupec,
+/// zrušený celý sloupec barvu původní a stojí tam, kde byl v původní verzi. Spoj beze změny
+/// zůstane, jak je.
 /// Spoj se páruje podle směru, čísla a skupiny dnů - týž spoj ve dvou skupinách dnů je dvakrát.
 ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %DynamicObject
 {
@@ -260,38 +265,61 @@ ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %D
     s it = spojePuvodni.%GetIterator()
     while it.%GetNext(.k, .spoj) { s indexPuvodnich(..KlicSpoje(spoj)) = k }
 
-    s spoje = ##class(%DynamicArray).%New()
+    // Pořadí ve výsledku drží klíč po tisících, aby šel zrušený spoj vložit mezi dva sousední.
+    s poradi = 0
     s it = radkyNove.%Get("SPOJE").%GetIterator()
     while it.%GetNext(.k, .spoj) {
         s klic = ..KlicSpoje(spoj)
         i '$d(indexPuvodnich(klic)) {
             d spoj.%Set("VERZE", "nova")
-            d spoj.%Set("ROZDILY", ..Rozdily(spoj, "", .pocet))
-            d spoje.%Push(spoj)
+            d spoj.%Set("ROZDILY", ..CelySloupec(spoj))
+            s poradi = poradi + 1000, serazene(poradi) = spoj
             continue
         }
-        s sparovane(klic) = ""
         s spojPuvodni = spojePuvodni.%Get(indexPuvodnich(klic))
         s rozdily = ..Rozdily(spoj, spojPuvodni, .pocet)
-        i 'pocet { d spoje.%Push(spoj) continue }
+        i pocet {
+            d spojPuvodni.%Set("VERZE", "puvodni")
+            d spojPuvodni.%Set("ROZDILY", rozdily)
+            d spoj.%Set("VERZE", "nova")
+            d spoj.%Set("ROZDILY", ##class(%DynamicArray).%FromJSON(rozdily.%ToJSON()))
+            s poradi = poradi + 1000, serazene(poradi) = spojPuvodni
+        }
+        s poradi = poradi + 1000, serazene(poradi) = spoj
+        s poradiSparovanych(klic) = poradi
+    }
 
-        d spojPuvodni.%Set("VERZE", "puvodni")
-        d spojPuvodni.%Set("ROZDILY", rozdily)
-        d spoj.%Set("VERZE", "nova")
-        d spoj.%Set("ROZDILY", ##class(%DynamicArray).%FromJSON(rozdily.%ToJSON()))
-        d spoje.%Push(spojPuvodni), spoje.%Push(spoj)
+    // Zrušené spoje - v původní verzi jsou, v nové ne. Stojí za předchozím spojem téže skupiny
+    // dnů a směru z původní verze, jinak před prvním spojem té skupiny, jinak na konci. Prvek
+    // kreslí skupinu dnů jako souvislý úsek, takže spoj mimo ni by dostal cizí nadpis.
+    s it = spojePuvodni.%GetIterator()
+    while it.%GetNext(.k, .spoj) {
+        s klic = ..KlicSpoje(spoj), skupina = ..KlicSkupiny(spoj)
+        i $d(poradiSparovanych(klic)) { s posledniVeSkupine(skupina) = poradiSparovanych(klic) continue }
+
+        d spoj.%Set("VERZE", "puvodni")
+        d spoj.%Set("ROZDILY", ..CelySloupec(spoj))
+        i $d(posledniVeSkupine(skupina)) {
+            s misto = posledniVeSkupine(skupina) + 1
+        } else {
+            s misto = ..PrvniVeSkupine(.serazene, skupina)
+            s misto = $s(misto '= "": misto - 500, 1: $o(serazene(""), -1) + 1000)
+        }
+        s serazene(misto) = spoj, posledniVeSkupine(skupina) = misto
+        s zrusene(+spoj.%Get("CISLO_SPOJE")) = ""
+        s:spoj.%Get("SKUPINA")'="" skupinyZrusenych(spoj.%Get("SKUPINA")) = ""
+    }
+
+    s spoje = ##class(%DynamicArray).%New(), misto = ""
+    f {
+        s misto = $o(serazene(misto), 1, spoj)
+        q:misto=""
+        d spoje.%Push(spoj)
     }
     d radkyNove.%Set("SPOJE", spoje)
+    d ..PrevezmiSkupinyDnu(radkyNove, radkyPuvodni, .skupinyZrusenych)
 
-    // Zrušené spoje - v původní verzi jsou, v nové ne. Číslo jen jednou, i když spoj byl ve víc
-    // skupinách dnů.
-    s klic = ""
-    f {
-        s klic = $o(indexPuvodnich(klic))
-        q:klic=""
-        continue:$d(sparovane(klic))
-        s zrusene(+$p(klic, "~", 2)) = ""
-    }
+    // Číslo jen jednou, i když spoj byl ve víc skupinách dnů.
     s seznam = "", cislo = ""
     f {
         s cislo = $o(zrusene(cislo))
@@ -304,17 +332,6 @@ ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %D
     d hodnoty.%Set("PUVODNI_DATUM_PLATNOSTI_DO", puvodniHodnoty.%Get("DATUM_PLATNOSTI_DO"))
     d hodnoty.%Set("PUVODNI_POPIS_PLATNOSTI", puvodniHodnoty.%Get("POPIS_PLATNOSTI"))
     d hodnoty.%Set("ZRUSENE_SPOJE", seznam)
-
-    i seznam '= "" {
-        s poznamky = radkyNove.%Get("POZNAMKY")
-        i '$isobject(poznamky) s poznamky = ##class(%DynamicArray).%New() d radkyNove.%Set("POZNAMKY", poznamky)
-        s pozn = ##class(%DynamicObject).%New()
-        d pozn.%Set("DRUH", 10)
-        d pozn.%Set("TYP", "text")
-        d pozn.%Set("ZNAK", "")
-        d pozn.%Set("TEXT", "Zrušené spoje: "_seznam)
-        d poznamky.%Push(pozn)
-    }
     q nova
 }
 
@@ -324,23 +341,63 @@ ClassMethod KlicSpoje(spoj As %DynamicObject) As %String
     q spoj.%Get("SMER")_"~"_spoj.%Get("CISLO_SPOJE")_"~"_spoj.%Get("SKUPINA")
 }
 
-/// Které buňky spoje se liší od jeho původní podoby (1 = liší se), zarovnané na CASY. U nového
-/// spoje (bez původní podoby) se liší každá buňka, ve které něco je.
-ClassMethod Rozdily(spoj As %DynamicObject, puvodni, ByRef pocet As %Integer) As %DynamicArray
+/// Skupina dnů spoje v jeho směru - souvislý úsek sloupců, do kterého se zrušený spoj vkládá.
+ClassMethod KlicSkupiny(spoj As %DynamicObject) As %String
+{
+    q spoj.%Get("SMER")_"~"_spoj.%Get("SKUPINA")
+}
+
+/// Pořadí prvního spoje skupiny dnů ve sloučeném seznamu; prázdné, když tam skupina není.
+ClassMethod PrvniVeSkupine(ByRef serazene, skupina As %String) As %String
+{
+    s misto = "", nalezeno = ""
+    f {
+        s misto = $o(serazene(misto), 1, spoj)
+        q:misto=""
+        i ..KlicSkupiny(spoj) = skupina s nalezeno = misto q
+    }
+    q nalezeno
+}
+
+/// Skupiny dnů, které má jen zrušený spoj, převezme z původní verze i s nadpisem - jinak by prvek
+/// nad jeho sloupcem nenapsal, ve které dny jezdil.
+ClassMethod PrevezmiSkupinyDnu(radkyNove As %DynamicObject, radkyPuvodni As %DynamicObject, ByRef skupinyZrusenych)
+{
+    q:'$d(skupinyZrusenych)
+    s nove = radkyNove.%Get("SKUPINY_DNU"), puvodni = radkyPuvodni.%Get("SKUPINY_DNU")
+    q:'$isobject(puvodni)
+    i '$isobject(nove) s nove = ##class(%DynamicArray).%New() d radkyNove.%Set("SKUPINY_DNU", nove)
+    s it = nove.%GetIterator()
+    while it.%GetNext(.k, .skupina) { s maNova(skupina.%Get("ID")) = "" }
+    s it = puvodni.%GetIterator()
+    while it.%GetNext(.k, .skupina) {
+        s id = skupina.%Get("ID")
+        continue:(id = "")||$d(maNova(id))||('$d(skupinyZrusenych(id)))
+        d nove.%Push(skupina)
+    }
+}
+
+/// Celý sloupec v barvě verze (nový nebo zrušený spoj) - 1 u každé buňky, i mimo trasu.
+ClassMethod CelySloupec(spoj As %DynamicObject) As %DynamicArray
+{
+    s rozdily = ##class(%DynamicArray).%New()
+    f i=1:1:spoj.%Get("CASY").%Size() d rozdily.%Push(1, "number")
+    q rozdily
+}
+
+/// Které buňky spoje se liší od jeho původní podoby (1 = liší se), zarovnané na CASY.
+ClassMethod Rozdily(spoj As %DynamicObject, puvodni As %DynamicObject, ByRef pocet As %Integer) As %DynamicArray
 {
     s pocet = 0
-    s casy = spoj.%Get("CASY")
-    s casyPuvodni = $s($isobject(puvodni): puvodni.%Get("CASY"), 1: "")
+    s casy = spoj.%Get("CASY"), casyPuvodni = puvodni.%Get("CASY")
     s rozdily = ##class(%DynamicArray).%New()
     f i=0:1:casy.%Size()-1 {
-        s cas = casy.%Get(i)
-        i $isobject(casyPuvodni) { s jinak = (cas '= casyPuvodni.%Get(i)) }
-        else { s jinak = (cas '= "") }
+        s jinak = (casy.%Get(i) '= casyPuvodni.%Get(i))
         d rozdily.%Push(jinak, "number")
         s pocet = pocet + jinak
     }
     // Původní podoba s víc řádky (nemělo by nastat - zastávky jsou stejné) se počítá jako rozdíl.
-    i $isobject(casyPuvodni) && (casyPuvodni.%Size() > casy.%Size()) s pocet = pocet + 1
+    i casyPuvodni.%Size() > casy.%Size() s pocet = pocet + 1
     q rozdily
 }
 

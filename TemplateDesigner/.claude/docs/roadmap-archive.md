@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B192a` Rozdílový JŘ: zrušený spoj a čísla spojů (hotovo 16. 10. 2026)
+
+První krok rozdílového linkového JŘ podle vzoru z CIS JŘ. Zrušený spoj je celý červený sloupec na
+místě, kde byl v původní verzi, místo poznámky „Zrušené spoje"; celé záhlaví spoje s verzí má barvu
+své verze. Ověřeno výtiskem CB_CSADAD 380715, 380738 a 380742 (skupina 207 proti 2). Detail
+changelog 2026-10-16, rozbor analýza linkového JŘ `§19`.
+
 ## Jedno záhlaví „km" nad všemi km sloupci (hotovo 15. 10. 2026)
 
 Dotaz Jan 13. 10., požadavek KOVED v `#13610`. Tabulka spojů psala „km" nad každý km sloupec.

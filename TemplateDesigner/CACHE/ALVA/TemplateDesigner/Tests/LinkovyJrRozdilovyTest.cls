@@ -7,7 +7,8 @@ Class ALVA.TemplateDesigner.Tests.LinkovyJrRozdilovyTest Extends ALVA.EDTesting.
 
 Parameter AGENDA = "ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy";
 
-/// Stránka se třemi zastávkami a zadanými spoji: spoje(n) = "číslo|čas1,čas2,čas3".
+/// Stránka se třemi zastávkami a zadanými spoji: spoje(n) = "číslo|čas1,čas2,čas3[|skupina dnů]"
+/// (bez skupiny = 1). Skupiny dnů stránky jsou ty, které spoje používají.
 ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C") As %DynamicObject
 {
 	set stranka = {"values":{"SMER":"T","DATUM_PLATNOSTI_OD":"1.1.2026","POPIS_PLATNOSTI":"Platí od 1.1.2026"},"rows":{}}
@@ -18,15 +19,35 @@ ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C") As %DynamicObjec
 	}
 	do radky.%Set("ZASTAVKY", zast)
 	set arr = []
+	kill skupiny
 	for i=1:1:$get(spoje) {
 		set casy = []
 		set texty = $piece(spoje(i),"|",2)
 		for j=1:1:$length(texty,",") { do casy.%Push($piece(texty,",",j)) }
-		do arr.%Push({"CISLO_SPOJE":(+$piece(spoje(i),"|",1)),"SKUPINA":1,"SMER":"T","CASY":(casy)})
+		set skupina = +$piece(spoje(i),"|",3)
+		set:skupina=0 skupina = 1
+		set skupiny(skupina) = ""
+		do arr.%Push({"CISLO_SPOJE":(+$piece(spoje(i),"|",1)),"SKUPINA":(skupina),"SMER":"T","CASY":(casy)})
 	}
 	do radky.%Set("SPOJE", arr)
+	set dny = [], skupina = ""
+	for {
+		set skupina = $order(skupiny(skupina))
+		quit:skupina=""
+		do dny.%Push({"ID":(skupina),"NADPIS":("Skupina "_skupina)})
+	}
+	do radky.%Set("SKUPINY_DNU", dny)
 	do radky.%Set("POZNAMKY", [])
 	quit stranka
+}
+
+/// ID skupin dnů výsledku oddělená čárkou.
+ClassMethod SkupinyDnu(stranka As %DynamicObject) As %String
+{
+	set out = ""
+	set it = stranka.%Get("rows").%Get("SKUPINY_DNU").%GetIterator()
+	while it.%GetNext(.k, .skupina) { set out = out_$select(out="":"",1:",")_skupina.%Get("ID") }
+	quit out
 }
 
 /// Spoje výsledku jako „číslo:verze" oddělené čárkou.
@@ -56,29 +77,64 @@ Method TestZmenenySpojJeDvakrat()
 	do $$$AssertEquals(vysledek.%Get("values").%Get("PUVODNI_POPIS_PLATNOSTI"), "Platí od 1.1.2026", "platnost původní verze")
 }
 
-/// Nový spoj je odlišný v každé buňce, ve které něco je.
-Method TestNovySpojCelyOdlisny()
+/// Nový spoj má barvu nové verze celý sloupec, i v buňkách mimo trasu - jako zrušený spoj ve vzoru
+/// z CIS JŘ (`B192a`).
+Method TestNovySpojCelyZeleny()
 {
 	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
 	set nov = 2, nov(1) = "1|6:00,6:10,6:20", nov(2) = "5|8:00,,8:20"
 	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv))
 
 	do $$$AssertEquals(..Prehled(vysledek), "1:,5:nova", "nový spoj jednou, s verzí nová")
-	do $$$AssertEquals(vysledek.%Get("rows").%Get("SPOJE").%Get(1).%Get("ROZDILY").%ToJSON(), "[1,0,1]", "prázdná buňka odlišná není")
+	do $$$AssertEquals(vysledek.%Get("rows").%Get("SPOJE").%Get(1).%Get("ROZDILY").%ToJSON(), "[1,1,1]", "celý sloupec, i prázdná buňka")
 }
 
-/// Spoj, který v nové verzi chybí, se nekreslí - jen vypíše v hodnotě i v poznámce.
-Method TestZrusenySpojSeVypise()
+/// Zrušený spoj je v tabulce celý v barvě původní verze, na místě, kde byl v původní verzi
+/// (`B192a`). Do 16. 10. se jen vypsal do poznámky, ta už nevzniká.
+Method TestZrusenySpojStojiNaSvemMiste()
 {
-	set puv = 2, puv(1) = "1|6:00,6:10,6:20", puv(2) = "3|9:00,9:10,9:20"
-	set nov = 1, nov(1) = "1|6:00,6:10,6:20"
+	set puv = 3, puv(1) = "1|6:00,6:10,6:20", puv(2) = "3|9:00,,9:20", puv(3) = "5|11:00,11:10,11:20"
+	set nov = 2, nov(1) = "1|6:00,6:10,6:20", nov(2) = "5|11:00,11:10,11:20"
 	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv))
 
-	do $$$AssertEquals(..Prehled(vysledek), "1:", "zrušený spoj v tabulce není")
+	do $$$AssertEquals(..Prehled(vysledek), "1:,3:puvodni,5:", "zrušený spoj mezi svými sousedy")
+	set zruseny = vysledek.%Get("rows").%Get("SPOJE").%Get(1)
+	do $$$AssertEquals(zruseny.%Get("ROZDILY").%ToJSON(), "[1,1,1]", "celý sloupec, i prázdná buňka")
+	do $$$AssertEquals(zruseny.%Get("CASY").%Get(2), "9:20", "zrušený spoj nese své časy")
 	do $$$AssertEquals(vysledek.%Get("values").%Get("ZRUSENE_SPOJE"), "3", "zrušený spoj v hodnotě")
-	set pozn = vysledek.%Get("rows").%Get("POZNAMKY")
-	do $$$AssertEquals(pozn.%Size(), 1, "jedna poznámka")
-	do $$$AssertEquals(pozn.%Get(0).%Get("TEXT"), "Zrušené spoje: 3", "text poznámky")
+	do $$$AssertEquals(vysledek.%Get("rows").%Get("POZNAMKY").%Size(), 0, "poznámka o zrušených spojích nevzniká")
+}
+
+/// Zrušený spoj za změněným stojí až za oběma jeho verzemi - dvojice se nerozdělí.
+Method TestZrusenySpojZaDvojici()
+{
+	set puv = 3, puv(1) = "1|6:00,6:10,6:20", puv(2) = "2|7:00,7:10,7:20", puv(3) = "3|9:00,9:10,9:20"
+	set nov = 2, nov(1) = "1|6:00,6:10,6:20", nov(2) = "2|7:00,7:12,7:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv))
+
+	do $$$AssertEquals(..Prehled(vysledek), "1:,2:puvodni,2:nova,3:puvodni", "dvojice pohromadě, zrušený za ní")
+}
+
+/// Zrušený spoj, který byl ve své skupině dnů první, stojí před jejím prvním spojem - ne za
+/// posledním spojem předchozí skupiny, to by ho prvek nakreslil pod cizím nadpisem.
+Method TestZrusenyPrvniSpojSkupinyJdePredNi()
+{
+	set puv = 3, puv(1) = "1|6:00,6:10,6:20|1", puv(2) = "2|7:00,7:10,7:20|2", puv(3) = "3|9:00,9:10,9:20|2"
+	set nov = 2, nov(1) = "1|6:00,6:10,6:20|1", nov(2) = "3|9:00,9:10,9:20|2"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv))
+
+	do $$$AssertEquals(..Prehled(vysledek), "1:,2:puvodni,3:", "zrušený na začátku své skupiny")
+}
+
+/// Skupina dnů, kterou nová verze vůbec nemá, se přidá na konec i se svým nadpisem.
+Method TestZrusenaCelaSkupinaDnu()
+{
+	set puv = 2, puv(1) = "1|6:00,6:10,6:20|1", puv(2) = "2|7:00,7:10,7:20|2"
+	set nov = 1, nov(1) = "1|6:00,6:10,6:20|1"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv))
+
+	do $$$AssertEquals(..Prehled(vysledek), "1:,2:puvodni", "zrušená skupina na konci")
+	do $$$AssertEquals(..SkupinyDnu(vysledek), "1,2", "nadpis zrušené skupiny se převezme z původní verze")
 }
 
 /// Verze s jinými zastávkami se zatím neporovnávají - srozumitelná chyba místo nesmyslných řádků.

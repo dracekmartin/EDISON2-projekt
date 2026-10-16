@@ -13,7 +13,7 @@ public class RozdilovyJrTests
 {
     private const float MmToPx = 96f / 25.4f;
 
-    private static DataContext Linka(bool sVerzemi) => RenderSnapshot.Data(
+    private static DataContext Linka(bool sVerzemi, string rozdily = "[0,1]", string? platnost = null) => RenderSnapshot.Data(
         ("ZASTAVKY",
         [
             RenderSnapshot.Row(("ID", "1"), ("NAZEV_ZASTAVKY", "Strakonice"), ("PORADI", "1")),
@@ -21,22 +21,24 @@ public class RozdilovyJrTests
         ]),
         ("SPOJE",
         [
-            Spoj("21", ["14:15", "14:20"], sVerzemi ? "puvodni" : null),
-            Spoj("21", ["14:15", "14:22"], sVerzemi ? "nova" : null),
+            Spoj("21", ["14:15", "14:20"], sVerzemi ? "puvodni" : null, rozdily, platnost),
+            Spoj("21", ["14:15", "14:22"], sVerzemi ? "nova" : null, rozdily, platnost),
         ]),
         ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1"))]));
 
-    private static DataContext Spoj(string cislo, string[] casy, string? verze)
+    private static DataContext Spoj(string cislo, string[] casy, string? verze, string rozdily, string? platnost)
     {
         var pole = new List<(string, object?)>
         {
             ("CISLO_SPOJE", cislo), ("SKUPINA", "1"), ("SMER", "T"),
             ("CASY", new System.Text.Json.Nodes.JsonArray([.. casy.Select(c => (System.Text.Json.Nodes.JsonNode?)c)])),
         };
+        if (platnost is not null)
+            pole.Add(("PLATNOST", new System.Text.Json.Nodes.JsonArray((System.Text.Json.Nodes.JsonNode?)platnost)));
         if (verze is not null)
         {
             pole.Add(("VERZE", verze));
-            pole.Add(("ROZDILY", System.Text.Json.Nodes.JsonNode.Parse("[0,1]")));
+            pole.Add(("ROZDILY", System.Text.Json.Nodes.JsonNode.Parse(rozdily)));
         }
         return RenderSnapshot.Row([.. pole]);
     }
@@ -80,6 +82,32 @@ public class RozdilovyJrTests
         // Jedna buňka (sloupec spoje × řádek 5 mm) je stovky pixelů; obě verze ji mají.
         Assert.True(Pixelu(prvek, data, prvek.RozdilPuvodniBackColor) > 200, "původní verze není podbarvená");
         Assert.True(Pixelu(prvek, data, prvek.RozdilNovaBackColor) > 200, "nová verze není podbarvená");
+    }
+
+    /// <summary>Číslo spoje má barvu své verze, i když se žádný čas neliší - u dvojice musí být
+    /// vidět, která je původní a která nová (vzor z CIS JŘ, `B192a`).</summary>
+    [Fact]
+    public void CisloSpojeMaBarvuSveVerze()
+    {
+        var prvek = Prvek();
+        var data = Linka(sVerzemi: true, rozdily: "[0,0]");
+
+        Assert.True(Pixelu(prvek, data, prvek.RozdilPuvodniBackColor) > 200, "číslo původní verze není podbarvené");
+        Assert.True(Pixelu(prvek, data, prvek.RozdilNovaBackColor) > 200, "číslo nové verze není podbarvené");
+    }
+
+    /// <summary>Barvu verze má celé záhlaví sloupce, tedy i řádek značek platnosti pod číslem spoje.</summary>
+    [Fact]
+    public void ZnackyPlatnostiMajiBarvuVerze()
+    {
+        var bezZnacek = Prvek();
+        var seZnackami = Prvek();
+        seZnackami.ShowPlatnostRow = true;
+        var data = Linka(sVerzemi: true, rozdily: "[0,0]", platnost: "X");
+
+        Assert.True(Pixelu(seZnackami, data, seZnackami.RozdilNovaBackColor)
+            > Pixelu(bezZnacek, data, bezZnacek.RozdilNovaBackColor) + 100,
+            "řádek značek platnosti nemá barvu verze");
     }
 
     /// <summary>Prázdný sloupec dorovnání za spojem nepatří spoji - podbarvení rozdílu nepřebírá

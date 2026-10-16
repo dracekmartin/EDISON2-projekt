@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-10-16 - 🔀 rozdílový linkový JŘ: zrušený spoj jako sloupec, záhlaví v barvě verze (`B192a`)
+
+První krok podle vzoru z CIS JŘ (rozbor v analýze linkového JŘ `§19`). Zrušený spoj už není jen
+v poznámce „Zrušené spoje: …", stojí v tabulce jako celý červený sloupec tam, kde byl v původní verzi:
+za předchozím spojem téže skupiny dnů, jinak na jejím začátku. Skupinu dnů, kterou má jen zrušený
+spoj, server převezme z původní verze i s nadpisem. Nový spoj má zelený celý sloupec, i buňky mimo
+trasu (do 16. 10. jen buňky s časem). Celé záhlaví spoje s verzí (číslo, turnusy, značky) má barvu
+své verze, takže u dvojice je vidět, která je která; prázdné sloupce dorovnání ji nepřebírají.
+Poznámka „Zrušené spoje" nevzniká, hodnota `ZRUSENE_SPOJE` zůstává. Agenda je skrytá, zákazník
+změnu nevidí.
+
+Ověřeno výtiskem se skutečnými daty CB_CSADAD 380715, 380738 a 380742 (skupina 207 proti 2,
+`ZkouskaTiskuNaostro`) a novou sondou `RozdilovyJrProbe.PrehledDvojice`, která vypíše pořadí spojů
+dvojice. `NajdiDvojice` počítá změněné spoje podle dvojic, protože verzi „původní" má teď i zrušený.
+Testy `LinkovyJrRozdilovyTest` (Caché: zrušený spoj mezi sousedy, za dvojicí, na začátku skupiny,
+celá skupina), `RozdilovyJrTests` (číslo spoje a značky v barvě verze, oba ověřené mutací).
+
 ## 2026-10-15 (6) - ✂️ nejvýš N km sloupců (#13610)
 
 KOVED chce tabulku zúžit omezením počtu km sloupců a vědomě přijímá, že část spojů pak kilometry nemá („km dnes nejsou tak důležité").

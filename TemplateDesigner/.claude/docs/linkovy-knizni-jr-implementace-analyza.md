@@ -2057,19 +2057,29 @@ Tabulka má jeden sloupec pásem a jeden Tč (`ColumnKeys.cs:20-21`).
 ⚠️ **Díra už ve stavu z 9. 10.:** legenda se skládá jen z nové verze (`:308-317`, text poznámky
 `LinkovyJrAd.cls:1851`), ale původní spoj ve dvojici nese své značky. Značka, kterou nová verze
 nemá, tak zůstane bez vysvětlení, a stejné číslo s jiným textem (ARRIVA 17) se vysvětlí textem
-nové verze. Řeší `B192b`.
+nové verze. Řeší `B192b`. Na skutečných datech je to vidět od `B192a`: zrušené spoje 380742/15
+a 380715/37, 39, 46 (skupina 207 proti 2) nesou značku 93, kterou legenda nové verze nemá.
 
 Řádek s km spoje pod tabulkou linkový JŘ nemá vůbec. To je samostatná věc, ne porovnání.
 
 ### 19.4 Testovací linky
 
 Dvojice hledá sonda `Tests/RozdilovyJrProbe.NajdiDvojice` (vstup `NOVE` a `PUVODNI` = skupiny JŘ).
-Zatím vrací jen dvojice se stejnou trasou; pro `B192d` ji rozšířit o změnu zastávek.
+Zatím vrací jen dvojice se stejnou trasou; pro `B192d` ji rozšířit o změnu zastávek. Pořadí spojů
+jedné dvojice vypíše `PrehledDvojice` (`NOVA`, `PUVODNI`, `LINKA`). Výtisk se skutečnými daty dělá
+`ZkouskaTiskuNaostro` nad kopií šablony, která má v parametrech `SKUPINA_LINEK_ID` a `POROVNAT_SKUPINU`
+(`TD_IDFA=CB_CSADAD`, `TD_NAMESPACE=CB_CSADAD`). Skupina 2 je verze z let 2022-2023, 207 od 14. 12. 2025.
 
 | Dvojice (CB_CSADAD) | Co na ní je | Pro krok |
 |---|---|---|
-| 380715, skupina 207 proti 2 | 2 změněné, 3 zrušené spoje | `a` |
-| 380738, skupina 207 proti 2 | 3 změněné, 1 nový, 1 zrušený | `a` |
-| 380742, skupina 207 proti 2 | 2 nové, 1 zrušený | `a` |
+| 380715, skupina 207 proti 2 | 2 změněné, 3 zrušené spoje | `a` (výtisk 16. 10.) |
+| 380738, skupina 207 proti 2 | 3 změněné, 1 nový, 1 zrušený | `a` (výtisk 16. 10.) |
+| 380742, skupina 207 proti 2 | 2 nové, 1 zrušený | `a` (výtisk 16. 10.) |
 | 380760, skupina 307 proti 207 | změněný spoj 21 Tam | základ z 9. 10. |
 | 380735, skupina 307 proti 207 | změněné spoje 14 a 18 Zpět | základ z 9. 10. |
+
+### 19.5 Zjištěno na výtiscích po `B192a` (16. 10.)
+
+- **Mezi dvojici se vkládá prázdný sloupec dorovnání.** Prázdné sloupce se rozdělují za první spoje
+  bloku, takže na 380715 Zpět stojí mezi původní a novou podobou spoje 6 prázdný sloupec a dvojice
+  přestane být vedle sebe. Ve vzoru dvojice stojí vždy těsně vedle sebe.

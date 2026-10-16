@@ -20,15 +20,13 @@ ve tvaru vzoru z CIS JŘ. Šablona i logika porovnání jsou naše, agenda zůst
 slouží jen k testování. Výběr dvou linek v hlavním okně jde cestou `B190`. Každý krok se ověří na
 skutečných linkách. Vzor, pravidla, mezery a testovací linky: [`§19`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B192a` Zrušený spoj a čísla spojů** [S]. Zrušený spoj jako celý červený sloupec místo
-   poznámky „Zrušené spoje", číslo spoje u dvojice podbarvené barvou své verze.
-2. **`B192b` Legenda z obou verzí** [S-M]. Poznámky obou verzí, původní přeškrtnuté. Dnes legenda
-   nevysvětlí značku, kterou má jen původní spoj (`§19.3`).
-3. **`B192c` Značky spoje** [S]. Značka jen v jedné verzi se obarví přímo ve sloupci, dvojici nedělá.
-4. **`B192d` Změna trasy** [M-L]. Sloučený seznam zastávek, přidaná zastávka zelený řádek, zrušená
+1. **`B192b` Legenda z obou verzí** [S-M]. Poznámky obou verzí, původní přeškrtnuté. Dnes legenda
+   nevysvětlí značku, kterou má jen původní spoj (`§19.3`, na výtisku 380742 značka 93).
+2. **`B192c` Značky spoje** [S]. Značka jen v jedné verzi se obarví přímo ve sloupci, dvojici nedělá.
+3. **`B192d` Změna trasy** [M-L]. Sloučený seznam zastávek, přidaná zastávka zelený řádek, zrušená
    červený. Teprve od tohoto kroku jdou porovnat linky ze vzorů.
-5. **`B192e` Původní pásmo a Tč** [S-M]. Dva sloupce navíc vedle dnešních.
-6. **`B192f` Hlavička** [S]. Původní platnost přeškrtnutá, dopravci podle verze.
+4. **`B192e` Původní pásmo a Tč** [S-M]. Dva sloupce navíc vedle dnešních.
+5. **`B192f` Hlavička** [S]. Původní platnost přeškrtnutá, dopravci podle verze.
 
 ---
 

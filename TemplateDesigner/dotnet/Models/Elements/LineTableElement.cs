@@ -2589,11 +2589,11 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // řádek čísel spojů - popisové sloupce per-column styl, spoje z Trip sloupce
         var headerSpecs = new List<ColumnRenderer.CellSpec>();
         PridejZrcadlene(headerSpecs, mrizka, zrcadlene.Count, headerResolved,
-            ti => (TextCislaSpoje(zrcadlene[ti]), tripHeaderStyle), tripHeaderStyle);
+            ti => (TextCislaSpoje(zrcadlene[ti]), SVerzi(tripHeaderStyle, zrcadlene[ti])), tripHeaderStyle);
         foreach (var (index, sirka, text, styl) in NadpisyPopisnychSloupcu(fixedCols))
             headerSpecs.Add(new(sirka, text, styl, SuppressLeadingLine: BezCaryVlevo(index, mrizka)));
         PridejSpoje(headerSpecs, mrizka, trips.Count, headerResolved,
-            ti => (TextCislaSpoje(trips[ti]), tripHeaderStyle));
+            ti => (TextCislaSpoje(trips[ti]), SVerzi(tripHeaderStyle, trips[ti])), tripHeaderStyle);
         plan.Add(new(RowKind.Header, headerH, headerSpecs)
             { VerticalLinePaint = sloupcovaCara, LineBelowPaint = radkovaCara });
 
@@ -3184,9 +3184,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     /// <summary>Buňka, ve které se verze spoje liší od druhé (rozdílový JŘ), dostane barvu své verze.</summary>
     private ResolvedTextStyle SRozdilem(ResolvedTextStyle style, LineTripData spoj, int radek) =>
-        spoj.Verze is "puvodni" or "nova" && radek < spoj.Rozdily.Count && spoj.Rozdily[radek]
-            ? style with { BackgroundColor = spoj.Verze == "puvodni" ? RozdilPuvodniBackColor : RozdilNovaBackColor }
-            : style;
+        radek < spoj.Rozdily.Count && spoj.Rozdily[radek] ? SVerzi(style, spoj) : style;
+
+    /// <summary>Barva verze spoje (rozdílový JŘ); spoj bez verze styl nemění.</summary>
+    /// <remarks>Záhlaví sloupce ji má celé, ať je u dvojice vidět, která je která (vzor z CIS JŘ, `B192a`).</remarks>
+    private ResolvedTextStyle SVerzi(ResolvedTextStyle style, LineTripData spoj) => spoj.Verze switch
+    {
+        "puvodni" => style with { BackgroundColor = RozdilPuvodniBackColor },
+        "nova" => style with { BackgroundColor = RozdilNovaBackColor },
+        _ => style,
+    };
 
     /// <summary>Styl buňky času s barvou spoje z dat - ručně kreslená buňka ji musí nést stejně
     /// jako ta, kterou sází <c>CellRenderer</c>.</summary>
@@ -3236,12 +3243,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         ResolvedTextStyle tripDataStyle, Func<LineTripData, string> text)
     {
         var specs = new List<ColumnRenderer.CellSpec>();
+        // Prázdný sloupec dorovnání patří tabulce, ne spoji před ním - barvu verze nepřebírá.
         PridejZrcadlene(specs, mrizka, zrcadlene.Count, tripDataStyle,
-            ti => (text(zrcadlene[ti]), tripDataStyle));
+            ti => (text(zrcadlene[ti]), SVerzi(tripDataStyle, zrcadlene[ti])), tripDataStyle);
         for (int ci = 0; ci < mrizka.Popisne.Count; ci++)
             specs.Add(new(mrizka.Popisne[ci].Width, "", mrizka.Popisne[ci].DataStyle,
                 SuppressLeadingLine: BezCaryVlevo(ci, mrizka)));
-        PridejSpoje(specs, mrizka, trips.Count, tripDataStyle, ti => (text(trips[ti]), tripDataStyle));
+        PridejSpoje(specs, mrizka, trips.Count, tripDataStyle,
+            ti => (text(trips[ti]), SVerzi(tripDataStyle, trips[ti])), tripDataStyle);
         return specs;
     }
 

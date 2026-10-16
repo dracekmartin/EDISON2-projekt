@@ -36,6 +36,41 @@ ClassMethod NajdiDvojice(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Pořadí spojů ve sloučené tabulce jedné dvojice - na ověření kroku `B192` na skutečných datech.
+/// IN: NOVA, PUVODNI = skupiny JŘ, LINKA. OUT(n) = stránka jako „směr: číslo:verze, …"
+/// (verze p = původní, n = nová, bez písmene beze změny), nebo chyba porovnání.
+ClassMethod PrehledDvojice(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        s agenda = "ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy"
+        s lin = $g(^||ML("IN","LINKA")), skuP = $g(^||ML("IN","PUVODNI"))
+        s vstup("SKUPINA_LINEK_ID") = $g(^||ML("IN","NOVA")), vstup("LINKA_ID") = lin
+        s vstup("DELENI_SLOUPCU") = "Bez rozlišení"
+        d $classmethod(agenda, "NactiStranky", .sys, .vstup, "", "", .stranky)
+        d $classmethod(agenda, "NactiStranky", .sys, .vstup, skuP, lin, .puvodni)
+        k ^||ML("OUT")
+        f i=1:1:$g(stranky) {
+            s protejsek = $classmethod(agenda, "ProtejsiStranka", stranky(i), i, .puvodni)
+            i protejsek = "" { s ^||ML("OUT", i) = "bez protějšku" continue }
+            try {
+                s stranka = $classmethod(agenda, "SlucStranky", stranky(i), protejsek)
+            } catch exSlouceni {
+                s ^||ML("OUT", i) = "neporovnáno: "_exSlouceni.DisplayString()
+                continue
+            }
+            s radek = "", it = stranka.%Get("rows").%Get("SPOJE").%GetIterator()
+            while it.%GetNext(.k, .spoj) {
+                s verze = $s(spoj.%Get("VERZE") = "puvodni": "p", spoj.%Get("VERZE") = "nova": "n", 1: "")
+                s radek = radek_$s(radek = "": "", 1: ", ")_spoj.%Get("CISLO_SPOJE")_":"_verze
+            }
+            s ^||ML("OUT", i) = stranka.%Get("values").%Get("SMER")_": "_radek_" | zrušené "_stranka.%Get("values").%Get("ZRUSENE_SPOJE")
+        }
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Porovná jednu dvojici; "" = jiná trasa, chyba nebo žádný rozdíl.
 ClassMethod Porovnej(ByRef sys As %String, skuN As %String, skuP As %String, lin As %String) As %String
 {
@@ -49,11 +84,18 @@ ClassMethod Porovnej(ByRef sys As %String, skuN As %String, skuP As %String, lin
             s protejsek = $classmethod(agenda, "ProtejsiStranka", stranky(i), i, .puvodni)
             continue:protejsek=""
             s stranka = $classmethod(agenda, "SlucStranky", stranky(i), protejsek)
-            s it = stranka.%Get("rows").%Get("SPOJE").%GetIterator()
+            // Změněný spoj = původní hned před novou podobou téhož čísla. Samotná původní verze je
+            // od `B192a` i zrušený spoj, ten se počítá ze ZRUSENE_SPOJE.
+            s it = stranka.%Get("rows").%Get("SPOJE").%GetIterator(), predchozi = ""
             while it.%GetNext(.k, .spoj) {
-                s verze = spoj.%Get("VERZE")
-                i verze = "puvodni" s zmenene = zmenene + 1
-                i verze = "nova" s nove = nove + 1
+                i spoj.%Get("VERZE") = "nova" {
+                    i $isobject(predchozi) && (predchozi.%Get("VERZE") = "puvodni") && (predchozi.%Get("CISLO_SPOJE") = spoj.%Get("CISLO_SPOJE")) {
+                        s zmenene = zmenene + 1
+                    } else {
+                        s nove = nove + 1
+                    }
+                }
+                s predchozi = spoj
             }
             s seznam = stranka.%Get("values").%Get("ZRUSENE_SPOJE")
             i seznam '= "" s zrusene = zrusene + $l(seznam, ",")
@@ -61,7 +103,6 @@ ClassMethod Porovnej(ByRef sys As %String, skuN As %String, skuP As %String, lin
     } catch (ex) {
         ret ""
     }
-    s nove = nove - zmenene
     q:(zmenene + nove + zrusene)=0 ""
     s o = ##class(%DynamicObject).%New()
     d o.%Set("nova", skuN), o.%Set("puvodni", skuP), o.%Set("linka", lin)
