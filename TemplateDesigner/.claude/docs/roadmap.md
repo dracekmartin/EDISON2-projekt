@@ -4,15 +4,35 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** linkový JŘ MHD (`B191`) po krocích v Priority, shora dolů (Jan 12. 10.).
-> Ostatní je v Backlogu - `B190` tisk z modulu JŘ čeká na kolegy, `B192` rozdílový JŘ na ukázku.
+> **Nejblíž na řadě:** rozdílový linkový JŘ (`B192`) po krocích, shora dolů (Jan 16. 10.). Linkový
+> JŘ MHD (`B191`) zatím stojí: `B191d` čeká na vizuální zkoušku a potvrzení návrhu (Jan).
+> Ostatní je v Backlogu - `B190` tisk z modulu JŘ čeká na kolegy.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
 
 ---
 
-## 🎯 Priority - linkový (knižní) JŘ MHD (`B191`, pořadí Jan 12. 10.)
+## 🎯 Priority - rozdílový linkový JŘ (`B192`, rozhodnutí Jan 16. 10.)
+
+Pevný výstup, ne agenda pro návrháře: uživatel v hlavním okně vybere dvě verze linky a dostane PDF
+ve tvaru vzoru z CIS JŘ. Šablona i logika porovnání jsou naše, agenda zůstává skrytá a návrhář
+slouží jen k testování. Výběr dvou linek v hlavním okně jde cestou `B190`. Každý krok se ověří na
+skutečných linkách. Vzor, pravidla, mezery a testovací linky: [`§19`](linkovy-knizni-jr-implementace-analyza.md).
+
+1. **`B192a` Zrušený spoj a čísla spojů** [S]. Zrušený spoj jako celý červený sloupec místo
+   poznámky „Zrušené spoje", číslo spoje u dvojice podbarvené barvou své verze.
+2. **`B192b` Legenda z obou verzí** [S-M]. Poznámky obou verzí, původní přeškrtnuté. Dnes legenda
+   nevysvětlí značku, kterou má jen původní spoj (`§19.3`).
+3. **`B192c` Značky spoje** [S]. Značka jen v jedné verzi se obarví přímo ve sloupci, dvojici nedělá.
+4. **`B192d` Změna trasy** [M-L]. Sloučený seznam zastávek, přidaná zastávka zelený řádek, zrušená
+   červený. Teprve od tohoto kroku jdou porovnat linky ze vzorů.
+5. **`B192e` Původní pásmo a Tč** [S-M]. Dva sloupce navíc vedle dnešních.
+6. **`B192f` Hlavička** [S]. Původní platnost přeškrtnutá, dopravci podle verze.
+
+---
+
+## ⏸️ Linkový (knižní) JŘ MHD (`B191`, pořadí Jan 12. 10., zatím stojí)
 
 Městská varianta linkového JŘ: agenda `LinkovyJrMhd` existuje, ale je skrytá - neprošla porovnáním
 se starým modulem. „Dodělám AD a MHD spadne samo" neplatí: AD je nadmnožina v obsahu tabulky, ne
@@ -73,12 +93,6 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
 - **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze **starých šablon**
   (starý tisk JŘ a jeho návrhář sestav), jak totéž udělat po novu v Návrháři šablon - převést
   jejich vzhled do nové šablony a ukázat postup. Nejdřív sepsat, kdo staré šablony reálně používá.
-
-- **`B192` Rozdílový linkový JŘ** [M] (základ 9. 10., **čeká na ukázku zákazníkům**, podle ní se
-  rozhodne, co dál). Nezveřejněná agenda „Linkový JŘ / AD - rozdílový" + šablona
-  `templates/rozdilovy-linkovy-jr-a4.json`. Otevřené: tlačítko z okna linek (`B190`), zrušené spoje
-  jako sloupce, rozdíly v platnosti a značkách, jiná trasa. Dvojice na ukázku: CB_CSADAD 340351
-  (842 proti 203), 380760 (307 proti 207); další najde `RozdilovyJrProbe.NajdiDvojice`.
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové

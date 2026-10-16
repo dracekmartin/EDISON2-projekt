@@ -2006,3 +2006,70 @@ protože to dev data nemají: příjezd/odjezd na jedné zastávce (atribut tras
 starého tisku nahrazený podřádky) a poznámky z trasy (`PoznamkyTam/Zpet` pro knižní tisk), které
 starý tisk připisuje k názvu zastávky - ty agenda zatím nečte vůbec. Linky KV_DP 1105 a 1106 starý
 tisk nevytiskne (chyba starého modulu); naše agenda pro ně vrátí prázdný výstup bez hlášky.
+
+## 19. Rozdílový linkový JŘ podle vzoru z CIS JŘ - rozbor `B192` (16. 10. 2026)
+
+**Rozhodnutí Jan 16. 10.:** rozdílový JŘ je pevný výstup, ne agenda pro návrháře. Uživatel v hlavním
+okně vybere dvě verze linky a dostane PDF v tomhle tvaru. Šablona i logika porovnání jsou naše,
+agenda zůstává skrytá (`Released = 0`) a návrhář slouží jen k testování. Porovnání se přidává po
+krocích (roadmapa `B192a-f`) a každý krok se ověří na skutečných linkách (§19.4).
+
+### 19.1 Vzor
+
+Dva výstupy CIS JŘ (CHAPS) od zákazníka z 16. 10., v repu nejsou: 950904 Jeseník-Rýmařov-Olomouc-Přerov
+(ARRIVA, oba směry, 4 strany) a 780400 Prostějov-Lutín-Olomouc (FTL, 3 strany). Obě linky mají
+změnu trasy, takže je agenda ve stavu z 9. 10. neporovná a vytiskne jen novou verzi s hláškou.
+
+### 19.2 Pravidla vzoru
+
+Červená = jen v původní verzi, zelená = jen v nové, přeškrtnutí = text, který zmizel. Odvozeno ze
+sedmi stran, ne z dokumentace CHAPS.
+
+- **Hlavička:** původní platnost přeškrtnutá nad novou. Dopravci po řádcích s čísly spojů, zmizelý
+  přeškrtnutý, nový zeleně.
+- **Zastávky:** vlevo dva páry sloupců, původní a nové pásmo a původní a nové Tč. Odlišné Tč je
+  červené a zelené; po vložené zastávce se posunou všechna další (ARRIVA).
+- **Přidaná zastávka** má celý řádek zelený (ARRIVA Ludvíkov,pošta), **zrušená** celý červený
+  (FTL Olomouc,Nedvězí). Zastávka nahrazená jinou jsou dva řádky (FTL Nedvězí → Nedvězí,křiž.).
+- **Spoj se změněným časem** jsou dva sloupce vedle sebe; číslo spoje i odlišné buňky mají barvu
+  své verze. Podbarvené jsou i buňky „…" (spoj v úseku nejede), buňky ⟆ a | ne.
+- **Spoj, který se liší jen trasou**, zůstává jednou: čas u zrušené zastávky stojí v červeném řádku,
+  u nové v zeleném (FTL spoj 17).
+- **Zrušený spoj** má celý sloupec červený včetně km (ARRIVA 527 a 528).
+- **Změna jen ve značce** dvojici nedělá. Značka jen v nové verzi je v zeleném rámečku, jen
+  v původní v tmavě červeném (FTL 23, 33, 35 přibyla 31; ARRIVA 1 ubyla 31; ARRIVA 8 změna 38 → 37).
+- **Km spoje:** původní hodnota přeškrtnutá vedle nové (FTL spoj 17 „24 23").
+- **Legenda:** číslované poznámky původní přeškrtnuté v tmavě červeném rámečku, nové zeleně; stejné
+  číslo s jiným textem je tam dvakrát (ARRIVA 17, 18, 72). Stejně vysvětlivky piktogramů a textové
+  poznámky.
+- **Nejasné:** ARRIVA spoj 23 je ve dvojici, ačkoli se jeho časy podle všeho nemění; FTL spoj 23
+  s podobnou změnou značky ve dvojici není.
+
+### 19.3 Proti agendě ze 9. 10.
+
+Spoj se změněným časem je dvakrát a odlišné buňky jsou podbarvené (`LinkovyJrAdRozdilovy.cls:263-283`,
+`LineTableElement.cs:3186`). Páruje se podle směru, čísla a skupiny dnů (`:322`) a porovnávají se
+jen časy (`:329`). Nový spoj je celý zelený, zrušené jsou jen text v poznámkách (`:286-317`). Když
+se liší zastávky, porovnání se nedělá (`:255`). Z původní verze se bere jen platnost (`:302`).
+Číslo spoje ani značky barvu verze nedostanou, verzi čtou jen buňky časů (`LineTableElement.cs:3187`).
+Tabulka má jeden sloupec pásem a jeden Tč (`ColumnKeys.cs:20-21`).
+
+⚠️ **Díra už ve stavu z 9. 10.:** legenda se skládá jen z nové verze (`:308-317`, text poznámky
+`LinkovyJrAd.cls:1851`), ale původní spoj ve dvojici nese své značky. Značka, kterou nová verze
+nemá, tak zůstane bez vysvětlení, a stejné číslo s jiným textem (ARRIVA 17) se vysvětlí textem
+nové verze. Řeší `B192b`.
+
+Řádek s km spoje pod tabulkou linkový JŘ nemá vůbec. To je samostatná věc, ne porovnání.
+
+### 19.4 Testovací linky
+
+Dvojice hledá sonda `Tests/RozdilovyJrProbe.NajdiDvojice` (vstup `NOVE` a `PUVODNI` = skupiny JŘ).
+Zatím vrací jen dvojice se stejnou trasou; pro `B192d` ji rozšířit o změnu zastávek.
+
+| Dvojice (CB_CSADAD) | Co na ní je | Pro krok |
+|---|---|---|
+| 380715, skupina 207 proti 2 | 2 změněné, 3 zrušené spoje | `a` |
+| 380738, skupina 207 proti 2 | 3 změněné, 1 nový, 1 zrušený | `a` |
+| 380742, skupina 207 proti 2 | 2 nové, 1 zrušený | `a` |
+| 380760, skupina 307 proti 207 | změněný spoj 21 Tam | základ z 9. 10. |
+| 380735, skupina 307 proti 207 | změněné spoje 14 a 18 Zpět | základ z 9. 10. |
