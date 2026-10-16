@@ -1,6 +1,6 @@
 # Fingerprint legacy zdroju, ze kterych je generovan Tree.cls (tools/GenerateTree).
 # Kontroluje .claude/hooks/tree-drift.sh, uloha tree-sync a parity test. Needitovat rucne.
 # Hash je pres obsah BEZ CR (checkouty se lisi CRLF/LF podle autocrlf): tr -d '\r' | sha256sum
-e8164c4f19594d2e0dfef30bbe492298ddfbf2914077e97c66c2eadada6a28a0  EDCORE/Resources/edisonnavbar.xml
-895ce2ec9944c7c11951c4c52f7f305ea0898b63ea5902e6b8d770860f065308  EDCORE/Resources/edisontree.xml
-405a9eec1999043534c0cbd7e6d8943a90eef07780c2fd0d5def067c80297eb6  EDCORE/EDFormInterfaceLic.vb
+0b00666471872f60a34c4bf23ba199747286689019cbe521bbc574d52678174e  EDCORE/Resources/edisonnavbar.xml
+e09816e6e94aad2fd8a94e45cf9d2232d1bf8355725e45349185e130f70dd308  EDCORE/Resources/edisontree.xml
+7cef3f60b43c392739ecc356d18a5b153b158e581a6e198df515a675912b8fd6  EDCORE/EDFormInterfaceLic.vb
