@@ -33,6 +33,9 @@ Include GENERAL
 ///   rows.ZASTAVKY[]: zastávky obou verzí jedním seznamem (`B192d`), VERZE "puvodni" / "nova"
 ///                 u zastávky jen v jedné verzi; PORADI přečíslované od 1, přípoje spojů
 ///                 přečíslované podle verze spoje; CASY a ZNACKY spojů zarovnané na tenhle seznam
+///                 - TC_PUVODNI / ZONY_PUVODNI (`B192e`): Tč a pásmo původní verze, jen když se
+///                   u některé zastávky obou verzí liší; zastávka jen v původní verzi má pak TC
+///                   a ZONY prázdné (nová verze ji nemá)
 ///
 /// Když porovnání nejde (srovnávací skupina linku nemá), vytiskne se vybraná verze a důvod nese
 /// POROVNANI_HLASENI - chyba by místo náhledu jen překážela. Do 16. 10. tak skončila i jiná trasa.
@@ -81,8 +84,11 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
 
         s it = def.%Get("fieldCollections").%GetIterator()
         while it.%GetNext(.k, .kolekce) {
-            continue:kolekce.%Get("collectionKey")'="SPOJE"
-            d ..AddField(kolekce.%Get("fields"), "VERZE", "Verze spoje (původní / nová)", "text")
+            s klic = kolekce.%Get("collectionKey")
+            d:klic="SPOJE" ..AddField(kolekce.%Get("fields"), "VERZE", "Verze spoje (původní / nová)", "text")
+            continue:klic'="ZASTAVKY"
+            d ..AddField(kolekce.%Get("fields"), "TC_PUVODNI", "Tarifní číslo (původní verze)", "number")
+            d ..AddField(kolekce.%Get("fields"), "ZONY_PUVODNI", "Zóny (původní verze)", "text")
         }
 
         s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
@@ -587,7 +593,30 @@ ClassMethod SlucZastavky(radkyNove As %DynamicObject, radkyPuvodni As %DynamicOb
         }
     }
     d ..VylozUsek(vysledek, stare, nove, .jenStare, .jenNove, smer, .mapa)
+    d ..PuvodniHodnoty(vysledek, stare, "TC", .mapa)
+    d ..PuvodniHodnoty(vysledek, stare, "ZONY", .mapa)
     d radkyNove.%Set("ZASTAVKY", vysledek)
+}
+
+/// Doplní sloučeným zastávkám původní Tč nebo pásmo (`pole` → pole_PUVODNI, `B192e`), jen když se
+/// u některé zastávky, kterou mají obě verze, liší - jinak by původní sloupec opakoval nový.
+/// Přidaná zastávka posune Tč všech dalších (vzor ARRIVA). Zastávka jen v původní verzi pak má
+/// hodnotu jen v původním sloupci, protože nová verze ji nemá.
+ClassMethod PuvodniHodnoty(vysledek As %DynamicArray, stare As %DynamicArray, pole As %String, ByRef mapa)
+{
+    s zmena = 0
+    f k=0:1:mapa("K")-1 {
+        s i = mapa("o", k)
+        continue:(i = "")||(mapa("n", k) = "")
+        i stare.%Get(i).%Get(pole) '= vysledek.%Get(k).%Get(pole) { s zmena = 1 q }
+    }
+    q:'zmena
+
+    f k=0:1:mapa("K")-1 {
+        s radek = vysledek.%Get(k), i = mapa("o", k)
+        d radek.%Set(pole_"_PUVODNI", $s(i '= "": stare.%Get(i).%Get(pole), 1: ""))
+        d:(mapa("n", k) = "") radek.%Set(pole, "")
+    }
 }
 
 /// Vypíše zastávky úseku, ve kterém se verze liší, a úsek vyprázdní.

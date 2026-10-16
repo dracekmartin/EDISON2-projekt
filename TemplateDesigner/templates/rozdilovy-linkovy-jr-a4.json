@@ -261,6 +261,18 @@
           "skupinyDnuDataSource": "SKUPINY_DNU",
           "columns": [
             {
+              "key": "OriginalZone",
+              "header": "TPZ",
+              "width": 5,
+              "visible": true,
+              "alignment": "Center",
+              "style": {
+                "header": {
+                  "backgroundColor": "#FFF08080"
+                }
+              }
+            },
+            {
               "key": "Zone",
               "header": "TPZ",
               "width": 5,
@@ -273,6 +285,18 @@
               "width": 3.6,
               "visible": true,
               "alignment": "Center"
+            },
+            {
+              "key": "OriginalTc",
+              "header": "Tč",
+              "width": 4,
+              "visible": true,
+              "alignment": "Center",
+              "style": {
+                "header": {
+                  "backgroundColor": "#FFF08080"
+                }
+              }
             },
             {
               "key": "Tc",

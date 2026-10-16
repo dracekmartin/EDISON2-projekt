@@ -44,6 +44,8 @@ public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
         ColumnKeys.Zone     => "Zóna",
         ColumnKeys.Km       => "Kilometry",
         ColumnKeys.Tc       => "Tarifní číslo (TČ)",
+        ColumnKeys.OriginalZone => "Zóna původní verze",
+        ColumnKeys.OriginalTc   => "Tarifní číslo (TČ) původní verze",
         ColumnKeys.StopName => "Zastávka",
         ColumnKeys.Mhd      => "MHD / IDS",
         ColumnKeys.Trip     => "Spoje (časové sloupce)",

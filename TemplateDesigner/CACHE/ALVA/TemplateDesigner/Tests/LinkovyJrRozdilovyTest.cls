@@ -10,14 +10,15 @@ Parameter AGENDA = "ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy";
 /// Stránka se třemi zastávkami a zadanými spoji:
 /// spoje(n) = "číslo|čas1,čas2,čas3[|skupina dnů[|značky platnosti oddělené ;[|negativní značka]]]"
 /// (bez skupiny = 1). Skupiny dnů stránky jsou ty, které spoje používají. Zastávky mají pořadí
-/// podle pozice (1, 2, 3…), jako trasa linky.
+/// i Tč podle pozice (1, 2, 3…), jako trasa linky; zastávka „X=101" má pásmo 101.
 ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C", smer As %String = "T") As %DynamicObject
 {
 	set stranka = {"values":{"SMER":(smer),"DATUM_PLATNOSTI_OD":"1.1.2026","POPIS_PLATNOSTI":"Platí od 1.1.2026"},"rows":{}}
 	set radky = stranka.%Get("rows")
 	set zast = []
 	for i=1:1:$length(zastavky,",") {
-		do zast.%Push({"CZST":($piece(zastavky,",",i)),"TYP":"zastavka","PORADI":(i)})
+		set z = $piece(zastavky,",",i)
+		do zast.%Push({"CZST":($piece(z,"=",1)),"TYP":"zastavka","PORADI":(i),"TC":(i),"ZONY":($piece(z,"=",2))})
 	}
 	do radky.%Set("ZASTAVKY", zast)
 	set arr = []
@@ -55,6 +56,18 @@ ClassMethod PrehledZastavek(stranka As %DynamicObject) As %String
 	while it.%GetNext(.k, .z) {
 		set verze = $case(z.%Get("VERZE"), "nova":"+", "puvodni":"-", :"")
 		set out = out_$select(out="":"",1:",")_z.%Get("CZST")_verze_":"_z.%Get("PORADI")
+	}
+	quit out
+}
+
+/// Hodnota pole zastávek výsledku po řádcích jako „původní>nová" (bez „>", když původní nepřišla).
+ClassMethod PrehledPuvodnich(stranka As %DynamicObject, pole As %String) As %String
+{
+	set out = ""
+	set it = stranka.%Get("rows").%Get("ZASTAVKY").%GetIterator()
+	while it.%GetNext(.k, .z) {
+		set puvodni = $select(z.%IsDefined(pole_"_PUVODNI"):z.%Get(pole_"_PUVODNI")_">",1:"")
+		set out = out_$select(k=0:"",1:",")_puvodni_z.%Get(pole)
 	}
 	quit out
 }
@@ -325,6 +338,50 @@ Method TestPripojPodlePoradiVerze()
 
 	do $$$AssertEquals(spoje.%Get(0).%Get("PRIPOJE").%Get(0).%Get("PORADI"), 4, "původní: zastávka C byla 3., ve sloučeném je 4.")
 	do $$$AssertEquals(spoje.%Get(1).%Get("PRIPOJE").%Get(0).%Get("PORADI"), 4, "nová: C je 4. v obou")
+}
+
+/// Přidaná zastávka posune Tč všech dalších (vzor ARRIVA, `B192e`): zastávky obou verzí nesou
+/// i původní Tč, aby šlo vytisknout vedle nového.
+Method TestPuvodniTcPoPridaneZastavce()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
+	set nov = 1, nov(1) = "1|6:00,6:10,6:15,6:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,B,X,C"), ..Stranka(.puv))
+
+	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1>1,2>2,>3,3>4", "C měla 3, teď 4; X původní Tč nemá")
+	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "ZONY"), ",,,", "pásma beze změny se neposílají")
+}
+
+/// Zrušená zastávka má Tč jen v původním sloupci - nová verze ji nemá.
+Method TestPuvodniTcZruseneZastavky()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
+	set nov = 1, nov(1) = "1|6:00,6:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,C"), ..Stranka(.puv))
+
+	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1>1,2>,3>2", "B jen v původním sloupci")
+}
+
+/// Bez posunu (náhrada zastávky na tomtéž místě) by původní sloupec jen opakoval nový, takže se
+/// neposílá a zrušená zastávka si své Tč nechá v jediném sloupci.
+Method TestBezPosunuTcPuvodniNeni()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
+	set nov = 1, nov(1) = "1|6:00,6:11,6:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,X,C"), ..Stranka(.puv))
+
+	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1,2,2,3", "jen jeden sloupec Tč")
+}
+
+/// Pásmo se porovnává samo za sebe: změněné pásmo na stejné trase pošle původní pásma, Tč ne.
+Method TestPuvodniPasmoJenKdyzSeLisi()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
+	set nov = 1, nov(1) = "1|6:00,6:10,6:20"
+	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A=1,B=2,C=2"), ..Stranka(.puv, "A=1,B=1,C=2"))
+
+	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "ZONY"), "1>1,1>2,2>2", "B přešla do pásma 2")
+	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1,2,3", "Tč beze změny")
 }
 
 }

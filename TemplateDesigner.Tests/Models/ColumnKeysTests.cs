@@ -22,6 +22,8 @@ public class ColumnKeysTests
         Assert.Equal("Mhd", ColumnKeys.Mhd);
         Assert.Equal("Trip", ColumnKeys.Trip);
         Assert.Equal("Arrow", ColumnKeys.Arrow);
+        Assert.Equal("OriginalTc", ColumnKeys.OriginalTc);
+        Assert.Equal("OriginalZone", ColumnKeys.OriginalZone);
     }
 
     [Fact]

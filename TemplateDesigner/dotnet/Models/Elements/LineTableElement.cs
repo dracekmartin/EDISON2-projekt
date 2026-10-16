@@ -460,6 +460,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// <summary>Rozdílový JŘ: „puvodni" / „nova" u zastávky, kterou má jen jedna verze trasy (`B192d`).</summary>
         public string Verze = "";
 
+        /// <summary>Rozdílový JŘ: Tč a pásmo původní verze (`B192e`). Null = server je neposlal,
+        /// protože se verze v nich neliší.</summary>
+        public string? TcPuvodni;
+        /// <inheritdoc cref="TcPuvodni"/>
+        public string? ZonaPuvodni;
+
         public bool JePrijezdovy => Typ == "prijezd";
     }
 
@@ -571,6 +577,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Km = ParseStringArray(row.GetValue("KM")),
             SourceRow = row,
             Verze = row.GetString("VERZE"),
+            TcPuvodni = row.GetValue("TC_PUVODNI") is null ? null : row.GetString("TC_PUVODNI"),
+            ZonaPuvodni = row.GetValue("ZONY_PUVODNI") is null ? null : row.GetString("ZONY_PUVODNI"),
         })];
 
         _cachedTrips = [.. data.GetRows(SpojeDataSource).Select(row => new LineTripData
@@ -945,7 +953,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     private static string DefaultHeaderFor(string key) => key switch
     {
-        ColumnKeys.Zone => "Zóna", ColumnKeys.Km => "km", ColumnKeys.Tc => "Tč",
+        ColumnKeys.Zone or ColumnKeys.OriginalZone => "Zóna", ColumnKeys.Km => "km",
+        ColumnKeys.Tc or ColumnKeys.OriginalTc => "Tč",
         ColumnKeys.StopName => "Zastávka", ColumnKeys.Mhd => "MHD", _ => ""
     };
 
@@ -964,6 +973,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             : kmIndex < s.Zony.Count ? s.Zony[kmIndex] : "",
         ColumnKeys.Km       => s => kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
         ColumnKeys.Tc       => s => s.Tc,
+        ColumnKeys.OriginalTc   => s => s.TcPuvodni ?? "",
+        ColumnKeys.OriginalZone => s => s.ZonaPuvodni ?? "",
         ColumnKeys.Mhd      => s => s.Mhd,
         // ⚠️ Mezera se přidává jen tehdy, když opravdu je co postavit před název. Dřív se řídila
         // tím, jestli zastávka má **jakýkoli** atribut - jenže řídicí atributy (T, P) se netisknou,
@@ -1718,7 +1729,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// od sebe liší.
     /// </remarks>
     private static bool PopisSeSlucuje(string key) =>
-        key is ColumnKeys.Km or ColumnKeys.Tc or ColumnKeys.StopName or ColumnKeys.Mhd;
+        key is ColumnKeys.Km or ColumnKeys.Tc or ColumnKeys.OriginalTc or ColumnKeys.StopName or ColumnKeys.Mhd;
 
     /// <summary>Kde v rozdvojené dvojici leží řádek zastávky.</summary>
     internal enum RozdvojenyRadek
@@ -2779,7 +2790,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 stop.JePrijezdovy ? [] : stop.Atributy.Where(JePiktogramZastavky), SymbolMap.ResolveZastavka);
             for (int ci = 0; ci < fixedCols.Count; ci++)
             {
-                var bunkaStyl = OddTc(fixedCols[ci].DataStyle, oddTc);
+                var bunkaStyl = SRozdilemPopisu(OddTc(fixedCols[ci].DataStyle, oddTc), fixedCols[ci].Key, stop);
                 if (ci == nameIndex && TucneZastavkyDleTrasy && MaTucneZTrasy(stop))
                     bunkaStyl = bunkaStyl with { Bold = true };
                 bunkaStyl = Inverze(bunkaStyl, inverze);
@@ -3258,6 +3269,26 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Buňka, ve které se verze spoje liší od druhé (rozdílový JŘ), dostane barvu své verze.</summary>
     private ResolvedTextStyle SRozdilem(ResolvedTextStyle style, LineTripData spoj, int radek) =>
         radek < spoj.Rozdily.Count && spoj.Rozdily[radek] ? SVerzi(style, spoj) : style;
+
+    /// <summary>Buňka Tč nebo pásma zastávky obou verzí, ve které se verze liší (rozdílový JŘ,
+    /// `B192e`): původní hodnota má barvu původní verze, nová barvu nové - jako odlišný čas spoje.</summary>
+    /// <remarks>Zastávka jen v jedné verzi má barvu verze celý řádek, takže buňky nepřebarvuje.</remarks>
+    private ResolvedTextStyle SRozdilemPopisu(ResolvedTextStyle style, string key, LineStopData stop)
+    {
+        if (stop.Verze != "") return style;
+        var (puvodni, nova) = key switch
+        {
+            ColumnKeys.Tc or ColumnKeys.OriginalTc => (stop.TcPuvodni, stop.Tc),
+            ColumnKeys.Zone or ColumnKeys.OriginalZone => (stop.ZonaPuvodni, stop.Zona),
+            _ => (null, ""),
+        };
+        if (puvodni is null || puvodni == nova) return style;
+        return style with
+        {
+            BackgroundColor = key is ColumnKeys.OriginalTc or ColumnKeys.OriginalZone
+                ? RozdilPuvodniBackColor : RozdilNovaBackColor,
+        };
+    }
 
     /// <summary>Barva verze spoje (rozdílový JŘ); spoj bez verze styl nemění.</summary>
     /// <remarks>Záhlaví sloupce ji má celé, ať je u dvojice vidět, která je která (vzor z CIS JŘ, `B192a`).</remarks>

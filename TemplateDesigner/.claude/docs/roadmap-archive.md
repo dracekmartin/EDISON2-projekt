@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B192e` Rozdílový JŘ: původní pásmo a Tč (hotovo 16. 10. 2026)
+
+Když se verze liší v Tč (po přidané zastávce) nebo v pásmu, tiskne tabulka vedle Zóny a Tč i sloupec
+původní verze; odlišné buňky mají barvu své verze. Beze změny se původní sloupec netiskne. Ověřeno
+výtiskem CB_CSADAD 0380724 (skupina 306 proti 2) proti samostatnému výtisku skupiny 2. Detail
+changelog 2026-10-16 (7).
+
 ## `B192d` Rozdílový JŘ: změna trasy (hotovo 16. 10. 2026)
 
 Zastávky obou verzí jedním seznamem, zastávka jen v jedné verzi celý řádek v barvě verze, nahrazená

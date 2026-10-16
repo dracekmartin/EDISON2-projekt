@@ -241,6 +241,71 @@ public class RozdilovyJrTests
         Assert.Equal(0, Pixelu(prvek, Trasa(null), prvek.RozdilNovaBackColor));
     }
 
+    /// <summary>Dvě zastávky obou verzí; u druhé se hodnota (Tč nebo pásmo) změnila ze 2 na 3.
+    /// Bez <paramref name="sPuvodnimi"/> je server nepošle, jako když se verze neliší.</summary>
+    private static DataContext PuvodniHodnoty(string pole, bool sPuvodnimi, string druhaPuvodni = "2") => RenderSnapshot.Data(
+        ("ZASTAVKY",
+        [
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Strakonice"), ("PORADI", "1"), (pole, "1"),
+                (pole + "_PUVODNI", sPuvodnimi ? "1" : null)),
+            RenderSnapshot.Row(("NAZEV_ZASTAVKY", "Blatná"), ("PORADI", "2"), (pole, "3"),
+                (pole + "_PUVODNI", sPuvodnimi ? druhaPuvodni : null)),
+        ]),
+        ("SPOJE",
+        [
+            RenderSnapshot.Row(("CISLO_SPOJE", "21"), ("SKUPINA", "1"), ("SMER", "T"),
+                ("CASY", System.Text.Json.Nodes.JsonNode.Parse("[\"14:15\",\"14:20\"]"))),
+        ]),
+        ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1"))]));
+
+    private static LineTableElement PrvekSeSloupci(params string[] klice)
+    {
+        var prvek = Prvek();
+        prvek.Columns = [.. klice.Select(k => new StopColumn { Key = k, Width = 6f }),
+            new StopColumn { Key = ColumnKeys.StopName, Width = 30f },
+            new StopColumn { Key = LineTableElement.TripKey }];
+        return prvek;
+    }
+
+    /// <summary>Původní Tč a pásmo mají vlastní sloupec a buňka, ve které se verze liší, má barvu
+    /// své verze - jako odlišný čas spoje (`B192e`, vzor ARRIVA: Tč za přidanou zastávkou).</summary>
+    [Theory]
+    [InlineData(ColumnKeys.OriginalTc, ColumnKeys.Tc, "TC")]
+    [InlineData(ColumnKeys.OriginalZone, ColumnKeys.Zone, "ZONY")]
+    public void OdlisnaHodnotaZastavkyMaBarvuSveVerze(string puvodniKlic, string novyKlic, string pole)
+    {
+        var prvek = PrvekSeSloupci(puvodniKlic, novyKlic);
+        var data = PuvodniHodnoty(pole, sPuvodnimi: true);
+
+        // Buňka 6 × 5 mm je přes 400 px; podbarvená má být jen ta jedna v každém sloupci.
+        int cervena = Pixelu(prvek, data, prvek.RozdilPuvodniBackColor);
+        int zelena = Pixelu(prvek, data, prvek.RozdilNovaBackColor);
+        Assert.InRange(cervena, 200, 700);
+        Assert.InRange(zelena, 200, 700);
+    }
+
+    [Fact]
+    public void StejnaHodnotaZastavkySeNepodbarvi()
+    {
+        var prvek = PrvekSeSloupci(ColumnKeys.OriginalTc, ColumnKeys.Tc);
+        var data = PuvodniHodnoty("TC", sPuvodnimi: true, druhaPuvodni: "3");
+
+        Assert.Equal(0, Pixelu(prvek, data, prvek.RozdilPuvodniBackColor));
+        Assert.Equal(0, Pixelu(prvek, data, prvek.RozdilNovaBackColor));
+    }
+
+    /// <summary>Když se verze v Tč neliší, server původní Tč nepošle a sloupec se netiskne -
+    /// tabulka vypadá stejně, jako by ho šablona neměla.</summary>
+    [Fact]
+    public void BezPuvodnichHodnotSloupecNeni()
+    {
+        var data = PuvodniHodnoty("TC", sPuvodnimi: false);
+        using var sPuvodnim = Vykresli(PrvekSeSloupci(ColumnKeys.OriginalTc, ColumnKeys.Tc), data);
+        using var bez = Vykresli(PrvekSeSloupci(ColumnKeys.Tc), data);
+
+        Assert.Equal(bez.Bytes, sPuvodnim.Bytes);
+    }
+
     /// <summary>Kolik pixelů má (zhruba) barvu <paramref name="hex"/>.</summary>
     private static int Pixelu(LineTableElement prvek, DataContext data, string hex)
     {

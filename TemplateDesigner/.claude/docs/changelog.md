@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-10-16 (7) - 🔀 rozdílový linkový JŘ: původní pásmo a Tč (`B192e`)
+
+Po přidané zastávce se Tč všech dalších posunou a do 16. 10. bylo vidět jen nové. Teď tabulka
+vlevo od Zóny a Tč tiskne i sloupec původní verze, jako vzor z CIS JŘ. Buňka, ve které se verze
+liší, je v původním sloupci červená a v novém zelená, jako odlišný čas spoje. Zastávka jen
+v původní verzi má Tč jen v původním sloupci. Sloupec se tiskne, jen když se některá zastávka
+obou verzí v Tč (nebo v pásmu) liší, jinak by jen opakoval sousední. Tabulka spojů má proto dva
+nové sloupce („Zóna původní verze", „Tarifní číslo (TČ) původní verze"); rozdílová šablona je má
+se záhlavím v barvě původní verze, do ostatních šablon se nepřidávají. Server posílá u zastávek
+navíc `TC_PUVODNI` a `ZONY_PUVODNI` (jen přidané klíče).
+
+Ověřeno výtiskem CB_CSADAD 0380724 (skupina 306 proti 2): původní Tč 18-22 a pásmo „-" u Kejnice
+souhlasí se samostatným výtiskem skupiny 2, bez porovnání se sloupce netisknou. Testy
+`LinkovyJrRozdilovyTest` (posun po přidané zastávce, zrušená zastávka, náhrada bez posunu, změna
+pásma) a `RozdilovyJrTests` (barva odlišné buňky, stejné hodnoty bez barvy, skrytý sloupec),
+obojí ověřené mutací.
+
 ## 2026-10-16 (6) - 🔀 rozdílový linkový JŘ: změna trasy (`B192d`)
 
 Verze s jinými zastávkami se do 16. 10. neporovnaly: vytiskla se nová verze s hláškou „Neporovnáno".
