@@ -2715,9 +2715,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 Decorate = rowY =>
                 {
                     DrawNegativniZnacky(ctx, rowY, znackaRowH, ti => X + mrizka.XSpojeMm(ti),
-                        mrizka.SirkaSpojeMm, trips, tripDataStyle, znackaScale, radekNz);
+                        mrizka.SirkaSpojeMm, trips, tripDataStyle, znackaScale, radekNz, nzRadku);
                     DrawNegativniZnacky(ctx, rowY, znackaRowH, ti => X + mrizka.XZrcadlenehoMm(ti),
-                        mrizka.SirkaZrcadlenehoMm, zrcadlene, tripDataStyle, znackaScale, radekNz);
+                        mrizka.SirkaZrcadlenehoMm, zrcadlene, tripDataStyle, znackaScale, radekNz, nzRadku);
                 },
             });
         }
@@ -3288,13 +3288,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <see cref="NegativniZnackaRenderer"/>.</summary>
     private void DrawNegativniZnacky(RenderContext ctx, float rowTopMm, float rowH,
         Func<int, float> xSpojeMm, Func<int, float> sirkaSpojeMm,
-        List<LineTripData> trips, ResolvedTextStyle style, float scale, int radek)
+        List<LineTripData> trips, ResolvedTextStyle style, float scale, int radek, int pocetRadku)
     {
         for (int i = 0; i < trips.Count; i++)
         {
-            var znacky = NzSpoje(trips[i]);
-            if (radek >= znacky.Count) continue;
-            var (znak, verze) = znacky[radek];
+            if (NzVRadku(trips[i], radek, pocetRadku) is not { } nz) continue;
+            var (znak, verze) = nz;
             // Box se kreslí barvou textu, znak v něm barvou pozadí - barva verze tedy jde do textu.
             var styl = BarvaZnackyVerze(verze) is { } barva ? style with { TextColor = barva } : style;
             float leftMm = xSpojeMm(i);
@@ -3312,6 +3311,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         if (spoj.NzPuvodni.Length > 0) znacky.Add((spoj.NzPuvodni, "puvodni"));
         if (spoj.Nz.Length > 0) znacky.Add((spoj.Nz, spoj.NzVerze));
         return znacky;
+    }
+
+    /// <summary>Negativní značka spoje v <paramref name="radek"/>-tém řádku negativních značek bloku.</summary>
+    /// <remarks>Ve dvou řádcích je nahoře vždy původní značka a dole ta, kterou spoj má teď - aktuální
+    /// značky všech spojů tak stojí v jedné výšce, i u spoje, kterému se nic nezměnilo (rozhodnutí
+    /// Jan 16. 10.: řádek navíc tam je tak jako tak, a takhle to vypadá přirozeněji).</remarks>
+    internal static (string Znak, string Verze)? NzVRadku(LineTripData spoj, int radek, int pocetRadku)
+    {
+        if (pocetRadku < 2) return NzSpoje(spoj) is [var jedina, ..] ? jedina : null;
+        if (radek == 0) return spoj.NzPuvodni.Length > 0 ? (spoj.NzPuvodni, "puvodni") : null;
+        return spoj.Nz.Length > 0 ? (spoj.Nz, spoj.NzVerze) : null;
     }
 
     /// <summary>Barva značky na řádku platnosti podle její verze; index je pořadí v řádku.</summary>

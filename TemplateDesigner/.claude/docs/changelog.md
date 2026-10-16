@@ -8,7 +8,8 @@ zůstává takový spoj v jednom sloupci bez dvojice, jen nese značky obou verz
 je v barvě „Značky původní verze" (`#960000`), ta, která přibyla, v barvě „Značky nové verze"
 (`#009600`). Platí pro značky platnosti i negativní značky. Změněná negativní značka (23 → 21)
 je ve sloupci dvakrát pod sebou, původní nad novou - sloupec se kvůli ní nerozšíří, přibude řádek
-jen v bloku, kde takový spoj je. Obě barvy jsou ve skupině Porovnání verzí u Tabulky spojů
+jen v bloku, kde takový spoj je. V takovém bloku je dole vždy značka, kterou spoj má teď, i u spoje
+beze změny, takže aktuální značky stojí v jedné výšce (rozhodnutí Jan 16. 10. po prohlédnutí 380756). Obě barvy jsou ve skupině Porovnání verzí u Tabulky spojů
 a formulář je ukazuje jen v rozdílové agendě. Server posílá navíc `PLATNOST_VERZE`, `NZ_PUVODNI`
 a `NZ_VERZE` (jen přidané klíče) a převezme i volný text značky z původní verze.
 

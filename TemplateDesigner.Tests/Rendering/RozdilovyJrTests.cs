@@ -156,6 +156,27 @@ public class RozdilovyJrTests
             "druhá značka nepřidala řádek");
     }
 
+    /// <summary>Ve dvou řádcích negativních značek je nahoře původní a dole aktuální značka - i u spoje,
+    /// který má jen tu aktuální, takže aktuální značky všech spojů stojí v jedné výšce (Jan 16. 10.).</summary>
+    [Fact]
+    public void AktualniNegativniZnackyJsouVJedneVysce()
+    {
+        var obe = new LineTableElement.LineTripData { Nz = "37", NzVerze = "nova", NzPuvodni = "38" };
+        var jenNova = new LineTableElement.LineTripData { Nz = "21", NzVerze = "nova" };
+        var beze = new LineTableElement.LineTripData { Nz = "46" };
+        var jenPuvodni = new LineTableElement.LineTripData { NzPuvodni = "23" };
+
+        Assert.Equal(("38", "puvodni"), LineTableElement.NzVRadku(obe, 0, 2));
+        Assert.Equal(("37", "nova"), LineTableElement.NzVRadku(obe, 1, 2));
+        Assert.Null(LineTableElement.NzVRadku(jenNova, 0, 2));
+        Assert.Equal(("21", "nova"), LineTableElement.NzVRadku(jenNova, 1, 2));
+        Assert.Equal(("46", ""), LineTableElement.NzVRadku(beze, 1, 2));
+        Assert.Equal(("23", "puvodni"), LineTableElement.NzVRadku(jenPuvodni, 0, 2));
+        // Jeden řádek: spoj má jedinou značku a ta jde do něj, ať je která chce.
+        Assert.Equal(("23", "puvodni"), LineTableElement.NzVRadku(jenPuvodni, 0, 1));
+        Assert.Equal(("46", ""), LineTableElement.NzVRadku(beze, 0, 1));
+    }
+
     /// <summary>Značka platnosti jen v nové verzi má ve sloupci barvu nové verze, ostatní zůstávají.</summary>
     [Fact]
     public void ZnackaPlatnostiNoveVerzeMaSvouBarvu()
