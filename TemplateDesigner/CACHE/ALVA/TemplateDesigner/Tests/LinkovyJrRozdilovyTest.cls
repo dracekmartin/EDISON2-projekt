@@ -8,7 +8,7 @@ Class ALVA.TemplateDesigner.Tests.LinkovyJrRozdilovyTest Extends ALVA.EDTesting.
 Parameter AGENDA = "ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy";
 
 /// Stránka se třemi zastávkami a zadanými spoji:
-/// spoje(n) = "číslo|čas1,čas2,čas3[|skupina dnů[|značky platnosti oddělené ;[|negativní značka]]]"
+/// spoje(n) = "číslo|čas1,čas2,čas3[|skupina dnů[|značky platnosti oddělené ;[|negativní značka[|dopravci oddělení ;]]]]"
 /// (bez skupiny = 1). Skupiny dnů stránky jsou ty, které spoje používají. Zastávky mají pořadí
 /// i Tč podle pozice (1, 2, 3…), jako trasa linky; zastávka „X=101" má pásmo 101.
 ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C", smer As %String = "T") As %DynamicObject
@@ -34,6 +34,9 @@ ClassMethod Stranka(ByRef spoje, zastavky As %String = "A,B,C", smer As %String 
 		set platnost = [], znacky = $piece(spoje(i),"|",4)
 		for j=1:1:$length(znacky,";") { do:$piece(znacky,";",j)'="" platnost.%Push($piece(znacky,";",j)) }
 		do spoj.%Set("PLATNOST", platnost), spoj.%Set("NZ", $piece(spoje(i),"|",5))
+		set dopravci = [], texty = $piece(spoje(i),"|",6)
+		for j=1:1:$length(texty,";") { do:$piece(texty,";",j)'="" dopravci.%Push($piece(texty,";",j)) }
+		do spoj.%Set("DOPRAVCI", dopravci)
 		do arr.%Push(spoj)
 	}
 	do radky.%Set("SPOJE", arr)
@@ -349,7 +352,6 @@ Method TestPuvodniTcPoPridaneZastavce()
 	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,B,X,C"), ..Stranka(.puv))
 
 	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1>1,2>2,>3,3>4", "C měla 3, teď 4; X původní Tč nemá")
-	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "ZONY"), ",,,", "pásma beze změny se neposílají")
 }
 
 /// Zrušená zastávka má Tč jen v původním sloupci - nová verze ji nemá.
@@ -362,26 +364,48 @@ Method TestPuvodniTcZruseneZastavky()
 	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1>1,2>,3>2", "B jen v původním sloupci")
 }
 
-/// Bez posunu (náhrada zastávky na tomtéž místě) by původní sloupec jen opakoval nový, takže se
-/// neposílá a zrušená zastávka si své Tč nechá v jediném sloupci.
-Method TestBezPosunuTcPuvodniNeni()
+/// I bez posunu (náhrada zastávky na tomtéž místě) přijdou původní Tč - vzor FTL má původní sloupce
+/// vždy, když se porovnává (rozhodnutí Jan 17. 10.). Každá zastávka má Tč ve sloupci své verze.
+Method TestBezPosunuPuvodniTcPrijdou()
 {
 	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
 	set nov = 1, nov(1) = "1|6:00,6:11,6:20"
 	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A,X,C"), ..Stranka(.puv))
 
-	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1,2,2,3", "jen jeden sloupec Tč")
+	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1>1,2>,>2,3>3", "B jen původní, X jen nové")
 }
 
-/// Pásmo se porovnává samo za sebe: změněné pásmo na stejné trase pošle původní pásma, Tč ne.
-Method TestPuvodniPasmoJenKdyzSeLisi()
+/// Pásmo jde vedle Tč: změněné pásmo na stejné trase je vidět v původním sloupci.
+Method TestPuvodniPasmo()
 {
 	set puv = 1, puv(1) = "1|6:00,6:10,6:20"
 	set nov = 1, nov(1) = "1|6:00,6:10,6:20"
 	set vysledek = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov, "A=1,B=2,C=2"), ..Stranka(.puv, "A=1,B=1,C=2"))
 
 	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "ZONY"), "1>1,1>2,2>2", "B přešla do pásma 2")
-	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1,2,3", "Tč beze změny")
+	do $$$AssertEquals(..PrehledPuvodnich(vysledek, "TC"), "1>1,2>2,3>3", "Tč beze změny")
+}
+
+/// Spoj se stejnými časy, kterému se změnil dopravce, nese i dopravce původní verze (`B192f`) -
+/// na skutečných datech dopravce v jedné verzi chybí úplně (CB_CSADAD 0320167).
+Method TestDopravcePuvodniVerze()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20||||GW BUS"
+	set nov = 1, nov(1) = "1|6:00,6:10,6:20"
+	set spoj = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv)).%Get("rows").%Get("SPOJE").%Get(0)
+
+	do $$$AssertEquals(spoj.%Get("DOPRAVCI_PUVODNI").%ToJSON(), "[""GW BUS""]", "dopravce jen v původní verzi")
+	do $$$AssertEquals(spoj.%Get("VERZE"), "", "kvůli dopravci se spoj nezdvojí")
+}
+
+/// Stejní dopravci v obou verzích nic navíc nenesou.
+Method TestStejniDopravciBezPuvodnich()
+{
+	set puv = 1, puv(1) = "1|6:00,6:10,6:20||||A;B"
+	set nov = 1, nov(1) = "1|6:00,6:10,6:20||||A;B"
+	set spoj = $classmethod(..#AGENDA, "SlucStranky", ..Stranka(.nov), ..Stranka(.puv)).%Get("rows").%Get("SPOJE").%Get(0)
+
+	do $$$AssertNotTrue(spoj.%IsDefined("DOPRAVCI_PUVODNI"), "dopravci beze změny")
 }
 
 }

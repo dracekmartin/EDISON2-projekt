@@ -15,7 +15,7 @@
     {
       "id": "00b38d7f-352c-404d-9ed2-a1032678573c",
       "name": "Hlavička",
-      "designerHeight": 17,
+      "designerHeight": 14.2,
       "printBehavior": "OnEveryPage",
       "overflowBehavior": "KeepTogether",
       "role": "Body",
@@ -198,27 +198,6 @@
         },
         {
           "type": "TextElement",
-          "text": "Přepravu zajišťuje :   {POPIS_DOPRAVCE}",
-          "style": {
-            "fontSize": 6
-          },
-          "wordWrap": false,
-          "id": "da29eebf-6190-4cee-b7c3-58bd1805f09d",
-          "x": 0.5,
-          "y": 14.2,
-          "width": 286.5,
-          "height": 3.2,
-          "zIndex": 0,
-          "isLocked": false,
-          "backgroundColor": "#00FFFFFF",
-          "borderColor": "#00FFFFFF",
-          "borderWidth": 0,
-          "cornerStyle": "None",
-          "cornerSize": 0,
-          "rotation": 0
-        },
-        {
-          "type": "TextElement",
           "text": "{POROVNANI_HLASENI}",
           "style": {
             "fontSize": 7,
@@ -232,6 +211,131 @@
           "y": 0.3,
           "width": 160,
           "height": 3.6,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "d0cada09-a38b-443e-ab6f-c8765b61d345",
+      "name": "Dopravci",
+      "designerHeight": null,
+      "printBehavior": "OnEveryPage",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "Přepravu zajišťuje :",
+          "style": {
+            "fontSize": 6
+          },
+          "wordWrap": false,
+          "id": "b1c5e572-a97a-438f-893d-d6384845be5f",
+          "x": 0.5,
+          "y": 0,
+          "width": 23,
+          "height": 3.2,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POPIS_DOPRAVCE_OBE_VERZE}",
+          "style": {
+            "fontSize": 6
+          },
+          "wordWrap": true,
+          "visibilityExpression": "{POPIS_DOPRAVCE_OBE_VERZE}",
+          "id": "ba93ecef-b628-4e08-b8f3-fddc90f1fad3",
+          "x": 24,
+          "y": 0,
+          "width": 263,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "3128aa28-a152-40bb-b9fa-2062838188c5",
+      "name": "Dopravci původní verze",
+      "designerHeight": null,
+      "printBehavior": "OnEveryPage",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "visibilityExpression": "{POPIS_DOPRAVCE_PUVODNI}",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "{POPIS_DOPRAVCE_PUVODNI}",
+          "style": {
+            "fontSize": 6,
+            "strikethrough": true
+          },
+          "wordWrap": true,
+          "id": "80578e76-658d-4dd4-9869-00fe05128c36",
+          "x": 24,
+          "y": 0,
+          "width": 263,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "cornerStyle": "None",
+          "cornerSize": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "1f3d9120-ba87-4081-b2aa-849f3cd78689",
+      "name": "Dopravci nové verze",
+      "designerHeight": null,
+      "printBehavior": "OnEveryPage",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "visibilityExpression": "{POPIS_DOPRAVCE_NOVA}",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "{POPIS_DOPRAVCE_NOVA}",
+          "style": {
+            "fontSize": 6,
+            "textColor": "#FF009600"
+          },
+          "wordWrap": true,
+          "id": "568d89bb-1c63-4549-ad19-f3397debc8f4",
+          "x": 24,
+          "y": 0,
+          "width": 263,
           "zIndex": 0,
           "isLocked": false,
           "backgroundColor": "#00FFFFFF",
@@ -262,20 +366,15 @@
           "columns": [
             {
               "key": "OriginalZone",
-              "header": "TPZ",
-              "width": 5,
+              "header": "Pův.TPZ",
+              "width": 7,
               "visible": true,
-              "alignment": "Center",
-              "style": {
-                "header": {
-                  "backgroundColor": "#FFF08080"
-                }
-              }
+              "alignment": "Center"
             },
             {
               "key": "Zone",
-              "header": "TPZ",
-              "width": 5,
+              "header": "Nové TPZ",
+              "width": 7.5,
               "visible": true,
               "alignment": "Center"
             },
@@ -288,20 +387,15 @@
             },
             {
               "key": "OriginalTc",
-              "header": "Tč",
-              "width": 4,
+              "header": "Pův.Tč",
+              "width": 6,
               "visible": true,
-              "alignment": "Center",
-              "style": {
-                "header": {
-                  "backgroundColor": "#FFF08080"
-                }
-              }
+              "alignment": "Center"
             },
             {
               "key": "Tc",
-              "header": "Tč",
-              "width": 4,
+              "header": "Nové Tč",
+              "width": 6.5,
               "visible": true,
               "alignment": "Center"
             },

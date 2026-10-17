@@ -2097,3 +2097,23 @@ zastávky jen v jedné verzi a dopravce obou verzí jedné dvojice vypíše `Pre
 - **Neřešeno: dvojici může rozdělit hranice bloku.** Když se spoje nevejdou na šířku a tabulka se
   láme do bloků pod sebou, může původní podoba skončit na konci bloku a nová začít další blok.
   Na výtiscích 16. 10. se to nestalo; ověřit na lince s víc změněnými spoji.
+
+### 19.6 Po `B192f` (17. 10.) - co proti vzoru zbývá
+
+Kroky `B192a-f` jsou hotové. Vzor (PDF od zákazníka, v repu nejsou) má navíc, nebo jinak:
+
+- **Dávka v patičce:** „Dávka: ~~ARRIVA_MORAVA/5454~~ ARRIVA_MORAVA/5982". Naše šablona dávku
+  netiskne vůbec.
+- **Km spoje pod tabulkou** s původní hodnotou přeškrtnutou (FTL spoj 17 „24 23"). Řádek km spojů
+  linkový JŘ nemá vůbec (§19.3).
+- **Pořadí dopravců:** vzor drží pořadí původní verze a nové přidává na konec, my tiskneme
+  společné, pak původní, pak nové (rozhodnutí Jan 17. 10.). Když žádný dopravce není v obou
+  verzích, stojí „Přepravu zajišťuje" na řádku samo a první dopravce až pod ním; vzor ho má
+  na řádku s popiskem.
+- **Dopravci za směr, ne za stránku:** sekce s nimi mají výšku podle obsahu a ta se počítá před
+  stránkováním, takže text za stránku by mohl přetéct (u ostatních šablon `POPIS_DOPRAVCE` za
+  stránku, #9417). U směru přes víc stránek se vypíšou spoje celého směru.
+- **Světlé barvy podbarvení** (`#FFF08080`, `#FF92D36E`) jsem se vzorem srovnal jen pohledem,
+  hodnoty ze vzoru nejsou změřené.
+- **Data:** na dev serveru se dopravce mezi verzemi liší jen tím, že v jedné chybí úplně
+  (0320167, 0132400). Dopravce se změněnými spoji (vzor ARRIVA) kryje jen test.

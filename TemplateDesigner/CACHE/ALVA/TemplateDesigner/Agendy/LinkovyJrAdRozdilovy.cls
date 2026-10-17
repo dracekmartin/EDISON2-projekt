@@ -25,7 +25,8 @@ Include GENERAL
 ///   rows.SPOJE[] se stejnými časy a jinými značkami (`B192c`) - jeden sloupec bez VERZE, navíc:
 ///                 PLATNOST obou verzí (původní na konci), PLATNOST_VERZE ["" / "nova" / "puvodni"]
 ///                 zarovnané na PLATNOST, NZ_PUVODNI (negativní značka původní verze, liší-li se)
-///                 a NZ_VERZE ("nova", když NZ má jen nová verze)
+///                 a NZ_VERZE ("nova", když NZ má jen nová verze); DOPRAVCI_PUVODNI (`B192f`) =
+///                 dopravci původní verze, když se liší od DOPRAVCI
 /// Barvu rozdílu určuje šablona (prvek Tabulka spojů), data říkají jen, která buňka se liší.
 /// Do 16. 10. se zrušené spoje jen vypsaly poznámkou „Zrušené spoje: …" (druh 10) - ta už nevzniká,
 /// ZRUSENE_SPOJE zůstává.
@@ -33,9 +34,8 @@ Include GENERAL
 ///   rows.ZASTAVKY[]: zastávky obou verzí jedním seznamem (`B192d`), VERZE "puvodni" / "nova"
 ///                 u zastávky jen v jedné verzi; PORADI přečíslované od 1, přípoje spojů
 ///                 přečíslované podle verze spoje; CASY a ZNACKY spojů zarovnané na tenhle seznam
-///                 - TC_PUVODNI / ZONY_PUVODNI (`B192e`): Tč a pásmo původní verze, jen když se
-///                   u některé zastávky obou verzí liší; zastávka jen v původní verzi má pak TC
-///                   a ZONY prázdné (nová verze ji nemá)
+///                 - TC_PUVODNI / ZONY_PUVODNI (`B192e`): Tč a pásmo původní verze u každé
+///                   zastávky; zastávka jen v původní verzi má TC a ZONY prázdné (nová verze ji nemá)
 ///
 /// Když porovnání nejde (srovnávací skupina linku nemá), vytiskne se vybraná verze a důvod nese
 /// POROVNANI_HLASENI - chyba by místo náhledu jen překážela. Do 16. 10. tak skončila i jiná trasa.
@@ -297,7 +297,7 @@ ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %D
         }
         s spojPuvodni = spojePuvodni.%Get(indexPuvodnich(klic))
         s rozdily = ..Rozdily(spoj, spojPuvodni, .pocet, .mapa)
-        i 'pocet d ..ZnackyVerzi(spoj, spojPuvodni), ..DoplnPuvodni(spoj, spojPuvodni, .mapa)
+        i 'pocet d ..ZnackyVerzi(spoj, spojPuvodni), ..DoplnPuvodni(spoj, spojPuvodni, .mapa), ..DopravciVerzi(spoj, spojPuvodni)
         i pocet {
             d spojPuvodni.%Set("VERZE", "puvodni")
             d spojPuvodni.%Set("ROZDILY", rozdily)
@@ -440,6 +440,18 @@ ClassMethod ZnackyVerzi(spoj As %DynamicObject, puvodni As %DynamicObject)
     q:nzNova=nzStara
     d:nzStara'="" spoj.%Set("NZ_PUVODNI", nzStara)
     d:nzNova'="" spoj.%Set("NZ_VERZE", "nova")
+}
+
+/// Spoj v jednom sloupci, kterému se změnil dopravce (`B192f`): nese i dopravce původní verze,
+/// aby hlavička porovnala dopravce obou verzí. Na skutečných datech dopravce v jedné verzi
+/// obvykle chybí úplně (CB_CSADAD 0320167 a 0132400, skupina 141 proti 127).
+ClassMethod DopravciVerzi(spoj As %DynamicObject, puvodni As %DynamicObject)
+{
+    s nove = spoj.%Get("DOPRAVCI"), stare = puvodni.%Get("DOPRAVCI")
+    i '$isobject(stare) s stare = ##class(%DynamicArray).%New()
+    s textNove = $s($isobject(nove): nove.%ToJSON(), 1: "[]")
+    q:textNove=stare.%ToJSON()
+    d spoj.%Set("DOPRAVCI_PUVODNI", stare)
 }
 
 /// Poznámky obou verzí do legendy (`B192b`). Poznámka stejná v obou zůstane jednou bez verze.
@@ -598,20 +610,12 @@ ClassMethod SlucZastavky(radkyNove As %DynamicObject, radkyPuvodni As %DynamicOb
     d radkyNove.%Set("ZASTAVKY", vysledek)
 }
 
-/// Doplní sloučeným zastávkám původní Tč nebo pásmo (`pole` → pole_PUVODNI, `B192e`), jen když se
-/// u některé zastávky, kterou mají obě verze, liší - jinak by původní sloupec opakoval nový.
-/// Přidaná zastávka posune Tč všech dalších (vzor ARRIVA). Zastávka jen v původní verzi pak má
-/// hodnotu jen v původním sloupci, protože nová verze ji nemá.
+/// Doplní sloučeným zastávkám původní Tč nebo pásmo (`pole` → pole_PUVODNI, `B192e`). Přidaná
+/// zastávka posune Tč všech dalších (vzor ARRIVA). Posílá se vždy, i beze změny - vzor FTL má
+/// původní sloupce i u náhrady zastávky bez posunu (rozhodnutí Jan 17. 10.). Zastávka jen
+/// v původní verzi má hodnotu jen v původním sloupci, protože nová verze ji nemá.
 ClassMethod PuvodniHodnoty(vysledek As %DynamicArray, stare As %DynamicArray, pole As %String, ByRef mapa)
 {
-    s zmena = 0
-    f k=0:1:mapa("K")-1 {
-        s i = mapa("o", k)
-        continue:(i = "")||(mapa("n", k) = "")
-        i stare.%Get(i).%Get(pole) '= vysledek.%Get(k).%Get(pole) { s zmena = 1 q }
-    }
-    q:'zmena
-
     f k=0:1:mapa("K")-1 {
         s radek = vysledek.%Get(k), i = mapa("o", k)
         d radek.%Set(pole_"_PUVODNI", $s(i '= "": stare.%Get(i).%Get(pole), 1: ""))

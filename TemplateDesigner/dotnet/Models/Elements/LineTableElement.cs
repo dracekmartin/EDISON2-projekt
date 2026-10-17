@@ -518,6 +518,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         public List<string> PlatnostVerze = [];
         /// <summary>Dtto: negativní značka původní verze, když se liší od <see cref="Nz"/>.</summary>
         public string NzPuvodni = "";
+        /// <summary>Dtto: dopravci původní verze, když se liší od <see cref="Dopravci"/> (`B192f`);
+        /// null = stejní.</summary>
+        public List<string>? DopravciPuvodni;
         /// <summary>Dtto: „nova", když <see cref="Nz"/> má jen nová verze.</summary>
         public string NzVerze = "";
     }
@@ -600,6 +603,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PlatnostVerze = ParseStringArray(row.GetValue("PLATNOST_VERZE")),
             NzPuvodni = row.GetString("NZ_PUVODNI"),
             NzVerze = row.GetString("NZ_VERZE"),
+            DopravciPuvodni = row.GetValue("DOPRAVCI_PUVODNI") is { } puvodni ? ParseStringArray(puvodni) : null,
         })];
 
         RozdelPodleSmeru();
@@ -2046,6 +2050,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return znacky;
     }
 
+    /// <summary>Všechny spoje dat bez dělení do bloků - levnější než <see cref="SpojeVUseku"/>, když
+    /// nezáleží na tom, kde v tabulce stojí.</summary>
+    internal List<LineTripData> VsechnySpoje(DataContext data)
+    {
+        EnsureParsed(data);
+        return _cachedTrips!;
+    }
+
     /// <summary>Spoje částí tabulky, které zasahují do úseku prvku <paramref name="odMm"/>-<paramref name="doMm"/>
     /// - tedy spoje, které jsou na téhle stránce vidět.</summary>
     internal List<LineTripData> SpojeVUseku(DataContext? data, float odMm, float doMm)
@@ -2083,22 +2095,66 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     {
         if (spoje.Count == 0 || spoje.All(s => s.Dopravci.Count == 0)) return null;
 
-        var poradi = spoje.Select(s => s.CisloSpoje).Distinct()
-            .OrderBy(c => int.TryParse(c, out int n) ? n : int.MaxValue).ThenBy(c => c, StringComparer.Ordinal)
-            .Select((c, i) => (c, i)).ToDictionary(x => x.c, x => x.i);
+        var cisla = CislaSpojuPoPoradi(spoje);
+        var poDopravcich = PoDopravcich(spoje.Select(s => (s.CisloSpoje, s.Dopravci)), cisla);
+        if (poDopravcich.Count == 1) return poDopravcich[0].Nazev;
+        return string.Join(", ", poDopravcich.Select(d => RadekDopravce(d, cisla)));
+    }
+
+    /// <summary>
+    /// Dopravci rozdílového JŘ podle verzí (`B192f`): řádky stejné v obou verzích, jen v původní
+    /// a jen v nové, každý řádek jeden dopravce. Null = spoje dopravce nenesou.
+    /// </summary>
+    /// <remarks>
+    /// Řádek je text jako v <c>POPIS_DOPRAVCE</c>, takže dopravce, kterému se změnily jen spoje,
+    /// je dvakrát - původní řádek přeškrtnutý a nový (vzor z CIS JŘ, ARRIVA provozovna Olomouc).
+    /// Obě verze čtou čísla spojů ze společného pořadí, aby týž dopravce se stejnými spoji dal
+    /// v obou týž text. Čísla spojů jsou u všech řádků, jakmile stránku jede víc dopravců
+    /// v kterékoli verzi - jinak by se dopravce lišil jen tím, že u něj v jedné verzi čísla chybí.
+    /// Bez porovnání (spoje verzi nenesou) jsou všichni dopravci v obou verzích.
+    /// </remarks>
+    internal static (string ObeVerze, string Puvodni, string Nova)? DopravciPodleVerzi(IReadOnlyList<LineTripData> spoje)
+    {
+        var puvodni = spoje.Where(s => s.Verze != "nova")
+            .Select(s => (s.CisloSpoje, Dopravci: s.Verze == "" ? s.DopravciPuvodni ?? s.Dopravci : s.Dopravci))
+            .ToList();
+        var nova = spoje.Where(s => s.Verze != "puvodni").Select(s => (s.CisloSpoje, s.Dopravci)).ToList();
+        var vsichni = puvodni.Concat(nova).SelectMany(s => s.Dopravci).Distinct().ToList();
+        if (vsichni.Count == 0) return null;
+
+        var cisla = CislaSpojuPoPoradi(spoje);
+        List<string> Radky(IEnumerable<(string, List<string>)> verze) =>
+            [.. PoDopravcich(verze, cisla).Select(d => vsichni.Count > 1 ? RadekDopravce(d, cisla) : d.Nazev)];
+        var radkyPuvodni = Radky(puvodni);
+        var radkyNova = Radky(nova);
+        return (string.Join("\n", radkyPuvodni.Where(radkyNova.Contains)),
+                string.Join("\n", radkyPuvodni.Where(r => !radkyNova.Contains(r))),
+                string.Join("\n", radkyNova.Where(r => !radkyPuvodni.Contains(r))));
+    }
+
+    /// <summary>Čísla spojů ve vzestupném pořadí - podle něj se slučují řady spojů.</summary>
+    private static List<string> CislaSpojuPoPoradi(IEnumerable<LineTripData> spoje) =>
+        [.. spoje.Select(s => s.CisloSpoje).Distinct()
+            .OrderBy(c => int.TryParse(c, out int n) ? n : int.MaxValue).ThenBy(c => c, StringComparer.Ordinal)];
+
+    /// <summary>Dopravci v pořadí prvního výskytu, každý s pozicemi svých spojů v <paramref name="cisla"/>.</summary>
+    private static List<(string Nazev, SortedSet<int> Pozice)> PoDopravcich(
+        IEnumerable<(string Cislo, List<string> Dopravci)> spoje, List<string> cisla)
+    {
+        var poradi = cisla.Select((c, i) => (c, i)).ToDictionary(x => x.c, x => x.i);
         var poDopravcich = new List<(string Nazev, SortedSet<int> Pozice)>();
-        foreach (var spoj in spoje)
-            foreach (var nazev in spoj.Dopravci)
+        foreach (var (cislo, dopravci) in spoje)
+            foreach (var nazev in dopravci)
             {
                 int k = poDopravcich.FindIndex(d => d.Nazev == nazev);
                 if (k < 0) { poDopravcich.Add((nazev, [])); k = poDopravcich.Count - 1; }
-                poDopravcich[k].Pozice.Add(poradi[spoj.CisloSpoje]);
+                poDopravcich[k].Pozice.Add(poradi[cislo]);
             }
-
-        if (poDopravcich.Count == 1) return poDopravcich[0].Nazev;
-        var cisla = poradi.OrderBy(x => x.Value).Select(x => x.Key).ToList();
-        return string.Join(", ", poDopravcich.Select(d => $"{d.Nazev} (spoje {Rady(d.Pozice, cisla)})"));
+        return poDopravcich;
     }
+
+    private static string RadekDopravce((string Nazev, SortedSet<int> Pozice) dopravce, List<string> cisla) =>
+        $"{dopravce.Nazev} (spoje {Rady(dopravce.Pozice, cisla)})";
 
     /// <summary>Jen názvy dopravců bez čísel spojů - pro list bez spojů (přetečené poznámky).
     /// Null = spoje dopravce nenesou.</summary>

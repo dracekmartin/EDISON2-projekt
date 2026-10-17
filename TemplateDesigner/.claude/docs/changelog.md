@@ -1,5 +1,34 @@
 ﻿# Changelog
 
+## 2026-10-17 - 🔀 rozdílový linkový JŘ: dopravci podle verze (`B192f`)
+
+Hlavička tiskla jen dopravce nové verze jedním řádkem. Teď je pod „Přepravu zajišťuje" každý
+dopravce na vlastním řádku jako ve vzoru z CIS JŘ: dopravci v obou verzích černě, jen v původní
+přeškrtnutí, jen v nové zeleně. Dopravce, kterému se změnily spoje, je dvakrát: původní řádek
+přeškrtnutý, nový zeleně (vzor ARRIVA, provozovna Olomouc). Pořadí se od vzoru liší - nejdřív
+společní, pak původní, pak noví (rozhodnutí Jan 17. 10.). Spoje se vypisují za celý směr, ne
+za stránku jako v ostatních šablonách: výška sekcí se počítá před stránkováním a text za
+stránku by mohl přetéct ze své sekce. Server posílá u spoje v jednom sloupci navíc
+`DOPRAVCI_PUVODNI`, když se dopravce liší (jen přidaný klíč). Šablona má tři nové sekce
+s výškou podle obsahu.
+
+Ve stejném kroku podle vzoru FTL 780400: sloupce původního pásma a Tč jsou při porovnání vždy,
+i bez posunu Tč, se záhlavím „Pův.TPZ / Nové TPZ / Pův.Tč / Nové Tč" bez barvy (rozhodnutí
+Jan 17. 10., mění `B192e` z 16. 10.).
+
+Ověřeno výtiskem CB_CSADAD 0320167 a 0132400 (skupina 141 proti 127: GW BUS jen v původní,
+Jan Kukla jen v nové), 0380724 a 0380730 (306 a 308 proti 2) a 380742 bez porovnání. Testy
+`DopravciStrankyTests` (verze, vzor ARRIVA, výška sekce), `LinkovyJrRozdilovyTest` (dopravci,
+původní Tč vždy), ověřené mutací. Na datech dev serveru se dopravce liší jen tím, že v jedné
+verzi chybí úplně.
+
+## 2026-10-17 (2) - 🐛 prázdná výška sekce přežije uložení šablony
+
+Sekce s výškou jen podle obsahu se po uložení a znovuotevření šablony stala 30 mm vysoká:
+serializer prázdnou hodnotu vynechával a model má výchozí výšku 30 mm. Na výtisku pak pod
+sekcí zůstala mezera. Prázdná výška se teď do šablony zapisuje. Test
+`PrazdnaVyskaSekce_PrezijeUlozeni`.
+
 ## 2026-10-16 (7) - 🔀 rozdílový linkový JŘ: původní pásmo a Tč (`B192e`)
 
 Po přidané zastávce se Tč všech dalších posunou a do 16. 10. bylo vidět jen nové. Teď tabulka

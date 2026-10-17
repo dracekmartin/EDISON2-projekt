@@ -121,6 +121,114 @@ public class DopravciStrankyTests
         Assert.Equal("A, B", texty[1]);
     }
 
+    // ─── Rozdílový JŘ: dopravci podle verzí (`B192f`) ──────────────────────────
+
+    private static LineTableElement.LineTripData SpojVerze(string cislo, string verze, string[] dopravci,
+        string[]? puvodni = null) =>
+        new() { CisloSpoje = cislo, Verze = verze, Dopravci = [.. dopravci], DopravciPuvodni = puvodni?.ToList() };
+
+    [Fact]
+    public void PodleVerzi_BezPorovnani_VsichniVObouVerzich()
+    {
+        Assert.Equal(("A", "", ""),
+            LineTableElement.DopravciPodleVerzi([Spoj("1", "A"), Spoj("3", "A")]));
+    }
+
+    /// <summary>Na skutečných datech dopravce v jedné verzi chybí úplně (CB_CSADAD 0320167: GW BUS
+    /// jen v původní, 0132400: Jan Kukla jen v nové).</summary>
+    [Fact]
+    public void PodleVerzi_DopravceJenVJedneVerzi()
+    {
+        Assert.Equal(("", "GW", ""),
+            LineTableElement.DopravciPodleVerzi([SpojVerze("1", "", [], puvodni: ["GW"])]));
+        Assert.Equal(("", "", "Kukla"),
+            LineTableElement.DopravciPodleVerzi([SpojVerze("1", "", ["Kukla"], puvodni: [])]));
+    }
+
+    /// <summary>
+    /// Vzor z CIS JŘ (ARRIVA 950904): dopravce, kterému ubyl zrušený spoj, je dvakrát - původní
+    /// řádek se všemi spoji a nový bez zrušeného. Ostatní dopravci jsou v obou verzích jednou.
+    /// </summary>
+    [Fact]
+    public void PodleVerzi_DopravceSJinymiSpoji_JeVKazdeVerzi()
+    {
+        var spoje = new[]
+        {
+            SpojVerze("1", "", ["Jeseník"]),
+            SpojVerze("13", "puvodni", ["Olomouc"]), SpojVerze("13", "nova", ["Olomouc"]),
+            SpojVerze("23", "", ["Přerov"]),
+            SpojVerze("527", "puvodni", ["Olomouc"]),
+            SpojVerze("627", "", ["Olomouc"]),
+        };
+
+        Assert.Equal(("Jeseník (spoje 1)\nPřerov (spoje 23)", "Olomouc (spoje 13, 527, 627)", "Olomouc (spoje 13, 627)"),
+            LineTableElement.DopravciPodleVerzi(spoje));
+    }
+
+    [Fact]
+    public void PodleVerzi_SpojeBezDopravcu_Nic()
+    {
+        Assert.Null(LineTableElement.DopravciPodleVerzi([Spoj("1"), Spoj("3")]));
+    }
+
+    /// <summary>
+    /// Sekce s dopravci podle verzí má výšku podle obsahu a ta se počítá před stránkováním, kdy
+    /// text za stránku ještě neexistuje. Bez textu za celá data by měla nulovou výšku a dopravce
+    /// by se na stránce vytiskl přes tabulku.
+    /// </summary>
+    [Fact]
+    public void SekceDopravcuPodleVerziMaVyskuPodleRadku()
+    {
+        var jeden = UmistiDopravce("GW BUS");
+        var dva = UmistiDopravce("GW BUS", "ČSAD");
+
+        Assert.Equal("GW BUS (spoje 1)\nČSAD (spoje 3)", dva.Dopravci.Data!.GetValue(PageLayoutEngine.DopravciPuvodniKlic)?.ToString());
+        Assert.True(dva.Dopravci.Height > jeden.Dopravci.Height * 1.5f,
+            $"dva řádky dopravců mají výšku {dva.Dopravci.Height} mm, jeden {jeden.Dopravci.Height} mm");
+        Assert.True(dva.Tabulka.Y >= dva.Dopravci.Y + dva.Dopravci.Height - 0.01f, "tabulka začíná pod dopravci");
+    }
+
+    /// <summary>Sazba linky, jejíž spoje mají každý jiného dopravce jen v původní verzi.</summary>
+    private static (PlacedSection Dopravci, PlacedSection Tabulka) UmistiDopravce(params string[] dopravci)
+    {
+        var zastavky = Enumerable.Range(1, 3)
+            .Select(i => RenderSnapshot.Row(("ID", i.ToString()), ("TYP", "zastavka"),
+                                            ("NAZEV_ZASTAVKY", $"Zastávka {i}"), ("PORADI", i.ToString())))
+            .ToArray();
+        var data = RenderSnapshot.Data(
+            ("ZASTAVKY", zastavky),
+            ("SPOJE", [.. dopravci.Select((d, i) => RenderSnapshot.Row(("CISLO_SPOJE", (i * 2 + 1).ToString()),
+                ("SKUPINA", "1"), ("DOPRAVCI", new JsonArray()), ("DOPRAVCI_PUVODNI", new JsonArray(d))))]),
+            ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1"))]));
+
+        var tabulka = ElementRenderFixtures.LineTable();
+        tabulka.X = 0; tabulka.Y = 0; tabulka.Height = null; tabulka.Width = 190;
+        var sablona = new Template
+        {
+            PageSize = new PageSize { Width = 210, Height = 160 },
+            Sections =
+            [
+                new Section
+                {
+                    Name = "Dopravci původní verze", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+                    DesignerHeight = null,
+                    Elements = [new TextElement { X = 0, Y = 0, Width = 190, Height = null, WordWrap = true,
+                        Text = "{" + PageLayoutEngine.DopravciPuvodniKlic + "}" }]
+                },
+                new Section
+                {
+                    Name = "Jízdní řád", PrintBehavior = SectionPrintBehavior.Once,
+                    OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+                    DesignerHeight = null, Elements = [tabulka]
+                },
+            ]
+        };
+
+        var stranka = new PageLayoutEngine(new SkiaHeightCalculator()).Layout(sablona, data).Pages[0];
+        return (stranka.Sections.Single(s => s.Source.Name == "Dopravci původní verze"),
+                stranka.Sections.Single(s => s.Source.Name == "Jízdní řád"));
+    }
+
     /// <summary>Spoj ve dvou skupinách dnů je v tabulce dvakrát - číslo se nesmí zopakovat.</summary>
     [Fact]
     public void TentyzSpojDvakrat_CisloJednou()

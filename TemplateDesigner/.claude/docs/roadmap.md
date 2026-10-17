@@ -4,25 +4,13 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** rozdílový linkový JŘ (`B192`) po krocích, shora dolů (Jan 16. 10.). Linkový
-> JŘ MHD (`B191`) zatím stojí: `B191d` čeká na vizuální zkoušku a potvrzení návrhu (Jan).
+> **Nejblíž na řadě:** rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; spuštění z hlavního okna
+> (výběr dvou verzí) jde cestou `B190`, mezery proti vzoru jsou v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
+> Linkový JŘ MHD (`B191`) zatím stojí: `B191d` čeká na vizuální zkoušku a potvrzení návrhu (Jan).
 > Ostatní je v Backlogu - `B190` tisk z modulu JŘ čeká na kolegy.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
-
----
-
-## 🎯 Priority - rozdílový linkový JŘ (`B192`, rozhodnutí Jan 16. 10.)
-
-Pevný výstup, ne agenda pro návrháře: uživatel v hlavním okně vybere dvě verze linky a dostane PDF
-ve tvaru vzoru z CIS JŘ. Šablona i logika porovnání jsou naše, agenda zůstává skrytá a návrhář
-slouží jen k testování. Výběr dvou linek v hlavním okně jde cestou `B190`. Každý krok se ověří na
-skutečných linkách. Vzor, pravidla, mezery a testovací linky: [`§19`](linkovy-knizni-jr-implementace-analyza.md).
-
-1. **`B192f` Dopravci podle verze** [S-M]. Platnost hotová 16. 10. Zbývá řádek dopravců: každý
-   na svém řádku se spoji, jen v původní verzi přeškrtnutý, jen v nové zeleně. Data mají jen
-   dopravce chybějícího v jedné verzi (`§19.4`). Kdyžtak srovnat i světlé barvy se vzorem.
 
 ---
 
@@ -72,6 +60,7 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
   (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch
   kontrakt už je) a render oddělit fasádou. **Před začátkem rozhodnout**, odkud se bere výchozí
   šablona a jak ji uživatel volí. Podklad [`R4/R7`](architektonicka-rozhodnuti-agendy.md).
+  Touhle cestou se spustí i rozdílový linkový JŘ (`B192`, hotový): uživatel vybere dvě verze linky.
 
 - **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
   dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),

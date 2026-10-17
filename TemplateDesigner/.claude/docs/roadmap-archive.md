@@ -1,11 +1,18 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B192f` Rozdílový JŘ: dopravci podle verze (hotovo 17. 10. 2026)
+
+Poslední krok rozdílového linkového JŘ podle vzoru z CIS JŘ (platnost v hlavičce hotová 16. 10.).
+Dopravci po řádcích: společní černě, jen v původní verzi přeškrtnutí, jen v nové zeleně; spoje
+za celý směr. Ověřeno výtiskem CB_CSADAD 0320167 a 0132400 (skupina 141 proti 127). Detail
+changelog 2026-10-17.
+
 ## `B192e` Rozdílový JŘ: původní pásmo a Tč (hotovo 16. 10. 2026)
 
-Když se verze liší v Tč (po přidané zastávce) nebo v pásmu, tiskne tabulka vedle Zóny a Tč i sloupec
-původní verze; odlišné buňky mají barvu své verze. Beze změny se původní sloupec netiskne. Ověřeno
+Vedle pásma a Tč tiskne tabulka i sloupec původní verze; odlišné buňky mají barvu své verze.
+Od 17. 10. jsou sloupce při porovnání vždy, se záhlavím „Pův. / Nové" (vzor FTL). Ověřeno
 výtiskem CB_CSADAD 0380724 (skupina 306 proti 2) proti samostatnému výtisku skupiny 2. Detail
-changelog 2026-10-16 (7).
+changelog 2026-10-16 (7) a 2026-10-17.
 
 ## `B192d` Rozdílový JŘ: změna trasy (hotovo 16. 10. 2026)
 

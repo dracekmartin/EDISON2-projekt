@@ -62,6 +62,7 @@ public class PageLayoutEngine
         NastavZmenseniLegend(legendy, 1f);
         NastavBezMezer(ZmensitelnePrvky(template), false);
         NastavZmensovatISirky(ZmensitelnePrvky(template), false);
+        data = SDopravciPodleVerzi(template, data);
         var vysledek = LayoutSeZmensenimTabulky(template, data);
 
         int cil = CilStran(data);
@@ -228,6 +229,14 @@ public class PageLayoutEngine
     /// <summary>Pole dopravců linkového JŘ, které sazba přepíše textem za spoje na stránce.</summary>
     public const string PopisDopravceKlic = "POPIS_DOPRAVCE";
 
+    /// <summary>Dopravci rozdílového JŘ po verzích (`B192f`), jeden na řádek: stejní v obou verzích,
+    /// jen v původní a jen v nové. Šablona je tiskne pod sebou, každou skupinu svým stylem.</summary>
+    public const string DopravciObeVerzeKlic = "POPIS_DOPRAVCE_OBE_VERZE";
+    /// <inheritdoc cref="DopravciObeVerzeKlic"/>
+    public const string DopravciPuvodniKlic = "POPIS_DOPRAVCE_PUVODNI";
+    /// <inheritdoc cref="DopravciObeVerzeKlic"/>
+    public const string DopravciNovaKlic = "POPIS_DOPRAVCE_NOVA";
+
     /// <summary>
     /// Doplní do dat stránky značky, které se na ní vyskytují - z prvků, které se dělí na díly.
     /// Bez takového prvku vrací data beze změny, takže se nic nefiltruje.
@@ -278,6 +287,37 @@ public class PageLayoutEngine
         && template.Sections.SelectMany(s => s.Elements).OfType<LineTableElement>().FirstOrDefault() is { } tabulka
             ? LineTableElement.JmenaDopravcu(tabulka.SpojeVUseku(data, 0f, float.MaxValue))
             : null;
+
+    /// <summary>
+    /// Dopravci po verzích (`B192f`) za celá data, tedy za směr - ne za stránku jako
+    /// <see cref="PopisDopravceKlic"/>.
+    /// </summary>
+    /// <remarks>
+    /// Sekce s nimi mají výšku podle obsahu a ta se počítá jednou před stránkováním. Text za
+    /// stránku by se mohl rozložit do skupin jinak než za celá data (dopravce s jinými spoji jen
+    /// na jiné stránce je na téhle společný) a přetéct ze své sekce - proto jedny hodnoty pro
+    /// výšku i tisk. Jen pro šablonu, která je tiskne: nová data jinak zbytečně zahodí
+    /// rozparsovanou tabulku. Když spoje dopravce nenesou, jsou v obou verzích dopravci ze
+    /// serveru - jinak by se pole vytisklo doslova.
+    /// </remarks>
+    private static DataContext? SDopravciPodleVerzi(Template template, DataContext? data)
+    {
+        if (data is null || !template.Sections.SelectMany(s => s.Elements).OfType<TextElement>()
+                .Any(t => t.Text.Contains(DopravciObeVerzeKlic) || t.Text.Contains(DopravciPuvodniKlic)
+                          || t.Text.Contains(DopravciNovaKlic)))
+            return data;
+        var tabulka = template.Sections.SelectMany(s => s.Elements).OfType<LineTableElement>().FirstOrDefault();
+        var verze = (tabulka is null ? null : LineTableElement.DopravciPodleVerzi(tabulka.VsechnySpoje(data)))
+                    ?? (data.GetString(PopisDopravceKlic), "", "");
+        return data.WithExtraValues(HodnotyDopravcu(verze));
+    }
+
+    private static Dictionary<string, object?> HodnotyDopravcu((string ObeVerze, string Puvodni, string Nova) verze) => new()
+    {
+        [DopravciObeVerzeKlic] = verze.ObeVerze,
+        [DopravciPuvodniKlic] = verze.Puvodni,
+        [DopravciNovaKlic] = verze.Nova,
+    };
 
     /// <summary>Sekce, ve kterých leží zmenšitelná tabulka.</summary>
     private static HashSet<Guid> SekceZmensitelnych(Template template) =>
