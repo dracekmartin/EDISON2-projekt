@@ -56,6 +56,21 @@ public class TemplateSerializerRoundTripTests
         Assert.Equal(StripModifiedAt(json1), StripModifiedAt(json2));
     }
 
+    /// <summary>
+    /// Sekce s prázdnou výškou (jen podle obsahu) ji musí mít i po uložení. Serializer null
+    /// vynechává a model má výchozí výšku 30 mm, takže se do 17. 10. ze sekce s dopravci po
+    /// znovuotevření stala 30 mm vysoká a na výtisku zůstala mezera (`B192f`).
+    /// </summary>
+    [Fact]
+    public void PrazdnaVyskaSekce_PrezijeUlozeni()
+    {
+        var template = new Template { Name = "Prázdná výška", Sections = [new Section { DesignerHeight = null }] };
+
+        var reloaded = TemplateSerializer.Deserialize(TemplateSerializer.Serialize(template));
+
+        Assert.Null(reloaded.Sections[0].DesignerHeight);
+    }
+
     private static string StripModifiedAt(string json)
     {
         var node = JsonNode.Parse(json)!.AsObject();

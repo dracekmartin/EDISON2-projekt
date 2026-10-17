@@ -16,6 +16,9 @@ public class Section
     /// může zvětšit (jako „Can Grow" v Crystal Reports). Null = výška jen podle obsahu; designer
     /// pak zobrazí placeholder výšku.
     /// </summary>
+    /// <remarks>Null se zapisuje: serializer null jinak vynechává a chybějící klíč by po načtení
+    /// vrátil výchozích 30 mm.</remarks>
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
     public float? DesignerHeight { get; set; } = 30f;
 
     /// <summary>Určuje, kdy a jak často se sekce tiskne.</summary>
