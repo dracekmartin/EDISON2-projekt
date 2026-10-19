@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-19 - 🐛 otevření souboru, který není šablona
+
+Uživatel CB_CSADAD vybral v importu šablony PDF a dostal technickou chybu „Neplatný formát JSON:
+'%' is an invalid start of a value", která navíc odešla do telemetrie jako chyba aplikace
+(19. 10.). Výběr souborů nabízí i „Všechny soubory", takže to jde snadno. Teď návrhář pozná soubor,
+který vůbec není šablona, a řekne to jako informaci: „Soubor X je PDF, ne šablona. Ze souboru jde
+načíst jen šablona uložená přes Soubor → Exportovat do souboru". Soubor, který vypadá jako šablona,
+ale nejde načíst, zůstává chybou. Rozdělaná šablona při nepovedeném otevření nikdy nezmizela
+(přepisuje se až po úspěšném načtení) - teď to hlídá test. Testy `OtevreniCizihoSouboruTests`
+(PDF, jiný text, poškozená šablona; ověřeno mutací).
+
 ## 2026-10-16 (6) - 🔀 rozdílový linkový JŘ: změna trasy (`B192d`)
 
 Verze s jinými zastávkami se do 16. 10. neporovnaly: vytiskla se nová verze s hláškou „Neporovnáno".

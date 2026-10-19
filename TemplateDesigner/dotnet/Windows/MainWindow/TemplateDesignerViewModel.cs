@@ -1985,6 +1985,12 @@ public class TemplateDesignerViewModel : EDViewModel
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();
         }
+        catch (TemplateDeserializationException ex) when (ex.NeniSablona)
+        {
+            // Vybraný soubor vůbec není šablona (typicky PDF předlohy) - chyba výběru, ne aplikace.
+            // Rozdělaná šablona zůstává v okně: přepisuje se až po úspěšném načtení.
+            PopupDisplayer.Info(ex.Message);
+        }
         catch (TemplateDeserializationException ex)
         {
             PopupDisplayer.Error(ex);

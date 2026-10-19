@@ -210,6 +210,19 @@ public static class TemplateSerializer
         }
     }
 
+    /// <summary>Proč soubor není šablona, srozumitelně pro uživatele; null = vypadá jako JSON
+    /// a chybu v něm má hlásit až deserializace.</summary>
+    /// <remarks>Uživatel při importu vybral PDF předlohy a dostal „'%' is an invalid start of
+    /// a value" jako chybu aplikace (telemetrie 19. 10., CB_CSADAD).</remarks>
+    internal static string? ProcNeniSablona(string obsah, string jmenoSouboru)
+    {
+        var zacatek = obsah.AsSpan().TrimStart("﻿ \t\r\n");
+        if (zacatek.StartsWith("{")) return null;
+        string co = zacatek.StartsWith("%PDF") ? "je PDF, ne šablona" : "není šablona návrháře";
+        return $"Soubor „{jmenoSouboru}“ {co}. Ze souboru jde načíst jen šablona uložená přes "
+            + "Soubor → Exportovat do souboru (soubor .json).";
+    }
+
     /// <summary>
     /// Načte šablonu ze souboru. Před deserializací aplikuje <see cref="TemplateMigrator"/>.
     /// </summary>
@@ -219,6 +232,8 @@ public static class TemplateSerializer
         try
         {
             string json = await File.ReadAllTextAsync(filePath, ct);
+            if (ProcNeniSablona(json, Path.GetFileName(filePath)) is { } duvod)
+                throw new TemplateDeserializationException(duvod) { NeniSablona = true };
             return Deserialize(json);
         }
         catch (TemplateDeserializationException) { throw; }
@@ -285,4 +300,8 @@ public class TemplateDeserializationException : Exception
 {
     public TemplateDeserializationException(string message) : base(message) { }
     public TemplateDeserializationException(string message, Exception inner) : base(message, inner) { }
+
+    /// <summary>Soubor vůbec není šablona (PDF, text…) - uživatel vybral jiný soubor, nejde
+    /// o chybu aplikace. Zpráva je pro uživatele srozumitelná.</summary>
+    public bool NeniSablona { get; init; }
 }
