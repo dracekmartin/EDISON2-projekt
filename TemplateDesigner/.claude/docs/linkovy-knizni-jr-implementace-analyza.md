@@ -2102,6 +2102,11 @@ zastávky jen v jedné verzi a dopravce obou verzí jedné dvojice vypíše `Pre
 
 Kroky `B192a-f` jsou hotové. Vzor (PDF od zákazníka, v repu nejsou) má navíc, nebo jinak:
 
+- **Vědomě jinak (rozhodnutí Jan 19. 10.):** vzor vyznačuje původní platnost, dopravce
+  a poznámky přeškrtnutím a nové barevným písmem, my všude podbarvením jako buňky tabulky.
+  Jednotný rozdíl na celém výtisku má přednost před shodou se vzorem. Černobílý tisk tím rozdíl
+  v hlavičce a legendě ztratí.
+
 - **Dávka v patičce:** „Dávka: ~~ARRIVA_MORAVA/5454~~ ARRIVA_MORAVA/5982". Naše šablona dávku
   netiskne vůbec.
 - **Km spoje pod tabulkou** s původní hodnotou přeškrtnutou (FTL spoj 17 „24 23"). Řádek km spojů

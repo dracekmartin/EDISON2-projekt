@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-19 (2) - 🔀 rozdílový linkový JŘ: rozdíl verzí všude podbarvením
+
+Hlavička a legenda vyznačovaly původní verzi přeškrtnutím a novou barevným písmem (vzor z CIS JŘ),
+tabulka spojů podbarvením - na jednom výtisku dva způsoby. Teď je rozdíl všude stejný jako
+v tabulce: původní platnost, dopravce i poznámka světle červeně, nové světle zeleně, nic se
+nepřeškrtává (rozhodnutí Jan 19. 10. po prohlédnutí 0380730). Nová platnost je zelená, jen když
+se porovnává. Prvek Poznámky má místo barvy značky a textu podbarvení verze (`RozdilPuvodniBackColor`,
+`RozdilNovaBackColor`, výchozí stejné jako u Tabulky spojů); pruh pokryje všechny řádky poznámky.
+Značky ve sloupcích spojů zůstávají v barvě verze. Ověřeno výtiskem CB_CSADAD 0380730, 0320167,
+0132400 a 380742 bez porovnání a voláním `Init` formuláře na serveru. Testy `RozdilovaLegendaTests`
+(podbarvení, text bez přeškrtnutí, pruh přes všechny řádky - ověřeno mutací).
+
 ## 2026-10-19 - 🐛 otevření souboru, který není šablona
 
 Uživatel CB_CSADAD vybral v importu šablony PDF a dostal technickou chybu „Neplatný formát JSON:

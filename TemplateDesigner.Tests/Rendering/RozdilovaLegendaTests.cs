@@ -6,8 +6,8 @@ namespace TemplateDesigner.Tests.Rendering;
 
 /// <summary>
 /// Legenda rozdílového linkového JŘ (`B192b`): server pošle poznámky obou verzí a u každé řekne,
-/// ke které patří. Původní se přeškrtne a její značka dostane barvu původní verze, nová má barvu
-/// nové verze - barvy jsou ze šablony, jako ve vzoru z CIS JŘ.
+/// ke které patří. Poznámka jen v jedné verzi má pod sebou pruh v barvě verze, jako odlišné buňky
+/// v Tabulce spojů (rozhodnutí Jan 19. 10., do té doby přeškrtnutí a barevné písmo podle vzoru).
 /// </summary>
 public class RozdilovaLegendaTests
 {
@@ -52,36 +52,50 @@ public class RozdilovaLegendaTests
 
     private static bool Tmava(SKColor p) => p.Red < 128 && p.Green < 128 && p.Blue < 128;
 
-    [Fact]
-    public void NovaPoznamkaMaBarvuNoveVerze()
+    /// <summary>Pruh přes celou šířku sloupce (100 mm) a výšku řádku je tisíce pixelů.</summary>
+    [Theory]
+    [InlineData("nova")]
+    [InlineData("puvodni")]
+    public void PoznamkaJenVJedneVerziMaPodbarveni(string verze)
     {
         var prvek = Prvek();
-        using var nova = Vykresli(prvek, Poznamky(("2", "nz", "17", "jede od 10.7.26 do 31.8.26", "nova")));
+        string barva = verze == "nova" ? prvek.RozdilNovaBackColor : prvek.RozdilPuvodniBackColor;
+        using var sVerzi = Vykresli(prvek, Poznamky(("2", "nz", "17", "jede od 10.7.26 do 31.8.26", verze)));
         using var bezVerze = Vykresli(prvek, Poznamky(("2", "nz", "17", "jede od 10.7.26 do 31.8.26", null)));
 
-        Assert.True(Pixelu(nova, Barva(prvek.RozdilNovaColor)) > 100, "nová poznámka nemá barvu nové verze");
-        Assert.Equal(0, Pixelu(bezVerze, Barva(prvek.RozdilNovaColor)));
+        Assert.True(Pixelu(sVerzi, Barva(barva)) > 2000, $"poznámka verze {verze} nemá podbarvení");
+        Assert.Equal(0, Pixelu(bezVerze, Barva(barva)));
     }
 
+    /// <summary>Text i značka zůstanou na pruhu vidět a nic se nepřeškrtává - tmavých pixelů je
+    /// stejně jako bez verze.</summary>
     [Fact]
-    public void PuvodniZnackaMaBarvuPuvodniVerze()
-    {
-        var prvek = Prvek();
-        using var puvodni = Vykresli(prvek, Poznamky(("2", "nz", "93", "nejede 24.12.22", "puvodni")));
-
-        Assert.True(Pixelu(puvodni, Barva(prvek.RozdilPuvodniColor)) > 30, "značka původní poznámky nemá barvu původní verze");
-    }
-
-    /// <summary>Přeškrtnutí přidá přes text vodorovnou čáru - tmavých pixelů je víc než bez něj.</summary>
-    [Fact]
-    public void PuvodniTextJePreskrtnuty()
+    public void PodbarvenaPoznamkaMaTextNavrchuBezPreskrtnuti()
     {
         var prvek = Prvek();
         const string text = "Na lince platí tarif IDS Jihočeského kraje.";
         using var puvodni = Vykresli(prvek, Poznamky(("9", "text", "", text, "puvodni")));
         using var bezVerze = Vykresli(prvek, Poznamky(("9", "text", "", text, null)));
 
-        Assert.True(Pixelu(puvodni, Tmava) > Pixelu(bezVerze, Tmava) + 60, "původní text není přeškrtnutý");
+        int tmavych = Pixelu(bezVerze, Tmava);
+        Assert.True(tmavych > 50, "pojistka: text se vůbec nevykreslil");
+        Assert.InRange(Pixelu(puvodni, Tmava), tmavych - 20, tmavych + 20);
+    }
+
+    /// <summary>Výšku poznámky zná až kreslení - pruh musí pokrýt všechny její řádky, ne jen první.</summary>
+    [Fact]
+    public void PruhPokryjeVsechnyRadkyPoznamky()
+    {
+        var prvek = Prvek();
+        prvek.Width = 40;
+        string text = string.Join(" ", Enumerable.Repeat("nejede ve dnech státních svátků", 4));
+        using var bitmapa = Vykresli(prvek, Poznamky(("9", "text", "", text, "nova")));
+
+        var barva = Barva(prvek.RozdilNovaBackColor);
+        int radkuSPruhem = Enumerable.Range(0, bitmapa.Height).Count(y => barva(bitmapa.GetPixel(2, y)));
+        float jedenRadekPx = prvek.EffectiveNoteLineHeight * MmToPx;
+        Assert.True(radkuSPruhem > 2.5f * jedenRadekPx,
+            $"pruh je vysoký {radkuSPruhem} px, jeden řádek poznámky má {jedenRadekPx:0} px");
     }
 
     [Theory]
@@ -89,19 +103,19 @@ public class RozdilovaLegendaTests
     [InlineData(false, false)]
     public void BarvyVerziJenVRozdiloveAgende(bool rozdilovy, bool viditelne)
     {
-        Assert.Equal(viditelne, NotesLegendElement.PoleFormulareViditelne(nameof(NotesLegendElement.RozdilNovaColor), true, rozdilovy));
-        Assert.Equal(viditelne, NotesLegendElement.PoleFormulareViditelne(nameof(NotesLegendElement.RozdilPuvodniColor), true, rozdilovy));
+        Assert.Equal(viditelne, NotesLegendElement.PoleFormulareViditelne(nameof(NotesLegendElement.RozdilNovaBackColor), true, rozdilovy));
+        Assert.Equal(viditelne, NotesLegendElement.PoleFormulareViditelne(nameof(NotesLegendElement.RozdilPuvodniBackColor), true, rozdilovy));
     }
 
     [Fact]
     public void KopiePrvkuNeseBarvyVerzi()
     {
         var prvek = Prvek();
-        prvek.RozdilPuvodniColor = "#FF112233";
-        prvek.RozdilNovaColor = "#FF445566";
+        prvek.RozdilPuvodniBackColor = "#FF112233";
+        prvek.RozdilNovaBackColor = "#FF445566";
         var kopie = (NotesLegendElement)prvek.Clone();
 
-        Assert.Equal("#FF112233", kopie.RozdilPuvodniColor);
-        Assert.Equal("#FF445566", kopie.RozdilNovaColor);
+        Assert.Equal("#FF112233", kopie.RozdilPuvodniBackColor);
+        Assert.Equal("#FF445566", kopie.RozdilNovaBackColor);
     }
 }

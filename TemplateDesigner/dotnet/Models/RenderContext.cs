@@ -81,6 +81,16 @@ public class RenderContext
             SectionOriginX + (xMm + wMm) * MmToPx,
             SectionOriginY + (yMm + hMm) * MmToPx);
 
+    /// <summary>Týž kontext, jen kreslí na jiné plátno - třeba do nahrávky, jejíž rozměr se
+    /// zjistí až po nakreslení.</summary>
+    public RenderContext SPlatnem(SKCanvas canvas) => new(canvas, MmToPx, Data)
+    {
+        SectionOriginX = SectionOriginX, SectionOriginY = SectionOriginY, ClipTopMm = ClipTopMm,
+        ViditelnyPasMm = ViditelnyPasMm, OpakovanaHlavickaMm = OpakovanaHlavickaMm,
+        SirkaSekceMm = SirkaSekceMm, ClippedCells = ClippedCells,
+        SrovnatCaryNaPixel = SrovnatCaryNaPixel, JeNavrh = JeNavrh,
+    };
+
     /// <summary>Vrátí nový kontext s posunutým originem sekce (px).</summary>
     public RenderContext WithSectionOrigin(float xPx, float yPx) =>
         new(Canvas, MmToPx, Data) { SectionOriginX = xPx, SectionOriginY = yPx, ClippedCells = ClippedCells, SirkaSekceMm = SirkaSekceMm };

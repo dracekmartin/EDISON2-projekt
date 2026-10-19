@@ -132,12 +132,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Jen rozdílový linkový JŘ: legenda nese poznámky obou verzí linky. Data říkají verzi,
         // barvu určuje šablona. Návrhář skupinu jinde schová.
         d form.AddGroup("verze", "Porovnání verzí")
-        s f = form.AddFieldToLastGroup("RozdilPuvodniColor", "Původní verze", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF960000"
-        s f.helpText = "Barva značky poznámky, která je jen v původní verzi linky. Její text se přeškrtne."
-        s f = form.AddFieldToLastGroup("RozdilNovaColor", "Nová verze", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF009600"
-        s f.helpText = "Barva značky i textu poznámky, která je jen v nové verzi linky."
+        s f = form.AddFieldToLastGroup("RozdilPuvodniBackColor", "Původní verze", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FFF08080"
+        s f.helpText = "Podbarvení poznámky, která je jen v původní verzi linky. Stejně jako odlišné buňky v Tabulce spojů."
+        s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF92D36E"
+        s f.helpText = "Podbarvení poznámky, která je jen v nové verzi linky."
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
