@@ -471,6 +471,7 @@ ClassMethod FillMain() [ Private ]
 		d ..AddExe("Řidiči - dlouhodobé nepřítomnosti", "MHD2Ridici.exe", "ALVA.MHD2.Ridici.formMHD2RidiciDlouhodobeNepritomnosti", "241004", 1, "", 0, "", 0)
 		d ..AddExe("Směny", "MHD2Linky.exe", "ALVA.MHD2.Linky.formMHD2LinkySmeny", "230002", 1, "", 0, "", 0)
 		d ..AddExe("Stavy elektroměrů", "MHD2Ridici.exe", "ALVA.MHD2.Ridici.formMHD2RidiciStavyElektromeru", "241003", 1, "", 0, "", 0)
+		d ..AddExe("Stavy tachometrů", "MHD2Ridici.exe", "ALVA.MHD2.Ridici.formMHD2RidiciStavyTachometru", "241005", 1, "", 0, "", 0)
 		d ..AddExe("Turnusové skupiny", "MHD2Linky.exe", "ALVA.MHD2.Linky.formMHD2LinkyTurnusoveSkupiny", "230008", 1, "", 0, "", 0)
 		d ..AddExe("Výstupy", "MHDZPRACOVANI.exe", "ALVA.MHDZPRACOVANI.formMHDZPRACOVANIVystupyList", "131017", 1, "", 0, "", 0)
 		d ..AddExe("Zastávky", "MHD2Ciselniky.exe", "ALVA.MHD2.Ciselniky.formMHD2CiselnikyZastavky", "210011", 1, "", 0, "", 0)
