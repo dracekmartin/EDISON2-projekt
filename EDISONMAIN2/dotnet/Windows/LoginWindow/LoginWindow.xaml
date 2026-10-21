@@ -26,8 +26,7 @@
                         Background="{DynamicResource EDTheme.Bg.PanelAlt}"
                         BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Image Source="{StaticResource EDIcons.Molecule}" Width="56" Height="56"
-                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <Image Source="{StaticResource EDIcons.MoleculeLarge}" Width="56" Height="56"/>
                         <TextBlock Text="EDISON" FontSize="{DynamicResource EDTheme.FontSize.Display}" FontWeight="Bold"
                                    Foreground="{DynamicResource EDTheme.Text.Header}"
                                    HorizontalAlignment="Center" Margin="0,8,0,0"/>

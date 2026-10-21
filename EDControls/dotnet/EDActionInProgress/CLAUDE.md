@@ -1,6 +1,6 @@
 # EDActionInProgress - poznámky pro vývojáře
 
-Overlay „Akce probíhá" s načítacím kolečkem. `EDActionInProgress` je **neviditelný controller**
+Overlay „Akce probíhá" se skládající se krychlí (logo EDISON). `EDActionInProgress` je **neviditelný controller**
 (FrameworkElement) - vlož kamkoli do okna (konvence: poslední child root Gridu). Na `Loaded` se
 sám naváže na `EDViewModel.IsActionInProgress` - v XAML se `IsActive` binding **nepíše**.
 Aktivace z VM: `using var _ = ActionInProgress();`.
@@ -30,9 +30,12 @@ Aktivace z VM: `using var _ = ActionInProgress();`.
 
 ## Ostatní neodvoditelné
 
-- **Kolečko** je v `EDTheme.Accent.BlueDark`, záměrně ne `Accent.Header` - obojí je v light brand
-  navy, ale Header se v dark nepřebarvuje a měl by na kartě kontrast 1,6:1 (BlueDark 7,4:1).
-- **Pixel-art maskoti jsou vypnutí, ne smazaní**: bez klíče sady (produkce) se točí kolečko,
+- **Krychle**: geometrie a časová osa jsou čistá logika v `CubeAssembly` (testy bez WPF), tvary staví
+  code-behind jednou per okno. Smyčku pohání `DoubleAnimation` na privátní DP `CubeTime` (stop =
+  `BeginAnimation(.., null)` jako u spritů, žádný render loop). Koule brand barvy jako `EDIcons.Molecule`,
+  vazby `EDTheme.Border.Contrast` s průhledností podle hloubky - kontrast na kartě v light i dark.
+  Vypnuté animace ve Windows (`ClientAreaAnimation`) = rovnou složená krychle.
+- **Pixel-art maskoti jsou vypnutí, ne smazaní**: bez klíče sady (produkce) se skládá krychle,
   s klíčem (`ActionInProgress("Money")` → `EDViewModel.ActionSpriteKey`) běží sprity. Shell je
   pouští jen z Test funkcí; mapa agenda→sada `AgendaSprites` v shellu je, ale produkce ji nevolá.
   Sady `Sprite.<Sada>.<Kus>` (pixel-art Canvas, čelem doprava) žijí v `ActionInProgressWindow.xaml`;

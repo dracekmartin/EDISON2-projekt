@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Shapes;
 
 namespace EDControls.EDActionInProgress;
 
@@ -22,11 +23,21 @@ namespace EDControls.EDActionInProgress;
 /// </summary>
 internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOverlayWindow
 {
-    // Režim karty určuje klíč sady: bez klíče (produkce) se točí kolečko, s klíčem běží maskoti.
+    // Režim karty určuje klíč sady: bez klíče (produkce) se skládá krychle, s klíčem běží maskoti.
     // Pixel-art styl se v produkci neosvědčil (zákaznická reklamace kapybary), sady ale zůstávají
     // celé - pustí je „Test funkcí ▸ Akce probíhá", takže je jde kdykoli vrátit i do produkce.
-    // Doba jedné otáčky kolečka.
-    private static readonly TimeSpan SpinnerTurnDuration = TimeSpan.FromSeconds(1.1);
+
+    // Vazby krychle: theme token (kontrast na kartě v light i dark), hloubku dělá průhlednost.
+    private const string CubeBondBrushKey = "EDTheme.Border.Contrast";
+    private const double CubeBondOpacityFar = 0.45;
+
+    // Čas ve smyčce skládání (ms). Animuje ho DoubleAnimation se smyčkou, stop přes
+    // BeginAnimation(.., null) jako u spritů - žádný vlastní render loop, který by tikal dál.
+    private static readonly DependencyProperty CubeTimeProperty =
+        DependencyProperty.Register(nameof(CubeTime), typeof(double), typeof(ActionInProgressWindow),
+            new PropertyMetadata(0.0, (d, e) => ((ActionInProgressWindow)d).ApplyCubeFrame((double)e.NewValue)));
+
+    private double CubeTime => (double)GetValue(CubeTimeProperty);
 
     // Sprity žijí v sadách "Sprite.<Sada>.<Kus>" ve Window.Resources; nový kus = jen XAML.
     private const string SpriteKeyPrefix = "Sprite.";
@@ -41,6 +52,10 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
 
     private readonly Window _owner;
     private readonly Random _rng = new();
+    // Krychle: geometrie a časová osa (CubeAssembly) + jejich tvary, stavěné jednou per okno.
+    private readonly CubeAssembly _cube = new();
+    private readonly List<(CubeAssembly.Atom Atom, UIElement Visual, ScaleTransform Scale, TranslateTransform Offset)> _cubeAtoms = [];
+    private readonly List<(CubeAssembly.Bond Bond, Line Line)> _cubeBonds = [];
     // Fall režim: kusy sady + jejich transformy; prázdné = režim jízdy.
     private readonly List<(TranslateTransform Transform, FrameworkElement Element)> _fallPieces = [];
     private string[] _pieceKeys = [];
@@ -52,6 +67,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
     public ActionInProgressWindow(Window owner, string? spriteKey = null)
     {
         InitializeComponent();
+        BuildCube();
         _owner = owner;
         Owner = owner;
         owner.LocationChanged += OnOwnerBoundsChanged;
@@ -86,21 +102,115 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
     private void PickSet(string? preferred)
     {
         _pieceKeys = SetPieceKeys(preferred);
-        if (_pieceKeys.Length == 0) return;   // bez sady zůstane viditelné kolečko
-        Spinner.Visibility = Visibility.Collapsed;
+        if (_pieceKeys.Length == 0) return;   // bez sady zůstane viditelná krychle
+        Cube.Visibility = Visibility.Collapsed;
         SpriteViewport.Visibility = Visibility.Visible;
         if (Equals((Resources[_pieceKeys[0]] as FrameworkElement)?.Tag, FallTag))
             BuildFallPieces();
     }
 
-    // Stop přes BeginAnimation(.., null) vrátí úhel na klidovou hodnotu - stejný vzor jako
+    // Stop přes BeginAnimation(.., null) vrátí čas na 0 (prázdné plátno) - stejný vzor jako
     // u spritů, aby skryté okno nedrželo tikající clock.
-    private void ToggleSpinner(bool active)
+    private void ToggleCube(bool active)
     {
-        if (Spinner.Visibility != Visibility.Visible) return;
-        SpinnerRotate.BeginAnimation(RotateTransform.AngleProperty, active
-            ? new DoubleAnimation(0, 360, SpinnerTurnDuration) { RepeatBehavior = RepeatBehavior.Forever }
+        if (Cube.Visibility != Visibility.Visible) return;
+        // Vypnuté animace ve Windows (Výkon ▸ Animovat ovládací prvky) - jen složená krychle.
+        if (!SystemParameters.ClientAreaAnimation)
+        {
+            BeginAnimation(CubeTimeProperty, null);
+            _cube.Apply(_cube.AssemblyMs);
+            ApplyCubeVisuals();
+            return;
+        }
+        BeginAnimation(CubeTimeProperty, active
+            ? new DoubleAnimation(0, _cube.CycleMs, TimeSpan.FromMilliseconds(_cube.CycleMs)) { RepeatBehavior = RepeatBehavior.Forever }
             : null);
+    }
+
+    // Koule = Grid (tělo s gradientem + odlesk) s vlastním scale/posunem kolem středu,
+    // vazba = Line, jejíž konec se posouvá. Pořadí v plátně = pořadí kreslení (zezadu dopředu).
+    private void BuildCube()
+    {
+        var front = (Brush)FindResource("Cube.AtomFront");
+        var back = (Brush)FindResource("Cube.AtomBack");
+        foreach (var part in _cube.DrawOrder)
+        {
+            if (part is CubeAssembly.Atom atom)
+                CubeCanvas.Children.Add(CreateCubeAtom(atom, atom.IsFront ? front : back));
+            else if (part is CubeAssembly.Bond bond)
+                CubeCanvas.Children.Add(CreateCubeBond(bond));
+        }
+        ApplyCubeVisuals();
+    }
+
+    private UIElement CreateCubeAtom(CubeAssembly.Atom atom, Brush fill)
+    {
+        double r = atom.Radius;
+        var scale = new ScaleTransform();
+        var offset = new TranslateTransform();
+        var visual = new Grid
+        {
+            Width = 2 * r,
+            Height = 2 * r,
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            RenderTransform = new TransformGroup { Children = { scale, offset } },
+        };
+        visual.Children.Add(new Ellipse { Fill = fill });
+        // Odlesk vlevo nahoře natočený podél koule; bližší koule se lesknou víc.
+        visual.Children.Add(new Ellipse
+        {
+            Width = 0.84 * r,
+            Height = 0.52 * r,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0.28 * r, 0.36 * r, 0, 0),
+            RenderTransformOrigin = new Point(0.5, 0.5),
+            RenderTransform = new RotateTransform(-28),
+            Fill = Brushes.White,
+            Opacity = 0.38 + 0.2 * atom.Depth,
+        });
+        Canvas.SetLeft(visual, atom.X - r);
+        Canvas.SetTop(visual, atom.Y - r);
+        _cubeAtoms.Add((atom, visual, scale, offset));
+        return visual;
+    }
+
+    private Line CreateCubeBond(CubeAssembly.Bond bond)
+    {
+        var line = new Line
+        {
+            X1 = bond.From.X,
+            Y1 = bond.From.Y,
+            StrokeThickness = bond.Width,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+        };
+        line.SetResourceReference(Shape.StrokeProperty, CubeBondBrushKey);
+        _cubeBonds.Add((bond, line));
+        return line;
+    }
+
+    private void ApplyCubeFrame(double cycleMs)
+    {
+        _cube.Apply(_cube.TimelineAt(cycleMs));
+        ApplyCubeVisuals();
+    }
+
+    private void ApplyCubeVisuals()
+    {
+        foreach (var (atom, visual, scale, offset) in _cubeAtoms)
+        {
+            visual.Opacity = atom.Opacity;
+            scale.ScaleX = scale.ScaleY = atom.Scale;
+            offset.X = atom.OffsetX;
+            offset.Y = atom.OffsetY;
+        }
+        foreach (var (bond, line) in _cubeBonds)
+        {
+            line.Opacity = bond.Opacity * (CubeBondOpacityFar + (1 - CubeBondOpacityFar) * bond.Depth);
+            line.X2 = bond.CurrentX2;
+            line.Y2 = bond.CurrentY2;
+        }
     }
 
     private string[] SetPieceKeys(string? set) => set is null ? [] :
@@ -233,7 +343,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
     private void ToggleWalk(bool active)
     {
         _running = active;
-        ToggleSpinner(active);
+        ToggleCube(active);
         if (_fallPieces.Count > 0)
         {
             if (active) StartFall(); else StopFall();
