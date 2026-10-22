@@ -419,17 +419,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         s nazev = $lg(##class(ALVA.MHD.ZastavkyFce).GetNazevHrl(IdFa, dataDB, zastavkaId, hrlod), 1)
         s cislo = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Cislo"))
 
-        // zóna: zóny zastávky filtrované na IDS linky (ENUMS Zony ZonaIDSID = IDSID linky)
-        s zona = "", zonaCnt = ""
-        f {
-            s zonaCnt = $o(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"ZonyID",zonaCnt))
-            q:zonaCnt=""
-            s zonaId = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"ZonyID",zonaCnt,"Itm"))
-            i zonaId = "" continue
-            i $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",zonaId,"ZonaIDSID")) '= idsId continue
-            s zona = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",zonaId,"Cislo"))
-            q:zona'=""
-        }
+        s zona = ..ZonyZastavky(IdFa, dataDB, zastavkaId, idsId)
 
         // odjezd/příjezd: atribut trasy 1011 na bodu (per směr)
         s odjPri = 0, atrCnt = ""
@@ -585,6 +575,26 @@ ClassMethod BuildZastavkaRadek(bodVeta As %List, typ As %String, poradi As %Inte
     // Příznak nese i řádek příjezdu - je to táž zastávka. Vzhled určí pravidlo zvýraznění šablony.
     d z.%Set("AKTUALNI_ZASTAVKA", $s(..JeZvyraznena($lg(bodVeta,3)):"true", 1:"false"))
     q z
+}
+
+/// Zóny zastávky v integrovaném systému linky (ENUMS Zony ZonaIDSID = IDSID linky), víc zón
+/// spojených „/" jako u zastávkového JŘ MHD. ⚠️ Vědomě jinak než starý tisk, který bere jen poslední
+/// zónu (legacy :353-358): hraniční zastávka patří do obou zón a cestující to má vidět (Jan 22. 10.).
+ClassMethod ZonyZastavky(IdFa As %String, dataDB As %String, zastavkaId As %String, idsId As %String) As %String
+{
+    s zony = "", c = ""
+    f {
+        s c = $o(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"ZonyID",c))
+        q:c=""
+        s zonaId = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"ZonyID",c,"Itm"))
+        continue:zonaId=""
+        continue:$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",zonaId,"ZonaIDSID"))'=idsId
+        s cislo = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",zonaId,"Cislo"))
+        continue:cislo=""
+        continue:$lf($lfs(zony,"/"),cislo)
+        s zony = $s(zony="":cislo, 1:zony_"/"_cislo)
+    }
+    q zony
 }
 
 /// Je zastávka zvýrazněná parametrem „Zvýraznit zastávku"? Kus názvu bez ohledu na velikost písmen,

@@ -245,7 +245,10 @@ ClassMethod NactiNase(ByRef sys, lin As %String, ByRef nase, vypnute As %String 
 			set nazev = $select(z.%Get("TYP")="prijezd":zastavky.%Get(j+1).%Get("NAZEV_ZASTAVKY"), 1:z.%Get("NAZEV_ZASTAVKY"))
 			set atributy = z.%Get("ATRIBUTY"), znacky = ""
 			if $isobject(atributy) { for a=0:1:atributy.%Size()-1 set znacky = znacky_"{"_atributy.%Get(a)_"}" }
-			set zast = zast_";"_nazev_znacky_"["_z.%Get("ZONY")_"]"
+			// Hraniční zastávka: my tiskneme všechny zóny systému linky („1/2"), starý tisk jen
+			// poslední - vědomá odchylka (`LinkovyJrMhd.ZonyZastavky`), porovná se tedy poslední.
+			set zony = z.%Get("ZONY")
+			set zast = zast_";"_nazev_znacky_"["_$piece(zony, "/", $length(zony, "/"))_"]"
 		}
 		set zast = smer_"|"_$extract(zast,2,$length(zast))
 		set (bloky, posledni) = "", pocetBloku = 0

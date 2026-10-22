@@ -1907,7 +1907,9 @@ Cesty bez prefixu jsou `CACHE/ALVA/TemplateDesigner/Agendy/LinkovyJrMhd.cls`, �
   za název zastávky (legacy `:403-440`, `:812-821`). My atributy dáváme jen do legendy (`:668-687`)
   a poznámky z trasy nečteme.
 - Zóna: starý modul bere poslední zónu v IDS linky, my první (`:331-340` × legacy `:353-358`).
-  Liší se jen u zastávky s víc zónami téhož IDS.
+  Liší se jen u zastávky s víc zónami téhož IDS. **22. 10. (Jan): tiskneme všechny („1/2")**,
+  vědomě jinak než starý tisk - hraniční zastávka patří do obou zón (`ZonyZastavky`). Dev data
+  takovou zastávku nemají (sonda `ViceZon`), test si číselník založí sám.
 
 **Proti AD** (rozsah `B191b`):
 

@@ -71,6 +71,45 @@ ClassMethod Linky(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Zastávky s víc zónami jednoho integrovaného systému (hraniční zastávky). IN: MAX = nejvýš tolik
+/// (výchozí 50). OUT(n) = "ZastavkaID|název|IDSID|čísla zón čárkou".
+ClassMethod ViceZon(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        k ^||ML("OUT")
+        s max = +$g(^||ML("IN","MAX"))
+        i 'max s max = 50
+        s zast = ""
+        f {
+            s zast = $o(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zast))
+            q:(zast="")||($g(^||ML("OUT"))>=max)
+            k poIds
+            s c = ""
+            f {
+                s c = $o(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zast,"DTA",1,"ZonyID",c))
+                q:c=""
+                s zona = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zast,"DTA",1,"ZonyID",c,"Itm"))
+                continue:zona=""
+                s ids = +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",zona,"ZonaIDSID"))
+                continue:'ids
+                continue:$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",zona,"Cislo"))=""
+                s poIds(ids) = $g(poIds(ids))_","_$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",zona,"Cislo"))
+                s poIds(ids,"n") = $g(poIds(ids,"n")) + 1
+            }
+            s ids = ""
+            f {
+                s ids = $o(poIds(ids))
+                q:ids=""
+                continue:poIds(ids,"n")<2
+                s ^||ML("OUT", $i(^||ML("OUT"))) = zast_"|"_$g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zast,"DTA",1,"Nazev"))_"|"_ids_"|"_$e(poIds(ids),2,*)
+            }
+        }
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Ukazatele jedné linky; "" = linka bez spojů.
 ClassMethod Linka(IdFa As %String, dataDB As %String, lin As %String) As %String
 {

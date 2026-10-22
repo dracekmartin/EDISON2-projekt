@@ -330,6 +330,31 @@ Method TestJenZastavujiciSeSloucenymBodem()
 	do $$$AssertTrue('$data(bodyMapa(101)), "vynechaný bod v mapě nezůstane")
 }
 
+/// Hraniční zastávka ukáže všechny zóny systému linky („1/2"), ne jen jednu jako starý tisk. Dev data
+/// takovou zastávku nemají (sonda `LinkovyJrMhdProbe.ViceZon`, KV_DP i CB_DP 22. 10.), proto si test
+/// založí číselník pod vlastní firmou s jedinečným jménem a po sobě ho smaže.
+Method TestZonyHranicniZastavky()
+{
+	set idfa = "TDTEST"_$translate($system.Util.CreateGUID(), "-"), db = $namespace
+	try {
+		// Zóny (id → systém, číslo): 11 → 7 „1", 12 → 7 „2", 13 → 8 „P", 14 → 7 bez čísla (přeskočí se).
+		// Zastávka 500 má 11, 13, 14, 12 a znovu 11 - duplicitu tisknout nemá.
+		for zona = $listbuild(11, 7, "1"), $listbuild(12, 7, "2"), $listbuild(13, 8, "P"), $listbuild(14, 7, "") {
+			set ^[db]ALVA.MHD.ENUMS(idfa, "Zony", "DTA", $list(zona, 1), "ZonaIDSID") = $list(zona, 2)
+			set ^[db]ALVA.MHD.ENUMS(idfa, "Zony", "DTA", $list(zona, 1), "Cislo") = $list(zona, 3)
+		}
+		set n = 0
+		for zonaId = 11, 13, 14, 12, 11 { set ^[db]ALVA.MHD.ZST(idfa, 1, "DTA", 500, "DTA", 1, "ZonyID", $increment(n), "Itm") = zonaId }
+
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).ZonyZastavky(idfa, db, 500, 7), "1/2", "systém linky 7: obě zóny, každá jednou")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).ZonyZastavky(idfa, db, 500, 8), "P", "systém 8")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).ZonyZastavky(idfa, db, 500, 9), "", "jiný systém nic")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]ALVA.MHD.ENUMS(idfa), ^[db]ALVA.MHD.ZST(idfa)
+}
+
 /// Čísla čárkou seřazená vzestupně, aby nezáleželo na pořadí.
 ClassMethod Serazene(cisla As %String) As %String
 {

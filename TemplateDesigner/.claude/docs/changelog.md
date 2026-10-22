@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-22 (6) - 🚌 linkový JŘ MHD: hraniční zastávka se všemi zónami
+
+Zastávka, která patří do víc zón systému linky (hraniční), ukazovala jen první zónu; starý tisk MHD
+jen poslední. Obojí je ztrátové - cestující nepozná, že zastávka leží na hranici. Sloupec Zóny teď
+nese všechny zóny systému linky spojené „/" („1/2"), jako zastávkový JŘ MHD; zóny jiného systému
+se dál netisknou (rozhodnutí Jan 22. 10.). Vědomá odchylka od starého tisku, porovnání s ním bere
+z našich zón poslední. Dev data hraniční zastávku nemají (nová sonda `LinkovyJrMhdProbe.ViceZon`
+na KV_DP i CB_DP), test `TestZonyHranicniZastavky` si proto založí číselník pod jedinečnou firmou
+a po sobě ho smaže (ověřeno mutací).
+
 ## 2026-10-22 (5) - 🚌 linkový JŘ MHD: Počet stran až 3 (`B191d`, část)
 
 Třetí nastavení převzaté z linkového AD. **Počet stran** sdílí definici s AD; u MHD volby Bez omezení
