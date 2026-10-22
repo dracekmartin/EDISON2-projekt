@@ -243,6 +243,60 @@ Method TestZvyraznitZastavku()
 	}
 }
 
+/// Zastávky, kde žádný spoj nestaví (`B191d`): s Netisknout zmizí přesně řádky, kde ve stejném
+/// výstupu s Tisknout nemá čas žádný tištěný spoj, a časy ostatních zůstanou na svých řádcích.
+/// Rozhodují jen vybrané typy provozu - KV_DP linka 1 se třemi typy z webu má na konci trasy za
+/// Lázněmi III zastávky, kam jezdí jen ostatní typy.
+Method TestZastavkyBezZastaveni()
+{
+	if '##class(%SYS.Namespace).Exists("KV_DP") {
+		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		quit
+	}
+	do ..SysFirmy(.sys, "KV_DP")
+	kill ^||ML
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetParameters(.sys)
+	set it = ##class(%DynamicArray).%FromJSON(^||ML("OUT",1)).%GetIterator()
+	while it.%GetNext(.k, .p) { set param(p.%Get("name")) = p }
+	do $$$AssertTrue($data(param("ZASTAVKY_BEZ_ZASTAVENI")), "parametr chybí")
+	quit:'$data(param("ZASTAVKY_BEZ_ZASTAVENI"))
+	do $$$AssertEquals(param("ZASTAVKY_BEZ_ZASTAVENI").%Get("defaultValue")_"|"_param("ZASTAVKY_BEZ_ZASTAVENI").options.%ToJSON(), "Tisknout|[""Tisknout"",""Netisknout""]", "MHD nemá volbu dle linky")
+
+	// Jen typy provozu jako na webu, ať je co vynechat.
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).NactiSkupinyProvozu("KV_DP", "KV_DP", .poradi, .nadpis)
+	set tp = ""
+	for  {
+		set tp = $order(nadpis(tp))
+		quit:tp=""
+		set:'$listfind($listbuild("Pracovní den mimo 1.7. - 31.8. a 27.12. - 31.12.", "Pracovní den 1.7. - 31.8. a 27.12. - 31.12.", "Sobota, neděle a státní svátky"), nadpis(tp)) vypnout(tp) = ""
+	}
+	for volba = "Tisknout", "Netisknout" {
+		kill ^||ML
+		set ^||ML("IN","LINKA_ID") = 1073, ^||ML("IN","SMER_TISKU") = "Tam", ^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI") = volba
+		set tp = ""
+		for  { set tp = $order(vypnout(tp)) quit:tp=""  set ^||ML("IN", ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).ParametrTypuProvozu(tp)) = "false" }
+		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)), zastavky = page.rows.%Get("ZASTAVKY"), spoje = page.rows.%Get("SPOJE")
+		for r=0:1:zastavky.%Size()-1 {
+			set casy = "", stavi = 0
+			for s=0:1:spoje.%Size()-1 {
+				set v = spoje.%Get(s).%Get("CASY").%Get(r), casy = casy_","_v
+				set:v?1.2N1":"2N stavi = 1
+			}
+			set radky(volba, $increment(radky(volba))) = $listbuild(zastavky.%Get(r).%Get("NAZEV_ZASTAVKY"), stavi, casy)
+		}
+	}
+	// Očekávané řádky = řádky s Tisknout, kde staví aspoň jeden spoj - i se svými časy.
+	set (ocekavane, vynechano) = 0
+	for r=1:1:radky("Tisknout") {
+		if '$listget(radky("Tisknout", r), 2) { set vynechano = vynechano + 1  continue }
+		set ocekavane = ocekavane + 1
+		do $$$AssertEquals($listget($get(radky("Netisknout", ocekavane)), 1, "(chybí)")_" "_$listget($get(radky("Netisknout", ocekavane)), 3), $listget(radky("Tisknout", r), 1)_" "_$listget(radky("Tisknout", r), 3), "řádek "_ocekavane)
+	}
+	do $$$AssertEquals(+$get(radky("Netisknout")), ocekavane, "počet řádků s Netisknout")
+	do $$$AssertTrue(vynechano > 0, "linka nemá zastávku bez zastavení - test nic nedokazuje")
+}
+
 /// Čísla čárkou seřazená vzestupně, aby nezáleželo na pořadí.
 ClassMethod Serazene(cisla As %String) As %String
 {

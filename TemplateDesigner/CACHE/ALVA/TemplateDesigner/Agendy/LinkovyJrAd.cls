@@ -228,22 +228,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d optsTc.%Push("Netisknout")
     s pTc.options = optsTc
 
-    // Zastávky, na kterých žádný spoj nestaví: nastavení u linky
-    // (`PATCH,tisknoutJenTcKdeSpojeZastavuji`, zapnuto na 362 linkách) ubírá řádky, takže je
-    // z celého inventáře nejvíc vidět. Týž třístav jako u sloupce tarifních čísel.
-    s pBez = ##class(%DynamicObject).%New()
-    s pBez.name         = "ZASTAVKY_BEZ_ZASTAVENI"
-    s pBez.label        = "Zastávky, kde žádný spoj nestaví"
-    s pBez.type         = "enum"
-    s pBez.group        = "Tabulka linky"
-    s pBez.serverSide   = 1
-    s pBez.defaultValue = "Automaticky (dle linky)"
-    s pBez.description  = "Zda se v tabulce objeví i zastávky, na kterých žádný spoj linky nestaví (jen je projíždí nebo jedou jinudy). Automaticky = podle nastavení u linky v jízdních řádech."
-    s optsBez = ##class(%DynamicArray).%New()
-    d optsBez.%Push("Automaticky (dle linky)")
-    d optsBez.%Push("Tisknout")
-    d optsBez.%Push("Netisknout")
-    s pBez.options = optsBez
 
     // Písmeno systému v označení zóny: data ho nesou (změřeno 10. 9. na `ZL_KOVED` 823955 -
     // syrová hodnota `Z420,I201`, tedy dvě zóny, každá se značkou svého IDS), ale nastavení
@@ -385,7 +369,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(pStr)
     d arr.%Push(p)         // Tabulka linky - dělení spojů je nejdůležitější volba agendy
     d arr.%Push(pTc)
-    d arr.%Push(pBez)
+    d arr.%Push(..ParametrZastavkyBezZastaveni())
     d arr.%Push(pZon)
     d arr.%Push(pBar)
     d arr.%Push(..ParametrZvyrazneniZastavky())
@@ -393,6 +377,29 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
+}
+
+/// Zastávky, na kterých žádný spoj nestaví: u AD nastavení u linky (`PATCH,tisknoutJenTcKdeSpojeZastavuji`,
+/// zapnuto na 362 linkách) ubírá řádky, takže je z celého inventáře nejvíc vidět; týž třístav jako
+/// u sloupce tarifních čísel. Jediná definice pro AD i MHD; `dleLinky` = linka nastavení má a nabízí
+/// se „Automaticky (dle linky)" (MHD ho nemá, výchozí je pak Tisknout jako starý tisk MHD).
+/// ⚠️ Popisky voleb jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
+ClassMethod ParametrZastavkyBezZastaveni(dleLinky As %Boolean = 1) As %DynamicObject
+{
+    s pBez = ##class(%DynamicObject).%New()
+    s pBez.name         = "ZASTAVKY_BEZ_ZASTAVENI"
+    s pBez.label        = "Zastávky, kde žádný spoj nestaví"
+    s pBez.type         = "enum"
+    s pBez.group        = "Tabulka linky"
+    s pBez.serverSide   = 1
+    s pBez.defaultValue = $s(dleLinky:"Automaticky (dle linky)", 1:"Tisknout")
+    s pBez.description  = "Zda se v tabulce objeví i zastávky, na kterých žádný spoj linky nestaví (jen je projíždí nebo jedou jinudy)."_$s(dleLinky:" Automaticky = podle nastavení u linky v jízdních řádech.", 1:"")
+    s optsBez = ##class(%DynamicArray).%New()
+    d:dleLinky optsBez.%Push("Automaticky (dle linky)")
+    d optsBez.%Push("Tisknout")
+    d optsBez.%Push("Netisknout")
+    s pBez.options = optsBez
+    q pBez
 }
 
 /// Zvýraznění zastávky, ze které se uživatel dívá (legacy `arr,5` + `arr,10`). Data řádek jen

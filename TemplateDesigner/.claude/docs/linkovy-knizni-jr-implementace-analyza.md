@@ -2050,7 +2050,7 @@ Co ze zkoušky 22. 10. zůstává jako obecný kandidát (dělat na poptávku, n
 
 - **Zastávky bez spoje.** Starý tisk i my tiskneme celou trasu linky, i řádky, kde ve vytištěných
   blocích žádný spoj nejede nebo jen projíždí (KV_DP linka 1: konec trasy za Lázněmi III, Slovanská,
-  Škola Dvory). Web je nemá. Obecná volba „netisknout zastávky bez spoje ve vytištěných blocích".
+  Škola Dvory). Web je nemá. Hotové 22. 10. jako parametr AD Zastávky, kde žádný spoj nestaví (§18.9).
 - **Dopravce a tarifní poznámka.** Starý knižní tisk řádek dopravce posílá prázdný
   (`LinkyPrintFormatJR.cls:1100-1106`) a tarifní poznámku linky (`PoznamkaTarifni`, vyplněná třeba
   u CB_DP 11350) nečte - v tom jsme s ním shodní. Doplnit je by bylo zlepšení proti starému modulu.
@@ -2074,7 +2074,7 @@ volby, popisek parametru stejný jako u AD.
 | Směr pro tisk | hotové 12. 10. |
 | Dělení spojů dle platnosti | nahrazené výběrem typů provozu (§18.8) |
 | Zvýraznit zastávku (+ Zvýraznit tarifní číslo) | zastávka hotová 22. 10.; tarifní číslo jen pokud bude sloupec Tč |
-| Zastávky, kde žádný spoj nestaví | přidat - obecná volba ze zkoušky s webem (§18.8) |
+| Zastávky, kde žádný spoj nestaví | hotové 22. 10. - rozhodují spoje vybraných typů provozu |
 | Počet stran | přidat |
 | Obousměrný tisk | přidat - agenda musí skládat stránku obou směrů jako AD |
 | Stránka pro každou zastávku | přidat |

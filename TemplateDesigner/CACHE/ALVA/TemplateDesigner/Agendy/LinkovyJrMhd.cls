@@ -142,6 +142,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
         $$$FillParams
         s arr = ##class(%DynamicArray).%New()
         d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
+        // Bez „Automaticky (dle linky)" - linka MHD to nastavení nemá; výchozí Tisknout jako starý tisk.
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrZastavkyBezZastaveni(0))
         // Bez Zvýraznit tarifní číslo - MHD sloupec Tč nemá (rozsah `B191d`, analýza §18.9).
         d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrZvyrazneniZastavky(0))
         d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)
@@ -450,30 +452,8 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     }
     i pocetBodu = 0 q ""
 
-    // 2. průchod: zastávkové řádky vč. zdvojení příjezd/odjezd; rowMeta(i)=$lb(radekBodu, typ)
-    s zastavky = ##class(%DynamicArray).%New()
-    k rowMeta, zvyraznene
-    s pocetRadku = 0
-    f i=1:1:pocetBodu {
-        s odjPri = $lg(body(i),5)
-        i odjPri {
-            s pocetRadku = pocetRadku + 1
-            s rowMeta(pocetRadku) = $lb(i, "P")
-            d zastavky.%Push(..BuildZastavkaRadek(body(i), "prijezd", i))
-        }
-        s pocetRadku = pocetRadku + 1
-        s rowMeta(pocetRadku) = $lb(i, "O")
-        d zastavky.%Push(..BuildZastavkaRadek(body(i), "zastavka", i))
-        s:..JeZvyraznena($lg(body(i),3)) zvyraznene(i) = $lg(body(i),6)
-    }
-    d vals.%Set("VYCHOZI_ZASTAVKA", $lg(body(1),3))
-    d vals.%Set("KONECNA_ZASTAVKA",       $lg(body(pocetBodu),3))
-    // Číslo zvýrazněné zastávky pro adresu v QR jen při jediné shodě, jako u AD (`LinkovyJrAd`) -
-    // kus názvu může trefit víc zastávek a adresa by pak ukázala na jedno z víc míst.
-    s zv = $o(zvyraznene(""))
-    d vals.%Set("AKTUALNI_ZASTAVKA_CZST", $s((zv '= "") && ($o(zvyraznene(zv)) = ""):zvyraznene(zv), 1:""))
-
     // ── spoje směru: MakeTableSpoj → časy per řádek; skupiny = TypProvozu ──
+    // Načítají se před řádky zastávek, protože Zastávky, kde žádný spoj nestaví, řádky ubírá.
     d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)
 
     // seřazení: (poradiProvozu, výchozí čas, spoj) - MHD legacy řadí uvnitř bloku TypProvozu;
@@ -496,6 +476,34 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         m spojTabulka(spojId) = arrtbsp("arr",1)   // cache pro BuildSpojMhd
     }
     i '$d(razeni) q ""
+
+    // Zastávky, kde žádný tištěný spoj nestaví (jen projíždí nebo jede jinudy), se vynechají jako
+    // u AD. Rozhodují spoje vybraných typů provozu, ne celá linka.
+    i $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI")) = "Netisknout" d ..JenZastavujici(.body, .pocetBodu, .bodyMapa, .spojTabulka)
+    i pocetBodu = 0 q ""
+
+    // 2. průchod: zastávkové řádky vč. zdvojení příjezd/odjezd; rowMeta(i)=$lb(radekBodu, typ)
+    s zastavky = ##class(%DynamicArray).%New()
+    k rowMeta, zvyraznene
+    s pocetRadku = 0
+    f i=1:1:pocetBodu {
+        s odjPri = $lg(body(i),5)
+        i odjPri {
+            s pocetRadku = pocetRadku + 1
+            s rowMeta(pocetRadku) = $lb(i, "P")
+            d zastavky.%Push(..BuildZastavkaRadek(body(i), "prijezd", i))
+        }
+        s pocetRadku = pocetRadku + 1
+        s rowMeta(pocetRadku) = $lb(i, "O")
+        d zastavky.%Push(..BuildZastavkaRadek(body(i), "zastavka", i))
+        s:..JeZvyraznena($lg(body(i),3)) zvyraznene(i) = $lg(body(i),6)
+    }
+    d vals.%Set("VYCHOZI_ZASTAVKA", $lg(body(1),3))
+    d vals.%Set("KONECNA_ZASTAVKA",       $lg(body(pocetBodu),3))
+    // Číslo zvýrazněné zastávky pro adresu v QR jen při jediné shodě, jako u AD (`LinkovyJrAd`) -
+    // kus názvu může trefit víc zastávek a adresa by pak ukázala na jedno z víc míst.
+    s zv = $o(zvyraznene(""))
+    d vals.%Set("AKTUALNI_ZASTAVKA_CZST", $s((zv '= "") && ($o(zvyraznene(zv)) = ""):zvyraznene(zv), 1:""))
 
     s spoje = ##class(%DynamicArray).%New()
     s skupinyDnu = ##class(%DynamicArray).%New()
@@ -740,6 +748,41 @@ ClassMethod CasyBodu(spojId As %String, ByRef spojTabulka, ByRef bodyMapa, ByRef
     // prohozené a ve směru zpět chyběly „jede jinudy" i krajní příjezd a odjezd.
     i prvniRadek > posledniRadek s x = prvniRadek, prvniRadek = posledniRadek, posledniRadek = x
     q 1
+}
+
+/// Nechá v `body` jen zastávky, kde aspoň jeden spoj z `spojTabulka` staví (má čas, ne jen průjezd),
+/// a přečísluje je. `bodyMapa` se přepočítá celá - sloučené sousední body trasy ukazují na řádek
+/// předchůdce, nejen bod, který řádek založil; vynechaný řádek v ní nezůstane.
+ClassMethod JenZastavujici(ByRef body, ByRef pocetBodu As %Integer, ByRef bodyMapa, ByRef spojTabulka)
+{
+    k zastavuje
+    s spojId = ""
+    f {
+        s spojId = $o(spojTabulka(spojId))
+        q:spojId=""
+        continue:'..CasyBodu(spojId, .spojTabulka, .bodyMapa, .casyBodu)
+        s i = ""
+        f {
+            s i = $o(casyBodu(i))
+            q:i=""
+            s:'$lg(casyBodu(i),3) zastavuje(i) = 1
+        }
+    }
+    k puvodni, noveCislo m puvodni = body
+    k body
+    s pocet = 0
+    f i=1:1:pocetBodu {
+        continue:'$g(zastavuje(i))
+        s pocet = pocet + 1, body(pocet) = puvodni(i), noveCislo(i) = pocet
+    }
+    s bodId = ""
+    f {
+        s bodId = $o(bodyMapa(bodId))
+        q:bodId=""
+        i $d(noveCislo(bodyMapa(bodId))) { s bodyMapa(bodId) = noveCislo(bodyMapa(bodId)) }
+        else { k bodyMapa(bodId) }
+    }
+    s pocetBodu = pocet
 }
 
 /// Pořadí spojů v bloku jako legacy (:951-990): od poslední zastávky trasy k první se v každém

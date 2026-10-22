@@ -27,7 +27,7 @@ Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R
 Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; vizuální zkouška a výběr typů provozu 22. 10.; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
 
 1. **`B191d` Nastavení jako u linkového AD** [M-L] (rozhodnutí Jan 22. 10.), po krocích (Zvýraznit
-   zastávku hotové 22. 10.): Zastávky, kde žádný spoj nestaví, Počet stran, Obousměrný tisk, Stránka
+   zastávku a Zastávky, kde žádný spoj nestaví hotové 22. 10.): Počet stran, Obousměrný tisk, Stránka
    pro každou zastávku; ze starého modulu kam legenda a rámečky kolem čísel spojů. Co se nepřidává a proč:
    [`§18.9`](linkovy-knizni-jr-implementace-analyza.md). Cílový stav skupin spojů napříč agendami: [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
 2. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné

@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-22 (4) - 🚌 linkový JŘ MHD: Zastávky, kde žádný spoj nestaví (`B191d`, část)
+
+Druhé nastavení převzaté z linkového AD. Parametr **Zastávky, kde žádný spoj nestaví** sdílí definici
+s AD; u MHD jen volby Tisknout / Netisknout s výchozím Tisknout (linka MHD nastavení „dle linky" nemá
+a starý tisk MHD tiskne celou trasu). Netisknout vynechá řádky zastávek, kde žádný tištěný spoj nemá
+čas - rozhodují jen vybrané typy provozu, takže u KV_DP linky 1 se třemi typy z webu zmizí konec trasy
+za Lázněmi III, kam jezdí jen ostatní typy. Spoje se proto načítají před řádky zastávek a body trasy
+se po vynechání přečíslují včetně sloučených sousedních bodů. Test `TestZastavkyBezZastaveni`
+(zmizí přesně řádky bez zastavujícího spoje, časy ostatních zůstanou na svých řádcích; dvě mutace).
+
 ## 2026-10-22 (3) - 🚌 linkový JŘ MHD: Zvýraznit zastávku (`B191d`, část)
 
 První nastavení převzaté z linkového AD (rozsah v analýze linkového JŘ `§18.9`). Parametr
