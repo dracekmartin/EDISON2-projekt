@@ -6,7 +6,7 @@
 
 > **Nejblíž na řadě:** rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; spuštění z hlavního okna
 > (výběr dvou verzí) jde cestou `B190`, mezery proti vzoru jsou v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
-> Linkový JŘ MHD (`B191`): nastavení jako u AD (`B191d`) hotové 22. 10., na řadě výchozí šablona (`B191e`).
+> Linkový JŘ MHD (`B191`): nastavení jako u AD (`B191d`) hotové 22. 10., zbývá vydání (`B191f`) - čeká, až půjde do verze.
 > Ostatní je v Backlogu - `B190` tisk z modulu JŘ čeká na kolegy.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -14,7 +14,7 @@
 
 ---
 
-## 🎯 Linkový (knižní) JŘ MHD (`B191`, pořadí Jan 12. 10.)
+## ⏸️ Linkový (knižní) JŘ MHD (`B191`, pořadí Jan 12. 10., čeká na vydání)
 
 Městská varianta linkového JŘ: agenda `LinkovyJrMhd` existuje, ale je skrytá - neprošla porovnáním
 se starým modulem. „Dodělám AD a MHD spadne samo" neplatí: AD je nadmnožina v obsahu tabulky, ne
@@ -26,12 +26,11 @@ Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R
 
 Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; vizuální zkouška a nastavení jako u AD (`B191d`) 22. 10.; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
-   `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu: poznámky
-   pod tabulkou, varianta vpravo jako AD #11373, pravidlo zvýraznění aktuální zastávky ([`§18.9`](linkovy-knizni-jr-implementace-analyza.md)).
-2. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
-   v `LinkovyJrAd.cls`), Novinky a příručka. Předtím rozhodnout výběr typů provozu v šablonách
-   přenášených mezi firmami (id typu je v každé firmě jiné, [`§18.8`](linkovy-knizni-jr-implementace-analyza.md)).
+1. **`B191f` Vydání** [S] (s `B191e`, sloučeno 22. 10.), až půjde do verze. Systémová šablona ze zkušební
+   `templates/linkovy-jr-mhd-postskript-a5.json` (veřejné číslo linky už tiskne; nové Id, bez „zkouška"),
+   do ní i do šablon linkového AD pravidlo zvýraznění aktuální zastávky; rozhodnout výběr typů provozu
+   v šablonách přenášených mezi firmami (id typu je v každé firmě jiné, [`§18.8`](linkovy-knizni-jr-implementace-analyza.md));
+   `Released = 1` (komentář u `Released` v `LinkovyJrAd.cls`), Novinky a příručka.
 
 ---
 
@@ -43,6 +42,11 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
   Zastávkový JŘ AD posílá `BARVA_LINKY` / `BARVA_LINKY_2` (`ZastavkoveJrAd.cls:352-355`, přes
   `ALVA.ISY.ISYJR2.API.Linky.GetBarvaLinky`), linkové agendy ne. AD: stejné pole do `LinkovyJrAd`.
   MHD: nejdřív zjistit, jestli modul MHD barvu linky vůbec má.
+
+- **Vývěsky MHD: číslo linky v systémové šabloně** [S] (nález 22. 10., k ověření). `zastavkovy-jr-mhd.json`
+  tiskne velkým písmem `{CISLO_LINKY}` = licenční číslo (CB_DP 325018 místo 18); cestující zná veřejné
+  `{LOKALNI_OZNACENI_LINKY}`. Ověřit proti staré vývěsce MHD, než se šablona změní. Totéž u výchozího
+  názvu PDF v okně Tisk (`{CISLO_LINKY}_…`, `PrintDialogViewModel.cs:30`).
 
 - **Vývěsky MHD: značka zastávky u názvu** [S] (nález 12. 10., `MhdLegacyOracle`). Starý tisk
   připisuje značku zastávky k názvu („Areál VŠTE, A" na CB_DP 11350), my ne - linkový JŘ MHD už
