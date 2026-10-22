@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace TemplateDesigner.Models;
 
@@ -55,6 +57,14 @@ public class TemplateParameter
     /// </summary>
     public bool PerInstance { get; set; }
 
+    /// <summary>
+    /// Název hodnoty v datech instance, která vyjmenovává parametry týkající se načtené instance
+    /// (pole názvů parametrů): parametr se ukáže, jen když v ní je. Dnes typy provozu linkového JŘ MHD -
+    /// firma jich má desítky, linka pár, a ostatní na ní nic nemění. Bez načtených dat nebo bez té
+    /// hodnoty v nich je parametr viditelný. Aditivní klíč kontraktu (R3), starší klient ukáže všechny.
+    /// </summary>
+    public string? VisibleWhenListedIn { get; set; }
+
     /// <summary>Vrátí DefaultValue převedenou na typovanou hodnotu dle Type.</summary>
     public object? GetDefaultTyped() => Type switch
     {
@@ -72,9 +82,13 @@ public class TemplateParameter
     /// i tiskový dialog) - porovnání case-insensitive.
     /// </summary>
     /// <param name="template">Šablona, ke které se parametry nastavují. Null = neznámá, sloupce se neposuzují.</param>
-    public bool IsVisible(IReadOnlyDictionary<string, object?> values, Template? template)
+    /// <param name="data">Načtené stránky dat instance pro <see cref="VisibleWhenListedIn"/>. Null = neznámá
+    /// (tiskový dialog může tisknout víc instancí) - parametr se neschová.</param>
+    public bool IsVisible(IReadOnlyDictionary<string, object?> values, Template? template, IReadOnlyList<DataContext>? data = null)
     {
         if (!string.IsNullOrEmpty(VisibleWhenColumn) && template is not null && !template.ShowsColumn(VisibleWhenColumn))
+            return false;
+        if (!string.IsNullOrEmpty(VisibleWhenListedIn) && IsListed(VisibleWhenListedIn, data) == false)
             return false;
         if (string.IsNullOrEmpty(VisibleWhen)) return true;
 
@@ -83,5 +97,31 @@ public class TemplateParameter
 
         var actual = values.TryGetValue(parts[0].Trim(), out var v) ? v?.ToString() : null;
         return string.Equals(actual, parts[1].Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Je parametr vyjmenovaný v hodnotě <paramref name="key"/> některé stránky dat? Null =
+    /// nedá se říct (data nejsou, nebo hodnotu žádná stránka nenese) - pak se parametr neschovává.</summary>
+    private bool? IsListed(string key, IReadOnlyList<DataContext>? data)
+    {
+        bool? listed = null;
+        foreach (var page in data ?? [])
+        {
+            var names = page.GetValue(key) switch
+            {
+                JsonArray arr => arr,
+                string s => ParseArray(s),
+                _ => null
+            };
+            if (names is null) continue;
+            if (names.Any(n => string.Equals(n?.ToString(), Name, StringComparison.OrdinalIgnoreCase))) return true;
+            listed = false;
+        }
+        return listed;
+    }
+
+    private static JsonArray? ParseArray(string json)
+    {
+        try { return JsonNode.Parse(json) as JsonArray; }
+        catch (JsonException) { return null; }
     }
 }

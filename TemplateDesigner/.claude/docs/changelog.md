@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-22 (2) - 🚌 linkový JŘ MHD: v panelu jen typy provozu načtené linky
+
+Panel parametrů nabízel všech 20 typů provozu KV_DP, ačkoli linka 1 jich má sedm, a z nabídky nešlo
+poznat, co odklikat (nález Jan po zkoušce). Teď ukazuje jen typy, které mají na načtené lince aspoň
+jeden spoj, v obou směrech a nezávisle na výběru - vypnutý typ v panelu zůstane, aby šel zapnout
+zpátky. Bez načtené linky a v tiskovém dialogu (tiskne víc linek) se ukazují všechny. Server posílá
+v datech linky `TYPY_PROVOZU_LINKY` (pole názvů parametrů) a parametr typu provozu nese
+`visibleWhenListedIn` - obojí přidané klíče, starší klient ukáže všechny; pravidlo v `cache-api.md`.
+Testy `ParametryTypuProvozuTests` (viditelnost ověřená mutací, načtení klíče, starší server bez
+seznamu), `LinkovyJrMhdTest` (sedm typů linky i se čtyřmi vypnutými).
+
 ## 2026-10-22 - 🚌 linkový JŘ MHD: výběr typů provozu (`B191d`, část)
 
 Linkový JŘ MHD tiskl každý typ provozu linky jako samostatný blok, všechny. Starý knižní tisk

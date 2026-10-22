@@ -2033,6 +2033,9 @@ ručně psané, nebo jiný nástroj (neověřeno).
 **Hotovo 22. 10. (rozhodnutí Jan):** parametr `TYP_PROVOZU_<id>` (zaškrtávátko) za každý nezablokovaný
 typ provozu firmy, výchozí zapnuto. Typy firmy, ne linky - parametry se berou bez znalosti instance;
 KV_DP jich má 20. Shodu s webem a se starým tiskem se stejným výběrem drží `LinkovyJrMhdTest`.
+Ve 20 typech uživatel nepozná, co odklikat (nález Jan po zkoušce), proto panel ukazuje jen typy, které
+mají na načtené lince aspoň jeden spoj (oba směry, nezávisle na výběru) - linka 1 jich má 7. Tiskový
+dialog ukazuje všechny, protože může tisknout víc linek.
 
 **Záměrně nedělané:** slučování typů do bloku. U MHD nese platnost typ provozu, ne značka spoje
 (KV_DP 1073: žádný z 205 spojů značku platnosti nemá), takže sloučený blok by potřeboval značky pro

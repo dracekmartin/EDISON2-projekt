@@ -280,6 +280,12 @@ před tiskem."
 vyhodnotil jako nesplněnou a parametr schoval natrvalo, `visibleWhenColumn` jen ignoruje. Klíč sloupce
 musí prvky znát (`ParametrySloupcemVariantTests`), jinak by se parametr schoval navždy.
 
+**Parametr, který se týká jen některých instancí**, nese `visibleWhenListedIn` = název hodnoty v datech,
+kterou `GetData` posílá jako pole názvů parametrů týkajících se načtené instance; panel ukáže jen ty
+(dnes typy provozu linkového JŘ MHD → `TYPY_PROVOZU_LINKY`: firma jich má desítky, linka pár).
+⚠️ Seznam **nesmí záviset na hodnotách parametrů** - vypnutý typ by z panelu zmizel a nešel zapnout.
+Bez dat, bez té hodnoty a v tiskovém dialogu (tiskne víc instancí) se nic neschovává.
+
 ---
 
 ### Prezentační nápovědy (R3) - kolik vzhledu smějí nést data

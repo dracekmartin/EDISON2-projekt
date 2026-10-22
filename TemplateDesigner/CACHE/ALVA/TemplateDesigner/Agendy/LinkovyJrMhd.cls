@@ -164,6 +164,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
             s popis = "Spoje tohoto typu provozu se vytisknou jako samostatný blok. Vypnutý typ provozu se netiskne."
             i $g(provozNadpis(tp)) '= "" s popis = "Nadpis bloku na tisku: „"_provozNadpis(tp)_"“. "_popis
             d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, ..ParametrTypuProvozu(tp), nazev, 1, "Typy provozu pro tisk", popis, 1)
+            // Firma má typů provozu desítky, linka pár - návrhář ukáže jen ty, které načtená linka má.
+            d arr.%Get(arr.%Size() - 1).%Set("visibleWhenListedIn", "TYPY_PROVOZU_LINKY")
         }
         s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     } catch (ex) { $$$CatchErrRest }
@@ -282,14 +284,38 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         s smery = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).SmeryKTisku($g(^||ML("IN","SMER_TISKU")))
         d ..PriradNegativniZnacky(.sys, IdFa, dataDB, linkaId, smery, .znacky)
+        s typyLinky = ..TypyProvozuLinky(IdFa, dataDB, linkaId)
         f si = 1:1:$l(smery, ",") {
             s smerId = $s($p(smery, ",", si) = "Z":1, 1:0)
             s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, smerId, .znacky)
-            i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+            i page = "" continue
+            d page.values.%Set("TYPY_PROVOZU_LINKY", typyLinky)
+            s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
     catch (ex) { $$$CatchErrRest }
     ret $$$OK
+}
+
+/// Parametry typů provozu, které mají na lince aspoň jeden spoj (oba směry), jako JSON pole názvů
+/// parametrů. Nezávisí na výběru typů ani směru tisku, jinak by vypnutý typ z panelu zmizel a nešel
+/// by zapnout zpátky.
+ClassMethod TypyProvozuLinky(IdFa As %String, dataDB As %String, linkaId As %String) As %DynamicArray
+{
+    k typy
+    s spojId = ""
+    f {
+        s spojId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,linkaId,spojId))
+        q:spojId=""
+        s typy(+$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"TypProvozuID"))) = ""
+    }
+    s arr = ##class(%DynamicArray).%New(), tp = ""
+    f {
+        s tp = $o(typy(tp))
+        q:tp=""
+        d arr.%Push(..ParametrTypuProvozu(tp))
+    }
+    q arr
 }
 
 /// Ukázková data pro live preview - první linka výchozí skupiny (DEV vzor).

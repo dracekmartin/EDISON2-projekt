@@ -599,6 +599,8 @@ public class TemplateDesignerViewModel : EDViewModel
         // WPF umí nastavení SelectedIndex během výměny ItemsSource spolknout (combobox zůstane
         // prázdný do ručního ◀/▶) → code-behind ho po usazení bindingu srovná deferovaně.
         RequestPreviewPagerSync?.Invoke();
+        // Data jiné instance můžou ukázat nebo schovat parametry, které se jí týkají (visibleWhenListedIn).
+        RequestParamsVisibilityRefresh?.Invoke();
     }
 
     /// <summary>Callback do code-behindu: po výměně stránek dat srovnej SelectedIndex pageru
@@ -3488,9 +3490,10 @@ public class TemplateDesignerViewModel : EDViewModel
         OnAgendaParamChanged();
     }
 
-    /// <summary>visibleWhen parametru proti aktuálním hodnotám a šabloně (jeden zdroj - TemplateParameter.IsVisible).</summary>
+    /// <summary>visibleWhen parametru proti aktuálním hodnotám, šabloně a načteným datům instance
+    /// (jeden zdroj - TemplateParameter.IsVisible).</summary>
     public bool IsAgendaParamVisible(string name) =>
-        _agendaParameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_previewParams, State.CurrentTemplate) ?? true;
+        _agendaParameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_previewParams, State.CurrentTemplate, _realPreviewData) ?? true;
 
     /// <summary>Callback do code-behindu: přepočítej viditelnost polí v tabu parametrů. Volá se po
     /// každé změně šablony - zapnutí sloupce v prvku může ukázat nebo schovat parametr.</summary>

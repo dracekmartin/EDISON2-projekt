@@ -103,7 +103,7 @@ Method TestParametryTypuProvozu()
 			continue
 		}
 		set p = nabidnute(nazev)
-		do $$$AssertEquals(p.%Get("type")_"|"_p.%Get("defaultValue")_"|"_p.%Get("serverSide"), "bool|true|1", nazev)
+		do $$$AssertEquals(p.%Get("type")_"|"_p.%Get("defaultValue")_"|"_p.%Get("serverSide")_"|"_p.%Get("visibleWhenListedIn"), "bool|true|1|TYPY_PROVOZU_LINKY", nazev)
 	}
 	do $$$AssertTrue(pocet > 0, "KV_DP nemá žádný typ provozu - test nic nedokazuje")
 }
@@ -144,6 +144,11 @@ Method TestVyberTypuProvozuJakoWeb()
 		quit:idx=""
 		continue:'$isvalidnum(idx)
 		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", idx)), smer = page.values.%Get("SMER")
+		// Panel ukazuje typy linky podle tohoto seznamu - vypnuté v něm zůstat musí, jinak by
+		// zmizely z panelu a nešly zapnout zpátky. Linka 1 má sedm typů provozu, tisknou se tři.
+		set typy = page.values.%Get("TYPY_PROVOZU_LINKY"), seznam = ""
+		if $isobject(typy) { for j=0:1:typy.%Size()-1 set seznam = seznam_","_typy.%Get(j) }
+		do $$$AssertEquals($select($isobject(typy):typy.%Size(), 1:0), 7, smer_": typy provozu linky "_seznam)
 		kill blok, spoje
 		set it = page.rows.%Get("SKUPINY_DNU").%GetIterator()
 		while it.%GetNext(.k, .s) { set blok(s.%Get("ID")) = s.%Get("NADPIS") }
