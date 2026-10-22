@@ -17,7 +17,9 @@ public class PocetStranTests
     [Theory]
     [InlineData("1 strana", 1)]
     [InlineData("2 strany", 2)]
+    [InlineData("3 strany", 3)]   // linkový JŘ MHD (víc spojů než AD)
     [InlineData("Automaticky (dle linky)", 0)]
+    [InlineData("Bez omezení", 0)]   // MHD nastavení u linky nemá
     [InlineData("", 0)]
     public void CilStran_ZTextuVolby(string volba, int ocekavano)
     {

@@ -338,21 +338,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvT.serverSide   = 1
     s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
 
-    // Počet stran (#8785): sazba zmenší nejdřív poznámky, pak tabulku, aby se sestava vešla.
-    // Řeší ho návrhář při sazbě, ne server - proto bez `serverSide`. „Automaticky" zatím nedělá
-    // nic: u linky pole zatím není (rozhodnutí Jan 23. 9., ladí se na vlastních datech).
-    s pStr = ##class(%DynamicObject).%New()
-    s pStr.name         = "POCET_STRAN_SESTAVY"
-    s pStr.label        = "Počet stran"
-    s pStr.type         = "enum"
-    s pStr.group        = "Obecné"
-    s pStr.defaultValue = "Automaticky (dle linky)"
-    s pStr.description  = "Na kolik stran se má vejít každý směr linky. Když se nevejde, zmenší se nejdřív poznámky, pak tabulka. Automaticky = podle nastavení u linky (zatím bez omezení)."
-    s optsStr = ##class(%DynamicArray).%New()
-    d optsStr.%Push("Automaticky (dle linky)")
-    d optsStr.%Push("1 strana")
-    d optsStr.%Push("2 strany")
-    s pStr.options = optsStr
 
     // ── pořadí, v jakém je uvidí uživatel ────────────────────────────────────────
     // Skupiny se v tabu Parametry řadí podle **prvního výskytu** v tomhle poli, ne abecedně, takže
@@ -366,7 +351,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(..ParametrSmeruTisku())
     d arr.%Push(pObou)
     d arr.%Push(pVyl)
-    d arr.%Push(pStr)
+    d arr.%Push(..ParametrPoctuStran())
     d arr.%Push(p)         // Tabulka linky - dělení spojů je nejdůležitější volba agendy
     d arr.%Push(pTc)
     d arr.%Push(..ParametrZastavkyBezZastaveni())
@@ -377,6 +362,28 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
+}
+
+/// Počet stran (#8785): sazba zmenší nejdřív poznámky, pak tabulku, aby se sestava vešla. Řeší ho
+/// návrhář při sazbě, ne server - proto bez `serverSide`; cíl čte z čísla na začátku volby a volba
+/// bez čísla = bez omezení. „Automaticky" zatím nedělá nic: u linky pole zatím není (rozhodnutí Jan
+/// 23. 9.). Jediná definice pro AD i MHD; MHD nastavení u linky nemá a jezdí v něm víc spojů, proto
+/// „Bez omezení" místo „Automaticky" a až 3 strany (rozhodnutí Jan 22. 10.).
+/// ⚠️ Popisky voleb jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
+ClassMethod ParametrPoctuStran(dleLinky As %Boolean = 1, nejvic As %Integer = 2) As %DynamicObject
+{
+    s pStr = ##class(%DynamicObject).%New()
+    s pStr.name         = "POCET_STRAN_SESTAVY"
+    s pStr.label        = "Počet stran"
+    s pStr.type         = "enum"
+    s pStr.group        = "Obecné"
+    s pStr.defaultValue = $s(dleLinky:"Automaticky (dle linky)", 1:"Bez omezení")
+    s pStr.description  = "Na kolik stran se má vejít každý směr linky. Když se nevejde, zmenší se nejdřív poznámky, pak tabulka."_$s(dleLinky:" Automaticky = podle nastavení u linky (zatím bez omezení).", 1:"")
+    s optsStr = ##class(%DynamicArray).%New()
+    d optsStr.%Push(pStr.defaultValue)
+    f n=1:1:nejvic d optsStr.%Push(n_" "_$s(n=1:"strana", n<5:"strany", 1:"stran"))
+    s pStr.options = optsStr
+    q pStr
 }
 
 /// Zastávky, na kterých žádný spoj nestaví: u AD nastavení u linky (`PATCH,tisknoutJenTcKdeSpojeZastavuji`,

@@ -142,6 +142,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
         $$$FillParams
         s arr = ##class(%DynamicArray).%New()
         d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
+        // Až 3 strany - městská linka má víc spojů než meziměstská (Jan 22. 10.).
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran(0, 3))
         // Bez „Automaticky (dle linky)" - linka MHD to nastavení nemá; výchozí Tisknout jako starý tisk.
         d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrZastavkyBezZastaveni(0))
         // Bez Zvýraznit tarifní číslo - MHD sloupec Tč nemá (rozsah `B191d`, analýza §18.9).

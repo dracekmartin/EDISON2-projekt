@@ -297,6 +297,39 @@ Method TestZastavkyBezZastaveni()
 	do $$$AssertTrue(vynechano > 0, "linka nemá zastávku bez zastavení - test nic nedokazuje")
 }
 
+/// Počet stran sdílí definici s AD (`B191d`): MHD má místo „Automaticky (dle linky)" volbu Bez omezení
+/// (linka MHD nastavení nemá) a až 3 strany; AD zůstává, jak bylo. Návrhář čte cíl z čísla na začátku.
+Method TestPocetStran()
+{
+	set mhd = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran(0, 3)
+	do $$$AssertEquals(mhd.%Get("defaultValue")_"|"_mhd.options.%ToJSON(), "Bez omezení|[""Bez omezení"",""1 strana"",""2 strany"",""3 strany""]", "MHD")
+	set ad = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran()
+	do $$$AssertEquals(ad.%Get("defaultValue")_"|"_ad.options.%ToJSON(), "Automaticky (dle linky)|[""Automaticky (dle linky)"",""1 strana"",""2 strany""]", "AD")
+	do $$$AssertEquals(mhd.%Get("name")_"|"_mhd.%Get("group")_"|"_mhd.%Get("serverSide"), "POCET_STRAN_SESTAVY|Obecné|", "řeší návrhář, ne server")
+}
+
+/// Vynechání zastávek bez zastavení přečísluje i sloučené sousední body trasy (stejné číslo
+/// zastávky = jeden řádek, `bodyMapa` na něj ukazuje z obou bodů). KV_DP linka 1 je má taky
+/// (`TestZastavkyBezZastaveni` to chytí přes časy), tady je případ izolovaný na smyšlených datech:
+/// řádek 2 obsluhuje spoj jen přes sloučený bod 103.
+Method TestJenZastavujiciSeSloucenymBodem()
+{
+	kill body, bodyMapa, spojTabulka
+	set body(1) = $listbuild(101, "", "První"), body(2) = $listbuild(102, "", "Sloučená"), body(3) = $listbuild(104, "", "Třetí")
+	set bodyMapa(101) = 1, bodyMapa(102) = 2, bodyMapa(103) = 2, bodyMapa(104) = 3
+	// $lb(?, ?, příjezd, odjezd, projíždí): na prvním bodu jen projíždí, staví na 103 a 104.
+	set spojTabulka("A", 101) = $listbuild("", "", "", "", 1)
+	set spojTabulka("A", 103) = $listbuild("", "", 310, 310, 0)
+	set spojTabulka("A", 104) = $listbuild("", "", 320, 320, 0)
+	set pocetBodu = 3
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).JenZastavujici(.body, .pocetBodu, .bodyMapa, .spojTabulka)
+
+	do $$$AssertEquals(pocetBodu, 2, "vynechá jen první zastávku")
+	do $$$AssertEquals($listget(body(1), 3)_","_$listget(body(2), 3), "Sloučená,Třetí", "pořadí řádků")
+	do $$$AssertEquals($get(bodyMapa(102))_","_$get(bodyMapa(103))_","_$get(bodyMapa(104)), "1,1,2", "sloučený bod ukazuje na přečíslovaný řádek")
+	do $$$AssertTrue('$data(bodyMapa(101)), "vynechaný bod v mapě nezůstane")
+}
+
 /// Čísla čárkou seřazená vzestupně, aby nezáleželo na pořadí.
 ClassMethod Serazene(cisla As %String) As %String
 {

@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-22 (5) - 🚌 linkový JŘ MHD: Počet stran až 3 (`B191d`, část)
+
+Třetí nastavení převzaté z linkového AD. **Počet stran** sdílí definici s AD; u MHD volby Bez omezení
+(výchozí, linka MHD nastavení „dle linky" nemá), 1, 2 a 3 strany - městská linka má víc spojů než
+meziměstská (rozhodnutí Jan 22. 10.). AD zůstává na Automaticky / 1 / 2. Sazbu řeší návrhář stejně
+jako u AD: cíl čte z čísla na začátku volby, takže 3 strany fungují bez změny sazby. Testy
+`PocetStranTests` (3 strany, Bez omezení), `LinkovyJrMhdTest.TestPocetStran` (volby MHD i AD).
+
+K předchozímu kroku přibyl test `TestJenZastavujiciSeSloucenymBodem`: přečíslování sloučených
+sousedních bodů trasy na smyšlených datech. Mutací se ukázalo, že je má i KV_DP linka 1 - verze, která
+mapovala jen bod, jenž řádek založil, by na ní posunula časy.
+
 ## 2026-10-22 (4) - 🚌 linkový JŘ MHD: Zastávky, kde žádný spoj nestaví (`B191d`, část)
 
 Druhé nastavení převzaté z linkového AD. Parametr **Zastávky, kde žádný spoj nestaví** sdílí definici

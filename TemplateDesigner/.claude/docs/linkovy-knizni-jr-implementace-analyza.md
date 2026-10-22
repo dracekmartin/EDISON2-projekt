@@ -2075,7 +2075,7 @@ volby, popisek parametru stejný jako u AD.
 | Dělení spojů dle platnosti | nahrazené výběrem typů provozu (§18.8) |
 | Zvýraznit zastávku (+ Zvýraznit tarifní číslo) | zastávka hotová 22. 10.; tarifní číslo jen pokud bude sloupec Tč |
 | Zastávky, kde žádný spoj nestaví | hotové 22. 10. - rozhodují spoje vybraných typů provozu |
-| Počet stran | přidat |
+| Počet stran | hotové 22. 10. - Bez omezení / 1-3 strany (víc spojů než AD) |
 | Obousměrný tisk | přidat - agenda musí skládat stránku obou směrů jako AD |
 | Stránka pro každou zastávku | přidat |
 | Sloupec tarifních čísel, Písmeno systému u zóny, Barvy spojů | neřeší se - nejisté, jestli to MHD data mají; vytáhnout, až o to někdo řekne |
