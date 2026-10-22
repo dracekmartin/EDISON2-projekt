@@ -2044,6 +2044,20 @@ vedlejší typy (`ZastavkoveJrMhd.cls:629`), to by tady nestačilo. Dál jen na 
 stejně tak samostatná stránka pro každý typ provozu (vzor „Samostatná stránka pro každý označník"),
 svislý nadpis bloku a automatická poznámka ke svátečním typům.
 
+**Web DPKV je jedna zakázka, ne vzor (rozhodnutí Jan 22. 10.).** Do základu jdou obecné věci: shoda
+se starým modulem a to, co dává smysl všem dopravcům MHD. Na vzhled webu DPKV se agenda nepřizpůsobuje.
+Co ze zkoušky 22. 10. zůstává jako obecný kandidát (dělat na poptávku, nebo s `B191e`):
+
+- **Zastávky bez spoje.** Starý tisk i my tiskneme celou trasu linky, i řádky, kde ve vytištěných
+  blocích žádný spoj nejede nebo jen projíždí (KV_DP linka 1: konec trasy za Lázněmi III, Slovanská,
+  Škola Dvory). Web je nemá. Obecná volba „netisknout zastávky bez spoje ve vytištěných blocích".
+- **Dopravce a tarifní poznámka.** Starý knižní tisk řádek dopravce posílá prázdný
+  (`LinkyPrintFormatJR.cls:1100-1106`) a tarifní poznámku linky (`PoznamkaTarifni`, vyplněná třeba
+  u CB_DP 11350) nečte - v tom jsme s ním shodní. Doplnit je by bylo zlepšení proti starému modulu.
+
+Rozdíly časů proti webu o minutu jsou rozdíl verze dat (dev kopie platí od 1. 1. 2025, web od
+1. 12. 2025), ne chyba; shodu časů drží porovnání se starým tiskem nad stejnými daty.
+
 ⚠️ **Otevřené před vydáním (`B191f`):** id typu provozu je číslo v rámci firmy, takže uložená
 hodnota `TYP_PROVOZU_1003` v šabloně by v jiné firmě vypnula jiný typ provozu. Týká se šablon
 přenášených mezi firmami (systémové šablony, export/import).
