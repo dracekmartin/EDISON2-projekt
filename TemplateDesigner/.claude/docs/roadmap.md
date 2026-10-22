@@ -24,13 +24,13 @@ v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva n
 bere jen to, co mění data.* Rozhodnutí po položkách, důvody a výskyt v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md).
 Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R2/R5`](architektonicka-rozhodnuti-agendy.md).
 
-Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; vizuální zkouška a nastavení jako u AD (`B191d`) 22. 10.; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
+Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; nastavení jako u AD (`B191d`) a funkční review 22. 10. - funkčně hotové; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B191f` Vydání** [S] (s `B191e`, sloučeno 22. 10.), až půjde do verze. Systémová šablona ze zkušební
-   `templates/linkovy-jr-mhd-postskript-a5.json` (veřejné číslo linky už tiskne; nové Id, bez „zkouška"),
-   do ní i do šablon linkového AD pravidlo zvýraznění aktuální zastávky; rozhodnout výběr typů provozu
-   v šablonách přenášených mezi firmami (id typu je v každé firmě jiné, [`§18.8`](linkovy-knizni-jr-implementace-analyza.md));
-   `Released = 1` (komentář u `Released` v `LinkovyJrAd.cls`), Novinky a příručka.
+1. **`B191f` Vydání** [S] (s `B191e`), až půjde do verze. Nejdřív finální zkouška (Jan), u zákazníka ověřit
+   neověřené na dev datech: poznámky z trasy, příjezd/odjezd, atributy spoje mimo B/C ([`§18.7`](linkovy-knizni-jr-implementace-analyza.md)).
+   Systémová šablona ze zkušební `templates/linkovy-jr-mhd-postskript-a5.json` (nové Id, bez „zkouška") s pravidlem
+   zvýraznění aktuální zastávky (i šablony linkového AD); rozhodnout výběr typů provozu v šablonách mezi firmami
+   ([`§18.8`](linkovy-knizni-jr-implementace-analyza.md)); `Released = 1`, Novinky a příručka.
 
 ---
 
