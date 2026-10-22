@@ -22,6 +22,17 @@
     <AppHostDotNetSearch>AppRelative;Global</AppHostDotNetSearch>
   </PropertyGroup>
 
+  <!-- Legacy knihovny jsou reference přes HintPath do C:\Edison. EdisonLegacyDir jde přepsat kvůli testu.
+       S LegacyAssembliesFromInstallation=true publish každou DLL odtud vynechá: nejde do bundlu ani
+       do PublishDir a exe ji podle deps.json načte z adresáře instalace, stejnou jako agendy (pravidlo
+       podle cesty, ať se nová tranzitivní závislost do bundlu nedostane). Do PublishDir ani do seznamu
+       PublishOutputs nesmí: publish, který by ji pak v seznamu neměl (starší revize), by ji z C:\Edison
+       smazal. Cena: změněný nebo odebraný člen legacy API shodí exe až za běhu. -->
+  <PropertyGroup>
+    <EdisonLegacyDir Condition="'$(EdisonLegacyDir)' == ''">C:\Edison\</EdisonLegacyDir>
+    <_EdisonLegacyDirFull>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::GetFullPath('$(EdisonLegacyDir)'))))</_EdisonLegacyDirFull>
+  </PropertyGroup>
+
   <!-- Hook musí být po ComputeResolvedFilesToPublishList (ne ComputeFilesToPublish — ten
        má bundling už v dependencies, takže by změny přišly pozdě). Sidecar .pdb/.xml
        do publish výstupu nepatří vůbec. -->
@@ -34,7 +45,21 @@
         <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       </ResolvedFileToPublish>
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'$(LegacyAssembliesFromInstallation)' == 'true' And '%(Extension)' == '.dll' And $([System.String]::Copy('%(FullPath)').StartsWith('$(_EdisonLegacyDirFull)', System.StringComparison.OrdinalIgnoreCase))" />
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
                              Condition="'%(Extension)' == '.pdb' Or '%(Extension)' == '.xml'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Inkrementální úklid SDK maže z PublishDir, co minulý publish zapsal a tenhle ne. Starší publish
+       zapsal do PublishOutputs i volné legacy DLL (C1) a první publish s vynechanými legacy DLL by je
+       z C:\Edison smazal, pojistka proto v C:\Edison nemaže nic. Jména targetů a položek jsou interní SDK
+       (verzi SDK připíná global.json), jejich přejmenování chytí SingleFilePublishTargetsTests. -->
+  <Target Name="KeepLegacyFilesOnIncrementalClean" AfterTargets="_GetCurrentAndPriorPublishFileWrites"
+          BeforeTargets="_IncrementalCleanPublishDirectory" Condition="'$(LegacyAssembliesFromInstallation)' == 'true'">
+    <ItemGroup>
+      <_PriorPublishFileWrites Remove="@(_PriorPublishFileWrites)"
+          Condition="$([System.String]::Copy('%(FullPath)').StartsWith('$(_EdisonLegacyDirFull)', System.StringComparison.OrdinalIgnoreCase))" />
     </ItemGroup>
   </Target>
 
@@ -57,13 +82,11 @@
            Text="Allow-list nefunguje: do '$(PublishDir)' by šel '@(ResolvedFileToPublish->'%(Filename)%(Extension)')' místo '$(TargetFileName)'. Publish zastaven." />
   </Target>
 
-  <!-- Legacy knihovny (HintPath do C:\Edison) jdou do bundlu tak, jak na publikujícím stroji leží.
+  <!-- Legacy knihovny, které jdou do bundlu, nese exe tak, jak na publikujícím stroji leží.
        Debug EDLicence stahuje licenci z 127.0.0.1 a chyby ukazuje dialogem ERROR (vydání 29. 9.),
-       proto Release publish Debug build odmítne. Lokální publish proti Debug legacy:
-       -p:AllowDebugLegacyAssemblies=true. EdisonLegacyDir jde přepsat kvůli testu. -->
-  <PropertyGroup>
-    <EdisonLegacyDir Condition="'$(EdisonLegacyDir)' == ''">C:\Edison\</EdisonLegacyDir>
-  </PropertyGroup>
+       proto Release publish Debug build odmítne. Vynechané legacy DLL (LegacyAssembliesFromInstallation)
+       publish nevydává, a tedy ani nekontroluje. Lokální publish proti Debug legacy:
+       -p:AllowDebugLegacyAssemblies=true. -->
 
   <UsingTask TaskName="FindDebugAssemblies" TaskFactory="RoslynCodeTaskFactory"
              AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -129,10 +152,8 @@ UnverifiedAssemblies = unverified.ToArray();
   </UsingTask>
 
   <Target Name="RejectDebugLegacyAssemblies" AfterTargets="ComputeResolvedFilesToPublishList"
+          DependsOnTargets="MarkLooseSingleFileAssemblies"
           Condition="'$(Configuration)' == 'Release' And '$(AllowDebugLegacyAssemblies)' != 'true' And '$(PublishOwnAssemblyOnly)' != 'true'">
-    <PropertyGroup>
-      <_EdisonLegacyDirFull>$([MSBuild]::EnsureTrailingSlash($([System.IO.Path]::GetFullPath('$(EdisonLegacyDir)'))))</_EdisonLegacyDirFull>
-    </PropertyGroup>
     <ItemGroup>
       <_LegacyPublishAssembly Include="@(ResolvedFileToPublish)"
           Condition="'%(Extension)' == '.dll' And $([System.String]::Copy('%(FullPath)').StartsWith('$(_EdisonLegacyDirFull)', System.StringComparison.OrdinalIgnoreCase))" />

@@ -7,8 +7,9 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// SingleFilePublish.targets odmítne v Release publish Debug build legacy knihovny z C:\Edison
-/// (vydání 29. 9. neslo Debug EDLicence). Fixture: vyrobená EDLicence.dll v dočasném „C:\Edison"
-/// a minimální projekt s HintPath na ni, publikovaný skutečným dotnet publish.
+/// (vydání 29. 9. neslo Debug EDLicence), s LegacyAssembliesFromInstallation ji nechá vedle exe.
+/// Fixture: vyrobená EDLicence.dll v dočasném „C:\Edison" a minimální projekt s HintPath na ni,
+/// publikovaný skutečným dotnet publish.
 /// </summary>
 public class SingleFilePublishTargetsTests : IDisposable
 {
@@ -74,6 +75,57 @@ public class SingleFilePublishTargetsTests : IDisposable
         Assert.True(exitCode == 0, output);
     }
 
+    [Fact]
+    public void SingleFilePublish_LegacyFromInstallation_LeavesLegacyDllOutOfBundleAndPublishDir()
+    {
+        WriteLegacyAssembly("EDLicence", DebuggableAttribute.DebuggingModes.Default
+            | DebuggableAttribute.DebuggingModes.DisableOptimizations);
+
+        var (exitCode, output) = Publish(singleFile: true, legacyFromInstallation: true);
+
+        Assert.True(exitCode == 0, output);
+        Assert.False(BundleContains("EDLicence"), "EDLicence.dll je v bundlu.");
+        Assert.False(File.Exists(Path.Combine(_root, "out", "EDLicence.dll")), output);
+        // Vlastní assembly v bundlu dokládá, že se single-file opravdu použil.
+        Assert.False(File.Exists(Path.Combine(_root, "out", "consumer.dll")), output);
+    }
+
+    [Fact]
+    public void SingleFilePublish_WithoutLegacyFromInstallation_BundlesLegacyDll()
+    {
+        WriteLegacyAssembly("EDLicence", DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints);
+
+        var (exitCode, output) = Publish(singleFile: true);
+
+        Assert.True(exitCode == 0, output);
+        Assert.True(BundleContains("EDLicence"), "EDLicence.dll chybí v bundlu.");
+        Assert.False(File.Exists(Path.Combine(_root, "out", "EDLicence.dll")), output);
+    }
+
+    // Profil SingleFileCEdison publikuje do C:\Edison, kde legacy DLL leží, a SDK z PublishDir maže,
+    // co minulý publish zapsal a tenhle ne.
+    [Fact]
+    public void SingleFilePublishIntoLegacyDir_SwitchingLegacyFromInstallation_KeepsLegacyDll()
+    {
+        WriteLegacyAssembly("EDLicence", DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints);
+        var legacyDll = Path.Combine(_legacyDir, "EDLicence.dll");
+
+        // Dřívější volná legacy DLL (jako C1) je v PublishOutputs minulého publishe.
+        var (exitCode, output) = Publish(singleFile: true, outDir: _legacyDir, looseFromSingleFile: "EDLicence");
+        Assert.True(exitCode == 0 && File.Exists(legacyDll), output);
+
+        (exitCode, output) = Publish(singleFile: true, outDir: _legacyDir, legacyFromInstallation: true);
+        Assert.True(exitCode == 0 && File.Exists(legacyDll), output);
+
+        // Starší revize, která legacy DLL balí.
+        (exitCode, output) = Publish(singleFile: true, outDir: _legacyDir);
+        Assert.True(exitCode == 0 && File.Exists(legacyDll), output);
+    }
+
+    private bool BundleContains(string legacyName) =>
+        File.ReadAllBytes(Path.Combine(_root, "out", "consumer.exe")).AsSpan()
+            .IndexOf(File.ReadAllBytes(Path.Combine(_legacyDir, legacyName + ".dll"))) >= 0;
+
     private void WriteLegacyAssembly(string name, DebuggableAttribute.DebuggingModes modes,
         CustomAttributeBuilder? extraAttribute = null)
     {
@@ -94,20 +146,25 @@ public class SingleFilePublishTargetsTests : IDisposable
                 ? Directory.EnumerateFileSystemEntries(outDir).Select(Path.GetFileName) : []));
     }
 
-    private (int ExitCode, string Output) Publish(string extraArgument = "")
+    private (int ExitCode, string Output) Publish(string extraArgument = "", bool singleFile = false,
+        bool legacyFromInstallation = false, string? outDir = null, string looseFromSingleFile = "")
     {
         var projectDir = Path.Combine(_root, "consumer");
         Directory.CreateDirectory(projectDir);
+        if (singleFile) File.WriteAllText(Path.Combine(projectDir, "Program.cs"), "return;");
         File.WriteAllText(Path.Combine(projectDir, "consumer.csproj"), $"""
             <Project Sdk="Microsoft.NET.Sdk">
               <PropertyGroup>
                 <TargetFramework>net10.0</TargetFramework>
                 <EdisonLegacyDir>{_legacyDir}</EdisonLegacyDir>
+                <OutputType>{(singleFile ? "Exe" : "Library")}</OutputType>
+                <LegacyAssembliesFromInstallation>{(legacyFromInstallation ? "true" : "")}</LegacyAssembliesFromInstallation>
               </PropertyGroup>
               <ItemGroup>
                 <Reference Include="EDLicence">
                   <HintPath>{Path.Combine(_legacyDir, "EDLicence.dll")}</HintPath>
                 </Reference>
+                {(looseFromSingleFile != "" ? $"""<LooseFromSingleFile Include="{looseFromSingleFile}" />""" : "")}
               </ItemGroup>
               <Import Project="{Path.Combine(RepoRoot(), "SingleFilePublish.targets")}" />
             </Project>
@@ -122,9 +179,12 @@ public class SingleFilePublishTargetsTests : IDisposable
             StandardOutputEncoding = System.Text.Encoding.UTF8,
             StandardErrorEncoding = System.Text.Encoding.UTF8,
         };
-        foreach (var argument in new[] { "publish", "-c", "Release", "-o", Path.Combine(_root, "out"), "-nologo",
+        foreach (var argument in new[] { "publish", "-c", "Release", "-o", outDir ?? Path.Combine(_root, "out"), "-nologo",
                      "-nodeReuse:false", "-p:UseSharedCompilation=false" })
             startInfo.ArgumentList.Add(argument);
+        if (singleFile)
+            foreach (var argument in new[] { "-r", "win-x64", "--self-contained", "false", "-p:PublishSingleFile=true" })
+                startInfo.ArgumentList.Add(argument);
         if (extraArgument != "") startInfo.ArgumentList.Add(extraArgument);
         // Proměnné MSBuildu z běžícího dotnet test by vnořený build navedly do cizí instalace SDK.
         foreach (var key in startInfo.Environment.Keys.Where(k => k.StartsWith("MSBuild", StringComparison.OrdinalIgnoreCase)).ToList())

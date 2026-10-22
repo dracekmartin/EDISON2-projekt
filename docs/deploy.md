@@ -9,13 +9,12 @@ sdílí ale `EDControls.dll` - breaking change jejího API znamená vydat i TD (
 Z repa EDISON2 (publish profilem `SingleFileCEdison` do `C:\Edison\`, soubory vybírat ručně,
 složku nikdy nezipovat - leží tam stale `.pdb`/`.deps.json` a dev `VERZE.INF`):
 
-- `EDISONMAIN2.exe` - single-file bundle (obsahuje `EDISONMAIN2.LegacyMiniApps`, AvalonDock,
-  WebView2 i snapshot `MLRest`, `EDLicence`, `EDUsers`, `EDISONAPI`, `EDCore`, `EDLibrary`, `MLServer`
-  a `Newtonsoft.Json` z `C:\Edison\` stroje, kde se publikovalo - publikovat jen tam, kde `C:\Edison\`
-  odpovídá vydávané legacy verzi. Debug build některé z nich (Debug `EDLicence` stahuje licenci
-  z `127.0.0.1` a chyby ukazuje dialogem `ERROR`) Release publish odmítne (`SingleFilePublish.targets`;
-  kontrolu umí jen `dotnet publish`, publish z Visual Studia skončí chybou), verzi legacy nehlídá nic.
-  SDK připíná `global.json` v kořeni repa)
+- `EDISONMAIN2.exe` - single-file bundle (obsahuje `EDISONMAIN2.LegacyMiniApps`, AvalonDock
+  a WebView2, SDK připíná `global.json` v kořeni repa). Legacy knihovny (`MLRest`, `EDLicence`, `EDUsers`,
+  `EDISONAPI`, `EDCore`, `EDLibrary`, `MLServer`, `Newtonsoft.Json`, C1, CacheClient, Aegis) bere shell z adresáře
+  instalace vedle sebe, stejné jako agendy, a MLRest odtud čte i `MLRestConfig-data.xml`. Shell je tak
+  za běhu vázaný na jejich API: změněný nebo odebraný člen, který volá, ho shodí až na té cestě. Publikovat
+  proti legacy HEAD vydávané verze a nové legacy API, které shell začne volat, vydat dřív než shell.
 - `EDControls.dll` - volná vedle exe. S každým vydáním nové DLL (FULL shell, TD i samostatně) přesuň obsah
   `EDControls/dotnet/PublicAPI.Unshipped.txt` do `PublicAPI.Shipped.txt` a commitni: řádek `*REMOVED*X` zmizí
   spolu s řádkem `X` ve `Shipped`. Řádek `*REMOVED*` v `Unshipped` znamená, že vydání odebírá API a DLL

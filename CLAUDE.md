@@ -2,16 +2,16 @@
 
 Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP (MLRest).
 
-Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se
-dostávají pouze přes `dotnet publish` s profilem „SingleFileCEdison"
-(`Properties/PublishProfiles/`) - bundle bez volných NuGet DLL. Výjimky drží sdílený
-`SingleFilePublish.targets` v rootu (importují ho EDISONMAIN2, EDUPDATE2, TemplateDesigner
+Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se dostávají pouze přes
+`dotnet publish` s profilem „SingleFileCEdison" (`Properties/PublishProfiles/`), NuGet DLL jsou v bundlu.
+Výjimky drží sdílený `SingleFilePublish.targets` v rootu (importují ho EDISONMAIN2, EDUPDATE2, TemplateDesigner
 i EDControls): **`EDControls.dll` je vedle exe volný soubor**, aby šla nasadit samostatně
 (do produkce jde DLL + exe, který ji používá; druhý exe se nepřebuildí a novou DLL převezme).
-Cena: **breaking change API znamená publikovat i konzumenty** (DLL nikdy samotnou) - viz
-`EDControls/CLAUDE.md`. Tamtéž `AppHostDotNetSearch`: exe hledají .NET runtime nejdřív v `dotnet\`
-vedle sebe (EDLOADER ho rozbalí z `EDISONRUNTIME.zip`), globální **jen když `dotnet\` neexistuje** -
-neúplná složka exe shodí.
+Cena: **breaking change API znamená publikovat i konzumenty** (DLL nikdy samotnou) - viz `EDControls/CLAUDE.md`.
+Shell (`LegacyAssembliesFromInstallation`) nebalí legacy DLL z `C:\Edison` (MLRest, EDLicence, EDCore...), bere
+je z instalace vedle sebe, stejné jako agendy: nové legacy API, které volá, musí být na instalaci dřív než shell.
+V targets je i `AppHostDotNetSearch`: exe hledají .NET runtime nejdřív v `dotnet\` vedle sebe (EDLOADER ho rozbalí
+z `EDISONRUNTIME.zip`), globální **jen když `dotnet\` neexistuje** - neúplná složka exe shodí.
 
 Týmž profilem se vydává i **EDControls samostatně**: `PublishOwnAssemblyOnly` propustí jen
 vlastní assembly (plný uzávěr závislostí - MLRest, EDLicence, EDCore, Newtonsoft - by

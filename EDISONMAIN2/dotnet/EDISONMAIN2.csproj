@@ -15,6 +15,9 @@
     <WarningsAsErrors>Nullable;CS0108</WarningsAsErrors>
     <!-- Připnutá aplikace na liště a okno bez Icon berou ikonu z exe, ne z okna - bez ní výchozí ikona .NET. -->
     <ApplicationIcon>..\..\EDControls\dotnet\EDIcons\cube_molecule.ico</ApplicationIcon>
+    <!-- Legacy DLL z C:\Edison bere shell z instalace, se stejnou verzí jako agendy vedle něj
+         (SingleFilePublish.targets). Nové legacy API, které shell volá, musí být na instalaci dřív než shell. -->
+    <LegacyAssembliesFromInstallation>true</LegacyAssembliesFromInstallation>
   </PropertyGroup>
 
   <ItemGroup>
@@ -60,17 +63,5 @@
   </ItemGroup>
 
   <Import Project="..\..\SingleFilePublish.targets" />
-
-  <!-- Transitivní závislosti EDLibrary (WinForms grid, přímý DB klient, mail), které shell
-       nenačítá - z single-file bundle ven jako loose soubory. V C:\Edison\ už leží z legacy
-       buildů, takže případná obskurní code path je vedle exe pořád najde. Chybějící soubor start
-       neshodí: host .NET 10 existenci app-local assetů z deps.json nekontroluje. -->
-  <ItemGroup>
-    <LooseFromSingleFile Include="C1.Win.4.5.2" />
-    <LooseFromSingleFile Include="C1.Win.C1FlexGrid.4.5.2" />
-    <LooseFromSingleFile Include="C1.Win.C1Sizer.4" />
-    <LooseFromSingleFile Include="InterSystems.Data.CacheClient" />
-    <LooseFromSingleFile Include="AegisImplicitMail" />
-  </ItemGroup>
 
 </Project>
