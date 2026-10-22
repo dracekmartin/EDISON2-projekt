@@ -42,7 +42,7 @@ public class EDSearchTextBox : TextBox
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         // Esc s textem vyčistí filtr; prázdné pole nechá klávesu probublat
-        // (v dialogu ji zpracuje IsCancel tlačítko).
+        // (v dialogu ji zpracuje IsCancel tlačítko nebo EDFooter).
         if (e.Key == Key.Escape && Text.Length > 0)
         {
             Clear();

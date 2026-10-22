@@ -16,6 +16,10 @@ DataContext, žádné atributy.
 - **Zavřít i Storno sdílí handler**: pokud VM má `ConfirmOnCancel = true`, nejdřív se
   ptá přes `PopupDisplayer.ConfirmClose()` - okna s neuloženými daty tím dostanou
   potvrzení zdarma.
+- **Esc = Zavřít/Storno** (týž handler). Footer ho bere z `KeyDown` okna, takže dostane jen Esc,
+  který nezpracoval control s fokusem (otevřené combo, hledání s textem). Esc z popupu a opakování
+  podržené klávesy ignoruje: `DatePicker` kalendář zavře, ale Esc neoznačí. `IsCancel` na tlačítku
+  nejde: `Button` po `Click` zavře dialog sám a obešel by odmítnuté `ConfirmClose`.
 - OK tlačítko: s VM volá `OkCommand` a spoléhá, že VM vyvolá `RequestClose`
   (validace v `OnOk` může zavření odmítnout); bez VM zavře rovnou.
 

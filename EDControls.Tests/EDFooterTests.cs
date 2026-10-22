@@ -1,16 +1,20 @@
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using EDControls.EDFooter;
 using EDControls.EDViewModel;
+using EDTesting;
 using NSubstitute;
 using Footer = EDControls.EDFooter.EDFooter;
 using Vm = EDControls.EDViewModel.EDViewModel;
 
 namespace EDControls.Tests;
 
-/// <summary>Viditelnost tlačítek dle FooterMode a propsání LeftContent (bez plného okna).</summary>
+/// <summary>Viditelnost tlačítek dle FooterMode, propsání LeftContent, odběry okna a zavření Esc.</summary>
 public class EDFooterTests
 {
     private const string Comp = "pack://application:,,,/EDControls;component/";
@@ -119,8 +123,172 @@ public class EDFooterTests
         });
     }
 
+    [WindowFact]
+    public void Esc_ClosesWindow()
+    {
+        RunSta(() =>
+        {
+            var box = new TextBox();
+            var window = ShownWindowWith(NewVm(), box);
+            var closed = false;
+            window.Closed += (_, _) => closed = true;
+            try
+            {
+                PressEsc(box);
+
+                Assert.True(closed);
+            }
+            finally
+            {
+                if (!closed) window.Close();
+            }
+        });
+    }
+
+    [WindowFact]
+    public void HeldEsc_RepeatDoesNotClose()
+    {
+        // Podržený Esc: první stisk zavřel dialog nad oknem, opakování nesmí zavřít i to pod ním.
+        RunSta(() =>
+        {
+            var box = new TextBox();
+            var window = ShownWindowWith(NewVm(), box);
+            try
+            {
+                PressEsc(box, repeat: true);
+
+                Assert.True(window.IsVisible);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [WindowFact]
+    public void Esc_InOpenCalendar_ClosesOnlyCalendar()
+    {
+        // DatePicker zavře kalendář z PreviewKeyDown tlačítka dne, ale Handled nenastaví - Esc pak probublá z popupu až do okna.
+        RunSta(() =>
+        {
+            var picker = new DatePicker();
+            var window = ShownWindowWith(NewVm(), picker);
+            try
+            {
+                picker.IsDropDownOpen = true;
+                var calendar = (Calendar)((Popup)picker.Template.FindName("PART_Popup", picker)).Child;
+                calendar.UpdateLayout();
+                var day = Descendants<CalendarDayButton>(calendar).First();
+
+                PressEsc(day);
+
+                Assert.False(picker.IsDropDownOpen);
+                Assert.True(window.IsVisible);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [WindowFact]
+    public void Esc_DeclinedConfirm_KeepsWindowOpen()
+    {
+        RunSta(() =>
+        {
+            var popups = Substitute.For<IPopupDisplayer>();   // ConfirmClose vrací false
+            var box = new TextBox();
+            var window = ShownWindowWith(new ConfirmingVm(popups), box);
+            try
+            {
+                PressEsc(box);
+
+                popups.Received(1).ConfirmClose(Arg.Any<Window?>());
+                Assert.True(window.IsVisible);
+            }
+            finally
+            {
+                window.Close();
+            }
+        });
+    }
+
+    [WindowFact]
+    public void Esc_InSearchWithText_ClearsFilterFirst()
+    {
+        RunSta(() =>
+        {
+            var search = new EDSearchTextBox.EDSearchTextBox { Text = "abc" };
+            var window = ShownWindowWith(NewVm(), search);
+            var closed = false;
+            window.Closed += (_, _) => closed = true;
+            try
+            {
+                PressEsc(search);
+                Assert.Equal("", search.Text);
+                Assert.False(closed);
+
+                PressEsc(search);
+                Assert.True(closed);
+            }
+            finally
+            {
+                if (!closed) window.Close();
+            }
+        });
+    }
+
+    private sealed class ConfirmingVm : Vm
+    {
+        public ConfirmingVm(IPopupDisplayer popups)
+            : base(new EDServices(null, Substitute.For<IWindowNavigator>(), popups)) => ConfirmOnCancel = true;
+    }
+
     private static Vm NewVm() =>
         new(new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
+
+    // Mimo viditelnou plochu a bez chrome - test nesmí blikat přes obrazovku.
+    private static Window ShownWindowWith(Vm vm, UIElement content)
+    {
+        var footer = new Footer();
+        DockPanel.SetDock(footer, Dock.Bottom);
+        var window = new Window
+        {
+            Content = new DockPanel { Children = { footer, content } },
+            DataContext = vm, WindowStartupLocation = WindowStartupLocation.Manual,
+            Left = -3000, Top = 0, Width = 400, Height = 300,
+            WindowStyle = WindowStyle.None, ShowInTaskbar = false, ShowActivated = false,
+        };
+        window.Show();
+        RaiseLoaded(footer);   // Loaded po Show čeká ve frontě dispatcheru až za tělem testu
+        return window;
+    }
+
+    private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T hit) yield return hit;
+            foreach (var deeper in Descendants<T>(child)) yield return deeper;
+        }
+    }
+
+    // Jako InputManager: Preview a bublající KeyDown sdílí args, Handled z Preview zastaví i KeyDown.
+    private static void PressEsc(UIElement target, bool repeat = false)
+    {
+        var args = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(target)!, 0, Key.Escape)
+            { RoutedEvent = Keyboard.PreviewKeyDownEvent };
+        // IsRepeat nastavuje jen InputManager - veřejný setter není.
+        if (repeat)
+            typeof(KeyEventArgs).GetMethod("SetRepeat", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(args, [true]);
+        target.RaiseEvent(args);
+        args.RoutedEvent = Keyboard.KeyDownEvent;
+        target.RaiseEvent(args);
+    }
 
     // Bez Show - footer je v logickém stromu okna, Window.GetWindow ho najde.
     private static Window WindowWith(Footer footer, Vm vm) => new()

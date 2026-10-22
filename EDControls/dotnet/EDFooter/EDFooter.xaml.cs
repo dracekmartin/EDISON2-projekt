@@ -1,5 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using EDControls.EDViewModel;
 
 namespace EDControls.EDFooter;
@@ -59,6 +61,8 @@ public partial class EDFooter : UserControl
         DetachFromWindow();
         _window = window;
         window.DataContextChanged += OnWindowDataContextChanged;
+        // Esc přes KeyDown okna, ne IsCancel: Button po Click zavře dialog sám i přes odmítnuté ConfirmClose.
+        window.KeyDown += OnWindowKeyDown;
         SubscribeToViewModel(window.DataContext as EDControls.EDViewModel.EDViewModel);
     }
 
@@ -69,6 +73,7 @@ public partial class EDFooter : UserControl
         if (_window != null)
         {
             _window.DataContextChanged -= OnWindowDataContextChanged;
+            _window.KeyDown -= OnWindowKeyDown;
             _window = null;
         }
         SubscribeToViewModel(null);
@@ -94,7 +99,19 @@ public partial class EDFooter : UserControl
             CloseWindow(true);
     }
 
-    private void CancelBtn_Click(object sender, RoutedEventArgs e)
+    private void OnWindowKeyDown(object sender, KeyEventArgs e)
+    {
+        // Opakování podrženého Esc by po zavřeném dialogu zavřelo i okno pod ním.
+        if (e.Key != Key.Escape || e.IsRepeat) return;
+        // Popup (kalendář DatePickeru) se na Esc zavře sám, jen klávesu neoznačí jako zpracovanou.
+        if (e.OriginalSource is Visual source && !((Visual)sender).IsAncestorOf(source)) return;
+        e.Handled = true;
+        Cancel();
+    }
+
+    private void CancelBtn_Click(object sender, RoutedEventArgs e) => Cancel();
+
+    private void Cancel()
     {
         if (_vm is { ConfirmOnCancel: true })
         {
