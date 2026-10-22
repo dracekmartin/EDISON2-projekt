@@ -24,12 +24,12 @@ v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva n
 bere jen to, co mění data.* Rozhodnutí po položkách, důvody a výskyt v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md).
 Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R2/R5`](architektonicka-rozhodnuti-agendy.md).
 
-Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; před `B191d` vizuální zkouška (Jan); oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
+Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; vizuální zkouška a výběr typů provozu 22. 10.; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B191d` Volby pro městské linky** [M-L]. Cíl (Jan 12. 10.): minimum = co šlo ve starém modulu
-   (kam legenda, rámečky kolem čísel spojů; směr hotový 12. 10., výběr typů provozu 22. 10.), k tomu
-   Zvýraznit zastávku jako u AD; cílový stav = skupiny spojů stejně ve všech čtyřech agendách JŘ
-   ([`§18.5`](linkovy-knizni-jr-implementace-analyza.md)). Teď vizuální zkouška proti webu DPKV ([`§18.8`](linkovy-knizni-jr-implementace-analyza.md)).
+1. **`B191d` Nastavení jako u linkového AD** [M-L] (rozhodnutí Jan 22. 10.), po krocích: Zvýraznit
+   zastávku, Zastávky, kde žádný spoj nestaví, Počet stran, Obousměrný tisk, Stránka pro každou
+   zastávku; ze starého modulu kam legenda a rámečky kolem čísel spojů. Co se nepřidává a proč:
+   [`§18.9`](linkovy-knizni-jr-implementace-analyza.md). Cílový stav skupin spojů napříč agendami: [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
 2. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
    `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
 3. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`

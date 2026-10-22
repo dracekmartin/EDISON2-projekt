@@ -2062,6 +2062,28 @@ Rozdíly časů proti webu o minutu jsou rozdíl verze dat (dev kopie platí od 
 hodnota `TYP_PROVOZU_1003` v šabloně by v jiné firmě vypnula jiný typ provozu. Týká se šablon
 přenášených mezi firmami (systémové šablony, export/import).
 
+### 18.9 Nastavení jako u linkového AD - rozsah `B191d` (22. 10. 2026)
+
+**Rozhodnutí Jan 22. 10.:** městský linkový JŘ nabídne parametry linkového AD všude, kde dávají smysl,
+aby se oba nastavovaly stejně. Bere se rozdělení níž bez dalšího ověřování; přidává se po krocích.
+Linka MHD nemá nastavení, na která u AD odkazuje volba „Automaticky (dle linky)" - u MHD tedy pevné
+volby, popisek parametru stejný jako u AD.
+
+| Parametr AD | MHD |
+|---|---|
+| Směr pro tisk | hotové 12. 10. |
+| Dělení spojů dle platnosti | nahrazené výběrem typů provozu (§18.8) |
+| Zvýraznit zastávku (+ Zvýraznit tarifní číslo) | přidat; tarifní číslo jen pokud bude sloupec Tč |
+| Zastávky, kde žádný spoj nestaví | přidat - obecná volba ze zkoušky s webem (§18.8) |
+| Počet stran | přidat |
+| Obousměrný tisk | přidat - agenda musí skládat stránku obou směrů jako AD |
+| Stránka pro každou zastávku | přidat |
+| Sloupec tarifních čísel, Písmeno systému u zóny, Barvy spojů | neřeší se - nejisté, jestli to MHD data mají; vytáhnout, až o to někdo řekne |
+| Tvar názvu zastávky, Použít název pro MHD | nedává smysl - názvy jsou z číselníku MHD |
+
+K tomu zůstává minimum ze starého knižního tisku MHD (Jan 12. 10.): kam se tiskne legenda (`arr,4`:
+každý blok / každý směr / na konec) a rámečky kolem čísel spojů (`arr,12`).
+
 ## 19. Rozdílový linkový JŘ podle vzoru z CIS JŘ - rozbor `B192` (16. 10. 2026)
 
 **Rozhodnutí Jan 16. 10.:** rozdílový JŘ je pevný výstup, ne agenda pro návrháře. Uživatel v hlavním
