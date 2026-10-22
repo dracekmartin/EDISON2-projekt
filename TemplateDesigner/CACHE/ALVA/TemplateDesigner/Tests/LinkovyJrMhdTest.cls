@@ -212,6 +212,37 @@ Method TestVyberTypuProvozuJakoStaryModul()
 	do $$$AssertTrue(1, "porovnáno linek: "_porovnano)
 }
 
+/// Zvýraznit zastávku jako u linkového AD (`B191d`): kus názvu označí řádky zastávky, číslo zastávky
+/// pro adresu v QR jde jen při jediné shodě. KV_DP linka 1 má Tržnici jednou a Tašovice třikrát
+/// (Tašovice a dvakrát Tašovice, rozcestí).
+Method TestZvyraznitZastavku()
+{
+	if '##class(%SYS.Namespace).Exists("KV_DP") {
+		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		quit
+	}
+	do ..SysFirmy(.sys, "KV_DP")
+	kill ^||ML
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetParameters(.sys)
+	do $$$AssertTrue(^||ML("OUT",1) [ """ZVYRAZNIT_ZASTAVKU""", "parametr Zvýraznit zastávku chybí")
+	do $$$AssertTrue('(^||ML("OUT",1) [ """ZVYRAZNIT_TC"""), "MHD nemá sloupec Tč, Zvýraznit tarifní číslo nemá nabízet")
+
+	for hledana = "TRŽNICE", "tašovice", "" {
+		kill ^||ML
+		set ^||ML("IN","LINKA_ID") = 1073, ^||ML("IN","SMER_TISKU") = "Tam", ^||ML("IN","ZVYRAZNIT_ZASTAVKU") = hledana
+		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
+		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1))
+		set (oznacene, czst) = "", it = page.rows.%Get("ZASTAVKY").%GetIterator()
+		while it.%GetNext(.k, .z) {
+			set ma = ($zconvert(z.%Get("NAZEV_ZASTAVKY"), "L") [ $zconvert(hledana, "L")) && (hledana '= "")
+			do $$$AssertEquals(z.%Get("AKTUALNI_ZASTAVKA"), $select(ma:"true", 1:"false"), """"_hledana_""": "_z.%Get("NAZEV_ZASTAVKY"))
+			if ma set oznacene = oznacene + 1, czst = z.%Get("CZST")
+		}
+		do $$$AssertEquals(+oznacene, $case(hledana, "TRŽNICE":1, "tašovice":3, :0), """"_hledana_""": počet označených řádků")
+		do $$$AssertEquals(page.values.%Get("AKTUALNI_ZASTAVKA_CZST"), $select(oznacene=1:czst, 1:""), """"_hledana_""": číslo zastávky pro QR")
+	}
+}
+
 /// Čísla čárkou seřazená vzestupně, aby nezáleželo na pořadí.
 ClassMethod Serazene(cisla As %String) As %String
 {

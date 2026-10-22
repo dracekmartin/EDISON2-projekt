@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-22 (3) - 🚌 linkový JŘ MHD: Zvýraznit zastávku (`B191d`, část)
+
+První nastavení převzaté z linkového AD (rozsah v analýze linkového JŘ `§18.9`). Parametr
+**Zvýraznit zastávku** je týž jako u AD (jedna definice pro obě agendy): kus názvu bez ohledu na
+velikost písmen označí řádky zastávky polem „Aktuální zastávka" a vzhled určí pravidlo zvýraznění
+šablony. Projíždí-li linka místo víckrát, označí se všechny jeho zastávky - Zvýraznit tarifní číslo,
+kterým je AD zúží na jednu, MHD nemá (sloupec Tč neposílá) a popis parametru na něj neodkazuje.
+Číslo zastávky pro adresu v QR (`AKTUALNI_ZASTAVKA_CZST`) jen při jediné shodě, jako u AD. Schéma MHD
+má nově obě pole. Test `TestZvyraznitZastavku` (jedna shoda, tři shody, prázdné; ověřeno mutací).
+
 ## 2026-10-22 (2) - 🚌 linkový JŘ MHD: v panelu jen typy provozu načtené linky
 
 Panel parametrů nabízel všech 20 typů provozu KV_DP, ačkoli linka 1 jich má sedm, a z nabídky nešlo

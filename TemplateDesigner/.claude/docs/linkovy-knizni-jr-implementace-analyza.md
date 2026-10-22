@@ -2073,7 +2073,7 @@ volby, popisek parametru stejný jako u AD.
 |---|---|
 | Směr pro tisk | hotové 12. 10. |
 | Dělení spojů dle platnosti | nahrazené výběrem typů provozu (§18.8) |
-| Zvýraznit zastávku (+ Zvýraznit tarifní číslo) | přidat; tarifní číslo jen pokud bude sloupec Tč |
+| Zvýraznit zastávku (+ Zvýraznit tarifní číslo) | zastávka hotová 22. 10.; tarifní číslo jen pokud bude sloupec Tč |
 | Zastávky, kde žádný spoj nestaví | přidat - obecná volba ze zkoušky s webem (§18.8) |
 | Počet stran | přidat |
 | Obousměrný tisk | přidat - agenda musí skládat stránku obou směrů jako AD |

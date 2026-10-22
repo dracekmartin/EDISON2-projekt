@@ -66,6 +66,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
+    d ..AddField(fields, "AKTUALNI_ZASTAVKA_CZST", "Číslo aktuální zastávky", "number")
     s def.fields = fields
 
     s collections = ##class(%DynamicArray).%New()
@@ -79,6 +80,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
     d ..AddField(gf, "ZONY",           "Zóny",               "text")
     d ..AddField(gf, "NASTUPISTE",     "Označník",           "text")
+    d ..AddField(gf, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
     s g.fields = gf
     d collections.%Push(g)
 
@@ -140,6 +142,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
         $$$FillParams
         s arr = ##class(%DynamicArray).%New()
         d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
+        // Bez Zvýraznit tarifní číslo - MHD sloupec Tč nemá (rozsah `B191d`, analýza §18.9).
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrZvyrazneniZastavky(0))
         d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)
         // Stejný název mají v číselníku i různé typy (KV_DP: dvakrát „Sobota", dvakrát „Neděle"),
         // takové se v panelu rozliší číslem typu.
@@ -448,7 +452,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
 
     // 2. průchod: zastávkové řádky vč. zdvojení příjezd/odjezd; rowMeta(i)=$lb(radekBodu, typ)
     s zastavky = ##class(%DynamicArray).%New()
-    k rowMeta
+    k rowMeta, zvyraznene
     s pocetRadku = 0
     f i=1:1:pocetBodu {
         s odjPri = $lg(body(i),5)
@@ -460,9 +464,14 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         s pocetRadku = pocetRadku + 1
         s rowMeta(pocetRadku) = $lb(i, "O")
         d zastavky.%Push(..BuildZastavkaRadek(body(i), "zastavka", i))
+        s:..JeZvyraznena($lg(body(i),3)) zvyraznene(i) = $lg(body(i),6)
     }
     d vals.%Set("VYCHOZI_ZASTAVKA", $lg(body(1),3))
     d vals.%Set("KONECNA_ZASTAVKA",       $lg(body(pocetBodu),3))
+    // Číslo zvýrazněné zastávky pro adresu v QR jen při jediné shodě, jako u AD (`LinkovyJrAd`) -
+    // kus názvu může trefit víc zastávek a adresa by pak ukázala na jedno z víc míst.
+    s zv = $o(zvyraznene(""))
+    d vals.%Set("AKTUALNI_ZASTAVKA_CZST", $s((zv '= "") && ($o(zvyraznene(zv)) = ""):zvyraznene(zv), 1:""))
 
     // ── spoje směru: MakeTableSpoj → časy per řádek; skupiny = TypProvozu ──
     d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)
@@ -563,7 +572,18 @@ ClassMethod BuildZastavkaRadek(bodVeta As %List, typ As %String, poradi As %Inte
     f i=1:1:$l(znacky) d atributy.%Push($e(znacky,i), "string")
     d z.%Set("ATRIBUTY", atributy)
     d z.%Set("KM",      ##class(%DynamicArray).%New())
+    // Příznak nese i řádek příjezdu - je to táž zastávka. Vzhled určí pravidlo zvýraznění šablony.
+    d z.%Set("AKTUALNI_ZASTAVKA", $s(..JeZvyraznena($lg(bodVeta,3)):"true", 1:"false"))
     q z
+}
+
+/// Je zastávka zvýrazněná parametrem „Zvýraznit zastávku"? Kus názvu bez ohledu na velikost písmen,
+/// jako u AD (`LinkovyJrAd.JeZvyraznena`); tarifní číslo MHD nemá, takže zúžit na jeden řádek nejde.
+ClassMethod JeZvyraznena(nazevZastavky As %String) As %Boolean
+{
+    s hledana = $zcvt($zstrip($g(^||ML("IN","ZVYRAZNIT_ZASTAVKU")), "<>W"), "L")
+    i hledana = "" q 0
+    q $zcvt(nazevZastavky, "L") [ hledana
 }
 
 /// Skupiny provozu: pořadí + nadpis z ENUMS TypyProvozu (NadpisSMOPrvni + NadpisSMODruhy).

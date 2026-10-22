@@ -346,17 +346,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pMhd.defaultValue = "true"
     s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté; vypnutím se všude použije název podle CIS."
 
-    // Zvýraznění zastávky, ze které se uživatel dívá (legacy `arr,5` + `arr,10`). Data řádek jen
-    // **označí**, vzhled si řeší šablona pravidlem zvýraznění nad polem „Zvýrazněná zastávka" -
-    // stejný vzor jako aktuální zastávka u vývěsky.
-    s pZvZ = ##class(%DynamicObject).%New()
-    s pZvZ.name         = "ZVYRAZNIT_ZASTAVKU"
-    s pZvZ.label        = "Zvýraznit zastávku"
-    s pZvZ.type         = "text"
-    s pZvZ.group        = "Tabulka linky"
-    s pZvZ.serverSide   = 1
-    s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. Projíždí-li linka město víckrát, označí se všechny jeho zastávky; jednu z nich vybere Zvýraznit tarifní číslo."
-
     s pZvT = ##class(%DynamicObject).%New()
     s pZvT.name         = "ZVYRAZNIT_TC"
     s pZvT.label        = "Zvýraznit tarifní číslo"
@@ -399,11 +388,27 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(pBez)
     d arr.%Push(pZon)
     d arr.%Push(pBar)
-    d arr.%Push(pZvZ)
+    d arr.%Push(..ParametrZvyrazneniZastavky())
     d arr.%Push(pZvT)
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
+}
+
+/// Zvýraznění zastávky, ze které se uživatel dívá (legacy `arr,5` + `arr,10`). Data řádek jen
+/// **označí**, vzhled si řeší šablona pravidlem zvýraznění nad polem „Aktuální zastávka" - stejný
+/// vzor jako aktuální zastávka u vývěsky. Jediná definice pro AD i MHD variantu; `sTarifnimCislem`
+/// = agenda nabízí i Zvýraznit tarifní číslo (MHD sloupec Tč nemá) a popis na něj odkáže.
+ClassMethod ParametrZvyrazneniZastavky(sTarifnimCislem As %Boolean = 1) As %DynamicObject
+{
+    s pZvZ = ##class(%DynamicObject).%New()
+    s pZvZ.name         = "ZVYRAZNIT_ZASTAVKU"
+    s pZvZ.label        = "Zvýraznit zastávku"
+    s pZvZ.type         = "text"
+    s pZvZ.group        = "Tabulka linky"
+    s pZvZ.serverSide   = 1
+    s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. Projíždí-li linka město víckrát, označí se všechny jeho zastávky"_$s(sTarifnimCislem:"; jednu z nich vybere Zvýraznit tarifní číslo.", 1:".")
+    q pZvZ
 }
 
 /// Směr pro tisk (legacy MHD `arr,11` „SmerID#", Jan 12. 10.): které směry linky se vytisknou.
