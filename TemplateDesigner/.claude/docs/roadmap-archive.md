@@ -1,5 +1,14 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B191d` Linkový JŘ MHD: nastavení jako u linkového AD (hotovo 22. 10. 2026)
+
+Městský linkový JŘ dostal nastavení linkového AD tam, kde dávají smysl (rozhodnutí Jan 22. 10.):
+výběr typů provozu (místo dělení spojů dle platnosti; v panelu jen typy načtené linky), Zvýraznit
+zastávku, Zastávky, kde žádný spoj nestaví, Počet stran až 3. Definice sdílí s AD, u MHD bez
+„Automaticky (dle linky)". Přeskočeno: obousměrný tisk a stránka pro každou zastávku (starý tisk MHD
+je neměl), sloupec Tč, písmeno u zóny, barvy spojů. Kam poznámky a rámečky čísel spojů řeší šablona
+(→ `B191e`). Ověřeno proti webu DPKV a starému tisku; detail changelog 2026-10-22, analýza `§18.8-18.9`.
+
 ## `B192f` Rozdílový JŘ: dopravci podle verze (hotovo 17. 10. 2026)
 
 Poslední krok rozdílového linkového JŘ podle vzoru z CIS JŘ (platnost v hlavičce hotová 16. 10.).

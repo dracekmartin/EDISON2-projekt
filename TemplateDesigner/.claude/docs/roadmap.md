@@ -6,7 +6,7 @@
 
 > **Nejblíž na řadě:** rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; spuštění z hlavního okna
 > (výběr dvou verzí) jde cestou `B190`, mezery proti vzoru jsou v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
-> Linkový JŘ MHD (`B191`) zatím stojí: `B191d` čeká na vizuální zkoušku a potvrzení návrhu (Jan).
+> Linkový JŘ MHD (`B191`): nastavení jako u AD (`B191d`) hotové 22. 10., na řadě výchozí šablona (`B191e`).
 > Ostatní je v Backlogu - `B190` tisk z modulu JŘ čeká na kolegy.
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -14,7 +14,7 @@
 
 ---
 
-## ⏸️ Linkový (knižní) JŘ MHD (`B191`, pořadí Jan 12. 10., zatím stojí)
+## 🎯 Linkový (knižní) JŘ MHD (`B191`, pořadí Jan 12. 10.)
 
 Městská varianta linkového JŘ: agenda `LinkovyJrMhd` existuje, ale je skrytá - neprošla porovnáním
 se starým modulem. „Dodělám AD a MHD spadne samo" neplatí: AD je nadmnožina v obsahu tabulky, ne
@@ -24,15 +24,12 @@ v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva n
 bere jen to, co mění data.* Rozhodnutí po položkách, důvody a výskyt v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md).
 Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R2/R5`](architektonicka-rozhodnuti-agendy.md).
 
-Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; vizuální zkouška a výběr typů provozu 22. 10.; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
+Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; vizuální zkouška a nastavení jako u AD (`B191d`) 22. 10.; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B191d` Nastavení jako u linkového AD** [M-L] (rozhodnutí Jan 22. 10.), po krocích (Zvýraznit
-   zastávku, Zastávky, kde žádný spoj nestaví a Počet stran hotové 22. 10.; obousměrný tisk a stránka
-   pro každou zastávku přeskočeny): zbývá ze starého modulu kam legenda a rámečky kolem čísel spojů. Co se nepřidává a proč:
-   [`§18.9`](linkovy-knizni-jr-implementace-analyza.md). Cílový stav skupin spojů napříč agendami: [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
-2. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
-   `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
-3. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
+1. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
+   `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu: poznámky
+   pod tabulkou, varianta vpravo jako AD #11373, pravidlo zvýraznění aktuální zastávky ([`§18.9`](linkovy-knizni-jr-implementace-analyza.md)).
+2. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
    v `LinkovyJrAd.cls`), Novinky a příručka. Předtím rozhodnout výběr typů provozu v šablonách
    přenášených mezi firmami (id typu je v každé firmě jiné, [`§18.8`](linkovy-knizni-jr-implementace-analyza.md)).
 
