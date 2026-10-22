@@ -77,13 +77,11 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 - **Jeden katalog ikon pro shell i TD záměrně**, dokud se nerozhodne o sadě (2026-10-06). Z 65 klíčů je 36 jen TD
   (`MainWindow.xaml`), 20 jen shell, 3 jen `StandardActions`, sdílené Help a Molecule, 4 bez konzumenta (A26).
   Jde se přes `StaticResource`: odebraný klíč shodí starší exe při načtení okna, odebírat jen s publishem obou.
-- Nová ikona: PNG do `EDIcons/png/` + **explicitní** `<Resource>` v csproj (jen PNG -
-  `.xaml` SDK zahrnuje sám, ruční `<Page>` = duplikát) + `BitmapImage` v `EDIcons.xaml`
-  se sémantickým klíčem (`EDIcons.MyName`, ne název souboru).
-- Výjimka: `EDIcons.MlineLogo` a logo EDISON `EDIcons.Molecule` / `MoleculeLarge` jsou `DrawingImage`
-  (vektor) s brand barvou zapečenou v geometrii - rastr se v běžné velikosti rozpadá a v dark modu se
-  značka záměrně nepřebarvuje. `Molecule` je kreslená pro 16-24 px (ikona okna, menu, status bar - silnější
-  vazby), `MoleculeLarge` pro velké zobrazení. Stejnou krychli skládá karta „Akce probíhá" (`CubeAssembly`).
+- Nová ikona: PNG do `EDIcons/png/` + **explicitní** `<Resource>` v csproj (jen PNG - `.xaml` SDK zahrnuje sám, ruční
+  `<Page>` = duplikát) + `BitmapImage` v `EDIcons.xaml` se sémantickým klíčem (`EDIcons.MyName`, ne název souboru).
+- Výjimka: `EDIcons.MlineLogo` a logo EDISON `Molecule` (kreslené pro 16-24 px) / `MoleculeLarge` jsou `DrawingImage`
+  s brand barvou v geometrii: rastr se v běžné velikosti rozpadá a dark mode značku záměrně nepřebarví. Krychli
+  `MoleculeLarge` skládá i karta „Akce probíhá" (`CubeAssembly`), koule a vazby hlídá test. Překresli i `cube_molecule.ico`.
 
 ## Root-level infrastruktura (`dotnet/*.cs`)
 

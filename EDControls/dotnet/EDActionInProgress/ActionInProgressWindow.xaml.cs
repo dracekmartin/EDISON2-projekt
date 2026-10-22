@@ -37,7 +37,7 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         DependencyProperty.Register(nameof(CubeTime), typeof(double), typeof(ActionInProgressWindow),
             new PropertyMetadata(0.0, (d, e) => ((ActionInProgressWindow)d).ApplyCubeFrame((double)e.NewValue)));
 
-    private double CubeTime => (double)GetValue(CubeTimeProperty);
+    internal double CubeTime => (double)GetValue(CubeTimeProperty);
 
     // Sprity žijí v sadách "Sprite.<Sada>.<Kus>" ve Window.Resources; nový kus = jen XAML.
     private const string SpriteKeyPrefix = "Sprite.";
@@ -313,7 +313,8 @@ internal sealed partial class ActionInProgressWindow : Window, EDViewModel.IOver
         {
             Show();
             Reposition();
-            ToggleWalk(true);
+            // Maximalizace z Normal běžící animaci nerestartuje, krychle by se rozpadla a skládala znovu.
+            if (!_running) ToggleWalk(true);
         }
     }
 

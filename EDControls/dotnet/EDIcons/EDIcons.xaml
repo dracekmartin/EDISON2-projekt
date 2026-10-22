@@ -1,12 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Logo EDISON (krychle z koulí, „obnovená 3D") jako vektor: rastr se v ikoně okna, menu
-         a status baru (16-24 px) zmenšením rozpadal a na vyšším DPI rozmazával. Brand barvy
-         zapečené v geometrii, v dark modu se záměrně nemění (jako EDIcons.MlineLogo).
-         Molecule = varianta pro malé velikosti (silnější vazby, větší koule): ikona okna,
-         menu, status bar. MoleculeLarge = běžná geometrie pro velké zobrazení (přihlášení).
-         Geometrii a barvy sdílí CubeAssembly (karta „Akce probíhá") a cube_molecule.ico. -->
+    <!-- Logo EDISON: brand barvy natvrdo, dark mode je nepřebarví. Molecule má pro 16-24 px silnější vazby.
+         MoleculeLarge je opsaná z výpočtu CubeAssembly (koule a vazby hlídá test), změna kresby = překreslit i cube_molecule.ico. -->
     <DrawingImage x:Key="EDIcons.Molecule">
         <DrawingImage.Drawing>
             <DrawingGroup>
