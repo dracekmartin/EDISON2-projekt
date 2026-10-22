@@ -4,6 +4,10 @@ Jen to, co existuje nebo se mění kvůli novému shellu. Zbytek (C1 knihovny, E
 k zákazníkům se starým shellem už dnes. TemplateDesigner je vydaný samostatně a sem nepatří;
 sdílí ale `EDControls.dll` - breaking change jejího API znamená vydat i TD (root `CLAUDE.md`).
 
+Nasazení na DEV share a REL dělá skill `/edison-nasad` se skripty v `tools/nasazeni/`: co nasadit zjistí
+`co-nasadit.ps1`, postaví a otestuje `sestav-a-otestuj.ps1`, na DEV nahraje `nahraj-na-dev.ps1`, TEST verzi
+na REL ověří `over-test-verzi.ps1`. Adresy a seznamy souborů jsou v `tools/nasazeni/nastaveni.json`.
+
 ## Binárky
 
 Z repa EDISON2 (publish profilem `SingleFileCEdison` do `C:\Edison\`, soubory vybírat ručně,

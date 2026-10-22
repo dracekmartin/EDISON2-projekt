@@ -130,7 +130,7 @@ barvy (WebView2 CSS, WinForms dialog). Lokální `Style` na themovaném controlu
   repo. Deploy vynuť `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`.
 - **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu - `.cs`→.NET
   (bez `Category=Integration`/`E2E`), `.cls`→Caché zúžená na dotčené package, `.cs/.cls/.inc`→integrační
-  sada (při `.cls/.inc` povinná), změna shellu→E2E (cesty `EDISON2.E2ETests/CLAUDE.md`). Produkční `.cls`
+  sada (při `.cls/.inc` povinná), změna shellu→E2E (cesty `EDISON2.E2ETests/CLAUDE.md`), `tools/nasazeni/`→jeho testy. Produkční `.cls`
   ve sdíleném `EDControls`/`EDTesting` spustí všechny Caché balíčky, testovací `.cls` (EDControls/EDTesting
   `Tests/`) jen svůj - TD sada je nejdražší (~45 s). Souhrn selhání `.husky/last-test-run.log`; bypass `git push --no-verify` jen nouzově.
 

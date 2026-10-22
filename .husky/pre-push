@@ -5,11 +5,11 @@
 #
 # Change-aware: only runs the suite whose sources changed in the pushed range
 #   (.cs/.csproj/.sln/.xaml and build files -> .NET, .cls -> Cache, .cs/.csproj/.sln/.cls/.inc -> integration,
-#   shell sources -> E2E). If the range can't be resolved, all run (safe default).
+#   shell sources -> E2E, tools/nasazeni -> its script tests). If the range can't be resolved, all run (safe default).
 # Integration = real MLRest against the dev server. Required when the server side
 #   changed (.cls/.inc); a .cs-only push without VPN reports it skipped and goes on.
 # E2E = the DEBUG shell driven on the desktop; without VPN or on a locked desktop it is skipped.
-# Visibility: full per-suite output goes to .husky/{dotnet,cache,integration,e2e}-tests.log and a
+# Visibility: full per-suite output goes to .husky/{dotnet,cache,integration,e2e,nasazeni}-tests.log and a
 #   short failure summary to .husky/last-test-run.log. On failure the paths are
 #   printed in a banner so they're clickable from the VSCode Git output panel.
 # Dry run: PRE_PUSH_RANGE=<range> PRE_PUSH_DRY_RUN=1 sh .husky/pre-push prints the suites it would run
@@ -22,6 +22,7 @@ DOTNET_LOG=".husky/dotnet-tests.log"
 CACHE_LOG=".husky/cache-tests.log"
 IT_LOG=".husky/integration-tests.log"
 E2E_LOG=".husky/e2e-tests.log"
+NASAZENI_LOG=".husky/nasazeni-tests.log"
 SUMMARY=".husky/last-test-run.log"
 
 # --- Resolve the range being pushed, then decide which suites to run ----------
@@ -45,6 +46,7 @@ run_cache=1
 run_it=1
 it_required=1
 run_e2e=1
+run_nasazeni=1
 if [ -n "$RANGE" ]; then
     # --no-renames: přesun souboru ven z projektu by jinak ukázal jen cílovou cestu.
     CHANGED=$(git diff --name-only --no-renames "$RANGE" 2>/dev/null || true)
@@ -60,6 +62,7 @@ if [ -n "$RANGE" ]; then
         # každých 10 min úloha tree-sync.
         echo "$CHANGED" | grep -viE '^(EDControls|EDISONMAIN2)/CACHE/|\.md$|(^|/)(Public|Internal)API\.[^/]*\.txt$' \
             | grep -qE '^(EDISONMAIN2|EDISONMAIN2\.LegacyMiniApps|EDControls|EDUpdateContract|EDISON2\.E2ETests)/' && run_e2e=1 || run_e2e=0
+        echo "$CHANGED" | grep -qE '^tools/nasazeni/' && run_nasazeni=1 || run_nasazeni=0
     fi
 fi
 
@@ -89,7 +92,7 @@ if [ "$run_cache" = "1" ] && [ -n "$CHANGED" ]; then
 fi
 
 if [ "$dry_run" = "1" ]; then
-    echo "range=${RANGE:-(unresolved)} dotnet=$run_dotnet cache=$run_cache${CACHE_ARGS:+ ($CACHE_ARGS)} integration=$run_it required=$it_required e2e=$run_e2e"
+    echo "range=${RANGE:-(unresolved)} dotnet=$run_dotnet cache=$run_cache${CACHE_ARGS:+ ($CACHE_ARGS)} integration=$run_it required=$it_required e2e=$run_e2e nasazeni=$run_nasazeni"
     exit 0
 fi
 
@@ -184,6 +187,22 @@ if [ "$run_cache" = "1" ]; then
     fi
 else
     echo "==> [Cache] skipped (no .cls in pushed range)"
+fi
+
+# --- Skripty nasazeni -----------------------------------------------------------
+if [ "$run_nasazeni" = "1" ]; then
+    echo ""
+    echo "==> [Nasazeni] tools/nasazeni/tests/spust.ps1 (log: $NASAZENI_LOG)"
+    set +e
+    powershell -NoProfile -ExecutionPolicy Bypass -File tools/nasazeni/tests/spust.ps1 > "$NASAZENI_LOG" 2>&1
+    nasazeni_status=$?
+    set -e
+    if [ $nasazeni_status -ne 0 ]; then
+        report_failure "Nasazeni tests" "$NASAZENI_LOG" "grep '^SELHALO' '$NASAZENI_LOG'"
+    fi
+    echo "    Nasazeni tests passed."
+else
+    echo "==> [Nasazeni] skipped (no tools/nasazeni change in pushed range)"
 fi
 
 # --- Integration (.NET <-> Cache seam) ----------------------------------------

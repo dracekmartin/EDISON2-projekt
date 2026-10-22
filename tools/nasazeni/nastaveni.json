@@ -1,0 +1,25 @@
+{
+  "edisonRepo": "..\\EDISON",
+  "edisonDir": "C:\\Edison",
+  "devShare": "\\\\192.168.16.1\\Edison\\Dev",
+  "relUrl": "http://release.m-line.cz:59993/edison",
+  "kanalRel": "release",
+  "kanalTest": "TEST",
+  "sevenZip": "C:\\Edison\\7za.exe",
+  "mcpKonfigurace": "C:\\Edison\\EdisonCacheMcp\\appsettings.json",
+  "stavDir": "%LOCALAPPDATA%\\edison-nasad",
+  "zalohyDir": "%LOCALAPPDATA%\\m-line\\dev-zaloha",
+  "treeSyncDir": "%LOCALAPPDATA%\\m-line\\tree-sync",
+  "shell": {
+    "soubory": [ "EDISONMAIN2.exe", "EDControls.dll" ],
+    "souboryPriZmene": { "EDUPDATE2.exe": [ "EDUPDATE2", "EDUpdateContract" ], "EDISONRUNTIME.zip": [ "global.json", "tools/build-runtime-zip.ps1" ] },
+    "slozky": [ "EDISONMAIN2", "EDISONMAIN2.LegacyMiniApps", "EDControls", "EDUpdateContract", "SingleFilePublish.targets", "global.json" ],
+    "projekty": [ "EDISONMAIN2/dotnet/EDISONMAIN2.csproj", "EDISONMAIN2.LegacyMiniApps/dotnet/EDISONMAIN2.LegacyMiniApps.csproj", "EDControls/dotnet/EDControls.csproj" ],
+    "publikovat": "EDISONMAIN2/dotnet/EDISONMAIN2.csproj",
+    "publishProfil": "SingleFileCEdison",
+    "navic": { "EDUPDATE2.exe": { "publikovat": "EDUPDATE2/dotnet/EDUPDATE2.csproj" }, "EDISONRUNTIME.zip": { "skript": "tools/build-runtime-zip.ps1" } }
+  },
+  "td": { "soubor": "TemplateDesigner.exe", "zdroj": "TemplateDesigner", "publicApi": "EDControls/dotnet/PublicAPI.Unshipped.txt" },
+  "bezeZmeny": [ "EDISONMAIN2API.exe", "EDUPDATE2.exe", "TemplateDesigner.exe", "EDISONRUNTIME.zip" ],
+  "strom": { "edcore": "EDCore.dll", "legacyXml": "EDCORE/Resources/edisontree.xml", "treeCls": "EDISONMAIN2/CACHE/ALVA/EDISONMAIN2/API/Tree.cls", "projekt": "ALVA_EDISONMAIN2" }
+}
