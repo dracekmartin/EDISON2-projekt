@@ -2077,12 +2077,21 @@ volby, popisek parametru stejný jako u AD.
 | Zastávky, kde žádný spoj nestaví | hotové 22. 10. - rozhodují spoje vybraných typů provozu |
 | Počet stran | hotové 22. 10. - Bez omezení / 1-3 strany (víc spojů než AD) |
 | Obousměrný tisk | přeskočeno (Jan 22. 10.) - starý tisk MHD ho neuměl (`arr,7` je v `LinkyPrintFormatJR.cls:24` jen popsané, kód ho nečte, dialog ho nenabízí), uměl ho jen AD; vytáhnout na poptávku |
-| Stránka pro každou zastávku | přidat |
+| Stránka pro každou zastávku | přeskočeno (Jan 22. 10.) - nová funkce návrháře pro výlepy AD (1. 10.), starý tisk ji neměl ani u AD; v MHD se na zastávky vylepují zastávkové JŘ |
 | Sloupec tarifních čísel, Písmeno systému u zóny, Barvy spojů | neřeší se - nejisté, jestli to MHD data mají; vytáhnout, až o to někdo řekne |
 | Tvar názvu zastávky, Použít název pro MHD | nedává smysl - názvy jsou z číselníku MHD |
 
 K tomu zůstává minimum ze starého knižního tisku MHD (Jan 12. 10.): kam se tiskne legenda (`arr,4`:
-každý blok / každý směr / na konec) a rámečky kolem čísel spojů (`arr,12`).
+každý blok / každý směr / na konec) a rámečky kolem čísel spojů (`arr,12`). Starý tisk MHD z vstupů
+popsaných v hlavičce čte jen tyhle dva a výběr typů a směrů (`arr,11`), viz §13 tabulka A -
+zvýraznění zastávky je tedy u MHD nad rámec starého modulu, kvůli shodě s AD.
+
+**Kam se tisknou poznámky (`arr,4`)** - starý tisk (`LinkyPrintFormatJR.cls:1293-1305`): 0 za každým
+blokem, 1 za směrem, 2 jednou na konci sestavy, 3/4 jako 0/1 s poznámkami na nové stránce. U nás
+je stránka = směr a Poznámky jsou prvek šablony, takže **za směrem (1) je dnešní stav**, na novou
+stránku (3/4) = sekce s „Začít na nové stránce" a **vpravo od tabulky** (přání Jan 22. 10., jako
+AD #11373) = rozvržení šablony, bez nové logiky. Za každým blokem (0) a jednou na konci (2) dnes
+nejdou ani u AD (§13 tabulka A: „legenda je vždy jednou na konci").
 
 ## 19. Rozdílový linkový JŘ podle vzoru z CIS JŘ - rozbor `B192` (16. 10. 2026)
 
