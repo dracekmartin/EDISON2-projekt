@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-22 (8) - 🚌 linkový JŘ MHD: poznámky z trasy u zastávky
+
+Starý knižní tisk MHD připisuje k zastávce poznámky z trasy linky a my je nečetli. Jde o poznámky ke
+spojům přiřazené bodu trasy pro směr - informace, kterou nevyjádří piktogram atributu a týká se
+zastávky jen na téhle lince. Tiskne se jako starý tisk: značka za názvem zastávky textem
+(„Tržnice, ab", ne piktogramem) a vysvětlivka mezi textovými poznámkami spojů (druh 4); bere se jen
+textová poznámka určená pro knižní tisk, „jen značka" do legendy nejde, stejná poznámka u spoje
+i u zastávky je v legendě jednou, sloučené sousední body trasy dají poznámky obou. ⚠️ **Neověřeno
+proti starému tisku na datech** - dev data (KV_DP, CB_DP) takovou poznámku nemají; postaveno čtením
+kódu (`LinkyPrintFormatJR.cls:418-436`, `:812-821`, `:1212-1219`). Test `TestPoznamkyZTrasy` si založí
+číselník a trasu pod vlastní firmou (ověřeno mutací); porovnání se starým tiskem na reálných linkách
+beze změny.
+
 ## 2026-10-22 (7) - 💬 linka bez dat řekne proč a co s tím
 
 KV_DP linka 20 dala v náhledu jen „Žádná data" a při tisku víc linek z PDF potichu zmizela; starý tisk

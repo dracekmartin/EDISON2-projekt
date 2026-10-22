@@ -387,6 +387,53 @@ Method TestDuvodPrazdnehoVystupu()
 	}
 }
 
+/// Poznámky z trasy jako ve starém tisku (legacy :418-436, :812-821, :1212-1219): značka za názvem
+/// zastávky („Tržnice, ab") a vysvětlivka mezi textovými poznámkami (druh 4). Bere se jen textová
+/// poznámka určená pro knižní tisk; „jen značka" se do legendy nedává. Dev data takovou poznámku nemají,
+/// proto si test založí číselník a trasu pod vlastní firmou s jedinečným jménem a po sobě je smaže.
+Method TestPoznamkyZTrasy()
+{
+	set idfa = "TDTEST"_$translate($system.Util.CreateGUID(), "-"), db = $namespace
+	try {
+		// Poznámky (id → značka, popis, knižní, jen značka, typ): 21 „a" s popisem, 22 „b" jen značka,
+		// 23 „c" jen pro zastávkový tisk, 24 „N" negativní značka (typ 2), 25 bez značky.
+		for p = $listbuild(21, "a", "u vchodu do nemocnice", 1, 0, ""), $listbuild(22, "b", "nepíše se", 1, 1, ""), $listbuild(23, "c", "zastávkový", 0, 0, ""), $listbuild(24, "N", "negativní", 1, 0, 2), $listbuild(25, "", "bez značky", 1, 0, "") {
+			set g = $name(^[db]ALVA.MHD.ENUMS(idfa, "PoznamkaSpoj", "DTA", $list(p, 1)))
+			set @g@("Text") = $list(p, 2), @g@("PopisPoznamky") = $list(p, 3), @g@("TiskJRMHDKnizni") = $list(p, 4)
+			set @g@("TiskJRMHDKnizniPouzeZnacku") = $list(p, 5), @g@("TypPoznamkyID") = $list(p, 6)
+		}
+		set bod = $name(^[db]ALVA.MHD.LSO(idfa, 4, "DTA", 7, "DTA", 1, "ModelTrasaBodDetail"))
+		set n = 0
+		for pozn = 22, 21, 23, 24, 25, 21 { set @bod@(1, "Val", "PoznamkyTam", $increment(n), "Itm") = pozn }
+		set @bod@(1, "Val", "PoznamkyZpet", 1, "Itm") = 23
+		set @bod@(2, "Val", "PoznamkyTam", 1, "Itm") = 22
+
+		kill popisy
+		set tam = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).PoznamkyBodu(idfa, db, 7, 1, 0, .popisy)
+		do $$$AssertEquals($listtostring(tam), "a,b", "tam: jen knižní textové, každá jednou")
+		do $$$AssertEquals($get(popisy("a"))_"|"_$get(popisy("b")), "u vchodu do nemocnice|", "jen značka bez vysvětlivky")
+		do $$$AssertEquals($listtostring(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).PoznamkyBodu(idfa, db, 7, 1, 1, .popisy)), "", "zpět: poznámka jen pro zastávkový tisk se nebere")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).NazevSPoznamkami("Tržnice", tam), "Tržnice, ab", "značky za názvem")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).NazevSPoznamkami("Tržnice", ""), "Tržnice", "bez poznámek beze změny")
+
+		// Sloučený bod 2 přidá „b" k řádku, který už ji má - zůstane jednou.
+		set slouceno = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).SloucenePoznamky(tam, ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).PoznamkyBodu(idfa, db, 7, 2, 0, .popisy))
+		do $$$AssertEquals($listtostring(slouceno), "a,b", "sloučené body")
+
+		// Legenda: „a" s vysvětlivkou jednou, i když ji má i spoj; „b" (jen značka) vůbec.
+		set body(1) = $listbuild(1, "", "Tržnice", "", 0, "", "", "", slouceno)
+		set poznamky = ##class(%DynamicArray).%New()
+		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).PridatPoznamkyTrasyMhd(.body, 1, poznamky, .popisy, .poznSpoju)
+		do $$$AssertEquals(poznamky.%ToJSON(), "[{""DRUH"":4,""TYP"":""text"",""ZNAK"":""a"",""TEXT"":""u vchodu do nemocnice""}]", "legenda")
+		set poznamky = ##class(%DynamicArray).%New(), poznSpoju("seen", 4, "a", "u vchodu do nemocnice") = ""
+		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).PridatPoznamkyTrasyMhd(.body, 1, poznamky, .popisy, .poznSpoju)
+		do $$$AssertEquals(poznamky.%Size(), 0, "stejná poznámka u spoje se neopakuje")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]ALVA.MHD.ENUMS(idfa), ^[db]ALVA.MHD.LSO(idfa)
+}
+
 /// Čísla čárkou seřazená vzestupně, aby nezáleželo na pořadí.
 ClassMethod Serazene(cisla As %String) As %String
 {

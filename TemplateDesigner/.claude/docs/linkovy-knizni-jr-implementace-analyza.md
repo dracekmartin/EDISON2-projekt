@@ -2011,6 +2011,8 @@ protože to dev data nemají: příjezd/odjezd na jedné zastávce (atribut tras
 starého tisku nahrazený podřádky) a poznámky z trasy (`PoznamkyTam/Zpet` pro knižní tisk), které
 starý tisk připisuje k názvu zastávky - ty agenda zatím nečte vůbec. Linky KV_DP 1105 a 1106 starý
 tisk nevytiskne (chyba starého modulu); naše agenda pro ně vrátí prázdný výstup bez hlášky.
+**Poznámky z trasy hotové 22. 10.** podle kódu starého tisku (značka za názvem, vysvětlivka druh 4),
+proti starému tisku neověřené - dev data je nemají; ověřit na datech zákazníka, který je používá.
 **Rozebráno 22. 10.** (sonda `LinkovyJrMhdProbe.ProcPrazdna`): 1105 (linka 20) má 136 spojů a žádný
 nemá spočítané časy (chybí jízdní doby) - teď vrátí `DUVOD_PRAZDNE` s radou. 1106 (linka 21) data
 dává (spoje jen víkendových a svátečních typů); starý tisk na ní padá na spoji, který začíná

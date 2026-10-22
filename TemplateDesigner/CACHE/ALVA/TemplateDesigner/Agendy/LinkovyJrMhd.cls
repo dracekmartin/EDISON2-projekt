@@ -439,7 +439,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     s smerpar = $s(smerId=0:1, 1:-1)
 
     // 1. průchod: body → seznam (bod, zastávka, název, zóna, odjPri); filtr kategorie 1001
-    k body, popisyZnacek                         // body(i) = $lb(BodID, ZastavkaID, Nazev, Zona, odjPri, Cislo, Oznacnik, ZnackyBodu)
+    k body, popisyZnacek, popisyPoznamekTrasy    // body(i) = $lb(BodID, ZastavkaID, Nazev, Zona, odjPri, Cislo, Oznacnik, ZnackyBodu, PoznamkyBodu)
     s pocetBodu = 0, bodId = ""
     f {
         s bodId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasaId,"DTA",1,"ModelTrasaBodDetail",bodId), smerpar)
@@ -462,16 +462,18 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         }
 
         s znackyBodu = ..ZnackyBodu(IdFa, dataDB, zastavkaId, trasaId, bodId, smerId, .popisyZnacek)
+        s poznamkyBodu = ..PoznamkyBodu(IdFa, dataDB, trasaId, bodId, smerId, .popisyPoznamekTrasy)
 
         // slučování sousedních shodných zastávek (dle čísla zastávky, 1:1 legacy); značky
-        // sloučených bodů trasy patří řádku, do kterého se sloučily (legacy :421-483)
+        // a poznámky sloučených bodů trasy patří řádku, do kterého se sloučily (legacy :421-483)
         i (pocetBodu > 0) && ($lg(body(pocetBodu),6) = cislo) && (cislo '= "") {
             s bodyMapa(bodId) = pocetBodu           // sloučený bod → řádek předchůdce
             s $li(body(pocetBodu),8) = ..SlouceneZnacky($lg(body(pocetBodu),8), znackyBodu)
+            s $li(body(pocetBodu),9) = ..SloucenePoznamky($lg(body(pocetBodu),9), poznamkyBodu)
             continue
         }
         s pocetBodu = pocetBodu + 1
-        s body(pocetBodu) = $lb(bodId, zastavkaId, nazev, zona, odjPri, cislo, $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Oznacnik")), znackyBodu)
+        s body(pocetBodu) = $lb(bodId, zastavkaId, nazev, zona, odjPri, cislo, $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Oznacnik")), znackyBodu, poznamkyBodu)
         s bodyMapa(bodId) = pocetBodu
     }
     i pocetBodu = 0 q ..Prazdna(smerId, "Na trase linky není žádná zastávka kategorie Zastávka. Linkový JŘ tiskne jen zastávky této kategorie, ostatní body trasy přeskočí - zkontrolujte zastávky na trase linky v modulu MHD.")
@@ -569,6 +571,9 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     // ── poznámky (pořadí druhů: 1 dny, 2 NZ, 4 poznámky spoje, 5 atributy, zastávkové) ──
     s poznamky = ##class(%DynamicArray).%New()
     f pi=1:1:pocetPoznSpoju d poznamky.%Push(poznSpoju(pi))
+    // Poznámky z trasy tištěných zastávek - mezi textové poznámky (druh 4) jako ve starém tisku
+    // (legacy :1212-1219); stejná poznámka u spoje i u zastávky jen jednou, „jen značka" bez vysvětlivky.
+    d ..PridatPoznamkyTrasyMhd(.body, pocetBodu, poznamky, .popisyPoznamekTrasy, .poznSpoju)
     d ..PridatPoznamkyNZMhd(IdFa, dataDB, poznamky, .nzSeen)
     d ..PridatPoznamkyAtributuMhd(poznamky, .atributSeen)
     d ..PridatStaleZnackyMhd(poznamky, .markerSeen)
@@ -594,7 +599,7 @@ ClassMethod BuildZastavkaRadek(bodVeta As %List, typ As %String, poradi As %Inte
     d z.%Set("TYP",     typ)
     // Číslo zastávky z číselníku MHD, ne interní ID - stejný význam jako CZST u AD.
     d z.%Set("CZST",    $lg(bodVeta,6))
-    d z.%Set("NAZEV_ZASTAVKY", $s(typ="prijezd":"", 1:$lg(bodVeta,3)))
+    d z.%Set("NAZEV_ZASTAVKY", $s(typ="prijezd":"", 1:..NazevSPoznamkami($lg(bodVeta,3), $lg(bodVeta,9))))
     // Klíč je množné ZONY jako u zastávkového JŘ; tam je to pole zón, tady jedna hodnota -
     // klient obojí čte přes GetString (pole spojí "/"), takže se binding chová stejně.
     d z.%Set("ZONY",    $lg(bodVeta,4))
@@ -1032,6 +1037,77 @@ ClassMethod PridatStaleZnackyMhd(poznamky As %DynamicArray, ByRef markerSeen)
 /// Značky bodu trasy k názvu zastávky jako řetězec písmen seřazený podle písmene: atributy
 /// zastávky v číselníku a atributy bodu trasy ve směru, jen N/V/x/A jako legacy (:403-416,
 /// :442-483; vlak „L" tam vyřadil zákazník). popisy(znak) = text do legendy.
+/// Poznámky z trasy u bodu (legacy :418-436 tam, :450-470 zpět): textové poznámky ke spojům
+/// (`TypPoznamkyID` prázdné) určené pro knižní tisk, přiřazené bodu pro směr. Vrací jejich značky
+/// jako $lb seřazené a bez opakování; `popisy(znak)` = vysvětlivka do legendy, u „jen značka" prázdná.
+/// ⚠️ Neověřeno proti starému tisku na datech: dev data (KV_DP, CB_DP) žádnou nemají.
+ClassMethod PoznamkyBodu(IdFa As %String, dataDB As %String, trasaId As %String, bodId As %String, smerId As %Integer, ByRef popisy) As %List
+{
+    k znaky
+    s klic = $s(smerId=0:"PoznamkyTam", 1:"PoznamkyZpet"), c = ""
+    f {
+        s c = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasaId,"DTA",1,"ModelTrasaBodDetail",bodId,"Val",klic,c))
+        q:c=""
+        s pozn = $g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasaId,"DTA",1,"ModelTrasaBodDetail",bodId,"Val",klic,c,"Itm"))
+        continue:pozn=""
+        continue:'$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",pozn,"TiskJRMHDKnizni"))
+        continue:+$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",pozn,"TypPoznamkyID"))
+        s znak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",pozn,"Text"))
+        continue:znak=""
+        s znaky(znak) = ""
+        continue:$d(popisy(znak))
+        s popisy(znak) = $s($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",pozn,"TiskJRMHDKnizniPouzeZnacku")):"", 1:$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",pozn,"PopisPoznamky")))
+    }
+    s out = "", znak = ""
+    f {
+        s znak = $o(znaky(znak))
+        q:znak=""
+        s out = out_$lb(znak)
+    }
+    q out
+}
+
+/// Vysvětlivky poznámek z trasy zastávek, které se tisknou, do legendy (druh 4).
+ClassMethod PridatPoznamkyTrasyMhd(ByRef body, pocetBodu As %Integer, poznamky As %DynamicArray, ByRef popisy, ByRef poznSpoju)
+{
+    k znaky
+    f i=1:1:pocetBodu {
+        s p = $lg(body(i),9)
+        f j=1:1:$ll(p) s znaky($lg(p,j)) = ""
+    }
+    s znak = ""
+    f {
+        s znak = $o(znaky(znak))
+        q:znak=""
+        s text = $g(popisy(znak))
+        continue:text=""
+        continue:$d(poznSpoju("seen", 4, znak, text))
+        d poznamky.%Push(..BuildPoznamka(4, "text", znak, text))
+    }
+}
+
+/// Poznámky dvou sloučených bodů trasy jedním seznamem, seřazené a bez opakování.
+ClassMethod SloucenePoznamky(a As %List, b As %List) As %List
+{
+    k znaky
+    f i=1:1:$ll(a) s znaky($lg(a,i)) = ""
+    f i=1:1:$ll(b) s znaky($lg(b,i)) = ""
+    s out = "", znak = ""
+    f {
+        s znak = $o(znaky(znak))
+        q:znak=""
+        s out = out_$lb(znak)
+    }
+    q out
+}
+
+/// Název zastávky se značkami poznámek z trasy jako ve starém tisku: „Tržnice, ab" (legacy :812-821).
+ClassMethod NazevSPoznamkami(nazev As %String, poznamky As %List) As %String
+{
+    q:$ll(poznamky)=0 nazev
+    q nazev_", "_$lts(poznamky, "")
+}
+
 ClassMethod ZnackyBodu(IdFa As %String, dataDB As %String, zastavkaId As %String, trasaId As %String, bodId As %String, smerId As %Integer, ByRef popisy) As %String
 {
     k seen
