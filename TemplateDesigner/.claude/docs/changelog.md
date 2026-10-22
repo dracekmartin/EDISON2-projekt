@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-22 (7) - 💬 linka bez dat řekne proč a co s tím
+
+KV_DP linka 20 dala v náhledu jen „Žádná data" a při tisku víc linek z PDF potichu zmizela; starý tisk
+na ní spadne na technickou chybu. Příčina je v datech: 136 spojů a ani jeden nemá spočítané časy.
+Linkový JŘ MHD teď u linky bez jediné stránky pošle důvod a radu (`DUVOD_PRAZDNE`, přidaný klíč):
+chybí trasa, na trase není zastávka kategorie Zastávka, linka nemá ve vybraném směru spoje, vybrané
+typy provozu nemají spoje (zapnout v parametrech), spoje nemají časy (doplnit jízdní doby), nebo žádný
+spoj nestaví na zastávce. Náhled ho ukáže ve stavovém řádku („Žádná data: linka 20 - Spoje linky
+nemají spočítané časy…"), tiskové okno u vynechaných linek („bez dat vynecháno: …") a když data nemá
+žádná linka, vypíše důvody místo obecného navedení. Chybou to vědomě není - zastavila by tisk
+ostatních linek. Linka 21 (1106), na které starý tisk taky padá, data má. Testy
+`DuvodPrazdnehoVystupuTests` (.NET), `TestDuvodPrazdnehoVystupu` (Caché, ověřeno mutací); pravidlo
+v `cache-api.md`.
+
 ## 2026-10-22 (6) - 🚌 linkový JŘ MHD: hraniční zastávka se všemi zónami
 
 Zastávka, která patří do víc zón systému linky (hraniční), ukazovala jen první zónu; starý tisk MHD

@@ -422,13 +422,22 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     /// Pro JŘ: vstup = LinkaID → výstup = pole stránek (1 per zastávka × směr).
     /// Null = metoda selhala.
     /// </summary>
-    public List<DataContext>? GetData(string agendaCode, Dictionary<string, object?> parameters)
+    public List<DataContext>? GetData(string agendaCode, Dictionary<string, object?> parameters) =>
+        GetDataSDuvodem(agendaCode, parameters).Stranky;
+
+    /// <summary>Klíč OUT, kterým agenda vysvětlí, proč nevrátila žádnou stránku (co v datech chybí
+    /// a co s tím). Aditivní klíč kontraktu (R3) - starší agenda ho neposílá.</summary>
+    public const string DuvodPrazdnehoKlic = "DUVOD_PRAZDNE";
+
+    /// <summary><see cref="GetData"/> i s důvodem, když agenda nevrátila nic. Prázdný výstup není
+    /// chyba - při tisku víc linek by jedna bez dat zastavila ostatní.</summary>
+    public (List<DataContext>? Stranky, string? DuvodPrazdneho) GetDataSDuvodem(string agendaCode, Dictionary<string, object?> parameters)
     {
-        if (string.IsNullOrEmpty(agendaCode)) return null;
-        if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
+        if (string.IsNullOrEmpty(agendaCode)) return (null, null);
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return (null, null);
 
         // Agenda bez Caché třídy (GENERAL) - žádná reálná data, šablona se tiskne s parametry přímo
-        if (string.IsNullOrWhiteSpace(cacheClass)) return null;
+        if (string.IsNullOrWhiteSpace(cacheClass)) return (null, null);
 
         try
         {
@@ -445,7 +454,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                 throw new CacheAgendaException(
                     $"Načtení dat agendy '{agendaCode}' z databáze selhalo: {_mlRest.RestStatus.Message}");
 
-            return ParsePages(result.Select(kvp => (kvp.Key, kvp.Value?.Value?.ToString())));
+            var uzly = result.Select(kvp => (kvp.Key, kvp.Value?.Value?.ToString())).ToList();
+            return (ParsePages(uzly), DuvodPrazdneho(uzly));
         }
         catch (CacheAgendaException)
         {
@@ -470,7 +480,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         var pages = new List<DataContext>();
         foreach (var (key, json) in outNodes)
         {
-            if (key == "ERR") continue;
+            if (key is "ERR" or DuvodPrazdnehoKlic) continue;
             if (string.IsNullOrEmpty(json)) continue;
 
             try
@@ -487,6 +497,10 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
         return pages.Count > 0 ? pages : null;
     }
+
+    /// <summary>Důvod prázdného výstupu z uzlu <see cref="DuvodPrazdnehoKlic"/>; null = agenda ho neposlala.</summary>
+    internal static string? DuvodPrazdneho(IEnumerable<(string Key, string? Json)> outNodes) =>
+        outNodes.FirstOrDefault(n => n.Key == DuvodPrazdnehoKlic).Json is { Length: > 0 } duvod ? duvod : null;
 
     /// <summary>
     /// Parsuje jeden objekt stránky { "values": {...}, "rows": {...} } do DataContext.

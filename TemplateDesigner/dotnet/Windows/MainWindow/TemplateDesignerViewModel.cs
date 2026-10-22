@@ -359,7 +359,8 @@ public class TemplateDesignerViewModel : EDViewModel
             var turnusy = CurrentTurnusyKeSpojum();
             var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson, turnusy, JazykSablony);
             List<DataContext>? pages;
-            try { pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams)); }
+            string? duvodPrazdneho;
+            try { (pages, duvodPrazdneho) = await Task.Run(() => CacheProvider.GetDataSDuvodem(agendaCode, getDataParams)); }
             finally { if (gen == _previewDataGeneration) { _nacitaniBezi = false; NacitaniDat = false; } }
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
@@ -372,7 +373,11 @@ public class TemplateDesignerViewModel : EDViewModel
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
                 NastavHlaseni(ZdrojHlaseni.Data, []);
-                StatusText = $"Žádná data: {instance.Display}";
+                // Agenda umí říct, co v datech chybí a co s tím (`DUVOD_PRAZDNE`) - jinak by uživatel
+                // hledal chybu v návrháři.
+                StatusText = duvodPrazdneho is null
+                    ? $"Žádná data: {instance.Display}"
+                    : $"Žádná data: {instance.Display} - {duvodPrazdneho}";
             }
             else
             {

@@ -355,6 +355,38 @@ Method TestZonyHranicniZastavky()
 	kill ^[db]ALVA.MHD.ENUMS(idfa), ^[db]ALVA.MHD.ZST(idfa)
 }
 
+/// Linka bez jediné stránky vrátí místo prázdna důvod a radu (`DUVOD_PRAZDNE`). KV_DP linka 20
+/// (1105): 136 spojů, žádný nemá spočítané časy - starý tisk na ní spadne na `<SUBSCRIPT>`. Linka 1
+/// se všemi typy provozu vypnutými řekne, že je zapnout. Linka 21 (1106) data má - starý tisk na
+/// ní padá jen kvůli spoji, který začíná uprostřed trasy.
+Method TestDuvodPrazdnehoVystupu()
+{
+	if '##class(%SYS.Namespace).Exists("KV_DP") {
+		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		quit
+	}
+	do ..SysFirmy(.sys, "KV_DP")
+	kill ^||ML
+	set ^||ML("IN","LINKA_ID") = 1105
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
+	do $$$AssertTrue($get(^||ML("OUT","DUVOD_PRAZDNE")) [ "jízdní doby", "linka 20: "_$get(^||ML("OUT","DUVOD_PRAZDNE"), "(bez důvodu)"))
+	do $$$AssertEquals(..PocetStranek(), 0, "linka 20 nemá stránky")
+
+	kill ^||ML
+	set ^||ML("IN","LINKA_ID") = 1073, tp = ""
+	for  { set tp = $order(^["KV_DP"]ALVA.MHD.ENUMS("KV_DP","TypyProvozu","DTA",tp)) quit:tp=""  set ^||ML("IN", ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).ParametrTypuProvozu(tp)) = "false" }
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
+	do $$$AssertTrue($get(^||ML("OUT","DUVOD_PRAZDNE")) [ "Typy provozu pro tisk", "linka 1 bez typů: "_$get(^||ML("OUT","DUVOD_PRAZDNE"), "(bez důvodu)"))
+
+	for lin = 1073, 1106 {
+		kill ^||ML
+		set ^||ML("IN","LINKA_ID") = lin
+		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
+		do $$$AssertTrue(..PocetStranek() > 0, lin_" má mít stránky")
+		do $$$AssertTrue('$data(^||ML("OUT","DUVOD_PRAZDNE")), lin_": s daty bez důvodu")
+	}
+}
+
 /// Čísla čárkou seřazená vzestupně, aby nezáleželo na pořadí.
 ClassMethod Serazene(cisla As %String) As %String
 {

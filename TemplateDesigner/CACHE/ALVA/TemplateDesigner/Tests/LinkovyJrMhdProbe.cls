@@ -110,6 +110,56 @@ ClassMethod ViceZon(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Proč linka nedá linkový JŘ. IN: LINKA. OUT("trasa"), OUT("bodu") = bodů trasy se zastávkou
+/// kategorie 1001 (směr tam), OUT("spoju"), OUT("sTabulkou") = spojů, kterým MakeTableSpoj spočítá
+/// řádky, OUT("legacy") = výsledek starého tisku (1 = vytiskl, jinak chyba).
+ClassMethod ProcPrazdna(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        k ^||ML("OUT")
+        s lin = $g(^||ML("IN","LINKA"))
+        s trasa = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, lin)
+        s ^||ML("OUT","trasa") = trasa
+        s bodu = 0, bod = ""
+        f {
+            q:trasa=""
+            s bod = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasa,"DTA",1,"ModelTrasaBodDetail",bod))
+            q:bod=""
+            s zast = +$g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",trasa,"DTA",1,"ModelTrasaBodDetail",bod,"Val","ZastavkaTamID"))
+            i zast, +$g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zast,"DTA",1,"KategorieZastavekID")) = 1001 s bodu = bodu + 1
+        }
+        s ^||ML("OUT","bodu") = bodu
+        s (spoju, sTabulkou) = 0, spoj = ""
+        f {
+            s spoj = $o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,lin,spoj))
+            q:spoj=""
+            s spoju = spoju + 1
+            k arr
+            d ##class(ALVA.MHD.SpojeFce).MakeTableSpoj(.sys, spoj, "", .arr)
+            i $o(arr("arr",1,"")) '= "" s sTabulkou = sTabulkou + 1
+        }
+        s ^||ML("OUT","spoju") = spoju, ^||ML("OUT","sTabulkou") = sTabulkou
+        s legacy = ""
+        try {
+            k in, out
+            s n = 0, tp = ""
+            f {
+                s tp = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp))
+                q:tp=""
+                s in("A",2,"arr",11,$i(n)) = "TypProvozuID#"_tp_"~1"
+            }
+            s in("A",2,"arr",11,$i(n)) = "SmerID#0~1", in("A",2,"arr",11,$i(n)) = "SmerID#1~1"
+            s in("A",2,"dta",1) = 1000000, in("A",2,"dta",2) = 1000000
+            s legacy = ##class(ALVA.MHD.LinkyPrintFormatJR).MakeData(IdFa, dataDB, lin, "^||TdProcPrazdna", .in, .out)
+            k ^||TdProcPrazdna
+        } catch exL { s legacy = exL.DisplayString() }
+        s ^||ML("OUT","legacy") = legacy
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Ukazatele jedné linky; "" = linka bez spojů.
 ClassMethod Linka(IdFa As %String, dataDB As %String, lin As %String) As %String
 {

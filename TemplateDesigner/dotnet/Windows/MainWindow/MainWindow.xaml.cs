@@ -1125,9 +1125,11 @@ public partial class MainWindow : Window
     /// <summary>
     /// Načtení dat všech vybraných linek (tiskové okno, kontrola z návrháře). Null = bez databáze
     /// nebo agendy. Stránky dat nesou popis linky (<c>KontrolaVystupu.LinkaKlic</c>).
+    /// <paramref name="vynechane"/> = linky bez dat z posledního načtení, s důvodem od agendy.
     /// </summary>
-    private Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? NacitaniVsechLinek()
+    private Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? NacitaniVsechLinek(out List<string> vynechane)
     {
+        var bezDat = vynechane = [];
         Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null;
         if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
         {
@@ -1142,6 +1144,7 @@ public partial class MainWindow : Window
             buildRealData = (paramValues, prubeh) =>
             {
                 List<DataContext>? pages;
+                bezDat.Clear();
 
                 // Pokud má uživatel aktivní instance (vybrané přes Instance Picker), iteruj je
                 // a vygeneruj batch napříč všemi - ignoruje LINKA_ID z parametrů dialogu.
@@ -1153,10 +1156,15 @@ public partial class MainWindow : Window
                     foreach (var inst in _vm.ActiveInstances)
                     {
                         prubeh?.Report((hotovo++, _vm.ActiveInstances.Count, inst.Display));
-                        var instPages = provider.GetData(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
+                        var (instPages, duvod) = provider.GetDataSDuvodem(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
                             paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson,
                             turnusy, _vm.JazykSablony));
-                        if (instPages is null) continue;
+                        if (instPages is null)
+                        {
+                            // Linka bez dat nezastaví ostatní, ale nesmí zmizet potichu.
+                            bezDat.Add(duvod is null ? inst.Display : $"{inst.Display} - {duvod}");
+                            continue;
+                        }
                         // Linka ke každé stránce - kontrola v tiskovém okně z ní řekne, které lince
                         // hláška patří (`B178`).
                         var linka = new Dictionary<string, object?> { [TemplateDesigner.Models.KontrolaVystupu.LinkaKlic] = inst.Display };
@@ -1198,7 +1206,7 @@ public partial class MainWindow : Window
     private async void BtnKontrola_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var nacitani = NacitaniVsechLinek();
+        var nacitani = NacitaniVsechLinek(out _);
         if (nacitani is null || _vm.ActiveInstances.Count == 0)
         {
             _vm.StatusText = "Kontrola potřebuje vybrané linky - vyberte je na štítku vedle agendy.";
@@ -1265,7 +1273,7 @@ public partial class MainWindow : Window
         // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
         // takže _previewParams už obsahuje persistované hodnoty - žádný extra I/O zde.
 
-        var buildRealData = NacitaniVsechLinek();
+        var buildRealData = NacitaniVsechLinek(out var vynechaneLinky);
 
         var tplAgendaCode = _vm!.State.CurrentTemplate.AgendaCode;
         var agendaClass = string.IsNullOrEmpty(tplAgendaCode) ? null : _vm.CacheProvider?.GetCacheClass(tplAgendaCode);
@@ -1280,6 +1288,7 @@ public partial class MainWindow : Window
             onParamsChanged: _vm.OnExternalParamsChanged,
             agendaClass: agendaClass,
             maVybraneLinky: () => _vm.ActiveInstances.Count > 0);
+        vm.VynechaneLinky = () => vynechaneLinky;
 
         vm.RequestRenderPng = (filePath, dataPages) =>
             _previewCanvas!.RenderMultiDataToPng(filePath, dataPages,

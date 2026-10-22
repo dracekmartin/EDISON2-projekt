@@ -108,6 +108,18 @@ public class PrintDialogViewModel : EDViewModel
     /// <summary>Otevře okno s výsledkem kontroly (nadpis, hlášky) - hlášky nezabírají formulář.</summary>
     public Action<string, IReadOnlyList<Hlaseni>>? RequestShowHlaseni { get; set; }
 
+    /// <summary>Linky, které při posledním načtení nedaly data, i s důvodem od agendy („linka 20 -
+    /// Spoje linky nemají spočítané časy…"). Tisk je přeskočí, ale musí to říct.</summary>
+    public Func<IReadOnlyList<string>>? VynechaneLinky { get; set; }
+
+    /// <summary>Hláška, když nemá data žádná linka: s důvody od agendy, jinak obecné navedení.</summary>
+    internal static string ZadnaData(IReadOnlyList<string>? vynechane, string bezDuvodu) =>
+        vynechane is { Count: > 0 } ? $"Žádná vybraná linka nemá data: {string.Join("; ", vynechane)}" : bezDuvodu;
+
+    /// <summary>Dovětek k hotovému výstupu o linkách, které se vynechaly; prázdný, když žádná.</summary>
+    internal static string DovetekVynechanych(IReadOnlyList<string>? vynechane) =>
+        vynechane is { Count: > 0 } ? $" · bez dat vynecháno: {string.Join("; ", vynechane)}" : "";
+
     /// <summary>Hlášky poslední kontroly, nejvážnější první.</summary>
     public IReadOnlyList<Hlaseni> Hlaseni { get; private set; } = [];
     public bool HasHlaseni => Hlaseni.Count > 0;
@@ -195,14 +207,15 @@ public class PrintDialogViewModel : EDViewModel
             var dataPages = await Task.Run(() => _buildRealData(paramsSnapshot, PrubehNacitani(podil: 0.5)));
             if (dataPages is null or { Count: 0 })
             {
-                StatusText = "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).";
+                StatusText = ZadnaData(VynechaneLinky?.Invoke(),
+                    "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).");
                 return;
             }
             var hlaseni = await ZkontrolujLinkyAsync(dataPages);
             int linek = KontrolaVystupu.PoLinkach(dataPages).Count;
-            StatusText = hlaseni.Count > 0
+            StatusText = (hlaseni.Count > 0
                 ? $"Zkontrolováno {Linek(linek)}"
-                : $"Zkontrolováno {Linek(linek)} - bez hlášek";
+                : $"Zkontrolováno {Linek(linek)} - bez hlášek") + DovetekVynechanych(VynechaneLinky?.Invoke());
             NastavHlaseni(hlaseni, $"Zkontrolováno {Linek(linek)}: {Souhrn(hlaseni)}");
         }
         catch (Exception ex)
@@ -292,16 +305,17 @@ public class PrintDialogViewModel : EDViewModel
                 var paramsSnapshot = new Dictionary<string, object?>(_paramValues);
                 stranky = await Task.Run(() => _buildRealData!(paramsSnapshot, PrubehNacitani())) ?? [];
                 Probiha = false;
-                if (stranky.Count == 0) { StatusText = "Databáze nevrátila žádná data."; return; }
+                if (stranky.Count == 0) { StatusText = ZadnaData(VynechaneLinky?.Invoke(), "Databáze nevrátila žádná data."); return; }
             }
             else stranky = [_buildMockData(_paramValues) ?? new DataContext()];
 
             StatusText = "Generuji PNG…";
             int pocet = await Task.Run(() => RequestRenderPng?.Invoke(path, stranky) ?? 0);
             if (pocet == 1) OpenPdf(path);
-            StatusText = pocet == 1
+            StatusText = (pocet == 1
                 ? $"PNG uloženo: {Path.GetFileName(path)}"
-                : $"PNG uloženo: {pocet} souborů ({Path.GetFileNameWithoutExtension(path)}_001.png …)";
+                : $"PNG uloženo: {pocet} souborů ({Path.GetFileNameWithoutExtension(path)}_001.png …)")
+                + (ZVybranychLinek ? DovetekVynechanych(VynechaneLinky?.Invoke()) : "");
         }
         catch (Exception ex)
         {
@@ -458,9 +472,11 @@ public class PrintDialogViewModel : EDViewModel
             if (dataPages is null or { Count: 0 })
             {
                 // Nejčastější příčina není výpadek DB, ale žádná vybraná linka - navést uživatele.
-                StatusText = "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).";
+                StatusText = ZadnaData(VynechaneLinky?.Invoke(),
+                    "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).");
                 return;
             }
+            string vynechane = DovetekVynechanych(VynechaneLinky?.Invoke());
 
             // Kontrolu všech linek tisk sám nespouští (rozhodnutí Jan 5. 10.): PDF vznikne tak jako
             // tak a kontrola by ho jen zdržela. Kdo chce hlášky za všechny linky, má „Zkontrolovat".
@@ -478,7 +494,7 @@ public class PrintDialogViewModel : EDViewModel
                 // ve wiring), takže nekoliduje s preview renderem UI threadu.
                 await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets, Meritko));
                 OpenPdf(target);
-                StatusText = $"PDF uloženo: {Path.GetFileName(target)}{sheetInfo}";
+                StatusText = $"PDF uloženo: {Path.GetFileName(target)}{sheetInfo}{vynechane}";
                 return;
             }
 
@@ -498,7 +514,7 @@ public class PrintDialogViewModel : EDViewModel
             });
 
             OpenFolder(target);
-            StatusText = $"{fileCount} PDF uloženo do složky{sheetInfo}";
+            StatusText = $"{fileCount} PDF uloženo do složky{sheetInfo}{vynechane}";
         }
         catch (Exception ex)
         {
