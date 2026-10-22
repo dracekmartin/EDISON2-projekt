@@ -18,7 +18,7 @@ Include GENERAL
 /// 
 /// ── Rozdíly/mezery vůči legacy MakeData ──
 /// - sloupec „OdjezdPříjezd" (typ 5, texty př/od) nahrazen ZASTAVKY.TYP="prijezd" podřádky
-/// - výběr typů provozu (arr,11) zatím bez parametru - tiskne všechny; směr volí SMER_TISKU
+/// - výběr typů provozu (arr,11) = parametry TYP_PROVOZU_<id>; směr volí SMER_TISKU
 /// - značky spoje a negativní značky skládá jako legacy (:490-695), porovnání viz
 ///   `Tests/LinkovyJrMhdTest`; z atributů spoje jen B/C, ostatní legacy tiskne id znaku (neověřeno)
 Class ALVA.TemplateDesigner.Agendy.LinkovyJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
@@ -130,13 +130,58 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
 }
 
 /// Parametry sestavy. Směr pro tisk je týž parametr jako u AD varianty (definici drží ona).
-/// Výběr typů provozu (legacy arr,11) zatím není.
+/// Typy provozu jsou zaškrtávátko pro každý nezablokovaný typ firmy (`TYP_PROVOZU_<id>`), jako
+/// starý dialog před tiskem (`LinkyPrintBIGFilterED.cls:115-123`) - typy firmy, ne linky, protože
+/// parametry se berou bez znalosti instance.
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    s arr = ##class(%DynamicArray).%New()
-    d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
-    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    q $$$OK
+    s err = ""
+    try {
+        $$$FillParams
+        s arr = ##class(%DynamicArray).%New()
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
+        d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)
+        // Stejný název mají v číselníku i různé typy (KV_DP: dvakrát „Sobota", dvakrát „Neděle"),
+        // takové se v panelu rozliší číslem typu.
+        k nazvy
+        s tp = ""
+        f {
+            s tp = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp))
+            q:tp=""
+            i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Blocked")) continue
+            s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Nazev"))
+            s:nazev'="" nazvy(nazev) = $g(nazvy(nazev)) + 1
+        }
+        s tp = ""
+        f {
+            s tp = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp))
+            q:tp=""
+            i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Blocked")) continue
+            s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Nazev"))
+            s cislo = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Cislo"), tp)
+            i nazev = "" { s nazev = "Typ provozu "_cislo }
+            elseif $g(nazvy(nazev)) > 1 { s nazev = nazev_" (č. "_cislo_")" }
+            s popis = "Spoje tohoto typu provozu se vytisknou jako samostatný blok. Vypnutý typ provozu se netiskne."
+            i $g(provozNadpis(tp)) '= "" s popis = "Nadpis bloku na tisku: „"_provozNadpis(tp)_"“. "_popis
+            d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, ..ParametrTypuProvozu(tp), nazev, 1, "Typy provozu pro tisk", popis, 1)
+        }
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Název parametru sestavy pro typ provozu. ⚠️ Id typu provozu je číslo v rámci firmy - týž název
+/// parametru znamená v jiné firmě jiný typ provozu.
+ClassMethod ParametrTypuProvozu(tp As %String) As %String
+{
+    q "TYP_PROVOZU_"_tp
+}
+
+/// Tiskne se typ provozu? Vypnutý je jen výslovným "false"; chybějící hodnota (starší klient,
+/// zablokovaný typ, který parametr nemá) = tisknout, jako před zavedením výběru.
+ClassMethod TypProvozuSeTiskne(tp As %String) As %Boolean
+{
+    q $zcvt($g(^||ML("IN", ..ParametrTypuProvozu(tp))), "L") '= "false"
 }
 
 /// Skupiny linek pro filtr Instance Pickeru - ENUMS "SkupinyLinek" mimo zablokované.
@@ -405,6 +450,8 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         q:spojId=""
         i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"SmerID")) '= smerId continue
         s typProvozu = +$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"TypProvozuID"))
+        // Vypnutý typ provozu se netiskne a nedělá blok (legacy :537-538).
+        i '..TypProvozuSeTiskne(typProvozu) continue
         k arrtbsp
         d ##class(ALVA.MHD.SpojeFce).MakeTableSpoj(.sys, spojId, "", .arrtbsp)
         s prvniCnt = $o(arrtbsp("arr",1,""), smerpar)
@@ -723,6 +770,9 @@ ClassMethod PriradNegativniZnacky(ByRef sys As %String, IdFa As %String, dataDB 
         q:spojId=""
         s smer = $s(+$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"SmerID")):"Z", 1:"T")
         i (","_smery_",") '[ (","_smer_",") continue
+        // Volné značky z rozsahu dostávají jen tištěné spoje, jako v legacy (filtr typu :538 je
+        // před přidělením); číselník výše bere celou linku i s vypnutými typy (legacy :497-528).
+        i '..TypProvozuSeTiskne(+$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"TypProvozuID"))) continue
         s nz = "", txt = ""
         i auto {
             i '$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"RucniZadani")) continue

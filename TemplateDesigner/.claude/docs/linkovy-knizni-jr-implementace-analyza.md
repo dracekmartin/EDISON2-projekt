@@ -1928,12 +1928,15 @@ starší 1001-1024 platily v roce 2018.
 
 | Linka | Co na ní je |
 |---|---|
-| CB_DP 11350 (linka 18, 122 spojů) | NZ z poznámky i ruční zadání, IDS, auto-poznámkování - hlavní případ NZ |
+| CB_DP 11350 (linka 18, skupina „testovací 2", 122 spojů) | NZ z poznámky i ruční zadání, IDS, auto-poznámkování - hlavní případ NZ |
 | CB_DP 11341 (linka 1, 318 spojů) | 51 ručně zadaných spojů - přidělování NZ z rozsahu |
 | CB_DP 11354 (linka 23, 411 spojů) | 205 spojů s poznámkou pro knižní tisk |
-| CB_DP 11018 (linka 13, 228 spojů) | 9 typů provozu - bloky po typu provozu |
+| CB_DP 11018 (linka 13, skupina „2026_06_08_Inizio/CIS!_A_ukončení uzavírky…", 228 spojů) | 9 typů provozu - bloky po typu provozu |
 | CB_DP 11338 (linka 33, 24 spojů) | malá linka s poznámkami, rychlý test |
-| KV_DP 1073 (205 spojů) | 7 typů provozu, „jede jinudy"; bez NZ, poznámek a IDS |
+| KV_DP 1073 (linka 1, skupina „Základní" - ta výš ze dvou stejně pojmenovaných, 205 spojů) | 7 typů provozu, „jede jinudy"; bez NZ, poznámek a IDS; vzor z webu DPKV v §18.8 |
+
+Výběr instancí ukazuje číslo linky a jméno skupiny, ne id z první kolonky - CB_DP má 835 skupin,
+skupinu hledej podle začátku jména.
 
 **Na dev datech chybí** příjezd a odjezd (atribut trasy 1011), atribut spoje B/C a poznámka z trasy
 pro knižní tisk. Tyto cesty oracle neověří a v dokladech parity se píšou jako neověřené (R6).
@@ -1957,7 +1960,7 @@ i linkovém JŘ a v obou datových zdrojích.
 | Zastávkový AD | dny v týdnu z kalendáře spoje | „Rozdělení sloupců (typy provozu)": Automaticky (dle linky), 4 vzory, Vlastní rozložení |
 | Linkový AD | dny v týdnu z kalendáře spoje | „Dělení spojů dle platnosti": 3 vzory, Vlastní rozložení (bez „Automaticky") |
 | Zastávkový MHD | typy provozu, sloučené do nejvýš 4 sloupců podle pole SMO v číselníku (`ZastavkoveJrMhd.cls:612-617`) | nic |
-| Linkový MHD | typ provozu = blok, pořadí z číselníku (`LinkovyJrMhd.cls:380-428`) | nic |
+| Linkový MHD | typ provozu = blok, pořadí z číselníku (`LinkovyJrMhd.cls:380-428`) | od 22. 10. zaškrtávátka typů provozu v parametrech (§18.8) |
 
 Vlastní rozložení u AD je jeden mechanismus pro obě agendy: prvek drží definici sloupců
 (`DepartureColumnDefinition`: dny, značky, období, nadpis), klient ji posílá jako `DEFINICE_SLOUPCU`
@@ -2006,6 +2009,41 @@ protože to dev data nemají: příjezd/odjezd na jedné zastávce (atribut tras
 starého tisku nahrazený podřádky) a poznámky z trasy (`PoznamkyTam/Zpet` pro knižní tisk), které
 starý tisk připisuje k názvu zastávky - ty agenda zatím nečte vůbec. Linky KV_DP 1105 a 1106 starý
 tisk nevytiskne (chyba starého modulu); naše agenda pro ně vrátí prázdný výstup bez hlášky.
+
+### 18.8 Výběr typů provozu a vzor z webu DPKV (22. 10. 2026)
+
+**Vzor:** linkový JŘ linky 1 z webu DPKV (`Linka1.pdf`, stažený 22. 10., v repu není). Tři strany,
+každá jeden typ provozu s oběma směry pod sebou, svislým nadpisem po straně a úzkým nadpisem
+„Jízdní řád platí v období od … do …". Čísla spojů jsou totožná s našimi bloky (oba směry):
+
+| Web | Náš typ provozu (KV_DP) |
+|---|---|
+| str. 1 Pracovní den, 1.1.-30.6. a 1.9.-26.12. | 1002 „Pracovní den - školní", blok „Pracovní den mimo 1.7. - 31.8. a 27.12. - 31.12." |
+| str. 2 Pracovní den, 1.7.-31.8. a 27.12.-31.12. | 1001 „Pracovní den - letní provoz" |
+| str. 3 Sobota + neděle + svátek | blok „Sobota, neděle a státní svátky" |
+| netiskne | „pracovní dny o prázdninách" - tytéž spoje jako str. 1 |
+| jen poznámka „poslední spoj 24.12. - 111, … první spoj 25.12. a 1.1. - 61" | 24.12. / 25.12. a 1.1. / 31.12. |
+
+Web tedy **typy provozu neslučuje, jen vybírá**, jako starý knižní tisk (`LinkyPrintBIGFilterED.cls:115-123`
+zaškrtávátka, `LinkyPrintFormatJR.cls:537-538` přeskočení). Sváteční typy jsou ve skutečnosti zkrácené
+základní typy (24.12. = víkendové spoje do 111, 25.12. a 1.1. = víkendové od 61, 31.12. = letní
+pracovní do 141). Text té poznámky ani nadpis období nejsou v datech ani ve starém knižním tisku -
+ručně psané, nebo jiný nástroj (neověřeno).
+
+**Hotovo 22. 10. (rozhodnutí Jan):** parametr `TYP_PROVOZU_<id>` (zaškrtávátko) za každý nezablokovaný
+typ provozu firmy, výchozí zapnuto. Typy firmy, ne linky - parametry se berou bez znalosti instance;
+KV_DP jich má 20. Shodu s webem a se starým tiskem se stejným výběrem drží `LinkovyJrMhdTest`.
+
+**Záměrně nedělané:** slučování typů do bloku. U MHD nese platnost typ provozu, ne značka spoje
+(KV_DP 1073: žádný z 205 spojů značku platnosti nemá), takže sloučený blok by potřeboval značky pro
+obě strany - na lince 1 by „jen v létě" dostalo 13 spojů a „ne v létě" 17. Zastávkový MHD značí jen
+vedlejší typy (`ZastavkoveJrMhd.cls:629`), to by tady nestačilo. Dál jen na poptávku zákazníka;
+stejně tak samostatná stránka pro každý typ provozu (vzor „Samostatná stránka pro každý označník"),
+svislý nadpis bloku a automatická poznámka ke svátečním typům.
+
+⚠️ **Otevřené před vydáním (`B191f`):** id typu provozu je číslo v rámci firmy, takže uložená
+hodnota `TYP_PROVOZU_1003` v šabloně by v jiné firmě vypnula jiný typ provozu. Týká se šablon
+přenášených mezi firmami (systémové šablony, export/import).
 
 ## 19. Rozdílový linkový JŘ podle vzoru z CIS JŘ - rozbor `B192` (16. 10. 2026)
 

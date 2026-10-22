@@ -25,7 +25,8 @@ ClassMethod OracleDostupny() As %Boolean
 }
 
 /// Spustí starý tisk nad linkou. 0 = starý modul nebo firma na serveru není, nebo skončil chybou.
-ClassMethod SpustLegacy(idfa As %String, db As %String, lin As %String) As %Boolean
+/// `vypnute` = id typů provozu čárkou, které se v dialogu starého tisku nezaškrtnou.
+ClassMethod SpustLegacy(idfa As %String, db As %String, lin As %String, vypnute As %String = "") As %Boolean
 {
 	quit:'..OracleDostupny() 0
 	quit:'##class(%SYS.Namespace).Exists(db) 0
@@ -35,7 +36,7 @@ ClassMethod SpustLegacy(idfa As %String, db As %String, lin As %String) As %Bool
 	for  {
 		set tp = $order(^[db]ALVA.MHD.ENUMS(idfa,"TypyProvozu","DTA",tp))
 		quit:tp=""
-		set in("A",2,"arr",11,$increment(n)) = "TypProvozuID#"_tp_"~1"
+		set in("A",2,"arr",11,$increment(n)) = "TypProvozuID#"_tp_"~"_'((","_vypnute_",") [ (","_tp_","))
 	}
 	set in("A",2,"arr",11,$increment(n)) = "SmerID#0~1"
 	set in("A",2,"arr",11,$increment(n)) = "SmerID#1~1"
@@ -64,10 +65,10 @@ ClassMethod PorovnavanaPoznamka(druh As %String, znak As %String) As %Boolean
 /// Starý tisk → leg("spoj", řádek) = počet, leg("pozn", směr|druh|znak|text) = 1.
 /// ⚠️ Hodnota musí být neprázdná: `Porovnej` srovnává hodnoty, takže s "" by položka chybějící
 /// na jedné straně vypadala jako shoda (tak to 12. 10. vypadalo, než to ukázala KV_DP 1073).
-ClassMethod NactiLegacy(idfa As %String, db As %String, lin As %String, ByRef leg) As %Boolean
+ClassMethod NactiLegacy(idfa As %String, db As %String, lin As %String, ByRef leg, vypnute As %String = "") As %Boolean
 {
 	kill leg
-	quit:'..SpustLegacy(idfa, db, lin) 0
+	quit:'..SpustLegacy(idfa, db, lin, vypnute) 0
 	set g = ..#GLB, idobj = ""
 	for  {
 		set idobj = $order(@g@(idobj))
@@ -220,11 +221,15 @@ ClassMethod RozdeleniBloku(bloky As %String) As %String
 	quit $extract(out,2,$length(out))
 }
 
-/// Náš výstup v témž tvaru jako `NactiLegacy`.
-ClassMethod NactiNase(ByRef sys, lin As %String, ByRef nase)
+/// Náš výstup v témž tvaru jako `NactiLegacy`; `vypnute` jako u `SpustLegacy`.
+ClassMethod NactiNase(ByRef sys, lin As %String, ByRef nase, vypnute As %String = "")
 {
 	kill nase, ^||ML
 	set ^||ML("IN","LINKA_ID") = lin
+	for i=1:1:$length(vypnute, ",") {
+		set tp = $piece(vypnute, ",", i)
+		set:tp'="" ^||ML("IN", ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).ParametrTypuProvozu(tp)) = "false"
+	}
 	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
 	set key = ""
 	for  {
@@ -282,11 +287,11 @@ ClassMethod NactiNase(ByRef sys, lin As %String, ByRef nase)
 /// Porovná obě strany. res("spoj") / res("pozn") = 1 shoda, res(...,"rozdil") = prvních pár rozdílů,
 /// res("pocet") = počet spojů starého tisku, res("sNz"/"sZnaky"/"sTexty"/"sPozn") = kolik z nich
 /// něco nese. 0 = starý modul nejde spustit (test linku přeskočí).
-ClassMethod Porovnej(ByRef sys, idfa As %String, db As %String, lin As %String, ByRef res) As %Boolean
+ClassMethod Porovnej(ByRef sys, idfa As %String, db As %String, lin As %String, ByRef res, vypnute As %String = "") As %Boolean
 {
 	kill res
-	quit:'..NactiLegacy(idfa, db, lin, .leg) 0
-	do ..NactiNase(.sys, lin, .nase)
+	quit:'..NactiLegacy(idfa, db, lin, .leg, vypnute) 0
+	do ..NactiNase(.sys, lin, .nase, vypnute)
 	// Co porovnání vůbec vidí - shoda nad prázdnými značkami by nic nedokazovala.
 	set (res("pocet"), res("sNz"), res("sZnaky"), res("sTexty"), res("sPozn")) = 0, k = ""
 	for  {

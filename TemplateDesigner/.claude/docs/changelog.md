@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-10-22 - 🚌 linkový JŘ MHD: výběr typů provozu (`B191d`, část)
+
+Linkový JŘ MHD tiskl každý typ provozu linky jako samostatný blok, všechny. Starý knižní tisk
+nabízel před tiskem zaškrtávátka typů provozu a DPKV na webu tiskne z linky 1 jen tři ze sedmi.
+Parametry sestavy mají teď skupinu **Typy provozu pro tisk**: zaškrtávátko za každý nezablokovaný
+typ provozu firmy (jako starý dialog, typy firmy, ne linky - parametry se berou bez znalosti linky),
+výchozí zapnuté. Vypnutý typ se netiskne a volné negativní značky z rozsahu se přidělují jen
+tištěným spojům, jako ve starém tisku. Typy se stejným názvem (KV_DP: dvakrát „Sobota") nesou číslo
+typu, popis ukazuje nadpis bloku na tisku. Typy se neslučují - u MHD nese platnost typ provozu,
+ne značka spoje (rozbor v analýze linkového JŘ `§18.8`). Agenda je skrytá, zákazník změnu nevidí.
+
+Ověřeno proti webu DPKV (`Linka1.pdf`): KV_DP linka 1 se třemi typy dá tytéž spoje v obou směrech.
+Testy `LinkovyJrMhdTest`: `TestVyberTypuProvozuJakoWeb` (čísla spojů z webu a starý tisk se stejným
+výběrem), `TestVyberTypuProvozuJakoStaryModul` (sada linek s vypnutým typem proti starému tisku;
+CB_DP 11018 ukázal posunuté číslování značek), `TestParametryTypuProvozu`. Obě místa filtru ověřená
+mutací, parametry voláním `GetParameters` na serveru.
+
 ## 2026-10-19 (2) - 🔀 rozdílový linkový JŘ: rozdíl verzí všude podbarvením
 
 Hlavička a legenda vyznačovaly původní verzi přeškrtnutím a novou barevným písmem (vzor z CIS JŘ),

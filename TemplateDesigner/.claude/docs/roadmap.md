@@ -27,13 +27,14 @@ Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R
 Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; před `B191d` vizuální zkouška (Jan); oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
 
 1. **`B191d` Volby pro městské linky** [M-L]. Cíl (Jan 12. 10.): minimum = co šlo ve starém modulu
-   (výběr typů provozu, kam legenda, rámečky kolem čísel spojů; směr hotový 12. 10.), k tomu
-   Zvýraznit zastávku jako u AD; cílový stav = skupiny spojů se nastavují stejně ve všech čtyřech
-   agendách JŘ. Návrh **čeká na potvrzení Jana**: [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
+   (kam legenda, rámečky kolem čísel spojů; směr hotový 12. 10., výběr typů provozu 22. 10.), k tomu
+   Zvýraznit zastávku jako u AD; cílový stav = skupiny spojů stejně ve všech čtyřech agendách JŘ
+   ([`§18.5`](linkovy-knizni-jr-implementace-analyza.md)). Teď vizuální zkouška proti webu DPKV ([`§18.8`](linkovy-knizni-jr-implementace-analyza.md)).
 2. **`B191e` Číslo linky a výchozí šablona** [S]. `{CISLO_LINKY}` je u MHD licenční číslo, veřejné
    `{LOKALNI_OZNACENI_LINKY}` - šablona musí ukázat to veřejné. MHD nemá systémovou šablonu.
 3. **`B191f` Vydání** [S]. `Released = 1` (jak se agenda skrývá: komentář u `Released`
-   v `LinkovyJrAd.cls`), Novinky a příručka.
+   v `LinkovyJrAd.cls`), Novinky a příručka. Předtím rozhodnout výběr typů provozu v šablonách
+   přenášených mezi firmami (id typu je v každé firmě jiné, [`§18.8`](linkovy-knizni-jr-implementace-analyza.md)).
 
 ---
 
