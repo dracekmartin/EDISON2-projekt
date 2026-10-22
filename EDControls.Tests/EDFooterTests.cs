@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Threading;
 using EDControls.EDFooter;
 using EDControls.EDViewModel;
@@ -167,23 +166,19 @@ public class EDFooterTests
     }
 
     [WindowFact]
-    public void Esc_InOpenCalendar_ClosesOnlyCalendar()
+    public void Esc_FromPopup_DoesNotClose()
     {
-        // DatePicker zavře kalendář z PreviewKeyDown tlačítka dne, ale Handled nenastaví - Esc pak probublá z popupu až do okna.
+        // Kalendář DatePickeru se na Esc zavře, ale Handled nenastaví - Esc pak probublá z popupu až do okna.
+        // Popup zůstane zavřený: otevřený na sdíleném app vlákně nechal žít okno souběžného Form_InClosedWindow_IsCollected.
+        // Obsah zavřeného popupu vede k oknu jen logický strom, mimo vizuální strom okna je stejně jako otevřený.
         RunSta(() =>
         {
-            var picker = new DatePicker();
-            var window = ShownWindowWith(NewVm(), picker);
+            var inPopup = new Button();
+            var window = ShownWindowWith(NewVm(), new Popup { Child = inPopup });
             try
             {
-                picker.IsDropDownOpen = true;
-                var calendar = (Calendar)((Popup)picker.Template.FindName("PART_Popup", picker)).Child;
-                calendar.UpdateLayout();
-                var day = Descendants<CalendarDayButton>(calendar).First();
+                PressEsc(inPopup, PresentationSource.FromVisual(window));
 
-                PressEsc(day);
-
-                Assert.False(picker.IsDropDownOpen);
                 Assert.True(window.IsVisible);
             }
             finally
@@ -266,20 +261,10 @@ public class EDFooterTests
         return window;
     }
 
-    private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-        {
-            var child = VisualTreeHelper.GetChild(root, i);
-            if (child is T hit) yield return hit;
-            foreach (var deeper in Descendants<T>(child)) yield return deeper;
-        }
-    }
-
     // Jako InputManager: Preview a bublající KeyDown sdílí args, Handled z Preview zastaví i KeyDown.
-    private static void PressEsc(UIElement target, bool repeat = false)
+    private static void PressEsc(UIElement target, PresentationSource? source = null, bool repeat = false)
     {
-        var args = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(target)!, 0, Key.Escape)
+        var args = new KeyEventArgs(Keyboard.PrimaryDevice, (source ?? PresentationSource.FromVisual(target))!, 0, Key.Escape)
             { RoutedEvent = Keyboard.PreviewKeyDownEvent };
         // IsRepeat nastavuje jen InputManager - veřejný setter není.
         if (repeat)
