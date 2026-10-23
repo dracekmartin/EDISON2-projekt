@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B193` Sjednocení agend JŘ - uzavřené (23. 10. 2026)
+
+Review zastávkového a linkového JŘ (AD i MHD) před vydáním linkového MHD, body `B193a-g` viz výš.
+`B193h` (jedno pole čísla zastávky pro QR) přesunuté k vyhledávači odjezdů pro cestující, `B193i` (název
+pro MHD) vědomě rozdílné - sjednocení by na většině linek ubralo obec (měření v changelogu 2026-10-23 (11)).
+
 ## `B193g` Linka bez dat řekne proč ve všech agendách (hotovo 23. 10. 2026)
 
 Hláška-problém „nemá data, nevytiskne se" s důvodem od agendy v náhledu, kontrole i tiskovém okně

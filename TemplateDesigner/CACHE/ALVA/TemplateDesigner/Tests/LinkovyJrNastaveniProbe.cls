@@ -922,6 +922,72 @@ ClassMethod NazvyVyskyt(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// `B193i` (23. 10.): kolik linek a zastávek by v linkovém JŘ AD dostalo jiný název, kdyby bral
+/// název pro MHD jako vývěska (vždy, když ho zastávka má), ne jen u městské linky s `nazMHD`.
+/// Počítá body trasy, jejichž zastávka má v registru název pro MHD (pole 7) jiný než podle CIS
+/// (pole 2), na linkách, kde ho linkový JŘ dnes nebere. Plus tři příklady za firmu.
+ClassMethod NazvyProMhdDopad(ByRef sys As %String) As %Status
+{
+    set err = ""
+    try {
+        $$$FillParams
+        kill ^||ML, radky
+        for fi = 1:1:$length(..#FIRMY, ",") {
+            set db = $piece(..#FIRMY, ",", fi)
+            continue:'##class(%SYS.Namespace).Exists(db)
+            set linek = 0, dotceneLinky = 0, dotceneBody = 0, priklady = 0
+            kill zastavky
+            set sku = ""
+            for  {
+                set sku = $order(^[db]JRL(sku))
+                quit:sku=""
+                continue:'$isvalidnum(sku)
+                set lin = ""
+                for  {
+                    set lin = $order(^[db]JRL(sku, lin))
+                    quit:lin=""
+                    continue:'$data(^[db]JRL(sku, lin, "I"))
+                    set linek = linek + 1
+                    set surovy = +$piece($get(^[db]JRL(sku, lin, "I")), "#", 1)
+                    set typ = $piece("0~1~2~3~5~7~6~8~4~9~10~11", "~", (surovy \ 10) + 1)
+                    // Linka, kde už dnes bere název pro MHD, se nezmění.
+                    set uzBere = ((typ = 2) || (typ = 9)) && +$get(^[db]JRL(sku, lin, "PATCH", "nazMHD"))
+                    continue:uzBere
+                    set naLince = 0, poradi = ""
+                    for  {
+                        set poradi = $order(^[db]JRL(sku, lin, "J", poradi))
+                        quit:poradi=""
+                        continue:'$isvalidnum(poradi)
+                        set czst = $piece($get(^[db]JRL(sku, lin, "J", poradi)), ":", 1)
+                        continue:czst=""
+                        set rec = $get(^[db]JRZ(czst))
+                        set mhd = $piece(rec, "$", 7), cis = $piece(rec, "$", 2)
+                        continue:(mhd = "")||(mhd = cis)
+                        set naLince = naLince + 1, zastavky(czst) = ""
+                        if priklady < 3 {
+                            set priklady = priklady + 1
+                            set radky($increment(radky)) = db_" příklad: linka "_(+lin)_" (skupina "_sku_"): „"_cis_"“ → „"_mhd_"“"
+                        }
+                    }
+                    if naLince set dotceneLinky = dotceneLinky + 1, dotceneBody = dotceneBody + naLince
+                }
+            }
+            set ruznych = 0, z = ""
+            for  { set z = $order(zastavky(z)) quit:z=""  set ruznych = ruznych + 1 }
+            set radky($increment(radky)) = db_": linek="_linek_" dotcenychLinek="_dotceneLinky_" dotcenychBoduTrasy="_dotceneBody_" ruznychZastavek="_ruznych
+        }
+        kill ^||ML
+        set idx = ""
+        for  {
+            set idx = $order(radky(idx))
+            quit:idx=""
+            set ^||ML("OUT", $increment(^||ML("OUT"))) = radky(idx)
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Vypíše linky, na kterých je nová práce `L2` vidět - podklad pro ruční zkoušku v návrháři.
 ClassMethod KdeToZkouset(ByRef sys As %String) As %Status
 {

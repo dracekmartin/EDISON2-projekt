@@ -3279,6 +3279,9 @@ ClassMethod NactiNastaveniNazvu()
 {
     s ^||TiskAd("nazev","tvar") = $g(^||ML("IN","TVAR_NAZVU_ZASTAVKY"))
     // Tolerantně jako ostatní bool parametry (starší klient posílal „True"); prázdné = zapnuto.
+    // Název pro MHD vždy, když ho zastávka má, bez ohledu na typ linky - jako stará vývěska
+    // (`JRapiLinPrtMhd.mac:280-286`). Linkový JŘ ho bere jen u městských linek; vědomě rozdílné
+    // (Jan 23. 10., `B193i`): název pro MHD často nemá obec, v JŘ meziměstské linky by chyběla.
     s ^||TiskAd("nazev","mhd") = ($zcvt($g(^||ML("IN","NAZEV_PRO_MHD")),"L") '= "false")
 }
 

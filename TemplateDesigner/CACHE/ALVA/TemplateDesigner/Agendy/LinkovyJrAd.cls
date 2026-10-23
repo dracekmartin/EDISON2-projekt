@@ -2351,6 +2351,9 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
 /// linka zapnuté** (`gPLSetWin` „nazMHD" × typ linky MEST/MESP) - jinak bere složený název podle
 /// registru (pole 2). My jsme do 24. 8. brali název pro MHD **vždycky**, takže se zhruba u poloviny
 /// zastávek tisklo jiné jméno než ve starém modulu; rozhodnutí přebírá `NactiNastaveniNazvu`.
+/// ⚠️ **Vývěska ho bere vždy** (jako stará vývěska) a je to vědomě rozdílné (Jan 23. 10., `B193i`):
+/// název pro MHD často nemá obec („Vsetín,,aut.nádr." → „aut.nádr."), sjednocení podle vývěsky by
+/// změnilo názvy na 81-96 % linek CB_CSADAD a KV_DP (`LinkovyJrNastaveniProbe.NazvyProMhdDopad`).
 ///
 /// Samotný tvar (dvojčárka × jedna čárka × okres) řeší sdílené `FormatNazvuZastavky` v `BaseAgenda`,
 /// společné s vývěskou - aby se táž zastávka nejmenovala v každé sestavě jinak.

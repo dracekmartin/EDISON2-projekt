@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-23 (11) - 🧹 sjednocení agend JŘ uzavřené (`B193h`, `B193i`)
+
+Poslední dva body review čtyř agend JŘ. **Číslo zastávky pro adresu v QR** (vývěsky z CIS čísla,
+linkové z interního čísla a Tč) se sjednotí až u položky „Vyhledávač odjezdů pro cestující", kde se
+rozhodne tvar adresy (Jan 23. 10.); podklad v `qr-linkovy-jr-pro-cestujici.md`. **Název pro MHD**
+zůstává vědomě rozdílný: vývěska AD ho bere vždy, když ho zastávka má (jako stará vývěska,
+`JRapiLinPrtMhd.mac:280-286`), linkový AD jen u městských linek s nastavením (jako starý knižní tisk).
+Sjednocení podle vývěsky by podle měření změnilo názvy na 81 % linek CB_CSADAD a 96 % KV_DP a název pro
+MHD často nemá obec („Vsetín,,aut.nádr." → „aut.nádr."), což v JŘ meziměstské linky nejde (sonda
+`LinkovyJrNastaveniProbe.NazvyProMhdDopad`, rozhodnutí Jan 23. 10.). Dočasný podklad review
+`konzistence-agend-jr.md` je smazaný; `B56` (sloučení kódu) čeká v backlogu na vydání.
+
 ## 2026-10-23 (10) - 🔀 rozdílový JŘ z jízdních řádů rovnou jako PDF v prohlížeči (`B192`, první kus `B190`)
 
 Porovnání linek v jízdních řádech neotevírá návrhář: spustí ho bez hlavního okna (`Vystup=PDF`),

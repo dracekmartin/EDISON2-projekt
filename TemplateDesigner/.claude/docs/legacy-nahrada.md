@@ -785,7 +785,7 @@ mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje. Popi
   MHD je od 23. 10. sdílí (`ZastavkoveJrMhd.SeznamLinek`, `B193c`), kopie se do té doby rozešly
   v příznaku zablokované skupiny.
 - **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - každá agenda ji skládá zvlášť; odtud čtyři
-  tvary popisu platnosti a dva texty návrhu ([`konzistence-agend-jr.md`](konzistence-agend-jr.md) `B193f`).
+  tvary popisu platnosti a dva texty návrhu (`B193f`, viz changelog 23. 10.).
 - **Společné parametry vývěsek** (Pořadí stránek, šipky, projeté zastávky, časová osa, roztažení) jsou
   opsané (`ZastavkoveJrAd.cls:3521-3675` × `ZastavkoveJrMhd.cls:1774-1826`). Linkové agendy mají jednu
   sdílenou definici (`LinkovyJrAd.cls:373-446`) a to je vzor.

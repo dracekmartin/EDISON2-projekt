@@ -4,33 +4,12 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** sjednocení agend JŘ (`B193`, Jan 23. 10.); kroky, které držely vydání
-> linkového JŘ MHD (`B193a-c`), jsou hotové 23. 10. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** sjednocení agend JŘ (`B193`) hotové 23. 10.; vydání linkového JŘ MHD (`B191f`)
+> čeká jen na verzi, po vydání `B56` (backlog). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
-
----
-
-## 🧹 Sjednocení agend JŘ (`B193`, Jan 23. 10.)
-
-Review zastávkového a linkového JŘ (AD i MHD) před vydáním linkového MHD: stejná věc se v nich místy
-jmenuje, tiskne nebo chová jinak. Doklady po položkách: [`konzistence-agend-jr.md`](konzistence-agend-jr.md).
-Rozdílový JŘ je mimo rozsah (bude nástroj modulu JŘ). Zamčené jsou jen popisky voleb parametrů.
-
-**Tisk a data - mění výstup vydaných agend:**
-
-1. **`B193i` Název pro MHD stejně ve vývěsce i v linkovém AD** [S] (nález 23. 10.). Volba „Použít název
-   pro MHD" bere ve vývěsce AD název pro MHD vždy, když ho zastávka má; v linkovém AD jen u městské linky,
-   která to má u sebe zapnuté (jako starý knižní tisk). Nejdřív ověřit proti staré vývěsce AD, pak rozhodnout.
-
-**Po vydání:**
-
-2. **`B56` Sloučení opsaného kódu agend** [L] (čekalo na doimplementaci knižního JŘ - splněno 22. 10.).
-   Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už rozešlo: výběr skupin linek
-   a linek u AD (MHD sdílí od `B193c`), hlavička linky (rozcházela se v platnosti a razítku, `B193f`), společné parametry vývěsek,
-   předpřipravené tabulky, které návrhář nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
 
 ---
 
@@ -57,6 +36,12 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
 ## 📥 Backlog
 
 ### Ostatní
+
+- **`B56` Sloučení opsaného kódu agend** [L] - **po vydání** linkového JŘ MHD (čekalo na doimplementaci
+  knižního JŘ, splněno 22. 10.). Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už
+  rozešlo: výběr skupin linek a linek u AD (MHD sdílí od `B193c`), hlavička linky (rozcházela se
+  v platnosti a razítku, `B193f`), společné parametry vývěsek, předpřipravené tabulky, které návrhář
+  nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
 
 - **Barva linky v linkovém JŘ** [S] (slíbeno TRANSDEV v `#13606` 12. 10., „v některé z příštích verzí").
   Zastávkový JŘ AD posílá `BARVA_LINKY` / `BARVA_LINKY_2` (`ZastavkoveJrAd.cls:352-355`, přes
