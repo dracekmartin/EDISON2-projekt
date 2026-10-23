@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Vývěsky MHD: značka zastávky u názvu (hotovo 23. 10. 2026)
+
+Nešlo o značky zastávky, ale o písmeno rozdílu trasy (alg. 1002): starý tisk ho píše i k zastávce,
+kterou obsluhují jen spoje s tím písmenem („Areál VŠTE, A" na CB_DP 11350). Detail changelog
+2026-10-23 (14).
+
 ## Barva linky v linkovém JŘ AD (hotovo 23. 10. 2026, #13606)
 
 Pole Barva linky a Barva linky 2 jako u vývěsky AD, týmž voláním. MHD zatím ne (Jan 23. 10.).

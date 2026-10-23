@@ -139,4 +139,9 @@ Fáze 6 čte `rozdilTrasy` per odjezd a přidá písmeno jako anotaci + text do 
 - mytyp=0 → "zastávky obsluhují pouze shodně označené spoje"
 - mytyp=1 → "končí v zast. {název}"
 
+Písmeno mytyp=0 dostane i **neprojetá zastávka v seznamu zastávek**, kterou spoje s tímto písmenem
+obsluhují (pole `POZNAMKY_ZASTAVKY`, starý tisk ho píše do názvu: „Areál VŠTE, A"); u mytyp=1 se
+zastávka neznačí (legacy `LinkyPrintFormatMHD.cls:764-789`). Do 23. 10. chybělo a vysvětlivka
+neměla na co ukázat. Hlídá `ZastavkoveJrMhdLegacyParityTest.TestParita11350AutoZnacky`.
+
 **Klíčový detail:** TrasaSpojZBodu musí zahrnovat konečný bod (jako legacy) - bez toho jsou bitmapy prázdné a A/B se nevygenerují.

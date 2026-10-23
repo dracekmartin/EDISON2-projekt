@@ -1200,11 +1200,27 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
 
         // Poznámky zastávky (jen neprojete)
         i ((SmerID=0)&&(bodIterator>aktualniZastBodID)) || ((SmerID=1)&&(bodIterator<aktualniZastBodID)) {
+            k znackyZastavky
             s znakPoznamky = ""
             f {
                 s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,bodIterator,znakPoznamky)) q:znakPoznamky=""
                 s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,bodIterator,znakPoznamky))
                 d ..AddPoznamkaZastavky(z, znakPoznamky, "text", $lg(pozVal,1))
+                s znackyZastavky(znakPoznamky) = ""
+            }
+            // Písmeno rozdílu trasy (alg. 1002) i u zastávky, kterou obsluhují jen spoje s tímto
+            // písmenem - bez něj vysvětlivka „zastávky obsluhují pouze shodně označené spoje" nemá
+            // na co ukázat. Jen „zastavuje navíc", u „končí dříve" zastávku legacy neznačí
+            // (LinkyPrintFormatMHD.cls:764-789).
+            i AutoPoznamkyRozdilTrasy && (AutoPoznamkyRozdilTrasyAlgoritmus = 1002) {
+                s DiffBitmap = ""
+                f {
+                    s DiffBitmap = $o(^||TiskMHD("rozdilTrasyPism",SmerID,aktualniZastBodID,0,DiffBitmap), 1, pismeno) q:DiffBitmap=""
+                    i '+$e(DiffBitmap, bodIterator) continue
+                    i (pismeno = "") || $d(znackyZastavky(pismeno)) continue
+                    d ..AddPoznamkaZastavky(z, pismeno, "text", "zastávky obsluhují pouze shodně označené spoje")
+                    s znackyZastavky(pismeno) = ""
+                }
             }
         }
 

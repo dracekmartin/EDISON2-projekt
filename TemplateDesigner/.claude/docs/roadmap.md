@@ -34,10 +34,6 @@ Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`
   v platnosti a razítku, `B193f`), společné parametry vývěsek, předpřipravené tabulky, které návrhář
   nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
 
-- **Vývěsky MHD: značka zastávky u názvu** [S] (nález 12. 10., `MhdLegacyOracle`). Starý tisk
-  připisuje značku zastávky k názvu („Areál VŠTE, A" na CB_DP 11350), my ne - linkový JŘ MHD už
-  značky bere i z bodu trasy (`LinkovyJrMhd.ZnackyBodu`), vývěsky ne. Ověřit proti starému tisku.
-
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony
   (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch

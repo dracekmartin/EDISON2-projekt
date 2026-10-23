@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-23 (14) - 🔤 vývěska MHD označí zastávku písmenem rozdílu trasy
+
+Linka s automatickým poznámkováním rozdílů v trase (varianta s písmeny) dávala písmeno odjezdům
+a vysvětlivku „zastávky obsluhují pouze shodně označené spoje", ale v seznamu zastávek žádná
+zastávka písmeno neměla - cestující nepoznal, kterou zastávku vysvětlivka myslí. Neprojetá
+zastávka, kterou spoje s písmenem obsluhují, ho teď nese jako ostatní poznámky z trasy (za názvem,
+přepínač „Poznámky zastávky"); jako starý tisk jen „zastavuje navíc", ne „končí dříve"
+(`LinkyPrintFormatMHD.cls:764-789`). Oracle porovnání se starým tiskem skládá náš název se značkami
+jako legacy („Areál VŠTE, A"): CB_DP 11350 zastávky 1:1 (800/800, dřív 19 rozdílů), 11018 1:1.
+Oddělovač zůstává mezera jako u ostatních poznámek z trasy, ne čárka.
+
 ## 2026-10-23 (13) - 🎨 barva linky i v linkovém JŘ AD (#13606)
 
 Slíbeno TRANSDEV 12. 10. Linkový JŘ AD posílá jako vývěska AD pole **Barva linky** a **Barva linky 2**

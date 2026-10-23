@@ -122,7 +122,7 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 		if $isobject(zas) {
 			set iz = zas.%GetIterator()
 			while iz.%GetNext(.zk, .z) {
-				set nz = ..Norm(z.%Get("NAZEV_ZASTAVKY"))
+				set nz = ..Norm(..NazevSeZnackami(z))
 				continue:nz=""
 				set oz(nz) = $get(oz(nz)) + 1
 			}
@@ -152,6 +152,18 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 	do ..Summarize(.lz, .oz, .res, "zast")
 	do ..Summarize(.lp, .op, .res, "pozn")
 	quit 1
+}
+
+/// Název zastávky ve tvaru starého tisku. Ten značky poznámek píše přímo do názvu („Areál VŠTE, A"),
+/// náš seznam zastávek je kreslí za název z vlastního pole - pro porovnání se proto složí stejně.
+ClassMethod NazevSeZnackami(z As %DynamicObject) As %String
+{
+	set znacky = "", pz = z.%Get("POZNAMKY_ZASTAVKY")
+	if $isobject(pz) {
+		set ip = pz.%GetIterator()
+		while ip.%GetNext(.pk, .pv) { set znacky = znacky_pv.%Get("ZNAK") }
+	}
+	quit z.%Get("NAZEV_ZASTAVKY")_$s(znacky="":"", 1:", "_znacky)
 }
 
 /// Porovná dva multisety (legacy la vs náš oa) → res(cat, ...). Match = shodný počet i md5.
@@ -267,7 +279,7 @@ ClassMethod StopProbe(ByRef sys As %String) As %Status
 			set iz = zas.%GetIterator()
 			while iz.%GetNext(.zk, .z) {
 				set ourN = ourN + 1
-				set our(ourN) = "poradi="_z.%Get("PORADI")_" akt="_z.%Get("AKTUALNI_ZASTAVKA")_" "_..Norm(z.%Get("NAZEV_ZASTAVKY"))
+				set our(ourN) = "poradi="_z.%Get("PORADI")_" akt="_z.%Get("AKTUALNI_ZASTAVKA")_" "_..Norm(..NazevSeZnackami(z))
 			}
 		}
 		quit

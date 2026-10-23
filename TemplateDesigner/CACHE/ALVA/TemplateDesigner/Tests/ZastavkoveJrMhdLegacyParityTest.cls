@@ -49,8 +49,8 @@ Method TestParita1073KvDpSmoKolize()
 
 /// Automaticky přidělené negativní značky (linka s auto-poznámkováním a ručně zadanou platností).
 /// Do 12. 10. ve vývěskách chyběly, protože text omezení vycházel prázdný - linky 1001-1006 výše
-/// tuhle cestu nemají, proto to nechytily. Zastávky se tu neporovnávají: starý tisk připisuje
-/// značku zastávky k názvu („Areál VŠTE, A"), to je jiná věc.
+/// tuhle cestu nemají, proto to nechytily. Zastávky hlídají písmeno rozdílu trasy u zastávky
+/// („Areál VŠTE, A"), které do 23. 10. chybělo a vysvětlivka k němu neměla na co ukázat.
 Method TestParita11350AutoZnacky()
 {
 	set ok = ##class(ALVA.TemplateDesigner.Tests.MhdLegacyOracle).CompareLine(..#GOLDIDFA, ..#GOLDDB, "11350", 1, .res)
@@ -58,6 +58,7 @@ Method TestParita11350AutoZnacky()
 		do $$$AssertTrue(1, "legacy oracle / namespace "_..#GOLDDB_" nedostupný - parita 11350 přeskočena")
 		quit
 	}
+	do $$$AssertEquals(res("zast","match"), 1, "zastávky 1:1 11350 (leg="_res("zast","legN")_" our="_res("zast","ourN")_") "_res("zast","diff"))
 	do $$$AssertEquals(res("pozn","match"), 1, "poznámky 1:1 11350 (leg="_res("pozn","legN")_" our="_res("pozn","ourN")_") "_res("pozn","diff"))
 	do $$$AssertEquals(res("dep","match"), 1, "odjezdy 1:1 11350 (leg="_res("dep","legN")_" our="_res("dep","ourN")_") "_res("dep","diff"))
 }
