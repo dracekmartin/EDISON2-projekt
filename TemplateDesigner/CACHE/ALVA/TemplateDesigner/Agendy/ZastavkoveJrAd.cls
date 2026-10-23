@@ -333,8 +333,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // ── hlavička linky ──────────────────────────────────────────────
     // SeT_MhD (delim "~"): $1 lokální označení, $2 titulek, $5 informace (1:1 sTIT^JRapiLinPrtMhd1).
     s setMhd = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD"))
-    s lokalni = $p(setMhd,"~",1)
-    i lokalni = "" s lokalni = $e(lin,5,7)                       // fallback = znaky 5-7 čísla linky
+    s lokalni = ..LokalniOznaceniLinkyAd(dataDB, sku, lin)
     s titulek = $p(setMhd,"~",2)
     i titulek = "" s titulek = "Městská hromadná doprava..."     // legacy MHD default
     s informace = $replace($p(setMhd,"~",5),"<br>",$c(13,10))    // cnvTxt: <br> → newline
@@ -3354,8 +3353,8 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     // a uživatel je v seznamu hledal po jednom (nález Jan 31. 8.).
 
     // ── linka ──
-    d ..AddField(fields, "CISLO_LINKY",            "Číslo linky",            "number")
-    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Označení linky",         "text")
+    d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
+    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky", "text")
     d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
     d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")

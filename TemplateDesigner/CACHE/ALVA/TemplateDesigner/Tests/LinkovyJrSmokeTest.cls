@@ -48,6 +48,40 @@ Method TestAdVraciOcekavaneKolekce()
 	do $$$AssertEquals(prazdnych, 0, "stránek bez směru: "_prazdnych)
 }
 
+/// `B193b`: linkový AD nese obě čísla linky jako vývěska AD - licenční i veřejné označení (MHD
+/// nastavení linky, bez něj znaky 5-7 čísla linky). Pravidlo se zkouší na vlastní skupině linek
+/// s jedinečným jménem, kterou test po sobě smaže; agenda na linkách jádra sady.
+Method TestAdObeCislaLinky()
+{
+	set db = $namespace, sku = "TDTEST"_$translate($system.Util.CreateGUID(), "-")
+	try {
+		set ^[db]JRL(sku, "0380715", "MhD", "SeT_MhD") = "15~Titulek"
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, "0380715"), "15", "z MHD nastavení linky")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, "0380716"), "716", "bez nastavení znaky 5-7 čísla linky")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRL(sku)
+
+	do ..SetupSys(.sys)
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro)
+	kill parametry
+	set overeno = 0, i = ""
+	for  {
+		set i = $order(jadro(i))
+		quit:i=""
+		set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
+		continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+		continue:'$data(^||ML("OUT",1))
+		set overeno = overeno + 1
+		set hodnoty = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)).values
+		do $$$AssertEquals(hodnoty.%Get("CISLO_LINKY"), +lin, db_" "_lin_": licenční číslo")
+		do $$$AssertEquals(hodnoty.%Get("LOKALNI_OZNACENI_LINKY"), ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, lin), db_" "_lin_": veřejné označení jako vývěska")
+		do $$$AssertTrue(hodnoty.%Get("LOKALNI_OZNACENI_LINKY") '= "", db_" "_lin_": veřejné označení není prázdné")
+	}
+	if 'overeno do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru")
+}
+
 /// Zbytek kontraktu agendy - schéma, parametry, ukázková data. Volá se z návrháře při každém
 /// otevření, takže výpadek kterékoli metody znamená, že se agenda nedá vybrat.
 Method TestAdKontraktProjde()

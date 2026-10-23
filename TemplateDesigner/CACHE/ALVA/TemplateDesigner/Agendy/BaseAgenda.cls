@@ -493,6 +493,15 @@ ClassMethod HorologPlatnostiOdLinky(dataDB As %String, sku As %String, lin As %S
     ret hrl
 }
 
+/// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
+/// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). Sdílí vývěska i linkový JŘ AD, aby táž linka
+/// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`NormalizLinku`).
+ClassMethod LokalniOznaceniLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String
+{
+    s lokalni = $p($g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD")),"~",1)
+    q $s(lokalni '= "":lokalni, 1:$e(lin,5,7))
+}
+
 /// Záznam zastávky z registru (`$`-věta jako `^JRZ(czst)`) **platný k datu** `hrl` (horolog,
 /// prázdné = dnešek). Zastávka může mít časové varianty `^JRZ(czst,"CasoveVariantyUdaju",od)`:
 /// platí ta s nejpozdějším začátkem ≤ hrl, jejíž konec (`$`-pole 42) je prázdný nebo ≥ hrl;

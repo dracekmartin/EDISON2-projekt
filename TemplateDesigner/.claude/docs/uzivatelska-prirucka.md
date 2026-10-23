@@ -991,7 +991,7 @@ Tato pole se nastavují jen v tiskovém dialogu (nejsou to parametry sestavy, ta
 v záložce Parametry v levém panelu):
 
 - **Členění výstupu** - Vše do jednoho PDF / Jeden PDF na linku / Jeden PDF na zastávku/směr.
-- **Název souboru (tokeny {POLE})** - výchozí `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}`,
+- **Název souboru (tokeny {POLE})** - výchozí `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}`,
   lze upravit na libovolnou kombinaci datových polí.
 
 U šablony o víc stránkách je k dispozici i **Uspořádání na list** (víc stránek na jeden papír);
@@ -1065,8 +1065,8 @@ vy nastavujete, co všechno se má tisknout a jak to má vypadat.
 
 Obvyklá šablona má tři sekce pod sebou:
 
-- **Hlavička** (opakuje se na každé stránce) - textové prvky s poli `{CISLO_LINKY}`,
-  `{POPIS_LINKY}`, `{DATUM_PLATNOSTI_OD}`, `{DATUM_PLATNOSTI_DO}`, `{TYP_JR}`,
+- **Hlavička** (opakuje se na každé stránce) - textové prvky s poli `{CISLO_LINKY}` (číslo linky
+  dle licence) nebo `{LOKALNI_OZNACENI_LINKY}` (veřejné označení, jak ho zná cestující), `{POPIS_LINKY}`, `{DATUM_PLATNOSTI_OD}`, `{DATUM_PLATNOSTI_DO}`, `{TYP_JR}`,
   `{POPIS_DOPRAVCE}` a `{POZNAMKA_NAD_LINKU}`. `{POPIS_DOPRAVCE}` uvádí jen dopravce spojů na dané
   stránce; jezdí-li na stránce víc dopravců, připíše ke každému čísla jeho spojů.
 - **Jízdní řád** - jediný prvek **Tabulka spojů**. Sekce má být nastavená na „Rozdělit přes

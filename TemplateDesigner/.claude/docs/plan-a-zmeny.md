@@ -38,6 +38,14 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
+### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
+
+- **Zastávkové a linkové JŘ:** v nabídce dat jsou všude obě čísla linky - **Číslo linky (dle
+  licence)** a **Veřejné označení linky**, jak ho zná cestující. Do šablony si vložíte to, které
+  chcete tisknout; nově ho nabízí i linkový JŘ AD.
+- **Zastávkový JŘ MHD:** výchozí šablona tiskne velkým písmem veřejné označení linky místo
+  licenčního čísla. Vlastní kopie šablony se nemění.
+
 ### Týden od 12. 10. 2026 · Linkové JŘ - tisk jen jednoho směru
 
 - **Linkové JŘ:** v nastavení sestavy přibyla volba **Směr pro tisk** (Oba / Tam / Zpět), takže

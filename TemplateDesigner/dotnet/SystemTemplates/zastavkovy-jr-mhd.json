@@ -2,7 +2,7 @@
   "version": "1.3.0",
   "id": "6d1f2c48-9a3e-4b57-8c21-5f0d7ae64b93",
   "name": "Zastávkový JŘ (MHD) - výchozí",
-  "description": "Výchozí systémová šablona zastávkového jízdního řádu pro agendu MHD. Vychází z varianty pro AD; liší se jen tím, co agenda MHD neposílá.",
+  "description": "Výchozí systémová šablona zastávkového jízdního řádu pro agendu MHD. Vychází z varianty pro AD; liší se tím, co agenda MHD neposílá, a velkým číslem linky: tiskne veřejné označení, které cestující zná z vozu, ne licenční číslo.",
   "pageSize": {
     "width": 210,
     "height": 148,
@@ -231,7 +231,7 @@
         },
         {
           "type": "TextElement",
-          "text": "{CISLO_LINKY}",
+          "text": "{LOKALNI_OZNACENI_LINKY}",
           "style": {
             "fontSize": 28.319,
             "bold": true,

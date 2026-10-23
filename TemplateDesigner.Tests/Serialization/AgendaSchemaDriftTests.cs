@@ -27,13 +27,9 @@ public class AgendaSchemaDriftTests
     /// Klíč = <c>&lt;místo&gt;|&lt;pole&gt;</c>. Nová výjimka jen s důvodem, jinak se to zvrhne
     /// v seznam nedodělků.
     /// </summary>
-    private static readonly HashSet<string> ExemptLabel = new(StringComparer.Ordinal)
-    {
-        // AD tiskne číslo linky z licence pod svým názvem, MHD musí rozlišit licenční číslo od
-        // veřejného označení - proto „(dle licence)". Rozdíl je doménový, ne drift (viz B56).
-        "fields|CISLO_LINKY",
-        "fields|LOKALNI_OZNACENI_LINKY",
-    };
+    /// <remarks>Do 23. 10. tu byla obě čísla linky (AD „Číslo linky" × MHD „… (dle licence)").
+    /// Od `B193b` nesou obě čísla všechny agendy JŘ, takže se musí všude jmenovat stejně.</remarks>
+    private static readonly HashSet<string> ExemptLabel = new(StringComparer.Ordinal);
 
     /// <summary>Vědomé rozdíly typu téhož pole. Prázdné = žádný takový dnes není.</summary>
     private static readonly HashSet<string> ExemptType = new(StringComparer.Ordinal);

@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B193b` Obě čísla linky ve všech agendách JŘ (hotovo 23. 10. 2026)
+
+Vývěska MHD tiskla licenční číslo, zkušební linkový MHD veřejné, linkový AD veřejné vůbec neposílal.
+Rozhodnutí Jan 23. 10.: obě čísla jako pole ve všech agendách pod stejným názvem, šablona si vybere.
+Výchozí vývěska MHD tiskne veřejné označení, šablony AD a název PDF zůstávají u licenčního čísla.
+Detail changelog 2026-10-23 (2).
+
 ## `B193a` Linkový JŘ MHD: dopravce a poznámka nad linku (hotovo 23. 10. 2026)
 
 Obě pole byla v nabídce dat a agenda je posílala vždy prázdná. Rozhodnutí Jan 23. 10.: dopravce

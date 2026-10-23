@@ -17,7 +17,7 @@ Include GENERAL
 /// 
 /// Názvy polí sdílí se zastávkovým JŘ (tam, kde jde o tutéž věc) - hlídá AgendaSchemaDriftTests.
 ///
-///   values: CISLO_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
+///   values: CISLO_LINKY, LOKALNI_OZNACENI_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
 ///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), KONECNA_ZASTAVKA,
 ///           VYCHOZI_ZASTAVKA, AKTUALNI_ZASTAVKA_CZST/TC (zvýrazněná zastávka, je-li jednoznačná)
 ///   rows.ZASTAVKY:    [{ PORADI, TYP ("zastavka" hlavní/odjezdový řádek | "prijezd" vložený
@@ -95,7 +95,8 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // Názvy i popisky polí drží slovník zastávkového JŘ (AgendaSchemaDriftTests) - táž věc se musí
     // v obou agendách jmenovat stejně, jinak binding {NAZEV_ZASTAVKY} v jedné funguje a ve druhé
     // tiše vykreslí prázdno.
-    d ..AddField(fields, "CISLO_LINKY",           "Číslo linky",              "number")
+    d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
+    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
     d ..AddField(fields, "POPIS_LINKY",           "Popis linky",              "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
@@ -771,6 +772,8 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     // ── hlavička linky ──────────────────────────────────────────────
     s vals = ##class(%DynamicObject).%New()
     d vals.%Set("CISLO_LINKY",            +lin)
+    // Obě čísla linky jako u vývěsky, šablona si vybere (rozhodnutí Jan 23. 10.).
+    d vals.%Set("LOKALNI_OZNACENI_LINKY", ..LokalniOznaceniLinkyAd(dataDB, sku, lin))
     d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
     d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))

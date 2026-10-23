@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-23 (2) - 🔢 obě čísla linky ve všech jízdních řádech (`B193b`)
+
+Číslo linky dle licence a veřejné označení (jak ho zná cestující, CB_DP 325018 × 18) jsou teď
+v nabídce dat všech čtyř agend JŘ pod stejným názvem: „Číslo linky (dle licence)" a „Veřejné
+označení linky". AD je do 23. 10. nazývalo „Číslo linky" a „Označení linky" a linkový AD veřejné
+označení neposílal vůbec; teď ho bere jako vývěska AD (první část MHD nastavení linky, bez něj znaky
+5-7 čísla linky; 380715 → „715"), obě sdílí `BaseAgenda.LokalniOznaceniLinkyAd`. Šablona si vybere,
+které tiskne (rozhodnutí Jan 23. 10.). Výchozí vývěska MHD tiskne velkým písmem veřejné označení místo
+licenčního čísla; šablony AD dál licenční, název PDF v okně Tisk dál podle licenčního (je jedinečné).
+Drift test popisků polí už výjimku pro čísla linky nemá. Gold digesty linkového AD přebaselinované
+(jen md5, počty shodné). Test `LinkovyJrSmokeTest.TestAdObeCislaLinky` (ověřeno mutací). V příručce
+opravený i výchozí název PDF (`{KONECNA_ZASTAVKA}`, ne zaniklé `{POPIS_SMER}`).
+
 ## 2026-10-23 - 🚌 linkový JŘ MHD: dopravce v hlavičce, bez poznámky nad linku (`B193a`)
 
 Linkový JŘ MHD nabízel v nabídce dat pole Popis dopravce a Poznámka nad linku a obě posílal vždy
