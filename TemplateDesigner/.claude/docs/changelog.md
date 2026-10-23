@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-23 (19) - 💬 nápověda „Viditelnost řádku" jmenuje jen pole z agendy (`B194a` C7)
+
+Nápověda u Tabulky spojů radila pole `POPIS` a `ZONA` a příklad `{ZONA} == "1"` - žádná agenda je
+nemá, takže podmínka podle příkladu nic neskryla. Seznam zastávek radil `NA_ZNAMENI`, které ve schématu
+zastávkových agend není. Formulář je společný všem agendám prvku, proto už pole nevypisuje: nese úvod
+a příklad `{NAZEV_ZASTAVKY} != 'Nádraží'` (pole má každá agenda JŘ) a seznam „Pole řádku: …" doplní
+návrhář z kolekce zastávek ve schématu agendy šablony (`ElementFormBinder.DoplnPoleRadku`) - v panelu
+vlastností i v obou oknech nastavení (`UpravaPoli`). Bez schématu zůstane úvod s příkladem. Rozhodnutí
+Jan 23. 10.: „referencovat jen pole, která v agendě opravdu existují". V témže formuláři opravená
+nápověda volby **Přestupy**: „Původní JŘ je netiskl" po `C3` neplatilo (starý tisk MHD přestupy měl).
+Test `RowVisibilityHelpTests`: seznam z agendy a jednou, text formuláře bez pevného výčtu a jen s poli,
+která mají všechny agendy prvku, příklad skryje jmenovanou zastávku; na serveru ověřeno voláním `Init`.
+
 ## 2026-10-23 (18) - 🚆 vývěska MHD tiskne přestup obrázkem (`B194a` C3)
 
 Vývěska MHD posílala přestup kódem fontu starého tisku (vlak 120 = „x", autobus 119 = „w"). Návrhář

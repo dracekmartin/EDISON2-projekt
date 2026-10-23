@@ -8,6 +8,8 @@
   23. 10., changelog 2026-10-23 (16)). Obecný test tlačítek všech formulářů zůstává jako `G5`.
 - **C3** Vývěska MHD tiskne přestup obrázkem a řídí ho volba „Přestupy", výchozí šablona ji má zapnutou
   (rozhodnutí Jan 23. 10. po vykreslení linky 11350; changelog 2026-10-23 (18)).
+- **C7** Nápověda „Viditelnost řádku" jmenuje jen pole řádku z agendy šablony, Tabulka spojů i Seznam
+  zastávek (rozhodnutí Jan 23. 10.; changelog 2026-10-23 (19)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

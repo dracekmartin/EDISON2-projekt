@@ -24,6 +24,9 @@ public partial class LineTableColumnsEditorDialog : Window
     /// Null = vše; nastavit před zobrazením.</summary>
     public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
 
+    /// <summary>Úprava polí „Obecné" po naplnění (nápověda podle agendy) - viz <see cref="ElementEditDialog.UpravaPoli"/>.</summary>
+    public Action<IEnumerable<EDControls.EDInputForm.Item>?>? UpravaPoli { get; set; }
+
     /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
     public List<Models.Elements.StopColumn> ResultColumns => _vm.ResultColumns;
 
@@ -69,6 +72,7 @@ public partial class LineTableColumnsEditorDialog : Window
         ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
         GeneralForm.Validate();
         if (ViditelnostPole is not null) ElementFormBinder.PouzijViditelnost(GeneralForm.Items, ViditelnostPole);
+        UpravaPoli?.Invoke(GeneralForm.Items);
     }
 
     private void OkButton_Click(object sender, RoutedEventArgs e)

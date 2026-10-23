@@ -41,7 +41,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddBool("ShowStopAttributes", "Atributy", 1)
         s f.helpText = "Značky u zastávky z jízdního řádu (např. ""S"" - tisk stanoviště, zóny)"
         s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/autobus)", 0)
-        s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Původní JŘ je netiskl."
+        s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak nebo autobus a k němu řádek v poznámkách. Starý tisk je měl jen u MHD."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         s f = form.AddBool("ShowSubMinuteTravel", "Jízda pod minutu jako <1", 0)
         s f.helpText = "Jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů ""<1"" místo prázdna. Zastávka, kterou spoj neobsluhuje, zůstane prázdná."
@@ -101,7 +101,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
         s f.placeholders = 1
-        s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí. Pole řádku: NAZEV_ZASTAVKY, CAS_JIZDY, PORADI, AKTUALNI_ZASTAVKA, NA_ZNAMENI. Např. {NA_ZNAMENI} == 'false'"
+        // Pole řádku doplní návrhář podle agendy šablony (ElementFormBinder.DoplnPoleRadku) - pevný seznam lhal.
+        s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí. Např. {NAZEV_ZASTAVKY} != 'Nádraží'."
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit pravidla…"
         s f.helpText = "Seznam pravidel: podmínka → barva pozadí řádku. První splněné vyhrává."

@@ -174,7 +174,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddText("SkupinyDnuDataSource", "Kolekce skupin dnů", "SKUPINY_DNU")
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
         s f.placeholders = 1
-        s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí (i s přípojnými řádky). Pole řádku: POPIS, TC, ZONA, MHD, TYP, PORADI, NASTUPISTE. Např. {ZONA} == ""1"""
+        // Pole řádku doplní návrhář podle agendy šablony (ElementFormBinder.DoplnPoleRadku) - pevný seznam lhal.
+        s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí (i s přípojnými řádky). Např. {NAZEV_ZASTAVKY} != 'Nádraží'."
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit pravidla…"
         s f.helpText = "Seznam pravidel: podmínka → barva pozadí řádku. První splněné vyhrává."

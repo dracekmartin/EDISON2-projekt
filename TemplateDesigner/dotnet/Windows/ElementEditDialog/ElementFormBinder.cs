@@ -162,6 +162,27 @@ public static class ElementFormBinder
         }
     }
 
+    /// <summary>Klíč podmínky viditelnosti řádku (Seznam zastávek, Tabulka spojů).</summary>
+    public const string ViditelnostRadkuKlic = "RowVisibilityExpression";
+
+    private const string PoleRadkuUvod = " Pole řádku: ";
+
+    /// <summary>
+    /// Doplní do nápovědy podmínky viditelnosti řádku pole, která řádek v agendě šablony opravdu nese
+    /// (kolekce <paramref name="kolekce"/> ze schématu). Formulář je společný všem agendám, takže pevný
+    /// seznam by v některé radil pole, která data nemají (`B194a` C7). Bez schématu zůstane obecný text.
+    /// </summary>
+    public static void DoplnPoleRadku(IEnumerable<Item>? items, Models.Schema.DataSchema? schema, string kolekce)
+    {
+        if ((items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == ViditelnostRadkuKlic) is not { } pole) return;
+        string zaklad = pole.HelpText ?? "";
+        int konec = zaklad.IndexOf(PoleRadkuUvod, StringComparison.Ordinal);
+        if (konec >= 0) zaklad = zaklad[..konec];   // re-Prefill panelu volá úpravu znovu
+        var nazvy = schema?.FieldCollections?.FirstOrDefault(c => c.CollectionKey == kolekce)?.Fields
+            .Select(f => f.FieldName).ToList();
+        pole.HelpText = nazvy is { Count: > 0 } ? $"{zaklad}{PoleRadkuUvod}{string.Join(", ", nazvy)}." : zaklad;
+    }
+
     /// <summary>Snapshot aktuálních hodnot polí formuláře (bez zápisu do cíle) - pro update
     /// change-detection baseline po živém write-backu v inline panelu.</summary>
     public static Dictionary<string, string> Snapshot(EDInputForm form)

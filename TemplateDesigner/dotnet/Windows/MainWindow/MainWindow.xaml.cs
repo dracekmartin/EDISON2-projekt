@@ -1944,7 +1944,8 @@ public partial class MainWindow : Window
 
     private void OpenStopColumnsDialog(StopListElement element)
     {
-        var dlg = new StopColumnsEditorDialog(element) { Owner = this, SearchMemoryKey = ElementDialogSearchKey(element) };
+        var dlg = new StopColumnsEditorDialog(element)
+            { Owner = this, SearchMemoryKey = ElementDialogSearchKey(element), UpravaPoli = DoplneniPoliRadku(element) };
 
         if (dlg.ShowDialog() == true)
         {
@@ -2019,6 +2020,7 @@ public partial class MainWindow : Window
         {
             Owner = this, SearchMemoryKey = ElementDialogSearchKey(element),
             ViditelnostPole = (klic, _) => LineTableElement.PoleFormulareViditelne(klic, rozdilovy),
+            UpravaPoli = DoplneniPoliRadku(element),
         };
 
         if (dlg.ShowDialog() == true)
@@ -2070,6 +2072,20 @@ public partial class MainWindow : Window
 
     /// <summary>Nabídka „Řazení poznámek" podle agendy šablony (<see cref="NotesLegendElement.VolbyRazeni"/>).
     /// Nastavuje se vždy celá, protože panel drží týž formulář i pro prvek z jiné šablony.</summary>
+    /// <summary>Nápověda viditelnosti řádku s poli zastávky z agendy šablony; null = prvek podmínku řádku nemá.</summary>
+    private Action<IEnumerable<Item>?>? DoplneniPoliRadku(TemplateElement prvek)
+    {
+        string? kolekce = prvek switch
+        {
+            LineTableElement t => t.ZastavkyDataSource,
+            StopListElement s  => s.ZastavkyDataSource,
+            _                  => null,
+        };
+        if (kolekce is null) return null;
+        var schema = _vm!.SchemaProvider.GetSchema(_vm.State.CurrentTemplate.AgendaCode ?? "");
+        return pole => ElementFormBinder.DoplnPoleRadku(pole, schema, kolekce);
+    }
+
     internal static void NastavVolbyRazeni(IEnumerable<Item>? pole, bool linkovyJr)
     {
         if ((pole ?? []).OfType<Field>().FirstOrDefault(f => f.Key == nameof(NotesLegendElement.Razeni)) is not { } razeni)
@@ -2228,7 +2244,7 @@ public partial class MainWindow : Window
                     LineTableElement   => (klic, _) => LineTableElement.PoleFormulareViditelne(klic, rozdilovy),
                     _                  => null,
                 };
-                InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : null;
+                InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : DoplneniPoliRadku(selected[0]);
                 try
                 {
                     InlineElementForm.ShowElement(selected[0], panelSchema);

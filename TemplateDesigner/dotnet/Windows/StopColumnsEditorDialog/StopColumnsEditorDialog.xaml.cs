@@ -20,6 +20,9 @@ public partial class StopColumnsEditorDialog : Window
     private readonly StopListElement _element;
     private Dictionary<string, string> _preFilled = [];
 
+    /// <summary>Úprava polí „Obecné" po naplnění (nápověda podle agendy) - viz <see cref="ElementEditDialog.UpravaPoli"/>.</summary>
+    public Action<IEnumerable<EDControls.EDInputForm.Item>?>? UpravaPoli { get; set; }
+
     /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
     public List<StopColumn> ResultColumns => _vm.ResultColumns;
 
@@ -67,6 +70,7 @@ public partial class StopColumnsEditorDialog : Window
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
         ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
         GeneralForm.Validate();
+        UpravaPoli?.Invoke(GeneralForm.Items);
     }
 
     private void OkButton_Click(object sender, RoutedEventArgs e)

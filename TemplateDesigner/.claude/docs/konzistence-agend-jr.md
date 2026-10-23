@@ -37,10 +37,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
   podmínky (`DepartureGroupEditorDialog.xaml:136`, osiřelý komentář ve VM :247), vývěska MHD
   `DEFINICE_SLOUPCU` nečte. Předvyplnění drží kód agendy natvrdo (`ShouldPrefillDepartureColumns` :3846).
   Návrh: schopnost hlásí agenda (`R4`); schovat, nebo doimplementovat.
-- **C7 Nápověda „Viditelnost řádku" u Tabulky spojů radí neexistující pole** [S] (*ověřeno:* kód, server).
-  `LineTableElementEdit.cls:177` uvádí `POPIS`, `ZONA` a příklad `{ZONA} == "1"`; řádek nese
-  `NAZEV_ZASTAVKY` a `ZONY`, podmínka podle příkladu nic nezachytí. Vzor správného textu
-  `StopListElementEdit.cls:104`.
 - **C8 Linkový AD tiskne „soboty, neděle a svátky" malým** [S] **tisk** (*ověřeno:* server CB_CSADAD
   0330510). Při rozdělení pracovní dny / víkend bere kus 7 číselníku nadpisů (prázdninový) místo 9
   (`LinkovyJrAd.PresetySloupcuLinky` :1731/:1737, `BuildSkupinyDnu` :1796/:1802). Parita nedoložena -
