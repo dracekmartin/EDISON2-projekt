@@ -1,5 +1,14 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Vyřazeno z backlogu (Jan 23. 10. 2026)
+
+Buď se řeší jinde, nebo to není důležité - backlog se pročistil od položek, na které nikdo nesahá.
+
+- **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze starých šablon, jak
+  totéž udělat v Návrháři šablon, a převést jejich vzhled. Provozní úkol, ne vývoj.
+- **`B138` Odložené do pozadí** (Jan 9. 9.): tisk celé sestavy jen černě a volba „bez roku"
+  u textů omezení v šabloně (dnes ji řídí nastavení EDISONu). Nikdo si o ně neřekl.
+
 ## Vývěsky MHD: značka zastávky u názvu (hotovo 23. 10. 2026)
 
 Nešlo o značky zastávky, ale o písmeno rozdílu trasy (alg. 1002): starý tisk ho píše i k zastávce,
