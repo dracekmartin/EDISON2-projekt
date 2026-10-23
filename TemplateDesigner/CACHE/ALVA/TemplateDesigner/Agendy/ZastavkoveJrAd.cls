@@ -94,12 +94,12 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
             ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
             ["Směr",        "{KONECNA_ZASTAVKA}"],
             ["Zastávka",    "{POPIS_ZASTAVKA}"],
-            ["Platnost",    "{POPIS_PLATNOSTI}"]
+            ["Platnost",    "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"]
         ])
     }
     elseif key = "PLATNOST_DOPRAVCE" {
         d ..WriteTemplate2Col([
-            ["Platnost",  "{POPIS_PLATNOSTI}"],
+            ["Platnost",  "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"],
             ["Dopravce",  "{POPIS_DOPRAVCE}"],
             ["Typ JR",    "{TYP_JR}"]
         ])
@@ -355,6 +355,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1)
     s platiDo = $p(plati,"~",2)
+    // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
     d vals.%Set("POPIS_PLATNOSTI",        $s(platiOd'="":"Platí od "_platiOd, 1:""))
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
     d vals.%Set("DATUM_PLATNOSTI_DO",     platiDo)
@@ -3373,7 +3374,8 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "ICO_DOPRAVCE",           "IČO dopravce",           "text")
 
     // ── platnost ──
-    d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
+    // Bez „Popisu platnosti" (Jan 23. 10.): větu si šablona složí z dat od-do. GetData ho posílá dál
+    // kvůli šablonám, které ho už mají; v nabídce není, aby se nepoužíval dál.
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
 

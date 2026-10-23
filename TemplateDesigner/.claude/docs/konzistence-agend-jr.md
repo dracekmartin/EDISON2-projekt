@@ -13,18 +13,12 @@ i pole v nabídce dat; po vydání platí „jen přidávat" (`cache-api.md §Ev
 **Co hlídají testy:** `AgendaSchemaDriftTests.cs:101-135` jen „stejné pole = stejný popisek a typ".
 Parametry sestavy, tvar hodnot a pole, která agenda vždy pošle prázdná, nehlídá nic.
 
-## B193f Popis platnosti a typ JŘ
+## B193f Razítko typu JŘ
 
-| Agenda | `POPIS_PLATNOSTI` | Místo |
-|---|---|---|
-| zastávkový AD | „Platí od X" (bez „do") | `ZastavkoveJrAd.cls:359` |
-| linkový AD | „Platí od X do Y" | `LinkovyJrAd.cls:787-789` |
-| zastávkový MHD | „X - Y" | `ZastavkoveJrMhd.cls:1115` |
-| linkový MHD | „Platí od X do Y" | `LinkovyJrMhd.cls:418-419` |
-
-- Návrh jízdního řádu: AD „návrh jízdního řádu" (`ZastavkoveJrAd.cls:365`, `LinkovyJrAd.cls:791`),
-  MHD „NÁVRH" (`ZastavkoveJrMhd.cls:323`, `LinkovyJrMhd.cls:425`).
-- Změna u vývěsek pohne vytištěnými vývěskami zákazníků i zlatými odtisky.
+- Návrh jízdního řádu: AD „návrh jízdního řádu" (`ZastavkoveJrAd.cls:365`, `LinkovyJrAd.cls:791`,
+  starý postskriptový tisk `JRapiLinPrtPS3`), MHD „NÁVRH" (`ZastavkoveJrMhd.TypJrLinky`, stará vývěska
+  `LinkyPrintFormatMHD.cls:692`). Výluka všude „VÝLUKOVÝ".
+- Systémová šablona linkového AD razítko tiskne vpravo nahoře; vývěsky v systémových šablonách ne.
 
 ## B193g Linka bez dat
 

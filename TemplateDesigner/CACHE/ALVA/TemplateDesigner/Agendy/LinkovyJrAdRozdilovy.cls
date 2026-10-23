@@ -14,7 +14,7 @@ Include GENERAL
 /// (`AgendyRegistr.ListAgendy`).
 ///
 /// Wire navíc proti linkovému JŘ (jen přidané klíče, R3):
-///   values: PUVODNI_DATUM_PLATNOSTI_OD/DO, PUVODNI_POPIS_PLATNOSTI, ZRUSENE_SPOJE,
+///   values: PUVODNI_DATUM_PLATNOSTI_OD/DO, ZRUSENE_SPOJE,
 ///           POROVNANI_HLASENI (proč se neporovnávalo; prázdné = porovnáno nebo bez porovnání)
 ///   rows.SPOJE[]: VERZE ("puvodni" / "nova" / "" beze změny), ROZDILY: [0/1 zarovnané na CASY]
 ///                 - nový i zrušený spoj má ROZDILY samé 1 (celý sloupec v barvě verze, jako
@@ -78,7 +78,6 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
         s fields = def.%Get("fields")
         d ..AddField(fields, "PUVODNI_DATUM_PLATNOSTI_OD", "Platnost od (původní verze)", "date")
         d ..AddField(fields, "PUVODNI_DATUM_PLATNOSTI_DO", "Platnost do (původní verze)", "date")
-        d ..AddField(fields, "PUVODNI_POPIS_PLATNOSTI", "Popis platnosti (původní verze)", "text")
         d ..AddField(fields, "ZRUSENE_SPOJE", "Zrušené spoje", "text")
         d ..AddField(fields, "POROVNANI_HLASENI", "Proč se neporovnávalo", "text")
 
@@ -351,7 +350,6 @@ ClassMethod SlucStranky(nova As %DynamicObject, puvodni As %DynamicObject) As %D
     s hodnoty = nova.%Get("values"), puvodniHodnoty = puvodni.%Get("values")
     d hodnoty.%Set("PUVODNI_DATUM_PLATNOSTI_OD", puvodniHodnoty.%Get("DATUM_PLATNOSTI_OD"))
     d hodnoty.%Set("PUVODNI_DATUM_PLATNOSTI_DO", puvodniHodnoty.%Get("DATUM_PLATNOSTI_DO"))
-    d hodnoty.%Set("PUVODNI_POPIS_PLATNOSTI", puvodniHodnoty.%Get("POPIS_PLATNOSTI"))
     d hodnoty.%Set("ZRUSENE_SPOJE", seznam)
     q nova
 }

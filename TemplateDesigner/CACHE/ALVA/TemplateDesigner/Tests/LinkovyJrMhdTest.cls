@@ -459,6 +459,7 @@ Method TestDopravceJakoVyveska()
 	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
 	set hodnoty = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)).values
 	do $$$AssertTrue('hodnoty.%IsDefined("POZNAMKA_NAD_LINKU"), "poznámka nad linku se neposílá")
+	do $$$AssertTrue('hodnoty.%IsDefined("POPIS_PLATNOSTI"), "hotová věta platnosti se neposílá (agenda nevyšla, Jan 23. 10.)")
 	set dopravce = hodnoty.%Get("POPIS_DOPRAVCE")
 	do $$$AssertEquals(dopravce, ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073, 1), "dopravce ze zdroje vývěsky")
 	set nazev = $piece(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073), $c(10), 1)
@@ -518,6 +519,8 @@ Method TestJakoVyveskaMhd()
 		kill polozky(o.value)
 	}
 	do $$$AssertTrue(pocet > 0, "vývěska nabídla aspoň jednu linku")
+	set prvni = ##class(%DynamicArray).%FromJSON(linky(vyv)).%Get(0)
+	do $$$AssertTrue(prvni.subtitle?1"Platnost od "2N1"."2N1"."4N.E, "platnost ve výběru linek jako u AD (dd.mm.rrrr): "_prvni.subtitle)
 	set lin = ""
 	for  {
 		set lin = $order(polozky(lin))

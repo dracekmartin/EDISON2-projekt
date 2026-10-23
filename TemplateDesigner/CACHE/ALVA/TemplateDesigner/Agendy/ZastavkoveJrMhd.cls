@@ -95,12 +95,12 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
             ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
             ["Směr",        "{KONECNA_ZASTAVKA}"],
             ["Zastávka",    "{POPIS_ZASTAVKA}"],
-            ["Platnost",    "{POPIS_PLATNOSTI}"]
+            ["Platnost",    "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"]
         ])
     }
     elseif key = "PLATNOST_DOPRAVCE" {
         d ..WriteTemplate2Col([
-            ["Platnost",  "{POPIS_PLATNOSTI}"],
+            ["Platnost",  "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"],
             ["Dopravce",  "{POPIS_DOPRAVCE}"],
             ["Typ JR",    "{TYP_JR}"]
         ])
@@ -198,8 +198,9 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String, jenSTrasou As %Boole
         s cislo  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
         if cislo = "" s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
         s nazev  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
-        s platOd = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd"))
-        s platDo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo"))
+        // LSO drží ISO tvar; ven jako u AD (14.12.2025), ne „2025-12-14" (Jan 23. 10.).
+        s platOd = ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd")),3,,,,,,,""))
+        s platDo = ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo")),3,,,,,,,""))
 
         s display = cislo
         if nazev '= "" {
@@ -1116,6 +1117,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni)
     d vals.%Set("POPIS_LINKY",            NazevLinky)
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(.sys, dataDB, IdFa, LinkaID))
+    // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
     d vals.%Set("POPIS_PLATNOSTI",        ..FormatDatum(platnostOd)_" - "_..FormatDatum(platnostDo))
     d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum(platnostOd))
     d vals.%Set("DATUM_PLATNOSTI_DO",     ..FormatDatum(platnostDo))
@@ -1701,7 +1703,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
 
     // ── platnost ──
-    d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
+    // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD.
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
 

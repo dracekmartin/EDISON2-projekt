@@ -71,7 +71,7 @@
         },
         {
           "type": "TextElement",
-          "text": "Sm\u011Br: {KONECNA_ZASTAVKA}    \u2022    {POPIS_PLATNOSTI}",
+          "text": "Sm\u011Br: {KONECNA_ZASTAVKA}    \u2022    Plat\u00ED od {DATUM_PLATNOSTI_OD}",
           "style": {
             "fontFamily": "Arial",
             "fontSize": 7,

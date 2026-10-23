@@ -285,7 +285,10 @@ ClassMethod FormatDatum(horolog As %String) As %String
 /// rows = COS array ve formátu:
 ///   [["Label 1", "{FIELD1}", "format"], ["Label 2", "{FIELD2}", "format"], ...]
 /// Třetí parametr (format) je volitelný.
-ClassMethod WriteTemplate2Col(rows As %List)
+/// `rows` = JSON pole dvojic `[["Popisek", "{POLE}"(, "formát")], …]`, jak ho volající píšou.
+/// Do 23. 10. se četlo jako `$lb` seznam a každé volání padlo na `<LIST>`; nevšimlo si toho nic,
+/// protože předpřipravené tabulky návrhář nikde nenabízí.
+ClassMethod WriteTemplate2Col(rows As %DynamicArray)
 {
     s def = ##class(%DynamicObject).%New()
 
@@ -307,19 +310,19 @@ ClassMethod WriteTemplate2Col(rows As %List)
 
     // Řádky
     s defRows = ##class(%DynamicArray).%New()
-    f i=1:1:$ll(rows) {
-        s pair = $lg(rows, i)
+    s it = rows.%GetIterator()
+    while it.%GetNext(.i, .pair) {
         s row = ##class(%DynamicObject).%New()
         s cells = ##class(%DynamicArray).%New()
 
         s cell1 = ##class(%DynamicObject).%New()
-        d cell1.%Set("content", $lg(pair, 1))
+        d cell1.%Set("content", pair.%Get(0))
         d cells.%Push(cell1)
 
         s cell2 = ##class(%DynamicObject).%New()
-        d cell2.%Set("content", $lg(pair, 2))
-        if $ll(pair) > 2 && ($lg(pair, 3) '= "") {
-            d cell2.%Set("format", $lg(pair, 3))
+        d cell2.%Set("content", pair.%Get(1))
+        if pair.%Get(2) '= "" {
+            d cell2.%Set("format", pair.%Get(2))
         }
         d cells.%Push(cell2)
 

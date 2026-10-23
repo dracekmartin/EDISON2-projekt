@@ -18,7 +18,7 @@ Include GENERAL
 /// Názvy polí sdílí se zastávkovým JŘ (tam, kde jde o tutéž věc) - hlídá AgendaSchemaDriftTests.
 ///
 ///   values: CISLO_LINKY, LOKALNI_OZNACENI_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
-///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), KONECNA_ZASTAVKA,
+///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI (jen pro starší šablony), TYP_JR, QR_KOD, SMER ("T"/"Z"), KONECNA_ZASTAVKA,
 ///           VYCHOZI_ZASTAVKA, AKTUALNI_ZASTAVKA_CZST/TC (zvýrazněná zastávka, je-li jednoznačná)
 ///   rows.ZASTAVKY:    [{ PORADI, TYP ("zastavka" hlavní/odjezdový řádek | "prijezd" vložený
 ///                        příjezdový u zastávek s atributem P/J), CZST, NAZEV_ZASTAVKY, TC, ZONY,
@@ -101,7 +101,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
-    d ..AddField(fields, "POPIS_PLATNOSTI",       "Popis platnosti",          "text")
+    // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD; GetData ho posílá dál kvůli starším šablonám.
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
@@ -770,6 +770,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s platiOd = $p(plati,"~",1), platiDo = $p(plati,"~",2)
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
     d vals.%Set("DATUM_PLATNOSTI_DO",     platiDo)
+    // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
     s popisPlatnosti = ""
     i platiOd '= "" {
         s popisPlatnosti = "Platí od "_platiOd

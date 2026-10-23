@@ -21,9 +21,9 @@ Rozdílový JŘ je mimo rozsah (bude nástroj modulu JŘ). Zamčené jsou jen po
 
 **Tisk a data - mění výstup vydaných agend:**
 
-1. **`B193f` Popis platnosti a typ JŘ jednotně** [S]. Popis platnosti má čtyři tvary („Platí od X",
-   „Platí od X do Y", „X - Y"), návrh JŘ je jednou „návrh jízdního řádu", jednou „NÁVRH". **Rozhodnout
-   cílový tvar (Jan)** - změna pohne vytištěnými vývěskami zákazníků.
+1. **`B193f` Razítko typu JŘ jednotně** [S]. AD tiskne „VÝLUKOVÝ" / „návrh jízdního řádu" (starý tisk AD),
+   MHD „VÝLUKOVÝ" / „NÁVRH" (stará vývěska MHD). **Rozhodnout (Jan):** všude „NÁVRH", nebo nechat podle
+   starých modulů. Platnost hotová 23. 10. (jen data od-do).
 2. **`B193g` Linka bez dat řekne proč ve všech agendách** [M]. Dnes jen linkový MHD; linkový AD vrátí
    prázdno, vývěska MHD spadne na chybu (zastaví tisk ostatních linek), vývěska AD stránky tiše vynechá.
 3. **`B193h` Číslo zastávky pro QR jedním polem** [S]. Ve vývěskách je pod jiným polem než v linkových
@@ -36,7 +36,8 @@ Rozdílový JŘ je mimo rozsah (bude nástroj modulu JŘ). Zamčené jsou jen po
 
 5. **`B56` Sloučení opsaného kódu agend** [L] (čekalo na doimplementaci knižního JŘ - splněno 22. 10.).
    Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už rozešlo: výběr skupin linek
-   a linek u AD (MHD sdílí od `B193c`), hlavička linky (odtud `B193f`), společné parametry vývěsek. Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
+   a linek u AD (MHD sdílí od `B193c`), hlavička linky (odtud `B193f`), společné parametry vývěsek,
+   předpřipravené tabulky, které návrhář nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
 
 ---
 

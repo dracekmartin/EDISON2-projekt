@@ -140,7 +140,8 @@ Method TestZmenenySpojJeDvakrat()
 	do $$$AssertEquals(spoje.%Get(1).%Get("ROZDILY").%ToJSON(), "[0,1,0]", "původní: odlišná jen druhá zastávka")
 	do $$$AssertEquals(spoje.%Get(2).%Get("ROZDILY").%ToJSON(), "[0,1,0]", "nová: odlišná jen druhá zastávka")
 	do $$$AssertEquals(spoje.%Get(1).%Get("CASY").%Get(1), "7:10", "původní nese své časy")
-	do $$$AssertEquals(vysledek.%Get("values").%Get("PUVODNI_POPIS_PLATNOSTI"), "Platí od 1.1.2026", "platnost původní verze")
+	do $$$AssertEquals(vysledek.%Get("values").%Get("PUVODNI_DATUM_PLATNOSTI_OD"), "1.1.2026", "platnost původní verze")
+	do $$$AssertTrue('vysledek.%Get("values").%IsDefined("PUVODNI_POPIS_PLATNOSTI"), "hotová věta platnosti se neposílá (Jan 23. 10.)")
 }
 
 /// Nový spoj má barvu nové verze celý sloupec, i v buňkách mimo trasu - jako zrušený spoj ve vzoru

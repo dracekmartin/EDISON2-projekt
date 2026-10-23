@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-23 (6) - 📅 platnost jen jako data od-do (`B193f`, část)
+
+Hotová věta „Popis platnosti" měla v každé agendě jiný tvar („Platí od X", „Platí od X do Y",
+„X - Y"). Rozhodnutí Jan 23. 10.: větu si šablona složí z dat, takže pole zmizelo z nabídky dat
+všech agend JŘ (i původní verze u rozdílového). Vydané agendy ho dál posílají beze změny, aby šablony,
+které ho mají, tiskly jako dosud; linkový JŘ MHD ani rozdílový nevyšly, ty ho neposílají vůbec.
+Návrat do nabídky hlídá `AgendaSchemaDriftTests.VyrazenaPole_NejsouVNabidceDat`. Předpřipravené
+tabulky vývěsek „Záhlaví linky" a „Platnost a dopravce" tisknou „Platí od {od} do {do}". Výběr linek
+MHD píše platnost jako AD (01.01.2025, ne 2025-01-01).
+
+Po cestě: předpřipravené tabulky agend (`GetTableTemplate`) padaly při každém volání na `<LIST>` -
+pomocná `BaseAgenda.WriteTemplate2Col` četla JSON pole jako `$lb` seznam. Nikdo si toho nevšiml, protože
+je návrhář nikde nenabízí (nevolá je žádné okno). Opravené a pokryté testem
+`ZastavkoveJrAdHelperyTest.TestPredpripraveneTabulky`; jestli je zrušit, nebo napojit, je u `B56`.
+
 ## 2026-10-23 (5) - 🏷️ „Rozdělení sloupců dle platnosti" v obou JŘ z AD (`B193e`)
 
 Nastavení, které rozděluje spoje do skupin sloupců podle dnů platnosti, se ve vývěsce AD jmenovalo

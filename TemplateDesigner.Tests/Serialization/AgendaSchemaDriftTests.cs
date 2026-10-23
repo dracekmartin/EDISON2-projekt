@@ -34,6 +34,25 @@ public class AgendaSchemaDriftTests
     /// <summary>Vědomé rozdíly typu téhož pole. Prázdné = žádný takový dnes není.</summary>
     private static readonly HashSet<string> ExemptType = new(StringComparer.Ordinal);
 
+    /// <summary>Pole vyřazená z nabídky dat. Vydané agendy je dál posílají kvůli šablonám, které je
+    /// mají, ale nový autor je nesmí najít - jinak se vyřazení nikdy nedokončí.</summary>
+    private static readonly (string Key, string Proc)[] Vyrazena =
+    [
+        ("POPIS_PLATNOSTI", "hotová věta platnosti - každá agenda ji skládala jinak, šablona si ji složí z dat od-do (Jan 23. 10.)"),
+        ("PUVODNI_POPIS_PLATNOSTI", "totéž u původní verze rozdílového JŘ"),
+    ];
+
+    [Fact]
+    public void VyrazenaPole_NejsouVNabidceDat()
+    {
+        var hits = AllFields()
+            .SelectMany(e => Vyrazena.Where(v => v.Key == e.Key).Select(v => $"{e.File} {e.Scope}|{e.Key}: {v.Proc}"))
+            .Distinct()
+            .ToList();
+
+        Assert.True(hits.Count == 0, "Vyřazené pole je zpátky v nabídce dat:\n" + string.Join("\n", hits));
+    }
+
     private static readonly Regex AddFieldRx = new(
         """AddField\(\s*\w+\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*[,)]""",
         RegexOptions.Compiled);

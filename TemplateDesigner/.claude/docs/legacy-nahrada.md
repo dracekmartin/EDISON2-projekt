@@ -789,5 +789,7 @@ mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje. Popi
 - **Společné parametry vývěsek** (Pořadí stránek, šipky, projeté zastávky, časová osa, roztažení) jsou
   opsané (`ZastavkoveJrAd.cls:3521-3675` × `ZastavkoveJrMhd.cls:1774-1826`). Linkové agendy mají jednu
   sdílenou definici (`LinkovyJrAd.cls:373-446`) a to je vzor.
+- **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`, vývěsky a faktury): návrhář je
+  nikde nenabízí a do 23. 10. při volání padaly (`B193f`). Zrušit, nebo napojit do vkládání tabulky.
 - **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (`LinkovyJrAd.cls:1814, 2120, 2131`
   × `LinkovyJrMhd.cls:1176-1195`) a `RgbToHex` vedle `BaseAgenda.RgbNaHex`.

@@ -75,7 +75,7 @@
         },
         {
           "type": "TextElement",
-          "text": "Směr: {KONECNA_ZASTAVKA}    •    {POPIS_PLATNOSTI}",
+          "text": "Směr: {KONECNA_ZASTAVKA}    •    Platí od {DATUM_PLATNOSTI_OD}",
           "style": {
             "fontFamily": "Arial",
             "fontSize": 7,

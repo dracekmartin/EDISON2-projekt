@@ -59,7 +59,8 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // Bez „Poznámky nad linku": linka MHD ji má v datech (PoznamkaNadLinku), ale modul MHD ji
     // zatím nenabízí k zadání (Jan 23. 10.). Až půjde zadávat, pole se přidá zpátky.
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
-    d ..AddField(fields, "POPIS_PLATNOSTI",       "Popis platnosti",          "text")
+    // Bez „Popisu platnosti" (Jan 23. 10.): větu si šablona složí z dat od-do. Agenda nevyšla,
+    // takže ho na rozdíl od vydaných agend neposílá ani v datech.
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
@@ -352,12 +353,6 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     i platiDo '= "" { s platiDo = ..FormatDatum($zdh(platiDo, 3)) }
     d vals.%Set("DATUM_PLATNOSTI_OD",  platiOd)
     d vals.%Set("DATUM_PLATNOSTI_DO",  platiDo)
-    s popisPlatnosti = ""
-    i platiOd '= "" {
-        s popisPlatnosti = "Platí od "_platiOd
-        i platiDo '= "" s popisPlatnosti = popisPlatnosti_" do "_platiDo
-    }
-    d vals.%Set("POPIS_PLATNOSTI",     popisPlatnosti)
     // Razítko jako vývěska MHD (do 23. 10. tu při návrhu i výluce vyhrál návrh); starý knižní tisk ho nemá.
     d vals.%Set("TYP_JR",              ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).TypJrLinky(IdFa, dataDB, linkaId))
     d vals.%Set("QR_KOD",              $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"QRCode")))
