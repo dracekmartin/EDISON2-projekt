@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Serialization;
 using TemplateDesigner.Services;
 
@@ -56,6 +57,7 @@ public class SystemTemplateSeedTests
         Assert.Contains("zastavkovy-jr-mhd.json", names);
         Assert.Contains("linkovy-jr-ad-postskript-a5.json", names);
         Assert.Contains("linkovy-jr-ad-poznamky-vedle-a4.json", names);
+        Assert.Contains("linkovy-jr-mhd-postskript-a5.json", names);
         // Rozdílový JŘ systémový není: seed by ho nalil do databáze a v návrháři by ho šlo otevřít
         // (rozhodnutí Jan 23. 10.). Leží v LaunchTemplates/, viz LaunchTemplateTests.
         Assert.DoesNotContain("rozdilovy-linkovy-jr-a4.json", names);
@@ -101,6 +103,40 @@ public class SystemTemplateSeedTests
 
         Assert.Contains(prvky, e => e is NotesLegendElement);
         Assert.DoesNotContain(prvky, e => e is DynamicTableElement d && d.DataSource == "POZNAMKY");
+    }
+
+    /// <summary>
+    /// `B191f`: parametr „Zvýraznit zastávku" řádek jen označí (pole Aktuální zastávka), vzhled určí
+    /// pravidlo šablony. Bez pravidla ve výchozí šabloně by se nezvýraznilo nic a volba by vypadala
+    /// rozbitá - do 23. 10. ho neměla žádná linková šablona.
+    /// </summary>
+    [Theory]
+    [InlineData("linkovy-jr-ad-postskript-a5.json")]
+    [InlineData("linkovy-jr-ad-poznamky-vedle-a4.json")]
+    [InlineData("linkovy-jr-mhd-postskript-a5.json")]
+    public void LinkovaSablona_ZvyrazniAktualniZastavku(string fileName)
+    {
+        var t = TemplateSerializer.Deserialize(File.ReadAllText(Path.Combine(SystemTemplatesDir(), fileName)));
+        var tabulka = Assert.Single(t.Sections.SelectMany(s => s.Elements).OfType<LineTableElement>());
+
+        var aktualni = new DataContext(new Dictionary<string, object?> { ["AKTUALNI_ZASTAVKA"] = "true" });
+        var ostatni = new DataContext(new Dictionary<string, object?> { ["AKTUALNI_ZASTAVKA"] = "false" });
+
+        Assert.NotNull(RowConditions.HighlightColor(tabulka.HighlightRules, aktualni));
+        Assert.Null(RowConditions.HighlightColor(tabulka.HighlightRules, ostatni));
+    }
+
+    /// <summary>`B191f`: systémová šablona linkového MHD nenese výběr typů provozu - id typu platí jen
+    /// ve firmě, takže uložený výběr by v jiné firmě vypnul jiný typ (rozhodnutí Jan 23. 10.).</summary>
+    [Fact]
+    public void LinkovaSablonaMhd_NeneseVyberTypuProvozu()
+    {
+        var t = TemplateSerializer.Deserialize(
+            File.ReadAllText(Path.Combine(SystemTemplatesDir(), "linkovy-jr-mhd-postskript-a5.json")));
+
+        Assert.Equal("LINKOVY_JR_MHD", t.AgendaCode);
+        Assert.DoesNotContain((IEnumerable<string>?)t.PrintParameters?.Keys ?? [], k => k.StartsWith("TYP_PROVOZU_", StringComparison.Ordinal));
+        Assert.DoesNotContain(t.Parameters ?? [], p => p.Name.StartsWith("TYP_PROVOZU_", StringComparison.Ordinal));
     }
 
     [Theory]

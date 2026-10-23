@@ -2102,6 +2102,21 @@ stránku (3/4) = sekce s „Začít na nové stránce" a **vpravo od tabulky** (
 AD #11373) = rozvržení šablony, bez nové logiky. Za každým blokem (0) a jednou na konci (2) dnes
 nejdou ani u AD (§13 tabulka A: „legenda je vždy jednou na konci").
 
+### 18.10 Finální zkouška před verzí 27. 10. (`B191g`)
+
+Nový exe (systémové šablony se nalijí při startu), firma KV_DP, pak CB_DP. Co projít:
+
+1. **Nabídka:** `Změnit agendu` nabízí *Linkový JŘ (MHD)*; Ctrl+O → Systémové M-line → *Linkový JŘ (MHD)
+   - postskriptový vzhled A5*.
+2. **KV_DP linka 1:** hlavička s veřejným číslem 1, platností a řádkem „Přepravu zajišťuje"; tabulka po
+   blocích typů provozu; panel *Typy provozu pro tisk* ukazuje 7 typů. Vypnout vše kromě tří typů z webu
+   DPKV (§18.8) - zůstanou tři bloky.
+3. **Parametry:** Zvýraznit zastávku „Tržnice" → řádky šedě; Zastávky, kde žádný spoj nestaví = Netisknout
+   → zmizí konec trasy za Lázněmi III; Počet stran 1 → tabulka se zmenší, případně hláška.
+4. **KV_DP linka 20:** červená hláška „nemá data, nevytiskne se → … jízdní doby".
+5. **Tisk víc linek** (1, 20 a další): Zkontrolovat ukáže linku 20 mezi hláškami, PDF vznikne z ostatních.
+6. **CB_DP linka 18 (11350):** veřejné 18 v hlavičce linkového JŘ i velké číslo na výchozí vývěsce MHD.
+
 ## 19. Rozdílový linkový JŘ podle vzoru z CIS JŘ - rozbor `B192` (16. 10. 2026)
 
 **Rozhodnutí Jan 16. 10.:** rozdílový JŘ je pevný výstup, ne agenda pro návrháře. Uživatel v hlavním

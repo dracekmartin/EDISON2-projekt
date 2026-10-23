@@ -1048,7 +1048,8 @@ zastávkovou šablonou (AD) dodávanou a aktualizovanou M-line.
 ## Linkový jízdní řád
 
 Celá linka na jedné sestavě: **zastávky jsou řádky, spoje sloupce**. Data jdou z hlavního modulu
-Jízdní řády (varianta AD) a jednou instancí je jedna linka - vyberete ji stejně jako u vývěsky.
+Jízdní řády (varianta AD) nebo z modulu MHD (varianta MHD, kap. 7) a jednou instancí je jedna
+linka - vyberete ji stejně jako u vývěsky.
 Většinu obsahu si sestava dopočítá sama (které zastávky, které spoje, co k nim patří za značky);
 vy nastavujete, co všechno se má tisknout a jak to má vypadat.
 
@@ -1060,6 +1061,7 @@ vy nastavujete, co všechno se má tisknout a jak to má vypadat.
 4. [Jak se tabulka vejde na papír](#4-jak-se-tabulka-vejde-na-papír)
 5. [Parametry sestavy](#5-parametry-sestavy-linkového-jř)
 6. [Postup krok za krokem](#6-postup-krok-za-krokem-linkový-jř)
+7. [Linkový JŘ MHD](#7-linkový-jř-mhd)
 
 ---
 
@@ -1234,7 +1236,7 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
   nevejde, zmenší se nejdřív poznámky, pak tabulka; nejde-li to ani tak, ozve se hláška.
   *Automaticky (dle linky)* zatím počet stran neomezuje.
 
-**Tabulka linky:**
+**Tabulka spojů:**
 
 - **Rozdělení sloupců dle platnosti** - podle čeho se spoje rozdělí do skupin sloupců: *Bez rozlišení*,
   *Pracovní dny / víkend+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
@@ -1244,8 +1246,8 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
   u linky v jízdních řádech, a pak *Tisknout* / *Netisknout*, kterými to pro tuhle sestavu přebijete.
 - **Zvýraznit zastávku** a **Zvýraznit tarifní číslo** - kus názvu zastávky (nerozlišují se velká
   a malá písmena) označí její řádek jako aktuální; vzhled zvýraznění si řeší šablona pravidlem
-  nad polem „Zvýrazněná zastávka". Projíždí-li linka město víckrát, označí se všechny jeho
-  zastávky - jednu z nich vybere tarifní číslo.
+  nad polem „Aktuální zastávka" (výchozí šablony ho mají: světle šedé pozadí řádku). Projíždí-li
+  linka město víckrát, označí se všechny jeho zastávky - jednu z nich vybere tarifní číslo.
 - **Pole *Číslo aktuální zastávky* a *Tarifní číslo aktuální zastávky*** (do hlavičky stránky) -
   nesou zastávku, pro kterou stránka je: na výlepech každá stránka tu svou, jinak ta, kterou
   zvýraznění trefí. Hodí se do prvku Kód (QR, čárový), aby každý výlep vedl na svou zastávku.
@@ -1271,3 +1273,27 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
    Náhled ukazuje výsledek rovnou.
 6. **Přidejte Poznámky** pod tabulku, jinak nebude čím značky vysvětlit.
 7. **Vyberte linky** (Ctrl+Shift+I) a v tiskovém dialogu (Ctrl+P) **vytvořte PDF**.
+
+---
+
+### 7. Linkový JŘ MHD
+
+Totéž pro městské linky z modulu MHD: agenda **Linkový JŘ (MHD)**, výchozí šablona *Linkový JŘ
+(MHD) - postskriptový vzhled A5* v sekci Systémové M-line. Tabulka, editor sloupců i vejití na
+papír fungují jako u AD (kap. 2-4). Rozdíly:
+
+- **Spoje jsou po typech provozu** (pracovní den, sobota, …), každý typ je vlastní blok sloupců
+  v pořadí z číselníku typů provozu. Které typy se tisknou, určí skupina parametrů **Typy provozu
+  pro tisk** - zaškrtávátko za každý typ, výchozí všechny. Panel ukazuje jen typy, které má
+  načtená linka; tiskové okno všechny, protože tiskne víc linek. Výběr se v šabloně pamatuje podle
+  čísla typu provozu, které platí jen ve firmě - šablonu převezenou exportem do jiné firmy
+  zkontrolujte.
+- **Parametry:** Směr pro tisk, Počet stran (*Bez omezení*, 1 až 3 strany), Zastávky, kde žádný
+  spoj nestaví (*Tisknout* / *Netisknout*) a Zvýraznit zastávku. Obousměrný tisk, stránka pro
+  každou zastávku, sloupec tarifních čísel, tvar názvu a název pro MHD tu nejsou - starý tisk MHD
+  je neměl a názvy jdou z číselníku zastávek MHD.
+- **Hlavička:** pole *Číslo linky (dle licence)* i *Veřejné označení linky*; výchozí šablona tiskne
+  veřejné. Dopravce je jedním řádkem jako u AD.
+- **Zastávka na hranici zón** má ve sloupci zón všechny zóny systému linky („1/2").
+- **Poznámky z trasy linky** (určené pro knižní tisk) se tisknou značkou za názvem zastávky
+  a vysvětlivkou mezi poznámkami spojů.

@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B191f` Linkový JŘ MHD: vydání (připraveno 23. 10. 2026 do verze 27. 10.)
+
+Zveřejněná agenda, systémová šablona ze zkušební (s pravidlem zvýraznění aktuální zastávky, které
+dostaly i šablony linkového AD), bez výběru typů provozu v šabloně (rozhodnutí Jan 23. 10.), Novinky
+a příručka. Obsahuje i dřívější `B191e` (výchozí šablona). Celý track `B191a-f`: rozbor, oprava dat,
+porovnání se starým tiskem na 65 linkách, nastavení jako u AD. Detail changelog 2026-10-23 (12).
+
 ## `B193` Sjednocení agend JŘ - uzavřené (23. 10. 2026)
 
 Review zastávkového a linkového JŘ (AD i MHD) před vydáním linkového MHD, body `B193a-g` viz výš.

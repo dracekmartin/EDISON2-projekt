@@ -1,8 +1,8 @@
 {
   "version": "1.15.0",
-  "id": "1beb2687-9d97-4a6a-be2d-b34a203bf482",
-  "name": "Linkový JŘ (MHD) - zkouška postskriptového vzhledu A5",
-  "description": "Zkušební šablona pro linkový JŘ MHD odvozená ze systémové šablony AD v podobě postskriptového tisku: veřejné číslo linky, bez poznámky nad linku (modul MHD ji nedává zadat).",
+  "id": "bde92703-ccd9-4fe0-adf2-f6fbf976041f",
+  "name": "Linkový JŘ (MHD) - postskriptový vzhled A5",
+  "description": "Systémová šablona linkového jízdního řádu (MHD) v podobě postskriptového tisku jako linkový JŘ AD: hlavička s veřejným označením linky a dopravcem, tabulka celé linky po typech provozu a dvousloupcová legenda poznámek. Formát A5 na šířku.",
   "pageSize": {
     "width": 210,
     "height": 148,
@@ -263,6 +263,12 @@
           "popisneSloupceBezVnitrnichCar": false,
           "sloucitPopisyRozdvojene": true,
           "mezeraMeziSkupinamiMm": 0,
+          "highlightRules": [
+            {
+              "condition": "{AKTUALNI_ZASTAVKA} == 'true'",
+              "backgroundColor": "#FFD9D9D9"
+            }
+          ],
           "highlightOddTc": false,
           "customColumns": null,
           "pripojStyle": {
@@ -377,7 +383,7 @@
       "group": "Obecné",
       "serverSide": true,
       "defaultValue": "Oba",
-      "description": "Které směry linky se vytisknou. S jedním směrem se obousměrný tisk neuplatní.",
+      "description": "Které směry linky se vytisknou.",
       "options": [
         "Oba",
         "Tam",

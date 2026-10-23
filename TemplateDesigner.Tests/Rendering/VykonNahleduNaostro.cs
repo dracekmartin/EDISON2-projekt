@@ -30,7 +30,7 @@ public class VykonNahleduNaostro(ITestOutputHelper output)
         var linky = (Environment.GetEnvironmentVariable("TD_VYKON_LINKY") ?? "1096")
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         string soubor = Environment.GetEnvironmentVariable("TD_VYKON_SABLONA")
-            ?? "TemplateDesigner/templates/linkovy-jr-mhd-postskript-a5.json";
+            ?? "TemplateDesigner/dotnet/SystemTemplates/linkovy-jr-mhd-postskript-a5.json";
         string cesta = Path.IsPathRooted(soubor) ? soubor : Path.Combine(RepoRoot(), soubor);
 
         var (provider, _) = await ImportNaostro.PripojAsync();

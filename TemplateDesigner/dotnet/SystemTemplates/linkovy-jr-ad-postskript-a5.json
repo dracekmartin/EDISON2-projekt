@@ -303,6 +303,12 @@
           "popisneSloupceBezVnitrnichCar": false,
           "sloucitPopisyRozdvojene": true,
           "mezeraMeziSkupinamiMm": 0,
+          "highlightRules": [
+            {
+              "condition": "{AKTUALNI_ZASTAVKA} == 'true'",
+              "backgroundColor": "#FFD9D9D9"
+            }
+          ],
           "highlightOddTc": false,
           "customColumns": [
             {

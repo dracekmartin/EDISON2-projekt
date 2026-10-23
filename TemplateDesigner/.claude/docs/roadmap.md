@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** sjednocení agend JŘ (`B193`) hotové 23. 10.; vydání linkového JŘ MHD (`B191f`)
-> čeká jen na verzi, po vydání `B56` (backlog). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** linkový JŘ MHD jde do verze 27. 10. (`B191g`: finální zkouška, po vydání ověření
+> u zákazníka), po vydání `B56` (backlog). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -13,23 +13,14 @@
 
 ---
 
-## ⏸️ Linkový (knižní) JŘ MHD (`B191`, pořadí Jan 12. 10., čeká na vydání)
+## 🔎 Linkový JŘ MHD ve verzi 27. 10. (`B191g`)
 
-Městská varianta linkového JŘ: agenda `LinkovyJrMhd` existuje, ale je skrytá - neprošla porovnáním
-se starým modulem. „Dodělám AD a MHD spadne samo" neplatí: AD je nadmnožina v obsahu tabulky, ne
-v pojmech (licenční × veřejné číslo linky, typ provozu, vlastní vrstva nastavení). Kroky shora dolů.
+Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`B191f`, archiv).
 
-🧭 **Nastavení starého modulu:** *jak je výstup složený, patří do návrháře; z nastavení u linky se
-bere jen to, co mění data.* Rozhodnutí po položkách, důvody a výskyt v datech: [`§13.4`-`§13.6`](linkovy-knizni-jr-implementace-analyza.md).
-Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R2/R5`](architektonicka-rozhodnuti-agendy.md).
-
-Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; nastavení jako u AD (`B191d`) a funkční review 22. 10. - funkčně hotové; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
-
-1. **`B191f` Vydání** [S] (s `B191e`), až půjde do verze. Nejdřív finální zkouška (Jan), u zákazníka ověřit
-   neověřené na dev datech: poznámky z trasy, příjezd/odjezd, atributy spoje mimo B/C ([`§18.7`](linkovy-knizni-jr-implementace-analyza.md)).
-   Systémová šablona ze zkušební `templates/linkovy-jr-mhd-postskript-a5.json` (nové Id, bez „zkouška") s pravidlem
-   zvýraznění aktuální zastávky (i šablony linkového AD); rozhodnout výběr typů provozu v šablonách mezi firmami
-   ([`§18.8`](linkovy-knizni-jr-implementace-analyza.md)); `Released = 1`, Novinky a příručka.
+1. **Finální zkouška (Jan) před úterkem** [S] - postup v [`§18.10`](linkovy-knizni-jr-implementace-analyza.md).
+2. **Po vydání ověřit u zákazníka** [S], co dev data nemají: poznámky z trasy u zastávky, příjezd
+   a odjezd na jedné zastávce, atributy spoje mimo B/C ([`§18.7`](linkovy-knizni-jr-implementace-analyza.md)).
+   Postavené podle kódu starého tisku; nahrát Novinky na wiki až s verzí.
 
 ---
 

@@ -38,6 +38,15 @@ Dílčí vylepšení a náměty.
 
 > U každého záznamu je uvedené, které agendy se týká.
 
+### Týden od 26. 10. 2026 · Linkové JŘ - městská doprava (MHD)
+
+- **Linkový JŘ MHD:** celá městská linka na jedné sestavě, s daty z modulu MHD - zastávky jsou
+  řádky, spoje sloupce po typech provozu. Před tiskem vyberete, které typy provozu se tisknou
+  (třeba jen pracovní den a víkend), a jestli oba směry. Začít můžete z výchozí šablony
+  *Linkový JŘ (MHD) - postskriptový vzhled A5*.
+- **Všechny jízdní řády:** linka, která nemá data, se ukáže jako problém mezi hláškami i s tím,
+  co v jejím jízdním řádu chybí; ostatní linky se vytisknou.
+
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 
 - **Zastávkové a linkové JŘ:** v nabídce dat jsou všude obě čísla linky - **Číslo linky (dle

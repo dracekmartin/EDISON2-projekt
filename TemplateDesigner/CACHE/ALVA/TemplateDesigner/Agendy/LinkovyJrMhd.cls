@@ -34,6 +34,12 @@ Parameter Variant As %String = "MHD";
 
 Parameter VariantLabel As %String = "MHD";
 
+/// Zveřejněná 23. 10. do verze 27. 10. (`B191f`): tabulka sedí se starým tiskem na 65 linkách CB_DP
+/// a KV_DP. Na datech zákazníka po vydání ověřit poznámky z trasy, příjezd/odjezd na zastávce
+/// a atributy spoje mimo B/C - dev data je nemají (rozhodnutí Jan 23. 10.).
+/// ⚠️ `Released` je serverová hodnota, ne v exe - nasazení třídy změní nabídku agend všem.
+Parameter Released = 1;
+
 Parameter InstanceParamName As %String = "LINKA_ID";
 
 Parameter ElementKind As %String = "LINE";

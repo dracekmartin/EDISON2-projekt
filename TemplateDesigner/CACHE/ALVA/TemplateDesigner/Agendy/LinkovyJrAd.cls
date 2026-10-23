@@ -73,7 +73,7 @@ Parameter VariantLabel As %String = "AD (linková doprava)";
 /// ⚠️ **Seznam agend se čte jednou při startu** - běžící aplikace změnu nepřebere, musí se zavřít
 /// a spustit znovu.
 ///
-/// Městská varianta (`LinkovyJrMhd`) zveřejněná nebyla nikdy: neprošla porovnáním se starým modulem.
+/// Městská varianta (`LinkovyJrMhd`) je zveřejněná od verze 27. 10. (`B191f`).
 Parameter Released = 1;
 
 Parameter InstanceParamName As %String = "LINKA_ID";

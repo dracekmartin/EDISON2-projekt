@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-23 (12) - 🚀 linkový JŘ MHD připravený do verze 27. 10. (`B191f`)
+
+Agenda **Linkový JŘ (MHD)** je zveřejněná (`Released = 1`, na dev serveru ověřeno voláním
+`AgendyRegistr.ListAgendy`). Systémová šablona *Linkový JŘ (MHD) - postskriptový vzhled A5* vznikla
+ze zkušební (nové Id, bez „zkouška", přesunutá z `templates/` do `SystemTemplates/`). Rozhodnutí Jan
+23. 10.: šablona **nenese výběr typů provozu** (id typu platí jen ve firmě, uložený výběr by v jiné
+firmě vypnul jiný typ; export mezi firmami je v příručce jako známé omezení), aktuální zastávku
+zvýrazní **světle šedým pozadím** řádku - pravidlo přibylo i do obou systémových šablon linkového AD,
+dosud žádná linková šablona pravidlo neměla a „Zvýraznit zastávku" tak nebylo vidět. Neověřené na
+dev datech (poznámky z trasy, příjezd/odjezd, atributy spoje mimo B/C) se ověří u zákazníka po vydání.
+Testy `SystemTemplateSeedTests` (šablona v exe, zvýraznění ve všech linkových, MHD bez typů provozu).
+Příručka: kapitola Linkový JŘ MHD, opravená skupina „Tabulka spojů" a pole „Aktuální zastávka";
+Novinky za týden od 26. 10. (seed připravený k nahrání).
+
 ## 2026-10-23 (11) - 🧹 sjednocení agend JŘ uzavřené (`B193h`, `B193i`)
 
 Poslední dva body review čtyř agend JŘ. **Číslo zastávky pro adresu v QR** (vývěsky z CIS čísla,
