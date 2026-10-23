@@ -34,6 +34,18 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 	quit:'##class(%Dictionary.CompiledClass).%ExistsId("ALVA.MHD.LinkyPrintFormatMHD") 0
 	quit:'##class(%SYS.Namespace).Exists(db) 0
 
+	// Přestup posíláme písmenem (A/L), legacy kódem fontu (119/120) - viz ZastavkoveJrMhd.ZnakAtributu.
+	// Vlak vychází v obou tiscích jako lokomotiva; autobus je u legacy vagon, u nás autobus (vědomě, B194a C3).
+	kill prestupKod
+	set atr = ""
+	for {
+		set atr = $order(^[db]ALVA.MHD.ENUMS(idfa,"Atribut","DTA",atr))
+		quit:atr=""
+		set kod = $get(^[db]ALVA.MHD.ENUMS(idfa,"Atribut","DTA",atr,"SpecZnak"))
+		set zn = $get(^[db]ALVA.MHD.ENUMS(idfa,"Atribut","DTA",atr,"Znak"))
+		if (kod '= "") && ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).JePrestup(zn) set prestupKod(kod) = zn
+	}
+
 	// ── LEGACY producent MakeData → outglb ─────────────────────────────
 	kill ^||TdOracleGlb, arri
 	set arri("par",1) = projete
@@ -89,7 +101,7 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 			// náš engine konvertuje už v datech. Sjednotíme přes ConvertSpecialniZnak → porovnává se
 			// finální glyf (což zároveň ověří, že náš převod = legacy převod).
 			set pznakRaw = $get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"dta",1))
-			set pznak = $s(ptyp=2:##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).ConvertSpecialniZnak(pznakRaw), 1:..Norm(pznakRaw))
+			set pznak = $s(ptyp'=2:..Norm(pznakRaw), (pznakRaw'="")&&$data(prestupKod(pznakRaw)):prestupKod(pznakRaw), 1:##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).ConvertSpecialniZnak(pznakRaw))
 			set ptext = ..Norm($get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"dta",2)))
 			set k = stop_"#"_ptyps_"#"_pznak_"#"_ptext
 			set lp(k) = $get(lp(k)) + 1

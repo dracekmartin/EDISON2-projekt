@@ -6,6 +6,8 @@
   dat jde do hlášení porovnání (hotovo 23. 10., changelog 2026-10-23 (15)).
 - **C2** „Upravit styl…" v panelu Minut odjezdů otevře okno stylu jako okno nastavení prvku (hotovo
   23. 10., changelog 2026-10-23 (16)). Obecný test tlačítek všech formulářů zůstává jako `G5`.
+- **C3** Vývěska MHD tiskne přestup obrázkem a řídí ho volba „Přestupy", výchozí šablona ji má zapnutou
+  (rozhodnutí Jan 23. 10. po vykreslení linky 11350; changelog 2026-10-23 (18)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

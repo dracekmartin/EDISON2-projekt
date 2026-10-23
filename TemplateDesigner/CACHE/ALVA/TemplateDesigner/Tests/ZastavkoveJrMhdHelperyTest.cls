@@ -32,4 +32,15 @@ Method TestConvertSpecialniZnakOstatniBezeZmeny()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).ConvertSpecialniZnak(""), "", "prázdný vstup → prázdný výstup")
 }
 
+/// `B194a` C3: přestup jde písmenem (A autobus, L vlak), ostatní atributy kódem fontu. Písmeno projde
+/// i převodem ConvertSpecialniZnak beze změny.
+Method TestZnakAtributuPrestupPismenem()
+{
+	set mhd = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+	do $$$AssertEquals($classmethod(mhd, "ZnakAtributu", 120, "L"), "L", "přestup na vlak → L")
+	do $$$AssertEquals($classmethod(mhd, "ZnakAtributu", 119, "A"), "A", "přestup na autobus → A")
+	do $$$AssertEquals($classmethod(mhd, "ZnakAtributu", 72, "B"), 72, "bezbariérově → kód fontu")
+	do $$$AssertEquals($classmethod(mhd, "ConvertSpecialniZnak", "L"), "L", "písmeno převodem projde")
+}
+
 }

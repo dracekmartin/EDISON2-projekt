@@ -83,6 +83,12 @@ public class ZkouskaTiskuNaostro(ITestOutputHelper output)
                     output.WriteLine($"{jmeno}: linka nemá data");
                     continue;
                 }
+                // Jako tisk z návrháře: legenda se řídí tím, co šablona tiskne (přestupy, na znamení, vypnutý obsah).
+                stranky = NoteVisibilityFilter.Apply(stranky,
+                    NoteVisibilityFilter.ParseMode(parametry.GetValueOrDefault(NoteVisibilityFilter.ParamName)), false,
+                    NoteVisibilityFilter.ShouldHideNaZnameniLegend(sablona),
+                    hidePrestupLegend: NoteVisibilityFilter.ShouldHidePrestupLegend(sablona),
+                    hiddenContent: NoteVisibilityFilter.HiddenContentCategories(sablona));
 
                 var canvas = new PreviewCanvas(new DesignerState { CurrentTemplate = sablona });
                 var vyber = stranky.Take(stran).ToList();

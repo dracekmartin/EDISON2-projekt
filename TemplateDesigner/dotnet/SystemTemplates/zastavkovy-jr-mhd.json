@@ -74,6 +74,7 @@
           "showSignalStopIndicator": true,
           "signalStopSymbol": "×",
           "showStopAttributes": true,
+          "showTransferAttributes": true,
           "showStopNotes": true,
           "markersPosition": "AfterName",
           "directionArrowColor": "#FF000000",

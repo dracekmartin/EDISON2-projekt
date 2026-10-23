@@ -23,11 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C3 Vývěska MHD kreslí přestup na autobus jako vagon a na vlak jako „x"** [S-M] **tisk** (*ověřeno:* kód,
-  server CB_DP 11350). `ZastavkoveJrMhd.ConvertSpecialniZnak` (:1695) pošle kódy 119/120 jako znaky
-  „w"/„x"; ve fontu je „w" vagon a „x" se kreslí jako text „na znamení" (`SymbolMap.JeKonvencneText`).
-  Starý modul sázel jiným fontem, kde je na 119 autobus. Návrh: posílat písmeno atributu jako linkový MHD
-  a překlad nechat na `SymbolMap`; ověřit vykreslením.
 - **C4 Export „Jeden PDF na linku" má špatný název i dělení** [M] (*ověřeno:* kód, server). Výchozí vzor
   `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}` (`PrintDialogViewModel.cs:30`): linkové agendy
   `POPIS_ZASTAVKA` nemají, v názvu souboru je doslova „POPIS_ZASTAVKA". Dělení `GroupForExport` (:608) jde

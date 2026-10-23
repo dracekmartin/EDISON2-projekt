@@ -108,16 +108,21 @@ Konverze v `ZastavkoveJrMhdAPI.ConvertSpecialniZnak()`:
 
 ```
 SpecZnak 1-7   → "Po"/"Út"/"St"/"Čt"/"Pá"/"So"/"Ne" (dny v týdnu)
-SpecZnak > 31  → $char(SpecZnak) - ASCII znak (70→F, 120→x, 123→{)
+SpecZnak > 31  → $char(SpecZnak) - ASCII znak (70→F, 123→{)
 jinak          → beze změny
 ```
+
+⚠️ **Přestup (atribut se znakem A autobus / L vlak) jde písmenem, ne kódem** (`ZnakAtributu`, od 23. 10.).
+Kód 120 by dal „x", které návrhář tiskne textem jako „na znamení", a přestupy by neřídila volba
+„Přestupy". Starý tisk (font Timetable) má na 120 lokomotivu a na 119 vagon, náš autobus je vědomá odchylka.
 
 Příklady z číselníku CB_DP:
 
 | AtributID | Popis | SpecZnak | `$char()` | ProSpoj | ProZastavku |
 |---|---|---|---|---|---|
 | 1003 | na znamení | 68 | D | 0 | 1 |
-| 1005 | přestup na železniční dopravu | 120 | x | 0 | 1 |
+| 1004 | přestup na linkovou dopravu | 119 | (posílá se „A") | 0 | 1 |
+| 1005 | přestup na železniční dopravu | 120 | (posílá se „L") | 0 | 1 |
 | 1006 | jízdenkový automat | 123 | { | 0 | 1 |
 | 1007 | bezbariérově přístupné | 72 | H | 1 | 1 |
 | 1008 | částečně bezbariérově, nutná dopomoc | 70 | F | 1 | 0 |

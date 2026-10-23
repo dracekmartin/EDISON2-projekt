@@ -642,6 +642,8 @@ dny (#8-14), a **NZ** (negativní, ruční box). Ostatní katalog je rezerva pro
   plošný překlad podle písmene by jí nakreslil autobus nebo kolo místo jejího symbolu. Sémantické
   kategorie (dnes `prestup`, `odjezd-kola`, `odjezd-mistenka`) drží `Models/NoteCategories.Semanticke`;
   jména kategorií mají jediný zdroj, protože na nich visí i vypínání obsahu v šabloně.
+  Výjimka od 23. 10.: **přestup** posílá MHD písmenem (`A`/`L`) s kategorií `prestup`, jako AD - kód
+  fontu 120 dal „x", které se tiskne textem jako „na znamení" (`B194a` C3).
 
   🔧 **Jak pozici ověřit** (Mapa znaků na to nestačí - dvakrát se z ní přečetlo špatně, protože
   ikony jsou drobné a sousedí spolu vagon s autobusem): vytáhnout **obrysy glyfů přímo z fontu** a

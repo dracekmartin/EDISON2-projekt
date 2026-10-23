@@ -22,7 +22,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194a` Chyby
 
-- **C3** Vývěska MHD kreslí přestup na autobus jako vagon a na vlak jako „x" [S-M] **tisk**
 - **C4** Export „Jeden PDF na linku": v názvu doslova „POPIS_ZASTAVKA", MHD dělí podle licenčního čísla [M] **Jan** **do 27. 10.**
 - **C5** Výchozí vývěska MHD tiskne dopravce dvakrát [S] **Jan**
 - **C6** „Vlastní definice sloupců" ve vývěsce MHD nic nedělá [S] **Jan**

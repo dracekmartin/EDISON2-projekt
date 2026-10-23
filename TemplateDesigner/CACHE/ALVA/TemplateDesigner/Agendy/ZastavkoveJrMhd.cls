@@ -263,7 +263,7 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
 ///   ("trasa",SmerID,"slouceniInv",BodID2)                      = BodID hlavní bod po sloučení
 ///   ("trasa",SmerID,"netisknout",BodID)                        = ""   bod s příznakem „netisknout na zastávkovém JŘ"
 ///   ("poznamkyZast",SmerID,BodID,Znak)                         = $lb(TextPoznamky, TypPoznamky)
-///   ("atributyZast",SmerID,BodID,AtributID)                    = $lb(Popis, Typ, SpecialniZnak)
+///   ("atributyZast",SmerID,BodID,AtributID)                    = $lb(Popis, Typ, SpecialniZnak, Znak)  (přestup: SpecialniZnak = písmeno A/L)
 ///   ("odjezdy",SmerID,BodID,SmoSloupec,Hodina,Minuta,SpojID)   = ""  (SmoSloupec 1-4 = sekce minut odjezdu dle SMOID)
 ///   ("smoSloupce",SmoSloupec)                                  = ""  (registr tiskových sloupců)
 ///   ("smoNadpis",SmoSloupec)                                   = $lb(nadpis1, nadpis2)
@@ -510,7 +510,8 @@ ClassMethod NacistPoznamkyAAtributyZastavek(ByRef sys As %String)
                 s Popis = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"Popis"))
                 s SpecialniZnak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"SpecZnak"))
                 i SpecialniZnak = "" continue
-                s ^||TiskMHD("atributyZast",SmerID,BodID,AtributID) = $lb(Popis, 2, SpecialniZnak)
+                s Znak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"Znak"))
+                s ^||TiskMHD("atributyZast",SmerID,BodID,AtributID) = $lb(Popis, 2, ..ZnakAtributu(SpecialniZnak, Znak), Znak)
             }
 
             // Poznámky a atributy z trasy linky (per sloučený bod)
@@ -550,7 +551,8 @@ ClassMethod NacistPoznamkyAAtributyZastavek(ByRef sys As %String)
                     s Popis = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"Popis"))
                     s SpecialniZnak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"SpecZnak"))
                     i SpecialniZnak = "" continue
-                    s ^||TiskMHD("atributyZast",SmerID,BodID,AtributID) = $lb(Popis, 2, SpecialniZnak)
+                    s Znak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"Znak"))
+                    s ^||TiskMHD("atributyZast",SmerID,BodID,AtributID) = $lb(Popis, 2, ..ZnakAtributu(SpecialniZnak, Znak), Znak)
                 }
             }
         }
@@ -1445,7 +1447,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             // „na znamení" řádek otagovat (rozpoznání dle popisu, konzistentně s TD IsNaZnameniAttr;
             // symbol se liší dle firmy) → přepínač „Na znamení" schová značku i tento řádek legendy (#7161).
             s popisAtr = $lg(atrVal,1)
-            s katAtr = $s($zcvt($e(popisAtr,1,9),"L")="na znamen":"atribut-zastavky", 1:"")
+            s katAtr = $s($zcvt($e(popisAtr,1,9),"L")="na znamen":"atribut-zastavky", ..JePrestup($lg(atrVal,4)):"prestup", 1:"")
             d poznamky.%Push(..BuildPoznamka("specialni", SpecZnak, popisAtr, "", "", katAtr))
         }
     }
@@ -1692,6 +1694,19 @@ ClassMethod RgbToHex(rgb As %String) As %String
 }
 
 /// Konvertuje číselný kód speciálního znaku na Unicode string.
+/// Přestup na autobus („A") a vlak („L") jde písmenem jako ve vývěsce AD a v linkovém JŘ - návrhář ho
+/// přeloží na piktogram a řídí ho volba „Přestupy". Kód starého fontu (119 / 120) by nakreslil vagon
+/// a „x", které se tiskne textem jako „na znamení". Ostatní atributy zůstávají kódem fontu, ten sedí.
+ClassMethod ZnakAtributu(specialniZnak As %String, znak As %String) As %String
+{
+    q $s(..JePrestup(znak):znak, 1:specialniZnak)
+}
+
+ClassMethod JePrestup(znak As %String) As %Boolean
+{
+    q (znak = "A") || (znak = "L")
+}
+
 ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
 {
     i cislo = 1 q "Po"

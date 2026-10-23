@@ -48,6 +48,9 @@ Dílčí vylepšení a náměty.
   co v jejím jízdním řádu chybí; ostatní linky se vytisknou.
 - **Linkový JŘ AD:** barvu linky z jízdních řádů jde použít jako u zastávkového JŘ - třeba jako
   barvu pozadí čísla linky.
+- **Zastávkový JŘ MHD:** přestupy na vlak a autobus se v seznamu zastávek i v poznámkách tisknou
+  obrázkem (přestup na vlak dřív vyšel jako písmeno „x"). Řídí je volba **Přestupy (vlak/autobus)**
+  u seznamu zastávek. Výchozí šablona ji má zapnutou, ve vlastní uložené šabloně si ji zapněte.
 
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 

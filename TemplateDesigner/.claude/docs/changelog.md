@@ -1,5 +1,26 @@
 ﻿# Changelog
 
+## 2026-10-23 (18) - 🚆 vývěska MHD tiskne přestup obrázkem (`B194a` C3)
+
+Vývěska MHD posílala přestup kódem fontu starého tisku (vlak 120 = „x", autobus 119 = „w"). Návrhář
+„x" tiskne textem jako „na znamení", takže zastávka Nádraží měla „Nádraží x" a poznámku „x přestup na
+železniční dopravu"; volba **Přestupy (vlak/autobus)** na MHD nepůsobila. Teď jde přestup písmenem
+z číselníku (L / A) s kategorií poznámky `prestup` jako ve vývěsce AD (`ZastavkoveJrMhd.ZnakAtributu`):
+vlak je lokomotiva jako ve starém tisku, autobus obrázek autobusu (starý tisk má na 119 ve fontu
+Timetable vagon - vědomá odchylka, stejně jako v AD a v linkovém JŘ). Řídí ho volba „Přestupy", ve
+výchozí šabloně MHD nově zapnutá (rozhodnutí Jan 23. 10.); uložené kopie zákazníků ji mají vypnutou
+a přestup z nich zmizí, proto zmínka v Novinkách.
+
+Měření: font starého tisku (`TiskJR/_ruzne/TimeTable.ttf`, rodina Timetable, kterou sází
+`formTISKMHDReportDotNet_Module.vb`) vykreslený vedle TimeTable2 CZ/SK - 119 vagon, 120 lokomotiva,
+68 křížek. Rozbor `B194` tvrdil, že starý font má na 119 autobus; nemá. Výchozí skupina CB_DP: přestup
+má 29 linek, všechny na vlak; KV_DP žádný; přestup na autobus v datech dev serveru není (vykreslení
+autobusu tedy neověřené). Vizuálně ověřeno na lince 11350 se zapnutou i vypnutou volbou
+(`ZkouskaTiskuNaostro`, který nově filtruje poznámky jako tisk z návrháře). Porovnání se starým
+tiskem (`MhdLegacyOracle`) bere kód přestupu přes číselník jako písmeno; zlaté odtisky 1001/1003/1006
+přebaselinované, mění se jen md5. Testy `ZastavkoveJrMhdGoldTest.TestPrestupNaVlakPismenem`,
+`ZastavkoveJrMhdHelperyTest.TestZnakAtributuPrestupPismenem`.
+
 ## 2026-10-23 (17) - 🩹 rozdílový JŘ podbarví platnost jen při změně
 
 Záhlaví rozdílového linkového JŘ ukazovalo platnost obou verzí pod sebou v barvách verzí pokaždé, když

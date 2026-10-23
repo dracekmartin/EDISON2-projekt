@@ -29,21 +29,57 @@ Method TestGold1001()
 	// směr Tam a za ním celý Zpět (shodně s AD vývěskou a se starým tiskem). ⚠️ **Mění se jen
 	// md5**, počty pages/zast/odj/pozn jsou shodné do jednoho - doklad, že se změnilo pořadí
 	// stránek a nic jiného.
-	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=Op1FfKluvtPGKJE0fa3rNQ==")
+	// Re-baseline 2026-10-23 (`B194a` C3): přestup na vlak jde písmenem „L" místo kódu fontu „x"
+	// a jeho poznámka má kategorii „prestup". Jen md5, počty beze změny.
+	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=r7e+CHbC8DylfFL6ysz6+g==")
 }
 
 Method TestGold1003()
 {
 	// Re-baseline 2026-08-31 (#13158) - viz gold 1001. Jen md5, počty beze změny.
 	// Re-baseline 2026-09-14: pořadí stránek po zastávkách - viz gold 1001. Jen md5.
-	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=VJ7wsEA+ui0Du/jHED/8DA==")
+	// Re-baseline 2026-10-23: přestup písmenem - viz gold 1001. Jen md5.
+	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=S++BEaURyBDIDQx/kxzg5A==")
 }
 
 Method TestGold1006()
 {
 	// Re-baseline 2026-08-31 (#13158) - viz gold 1001. Jen md5, počty beze změny.
 	// Re-baseline 2026-09-14: pořadí stránek po zastávkách - viz gold 1001. Jen md5.
-	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=lFm3A6MSDzn+Qjw3lT++oA==")
+	// Re-baseline 2026-10-23: přestup písmenem - viz gold 1001. Jen md5.
+	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=9cqrdBgXx4bxWv20TqT5sQ==")
+}
+
+/// `B194a` C3: přestup na vlak (CB_DP, zastávka Nádraží linky 11350) má v seznamu zastávek i v poznámkách
+/// písmeno „L" a poznámka kategorii „prestup". Do 23. 10. šel kódem fontu „x", který návrhář tiskne
+/// textem jako „na znamení", a volba „Přestupy" na něj nepůsobila.
+Method TestPrestupNaVlakPismenem()
+{
+	set db = ..#GOLDDB
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru")
+		quit
+	}
+	do ##class(ALVA.TemplateDesigner.Tests.MhdLegacyOracle).SetupOur(.sys, ..#GOLDIDFA, db)
+	kill ^||ML
+	set ^||ML("IN","LINKA_ID") = "11350"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
+	set atributy = "", poznamky = "", p = ""
+	for {
+		set p = $order(^||ML("OUT",p), 1, json)
+		quit:p=""
+		continue:'$isvalidnum(p)
+		set page = ##class(%DynamicObject).%FromJSON(json)
+		set iz = page.rows.%Get("ZASTAVKY").%GetIterator()
+		while iz.%GetNext(.zk, .z) {
+			set ia = z.%Get("ATRIBUTY").%GetIterator()
+			while ia.%GetNext(.ak, .a) { set:a.%Get("POPIS")["železniční" atributy(a.%Get("ZNAK")) = "" }
+		}
+		set ip = page.rows.%Get("POZNAMKY").%GetIterator()
+		while ip.%GetNext(.pk, .pz) { set:pz.%Get("TEXT")["železniční" poznamky(pz.%Get("ZNAK")_"/"_pz.%Get("KATEGORIE")) = "" }
+	}
+	do $$$AssertTrue($data(atributy("L")) && '$data(atributy("x")), "značka přestupu v seznamu zastávek: L")
+	do $$$AssertTrue($data(poznamky("L/prestup")) && ($order(poznamky(""))="L/prestup") && ($order(poznamky(""),-1)="L/prestup"), "poznámka přestupu: L s kategorií prestup")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:
