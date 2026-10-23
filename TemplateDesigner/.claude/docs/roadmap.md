@@ -5,7 +5,7 @@
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
 > **Nejblíž na řadě:** linkový JŘ MHD jde do verze 27. 10. (`B191g`: finální zkouška, po vydání ověření
-> u zákazníka), po vydání `B56` (backlog). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> u zákazníka), souběžně druhé kolo sjednocení agend JŘ (`B194`, bod po bodu), po něm `B56` (backlog). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -24,6 +24,31 @@ Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`
 
 ---
 
+## 🧩 Sjednocení agend JŘ - druhé kolo (`B194`, revize 23. 10.)
+
+Nezávislá revize čtyř agend JŘ po `B193`: chyby, rozdíly v tisku, názvosloví, chybějící pojistky. Každý nález
+přeověřený proti kódu; doklady a návrhy po položkách v [`konzistence-agend-jr.md`](konzistence-agend-jr.md).
+Procházet s Janem bod po bodu. Co se týká linkového MHD, je nejlevnější opravit před 27. 10.
+
+1. **`B194a` Chyby** [S-M] (§1 `C1`-`C11`). Nejdřív `C1`: rozdílový JŘ padá na lince bez dat (regrese
+   z 23. 10., spouští se z modulu JŘ). Dál „Upravit styl…" v panelu Minut odjezdů, značky přestupu ve vývěsce
+   MHD, název a dělení exportu PDF po linkách, nápověda podmínky řádku. Rozhodnutí Jana u `C4`-`C6`.
+2. **`B194b` Tisk: rozdíly mezi agendami** [M] (§2). Mění vytištěný výstup, každý bod rozhoduje Jan.
+   Mezery proti starému modulu: vývěska AD bez značek „na objednání" / „podmínečně" a bez barev spojů;
+   text omezení ve vývěsce AD nemá doloženou paritu. Před 27. 10.: nadpisy skupin dnů a dopravce v linkovém MHD.
+3. **`B194c` Nabídka dat a parametry** [S-M] (§3). Jen popisky a nápovědy: dvojí „Aktuální zastávka",
+   „Pořadí" jako tarifní číslo, osm voleb vývěsek bez nápovědy. Zamčené volby rozdělení sloupců jen
+   přidaným klíčem `optionLabels` (`P2`).
+4. **`B194d` Prvky: kanon a jedna kostra formulářů** [L] (§4). Nejdřív Jan doplní kanon `ux-conventions §8`
+   (prvek, vrstva, záhlaví, výška řádku, mezery), pak sjednotit formuláře a dialogy sloupců. Základ pro
+   každý další prvek.
+5. **`B194e` Aplikace a dokumentace** [M] (§5). Jeden tvar názvu agendy, start linkového JŘ z EDISONu,
+   výběr linek, příručka (21 míst) a Nápověda F1.
+6. **`B194f` Pojistky před `B56`** [M] (§6). Kontraktový Caché test přes registr agend a shoda celých
+   definic parametrů, k tomu menší drift testy. Bez nich se po sloučení kódu rozejde totéž znovu.
+
+---
+
 ## 📥 Backlog
 
 ### Ostatní
@@ -32,7 +57,8 @@ Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`
   knižního JŘ, splněno 22. 10.). Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už
   rozešlo: výběr skupin linek a linek u AD (MHD sdílí od `B193c`), hlavička linky (rozcházela se
   v platnosti a razítku, `B193f`), společné parametry vývěsek, předpřipravené tabulky, které návrhář
-  nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
+  nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md). **Před startem**
+  rozhodnout model sdílení (registr najde jen přímé potomky `BaseAgenda`) a mít pojistky `B194f` ([`§7`](konzistence-agend-jr.md)).
 
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony

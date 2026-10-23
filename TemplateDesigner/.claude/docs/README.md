@@ -12,6 +12,7 @@
 | [`roadmap.md`](roadmap.md) | Jen otevřená práce; hotové → archiv |
 | [`changelog.md`](changelog.md) | Průběžný changelog (technický) |
 | [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md) | Stav helpdesk tiketů + TR sada; §0 = dispatch |
+| [`konzistence-agend-jr.md`](konzistence-agend-jr.md) | Jednorázová revize čtyř agend JŘ (`B194`); smazat po dokončení |
 
 ## Závazné reference a rozhodnutí (evergreen)
 
