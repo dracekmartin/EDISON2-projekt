@@ -2062,6 +2062,7 @@ Co ze zkoušky 22. 10. zůstává jako obecný kandidát (dělat na poptávku, n
 - **Dopravce a tarifní poznámka.** Starý knižní tisk řádek dopravce posílá prázdný
   (`LinkyPrintFormatJR.cls:1100-1106`) a tarifní poznámku linky (`PoznamkaTarifni`, vyplněná třeba
   u CB_DP 11350) nečte - v tom jsme s ním shodní. Doplnit je by bylo zlepšení proti starému modulu.
+  **Dopravce hotový 23. 10.** (`B193a`, jedním řádkem ze zdroje vývěsky MHD); tarifní poznámka dál na poptávku.
 
 Rozdíly časů proti webu o minutu jsou rozdíl verze dat (dev kopie platí od 1. 1. 2025, web od
 1. 12. 2025), ne chyba; shodu časů drží porovnání se starým tiskem nad stejnými daty.

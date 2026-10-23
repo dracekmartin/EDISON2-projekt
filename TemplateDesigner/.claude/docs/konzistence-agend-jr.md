@@ -13,16 +13,6 @@ i pole v nabídce dat; po vydání platí „jen přidávat" (`cache-api.md §Ev
 **Co hlídají testy:** `AgendaSchemaDriftTests.cs:101-135` jen „stejné pole = stejný popisek a typ".
 Parametry sestavy, tvar hodnot a pole, která agenda vždy pošle prázdná, nehlídá nic.
 
-## B193a Dopravce a poznámka nad linku v linkovém MHD
-
-- `LinkovyJrMhd.cls:429-430` posílá `POZNAMKA_NAD_LINKU` a `POPIS_DOPRAVCE` vždy prázdné,
-  nabídka dat je přitom nabízí (`:59-60`).
-- Vývěska MHD dopravce téže linky skládá (`ZastavkoveJrMhd.cls:1114`, `PopisDopravce` `:1840`).
-- Starý knižní tisk řádek dopravce posílá prázdný ([`§18.8`](linkovy-knizni-jr-implementace-analyza.md)),
-  doplnění je tedy zlepšení proti němu.
-- Poznámku nad linku MHD nemá odkud vzít (`ZastavkoveJrMhd.cls:1123`), ale zkušební šablona na ni
-  má prvek (`templates/linkovy-jr-mhd-postskript-a5.json:46`).
-
 ## B193b Číslo linky v šablonách MHD
 
 - Vývěska MHD tiskne `{CISLO_LINKY}` = licenční číslo (`SystemTemplates/zastavkovy-jr-mhd.json:234`),

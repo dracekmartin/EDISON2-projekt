@@ -1837,7 +1837,8 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 /// Zákazník uvození nechtěl a adresu ano (#13158, rozhodnutí Jan 31. 8.); tvar je shodný s AD
 /// vývěskou, ať se dvě vývěsky vedle sebe neliší. Tím se to rozešlo se vzorem MHD2 `Export.cls`,
 /// odkud tvar původně pocházel - je to vědomé, ne drift.
-ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String) As %String
+/// `jednimRadkem` = řádek hlavičky linkového JŘ MHD (viz `RadkyDopravce`).
+ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, jednimRadkem As %Boolean = 0) As %String
 {
     s radky = ""
     try {
@@ -1850,14 +1851,14 @@ ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
                 s nazev = $g(tmpArr("dta",2))
                 i $g(tmpArr("dta",3)) '= "" s nazev = nazev _ $g(tmpArr("dta",3))
                 s mesto = $zstrip($g(tmpArr("dta",15))_" "_$g(tmpArr("dta",14)), "<>W")
-                s radky = ..RadkyDopravce(nazev, $g(tmpArr("dta",13)), mesto, $g(tmpArr("dta",23)))
+                s radky = ..RadkyDopravce(nazev, $g(tmpArr("dta",13)), mesto, $g(tmpArr("dta",23)), jednimRadkem)
             }
         } elseif druh = 1 {
             // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 7 obchodní název)
             s ciziFa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DopravceCiziFirmaID"))
             i ciziFa '= "" {
                 k tmpArr  s err = $$gDopFa^JRapi(IdFa, dataDB, ciziFa, "", .tmpArr)
-                i 'err s radky = ..RadkyDopravce($g(tmpArr("dta",7)), $g(tmpArr("dta",2)), $g(tmpArr("dta",1)), $g(tmpArr("dta",3)))
+                i 'err s radky = ..RadkyDopravce($g(tmpArr("dta",7)), $g(tmpArr("dta",2)), $g(tmpArr("dta",1)), $g(tmpArr("dta",3)), jednimRadkem)
             }
         }
     } catch ex { s radky = "" }
@@ -1866,14 +1867,23 @@ ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
 
 /// Složí dopravce do řádků: název, ulice, sídlo/město, telefon. Prázdné položky se vynechají,
 /// takže u dopravce bez adresy zbyde samotný název jako dřív.
-ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, tel As %String) As %String
+/// `jednimRadkem` = tvar řádku „Přepravu zajišťuje" linkového JŘ, shodný s linkovým AD
+/// (`LinkovyJrAd.NazevDopravce`): název, sídlo, ulice, „tel. " oddělené čárkou.
+ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, tel As %String, jednimRadkem As %Boolean = 0) As %String
 {
     s nazev = $zstrip($g(nazev), "<>W")
     i nazev = "" q ""
+    s ulice = $zstrip($g(ulice), "<>W"), mesto = $zstrip($g(mesto), "<>W"), tel = $zstrip($g(tel), "<>W")
     s text = nazev
-    i $zstrip($g(ulice), "<>W") '= "" s text = text_$c(10)_$zstrip(ulice, "<>W")
-    i $zstrip($g(mesto), "<>W") '= "" s text = text_$c(10)_$zstrip(mesto, "<>W")
-    i $zstrip($g(tel), "<>W") '= ""   s text = text_$c(10)_"tel: "_$zstrip(tel, "<>W")
+    i jednimRadkem {
+        i mesto '= "" s text = text_", "_mesto
+        i ulice '= "" s text = text_", "_ulice
+        i tel '= ""   s text = text_", tel. "_tel
+        q text
+    }
+    i ulice '= "" s text = text_$c(10)_ulice
+    i mesto '= "" s text = text_$c(10)_mesto
+    i tel '= ""   s text = text_$c(10)_"tel: "_tel
     q text
 }
 

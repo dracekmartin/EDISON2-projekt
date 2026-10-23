@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** sjednocení agend JŘ (`B193`, Jan 23. 10.) - nejdřív `B193a-c`, které drží
+> **Nejblíž na řadě:** sjednocení agend JŘ (`B193`, Jan 23. 10.) - nejdřív `B193b-c`, které drží
 > vydání linkového JŘ MHD (`B191f`). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; spustí se
 > z modulu JŘ cestou `B190` (čeká na kolegy), mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
@@ -21,38 +21,35 @@ Rozdílový JŘ je mimo rozsah (bude nástroj modulu JŘ). Zamčené jsou jen po
 
 **Před vydáním linkového MHD** (drží `B191f`):
 
-1. **`B193a` Dopravce a poznámka nad linku v linkovém MHD** [S]. Nabídka dat je nabízí, agenda je posílá
-   vždy prázdné; vývěska MHD dopravce téže linky tiskne. **Rozhodnout (Jan):** doplnit dopravce jako
-   vývěska (zlepšení proti starému tisku), nebo pole odebrat. Poznámku nad linku MHD nemá odkud vzít.
-2. **`B193b` Číslo linky v šablonách MHD** [S] (nález 22. 10.). Vývěska tiskne licenční číslo (CB_DP 325018),
+1. **`B193b` Číslo linky v šablonách MHD** [S] (nález 22. 10.). Vývěska tiskne licenční číslo (CB_DP 325018),
    zkušební linkový veřejné (18). **Rozhodnout které** (ověřit proti staré vývěsce MHD) a sjednotit obě
    šablony i výchozí název PDF v okně Tisk.
-3. **`B193c` Drobné rozdíly linkového MHD proti vývěsce** [S]. Typ JŘ při výluce i návrhu, výchozí skupina
+2. **`B193c` Drobné rozdíly linkového MHD proti vývěsce** [S]. Typ JŘ při výluce i návrhu, výchozí skupina
    linek (čte jiný příznak zablokování), výběr linek bez platnosti a s interním číslem místo čísla linky,
    popis Směru pro tisk odkazuje na obousměrný tisk, který MHD nemá.
 
 **Napříč agendami - jen popisky, nic se neukládá:**
 
-4. **`B193d` Popisky a skupiny parametrů** [S]. Skupina „Tabulka linky" → „Tabulka spojů" (název prvku,
+3. **`B193d` Popisky a skupiny parametrů** [S]. Skupina „Tabulka linky" → „Tabulka spojů" (název prvku,
    `ux-conventions §8`), pořadí voleb Tvaru názvu zastávky. Pojistka: drift test parametrů agend
    (zakázané tvary, stejný parametr = stejný popisek) - dnes parametry nehlídá nic.
-5. **`B193e` Skupiny spojů jedním názvem** [M] (Jan 12. 10.). Tři názvy pro totéž (vývěska AD, linkový AD,
+4. **`B193e` Skupiny spojů jedním názvem** [M] (Jan 12. 10.). Tři názvy pro totéž (vývěska AD, linkový AD,
    linkový MHD) - názvy parametrů sjednotit hned. Zamčené volby obou AD se liší („Pracovní / Sobota…"
    × „Pracovní dny / Soboty…"), ty jen se stabilním kódem vedle popisku. Návrh v [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
 
 **Tisk a data - mění výstup vydaných agend:**
 
-6. **`B193f` Popis platnosti a typ JŘ jednotně** [S]. Popis platnosti má čtyři tvary („Platí od X",
+5. **`B193f` Popis platnosti a typ JŘ jednotně** [S]. Popis platnosti má čtyři tvary („Platí od X",
    „Platí od X do Y", „X - Y"), návrh JŘ je jednou „návrh jízdního řádu", jednou „NÁVRH". **Rozhodnout
    cílový tvar (Jan)** - změna pohne vytištěnými vývěskami zákazníků.
-7. **`B193g` Linka bez dat řekne proč ve všech agendách** [M]. Dnes jen linkový MHD; linkový AD vrátí
+6. **`B193g` Linka bez dat řekne proč ve všech agendách** [M]. Dnes jen linkový MHD; linkový AD vrátí
    prázdno, vývěska MHD spadne na chybu (zastaví tisk ostatních linek), vývěska AD stránky tiše vynechá.
-8. **`B193h` Pole napříč agendami** [S]. Linkový AD nemá veřejné označení linky (vývěska AD ano), číslo
+7. **`B193h` Pole napříč agendami** [S]. Linkový AD nemá veřejné označení linky (vývěska AD ano), číslo
    zastávky pro QR je ve vývěskách a v linkových pod jiným polem. Ověřit, jestli to někomu chybí.
 
 **Po vydání:**
 
-9. **`B56` Sloučení opsaného kódu agend** [L] (čekalo na doimplementaci knižního JŘ - splněno 22. 10.).
+8. **`B56` Sloučení opsaného kódu agend** [L] (čekalo na doimplementaci knižního JŘ - splněno 22. 10.).
    Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už rozešlo: výběr skupin linek
    a linek, hlavička linky (odtud `B193c` a `B193f`), společné parametry vývěsek. Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
 
@@ -70,7 +67,7 @@ Závazná rozhodnutí agend (sdílené tabulkové jádro, layout, fonty): [`R1/R
 
 Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; nastavení jako u AD (`B191d`) a funkční review 22. 10. - funkčně hotové; oracle, mezery a testovací linky v [`§18`](linkovy-knizni-jr-implementace-analyza.md).
 
-1. **`B191f` Vydání** [S] (s `B191e`), až půjde do verze, po `B193a-c`. Nejdřív finální zkouška (Jan), u zákazníka ověřit
+1. **`B191f` Vydání** [S] (s `B191e`), až půjde do verze, po `B193b-c`. Nejdřív finální zkouška (Jan), u zákazníka ověřit
    neověřené na dev datech: poznámky z trasy, příjezd/odjezd, atributy spoje mimo B/C ([`§18.7`](linkovy-knizni-jr-implementace-analyza.md)).
    Systémová šablona ze zkušební `templates/linkovy-jr-mhd-postskript-a5.json` (nové Id, bez „zkouška") s pravidlem
    zvýraznění aktuální zastávky (i šablony linkového AD); rozhodnout výběr typů provozu v šablonách mezi firmami

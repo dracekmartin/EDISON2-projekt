@@ -56,7 +56,8 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
     d ..AddField(fields, "POPIS_LINKY",           "Popis linky",              "text")
-    d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
+    // Bez „Poznámky nad linku": linka MHD ji má v datech (PoznamkaNadLinku), ale modul MHD ji
+    // zatím nenabízí k zadání (Jan 23. 10.). Až půjde zadávat, pole se přidá zpátky.
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
     d ..AddField(fields, "POPIS_PLATNOSTI",       "Popis platnosti",          "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
@@ -426,8 +427,10 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     d vals.%Set("TYP_JR",              typJr)
     d vals.%Set("QR_KOD",              $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"QRCode")))
     d vals.%Set("SMER",                $s(smerId=0:"T", 1:"Z"))
-    d vals.%Set("POZNAMKA_NAD_LINKU",  "")
-    d vals.%Set("POPIS_DOPRAVCE",      "")
+    // Dopravce z téhož zdroje jako vývěska MHD, jen jedním řádkem jako linkový AD. Starý knižní
+    // tisk MHD ho neposílal (`LinkyPrintFormatJR.cls:1100-1106`); tatáž linka ho ale má na vývěsce
+    // (rozhodnutí Jan 23. 10.).
+    d vals.%Set("POPIS_DOPRAVCE",      ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, dataDB, IdFa, linkaId, 1))
 
     // ── trasa: body → zastávkové řádky (kategorie 1001, slučování sousedů, odjezd/příjezd) ──
     s trasaId = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, linkaId)

@@ -434,6 +434,42 @@ Method TestPoznamkyZTrasy()
 	kill ^[db]ALVA.MHD.ENUMS(idfa), ^[db]ALVA.MHD.LSO(idfa)
 }
 
+/// `B193a`: dopravce z téhož zdroje jako vývěska MHD, jen jedním řádkem jako linkový AD (název,
+/// sídlo, ulice, „tel. "). Poznámku nad linku linkový MHD nenabízí - modul MHD ji nedává zadat.
+Method TestDopravceJakoVyveska()
+{
+	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", " DP, a.s. ", "Hlavní 1", "123 45 Město", "111 222", 1), "DP, a.s., 123 45 Město, Hlavní 1, tel. 111 222", "jedním řádkem")
+	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", "DP", "", "", "", 1), "DP", "bez adresy jen název")
+	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", "DP", "Hlavní 1", "Město", "111"), "DP"_$c(10)_"Hlavní 1"_$c(10)_"Město"_$c(10)_"tel: 111", "vývěska po řádcích beze změny")
+
+	do ..SetupSys(.sys)
+	kill ^||ML
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetSchema(.sys)
+	do $$$AssertTrue($get(^||ML("OUT",1)) '[ "POZNAMKA_NAD_LINKU", "nabídka dat bez poznámky nad linku")
+	do $$$AssertTrue($get(^||ML("OUT",1)) [ """POPIS_DOPRAVCE""", "nabídka dat s dopravcem")
+
+	if '##class(%SYS.Namespace).Exists("KV_DP") {
+		do $$$AssertSkipped("firma KV_DP není na serveru")
+		quit
+	}
+	do ..SysFirmy(.sys, "KV_DP")
+	kill ^||ML
+	set ^||ML("IN","LINKA_ID") = 1073, ^||ML("IN","SMER_TISKU") = "Tam"
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
+	set hodnoty = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)).values
+	do $$$AssertTrue('hodnoty.%IsDefined("POZNAMKA_NAD_LINKU"), "poznámka nad linku se neposílá")
+	set dopravce = hodnoty.%Get("POPIS_DOPRAVCE")
+	do $$$AssertEquals(dopravce, ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073, 1), "dopravce ze zdroje vývěsky")
+	set nazev = $piece(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073), $c(10), 1)
+	if nazev = "" {
+		do $$$AssertSkipped("firemní údaje KV_DP nejsou v systémovém namespace testu")
+		quit
+	}
+	do $$$AssertEquals($extract(dopravce, 1, $length(nazev)), nazev, "linka 1 začíná názvem dopravce z vývěsky: "_dopravce)
+	do $$$AssertTrue(dopravce '[ $c(10), "jedním řádkem")
+}
+
 /// Čísla čárkou seřazená vzestupně, aby nezáleželo na pořadí.
 ClassMethod Serazene(cisla As %String) As %String
 {

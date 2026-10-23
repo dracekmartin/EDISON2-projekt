@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B193a` Linkový JŘ MHD: dopravce a poznámka nad linku (hotovo 23. 10. 2026)
+
+Obě pole byla v nabídce dat a agenda je posílala vždy prázdná. Rozhodnutí Jan 23. 10.: dopravce
+tisknout jako vývěska MHD (jedním řádkem jako linkový AD, zlepšení proti starému tisku), poznámku nad
+linku odebrat, dokud ji modul MHD nedává zadat. Zkušební šablona má řádek „Přepravu zajišťuje".
+Detail changelog 2026-10-23.
+
 ## `B191d` Linkový JŘ MHD: nastavení jako u linkového AD (hotovo 22. 10. 2026)
 
 Městský linkový JŘ dostal nastavení linkového AD tam, kde dávají smysl (rozhodnutí Jan 22. 10.):

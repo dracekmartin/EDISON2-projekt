@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-23 - 🚌 linkový JŘ MHD: dopravce v hlavičce, bez poznámky nad linku (`B193a`)
+
+Linkový JŘ MHD nabízel v nabídce dat pole Popis dopravce a Poznámka nad linku a obě posílal vždy
+prázdná - prvek s nimi nic nevytiskl a autor šablony nepoznal proč. Vývěska MHD přitom dopravce téže
+linky tiskne. Dopravce teď jde z téhož zdroje jako u vývěsky, jen jedním řádkem jako u linkového AD
+(název, sídlo, ulice, „tel. "): KV_DP linka 1 „Dopravní podnik Karlovy Vary, a. s., 36009 Karlovy
+Vary, Sportovní 656/1, tel. 353505311". Starý knižní tisk MHD dopravce netiskl, je to vědomé zlepšení
+(rozhodnutí Jan 23. 10.). Poznámka nad linku z nabídky zmizela: linka MHD ji v datech má
+(`PoznamkaNadLinku`), ale modul MHD ji nedává zadat; až půjde, přidá se zpátky. Zkušební šablona
+linkového MHD dostala řádek „Přepravu zajišťuje" jako linkový AD a přišla o rámeček poznámky, hlavička
+se o uvolněné místo zkrátila. Vývěska MHD tiskne dopravce po řádcích beze změny (ověřeno voláním
+na CB_DP 11350). Test `LinkovyJrMhdTest.TestDopravceJakoVyveska` (ověřeno mutací).
+
 ## 2026-10-22 (8) - 🚌 linkový JŘ MHD: poznámky z trasy u zastávky
 
 Starý knižní tisk MHD připisuje k zastávce poznámky z trasy linky a my je nečetli. Jde o poznámky ke
