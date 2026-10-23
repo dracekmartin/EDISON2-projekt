@@ -1,3 +1,4 @@
+using TemplateDesigner.Models;
 using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -30,10 +31,10 @@ public class DuvodPrazdnehoVystupuTests
     }
 
     [Fact]
-    public void ZadnaLinkaNemaData_HlaskaNeseDuvody()
+    public void ZadnaLinkaNemaData_StavJmenujeLinky()
     {
-        Assert.Equal($"Žádná vybraná linka nemá data: linka 20 - {Duvod}",
-            PrintDialogViewModel.ZadnaData([$"linka 20 - {Duvod}"], "obecná hláška"));
+        Assert.Equal("Žádná vybraná linka nemá data: linka 20, linka 21",
+            PrintDialogViewModel.ZadnaData([("linka 20", Duvod), ("linka 21", null)], "obecná hláška"));
         Assert.Equal("obecná hláška", PrintDialogViewModel.ZadnaData([], "obecná hláška"));
         Assert.Equal("obecná hláška", PrintDialogViewModel.ZadnaData(null, "obecná hláška"));
     }
@@ -41,8 +42,36 @@ public class DuvodPrazdnehoVystupuTests
     [Fact]
     public void VynechanaLinka_JeVidetUHotovehoVystupu()
     {
-        Assert.Equal(" · bez dat vynecháno: linka 20 - x; linka 21",
-            PrintDialogViewModel.DovetekVynechanych(["linka 20 - x", "linka 21"]));
+        Assert.Equal(" · bez dat vynecháno: linka 20, linka 21",
+            PrintDialogViewModel.DovetekVynechanych([("linka 20", "x"), ("linka 21", null)]));
         Assert.Equal("", PrintDialogViewModel.DovetekVynechanych([]));
+    }
+
+    /// <summary>`B193g`: linka bez dat je hláška (problém, ne text dole) - s důvodem od agendy jako radou
+    /// a s linkou, na kterou klik přepne; bez důvodu obecná rada.</summary>
+    [Fact]
+    public void LinkaBezDat_JeProblemSDuvodemJakoRadou()
+    {
+        var h = KontrolaVystupu.LinkaBezDat("linka 20", Duvod);
+
+        Assert.Equal(ZavaznostHlaseni.Chyba, h.Zavaznost);
+        Assert.Equal("linka 20", h.Kde);
+        Assert.Equal("nemá data, nevytiskne se", h.Co);
+        Assert.Equal(Duvod, h.Rada);
+        Assert.Equal("linka 20", h.Linka);
+        Assert.False(string.IsNullOrWhiteSpace(KontrolaVystupu.LinkaBezDat("linka 21", null).Rada));
+    }
+
+    [Fact]
+    public void LinkyBezDat_JsouPredOstatnimiHlaskami()
+    {
+        var ostatni = new Hlaseni(ZavaznostHlaseni.Upozorneni, "Kód (QR, čárový)", "je malý");
+
+        var vse = KontrolaVystupu.SBezDat([("linka 20", Duvod)], [ostatni]);
+
+        Assert.Equal(2, vse.Count);
+        Assert.Equal("linka 20", vse[0].Linka);
+        Assert.Same(ostatni, vse[1]);
+        Assert.Single(KontrolaVystupu.SBezDat(null, [ostatni]));
     }
 }

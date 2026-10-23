@@ -204,15 +204,14 @@ ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
     q ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetAvailableSkupiny(.sys)
 }
 
-/// Linky pro výběr instancí stejně jako u vývěsky MHD (číslo, název, platnost), jen i bez trasy:
-/// linkový JŘ u takové linky napíše důvod (`DUVOD_PRAZDNE`), schovaná by vypadala jako chybějící.
+/// Linky pro výběr instancí stejně jako u vývěsky MHD (číslo, název, platnost, i linky bez trasy).
 /// Do 23. 10. tu byla vlastní kopie, která se rozešla v příznaku zablokované skupiny.
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
     s err = ""
     try {
         $$$FillParams
-        s ^||ML("OUT","1") = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).SeznamLinek(IdFa, dataDB, 0).%ToJSON()
+        s ^||ML("OUT","1") = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).SeznamLinek(IdFa, dataDB).%ToJSON()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
@@ -224,6 +223,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         k ^||TiskKnizniMhd
+        d ..ZacitDuvodyPrazdne()
 
         s linkaId = $g(^||ML("IN","LINKA_ID"))
         i linkaId = "" s linkaId = $g(^||ML("IN","INSTANCE_ID"))
@@ -233,48 +233,24 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s smery = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).SmeryKTisku($g(^||ML("IN","SMER_TISKU")))
         d ..PriradNegativniZnacky(.sys, IdFa, dataDB, linkaId, smery, .znacky)
         s typyLinky = ..TypyProvozuLinky(IdFa, dataDB, linkaId)
-        s stranek = 0
         f si = 1:1:$l(smery, ",") {
             s smerId = $s($p(smery, ",", si) = "Z":1, 1:0)
             s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, smerId, .znacky)
             i page = "" continue
-            s stranek = stranek + 1
             d page.values.%Set("TYPY_PROVOZU_LINKY", typyLinky)
             s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
         }
-        // Linka bez jediné stránky: důvod a rada pro uživatele místo prázdna. Chybou to není -
-        // při tisku víc linek by jedna bez dat zastavila ostatní (starý tisk tu spadl na `<SUBSCRIPT>`).
-        i 'stranek s ^||ML("OUT","DUVOD_PRAZDNE") = ..DuvodPrazdneho()
+        // Linka bez jediné stránky: důvod a rada místo prázdna (starý tisk tu spadl na `<SUBSCRIPT>`).
+        d ..VydatDuvodPrazdne()
     }
     catch (ex) { $$$CatchErrRest }
     ret $$$OK
-}
-
-/// Důvod prázdné stránky směru pro uživatele (co v datech chybí a co s tím). Vrací "" pro
-/// `q ..Prazdna(...)` v `BuildStrankaLinky`.
-ClassMethod Prazdna(smerId As %Integer, duvod As %String) As %String
-{
-    s ^||TiskKnizniMhd("duvod", smerId) = duvod
-    q ""
 }
 
 /// Spoje mají časy, ale ani jeden na zastávce, kterou linkový JŘ tiskne (KV_DP 1106).
 ClassMethod DuvodBezZastaveni() As %String
 {
     q "Žádný spoj linky nestaví na zastávce kategorie Zastávka - časy mají jen body trasy jiné kategorie. Zkontrolujte zastávky na trase linky v modulu MHD."
-}
-
-/// Důvody prázdných směrů bez opakování; směr, který prošel, žádný nemá.
-ClassMethod DuvodPrazdneho() As %String
-{
-    s out = "", smer = ""
-    f {
-        s smer = $o(^||TiskKnizniMhd("duvod", smer))
-        q:smer=""
-        s duvod = ^||TiskKnizniMhd("duvod", smer)
-        s:'$lf($lfs(out, $c(10)), duvod) out = $s(out="":duvod, 1:out_$c(10)_duvod)
-    }
-    q $tr(out, $c(10), " ")
 }
 
 /// Parametry typů provozu, které mají na lince aspoň jeden spoj (oba směry), jako JSON pole názvů
@@ -364,7 +340,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
 
     // ── trasa: body → zastávkové řádky (kategorie 1001, slučování sousedů, odjezd/příjezd) ──
     s trasaId = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, linkaId)
-    i trasaId = "" q ..Prazdna(smerId, "Linka nemá zadanou trasu. Doplňte trasu u linky v modulu MHD.")
+    i trasaId = "" q ..PrazdnaStranka("Linka nemá zadanou trasu. Doplňte trasu u linky v modulu MHD.")
     // Název zastávky k datu platnosti linky chce $h, LSO drží ISO text (legacy $$$EDDN, :327).
     // Do 12. 10. tu šel text a vybral se jiný název (KV_DP 1438: „KV Arena" místo „MATTONI Arena").
     s hrlod = $zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiOd")),3,,,,,,,-1)
@@ -409,7 +385,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         s body(pocetBodu) = $lb(bodId, zastavkaId, nazev, zona, odjPri, cislo, $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastavkaId,"DTA",1,"Oznacnik")), znackyBodu, poznamkyBodu)
         s bodyMapa(bodId) = pocetBodu
     }
-    i pocetBodu = 0 q ..Prazdna(smerId, "Na trase linky není žádná zastávka kategorie Zastávka. Linkový JŘ tiskne jen zastávky této kategorie, ostatní body trasy přeskočí - zkontrolujte zastávky na trase linky v modulu MHD.")
+    i pocetBodu = 0 q ..PrazdnaStranka("Na trase linky není žádná zastávka kategorie Zastávka. Linkový JŘ tiskne jen zastávky této kategorie, ostatní body trasy přeskočí - zkontrolujte zastávky na trase linky v modulu MHD.")
 
     // ── spoje směru: MakeTableSpoj → časy per řádek; skupiny = TypProvozu ──
     // Načítají se před řádky zastávek, protože Zastávky, kde žádný spoj nestaví, řádky ubírá.
@@ -435,12 +411,12 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         s razeni($g(provozPoradi(typProvozu), 999), typProvozu, vychoziCas, spojId) = ""
         m spojTabulka(spojId) = arrtbsp("arr",1)   // cache pro BuildSpojMhd
     }
-    i '$d(razeni) q ..Prazdna(smerId, $s('$g(spojuSmeru):"Linka nemá ve vybraném směru žádné spoje.", $g(vypnuteTypem)=spojuSmeru:"Vybrané typy provozu nemají na lince žádné spoje. V parametrech (Typy provozu pro tisk) zapněte aspoň jeden typ, který linka má.", 1:"Spoje linky nemají spočítané časy, nejspíš chybí jízdní doby. Doplňte jízdní doby linky v modulu MHD."))
+    i '$d(razeni) q ..PrazdnaStranka($s('$g(spojuSmeru):"Linka nemá ve vybraném směru žádné spoje.", $g(vypnuteTypem)=spojuSmeru:"Vybrané typy provozu nemají na lince žádné spoje. V parametrech (Typy provozu pro tisk) zapněte aspoň jeden typ, který linka má.", 1:"Spoje linky nemají spočítané časy, nejspíš chybí jízdní doby. Doplňte jízdní doby linky v modulu MHD."))
 
     // Zastávky, kde žádný tištěný spoj nestaví (jen projíždí nebo jede jinudy), se vynechají jako
     // u AD. Rozhodují spoje vybraných typů provozu, ne celá linka.
     i $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI")) = "Netisknout" d ..JenZastavujici(.body, .pocetBodu, .bodyMapa, .spojTabulka)
-    i pocetBodu = 0 q ..Prazdna(smerId, ..DuvodBezZastaveni())
+    i pocetBodu = 0 q ..PrazdnaStranka(..DuvodBezZastaveni())
 
     // 2. průchod: zastávkové řádky vč. zdvojení příjezd/odjezd; rowMeta(i)=$lb(radekBodu, typ)
     s zastavky = ##class(%DynamicArray).%New()
@@ -499,7 +475,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
             }
         }
     }
-    i spoje.%Size() = 0 q ..Prazdna(smerId, ..DuvodBezZastaveni())
+    i spoje.%Size() = 0 q ..PrazdnaStranka(..DuvodBezZastaveni())
 
     // ── poznámky (pořadí druhů: 1 dny, 2 NZ, 4 poznámky spoje, 5 atributy, zastávkové) ──
     s poznamky = ##class(%DynamicArray).%New()

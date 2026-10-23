@@ -244,9 +244,10 @@ Každý OUT node je vlastní `%DynamicObject.%ToJSON()` → na .NET straně `Cac
 **Pro agendu s jediným výstupem** (např. jedna faktura) stačí zapsat pouze `OUT[1]` - C# strana přijímá 1..N stránek.
 
 **Instance bez jediné stránky** (nestandardní data) vrací místo prázdna `OUT("DUVOD_PRAZDNE")` = text
-pro uživatele: co v datech chybí a co s tím (dnes `LinkovyJrMhd`). Návrhář ho ukáže v náhledu
-a v tisku víc instancí u vynechaných. ⚠️ **Ne chyba přes `$$$ThrowStatus`**: výjimka by při tisku
-víc linek zastavila i ty s daty.
+pro uživatele: co v datech chybí a co s tím. Všechny agendy JŘ přes `BaseAgenda`: `ZacitDuvodyPrazdne`
+na začátku GetData, `q ..PrazdnaStranka("…")` místo prázdné stránky, `VydatDuvodPrazdne` na konci.
+Návrhář z něj udělá hlášku-problém „nemá data, nevytiskne se" (náhled, kontrola, tisk víc linek).
+⚠️ **Ne chyba přes `$$$ThrowStatus`**: výjimka by při tisku víc linek zastavila i ty s daty.
 
 ---
 

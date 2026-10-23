@@ -160,16 +160,16 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
     s err = ""   // $$$CatchErrRest čte err; bez init by catch (např. firma bez MHD dat → throw) padl na <UNDEFINED>err
     try {
         $$$FillParams
-        s ^||ML("OUT","1") = ..SeznamLinek(IdFa, dataDB, 1).%ToJSON()
+        s ^||ML("OUT","1") = ..SeznamLinek(IdFa, dataDB).%ToJSON()
     } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
 /// Linky skupiny pro výběr instancí (číslo, název, platnost). Sdílí ho linkový JŘ MHD, aby se táž
-/// linka v obou nabízela stejně. `jenSTrasou` = vynechat linky bez trasy: vývěska by na nich
-/// spadla, linkový JŘ u nich napíše důvod (`DUVOD_PRAZDNE`), takže je ukáže.
+/// linka v obou nabízela stejně. Nabízí i linky bez trasy - obě agendy u nich napíšou důvod
+/// (`DUVOD_PRAZDNE`); do 23. 10. je vývěska schovávala, protože na nich padala.
 /// Helper - volá se z GetAvailableInstances obou agend MHD, které catch mají.
-ClassMethod SeznamLinek(IdFa As %String, dataDB As %String, jenSTrasou As %Boolean = 1) As %DynamicArray
+ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
 {
     s search = $zcvt($g(^||ML("IN","search")), "L")
     s limit  = +$g(^||ML("IN","limit"))
@@ -191,11 +191,7 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String, jenSTrasou As %Boole
         s LinkaID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID))
         q:LinkaID=""
 
-        // Přeskočit linky bez nastavené trasy - orphan / nedokončené záznamy,
-        // GetData vývěsky by na nich padl na <SUBSCRIPT> v PripravitTrasu.
-        if jenSTrasou && (##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, LinkaID) = "") continue
-
-        s cislo  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
+        s cislo  =$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
         if cislo = "" s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
         s nazev  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
         // LSO drží ISO tvar; ven jako u AD (14.12.2025), ne „2025-12-14" (Jan 23. 10.).
@@ -296,6 +292,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i 'LinkaID $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
 
         k ^||TiskMHD
+        d ..ZacitDuvodyPrazdne()
 
         // ── Příprava konfigurace ────────────────────────────────────────
         s TrasaID = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, LinkaID)
@@ -306,8 +303,13 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s platnostDoHrl = $zdh(platnostDo, 3)
         s PlatnostChronometrazeID = ##class(ALVA.MHD.ChronometrazeFce).GetPlatnostChronometrazeID(IdFa, dataDB, VariantaChronometrazeID, platnostOdHrl)
 
-        // Linka bez nastavené trasy - fáze 1 by padla na <SUBSCRIPT>. Vyhodit srozumitelnou chybu.
-        if TrasaID = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_LinkaID_" nemá nastavenou trasu - nelze tisknout"))
+        // Linka bez nastavené trasy - fáze 1 by padla na <SUBSCRIPT>. Důvod pro uživatele jako u linkového
+        // JŘ MHD, ne chyba: ta by při tisku víc linek zastavila i ty s daty (`B193g`, do 23. 10. ThrowStatus).
+        if TrasaID = "" {
+            d ..PrazdnaStranka("Linka nemá zadanou trasu. Doplňte trasu u linky v modulu MHD.")
+            d ..VydatDuvodPrazdne()
+            quit
+        }
 
         // Nastavení auto-poznámkování
         s AutoPoznamkyRozdilTrasy = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpoju"))
@@ -382,6 +384,9 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // FÁZE 6: Sestavení JSON výstupu - pole stránek
         // ═══════════════════════════════════════════════════════════════════
         d ..SestavitStranky(.sys)
+        // Vývěska bez odjezdů se vynechává (konečná) - linka bez jediné stránky je ta, odkud nejede nic odnikud.
+        s maSpoje = ($o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,LinkaID,"")) '= "")
+        d ..VydatDuvodPrazdne($s('maSpoje:"Linka nemá žádné spoje. Doplňte spoje linky v modulu MHD.", 1:"Z žádné zastávky linky neodjíždí žádný spoj. Zkontrolujte spoje a jízdní doby linky v modulu MHD."))
     }
     catch (ex) { $$$CatchErrRest }
     k ^||TiskMHD                       // úklid working global i po chybě (self-healing kill je na začátku)

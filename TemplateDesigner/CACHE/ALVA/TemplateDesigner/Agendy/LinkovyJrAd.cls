@@ -539,6 +539,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         k ^||TiskKnizni                    // per-request cache (W-mapy)
+        d ..ZacitDuvodyPrazdne()
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         i sku = "" s sku = $o(^[dataDB]JRL(""))
@@ -583,6 +584,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
                 else { s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON() }
             }
         }
+        // Stránky linky vznikly, ale výlep žádná zastávka nedostala - jiný důvod než chybějící data.
+        d ..VydatDuvodPrazdne($s(vylepy:"Žádná zastávka linky nedostala výlep: z žádné neodjíždí spoj, který by dál ještě stavěl, nebo žádná neodpovídá nastavení Zvýraznit zastávku.", 1:""))
     }
     catch (ex) { $$$CatchErrRest }
     ret $$$OK
@@ -744,11 +747,12 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s ^||TiskKnizni("zastavky","hrl") = ..HorologPlatnostiOdLinky(dataDB, sku, lin)
     // U obousměrné stránky stačí spoje v jednom ze směrů - kdyby se ptalo jen na `smer`, linka
     // obsluhovaná pouze zpět by nevrátila nic.
+    // Důvod prázdné stránky stejnými slovy jako linkový JŘ MHD (`BaseAgenda.PrazdnaStranka`, `B193g`).
     i obousmerne {
-        i '..MaSpoje(dataDB, sku, lin, "T") && '..MaSpoje(dataDB, sku, lin, "Z") q ""
+        i '..MaSpoje(dataDB, sku, lin, "T") && '..MaSpoje(dataDB, sku, lin, "Z") q ..PrazdnaStranka("Linka nemá ve vybraném směru žádné spoje.")
     }
     else {
-        i '..MaSpoje(dataDB, sku, lin, smer) q ""
+        i '..MaSpoje(dataDB, sku, lin, smer) q ..PrazdnaStranka("Linka nemá ve vybraném směru žádné spoje.")
     }
 
     s rec = ..Jazyk(dataDB)
@@ -874,7 +878,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i prvniNazev = "" s prvniNazev = ..NazevZastavky(dataDB, czst)
         s posledniNazev = ..NazevZastavky(dataDB, czst)
     }
-    i idx = 0 q ""
+    i idx = 0 q ..PrazdnaStranka($s('tiskBezZastaveni:"Žádný spoj linky ve vybraném směru nestaví na žádné zastávce, a ty se podle nastavení Zastávky, kde žádný spoj nestaví, netisknou. Zkontrolujte časy spojů v jízdních řádech.", 1:"Na trase linky není žádná zastávka. Zkontrolujte trasu linky v jízdních řádech."))
 
     d vals.%Set("VYCHOZI_ZASTAVKA", prvniNazev)
     d vals.%Set("KONECNA_ZASTAVKA",       posledniNazev)
@@ -931,7 +935,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         }
     }
     }
-    i spoje.%Size() = 0 q ""
+    i spoje.%Size() = 0 q ..PrazdnaStranka("Žádný spoj linky nepatří do sloupců šablony. Zkontrolujte Rozdělení sloupců dle platnosti, případně vlastní rozložení sloupců u prvku Tabulka spojů.")
 
     // ── poznámky (pevné pořadí druhů 1:1 MT3: platnosti, NZ, návaznosti - pokračuje/vyčká/
     //    navazuje, atributy, místenkování, stálé značky, poznámky linky) ──

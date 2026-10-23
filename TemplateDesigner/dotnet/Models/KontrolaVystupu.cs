@@ -16,6 +16,20 @@ public static class KontrolaVystupu
     /// <summary>Hodnota, kterou tiskové okno připíše každé stránce dat: popis linky („číslo - název").</summary>
     public const string LinkaKlic = "__LINKA_PRO_HLASKY";
 
+    /// <summary>
+    /// Linka bez jediné stránky (`B193g`): problém, protože se z ní nevytiskne nic. Rada = důvod od
+    /// agendy (co v datech chybí a co s tím). Klik přepne na linku.
+    /// </summary>
+    /// <remarks>Do 23. 10. byla jen textem ve stavovém řádku, takže se nedala prokliknout a v tiskovém
+    /// okně ji kontrola neukázala vůbec (rozhodnutí Jan: patří mezi hlášky, červeně).</remarks>
+    public static Hlaseni LinkaBezDat(string linka, string? duvod) =>
+        new(ZavaznostHlaseni.Chyba, linka, "nemá data, nevytiskne se",
+            string.IsNullOrWhiteSpace(duvod) ? "zkontrolujte jízdní řád linky" : duvod) { Linka = linka };
+
+    /// <summary>Hlášky linek, které nedaly data - před hláškami ostatních linek.</summary>
+    public static List<Hlaseni> SBezDat(IReadOnlyList<(string Linka, string? Duvod)>? bezDat, IEnumerable<Hlaseni> ostatni) =>
+        [.. (bezDat ?? []).Select(v => LinkaBezDat(v.Linka, v.Duvod)), .. ostatni];
+
     /// <summary>Stránky dat po linkách, v pořadí výběru.</summary>
     public static List<(string Linka, IReadOnlyList<DataContext> Stranky)> PoLinkach(IReadOnlyList<DataContext> stranky) =>
         [.. stranky

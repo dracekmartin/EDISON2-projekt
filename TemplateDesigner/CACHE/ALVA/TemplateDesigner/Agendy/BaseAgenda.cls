@@ -521,6 +521,44 @@ ClassMethod HorologPlatnostiOdLinky(dataDB As %String, sku As %String, lin As %S
 /// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
 /// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). Sdílí vývěska i linkový JŘ AD, aby táž linka
 /// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`NormalizLinku`).
+/// ── Důvod prázdného výstupu (`DUVOD_PRAZDNE`, `cache-api.md`) ──
+/// Agenda během GetData zapíše, proč stránka nevznikla (co v datech chybí a co s tím), a na konci
+/// `VydatDuvodPrazdne` důvody pošle - jen když nevznikla žádná stránka. Návrhář z nich udělá hlášku
+/// „nemá data, nevytiskne se". Sdílí všechny agendy JŘ, aby linka bez dat hlásila totéž všude (`B193g`).
+ClassMethod ZacitDuvodyPrazdne()
+{
+    k ^||TdDuvodPrazdne
+}
+
+/// Zapíše důvod (stejný jen jednou) a vrátí "" - pro `q ..PrazdnaStranka("…")` místo prázdné stránky.
+ClassMethod PrazdnaStranka(duvod As %String) As %String
+{
+    i (duvod '= "") && '$d(^||TdDuvodPrazdne("text", duvod)) {
+        s ^||TdDuvodPrazdne("text", duvod) = ""
+        s ^||TdDuvodPrazdne($i(^||TdDuvodPrazdne)) = duvod
+    }
+    q ""
+}
+
+/// Konec GetData: bez jediné stránky v `^||ML("OUT")` pošle zapsané důvody, a když žádný není,
+/// `vychozi`. Chybou to vědomě není - při tisku víc linek by zastavila i ty s daty.
+ClassMethod VydatDuvodPrazdne(vychozi As %String = "")
+{
+    s k = "", stranek = 0
+    f {
+        s k = $o(^||ML("OUT", k))
+        q:k=""
+        i $isvalidnum(k) s stranek = 1 q
+    }
+    i 'stranek {
+        s out = ""
+        f i=1:1:+$g(^||TdDuvodPrazdne) s out = out_$s(out="":"", 1:" ")_^||TdDuvodPrazdne(i)
+        s:out="" out = vychozi
+        s:out'="" ^||ML("OUT","DUVOD_PRAZDNE") = out
+    }
+    k ^||TdDuvodPrazdne
+}
+
 /// Razítko typu JŘ linky AD podle `PATCH,"OBJ"` (1 výluka, 2 návrh). Texty jako u MHD
 /// (`ZastavkoveJrMhd.TypJrLinky`), aby razítko vypadalo ve všech agendách stejně; starý postskriptový
 /// tisk AD psal u návrhu „návrh jízdního řádu" (rozhodnutí Jan 23. 10.: jednotně „NÁVRH").

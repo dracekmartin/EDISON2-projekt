@@ -1140,7 +1140,7 @@ public partial class MainWindow : Window
     /// nebo agendy. Stránky dat nesou popis linky (<c>KontrolaVystupu.LinkaKlic</c>).
     /// <paramref name="vynechane"/> = linky bez dat z posledního načtení, s důvodem od agendy.
     /// </summary>
-    private Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? NacitaniVsechLinek(out List<string> vynechane)
+    private Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? NacitaniVsechLinek(out List<(string Linka, string? Duvod)> vynechane)
     {
         var bezDat = vynechane = [];
         Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null;
@@ -1175,7 +1175,7 @@ public partial class MainWindow : Window
                         if (instPages is null)
                         {
                             // Linka bez dat nezastaví ostatní, ale nesmí zmizet potichu.
-                            bezDat.Add(duvod is null ? inst.Display : $"{inst.Display} - {duvod}");
+                            bezDat.Add((inst.Display, duvod));
                             continue;
                         }
                         // Linka ke každé stránce - kontrola v tiskovém okně z ní řekne, které lince
@@ -1219,7 +1219,7 @@ public partial class MainWindow : Window
     private async void BtnKontrola_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var nacitani = NacitaniVsechLinek(out _);
+        var nacitani = NacitaniVsechLinek(out var bezDat);
         if (nacitani is null || _vm.ActiveInstances.Count == 0)
         {
             _vm.StatusText = "Kontrola potřebuje vybrané linky - vyberte je na štítku vedle agendy.";
@@ -1240,18 +1240,21 @@ public partial class MainWindow : Window
             var data = await Task.Run(() => nacitani(parametry, prubeh));
             if (data is null or { Count: 0 })
             {
-                vysledek.Nadpis = "Databáze nevrátila žádná data.";
+                // Linky bez dat řeknou proč (`B193g`); bez nich jde nejspíš o výpadek databáze.
+                vysledek.Hlaseni = TemplateDesigner.Models.KontrolaVystupu.SBezDat(bezDat, []);
+                vysledek.Nadpis = bezDat.Count > 0 ? "Žádná vybraná linka nemá data" : "Databáze nevrátila žádná data.";
                 return;
             }
             var template = _vm.State.CurrentTemplate;
-            var hlaseni = await TemplateDesigner.Models.KontrolaVystupu.ZkontrolujAsync(template, data,
+            var hlaseni = TemplateDesigner.Models.KontrolaVystupu.SBezDat(bezDat,
+                await TemplateDesigner.Models.KontrolaVystupu.ZkontrolujAsync(template, data,
                 d => TemplateDesigner.Models.KontrolaVystupu.ZLinky(template, d, _previewCanvas!.HlaseniSazby),
                 (hotovo, celkem, linka) =>
                 {
                     vysledek.Nadpis = hotovo < celkem ? $"Kontroluji {hotovo + 1} z {celkem} · {linka}" : "";
                     vysledek.Prubeh = celkem > 0 ? 0.5 + 0.5 * hotovo / celkem : 1;
-                });
-            int linek = TemplateDesigner.Models.KontrolaVystupu.PoLinkach(data).Count;
+                }));
+            int linek = TemplateDesigner.Models.KontrolaVystupu.PoLinkach(data).Count + bezDat.Count;
             vysledek.Hlaseni = hlaseni;
             vysledek.Nadpis = hlaseni.Count > 0
                 ? $"Zkontrolováno {TemplateDesigner.Models.KontrolaVystupu.Linek(linek)}: {TemplateDesigner.Models.KontrolaVystupu.SouhrnPoctu(hlaseni)}"

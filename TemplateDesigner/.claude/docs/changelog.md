@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-23 (9) - 🚫 linka bez dat jako problém mezi hláškami, ve všech agendách (`B193g`)
+
+Linka, ze které nevznikla žádná stránka, byla jen textem ve stavovém řádku („Žádná data: linka 20")
+a důvod uměl napsat jen linkový JŘ MHD. Teď je to **hláška-problém** „linka 20 · nemá data, nevytiskne
+se" s důvodem od agendy jako radou (rozhodnutí Jan 23. 10.: patří mezi hlášky, červeně, protože se
+nic nevytiskne). Ukáže se v bloku hlášek náhledu, v kontrole z návrháře i v tiskovém okně (Zkontrolovat
+ji dá mezi ostatní hlášky, po vytvoření PDF je mezi hláškami bez otevírání okna); klik přepne na linku.
+Důvod posílají všechny agendy JŘ přes sdílené `BaseAgenda.PrazdnaStranka` / `VydatDuvodPrazdne` (linkový
+MHD na ně přešel ze své kopie): linkový AD (žádné spoje ve směru, žádná zastávka, žádný spoj ve sloupcích,
+žádný výlep), vývěska AD (bez spojů, odnikud nic neodjíždí), vývěska MHD (bez trasy, bez spojů, odnikud nic).
+Vývěska MHD u linky bez trasy už nepadá na chybu, která by při tisku víc linek zastavila i ostatní, a takové
+linky ve výběru neschovává - výběr linek je u obou agend MHD totožný. Testy `DuvodPrazdnehoTest` (Caché,
+ověřeno mutací), `DuvodPrazdnehoVystupuTests` (.NET); pravidlo v `cache-api.md`, příručka.
+
 ## 2026-10-23 (8) - 🔀 rozdílový JŘ se otevře z jízdních řádů (`B192`)
 
 V hlavním okně jízdních řádů (ISYJR2) přidal Petr Šmíd položku Nástroje → Porovnání linek: uživatel

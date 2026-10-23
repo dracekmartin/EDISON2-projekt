@@ -372,12 +372,10 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _realPreviewData = null;
                 Models.ColorHex.UiData = null;
-                NastavHlaseni(ZdrojHlaseni.Data, []);
-                // Agenda umí říct, co v datech chybí a co s tím (`DUVOD_PRAZDNE`) - jinak by uživatel
-                // hledal chybu v návrháři.
-                StatusText = duvodPrazdneho is null
-                    ? $"Žádná data: {instance.Display}"
-                    : $"Žádná data: {instance.Display} - {duvodPrazdneho}";
+                // Agenda řekne, co v datech chybí a co s tím (`DUVOD_PRAZDNE`) - jinak by uživatel
+                // hledal chybu v návrháři. Hláška, ne jen text dole (`B193g`).
+                NastavHlaseni(ZdrojHlaseni.Data, [Models.KontrolaVystupu.LinkaBezDat(instance.Display, duvodPrazdneho)]);
+                StatusText = $"Žádná data: {instance.Display}";
             }
             else
             {

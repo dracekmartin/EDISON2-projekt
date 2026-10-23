@@ -13,14 +13,6 @@ i pole v nabídce dat; po vydání platí „jen přidávat" (`cache-api.md §Ev
 **Co hlídají testy:** `AgendaSchemaDriftTests.cs:101-135` jen „stejné pole = stejný popisek a typ".
 Parametry sestavy, tvar hodnot a pole, která agenda vždy pošle prázdná, nehlídá nic.
 
-## B193g Linka bez dat
-
-- Linkový MHD pošle důvod a radu (`DUVOD_PRAZDNE`, `LinkovyJrMhd.cls:307`).
-- Linkový AD vrátí prázdno bez vysvětlení (`LinkovyJrAd.cls:595`, `:756-765`).
-- Vývěska MHD u linky bez trasy spadne na chybu (`ZastavkoveJrMhd.cls:303`) - při tisku víc linek
-  zastaví i ostatní, proti čemuž je `DUVOD_PRAZDNE` zavedený (`cache-api.md`).
-- Vývěska AD stránky bez odjezdů tiše vynechá (`ZastavkoveJrAd.cls:778`).
-
 ## B193h Číslo zastávky pro QR
 
 - Číslo zastávky pro adresu v QR: vývěsky `{CISLO_ZASTAVKA}` (AD číslo zastávky, MHD „číslo-označník",

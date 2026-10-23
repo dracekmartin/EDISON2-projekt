@@ -472,8 +472,8 @@ Method TestDopravceJakoVyveska()
 }
 
 /// `B193c`: linkový JŘ MHD se chová jako vývěska MHD - razítko typu JŘ (při návrhu i výluce vyhrává
-/// výluka), výchozí skupina linek (zablokovaná se přeskočí), skupiny a položky výběru linek (linkový
-/// navíc jen linky bez trasy, u kterých napíše důvod) a popis Směru pro tisk bez obousměrného tisku.
+/// výluka), výchozí skupina linek (zablokovaná se přeskočí), skupiny a položky výběru linek
+/// a popis Směru pro tisk bez obousměrného tisku.
 Method TestJakoVyveskaMhd()
 {
 	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
@@ -521,12 +521,8 @@ Method TestJakoVyveskaMhd()
 	do $$$AssertTrue(pocet > 0, "vývěska nabídla aspoň jednu linku")
 	set prvni = ##class(%DynamicArray).%FromJSON(linky(vyv)).%Get(0)
 	do $$$AssertTrue(prvni.subtitle?1"Platnost od "2N1"."2N1"."4N.E, "platnost ve výběru linek jako u AD (dd.mm.rrrr): "_prvni.subtitle)
-	set lin = ""
-	for  {
-		set lin = $order(polozky(lin))
-		quit:lin=""
-		do $$$AssertEquals(##class(ALVA.MHD.LinkyFce).GetTrasaId("KV_DP", "KV_DP", lin), "", "linka "_lin_" navíc jen proto, že nemá trasu")
-	}
+	// Od `B193g` nabízejí obě agendy i linky bez trasy (napíšou u nich důvod) - výběr je totožný.
+	do $$$AssertEquals($order(polozky("")), "", "linkový nabízí linku, kterou vývěska ne: "_$order(polozky("")))
 
 	kill ^||ML
 	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetParameters(.sys)

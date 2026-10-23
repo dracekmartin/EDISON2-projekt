@@ -536,6 +536,8 @@ Hlášky mají tři úrovně a žádná tisk nezastaví:
   mimo platnost jízdního řádu, zůstane prázdný. Doporučujeme zkontrolovat.
 - **Problém** (červené kolečko) - část obsahu se na papír nedostane, např. text se ořízne nebo sekce se
   nevejde na stránku. Stránka má v náhledu navíc červený rámeček. Rada u hlášky říká, co upravit.
+  Problém je i **linka, která nemá data** („linka 20 · nemá data, nevytiskne se") - rada řekne, co
+  v jízdním řádu linky chybí (třeba trasa nebo jízdní doby). Ostatní linky se přitom vytisknou.
 
 Náhled a blok hlášek se týkají jen linky, která je právě v náhledu. Tlačítkem **„Zkontrolovat"**
 v okně Tisk, lupou na liště nebo `Soubor → Zkontrolovat vybrané linky…` projdete **všechny vybrané

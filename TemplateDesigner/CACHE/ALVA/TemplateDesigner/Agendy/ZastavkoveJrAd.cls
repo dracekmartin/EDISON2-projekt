@@ -221,6 +221,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) - fresh per request
+        d ..ZacitDuvodyPrazdne()
         d ..NactiNastaveniNazvu()         // tvar názvu zastávky + „název pro MHD" (platí pro celou sestavu)
         d ..NactiJazyk()                  // jazyk textů značek = kultura šablony (#12843)
         d ..NactiTextyZnacek(dataDB)      // vysvětlivky dnů z číselníku zákazníka (musí až po NactiJazyk)
@@ -276,6 +277,10 @@ ClassMethod GetData(ByRef sys As %String) As %Status
                 }
             }
         }
+        // Vývěska bez odjezdů se vynechává (konečná), takže linka bez jediné stránky je ta, odkud
+        // nejede nic odnikud. Důvod stejnými slovy jako linkové agendy (`BaseAgenda.PrazdnaStranka`, `B193g`).
+        s maSpoje = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).MaSpoje(dataDB, sku, lin, "T") || ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).MaSpoje(dataDB, sku, lin, "Z")
+        d ..VydatDuvodPrazdne($s('maSpoje:"Linka nemá v jízdních řádech žádné spoje.", 1:"Z žádné zastávky linky neodjíždí žádný spoj. Zkontrolujte časy spojů a trasu linky v jízdních řádech."))
     }
     catch (ex) { $$$CatchErrRest }
     k ^||TiskAd                        // úklid working global i po chybě (self-healing kill je na začátku)

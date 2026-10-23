@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B193g` Linka bez dat řekne proč ve všech agendách (hotovo 23. 10. 2026)
+
+Hláška-problém „nemá data, nevytiskne se" s důvodem od agendy v náhledu, kontrole i tiskovém okně
+(rozhodnutí Jan 23. 10.: mezi hlášky, ne text dole, červeně). Důvod posílají všechny agendy JŘ jedním
+sdíleným kódem; vývěska MHD u linky bez trasy nepadá a linky bez trasy nabízí. Detail changelog 2026-10-23 (9).
+
 ## `B193f` Platnost a razítko typu JŘ jednotně (hotovo 23. 10. 2026)
 
 Hotová věta „Popis platnosti" vyřazená z nabídky dat (šablona skládá data od-do; vydané agendy ji
