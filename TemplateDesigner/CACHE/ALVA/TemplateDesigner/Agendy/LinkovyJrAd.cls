@@ -777,7 +777,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i platiDo '= "" s popisPlatnosti = popisPlatnosti_" do "_platiDo
     }
     d vals.%Set("POPIS_PLATNOSTI",        popisPlatnosti)
-    d vals.%Set("TYP_JR", $case(+$g(^[dataDB]JRL(sku,lin,"PATCH","OBJ")),1:"VÝLUKOVÝ",2:"návrh jízdního řádu",:""))
+    d vals.%Set("TYP_JR",                 ..TypJrLinkyAd(dataDB, sku, lin))
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     // ⚠️ U obousměrné stránky je směr **prázdný** - stránka nese oba a `SMER` u stránky by šablonu
     // navedl vytisknout jeden z nich jako by byl jediný. Směr každého spoje je na spoji;

@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-23 (7) - 🔖 razítko návrhu „NÁVRH" ve všech jízdních řádech (`B193f`)
+
+Pole „Typ jízdního řádu" tisklo u návrhu v agendách AD „návrh jízdního řádu" (starý postskriptový tisk
+AD), v agendách MHD „NÁVRH" (stará vývěska MHD). Rozhodnutí Jan 23. 10.: jednotně „NÁVRH", výluka
+všude „VÝLUKOVÝ". Vědomá odchylka od starého tisku AD; změní se výtisk linek AD s příznakem návrhu,
+kde šablona razítko tiskne (systémová šablona linkového AD vpravo nahoře). Obě agendy AD sdílejí
+`BaseAgenda.TypJrLinkyAd`. Test `LinkovyJrSmokeTest.TestAdObeCislaLinky` (razítko pro výluku, návrh
+a nic na vlastních datech). Gold digesty beze změny - žádná porovnávaná linka návrh nemá.
+
 ## 2026-10-23 (6) - 📅 platnost jen jako data od-do (`B193f`, část)
 
 Hotová věta „Popis platnosti" měla v každé agendě jiný tvar („Platí od X", „Platí od X do Y",

@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B193f` Platnost a razítko typu JŘ jednotně (hotovo 23. 10. 2026)
+
+Hotová věta „Popis platnosti" vyřazená z nabídky dat (šablona skládá data od-do; vydané agendy ji
+posílají dál kvůli starším šablonám), výběr linek MHD píše datum jako AD, razítko návrhu všude „NÁVRH"
+(odchylka od starého tisku AD, rozhodnutí Jan 23. 10.). Po cestě opravené předpřipravené tabulky, které
+při volání padaly. Detail changelog 2026-10-23 (6) a (7).
+
 ## `B193e` Rozdělení spojů do sloupců jedním názvem (hotovo 23. 10. 2026)
 
 Vývěska i linkový JŘ AD: „Rozdělení sloupců dle platnosti" (Jan 23. 10.), vývěska s popisem. Popisky

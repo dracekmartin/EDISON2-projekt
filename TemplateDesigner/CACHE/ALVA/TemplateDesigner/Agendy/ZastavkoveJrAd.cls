@@ -359,10 +359,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("POPIS_PLATNOSTI",        $s(platiOd'="":"Platí od "_platiOd, 1:""))
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
     d vals.%Set("DATUM_PLATNOSTI_DO",     platiDo)
-    // Typ JR (AD-N2) - PATCH,"OBJ" (gPrpLin dta3). Znění razítka 1:1 legacy JRapiLinPrtPS3.
+    // Typ JR (AD-N2) - PATCH,"OBJ" (gPrpLin dta3), znění jako u MHD (BaseAgenda.TypJrLinkyAd).
     // Pozn.: zastávková větev (JRapiLinPrtMhd) OBJ nečte → razítko nestaví automaticky;
     // TYP_JR je volitelný placeholder pro autora šablony (PS/knižní feature).
-    d vals.%Set("TYP_JR", $case(+$g(^[dataDB]JRL(sku,lin,"PATCH","OBJ")),1:"VÝLUKOVÝ",2:"návrh jízdního řádu",:""))
+    d vals.%Set("TYP_JR",                 ..TypJrLinkyAd(dataDB, sku, lin))
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
     // Poznámka nad linku (AD-N1) - legacy gPrpLin dta4 = PATCH,"Head"

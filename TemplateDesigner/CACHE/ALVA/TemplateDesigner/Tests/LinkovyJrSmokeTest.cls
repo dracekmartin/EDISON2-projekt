@@ -63,6 +63,18 @@ Method TestAdObeCislaLinky()
 	}
 	kill ^[db]JRL(sku)
 
+	// `B193f`: razítko typu JŘ jako u MHD (návrh „NÁVRH", ne „návrh jízdního řádu").
+	set sku = "TDTEST"_$translate($system.Util.CreateGUID(), "-")
+	try {
+		for objekt = $listbuild(1, "VÝLUKOVÝ"), $listbuild(2, "NÁVRH"), $listbuild(0, "") {
+			set ^[db]JRL(sku, "0380715", "PATCH", "OBJ") = $list(objekt, 1)
+			do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).TypJrLinkyAd(db, sku, "0380715"), $list(objekt, 2), "razítko pro OBJ="_$list(objekt, 1))
+		}
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRL(sku)
+
 	do ..SetupSys(.sys)
 	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro)
 	kill parametry
