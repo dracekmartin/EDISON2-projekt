@@ -3606,10 +3606,13 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // {prázdninový split prac. dnů} × {sloučení víkendu}; reuse existujícího NacistSkupinyDnu/ZarazeniSpoje.
     s pRozd = ##class(%DynamicObject).%New()
     s pRozd.name         = "ROZDELENI_SLOUPCU"
-    s pRozd.label        = "Rozdělení sloupců (typy provozu)"
+    // Název jako u linkového AD (Jan 23. 10.); do té doby „Rozdělení sloupců (typy provozu)" - typy
+    // provozu jsou pojem z MHD, v AD se spoje dělí podle dnů platnosti.
+    s pRozd.label        = "Rozdělení sloupců dle platnosti"
     s pRozd.type         = "enum"
     s pRozd.group        = "Minuty odjezdů"
     s pRozd.serverSide   = 1
+    s pRozd.description  = "Podle čeho se spoje rozdělí do sloupců minut odjezdů. Automaticky = podle nastavení u linky v jízdních řádech. Vlastní rozložení se nastavuje u prvku Minuty odjezdů - tady se jen ukáže, že ho šablona má."
     s pRozd.defaultValue = "Automaticky (dle linky)"
     s optsR = ##class(%DynamicArray).%New()
     d optsR.%Push("Automaticky (dle linky)")

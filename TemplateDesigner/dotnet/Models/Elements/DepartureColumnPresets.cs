@@ -26,7 +26,7 @@ public static class DepartureColumnPresets
     ];
 
     /// <summary>Vzory <b>linkového</b> JŘ - jiná agenda, jiné volby. Klíče odpovídají tomu, co
-    /// posílá server, popisky volbám parametru „Dělení spojů dle platnosti".</summary>
+    /// posílá server, popisky volbám parametru „Rozdělení sloupců dle platnosti".</summary>
     /// <remarks>⚠️ Nesplývá to s vývěskovými vzory schválně: linka jich má tři a jinak pojmenované.
     /// Společný je jen <b>tvar</b> definice, ne její nabídka.</remarks>
     public static IReadOnlyList<Preset> Linkove { get; } =

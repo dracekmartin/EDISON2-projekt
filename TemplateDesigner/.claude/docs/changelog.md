@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-23 (5) - 🏷️ „Rozdělení sloupců dle platnosti" v obou JŘ z AD (`B193e`)
+
+Nastavení, které rozděluje spoje do skupin sloupců podle dnů platnosti, se ve vývěsce AD jmenovalo
+„Rozdělení sloupců (typy provozu)" a v linkovém AD „Dělení spojů dle platnosti". Obě teď nesou název
+„Rozdělení sloupců dle platnosti" (rozhodnutí Jan 23. 10.); typy provozu jsou pojem z MHD. Vývěska
+k němu dostala popis jako linkový. Vnitřní názvy parametrů (`ROZDELENI_SLOUPCU` / `DELENI_SLOUPCU`)
+i popisky voleb zůstávají - ukládají se, takže uložené volby uživatelů platí dál. Stejný popisek obou
+parametrů hlídá `AgendaParameterDriftTests.ParametrySeStejnymUcelem_MajiStejnyPopisek`. Opravené
+okno Nápověda (tip u vývěsky), příručka a uložené popisy parametrů v systémových šablonách.
+
 ## 2026-10-23 (4) - 🏷️ parametry sestavy pod jednotnými názvy a pod dohledem testu (`B193d`)
 
 Skupina parametrů linkových JŘ „Tabulka linky" se jmenuje „Tabulka spojů" jako prvek, kterého se

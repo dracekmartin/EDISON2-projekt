@@ -193,7 +193,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // Dělení sloupců spojů podle platnosti (legacy in("A",2,"arr",3) = 0/1/2)
     s p = ##class(%DynamicObject).%New()
     s p.name = "DELENI_SLOUPCU"
-    s p.label = "Dělení spojů dle platnosti"
+    s p.label = "Rozdělení sloupců dle platnosti"
     s p.type = "enum"
     // Skupina = název prvku jako u vývěsek; do 23. 10. „Tabulka linky", což se pletlo s agendou (`ux-conventions §8`).
     s p.group = "Tabulka spojů"
@@ -701,7 +701,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Mapování labelu parametru „Dělení spojů dle platnosti" na legacy mód 0/1/2.
+/// Mapování volby parametru „Rozdělení sloupců dle platnosti" na legacy mód 0/1/2.
 ClassMethod DeleniZParametru(label As %String) As %Integer
 {
     // „Vlastní rozložení" sem nemá jak dojít jako skutečná volba - je to jen ukazatel a objeví se,

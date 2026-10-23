@@ -453,7 +453,7 @@ ClassMethod Porovnej(ByRef sys, db As %String, sku As %String, lin As %String, B
 	kill parametry
 	quit:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) 0
 	do ..NactiNase(.nase)
-	// Dělení 2 = výchozí hodnota našeho parametru „Dělení spojů dle platnosti"; obě strany musí
+	// Dělení 2 = výchozí hodnota našeho parametru „Rozdělení sloupců dle platnosti"; obě strany musí
 	// dostat totéž, jinak by se porovnávaly jiné sestavy.
 	//
 	// ⚠️ **Poznámky se berou v režimu „blok na směr"** (`poznRezim` = 1), protože tak vypadá i náš

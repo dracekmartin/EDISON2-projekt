@@ -298,7 +298,7 @@ public class HelpDialogViewModel : EDViewModel
                   "NE v parametrech sestavy - dřív to byly parametry tisku. Značka u odjezdu a její vysvětlivka " +
                   "jsou jedna volba, takže nemůže vzniknout značka, kterou legenda nevysvětlí. " +
                   "Když šablona prvek Poznámky nemá, značky se nevytisknou vůbec. " +
-                  "Rozvržení sloupců drží šablona: parametr sestavy „Rozdělení sloupců (typy provozu)“ je jen pohled " +
+                  "Rozvržení sloupců drží šablona: parametr sestavy „Rozdělení sloupců dle platnosti“ je jen pohled" +
                   "na definici v prvku odjezdů, takže se ta dvě nastavení nemůžou přebíjet. " +
                   "V seznamu zastávek jsou jen zastávky, kam z té vývěsky opravdu nějaký spoj jede.",
         },

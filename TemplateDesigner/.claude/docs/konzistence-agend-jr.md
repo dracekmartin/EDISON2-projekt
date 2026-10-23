@@ -13,15 +13,6 @@ i pole v nabídce dat; po vydání platí „jen přidávat" (`cache-api.md §Ev
 **Co hlídají testy:** `AgendaSchemaDriftTests.cs:101-135` jen „stejné pole = stejný popisek a typ".
 Parametry sestavy, tvar hodnot a pole, která agenda vždy pošle prázdná, nehlídá nic.
 
-## B193e Skupiny spojů jedním názvem
-
-- Zastávkový AD „Rozdělení sloupců (typy provozu)" ve skupině Minuty odjezdů (`ZastavkoveJrAd.cls:3626`),
-  linkový AD „Dělení spojů dle platnosti" (`LinkovyJrAd.cls:195`), linkový MHD skupina „Typy provozu
-  pro tisk" (`LinkovyJrMhd.cls:174`).
-- Zamčené volby obou AD se liší: „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty /
-  Neděle+svátky", „Pracovní / víkend (So+Ne+svátky)" × „Pracovní dny / víkend+svátky". Linkový AD
-  nemá „Automaticky (dle linky)". Návrh v [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
-
 ## B193f Popis platnosti a typ JŘ
 
 | Agenda | `POPIS_PLATNOSTI` | Místo |

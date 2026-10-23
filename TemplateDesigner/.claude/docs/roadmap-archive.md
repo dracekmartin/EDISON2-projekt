@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B193e` Rozdělení spojů do sloupců jedním názvem (hotovo 23. 10. 2026)
+
+Vývěska i linkový JŘ AD: „Rozdělení sloupců dle platnosti" (Jan 23. 10.), vývěska s popisem. Popisky
+voleb zůstávají (zamčené, sjednotit by šlo jen se stabilním kódem a převodem uložených hodnot - zatím
+se nevyplatí). MHD beze změny (vývěska bez volby, linkový zaškrtávátka typů provozu). Detail changelog
+2026-10-23 (5).
+
 ## `B193d` Popisky a skupiny parametrů (hotovo 23. 10. 2026)
 
 Skupina „Tabulka linky" → „Tabulka spojů" (název prvku), Tvar názvu zastávky jednou definicí pro obě

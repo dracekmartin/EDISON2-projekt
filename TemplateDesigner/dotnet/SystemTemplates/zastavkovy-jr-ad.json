@@ -426,7 +426,7 @@
     },
     {
       "name": "ROZDELENI_SLOUPCU",
-      "label": "Rozd\u011Blen\u00ED sloupc\u016F (typy provozu)",
+      "label": "Rozd\u011Blen\u00ED sloupc\u016F dle platnosti",
       "type": "enum",
       "defaultValue": "Automaticky (dle linky)",
       "options": [

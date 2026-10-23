@@ -698,7 +698,7 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   prázdniny / Pracovní o prázdninách / Sobota+Neděle+svátky (3 sloupce); Pracovní /
   Sobota+Neděle+svátky (2 sloupce); Pracovní mimo prázd. / Pracovní o prázd. / Sobota /
   Neděle+svátky (4 sloupce).
-- **Parametr „Rozdělení sloupců (typy provozu)"** (záložka Parametry / tiskový dialog) - je to
+- **Parametr „Rozdělení sloupců dle platnosti"** (záložka Parametry / tiskový dialog) - je to
   **pohled na definici sloupců uložených v šabloně a zároveň její ovladač**: ukazuje název vzoru,
   kterému vaše definice odpovídá, „Automaticky (dle linky)", když žádnou nemáte, nebo „Vlastní
   sloupce", když jste si ji poskládali po svém. Přepnutím parametru se definice v šabloně přepíše
@@ -973,7 +973,7 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
   z denního provozu se neztratí.
 - **Roztáhnout na výšku**
 
-Navíc jen u AD: **Rozdělení sloupců (typy provozu)**, **Řazení variant tras**, **Písmena variant
+Navíc jen u AD: **Rozdělení sloupců dle platnosti**, **Řazení variant tras**, **Písmena variant
 u odjezdů** (+ **První varianta bez písmene**), **Nejvýš sloupců variant tras**, **Samostatná stránka pro každý označník** (vše
 viz kap. 1), **V rozsahu nepoznámkovat schovat** a **Souhrn „všechny zastávky na znamení"** - místo
 značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
@@ -1234,7 +1234,7 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 
 **Tabulka linky:**
 
-- **Dělení spojů dle platnosti** - podle čeho se spoje rozdělí do skupin sloupců: *Bez rozlišení*,
+- **Rozdělení sloupců dle platnosti** - podle čeho se spoje rozdělí do skupin sloupců: *Bez rozlišení*,
   *Pracovní dny / víkend+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
   rozložení* se vybrat nedá - jen hlásí, že si šablona rozvržení drží vlastní.
 - **Sloupec tarifních čísel**, **Zastávky, kde žádný spoj nestaví**, **Písmeno systému u zóny**

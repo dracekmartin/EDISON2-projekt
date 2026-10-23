@@ -39,6 +39,26 @@ public class AgendaParameterDriftTests
     /// <summary>Vědomé rozdíly popisku téhož parametru mezi agendami. Prázdné = žádný není.</summary>
     private static readonly HashSet<string> ExemptLabel = new(StringComparer.Ordinal);
 
+    /// <summary>Parametry, které dělají v různých agendách totéž pod jiným názvem (název se ukládá
+    /// v šablonách, přejmenovat ho nejde) - uživatel je musí vidět pod stejným popiskem.</summary>
+    private static readonly (string A, string B, string Proc)[] StejnaVec =
+    [
+        ("ROZDELENI_SLOUPCU", "DELENI_SLOUPCU",
+            "rozdělení spojů do sloupců podle platnosti, vývěska × linkový JŘ AD (Jan 23. 10.)"),
+    ];
+
+    [Fact]
+    public void ParametrySeStejnymUcelem_MajiStejnyPopisek()
+    {
+        var labels = AllParams().Where(p => p.Label is not null)
+            .GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First().Label!);
+        foreach (var (a, b, proc) in StejnaVec)
+        {
+            Assert.True(labels.ContainsKey(a) && labels.ContainsKey(b), $"Parser nenašel {a} nebo {b}.");
+            Assert.True(labels[a] == labels[b], $"{a} „{labels[a]}\" × {b} „{labels[b]}\" - {proc}");
+        }
+    }
+
     private sealed record Param(string File, string Name)
     {
         public string? Label { get; set; }

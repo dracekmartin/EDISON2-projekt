@@ -19,28 +19,22 @@ Review zastávkového a linkového JŘ (AD i MHD) před vydáním linkového MHD
 jmenuje, tiskne nebo chová jinak. Doklady po položkách: [`konzistence-agend-jr.md`](konzistence-agend-jr.md).
 Rozdílový JŘ je mimo rozsah (bude nástroj modulu JŘ). Zamčené jsou jen popisky voleb parametrů.
 
-**Napříč agendami - jen popisky, nic se neukládá:**
-
-1. **`B193e` Skupiny spojů jedním názvem** [M] (Jan 12. 10.). Tři názvy pro totéž (vývěska AD, linkový AD,
-   linkový MHD) - názvy parametrů sjednotit hned. Zamčené volby obou AD se liší („Pracovní / Sobota…"
-   × „Pracovní dny / Soboty…"), ty jen se stabilním kódem vedle popisku. Návrh v [`§18.5`](linkovy-knizni-jr-implementace-analyza.md).
-
 **Tisk a data - mění výstup vydaných agend:**
 
-2. **`B193f` Popis platnosti a typ JŘ jednotně** [S]. Popis platnosti má čtyři tvary („Platí od X",
+1. **`B193f` Popis platnosti a typ JŘ jednotně** [S]. Popis platnosti má čtyři tvary („Platí od X",
    „Platí od X do Y", „X - Y"), návrh JŘ je jednou „návrh jízdního řádu", jednou „NÁVRH". **Rozhodnout
    cílový tvar (Jan)** - změna pohne vytištěnými vývěskami zákazníků.
-3. **`B193g` Linka bez dat řekne proč ve všech agendách** [M]. Dnes jen linkový MHD; linkový AD vrátí
+2. **`B193g` Linka bez dat řekne proč ve všech agendách** [M]. Dnes jen linkový MHD; linkový AD vrátí
    prázdno, vývěska MHD spadne na chybu (zastaví tisk ostatních linek), vývěska AD stránky tiše vynechá.
-4. **`B193h` Číslo zastávky pro QR jedním polem** [S]. Ve vývěskách je pod jiným polem než v linkových
+3. **`B193h` Číslo zastávky pro QR jedním polem** [S]. Ve vývěskách je pod jiným polem než v linkových
    (a ve vývěsce MHD nese i označník). Ověřit, jestli to někomu vadí.
-5. **`B193i` Název pro MHD stejně ve vývěsce i v linkovém AD** [S] (nález 23. 10.). Volba „Použít název
+4. **`B193i` Název pro MHD stejně ve vývěsce i v linkovém AD** [S] (nález 23. 10.). Volba „Použít název
    pro MHD" bere ve vývěsce AD název pro MHD vždy, když ho zastávka má; v linkovém AD jen u městské linky,
    která to má u sebe zapnuté (jako starý knižní tisk). Nejdřív ověřit proti staré vývěsce AD, pak rozhodnout.
 
 **Po vydání:**
 
-6. **`B56` Sloučení opsaného kódu agend** [L] (čekalo na doimplementaci knižního JŘ - splněno 22. 10.).
+5. **`B56` Sloučení opsaného kódu agend** [L] (čekalo na doimplementaci knižního JŘ - splněno 22. 10.).
    Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už rozešlo: výběr skupin linek
    a linek u AD (MHD sdílí od `B193c`), hlavička linky (odtud `B193f`), společné parametry vývěsek. Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
 

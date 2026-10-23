@@ -606,7 +606,7 @@
     },
     {
       "name": "DELENI_SLOUPCU",
-      "label": "Dělení spojů dle platnosti",
+      "label": "Rozdělení sloupců dle platnosti",
       "type": "enum",
       "defaultValue": "Pracovní dny / Soboty / Neděle+svátky",
       "options": [
