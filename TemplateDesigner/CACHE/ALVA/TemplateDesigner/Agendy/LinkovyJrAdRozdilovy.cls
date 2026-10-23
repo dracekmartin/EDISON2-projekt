@@ -37,8 +37,9 @@ Include GENERAL
 ///                 - TC_PUVODNI / ZONY_PUVODNI (`B192e`): Tč a pásmo původní verze u každé
 ///                   zastávky; zastávka jen v původní verzi má TC a ZONY prázdné (nová verze ji nemá)
 ///
-/// Když porovnání nejde (srovnávací skupina linku nemá), vytiskne se vybraná verze a důvod nese
-/// POROVNANI_HLASENI - chyba by místo náhledu jen překážela. Do 16. 10. tak skončila i jiná trasa.
+/// Když porovnání nejde (srovnávací skupina linku nemá, původní verze nemá data), vytiskne se vybraná
+/// verze a důvod nese POROVNANI_HLASENI - chyba by místo náhledu jen překážela. Do 16. 10. tak skončila
+/// i jiná trasa. Vybraná verze bez dat pošle důvod linkového JŘ (`DUVOD_PRAZDNE`).
 Class ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
@@ -176,7 +177,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s skuPuvodni = $zstrip($g(^||ML("IN","POROVNAT_SKUPINU")), "<>W")
         s linPuvodni = $zstrip($g(^||ML("IN","POROVNAT_LINKU")), "<>W")
 
-        d ..NactiStranky(.sys, .vstup, "", "", .nove)
+        d ..NactiStranky(.sys, .vstup, "", "", .nove, .duvodNove)
 
         // Porovnání, které nejde udělat (srovnávací skupina linku nemá, sloučení selže), sestavu
         // neshodí: vytiskne se vybraná verze a důvod jde do POROVNANI_HLASENI, které šablona ukáže
@@ -190,7 +191,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
             i linPuvodni = "" s linPuvodni = linNova
             s linPuvodni = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NormalizLinku(linPuvodni)
             i $d(^[dataDB]JRL(skuPuvodni, linPuvodni, "I")) {
-                d ..NactiStranky(.sys, .vstup, skuPuvodni, linPuvodni, .puvodni)
+                d ..NactiStranky(.sys, .vstup, skuPuvodni, linPuvodni, .puvodni, .duvodPuvodni)
+                i '$g(puvodni) s hlaseni = "Neporovnáno: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" nemá data"_$s(duvodPuvodni="":".", 1:" - "_duvodPuvodni)
             } else {
                 s hlaseni = "Neporovnáno: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" není."
             }
@@ -211,6 +213,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
             d stranka.%Get("values").%Set("POROVNANI_HLASENI", hlaseni)
             s ^||ML("OUT", $i(^||ML("OUT"))) = stranka.%ToJSON()
         }
+        // Nová verze bez jediné stránky: důvod linkového JŘ jde dál, návrhář z něj udělá hlášku „nemá data".
+        i '$g(nove) && (duvodNove '= "") s ^||ML("OUT","DUVOD_PRAZDNE") = duvodNove
     } catch (ex) {
         k ^||ML("IN") m ^||ML("IN") = vstup
         k ^||ML("OUT")
@@ -221,9 +225,11 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
 /// Postaví stránky linkového JŘ pro zadanou skupinu a linku (prázdné = jak přišly ve vstupu).
 /// Chybu linkového JŘ (např. linka ve skupině není) vyhodí znovu s označením původní verze.
-ClassMethod NactiStranky(ByRef sys As %String, ByRef vstup, sku As %String, lin As %String, ByRef stranky)
+/// `duvod` = proč nevznikla žádná stránka (`DUVOD_PRAZDNE` linkového JŘ), jinak prázdné.
+ClassMethod NactiStranky(ByRef sys As %String, ByRef vstup, sku As %String, lin As %String, ByRef stranky, ByRef duvod)
 {
     k stranky, ^||ML("IN"), ^||ML("OUT"), ^||ML("ERR")
+    s duvod = ""
     m ^||ML("IN") = vstup
     i sku '= "" s ^||ML("IN","SKUPINA_LINEK_ID") = sku
     i lin '= "" s ^||ML("IN","LINKA_ID") = lin, ^||ML("IN","INSTANCE_ID") = lin
@@ -240,10 +246,13 @@ ClassMethod NactiStranky(ByRef sys As %String, ByRef vstup, sku As %String, lin 
         $$$ThrowStatus($$$ERROR($$$GeneralError, text))
     }
 
+    // Stránky jsou jen číselné uzly; vedle nich smí stát textový důvod prázdného výstupu.
+    s duvod = $g(^||ML("OUT","DUVOD_PRAZDNE"))
     s idx = ""
     f {
         s idx = $o(^||ML("OUT", idx), 1, json)
         q:idx=""
+        continue:'$isvalidnum(idx)
         s stranky($i(stranky)) = ##class(%DynamicObject).%FromJSON(json)
     }
     k ^||ML("OUT")

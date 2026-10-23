@@ -33,7 +33,8 @@ Method TestSberDuvodu()
 	do $$$AssertEquals($get(^||ML("OUT","DUVOD_PRAZDNE")), "výchozí", "bez zapsaného důvodu výchozí")
 }
 
-/// Linka AD bez spojů: linkový i vývěska pošlou důvod místo prázdna.
+/// Linka AD bez spojů: linkový, rozdílový i vývěska pošlou důvod místo prázdna. Rozdílový do 23. 10.
+/// četl důvod linkového JŘ jako stránku a spadl.
 Method TestLinkaAdBezSpoju()
 {
 	set db = $namespace, sku = "TDTEST"_$translate($system.Util.CreateGUID(), "-"), lin = "0999999"
@@ -41,17 +42,46 @@ Method TestLinkaAdBezSpoju()
 		set ^[db]JRL(sku, lin, "I") = "", ^[db]JRL(sku, lin, "I", 1) = "Zkušební linka"
 		do ..SetupSys(.sys)
 		set sys("U","DATA") = db
-		for agenda = "LinkovyJrAd", "ZastavkoveJrAd" {
+		for agenda = "LinkovyJrAd", "LinkovyJrAdRozdilovy", "ZastavkoveJrAd" {
 			kill ^||ML
 			set ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
 			do $classmethod("ALVA.TemplateDesigner.Agendy."_agenda, "GetData", .sys)
-			do $$$AssertEquals($get(^||ML("OUT","ERR")), "", agenda_": bez chyby")
+			do $$$AssertEquals($get(^||ML("ERR")), "", agenda_": bez chyby "_$get(^||ML("ERR")))
 			do $$$AssertTrue($get(^||ML("OUT","DUVOD_PRAZDNE")) [ "žádné spoje", agenda_": "_$get(^||ML("OUT","DUVOD_PRAZDNE"), "(bez důvodu)"))
 		}
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
 	}
 	kill ^[db]JRL(sku)
+}
+
+/// Rozdílový: původní verze bez spojů porovnání nezastaví - nová verze se vytiskne a hlášení
+/// porovnání řekne proč. Nová verze je linka z jádra sady, původní prázdná kopie pod jedinečnou skupinou.
+Method TestRozdilovyPuvodniBezSpoju()
+{
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Jadro(.jadro)
+	set db = $piece(jadro(1),"~",1), sku = $piece(jadro(1),"~",2), lin = $piece(jadro(1),"~",3)
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertSkipped("linka "_lin_" z jádra sady není na tomto serveru")
+		quit
+	}
+	set skuPuvodni = "TDTEST"_$translate($system.Util.CreateGUID(), "-")
+	try {
+		set ^[db]JRL(skuPuvodni, lin, "I") = ""
+		do ..SetupSys(.sys)
+		set sys("U","DATA") = db
+		kill ^||ML
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin, ^||ML("IN","POROVNAT_SKUPINU") = skuPuvodni
+		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAdRozdilovy).GetData(.sys)
+		do $$$AssertEquals($get(^||ML("ERR")), "", "bez chyby "_$get(^||ML("ERR")))
+		do $$$AssertTrue($data(^||ML("OUT",1)), "nová verze se vytiskne")
+		set stranka = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT",1), "{}"))
+		set hlaseni = $select($isobject(stranka.values):stranka.values.%Get("POROVNANI_HLASENI"), 1:"")
+		do $$$AssertTrue((hlaseni [ "nemá data") && (hlaseni [ "žádné spoje"), "hlášení: "_hlaseni)
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRL(skuPuvodni)
 }
 
 /// Linka MHD bez trasy: vývěska pošle důvod (do 23. 10. chyba, která zastavila tisk ostatních linek).
@@ -66,7 +96,7 @@ Method TestVyveskaMhdBezTrasy()
 		kill ^||ML
 		set ^||ML("IN","LINKA_ID") = 7
 		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
-		do $$$AssertEquals($get(^||ML("OUT","ERR")), "", "bez chyby")
+		do $$$AssertEquals($get(^||ML("ERR")), "", "bez chyby")
 		do $$$AssertTrue($get(^||ML("OUT","DUVOD_PRAZDNE")) [ "trasu", "důvod: "_$get(^||ML("OUT","DUVOD_PRAZDNE"), "(bez důvodu)"))
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())

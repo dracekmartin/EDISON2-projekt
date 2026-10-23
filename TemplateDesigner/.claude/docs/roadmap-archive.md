@@ -1,5 +1,10 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
+
+- **C1** Porovnání linek nespadne na lince bez dat: vybraná linka bez dat pošle důvod, původní verze bez
+  dat jde do hlášení porovnání (hotovo 23. 10., changelog 2026-10-23 (15)).
+
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 
 Buď se řeší jinde, nebo to není důležité - backlog se pročistil od položek, na které nikdo nesahá.

@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-23 (15) - 🩹 porovnání linek nespadne na lince bez dat (`B194a` C1)
+
+Rozdílový linkový JŘ (Porovnání linek v modulu JŘ) četl jako stránku každý uzel výstupu linkového JŘ,
+i textový důvod prázdného výstupu, který linkový JŘ posílá od `B193g` - na lince bez dat tak místo
+hlášky přišla technická chyba. Teď: vybraná linka bez dat pošle důvod dál (z modulu JŘ uživatel uvidí
+„Linka … nemá data: …"), původní verze bez dat porovnání nezastaví - vytiskne se vybraná linka
+a hlášení porovnání řekne „Neporovnáno: linka … ve skupině … nemá data - <důvod>". Test
+`DuvodPrazdnehoTest` (rozdílový v linkách bez spojů, nový `TestRozdilovyPuvodniBezSpoju`); jeho kontrola
+chyby četla `^||ML("OUT","ERR")`, kam chyba nikdy nejde, a nic nehlídala - čte `^||ML("ERR")`.
+
 ## 2026-10-23 (14) - 🔤 vývěska MHD označí zastávku písmenem rozdílu trasy
 
 Linka s automatickým poznámkováním rozdílů v trase (varianta s písmeny) dávala písmeno odjezdům

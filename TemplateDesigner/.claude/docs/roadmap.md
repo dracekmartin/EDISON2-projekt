@@ -22,7 +22,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194a` Chyby
 
-- **C1** Rozdílový JŘ spadne na lince bez dat - regrese z 23. 10., spouští se z modulu JŘ [S]
 - **C2** V panelu Minut odjezdů tlačítko „Upravit styl…" nic neotevře [S-M]
 - **C3** Vývěska MHD kreslí přestup na autobus jako vagon a na vlak jako „x" [S-M] **tisk**
 - **C4** Export „Jeden PDF na linku": v názvu doslova „POPIS_ZASTAVKA", MHD dělí podle licenčního čísla [M] **Jan** **do 27. 10.**

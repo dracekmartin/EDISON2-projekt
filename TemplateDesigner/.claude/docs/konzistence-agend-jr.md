@@ -23,11 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C1 Rozdílový JŘ spadne na lince bez dat** [S] (regrese `0ba002d1`; *ověřeno:* kód).
-  `LinkovyJrAdRozdilovy.NactiStranky` (:224-250) čte jako stránku každý klíč výstupu linkového JŘ, i nový
-  textový `DUVOD_PRAZDNE` → `%FromJSON` vyhodí a místo důvodu přijde chyba. `GetData` výstup navíc maže
-  (:200), takže by se důvod ztratil i bez pádu. Týká se spuštění z Porovnání linek v modulu JŘ.
-  Návrh: nečíselné klíče přeskočit, důvod předat dál, rozdílový přidat do `DuvodPrazdnehoTest`.
 - **C2 Panel Minut odjezdů: „Upravit styl…" nic neotevře** [S-M] (*ověřeno:* kód). Tlačítka
   `style:HeaderStyle` a `style:HeaderLine2Style` (`DepartureGridElementEdit.cls:59-67`) obsluhuje jen
   dialog prvku (`DepartureGroupEditorDialog.OnGeneralButtonClicked`), panel ne
@@ -302,6 +297,9 @@ totéž znovu. Pořadí podle přínosu:
 - **G7 Drobné díry drift testů** [S]. Regex schématu nevidí `AddField(kolekce.%Get("fields"), …)` (rozdílový
   `VERZE`, `TC_PUVODNI`, `ZONY_PUVODNI`) a chytá zakomentované řádky; parametry se jménem skládaným za
   běhu (`P4`) a pořadí „Obecné první" u vývěsek a linkového MHD (definice v pomocných metodách) test nevidí.
+  Caché testy kontrolují chybu agendy v `^||ML("OUT","ERR")`, kam `$$$CatchErrRest` nepíše (chyba je
+  v `^||ML("ERR")`), takže „bez chyby" nehlídají: `LinkovyJrSmokeTest` (:28, :134) a sonda
+  `AdSloupekProbe` (nalezeno u `C1`, `DuvodPrazdnehoTest` už opravený).
 - **G8 Zlatý odtisk linkového MHD včetně hlavičky** [S] (po 27. 10.). Bere z vývěsky MHD pět metod
   (dopravce, typ JŘ, seznam linek, skupiny); porovnání se starým modulem kryje jen tabulku a
   `TestDopravceJakoVyveska` porovnává s toutéž funkcí.
