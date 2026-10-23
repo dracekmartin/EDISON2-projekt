@@ -767,6 +767,26 @@ Analýza 5. 8. 2026, přesunuto z roadmapy 4. 9. - **udělané jednou, nedělat 
   kontraktem** (zastávková posílá `KATEGORIE` + barvy, linková `DRUH`), `PopisDopravce` existuje
   3× se třemi signaturami.
 
-⚠️ **Sloučit jde bezpečně jen skupinu doslovných kopií a jen u zastávkových agend**, které kryjí
-zlaté odtisky a 46 testů helperů. **Linkové agendy nemají ani jeden test** (2 000 řádků), takže
-tam by zásah jel bez sítě. Vzor existuje - `BaseAgenda` už čtyři sdílené helpery hostuje.
+Sloučit jde doslovné kopie. Zastávkové agendy kryjí zlaté odtisky a 46 testů helperů, linkové
+mají vlastní sady (`LinkovyJrGoldTest`, `LinkovyJrMhdTest`, porovnání se starým tiskem
+`LinkovyJrLegacyOracle` a `LinkovyJrMhdLegacyOracle`). Vzor existuje - `BaseAgenda` už čtyři
+sdílené helpery hostuje.
+
+**Změřeno 21. 9.:** vývěsky mají 10 metod znak po znaku shodných (~100 řádků: barvy, atributy
+zastávky, stavba odjezdu a skupiny dnů, obě metody předdefinovaných tabulek); ze schématu je 25 z 27
+popisů polí MHD totožných s AD (u linkových 22 z 24). Liší se dva popisky po ose AD × MHD
+(`CISLO_LINKY`, `LOKALNI_OZNACENI_LINKY`) - ve společné metodě by byly parametrem. Navržený tvar:
+mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje. Popisky polí hlídá
+`AgendaSchemaDriftTests`.
+
+**Doplněno 23. 10. (review `B193`)** - kde začít, protože se to už rozešlo:
+
+- **Výběr skupin linek a linek** - čtyři kopie (`GetAvailableSkupiny`, `GetAvailableInstances`,
+  výchozí skupina). Kopie MHD se rozešly v příznaku zablokování (`LinkovyJrMhd.cls:274`).
+- **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - každá agenda ji skládá zvlášť; odtud čtyři
+  tvary popisu platnosti a dva texty návrhu ([`konzistence-agend-jr.md`](konzistence-agend-jr.md) `B193f`).
+- **Společné parametry vývěsek** (Pořadí stránek, šipky, projeté zastávky, časová osa, roztažení) jsou
+  opsané (`ZastavkoveJrAd.cls:3521-3675` × `ZastavkoveJrMhd.cls:1774-1826`). Linkové agendy mají jednu
+  sdílenou definici (`LinkovyJrAd.cls:373-446`) a to je vzor.
+- **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (`LinkovyJrAd.cls:1814, 2120, 2131`
+  × `LinkovyJrMhd.cls:1176-1195`) a `RgbToHex` vedle `BaseAgenda.RgbNaHex`.
