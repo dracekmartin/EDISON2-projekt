@@ -77,26 +77,10 @@ public partial class DepartureGroupEditorDialog : Window
     // Command se akumuluje a vykoná se v parent OK (batch, jeden undo krok).
     private void OnGeneralButtonClicked(string key)
     {
-        const string marker = "style:";
-        if (!key.StartsWith(marker, System.StringComparison.Ordinal)) return;
-        var prefix = key[marker.Length..];
-        var title = (GeneralForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == key)?.Label?.TrimEnd('…', ' ') ?? "Styl";
-
-        var vm = new StyleEditDialogViewModel(_element, prefix, ResolveInherited(prefix));
-        var dlg = new StyleEditDialog(vm) { Owner = this, Title = title };
-        if (dlg.ShowDialog() == true && vm.ResultCommand is not null)
-            _styleCommands[prefix] = vm.ResultCommand;   // replace (poslední edit zóny vyhraje)
+        if (ElementStyleButton.StyleProperty(key) is not { } prefix) return;
+        if (ElementStyleButton.Edit(this, _element, prefix, GeneralForm) is { } command)
+            _styleCommands[prefix] = command;   // replace (poslední edit zóny vyhraje)
     }
-
-    /// <summary>Vyřešený rodičovský styl zóny (= zděděné hodnoty pro šedé placeholdery v CellStyleEditoru).</summary>
-    private ResolvedTextStyle ResolveInherited(string prefix) => prefix switch
-    {
-        "HeaderStyle"      => _element.ResolveElementHeaderParent(),
-        "HeaderLine2Style" => _element.ResolveElementHeaderParent(),   // 2. řádek dědí ze záhlaví
-        "DataStyle"        => _element.ResolveElementDataParent(),
-        "MinuteStyle"      => _element.ResolveGroupMinuteParent(),
-        _                  => CellDefaults.Default
-    };
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {

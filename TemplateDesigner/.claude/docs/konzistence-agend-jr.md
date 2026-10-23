@@ -23,10 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C2 Panel Minut odjezdů: „Upravit styl…" nic neotevře** [S-M] (*ověřeno:* kód). Tlačítka
-  `style:HeaderStyle` a `style:HeaderLine2Style` (`DepartureGridElementEdit.cls:59-67`) obsluhuje jen
-  dialog prvku (`DepartureGroupEditorDialog.OnGeneralButtonClicked`), panel ne
-  (`MainWindow.OnInlineElementButtonClicked` :1961 zná tři jiné klíče). Návrh: obsluha v panelu + `G5`.
 - **C3 Vývěska MHD kreslí přestup na autobus jako vagon a na vlak jako „x"** [S-M] **tisk** (*ověřeno:* kód,
   server CB_DP 11350). `ZastavkoveJrMhd.ConvertSpecialniZnak` (:1695) pošle kódy 119/120 jako znaky
   „w"/„x"; ve fontu je „w" vagon a „x" se kreslí jako text „na znamení" (`SymbolMap.JeKonvencneText`).

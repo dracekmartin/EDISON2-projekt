@@ -1963,6 +1963,18 @@ public partial class MainWindow : Window
         // Z formuláře buňky zpátky na nastavení celé tabulky (= odchod z buňky, jako Esc).
         if (key == "__tableSettings") { ExitToTableSettings(); return; }
 
+        if (ElementStyleButton.StyleProperty(key) is { } styl)
+        {
+            if (_vm!.State.SelectedElements is [DepartureGridElement odjezdy]
+                && ElementStyleButton.Edit(this, odjezdy, styl, InlineElementForm.TheForm) is { } command)
+            {
+                _vm.Execute(command);
+                InvalidateCanvas();
+                InvalidatePreview();
+            }
+            return;
+        }
+
         if (key == NotesLegendElement.SkupinyPoznamekKlic)
         {
             if (_vm!.State.SelectedElements is [NotesLegendElement poznamky]

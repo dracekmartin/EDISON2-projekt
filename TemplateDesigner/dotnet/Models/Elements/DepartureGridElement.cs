@@ -568,6 +568,17 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return p;
     }
 
+    /// <summary>Z čeho dědí zóna, kterou otevírá tlačítko „Upravit styl…" formuláře (klíč <c>style:&lt;vlastnost&gt;</c>);
+    /// null = prvek takovou zónu nemá a tlačítko by nic neupravilo.</summary>
+    public ResolvedTextStyle? ResolveStyleParent(string property) => property switch
+    {
+        nameof(HeaderStyle)      => ResolveElementHeaderParent(),
+        nameof(HeaderLine2Style) => ResolveElementHeaderParent(),   // 2. řádek dědí ze záhlaví
+        nameof(DataStyle)        => ResolveElementDataParent(),
+        nameof(MinuteStyle)      => ResolveGroupMinuteParent(),
+        _                        => null
+    };
+
     /// <summary>Parent kaskády pro per-column override minutové buňky skupiny.</summary>
     public ResolvedTextStyle ResolveGroupMinuteParent()
     {

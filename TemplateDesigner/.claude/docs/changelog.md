@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-23 (16) - 🎨 „Upravit styl…" funguje i v panelu Minut odjezdů (`B194a` C2)
+
+Tlačítka „Styl záhlaví" a „Styl 2. řádku nadpisu" ve formuláři Minut odjezdů otevírala okno stylu jen
+v okně nastavení prvku; v panelu vlastností se po kliknutí nestalo nic. Panel teď otevře totéž okno
+a změnu provede hned jako jeden vratný krok (Ctrl+Z), stejně jako ostatní tlačítka panelu. Obsluhu
+sdílí oba hostitelé (`ElementStyleButton`), zóna a její rodičovský styl jsou u prvku
+(`DepartureGridElement.ResolveStyleParent`). Test `ElementStyleButtonTests`: tlačítko stylu je jen ve
+formuláři Minut odjezdů a každé míří na styl, který prvek má. Obecná kontrola tlačítek všech formulářů
+zůstává jako `G5`.
+
 ## 2026-10-23 (15) - 🩹 porovnání linek nespadne na lince bez dat (`B194a` C1)
 
 Rozdílový linkový JŘ (Porovnání linek v modulu JŘ) četl jako stránku každý uzel výstupu linkového JŘ,

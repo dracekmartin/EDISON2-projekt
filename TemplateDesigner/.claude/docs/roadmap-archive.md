@@ -4,6 +4,8 @@
 
 - **C1** Porovnání linek nespadne na lince bez dat: vybraná linka bez dat pošle důvod, původní verze bez
   dat jde do hlášení porovnání (hotovo 23. 10., changelog 2026-10-23 (15)).
+- **C2** „Upravit styl…" v panelu Minut odjezdů otevře okno stylu jako okno nastavení prvku (hotovo
+  23. 10., changelog 2026-10-23 (16)). Obecný test tlačítek všech formulářů zůstává jako `G5`.
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 
