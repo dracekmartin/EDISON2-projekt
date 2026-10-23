@@ -150,12 +150,11 @@ public partial class App : Application
                 new TemplateDesigner.Services.CacheTemplateService(mlRest));
 
         // inputParam kontraktu "Agenda=<kód>" → startovní agenda šablony. Uzel stromu legacy
-        // shellu nese kód v atributu input (JŘ vs MHD místo), MHD2 tlačítko ho posílá natvrdo.
-        string? startupAgendaCode = null;
-        if (launch?.InputParam.StartsWith("Agenda=", StringComparison.OrdinalIgnoreCase) == true)
-            startupAgendaCode = launch.InputParam["Agenda=".Length..].Trim();
+        // shellu nese kód v atributu input (JŘ vs MHD místo), MHD2 tlačítko ho posílá natvrdo;
+        // porovnání linek v modulu JŘ přidá linku a srovnávací linku (LaunchInput).
+        var launchInput = TemplateDesigner.Config.LaunchInput.Parse(launch?.InputParam);
 
-        new MainWindow(mlRest, prefs, agendas, startupAgendaCode).Show();
+        new MainWindow(mlRest, prefs, agendas, launchInput).Show();
     }
 
     /// <summary>

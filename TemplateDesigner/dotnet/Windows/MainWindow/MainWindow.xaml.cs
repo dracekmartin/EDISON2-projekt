@@ -107,10 +107,10 @@ public partial class MainWindow : Window
     public MainWindow(MLRest? mlRest,
                       Services.TdPreferencesService? preferences = null,
                       IReadOnlyList<Serialization.AgendaRegistryEntry>? agendas = null,
-                      string? startupAgendaCode = null)
+                      Config.LaunchInput? launchInput = null)
     {
         _preferences = preferences;
-        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas, startupAgendaCode);
+        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas, launchInput?.AgendaCode);
         DataContext = _vm;
         InitializeComponent();
 
@@ -311,6 +311,19 @@ public partial class MainWindow : Window
         // Subscribe-after-loaded case (warm cache) řeší Loaded event accessor - invoke immediately.
         if (_preferences is not null)
             _preferences.Loaded += OnPreferencesLoaded;
+
+        // Spuštění s vybranou linkou (porovnání linek v modulu JŘ) otevře šablonu až nad hotovým
+        // oknem - čte z databáze a chybu musí mít komu ukázat.
+        if (launchInput is not null && _vm.ShouldOpenFromLaunch(launchInput))
+        {
+            RoutedEventHandler? open = null;
+            open = async (_, _) =>
+            {
+                Loaded -= open;
+                await _vm.OpenFromLaunchAsync(launchInput);
+            };
+            Loaded += open;
+        }
     }
 
     private void OnPreferencesLoaded()

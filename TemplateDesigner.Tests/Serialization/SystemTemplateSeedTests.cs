@@ -56,6 +56,19 @@ public class SystemTemplateSeedTests
         Assert.Contains("zastavkovy-jr-mhd.json", names);
         Assert.Contains("linkovy-jr-ad-postskript-a5.json", names);
         Assert.Contains("linkovy-jr-ad-poznamky-vedle-a4.json", names);
+        // Rozdílový JŘ se otevírá z modulu JŘ (porovnání linek) a bez systémové šablony by
+        // zákazník dostal prázdnou stránku - agenda je přitom skrytá, takže si ji sám nezaloží.
+        Assert.Contains("rozdilovy-linkovy-jr-a4.json", names);
+    }
+
+    [Fact]
+    public void SablonaProSpusteni_SeNajdePodleAgendy()
+    {
+        var t = SystemTemplateSeeder.EmbeddedForAgenda("linkovy_jr_ad_rozdilovy");
+
+        Assert.NotNull(t);
+        Assert.Equal("LINKOVY_JR_AD_ROZDILOVY", t.AgendaCode);
+        Assert.Null(SystemTemplateSeeder.EmbeddedForAgenda("NEEXISTUJE"));
     }
 
     /// <summary>Tohle je vlastní jádro `B92`: soubor ve složce ještě neznamená soubor v .exe.</summary>

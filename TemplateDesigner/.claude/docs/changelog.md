@@ -1,5 +1,23 @@
 ﻿# Changelog
 
+## 2026-10-23 (8) - 🔀 rozdílový JŘ se otevře z jízdních řádů (`B192`)
+
+V hlavním okně jízdních řádů (ISYJR2) přidal Petr Šmíd položku Nástroje → Porovnání linek: uživatel
+označí linku a v dialogu vybere linku, se kterou ji porovná. Teď to dělá něco: spustí návrhář s agendou
+rozdílového linkového JŘ, otevře jeho šablonu a vybere v ní označenou linku jako **novou verzi**
+(zeleně); linka z dialogu je **původní** (červeně). Rozhodnutí Jan 23. 10. Šablona je nejnověji upravená
+vlastní šablona firmy v agendě, jinak systémová - rozdílová šablona se proto přesunula
+z `templates/` mezi systémové (`SystemTemplates/rozdilovy-linkovy-jr-a4.json`). Agenda zůstává
+nezveřejněná (`Released = 0`), ve výběru agend ji uživatel nevidí.
+
+Spuštění nese linku a srovnávací linku v poli `inputParam` launch kontraktu za kódem agendy
+(`Agenda=…;SKUPINA_LINEK_ID=…;LINKA_ID=…;POROVNAT_SKUPINU=…;POROVNAT_LINKU=…`, `Config/LaunchInput`).
+Hodnoty ze spuštění mají přednost před uloženou předvolbou i šablonou a přestanou platit, když uživatel
+změní parametr nebo vybere jinou linku. Strana ISYJR2 je v repu EDISON (`TiskJRHelper.OpenRozdilovyJR`).
+⚠️ Starší návrhář nový vstup nepozná a otevře poslední agendu - JŘ s touto položkou musí jít ven
+s novým návrhářem. Testy `LaunchInputTests`, `SpusteniSLinkouTests` (přednost hodnot ze spuštění ověřená
+mutací), `SystemTemplateSeedTests`. Celek proti serveru (spuštění z ISYJR2) neověřený - zkouší Jan.
+
 ## 2026-10-23 (7) - 🔖 razítko návrhu „NÁVRH" ve všech jízdních řádech (`B193f`)
 
 Pole „Typ jízdního řádu" tisklo u návrhu v agendách AD „návrh jízdního řádu" (starý postskriptový tisk

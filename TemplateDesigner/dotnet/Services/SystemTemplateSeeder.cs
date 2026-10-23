@@ -65,6 +65,28 @@ public static class SystemTemplateSeeder
         }
     }
 
+    /// <summary>
+    /// Systémová šablona agendy zabalená v .exe (první podle jména souboru), null když agenda žádnou nemá.
+    /// Spuštění z modulu JŘ se o ni opírá, když firma vlastní šablonu agendy nemá.
+    /// </summary>
+    public static Template? EmbeddedForAgenda(string agendaCode)
+    {
+        var asm = typeof(SystemTemplateSeeder).Assembly;
+        foreach (var name in asm.GetManifestResourceNames().Order(StringComparer.Ordinal))
+        {
+            if (!name.Contains(".SystemTemplates.") ||
+                !name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                continue;
+            using var stream = asm.GetManifestResourceStream(name);
+            if (stream is null) continue;
+            using var reader = new StreamReader(stream);
+            var template = TemplateSerializer.Deserialize(reader.ReadToEnd());
+            if (string.Equals(template.AgendaCode, agendaCode, StringComparison.OrdinalIgnoreCase))
+                return template;
+        }
+        return null;
+    }
+
     /// <summary>Je v MLINE něco jiného, než co nese .exe? Šablonu, která tam ještě není, zapiš.</summary>
     private static async Task<bool> MaSeZapsatAsync(CacheTemplateService storage, Template zExe)
     {

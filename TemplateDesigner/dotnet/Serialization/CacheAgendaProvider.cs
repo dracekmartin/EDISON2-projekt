@@ -324,7 +324,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     /// Server-side filter - předaný search se aplikuje v Caché (case-insensitive substring).
     /// Prázdný seznam = agenda nemá koncept instancí (GENERAL) nebo žádné neodpovídají filtru.
     /// </summary>
-    public IReadOnlyList<AgendaInstance> GetAvailableInstances(string agendaCode, string? search = null, int limit = 50)
+    public IReadOnlyList<AgendaInstance> GetAvailableInstances(string agendaCode, string? search = null, int limit = 50,
+                                                               string? skupinaId = null)
     {
         if (string.IsNullOrEmpty(agendaCode)) return [];
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
@@ -335,8 +336,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             var inVar = new CVar();
             inVar["search"] = new CVar(search ?? "");
             inVar["limit"]  = new CVar(limit.ToString());
-            // Pozn.: filtr skupiny linek (SKUPINA_LINEK_ID) teče přes EDList dispatch (Instance.LoadList),
-            // ne přes tuto metodu - Instance Picker načítá řádky EDListem. Tady zůstává default skupina.
+            // Instance Picker filtruje skupinu přes EDList dispatch (Instance.LoadList); skupinu sem
+            // posílá jen dohledání linky ze spuštění, jinak zůstává výchozí skupina serveru.
+            if (!string.IsNullOrEmpty(skupinaId)) inVar["SKUPINA_LINEK_ID"] = new CVar(skupinaId);
 
             CVar result = _mlRest.Query(cacheClass, "GetAvailableInstances", inVar);
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)

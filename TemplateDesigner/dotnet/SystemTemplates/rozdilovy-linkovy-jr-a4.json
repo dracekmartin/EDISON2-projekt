@@ -2,7 +2,7 @@
   "version": "1.15.0",
   "id": "2d8eaf80-c786-4f6e-b354-f62772e68a11",
   "name": "Linkový JŘ (AD) - rozdílový A4",
-  "description": "Dvě verze linky v jedné tabulce (B192): změněný spoj vedle sebe, původní a nový, s podbarvenými odlišnými časy. Původní verzi zadejte v parametrech Porovnat se skupinou JŘ / Porovnat s linkou.",
+  "description": "Systémová šablona rozdílového linkového jízdního řádu (AD): dvě verze linky v jedné tabulce, změněný spoj vedle sebe, původní a nový, s podbarvenými odlišnými časy. Otevře se z jízdních řádů (Nástroje - Porovnání linek); původní verzi lze zadat i v parametrech Porovnat se skupinou JŘ / Porovnat s linkou. Formát A4 na šířku.",
   "pageSize": {
     "width": 297,
     "height": 210,

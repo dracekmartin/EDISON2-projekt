@@ -1905,6 +1905,7 @@ public class TemplateDesignerViewModel : EDViewModel
         _activeSkupinaLabel = vm.SelectedSkupinaLabel;
         _activeInstances = vm.SelectedInstances.ToList();
         _activeInstanceIndex = 0;
+        _launchParams = null;     // srovnávací linka ze spuštění patřila předchozí lince
         // Před načtením dat: hodnota vázaná na předchozí linku by šla do GetData nové.
         bool vynulovano = VynulujParametryInstance();
         // Výběr z pickeru = táž šablona, jiné linky → nechat stará data do dosednutí (bez mock bliku).
@@ -2186,36 +2187,155 @@ public class TemplateDesignerViewModel : EDViewModel
 
         try
         {
-            var oldAgenda = State.CurrentTemplate.AgendaCode;
             // Systémová (M-line) šablona se čte z MLINE větve; jinak z firmy (default).
             var sourceIdFa = vm.SelectedIsSystem ? Services.CacheTemplateService.MlineIdFa : null;
             var (_, template) = await TemplateStorage.LoadAsync(vm.SelectedTemplateId.Value, sourceIdFa);
-            State.CurrentTemplate = template;
-            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance - jejich
-            // IDs patří staré agendě a v nové by GetData padl.
-            if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
-                ClearActiveInstances();
-            CurrentFilePath = null;
-            // Systémová = read-only originál → otevřít jako „kopie": Ctrl+S vynutí „Uložit jako"
-            // do firmy (nový GUID). Vlastní firma šablona → normální update.
-            _loadedFromCache = !vm.SelectedIsSystem;
-            IsDirty = false;
-            State.SelectedElements.Clear();
-            State.UndoStack.Clear();
-            State.RedoStack.Clear();
-            NotifyUndoRedo();
-            ApplyEditorPreferencesFromTemplate();
-            State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
-            RebuildSections();
-            await RefreshFieldsList();
-            await TryLoadInstanceDefaultsAsync();
-            await ApplyPersistedPrintParamsAsync();
-            NotifyMigrationIfNeeded();
-            RequestTitleUpdate?.Invoke();
-            RequestCanvasSizeUpdate?.Invoke();
-            RequestPropertiesPanelUpdate?.Invoke();
+            await ShowTemplateFromDatabaseAsync(template, isSystem: vm.SelectedIsSystem, loadInstanceDefaults: true);
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    /// <summary>Otevře šablonu načtenou z databáze (výběr šablony i spuštění z modulu JŘ).</summary>
+    private async Task ShowTemplateFromDatabaseAsync(Template template, bool isSystem, bool loadInstanceDefaults)
+    {
+        var oldAgenda = State.CurrentTemplate.AgendaCode;
+        State.CurrentTemplate = template;
+        // Pokud nová šablona má jinou agendu, vyčistit aktivní instance - jejich
+        // IDs patří staré agendě a v nové by GetData padl.
+        if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
+            ClearActiveInstances();
+        CurrentFilePath = null;
+        // Systémová = read-only originál → otevřít jako „kopie": Ctrl+S vynutí „Uložit jako"
+        // do firmy (nový GUID). Vlastní firma šablona → normální update.
+        _loadedFromCache = !isSystem;
+        IsDirty = false;
+        State.SelectedElements.Clear();
+        State.UndoStack.Clear();
+        State.RedoStack.Clear();
+        NotifyUndoRedo();
+        ApplyEditorPreferencesFromTemplate();
+        State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
+        RebuildSections();
+        await RefreshFieldsList();
+        if (loadInstanceDefaults) await TryLoadInstanceDefaultsAsync();
+        await ApplyPersistedPrintParamsAsync();
+        NotifyMigrationIfNeeded();
+        RequestTitleUpdate?.Invoke();
+        RequestCanvasSizeUpdate?.Invoke();
+        RequestPropertiesPanelUpdate?.Invoke();
+    }
+
+    // ── Spuštění s vybranou linkou (porovnání linek v modulu JŘ) ─────────────
+
+    /// <summary>
+    /// Hodnoty parametrů ze spuštění a šablona, ke které patří. Mají přednost před uloženými
+    /// předvolbami i hodnotami v šabloně - jinak by předvolba načtená až po startu (pomalé spojení)
+    /// přepsala srovnávací skupinu, kterou uživatel vybral v modulu JŘ. Platí, dokud uživatel
+    /// nezmění parametr nebo nevybere jinou linku.
+    /// </summary>
+    private (Guid TemplateId, IReadOnlyDictionary<string, string> Values)? _launchParams;
+
+    internal void UseLaunchParams(Guid templateId, IReadOnlyDictionary<string, string> values) =>
+        _launchParams = (templateId, values);
+
+    /// <summary>Nese spuštění linku k otevření (ne jen agendu)?</summary>
+    public bool ShouldOpenFromLaunch(Config.LaunchInput input) =>
+        CacheProvider is not null && TemplateStorage is not null && input.AgendaCode is not null
+        && !string.IsNullOrEmpty(input.Get(InstanceParamName(input.AgendaCode)));
+
+    /// <summary>
+    /// Otevře šablonu agendy ze spuštění, vybere v ní linku a nastaví parametry ze spuštění.
+    /// Šablona: nejnověji upravená vlastní šablona firmy v agendě, jinak systémová.
+    /// </summary>
+    public async Task OpenFromLaunchAsync(Config.LaunchInput input)
+    {
+        if (!ShouldOpenFromLaunch(input)) return;
+        var agenda = State.CurrentTemplate.AgendaCode;
+        // Neznámý kód agendy konstruktor přeskočil - pak tu stojí jiná agenda a linka by k ní nepatřila.
+        if (!string.Equals(agenda, input.AgendaCode, StringComparison.OrdinalIgnoreCase))
+        {
+            PopupDisplayer.Info($"Agenda {input.AgendaCode} není na serveru k dispozici - linku nelze otevřít.");
+            return;
+        }
+
+        try
+        {
+            var (template, isSystem) = await FindLaunchTemplateAsync(agenda!);
+            UseLaunchParams(template?.Id ?? State.CurrentTemplate.Id, input.Values);
+            if (template is not null)
+                await ShowTemplateFromDatabaseAsync(template, isSystem, loadInstanceDefaults: false);
+            else
+            {
+                await RefreshFieldsList();
+                await ApplyPersistedPrintParamsAsync();
+                StatusText = "Agenda nemá uloženou ani systémovou šablonu - otevřena prázdná šablona.";
+            }
+
+            var instanceValue = input.Get(InstanceParamName(agenda!))!;
+            var skupina = input.Get(Config.LaunchInput.SkupinaKey);
+            await SelectLaunchInstanceAsync(agenda!, skupina, instanceValue);
+        }
+        catch (Exception ex) { PopupDisplayer.Error(ex); }
+    }
+
+    private async Task<(Template? Template, bool IsSystem)> FindLaunchTemplateAsync(string agenda)
+    {
+        var storage = TemplateStorage!;
+        var own = NewestTemplate(await storage.ListAsync(agenda));
+        if (own is not null)
+            return ((await storage.LoadAsync(own.TemplateId)).Template, false);
+
+        var embedded = await Task.Run(() => Services.SystemTemplateSeeder.EmbeddedForAgenda(agenda));
+        if (embedded is null) return (null, true);
+        // V databázi může být novější verze z distribučního kanálu; když tam ještě není (seed
+        // běží souběžně se startem), stačí ta z .exe.
+        try { return ((await storage.LoadAsync(embedded.Id, Services.CacheTemplateService.MlineIdFa)).Template, true); }
+        catch (CacheTemplateException) { return (embedded, true); }
+    }
+
+    internal static CacheTemplateMetadata? NewestTemplate(IEnumerable<CacheTemplateMetadata> templates) =>
+        templates.OrderByDescending(m => m.ModifiedAt ?? m.CreatedAt ?? DateTime.MinValue).FirstOrDefault();
+
+    private async Task SelectLaunchInstanceAsync(string agenda, string? skupina, string instanceValue)
+    {
+        var provider = CacheProvider!;
+        var (instance, skupinaLabel) = await Task.Run(() =>
+        {
+            // Popis linky („číslo - název") dá jen server; hledá se podle čísla ve zvolené skupině.
+            var found = provider.GetAvailableInstances(agenda, instanceValue.TrimStart('0'), skupinaId: skupina);
+            var label = string.IsNullOrEmpty(skupina) ? null
+                : provider.GetAvailableSkupiny(agenda).FirstOrDefault(s => s.Value == skupina)?.Display;
+            return (MatchLaunchInstance(found, instanceValue), label);
+        });
+
+        _activeSkupinaId = string.IsNullOrEmpty(skupina) ? null : skupina;
+        _activeSkupinaLabel = string.IsNullOrEmpty(skupina) ? null : skupinaLabel ?? skupina;
+        _activeInstances = [instance];
+        _activeInstanceIndex = 0;
+        OnActiveInstancesChanged(reloadData: true);
+        OnPropertyChanged(nameof(ActiveSkupinaText));
+        OnPropertyChanged(nameof(HasActiveSkupina));
+    }
+
+    /// <summary>
+    /// Linka ze spuštění mezi nalezenými. Modul JŘ posílá klíč linky s vedoucími nulami („0380760"),
+    /// shoda se proto bere i bez nich. Nenalezenou linku nechá s jejím klíčem - data načte server
+    /// i tak, jen popis linky bude holé číslo.
+    /// </summary>
+    internal static AgendaInstance MatchLaunchInstance(IEnumerable<AgendaInstance> found, string value)
+    {
+        static string Bare(string s) => s.TrimStart('0') is { Length: > 0 } t ? t : s;
+        return found.FirstOrDefault(i => i.Value == value || Bare(i.Value) == Bare(value))
+               ?? new AgendaInstance(value, Bare(value), null);
+    }
+
+    /// <summary>Hodnoty parametrů ze spuštění nad <see cref="_previewParams"/>, jen u šablony, ke které patří.</summary>
+    private void ApplyLaunchParamsToPreview()
+    {
+        if (_launchParams is not { } launch || launch.TemplateId != State.CurrentTemplate.Id) return;
+        foreach (var p in _agendaParameters)
+            if (launch.Values.TryGetValue(p.Name, out var s))
+                _previewParams[p.Name] = ParseParamValue(p, s);
     }
 
     /// <summary>Uloží do DB (nová/z disku → Save As dialog). Vrátí true při úspěchu, false při
@@ -3289,21 +3409,24 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             if (p.PerInstance) continue;
             if (!tp.TryGetValue(p.Name, out var s) || s is null) continue;
-            _previewParams[p.Name] = p.Type switch
-            {
-                "bool"   => s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase),
-                "number" => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
-                _        => (object)s
-            };
+            _previewParams[p.Name] = ParseParamValue(p, s);
         }
         // Přenačtení panelu/tabu z finálních hodnot dělá otevírací flow (RefreshParamsUiAfterLoad),
         // bezpodmínečně - per-agenda i šablona; sem to nedávat (nespustilo by se, když šablona
         // nic nezměnila, protože per-agenda už tytéž hodnoty nastavila → tab by zůstal na defaultech).
     }
 
+    /// <summary>Textová hodnota parametru (šablona, spuštění) v typu, se kterým pracuje náhled.</summary>
+    private static object? ParseParamValue(TemplateParameter p, string s) => p.Type switch
+    {
+        "bool"   => s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase),
+        "number" => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : null,
+        _        => s
+    };
+
     /// <summary>
-    /// Jediná cesta k aplikaci persistovaných hodnot parametrů: per-agenda → šablona → přenačtení UI.
-    /// **Volat vždy tuhle metodu, nikdy ty tři kroky zvlášť.** Když se jeden krok vynechá (dřív to
+    /// Jediná cesta k aplikaci persistovaných hodnot parametrů: per-agenda → šablona → spuštění
+    /// z modulu JŘ → přenačtení UI. **Volat vždy tuhle metodu, nikdy ty kroky zvlášť.** Když se jeden krok vynechá (dřív to
     /// dělal cold-start fallback po dokončení načtení preferencí), hodnoty jdou do `GetData`, ale
     /// ovladače v UI zůstanou na defaultech - uživatel pak tiskne něco jiného, než co v nastavení vidí
     /// a nemá jak na to přijít. Přesně tak tiše rozdělovalo vývěsky `ROZDELIT_PER_OZNACNIK=true`.
@@ -3312,6 +3435,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         await LoadPrintParamsAndApplyAsync();
         ApplyTemplatePrintParamsToPreview();
+        ApplyLaunchParamsToPreview();
         RefreshParamsUiAfterLoad();
     }
 
@@ -3427,6 +3551,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // Volá se JEN z user cest (SetAgendaParamValue / preview lišta setter); načtení jde přes
         // OnExternalParamsChanged, takže tady dirty falešně nenaskočí.
         IsDirty = true;
+        _launchParams = null;     // od teď platí, co nastavil uživatel
         _cachedParamValues = null;
         NotifyParamsSummaryChanged();
         ApplyLayoutParamPick();   // rozvržení sloupců drží šablona - parametr ho do ní promítne
