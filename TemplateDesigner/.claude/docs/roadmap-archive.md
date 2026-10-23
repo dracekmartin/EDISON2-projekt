@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B193d` Popisky a skupiny parametrů (hotovo 23. 10. 2026)
+
+Skupina „Tabulka linky" → „Tabulka spojů" (název prvku), Tvar názvu zastávky jednou definicí pro obě
+agendy AD, nový drift test parametrů všech agend (zakázané tvary, skupina, stejný popisek).
+Detail changelog 2026-10-23 (4).
+
 ## `B193c` Linkový JŘ MHD jako vývěska MHD (hotovo 23. 10. 2026)
 
 Razítko typu JŘ (při návrhu i výluce vyhrává výluka), výchozí skupina linek, výběr linek s platností

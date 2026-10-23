@@ -195,7 +195,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s p.name = "DELENI_SLOUPCU"
     s p.label = "Dělení spojů dle platnosti"
     s p.type = "enum"
-    s p.group = "Tabulka linky"
+    // Skupina = název prvku jako u vývěsek; do 23. 10. „Tabulka linky", což se pletlo s agendou (`ux-conventions §8`).
+    s p.group = "Tabulka spojů"
     s p.serverSide = 1
     s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku tabulky - tady se jen ukáže, že ho šablona má."
     s opts = ##class(%DynamicArray).%New()
@@ -219,7 +220,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pTc.name         = "SLOUPEC_TC"
     s pTc.label        = "Sloupec tarifních čísel"
     s pTc.type         = "enum"
-    s pTc.group        = "Tabulka linky"
+    s pTc.group        = "Tabulka spojů"
     s pTc.serverSide   = 1
     s pTc.defaultValue = "Automaticky (dle linky)"
     s pTc.description  = "Zda se tiskne sloupec tarifních čísel. Automaticky = podle nastavení u linky v jízdních řádech; volbou Tisknout nebo Netisknout se to dá přebít pro tuhle sestavu."
@@ -238,7 +239,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZon.name         = "PISMENO_V_ZONE"
     s pZon.label        = "Písmeno systému u zóny"
     s pZon.type         = "enum"
-    s pZon.group        = "Tabulka linky"
+    s pZon.group        = "Tabulka spojů"
     s pZon.serverSide   = 1
     s pZon.defaultValue = "Automaticky (dle linky)"
     s pZon.description  = "Zda označení zóny nese písmeno svého dopravního systému (Z420 místo 420). Bez něj nejdou u linky přes dvě IDS rozlišit stejně číslované zóny. Automaticky = podle nastavení u linky v jízdních řádech."
@@ -254,7 +255,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pBar.name         = "BARVY_SPOJU"
     s pBar.label        = "Barvy spojů"
     s pBar.type         = "enum"
-    s pBar.group        = "Tabulka linky"
+    s pBar.group        = "Tabulka spojů"
     s pBar.serverSide   = 1
     s pBar.defaultValue = "Automaticky (dle linky)"
     s pBar.description  = "Zda se časy spoje tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Automaticky = podle nastavení u linky; Netisknout = celá tabulka černě."
@@ -274,7 +275,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pObou.name         = "OBOUSMERNY_TISK"
     s pObou.label        = "Obousměrný tisk"
     s pObou.type         = "bool"
-    // „Obecné", ne „Tabulka linky": rozhoduje o složení celé sestavy (jestli vyjde jedna stránka
+    // „Obecné", ne „Tabulka spojů": rozhoduje o složení celé sestavy (jestli vyjde jedna stránka
     // nebo dvě), ne o vzhledu jednoho prvku. Že se promítne i do tabulky, platí skoro o každém
     // parametru téhle agendy (rozhodnutí Jan 31. 8.).
     s pObou.group        = "Obecné"
@@ -300,26 +301,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // se pořád nespustí nikomu, kdo turnusy netiskne. Rozhodnutí Jan 28. 8.: turnus je provozní
     // věc dopravce, ne informace pro cestujícího - patří k sestavě, ne k volbám tisku.
 
-    // Tvar názvu zastávky. ⚠️ **Výchozí „Plný CIS", jinak než u vývěsky**, kde je „Zkrácený":
-    // starý linkový tisk skládá název čárkami a prázdnou část obce nechává jako dvojčárku
-    // („Český Krumlov,,aut. nádraží"), kdežto starý vývěskový modul ji srážel. Ty dva staré moduly
-    // se lišily a parita je tu přednější; komu dvojčárka vadí, přepne si tvar.
-    // Potvrzeno Janem 24. 8.: plný tvar je standard a zůstává výchozí.
-    s pTvar = ##class(%DynamicObject).%New()
-    s pTvar.name         = "TVAR_NAZVU_ZASTAVKY"
-    s pTvar.label        = "Tvar názvu zastávky"
-    s pTvar.type         = "enum"
-    s pTvar.group        = "Obecné"
-    s pTvar.serverSide   = 1
-    s pTvar.defaultValue = "Plný CIS"
-    s pTvar.description  = "Plný CIS zachová dvojčárku podle číselníku zastávek (tak to tiskne starý modul), s okresem i jeho zkratku · Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou)."
-    s optsTvar = ##class(%DynamicArray).%New()
-    d optsTvar.%Push("Plný CIS")
-    d optsTvar.%Push("Plný CIS s okresem")
-    d optsTvar.%Push("Zkrácený")
-    d optsTvar.%Push("Typograficky upravený")
-    s pTvar.options = optsTvar
-
     // Název pro MHD. Legacy ho bere jen u městských linek, které to mají zapnuté - tahle volba
     // umí navíc i to vypnout (stejně jako u vývěsky). Výchozí zapnuto = chování starého modulu.
     s pMhd = ##class(%DynamicObject).%New()
@@ -335,7 +316,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pZvT.name         = "ZVYRAZNIT_TC"
     s pZvT.label        = "Zvýraznit tarifní číslo"
     s pZvT.type         = "text"
-    s pZvT.group        = "Tabulka linky"
+    s pZvT.group        = "Tabulka spojů"
     s pZvT.serverSide   = 1
     s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
 
@@ -347,13 +328,16 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // ⚠️ Každý parametr musí mít `group`. Bez ní ho `AddParamGroups` shodí do vlastní skupiny
     // „Parametry sestavy" a uživatel uvidí osamocenou položku - přesně to potkalo `DELENI_SLOUPCU`
     // do 31. 8. (`L12`).
-    d arr.%Push(pTvar)     // Obecné
+    // Obecné. Tvar názvu zastávky: ⚠️ **výchozí „Plný CIS", jinak než u vývěsky** („Zkrácený") -
+    // starý linkový tisk nechává prázdnou část obce jako dvojčárku („Český Krumlov,,aut. nádraží"),
+    // starý vývěskový modul ji srážel; parita je přednější (potvrzeno Janem 24. 8.).
+    d arr.%Push(..ParametrTvaruNazvuZastavky("Plný CIS"))
     d arr.%Push(pMhd)
     d arr.%Push(..ParametrSmeruTisku())
     d arr.%Push(pObou)
     d arr.%Push(pVyl)
     d arr.%Push(..ParametrPoctuStran())
-    d arr.%Push(p)         // Tabulka linky - dělení spojů je nejdůležitější volba agendy
+    d arr.%Push(p)         // Tabulka spojů - dělení spojů je nejdůležitější volba agendy
     d arr.%Push(pTc)
     d arr.%Push(..ParametrZastavkyBezZastaveni())
     d arr.%Push(pZon)
@@ -398,7 +382,7 @@ ClassMethod ParametrZastavkyBezZastaveni(dleLinky As %Boolean = 1) As %DynamicOb
     s pBez.name         = "ZASTAVKY_BEZ_ZASTAVENI"
     s pBez.label        = "Zastávky, kde žádný spoj nestaví"
     s pBez.type         = "enum"
-    s pBez.group        = "Tabulka linky"
+    s pBez.group        = "Tabulka spojů"
     s pBez.serverSide   = 1
     s pBez.defaultValue = $s(dleLinky:"Automaticky (dle linky)", 1:"Tisknout")
     s pBez.description  = "Zda se v tabulce objeví i zastávky, na kterých žádný spoj linky nestaví (jen je projíždí nebo jedou jinudy)."_$s(dleLinky:" Automaticky = podle nastavení u linky v jízdních řádech.", 1:"")
@@ -420,7 +404,7 @@ ClassMethod ParametrZvyrazneniZastavky(sTarifnimCislem As %Boolean = 1) As %Dyna
     s pZvZ.name         = "ZVYRAZNIT_ZASTAVKU"
     s pZvZ.label        = "Zvýraznit zastávku"
     s pZvZ.type         = "text"
-    s pZvZ.group        = "Tabulka linky"
+    s pZvZ.group        = "Tabulka spojů"
     s pZvZ.serverSide   = 1
     s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. Projíždí-li linka město víckrát, označí se všechny jeho zastávky"_$s(sTarifnimCislem:"; jednu z nich vybere Zvýraznit tarifní číslo.", 1:".")
     q pZvZ

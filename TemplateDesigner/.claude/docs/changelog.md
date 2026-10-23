@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-23 (4) - 🏷️ parametry sestavy pod jednotnými názvy a pod dohledem testu (`B193d`)
+
+Skupina parametrů linkových JŘ „Tabulka linky" se jmenuje „Tabulka spojů" jako prvek, kterého se
+týká - stejně jako vývěsky pojmenovávají skupiny podle prvků (Seznam zastávek, Minuty odjezdů).
+Kanon `ux-conventions §8` tvar „Tabulka linky" zakazuje, protože se plete s agendou. Skupina se
+neukládá, uložené volby zůstávají; v systémových šablonách se opravil i uložený popis parametrů.
+Tvar názvu zastávky má jednu definici pro vývěsku i linkový JŘ AD (`BaseAgenda.ParametrTvaruNazvuZastavky`)
+se stejným pořadím voleb a popisem; výchozí tvar se dál vědomě liší (vývěska Zkrácený, linkový Plný CIS).
+Parametry do teď nehlídal žádný test, proto se tam „Tabulka linky" vůbec dostala: nový
+`AgendaParameterDriftTests` kontroluje u všech agend zakázané tvary v popisku a skupině, skupinu
+„Obecné" nebo název prvku a stejný popisek téhož parametru napříč agendami (ověřeno mutací); pohltil
+dřívější `AgendaParamGroupsDriftTests` (pořadí „Obecné" první zůstává). Ban list kanonu přibral
+„Tabulka linky", „Mřížka odjezdů" a „Legenda poznámek".
+
 ## 2026-10-23 (3) - 🚌 linkový JŘ MHD se chová jako vývěska MHD (`B193c`)
 
 Čtyři drobné rozdíly linkového JŘ MHD proti vývěsce MHD (rozhodnutí Jan 23. 10.: mají být co nejpodobnější).

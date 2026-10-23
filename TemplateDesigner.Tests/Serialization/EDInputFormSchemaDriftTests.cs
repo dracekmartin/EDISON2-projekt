@@ -706,6 +706,9 @@ public class EDInputFormSchemaDriftTests
         "(vlak/bus)",       // → (vlak/autobus)
         "nástupiště",       // → označník
         "Nástupiště",       // → Označník
+        "Tabulka linky",    // → Tabulka spojů (tak se jmenuje agenda, prvek by se s ní pletl)
+        "Mřížka odjezdů",   // → Minuty odjezdů
+        "Legenda poznámek", // → Poznámky
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě
         // různá pole a „stanoviště" je zastřešující pojem pro to z nich, které je zvolené parametrem
         // „Číslo stanoviště podle". Jako synonymum pro označník se dál nepoužívá - viz ux-conventions §8.

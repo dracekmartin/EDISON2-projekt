@@ -281,7 +281,9 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 
 **Strojová pojistka:** `EDInputFormSchemaDriftTests` (ban list zakázaných tvarů + „stejný field key
 = stejný label napříč .cls") - nový termín přidej do kanonu ZDE a případně do ban listu testu;
-vědomé kontextové rozdíly labelu téhož klíče patří do `exempt` v testu s komentářem.
+vědomé kontextové rozdíly labelu téhož klíče patří do `exempt` v testu s komentářem. Týž ban list
+hlídá pole agend (`AgendaSchemaDriftTests`) a parametry sestavy (`AgendaParameterDriftTests`: popisek,
+skupina = „Obecné" nebo název prvku, stejný parametr = stejný popisek napříč agendami).
 
 Kanonické termíny (doména JŘ):
 

@@ -615,7 +615,7 @@
         "Pracovní dny / Soboty / Neděle+svátky",
         "Vlastní rozložení"
       ],
-      "group": "Tabulka linky",
+      "group": "Tabulka spojů",
       "serverSide": true
     },
     {
@@ -628,7 +628,7 @@
         "Tisknout",
         "Netisknout"
       ],
-      "group": "Tabulka linky",
+      "group": "Tabulka spojů",
       "serverSide": true
     },
     {
@@ -641,7 +641,7 @@
         "Tisknout",
         "Netisknout"
       ],
-      "group": "Tabulka linky",
+      "group": "Tabulka spojů",
       "serverSide": true
     },
     {
@@ -654,7 +654,7 @@
         "Zobrazit",
         "Skrýt"
       ],
-      "group": "Tabulka linky",
+      "group": "Tabulka spojů",
       "serverSide": true
     },
     {
@@ -667,21 +667,21 @@
         "Tisknout",
         "Netisknout"
       ],
-      "group": "Tabulka linky",
+      "group": "Tabulka spojů",
       "serverSide": true
     },
     {
       "name": "ZVYRAZNIT_ZASTAVKU",
       "label": "Zvýraznit zastávku",
       "type": "text",
-      "group": "Tabulka linky",
+      "group": "Tabulka spojů",
       "serverSide": true
     },
     {
       "name": "ZVYRAZNIT_TC",
       "label": "Zvýraznit tarifní číslo",
       "type": "text",
-      "group": "Tabulka linky",
+      "group": "Tabulka spojů",
       "serverSide": true
     }
   ],

@@ -3491,24 +3491,8 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // takže přejmenování skupiny uloženou volbu uživatele nezahodí (na rozdíl od labelů voleb).
     // „Obecné" je první schválně - je to nastavení celé sestavy, ne jednoho prvku.
 
-    // KOVED #13089: tvar názvu zastávky. Platí pro název všude, kde se objeví (seznam zastávek,
-    // nadpis vývěsky, cíl, texty poznámek), proto „Obecné" a ne „Seznam zastávek".
     // ⚠️ Výchozí „Zkrácený" = dosavadní chování - jiná výchozí hodnota by pohnula zlatými odtisky.
-    s pTvarNaz = ##class(%DynamicObject).%New()
-    s pTvarNaz.name         = "TVAR_NAZVU_ZASTAVKY"
-    s pTvarNaz.label        = "Tvar názvu zastávky"
-    s pTvarNaz.type         = "enum"
-    s pTvarNaz.group        = "Obecné"
-    s pTvarNaz.serverSide   = 1
-    s pTvarNaz.defaultValue = "Zkrácený"
-    s pTvarNaz.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek, s okresem i jeho zkratku - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
-    s optsTN = ##class(%DynamicArray).%New()
-    d optsTN.%Push("Zkrácený")
-    d optsTN.%Push("Typograficky upravený")
-    d optsTN.%Push("Plný CIS")
-    d optsTN.%Push("Plný CIS s okresem")
-    s pTvarNaz.options = optsTN
-    d arr.%Push(pTvarNaz)
+    d arr.%Push(..ParametrTvaruNazvuZastavky("Zkrácený"))
 
     d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnutím se použije název podle CIS.", 1)
     d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.", 1)

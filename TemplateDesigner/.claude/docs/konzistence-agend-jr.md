@@ -13,14 +13,6 @@ i pole v nabídce dat; po vydání platí „jen přidávat" (`cache-api.md §Ev
 **Co hlídají testy:** `AgendaSchemaDriftTests.cs:101-135` jen „stejné pole = stejný popisek a typ".
 Parametry sestavy, tvar hodnot a pole, která agenda vždy pošle prázdná, nehlídá nic.
 
-## B193d Popisky a skupiny parametrů
-
-- Skupina **„Tabulka linky"** u linkových agend (`LinkovyJrAd.cls:197, 221, 240, 256, 337, 400, 422`).
-  Prvek se jmenuje „Tabulka spojů" (`ElementNames.cs:78`) a `ux-conventions §8` tvar „Tabulka linky"
-  zakazuje. Zastávkové agendy pojmenovávají skupiny podle prvků (Seznam zastávek, Minuty odjezdů).
-- **Tvar názvu zastávky:** jiné pořadí voleb (`ZastavkoveJrAd.cls:3507-3510` × `LinkovyJrAd.cls:316-319`).
-  Jiný výchozí tvar je vědomý (`LinkovyJrAd.cls:302-306`).
-
 ## B193e Skupiny spojů jedním názvem
 
 - Zastávkový AD „Rozdělení sloupců (typy provozu)" ve skupině Minuty odjezdů (`ZastavkoveJrAd.cls:3626`),
@@ -56,3 +48,12 @@ Parametry sestavy, tvar hodnot a pole, která agenda vždy pošle prázdná, neh
 - Číslo zastávky pro adresu v QR: vývěsky `{CISLO_ZASTAVKA}` (AD číslo zastávky, MHD „číslo-označník",
   `ZastavkoveJrMhd.cls:1122`), linkové `{AKTUALNI_ZASTAVKA_CZST}`. Popisek „Číslo zastávky" nese ve
   vývěskách skalár `CISLO_ZASTAVKA` a v linkových pole kolekce `CZST`.
+
+## B193i Název pro MHD
+
+- Vývěska AD: `NAZEV_PRO_MHD` zapnuté = název pro MHD (pole 7 registru) vždy, když ho zastávka má
+  (`ZastavkoveJrAd.cls:3276`, použití `:3135`).
+- Linkový AD: jen u městské linky (typ MEST/MESP) s nastavením linky `PATCH,nazMHD`
+  (`LinkovyJrAd.cls:2430-2448`, použití `ZdrojNazvuZastavky` `:2415`) - parita se starým knižním tiskem.
+- Popisy parametru to říkají každý jinak (`ZastavkoveJrAd.cls:3497`, `LinkovyJrAd.cls:307-312`).
+  Zda je chování vývěsky shodné se starým vývěskovým modulem, neověřeno.

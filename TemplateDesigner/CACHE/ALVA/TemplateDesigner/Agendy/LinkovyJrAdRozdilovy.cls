@@ -122,7 +122,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 }
 
 /// Parametry linkového JŘ, před nimi dva, kterými se zadá původní verze. Patří do „Obecné" -
-/// je to nastavení celé sestavy a ta skupina musí být první (AgendaParamGroupsDriftTests).
+/// je to nastavení celé sestavy a ta skupina musí být první (AgendaParameterDriftTests).
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
     s err = ""
