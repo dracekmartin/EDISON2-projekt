@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B193c` Linkový JŘ MHD jako vývěska MHD (hotovo 23. 10. 2026)
+
+Razítko typu JŘ (při návrhu i výluce vyhrává výluka), výchozí skupina linek, výběr linek s platností
+a číslem linky, popis Směru pro tisk bez obousměrného tisku. Obě agendy MHD na to sdílejí jeden kód;
+linkový JŘ vědomě nabízí i linky bez trasy, protože u nich napíše důvod. Detail changelog 2026-10-23 (3).
+
 ## `B193b` Obě čísla linky ve všech agendách JŘ (hotovo 23. 10. 2026)
 
 Vývěska MHD tiskla licenční číslo, zkušební linkový MHD veřejné, linkový AD veřejné vůbec neposílal.

@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-23 (3) - 🚌 linkový JŘ MHD se chová jako vývěska MHD (`B193c`)
+
+Čtyři drobné rozdíly linkového JŘ MHD proti vývěsce MHD (rozhodnutí Jan 23. 10.: mají být co nejpodobnější).
+Linka s příznakem návrhu i výluky dostane razítko „VÝLUKOVÝ" jako na vývěsce (do teď „NÁVRH"; stará
+vývěska `LinkyPrintFormatMHD.cls:692-693`, starý knižní tisk razítko neměl). Výchozí skupina linek
+četla neexistující příznak zablokování, takže mohla vyjít zablokovaná skupina, kterou nabídka
+neukazuje. Výběr linek ukazuje platnost a bez veřejného čísla licenční, ne interní číslo záznamu.
+Popis Směru pro tisk už neodkazuje na obousměrný tisk, který MHD nemá. Místo opravy kopií teď obě
+agendy MHD sdílejí jeden kód: razítko (`ZastavkoveJrMhd.TypJrLinky`), skupiny linek, výchozí skupinu
+a seznam linek (`SeznamLinek`). Jediný vědomý rozdíl: linkový JŘ nabízí i linky bez trasy, protože
+u nich napíše důvod; vývěska je schovává (srovná se s `B193g`). Test `LinkovyJrMhdTest.TestJakoVyveskaMhd`
+(ověřeno dvěma mutacemi).
+
 ## 2026-10-23 (2) - 🔢 obě čísla linky ve všech jízdních řádech (`B193b`)
 
 Číslo linky dle licence a veřejné označení (jak ho zná cestující, CB_DP 325018 × 18) jsou teď

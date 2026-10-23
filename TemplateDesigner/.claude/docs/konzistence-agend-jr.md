@@ -13,18 +13,6 @@ i pole v nabídce dat; po vydání platí „jen přidávat" (`cache-api.md §Ev
 **Co hlídají testy:** `AgendaSchemaDriftTests.cs:101-135` jen „stejné pole = stejný popisek a typ".
 Parametry sestavy, tvar hodnot a pole, která agenda vždy pošle prázdná, nehlídá nic.
 
-## B193c Drobné rozdíly linkového MHD proti vývěsce MHD
-
-- **Typ JŘ** při výluce i návrhu: vývěska „VÝLUKOVÝ" (`ZastavkoveJrMhd.cls:323-324`, výluka se
-  nastaví až po návrhu), linkový „NÁVRH" (`LinkovyJrMhd.cls:424-425`). Komentář tvrdí „1:1 zastávkový vzor".
-- **Výchozí skupina linek:** linkový čte příznak `Zablokovano` (`LinkovyJrMhd.cls:274`), všude jinde
-  `Blocked` (`:212`, `ZastavkoveJrMhd.cls:2011`). Výchozí tak může být zablokovaná skupina, kterou
-  nabídka skupin neukazuje. Neověřeno na datech.
-- **Výběr linek:** vývěska ukazuje platnost a bez veřejného čísla licenční (`ZastavkoveJrMhd.cls:189-211`),
-  linkový platnost ne a bez čísla interní id (`LinkovyJrMhd.cls:245-248`).
-- **Popis Směru pro tisk** odkazuje na obousměrný tisk (`LinkovyJrAd.cls:441`), který MHD nemá.
-  Zvýraznit zastávku už popis podle agendy mění (`:424`).
-
 ## B193d Popisky a skupiny parametrů
 
 - Skupina **„Tabulka linky"** u linkových agend (`LinkovyJrAd.cls:197, 221, 240, 256, 337, 400, 422`).

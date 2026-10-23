@@ -428,8 +428,9 @@ ClassMethod ParametrZvyrazneniZastavky(sTarifnimCislem As %Boolean = 1) As %Dyna
 
 /// Směr pro tisk (legacy MHD `arr,11` „SmerID#", Jan 12. 10.): které směry linky se vytisknou.
 /// Jediná definice pro AD i MHD variantu - musí se v obou jmenovat a chovat stejně.
+/// `sObousmernym` = agenda nabízí obousměrný tisk a popis na něj odkáže (MHD ho nemá).
 /// ⚠️ Popisky voleb jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
-ClassMethod ParametrSmeruTisku() As %DynamicObject
+ClassMethod ParametrSmeruTisku(sObousmernym As %Boolean = 1) As %DynamicObject
 {
     s pSmer = ##class(%DynamicObject).%New()
     s pSmer.name         = "SMER_TISKU"
@@ -439,7 +440,7 @@ ClassMethod ParametrSmeruTisku() As %DynamicObject
     s pSmer.group        = "Obecné"
     s pSmer.serverSide   = 1
     s pSmer.defaultValue = "Oba"
-    s pSmer.description  = "Které směry linky se vytisknou. S jedním směrem se obousměrný tisk neuplatní."
+    s pSmer.description  = "Které směry linky se vytisknou."_$s(sObousmernym:" S jedním směrem se obousměrný tisk neuplatní.", 1:"")
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Oba"), opts.%Push("Tam"), opts.%Push("Zpět")
     s pSmer.options = opts

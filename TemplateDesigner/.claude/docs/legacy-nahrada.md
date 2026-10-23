@@ -781,8 +781,9 @@ mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje. Popi
 
 **Doplněno 23. 10. (review `B193`)** - kde začít, protože se to už rozešlo:
 
-- **Výběr skupin linek a linek** - čtyři kopie (`GetAvailableSkupiny`, `GetAvailableInstances`,
-  výchozí skupina). Kopie MHD se rozešly v příznaku zablokování (`LinkovyJrMhd.cls:274`).
+- **Výběr skupin linek a linek** - u AD dvě kopie (`GetAvailableSkupiny`, `GetAvailableInstances`).
+  MHD je od 23. 10. sdílí (`ZastavkoveJrMhd.SeznamLinek`, `B193c`), kopie se do té doby rozešly
+  v příznaku zablokované skupiny.
 - **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - každá agenda ji skládá zvlášť; odtud čtyři
   tvary popisu platnosti a dva texty návrhu ([`konzistence-agend-jr.md`](konzistence-agend-jr.md) `B193f`).
 - **Společné parametry vývěsek** (Pořadí stránek, šipky, projeté zastávky, časová osa, roztažení) jsou

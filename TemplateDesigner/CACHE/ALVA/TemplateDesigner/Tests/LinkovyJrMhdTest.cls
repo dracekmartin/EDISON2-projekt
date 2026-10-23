@@ -470,6 +470,68 @@ Method TestDopravceJakoVyveska()
 	do $$$AssertTrue(dopravce '[ $c(10), "jedním řádkem")
 }
 
+/// `B193c`: linkový JŘ MHD se chová jako vývěska MHD - razítko typu JŘ (při návrhu i výluce vyhrává
+/// výluka), výchozí skupina linek (zablokovaná se přeskočí), skupiny a položky výběru linek (linkový
+/// navíc jen linky bez trasy, u kterých napíše důvod) a popis Směru pro tisk bez obousměrného tisku.
+Method TestJakoVyveskaMhd()
+{
+	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+	set idfa = "TDTEST"_$translate($system.Util.CreateGUID(), "-"), db = $namespace
+	try {
+		set g = $name(^[db]ALVA.MHD.LSO(idfa, 1, "DTA", 7, "DTA", 1))
+		set @g@("Navrh") = 1, @g@("Vyluka") = 1
+		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "VÝLUKOVÝ", "návrh i výluka")
+		set @g@("Vyluka") = 0
+		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "NÁVRH", "jen návrh")
+		set @g@("Navrh") = 0
+		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "", "bez příznaků")
+		set ^[db]ALVA.MHD.ENUMS(idfa, "SkupinyLinek", "DTA", 1, "Blocked") = 1
+		set ^[db]ALVA.MHD.ENUMS(idfa, "SkupinyLinek", "DTA", 2, "Blocked") = 0
+		do $$$AssertEquals($classmethod(vyv, "GetDefaultSkupinaLinekID", idfa, db), 2, "zablokovaná skupina se přeskočí")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]ALVA.MHD.LSO(idfa), ^[db]ALVA.MHD.ENUMS(idfa)
+
+	if '##class(%SYS.Namespace).Exists("KV_DP") {
+		do $$$AssertSkipped("firma KV_DP není na serveru")
+		quit
+	}
+	do ..SysFirmy(.sys, "KV_DP")
+	for agenda = vyv, "ALVA.TemplateDesigner.Agendy.LinkovyJrMhd" {
+		kill ^||ML
+		set ^||ML("IN","limit") = 10000
+		do $classmethod(agenda, "GetAvailableInstances", .sys)
+		set linky(agenda) = $get(^||ML("OUT",1))
+		kill ^||ML
+		do $classmethod(agenda, "GetAvailableSkupiny", .sys)
+		set skupiny(agenda) = $get(^||ML("OUT",1))
+	}
+	do $$$AssertEquals(skupiny("ALVA.TemplateDesigner.Agendy.LinkovyJrMhd"), skupiny(vyv), "skupiny linek jako vývěska")
+	kill polozky
+	set it = ##class(%DynamicArray).%FromJSON(linky("ALVA.TemplateDesigner.Agendy.LinkovyJrMhd")).%GetIterator()
+	while it.%GetNext(.k, .o) { set polozky(o.value) = o.%ToJSON() }
+	set it = ##class(%DynamicArray).%FromJSON(linky(vyv)).%GetIterator(), pocet = 0
+	while it.%GetNext(.k, .o) {
+		set pocet = pocet + 1
+		do $$$AssertEquals($get(polozky(o.value), "(chybí)"), o.%ToJSON(), "linka "_o.value_" ve výběru jako vývěska")
+		kill polozky(o.value)
+	}
+	do $$$AssertTrue(pocet > 0, "vývěska nabídla aspoň jednu linku")
+	set lin = ""
+	for  {
+		set lin = $order(polozky(lin))
+		quit:lin=""
+		do $$$AssertEquals(##class(ALVA.MHD.LinkyFce).GetTrasaId("KV_DP", "KV_DP", lin), "", "linka "_lin_" navíc jen proto, že nemá trasu")
+	}
+
+	kill ^||ML
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetParameters(.sys)
+	set it = ##class(%DynamicArray).%FromJSON(^||ML("OUT",1)).%GetIterator(), popis = "(chybí)"
+	while it.%GetNext(.k, .p) { set:p.name="SMER_TISKU" popis = p.description }
+	do $$$AssertTrue((popis '= "(chybí)") && (popis '[ "obousměrný"), "Směr pro tisk bez obousměrného tisku: "_popis)
+}
+
 /// Čísla čárkou seřazená vzestupně, aby nezáleželo na pořadí.
 ClassMethod Serazene(cisla As %String) As %String
 {

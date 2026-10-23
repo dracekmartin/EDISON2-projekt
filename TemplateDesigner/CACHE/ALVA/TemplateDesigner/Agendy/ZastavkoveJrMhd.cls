@@ -160,72 +160,78 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
     s err = ""   // $$$CatchErrRest čte err; bez init by catch (např. firma bez MHD dat → throw) padl na <UNDEFINED>err
     try {
         $$$FillParams
-
-        s search = $zcvt($g(^||ML("IN","search")), "L")
-        s limit  = +$g(^||ML("IN","limit"))
-        if 'limit s limit = 50
-
-        // Skupina linek = organizační kontext. V budoucnu předáváno z Edisona;
-        // zatím default první nezblokovaná skupina v ENUMS.
-        s SkupinaLinekID = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
-        if 'SkupinaLinekID s SkupinaLinekID = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
-
-        s arr = ##class(%DynamicArray).%New()
-        s count = 0
-        // Bez aktivní skupiny linek (typicky firma bez MHD dat, např. čistě AD firma) → prázdný
-        // picker, NE chyba: přepnutí na agendu MHD u takové firmy nemá vyhazovat popup. Smyčka níže
-        // se SkupinaLinekID=0 nenajde v indexu žádnou linku a vrátí prázdné pole.
-        // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID) - jen linky skupiny.
-        s LinkaID = ""
-        for {
-            s LinkaID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID))
-            q:LinkaID=""
-
-            // Přeskočit linky bez nastavené trasy - orphan / nedokončené záznamy,
-            // GetData by na nich padl na <SUBSCRIPT> v PripravitTrasu.
-            s TrasaID = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, LinkaID)
-            if TrasaID = "" continue
-
-            s cislo  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
-            if cislo = "" s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
-            s nazev  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
-            s platOd = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd"))
-            s platDo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo"))
-
-            s display = cislo
-            if nazev '= "" {
-                if display '= "" s display = display_" - "_nazev
-                else  s display = nazev
-            }
-            if display = "" s display = "Linka "_LinkaID
-
-            // Filtr - substring match case-insensitive na display
-            if search '= "" {
-                if '$f($zcvt(display, "L"), search) continue
-            }
-
-            s subtitle = ""
-            if platOd '= "" {
-                s subtitle = "Platnost od "_platOd
-                if platDo '= "" s subtitle = subtitle_" do "_platDo
-            }
-
-            s obj = ##class(%DynamicObject).%New()
-            // "string" type - .NET čte přes GetString(); bez toho číselné cislo/LinkaID → JSON number → chyba
-            d obj.%Set("value",    LinkaID, "string")
-            d obj.%Set("cislo",    cislo, "string")
-            d obj.%Set("nazev",    nazev, "string")
-            d obj.%Set("display",  display, "string")
-            if subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
-            d arr.%Push(obj)
-
-            s count = count + 1
-            q:count>=limit
-        }
-
-        s ^||ML("OUT","1") = arr.%ToJSON()
+        s ^||ML("OUT","1") = ..SeznamLinek(IdFa, dataDB, 1).%ToJSON()
     } catch (ex) { $$$CatchErrRest }
     ret $$$OK
+}
+
+/// Linky skupiny pro výběr instancí (číslo, název, platnost). Sdílí ho linkový JŘ MHD, aby se táž
+/// linka v obou nabízela stejně. `jenSTrasou` = vynechat linky bez trasy: vývěska by na nich
+/// spadla, linkový JŘ u nich napíše důvod (`DUVOD_PRAZDNE`), takže je ukáže.
+/// Helper - volá se z GetAvailableInstances obou agend MHD, které catch mají.
+ClassMethod SeznamLinek(IdFa As %String, dataDB As %String, jenSTrasou As %Boolean = 1) As %DynamicArray
+{
+    s search = $zcvt($g(^||ML("IN","search")), "L")
+    s limit  = +$g(^||ML("IN","limit"))
+    if 'limit s limit = 50
+
+    // Skupina linek = organizační kontext. V budoucnu předáváno z Edisona;
+    // zatím default první nezblokovaná skupina v ENUMS.
+    s SkupinaLinekID = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
+    if 'SkupinaLinekID s SkupinaLinekID = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
+
+    s arr = ##class(%DynamicArray).%New()
+    s count = 0
+    // Bez aktivní skupiny linek (typicky firma bez MHD dat, např. čistě AD firma) → prázdný
+    // picker, NE chyba: přepnutí na agendu MHD u takové firmy nemá vyhazovat popup. Smyčka níže
+    // se SkupinaLinekID=0 nenajde v indexu žádnou linku a vrátí prázdné pole.
+    // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID) - jen linky skupiny.
+    s LinkaID = ""
+    for {
+        s LinkaID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID))
+        q:LinkaID=""
+
+        // Přeskočit linky bez nastavené trasy - orphan / nedokončené záznamy,
+        // GetData vývěsky by na nich padl na <SUBSCRIPT> v PripravitTrasu.
+        if jenSTrasou && (##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, LinkaID) = "") continue
+
+        s cislo  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
+        if cislo = "" s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
+        s nazev  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
+        s platOd = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd"))
+        s platDo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo"))
+
+        s display = cislo
+        if nazev '= "" {
+            if display '= "" s display = display_" - "_nazev
+            else  s display = nazev
+        }
+        if display = "" s display = "Linka "_LinkaID
+
+        // Filtr - substring match case-insensitive na display
+        if search '= "" {
+            if '$f($zcvt(display, "L"), search) continue
+        }
+
+        s subtitle = ""
+        if platOd '= "" {
+            s subtitle = "Platnost od "_platOd
+            if platDo '= "" s subtitle = subtitle_" do "_platDo
+        }
+
+        s obj = ##class(%DynamicObject).%New()
+        // "string" type - .NET čte přes GetString(); bez toho číselné cislo/LinkaID → JSON number → chyba
+        d obj.%Set("value",    LinkaID, "string")
+        d obj.%Set("cislo",    cislo, "string")
+        d obj.%Set("nazev",    nazev, "string")
+        d obj.%Set("display",  display, "string")
+        if subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
+        d arr.%Push(obj)
+
+        s count = count + 1
+        q:count>=limit
+    }
+    q arr
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -319,9 +325,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s LokalniOznaceni = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
         s NazevLinky = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
         s QRKod = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"QRCode"))
-        s TypJR = ""
-        i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Navrh")) s TypJR = "NÁVRH"
-        i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Vyluka")) s TypJR = "VÝLUKOVÝ"
+        s TypJR = ..TypJrLinky(IdFa, dataDB, LinkaID)
 
         // Uložit konfiguraci do working globálu - helper metody čtou odtud
         s ^||TiskMHD("config","LinkaID") = LinkaID
@@ -2007,6 +2011,15 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     d out.%Set("rows", rows)
     s ^||ML("OUT", $i(^||ML("OUT"))) = out.%ToJSON()
     ret $$$OK
+}
+
+/// Razítko typu JŘ podle příznaků linky; při návrhu i výluce vyhrává výluka (stará vývěska
+/// `LinkyPrintFormatMHD.cls:692-693`). Sdílí linkový JŘ MHD, aby táž linka nesla v obou totéž.
+ClassMethod TypJrLinky(IdFa As %String, dataDB As %String, LinkaID As %String) As %String
+{
+    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Vyluka")) q "VÝLUKOVÝ"
+    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Navrh")) q "NÁVRH"
+    q ""
 }
 
 /// Vrátí ID první nezblokované skupiny linek pro danou IdFa.

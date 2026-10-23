@@ -142,7 +142,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         s arr = ##class(%DynamicArray).%New()
-        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
+        // Bez zmínky o obousměrném tisku - MHD ho nemá (`B191d`).
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku(0))
         // Až 3 strany - městská linka má víc spojů než meziměstská (Jan 22. 10.).
         d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran(0, 3))
         // Bez „Automaticky (dle linky)" - linka MHD to nastavení nemá; výchozí Tisknout jako starý tisk.
@@ -195,87 +196,24 @@ ClassMethod TypProvozuSeTiskne(tp As %String) As %Boolean
     q $zcvt($g(^||ML("IN", ..ParametrTypuProvozu(tp))), "L") '= "false"
 }
 
-/// Skupiny linek pro filtr Instance Pickeru - ENUMS "SkupinyLinek" mimo zablokované.
-/// Bez téhle metody dialog přepínač skryje a uživatel zůstane na výchozí skupině, i když
-/// GetAvailableInstances filtr přijímá. ⚠️ Vědomá kopie ZastavkoveJrMhd (týž zdroj ENUMS);
-/// zastávkových agend se podle CLAUDE.md nedotýkáme, sjednocení readerů patří do `L8`.
+/// Skupiny linek pro filtr výběru instancí - tytéž jako u vývěsky MHD (týž číselník).
+/// Bez téhle metody dialog přepínač skryje a uživatel zůstane na výchozí skupině.
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
-    s err = ""
-    try {
-        $$$FillParams
-
-        s arr = ##class(%DynamicArray).%New()
-        s id = ""
-        f {
-            s id = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id))
-            q:id=""
-            i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Blocked")) continue
-
-            s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Nazev"))
-            s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value", id)
-            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_id))
-            d arr.%Push(obj)
-        }
-        s ^||ML("OUT","1") = arr.%ToJSON()
-    }
-    catch (ex) { $$$CatchErrRest }
-    q $$$OK
+    q ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetAvailableSkupiny(.sys)
 }
 
-/// Vrátí seznam linek pro Instance Picker - linky aktivní skupiny linek (vzor ZastavkoveJrMhd).
+/// Linky pro výběr instancí stejně jako u vývěsky MHD (číslo, název, platnost), jen i bez trasy:
+/// linkový JŘ u takové linky napíše důvod (`DUVOD_PRAZDNE`), schovaná by vypadala jako chybějící.
+/// Do 23. 10. tu byla vlastní kopie, která se rozešla v příznaku zablokované skupiny.
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
     s err = ""
     try {
         $$$FillParams
-
-        s search = $zcvt($g(^||ML("IN","search")), "L")
-        s limit  = +$g(^||ML("IN","limit"))
-        i 'limit s limit = 50
-
-        s skupinaLinek = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
-        i 'skupinaLinek s skupinaLinek = ..DefaultSkupinaLinek(IdFa, dataDB)
-
-        s arr = ##class(%DynamicArray).%New()
-        s count = 0, linkaId = ""
-        f {
-            s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,linkaId))
-            q:linkaId=""
-            s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloVerejne"))
-            s nazev = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"NazevLinky"))
-            s display = $s(cislo'="":cislo, 1:linkaId)
-            i nazev '= "" s display = display_" - "_nazev
-            i (search '= "") && ('$f($zcvt(display,"L"), search)) continue
-
-            s obj = ##class(%DynamicObject).%New()
-            // Viz LinkovyJrAd: bez `cislo`/`nazev` je výběr instancí prázdný.
-            d obj.%Set("value", linkaId, "string")
-            d obj.%Set("cislo", cislo, "string")
-            d obj.%Set("nazev", nazev, "string")
-            d obj.%Set("display", display, "string")
-            d arr.%Push(obj)
-            s count = count + 1
-            q:count>=limit
-        }
-
-        s ^||ML("OUT","1") = arr.%ToJSON()
+        s ^||ML("OUT","1") = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).SeznamLinek(IdFa, dataDB, 0).%ToJSON()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
-}
-
-/// První nezablokovaná skupina linek (vzor ZastavkoveJrMhd.GetDefaultSkupinaLinekID).
-ClassMethod DefaultSkupinaLinek(IdFa As %String, dataDB As %String) As %Integer
-{
-    s skupina = ""
-    f {
-        s skupina = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",skupina))
-        q:skupina=""
-        i '+$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",skupina,"Zablokovano")) q
-    }
-    i skupina = "" s skupina = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,""))
-    q +skupina
 }
 
 /// Vrátí data pro tisk: 1 stránka per (linka × směr) - směr 0 (T), pak 1 (Z); `SMER_TISKU` vybere jen jeden.
@@ -367,7 +305,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         $$$FillParams
         k ^||TiskKnizniMhd
 
-        s skupinaLinek = ..DefaultSkupinaLinek(IdFa, dataDB)
+        s skupinaLinek = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetDefaultSkupinaLinekID(IdFa, dataDB)
         s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,""))
         s page = ""
         i linkaId '= "" {
@@ -420,11 +358,8 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         i platiDo '= "" s popisPlatnosti = popisPlatnosti_" do "_platiDo
     }
     d vals.%Set("POPIS_PLATNOSTI",     popisPlatnosti)
-    // razítko: Navrh / Vyluka na lince (1:1 zastávkový vzor)
-    s typJr = ""
-    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"Vyluka")) s typJr = "VÝLUKOVÝ"
-    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"Navrh"))  s typJr = "NÁVRH"
-    d vals.%Set("TYP_JR",              typJr)
+    // Razítko jako vývěska MHD (do 23. 10. tu při návrhu i výluce vyhrál návrh); starý knižní tisk ho nemá.
+    d vals.%Set("TYP_JR",              ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).TypJrLinky(IdFa, dataDB, linkaId))
     d vals.%Set("QR_KOD",              $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"QRCode")))
     d vals.%Set("SMER",                $s(smerId=0:"T", 1:"Z"))
     // Dopravce z téhož zdroje jako vývěska MHD, jen jedním řádkem jako linkový AD. Starý knižní
