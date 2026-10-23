@@ -58,7 +58,8 @@ public class SpusteniPdfNaostro(ITestOutputHelper output)
         using var pdf = PdfDocument.Open(cesta);
         var text = string.Join("\n", pdf.GetPages().Select(p => p.Text));
         output.WriteLine($"stran: {pdf.NumberOfPages}");
-        output.WriteLine(text.Length > 1500 ? text[..1500] : text);
+        foreach (var strana in pdf.GetPages())
+            output.WriteLine($"--- strana {strana.Number}: {(strana.Text.Length > 700 ? strana.Text[..700] : strana.Text)}");
         Assert.True(pdf.NumberOfPages > 0);
         Assert.DoesNotContain("Neporovnáno", text);
     }
