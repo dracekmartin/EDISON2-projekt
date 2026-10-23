@@ -13,12 +13,6 @@ i pole v nabídce dat; po vydání platí „jen přidávat" (`cache-api.md §Ev
 **Co hlídají testy:** `AgendaSchemaDriftTests.cs:101-135` jen „stejné pole = stejný popisek a typ".
 Parametry sestavy, tvar hodnot a pole, která agenda vždy pošle prázdná, nehlídá nic.
 
-## B193h Číslo zastávky pro QR
-
-- Číslo zastávky pro adresu v QR: vývěsky `{CISLO_ZASTAVKA}` (AD číslo zastávky, MHD „číslo-označník",
-  `ZastavkoveJrMhd.cls:1122`), linkové `{AKTUALNI_ZASTAVKA_CZST}`. Popisek „Číslo zastávky" nese ve
-  vývěskách skalár `CISLO_ZASTAVKA` a v linkových pole kolekce `CZST`.
-
 ## B193i Název pro MHD
 
 - Vývěska AD: `NAZEV_PRO_MHD` zapnuté = název pro MHD (pole 7 registru) vždy, když ho zastávka má

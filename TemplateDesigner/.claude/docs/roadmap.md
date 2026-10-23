@@ -21,15 +21,13 @@ Rozdílový JŘ je mimo rozsah (bude nástroj modulu JŘ). Zamčené jsou jen po
 
 **Tisk a data - mění výstup vydaných agend:**
 
-1. **`B193h` Číslo zastávky pro QR jedním polem** [S]. Ve vývěskách je pod jiným polem než v linkových
-   (a ve vývěsce MHD nese i označník). Ověřit, jestli to někomu vadí.
-2. **`B193i` Název pro MHD stejně ve vývěsce i v linkovém AD** [S] (nález 23. 10.). Volba „Použít název
+1. **`B193i` Název pro MHD stejně ve vývěsce i v linkovém AD** [S] (nález 23. 10.). Volba „Použít název
    pro MHD" bere ve vývěsce AD název pro MHD vždy, když ho zastávka má; v linkovém AD jen u městské linky,
    která to má u sebe zapnuté (jako starý knižní tisk). Nejdřív ověřit proti staré vývěsce AD, pak rozhodnout.
 
 **Po vydání:**
 
-3. **`B56` Sloučení opsaného kódu agend** [L] (čekalo na doimplementaci knižního JŘ - splněno 22. 10.).
+2. **`B56` Sloučení opsaného kódu agend** [L] (čekalo na doimplementaci knižního JŘ - splněno 22. 10.).
    Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už rozešlo: výběr skupin linek
    a linek u AD (MHD sdílí od `B193c`), hlavička linky (rozcházela se v platnosti a razítku, `B193f`), společné parametry vývěsek,
    předpřipravené tabulky, které návrhář nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md).
@@ -86,7 +84,8 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
 - **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
   otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.
   Nahrazuje lokální demo z 1. 10. (`edwcore/apps/tisky-qr` nad EDISONem). Zadání, k ověření
-  a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md).
+  a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md). Patří sem i jedno pole
+  čísla zastávky pro adresu v QR ve všech agendách (dřív `B193h`, odloženo Janem 23. 10.).
 
 - **Provozně (ne vývoj, Jan 7. 10.):** projít se zákazníky, kteří tisknou ze **starých šablon**
   (starý tisk JŘ a jeho návrhář sestav), jak totéž udělat po novu v Návrháři šablon - převést

@@ -37,6 +37,12 @@ naskenuje QR u sloupku a hned má informace o zastávce, kde stojí.
 sloupku" nešlo říct) a z jízd **do konce zítřka** - cíl obsluhovaný jen o víkendu se ve středu
 nenabídne. Natáhnout na 7 dní jako hledání nejbližšího spoje? Pro demo zůstává (Jan 13. 10.).
 
+**Číslo zastávky pro adresu v QR je v každé agendě v jiném poli** (review `B193h`, odloženo sem
+Janem 23. 10.): ukázkové vývěsky AD skládají adresu z `{CISLO_ZASTAVKA_CIS}` (CIS číslo, + `{SLOUPEK}`),
+linkové JŘ z `{AKTUALNI_ZASTAVKA_CZST}` + `{AKTUALNI_ZASTAVKA_TC}` (interní číslo, starší lokální demo).
+Vývěska MHD nese `{CISLO_ZASTAVKA}` jako „číslo-označník" (`ZastavkoveJrMhd.cls:1122`), CIS číslo nemá.
+Až se tu rozhodne tvar adresy, vybrat jedno pole pro všechny agendy a doplnit ho tam, kde chybí.
+
 ## Stav 13. 10. - nasazeno v ISYCloud 0.37.1
 
 - **Aplikace:** `https://isycloud.cz/qr-vyhledavac/<CIS číslo>?sloupek=<id sloupku>` (edwcore
