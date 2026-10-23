@@ -17,7 +17,7 @@ Include GENERAL
 /// 
 /// Názvy polí sdílí se zastávkovým JŘ (tam, kde jde o tutéž věc) - hlídá AgendaSchemaDriftTests.
 ///
-///   values: CISLO_LINKY, LOKALNI_OZNACENI_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
+///   values: CISLO_LINKY, LOKALNI_OZNACENI_LINKY, POPIS_LINKY, BARVA_LINKY(_2), POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
 ///           DATUM_PLATNOSTI_OD/DO, POPIS_PLATNOSTI (jen pro starší šablony), TYP_JR, QR_KOD, SMER ("T"/"Z"), KONECNA_ZASTAVKA,
 ///           VYCHOZI_ZASTAVKA, AKTUALNI_ZASTAVKA_CZST/TC (zvýrazněná zastávka, je-li jednoznačná)
 ///   rows.ZASTAVKY:    [{ PORADI, TYP ("zastavka" hlavní/odjezdový řádek | "prijezd" vložený
@@ -98,6 +98,8 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
     d ..AddField(fields, "POPIS_LINKY",           "Popis linky",              "text")
+    d ..AddField(fields, "BARVA_LINKY",           "Barva linky",              "color")
+    d ..AddField(fields, "BARVA_LINKY_2",         "Barva linky 2",            "color")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
@@ -571,6 +573,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
             // strana prostě nemá sloupce a prvek ji nenakreslí.
             s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 1, sTurnusy, volbaZony)
             i page '= "" {
+                d ..DoplnBarvyLinky(page, IdFa, dataDB, sku, lin)
                 i vylepy { d ..VypisVylepy(page, "T,Z", 1) }
                 else { s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON() }
             }
@@ -580,6 +583,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
                 s smer = $p(smery, ",", si)
                 s page = ..BuildStrankaLinky(dataDB, sku, lin, smer, deleni, volbaTc, volbaBez, volbaBarvy, .defSloupcu, 0, sTurnusy, volbaZony)
                 continue:page=""
+                d ..DoplnBarvyLinky(page, IdFa, dataDB, sku, lin)
                 i vylepy { d ..VypisVylepy(page, smer, 0) }
                 else { s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON() }
             }
@@ -589,6 +593,14 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     }
     catch (ex) { $$$CatchErrRest }
     ret $$$OK
+}
+
+/// Barvy linky z jízdních řádů (#13606) týmž voláním jako vývěska AD (`ZastavkoveJrAd.BarvaLinky`),
+/// aby měla linka v obou sestavách stejnou barvu. Druhou barvu modul významově nepojmenovává.
+ClassMethod DoplnBarvyLinky(page As %DynamicObject, IdFa As %String, dataDB As %String, sku As %String, lin As %String)
+{
+    d page.values.%Set("BARVA_LINKY", ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BarvaLinky(IdFa, dataDB, sku, lin))
+    d page.values.%Set("BARVA_LINKY_2", ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BarvaLinky(IdFa, dataDB, sku, lin, 2))
 }
 
 /// Výlepy na zastávky: ze stránky směru (nebo obousměrné) vypíše jednu stránku za každou zastávku
@@ -684,6 +696,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         d ..ParseDefiniceSloupcu(.defSloupcu)
         s page = ""
         i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2, "", "", "", .defSloupcu)
+        i page '= "" d ..DoplnBarvyLinky(page, IdFa, dataDB, sku, lin)
 
         i page = "" {
             s page = ##class(%DynamicObject).%New()

@@ -1,5 +1,10 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Barva linky v linkovém JŘ AD (hotovo 23. 10. 2026, #13606)
+
+Pole Barva linky a Barva linky 2 jako u vývěsky AD, týmž voláním. MHD zatím ne (Jan 23. 10.).
+Detail changelog 2026-10-23 (13).
+
 ## `B191f` Linkový JŘ MHD: vydání (připraveno 23. 10. 2026 do verze 27. 10.)
 
 Zveřejněná agenda, systémová šablona ze zkušební (s pravidlem zvýraznění aktuální zastávky, které

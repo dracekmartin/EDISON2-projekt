@@ -1072,7 +1072,9 @@ Obvyklá šablona má tři sekce pod sebou:
 - **Hlavička** (opakuje se na každé stránce) - textové prvky s poli `{CISLO_LINKY}` (číslo linky
   dle licence) nebo `{LOKALNI_OZNACENI_LINKY}` (veřejné označení, jak ho zná cestující), `{POPIS_LINKY}`, `{DATUM_PLATNOSTI_OD}`, `{DATUM_PLATNOSTI_DO}`, `{TYP_JR}`,
   `{POPIS_DOPRAVCE}` a `{POZNAMKA_NAD_LINKU}`. `{POPIS_DOPRAVCE}` uvádí jen dopravce spojů na dané
-  stránce; jezdí-li na stránce víc dopravců, připíše ke každému čísla jeho spojů.
+  stránce; jezdí-li na stránce víc dopravců, připíše ke každému čísla jeho spojů. Barvu linky
+  z jízdních řádů dostanete jako u vývěsky: do pole barvy prvku napište `{BARVA_LINKY}` nebo
+  `{BARVA_LINKY_2}` (jen linkový JŘ AD).
 - **Jízdní řád** - jediný prvek **Tabulka spojů**. Sekce má být nastavená na „Rozdělit přes
   stránky", jinak se dlouhá linka nevytiskne celá.
 - **Poznámky** - prvek **Poznámky**, tentýž jako u vývěsky: vysvětlí značky, které tabulka

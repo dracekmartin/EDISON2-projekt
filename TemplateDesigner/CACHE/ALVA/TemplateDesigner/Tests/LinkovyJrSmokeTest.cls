@@ -94,6 +94,22 @@ Method TestAdObeCislaLinky()
 	if 'overeno do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru")
 }
 
+/// Barva linky (#13606) jako u vývěsky AD: linka `0365001` má v jízdních řádech jednu barvu
+/// (`149;202;100`), druhá je prázdná - stejná linka jako `ZastavkoveJrAdLegacyTest.TestBarvaLinkyDlePoradi`.
+Method TestAdBarvaLinky()
+{
+	set db = "CB_CSADAD", sku = 1, lin = "0365001"
+	do ..SetupSys(.sys)
+	kill parametry
+	if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) || ($get(^[db]JRL(sku, lin, "PATCH", "BARVA")) = "") {
+		do $$$AssertSkipped("linka "_lin_" s barvou není na serveru")
+		quit
+	}
+	set hodnoty = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)).values
+	do $$$AssertEquals(hodnoty.%Get("BARVA_LINKY"), "#FF95CA64", "první barva linky jako u vývěsky")
+	do $$$AssertEquals(hodnoty.%Get("BARVA_LINKY_2"), "", "druhá barva není nastavená")
+}
+
 /// Zbytek kontraktu agendy - schéma, parametry, ukázková data. Volá se z návrháře při každém
 /// otevření, takže výpadek kterékoli metody znamená, že se agenda nedá vybrat.
 Method TestAdKontraktProjde()

@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-23 (13) - 🎨 barva linky i v linkovém JŘ AD (#13606)
+
+Slíbeno TRANSDEV 12. 10. Linkový JŘ AD posílá jako vývěska AD pole **Barva linky** a **Barva linky 2**
+z jízdních řádů (týmž voláním `ZastavkoveJrAd.BarvaLinky`, aby měla linka v obou sestavách stejnou
+barvu; v ukázkových datech i na výlepech). V šabloně se použijí stejně: `{BARVA_LINKY}` do pole barvy
+prvku. Linkový JŘ MHD barvu zatím nemá (Jan 23. 10.: neřešit). Test `LinkovyJrSmokeTest.TestAdBarvaLinky`
+(CB_CSADAD 0365001: `#FF95CA64`, druhá prázdná), gold digesty linkového AD přebaselinované (jen md5).
+
 ## 2026-10-23 (12) - 🚀 linkový JŘ MHD připravený do verze 27. 10. (`B191f`)
 
 Agenda **Linkový JŘ (MHD)** je zveřejněná (`Released = 1`, na dev serveru ověřeno voláním

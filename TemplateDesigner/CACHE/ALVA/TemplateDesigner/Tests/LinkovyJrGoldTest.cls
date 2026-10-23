@@ -58,7 +58,9 @@ Method TestGold0330510()
 	// (`AKTUALNI_ZASTAVKA_CZST`/`_TC`, bez zvýraznění prázdné). Mění se jen md5, počty jsou shodné.
 	// Re-baseline 2026-10-23 (`B193b`): do hlavičky přibylo veřejné označení linky
 	// (`LOKALNI_OZNACENI_LINKY`, jako u vývěsky AD). Mění se jen md5, počty jsou shodné.
-	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=bo2B2iNB7oFsP050H6/Qrw==")
+	// Re-baseline 2026-10-23 (#13606): do hlavičky přibyly barvy linky (`BARVA_LINKY`, `BARVA_LINKY_2`,
+	// jako u vývěsky AD). Mění se jen md5, počty jsou shodné.
+	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=GtryPoxVhXMAmPVkXo8nVw==")
 }
 
 /// Druhý tvar: bez skupin dnů, zdvojené řádky příjezd/odjezd, šest km sloupců.
@@ -92,7 +94,8 @@ Method TestGold0330511()
 	// Re-baseline 2026-10-01 (QR pro cestující): do hlavičky přibyla zastávka výlepu
 	// (`AKTUALNI_ZASTAVKA_CZST`/`_TC`, bez zvýraznění prázdné). Mění se jen md5, počty jsou shodné.
 	// Re-baseline 2026-10-23 (`B193b`): veřejné označení linky v hlavičce (viz 0330510). Jen md5.
-	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=zbIRrE4TSBHidt5P7JxxmQ==")
+	// Re-baseline 2026-10-23 (#13606): barvy linky v hlavičce (viz 0330510). Jen md5.
+	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=29L6zct8o0443ORbgv86XQ==")
 }
 
 /// Třetí tvar, jiná firma: největší linka jádra (99 spojů, 53 na stránku, osm km sloupců).
@@ -124,7 +127,8 @@ Method TestGold0410107()
 	// Re-baseline 2026-10-01 (QR pro cestující): do hlavičky přibyla zastávka výlepu
 	// (`AKTUALNI_ZASTAVKA_CZST`/`_TC`, bez zvýraznění prázdné). Mění se jen md5, počty jsou shodné.
 	// Re-baseline 2026-10-23 (`B193b`): veřejné označení linky v hlavičce (viz 0330510). Jen md5.
-	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=HHqEF0kJ8HndhcQ/2JA2yw==")
+	// Re-baseline 2026-10-23 (#13606): barvy linky v hlavičce (viz 0330510). Jen md5.
+	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=bdIpmuKmzmUGSFwcpitJ3g==")
 }
 
 /// Čtvrtý tvar: 109 spojů na **jediné** stránce (jeden směr), bez zón a bez sloupce MHD.
@@ -159,7 +163,8 @@ Method TestGold0945001()
 	// Re-baseline 2026-10-01 (QR pro cestující): do hlavičky přibyla zastávka výlepu
 	// (`AKTUALNI_ZASTAVKA_CZST`/`_TC`, bez zvýraznění prázdné). Mění se jen md5, počty jsou shodné.
 	// Re-baseline 2026-10-23 (`B193b`): veřejné označení linky v hlavičce (viz 0330510). Jen md5.
-	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=4LwMT/aDAidg2tZ1JDzWnQ==")
+	// Re-baseline 2026-10-23 (#13606): barvy linky v hlavičce (viz 0330510). Jen md5.
+	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=E6vwHqmH+QmyJuCFtibFKA==")
 }
 
 /// Ověří digest jedné linky proti očekávané hodnotě. Rozlišuje:
