@@ -1136,90 +1136,13 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Načtení dat všech vybraných linek (tiskové okno, kontrola z návrháře). Null = bez databáze
-    /// nebo agendy. Stránky dat nesou popis linky (<c>KontrolaVystupu.LinkaKlic</c>).
-    /// <paramref name="vynechane"/> = linky bez dat z posledního načtení, s důvodem od agendy.
-    /// </summary>
-    private Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? NacitaniVsechLinek(out List<(string Linka, string? Duvod)> vynechane)
-    {
-        var bezDat = vynechane = [];
-        Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null;
-        if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
-        {
-            var provider = _vm.CacheProvider;
-            var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
-            // Snapshot na UI threadu - callback běží na threadpoolu a nesmí sahat na živou šablonu
-            var columnsDefJson = _vm.CurrentColumnsDefinitionJson();
-            var turnusy = _vm.CurrentTurnusyKeSpojum();
-            // Kultura šablony (formát dat, čísel) - bez ní by tisk formátoval podle nastavení
-            // Windows, zatímco náhled podle šablony, a slovenská šablona by vyšla jinak.
-            var kultura = _vm.GetTemplateCulture();
-            buildRealData = (paramValues, prubeh) =>
-            {
-                List<DataContext>? pages;
-                bezDat.Clear();
-
-                // Pokud má uživatel aktivní instance (vybrané přes Instance Picker), iteruj je
-                // a vygeneruj batch napříč všemi - ignoruje LINKA_ID z parametrů dialogu.
-                if (_vm.ActiveInstances.Count > 0)
-                {
-                    var paramName = _vm.CurrentInstanceParamName;
-                    var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
-                    int hotovo = 0;
-                    foreach (var inst in _vm.ActiveInstances)
-                    {
-                        prubeh?.Report((hotovo++, _vm.ActiveInstances.Count, inst.Display));
-                        var (instPages, duvod) = provider.GetDataSDuvodem(agendaCode, TemplateDesignerViewModel.ComposeGetDataParams(
-                            paramValues, paramName, inst.Value, _vm.ActiveSkupinaId, columnsDefJson,
-                            turnusy, _vm.JazykSablony));
-                        if (instPages is null)
-                        {
-                            // Linka bez dat nezastaví ostatní, ale nesmí zmizet potichu.
-                            bezDat.Add((inst.Display, duvod));
-                            continue;
-                        }
-                        // Linka ke každé stránce - kontrola v tiskovém okně z ní řekne, které lince
-                        // hláška patří (`B178`).
-                        var linka = new Dictionary<string, object?> { [TemplateDesigner.Models.KontrolaVystupu.LinkaKlic] = inst.Display };
-                        all.AddRange(instPages.Select(p => p.WithCulture(kultura).WithExtraValues(linka)));
-                    }
-                    pages = all.Count > 0 ? all : null;
-                }
-                else
-                {
-                    // Bez vybrané instance nelze tisknout reálná data - linku určuje výhradně
-                    // Instance Picker (parametry sestavy už LINKA_ID neobsahují). Dialog na null
-                    // ukáže hlášku s navedením na výběr linky.
-                    pages = null;
-                }
-
-                if (pages is null) return null;
-                // Merge parametrů do každého DataContextu - C# rendering je potřebuje
-                // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
-                pages = TemplateDesignerViewModel.MergeParamsIntoPages(pages, paramValues).ToList();
-
-                return TemplateDesigner.Models.NoteVisibilityFilter.Apply(
-                    pages,
-                    TemplateDesigner.Models.NoteVisibilityFilter.ParseMode(
-                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamName)),
-                    false,
-                    TemplateDesigner.Models.NoteVisibilityFilter.ShouldHideNaZnameniLegend(_vm.State.CurrentTemplate),
-                    hidePrestupLegend: TemplateDesigner.Models.NoteVisibilityFilter.ShouldHidePrestupLegend(_vm.State.CurrentTemplate),
-                    hiddenContent: TemplateDesigner.Models.NoteVisibilityFilter.HiddenContentCategories(_vm.State.CurrentTemplate));
-            };
-        }
-
-        return buildRealData;
-    }
-
-    /// <summary>
     /// Kontrola všech vybraných linek z návrháře (`B178`). Okno s výsledkem se otevře hned a ukazuje
     /// průběh; klik na hlášku přepne na její linku a vybere prvek - to z tiskového okna nejde.
     /// </summary>
     private async void BtnKontrola_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var nacitani = NacitaniVsechLinek(out var bezDat);
+        var nacitani = _vm!.NacitaniVsechLinek(out var bezDat);
         if (nacitani is null || _vm.ActiveInstances.Count == 0)
         {
             _vm.StatusText = "Kontrola potřebuje vybrané linky - vyberte je na štítku vedle agendy.";
@@ -1289,7 +1212,7 @@ public partial class MainWindow : Window
         // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
         // takže _previewParams už obsahuje persistované hodnoty - žádný extra I/O zde.
 
-        var buildRealData = NacitaniVsechLinek(out var vynechaneLinky);
+        var buildRealData = _vm!.NacitaniVsechLinek(out var vynechaneLinky);
 
         var tplAgendaCode = _vm!.State.CurrentTemplate.AgendaCode;
         var agendaClass = string.IsNullOrEmpty(tplAgendaCode) ? null : _vm.CacheProvider?.GetCacheClass(tplAgendaCode);

@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-23 (10) - 🔀 rozdílový JŘ z jízdních řádů rovnou jako PDF v prohlížeči (`B192`, první kus `B190`)
+
+Porovnání linek v jízdních řádech neotevírá návrhář: spustí ho bez hlavního okna (`Vystup=PDF`),
+ukáže jen „Připravuji PDF…", PDF uloží do `%TEMP%\EDISON\TemplateDesigner` a otevře ve **výchozím
+prohlížeči** (rozhodnutí Jan 23. 10.; prohlížeč zobrazí PDF na každé stanici, výchozí aplikace pro PDF
+být nemusí). Když prohlížeč z registru zjistit nejde, otevře PDF výchozí aplikace pro PDF. Data a kreslení
+jdou touž cestou jako „Vytvořit PDF" v tiskovém okně (načítání dat se kvůli tomu přesunulo z okna
+do viewmodelu, `NacitaniVsechLinek`), parametry touž cestou jako otevření šablony.
+
+**Šablona rozdílového JŘ není veřejná** (rozhodnutí Jan 23. 10.): přestěhovala se ze `SystemTemplates/`
+do `LaunchTemplates/`, které se zabalí do exe, ale do databáze se nenalévají, takže ji v návrháři nikdo
+neotevře. Ruší to systémovou šablonu ze záznamu (8). Testy `SpusteniPdfTests`, `DefaultBrowserTests`,
+`LaunchTemplateTests`, `LaunchInputTests`; celek proti dev serveru `SpusteniPdfNaostro` (CB_CSADAD
+380760, objížďka 307 proti 207: 3 strany, obě platnosti, porovnáno) - barvy v PDF neověřené.
+
 ## 2026-10-23 (9) - 🚫 linka bez dat jako problém mezi hláškami, ve všech agendách (`B193g`)
 
 Linka, ze které nevznikla žádná stránka, byla jen textem ve stavovém řádku („Žádná data: linka 20")

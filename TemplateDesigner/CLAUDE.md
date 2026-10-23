@@ -35,8 +35,10 @@ Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživate
   (JŘ uzel stromu → `ZASTAVKOVY_JR_AD`, MHD uzel a MHD2 tlačítko → `ZASTAVKOVY_JR_MHD`),
   neznámý kód → default. Za kódem smí stát `;KLÍČ=hodnota` (wire jména agendy, `Config/LaunchInput`):
   s klíčem instance (`LINKA_ID`) TD otevře šablonu agendy (nejnovější vlastní firmy, jinak systémovou),
-  vybere linku a nastaví parametry - takhle spouští rozdílový JŘ porovnání linek v ISYJR2 (repo EDISON,
-  `TiskJRHelper.OpenRozdilovyJR`). Starší TD takový vstup nepozná, ISYJR2 ho smí posílat až s novým TD.
+  vybere linku a nastaví parametry; s `Vystup=PDF` okno neotevře, PDF vyrobí cestou tisku a ukáže ve
+  výchozím prohlížeči. Šablonu pro PDF bere jen z `LaunchTemplates/` v exe, **ne z databáze** - tak
+  spouští rozdílový JŘ porovnání linek v ISYJR2 (repo EDISON, `TiskJRHelper.OpenRozdilovyJR`) a jeho
+  šablona se v návrháři nenabízí (Jan 23. 10.). Starší TD vstup nepozná, ISYJR2 ho smí posílat až s novým TD.
   Bez argumentů běží TD standalone. Obecný kontrakt (`EdisonLaunchArgs`,
   MLRest ze session shellu) viz `EDControls/CLAUDE.md`. **Neprázdný `shellGuid` = sdílená
   shell session** (`GUID` + `CacheLocks=1`, parita s hostem legacy modulů): requesty TD drží

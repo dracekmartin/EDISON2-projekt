@@ -20,16 +20,24 @@ public class LaunchInputTests
     [Fact]
     public void PorovnaniLinekZModuluJr()
     {
-        // Tvar z formISYJR2HlavniOkno.PorovnatLinky: označená linka je nová verze, z dialogu původní.
+        // Tvar z TiskJRHelper.OpenRozdilovyJR: označená linka je nová verze, z dialogu původní.
         var input = LaunchInput.Parse(
-            "Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760");
+            "Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760;Vystup=PDF");
 
         Assert.Equal("LINKOVY_JR_AD_ROZDILOVY", input.AgendaCode);
         Assert.Equal("307", input.Get(LaunchInput.SkupinaKey));
         Assert.Equal("0380760", input.Get("LINKA_ID"));
         Assert.Equal("207", input.Get("POROVNAT_SKUPINU"));
         Assert.Equal("0380760", input.Get("POROVNAT_LINKU"));
+        Assert.True(input.WantsPdf);
     }
+
+    [Theory]
+    [InlineData("Agenda=X;LINKA_ID=1", false)]
+    [InlineData("Agenda=X;LINKA_ID=1;Vystup=pdf", true)]
+    [InlineData("Agenda=X;LINKA_ID=1;Vystup=PNG", false)]
+    public void PdfJenNaVyzadani(string inputParam, bool pdf) =>
+        Assert.Equal(pdf, LaunchInput.Parse(inputParam).WantsPdf);
 
     [Fact]
     public void PrazdnaHodnotaZustane_ChybejiciJeNull()

@@ -2283,7 +2283,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (own is not null)
             return ((await storage.LoadAsync(own.TemplateId)).Template, false);
 
-        var embedded = await Task.Run(() => Services.SystemTemplateSeeder.EmbeddedForAgenda(agenda));
+        var embedded = await Task.Run(() => EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda));
         if (embedded is null) return (null, true);
         // V databázi může být novější verze z distribučního kanálu; když tam ještě není (seed
         // běží souběžně se startem), stačí ta z .exe.
@@ -2294,7 +2294,8 @@ public class TemplateDesignerViewModel : EDViewModel
     internal static CacheTemplateMetadata? NewestTemplate(IEnumerable<CacheTemplateMetadata> templates) =>
         templates.OrderByDescending(m => m.ModifiedAt ?? m.CreatedAt ?? DateTime.MinValue).FirstOrDefault();
 
-    private async Task SelectLaunchInstanceAsync(string agenda, string? skupina, string instanceValue)
+    /// <param name="loadPreview">false = PDF bez okna: data načte tisková cesta, náhled by je tahal podruhé.</param>
+    private async Task SelectLaunchInstanceAsync(string agenda, string? skupina, string instanceValue, bool loadPreview = true)
     {
         var provider = CacheProvider!;
         var (instance, skupinaLabel) = await Task.Run(() =>
@@ -2310,9 +2311,141 @@ public class TemplateDesignerViewModel : EDViewModel
         _activeSkupinaLabel = string.IsNullOrEmpty(skupina) ? null : skupinaLabel ?? skupina;
         _activeInstances = [instance];
         _activeInstanceIndex = 0;
-        OnActiveInstancesChanged(reloadData: true);
+        OnActiveInstancesChanged(reloadData: loadPreview);
         OnPropertyChanged(nameof(ActiveSkupinaText));
         OnPropertyChanged(nameof(HasActiveSkupina));
+    }
+
+    /// <summary>
+    /// PDF ze spuštění bez hlavního okna (rozdílový JŘ z porovnání linek v modulu JŘ). Šablona, linka
+    /// a parametry jdou toutéž cestou jako otevření v návrháři, data a kreslení touž cestou jako tisk
+    /// do PDF z tiskového okna. Vrátí cestu k PDF, nebo důvod pro uživatele, proč nevzniklo.
+    /// </summary>
+    /// <param name="folder">Složka pro PDF; soubor se jmenuje podle šablony a linky.</param>
+    public async Task<(string? Path, string? Duvod)> ExportLaunchPdfAsync(LaunchInput input, Template template, string folder)
+    {
+        var agenda = input.AgendaCode;
+        if (CacheProvider is null || agenda is null) return (null, "Návrhář není připojený k databázi.");
+        var instanceValue = input.Get(InstanceParamName(agenda));
+        if (string.IsNullOrEmpty(instanceValue)) return (null, "Spuštění neurčuje linku.");
+
+        State.CurrentTemplate = template;
+        await RefreshFieldsList();
+        UseLaunchParams(template.Id, input.Values);
+        await ApplyPersistedPrintParamsAsync();
+        await SelectLaunchInstanceAsync(agenda, input.Get(LaunchInput.SkupinaKey), instanceValue, loadPreview: false);
+        var linka = CurrentActiveInstance!.Display;
+
+        var load = NacitaniVsechLinek(out var vynechane);
+        if (load is null) return (null, "Návrhář není připojený k databázi.");
+        var paramsSnapshot = new Dictionary<string, object?>(_previewParams);
+        var pages = await Task.Run(() => load(paramsSnapshot, null));
+        if (pages is null or { Count: 0 })
+            return (null, vynechane.FirstOrDefault().Duvod is { Length: > 0 } duvod
+                ? $"Linka {linka} nemá data: {duvod}"
+                : $"Linka {linka} nemá data.");
+
+        var path = LaunchPdfPath(folder, $"{template.Name} - {linka}");
+        var snapshot = TemplateSerializer.DeepClone(template);
+        await Task.Run(() => new PreviewCanvas(State).RenderMultiDataToPdf(path, pages, template: snapshot));
+        return (path, null);
+    }
+
+    /// <summary>
+    /// Cesta k PDF ze spuštění. Stejné jméno se přepisuje, aby ve složce nepřibývaly soubory; když starý soubor drží
+    /// otevřený prohlížeč nebo prohlížeč PDF, dostane nový soubor k jménu čas.
+    /// </summary>
+    internal static string LaunchPdfPath(string folder, string name)
+    {
+        Directory.CreateDirectory(folder);
+        var invalid = Path.GetInvalidFileNameChars();
+        var clean = new string([.. name.Select(c => invalid.Contains(c) ? '_' : c)]).Trim();
+        if (clean.Length > 120) clean = clean[..120].Trim();
+        var path = Path.Combine(folder, clean + ".pdf");
+        try
+        {
+            if (File.Exists(path)) File.Delete(path);
+            return path;
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+        return Path.Combine(folder, $"{clean} {DateTime.Now:HHmmss}.pdf");
+    }
+
+    /// <summary>
+    /// Načtení dat všech vybraných linek pro tisk (tiskové okno, kontrola z návrháře, PDF ze spuštění).
+    /// Null = bez databáze nebo agendy. Stránky dat nesou popis linky (<c>KontrolaVystupu.LinkaKlic</c>).
+    /// <paramref name="vynechane"/> = linky bez dat z posledního načtení, s důvodem od agendy.
+    /// </summary>
+    public Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? NacitaniVsechLinek(out List<(string Linka, string? Duvod)> vynechane)
+    {
+        var bezDat = vynechane = [];
+        Func<Dictionary<string, object?>, IProgress<(int Hotovo, int Celkem, string Linka)>?, List<DataContext>?>? buildRealData = null;
+        if (CacheProvider is not null && !string.IsNullOrEmpty(State.CurrentTemplate.AgendaCode))
+        {
+            var provider = CacheProvider;
+            var agendaCode = State.CurrentTemplate.AgendaCode!;
+            // Snapshot na UI threadu - callback běží na threadpoolu a nesmí sahat na živou šablonu
+            var columnsDefJson = CurrentColumnsDefinitionJson();
+            var turnusy = CurrentTurnusyKeSpojum();
+            // Kultura šablony (formát dat, čísel) - bez ní by tisk formátoval podle nastavení
+            // Windows, zatímco náhled podle šablony, a slovenská šablona by vyšla jinak.
+            var kultura = GetTemplateCulture();
+            buildRealData = (paramValues, prubeh) =>
+            {
+                List<DataContext>? pages;
+                bezDat.Clear();
+
+                // Pokud má uživatel aktivní instance (vybrané přes Instance Picker), iteruj je
+                // a vygeneruj batch napříč všemi - ignoruje LINKA_ID z parametrů dialogu.
+                if (ActiveInstances.Count > 0)
+                {
+                    var paramName = CurrentInstanceParamName;
+                    var all = new List<DataContext>(ActiveInstances.Count * 4);
+                    int hotovo = 0;
+                    foreach (var inst in ActiveInstances)
+                    {
+                        prubeh?.Report((hotovo++, ActiveInstances.Count, inst.Display));
+                        var (instPages, duvod) = provider.GetDataSDuvodem(agendaCode, ComposeGetDataParams(
+                            paramValues, paramName, inst.Value, ActiveSkupinaId, columnsDefJson,
+                            turnusy, JazykSablony));
+                        if (instPages is null)
+                        {
+                            // Linka bez dat nezastaví ostatní, ale nesmí zmizet potichu.
+                            bezDat.Add((inst.Display, duvod));
+                            continue;
+                        }
+                        // Linka ke každé stránce - kontrola v tiskovém okně z ní řekne, které lince
+                        // hláška patří (`B178`).
+                        var linka = new Dictionary<string, object?> { [KontrolaVystupu.LinkaKlic] = inst.Display };
+                        all.AddRange(instPages.Select(p => p.WithCulture(kultura).WithExtraValues(linka)));
+                    }
+                    pages = all.Count > 0 ? all : null;
+                }
+                else
+                {
+                    // Bez vybrané instance nelze tisknout reálná data - linku určuje výhradně
+                    // Instance Picker (parametry sestavy už LINKA_ID neobsahují). Dialog na null
+                    // ukáže hlášku s navedením na výběr linky.
+                    pages = null;
+                }
+
+                if (pages is null) return null;
+                // Merge parametrů do každého DataContextu - C# rendering je potřebuje
+                // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
+                pages = MergeParamsIntoPages(pages, paramValues).ToList();
+
+                return NoteVisibilityFilter.Apply(
+                    pages,
+                    NoteVisibilityFilter.ParseMode(paramValues.GetValueOrDefault(NoteVisibilityFilter.ParamName)),
+                    false,
+                    NoteVisibilityFilter.ShouldHideNaZnameniLegend(State.CurrentTemplate),
+                    hidePrestupLegend: NoteVisibilityFilter.ShouldHidePrestupLegend(State.CurrentTemplate),
+                    hiddenContent: NoteVisibilityFilter.HiddenContentCategories(State.CurrentTemplate));
+            };
+        }
+
+        return buildRealData;
     }
 
     /// <summary>

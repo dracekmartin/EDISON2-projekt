@@ -28,21 +28,12 @@ public static class SystemTemplateSeeder
         try { zKanalu = await SystemTemplateChannelSync.ChannelBackedIdsAsync(storage); }
         catch (Exception) { zKanalu = []; }
 
-        var asm = typeof(SystemTemplateSeeder).Assembly;
-        foreach (var name in asm.GetManifestResourceNames())
+        foreach (var name in EmbeddedTemplates.ResourceNames(EmbeddedTemplates.SystemFolder))
         {
-            if (!name.Contains(".SystemTemplates.") ||
-                !name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                continue;
             try
             {
-                using var stream = asm.GetManifestResourceStream(name);
-                if (stream is null) continue;
-                using var reader = new StreamReader(stream);
-                var json = await reader.ReadToEndAsync();
-
                 // Deserialize spustí TemplateMigrator → šablona je při seedu vždy v aktuální verzi.
-                var template = TemplateSerializer.Deserialize(json);
+                var template = TemplateSerializer.Deserialize(EmbeddedTemplates.Read(name));
                 if (zKanalu.Contains(template.Id))
                 {
                     Debug.WriteLine($"[SystemTemplateSeeder] '{template.Name}' už doručil kanál - přeskakuji.");
@@ -63,28 +54,6 @@ public static class SystemTemplateSeeder
                 Debug.WriteLine($"[SystemTemplateSeeder] Seed '{name}' selhal: {ex.Message}");
             }
         }
-    }
-
-    /// <summary>
-    /// Systémová šablona agendy zabalená v .exe (první podle jména souboru), null když agenda žádnou nemá.
-    /// Spuštění z modulu JŘ se o ni opírá, když firma vlastní šablonu agendy nemá.
-    /// </summary>
-    public static Template? EmbeddedForAgenda(string agendaCode)
-    {
-        var asm = typeof(SystemTemplateSeeder).Assembly;
-        foreach (var name in asm.GetManifestResourceNames().Order(StringComparer.Ordinal))
-        {
-            if (!name.Contains(".SystemTemplates.") ||
-                !name.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                continue;
-            using var stream = asm.GetManifestResourceStream(name);
-            if (stream is null) continue;
-            using var reader = new StreamReader(stream);
-            var template = TemplateSerializer.Deserialize(reader.ReadToEnd());
-            if (string.Equals(template.AgendaCode, agendaCode, StringComparison.OrdinalIgnoreCase))
-                return template;
-        }
-        return null;
     }
 
     /// <summary>Je v MLINE něco jiného, než co nese .exe? Šablonu, která tam ještě není, zapiš.</summary>

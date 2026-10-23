@@ -3,7 +3,7 @@ namespace TemplateDesigner.Config;
 /// <summary>
 /// Obsah pole <c>inputParam</c> launch kontraktu EDISONMAIN2: <c>Agenda=&lt;kód&gt;</c> a za ním volitelně
 /// další <c>KLÍČ=hodnota</c> oddělené středníkem (jména jako na wire agendy), např. z porovnání linek
-/// v modulu JŘ: <c>Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760</c>.
+/// v modulu JŘ: <c>Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760;Vystup=PDF</c>.
 /// </summary>
 /// <remarks>
 /// Producent je v repu EDISON (<c>ISYJR2/TiskJRHelper.cs</c>), proto tvar jen přidáváme.
@@ -15,10 +15,15 @@ public sealed record LaunchInput(string? AgendaCode, IReadOnlyDictionary<string,
     /// <summary>Klíč skupiny linek - stejné jméno jako v IN <c>GetData</c> a výběru instancí.</summary>
     public const string SkupinaKey = "SKUPINA_LINEK_ID";
 
+    /// <summary><c>Vystup=PDF</c>: návrhář neotevře okno, vyrobí PDF a ukáže ho ve výchozím prohlížeči.</summary>
+    public const string OutputKey = "Vystup";
+
     public static readonly LaunchInput Empty = new(null, new Dictionary<string, string>());
 
     /// <summary>Hodnota klíče, null když ve vstupu není (prázdná hodnota je hodnota).</summary>
     public string? Get(string key) => Values.TryGetValue(key, out var v) ? v : null;
+
+    public bool WantsPdf => string.Equals(Get(OutputKey), "PDF", StringComparison.OrdinalIgnoreCase);
 
     public static LaunchInput Parse(string? inputParam)
     {

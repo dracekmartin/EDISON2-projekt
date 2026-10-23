@@ -6,7 +6,7 @@
 
 > **Nejblíž na řadě:** sjednocení agend JŘ (`B193`, Jan 23. 10.); kroky, které držely vydání
 > linkového JŘ MHD (`B193a-c`), jsou hotové 23. 10. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
-> se otevře z jízdních řádů (Nástroje → Porovnání linek, čeká na zkoušku celku Janem), mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
+> ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
@@ -72,8 +72,8 @@ Rozbor, oprava dat a porovnání se starým tiskem (`B191a-c`) hotové 12. 10.; 
   (nebo podobně, doladí se). R4 doporučuje začít spuštěním návrháře z EDISONu s parametry (launch
   kontrakt už je) a render oddělit fasádou. **Před začátkem rozhodnout**, odkud se bere výchozí
   šablona a jak ji uživatel volí. Podklad [`R4/R7`](architektonicka-rozhodnuti-agendy.md).
-  Spuštění s vybranou linkou už je (rozdílový JŘ z porovnání linek, 23. 10., `Config/LaunchInput`):
-  šablona = nejnovější vlastní šablona firmy v agendě, jinak systémová.
+  PDF bez okna ze spuštění už je pro jednu linku (`Vystup=PDF`, rozdílový JŘ 23. 10., `Config/LaunchInput`),
+  šablona zatím jen ze `LaunchTemplates/` v exe; zbývá víc linek a volba šablony z databáze.
 
 - **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
   dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),
