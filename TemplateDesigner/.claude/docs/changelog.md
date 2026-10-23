@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-23 (17) - 🩹 rozdílový JŘ podbarví platnost jen při změně
+
+Záhlaví rozdílového linkového JŘ ukazovalo platnost obou verzí pod sebou v barvách verzí pokaždé, když
+porovnání proběhlo, i když obě linky platily stejně - vypadalo to jako změna. Teď se dvojice podbarvených
+řádků ukáže jen tehdy, když se liší datum od nebo do; při shodě je v záhlaví jedna řádka platnosti bez
+podbarvení, stejná jako bez porovnání. Oprava je jen v podmínkách viditelnosti šablony
+(`LaunchTemplates/rozdilovy-linkovy-jr-a4.json`), server posílá data beze změny. Test
+`LaunchTemplateTests.Platnost_*`: bez porovnání, shoda, jiné „od", jiné „do".
+
 ## 2026-10-23 (16) - 🎨 „Upravit styl…" funguje i v panelu Minut odjezdů (`B194a` C2)
 
 Tlačítka „Styl záhlaví" a „Styl 2. řádku nadpisu" ve formuláři Minut odjezdů otevírala okno stylu jen
