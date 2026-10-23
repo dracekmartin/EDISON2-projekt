@@ -13,6 +13,110 @@
 
 ---
 
+## 🧩 Sjednocení agend JŘ - druhé kolo (`B194`, revize 23. 10.)
+
+Nezávislá revize čtyř agend JŘ po `B193`, každý nález přeověřený proti kódu. **Jeden řádek = jeden nález**;
+co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-jr.md`](konzistence-agend-jr.md).
+Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
+vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se linkového MHD, nejlevnější před verzí.
+
+### `B194a` Chyby
+
+- **C1** Rozdílový JŘ spadne na lince bez dat - regrese z 23. 10., spouští se z modulu JŘ [S]
+- **C2** V panelu Minut odjezdů tlačítko „Upravit styl…" nic neotevře [S-M]
+- **C3** Vývěska MHD kreslí přestup na autobus jako vagon a na vlak jako „x" [S-M] **tisk**
+- **C4** Export „Jeden PDF na linku": v názvu doslova „POPIS_ZASTAVKA", MHD dělí podle licenčního čísla [M] **Jan** **do 27. 10.**
+- **C5** Výchozí vývěska MHD tiskne dopravce dvakrát [S] **Jan**
+- **C6** „Vlastní definice sloupců" ve vývěsce MHD nic nedělá [S] **Jan**
+- **C7** Nápověda „Viditelnost řádku" u Tabulky spojů radí pole, která data nemají [S]
+- **C8** Linkový AD tiskne „soboty, neděle a svátky" malým písmenem [S] **tisk**
+- **C9** Linkový AD čte nastavení formátu data u linky o režim vedle [S] **tisk**
+- **C10** „Uložit jako" přepojí šablonu na jinou agendu, i nezveřejněnou [S]
+- **C11** Chyba serveru u jedné linky zastaví tisk všech, hláška je technická [M]
+
+### `B194b` Tisk - rozdíly mezi agendami (všechno **tisk** a **Jan**)
+
+- **T1** Vývěska AD neoznačuje spoje „na objednání" a „podmínečně" - starý modul to tiskl [M]
+- **T2** Vývěska AD nebarví obarvené spoje - starý modul to tiskl [M]
+- **T3** Text omezení u značky je na vývěsce AD jiný než v linkovém AD, parita nedoložena [M]
+- **T4** Vysvětlivka téže značky zní v každé agendě jinak, překlep „částečne" [S]
+- **T5** Linkový MHD slije dvouřádkový nadpis skupiny dnů do jednoho řádku [M] **do 27. 10.**
+- **T6** Dopravce se tiskne v pěti tvarech („tel:" × „tel.", pořadí adresy v linkovém MHD) [S] **do 27. 10.**
+- **T7** „Jen nástup / jen výstup" chybí jen na vývěsce AD [S-M]
+- **T8** Zóny se počítají čtyřmi pravidly - doporučení neměnit, opravit komentář [S]
+- **T9** Oddělovač v legendě vývěsek je dlouhá pomlčka [S]
+- **T10** Pokračování spoje v linkovém AD je natvrdo česky i ve slovenské šabloně [S]
+
+### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)
+
+- **D1** „Aktuální zastávka" je ve vývěsce název i příznak, linkové JŘ název aktuální zastávky nemají [S]
+- **D2** „Pořadí" v linkovém AD je ve skutečnosti tarifní číslo [S] **Jan**
+- **D3** „Konečná" × „cílová", CIS na začátku × na konci popisku, vývěsky bez výchozí zastávky [S]
+- **D4** Údaje dopravce po jednotlivých polích má jen vývěska AD [M] **Jan**
+- **D5** Pořadí polí v nabídce dat se mezi agendami liší [S]
+- **D6** Nejasné popisky: „Popis linky", „Druh (1-10)", interní kódy typů poznámek [S]
+- **D7** Náhled vývěsky MHD bez linky ukazuje vymyšlenou brněnskou linku [M]
+- **D8** Drobnosti v datech a ukázkách (mylný komentář, technický záložní text) [S]
+- **P1** Vývěsky: osm voleb bez nápovědy, dvě nesrozumitelné [S]
+- **P2** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M] **Jan**
+- **P3** Stránka pro stanoviště je ve vývěsce jinde a jinak pojmenovaná než v linkovém JŘ [S] **Jan**
+- **P4** Linkový MHD: skupina „Typy provozu pro tisk" mimo pravidlo [S] **Jan** **do 27. 10.**
+- **P5** Linkový AD výlepy: bez pořadí stránek a bez PDF na zastávku [M] **Jan**
+- **P6** „Obousměrný tisk" svítí i při jednom směru [S]
+- **P7** Nápovědy parametrů: „nástupiště", neúplné výčty, věta nevhodná pro MHD [S] **do 27. 10.**
+
+### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
+
+- **E1** Strom šablony ukazuje anglické názvy tříd [S]
+- **E2** Okna nastavení se jmenují jinak než prvky („Linkový JŘ - nastavení") [S]
+- **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan**
+- **E4** „Záhlaví" × „nadpis" pro totéž [S]
+- **E5** Seznam zastávek nabízí v MHD sloupek a parametr, které existují jen v AD [M]
+- **E6** „Zarovnání" vedle „Svisle" místo „Vodorovně" [S]
+- **E7** „Element" × „prvek", „ZIndex" × „Vrstva", „engine" [M] **Jan**
+- **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan**
+- **E9** Minuty odjezdů a Tabulka spojů pojmenovávají mezery a poměry jinak [S] **Jan**
+- **E10** Aktuální zastávka v Seznamu zastávek: zkratky, „Tučně", „Zvýraznění" [S]
+- **E11** Popisky v C# a ve formuláři se rozcházejí (import z PDF, náhradní panel, AI) [M]
+- **E12** Katalog sloupců Tabulky spojů jinak než data („Zastávka", „TČ" × „Tč") [S]
+- **E13** Dialogy sloupců mají každý jiné ovládání [M]
+- **E14** Tabulka spojů ukazuje interní pole „Kolekce …" [S] **Jan**
+- **E15** Texty nápověd: tykání, „engine", „padding", překlep v Nápovědě F1 [S]
+- **E16** Drobnosti: „Rozměry a mřížka", dvojí „Mřížka", stejná ikona dvou prvků [S]
+
+### `B194e` Aplikace a dokumentace
+
+- **A1** Agenda se jmenuje sedmi způsoby, „AD (linková doprava)" [M] **Jan**
+- **A2** Start z EDISONu vždy předvolí zastávkový JŘ, linkový JŘ nemá vstup [S-M] **Jan**
+- **A3** Výběr linek: „Číslo" znamená v každé variantě něco jiného [S-M]
+- **A4** Systémové šablony postavené různě (sekce, popis) [S]
+- **A5** Drobnosti textů (tokeny, tooltip výběru linek, „Přejmenovat...") [S]
+- **H1** Příručka nesedí s UI na 21 místech [S]
+- **H2** Nápověda F1 zastaralá a s překlepem [S]
+
+### `B194f` Pojistky před `B56`
+
+- **G1** Kontraktový Caché test přes registr agend (schéma, ukázka, data, kódy, důvod prázdného výstupu) [M]
+- **G2** Shoda celé definice stejnojmenného parametru ve všech agendách [S]
+- **G3** Jeden popisek = jeden klíč napříč agendami JŘ [S]
+- **G4** Kontrola zakázaných termínů i v nápovědách a titulcích oken [S]
+- **G5** Každé tlačítko formuláře má obsluhu v každém hostiteli [S]
+- **G6** Popisek v C# a ve formuláři u téhož klíče shodný [S-M]
+- **G7** Drobné díry drift testů [S]
+- **G8** Zlatý odtisk linkového MHD včetně hlavičky (po 27. 10.) [S]
+
+### `B194g` Architektura před `B56`
+
+- **R1** Rozhodnout model sdílení kódu agend - registr najde jen přímé potomky `BaseAgenda` [S] **Jan**
+- **R2** Duplicity pod jiným jménem (dopravce, platnost, barva, texty omezení) doplnit do `legacy-nahrada §4` [M]
+- **R3** Zapsat kontrakt prvek ↔ agenda a hlídat ho testem [M]
+- **R4** Schopnosti agend místo kódů agend natvrdo v C# [S-M] **Jan**
+- **R5** Parametry vývěsek do jedné definice (první krok `B56`) [S-M]
+- **R6** Dokumentace pro rozvoj (`cache-api.md` vzor a checklist, Faktury) [S]
+- **R7** Názvosloví v kódu sjednotit jen u nových názvů [S]
+
+---
+
 ## 🔎 Linkový JŘ MHD ve verzi 27. 10. (`B191g`)
 
 Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`B191f`, archiv).
@@ -21,31 +125,6 @@ Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`
 2. **Po vydání ověřit u zákazníka** [S], co dev data nemají: poznámky z trasy u zastávky, příjezd
    a odjezd na jedné zastávce, atributy spoje mimo B/C ([`§18.7`](linkovy-knizni-jr-implementace-analyza.md)).
    Postavené podle kódu starého tisku; nahrát Novinky na wiki až s verzí.
-
----
-
-## 🧩 Sjednocení agend JŘ - druhé kolo (`B194`, revize 23. 10.)
-
-Nezávislá revize čtyř agend JŘ po `B193`: chyby, rozdíly v tisku, názvosloví, chybějící pojistky. Každý nález
-přeověřený proti kódu; doklady a návrhy po položkách v [`konzistence-agend-jr.md`](konzistence-agend-jr.md).
-Procházet s Janem bod po bodu. Co se týká linkového MHD, je nejlevnější opravit před 27. 10.
-
-1. **`B194a` Chyby** [S-M] (§1 `C1`-`C11`). Nejdřív `C1`: rozdílový JŘ padá na lince bez dat (regrese
-   z 23. 10., spouští se z modulu JŘ). Dál „Upravit styl…" v panelu Minut odjezdů, značky přestupu ve vývěsce
-   MHD, název a dělení exportu PDF po linkách, nápověda podmínky řádku. Rozhodnutí Jana u `C4`-`C6`.
-2. **`B194b` Tisk: rozdíly mezi agendami** [M] (§2). Mění vytištěný výstup, každý bod rozhoduje Jan.
-   Mezery proti starému modulu: vývěska AD bez značek „na objednání" / „podmínečně" a bez barev spojů;
-   text omezení ve vývěsce AD nemá doloženou paritu. Před 27. 10.: nadpisy skupin dnů a dopravce v linkovém MHD.
-3. **`B194c` Nabídka dat a parametry** [S-M] (§3). Jen popisky a nápovědy: dvojí „Aktuální zastávka",
-   „Pořadí" jako tarifní číslo, osm voleb vývěsek bez nápovědy. Zamčené volby rozdělení sloupců jen
-   přidaným klíčem `optionLabels` (`P2`).
-4. **`B194d` Prvky: kanon a jedna kostra formulářů** [L] (§4). Nejdřív Jan doplní kanon `ux-conventions §8`
-   (prvek, vrstva, záhlaví, výška řádku, mezery), pak sjednotit formuláře a dialogy sloupců. Základ pro
-   každý další prvek.
-5. **`B194e` Aplikace a dokumentace** [M] (§5). Jeden tvar názvu agendy, start linkového JŘ z EDISONu,
-   výběr linek, příručka (21 míst) a Nápověda F1.
-6. **`B194f` Pojistky před `B56`** [M] (§6). Kontraktový Caché test přes registr agend a shoda celých
-   definic parametrů, k tomu menší drift testy. Bez nich se po sloučení kódu rozejde totéž znovu.
 
 ---
 
@@ -58,7 +137,7 @@ Procházet s Janem bod po bodu. Co se týká linkového MHD, je nejlevnější o
   rozešlo: výběr skupin linek a linek u AD (MHD sdílí od `B193c`), hlavička linky (rozcházela se
   v platnosti a razítku, `B193f`), společné parametry vývěsek, předpřipravené tabulky, které návrhář
   nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md). **Před startem**
-  rozhodnout model sdílení (registr najde jen přímé potomky `BaseAgenda`) a mít pojistky `B194f` ([`§7`](konzistence-agend-jr.md)).
+  rozhodnout model sdílení (`B194g` R1: registr najde jen přímé potomky `BaseAgenda`) a mít pojistky `B194f`.
 
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez otevření návrháře; šablona jednoduchou volbou výchozí šablony

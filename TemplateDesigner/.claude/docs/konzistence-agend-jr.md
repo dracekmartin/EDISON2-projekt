@@ -7,6 +7,9 @@
 > kandidáti sloučení kódu do [`legacy-nahrada.md §4`](legacy-nahrada.md).
 > Rozdílový JŘ je v rozsahu jen tam, kde ho rozbila změna společného kódu (`C1`).
 
+**Roadmapa** má každou položku jako jeden řádek pod týmž ID: §1-§7 tady = `B194a`-`B194g` tam. Hotovou
+položku smaž tady i v roadmapě (do `roadmap-archive.md`).
+
 **Jak číst položky.** `[S/M/L]` velikost · **tisk** = oprava změní vytištěný výstup vydané agendy ·
 **Jan** = potřebuje rozhodnutí (jinak zjevná oprava) · *ověřeno:* kód / server (čtecí volání na dev
 serveru) / neověřeno. Odkazy jsou jméno metody + řádek k 23. 10.; řádky se posouvají, metoda platí.
