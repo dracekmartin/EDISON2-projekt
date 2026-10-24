@@ -25,9 +25,11 @@ public class PrintDialogViewModel : EDViewModel
 
     private string _statusText = "";
 
-    /// <summary>Výchozí pattern názvu souboru (tokeny {POLE} z dat) - odpovídá legacy
-    /// „NázevZastávky_ČísloLinky_…". Funguje pro AD i MHD (obě emitují tato pole).</summary>
-    public const string DefaultFileNamePattern = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}";
+    /// <summary>Do 24. 10. výchozí název pro všechny agendy. Linkové JŘ aktuální zastávku nemají,
+    /// takže v názvu stálo doslova „POPIS_ZASTAVKA"; uložený beze změny se bere jako nezadaný.</summary>
+    private const string PuvodniVychoziNazev = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}";
+
+    private readonly string? _elementKind;
 
     /// <summary>Klíče universálních export polí v EDInputformu (AgendaParams) - NEjsou agenda
     /// parametry, jsou společné všem agendám. Hodnoty tečou přes sdílený <c>_paramValues</c>
@@ -271,9 +273,11 @@ public class PrintDialogViewModel : EDViewModel
         TdPreferencesService? preferences = null,
         Action? onParamsChanged = null,
         string? agendaClass = null,
-        Func<bool>? maVybraneLinky = null)
+        Func<bool>? maVybraneLinky = null,
+        string? elementKind = null)
     {
         _maVybraneLinky = maVybraneLinky ?? (() => false);
+        _elementKind = elementKind;
         _template = template;
         _paramValues = sharedParamValues;
         _parameters = parameters;
@@ -564,11 +568,14 @@ public class PrintDialogViewModel : EDViewModel
         _          => ExportSplitMode.Single,
     };
 
-    private string CurrentFileNamePattern()
-    {
-        var p = _paramValues.GetValueOrDefault(ExportFileNameKey) as string;
-        return string.IsNullOrWhiteSpace(p) ? DefaultFileNamePattern : p;
-    }
+    private string CurrentFileNamePattern() =>
+        NazevSouboruVzor(_paramValues.GetValueOrDefault(ExportFileNameKey) as string, _elementKind);
+
+    /// <summary>Vzor názvu souboru: uložený vlastní vzor uživatele, jinak výchozí podle druhu agendy.</summary>
+    internal static string NazevSouboruVzor(string? ulozeny, string? elementKind) =>
+        string.IsNullOrWhiteSpace(ulozeny) || ulozeny == PuvodniVychoziNazev
+            ? AgendaCapabilities.VychoziNazevSouboru(elementKind)
+            : ulozeny;
 
     /// <summary>Imposice z exportních polí (sdílený dict) + rozměru stránky šablony.
     /// Null = vypnutá. ArgumentException = mřížka se na list nevejde (hláška pro uživatele).</summary>
@@ -602,18 +609,24 @@ public class PrintDialogViewModel : EDViewModel
 
     /// <summary>Seskupí stránky dat dle režimu členění. Pořadí skupin i stránek v nich
     /// odpovídá pořadí z Caché (LINQ GroupBy zachovává first-seen pořadí).</summary>
-    private static IEnumerable<List<DataContext>> GroupForExport(IReadOnlyList<DataContext> pages, ExportSplitMode mode) =>
+    /// <remarks>Po linkách = podle linky vybrané v seznamu, ne podle pole z dat. Do 24. 10. se dělilo
+    /// podle <c>CISLO_LINKY</c>: u MHD je to licenční číslo, linky se stejným nebo prázdným skončily
+    /// v jednom PDF a agenda bez linek (Faktury) dala jedno PDF vždy.</remarks>
+    internal static IEnumerable<List<DataContext>> GroupForExport(IReadOnlyList<DataContext> pages, ExportSplitMode mode) =>
         mode switch
         {
-            ExportSplitMode.PerLine => pages.GroupBy(p => p.GetString("CISLO_LINKY")).Select(g => g.ToList()),
+            ExportSplitMode.PerLine => KontrolaVystupu.PoLinkach(pages).Select(g => g.Stranky.ToList()),
             ExportSplitMode.PerStop => pages.Select(p => new List<DataContext> { p }),
             _                       => [pages.ToList()],
         };
 
-    /// <summary>Vyhodnotí pattern nad daty, ošetří neplatné znaky a kolize (přípona _2, _3, …).</summary>
-    private static string BuildFileName(DataContext page, string pattern, HashSet<string> used)
+    /// <summary>Vyhodnotí pattern nad daty, ošetří neplatné znaky a kolize (přípona _2, _3, …).
+    /// Prázdný pattern = jméno vybrané instance.</summary>
+    internal static string BuildFileName(DataContext page, string pattern, HashSet<string> used)
     {
-        var resolved = string.IsNullOrWhiteSpace(pattern) ? "export" : page.ResolvePlaceholders(pattern);
+        var resolved = string.IsNullOrWhiteSpace(pattern)
+            ? page.GetString(KontrolaVystupu.LinkaKlic)
+            : page.ResolvePlaceholders(pattern);
         var name = Sanitize(resolved);
         if (string.IsNullOrWhiteSpace(name)) name = "export";
 

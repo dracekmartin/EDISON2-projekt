@@ -10,6 +10,8 @@
   (rozhodnutí Jan 23. 10. po vykreslení linky 11350; changelog 2026-10-23 (18)).
 - **C7** Nápověda „Viditelnost řádku" jmenuje jen pole řádku z agendy šablony, Tabulka spojů i Seznam
   zastávek (rozhodnutí Jan 23. 10.; changelog 2026-10-23 (19)).
+- **C4** „Jeden PDF na linku" dělí podle linky vybrané v seznamu, linkové JŘ mají výchozí název
+  s výchozí zastávkou, u MHD zůstává licenční číslo (rozhodnutí Jan 24. 10.; changelog 2026-10-24).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

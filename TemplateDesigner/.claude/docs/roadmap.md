@@ -22,7 +22,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194a` Chyby
 
-- **C4** Export „Jeden PDF na linku": v názvu doslova „POPIS_ZASTAVKA", MHD dělí podle licenčního čísla [M] **Jan** **do 27. 10.**
 - **C5** Výchozí vývěska MHD tiskne dopravce dvakrát [S] **Jan**
 - **C6** „Vlastní definice sloupců" ve vývěsce MHD nic nedělá [S] **Jan**
 - **C8** Linkový AD tiskne „soboty, neděle a svátky" malým písmenem [S] **tisk**

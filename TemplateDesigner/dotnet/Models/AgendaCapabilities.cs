@@ -43,6 +43,20 @@ public static class AgendaCapabilities
     public static bool Supports(string? elementKind, string elementType) =>
         ScheduleElementTypes(elementKind).Contains(elementType);
 
+    /// <summary>
+    /// Výchozí název PDF při tisku do víc souborů (tokeny <c>{POLE}</c> z dat) - jen z polí, která
+    /// druh agendy posílá. Prázdný = agenda bez polí JŘ, soubor dostane jméno vybrané instance.
+    /// </summary>
+    /// <remarks>Číslo linky je i u MHD licenční, ne veřejné: je vždy vyplněné a jednoznačné
+    /// (rozhodnutí Jan 24. 10.), dával ho tak i starý tisk MHD (`TiskMHD/.../Linka.cls:99`).</remarks>
+    public static string VychoziNazevSouboru(string? elementKind) =>
+        elementKind?.ToUpperInvariant() switch
+        {
+            "STOP" => "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}",
+            "LINE" => "{CISLO_LINKY}_{VYCHOZI_ZASTAVKA}_{KONECNA_ZASTAVKA}",
+            _      => "",
+        };
+
     private static readonly HashSet<string> AllScheduleTypes = [.. StopTypes, .. LineTypes];
 
     /// <summary>Kód agendy rozdílového linkového JŘ (`B192`) - dvě verze linky v jedné tabulce.

@@ -1226,7 +1226,8 @@ public partial class MainWindow : Window
             _preferences,
             onParamsChanged: _vm.OnExternalParamsChanged,
             agendaClass: agendaClass,
-            maVybraneLinky: () => _vm.ActiveInstances.Count > 0);
+            maVybraneLinky: () => _vm.ActiveInstances.Count > 0,
+            elementKind: _vm.CurrentAgendaElementKind);
         vm.VynechaneLinky = () => vynechaneLinky;
 
         vm.RequestRenderPng = (filePath, dataPages) =>

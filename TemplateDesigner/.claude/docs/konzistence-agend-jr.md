@@ -18,17 +18,11 @@ serveru) / neověřeno. Odkazy jsou jméno metody + řádek k 23. 10.; řádky s
 polí na wire a klíče vlastností v šablonách (jen přidávat), kódy agend. Popisky polí, parametrů,
 skupin a formulářů se mění volně - bere je návrhář ze serveru.
 
-**Linkový JŘ MHD jde ven ve verzi 27. 10.** Co se ho týká (`T5`, `T6`, `C4`, `P4`, `P7`), je nejlevnější
+**Linkový JŘ MHD jde ven ve verzi 27. 10.** Co se ho týká (`T5`, `T6`, `P4`, `P7`), je nejlevnější
 opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C4 Export „Jeden PDF na linku" má špatný název i dělení** [M] (*ověřeno:* kód, server). Výchozí vzor
-  `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}` (`PrintDialogViewModel.cs:30`): linkové agendy
-  `POPIS_ZASTAVKA` nemají, v názvu souboru je doslova „POPIS_ZASTAVKA". Dělení `GroupForExport` (:608) jde
-  podle `CISLO_LINKY` = u MHD licenční číslo, uživatel všude vidí veřejné; agenda bez linek (Faktury) dá
-  jedno PDF. Návrh: vzor podle agendy, dělit podle `KontrolaVystupu.LinkaKlic` (stránky ho už nesou).
-  Tvar názvu u MHD potvrdí **Jan**. Uložený vzor uživatele zůstane, nový výchozí dostanou prázdné.
 - **C5 Výchozí vývěska MHD tiskne dopravce dvakrát** [S] **Jan** (*ověřeno:* kód, server). Nahoře v úzkém
   rámečku celý víceřádkový blok, dole znovu (`zastavkovy-jr-mhd.json:258` a `:330`); AD má nahoře
   `{NAZEV_DOPRAVCE}`. V changelogu vědomě „nechané" - proto rozhodnutí: horní prvek odebrat, nebo dát MHD

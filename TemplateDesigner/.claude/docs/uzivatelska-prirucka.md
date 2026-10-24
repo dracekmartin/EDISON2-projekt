@@ -993,8 +993,10 @@ Tato pole se nastavují jen v tiskovém dialogu (nejsou to parametry sestavy, ta
 v záložce Parametry v levém panelu):
 
 - **Členění výstupu** - Vše do jednoho PDF / Jeden PDF na linku / Jeden PDF na zastávku/směr.
-- **Název souboru (tokeny {POLE})** - výchozí `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}`,
-  lze upravit na libovolnou kombinaci datových polí.
+- **Název souboru (tokeny {POLE})** - výchozí u zastávkového JŘ `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}`,
+  u linkového `{CISLO_LINKY}_{VYCHOZI_ZASTAVKA}_{KONECNA_ZASTAVKA}` (číslo linky je i u MHD licenční).
+  Lze upravit na libovolnou kombinaci datových polí.
+- **Jeden PDF na linku** vytvoří jeden soubor za každou linku vybranou v seznamu linek.
 
 U šablony o víc stránkách je k dispozici i **Uspořádání na list** (víc stránek na jeden papír);
 detail viz část I, kap. 9.

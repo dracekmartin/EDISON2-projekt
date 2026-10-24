@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-24 - 📄 „Jeden PDF na linku": soubor za vybranou linku, název z polí agendy (`B194a` C4)
+
+Tisk s daty a členěním „Jeden PDF na linku" dělil stránky podle `CISLO_LINKY`. U MHD je to licenční
+číslo, takže linky se stejným nebo prázdným licenčním číslem skončily v jednom PDF; agenda bez linek
+(Faktury) dala vždy jedno PDF. Teď se dělí podle linky vybrané v seznamu (`KontrolaVystupu.PoLinkach`,
+stejně jako hlášky kontroly). Výchozí název souboru byl pro všechny agendy
+`{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}` a linkové JŘ aktuální zastávku nemají, takže soubor
+se jmenoval `380724_POPIS_ZASTAVKA_Ostrava`. Výchozí název teď určuje druh agendy
+(`AgendaCapabilities.VychoziNazevSouboru`): linkové JŘ `{CISLO_LINKY}_{VYCHOZI_ZASTAVKA}_{KONECNA_ZASTAVKA}`,
+zastávkové beze změny, agenda bez polí JŘ jméno vybrané instance. Číslo linky zůstává i u MHD licenční:
+je vždy vyplněné a jednoznačné (rozhodnutí Jan 24. 10.), stejně ho dával starý tisk MHD. Vlastní vzor
+uživatele zůstává; dřívější výchozí vzor uložený beze změny se bere jako nezadaný. Test
+`ExportPoLinkachTests` (před opravou padal na obou chybách); na serveru ověřeno, že linkový JŘ MHD posílá
+číslo, výchozí i konečnou na každé straně (KV_DP linka 17: `425017_Tržnice_Dalovice`).
+
 ## 2026-10-23 (19) - 💬 nápověda „Viditelnost řádku" jmenuje jen pole z agendy (`B194a` C7)
 
 Nápověda u Tabulky spojů radila pole `POPIS` a `ZONA` a příklad `{ZONA} == "1"` - žádná agenda je
