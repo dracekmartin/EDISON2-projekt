@@ -1867,7 +1867,7 @@ public partial class MainWindow : Window
 
         var dlg = new DepartureGroupEditorDialog(
             element, availableGroups, element.GroupColumns, element.HourColumnStyle,
-            element.CustomColumns, presetsJson)
+            element.CustomColumns, presetsJson, _vm.CurrentAgendaCustomColumns)
             { Owner = this, SearchMemoryKey = ElementDialogSearchKey(element) };
 
         if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)

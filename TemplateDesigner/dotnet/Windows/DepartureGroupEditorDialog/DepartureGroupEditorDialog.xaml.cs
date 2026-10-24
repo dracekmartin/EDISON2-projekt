@@ -44,11 +44,12 @@ public partial class DepartureGroupEditorDialog : Window
         List<DepartureGroupColumnStyle> currentStyles,
         ColumnVisualStyle? hourColumnStyle,
         List<DepartureColumnDefinition>? customColumns = null,
-        string? presetsJson = null)
+        string? presetsJson = null,
+        bool ukazatVlastniSloupce = true)
     {
         _element = element;
         _vm = new DepartureGroupEditorDialogViewModel(element, availableGroups, currentStyles, hourColumnStyle,
-            customColumns, presetsJson);
+            customColumns, presetsJson, ukazatVlastniSloupce);
         DataContext = _vm;
         InitializeComponent();
 

@@ -18,6 +18,10 @@ namespace TemplateDesigner.Serialization;
 /// <para><see cref="Released"/> = zveřejněná pro uživatele; nezveřejněné (pilotní) agendy se
 /// nenabízejí v UI výběru, ale zůstávají funkční pro existující šablony a EDISON launch.
 /// Default true = starší Caché bez klíče ukáže vše (dnešní chování).</para>
+///
+/// <para><see cref="CustomColumns"/> = agenda čte vlastní definici sloupců ze šablony; jinak okno
+/// Minut odjezdů záložku „Vlastní definice sloupců" schová. Default true = starší Caché bez klíče
+/// ji ukáže jako dřív.</para>
 /// </summary>
 public record AgendaRegistryEntry(
     string Code,
@@ -31,7 +35,8 @@ public record AgendaRegistryEntry(
     string AgendaLabel = "",
     string Variant = "",
     string VariantLabel = "",
-    bool Released = true)
+    bool Released = true,
+    bool CustomColumns = true)
 {
     /// <summary>Label agendy s fallbackem pro starší Caché bez dvouosých klíčů (→ kombinovaný Label).</summary>
     public string EffectiveAgendaLabel => AgendaLabel is { Length: > 0 } ? AgendaLabel : Label;

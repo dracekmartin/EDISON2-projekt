@@ -244,8 +244,11 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     public bool HasCustomSelection => _selectedCustomVM is not null;
     public bool CanAddCustomColumn => CustomColumnVMs.Count < DepartureGridElement.MaxCustomColumns;
 
-    /// <summary>Ukázat tab „Vlastní definice sloupců"? Featura jde do verze zhasnutá (#13045b),
-    /// rozsvítí ji lokální config. Skrytý tab definici v šabloně nemaže - OK ji vrátí beze změny.</summary>
+    /// <summary>Ukázat tab „Vlastní definice sloupců"? Jen u agendy, která definici čte (vývěska MHD
+    /// ne). Skrytý tab definici v šabloně nemaže ani nekontroluje - OK ji vrátí beze změny.</summary>
+    public bool UkazatVlastniSloupce { get; }
+
+    private readonly List<DepartureColumnDefinition>? _puvodniVlastniSloupce;
 
     /// <summary>Nabídka vzorů + prázdná varianta pro stavbu od začátku. Vzory drží server
     /// (pole PRESETY_SLOUPCU), takže bez načtených dat zůstane jen prázdná varianta - vzor
@@ -315,9 +318,12 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         List<DepartureGroupColumnStyle> currentStyles,
         ColumnVisualStyle? hourColumnStyle,
         List<DepartureColumnDefinition>? customColumns = null,
-        string? presetsJson = null)
+        string? presetsJson = null,
+        bool ukazatVlastniSloupce = true)
     {
         _element = element;
+        UkazatVlastniSloupce = ukazatVlastniSloupce;
+        _puvodniVlastniSloupce = customColumns;
         _presety = DepartureColumnPresets.Parse(presetsJson);
         Presets = [.. DepartureColumnPresets.All.Where(p => _presety.ContainsKey(p.Key)),
                    new("PRAZDNA", "Prázdná (sloupce si přidáte sami)")];
@@ -539,7 +545,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     protected override void OnOk()
     {
         // Validace definice sloupců - nevalidní seznam značek ani období nepustit na server
-        if (UseCustomColumns)
+        if (UkazatVlastniSloupce && UseCustomColumns)
         {
             var chybny = CustomColumnVMs.FirstOrDefault(vm =>
                 !JsouPlatneZnacky(vm.IncludeMarks) || !JsouPlatneZnacky(vm.ExcludeMarks) || !JsouPlatneZnacky(vm.SuppressedMarks));
@@ -575,8 +581,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             .ToList();
 
         // Definice vlastních sloupců - null = automaticky (vypnuté, nebo zapnuté bez sloupců)
-        ResultCustomColumns = UseCustomColumns && CustomColumnVMs.Count > 0
-            ? CustomColumnVMs.Select(vm => vm.ToModel()).ToList()
+        ResultCustomColumns = !UkazatVlastniSloupce ? _puvodniVlastniSloupce
+            : UseCustomColumns && CustomColumnVMs.Count > 0 ? CustomColumnVMs.Select(vm => vm.ToModel()).ToList()
             : null;
 
         CloseDialog(true);

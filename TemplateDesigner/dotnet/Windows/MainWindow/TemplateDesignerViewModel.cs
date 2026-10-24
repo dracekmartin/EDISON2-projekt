@@ -431,6 +431,10 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Druh JŘ elementů aktuální agendy (STOP/LINE/"") - řídí kontextové menu + paletu okna.</summary>
     public string CurrentAgendaElementKind => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind ?? "";
 
+    /// <summary>Čte agenda šablony vlastní definici sloupců? Neznámá agenda (registr se nenačetl) ano -
+    /// záložku radši ukázat než schovat tam, kde funguje.</summary>
+    public bool CurrentAgendaCustomColumns => AgendaEntry(State.CurrentTemplate.AgendaCode)?.CustomColumns ?? true;
+
     /// <summary>Zobrazovací název aktuální konfigurace „Agenda · Varianta" (např. „Zastávkový JŘ · AD");
     /// fallback = syrový kód (registr nedostupný / neznámý kód). Čte titulek okna.</summary>
     public string CurrentAgendaDisplayName =>
@@ -3840,11 +3844,10 @@ public class TemplateDesignerViewModel : EDViewModel
             : null;
     }
 
-    /// <summary>Vzor sloupců předvyplnit jen prvnímu prvku odjezdů v šabloně a jen u zastávkového
-    /// JŘ AD (jediná agenda, jejíž server DEFINICE_SLOUPCU čte). Kód agendy je stabilní
-    /// persistovaný klíč.</summary>
+    /// <summary>Vzor sloupců předvyplnit jen prvnímu prvku odjezdů v šabloně a jen u agendy, jejíž
+    /// server DEFINICE_SLOUPCU čte (hlásí to registr agend).</summary>
     private bool ShouldPrefillDepartureColumns() =>
-        string.Equals(State.CurrentTemplate.AgendaCode, "ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)
+        AgendaEntry(State.CurrentTemplate.AgendaCode)?.CustomColumns == true
         && !State.CurrentTemplate.Sections.SelectMany(s => s.Elements).OfType<DepartureGridElement>().Any();
 
     /// <summary>Chce **některý** prvek šablony turnusy ke spojům? Podle toho se posílá serveru

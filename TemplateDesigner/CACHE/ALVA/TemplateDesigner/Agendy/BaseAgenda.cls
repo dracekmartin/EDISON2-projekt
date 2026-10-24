@@ -65,6 +65,11 @@ Parameter Released As %Boolean = 0;
 /// z registru (AgendaRegistryEntry) → žádné hardcoded větvení dle kódu agendy.
 Parameter InstanceParamName As %String = "INSTANCE_ID";
 
+/// Agenda čte vlastní definici sloupců ze šablony (`DEFINICE_SLOUPCU`, `ParseDefiniceSloupcu`).
+/// Návrhář podle toho ukáže záložku „Vlastní definice sloupců" v okně Minut odjezdů; u agendy,
+/// která ji nečte, by nic nedělala (vývěska MHD, rozhodnutí Jan 24. 10.: koncept AD).
+Parameter CustomColumns As %Boolean = 0;
+
 /// Druh JŘ elementů, které agenda podporuje - řídí kontextové menu/paletu okna.
 /// "STOP" = zastávkové (StopList/DepartureGrid/NotesLegend), "LINE" = knižní/linkové
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.

@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-24 (3) - 🚌 vývěska MHD bez záložky „Vlastní definice sloupců" (`B194a` C6)
+
+Okno Minut odjezdů ukazovalo záložku „Vlastní definice sloupců" ve všech agendách. Vývěska MHD definici
+nečte, takže uživatel nadefinoval sloupce, dal OK a vývěska se nezměnila, bez hlášky. Vlastní sloupce
+jsou koncept AD a MHD je nedostane (rozhodnutí Jan 24. 10.: nesjednocovat, u MHD záložku vyhodit).
+Agenda teď hlásí, jestli definici čte: parametr třídy `CustomColumns` (výchozí 0, vývěska a linkový AD
+1), registr agend ho posílá jako `customColumns` a okno záložku podle něj ukáže nebo schová. Starší
+server bez klíče ji ukáže jako dřív. Předvyplnění vzoru sloupců u nového prvku se řídí týmž příznakem
+místo kódu agendy natvrdo. Schovaná záložka definici uloženou v šabloně nemění ani nekontroluje. Testy
+`VlastniSloupceAgendyTests`: příznak každé agendy sedí s tím, zda volá `ParseDefiniceSloupcu`; registr
+čte klíč a bez klíče ukáže záložku; OK se schovanou záložkou vrátí definici beze změny. Na serveru
+ověřeno voláním `ListAgendy` (AD ano, obě MHD ne). V příručce opravený i název záložky.
+
 ## 2026-10-24 (2) - 🚌 vývěska MHD: dopravce v záhlaví jednou, jako AD (`B194a` C5)
 
 Výchozí vývěska MHD měla v záhlaví celý popis dopravce dvakrát: tučně v úzkém rámečku vedle „Platí od"

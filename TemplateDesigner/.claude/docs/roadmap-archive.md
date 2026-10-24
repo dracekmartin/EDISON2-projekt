@@ -14,6 +14,8 @@
   s výchozí zastávkou, u MHD zůstává licenční číslo (rozhodnutí Jan 24. 10.; changelog 2026-10-24).
 - **C5** Vývěska MHD posílá „Název dopravce", výchozí šablona ho má nahoře jako AD a celý popis jen
   pod názvem linky (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (2)).
+- **C6** Záložka „Vlastní definice sloupců" je jen u agend, které definici čtou (AD); u MHD zmizela.
+  Vlastní sloupce jsou koncept AD, MHD je nedostane (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (3)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

@@ -133,7 +133,7 @@
             </TabItem>
 
             <!-- ── Tab 3: Vlastní definice sloupců (dny + značky + období; tab Sloupce zůstává vzhled) ── -->
-            <TabItem Header="Vlastní definice sloupců">
+            <TabItem Header="Vlastní definice sloupců" Visibility="{Binding UkazatVlastniSloupce, Converter={StaticResource BoolToVis}}">
                 <Grid Margin="6">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

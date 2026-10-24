@@ -889,9 +889,10 @@ Dvoutabový dialog: **Obecné** (vlastnosti prvku) a **Sloupce**:
 #### Vlastní definice sloupců vývěsky
 
 Které sloupce na vývěsce vzniknou, dosud určovala konfigurace linky. V editoru prvku **Minuty
-odjezdů** je proto záložka **„Definice sloupců"** s přepínačem **Automaticky (dle linky)** ×
+odjezdů** je proto záložka **„Vlastní definice sloupců"** s přepínačem **Automaticky (dle linky)** ×
 **Vlastní sloupce** - vlastních jde nadefinovat až pět a **uloží se do šablony**, takže platí
-pro každou linku, kterou tou šablonou vytisknete.
+pro každou linku, kterou tou šablonou vytisknete. Záložka je jen u varianty AD; vývěska MHD bere
+sloupce vždy z nastavení linky v modulu MHD.
 
 U každého sloupce nastavíte:
 

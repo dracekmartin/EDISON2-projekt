@@ -78,6 +78,8 @@ Parameter Released = 1;
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 
+Parameter CustomColumns As %Boolean = 1;
+
 Parameter ElementKind As %String = "LINE";
 
 Parameter InstanceLabel As %String = "linka";
