@@ -386,6 +386,42 @@ Method TestDefiniceSloupcuVUkazkovychDatech()
 	kill ^||ML
 }
 
+/// `B194a` C8: dvojice pracovní dny / víkend bere nadpisy z kusů 8 a 9 číselníku jako starý tisk;
+/// prázdné → dřívější kus 2 a 7, prázdné vše → pevný text. Trojice beze změny (kusy 2-4).
+Method TestNadpisyDvojiceZKusu8a9()
+{
+	set ad = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
+	do $classmethod(ad, "NadpisyZCiselniku", "~pd~so~ne~~~víkend prázdniny~Pracovní dny~Soboty, neděle a svátky", .t)
+	do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "Pracovní dny|Soboty, neděle a svátky", "dvojice z kusů 8 a 9")
+	do $$$AssertEquals(t("PD")_"|"_t("SO")_"|"_t("NE"), "pd|so|ne", "trojice z kusů 2-4")
+
+	do $classmethod(ad, "NadpisyZCiselniku", "~pd~so~ne~~~víkend prázdniny", .t)
+	do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "pd|víkend prázdniny", "bez kusů 8 a 9 jako dřív")
+
+	do $classmethod(ad, "NadpisyZCiselniku", "", .t)
+	do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "pracovní dny|soboty, neděle a svátky", "prázdný číselník")
+}
+
+/// Totéž na lince: firma s vyplněnou sadou 8/9 (CB_CSADAD) tiskne obě poloviny dvojice z ní.
+Method TestDvojiceNaLinceZCiselniku()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_CSADAD", sku = 1, lin = "0330510"
+	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertSkipped("linka "_lin_" není na tomto serveru")
+		quit
+	}
+	set dsc = $get(^[db]JRSET("Definice","WinMHD","CZ","DSC"))
+	if ($piece(dsc,"~",8) = "") || ($piece(dsc,"~",9) = "") {
+		do $$$AssertSkipped("firma nemá vyplněné nadpisy dvojice (kusy 8 a 9)")
+		quit
+	}
+	kill parametry
+	set parametry("DELENI_SLOUPCU") = "Pracovní dny / víkend+svátky"
+	do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
+	do $$$AssertEquals(..NadpisySkupin(), $piece(dsc,"~",8)_"|"_$piece(dsc,"~",9), "nadpisy dvojice z kusů 8 a 9")
+}
+
 /// Nadpisy pásů z posledního běhu, spojené „|" - jen z první stránky.
 ClassMethod NadpisySkupin() As %String
 {

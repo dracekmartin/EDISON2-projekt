@@ -1732,17 +1732,39 @@ ClassMethod ZarazeniSpojeKnizni(deleni As %Integer, plk As %String) As %String
 /// skupin, aby vzor vypadal stejně jako dnešní hrubé dělení.
 ClassMethod PresetySloupcuLinky(dataDB As %String, rec As %String) As %String
 {
-    s dsc = $g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC"))
-    s tPD = $p(dsc,"~",2)  i tPD = "" s tPD = "pracovní dny"
-    s tSo = $p(dsc,"~",3)  i tSo = "" s tSo = "soboty"
-    s tNe = $p(dsc,"~",4)  i tNe = "" s tNe = "neděle a svátky"
-    s tVik = $p(dsc,"~",7) i tVik = "" s tVik = "soboty, neděle a svátky"
+    d ..NadpisySkupinDnu(dataDB, rec, .t)
 
     s out = ##class(%DynamicObject).%New()
     d out.%Set("BEZ_ROZLISENI", ..PresetSloupceLinky($lb($lb("1","",""))))
-    d out.%Set("PRAC_VIKEND",   ..PresetSloupceLinky($lb($lb("1",tPD,"X"), $lb("2",tVik,"6+"))))
-    d out.%Set("PRAC_SO_NE",    ..PresetSloupceLinky($lb($lb("1",tPD,"X"), $lb("2",tSo,"6"), $lb("3",tNe,"+"))))
+    d out.%Set("PRAC_VIKEND",   ..PresetSloupceLinky($lb($lb("1",t("dvojicePD"),"X"), $lb("2",t("dvojiceVikend"),"6+"))))
+    d out.%Set("PRAC_SO_NE",    ..PresetSloupceLinky($lb($lb("1",t("PD"),"X"), $lb("2",t("SO"),"6"), $lb("3",t("NE"),"+"))))
     q out.%ToJSON()
+}
+
+/// Nadpisy skupin dnů z číselníku WinMHD DSC (`^JRSET("Definice","WinMHD",rec,"DSC")`) podle
+/// starého tisku ve tvaru MHD (`JRapiLinPrtMhd1.mac:544-562`): trojice pracovní dny / soboty /
+/// neděle a svátky = kusy 2-4, dvojice pracovní dny / víkend = kusy **8 a 9**.
+/// Do 24. 10. brala dvojice kus 2 a kus 7 (třetí nadpis prázdninové trojice), takže firma
+/// s vyplněnou sadou tiskla „Pracovní dny" vedle „soboty, neděle a svátky" (`B194a` C8).
+/// Prázdný kus 8 nebo 9 → dřívější kus 2 / 7 (rozhodnutí Jan 24. 10.; starý tisk by nechal
+/// nadpis prázdný), prázdné všechno → pevný text.
+ClassMethod NadpisySkupinDnu(dataDB As %String, rec As %String, ByRef t)
+{
+    d ..NadpisyZCiselniku($g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC")), .t)
+}
+
+/// Nadpisy z věty číselníku WinMHD DSC (kusy oddělené `~`), pravidla viz `NadpisySkupinDnu`.
+ClassMethod NadpisyZCiselniku(dsc As %String, ByRef t)
+{
+    k t
+    s t("PD") = $p(dsc,"~",2)  i t("PD") = "" s t("PD") = "pracovní dny"
+    s t("SO") = $p(dsc,"~",3)  i t("SO") = "" s t("SO") = "soboty"
+    s t("NE") = $p(dsc,"~",4)  i t("NE") = "" s t("NE") = "neděle a svátky"
+    s t("dvojicePD") = $p(dsc,"~",8)
+    i t("dvojicePD") = "" s t("dvojicePD") = t("PD")
+    s t("dvojiceVikend") = $p(dsc,"~",9)
+    i t("dvojiceVikend") = "" s t("dvojiceVikend") = $p(dsc,"~",7)
+    i t("dvojiceVikend") = "" s t("dvojiceVikend") = "soboty, neděle a svátky"
 }
 
 /// Jeden vzor: seznam `$lb(id, nadpis, dny)` → pole sloupců ve wire tvaru `DEFINICE_SLOUPCU`.
@@ -1793,28 +1815,23 @@ ClassMethod BuildSkupinyZDefinice(ByRef defArr) As %DynamicArray
     q arr
 }
 
-/// Definice skupin dnů - nadpisy z číselníku WinMHD DSC (^JRSET("Definice","WinMHD",rec,"DSC"),
-/// piece 2 = pracovní dny, 3 = soboty, 4 = neděle a svátky, 7 = soboty+neděle+svátky).
+/// Definice skupin dnů - nadpisy viz `NadpisySkupinDnu`.
 ClassMethod BuildSkupinyDnu(dataDB As %String, rec As %String, deleni As %Integer) As %DynamicArray
 {
-    s dsc = $g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC"))
-    s tPD = $p(dsc,"~",2)  i tPD = "" s tPD = "pracovní dny"
-    s tSo = $p(dsc,"~",3)  i tSo = "" s tSo = "soboty"
-    s tNe = $p(dsc,"~",4)  i tNe = "" s tNe = "neděle a svátky"
-    s tVik = $p(dsc,"~",7) i tVik = "" s tVik = "soboty, neděle a svátky"
+    d ..NadpisySkupinDnu(dataDB, rec, .t)
 
     s arr = ##class(%DynamicArray).%New()
     i deleni = 0 {
         d arr.%Push(..BuildSkupina(1, ""))
     }
     elseif deleni = 1 {
-        d arr.%Push(..BuildSkupina(1, tPD))
-        d arr.%Push(..BuildSkupina(2, tVik))
+        d arr.%Push(..BuildSkupina(1, t("dvojicePD")))
+        d arr.%Push(..BuildSkupina(2, t("dvojiceVikend")))
     }
     else {
-        d arr.%Push(..BuildSkupina(1, tPD))
-        d arr.%Push(..BuildSkupina(2, tSo))
-        d arr.%Push(..BuildSkupina(3, tNe))
+        d arr.%Push(..BuildSkupina(1, t("PD")))
+        d arr.%Push(..BuildSkupina(2, t("SO")))
+        d arr.%Push(..BuildSkupina(3, t("NE")))
     }
     q arr
 }

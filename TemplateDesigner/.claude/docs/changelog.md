@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-24 (4) - 📅 linkový AD: nadpisy „pracovní dny / víkend" z jejich sady číselníku (`B194a` C8)
+
+Linkový AD při rozdělení na pracovní dny a víkend bral nadpis víkendu z kusu 7 číselníku nadpisů
+(třetí sloupec prázdninové trojice). CB_CSADAD tak tiskla „Pracovní dny" vedle „soboty, neděle
+a svátky". Starý tisk ve tvaru MHD bere pro tuto dvojici kusy 8 a 9 (`JRapiLinPrtMhd1.mac:559-562`).
+Teď je bere i linkový AD (`LinkovyJrAd.NadpisySkupinDnu`), jak pro pásy skupin, tak pro vzor sloupců
+„pracovní dny / víkend". Když firma kusy 8 a 9 vyplněné nemá, zůstává dřívější kus 2 a 7 (rozhodnutí
+Jan 24. 10.; starý tisk by nechal nadpis prázdný). Tisk se tedy změní jen firmám s vyplněnou sadou;
+na dev serveru CB_CSADAD, VS_CSAD a KV_DP ne. ⚠️ Šablona, ve které už uživatel dvojici zvolil, má
+nadpisy uložené: tiskne dál ty staré a parametr rozdělení u ní ukáže „Vlastní rozložení", protože
+sloupce už neodpovídají vzoru. Nová volba dvojice nadpisy srovná. Testy `LinkovyJrNastaveniTest`:
+pravidla nad syntetickou větou číselníku a dvojice na lince 0330510 CB_CSADAD; zlaté otisky
+0330510 a 0330511 přegenerované (data nesou vzory sloupců; jen md5, počty beze změny).
+
 ## 2026-10-24 (3) - 🚌 vývěska MHD bez záložky „Vlastní definice sloupců" (`B194a` C6)
 
 Okno Minut odjezdů ukazovalo záložku „Vlastní definice sloupců" ve všech agendách. Vývěska MHD definici

@@ -60,7 +60,10 @@ Method TestGold0330510()
 	// (`LOKALNI_OZNACENI_LINKY`, jako u vývěsky AD). Mění se jen md5, počty jsou shodné.
 	// Re-baseline 2026-10-23 (#13606): do hlavičky přibyly barvy linky (`BARVA_LINKY`, `BARVA_LINKY_2`,
 	// jako u vývěsky AD). Mění se jen md5, počty jsou shodné.
-	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=GtryPoxVhXMAmPVkXo8nVw==")
+	// Re-baseline 2026-10-24 (`B194a` C8): vzor sloupců „pracovní dny / víkend" bere nadpisy z kusů
+	// 8 a 9 číselníku (CB_CSADAD „Soboty, neděle a svátky" místo „soboty, …"). Mění se jen md5,
+	// počty jsou shodné.
+	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=axUaNfJAV6zTLpjhHlQaxQ==")
 }
 
 /// Druhý tvar: bez skupin dnů, zdvojené řádky příjezd/odjezd, šest km sloupců.
@@ -95,7 +98,8 @@ Method TestGold0330511()
 	// (`AKTUALNI_ZASTAVKA_CZST`/`_TC`, bez zvýraznění prázdné). Mění se jen md5, počty jsou shodné.
 	// Re-baseline 2026-10-23 (`B193b`): veřejné označení linky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-23 (#13606): barvy linky v hlavičce (viz 0330510). Jen md5.
-	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=29L6zct8o0443ORbgv86XQ==")
+	// Re-baseline 2026-10-24 (`B194a` C8): nadpisy vzoru dvojice z kusů 8 a 9 (viz 0330510). Jen md5.
+	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=Sx0xrAZUEQLvp/R3IgT88g==")
 }
 
 /// Třetí tvar, jiná firma: největší linka jádra (99 spojů, 53 na stránku, osm km sloupců).

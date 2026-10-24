@@ -16,6 +16,8 @@
   pod názvem linky (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (2)).
 - **C6** Záložka „Vlastní definice sloupců" je jen u agend, které definici čtou (AD); u MHD zmizela.
   Vlastní sloupce jsou koncept AD, MHD je nedostane (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (3)).
+- **C8** Linkový AD bere nadpisy dvojice pracovní dny / víkend z kusů 8 a 9 číselníku jako starý tisk,
+  prázdné → dřívější chování (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (4)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

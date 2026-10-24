@@ -23,14 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C8 Linkový AD tiskne „soboty, neděle a svátky" malým** [S] **tisk** (*ověřeno:* server CB_CSADAD
-  0330510). Při rozdělení pracovní dny / víkend bere kus 7 číselníku nadpisů (prázdninový) místo 9
-  (`LinkovyJrAd.PresetySloupcuLinky` :1731/:1737, `BuildSkupinyDnu` :1796/:1802). Parita nedoložena -
-  starý knižní tisk nadpis v Caché nevyrábí. *Doměřeno 23. 10.:* starý tisk ve tvaru MHD z modulu JŘ
-  (`JRapiLinPrtMhd1.mac:541-570`) bere sady číselníku takto: 2-4 tři sloupce, 5-7 prázdninová trojice,
-  **8+9 dvojice pracovní dny / víkend**. Dev data: CB_CSADAD má 8/9 vyplněné („Pracovní dny", „Soboty,
-  neděle a svátky"), VS_CSAD a KV_DP prázdné (vše malými). Návrh předložený Janovi, čeká na souhlas:
-  dvojice z 8+9, prázdné → dnešní chování (mění tisk jen firmám s vyplněnou sadou 8/9).
 - **C9 Linkový AD čte formát data u linky o režim vedle** [S] **tisk** (*ověřeno:* kód). Starý modul ukládá
   nastavení u linky posunuté o 1 (0 = nenastaveno) a při čtení odečítá (`JRapiNZUtl2.mac:190-193`);
   `LinkovyJrAd.TiskDtm` (:745-747) bere hodnotu bez odečtu. Počet linek nezměřen: sonda
