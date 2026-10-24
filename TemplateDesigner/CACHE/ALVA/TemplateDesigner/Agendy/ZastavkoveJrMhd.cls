@@ -1123,7 +1123,10 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("CISLO_LINKY",            CisloLinky)
     d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni)
     d vals.%Set("POPIS_LINKY",            NazevLinky)
-    d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(.sys, dataDB, IdFa, LinkaID))
+    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .dopravce)
+    d vals.%Set("POPIS_DOPRAVCE",         ..RadkyDopravce($g(dopravce("NAZEV")), $g(dopravce("ULICE")), $g(dopravce("MESTO")), $g(dopravce("TELEFON"))))
+    // Samotný název do úzkého rámečku záhlaví, celý popis jde pod název linky (jako vývěska AD).
+    d vals.%Set("NAZEV_DOPRAVCE",         $zstrip($g(dopravce("NAZEV")), "<>W"))
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
     d vals.%Set("POPIS_PLATNOSTI",        ..FormatDatum(platnostOd)_" - "_..FormatDatum(platnostDo))
     d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum(platnostOd))
@@ -1737,6 +1740,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
 
     // ── dopravce ──
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+    d ..AddField(fields, "NAZEV_DOPRAVCE",         "Název dopravce",         "text")
 
     // ── platnost ──
     // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD.
@@ -1882,7 +1886,15 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 /// `jednimRadkem` = řádek hlavičky linkového JŘ MHD (viz `RadkyDopravce`).
 ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, jednimRadkem As %Boolean = 0) As %String
 {
-    s radky = ""
+    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .udaje)
+    ret ..RadkyDopravce($g(udaje("NAZEV")), $g(udaje("ULICE")), $g(udaje("MESTO")), $g(udaje("TELEFON")), jednimRadkem)
+}
+
+/// Údaje dopravce linky po položkách: `udaje("NAZEV")`, `("ULICE")`, `("MESTO")`, `("TELEFON")`.
+/// Zdroj viz `PopisDopravce`; selhání legacy volání → prázdné pole.
+ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, ByRef udaje As %String)
+{
+    k udaje
     try {
         s sysnmsp = $g(sys("U","SystemDB"))
         s druh = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DruhDopravceID"))
@@ -1890,21 +1902,27 @@ ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
             // Vlastní firma (MlJFapiFa: 02 název, 03 upřesnění, 13 ulice, 14 město, 15 PSČ, 23 tel)
             k tmpArr  s err = $$gIdFa^MlJFapi(IdFa, sysnmsp, "", .tmpArr)
             i 'err {
-                s nazev = $g(tmpArr("dta",2))
-                i $g(tmpArr("dta",3)) '= "" s nazev = nazev _ $g(tmpArr("dta",3))
-                s mesto = $zstrip($g(tmpArr("dta",15))_" "_$g(tmpArr("dta",14)), "<>W")
-                s radky = ..RadkyDopravce(nazev, $g(tmpArr("dta",13)), mesto, $g(tmpArr("dta",23)), jednimRadkem)
+                s udaje("NAZEV") = $g(tmpArr("dta",2))
+                i $g(tmpArr("dta",3)) '= "" s udaje("NAZEV") = udaje("NAZEV") _ $g(tmpArr("dta",3))
+                s udaje("ULICE") = $g(tmpArr("dta",13))
+                s udaje("MESTO") = $zstrip($g(tmpArr("dta",15))_" "_$g(tmpArr("dta",14)), "<>W")
+                s udaje("TELEFON") = $g(tmpArr("dta",23))
             }
         } elseif druh = 1 {
             // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 7 obchodní název)
             s ciziFa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DopravceCiziFirmaID"))
             i ciziFa '= "" {
                 k tmpArr  s err = $$gDopFa^JRapi(IdFa, dataDB, ciziFa, "", .tmpArr)
-                i 'err s radky = ..RadkyDopravce($g(tmpArr("dta",7)), $g(tmpArr("dta",2)), $g(tmpArr("dta",1)), $g(tmpArr("dta",3)), jednimRadkem)
+                i 'err {
+                    s udaje("NAZEV") = $g(tmpArr("dta",7))
+                    s udaje("ULICE") = $g(tmpArr("dta",2))
+                    s udaje("MESTO") = $g(tmpArr("dta",1))
+                    s udaje("TELEFON") = $g(tmpArr("dta",3))
+                }
             }
         }
-    } catch ex { s radky = "" }
-    ret radky
+    } catch ex { k udaje }
+    q
 }
 
 /// Složí dopravce do řádků: název, ulice, sídlo/město, telefon. Prázdné položky se vynechají,
@@ -1941,6 +1959,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     d vals.%Set("LOKALNI_OZNACENI_LINKY", "A42")
     d vals.%Set("POPIS_LINKY",            "Líšeň–Bystrc")
     d vals.%Set("POPIS_DOPRAVCE",         "Dopravní podnik města Brna, a.s."_$c(10)_"Hlinky 151"_$c(10)_"656 46 Brno"_$c(10)_"tel: 543 171 111")
+    d vals.%Set("NAZEV_DOPRAVCE",         "Dopravní podnik města Brna, a.s.")
     d vals.%Set("POPIS_PLATNOSTI",        "01.01.2026 - 31.12.2026")
     d vals.%Set("DATUM_PLATNOSTI_OD",     "01.01.2026")
     d vals.%Set("DATUM_PLATNOSTI_DO",     "31.12.2026")

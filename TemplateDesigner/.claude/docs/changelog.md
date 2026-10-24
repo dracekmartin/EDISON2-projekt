@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-24 (2) - 🚌 vývěska MHD: dopravce v záhlaví jednou, jako AD (`B194a` C5)
+
+Výchozí vývěska MHD měla v záhlaví celý popis dopravce dvakrát: tučně v úzkém rámečku vedle „Platí od"
+(řádky slité čárkou, delší adresa se nevešla) a malým písmem pod názvem linky. AD to má od 31. 8.
+nahoře jen s názvem; MHD tehdy zůstala, protože agenda název zvlášť neposílala. Teď ho posílá jako pole
+**Název dopravce** (`NAZEV_DOPRAVCE`, stejný klíč i popisek jako AD) a šablona ho má nahoře. Údaje
+dopravce čte `ZastavkoveJrMhd.UdajeDopravce` po položkách, takže název je vždy první řádek popisu.
+Ostatní pole dopravce po položkách (adresa, telefon) MHD nemá, zůstávají v `D4`. Mění tisk systémové
+šablony; kopie, které si zákazník uložil, zůstávají, jak jsou. Ověřeno: nový Caché test
+`ZastavkoveJrMhdDopravceTest` (nabídka dat, název = první řádek popisu na KV_DP), zlaté otisky vývěsky
+MHD přegenerované (jen md5, počty stránek, zastávek, odjezdů i poznámek beze změny), vykreslení linky 17
+KV_DP před a po. Při vykreslení vyplavalo přetékání nadpisů skupin dnů, zapsané jako `C12`.
+
 ## 2026-10-24 - 📄 „Jeden PDF na linku": soubor za vybranou linku, název z polí agendy (`B194a` C4)
 
 Tisk s daty a členěním „Jeden PDF na linku" dělil stránky podle `CISLO_LINKY`. U MHD je to licenční

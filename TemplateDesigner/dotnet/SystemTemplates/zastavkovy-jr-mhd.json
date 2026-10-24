@@ -256,7 +256,7 @@
         },
         {
           "type": "TextElement",
-          "text": "{POPIS_DOPRAVCE}",
+          "text": "{NAZEV_DOPRAVCE}",
           "style": {
             "fontSize": 8.5197,
             "bold": true,

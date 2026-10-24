@@ -22,12 +22,12 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194a` Chyby
 
-- **C5** Výchozí vývěska MHD tiskne dopravce dvakrát [S] **Jan**
 - **C6** „Vlastní definice sloupců" ve vývěsce MHD nic nedělá [S] **Jan**
 - **C8** Linkový AD tiskne „soboty, neděle a svátky" malým písmenem [S] **tisk**
 - **C9** Linkový AD čte nastavení formátu data u linky o režim vedle [S] **tisk**
 - **C10** „Uložit jako" přepojí šablonu na jinou agendu, i nezveřejněnou [S]
 - **C11** Chyba serveru u jedné linky zastaví tisk všech, hláška je technická [M]
+- **C12** Výchozí vývěska MHD: nadpisy skupin dnů přetékají, minuty ve čtvrté skupině uříznuté [M] **tisk**
 
 ### `B194b` Tisk - rozdíly mezi agendami (všechno **tisk** a **Jan**)
 

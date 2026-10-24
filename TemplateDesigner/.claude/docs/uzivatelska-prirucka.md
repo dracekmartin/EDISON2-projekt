@@ -727,7 +727,7 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   dopravce*, *E-mail dopravce* a *IČO dopravce*. Použijte je, když chcete o obsahu rozhodovat sami:
   poskládáte si jen to, co na vývěsce chcete, a nic se neopakuje dvakrát. Adresa je jedno pole
   včetně PSČ a obce - tak je uložená v číselníku dopravců. U linky s více dopravci nesou tato pole
-  **prvního** z nich.
+  **prvního** z nich. Varianta MHD má z nich jen *Název dopravce*.
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"). Ukážou se, jen když má
   šablona zapnutý sloupec „Varianty tras" - bez něj nemají na tisk vliv:
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané

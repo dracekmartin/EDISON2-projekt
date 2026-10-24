@@ -12,6 +12,8 @@
   zastávek (rozhodnutí Jan 23. 10.; changelog 2026-10-23 (19)).
 - **C4** „Jeden PDF na linku" dělí podle linky vybrané v seznamu, linkové JŘ mají výchozí název
   s výchozí zastávkou, u MHD zůstává licenční číslo (rozhodnutí Jan 24. 10.; changelog 2026-10-24).
+- **C5** Vývěska MHD posílá „Název dopravce", výchozí šablona ho má nahoře jako AD a celý popis jen
+  pod názvem linky (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (2)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

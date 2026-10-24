@@ -23,10 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C5 Výchozí vývěska MHD tiskne dopravce dvakrát** [S] **Jan** (*ověřeno:* kód, server). Nahoře v úzkém
-  rámečku celý víceřádkový blok, dole znovu (`zastavkovy-jr-mhd.json:258` a `:330`); AD má nahoře
-  `{NAZEV_DOPRAVCE}`. V changelogu vědomě „nechané" - proto rozhodnutí: horní prvek odebrat, nebo dát MHD
-  pole `NAZEV_DOPRAVCE` (`D4`).
 - **C6 „Vlastní definice sloupců" ve vývěsce MHD nic nedělá** [S] **Jan** (*ověřeno:* kód). Záložka bez
   podmínky (`DepartureGroupEditorDialog.xaml:136`, osiřelý komentář ve VM :247), vývěska MHD
   `DEFINICE_SLOUPCU` nečte. Předvyplnění drží kód agendy natvrdo (`ShouldPrefillDepartureColumns` :3846).
@@ -53,6 +49,10 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
   `LinkovyJrAd.cls:550`, `LinkovyJrMhd.cls:236`, `ZastavkoveJrMhd.cls:292`) a nese kód agendy
   (`CacheAgendaProvider.GetDataSDuvodem`). Návrh: chybu linky zařadit mezi vynechané; linka, která v JŘ
   není, jako `DUVOD_PRAZDNE` s větou pro uživatele.
+- **C12 Výchozí vývěska MHD: nadpisy skupin dnů a minuty se nevejdou** [M] (*ověřeno:* jen zkušební
+  vykreslení `ZkouskaTiskuNaostro`, KV_DP linka 17 se čtyřmi skupinami dnů, 24. 10.; v návrháři
+  neověřeno). Dvouřádkový nadpis („Pracovní den" / „1.7. - 31.8. a 27.12. - …") přetéká do sousední
+  skupiny a druhý řádek přepisuje „Hod"; ve čtvrté skupině jsou minuty vpravo uříznuté („47 4").
 
 ## 2. Tisk - rozdíly mezi agendami
 
@@ -124,7 +124,8 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
   „Konečná zastávka" vedle „CIS číslo cílové zastávky", „Aktuální zastávka (CIS)" vedle „CIS číslo zastávky"
   (`ZastavkoveJrAd.AddStandardJRFields`). Návrh: „Číslo … (CIS)" jednotně, přidat `VYCHOZI_ZASTAVKA` do vývěsek.
   Zákazník hledal „cílovou" (`MigrationKonecnaZastavka.cs:10`) - kanon „konečná" potvrdí **Jan**.
-- **D4 Údaje dopravce po polích má jen vývěska AD** [M] **Jan** (*ověřeno:* kód). Jinde jen hotový blok.
+- **D4 Údaje dopravce po polích má jen vývěska AD** [M] **Jan** (*ověřeno:* kód). Jinde jen hotový blok,
+  vývěska MHD od `C5` (24. 10.) navíc název.
   Linkový AD má tentýž zdroj (`ZastavkoveJrAd.BuildDopravci`), MHD název, ulici, město a telefon
   (`ZastavkoveJrMhd.PopisDopravce`). Jen přidání.
 - **D5 Pořadí polí v nabídce se liší** [S] (*ověřeno:* kód). Nabídka nepřeřazuje. Linkový AD má poznámky
