@@ -348,7 +348,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             "každý oddíl nese celou tabulku znovu včetně záhlaví, takže prvek je nižší a širší.",
         ElementTypes.DepartureGrid =>
             "Mřížka minut odjezdů po skupinách dnů. Skupiny a sloupce mají vlastní dialog " +
-            "(vč. přepisu nadpisu skupiny a sloupce hodin per skupina).",
+            "(vč. přepisu záhlaví skupiny a sloupce hodin per skupina).",
         ElementTypes.NotesLegend =>
             "Legenda vysvětlivek/poznámek pod jízdním řádem (1–4 sloupce, řazení, směr plnění, filtr typů). " +
             "⚠️ Tady se zapínají i ZNAČKY U ODJEZDŮ - přeprava kol, místenky, pokračující spoje - a souhrn " +
@@ -358,7 +358,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             "Sloupcová tabulka celé linky (zastávky × spoje) pro linkový/knižní JŘ. Zastávky jsou řádky, " +
             "spoje sloupce. Viditelnost, pořadí, šířky a styl sloupců má vlastní dialog (Upravit sloupce…). " +
             "POPISNÉ SLOUPCE (zóna, km, Tč, zastávka, MHD, šipka) jsou skupina: dají se přejmenovat, " +
-            "dostat jeden společný nadpis ('Nadpis popisných sloupců'), slít bez vnitřních čar " +
+            "dostat jedno společné záhlaví ('Text záhlaví popisných sloupců'), slít bez vnitřních čar " +
             "('Popisné sloupce bez vnitřních čar') a oddělit od spojů mezerou ('Mezera mezi skupinami sloupců'). " +
             "⚠️ ŠÍŘKA SLOUPCE SPOJE rozhoduje o všem ostatním: kolik spojů se vejde vedle sebe, na kolik ČÁSTÍ " +
             "se tabulka rozřeže a kolik vyjde stran. Ovlivňují ji 'Nejmenší/Největší šířka sloupce spoje', " +

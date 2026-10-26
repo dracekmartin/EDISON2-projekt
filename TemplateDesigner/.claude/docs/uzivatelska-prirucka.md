@@ -497,7 +497,7 @@ vypadá stejně na každé stanici.
 
 U jízdních řádů se tímtéž nastavením řídí i **jazyk vysvětlivek v legendě** (u slovenštiny tedy
 „premáva len", „na znamenie") a **znaková sada symbolů**. Nepřekládá se to, co jste napsali sami -
-poznámky zadané u linky, názvy zastávek ani vlastní nadpisy sloupců dnů zůstávají tak, jak jsou
+poznámky zadané u linky, názvy zastávek ani vlastní záhlaví sloupců dnů zůstávají tak, jak jsou
 uložené.
 
 ---
@@ -811,11 +811,11 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 
 Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle…).
 
-- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Rozestup odjezdů (Bez zarovnání / Zarovnat dle nejširšího odjezdu / Zarovnat na pevnou šířku - viz níže), Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, nadpis sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
+- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Rozestup odjezdů (Bez zarovnání / Zarovnat dle nejširšího odjezdu / Zarovnat na pevnou šířku - viz níže), Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, text záhlaví sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
 - **Časová osa** - Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah (+ pole Hodiny od/do); Roztáhnout na výšku - když je mřížka nižší, než by odpovídalo datům, řádky (a font) se proporcionálně zvětší (strop 1,5× přirozené výšky)
 - **Rozestup odjezdů** - jak daleko od sebe stojí minuty v řádku hodiny. *Bez zarovnání*: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí a minuta se značkou odsune odjezdy za sebou. *Zarovnat dle nejširšího odjezdu* (výchozí): jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici napříč hodinami i sloupci, ale jeden takový spoj zředí celou vývěsku, i řádky a sloupce bez značek. *Zarovnat na pevnou šířku*: rozteč se řídí nastavením („Šířka minuty", nejméně však minuta a jedna značka s odstupem), takže ji data nezmění a přidaný označkovaný spoj zbytek vývěsky nepřesází. Spoj s víc značkami se do rozteče vejde tím, že se jeho značky úměrně zmenší - nejvýš na polovinu a nikdy pod 4 body; nevejdou-li se ani tak, zvětšete Šířku minuty
 - **Řádky dat** - Výška řádku, Střídavé podbarvení (sudé řádky)
-- **Záhlaví - 2. řádek** - Velikost, Tučné, Kurzíva, Barva textu pro druhý řádek nadpisu skupiny (např. „den" v „Pracovní / den") - pokud nevyplněno, dědí z prvního řádku
+- **Záhlaví - 2. řádek** - Velikost, Tučné, Kurzíva, Barva textu pro druhý řádek záhlaví skupiny (např. „den" v „Pracovní / den") - pokud nevyplněno, dědí z prvního řádku
 - **Styl minuty** - Font, Velikost, Tučné, Kurzíva, Barva textu
 - **Anotace - symboly** a **Anotace - text** - samostatný styl (font/velikost/řez/barva) pro horní index u minut - symboly/negativní značky vs. textová písmena/dny; u symbolů navíc NZ pozadí a NZ znak (barvy invertovaného boxu negativní značky)
 - **Anotace** - zap/vyp zobrazování anotací u minut
@@ -896,7 +896,7 @@ sloupce vždy z nastavení linky v modulu MHD.
 
 U každého sloupce nastavíte:
 
-- **Nadpis** - i dvouřádkový (Enter uvnitř pole).
+- **Záhlaví** - i dvouřádkové (Enter uvnitř pole).
 - **Týdenní platnost** - jednotlivé dny **Po až Ne** plus dvě samostatné volby podle vyhlášky
   122/2014:
   - **Pracovní dny (X)** - pracovní dny **bez svátků**. Není to zkratka za Po-Pá: spoj „jede
@@ -923,15 +923,15 @@ Analogický dvoutabový dialog:
 
 - První řádek je vždy pevně **„Hodiny"** (nelze přesunout), následují jednotlivé skupiny dnů
   podle skutečných dat.
-- Pro skupinu: viditelnost, pořadí (▲/▼), **přepis nadpisu** (jinak se použije nadpis z dat, u
+- Pro skupinu: viditelnost, pořadí (▲/▼), **přepis záhlaví** (jinak se použije text skupiny z dat, u
   sloupce hodin výchozí „Hod"), pevná šířka (prázdné = automatický výpočet + rovnoměrné dofill),
   vlastní **střídání řádků** pro danou skupinu.
 - **Barevné pruhy podle skupin dnů** - když každá skupina dostane vlastní barvu záhlaví, převezme
   ji i **sloupec hodin** u té skupiny (platí při zapnuté volbě *Hodiny u každé skupiny*), takže
   celý pruh vyjde jednobarevný sám a nemusíte ho barvit zvlášť. Buňka nad hodinami zůstane
   neutrální - je to místo pro ikonku hodin.
-- **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `\n`)
-  a nadpis se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
+- **Víc řádků v záhlaví skupiny** - v přepisu záhlaví stiskněte **Enter** (nebo napište `\n`)
+  a záhlaví se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
   jízdní řád u skupiny vyplněný i druhý nadpis, přidá se pod ně jako další řádek s vlastním
   stylem (viz *Záhlaví - 2. řádek* ve vlastnostech prvku).
 - Per-sloupec styl barev a zarovnání zvlášť pro záhlaví a data. **Typografie záhlaví (font,
@@ -1110,8 +1110,8 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
 
 **Řádky** - co se tiskne navíc k časům:
 
-- **Nadpisy skupin dnů** - pás nad sloupci spojů s označením skupiny (pracovní dny, sobota…).
-- **Čísla spojů** - řádek s čísly spojů nad časy. Vypnuté = řádek zůstane (nese nadpisy popisných
+- **Záhlaví skupin dnů** - pás nad sloupci spojů s označením skupiny (pracovní dny, sobota…).
+- **Čísla spojů** - řádek s čísly spojů nad časy. Vypnuté = řádek zůstane (nese záhlaví popisných
   sloupců), jen nad spoji je prázdný.
 - **Řádek platnosti** - pod číslem spoje řádek se značkami platnosti (denní značky, místenka,
   atributy vozidla).
@@ -1132,7 +1132,7 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
 - **Jedno záhlaví nad km sloupci** - místo „km" nad každým km sloupcem jedno společné přes všechny.
 - **Nejvýš km sloupců** - kolik km sloupců se nejvýš vytiskne; prázdné = všechny. Ostatní se
   netisknou a jejich spoje pak v tabulce kilometry nemají.
-- **Nadpis popisných sloupců** - jeden společný text nad zónou, km, Tč, zastávkou a MHD.
+- **Text záhlaví popisných sloupců** - jeden společný text nad zónou, km, Tč, zastávkou a MHD.
 - **Sloučit popis u příjezdu a odjezdu** - zastávka s příjezdem i odjezdem zabírá dva řádky.
   Vypnuté zopakuje název a km na obou (tvar windowsového tisku), zapnuté je vypíše jednou
   přes oba řádky.

@@ -48,8 +48,8 @@ public class LineScheduleImportTests
     [InlineData("Řádky · Přípojné řádky")]
     [InlineData("Tučné zastávky dle trasy")]
     [InlineData("Čáry u zastávek dle trasy")]
-    [InlineData("Nadpisy skupin dnů")]
-    [InlineData("Nadpis popisných sloupců")]
+    [InlineData("Záhlaví skupin dnů")]
+    [InlineData("Text záhlaví popisných sloupců")]
     [InlineData("Podbarvit lichá Tč")]   // měří se z PDF
     [InlineData("Barva lichých Tč")]
     public void NaVolbyNepotvrditelneZPapiruSeNeptame(string klic)

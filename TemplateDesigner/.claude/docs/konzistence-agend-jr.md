@@ -109,9 +109,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   tučného (Poznámky). Skupina „Značky u odjezdů" má 37 polí, pořadí skupin nemá kostru (Minuty začínají
   „Skupiny dnů", Tabulka spojů „Řádky"). Návrh: kostra Obecné → specifické → Záhlaví → Buňky →
   Rámeček/Mřížka/Pozice/Podmínky, zóna stylu vždy stejným balíčkem `StyleFields`.
-- **E4 Záhlaví × nadpis** [S] (*ověřeno:* server). „Záhlaví skupin dnů" (Minuty) × „Nadpisy skupin dnů"
-  (Tabulka spojů), „Nadpis popisných sloupců", „Styl 2. řádku nadpisu", v dialogu Minut obojí. Kanon říká
-  „Záhlaví". Přesun do skupiny Obecné **Jan**.
 - **E5 Seznam zastávek nabízí v MHD věci z AD** [M] (*ověřeno:* kód). Sloupec „Sloupek" (MHD ho nemá) a
   nápověda „Více stanovišť" s odkazem na parametr, který MHD nemá. Skrývání podle agendy už mají Poznámky
   a Tabulka spojů (`ViditelnostPole`).

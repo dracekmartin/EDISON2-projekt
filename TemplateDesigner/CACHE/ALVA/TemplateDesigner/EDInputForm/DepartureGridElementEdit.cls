@@ -27,12 +27,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // čeho se pole týkají; klíče polí se NEMĚNÍ, mění se jen zařazení a popisky.
         d form.AddGroup("groups", "Skupiny dnů")
         s f = form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
-        s f.helpText = "Nadpis nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
+        s f.helpText = "Záhlaví nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         s f = form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f.helpText = "Sloupec s hodinami se zopakuje u každé skupiny dnů. Vypnuto = jeden sloupec hodin vlevo pro všechny skupiny."
         s f = form.AddFieldToLastGroup("HourColumnHeaderImageBase64", "Obrázek v záhlaví hodin", $$$FieldTypeImage, 0, 0)
-        s f.helpText = "Ikona se vykreslí v záhlaví sloupce hodin u každé skupiny dnů. Když je nastavená, nadpis sloupce se netískne."
+        s f.helpText = "Ikona se vykreslí v záhlaví sloupce hodin u každé skupiny dnů. Když je nastavená, text záhlaví sloupce se netiskne."
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
         s f.helpText = "Kolik skupin dnů se vejde do prvku; další se nevykreslí. 0 = bez omezení."
 
@@ -63,7 +63,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("HeaderVerticalAlignment", "Zarovnání záhlaví", $$$FieldTypeList, 0, 0)
         d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
         s f.value = "Bottom"
-        s f = form.AddFieldToLastGroup("style:HeaderLine2Style", "Styl 2. řádku nadpisu", $$$FieldTypeButton, 0, 0)
+        s f = form.AddFieldToLastGroup("style:HeaderLine2Style", "Styl 2. řádku záhlaví", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit styl…"
 
         // Styl datových buněk: DataStyle = báze (minuty i hodinová čísla z ní dědí),

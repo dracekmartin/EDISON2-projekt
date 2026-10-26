@@ -62,7 +62,7 @@ public class AssistantKnowledgeTests
     /// </summary>
     [Theory]
     [InlineData("Upravit sloupce")]                  // dialog, který uživatel sám nenajde
-    [InlineData("Nadpis popisných sloupců")]         // skupina popisných sloupců
+    [InlineData("Text záhlaví popisných sloupců")]   // skupina popisných sloupců
     [InlineData("Mezera mezi skupinami sloupců")]
     [InlineData("Nejmenší/Největší šířka sloupce spoje")]
     [InlineData("Sloučit popis u příjezdu a odjezdu")]

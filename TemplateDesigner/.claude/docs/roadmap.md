@@ -43,8 +43,9 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
-- **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan**
-- **E4** „Záhlaví" × „nadpis" pro totéž [S]
+- **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan** -
+  **odloženo** (Jan 26. 10.) až za menší body E5-E16; patří sem i umístění voleb záhlaví (dnes „Skupiny
+  dnů" / „Řádky", kanon chce „Obecné")
 - **E5** Seznam zastávek nabízí v MHD sloupek a parametr, které existují jen v AD [M]
 - **E6** „Zarovnání" vedle „Svisle" místo „Vodorovně" [S]
 - **E7** „Element" × „prvek", „ZIndex" × „Vrstva", „engine" [M] **Jan**

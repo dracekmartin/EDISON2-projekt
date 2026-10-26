@@ -30,7 +30,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Řádky" ───────────────────────────────────────────────
         d form.AddGroup("rows", "Řádky")
-        d form.AddBool("ShowGroupHeaders", "Nadpisy skupin dnů", 1)
+        d form.AddBool("ShowGroupHeaders", "Záhlaví skupin dnů", 1)
         d form.AddBool("ShowTripNumbers", "Čísla spojů", 1)
         d form.AddBool("ShowPlatnostRow", "Řádek platnosti", 1)
         d form.AddBool("ShowNzRow", "Řádek negativních značek", 1)
@@ -70,9 +70,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Vypnuté = nad každým km sloupcem je vlastní záhlaví ""km"", zapnuté = jedno společné přes všechny. Kilometry zůstávají v samostatných sloupcích."
         s f = form.AddNumber("MaxKmSloupcu", "Nejvýš km sloupců", "", 1, 20)
         s f.helpText = "Kolik km sloupců se nejvýš vytiskne. Prázdné = všechny. Vezmou se první v pořadí, ve kterém je linka má, ostatní se netisknou - jejich spoje pak v tabulce kilometry nemají. Zúží to tabulku za cenu té informace."
-        // Jeden nadpis nad celou skupinou a jeden slitý blok bez vnitřních čar. Změřeno na vzoru IDZK 940.
-        s f = form.AddText("PopisneSloupceNadpis", "Nadpis popisných sloupců")
-        s f.helpText = "Text nad zónou, km, Tč, zastávkou a MHD - všechny mají jeden společný nadpis. Prázdné = bez nadpisu."
+        // Jedno záhlaví nad celou skupinou a jeden slitý blok bez vnitřních čar. Změřeno na vzoru IDZK 940.
+        s f = form.AddText("PopisneSloupceNadpis", "Text záhlaví popisných sloupců")
+        s f.helpText = "Text nad zónou, km, Tč, zastávkou a MHD - všechny mají jedno společné záhlaví. Prázdné = bez záhlaví."
         s f = form.AddBool("SloucitPopisyRozdvojene", "Sloučit popis u příjezdu a odjezdu", 0)
         s f.helpText = "Zastávka, u které se tiskne příjezd i odjezd, zabírá dva řádky. Vypnuté = km, tarifní číslo, název i MHD se na obou zopakují (tvar windowsového tisku). Zapnuté = vypíšou se jednou přes oba řádky na střed a mezi časy je vodorovná úsečka (tvar postskriptového tisku). Zóna se opakuje vždy."
         s f = form.AddBool("PopisneSloupceBezVnitrnichCar", "Popisné sloupce bez vnitřních čar", 0)

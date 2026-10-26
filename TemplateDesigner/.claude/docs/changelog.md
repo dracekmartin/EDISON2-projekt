@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-26 (28) - „záhlaví" místo „nadpisu" u hlavičky tabulky (`B194d` E4)
+
+Rozhodnutí Jan 26. 10.: hlavička tabulky oproti datovým buňkám je **záhlaví**, „nadpis" jen pro
+koncepčně jinou věc (text skupiny dnů v datech, nadpis okna). Tabulka spojů: „Nadpisy skupin dnů" →
+„Záhlaví skupin dnů" (jako Minuty), „Nadpis popisných sloupců" → „Text záhlaví popisných sloupců"
+(formulář i deskriptor, klíč `PopisneSloupceNadpis` beze změny). Minuty odjezdů: „Styl 2. řádku nadpisu"
+→ „Styl 2. řádku záhlaví", nápovědy, v okně se sloupci „Záhlaví sloupce" / „Záhlaví:", „Přepis záhlaví
+skupiny", „(bez záhlaví)"; překlep „netískne". Katalog asistenta a příručka (seed připravený k nahrání)
+stejně. Kanon `ux-conventions §8` má nový řádek, zakázané tvary „Nadpisy skupin", „Nadpis popisných",
+„řádku nadpisu" (`EDInputFormSchemaDriftTests`); testy importu z PDF a znalostí asistenta mířily na staré
+popisky a prošly by naprázdno - přepsané. Ověřeno voláním `Init` obou formulářů na serveru. Umístění
+volby záhlaví (kanon: skupina Obecné) zůstává na `E3`.
+
 ## 2026-10-26 (27) - jeden titulek oken vlastností prvku (`B194d` E2)
 
 Okna otevřená dvojklikem na prvek měla tři tvary titulku: „Vlastnosti textu / čáry / tabulky…",
