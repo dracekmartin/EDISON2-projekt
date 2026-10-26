@@ -33,13 +33,12 @@ Include GENERAL
 ///                       per tarifní číslo); spoj patřící do víc skupin dnů emitován vícekrát
 ///   rows.SKUPINY_DNU: [{ ID, NADPIS }] dle parametru DELENI_SLOUPCU (texty WinMHD DSC číselník)
 ///   rows.POZNAMKY:    [{ DRUH (1-10 legacy číselník druhů), TYP ("text"/"znak"/"nz"), ZNAK, TEXT }]
-///                     - pořadí druhů pevné (1,2,3,7,8,9,10; 4/5/6 zatím neemitovány)
+///                     - pořadí druhů pevné (1-10 jako legacy MT3)
 /// 
 /// ── Vědomé mezery vůči mkPLinWin (viz analýza linkovy-knizni-jr-implementace §11) ──
 /// - bez 2D bin-packingu (`Strih`), měřicích řetězců a padding sloupců - layout řeší TD
 /// - bez turnusů, obousměrného tisku, souhrnných JŘ (řádek zdrojové linky)
-/// - poznámky druhů 4 (poznámka pro spoj, omz41/42), 5 (atributy spoje) a 6 (místenkování)
-///   čekají na mapování gSpLin dta→raw pieces; pořadí poznámek pevné (legacy konfigurovatelné)
+/// - pořadí druhů poznámek pevné (legacy konfigurovatelné), skupiny a sloupce řídí prvek Poznámky
 /// - dělení do skupin dnů jen dle Plk znaků (legacy u spojů „jede vždy" ověřuje kalendář
 ///   mkStaLinSp - spoj bez týdenní platnosti jde do všech skupin, jako legacy fallback HD 10183)
 /// - symbolový font (roadmap 42b): ZNAK hodnoty jsou legacy klíče (X, |, <, m, u…), ne glyfy
@@ -884,7 +883,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 
     // ── spoje směru: legacy mkPoradiSp řazení + zařazení do skupin dnů ──
     s spoje = ##class(%DynamicArray).%New()
-    k platnostZnakySeen, nzSeen, pripojePoznamky, markerSeen, atributSeen, mistenkaSeen, trasaZnakySeen
+    k platnostZnakySeen, nzSeen, pripojePoznamky, markerSeen, atributSeen, mistenkaSeen, trasaZnakySeen, poznamkaSpojeSeen
     s pocetSkupin = $s(+$g(defSloupcu):+$g(defSloupcu), deleni=0:1, deleni=1:2, 1:3)
 
     // Směry k projití: u obousměrné stránky oba, jinak jen ten svůj. Časy se zarovnávají podle
@@ -921,7 +920,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
             }
             else { s skupiny = ..ZarazeniSpojeKnizni(deleni, plk) }
             i (","_skupiny_",") '[ (","_skupina_",") continue
-            s spojObj = ..BuildSpoj(dataDB, sku, lin, smerSpoju, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy)
+            s spojObj = ..BuildSpoj(dataDB, sku, lin, smerSpoju, sp, skupina, idx, .rowMeta, rec, .platnostZnakySeen, .nzSeen, .pripojePoznamky, .markerSeen, .atributSeen, .mistenkaSeen, .trasaZnakySeen, .spojeSeen, tiskBarvy, .poznamkaSpojeSeen)
             i spojObj '= "" d ..PridejTurnusySpoje(spojObj, .turnusySpoju, sp)
             i spojObj '= "" d spoje.%Push(spojObj)
         }
@@ -942,8 +941,9 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
             d poznamky.%Push(pripojePoznamky(poradiDruhu3, seq))
         }
     }
+    d ..PridatPoznamkySpoju(dataDB, sku, lin, rec, poznamky, .poznamkaSpojeSeen)
     d ..PridatPoznamkyAtributu(dataDB, sku, lin, poznamky, .atributSeen, .spojeSeen, rec)
-    d ..PridatPoznamkyMistenkovani(poznamky, .mistenkaSeen)
+    d ..PridatPoznamkyMistenkovani(dataDB, sku, lin, rec, poznamky, .mistenkaSeen)
     d ..PridatStaleZnacky(dataDB, rec, poznamky, .markerSeen, .atributyZobrazene, .atributyZastavek, .trasaZnakySeen, maMhd)
     d ..PridatPoznamkyLinky(dataDB, sku, lin, poznamky)
 
@@ -1353,7 +1353,7 @@ ClassMethod PridejTurnusySpoje(spojObj As %DynamicObject, ByRef turnusy, sp As %
 
 /// Sestaví JSON objekt jednoho spoje (sloupec matice): řádek platnosti (plný klíčový systém
 /// legacy Platnost/Spoj2Tb), NZ, časy per řádek, návaznosti.
-ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, skupina As %Integer, pocetRadku As %Integer, ByRef rowMeta, rec As %String, ByRef platnostZnakySeen, ByRef nzSeen, ByRef pripojePoznamky, ByRef markerSeen, ByRef atributSeen, ByRef mistenkaSeen, ByRef trasaZnakySeen, ByRef spojeSeen, tiskBarvy As %Boolean = 1) As %DynamicObject
+ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, skupina As %Integer, pocetRadku As %Integer, ByRef rowMeta, rec As %String, ByRef platnostZnakySeen, ByRef nzSeen, ByRef pripojePoznamky, ByRef markerSeen, ByRef atributSeen, ByRef mistenkaSeen, ByRef trasaZnakySeen, ByRef spojeSeen, tiskBarvy As %Boolean = 1, ByRef poznamkaSpojeSeen) As %DynamicObject
 {
     s spoj = $g(^[dataDB]JRL(sku,lin,smer,sp))
     s hlava = $p(spoj,"#",1)
@@ -1428,14 +1428,15 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     s mistenka = $tr($p(hlava,":",6)_$p(hlava,":",11), " ", "")
     i rec '= "*SK" s mistenka = $case(mistenka, "R2":"R", "R3":"R1", :mistenka)
     s mistZnak = $case(mistenka, "R":"R", "R1":$c(254), "R2":"&", "R3":$c(220), :"")
-    i mistZnak '= "" s klice(mistZnak) = "", mistenkaSeen(mistZnak) = ""
+    // spoj u značky: věty ke spojům v legendě vypíšou jen spoje se značkou na stránce (trtSp)
+    i mistZnak '= "" s klice(mistZnak) = "", mistenkaSeen(mistZnak, +sp) = ""
     // pokračuje (omz34, typ výstupu ≠ 2) → klíč u (nebo p dle ^JRSET("Cis","comU34znk"))
     s omz34 = $g(^[dataDB]JRL(sku,lin,smer,sp,34))
     i (omz34 '= "") && ($p($p(omz34,"@",2),":",5) '= 2) {
         s klice($s(+$g(^[dataDB]JRSET("Cis","comU34znk")):"p", 1:"u")) = ""
     }
     // poznámka pro spoj/tč (omz41/42) → klíč p
-    i ($d(^[dataDB]JRL(sku,lin,smer,sp,41))) || ($d(^[dataDB]JRL(sku,lin,smer,sp,42))) s klice("p") = ""
+    i ($d(^[dataDB]JRL(sku,lin,smer,sp,41))) || ($d(^[dataDB]JRL(sku,lin,smer,sp,42))) s klice("p") = "", poznamkaSpojeSeen(smer, +sp) = ""
     // atributy spoje (gSpLin dta ↔ hlava pieces: POS=12, IDS=14, BEV=15, SAO=16, PCZ=17, OBC=18,
     // PJI=19, NKA=20, RBU=21, CBE=22, RBP=23, wifi=25, zasu=26)
     f ai=1:1:13 {
@@ -2088,13 +2089,119 @@ ClassMethod AtributSablona(klic As %String, rec As %String = "CZ") As %String
         :"")
 }
 
-/// Poznámky druhu 6 - místenkování (texty hardcoded CZ, 1:1 gMstNZLi).
-ClassMethod PridatPoznamkyMistenkovani(poznamky As %DynamicArray, ByRef mistenkaSeen)
+/// Poznámky druhu 4 - poznámka pro spoj a pro tarifní body spoje (`omz` 41 / 42, značka „p"),
+/// 1:1 gComNZLi → p41 / p42 / sComToArr (`JRapiNZUtl2.mac:73-91, 559-588`) a výstup
+/// `JRapiLinPrtWin.mac:3582-3594`: každý text zvlášť, spoje se stejným textem v jednom řádku
+/// „spoj 1,3,5 text" (čísla bez mezer, „spoj" i u víc spojů). Poznámka k tarifnímu bodu dostane
+/// úvod z číselníku firmy (`NCOME` 42) a číslo bodu. Do 26. 10. se tiskla jen značka u spoje
+/// a legenda ji nevysvětlila (`B194` T13b).
+/// ⚠️ Firma s `comU34znk` dává pod „p" i věty „pokračuje" (n34); na serveru ji nemá žádná firma,
+/// ty věty zůstávají v návaznostech.
+ClassMethod PridatPoznamkySpoju(dataDB As %String, sku As %String, lin As %String, rec As %String, poznamky As %DynamicArray, ByRef poznamkaSpojeSeen)
 {
-    i $d(mistenkaSeen("R"))     d poznamky.%Push(..BuildPoznamka(6, "znak", "R", "k jízdence je možné zakoupit místenku"))
-    i $d(mistenkaSeen($c(254))) d poznamky.%Push(..BuildPoznamka(6, "znak", $c(254), "spoj je možné použít jen s místenkou"))
-    i $d(mistenkaSeen("&"))     d poznamky.%Push(..BuildPoznamka(6, "znak", "&", "místenku je možné zakoupit v místenkových kancelářích AMS"))
-    i $d(mistenkaSeen($c(220))) d poznamky.%Push(..BuildPoznamka(6, "znak", $c(220), "místenku je nutné zakoupit v místenkových kancelářích AMS"))
+    k texty, poradi
+    s uvod42 = $g(^[dataDB]JRSET("NCOME",rec,42))
+    // pořadí jako legacy: směr T před Z, spoje vzestupně, u spoje 41 před 42
+    s smer = ""
+    f {
+        s smer = $o(poznamkaSpojeSeen(smer))
+        q:smer=""
+        s sp = ""
+        f {
+            s sp = $o(poznamkaSpojeSeen(smer, sp))
+            q:sp=""
+            // sdílený spoj se označuje „číslo/sdílené číslo" (gComNZLi oznsp)
+            s sdil = $p($p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",10),"$",1)
+            s oznSp = sp_$s(sdil:"/"_sdil, 1:"")
+            i $d(^[dataDB]JRL(sku,lin,smer,sp,41)) {
+                s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,41))
+                i $p(omz,"@",1) = "p" d ..PridatTextSpoje(.texty, .poradi, $tr($p(omz,"@",2,$l(omz,"@")),"\",""), oznSp)
+            }
+            i $d(^[dataDB]JRL(sku,lin,smer,sp,42)) && ($p($g(^[dataDB]JRL(sku,lin,smer,sp,42)),"@",1) = "p") {
+                s tb = ""
+                f {
+                    s tb = $o(^[dataDB]JRL(sku,lin,smer,sp,42,tb), 1, pozn)
+                    q:tb=""
+                    d ..PridatTextSpoje(.texty, .poradi, uvod42_" "_tb_" : "_$tr(pozn,"\",""), oznSp)
+                }
+            }
+        }
+    }
+    f n=1:1:$g(texty) d poznamky.%Push(..BuildPoznamka(4, "znak", "p", "spoj "_texty(n,"sp")_" "_texty(n)))
+}
+
+/// Přidá spoj k textu poznámky pro spoj; stejný text = jeden řádek (sComToArr). Prázdný text nic.
+ClassMethod PridatTextSpoje(ByRef texty, ByRef poradi, text As %String, oznSp As %String)
+{
+    q:text=""
+    i '$d(poradi(text)) s n = $i(texty), poradi(text) = n, texty(n) = text, texty(n,"sp") = oznSp q
+    s n = poradi(text)
+    s texty(n,"sp") = texty(n,"sp")_","_oznSp
+}
+
+/// Poznámky druhu 6 - místenkování, 1:1 gMstNZLi (`JRapiNZUtl3.mac:325-399`): věta podle druhu
+/// místenky, za ní obecný doplněk linky (`^JRL(…,"C",2)`) a poznámky k vybraným spojům
+/// (`"C",2,n` = „spoje~text"), ze kterých zůstanou jen spoje s touto značkou na stránce.
+/// Nastavení firmy (`JRapiSet.mac:316-317`): `MistOR` = každá poznámka ke spojům na nový řádek
+/// („#" legenda láme jako odstavec), `MistNOD` = bez dvojtečky před nimi. Do 26. 10. se tiskla
+/// jen věta bez doplňku linky (`B194` T13a).
+ClassMethod PridatPoznamkyMistenkovani(dataDB As %String, sku As %String, lin As %String, rec As %String, poznamky As %DynamicArray, ByRef mistenkaSeen)
+{
+    s oddelovac = $s($d(^[dataDB]JRSET("Definice","MistOR")):"#", 1:" ")
+    s dvojtecka = (+$g(^[dataDB]JRSET("Definice","MistNOD")) = 0)
+    // legacy podmínka `'$e(veta,1)'=" "` platí vždy, mezera se tedy přidává bez výjimky
+    s doplnek = $g(^[dataDB]JRL(sku,lin,"C",2))
+    s:doplnek'="" doplnek = " "_doplnek
+    s maPoznamkySpoju = ($o(^[dataDB]JRL(sku,lin,"C",2,"")) '= "")
+    k vety
+    // klíče značek v pořadí $o jako legacy (& , AMS, R, Ü, þ)
+    s znak = ""
+    f {
+        s znak = $o(mistenkaSeen(znak))
+        q:znak=""
+        s txt = ..TextMistenky(znak, rec)
+        continue:txt=""
+        i (rec = "*SK") && ((znak = "&") || (znak = $c(220))) s vety("AMS") = "automatizovaný miestenkový systém vo vybraných mestách"
+        s txt = txt_doplnek
+        i maPoznamkySpoju {
+            s:dvojtecka txt = txt_":"
+            s pocet = 0, n = ""
+            f {
+                s n = $o(^[dataDB]JRL(sku,lin,"C",2,n), 1, veta)
+                q:n=""
+                s vstup = $tr($p(veta,"~",1),";",","), spoje = ""
+                f i=1:1:$l(vstup,",") {
+                    s spoj = $p(vstup,",",i)
+                    continue:spoj=""
+                    continue:'$d(mistenkaSeen(znak, spoj))
+                    s spoje = spoje_$s(spoje="":"", 1:",")_spoj
+                }
+                continue:spoje=""
+                s pocet = pocet + 1
+                s:pocet>1 txt = txt_";"
+                s txt = txt_oddelovac_$s($l(spoje,",")>1:"na spoje", 1:"na spoj")_" "_spoje_" "_$p(veta,"~",2)
+            }
+            s:$e(txt,$l(txt))=":" txt = $e(txt,1,$l(txt)-1)
+        }
+        s vety(znak) = txt
+    }
+    s znak = ""
+    f {
+        s znak = $o(vety(znak))
+        q:znak=""
+        d poznamky.%Push(..BuildPoznamka(6, "znak", znak, vety(znak)))
+    }
+}
+
+/// Věta místenkování podle značky a jazyka (gMstNZLi). Česká verze zná jen R a þ.
+ClassMethod TextMistenky(znak As %String, rec As %String) As %String
+{
+    i rec '= "*SK" q $case(znak, "R":"k jízdence je možné zakoupit místenku", $c(254):"spoj je možné použít jen s místenkou", :"")
+    q:znak="R" "miestenku s cestovným lístkom možno zakúpiť"
+    q:znak=$c(254) "miestenku s cestovným lístkom treba zakúpiť"
+    q:znak="&" "miestenku s cestovným lístkom možno zakúpiť v miestenkových kanceláriách AMS"
+    q:znak=$c(220) "miestenku s cestovným lístkom treba zakúpiť v miestenkových kanceláriách AMS"
+    q ""
 }
 
 /// Poznámky druhu 7 - stálé značky: markery matice (| projíždí, < jede jinudy), MHD sloupec,

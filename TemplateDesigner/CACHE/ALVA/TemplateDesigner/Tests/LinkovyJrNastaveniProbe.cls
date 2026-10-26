@@ -2256,6 +2256,48 @@ ClassMethod PredlozkyOmezeni(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Poznámky ke spojům a místenkové poznámky linky po firmách (`B194` T13): kolik linek má spoj
+/// s poznámkou pro spoj / tarifní bod (`omz` 41 / 42, legenda „p") a kolik linek má místenkové poznámky
+/// (`^JRL(sku,lin,"C",2)` text, `"C",2,n` = spoje~text), které starý linkový tisk lepí k větě o místence.
+ClassMethod PoznamkySpojuVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linekP = 0, linekMhd2 = 0, linekMist = 0, prikladP = "", prikladM = "", sku = "", linek42 = 0, priklad42 = ""
+			for {
+				set sku = $order(^[db]JRL(sku)) quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for {
+					set lin = $order(^[db]JRL(sku, lin)) quit:lin=""
+					set maP = 0, maMhd2 = 0
+					for smer = "T", "Z" {
+						set sp = ""
+						for {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp)) quit:sp=""
+							continue:'$isvalidnum(sp)
+							if $data(^[db]JRL(sku, lin, smer, sp, 41)) || $data(^[db]JRL(sku, lin, smer, sp, 42)) set maP = 1
+							if $data(^[db]JRL(sku, lin, smer, sp, 42)) set linek42 = linek42 + 1, priklad42 = sku_"/"_lin_" "_smer_sp
+							if $get(^[db]JRL(sku, lin, smer, sp, 41)) [ "@MHD2~" set maMhd2 = 1
+						}
+					}
+					set:maP linekP = linekP + 1, prikladP = sku_"/"_lin
+					set:maMhd2 linekMhd2 = linekMhd2 + 1
+					if ($get(^[db]JRL(sku, lin, "C", 2)) '= "") || ($order(^[db]JRL(sku, lin, "C", 2, "")) '= "") set linekMist = linekMist + 1, prikladM = sku_"/"_lin
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s poznámkou ke spoji "_linekP_" (z toho MHD2 "_linekMhd2_", např. "_prikladP_"), s místenkovou poznámkou "_linekMist_" (např. "_prikladM_"), MistOR "_$data(^[db]JRSET("Definice","MistOR"))_", MistNOD "_$data(^[db]JRSET("Definice","MistNOD"))_", spojů s poznámkou k tarifnímu bodu "_linek42_" (např. "_priklad42_")"
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Nadpisy skupin dnů po firmách (`B194` T11): nastavení firmy `^JRSET("Definice","WinMHD",rec,"DSC")`
 /// (kusy 1-13 podle rozložení, `JRapiLinPrtMhd1.mac:541-571`), odkud je bral starý zastávkový tisk,
 /// a kolik linek má vlastní sadu nadpisů (`PATCH,ISY_LinkyTiskMHDNadpisy` → `^JRSET("LinkyTiskMHDNadpisy")`).

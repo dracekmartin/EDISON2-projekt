@@ -144,6 +144,106 @@ Method TestZnackaNaObjednaniUCasu()
 	do $$$AssertEquals(nasich, starych, "buňky se značkou „r"" (my "_nasich_") × buňky s telefonem (starý tisk "_starych_")")
 }
 
+/// Linky s poznámkou ke spoji (druh 4, značka „p") a s místenkovou poznámkou linky (druh 6),
+/// `B194` T13. Formát: `firma~skupina~linka~druh~co na ní je vidět`.
+ClassMethod LinkySPoznamkouSpoje(ByRef sada)
+{
+	kill sada
+	set sada(1) = "CB_GWBUS~990~0329471~4~poznámka pro spoj"
+	set sada(2) = "CB_CSADAD~995~0380780~4~poznámky k tarifním bodům a dva spoje s týmž textem zvlášť"
+	set sada(3) = "VS_CSAD~797~0440055~4~dva spoje se stejným textem v jednom řádku"
+	set sada(4) = "CB_GWBUS~990~0322002~6~doplněk linky a poznámky ke spojům, každá na nový řádek (MistOR)"
+	set sada(5) = "VS_CSAD~799~0440080~6~doplněk linky bez poznámek ke spojům, firma bez MistOR"
+	set sada(6) = "CB_GWBUS~216~0125850~6~spoj jen s místenkou"
+}
+
+/// Legenda druhu 4 a 6 = starý linkový tisk, řádek po řádku (`B194` T13). Do 26. 10. legenda
+/// poznámky ke spojům nevysvětlovala vůbec a u místenek chyběl doplněk linky.
+Method TestPoznamkySpojuAMistenkyProtiLegacy()
+{
+	do ..SetupSys(.sys)
+	do ..LinkySPoznamkouSpoje(.sada)
+	set overeno = 0, nalezy = "", i = ""
+	for  {
+		set i = $order(sada(i))
+		quit:i=""
+		set db = $piece(sada(i),"~",1), sku = $piece(sada(i),"~",2), lin = $piece(sada(i),"~",3)
+		set druh = $piece(sada(i),"~",4), popis = $piece(sada(i),"~",5)
+		continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).NactiObeStrany(.sys, db, sku, lin, .leg, .nase)
+		set vLeg = ..PoznamkyDruhu(.leg, druh), vNase = ..PoznamkyDruhu(.nase, druh)
+		if vLeg = "" {
+			set nalezy = nalezy _ $select(nalezy="":"", 1:" | ") _ db_" "_lin_" druh "_druh_": starý modul poznámku nemá, fixture vyhnila ("_popis_")"
+			continue
+		}
+		set overeno = overeno + 1
+		continue:vNase=vLeg
+		set nalezy = nalezy _ $select(nalezy="":"", 1:" | ") _ db_" "_lin_" ("_popis_"): starý ["_vLeg_"] × náš ["_vNase_"]"
+	}
+	if 'overeno {
+		do $$$AssertTrue(1, "starý modul ani firmy sady na tomto serveru nejsou - přeskočeno")
+		quit
+	}
+	do $$$AssertEquals(nalezy, "", "poznámka ke spoji nebo místenka se liší od starého modulu: "_nalezy)
+}
+
+/// Řádky legendy jednoho druhu jako text (`klíč×počet` oddělené „ | "), pro porovnání obou stran.
+ClassMethod PoznamkyDruhu(ByRef n, druh As %String) As %String
+{
+	set vysledek = "", klic = druh_"~"
+	for  {
+		set klic = $order(n("pozn", klic))
+		quit:klic=""
+		quit:$piece(klic,"~",1)'=druh
+		set vysledek = vysledek _ $select(vysledek="":"", 1:" | ") _ klic_"×"_n("pozn", klic)
+	}
+	quit vysledek
+}
+
+/// Firma s `MistOR` dá každou poznámku ke spojům na nový řádek („#", prvek Poznámky ho láme jako
+/// odstavec). Porovnání se starým tiskem „#" na obou stranách srovná na mezeru, tady se hlídá znak sám.
+Method TestMistenkyNaNovyRadek()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_GWBUS", sku = 990, lin = "0322002"
+	kill parametry
+	if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) {
+		do $$$AssertTrue(1, "linka "_lin_" není na tomto serveru - přeskočeno")
+		quit
+	}
+	if '$data(^[db]JRSET("Definice","MistOR")) {
+		do $$$AssertTrue(1, "firma "_db_" už nemá MistOR - přeskočeno")
+		quit
+	}
+	set texty = "", key = ""
+	for {
+		set key = $order(^||ML("OUT", key)) quit:key=""
+		continue:'$isvalidnum(key)
+		set pozn = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key)).rows.POZNAMKY
+		set it = pozn.%GetIterator()
+		while it.%GetNext(.j, .p) { set:p.DRUH=6 texty = texty_p.TEXT_"|" }
+	}
+	do $$$AssertTrue(texty [ ":#na spoj ", "místenka bez nového řádku před poznámkou ke spoji: "_texty)
+}
+
+/// Slovenská firma zná čtyři druhy místenek a k variantám s kancelářemi AMS přidá řádek vysvětlující
+/// zkratku (gMstNZLi). Česká zná jen R a þ - ampersand ani Ü se jí nevytisknou. Data pro tohle
+/// na serveru nejsou (žádná SK firma s místenkami), test hlídá pravidlo opsané z `JRapiNZUtl3.mac:356-371`.
+Method TestMistenkySlovenskeAAms()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
+	kill seen
+	set seen("R", 1) = "", seen("&", 3) = "", seen($char(220), 5) = ""
+	set poznamky = ##class(%DynamicArray).%New()
+	// neexistující linka: bez doplňku a bez poznámek ke spojům, zůstane jen věta
+	do $classmethod(cls, "PridatPoznamkyMistenkovani", $namespace, "999999", "TD_TEST_NIC", "*SK", poznamky, .seen)
+	set radky = ""
+	for i = 0:1:poznamky.%Size()-1 { set p = poznamky.%Get(i), radky = radky_p.ZNAK_"="_p.TEXT_"|" }
+	do $$$AssertEquals(radky, "&=miestenku s cestovným lístkom možno zakúpiť v miestenkových kanceláriách AMS|AMS=automatizovaný miestenkový systém vo vybraných mestách|R=miestenku s cestovným lístkom možno zakúpiť|"_$char(220)_"=miestenku s cestovným lístkom treba zakúpiť v miestenkových kanceláriách AMS|", "SK: pořadí jako starý tisk, řádek AMS")
+	set poznamky = ##class(%DynamicArray).%New()
+	do $classmethod(cls, "PridatPoznamkyMistenkovani", $namespace, "999999", "TD_TEST_NIC", "CZ", poznamky, .seen)
+	do $$$AssertEquals(poznamky.%Size(), 1, "CZ: jen R, ampersand a Ü česká verze nezná")
+}
+
 /// Věta o pokračování spoje jde z číselníku firmy v jazyce šablony (`B194` T10a) - do 26. 10. byla
 /// napevno česky i ve slovenské šabloně. Český číselník dává totéž znění jako dřívější text napevno.
 Method TestPokracovaniSpojeZCiselniku()

@@ -37,10 +37,12 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
   zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
-- **T13 Linkový AD vynechává upřesnění místenky a poznámky „p" u spojů** [S-M] **tisk** (*ověřeno:* oracle
-  CB_GWBUS 216/0125850 a 0340941, 26. 10.). Starý modul připojuje k větě místenky text (např. „…zakoupit
-  bez příplatku na e-shopu www.AMSbus.cz…") a vypisuje poznámky druhu 4 „p" s výčtem spojů; my ne. Jádro
-  sady oraclu tyhle linky nemá, proto to neviděl.
+- **T14 Linkový AD: další rozdíly proti starému tisku mimo jádro sady** [S-M] **tisk** (*ověřeno:* oracle
+  `PoznamkyVedleSebe`, 26. 10., nalezeno při `T13`). (a) U atributu spoje starý tisk připíše omezení jeho
+  platnosti z linky (`PATCH,"attrOm"`): CB_GWBUS 990/0329471 „spoj přepravuje jízdní kola / spoj 17 4.7. /
+  spoje 15, 25, 45 od 4.7. do 30.8.", my jen větu. (b) VS_CSAD 799/0440080: starý tisk má stálou značku
+  „G" (zákaz přepravy mezi označenými zastávkami), my ne. (c) CB_CSADAD 995/0380780: dvě věty „navazuje"
+  (spoje 17, 37 na Vodňanech) máme navíc. Příčiny zatím nehledané.
 
 ## 3. Nabídka dat a parametry sestavy
 

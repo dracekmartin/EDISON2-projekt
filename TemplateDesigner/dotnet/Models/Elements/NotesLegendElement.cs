@@ -528,7 +528,8 @@ public class NotesLegendElement : StopScheduleElementBase
     }
 
     /// <summary>Do které skupiny patří druh poznámky z číselníku linkového JŘ (1-10).</summary>
-    /// <remarks>Druh 4 linková agenda neposílá; neznámý druh jde k dalším značkám, aby nezmizel.</remarks>
+    /// <remarks>Druh 4 (poznámka pro spoj, „p") nemá vlastní skupinu jako ve starém tisku a jde
+    /// k dalším značkám, před místenky; stejně tak neznámý druh, aby nezmizel.</remarks>
     internal static SkupinaPoznamek SkupinaDruhu(string druh) => druh switch
     {
         "1"                => SkupinaPoznamek.TydenniPlatnost,
@@ -536,7 +537,7 @@ public class NotesLegendElement : StopScheduleElementBase
         "3"                => SkupinaPoznamek.Navaznosti,
         "5"                => SkupinaPoznamek.AtributySpoju,
         "8" or "9" or "10" => SkupinaPoznamek.PoznamkyLinky,
-        _                  => SkupinaPoznamek.DalsiZnacky,   // 6 místenky, 7 stálé značky
+        _                  => SkupinaPoznamek.DalsiZnacky,   // 4 poznámky ke spojům, 6 místenky, 7 stálé značky
     };
 
     /// <summary>Klíč tlačítka „Druhy poznámek" ve formuláři prvku (<c>NotesLegendElementEdit.cls</c>).</summary>

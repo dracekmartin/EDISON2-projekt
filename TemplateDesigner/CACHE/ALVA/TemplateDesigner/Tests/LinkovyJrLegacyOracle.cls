@@ -251,6 +251,9 @@ ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As
 					set text = text _ $select(text="":"", 1:" ") _ $get(@glb@(idobj, "dta", pi, "txt", ti))
 				}
 				if druh = 2 set text = ..OddelovacDat(text)
+				// „#" je v obou tiscích nový řádek poznámky (místenky s `MistOR`); naše strana ho
+				// převádí na mezeru, jinak by se lišil jen zlom řádku
+				set text = $translate(text, "#", " ")
 				set klic = ..KlicPoznamky(druh, znak, text)
 				set n("pozn", klic) = $get(n("pozn", klic)) + 1
 			}

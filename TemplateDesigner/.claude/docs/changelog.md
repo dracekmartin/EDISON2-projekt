@@ -1,5 +1,24 @@
 ﻿# Changelog
 
+## 2026-10-26 (22) - poznámky ke spojům a doplněk místenky v Linkovém JŘ AD (`B194b` T13)
+
+Linkový JŘ AD tiskl u spoje značku „p", ale legenda ji nevysvětlila, a u místenky tiskl jen holou
+větu. Teď 1:1 se starým linkovým tiskem (rozhodnutí Jan 26. 10.: srovnat se starým):
+- **poznámka pro spoj / tarifní bod** (`omz` 41 / 42, druh 4): „spoj 6,8 text", spoje se stejným
+  textem v jednom řádku, u tarifního bodu úvod z číselníku firmy (`NCOME` 42) a číslo bodu, sdílený
+  spoj „číslo/sdílené" (gComNZLi → p41 / p42 / sComToArr, `JRapiNZUtl2.mac:73-91, 559-588`,
+  `JRapiLinPrtWin.mac:3582-3594`). V prvku Poznámky ve skupině „Další značky" před místenkami.
+- **místenka** (druh 6): za větou obecný doplněk linky (`^JRL(…,"C",2)`) a poznámky k vybraným spojům
+  („na spoj 11 ze zastávky…"), jen spoje se značkou na stránce; firma s `MistOR` dává každou na nový
+  řádek, `MistNOD` ruší dvojtečku (gMstNZLi `JRapiNZUtl3.mac:325-399`). Slovenské věty a řádek „AMS"
+  podle starého (česká verze dál zná jen R a þ).
+
+Ověřeno: oracle shodně na CB_GWBUS 990/0329471, 990/0322002, 216/0125850, 216/0340941, CB_CSADAD
+995/0380780, VS_CSAD 797/0440055 a 799/0440080; nové testy `TestPoznamkySpojuAMistenkyProtiLegacy`,
+`TestMistenkyNaNovyRadek`, `TestMistenkySlovenskeAAms`. Oracle nově srovná „#" (nový řádek) na mezeru
+i na straně starého tisku. Sonda `PoznamkySpojuVyskyt` (VS_CSAD 333 linek s poznámkou ke spoji,
+1 730 s místenkovou poznámkou). Zlaté odtisky beze změny. Další rozdíly z oraclu mimo T13 jako `T14`.
+
 ## 2026-10-26 (21) - zastávka na objednání u času v Linkovém JŘ AD (`B194b` T12)
 
 Starý linkový tisk dává do buňky času telefon, když spoj danou zastávku obsluhuje jen na objednání
