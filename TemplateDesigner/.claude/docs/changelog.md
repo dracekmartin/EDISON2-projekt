@@ -1,5 +1,23 @@
 ﻿# Changelog
 
+## 2026-10-26 (4) - 📐 Minuty odjezdů hlídají šířku jako výšku (`B194a` C12)
+
+Výchozí vývěska MHD na lince se čtyřmi skupinami dnů (KV_DP 17 Tržnice - Dalovice) kreslila nadpisy
+skupin přes sebe i přes „Hod" a ve skupině se značkami zvláštních dnů uřízla minuty; hláška žádná.
+Tři příčiny v prvku Minuty odjezdů: (1) šířka skupiny se počítala jen z počtu minut, bez značek, kdežto
+kreslení je počítalo - teď je výpočet odjezdů jeden (`SlotyOdjezdu`/`PripravSloty`, rozvržení v měřítku 1,
+kreslení v měřítku písma), (2) se druhým nadpisem z dat (období) se nezalamovalo nic - teď se zalamují
+všechny řádky do šířky skupiny, druhý svým písmem, (3) šířku prvku nikdo nehlídal. Rozhodnutí Jan 26. 10.:
+hlídat šířku stejně jako výšku. Když skupině chybí místo a celek se vejde, vezme se skupinám s rezervou
+(úměrně rezervě) - vývěsky, kterým nic nechybělo, se nehnou (porovnání pixelů CB_DP 11350: mřížka shodná,
+rozdíl jen v pruhu dopravce z `C5`); když se nevejde, zmenší se celá mřížka (písmo, šířky, sloupec hodin;
+platí přísnější z výšky a šířky) a ukáže se hláška „písmo zmenšeno"; pod mezí zmenšení (50 %) červená
+hláška, že se skupiny ořízly, s radou (skrýt skupinu, zmenšit písmo, rozšířit prvek). Hláška platí i pro
+prvek s dynamickou výškou, ten se zmenšením na šířku sníží. KV_DP 17 se vejde bez zmenšení (čtvrtá
+skupina si vzala místo prvním třem). Testy `MinutyOdjezduSirkaTests` (místo pro značky - mutací
+ověřeno, zmenšení + hláška, ořez + hláška, dynamická výška, kreslení), `DepartureHeaderLinesTests`
+(zalomení druhého nadpisu). Mezipaměť rozvržení sleduje i šířku prvku a nastavení značek.
+
 ## 2026-10-26 (3) - 💬 chyba v datech linky říká, co opravit (`B194a` C11)
 
 Chyba ze serveru u jedné linky zastavila tisk s textem „Načtení dat agendy 'ZASTAVKOVY_JR_AD' z databáze

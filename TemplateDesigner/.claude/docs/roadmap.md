@@ -22,7 +22,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194a` Chyby
 
-- **C12** Výchozí vývěska MHD: nadpisy skupin dnů přetékají, minuty ve čtvrté skupině uříznuté [M] **tisk**
 
 ### `B194b` Tisk - rozdíly mezi agendami (všechno **tisk** a **Jan**)
 

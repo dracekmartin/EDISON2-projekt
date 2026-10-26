@@ -23,10 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C12 Výchozí vývěska MHD: nadpisy skupin dnů a minuty se nevejdou** [M] (*ověřeno:* jen zkušební
-  vykreslení `ZkouskaTiskuNaostro`, KV_DP linka 17 se čtyřmi skupinami dnů, 24. 10.; v návrháři
-  neověřeno). Dvouřádkový nadpis („Pracovní den" / „1.7. - 31.8. a 27.12. - …") přetéká do sousední
-  skupiny a druhý řádek přepisuje „Hod"; ve čtvrté skupině jsou minuty vpravo uříznuté („47 4").
 
 ## 2. Tisk - rozdíly mezi agendami
 

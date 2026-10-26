@@ -24,6 +24,9 @@
   changelog 2026-10-26 (2)).
 - **C11** Chyba v datech linky zastaví tisk, ale ukáže se jako informace s tím, co opravit, a s číslem
   linky (rozhodnutí Jan 26. 10.: zastavit celé smí; changelog 2026-10-26 (3)).
+- **C12** Minuty odjezdů hlídají šířku jako výšku: skupina dostane místo na minuty se značkami, nadpisy
+  se zalamují do skupiny, co se nevejde, zmenší se s hláškou, pod mezí hláška o ořezu (rozhodnutí Jan
+  26. 10.; changelog 2026-10-26 (4)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

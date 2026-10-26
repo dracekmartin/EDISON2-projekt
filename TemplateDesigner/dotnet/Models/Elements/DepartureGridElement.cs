@@ -186,8 +186,8 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
     /// (každá minuta zabere jen to, co potřebuje). `Even` je srovná na **nejširší z nich**, takže
     /// minuty stojí ve svislici napříč řádky a značka nerozhodí sousedy - za cenu toho, že jeden
     /// odjezd s víc značkami roztáhne rozestup celé skupině.
-    /// ⚠️ Minimální šířka skupiny se počítá bez šířky značek (jako dosud), takže hodně označkovaná
-    /// skupina může chtít širší prvek - „Šířka minuty" je pro rastr jen spodní mez.</summary>
+    /// Šířka skupiny počítá se značkami i rozestupem stejně jako kreslení (<see cref="PotrebneSirkyMinut"/>);
+    /// „Šířka minuty" je pro rastr jen spodní mez.</summary>
     internal static List<float> ApplySpacingMode(List<float> slotW, DepartureSpacing mode, float uniformSlotMm)
     {
         if (mode == DepartureSpacing.ByContent || slotW.Count == 0 || uniformSlotMm <= 0) return slotW;
@@ -232,6 +232,193 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return max;
     }
 
+    /// <summary>Styly značek u minut - jedno místo pro rozvržení i kreslení, aby šířka skupiny počítala
+    /// se stejným písmem značek, jakým se nakreslí.</summary>
+    private (ResolvedTextStyle Sym, ResolvedTextStyle Text, ResolvedTextStyle Glyph) StylyZnacek(DataContext? data)
+    {
+        var dataBase = DataStyle.Resolve(ScheduleDataDefaults);
+        var minuteElementStyle = ResolveGroupMinuteStyle(null);
+        var sym = AnotaceSymbolStyle.Resolve(dataBase);
+        if (AnotaceSymbolStyle.FontSize is null)
+            sym = sym with { FontSize = minuteElementStyle.FontSize * 0.8f };
+        var text = ResolveAnotaceTextStyle(dataBase);
+        // Symbolový JŘ font (piktogramy) pro jednoznakové SpecialniZnak - dle jazyka šablony.
+        // Uživatelský font v AnotaceSymbolStyle (pokud zvolen) má přednost; jinak embedded TimeTable2.
+        var glyph = AnotaceSymbolStyle.FontFamily is null
+            ? sym with { FontFamily = FontResolver.SymbolFontFamily(data?.Culture) }
+            : sym;
+        return (sym, text, glyph);
+    }
+
+    /// <summary>Šířky odjezdů (minuta + značky) a rastr rozestupu pro dané měřítko písma. Jeden výpočet
+    /// pro rozvržení (měřítko 1) i kreslení - do 26. 10. je rozvržení počítalo bez značek (`B194a` C12).</summary>
+    private sealed class SlotyOdjezdu : IDisposable
+    {
+        public required SKFont Sym { get; set; }
+        public required SKFont Glyph { get; set; }
+        public required SKFont Text { get; set; }
+        /// <summary>Nominální šířka minuty v mm (už v měřítku).</summary>
+        public required float MinutaMm { get; init; }
+        public required float MezeraPx { get; init; }
+        public required float MeziZnackamiPx { get; init; }
+        public required float MmToPx { get; init; }
+        public required bool SeZnackami { get; init; }
+        /// <summary>Rozteč rovnoměrného nebo pevného rastru po skupinách (bez záznamu = podle obsahu).</summary>
+        public Dictionary<string, float> Rastr { get; } = [];
+
+        public float SirkaMm(OdjezdData o)
+        {
+            float extraPx = 0f;
+            if (SeZnackami && o.Anotace.Count > 0)
+            {
+                extraPx = MezeraPx;
+                foreach (var a in o.Anotace)
+                {
+                    SKFont af = JeGlyfSymbol(a) ? Glyph : (a.Typ == TypAnotace.Text ? Text : Sym);
+                    bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
+                    extraPx += af.MeasureText(GlyfProKresleni(a)) + (nzBox ? af.Size * 0.12f * 2f : 0f) + MeziZnackamiPx;
+                }
+            }
+            return MinutaMm + extraPx / MmToPx;
+        }
+
+        public void Dispose()
+        {
+            Sym.Dispose(); Glyph.Dispose(); Text.Dispose();
+        }
+    }
+
+    private SlotyOdjezdu PripravSloty(IReadOnlyList<GroupLayout> skupiny, IReadOnlyCollection<SKFont> fontyMinut,
+        (ResolvedTextStyle Sym, ResolvedTextStyle Text, ResolvedTextStyle Glyph) styly, float dataScale, float mmToPx)
+    {
+        var s = new SlotyOdjezdu
+        {
+            Sym = styly.Sym.CreateFont(dataScale, mmToPx),
+            Glyph = styly.Glyph.CreateFont(dataScale, mmToPx),
+            Text = styly.Text.CreateFont(dataScale, mmToPx),
+            MinutaMm = (MinuteWidth + AnotaceGap) * dataScale,
+            MezeraPx = AnotaceGap * dataScale * mmToPx,
+            MeziZnackamiPx = AnotaceInterGap * dataScale * mmToPx,
+            MmToPx = mmToPx,
+            SeZnackami = ShowAnotace,
+        };
+        var odjezdy = skupiny.SelectMany(g => g.ByHour.Values).SelectMany(o => o).ToList();
+
+        // Rovnoměrný rozestup: jeden rastr na **celý prvek**, ne na řádek ani na sloupec.
+        // Za řádek by hodina se značkami měla jiný rozestup než hodina bez nich; za sloupec
+        // se rozcházely sloupce mezi sebou - jeden označkovaný spoj roztáhl svůj sloupec
+        // a sousední zůstal těsný (nález Jan 11. 9. na Nitře 4, `B143`). Cena: sloupce bez
+        // značek zřídnou na šířku toho nejhustšího.
+        if (MinuteSpacing == DepartureSpacing.Even)
+        {
+            float rastr = UniformSlotWidth(odjezdy.Select(s.SirkaMm), s.MinutaMm);
+            foreach (var g in skupiny) s.Rastr[g.Skupina.Id] = rastr;
+        }
+        // Pevný rastr (`B160`): rozteč je nastavená šířka minuty, značky do ní nemluví - hustota
+        // vývěsky pak nezávisí na tom, kolik má linka značek. Značky, které se do zbytku rastru
+        // nevejdou, se zmenší; jedním poměrem pro celý prvek, aby nebyly každá jinak velká.
+        else if (MinuteSpacing == DepartureSpacing.Fixed)
+        {
+            float minutaMm = 0f, odstupMm = 0f;
+            foreach (var f in fontyMinut)
+            {
+                minutaMm = MathF.Max(minutaMm, f.MeasureText("00") / mmToPx);
+                // Odstup = mezera v písmu minut, ať roste s velikostí a nemusí se nastavovat.
+                odstupMm = MathF.Max(odstupMm, f.MeasureText(" ") / mmToPx);
+            }
+
+            float jednaZnackaMm = 0f, vsechnyZnackyMm = 0f;
+            foreach (var o in odjezdy)
+            {
+                vsechnyZnackyMm = MathF.Max(vsechnyZnackyMm, s.SirkaMm(o) - s.MinutaMm);
+                if (!ShowAnotace) continue;
+                foreach (var a in o.Anotace)
+                {
+                    SKFont af = JeGlyfSymbol(a) ? s.Glyph : (a.Typ == TypAnotace.Text ? s.Text : s.Sym);
+                    float boxPx = a.Typ == TypAnotace.NegativniZnacka ? af.Size * 0.12f * 2f : 0f;
+                    jednaZnackaMm = MathF.Max(jednaZnackaMm, (af.MeasureText(GlyfProKresleni(a)) + boxPx) / mmToPx);
+                }
+            }
+
+            // V rozteči je místo na **jednu** značku, ne na nejhorší odjezd - kde značka není,
+            // místo zůstane prázdné a minuty stojí v mřížce. Doloženo vzorem vývěsky, kterou
+            // TRANSDEV posílal k `B160` (linka 32 Nitra): `18 38 58` i `08 к 18 28 к 38` mají
+            // tytéž pozice minut. Spoj s víc značkami se do místa vejde zmenšením.
+            float rastr = PevnyRastr(s.MinutaMm, minutaMm, AnotaceGap * dataScale, jednaZnackaMm, odstupMm);
+
+            float anotScale = ZmenseniZnacek(rastr, minutaMm, vsechnyZnackyMm, dataScale, styly.Sym, styly.Text, styly.Glyph);
+            if (anotScale < dataScale)
+            {
+                s.Sym.Dispose(); s.Glyph.Dispose(); s.Text.Dispose();
+                s.Sym = styly.Sym.CreateFont(anotScale, mmToPx);
+                s.Glyph = styly.Glyph.CreateFont(anotScale, mmToPx);
+                s.Text = styly.Text.CreateFont(anotScale, mmToPx);
+            }
+            foreach (var g in skupiny) s.Rastr[g.Skupina.Id] = rastr;
+        }
+        return s;
+    }
+
+    /// <summary>Šířky odjezdů jedné buňky (skupina × hodina) po rozestupu.</summary>
+    private List<float> SirkySlotu(SlotyOdjezdu s, string skupinaId, List<OdjezdData> odjezdy) =>
+        ApplySpacingMode([.. odjezdy.Select(s.SirkaMm)], MinuteSpacing, s.Rastr.GetValueOrDefault(skupinaId));
+
+    /// <summary>Šířka, kterou skupina potřebuje na minuty nejplnější viditelné hodiny (měřítko 1),
+    /// i s vnitřními okraji a půlmilimetrovými odstupy kreslení od hran.</summary>
+    private Dictionary<string, float> PotrebneSirkyMinut(List<GroupLayout> skupiny, List<int> hodiny,
+        Func<string, ResolvedTextStyle> stylMinut, DataContext? data, float mmToPx)
+    {
+        var fonty = skupiny.ToDictionary(g => g.Skupina.Id, g => stylMinut(g.Skupina.Id).CreateFont(1f, mmToPx));
+        try
+        {
+            using var sloty = PripravSloty(skupiny, fonty.Values, StylyZnacek(data), 1f, mmToPx);
+            var vysledek = new Dictionary<string, float>();
+            foreach (var g in skupiny)
+            {
+                var ms = stylMinut(g.Skupina.Id);
+                float minuty = 0f;
+                foreach (int h in hodiny)
+                {
+                    if (!g.ByHour.TryGetValue(h, out var odjezdy) || odjezdy.Count == 0) continue;
+                    float blok = SirkySlotu(sloty, g.Skupina.Id, odjezdy).Sum() + (odjezdy.Count - 1) * OdjezdGap;
+                    minuty = MathF.Max(minuty, blok);
+                }
+                vysledek[g.Skupina.Id] = minuty + ms.PaddingLeft + ms.PaddingRight + 1f;
+            }
+            return vysledek;
+        }
+        finally
+        {
+            foreach (var f in fonty.Values) f.Dispose();
+        }
+    }
+
+    /// <summary>Skupiny pod svou potřebou dorovná na potřebu na úkor skupin s rezervou (úměrně
+    /// rezervě); nepinnuté skupiny nad potřebou a pinnuté zůstanou. Když nic nechybí, vrátí šířky
+    /// beze změny - vývěsky, které se vešly, se tím nehnou.</summary>
+    private static List<GroupLayout> DorovnejNaPotrebu(List<GroupLayout> skupiny, List<float> potrebne,
+        Func<GroupLayout, float?> pinnuta)
+    {
+        float chybi = 0f, rezerva = 0f;
+        for (int i = 0; i < skupiny.Count; i++)
+        {
+            if (pinnuta(skupiny[i]) is not null) continue;
+            float rozdil = skupiny[i].GroupWidth - potrebne[i];
+            if (rozdil < 0f) chybi -= rozdil; else rezerva += rozdil;
+        }
+        if (chybi <= 0.001f || rezerva <= 0f) return skupiny;
+
+        float podil = MathF.Min(1f, chybi / rezerva);
+        return [.. skupiny.Select((g, i) =>
+        {
+            if (pinnuta(g) is not null) return g;
+            float rozdil = g.GroupWidth - potrebne[i];
+            return rozdil < 0f
+                ? g with { GroupWidth = potrebne[i] }
+                : g with { GroupWidth = g.GroupWidth - rozdil * podil };
+        })];
+    }
+
     /// <summary>Slova nadpisu pro výpočet minimální šířky skupiny. **Ruční zlom dělí slova stejně
     /// jako mezera** - jinak by dvouřádkový nadpis byl jedno dlouhé slovo a roztáhl minimální šířku
     /// na součet obou řádků.</summary>
@@ -241,18 +428,19 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
     /// <summary>Řádky záhlaví skupiny dnů. **Ruční zlom** (Enter nebo token) v nadpisu = další řádek
     /// **téhož** nadpisu, tedy stejný styl. **Druhý nadpis z dat** je jiná věc - má vlastní styl
-    /// (`HeaderLine2Style`), proto jde zvlášť jako sekundární řádek a nezalamuje se.
-    /// Bez druhého nadpisu se každý ruční řádek ještě dozalomí podle šířky (`wrap`).</summary>
+    /// (`HeaderLine2Style`), proto jde zvlášť jako sekundární řádek a zalamuje se svým písmem (`wrap2`).
+    /// Každý řádek se dozalomí podle šířky skupiny. Do 26. 10. se se druhým nadpisem nezalamovalo nic
+    /// a dlouhé období („1.7. - 31.8. a 27.12. - …") přetékalo do sousední skupiny (`B194a` C12).</summary>
     internal static HeaderLine[] ComposeHeaderLines(string nadpis, string nadpis2,
-        Func<string, IEnumerable<string>> wrap)
+        Func<string, IEnumerable<string>> wrap, Func<string, IEnumerable<string>>? wrap2 = null)
     {
         var rucniRadky = Rendering.CellLayout.SplitLines(nadpis);
+        var hlavni = rucniRadky.SelectMany(wrap).Select(w => new HeaderLine(w, IsSecondary: false));
 
         if (nadpis2.Length > 0)
-            return [.. rucniRadky.Select(r => new HeaderLine(r, IsSecondary: false))
-                                 .Append(new HeaderLine(nadpis2, IsSecondary: true))];
+            return [.. hlavni.Concat((wrap2 ?? wrap)(nadpis2).Select(w => new HeaderLine(w, IsSecondary: true)))];
 
-        return [.. rucniRadky.SelectMany(wrap).Select(w => new HeaderLine(w, IsSecondary: false))];
+        return [.. hlavni];
     }
 
     private record GroupLayout(
@@ -272,7 +460,15 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         float RowH,
         float HeaderH,
         float GroupHeaderH,
-        int MaxHeaderLines);
+        int MaxHeaderLines,
+        float SirkaSloupceHodin,
+        float MeritkoSirky,
+        bool NevejdeSe,
+        float[] PotrebneSirky);
+
+    /// <summary>Kolikrát se mřížka zmenší, aby se skupiny vešly do šířky prvku (`B194a` C12):
+    /// 1 = vejde se. Pod mez zmenšování nejde - zbytek se pak ořízne (<see cref="NevejdeSeNaSirku"/>).</summary>
+    private const float MinMeritkoSirky = Rendering.CellRenderer.MinScale;
 
     // Cache layoutu - aby se nepočítal dvakrát (CalculateHeight + Render) pro stejná data
     [System.Text.Json.Serialization.JsonIgnore]
@@ -291,7 +487,10 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         HeaderLine2Style?.GetHashCode() ?? 0,
         HashCode.Combine(DataRowHeight, AnotaceGap, OdjezdGap, GroupSeparatorWidth, HourColumnPerGroup,
             ShowSkupinaDnuHeader, SkupinaDnuId),
-        GroupHeaderOverridesHash());
+        GroupHeaderOverridesHash(),
+        // Šířka skupin počítá se značkami a zmenšení s šířkou prvku (`B194a` C12).
+        HashCode.Combine(Width, MinuteSpacing, ShowAnotace, AnotaceInterGap,
+            AnotaceSymbolStyle.GetHashCode(), AnotaceTextStyle.GetHashCode()));
 
     /// <summary>Hash layout-affecting per-group nastavení (nadpis override, šířka override, pořadí) -
     /// mění šířku/wrap/pořadí, musí invalidovat layout cache (Count v hlavním fingerprintu to nezachytí).
@@ -394,8 +593,14 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         float? PinnedWidth(GroupLayout g) =>
             styleLookup.TryGetValue(g.Skupina.Id, out var cs) && cs.WidthOverride is float p && p > 0 ? p : null;
 
+        // Skutečná šířka minut skupiny (se značkami a rozestupem) - týž výpočet jako kreslení.
+        // Do 26. 10. se brala jen z počtu minut a skupina se značkami vyšla užší, než co se do ní
+        // nakreslilo: minuty přetekly do sousední skupiny nebo se uřízly (`B194a` C12).
+        var potrebneMinuty = PotrebneSirkyMinut(groupLayouts, hours, MinuteStyleForGroup, data, effectiveMmToPx);
+
         // Šířky skupin: pin (override), jinak max(minuty, min. pro text záhlaví)
         var finalGroups = new List<GroupLayout>();
+        var potrebne = new List<float>();
         foreach (var g in groupLayouts)
         {
             int maxMin = GetMaxMinutesPerHour(g.ByHour, hours);
@@ -405,6 +610,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             float autoW = Math.Max(minuteBasedW, g.MinWidthForText);
             float groupW = PinnedWidth(g) ?? autoW;
             finalGroups.Add(g with { MaxMinutesPerHour = maxMin, GroupWidth = groupW });
+            potrebne.Add(PinnedWidth(g) ?? Math.Max(potrebneMinuty[g.Skupina.Id], g.MinWidthForText));
         }
 
         // Redistribuce extra prostoru - jen auto (nepinnuté) skupiny zaplní zbytek šířky elementu
@@ -426,6 +632,21 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             }
         }
 
+        // Skupina užší, než kolik potřebují její minuty: když se celek do prvku vejde, dorovná se
+        // na úkor skupin s rezervou a ostatní šířky zůstanou jako dosud; když ne, zmenší se celá
+        // mřížka (písmo i šířky) jako při přetečení na výšku.
+        float hodiny = hourColumnCount * HourColumnWidth;
+        float potrebaCelkem = hodiny + potrebne.Sum() + separatorTotal;
+        float meritkoSirky = 1f;
+        if (potrebaCelkem <= Width + 0.01f)
+            finalGroups = DorovnejNaPotrebu(finalGroups, potrebne, PinnedWidth);
+        else
+        {
+            meritkoSirky = MathF.Max(MinMeritkoSirky, (Width - separatorTotal) / (potrebaCelkem - separatorTotal));
+            finalGroups = [.. finalGroups.Select((g, i) => g with { GroupWidth = potrebne[i] * meritkoSirky })];
+        }
+        bool nevejdeSe = hodiny * meritkoSirky + finalGroups.Sum(g => g.GroupWidth) + separatorTotal > Width + 0.01f;
+
         // Layout řádků záhlaví:
         // - Ruční zlom v nadpisu (Enter nebo token) → řádky ve STEJNÉM stylu
         // - Nadpis2 z dat → navíc sekundární řádek s vlastním stylem (HeaderLine2Style)
@@ -433,15 +654,19 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         finalGroups = finalGroups.Select(g =>
         {
             var skHeader = HeaderStyleForGroup(g.Skupina.Id);
-            float fontPx = skHeader.FontSize * PtToMm * effectiveMmToPx;
+            // Zalamuje se písmem, jakým se nakreslí - po zmenšení na šířku je menší.
+            float fontPx = skHeader.FontSize * PtToMm * effectiveMmToPx * meritkoSirky;
             using var wrapFont = new SKFont(
                 // resolved rodina + řez (vč. dokumentového defaultu) - wrap musí trefit stejný font jako render
                 GetTypeface(skHeader), fontPx);
+            var skHeader2 = HeaderLine2Style is { } h2 ? h2.Resolve(skHeader) : skHeader;
+            using var wrapFont2 = new SKFont(GetTypeface(skHeader2), skHeader2.FontSize * PtToMm * effectiveMmToPx * meritkoSirky);
 
             return g with
             {
                 HeaderLines = ComposeHeaderLines(g.Skupina.Nadpis, g.Skupina.Nadpis2,
-                    radek => WrapHeaderText(radek, g.GroupWidth, wrapFont, effectiveMmToPx)),
+                    radek => WrapHeaderText(radek, g.GroupWidth, wrapFont, effectiveMmToPx),
+                    radek => WrapHeaderText(radek, g.GroupWidth, wrapFont2, effectiveMmToPx)),
             };
         }).ToList();
 
@@ -489,7 +714,8 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             : 0f;
 
         var result = new GridLayout(finalGroups, hours, fontSizeMm, headerFontMm, minuteFontMm,
-            rowH, headerH, groupHeaderH, maxHeaderLines);
+            rowH, headerH, groupHeaderH, maxHeaderLines, HourColumnWidth * meritkoSirky, meritkoSirky, nevejdeSe,
+            [.. potrebne.Select(p => p * meritkoSirky)]);
 
         _cachedLayout = result;
         _cachedLayoutDataRef = data;
@@ -677,7 +903,9 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // Auto-shrink do fit je konzistentní pattern všech JŘ elementů → velká DataRowHeight se
         // zmenší jako vše ostatní (dřív se tu z ní naopak nezmenšovaly fonty → obsah tiše přetekl).
         float scaleNaturalH = combinedHeaderH + layout.Hours.Count * layout.RowH;
-        float scale = ComputeFontScale(scaleNaturalH);
+        // Na šířku se zmenšuje stejně jako na výšku - platí přísnější z obou (`B194a` C12).
+        float scale = MathF.Min(ComputeFontScale(scaleNaturalH), layout.MeritkoSirky);
+        float hourW = layout.SirkaSloupceHodin;
 
         // Roztáhnout na výšku - pokud obsah je kratší než Height a feature je zapnutá,
         // proporcionálně zvětšit data řádky + jejich fonty (header zůstává).
@@ -730,17 +958,9 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         }
 
         // Anotace - element-level (nedědí z column.Data)
-        var dataBase = DataStyle.Resolve(ScheduleDataDefaults);
-        var minuteElementStyle = ResolveGroupMinuteStyle(null);
-        var anotSymStyle = AnotaceSymbolStyle.Resolve(dataBase);
-        if (AnotaceSymbolStyle.FontSize is null)
-            anotSymStyle = anotSymStyle with { FontSize = minuteElementStyle.FontSize * 0.8f };
-        var anotTextStyle = ResolveAnotaceTextStyle(dataBase);
-        // Symbolový JŘ font (piktogramy) pro jednoznakové SpecialniZnak - dle jazyka šablony.
-        // Uživatelský font v AnotaceSymbolStyle (pokud zvolen) má přednost; jinak embedded TimeTable2.
-        var anotGlyphStyle = AnotaceSymbolStyle.FontFamily is null
-            ? anotSymStyle with { FontFamily = FontResolver.SymbolFontFamily(ctx.Data?.Culture) }
-            : anotSymStyle;
+        var stylyZnacek = StylyZnacek(ctx.Data);
+        var anotSymStyle = stylyZnacek.Sym;
+        var anotTextStyle = stylyZnacek.Text;
 
         // ── Deklarace zdrojů (perf: 100+ buněk/frame) - plnění až uvnitř try ────
         // Deklarace musí být před try, aby na ně viděl finally i lokální helpery níže;
@@ -760,6 +980,8 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         var groupHeaderTextPaints2 = new Dictionary<string, SKPaint>();
 
         // Anotace fonty/painty - element-level, sdílené pro všechny buňky (nullable = alokace v try).
+        // Fonty a šířky odjezdů drží sdílený výpočet (týž jako rozvržení), painty zvlášť.
+        SlotyOdjezdu? sloty = null;
         SKFont?  anotSymFont   = null;
         SKFont?  anotGlyphFont = null;
         SKPaint? anotSymPaint  = null;
@@ -776,28 +998,6 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         float scaledOdjezdGap = OdjezdGap * dataScale; // v mm (model space), ne v px
         float usedWidth = Width;
         float currentY = Y;
-        float scaledMinuteW = (MinuteWidth + AnotaceGap) * dataScale;
-
-        // Rastr rovnoměrného rozestupu per skupina dnů (plní se po vytvoření fontů anotací).
-        var uniformSlotByGroup = new Dictionary<string, float>();
-
-        // Šířka slotu jednoho odjezdu: nominální (scaledMinuteW) + jeho anotace. Nezávisí na skupině
-        // (fonty anotací jsou element-level), takže se počítá i pro rastr celého sloupce.
-        float SlotWidthMm(OdjezdData o)
-        {
-            float extraPx = 0f;
-            if (ShowAnotace && o.Anotace.Count > 0)
-            {
-                extraPx = anotGapPx;
-                foreach (var a in o.Anotace)
-                {
-                    SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
-                    bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
-                    extraPx += af.MeasureText(GlyfProKresleni(a)) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
-                }
-            }
-            return scaledMinuteW + extraPx / ctx.MmToPx;
-        }
 
         try
         {
@@ -826,69 +1026,14 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                 groupMinuteBgPaints[id]   = ms.CreateBgPaint();
             }
 
-            // Anotace patří k datovým buňkám → dataScale.
-            anotSymFont   = anotSymStyle.CreateFont(dataScale, ctx.MmToPx);
-            anotGlyphFont = anotGlyphStyle.CreateFont(dataScale, ctx.MmToPx);
+            // Anotace patří k datovým buňkám → dataScale. Rozestup (rovnoměrný / pevný rastr)
+            // a zmenšení značek v pevném rastru počítá sdílený výpočet, týž jako rozvržení.
+            sloty = PripravSloty(layout.Groups, groupMinuteFonts.Values, stylyZnacek, dataScale, ctx.MmToPx);
+            anotSymFont   = sloty.Sym;
+            anotGlyphFont = sloty.Glyph;
+            anotTextFont  = sloty.Text;
             anotSymPaint  = anotSymStyle.CreateTextPaint();
-            anotTextFont  = anotTextStyle.CreateFont(dataScale, ctx.MmToPx);
             anotTextPaint = anotTextStyle.CreateTextPaint();
-
-            // Rovnoměrný rozestup: jeden rastr na **celý prvek**, ne na řádek ani na sloupec.
-            // Za řádek by hodina se značkami měla jiný rozestup než hodina bez nich; za sloupec
-            // se rozcházely sloupce mezi sebou - jeden označkovaný spoj roztáhl svůj sloupec
-            // a sousední zůstal těsný (nález Jan 11. 9. na Nitře 4, `B143`). Cena: sloupce bez
-            // značek zřídnou na šířku toho nejhustšího.
-            if (MinuteSpacing == DepartureSpacing.Even)
-            {
-                float rastr = UniformSlotWidth(
-                    layout.Groups.SelectMany(g => g.ByHour.Values).SelectMany(o => o).Select(SlotWidthMm),
-                    scaledMinuteW);
-                foreach (var g in layout.Groups) uniformSlotByGroup[g.Skupina.Id] = rastr;
-            }
-            // Pevný rastr (`B160`): rozteč je nastavená šířka minuty, značky do ní nemluví - hustota
-            // vývěsky pak nezávisí na tom, kolik má linka značek. Značky, které se do zbytku rastru
-            // nevejdou, se zmenší; jedním poměrem pro celý prvek, aby nebyly každá jinak velká.
-            else if (MinuteSpacing == DepartureSpacing.Fixed)
-            {
-                float minutaMm = 0f, odstupMm = 0f;
-                foreach (var f in groupMinuteFonts.Values)
-                {
-                    minutaMm = MathF.Max(minutaMm, f.MeasureText("00") / ctx.MmToPx);
-                    // Odstup = mezera v písmu minut, ať roste s velikostí a nemusí se nastavovat.
-                    odstupMm = MathF.Max(odstupMm, f.MeasureText(" ") / ctx.MmToPx);
-                }
-
-                float jednaZnackaMm = 0f, vsechnyZnackyMm = 0f;
-                foreach (var o in layout.Groups.SelectMany(g => g.ByHour.Values).SelectMany(o => o))
-                {
-                    vsechnyZnackyMm = MathF.Max(vsechnyZnackyMm, SlotWidthMm(o) - scaledMinuteW);
-                    if (!ShowAnotace) continue;
-                    foreach (var a in o.Anotace)
-                    {
-                        SKFont af = JeGlyfSymbol(a) ? anotGlyphFont : (a.Typ == TypAnotace.Text ? anotTextFont : anotSymFont);
-                        float boxPx = a.Typ == TypAnotace.NegativniZnacka ? af.Size * 0.12f * 2f : 0f;
-                        jednaZnackaMm = MathF.Max(jednaZnackaMm,
-                            (af.MeasureText(GlyfProKresleni(a)) + boxPx) / ctx.MmToPx);
-                    }
-                }
-
-                // V rozteči je místo na **jednu** značku, ne na nejhorší odjezd - kde značka není,
-                // místo zůstane prázdné a minuty stojí v mřížce. Doloženo vzorem vývěsky, kterou
-                // TRANSDEV posílal k `B160` (linka 32 Nitra): `18 38 58` i `08 к 18 28 к 38` mají
-                // tytéž pozice minut. Spoj s víc značkami se do místa vejde zmenšením.
-                float rastr = PevnyRastr(scaledMinuteW, minutaMm, AnotaceGap * dataScale, jednaZnackaMm, odstupMm);
-
-                float anotScale = ZmenseniZnacek(rastr, minutaMm, vsechnyZnackyMm, dataScale,
-                    anotSymStyle, anotTextStyle, anotGlyphStyle);
-                if (anotScale < dataScale)
-                {
-                    anotSymFont.Dispose();  anotGlyphFont.Dispose();  anotTextFont.Dispose();
-                    anotSymFont   = anotSymStyle.CreateFont(anotScale, ctx.MmToPx);
-                    anotGlyphFont = anotGlyphStyle.CreateFont(anotScale, ctx.MmToPx);
-                    anotTextFont  = anotTextStyle.CreateFont(anotScale, ctx.MmToPx);
-                }
-                foreach (var g in layout.Groups) uniformSlotByGroup[g.Skupina.Id] = rastr;
-            }
 
             if (AlternatingRowColor is not null)
                 zebraPaint = new SKPaint { Color = ColorHex.ParseOrTransparent(AlternatingRowColor) };
@@ -915,8 +1060,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             foreach (var f in groupMinuteFonts.Values)      f.Dispose();
             foreach (var p in groupMinuteTextPaints.Values) p.Dispose();
             foreach (var p in groupMinuteBgPaints.Values)   p?.Dispose();
-            anotSymFont?.Dispose();   anotGlyphFont?.Dispose();   anotSymPaint?.Dispose();
-            anotTextFont?.Dispose();  anotTextPaint?.Dispose();
+            sloty?.Dispose();   anotSymPaint?.Dispose();   anotTextPaint?.Dispose();
             zebraPaint?.Dispose();
             foreach (var p in perGroupZebraPaints.Values)   p.Dispose();
 
@@ -932,7 +1076,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             var style = bgColorOverride is not null
                 ? hourHeaderStyle with { BackgroundColor = bgColorOverride }
                 : hourHeaderStyle;
-            var rect = new SKRect(hx, currentY, hx + HourColumnWidth, currentY + scaledCombinedHeaderH);
+            var rect = new SKRect(hx, currentY, hx + hourW, currentY + scaledCombinedHeaderH);
             var ikona = _hourHeaderImage.Get(HourColumnHeaderImageBase64);
             // obrázek nahrazuje nadpis - dvě věci v jedné buňce by se překryly
             CellRenderer.DrawCell(ctx, rect, ikona is null ? Rendering.ColumnHeader.Resolve(HourColumnHeader, "Hod") : "", style, scale);
@@ -948,7 +1092,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             var style = bgColorOverride is not null
                 ? hourDataStyle with { BackgroundColor = bgColorOverride }
                 : hourDataStyle;
-            var rect = new SKRect(hx, currentY, hx + HourColumnWidth, currentY + scaledRowH);
+            var rect = new SKRect(hx, currentY, hx + hourW, currentY + scaledRowH);
             CellRenderer.DrawCell(ctx, rect, (hour % 24).ToString(), style, dataScale);
         }
 
@@ -964,7 +1108,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
             if (ShowSkupinaDnuHeader && scaledGroupHeaderH > 0)
             {
-                float gx = HourColumnPerGroup ? X : X + HourColumnWidth;
+                float gx = HourColumnPerGroup ? X : X + hourW;
                 foreach (var g in layout.Groups)
                 {
                     var gid = g.Skupina.Id;
@@ -979,7 +1123,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                     if (HourColumnPerGroup)
                     {
                         DrawHourHeaderCell(gx);
-                        gx += HourColumnWidth;
+                        gx += hourW;
                     }
 
                     // BG skupiny
@@ -1049,7 +1193,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                 foreach (var g in layout.Groups)
                 {
                     DrawHourHeaderCell(gx);
-                    gx += HourColumnWidth + g.GroupWidth + GroupSeparatorWidth;
+                    gx += hourW + g.GroupWidth + GroupSeparatorWidth;
                 }
             }
 
@@ -1067,7 +1211,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                 if (!HourColumnPerGroup)
                     DrawHourDataCell(X, hour);
 
-                float gx = HourColumnPerGroup ? X : X + HourColumnWidth;
+                float gx = HourColumnPerGroup ? X : X + hourW;
                 foreach (var g in layout.Groups)
                 {
                     var gid = g.Skupina.Id;
@@ -1077,7 +1221,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                     if (HourColumnPerGroup)
                     {
                         DrawHourDataCell(gx, hour, HourBodyBackground(groupHeaderStyles[gid], ms));
-                        gx += HourColumnWidth;
+                        gx += hourW;
                     }
 
                     // BG datové buňky skupiny (null = průhledná, ponechá zebra)
@@ -1112,12 +1256,12 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
             if (hasPerGroupZebra)
             {
-                float zx = HourColumnPerGroup ? X : X + HourColumnWidth;
+                float zx = HourColumnPerGroup ? X : X + hourW;
 
                 // Sdílený hour column (pokud není per-group)
                 if (!HourColumnPerGroup && zebraPaint is not null)
                 {
-                    var r = ctx.ToCanvasRect(X, currentY, HourColumnWidth, scaledRowH);
+                    var r = ctx.ToCanvasRect(X, currentY, hourW, scaledRowH);
                     ctx.Canvas.DrawRect(r, zebraPaint);
                 }
 
@@ -1129,15 +1273,15 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                     {
                         if (HourColumnPerGroup)
                         {
-                            var hr = ctx.ToCanvasRect(zx, currentY, HourColumnWidth, scaledRowH);
+                            var hr = ctx.ToCanvasRect(zx, currentY, hourW, scaledRowH);
                             ctx.Canvas.DrawRect(hr, gZebra);
-                            zx += HourColumnWidth;
+                            zx += hourW;
                         }
                         var dr = ctx.ToCanvasRect(zx, currentY, g.GroupWidth, scaledRowH);
                         ctx.Canvas.DrawRect(dr, gZebra);
                     }
                     else if (HourColumnPerGroup)
-                        zx += HourColumnWidth;
+                        zx += hourW;
 
                     zx += g.GroupWidth + GroupSeparatorWidth;
                 }
@@ -1165,8 +1309,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
             float availW = g.GroupWidth - padL - padR;
 
-            var slotW = ApplySpacingMode([.. odjezdy.Select(SlotWidthMm)], MinuteSpacing,
-                uniformSlotByGroup.TryGetValue(gid, out var u) ? u : 0f);
+            var slotW = SirkySlotu(sloty!, gid, odjezdy);
             float blockW = slotW.Sum() + Math.Max(0, odjezdy.Count - 1) * scaledOdjezdGap;
             float alignOffset = padL + ms.HAlign switch
             {
@@ -1269,18 +1412,18 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             if (!HourColumnPerGroup)
             {
                 // Jedna čára za sdíleným sloupcem hodin
-                var hourVLineTop = ctx.ToCanvas(X + HourColumnWidth, vLineTopY);
-                var hourVLineBottom = ctx.ToCanvas(X + HourColumnWidth, currentY);
+                var hourVLineTop = ctx.ToCanvas(X + hourW, vLineTopY);
+                var hourVLineBottom = ctx.ToCanvas(X + hourW, currentY);
                 ctx.Canvas.DrawLine(hourVLineTop, hourVLineBottom, paints.Grid);
             }
 
-            float gxSep = HourColumnPerGroup ? X : X + HourColumnWidth;
+            float gxSep = HourColumnPerGroup ? X : X + hourW;
             for (int i = 0; i < layout.Groups.Count; i++)
             {
                 if (HourColumnPerGroup)
                 {
                     // Čára za hour sloupcem této skupiny
-                    gxSep += HourColumnWidth;
+                    gxSep += hourW;
                     var hLineTop = ctx.ToCanvas(gxSep, vLineTopY);
                     var hLineBottom = ctx.ToCanvas(gxSep, currentY);
                     ctx.Canvas.DrawLine(hLineTop, hLineBottom, paints.Grid);
@@ -1385,8 +1528,29 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         float combinedHeaderH = ShowSkupinaDnuHeader
             ? Math.Max(layout.GroupHeaderH, layout.HeaderH)
             : layout.HeaderH;
-        return combinedHeaderH + layout.Hours.Count * layout.RowH;
+        // Po zmenšení na šířku je menší i výška - prvek s dynamickou výškou se nakreslí takhle.
+        return (combinedHeaderH + layout.Hours.Count * layout.RowH) * layout.MeritkoSirky;
     }
+
+    /// <summary>Kolikrát se písmo zmenší, aby se mřížka vešla na výšku i na šířku (1 = vejde se) -
+    /// týž výpočet jako kreslení, ať hláška netvrdí jinou velikost, než se vytiskne.</summary>
+    internal float ZmenseniPisma(DataContext? data)
+    {
+        var layout = ComputeLayout(data);
+        if (layout is null) return 1f;
+        float combinedHeaderH = ShowSkupinaDnuHeader
+            ? Math.Max(layout.GroupHeaderH, layout.HeaderH)
+            : layout.HeaderH;
+        return MathF.Min(ComputeFontScale(combinedHeaderH + layout.Hours.Count * layout.RowH), layout.MeritkoSirky);
+    }
+
+    /// <summary>Skupiny dnů se nevejdou do šířky prvku ani po zmenšení na mez - zbytek se ořízne.</summary>
+    internal bool NevejdeSeNaSirku(DataContext? data) => ComputeLayout(data)?.NevejdeSe == true;
+
+    /// <summary>Šířky skupin dnů a to, kolik jejich minuty potřebují (obojí po zmenšení na šířku) -
+    /// pro testy rozvržení.</summary>
+    internal (float[] Sirky, float[] Potreby, float Meritko) RozvrzeniSirek(DataContext? data) =>
+        ComputeLayout(data) is { } l ? ([.. l.Groups.Select(g => g.GroupWidth)], l.PotrebneSirky, l.MeritkoSirky) : ([], [], 1f);
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 
