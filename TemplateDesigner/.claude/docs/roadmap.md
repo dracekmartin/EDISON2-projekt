@@ -22,7 +22,7 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194b` Tisk - rozdíly mezi agendami (všechno **tisk** a **Jan**)
 
-- **T4** Vysvětlivka téže značky zní v každé agendě jinak: T4b překlep „částečne", T4c na znamení, T4d přestup [S]
+- **T4** Vysvětlivka téže značky zní v každé agendě jinak: T4c na znamení, T4d přestup [S]
 - **T7** „Jen nástup / jen výstup" chybí jen na vývěsce AD [S-M]
 - **T8** Zóny se počítají čtyřmi pravidly - doporučení neměnit, opravit komentář [S]
 - **T9** Oddělovač v legendě vývěsek je dlouhá pomlčka [S]

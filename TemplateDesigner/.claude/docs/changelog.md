@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-26 (16) - překlep „částečne" pryč z obou agend AD (`B194b` T4b)
+
+Vysvětlivka částečně bezbariérového vozidla měla v Zastávkovém i Linkovém JŘ AD překlep „částečne"
+převzatý ze starého modulu (Linkový JŘ MHD ho neměl). Opraveno; Zastávkový JŘ AD navíc tvarem „s" jako
+v T4a („spoj s částečně bezbariérově přístupným vozidlem, nutná dopomoc průvodce", slovensky jako
+Linkový JŘ AD). V měřených datech takový spoj není, tisk se nikde nezmění - proto nový test
+`TestVysvetlivkyVozidlaJakoLinkovy`, který hlídá shodu obou vysvětlivek vozidla mezi agendami AD
+v obou jazycích (rozhodnutí Jan 26. 10.: opravit, i když se to teď nikde netiskne).
+
 ## 2026-10-26 (15) - „spoj s bezbariérově přístupným vozidlem" i v Zastávkovém JŘ AD (`B194b` T4a)
 
 Zastávkový JŘ AD vysvětloval vozíček „spoj má bezbariérově přístupné vozidlo" (a „všechny spoje mají …"),

@@ -2027,6 +2027,7 @@ ClassMethod SlozVetu(sablona As %String, uvodniDil As %Integer, vlozka As %Strin
 
 /// Šablona věty atributu, opsaná **doslova** z legacy `gAtrNZLi^JRapiNZUtl3` (`:161-192`).
 /// Dvě jazykové sady, protože je tak má i starý modul; `rec` = „CZ" nebo „*SK" (viz `Jazyk`).
+/// Jediná vědomá odchylka: u `CBE` opravený překlep „částečne" → „částečně" (`B194` T4b).
 ClassMethod AtributSablona(klic As %String, rec As %String = "CZ") As %String
 {
     i rec = "*SK" {
@@ -2056,7 +2057,7 @@ ClassMethod AtributSablona(klic As %String, rec As %String = "CZ") As %String
         "PJI":"PJI|všechny|spoj|spoje|přepravuje|přepravují|jízdní kola|nejvýše|kol(a)",
         "NKA":"NKA|všechny|spoj|spoje|je obsluhován|jsou obsluhovány|nízkokapacitním autobusem",
         "RBU":"RBU|všechny|spoj|spoje|jede jen na objednání|jedou jen na objednání|",
-        "CBE":"CBE|všechny|spoj|spoje|||s částečne bezbariérově přístupným vozidlem, nutná dopomoc průvodce",
+        "CBE":"CBE|všechny|spoj|spoje|||s částečně bezbariérově přístupným vozidlem, nutná dopomoc průvodce",
         "RBP":"RBP|všechny|spoj|spoje|jede jen podmínečně|jedou jen podmínečně|",
         "wifi":"wifi|všechny|spoj|spoje|s bezdrátovým připojením k internetu",
         "zasu":"zasu|všechny|spoj|spoje|s přípojkou 230 V",

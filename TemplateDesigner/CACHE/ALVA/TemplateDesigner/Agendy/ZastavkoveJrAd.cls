@@ -3255,10 +3255,12 @@ ClassMethod TextBezbarier(vsechny As %Boolean) As %String
     ret $s(vsechny:"všechny spoje s bezbariérově přístupným vozidlem", 1:"spoj s bezbariérově přístupným vozidlem")
 }
 
+/// Částečně bezbariérové vozidlo - stejné znění jako Linkový JŘ AD a MHD (`CBE`), tvar „s" jako
+/// u `TextBezbarier`. Starý tisk psal „částečne" (`B194` T4b, oprava překlepu).
 ClassMethod TextCastecneBezbarier() As %String
 {
-    i ..Jazyk() = "sk" ret "spoj má čiastočne bezbariérovo prístupné vozidlo, potrebná pomoc sprievodcu"
-    ret "spoj má částečne bezbariérově přístupné vozidlo, nutná dopomoc průvodce"
+    i ..Jazyk() = "sk" ret "spoj s čiastočne bezbariérovým prístupným vozidlom, nutná dopomoc sprievodcu"
+    ret "spoj s částečně bezbariérově přístupným vozidlem, nutná dopomoc průvodce"
 }
 
 ClassMethod TextKola() As %String

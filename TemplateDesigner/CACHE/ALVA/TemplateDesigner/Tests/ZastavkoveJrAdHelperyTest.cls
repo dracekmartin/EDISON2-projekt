@@ -30,6 +30,22 @@ Method TestCasJizdySloupce()
 	kill wMap
 }
 
+// ── Vysvětlivky vozidla (B194 T4a, T4b) ─────────────────────────────────────
+/// Vozíček a částečně bezbariérové vozidlo vysvětluje Zastávkový JŘ AD stejně jako Linkový JŘ AD
+/// (obecná věta bez výčtu spojů), česky i slovensky. Částečně bezbariérové vozidlo v datech nemá
+/// žádný spoj, takže jinak by se rozchod ani překlep „částečne" neukázal.
+Method TestVysvetlivkyVozidlaJakoLinkovy()
+{
+	set zast = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", link = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
+	for jazyk = "cs", "sk" {
+		set ^||TiskAd("jazyk") = jazyk, rec = $select(jazyk="sk":"*SK", 1:"CZ")
+		do $$$AssertEquals($classmethod(zast, "TextBezbarier", 0), $classmethod(link, "VetaAtributu", "BEV", rec, 1), jazyk_": bezbariérové vozidlo")
+		do $$$AssertEquals($classmethod(zast, "TextCastecneBezbarier"), $classmethod(link, "VetaAtributu", "CBE", rec, 1), jazyk_": částečně bezbariérové vozidlo")
+	}
+	kill ^||TiskAd("jazyk")
+	do $$$AssertTrue($classmethod(zast, "TextCastecneBezbarier") '[ "částečne ", "překlep „částečne""")
+}
+
 // ── Barvy spojů (B194 T2) ────────────────────────────────────────────────────
 /// Checkbox `TISKNOUT_BARVY_SPOJU` má přednost; bez něj platí třístav `BARVY_SPOJU`, který posílá
 /// starší návrhář u linkového JŘ - jinak by mu volba „Netisknout" po aktualizaci serveru přestala platit.
