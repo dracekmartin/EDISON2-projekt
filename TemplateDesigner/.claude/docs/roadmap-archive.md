@@ -27,6 +27,9 @@
 - **C12** Minuty odjezdů hlídají šířku jako výšku: skupina dostane místo na minuty se značkami, nadpisy
   se zalamují do skupiny, co se nevejde, zmenší se s hláškou, pod mezí hláška o ořezu (rozhodnutí Jan
   26. 10.; changelog 2026-10-26 (4)).
+- **T5** Nadpis skupiny dnů v linkovém MHD jedním řádkem - **vědomý rozdíl** proti vývěsce MHD (rozhodnutí
+  Jan 26. 10.: vývěska má úzké sloupce, v Tabulce spojů je nadpis přes celou skupinu; #10660 se týkal
+  vývěsky). Související nadpisy vývěsky AD natvrdo česky zůstaly jako `T11`.
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

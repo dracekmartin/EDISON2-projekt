@@ -52,11 +52,9 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   ho měl taky), „na znamení" (linkový AD bere ze STALCOME, vývěska vědomě Jan), přestup na autobus tři
   znění (vývěska AD vlastní text `TextPrestupu`). Doporučení: překlep opravit, přestup vývěsky ze STALCOME,
   zbytek rozhodnout.
-- **T5 Linkový MHD slije dvouřádkový nadpis skupiny dnů** [M] (*ověřeno:* server CB_DP 11350). Tiskne
-  „Pracovní dny prázdniny", vývěska MHD dva řádky (požadavek DPKV #10660). `LinkovyJrMhd.NactiSkupinyProvozu`
-  (:563-574); prvek Tabulka spojů čte jen `NADPIS`. Návrh: přidat `NADPIS2` a naučit ho prvek - **ideálně
-  před 27. 10.** Souvisí: vývěska AD má nadpisy skupin dnů natvrdo česky (`NacistSkupinyDnu` :851), starý
-  tisk bral číselník firmy (`JRapiLinPrtMhd1.mac:541-571`) - nejdřív změřit, u kolika firem se liší.
+- **T11 Vývěska AD má nadpisy skupin dnů natvrdo česky** [S-M] **tisk** (*ověřeno:* kód). `NacistSkupinyDnu`
+  (:851); starý tisk bral číselník firmy (`JRapiLinPrtMhd1.mac:541-571`) - nejdřív změřit, u kolika firem
+  se liší. (Vyčleněno z `T5`, které je uzavřené jako vědomý rozdíl - viz §8.)
 - **T6 Dopravce v pěti tvarech** [S] (*ověřeno:* server). Vývěska AD po řádcích s adresou a „tel:" (#13158,
   vědomé), linkový AD jedním řádkem „tel." bez adresy (ověřený oraclem), pole `DOPRAVCI_SOUHRNNY_JR`
   „…,Hálkova…,tel:386100111" bez mezer (`ZastavkoveJrAd.NazevDopravce` :3011; nové pole #13008, tvar převzalo,
@@ -299,6 +297,10 @@ totéž znovu. Pořadí podle přínosu:
   třídy nepřejmenovávat.
 
 ## 8. Co je v pořádku
+
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** nadpis skupiny dnů je ve vývěsce MHD dvouřádkový, v linkovém
+  MHD jedním řádkem (`T5`). Vývěska má úzké sloupce skupin, v Tabulce spojů se nadpis táhne přes všechny
+  spoje skupiny. Požadavek DPKV #10660 se týkal vývěsky. Dva řádky v linkovém by se dělaly novým polem.
 
 - Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (výjimka `P4`);
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,

@@ -26,12 +26,12 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **T2** Vývěska AD nebarví obarvené spoje - starý modul to tiskl [M]
 - **T3** Text omezení u značky je na vývěsce AD jiný než v linkovém AD, parita nedoložena [M]
 - **T4** Vysvětlivka téže značky zní v každé agendě jinak, překlep „částečne" [S]
-- **T5** Linkový MHD slije dvouřádkový nadpis skupiny dnů do jednoho řádku [M] **do 27. 10.**
 - **T6** Dopravce se tiskne v pěti tvarech („tel:" × „tel.", pořadí adresy v linkovém MHD) [S] **do 27. 10.**
 - **T7** „Jen nástup / jen výstup" chybí jen na vývěsce AD [S-M]
 - **T8** Zóny se počítají čtyřmi pravidly - doporučení neměnit, opravit komentář [S]
 - **T9** Oddělovač v legendě vývěsek je dlouhá pomlčka [S]
 - **T10** Pokračování spoje v linkovém AD je natvrdo česky i ve slovenské šabloně [S]
+- **T11** Vývěska AD má nadpisy skupin dnů natvrdo česky, starý tisk bral číselník firmy [S-M]
 
 ### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)
 
