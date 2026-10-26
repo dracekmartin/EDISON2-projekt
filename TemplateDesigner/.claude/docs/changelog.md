@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-26 (17) - přestup v legendě Zastávkového JŘ AD z číselníku firmy (`B194b` T4d)
+
+Zastávkový JŘ AD vysvětloval piktogram přestupu vlastním textem „přestup na autobus / vlak", Linkový
+JŘ AD větou z číselníku stálých značek firmy („zastávka s možností přestupu na linkovou dopravu",
+„…na železniční dopravu"), agendy MHD z číselníku atributů MHD. Starý zastávkový tisk přestupy netiskl,
+takže vzor je linkový. Teď i Zastávkový JŘ AD z číselníku (`ZastavkoveJrAd.TextPrestupuLegendy`), bez
+něj dosavadní „přestup na …" (rozhodnutí Jan 26. 10.). Řádek se dál objeví jen se zapnutou volbou
+Přestupy (vlak/autobus) u seznamu zastávek. Re-baseline zlatých odtisků 0365001, 0365005, 0330530:
+jen md5, počty shodné. Test `TestTextPrestupuLegendy`. Tím je celé T4 (vysvětlivky téže značky).
+
 ## 2026-10-26 (16) - překlep „částečne" pryč z obou agend AD (`B194b` T4b)
 
 Vysvětlivka částečně bezbariérového vozidla měla v Zastávkovém i Linkovém JŘ AD překlep „částečne"

@@ -650,7 +650,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
                 // Přestupy jdou do legendy zvlášť (kategorie „prestup") - piktogram autobusu/vlaku
                 // sám o sobě neřekne, co znamená. Šablona, která značku netiskne, si řádek schová
                 // render-time filtrem (stejně jako „× na znamení"), takže se nikomu neobjeví omylem.
-                i jePrestup { s prestupSeen(znak) = txtAtr } else { s atrSeen(znak) = txtAtr }
+                i jePrestup { s prestupSeen(znak) = ..TextPrestupuLegendy(dataDB, znak, txtAtr) } else { s atrSeen(znak) = txtAtr }
             }
         }
         // varianty časů (dynamické TrasaMin) - sloupce v pořadí displayVar, hodnota = průběh vybrané trasy
@@ -2526,12 +2526,12 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         d poznamky.%Push(..BuildPoznamka("text", znakPokr, pokrLegenda(znakPokr), "", "", "pokracovani"))
     }
     // přestupy - vlastní kategorie, aby si je šablona bez značky přestupu mohla schovat.
-    // Text z číselníku je jen „autobus" / „vlak", pro legendu z toho udělá větu „přestup na …".
+    // Hotová věta z TextPrestupuLegendy (číselník stálých značek firmy, jinak „přestup na …").
     s znak = ""
     f {
         s znak = $o(prestupSeen(znak))
         q:znak=""
-        d poznamky.%Push(..BuildPoznamka("specialni", znak, ..TextPrestupu()_prestupSeen(znak), "", "", "prestup"))
+        d poznamky.%Push(..BuildPoznamka("specialni", znak, prestupSeen(znak), "", "", "prestup"))
     }
     // atributy spoje - bezbariér (H) / částečně bezbariér (F). Při allBBP je „H" agregátní řádek
     // („všechny spoje…") → kategorie „bezbarier-agregat" (TD filtr ho umí skrýt, #7161 D6).
@@ -3283,6 +3283,16 @@ ClassMethod TextPrestupu() As %String
 {
     i ..Jazyk() = "sk" ret "prestup na "
     ret "přestup na "
+}
+
+/// Řádek legendy pro přestup u zastávky (`znak` A = autobus, L = vlak): věta z číselníku stálých
+/// značek firmy jako v Linkovém JŘ AD (`^JRSET("STALCOME",rec,"auto"/"vlak")`, např. „zastávka
+/// s možností přestupu na linkovou dopravu"), jinak „přestup na " + `druh` (text atributu).
+/// Starý zastávkový tisk přestupy netiskl, znění se proto bere z linkového (`B194` T4d, rozhodnutí Jan 26. 10.).
+ClassMethod TextPrestupuLegendy(dataDB As %String, znak As %String, druh As %String) As %String
+{
+    s txt = $g(^[dataDB]JRSET("STALCOME", $s(..Jazyk() = "sk":"*SK", 1:"CZ"), $case(znak, "A":"auto", "L":"vlak", :znak)))
+    q $s(txt '= "":txt, 1:..TextPrestupu()_druh)
 }
 
 ClassMethod TextSouhrnuNaZnameni() As %String

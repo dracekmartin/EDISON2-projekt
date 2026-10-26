@@ -46,6 +46,23 @@ Method TestVysvetlivkyVozidlaJakoLinkovy()
 	do $$$AssertTrue($classmethod(zast, "TextCastecneBezbarier") '[ "částečne ", "překlep „částečne""")
 }
 
+/// Přestup v legendě (`B194` T4d): věta z číselníku stálých značek firmy jako v Linkovém JŘ AD,
+/// bez ní „přestup na autobus / vlak".
+Method TestTextPrestupuLegendy()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill ^||TiskAd("jazyk")
+	for db = $namespace, "CB_CSADAD" {
+		continue:'##class(%SYS.Namespace).Exists(db)
+		for znak = "A", "L" {
+			set ciselnik = $get(^[db]JRSET("STALCOME", "CZ", $select(znak="A":"auto", 1:"vlak")))
+			set druh = $select(znak="A":"autobus", 1:"vlak")
+			set ocekavany = $select(ciselnik'="":ciselnik, 1:"přestup na "_druh)
+			do $$$AssertEquals($classmethod(cls, "TextPrestupuLegendy", db, znak, druh), ocekavany, db_" "_znak)
+		}
+	}
+}
+
 // ── Barvy spojů (B194 T2) ────────────────────────────────────────────────────
 /// Checkbox `TISKNOUT_BARVY_SPOJU` má přednost; bez něj platí třístav `BARVY_SPOJU`, který posílá
 /// starší návrhář u linkového JŘ - jinak by mu volba „Netisknout" po aktualizaci serveru přestala platit.
