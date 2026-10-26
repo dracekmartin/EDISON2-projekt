@@ -40,10 +40,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
   zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
-- **T8 Zóny se počítají čtyřmi pravidly** [S] (*ověřeno:* kód). Každé je parita se svým starým modulem
-  (`ZastavkoveJrAd.ZonyZastavky`, `LinkovyJrAd.BuildZastavkaRadek`, `LinkovyJrMhd.ZonyZastavky`,
-  vývěska MHD bez filtru IDS). Doporučení neměnit; opravit komentář `LinkovyJrMhd.cls:533-535`
-  („jako u zastávkového JŘ MHD" neplatí).
 - **T9 Oddělovač v legendě vývěsek je dlouhá pomlčka** [S] (*ověřeno:* kód). `zastavkovy-jr-ad.json:201`,
   `zastavkovy-jr-mhd.json:201` (znak U+2014), linkové šablony tři mezery, výchozí prvku „ - ". Pravidlo projektu
   dlouhou pomlčku zakazuje; parita se starým tiskem neověřena.
@@ -286,6 +282,10 @@ totéž znovu. Pořadí podle přínosu:
   JŘ AD krátká a napevno („na znamení", `ZastavkoveJrAd.TextAtributu`), Linkový JŘ AD ji bere z číselníku
   stálých značek firmy („zastávka je jen na znamení nebo požádání"), agendy MHD z číselníku atributů MHD
   (`T4c`). Starý zastávkový tisk měl „zastávka pouze na znamení".
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** zóny zastávky skládá každá agenda pravidlem svého starého
+  modulu (`T8`): Zastávkový AD z trasy linky se záskokem na registr (`ZonyZastavky`), Linkový AD jen z trasy
+  a „-" (`BuildZastavkaRadek`), Zastávkový MHD všechny zóny bez filtru systému, Linkový MHD jen systém
+  linky spojené „/" (`ZonyZastavky`). Rozdíl je vidět jen u zastávek se zónou mimo trasu nebo ve dvou IDS.
 
 - Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (od 26. 10. i typy provozu, `SkupinyParametruTest`);
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,

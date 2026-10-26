@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T8** Zóny - vědomý rozdíl, každá agenda drží pravidlo svého starého modulu (rozhodnutí Jan 26. 10.;
+  `konzistence-agend-jr.md` §8), opravený zavádějící komentář v `LinkovyJrMhd.ZonyZastavky`.
 - **T4d** Přestup v legendě Zastávkového JŘ AD z číselníku stálých značek firmy jako Linkový JŘ AD,
   bez něj „přestup na autobus / vlak" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (17)). Tím je T4 celé.
 - **T4c** „Na znamení" - vědomý rozdíl: Zastávkový JŘ AD krátce napevno, Linkový JŘ AD z číselníku firmy

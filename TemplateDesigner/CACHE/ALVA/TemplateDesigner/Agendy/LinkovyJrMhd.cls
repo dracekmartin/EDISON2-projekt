@@ -533,8 +533,9 @@ ClassMethod BuildZastavkaRadek(bodVeta As %List, typ As %String, poradi As %Inte
 }
 
 /// Zóny zastávky v integrovaném systému linky (ENUMS Zony ZonaIDSID = IDSID linky), víc zón
-/// spojených „/" jako u zastávkového JŘ MHD. ⚠️ Vědomě jinak než starý tisk, který bere jen poslední
-/// zónu (legacy :353-358): hraniční zastávka patří do obou zón a cestující to má vidět (Jan 22. 10.).
+/// spojených „/". ⚠️ Vědomě jinak než starý tisk, který bere jen poslední zónu (legacy :353-358):
+/// hraniční zastávka patří do obou zón a cestující to má vidět (Jan 22. 10.). Zastávkový JŘ MHD
+/// systém nefiltruje a posílá všechny zóny zastávky - každá agenda drží svůj starý modul (`B194` T8).
 ClassMethod ZonyZastavky(IdFa As %String, dataDB As %String, zastavkaId As %String, idsId As %String) As %String
 {
     s zony = "", c = ""
