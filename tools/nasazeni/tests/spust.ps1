@@ -272,6 +272,13 @@ try {
     $tridy = Join-Path $koren 'tridy'; Set-Text (Join-Path $tridy 'ALVA.MOD.A.cls') "Class ALVA.MOD.A`r`n{`r`n///    moje  `r`n}`r`n"
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-PorovnejTridy', $tridy, '-Nastaveni', $nast)
     Test-Plati ($r.Kod -eq 0) 'trida z DEV se lisi od HEAD jen mezerami za ///'
+    Set-Text (Join-Path $tridy 'ALVA.MOD.A.cls') "Class ALVA.MOD.A`r`n`r`n{`r`n`r`n/// moje`r`n`r`n}`r`n"
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-PorovnejTridy', $tridy, '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -eq 0) 'trida z DEV se lisi od HEAD jen prazdnymi radky, ktere vlozila Cache'
+    Set-Text (Join-Path $tridy 'OBapi.int') "`r`nROUTINE OBapi`r`n"
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-PorovnejTridy', $tridy, '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -eq 1 -and ($r.Vystup -join ' ') -match 'OBapi\.int') 'rutina lisici se jen prazdnym radkem se ohlasi (v rutine prazdny radek meni chovani)'
+    Remove-Item -LiteralPath (Join-Path $tridy 'OBapi.int')
     Set-Text (Join-Path $tridy 'ALVA.MOD.A.cls') "Class ALVA.MOD.A`n{`n/// cizi`n}`n"
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-PorovnejTridy', $tridy, '-Nastaveni', $nast)
     Test-Plati ($r.Kod -eq 1) 'jina trida na DEV se ohlasi'

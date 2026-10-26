@@ -458,8 +458,11 @@ function Get-UzlyStromu([string]$Text) {
 
 # --- Tridy Cache -------------------------------------------------------------------------------
 
-function ConvertTo-PorovnatelnaTrida([string]$Text) {
-    $radky = ($Text.TrimStart([char]0xFEFF) -split "`r?`n") | ForEach-Object { ($_ -replace '^(\s*///)\s+', '$1 ').TrimEnd() }
+# Cache pri ulozeni tridy vklada prazdne radky mezi // komentare mimo metody a mezeru za ///. Prazdne radky
+# vynechava jen u tridy (-BezPrazdnych): v rutine je cte $t(label+i) a prazdny radek meni chovani.
+function ConvertTo-PorovnatelnaTrida([string]$Text, [switch]$BezPrazdnych) {
+    $radky = ($Text.TrimStart([char]0xFEFF) -split "`r?`n") | ForEach-Object { ($_ -replace '^(\s*///)\s+', '$1 ').TrimEnd() } |
+        Where-Object { $_ -or -not $BezPrazdnych }
     return (($radky -join "`n").TrimEnd())
 }
 

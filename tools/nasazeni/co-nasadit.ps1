@@ -57,13 +57,15 @@ if ($PorovnejTridy) {
             if ($nalez.Count -gt 0) { $cesta = $nalez[0]; $repoTridy = $r; break }
         }
         if (-not $cesta) { [pscustomobject]@{ trida = $trida; shoda = $false; duvod = 'neni v gitu' }; continue }
-        $git = ConvertTo-PorovnatelnaTrida (Get-GitText $repa[$repoTridy] 'HEAD' $cesta)
-        $dev = ConvertTo-PorovnatelnaTrida ([IO.File]::ReadAllText($f.FullName, (New-Object Text.UTF8Encoding($false))))
+        $git = ConvertTo-PorovnatelnaTrida (Get-GitText $repa[$repoTridy] 'HEAD' $cesta) -BezPrazdnych:$jeTrida
+        $dev = ConvertTo-PorovnatelnaTrida ([IO.File]::ReadAllText($f.FullName, (New-Object Text.UTF8Encoding($false)))) -BezPrazdnych:$jeTrida
         $duvod = ''
         if ($git -ne $dev) {
             $a = $git -split "`n"; $b = $dev -split "`n"; $i = 0
             while ($i -lt [Math]::Min($a.Count, $b.Count) -and $a[$i] -eq $b[$i]) { $i++ }
-            $duvod = "prvni rozdil na radku $($i + 1)"
+            # Cislo radku po vynechani prazdnych v souboru nesedi, text radku jde najit.
+            $radek = if ($i -lt $a.Count) { $a[$i].Trim() } else { '(konec)' }
+            $duvod = "prvni rozdil v gitu u radku: $($radek.Substring(0, [Math]::Min(80, $radek.Length)))"
         }
         [pscustomobject]@{ trida = $trida; repo = $repoTridy; cesta = $cesta; shoda = ($git -eq $dev); duvod = $duvod }
     }
