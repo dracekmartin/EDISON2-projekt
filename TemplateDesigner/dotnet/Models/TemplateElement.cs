@@ -336,7 +336,7 @@ public abstract class TemplateElement
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
                 Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
         new FloatPropertyDescriptor { Label = "Rotace",  Group = PositionGroup, Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
-        new FloatPropertyDescriptor { Label = "ZIndex",  Group = PositionGroup, Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
+        new FloatPropertyDescriptor { Label = "Vrstva",  Group = PositionGroup, Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
         new BoolPropertyDescriptor  { Label = "Uzamčeno", Group = PositionGroup, Get = () => IsLocked, Set = v => IsLocked = v },
 
         new ColorPropertyDescriptor { Label = "Barva rámečku", Group = BorderGroup, Get = () => BorderColor, Set = v => BorderColor = v },

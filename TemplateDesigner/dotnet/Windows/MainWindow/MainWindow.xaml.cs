@@ -261,7 +261,7 @@ public partial class MainWindow : Window
         InlinePropertiesPanel.SetContext(
             cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
-        InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
+        InlinePropertiesPanel.ShowMessage("Vyberte element na plátně");
 
         // Template tree panel - SetContext
         TreePanel.SetContext(
@@ -1609,7 +1609,7 @@ public partial class MainWindow : Window
         if (_vm is null) return;
         if (_vm.State.ActiveSection is null)
         {
-            _vm.PopupDisplayer.Info("Nejprve vyberte sekci kliknutím v levém panelu nebo na canvasu.");
+            _vm.PopupDisplayer.Info("Nejprve vyberte sekci kliknutím v levém panelu nebo na plátně.");
             return;
         }
 
@@ -2284,7 +2284,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
+            InlinePropertiesPanel.ShowMessage("Vyberte element na plátně");
             FormatToolbar.ShowDescriptors(null);
             ShowInlineFormPanel(false);
         }

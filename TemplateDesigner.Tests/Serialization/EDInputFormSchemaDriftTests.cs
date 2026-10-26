@@ -693,6 +693,7 @@ public class EDInputFormSchemaDriftTests
         "Nahoru",           // → Nahoře (zarovnání je stav, ne pohyb)
         "Dolů",             // → Dole
         "Pokročilé",        // skupina → Podmínky
+        "ZIndex",           // → Vrstva (rozhodnutí Jan 2026-10-26, `B194` E7)
     ];
 
     /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive). Sdílené s

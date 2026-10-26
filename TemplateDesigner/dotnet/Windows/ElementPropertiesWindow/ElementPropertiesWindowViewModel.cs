@@ -721,7 +721,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             },
             new FloatPropertyDescriptor
             {
-                Label = "ZIndex", Group = "Pozice",
+                Label = "Vrstva", Group = "Pozice",
                 Get = () => first.ZIndex,
                 Set = v => { foreach (var el in elements) el.ZIndex = (int)Math.Round(v); },
                 Min = 0, Max = 100, Format = "0"

@@ -348,7 +348,7 @@ ho aplikuje na vybrané prvky.
 
 ### Hromadné úpravy
 Výběr více prvků + **Enter** otevře dialog společných vlastností: Barva rámečku, Tloušťka rámečku,
-Pořadí vrstvy (ZIndex), Uzamčeno - změna se aplikuje na všechny vybrané najednou.
+Vrstva, Uzamčeno - změna se aplikuje na všechny vybrané najednou.
 
 ### Normalizace pozic
 **Ctrl+Shift+N** - dialog s volbou kroku zaokrouhlení (0,1 / 0,5 / 1 / 2 / 5 mm) a živým náhledem
@@ -620,7 +620,7 @@ operaci).
 - **Šipky** - Posun prvku o 1 mm
 - **Ctrl+šipky** - Posun o velikost mřížky (podle volby v liště)
 - **Shift+šipky** - Změna velikosti prvku o 1 mm; mění se pravá a dolní hrana, levý horní roh
-  zůstává na místě. U prvku, jehož výšku počítá engine z dat, jde měnit jen šířka
+  zůstává na místě. U prvku, jehož výška se počítá podle obsahu, jde měnit jen šířka
 - **Ctrl+Shift+C / Ctrl+Shift+V** - Kopírovat / Vložit styl
 - **Delete** - Smazat výběr
 - **Ctrl+A** - Vybrat vše v aktivní sekci

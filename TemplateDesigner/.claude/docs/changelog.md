@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-26 (30) - „Vrstva", „podle obsahu", „plátno" (`B194d` E7, část)
+
+Rozhodnutí Jan 26. 10.: pole „ZIndex" (společná pole každého prvku, panel i společné vlastnosti víc prvků,
+krok zpět „Změna: ZIndex") je **„Vrstva"** s nápovědou „Vyšší vrstva leží nad nižší"; nápověda výšky
+„Prázdné = dynamická výška (počítá engine)" → „Prázdné = výška se počítá podle obsahu", hláška při
+Shift+šipce u prvku s výškou z dat stejně; „canvas" → „plátno" („Vyberte element na plátně"). Kanon §8
+má tři nové řádky, „ZIndex" je mezi zakázanými popisky. Test `VelikostKlavesniciTests` hledal v hlášce
+„z dat" - přepsán na „podle obsahu". Ověřeno voláním `Init` formuláře obdélníku. Příručka (seed) upravená.
+Sjednocení „element" × „prvek" čeká na Janovo potvrzení rozsahu (Jan preferuje „element").
+
 ## 2026-10-26 (29) - „Zarovnání vodorovně / svisle" všude (`B194d` E6)
 
 Společná sada stylu (`StyleFields.cls`, všechny prvky se stylem buněk i okno stylu) měla dvojici

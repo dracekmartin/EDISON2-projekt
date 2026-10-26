@@ -3042,7 +3042,7 @@ public class TemplateDesignerViewModel : EDViewModel
             foreach (var el in selected.OrderBy(e => e.ZIndex))
             {
                 int oldZ = el.ZIndex, newZ = baseZ++;
-                if (oldZ != newZ) commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
+                if (oldZ != newZ) commands.Add(new SetPropertyCommand("Vrstva", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
         else if (toExtreme && sign < 0)
@@ -3051,13 +3051,13 @@ public class TemplateDesignerViewModel : EDViewModel
             foreach (var el in section.Elements.Where(e => !selected.Contains(e)))
             {
                 int oldZ = el.ZIndex, newZ = oldZ + shift;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
+                commands.Add(new SetPropertyCommand("Vrstva", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
             int z = 0;
             foreach (var el in selected.OrderBy(e => e.ZIndex))
             {
                 int oldZ = el.ZIndex, newZ = z++;
-                if (oldZ != newZ) commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
+                if (oldZ != newZ) commands.Add(new SetPropertyCommand("Vrstva", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
         else
@@ -3065,7 +3065,7 @@ public class TemplateDesignerViewModel : EDViewModel
             foreach (var el in selected)
             {
                 int oldZ = el.ZIndex, newZ = Math.Max(0, oldZ + sign);
-                if (oldZ != newZ) commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
+                if (oldZ != newZ) commands.Add(new SetPropertyCommand("Vrstva", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
 
@@ -3346,7 +3346,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (dh != 0f && cile.All(el => el.Height is null))
         {
             StatusText = cile.Count == 1
-                ? "Výšku tohoto prvku počítá engine z dat - zadejte ji v jeho vlastnostech, nebo měňte šířku."
+                ? "Výška tohoto prvku se počítá podle obsahu - zadejte ji v jeho vlastnostech, nebo měňte šířku."
                 : "Vybrané prvky mají výšku z dat - svisle je zvětšit nejde.";
             return;
         }

@@ -64,13 +64,13 @@ ClassMethod AddPosition(form As ALVA.EDControls.EDInputForm.Form, defWidth As %S
     d form.AddDecimal("Width", "Šířka", defWidth, widthMin, "", "mm", "", 1)
     i defHeight = "" {
         s f = form.AddDecimal("Height", "Výška", "", 0, "", "mm")
-        s f.helpText = "Prázdné = dynamická výška (počítá engine)"
+        s f.helpText = "Prázdné = výška se počítá podle obsahu"
     } else {
         d form.AddDecimal("Height", "Výška", defHeight, 1, "", "mm", "", heightRequired)
     }
     d form.AddDecimal("Rotation", "Rotace", 0, -360, 360, "°")
-    s f = form.AddNumber("ZIndex", "ZIndex", 0, 0, 100)
-    s f.helpText = "Pořadí vrstev (vyšší = nad nižším)"
+    s f = form.AddNumber("ZIndex", "Vrstva", 0, 0, 100)
+    s f.helpText = "Vyšší vrstva leží nad nižší"
     s f = form.AddBool("IsLocked", "Uzamčeno", 0)
     s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
 }

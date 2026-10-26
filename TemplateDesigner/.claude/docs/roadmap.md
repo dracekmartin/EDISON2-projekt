@@ -48,7 +48,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   dnů" / „Řádky", kanon chce „Obecné")
 - **E5** Seznam zastávek nabízí v MHD sloupek, varianty tras a „Více stanovišť", které existují jen v AD [M] -
   **odloženo** (Jan 26. 10.); návrh: nabídka podle polí, která agenda posílá, zapnutý sloupec zůstane vidět
-- **E7** „Element" × „prvek", „ZIndex" × „Vrstva", „engine" [M] **Jan**
+- **E7** „Element" × „prvek" - zbývá sjednotit; Jan chce „element", čeká na potvrzení rozsahu (prvek ~80 textů
+  + 103× příručka, element ~45 + 7×) [M] **Jan**. Vrstva, „podle obsahu", „plátno" hotové
 - **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan**
 - **E9** Minuty odjezdů a Tabulka spojů pojmenovávají mezery a poměry jinak [S] **Jan**
 - **E10** Aktuální zastávka v Seznamu zastávek: zkratky, „Tučně", „Zvýraznění" [S]
