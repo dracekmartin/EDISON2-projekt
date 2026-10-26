@@ -50,6 +50,15 @@ ClassMethod KlicPoznamky(druh As %String, znak As %String, text As %String) As %
 	quit druh_"~"_znak_"~"_$extract(t, 1, 180)_"… (délka "_$length(t)_")"
 }
 
+/// **Vědomá odchylka** (`B194` T3b, rozhodnutí Jan 26. 10.): starý linkový tisk spojuje data omezení
+/// čárkou bez mezery, my čárkou s mezerou jako starý zastávkový tisk. Text starého tisku se proto před
+/// porovnáním převede na náš tvar - zbytek věty se dál porovnává doslova. Jen poznámky druhu 2
+/// (omezení), jinde čárka patří k textu zákazníka.
+ClassMethod OddelovacDat(text As %String) As %String
+{
+	quit ..Norm($replace(text, ",", ", "))
+}
+
 /// Je starý modul na tomto serveru vůbec k dispozici?
 ClassMethod OracleDostupny() As %Boolean
 {
@@ -179,6 +188,7 @@ ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As
 					quit:ti=""
 					set text = text _ $select(text="":"", 1:" ") _ $get(@glb@(idobj, "dta", pi, "txt", ti))
 				}
+				if druh = 2 set text = ..OddelovacDat(text)
 				set klic = ..KlicPoznamky(druh, znak, text)
 				set n("pozn", klic) = $get(n("pozn", klic)) + 1
 			}

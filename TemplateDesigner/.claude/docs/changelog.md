@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-26 (11) - čárka s mezerou mezi daty omezení i v Linkovém JŘ AD (`B194b` T3b)
+
+Linkový JŘ AD psal „nejede 24.12.22,31.12.22" (tvar starého linkového tisku), Zastávkový JŘ AD
+„nejede 24.12.22, 31.12.22" (tvar starého zastávkového tisku). Teď obě agendy čárkou s mezerou
+(`LinkovyJrAd.FormatDatumyOmezeni`), dlouhý výčet dat se líp čte (rozhodnutí Jan 26. 10.). Vědomá
+odchylka od starého linkového tisku: oracle (`LinkovyJrLegacyOracle.OddelovacDat`) i test dat
+(`LinkovyJrAdDatumyTest`) převádějí starý text na nový tvar a zbytek věty porovnávají doslova -
+CB_CSADAD 0330510 dál 43/43. Re-baseline zlatých odtisků 0330510, 0330511, 0410107: jen md5, počty
+shodné. Legenda Linkového JŘ AD je u dlouhých výčtů o znak za každým datem delší.
+
 ## 2026-10-26 (10) - 📅 liché a sudé týdny i v Zastávkovém JŘ AD (`B194b` T3a)
 
 Spoj s platností „jen v lichých / sudých týdnech" (hlava:8 = 5 / 4) neměl v Zastávkovém JŘ AD ani

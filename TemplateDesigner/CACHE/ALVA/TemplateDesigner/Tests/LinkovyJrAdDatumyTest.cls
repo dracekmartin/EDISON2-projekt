@@ -52,7 +52,9 @@ Method TestDatumyJakoStaryTisk()
 			set legacy = ""
 			set ok = $$gComOddO^JRapiNZUtl2("", db, rec, vzor, .legacy, .set)
 			set nas = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).FormatDatumyOmezeni(vzor, rezim)
-			do $$$AssertEquals(nas, $zstrip(legacy, "<>W"), "režim "_rezim_", "_vzor_": náš „"_nas_""" × starý „"_legacy_"""")
+			// mezera za čárkou je vědomá odchylka (T3b), viz LinkovyJrLegacyOracle.OddelovacDat
+			set ocekavany = ##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).OddelovacDat(legacy)
+			do $$$AssertEquals(nas, ocekavany, "režim "_rezim_", "_vzor_": náš „"_nas_""" × starý „"_legacy_"""")
 		}
 	}
 }

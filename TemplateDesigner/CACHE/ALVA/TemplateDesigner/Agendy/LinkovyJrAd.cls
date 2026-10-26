@@ -2252,8 +2252,12 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
 }
 
 /// Datumová část omezení jako starý tisk (`JRapiNZUtl2.mac` gComOddO :197-222): položky (`#`) spojené
-/// ",", rozsah `od:do` → "od D1 do D2" (úvodní mezera kromě první položky); shodné nebo chybějící
-/// „do" = jedno datum. Datumy dle režimu TiskDtm (viz ..TiskDtm a ..UpravDatum).
+/// ", ", rozsah `od:do` → "od D1 do D2"; shodné nebo chybějící „do" = jedno datum. Datumy dle režimu
+/// TiskDtm (viz ..TiskDtm a ..UpravDatum).
+///
+/// Vědomě jinak: starý linkový tisk spojuje data čárkou bez mezery („24.12.22,31.12.22", mezeru má
+/// jen před „od"). Čárka s mezerou je tvar starého zastávkového tisku a Zastávkového JŘ AD - obě
+/// agendy AD tak píšou totéž a dlouhý výčet se líp čte (`B194` T3b, rozhodnutí Jan 26. 10.).
 ClassMethod FormatDatumyOmezeni(omz As %String, tiskDtm As %Integer) As %String
 {
     s data = $s(omz["@":$p(omz,"@",2), 1:omz)
@@ -2266,9 +2270,9 @@ ClassMethod FormatDatumyOmezeni(omz As %String, tiskDtm As %Integer) As %String
         else {
             // režim 2: „od" bez roku, jen když je rok stejný jako u „do" (do 26. 10. vždy a u obou)
             i (tiskDtm = 2) && ($p(od,".",3) = $p(do,".",3)) s od = $p(od,".",1,2)_"."
-            s cast = $s(casti="":"", 1:" ")_"od "_od_" do "_do
+            s cast = "od "_od_" do "_do
         }
-        i casti '= "" s casti = casti_","
+        i casti '= "" s casti = casti_", "
         s casti = casti_cast
     }
     q casti
