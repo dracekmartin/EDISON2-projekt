@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-26 (14) - pořadí typů omezení v Zastávkovém JŘ AD jako starý tisk (`B194b` T3e)
+
+Spoj s víc typy omezení skládal Zastávkový JŘ AD v pořadí „jede jen", „jede také", „jede"; starý
+zastávkový tisk i Linkový JŘ AD mají „jede" (základní období), „jede také", „jede jen", pak sudé / liché
+týdny a „nejede" (`gComNZLiSp`). Teď i Zastávkový. Týká se spojů s víc typy zároveň (VS_CSAD 4 258,
+CB_CSADAD 85, CB_GWBUS 36, ZL_KOVED 1; sonda `PoradiOmezeniVyskyt`). Oracle `TestTextyOmezeniProtiLegacy`
+rozšířen o CB_CSADAD 997/0370702 (značka 12 „jede od … , jede také …"). **T3 je celé**: text omezení
+skládají obě agendy AD stejně (oddělovač, rok, předložky, pořadí, sudé / liché týdny) a Zastávkový JŘ AD
+se shoduje se starým zastávkovým tiskem na šesti linkách.
+
 ## 2026-10-26 (13) - předložky omezení z číselníku i v Zastávkovém JŘ AD (`B194b` T3d)
 
 Zastávkový JŘ AD měl předložky textu omezení napevno, u omezení „v sudých / lichých týdnech od-do"

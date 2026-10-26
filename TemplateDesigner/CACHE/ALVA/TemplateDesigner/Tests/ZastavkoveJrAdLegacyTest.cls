@@ -798,11 +798,12 @@ ClassMethod LegacyStrankaProbe(ByRef sys As %String) As %Status
 /// 26. 10. ho Zastávkový JŘ AD vynechával, i když starý tisk i Linkový JŘ AD ho mají). Rok podle
 /// nastavení firmy (T3c): CB_GWBUS 216/0125850 bez roku, KV_DP 0410107 celý rok. Předložky z číselníku
 /// firmy (T3d): CB_CSADAD 990/0680731 „jede jen v sudých týdnech od …" (dřív zkratka „v su.") - ta je
-/// až na pozdější stránce, hledá se podle textu starého tisku.
+/// až na pozdější stránce, hledá se podle textu starého tisku. Pořadí typů (T3e): CB_CSADAD 997/0370702
+/// „jede od … , jede také …" (dřív „jede také" první).
 Method TestTextyOmezeniProtiLegacy()
 {
 	set overeno = 0, nalezy = ""
-	for pripad = "CB_CSADAD~1~0330510", "CB_GWBUS~216~0103942", "CB_GWBUS~216~0125850", "KV_DP~1~0410107", "CB_CSADAD~990~0680731~sudých týdnech od" {
+	for pripad = "CB_CSADAD~1~0330510", "CB_GWBUS~216~0103942", "CB_GWBUS~216~0125850", "KV_DP~1~0410107", "CB_CSADAD~990~0680731~sudých týdnech od", "CB_CSADAD~997~0370702~12.12.20, jede také" {
 		set db = $piece(pripad,"~",1), sku = $piece(pripad,"~",2), lin = $piece(pripad,"~",3), hledany = $piece(pripad,"~",4)
 		set page = 1
 		if hledany '= "" {

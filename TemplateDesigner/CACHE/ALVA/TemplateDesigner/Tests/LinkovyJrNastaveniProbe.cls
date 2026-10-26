@@ -2298,6 +2298,47 @@ ClassMethod OmezeniSudeLiche(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Spoje, u kterých záleží na pořadí typů omezení ve větě (`B194` T3e): mají aspoň dva z „jede jen" (11),
+/// „jede také" (12) a „jede" (13) - jen ty Zastávkový JŘ AD (11, 12, 13) a starý tisk (13, 12, 11) skládají
+/// jinak. Příklad = poslední nalezený spoj `skupina/linka/směr/spoj`.
+ClassMethod PoradiOmezeniVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set spoju = 0, priklad = "", sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					for smer = "T", "Z" {
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set typu = ($data(^[db]JRL(sku, lin, smer, sp, 11))>0) + ($data(^[db]JRL(sku, lin, smer, sp, 12))>0) + ($data(^[db]JRL(sku, lin, smer, sp, 13))>0)
+							continue:typu<2
+							set spoju = spoju + 1, priklad = sku_"/"_lin_"/"_smer_"/"_sp
+						}
+					}
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": spojů "_spoju_"; příklad "_priklad
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Barevné spoje po firmách (`B194` T2): kolik linek má aspoň jeden spoj s barvou (jinou než černou,
 /// pole `#12` = legacy `dta38`) a kolik z nich má u linky barvy vypnuté (`PATCH,barevnyTiskSpoju` = 1,
 /// starý linkový JŘ pak tiskne černě - `JRapiLinPrtWin.mac:2085-2102`; starý vývěskový tisk nastavení

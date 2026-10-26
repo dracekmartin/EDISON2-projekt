@@ -2670,13 +2670,15 @@ ClassMethod TextAtributu(znak As %String) As %String
     q $g(m(znak))
 }
 
-/// Sestaví text poznámky z datumových omezení spoje (omzId 11-15, 22), 1:1 s legacy `txtNZ^JRapiNZUtl`.
-/// Spoj může mít víc omezení → spojí je do jedné poznámky čárkou v pořadí 11,12,13,14,15,22.
-/// Na začátku věta o lichých / sudých týdnech jako v Linkovém JŘ AD (`TextTydnuPlatnosti`).
+/// Sestaví text poznámky z datumových omezení spoje (omzId 11-15, 22) jako starý zastávkový tisk
+/// (`gComNZLiSp`, `JRapiNZUtl2.mac:110-131`, volá ho `JRapiLinPrtMhd1.mac:154`): na začátku věta
+/// o lichých / sudých týdnech (`TextTydnuPlatnosti`), pak omezení spojená čárkou v pořadí
+/// 13, 12, 11, 14, 15, 22 - základní období „jede", pak „jede také", „jede jen", nakonec „nejede".
+/// Totéž pořadí má Linkový JŘ AD; do 26. 10. tu bylo 11, 12, 13 (`B194` T3e).
 ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String) As %String
 {
     s txt = ..TextTydnuPlatnosti(dataDB, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8))
-    f omzId = 11,12,13,14,15,22 {
+    f omzId = 13,12,11,14,15,22 {
         s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
         i omz = "" continue
         s datumy = ..FormatDatumyOmezeni(omz, ..TiskDtm(dataDB, sku, lin))
