@@ -83,7 +83,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Velikost je u tabulky rozměrová volba, ne kosmetika: nese výšku řádku i šířku sloupce
         // spoje. Prázdné pole = dědí se (kaskáda dá 9 pt), per-sloupcová velikost z dialogu vyhrává.
         s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", 9, 3, 24, "pt", "0.#")
-        s f.helpText = "Písmo záhlaví celého prvku. Jednotlivému sloupci se dá přebít v tabu Sloupce."
+        s f.helpText = "Písmo záhlaví celého prvku. Jednotlivému sloupci se dá přebít v záložce Sloupce."
         // Bez výchozí hodnoty - podbarvení nese prvek sám, prázdno znamená bez podbarvení.
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)

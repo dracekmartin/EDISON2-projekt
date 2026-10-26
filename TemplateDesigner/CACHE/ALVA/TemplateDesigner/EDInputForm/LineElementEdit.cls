@@ -42,10 +42,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "Solid"
 
         s f = form.AddDecimal("CustomDashMm", "Délka čárky", "", 0.1, 20, "mm")
-        s f.helpText = "Prázdné = výchozí (Dashed=3mm, Dotted=1mm)"
+        s f.helpText = "Prázdné = výchozí (čárkovaná 3 mm, tečkovaná 1 mm)"
 
         s f = form.AddDecimal("CustomGapMm", "Délka mezery", "", 0.1, 20, "mm")
-        s f.helpText = "Prázdné = výchozí (Dashed=2mm, Dotted=1.5mm)"
+        s f.helpText = "Prázdné = výchozí (čárkovaná 2 mm, tečkovaná 1,5 mm)"
 
         // ── Base pole (čára nemá plochu → bez rohů; nulová šířka je u svislé legitimní) ────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form, 0)

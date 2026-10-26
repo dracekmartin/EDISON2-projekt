@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-26 (41) - texty nápověd: vykání a srozumitelné výrazy (`B194d` E15)
+
+Rozhodnutí Jan 26. 10.: **vykání všude** („Nahrajte obrázek", „vyberte nebo napište font", „Vyplněním ji
+přepíšete", „napište \n nebo stiskněte Enter"); **technické výrazy po uživatelsku** - „dědit od rodiče" →
+„převezme se z nadřazeného stylu" (editor stylu buňky, okno stylu, reset), „padding zdola" → „vnitřní okraj
+dole" (jako pole ve formuláři), Čára „Dashed=3mm, Dotted=1mm" → „čárkovaná 3 mm, tečkovaná 1 mm" (i délka
+mezery), „tab Obecné / Sloupce" → „záložka", Tabulka z dat „mapování Field" → „Použijte názvy polí ze sloupců";
+překlep „pohledna" v nápovědě F1 (chyběla mezera mezi spojenými texty); dlouhé pomlčky v komentářích
+`App.xaml.cs` → „-". Pokyny pro asistenta (tykají záměrně) beze změny. Ověřeno voláním `Init` formulářů
+Obrázku, Čáry a Tabulky z dat.
+
 ## 2026-10-26 (40) - Tabulka spojů bez interních polí zdrojů dat (`B194d` E14)
 
 Formulář Tabulky spojů měl ve skupině Podmínky „Kolekce zastávek / spojů / skupin dnů" s hodnotami

@@ -52,7 +52,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   (Jan 26. 10.); návrh: vysvětlivka z popisku do nápovědy, rozsahy na nejširší (výška řádku 1-50 mm, písmo 3-200 pt)
 - **E13** Dialogy sloupců - zbývá c (jedna společná komponenta oken se sloupci, přestavba) - **odloženo**
   spolu s E3 [M]
-- **E15** Texty nápověd: tykání, „engine", „padding", překlep v Nápovědě F1 [S]
 - **E16** Drobnosti: „Rozměry a mřížka", dvojí „Mřížka", stejná ikona dvou prvků [S]
 
 ### `B194e` Aplikace a dokumentace

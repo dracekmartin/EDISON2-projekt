@@ -119,9 +119,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   (38), (39)); (b) uzavřeno bez změny - v Tabulce spojů se zadávají jen popisné sloupce, šířku spojů
   dopočítá tabulka, „Přizpůsobit" by spojům vzalo místo. Zbývá (c) sloučení do sdíleného `ColumnListEditor`
   (odloženo s E3).
-- **E15 Texty nápověd** [S]. Tykání vedle vykání (`ImageElementEdit`, `CellStyleEditor`, `StyleEditDialog`,
-  dva dialogy sloupců), „engine", „padding", „dědit od rodiče", „Dashed=3mm", v F1 „pohledna definici"
-  a cesty, které v UI nejsou. Dlouhá pomlčka v komentářích `App.xaml.cs:17, 210`.
 - **E16 Drobnosti** [S]. Skupina „Rozměry a mřížka" bez mřížky; „Mřížka" znamená čáry tabulky i pomocnou
   mřížku lišty; barva negativní značky dvěma popisky; Tabulka spojů má ikonu Seznamu zastávek.
 
@@ -153,7 +150,7 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   u dopravce, číslo stanoviště podle); cesta ve stromu EDISONu (:12) není ani v `prirucka-it.md`.
 - **H2 Nápověda F1** [S]. `HelpDialogViewModel.BuildContent`: štítek „Instance" (:96), import PDF v menu
   Nástroje, který běžný uživatel nemá (:116), „linkový a knižní JŘ" jako dvě sestavy (:244, :308,
-  `CapabilityCatalog.cs:327`), „pohledna" (:301).
+  `CapabilityCatalog.cs:327`) („pohledna" opraveno v E15).
 
 ## 6. Pojistky - testy, které by tyto nálezy chytily
 

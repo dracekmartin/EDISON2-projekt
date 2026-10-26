@@ -20,7 +20,7 @@
             <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Caption}"/>
             <Setter Property="Margin" Value="2,0,0,0"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="ToolTip" Value="Resetovat na zděděnou hodnotu (dědit od rodiče)"/>
+            <Setter Property="ToolTip" Value="Vrátit hodnotu z nadřazeného stylu"/>
             <Setter Property="Command" Value="{Binding ResetFieldCommand}"/>
         </Style>
 
@@ -62,7 +62,7 @@
                 <ComboBox x:Name="FontFamilyBox"
                           IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True"
                           ItemsSource="{Binding FontFamilyOptions, ElementName=Root}"
-                          ToolTip="Prázdné = dědit od rodiče; vyber nebo napiš font"
+                          ToolTip="Prázdné = převezme se z nadřazeného stylu; vyberte nebo napište font"
                           Text="{Binding FontFamily, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                 <TextBlock Style="{StaticResource InheritedPlaceholder}"
                            Text="{Binding Inherited.FontFamily}"
@@ -95,7 +95,7 @@
             <Grid Grid.Column="1" Width="70" HorizontalAlignment="Left">
                 <ComboBox x:Name="FontSizeBox"
                           IsEditable="True"
-                          ToolTip="Prázdné pole = dědit od rodiče"
+                          ToolTip="Prázdné = převezme se z nadřazeného stylu"
                           ItemsSource="{Binding FontSizeOptions, ElementName=Root}"
                           Text="{Binding FontSize, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                 <TextBlock Style="{StaticResource InheritedPlaceholder}"
@@ -269,7 +269,7 @@
             <TextBlock Grid.Column="0" Text="Vnitřní okraj (mm):" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <TextBlock Text="↑" VerticalAlignment="Center" Margin="0,0,2,0"
-                           ToolTip="Posune text nahoru (padding zdola)"/>
+                           ToolTip="Posune text nahoru (vnitřní okraj dole)"/>
                 <Grid Width="45" Margin="0,0,6,0">
                     <TextBox x:Name="PadUp"
                              Text="{Binding PaddingBottom, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
@@ -278,7 +278,7 @@
                                Visibility="{Binding Text, ElementName=PadUp, Converter={StaticResource NullToVis}}"/>
                 </Grid>
                 <TextBlock Text="→" VerticalAlignment="Center" Margin="0,0,2,0"
-                           ToolTip="Posune text doprava (padding zleva)"/>
+                           ToolTip="Posune text doprava (vnitřní okraj vlevo)"/>
                 <Grid Width="45" Margin="0,0,6,0">
                     <TextBox x:Name="PadRightward"
                              Text="{Binding PaddingLeft, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
@@ -287,7 +287,7 @@
                                Visibility="{Binding Text, ElementName=PadRightward, Converter={StaticResource NullToVis}}"/>
                 </Grid>
                 <TextBlock Text="↓" VerticalAlignment="Center" Margin="0,0,2,0"
-                           ToolTip="Posune text dolů (padding shora)"/>
+                           ToolTip="Posune text dolů (vnitřní okraj nahoře)"/>
                 <Grid Width="45" Margin="0,0,6,0">
                     <TextBox x:Name="PadDown"
                              Text="{Binding PaddingTop, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
@@ -296,7 +296,7 @@
                                Visibility="{Binding Text, ElementName=PadDown, Converter={StaticResource NullToVis}}"/>
                 </Grid>
                 <TextBlock Text="←" VerticalAlignment="Center" Margin="0,0,2,0"
-                           ToolTip="Posune text doleva (padding zprava)"/>
+                           ToolTip="Posune text doleva (vnitřní okraj vpravo)"/>
                 <Grid Width="45">
                     <TextBox x:Name="PadLeftward"
                              Text="{Binding PaddingRight, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>

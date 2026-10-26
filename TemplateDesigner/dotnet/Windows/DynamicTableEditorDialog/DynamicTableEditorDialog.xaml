@@ -112,7 +112,7 @@
 
                             <Separator Margin="0,8,0,8"/>
 
-                            <TextBlock Text="Prázdné pole = dědí výchozí styl prvku (tab Obecné)."
+                            <TextBlock Text="Prázdné pole = převezme se styl prvku (záložka Obecné)."
                                        FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <!-- ── Styl záhlaví ──────────────── -->
@@ -135,7 +135,7 @@
                                         Padding="10,3" Margin="0,0,6,0"/>
                                 <Button Content="Resetovat všechny sloupce"
                                         Command="{Binding DataContext.ResetAllColumnStylesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce budou dědit z tabu Obecné"
+                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce převezmou styl ze záložky Obecné"
                                         Padding="10,3"/>
                             </StackPanel>
 
