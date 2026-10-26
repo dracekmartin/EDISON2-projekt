@@ -228,6 +228,18 @@ ClassMethod RgbNaHex(rgb As %String) As %String
     q out
 }
 
+/// Věta o platnosti spoje AD „jen v sudých / lichých týdnech" (`dlouhodoba` = hlava:8, 4 sudé, 5 liché)
+/// z číselníku firmy (NCOME SU/LI), jinak české znění. Stojí na začátku textu omezení - 1:1 legacy
+/// `gComNZLiSp` (`JRapiNZUtl2.mac:125-128`), který volá starý zastávkový i linkový tisk AD.
+/// Zastávkový JŘ AD ji do 26. 10. vynechával (`B194` T3a).
+ClassMethod TextTydnuPlatnosti(dataDB As %String, rec As %String, dlouhodoba As %String) As %String
+{
+    i (dlouhodoba '= 4) && (dlouhodoba '= 5) q ""
+    s txt = $g(^[dataDB]JRSET("NCOME",rec,$s(dlouhodoba=4:"SU",1:"LI")))
+    i txt = "" s txt = $s(dlouhodoba=4:"jede jen v sudých týdnech", 1:"jede jen v lichých týdnech")
+    q txt
+}
+
 /// Parametr sestavy „Barvy spojů" agend AD jako volba: „Tisknout", „Netisknout", nebo prázdno =
 /// podle linky. Návrhář posílá checkbox `TISKNOUT_BARVY_SPOJU`; starší návrhář u linkového JŘ místo
 /// něj třístav `BARVY_SPOJU` (Automaticky (dle linky) / Tisknout / Netisknout), který se přebírá.

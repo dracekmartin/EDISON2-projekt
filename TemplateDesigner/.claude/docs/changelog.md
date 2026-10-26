@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-26 (10) - 📅 liché a sudé týdny i v Zastávkovém JŘ AD (`B194b` T3a)
+
+Spoj s platností „jen v lichých / sudých týdnech" (hlava:8 = 5 / 4) neměl v Zastávkovém JŘ AD ani
+značku u minuty, ani řádek v poznámkách - cestující nepoznal, že jede jen každý druhý týden. Starý
+zastávkový i linkový tisk větu přidávají na začátek textu omezení (`gComNZLiSp`, `JRapiNZUtl2.mac:125-128`),
+Linkový JŘ AD to měl. Teď obě agendy AD přes `BaseAgenda.TextTydnuPlatnosti` (číselník NCOME SU/LI,
+jinak české znění). Ověřeno: nový oracle `ZastavkoveJrAdLegacyTest.TestTextyOmezeniProtiLegacy`
+(CB_GWBUS 216/0103942 značka 11 „jede jen v lichých týdnech" + CB_CSADAD 0330510 osm omezení shodně se
+starým zastávkovým tiskem); sonda `LegendaVedleSebeProbe` (legenda obou stran vedle sebe). Zbytek T3
+(oddělovač, rok, předložky, pořadí) rozdělen na T3b-e.
+
 ## 2026-10-26 (9) - 🎨 barvy spojů na vývěsce a checkbox v obou agendách AD (`B194b` T2)
 
 **Vývěska AD** tiskne minutu barvou spoje (pole `#12`, přes `RgbNaHex` - `0;0;0` = nenastaveno), do

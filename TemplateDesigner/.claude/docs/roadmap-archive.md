@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T3a** „Jede jen v lichých / sudých týdnech" tiskne i Zastávkový JŘ AD (jako starý zastávkový tisk
+  a Linkový JŘ AD, společná `BaseAgenda.TextTydnuPlatnosti`; changelog 2026-10-26 (10)).
 - **T2** Barvy spojů: vývěska AD barví minuty jako linkový JŘ, v obou agendách checkbox „Barvy spojů"
   místo třístavu „dle linky" (nastavení u linky nemá zapnuté žádná linka; rozhodnutí Jan 26. 10.;
   changelog 2026-10-26 (9)).

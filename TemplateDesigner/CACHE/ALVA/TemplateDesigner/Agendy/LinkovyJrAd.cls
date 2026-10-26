@@ -2235,12 +2235,7 @@ ClassMethod CasHodnota(cas As %String) As %String
 /// prefixy z ^JRSET("NCOME"); víc omezení spojeno ", ".
 ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, rec As %String, tiskDtm As %Integer) As %String
 {
-    s txt = ""
-    s dlouhodoba = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8)
-    i (dlouhodoba = 4) || (dlouhodoba = 5) {
-        s txt = $g(^[dataDB]JRSET("NCOME",rec,$s(dlouhodoba=4:"SU",1:"LI")))
-        i txt = "" s txt = $s(dlouhodoba=4:"jede jen v sudých týdnech", 1:"jede jen v lichých týdnech")
-    }
+    s txt = ..TextTydnuPlatnosti(dataDB, rec, $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8))
     f omzIdx=1:1:6 {
         s omzId = $p("13,12,11,14,15,22", ",", omzIdx)
         s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))

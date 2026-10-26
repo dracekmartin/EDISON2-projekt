@@ -2672,9 +2672,10 @@ ClassMethod TextAtributu(znak As %String) As %String
 
 /// Sestaví text poznámky z datumových omezení spoje (omzId 11-15, 22), 1:1 s legacy `txtNZ^JRapiNZUtl`.
 /// Spoj může mít víc omezení → spojí je do jedné poznámky čárkou v pořadí 11,12,13,14,15,22.
+/// Na začátku věta o lichých / sudých týdnech jako v Linkovém JŘ AD (`TextTydnuPlatnosti`).
 ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String) As %String
 {
-    s txt = ""
+    s txt = ..TextTydnuPlatnosti(dataDB, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8))
     f omzId = 11,12,13,14,15,22 {
         s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
         i omz = "" continue
