@@ -199,7 +199,7 @@
         {
           "type": "NotesLegendElement",
           "headerText": "Poznámky",
-          "noteSeparator": " — ",
+          "noteSeparator": " - ",
           "noteFontSize": 6,
           "noteLineHeight": 4.058,
           "columns": 1,

@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-26 (18) - oddělovač poznámek bez dlouhé pomlčky (`B194b` T9)
+
+Výchozí šablony Zastávkového JŘ AD i MHD měly v prvku Poznámky oddělovač mezi textovou značkou a textem
+dlouhou pomlčku („A — jede přes…"), kterou projekt zakazuje. Teď „ - " jako výchozí hodnota prvku
+(rozhodnutí Jan 26. 10.). Linkové šablony mají vědomě dál tři mezery - legenda je ve sloupcích a mezery
+drží zarovnání. Výchozí šablony nalévá seeder do MLINE při každém startu, uložené zákaznické šablony
+se nemění. Nový test `SystemTemplateSeedTests.SablonaNemaDlouhouPomlckuNikde` projde všechny texty
+každé výchozí šablony (dosud jen název a popis).
+
 ## 2026-10-26 (17) - přestup v legendě Zastávkového JŘ AD z číselníku firmy (`B194b` T4d)
 
 Zastávkový JŘ AD vysvětloval piktogram přestupu vlastním textem „přestup na autobus / vlak", Linkový

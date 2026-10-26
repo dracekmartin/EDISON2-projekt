@@ -198,7 +198,7 @@
         {
           "type": "NotesLegendElement",
           "headerText": "Pozn\u00E1mky",
-          "noteSeparator": " \u2014 ",
+          "noteSeparator": " - ",
           "noteFontSize": 6,
           "noteLineHeight": 4.058,
           "columns": 1,

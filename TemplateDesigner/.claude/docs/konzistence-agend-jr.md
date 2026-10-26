@@ -40,9 +40,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
   zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
-- **T9 Oddělovač v legendě vývěsek je dlouhá pomlčka** [S] (*ověřeno:* kód). `zastavkovy-jr-ad.json:201`,
-  `zastavkovy-jr-mhd.json:201` (znak U+2014), linkové šablony tři mezery, výchozí prvku „ - ". Pravidlo projektu
-  dlouhou pomlčku zakazuje; parita se starým tiskem neověřena.
 - **T10 Drobnosti** [S]. Pokračování spoje v linkovém AD je natvrdo česky i ve slovenské šabloně
   (`LinkovyJrAd.BuildSpoj` :1649, komentář tvrdí číselník) - zjevná oprava. Stanoviště „, stan.16" (linkový
   AD, parita) × „, označník 3" (vývěska AD, bez opory); rozdíly tras „neobsluhuje zast." × „nezajíždí do"
