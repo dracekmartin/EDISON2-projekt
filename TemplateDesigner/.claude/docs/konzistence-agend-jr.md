@@ -30,10 +30,6 @@ Všechny hotové (C1-C12, 23.-26. 10.) - viz `roadmap-archive.md` a changelog.
 Všechno mění vytištěný výstup vydaných agend, proto **Jan** u každé. Kde je doložená parita se starým
 modulem, stojí u položky; bez ní je rozdíl nahodilý.
 
-- **T2 Vývěska AD nebarví obarvené spoje** [M] (*ověřeno:* kód; 3 926 spojů s barvou). Linkový AD barví
-  (`LinkovyJrAd.BuildSpoj` :1429, volba „Barvy spojů"), vývěska posílá `FORE_COLOR` vždy prázdné
-  (`ZastavkoveJrAd.BuildOdjezd`). **Mezera proti starému modulu** (`JRapiLinPrtMhd1.mac:56`,
-  `JRapiExp10.mac:602-605`). Doporučení: doplnit se stejnou volbou.
 - **T3 Text omezení u značky je na vývěsce AD jiný** [M] (*ověřeno:* kód, server CB_CSADAD 0330510).
   „nejede 24.12.22, 31.12.22" × linkový „nejede 24.12.22,31.12.22"; vývěska tiskne rok vždy dvoumístně
   (linkový podle nastavení firmy: 0 VS_CSAD, KV_DP, SKNI_MHDNITRA; 1 CB_CSADAD, ZL_KOVED; 3 CB_GWBUS), má

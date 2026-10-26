@@ -30,6 +30,23 @@ Method TestCasJizdySloupce()
 	kill wMap
 }
 
+// ── Barvy spojů (B194 T2) ────────────────────────────────────────────────────
+/// Checkbox `TISKNOUT_BARVY_SPOJU` má přednost; bez něj platí třístav `BARVY_SPOJU`, který posílá
+/// starší návrhář u linkového JŘ - jinak by mu volba „Netisknout" po aktualizaci serveru přestala platit.
+Method TestVolbaBarevSpoju()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
+	kill ^||ML("IN")
+	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "", "nic nepřišlo → podle linky")
+	set ^||ML("IN","BARVY_SPOJU") = "Netisknout"
+	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "Netisknout", "starý třístav se přebírá")
+	set ^||ML("IN","TISKNOUT_BARVY_SPOJU") = "True"
+	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "Tisknout", "checkbox má přednost, velikost písmen nevadí")
+	set ^||ML("IN","TISKNOUT_BARVY_SPOJU") = "false"
+	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "Netisknout")
+	kill ^||ML("IN")
+}
+
 // ── Jazyk textů značek (#12843) ──────────────────────────────────────────────
 /// Slovenský zákazník má správné piktogramy, ale české popisky v legendě. Jazyk se bere
 /// z kultury šablony (`JAZYK` na wire), ne z firemního nastavení legacy tisku.

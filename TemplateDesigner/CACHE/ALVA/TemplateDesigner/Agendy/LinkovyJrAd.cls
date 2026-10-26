@@ -253,21 +253,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d optsZon.%Push("Skrýt")
     s pZon.options = optsZon
 
-    // Barvy spojů: barva je u spoje (3 926 spojů ji v datech má), linka ji umí potlačit
-    // (`PATCH,barevnyTiskSpoju` = 1 → tisknout černě). Týž třístav.
-    s pBar = ##class(%DynamicObject).%New()
-    s pBar.name         = "BARVY_SPOJU"
-    s pBar.label        = "Barvy spojů"
-    s pBar.type         = "enum"
-    s pBar.group        = "Tabulka spojů"
-    s pBar.serverSide   = 1
-    s pBar.defaultValue = "Automaticky (dle linky)"
-    s pBar.description  = "Zda se časy spoje tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Automaticky = podle nastavení u linky; Netisknout = celá tabulka černě."
-    s optsBar = ##class(%DynamicArray).%New()
-    d optsBar.%Push("Automaticky (dle linky)")
-    d optsBar.%Push("Tisknout")
-    d optsBar.%Push("Netisknout")
-    s pBar.options = optsBar
 
     // Obousměrný tisk: oba směry na jedné sestavě (legacy in("A",2,"arr",7), JRapiLinPrtWin.mac:598).
     // ⚠️ Starý modul zrcadlo tiše VYPNE, když se společný blok nevejde na stránku bez řezu (:627).
@@ -345,7 +330,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d arr.%Push(pTc)
     d arr.%Push(..ParametrZastavkyBezZastaveni())
     d arr.%Push(pZon)
-    d arr.%Push(pBar)
+    // Barvy spojů - checkbox jako u vývěsky, viz BaseAgenda.VolbaBarevSpoju
+    d ..AddBoolParam(arr, "TISKNOUT_BARVY_SPOJU", "Barvy spojů", 1, "Tabulka spojů", "Časy spoje se tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Vypnuto = celá tabulka černě.", 1)
     d arr.%Push(..ParametrZvyrazneniZastavky())
     d arr.%Push(pZvT)
 
@@ -561,7 +547,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s deleni = ..DeleniZParametru($g(^||ML("IN","DELENI_SLOUPCU")))
         s volbaTc = $g(^||ML("IN","SLOUPEC_TC"))
         s volbaBez = $g(^||ML("IN","ZASTAVKY_BEZ_ZASTAVENI"))
-        s volbaBarvy = $g(^||ML("IN","BARVY_SPOJU"))
+        s volbaBarvy = ..VolbaBarevSpoju()
         s volbaZony = $g(^||ML("IN","PISMENO_V_ZONE"))
 
         // Obousměrný tisk: jedna stránka se spoji obou směrů nad společným seznamem zastávek.
@@ -827,8 +813,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s tiskBezZastaveni = ..TristavDleLinky(volbaBezZastaveni, '+$g(^[dataDB]JRL(sku,lin,"PATCH","tisknoutJenTcKdeSpojeZastavuji")))
     k zastavuje
     i 'tiskBezZastaveni d ..ZastavujiciTc(dataDB, sku, lin, smer, .zastavuje)
-    // Barvy spojů: u linky 1 = tisknout černě, tedy barvy potlačit.
-    s tiskBarvy = ..TristavDleLinky(volbaBarvy, '+$g(^[dataDB]JRL(sku,lin,"PATCH","barevnyTiskSpoju")))
+    s tiskBarvy = ..TiskBarevSpoju(volbaBarvy, dataDB, sku, lin)
     // Odstranit z označení zóny písmena. Nastavení je globální, ale linka ho **přebíjí** - a ukládá
     // se u ní jako hodnota+1, takže 1 = neodstraňovat, 2 = odstraňovat, 0 nebo prázdno = platí
     // globální (1:1 legacy gPLSetWin `:1847`, kde je `hodnota-1`).

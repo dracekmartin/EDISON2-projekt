@@ -54,6 +54,8 @@ Dílčí vylepšení a náměty.
 - **Zastávkový JŘ AD:** spoje na objednání mají u minuty telefon a podmínečné spoje vykřičník,
   v poznámkách s vysvětlením, jak spoj objednat (text spoje, linky nebo nastavení firmy). Totéž
   upřesnění nově tiskne i linkový JŘ AD.
+- **Barvy spojů:** zastávkový JŘ AD tiskne minuty barvou spoje z jízdních řádů jako linkový JŘ.
+  V obou se to vypíná zaškrtávátkem **Barvy spojů** v parametrech sestavy.
 
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 

@@ -978,7 +978,8 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 
 Navíc jen u AD: **Rozdělení sloupců dle platnosti**, **Řazení variant tras**, **Písmena variant
 u odjezdů** (+ **První varianta bez písmene**), **Nejvýš sloupců variant tras**, **Samostatná stránka pro každý označník** (vše
-viz kap. 1), **V rozsahu nepoznámkovat schovat** a **Souhrn „všechny zastávky na znamení"** - místo
+viz kap. 1), **Barvy spojů** (minuty spoje barvou z jízdních řádů, vypnuto = všechny černě),
+**V rozsahu nepoznámkovat schovat** a **Souhrn „všechny zastávky na znamení"** - místo
 značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
 všechny zastávky).
 
@@ -1246,9 +1247,11 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 - **Rozdělení sloupců dle platnosti** - podle čeho se spoje rozdělí do skupin sloupců: *Bez rozlišení*,
   *Pracovní dny / víkend+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
   rozložení* se vybrat nedá - jen hlásí, že si šablona rozvržení drží vlastní.
-- **Sloupec tarifních čísel**, **Zastávky, kde žádný spoj nestaví**, **Písmeno systému u zóny**
-  a **Barvy spojů** - všechny čtyři mají volbu **Automaticky (dle linky)**, tedy podle nastavení
-  u linky v jízdních řádech, a pak *Tisknout* / *Netisknout*, kterými to pro tuhle sestavu přebijete.
+- **Sloupec tarifních čísel**, **Zastávky, kde žádný spoj nestaví** a **Písmeno systému u zóny** -
+  všechny tři mají volbu **Automaticky (dle linky)**, tedy podle nastavení u linky v jízdních řádech,
+  a pak *Tisknout* / *Netisknout*, kterými to pro tuhle sestavu přebijete.
+- **Barvy spojů** - zapnuté tisknou časy spoje barvou, kterou má spoj nastavenou v jízdních řádech;
+  vypnuté = celá tabulka černě. Stejná volba je u zastávkového JŘ AD.
 - **Zvýraznit zastávku** a **Zvýraznit tarifní číslo** - kus názvu zastávky (nerozlišují se velká
   a malá písmena) označí její řádek jako aktuální; vzhled zvýraznění si řeší šablona pravidlem
   nad polem „Aktuální zastávka" (výchozí šablony ho mají: světle šedé pozadí řádku). Projíždí-li

@@ -227,6 +227,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         d ..NactiNastaveniNazvu()         // tvar názvu zastávky + „název pro MHD" (platí pro celou sestavu)
         d ..NactiJazyk()                  // jazyk textů značek = kultura šablony (#12843)
         d ..NactiTextyZnacek(dataDB)      // vysvětlivky dnů z číselníku zákazníka (musí až po NactiJazyk)
+        s ^||TiskAd("volbaBarev") = ..VolbaBarevSpoju()
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         // Default = první skupina v ^JRL - shodně s GetAvailableInstances. Picker posílá jen
@@ -890,6 +891,10 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
     // „nevypisovat NZ ve sloupci 1-4" - per linka, 4 sloty. Potlačuje **značku u minuty**, ne spoj.
     s nzNoShow = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NEZNZ123"))
 
+    // Barva spoje u minuty (`B194` T2) - starý vývěskový tisk ji dával vždy (`JRapiLinPrtMhd1.mac:56`),
+    // teď ji vypíná parametr Barvy spojů jako u linkového JŘ.
+    s tiskBarev = ..TiskBarevSpoju($g(^||TiskAd("volbaBarev")), dataDB, sku, lin)
+
     // období vlastních sloupců: rozsahy dat převedené na horolog proti platnosti jízdního řádku.
     // Sloupec, kterému po ořezu nezbyl žádný rozsah, se hlásí ven - jinak zmlkne bez vysvětlení.
     k obdobiSloupcu
@@ -1016,6 +1021,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         f gi=1:1:$l(skupiny,",") {
             s idSloupce = $p(skupiny,",",gi)
             s o = ..BuildOdjezd(currentPoradi, idSloupce, hod, min)
+            i tiskBarev d o.%Set("FORE_COLOR", ..RgbNaHex($p(spoj,"#",12)))
             s idxSloupce = 0, pokryvaObdobi = 0
             i +$g(defSloupce) {
                 s idxSloupce = ..IndexSloupce(.defSloupce, idSloupce)
@@ -3735,6 +3741,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d arr.%Push(pDo)
 
     d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů")
+    d ..AddBoolParam(arr, "TISKNOUT_BARVY_SPOJU", "Barvy spojů", "true", "Minuty odjezdů", "Minuty spoje se tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Vypnuto = všechny minuty černě.", 1)
 
     d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI", "Souhrn ""všechny zastávky na znamení"" místo × u každé", "false", "Poznámky", , 1)
 

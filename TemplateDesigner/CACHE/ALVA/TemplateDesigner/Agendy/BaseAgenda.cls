@@ -228,6 +228,25 @@ ClassMethod RgbNaHex(rgb As %String) As %String
     q out
 }
 
+/// Parametr sestavy „Barvy spojů" agend AD jako volba: „Tisknout", „Netisknout", nebo prázdno =
+/// podle linky. Návrhář posílá checkbox `TISKNOUT_BARVY_SPOJU`; starší návrhář u linkového JŘ místo
+/// něj třístav `BARVY_SPOJU` (Automaticky (dle linky) / Tisknout / Netisknout), který se přebírá.
+/// Checkbox nahradil třístav 26. 10. (rozhodnutí Jan): nastavení u linky nemá v datech zapnuté
+/// žádná linka (sonda `BarvySpojuVyskyt`), takže volba „dle linky" nebyla k ničemu.
+ClassMethod VolbaBarevSpoju() As %String
+{
+    s zaskrtnuto = $zcvt($g(^||ML("IN","TISKNOUT_BARVY_SPOJU")),"L")
+    i zaskrtnuto '= "" q $s(zaskrtnuto = "true":"Tisknout", 1:"Netisknout")
+    q $g(^||ML("IN","BARVY_SPOJU"))
+}
+
+/// Tisknou se barvy spojů? `volba` z `VolbaBarevSpoju`; bez ní rozhodne linka
+/// (`PATCH,barevnyTiskSpoju` = 1 znamená tisknout černě, `JRapiLinPrtWin.mac:2085-2102`).
+ClassMethod TiskBarevSpoju(volba As %String, dataDB As %String, sku As %String, lin As %String) As %Boolean
+{
+    q $case(volba, "Tisknout":1, "Netisknout":0, :'+$g(^[dataDB]JRL(sku,lin,"PATCH","barevnyTiskSpoju")))
+}
+
 /// `serverSide` = hodnotu parametru zpracovává až `GetData`, takže její změna musí klientovi
 /// spustit načtení dat, ne jen překreslení náhledu. Dřív si ten seznam držel klient natvrdo a dalo
 /// se na něj zapomenout; příznak patří k definici parametru, kde se stejně píše.

@@ -39,6 +39,9 @@ public class ServerSideParamsDriftTests
         "TURNUSY_KE_SPOJUM",  // volba prvku (turnus je provozní věc dopravce, ne informace pro
                               // cestujícího) - posílá se ze šablony jako DEFINICE_SLOUPCU a re-fetch
                               // při přepnutí drží týž snapshot (CurrentWireSnapshot)
+        "BARVY_SPOJU",        // třístav, který posílá starší návrhář místo checkboxu
+                              // TISKNOUT_BARVY_SPOJU (BaseAgenda.VolbaBarevSpoju) - jen zpětná
+                              // kompatibilita, nový návrhář ho nezná
     };
 
     // Čtení pojmenovaného IN klíče. Skupina 2 zachytí znak za uvozovkou - když je to `_`, jde

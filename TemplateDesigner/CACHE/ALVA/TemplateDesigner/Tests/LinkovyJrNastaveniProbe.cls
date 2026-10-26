@@ -2230,6 +2230,62 @@ ClassMethod AtributySpojuVyskyt(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Barevné spoje po firmách (`B194` T2): kolik linek má aspoň jeden spoj s barvou (jinou než černou,
+/// pole `#12` = legacy `dta38`) a kolik z nich má u linky barvy vypnuté (`PATCH,barevnyTiskSpoju` = 1,
+/// starý linkový JŘ pak tiskne černě - `JRapiLinPrtWin.mac:2085-2102`; starý vývěskový tisk nastavení
+/// nečte). Příklad = linka s nejvíc barevnými spoji, nejvyšší skupina vyhrává remízu.
+ClassMethod BarvySpojuVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linek = 0, vypnuto = 0, priklad = "", prikladVyp = "", maxBarev = 0, maxBarevVyp = 0, sku = ""
+			kill barvy
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					set pocet = 0
+					for smer = "T", "Z" {
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set barva = $piece($get(^[db]JRL(sku, lin, smer, sp)), "#", 12)
+							continue:$translate(barva, ";0", "")=""
+							set pocet = pocet + 1, barvy(barva) = ""
+						}
+					}
+					continue:'pocet
+					set linek = linek + 1
+					if +$get(^[db]JRL(sku, lin, "PATCH", "barevnyTiskSpoju")) {
+						set vypnuto = vypnuto + 1
+						if pocet '< maxBarevVyp set maxBarevVyp = pocet, prikladVyp = sku_"/"_lin
+						continue
+					}
+					if pocet '< maxBarev set maxBarev = pocet, priklad = sku_"/"_lin
+				}
+			}
+			set seznamBarev = "", b = ""
+			for  { set b = $order(barvy(b))  quit:b=""  set seznamBarev = seznamBarev_$select(seznamBarev="":"", 1:" ")_b }
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s barevnými spoji "_linek_", z toho s barvami vypnutými u linky "_vypnuto
+				_"; příklad "_priklad_" ("_maxBarev_" spojů)"_$select(prikladVyp'="":"; vypnuté např. "_prikladVyp_" ("_maxBarevVyp_")", 1:"")
+				_"; barvy: "_$extract(seznamBarev, 1, 200)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Spoje „na objednání" a „podmínečně" po firmách (`B194` T1): příznak u spoje (hlava:21 RBU,
 /// hlava:23 RBP) a příznak jen v zastávce (atribut trasy `r` / `i`, tak ho čte starý vývěskový tisk
 /// `JRapiLinPrtMhd1.mac:203-204`). K tomu, kolik linek má vyplněné upřesnění (`SP_TX_JOBJ`/`SP_TX_JPOD`),

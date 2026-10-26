@@ -640,6 +640,40 @@ Method TestNaObjednaniZnackaALegenda()
 	if 'overeno do $$$AssertTrue(1, "firma CB_GWBUS není na tomto serveru - přeskočeno")
 }
 
+/// Barevný spoj má barvu u minuty a parametr Barvy spojů ji vypne (`B194` T2). ZL_KOVED 260/0000621
+/// má 48 barevných spojů (sonda `BarvySpojuVyskyt`, 26. 10.).
+Method TestBarvySpojuNaMinutach()
+{
+	do ..SetupSys(.sys)
+	kill parametry
+	if '..NactiLinku(.sys, "ZL_KOVED", 260, "0000621", .parametry) {
+		do $$$AssertTrue(1, "linka ZL_KOVED 260/0000621 není na tomto serveru - přeskočeno")
+		quit
+	}
+	do $$$AssertTrue(..PocetBarevnychMinut() > 0, "bez parametru má mít barevný spoj barvu u minuty")
+	set parametry("TISKNOUT_BARVY_SPOJU") = "false"
+	do ..NactiLinku(.sys, "ZL_KOVED", 260, "0000621", .parametry)
+	do $$$AssertEquals(..PocetBarevnychMinut(), 0, "vypnuté Barvy spojů mají nechat všechny minuty bez barvy")
+}
+
+/// Kolik odjezdů právě načteného výstupu nese barvu spoje.
+ClassMethod PocetBarevnychMinut() As %Integer
+{
+	set pocet = 0, key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:'$isvalidnum(key)
+		set odj = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key)).rows.ODJEZDY
+		continue:'$isobject(odj)
+		set io = odj.%GetIterator()
+		while io.%GetNext(.j, .o) {
+			set:o.%Get("FORE_COLOR")'="" pocet = pocet + 1
+		}
+	}
+	quit pocet
+}
+
 /// Počet odjezdů ve všech stránkách právě načteného výstupu.
 ClassMethod PocetOdjezdu() As %Integer
 {

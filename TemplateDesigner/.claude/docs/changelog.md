@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-26 (9) - 🎨 barvy spojů na vývěsce a checkbox v obou agendách AD (`B194b` T2)
+
+**Vývěska AD** tiskne minutu barvou spoje (pole `#12`, přes `RgbNaHex` - `0;0;0` = nenastaveno), do
+26. 10. posílala `FORE_COLOR` vždy prázdné. Starý vývěskový tisk barvu dával vždy (`JRapiLinPrtMhd1.mac:56`).
+**Parametr „Barvy spojů"** je v obou agendách AD checkbox `TISKNOUT_BARVY_SPOJU` (výchozí zapnuto; vývěska
+skupina Minuty odjezdů, linkový Tabulka spojů). Linkový AD měl třístav `BARVY_SPOJU` s „Automaticky (dle
+linky)"; volba „dle linky" zmizela, protože nastavení u linky (`PATCH,barevnyTiskSpoju`) nemá v datech
+zapnuté žádná linka (sonda `BarvySpojuVyskyt`: ZL_KOVED 651 linek s barvami, VS_CSAD 348, vypnuté 0;
+rozhodnutí Jan 26. 10.). **Nový klíč, ne změna typu starého**: uložené „Automaticky" by se jako bool
+načetlo jako vypnuto. Starší návrhář posílá dál třístav a server ho přebírá (`BaseAgenda.VolbaBarevSpoju`,
+v `ServerSideParamsDriftTests` mezi technickými klíči). Kdo měl v linkovém AD uloženo „Netisknout",
+má po aktualizaci barvy zase zapnuté. Linkové šablony (systémové i rozdílový JŘ) mají nový klíč.
+Ověřeno: `TestBarvySpojuNaMinutach` (ZL_KOVED 260/0000621 zapnuto/vypnuto), `TestVolbaBarevSpoju`,
+vykreslení vývěsky (červené minuty).
+
 ## 2026-10-26 (8) - ☎ spoje na objednání a podmínečné (`B194b` T1)
 
 **Vývěska AD** označí spoj „na objednání" telefonem a „podmínečně" vykřičníkem u minuty (příznak
