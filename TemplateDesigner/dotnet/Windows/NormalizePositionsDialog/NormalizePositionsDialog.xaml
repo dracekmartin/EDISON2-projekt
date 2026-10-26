@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="{Binding ElementCount, StringFormat='Vybrané elementy: {0}'}"
+                   Text="{Binding ElementCount, StringFormat='Vybrané prvky: {0}'}"
                    Margin="0,0,0,12"/>
 
         <Grid Grid.Row="1" Margin="0,0,0,8">
@@ -31,7 +31,7 @@
         </Grid>
 
         <TextBlock Grid.Row="2"
-                   Text="{Binding AffectedCount, StringFormat='Bude upraveno: {0} elementů'}"
+                   Text="{Binding AffectedCount, StringFormat='Bude upraveno: {0} prvků'}"
                    Foreground="{DynamicResource EDTheme.Text.Muted}"
                    Margin="0,0,0,16"/>
 

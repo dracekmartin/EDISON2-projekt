@@ -74,7 +74,7 @@
 
                             <Separator Margin="0,8,0,8"/>
 
-                            <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
+                            <TextBlock Text="Prázdné pole = dědí výchozí styl prvku."
                                        FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <!-- ── Záhlaví ──────────────────── -->

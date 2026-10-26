@@ -1649,7 +1649,7 @@ public class TemplateDesignerViewModel : EDViewModel
         int elementCount = section.Elements.Count;
         if (elementCount > 0)
         {
-            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci „{section.Name}“ s {elementCount} elementy?"))
+            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci „{section.Name}“ s {elementCount} prvky?"))
                 return;
         }
 
@@ -2691,7 +2691,7 @@ public class TemplateDesignerViewModel : EDViewModel
             .ToList();
 
         if (commands.Count == 1) Execute(commands[0]);
-        else Execute(new CompositeCommand("Vložit elementy", commands));
+        else Execute(new CompositeCommand("Vložit prvky", commands));
 
         State.SelectedElements.Clear();
         State.SelectedElements.AddRange(newElements);
@@ -2809,7 +2809,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
 
         if (commands.Count == 1) Execute(commands[0]);
-        else Execute(new CompositeCommand("Duplikovat elementy", commands));
+        else Execute(new CompositeCommand("Duplikovat prvky", commands));
 
         State.SelectedElements.Clear();
         State.SelectedElements.AddRange(newElements);
@@ -2985,7 +2985,7 @@ public class TemplateDesignerViewModel : EDViewModel
         State.SelectedElements.Clear();
 
         if (commands.Count == 1) Execute(commands[0]);
-        else Execute(new CompositeCommand("Smazat elementy", commands));
+        else Execute(new CompositeCommand("Smazat prvky", commands));
 
         RequestPropertiesPanelUpdate?.Invoke();
         RequestCanvasRefresh?.Invoke();

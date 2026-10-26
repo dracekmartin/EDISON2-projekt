@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-26 (31) - „prvek" místo „element" v textech pro uživatele (`B194d` E7)
+
+Rozhodnutí Jan 26. 10.: sjednotit na **„prvek"** - používá ho paleta, strom, titulky oken, hlášky
+i příručka (103×), „element" zbyl v ~45 textech. Změněno: skupina „Rámeček elementu" → „Rámeček prvku"
+(`BaseElementFields.cls` i `TemplateElement.BorderGroup` naráz), nápovědy „Uzamčený prvek…", „prvek se
+zobrazí jen když…", „podle tloušťky rámečku prvku", volby šipky „u pravého/levého okraje prvku", místní
+nabídka „Vlastnosti prvku…", lišta „Prvky", „Přichytit k prvkům", „Vyberte prvek na plátně", popisy kroku
+zpět („Přidat prvek", „Smazat prvky", „Přesun prvku"…), okna se sloupci („Přizpůsobit sloupce k šířce
+prvku", „dědí výchozí styl prvku", varování o šířce), nápověda F1 (kapitola „Prvky" a 15 řádků),
+Normalizovat pozice, import z PDF, katalog asistenta, potvrzení smazání sekce. Příručka: kapitola
+„Práce s prvky" (i kotva v obsahu) a 5 dalších míst. Kanon §8 má řádek „prvek" (třídy v kódu zůstávají
+`*Element`), „element" / „Element" mezi zakázanými podřetězci. Prompty pro AI model (nevidí je uživatel)
+beze změny. Ověřeno voláním `Init` obdélníku a Seznamu zastávek.
+
 ## 2026-10-26 (30) - „Vrstva", „podle obsahu", „plátno" (`B194d` E7, část)
 
 Rozhodnutí Jan 26. 10.: pole „ZIndex" (společná pole každého prvku, panel i společné vlastnosti víc prvků,

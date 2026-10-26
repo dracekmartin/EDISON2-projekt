@@ -112,12 +112,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
 - **E5 Seznam zastávek nabízí v MHD věci z AD** [M] (*ověřeno:* kód). Sloupec „Sloupek" (MHD ho nemá) a
   nápověda „Více stanovišť" s odkazem na parametr, který MHD nemá. Skrývání podle agendy už mají Poznámky
   a Tabulka spojů (`ViditelnostPole`).
-- **E7 „Element" × „prvek"** [M] **Jan** (*ověřeno:* kód). „ZIndex" → „Vrstva", „počítá engine" → „podle
-  obsahu", „canvas" → „plátno" hotové (changelog 2026-10-26 (30)). Zbývá element × prvek: Jan 26. 10.
-  preferuje „element"; „prvek" je dnes v paletě, stromu, hláškách, stavovém řádku a ~80 textech plus 103×
-  v příručce, „element" v ~45 textech (`BaseElementFields.cls` „Rámeček elementu", „Uzamčený element…",
-  místní nabídka „Vlastnosti elementu…", dialogy sloupců, F1 „Elementy") a 7× v příručce. `BorderGroup`
-  změnit v `.cls` i C# naráz.
 - **E8 Význam prázdné hodnoty pěti zápisy, různé rozsahy** [M] **Jan**. „(prázdné = auto)", „(0 = ∞)",
   „(0 = ne)", „(0 = bez limitu)", „(0=vedle)"; výška řádku 1-50 / 1-20 / 2-15 / 2-50 mm, písmo 4-200 ×
   3-24 pt. Návrh: popisek = podstatné jméno, význam prázdna do nápovědy, rozsahy sjednotit.

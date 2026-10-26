@@ -17,7 +17,7 @@ Class ALVA.TemplateDesigner.EDInputForm.BaseElementFields
 /// konkrétního prvku; musí souhlasit s jeho C# defaulty (hlídá EDInputFormSchemaDriftTests).
 ClassMethod AddBorder(form As ALVA.EDControls.EDInputForm.Form, withCorners As %Boolean = 1, defColor As %String = "#00FFFFFF", defWidth As %String = 0)
 {
-    d form.AddGroup("border", "Rámeček elementu")
+    d form.AddGroup("border", "Rámeček prvku")
     s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
     s f.value = defColor
     s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
@@ -46,7 +46,7 @@ ClassMethod AddGrid(form As ALVA.EDControls.EDInputForm.Form, withLineToggles As
     s f = form.AddFieldToLastGroup("Grid.Color", "Barva mřížky", $$$FieldTypeColor, 0, 0)
     s f.value = defColor
     s f = form.AddDecimal("Grid.Width", "Tloušťka mřížky", "", 0, 5, "mm")
-    s f.helpText = "Prázdné nebo 0 = podle tloušťky rámečku elementu"
+    s f.helpText = "Prázdné nebo 0 = podle tloušťky rámečku prvku"
     s f = form.AddFieldToLastGroup("Grid.Style", "Styl mřížky", $$$FieldTypeList, 0, 1)
     d f.AddListItem("Solid", "Plná"), f.AddListItem("Dashed", "Čárkovaná"), f.AddListItem("Dotted", "Tečkovaná")
     s f.value = "Solid"
@@ -72,7 +72,7 @@ ClassMethod AddPosition(form As ALVA.EDControls.EDInputForm.Form, defWidth As %S
     s f = form.AddNumber("ZIndex", "Vrstva", 0, 0, 100)
     s f.helpText = "Vyšší vrstva leží nad nižší"
     s f = form.AddBool("IsLocked", "Uzamčeno", 0)
-    s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
+    s f.helpText = "Uzamčený prvek nelze přesunout ani změnit jeho velikost"
 }
 
 /// Podmínka viditelnosti elementu. Řádkové podmínky (viditelnost řádku, pravidla zvýraznění)
@@ -80,7 +80,7 @@ ClassMethod AddPosition(form As ALVA.EDControls.EDInputForm.Form, defWidth As %S
 /// takže sdílet nejde.
 /// <var>subjekt</var> = čeho se podmínka týká (element, řádek) - mění jen nápovědu, aby řádek
 /// tabulky nemluvil o elementu. Pole i popisek zůstávají tytéž, ať se výraz zadává všude stejně.
-ClassMethod AddConditions(form As ALVA.EDControls.EDInputForm.Form, subjekt As %String = "element")
+ClassMethod AddConditions(form As ALVA.EDControls.EDInputForm.Form, subjekt As %String = "prvek")
 {
     d form.AddGroup("advanced", "Podmínky")
     s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")

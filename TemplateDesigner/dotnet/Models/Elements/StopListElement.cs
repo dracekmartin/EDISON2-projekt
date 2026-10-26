@@ -1358,8 +1358,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             // u širokého elementu je tedy daleko vpravo a uživateli se zdálo, že se „nic nezměnilo".
             Options =
             [
-                ("Vpravo (u pravého okraje elementu)", (object)DirectionArrowSide.Right),
-                ("Vlevo (u levého okraje elementu)",   (object)DirectionArrowSide.Left),
+                ("Vpravo (u pravého okraje prvku)", (object)DirectionArrowSide.Right),
+                ("Vlevo (u levého okraje prvku)",   (object)DirectionArrowSide.Left),
             ]
         },
         new ColorPropertyDescriptor { FromImage = true, Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },

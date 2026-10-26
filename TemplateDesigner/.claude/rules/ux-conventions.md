@@ -56,7 +56,7 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 | Ctrl+A | Vybrat vše (v aktivní sekci) |
 | Enter | Vlastnosti výběru (1 element = dialog; víc = dialog společných vlastností) |
 | F2 | Inline editace textu (jen TextElement, 1 vybraný) |
-| Dvojklik | Vlastnosti elementu (dvojklik do prázdna = zrušit výběr) |
+| Dvojklik | Vlastnosti prvku (dvojklik do prázdna = zrušit výběr) |
 
 ### Uvnitř pevné tabulky (editace buněk na plátně)
 
@@ -266,7 +266,8 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 
 | Vlastnost | Kanonický label | NE |
 |---|---|---|
-| Uzamčení elementu (IsLocked) | **Uzamčeno** | ~~Zamčeno~~ |
+| Objekt na plátně (TextElement, LineTableElement…) | **prvek** - v UI textech, nápovědách i příručce; třídy v kódu zůstávají `*Element` (rozhodnutí Jan 26. 10.) | ~~element~~ |
+| Uzamčení prvku (IsLocked) | **Uzamčeno** | ~~Zamčeno~~ |
 | Pořadí překrytí (ZIndex) | **Vrstva** („Vyšší vrstva leží nad nižší") - rozhodnutí Jan 26. 10. | ~~ZIndex~~, ~~Pořadí vrstvy~~ |
 | Výška, kterou sazba dopočte | **výška podle obsahu** („výška se počítá podle obsahu") | ~~počítá engine~~, ~~dynamická výška~~ |
 | Plocha návrháře | **plátno** | ~~canvas~~ |

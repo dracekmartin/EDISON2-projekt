@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E7** Uživatelské texty říkají „prvek" (ne „element"), „Vrstva" (ne „ZIndex"), „výška podle obsahu"
+  (ne „počítá engine") a „plátno" (ne „canvas"); kanon §8 a zakázané tvary (rozhodnutí Jan 26. 10.: „prvek",
+  protože ho používá většina textů i příručka; changelog 2026-10-26 (30), (31)).
 - **E6** Zarovnání je všude „Zarovnání vodorovně" / „Zarovnání svisle" (celý tvar kvůli hledání), volba
   jen jedním směrem nese směr v popisku („Zarovnání záhlaví svisle"); kanon §8 změněn (rozhodnutí Jan
   26. 10.; changelog 2026-10-26 (29)).

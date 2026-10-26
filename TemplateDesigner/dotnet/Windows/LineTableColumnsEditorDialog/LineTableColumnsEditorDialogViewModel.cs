@@ -167,7 +167,7 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
     public bool HasColumnOverflow => TotalVisibleColumnWidth > ElementWidth + 0.01f;
 
     public string ColumnOverflowText =>
-        $"⚠ Součet šířek popisových sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku elementu ({ElementWidth:0.#} mm). Na spoje nezbude místo.";
+        $"⚠ Součet šířek popisových sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku prvku ({ElementWidth:0.#} mm). Na spoje nezbude místo.";
 
     public List<StopColumn> ResultColumns { get; private set; } = [];
 

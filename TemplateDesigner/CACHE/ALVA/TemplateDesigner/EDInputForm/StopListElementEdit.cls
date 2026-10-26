@@ -67,7 +67,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Zapnutí šipky řídí parametr sestavy TISK_SIPKY - jako pole prvku by bylo mrtvé (parametr
         // ho přebije). Tady zůstává jen vzhled šipky.
         s f = form.AddFieldToLastGroup("DirectionArrowPosition", "Pozice šipky", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Right", "Vpravo (u pravého okraje elementu)"), f.AddListItem("Left", "Vlevo (u levého okraje elementu)")
+        d f.AddListItem("Right", "Vpravo (u pravého okraje prvku)"), f.AddListItem("Left", "Vlevo (u levého okraje prvku)")
         s f.helpText = "Tisk šipky se zapíná v parametrech sestavy (Tisknout šipky směru)"
         s f = form.AddFieldToLastGroup("DirectionArrowColor", "Barva šipky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"

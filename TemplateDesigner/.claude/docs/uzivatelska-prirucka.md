@@ -24,7 +24,7 @@
 2. [Orientace v aplikaci](#2-orientace-v-aplikaci)
 3. [Práce se šablonou](#3-práce-se-šablonou)
 4. [Sekce a struktura stránky](#4-sekce-a-struktura-stránky)
-5. [Práce s prvky (elementy)](#5-práce-s-prvky-elementy)
+5. [Práce s prvky](#5-práce-s-prvky)
 6. [Editační nástroje](#6-editační-nástroje)
 7. [Vlastnosti a styly](#7-vlastnosti-a-styly)
 8. [Datová pole a výrazový jazyk](#8-datová-pole-a-výrazový-jazyk)
@@ -65,7 +65,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Upravit** - Zpět, Vpřed
 - **Stránka** - Vlastnosti stránky
 - **Sekce** - Přidat sekci (rozbalovací nabídka presetů)
-- **Přidat / Elementy** - paleta prvků: Text, Obdélník, Čára, Obrázek, Tabulka, Kód (QR, čárový) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
+- **Přidat / Prvky** - paleta prvků: Text, Obdélník, Čára, Obrázek, Tabulka, Kód (QR, čárový) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
 - **Vrstva** - Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
 - **Data** - obnovení dat náhledu (↻)
@@ -101,7 +101,7 @@ Zleva doprava:
   (vlevo, vpravo, na střed, nahoru, dolů) · Rozložit vodorovně / svisle · Normalizovat pozice… ·
   Přepočítat šablonu na jinou velikost (podnabídka procent) · Kopírovat styl · Vložit styl ·
   Použít výchozí font u všech prvků
-- **Zobrazit** - Mřížka, Přichytit na mřížku, Přichytit k elementům, Záhlaví sekcí, Pravítka,
+- **Zobrazit** - Mřížka, Přichytit na mřížku, Přichytit k prvkům, Záhlaví sekcí, Pravítka,
   Panel sekcí, Živý náhled (zaškrtávací položky)
 - **Nástroje** - Změnit agendu… · Šablony v databázi…
 - **Nápověda** - Klávesové zkratky a ovládání (F1) - s fulltextovým hledáním (Ctrl+F)
@@ -229,7 +229,7 @@ jen se zapnutým Rámečkem.
 
 ---
 
-## 5. Práce s prvky (elementy)
+## 5. Práce s prvky
 
 Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
 
@@ -255,7 +255,7 @@ záhlaví**, **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťk
 barvy pozadí a textu záhlaví i dat. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
 Editor sloupců (okno „Vlastnosti - Tabulka (z dat)") má záložky **Obecné** a **Sloupce**: přidání/
-odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce elementu",
+odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce prvku",
 a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor stylu (viz kap. 7).
 
 ### Pevná tabulka
@@ -1019,7 +1019,7 @@ odjezdů, poznámek) by potřeboval víc místa, systém automaticky **proporcio
 velikost písma**, aby se všechno vešlo do vymezeného prostoru. Pokud je výška prvku dynamická
 (automatická), tohle se neuplatňuje - prostor prostě roste podle potřeby.
 
-Varování o přetečení (červený rámeček stránky v náhledu) se u JŘ elementů řídí stejným
+Varování o přetečení (červený rámeček stránky v náhledu) se u JŘ prvků řídí stejným
 pravidlem jako v části I (kap. 9): objeví se jen u sekcí nastavených
 jako „Držet pohromadě", a jen když se prvek fyzicky nevejde i po auto-zmenšení písma - pokud
 zmenšení pomůže, k varování nedojde.

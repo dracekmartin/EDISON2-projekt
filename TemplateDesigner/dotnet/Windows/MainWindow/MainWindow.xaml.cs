@@ -261,7 +261,7 @@ public partial class MainWindow : Window
         InlinePropertiesPanel.SetContext(
             cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
-        InlinePropertiesPanel.ShowMessage("Vyberte element na plátně");
+        InlinePropertiesPanel.ShowMessage("Vyberte prvek na plátně");
 
         // Template tree panel - SetContext
         TreePanel.SetContext(
@@ -2284,7 +2284,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            InlinePropertiesPanel.ShowMessage("Vyberte element na plátně");
+            InlinePropertiesPanel.ShowMessage("Vyberte prvek na plátně");
             FormatToolbar.ShowDescriptors(null);
             ShowInlineFormPanel(false);
         }
@@ -3212,7 +3212,7 @@ public partial class MainWindow : Window
             menu.Items.Add(new Separator());
             menu.Items.Add(new MenuItem
             {
-                Header = "Vlastnosti elementu...",
+                Header = "Vlastnosti prvku...",
                 Command = new EDControls.EDViewModel.RelayCommand(() =>
                 {
                     // U2: otevřít dialog (jako dvojklik a „Vlastnosti sekce…") - dřív jen přepínalo
@@ -3390,7 +3390,7 @@ public partial class MainWindow : Window
                 if (kvp.Key.X != kvp.Value.X || kvp.Key.Y != kvp.Value.Y)
                     moves.Add(new MoveElementCommand(kvp.Key, kvp.Value.X, kvp.Value.Y, kvp.Key.X, kvp.Key.Y));
             if (moves.Count == 1) _vm.Execute(moves[0]);
-            else if (moves.Count > 1) _vm.Execute(new CompositeCommand("Přesun elementů", moves));
+            else if (moves.Count > 1) _vm.Execute(new CompositeCommand("Přesun prvků", moves));
         }
         else
         {

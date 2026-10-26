@@ -222,8 +222,8 @@ Pravidla obsahu (ZÁVAZNÁ):
         sb.AppendLine($"- Agenda: {(string.IsNullOrEmpty(agendaName) ? "obecná (bez dat)" : agendaName)}");
         sb.AppendLine($"- Počet sekcí v šabloně: {sectionCount}");
         sb.AppendLine(selectedElementType is null
-            ? "- Vybraný element: žádný"
-            : $"- Vybraný element: {FriendlyName(selectedElementType)}");
+            ? "- Vybraný prvek: žádný"
+            : $"- Vybraný prvek: {FriendlyName(selectedElementType)}");
 
         var specialni = AgendaCapabilities.ScheduleElementTypes(elementKind);
         if (specialni.Count > 0)
@@ -247,7 +247,7 @@ Pravidla obsahu (ZÁVAZNÁ):
     public static string BuildElementCatalog(string? elementKind)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("# Katalog elementů a jejich nastavení");
+        sb.AppendLine("# Katalog prvků a jejich nastavení");
         sb.AppendLine("(Vlastnosti jsou seskupené tak, jak je uživatel vidí v panelu/dialogu.)");
         sb.AppendLine();
 

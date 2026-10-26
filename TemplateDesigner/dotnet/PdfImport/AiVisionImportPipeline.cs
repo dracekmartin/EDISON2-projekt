@@ -126,7 +126,7 @@ public class AiVisionImportPipeline
         }
 
         // 4. Sestavit šablonu
-        setStatus("Vytvářím elementy...");
+        setStatus("Vytvářím prvky...");
 
         // Jízdní řád bez AI nemá cenu dodělávat náhradním rozpoznáním: vznikne z něj hrubá šablona,
         // která vypadá jako výsledek importu, jen je špatně - a uživatel se to nedozví, protože
@@ -154,7 +154,7 @@ public class AiVisionImportPipeline
                 : "";
             if (missingWarn.Length > 0)
                 ImportLog.Add($"⚠ Nerozpoznáno: {missing} - doplňte ručně z palety.");
-            setStatus($"AI Vision: {visionResult.Elements.Count} JŘ elementů, {mappedFields} polí namapováno, celkem {elCount} elementů{missingWarn}");
+            setStatus($"AI Vision: {visionResult.Elements.Count} JŘ prvků, {mappedFields} polí namapováno, celkem {elCount} prvků{missingWarn}");
         }
         else
         {

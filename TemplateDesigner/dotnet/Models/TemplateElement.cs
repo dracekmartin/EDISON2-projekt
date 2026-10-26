@@ -271,7 +271,7 @@ public abstract class TemplateElement
     // Názvy skupin base polí - shodné se sdíleným Caché balíčkem BaseElementFields.cls,
     // ať obě editační cesty řadí tytéž vlastnosti do stejně pojmenovaných skupin.
     internal const string PositionGroup = "Pozice a velikost";
-    internal const string BorderGroup = "Rámeček elementu";
+    internal const string BorderGroup = "Rámeček prvku";
     internal const string ConditionsGroup = "Podmínky";
     internal const string GridGroup = "Mřížka";
 
