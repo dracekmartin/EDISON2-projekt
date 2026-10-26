@@ -50,7 +50,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   **odloženo** (Jan 26. 10.); návrh: nabídka podle polí, která agenda posílá, zapnutý sloupec zůstane vidět
 - **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan** - **odloženo k rozmyšlení**
   (Jan 26. 10.); návrh: vysvětlivka z popisku do nápovědy, rozsahy na nejširší (výška řádku 1-50 mm, písmo 3-200 pt)
-- **E11** Popisky v C# a ve formuláři se rozcházejí (import z PDF, náhradní panel, AI) [M]
 - **E12** Katalog sloupců Tabulky spojů jinak než data („Zastávka", „TČ" × „Tč") [S]
 - **E13** Dialogy sloupců mají každý jiné ovládání [M]
 - **E14** Tabulka spojů ukazuje interní pole „Kolekce …" [S] **Jan**
@@ -74,7 +73,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **G3** Jeden popisek = jeden klíč napříč agendami JŘ [S]
 - **G4** Kontrola zakázaných termínů i v nápovědách a titulcích oken [S]
 - **G5** Každé tlačítko formuláře má obsluhu v každém hostiteli [S]
-- **G6** Popisek v C# a ve formuláři u téhož klíče shodný [S-M]
 - **G7** Drobné díry drift testů [S]
 - **G8** Zlatý odtisk linkového MHD včetně hlavičky (po 27. 10.) [S]
 

@@ -115,9 +115,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
 - **E8 Význam prázdné hodnoty pěti zápisy, různé rozsahy** [M] **Jan**. „(prázdné = auto)", „(0 = ∞)",
   „(0 = ne)", „(0 = bez limitu)", „(0=vedle)"; výška řádku 1-50 / 1-20 / 2-15 / 2-50 mm, písmo 4-200 ×
   3-24 pt. Návrh: popisek = podstatné jméno, význam prázdna do nápovědy, rozsahy sjednotit.
-- **E11 Popisky C# a formuláře se rozcházejí** [M] (*ověřeno:* kód). Uživatel je vidí v protokolu importu
-  z PDF, v náhradním panelu a mluví jimi AI („Šířka sl. hodin", „Zalamování", „Výplň"). Návrh: `G6`.
-  `mvvm-patterns.md:14` tvrdí, že úprava více prvků jde přes deskriptory - umí jen 4 pevná pole.
 - **E12 Katalog sloupců Tabulky spojů jinak než data** [S]. „Zastávka", „Zóna", „MHD / IDS" × data
   „Název zastávky", „Zóny", „MHD/IDS"; „TČ" × „Tč"; „popisné" × „popisové" × „sloupce popisu".
 - **E13 Dialogy sloupců mají každý jiné ovládání** [M]. „+ Přidat" × „Přidat", „▲" × „▲ Nahoru" × „Nahoru",
@@ -180,7 +177,6 @@ totéž znovu. Pořadí podle přínosu:
 - **G4 Ban list i na nápovědy, části slov a titulky oken** [S]. Odtud „nástupiště" (`P7`), „engine" (`E7`),
   „Tučně" uvnitř popisku (`E10`), „Linkový JŘ - nastavení" (`E2`).
 - **G5 Každé tlačítko formuláře má obsluhu v každém hostiteli** [S]. Odtud `C2`.
-- **G6 Deskriptor C# a formulář `.cls` u téhož klíče mají stejný popisek a skupinu** [S-M]. Odtud `E11`.
 - **G7 Drobné díry drift testů** [S]. Regex schématu nevidí `AddField(kolekce.%Get("fields"), …)` (rozdílový
   `VERZE`, `TC_PUVODNI`, `ZONY_PUVODNI`) a chytá zakomentované řádky; parametry se jménem skládaným za
   běhu (`P4`) a pořadí „Obecné první" u vývěsek a linkového MHD (definice v pomocných metodách) test nevidí.

@@ -11,14 +11,17 @@ Hlavní editační cestou je **Caché formulář** (`*Edit.cls`): u elementu se 
 živé ve třech konkrétních rolích a proto je nelze odstranit:
 
 1. **Formátovací lišta** (`FormatToolbar`) je potřebuje **vždy**, i když se zobrazuje Caché formulář.
-2. **Úprava více elementů naráz** jde jen přes ně (Caché formulář edituje jeden cíl).
+2. **Úprava více prvků naráz** jde jen přes ně (Caché formulář edituje jeden cíl) - okno společných
+   vlastností nabízí jen pevnou sadu (rámeček, vrstva, uzamčení), ne všechny deskriptory prvků.
 3. **Fallback** pro element bez `*Edit.cls` schématu (dnes pevná tabulka).
 
 **Nejsou tedy druhý zdroj pravdy pro schéma** - u base polí je autoritou sdílený
 [`BaseElementFields.cls`](../../CACHE/ALVA/TemplateDesigner/EDInputForm/BaseElementFields.cls) a C#
 `GetPositionDescriptors()` s ním musí souhlasit v popiscích i skupinách (konstanty `PositionGroup`/
 `BorderGroup`/`ConditionsGroup`); hlídá to `EDInputFormSchemaDriftTests`. Nové base pole se přidává
-**na obou stranách v jednom commitu**, jinak test spadne.
+**na obou stranách v jednom commitu**, jinak test spadne. Popisek každého deskriptoru prvku musí
+existovat i ve formuláři prvku (protokol importu z PDF a asistent mluví popisky deskriptorů) -
+hlídá to `DescriptorLabelsMatchFormTests`, vědomé výjimky jsou v něm s důvodem.
 
 **Dostupné typy deskriptorů:**
 - `StringPropertyDescriptor` - textové pole (s volitelným `MultiLine = true`)

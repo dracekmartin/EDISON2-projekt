@@ -134,7 +134,7 @@ public class ElementSettingsFromImageTests
         var catalog = ElementSettingsFromImage.BuildCatalog(new DepartureGridElement());
 
         Assert.DoesNotContain("Velikost záhlaví", catalog);
-        Assert.DoesNotContain("Min. výška řádku", catalog);
+        Assert.DoesNotContain("Min. výška řádku záhlaví", catalog);
     }
 
     [Theory]

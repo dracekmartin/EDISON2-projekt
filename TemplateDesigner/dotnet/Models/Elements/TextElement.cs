@@ -143,9 +143,12 @@ public class TextElement : TemplateElement
         // LineSpacing je bezrozměrný násobitel (1.2 = 120 %) - neškáluje se
     }
 
+    /// <summary>Popisek pole s obsahem textu jako ve formuláři; podle něj okno vlastností přidá výběr datového pole.</summary>
+    internal const string ObsahLabel = "Obsah";
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new StringPropertyDescriptor { Label = "Text",         Group = "Obsah",     Get = () => Text,                Set = v => Text = v,                                   MultiLine = true },
+        new StringPropertyDescriptor { Label = ObsahLabel,     Group = "Obsah",     Get = () => Text,                Set = v => Text = v,                                   MultiLine = true },
 
         new StringPropertyDescriptor { Label = "Font",         Group = "Font",      Get = () => Style.FontFamily ?? "Arial",  Set = v => Style.FontFamily = v },
         new FloatPropertyDescriptor  { Label = "Velikost",      Group = "Font",      Get = () => Style.FontSize ?? 10f,        Set = v => Style.FontSize = v,                 Min = 4, Max = 200, Unit = "pt" },
@@ -153,7 +156,7 @@ public class TextElement : TemplateElement
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Font",      Get = () => Style.Italic ?? false,        Set = v => Style.Italic = v },
         new BoolPropertyDescriptor   { Label = "Podtržení",    Group = "Font",      Get = () => Style.Underline ?? false,      Set = v => Style.Underline = v },
         new BoolPropertyDescriptor   { Label = "Přeškrtnutí", Group = "Font",      Get = () => Style.Strikethrough ?? false,  Set = v => Style.Strikethrough = v },
-        new BoolPropertyDescriptor   { Label = "Zalamování",    Group = "Font",      Get = () => WordWrap,                     Set = v => WordWrap = v },
+        new BoolPropertyDescriptor   { Label = "Zalamovat řádky", Group = "Font",      Get = () => WordWrap,                     Set = v => WordWrap = v },
         new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => Style.LineSpacing ?? 1.2f,    Set = v => Style.LineSpacing = v,               Min = 0.8f, Max = 3f, Format = "0.0#" },
 
         // HAlign rozšířený o Justify - inline (sdílené HAlignOptions Justify nemají, cell elementy ho v rendereru ignorují)

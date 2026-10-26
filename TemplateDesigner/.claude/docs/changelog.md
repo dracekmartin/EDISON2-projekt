@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-26 (36) - popisky v programu podle formuláře (`B194d` E11, `B194f` G6)
+
+Každé nastavení prvku má popisek dvakrát: ve formuláři ze serveru (panel Vlastnosti, okno prvku) a v
+programu (deskriptor - okno společných vlastností, protokol importu z PDF, popis prvků pro asistenta,
+lišta formátu). Rozešly se na ~20 místech. Rozhodnutí Jan 26. 10.: platí formulář. Přepsáno: Text „Text" →
+„Obsah" (okno vlastností hledalo pole podle popisku - teď konstanta `TextElement.ObsahLabel`),
+„Zalamování" → „Zalamovat řádky"; Obdélník „Výplň" → „Barva pozadí"; tabulky „Záhlaví" → „Záhlaví
+sloupců"; Minuty „Záhlaví skupin" → „Záhlaví skupin dnů", „Min. výška řádku" → „… záhlaví", „Šířka sl.
+hodin" → „Šířka sloupce hodin", „Hodiny u každé sk." → „… skupiny", styly zón „Minuta: / Symbol: / Text:
+Font…" jako ve formuláři; Poznámky „Řazení" → „Řazení poznámek"; Tabulka spojů „Přípojné řádky" →
+„Přípojné řádky (vyčká/navazuje)". Nový test `DescriptorLabelsMatchFormTests` (pokrývá i plánované `G6`):
+popisek každého deskriptoru prvku musí existovat ve formuláři prvku, výjimky s důvodem (barvy zón tabulek
+podle kanonu, pole čekající na E8, pole ve formuláři jinde). `mvvm-patterns.md` opravené: okno společných
+vlastností nabízí jen pevnou sadu polí. Testy importu z PDF přepsané na nové popisky.
+
 ## 2026-10-26 (35) - „Aktuální: …" a „Projeté: …" v Seznamu zastávek (`B194d` E10)
 
 Skupina „Aktuální a projeté zastávky" měla každý popisek poskládaný jinak („Podtržení aktuální zast.",

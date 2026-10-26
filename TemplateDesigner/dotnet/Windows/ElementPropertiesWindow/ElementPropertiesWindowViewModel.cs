@@ -369,7 +369,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         var list = new List<Models.PropertyDescriptor>(descriptors.Count);
         foreach (var d in descriptors)
         {
-            if (d is StringPropertyDescriptor sd && sd.Label == "Text" && sd.MultiLine)
+            if (d is StringPropertyDescriptor sd && sd.Label == TextElement.ObsahLabel && sd.MultiLine)
             {
                 list.Add(new TextWithPickerPropertyDescriptor
                 {
