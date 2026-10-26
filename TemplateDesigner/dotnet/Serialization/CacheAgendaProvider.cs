@@ -453,8 +453,11 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             // Chyba Caché NENÍ „prázdno" - vyhodit, ať ji volající (export/tisk) pozná a nespadne
             // tiše na mock data. `null` níže znamená výhradně „legitimně žádná data", ne selhání.
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
+            {
+                if (ChybaDat(_mlRest.RestStatus.Message) is { } text) throw new CacheAgendaDataException(text);
                 throw new CacheAgendaException(
                     $"Načtení dat agendy '{agendaCode}' z databáze selhalo: {_mlRest.RestStatus.Message}");
+            }
 
             var uzly = result.Select(kvp => (kvp.Key, kvp.Value?.Value?.ToString())).ToList();
             return (ParsePages(uzly), DuvodPrazdneho(uzly));
@@ -498,6 +501,22 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             }
         }
         return pages.Count > 0 ? pages : null;
+    }
+
+    /// <summary>
+    /// Text chyby v datech ze zprávy serveru: agenda ji posílá jako obecnou chybu 5001
+    /// (`BaseAgenda.ChybaDat`), za textem visí výpis volání MLRest. Null = jiná chyba (chyba v kódu
+    /// serveru, výpadek) - ta zůstává chybou programu.
+    /// </summary>
+    internal static string? ChybaDat(string? zprava)
+    {
+        const string Znacka = "ERROR #5001: ";
+        int od = zprava?.IndexOf(Znacka, StringComparison.Ordinal) ?? -1;
+        if (od < 0) return null;
+        var text = zprava![(od + Znacka.Length)..];
+        foreach (var konec in new[] { "\r", "\n", "<EDISON>" })
+            if (text.IndexOf(konec, StringComparison.Ordinal) is var i and >= 0) text = text[..i];
+        return text.Trim() is { Length: > 0 } t ? t : null;
     }
 
     /// <summary>Důvod prázdného výstupu z uzlu <see cref="DuvodPrazdnehoKlic"/>; null = agenda ho neposlala.</summary>
@@ -854,4 +873,14 @@ public class CacheAgendaException : Exception
 {
     public CacheAgendaException(string message) : base(message) { }
     public CacheAgendaException(string message, Exception inner) : base(message, inner) { }
+}
+
+/// <summary>
+/// Chyba v datech linky, kterou agenda vysvětlila (`BaseAgenda.ChybaDat`): co je špatně a co s tím.
+/// Ukáže se jako informace, ne jako chyba programu - uživatel opraví data, ne nahlásí chybu (`B194a` C11).
+/// </summary>
+public class CacheAgendaDataException(string message, string? linka = null) : CacheAgendaException(message)
+{
+    /// <summary>Linka, u které se tisk zastavil; null = náhled jedné linky (ta je na štítku).</summary>
+    public string? Linka { get; } = linka;
 }

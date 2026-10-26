@@ -407,6 +407,17 @@ public class TemplateDesignerViewModel : EDViewModel
             SyncLayoutParamFromTemplate();
             RequestPreviewRefresh?.Invoke();
         }
+        catch (CacheAgendaDataException ex)
+        {
+            // Chyba v datech linky (`B194a` C11): mezi hlášky jako linka bez dat - říká, co opravit.
+            if (gen != _previewDataGeneration) return;
+            _realPreviewData = null;
+            Models.ColorHex.UiData = null;
+            NastavHlaseni(ZdrojHlaseni.Data, [Models.KontrolaVystupu.LinkaChybaDat(instance.Display, ex.Message)]);
+            StatusText = $"Linku nejde vytisknout: {instance.Display}";
+            NotifyPreviewPagesChanged();
+            RequestPreviewRefresh?.Invoke();
+        }
         catch (Exception ex)
         {
             if (gen != _previewDataGeneration) return;
@@ -2410,9 +2421,19 @@ public class TemplateDesignerViewModel : EDViewModel
                     foreach (var inst in ActiveInstances)
                     {
                         prubeh?.Report((hotovo++, ActiveInstances.Count, inst.Display));
-                        var (instPages, duvod) = provider.GetDataSDuvodem(agendaCode, ComposeGetDataParams(
-                            paramValues, paramName, inst.Value, ActiveSkupinaId, columnsDefJson,
-                            turnusy, JazykSablony));
+                        List<DataContext>? instPages;
+                        string? duvod;
+                        try
+                        {
+                            (instPages, duvod) = provider.GetDataSDuvodem(agendaCode, ComposeGetDataParams(
+                                paramValues, paramName, inst.Value, ActiveSkupinaId, columnsDefJson,
+                                turnusy, JazykSablony));
+                        }
+                        // Chyba v datech tisk zastaví (rozhodnutí Jan 26. 10.), ale musí říct, u které linky.
+                        catch (CacheAgendaDataException ex) when (ex.Linka is null)
+                        {
+                            throw new CacheAgendaDataException(ex.Message, inst.Display);
+                        }
                         if (instPages is null)
                         {
                             // Linka bez dat nezastaví ostatní, ale nesmí zmizet potichu.

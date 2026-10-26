@@ -55,6 +55,11 @@ public class LaunchPdfWindowViewModel : EDViewModel
             }
             OpenPdf(path);
         }
+        catch (Serialization.CacheAgendaDataException ex)
+        {
+            // Chyba v datech linky (`B194a` C11) - uživatel ji opraví v jízdních řádech, není to chyba programu.
+            PopupDisplayer.Info(ex.Linka is null ? ex.Message : $"Linka {ex.Linka} nejde vytisknout: {ex.Message}");
+        }
         catch (Exception ex)
         {
             PopupDisplayer.Error(ex);

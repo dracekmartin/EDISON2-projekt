@@ -22,6 +22,8 @@
   (rozhodnutí Jan 26. 10.: zatím takto, lépe po probrání nastavení JŘ - backlog; changelog 2026-10-26 (1)).
 - **C10** „Uložit jako" agendu šablony jen ukáže, změna jen přes Změnit agendu (rozhodnutí Jan 26. 10.;
   changelog 2026-10-26 (2)).
+- **C11** Chyba v datech linky zastaví tisk, ale ukáže se jako informace s tím, co opravit, a s číslem
+  linky (rozhodnutí Jan 26. 10.: zastavit celé smí; changelog 2026-10-26 (3)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

@@ -549,8 +549,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i sku = "" s sku = $o(^[dataDB]JRL(""))
         s lin = ..NormalizLinku($g(^||ML("IN","LINKA_ID")))
         i lin = "" s lin = ..NormalizLinku($g(^||ML("IN","INSTANCE_ID")))
-        i lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
-        i '$d(^[dataDB]JRL(sku,lin,"I")) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_sku_"/"_lin_" neexistuje v ^JRL"))
+        i lin = "" d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
+        i '$d(^[dataDB]JRL(sku,lin,"I")) d ..ChybaDat(..TextLinkaNeniVJr(sku, lin))
 
         d ..NactiNastaveniNazvu(dataDB, sku, lin)
         // Vlastní definice sloupců ze šablony (`DEFINICE_SLOUPCU`) přebíjí hrubý přepínač dělení.
@@ -1342,7 +1342,7 @@ ClassMethod NactiTurnusy(dataDB As %String, sku As %String, lin As %String, ByRe
     s chyba = ##class(ALVA.ADMAIN.MLAPI).gSplTur(dataDB, dataDB, dh, .tin, .tout)
     // Chyba se **nepolyká**: uživatel si turnusy vyžádal parametrem, takže tisk bez nich by byl
     // tichý fallback - pozná se až na papíře, že tam nejsou.
-    i +chyba $$$ThrowStatus($$$ERROR($$$GeneralError, "turnusy ke spojům: "_$p(chyba,"~",2)))
+    i +chyba d ..ChybaDat("Turnusy ke spojům nejde načíst"_$s($p(chyba,"~",2)'="":" ("_$p(chyba,"~",2)_")", 1:"")_". Zkontrolujte turnusy v modulu AD, nebo u Tabulky spojů vypněte Turnusy ke spojům.")
     s sp = ""
     f {
         s sp = $o(tout("arr",1,+lin,sp))

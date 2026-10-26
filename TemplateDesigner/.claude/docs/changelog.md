@@ -1,5 +1,21 @@
 ﻿# Changelog
 
+## 2026-10-26 (3) - 💬 chyba v datech linky říká, co opravit (`B194a` C11)
+
+Chyba ze serveru u jedné linky zastavila tisk s textem „Načtení dat agendy 'ZASTAVKOVY_JR_AD' z databáze
+selhalo: … Linka 1/380761 neexistuje v ^JRL" (v náhledu jen ve stavovém řádku). Rozhodnutí Jan 26. 10.:
+tisk se zastavit smí, hláška ale musí říct, co je v datech špatně a co s tím. Agendy JŘ teď chyby dat
+posílají přes `BaseAgenda.ChybaDat` (obecná chyba 5001): linka AD ve skupině není („Linka 999999 ve
+skupině 1 v jízdních řádech není. Mohla být smazána nebo přesunuta do jiné skupiny - vyberte linky
+znovu."), linka MHD v modulu není, spoj MHD bez použitelného kalendáře či rozpisu typu provozu (veřejné
+číslo spoje, ne ID), turnusy nejdou načíst, chybí linka. Návrhář chybu 5001 pozná
+(`CacheAgendaProvider.ChybaDat` → `CacheAgendaDataException`) a ukáže ji jako hlášku-problém linky
+(`KontrolaVystupu.LinkaChybaDat`) v náhledu i v tiskovém okně a jako informaci při tisku z EDISONu,
+s číslem linky; jiná chyba serveru (chyba v kódu, výpadek) zůstává chybou programu. Linka mimo JŘ přes
+výběr linek vybrat nejde - jen spuštěním z EDISONu s linkou z jiné skupiny nebo po smazání linky
+(Jan: i tak má hláška smysl). Pravidlo v `cache-api.md`. Testy `ChybaDatTest` (Caché, texty agend ověřené
+i voláním serveru) a `ChybaDatTests` (rozpoznání ze skutečné zprávy MLRest, hláška).
+
 ## 2026-10-26 (2) - 🔒 „Uložit jako" už nemění agendu šablony (`B194a` C10)
 
 Okno „Uložit do databáze jako…" nabízelo v poli Agenda všechny agendy z registru, i nezveřejněné

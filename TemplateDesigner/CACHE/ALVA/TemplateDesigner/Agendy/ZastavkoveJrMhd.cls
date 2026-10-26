@@ -289,7 +289,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         $$$FillParams
 
         s LinkaID = $g(^||ML("IN","LINKA_ID"))
-        i 'LinkaID $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
+        i 'LinkaID d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
 
         k ^||TiskMHD
         d ..ZacitDuvodyPrazdne()

@@ -233,8 +233,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         s linkaId = $g(^||ML("IN","LINKA_ID"))
         i linkaId = "" s linkaId = $g(^||ML("IN","INSTANCE_ID"))
-        i linkaId = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
-        i '$d(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId)) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_linkaId_" neexistuje v ALVA.MHD.LSO"))
+        i linkaId = "" d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
+        i '$d(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId)) d ..ChybaDat("Vybraná linka v modulu MHD není, mohla být smazána. Vyberte linky znovu.")
 
         s smery = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).SmeryKTisku($g(^||ML("IN","SMER_TISKU")))
         d ..PriradNegativniZnacky(.sys, IdFa, dataDB, linkaId, smery, .znacky)
@@ -879,7 +879,7 @@ ClassMethod OmezeniSpoje(IdFa As %String, dataDB As %String, spojId As %String, 
     s bmp = $p(provozBitmapa,"~",3)
     k arr
     s isok = ##class(ALVA.MHD.KalendarFce).GetJede(IdFa, dataDB, $p(provozBitmapa,"~",1), $p(provozBitmapa,"~",2), typProvozu, "", "", .arr)
-    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Kalendář typu provozu spoje "_spojId_": "_isok))
+    i 'isok d ..ChybaSpoje(IdFa, dataDB, spojId, "kalendář typu provozu", isok)
     s cbmp = $lg($g(arr("dta",1)), 3)
     i cbmp = bmp q ""
 
@@ -887,14 +887,23 @@ ClassMethod OmezeniSpoje(IdFa As %String, dataDB As %String, spojId As %String, 
     s arri("dta",1) = $p(provozBitmapa,"~",1), arri("dta",2) = $p(provozBitmapa,"~",2)
     s arri("dta",3) = bmp, arri("dta",4) = cbmp
     s isok = ##class(ALVA.MHD.KalendarFce).MakeRozpisTplProTypProvozuID(IdFa, dataDB, typProvozu, .arri)
-    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Rozpis typu provozu spoje "_spojId_": "_isok))
+    i 'isok d ..ChybaSpoje(IdFa, dataDB, spojId, "rozpis typu provozu", isok)
     s chyba = $$mkOmzFromOnlyTwoBitmaps^JRapi(IdFa, dataDB, .arri, .arr)
-    i +chyba $$$ThrowStatus($$$ERROR($$$GeneralError, "Omezení spoje "_spojId_": "_chyba))
+    i +chyba d ..ChybaSpoje(IdFa, dataDB, spojId, "omezení proti kalendáři", chyba)
     s dny = $g(arr("dta",1))
     k arri m arri = arr s arri("par",1) = 0 k arr
     s isok = ##class(ALVA.MHD.KalendarFce).MakeOmezeniTXT(IdFa, dataDB, .arri, .arr)
-    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Text omezení spoje "_spojId_": "_isok))
+    i 'isok d ..ChybaSpoje(IdFa, dataDB, spojId, "text omezení", isok)
     q $g(arr("dta",1))
+}
+
+/// Spoj, u kterého modul MHD nedokáže říct, kdy jede - chyba v datech typu provozu, kterou uživatel
+/// opraví v modulu MHD (`BaseAgenda.ChybaDat`). Číslo spoje veřejné, ne interní ID.
+ClassMethod ChybaSpoje(IdFa As %String, dataDB As %String, spojId As %String, co As %String, vysledek As %String)
+{
+    s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"CisloSpoje"))
+    s detail = $zstrip($s(vysledek["~":$p(vysledek,"~",2,$l(vysledek,"~")), 1:""), "<>W")
+    d ..ChybaDat("Spoj "_$s(cislo'="":cislo, 1:spojId)_": nejde určit, kdy jede ("_co_$s(detail'="":": "_detail, 1:"")_"). Zkontrolujte typ provozu spoje v modulu MHD.")
 }
 
 /// První NZ od `od`, kterou nemá žádný typ provozu, číselník ani už přidělený text (legacy :606-618).

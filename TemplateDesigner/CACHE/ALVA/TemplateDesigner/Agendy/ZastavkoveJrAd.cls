@@ -235,8 +235,9 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // LINKA_ID nebo INSTANCE_ID (alias z Instance Pickeru) - co přijde
         s lin = ..NormalizLinku($g(^||ML("IN","LINKA_ID")))
         i lin = "" s lin = ..NormalizLinku($g(^||ML("IN","INSTANCE_ID")))
-        i lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
-        i '$d(^[dataDB]JRL(sku,lin,"I")) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_sku_"/"_lin_" neexistuje v ^JRL"))
+        i lin = "" d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
+        // Přes výběr linek nejde, jen spuštěním z EDISONu nebo po smazání linky v JŘ (BaseAgenda.TextLinkaNeniVJr).
+        i '$d(^[dataDB]JRL(sku,lin,"I")) d ..ChybaDat(..TextLinkaNeniVJr(sku, lin))
 
         // #8828: rozdělit vývěsku per označník - vývěska obsluhovaná z N označníků → N stránek,
         // každá s odjezdy jen z toho označníku. Default vyp = jedna vývěska (odjezdy smíchané).

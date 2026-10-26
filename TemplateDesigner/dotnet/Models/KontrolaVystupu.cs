@@ -26,6 +26,10 @@ public static class KontrolaVystupu
         new(ZavaznostHlaseni.Chyba, linka, "nemá data, nevytiskne se",
             string.IsNullOrWhiteSpace(duvod) ? "zkontrolujte jízdní řád linky" : duvod) { Linka = linka };
 
+    /// <summary>Linka, kterou zastavila chyba v jejích datech - agenda řekne, co opravit (`B194a` C11).</summary>
+    public static Hlaseni LinkaChybaDat(string linka, string text) =>
+        new(ZavaznostHlaseni.Chyba, linka, "nejde vytisknout, tisk se zastavil", text) { Linka = linka };
+
     /// <summary>Hlášky linek, které nedaly data - před hláškami ostatních linek.</summary>
     public static List<Hlaseni> SBezDat(IReadOnlyList<(string Linka, string? Duvod)>? bezDat, IEnumerable<Hlaseni> ostatni) =>
         [.. (bezDat ?? []).Select(v => LinkaBezDat(v.Linka, v.Duvod)), .. ostatni];

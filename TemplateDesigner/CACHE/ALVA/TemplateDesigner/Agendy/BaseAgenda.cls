@@ -564,6 +564,22 @@ ClassMethod VydatDuvodPrazdne(vychozi As %String = "")
     k ^||TdDuvodPrazdne
 }
 
+/// ── Chyba v datech (`B194a` C11) ──
+/// Linku nejde vytisknout kvůli datům, která uživatel opraví (linka v JŘ není, spoj bez kalendáře…).
+/// Text řekne co a co s tím; návrhář ho ukáže jako informaci s číslem linky a tisk zastaví. Pozná ji
+/// podle tvaru obecné chyby (5001) - chyba v kódu ho nemá a zůstává chybou programu s hlášením.
+ClassMethod ChybaDat(text As %String)
+{
+    throw ##class(%Exception.StatusException).CreateFromStatus($system.Status.Error(5001, text))
+}
+
+/// Linka AD, která ve skupině není - přes výběr linek to nejde, jen spuštěním z EDISONu s linkou
+/// z jiné skupiny, nebo když ji někdo v JŘ smazal či přesunul, zatímco je v návrháři vybraná.
+ClassMethod TextLinkaNeniVJr(sku As %String, lin As %String) As %String
+{
+    q "Linka "_(+lin)_" ve skupině "_sku_" v jízdních řádech není. Mohla být smazána nebo přesunuta do jiné skupiny - vyberte linky znovu."
+}
+
 /// Razítko typu JŘ linky AD podle `PATCH,"OBJ"` (1 výluka, 2 návrh). Texty jako u MHD
 /// (`ZastavkoveJrMhd.TypJrLinky`), aby razítko vypadalo ve všech agendách stejně; starý postskriptový
 /// tisk AD psal u návrhu „návrh jízdního řádu" (rozhodnutí Jan 23. 10.: jednotně „NÁVRH").

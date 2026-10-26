@@ -23,12 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C11 Chyba u jedné linky zastaví tisk všech** [M] (*ověřeno:* kód). Linka bez dat už tisk nezastaví
-  (`0ba002d1`), výjimka ze serveru ano: `NacitaniVsechLinek` (:2380) nemá ošetření pro každou linku.
-  Hláška je technická: „LINKA_ID is required", „Linka 1/380761 neexistuje v ^JRL" (`ZastavkoveJrAd.cls:236`,
-  `LinkovyJrAd.cls:550`, `LinkovyJrMhd.cls:236`, `ZastavkoveJrMhd.cls:292`) a nese kód agendy
-  (`CacheAgendaProvider.GetDataSDuvodem`). Návrh: chybu linky zařadit mezi vynechané; linka, která v JŘ
-  není, jako `DUVOD_PRAZDNE` s větou pro uživatele.
 - **C12 Výchozí vývěska MHD: nadpisy skupin dnů a minuty se nevejdou** [M] (*ověřeno:* jen zkušební
   vykreslení `ZkouskaTiskuNaostro`, KV_DP linka 17 se čtyřmi skupinami dnů, 24. 10.; v návrháři
   neověřeno). Dvouřádkový nadpis („Pracovní den" / „1.7. - 31.8. a 27.12. - …") přetéká do sousední
