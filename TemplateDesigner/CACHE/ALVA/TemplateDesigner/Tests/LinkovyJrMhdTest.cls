@@ -434,12 +434,13 @@ Method TestPoznamkyZTrasy()
 	kill ^[db]ALVA.MHD.ENUMS(idfa), ^[db]ALVA.MHD.LSO(idfa)
 }
 
-/// `B193a`: dopravce z téhož zdroje jako vývěska MHD, jen jedním řádkem jako linkový AD (název,
-/// sídlo, ulice, „tel. "). Poznámku nad linku linkový MHD nenabízí - modul MHD ji nedává zadat.
+/// `B193a`: dopravce z téhož zdroje jako vývěska MHD, jen jedním řádkem s oddělovači a „tel. " jako
+/// linkový AD. Pořadí adresy jako vývěska MHD - ulice, PSČ obec (`B194a` T6, do 26. 10. obráceně).
+/// Poznámku nad linku linkový MHD nenabízí - modul MHD ji nedává zadat.
 Method TestDopravceJakoVyveska()
 {
 	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
-	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", " DP, a.s. ", "Hlavní 1", "123 45 Město", "111 222", 1), "DP, a.s., 123 45 Město, Hlavní 1, tel. 111 222", "jedním řádkem")
+	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", " DP, a.s. ", "Hlavní 1", "123 45 Město", "111 222", 1), "DP, a.s., Hlavní 1, 123 45 Město, tel. 111 222", "jedním řádkem")
 	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", "DP", "", "", "", 1), "DP", "bez adresy jen název")
 	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", "DP", "Hlavní 1", "Město", "111"), "DP"_$c(10)_"Hlavní 1"_$c(10)_"Město"_$c(10)_"tel: 111", "vývěska po řádcích beze změny")
 

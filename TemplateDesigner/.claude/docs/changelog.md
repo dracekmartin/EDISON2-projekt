@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-26 (5) - 🚌 dopravce: pořadí adresy v linkovém MHD a mezery v souhrnném poli (`B194b` T6)
+
+Rozhodnutí Jan 26. 10. jako kompromis sjednocení: linkový JŘ MHD tiskne v řádku „Přepravu zajišťuje"
+adresu v pořadí ulice, PSČ obec jako vývěska MHD (dřív „PSČ obec, ulice" převzaté z linkového AD, kde
+jsou data členěná jinak - sídlo provozovny a celá adresa); oddělovače a „tel." dál jako linkový AD
+(`ZastavkoveJrMhd.RadkyDopravce`, agenda ještě nevydaná). Souhrnné pole dopravců vývěsky AD
+(`DOPRAVCI_SOUHRNNY_JR`) má mezery za čárkami a provoz bez ulice nedá dvojčárku
+(`ZastavkoveJrAd.NazevDopravce`; mění vydaný tisk jen v tomhle poli). „tel:" ve vývěskách a „tel."
+v linkových JŘ vědomě zůstávají - každé podle svého starého tisku. Testy `LinkovyJrMhdTest.TestDopravceJakoVyveska`,
+`ZastavkoveJrAdHelperyTest.TestNazevDopravceJednimRadkem`; zlaté odtisky vývěsky AD 0365001/0365005/0330530
+přebaselinované, mění se jen md5.
+
 ## 2026-10-26 (4) - 📐 Minuty odjezdů hlídají šířku jako výšku (`B194a` C12)
 
 Výchozí vývěska MHD na lince se čtyřmi skupinami dnů (KV_DP 17 Tržnice - Dalovice) kreslila nadpisy

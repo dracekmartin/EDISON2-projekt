@@ -55,12 +55,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
 - **T11 Vývěska AD má nadpisy skupin dnů natvrdo česky** [S-M] **tisk** (*ověřeno:* kód). `NacistSkupinyDnu`
   (:851); starý tisk bral číselník firmy (`JRapiLinPrtMhd1.mac:541-571`) - nejdřív změřit, u kolika firem
   se liší. (Vyčleněno z `T5`, které je uzavřené jako vědomý rozdíl - viz §8.)
-- **T6 Dopravce v pěti tvarech** [S] (*ověřeno:* server). Vývěska AD po řádcích s adresou a „tel:" (#13158,
-  vědomé), linkový AD jedním řádkem „tel." bez adresy (ověřený oraclem), pole `DOPRAVCI_SOUHRNNY_JR`
-  „…,Hálkova…,tel:386100111" bez mezer (`ZastavkoveJrAd.NazevDopravce` :3011; nové pole #13008, tvar převzalo,
-  pinuje ho zlatý odtisk), linkový MHD „PSČ obec, ulice" × vývěska MHD „ulice, PSČ obec"
-  (`ZastavkoveJrMhd.RadkyDopravce`). Návrh: souhrnné pole na oddělovače linkového AD, pořadí u linkového
-  MHD **před 27. 10.**, „tel:" × „tel." rozhodnout.
 - **T7 „Jen nástup / jen výstup" chybí jen na vývěsce AD** [S-M] (*ověřeno:* kód). Ostatní tři kreslí šipku
   a vysvětlivku; vývěska je řadí mezi tiskové pokyny (`ZastavkoveJrAd.JeViditelnyAtribut` :2539). Parita se
   starou vývěskou (tiskla jen „x"), počet zastávek nezměřen.
@@ -301,6 +295,8 @@ totéž znovu. Pořadí podle přínosu:
 - **Vědomě jinak (rozhodnutí Jan 26. 10.):** nadpis skupiny dnů je ve vývěsce MHD dvouřádkový, v linkovém
   MHD jedním řádkem (`T5`). Vývěska má úzké sloupce skupin, v Tabulce spojů se nadpis táhne přes všechny
   spoje skupiny. Požadavek DPKV #10660 se týkal vývěsky. Dva řádky v linkovém by se dělaly novým polem.
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** telefon dopravce „tel:" ve vývěskách a „tel." v linkových JŘ
+  (`T6`) - každý tvar odpovídá svému starému tisku a vývěsky jsou vydané.
 
 - Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (výjimka `P4`);
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,

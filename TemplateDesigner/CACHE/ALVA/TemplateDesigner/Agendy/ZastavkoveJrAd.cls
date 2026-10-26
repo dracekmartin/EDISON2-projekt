@@ -3007,11 +3007,16 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String, poRad
     i tel = ""   s tel = $p(firma,"~",3)
 
     i 'poRadcich {
-        // Jednořádkový tvar 1:1 jako dosud - zkrácený název se vrací samotný.
+        // Jednořádkový tvar (souhrnné pole dopravců) - zkrácený název se vrací samotný. Části odděluje
+        // „, " a prázdná ulice se přeskočí; do 26. 10. „,ulice,tel:" bez mezer a „,,tel:" u provozu bez
+        // ulice (`B194a` T6). Ulice dál jen s telefonem jako dřív, „tel:" jako ve vývěsce po řádcích.
         i maZkratku q jmeno
         s text = jmeno
         i sidlo '= "" s text = text_", "_sidlo
-        i tel '= ""   s text = text_","_ulice_",tel:"_tel   // slot ulice mezi sídlem a telefonem (prázdná → ,,tel:)
+        i tel '= "" {
+            i ulice '= "" s text = text_", "_ulice
+            s text = text_", tel: "_tel
+        }
         q text
     }
 

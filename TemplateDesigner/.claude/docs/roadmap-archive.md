@@ -30,6 +30,8 @@
 - **T5** Nadpis skupiny dnů v linkovém MHD jedním řádkem - **vědomý rozdíl** proti vývěsce MHD (rozhodnutí
   Jan 26. 10.: vývěska má úzké sloupce, v Tabulce spojů je nadpis přes celou skupinu; #10660 se týkal
   vývěsky). Související nadpisy vývěsky AD natvrdo česky zůstaly jako `T11`.
+- **T6** Dopravce: linkový MHD v pořadí ulice, PSČ obec jako vývěska MHD, souhrnné pole dopravců s mezerami
+  za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

@@ -1094,4 +1094,22 @@ Method Znacky(plk As %String, sloupecDny As %String) As %String
 	quit $classmethod(cls, "DenniZnackyProSloupec", plk, $classmethod(cls, "DnySpoje", plk), sloupecDny)
 }
 
+/// `B194a` T6: souhrnné pole dopravců jedním řádkem - části oddělené „, " a provoz bez ulice bez
+/// dvojčárky. Do 26. 10. „ČSAD Test, Písek,Hálkova 1,tel:386100111" a „…,,tel:386100111".
+Method TestNazevDopravceJednimRadkem()
+{
+	set db = $namespace, fa = "TDTEST"_$translate($system.Util.CreateGUID(), "-")
+	set ad = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	try {
+		set $piece(^[db]JRSET("DOP", fa), "~", 7) = "ČSAD Test"
+		set ^[db]JRSET("DOP", fa, 1) = "Písek~Hálkova 1~386100111"
+		set ^[db]JRSET("DOP", fa, 2) = "Písek~~386100111"
+		do $$$AssertEquals($classmethod(ad, "NazevDopravce", db, fa, 1), "ČSAD Test, Písek, Hálkova 1, tel: 386100111", "s ulicí")
+		do $$$AssertEquals($classmethod(ad, "NazevDopravce", db, fa, 2), "ČSAD Test, Písek, tel: 386100111", "provoz bez ulice")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRSET("DOP", fa)
+}
+
 }

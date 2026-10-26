@@ -1929,8 +1929,9 @@ ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
 
 /// Složí dopravce do řádků: název, ulice, sídlo/město, telefon. Prázdné položky se vynechají,
 /// takže u dopravce bez adresy zbyde samotný název jako dřív.
-/// `jednimRadkem` = tvar řádku „Přepravu zajišťuje" linkového JŘ, shodný s linkovým AD
-/// (`LinkovyJrAd.NazevDopravce`): název, sídlo, ulice, „tel. " oddělené čárkou.
+/// `jednimRadkem` = tvar řádku „Přepravu zajišťuje" linkového JŘ: název, ulice, PSČ obec, „tel. "
+/// oddělené čárkou. Oddělovače a „tel." jako linkový AD (`LinkovyJrAd.NazevDopravce`), pořadí adresy
+/// jako vývěska MHD - do 26. 10. „PSČ obec, ulice" převzaté z AD, kde jsou data členěná jinak (`B194a` T6).
 ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, tel As %String, jednimRadkem As %Boolean = 0) As %String
 {
     s nazev = $zstrip($g(nazev), "<>W")
@@ -1938,8 +1939,8 @@ ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, 
     s ulice = $zstrip($g(ulice), "<>W"), mesto = $zstrip($g(mesto), "<>W"), tel = $zstrip($g(tel), "<>W")
     s text = nazev
     i jednimRadkem {
-        i mesto '= "" s text = text_", "_mesto
         i ulice '= "" s text = text_", "_ulice
+        i mesto '= "" s text = text_", "_mesto
         i tel '= ""   s text = text_", tel. "_tel
         q text
     }
