@@ -1,5 +1,21 @@
 ﻿# Changelog
 
+## 2026-10-26 (20) - nadpisy skupin dnů z nastavení firmy i v Zastávkovém JŘ AD (`B194b` T11)
+
+Zastávkový JŘ AD měl nadpisy skupin dnů („Pracovní dny", „Soboty"…) napevno česky. Starý zastávkový
+tisk je bral z nastavení firmy `^JRSET("Definice","WinMHD",rec,"DSC")` podle rozložení sloupců a linka
+mohla mít vlastní sadu (`PATCH,ISY_LinkyTiskMHDNadpisy`, `JRapiLinPrtMhd1.mac:541-571`). Teď jedna
+metoda `BaseAgenda.NadpisySkupinDnuAd` pro obě agendy AD: rozložení 0-3 = kusy 2-4 / 5-7 / 8-9 / 10-13,
+sada linky má přednost, `<br>` je druhý řádek nadpisu (Zastávkový) nebo mezera (Linkový - do 26. 10.
+vycházelo doslova, CB_GWBUS „Sobota,<br> Neděle…"), prázdné → dosavadní text (rozhodnutí Jan 26. 10.).
+Vzory vlastních sloupců berou tytéž nadpisy, aby vzor a automatika téhož rozložení tiskly stejně
+(nově i `nadpis2`). Měřeno sondou `NadpisySkupinDnu`: KV_DP, VS_CSAD, ZL_KOVED mají nadpisy malým
+písmenem, CB_GWBUS dvouřádkové, Nitra dvojjazyčné a 218 linek se sadou TN2/TN3. Nadpisy přepsané
+v šabloně mají dál přednost. ⚠️ Šablona s vlastními sloupci z dřívějšího vzoru se u firem s jinými
+nadpisy už nepozná jako vzor (parametr ukáže „Vlastní rozložení"), tisk se jí nemění.
+Testy `TestNadpisySkupinDnuZNastaveni`, `TestNadpisyDvojiceZKusu8a9` (přepsaný na čtení z nastavení);
+re-baseline zlatých odtisků Zastávkového JŘ AD 0365001, 0365005, 0330530: jen md5, počty shodné.
+
 ## 2026-10-26 (19) - pokračování spoje v Linkovém JŘ AD i slovensky (`B194b` T10a)
 
 Věta „spoj N pokračuje na lince číslo L spojem číslo S do zastávky Z" byla v Linkovém JŘ AD napevno

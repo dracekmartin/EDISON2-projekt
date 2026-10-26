@@ -56,6 +56,9 @@ Dílčí vylepšení a náměty.
   upřesnění nově tiskne i linkový JŘ AD.
 - **Barvy spojů:** zastávkový JŘ AD tiskne minuty barvou spoje z jízdních řádů jako linkový JŘ.
   V obou se to vypíná zaškrtávátkem **Barvy spojů** v parametrech sestavy.
+- **Nadpisy sloupců dnů** (pracovní dny, soboty…) bere zastávkový JŘ AD z nastavení jízdních řádů
+  vaší firmy, i dvouřádkové a dvojjazyčné, jako starý tisk a linkový JŘ. Nadpisy upravené v šabloně
+  platí dál.
 
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 

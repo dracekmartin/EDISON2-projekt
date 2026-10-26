@@ -839,7 +839,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s rows = ##class(%DynamicObject).%New()
     d rows.%Set("ZASTAVKY", zastavky)
     i pocetDefSloupcu { d rows.%Set("SKUPINY_DNU", ..NacistSkupinyDnuDleDefinice(.defSloupce)) }
-    else { d rows.%Set("SKUPINY_DNU", ..NacistSkupinyDnu(ftl)) }
+    else { d rows.%Set("SKUPINY_DNU", ..NacistSkupinyDnu(ftl, dataDB, sku, lin)) }
     d rows.%Set("ODJEZDY", odjezdy)
     d rows.%Set("POZNAMKY", poznamky)
     d rows.%Set("DOPRAVCI", ..BuildDopravci(dataDB, sku, lin))
@@ -852,27 +852,25 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
 ///   FTL=1: Prac mimo prázd | Prac o prázd | So+Ne+svátky  (3 sloupce)
 ///   FTL=2: Prac | So+Ne+svátky                            (2 sloupce)
 ///   FTL=3: Prac mimo prázd | Prac o prázd | So | Ne+svátky (4 sloupce)
-ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
+ClassMethod NacistSkupinyDnu(ftl As %String, dataDB As %String = "", sku As %String = "", lin As %String = "") As %DynamicArray
 {
     s skupiny = ##class(%DynamicArray).%New()
-    i ftl = 1 {
-        d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny mimo prázdniny", "", 1))
-        d skupiny.%Push(..BuildSkupinaDnu("2", "Pracovní dny o prázdninách", "", 2))
-        d skupiny.%Push(..BuildSkupinaDnu("3", "Soboty, neděle a svátky", "", 3))
-    } elseif ftl = 2 {
-        d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny", "", 1))
-        d skupiny.%Push(..BuildSkupinaDnu("2", "Soboty, neděle a svátky", "", 2))
-    } elseif ftl = 3 {
-        d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny mimo prázdniny", "", 1))
-        d skupiny.%Push(..BuildSkupinaDnu("2", "Pracovní dny o prázdninách", "", 2))
-        d skupiny.%Push(..BuildSkupinaDnu("3", "Soboty", "", 3))
-        d skupiny.%Push(..BuildSkupinaDnu("4", "Neděle a svátky", "", 4))
-    } else {
-        d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny", "", 1))
-        d skupiny.%Push(..BuildSkupinaDnu("2", "Soboty", "", 2))
-        d skupiny.%Push(..BuildSkupinaDnu("3", "Neděle a svátky", "", 3))
-    }
+    // nadpisy z nastavení firmy / sady linky (BaseAgenda.NadpisySkupinDnuAd), dnešní text jako výchozí
+    s rozlozeni = $case(ftl, 1:1, 2:2, 3:3, :0)
+    d ..NadpisySkupinDnuAd(dataDB, sku, lin, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), rozlozeni, ..NadpisySkupinVychozi(rozlozeni), .t)
+    // ID jde na wire jako text („1"), jako dřív - odjezdy na něj odkazují svým SKUPINA_DNU_ID
+    f i=1:1:$o(t(""),-1) d skupiny.%Push(..BuildSkupinaDnu(i_"", t(i), t(i,2), i))
     q skupiny
+}
+
+/// Výchozí nadpisy skupin dnů pro rozložení (viz `NadpisySkupinDnuAd`), když je firma nemá.
+ClassMethod NadpisySkupinVychozi(rozlozeni As %Integer) As %String
+{
+    q $case(rozlozeni,
+        1:"Pracovní dny mimo prázdniny~Pracovní dny o prázdninách~Soboty, neděle a svátky",
+        2:"Pracovní dny~Soboty, neděle a svátky",
+        3:"Pracovní dny mimo prázdniny~Pracovní dny o prázdninách~Soboty~Neděle a svátky",
+        :"Pracovní dny~Soboty~Neděle a svátky")
 }
 
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
@@ -1906,11 +1904,16 @@ ClassMethod PresetySloupcu(dataDB As %String, sku As %String, lin As %String) As
     s mimoBez   = ..SpojSeznamyZnacek($p(nz,"~",1), $p(nenz,"~",2))
     s oPrazdBez = ..SpojSeznamyZnacek($p(nz,"~",2), $p(nenz,"~",1))
 
+    // nadpisy vzorů stejně jako automatické rozložení (`NadpisySkupinDnuAd`, `B194` T11) - vzor
+    // a automatika téhož rozložení tak tisknou tytéž nadpisy
+    s rec = $s(..Jazyk() = "sk":"*SK", 1:"CZ")
+    f rozl=0:1:3 { k tt  d ..NadpisySkupinDnuAd(dataDB, sku, lin, rec, rozl, ..NadpisySkupinVychozi(rozl), .tt)  m n(rozl) = tt }
+
     s out = ##class(%DynamicObject).%New()
-    d out.%Set("PRAC_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny","X",""), $lb("2","Soboty","6",""), $lb("3","Neděle a svátky","+","")), neznz))
-    d out.%Set("PRAC_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny","X",""), $lb("2","Soboty, neděle a svátky","6+","")), neznz))
-    d out.%Set("PRAZDNINY_VIKEND", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","X",mimoBez), $lb("2","Pracovní dny o prázdninách","X",oPrazdBez), $lb("3","Soboty, neděle a svátky","6+","")), neznz))
-    d out.%Set("PRAZDNINY_SO_NE", ..PresetSloupce($lb($lb("1","Pracovní dny mimo prázdniny","X",mimoBez), $lb("2","Pracovní dny o prázdninách","X",oPrazdBez), $lb("3","Soboty","6",""), $lb("4","Neděle a svátky","+","")), neznz))
+    d out.%Set("PRAC_SO_NE", ..PresetSloupce($lb($lb("1",n(0,1),"X","",n(0,1,2)), $lb("2",n(0,2),"6","",n(0,2,2)), $lb("3",n(0,3),"+","",n(0,3,2))), neznz))
+    d out.%Set("PRAC_VIKEND", ..PresetSloupce($lb($lb("1",n(2,1),"X","",n(2,1,2)), $lb("2",n(2,2),"6+","",n(2,2,2))), neznz))
+    d out.%Set("PRAZDNINY_VIKEND", ..PresetSloupce($lb($lb("1",n(1,1),"X",mimoBez,n(1,1,2)), $lb("2",n(1,2),"X",oPrazdBez,n(1,2,2)), $lb("3",n(1,3),"6+","",n(1,3,2))), neznz))
+    d out.%Set("PRAZDNINY_SO_NE", ..PresetSloupce($lb($lb("1",n(3,1),"X",mimoBez,n(3,1,2)), $lb("2",n(3,2),"X",oPrazdBez,n(3,2,2)), $lb("3",n(3,3),"6","",n(3,3,2)), $lb("4",n(3,4),"+","",n(3,4,2))), neznz))
     q out.%ToJSON()
 }
 
@@ -1923,6 +1926,8 @@ ClassMethod PresetSloupce(sloupce As %List, neznz As %String) As %DynamicArray
         s sl = ##class(%DynamicObject).%New()
         d sl.%Set("id", $li(def,1))
         d sl.%Set("nadpis", $li(def,2))
+        // druhý řádek nadpisu (`<br>` v nastavení firmy) - jen když je, ať se vzory bez něj nemění
+        i $lg(def,5) '= "" d sl.%Set("nadpis2", $lg(def,5))
         d sl.%Set("dny", $li(def,3))
         d sl.%Set("znackyBez", $li(def,4))
         d sl.%Set("nevypisovatZnacky", $zstrip($p(neznz,"~",i),"<>W"))

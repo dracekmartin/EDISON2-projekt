@@ -2256,6 +2256,45 @@ ClassMethod PredlozkyOmezeni(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Nadpisy skupin dnů po firmách (`B194` T11): nastavení firmy `^JRSET("Definice","WinMHD",rec,"DSC")`
+/// (kusy 1-13 podle rozložení, `JRapiLinPrtMhd1.mac:541-571`), odkud je bral starý zastávkový tisk,
+/// a kolik linek má vlastní sadu nadpisů (`PATCH,ISY_LinkyTiskMHDNadpisy` → `^JRSET("LinkyTiskMHDNadpisy")`).
+ClassMethod NadpisySkupinDnu(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			for rec = "CZ", "*SK" {
+				set dsc = $get(^[db]JRSET("Definice","WinMHD",rec,"DSC"))
+				continue:dsc=""
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = db_" "_rec_" DSC: "_dsc
+			}
+			set linek = 0, sady = "", sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					set sada = $get(^[db]JRL(sku, lin, "PATCH", "ISY_LinkyTiskMHDNadpisy"))
+					continue:sada=""
+					set linek = linek + 1
+					set:(","_sady_",")'[(","_sada_",") sady = sady_$select(sady="":"", 1:",")_sada
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s vlastní sadou nadpisů "_linek_" (sady "_sady_")"
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Spoje s omezením „v sudých / lichých týdnech od-do" (omzId 14 / 15) po firmách (`B194` T3d) - jen
 /// u nich se liší zkrácená předložka Zastávkového JŘ AD („v su.") od číselníku. Příklad = nejvyšší skupina.
 ClassMethod OmezeniSudeLiche(ByRef sys As %String) As %Status

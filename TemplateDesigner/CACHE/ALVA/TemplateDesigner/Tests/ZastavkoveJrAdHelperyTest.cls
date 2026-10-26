@@ -63,6 +63,49 @@ Method TestTextPrestupuLegendy()
 	}
 }
 
+// ── Nadpisy skupin dnů (B194 T11) ────────────────────────────────────────────
+/// Nadpisy skupin dnů jdou z nastavení firmy jako ve starém zastávkovém tisku: malá písmena KV_DP,
+/// zalomení `<br>` na druhý řádek (CB_GWBUS), sada nadpisů u linky (Nitra, sada TN2) a bez nastavení
+/// dnešní výchozí text. Linkový JŘ AD z téhož zdroje skládá jeden řádek - `<br>` nesmí vyjít doslova.
+Method TestNadpisySkupinDnuZNastaveni()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
+	if ##class(%SYS.Namespace).Exists("KV_DP") {
+		kill t
+		do $classmethod(cls, "NadpisySkupinDnuAd", "KV_DP", "", "", "CZ", 0, "Pracovní dny~Soboty~Neděle a svátky", .t)
+		do $$$AssertEquals(t(1), $piece($get(^["KV_DP"]JRSET("Definice","WinMHD","CZ","DSC")),"~",2), "KV_DP: nadpis z nastavení firmy")
+	}
+	if ##class(%SYS.Namespace).Exists("CB_GWBUS") {
+		kill t
+		do $classmethod(cls, "NadpisySkupinDnuAd", "CB_GWBUS", "", "", "CZ", 1, "a~b~c", .t)
+		do $$$AssertEquals(t(1)_"|"_t(1,2), "Pracovní dny|mimo prázdniny", "CB_GWBUS: <br> = druhý řádek")
+		kill t
+		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NadpisySkupinDnu("CB_GWBUS", "CZ", .t)
+		do $$$AssertTrue(t("dvojiceVikend") '[ "<br>", "Linkový JŘ AD nesmí tisknout <br> doslova: "_t("dvojiceVikend"))
+	}
+	if ##class(%SYS.Namespace).Exists("SKNI_MHDNITRA") {
+		// první linka s vlastní sadou TN2
+		set sku = "", lin = "", nasel = 0
+		for {
+			set sku = $order(^["SKNI_MHDNITRA"]JRL(sku)) quit:sku=""  quit:nasel
+			continue:'$isvalidnum(sku)
+			set lin = ""
+			for {
+				set lin = $order(^["SKNI_MHDNITRA"]JRL(sku, lin)) quit:lin=""
+				if $get(^["SKNI_MHDNITRA"]JRL(sku, lin, "PATCH", "ISY_LinkyTiskMHDNadpisy")) = "TN2" set nasel = 1  quit
+			}
+		}
+		if nasel {
+			kill t
+			do $classmethod(cls, "NadpisySkupinDnuAd", "SKNI_MHDNITRA", sku, lin, "*SK", 1, "a~b~c", .t)
+			do $$$AssertEquals(t(1)_"|"_t(1,2), "Pracovný deň (škol. rok)|Work day (school year)", "Nitra: sada nadpisů u linky")
+		}
+	}
+	kill t
+	do $classmethod(cls, "NadpisySkupinDnuAd", "", "", "", "CZ", 2, "Pracovní dny~Soboty, neděle a svátky", .t)
+	do $$$AssertEquals(t(1)_"|"_t(2), "Pracovní dny|Soboty, neděle a svátky", "bez nastavení výchozí text")
+}
+
 // ── Barvy spojů (B194 T2) ────────────────────────────────────────────────────
 /// Checkbox `TISKNOUT_BARVY_SPOJU` má přednost; bez něj platí třístav `BARVY_SPOJU`, který posílá
 /// starší návrhář u linkového JŘ - jinak by mu volba „Netisknout" po aktualizaci serveru přestala platit.

@@ -30,9 +30,6 @@ Všechny hotové (C1-C12, 23.-26. 10.) - viz `roadmap-archive.md` a changelog.
 Všechno mění vytištěný výstup vydaných agend, proto **Jan** u každé. Kde je doložená parita se starým
 modulem, stojí u položky; bez ní je rozdíl nahodilý.
 
-- **T11 Vývěska AD má nadpisy skupin dnů natvrdo česky** [S-M] **tisk** (*ověřeno:* kód). `NacistSkupinyDnu`
-  (:851); starý tisk bral číselník firmy (`JRapiLinPrtMhd1.mac:541-571`) - nejdřív změřit, u kolika firem
-  se liší. (Vyčleněno z `T5`, které je uzavřené jako vědomý rozdíl - viz §8.)
 - **T7 „Jen nástup / jen výstup" chybí jen v Zastávkovém JŘ AD** [M] **odloženo, Jan 26. 10.** (*ověřeno:*
   kód, data). Ostatní tři kreslí šipku a vysvětlivku; starý zastávkový tisk to neměl. Rozhodnuto: jako
   volba u seznamu zastávek, výchozí vypnutá. **Otevřené:** N / V není atribut zastávky (`J`), ale trasy

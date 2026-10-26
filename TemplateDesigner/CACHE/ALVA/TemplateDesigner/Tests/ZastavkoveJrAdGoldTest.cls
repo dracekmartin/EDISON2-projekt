@@ -101,7 +101,9 @@ Method TestGold0365001()
 	// v Linkovém JŘ AD místo „spoj má …" (vědomě jinak než starý zastávkový tisk). Jen md5, počty shodné.
 	// Re-baseline 2026-10-26 (`B194` T4d): přestup v legendě z číselníku stálých značek firmy („zastávka
 	// s možností přestupu na linkovou dopravu") místo „přestup na autobus". Jen md5, počty shodné.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=u9V40ig7Ribd5a71HhdoLQ==")
+	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů (i ve vzorech sloupců) z nastavení firmy
+	// jako starý zastávkový tisk - CB_CSADAD má prázdninové nadpisy malým písmenem. Jen md5, počty shodné.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=Jv9Naf1LpG31sCVpcQck+A==")
 }
 
 Method TestGold0365005()
@@ -145,7 +147,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-10-26: souhrnné pole dopravců - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T4a): „spoj s bezbariérově přístupným vozidlem" - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T4d): přestup z číselníku firmy - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=CG7dRchHZPD7/5XZuEAFiQ==")
+	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=nPFVdSjcdb5ap3lFER6VAw==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -233,7 +236,8 @@ Method TestGold0330530()
 	// Re-baseline 2026-10-26: souhrnné pole dopravců - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T4a): „spoj s bezbariérově přístupným vozidlem" - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T4d): přestup z číselníku firmy - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=4xNuKs0Ewb1X+ZgIG8RbWg==")
+	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=9fDRNV/Z3F9ETPdLZ2EZ+w==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

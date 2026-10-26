@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T11** Nadpisy skupin dnů v Zastávkovém JŘ AD (sloupce i vzory) z nastavení firmy a sady nadpisů u linky
+  jako starý zastávkový tisk, `<br>` = druhý řádek; společné `BaseAgenda.NadpisySkupinDnuAd` i pro Linkový
+  JŘ AD (tam `<br>` mezerou). Bez nastavení dnešní text (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (20)).
 - **T10c** Text rozdílů tras - planý nález, uzavřeno bez změny (Jan 26. 10.): „nezajíždí do" je jen ve vzorových
   datech Zastávkového JŘ MHD, Linkový JŘ AD rozdíly vypisuje značkou „jede jinudy", Zastávkový JŘ AD
   větami starého zastávkového tisku, Zastávkový JŘ MHD z dat modulu MHD.

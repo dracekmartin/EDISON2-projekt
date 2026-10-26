@@ -762,7 +762,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
     // Vzory rozložení sloupců - obsah drží **server**, klient zná jen klíče a popisky. Bez toho
     // by parametr uměl jen hlásit stav, ale ne přepnout (a klientský opis pravidel by se rozešel).
-    d vals.%Set("PRESETY_SLOUPCU",        ..PresetySloupcuLinky(dataDB, rec))
+    d vals.%Set("PRESETY_SLOUPCU",        ..PresetySloupcuLinky(dataDB, rec, sku, lin))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1), platiDo = $p(plati,"~",2)
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
@@ -953,7 +953,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s rows = ##class(%DynamicObject).%New()
     d rows.%Set("ZASTAVKY", zastavky)
     d rows.%Set("SPOJE", spoje)
-    d rows.%Set("SKUPINY_DNU", $s(+$g(defSloupcu):..BuildSkupinyZDefinice(.defSloupcu), 1:..BuildSkupinyDnu(dataDB, rec, deleni)))
+    d rows.%Set("SKUPINY_DNU", $s(+$g(defSloupcu):..BuildSkupinyZDefinice(.defSloupcu), 1:..BuildSkupinyDnu(dataDB, rec, deleni, sku, lin)))
     d rows.%Set("POZNAMKY", poznamky)
     d out.%Set("rows", rows)
     q out
@@ -1708,9 +1708,9 @@ ClassMethod ZarazeniSpojeKnizni(deleni As %Integer, plk As %String) As %String
 /// Vzory rozložení sloupců spojů - **jediný zdroj pravdy je server**, klient je nestaví sám.
 /// Klíče jsou stabilní (visí na nich volba parametru), nadpisy jdou z téhož číselníku jako pásy
 /// skupin, aby vzor vypadal stejně jako dnešní hrubé dělení.
-ClassMethod PresetySloupcuLinky(dataDB As %String, rec As %String) As %String
+ClassMethod PresetySloupcuLinky(dataDB As %String, rec As %String, sku As %String = "", lin As %String = "") As %String
 {
-    d ..NadpisySkupinDnu(dataDB, rec, .t)
+    d ..NadpisySkupinDnu(dataDB, rec, .t, sku, lin)
 
     s out = ##class(%DynamicObject).%New()
     d out.%Set("BEZ_ROZLISENI", ..PresetSloupceLinky($lb($lb("1","",""))))
@@ -1726,23 +1726,23 @@ ClassMethod PresetySloupcuLinky(dataDB As %String, rec As %String) As %String
 /// s vyplněnou sadou tiskla „Pracovní dny" vedle „soboty, neděle a svátky" (`B194a` C8).
 /// Prázdný kus 8 nebo 9 → dřívější kus 2 / 7 (rozhodnutí Jan 24. 10.; starý tisk by nechal
 /// nadpis prázdný), prázdné všechno → pevný text.
-ClassMethod NadpisySkupinDnu(dataDB As %String, rec As %String, ByRef t)
-{
-    d ..NadpisyZCiselniku($g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC")), .t)
-}
-
-/// Nadpisy z věty číselníku WinMHD DSC (kusy oddělené `~`), pravidla viz `NadpisySkupinDnu`.
-ClassMethod NadpisyZCiselniku(dsc As %String, ByRef t)
+/// Čte se společně se Zastávkovým JŘ AD (`BaseAgenda.NadpisySkupinDnuAd`, `B194` T11): i sada nadpisů
+/// u linky, a zalomení `<br>` (CB_GWBUS „Sobota,<br> Neděle…") se v jednořádkovém nadpisu tiskne mezerou -
+/// do 26. 10. vyšlo doslova.
+ClassMethod NadpisySkupinDnu(dataDB As %String, rec As %String, ByRef t, sku As %String = "", lin As %String = "")
 {
     k t
-    s t("PD") = $p(dsc,"~",2)  i t("PD") = "" s t("PD") = "pracovní dny"
-    s t("SO") = $p(dsc,"~",3)  i t("SO") = "" s t("SO") = "soboty"
-    s t("NE") = $p(dsc,"~",4)  i t("NE") = "" s t("NE") = "neděle a svátky"
-    s t("dvojicePD") = $p(dsc,"~",8)
-    i t("dvojicePD") = "" s t("dvojicePD") = t("PD")
-    s t("dvojiceVikend") = $p(dsc,"~",9)
-    i t("dvojiceVikend") = "" s t("dvojiceVikend") = $p(dsc,"~",7)
-    i t("dvojiceVikend") = "" s t("dvojiceVikend") = "soboty, neděle a svátky"
+    d ..NadpisySkupinDnuAd(dataDB, sku, lin, rec, 0, "pracovní dny~soboty~neděle a svátky", .trojice)
+    d ..NadpisySkupinDnuAd(dataDB, sku, lin, rec, 1, "~~soboty, neděle a svátky", .prazdniny)
+    s t("PD") = ..JednimRadkem(.trojice, 1), t("SO") = ..JednimRadkem(.trojice, 2), t("NE") = ..JednimRadkem(.trojice, 3)
+    d ..NadpisySkupinDnuAd(dataDB, sku, lin, rec, 2, t("PD")_"~"_..JednimRadkem(.prazdniny, 3), .dvojice)
+    s t("dvojicePD") = ..JednimRadkem(.dvojice, 1), t("dvojiceVikend") = ..JednimRadkem(.dvojice, 2)
+}
+
+/// Nadpis `t(i)` s případným druhým řádkem `t(i,2)` do jednoho řádku (linkový JŘ má nadpis skupiny jednořádkový).
+ClassMethod JednimRadkem(ByRef t, i As %Integer) As %String
+{
+    q $g(t(i))_$s($g(t(i,2)) '= "":" "_t(i,2), 1:"")
 }
 
 /// Jeden vzor: seznam `$lb(id, nadpis, dny)` → pole sloupců ve wire tvaru `DEFINICE_SLOUPCU`.
@@ -1794,9 +1794,9 @@ ClassMethod BuildSkupinyZDefinice(ByRef defArr) As %DynamicArray
 }
 
 /// Definice skupin dnů - nadpisy viz `NadpisySkupinDnu`.
-ClassMethod BuildSkupinyDnu(dataDB As %String, rec As %String, deleni As %Integer) As %DynamicArray
+ClassMethod BuildSkupinyDnu(dataDB As %String, rec As %String, deleni As %Integer, sku As %String = "", lin As %String = "") As %DynamicArray
 {
-    d ..NadpisySkupinDnu(dataDB, rec, .t)
+    d ..NadpisySkupinDnu(dataDB, rec, .t, sku, lin)
 
     s arr = ##class(%DynamicArray).%New()
     i deleni = 0 {

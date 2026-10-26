@@ -315,6 +315,34 @@ ClassMethod UpravDatum(dat As %String, tiskDtm As %Integer) As %String
     q dat
 }
 
+/// Nadpisy skupin dnů AD z nastavení firmy, jako starý zastávkový tisk (`JRapiLinPrtMhd1.mac:541-571`):
+/// věta `^JRSET("Definice","WinMHD",rec,"DSC")` (kusy `~`) podle `rozlozeni` - 0 = pracovní / soboty /
+/// neděle a svátky (kusy 2-4), 1 = prázdninová trojice (5-7), 2 = pracovní / víkend (8-9),
+/// 3 = prázdninová čtveřice (10-13). Linka může mít vlastní sadu (`PATCH,ISY_LinkyTiskMHDNadpisy` →
+/// `^JRSET("LinkyTiskMHDNadpisy",sada,"R<rozlozeni+1>_SMO<i>")`), ta má přednost. Prázdný kus → i-tý kus
+/// `vychozi`. Výstup `t(i)` = nadpis, `t(i,2)` = druhý řádek (text za `<br>`, další `<br>` jako mezera).
+/// Zastávkový JŘ AD měl do 26. 10. nadpisy napevno česky (`B194` T11).
+ClassMethod NadpisySkupinDnuAd(dataDB As %String, sku As %String, lin As %String, rec As %String, rozlozeni As %Integer, vychozi As %String, ByRef t)
+{
+    k t
+    s dsc = "", sada = ""
+    i dataDB '= "" {
+        s dsc = $g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC"))
+        i (sku '= "") && (lin '= "") s sada = $g(^[dataDB]JRL(sku,lin,"PATCH","ISY_LinkyTiskMHDNadpisy"))
+    }
+    s prvniKus = $case(rozlozeni, 1:5, 2:8, 3:10, :2)
+    f i=1:1:$l(vychozi,"~") {
+        s txt = $p(dsc,"~",prvniKus+i-1)
+        i sada '= "" {
+            s vlastni = $g(^[dataDB]JRSET("LinkyTiskMHDNadpisy",sada,"R"_(rozlozeni+1)_"_SMO"_i))
+            i vlastni '= "" s txt = vlastni
+        }
+        i $tr(txt," ","") = "" s txt = $p(vychozi,"~",i)
+        s t(i) = $zstrip($p(txt,"<br>",1),"<=>W")
+        s t(i,2) = $zstrip($replace($p(txt,"<br>",2,99),"<br>"," "),"<=>W")
+    }
+}
+
 /// Parametr sestavy „Barvy spojů" agend AD jako volba: „Tisknout", „Netisknout", nebo prázdno =
 /// podle linky. Návrhář posílá checkbox `TISKNOUT_BARVY_SPOJU`; starší návrhář u linkového JŘ místo
 /// něj třístav `BARVY_SPOJU` (Automaticky (dle linky) / Tisknout / Netisknout), který se přebírá.
