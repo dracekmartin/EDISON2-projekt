@@ -23,10 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C9 Linkový AD čte formát data u linky o režim vedle** [S] **tisk** (*ověřeno:* kód). Starý modul ukládá
-  nastavení u linky posunuté o 1 (0 = nenastaveno) a při čtení odečítá (`JRapiNZUtl2.mac:190-193`);
-  `LinkovyJrAd.TiskDtm` (:745-747) bere hodnotu bez odečtu. Počet linek nezměřen: sonda
-  `LinkovyJrNastaveniProbe` klíč nesleduje - přidat `TiskDtm` do `PATCHKLICE` a spustit `Vyskyt`.
 - **C10 „Uložit jako" přepojí šablonu na jinou agendu, i nezveřejněnou** [S] (*ověřeno:* kód, server).
   Pole Agenda nabízí vše z `ListAgendy` včetně Faktur a rozdílového (`SaveTemplate.AddAgendyItems`), uložení
   přepíše `AgendaCode` bez výměny schématu (`SaveToCacheAsAsync` :2493). Odporuje pravidlu „změna agendy =

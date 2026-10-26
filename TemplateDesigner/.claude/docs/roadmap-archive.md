@@ -18,6 +18,8 @@
   Vlastní sloupce jsou koncept AD, MHD je nedostane (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (3)).
 - **C8** Linkový AD bere nadpisy dvojice pracovní dny / víkend z kusů 8 a 9 číselníku jako starý tisk,
   prázdné → dřívější chování (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (4)).
+- **C9** Linkový AD čte formát roku u linky o 1 níž jako starý modul a data v omezeních skládá jako on
+  (rozhodnutí Jan 26. 10.: zatím takto, lépe po probrání nastavení JŘ - backlog; changelog 2026-10-26 (1)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

@@ -744,11 +744,13 @@ ClassMethod Jazyk(dataDB As %String) As %String
 
 /// Režim tisku datumů omezení (legacy TiskDtm): per-linka PATCH override, jinak globální Definice.
 /// 0 = jak zadáno, 1 = rok 2místně, 2 = rozsahy bez roku v „od", 3 = bez roku.
+/// ⚠️ U linky je režim uložený **o 1 výš** (0 = nenastaveno), u firmy bez posunu - jako starý tisk
+/// (`JRapiNZUtl2.mac:186-190`). Do 26. 10. se u linky nic neodečítalo a 5 tisíc linek s „rokem
+/// dvoumístně" tisklo data bez roku (`B194a` C9).
 ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integer
 {
-    s v = $g(^[dataDB]JRL(sku,lin,"PATCH","TiskDtm"))
-    i v = "" s v = $g(^[dataDB]JRSET("Definice","TiskDtm"))
-    q +v
+    s v = +$g(^[dataDB]JRL(sku,lin,"PATCH","TiskDtm"))
+    q $s(v > 0:v - 1, 1:+$g(^[dataDB]JRSET("Definice","TiskDtm")))
 }
 
 /// Sestaví JSON stránku knižního JŘ pro jednu linku a směr. "" když směr nemá spoje.
@@ -2229,8 +2231,9 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
     q txt
 }
 
-/// Datumová část omezení: položky (`#`) spojené ","; rozsah `od:do` → " od D1 do D2" (úvodní
-/// mezera kromě první položky, 1:1 gold). Datumy dle režimu TiskDtm (viz ..TiskDtm).
+/// Datumová část omezení jako starý tisk (`JRapiNZUtl2.mac` gComOddO :197-222): položky (`#`) spojené
+/// ",", rozsah `od:do` → "od D1 do D2" (úvodní mezera kromě první položky); shodné nebo chybějící
+/// „do" = jedno datum. Datumy dle režimu TiskDtm (viz ..TiskDtm a ..UpravDatum).
 ClassMethod FormatDatumyOmezeni(omz As %String, tiskDtm As %Integer) As %String
 {
     s data = $s(omz["@":$p(omz,"@",2), 1:omz)
@@ -2239,29 +2242,31 @@ ClassMethod FormatDatumyOmezeni(omz As %String, tiskDtm As %Integer) As %String
         s item = $p(data,"#",i)
         i item = "" continue
         s od = ..UpravDatum($p(item,":",1), tiskDtm), do = ..UpravDatum($p(item,":",2), tiskDtm)
-        i do '= "" {
-            i tiskDtm = 2 s od = ..UpravDatum($p(item,":",1), 3)      // režim 2: „od" část bez roku
+        i (do = "") || (do = od) { s cast = od }
+        else {
+            // režim 2: „od" bez roku, jen když je rok stejný jako u „do" (do 26. 10. vždy a u obou)
+            i (tiskDtm = 2) && ($p(od,".",3) = $p(do,".",3)) s od = $p(od,".",1,2)_"."
             s cast = $s(casti="":"", 1:" ")_"od "_od_" do "_do
         }
-        else { s cast = od }
         i casti '= "" s casti = casti_","
         s casti = casti_cast
     }
     q casti
 }
 
-/// Úprava datumu dle režimu TiskDtm: 0 = jak zadáno; 1 = strip nul + rok 2místně ("24.12.22");
-/// 2/3 = bez roku ("24.12."). "" → "".
+/// Datum položky omezení: den a měsíc vždy bez úvodních nul a „d.m" s tečkou - starý tisk tak čistí
+/// data s nulou navíc v každém režimu. Režim 1 = rok dvoumístně, 3 = bez roku, 0 a 2 = rok jak je.
 ClassMethod UpravDatum(dat As %String, tiskDtm As %Integer) As %String
 {
     i dat = "" q ""
-    i tiskDtm = 0 q dat
-    s dd = +$p(dat,".",1), mm = +$p(dat,".",2), rr = $p(dat,".",3)
+    i dat [ "." { f idx=1:1:2 { s $p(dat,".",idx) = +$p(dat,".",idx) } }
+    i dat ? 1.2N1"."1.2N s dat = dat_"."
+    i tiskDtm = 3 q $p(dat,".",1,2)_"."
     i tiskDtm = 1 {
-        i $l(rr) > 2 s rr = $e(rr,*-1,*)
-        ret dd_"."_mm_"."_rr
+        s rr = $p(dat,".",3)
+        i $l(rr) > 2 s $p(dat,".",3) = $e(rr,*-1,*)
     }
-    q dd_"."_mm_"."
+    q dat
 }
 
 /// Najde první linku firmy (první skupina × první linka s uzlem "I").

@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-26 (1) - 📅 linkový AD tiskne rok v omezeních podle nastavení linky (`B194a` C9)
+
+Modul JŘ ukládá u linky režim tisku roku o 1 výš (0 = nenastaveno), u firmy bez posunu; starý tisk
+u linky odečítá (`JRapiNZUtl2.mac:186-190`), my jsme neodečítali. Měření (`LinkovyJrNastaveniProbe.Vyskyt`,
+6 firem, 94 513 linek): nastavení má 6 268 linek - 5 052 s „rokem dvoumístně" tisklo data bez roku,
+1 213 s „bez roku" tisklo shodou správně, 3 s „jak zadáno" tiskly rok dvoumístně. Teď `TiskDtm`
+odečítá. Zároveň skládání dat přepsané podle starého `gComOddO`: den a měsíc bez úvodních nul a „d.m"
+s tečkou v každém režimu, shodné „od" a „do" jako jedno datum, režim „od bez roku" maže rok jen u „od"
+a jen při stejném roce (dřív u obou vždy; v datech ho dnes nikdo nemá). Parita **oraclem**: test
+`LinkovyJrAdDatumyTest` porovná náš text se starým `gComOddO` ve všech čtyřech režimech na šesti vzorech
+(CB_CSADAD, číselník od/do), plus posun u linky. Zlaté odtisky beze změny - linky jádra sady režim
+nastavený nemají. Rozhodnutí Jan 26. 10.: zatím takto, lépe až po probrání nastavení JŘ s kolegy (backlog).
+
 ## 2026-10-24 (4) - 📅 linkový AD: nadpisy „pracovní dny / víkend" z jejich sady číselníku (`B194a` C8)
 
 Linkový AD při rozdělení na pracovní dny a víkend bral nadpis víkendu z kusu 7 číselníku nadpisů

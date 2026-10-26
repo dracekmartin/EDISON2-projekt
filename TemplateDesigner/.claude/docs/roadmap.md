@@ -22,7 +22,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194a` Chyby
 
-- **C9** Linkový AD čte nastavení formátu data u linky o režim vedle [S] **tisk**
 - **C10** „Uložit jako" přepojí šablonu na jinou agendu, i nezveřejněnou [S]
 - **C11** Chyba serveru u jedné linky zastaví tisk všech, hláška je technická [M]
 - **C12** Výchozí vývěska MHD: nadpisy skupin dnů přetékají, minuty ve čtvrté skupině uříznuté [M] **tisk**
@@ -124,6 +123,11 @@ Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`
 ## 📥 Backlog
 
 ### Ostatní
+
+- **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - Jan je nejdřív projde s kolegy (26. 10.).
+  Dnes návrhář přebírá nastavení u linky a firmy z modulu JŘ tak, jak je ukládá starý modul (např.
+  formát roku v omezeních, `B194a` C9). Po probrání rozhodnout, co z nich zůstane u linky, co se
+  přesune do šablony a jak se má nastavovat.
 
 - **`B56` Sloučení opsaného kódu agend** [L] - **po vydání** linkového JŘ MHD (čekalo na doimplementaci
   knižního JŘ, splněno 22. 10.). Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už

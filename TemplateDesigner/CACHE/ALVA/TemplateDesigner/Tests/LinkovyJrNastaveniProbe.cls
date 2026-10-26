@@ -19,7 +19,7 @@ Class ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe
 Parameter FIRMY = "CB_CSADAD,CB_GWBUS,KV_DP,VS_CSAD,ZL_KOVED,SKNI_MHDNITRA";
 
 /// Nastavení u linky (`^JRL(sku,lin,"PATCH",<klíč>)`) - jednoduché klíče.
-Parameter PATCHKLICE = "linIDS,nazMHD,netisknoutSloupecTC,tisknoutJenTcKdeSpojeZastavuji,podtrzeniPaJ,barevnyTiskSpoju,cisIDS,ZLOM,ZonaIdsDelZnk,Head,OBJ,PoznPodDopr,Plati";
+Parameter PATCHKLICE = "linIDS,nazMHD,netisknoutSloupecTC,tisknoutJenTcKdeSpojeZastavuji,podtrzeniPaJ,barevnyTiskSpoju,cisIDS,ZLOM,ZonaIdsDelZnk,Head,OBJ,PoznPodDopr,Plati,TiskDtm";
 
 /// Nastavení u linky pod podklíčem `MHD2`. ⚠️ Přes název je to **AD** nastavení - čte je AD engine.
 Parameter MHD2KLICE = "netisknoutTC,netisknoutCislaSpoju,netisknoutSipky,netisknoutKladivkaAPodobne,umeleDatDoSekci,rozdelitUmeleSekceNaVlastniStranky";
