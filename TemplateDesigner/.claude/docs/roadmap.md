@@ -43,7 +43,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
-- **E2** Okna nastavení se jmenují jinak než prvky („Linkový JŘ - nastavení") [S]
 - **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan**
 - **E4** „Záhlaví" × „nadpis" pro totéž [S]
 - **E5** Seznam zastávek nabízí v MHD sloupek a parametr, které existují jen v AD [M]

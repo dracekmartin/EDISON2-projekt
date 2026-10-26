@@ -41,6 +41,7 @@ public partial class StopColumnsEditorDialog : Window
         _vm = new StopColumnsEditorDialogViewModel(element, element.Columns);
         DataContext = _vm;
         InitializeComponent();
+        Title = Models.ElementNames.TitulekVlastnosti(element);
 
         // Tab „Obecné": EDInputForm (general properties přes reflexi). Styl záhlaví/buněk
         // řeší CellStyleEditor v témže tabu, sloupce tab „Sloupce".

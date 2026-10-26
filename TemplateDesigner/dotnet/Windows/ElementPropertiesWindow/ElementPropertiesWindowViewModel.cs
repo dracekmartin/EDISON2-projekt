@@ -108,7 +108,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         CurrentElement     = element;
         _currentInvalidate = _invalidate;
-        WindowTitle        = "Vlastnosti: " + element.GetType().Name.Replace("Element", "");
+        WindowTitle        = ElementNames.TitulekVlastnosti(element);
 
         var descriptors = element.GetPropertyDescriptors();
 
@@ -168,7 +168,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         _undoDepthAtOpen   = _state.UndoStack.Count;
         CurrentElement     = null;
         _currentInvalidate = _invalidate;
-        WindowTitle        = $"Společné vlastnosti ({elements.Count} elementů)";
+        WindowTitle        = $"Společné vlastnosti ({elements.Count} {TemplateTreeNames.Prvku(elements.Count)})";
 
         return CurrentDescriptors = BuildMultiElementDescriptors(elements);
     }

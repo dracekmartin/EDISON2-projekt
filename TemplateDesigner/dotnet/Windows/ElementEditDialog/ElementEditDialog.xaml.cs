@@ -125,7 +125,7 @@ public partial class ElementEditDialog : Window
         {
             0 => null,
             1 => commands[0],
-            _ => new CompositeCommand($"Změna vlastností: {Title}", commands)
+            _ => new CompositeCommand($"Změna vlastností: {(Title.StartsWith(Models.ElementNames.PredponaTitulkuVlastnosti) ? Title[Models.ElementNames.PredponaTitulkuVlastnosti.Length..] : Title)}", commands)
         };
 
         DialogResult = true;

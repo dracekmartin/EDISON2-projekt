@@ -104,9 +104,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
 Mění se jen popisky a struktura formulářů, klíče vlastností v šablonách zůstávají. Tady je nejvíc práce
 a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions §8` (Jan), pak sjednocovat.**
 
-- **E2 Okna nastavení se jmenují jinak než prvky** [S] (*ověřeno:* kód). „Zastávky - nastavení", „Odjezdy -
-  nastavení", „Linkový JŘ - nastavení" (proti kanonu), „Tabulka - nastavení"; Tabulka z dat má čtyři názvy.
-  Návrh: „Vlastnosti - {název prvku}" všude, test rozšířit na titulky.
 - **E3 Styl záhlaví a buněk má pět podob** [L] **Jan** (*ověřeno:* kód, server). Plný balíček (Seznam
   zastávek, Tabulka z dat), záhlaví za tlačítkem (Minuty), jen velikost a dvě barvy (Tabulka spojů), bez
   tučného (Poznámky). Skupina „Značky u odjezdů" má 37 polí, pořadí skupin nemá kostru (Minuty začínají

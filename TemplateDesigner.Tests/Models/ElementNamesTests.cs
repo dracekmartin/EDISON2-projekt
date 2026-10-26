@@ -90,6 +90,30 @@ public class ElementNamesTests
         }
     }
 
+    [Fact]
+    public void OknoVlastnostiSeJmenujeJakoPrvek()
+    {
+        // Jeden tvar titulku pro všechna okna vlastností prvku, jako záložka „Vlastnosti" (`B194` E2).
+        // Do 26. 10. „Vlastnosti textu" vedle „Odjezdy - nastavení" a „Linkový JŘ - nastavení".
+        Assert.Equal("Vlastnosti - Minuty odjezdů", ElementNames.TitulekVlastnosti(new DepartureGridElement()));
+        Assert.Equal("Vlastnosti - Tabulka spojů", ElementNames.TitulekVlastnosti(new LineTableElement()));
+        Assert.Equal("Vlastnosti - Text", ElementNames.TitulekVlastnosti(new TextElement { Text = "Linka" }));
+    }
+
+    [Theory]
+    [InlineData("DepartureGroupEditorDialog")]
+    [InlineData("DynamicTableEditorDialog")]
+    [InlineData("LineTableColumnsEditorDialog")]
+    [InlineData("StopColumnsEditorDialog")]
+    public void OknoVlastnostiNemaTitulekNapevno(string okno)
+    {
+        // Titulek dosadí okno z ElementNames; napevno v XAML se rozejde s paletou při přejmenování.
+        var xaml = File.ReadAllText(Cesta($"dotnet/Windows/{okno}/{okno}.xaml"));
+        Assert.DoesNotContain("Title=", xaml);
+        var kod = File.ReadAllText(Cesta($"dotnet/Windows/{okno}/{okno}.xaml.cs"));
+        Assert.Contains("ElementNames.TitulekVlastnosti(element)", kod);
+    }
+
     /// <summary>Cesta ke zdroji v repu - test čte jen obsah repa, ne stav stroje.</summary>
     private static string Cesta(string relativni)
     {

@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-26 (27) - jeden titulek oken vlastností prvku (`B194d` E2)
+
+Okna otevřená dvojklikem na prvek měla tři tvary titulku: „Vlastnosti textu / čáry / tabulky…",
+„Zastávky - nastavení", „Odjezdy - nastavení", „Tabulka - nastavení" (staré názvy prvků) a „Linkový JŘ -
+nastavení" (název agendy místo prvku); záložní okno „Vlastnosti: DepartureGrid" a úprava víc prvků
+„Společné vlastnosti (3 elementů)". Teď všude „Vlastnosti - {název z palety}" jako záložka Vlastnosti
+v levém panelu (`ElementNames.TitulekVlastnosti`), víc prvků „Společné vlastnosti (3 prvky)". Čtyři okna
+se sloupci titulek v XAML nemají, dosadí si ho z prvku. Krok zpět po úpravě se jmenuje „Změna vlastností:
+{název prvku}". Okna sekce, stránky, buňky a řádku beze změny. Příručka: „Tabulka - nastavení" →
+„Vlastnosti - Tabulka (z dat)" (seed připravený k nahrání). Testy `ElementNamesTests`
+(`OknoVlastnostiSeJmenujeJakoPrvek`, `OknoVlastnostiNemaTitulekNapevno`). Rozhodnutí Jan 26. 10.
+
 ## 2026-10-26 (26) - strom šablony bez interních názvů (`B194d` E1)
 
 Záložka „Strom" ukazovala názvy tříd a interní hodnoty: „Template:", „PageSize: 210x297mm (L=…)",

@@ -1883,19 +1883,23 @@ public partial class MainWindow : Window
 
     /// <summary>Mapping element type → (Caché schema class, titulek) pro generický
     /// EDInputForm editor. Vrací (null, null) pro typy bez schema (fallback na legacy).</summary>
-    private static (string? cacheClass, string? title) EDInputFormSchema(TemplateElement element) => element switch
+    private static (string? cacheClass, string? title) EDInputFormSchema(TemplateElement element)
     {
-        Models.Elements.TextElement      => ("ALVA.TemplateDesigner.EDInputForm.TextElementEdit", "Vlastnosti textu"),
-        Models.Elements.LineElement      => ("ALVA.TemplateDesigner.EDInputForm.LineElementEdit", "Vlastnosti čáry"),
-        Models.Elements.RectangleElement   => ("ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit", "Vlastnosti obdélníku"),
-        Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
-        Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti poznámek"),
-        Models.Elements.ImageElement       => ("ALVA.TemplateDesigner.EDInputForm.ImageElementEdit", "Vlastnosti obrázku"),
-        // Pevná tabulka má jediný tab (bez sloupců a řádků) - strukturu i obsah dělá plátno.
-        Models.Elements.TableElement       => ("ALVA.TemplateDesigner.EDInputForm.TableElementEdit", "Vlastnosti tabulky"),
-        // LineTable NENÍ zde - má vlastní 2-tab dialog (Obecné + Sloupce), viz OpenLineTableColumnsDialog.
-        _ => (null, null)
-    };
+        string? cacheClass = element switch
+        {
+            Models.Elements.TextElement        => "ALVA.TemplateDesigner.EDInputForm.TextElementEdit",
+            Models.Elements.LineElement        => "ALVA.TemplateDesigner.EDInputForm.LineElementEdit",
+            Models.Elements.RectangleElement   => "ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit",
+            Models.Elements.BarcodeElement     => "ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit",
+            Models.Elements.NotesLegendElement => "ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit",
+            Models.Elements.ImageElement       => "ALVA.TemplateDesigner.EDInputForm.ImageElementEdit",
+            // Pevná tabulka má jediný tab (bez sloupců a řádků) - strukturu i obsah dělá plátno.
+            Models.Elements.TableElement       => "ALVA.TemplateDesigner.EDInputForm.TableElementEdit",
+            // LineTable NENÍ zde - má vlastní 2-tab dialog (Obecné + Sloupce), viz OpenLineTableColumnsDialog.
+            _ => null
+        };
+        return cacheClass is null ? (null, null) : (cacheClass, ElementNames.TitulekVlastnosti(element));
+    }
 
     /// <summary>Caché *Edit.cls schéma pro inline panel - pokrývá i komplexní elementy
     /// (StopList/DepartureGrid/Dynamic), jejichž „Obecné" tab modálu jede na tomtéž schématu.

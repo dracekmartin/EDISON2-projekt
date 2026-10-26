@@ -41,6 +41,15 @@ public static class ElementNames
         return $"{ForUser(el)} „{jednim}“";
     }
 
+    /// <summary>
+    /// Titulek okna vlastností prvku: „Vlastnosti - {název z palety}", jako záložka „Vlastnosti"
+    /// v levém panelu. Do 26. 10. měla okna tři tvary („Vlastnosti textu", „Odjezdy - nastavení",
+    /// „Linkový JŘ - nastavení" podle agendy místo prvku), `B194` E2.
+    /// </summary>
+    public static string TitulekVlastnosti(TemplateElement el) => PredponaTitulkuVlastnosti + ForUser(el);
+
+    public const string PredponaTitulkuVlastnosti = "Vlastnosti - ";
+
     /// <summary>Do kolika znaků se text prvku vypíše celý.</summary>
     private const int MaxDelkaPopisu = 30;
 

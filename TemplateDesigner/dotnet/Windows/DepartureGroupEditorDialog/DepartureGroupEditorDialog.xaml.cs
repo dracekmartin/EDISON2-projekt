@@ -52,6 +52,7 @@ public partial class DepartureGroupEditorDialog : Window
             customColumns, presetsJson, ukazatVlastniSloupce);
         DataContext = _vm;
         InitializeComponent();
+        Title = ElementNames.TitulekVlastnosti(element);
 
         // Tab „Obecné": EDInputForm (DepartureGridElementEdit přes reflexi). Per-skupina/sloupec
         // override řeší CellStyleEditor v tabu „Sloupce".

@@ -254,7 +254,7 @@ od dat). Vlastnosti: **Upravit sloupce…**, **Zdroj dat**, **Výška řádku**,
 záhlaví**, **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťka, styl), **Střídání řádků**, **Tučné záhlaví**,
 barvy pozadí a textu záhlaví i dat. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
-Editor sloupců (dialog „Tabulka - nastavení") má záložky **Obecné** a **Sloupce**: přidání/
+Editor sloupců (okno „Vlastnosti - Tabulka (z dat)") má záložky **Obecné** a **Sloupce**: přidání/
 odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce elementu",
 a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor stylu (viz kap. 7).
 
