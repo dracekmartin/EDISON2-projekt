@@ -4203,21 +4203,14 @@ public class TemplateDesignerViewModel : EDViewModel
         else if (State.SelectedElements.Count > 1)
         {
             int n = State.SelectedElements.Count;
-            SelectionStatusText = $"Vybráno {n} {(n <= 4 ? "prvky" : "prvků")}";
+            SelectionStatusText = $"Vybráno {n} {TemplateTreeNames.Prvku(n)}";
         }
         else if (State.ActiveSection is { } sekce)
         {
-            string typ = sekce.Typ switch
-            {
-                TypSekce.HlavickaStranky   => "hlavička stránky",
-                TypSekce.PodObsahemStranky => "pod obsahem stránky",
-                TypSekce.PatickaStranky    => "patička stránky",
-                _                          => "obsah",
-            };
+            string typ = TemplateTreeNames.NazevTypuSekce(sekce.Typ).ToLower();
             string vyska = sekce.DesignerHeight is { } h ? $"výška {h:0.#} mm" : "výška podle obsahu";
             int n = sekce.Elements.Count;
-            SelectionStatusText = $"Sekce „{sekce.Name}“  ·  {typ}  ·  {vyska}  ·  {n} "
-                + (n == 1 ? "prvek" : n is >= 2 and <= 4 ? "prvky" : "prvků");
+            SelectionStatusText = $"Sekce „{sekce.Name}“  ·  {typ}  ·  {vyska}  ·  {n} {TemplateTreeNames.Prvku(n)}";
         }
         else
         {

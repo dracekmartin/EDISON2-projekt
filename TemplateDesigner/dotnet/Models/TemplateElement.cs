@@ -426,32 +426,4 @@ public abstract class TemplateElement
     public float EffectiveDesignerHeight => Height ?? DesignerPlaceholderHeight;
 
     protected virtual float DesignerPlaceholderHeight => 20f;
-
-    // ---------------------------------------------------------------------------
-    // Sdílené utility pro zobrazení v UI (strom, debug)
-
-    /// <summary>Zkrácený popis elementu pro strom šablony a debug výpisy.</summary>
-    public static string GetSummary(TemplateElement el) => el switch
-    {
-        TextElement t      => $"\"{TruncateText(t.Text, 50)}\"  {t.Style.FontFamily ?? "Arial"} {t.Style.FontSize ?? 10f}pt",
-        LineElement l      => $"{l.Orientation} {l.StrokeWidth}mm {l.Color}",
-        RectangleElement r => $"Fill={r.BackgroundColor} Stroke={r.StrokeColor}",
-        ImageElement       => "Image",
-        BarcodeElement b   => $"{b.BarcodeType}",
-        TableElement t     => $"{t.Mode} cols={t.Columns.Count}",
-        DynamicTableElement dt => $"Dynamická tabulka [{dt.DataSource}] cols={dt.Columns.Count}",
-        StopListElement      => "Seznam zastávek",
-        DepartureGridElement d => $"Odjezdy {(d.SkupinaDnuId.Length > 0 ? d.SkupinaDnuId : "auto")}",
-        NotesLegendElement   => "Poznámky",
-        LineTableElement     => "Tabulka spojů (zastávky × spoje)",
-        _                  => $"({el.X:0.#}, {el.Y:0.#}) {el.Width:0.#}x{(el.Height?.ToString("0.#") ?? "auto")}"
-    };
-
-    /// <summary>Zkrátí text na maxLen znaků, nahradí odřádkování mezerou.</summary>
-    public static string TruncateText(string? text, int maxLen)
-    {
-        if (string.IsNullOrEmpty(text)) return "";
-        var oneLine = text.Replace("\n", " ").Replace("\r", "");
-        return oneLine.Length <= maxLen ? oneLine : oneLine[..(maxLen - 3)] + "...";
-    }
 }

@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E1** Strom šablony mluví jmény z palety a formuláře sekce: „Šablona", „Stránka … okraje", sekce s typem
+  a výškou, „Skupina (N prvků)", prvek jménem z palety (text s obsahem); bez čísla vrstvy a technických
+  údajů (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (26)).
 - **T14** Linkový JŘ AD, další rozdíly proti starému tisku, které oracle našel mimo jádro sady (rozhodnutí
   Jan 26. 10.: jako starý tisk): (a) omezení atributu kol / bezbariérového vozidla za větou, (d) tvar
   „všechny spoje" podle všech spojů stránky, ne jen spojů s atributem (chyba od `L2`), (b) značka G a další

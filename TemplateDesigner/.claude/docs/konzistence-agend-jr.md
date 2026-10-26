@@ -104,9 +104,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
 Mění se jen popisky a struktura formulářů, klíče vlastností v šablonách zůstávají. Tady je nejvíc práce
 a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions §8` (Jan), pak sjednocovat.**
 
-- **E1 Strom šablony ukazuje anglické názvy tříd** [S] (*ověřeno:* kód). `[Z0] DepartureGrid: Odjezdy auto`,
-  `Rectangle: Fill=#…` (`TemplateTreePanel.CreateElementNode`, `TemplateElement.GetSummary`). Správné názvy
-  dává `ElementNames.SPopisem`.
 - **E2 Okna nastavení se jmenují jinak než prvky** [S] (*ověřeno:* kód). „Zastávky - nastavení", „Odjezdy -
   nastavení", „Linkový JŘ - nastavení" (proti kanonu), „Tabulka - nastavení"; Tabulka z dat má čtyři názvy.
   Návrh: „Vlastnosti - {název prvku}" všude, test rozšířit na titulky.

@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-26 (26) - strom šablony bez interních názvů (`B194d` E1)
+
+Záložka „Strom" ukazovala názvy tříd a interní hodnoty: „Template:", „PageSize: 210x297mm (L=…)",
+„[OnEveryPage] Záhlaví", „[G] <id skupiny> [2 elem.]", „[Z0] DepartureGrid: Odjezdy auto",
+„Rectangle: Fill=#…". Teď jména z palety, formuláře sekce a stavového řádku (`Models/TemplateTreeNames`):
+„Šablona: …", „Stránka: 210 × 297 mm, okraje vlevo …, nahoře …, vpravo …, dole … mm", „Záhlaví -
+Hlavička stránky, 25 mm" (sekce pojmenovaná jako typ ho neopakuje), „Skupina (2 prvky)", prvek přes
+`ElementNames.SPopisem` (text s obsahem). Číslo vrstvy a technické údaje (barvy, font, počet sloupců)
+vypadly - pořadí ve stromu vrstvu ukazuje a název „ZIndex" řeší `E7`. `TemplateElement.GetSummary`
+a `TruncateText` zrušené, stavový řádek bere typ sekce a skloňování „prvek / prvky / prvků" ze
+stejného místa. Skill `novy-element` krok 9 teď vede na `ElementNames`. Test `TemplateTreeNamesTests`.
+Rozhodnutí Jan 26. 10.
+
 ## 2026-10-26 (25) - návaznost bez druhu dopravy mimo legendu Linkového JŘ AD (`B194b` T14c)
 
 Starý tisk skládá větu „vyčká / navazuje" jen z návazností s druhem dopravy A, V nebo L (n31 / n32
