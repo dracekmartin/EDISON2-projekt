@@ -1584,8 +1584,11 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                 d pr.%Set("RADEK", $s(maRadek:1, 1:0))
                 d pripoje.%Push(pr)
 
-                // fráze do agregované poznámky legendy (typZobrazeni 0 nebo 2)
-                i (typZobrazeni=0) || (typZobrazeni=2) {
+                // fráze do agregované poznámky legendy (typZobrazeni 0 nebo 2). Návaznost bez druhu
+                // dopravy (staré záznamy bez pole AVL) starý tisk do věty nedá vůbec - zná jen A, V, L
+                // (n31 / n32 `JRapiNZUtl2.mac:266-281, 425-439`); do 26. 10. ji tu věta brala jako
+                // autobus (`B194` T14c). Přípojný řádek ji dál bere jako autobus, jako starý tisk.
+                i ((typZobrazeni=0) || (typZobrazeni=2)) && $case(avl, "A":1, "V":1, "L":1, :0) {
                     // AVL abeceda: A=autobus, V=vlak, L=loď (legacy $tr("AVL","ALD") před GSId)
                     i omzId = 31 {
                         // „spoje 25 linky 330510" / vlak: „vlaku 20880" (bez čísla spoje); [ z SMĚR].

@@ -34,6 +34,11 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T14** Linkový JŘ AD, další rozdíly proti starému tisku, které oracle našel mimo jádro sady (rozhodnutí
+  Jan 26. 10.: jako starý tisk): (a) omezení atributu kol / bezbariérového vozidla za větou, (d) tvar
+  „všechny spoje" podle všech spojů stránky, ne jen spojů s atributem (chyba od `L2`), (b) značka G a další
+  atributy zastávky na trase v legendě, (c) návaznost bez druhu dopravy mimo větu (changelog 2026-10-26
+  (23)-(25); oracle na 7 linkách pěti firem).
 - **T13** Linkový JŘ AD: legenda vysvětluje poznámky „p" ke spojům a tarifním bodům a místenka nese
   doplněk linky a poznámky k vybraným spojům (nový řádek podle `MistOR`) - vše jako starý linkový tisk
   (oracle na 7 linkách tří firem; changelog 2026-10-26 (22)). Zbylé rozdíly z oraclu jako `T14`.

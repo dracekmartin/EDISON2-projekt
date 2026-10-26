@@ -37,13 +37,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
   zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
-- **T14 Linkový AD: další rozdíly proti starému tisku mimo jádro sady** [S-M] **tisk** (*ověřeno:* oracle
-  `PoznamkyVedleSebe`, 26. 10., nalezeno při `T13`; rozhodnutí Jan 26. 10.: jako starý tisk). Hotové
-  a (omezení atributu), d (tvar „všechny spoje") a b (značka G u zastávky) - changelog 2026-10-26
-  (23), (24). Zbývá (c) CB_CSADAD 995/0380780: dvě věty „navazuje" máme navíc. Návaznost
-  bez druhu dopravy (staré záznamy, pole AVL prázdné) starý tisk v legendě vynechá (n31 / n32
-  `JRapiNZUtl2.mac:425-439`), my ji bereme jako autobus.
-
 ## 3. Nabídka dat a parametry sestavy
 
 Popisky a nápovědy výstup ani uložené volby nemění (návrhář je bere ze serveru). Popisky citují i nové

@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-26 (25) - návaznost bez druhu dopravy mimo legendu Linkového JŘ AD (`B194b` T14c)
+
+Starý tisk skládá větu „vyčká / navazuje" jen z návazností s druhem dopravy A, V nebo L (n31 / n32
+`JRapiNZUtl2.mac:266-281, 425-439`); staré záznamy bez něj (CB_CSADAD 995/0380780 z roku 2016,
+spoje 17 a 37) do věty nedá. Linkový JŘ AD je bral jako autobus a tiskl dvě věty navíc. Přípojný
+řádek tabulky je dál bere jako autobus, jako starý tisk. Ověřeno: oracle 23/23, test
+`TestPoznamkyMimoJadroProtiLegacy` o tu linku rozšířen. Tím je `T14` uzavřené.
+
 ## 2026-10-26 (24) - značka G u zastávky v legendě Linkového JŘ AD (`B194b` T14b)
 
 Atribut zastávky na trase linky (`J` pole 2) G a a, b, c (zákaz přepravy mezi označenými zastávkami),

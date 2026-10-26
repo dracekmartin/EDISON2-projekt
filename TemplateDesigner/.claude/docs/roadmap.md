@@ -24,8 +24,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 - **T7** „Jen nástup / jen výstup" chybí v Zastávkovém JŘ AD - **odloženo** (Jan 26. 10.), otevřené: podle
   kterých spojů šipku ukázat; rozpracováno ve stashi [M]
-- **T14** Linkový AD: další rozdíly proti starému tisku mimo jádro sady - zbývají věty návazností
-  bez druhu dopravy navíc (c); rozhodnuto jako starý tisk [S]
 
 ### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)
 
