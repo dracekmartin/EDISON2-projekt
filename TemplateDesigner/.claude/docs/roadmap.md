@@ -20,9 +20,6 @@ co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-
 Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
 vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se linkového MHD, nejlevnější před verzí.
 
-### `B194a` Chyby
-
-
 ### `B194b` Tisk - rozdíly mezi agendami (všechno **tisk** a **Jan**)
 
 - **T1** Vývěska AD neoznačuje spoje „na objednání" a „podmínečně" - starý modul to tiskl [M]
