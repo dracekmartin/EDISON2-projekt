@@ -39,11 +39,8 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
 - **T14 Linkový AD: další rozdíly proti starému tisku mimo jádro sady** [S-M] **tisk** (*ověřeno:* oracle
   `PoznamkyVedleSebe`, 26. 10., nalezeno při `T13`; rozhodnutí Jan 26. 10.: jako starý tisk). Hotové
-  a (omezení atributu) a d (tvar „všechny spoje") - changelog 2026-10-26 (23). Zbývá:
-  (b) VS_CSAD 799/0440080: starý tisk vysvětluje stálou značku „G" (zákaz přepravy mezi označenými
-  zastávkami), my ne. G je atribut zastávky na trase linky (`J` pole 2), převodní tabulka v
-  `PridatStaleZnacky` zná jen A, L, x, y, z, V, N, D, C - chybí G, a, b, c, e, f, g, O (gStzNZLi
-  `JRapiNZUtl3.mac:467-484`). (c) CB_CSADAD 995/0380780: dvě věty „navazuje" máme navíc. Návaznost
+  a (omezení atributu), d (tvar „všechny spoje") a b (značka G u zastávky) - changelog 2026-10-26
+  (23), (24). Zbývá (c) CB_CSADAD 995/0380780: dvě věty „navazuje" máme navíc. Návaznost
   bez druhu dopravy (staré záznamy, pole AVL prázdné) starý tisk v legendě vynechá (n31 / n32
   `JRapiNZUtl2.mac:425-439`), my ji bereme jako autobus.
 

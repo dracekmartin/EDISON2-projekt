@@ -160,6 +160,8 @@ ClassMethod LinkyPoznamekMimoJadro(ByRef sada)
 	set sada(8) = "KV_DP~775~0410116~5~PJI~~výčet spojů směru, ač kola mají všechny spoje s atributem"
 	set sada(9) = "VS_CSAD~810~0440523~5~PJI~~období a nejvýše N kol"
 	set sada(10) = "ZL_KOVED~930~0773777~5~PJI~~jen počet kol bez období"
+	// značka G jako atribut zastávky na trase linky, ne u spoje (T14b)
+	set sada(11) = "VS_CSAD~799~0440080~7~G~~značka G u zastávky na trase"
 }
 
 /// Řádky legendy mimo jádro sady = starý linkový tisk, řádek po řádku (`B194` T13, T14). Do 26. 10.

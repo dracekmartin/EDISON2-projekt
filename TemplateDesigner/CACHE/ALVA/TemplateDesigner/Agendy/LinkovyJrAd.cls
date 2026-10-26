@@ -2302,12 +2302,17 @@ ClassMethod PridatStaleZnacky(dataDB As %String, rec As %String, poznamky As %Dy
     }
     // MHD sloupec → text „zastávka s možností přestupu na MHD"
     i maMhd s klice("MHD") = ""
-    // atributy trasy (jen významové pro cestujícího; řídicí P/T/S/E/J/o/p se netisknou)
+    // atributy trasy (jen významové pro cestujícího; řídicí P/T/S/E/J/o/p se netisknou), převod
+    // 1:1 gStzNZLi (`JRapiNZUtl3.mac:467-484`). G, a, b, c, e, f, g, O chyběly do 26. 10. - zastávka
+    // značku nesla, legenda ji nevysvětlila (`B194` T14b). Vědomě jen zobrazené zastávky: starý tisk
+    // bere celou trasu, takže při „netisknout zastávky bez zastavení" vysvětlí i značku, která na
+    // stránce není.
     s znak = ""
     f {
         s znak = $o(atributyZobrazene(znak))
         q:znak=""
-        s klic = $case(znak, "A":"auto", "L":"vlak", "x":"x", "y":"y", "z":"z", "V":"(", "N":")", "D":"lod", "C":"CLO", :"")
+        s klic = $case(znak, "A":"auto", "L":"vlak", "x":"x", "y":"y", "z":"z", "V":"(", "N":")", "D":"lod", "C":"CLO",
+            "G":"G", "a":"GA", "b":"GB", "c":"GC", "e":"e", "f":"f", "g":"g", "O":"O", :"")
         i klic '= "" s klice(klic) = ""
     }
     // atributy z číselníku zastávek (^JRZ $8, 1:1 gStzNZLi zastávková sekce)

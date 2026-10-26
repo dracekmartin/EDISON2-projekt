@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-26 (24) - značka G u zastávky v legendě Linkového JŘ AD (`B194b` T14b)
+
+Atribut zastávky na trase linky (`J` pole 2) G a a, b, c (zákaz přepravy mezi označenými zastávkami),
+e, f, g (metro) a O (letiště) zastávka v tabulce nesla, ale legenda ho nevysvětlila - převod v
+`PridatStaleZnacky` je neznal. Teď 1:1 gStzNZLi (`JRapiNZUtl3.mac:467-484`). Vědomě zůstává rozsah:
+my vysvětlujeme jen značky zobrazených zastávek, starý tisk celé trasy (liší se jen s volbou
+„netisknout zastávky bez zastavení"). Ověřeno: oracle VS_CSAD 799/0440080 shodně 12/12, test
+`TestPoznamkyMimoJadroProtiLegacy` o tu linku rozšířen. Rozhodnutí Jan 26. 10.: jako starý tisk.
+
 ## 2026-10-26 (23) - omezení atributu a „všechny spoje" v Linkovém JŘ AD (`B194b` T14a, T14d)
 
 **T14a:** starý linkový tisk připisuje za větu atributu omezení zadané u spoje (`PATCH,"attrOm"`):
