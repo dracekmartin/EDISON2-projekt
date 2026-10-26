@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-26 (19) - pokračování spoje v Linkovém JŘ AD i slovensky (`B194b` T10a)
+
+Věta „spoj N pokračuje na lince číslo L spojem číslo S do zastávky Z" byla v Linkovém JŘ AD napevno
+česky i ve slovenské šabloně (komentář tvrdil číselník). Teď z číselníku firmy `NCOME` 34 v jazyce
+šablony, skládaná jako starý tisk (`JRapiExp32.mac:353-357`), bez číselníku české znění
+(`LinkovyJrAd.TextPokracovaniSpoje`; rozhodnutí Jan 26. 10.). Český číselník dává totéž co dřívější
+text, takže české šablony, zlaté odtisky i oracle beze změny. Test `TestPokracovaniSpojeZCiselniku`.
+
 ## 2026-10-26 (18) - oddělovač poznámek bez dlouhé pomlčky (`B194b` T9)
 
 Výchozí šablony Zastávkového JŘ AD i MHD měly v prvku Poznámky oddělovač mezi textovou značkou a textem

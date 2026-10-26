@@ -1621,12 +1621,12 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     d o.%Set("PRIPOJE", pripoje)
 
     // pokračuje (omz34): „spoj N pokračuje na lince číslo L spojem číslo S do zastávky Z"
-    // (1:1 NCOME 34 šablona; typ výstupu :5 = 2 → netisknout). Jen poznámka, žádný řádek matice.
+    // (typ výstupu :5 = 2 → netisknout). Jen poznámka, žádný řádek matice.
     s omz34 = $g(^[dataDB]JRL(sku,lin,smer,sp,34))
     i (omz34 '= "") && ($p($p(omz34,"@",2),":",5) '= 2) {
         s data34 = $p(omz34,"@",2)
         s znak34 = $s(+$g(^[dataDB]JRSET("Cis","comU34znk")):"p", 1:"u")
-        s txt = "spoj "_(+sp)_" pokračuje na lince číslo "_(+$p(data34,":",2))_" spojem číslo "_(+$p(data34,":",3))_" do zastávky "_$p(data34,":",4)
+        s txt = ..TextPokracovaniSpoje(dataDB, rec, +sp, +$p(data34,":",2), +$p(data34,":",3), $p(data34,":",4))
         i '$d(pripojePoznamky("seen", txt)) {
             s pripojePoznamky("seen", txt) = ""
             s seq = $o(pripojePoznamky(1, ""), -1) + 1
@@ -2237,6 +2237,17 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
         s txt = txt_prefix_$s(datumy'="":" "_datumy, 1:"")
     }
     q txt
+}
+
+/// Věta o pokračování spoje na jinou linku z číselníku firmy (`NCOME` 34, kusy „spoj~pokračuje na
+/// lince číslo ~spojem číslo~do zastávky" v jazyce šablony), skládaná jako starý tisk - kusy a čísla
+/// odděluje mezera (`JRapiExp32.mac:353-357`). Bez číselníku české znění. Do 26. 10. byla věta napevno
+/// česky i ve slovenské šabloně (`B194` T10a).
+ClassMethod TextPokracovaniSpoje(dataDB As %String, rec As %String, sp As %String, linka As %String, spoj As %String, zastavka As %String) As %String
+{
+    s vzor = $g(^[dataDB]JRSET("NCOME",rec,34))
+    i $l(vzor,"~") < 4 s vzor = "spoj~pokračuje na lince číslo~spojem číslo~do zastávky"
+    q $zstrip($p(vzor,"~",1)_" "_sp_" "_$p(vzor,"~",2)_" "_linka_" "_$p(vzor,"~",3)_" "_spoj_" "_$p(vzor,"~",4)_" "_zastavka, "<=>W")
 }
 
 /// Najde první linku firmy (první skupina × první linka s uzlem "I").

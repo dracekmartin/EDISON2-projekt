@@ -104,6 +104,22 @@ ClassMethod LinkySVetouAtributu(ByRef sada)
 	set sada(5) = "CB_GWBUS~216~0125850~RBP~upřesnění z textu spoje za větou"
 }
 
+/// Věta o pokračování spoje jde z číselníku firmy v jazyce šablony (`B194` T10a) - do 26. 10. byla
+/// napevno česky i ve slovenské šabloně. Český číselník dává totéž znění jako dřívější text napevno.
+Method TestPokracovaniSpojeZCiselniku()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
+	if ##class(%SYS.Namespace).Exists("CB_CSADAD") {
+		do $$$AssertEquals($classmethod(cls, "TextPokracovaniSpoje", "CB_CSADAD", "CZ", 5, 320, 3, "Brno"), "spoj 5 pokračuje na lince číslo 320 spojem číslo 3 do zastávky Brno", "CZ z číselníku")
+	}
+	if ##class(%SYS.Namespace).Exists("SKNI_MHDNITRA") {
+		do $$$AssertEquals($classmethod(cls, "TextPokracovaniSpoje", "SKNI_MHDNITRA", "*SK", 5, 320, 3, "Nitra"), "spoj 5 pokračuje na linke číslo 320 spojom číslo 3 do zastávky Nitra", "SK z číselníku")
+	}
+	if $get(^[$namespace]JRSET("NCOME","CZ",34)) = "" {
+		do $$$AssertEquals($classmethod(cls, "TextPokracovaniSpoje", $namespace, "CZ", 5, 320, 3, "Brno"), "spoj 5 pokračuje na lince číslo 320 spojem číslo 3 do zastávky Brno", "bez číselníku české znění")
+	}
+}
+
 /// Liší-li se upřesnění spojů „na objednání", dostane každé vlastní větu s výčtem spojů; spoj bez
 /// upřesnění vlastní větu bez dovětku. Data takovou linku dnes nemají (sonda `NaObjednaniVyskyt`,
 /// 26. 10.), takže se to proti starému modulu porovnat nedá - test hlídá pravidlo opsané

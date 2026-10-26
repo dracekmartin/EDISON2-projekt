@@ -24,7 +24,7 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 - **T7** „Jen nástup / jen výstup" chybí v Zastávkovém JŘ AD - **odloženo** (Jan 26. 10.), otevřené: podle
   kterých spojů šipku ukázat; rozpracováno ve stashi [M]
-- **T10** Pokračování spoje v linkovém AD je natvrdo česky i ve slovenské šabloně [S]
+- **T10** Drobnosti: T10b stanoviště v názvu zastávky, T10c rozdíly tras (doporučení neměnit) [S]
 - **T11** Vývěska AD má nadpisy skupin dnů natvrdo česky, starý tisk bral číselník firmy [S-M]
 - **T12** Linkový AD netiskne značky u času v zastávce (na objednání, paragraf) ani věty k nim [M]
 - **T13** Linkový AD vynechává upřesnění místenky a poznámky „p" u spojů (CB_GWBUS) [S-M]
