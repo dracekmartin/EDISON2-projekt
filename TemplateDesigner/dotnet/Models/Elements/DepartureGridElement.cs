@@ -368,7 +368,10 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
     private Dictionary<string, float> PotrebneSirkyMinut(List<GroupLayout> skupiny, List<int> hodiny,
         Func<string, ResolvedTextStyle> stylMinut, DataContext? data, float mmToPx)
     {
-        var fonty = skupiny.ToDictionary(g => g.Skupina.Id, g => stylMinut(g.Skupina.Id).CreateFont(1f, mmToPx));
+        // Skupina se stejným ID se v datech opakovat smí (ukázková data šablony MHD) - jeden font na ID.
+        var fonty = new Dictionary<string, SKFont>();
+        foreach (var g in skupiny)
+            if (!fonty.ContainsKey(g.Skupina.Id)) fonty[g.Skupina.Id] = stylMinut(g.Skupina.Id).CreateFont(1f, mmToPx);
         try
         {
             using var sloty = PripravSloty(skupiny, fonty.Values, StylyZnacek(data), 1f, mmToPx);

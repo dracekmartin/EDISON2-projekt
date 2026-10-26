@@ -132,6 +132,23 @@ public class MinutyOdjezduSirkaTests
         Assert.Contains(ContentShrinkWarnings.Seznam(Sablona(uzky), [data]), h => h.Co.Contains("písmo zmenšeno"));
     }
 
+    /// <summary>Dvě skupiny dnů se stejným ID (ukázková data šablony MHD) - výpočet šířek z 26. 10. na nich
+    /// spadl při otevření šablony, dosavadní kód je snášel.</summary>
+    [Fact]
+    public void SkupinySeStejnymId_Nespadne()
+    {
+        var data = RenderSnapshot.Data(
+            ("SKUPINY_DNU",
+            [
+                RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1")),
+                RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "2")),
+            ]),
+            ("ODJEZDY", [RenderSnapshot.Row(("SKUPINA_DNU_ID", "1"), ("HODINA", "6"), ("MINUTA", "15"))]));
+
+        Assert.Null(Record.Exception(() => Prvek(120).RozvrzeniSirek(data)));
+        Assert.Null(Record.Exception(() => RenderSnapshot.Capture(Prvek(120), data)));
+    }
+
     [Fact]
     public void Kresleni_Nespadne_AniVZuzenemPrvku()
     {
