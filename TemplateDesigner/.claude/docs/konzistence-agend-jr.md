@@ -33,9 +33,13 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
 - **T11 Vývěska AD má nadpisy skupin dnů natvrdo česky** [S-M] **tisk** (*ověřeno:* kód). `NacistSkupinyDnu`
   (:851); starý tisk bral číselník firmy (`JRapiLinPrtMhd1.mac:541-571`) - nejdřív změřit, u kolika firem
   se liší. (Vyčleněno z `T5`, které je uzavřené jako vědomý rozdíl - viz §8.)
-- **T7 „Jen nástup / jen výstup" chybí jen na vývěsce AD** [S-M] (*ověřeno:* kód). Ostatní tři kreslí šipku
-  a vysvětlivku; vývěska je řadí mezi tiskové pokyny (`ZastavkoveJrAd.JeViditelnyAtribut` :2539). Parita se
-  starou vývěskou (tiskla jen „x"), počet zastávek nezměřen.
+- **T7 „Jen nástup / jen výstup" chybí jen v Zastávkovém JŘ AD** [M] **odloženo, Jan 26. 10.** (*ověřeno:*
+  kód, data). Ostatní tři kreslí šipku a vysvětlivku; starý zastávkový tisk to neměl. Rozhodnuto: jako
+  volba u seznamu zastávek, výchozí vypnutá. **Otevřené:** N / V není atribut zastávky (`J`), ale trasy
+  spoje (`W` pole 5) - liší se mezi trasami téže linky (CB_CSADAD 996/0360022: trasa 1 má V na pořadí
+  12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
+  zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
+  sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
 - **T8 Zóny se počítají čtyřmi pravidly** [S] (*ověřeno:* kód). Každé je parita se svým starým modulem
   (`ZastavkoveJrAd.ZonyZastavky`, `LinkovyJrAd.BuildZastavkaRadek`, `LinkovyJrMhd.ZonyZastavky`,
   vývěska MHD bez filtru IDS). Doporučení neměnit; opravit komentář `LinkovyJrMhd.cls:533-535`
