@@ -40,8 +40,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
   zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
-- **T10 Drobnosti** [S] (T10a hotové, T10b vědomý rozdíl - §8):
-  - **T10c rozdíly tras**: „neobsluhuje zast." × „nezajíždí do" (parita obou) - doporučení neměnit.
 - **T12 Linkový AD netiskne značky u času v zastávce** [M] **tisk** (*ověřeno:* oracle CB_GWBUS 216/0340941,
   26. 10.). Starý modul dává do buňky času značku atributu zastávky spoje (telefon u zastávky obsluhované
   na objednání, paragraf `G`…; buňka = značka + čas, `JRapiLinPrtWin.mac:1629` „konverze atributu u času"),
