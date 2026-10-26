@@ -31,9 +31,7 @@ Všechno mění vytištěný výstup vydaných agend, proto **Jan** u každé. K
 modulem, stojí u položky; bez ní je rozdíl nahodilý.
 
 - **T4 Vysvětlivka téže značky zní v každé agendě jinak** [S] (*ověřeno:* kód, server). Rozděleno
-  (T4a bezbariérové vozidlo, T4b překlep „částečne" hotové):
-  - **T4c „na znamení"**: Linkový AD bere ze STALCOME, Zastávkový AD „na znamení" (vědomě Jan; starý
-    zastávkový tisk „zastávka pouze na znamení").
+  (T4a, T4b hotové, T4c vědomý rozdíl - §8):
   - **T4d přestup na autobus**: tři znění (Zastávkový AD vlastní text `TextPrestupu`). Doporučení: ze STALCOME.
 - **T11 Vývěska AD má nadpisy skupin dnů natvrdo česky** [S-M] **tisk** (*ověřeno:* kód). `NacistSkupinyDnu`
   (:851); starý tisk bral číselník firmy (`JRapiLinPrtMhd1.mac:541-571`) - nejdřív změřit, u kolika firem
@@ -283,6 +281,10 @@ totéž znovu. Pořadí podle přínosu:
   spoje skupiny. Požadavek DPKV #10660 se týkal vývěsky. Dva řádky v linkovém by se dělaly novým polem.
 - **Vědomě jinak (rozhodnutí Jan 26. 10.):** telefon dopravce „tel:" ve vývěskách a „tel." v linkových JŘ
   (`T6`) - každý tvar odpovídá svému starému tisku a vývěsky jsou vydané.
+- **Vědomě jinak (rozhodnutí Jan 26. 10., potvrzuje srpnové):** vysvětlivka „na znamení" je v Zastávkovém
+  JŘ AD krátká a napevno („na znamení", `ZastavkoveJrAd.TextAtributu`), Linkový JŘ AD ji bere z číselníku
+  stálých značek firmy („zastávka je jen na znamení nebo požádání"), agendy MHD z číselníku atributů MHD
+  (`T4c`). Starý zastávkový tisk měl „zastávka pouze na znamení".
 
 - Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (od 26. 10. i typy provozu, `SkupinyParametruTest`);
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,

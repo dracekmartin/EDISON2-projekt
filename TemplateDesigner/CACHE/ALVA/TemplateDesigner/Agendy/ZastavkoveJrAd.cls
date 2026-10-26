@@ -2616,6 +2616,8 @@ ClassMethod JePrestupovyAtribut(znak As %String) As %Boolean
 }
 
 /// Text atributu zastávky dle znaku - 1:1 s číselníkem `arrCis(16)^JRapiCis`.
+/// Krátké „na znamení" je vědomě jinak než v Linkovém JŘ AD, který bere znění z číselníku stálých
+/// značek firmy („zastávka je jen na znamení nebo požádání") - rozhodnutí Jan 26. 10. (`B194` T4c).
 ClassMethod TextAtributu(znak As %String) As %String
 {
     s m("P") = "podtrženo s příjezdem a odjezdem"
