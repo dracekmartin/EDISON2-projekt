@@ -40,9 +40,7 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
   zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
-- **T10 Drobnosti** [S] (T10a pokračování spoje hotové):
-  - **T10b stanoviště** v názvu zastávky: „, stan.16" (Linkový AD, parita) × „, označník 3" (Zastávkový AD,
-    bez opory).
+- **T10 Drobnosti** [S] (T10a hotové, T10b vědomý rozdíl - §8):
   - **T10c rozdíly tras**: „neobsluhuje zast." × „nezajíždí do" (parita obou) - doporučení neměnit.
 - **T12 Linkový AD netiskne značky u času v zastávce** [M] **tisk** (*ověřeno:* oracle CB_GWBUS 216/0340941,
   26. 10.). Starý modul dává do buňky času značku atributu zastávky spoje (telefon u zastávky obsluhované
@@ -283,6 +281,11 @@ totéž znovu. Pořadí podle přínosu:
   modulu (`T8`): Zastávkový AD z trasy linky se záskokem na registr (`ZonyZastavky`), Linkový AD jen z trasy
   a „-" (`BuildZastavkaRadek`), Zastávkový MHD všechny zóny bez filtru systému, Linkový MHD jen systém
   linky spojené „/" (`ZonyZastavky`). Rozdíl je vidět jen u zastávek se zónou mimo trasu nebo ve dvou IDS.
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** stanoviště u názvu zastávky (`T10b`). Linkový JŘ AD ho
+  tiskne v řádku tabulky u zastávky s příznakem trasy „S" jako „, stan.16" (parita starého linkového tisku,
+  `LinkovyJrAd` :1011), Zastávkový JŘ AD jen v nadpisu rozdělené vývěsky jako „, označník 3" / „, sloupek 1"
+  (vzor KOVED #8828, `ZastavkoveJrAd` :718). Jiné místo i účel, zkratka „stan." neumí rozlišit označník
+  a sloupek.
 
 - Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (od 26. 10. i typy provozu, `SkupinyParametruTest`);
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,

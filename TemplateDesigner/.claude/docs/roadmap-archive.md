@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T10b** Stanoviště u názvu zastávky - vědomý rozdíl („, stan.16" v Linkovém JŘ AD × „, označník 3"
+  v nadpisu rozdělené vývěsky; rozhodnutí Jan 26. 10.; `konzistence-agend-jr.md` §8).
 - **T10a** Věta o pokračování spoje v Linkovém JŘ AD z číselníku firmy v jazyce šablony, bez něj české
   znění (changelog 2026-10-26 (19)).
 - **T9** Oddělovač poznámek ve výchozích šablonách zastávkových JŘ (AD i MHD) „ - " místo dlouhé pomlčky;
