@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-26 (6) - 🗂️ typy provozu linkového MHD ve skupině Tabulka spojů (`B194c` P4)
+
+Zaškrtávátka typů provozu linkového JŘ MHD měla v tabu Parametry vlastní skupinu „Typy provozu pro tisk",
+poslední a mimo pravidlo „Obecné, nebo název prvku". Rozhodnutí Jan 26. 10.: patří k Tabulce spojů (vybírají,
+které spoje tabulka vytiskne), samostatně ne. Skupina „Tabulka spojů", popisek „Typ provozu: <název>", aby
+se v ní odlišily od ostatních voleb; hláška linky bez dat po vypnutí všech typů odkazuje na skupinu Tabulka
+spojů. .NET kontrola skupin (`AgendaParameterDriftTests`) parametry skládané za běhu nevidí - nově je hlídá
+Caché `SkupinyParametruTest` (parametry všech čtyř agend JŘ ze serveru, KV_DP a CB_CSADAD). Ověřeno voláním
+`GetParameters` (KV_DP).
+
 ## 2026-10-26 (5) - 🚌 dopravce: pořadí adresy v linkovém MHD a mezery v souhrnném poli (`B194b` T6)
 
 Rozhodnutí Jan 26. 10. jako kompromis sjednocení: linkový JŘ MHD tiskne v řádku „Přepravu zajišťuje"

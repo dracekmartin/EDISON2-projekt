@@ -126,9 +126,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
   Linkový „Stránka pro každou zastávku" v Obecné × vývěska „Samostatná stránka pro každé stanoviště"
   ve skupině Seznam zastávek (s ní „Číslo stanoviště podle"). Pravidlo linkového JŘ (Jan 31. 8.): co mění
   složení sestavy, patří do Obecné. Návrh: Obecné, „Stránka pro každé stanoviště".
-- **P4 Linkový MHD: skupina „Typy provozu pro tisk" mimo pravidlo** [S] **Jan** (*ověřeno:* server). Není
-  „Obecné" ani název prvku, je poslední, i když je to hlavní volba tabulky; drift test ji nevidí (název
-  parametru se skládá za běhu). Vědomá výjimka v testu, nebo „Tabulka spojů" - **před 27. 10.**
 - **P5 Linkový AD výlepy: bez pořadí stránek a PDF na zastávku** [M] **Jan** (*ověřeno:* kód). Stránky jdou
   vždy po směrech (`LinkovyJrAd.VypisVylepy`), vývěska nabízí „Po zastávkách"; export „Jeden PDF na
   zastávku" se nabízí jen agendám druhu STOP (`AgendaParams.AddExportFields`).
@@ -298,7 +295,7 @@ totéž znovu. Pořadí podle přínosu:
 - **Vědomě jinak (rozhodnutí Jan 26. 10.):** telefon dopravce „tel:" ve vývěskách a „tel." v linkových JŘ
   (`T6`) - každý tvar odpovídá svému starému tisku a vývěsky jsou vydané.
 
-- Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (výjimka `P4`);
+- Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (od 26. 10. i typy provozu, `SkupinyParametruTest`);
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,
   zvýraznění zastávky) mají stejný klíč i popisek; `serverSide` sedí oběma směry.
 - Data: obě čísla linky ve všech agendách pod stejným klíčem i popiskem; kolekce `ZASTAVKY`, `SKUPINY_DNU`,

@@ -376,7 +376,7 @@ Method TestDuvodPrazdnehoVystupu()
 	set ^||ML("IN","LINKA_ID") = 1073, tp = ""
 	for  { set tp = $order(^["KV_DP"]ALVA.MHD.ENUMS("KV_DP","TypyProvozu","DTA",tp)) quit:tp=""  set ^||ML("IN", ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).ParametrTypuProvozu(tp)) = "false" }
 	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
-	do $$$AssertTrue($get(^||ML("OUT","DUVOD_PRAZDNE")) [ "Typy provozu pro tisk", "linka 1 bez typů: "_$get(^||ML("OUT","DUVOD_PRAZDNE"), "(bez důvodu)"))
+	do $$$AssertTrue($get(^||ML("OUT","DUVOD_PRAZDNE")) [ "skupině Tabulka spojů", "linka 1 bez typů: "_$get(^||ML("OUT","DUVOD_PRAZDNE"), "(bez důvodu)"))
 
 	for lin = 1073, 1106 {
 		kill ^||ML

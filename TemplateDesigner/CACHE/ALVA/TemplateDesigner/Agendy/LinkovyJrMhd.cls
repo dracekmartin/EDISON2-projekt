@@ -176,11 +176,13 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
             i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Blocked")) continue
             s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Nazev"))
             s cislo = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Cislo"), tp)
-            i nazev = "" { s nazev = "Typ provozu "_cislo }
+            i nazev = "" { s nazev = cislo }
             elseif $g(nazvy(nazev)) > 1 { s nazev = nazev_" (č. "_cislo_")" }
             s popis = "Spoje tohoto typu provozu se vytisknou jako samostatný blok. Vypnutý typ provozu se netiskne."
             i $g(provozNadpis(tp)) '= "" s popis = "Nadpis bloku na tisku: „"_provozNadpis(tp)_"“. "_popis
-            d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, ..ParametrTypuProvozu(tp), nazev, 1, "Typy provozu pro tisk", popis, 1)
+            // Skupina podle prvku jako ostatní parametry (`B194c` P4, do 26. 10. vlastní skupina „Typy
+            // provozu pro tisk"); předpona v popisku je odliší od ostatních voleb Tabulky spojů.
+            d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, ..ParametrTypuProvozu(tp), "Typ provozu: "_nazev, 1, "Tabulka spojů", popis, 1)
             // Firma má typů provozu desítky, linka pár - návrhář ukáže jen ty, které načtená linka má.
             d arr.%Get(arr.%Size() - 1).%Set("visibleWhenListedIn", "TYPY_PROVOZU_LINKY")
         }
@@ -417,7 +419,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         s razeni($g(provozPoradi(typProvozu), 999), typProvozu, vychoziCas, spojId) = ""
         m spojTabulka(spojId) = arrtbsp("arr",1)   // cache pro BuildSpojMhd
     }
-    i '$d(razeni) q ..PrazdnaStranka($s('$g(spojuSmeru):"Linka nemá ve vybraném směru žádné spoje.", $g(vypnuteTypem)=spojuSmeru:"Vybrané typy provozu nemají na lince žádné spoje. V parametrech (Typy provozu pro tisk) zapněte aspoň jeden typ, který linka má.", 1:"Spoje linky nemají spočítané časy, nejspíš chybí jízdní doby. Doplňte jízdní doby linky v modulu MHD."))
+    i '$d(razeni) q ..PrazdnaStranka($s('$g(spojuSmeru):"Linka nemá ve vybraném směru žádné spoje.", $g(vypnuteTypem)=spojuSmeru:"Vybrané typy provozu nemají na lince žádné spoje. V parametrech ve skupině Tabulka spojů zapněte aspoň jeden typ provozu, který linka má.", 1:"Spoje linky nemají spočítané časy, nejspíš chybí jízdní doby. Doplňte jízdní doby linky v modulu MHD."))
 
     // Zastávky, kde žádný tištěný spoj nestaví (jen projíždí nebo jede jinudy), se vynechají jako
     // u AD. Rozhodují spoje vybraných typů provozu, ne celá linka.

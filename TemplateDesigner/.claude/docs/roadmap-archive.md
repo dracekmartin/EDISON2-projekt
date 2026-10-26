@@ -32,6 +32,8 @@
   vývěsky). Související nadpisy vývěsky AD natvrdo česky zůstaly jako `T11`.
 - **T6** Dopravce: linkový MHD v pořadí ulice, PSČ obec jako vývěska MHD, souhrnné pole dopravců s mezerami
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
+- **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
+  (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 
