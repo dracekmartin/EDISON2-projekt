@@ -140,8 +140,8 @@ a jaké **specializované prvky** máte k dispozici.
   čtení - upravenou verzi uložíte jako vlastní šablonu) a **Moje šablony**; tlačítka
   Přejmenovat…, Smazat, Otevřít.
 - `Soubor → Uložit do databáze` - u šablony již uložené v databázi provede tichý update.
-- `Soubor → Uložit do databáze jako…` - dialog s polem pro název a popis; nová/importovaná
-  šablona se takto poprvé zařadí do databáze.
+- `Soubor → Uložit do databáze jako…` - dialog s názvem šablony; nová/importovaná šablona se
+  takto poprvé zařadí do databáze. Agendu dialog jen ukáže - změníte ji přes `Nástroje → Změnit agendu`.
 - Výhoda oproti lokálním souborům: šablony jsou sdílené, centrální a dohledatelné - ne
   roztroušené po jednotlivých počítačích.
 

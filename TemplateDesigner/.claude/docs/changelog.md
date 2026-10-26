@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-26 (2) - 🔒 „Uložit jako" už nemění agendu šablony (`B194a` C10)
+
+Okno „Uložit do databáze jako…" nabízelo v poli Agenda všechny agendy z registru, i nezveřejněné
+(Faktury, rozdílový JŘ), a změna uložila šablonu s prvky a poli jedné agendy pod jinou - bez výměny
+nabídky dat, kterou dělá jen Změnit agendu (to zakládá novou šablonu). Obecná agenda v nabídce chyběla.
+Teď pole ukáže jen agendu šablony, nejde změnit a nápověda odkáže na Změnit agendu (Ctrl+Shift+A);
+název agendy pošle návrhář (obecná v registru není), starší klient ho dostane z registru
+(`SaveTemplate.NazevAgendy`). Uložení bere agendu vždy ze šablony - okno ji změnit neumí, `AgendaCode`
+nemá setter. Rozhodnutí Jan 26. 10.: „takové obcházení nesmí být možné". Testy `SaveTemplateFormTest`
+(jediná položka, zamčené, obecná s názvem) a `SaveToCacheDialogViewModelTests`; na serveru ověřeno
+voláním `Init`. Příručka: dialog má název šablony, ne „název a popis".
+
 ## 2026-10-26 (1) - 📅 linkový AD tiskne rok v omezeních podle nastavení linky (`B194a` C9)
 
 Modul JŘ ukládá u linky režim tisku roku o 1 výš (0 = nenastaveno), u firmy bez posunu; starý tisk

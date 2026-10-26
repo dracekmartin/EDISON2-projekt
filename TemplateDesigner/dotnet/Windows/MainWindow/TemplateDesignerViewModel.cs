@@ -2500,7 +2500,8 @@ public class TemplateDesignerViewModel : EDViewModel
 
         var vm = new SaveToCacheDialogViewModel(
             State.CurrentTemplate.Name,
-            State.CurrentTemplate.AgendaCode);
+            State.CurrentTemplate.AgendaCode,
+            CurrentAgendaDisplayName);
         if (Dialogs?.ShowSaveToCache(vm) != true) return false;
 
         // Kolize názvu: bez kontroly by vznikla tichá duplicita (dvě šablony stejného jména,
@@ -2521,7 +2522,6 @@ public class TemplateDesignerViewModel : EDViewModel
         // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
         State.CurrentTemplate.Id = Guid.NewGuid();
         State.CurrentTemplate.Name = vm.Name;
-        State.CurrentTemplate.AgendaCode = vm.AgendaCode;
 
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();

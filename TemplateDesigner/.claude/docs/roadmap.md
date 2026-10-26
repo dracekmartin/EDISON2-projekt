@@ -22,7 +22,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194a` Chyby
 
-- **C10** „Uložit jako" přepojí šablonu na jinou agendu, i nezveřejněnou [S]
 - **C11** Chyba serveru u jedné linky zastaví tisk všech, hláška je technická [M]
 - **C12** Výchozí vývěska MHD: nadpisy skupin dnů přetékají, minuty ve čtvrté skupině uříznuté [M] **tisk**
 

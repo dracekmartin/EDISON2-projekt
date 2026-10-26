@@ -20,6 +20,8 @@
   prázdné → dřívější chování (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (4)).
 - **C9** Linkový AD čte formát roku u linky o 1 níž jako starý modul a data v omezeních skládá jako on
   (rozhodnutí Jan 26. 10.: zatím takto, lépe po probrání nastavení JŘ - backlog; changelog 2026-10-26 (1)).
+- **C10** „Uložit jako" agendu šablony jen ukáže, změna jen přes Změnit agendu (rozhodnutí Jan 26. 10.;
+  changelog 2026-10-26 (2)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

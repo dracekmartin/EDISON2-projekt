@@ -23,10 +23,6 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C10 „Uložit jako" přepojí šablonu na jinou agendu, i nezveřejněnou** [S] (*ověřeno:* kód, server).
-  Pole Agenda nabízí vše z `ListAgendy` včetně Faktur a rozdílového (`SaveTemplate.AddAgendyItems`), uložení
-  přepíše `AgendaCode` bez výměny schématu (`SaveToCacheAsAsync` :2493). Odporuje pravidlu „změna agendy =
-  nová šablona" (`ChangeAgendaDialogViewModel`). Obecná agenda v nabídce chybí. Návrh: agendu jen ukázat.
 - **C11 Chyba u jedné linky zastaví tisk všech** [M] (*ověřeno:* kód). Linka bez dat už tisk nezastaví
   (`0ba002d1`), výjimka ze serveru ano: `NacitaniVsechLinek` (:2380) nemá ošetření pro každou linku.
   Hláška je technická: „LINKA_ID is required", „Linka 1/380761 neexistuje v ^JRL" (`ZastavkoveJrAd.cls:236`,
