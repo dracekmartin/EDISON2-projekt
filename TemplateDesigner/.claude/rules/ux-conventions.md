@@ -257,6 +257,7 @@ Kanonické termíny (font/styl textu):
 |---|---|---|
 | Rodina písma (FontFamily) | **Font** | ~~Rodina písma~~, ~~Písmo~~ |
 | Velikost písma (FontSize) | **Velikost** (`Unit = "pt"`) | ~~Velikost písma~~ |
+| Velikost jako násobek jiné velikosti | **Poměr velikosti …** (`Unit = "×"`) - „Velikost" je vždy pevná hodnota v pt nebo mm, poměr se musí poznat už z popisku (rozhodnutí Jan 26. 10.) | ~~Velikost značek~~ pro poměr |
 | Tučné / Kurzíva / Podtržení / Přeškrtnutí | **Tučné** / **Kurzíva** / **Podtržení** / **Přeškrtnutí** | anglicismy |
 | Řádkování (LineSpacing) | **Řádkování** | - |
 | Barva textu / pozadí buňky | **Barva textu buněk** / **Pozadí buněk** | - |

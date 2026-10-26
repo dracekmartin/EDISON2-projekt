@@ -50,8 +50,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   **odloženo** (Jan 26. 10.); návrh: nabídka podle polí, která agenda posílá, zapnutý sloupec zůstane vidět
 - **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan** - **odloženo k rozmyšlení**
   (Jan 26. 10.); návrh: vysvětlivka z popisku do nápovědy, rozsahy na nejširší (výška řádku 1-50 mm, písmo 3-200 pt)
-- **E9** Minuty odjezdů a Tabulka spojů pojmenovávají poměry jinak - zbývá c (poměr „Velikost značek /
-  minut" vedle „Velikost" v bodech) [S] **Jan**
 - **E10** Aktuální zastávka v Seznamu zastávek: zkratky, „Tučně", „Zvýraznění" [S]
 - **E11** Popisky v C# a ve formuláři se rozcházejí (import z PDF, náhradní panel, AI) [M]
 - **E12** Katalog sloupců Tabulky spojů jinak než data („Zastávka", „TČ" × „Tč") [S]

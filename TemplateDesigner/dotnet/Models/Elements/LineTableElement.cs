@@ -3801,9 +3801,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new FloatPropertyDescriptor
         {
-            Label = "Velikost minut", Group = "Datové buňky",
+            Label = "Poměr velikosti minut", Group = "Datové buňky",
             Get = () => PomerMinuty, Set = v => PomerMinuty = v,
-            Min = 0.3f, Max = 1f, Format = "0.##",
+            Min = 0.3f, Max = 1f, Unit = "×", Format = "0.##",
         },
         new BoolPropertyDescriptor { FromImage = true, Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
         new BoolPropertyDescriptor { FromImage = true, Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
@@ -3811,9 +3811,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Čáry u zastávek dle trasy", Group = "Datové buňky", Get = () => CaryZastavekDleTrasy, Set = v => CaryZastavekDleTrasy = v },
         new FloatPropertyDescriptor
         {
-            Label = "Velikost značek", Group = "Řádky",
+            Label = "Poměr velikosti značek", Group = "Řádky",
             Get = () => PomerZnacek, Set = v => PomerZnacek = v,
-            Min = 1f, Max = 3f, Format = "0.##",
+            Min = 1f, Max = 3f, Unit = "×", Format = "0.##",
         },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = PopisneGroup,
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },

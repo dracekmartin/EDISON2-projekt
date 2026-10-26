@@ -694,6 +694,8 @@ public class EDInputFormSchemaDriftTests
         "Dolů",             // → Dole
         "Pokročilé",        // skupina → Podmínky
         "ZIndex",           // → Vrstva (rozhodnutí Jan 2026-10-26, `B194` E7)
+        "Velikost značek",  // → Poměr velikosti značek („Velikost" = pevná hodnota v pt / mm, `B194` E9c)
+        "Velikost minut",   // → Poměr velikosti minut
     ];
 
     /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive). Sdílené s

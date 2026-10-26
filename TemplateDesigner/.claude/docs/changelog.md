@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-26 (34) - „Poměr velikosti" u násobků v Tabulce spojů (`B194d` E9c)
+
+Tabulka spojů měla „Velikost značek" (1,5) a „Velikost minut" (0,75) - násobky bez jednotky vedle
+„Velikost" v bodech, kdo napsal 7 (myslel pt), dostal chybu rozsahu. Rozhodnutí Jan 26. 10.: **„Velikost"
+je vždy pevná hodnota v pt nebo mm, poměr se jmenuje „Poměr velikosti …"** → „Poměr velikosti značek",
+„Poměr velikosti minut", jednotka „×" ve formuláři i deskriptoru. Jiný poměr pojmenovaný „Velikost"
+v návrháři není (ostatní „Velikost …" mají pt nebo mm). Kanon §8 má řádek, staré popisky mezi zakázanými,
+příručka (seed) upravená. Ověřeno voláním `Init` formuláře Tabulky spojů. Tím je `E9` uzavřené.
+
 ## 2026-10-26 (33) - „Mezera mezi značkou a minutou" (`B194d` E9b)
 
 Minuty odjezdů měly „Mezera minuta ↔ značka" (šipka místo slov) s nápovědou „Prázdné = automaticky podle

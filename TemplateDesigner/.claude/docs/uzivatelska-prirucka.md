@@ -1120,7 +1120,7 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
   informace pro cestujícího, proto je z výroby vypnutý; zapnutí stojí čas navíc při načítání dat.
 - **Přípojné řádky (vyčká/navazuje)** - pod zastávkou řádky o přípojích.
 - **Výška řádku** - prázdné = podle velikosti písma.
-- **Velikost značek** - kolikrát větší je písmo značek než písmo buňky (starý tisk 1,5×, aby byly
+- **Poměr velikosti značek** - kolikrát větší je písmo značek než písmo buňky (starý tisk 1,5×, aby byly
   na výtisku čitelné).
 
 **Šířka sloupců** - viz kapitola 4.
@@ -1144,7 +1144,7 @@ buňky a tyhle volby:
 
 - **Formát času** - *Minuty menším písmem (hh mm)* jako starý tisk, *Celý čas stejně (hh:mm)*
   s dvojtečkou („04:20"), nebo *Celý čas stejně (hh.mm)* s tečkou a hodinou bez nuly („4.20").
-  **Velikost minut** říká, o kolik jsou minuty menší.
+  **Poměr velikosti minut** říká, o kolik jsou minuty menší.
 - **Tečky v prázdných buňkách** - buňka bez času se vyplní tečkami, takže tabulka drží svislé
   vodicí pruhy jako starý tisk. Dostanou je i prázdné sloupce dorovnání.
 - **Tučné zastávky dle trasy** a **Čáry u zastávek dle trasy** - v trase linky jde u zastávky zadat

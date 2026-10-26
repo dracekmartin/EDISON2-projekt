@@ -38,7 +38,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowPripojeRows", "Přípojné řádky (vyčká/navazuje)", 1)
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 20, "mm")
         s f.helpText = "Prázdné = auto podle velikosti písma"
-        s f = form.AddDecimal("PomerZnacek", "Velikost značek", 1.5, 1, 3)
+        s f = form.AddDecimal("PomerZnacek", "Poměr velikosti značek", 1.5, 1, 3, "×")
         s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
 
         // ── Skupina "Šířka sloupců" ───────────────────────────────────────
@@ -113,7 +113,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("STeckou", "Celý čas stejně (hh.mm)")
         s f.value = "HodinaVetsi"
         s f.helpText = "Starý tisk sází hodinu větším písmem a minutu menším, oddělené mezerou bez dvojtečky. Ostatní volby vypíší celý čas jednou velikostí: s dvojtečkou (04:20), nebo s tečkou a hodinou bez nuly (4.20)."
-        s f = form.AddDecimal("PomerMinuty", "Velikost minut", 0.75, 0.3, 1)
+        s f = form.AddDecimal("PomerMinuty", "Poměr velikosti minut", 0.75, 0.3, 1, "×")
         s f.helpText = "Podíl velikosti minut vůči hodině. 1 = obojí stejně velké. Uplatní se jen u formátu s hodinou větším písmem."
         s f = form.AddBool("VyplnitPrazdneBunkySpoju", "Tečky v prázdných buňkách", 0)
         s f.helpText = "Buňka spoje, ve které není čas, se vyplní tečkami - tabulka pak drží svislé vodicí pruhy jako starý tisk. U linky, kde většina spojů jede jen část trasy, se tím tabulka zaplní a čte se hůř."

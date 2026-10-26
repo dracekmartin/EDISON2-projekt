@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E9c** Tabulka spojů: poměry „Poměr velikosti značek" / „Poměr velikosti minut" s jednotkou „×";
+  „Velikost" je vždy pevná hodnota v pt / mm, pravidlo v kanonu §8 (rozhodnutí Jan 26. 10.; changelog
+  2026-10-26 (34)). Tím je `E9` uzavřené.
 - **E9b** Minuty odjezdů: „Mezera mezi značkou a minutou" místo „Mezera minuta ↔ značka", nápovědy mezer
   v obou prvcích „Prázdné = mezera podle velikosti písma" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (33)).
 - **E9a** Minuty odjezdů i Tabulka spojů: „Mezera mezi skupinami dnů" místo „Oddělovač skupin" (zněl jako
