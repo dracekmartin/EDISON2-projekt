@@ -37,13 +37,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
   zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
-- **T12 Linkový AD netiskne značky u času v zastávce** [M] **tisk** (*ověřeno:* oracle CB_GWBUS 216/0340941,
-  26. 10.). Starý modul dává do buňky času značku atributu zastávky spoje (telefon u zastávky obsluhované
-  na objednání, paragraf `G`…; buňka = značka + čas, `JRapiLinPrtWin.mac:1629` „konverze atributu u času"),
-  na té lince 77 buněk. K tomu věty „spoj zastávku obsluhuje jen na objednání / podmínečně" (`OZO`/`OZP`,
-  `JRapiNZUtl3.mac:68-72, 135-158`), které bez značky v buňce nedávají smysl. Oracle to dosud neviděl, čte
-  jen první položku buňky (`LinkovyJrLegacyOracle.Bunka`). Vyčleněno z `T1`; potřebuje aditivní wire
-  (značky k času) a kreslení v Tabulce spojů.
 - **T13 Linkový AD vynechává upřesnění místenky a poznámky „p" u spojů** [S-M] **tisk** (*ověřeno:* oracle
   CB_GWBUS 216/0125850 a 0340941, 26. 10.). Starý modul připojuje k větě místenky text (např. „…zakoupit
   bez příplatku na e-shopu www.AMSbus.cz…") a vypisuje poznámky druhu 4 „p" s výčtem spojů; my ne. Jádro

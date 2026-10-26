@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-26 (21) - zastávka na objednání u času v Linkovém JŘ AD (`B194b` T12)
+
+Starý linkový tisk dává do buňky času telefon, když spoj danou zastávku obsluhuje jen na objednání
+(atribut trasy `r`), a vykřičník u „podmínečně" (`i`; GSId `JRapiLinPrtWin.mac:1629`). V legendě k tomu
+věta „spoj zastávku obsluhuje jen na objednání / podmínečně" s upřesněním (OZO / OZP,
+`JRapiNZUtl3.mac:68-72, 135-158`, piktogram RBU / RBP). Linkový JŘ AD r/i vynechával s mylným
+komentářem „přesunuty do atributů". Teď 1:1: r/i jdou do `ZNACKY` buňky (klient `SymbolMap`
+zastávková mapa r → telefon, i → vykřičník), věty OZO / OZP v pořadí za zasu se značkou RBU / RBP
+a upřesněním přes `UpresneniAtributuSpoje` (rozhodnutí Jan 26. 10.: do první verze přesně podle starého).
+**Zdvojená zastávka:** starý tisk kreslí značky u času i do příjezdového řádku (oracle: paragraf
+u spoje 3, telefon u spoje 8 na Benešov, Konopiště); náš kód je dával jen do odjezdového s odkazem na
+tc2row, který to netvrdí - opraveno, příjezdový řádek je dostane, když má čas. Ověřeno: nový
+`TestZnackaNaObjednaniUCasu` (telefon v 64 buňkách stejně jako starý tisk), oracle věty OZO shodně,
+vykreslení. Sonda `LinkovyJrLegacyOracle.ZnackyNaObjednaniProbe`. Zlaté odtisky beze změny.
+
 ## 2026-10-26 (20) - nadpisy skupin dnů z nastavení firmy i v Zastávkovém JŘ AD (`B194b` T11)
 
 Zastávkový JŘ AD měl nadpisy skupin dnů („Pracovní dny", „Soboty"…) napevno česky. Starý zastávkový

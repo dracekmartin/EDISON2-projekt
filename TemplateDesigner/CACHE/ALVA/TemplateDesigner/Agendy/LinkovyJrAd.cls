@@ -1360,8 +1360,10 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     s cisloTrasy = $p(hlava,":",3)
 
     // per-tč značky spoje z trasy (W segment ":"-piece 5, legacy gSpLin trs,6): N/V/x/G/a/b/c
-    // → legenda druhu 7 (r/i přesunuty do atributů, jako legacy) i do buňky vedle času
-    // (`znackyTc`), kam je starý tisk kreslí (JRapiLinPrtWin.mac:3838 a :1409).
+    // → legenda druhu 7 i do buňky vedle času (`znackyTc`), kam je starý tisk kreslí
+    // (JRapiLinPrtWin.mac:3838 a :1409). Zastávka na objednání „r" / podmínečně „i" jde do buňky
+    // taky (telefon / vykřičník, GSId :1629), ale legendu nemá druhu 7 - vysvětluje ji věta OZO / OZP
+    // druhu 5 (`JRapiNZUtl3.mac:68-72, 135-158`). Do 26. 10. se r/i vynechávaly úplně (`B194` T12).
     k znackyTc
     s wTrasaVeta = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
     f wi=1:1:$l(wTrasaVeta,"#") {
@@ -1370,8 +1372,12 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         s wZnaky = $p(wSegment,":",5)
         f zi=1:1:$l(wZnaky) {
             s wZnak = $e(wZnaky,zi)
-            i (wZnak = "") || (wZnak = "r") || (wZnak = "i") continue
-            s trasaZnakySeen(wZnak) = ""
+            i wZnak = "" continue
+            i (wZnak = "r") || (wZnak = "i") {
+                s klicZast = $s(wZnak = "r":"OZO", 1:"OZP")
+                s atributSeen(klicZast, +sp) = ..UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, $s(wZnak = "r":"RBU", 1:"RBP"))
+            }
+            else { s trasaZnakySeen(wZnak) = "" }
             i wPoradi '= "" s znackyTc(+wPoradi) = $g(znackyTc(+wPoradi))_wZnak
         }
     }
@@ -1488,15 +1494,21 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     }
     d o.%Set("CASY", casy)
 
-    // Značky u zastávky per řádek, stejně indexované jako CASY. Nesou je jen řádky s časem -
-    // u zdvojené zastávky tedy hlavní (odjezdový), jako v legacy (tc2row). Pole se posílá jen
-    // když má linka aspoň jednu značku, ať se stránka zbytečně nenafukuje.
+    // Značky u zastávky per řádek, stejně indexované jako CASY. Pole se posílá jen když má linka
+    // aspoň jednu značku, ať se stránka zbytečně nenafukuje. U zdvojené zastávky je starý tisk
+    // kreslí k odjezdu i k příjezdu (oracle CB_GWBUS 216/0340941: paragraf u spoje 3, telefon
+    // u spoje 8). Do 26. 10. tu byl jen odjezdový řádek s odkazem na tc2row (`B194` T12);
+    // příjezdový dostane značky, jen když má čas.
     i $d(znackyTc) {
         s maZnacku = 0
         s znacky = ##class(%DynamicArray).%New()
         f i=1:1:pocetRadku {
             s pp = $lg(rowMeta(i),1), typRadku = $lg(rowMeta(i),2)
-            s znakyRadku = $s(typRadku = "P":"", 1:$g(znackyTc(pp)))
+            s znakyRadku = $g(znackyTc(pp))
+            i typRadku = "P" {
+                s casRadku = casy.%Get(i-1)
+                i (casRadku = "") || (casRadku = "|") || (casRadku = "<") s znakyRadku = ""
+            }
             i znakyRadku '= "" s maZnacku = 1
             d znacky.%Push(znakyRadku)
         }
@@ -1879,7 +1891,8 @@ ClassMethod PridatPoznamkyNZ(dataDB As %String, sku As %String, lin As %String, 
 /// nese řádek platnosti.
 ///
 /// **Pořadí je legacy pořadí**, ne naše abecední: řádky legendy jdou v tom pořadí, v jakém je
-/// starý modul prochází (POS, IDS, BEV, SAO, PCZ, OBC, PJI, NKA, RBU, CBE, RBP, wifi, zasu).
+/// starý modul prochází (POS, IDS, BEV, SAO, PCZ, OBC, PJI, NKA, RBU, CBE, RBP, wifi, zasu,
+/// a nakonec OZO / OZP - zastávka na objednání / podmínečně, `JRapiNZUtl3.mac` cnt 530 / 534).
 ///
 /// Řádek dostane **každý** atribut, který se na stránce vyskytl - nastavení „značka atributu nad
 /// spoj" neřídí, **jestli** se vytiskne, ale **jakým tvarem** (viz `VetaAtributu`).
@@ -1890,8 +1903,8 @@ ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %St
     // kolik spojů je na stránce celkem - podle toho se pozná tvar „všechny spoje"
     s spojuCelkem = 0, sp = ""
     f { s sp = $o(spojeSeen(sp))  q:sp=""  s spojuCelkem = spojuCelkem + 1 }
-    f ki=1:1:13 {
-        s klic = $p("POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu", ",", ki)
+    f ki=1:1:15 {
+        s klic = $p("POS,IDS,BEV,SAO,PCZ,OBC,PJI,NKA,RBU,CBE,RBP,wifi,zasu,OZO,OZP", ",", ki)
         i '$d(atributSeen(klic)) continue
         // spoje, které atribut mají - v pořadí čísla spoje
         s vycet = "", pocet = 0, sp = ""
@@ -1903,7 +1916,7 @@ ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %St
         }
         s veta = ..VetaAtributu(klic, rec, ..GenerickaVeta(klic, patrSp, bbpLinka), vycet, pocet, spojuCelkem)
         i veta = "" continue
-        i (klic = "RBU") || (klic = "RBP") {
+        i (klic = "RBU") || (klic = "RBP") || (klic = "OZO") || (klic = "OZP") {
             d ..PridatVetyUpresneni(poznamky, klic, rec, veta, .atributSeen)
             continue
         }
@@ -1934,15 +1947,22 @@ ClassMethod PridatVetyUpresneni(poznamky As %DynamicArray, klic As %String, rec 
         s pocetSpoju(idx) = pocetSpoju(idx) + 1
     }
     i pocetTextu = 1 {
-        d poznamky.%Push(..BuildPoznamka(5, "znak", klic, obecnaVeta_$s(texty(1)="":"", 1:" "_texty(1))))
+        d poznamky.%Push(..BuildPoznamka(5, "znak", ..ZnakAtributuLegendy(klic), obecnaVeta_$s(texty(1)="":"", 1:" "_texty(1))))
         q
     }
     s sablona = ..AtributSablona(klic, rec)
     f i=1:1:pocetTextu {
         s veta = $s(pocetSpoju(i) > 1:..SlozVetu(sablona, 4, spojeTextu(i), 6), 1:..SlozVetu(sablona, 3, spojeTextu(i), 5))
         i texty(i) '= "" s veta = veta_" "_texty(i)
-        d poznamky.%Push(..BuildPoznamka(5, "znak", klic, veta))
+        d poznamky.%Push(..BuildPoznamka(5, "znak", ..ZnakAtributuLegendy(klic), veta))
     }
+}
+
+/// Značka řádku legendy atributu: zastávka na objednání / podmínečně (OZO / OZP) má tentýž telefon
+/// a vykřičník jako spoj na objednání / podmínečně (legacy GSId `JRapiLinPrtWin.mac:1629`).
+ClassMethod ZnakAtributuLegendy(klic As %String) As %String
+{
+    q $case(klic, "OZO":"RBU", "OZP":"RBP", :klic)
 }
 
 /// Má se u atributu použít **generická věta** (bez výčtu spojů), nebo věta s výčtem?
@@ -2045,6 +2065,8 @@ ClassMethod AtributSablona(klic As %String, rec As %String = "CZ") As %String
             "RBP":"RBP|všetky|spoj|spoje|jede len podmienečne|idú len podmienečne|",
             "wifi":"wifi|všetky|spoj|spoje|s bezdrôtovým pripojením k internetu",
             "zasu":"zasu|všetky|spoj|spoje|s prípojkou 230 V",
+            "OZO":"OZO|všetky|spoj|spoje|zastávku obsluhuje len na objednanie|zastávku obsluhujú len na objednanie|",
+            "OZP":"OZP|všetky|spoj|spoje|zastávku obsluhuje len podmienečne|zastávku obsluhujú len podmienečne|",
             :"")
     }
     q $case(klic,
@@ -2061,6 +2083,8 @@ ClassMethod AtributSablona(klic As %String, rec As %String = "CZ") As %String
         "RBP":"RBP|všechny|spoj|spoje|jede jen podmínečně|jedou jen podmínečně|",
         "wifi":"wifi|všechny|spoj|spoje|s bezdrátovým připojením k internetu",
         "zasu":"zasu|všechny|spoj|spoje|s přípojkou 230 V",
+        "OZO":"OZO|všechny|spoj|spoje|zastávku obsluhuje jen na objednání|zastávku obsluhují jen na objednání|",
+        "OZP":"OZP|všechny|spoj|spoje|zastávku obsluhuje jen podmínečně|zastávku obsluhují jen podmínečně|",
         :"")
 }
 

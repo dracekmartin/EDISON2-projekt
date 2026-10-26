@@ -34,6 +34,10 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T12** Linkový JŘ AD: telefon / vykřičník u času v zastávce obsluhované na objednání / podmínečně
+  a věty OZO / OZP s upřesněním; značky u času i v příjezdovém řádku zdvojené zastávky - vše jako starý
+  linkový tisk (oracle 64/64 buněk, CB_GWBUS 216/0340941; changelog 2026-10-26 (21)). Původní zápis
+  „netiskne značky u času" byl širší, než platilo - ostatní značky (N, V, x, G) se posílaly.
 - **T11** Nadpisy skupin dnů v Zastávkovém JŘ AD (sloupce i vzory) z nastavení firmy a sady nadpisů u linky
   jako starý zastávkový tisk, `<br>` = druhý řádek; společné `BaseAgenda.NadpisySkupinDnuAd` i pro Linkový
   JŘ AD (tam `<br>` mezerou). Bez nastavení dnešní text (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (20)).

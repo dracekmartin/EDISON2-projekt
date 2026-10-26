@@ -24,7 +24,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 - **T7** „Jen nástup / jen výstup" chybí v Zastávkovém JŘ AD - **odloženo** (Jan 26. 10.), otevřené: podle
   kterých spojů šipku ukázat; rozpracováno ve stashi [M]
-- **T12** Linkový AD netiskne značky u času v zastávce (na objednání, paragraf) ani věty k nim [M]
 - **T13** Linkový AD vynechává upřesnění místenky a poznámky „p" u spojů (CB_GWBUS) [S-M]
 
 ### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)

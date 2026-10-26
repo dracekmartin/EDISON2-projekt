@@ -104,6 +104,46 @@ ClassMethod LinkySVetouAtributu(ByRef sada)
 	set sada(5) = "CB_GWBUS~216~0125850~RBP~upřesnění z textu spoje za větou"
 }
 
+/// Zastávka na objednání u času (`B194` T12): kolik buněk starý linkový tisk kreslí s telefonem,
+/// tolik buněk náš Linkový JŘ AD posílá se značkou „r". Do 26. 10. je vynechával. CB_GWBUS 216/0340941.
+Method TestZnackaNaObjednaniUCasu()
+{
+	do ..SetupSys(.sys)
+	set db = "CB_GWBUS", sku = 216, lin = "0340941"
+	kill parametry
+	if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) {
+		do $$$AssertTrue(1, "linka "_lin_" není na tomto serveru - přeskočeno")
+		quit
+	}
+	set nasich = 0, key = ""
+	for {
+		set key = $order(^||ML("OUT", key)) quit:key=""
+		continue:'$isvalidnum(key)
+		set spoje = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key)).rows.SPOJE
+		continue:'$isobject(spoje)
+		set is = spoje.%GetIterator()
+		while is.%GetNext(.j, .s) {
+			set zn = s.%Get("ZNACKY")
+			continue:'$isobject(zn)
+			set iz = zn.%GetIterator()
+			while iz.%GetNext(.k, .z) { set:z["r" nasich = nasich + 1 }
+		}
+	}
+	quit:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).NactiObeStrany(.sys, db, sku, lin, .leg, .nase)
+	set starych = 0, sm = ""
+	for {
+		set sm = $order(leg("cas", sm)) quit:sm=""
+		set r = ""
+		for {
+			set r = $order(leg("cas", sm, r)) quit:r=""
+			set sp = ""
+			for { set sp = $order(leg("cas", sm, r, sp), 1, hodnota) quit:sp=""  set:hodnota="RBU" starych = starych + 1 }
+		}
+	}
+	do $$$AssertTrue(starych > 0, "starý tisk nemá žádnou buňku s telefonem - fixture vyhnila?")
+	do $$$AssertEquals(nasich, starych, "buňky se značkou „r"" (my "_nasich_") × buňky s telefonem (starý tisk "_starych_")")
+}
+
 /// Věta o pokračování spoje jde z číselníku firmy v jazyce šablony (`B194` T10a) - do 26. 10. byla
 /// napevno česky i ve slovenské šabloně. Český číselník dává totéž znění jako dřívější text napevno.
 Method TestPokracovaniSpojeZCiselniku()
