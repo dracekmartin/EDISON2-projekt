@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-26 (35) - „Aktuální: …" a „Projeté: …" v Seznamu zastávek (`B194d` E10)
+
+Skupina „Aktuální a projeté zastávky" měla každý popisek poskládaný jinak („Podtržení aktuální zast.",
+„Tučně aktuální zast.", „Velikost aktuální (prázdné = dle buňky)", „Barva projetých", „Čas u projetých"),
+rychlý panel a import z PDF jí říkaly „Zvýraznění" (plete se se „Zvýraznění řádků"), F1 „Zvýraznění
+aktuální zastávky". Rozhodnutí Jan 26. 10.: vzor Minut odjezdů **„Část: Vlastnost"** - „Aktuální: Tučné /
+Podtržení / Velikost / Barva textu / Pozadí", „Projeté: Barva textu / Čas", vysvětlivky prázdné hodnoty
+v nápovědě („Prázdné = jako ostatní zastávky", „Prázdné = bez pozadí"), pořadí jako ostatní styly.
+Formulář i deskriptory (skupina `StopListElement.AktualniGroup`), F1, příručka (seed), test importu z PDF;
+vzor v kanonu §8, „aktuální zast." a „projetých" v popiscích mezi zakázanými. Ověřeno voláním `Init`
+formuláře Seznamu zastávek.
+
 ## 2026-10-26 (34) - „Poměr velikosti" u násobků v Tabulce spojů (`B194d` E9c)
 
 Tabulka spojů měla „Velikost značek" (1,5) a „Velikost minut" (0,75) - násobky bez jednotky vedle

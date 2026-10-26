@@ -286,7 +286,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Řazení poznámek a směr plnění sloupců legendy", "prvek Poznámky → Rozložení"),
                 new("Dlouhá trasa na užší vývěsku - rozdělit seznam zastávek na oddíly vedle sebe",
                     "prvek Seznam zastávek → Rozdělit na více oddílů"),
-                new("Zvýraznění aktuální zastávky, projeté zastávky, šipka směru", "prvek Seznam zastávek"),
+                new("Aktuální a projeté zastávky, šipka směru", "prvek Seznam zastávek"),
                 new("Skupiny dnů, šířka minuty, oddělovač skupin, značky u minut", "prvek Minuty odjezdů"),
                 new("Které sloupce vývěsky vzniknou (vzory i vlastní definice)",
                     "prvek Minuty odjezdů → Definice sloupců"),

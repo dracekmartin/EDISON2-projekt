@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E10** Seznam zastávek: vzhled aktuální a projetých zastávek jako „Aktuální: Tučné / Podtržení /
+  Velikost / Barva textu / Pozadí", „Projeté: Barva textu / Čas", skupina všude „Aktuální a projeté
+  zastávky"; vzor „Část: Vlastnost" v kanonu (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (35)).
 - **E9c** Tabulka spojů: poměry „Poměr velikosti značek" / „Poměr velikosti minut" s jednotkou „×";
   „Velikost" je vždy pevná hodnota v pt / mm, pravidlo v kanonu §8 (rozhodnutí Jan 26. 10.; changelog
   2026-10-26 (34)). Tím je `E9` uzavřené.

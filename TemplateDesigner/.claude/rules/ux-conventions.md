@@ -259,6 +259,7 @@ Kanonické termíny (font/styl textu):
 | Velikost písma (FontSize) | **Velikost** (`Unit = "pt"`) | ~~Velikost písma~~ |
 | Velikost jako násobek jiné velikosti | **Poměr velikosti …** (`Unit = "×"`) - „Velikost" je vždy pevná hodnota v pt nebo mm, poměr se musí poznat už z popisku (rozhodnutí Jan 26. 10.) | ~~Velikost značek~~ pro poměr |
 | Tučné / Kurzíva / Podtržení / Přeškrtnutí | **Tučné** / **Kurzíva** / **Podtržení** / **Přeškrtnutí** | anglicismy |
+| Vzhled jedné části prvku | **„Část: Vlastnost"** - předpona a kanonický název („Minuta: Velikost", „Aktuální: Tučné", „Projeté: Barva textu"); vysvětlivka prázdné hodnoty do nápovědy (rozhodnutí Jan 26. 10.) | ~~Tučně aktuální zast.~~, ~~Barva projetých~~ |
 | Řádkování (LineSpacing) | **Řádkování** | - |
 | Barva textu / pozadí buňky | **Barva textu buněk** / **Pozadí buněk** | - |
 | Barva textu / pozadí záhlaví | **Barva textu záhlaví** / **Pozadí záhlaví** | - |

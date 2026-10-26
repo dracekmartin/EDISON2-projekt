@@ -119,7 +119,7 @@ public class ElementSettingsFromImageTests
     [InlineData("Zastávky · Přestupy (vlak/autobus)")]
     [InlineData("Zastávky · Poznámky zastávky")]
     [InlineData("Zastávky · Více stanovišť")]
-    [InlineData("Zvýraznění · Čas u projetých")]
+    [InlineData("Aktuální a projeté zastávky · Projeté: Čas")]
     public void NaVeciNeodvoditelneZObrazkuSeNeptame(string klic)
     {
         var catalog = ElementSettingsFromImage.BuildCatalog(new StopListElement());

@@ -80,16 +80,22 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Aktuální a projeté zastávky ───────────────────────────────────
         d form.AddGroup("stopshighlight", "Aktuální a projeté zastávky")
-        d form.AddBool("CurrentStopUnderline", "Podtržení aktuální zast.", 1)
-        d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
-        s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
-        s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Pozadí aktuální (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
-        s f = form.AddFieldToLastGroup("CurrentStopTextColor", "Barva textu aktuální (prázdné = dle buňky)", $$$FieldTypeColor, 0, 0)
+        // Předpona „Aktuální:" / „Projeté:" a kanonický název vlastnosti, jako zóny Minut odjezdů
+        // („Minuta: Velikost"); vysvětlivky prázdné hodnoty v nápovědě (`B194` E10).
+        s f = form.AddBool("CurrentStopBold", "Aktuální: Tučné", 1)
+        s f.helpText = "Zastávka, pro kterou se vývěska tiskne"
+        s f = form.AddBool("CurrentStopUnderline", "Aktuální: Podtržení", 1)
+        s f = form.AddDecimal("CurrentStopFontSize", "Aktuální: Velikost", "", 4, 200, "pt")
+        s f.helpText = "Prázdné = jako ostatní zastávky"
+        s f = form.AddFieldToLastGroup("CurrentStopTextColor", "Aktuální: Barva textu", $$$FieldTypeColor, 0, 0)
+        s f.helpText = "Prázdné = jako ostatní zastávky"
+        s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Aktuální: Pozadí", $$$FieldTypeColor, 0, 0)
+        s f.helpText = "Prázdné = bez pozadí"
         // Zapnutí tisku projetých zastávek řídí parametr sestavy TISK_PROJETYCH_ZAST; tady je vzhled.
-        s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Barva projetých", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Projeté: Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF999999"
         s f.helpText = "Tisk projetých zastávek se zapíná v parametrech sestavy (Tisknout projeté zastávky)"
-        s f = form.AddFieldToLastGroup("PassedStopsTime", "Čas u projetých", $$$FieldTypeList, 0, 1)
+        s f = form.AddFieldToLastGroup("PassedStopsTime", "Projeté: Čas", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Hide", "Nezobrazovat"), f.AddListItem("Show", "Zobrazit")
         s f.helpText = "Časy jsou počítané od vývěskové zastávky, u projetých proto vycházejí záporné"
 

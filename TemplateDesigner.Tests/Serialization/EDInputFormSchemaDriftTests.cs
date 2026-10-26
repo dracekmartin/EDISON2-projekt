@@ -706,7 +706,7 @@ public class EDInputFormSchemaDriftTests
         "Zebra",            // → Střídání řádků
         "Tl. ",             // → Tloušťka …
         "Řádek NZ",         // → Řádek negativních značek
-        "Font aktuální",    // → Velikost aktuální (je to velikost písma, ne rodina)
+        "Font aktuální",    // → Aktuální: Velikost (je to velikost písma, ne rodina)
         " per ",            // UI texty česky (kanon §8)
         "(vlak/bus)",       // → (vlak/autobus)
         "nástupiště",       // → označník
@@ -722,6 +722,8 @@ public class EDInputFormSchemaDriftTests
         "Oddělovač skupin", // → Mezera mezi skupinami dnů (je to mezera, ne čára; `B194` E9a)
         "skupinami sloupců", // → Mezera mezi skupinami dnů (stejný pojem v Minutách i Tabulce spojů)
         "↔",                // → slovy „Mezera mezi značkou a minutou" (`B194` E9b)
+        "aktuální zast.",   // → „Aktuální: Vlastnost" (zkratka; `B194` E10)
+        "projetých",        // → „Projeté: Barva textu", „Projeté: Čas"
         "element",          // → prvek (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Element",
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě

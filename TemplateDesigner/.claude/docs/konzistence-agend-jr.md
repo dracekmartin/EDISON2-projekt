@@ -115,9 +115,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
 - **E8 Význam prázdné hodnoty pěti zápisy, různé rozsahy** [M] **Jan**. „(prázdné = auto)", „(0 = ∞)",
   „(0 = ne)", „(0 = bez limitu)", „(0=vedle)"; výška řádku 1-50 / 1-20 / 2-15 / 2-50 mm, písmo 4-200 ×
   3-24 pt. Návrh: popisek = podstatné jméno, význam prázdna do nápovědy, rozsahy sjednotit.
-- **E10 Aktuální zastávka v Seznamu zastávek** [S]. „Tučně aktuální zast.", „Podtržení aktuální zast.",
-  C# a Nápověda tomu říkají „Zvýraznění" (plete se se „Zvýraznění řádků"). Návrh: skupina „Aktuální
-  zastávka", „Aktuální: Tučné / Podtržení / …".
 - **E11 Popisky C# a formuláře se rozcházejí** [M] (*ověřeno:* kód). Uživatel je vidí v protokolu importu
   z PDF, v náhradním panelu a mluví jimi AI („Šířka sl. hodin", „Zalamování", „Výplň"). Návrh: `G6`.
   `mvvm-patterns.md:14` tvrdí, že úprava více prvků jde přes deskriptory - umí jen 4 pevná pole.
