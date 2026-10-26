@@ -2230,6 +2230,74 @@ ClassMethod AtributySpojuVyskyt(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Předložky textu omezení po firmách (`B194` T3d): číselník `NCOME` (CZ i *SK) pro typy omezení
+/// 11, 12, 13, 22 a liché / sudé týdny, ze kterých je bere starý tisk i Linkový JŘ AD. Zastávkový JŘ AD
+/// je má napevno (`PrefixOmezeni`), takže rozdíl je vidět jen tam, kde se číselník od nich liší.
+ClassMethod PredlozkyOmezeni(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			for rec = "CZ", "*SK" {
+				continue:'$data(^[db]JRSET("NCOME", rec))
+				set txt = db_" "_rec_":"
+				for klic = 11, 12, 13, 22, "SU", "LI", "ODDO" {
+					set txt = txt_" "_klic_"=["_$get(^[db]JRSET("NCOME", rec, klic))_"]"
+				}
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Spoje s omezením „v sudých / lichých týdnech od-do" (omzId 14 / 15) po firmách (`B194` T3d) - jen
+/// u nich se liší zkrácená předložka Zastávkového JŘ AD („v su.") od číselníku. Příklad = nejvyšší skupina.
+ClassMethod OmezeniSudeLiche(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set spoju = 0, linek = 0, priklad = "", sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					set naLince = 0
+					for smer = "T", "Z" {
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							continue:'$data(^[db]JRL(sku, lin, smer, sp, 14))&&'$data(^[db]JRL(sku, lin, smer, sp, 15))
+							set naLince = naLince + 1
+						}
+					}
+					continue:'naLince
+					set linek = linek + 1, spoju = spoju + naLince, priklad = sku_"/"_lin_" ("_naLince_")"
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek "_linek_", spojů "_spoju_"; příklad "_priklad
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Barevné spoje po firmách (`B194` T2): kolik linek má aspoň jeden spoj s barvou (jinou než černou,
 /// pole `#12` = legacy `dta38`) a kolik z nich má u linky barvy vypnuté (`PATCH,barevnyTiskSpoju` = 1,
 /// starý linkový JŘ pak tiskne černě - `JRapiLinPrtWin.mac:2085-2102`; starý vývěskový tisk nastavení

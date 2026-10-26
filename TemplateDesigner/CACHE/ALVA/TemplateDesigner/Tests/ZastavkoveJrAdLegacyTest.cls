@@ -796,13 +796,23 @@ ClassMethod LegacyStrankaProbe(ByRef sys As %String) As %Status
 /// Text omezení u značky se shoduje se starým zastávkovým tiskem AD (`B194` T3). CB_CSADAD 0330510 má
 /// na první stránce osm různých omezení, CB_GWBUS 216/0103942 spoj jen v lichých týdnech (T3a - do
 /// 26. 10. ho Zastávkový JŘ AD vynechával, i když starý tisk i Linkový JŘ AD ho mají). Rok podle
-/// nastavení firmy (T3c): CB_GWBUS 216/0125850 bez roku, KV_DP 0410107 celý rok.
+/// nastavení firmy (T3c): CB_GWBUS 216/0125850 bez roku, KV_DP 0410107 celý rok. Předložky z číselníku
+/// firmy (T3d): CB_CSADAD 990/0680731 „jede jen v sudých týdnech od …" (dřív zkratka „v su.") - ta je
+/// až na pozdější stránce, hledá se podle textu starého tisku.
 Method TestTextyOmezeniProtiLegacy()
 {
 	set overeno = 0, nalezy = ""
-	for pripad = "CB_CSADAD~1~0330510", "CB_GWBUS~216~0103942", "CB_GWBUS~216~0125850", "KV_DP~1~0410107" {
-		set db = $piece(pripad,"~",1), sku = $piece(pripad,"~",2), lin = $piece(pripad,"~",3)
-		continue:'..NactiLegendy(.sys, db, sku, lin, 1, .leg, .nase)
+	for pripad = "CB_CSADAD~1~0330510", "CB_GWBUS~216~0103942", "CB_GWBUS~216~0125850", "KV_DP~1~0410107", "CB_CSADAD~990~0680731~sudých týdnech od" {
+		set db = $piece(pripad,"~",1), sku = $piece(pripad,"~",2), lin = $piece(pripad,"~",3), hledany = $piece(pripad,"~",4)
+		set page = 1
+		if hledany '= "" {
+			set page = ..StrankaSTextem(.sys, db, sku, lin, hledany)
+			if 'page {
+				set:##class(%SYS.Namespace).Exists(db) nalezy = nalezy_" | "_db_" "_lin_": starý tisk nemá „"_hledany_""" - fixture vyhnila?"
+				continue
+			}
+		}
+		continue:'..NactiLegendy(.sys, db, sku, lin, page, .leg, .nase)
 		set overeno = overeno + 1, pocet = 0, t = ""
 		for {
 			set t = $order(leg(t)) quit:t=""
@@ -819,6 +829,34 @@ Method TestTextyOmezeniProtiLegacy()
 		quit
 	}
 	do $$$AssertEquals(nalezy, "", "text omezení se liší od starého zastávkového tisku:"_nalezy)
+}
+
+/// První stránka, na které má starý zastávkový tisk v legendě text obsahující `hledany`; 0 = žádná
+/// z prvních `maxStran` (nebo starý tisk tu není). Jen starý tisk - náš GetData se volá až nad ní.
+ClassMethod StrankaSTextem(ByRef sys, db As %String, sku As %String, lin As %String, hledany As %String, maxStran As %Integer = 40) As %Integer
+{
+	quit:'##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") 0
+	quit:'##class(%SYS.Namespace).Exists(db) 0
+	quit:'$data(^[db]JRL(sku, lin, "I")) 0
+	do ..SetupSysFor(.sys, db)
+	set nalezena = 0
+	for page = 1:1:maxStran {
+		kill ^||ML("IN"), ^||ML("OUT")
+		set ^||ML("IN","1") = "VOLANO_Z~JRMAIN"
+		set ^||ML("IN","2") = "SESTAVA~1"
+		set ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
+		do ##class(ALVA.TISKMHD.Data).LoadData(.sys)
+		set i = ""
+		for {
+			set i = $order(^||ML("OUT",i)) quit:i=""
+			set radek = $get(^||ML("OUT",i))
+			continue:$piece(radek,"~",1)'="PoznamkyDataPoznamky"
+			if radek [ hledany set nalezena = page  quit
+		}
+		quit:nalezena
+	}
+	kill ^||ML
+	quit nalezena
 }
 
 /// Legenda stránky `page`: starý zastávkový tisk AD `leg(text) = typ#znak` a náš `GetData`

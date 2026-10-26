@@ -235,9 +235,28 @@ ClassMethod RgbNaHex(rgb As %String) As %String
 ClassMethod TextTydnuPlatnosti(dataDB As %String, rec As %String, dlouhodoba As %String) As %String
 {
     i (dlouhodoba '= 4) && (dlouhodoba '= 5) q ""
-    s txt = $g(^[dataDB]JRSET("NCOME",rec,$s(dlouhodoba=4:"SU",1:"LI")))
-    i txt = "" s txt = $s(dlouhodoba=4:"jede jen v sudých týdnech", 1:"jede jen v lichých týdnech")
-    q txt
+    q ..PredlozkaOmezeni(dataDB, rec, $s(dlouhodoba=4:14, 1:15))
+}
+
+/// Předložka typu omezení AD (`omzId`): 11 jede jen, 12 jede také, 13 jede, 22 nejede, 14 / 15 jede
+/// jen v sudých / lichých týdnech. Z číselníku firmy `^JRSET("NCOME",rec,…)` (14 / 15 pod klíči SU / LI),
+/// jako starý zastávkový i linkový tisk (`gComNZOmz`, `JRapiNZUtl2.mac:146-153`) - zákazník si znění
+/// může přepsat, `rec` = „CZ" nebo „*SK". Bez číselníku (nebo `dataDB` prázdné) standardní znění.
+/// Do 26. 10. měl Zastávkový JŘ AD předložky napevno, u sudých týdnů zkratkou „jede jen v su."
+/// a ve slovenštině „premáva aj" (`B194` T3d).
+ClassMethod PredlozkaOmezeni(dataDB As %String, rec As %String, omzId As %String) As %String
+{
+    s txt = ""
+    i dataDB '= "" s txt = $g(^[dataDB]JRSET("NCOME",rec,$case(omzId, 14:"SU", 15:"LI", :omzId)))
+    q $s(txt '= "":txt, 1:..PredlozkaOmezeniStandard(rec, omzId))
+}
+
+/// Standardní znění předložek omezení - totéž, co mají v číselníku všechny měřené firmy
+/// (sonda `LinkovyJrNastaveniProbe.PredlozkyOmezeni`, 26. 10.).
+ClassMethod PredlozkaOmezeniStandard(rec As %String, omzId As %String) As %String
+{
+    i rec = "*SK" q $case(omzId, 11:"premáva len", 12:"premáva tiež", 13:"premáva", 14:"premáva len v párnych týždňoch", 15:"premáva len v nepárnych týždňoch", 22:"nepremáva", :"")
+    q $case(omzId, 11:"jede jen", 12:"jede také", 13:"jede", 14:"jede jen v sudých týdnech", 15:"jede jen v lichých týdnech", 22:"nejede", :"")
 }
 
 /// Režim tisku roku v datech omezení AD (legacy TiskDtm): nastavení u linky, jinak u firmy.

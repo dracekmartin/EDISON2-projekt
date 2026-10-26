@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-26 (13) - předložky omezení z číselníku i v Zastávkovém JŘ AD (`B194b` T3d)
+
+Zastávkový JŘ AD měl předložky textu omezení napevno, u omezení „v sudých / lichých týdnech od-do"
+zkratkou („jede jen v su. od 12.12.10…") a ve slovenštině „premáva aj". Starý zastávkový tisk
+i Linkový JŘ AD je berou z číselníku firmy `NCOME`. Teď obě agendy přes `BaseAgenda.PredlozkaOmezeni`:
+číselník firmy (CZ / *SK podle jazyka šablony), bez něj standardní znění - totéž, co mají v číselníku
+všechny měřené firmy (sonda `PredlozkyOmezeni`; rozhodnutí Jan 26. 10.). Viditelné jen u omezení
+sudých / lichých týdnů s daty (CB_CSADAD 105 linek, 319 spojů; ostatní firmy je nemají) a ve
+slovenské šabloně. Oracle `TestTextyOmezeniProtiLegacy` rozšířen o CB_CSADAD 990/0680731 (stránku
+s „jede jen v sudých týdnech od …" hledá v textu starého tisku), nový `TestPredlozkaZCiselniku`.
+
 ## 2026-10-26 (12) - rok v datech omezení i v Zastávkovém JŘ AD podle nastavení (`B194b` T3c)
 
 Zastávkový JŘ AD tiskl rok v datech omezení napevno dvoumístně. Starý zastávkový tisk se přitom

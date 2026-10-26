@@ -2682,7 +2682,7 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
         s datumy = ..FormatDatumyOmezeni(omz, ..TiskDtm(dataDB, sku, lin))
         i datumy = "" continue
         i txt '= "" s txt = txt_", "
-        s txt = txt_..PrefixOmezeni(omzId)_datumy
+        s txt = txt_..PrefixOmezeni(omzId, dataDB)_datumy
     }
     q txt
 }
@@ -2754,14 +2754,13 @@ ClassMethod PocetZastaveni(sig As %String) As %Integer
     ret n
 }
 
-/// Prefix textu pro daný typ omezení (1:1 s `txtNZ^JRapiNZUtl`).
-ClassMethod PrefixOmezeni(omzId As %String) As %String
+/// Prefix textu pro daný typ omezení v jazyce šablony: předložka z číselníku firmy, jinak standardní
+/// znění (`BaseAgenda.PredlozkaOmezeni`, společné s Linkovým JŘ AD), s mezerou na konci. Prázdné
+/// `dataDB` = jen standardní znění.
+ClassMethod PrefixOmezeni(omzId As %String, dataDB As %String = "") As %String
 {
-    // SK sloveso „premáva" je z legacy („premáva len do zast. …"), ne vymyšlené.
-    i ..Jazyk() = "sk" {
-        q $case(omzId, 11:"premáva len ", 12:"premáva aj ", 13:"premáva ", 14:"premáva len v su. ", 15:"premáva len v li. ", 22:"nepremáva ", :"")
-    }
-    q $case(omzId, 11:"jede jen ", 12:"jede také ", 13:"jede ", 14:"jede jen v su. ", 15:"jede jen v li. ", 22:"nejede ", :"")
+    s txt = ..PredlozkaOmezeni(dataDB, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), omzId)
+    q $s(txt '= "":txt_" ", 1:"")
 }
 
 /// Text do legendy pro kroužkovou denní značku týdenní platnosti (dny 1-7, svátek `+`).

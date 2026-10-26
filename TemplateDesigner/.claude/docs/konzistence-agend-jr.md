@@ -34,12 +34,11 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   26. 10.). Každá agenda se shoduje se **svým** starým tiskem (Zastávkový AD × starý zastávkový tisk
   na CB_CSADAD 0330510 všech osm omezení, `ZastavkoveJrAdLegacyTest.TestTextyOmezeniProtiLegacy`;
   Linkový AD × starý linkový 43/43), staré tisky se ale liší mezi sebou, ač volají tutéž rutinu
-  `gComNZLiSp` (`JRapiNZUtl2.mac:110-131`). Rozděleno na podbody, bere se po jednom (T3a-c hotové):
-  - **T3d předložky**: zastávkový natvrdo (`PrefixOmezeni`) × linkový z číselníku NCOME.
-  - **T3e pořadí typů omezení**: zastávkový 11,12,13,14,15,22 × linkový 13,12,11,14,15,22.
-  U T3d a T3e má **starý zastávkový tisk totéž co linkový** (`gComNZOmz` bere NCOME, `gComNZLiSp` pořadí
-  13,12,11…, volá ho `JRapiLinPrtMhd1.mac:154`) - náš Zastávkový AD se tu od svého starého tisku liší,
-  oracle to neviděl, protože spoje na porovnaných stránkách mají jediný typ omezení a výchozí předložky.
+  `gComNZLiSp` (`JRapiNZUtl2.mac:110-131`). Rozděleno na podbody, bere se po jednom (T3a-d hotové):
+  - **T3e pořadí typů omezení**: zastávkový 11,12,13,14,15,22 × linkový 13,12,11,14,15,22. **Starý
+    zastávkový tisk má totéž co linkový** (`gComNZLiSp` 13,12,11…, volá ho `JRapiLinPrtMhd1.mac:154`) -
+    náš Zastávkový AD se tu od svého starého tisku liší; oracle to neviděl, protože spoje na porovnaných
+    stránkách nemají „jede jen" a „jede" zároveň.
 - **T4 Vysvětlivka téže značky zní v každé agendě jinak** [S] (*ověřeno:* kód, server). Bezbariér
   („spoj má bezbariérově přístupné vozidlo" jen vývěska AD), překlep **„částečne"** v obou AD (starý modul
   ho měl taky), „na znamení" (linkový AD bere ze STALCOME, vývěska vědomě Jan), přestup na autobus tři

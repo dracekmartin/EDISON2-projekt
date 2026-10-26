@@ -291,9 +291,33 @@ Method TestVyberZaklTrasu()
 
 Method TestPrefixOmezeni()
 {
+	kill ^||TiskAd("jazyk")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(11), "jede jen ", "11")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(22), "nejede ", "22")
+	// T3d: celé znění jako v číselníku a Linkovém JŘ AD, dřív zkratka „jede jen v su."
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(14), "jede jen v sudých týdnech ", "14")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(99), "", "neznámé → prázdné")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni("", "*SK", 12), "premáva tiež", "SK standard jako výchozí číselník")
+}
+
+/// Předložka z číselníku firmy má přednost před standardním zněním (`B194` T3d) - zákazník si ji
+/// může přepsat a starý tisk i Linkový JŘ AD ho poslouchají. Testovací namespace číselník nemá;
+/// kdyby ho měl, test ho nepřepisuje a přeskočí se.
+Method TestPredlozkaZCiselniku()
+{
+	set db = $namespace
+	if $data(^[db]JRSET("NCOME","CZ",22)) {
+		do $$$AssertSkipped("testovací namespace má vlastní číselník NCOME - nepřepisuje se")
+		quit
+	}
+	try {
+		set ^[db]JRSET("NCOME","CZ",22) = "nepremáva v dňoch"
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni(db, "CZ", 22), "nepremáva v dňoch", "číselník má přednost")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni(db, "CZ", 11), "jede jen", "co v číselníku chybí, je standard")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRSET("NCOME","CZ",22)
 }
 
 /// Rok podle režimu firmy / linky (`B194` T3c) - do 26. 10. měl Zastávkový JŘ AD rok napevno

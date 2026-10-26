@@ -2229,9 +2229,7 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
         s omzId = $p("13,12,11,14,15,22", ",", omzIdx)
         s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
         i omz = "" continue
-        s nidom = $case(omzId, 14:"SU", 15:"LI", :omzId)
-        s prefix = $g(^[dataDB]JRSET("NCOME",rec,nidom))
-        i prefix = "" s prefix = $case(omzId, 11:"jede jen", 12:"jede také", 13:"jede", 14:"jede jen v sudých týdnech", 15:"jede jen v lichých týdnech", 22:"nejede", :"")
+        s prefix = ..PredlozkaOmezeni(dataDB, rec, omzId)
         s datumy = ..FormatDatumyOmezeni(omz, tiskDtm)
         i (datumy = "") && (omzId '= 14) && (omzId '= 15) continue
         i txt '= "" s txt = txt_", "
