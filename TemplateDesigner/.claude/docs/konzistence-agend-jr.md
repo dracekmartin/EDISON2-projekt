@@ -34,9 +34,7 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   26. 10.). Každá agenda se shoduje se **svým** starým tiskem (Zastávkový AD × starý zastávkový tisk
   na CB_CSADAD 0330510 všech osm omezení, `ZastavkoveJrAdLegacyTest.TestTextyOmezeniProtiLegacy`;
   Linkový AD × starý linkový 43/43), staré tisky se ale liší mezi sebou, ač volají tutéž rutinu
-  `gComNZLiSp` (`JRapiNZUtl2.mac:110-131`). Rozděleno na podbody, bere se po jednom (T3a, T3b hotové):
-  - **T3c rok**: zastávkový vždy dvoumístně × linkový podle `TiskDtm` firmy / linky (0 VS_CSAD, KV_DP,
-    SKNI_MHDNITRA; 1 CB_CSADAD, ZL_KOVED; 3 CB_GWBUS = bez roku → „jede jen 17.8.21" × „17.8.").
+  `gComNZLiSp` (`JRapiNZUtl2.mac:110-131`). Rozděleno na podbody, bere se po jednom (T3a-c hotové):
   - **T3d předložky**: zastávkový natvrdo (`PrefixOmezeni`) × linkový z číselníku NCOME.
   - **T3e pořadí typů omezení**: zastávkový 11,12,13,14,15,22 × linkový 13,12,11,14,15,22.
   U T3d a T3e má **starý zastávkový tisk totéž co linkový** (`gComNZOmz` bere NCOME, `gComNZLiSp` pořadí

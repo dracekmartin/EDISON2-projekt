@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-26 (12) - rok v datech omezení i v Zastávkovém JŘ AD podle nastavení (`B194b` T3c)
+
+Zastávkový JŘ AD tiskl rok v datech omezení napevno dvoumístně. Starý zastávkový tisk se přitom
+řídí režimem `TiskDtm` firmy / linky stejně jako linkový (ověřeno oraclem: CB_GWBUS „bez roku" →
+„jede jen 17.8." místo našeho „17.8.21", KV_DP „jak zadáno" → „31.12.2024" místo „31.12.24").
+Formátování dat je teď jedno pro obě agendy AD v `BaseAgenda` (`TiskDtm`, `FormatDatumyOmezeni`,
+`UpravDatum`, přesunuté z Linkového JŘ AD; kopie v Zastávkovém zrušena). Výchozí režim firmy bez
+nastavení zůstává jako ve starém tisku: rok jak je v datech, tedy celý (všechny měřené firmy ho mají
+vyplněný; až se nastavení přesune nebo zruší, mění se jen `TiskDtm`). Vedlejší oprava: rozsah jednoho
+dne („05.07.2026:05.07.2026") tiskl Zastávkový JŘ AD jako „od 5.7.26 do 5.7.26", teď jedno datum
+jako starý tisk. Oracle `TestTextyOmezeniProtiLegacy` rozšířen o CB_GWBUS 0125850 a KV_DP 0410107.
+Na CB_CSADAD a ZL_KOVED (rok dvoumístně) se výstup nemění.
+
 ## 2026-10-26 (11) - čárka s mezerou mezi daty omezení i v Linkovém JŘ AD (`B194b` T3b)
 
 Linkový JŘ AD psal „nejede 24.12.22,31.12.22" (tvar starého linkového tisku), Zastávkový JŘ AD

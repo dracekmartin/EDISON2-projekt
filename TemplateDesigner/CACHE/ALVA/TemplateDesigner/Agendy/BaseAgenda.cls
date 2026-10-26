@@ -240,6 +240,62 @@ ClassMethod TextTydnuPlatnosti(dataDB As %String, rec As %String, dlouhodoba As 
     q txt
 }
 
+/// Režim tisku roku v datech omezení AD (legacy TiskDtm): nastavení u linky, jinak u firmy.
+/// 0 = rok jak je v datech (celý), 1 = rok dvoumístně, 2 = rozsahy bez roku v „od", 3 = bez roku.
+/// Firma bez nastavení = 0, jako starý tisk - data jsou uložená s celým rokem, takže výchozí tvar
+/// je jednoznačný. Až se nastavení přesune nebo zruší, mění se jen tady.
+/// ⚠️ U linky je režim uložený **o 1 výš** (0 = nenastaveno), u firmy bez posunu - jako starý tisk
+/// (`JRapiNZUtl2.mac:186-190`). Do 26. 10. se u linky nic neodečítalo a 5 tisíc linek s „rokem
+/// dvoumístně" tisklo data bez roku (`B194a` C9). Zastávkový JŘ AD režim do 26. 10. nečetl vůbec
+/// a tiskl rok vždy dvoumístně, ač starý zastávkový tisk se jím řídí (`B194` T3c).
+ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integer
+{
+    s v = +$g(^[dataDB]JRL(sku,lin,"PATCH","TiskDtm"))
+    q $s(v > 0:v - 1, 1:+$g(^[dataDB]JRSET("Definice","TiskDtm")))
+}
+
+/// Datumová část omezení AD jako starý tisk (`JRapiNZUtl2.mac` gComOddO :197-222): položky (`#`)
+/// spojené ", ", rozsah `od:do` → "od D1 do D2"; shodné nebo chybějící „do" = jedno datum. Datumy
+/// dle režimu `TiskDtm` (viz `UpravDatum`). Společné pro Zastávkový i Linkový JŘ AD.
+///
+/// Vědomě jinak: starý linkový tisk spojuje data čárkou bez mezery („24.12.22,31.12.22", mezeru má
+/// jen před „od"). Čárka s mezerou je tvar starého zastávkového tisku - obě agendy AD tak píšou totéž
+/// a dlouhý výčet se líp čte (`B194` T3b, rozhodnutí Jan 26. 10.).
+ClassMethod FormatDatumyOmezeni(omz As %String, tiskDtm As %Integer) As %String
+{
+    s data = $s(omz["@":$p(omz,"@",2), 1:omz)
+    s casti = ""
+    f i=1:1:$l(data,"#") {
+        s item = $p(data,"#",i)
+        i item = "" continue
+        s od = ..UpravDatum($p(item,":",1), tiskDtm), do = ..UpravDatum($p(item,":",2), tiskDtm)
+        i (do = "") || (do = od) { s cast = od }
+        else {
+            // režim 2: „od" bez roku, jen když je rok stejný jako u „do" (do 26. 10. vždy a u obou)
+            i (tiskDtm = 2) && ($p(od,".",3) = $p(do,".",3)) s od = $p(od,".",1,2)_"."
+            s cast = "od "_od_" do "_do
+        }
+        i casti '= "" s casti = casti_", "
+        s casti = casti_cast
+    }
+    q casti
+}
+
+/// Datum položky omezení: den a měsíc vždy bez úvodních nul a „d.m" s tečkou - starý tisk tak čistí
+/// data s nulou navíc v každém režimu. Režim 1 = rok dvoumístně, 3 = bez roku, 0 a 2 = rok jak je.
+ClassMethod UpravDatum(dat As %String, tiskDtm As %Integer) As %String
+{
+    i dat = "" q ""
+    i dat [ "." { f idx=1:1:2 { s $p(dat,".",idx) = +$p(dat,".",idx) } }
+    i dat ? 1.2N1"."1.2N s dat = dat_"."
+    i tiskDtm = 3 q $p(dat,".",1,2)_"."
+    i tiskDtm = 1 {
+        s rr = $p(dat,".",3)
+        i $l(rr) > 2 s $p(dat,".",3) = $e(rr,*-1,*)
+    }
+    q dat
+}
+
 /// Parametr sestavy „Barvy spojů" agend AD jako volba: „Tisknout", „Netisknout", nebo prázdno =
 /// podle linky. Návrhář posílá checkbox `TISKNOUT_BARVY_SPOJU`; starší návrhář u linkového JŘ místo
 /// něj třístav `BARVY_SPOJU` (Automaticky (dle linky) / Tisknout / Netisknout), který se přebírá.

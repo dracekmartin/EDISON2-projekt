@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T3c** Rok v datech omezení i Zastávkový JŘ AD podle nastavení firmy / linky jako starý zastávkový
+  tisk a Linkový JŘ AD; společné `BaseAgenda.TiskDtm/FormatDatumyOmezeni/UpravDatum`, výchozí celý rok
+  (changelog 2026-10-26 (12)).
 - **T3b** Data v textu omezení odděluje i Linkový JŘ AD čárkou s mezerou jako Zastávkový JŘ AD
   (vědomá odchylka od starého linkového tisku, rozhodnutí Jan 26. 10.; changelog 2026-10-26 (11)).
 - **T3a** „Jede jen v lichých / sudých týdnech" tiskne i Zastávkový JŘ AD (jako starý zastávkový tisk

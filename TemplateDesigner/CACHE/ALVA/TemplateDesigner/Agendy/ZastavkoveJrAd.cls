@@ -2679,7 +2679,7 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
     f omzId = 11,12,13,14,15,22 {
         s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
         i omz = "" continue
-        s datumy = ..FormatDatumyOmezeni(omz)
+        s datumy = ..FormatDatumyOmezeni(omz, ..TiskDtm(dataDB, sku, lin))
         i datumy = "" continue
         i txt '= "" s txt = txt_", "
         s txt = txt_..PrefixOmezeni(omzId)_datumy
@@ -2801,35 +2801,6 @@ ClassMethod DenniZnacky(ftl As %String, plk As %String) As %String
     i (plk'["6") && (plk["7") s znacky = znacky_"7"
     i (plk'["6") && (plk["+") s znacky = znacky_"+"
     q znacky
-}
-
-/// Datumová část omezení - 1:1 formát zastávkového JŘ (gold `JRapiLinPrtPS3`): datumy přes `UpravDatum`
-/// (strip nul ze dne/měsíce, 2místný rok), rozsah `:` → `od D1 do D2`, jednotlivé datum = `D1`,
-/// položky (`#`) spojené `, `. Vedoucí prefix `k@`/`L@` se zahodí.
-ClassMethod FormatDatumyOmezeni(omz As %String) As %String
-{
-    s data = $s(omz["@":$p(omz,"@",2), 1:omz)
-    s casti = ""
-    f i=1:1:$l(data,"#") {
-        s item = $p(data,"#",i)
-        i item = "" continue
-        s od = ..UpravDatum($p(item,":",1)), do = ..UpravDatum($p(item,":",2))
-        i do '= "" { s cast = "od "_od_" do "_do }
-        else       { s cast = od }
-        i casti '= "" s casti = casti_", "
-        s casti = casti_cast
-    }
-    q casti
-}
-
-/// Úprava datumu pro tisk (1:1 `UprDat^JRapiLinPrtPS3`): strip vedoucích nul ze dne a měsíce; rok
-/// 2místně (zastávkový JŘ ukazuje „25.12.22", ne „25.12.2022"). "" → "".
-ClassMethod UpravDatum(dat As %String) As %String
-{
-    i dat = "" q ""
-    s dd = +$p(dat,".",1), mm = +$p(dat,".",2), rr = $p(dat,".",3)
-    i $l(rr) > 2 s rr = $e(rr,*-1,*)        // 2022 → 22
-    q dd_"."_mm_"."_rr
 }
 
 /// Najde první linku v zadané firmě (první skupina × první linka s uzlem "I").

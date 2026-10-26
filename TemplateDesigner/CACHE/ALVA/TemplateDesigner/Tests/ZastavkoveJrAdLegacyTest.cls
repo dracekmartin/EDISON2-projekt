@@ -795,11 +795,12 @@ ClassMethod LegacyStrankaProbe(ByRef sys As %String) As %Status
 
 /// Text omezení u značky se shoduje se starým zastávkovým tiskem AD (`B194` T3). CB_CSADAD 0330510 má
 /// na první stránce osm různých omezení, CB_GWBUS 216/0103942 spoj jen v lichých týdnech (T3a - do
-/// 26. 10. ho Zastávkový JŘ AD vynechával, i když starý tisk i Linkový JŘ AD ho mají).
+/// 26. 10. ho Zastávkový JŘ AD vynechával, i když starý tisk i Linkový JŘ AD ho mají). Rok podle
+/// nastavení firmy (T3c): CB_GWBUS 216/0125850 bez roku, KV_DP 0410107 celý rok.
 Method TestTextyOmezeniProtiLegacy()
 {
 	set overeno = 0, nalezy = ""
-	for pripad = "CB_CSADAD~1~0330510", "CB_GWBUS~216~0103942" {
+	for pripad = "CB_CSADAD~1~0330510", "CB_GWBUS~216~0103942", "CB_GWBUS~216~0125850", "KV_DP~1~0410107" {
 		set db = $piece(pripad,"~",1), sku = $piece(pripad,"~",2), lin = $piece(pripad,"~",3)
 		continue:'..NactiLegendy(.sys, db, sku, lin, 1, .leg, .nase)
 		set overeno = overeno + 1, pocet = 0, t = ""

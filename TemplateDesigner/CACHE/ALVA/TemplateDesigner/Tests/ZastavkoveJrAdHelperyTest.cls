@@ -296,18 +296,27 @@ Method TestPrefixOmezeni()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(99), "", "neznámé → prázdné")
 }
 
+/// Rok podle režimu firmy / linky (`B194` T3c) - do 26. 10. měl Zastávkový JŘ AD rok napevno
+/// dvoumístně, starý zastávkový tisk se ale režimem řídí (CB_GWBUS bez roku, KV_DP celý rok).
+/// Proti starému tisku to hlídá `LinkovyJrAdDatumyTest.TestDatumyJakoStaryTisk` (metoda je společná).
 Method TestUpravDatum()
 {
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).UpravDatum("01.05.2026"), "1.5.26", "strip nul + 2místný rok")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).UpravDatum("24.12.26"), "24.12.26", "už 2místný rok beze změny")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).UpravDatum(""), "", "prázdné → prázdné")
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 1), "1.5.26", "režim 1: strip nul + 2místný rok")
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "24.12.26", 1), "24.12.26", "už 2místný rok beze změny")
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 0), "1.5.2026", "režim 0: rok jak je v datech")
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 3), "1.5.", "režim 3: bez roku")
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "", 1), "", "prázdné → prázdné")
 }
 
 Method TestFormatDatumyOmezeni()
 {
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).FormatDatumyOmezeni("k@01.05.2026:31.08.2026"), "od 1.5.26 do 31.8.26", "rozsah s prefixem k@")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).FormatDatumyOmezeni("24.12.2026#31.12.2026"), "24.12.26, 31.12.26", "jednotlivá data přes #")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).FormatDatumyOmezeni("05.07.2026"), "5.7.26", "jedno datum bez rozsahu")
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "k@01.05.2026:31.08.2026", 1), "od 1.5.26 do 31.8.26", "rozsah s prefixem k@")
+	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "24.12.2026#31.12.2026", 1), "24.12.26, 31.12.26", "jednotlivá data přes #")
+	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "05.07.2026", 1), "5.7.26", "jedno datum bez rozsahu")
+	// shodné „od" a „do" = jedno datum jako starý tisk; do 26. 10. tu vycházelo „od 5.7.26 do 5.7.26"
+	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "05.07.2026:05.07.2026", 1), "5.7.26", "rozsah jednoho dne")
 }
 
 // ── Atributy, markery, normalizace ──────────────────────────────────────────
