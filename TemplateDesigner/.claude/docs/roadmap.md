@@ -50,7 +50,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   **odloženo** (Jan 26. 10.); návrh: nabídka podle polí, která agenda posílá, zapnutý sloupec zůstane vidět
 - **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan** - **odloženo k rozmyšlení**
   (Jan 26. 10.); návrh: vysvětlivka z popisku do nápovědy, rozsahy na nejširší (výška řádku 1-50 mm, písmo 3-200 pt)
-- **E13** Dialogy sloupců mají každý jiné ovládání [M]
+- **E13** Dialogy sloupců - zbývá b (Tabulce spojů chybí „Přizpůsobit sloupce k šířce prvku") a c (jedna
+  společná komponenta oken se sloupci, přestavba - spolu s E3) [M]
 - **E14** Tabulka spojů ukazuje interní pole „Kolekce …" [S] **Jan**
 - **E15** Texty nápověd: tykání, „engine", „padding", překlep v Nápovědě F1 [S]
 - **E16** Drobnosti: „Rozměry a mřížka", dvojí „Mřížka", stejná ikona dvou prvků [S]

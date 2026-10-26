@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-26 (38) - tlačítka seznamů v dialozích jednotně (`B194d` E13a)
+
+Stejné akce měly v oknech se seznamem různé popisky: „+ Přidat" / „− Odebrat" (Tabulka z dat) × „Přidat" /
+„Odebrat", posun „▲" × „▲ Nahoru" (Zvýraznění řádků) × šipka s „Nahoru" (Druhy poznámek), smazání barvy
+„×" × „Vymazat". Rozhodnutí Jan 26. 10.: **„Přidat" / „Odebrat" bez znaménka, posun jen šipkami, smazání
+barvy jen „×"**; bubliny „Posunout nahoru / dolů" a „Vymazat barvu" zůstávají (pravidlo: ikonové tlačítko
+má tooltip). Druhy poznámek drží šipky jako tvar (znaky ▲ ▼ mají ve fontu různou velikost). Pravidlo
+v `ux-conventions §1`. „Přizpůsobit sloupce" pro Tabulku spojů (E13b) a společná komponenta (E13c) zbývají.
+
 ## 2026-10-26 (37) - „popisné sloupce" všude (`B194d` E12, zúženě)
 
 Skupina zóna / km / Tč / zastávka / MHD Tabulky spojů se jmenovala „Popisné sloupce" (formulář),

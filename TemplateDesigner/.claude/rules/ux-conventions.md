@@ -26,6 +26,9 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 - Tlačítka **akčně pojmenovaná**, ne „Ano/Ne" - např. „Smazat" / „Storno", „Uložit" / „Zahodit", ne „Yes" / „No".
 - Destruktivní akce a confirmation → vždy přes `IPopupDisplayer.Confirm` z EDControls (R2), nikdy `MessageBox.Show`.
 - Multi-tab dialog: **max 3 taby**. Pokud potřebuješ víc, rozděl do samostatných dialogů nebo restrukturuj.
+- **Seznam v dialogu** (sloupce, pravidla, druhy poznámek): **„Přidat" / „Odebrat"** bez znaménka, posun
+  **jen šipkami ▲ ▼** (bez textu, bublina „Posunout nahoru / dolů"), smazání barvy **„×"** s bublinou
+  „Vymazat barvu" (rozhodnutí Jan 26. 10., `B194` E13a).
 
 ---
 
