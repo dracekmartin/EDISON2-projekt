@@ -3,9 +3,11 @@
 # Pred kopii overi, ze kazdy soubor je ten z buildu (MD5 ze sestaveni-*.json) a ze soubor na DEV share je
 # porad ten, ktery ukazala schvalena tabulka (seznam-dev-*.json). Kdyz ho mezitim nekdo prepsal (kolega
 # nahral vlastni build), zastavi se driv, nez cokoli zkopiruje. Puvodni soubory i stav.json zazalohuje. Kdyz
-# kopie selze uprostred, vrati uz nahrane soubory. -Obnov vrati DEV share i stav.json do stavu pred nasazenim.
-# Nahrane MD5 zapise do stav.json. Commity posledniho nasazeni posune jen tehdy, kdyz se nahralo vse, co seznam
-# ukazal jako potrebne, jinak by nenasazena zmena z pristi inventury zmizela.
+# kopie selze uprostred, vrati uz nahrane soubory. -Obnov vrati DEV share i zaznam DEV ve stav.json do stavu
+# pred nasazenim. Nahrane MD5 zapise do stav.json. Commity posledniho nasazeni posune jen tehdy, kdyz na DEV
+# share je vse, co seznam ukazal jako potrebne (i soubor, ktery tam uz lezel se stejnym MD5), jinak by
+# nenasazena zmena z pristi inventury zmizela. Bez -Soubory nic nekopiruje a jen posune commity (nasazeni
+# jen trid Cache, ty na DEV nasazuje hook).
 #
 #   powershell -NoProfile -File tools/nasazeni/nahraj-na-dev.ps1 -Sestaveni <sestaveni.json> -Seznam <seznam-dev.json> -Soubory a.exe,b.dll
 #   powershell -NoProfile -File tools/nasazeni/nahraj-na-dev.ps1 -Obnov <slozka zalohy>
@@ -16,7 +18,7 @@
 param(
     [Parameter(ParameterSetName = 'Kopie', Mandatory)] [string]$Sestaveni,
     [Parameter(ParameterSetName = 'Kopie', Mandatory)] [string]$Seznam,
-    [Parameter(ParameterSetName = 'Kopie', Mandatory)] [string[]]$Soubory,
+    [Parameter(ParameterSetName = 'Kopie')] [string[]]$Soubory = @(),
     [Parameter(ParameterSetName = 'Obnov', Mandatory)] [string]$Obnov,
     [string]$Cil,
     [string]$Nastaveni
@@ -61,7 +63,7 @@ if ($Obnov) {
 $sestaveniData = [IO.File]::ReadAllText($Sestaveni, $utf8) | ConvertFrom-Json
 $seznamData = [IO.File]::ReadAllText($Seznam, $utf8) | ConvertFrom-Json
 if ($seznamData.faze -ne 'dev') { throw "$Seznam neni inventura faze dev." }
-$soubory =@($Soubory | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+$soubory = @($Soubory | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 
 # Vsechny kontroly pred prvni kopii: radsi nic nez pul nasazeni.
 $plan = foreach ($n in $soubory) {
@@ -76,6 +78,7 @@ $plan = foreach ($n in $soubory) {
     [pscustomobject]@{ Jmeno = $n; Zdroj = $polozka.cesta; Cil = $cil; Md5 = $polozka.md5; Puvodni = $ted }
 }
 
+$plan = @($plan)
 $zaloha = Join-Path $k.zalohyDir (New-CasovaZnacka)
 New-Item -ItemType Directory -Force -Path (Join-Path $zaloha 'soubory') | Out-Null
 $stavCesta = Join-Path $k.stavDir 'stav.json'
@@ -84,7 +87,7 @@ foreach ($p in $plan) { if ($p.Puvodni) { Copy-Item -LiteralPath $p.Cil -Destina
 Write-Json (Join-Path $zaloha 'popis.json') ([ordered]@{ soubory = @($plan | ForEach-Object { [ordered]@{ jmeno = $_.Jmeno; puvodni = $_.Puvodni; nahrany = $_.Md5 } }) })
 
 $zmenene = @()
-try {
+if ($plan.Count -gt 0) { try {
     foreach ($p in $plan) {
         $zmenene += $p.Jmeno
         Copy-Item -LiteralPath $p.Zdroj -Destination $p.Cil -Force
@@ -101,13 +104,16 @@ try {
     if ($ted -eq $posledni.Puvodni) { $zmenene = @($zmenene | Select-Object -SkipLast 1) }
     try { Restore-Zaloha $zaloha $zmenene } catch { throw "Kopie selhala ($chyba) a vraceni ze zalohy taky: $($_.Exception.Message). Zaloha: $zaloha" }
     throw "Kopie selhala ($chyba), DEV share je vraceny do puvodniho stavu. Zaloha: $zaloha"
-}
+} }
 
+# Soubor ze sestaveni, ktery uz na DEV share lezi se stejnym MD5, je nasazeny i bez kopie (tabulka ho neukaze).
+$naShare = @($sestaveniData.soubory | Where-Object { $_.nasadit -and $soubory -notcontains $_.jmeno } | Where-Object {
+    $c = Join-Path $cilSlozka $_.jmeno; (Test-Path -LiteralPath $c) -and (Get-Md5 $c) -eq $_.md5 } | ForEach-Object { $_.jmeno })
 $stav = Read-NasazeniStav $k
 $souboryStavu = [ordered]@{}
 if ($stav.dev -and $stav.dev.soubory) { foreach ($pr in $stav.dev.soubory.PSObject.Properties) { $souboryStavu[$pr.Name] = $pr.Value } }
 foreach ($p in $plan) { $souboryStavu[$p.Jmeno] = $p.Md5 }
-$kotva = Get-KotvaPoNasazeni $k $seznamData $sestaveniData @($plan | ForEach-Object { $_.Jmeno })
+$kotva = Get-KotvaPoNasazeni $k $seznamData $sestaveniData (@($plan | ForEach-Object { $_.Jmeno }) + $naShare)
 if ($kotva.chybi.Count -gt 0) { Write-Host "Kotva DEV zustava, nenasazeno: $($kotva.chybi -join ', ')" }
 Write-NasazeniStav $k 'dev' ([ordered]@{ cas = (Get-Date).ToString('s'); commity = $kotva.commity; soubory = $souboryStavu })
 Write-Host "zaloha: $zaloha"

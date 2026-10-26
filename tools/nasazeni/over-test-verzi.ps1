@@ -7,7 +7,7 @@
 # S -Zapis ulozi overene soubory a commity do stav.json jako posledni nasazeni na REL. Commity posune, jen kdyz
 # balik nese vse ze seznamu, vcetne zmeneneho XML kazdeho projektu. -Predchozi je proto verze pred importem.
 #
-#   powershell -NoProfile -File tools/nasazeni/over-test-verzi.ps1 -Predchozi 261020.1 -Cekej -Sestaveni <sestaveni1.json>,<sestaveni2.json> -Seznam <seznam-rel.json> -Zapis
+#   powershell -NoProfile -File tools/nasazeni/over-test-verzi.ps1 -Predchozi 261020.1 -Cekej -Sestaveni <sestaveni1.json>,<sestaveni2.json> -Soubory a.exe,b.dll -Seznam <seznam-rel.json> -Zapis
 #   powershell -NoProfile -File tools/nasazeni/over-test-verzi.ps1 -Verze 261020.2 -Predchozi 261020.1 -Lokalni <slozka se soubory>
 #
 # Exit 1 = neco nesedi. ASCII-only zamerne: WinPS 5.1 cte UTF-8 bez BOM jako CP-1252.
@@ -18,6 +18,7 @@ param(
     [Parameter(Mandatory)] [string]$Predchozi,
     [string]$Kanal,
     [string[]]$Sestaveni = @(),
+    [string[]]$Soubory = @(),
     [string]$Lokalni,
     [switch]$Cekej,
     [string[]]$Projekty = @(),
@@ -31,7 +32,7 @@ Import-Module (Join-Path $PSScriptRoot 'spolecne.psm1') -Force
 $k = Get-Nastaveni $Nastaveni
 if (-not $Kanal) { $Kanal = $k.kanalTest }
 $rozdel = { param($s) @($s | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
-$Sestaveni = @(& $rozdel $Sestaveni); $Projekty = @(& $rozdel $Projekty)
+$Sestaveni = @(& $rozdel $Sestaveni); $Projekty = @(& $rozdel $Projekty); $Soubory = @(& $rozdel $Soubory)
 if ($Sestaveni.Count -eq 0 -and -not $Lokalni) { throw 'Zadej -Sestaveni nebo -Lokalni.' }
 if ($Zapis -and ($Sestaveni.Count -eq 0 -or -not $Seznam)) { throw '-Zapis potrebuje -Sestaveni a -Seznam (podle seznamu se posouva kotva).' }
 $utf8 = New-Object Text.UTF8Encoding($false)
@@ -51,15 +52,19 @@ if (-not $Verze) { throw 'Zadej -Verze nebo -Cekej.' }
 
 # Ocekavane nase soubory: jmeno -> MD5 ze sestaveni a lokalni kopie (ta jen pro otisk podepsaneho souboru,
 # v C:\Edison ji mezitim muze prepsat jiny build). REL nese soubory z vic kol DEV, kazde ma sve sestaveni,
-# pozdejsi prebije drivejsi.
+# novejsi (podle casu sestaveni) prebije starsi. -Soubory omezi overeni na soubory, ktere na REL opravdu sly.
 $nase = [ordered]@{}
 $souboryNase = [ordered]@{}
 if ($Sestaveni.Count -gt 0) {
-    foreach ($cesta in $Sestaveni) {
-        foreach ($s in ([IO.File]::ReadAllText($cesta, $utf8) | ConvertFrom-Json).soubory) {
-            if ($s.nasadit) { $nase[$s.jmeno] = [pscustomobject]@{ md5 = $s.md5; cesta = $s.cesta }; $souboryNase[$s.jmeno] = $s }
+    $data = @($Sestaveni | ForEach-Object { [IO.File]::ReadAllText($_, $utf8) | ConvertFrom-Json } | Sort-Object { [string]$_.cas })
+    foreach ($d in $data) {
+        foreach ($s in $d.soubory) {
+            if (-not $s.nasadit -or ($Soubory.Count -gt 0 -and $Soubory -notcontains $s.jmeno)) { continue }
+            $nase[$s.jmeno] = [pscustomobject]@{ md5 = $s.md5; cesta = $s.cesta }; $souboryNase[$s.jmeno] = $s
         }
     }
+    $chybiVSestaveni = @($Soubory | Where-Object { -not $nase.Contains($_) })
+    if ($chybiVSestaveni.Count -gt 0) { throw "Zadne sestaveni nenese: $($chybiVSestaveni -join ', ')" }
 } else {
     foreach ($f in Get-ChildItem -LiteralPath $Lokalni -File) { $nase[$f.Name] = [pscustomobject]@{ md5 = (Get-Md5 $f.FullName); cesta = $f.FullName } }
 }
@@ -147,11 +152,11 @@ $vystup = Join-Path $k.stavDir "balik-$Kanal-$Verze.json"
 Write-Json $vystup $vysledek
 
 if ($Zapis -and $vysledek.ok) {
-    $soubory = [ordered]@{}; foreach ($n in $souboryNase.Keys) { $soubory[$n] = $souboryNase[$n].md5 }
-    $nasazeno = @($soubory.Keys) + @($zmeneneXml | ForEach-Object { "$_.XML" })
+    $md5Nase = [ordered]@{}; foreach ($n in $souboryNase.Keys) { $md5Nase[$n] = $souboryNase[$n].md5 }
+    $nasazeno = @($md5Nase.Keys) + @($zmeneneXml | ForEach-Object { "$_.XML" })
     $kotva = Get-KotvaPoNasazeni $k $seznamData ([pscustomobject]@{ soubory = @($souboryNase.Values) }) $nasazeno -VcetneProjektu
     if ($kotva.chybi.Count -gt 0) { Write-Host "Kotva REL zustava, nenasazeno: $($kotva.chybi -join ', ')" }
-    Write-NasazeniStav $k 'rel' ([ordered]@{ cas = (Get-Date).ToString('s'); commity = $kotva.commity; verze = $Verze; soubory = $soubory })
+    Write-NasazeniStav $k 'rel' ([ordered]@{ cas = (Get-Date).ToString('s'); commity = $kotva.commity; verze = $Verze; soubory = $md5Nase })
 }
 
 Write-Host ("Balik {0} {1} proti {2}: {3}" -f $Kanal, $Verze, $Predchozi, $(if ($vysledek.ok) { 'OK' } else { 'NESEDI' }))

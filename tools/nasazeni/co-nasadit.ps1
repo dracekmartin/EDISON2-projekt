@@ -12,6 +12,8 @@
 #   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -Faze dev
 #   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -Faze rel
 #   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -PorovnejTridy <slozka>   tridy z DEV proti gitu
+#   powershell -NoProfile -File tools/nasazeni/co-nasadit.ps1 -ClenoveProjektu <slozka> [-Seznam <seznam.json>]
+#     clenove projektu z DEV (<projekt>.txt, radky "Jmeno|Typ" z cache_project_info) proti gitu
 #
 # Vystup: %LOCALAPPDATA%\edison-nasad\seznam-<faze>-<cas>.json (cesta na poslednim radku) a prehled.
 # "Posledni nasazeni" je ve stav.json, ktery zapisuji nahraj-na-dev.ps1 a over-test-verzi.ps1. Prvni beh
@@ -24,6 +26,8 @@ param(
     [string]$KotvaEdison,
     [string]$KotvaEdison2,
     [string]$PorovnejTridy,
+    [string]$ClenoveProjektu,
+    [string]$Seznam,
     [switch]$BezFetch,
     [string]$Nastaveni,
     [string]$Cil
@@ -68,6 +72,54 @@ if ($PorovnejTridy) {
     Write-Json $vystup @($vysledek)
     $vystup
     if (@($vysledek | Where-Object { -not $_.shoda }).Count -gt 0) { exit 1 }
+    exit 0
+}
+
+# --- Clenove Studio projektu na DEV (cache_project_info) proti gitu ------------------------------
+# Import z DEV na REL posle cely projekt. Clen, ktery v gitu neni, nebo je v hlavni kopii rozdelany (hook ho
+# nasadil bez commitu), by na REL dostal necommitovanou praci. Hlasi i testy NEPRIDAVAT v projektu a s -Seznam
+# tridy ze seznamu mimo projekt (import by je vynechal).
+if ($ClenoveProjektu) {
+    $vGitu = @{}; $rozdelane = @{}
+    foreach ($r in $repa.Keys) {
+        foreach ($f in (Invoke-Git $repa[$r] @('ls-files', '--', '*/CACHE/*')).Vystup) { $t = Get-JmenoTridy $f; if ($t) { $vGitu[$t] = $r } }
+        foreach ($l in (Invoke-Git $repa[$r] @('status', '--porcelain', '--', '*/CACHE/*')).Vystup) {
+            if (-not $l -or $l.Length -lt 4) { continue }
+            $t = Get-JmenoTridy (($l.Substring(3) -split ' -> ')[-1].Trim('"'))
+            if ($t) { $rozdelane[$t] = $r }
+        }
+    }
+    $seznamData = if ($Seznam) { [IO.File]::ReadAllText($Seznam, (New-Object Text.UTF8Encoding($false))) | ConvertFrom-Json } else { $null }
+    # Testy hleda v celem gitu: seznam.nepridavat zna jen moduly, ve kterych se od kotvy commitovalo.
+    $nepridavat = @(foreach ($r in $repa.Keys) { Get-NepridavatTridy $repa[$r] })
+    $vysledek = foreach ($f in Get-ChildItem -LiteralPath $ClenoveProjektu -File -Filter '*.txt') {
+        $projekt = $f.BaseName
+        $clenove = @{}; $baliky = @(); $mimoGit = @(); $necommit = @(); $testy = @(); $neovereno = @()
+        foreach ($radek in [IO.File]::ReadAllLines($f.FullName)) {
+            $jmeno, $typ = $radek.Trim() -split '\|', 2
+            if (-not $jmeno -or -not $typ) { continue }
+            if ($typ -ieq 'PKG') { $baliky += $jmeno; $neovereno += "$jmeno (PKG)"; continue }
+            $doc = if ($typ -ieq 'CLS') { $jmeno -replace '\.cls$', '' } elseif ($jmeno -match '\.(inc|mac|int)$') { $jmeno } elseif ($typ -match '^(INC|MAC|INT)$') { "$jmeno.$($typ.ToLowerInvariant())" } else { $null }
+            if (-not $doc) { $neovereno += "$jmeno ($typ)"; continue }
+            $clenove[$doc] = $true
+            if (-not $vGitu.ContainsKey($doc)) { $mimoGit += $doc }
+            if ($rozdelane.ContainsKey($doc)) { $necommit += $doc }
+            if ($nepridavat -contains $doc) { $testy += $doc }
+        }
+        $jeClen = { param($t) $clenove.ContainsKey($t) -or @($baliky | Where-Object { $t -like "$_.*" }).Count -gt 0 }
+        $chybi = @()
+        if ($seznamData) { $chybi = @(Get-TridyKNasazeni $seznamData | Where-Object { @($_.cacheProjekty) -contains $projekt -and -not (& $jeClen $_.trida) } | ForEach-Object { $_.trida }) }
+        [pscustomobject]@{ projekt = $projekt; clenu = $clenove.Count; mimoGit = $mimoGit; necommitovane = $necommit; testy = $testy; chybiVProjektu = $chybi; neovereno = $neovereno }
+    }
+    foreach ($v in $vysledek) {
+        Write-Host ("{0}: clenu {1}, mimo git {2}, necommitovane {3}, testy {4}, chybi v projektu {5}{6}" -f $v.projekt, $v.clenu,
+            ($v.mimoGit -join ', '), ($v.necommitovane -join ', '), ($v.testy -join ', '), ($v.chybiVProjektu -join ', '),
+            $(if ($v.neovereno.Count) { ", neovereno $($v.neovereno -join ', ')" } else { '' }))
+    }
+    $vystup = Join-Path $k.stavDir "clenove-$(New-CasovaZnacka).json"
+    Write-Json $vystup @($vysledek)
+    $vystup
+    if (@($vysledek | Where-Object { $_.mimoGit.Count + $_.necommitovane.Count + $_.testy.Count + $_.chybiVProjektu.Count -gt 0 }).Count -gt 0) { exit 1 }
     exit 0
 }
 
@@ -149,13 +201,13 @@ $soubory = [ordered]@{
 # Cizi commity v tychz slozkach: build i export z DEV je pribali.
 $cizi = @()
 foreach ($jmeno in $repa.Keys) {
-    $slozky = @($soubory[$jmeno] | ForEach-Object { ($_ -split '/')[0] } | Sort-Object -Unique)
-    if ($slozky.Count -eq 0) { continue }
-    $r = Invoke-Git $repa[$jmeno] (@('log', '--no-merges', '--format=%h|%an|%s', "$($kotva[$jmeno])..HEAD", '--') + $slozky)
-    $cizi += @($r.Vystup | Where-Object { $_ } | ForEach-Object {
-        $p = $_ -split '\|', 3
-        if ($p[1] -ne $autor) { [ordered]@{ repo = $jmeno; sha = $p[0]; autor = $p[1]; zprava = $p[2] } }
-    })
+    foreach ($slozka in @($soubory[$jmeno] | ForEach-Object { ($_ -split '/')[0] } | Sort-Object -Unique)) {
+        $r = Invoke-Git $repa[$jmeno] @('log', '--no-merges', '--format=%h|%an|%s', "$($kotva[$jmeno])..HEAD", '--', $slozka)
+        $cizi += @($r.Vystup | Where-Object { $_ } | ForEach-Object {
+            $p = $_ -split '\|', 3
+            if ($p[1] -ne $autor) { [ordered]@{ repo = $jmeno; modul = $slozka; sha = $p[0]; autor = $p[1]; zprava = $p[2] } }
+        })
+    }
 }
 
 # --- 5. Legacy projekty k buildu, zastarale DLL ----------------------------------------------------

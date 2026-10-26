@@ -4,8 +4,8 @@
 # Legacy projekty z EDISON postavi do C:\Edison: nejdriv zastarale DLL (-Predem, z co-nasadit.ps1), pak
 # zmenene projekty (-Legacy). Shell z EDISON2 (-Shell) postavi v docasnem worktree na commitu, ktery
 # zaznamena na zacatku behu, pusti vsechny testy (unit s okny, integracni, Cache vcetne -CacheTesty, E2E)
-# a publikuje do C:\Edison, s -Navic i EDUPDATE2.exe nebo EDISONRUNTIME.zip. Neprosly nebo preskoceny test
-# zastavi.
+# a publikuje do C:\Edison, s -Navic i EDUPDATE2.exe nebo EDISONRUNTIME.zip. Bez -Shell pusti jen -CacheTesty.
+# Neprosly nebo preskoceny test zastavi.
 # Zapise seznam postavenych souboru s MD5 a commitem, ze ktereho nahraj-na-dev.ps1 a over-test-verzi.ps1
 # poznaji, ze nasazuji a overuji prave tyhle soubory.
 #
@@ -67,6 +67,27 @@ function Assert-Testy([string]$Nazev, $Vysledek) {
     if ($souhrny.Count -eq 0) { throw "$Nazev nemaji souhrn, log v $script:logy" }
     if ($preskoceno -gt 0) { throw "$Nazev preskocily $preskoceno testu (plocha, VPN?), log v $script:logy" }
     return "$Nazev $proslo"
+}
+
+# Testy Cache bezi proti DEV serveru, build nepotrebuji. -Vychozi prida vychozi baliky EDISON2 (bez -Shell
+# se nemenily).
+function Invoke-CacheTesty([string]$Repo, [bool]$Vychozi) {
+    $sady = @()
+    if ($Vychozi) { $sady += , @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'tools/run-cache-tests.ps1') }
+    if ($CacheTesty.Count -gt 0) { $sady += , @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'tools/run-cache-tests.ps1', '-Package', ($CacheTesty -join ',')) }
+    $vysledky = @()
+    $i = 0
+    foreach ($argumenty in $sady) {
+        $i++
+        $r = Invoke-Krok "testy-cache-$i" 'powershell' $argumenty $Repo
+        $celkem = @($r.Vystup | ForEach-Object {
+            if ($_ -match 'Total:\s+(\d+) passed,\s+(\d+) failed,\s+(\d+) skipped') { , [int[]]@($Matches[1], $Matches[2], $Matches[3]) }
+        })
+        if ($r.Kod -ne 0 -or $celkem.Count -eq 0 -or $celkem[-1][1] -gt 0) { throw "Cache testy ($i) neprosly, log v $script:logy" }
+        if ($celkem[-1][2] -gt 0) { throw "Cache testy ($i) preskocily $($celkem[-1][2]) testu, log v $script:logy" }
+        $vysledky += "cache$i $($celkem[-1][0])"
+    }
+    return $vysledky
 }
 
 # Build server dotnet drzi soubory ve worktree i po buildu, git worktree remove pak adresar nesmaze cely.
@@ -148,6 +169,9 @@ if ($Predem.Count + $Legacy.Count -gt 0) {
     }
 }
 
+# Bez shellu bezi jen testy Cache dotcenych modulu, z hlavni kopie EDISON2 (skript testu je tam).
+if (-not $Shell -and $CacheTesty.Count -gt 0) { $souhrnTestu += Invoke-CacheTesty $k.repoEdison2 $false }
+
 # --- Shell ------------------------------------------------------------------------------------------
 if ($Shell) {
     $repo = $k.repoEdison2
@@ -176,19 +200,7 @@ if ($Shell) {
 
         $souhrnTestu += Assert-Testy 'unit+okna' (Invoke-Krok 'testy-unit' 'dotnet' @('test', 'EDISON2.sln', '--no-build', '-nologo', '-v', 'q', '--filter', 'Category!=Integration&Category!=E2E') $repo @{ EDISON_WINDOW_TESTS = '1'; EDISON_LEGACY_ROOT = $legacyRoot })
         $souhrnTestu += Assert-Testy 'integracni' (Invoke-Krok 'testy-integracni' 'dotnet' @('test', 'EDISON2.IntegrationTests', '--no-build', '-nologo', '-v', 'q') $repo @{ EDISON_IT_REQUIRED = '1' })
-        $cacheArgumenty = @(, @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'tools/run-cache-tests.ps1'))
-        if ($CacheTesty.Count -gt 0) { $cacheArgumenty += , @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'tools/run-cache-tests.ps1', '-Package', ($CacheTesty -join ',')) }
-        $i = 0
-        foreach ($argumenty in $cacheArgumenty) {
-            $i++
-            $r = Invoke-Krok "testy-cache-$i" 'powershell' $argumenty $repo
-            $celkem = @($r.Vystup | ForEach-Object {
-                if ($_ -match 'Total:\s+(\d+) passed,\s+(\d+) failed,\s+(\d+) skipped') { , [int[]]@($Matches[1], $Matches[2], $Matches[3]) }
-            })
-            if ($r.Kod -ne 0 -or $celkem.Count -eq 0 -or $celkem[-1][1] -gt 0) { throw "Cache testy ($i) neprosly, log v $logy" }
-            if ($celkem[-1][2] -gt 0) { throw "Cache testy ($i) preskocily $($celkem[-1][2]) testu, log v $logy" }
-            $souhrnTestu += "cache$i $($celkem[-1][0])"
-        }
+        $souhrnTestu += Invoke-CacheTesty $repo $true
         $souhrnTestu += Assert-Testy 'e2e' (Invoke-Krok 'testy-e2e' 'dotnet' @('test', 'EDISON2.E2ETests', '--no-build', '-nologo', '-v', 'q') $repo @{ EDISON_E2E = '1' })
 
         $r = Invoke-Krok 'dotnet-publish' 'dotnet' @('publish', $k.shell.publikovat, "-p:PublishProfile=$($k.shell.publishProfil)", '-nologo', '-v', 'q') $repo

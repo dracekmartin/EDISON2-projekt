@@ -217,6 +217,21 @@ try {
     Test-Plati (-not (@($s.tridy | ForEach-Object { $_.trida }) -contains 'ALVA.MOD.B')) 'smazana trida se nenasazuje'
     Test-Plati ($s.shell.td.stav -eq 'API EDControls nic neodebira') "TD: bez odebraneho API neni co resit ($($s.shell.td.stav))"
     Test-Plati (-not (@($s.shell.souboryPriZmene) -contains 'UPD.exe')) 'zmena jen dokumentace nevynuti EDUPDATE2.exe'
+    Test-Plati (@($s.cizi | Where-Object { $_.modul -eq 'MOD' -and $_.autor -eq 'Kolega' }).Count -ge 1) 'cizi commit nese modul'
+
+    # Clenove projektu na DEV: clen mimo git, rozdelany v hlavni kopii, test NEPRIDAVAT, trida ze seznamu mimo projekt.
+    $clenove = Join-Path $koren 'clenove'; Set-Text (Join-Path $clenove 'ALVA_MOD.txt') "ALVA.MOD.A|CLS`nALVA.MOD.Tests.T|CLS`nALVA.MOD.Ghost|CLS`n"
+    Set-Text (Join-Path $e1 'MOD\CACHE\ALVA\MOD\A.cls') 'rozdelana prace'
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-ClenoveProjektu', $clenove, '-Seznam', $seznamCesta, '-Nastaveni', $nast)
+    Invoke-G $e1 @('checkout', '--', 'MOD/CACHE/ALVA/MOD/A.cls') | Out-Null
+    $v = @([IO.File]::ReadAllText(@($r.Vystup | Where-Object { $_ -match 'clenove-.*\.json$' })[-1], $utf8) | ConvertFrom-Json)[0]
+    Test-Plati ($r.Kod -eq 1 -and @($v.mimoGit) -contains 'ALVA.MOD.Ghost' -and @($v.necommitovane) -contains 'ALVA.MOD.A' -and @($v.testy) -contains 'ALVA.MOD.Tests.T' -and @($v.chybiVProjektu) -contains 'OBapi.int') "clenove projektu proti gitu a seznamu ($($r.Vystup -join ' '))"
+    Set-Text (Join-Path $clenove 'ALVA_MOD.txt') "ALVA.MOD.A|CLS`nOBapi.INT|INT`n"
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-ClenoveProjektu', $clenove, '-Seznam', $seznamCesta, '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -eq 0) "cisty projekt projde ($($r.Vystup -join ' '))"
+    Set-Text (Join-Path $clenove 'ALVA_MOD.txt') "ALVA.MOD.A|CLS`nALVA.MOD.Tests.T|CLS`n"
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $skript, '-ClenoveProjektu', $clenove, '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -eq 1 -and ($r.Vystup -join ' ') -match 'testy ALVA\.MOD\.Tests\.T') 'test NEPRIDAVAT v projektu se najde i bez seznamu'
 
     # --- kotva ---------------------------------------------------------------------------------------
     $nastData = Get-Nastaveni $nast
@@ -301,6 +316,13 @@ try {
     Test-Plati (@($test.volani | Where-Object { $_ -match 'run-cache-tests.*-Package ALVA\.MOD\.Tests' }).Count -eq 1) 'Cache testy dotcenych modulu'
     Test-Plati (@($test.volani | Where-Object { $_ -match 'EDISON2\.E2ETests' }).Count -eq 1) 'E2E testy bezi'
     Test-Plati ($test.volani[-1] -match '^dotnet publish') 'publish az po testech'
+    $test.odpovedi = @{}
+    $test.volani.Clear()
+    $vystupSestaveni = & $sestav -Legacy 'APP\APP.csproj' -CacheTesty 'ALVA.MOD.Tests' -Spoustec $spoustec -BezKontrolSouboru -Nastaveni $nast
+    $cacheVolani = @($test.volani | Where-Object { $_ -match 'run-cache-tests' })
+    Test-Plati ($cacheVolani.Count -eq 1 -and $cacheVolani[0] -match '-Package ALVA\.MOD\.Tests' -and @($test.volani | Where-Object { $_ -match '^dotnet' }).Count -eq 0) 'bez shellu bezi jen Cache testy dotcenych modulu'
+    $sd = [IO.File]::ReadAllText(@($vystupSestaveni)[-1], $utf8) | ConvertFrom-Json
+    Test-Plati (@($sd.testy).Count -eq 1) 'souhrn testu bez shellu neni prazdny'
 
     $test.odpovedi = @{ 'B\\B\.csproj' = @($chyba, $ok) }
     $test.volani.Clear()
@@ -387,6 +409,15 @@ try {
     Test-Plati (-not (Test-Path (Join-Path $share 'N.exe'))) 'po selhane kopii novy soubor na DEV share neni'
     Test-Plati ([IO.File]::ReadAllText((Join-Path $share 'L.exe')) -eq 'stara L') 'po selhane kopii zustal puvodni soubor'
 
+    # Soubor, ktery uz na DEV share lezi se stejnym MD5, se pocita jako nasazeny, i kdyz se nic nekopiruje.
+    $hE1 = Invoke-G $e1 @('rev-parse', 'HEAD')
+    $zdrojY = Join-Path $koren 'zdroj\Y.exe'; Set-Text $zdrojY 'stejny'; Set-Text (Join-Path $share 'Y.exe') 'stejny'
+    Write-Json $sestaveni ([ordered]@{ soubory = @([ordered]@{ jmeno = 'Y.exe'; cesta = $zdrojY; md5 = (Get-Md5 $zdrojY); commit = $hE1; nasadit = $true }) })
+    Write-Json $seznam ([ordered]@{ faze = 'dev'; kotva = [ordered]@{ EDISON = 'k1'; EDISON2 = 'k2' }; repa = [ordered]@{ EDISON = [ordered]@{ head = $hE1 }; EDISON2 = [ordered]@{ head = 'h2' } }
+        buildLegacy = @([ordered]@{ vystup = 'Y.exe'; projekt = 'APP\APP.csproj'; nasaditelny = $true }); shell = [ordered]@{ zmena = $false; souboryPriZmene = @() }; cil = [ordered]@{ soubory = [ordered]@{} } })
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $nahraj, '-Sestaveni', $sestaveni, '-Seznam', $seznam, '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -eq 0 -and (Read-NasazeniStav (Get-Nastaveni $nast)).dev.commity.EDISON -eq $hE1) "bez kopie se souborem uz na DEV share se kotva DEV posune ($($r.Vystup -join ' '))"
+
     # --- over-test-verzi.ps1 -------------------------------------------------------------------------
     $over = Join-Path $nasazeni 'over-test-verzi.ps1'
     $balik = Join-Path $koren 'stav\balik'
@@ -409,7 +440,7 @@ try {
     Test-Plati ($r.Kod -ne 0 -and ($r.Vystup -join ' ') -match 'testovaci tridy v projektech: ALVA_MOD') 'over-test-verzi: test NEPRIDAVAT v projektu s celym balikem'
     $sestaveniVerze = Join-Path $koren 'sestaveni-verze.json'
     Set-Text (Join-Path $lokalni 'A.exe') 'prepsano jinym buildem'
-    Write-Json $sestaveniVerze ([ordered]@{ commity = [ordered]@{ EDISON = 'a'; EDISON2 = 'b' }; soubory = @([ordered]@{ jmeno = 'A.exe'; cesta = (Join-Path $lokalni 'A.exe'); md5 = (Get-Md5Bajtu $exeA); nasadit = $true }) })
+    Write-Json $sestaveniVerze ([ordered]@{ cas = '2026-02-01T00:00:00'; soubory = @([ordered]@{ jmeno = 'A.exe'; cesta = (Join-Path $lokalni 'A.exe'); md5 = (Get-Md5Bajtu $exeA); nasadit = $true }) })
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $over, '-Verze', '1.2', '-Predchozi', '1.1', '-Sestaveni', $sestaveniVerze, '-Projekty', 'ALVA_MOD', '-Nastaveni', $nast)
     Test-Plati ($r.Kod -eq 0) 'over-test-verzi: porovnava s MD5 ze sestaveni, ne s dnesnim souborem'
     $seznamRel = Join-Path $koren 'seznam-rel.json'
@@ -430,6 +461,12 @@ try {
     Write-Json $sestaveniB ([ordered]@{ soubory = @([ordered]@{ jmeno = 'B.exe'; cesta = 'neni'; md5 = (Get-Md5Bajtu $exeB); nasadit = $true }) })
     $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $over, '-Verze', '1.2', '-Predchozi', '1.1', '-Sestaveni', "$sestaveniVerze,$sestaveniB", '-Nastaveni', $nast)
     Test-Plati ($r.Kod -eq 0 -and @($r.Vystup | Where-Object { $_ -match '^\s+(A|B)\.exe\s+nase' }).Count -eq 2) "REL nese soubory ze dvou sestaveni ($($r.Vystup | Select-Object -Last 4))"
+    $sestaveniStare = Join-Path $koren 'sestaveni-stare.json'
+    Write-Json $sestaveniStare ([ordered]@{ cas = '2026-01-01T00:00:00'; soubory = @([ordered]@{ jmeno = 'A.exe'; cesta = 'neni'; md5 = 'STARE'; nasadit = $true }, [ordered]@{ jmeno = 'C.exe'; cesta = 'neni'; md5 = 'C'; nasadit = $true }) })
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $over, '-Verze', '1.2', '-Predchozi', '1.1', '-Sestaveni', "$sestaveniVerze,$sestaveniStare", '-Soubory', 'A.exe', '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -eq 0) "novejsi sestaveni prebije starsi i predane drive, -Soubory vynecha neschvalene ($($r.Vystup | Select-Object -Last 3))"
+    $r = Invoke-Prikaz 'powershell' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $over, '-Verze', '1.2', '-Predchozi', '1.1', '-Sestaveni', "$sestaveniVerze,$sestaveniStare", '-Nastaveni', $nast)
+    Test-Plati ($r.Kod -ne 0 -and ($r.Vystup -join ' ') -match 'C\.exe v baliku chybi') 'bez -Soubory se overi vse ze sestaveni'
 
     # --- nastaveni.json ------------------------------------------------------------------------------
     Remove-Item Env:\EDISON_NASAD_REPO2
