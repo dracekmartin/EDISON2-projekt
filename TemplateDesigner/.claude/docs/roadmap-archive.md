@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T4a** Vysvětlivka bezbariérového vozidla i v Zastávkovém JŘ AD „spoj s bezbariérově přístupným
+  vozidlem" jako obě linkové agendy (vědomě jinak než starý zastávkový tisk, rozhodnutí Jan 26. 10.;
+  changelog 2026-10-26 (15)).
 - **T3e** Pořadí typů omezení i v Zastávkovém JŘ AD 13, 12, 11, 14, 15, 22 jako starý zastávkový tisk
   a Linkový JŘ AD (changelog 2026-10-26 (14)). Tím je T3 (text omezení u značky) celé: obě agendy AD
   skládají text stejně a Zastávkový se shoduje se starým zastávkovým tiskem (oracle šesti linek).

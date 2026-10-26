@@ -97,7 +97,9 @@ Method TestGold0365001()
 	// pořadí stránek a nic jiného.
 	// Re-baseline 2026-10-26 (`B194a` T6): souhrnné pole dopravců s mezerami za čárkami a bez dvojčárky
 	// („…, Písek, Hálkova 1, tel: …" místo „…, Písek,Hálkova 1,tel:…"). Jen md5, počty shodné.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=H5aDfaX8T7AJpFfuXZSx3Q==")
+	// Re-baseline 2026-10-26 (`B194` T4a): vysvětlivka „spoj s bezbariérově přístupným vozidlem" jako
+	// v Linkovém JŘ AD místo „spoj má …" (vědomě jinak než starý zastávkový tisk). Jen md5, počty shodné.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=svGCL+QsdT9kbRqGarVTww==")
 }
 
 Method TestGold0365005()
@@ -139,7 +141,8 @@ Method TestGold0365005()
 	// výstup" (legacy `JRapiLinPrtMhd1.mac:194,201`). ⚠️ Mění POČTY: odjezdů 498 → 484, poznámek
 	// 236 → 235. Každá stránka linky ověřena proti starému tisku (`ParitaOdjezduProbe`, bez rozdílu).
 	// Re-baseline 2026-10-26: souhrnné pole dopravců - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=wk+r06SUBr+BJBZ30zzQOQ==")
+	// Re-baseline 2026-10-26 (`B194` T4a): „spoj s bezbariérově přístupným vozidlem" - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=a1rVCjrxSxIPG4M2uooTTg==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -225,7 +228,8 @@ Method TestGold0330530()
 	// 0365005. Stránek 45 → 44: na jedné zastávce jen končily spoje, starý tisk ji nevydává také.
 	// Odjezdů 1236 → 1232, zastávek 1022 → 999, poznámek 638 → 632; ověřeno proti starému tisku.
 	// Re-baseline 2026-10-26: souhrnné pole dopravců - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=4EF0C8R1WMsG7Nf8cCDGlw==")
+	// Re-baseline 2026-10-26 (`B194` T4a): „spoj s bezbariérově přístupným vozidlem" - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=4WcZf+T1sT+s6T3qRBrbxA==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

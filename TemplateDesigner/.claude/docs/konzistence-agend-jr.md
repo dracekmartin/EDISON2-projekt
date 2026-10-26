@@ -30,11 +30,12 @@ Všechny hotové (C1-C12, 23.-26. 10.) - viz `roadmap-archive.md` a changelog.
 Všechno mění vytištěný výstup vydaných agend, proto **Jan** u každé. Kde je doložená parita se starým
 modulem, stojí u položky; bez ní je rozdíl nahodilý.
 
-- **T4 Vysvětlivka téže značky zní v každé agendě jinak** [S] (*ověřeno:* kód, server). Bezbariér
-  („spoj má bezbariérově přístupné vozidlo" jen vývěska AD), překlep **„částečne"** v obou AD (starý modul
-  ho měl taky), „na znamení" (linkový AD bere ze STALCOME, vývěska vědomě Jan), přestup na autobus tři
-  znění (vývěska AD vlastní text `TextPrestupu`). Doporučení: překlep opravit, přestup vývěsky ze STALCOME,
-  zbytek rozhodnout.
+- **T4 Vysvětlivka téže značky zní v každé agendě jinak** [S] (*ověřeno:* kód, server). Rozděleno
+  (T4a bezbariérové vozidlo hotové):
+  - **T4b překlep „částečne"** u částečně bezbariérového vozidla v obou AD (starý modul ho měl taky).
+  - **T4c „na znamení"**: Linkový AD bere ze STALCOME, Zastávkový AD „na znamení" (vědomě Jan; starý
+    zastávkový tisk „zastávka pouze na znamení").
+  - **T4d přestup na autobus**: tři znění (Zastávkový AD vlastní text `TextPrestupu`). Doporučení: ze STALCOME.
 - **T11 Vývěska AD má nadpisy skupin dnů natvrdo česky** [S-M] **tisk** (*ověřeno:* kód). `NacistSkupinyDnu`
   (:851); starý tisk bral číselník firmy (`JRapiLinPrtMhd1.mac:541-571`) - nejdřív změřit, u kolika firem
   se liší. (Vyčleněno z `T5`, které je uzavřené jako vědomý rozdíl - viz §8.)

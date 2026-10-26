@@ -3243,14 +3243,16 @@ ClassMethod NactiTextyZnacek(dataDB As %String)
     }
 }
 
-/// Bezbariérovost spoje. SK znění „všetky spoje s bezbariérovým prístupom do vozidla" je z jeho
-/// starého tisku (#12843), ne vymyšlené.
+/// Bezbariérovost spoje - tvar „spoj s …" jako Linkový JŘ AD i MHD (věty `BEV` v `LinkovyJrAd.AtributSablona`).
+/// Vědomě jinak než starý zastávkový tisk („spoj má bezbariérově přístupné vozidlo", `JRapiLinPrtMhd1.mac:225`):
+/// obě agendy AD tak píšou totéž (`B194` T4a, rozhodnutí Jan 26. 10.). SK znění „všetky spoje
+/// s bezbariérovým prístupom do vozidla" je ze starého tisku (#12843).
 ClassMethod TextBezbarier(vsechny As %Boolean) As %String
 {
     i ..Jazyk() = "sk" {
-        ret $s(vsechny:"všetky spoje s bezbariérovým prístupom do vozidla", 1:"spoj má bezbariérovo prístupné vozidlo")
+        ret $s(vsechny:"všetky spoje s bezbariérovým prístupom do vozidla", 1:"spoj s bezbariérovým prístupom do vozidla")
     }
-    ret $s(vsechny:"všechny spoje mají bezbariérově přístupné vozidlo", 1:"spoj má bezbariérově přístupné vozidlo")
+    ret $s(vsechny:"všechny spoje s bezbariérově přístupným vozidlem", 1:"spoj s bezbariérově přístupným vozidlem")
 }
 
 ClassMethod TextCastecneBezbarier() As %String

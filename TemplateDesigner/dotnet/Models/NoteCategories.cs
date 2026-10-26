@@ -39,7 +39,7 @@ public static class NoteCategories
     /// <summary>Týdenní platnost spoje (X, 6, 7, +) - zastávková AD; linková ji posílá jako druh 1.</summary>
     public const string TydenniPlatnost = "tydenni-platnost";
 
-    /// <summary>Souhrn „všechny spoje mají bezbariérově přístupné vozidlo".</summary>
+    /// <summary>Souhrn „všechny spoje s bezbariérově přístupným vozidlem".</summary>
     public const string BezbarierAgregat = "bezbarier-agregat";
 
     /// <summary>Výluková poznámka linky (podmnožina všeobecných, poznaná podle prefixu textu).</summary>

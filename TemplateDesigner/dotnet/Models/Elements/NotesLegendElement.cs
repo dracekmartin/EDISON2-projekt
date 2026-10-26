@@ -138,7 +138,7 @@ public class NotesLegendElement : StopScheduleElementBase
     /// <inheritdoc cref="ShowPoznamkyLinkyTarifni"/>
     public bool ShowPoznamkyLinkyRadiobus { get; set; } = false;
 
-    /// <summary>Souhrnná vysvětlivka „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
+    /// <summary>Souhrnná vysvětlivka „všechny spoje s bezbariérově přístupným vozidlem" (#7161 D6).
     /// Dřív parametr sestavy „Skrýt souhrn…"; přesunuto sem, aby se obsah zapínal na jednom místě.</summary>
     public bool ShowSouhrnBezbarier { get; set; } = true;
 

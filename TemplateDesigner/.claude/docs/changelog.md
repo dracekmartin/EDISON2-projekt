@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-26 (15) - „spoj s bezbariérově přístupným vozidlem" i v Zastávkovém JŘ AD (`B194b` T4a)
+
+Zastávkový JŘ AD vysvětloval vozíček „spoj má bezbariérově přístupné vozidlo" (a „všechny spoje mají …"),
+Linkový JŘ AD i MHD „spoj s bezbariérově přístupným vozidlem". Každá agenda AD odpovídala svému starému
+tisku. Teď všude tvar „s" (`ZastavkoveJrAd.TextBezbarier`), slovensky „spoj s bezbariérovým prístupom
+do vozidla" (rozhodnutí Jan 26. 10.: zní líp a linkové věty ho potřebují kvůli výčtu spojů). Vědomě
+jinak než starý zastávkový tisk. Zastávkový JŘ MHD bere text z poznámek modulu MHD, netýká se ho.
+Re-baseline zlatých odtisků Zastávkového JŘ AD 0365001, 0365005, 0330530: jen md5, počty shodné.
+Nápověda volby „Souhrn bezbariérových spojů" v prvku Poznámky cituje nové znění.
+
 ## 2026-10-26 (14) - pořadí typů omezení v Zastávkovém JŘ AD jako starý tisk (`B194b` T3e)
 
 Spoj s víc typy omezení skládal Zastávkový JŘ AD v pořadí „jede jen", „jede také", „jede"; starý
