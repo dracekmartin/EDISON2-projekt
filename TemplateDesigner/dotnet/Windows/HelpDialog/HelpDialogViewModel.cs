@@ -94,7 +94,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("1. Otevřít šablonu z databáze / založit novou", "Ctrl+O / Ctrl+N"),
                 new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", "Ctrl+Shift+A"),
                 new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "Ctrl+Shift+I"),
-                new("4. Přidat sekce (tlačítko + Sekce) a prvky (táhnout z palety)", "myš"),
+                new("4. Přidat sekce (tlačítko Přidat sekci) a prvky (táhnout z palety)", "myš"),
                 new("5. Napojit data - pole ze záložky „Datová pole“ táhnout na plochu", "táhnout myší"),
                 new("6. Upravit vzhled - záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
                 new("7. Uložit do databáze a vytisknout s reálnými daty", "Ctrl+S, Ctrl+P"),
@@ -200,7 +200,7 @@ public class HelpDialogViewModel : EDViewModel
             Title = "📑 Sekce",
             Entries =
             [
-                new("Přidat sekci", "tlačítko + Sekce"),
+                new("Přidat sekci", "tlačítko Přidat sekci"),
                 new("Přesunout aktivní sekci nahoru / dolů", "Ctrl+Shift+↑ / Ctrl+Shift+↓"),
                 new("Přesunout sekci tažením", "táhnout myší v panelu"),
                 new("Výška sekce myší - patička se tahá za HORNÍ hranu (roste nahoru)", "táhnout hranu na ploše"),

@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-26 (39) - tlačítka přidání bez „+" (`B194d` E13a, E13b)
+
+Rozhodnutí Jan 26. 10.: „+" na začátku popisku pryč i v hlavním okně - „Přidat sekci", „Přidat stránku"
+(i nad plátnem místo „+ Stránka"); nápověda F1 „tlačítko Přidat sekci", příručka a Novinky (seedy). Pravidlo
+v `ux-conventions §1`. **E13b** (Tabulce spojů přidat „Přizpůsobit sloupce k šířce prvku") uzavřeno bez
+změny: zadávají se jen šířky popisných sloupců, spoje dostanou zbytek - roztažení popisných na celou šířku
+by spojům vzalo místo.
+
 ## 2026-10-26 (38) - tlačítka seznamů v dialozích jednotně (`B194d` E13a)
 
 Stejné akce měly v oknech se seznamem různé popisky: „+ Přidat" / „− Odebrat" (Tabulka z dat) × „Přidat" /

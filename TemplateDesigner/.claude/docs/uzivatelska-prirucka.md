@@ -164,7 +164,7 @@ sekce má nastavené chování, které určuje **kdy a jak často** se tiskne a 
 přetečení** obsahu.
 
 ### Přidání sekce
-Tlačítko `+ Přidat sekci` nabízí presety:
+Tlačítko `Přidat sekci` nabízí presety:
 
 - **Hlavička stránky** - každá stránka, 25 mm
 - **Patička stránky** - každá stránka, 15 mm
@@ -191,7 +191,7 @@ v rozbalovacích seznamech:
   na dalším listu. Na listu, kde ještě nic není, se nový nezakládá
 
 **Doklad o více stránkách** (stazka s lícem a rubem, faktura s podmínkami na zadní straně): tlačítko
-**„+ Přidat stránku"** pod seznamem sekcí přidá stránku šablony. Nad plátnem se pak objeví přepínač
+**„Přidat stránku"** pod seznamem sekcí přidá stránku šablony. Nad plátnem se pak objeví přepínač
 stránek („Stránka 1 z 2") a plátno ukazuje vždy jednu stránku přesně velikosti papíru. Hlavička a patička jsou společné - jsou na každé
 stránce, kde se tisknou, a upravit je jde z kterékoli (mají jinak barevný štítek). Obsah, který se
 na stránku nevejde, je pod listem vidět v šrafovaném pásu: při tisku přeteče na další stránku.
@@ -224,7 +224,7 @@ jen se zapnutým Rámečkem.
   výška se proporcionálně rozdělí mezi zbývající sekce (a naopak při přidání nové).
 - **Řazení** - přetažením v levém panelu, nebo šipkami v kontextovém menu.
 - **Vlastní šablony sekcí** - pravý klik na sekci → „Uložit jako šablonu…", zadáte název. Sekce
-  se pak nabízí v menu „+ Přidat sekci" (💾) a lze ji opakovaně vkládat do dalších šablon -
+  se pak nabízí v menu „Přidat sekci" (💾) a lze ji opakovaně vkládat do dalších šablon -
   vkládá se vždy jako nezávislá kopie.
 
 ---

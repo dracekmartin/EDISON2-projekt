@@ -116,8 +116,9 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   „(0 = ne)", „(0 = bez limitu)", „(0=vedle)"; výška řádku 1-50 / 1-20 / 2-15 / 2-50 mm, písmo 4-200 ×
   3-24 pt. Návrh: popisek = podstatné jméno, význam prázdna do nápovědy, rozsahy sjednotit.
 - **E13 Dialogy sloupců mají každý jiné ovládání** [M]. (a) popisky tlačítek hotové (changelog 2026-10-26
-  (38)). Zbývá (b) Tabulce spojů chybí „Přizpůsobit sloupce" a (c) sloučení do sdíleného `ColumnListEditor`
-  (s E3). Otevřené: „+ Přidat sekci" / „+ Přidat stránku" / „+ Stránka" v hlavním okně mají znaménko dál.
+  (38), (39)); (b) uzavřeno bez změny - v Tabulce spojů se zadávají jen popisné sloupce, šířku spojů
+  dopočítá tabulka, „Přizpůsobit" by spojům vzalo místo. Zbývá (c) sloučení do sdíleného `ColumnListEditor`
+  (odloženo s E3).
 - **E14 Tabulka spojů ukazuje interní pole** [S] **Jan**. „Kolekce zastávek/spojů/skupin dnů" s klíči
   `ZASTAVKY`… ve skupině Podmínky (`LineTableElementEdit.cls:172-174`) - skrýt.
 - **E15 Texty nápověd** [S]. Tykání vedle vykání (`ImageElementEdit`, `CellStyleEditor`, `StyleEditDialog`,

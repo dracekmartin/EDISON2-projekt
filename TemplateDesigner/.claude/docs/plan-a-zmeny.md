@@ -85,7 +85,7 @@ Dílčí vylepšení a náměty.
 
 ### Týden od 28. 9. 2026 · Návrhář - Doklady o více stránkách, kontrola před tiskem
 
-- Šablona může mít víc stránek (např. líc a rub dokladu), přidávají se tlačítkem **„+ Stránka"**.
+- Šablona může mít víc stránek (např. líc a rub dokladu), přidávají se tlačítkem **„Přidat stránku"**.
 - Při tisku lze druhou stránku dokladu dát vedle první, nebo na zadní stranu listu.
 - PDF a PNG se vytváří jen v okně **Tisk**, tlačítka na liště byla zrušena.
 - Hlášky k tisku jsou vpravo dole v jednom bloku podle závažnosti (informace, upozornění,

@@ -28,7 +28,8 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 - Multi-tab dialog: **max 3 taby**. Pokud potřebuješ víc, rozděl do samostatných dialogů nebo restrukturuj.
 - **Seznam v dialogu** (sloupce, pravidla, druhy poznámek): **„Přidat" / „Odebrat"** bez znaménka, posun
   **jen šipkami ▲ ▼** (bez textu, bublina „Posunout nahoru / dolů"), smazání barvy **„×"** s bublinou
-  „Vymazat barvu" (rozhodnutí Jan 26. 10., `B194` E13a).
+  „Vymazat barvu" (rozhodnutí Jan 26. 10., `B194` E13a). Žádné „+" na začátku popisku ani mimo dialogy
+  („Přidat sekci", „Přidat stránku").
 
 ---
 
