@@ -756,7 +756,7 @@ public class EDInputFormSchemaDriftTests
         //  ho sjednotil na „Výška" + nápovědu, takže výjimka padla.)
         //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Pozadí značky"), v mřížce
         //     odjezdů stojí hned vedle obecné barvy symbolu anotace, takže tam musí být v popisku
-        //     rozlišené („Pozadí negativní značky"); bez toho se nedá poznat, co která barva řídí.
+        //     rozlišené („Negativní značka: Pozadí"); bez toho se nedá poznat, co která barva řídí.
         //   Format - u stránky je to formát papíru („Formát"), u buňky formát vypisované hodnoty
         //     („Formát hodnoty"). Dvě různé věci, které jen shodou okolností mají stejný název
         //     vlastnosti na svém cíli.

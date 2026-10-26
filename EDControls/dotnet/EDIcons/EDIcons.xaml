@@ -293,6 +293,8 @@
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/barcode.png"/>
     <BitmapImage x:Key="EDIcons.StopList"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/stop_list.png"/>
+    <BitmapImage x:Key="EDIcons.LineTable"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/line_table.png"/>
     <BitmapImage x:Key="EDIcons.DepartureGrid"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/departure_grid.png"/>
     <BitmapImage x:Key="EDIcons.NotesLegend"

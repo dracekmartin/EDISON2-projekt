@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-26 (42) - drobnosti prvků: skupina Rozměry, mřížka plátna, negativní značka, ikona Tabulky spojů (`B194d` E16)
+
+Rozhodnutí Jan 26. 10.: Minuty odjezdů mají skupinu **„Rozměry"** místo „Rozměry a mřížka" (čáry tabulky
+má vlastní skupina „Mřížka"). Pomocná mřížka návrháře se v menu Zobrazit a na liště jmenuje **„Mřížka
+plátna"** (i „Přichytit k mřížce plátna", bublina tlačítka a velikosti, skupina lišty „Mřížka plátna
+a přichytávání", nápověda F1 a příručka); prvky si „Mřížka" nechávají. Barvy negativní značky v Minutách
+odjezdů jsou **„Negativní značka: Pozadí" / „Negativní značka: Barva textu"** ve formuláři i v panelu,
+stejným tvarem jako „Symbol: …" a „Text: …" vedle nich. **Tabulka spojů má v paletě vlastní ikonu**
+(Fluent „Table Freeze Column" - tabulka s ukotveným prvním sloupcem zastávek), dosud sdílela autobus se
+Seznamem zastávek; nový klíč `EDIcons.LineTable` v EDControls. Ověřeno voláním `Init` formuláře Minut odjezdů.
+
 ## 2026-10-26 (41) - texty nápověd: vykání a srozumitelné výrazy (`B194d` E15)
 
 Rozhodnutí Jan 26. 10.: **vykání všude** („Nahrajte obrázek", „vyberte nebo napište font", „Vyplněním ji

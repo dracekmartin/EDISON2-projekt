@@ -120,7 +120,7 @@ s daty z agendy → PDF.
 
 ### Navigace a zobrazení
 - Zoom: Ctrl+kolečko (k kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
-- Mřížka a přichytávání: toolbar - zobrazit mřížku, snap na mřížku (velikost 0,2–10 mm),
+- Mřížka plátna a přichytávání: toolbar - zobrazit mřížku plátna, snap na mřížku (velikost 0,2–10 mm),
   snap na elementy; Ctrl+Shift+N normalizuje pozice existujících elementů.
 - Levý panel: záložky Sekce / Datová pole / Vlastnosti / Strom / Pomocník; Ctrl+B sbalí.
 - Strom šablony: záložka 'Strom' - hierarchie sekce → skupiny → elementy.

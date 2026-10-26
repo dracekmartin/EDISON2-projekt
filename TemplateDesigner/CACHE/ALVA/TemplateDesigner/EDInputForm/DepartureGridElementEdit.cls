@@ -36,8 +36,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
         s f.helpText = "Kolik skupin dnů se vejde do prvku; další se nevykreslí. 0 = bez omezení."
 
-        // ── Rozměry a mřížka ──────────────────────────────────────────────
-        d form.AddGroup("layout", "Rozměry a mřížka")
+        // ── Rozměry ───────────────────────────────────────────────────────
+        // Mřížka (čáry) má vlastní skupinu níž; „a mřížka" v názvu skupiny mátlo.
+        d form.AddGroup("layout", "Rozměry")
         s f = form.AddDecimal("MinuteWidth", "Šířka minuty", 5, 3, 15, "mm")
         s f.helpText = "Šířka jednoho políčka s minutou - určuje, kolik minut se vejde na řádek"
         s f = form.AddFieldToLastGroup("MinuteSpacing", "Rozestup odjezdů", $$$FieldTypeList, 0, 1)
@@ -84,10 +85,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Odsazení mezi dvěma značkami u téhož odjezdu"
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ")
         // Negativní značka = symbol vykreslený inverzně (znak na plné ploše) - vlastní dvojice barev.
-        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Pozadí negativní značky", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Negativní značka: Pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         s f.helpText = "Negativní značka = znak vykreslený inverzně, tedy světlý na plné barevné ploše"
-        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva negativní značky", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Negativní značka: Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ")
 

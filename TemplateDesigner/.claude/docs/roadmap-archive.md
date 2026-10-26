@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E16** Drobnosti: Minuty odjezdů skupina „Rozměry", pomocná mřížka „Mřížka plátna" v menu a na liště,
+  „Negativní značka: Pozadí / Barva textu", Tabulka spojů s vlastní ikonou v paletě (rozhodnutí Jan 26. 10.;
+  changelog 2026-10-26 (42)).
 - **E15** Texty nápověd: vykání všude, technické výrazy po uživatelsku („převezme se z nadřazeného stylu",
   „vnitřní okraj", „čárkovaná / tečkovaná", „záložka"), překlep „pohledna" v F1, dlouhé pomlčky v komentářích
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (41)). Cesty v F1, které v UI nejsou, zůstávají v `H2`.

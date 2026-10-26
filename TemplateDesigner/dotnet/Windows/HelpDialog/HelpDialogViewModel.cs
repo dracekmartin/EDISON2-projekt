@@ -221,7 +221,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Skutečná velikost 100 %", "Ctrl+1"),
                 new("Zoom k kurzoru", "Ctrl+kolečko"),
                 new("Sbalit / rozbalit levý panel", "Ctrl+B"),
-                new("Mřížka, přichytávání, velikost kroku (0,2–10 mm)", "lišta nástrojů"),
+                new("Mřížka plátna, přichytávání, velikost kroku (0,2–10 mm)", "lišta nástrojů"),
                 new("Strom šablony (sekce → skupiny → prvky)", "záložka Strom"),
                 new("Nápověda (tento dialog)", "F1"),
             ],

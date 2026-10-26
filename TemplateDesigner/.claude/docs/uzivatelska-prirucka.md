@@ -70,7 +70,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
 - **Data** - obnovení dat náhledu (↻)
 - **Tisk** - kontrola vybraných linek (lupa) a Tisk; PDF i PNG se vytváří v okně Tisk
-- **Mřížka a přichytávání** - přepínač mřížky, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání
+- **Mřížka plátna a přichytávání** - přepínač mřížky plátna, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání
 - **Zoom** - zoom, tlačítka „Fit" a „1:1"
 - **Panely** - skrytí panelu sekcí, přepínač živého náhledu
 
