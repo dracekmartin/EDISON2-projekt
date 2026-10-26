@@ -2339,6 +2339,50 @@ ClassMethod PoradiOmezeniVyskyt(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Zastávky „jen nástup" / „jen výstup" po firmách (`B194` T7): atribut trasy `N` / `V` (pole 5 úseku
+/// `^JRL(sku,lin,"W",trasa)`). Počítají se linky a úseky tras, příklad = linka s oběma, jinak s kterýmkoli.
+ClassMethod NastupVystupVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linekN = 0, linekV = 0, useku = 0, priklad = "", prikladObe = "", sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					set maN = 0, maV = 0, w = ""
+					for  {
+						set w = $order(^[db]JRL(sku, lin, "W", w), 1, veta)
+						quit:w=""
+						for si = 1:1:$length(veta, "#") {
+							set atr = $piece($piece(veta, "#", si), ":", 5)
+							continue:atr=""
+							if atr [ "N" set maN = 1, useku = useku + 1
+							if atr [ "V" set maV = 1, useku = useku + 1
+						}
+					}
+					set:maN linekN = linekN + 1
+					set:maV linekV = linekV + 1
+					if maN || maV set priklad = sku_"/"_lin
+					if maN && maV set prikladObe = sku_"/"_lin
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s N "_linekN_", s V "_linekV_", úseků "_useku_"; příklad s oběma "_prikladObe_", jinak "_priklad
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Barevné spoje po firmách (`B194` T2): kolik linek má aspoň jeden spoj s barvou (jinou než černou,
 /// pole `#12` = legacy `dta38`) a kolik z nich má u linky barvy vypnuté (`PATCH,barevnyTiskSpoju` = 1,
 /// starý linkový JŘ pak tiskne černě - `JRapiLinPrtWin.mac:2085-2102`; starý vývěskový tisk nastavení
