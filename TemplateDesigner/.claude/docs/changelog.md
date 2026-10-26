@@ -1,5 +1,21 @@
 ﻿# Changelog
 
+## 2026-10-26 (23) - omezení atributu a „všechny spoje" v Linkovém JŘ AD (`B194b` T14a, T14d)
+
+**T14a:** starý linkový tisk připisuje za větu atributu omezení zadané u spoje (`PATCH,"attrOm"`):
+u jízdních kol období (dvě), „nejvýše N kol(a)" a text, u bezbariérového vozidla období. Spoje se
+stejným omezením tvoří skupinu; mají-li ho všechny spoje s atributem, jde za větu rovnou, jinak
+„ / spoj(e) výčet omezení" (gAtrNZLi `JRapiNZUtl3.mac:80-117, 257-312`). Linkový JŘ AD to netiskl
+(`DoplnOmezeniAtributu`, data přes `FormatDatumyOmezeni` podle `TiskDtm`). Sonda
+`OmezeniAtributuVyskyt`: kola s omezením u linky VS_CSAD 1 157, KV_DP 248, ZL_KOVED 238, CB_CSADAD
+90 (horní odhad), bezbariérové vozidlo nikde. Rozhodnutí Jan 26. 10.: jako starý tisk.
+**T14d** (nalezeno při T14a): tvar „všechny spoje" se porovnával s počtem spojů, které mají nějaký
+atribut, ne se všemi spoji stránky - na KV_DP 775/0410116 jsme tiskli „všechny spoje přepravují
+jízdní kola" místo „spoje 1, 3, 5, 7, 9, 11 …". Chyba od zavedení tvarů (`L2`, 21. 8.).
+Ověřeno: oracle shodně na CB_GWBUS 990/0329471, KV_DP 775/0410116, VS_CSAD 810/0440523, ZL_KOVED
+930/0773777, CB_CSADAD 832/0320680; test `TestPoznamkyMimoJadroProtiLegacy` (dřív jen T13) rozšířen
+o tyto linky a porovnává řádky podle začátku klíče. Brána parity na jádru i zlaté odtisky beze změny.
+
 ## 2026-10-26 (22) - poznámky ke spojům a doplněk místenky v Linkovém JŘ AD (`B194b` T13)
 
 Linkový JŘ AD tiskl u spoje značku „p", ale legenda ji nevysvětlila, a u místenky tiskl jen holou
@@ -14,7 +30,7 @@ větu. Teď 1:1 se starým linkovým tiskem (rozhodnutí Jan 26. 10.: srovnat se
   podle starého (česká verze dál zná jen R a þ).
 
 Ověřeno: oracle shodně na CB_GWBUS 990/0329471, 990/0322002, 216/0125850, 216/0340941, CB_CSADAD
-995/0380780, VS_CSAD 797/0440055 a 799/0440080; nové testy `TestPoznamkySpojuAMistenkyProtiLegacy`,
+995/0380780, VS_CSAD 797/0440055 a 799/0440080; nové testy `TestPoznamkyMimoJadroProtiLegacy`,
 `TestMistenkyNaNovyRadek`, `TestMistenkySlovenskeAAms`. Oracle nově srovná „#" (nový řádek) na mezeru
 i na straně starého tisku. Sonda `PoznamkySpojuVyskyt` (VS_CSAD 333 linek s poznámkou ke spoji,
 1 730 s místenkovou poznámkou). Zlaté odtisky beze změny. Další rozdíly z oraclu mimo T13 jako `T14`.

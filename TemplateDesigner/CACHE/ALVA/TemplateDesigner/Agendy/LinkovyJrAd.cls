@@ -942,7 +942,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         }
     }
     d ..PridatPoznamkySpoju(dataDB, sku, lin, rec, poznamky, .poznamkaSpojeSeen)
-    d ..PridatPoznamkyAtributu(dataDB, sku, lin, poznamky, .atributSeen, .spojeSeen, rec)
+    d ..PridatPoznamkyAtributu(dataDB, sku, lin, poznamky, .atributSeen, .spojeSeen, rec, tiskDtm)
     d ..PridatPoznamkyMistenkovani(dataDB, sku, lin, rec, poznamky, .mistenkaSeen)
     d ..PridatStaleZnacky(dataDB, rec, poznamky, .markerSeen, .atributyZobrazene, .atributyZastavek, .trasaZnakySeen, maMhd)
     d ..PridatPoznamkyLinky(dataDB, sku, lin, poznamky)
@@ -1358,6 +1358,9 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     s spoj = $g(^[dataDB]JRL(sku,lin,smer,sp))
     s hlava = $p(spoj,"#",1)
     s cisloTrasy = $p(hlava,":",3)
+    // každý spoj stránky - tvar věty atributu „všechny spoje" (legacy pSp v gAtrNZLi počítá všechny
+    // spoje, ne jen ty s atributem; do 26. 10. se tu počítaly jen spoje s atributem, `B194` T14d)
+    s spojeSeen(+sp) = ""
 
     // per-tč značky spoje z trasy (W segment ":"-piece 5, legacy gSpLin trs,6): N/V/x/G/a/b/c
     // → legenda druhu 7 i do buňky vedle času (`znackyTc`), kam je starý tisk kreslí
@@ -1446,7 +1449,6 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
             s klice(klic) = ""
             // u „na objednání" a „podmínečně" nese spoj i upřesnění pro větu legendy
             s atributSeen(klic, +sp) = $s((klic = "RBU") || (klic = "RBP"):..UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, klic), 1:"")
-            s spojeSeen(+sp) = ""
         }
     }
     // PLATNOST = klíče v pevném legacy pořadí (Spoj2Tb ř.3754)
@@ -1897,7 +1899,7 @@ ClassMethod PridatPoznamkyNZ(dataDB As %String, sku As %String, lin As %String, 
 ///
 /// Řádek dostane **každý** atribut, který se na stránce vyskytl - nastavení „značka atributu nad
 /// spoj" neřídí, **jestli** se vytiskne, ale **jakým tvarem** (viz `VetaAtributu`).
-ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %String, poznamky As %DynamicArray, ByRef atributSeen, ByRef spojeSeen, rec As %String = "CZ")
+ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %String, poznamky As %DynamicArray, ByRef atributSeen, ByRef spojeSeen, rec As %String = "CZ", tiskDtm As %Integer = 0)
 {
     s patrSp = $g(^[dataDB]JRSET("Definice","PAtrSp"))
     s bbpLinka = +$g(^[dataDB]JRL(sku,lin,"PATCH","TZPA","BBP"))
@@ -1921,8 +1923,85 @@ ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %St
             d ..PridatVetyUpresneni(poznamky, klic, rec, veta, .atributSeen)
             continue
         }
+        i (klic = "PJI") || (klic = "BEV") s veta = ..DoplnOmezeniAtributu(dataDB, sku, lin, klic, rec, veta, .atributSeen, tiskDtm)
         d poznamky.%Push(..BuildPoznamka(5, "znak", klic, veta))
     }
+}
+
+/// Omezení platnosti atributu u spoje za větou atributu, 1:1 gAtrNZLi (`JRapiNZUtl3.mac:80-117,
+/// 257-312`). Linka ho drží po spojích v `PATCH,"attrOm"` (19 = jízdní kola, 15 = bezbariérové
+/// vozidlo) jako „od~do~počet~text", za „#" druhé období; počet a text jen u kol. Spoje se stejným
+/// omezením tvoří skupinu: mají-li ho všechny spoje s atributem, připíše se rovnou za větu, jinak
+/// za každou skupinu „ / spoj(e) výčet omezení". Do 26. 10. se omezení netisklo (`B194` T14a).
+ClassMethod DoplnOmezeniAtributu(dataDB As %String, sku As %String, lin As %String, klic As %String, rec As %String, veta As %String, ByRef atributSeen, tiskDtm As %Integer) As %String
+{
+    s idOm = $case(klic, "PJI":19, "BEV":15, :"")
+    q:idOm="" veta
+    s sablona = ..AtributSablona(klic, rec)
+    k skupiny
+    s pocet = 0, sp = ""
+    f {
+        s sp = $o(atributSeen(klic, sp))
+        q:sp=""
+        s pocet = pocet + 1
+        s om = $g(^[dataDB]JRL(sku,lin,"PATCH","attrOm",idOm,sp))
+        s o1 = $p(om,"#",1), o2 = $p(om,"#",2)
+        s od1 = +..DatumNaDh($p(o1,"~",1)), do1 = +..DatumNaDh($p(o1,"~",2))
+        s od2 = +..DatumNaDh($p(o2,"~",1)), do2 = +..DatumNaDh($p(o2,"~",2))
+        s poc1 = 0, poc2 = 0, info1 = "", info2 = ""
+        i idOm = 19 {
+            s poc1 = +$p(o1,"~",3), poc2 = +$p(o2,"~",3), info1 = $p(o1,"~",4), info2 = $p(o2,"~",4)
+            continue:'(od1 || od2 || poc1 || (info1 '= "") || (info2 '= ""))
+            s:'do1 do1 = od1
+            s:'od1 od1 = do1
+        }
+        else {
+            // bezbariérové vozidlo: chybějící „od" se z „do" nedoplní (legacy :106-112)
+            continue:'(od1 || od2)
+            s:'do1 do1 = od1
+        }
+        // pořadí skupin jako legacy (od1, do1, počet1, od2, do2, počet2 vzestupně, pak text):
+        // čísla pevné šířky se řadí jako text stejně jako čísla
+        s razeni = ""
+        f cislo = od1, do1, poc1, od2, do2, poc2 s razeni = razeni_$j(cislo, 6)
+        s razeni = razeni_"|"_info1_"|"_info2
+        i '$d(skupiny(razeni)) s skupiny(razeni) = $lb(od1, do1, poc1, info1, od2, do2, poc2, info2), skupiny(razeni, "spoje") = "", skupiny(razeni, "pocet") = 0
+        s skupiny(razeni, "spoje") = skupiny(razeni, "spoje")_$s(skupiny(razeni, "spoje")="":"", 1:", ")_sp
+        s skupiny(razeni, "pocet") = skupiny(razeni, "pocet") + 1
+    }
+    s razeni = ""
+    f {
+        s razeni = $o(skupiny(razeni))
+        q:razeni=""
+        s d = skupiny(razeni)
+        s txt1 = ..TextOmezeniAtributu($li(d,1), $li(d,2), $li(d,3), $li(d,4), sablona, tiskDtm)
+        s txt2 = ..TextOmezeniAtributu($li(d,5), $li(d,6), $li(d,7), $li(d,8), sablona, tiskDtm)
+        s txt = txt1_$s(txt2'="":", "_txt2, 1:"")
+        i skupiny(razeni, "pocet") = pocet {
+            s veta = veta_" "_txt
+            continue
+        }
+        s veta = veta_" / "_$s(skupiny(razeni, "pocet")=1:$p(sablona,"|",3), 1:$p(sablona,"|",4))_" "_skupiny(razeni, "spoje")_" "_txt
+    }
+    q $zstrip(veta, "<=>W")
+}
+
+/// Jedno období omezení atributu: „od D1 do D2" podle režimu data, u kol „nejvýše N kol(a)"
+/// a text spoje (legacy oddotxt). `od` / `do` jsou $H, 0 = nezadáno.
+ClassMethod TextOmezeniAtributu(od As %Integer, do As %Integer, pocet As %Integer, info As %String, sablona As %String, tiskDtm As %Integer) As %String
+{
+    s txt = ""
+    i od s txt = ..FormatDatumyOmezeni(..DhNaDatum(od)_":"_$s(do:..DhNaDatum(do), 1:""), tiskDtm)
+    i pocet s txt = txt_$s(txt="":"", 1:", ")_$p(sablona,"|",8)_" "_pocet_" "_$p(sablona,"|",9)
+    i info '= "" s txt = txt_$s(txt="":"", 1:", ")_info
+    q txt
+}
+
+/// $H den → „d.m.rrrr" (vstup pro `FormatDatumyOmezeni`).
+ClassMethod DhNaDatum(dh As %Integer) As %String
+{
+    s iso = $zdate(dh, 3)
+    q (+$p(iso,"-",3))_"."_(+$p(iso,"-",2))_"."_$p(iso,"-",1)
 }
 
 /// Věty „na objednání" a „podmínečně" s upřesněním (`UpresneniAtributuSpoje`). Mají-li spoje

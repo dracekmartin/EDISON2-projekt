@@ -144,35 +144,40 @@ Method TestZnackaNaObjednaniUCasu()
 	do $$$AssertEquals(nasich, starych, "buňky se značkou „r"" (my "_nasich_") × buňky s telefonem (starý tisk "_starych_")")
 }
 
-/// Linky s poznámkou ke spoji (druh 4, značka „p") a s místenkovou poznámkou linky (druh 6),
-/// `B194` T13. Formát: `firma~skupina~linka~druh~co na ní je vidět`.
-ClassMethod LinkySPoznamkouSpoje(ByRef sada)
+/// Linky mimo jádro sady, na kterých je vidět řádek legendy, který jádro nemá (`B194` T13, T14).
+/// Formát: `firma~skupina~linka~začátek klíče řádku (druh~značka~)~co na ní je vidět`.
+ClassMethod LinkyPoznamekMimoJadro(ByRef sada)
 {
 	kill sada
-	set sada(1) = "CB_GWBUS~990~0329471~4~poznámka pro spoj"
-	set sada(2) = "CB_CSADAD~995~0380780~4~poznámky k tarifním bodům a dva spoje s týmž textem zvlášť"
-	set sada(3) = "VS_CSAD~797~0440055~4~dva spoje se stejným textem v jednom řádku"
-	set sada(4) = "CB_GWBUS~990~0322002~6~doplněk linky a poznámky ke spojům, každá na nový řádek (MistOR)"
-	set sada(5) = "VS_CSAD~799~0440080~6~doplněk linky bez poznámek ke spojům, firma bez MistOR"
-	set sada(6) = "CB_GWBUS~216~0125850~6~spoj jen s místenkou"
+	set sada(1) = "CB_GWBUS~990~0329471~4~~poznámka pro spoj"
+	set sada(2) = "CB_CSADAD~995~0380780~4~~poznámky k tarifním bodům a dva spoje s týmž textem zvlášť"
+	set sada(3) = "VS_CSAD~797~0440055~4~~dva spoje se stejným textem v jednom řádku"
+	set sada(4) = "CB_GWBUS~990~0322002~6~~doplněk linky a poznámky ke spojům, každá na nový řádek (MistOR)"
+	set sada(5) = "VS_CSAD~799~0440080~6~~doplněk linky bez poznámek ke spojům, firma bez MistOR"
+	set sada(6) = "CB_GWBUS~216~0125850~6~~spoj jen s místenkou"
+	// omezení atributu kol (T14a) a výčet místo „všechny spoje" (T14d)
+	set sada(7) = "CB_GWBUS~990~0329471~5~PJI~~skupiny spojů s různým obdobím za lomítkem"
+	set sada(8) = "KV_DP~775~0410116~5~PJI~~výčet spojů směru, ač kola mají všechny spoje s atributem"
+	set sada(9) = "VS_CSAD~810~0440523~5~PJI~~období a nejvýše N kol"
+	set sada(10) = "ZL_KOVED~930~0773777~5~PJI~~jen počet kol bez období"
 }
 
-/// Legenda druhu 4 a 6 = starý linkový tisk, řádek po řádku (`B194` T13). Do 26. 10. legenda
-/// poznámky ke spojům nevysvětlovala vůbec a u místenek chyběl doplněk linky.
-Method TestPoznamkySpojuAMistenkyProtiLegacy()
+/// Řádky legendy mimo jádro sady = starý linkový tisk, řádek po řádku (`B194` T13, T14). Do 26. 10.
+/// legenda poznámky ke spojům nevysvětlovala, u místenek chyběl doplněk linky a u kol omezení.
+Method TestPoznamkyMimoJadroProtiLegacy()
 {
 	do ..SetupSys(.sys)
-	do ..LinkySPoznamkouSpoje(.sada)
+	do ..LinkyPoznamekMimoJadro(.sada)
 	set overeno = 0, nalezy = "", i = ""
 	for  {
 		set i = $order(sada(i))
 		quit:i=""
 		set db = $piece(sada(i),"~",1), sku = $piece(sada(i),"~",2), lin = $piece(sada(i),"~",3)
-		set druh = $piece(sada(i),"~",4), popis = $piece(sada(i),"~",5)
+		set zacatek = $piece(sada(i),"~",4,$length(sada(i),"~")-1), popis = $piece(sada(i),"~",$length(sada(i),"~"))
 		continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).NactiObeStrany(.sys, db, sku, lin, .leg, .nase)
-		set vLeg = ..PoznamkyDruhu(.leg, druh), vNase = ..PoznamkyDruhu(.nase, druh)
+		set vLeg = ..RadkyLegendy(.leg, zacatek), vNase = ..RadkyLegendy(.nase, zacatek)
 		if vLeg = "" {
-			set nalezy = nalezy _ $select(nalezy="":"", 1:" | ") _ db_" "_lin_" druh "_druh_": starý modul poznámku nemá, fixture vyhnila ("_popis_")"
+			set nalezy = nalezy _ $select(nalezy="":"", 1:" | ") _ db_" "_lin_" "_zacatek_": starý modul řádek nemá, fixture vyhnila ("_popis_")"
 			continue
 		}
 		set overeno = overeno + 1
@@ -183,17 +188,18 @@ Method TestPoznamkySpojuAMistenkyProtiLegacy()
 		do $$$AssertTrue(1, "starý modul ani firmy sady na tomto serveru nejsou - přeskočeno")
 		quit
 	}
-	do $$$AssertEquals(nalezy, "", "poznámka ke spoji nebo místenka se liší od starého modulu: "_nalezy)
+	do $$$AssertEquals(nalezy, "", "řádek legendy se liší od starého modulu: "_nalezy)
 }
 
-/// Řádky legendy jednoho druhu jako text (`klíč×počet` oddělené „ | "), pro porovnání obou stran.
-ClassMethod PoznamkyDruhu(ByRef n, druh As %String) As %String
+/// Řádky legendy, jejichž klíč začíná `zacatek` (`druh~` nebo `druh~značka~`), jako text
+/// (`klíč×počet` oddělené „ | "), pro porovnání obou stran.
+ClassMethod RadkyLegendy(ByRef n, zacatek As %String) As %String
 {
-	set vysledek = "", klic = druh_"~"
+	set vysledek = "", klic = zacatek
 	for  {
 		set klic = $order(n("pozn", klic))
 		quit:klic=""
-		quit:$piece(klic,"~",1)'=druh
+		quit:$extract(klic, 1, $length(zacatek))'=zacatek
 		set vysledek = vysledek _ $select(vysledek="":"", 1:" | ") _ klic_"×"_n("pozn", klic)
 	}
 	quit vysledek

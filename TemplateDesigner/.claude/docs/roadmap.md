@@ -24,8 +24,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 - **T7** „Jen nástup / jen výstup" chybí v Zastávkovém JŘ AD - **odloženo** (Jan 26. 10.), otevřené: podle
   kterých spojů šipku ukázat; rozpracováno ve stashi [M]
-- **T14** Linkový AD: tři další rozdíly proti starému tisku, které oracle našel mimo jádro sady
-  (omezení platnosti atributu, stálá značka G, věty „navazuje" navíc) [S-M]
+- **T14** Linkový AD: další rozdíly proti starému tisku mimo jádro sady - zbývá značka G u zastávky
+  (b) a věty návazností bez druhu dopravy navíc (c); rozhodnuto jako starý tisk [S]
 
 ### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)
 

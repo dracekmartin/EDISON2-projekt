@@ -38,11 +38,14 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
   sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
 - **T14 Linkový AD: další rozdíly proti starému tisku mimo jádro sady** [S-M] **tisk** (*ověřeno:* oracle
-  `PoznamkyVedleSebe`, 26. 10., nalezeno při `T13`). (a) U atributu spoje starý tisk připíše omezení jeho
-  platnosti z linky (`PATCH,"attrOm"`): CB_GWBUS 990/0329471 „spoj přepravuje jízdní kola / spoj 17 4.7. /
-  spoje 15, 25, 45 od 4.7. do 30.8.", my jen větu. (b) VS_CSAD 799/0440080: starý tisk má stálou značku
-  „G" (zákaz přepravy mezi označenými zastávkami), my ne. (c) CB_CSADAD 995/0380780: dvě věty „navazuje"
-  (spoje 17, 37 na Vodňanech) máme navíc. Příčiny zatím nehledané.
+  `PoznamkyVedleSebe`, 26. 10., nalezeno při `T13`; rozhodnutí Jan 26. 10.: jako starý tisk). Hotové
+  a (omezení atributu) a d (tvar „všechny spoje") - changelog 2026-10-26 (23). Zbývá:
+  (b) VS_CSAD 799/0440080: starý tisk vysvětluje stálou značku „G" (zákaz přepravy mezi označenými
+  zastávkami), my ne. G je atribut zastávky na trase linky (`J` pole 2), převodní tabulka v
+  `PridatStaleZnacky` zná jen A, L, x, y, z, V, N, D, C - chybí G, a, b, c, e, f, g, O (gStzNZLi
+  `JRapiNZUtl3.mac:467-484`). (c) CB_CSADAD 995/0380780: dvě věty „navazuje" máme navíc. Návaznost
+  bez druhu dopravy (staré záznamy, pole AVL prázdné) starý tisk v legendě vynechá (n31 / n32
+  `JRapiNZUtl2.mac:425-439`), my ji bereme jako autobus.
 
 ## 3. Nabídka dat a parametry sestavy
 

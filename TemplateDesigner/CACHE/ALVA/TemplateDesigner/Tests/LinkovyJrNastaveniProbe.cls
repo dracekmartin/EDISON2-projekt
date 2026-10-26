@@ -2298,6 +2298,36 @@ ClassMethod PoznamkySpojuVyskyt(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Omezení platnosti atributu spoje po firmách (`B194` T14a): kolik linek má u spoje období
+/// (a u kol počet a text) pro jízdní kola (`PATCH,"attrOm",19`) a bezbariérové vozidlo (`"attrOm",15`),
+/// které starý linkový tisk připisuje za větu atributu (`JRapiNZUtl3.mac:80-117, 257-330`).
+ClassMethod OmezeniAtributuVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linek19 = 0, linek15 = 0, priklad19 = "", priklad15 = "", sku = ""
+			for {
+				set sku = $order(^[db]JRL(sku)) quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for {
+					set lin = $order(^[db]JRL(sku, lin)) quit:lin=""
+					if $data(^[db]JRL(sku, lin, "PATCH", "attrOm", 19)) set linek19 = linek19 + 1, priklad19 = sku_"/"_lin
+					if $data(^[db]JRL(sku, lin, "PATCH", "attrOm", 15)) set linek15 = linek15 + 1, priklad15 = sku_"/"_lin
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s omezením kol "_linek19_" (např. "_priklad19_"), s omezením bezbariérového vozidla "_linek15_" (např. "_priklad15_")"
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Nadpisy skupin dnů po firmách (`B194` T11): nastavení firmy `^JRSET("Definice","WinMHD",rec,"DSC")`
 /// (kusy 1-13 podle rozložení, `JRapiLinPrtMhd1.mac:541-571`), odkud je bral starý zastávkový tisk,
 /// a kolik linek má vlastní sadu nadpisů (`PATCH,ISY_LinkyTiskMHDNadpisy` → `^JRSET("LinkyTiskMHDNadpisy")`).
