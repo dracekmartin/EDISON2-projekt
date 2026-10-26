@@ -18,7 +18,7 @@ namespace TemplateDesigner.Tests.Rendering;
 /// Bez proměnné <c>TD_TISK_VYSTUP</c> nic nedělá. Připojení z <c>templatedesigner.appsettings.local.json</c> (VPN).
 /// <code>
 /// TD_TISK_VYSTUP=slozka [TD_TISK_LINKY=330530,330510] [TD_TISK_SABLONY=cesta1.json,cesta2.json]
-/// [TD_TISK_STRAN=2] [TD_TISK_DPI=110] dotnet test TemplateDesigner.Tests --filter ZkouskaTiskuNaostro
+/// [TD_TISK_STRAN=2] [TD_TISK_DPI=110] [TD_TISK_SKUPINA=216] dotnet test TemplateDesigner.Tests --filter ZkouskaTiskuNaostro
 /// </code>
 /// </remarks>
 public class ZkouskaTiskuNaostro(ITestOutputHelper output)
@@ -76,8 +76,9 @@ public class ZkouskaTiskuNaostro(ITestOutputHelper output)
             foreach (var linka in linky)
             {
                 string jmeno = $"{Path.GetFileNameWithoutExtension(cesta)}-{linka}";
+                // bez skupiny bere server první skupinu linek firmy
                 var stranky = provider.GetData(agenda, TemplateDesignerViewModel.ComposeGetDataParams(
-                    parametry, instance, linka, null, sloupce, turnusy, "cs"));
+                    parametry, instance, linka, Environment.GetEnvironmentVariable("TD_TISK_SKUPINA"), sloupce, turnusy, "cs"));
                 if (stranky is null || stranky.Count == 0)
                 {
                     output.WriteLine($"{jmeno}: linka nemá data");

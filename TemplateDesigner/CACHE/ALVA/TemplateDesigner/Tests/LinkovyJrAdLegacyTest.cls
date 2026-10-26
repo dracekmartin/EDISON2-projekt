@@ -99,6 +99,31 @@ ClassMethod LinkySVetouAtributu(ByRef sada)
 	set sada(2) = "VS_CSAD~9~0240801~IDS~tvar ""všechny spoje"""
 	// Rozhodující případ pro rozsah počítání: ve směru Z ho mají všechny spoje, na celé lince ne.
 	set sada(3) = "VS_CSAD~24~0941210~BEV~všechny spoje směru, ale ne celé linky"
+	// Upřesnění za větou (`B194` T1): u linky nebo firmy, a vlastní text spoje.
+	set sada(4) = "CB_GWBUS~216~0103942~RBU~upřesnění linky nebo firmy za větou"
+	set sada(5) = "CB_GWBUS~216~0125850~RBP~upřesnění z textu spoje za větou"
+}
+
+/// Liší-li se upřesnění spojů „na objednání", dostane každé vlastní větu s výčtem spojů; spoj bez
+/// upřesnění vlastní větu bez dovětku. Data takovou linku dnes nemají (sonda `NaObjednaniVyskyt`,
+/// 26. 10.), takže se to proti starému modulu porovnat nedá - test hlídá pravidlo opsané
+/// z `gAtrNZLi^JRapiNZUtl3` (`:239-256`).
+Method TestVetyRuznychUpresneni()
+{
+	set poznamky = ##class(%DynamicArray).%New()
+	kill seen
+	set seen("RBU", 1) = "tel. 111", seen("RBU", 3) = "tel. 111", seen("RBU", 5) = ""
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).PridatVetyUpresneni(poznamky, "RBU", "CZ", "spoj jede jen na objednání", .seen)
+	do $$$AssertEquals(poznamky.%Size(), 2, "dvě různá upřesnění = dvě věty")
+	do $$$AssertEquals(poznamky.%Get(0).%Get("TEXT"), "spoje 1, 3 jedou jen na objednání tel. 111")
+	do $$$AssertEquals(poznamky.%Get(1).%Get("TEXT"), "spoj 5 jede jen na objednání")
+
+	set poznamky = ##class(%DynamicArray).%New()
+	kill seen
+	set seen("RBP", 2) = "jen v sezóně", seen("RBP", 4) = "jen v sezóně"
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).PridatVetyUpresneni(poznamky, "RBP", "CZ", "spoj jede jen podmínečně", .seen)
+	do $$$AssertEquals(poznamky.%Size(), 1, "jedno upřesnění = jedna obecná věta")
+	do $$$AssertEquals(poznamky.%Get(0).%Get("TEXT"), "spoj jede jen podmínečně jen v sezóně")
 }
 
 /// **Věty u atributů spojů se musí shodovat se starým modulem, včetně volby tvaru.**

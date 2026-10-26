@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T1** Spoje „na objednání" a „podmínečně": vývěska AD je značí telefonem / vykřičníkem u minuty
+  s řádkem legendy, obě agendy AD připojují upřesnění spoj - linka - firma (i text firmy, rozhodnutí
+  Jan 26. 10.); značky u času v linkovém AD vyčleněny do `T12` (changelog 2026-10-26 (8)).
 - **P7** Nápovědy parametrů sjednocené: bez „nástupiště", úplný výčet řazení variant, věta pro MHD,
   „prvek Tabulka spojů", všude „Vypnuto = …", typ „string" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (7)).
 

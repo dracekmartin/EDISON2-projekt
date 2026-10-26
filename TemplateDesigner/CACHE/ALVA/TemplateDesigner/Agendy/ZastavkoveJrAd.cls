@@ -972,6 +972,13 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         i kolo s odjAtrLegenda(..ZnakKola()) = "specialni~"_..TextKola()_"~odjezd-kola"
         i mistenka s odjAtrLegenda("R") = "text~"_..TextMistenky()_"~odjezd-mistenka"
         i cbe s bezbarLegenda("F") = ..TextCastecneBezbarier()
+        // „na objednání" / „podmínečně": příznak u spoje (hlava:21 / :23), nebo jen v této zastávce
+        // (atribut trasy r / i). 1:1 legacy `JRapiLinPrtMhd1.mac:68-69, 203-204, 231-241`.
+        s atrZde = $g(wMap(currentPoradi,"atr"))
+        s naObjednani = +$p(hlava,":",21) || (atrZde [ "r")
+        s podminecne = +$p(hlava,":",23) || (atrZde [ "i")
+        i naObjednani d ..ZapsatNaObjednani(.odjAtrLegenda, dataDB, "RBU", ..UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, "RBU"))
+        i podminecne d ..ZapsatNaObjednani(.odjAtrLegenda, dataDB, "RBP", ..UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, "RBP"))
 
         // ruční komentáře spoje (tab MHD: Komentáře = SeT_SpeC přiřazené spoji přes MhD_SpeC).
         // V rozsahu „Spoje, nepoznámkovat" (MHDSPNPZN) se anotace jen OZNAČÍ (vRozsahu) - co se reálně
@@ -1034,6 +1041,8 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             }
             i inv && 'allBBP d ..AddAnotace(o, "specialni", "H", "", "", "bezbarier", sp, vRozsahu)   // u allBBP se marker netiskne, jen legenda
             i cbe d ..AddAnotace(o, "specialni", "F", "", "", "bezbarier", sp, vRozsahu)
+            i naObjednani d ..AddAnotace(o, "specialni", ..ZnakNaObjednani(), "", "", "odjezd-na-objednani", sp, vRozsahu)
+            i podminecne d ..AddAnotace(o, "specialni", ..ZnakPodminecne(), "", "", "odjezd-podminecne", sp, vRozsahu)
             i kolo d ..AddAnotace(o, "specialni", ..ZnakKola(), "", "", "odjezd-kola", sp, vRozsahu)
             i mistenka d ..AddAnotace(o, "text", "R", "", "", "odjezd-mistenka", sp, vRozsahu)
             i pokrZnak '= "" d ..AddAnotace(o, "text", pokrZnak, "", "", "pokracovani", sp, vRozsahu)
@@ -1224,6 +1233,52 @@ ClassMethod TextPokracovani(linka As %String, cil As %String) As %String
 ClassMethod ZnakKola() As %String
 {
     ret "K"
+}
+
+/// Znak spoje „na objednání" u minuty: telefon. Pozice ve fontu jako u linkového JŘ
+/// (`SymbolMap.PiktogramyLinky` „RBU" → `Z`), kreslí se bez překladu jako bezbariérovost.
+ClassMethod ZnakNaObjednani() As %String
+{
+    ret "Z"
+}
+
+/// Znak spoje „podmínečně" u minuty: vykřičník (`SymbolMap.PiktogramyLinky` „RBP" → 240).
+ClassMethod ZnakPodminecne() As %String
+{
+    ret $c(240)
+}
+
+/// Řádek legendy pro spoj „na objednání" (`klic` = RBU) nebo „podmínečně" (RBP): věta z číselníku
+/// stálých značek firmy a za ní upřesnění spojů stránky (`UpresneniAtributuSpoje`). 1:1 legacy
+/// `JRapiLinPrtMhd1.mac:231-241`, jen upřesnění bere celé pořadí spoj - linka - firma (starý vývěskový
+/// tisk jen linku; rozhodnutí Jan 26. 10., aby vývěska psala totéž co linkový JŘ).
+///
+/// Liší-li se upřesnění spojů téže stránky, vypíšou se za sebou oddělená středníkem: vývěska čísla
+/// spojů netiskne, takže je nejde rozdělit do vět jako v linkovém JŘ. V datech to dnes nenastává
+/// (sonda `NaObjednaniVyskyt`, 26. 10.).
+ClassMethod ZapsatNaObjednani(ByRef odjAtrLegenda, dataDB As %String, klic As %String, upresneni As %String)
+{
+    s naObjednani = (klic = "RBU")
+    s znak = $s(naObjednani:..ZnakNaObjednani(), 1:..ZnakPodminecne())
+    i '$d(odjAtrLegenda(znak)) {
+        s rec = $s(..Jazyk() = "sk":"*SK", 1:"CZ")
+        s veta = $g(^[dataDB]JRSET("STALCOME", rec, klic))
+        i veta = "" s veta = ..TextNaObjednani(naObjednani)
+        s odjAtrLegenda(znak) = "specialni~"_veta_"~"_$s(naObjednani:"odjezd-na-objednani", 1:"odjezd-podminecne")
+    }
+    q:upresneni=""
+    s uzJe = 0
+    f i=1:1:+$g(odjAtrLegenda(znak, "upresneni")) { i odjAtrLegenda(znak, "upresneni", i) = upresneni { s uzJe = 1  q } }
+    q:uzJe
+    s n = $i(odjAtrLegenda(znak, "upresneni")), odjAtrLegenda(znak, "upresneni", n) = upresneni
+}
+
+/// Věta pro firmu, která ji v číselníku stálých značek nemá. Znění z legacy linkového JŘ pro
+/// spoj obsluhující zastávku na objednání (`JRapiNZUtl3.mac:174-175, 191-192`).
+ClassMethod TextNaObjednani(naObjednani As %Boolean) As %String
+{
+    i ..Jazyk() = "sk" ret $s(naObjednani:"spoj zastávku obsluhuje len na objednanie", 1:"spoj zastávku obsluhuje len podmienečne")
+    ret $s(naObjednani:"spoj zastávku obsluhuje jen na objednání", 1:"spoj zastávku obsluhuje jen podmínečně")
 }
 
 /// Textové poznámky z vlastností linky (#13093 bod 1). Zdroj `^JRL(sku,lin,"C",key,idx)`, kategorie
@@ -2451,7 +2506,10 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         q:znakAtr=""
         continue:$d(znakyLinky(znakAtr))     // zákazník si tuto značku vysvětluje vlastní poznámkou
         s zapis = odjAtrLegenda(znakAtr)
-        d poznamky.%Push(..BuildPoznamka($p(zapis,"~",1), znakAtr, $p(zapis,"~",2), "", "", $p(zapis,"~",3)))
+        // upřesnění „na objednání" / „podmínečně" (ZapsatNaObjednani)
+        s text = $p(zapis,"~",2)
+        f iu=1:1:+$g(odjAtrLegenda(znakAtr, "upresneni")) s text = text_$s(iu=1:" ", 1:"; ")_odjAtrLegenda(znakAtr, "upresneni", iu)
+        d poznamky.%Push(..BuildPoznamka($p(zapis,"~",1), znakAtr, text, "", "", $p(zapis,"~",3)))
     }
     // pokračující spoje - značky u1, u2… přidělil server per stránka (viz PokracovaniZnak).
     // Kreslí se textem (víceznakové), kategorie `pokracovani` = filtr-tag pro šablonu.

@@ -30,11 +30,6 @@ Všechny hotové (C1-C12, 23.-26. 10.) - viz `roadmap-archive.md` a changelog.
 Všechno mění vytištěný výstup vydaných agend, proto **Jan** u každé. Kde je doložená parita se starým
 modulem, stojí u položky; bez ní je rozdíl nahodilý.
 
-- **T1 Vývěska AD neoznačuje spoje „na objednání" a „podmínečně"** [M] (*ověřeno:* kód; sonda
-  `AtributySpojuVyskyt`: RBU 169 linek, RBP 21). Linkový AD kreslí telefon / vykřičník s vysvětlivkou
-  (`LinkovyJrAd.BuildSpoj`, `AtributSablona`), vývěska nic (`ZastavkoveJrAd.NacistOdjezdy`, anotace
-  :1032-1037). **Mezera proti starému modulu**, ten to tiskl (`JRapiLinPrtMhd1.mac:68-69, 231-241`,
-  `JRapiExp10.mac:606-615`). Doporučení: doplnit.
 - **T2 Vývěska AD nebarví obarvené spoje** [M] (*ověřeno:* kód; 3 926 spojů s barvou). Linkový AD barví
   (`LinkovyJrAd.BuildSpoj` :1429, volba „Barvy spojů"), vývěska posílá `FORE_COLOR` vždy prázdné
   (`ZastavkoveJrAd.BuildOdjezd`). **Mezera proti starému modulu** (`JRapiLinPrtMhd1.mac:56`,
@@ -69,6 +64,17 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
   (`LinkovyJrAd.BuildSpoj` :1649, komentář tvrdí číselník) - zjevná oprava. Stanoviště „, stan.16" (linkový
   AD, parita) × „, označník 3" (vývěska AD, bez opory); rozdíly tras „neobsluhuje zast." × „nezajíždí do"
   (parita obou) - neměnit.
+- **T12 Linkový AD netiskne značky u času v zastávce** [M] **tisk** (*ověřeno:* oracle CB_GWBUS 216/0340941,
+  26. 10.). Starý modul dává do buňky času značku atributu zastávky spoje (telefon u zastávky obsluhované
+  na objednání, paragraf `G`…; buňka = značka + čas, `JRapiLinPrtWin.mac:1629` „konverze atributu u času"),
+  na té lince 77 buněk. K tomu věty „spoj zastávku obsluhuje jen na objednání / podmínečně" (`OZO`/`OZP`,
+  `JRapiNZUtl3.mac:68-72, 135-158`), které bez značky v buňce nedávají smysl. Oracle to dosud neviděl, čte
+  jen první položku buňky (`LinkovyJrLegacyOracle.Bunka`). Vyčleněno z `T1`; potřebuje aditivní wire
+  (značky k času) a kreslení v Tabulce spojů.
+- **T13 Linkový AD vynechává upřesnění místenky a poznámky „p" u spojů** [S-M] **tisk** (*ověřeno:* oracle
+  CB_GWBUS 216/0125850 a 0340941, 26. 10.). Starý modul připojuje k větě místenky text (např. „…zakoupit
+  bez příplatku na e-shopu www.AMSbus.cz…") a vypisuje poznámky druhu 4 „p" s výčtem spojů; my ne. Jádro
+  sady oraclu tyhle linky nemá, proto to neviděl.
 
 ## 3. Nabídka dat a parametry sestavy
 

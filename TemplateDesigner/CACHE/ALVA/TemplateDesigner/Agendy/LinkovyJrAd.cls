@@ -1463,7 +1463,8 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         s piece = $p("12,14,15,16,17,18,19,20,21,22,23,25,26", ",", ai)
         i +$p(hlava,":",piece) {
             s klice(klic) = ""
-            s atributSeen(klic, +sp) = ""
+            // u „na objednání" a „podmínečně" nese spoj i upřesnění pro větu legendy
+            s atributSeen(klic, +sp) = $s((klic = "RBU") || (klic = "RBP"):..UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, klic), 1:"")
             s spojeSeen(+sp) = ""
         }
     }
@@ -1928,6 +1929,44 @@ ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %St
         }
         s veta = ..VetaAtributu(klic, rec, ..GenerickaVeta(klic, patrSp, bbpLinka), vycet, pocet, spojuCelkem)
         i veta = "" continue
+        i (klic = "RBU") || (klic = "RBP") {
+            d ..PridatVetyUpresneni(poznamky, klic, rec, veta, .atributSeen)
+            continue
+        }
+        d poznamky.%Push(..BuildPoznamka(5, "znak", klic, veta))
+    }
+}
+
+/// Věty „na objednání" a „podmínečně" s upřesněním (`UpresneniAtributuSpoje`). Mají-li spoje
+/// stránky totéž upřesnění, přilepí se za obecnou větu; liší-li se, dostane každé vlastní větu
+/// s výčtem spojů. Prázdné upřesnění je taky jedno z nich, takže spoj bez něj vedle spoje s ním
+/// dostane větu bez dovětku. 1:1 legacy `gAtrNZLi^JRapiNZUtl3` (`:227-256`).
+///
+/// Vědomě jinak: věta s výčtem bere i 7. díl šablony, legacy ho tam vynechává. V češtině to nic
+/// nemění (u RBU i RBP je prázdný), slovenská věta by ale skončila „spoj 5 je obsluhovaný …"
+/// bez „radiobusom".
+ClassMethod PridatVetyUpresneni(poznamky As %DynamicArray, klic As %String, rec As %String, obecnaVeta As %String, ByRef atributSeen)
+{
+    // různá upřesnění v pořadí čísel spojů: texty(i) = upřesnění, spojeTextu(i) = výčet spojů
+    k texty, spojeTextu, pocetSpoju
+    s pocetTextu = 0, sp = ""
+    f {
+        s sp = $o(atributSeen(klic, sp))
+        q:sp=""
+        s txt = atributSeen(klic, sp), idx = 0
+        f i=1:1:pocetTextu { i texty(i) = txt { s idx = i  q } }
+        i 'idx s pocetTextu = pocetTextu + 1, idx = pocetTextu, texty(idx) = txt, spojeTextu(idx) = "", pocetSpoju(idx) = 0
+        s spojeTextu(idx) = spojeTextu(idx)_$s(spojeTextu(idx)="":"", 1:", ")_sp
+        s pocetSpoju(idx) = pocetSpoju(idx) + 1
+    }
+    i pocetTextu = 1 {
+        d poznamky.%Push(..BuildPoznamka(5, "znak", klic, obecnaVeta_$s(texty(1)="":"", 1:" "_texty(1))))
+        q
+    }
+    s sablona = ..AtributSablona(klic, rec)
+    f i=1:1:pocetTextu {
+        s veta = $s(pocetSpoju(i) > 1:..SlozVetu(sablona, 4, spojeTextu(i), 6), 1:..SlozVetu(sablona, 3, spojeTextu(i), 5))
+        i texty(i) '= "" s veta = veta_" "_texty(i)
         d poznamky.%Push(..BuildPoznamka(5, "znak", klic, veta))
     }
 }

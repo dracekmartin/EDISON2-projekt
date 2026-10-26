@@ -588,6 +588,24 @@ ClassMethod TypJrLinkyAd(dataDB As %String, sku As %String, lin As %String) As %
     q $case(+$g(^[dataDB]JRL(sku,lin,"PATCH","OBJ")), 1:"VÝLUKOVÝ", 2:"NÁVRH", :"")
 }
 
+/// Upřesnění ke spoji AD „na objednání" (`klic` = RBU) nebo „podmínečně" (RBP), které se lepí za
+/// větu legendy: text u spoje, jinak u linky, jinak v nastavení firmy. Prázdné = bez upřesnění.
+/// 1:1 legacy `JRapiNZUtl3.mac:41-48, 118-130` (spoj `#10`/`#11` podle `JRapiSp.mac:192-193`,
+/// linka `PATCH,SP_TX_JOBJ/JPOD` podle `JRapiLin.mac:402-405`).
+///
+/// Starý vývěskový tisk bral jen text linky (`JRapiLinPrtMhd1.mac:234`); obě agendy AD berou
+/// celé pořadí, aby vývěska i linkový JŘ psaly totéž (rozhodnutí Jan 26. 10.).
+ClassMethod UpresneniAtributuSpoje(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, klic As %String) As %String
+{
+    s naObjednani = (klic = "RBU")
+    s txt = $g(^[dataDB]JRSET("Definice", $s(naObjednani:"PS_RADIOBUS_NZ_RBU", 1:"PS_PODMINECNE_NZ_RBP")))
+    s textLinky = $g(^[dataDB]JRL(sku,lin,"PATCH",$s(naObjednani:"SP_TX_JOBJ", 1:"SP_TX_JPOD")))
+    i textLinky '= "" s txt = textLinky
+    s textSpoje = $p($g(^[dataDB]JRL(sku,lin,smer,sp)), "#", $s(naObjednani:10, 1:11))
+    i textSpoje '= "" s txt = textSpoje
+    q $zstrip(txt, "<>W")
+}
+
 ClassMethod LokalniOznaceniLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String
 {
     s lokalni = $p($g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD")),"~",1)

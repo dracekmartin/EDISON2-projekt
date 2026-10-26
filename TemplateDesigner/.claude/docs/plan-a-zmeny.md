@@ -51,6 +51,9 @@ Dílčí vylepšení a náměty.
 - **Zastávkový JŘ MHD:** přestupy na vlak a autobus se v seznamu zastávek i v poznámkách tisknou
   obrázkem (přestup na vlak dřív vyšel jako písmeno „x"). Řídí je volba **Přestupy (vlak/autobus)**
   u seznamu zastávek. Výchozí šablona ji má zapnutou, ve vlastní uložené šabloně si ji zapněte.
+- **Zastávkový JŘ AD:** spoje na objednání mají u minuty telefon a podmínečné spoje vykřičník,
+  v poznámkách s vysvětlením, jak spoj objednat (text spoje, linky nebo nastavení firmy). Totéž
+  upřesnění nově tiskne i linkový JŘ AD.
 
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 

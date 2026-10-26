@@ -2230,4 +2230,105 @@ ClassMethod AtributySpojuVyskyt(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Spoje „na objednání" a „podmínečně" po firmách (`B194` T1): příznak u spoje (hlava:21 RBU,
+/// hlava:23 RBP) a příznak jen v zastávce (atribut trasy `r` / `i`, tak ho čte starý vývěskový tisk
+/// `JRapiLinPrtMhd1.mac:203-204`). K tomu, kolik linek má vyplněné upřesnění (`SP_TX_JOBJ`/`SP_TX_JPOD`),
+/// které starý modul přidává za text legendy. Příklad = linka s nejvíc spoji, nejvyšší skupina vyhrává remízu.
+ClassMethod NaObjednaniVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			kill souhrn, priklad
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					kill pocty, trasaAtr
+					for smerIdx = 1:1:2 {
+						set smer = $piece("T,Z", ",", smerIdx)
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set radek = $get(^[db]JRL(sku, lin, smer, sp))
+							set hlava = $piece(radek, "#", 1)
+							continue:hlava=""
+							if $piece(radek, "#", 10) '= "" set pocty("upresneni spoje JOBJ") = $get(pocty("upresneni spoje JOBJ")) + 1, upr("spoj JOBJ") = $piece(radek, "#", 10)
+							if $piece(radek, "#", 11) '= "" set pocty("upresneni spoje JPOD") = $get(pocty("upresneni spoje JPOD")) + 1, upr("spoj JPOD") = $piece(radek, "#", 11)
+							if +$piece(hlava, ":", 21) && ($piece(radek, "#", 10) '= "") set pocty("RBU spoj s vlastnim textem") = $get(pocty("RBU spoj s vlastnim textem")) + 1
+							if +$piece(hlava, ":", 23) && ($piece(radek, "#", 11) '= "") set pocty("RBP spoj s vlastnim textem") = $get(pocty("RBP spoj s vlastnim textem")) + 1
+							for ak = "RBU", "RBP" {
+								continue:'+$piece(hlava, ":", $select(ak="RBU":21, 1:23))
+								set ut = ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).UpresneniAtributuSpoje(db, sku, lin, smer, sp, ak)
+								// prefix kvůli prázdnému upřesnění - prázdný subscript nejde
+								set ruzneTexty(ak, "~"_$extract(ut, 1, 200)) = ""
+							}
+							if +$piece(hlava, ":", 21) set pocty("RBU spoj") = $get(pocty("RBU spoj")) + 1
+							if +$piece(hlava, ":", 23) set pocty("RBP spoj") = $get(pocty("RBP spoj")) + 1
+							set trasa = $piece(hlava, ":", 3)
+							continue:trasa=""
+							if '$data(trasaAtr(trasa)) {
+								set trasaAtr(trasa) = ""
+								set w = "", cnt = trasa
+								while $data(^[db]JRL(sku, lin, "W", cnt)) {
+									set w = w_^[db]JRL(sku, lin, "W", cnt), cnt = cnt + .01
+								}
+								for si = 1:1:$length(w, "#") {
+									set atr = $piece($piece(w, "#", si), ":", 5)
+									if atr [ "r" set $piece(trasaAtr(trasa), "~", 1) = 1
+									if atr [ "i" set $piece(trasaAtr(trasa), "~", 2) = 1
+								}
+							}
+							if +$piece(trasaAtr(trasa), "~", 1) set pocty("RBU zastavka") = $get(pocty("RBU zastavka")) + 1
+							if +$piece(trasaAtr(trasa), "~", 2) set pocty("RBP zastavka") = $get(pocty("RBP zastavka")) + 1
+						}
+					}
+					for ak = "RBU", "RBP" {
+						set prvni = $order(ruzneTexty(ak, ""))
+						continue:prvni=""
+						if $order(ruzneTexty(ak, prvni)) '= "" set pocty(ak_" ruzna upresneni") = 1
+					}
+					kill ruzneTexty
+					if $get(^[db]JRL(sku, lin, "PATCH", "SP_TX_JOBJ")) '= "" set pocty("upresneni JOBJ") = 1, upr("JOBJ") = ^[db]JRL(sku, lin, "PATCH", "SP_TX_JOBJ")
+					if $get(^[db]JRL(sku, lin, "PATCH", "SP_TX_JPOD")) '= "" set pocty("upresneni JPOD") = 1, upr("JPOD") = ^[db]JRL(sku, lin, "PATCH", "SP_TX_JPOD")
+					set k = ""
+					for  {
+						set k = $order(pocty(k))
+						quit:k=""
+						set souhrn(k) = $get(souhrn(k)) + 1
+						if pocty(k) '< +$piece($get(priklad(k)), "~", 1) set priklad(k) = pocty(k)_"~"_sku_"/"_lin
+					}
+				}
+			}
+			set txt = db_":"
+			set k = ""
+			for  {
+				set k = $order(souhrn(k))
+				quit:k=""
+				set txt = txt_" "_k_" "_souhrn(k)_" linek (např. "_$piece(priklad(k), "~", 2)_", "_$piece(priklad(k), "~", 1)_");"
+			}
+			if $data(upr("JOBJ")) set txt = txt_" vzor JOBJ: "_upr("JOBJ")_";"
+			if $data(upr("JPOD")) set txt = txt_" vzor JPOD: "_upr("JPOD")_";"
+			if $data(upr("spoj JOBJ")) set txt = txt_" vzor spoje JOBJ: "_upr("spoj JOBJ")_";"
+			if $data(upr("spoj JPOD")) set txt = txt_" vzor spoje JPOD: "_upr("spoj JPOD")_";"
+			set txt = txt_" firma RBU: "_$get(^[db]JRSET("Definice","PS_RADIOBUS_NZ_RBU"))_"; firma RBP: "_$get(^[db]JRSET("Definice","PS_PODMINECNE_NZ_RBP"))
+			kill upr
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 }

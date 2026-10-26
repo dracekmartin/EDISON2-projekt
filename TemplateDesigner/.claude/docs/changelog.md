@@ -1,5 +1,23 @@
 ﻿# Changelog
 
+## 2026-10-26 (8) - ☎ spoje na objednání a podmínečné (`B194b` T1)
+
+**Vývěska AD** označí spoj „na objednání" telefonem a „podmínečně" vykřičníkem u minuty (příznak
+u spoje i jen v té zastávce, jako starý vývěskový tisk `JRapiLinPrtMhd1.mac:68-69, 203-204`) a stránka
+dostane řádek legendy: věta z číselníku stálých značek firmy a za ní upřesnění. Do 26. 10. nebylo nic.
+**Upřesnění** berou obě agendy AD stejně (`BaseAgenda.UpresneniAtributuSpoje`): text spoje, jinak linky,
+jinak nastavení firmy. Starý vývěskový tisk bral jen text linky; text firmy se přidal vědomě, aby
+vývěska psala totéž co linkový JŘ (rozhodnutí Jan 26. 10.) - u firem s výchozím nastavením to znamená
+„… telefonicky nebo u řidiče" všude, kde linka nemá vlastní text.
+**Linkový AD** upřesnění do věty legendy dřív nepřidával vůbec („spoj jede jen na objednání" bez
+pokračování); teď 1:1 se starým modulem (`gAtrNZLi^JRapiNZUtl3` :227-256), včetně rozpadu na věty
+s výčtem spojů, když se upřesnění spojů liší (v datech nenastává, hlídá syntetický test).
+Ověřeno: oracle linkového AD na CB_GWBUS 216/0103942 (RBU) a 0125850 (RBP) shoda vět, nové fixture
+`TestVetyAtributuProtiLegacy`; vývěska `TestNaObjednaniZnackaALegenda` + vykreslení obou linek
+(telefon a vykřičník ve fontu sedí). Měření `LinkovyJrNastaveniProbe.NaObjednaniVyskyt`.
+Nálezy mimo T1 zapsané jako `T12` (značky u času v zastávce, 77 buněk na 0340941) a `T13` (upřesnění
+místenky, poznámky „p"). Harness `ZkouskaTiskuNaostro` umí `TD_TISK_SKUPINA`.
+
 ## 2026-10-26 (7) - 💬 nápovědy parametrů jednotně (`B194c` P7)
 
 Jen texty, tisk beze změny. Linkový MHD u Zvýraznit zastávku už neříká „Projíždí-li linka město víckrát"
