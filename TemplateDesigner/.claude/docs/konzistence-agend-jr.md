@@ -131,11 +131,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
   zastávku" se nabízí jen agendám druhu STOP (`AgendaParams.AddExportFields`).
 - **P6 „Obousměrný tisk" svítí i při jednom směru** [S] (*ověřeno:* server). Doplnit `visibleWhen`
   `SMER_TISKU=Oba` podle vzoru vývěsky, větu z nápovědy Směru pro tisk vypustit.
-- **P7 Nápovědy parametrů** [S] (*ověřeno:* server). Zakázané „nástupiště" (`ZastavkoveJrAd` :3548),
-  řazení variant popisuje 3 ze 4 voleb, „s okresem i jeho zkratku" gramaticky (`BaseAgenda` :352),
-  „Projíždí-li linka město víckrát" u MHD nedává smysl (`LinkovyJrAd.ParametrZvyrazneniZastavky`, **před
-  27. 10.**), „u prvku tabulky" místo „Tabulka spojů" (`LinkovyJrAd` :203), střídá se „Vypnuto =" /
-  „Vypnuté =" / „Vypnutím". Typ „text" u dvou parametrů je mimo dokumentovaný kontrakt (`string`).
 
 ## 4. Prvky a formuláře
 

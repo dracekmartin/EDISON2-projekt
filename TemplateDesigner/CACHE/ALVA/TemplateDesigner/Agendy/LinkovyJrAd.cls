@@ -202,7 +202,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // Skupina = název prvku jako u vývěsek; do 23. 10. „Tabulka linky", což se pletlo s agendou (`ux-conventions §8`).
     s p.group = "Tabulka spojů"
     s p.serverSide = 1
-    s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku tabulky - tady se jen ukáže, že ho šablona má."
+    s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku Tabulka spojů - tady se jen ukáže, že ho šablona má."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Bez rozlišení")
     d opts.%Push("Pracovní dny / víkend+svátky")
@@ -285,7 +285,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pObou.group        = "Obecné"
     s pObou.serverSide   = 1
     s pObou.defaultValue = "false"
-    s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuté = každý směr na vlastní stránce."
+    s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuto = každý směr na vlastní stránce."
 
     // Výlepy na zastávky (Jan 1. 10.): místo stránky za směr stránka za každou zastávku a směr,
     // na které je ta zastávka zvýrazněná - na výlep tak jde i QR s adresou své zastávky.
@@ -314,12 +314,12 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pMhd.group        = "Obecné"
     s pMhd.serverSide   = 1
     s pMhd.defaultValue = "true"
-    s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté; vypnutím se všude použije název podle CIS."
+    s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté. Vypnuto = všude název podle CIS."
 
     s pZvT = ##class(%DynamicObject).%New()
     s pZvT.name         = "ZVYRAZNIT_TC"
     s pZvT.label        = "Zvýraznit tarifní číslo"
-    s pZvT.type         = "text"
+    s pZvT.type         = "string"
     s pZvT.group        = "Tabulka spojů"
     s pZvT.serverSide   = 1
     s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
@@ -407,10 +407,11 @@ ClassMethod ParametrZvyrazneniZastavky(sTarifnimCislem As %Boolean = 1) As %Dyna
     s pZvZ = ##class(%DynamicObject).%New()
     s pZvZ.name         = "ZVYRAZNIT_ZASTAVKU"
     s pZvZ.label        = "Zvýraznit zastávku"
-    s pZvZ.type         = "text"
+    s pZvZ.type         = "string"
     s pZvZ.group        = "Tabulka spojů"
     s pZvZ.serverSide   = 1
-    s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. Projíždí-li linka město víckrát, označí se všechny jeho zastávky"_$s(sTarifnimCislem:"; jednu z nich vybere Zvýraznit tarifní číslo.", 1:".")
+    // Věta o městě dává smysl jen u meziměstské linky (AD); MHD jezdí v jednom městě (`B194c` P7).
+    s pZvZ.description  = "Kus názvu zastávky, jejíž řádek se má označit jako aktuální a zvýraznit (nerozlišují se velká a malá písmena). Prázdné = nezvýrazňovat nic. "_$s(sTarifnimCislem:"Projíždí-li linka město víckrát, označí se všechny jeho zastávky; jednu z nich vybere Zvýraznit tarifní číslo.", 1:"Odpovídá-li zadaný text víc zastávkám, označí se všechny.")
     q pZvZ
 }
 

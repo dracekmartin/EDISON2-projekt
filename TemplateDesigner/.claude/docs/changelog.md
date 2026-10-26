@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-26 (7) - 💬 nápovědy parametrů jednotně (`B194c` P7)
+
+Jen texty, tisk beze změny. Linkový MHD u Zvýraznit zastávku už neříká „Projíždí-li linka město víckrát"
+(MHD jezdí v jednom městě), ale „Odpovídá-li zadaný text víc zastávkám, označí se všechny"; AD beze změny.
+Vývěska AD: „Číslo stanoviště podle" bez zakázaného „nástupiště" („Označník (údaj z trasy linky)"),
+„Řazení variant tras" vyjmenuje všechny čtyři volby. Tvar názvu zastávky (všechny agendy) „včetně okresu
+a jeho zkratky" místo „s okresem i jeho zkratku". Linkový AD odkazuje na „prvek Tabulka spojů", ne
+„prvek tabulky". Vypínací věty všude „Vypnuto = …" (dřív i „Vypnuté =" a „Vypnutím…", pět míst). Textové
+parametry linkového AD a rozdílového JŘ mají typ „string" podle kontraktu (dřív „text"; návrhář je bral
+stejně). Ověřeno voláním `GetParameters` (vývěska AD, rozdílový = linkový AD).
+
 ## 2026-10-26 (6) - 🗂️ typy provozu linkového MHD ve skupině Tabulka spojů (`B194c` P4)
 
 Zaškrtávátka typů provozu linkového JŘ MHD měla v tabu Parametry vlastní skupinu „Typy provozu pro tisk",

@@ -354,7 +354,7 @@ ClassMethod ParametrTvaruNazvuZastavky(vychozi As %String) As %DynamicObject
     s p.group        = "Obecné"
     s p.serverSide   = 1
     s p.defaultValue = vychozi
-    s p.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek (tak tiskne starý linkový JŘ), s okresem i jeho zkratku - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
+    s p.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek (tak tiskne starý linkový JŘ) včetně okresu a jeho zkratky - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Zkrácený"), opts.%Push("Typograficky upravený"), opts.%Push("Plný CIS"), opts.%Push("Plný CIS s okresem")
     s p.options = opts

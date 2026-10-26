@@ -3512,7 +3512,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // ⚠️ Výchozí „Zkrácený" = dosavadní chování - jiná výchozí hodnota by pohnula zlatými odtisky.
     d arr.%Push(..ParametrTvaruNazvuZastavky("Zkrácený"))
 
-    d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnutím se použije název podle CIS.", 1)
+    d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnuto = název podle CIS.", 1)
     d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.", 1)
 
     // `B161`: výchozí pořadí je parita se starým tiskem (`JRapiLinPrtMhd1.mac:397-398`, zastávka
@@ -3553,7 +3553,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pZdrojSt.group        = "Seznam zastávek"
     s pZdrojSt.serverSide   = 1
     s pZdrojSt.defaultValue = "Označník"
-    s pZdrojSt.description  = "Který údaj z jízdního řádu se bere jako číslo stanoviště: Označník (pole nástupiště z trasy linky) nebo Sloupek (číslo z číselníku sloupků zastávky). Volba řídí Více stanovišť, samostatné stránky i titulek stránky. Sloupce Označník a Sloupek jdou tisknout oba nezávisle."
+    s pZdrojSt.description  = "Který údaj z jízdního řádu se bere jako číslo stanoviště: Označník (údaj z trasy linky) nebo Sloupek (číslo z číselníku sloupků zastávky). Volba řídí Více stanovišť, samostatné stránky i titulek stránky. Sloupce Označník a Sloupek jdou tisknout oba nezávisle."
     s optsZS = ##class(%DynamicArray).%New()
     d optsZS.%Push("Označník")
     d optsZS.%Push("Sloupek")
@@ -3574,7 +3574,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRazV.group        = "Seznam zastávek"
     s pRazV.serverSide   = 1
     s pRazV.defaultValue = "Dle četnosti ze zastávky"
-    s pRazV.description  = "Pořadí variantních časových sloupců v seznamu zastávek: nejčastější varianta z dané zastávky první, stabilní pořadí dle spojů (stejné napříč stránkami), nebo od nejrychlejší varianty k nejpomalejší."
+    s pRazV.description  = "Pořadí variantních časových sloupců v seznamu zastávek: nejčastější varianta z dané zastávky první, stabilní pořadí dle spojů (stejné napříč stránkami), od nejrychlejší varianty k nejpomalejší, nebo od nejpomalejší k nejrychlejší."
     s optsRV = ##class(%DynamicArray).%New()
     d optsRV.%Push("Dle četnosti ze zastávky")
     d optsRV.%Push("Stabilní (pořadí spojů)")
@@ -3603,7 +3603,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // vysvětluje jinde, je nepotřebuje. Hodnotu aplikuje KLIENT (vyprázdní záhlaví sloupců
     // a zhasne anotaci u minuty), takže do allowlistu server-side parametrů nepatří - server
     // písmena posílá dál a nic se kvůli té volbě znovu nenačítá.
-    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant tras", "true", "Seznam zastávek", "Označení variantních sloupců jízdních dob - v záhlaví sloupců i u minut odjezdů. Vypnutím sloupce s časy zůstanou, jen bez písmen. Netýká se písmen rozdílů tras, ta se vypínají u linky.")
+    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant tras", "true", "Seznam zastávek", "Označení variantních sloupců jízdních dob - v záhlaví sloupců i u minut odjezdů. Vypnuto = sloupce s časy zůstanou, jen bez písmen. Netýká se písmen rozdílů tras, ta se vypínají u linky.")
     d ..JenSeSloupcemVariant(arr.%Get(arr.%Size() - 1))
 
     s pPrvB = ##class(%DynamicObject).%New()

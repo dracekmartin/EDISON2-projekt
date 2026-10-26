@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **P7** Nápovědy parametrů sjednocené: bez „nástupiště", úplný výčet řazení variant, věta pro MHD,
+  „prvek Tabulka spojů", všude „Vypnuto = …", typ „string" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (7)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 
