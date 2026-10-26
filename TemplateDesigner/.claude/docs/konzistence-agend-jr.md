@@ -112,8 +112,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
 - **E5 Seznam zastávek nabízí v MHD věci z AD** [M] (*ověřeno:* kód). Sloupec „Sloupek" (MHD ho nemá) a
   nápověda „Více stanovišť" s odkazem na parametr, který MHD nemá. Skrývání podle agendy už mají Poznámky
   a Tabulka spojů (`ViditelnostPole`).
-- **E6 „Zarovnání" vedle „Svisle"** [S]. `StyleFields.cls:34` → „Vodorovně" (kanon); „Zarovnání záhlaví"
-  v Minutách je jen svislé.
 - **E7 „Element" × „prvek", „ZIndex" × „Vrstva", „engine"** [M] **Jan** (*ověřeno:* kód). Společná pole
   (`BaseElementFields.cls`: „Rámeček elementu", „Uzamčený element…", „(počítá engine)", „ZIndex"), lišta
   „Elementy", krok zpět „Přidat element", dialogy sloupců. Návrh: do kanonu „prvek" a „Vrstva";

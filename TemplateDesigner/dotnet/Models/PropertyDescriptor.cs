@@ -119,6 +119,11 @@ public class EnumPropertyDescriptor : PropertyDescriptor
         ("Na střed", TextVerticalAlignment.Middle),
         ("Dole",     TextVerticalAlignment.Bottom),
     ];
+
+    /// <summary>Popisky zarovnání (kanon §8, rozhodnutí Jan 26. 10.: celé „Zarovnání …", ať jde
+    /// hledat). Podle nich pole najde lišta formátu, proto jedno místo.</summary>
+    public const string LabelZarovnaniVodorovne = "Zarovnání vodorovně";
+    public const string LabelZarovnaniSvisle    = "Zarovnání svisle";
 }
 
 /// <summary>

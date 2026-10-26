@@ -50,8 +50,8 @@ public partial class FormatToolbar : UserControl
                     else if (d is EnumPropertyDescriptor e && e.Group == "Zarovnání")
                         switch (e.Label)
                         {
-                            case "Vodorovně": _hAlign = e; break;
-                            case "Svisle":    _vAlign = e; break;
+                            case EnumPropertyDescriptor.LabelZarovnaniVodorovne: _hAlign = e; break;
+                            case EnumPropertyDescriptor.LabelZarovnaniSvisle:    _vAlign = e; break;
                         }
                 }
             }

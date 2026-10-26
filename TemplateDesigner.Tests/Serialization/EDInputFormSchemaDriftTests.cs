@@ -686,8 +686,10 @@ public class EDInputFormSchemaDriftTests
         "Tučně",            // → Tučné
         "Podtržené",        // → Podtržení
         "Přeškrtnuté",      // → Přeškrtnutí
-        "Horizontálně",     // → Vodorovně
-        "Vertikálně",       // → Svisle
+        "Horizontálně",     // → Zarovnání vodorovně
+        "Vertikálně",       // → Zarovnání svisle
+        "Vodorovně",        // → Zarovnání vodorovně (celý tvar jde hledat, rozhodnutí Jan 2026-10-26, `B194` E6)
+        "Svisle",           // → Zarovnání svisle
         "Nahoru",           // → Nahoře (zarovnání je stav, ne pohyb)
         "Dolů",             // → Dole
         "Pokročilé",        // skupina → Podmínky

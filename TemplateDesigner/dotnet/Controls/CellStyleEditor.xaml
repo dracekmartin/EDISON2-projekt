@@ -151,7 +151,7 @@
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Vodorovně:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Zarovnání vodorovně:" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Grid Width="120">
                     <ComboBox x:Name="HAlignBox"
@@ -173,7 +173,7 @@
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Svisle:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Zarovnání svisle:" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Grid Width="120">
                     <ComboBox x:Name="VAlignBox"

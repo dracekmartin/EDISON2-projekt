@@ -146,9 +146,9 @@ public sealed class TableCellFormatting(
             Toggle("Kurzíva",     s => s.Italic,        (s, v) => s.Italic = v),
             Toggle("Podtržení",   s => s.Underline,     (s, v) => s.Underline = v),
             Toggle("Přeškrtnutí", s => s.Strikethrough, (s, v) => s.Strikethrough = v),
-            Align("Vodorovně", EnumPropertyDescriptor.HAlignOptions,
+            Align(EnumPropertyDescriptor.LabelZarovnaniVodorovne, EnumPropertyDescriptor.HAlignOptions,
                 s => s.HAlign, (s, v) => s.HAlign = (TextHorizontalAlignment)v),
-            Align("Svisle", EnumPropertyDescriptor.VAlignOptions,
+            Align(EnumPropertyDescriptor.LabelZarovnaniSvisle, EnumPropertyDescriptor.VAlignOptions,
                 s => s.VAlign, (s, v) => s.VAlign = (TextVerticalAlignment)v),
         ];
     }

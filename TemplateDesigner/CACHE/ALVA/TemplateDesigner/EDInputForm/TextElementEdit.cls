@@ -63,14 +63,14 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Zarovnání" ───────────────────────────────────────────
         d form.AddGroup("align", "Zarovnání")
 
-        s f = form.AddFieldToLastGroup("Style.HAlign", "Vodorovně", $$$FieldTypeList, 0, 1)
+        s f = form.AddFieldToLastGroup("Style.HAlign", "Zarovnání vodorovně", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Left", "Vlevo")
         d f.AddListItem("Center", "Na střed")
         d f.AddListItem("Right", "Vpravo")
         d f.AddListItem("Justify", "Do bloku")
         s f.value = "Center"
 
-        s f = form.AddFieldToLastGroup("Style.VAlign", "Svisle", $$$FieldTypeList, 0, 1)
+        s f = form.AddFieldToLastGroup("Style.VAlign", "Zarovnání svisle", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Top", "Nahoře")
         d f.AddListItem("Middle", "Na střed")
         d f.AddListItem("Bottom", "Dole")

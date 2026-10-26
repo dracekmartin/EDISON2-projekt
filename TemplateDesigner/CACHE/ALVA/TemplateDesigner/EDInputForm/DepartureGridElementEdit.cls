@@ -60,7 +60,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("style:HeaderStyle", "Styl záhlaví", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit styl…"
         d form.AddDecimal("SkupinaDnuHeaderLineHeight", "Min. výška řádku záhlaví", 4, 2, 10, "mm")
-        s f = form.AddFieldToLastGroup("HeaderVerticalAlignment", "Zarovnání záhlaví", $$$FieldTypeList, 0, 0)
+        s f = form.AddFieldToLastGroup("HeaderVerticalAlignment", "Zarovnání záhlaví svisle", $$$FieldTypeList, 0, 0)
         d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
         s f.value = "Bottom"
         s f = form.AddFieldToLastGroup("style:HeaderLine2Style", "Styl 2. řádku záhlaví", $$$FieldTypeButton, 0, 0)

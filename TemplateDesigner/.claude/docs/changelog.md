@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-26 (29) - „Zarovnání vodorovně / svisle" všude (`B194d` E6)
+
+Společná sada stylu (`StyleFields.cls`, všechny prvky se stylem buněk i okno stylu) měla dvojici
+„Zarovnání" / „Svisle", textový prvek, panel buňky a editor stylu sloupce „Vodorovně" / „Svisle" - ve
+formuláři buňky pevné tabulky tak stálo jinak než na liště a v panelu téže buňky. Rozhodnutí Jan 26. 10.:
+celý tvar **„Zarovnání vodorovně" / „Zarovnání svisle"**, ať jde hledat (kanon §8 změněn z „Vodorovně /
+Svisle"). U zón Minut s předponou („Minuta: Zarovnání vodorovně"). Minuty „Zarovnání záhlaví" umí jen
+svisle → „Zarovnání záhlaví svisle". Lišta formátu hledá pole podle popisku - popisky jsou teď konstanty
+`EnumPropertyDescriptor.LabelZarovnaniVodorovne/Svisle`, ať se při přejmenování nerozejde. Samotné
+„Vodorovně" / „Svisle" jako popisek v zakázaných tvarech. Ověřeno voláním `Init` formulářů stylu, textu
+a Minut; příručka (seed) upravená. E5 (Seznam zastávek v MHD) odloženo na pokyn Jana.
+
 ## 2026-10-26 (28) - „záhlaví" místo „nadpisu" u hlavičky tabulky (`B194d` E4)
 
 Rozhodnutí Jan 26. 10.: hlavička tabulky oproti datovým buňkám je **záhlaví**, „nadpis" jen pro

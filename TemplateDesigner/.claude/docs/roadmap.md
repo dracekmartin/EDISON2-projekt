@@ -46,8 +46,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan** -
   **odloženo** (Jan 26. 10.) až za menší body E5-E16; patří sem i umístění voleb záhlaví (dnes „Skupiny
   dnů" / „Řádky", kanon chce „Obecné")
-- **E5** Seznam zastávek nabízí v MHD sloupek a parametr, které existují jen v AD [M]
-- **E6** „Zarovnání" vedle „Svisle" místo „Vodorovně" [S]
+- **E5** Seznam zastávek nabízí v MHD sloupek, varianty tras a „Více stanovišť", které existují jen v AD [M] -
+  **odloženo** (Jan 26. 10.); návrh: nabídka podle polí, která agenda posílá, zapnutý sloupec zůstane vidět
 - **E7** „Element" × „prvek", „ZIndex" × „Vrstva", „engine" [M] **Jan**
 - **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan**
 - **E9** Minuty odjezdů a Tabulka spojů pojmenovávají mezery a poměry jinak [S] **Jan**

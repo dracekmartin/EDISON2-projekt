@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E6** Zarovnání je všude „Zarovnání vodorovně" / „Zarovnání svisle" (celý tvar kvůli hledání), volba
+  jen jedním směrem nese směr v popisku („Zarovnání záhlaví svisle"); kanon §8 změněn (rozhodnutí Jan
+  26. 10.; changelog 2026-10-26 (29)).
 - **E4** Hlavička tabulky oproti datovým buňkám je všude „záhlaví" (Záhlaví skupin dnů, Text záhlaví
   popisných sloupců, Styl 2. řádku záhlaví, okno se sloupci Minut); „nadpis" jen pro jinou věc, pravidlo
   v kanonu §8 a staré tvary v zakázaných (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (28)).

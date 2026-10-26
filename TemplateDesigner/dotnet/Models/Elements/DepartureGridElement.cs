@@ -1766,7 +1766,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // „Výška řádku záhl." (mm), která ale text zvětší jen dokud je FontSize null (legacy derive).
         new FloatPropertyDescriptor { Label = "Velikost záhlaví",  Group = "Odjezdy", Get = () => HeaderStyle.FontSize ?? 9f,  Set = SetHeaderFontSize, Min = 3, Max = 24, Unit = "pt" },
         new FloatPropertyDescriptor { Label = "Min. výška řádku",  Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
-        new EnumPropertyDescriptor  { FromImage = true, Label = "Zarovnání záhlaví", Group = "Odjezdy",
+        new EnumPropertyDescriptor  { FromImage = true, Label = "Zarovnání záhlaví svisle", Group = "Odjezdy",
             Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (TextVerticalAlignment)v,
             Options = EnumPropertyDescriptor.VAlignOptions },
         new FloatPropertyDescriptor { FromImage = true, Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
