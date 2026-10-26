@@ -43,8 +43,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("MinuteSpacing", "Rozestup odjezdů", $$$FieldTypeList, 0, 1)
         d f.AddListItem("ByContent", "Bez zarovnání"), f.AddListItem("Even", "Zarovnat dle nejširšího odjezdu"), f.AddListItem("Fixed", "Zarovnat na pevnou šířku")
         s f.helpText = "Bez zarovnání: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí. Zarovnat dle nejširšího odjezdu: jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici, ale jeden takový spoj zředí celou vývěsku. Zarovnat na pevnou šířku: rozteč je Šířka minuty, nejméně však minuta a jedna značka, takže ji data nezmění; spoj s víc značkami se do ní vejde jejich zmenšením."
-        s f = form.AddDecimal("GroupSeparatorWidth", "Oddělovač skupin", 0.5, 0, 5, "mm")
-        s f.helpText = "Mezera mezi bloky jednotlivých skupin dnů. 0 = bez mezery."
+        s f = form.AddDecimal("GroupSeparatorWidth", "Mezera mezi skupinami dnů", 0.5, 0, 5, "mm")
+        s f.helpText = "Volné místo mezi bloky jednotlivých skupin dnů. 0 = bez mezery."
         s f = form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
         s f.helpText = "Vodorovná mezera mezi jednotlivými odjezdy v řádku. Prázdné = podle šířky minuty."
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")

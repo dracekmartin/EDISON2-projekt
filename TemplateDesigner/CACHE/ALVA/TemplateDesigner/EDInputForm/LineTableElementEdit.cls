@@ -57,8 +57,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Co se stane s volným místem vpravo: zapnuté = rozkreslí se prázdnými sloupci, takže tabulka končí rovně, vypnuté = zůstane bílé. Týká se posledního nedopsaného bloku i tabulky, které místo zbylo kvůli největší šířce."
         s f = form.AddBool("JednotnaSirkaSpoju", "Stejně široké sloupce spojů", 0)
         s f.helpText = "Vypnuté = každý sloupec je tak široký, jak ho potřebuje jeho obsah, takže ten se značkami je širší než ostatní (tak to dělá starý tisk) a tabulka působí roztřepeně; do řádku se ale vejde víc spojů. Zapnuté = všechny dostanou šířku toho nejširšího, tabulka je pravidelná a zabere víc místa."
-        s f = form.AddDecimal("MezeraMeziSkupinamiMm", "Mezera mezi skupinami sloupců", 0, 0, 20, "mm")
-        s f.helpText = "Volné místo za popisným blokem a mezi skupinami dnů. 0 = souvislá mřížka bez mezer. Mezera se bere ze šířky prvku, takže se do řádku vejde méně spojů."
+        s f = form.AddDecimal("MezeraMeziSkupinamiMm", "Mezera mezi skupinami dnů", 0, 0, 20, "mm")
+        s f.helpText = "Volné místo mezi skupinami dnů a také za popisnými sloupci. 0 = souvislá mřížka bez mezer. Mezera se bere ze šířky prvku, takže se do řádku vejde méně spojů."
 
         // ── Skupina "Popisné sloupce" ──────────────────────────────────────
         // Zóna, km, Tč, zastávka a MHD. Viditelnost, šířky a pořadí jednotlivých sloupců se

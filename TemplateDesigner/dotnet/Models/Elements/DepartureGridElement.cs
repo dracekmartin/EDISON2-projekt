@@ -1794,7 +1794,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                 ("Zarovnat na pevnou šířku", (object)DepartureSpacing.Fixed),
             ]
         },
-        new FloatPropertyDescriptor { FromImage = true, Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
+        new FloatPropertyDescriptor { FromImage = true, Label = "Mezera mezi skupinami dnů", Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
 
         GetDataRowHeightDescriptor("Řádky dat"),
         new ColorPropertyDescriptor { FromImage = true, Label = "Střídání řádků", Group = "Řádky dat", Get = () => AlternatingRowColor ?? "", Set = v => AlternatingRowColor = string.IsNullOrEmpty(v) ? null : v },

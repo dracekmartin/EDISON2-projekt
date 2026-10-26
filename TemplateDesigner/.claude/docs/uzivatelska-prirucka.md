@@ -811,7 +811,7 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 
 Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle…).
 
-- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví svisle, Šířka sloupce hodin, Rozestup odjezdů (Bez zarovnání / Zarovnat dle nejširšího odjezdu / Zarovnat na pevnou šířku - viz níže), Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, text záhlaví sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
+- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví svisle, Šířka sloupce hodin, Rozestup odjezdů (Bez zarovnání / Zarovnat dle nejširšího odjezdu / Zarovnat na pevnou šířku - viz níže), Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, text záhlaví sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Mezera mezi skupinami dnů
 - **Časová osa** - Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah (+ pole Hodiny od/do); Roztáhnout na výšku - když je mřížka nižší, než by odpovídalo datům, řádky (a font) se proporcionálně zvětší (strop 1,5× přirozené výšky)
 - **Rozestup odjezdů** - jak daleko od sebe stojí minuty v řádku hodiny. *Bez zarovnání*: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí a minuta se značkou odsune odjezdy za sebou. *Zarovnat dle nejširšího odjezdu* (výchozí): jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici napříč hodinami i sloupci, ale jeden takový spoj zředí celou vývěsku, i řádky a sloupce bez značek. *Zarovnat na pevnou šířku*: rozteč se řídí nastavením („Šířka minuty", nejméně však minuta a jedna značka s odstupem), takže ji data nezmění a přidaný označkovaný spoj zbytek vývěsky nepřesází. Spoj s víc značkami se do rozteče vejde tím, že se jeho značky úměrně zmenší - nejvýš na polovinu a nikdy pod 4 body; nevejdou-li se ani tak, zvětšete Šířku minuty
 - **Řádky dat** - Výška řádku, Střídavé podbarvení (sudé řádky)
@@ -1201,7 +1201,7 @@ Zapnuté srovná všechny na nejširší z nich - tabulka je pravidelná, ale za
 **Dorovnat prázdnými sloupci** - co se stane s volným místem vpravo. Zapnuté ho rozkreslí
 prázdnými sloupci, takže tabulka končí rovně; vypnuté ho nechá bílé.
 
-**Mezera mezi skupinami sloupců** - volné místo za popisným blokem a mezi skupinami dnů.
+**Mezera mezi skupinami dnů** - volné místo mezi skupinami dnů a také za popisnými sloupci.
 Bere se ze šířky prvku, takže se do řádku vejde méně spojů.
 
 **Co se nevejde, jde pod tabulku.** Když je spojů víc, než kolik se vejde do šířky prvku, sestaví

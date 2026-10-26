@@ -63,7 +63,7 @@ public class AssistantKnowledgeTests
     [Theory]
     [InlineData("Upravit sloupce")]                  // dialog, který uživatel sám nenajde
     [InlineData("Text záhlaví popisných sloupců")]   // skupina popisných sloupců
-    [InlineData("Mezera mezi skupinami sloupců")]
+    [InlineData("Mezera mezi skupinami dnů")]
     [InlineData("Nejmenší/Největší šířka sloupce spoje")]
     [InlineData("Sloučit popis u příjezdu a odjezdu")]
     public void KatalogLinkoveZnaSouvislosti(string tvar)

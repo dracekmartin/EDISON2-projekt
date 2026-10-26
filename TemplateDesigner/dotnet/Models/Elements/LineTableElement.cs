@@ -3830,7 +3830,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => PopisneSloupceBezVnitrnichCar, Set = v => PopisneSloupceBezVnitrnichCar = v },
         new BoolPropertyDescriptor { Label = "Sloučit popis u příjezdu a odjezdu", Group = PopisneGroup,
             Get = () => SloucitPopisyRozdvojene, Set = v => SloucitPopisyRozdvojene = v },
-        new FloatPropertyDescriptor { Label = "Mezera mezi skupinami sloupců", Group = SirkaGroup,
+        new FloatPropertyDescriptor { Label = "Mezera mezi skupinami dnů", Group = SirkaGroup,
             Unit = "mm", Min = 0, Max = 20, Format = "0.#",
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },

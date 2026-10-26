@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-26 (32) - „Mezera mezi skupinami dnů" v Minutách i Tabulce spojů (`B194d` E9a)
+
+Totéž nastavení (volné místo mezi bloky skupin dnů) se jmenovalo v Minutách odjezdů „Oddělovač skupin"
+(zní jako čára, je to mezera v mm) a v Tabulce spojů „Mezera mezi skupinami sloupců". Rozhodnutí Jan
+26. 10.: v obou **„Mezera mezi skupinami dnů"**; nápověda Tabulky spojů dál říká, že se mezera dělá
+i za popisnými sloupci. Formuláře i deskriptory, katalog asistenta, příručka (seed), testy
+(`LineTableSirkaSloupcuTests`, `AssistantKnowledgeTests`); staré tvary mezi zakázanými. Ověřeno voláním
+`Init` obou formulářů. Rozdíly E9b a E9c a bod E8 (odložen k rozmyšlení) zůstávají v roadmapě.
+
 ## 2026-10-26 (31) - „prvek" místo „element" v textech pro uživatele (`B194d` E7)
 
 Rozhodnutí Jan 26. 10.: sjednotit na **„prvek"** - používá ho paleta, strom, titulky oken, hlášky

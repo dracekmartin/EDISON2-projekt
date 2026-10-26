@@ -717,6 +717,8 @@ public class EDInputFormSchemaDriftTests
         "Nadpisy skupin",   // → Záhlaví skupin dnů
         "Nadpis popisných", // → Text záhlaví popisných sloupců
         "řádku nadpisu",    // → Styl 2. řádku záhlaví
+        "Oddělovač skupin", // → Mezera mezi skupinami dnů (je to mezera, ne čára; `B194` E9a)
+        "skupinami sloupců", // → Mezera mezi skupinami dnů (stejný pojem v Minutách i Tabulce spojů)
         "element",          // → prvek (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Element",
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě

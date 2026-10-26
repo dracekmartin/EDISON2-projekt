@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E9a** Minuty odjezdů i Tabulka spojů: „Mezera mezi skupinami dnů" místo „Oddělovač skupin" (zněl jako
+  čára) a „Mezera mezi skupinami sloupců" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (32)).
 - **E7** Uživatelské texty říkají „prvek" (ne „element"), „Vrstva" (ne „ZIndex"), „výška podle obsahu"
   (ne „počítá engine") a „plátno" (ne „canvas"); kanon §8 a zakázané tvary (rozhodnutí Jan 26. 10.: „prvek",
   protože ho používá většina textů i příručka; changelog 2026-10-26 (30), (31)).

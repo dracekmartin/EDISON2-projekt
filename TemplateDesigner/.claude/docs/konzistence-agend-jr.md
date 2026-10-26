@@ -115,9 +115,9 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
 - **E8 Význam prázdné hodnoty pěti zápisy, různé rozsahy** [M] **Jan**. „(prázdné = auto)", „(0 = ∞)",
   „(0 = ne)", „(0 = bez limitu)", „(0=vedle)"; výška řádku 1-50 / 1-20 / 2-15 / 2-50 mm, písmo 4-200 ×
   3-24 pt. Návrh: popisek = podstatné jméno, význam prázdna do nápovědy, rozsahy sjednotit.
-- **E9 Minuty × Tabulka spojů pro tentýž pojem** [S] **Jan**. „Oddělovač skupin" × „Mezera mezi skupinami
-  sloupců", „Mezera minuta ↔ značka" × „Mezera mezi značkou a časem", „Velikost značek/minut" jsou poměry
-  vedle „Velikost" v bodech (kanon: Velikost = pt).
+- **E9 Minuty × Tabulka spojů pro tentýž pojem** [S] **Jan**. (a) hotové: „Mezera mezi skupinami dnů"
+  v obou (changelog 2026-10-26 (32)). Zbývá (b) „Mezera minuta ↔ značka" × „Mezera mezi značkou a časem",
+  (c) „Velikost značek/minut" jsou poměry vedle „Velikost" v bodech (kanon: Velikost = pt).
 - **E10 Aktuální zastávka v Seznamu zastávek** [S]. „Tučně aktuální zast.", „Podtržení aktuální zast.",
   C# a Nápověda tomu říkají „Zvýraznění" (plete se se „Zvýraznění řádků"). Návrh: skupina „Aktuální
   zastávka", „Aktuální: Tučné / Podtržení / …".

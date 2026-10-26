@@ -359,7 +359,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             "spoje sloupce. Viditelnost, pořadí, šířky a styl sloupců má vlastní dialog (Upravit sloupce…). " +
             "POPISNÉ SLOUPCE (zóna, km, Tč, zastávka, MHD, šipka) jsou skupina: dají se přejmenovat, " +
             "dostat jedno společné záhlaví ('Text záhlaví popisných sloupců'), slít bez vnitřních čar " +
-            "('Popisné sloupce bez vnitřních čar') a oddělit od spojů mezerou ('Mezera mezi skupinami sloupců'). " +
+            "('Popisné sloupce bez vnitřních čar') a oddělit od spojů mezerou ('Mezera mezi skupinami dnů'). " +
             "⚠️ ŠÍŘKA SLOUPCE SPOJE rozhoduje o všem ostatním: kolik spojů se vejde vedle sebe, na kolik ČÁSTÍ " +
             "se tabulka rozřeže a kolik vyjde stran. Ovlivňují ji 'Nejmenší/Největší šířka sloupce spoje', " +
             "'Stejně široké sloupce spojů', vnitřní okraj datových buněk a velikost jejich písma " +
