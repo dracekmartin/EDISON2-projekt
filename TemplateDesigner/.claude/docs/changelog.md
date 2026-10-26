@@ -7,7 +7,8 @@ selhalo: … Linka 1/380761 neexistuje v ^JRL" (v náhledu jen ve stavovém řá
 tisk se zastavit smí, hláška ale musí říct, co je v datech špatně a co s tím. Agendy JŘ teď chyby dat
 posílají přes `BaseAgenda.ChybaDat` (obecná chyba 5001): linka AD ve skupině není („Linka 999999 ve
 skupině 1 v jízdních řádech není. Mohla být smazána nebo přesunuta do jiné skupiny - vyberte linky
-znovu."), linka MHD v modulu není, spoj MHD bez použitelného kalendáře či rozpisu typu provozu (veřejné
+znovu."), linka MHD v modulu není (vývěska MHD na ní dřív padala na `<ILLEGAL VALUE>` - doplněno týž den
+při ověřování `C12`), spoj MHD bez použitelného kalendáře či rozpisu typu provozu (veřejné
 číslo spoje, ne ID), turnusy nejdou načíst, chybí linka. Návrhář chybu 5001 pozná
 (`CacheAgendaProvider.ChybaDat` → `CacheAgendaDataException`) a ukáže ji jako hlášku-problém linky
 (`KontrolaVystupu.LinkaChybaDat`) v náhledu i v tiskovém okně a jako informaci při tisku z EDISONu,

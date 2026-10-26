@@ -290,6 +290,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         s LinkaID = $g(^||ML("IN","LINKA_ID"))
         i 'LinkaID d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
+        // Bez linky by níž $zdh prázdné platnosti spadl na <ILLEGAL VALUE> (`B194a` C11).
+        i '$d(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID)) d ..ChybaDat("Vybraná linka v modulu MHD není, mohla být smazána. Vyberte linky znovu.")
 
         k ^||TiskMHD
         d ..ZacitDuvodyPrazdne()

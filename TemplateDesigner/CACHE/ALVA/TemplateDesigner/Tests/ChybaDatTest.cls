@@ -29,15 +29,17 @@ Method TestLinkaAdMimoJr()
 	}
 }
 
-/// Linka MHD, která v modulu MHD není.
+/// Linka MHD, která v modulu MHD není - linkový i vývěska (ta do 26. 10. padala na <ILLEGAL VALUE>).
 Method TestLinkaMhdMimoModul()
 {
 	do ..SetupSys(.sys, "TDTEST"_$translate($system.Util.CreateGUID(), "-"))
 	set sys("U","DATA") = $namespace
-	kill ^||ML
-	set ^||ML("IN","LINKA_ID") = "999999"
-	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
-	do $$$AssertTrue(..TextChyby() [ "v modulu MHD není", "linkový MHD: "_..TextChyby())
+	for agenda = "LinkovyJrMhd", "ZastavkoveJrMhd" {
+		kill ^||ML
+		set ^||ML("IN","LINKA_ID") = "999999"
+		do $classmethod("ALVA.TemplateDesigner.Agendy."_agenda, "GetData", .sys)
+		do $$$AssertTrue(..TextChyby() [ "v modulu MHD není", agenda_": "_$get(^||ML("ERR"), "(bez chyby)"))
+	}
 }
 
 /// Bez vybrané linky - všechny čtyři agendy stejnou větou.
