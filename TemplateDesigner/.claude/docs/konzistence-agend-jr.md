@@ -115,8 +115,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
 - **E8 Význam prázdné hodnoty pěti zápisy, různé rozsahy** [M] **Jan**. „(prázdné = auto)", „(0 = ∞)",
   „(0 = ne)", „(0 = bez limitu)", „(0=vedle)"; výška řádku 1-50 / 1-20 / 2-15 / 2-50 mm, písmo 4-200 ×
   3-24 pt. Návrh: popisek = podstatné jméno, význam prázdna do nápovědy, rozsahy sjednotit.
-- **E12 Katalog sloupců Tabulky spojů jinak než data** [S]. „Zastávka", „Zóna", „MHD / IDS" × data
-  „Název zastávky", „Zóny", „MHD/IDS"; „TČ" × „Tč"; „popisné" × „popisové" × „sloupce popisu".
 - **E13 Dialogy sloupců mají každý jiné ovládání** [M]. „+ Přidat" × „Přidat", „▲" × „▲ Nahoru" × „Nahoru",
   „×" × „Vymazat", nadpisy sekcí; Tabulce spojů chybí „Přizpůsobit sloupce". Návrh: do sdíleného
   `ColumnListEditor`.

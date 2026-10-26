@@ -42,7 +42,7 @@ public enum PripojSlucovani
 /// (tarifní čísla) × vodorovné sloupce jednotlivých spojů s časy v buňkách.
 /// Datový zdroj: agenda LINKOVY_JR_AD / LINKOVY_JR_MHD (kolekce ZASTAVKY + SPOJE + SKUPINY_DNU).
 ///
-/// Sloupce (`Columns`, model <see cref="StopColumn"/> - sdílený se StopList) definují popisové
+/// Sloupce (`Columns`, model <see cref="StopColumn"/> - sdílený se StopList) definují popisné
 /// sloupce: Zóna, Km, Tč, Zastávka, MHD + „Spoj" (řídí šířku/styl časových sloupců spojů, které
 /// vznikají z dat). Editace přes 2-tab dialog (Obecné = EDInputForm, Sloupce = sdílený
 /// `ColumnListEditor` + `CellStyleEditor`) - konzistentní se StopList/DepartureGrid.

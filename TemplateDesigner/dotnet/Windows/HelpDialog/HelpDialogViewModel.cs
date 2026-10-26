@@ -308,7 +308,7 @@ public class HelpDialogViewModel : EDViewModel
             Title = "🚆 Tabulka spojů - linkový a knižní JŘ",
             Entries =
             [
-                new("Které sloupce popisu se tisknou (km, tarifní číslo, zóna, MHD, označník)",
+                new("Které popisné sloupce se tisknou (km, tarifní číslo, zóna, MHD, označník)",
                     "prvek Tabulka spojů → Sloupce"),
                 new("Řádek platnosti pod číslem spoje - denní značky, místenka, atributy vozidla",
                     "prvek Tabulka spojů → Řádky"),

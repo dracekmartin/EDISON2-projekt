@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-26 (37) - „popisné sloupce" všude (`B194d` E12, zúženě)
+
+Skupina zóna / km / Tč / zastávka / MHD Tabulky spojů se jmenovala „Popisné sloupce" (formulář),
+„popisové sloupce" (varování o šířce v okně se sloupci) a „sloupce popisu" (nápověda F1). Rozhodnutí Jan
+26. 10.: všude **„popisné sloupce"**, kanon §8 má řádek. Původně navržené sladění názvů sloupců („Zastávka"
+× pole „Název zastávky") vědomě vypuštěno: údaje zastávek nejsou v záložce Datová pole (ta ukazuje jen
+údaje linky), uživatel je vidí jen v nabídce `{` u podmínky řádku, takže rozdíl nikoho nemate.
+
 ## 2026-10-26 (36) - popisky v programu podle formuláře (`B194d` E11, `B194f` G6)
 
 Každé nastavení prvku má popisek dvakrát: ve formuláři ze serveru (panel Vlastnosti, okno prvku) a v

@@ -34,6 +34,10 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E12** Tabulka spojů: skupina zóna / km / Tč / zastávka / MHD se všude jmenuje „popisné sloupce"
+  (dřív i „popisové", „sloupce popisu"); názvy sloupců v okně se sloupci vědomě beze změny - údaje
+  zastávek nejsou v záložce Datová pole, vedle sebe je uživatel skoro nevidí (rozhodnutí Jan 26. 10.,
+  zúžený rozsah; changelog 2026-10-26 (37)).
 - **E11 + G6** Popisky nastavení v programu (úprava víc prvků, protokol importu z PDF, asistent) jsou
   tytéž jako ve formuláři; hlídá `DescriptorLabelsMatchFormTests` (páruje podle popisku, deskriptor klíč
   nenese; výjimky s důvodem). Rozhodnutí Jan 26. 10.: formulář má lepší popisky (changelog 2026-10-26 (36)).

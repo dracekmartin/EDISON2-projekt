@@ -281,6 +281,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Prvek s vysvětlivkami pod vývěskou | **Poznámky** | ~~Legenda poznámek~~ (třída `NotesLegendElement` se nepřejmenovává - visí na ní `type` v šablonách) |
 | Prvek s časy odjezdů po hodinách | **Minuty odjezdů** | ~~Mřížka odjezdů~~ („mřížka" je implementační pojem; třída `DepartureGridElement` zůstává) |
 | Prvek s tabulkou zastávky × spoje | **Tabulka spojů** | ~~Linkový JŘ~~, ~~Tabulka linky~~ (tak se jmenuje **agenda**, prvek by se s ní pletl; třída `LineTableElement` zůstává) |
+| Zóna, km, Tč, zastávka a MHD v Tabulce spojů | **popisné sloupce** (rozhodnutí Jan 26. 10.) | ~~popisové sloupce~~, ~~sloupce popisu~~ |
 | Prvek s QR / čárovým kódem | **Kód (QR, čárový)** | ~~Kód~~ samotné (neřekne, co prvek umí), ~~Kód (QR / čárový)~~ |
 | Zapnutí záhlaví prvku | **Záhlaví** (u zastávek „Záhlaví sloupců") - patří do skupiny **Obecné** | ~~Zobrazit nadpis~~ |
 | Text v záhlaví prvku | **Text záhlaví** | ~~Nadpis~~ (samotné „Nadpis skupiny" u dat je jiný pojem a je OK) |
