@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-26 (33) - „Mezera mezi značkou a minutou" (`B194d` E9b)
+
+Minuty odjezdů měly „Mezera minuta ↔ značka" (šipka místo slov) s nápovědou „Prázdné = automaticky podle
+velikosti písma", Tabulka spojů „Mezera mezi značkou a časem" a „Prázdné = mezera z písma". Rozhodnutí
+Jan 26. 10.: Minuty **„Mezera mezi značkou a minutou"** (v buňce je jen minuta), Tabulka spojů beze změny,
+tvar „Mezera mezi X a Y" jako ostatní mezery; nápovědy všech mezer v obou prvcích „Prázdné = mezera podle
+velikosti písma". Formulář i deskriptor; „↔" v popisku mezi zakázanými. Ověřeno voláním `Init` obou formulářů.
+
 ## 2026-10-26 (32) - „Mezera mezi skupinami dnů" v Minutách i Tabulce spojů (`B194d` E9a)
 
 Totéž nastavení (volné místo mezi bloky skupin dnů) se jmenovalo v Minutách odjezdů „Oddělovač skupin"

@@ -1831,7 +1831,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
         new BoolPropertyDescriptor  { Label = "Značky u odjezdů",     Group = "Značky u odjezdů", Get = () => ShowAnotace,              Set = v => ShowAnotace = v },
 
-        new FloatPropertyDescriptor { Label = "Mezera minuta ↔ značka", Group = "Mezery", Get = () => AnotaceGap,      Set = v => AnotaceGap = v,      Min = 0, Max = 5, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Mezera mezi značkou a minutou", Group = "Mezery", Get = () => AnotaceGap,      Set = v => AnotaceGap = v,      Min = 0, Max = 5, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Mezera mezi značkami",   Group = "Mezery", Get = () => AnotaceInterGap, Set = v => AnotaceInterGap = v, Min = 0, Max = 5, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Mezera mezi odjezdy",  Group = "Mezery", Get = () => OdjezdGap,       Set = v => OdjezdGap = v,       Min = 0, Max = 10, Unit = "mm" },
 
