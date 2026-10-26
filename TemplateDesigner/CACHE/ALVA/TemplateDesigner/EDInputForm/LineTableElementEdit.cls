@@ -168,10 +168,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 190)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 
-        // Kolekce zdrojů dat + řádkové podmínky (element-specifické, do skupiny "Podmínky" výše)
-        s f = form.AddText("ZastavkyDataSource", "Kolekce zastávek", "ZASTAVKY")
-        s f = form.AddText("SpojeDataSource", "Kolekce spojů", "SPOJE")
-        s f = form.AddText("SkupinyDnuDataSource", "Kolekce skupin dnů", "SKUPINY_DNU")
+        // Řádkové podmínky (do skupiny "Podmínky" výše). Zdroje dat (ZastavkyDataSource / SpojeDataSource /
+        // SkupinyDnuDataSource) formulář nenabízí: všechny agendy posílají ZASTAVKY / SPOJE / SKUPINY_DNU
+        // a jiná hodnota tabulku jen vyprázdní; v šabloně vlastnost zůstává (`B194` E14).
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
         s f.placeholders = 1
         // Pole řádku doplní návrhář podle agendy šablony (ElementFormBinder.DoplnPoleRadku) - pevný seznam lhal.

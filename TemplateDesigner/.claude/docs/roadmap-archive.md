@@ -34,6 +34,10 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E14** Tabulka spojů: z formuláře zmizela interní pole „Kolekce zastávek / spojů / skupin dnů"; všechny
+  agendy posílají `ZASTAVKY` / `SPOJE` / `SKUPINY_DNU`, v šablonách vlastnost zůstává (sonda
+  `ZdrojeTabulkySpoju`: 8 šablon s Tabulkou spojů, žádná jiná hodnota; rozhodnutí Jan 26. 10.; changelog
+  2026-10-26 (40)).
 - **E13a** Seznamy v dialozích: „Přidat" / „Odebrat" bez znaménka, posun jen šipkami ▲ ▼ s bublinou,
   smazání barvy „×" (Tabulka z dat, Zvýraznění řádků, Druhy poznámek); pravidlo v ux-conventions §1
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (38)).

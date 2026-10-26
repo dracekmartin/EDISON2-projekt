@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-26 (40) - Tabulka spojů bez interních polí zdrojů dat (`B194d` E14)
+
+Formulář Tabulky spojů měl ve skupině Podmínky „Kolekce zastávek / spojů / skupin dnů" s hodnotami
+`ZASTAVKY` / `SPOJE` / `SKUPINY_DNU` - odkud prvek bere data. Všechny agendy (Linkový JŘ AD, MHD,
+rozdílový) posílají vždy tato jména, jiná hodnota tabulku jen vyprázdní a uživatel nepozná proč. Rozhodnutí
+Jan 26. 10.: z formuláře pryč, vlastnost v šabloně zůstává s výchozí hodnotou (starší šablony beze změny).
+Sonda `LinkovyJrNastaveniProbe.ZdrojeTabulkySpoju` nad uloženými šablonami: 30 šablon, 8 s Tabulkou spojů,
+žádná s jinou než výchozí hodnotou. Ověřeno voláním `Init` formuláře.
+
 ## 2026-10-26 (39) - tlačítka přidání bez „+" (`B194d` E13a, E13b)
 
 Rozhodnutí Jan 26. 10.: „+" na začátku popisku pryč i v hlavním okně - „Přidat sekci", „Přidat stránku"

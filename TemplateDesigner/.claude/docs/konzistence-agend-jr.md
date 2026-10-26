@@ -119,8 +119,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   (38), (39)); (b) uzavřeno bez změny - v Tabulce spojů se zadávají jen popisné sloupce, šířku spojů
   dopočítá tabulka, „Přizpůsobit" by spojům vzalo místo. Zbývá (c) sloučení do sdíleného `ColumnListEditor`
   (odloženo s E3).
-- **E14 Tabulka spojů ukazuje interní pole** [S] **Jan**. „Kolekce zastávek/spojů/skupin dnů" s klíči
-  `ZASTAVKY`… ve skupině Podmínky (`LineTableElementEdit.cls:172-174`) - skrýt.
 - **E15 Texty nápověd** [S]. Tykání vedle vykání (`ImageElementEdit`, `CellStyleEditor`, `StyleEditDialog`,
   dva dialogy sloupců), „engine", „padding", „dědit od rodiče", „Dashed=3mm", v F1 „pohledna definici"
   a cesty, které v UI nejsou. Dlouhá pomlčka v komentářích `App.xaml.cs:17, 210`.

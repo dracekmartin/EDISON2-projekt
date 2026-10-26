@@ -2651,4 +2651,44 @@ ClassMethod NaObjednaniVyskyt(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Zdroje dat Tabulky spojů v uložených šablonách (`B194` E14): kolik šablon má Tabulku spojů a jestli
+/// některá nemá u `ZastavkyDataSource` / `SpojeDataSource` / `SkupinyDnuDataSource` jinou než výchozí
+/// hodnotu - před odebráním těch polí z formuláře.
+ClassMethod ZdrojeTabulkySpoju(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		set sablon = 0, sTabulkou = 0, jine = "", idfa = ""
+		for {
+			set idfa = $order(^ALVA.TemplateDesigner.Templates(idfa)) quit:idfa=""
+			set id = ""
+			for {
+				set id = $order(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id)) quit:id=""
+				set json = $get(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id, "Data"))
+				if $data(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id, "Data")) >= 10 {
+					set json = ""
+					for n = 1:1:+$get(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id, "Data")) set json = json_$get(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id, "Data", n))
+				}
+				set sablon = sablon + 1
+				continue:json'["LineTableElement"
+				set sTabulkou = sTabulkou + 1
+				for klic = "ZastavkyDataSource~ZASTAVKY", "SpojeDataSource~SPOJE", "SkupinyDnuDataSource~SKUPINY_DNU" {
+					set pole = $piece(klic, "~", 1), vychozi = $piece(klic, "~", 2)
+					set zbytek = json
+					while zbytek [ (""""_pole_"""") {
+						set zbytek = $piece(zbytek, """"_pole_"""", 2, *)
+						set hodnota = $piece($piece(zbytek, """", 2), """", 1)
+						if hodnota '= vychozi set jine = jine_idfa_"/"_id_" "_pole_"="_hodnota_"; "
+					}
+				}
+			}
+		}
+		set ^||ML("OUT", 1) = "šablon "_sablon_", s Tabulkou spojů "_sTabulkou_", jiný než výchozí zdroj: "_$select(jine="":"žádná", 1:jine)
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 }
