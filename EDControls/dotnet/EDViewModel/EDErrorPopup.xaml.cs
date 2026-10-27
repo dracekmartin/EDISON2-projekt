@@ -85,7 +85,9 @@ internal partial class EDErrorPopup : Window
 
     internal static void Show(Window? owner, Exception ex, string? refId = null)
     {
-        var popup = new EDErrorPopup(ex, refId) { Owner = owner };
+        if (!PopupGuard.CanOpen()) return;
+        var popup = new EDErrorPopup(ex, refId);
+        PopupGuard.SetOwner(popup, owner);
         popup.ShowDialog();
     }
 }

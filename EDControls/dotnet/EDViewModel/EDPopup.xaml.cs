@@ -49,14 +49,18 @@ public partial class EDPopup : Window
     /// <summary>2-button popup (Ok, AnoNe) - vrátí true/false. Title volitelný (default "Informace"/"Potvrzení").</summary>
     internal static bool Show(Window? owner, string message, EDPopupButtons buttons, string? title = null)
     {
-        var popup = new EDPopup(message, buttons, title) { Owner = owner };
+        if (!PopupGuard.CanOpen()) return false;
+        var popup = new EDPopup(message, buttons, title);
+        PopupGuard.SetOwner(popup, owner);
         return popup.ShowDialog() == true;
     }
 
     /// <summary>3-button popup (AnoNeStorno) - vrátí true (Ano) / false (Ne) / null (Storno nebo Esc). Title volitelný.</summary>
     internal static bool? ShowYesNoCancel(Window? owner, string message, string? title = null)
     {
-        var popup = new EDPopup(message, EDPopupButtons.AnoNeStorno, title) { Owner = owner };
+        if (!PopupGuard.CanOpen()) return null;
+        var popup = new EDPopup(message, EDPopupButtons.AnoNeStorno, title);
+        PopupGuard.SetOwner(popup, owner);
         popup.ShowDialog();
         return popup._result;
     }
