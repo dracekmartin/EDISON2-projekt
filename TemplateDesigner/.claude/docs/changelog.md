@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-27 (10) - drobnosti v datech a ukázkách (`B194c` D8, dokončení)
+
+**Linkový JŘ MHD bez vybrané linky** ukazoval v parametrech všechny typy provozu firmy (KV_DP desítky),
+protože ukázka neposílala `TYPY_PROVOZU_LINKY` jako tisk - teď ho posílá (test
+`LinkovyJrMhdTest.TestUkazkaNeseTypyProvozuLinky`, KV_DP linka 1073). „Čas jízdy" ve vývěskách AD i MHD
+má v nabídce dat typ text, ne číslo - nese i „<" a prázdno. Opravený mylný komentář o tarifním čísle
+ve vývěsce AD a klíče v sondě `AdSloupekProbe` (pole se přejmenovala na `CISLO_ZASTAVKA_*_CIS`).
+Rozhodnutí Jan 27. 10.
+
 ## 2026-10-27 (9) - náhled vývěsky MHD bez linky ukazuje skutečnou linku (`B194c` D7)
 
 Zastávkový JŘ MHD měl jako jediná agenda v náhledu bez vybrané linky vymyšlenou brněnskou linku

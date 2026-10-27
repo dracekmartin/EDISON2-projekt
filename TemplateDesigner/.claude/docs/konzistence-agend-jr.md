@@ -49,10 +49,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
 - **D5 Pořadí polí v nabídce se liší** [S] (*ověřeno:* kód). Nabídka nepřeřazuje. Linkový AD má poznámky
   mezi linkou a dopravcem, typ JŘ za platností, QR uprostřed (`LinkovyJrAd.GetSchema` :98-137). Návrh:
   bloky linka → dopravce → platnost → zastávka a směr → poznámky ve všech čtyřech.
-- **D8 Drobnosti v datech** [S]. Komentář o tarifním čísle ve vývěsce AD je mylný
-  (`AddStandardJRCollections` :3438). `CAS_JIZDY` deklarovaný jako číslo nese „<" a prázdno. Ukázka
-  linkového MHD nenese `TYPY_PROVOZU_LINKY` (panel bez linky ukáže všechny typy firmy). Sonda
-  `AdSloupekProbe.cls:1397` čte neexistující klíče. (Technický záložní text ukázky hotový 27. 10.)
 - **P2 Totéž rozdělení sloupců má ve vývěsce a v linkovém jiné volby** [M] **Jan** (*ověřeno:* server).
   „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", kryptické prázdninové volby
   vývěsky; vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`). Volby jsou zamčené → přidat souběžný

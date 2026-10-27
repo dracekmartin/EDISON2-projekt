@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **D8 (dokončení)** Ukázka linkového MHD s typy provozu linky, „Čas jízdy" jako text, opravený komentář
+  a sonda (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (10)).
 - **D7** Náhled vývěsky MHD bez linky = první vývěska první linky výchozí skupiny místo vymyšlené brněnské
   linky (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (9)).
 - **D6 (dokončení)** „Typ poznámky" a „Typ řádku" (interní kódy pro prvky) z nabídky dat pryč, data je

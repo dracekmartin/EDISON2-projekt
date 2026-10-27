@@ -296,6 +296,8 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         i linkaId '= "" {
             d ..PriradNegativniZnacky(.sys, IdFa, dataDB, linkaId, "T", .znacky)
             s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, 0, .znacky)
+            // Jako GetData: bez toho by panel bez vybrané linky ukázal všechny typy provozu firmy.
+            i page '= "" d page.values.%Set("TYPY_PROVOZU_LINKY", ..TypyProvozuLinky(IdFa, dataDB, linkaId))
         }
 
         i page = "" {

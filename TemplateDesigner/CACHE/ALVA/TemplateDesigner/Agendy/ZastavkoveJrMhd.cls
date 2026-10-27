@@ -1783,7 +1783,8 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colZastavky.collectionKey = "ZASTAVKY"
     s colZastavkyFields = ##class(%DynamicArray).%New()
     d ..AddField(colZastavkyFields, "NAZEV_ZASTAVKY",    "Název zastávky",    "text")
-    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "number")
+    // Text, ne číslo: vedle minut nese „<" (spoj jede jinou trasou) a prázdno (mimo trasu).
+    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "text")
     d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
     d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")

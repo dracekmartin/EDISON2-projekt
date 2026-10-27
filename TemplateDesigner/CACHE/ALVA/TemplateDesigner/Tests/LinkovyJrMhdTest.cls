@@ -184,6 +184,27 @@ Method TestVyberTypuProvozuJakoWeb()
 	}
 }
 
+/// Ukázka bez vybrané linky nese typy provozu své linky jako tisk - jinak panel ukáže všechny
+/// typy provozu firmy (KV_DP jich má desítky, linka pár).
+Method TestUkazkaNeseTypyProvozuLinky()
+{
+	if '##class(%SYS.Namespace).Exists("KV_DP") {
+		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		quit
+	}
+	do ..SysFirmy(.sys, "KV_DP")
+	kill ^||ML
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetMockData(.sys)
+	do $$$AssertEquals($get(^||ML("ERR")), "", "GetMockData skončil chybou")
+	set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT", 1), "{}"))
+	if '$isobject(page.%Get("rows")) || (page.rows.%Get("SPOJE").%Size() = 0) {
+		do $$$AssertTrue(1, "první linka KV_DP nedala ukázku - přeskočeno")
+		quit
+	}
+	set typy = page.values.%Get("TYPY_PROVOZU_LINKY")
+	do $$$AssertTrue($isobject(typy) && (typy.%Size() > 0), "ukázka nemá seznam typů provozu linky")
+}
+
 /// Vypnutý typ provozu proti starému tisku se stejným výběrem na celé sadě linek. Vypíná se typ
 /// prvního spoje s ručně zadanou platností, protože takový spoj dostává volnou negativní značku
 /// z rozsahu - jeho vynechání posune číslování dalších (starý tisk přiděluje jen tištěným).
