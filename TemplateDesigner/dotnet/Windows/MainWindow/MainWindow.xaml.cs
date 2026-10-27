@@ -1283,13 +1283,21 @@ public partial class MainWindow : Window
             ParamsTabForm.SchemaLoaded += OnParamsTabInitialized;
             _paramsTabInitHooked = true;
         }
-        ParamsTabForm.CacheClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";
+        const string paramsFormClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";
 
         // Init() = synchronní Caché round-trip. Voláme ho jen když je control už Loaded (přepnutí
         // agendy za běhu). Při prvním zobrazení tabu (a v konstruktoru okna) ho spustí EDInputForm
         // Loaded auto-init s aktuálními InitParams - jinak by transientní chyba Caché propadla ven
         // z konstruktoru okna a aplikace by se neotevřela (R1/R2). Chyba jde do status baru, ne do pádu.
-        if (!ParamsTabForm.IsLoaded) return;
+        if (!ParamsTabForm.IsLoaded)
+        {
+            // ⚠️ Auto-init běží jednou za CacheClass a ta je pro všechny agendy stejná: po změně
+            // agendy mimo tab by se ukázaly parametry té předchozí. Prázdná třída ho vynutí znovu.
+            ParamsTabForm.CacheClass = "";
+            ParamsTabForm.CacheClass = paramsFormClass;
+            return;
+        }
+        ParamsTabForm.CacheClass = paramsFormClass;
         try { ParamsTabForm.Init(); }
         catch (System.Exception ex) { _vm.StatusText = $"⚠ Parametry sestavy se nepodařilo načíst: {ex.Message}"; }
     }

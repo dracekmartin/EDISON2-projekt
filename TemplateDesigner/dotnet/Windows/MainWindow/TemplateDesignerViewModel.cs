@@ -3410,8 +3410,13 @@ public class TemplateDesignerViewModel : EDViewModel
             var code = agendaCode;
             AgendaNameText = $"Agenda: {AgendaEntry(code)?.DisplayName ?? code} (načítám…)";
             return Task.Run(() => SchemaProvider.GetSchema(code))
-                .ContinueWith(_ => RefreshFieldsListCore(code),
-                              TaskScheduler.FromCurrentSynchronizationContext());
+                .ContinueWith(_ =>
+                {
+                    // Agenda se mezitím změnila: její parametry už nastavilo novější volání a pozdní
+                    // výsledek by tam vrátil parametry té předchozí.
+                    if (string.Equals(State.CurrentTemplate.AgendaCode, code, StringComparison.OrdinalIgnoreCase))
+                        RefreshFieldsListCore(code);
+                }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         RefreshFieldsListCore(agendaCode);

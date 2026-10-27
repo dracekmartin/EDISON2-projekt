@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-27 (22) - panel Parametry po změně agendy neukazuje parametry té předchozí
+
+Jan to občas viděl při předvádění zákazníkům: po přepnutí zastávkového JŘ AD na linkový zůstaly
+v záložce Parametry volby vývěsky, zatímco náhled a tisk už jely podle nové agendy. Stalo se to,
+když záložka Parametry při změně agendy nebyla vidět - formulář parametrů se při zobrazení sestavuje
+jen jednou pro svou Caché třídu (`EDInputForm` auto-init) a ta je pro všechny agendy stejná, takže
+se po návratu na záložku nepřenačetl. Teď ho `MainWindow.ReloadParamsTabForm` mimo záložku vyprázdněním
+a vrácením třídy přinutí sestavit se znovu s aktuální agendou. Druhá, vzácnější cesta téhož příznaku:
+pozdě dorazivší načtení schématu agendy otevřené poprvé teď parametry nastaví, jen když šablona tu
+agendu pořád má. Pojistka mechanismu v EDControls `EDInputFormViewTests.Loaded_AfterCacheClassReset_InitsSameClassAgain`;
+okno samo test nemá (TD testy okna nespouští), ověřeno ručně v návrháři - simulace před opravou
+chybu ukázala (Jan 27. 10.).
+
 ## 2026-10-27 (21) - popisy metod zpátky u svých metod, bez dlouhých pomlček (review body 9, 10)
 
 Na deseti místech se mezi popis a jeho metodu vložila nová metoda, takže popis visel u cizí (C#:
