@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **D4** Údaje dopravce po polích (Název, Adresa, Telefon, E-mail, IČO) ve všech agendách JŘ pod
+  stejnými klíči; e-mail vlastní firmy u MHD prázdný, Popis dopravce beze změny (rozhodnutí Jan
+  27. 10.; changelog 2026-10-27 (24)).
 - **P3** „Stránka pro každé stanoviště" (dřív „Samostatná…") zastávkového AD v Obecné za Pořadím stránek
   (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (23)). Sjednocení s linkovou „Stránka pro každou
   zastávku" nejde - jiná věc (zastávky × stanoviště).

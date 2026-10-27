@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-27 (24) - údaje dopravce po polích ve všech agendách JŘ (`B194c` D4)
+
+Název, Adresa, Telefon, E-mail a IČO dopravce nabízí teď každá agenda JŘ pod stejnými klíči
+a popisky - do 27. 10. je měla jen vývěska AD (vývěska MHD jen název). Šablona si údaje poskládá
+sama a jde přenést mezi agendami. Linkový AD bere prvního dopravce linky týmž voláním jako vývěska
+AD (`ZastavkoveJrAd.DopravceSkalary`), obě MHD z karty dopravce, kterou už čte Popis dopravce
+(`ZastavkoveJrMhd.DopravceSkalary`; vlastní firma IČO z pole 7, cizí dopravce IČO 5 a e-mail 13).
+**E-mail vlastní firmy u MHD zůstává prázdný** (rozhodnutí Jan 27. 10.): jediný e-mail na kartě
+firmy (26) je odesílací adresa EDISONu vedle SMTP nastavení - KV_DP „edison@…", CB_DP
+„no-reply@m-line.cz" - a cestujícím by se vytiskla. Popis dopravce se nemění: vývěsky ho dál
+píšou na víc řádků, linkové JŘ jedním řádkem jako starý tisk (vědomý rozdíl, Jan 27. 10.).
+Ověřeno voláním na CB_CSADAD 0330510, KV_DP 1073 (obě MHD) a CB_DP 11350. Pojistka
+`DopravcePoPolichTest`.
+
 ## 2026-10-27 (23) - „Stránka pro každé stanoviště" ve skupině Obecné (`B194c` P3)
 
 Volba zastávkového JŘ AD, která rozdělí zastávku obsluhovanou z víc stanovišť na víc vývěsek, je

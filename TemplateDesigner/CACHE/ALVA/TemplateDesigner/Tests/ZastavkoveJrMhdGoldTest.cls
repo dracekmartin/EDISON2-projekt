@@ -35,7 +35,9 @@ Method TestGold1001()
 	// počty beze změny.
 	// Re-baseline 2026-10-27 (`B194` D3): každá stránka nese navíc pole VYCHOZI_ZASTAVKA. Jen md5,
 	// počty beze změny.
-	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=4DL4Pk8DdyT3vo7mj9gtUA==")
+	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích (ADRESA, TELEFON, EMAIL, ICO
+	// _DOPRAVCE) jako ve všech agendách JŘ. Jen md5, počty beze změny.
+	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=aM2OsDckjrmDwloemdcWXw==")
 }
 
 Method TestGold1003()
@@ -45,7 +47,8 @@ Method TestGold1003()
 	// Re-baseline 2026-10-23: přestup písmenem - viz gold 1001. Jen md5.
 	// Re-baseline 2026-10-24: pole NAZEV_DOPRAVCE - viz gold 1001. Jen md5.
 	// Re-baseline 2026-10-27: pole VYCHOZI_ZASTAVKA - viz gold 1001. Jen md5.
-	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=7dxg2pIXSI72l+TJnbn8+A==")
+	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 1001. Jen md5.
+	do ..AssertLine("1003", "pages=20 zast=220 odj=7780 pozn=22 md5=mYIDuT7vH0nWQLAwLxcj/Q==")
 }
 
 Method TestGold1006()
@@ -55,7 +58,8 @@ Method TestGold1006()
 	// Re-baseline 2026-10-23: přestup písmenem - viz gold 1001. Jen md5.
 	// Re-baseline 2026-10-24: pole NAZEV_DOPRAVCE - viz gold 1001. Jen md5.
 	// Re-baseline 2026-10-27: pole VYCHOZI_ZASTAVKA - viz gold 1001. Jen md5.
-	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=d9CA/+IO1q36vm5KfALjjg==")
+	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 1001. Jen md5.
+	do ..AssertLine("1006", "pages=53 zast=1458 odj=5982 pozn=58 md5=oQCenOGLg/YUCCud+5oMdw==")
 }
 
 /// `B194a` C3: přestup na vlak (CB_DP, zastávka Nádraží linky 11350) má v seznamu zastávek i v poznámkách

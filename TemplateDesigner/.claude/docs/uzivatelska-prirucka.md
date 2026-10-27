@@ -729,7 +729,9 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   dopravce*, *E-mail dopravce* a *IČO dopravce*. Použijte je, když chcete o obsahu rozhodovat sami:
   poskládáte si jen to, co na vývěsce chcete, a nic se neopakuje dvakrát. Adresa je jedno pole
   včetně PSČ a obce - tak je uložená v číselníku dopravců. U linky s více dopravci nesou tato pole
-  **prvního** z nich. Varianta MHD má z nich jen *Název dopravce*.
+  **prvního** z nich. Stejná pole mají všechny agendy jízdních řádů, šablonu tak jde přenést.
+  U MHD zůstává *E-mail dopravce* prázdný, když linku obsluhuje vaše vlastní firma - karta firmy
+  nemá kontaktní e-mail, jen adresu, ze které EDISON odesílá poštu.
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"). Ukážou se, jen když má
   šablona zapnutý sloupec „Varianty tras" - bez něj nemají na tisk vliv:
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
@@ -1079,7 +1081,9 @@ Obvyklá šablona má tři sekce pod sebou:
 - **Hlavička** (opakuje se na každé stránce) - textové prvky s poli `{CISLO_LINKY}` (číslo linky
   dle licence) nebo `{LOKALNI_OZNACENI_LINKY}` (veřejné označení, jak ho zná cestující), `{POPIS_LINKY}`, `{DATUM_PLATNOSTI_OD}`, `{DATUM_PLATNOSTI_DO}`, `{TYP_JR}`,
   `{POPIS_DOPRAVCE}` a `{POZNAMKA_NAD_LINKU}`. `{POPIS_DOPRAVCE}` uvádí jen dopravce spojů na dané
-  stránce; jezdí-li na stránce víc dopravců, připíše ke každému čísla jeho spojů. Barvu linky
+  stránce; jezdí-li na stránce víc dopravců, připíše ke každému čísla jeho spojů. Kdo chce údaje
+  dopravce poskládat sám, má jako u vývěsky pole `{NAZEV_DOPRAVCE}`, `{ADRESA_DOPRAVCE}`,
+  `{TELEFON_DOPRAVCE}`, `{EMAIL_DOPRAVCE}` a `{ICO_DOPRAVCE}` (první dopravce linky). Barvu linky
   z jízdních řádů dostanete jako u vývěsky: do pole barvy prvku napište `{BARVA_LINKY}` nebo
   `{BARVA_LINKY_2}` (jen linkový JŘ AD).
 - **Jízdní řád** - jediný prvek **Tabulka spojů**. Sekce má být nastavená na „Rozdělit přes

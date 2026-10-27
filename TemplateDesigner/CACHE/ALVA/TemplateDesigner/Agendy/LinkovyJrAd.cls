@@ -106,6 +106,12 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "BARVA_LINKY",           "Barva linky",              "color")
     d ..AddField(fields, "BARVA_LINKY_2",         "Barva linky 2",            "color")
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
+    // Po polích jako vývěska AD - první dopravce linky (`B194c` D4).
+    d ..AddField(fields, "NAZEV_DOPRAVCE",        "Název dopravce",           "text")
+    d ..AddField(fields, "ADRESA_DOPRAVCE",       "Adresa dopravce",          "text")
+    d ..AddField(fields, "TELEFON_DOPRAVCE",      "Telefon dopravce",         "text")
+    d ..AddField(fields, "EMAIL_DOPRAVCE",        "E-mail dopravce",          "text")
+    d ..AddField(fields, "ICO_DOPRAVCE",          "IČO dopravce",             "text")
     // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD; GetData ho posílá dál kvůli starším šablonám.
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
@@ -768,6 +774,8 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
+    // Údaje prvního dopravce linky po polích, týmž voláním jako vývěska AD (`B194c` D4).
+    d ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).DopravceSkalary(dataDB, sku, lin, vals)
     // Vzory rozložení sloupců - obsah drží **server**, klient zná jen klíče a popisky. Bez toho
     // by parametr uměl jen hlásit stav, ale ne přepnout (a klientský opis pravidel by se rozešel).
     d vals.%Set("PRESETY_SLOUPCU",        ..PresetySloupcuLinky(dataDB, rec, sku, lin))

@@ -1151,8 +1151,9 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("POPIS_LINKY",            NazevLinky)
     d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .dopravce)
     d vals.%Set("POPIS_DOPRAVCE",         ..RadkyDopravce($g(dopravce("NAZEV")), $g(dopravce("ULICE")), $g(dopravce("MESTO")), $g(dopravce("TELEFON"))))
-    // Samotný název do úzkého rámečku záhlaví, celý popis jde pod název linky (jako vývěska AD).
-    d vals.%Set("NAZEV_DOPRAVCE",         $zstrip($g(dopravce("NAZEV")), "<>W"))
+    // Samotný název do úzkého rámečku záhlaví, celý popis jde pod název linky (jako vývěska AD);
+    // vedle něj adresa, telefon, e-mail a IČO po polích jako ve všech agendách JŘ.
+    d ..DopravceSkalary(.sys, dataDB, IdFa, LinkaID, vals)
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
     d vals.%Set("POPIS_PLATNOSTI",        ..FormatDatum(platnostOd)_" - "_..FormatDatum(platnostDo))
     d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum(platnostOd))
@@ -1769,7 +1770,12 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
 
     // ── dopravce ──
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+    // Po polích pod stejnými klíči jako AD (`B194c` D4).
     d ..AddField(fields, "NAZEV_DOPRAVCE",         "Název dopravce",         "text")
+    d ..AddField(fields, "ADRESA_DOPRAVCE",        "Adresa dopravce",        "text")
+    d ..AddField(fields, "TELEFON_DOPRAVCE",       "Telefon dopravce",       "text")
+    d ..AddField(fields, "EMAIL_DOPRAVCE",         "E-mail dopravce",        "text")
+    d ..AddField(fields, "ICO_DOPRAVCE",           "IČO dopravce",           "text")
 
     // ── platnost ──
     // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD.
@@ -1926,8 +1932,8 @@ ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
     ret ..RadkyDopravce($g(udaje("NAZEV")), $g(udaje("ULICE")), $g(udaje("MESTO")), $g(udaje("TELEFON")), jednimRadkem)
 }
 
-/// Údaje dopravce linky po položkách: `udaje("NAZEV")`, `("ULICE")`, `("MESTO")`, `("TELEFON")`.
-/// Zdroj viz `PopisDopravce`; selhání legacy volání → prázdné pole.
+/// Údaje dopravce linky po položkách: `udaje("NAZEV")`, `("ULICE")`, `("MESTO")`, `("TELEFON")`,
+/// `("EMAIL")`, `("ICO")`. Zdroj viz `PopisDopravce`; selhání legacy volání → prázdné pole.
 ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, ByRef udaje As %String)
 {
     k udaje
@@ -1935,7 +1941,9 @@ ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
         s sysnmsp = $g(sys("U","SystemDB"))
         s druh = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DruhDopravceID"))
         i druh = 0 {
-            // Vlastní firma (MlJFapiFa: 02 název, 03 upřesnění, 13 ulice, 14 město, 15 PSČ, 23 tel)
+            // Vlastní firma (MlJFapiFa: 02 název, 03 upřesnění, 07 IČO, 13 ulice, 14 město, 15 PSČ, 23 tel)
+            // ⚠️ E-mail se nebere: jediný na kartě (26) je odesílací adresa EDISONu vedle SMTP serveru
+            // a hesla (KV_DP edison@…, CB_DP no-reply@m-line.cz), ne kontakt pro cestující (Jan 27. 10.).
             k tmpArr  s err = $$gIdFa^MlJFapi(IdFa, sysnmsp, "", .tmpArr)
             i 'err {
                 s udaje("NAZEV") = $g(tmpArr("dta",2))
@@ -1943,9 +1951,10 @@ ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
                 s udaje("ULICE") = $g(tmpArr("dta",13))
                 s udaje("MESTO") = $zstrip($g(tmpArr("dta",15))_" "_$g(tmpArr("dta",14)), "<>W")
                 s udaje("TELEFON") = $g(tmpArr("dta",23))
+                s udaje("ICO") = $g(tmpArr("dta",7))
             }
         } elseif druh = 1 {
-            // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 7 obchodní název)
+            // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 5 IČO, 7 obchodní název, 13 e-mail)
             s ciziFa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DopravceCiziFirmaID"))
             i ciziFa '= "" {
                 k tmpArr  s err = $$gDopFa^JRapi(IdFa, dataDB, ciziFa, "", .tmpArr)
@@ -1954,11 +1963,27 @@ ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
                     s udaje("ULICE") = $g(tmpArr("dta",2))
                     s udaje("MESTO") = $g(tmpArr("dta",1))
                     s udaje("TELEFON") = $g(tmpArr("dta",3))
+                    s udaje("EMAIL") = $g(tmpArr("dta",13))
+                    s udaje("ICO") = $g(tmpArr("dta",5))
                 }
             }
         }
     } catch ex { k udaje }
     q
+}
+
+/// Údaje dopravce po jednotlivých polích pod stejnými klíči jako agendy AD (`ZastavkoveJrAd.DopravceSkalary`),
+/// aby šablona šla mezi agendami přenášet (`B194c` D4). Adresa = ulice, PSČ a obec.
+/// Linka bez dopravce zapíše prázdno, ať pole v datech existuje vždy.
+ClassMethod DopravceSkalary(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, vals As %DynamicObject)
+{
+    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .udaje)
+    s ulice = $zstrip($g(udaje("ULICE")), "<>W"), mesto = $zstrip($g(udaje("MESTO")), "<>W")
+    d vals.%Set("NAZEV_DOPRAVCE",   $zstrip($g(udaje("NAZEV")), "<>W"))
+    d vals.%Set("ADRESA_DOPRAVCE",  ulice_$s((ulice '= "") && (mesto '= ""):", ", 1:"")_mesto)
+    d vals.%Set("TELEFON_DOPRAVCE", $zstrip($g(udaje("TELEFON")), "<>W"))
+    d vals.%Set("EMAIL_DOPRAVCE",   $zstrip($g(udaje("EMAIL")), "<>W"))
+    d vals.%Set("ICO_DOPRAVCE",     $zstrip($g(udaje("ICO")), "<>W"))
 }
 
 /// Složí dopravce do řádků: název, ulice, sídlo/město, telefon. Prázdné položky se vynechají,

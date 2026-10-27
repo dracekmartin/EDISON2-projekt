@@ -68,6 +68,12 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // Bez „Poznámky nad linku": linka MHD ji má v datech (PoznamkaNadLinku), ale modul MHD ji
     // zatím nenabízí k zadání (Jan 23. 10.). Až půjde zadávat, pole se přidá zpátky.
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
+    // Po polích pod stejnými klíči jako ostatní agendy JŘ (`B194c` D4).
+    d ..AddField(fields, "NAZEV_DOPRAVCE",        "Název dopravce",           "text")
+    d ..AddField(fields, "ADRESA_DOPRAVCE",       "Adresa dopravce",          "text")
+    d ..AddField(fields, "TELEFON_DOPRAVCE",      "Telefon dopravce",         "text")
+    d ..AddField(fields, "EMAIL_DOPRAVCE",        "E-mail dopravce",          "text")
+    d ..AddField(fields, "ICO_DOPRAVCE",          "IČO dopravce",             "text")
     // Bez „Popisu platnosti" (Jan 23. 10.): větu si šablona složí z dat od-do. Agenda nevyšla,
     // takže ho na rozdíl od vydaných agend neposílá ani v datech.
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
@@ -349,6 +355,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     // tisk MHD ho neposílal (`LinkyPrintFormatJR.cls:1100-1106`); tatáž linka ho ale má na vývěsce
     // (rozhodnutí Jan 23. 10.).
     d vals.%Set("POPIS_DOPRAVCE",      ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, dataDB, IdFa, linkaId, 1))
+    d ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).DopravceSkalary(.sys, dataDB, IdFa, linkaId, vals)
 
     // ── trasa: body → zastávkové řádky (kategorie 1001, slučování sousedů, odjezd/příjezd) ──
     s trasaId = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, linkaId)
