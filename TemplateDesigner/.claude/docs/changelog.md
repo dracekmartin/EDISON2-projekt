@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-27 (11) - pole v nabídce dat ve stejném pořadí ve všech agendách JŘ (`B194c` D5)
+
+Nabídka dat (záložka Datová pole i „vložit pole") ukazuje pole v pořadí, v jakém je agenda posílá.
+Teď mají všechny čtyři agendy JŘ stejné bloky podle vývěsky AD: **linka** (číslo, veřejné označení,
+název, typ JŘ, barvy) → **dopravce** → **platnost** → **zastávka a směr** (aktuální zastávka, směr,
+výchozí, konečná) → **poznámky a doplňky** (poznámka nad linku, pod dopravce, URL adresa pro QR kód).
+Nejvíc se posunul Linkový JŘ AD (poznámky a QR byly mezi linkou a dopravcem, typ JŘ za platností),
+u Linkového MHD typ JŘ, QR a výchozí před konečnou. Šablony ani tisk se nemění. Rozhodnutí Jan 27. 10.
+Test `AgendaSchemaDriftTests.SkalarniPoleJr_MajiSpolecnePoradi`, ověřeno voláním `GetSchema`.
+
 ## 2026-10-27 (10) - drobnosti v datech a ukázkách (`B194c` D8, dokončení)
 
 **Linkový JŘ MHD bez vybrané linky** ukazoval v parametrech všechny typy provozu firmy (KV_DP desítky),

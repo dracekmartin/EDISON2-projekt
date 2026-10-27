@@ -132,6 +132,36 @@ public class AgendaSchemaDriftTests
             e => e.Scope == "collection:ZASTAVKY" && e.Key == "NAZEV_ZASTAVKY");
     }
 
+    /// <summary>Společné pořadí skalárních polí agend JŘ: linka → dopravce → platnost → zastávka a směr →
+    /// poznámky a doplňky (Jan 27. 10., `B194` D5). Nabídka dat pole nepřeřazuje, takže by stejné pole
+    /// bylo v každé agendě jinde. Pole, které tu není, se nekontroluje - nové pole JŘ sem patří.</summary>
+    private static readonly string[] PoradiPoliJr =
+    [
+        "CISLO_LINKY", "LOKALNI_OZNACENI_LINKY", "TITULEK", "POPIS_LINKY", "TYP_JR", "BARVA_LINKY", "BARVA_LINKY_2",
+        "POPIS_DOPRAVCE", "DOPRAVCI_SOUHRNNY_JR", "NAZEV_DOPRAVCE", "ADRESA_DOPRAVCE", "TELEFON_DOPRAVCE",
+        "EMAIL_DOPRAVCE", "ICO_DOPRAVCE",
+        "DATUM_PLATNOSTI_OD", "DATUM_PLATNOSTI_DO",
+        "POPIS_ZASTAVKA", "POPIS_ZASTAVKA_CIS", "CISLO_ZASTAVKA", "CISLO_ZASTAVKA_CIS", "AKTUALNI_ZASTAVKA_CZST",
+        "AKTUALNI_ZASTAVKA_TC", "VYLEP_ZASTAVKY", "NASTUPISTE", "SLOUPEK", "SLOUPEK_POPIS", "SMER",
+        "VYCHOZI_ZASTAVKA", "KONECNA_ZASTAVKA", "KONECNA_ZASTAVKA_CIS", "CISLO_ZASTAVKA_VYCHOZI_CIS",
+        "CISLO_ZASTAVKA_CILOVA_CIS",
+        "POZNAMKA_NAD_LINKU", "POZNAMKA_POD_DOPRAVCE", "INFORMACE", "VYLUKOVE_TEXTY", "QR_KOD",
+    ];
+
+    [Fact]
+    public void SkalarniPoleJr_MajiSpolecnePoradi()
+    {
+        var hits = new List<string>();
+        foreach (var agenda in AllFields().Where(e => e.Scope == "fields").GroupBy(e => e.File))
+        {
+            var poradi = agenda.Select(e => Array.IndexOf(PoradiPoliJr, e.Key)).Where(i => i >= 0).ToList();
+            for (int i = 1; i < poradi.Count; i++)
+                if (poradi[i] < poradi[i - 1])
+                    hits.Add($"{agenda.Key}: {PoradiPoliJr[poradi[i]]} stojí za {PoradiPoliJr[poradi[i - 1]]}");
+        }
+        Assert.True(hits.Count == 0, "Pole agendy JŘ mimo společné pořadí:\n" + string.Join("\n", hits));
+    }
+
     [Fact]
     public void StejnePole_MaVeVsechAgendachStejnyPopisek()
     {

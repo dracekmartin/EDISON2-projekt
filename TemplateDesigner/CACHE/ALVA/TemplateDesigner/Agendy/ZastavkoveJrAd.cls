@@ -3473,8 +3473,8 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "CISLO_ZASTAVKA_CILOVA_CIS",  "Číslo konečné zastávky (CIS)", "text")
 
     // ── poznámky a doplňky ──
-    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
+    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "VYLUKOVE_TEXTY",         "Výlukové texty",         "text")
     d ..AddField(fields, "QR_KOD",                 "URL adresa pro QR kód",  "text")

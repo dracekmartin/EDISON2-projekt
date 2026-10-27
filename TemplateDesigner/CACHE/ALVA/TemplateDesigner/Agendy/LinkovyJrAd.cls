@@ -96,19 +96,18 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // Názvy i popisky polí drží slovník zastávkového JŘ (AgendaSchemaDriftTests) - táž věc se musí
     // v obou agendách jmenovat stejně, jinak binding {NAZEV_ZASTAVKY} v jedné funguje a ve druhé
     // tiše vykreslí prázdno.
+    // Pořadí bloků jako ve všech agendách JŘ (Jan 27. 10.): linka → dopravce → platnost → zastávka
+    // a směr → poznámky a doplňky. Nabídka dat pole nepřeřazuje, ukazuje je v tomhle pořadí.
     d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
     d ..AddField(fields, "POPIS_LINKY",           "Název linky",              "text")
+    d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
     d ..AddField(fields, "BARVA_LINKY",           "Barva linky",              "color")
     d ..AddField(fields, "BARVA_LINKY_2",         "Barva linky 2",            "color")
-    d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
-    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
     // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD; GetData ho posílá dál kvůli starším šablonám.
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
-    d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
-    d ..AddField(fields, "QR_KOD",                "URL adresa pro QR kód",    "text")
     // Zastávka výlepu (parametr „Zvýraznit zastávku") jako pole stránky, aby ji šlo dosadit do QR.
     // Klíč i popisek jako u vývěsek; do hlavičky výlepu („Zastávka: …") jiný název stránky není.
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky",  "text")
@@ -118,8 +117,11 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // aktuální zastávku. Bez parametru pole na stránce není.
     d ..AddField(fields, "VYLEP_ZASTAVKY",         "Výlep pro zastávku",       "boolean")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
-    d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA",      "Konečná zastávka",         "text")
+    d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
+    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
+    d ..AddField(fields, "QR_KOD",                "URL adresa pro QR kód",    "text")
     s def.fields = fields
 
     s collections = ##class(%DynamicArray).%New()
