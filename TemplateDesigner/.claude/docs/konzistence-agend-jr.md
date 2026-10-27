@@ -27,16 +27,8 @@ Všechny hotové (C1-C12, 23.-26. 10.) - viz `roadmap-archive.md` a changelog.
 
 ## 2. Tisk - rozdíly mezi agendami
 
-Všechno mění vytištěný výstup vydaných agend, proto **Jan** u každé. Kde je doložená parita se starým
-modulem, stojí u položky; bez ní je rozdíl nahodilý.
+Všechno hotové nebo rozhodnuté (27. 10.) - viz `roadmap-archive.md`, `B194` T1-T14 (T7 vědomý rozdíl).
 
-- **T7 „Jen nástup / jen výstup" chybí jen v Zastávkovém JŘ AD** [M] **odloženo, Jan 26. 10.** (*ověřeno:*
-  kód, data). Ostatní tři kreslí šipku a vysvětlivku; starý zastávkový tisk to neměl. Rozhodnuto: jako
-  volba u seznamu zastávek, výchozí vypnutá. **Otevřené:** N / V není atribut zastávky (`J`), ale trasy
-  spoje (`W` pole 5) - liší se mezi trasami téže linky (CB_CSADAD 996/0360022: trasa 1 má V na pořadí
-  12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
-  zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
-  sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
 ## 3. Nabídka dat a parametry sestavy
 
 Popisky a nápovědy výstup ani uložené volby nemění (návrhář je bere ze serveru). Popisky citují i nové

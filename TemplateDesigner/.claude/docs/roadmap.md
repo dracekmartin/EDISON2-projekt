@@ -20,11 +20,6 @@ co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-
 Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
 vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se linkového MHD, nejlevnější před verzí.
 
-### `B194b` Tisk - rozdíly mezi agendami (všechno **tisk** a **Jan**)
-
-- **T7** „Jen nástup / jen výstup" chybí v Zastávkovém JŘ AD - **odloženo** (Jan 26. 10.), otevřené: podle
-  kterých spojů šipku ukázat; rozpracováno ve stashi [M]
-
 ### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)
 
 - **P2** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M] **Jan** -

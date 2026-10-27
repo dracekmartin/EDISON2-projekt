@@ -34,6 +34,11 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **T7** „Jen nástup / jen výstup" v Zastávkovém JŘ AD - **vědomý rozdíl, nedělá se** (rozhodnutí Jan
+  27. 10.). V AD je to údaj spoje v zastávce (trasa, W pole 5), ne zastávky: linkový JŘ ho dá do buňky
+  spoje (CB_CSADAD 996/0360022 jen u spoje 5), vývěska má jeden seznam zastávek pro všechny spoje
+  a nemá ho kde přesně ukázat. Starý zastávkový tisk ho neměl. Rozpracovaný kód ve stashi
+  „B194 T7 rozpracovane" pro případ poptávky zákazníka.
 - **A2** Spuštění z EDISONu otevře naposledy použitou agendu modulu (AD / MHD), strom beze změny
   (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (26)).
 - **P5** Výlepy linkového AD po zastávkách a PDF na zastávku - **vyřazeno, nedělá se** (rozhodnutí Jan
