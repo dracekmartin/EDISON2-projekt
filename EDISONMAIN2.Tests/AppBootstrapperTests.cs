@@ -83,7 +83,11 @@ public class AppBootstrapperTests
 
         protected override IMLRest OpenLoginConnection(string server, int port) => LoginRest;
 
-        protected override IReadOnlyList<CompanyStruct> LoadServerCompanies(IMLRest loginRest) => ServerCompanies;
+        /// <summary>Chyba načtení předloginového seznamu firem (výpadek spojení, chyba serveru).</summary>
+        public Exception? CompanyListFailure { get; set; }
+
+        protected override IReadOnlyList<CompanyStruct> LoadServerCompanies(IMLRest loginRest) =>
+            CompanyListFailure is { } failure ? throw failure : ServerCompanies;
 
         public LicenceAcquireOutcome SessionOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
         public IPopupDisplayer Popup { get; set; } = Substitute.For<IPopupDisplayer>();
@@ -755,6 +759,35 @@ public class AppBootstrapperTests
         Assert.Same(ex, b.ReportedFailure);
         Assert.False(b.BuildShellCalled);
         Assert.False(b.HandOffCalled);
+    }
+
+    [Fact]
+    public void Run_ServerUnreachableBeforeLogin_MessageAndShutdownWithoutErrorDialog()
+    {
+        var b = new TestableBootstrapper { CompanyListFailure = new InvalidOperationException(MLRestErrors.LegacyWrapped(MLRestErrors.Transport())) };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.Contains("unreachable test-host:9999", b.Calls);
+        Assert.Same(b.CompanyListFailure, b.Host.UnreachableFailure);
+        Assert.Null(b.ReportedFailure);
+        Assert.False(b.TryLoginCalled);
+    }
+
+    [Fact]
+    public void Run_CompanyListServerError_StaysTechnicalFailure()
+    {
+        var ex = new InvalidOperationException(MLRestErrors.ServerError("ERROR #5001: chyba v metodě"));
+        var b = new TestableBootstrapper { CompanyListFailure = ex };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.Same(ex, b.ReportedFailure);
+        Assert.Null(b.Host.UnreachableFailure);
     }
 
     [Fact]

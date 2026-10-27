@@ -1,6 +1,7 @@
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.LoginWindow;
+using EDTesting;
 using NSubstitute;
 
 namespace EDISONMAIN2.Tests;
@@ -116,6 +117,43 @@ public class LoginViewModelTests
         Assert.Null(vm.Result);
         Assert.True(vm.IsEditable);
         Assert.Equal(0, succeeded);
+    }
+
+    [Fact]
+    public void ServerUnreachable_ShowsMessageKeepsRememberedPasswordAndReports()
+    {
+        // Výpadek spojení není odmítnuté heslo: zapamatované se nesmí zapomenout a globální dialog chyby nepřijde.
+        var prefs = RememberedPrefs("jan.novak", "heslo");
+        var remembered = DevPassword(prefs);
+        var rest = Server(Accepted());
+        rest.QueryOrThrow("ALVA.SYS.Login", "Login", Arg.Any<object[]>())
+            .Returns(_ => throw new Exception(MLRestErrors.Transport()));
+        var reported = new List<Exception>();
+        var vm = LoginViewModel.ForStartup(Services(), rest, prefs, reported.Add);
+        int succeeded = 0;
+        vm.LoginSucceeded += (_, _) => succeeded++;
+
+        Assert.Equal(LoginAttempt.Failed, vm.Login(vm.InitialPassword));
+        vm.ApplyRememberedPassword();
+
+        Assert.Equal(LoginViewModel.UnreachableMessage, vm.ErrorMessage);
+        Assert.False(vm.RememberedPasswordRejected);
+        Assert.Equal(remembered, DevPassword(prefs));
+        Assert.Single(reported);
+        Assert.True(vm.IsEditable);
+        Assert.Equal(0, succeeded);
+    }
+
+    [Fact]
+    public void ServerErrorOtherThanTransport_StillPropagates()
+    {
+        var rest = Server(Accepted());
+        rest.QueryOrThrow("ALVA.SYS.Login", "Login", Arg.Any<object[]>())
+            .Returns(_ => throw new Exception(MLRestErrors.ServerError("ERROR #5001: chyba v metodě")));
+        var vm = LoginViewModel.ForStartup(Services(), rest, new TransientLocalPrefs(), _ => { });
+        vm.UserName = "jan";
+
+        Assert.Throws<Exception>(() => vm.Login("heslo"));
     }
 
     [Fact]

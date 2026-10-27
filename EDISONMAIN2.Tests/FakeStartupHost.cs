@@ -84,4 +84,12 @@ internal sealed class FakeStartupHost(List<string>? calls = null) : IStartupHost
     public void Dispatch(Action action) => action();
 
     public void ReportFailure(Exception ex) => ReportedFailure = ex;
+
+    public Exception? UnreachableFailure { get; private set; }
+
+    public void ReportUnreachableServer(Exception failure, string server, int port)
+    {
+        Calls.Add($"unreachable {server}:{port}");
+        UnreachableFailure = failure;
+    }
 }

@@ -1,6 +1,7 @@
 using System;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.ErrorReporting;
 
 namespace EDISONMAIN2.Windows.LoginWindow
 {
@@ -14,8 +15,11 @@ namespace EDISONMAIN2.Windows.LoginWindow
     /// </summary>
     internal sealed class LoginViewModel : EDViewModel
     {
+        internal const string UnreachableMessage = "Server neodpovídá, zkuste to znovu.";
+
         private readonly IMLRest _rest;
         private readonly ILocalPrefs? _prefs;
+        private readonly Action<Exception> _reportFailure;
         private string _userName;
         private bool _rememberPassword;
         private string? _errorMessage;
@@ -23,10 +27,11 @@ namespace EDISONMAIN2.Windows.LoginWindow
         private bool _isInProgress;
 
         private LoginViewModel(EDServices services, IMLRest rest, ILocalPrefs? prefs,
-                               string userName, string initialPassword) : base(services)
+                               string userName, string initialPassword, Action<Exception>? reportFailure) : base(services)
         {
             _rest = rest;
             _prefs = prefs;
+            _reportFailure = reportFailure ?? ErrorReports.ReportBackground;
             _userName = userName;
             InitialPassword = initialPassword;
             // Předvyplněné heslo → checkbox zaškrtnutý (uložení se má obnovit při dalším loginu).
@@ -34,16 +39,19 @@ namespace EDISONMAIN2.Windows.LoginWindow
             InitialFocus = LoginWindowLogic.PickInitialFocus(userName, initialPassword);
         }
 
-        public static LoginViewModel ForStartup(EDServices services, IMLRest rest, ILocalPrefs prefs)
+        /// <param name="reportFailure">Hlášení výpadku spojení do telemetrie, testy ho podstrčí.</param>
+        public static LoginViewModel ForStartup(EDServices services, IMLRest rest, ILocalPrefs prefs,
+                                                Action<Exception>? reportFailure = null)
         {
             prefs.AdoptLegacyLogin(rest.Server, rest.Port);
             // Zapamatované heslo předvyplní jen když patří k naposledy přihlášenému jménu (DPAPI).
             var lastName = prefs.LoginNameFor(rest.Server, rest.Port) ?? "";
             var remembered = prefs.RememberedPasswordFor(rest.Server, rest.Port);
-            return new(services, rest, prefs, lastName, PasswordProtector.Unprotect(remembered, lastName) ?? "");
+            return new(services, rest, prefs, lastName, PasswordProtector.Unprotect(remembered, lastName) ?? "", reportFailure);
         }
 
-        public static LoginViewModel ForReauth(EDServices services, IMLRest rest) => new(services, rest, null, "", "");
+        public static LoginViewModel ForReauth(EDServices services, IMLRest rest, Action<Exception>? reportFailure = null) =>
+            new(services, rest, null, "", "", reportFailure);
 
         // Geometrii login okna řeší bootstrapper přes local.json (před loginem není kam ukládat) a pre-login
         // kliky nemají session pro telemetrii.
@@ -124,6 +132,13 @@ namespace EDISONMAIN2.Windows.LoginWindow
                     return LoginAttempt.Failed;
                 RememberedPasswordRejected = true;
                 return LoginAttempt.RememberedPasswordRejected;
+            }
+            catch (Exception ex) when (MLRestFailure.IsTransport(ex))
+            {
+                // Výpadek spojení heslo nezpochybňuje: hláška v okně, zapamatované heslo zůstává.
+                _reportFailure(ex);
+                ErrorMessage = UnreachableMessage;
+                return LoginAttempt.Failed;
             }
 
             Result = result;

@@ -92,7 +92,11 @@ public class AppBootstrapper
             return null;
         }
 
-        var prep = PrepareLogin(prefs);
+        if (PrepareLogin(prefs) is not { } prep)
+        {
+            Shutdown();
+            return null;
+        }
 
         // Brány legacy EDLOADERu (zákaz přihlašování, běžící instalace na serveru): start, který App
         // nepřesměruje přes EDLOADER (značka reason=2, argumenty připojení), je obchází.
@@ -157,7 +161,7 @@ public class AppBootstrapper
 
     /// <summary>Cesta po loginu sdílená s přihlášením jiného uživatele; tatáž instance jde do <see cref="SessionSwitcher"/>.</summary>
     protected virtual SessionOpener CreateSessionOpener(EDServices services) =>
-        new(services, _options, BuildActivityFailedWire(services));
+        new(services, _options, new ServerSessionEnd(_host, _shutdown, () => services.PopupDisplayer).Wire);
 
     private void ShowStartupProgress(string message)
     {
@@ -229,14 +233,28 @@ public class AppBootstrapper
     // Připojení z příkazové řádky (Připojit k databázi) - EDISONini.xml stanice se nepoužije.
     protected virtual bool IsConfigured() => _connectionOverride is not null || SettingsLoader.IsConfigured(SettingsFilePath);
 
-    private PreLoginContext PrepareLogin(ILocalPrefs prefs)
+    internal static string UnreachableServerMessage(string server, int port) =>
+        $"Server {server}:{port} neodpovídá. Aplikace bude ukončena.";
+
+    /// <summary>Null = server neodpovídá, uživatel to už ví z hlášky.</summary>
+    private PreLoginContext? PrepareLogin(ILocalPrefs prefs)
     {
         var (server, port) = ResolveConnection(_connectionOverride,
                                                () => SettingsLoader.Load(_options.UseDevDefaults, SettingsFilePath).Server);
 
         var loginRest = OpenLoginConnection(server, port);
-        // Bez uživatele úplný seznam - slouží jen k Idfa pro Login, povolené firmy načte Run po přihlášení.
-        var companies = LoadServerCompanies(loginRest);
+        IReadOnlyList<CompanyStruct> companies;
+        try
+        {
+            // Bez uživatele úplný seznam - slouží jen k Idfa pro Login, povolené firmy načte Run po přihlášení.
+            companies = LoadServerCompanies(loginRest);
+        }
+        catch (Exception ex) when (MLRestFailure.IsTransport(ex))
+        {
+            // Nedostupný server není chyba programu: místo technického dialogu hláška, do telemetrie varování.
+            _host.ReportUnreachableServer(ex, server, port);
+            return null;
+        }
 
         var startCompany = CompanySwitcher.PickInitial(companies, PreferredIdfa(prefs, companies, server, port));
         // Idfa potřebné aby ALVA.SYS.Login.Login uměl resolvovat user's startupForm.
@@ -356,26 +374,6 @@ public class AppBootstrapper
         // zapamatované heslo) pro ostrý exe na témže stroji.
         if (_options.DevLogin is null) prefs.SetLoginName(server, port, loginName);
         prefs.Save();
-    }
-
-    /// <summary>
-    /// Delegát, který napojí force-logout na MLRest každé nové session (start i přihlášení jiného
-    /// uživatele, <see cref="SessionOpener"/>): když server odstraní ACTIVITY zámek (timeout, výpadek,
-    /// admin disconnect) nebo nesedí verze, aplikace skončí s informační hláškou.
-    /// </summary>
-    private Action<IMLRest> BuildActivityFailedWire(EDServices services)
-    {
-        // Lokální kopie polí: delegát žije po celou session, closure na bootstrapper by ho držela taky.
-        var host = _host;
-        var shutdown = _shutdown;
-        void End(string message) => host.Dispatch(() =>
-        {
-            services.PopupDisplayer.Info(message);
-            shutdown.Force();
-        });
-        return mlRest => LegacyApi.OnSessionEnd(mlRest,
-            activityLost: () => End("Spojení se serverem bylo přerušeno. Aplikace bude ukončena."),
-            versionMismatch: () => End("Rozdílná verze Caché a verze Edison, aplikace bude ukončena."));
     }
 
     protected virtual EdisonMainWindow BuildShellWindow(

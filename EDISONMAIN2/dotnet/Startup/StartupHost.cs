@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Threading;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.ErrorReporting;
 using EDISONMAIN2.Windows.LoginWindow;
 using EDISONMAIN2.Windows.SetupWindow;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro WinForms color picker).
@@ -37,7 +38,7 @@ internal interface IStartupHost
     /// <summary>Předá shellu roli hlavního okna; false = ukončení už běží a shell se nemá ukázat.</summary>
     bool HandOff(EdisonMainWindow shell);
 
-    /// <summary>Ukončení už běží (force logout nebo version gate během startu).</summary>
+    /// <summary>Ukončení už běží: <see cref="Shutdown"/> (force logout, version gate) nebo uživatel zavřel shell.</summary>
     bool ShutdownRequested { get; }
 
     void Shutdown();
@@ -49,6 +50,9 @@ internal interface IStartupHost
 
     /// <summary>Hlášení chyby startu, dialog nad login oknem, je-li.</summary>
     void ReportFailure(Exception ex);
+
+    /// <summary>Server před přihlášením neodpovídá: hláška místo technického dialogu, do telemetrie jako varování.</summary>
+    void ReportUnreachableServer(Exception failure, string server, int port);
 }
 
 /// <summary>Start nad skutečnou <see cref="Application"/>.</summary>
@@ -57,7 +61,8 @@ internal sealed class ApplicationStartupHost(Application application) : IStartup
     // Login okno dialog cesty: owner dalších dialogů a podklad, který se zavře až po vykreslení shellu.
     private Window? _loginWindow;
     private LoginViewModel? _login;
-    private bool _shutdownRequested;
+    // Čte ho i vlákno requestu (konec session ze serveru).
+    private volatile bool _shutdownRequested;
 
     public void HoldShutdown() => application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
@@ -111,6 +116,8 @@ internal sealed class ApplicationStartupHost(Application application) : IStartup
         if (_shutdownRequested) return false;
         application.MainWindow = shell;
         application.ShutdownMode = ShutdownMode.OnMainWindowClose;
+        // Zavřením shellu WPF ukončí aplikaci samo, bez Shutdown: pozdní konec session pak hlášku neukáže.
+        shell.Closed += (_, _) => _shutdownRequested = true;
         if (_login is { } login)
             shell.ContentRendered += (_, _) => login.CompleteHandoff();
         // Host žije celou session (ukončení přes ShellShutdown), login okno držet nemá.
@@ -127,7 +134,19 @@ internal sealed class ApplicationStartupHost(Application application) : IStartup
 
     public void OnExit(Action action) => application.Exit += (_, _) => action();
 
-    public void Dispatch(Action action) => application.Dispatcher.Invoke(action);
+    public void Dispatch(Action action)
+    {
+        if (application.Dispatcher.HasShutdownStarted) return;
+        // Zrušené volání by se v MLRest.Query ukázalo jako TaskCanceledException místo chyby serveru.
+        try { application.Dispatcher.Invoke(action); }
+        catch (OperationCanceledException) { }
+    }
 
     public void ReportFailure(Exception ex) => new PopupDisplayer(_loginWindow).Error(ex);
+
+    public void ReportUnreachableServer(Exception failure, string server, int port)
+    {
+        ErrorReports.ReportBackground(failure);
+        new PopupDisplayer(_loginWindow).Info(AppBootstrapper.UnreachableServerMessage(server, port));
+    }
 }

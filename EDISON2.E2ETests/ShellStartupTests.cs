@@ -23,4 +23,18 @@ public class ShellStartupTests
 
         Assert.Equal(0, shell.ExitCode);
     }
+
+    [E2EFact]
+    public void UnreachableServer_MessageAndExitWithoutErrorDialog()
+    {
+        // Výpadek spojení před přihlášením: hláška místo technického dialogu (nečekané okno by test shodilo).
+        using var shell = ShellSession.StartUnreachable();
+
+        var popup = shell.WaitForStartupWindow("Informace");
+        Assert.Contains("neodpovídá", shell.PopupMessage(popup));
+        shell.Button(popup, "PositiveBtn").Invoke();
+        shell.WaitForExit();
+
+        Assert.Equal(0, shell.ExitCode);
+    }
 }

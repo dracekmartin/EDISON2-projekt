@@ -50,12 +50,23 @@ internal sealed class ShellSession : IDisposable
     /// (<see cref="WaitForStartupWindow"/>) a pak zavolá <see cref="WaitUntilReady"/>.</summary>
     public static ShellSession StartBeforeShell(params string[] extraArgs) => Launch(extraArgs, waitUntilReady: false);
 
-    private static ShellSession Launch(IEnumerable<string> extraArgs, bool waitUntilReady)
+    /// <summary>Shell proti serveru, který neodpovídá (zavřený port na loopbacku): start skončí hláškou.</summary>
+    public static ShellSession StartUnreachable()
+    {
+        var listener = new TcpListener(System.Net.IPAddress.Loopback, 0);
+        listener.Start();
+        var port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
+        listener.Stop();
+        return Launch([], waitUntilReady: false, server: ("127.0.0.1", port));
+    }
+
+    private static ShellSession Launch(IEnumerable<string> extraArgs, bool waitUntilReady,
+                                       (string Host, int Port)? server = null)
     {
         var exe = ShellExe();
-        var (host, port) = Server();
+        var (host, port) = server ?? Server();
         // Bez serveru by GetCompanyList visel bez jediného okna na 8h timeoutu MLRest.
-        if (!Reachable(host, port))
+        if (server is null && !Reachable(host, port))
             throw new InvalidOperationException($"Dev server {host}:{port} není dostupný (VPN?).");
 
         var runLock = new Mutex(false, @"Local\EDISON2.E2E");
@@ -189,6 +200,13 @@ internal sealed class ShellSession : IDisposable
         if (message != ExitConfirmText) Fail($"Potvrzení s nečekaným textem: „{message}\".", popup);
         Button(popup, "PositiveBtn").Invoke();
         if (!_process.WaitForExit(StepTimeout)) Fail("Shell po potvrzení konce do 30 s neskončil.");
+        _exited = true;
+    }
+
+    /// <summary>Konec procesu, který skončí sám (start bez shellu).</summary>
+    public void WaitForExit()
+    {
+        if (!_process.WaitForExit(StepTimeout)) Fail("Shell do 30 s neskončil.");
         _exited = true;
     }
 

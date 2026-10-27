@@ -23,12 +23,12 @@ Geometrie (`ShellWindowBoundsByServer`) je **jedna pro shell i login okno** (př
 firma, jméno i heslo (DPAPI blob, předvyplní se jen ke jménu z blobu) jsou **per server** (`ServerPrefs`, `server:port`).
 Globální hodnoty starší verze se jen čtou: geometrie pro server bez záznamu, firma, dokud žádný server nemá vlastní.
 
-`SettingsLoader` čte `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho roznáší ze
-serveru): **`connection@restport`, ne `@port`** (to je superserver); wizard zapisuje plnou legacy
-paritu (`initialized`/`forceChange`=1), uzly mimo ni (`securedMode`) zachovává. Argumenty
-`server=<host> restport=<port>` (`ConnectionOverride`) mají přednost a wizard přeskočí: „Připojit
-k databázi" jimi spouští **novou instanci** (session v procesu je na jeden server); uložená
-připojení žijí mimo `EDISONini.xml`, ten zůstává centrálně řízený (legacy `forceChange`).
+`SettingsLoader` čte `EDISONini.xml` vedle exe (sdílený s legacy, EDUPDATE ho roznáší ze serveru): **`connection@restport`,
+ne `@port`** (to je superserver); wizard zapisuje plnou legacy paritu (`initialized`/`forceChange`=1), uzly mimo ni
+(`securedMode`) zachovává. Argumenty `server=<host> restport=<port>` (`ConnectionOverride`) mají přednost a wizard přeskočí:
+„Připojit k databázi" jimi spouští **novou instanci** (session v procesu je na jeden server); uložená připojení žijí mimo
+`EDISONini.xml`, ten zůstává centrálně řízený (legacy `forceChange`). Nedostupný server před přihlášením (`MLRestFailure`)
+ukáže hlášku a aplikaci ukončí (`IStartupHost.ReportUnreachableServer`), v login okně jde do `ErrorMessage`, telemetrii varování.
 Start bez značky `reason=2` od EDLOADERu (pin na liště, zástupce na exe) `App` přesměruje přes
 `EDISON.exe` kvůli uzlu NewShell (`EDISONMAIN2_REDIRECTED` brání smyčce); výjimky (připojení, `e2e=1`, `bin\`) kryjí brány `PassesPreLoginGates`.
 Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDATE2/CLAUDE.md).
@@ -38,19 +38,19 @@ Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDA
 - Zámek vytváří `VerifyLic` při loginu; je v **temp globálu** - hard-kill ho neuvolní (uklidí až idle
   timeout). V dev ho re-run přepíše díky deterministickému GUID (`StartupOptions.SessionGuidTag`); E2E běh
   (`e2e=1`) má vlastní tag, jinak by jeho logout (maže zámky podle GUID) shodil vývojářův shell.
-- Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty obnovují
-  idle timer (jinak aktivní shell vypadá serveru jako idle) a detekují zaniklý zámek/verzi.
-  Přepnutí firmy jede s `CacheLocks=0` po dobu verify **i logoutu staré firmy** (zámek nové
-  firmy ještě/už neexistuje, LockExist by session shodil; `LicenceLoader` je taky request na
-  sdílené instanci). Version gate jen při Locks=1: update check proto jede na klonu s `Locks=0`
-  (po FULL vydání by jinak `LoadSettings` odmítl a updater se nespustil), DEBUG posílá prázdnou
-  `EdisonVersion` (dev verze `999999.9` by gate shodila).
-- `SessionLogout.Logout` jede na **klonu** `IMLRest.With(...)`. Kromě ACTIVITY zámku uklízí
-  i **business zámky session** (`ALWA.SYS.Lock.LockClearExt` dle GUID, parita s legacy
-  `EDUsers.Logout` - pod shell GUID zamykají i hostované moduly, zavírané killem). Úklid je
-  **GUID-wide, ne per-IdFa** (`^CacheTempSYSLock` drží i `ACTIVITY/<idfa>~…`) a shell GUID
-  přepnutí firmy přežije, proto `CompanySwitcher` po logoutu obnovuje zámek nové firmy
-  (`LicenceVerifier.ReacquireLock`); guard `Tests/SessionLockTest`.
+- Po `Accepted` nastaví `LicenceVerifier` sdílené session **`CacheLocks=1`** - requesty obnovují idle timer (jinak aktivní
+  shell vypadá serveru jako idle) a detekují zaniklý zámek/verzi. Konec session ze serveru obslouží **jednou**
+  `ServerSessionEnd` a session hned přepne na `CacheLocks=0`: zavírací zápisy, flush a logout projdou jako běžné zavření
+  (**obchodní zápis při zavření proto nepřidávat**), po zahájení ukončení (Shutdown, zavřený shell) hláška nepřijde.
+  Přepnutí firmy jede s `CacheLocks=0` po dobu verify **i logoutu staré firmy** (zámek nové firmy ještě/už neexistuje,
+  LockExist by session shodil; `LicenceLoader` je taky request na sdílené instanci). Version gate jen při Locks=1: update
+  check proto jede na klonu s `Locks=0` (po FULL vydání by jinak `LoadSettings` odmítl a updater se nespustil), DEBUG
+  posílá prázdnou `EdisonVersion` (dev verze `999999.9` by gate shodila).
+- `SessionLogout.Logout` jede na **klonu** `IMLRest.With(...)`. Kromě ACTIVITY zámku uklízí i **business zámky session**
+  (`ALWA.SYS.Lock.LockClearExt` dle GUID, parita s legacy `EDUsers.Logout` - pod shell GUID zamykají i hostované moduly,
+  zavírané killem), po konci session ze serveru i zámek pod starou IP stanice. Úklid je **GUID-wide, ne per-IdFa**
+  (`^CacheTempSYSLock` drží i `ACTIVITY/<idfa>~…`) a shell GUID přepnutí firmy přežije, proto `CompanySwitcher` po
+  logoutu obnovuje zámek nové firmy (`LicenceVerifier.ReacquireLock`); guard `Tests/SessionLockTest`.
 - `LogoutWatcher` pollí `maSeUkoncit` s `CacheLocks=2`, aby poll neobnovoval idle timer.
 - `CompanySwitcher.Switch` je synchronní (UI thread na dialogy licenčního retry). Zavírání dvoufázově: WPF okna
   shellu **před** swapem Idfa (volají server přes sdílený MLRest), hned po nich `EDUsageTelemetry.Flush` (zápisy zavřených
