@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-27 (15) - okno Vybrat linky: „Číslo linky", „Platnost", řazení podle čísla (`B194e` A3, část)
+
+Sloupce okna **Vybrat linky** se jmenují **„Číslo linky"** (dřív „Číslo") a **„Platnost"** (dřív
+„Detail", přitom ukazoval jen platnost). Sloupec čísla je číselný, takže klik na záhlaví řadí 2 před 11;
+označení s písmenem EDList porovná jako text. **Linky MHD jdou v seznamu podle čísla linky** jako v AD
+(čísla vzestupně, pak ostatní označení, linky bez čísla na konci) - dřív podle interního ID, takže
+vypadaly rozházeně (11, 1, 25, 2). Klíče sloupců beze změny, uložené rozvržení platí dál. Rozhodnutí
+Jan 27. 10. Test pořadí v `LinkovyJrMhdTest.TestJakoVyveskaMhd` (KV_DP), ověřeno voláním
+`EDList.Instance.InitializeList`.
+
 ## 2026-10-27 (14) - příručka, nápověda F1 a Pomocník podle aktuální aplikace (`B194e` H1, H2)
 
 **Příručka** (`uzivatelska-prirucka.md`, wiki seed): opravených ~50 míst, kde nesouhlasila s aplikací -

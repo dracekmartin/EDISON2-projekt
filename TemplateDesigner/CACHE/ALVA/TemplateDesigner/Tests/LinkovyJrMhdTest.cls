@@ -549,6 +549,17 @@ Method TestJakoVyveskaMhd()
 		kill polozky(o.value)
 	}
 	do $$$AssertTrue(pocet > 0, "vývěska nabídla aspoň jednu linku")
+	// Řazení podle čísla linky (Jan 27. 10.): čísla vzestupně, pak ostatní označení, ne podle interního ID.
+	set it = ##class(%DynamicArray).%FromJSON(linky(vyv)).%GetIterator(), predchozi = "", spatne = ""
+	while it.%GetNext(.k, .o) {
+		set c = o.cislo
+		if c?1.N { set klic = "0~"_$translate($justify(+c, 12), " ", "0") }
+		elseif c '= "" { set klic = "1~"_$zconvert(c, "U") }
+		else { set klic = "2~" }
+		if (predchozi '= "") && (predchozi ]] klic) { set spatne = spatne_" "_c }
+		set predchozi = klic
+	}
+	do $$$AssertEquals(spatne, "", "linky ve výběru nejsou seřazené podle čísla, mimo pořadí:"_spatne)
 	set prvni = ##class(%DynamicArray).%FromJSON(linky(vyv)).%Get(0)
 	do $$$AssertTrue(prvni.subtitle?1"Platnost od "2N1"."2N1"."4N.E, "platnost ve výběru linek jako u AD (dd.mm.rrrr): "_prvni.subtitle)
 	// Od `B193g` nabízejí obě agendy i linky bez trasy (napíšou u nich důvod) - výběr je totožný.

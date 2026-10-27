@@ -223,10 +223,25 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
         d obj.%Set("nazev",    nazev, "string")
         d obj.%Set("display",  display, "string")
         if subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
-        d arr.%Push(obj)
-
-        s count = count + 1
-        q:count>=limit
+        // Řadí se podle čísla linky jako v AD, ne podle interního ID (to dávalo 11, 1, 25, 2 -
+        // Jan 27. 10.): nejdřív čísla vzestupně, pak ostatní označení abecedně, linky bez čísla na konci.
+        s razeni = $s(cislo?1.N:$lb(0, +cislo), cislo'="":$lb(1, $zcvt(cislo,"U")), 1:$lb(2, 0))
+        s radky($lg(razeni,1), $lg(razeni,2), LinkaID) = obj
+    }
+    s skupina = ""
+    for {
+        s skupina = $o(radky(skupina))  q:skupina=""
+        s klic = ""
+        for {
+            s klic = $o(radky(skupina, klic))  q:klic=""
+            s id = ""
+            for {
+                s id = $o(radky(skupina, klic, id))  q:id=""
+                q:count>=limit
+                d arr.%Push(radky(skupina, klic, id))
+                s count = count + 1
+            }
+        }
     }
     q arr
 }
