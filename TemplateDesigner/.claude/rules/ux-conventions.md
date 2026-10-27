@@ -322,7 +322,7 @@ Výjimka: text „tisk stanoviště" v legendě CIS atributů (`ZastavkoveJrAd.T
 doslovná parita textů starého modulu - nechává se.
 
 **UI texty jen česky** - žádné cizí výrazy typu „per", „split" v labelech, tooltipech a helpTextech
-(„Samostatná stránka pro každé stanoviště", ne „per označník"; „Řádek pro každé stanoviště",
+(„Stránka pro každé stanoviště", ne „per označník"; „Řádek pro každé stanoviště",
 ne „per stanoviště").
 
 **Nastavení, které je u linky a uživatel ho má jít přebít**, se dělá jako enum s výchozí volbou

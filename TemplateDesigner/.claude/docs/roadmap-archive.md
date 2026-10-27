@@ -34,7 +34,7 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
-- **P3** „Samostatná stránka pro každé stanoviště" zastávkového AD přesunutá do Obecné za Pořadí stránek
+- **P3** „Stránka pro každé stanoviště" (dřív „Samostatná…") zastávkového AD v Obecné za Pořadím stránek
   (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (23)). Sjednocení s linkovou „Stránka pro každou
   zastávku" nejde - jiná věc (zastávky × stanoviště).
 - **A4** Systémové šablony: sekce zastávkové „Obsah", popisy s dnešními názvy prvků; stavba šablon

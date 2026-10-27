@@ -768,7 +768,7 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     ⚠️ Slití něco stojí: u slitých spojů jsou **časy té delší varianty**. U dvou variant se shodnými
     časy to nevadí, u variant s jinými jízdními dobami se minuty posunou. Zapíná se to na celou
     sestavu, ne po jednotlivých variantách - před zapnutím si vývěsku prohlédněte.
-- **Samostatná stránka pro každé stanoviště** (parametr ve skupině „Obecné") - zastávka
+- **Stránka pro každé stanoviště** (parametr ve skupině „Obecné") - zastávka
   obsluhovaná z více stanovišť se vytiskne jako **samostatná vývěska pro každé z nich**, vždy jen
   s odjezdy spojů, které z něj jedou; číslo stanoviště je i v titulku stránky. Hodí se, když vývěsku
   fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy). Zda je
@@ -980,7 +980,7 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 Navíc jen u AD: **Tvar názvu zastávky** (zkrácený / typograficky upravený / plný CIS), **Použít
 název pro MHD**, **Výčet spojů u dopravce**, **Rozdělení sloupců dle platnosti**, **Řazení variant
 tras**, **Písmena variant tras** (+ **První varianta bez písmene**), **Nejvýš sloupců variant tras**,
-**Slučovat varianty, které jedou jen část jiné**, **Samostatná stránka pro každé stanoviště**
+**Slučovat varianty, které jedou jen část jiné**, **Stránka pro každé stanoviště**
 a **Číslo stanoviště podle** (vše viz kap. 1), **Barvy spojů** (minuty spoje barvou z jízdních řádů, vypnuto = všechny černě),
 **Schovat poznámky v rozsahu „nepoznámkovat“** a **Zastávky na znamení souhrnně** - místo
 značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
