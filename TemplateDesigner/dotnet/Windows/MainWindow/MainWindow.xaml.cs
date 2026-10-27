@@ -2076,8 +2076,6 @@ public partial class MainWindow : Window
         };
     }
 
-    /// <summary>Nabídka „Řazení poznámek" podle agendy šablony (<see cref="NotesLegendElement.VolbyRazeni"/>).
-    /// Nastavuje se vždy celá, protože panel drží týž formulář i pro prvek z jiné šablony.</summary>
     /// <summary>Nápověda viditelnosti řádku s poli zastávky z agendy šablony; null = prvek podmínku řádku nemá.</summary>
     private Action<IEnumerable<Item>?>? DoplneniPoliRadku(TemplateElement prvek)
     {
@@ -2092,6 +2090,8 @@ public partial class MainWindow : Window
         return pole => ElementFormBinder.DoplnPoleRadku(pole, schema, kolekce);
     }
 
+    /// <summary>Nabídka „Řazení poznámek" podle agendy šablony (<see cref="NotesLegendElement.VolbyRazeni"/>).
+    /// Nastavuje se vždy celá, protože panel drží týž formulář i pro prvek z jiné šablony.</summary>
     internal static void NastavVolbyRazeni(IEnumerable<Item>? pole, bool linkovyJr)
     {
         if ((pole ?? []).OfType<Field>().FirstOrDefault(f => f.Key == nameof(NotesLegendElement.Razeni)) is not { } razeni)

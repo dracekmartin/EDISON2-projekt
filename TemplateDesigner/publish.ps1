@@ -23,7 +23,7 @@ if (-not (Test-Path $csproj)) {
 }
 
 # Ověř, že žádný cílový soubor nedrží běžící proces. EDControls.dll zamyká KAŽDÁ m-line
-# aplikace, která ji načetla — tedy i EDISONMAIN2, ne jen TemplateDesigner.
+# aplikace, která ji načetla - tedy i EDISONMAIN2, ne jen TemplateDesigner.
 foreach ($t in $targets) {
     if (-not (Test-Path $t)) { continue }
     try {

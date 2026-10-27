@@ -325,16 +325,6 @@ public class PreviewCanvas
     }
 
     /// <summary>
-    /// Spočítá přetékající stránky napříč všemi dodanými datovými sadami - **layout-only, bez renderu**.
-    /// Použito v tisku pro agregovanou kontrolu přes všechny instance: data už jsou fetchnutá z Caché,
-    /// takže projetí layoutem + <see cref="NajdiPreteceni"/> je levné. Vrací nálezy (co a kde se nevejde)
-    /// a celkový počet stránek.
-    /// </summary>
-    /// <remarks>
-    /// Čísla stránek jsou průběžná přes všechny instance, ne od jedničky za každou - v tisku jde
-    /// o jeden výstup a uživatel v něm hledá pořadovou stránku.
-    /// </remarks>
-    /// <summary>
     /// Hlášky ze sazby pro stránky dat jedné linky - přetečení, Počet stran, zmenšení tabulky,
     /// nečitelné podmínky (`B178`). Bez kreslení, jen layout.
     /// </summary>
@@ -347,6 +337,16 @@ public class PreviewCanvas
         return [.. hlaseni.Distinct()];
     }
 
+    /// <summary>
+    /// Spočítá přetékající stránky napříč všemi dodanými datovými sadami - **layout-only, bez renderu**.
+    /// Použito v tisku pro agregovanou kontrolu přes všechny instance: data už jsou fetchnutá z Caché,
+    /// takže projetí layoutem + <see cref="NajdiPreteceni"/> je levné. Vrací nálezy (co a kde se nevejde)
+    /// a celkový počet stránek.
+    /// </summary>
+    /// <remarks>
+    /// Čísla stránek jsou průběžná přes všechny instance, ne od jedničky za každou - v tisku jde
+    /// o jeden výstup a uživatel v něm hledá pořadovou stránku.
+    /// </remarks>
     public (IReadOnlyList<PreteceniNalez> Nalezy, int Total) CountOverflowingPages(IReadOnlyList<DataContext> dataPages)
     {
         var ps = _state.CurrentTemplate.PageSize;

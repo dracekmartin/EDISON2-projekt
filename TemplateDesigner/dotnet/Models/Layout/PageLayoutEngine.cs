@@ -30,6 +30,12 @@ public class PageLayoutEngine
     /// </summary>
     private static readonly float[] ZmensovaciZebrik = [0.97f, 0.94f, 0.90f];
 
+    /// <summary>Kolik sazeb proběhlo od startu, napříč všemi instancemi enginu.</summary>
+    /// <remarks>Sazba nastavuje prvkům sdílený stav (zmenšení, mezery), takže pamatovaný výsledek
+    /// platí, jen dokud mezitím neproběhla žádná jiná - viz `PreviewCanvas.PamatovatSazbu`.</remarks>
+    public static int PocetSazeb => _pocetSazeb;
+    private static int _pocetSazeb;
+
     /// <summary>
     /// Rozvrhne šablonu a cestou zkusí, jestli se **nevyplatí tabulku o kousek zmenšit** místo
     /// zakládání další stránky.
@@ -49,12 +55,6 @@ public class PageLayoutEngine
     /// <para>„Zmenši všechno, ať se sestava vejde na jednu stranu" je jiná featura (`#8785`) -
     /// sahá na celý výstup včetně poznámek a má vlastní strop.</para>
     /// </remarks>
-    /// <summary>Kolik sazeb proběhlo od startu, napříč všemi instancemi enginu.</summary>
-    /// <remarks>Sazba nastavuje prvkům sdílený stav (zmenšení, mezery), takže pamatovaný výsledek
-    /// platí, jen dokud mezitím neproběhla žádná jiná - viz `PreviewCanvas.PamatovatSazbu`.</remarks>
-    public static int PocetSazeb => _pocetSazeb;
-    private static int _pocetSazeb;
-
     public LayoutResult Layout(Template template, DataContext? data)
     {
         Interlocked.Increment(ref _pocetSazeb);

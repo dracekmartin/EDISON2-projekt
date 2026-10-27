@@ -657,9 +657,6 @@ ClassMethod HorologPlatnostiOdLinky(dataDB As %String, sku As %String, lin As %S
     ret hrl
 }
 
-/// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
-/// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). Sdílí vývěska i linkový JŘ AD, aby táž linka
-/// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`NormalizLinku`).
 /// ── Důvod prázdného výstupu (`DUVOD_PRAZDNE`, `cache-api.md`) ──
 /// Agenda během GetData zapíše, proč stránka nevznikla (co v datech chybí a co s tím), a na konci
 /// `VydatDuvodPrazdne` důvody pošle - jen když nevznikla žádná stránka. Návrhář z nich udělá hlášku
@@ -747,6 +744,9 @@ ClassMethod UpresneniAtributuSpoje(dataDB As %String, sku As %String, lin As %St
     q $zstrip(txt, "<>W")
 }
 
+/// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
+/// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). Sdílí vývěska i linkový JŘ AD, aby táž linka
+/// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`NormalizLinku`).
 ClassMethod LokalniOznaceniLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String
 {
     s lokalni = $p($g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD")),"~",1)

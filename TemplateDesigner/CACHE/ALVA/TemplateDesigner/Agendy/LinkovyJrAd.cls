@@ -2617,10 +2617,6 @@ ClassMethod ZaznamZastavky(dataDB As %String, czst As %String) As %String
     ret ..ZaznamZastavkyKDatu(dataDB, czst, $g(^||TiskKnizni("zastavky","hrl")))
 }
 
-/// Označení navazující linky do textu poznámky. U autobusu je to číslo a vede se bez vodicích nul
-/// („0330510" → „330510"), u vlaku ale bývá **nečíselné** („R 627") - a to se převodem na číslo
-/// scvrklo na nulu, takže v tisku stálo „vyčká příjezdu vlaku 0".
-/// ⚠️ Našlo to rozšíření porovnávací sady 24. 8.; na původních čtyřech linkách vlakový přípoj nebyl.
 /// Kus věty návaznosti z číselníku `^JRSET("NCOME",jazyk,31|32)` (kusy oddělené `~`).
 /// Bez záznamu platí česká slova, jak byla v kódu do 23. 9.
 /// 31 = spoj~vyčká v zastávce~příjezdu~vlaku:linky:lodě z~nejvýše~minut,
@@ -2633,6 +2629,10 @@ ClassMethod TextNavaznosti(dataDB As %String, omz As %Integer, kus As %Integer) 
     q $s(text '= "":text, 1:$p(vychozi, "~", kus))
 }
 
+/// Označení navazující linky do textu poznámky. U autobusu je to číslo a vede se bez vodicích nul
+/// („0330510" → „330510"), u vlaku ale bývá **nečíselné** („R 627") - a to se převodem na číslo
+/// scvrklo na nulu, takže v tisku stálo „vyčká příjezdu vlaku 0".
+/// ⚠️ Našlo to rozšíření porovnávací sady 24. 8.; na původních čtyřech linkách vlakový přípoj nebyl.
 ClassMethod OznaceniLinky(hodnota As %String) As %String
 {
     i $isvalidnum(hodnota) q +hodnota

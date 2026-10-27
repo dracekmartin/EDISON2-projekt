@@ -1946,16 +1946,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             })];
     }
 
-    /// <summary>
-    /// Výšky řádků jednoho bloku ve stejném pořadí, v jakém je skládá <see cref="BuildRowPlan"/>:
-    /// hlava (pás skupin, čísla spojů, platnost, negativní značky) a pod ní řádky zastávek
-    /// i s jejich přípojnými podřádky.
-    /// </summary>
-    /// <remarks>
-    /// Jeden zdroj pro výšku prvku i pro místa, kudy se smí řezat. Kdyby to byly dva výpočty,
-    /// rozešly by se a stránkování by řezalo jinam, než kde jsou doopravdy hranice řádků.
-    /// Volá se až po <c>EnsureParsed</c>.
-    /// </remarks>
     /// <summary>Výška řádku značek - datový řádek zvětšený o <see cref="PomerZnacek"/>.
     /// Jediné místo výpočtu, ať se render a výpočet výšky prvku nerozejdou.</summary>
     private float VyskaRadkuZnacek(float rowH) => rowH * Math.Clamp(PomerZnacek, 1f, 3f);
@@ -1969,6 +1959,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </param>
     private readonly record struct RadekBloku(float VyskaMm, bool KonecZastavky);
 
+    /// <summary>
+    /// Výšky řádků jednoho bloku ve stejném pořadí, v jakém je skládá <see cref="BuildRowPlan"/>:
+    /// hlava (pás skupin, čísla spojů, platnost, negativní značky) a pod ní řádky zastávek
+    /// i s jejich přípojnými podřádky.
+    /// </summary>
+    /// <remarks>
+    /// Jeden zdroj pro výšku prvku i pro místa, kudy se smí řezat. Kdyby to byly dva výpočty,
+    /// rozešly by se a stránkování by řezalo jinam, než kde jsou doopravdy hranice řádků.
+    /// Volá se až po <c>EnsureParsed</c>.
+    /// </remarks>
     private (List<float> Hlava, List<RadekBloku> Radky) VyskyRadkuBloku(
         IReadOnlyList<LineTripData> spojeBloku, IReadOnlyList<LineTripData>? zrcadleneBloku = null,
         float? meritko = null)
@@ -2208,13 +2208,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Řezat se má mezi bloky (<see cref="ZlomUroven.Blok"/>) - blok useknutý uprostřed je tabulka
-    /// bez konce. Uvnitř bloku se nabízejí hranice mezi zastávkami
-    /// (<see cref="ZlomUroven.Zastavka"/>) pro případ, kdy je blok sám vyšší než stránka; hranice
-    /// uvnitř zastávky jsou jen nouze (<see cref="ZlomUroven.Radek"/>), aby stránkování mělo kam
-    /// říznout i u zastávky vyšší než celá stránka.
-    /// </summary>
-    /// <summary>
     /// Svislé rozsahy jednotlivých částí tabulky (mm od horní hrany prvku) - podklad pro rámeček
     /// kolem každé části zvlášť.
     /// </summary>
@@ -2294,6 +2287,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
     }
 
+    /// <summary>
+    /// Řezat se má mezi bloky (<see cref="ZlomUroven.Blok"/>) - blok useknutý uprostřed je tabulka
+    /// bez konce. Uvnitř bloku se nabízejí hranice mezi zastávkami
+    /// (<see cref="ZlomUroven.Zastavka"/>) pro případ, kdy je blok sám vyšší než stránka; hranice
+    /// uvnitř zastávky jsou jen nouze (<see cref="ZlomUroven.Radek"/>), aby stránkování mělo kam
+    /// říznout i u zastávky vyšší než celá stránka.
+    /// </summary>
     public IReadOnlyList<Zlom> ZlomyMm(DataContext? data)
     {
         if (data is null) return [];
@@ -2513,16 +2513,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Nakreslí šipku směru jízdy přes řádky zastávek bloku - <b>ve svém sloupci</b>.
-    /// </summary>
-    /// <remarks>
-    /// Kreslí se až nad hotovým blokem, protože jde přes víc řádků; buňka umí jen svůj vlastní.
-    /// Rozsah se bere <b>z téhož plánu, který se kreslil</b>, ne z vlastního výpočtu výšek - jinak
-    /// by se šipka rozešla s řádky, jakmile by některý z nich změnil výšku.
-    /// <para>Barvu si bere z <b>textové barvy toho sloupce</b> (kaskáda stylů), takže nepřidává
-    /// další nastavení do panelu; tloušťka a hrot jsou stejné jako u vývěsky.</para>
-    /// </remarks>
-    /// <summary>
     /// Kam ukazuje šipka v daném popisném sloupci: dolů (v pořadí zastávek), nebo nahoru.
     /// </summary>
     /// <remarks>
@@ -2537,6 +2527,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static bool HrotDoluUSipky(int indexSloupce, int indexNazvu, bool maZrcadlene) =>
         !(maZrcadlene && indexNazvu >= 0 && indexSloupce > indexNazvu);
 
+    /// <summary>
+    /// Nakreslí šipku směru jízdy přes řádky zastávek bloku - <b>ve svém sloupci</b>.
+    /// </summary>
+    /// <remarks>
+    /// Kreslí se až nad hotovým blokem, protože jde přes víc řádků; buňka umí jen svůj vlastní.
+    /// Rozsah se bere <b>z téhož plánu, který se kreslil</b>, ne z vlastního výpočtu výšek - jinak
+    /// by se šipka rozešla s řádky, jakmile by některý z nich změnil výšku.
+    /// <para>Barvu si bere z <b>textové barvy toho sloupce</b> (kaskáda stylů), takže nepřidává
+    /// další nastavení do panelu; tloušťka a hrot jsou stejné jako u vývěsky.</para>
+    /// </remarks>
     private void KresliSipkuSmeru(RenderContext ctx, SloupcovaMrizka mrizka, List<RowSpec> plan,
         float yBlokuMm)
     {
@@ -3005,12 +3005,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         && SymbolMap.JeZnackaZastavky(znak)
         && SymbolMap.ResolveZastavka(znak).Mode == SymbolRenderMode.FontGlyf;
 
-    /// <summary>Nakreslí piktogram zastávky vpravo ve sloupci zastávek - jako v původním tisku.</summary>
-    /// <remarks>
-    /// ⚠️ Je to <b>overlay nad hotovou buňkou</b>, ne součást jejího textu: název se kreslí vlevo
-    /// a zmenšuje se, aby se vešel, kdežto piktogram má sedět u pravého okraje. U velmi dlouhého
-    /// názvu se můžou potkat - kdyby se to ukázalo, patří to řešit rezervací místa v buňce.
-    /// </remarks>
     /// <summary>
     /// Úsečka mezi příjezdem a odjezdem rozdvojené zastávky - v každém časovém sloupci a v zóně.
     /// </summary>
@@ -3053,6 +3047,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 Usek(X + mrizka.XPopisnehoMm(ci), mrizka.Popisne[ci].Width);
     }
 
+    /// <summary>Nakreslí piktogram zastávky vpravo ve sloupci zastávek - jako v původním tisku.</summary>
+    /// <remarks>
+    /// ⚠️ Je to <b>overlay nad hotovou buňkou</b>, ne součást jejího textu: název se kreslí vlevo
+    /// a zmenšuje se, aby se vešel, kdežto piktogram má sedět u pravého okraje. U velmi dlouhého
+    /// názvu se můžou potkat - kdyby se to ukázalo, patří to řešit rezervací místa v buňce.
+    /// </remarks>
     private static void DrawZnakZastavky(RenderContext ctx, float rowTopMm, float rowH, float xMm,
         SloupcovaMrizka mrizka, int nameIndex, List<SymbolRunRenderer.Run> runs,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
@@ -3189,15 +3189,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Rozpad času na hodinu a menší minutu, nebo null, když se má vysázet jako obyčejný text.
-    /// </summary>
-    /// <remarks>
-    /// Dělí se jen tvar <c>HH:MM</c>. Buňka může nést i značku („&lt;" jede po jiné trase,
-    /// „|" projíždí) nebo prázdno - to se dělit nesmí, jinak by se z „&lt;" stal nesmysl.
-    /// <para>Mezera místo dvojtečky je záměr, ne úspora: starý tisk sází „16 15" a dvojtečka
-    /// mezi různě velkými čísly působí jako překlep.</para>
-    /// </remarks>
-    /// <summary>
     /// Řetězec teček proložených mezerami, který se vejde do <paramref name="volnoMm"/>.
     /// Prázdno, když se nevejde ani jedna.
     /// </summary>
@@ -3266,6 +3257,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return (hodina == "" ? "0" : hodina) + "." + minuta;
     }
 
+    /// <summary>
+    /// Rozpad času na hodinu a menší minutu, nebo null, když se má vysázet jako obyčejný text.
+    /// </summary>
+    /// <remarks>
+    /// Dělí se jen tvar <c>HH:MM</c>. Buňka může nést i značku („&lt;" jede po jiné trase,
+    /// „|" projíždí) nebo prázdno - to se dělit nesmí, jinak by se z „&lt;" stal nesmysl.
+    /// <para>Mezera místo dvojtečky je záměr, ne úspora: starý tisk sází „16 15" a dvojtečka
+    /// mezi různě velkými čísly působí jako překlep.</para>
+    /// </remarks>
     internal List<SymbolRunRenderer.Run>? CasRuns(string cas)
     {
         // „Projíždí" a „jede jinudy" nejsou čas ani text - jsou to piktogramy přes výšku řádku

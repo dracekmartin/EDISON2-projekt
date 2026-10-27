@@ -19,11 +19,11 @@ namespace TemplateDesigner.Tests.Rendering;
 /// </remarks>
 public class LineTableBlokyTests
 {
-    /// <summary>Linka s tolika spoji, že se do šířky nevejdou - právě na téhle se to lámalo.</summary>
     /// <summary>Sdíleno se stránkovacím testem - táž linka, dva pohledy na ni.</summary>
     internal static DataContext SirokaLinkaData(int pocetSpoju, int pocetZastavek = 3) =>
         SirokaLinka(pocetSpoju, pocetZastavek);
 
+    /// <summary>Linka s tolika spoji, že se do šířky nevejdou - právě na téhle se to lámalo.</summary>
     private static DataContext SirokaLinka(int pocetSpoju, int pocetZastavek = 3)
     {
         // ⚠️ Přípojné řádky jen u **některých** spojů: patří ke spoji, takže každý blok jich má

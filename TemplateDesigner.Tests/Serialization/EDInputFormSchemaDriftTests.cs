@@ -731,7 +731,7 @@ public class EDInputFormSchemaDriftTests
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě
         // různá pole a „stanoviště" je zastřešující pojem pro to z nich, které je zvolené parametrem
         // „Číslo stanoviště podle". Jako synonymum pro označník se dál nepoužívá - viz ux-conventions §8.
-        "—",           // em dash → běžná pomlčka "-" (rozhodnutí Jan 2026-07-28)
+        "\u2014",      // em dash → běžná pomlčka "-" (rozhodnutí Jan 2026-07-28)
     ];
 
     private static readonly Regex LabeledFieldRx = new(

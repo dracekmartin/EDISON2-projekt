@@ -60,9 +60,9 @@ public class LaunchTemplateTests
         {
             var t = TemplateSerializer.Deserialize(EmbeddedTemplates.Read(n));
             // Název šablony je i v názvu PDF, které uživatel vidí v prohlížeči.
-            Assert.False(t.Name.Contains('—') || t.Name.Contains('–'), $"{n}: název má dlouhou pomlčku");
+            Assert.False(t.Name.Contains('\u2014') || t.Name.Contains('\u2013'), $"{n}: název má dlouhou pomlčku");
             var popis = t.Description ?? "";
-            Assert.False(popis.Contains('—') || popis.Contains('–'), $"{n}: popis má dlouhou pomlčku");
+            Assert.False(popis.Contains('\u2014') || popis.Contains('\u2013'), $"{n}: popis má dlouhou pomlčku");
         }
     }
 

@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-27 (21) - popisy metod zpátky u svých metod, bez dlouhých pomlček (review body 9, 10)
+
+Na deseti místech se mezi popis a jeho metodu vložila nová metoda, takže popis visel u cizí (C#:
+`PreviewCanvas.CountOverflowingPages`, `PageLayoutEngine.Layout`, `MainWindow.NastavVolbyRazeni`,
+čtyři metody `LineTableElement`, test `LineTableBlokyTests`; Caché: `BaseAgenda.LokalniOznaceniLinkyAd`,
+`LinkovyJrAd.OznaceniLinky`). Dlouhá pomlčka zmizela z komentářů, csproj, changelogu a demo šablon QR;
+testy, které ji hledají, ji zapisují jako `—`, takže repo projde grepem. Chování beze změny.
+Rozhodnutí Jan 27. 10. k review: bod 1 (demo QR u linky bez spojů) a bod 8 (čárka u omezení jen
+ve druhém období - stejně jako starý tisk, v datech CB_CSADAD, ZL_KOVED ani KV_DP ani jednou)
+se neopravují, bod 4 přešel do backlogu jako blokace změny agendy.
+
 ## 2026-10-27 (20) - rozdílový JŘ nevydává chybu programu za chybu v datech (review bod 2)
 
 Rozdílový JŘ si obě verze linky bere z linkového JŘ AD a každou jeho chybu přebalil na chybu v datech
@@ -484,7 +495,7 @@ text, takže české šablony, zlaté odtisky i oracle beze změny. Test `TestPo
 ## 2026-10-26 (18) - oddělovač poznámek bez dlouhé pomlčky (`B194b` T9)
 
 Výchozí šablony Zastávkového JŘ AD i MHD měly v prvku Poznámky oddělovač mezi textovou značkou a textem
-dlouhou pomlčku („A — jede přes…"), kterou projekt zakazuje. Teď „ - " jako výchozí hodnota prvku
+dlouhou pomlčku (mezi „A" a „jede přes…"), kterou projekt zakazuje. Teď „ - " jako výchozí hodnota prvku
 (rozhodnutí Jan 26. 10.). Linkové šablony mají vědomě dál tři mezery - legenda je ve sloupcích a mezery
 drží zarovnání. Výchozí šablony nalévá seeder do MLINE při každém startu, uložené zákaznické šablony
 se nemění. Nový test `SystemTemplateSeedTests.SablonaNemaDlouhouPomlckuNikde` projde všechny texty
@@ -7371,7 +7382,7 @@ starší bod „přestup na vlak se zobrazuje se symbolem bicykla".
 
 **Co nedělá:** texty legendy. Ty generuje agenda a jsou napevno české. Na jeho vývěsce je to vidět
 v jedné legendě vedle sebe - „x **na znamení**" a „**přestup na autobus**" česky (naše), ale
-„K — **premáva po zast. Kmeťova**" slovensky (jeho komentář z číselníku linky).
+„K - **premáva po zast. Kmeťova**" slovensky (jeho komentář z číselníku linky).
 
 ⚠️ **Korekce odhadu:** psal jsem, že to chce vymyslet slovenská znění a poslat serveru jazyk.
 První část neplatí - **starý modul má obě varianty napevno** a přepíná je firemním příznakem
