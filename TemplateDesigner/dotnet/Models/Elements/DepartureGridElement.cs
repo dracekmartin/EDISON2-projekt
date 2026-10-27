@@ -1780,7 +1780,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // k jedné věci znamenaly, že klik v prvku nic nedělal (hlášení B22/B24).
 
         new BoolPropertyDescriptor  { FromImage = true, Label = "Hodiny u každé skupiny", Group = "Odjezdy", Get = () => HourColumnPerGroup,        Set = v => HourColumnPerGroup = v },
-        new FloatPropertyDescriptor { Label = "Max skupin",          Group = "Odjezdy", Get = () => MaxGroupCount,             Set = v => MaxGroupCount = (int)v, Min = 0, Max = 10, Format = "0", Unit = "(0=∞)" },
+        new FloatPropertyDescriptor { Label = "Nejvýš skupin dnů",   Group = "Odjezdy", Get = () => MaxGroupCount,             Set = v => MaxGroupCount = (int)v, Min = 0, Max = 10, Format = "0" },
         new FloatPropertyDescriptor { FromImage = true, Label = "Šířka minuty",       Group = "Odjezdy", Get = () => MinuteWidth,                Set = v => MinuteWidth = v, Min = 3, Max = 15, Unit = "mm" },
         new EnumPropertyDescriptor
         {

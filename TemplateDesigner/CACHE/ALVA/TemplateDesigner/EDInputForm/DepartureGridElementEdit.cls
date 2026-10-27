@@ -33,8 +33,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Sloupec s hodinami se zopakuje u každé skupiny dnů. Vypnuto = jeden sloupec hodin vlevo pro všechny skupiny."
         s f = form.AddFieldToLastGroup("HourColumnHeaderImageBase64", "Obrázek v záhlaví hodin", $$$FieldTypeImage, 0, 0)
         s f.helpText = "Ikona se vykreslí v záhlaví sloupce hodin u každé skupiny dnů. Když je nastavená, text záhlaví sloupce se netiskne."
-        s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
-        s f.helpText = "Kolik skupin dnů se vejde do prvku; další se nevykreslí. 0 = bez omezení."
+        s f = form.AddNumber("MaxGroupCount", "Nejvýš skupin dnů", 0, 0, 10)
+        s f.helpText = "Kolik skupin dnů se nejvýš vytiskne, další se vynechají. 0 = bez omezení."
 
         // ── Rozměry ───────────────────────────────────────────────────────
         // Mřížka (čáry) má vlastní skupinu níž; „a mřížka" v názvu skupiny mátlo.

@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-27 (29) - „Nejvýš skupin dnů" místo „Max skupin (0 = ∞)" (`B194d` E8c)
+
+Pole Minut odjezdů, kterým se omezí počet vytištěných skupin dnů, se ve formuláři i v panelu jmenuje
+„Nejvýš skupin dnů" jako „Nejvýš km sloupců" a „Nejvýš sloupců variant tras" (dřív zkratka „Max skupin"
+s nekonečnem „(0 = ∞)" v popisku a jednotkou „(0=∞)" v panelu). Nápověda: „Kolik skupin dnů se nejvýš
+vytiskne, další se vynechají. 0 = bez omezení." Hodnota 0 dál znamená bez omezení. Z výjimek testu
+`DescriptorLabelsMatchFormTests` odešly Výška řádku, Střídání řádků i tohle pole - popisky formuláře
+a panelu teď sedí. Ověřeno voláním `Init`.
+
 ## 2026-10-27 (28) - Střídání řádků s popiskem bez závorky a s nápovědou (`B194d` E8b)
 
 Minuty odjezdů, Tabulka z dat a Pevná tabulka mají ve formuláři popisek „Střídání řádků" jako panel
