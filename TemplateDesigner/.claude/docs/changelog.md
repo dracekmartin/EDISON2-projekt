@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-27 (7) - čísla zastávek jednou řadou, „konečná" místo „cílová", vývěsky s výchozí zastávkou (`B194c` D3)
+
+Zastávkový JŘ AD: „Číslo zastávky" → **„Číslo aktuální zastávky"** (jako v linkových JŘ), „CIS číslo
+zastávky" → **„Číslo aktuální zastávky (CIS)"** (v kolekci Zastávky „Číslo zastávky (CIS)"), „CIS číslo
+výchozí zastávky" → **„Číslo výchozí zastávky (CIS)"**, „CIS číslo cílové zastávky" → **„Číslo konečné
+zastávky (CIS)"** - CIS vždy na konci v závorce jako u názvů, poslední zastávka směru je „konečná"
+(rozhodnutí Jan 27. 10., kanon `ux-conventions §8`, ban list „cílov" / „CIS číslo"). Zastávkový JŘ MHD:
+„Číslo aktuální zastávky" (nese číslo i s označníkem). **Obě vývěsky nově posílají „Výchozí zastávku"**
+(`VYCHOZI_ZASTAVKA`, aditivně) - první vytištěnou zastávku směru, jako linkové JŘ. Klíče beze změny.
+Ověřeno voláním `GetSchema` obou vývěsek. Zlaté otisky vývěsek přebaselinované (nové pole, jen md5,
+počty shodné).
+
 ## 2026-10-27 (6) - Linkový JŘ AD bez „Pořadí" v nabídce dat (`B194c` D2)
 
 V Linkovém JŘ AD (a v porovnání linek, které schéma přebírá) neslo pole „Pořadí" v kolekci Zastávky

@@ -42,10 +42,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
 Popisky a nápovědy výstup ani uložené volby nemění (návrhář je bere ze serveru). Popisky citují i nové
 hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`) - při přejmenování opravit i je.
 
-- **D3 Konečná × cílová, CIS na začátku × na konci, vývěska bez výchozí zastávky** [S] (*ověřeno:* kód).
-  „Konečná zastávka" vedle „CIS číslo cílové zastávky", „Aktuální zastávka (CIS)" vedle „CIS číslo zastávky"
-  (`ZastavkoveJrAd.AddStandardJRFields`). Návrh: „Číslo … (CIS)" jednotně, přidat `VYCHOZI_ZASTAVKA` do vývěsek.
-  Zákazník hledal „cílovou" (`MigrationKonecnaZastavka.cs:10`) - kanon „konečná" potvrdí **Jan**.
 - **D4 Údaje dopravce po polích má jen vývěska AD** [M] **Jan** (*ověřeno:* kód). Jinde jen hotový blok,
   vývěska MHD od `C5` (24. 10.) navíc název.
   Linkový AD má tentýž zdroj (`ZastavkoveJrAd.BuildDopravci`), MHD název, ulici, město a telefon

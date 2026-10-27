@@ -304,6 +304,8 @@ Kanonické termíny (doména JŘ):
 | Pole „nástupiště" z trasy linky (volný text) | **Označník** (pole `NASTUPISTE` na wire zůstává) | ~~Nástupiště~~, ~~stanoviště~~ |
 | Číslo z číselníku sloupků zastávky (AD) | **Sloupek** (pole `SLOUPEK`) | ~~označník~~ |
 | Zastřešující pojem pro „ten z těch dvou, který je zvolený" | **Stanoviště** (volba „Číslo stanoviště podle") | konkrétní z těch dvou, když se míní obojí |
+| Poslední zastávka směru | **Konečná zastávka** (i „Číslo konečné zastávky (CIS)"; klíč `…_CILOVA_CIS` zůstává) - rozhodnutí Jan 27. 10. | ~~cílová~~ |
+| Údaj podle číselníku CIS | přípona **„(CIS)" na konci** („Číslo aktuální zastávky (CIS)", „Konečná zastávka (CIS)") | ~~CIS číslo …~~ |
 
 ⚠️ **Označník a sloupek NEJSOU synonyma** (zjištěno 2026-08-03 u #13088): v AD jsou to dvě různá pole
 vedle sebe (volný text vs. číselník s GPS a popisem směru) a zákazník je rozlišuje - do 3. 8. tu bylo

@@ -726,6 +726,8 @@ public class EDInputFormSchemaDriftTests
         "projetých",        // → „Projeté: Barva textu", „Projeté: Čas"
         "element",          // → prvek (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Element",
+        "cílov",            // → konečná (poslední zastávka směru; Jan 2026-10-27, `B194` D3)
+        "CIS číslo",        // → „Číslo … zastávky (CIS)" - CIS na konci jako u názvů (`B194` D3)
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě
         // různá pole a „stanoviště" je zastřešující pojem pro to z nich, které je zvolené parametrem
         // „Číslo stanoviště podle". Jako synonymum pro označník se dál nepoužívá - viz ux-conventions §8.

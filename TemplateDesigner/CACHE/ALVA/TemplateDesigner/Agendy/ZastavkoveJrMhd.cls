@@ -1151,6 +1151,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     s zastavky = ##class(%DynamicArray).%New()
     s poradiZast = 0
     s konecnaNazev = ""                       // poslední zastávka ve směru = konečná (→ KONECNA_ZASTAVKA, A1)
+    s vychoziNazev = ""                       // první vytištěná zastávka směru (→ VYCHOZI_ZASTAVKA, jako vývěska AD)
     s bodIterator = ""
     f {
         s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator), smerKrok) q:bodIterator=""
@@ -1232,11 +1233,13 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         }
 
         s konecnaNazev = zastNazev
+        s:vychoziNazev="" vychoziNazev = zastNazev
         s oznacnikRow = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastID,"DTA",1,"Oznacnik"))
         d z.%Set("NASTUPISTE", oznacnikRow)   // TR3: nástupiště per zastávka (MHD = Oznacnik)
         d zastavky.%Push(z)
     }
     d rows.%Set("ZASTAVKY", zastavky)
+    d vals.%Set("VYCHOZI_ZASTAVKA", vychoziNazev)
     d vals.%Set("KONECNA_ZASTAVKA", konecnaNazev)   // A1: konečná směru (dřív T/Z, to je teď v SMER)
 
     // SKUPINY_DNU - z typů provozu. Struktura sloupců je per LINKA (všechny SMO sloupce linky),
@@ -1752,8 +1755,10 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     // ── zastávka, na které vývěska visí, a směr ──
     // „Název …", aby se v nabídce polí nepletl s příznakem řádku „Je aktuální zastávka" (Jan 27. 10.).
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky", "text")
-    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
+    // Popisek jako u vývěsky AD; v MHD nese číslo i s označníkem („101-A").
+    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo aktuální zastávky", "text")
     d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
+    d ..AddField(fields, "VYCHOZI_ZASTAVKA",       "Výchozí zastávka",       "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
 
     // ── doplňky ──
@@ -1971,6 +1976,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     d vals.%Set("DATUM_PLATNOSTI_OD",     "01.01.2026")
     d vals.%Set("DATUM_PLATNOSTI_DO",     "31.12.2026")
     d vals.%Set("SMER",                   "T")
+    d vals.%Set("VYCHOZI_ZASTAVKA",             "Líšeň, Novolíšeňská")
     d vals.%Set("KONECNA_ZASTAVKA",             "Bystrc, zoo")
     d vals.%Set("TYP_JR",                 "")
     d vals.%Set("QR_KOD",                 "https://jr.example.com/42")
