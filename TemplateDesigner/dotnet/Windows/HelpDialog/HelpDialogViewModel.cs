@@ -93,13 +93,13 @@ public class HelpDialogViewModel : EDViewModel
             [
                 new("1. Otevřít šablonu z databáze / založit novou", "Ctrl+O / Ctrl+N"),
                 new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", "Ctrl+Shift+A"),
-                new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "Ctrl+Shift+I"),
+                new("3. Vybrat linky pro náhled (modrý štítek „Linka“ ve stavovém řádku)", "Ctrl+Shift+I"),
                 new("4. Přidat sekce (tlačítko Přidat sekci) a prvky (táhnout z palety)", "myš"),
                 new("5. Napojit data - pole ze záložky „Datová pole“ táhnout na plochu", "táhnout myší"),
                 new("6. Upravit vzhled - záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
                 new("7. Uložit do databáze a vytisknout s reálnými daty", "Ctrl+S, Ctrl+P"),
             ],
-            Tip = "Živý náhled vpravo ukazuje výsledek s daty vybrané instance průběžně. " +
+            Tip = "Živý náhled vpravo ukazuje výsledek s daty vybrané linky průběžně. " +
                   "Databáze je primární úložiště šablon - soubor JSON slouží jen pro přenos (menu Soubor → Import/Export).",
         },
 
@@ -113,10 +113,9 @@ public class HelpDialogViewModel : EDViewModel
                 new("Uložit do databáze (nová se zeptá na jméno)", "Ctrl+S"),
                 new("Uložit jako (nová kopie v databázi)", "menu Soubor"),
                 new("Import / export JSON souboru (přenos šablony)", "menu Soubor"),
-                new("Import existujícího PDF jako šablona", "menu Nástroje"),
                 new("Vlastnosti stránky (formát, orientace, okraje, jazyk)", "Ctrl+Shift+P"),
             ],
-            Tip = "Změna formátu nebo orientace stránky založí novou prázdnou šablonu (s potvrzením) - " +
+            Tip = "Při změně formátu nebo orientace stránky se návrhář zeptá, zda obsah přepočítat na novou velikost - " +
                   "úprava okrajů je běžná vratná změna.",
         },
 
@@ -139,13 +138,13 @@ public class HelpDialogViewModel : EDViewModel
 
         new HelpSection
         {
-            Title = "🗂 Data, agenda a instance",
+            Title = "🗂 Data, agenda a linky",
             Entries =
             [
                 new("Změnit agendu / variantu (založí novou prázdnou šablonu)", "Ctrl+Shift+A"),
-                new("Výběr instancí (linek) pro náhled a tisk", "Ctrl+Shift+I / modrý štítek"),
-                new("Listování mezi vybranými instancemi", "◀ ▶ u štítku"),
-                new("Seznam vybraných instancí k přepnutí", "▲ u štítku"),
+                new("Výběr linek pro náhled a tisk", "Ctrl+Shift+I / modrý štítek"),
+                new("Listování mezi vybranými linkami", "◀ ▶ u štítku"),
+                new("Seznam vybraných linek k přepnutí", "▲ u štítku"),
                 new("Obnovit data z databáze (znovu načte ze serveru)", "F5"),
                 new("Datová pole → nový text s {POLE} na ploše", "táhnout pole na plochu"),
                 new("Datová pole → přidat {POLE} do existujícího textu", "táhnout pole na text"),
@@ -241,7 +240,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Seznam zastávek - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
                 new("Minuty odjezdů - po skupinách dnů", "paleta (JŘ agenda)"),
                 new("Poznámky - značky, omezení a vysvětlivky pod vývěskou", "paleta (JŘ agenda)"),
-                new("Tabulka spojů - zastávky × spoje (linkové a knižní JŘ)", "paleta (JŘ agenda)"),
+                new("Tabulka spojů - zastávky × spoje (linkový JŘ)", "paleta (JŘ agenda)"),
             ],
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
                   "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr), min/max počet řádků " +
@@ -287,7 +286,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Dlouhá trasa na užší vývěsku - rozdělit seznam zastávek na oddíly vedle sebe",
                     "prvek Seznam zastávek → Rozdělit na více oddílů"),
                 new("Aktuální a projeté zastávky, šipka směru", "prvek Seznam zastávek"),
-                new("Skupiny dnů, šířka minuty, oddělovač skupin, značky u minut", "prvek Minuty odjezdů"),
+                new("Skupiny dnů, šířka minuty, mezera mezi skupinami dnů, značky u minut", "prvek Minuty odjezdů"),
                 new("Které sloupce vývěsky vzniknou (vzory i vlastní definice)",
                     "prvek Minuty odjezdů → Definice sloupců"),
                 new("Písmeno varianty u minuty říká, který sloupec časů pro spoj platí; zda má "
@@ -305,16 +304,16 @@ public class HelpDialogViewModel : EDViewModel
 
         new HelpSection
         {
-            Title = "🚆 Tabulka spojů - linkový a knižní JŘ",
+            Title = "🚆 Tabulka spojů - linkový JŘ",
             Entries =
             [
                 new("Které popisné sloupce se tisknou (km, tarifní číslo, zóna, MHD, označník)",
-                    "prvek Tabulka spojů → Sloupce"),
+                    "prvek Tabulka spojů → Upravit sloupce…"),
                 new("Řádek platnosti pod číslem spoje - denní značky, místenka, atributy vozidla",
                     "prvek Tabulka spojů → Řádky"),
-                new("Obousměrná sestava - spoje opačného směru nalevo od zastávek", "prvek Tabulka spojů"),
+                new("Obousměrný tisk - spoje opačného směru na druhé straně od zastávek", "parametry sestavy → Obecné"),
                 new("Tabulka širší než prvek se rozřeže na bloky pod sebe", "automaticky"),
-                new("Dorovnat prázdnými sloupci - volné místo se proloží mezi spoje", "prvek Tabulka spojů → Šířka"),
+                new("Dorovnat prázdnými sloupci - volné místo vpravo se vyplní prázdnými sloupci", "prvek Tabulka spojů → Šířka sloupců"),
                 new("Mezery u značek a vnitřní okraje buňky - řídí, kolik spojů je na bloku",
                     "prvek Tabulka spojů → Šířka sloupců, Datové buňky"),
                 new("Stejně široké sloupce spojů - jinak je každý tak široký, jak potřebuje",

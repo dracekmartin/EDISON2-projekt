@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **H1, H2** Příručka, nápověda F1 a Pomocník srovnané s aktuální aplikací (~50 míst příručky; rozhodnutí
+  Jan 27. 10.; changelog 2026-10-27 (14)). Seed příručky připravený k nahrání s verzí.
 - **A5 (část)** „Vybrat linky - Ctrl+Shift+I", titulek „Vybrat linky", „Název souboru" s nápovědou,
   „Přejmenovat…" / „Procházet…", „Tato šablona nemá parametry." (rozhodnutí Jan 27. 10.; changelog
   2026-10-27 (13)).

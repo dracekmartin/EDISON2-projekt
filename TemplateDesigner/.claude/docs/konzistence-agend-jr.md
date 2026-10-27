@@ -92,18 +92,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   Poznámky", nová šablona „Záhlaví / Obsah"; popis šablony AD používá staré názvy prvků. Oddělovač viz `T9`.
 - **A5 Slovo „linka" natvrdo** [S]. V tisku a menu (pro agendu bez linek nesedí). (Ostatní drobnosti textů
   hotové 27. 10.)
-- **H1 Příručka nesedí s UI na 21 místech** [S] (*ověřeno:* kód; seed, nahrává se až s verzí).
-  `uzivatelska-prirucka.md`: „Instance:" (:91, :947) → „Linka:"; titulek (:109); dvě výchozí sekce (:117);
-  štítek agendy (:128); sekce „Systémové M-line / Moje šablony" (:139, :1029, :1043, :1266, :1284) → sloupec
-  Zdroj; popis v Uložit jako (:143); „Importovat z JSON souboru" (:152, :154); „/ N" (:523); výběr linek
-  v tiskovém dialogu (:552); „Otevřít poslední JSON" (:598); „Tabulka zastávek" (:709, :780); „pro každý
-  označník" (:769, :979, :791); zrušený parametr bezbariérového souhrnu (:774); „Definice sloupců" (:892);
-  „Rozdělení sloupců (typy provozu)" (:917); „Písmena variant u odjezdů" (:978); filtr a „Vybrat vše" (:944);
-  jen šablona AD (:1043); u vývěsky AD chybí čtyři parametry (tvar názvu, název pro MHD, výčet spojů
-  u dopravce, číslo stanoviště podle); cesta ve stromu EDISONu (:12) není ani v `prirucka-it.md`.
-- **H2 Nápověda F1** [S]. `HelpDialogViewModel.BuildContent`: štítek „Instance" (:96), import PDF v menu
-  Nástroje, který běžný uživatel nemá (:116), „linkový a knižní JŘ" jako dvě sestavy (:244, :308,
-  `CapabilityCatalog.cs:327`) („pohledna" opraveno v E15).
 
 ## 6. Pojistky - testy, které by tyto nálezy chytily
 

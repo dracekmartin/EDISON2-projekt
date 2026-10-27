@@ -1,5 +1,23 @@
 ﻿# Changelog
 
+## 2026-10-27 (14) - příručka, nápověda F1 a Pomocník podle aktuální aplikace (`B194e` H1, H2)
+
+**Příručka** (`uzivatelska-prirucka.md`, wiki seed): opravených ~50 míst, kde nesouhlasila s aplikací -
+linkový JŘ MHD je hotový; paleta a názvy prvků (Seznam zastávek, Tabulka (z dat)); štítek „Linka:"
+místo „Instance:"; menu Zobrazit a Soubor (Mřížka plátna, Importovat ze souboru…); titulek okna
+„[Zastávkový JŘ · AD]"; nová šablona se dvěma sekcemi; sloupec Zdroj v Otevřít místo sekcí „Systémové
+M-line / Moje šablony"; skupiny formuláře Minut odjezdů a Seznamu zastávek (Stanoviště, Značky a šipka
+směru), Poznámek a Tabulky spojů (Podmínky místo Data); parametry vývěsky AD, které chyběly (tvar názvu,
+název pro MHD, výčet spojů u dopravce, číslo stanoviště podle), zrušený parametr bezbariérového souhrnu
+pryč; „Rozdělení sloupců dle platnosti", „Písmena variant tras", „stanoviště" místo „označník";
+okno „Vybrat linky"; jazyk šablony „Kultura (formátování)"; tlačítka „Resetovat styl sloupce";
+typy provozu MHD jako parametry „Typ provozu: …". **Nápověda F1**: štítek „Linka", bez importu PDF
+(nemá ho běžný uživatel), „linkový JŘ" místo „linkový a knižní JŘ", změna formátu stránky se ptá na
+přepočet (nezakládá novou šablonu), obousměrný tisk je parametr sestavy, dorovnání sloupců a mezera
+mezi skupinami dnů správně. **Pomocník** (katalog schopností): stejné opravy plus šipky/Shift, export
+jen v dialogu tisku, parametry v levém panelu, nové uspořádání na list. Seed příručky připravený
+k nahrání s verzí. Rozhodnutí Jan 27. 10.
+
 ## 2026-10-27 (13) - drobné texty v aplikaci (`B194e` A5)
 
 Bublina modrého štítku linky **„Vybrat linky - Ctrl+Shift+I"** (tvar „Akce - klávesa" z pravidel), titulek
