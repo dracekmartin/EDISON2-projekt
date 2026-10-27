@@ -49,10 +49,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
 - **D5 Pořadí polí v nabídce se liší** [S] (*ověřeno:* kód). Nabídka nepřeřazuje. Linkový AD má poznámky
   mezi linkou a dopravcem, typ JŘ za platností, QR uprostřed (`LinkovyJrAd.GetSchema` :98-137). Návrh:
   bloky linka → dopravce → platnost → zastávka a směr → poznámky ve všech čtyřech.
-- **D7 Náhled vývěsky MHD bez linky je vymyšlená brněnská linka** [M] (*ověřeno:* server KV_DP).
-  `ZastavkoveJrMhd.GetMockData` (:1919) má pevná data „Líšeň-Bystrc", DPMB; PDF z ukázkových dat je
-  vytiskne. Struktura se liší od dat (chybí označník, nese „na znamení", které data nikdy nemají). Ostatní
-  tři agendy berou první reálnou linku (rozhodnutí C-e). Návrh: totéž pro MHD.
 - **D8 Drobnosti v datech** [S]. Komentář o tarifním čísle ve vývěsce AD je mylný
   (`AddStandardJRCollections` :3438). `CAS_JIZDY` deklarovaný jako číslo nese „<" a prázdno. Ukázka
   linkového MHD nenese `TYPY_PROVOZU_LINKY` (panel bez linky ukáže všechny typy firmy). Sonda

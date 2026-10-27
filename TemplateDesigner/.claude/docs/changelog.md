@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-27 (9) - náhled vývěsky MHD bez linky ukazuje skutečnou linku (`B194c` D7)
+
+Zastávkový JŘ MHD měl jako jediná agenda v náhledu bez vybrané linky vymyšlenou brněnskou linku
+(Líšeň - Bystrc, DPMB), která se od dat lišila stavbou (bez označníku, s „na znamení") a tiskla se do PDF
+z ukázky. Teď ukazuje **první vývěsku první linky výchozí skupiny**, jako ostatní agendy JŘ první skutečnou
+linku; když linka data nedá, „Ukázka bez dat - vyberte linku (Ctrl+Shift+I)". Tisk i ukázka staví vývěsky
+jednou cestou (`ZastavkoveJrMhd.SestavitVyvesky`), ukázka se zastaví po první stránce (CB_DP: linka 1,
+0,3 s). Rozhodnutí Jan 27. 10. Nový test `ZastavkoveJrMhdUkazkaTest` (jedna stránka = první vývěska tisku),
+zlaté otisky MHD beze změny. Ověřeno voláním `GetMockData` na CB_DP.
+
 ## 2026-10-27 (8) - „Typ poznámky" a „Typ řádku" zmizely z nabídky dat (`B194c` D6)
 
 Obě pole vracela interní kódy pro prvky: typ poznámky `znak` / `specialni` (vývěsky) / `nz` / `text` -
