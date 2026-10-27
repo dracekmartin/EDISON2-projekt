@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-27 (19) - stavový řádek: Obecná agenda bez „(nedostupná)"
+
+Stavový řádek ukazoval „Agenda: Obecná (bez dat) (nedostupná)". Přípona hlásí, že od serveru nepřišlo
+schéma (výpadek, agenda na serveru chybí), jenže Obecná agenda nemá třídu na serveru a schéma nemá
+z principu. U agendy bez třídy se přípona vynechá, ostatním zůstává
+(`AgendaRegistryEntryTests.StavovyRadek_BezSchematu_NedostupnaJenUAgendySeTridou`).
+
 ## 2026-10-27 (18) - lišta: skupina „Stránka a sekce", bez osiřelého oddělovače v obecné agendě
 
 Vlastnosti stránky a Přidat sekci jsou v jedné skupině lišty „Stránka a sekce" (rozhodnutí Jan 27. 10.,

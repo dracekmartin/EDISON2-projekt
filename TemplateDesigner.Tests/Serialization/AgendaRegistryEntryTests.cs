@@ -86,4 +86,19 @@ public class AgendaRegistryEntryTests
         var e = Assert.Single(JsonSerializer.Deserialize<List<AgendaRegistryEntry>>(json, Options)!);
         Assert.False(e.Released);
     }
+
+    /// <summary>Obecná agenda schéma nemá z principu - stavový řádek u ní nesmí hlásit „nedostupná"
+    /// (Jan 27. 10.). Agenda se třídou na serveru bez schématu je výpadek a hlásí ho dál.</summary>
+    [Fact]
+    public void StavovyRadek_BezSchematu_NedostupnaJenUAgendySeTridou()
+    {
+        var obecna = new AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "",
+            Agenda: "GENERAL", AgendaLabel: "Obecná (bez dat)");
+        var zastavkovy = new AgendaRegistryEntry("ZASTAVKOVY_JR_AD", "Zastávkový JŘ (AD)", "cls",
+            Agenda: "ZASTAVKOVY_JR", AgendaLabel: "Zastávkový JŘ", Variant: "AD", VariantLabel: "AD");
+
+        Assert.Equal("Agenda: Obecná (bez dat)", TemplateDesignerViewModel.AgendaBezSchematuText(obecna, "GENERAL"));
+        Assert.Equal("Agenda: Zastávkový JŘ · AD (nedostupná)", TemplateDesignerViewModel.AgendaBezSchematuText(zastavkovy, "ZASTAVKOVY_JR_AD"));
+        Assert.Equal("Agenda: NEZNAMA (nedostupná)", TemplateDesignerViewModel.AgendaBezSchematuText(null, "NEZNAMA"));
+    }
 }

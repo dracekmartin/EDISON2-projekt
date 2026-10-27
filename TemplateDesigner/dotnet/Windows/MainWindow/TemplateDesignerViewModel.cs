@@ -3424,7 +3424,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         if (schema is null)
         {
-            AgendaNameText = $"Agenda: {AgendaEntry(agendaCode)?.DisplayName ?? agendaCode} (nedostupná)";
+            AgendaNameText = AgendaBezSchematuText(AgendaEntry(agendaCode), agendaCode);
             UpdateCacheStatus(agendaCode, null);
             LoadAgendaParameters(agendaCode);
             RebuildSchemaTree(null);
@@ -3441,6 +3441,13 @@ public class TemplateDesignerViewModel : EDViewModel
         RebuildSchemaTree(schema);
         _ = PrefetchMockDataAsync(agendaCode);
     }
+
+    /// <summary>Stavový řádek agendy, od které nepřišlo schéma. Agenda bez třídy na serveru (Obecná)
+    /// ho nemá z principu - „nedostupná" by u ní hlásilo výpadek, který není.</summary>
+    internal static string AgendaBezSchematuText(Serialization.AgendaRegistryEntry? entry, string agendaCode) =>
+        entry is { CacheClass: "" }
+            ? $"Agenda: {entry.DisplayName}"
+            : $"Agenda: {entry?.DisplayName ?? agendaCode} (nedostupná)";
 
     /// <summary>Načte mock data agendy na pozadí do cache a po dokončení překreslí náhled (aby
     /// první vykreslení nešlo přes synchronní HTTP). Když jsou už v cache, hned se vrátí.</summary>
