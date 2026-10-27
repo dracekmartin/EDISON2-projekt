@@ -714,7 +714,7 @@ ClassMethod TextLinkaNeniVJr(sku As %String, lin As %String) As %String
     q "Linka "_(+lin)_" ve skupině "_sku_" v jízdních řádech není. Mohla být smazána nebo přesunuta do jiné skupiny - vyberte linky znovu."
 }
 
-/// Popis linky v náhledu bez vybrané linky, když první linka firmy nedala data (žádná není, nebo
+/// Název linky v náhledu bez vybrané linky, když první linka firmy nedala data (žádná není, nebo
 /// nemá trasu). Text vidí uživatel na plátně: bez globálů a kódu firmy, jen co udělat.
 ClassMethod TextUkazkyBezDat() As %String
 {

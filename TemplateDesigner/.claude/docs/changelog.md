@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-27 (5) - srozumitelnější popisky v nabídce dat (`B194c` D6)
+
+Ve všech čtyřech agendách JŘ: „Popis linky" → **„Název linky"** (pole nese název linky, ne popis),
+„QR kód URL" → **„URL adresa pro QR kód"**; v kolekci Poznámky linkových JŘ „Druh (1-10)" → **„Druh
+poznámky"**. Klíče beze změny. Vědomě ponecháno: „MHD/IDS" (zavedené označení sloupce v tištěném JŘ)
+a „Typ poznámky" / „Typ řádku" s interními kódy (čeká na rozhodnutí). Rozhodnutí Jan 27. 10. Ověřeno
+voláním `GetSchema` všech čtyř agend.
+
 ## 2026-10-27 (4) - volby vývěsek mají nápovědu, dvě srozumitelnější popisky (`B194c` P1)
 
 Zastávkový JŘ AD i MHD: nápovědu dostaly **Tisknout šipky směru, Tisknout projeté zastávky, Časová osa

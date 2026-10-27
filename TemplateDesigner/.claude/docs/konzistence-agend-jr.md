@@ -56,9 +56,9 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
 - **D5 Pořadí polí v nabídce se liší** [S] (*ověřeno:* kód). Nabídka nepřeřazuje. Linkový AD má poznámky
   mezi linkou a dopravcem, typ JŘ za platností, QR uprostřed (`LinkovyJrAd.GetSchema` :98-137). Návrh:
   bloky linka → dopravce → platnost → zastávka a směr → poznámky ve všech čtyřech.
-- **D6 Nejasné popisky** [S] (*ověřeno:* kód). „Popis linky" je název linky → „Název linky" (všechny 4 naráz,
-  drift test). „Druh (1-10)" → „Druh poznámky". „Typ poznámky" a „Typ řádku" vrací interní kódy, u poznámek
-  podle rodiny jiné (`specialni` × `znak`; **Jan**). „QR kód URL" anglicismus, „MHD/IDS" zkratka.
+- **D6 Interní kódy v nabídce dat** [S] **Jan** (*ověřeno:* kód). „Typ poznámky" a „Typ řádku" vrací interní
+  kódy, u poznámek podle rodiny jiné (`specialni` × `znak`). (Popisky linky, QR a druhu poznámky hotové 27. 10.,
+  „MHD/IDS" vědomě ponechané.)
 - **D7 Náhled vývěsky MHD bez linky je vymyšlená brněnská linka** [M] (*ověřeno:* server KV_DP).
   `ZastavkoveJrMhd.GetMockData` (:1919) má pevná data „Líšeň-Bystrc", DPMB; PDF z ukázkových dat je
   vytiskne. Struktura se liší od dat (chybí označník, nese „na znamení", které data nikdy nemají). Ostatní

@@ -61,7 +61,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // tiše vykreslí prázdno.
     d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
-    d ..AddField(fields, "POPIS_LINKY",           "Popis linky",              "text")
+    d ..AddField(fields, "POPIS_LINKY",           "Název linky",              "text")
     // Bez „Poznámky nad linku": linka MHD ji má v datech (PoznamkaNadLinku), ale modul MHD ji
     // zatím nenabízí k zadání (Jan 23. 10.). Až půjde zadávat, pole se přidá zpátky.
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
@@ -70,7 +70,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
-    d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
+    d ..AddField(fields, "QR_KOD",                "URL adresa pro QR kód",    "text")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
@@ -114,7 +114,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g = ##class(%DynamicObject).%New()
     s g.name = "Poznámky", g.collectionKey = "POZNAMKY"
     s gf = ##class(%DynamicArray).%New()
-    d ..AddField(gf, "DRUH", "Druh (1-10)",       "number")
+    d ..AddField(gf, "DRUH", "Druh poznámky",     "number")
     d ..AddField(gf, "TYP",  "Typ poznámky",      "text")
     d ..AddField(gf, "ZNAK", "Znak",              "text")
     d ..AddField(gf, "TEXT", "Text poznámky",     "text")

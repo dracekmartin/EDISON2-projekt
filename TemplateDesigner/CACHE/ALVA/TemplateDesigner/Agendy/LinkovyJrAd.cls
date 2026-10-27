@@ -98,7 +98,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // tiše vykreslí prázdno.
     d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
-    d ..AddField(fields, "POPIS_LINKY",           "Popis linky",              "text")
+    d ..AddField(fields, "POPIS_LINKY",           "Název linky",              "text")
     d ..AddField(fields, "BARVA_LINKY",           "Barva linky",              "color")
     d ..AddField(fields, "BARVA_LINKY_2",         "Barva linky 2",            "color")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
@@ -108,7 +108,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
     d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
-    d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
+    d ..AddField(fields, "QR_KOD",                "URL adresa pro QR kód",    "text")
     // Zastávka výlepu (parametr „Zvýraznit zastávku") jako pole stránky, aby ji šlo dosadit do QR.
     // Klíč i popisek jako u vývěsek; do hlavičky výlepu („Zastávka: …") jiný název stránky není.
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky",  "text")
@@ -162,7 +162,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g = ##class(%DynamicObject).%New()
     s g.name = "Poznámky", g.collectionKey = "POZNAMKY"
     s gf = ##class(%DynamicArray).%New()
-    d ..AddField(gf, "DRUH", "Druh (1-10)",       "number")
+    d ..AddField(gf, "DRUH", "Druh poznámky",     "number")
     d ..AddField(gf, "TYP",  "Typ poznámky",      "text")
     d ..AddField(gf, "ZNAK", "Znak",              "text")
     d ..AddField(gf, "TEXT", "Text poznámky",     "text")

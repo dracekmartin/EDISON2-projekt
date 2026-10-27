@@ -3431,7 +3431,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky", "text")
     d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
-    d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
+    d ..AddField(fields, "POPIS_LINKY",            "Název linky",            "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
     d ..AddField(fields, "BARVA_LINKY",            "Barva linky",            "color")
     d ..AddField(fields, "BARVA_LINKY_2",          "Barva linky 2",          "color")
@@ -3473,7 +3473,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "VYLUKOVE_TEXTY",         "Výlukové texty",         "text")
-    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
+    d ..AddField(fields, "QR_KOD",                 "URL adresa pro QR kód",  "text")
     // _CIS varianty (celostátní názvy) jsou AD-specifické - MHD je zatím neprodukuje.
     // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values -
     // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.

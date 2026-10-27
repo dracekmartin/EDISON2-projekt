@@ -1737,7 +1737,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     // ── linka ──
     d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",    "text")
-    d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
+    d ..AddField(fields, "POPIS_LINKY",            "Název linky",            "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
 
     // ── dopravce ──
@@ -1757,7 +1757,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
 
     // ── doplňky ──
-    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
+    d ..AddField(fields, "QR_KOD",                 "URL adresa pro QR kód",  "text")
 }
 
 /// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.
