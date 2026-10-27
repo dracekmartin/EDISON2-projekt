@@ -2316,6 +2316,8 @@ public class TemplateDesignerViewModel : EDViewModel
         var (instance, skupinaLabel) = await Task.Run(() =>
         {
             // Popis linky („číslo - název") dá jen server; hledá se podle čísla ve zvolené skupině.
+            // ⚠️ Číslo nese klíč linky jen v AD. MHD má klíč vnitřní ID, popis by se nenašel a ukázalo
+            // by se holé ID - dnes MHD linku ve spuštění neposílá; kdo to zavede, musí hledat podle klíče.
             var found = provider.GetAvailableInstances(agenda, instanceValue.TrimStart('0'), skupinaId: skupina);
             var label = string.IsNullOrEmpty(skupina) ? null
                 : provider.GetAvailableSkupiny(agenda).FirstOrDefault(s => s.Value == skupina)?.Display;
