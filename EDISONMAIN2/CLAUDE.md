@@ -115,12 +115,12 @@ cesta `ShowAlwaysAsync` (Nápověda, kontextová menu) obchází dedup i snooze,
 ## Legacy moduly - EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.exe` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET
-Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 20 polí (pořadí
+Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 21 polí (pořadí
 `EdisonLaunchArgs.Field`), host je mapuje do `MLProps`: [13] zástupce z plochy
 (viz `docs/zastupci-na-plose.md`), [14] admin → `UserIsAdmin` (klíč pro `CAccess(useAdmin)`
 bypass práv), [15] → `UserMayUpdate` (gate serverového update v legacy Nastavení) - host bez pole
 defaultuje na **false**; [16]/[17] osobní adresář a e-mail z loginu → `UserDirectory`/`UserEmail`
-(bez nich agendy exportují do kořene disku); [18]-[20] verze, stav a konec platnosti licence shellu. Host nastavuje i `EDFormID` formy - agendy přes něj
+(bez nich agendy exportují do kořene disku); [18]-[20] verze, stav a konec platnosti licence shellu, [21] monitor shellu → `EDForm.PreferredScreenName`. Host nastavuje i `EDFormID` formy - agendy přes něj
 čtou `AccessTable[EDFormID]`, bez něj jsou volby gate-ované právem zašedlé. Vstupy:
 `TryGetFormFromArgs` (typ reflexí ve volajícím assembly - jediný retrofit
 `EDISONMAIN/ApplicationEvents.vb`) a `TryRunFromArgs` (`Assembly.LoadFrom`, generický host).

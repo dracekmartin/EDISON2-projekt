@@ -9,6 +9,8 @@ public partial class LaunchPdfWindow : Window
         DataContext = vm;
         InitializeComponent();
         vm.RequestClose += _ => Close();
+        // Okno nemá vlastníka: CenterScreen by ho dal pod kurzor, tohle na monitor, odkud TD spustili (pole [21]).
+        Loaded += (_, _) => EDControls.OwnerWindowCentering.CenterOnOwner(this);
         Loaded += async (_, _) => await vm.RunAsync();
     }
 }

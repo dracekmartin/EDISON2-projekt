@@ -1,6 +1,9 @@
 using System;
 using System.Windows;
 using System.Windows.Threading;
+// Alias proti ambient System.Drawing (UseWindowsForms je zapnuté pro WinForms color picker).
+using Point = System.Windows.Point;
+using Size = System.Windows.Size;
 
 namespace EDISONMAIN2.Windows.LogoutCountdownWindow
 {
@@ -42,11 +45,17 @@ namespace EDISONMAIN2.Windows.LogoutCountdownWindow
 
         private void UpdateText() => CountdownText.Text = _state.Text;
 
+        // Okno nemá vlastníka, monitor shellu se proto hledá přes hlavní okno aplikace.
         private void PositionBottomRight()
         {
-            var area = SystemParameters.WorkArea;
-            Left = area.Right - ActualWidth - 16;
-            Top = area.Bottom - ActualHeight - 16;
+            var topLeft = BottomRight(EDControls.MonitorPlacement.FallbackWorkArea(this), new Size(ActualWidth, ActualHeight));
+            Left = topLeft.X;
+            Top = topLeft.Y;
         }
+
+        internal static Point BottomRight(Rect workArea, Size window) =>
+            new(workArea.Right - window.Width - EdgeGap, workArea.Bottom - window.Height - EdgeGap);
+
+        private const double EdgeGap = 16;
     }
 }

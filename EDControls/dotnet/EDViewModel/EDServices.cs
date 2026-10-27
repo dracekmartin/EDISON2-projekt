@@ -63,6 +63,12 @@ public class EDServices(
     public string FormIdPrefix { get; set; } = AppIdentity.DefaultPrefix;
 
     /// <summary>
+    /// Monitor (jméno zařízení), odkud aplikaci spustili: shell nebo okno legacy agendy, TD ho čte z launch pole [21].
+    /// Okno bez uložené pozice a bez vlastníka se otevře na něm, viz <see cref="MonitorPlacement"/>. Shell ho nenastavuje.
+    /// </summary>
+    public string? PreferredMonitor { get; set; }
+
+    /// <summary>
     /// Persistent per-user state (column layouty, hidden položky, ...). Default je
     /// no-op <see cref="NullUserPrefsService"/>; composition-root nastaví
     /// <see cref="CacheUserPrefsService"/> po vytvoření <see cref="MLRest"/>.

@@ -75,15 +75,18 @@ public static class WindowStatePersistence
         }
 
         // I při selhání se musí projít ApplyToWindow: vrací stav sražený v Attach.
-        try { ApplyToWindow(window, geometry, xamlState); }
+        try { ApplyToWindow(window, geometry, xamlState, () => MonitorPlacement.PreferredWorkArea(window)); }
         catch { }
     }
 
-    internal static void ApplyToWindow(Window window, WindowGeometry geometry, WindowState xamlState)
+    /// <param name="preferredArea">Kam s oknem bez použitelné uložené pozice; null = nechat startovní pozici okna.</param>
+    internal static void ApplyToWindow(Window window, WindowGeometry geometry, WindowState xamlState,
+                                       Func<Rect?>? preferredArea = null)
     {
         // Nic uloženého - vrátíme stav, který chtěl XAML (Attach ho kvůli HWND srazil na Normal).
         if (geometry.IsEmpty)
         {
+            PlaceOnPreferredArea(window, preferredArea);
             window.WindowState = xamlState;
             return;
         }
@@ -102,6 +105,8 @@ public static class WindowStatePersistence
             window.Left = x;
             window.Top = y;
         }
+        else
+            PlaceOnPreferredArea(window, preferredArea);
 
         // Chybějící uložený stav nesmí okno nechat odmaximalizované - vrátíme stav z XAML.
         window.WindowState = geometry.Maximized switch
@@ -110,6 +115,12 @@ public static class WindowStatePersistence
             false => WindowState.Normal,
             null => xamlState,
         };
+    }
+
+    // Před vrácením stavu: maximalizace jde na monitor, kde okno leží.
+    private static void PlaceOnPreferredArea(Window window, Func<Rect?>? preferredArea)
+    {
+        if (preferredArea?.Invoke() is { } area) MonitorPlacement.CenterIn(window, area);
     }
 
     private static Rect VirtualScreen() => new(

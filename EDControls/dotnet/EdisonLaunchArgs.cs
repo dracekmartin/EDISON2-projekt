@@ -3,7 +3,7 @@ using System.Globalization;
 namespace EDControls;
 
 /// <summary>
-/// Launch kontrakt EDISONMAIN2: značka + 20 polí v uvozovkách. Jediný kodek pro producenta (shell,
+/// Launch kontrakt EDISONMAIN2: značka + 21 polí v uvozovkách. Jediný kodek pro producenta (shell,
 /// <see cref="Format"/>) i konzumenta (TemplateDesigner, <see cref="TryParse"/>); pozice drží <see cref="Field"/>.
 /// Zrcadlí <c>EDISONMAIN2API.FormToRunGetter</c> v repu EDISON (vzorový argv: <c>launch-args.fixture.txt</c> vedle něj
 /// i v <c>EDControls.Tests/Fixtures</c>) - pole se jen přidávají na konec, starší host je ignoruje.
@@ -47,7 +47,8 @@ public sealed record EdisonLaunchArgs(
         public const int LicenceVersion = 18;
         public const int LicenceState = 19;
         public const int LicenceValidTo = 20;
-        public const int Count = 21;
+        public const int ShellMonitor = 21;
+        public const int Count = 22;
     }
 
     /// <summary>Cesta k agendě, kterou host načte přes <c>Assembly.LoadFrom</c>; prázdná = přímý launch (EDISONMAIN, TD).</summary>
@@ -76,6 +77,9 @@ public sealed record EdisonLaunchArgs(
     public string LicenceState { get; init; } = "";
 
     public string LicenceValidTo { get; init; } = "";
+
+    /// <summary>Monitor shellu (jméno zařízení, <c>\\.\DISPLAY2</c>): okno bez uložené pozice se otevře na něm.</summary>
+    public string ShellMonitor { get; init; } = "";
 
     /// <summary>První argument je značka kontraktu (bez ohledu na validitu zbytku).</summary>
     public static bool IsEdisonLaunch(string[] args) => Arg(args, Field.Marker) == LaunchMarker;
@@ -113,6 +117,7 @@ public sealed record EdisonLaunchArgs(
             LicenceVersion = Arg(args, Field.LicenceVersion),
             LicenceState = Arg(args, Field.LicenceState),
             LicenceValidTo = Arg(args, Field.LicenceValidTo),
+            ShellMonitor = Arg(args, Field.ShellMonitor),
         };
     }
 
@@ -145,6 +150,7 @@ public sealed record EdisonLaunchArgs(
         values[Field.LicenceVersion] = Version(LicenceVersion);
         values[Field.LicenceState] = Plain(LicenceState);
         values[Field.LicenceValidTo] = Plain(LicenceValidTo);
+        values[Field.ShellMonitor] = Plain(ShellMonitor);
         return LaunchMarker + string.Concat(values.Skip(Field.Server).Select(v => $" \"{v}\""));
     }
 

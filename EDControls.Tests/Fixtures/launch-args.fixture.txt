@@ -1,5 +1,5 @@
-# Vzorový argv launch kontraktu EDISONMAIN2 (značka + 20 polí, neprázdná pole mají každé jinou hodnotu).
+# Vzorový argv launch kontraktu EDISONMAIN2 (značka + 21 polí, neprázdná pole mají každé jinou hodnotu).
 # Identické kopie: EDISON2 EDControls.Tests/Fixtures/launch-args.fixture.txt (hlídá EdisonLaunchArgsTests)
 # a EDISON EDISONMAIN2API/launch-args.fixture.txt (jen referenční, host nemá testy). Zástupce [13] je prázdný,
 # aby šel argv přehrát i proti skutečnému hostu.
-EDISONMAIN2 "192.168.16.1" "57770" "MLINE" "CB_DP" "jan.novak" "Jan Novák" "157" "ALVA.USERS.formUSERSLocks" "SHELLGUID-1" "AdminMode=1" "C:\Edison\USERS.exe" "26001,6001" "" "1" "0" "C:\Mline\EdisonData" "jan.novak@firma.cz" "2.001" "3" "31.12.2026"
+EDISONMAIN2 "192.168.16.1" "57770" "MLINE" "CB_DP" "jan.novak" "Jan Novák" "157" "ALVA.USERS.formUSERSLocks" "SHELLGUID-1" "AdminMode=1" "C:\Edison\USERS.exe" "26001,6001" "" "1" "0" "C:\Mline\EdisonData" "jan.novak@firma.cz" "2.001" "3" "31.12.2026" "\\.\DISPLAY2"

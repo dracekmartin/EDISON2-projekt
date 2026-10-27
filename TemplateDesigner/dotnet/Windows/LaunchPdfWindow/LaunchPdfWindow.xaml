@@ -4,7 +4,7 @@
         Title="Návrhář sestav"
         Width="420" SizeToContent="Height"
         ResizeMode="NoResize"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="Manual">
     <StackPanel Margin="20">
         <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" Margin="0,0,0,12"/>
         <ProgressBar IsIndeterminate="True" Height="6"/>

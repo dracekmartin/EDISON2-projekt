@@ -52,6 +52,7 @@ internal sealed class LegacyModuleHost
     private readonly Func<Window?, IDisposable> _dim;
     private readonly Action<IntPtr> _focus;
     private readonly Func<DateTime> _utcNow;
+    private readonly Func<string?> _shellMonitor;
 
     /// <summary>Ctor nic nevolá - services se čtou až při launchi (shell je skládá po navigatoru).</summary>
     internal LegacyModuleHost(
@@ -66,7 +67,8 @@ internal sealed class LegacyModuleHost
         Func<Window?, IDisposable>? dim = null,
         Action<IntPtr>? focus = null,
         string launcherExe = DefaultLauncherExe,
-        Func<DateTime>? utcNow = null)
+        Func<DateTime>? utcNow = null,
+        Func<string?>? shellMonitor = null)
     {
         _services = services;
         _launcherExe = launcherExe;
@@ -82,6 +84,10 @@ internal sealed class LegacyModuleHost
         _dim = dim ?? WindowDimmer.Dim;
         _focus = focus ?? ProcessWindows.Activate;
         _utcNow = utcNow ?? (() => DateTime.UtcNow);
+        // Okno modulu bez uložené pozice se otevře na monitoru shellu, ne pod kurzorem nebo na hlavním monitoru.
+        _shellMonitor = shellMonitor ?? (() => Application.Current is { } app && app.Dispatcher.CheckAccess()
+            ? MonitorPlacement.DeviceNameOf(app.MainWindow)
+            : null);
     }
 
     public event Action? LegacyModuleExited;
@@ -316,8 +322,8 @@ internal sealed class LegacyModuleHost
         {
             UseShellExecute = true,
             FileName = launcherPath,
-            Arguments = LaunchArgsFor(services, mlRest, formFqn, shellGuid, inputParam,
-                direct ? "" : agendaPath, shortcutPayload).Format(),
+            Arguments = (LaunchArgsFor(services, mlRest, formFqn, shellGuid, inputParam,
+                direct ? "" : agendaPath, shortcutPayload) with { ShellMonitor = _shellMonitor() ?? "" }).Format(),
         });
         if (prc is null) return null;
 

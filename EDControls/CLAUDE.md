@@ -100,14 +100,14 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
 - `ColorValue` - jediná definice barvy na drátě (hex `#AARRGGBB`, legacy `R;G;B` EDListu; formulář jen
   hex, TD jiný tvar neumí); konvertory se liší jen fallbackem. Nový formát patří sem, ne do konvertoru.
 - `EdisonLaunchArgs` - jediný kodek launch kontraktu shellu (`Format` producent, `TryParse` konzument,
-  pozice `Field`); **zrcadlí `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) -
-  pořadí a počet polí musí zůstat synchronní, vzorový argv je `launch-args.fixture.txt` v obou repech
-  (`EDControls.Tests/Fixtures/` a vedle `FormToRunGetter.cs`). Nové pole se **přidává na konec** (starší
+  pozice `Field`); **zrcadlí `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`),
+  vzorový argv `launch-args.fixture.txt` je v obou repech. Nové pole se **přidává na konec** (starší
   host ho ignoruje). Hodnoty se jen obalují uvozovkami, **neescapují**: `Format` z textových polí odstraní
   `"` a koncové `\`, co je nést musí, posílej zakódované (viz Base64 payload zástupce na ploše).
 - `WindowDimmer` - ztmavení okna, refcount per okno; UI-thread only.
-- `OwnerWindowCentering` - vycentrování na klientskou oblast ownera (volat z `Loaded`).
-  WPF `CenterOwner` u maximalizovaného ownera centruje podle restore bounds → mimo střed.
+- `OwnerWindowCentering` - střed klientské oblasti ownera (volat z `Loaded`), WPF `CenterOwner` u maximalizovaného ownera
+  bere restore bounds. Bez ownera `MonitorPlacement.FallbackWorkArea` (`SystemParameters.WorkArea` je jen hlavní monitor):
+  hlavní okno (ne samo), `EDServices.PreferredMonitor`, jiné okno, kurzor. `PreferredMonitor` z launch pole [21] plní jen TD.
 - `TaskbarIcon` - po `Loaded` znovu pošle ikonu okna a dá ji i třídě okna: taskbar Win11 (od
   KB5051989) se na ikonu ptá jednou s krátkým timeoutem, blokovaný startup ho nechá na výchozí.
 - `ErrorReporting/` - hlášení chyb na `podpora.m-line.cz` (přímý HTTPS POST, **ne** přes

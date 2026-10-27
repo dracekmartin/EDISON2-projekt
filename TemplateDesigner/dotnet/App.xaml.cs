@@ -52,6 +52,7 @@ public partial class App : Application
         // Spuštění ze shellu (starý EDISON / EDISONMAIN2): session přijde v argumentech
         // EDISONMAIN2 kontraktu a přebije appsettings. Bez argů běží standalone režim.
         var launch = EdisonLaunchArgs.TryParse(e.Args);
+        EDServices.Current.PreferredMonitor = launch?.ShellMonitor;
         var mlRest = launch is not null
             ? CacheSchemaWiring.CreateMlRest(launch)
             : CacheSchemaWiring.TryCreateMlRest(settings);

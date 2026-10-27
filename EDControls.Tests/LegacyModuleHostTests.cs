@@ -88,6 +88,7 @@ public class LegacyModuleHostTests
         public Window? Owner { get; init; }
         /// <summary>Hodiny hostu, default skutečný čas (test času startu ho porovnává s <c>DateTime.UtcNow</c>).</summary>
         public DateTime? Now { get; set; }
+        public string? ShellMonitor { get; set; }
         /// <summary>Odpověď uživatele na dotaz „ukončit modul bez okna".</summary>
         public bool ConfirmAnswer { get; set; }
         public List<string> Questions { get; } = [];
@@ -139,7 +140,8 @@ public class LegacyModuleHostTests
                 },
                 focus: hwnd => Focused.Add(hwnd),
                 launcherExe: launcherExe,
-                utcNow: () => Now ?? DateTime.UtcNow);
+                utcNow: () => Now ?? DateTime.UtcNow,
+                shellMonitor: () => ShellMonitor);
             Host.LegacyModuleExited += () => ModuleExitedCount++;
         }
     }
@@ -623,6 +625,29 @@ public class LegacyModuleHostTests
         Assert.Equal((true, true), (parsed.IsAdmin, parsed.MayUpdate));
         Assert.Equal((@"C:\Mline\Data", "jan.novak@firma.cz"), (parsed.UserDirectory, parsed.UserEmail));
         Assert.Equal(("26001,6001", "2.001", "31.12.2026"), (parsed.LicensedElements, parsed.LicenceVersion, parsed.LicenceValidTo));
+    }
+
+    [Theory]
+    [InlineData("AGENDA.exe")]
+    [InlineData("TemplateDesigner.exe")]
+    public void Launch_PassesShellMonitor(string exe)
+    {
+        // Okno bez uložené pozice se otevře na monitoru shellu, ne pod kurzorem.
+        var h = new Harness { ShellMonitor = @"\\.\DISPLAY2" };
+
+        h.Host.ShowLegacy(exe, Form, true, "");
+
+        Assert.Equal(@"\\.\DISPLAY2", EdisonLaunchArgs.TryParse(ProcessArgv.Split(Assert.Single(h.Started).Arguments))!.ShellMonitor);
+    }
+
+    [Fact]
+    public void Launch_UnknownShellMonitor_SendsEmptyField()
+    {
+        var h = new Harness { ShellMonitor = null };
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        Assert.Equal("", EdisonLaunchArgs.TryParse(ProcessArgv.Split(Assert.Single(h.Started).Arguments))!.ShellMonitor);
     }
 
     [Fact]

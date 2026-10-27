@@ -201,3 +201,10 @@
 *REMOVED*static readonly EDControls.ErrorReporting.ErrorReporter.IngestUrl -> string
 *REMOVED*static readonly EDControls.UserFonts.FontCatalog.AllowedFamilies -> System.Collections.Generic.IReadOnlyList<string>
 *REMOVED*static readonly EDControls.WindowDimmer.TintBrush -> System.Windows.Media.SolidColorBrush
+EDControls.EdisonLaunchArgs.ShellMonitor.get -> string
+EDControls.EdisonLaunchArgs.ShellMonitor.init -> void
+EDControls.EDViewModel.EDServices.PreferredMonitor.get -> string
+EDControls.EDViewModel.EDServices.PreferredMonitor.set -> void
+EDControls.MonitorPlacement
+static EDControls.MonitorPlacement.DeviceNameOf(System.Windows.Window window) -> string
+static EDControls.MonitorPlacement.FallbackWorkArea(System.Windows.Window window) -> System.Windows.Rect

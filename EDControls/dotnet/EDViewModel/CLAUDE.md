@@ -13,7 +13,7 @@ Základní třída ViewModelů + infrastruktura (`EDServices` - DI singleton `Cu
    před prvním paintem → žádný flicker); **okno pustí do `Show()` vždy jako `Normal`** - HWND
    s `WS_MAXIMIZE` Win32 zvětšit nenechá a uložená velikost by skončila jen v restore bounds;
    restore pak size → location → Maximize **poslední**, save z `RestoreBounds`; **pozice mimo dnešní plochu** (odpojený
-   monitor) se zahodí; best-effort vždy. Caché úložiště čte na klonu nejvýš 3 s (bez odpovědi save vynechá), ukládá na pozadí;
+   monitor) se zahodí (kam pak okno jde: `MonitorPlacement`); best-effort vždy. Caché úložiště čte na klonu nejvýš 3 s (bez odpovědi save vynechá), ukládá na pozadí;
 3. window-scoped `PopupDisplayer` (owner: per-call → okno VM → globální default) -
    agendová okna nedostávají popupy nad shellem.
 

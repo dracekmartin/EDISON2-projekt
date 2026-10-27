@@ -51,6 +51,7 @@ public class EdisonLaunchArgsTests
             LicenceVersion = "2.001",
             LicenceState = "3",
             LicenceValidTo = "31.12.2026",
+            ShellMonitor = @"\\.\DISPLAY2",
         };
 
     /// <summary>Sdílená fixture s hostem (kopie vedle FormToRunGetter.cs v repu EDISON).</summary>
@@ -140,7 +141,7 @@ public class EdisonLaunchArgsTests
         var args = new EdisonLaunchArgs("srv", 57770, "NS", "IDFA", "login", "Jméno", "1", "F", "G", "").Format();
 
         Assert.Equal(
-            "EDISONMAIN2 \"srv\" \"57770\" \"NS\" \"IDFA\" \"login\" \"Jméno\" \"1\" \"F\" \"G\" \"\" \"\" \"\" \"\" \"0\" \"0\" \"\" \"\" \"\" \"\" \"\"",
+            "EDISONMAIN2 \"srv\" \"57770\" \"NS\" \"IDFA\" \"login\" \"Jméno\" \"1\" \"F\" \"G\" \"\" \"\" \"\" \"\" \"0\" \"0\" \"\" \"\" \"\" \"\" \"\" \"\"",
             args);
     }
 
@@ -210,6 +211,16 @@ public class EdisonLaunchArgsTests
         Assert.Equal("", launch.AgendaPath);
         Assert.False(launch.IsAdmin);
         Assert.Equal("", launch.LicenceValidTo);
+        Assert.Equal("", launch.ShellMonitor);
+    }
+
+    [Fact]
+    public void RoundTrip_ShellMonitor_KeepsLeadingBackslashes()
+    {
+        // Jméno zařízení začíná zpětnými lomítky; před uvozovkou by je argv parser zdvojil či spolkl.
+        var parsed = RoundTrip(FixtureRecord() with { ShellMonitor = @"\\.\DISPLAY12" });
+
+        Assert.Equal(@"\\.\DISPLAY12", parsed.ShellMonitor);
     }
 
     [Fact]

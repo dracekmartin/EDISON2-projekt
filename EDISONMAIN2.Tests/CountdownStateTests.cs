@@ -1,3 +1,4 @@
+using System.Windows;
 using EDISONMAIN2.Windows.LogoutCountdownWindow;
 
 namespace EDISONMAIN2.Tests;
@@ -24,5 +25,14 @@ public class CountdownStateTests
         Assert.Equal("Aplikace bude ukončena za 15 s.", state.Text);
         state.Tick();
         Assert.Equal("Aplikace bude ukončena za 14 s.", state.Text);
+    }
+
+    [Fact]
+    public void BottomRight_SitsInCornerOfShellMonitorWorkArea()
+    {
+        // Monitor shellu vlevo od hlavního (záporné souřadnice), odpočet nesmí skončit na hlavním.
+        var topLeft = LogoutCountdownWindow.BottomRight(new Rect(-1920, 0, 1920, 1040), new Size(300, 80));
+
+        Assert.Equal(new Point(-1920 + 1920 - 300 - 16, 1040 - 80 - 16), topLeft);
     }
 }

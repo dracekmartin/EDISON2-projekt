@@ -8,7 +8,8 @@ namespace EDControls;
 /// <summary>
 /// Vycentruje okno na klientskou oblast svého ownera. Přes PointToScreen(0,0) + GetClientRect,
 /// protože maximalizovaný owner má v Left/Top restore bounds a WPF CenterOwner ho tam mine
-/// (stejný důvod jako u EDActionInProgress). Bez ownera → střed pracovní plochy.
+/// (stejný důvod jako u EDActionInProgress). Bez ownera nebo s minimalizovaným → střed pracovní plochy
+/// monitoru z <see cref="MonitorPlacement.FallbackWorkArea"/>.
 /// </summary>
 public static class OwnerWindowCentering
 {
@@ -18,9 +19,10 @@ public static class OwnerWindowCentering
         var owner = window.Owner;
         if (owner is null || owner.WindowState == WindowState.Minimized)
         {
-            var wa = SystemParameters.WorkArea;
-            window.Left = wa.Left + (wa.Width - window.ActualWidth) / 2;
-            window.Top = wa.Top + (wa.Height - window.ActualHeight) / 2;
+            var wa = MonitorPlacement.FallbackWorkArea(window);
+            var centered = ComputeTopLeft(wa.TopLeft, wa.Size, new Size(window.ActualWidth, window.ActualHeight));
+            window.Left = centered.X;
+            window.Top = centered.Y;
             return;
         }
 

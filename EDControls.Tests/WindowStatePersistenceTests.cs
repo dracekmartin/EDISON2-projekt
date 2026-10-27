@@ -112,6 +112,70 @@ public class WindowStatePersistenceTests
         });
     }
 
+    /// <summary>Pracovní plocha monitoru shellu vlevo od hlavního.</summary>
+    private static readonly Rect ShellMonitorArea = new(-1920, 0, 1920, 1040);
+
+    [Fact]
+    public void ApplyToWindow_NothingStored_CentersOnShellMonitorBeforeMaximizing()
+    {
+        // TD bez uložené pozice: jinak by se otevřel a maximalizoval na hlavním monitoru.
+        EDTesting.Sta.Run(() =>
+        {
+            var window = new Window { Width = 800, Height = 600, WindowState = WindowState.Normal };
+
+            WindowStatePersistence.ApplyToWindow(window, WindowGeometry.None, WindowState.Maximized, () => ShellMonitorArea);
+
+            Assert.Equal((-1920 + 560, 220), (window.Left, window.Top));
+            Assert.Equal(WindowState.Maximized, window.WindowState);
+        });
+    }
+
+    [Fact]
+    public void ApplyToWindow_UnreachableStoredLocation_CentersOnShellMonitor()
+    {
+        // Uloženo na monitoru, který mezitím zmizel.
+        EDTesting.Sta.Run(() =>
+        {
+            var window = new Window { WindowState = WindowState.Normal };
+
+            WindowStatePersistence.ApplyToWindow(window, new(50000, 50000, 800, 600, false), WindowState.Normal,
+                () => ShellMonitorArea);
+
+            Assert.Equal((-1920 + 560, 220), (window.Left, window.Top));
+        });
+    }
+
+    [Fact]
+    public void ApplyToWindow_ReachableStoredLocation_IgnoresShellMonitor()
+    {
+        EDTesting.Sta.Run(() =>
+        {
+            var window = new Window { WindowState = WindowState.Normal };
+            var asked = false;
+
+            WindowStatePersistence.ApplyToWindow(window, new(100, 100, 800, 600, false), WindowState.Normal,
+                () => { asked = true; return ShellMonitorArea; });
+
+            Assert.Equal((100, 100), (window.Left, window.Top));
+            Assert.False(asked);
+        });
+    }
+
+    [Fact]
+    public void ApplyToWindow_NoShellMonitor_LeavesStartupLocation()
+    {
+        // Shell a login okno nápovědu nemají: pozici dál určí WindowStartupLocation.
+        EDTesting.Sta.Run(() =>
+        {
+            var window = new Window { Width = 800, Height = 600, WindowState = WindowState.Normal };
+
+            WindowStatePersistence.ApplyToWindow(window, WindowGeometry.None, WindowState.Normal, () => null);
+
+            Assert.True(double.IsNaN(window.Left));
+            Assert.True(double.IsNaN(window.Top));
+        });
+    }
+
     [Fact]
     public void ApplyToWindow_StoredNormalState_WinsOverXamlMaximized()
     {
