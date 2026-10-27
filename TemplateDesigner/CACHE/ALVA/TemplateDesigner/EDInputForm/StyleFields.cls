@@ -26,7 +26,7 @@ ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, gro
     // Řez (váha) - items plní klient dynamicky z reálných řezů rodiny (PopulateFontWeightFields).
     // Prázdná položka (nepovinné pole) = auto dle Tučné.
     d form.AddFieldToLastGroup(prefix_".FontWeight", labelPrefix_"Řez", $$$FieldTypeList, 0, 0)
-    d form.AddDecimal(prefix_".FontSize", labelPrefix_"Velikost", "", 4, 200, "pt")
+    d form.AddDecimal(prefix_".FontSize", labelPrefix_"Velikost", "", 3, 72, "pt")
     d form.AddBool(prefix_".Bold", labelPrefix_"Tučné", defBold)
     d form.AddBool(prefix_".Italic", labelPrefix_"Kurzíva", 0)
     d form.AddBool(prefix_".Underline", labelPrefix_"Podtržení", 0)

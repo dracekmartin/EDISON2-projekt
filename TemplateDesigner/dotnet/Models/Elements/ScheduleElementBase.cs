@@ -357,7 +357,7 @@ public abstract class ScheduleElementBase : TemplateElement
         GetHeaderFontSizeDescriptor(headerGroup),
         new FloatPropertyDescriptor
         {
-            Label = "Velikost", Group = dataGroup, Unit = "pt", Min = 3, Max = 24,
+            Label = "Velikost", Group = dataGroup, Unit = "pt", Min = 3, Max = 72,
             Get = () => DataStyle.FontSize ?? ScheduleDataDefaults.FontSize,
             Set = v => DataStyle.FontSize = v,
         },
@@ -368,7 +368,7 @@ public abstract class ScheduleElementBase : TemplateElement
     protected PropertyDescriptor GetHeaderFontSizeDescriptor(string headerGroup = "Záhlaví") =>
         new FloatPropertyDescriptor
         {
-            Label = "Velikost", Group = headerGroup, Unit = "pt", Min = 3, Max = 24,
+            Label = "Velikost", Group = headerGroup, Unit = "pt", Min = 3, Max = 72,
             Get = () => HeaderStyle.FontSize ?? ScheduleHeaderDefaults.FontSize,
             Set = v => HeaderStyle.FontSize = v,
         };

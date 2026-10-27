@@ -3841,7 +3841,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new ColorPropertyDescriptor { Label = "Značky nové verze", Group = "Porovnání verzí", Get = () => RozdilNovaZnackaColor, Set = v => RozdilNovaZnackaColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
         // #8360: přípojný řádek se má dát odlišit od časů spojů. Prázdné = dědí se z buněk.
-        new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 4, Max = 200,
+        new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 3, Max = 72,
             Get = () => PripojStyle.FontSize ?? ResolveElementPripojParent().FontSize, Set = v => PripojStyle.FontSize = v },
         new BoolPropertyDescriptor { Label = "Tučné", Group = "Přípojné řádky",
             Get = () => PripojStyle.Bold ?? ResolveElementPripojParent().Bold, Set = v => PripojStyle.Bold = v },

@@ -82,7 +82,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("header", "Záhlaví")
         // Velikost je u tabulky rozměrová volba, ne kosmetika: nese výšku řádku i šířku sloupce
         // spoje. Prázdné pole = dědí se (kaskáda dá 9 pt), per-sloupcová velikost z dialogu vyhrává.
-        s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", 9, 3, 24, "pt", "0.#")
+        s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", 9, 3, 72, "pt", "0.#")
         s f.helpText = "Písmo záhlaví celého prvku. Jednotlivému sloupci se dá přebít v záložce Sloupce."
         // Bez výchozí hodnoty - podbarvení nese prvek sám, prázdno znamená bez podbarvení.
         s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
@@ -91,7 +91,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
         d form.AddGroup("data", "Datové buňky")
-        s f = form.AddDecimal("DataStyle.FontSize", "Velikost", 8, 3, 24, "pt", "0.#")
+        s f = form.AddDecimal("DataStyle.FontSize", "Velikost", 8, 3, 72, "pt", "0.#")
         s f.helpText = "Písmo buněk celého prvku. Řídí i výšku řádku, když je prázdná, a šířku sloupce spoje."
         s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Pozadí buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
@@ -136,7 +136,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("PodleSmeru", "Podle směru")
         d f.AddListItem("PodleSmeruALinky", "Podle směru a linky")
         s f.helpText = "Sloučený řádek nese časy víc spojů a v popisku má směr (""ze směru Trhové Sviny""), takže šetří místo. Bez slučování má každý spoj vlastní řádek s číslem spoje a linky."
-        s f = form.AddDecimal("PripojStyle.FontSize", "Velikost", "", 4, 200, "pt")
+        s f = form.AddDecimal("PripojStyle.FontSize", "Velikost", "", 3, 72, "pt")
         s f.helpText = "Prázdné = jako datové buňky"
         d form.AddBool("PripojStyle.Bold", "Tučné", 0)
         d form.AddBool("PripojStyle.Italic", "Kurzíva", 0)

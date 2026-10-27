@@ -86,7 +86,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddBool("CurrentStopBold", "Aktuální: Tučné", 1)
         s f.helpText = "Zastávka, pro kterou se vývěska tiskne"
         s f = form.AddBool("CurrentStopUnderline", "Aktuální: Podtržení", 1)
-        s f = form.AddDecimal("CurrentStopFontSize", "Aktuální: Velikost", "", 4, 200, "pt")
+        s f = form.AddDecimal("CurrentStopFontSize", "Aktuální: Velikost", "", 3, 72, "pt")
         s f.helpText = "Prázdné = jako ostatní zastávky"
         s f = form.AddFieldToLastGroup("CurrentStopTextColor", "Aktuální: Barva textu", $$$FieldTypeColor, 0, 0)
         s f.helpText = "Prázdné = jako ostatní zastávky"

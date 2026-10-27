@@ -1768,7 +1768,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         new BoolPropertyDescriptor  { FromImage = true, Label = "Záhlaví skupin dnů", Group = "Odjezdy", Get = () => ShowSkupinaDnuHeader,       Set = v => ShowSkupinaDnuHeader = v },
         // Velikost písma záhlaví - přímý ovladač HeaderStyle.FontSize. Bez něj šlo měnit jen
         // „Výška řádku záhl." (mm), která ale text zvětší jen dokud je FontSize null (legacy derive).
-        new FloatPropertyDescriptor { Label = "Velikost záhlaví",  Group = "Odjezdy", Get = () => HeaderStyle.FontSize ?? 9f,  Set = SetHeaderFontSize, Min = 3, Max = 24, Unit = "pt" },
+        new FloatPropertyDescriptor { Label = "Velikost záhlaví",  Group = "Odjezdy", Get = () => HeaderStyle.FontSize ?? 9f,  Set = SetHeaderFontSize, Min = 3, Max = 72, Unit = "pt" },
         new FloatPropertyDescriptor { Label = "Min. výška řádku záhlaví", Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
         new EnumPropertyDescriptor  { FromImage = true, Label = "Zarovnání záhlaví svisle", Group = "Odjezdy",
             Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (TextVerticalAlignment)v,
@@ -1805,21 +1805,21 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
         // ── Styl 2. řádku záhlaví skupin dnů (např. "den" v "Pracovní / den") ──
         // Aplikuje se POUZE pokud SkupinaDnu.Nadpis2 je vyplněn. Null = stejné jako Line 1 (HeaderStyle).
-        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Záhlaví - 2. řádek", Get = () => HeaderLine2Style?.FontSize ?? HeaderStyle.FontSize ?? 9f, Set = v => EnsureHeaderLine2Style().FontSize = v, Min = 3, Max = 24, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Záhlaví - 2. řádek", Get = () => HeaderLine2Style?.FontSize ?? HeaderStyle.FontSize ?? 9f, Set = v => EnsureHeaderLine2Style().FontSize = v, Min = 3, Max = 72, Unit = "pt" },
         new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Záhlaví - 2. řádek", Get = () => HeaderLine2Style?.Bold ?? HeaderStyle.Bold ?? true, Set = v => EnsureHeaderLine2Style().Bold = v },
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Záhlaví - 2. řádek", Get = () => HeaderLine2Style?.Italic ?? HeaderStyle.Italic ?? false, Set = v => EnsureHeaderLine2Style().Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Záhlaví - 2. řádek", Get = () => HeaderLine2Style?.TextColor ?? HeaderStyle.TextColor ?? "", Set = v => EnsureHeaderLine2Style().TextColor = string.IsNullOrEmpty(v) ? null : v },
 
         // ── Styl minuty ──
         new StringPropertyDescriptor { Label = "Minuta: Font",         Group = "Styl minuty", Get = () => MinuteStyle.FontFamily ?? "", Set = v => MinuteStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new FloatPropertyDescriptor  { Label = "Minuta: Velikost",     Group = "Styl minuty", Get = () => MinuteStyle.FontSize ?? MinuteFontSize, Set = v => MinuteStyle.FontSize = v, Min = 3, Max = 24, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Minuta: Velikost",     Group = "Styl minuty", Get = () => MinuteStyle.FontSize ?? MinuteFontSize, Set = v => MinuteStyle.FontSize = v, Min = 3, Max = 72, Unit = "pt" },
         new BoolPropertyDescriptor   { Label = "Minuta: Tučné",        Group = "Styl minuty", Get = () => MinuteStyle.Bold ?? MinuteBold,         Set = v => MinuteStyle.Bold = v },
         new BoolPropertyDescriptor   { Label = "Minuta: Kurzíva",      Group = "Styl minuty", Get = () => MinuteStyle.Italic ?? false,            Set = v => MinuteStyle.Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Minuta: Barva textu",  Group = "Styl minuty", Get = () => MinuteStyle.TextColor ?? "",            Set = v => MinuteStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
         // ── Styl anotací - symboly (speciální/NZ) ──
         new StringPropertyDescriptor { Label = "Symbol: Font",         Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.FontFamily ?? "", Set = v => AnotaceSymbolStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new FloatPropertyDescriptor  { Label = "Symbol: Velikost",     Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.FontSize ?? 0, Set = v => AnotaceSymbolStyle.FontSize = v > 0 ? v : null, Min = 0, Max = 20, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Symbol: Velikost",     Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.FontSize ?? 0, Set = v => AnotaceSymbolStyle.FontSize = v > 0 ? v : null, Min = 0, Max = 72, Unit = "pt" },
         new BoolPropertyDescriptor   { Label = "Symbol: Tučné",        Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
         new BoolPropertyDescriptor   { Label = "Symbol: Kurzíva",      Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Symbol: Barva textu",  Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
@@ -1828,7 +1828,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
         // ── Styl anotací - text (písmena, dny) ──
         new StringPropertyDescriptor { Label = "Text: Font",         Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new FloatPropertyDescriptor  { Label = "Text: Velikost",     Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.FontSize ?? AnotaceFontSize, Set = v => AnotaceTextStyle.FontSize = v, Min = 3, Max = 20, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Text: Velikost",     Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.FontSize ?? AnotaceFontSize, Set = v => AnotaceTextStyle.FontSize = v, Min = 3, Max = 72, Unit = "pt" },
         new BoolPropertyDescriptor   { Label = "Text: Tučné",        Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.Bold ?? false,   Set = v => AnotaceTextStyle.Bold = v ? true : null },
         new BoolPropertyDescriptor   { Label = "Text: Kurzíva",      Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.Italic ?? false, Set = v => AnotaceTextStyle.Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Text: Barva textu",  Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.TextColor ?? "", Set = v => AnotaceTextStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },

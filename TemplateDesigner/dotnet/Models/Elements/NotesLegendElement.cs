@@ -810,7 +810,7 @@ public class NotesLegendElement : StopScheduleElementBase
         new StringPropertyDescriptor { FromImage = true, Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
         // Velikost a výška řádku patří k rozložení, ne mezi barvy buněk: uživatel je hledá spolu
         // s počtem sloupců a ve „Datových buňkách" je nenašel (nález Pavel 1. 9.).
-        new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Rozložení", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Rozložení", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 3, Max = 72, Unit = "pt" },
         new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Rozložení",
             Get = () => EffectiveNoteLineHeight,
             // Hodnota shodná s automatickou = vrátit se k dědění z písma; uživatel tak nemusí znát

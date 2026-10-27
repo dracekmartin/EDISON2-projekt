@@ -236,7 +236,7 @@ jen se zapnutým Rámečkem.
 
 Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
 
-- **Text** - text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování (výchozí vypnuté), řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí. Pole z dat na víc řádků (třeba popis dopravce: název, sídlo, telefon) se bez zalamování vypíše na jeden řádek a části oddělí čárka; se zalamováním zůstanou pod sebou
+- **Text** - text (víceřádkový), rodina a velikost písma (3–72 pt, stejně u všech prvků), tučné/kurzíva/podtržení/přeškrtnutí, zalamování (výchozí vypnuté), řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí. Pole z dat na víc řádků (třeba popis dopravce: název, sídlo, telefon) se bez zalamování vypíše na jeden řádek a části oddělí čárka; se zalamováním zůstanou pod sebou
 - **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy. Obrázek bez souboru se netiskne - rámeček „IMG" je jen v návrháři
 - **Obdélník** - výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery

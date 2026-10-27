@@ -43,7 +43,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // z reálných řezů nainstalovaného fontu). Prázdná položka (nepovinné pole) = auto dle Tučně.
         d form.AddFieldToLastGroup("Style.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
-        d form.AddDecimal("Style.FontSize", "Velikost", 10, 4, 200, "pt", "0.#", 1)
+        d form.AddDecimal("Style.FontSize", "Velikost", 10, 3, 72, "pt", "0.#", 1)
         d form.AddBool("Style.Bold", "Tučné", 0)
         d form.AddBool("Style.Italic", "Kurzíva", 0)
         d form.AddBool("Style.Underline", "Podtržení", 0)

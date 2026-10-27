@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-27 (32) - Velikost písma všude 3-72 pt (`B194d` E8f)
+
+Velikost písma jde ve všech formulářích i v panelu zadat 3-72 pt (rozhodnutí Jan 27. 10.: pod 3 pt
+je tisk nečitelný, 72 pt pokryje nadpis na A3). Dřív měla tatáž vlastnost v panelu 3-24 pt, v okně stylu
+4-200 pt, Poznámky 4-20 a textové značky Minut 3-20. Formulář hodnotu mimo rozsah nepustí uložit,
+panel ji ořízne - ve všech 277 hodnotách písma našich šablon (systémové, pro porovnání linek, ukázkové)
+je žádná mimo 4-50 pt. „Symbol: Velikost" v panelu dál přijímá 0 = podle velikosti minuty. Pojistka
+`RozsahPismaTests` (formuláře i panel); ověřeno voláním `Init` sedmi polí včetně sdíleného balíčku stylu.
+Tím je E8 hotové celé.
+
 ## 2026-10-27 (31) - Poznámky: „Šířka buňky značky" s nápovědou místo „(0=vedle)" (`B194d` E8e)
 
 Popisek je ve formuláři jako v panelu „Šířka buňky značky" (dřív „Šířka buňky značky (0=vedle)"),

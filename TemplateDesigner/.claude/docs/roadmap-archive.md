@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E8** Význam prázdné hodnoty a rozsahy polí, po krocích s Janem 27. 10.: výška řádku (popisek, nápověda,
+  1-50 mm), střídání řádků, „Nejvýš skupin dnů", „Nejméně / Nejvýš řádků", šířka buňky značky, písmo 3-72 pt
+  (changelog 2026-10-27 (27)-(32)).
 - **T7** „Jen nástup / jen výstup" v Zastávkovém JŘ AD - **vědomý rozdíl, nedělá se** (rozhodnutí Jan
   27. 10.). V AD je to údaj spoje v zastávce (trasa, W pole 5), ne zastávky: linkový JŘ ho dá do buňky
   spoje (CB_CSADAD 996/0360022 jen u spoje 5), vývěska má jeden seznam zastávek pro všechny spoje
