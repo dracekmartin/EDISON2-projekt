@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-27 (3) - náhled bez dat neukazuje globál ani kód firmy (`B194c` D8, část)
+
+Náhled bez vybrané linky bere jako ukázku první linku firmy. Když nedala data (firma žádnou nemá, nebo
+první nemá trasu), stálo v místě popisu linky „(žádná linka v ^JRL pro firmu MLINE)", u MHD „(žádná MHD
+linka pro firmu KV_DP)". Teď ve všech třech agendách (Linkový JŘ AD a MHD, Zastávkový JŘ AD) jednotně
+**„Ukázka bez dat - vyberte linku (Ctrl+Shift+I)"** ze sdíleného `BaseAgenda.TextUkazkyBezDat`.
+Rozhodnutí Jan 27. 10. Nový test `AgendaUserTextTests`: hodnota stránky v agendě nesmí skládat kód
+firmy / jmenného prostoru ani obsahovat název globálu (kontrola si sama ověřuje, že původní tvar chytí).
+Ověřeno voláním `GetMockData` všech tří agend u firmy bez linek.
+
 ## 2026-10-27 (2) - název aktuální zastávky se nepere s příznakem řádku, linkové JŘ ho dostaly (`B194c` D1)
 
 V nabídce polí („vložit pole" u textu) stály ve vývěskách dvě položky „Aktuální zastávka" - název

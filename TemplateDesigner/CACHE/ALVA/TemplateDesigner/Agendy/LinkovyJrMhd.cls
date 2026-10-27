@@ -301,7 +301,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         i page = "" {
             s page = ##class(%DynamicObject).%New()
             s v = ##class(%DynamicObject).%New()
-            d v.%Set("POPIS_LINKY", "(žádná MHD linka pro firmu "_IdFa_")")
+            d v.%Set("POPIS_LINKY", ..TextUkazkyBezDat())
             d page.%Set("values", v)
             s r = ##class(%DynamicObject).%New()
             d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())

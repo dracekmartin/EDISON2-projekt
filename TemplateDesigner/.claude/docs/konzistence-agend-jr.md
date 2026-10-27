@@ -65,9 +65,8 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
   tři agendy berou první reálnou linku (rozhodnutí C-e). Návrh: totéž pro MHD.
 - **D8 Drobnosti v datech** [S]. Komentář o tarifním čísle ve vývěsce AD je mylný
   (`AddStandardJRCollections` :3438). `CAS_JIZDY` deklarovaný jako číslo nese „<" a prázdno. Ukázka
-  linkového MHD nenese `TYPY_PROVOZU_LINKY` (panel bez linky ukáže všechny typy firmy). Záložní text ukázky
-  „(žádná linka v ^JRL…)" je technický a objeví se i u existující linky (`LinkovyJrAd.GetMockData` :704,
-  `LinkovyJrMhd` :302, `ZastavkoveJrAd` :3338). Sonda `AdSloupekProbe.cls:1397` čte neexistující klíče.
+  linkového MHD nenese `TYPY_PROVOZU_LINKY` (panel bez linky ukáže všechny typy firmy). Sonda
+  `AdSloupekProbe.cls:1397` čte neexistující klíče. (Technický záložní text ukázky hotový 27. 10.)
 - **P1 Vývěsky: osm voleb bez nápovědy, dvě nesrozumitelné** [S] (*ověřeno:* kód, server). Šipky, projeté
   zastávky, časová osa, hodiny od/do, roztažení na výšku, souhrn „na znamení", „V rozsahu nepoznámkovat
   schovat" (`AddStandardJRParameters` v obou vývěskách - opsané, opravit obě). Linkové JŘ mají nápovědu
