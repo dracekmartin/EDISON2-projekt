@@ -84,7 +84,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g.name = "Zastávky", g.collectionKey = "ZASTAVKY"
     s gf = ##class(%DynamicArray).%New()
     d ..AddField(gf, "PORADI",         "Pořadí",             "number")
-    d ..AddField(gf, "TYP",            "Typ řádku",          "text")
+    // Bez „Typu řádku" (Jan 27. 10.): interní kód zastavka/prijezd pro Tabulku spojů, data ho posílají dál.
     d ..AddField(gf, "CZST",           "Číslo zastávky",     "number")
     d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
     d ..AddField(gf, "ZONY",           "Zóny",               "text")
@@ -115,7 +115,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g.name = "Poznámky", g.collectionKey = "POZNAMKY"
     s gf = ##class(%DynamicArray).%New()
     d ..AddField(gf, "DRUH", "Druh poznámky",     "number")
-    d ..AddField(gf, "TYP",  "Typ poznámky",      "text")
+    // Bez „Typu poznámky" (Jan 27. 10.): interní kód znak/nz/text pro prvek Poznámky, data ho posílají dál.
     d ..AddField(gf, "ZNAK", "Znak",              "text")
     d ..AddField(gf, "TEXT", "Text poznámky",     "text")
     s g.fields = gf

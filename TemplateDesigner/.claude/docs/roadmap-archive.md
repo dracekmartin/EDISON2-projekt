@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **D6 (dokončení)** „Typ poznámky" a „Typ řádku" (interní kódy pro prvky) z nabídky dat pryč, data je
+  posílají dál (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (8)).
 - **D3** Čísla zastávek „Číslo … zastávky (CIS)", „konečná" místo „cílová", vývěsky s výchozí zastávkou
   (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (7)).
 - **D2** Linkový JŘ AD: „Pořadí" (nese tarifní číslo) z nabídky dat pryč, data ho posílají dál pro

@@ -40,6 +40,7 @@ public class AgendaSchemaDriftTests
     [
         ("POPIS_PLATNOSTI", "hotová věta platnosti - každá agenda ji skládala jinak, šablona si ji složí z dat od-do (Jan 23. 10.)"),
         ("PUVODNI_POPIS_PLATNOSTI", "totéž u původní verze rozdílového JŘ"),
+        ("TYP", "interní kód pro prvky (znak/specialni/nz/text u poznámek, zastavka/prijezd u řádků) - uživatel s ním nic neudělá (Jan 27. 10.)"),
     ];
 
     [Fact]

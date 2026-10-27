@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-27 (8) - „Typ poznámky" a „Typ řádku" zmizely z nabídky dat (`B194c` D6)
+
+Obě pole vracela interní kódy pro prvky: typ poznámky `znak` / `specialni` (vývěsky) / `nz` / `text` -
+podle něj prvek Poznámky kreslí značku, negativní značku nebo jen text; typ řádku `zastavka` / `prijezd`
+v linkových JŘ - podle něj Tabulka spojů pozná vložený příjezdový řádek. Uživatel s nimi nic neudělá,
+proto jsou z nabídky dat pryč ve všech čtyřech agendách; data je posílají dál a prvky fungují beze změny
+(rozhodnutí Jan 27. 10.). `AgendaSchemaDriftTests` hlídá, aby se `TYP` do nabídky nevrátil. Ověřeno voláním
+`GetSchema` všech čtyř agend.
+
 ## 2026-10-27 (7) - čísla zastávek jednou řadou, „konečná" místo „cílová", vývěsky s výchozí zastávkou (`B194c` D3)
 
 Zastávkový JŘ AD: „Číslo zastávky" → **„Číslo aktuální zastávky"** (jako v linkových JŘ), „CIS číslo

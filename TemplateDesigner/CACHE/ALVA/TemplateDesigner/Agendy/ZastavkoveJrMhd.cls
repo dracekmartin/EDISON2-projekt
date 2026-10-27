@@ -1811,7 +1811,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colPoznamky.name          = "Poznámky"
     s colPoznamky.collectionKey = "POZNAMKY"
     s colPoznamkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colPoznamkyFields, "TYP",  "Typ poznámky", "text")
+    // Bez „Typu poznámky" (Jan 27. 10.): interní kód specialni/nz/text pro prvek Poznámky, data ho posílají dál.
     d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
     d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky",  "text")
     s colPoznamky.fields = colPoznamkyFields

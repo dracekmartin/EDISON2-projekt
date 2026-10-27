@@ -29,7 +29,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 - **D4** Údaje dopravce po jednotlivých polích má jen vývěska AD [M] **Jan**
 - **D5** Pořadí polí v nabídce dat se mezi agendami liší [S]
-- **D6** „Typ poznámky" a „Typ řádku" v nabídce dat vracejí interní kódy [S] **Jan**
 - **D7** Náhled vývěsky MHD bez linky ukazuje vymyšlenou brněnskou linku [M]
 - **D8** Drobnosti v datech a ukázkách - zbývá mylný komentář, typ času jízdy, typy provozu v ukázce MHD, sonda [S]
 - **P2** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M] **Jan**

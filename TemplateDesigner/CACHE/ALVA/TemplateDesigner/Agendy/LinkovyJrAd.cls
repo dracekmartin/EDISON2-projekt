@@ -129,7 +129,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s gf = ##class(%DynamicArray).%New()
     // Bez „Pořadí" (Jan 27. 10.): nese tarifní číslo, ne pořadí 1..N jako jinde - v nabídce je jako
     // „Tarifní číslo". GetData PORADI posílá dál, prvek podle něj páruje řádky, značky a přípoje zastávky.
-    d ..AddField(gf, "TYP",            "Typ řádku",          "text")
+    // Bez „Typu řádku" (Jan 27. 10.): interní kód zastavka/prijezd pro Tabulku spojů, data ho posílají dál.
     d ..AddField(gf, "CZST",           "Číslo zastávky",     "number")
     d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
     // Popisek je kanonický z vývěsky - stejné pole se nesmí v nabídce dat jmenovat dvakrát jinak
@@ -164,7 +164,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g.name = "Poznámky", g.collectionKey = "POZNAMKY"
     s gf = ##class(%DynamicArray).%New()
     d ..AddField(gf, "DRUH", "Druh poznámky",     "number")
-    d ..AddField(gf, "TYP",  "Typ poznámky",      "text")
+    // Bez „Typu poznámky" (Jan 27. 10.): interní kód znak/nz/text pro prvek Poznámky, data ho posílají dál.
     d ..AddField(gf, "ZNAK", "Znak",              "text")
     d ..AddField(gf, "TEXT", "Text poznámky",     "text")
     s g.fields = gf

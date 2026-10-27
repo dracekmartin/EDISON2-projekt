@@ -3544,7 +3544,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colPoznamkyFields = ##class(%DynamicArray).%New()
     // Ploché user-facing pole (legenda = znak + text). KATEGORIE (interní filtr-tag) + FORE_COLOR/
     // BACK_COLOR (prezentační nápovědy) zůstávají ve wire, ale NEvystavují se jako sloupce.
-    d ..AddField(colPoznamkyFields, "TYP",  "Typ poznámky",  "text")
+    // Bez „Typu poznámky" (Jan 27. 10.): interní kód specialni/text pro prvek Poznámky, data ho posílají dál.
     d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
     d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky", "text")
     s colPoznamky.fields = colPoznamkyFields
