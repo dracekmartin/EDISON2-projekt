@@ -45,7 +45,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 return;
             // Reset persistovaných pozic/velikostí oken (per MLP × IDFa) - legacy endpoint.
             Rest.QueryOrThrow("ALVA.LIBRARY.Form", "ResetSettings", new CVar());
+            // Legacy reset maže jen pozice WinForms agend, okna EDISON2 a TD mají geometrii jinde (viz WindowState.cls).
+            Rest.QueryOrThrow("ALVA.EDControls.WindowState", "ResetUserStates", WindowStateResetInput(_services.FormIdPrefix));
             PopupDisplayer.Info("Nastavení oken bylo obnoveno. Změna se projeví po jejich příštím otevření.");
+        }
+
+        // TD si prefix nastavuje sám (TemplateDesigner App.xaml.cs), shell na jeho kód nevidí.
+        private const string TemplateDesignerFormIdPrefix = "TD";
+
+        internal static CVar WindowStateResetInput(string shellFormIdPrefix)
+        {
+            var input = new CVar();
+            input["prefixes"] = new CList(shellFormIdPrefix, TemplateDesignerFormIdPrefix);
+            return input;
         }
 
         private static void RunEdisonCopy()

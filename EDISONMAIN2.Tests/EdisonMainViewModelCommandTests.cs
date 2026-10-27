@@ -116,7 +116,17 @@ public class EdisonMainViewModelCommandTests
         popup.Confirm(Arg.Any<string>()).Returns(true);
         vm.ResetFormsCommand.Execute(null);
         ml.Received(1).QueryOrThrow("ALVA.LIBRARY.Form", "ResetSettings", Arg.Any<CVar>());
+        // Legacy reset nesahá na geometrii oken EDISON2 a TD, ta se maže zvlášť.
+        ml.Received(1).QueryOrThrow("ALVA.EDControls.WindowState", "ResetUserStates", Arg.Any<CVar>());
         popup.Received(1).Info(Arg.Is<string>(s => s.Contains("obnoveno")));
+    }
+
+    [Fact]
+    public void WindowStateResetInput_SendsShellAndTemplateDesignerPrefixes()
+    {
+        CList prefixes = EdisonMainViewModel.WindowStateResetInput("EDISON2")["prefixes"];
+
+        Assert.Equal((2, "EDISON2", "TD"), (prefixes.Length, prefixes.GetString(1), prefixes.GetString(2)));
     }
 
     [Fact]
