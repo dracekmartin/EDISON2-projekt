@@ -46,7 +46,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194e` Aplikace a dokumentace
 
-- **A1** Název agendy - zbývá jednotný tvar zápisu (titulek × stavový řádek × seznamy) a kód v okně Změnit agendu [S] **Jan**
 - **A2** Start z EDISONu vždy předvolí zastávkový JŘ, linkový JŘ nemá vstup [S-M] **Jan**
 - **A3** Výběr linek: „Číslo" znamená v každé variantě něco jiného [S-M]
 - **A4** Systémové šablony postavené různě (sekce, popis) [S]

@@ -3429,12 +3429,10 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
-        // Explicitní dvouosý formát: „Agenda: Zastávkový JŘ · Varianta: AD" (učí nové názvosloví);
-        // bez varianty jen „Agenda: Faktury". Fallback = jméno ze schématu (registr nezná kód).
+        // Týž tvar jako titulek okna a Uložit jako: „Agenda: Zastávkový JŘ · AD" (Jan 27. 10.).
+        // Fallback = jméno ze schématu (registr nezná kód).
         var entry = AgendaEntry(agendaCode);
-        AgendaNameText = entry is { Variant.Length: > 0 }
-            ? $"Agenda: {entry.EffectiveAgendaLabel} · Varianta: {entry.EffectiveVariantLabel}"
-            : $"Agenda: {entry?.EffectiveAgendaLabel ?? schema.AgendaName}";
+        AgendaNameText = $"Agenda: {entry?.DisplayName ?? schema.AgendaName}";
         var cacheSchema = CacheProvider?.GetSchema(agendaCode);
         UpdateCacheStatus(agendaCode, cacheSchema);
         LoadAgendaParameters(agendaCode);
