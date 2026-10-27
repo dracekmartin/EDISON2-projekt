@@ -30,11 +30,9 @@ Aktivace z VM: `using var _ = ActionInProgress();`.
 
 ## Ostatní neodvoditelné
 
-- **Krychle**: geometrie a časová osa jsou čistá logika v `CubeAssembly` (testy bez WPF), tvary staví
-  code-behind jednou per okno. Smyčku pohání `DoubleAnimation` na privátní DP `CubeTime` (stop =
-  `BeginAnimation(.., null)` jako u spritů, žádný render loop). Koule brand barvy jako `EDIcons.Molecule`,
-  vazby `EDTheme.Border.Contrast` s průhledností podle hloubky - kontrast na kartě v light i dark.
-  Vypnuté animace ve Windows (`ClientAreaAnimation`) = rovnou složená krychle.
+- **Krychle** je `EDLogo` s `AnimationMode="Loop"` (viz `EDControls/CLAUDE.md`): hodiny si spouští a zastavuje
+  samo podle viditelnosti, takže `Hide()` při minimalizaci ownera smyčku zastaví a `Show()` ji pustí od začátku.
+  Okno ho jen schová, když běží sprity.
 - **Pixel-art maskoti jsou vypnutí, ne smazaní**: bez klíče sady (produkce) se skládá krychle,
   s klíčem (`ActionInProgress("Money")` → `EDViewModel.ActionSpriteKey`) běží sprity. Shell je
   pouští jen z Test funkcí; mapa agenda→sada `AgendaSprites` v shellu je, ale produkce ji nevolá.

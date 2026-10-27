@@ -81,7 +81,7 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
   `<Page>` = duplikát) + `BitmapImage` v `EDIcons.xaml` se sémantickým klíčem (`EDIcons.MyName`, ne název souboru).
 - Výjimka: `EDIcons.MlineLogo` a logo EDISON `Molecule` (kreslené pro 16-24 px) / `MoleculeLarge` jsou `DrawingImage`
   s brand barvou v geometrii: rastr se v běžné velikosti rozpadá a dark mode značku záměrně nepřebarví. Krychli
-  `MoleculeLarge` skládá i karta „Akce probíhá" (`CubeAssembly`), koule a vazby hlídá test. Překresli i `cube_molecule.ico`.
+  `MoleculeLarge` skládá i `EDLogo` (`CubeAssembly`), koule a vazby hlídá test. Překresli i `cube_molecule.ico`.
 
 ## Root-level infrastruktura (`dotnet/*.cs`)
 
@@ -128,6 +128,11 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
   interní zvýraznění WPF), aby pick zachytil `SelectionChanged`.
 - `EDFilter/` - pruh filtračních polí; cíl je `IEDFilterTarget` (root namespace), ne konkrétní
   control. Vlastní `CLAUDE.md`.
+- `EDLogo/` - logo EDISON se skládáním krychle (`AnimationMode` None/Once/Loop: přihlášení Once, karta „Akce probíhá"
+  Loop); geometrie a časová osa čistě v `CubeAssembly`. Čas pohání `DoubleAnimation` na privátní DP (žádný render loop)
+  a **jen u viditelného loga** - clock skrytého okna by tikal dál: skrytá smyčka se zastaví a po zobrazení začne znovu,
+  skryté Once skončí složené. `AnimationCompleted` přijde po každém spuštění Once právě jednou, i při skrytí nebo
+  vypnutých animacích ve Windows (`ClientAreaAnimation` = rovnou složené logo).
 - `EDSearchTextBox/`, `EDInfoBar/` - šablony v `EDControlStyles.xaml`.
 - `SessionState/` - `ISessionState`, slovník v paměti procesu pro stav, který má přežít zavření
   dialogu, ale ne restart (filtr v `EDInputForm`); co restart přežít má, patří do `UserPrefs/`.

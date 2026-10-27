@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
-namespace EDControls.EDActionInProgress;
+namespace EDControls.EDLogo;
 
 /// <summary>
-/// Skládání krychle (logo EDISON) na kartě „Akce probíhá" - geometrie a časová osa bez WPF.
+/// Skládání krychle (logo EDISON) - geometrie a časová osa bez WPF.
 /// Krychle v mírné perspektivě (stejný pohled jako <c>EDIcons.Molecule</c>), na každém rohu koule.
 /// Koule naskakují po hranách krychle (nejbližší, největší přistane poslední), ke každé doroste
 /// vazba od předchozí, zbylé vazby krychli uzavřou. Pak krychle chvíli drží, rozloží se
-/// (skládání pozpátku), krátká pauza a znovu. Tvary z toho staví <see cref="ActionInProgressWindow"/>.
+/// (skládání pozpátku), krátká pauza a znovu. Tvary z toho staví <see cref="EDLogo"/>.
 /// </summary>
 internal sealed class CubeAssembly
 {
-    /// <summary>Strana plátna v jednotkách loga; karta ho škáluje přes Viewbox.</summary>
+    /// <summary>Strana plátna v jednotkách loga; <see cref="EDLogo"/> ho škáluje přes Viewbox.</summary>
     internal const double CanvasSize = 64;
 
     // Kamera: krychle otočená kolem svislé osy, pohled mírně shora, lehká perspektiva

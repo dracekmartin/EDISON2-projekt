@@ -2,7 +2,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using EDControls.EDActionInProgress;
+using EDControls.EDLogo;
 
 namespace EDControls.Tests;
 
@@ -86,7 +86,7 @@ public class MlineLogoResourceTests
     [Fact]
     public void MoleculeLarge_MatchesCubeAssembly()
     {
-        // Karta „Akce probíhá" skládá stejnou krychli, v EDIcons.xaml jsou čísla opsaná ručně.
+        // EDLogo skládá stejnou krychli, v EDIcons.xaml jsou čísla opsaná ručně.
         EDTesting.Sta.Run(() =>
         {
             var logo = (DrawingImage)Load(IconsUri)["EDIcons.MoleculeLarge"];

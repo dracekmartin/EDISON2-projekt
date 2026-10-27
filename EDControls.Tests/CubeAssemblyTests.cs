@@ -1,9 +1,9 @@
 using System.Numerics;
-using EDControls.EDActionInProgress;
+using EDControls.EDLogo;
 
 namespace EDControls.Tests;
 
-/// <summary>Testy čisté logiky skládání krychle na kartě „Akce probíhá": geometrie, pořadí, časová osa.</summary>
+/// <summary>Testy čisté logiky skládání krychle (<c>EDLogo</c>): geometrie, pořadí, časová osa.</summary>
 public class CubeAssemblyTests
 {
     private static void AssertAssembled(CubeAssembly cube)
