@@ -74,6 +74,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
+    d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky", "text")
     d ..AddField(fields, "AKTUALNI_ZASTAVKA_CZST", "Číslo aktuální zastávky", "number")
     s def.fields = fields
 
@@ -88,7 +89,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
     d ..AddField(gf, "ZONY",           "Zóny",               "text")
     d ..AddField(gf, "NASTUPISTE",     "Označník",           "text")
-    d ..AddField(gf, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
+    d ..AddField(gf, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
     s g.fields = gf
     d collections.%Push(g)
 
@@ -427,7 +428,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
 
     // 2. průchod: zastávkové řádky vč. zdvojení příjezd/odjezd; rowMeta(i)=$lb(radekBodu, typ)
     s zastavky = ##class(%DynamicArray).%New()
-    k rowMeta, zvyraznene
+    k rowMeta, zvyraznene, zvyrazneneNazev
     s pocetRadku = 0
     f i=1:1:pocetBodu {
         s odjPri = $lg(body(i),5)
@@ -439,14 +440,17 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         s pocetRadku = pocetRadku + 1
         s rowMeta(pocetRadku) = $lb(i, "O")
         d zastavky.%Push(..BuildZastavkaRadek(body(i), "zastavka", i))
-        s:..JeZvyraznena($lg(body(i),3)) zvyraznene(i) = $lg(body(i),6)
+        s:..JeZvyraznena($lg(body(i),3)) zvyraznene(i) = $lg(body(i),6), zvyrazneneNazev(i) = $lg(body(i),3)
     }
     d vals.%Set("VYCHOZI_ZASTAVKA", $lg(body(1),3))
     d vals.%Set("KONECNA_ZASTAVKA",       $lg(body(pocetBodu),3))
     // Číslo zvýrazněné zastávky pro adresu v QR jen při jediné shodě, jako u AD (`LinkovyJrAd`) -
     // kus názvu může trefit víc zastávek a adresa by pak ukázala na jedno z víc míst.
     s zv = $o(zvyraznene(""))
-    d vals.%Set("AKTUALNI_ZASTAVKA_CZST", $s((zv '= "") && ($o(zvyraznene(zv)) = ""):zvyraznene(zv), 1:""))
+    s jednoznacna = (zv '= "") && ($o(zvyraznene(zv)) = "")
+    // Název bez značek poznámek (řádek je nese u názvu), stejně jako výchozí a konečná zastávka.
+    d vals.%Set("POPIS_ZASTAVKA",         $s(jednoznacna:zvyrazneneNazev(zv), 1:""))
+    d vals.%Set("AKTUALNI_ZASTAVKA_CZST", $s(jednoznacna:zvyraznene(zv), 1:""))
 
     s spoje = ##class(%DynamicArray).%New()
     s skupinyDnu = ##class(%DynamicArray).%New()

@@ -232,14 +232,22 @@ Method TestZvyraznitZastavku()
 		set ^||ML("IN","LINKA_ID") = 1073, ^||ML("IN","SMER_TISKU") = "Tam", ^||ML("IN","ZVYRAZNIT_ZASTAVKU") = hledana
 		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
 		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1))
-		set (oznacene, czst) = "", it = page.rows.%Get("ZASTAVKY").%GetIterator()
+		set (oznacene, czst, nazev) = "", it = page.rows.%Get("ZASTAVKY").%GetIterator()
 		while it.%GetNext(.k, .z) {
 			set ma = ($zconvert(z.%Get("NAZEV_ZASTAVKY"), "L") [ $zconvert(hledana, "L")) && (hledana '= "")
 			do $$$AssertEquals(z.%Get("AKTUALNI_ZASTAVKA"), $select(ma:"true", 1:"false"), """"_hledana_""": "_z.%Get("NAZEV_ZASTAVKY"))
-			if ma set oznacene = oznacene + 1, czst = z.%Get("CZST")
+			if ma set oznacene = oznacene + 1, czst = z.%Get("CZST"), nazev = z.%Get("NAZEV_ZASTAVKY")
 		}
 		do $$$AssertEquals(+oznacene, $case(hledana, "TRŽNICE":1, "tašovice":3, :0), """"_hledana_""": počet označených řádků")
 		do $$$AssertEquals(page.values.%Get("AKTUALNI_ZASTAVKA_CZST"), $select(oznacene=1:czst, 1:""), """"_hledana_""": číslo zastávky pro QR")
+		// Název aktuální zastávky jen při jediné shodě; řádek ho může mít doplněný o značky poznámek.
+		set popis = page.values.%Get("POPIS_ZASTAVKA")
+		if oznacene = 1 {
+			do $$$AssertTrue((popis '= "") && ($extract(nazev, 1, $length(popis)) = popis), """"_hledana_""": název aktuální zastávky „"_popis_"“ × řádek „"_nazev_"“")
+		}
+		else {
+			do $$$AssertEquals(popis, "", """"_hledana_""": bez jediné shody název aktuální zastávky prázdný")
+		}
 	}
 }
 

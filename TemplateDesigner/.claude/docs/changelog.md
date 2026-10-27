@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-27 (2) - název aktuální zastávky se nepere s příznakem řádku, linkové JŘ ho dostaly (`B194c` D1)
+
+V nabídce polí („vložit pole" u textu) stály ve vývěskách dvě položky „Aktuální zastávka" - název
+zastávky a příznak řádku ano/ne pro pravidla zvýraznění - a nešlo je rozlišit. Popisky teď jsou
+**„Název aktuální zastávky"** (`POPIS_ZASTAVKA`), **„Název aktuální zastávky (CIS)"** (`POPIS_ZASTAVKA_CIS`,
+jen vývěska AD) a **„Je aktuální zastávka"** (`AKTUALNI_ZASTAVKA`, příznak řádku; stejně i položka
+v okně sloupců Seznamu zastávek) ve všech čtyřech agendách. Klíče se nemění, uložené šablony beze změny.
+**Linkový JŘ AD i MHD nově posílají `POPIS_ZASTAVKA`** (aditivně) - název do hlavičky výlepu: na výlepu
+vždy název zvýrazněného řádku, jinak jen když Zvýraznit zastávku / tarifní číslo trefí jedinou zastávku
+(jako Číslo aktuální zastávky); MHD bez značek poznámek, které řádek nese u názvu. Rozhodnutí Jan 27. 10.
+Testy `LinkovyJrNastaveniTest` (každý výlep), `LinkovyJrMhdTest` (jediná / víc shod), ověřeno
+voláním `GetSchema` všech čtyř agend. Zlaté otisky linkového JŘ přebaselinované (nové pole v hlavičce, jen
+md5, počty shodné).
+
 ## 2026-10-27 (1) - Obousměrný tisk se nabízí jen při obou směrech (`B194c` P6)
 
 Linkový JŘ AD: volba **„Obousměrný tisk"** se v parametrech (panel i tiskový dialog) ukáže jen při

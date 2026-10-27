@@ -1750,7 +1750,8 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
 
     // ── zastávka, na které vývěska visí, a směr ──
-    d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
+    // „Název …", aby se v nabídce polí nepletl s příznakem řádku „Je aktuální zastávka" (Jan 27. 10.).
+    d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky", "text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
     d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
@@ -1770,7 +1771,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "NAZEV_ZASTAVKY",    "Název zastávky",    "text")
     d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "number")
     d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
-    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
+    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
     d ..AddField(colZastavkyFields, "NASTUPISTE",        "Označník",          "text")
     s colZastavky.fields = colZastavkyFields

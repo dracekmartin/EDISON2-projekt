@@ -43,7 +43,7 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
         StopFields.StopName           => "Název zastávky",
         StopFields.Zone               => "Zóny",
         StopFields.Poradi             => "Pořadí",
-        StopFields.JeAktualni         => "Aktuální zastávka",
+        StopFields.JeAktualni         => "Je aktuální zastávka",
         _                             => string.IsNullOrWhiteSpace(header) ? key : header,
     };
 

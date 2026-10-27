@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **D1** Popisky „Název aktuální zastávky" (+ „(CIS)") a „Je aktuální zastávka" (příznak řádku) ve všech
+  čtyřech agendách; linkové JŘ nově posílají název aktuální zastávky (rozhodnutí Jan 27. 10.; changelog
+  2026-10-27 (2)).
 - **P6** „Obousměrný tisk" se nabízí jen při Směru pro tisk „Oba", věta v nápovědě Směru zmizela;
   Směr pro tisk zůstává v AD i MHD (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (1)).
 - **E16** Drobnosti: Minuty odjezdů skupina „Rozměry", pomocná mřížka „Mřížka plátna" v menu a na liště,

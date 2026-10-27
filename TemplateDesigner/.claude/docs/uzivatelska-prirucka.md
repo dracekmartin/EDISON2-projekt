@@ -1253,11 +1253,12 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
   vypnuté = celá tabulka černě. Stejná volba je u zastávkového JŘ AD.
 - **Zvýraznit zastávku** a **Zvýraznit tarifní číslo** - kus názvu zastávky (nerozlišují se velká
   a malá písmena) označí její řádek jako aktuální; vzhled zvýraznění si řeší šablona pravidlem
-  nad polem „Aktuální zastávka" (výchozí šablony ho mají: světle šedé pozadí řádku). Projíždí-li
+  nad polem „Je aktuální zastávka" (výchozí šablony ho mají: světle šedé pozadí řádku). Projíždí-li
   linka město víckrát, označí se všechny jeho zastávky - jednu z nich vybere tarifní číslo.
-- **Pole *Číslo aktuální zastávky* a *Tarifní číslo aktuální zastávky*** (do hlavičky stránky) -
-  nesou zastávku, pro kterou stránka je: na výlepech každá stránka tu svou, jinak ta, kterou
-  zvýraznění trefí. Hodí se do prvku Kód (QR, čárový), aby každý výlep vedl na svou zastávku.
+- **Pole *Název aktuální zastávky*, *Číslo aktuální zastávky* a *Tarifní číslo aktuální zastávky***
+  (do hlavičky stránky) - nesou zastávku, pro kterou stránka je: na výlepech každá stránka tu svou,
+  jinak ta, kterou zvýraznění trefí. Název se hodí do hlavičky výlepu („Zastávka: …"), čísla do prvku
+  Kód (QR, čárový), aby každý výlep vedl na svou zastávku.
   Když kus názvu odpovídá víc zastávkám, zůstanou prázdná.
 
 **Výběr linek k tisku** i **tisk a export** fungují stejně jako u zastávkového JŘ (viz kapitoly

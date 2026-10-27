@@ -42,11 +42,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
 Popisky a nápovědy výstup ani uložené volby nemění (návrhář je bere ze serveru). Popisky citují i nové
 hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`) - při přejmenování opravit i je.
 
-- **D1 „Aktuální zastávka" je ve vývěsce název i příznak** [S] (*ověřeno:* kód, server). Skalár
-  `POPIS_ZASTAVKA` i řádkový příznak `AKTUALNI_ZASTAVKA` se jmenují stejně a nabídka je ukáže vedle sebe;
-  linkové agendy název aktuální zastávky nemají vůbec, do hlavičky výlepu se vloží příznak a vytiskne
-  „true". Návrh: skalár „Název aktuální zastávky" (+ „(CIS)"), příznak nechat (používají ho šablony
-  a dialog sloupců); přidat `POPIS_ZASTAVKA` do linkových (**Jan**, jen přidání).
 - **D2 „Pořadí" v linkovém AD je tarifní číslo** [S] **Jan** (*ověřeno:* kód). Jinde 1..N, v linkovém AD
   tarifní číslo s mezerami a ve směru Zpět sestupně (`LinkovyJrAd.BuildZastavkaRadek` :1014). Prvek podle
   něj páruje řádky, význam měnit nejde. Návrh: z nabídky stáhnout a dál posílat (jako `POPIS_PLATNOSTI`).
