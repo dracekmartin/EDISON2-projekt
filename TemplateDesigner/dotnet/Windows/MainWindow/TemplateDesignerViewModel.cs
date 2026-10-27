@@ -1023,6 +1023,33 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand PasteStyleCommand => _pasteStyle ??= Command(PasteStyle, () => State.StyleClipboard is not null);
 
     // ── Constructor ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Agenda, se kterou se návrhář otevře. Agenda ze shellu bez dalších hodnot (uzel stromu JŘ / MHD,
+    /// tlačítko MHD2) říká jen, **z kterého modulu** uživatel přichází: otevře se agenda téže varianty
+    /// (AD / MHD), se kterou pracoval naposledy, napoprvé ta ze shellu (`B194e` A2, Jan 27. 10.) - kdo
+    /// dělá linkové JŘ, se dřív musel po každém spuštění přepínat. Spuštění s linkou (porovnání linek)
+    /// určuje agendu přesně. Neznámý kód se přeskočí.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Poslední použitá agenda se obnoví jen když je ZVEŘEJNĚNÁ. Bez té podmínky se skrytá agenda
+    /// vrátila každému, kdo ji kdy vyzkoušel (nález Jan 1. 9.). Kód ze shellu filtr nemá: je to příkaz
+    /// zvenčí a skrytá agenda tam znamená chybu konfigurace shellu, ne zapamatovaný stav uživatele.
+    /// </remarks>
+    internal static string? StartovniAgenda(IReadOnlyList<AgendaRegistryEntry> agendy, string? zeShellu,
+        bool zeShelluJenModul, string? posledni)
+    {
+        AgendaRegistryEntry? Najdi(string? kod, bool jenZverejnene) => kod is null ? null
+            : agendy.FirstOrDefault(a => string.Equals(a.Code, kod, StringComparison.OrdinalIgnoreCase)
+                                        && (!jenZverejnene || a.Released));
+        var shell = Najdi(zeShellu, jenZverejnene: false);
+        var minula = Najdi(posledni, jenZverejnene: true);
+        if (shell is null) return minula?.Code;
+        bool tyzModul = zeShelluJenModul && minula is not null && shell.Variant is { Length: > 0 }
+                        && string.Equals(minula.Variant, shell.Variant, StringComparison.OrdinalIgnoreCase);
+        return tyzModul ? minula!.Code : shell.Code;
+    }
+
     /// <summary>
     /// Per-user state (zoom, grid, splittery, recent files, instance defaults).
     /// Null v testech / standalone bez Caché - get pro UI binding loaded files menu;
@@ -1033,7 +1060,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public TemplateDesignerViewModel(MLRest? mlRest = null,
                                      TdPreferencesService? preferences = null,
                                      IReadOnlyList<AgendaRegistryEntry>? agendas = null,
-                                     string? startupAgendaCode = null)
+                                     string? startupAgendaCode = null,
+                                     bool startupJenModul = false)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
 
@@ -1073,23 +1101,10 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate = CreateSampleTemplate();
 
-        // Startovní agenda - priorita: (1) EDISONMAIN2 kontrakt (inputParam "Agenda=<kód>" dle
-        // uzlu stromu shellu / MHD2 tlačítka), (2) poslední použitá agenda uživatele (per-user
-        // prefs), (3) fallback ze CreateSampleTemplate. Neznámý kód se přeskočí.
-        string? ResolveKnown(string? code, bool jenZverejnene) => code is null ? null
-            : resolvedAgendas.FirstOrDefault(a =>
-                string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase)
-                && (!jenZverejnene || a.Released))?.Code;
-        // ⚠️ Poslední použitá agenda se obnoví jen když je ZVEŘEJNĚNÁ. Bez té podmínky se skrytá
-        // agenda vrátila každému, kdo ji kdy vyzkoušel: uložila se do preferencí, po startu se
-        // obnovila jako agenda šablony a výběr ji pak ukázal (tam se aktuální agenda zobrazuje
-        // vždy, aby šly otevřít hotové šablony). Skrytí linkových JŘ se tím dalo obejít
-        // pamětí aplikace - nález Jan 1. 9. při kontrole před vydáním.
-        //
-        // Kód z launch kontraktu shellu filtr NEmá: to je explicitní příkaz zvenčí a případná
-        // skrytá agenda tam znamená chybu konfigurace shellu, ne zapamatovaný stav uživatele.
-        var startAgenda = ResolveKnown(startupAgendaCode, jenZverejnene: false)
-                          ?? ResolveKnown(preferences?.MainState?.LastAgendaCode, jenZverejnene: true);
+        // Startovní agenda: ze shellu (inputParam "Agenda=<kód>"), poslední použitá uživatele,
+        // jinak fallback ze CreateSampleTemplate - pravidla viz StartovniAgenda.
+        var startAgenda = StartovniAgenda(resolvedAgendas, startupAgendaCode, startupJenModul,
+            preferences?.MainState?.LastAgendaCode);
         if (startAgenda is not null) State.CurrentTemplate.AgendaCode = startAgenda;
 
         RebuildSections();

@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-27 (26) - spuštění z EDISONu otevře naposledy použitou agendu modulu (`B194e` A2)
+
+Strom EDISONu má jeden vstup do návrháře v uzlu JŘ a jeden v uzlu MHD a posílá napevno zastávkový
+JŘ; agenda ze shellu měla přednost před naposledy použitou, takže kdo dělal linkové JŘ, musel se po
+každém spuštění přepnout (Ctrl+Shift+A). Teď samotný kód ze shellu (bez dalších hodnot) znamená jen
+modul: otevře se naposledy použitá zveřejněná agenda téže varianty (AD / MHD), napoprvé ta ze shellu
+(`TemplateDesignerViewModel.StartovniAgenda`). Spuštění s linkou (porovnání linek, PDF) určuje agendu
+přesně jako dřív. Strom (generovaný z legacy XML) se nemění. Rozhodnutí Jan 27. 10. Pojistka
+`StartovniAgendaTests`; invariant v `TemplateDesigner/CLAUDE.md` upravený.
+
 ## 2026-10-27 (25) - Seznam zastávek v MHD nenabízí sloupek, varianty tras ani Více stanovišť (`B194d` E5)
 
 Vývěska MHD posílá u zastávek jen označník: sloupky (číselník AD), časy variant tras ani stanoviště

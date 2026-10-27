@@ -130,6 +130,8 @@ a jaké **specializované prvky** máte k dispozici.
   krátce **AD** nebo **MHD**.
 - Změna: `Nástroje → Změnit agendu…`, klávesa **Ctrl+Shift+A**, nebo klik na zelený štítek -
   dialog nabízí agendy seskupené s variantami pod sebou.
+- **Spuštění z EDISONu** (strom JŘ nebo MHD) otevře agendu, se kterou jste v tomto modulu pracovali
+  naposledy - kdo dělá linkové jízdní řády, nemusí se po spuštění přepínat. Napoprvé zastávkový JŘ.
 - **Přepnutí agendy vždy založí novou prázdnou šablonu** pro zvolenou agendu - nejde o konverzi
   obsahu stávající šablony. Rozdělanou práci vás systém před přepnutím vyzve uložit nebo zahodit.
 

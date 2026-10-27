@@ -68,9 +68,7 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
 
 ## 5. Aplikace a dokumentace
 
-- **A2 Start z EDISONu vždy předvolí zastávkový JŘ** [S-M] **Jan** (*ověřeno:* kód). Linkový JŘ nemá ve stromu
-  vstup (`EDISONMAIN2/.../API/Tree.cls:414, 493`, generuje se z legacy XML) a agenda ze shellu má přednost
-  před naposledy použitou. Rozhodnout s autory stromu.
+Vše hotové nebo rozhodnuté (27. 10.) - viz `roadmap-archive.md`, `B194` A1-A5.
 
 ## 6. Pojistky - testy, které by tyto nálezy chytily
 

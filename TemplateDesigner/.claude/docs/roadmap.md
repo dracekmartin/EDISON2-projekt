@@ -40,10 +40,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **E13** Dialogy sloupců - zbývá c (jedna společná komponenta oken se sloupci, přestavba) - **odloženo**
   spolu s E3 [M]
 
-### `B194e` Aplikace a dokumentace
-
-- **A2** Start z EDISONu vždy předvolí zastávkový JŘ, linkový JŘ nemá vstup [S-M] **Jan** - **odloženo** (Jan 27. 10.)
-
 ### `B194f` Pojistky před `B56`
 
 - **G1** Kontraktový Caché test přes registr agend (schéma, ukázka, data, kódy, důvod prázdného výstupu) [M]

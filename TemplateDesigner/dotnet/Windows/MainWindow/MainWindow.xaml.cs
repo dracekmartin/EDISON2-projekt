@@ -110,7 +110,8 @@ public partial class MainWindow : Window
                       Config.LaunchInput? launchInput = null)
     {
         _preferences = preferences;
-        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas, launchInput?.AgendaCode);
+        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas, launchInput?.AgendaCode,
+                                                    startupJenModul: launchInput is { Values.Count: 0 });
         DataContext = _vm;
         InitializeComponent();
 
