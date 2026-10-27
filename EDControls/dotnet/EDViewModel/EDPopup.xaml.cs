@@ -7,12 +7,13 @@ public partial class EDPopup : Window
     /// <summary>Result kódovaný v DialogResult bool? → třístav pro AnoNeStorno.</summary>
     private bool? _result;
 
-    private EDPopup(string message, EDPopupButtons buttons, string? title)
+    private EDPopup(string message, EDPopupButtons buttons, string? title, bool showLogo = false)
     {
         InitializeComponent();
         // CenterOwner mine maximalizovaný shell (restore bounds) - centrujeme ručně po layoutu.
         Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
         MessageText.Text = message;
+        if (showLogo) LogoImage.Visibility = Visibility.Visible;
 
         switch (buttons)
         {
@@ -46,10 +47,10 @@ public partial class EDPopup : Window
     private void NegativeBtn_Click(object sender, RoutedEventArgs e) { _result = false; DialogResult = false; }
     private void CancelBtn_Click  (object sender, RoutedEventArgs e) { _result = null;  Close(); }
 
-    /// <summary>2-button popup (Ok, AnoNe) - vrátí true/false. Title volitelný (default "Informace"/"Potvrzení").</summary>
-    internal static bool Show(Window? owner, string message, EDPopupButtons buttons, string? title = null)
+    /// <summary>2-button popup (Ok, AnoNe) - vrátí true/false. Title volitelný (default "Informace"/"Potvrzení"), showLogo = logo EDISON vlevo.</summary>
+    internal static bool Show(Window? owner, string message, EDPopupButtons buttons, string? title = null, bool showLogo = false)
     {
-        var popup = new EDPopup(message, buttons, title) { Owner = owner };
+        var popup = new EDPopup(message, buttons, title, showLogo) { Owner = owner };
         return popup.ShowDialog() == true;
     }
 

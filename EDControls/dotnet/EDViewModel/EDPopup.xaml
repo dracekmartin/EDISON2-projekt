@@ -9,13 +9,33 @@
 
     <Border Padding="20,16,20,14"
             Background="{DynamicResource EDTheme.Bg.Surface}">
-        <StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- DynamicResource: EDControls jako knihovna nemá zaručeno, že host EDIcons mergnul. -->
+            <Image x:Name="LogoImage"
+                   Source="{DynamicResource EDIcons.MoleculeLarge}"
+                   Width="48" Height="48"
+                   Margin="0,0,16,16"
+                   VerticalAlignment="Top"
+                   Visibility="Collapsed"/>
+
             <TextBlock x:Name="MessageText"
+                       Grid.Column="1"
                        Margin="0,0,0,16"
+                       VerticalAlignment="Center"
                        TextWrapping="Wrap"
                        MaxWidth="340"/>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel Grid.Row="1" Grid.ColumnSpan="2"
+                        Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="PositiveBtn"
                         Width="80" IsDefault="True"
                         Padding="0,4" Margin="0,0,6,0"
@@ -30,7 +50,7 @@
                         Visibility="Collapsed"
                         Click="CancelBtn_Click"/>
             </StackPanel>
-        </StackPanel>
+        </Grid>
     </Border>
 
 </Window>

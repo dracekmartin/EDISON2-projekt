@@ -20,6 +20,9 @@ public class PopupDisplayer(Window? defaultOwner = null) : IPopupDisplayer
     public bool ConfirmClose(Window? owner = null) =>
         Confirm("Opravdu chcete zavřít okno bez uložení?", owner);
 
+    public bool ConfirmExit(string message, Window? owner = null) =>
+        EDPopup.Show(owner ?? DefaultOwner, message, EDPopupButtons.AnoNe, showLogo: true);
+
     public bool? ConfirmYesNoCancel(string message, string? title = null, Window? owner = null) =>
         EDPopup.ShowYesNoCancel(owner ?? DefaultOwner, message, title);
 

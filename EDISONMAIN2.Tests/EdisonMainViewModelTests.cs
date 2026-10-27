@@ -1070,18 +1070,18 @@ public class EdisonMainViewModelTests
     public void ConfirmShellClose_UserConfirms_ReturnsTrue()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(true);
         var vm = CreateVM(popup: mockPopup);
 
         Assert.True(vm.ConfirmShellClose());
-        mockPopup.Received(1).Confirm(Arg.Any<string>());
+        mockPopup.Received(1).ConfirmExit(Arg.Any<string>());
     }
 
     [Fact]
     public void ConfirmShellClose_UserDeclines_ReturnsFalse_AndDoesNotPersistLayout()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(false);
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.TreeWidths.Returns(new Dictionary<string, double>());
         var vm = CreateVM(popup: mockPopup, prefs: prefs);
@@ -1098,7 +1098,7 @@ public class EdisonMainViewModelTests
     {
         // Closing jen potvrzuje, ukládá až Closed - dřív se layout zapisoval v obou.
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(true);
         var widths = new Dictionary<string, double>();
         var prefs = Substitute.For<ILocalPrefs>();
         prefs.TreeWidths.Returns(widths);
@@ -1125,14 +1125,14 @@ public class EdisonMainViewModelTests
         vm.SuppressCloseConfirm();
 
         Assert.True(vm.ConfirmShellClose());
-        mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+        mockPopup.DidNotReceive().ConfirmExit(Arg.Any<string>());
     }
 
     [Fact]
     public void Exit_Confirmed_ForcesShutdown()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(true);
         var shutdown = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown);
 
@@ -1145,7 +1145,7 @@ public class EdisonMainViewModelTests
     public void Exit_Declined_DoesNotShutdown()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
-        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        mockPopup.ConfirmExit(Arg.Any<string>()).Returns(false);
         var shutdown = Substitute.For<Action>();
         var vm = CreateVM(popup: mockPopup, forceShutdown: shutdown);
 

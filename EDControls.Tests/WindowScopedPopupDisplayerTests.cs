@@ -25,12 +25,14 @@ public class WindowScopedPopupDisplayerTests
             sut.Info("hello");
             sut.Confirm("really?");
             sut.ConfirmClose();
+            sut.ConfirmExit("exit?");
             sut.ConfirmYesNoCancel("save?", "Neuložené změny");
             sut.Error(new InvalidOperationException("boom"));
 
             inner.Received(1).Info("hello", scoped);
             inner.Received(1).Confirm("really?", scoped);
             inner.Received(1).ConfirmClose(scoped);
+            inner.Received(1).ConfirmExit("exit?", scoped);
             inner.Received(1).ConfirmYesNoCancel("save?", "Neuložené změny", scoped);
             inner.Received(1).Error(Arg.Any<InvalidOperationException>(), scoped);
         });
@@ -49,12 +51,14 @@ public class WindowScopedPopupDisplayerTests
             sut.Info("hello", explicitOwner);
             sut.Confirm("really?", explicitOwner);
             sut.ConfirmClose(explicitOwner);
+            sut.ConfirmExit("exit?", explicitOwner);
             sut.ConfirmYesNoCancel("save?", owner: explicitOwner);
             sut.Error(new InvalidOperationException("boom"), explicitOwner);
 
             inner.Received(1).Info("hello", explicitOwner);
             inner.Received(1).Confirm("really?", explicitOwner);
             inner.Received(1).ConfirmClose(explicitOwner);
+            inner.Received(1).ConfirmExit("exit?", explicitOwner);
             inner.Received(1).ConfirmYesNoCancel("save?", null, explicitOwner);
             inner.Received(1).Error(Arg.Any<InvalidOperationException>(), explicitOwner);
             inner.DidNotReceive().Info(Arg.Any<string>(), scoped);
@@ -70,12 +74,14 @@ public class WindowScopedPopupDisplayerTests
             var scoped = new Window();
             inner.Confirm(Arg.Any<string>(), Arg.Any<Window>()).Returns(true);
             inner.ConfirmClose(Arg.Any<Window>()).Returns(true);
+            inner.ConfirmExit(Arg.Any<string>(), Arg.Any<Window>()).Returns(true);
             inner.ConfirmYesNoCancel(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Window>())
                  .Returns((bool?)null);
             var sut = new WindowScopedPopupDisplayer(inner, scoped);
 
             Assert.True(sut.Confirm("really?"));
             Assert.True(sut.ConfirmClose());
+            Assert.True(sut.ConfirmExit("exit?"));
             Assert.Null(sut.ConfirmYesNoCancel("save?"));
         });
     }

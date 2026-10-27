@@ -912,7 +912,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         /// <summary>Closing shellu: false = zavření zrušit.</summary>
         public bool ConfirmShellClose() =>
-            _closeConfirmSuppressed || PopupDisplayer.Confirm(ExitConfirmMessage);
+            _closeConfirmSuppressed || PopupDisplayer.ConfirmExit(ExitConfirmMessage);
 
         /// <summary>
         /// Closed shellu (volá code-behind): jediné místo, které při zavření ukládá layout. Ne v Closing:
@@ -928,7 +928,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private void ExitApplication()
         {
-            if (PopupDisplayer.Confirm(ExitConfirmMessage))
+            if (PopupDisplayer.ConfirmExit(ExitConfirmMessage))
                 _forceShutdown();
         }
 
