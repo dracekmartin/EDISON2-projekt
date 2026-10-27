@@ -238,13 +238,7 @@ ClassMethod NactiStranky(ByRef sys As %String, ByRef vstup, sku As %String, lin 
 
     s chyba = $g(^||ML("ERR"))
     k ^||ML("ERR")
-    i chyba '= "" {
-        // Tvar „1~<err>CRLF<popis výjimky>" - <err> bývá prázdné, text je až za CRLF.
-        s text = $zstrip($replace($e(chyba, $f(chyba, "~"), $l(chyba)), $c(13,10), " "), "<>W")
-        i $e(text, 1, 13) = "ERROR #5001: " s text = $e(text, 14, $l(text))
-        i (sku '= "") || (lin '= "") s text = "Původní verze (skupina "_sku_", linka "_lin_"): "_text
-        $$$ThrowStatus($$$ERROR($$$GeneralError, text))
-    }
+    i chyba '= "" $$$ThrowStatus(..StatusVnoreneChyby(chyba, sku, lin))
 
     // Stránky jsou jen číselné uzly; vedle nich smí stát textový důvod prázdného výstupu.
     s duvod = $g(^||ML("OUT","DUVOD_PRAZDNE"))
@@ -256,6 +250,19 @@ ClassMethod NactiStranky(ByRef sys As %String, ByRef vstup, sku As %String, lin 
         s stranky($i(stranky)) = ##class(%DynamicObject).%FromJSON(json)
     }
     k ^||ML("OUT")
+}
+
+/// Chyba linkového JŘ jako status k vyhození dál. Chybou v datech (5001) zůstane jen to, co tak
+/// označil už linkový JŘ (`ChybaDat` - uživatel ji opraví v datech). Cokoli jiného je chyba
+/// programu (5002) - jako 5001 by ji návrhář ukázal jako „linku nejde vytisknout: <UNDEFINED>…"
+/// místo chybového okna. `chyba` = ^||ML("ERR") ve tvaru „1~<err>CRLF<popis výjimky>".
+ClassMethod StatusVnoreneChyby(chyba As %String, sku As %String, lin As %String) As %Status
+{
+    s text = $zstrip($replace($e(chyba, $f(chyba, "~"), $l(chyba)), $c(13,10), " "), "<>W")
+    s od = $f(text, "ERROR #5001: ")
+    i od s text = $e(text, od, $l(text))
+    i (sku '= "") || (lin '= "") s text = "Původní verze (skupina "_sku_", linka "_lin_"): "_text
+    q $system.Status.Error($s(od:5001, 1:5002), text)
 }
 
 /// Stránka původní verze ke stránce nové: přednostně táž pozice, pokud má týž směr; jinak první

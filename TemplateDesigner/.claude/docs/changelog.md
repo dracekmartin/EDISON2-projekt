@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-27 (20) - rozdílový JŘ nevydává chybu programu za chybu v datech (review bod 2)
+
+Rozdílový JŘ si obě verze linky bere z linkového JŘ AD a každou jeho chybu přebalil na chybu v datech
+(5001). Chyba v kódu (`<UNDEFINED>…`) by tak v návrháři vyšla jako hláška „Linku nejde vytisknout"
+místo chybového okna a uživatel by hledal chybu v datech, která jsou v pořádku. Chybou v datech teď
+zůstane jen to, co tak označil už linkový JŘ (`ChybaDat`), zbytek jde dál jako chyba programu (5002);
+prefix „Původní verze (skupina, linka)" zůstává v obou (`LinkovyJrAdRozdilovy.StatusVnoreneChyby`,
+`LinkovyJrRozdilovyTest.TestChybaProgramuNeniChybaDat`). Ověřeno voláním na CB_CSADAD: linka mimo
+skupinu dál vrací 5001 s textem pro uživatele.
+
 ## 2026-10-27 (19) - stavový řádek: Obecná agenda bez „(nedostupná)"
 
 Stavový řádek ukazoval „Agenda: Obecná (bez dat) (nedostupná)". Přípona hlásí, že od serveru nepřišlo
