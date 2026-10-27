@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **P1** Vývěsky: nápověda u osmi voleb, „Zastávky na znamení souhrnně" a „Schovat poznámky v rozsahu
+  „nepoznámkovat“" (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (4)).
 - **D8 (část)** Náhled bez linky s daty ukazuje „Ukázka bez dat - vyberte linku (Ctrl+Shift+I)" místo
   globálu a kódu firmy; zbytek D8 v roadmapě (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (3)).
 - **D1** Popisky „Název aktuální zastávky" (+ „(CIS)") a „Je aktuální zastávka" (příznak řádku) ve všech

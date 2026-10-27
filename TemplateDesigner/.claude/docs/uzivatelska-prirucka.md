@@ -770,7 +770,7 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   z více označníků se vytiskne jako **samostatná vývěska pro každý označník**, vždy jen s odjezdy
   spojů, které z daného sloupku jedou; číslo označníku je i v titulku stránky. Hodí se, když
   vývěsku fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy).
-- Doplňkové tiskové parametry: **„V rozsahu nepoznámkovat schovat"** (Ruční komentáře /
+- Doplňkové tiskové parametry: **„Schovat poznámky v rozsahu „nepoznámkovat“"** (Ruční komentáře /
   Automatické rozdíly tras / Obojí) a **„Skrýt souhrn 'všechny spoje bezbariérové'"**.
 
 ---
@@ -963,7 +963,8 @@ dávkový export/tisk (kap. 5).
 #### Parametry sestavy v tiskovém dialogu
 Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 
-- **Tisknout šipky směru**, **Tisknout projeté zastávky**
+- **Tisknout šipky směru** - šipka ve směru jízdy od aktuální zastávky v seznamu zastávek;
+  **Tisknout projeté zastávky** - seznam začne už zastávkami, které spoj před aktuální projel
 - **Pořadí stránek** - v jakém pořadí jdou vývěsky v exportu. *Po zastávkách (oba směry za sebou)*
   je výchozí: linka se projde jednou a u každé zastávky jsou obě její vývěsky vedle sebe, takže se
   vytisknou a pověsí jedním výjezdem. *Po směrech (tam vzestupně, zpět sestupně)* vytiskne nejdřív
@@ -974,12 +975,13 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
   jde 22, 23, 0, 1…5. Pro celodenní linku s nočními spoji zvolte např. od 4 do 0 - osa končí
   řádkem 0 za třiadvacátou hodinou, takže půlnoční odjezdy jsou na konci provozního dne a nic
   z denního provozu se neztratí.
-- **Roztáhnout na výšku**
+- **Roztáhnout na výšku** - když je hodin s odjezdy méně, než se do prvku vejde, řádky hodin
+  i písmo se zvětší, aby prvek vyplnily; záhlaví zůstává
 
 Navíc jen u AD: **Rozdělení sloupců dle platnosti**, **Řazení variant tras**, **Písmena variant
 u odjezdů** (+ **První varianta bez písmene**), **Nejvýš sloupců variant tras**, **Samostatná stránka pro každý označník** (vše
 viz kap. 1), **Barvy spojů** (minuty spoje barvou z jízdních řádů, vypnuto = všechny černě),
-**V rozsahu nepoznámkovat schovat** a **Souhrn „všechny zastávky na znamení"** - místo
+**Schovat poznámky v rozsahu „nepoznámkovat“** a **Zastávky na znamení souhrnně** - místo
 značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
 všechny zastávky).
 

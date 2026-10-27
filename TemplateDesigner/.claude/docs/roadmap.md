@@ -34,7 +34,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **D6** Nejasné popisky: „Popis linky", „Druh (1-10)", interní kódy typů poznámek [S]
 - **D7** Náhled vývěsky MHD bez linky ukazuje vymyšlenou brněnskou linku [M]
 - **D8** Drobnosti v datech a ukázkách - zbývá mylný komentář, typ času jízdy, typy provozu v ukázce MHD, sonda [S]
-- **P1** Vývěsky: osm voleb bez nápovědy, dvě nesrozumitelné [S]
 - **P2** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M] **Jan**
 - **P3** Stránka pro stanoviště je ve vývěsce jinde a jinak pojmenovaná než v linkovém JŘ [S] **Jan**
 - **P5** Linkový AD výlepy: bez pořadí stránek a bez PDF na zastávku [M] **Jan**

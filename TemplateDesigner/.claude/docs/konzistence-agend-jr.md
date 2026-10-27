@@ -67,17 +67,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
   (`AddStandardJRCollections` :3438). `CAS_JIZDY` deklarovaný jako číslo nese „<" a prázdno. Ukázka
   linkového MHD nenese `TYPY_PROVOZU_LINKY` (panel bez linky ukáže všechny typy firmy). Sonda
   `AdSloupekProbe.cls:1397` čte neexistující klíče. (Technický záložní text ukázky hotový 27. 10.)
-- **P1 Vývěsky: osm voleb bez nápovědy, dvě nesrozumitelné** [S] (*ověřeno:* kód, server). Šipky, projeté
-  zastávky, časová osa, hodiny od/do, roztažení na výšku, souhrn „na znamení", „V rozsahu nepoznámkovat
-  schovat" (`AddStandardJRParameters` v obou vývěskách - opsané, opravit obě). Linkové JŘ mají nápovědu
-  všude. Návrh (popisky dvou voleb **Jan**): `SCHOVAT_V_ROZSAHU` „Schovat poznámky v rozsahu
-  „nepoznámkovat"" - „U spojů a zastávek, které mají v jízdních řádech nastavené Spoje, nepoznámkovat, se
-  v tisku schová vybraný druh poznámek: ruční komentáře, automatické poznámky o rozdílech tras, nebo obojí."
-  (význam `NoteVisibilityFilter.cs:5-9`); `SOUHRN_NA_ZNAMENI` „Zastávky na znamení souhrnně" - „Když jsou
-  všechny zbývající zastávky na znamení, nevytiskne se značka u každé z nich, ale jeden řádek v poznámkách."
-  (rovné uvozovky v dnešním popisku pryč); `ROZTAHNOUT_NA_VYSKU` - „Když je hodin s odjezdy méně, než se do
-  prvku vejde, řádky hodin i písmo se zvětší, aby prvek vyplnily. Záhlaví zůstává."
-  (`DepartureGridElement.cs:672-680`); ostatním krátká věta.
 - **P2 Totéž rozdělení sloupců má ve vývěsce a v linkovém jiné volby** [M] **Jan** (*ověřeno:* server).
   „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", kryptické prázdninové volby
   vývěsky; vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`). Volby jsou zamčené → přidat souběžný

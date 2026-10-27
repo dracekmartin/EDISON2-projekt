@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-27 (4) - volby vývěsek mají nápovědu, dvě srozumitelnější popisky (`B194c` P1)
+
+Zastávkový JŘ AD i MHD: nápovědu dostaly **Tisknout šipky směru, Tisknout projeté zastávky, Časová osa
+odjezdů, Hodiny od / do** (včetně rozsahu přes půlnoc) a **Roztáhnout na výšku**; u AD navíc dvě volby
+poznámek s novým popiskem - `Souhrn "všechny zastávky na znamení" místo × u každé` → **„Zastávky na znamení
+souhrnně"**, „V rozsahu nepoznámkovat schovat" → **„Schovat poznámky v rozsahu „nepoznámkovat“"**, obě
+s nápovědou. Uložené volby beze změny (ukládá se název parametru; volby enumu nedotčené). Rozhodnutí Jan
+27. 10. Ověřeno voláním `GetParameters` obou vývěsek.
+
 ## 2026-10-27 (3) - náhled bez dat neukazuje globál ani kód firmy (`B194c` D8, část)
 
 Náhled bez vybrané linky bere jako ukázku první linku firmy. Když nedala data (firma žádnou nemá, nebo

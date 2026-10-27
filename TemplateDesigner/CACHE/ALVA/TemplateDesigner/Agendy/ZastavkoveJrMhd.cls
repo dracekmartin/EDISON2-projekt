@@ -1834,8 +1834,8 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pPorStr.options = optsPS
     d arr.%Push(pPorStr)
 
-    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
-    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
+    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek", "V seznamu zastávek se od aktuální zastávky nakreslí šipka ve směru jízdy. Barvu a stranu šipky nastavíte u prvku Seznam zastávek.")
+    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek", "V seznamu zastávek se vytisknou i zastávky, které spoj před aktuální zastávkou už projel. Vypnuto = seznam začíná aktuální zastávkou.")
 
     // Časová osa odjezdů - popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
     s param = ##class(%DynamicObject).%New()
@@ -1844,6 +1844,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s param.type         = "enum"
     s param.group        = "Minuty odjezdů"
     s param.defaultValue = "Jen hodiny s odjezdy"
+    s param.description  = "Které hodiny se vytisknou: jen hodiny s odjezdy, všechny hodiny od první do poslední hodiny s odjezdem (i prázdné), nebo pevný rozsah Hodiny od - Hodiny do."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Jen hodiny s odjezdy")
     d opts.%Push("Souvislá od první do poslední")
@@ -1858,6 +1859,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pOd.type         = "number"
     s pOd.group        = "Minuty odjezdů"
     s pOd.defaultValue = "4"
+    s pOd.description  = "První vytištěná hodina (0-23)."
     s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pOd)
 
@@ -1867,12 +1869,13 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pDo.type         = "number"
     s pDo.group        = "Minuty odjezdů"
     s pDo.defaultValue = "23"
+    s pDo.description  = "Poslední vytištěná hodina (0-23). Menší než Hodiny od = rozsah přes půlnoc."
     s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pDo)
 
     // Roztáhnout data odjezdů (řádky + fonty) na výšku elementu, pokud je kratší rozsah hodin než kapacita.
     // Hlavička skupin dnů + sloupec hodin zůstávají původní velikost.
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů")
+    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů", "Když je hodin s odjezdy méně, než se do prvku vejde, řádky hodin i písmo se zvětší, aby prvek vyplnily. Záhlaví zůstává.")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
