@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-27 (31) - Poznámky: „Šířka buňky značky" s nápovědou místo „(0=vedle)" (`B194d` E8e)
+
+Popisek je ve formuláři jako v panelu „Šířka buňky značky" (dřív „Šířka buňky značky (0=vedle)"),
+nová nápověda vysvětluje, k čemu je: „Pevná šířka místa pro značku, aby texty poznámek začínaly pod
+sebou. 0 = text hned za značkou." Poslední výjimka E8 v `DescriptorLabelsMatchFormTests` odešla.
+Chování beze změny; ověřeno voláním `Init`.
+
 ## 2026-10-27 (30) - Tabulka z dat: „Nejméně řádků" a „Nejvýš řádků" (`B194d` E8d)
 
 „Min. řádků (0 = ne)" a „Max. řádků (0 = bez limitu)" se ve formuláři i v panelu jmenují „Nejméně

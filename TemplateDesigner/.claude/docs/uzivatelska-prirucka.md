@@ -844,7 +844,7 @@ Vysvětlivky pod odjezdy.
 - **Počet sloupců (1–4) + Směr plnění** - „Po sloupcích" (jako noviny) nebo „Po řádcích". U linkového
   JŘ je jen Směr plnění, sloupce se nastavují po druzích
 - **Řazení poznámek** - Dle typu (dny platnosti → značky → atributy → text; výchozí) / Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně. U linkového JŘ platí uvnitř každého druhu a volba Dle typu tam není
-- **Šířka buňky značky (0=vedle)** - pevná šířka sloupce se značkou, aby byly texty svisle zarovnané (0 = značka inline před textem)
+- **Šířka buňky značky** - pevná šířka místa pro značku, aby texty poznámek začínaly pod sebou (0 = text hned za značkou)
 - **Negativní značky / Speciální znaky / Textové poznámky** (skupina Obsah poznámek, jen vývěska) - přepínače, které typy poznámek se v legendě vůbec zobrazí
 - **Pozadí značky / Barva textu značky** (skupina Negativní značky) - barvy invertovaného boxu u negativních značek
 

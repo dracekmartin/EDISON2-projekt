@@ -82,7 +82,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("DleTypu", "Dle typu (dny platnosti → značky → atributy → text)"), f.AddListItem("Vychozi", "Výchozí (dle dat)")
         d f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
         s f.value = "DleTypu"
-        d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
+        s f = form.AddDecimal("MarkerSirka", "Šířka buňky značky", 0, 0, 30, "mm")
+        s f.helpText = "Pevná šířka místa pro značku, aby texty poznámek začínaly pod sebou. 0 = text hned za značkou."
 
         // ── Co blok tiskne ────────────────────────────────────────────────
         // Skupina „Filtrování" míchala tři různé věci a měla 11 položek (rozpočet ~7): které

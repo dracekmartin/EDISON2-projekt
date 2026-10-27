@@ -28,8 +28,6 @@ public class DescriptorLabelsMatchFormTests
         ["Pozadí buněk"] = "barvy zón tabulky",
         ["Barva textu buněk"] = "barvy zón tabulky",
         ["Tučné záhlaví"] = "promoted shortcut tabulek (mvvm-patterns)",
-        // Formulář nese vysvětlivku prázdné hodnoty v popisku - sjednocení čeká na E8e.
-        ["Šířka buňky značky"] = "E8",
         // Ve formuláři je jinde než v hlavním formuláři prvku.
         ["Velikost záhlaví"] = "Minuty odjezdů: písmo záhlaví je ve formuláři v okně stylu (tlačítko Styl záhlaví)",
         ["Šířka sloupce hodin"] = "Minuty odjezdů: ve formuláři v záložce Sloupce (řádek Hodiny)",
