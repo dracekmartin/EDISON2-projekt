@@ -1,3 +1,10 @@
+EDControls.ErrorReporting.ErrorReportType
+EDControls.ErrorReporting.ErrorReportType.Error = 2 -> EDControls.ErrorReporting.ErrorReportType
+EDControls.ErrorReporting.ErrorReportType.Info = 0 -> EDControls.ErrorReporting.ErrorReportType
+EDControls.ErrorReporting.ErrorReportType.Warning = 1 -> EDControls.ErrorReporting.ErrorReportType
+EDControls.MLRestFailure
+static EDControls.ErrorReporting.ErrorReports.ReportEvent(EDControls.ErrorReporting.ErrorReportType type, string module, string name, string message, System.Text.Json.Nodes.JsonObject details) -> void
+static EDControls.MLRestFailure.IsTransport(System.Exception ex) -> bool
 *REMOVED*const EDControls.ErrorReporting.ErrorReport.InternalSuffix = "-internal" -> string
 *REMOVED*const EDControls.ErrorReporting.ErrorReport.StageAuto = "auto" -> string
 *REMOVED*const EDControls.ErrorReporting.ErrorReport.StageUser = "user" -> string

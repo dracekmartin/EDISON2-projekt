@@ -64,6 +64,71 @@ public class ErrorReportTests
     }
 
     [Fact]
+    public void Build_TypeParameterOverridesDefaultError()
+    {
+        Assert.Equal("warning", ErrorReportBuilder.Build(Thrown(), Ctx(), type: ErrorReportBuilder.TypeWarning).Type);
+        Assert.Equal("info", ErrorReportBuilder.Build(Thrown(), Ctx(), type: ErrorReportBuilder.TypeInfo).Type);
+    }
+
+    [Theory]
+    [InlineData(ErrorReportType.Info, "info")]
+    [InlineData(ErrorReportType.Warning, "warning")]
+    [InlineData(ErrorReportType.Error, "error")]
+    public void TypeName_MapsToServerValues(ErrorReportType type, string expected) =>
+        Assert.Equal(expected, ErrorReportBuilder.TypeName(type));
+
+    [Fact]
+    public void BuildEvent_CarriesModuleNameMessageAndDetails()
+    {
+        var report = ErrorReportBuilder.BuildEvent("warning", "EDUPDATE", "Aktualizace stanice", "Aktualizace selhala: zámek",
+            new JsonObject { ["exitCode"] = 100, ["failure"] = "zámek" }, Ctx());
+
+        Assert.Equal("warning", report.Type);
+        Assert.Equal("EDUPDATE", report.Module);
+        Assert.Equal("Aktualizace stanice", report.Name);
+        Assert.Equal("CB_MLINEAS", report.Partner);
+        Assert.Equal($"{report.RefId} | Aktualizace selhala: zámek", report.Description);
+        Assert.Equal("Aktualizace selhala: zámek", report.Data["message"]!.GetValue<string>());
+        Assert.Equal(100, report.Data["exitCode"]!.GetValue<int>());
+        Assert.Empty(report.Attachments);
+    }
+
+    [Fact]
+    public void BuildEvent_InstallEventPair_IsRenamed()
+    {
+        // Modul a jméno tu určuje volající - dvojici instalační události builder nepustí.
+        var report = ErrorReportBuilder.BuildEvent("info", ErrorReportBuilder.InstallEventModule,
+            ErrorReportBuilder.InstallEventName, "x", null, Ctx());
+
+        Assert.False(report.Module == ErrorReportBuilder.InstallEventModule &&
+                     report.Name == ErrorReportBuilder.InstallEventName);
+    }
+
+    [Fact]
+    public void BuildEvent_DetailsCannotOverrideBaseDataOrCarryUnitMetricKeys()
+    {
+        var details = new JsonObject { ["version"] = "podvrh", ["firma"] = "JINA", ["pocty"] = 5, ["zam_pocetZam"] = 1 };
+
+        var report = ErrorReportBuilder.BuildEvent("error", "EDUPDATE", "Aktualizace stanice", "x", details, Ctx());
+
+        Assert.Equal("2.1.3", report.Data["version"]!.GetValue<string>());
+        Assert.Equal("CB_MLINEAS", report.Data["firma"]!.GetValue<string>());
+        foreach (var forbidden in ErrorReportBuilder.ForbiddenDataKeys)
+            Assert.False(report.Data.ContainsKey(forbidden), $"data nesmí nést klíč '{forbidden}'");
+    }
+
+    [Fact]
+    public void BuildEvent_LongMessage_DescriptionIsShortenedMessageKeepsFullText()
+    {
+        var message = new string('a', 1000);
+
+        var report = ErrorReportBuilder.BuildEvent("error", "EDUPDATE", "Aktualizace stanice", message, null, Ctx());
+
+        Assert.True(report.Description.Length < 400);
+        Assert.Equal(message, report.Data["message"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Never_LooksLikeInstallEvent()
     {
         // module="EDISON" + name="Instalace verze" spustí na serveru applyEdisonVersions

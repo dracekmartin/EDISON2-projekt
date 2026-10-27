@@ -22,17 +22,17 @@ podle `data.version`, když je záznam instalační událost (`module="EDISON"` 
 `name="Instalace verze"`) nebo nese klíč `pocty` / `ad_pocetRZ` / `mhd_pocetRZ` /
 `zam_pocetZam`. `data.version` posíláme vždy (viz Identita níž), takže se těm dvěma
 vzorům musíme vyhýbat - jinak by každá chyba z EDISON2 přepsala zákazníkovi verzi legacy
-EDISONu. Hlídají to `ErrorReportTests.Never_LooksLikeInstallEvent` / `Never_CarriesUnitMetricKeys`.
+EDISONu. Hlídá to `ErrorReportTests`, u události s modulem od volajícího (`BuildEvent`) i přejmenování dvojice.
 
 ## Vědomé odchylky od legacy
 
 - **Hybrid místo „až na tlačítko".** Jádro odejde automaticky (`stage=auto`), dobrovolný popis
   okolností posílá uživatel z dialogu jako druhý záznam `type=info` se stejným `refId`
   (`stage=user`). Párování přes `refId` v `description` - server se kvůli tomu neměnil.
-- **Deduplikace je povinná, ne vylepšení.** Suppression list vědomě **nemáme** (rozhodnutí
-  2026-08-04), takže projde i běžný provozní `Lock exist failed!`, který legacy zahazoval.
-  Jediná pojistka proti chybě v `OnPaint` / timeru je `ErrorThrottle` (klíč = typ výjimky +
-  5 rámců stacku + form, okno 5 min, pak souhrn s `repeatCount`, strop 50 na běh).
+- **Deduplikace je povinná, ne vylepšení.** Suppression list vědomě **nemáme** (rozhodnutí 2026-08-04): konec
+  session ze serveru (`Lock exist failed!`, `EdisonVersionFailed!`, legacy je zahazoval) jde jako `info`, výpadek
+  spojení jako `warning`, každý s jedním klíčem (`MLRestFailure`, text MLRestu je kontrakt s repem EDISON). Jinak
+  `ErrorThrottle`: typ výjimky + 5 rámců stacku + form, okno 5 min, pak souhrn s `repeatCount`, strop 50 na běh.
 - **Snímek jen vlastních oken** (`RenderTargetBitmap`), ne obrazovky - cizí aplikace se do
   přílohy nemají jak dostat. Legacy sešívá všechny monitory. Důsledek: **HWND obsah se
   nevykreslí**, takže WebView2 miniaplikace shellu zůstanou v snímku prázdné a snímek nikdy

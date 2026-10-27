@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
+using EDTesting;
 using NSubstitute;
 
 namespace EDControls.Tests;
@@ -319,6 +320,166 @@ public class ErrorReportsTests : IDisposable
         _pipeline.Enabled = false;
 
         _pipeline.ReportLegacyExit("USERS.exe", "ALVA.USERS.formUSERSActivity", 3);
+
+        await AssertNothingSent();
+    }
+
+    // Dvě různá místa vyhození: dnes dávají dva throttle klíče, konec session a výpadek je mají slučovat.
+    private static Exception ThrownAtA(string message)
+    {
+        try { throw new Exception(message); }
+        catch (Exception ex) { return ex; }
+    }
+
+    private static Exception ThrownAtB(string message)
+    {
+        try { throw new Exception(message); }
+        catch (Exception ex) { return ex; }
+    }
+
+    private void UseServer(string server, int port)
+    {
+        var mlRest = MLRestMocks.Create();
+        mlRest.Server.Returns(server);
+        mlRest.Port.Returns(port);
+        _services = new EDServices(mlRest, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+    }
+
+    [Fact]
+    public async Task ReportBackground_SessionEnd_IsInfoOnceAcrossCallSites()
+    {
+        // Zavírací zápisy mrtvé session padají každý jinde - podpora z toho potřebuje jeden záznam, ne chybu za každý.
+        _pipeline.ReportBackground(ThrownAtA(MLRestErrors.SessionEnd()));
+        _pipeline.ReportBackground(ThrownAtB(MLRestErrors.VersionMismatch()));
+
+        await WaitForRequests(1);
+        await AssertNothingMoreSent(1);
+        Assert.Equal("info", Body(0)["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Report_SessionEnd_IsInfoWithoutSnapshot()
+    {
+        _pipeline.Report(ThrownAtA(MLRestErrors.SessionEnd()));
+
+        await WaitForRequests(1);
+        Assert.Equal("info", Body(0)["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task ReportBackground_TransportFromTwoCallSitesSameServer_IsOneWarning()
+    {
+        UseServer("srv", 57772);
+
+        _pipeline.ReportBackground(ThrownAtA(MLRestErrors.Transport()));
+        _pipeline.ReportBackground(ThrownAtB(MLRestErrors.Transport()));
+
+        await WaitForRequests(1);
+        await AssertNothingMoreSent(1);
+        Assert.Equal("warning", Body(0)["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task ReportBackground_TransportOnTwoServers_TwoWarnings()
+    {
+        UseServer("a", 1);
+        _pipeline.ReportBackground(ThrownAtA(MLRestErrors.Transport()));
+        UseServer("b", 1);
+        _pipeline.ReportBackground(ThrownAtA(MLRestErrors.Transport()));
+
+        await WaitForRequests(2);
+    }
+
+    [Fact]
+    public async Task ReportBackground_TransportToOtherServer_SeparateWarning()
+    {
+        // Výpadek licenčního serveru M-line nesmí 5 min zakrývat výpadek serveru firmy.
+        UseServer("srv", 57772);
+
+        _pipeline.ReportBackground(ThrownAtA(MLRestErrors.Transport("NameResolutionFailure", "Není znám žádný takový hostitel. (cloud2:57772)")));
+        _pipeline.ReportBackground(ThrownAtA(MLRestErrors.Transport()));
+
+        await WaitForRequests(2);
+    }
+
+    [Fact]
+    public async Task Report_SnapshotOnlyForError()
+    {
+        // Očekávaný stav (konec session, výpadek) neposílá snímek okna, chyba ano.
+        var captures = 0;
+        var pipeline = new ErrorReportingPipeline(() => new HttpClient(_handler), new ErrorFallbackLog(_fallbackPath),
+            () => false, () => null, () => { captures++; return []; }, () => Entry);
+
+        pipeline.Report(ThrownAtA(MLRestErrors.SessionEnd()));
+        pipeline.Report(ThrownAtB(MLRestErrors.Transport()));
+        Assert.Equal(0, captures);
+
+        pipeline.Report(Thrown());
+        Assert.Equal(1, captures);
+        await WaitForRequests(3);
+    }
+
+    [Fact]
+    public async Task ReportBackground_TransportInsideAggregate_IsWarning()
+    {
+        // Neodchycený task (UnobservedTaskException) přijde zabalený.
+        _pipeline.ReportBackground(new AggregateException(ThrownAtA(MLRestErrors.Transport())));
+
+        await WaitForRequests(1);
+        Assert.Equal("warning", Body(0)["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task ReportBackground_ServerErrorThatIsNotSessionEnd_StaysError()
+    {
+        _pipeline.ReportBackground(ThrownAtA(MLRestErrors.ServerError("ERROR #5001: Chyba v metodě")));
+
+        await WaitForRequests(1);
+        Assert.Equal("error", Body(0)["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void ReportFatal_SessionEndText_StaysError()
+    {
+        // Fatální pád je vždy chyba, i když v textu nese konec session.
+        _pipeline.ReportFatal(ThrownAtA(MLRestErrors.SessionEnd()));
+
+        Assert.Equal("error", Body(0)["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task ReportEvent_SendsTypeModuleNameDetailsAndPartner()
+    {
+        UseServer("srv", 57772);
+
+        _pipeline.ReportEvent(ErrorReportType.Warning, "EDUPDATE", "Aktualizace stanice", "Aktualizace stanice selhala: zámek",
+            new JsonObject { ["exitCode"] = 100 });
+
+        await WaitForRequests(1);
+        var body = Body(0);
+        Assert.Equal("warning", body["type"]!.GetValue<string>());
+        Assert.Equal("EDUPDATE", body["module"]!.GetValue<string>());
+        Assert.Equal("Aktualizace stanice", body["name"]!.GetValue<string>());
+        Assert.Equal(MLRestMocks.DefaultIdfa, body["partner"]!.GetValue<string>());
+        Assert.Equal(100, body["data"]!["exitCode"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public async Task ReportEvent_SameModuleAndName_SecondIsSuppressed()
+    {
+        _pipeline.ReportEvent(ErrorReportType.Error, "EDUPDATE", "Aktualizace stanice", "první", null);
+        _pipeline.ReportEvent(ErrorReportType.Error, "EDUPDATE", "Aktualizace stanice", "druhá", null);
+
+        await WaitForRequests(1);
+        await AssertNothingMoreSent(1);
+    }
+
+    [Fact]
+    public async Task ReportEvent_Disabled_SendsNothing()
+    {
+        _pipeline.Enabled = false;
+
+        _pipeline.ReportEvent(ErrorReportType.Error, "EDUPDATE", "Aktualizace stanice", "x", null);
 
         await AssertNothingSent();
     }

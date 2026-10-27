@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Windows;
 using EDControls.EDViewModel;
 
@@ -56,6 +57,14 @@ public static class ErrorReports
     /// <summary>Původní signatura pro exe přeložené proti starší samostatně nasazené EDControls.dll.</summary>
     public static void ReportLegacyExit(string exeName, string formFqn, int exitCode) =>
         Pipeline.ReportLegacyExit(exeName, formFqn, exitCode);
+
+    /// <summary>
+    /// Nahlásí událost bez výjimky (selhaný update stanice, chybějící host modulů) s vlastním typem,
+    /// modulem a jménem. <paramref name="details"/> jde do <c>data</c>, základní údaje nepřepíše.
+    /// Na odeslání čeká i ukončení procesu (<c>BackgroundWrites</c>). Volatelné z libovolného vlákna. Nikdy nehází.
+    /// </summary>
+    public static void ReportEvent(ErrorReportType type, string module, string name, string message, JsonObject? details) =>
+        Pipeline.ReportEvent(type, module, name, message, details);
 
     /// <summary>Odešle dobrovolné doplnění od uživatele k už nahlášené chybě.</summary>
     public static void ReportFollowUp(string refId, string userText, Window? owner = null) =>

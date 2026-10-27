@@ -1,6 +1,7 @@
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Windows;
 using EDControls.EDViewModel;
 
@@ -60,10 +61,12 @@ internal sealed class ErrorReportingPipeline
             if (!Enabled || ex is null) return null;
 
             var ctx = BuildContext(owner);
-            var decision = Throttle.Register(ErrorThrottle.BuildKey(ex, ctx.WindowNamespace), DateTime.UtcNow);
+            var (type, key) = Classify(ex, ctx.WindowNamespace);
+            var decision = Throttle.Register(key, DateTime.UtcNow);
             if (decision.Action == ThrottleAction.Suppress) return null;
 
-            var report = ErrorReportBuilder.Build(ex, ctx, _captureWindows(), decision.RepeatCount);
+            var attachments = type == ErrorReportBuilder.TypeError ? _captureWindows() : null;
+            var report = ErrorReportBuilder.Build(ex, ctx, attachments, decision.RepeatCount, type);
             Send(report);
             return report.RefId;
         }
@@ -82,15 +85,55 @@ internal sealed class ErrorReportingPipeline
             if (!Enabled || ex is null) return;
 
             var ctx = BuildContext(null);
-            var decision = Throttle.Register(ErrorThrottle.BuildKey(ex, null), DateTime.UtcNow);
+            var (type, key) = Classify(ex, null);
+            var decision = Throttle.Register(key, DateTime.UtcNow);
             if (decision.Action == ThrottleAction.Suppress) return;
 
-            Send(ErrorReportBuilder.Build(ex, ctx, null, decision.RepeatCount));
+            Send(ErrorReportBuilder.Build(ex, ctx, null, decision.RepeatCount, type));
         }
         catch
         {
             // best-effort
         }
+    }
+
+    /// <inheritdoc cref="ErrorReports.ReportEvent"/>
+    internal void ReportEvent(ErrorReportType type, string module, string name, string message, JsonObject? details)
+    {
+        try
+        {
+            if (!Enabled) return;
+
+            var decision = Throttle.Register($"Event|{module}|{name}", DateTime.UtcNow);
+            if (decision.Action == ThrottleAction.Suppress) return;
+
+            var report = ErrorReportBuilder.BuildEvent(ErrorReportBuilder.TypeName(type), module, name, message,
+                details, BuildContext(null), decision.RepeatCount);
+            // Shell po hlášení může hned skončit (spouští updater), odeslání musí doběhnout do ProcessExit.
+            BackgroundWrites.Register(Task.Run(() => SendAsync([report])));
+        }
+        catch
+        {
+            // best-effort
+        }
+    }
+
+    /// <summary>
+    /// Typ záznamu a throttle klíč. Suppression list nemáme: konec session ze serveru a výpadek spojení
+    /// jdou taky, jen jako info a varování s jedním klíčem, jinak by každé místo volání poslalo vlastní chybu.
+    /// </summary>
+    private (string Type, string Key) Classify(Exception ex, string? formId)
+    {
+        if (MLRestFailure.IsSessionEnd(ex)) return (ErrorReportBuilder.TypeInfo, "SessionEnd");
+        // Klíč nese server, se kterým spojení selhalo: výpadek licenčního serveru M-line nesmí zakrýt výpadek serveru firmy.
+        if (MLRestFailure.IsTransport(ex)) return (ErrorReportBuilder.TypeWarning, $"Transport|{MLRestFailure.FailedEndpoint(ex) ?? ServerOf()}");
+        return (ErrorReportBuilder.TypeError, ErrorThrottle.BuildKey(ex, formId));
+    }
+
+    private string ServerOf()
+    {
+        var mlRest = _services()?.MLRest;
+        return mlRest is null ? "" : $"{mlRest.Server}:{mlRest.Port}";
     }
 
     /// <inheritdoc cref="ErrorReports.ReportFatal"/>
