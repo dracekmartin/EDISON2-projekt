@@ -83,6 +83,7 @@
     <Resource Include="EDIcons\png\qr_code.png"/>
     <Resource Include="EDIcons\png\barcode.png"/>
     <Resource Include="EDIcons\png\stop_list.png"/>
+    <Resource Include="EDIcons\png\line_table.png"/>
     <Resource Include="EDIcons\png\departure_grid.png"/>
     <Resource Include="EDIcons\png\notes_legend.png"/>
     <Resource Include="EDIcons\png\z_forward.png"/>

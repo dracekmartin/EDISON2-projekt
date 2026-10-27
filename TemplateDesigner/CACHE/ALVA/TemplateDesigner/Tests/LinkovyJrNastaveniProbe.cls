@@ -19,7 +19,7 @@ Class ALVA.TemplateDesigner.Tests.LinkovyJrNastaveniProbe
 Parameter FIRMY = "CB_CSADAD,CB_GWBUS,KV_DP,VS_CSAD,ZL_KOVED,SKNI_MHDNITRA";
 
 /// Nastavení u linky (`^JRL(sku,lin,"PATCH",<klíč>)`) - jednoduché klíče.
-Parameter PATCHKLICE = "linIDS,nazMHD,netisknoutSloupecTC,tisknoutJenTcKdeSpojeZastavuji,podtrzeniPaJ,barevnyTiskSpoju,cisIDS,ZLOM,ZonaIdsDelZnk,Head,OBJ,PoznPodDopr,Plati";
+Parameter PATCHKLICE = "linIDS,nazMHD,netisknoutSloupecTC,tisknoutJenTcKdeSpojeZastavuji,podtrzeniPaJ,barevnyTiskSpoju,cisIDS,ZLOM,ZonaIdsDelZnk,Head,OBJ,PoznPodDopr,Plati,TiskDtm";
 
 /// Nastavení u linky pod podklíčem `MHD2`. ⚠️ Přes název je to **AD** nastavení - čte je AD engine.
 Parameter MHD2KLICE = "netisknoutTC,netisknoutCislaSpoju,netisknoutSipky,netisknoutKladivkaAPodobne,umeleDatDoSekci,rozdelitUmeleSekceNaVlastniStranky";
@@ -2225,6 +2225,467 @@ ClassMethod AtributySpojuVyskyt(ByRef sys As %String) As %Status
 			set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
 		}
 		set ^||ML("OUT","SOUHRN") = "linek s aspoň jedním atributem: "_nalezeno
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Předložky textu omezení po firmách (`B194` T3d): číselník `NCOME` (CZ i *SK) pro typy omezení
+/// 11, 12, 13, 22 a liché / sudé týdny, ze kterých je bere starý tisk i Linkový JŘ AD. Zastávkový JŘ AD
+/// je má napevno (`PrefixOmezeni`), takže rozdíl je vidět jen tam, kde se číselník od nich liší.
+ClassMethod PredlozkyOmezeni(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			for rec = "CZ", "*SK" {
+				continue:'$data(^[db]JRSET("NCOME", rec))
+				set txt = db_" "_rec_":"
+				for klic = 11, 12, 13, 22, "SU", "LI", "ODDO" {
+					set txt = txt_" "_klic_"=["_$get(^[db]JRSET("NCOME", rec, klic))_"]"
+				}
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Poznámky ke spojům a místenkové poznámky linky po firmách (`B194` T13): kolik linek má spoj
+/// s poznámkou pro spoj / tarifní bod (`omz` 41 / 42, legenda „p") a kolik linek má místenkové poznámky
+/// (`^JRL(sku,lin,"C",2)` text, `"C",2,n` = spoje~text), které starý linkový tisk lepí k větě o místence.
+ClassMethod PoznamkySpojuVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linekP = 0, linekMhd2 = 0, linekMist = 0, prikladP = "", prikladM = "", sku = "", linek42 = 0, priklad42 = ""
+			for {
+				set sku = $order(^[db]JRL(sku)) quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for {
+					set lin = $order(^[db]JRL(sku, lin)) quit:lin=""
+					set maP = 0, maMhd2 = 0
+					for smer = "T", "Z" {
+						set sp = ""
+						for {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp)) quit:sp=""
+							continue:'$isvalidnum(sp)
+							if $data(^[db]JRL(sku, lin, smer, sp, 41)) || $data(^[db]JRL(sku, lin, smer, sp, 42)) set maP = 1
+							if $data(^[db]JRL(sku, lin, smer, sp, 42)) set linek42 = linek42 + 1, priklad42 = sku_"/"_lin_" "_smer_sp
+							if $get(^[db]JRL(sku, lin, smer, sp, 41)) [ "@MHD2~" set maMhd2 = 1
+						}
+					}
+					set:maP linekP = linekP + 1, prikladP = sku_"/"_lin
+					set:maMhd2 linekMhd2 = linekMhd2 + 1
+					if ($get(^[db]JRL(sku, lin, "C", 2)) '= "") || ($order(^[db]JRL(sku, lin, "C", 2, "")) '= "") set linekMist = linekMist + 1, prikladM = sku_"/"_lin
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s poznámkou ke spoji "_linekP_" (z toho MHD2 "_linekMhd2_", např. "_prikladP_"), s místenkovou poznámkou "_linekMist_" (např. "_prikladM_"), MistOR "_$data(^[db]JRSET("Definice","MistOR"))_", MistNOD "_$data(^[db]JRSET("Definice","MistNOD"))_", spojů s poznámkou k tarifnímu bodu "_linek42_" (např. "_priklad42_")"
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Omezení platnosti atributu spoje po firmách (`B194` T14a): kolik linek má u spoje období
+/// (a u kol počet a text) pro jízdní kola (`PATCH,"attrOm",19`) a bezbariérové vozidlo (`"attrOm",15`),
+/// které starý linkový tisk připisuje za větu atributu (`JRapiNZUtl3.mac:80-117, 257-330`).
+ClassMethod OmezeniAtributuVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linek19 = 0, linek15 = 0, priklad19 = "", priklad15 = "", sku = ""
+			for {
+				set sku = $order(^[db]JRL(sku)) quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for {
+					set lin = $order(^[db]JRL(sku, lin)) quit:lin=""
+					if $data(^[db]JRL(sku, lin, "PATCH", "attrOm", 19)) set linek19 = linek19 + 1, priklad19 = sku_"/"_lin
+					if $data(^[db]JRL(sku, lin, "PATCH", "attrOm", 15)) set linek15 = linek15 + 1, priklad15 = sku_"/"_lin
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s omezením kol "_linek19_" (např. "_priklad19_"), s omezením bezbariérového vozidla "_linek15_" (např. "_priklad15_")"
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Nadpisy skupin dnů po firmách (`B194` T11): nastavení firmy `^JRSET("Definice","WinMHD",rec,"DSC")`
+/// (kusy 1-13 podle rozložení, `JRapiLinPrtMhd1.mac:541-571`), odkud je bral starý zastávkový tisk,
+/// a kolik linek má vlastní sadu nadpisů (`PATCH,ISY_LinkyTiskMHDNadpisy` → `^JRSET("LinkyTiskMHDNadpisy")`).
+ClassMethod NadpisySkupinDnu(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			for rec = "CZ", "*SK" {
+				set dsc = $get(^[db]JRSET("Definice","WinMHD",rec,"DSC"))
+				continue:dsc=""
+				set ^||ML("OUT", $increment(^||ML("OUT"))) = db_" "_rec_" DSC: "_dsc
+			}
+			set linek = 0, sady = "", sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					set sada = $get(^[db]JRL(sku, lin, "PATCH", "ISY_LinkyTiskMHDNadpisy"))
+					continue:sada=""
+					set linek = linek + 1
+					set:(","_sady_",")'[(","_sada_",") sady = sady_$select(sady="":"", 1:",")_sada
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s vlastní sadou nadpisů "_linek_" (sady "_sady_")"
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Spoje s omezením „v sudých / lichých týdnech od-do" (omzId 14 / 15) po firmách (`B194` T3d) - jen
+/// u nich se liší zkrácená předložka Zastávkového JŘ AD („v su.") od číselníku. Příklad = nejvyšší skupina.
+ClassMethod OmezeniSudeLiche(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set spoju = 0, linek = 0, priklad = "", sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					set naLince = 0
+					for smer = "T", "Z" {
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							continue:'$data(^[db]JRL(sku, lin, smer, sp, 14))&&'$data(^[db]JRL(sku, lin, smer, sp, 15))
+							set naLince = naLince + 1
+						}
+					}
+					continue:'naLince
+					set linek = linek + 1, spoju = spoju + naLince, priklad = sku_"/"_lin_" ("_naLince_")"
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek "_linek_", spojů "_spoju_"; příklad "_priklad
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Spoje, u kterých záleží na pořadí typů omezení ve větě (`B194` T3e): mají aspoň dva z „jede jen" (11),
+/// „jede také" (12) a „jede" (13) - jen ty Zastávkový JŘ AD (11, 12, 13) a starý tisk (13, 12, 11) skládají
+/// jinak. Příklad = poslední nalezený spoj `skupina/linka/směr/spoj`.
+ClassMethod PoradiOmezeniVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set spoju = 0, priklad = "", sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					for smer = "T", "Z" {
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set typu = ($data(^[db]JRL(sku, lin, smer, sp, 11))>0) + ($data(^[db]JRL(sku, lin, smer, sp, 12))>0) + ($data(^[db]JRL(sku, lin, smer, sp, 13))>0)
+							continue:typu<2
+							set spoju = spoju + 1, priklad = sku_"/"_lin_"/"_smer_"/"_sp
+						}
+					}
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": spojů "_spoju_"; příklad "_priklad
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Zastávky „jen nástup" / „jen výstup" po firmách (`B194` T7): atribut trasy `N` / `V` (pole 5 úseku
+/// `^JRL(sku,lin,"W",trasa)`). Počítají se linky a úseky tras, příklad = linka s oběma, jinak s kterýmkoli.
+ClassMethod NastupVystupVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linekN = 0, linekV = 0, useku = 0, priklad = "", prikladObe = "", sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					set maN = 0, maV = 0, w = ""
+					for  {
+						set w = $order(^[db]JRL(sku, lin, "W", w), 1, veta)
+						quit:w=""
+						for si = 1:1:$length(veta, "#") {
+							set atr = $piece($piece(veta, "#", si), ":", 5)
+							continue:atr=""
+							if atr [ "N" set maN = 1, useku = useku + 1
+							if atr [ "V" set maV = 1, useku = useku + 1
+						}
+					}
+					set:maN linekN = linekN + 1
+					set:maV linekV = linekV + 1
+					if maN || maV set priklad = sku_"/"_lin
+					if maN && maV set prikladObe = sku_"/"_lin
+				}
+			}
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s N "_linekN_", s V "_linekV_", úseků "_useku_"; příklad s oběma "_prikladObe_", jinak "_priklad
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Barevné spoje po firmách (`B194` T2): kolik linek má aspoň jeden spoj s barvou (jinou než černou,
+/// pole `#12` = legacy `dta38`) a kolik z nich má u linky barvy vypnuté (`PATCH,barevnyTiskSpoju` = 1,
+/// starý linkový JŘ pak tiskne černě - `JRapiLinPrtWin.mac:2085-2102`; starý vývěskový tisk nastavení
+/// nečte). Příklad = linka s nejvíc barevnými spoji, nejvyšší skupina vyhrává remízu.
+ClassMethod BarvySpojuVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linek = 0, vypnuto = 0, priklad = "", prikladVyp = "", maxBarev = 0, maxBarevVyp = 0, sku = ""
+			kill barvy
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					set pocet = 0
+					for smer = "T", "Z" {
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set barva = $piece($get(^[db]JRL(sku, lin, smer, sp)), "#", 12)
+							continue:$translate(barva, ";0", "")=""
+							set pocet = pocet + 1, barvy(barva) = ""
+						}
+					}
+					continue:'pocet
+					set linek = linek + 1
+					if +$get(^[db]JRL(sku, lin, "PATCH", "barevnyTiskSpoju")) {
+						set vypnuto = vypnuto + 1
+						if pocet '< maxBarevVyp set maxBarevVyp = pocet, prikladVyp = sku_"/"_lin
+						continue
+					}
+					if pocet '< maxBarev set maxBarev = pocet, priklad = sku_"/"_lin
+				}
+			}
+			set seznamBarev = "", b = ""
+			for  { set b = $order(barvy(b))  quit:b=""  set seznamBarev = seznamBarev_$select(seznamBarev="":"", 1:" ")_b }
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = db_": linek s barevnými spoji "_linek_", z toho s barvami vypnutými u linky "_vypnuto
+				_"; příklad "_priklad_" ("_maxBarev_" spojů)"_$select(prikladVyp'="":"; vypnuté např. "_prikladVyp_" ("_maxBarevVyp_")", 1:"")
+				_"; barvy: "_$extract(seznamBarev, 1, 200)
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Spoje „na objednání" a „podmínečně" po firmách (`B194` T1): příznak u spoje (hlava:21 RBU,
+/// hlava:23 RBP) a příznak jen v zastávce (atribut trasy `r` / `i`, tak ho čte starý vývěskový tisk
+/// `JRapiLinPrtMhd1.mac:203-204`). K tomu, kolik linek má vyplněné upřesnění (`SP_TX_JOBJ`/`SP_TX_JPOD`),
+/// které starý modul přidává za text legendy. Příklad = linka s nejvíc spoji, nejvyšší skupina vyhrává remízu.
+ClassMethod NaObjednaniVyskyt(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			kill souhrn, priklad
+			set sku = ""
+			for  {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for  {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					kill pocty, trasaAtr
+					for smerIdx = 1:1:2 {
+						set smer = $piece("T,Z", ",", smerIdx)
+						set sp = ""
+						for  {
+							set sp = $order(^[db]JRL(sku, lin, smer, sp))
+							quit:sp=""
+							continue:'$isvalidnum(sp)
+							set radek = $get(^[db]JRL(sku, lin, smer, sp))
+							set hlava = $piece(radek, "#", 1)
+							continue:hlava=""
+							if $piece(radek, "#", 10) '= "" set pocty("upresneni spoje JOBJ") = $get(pocty("upresneni spoje JOBJ")) + 1, upr("spoj JOBJ") = $piece(radek, "#", 10)
+							if $piece(radek, "#", 11) '= "" set pocty("upresneni spoje JPOD") = $get(pocty("upresneni spoje JPOD")) + 1, upr("spoj JPOD") = $piece(radek, "#", 11)
+							if +$piece(hlava, ":", 21) && ($piece(radek, "#", 10) '= "") set pocty("RBU spoj s vlastnim textem") = $get(pocty("RBU spoj s vlastnim textem")) + 1
+							if +$piece(hlava, ":", 23) && ($piece(radek, "#", 11) '= "") set pocty("RBP spoj s vlastnim textem") = $get(pocty("RBP spoj s vlastnim textem")) + 1
+							for ak = "RBU", "RBP" {
+								continue:'+$piece(hlava, ":", $select(ak="RBU":21, 1:23))
+								set ut = ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).UpresneniAtributuSpoje(db, sku, lin, smer, sp, ak)
+								// prefix kvůli prázdnému upřesnění - prázdný subscript nejde
+								set ruzneTexty(ak, "~"_$extract(ut, 1, 200)) = ""
+							}
+							if +$piece(hlava, ":", 21) set pocty("RBU spoj") = $get(pocty("RBU spoj")) + 1
+							if +$piece(hlava, ":", 23) set pocty("RBP spoj") = $get(pocty("RBP spoj")) + 1
+							set trasa = $piece(hlava, ":", 3)
+							continue:trasa=""
+							if '$data(trasaAtr(trasa)) {
+								set trasaAtr(trasa) = ""
+								set w = "", cnt = trasa
+								while $data(^[db]JRL(sku, lin, "W", cnt)) {
+									set w = w_^[db]JRL(sku, lin, "W", cnt), cnt = cnt + .01
+								}
+								for si = 1:1:$length(w, "#") {
+									set atr = $piece($piece(w, "#", si), ":", 5)
+									if atr [ "r" set $piece(trasaAtr(trasa), "~", 1) = 1
+									if atr [ "i" set $piece(trasaAtr(trasa), "~", 2) = 1
+								}
+							}
+							if +$piece(trasaAtr(trasa), "~", 1) set pocty("RBU zastavka") = $get(pocty("RBU zastavka")) + 1
+							if +$piece(trasaAtr(trasa), "~", 2) set pocty("RBP zastavka") = $get(pocty("RBP zastavka")) + 1
+						}
+					}
+					for ak = "RBU", "RBP" {
+						set prvni = $order(ruzneTexty(ak, ""))
+						continue:prvni=""
+						if $order(ruzneTexty(ak, prvni)) '= "" set pocty(ak_" ruzna upresneni") = 1
+					}
+					kill ruzneTexty
+					if $get(^[db]JRL(sku, lin, "PATCH", "SP_TX_JOBJ")) '= "" set pocty("upresneni JOBJ") = 1, upr("JOBJ") = ^[db]JRL(sku, lin, "PATCH", "SP_TX_JOBJ")
+					if $get(^[db]JRL(sku, lin, "PATCH", "SP_TX_JPOD")) '= "" set pocty("upresneni JPOD") = 1, upr("JPOD") = ^[db]JRL(sku, lin, "PATCH", "SP_TX_JPOD")
+					set k = ""
+					for  {
+						set k = $order(pocty(k))
+						quit:k=""
+						set souhrn(k) = $get(souhrn(k)) + 1
+						if pocty(k) '< +$piece($get(priklad(k)), "~", 1) set priklad(k) = pocty(k)_"~"_sku_"/"_lin
+					}
+				}
+			}
+			set txt = db_":"
+			set k = ""
+			for  {
+				set k = $order(souhrn(k))
+				quit:k=""
+				set txt = txt_" "_k_" "_souhrn(k)_" linek (např. "_$piece(priklad(k), "~", 2)_", "_$piece(priklad(k), "~", 1)_");"
+			}
+			if $data(upr("JOBJ")) set txt = txt_" vzor JOBJ: "_upr("JOBJ")_";"
+			if $data(upr("JPOD")) set txt = txt_" vzor JPOD: "_upr("JPOD")_";"
+			if $data(upr("spoj JOBJ")) set txt = txt_" vzor spoje JOBJ: "_upr("spoj JOBJ")_";"
+			if $data(upr("spoj JPOD")) set txt = txt_" vzor spoje JPOD: "_upr("spoj JPOD")_";"
+			set txt = txt_" firma RBU: "_$get(^[db]JRSET("Definice","PS_RADIOBUS_NZ_RBU"))_"; firma RBP: "_$get(^[db]JRSET("Definice","PS_PODMINECNE_NZ_RBP"))
+			kill upr
+			set ^||ML("OUT", $increment(^||ML("OUT"))) = txt
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Zdroje dat Tabulky spojů v uložených šablonách (`B194` E14): kolik šablon má Tabulku spojů a jestli
+/// některá nemá u `ZastavkyDataSource` / `SpojeDataSource` / `SkupinyDnuDataSource` jinou než výchozí
+/// hodnotu - před odebráním těch polí z formuláře.
+ClassMethod ZdrojeTabulkySpoju(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML
+		set sablon = 0, sTabulkou = 0, jine = "", idfa = ""
+		for {
+			set idfa = $order(^ALVA.TemplateDesigner.Templates(idfa)) quit:idfa=""
+			set id = ""
+			for {
+				set id = $order(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id)) quit:id=""
+				set json = $get(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id, "Data"))
+				if $data(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id, "Data")) >= 10 {
+					set json = ""
+					for n = 1:1:+$get(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id, "Data")) set json = json_$get(^ALVA.TemplateDesigner.Templates(idfa, "DTA", id, "Data", n))
+				}
+				set sablon = sablon + 1
+				continue:json'["LineTableElement"
+				set sTabulkou = sTabulkou + 1
+				for klic = "ZastavkyDataSource~ZASTAVKY", "SpojeDataSource~SPOJE", "SkupinyDnuDataSource~SKUPINY_DNU" {
+					set pole = $piece(klic, "~", 1), vychozi = $piece(klic, "~", 2)
+					set zbytek = json
+					while zbytek [ (""""_pole_"""") {
+						set zbytek = $piece(zbytek, """"_pole_"""", 2, *)
+						set hodnota = $piece($piece(zbytek, """", 2), """", 1)
+						if hodnota '= vychozi set jine = jine_idfa_"/"_id_" "_pole_"="_hodnota_"; "
+					}
+				}
+			}
+		}
+		set ^||ML("OUT", 1) = "šablon "_sablon_", s Tabulkou spojů "_sTabulkou_", jiný než výchozí zdroj: "_$select(jine="":"žádná", 1:jine)
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret $$$OK

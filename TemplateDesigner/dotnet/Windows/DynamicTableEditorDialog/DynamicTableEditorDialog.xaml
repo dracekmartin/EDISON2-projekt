@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
-        Title="Tabulka - nastavení"
         Width="700" Height="640"
         MinWidth="580" MinHeight="520"
         WindowStartupLocation="CenterOwner"
@@ -55,9 +54,9 @@
                             MoveDownCommand="{Binding MoveDownCommand}"/>
 
                         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
-                            <Button Content="+ Přidat" Command="{Binding AddColumnCommand}"
+                            <Button Content="Přidat" Command="{Binding AddColumnCommand}"
                                     Padding="8,3" Margin="0,0,6,0"/>
-                            <Button Content="− Odebrat" Command="{Binding RemoveColumnCommand}"
+                            <Button Content="Odebrat" Command="{Binding RemoveColumnCommand}"
                                     IsEnabled="{Binding HasSelection}" Padding="8,3"/>
                         </StackPanel>
 
@@ -66,9 +65,9 @@
                                        Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
-                            <Button Content="Přizpůsobit sloupce k šířce elementu"
+                            <Button Content="Přizpůsobit sloupce k šířce prvku"
                                     Command="{Binding FitColumnsToWidthCommand}"
-                                    ToolTip="Proporcionálně zmenší/zvětší pevné šířky sloupců, aby součet odpovídal šířce elementu."
+                                    ToolTip="Proporcionálně zmenší/zvětší pevné šířky sloupců, aby součet odpovídal šířce prvku."
                                     HorizontalAlignment="Stretch" Padding="6,3" Margin="0,4,0,0"
                                     Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
@@ -113,7 +112,7 @@
 
                             <Separator Margin="0,8,0,8"/>
 
-                            <TextBlock Text="Prázdné pole = dědí výchozí styl elementu (tab Obecné)."
+                            <TextBlock Text="Prázdné pole = převezme se styl prvku (záložka Obecné)."
                                        FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <!-- ── Styl záhlaví ──────────────── -->
@@ -136,7 +135,7 @@
                                         Padding="10,3" Margin="0,0,6,0"/>
                                 <Button Content="Resetovat všechny sloupce"
                                         Command="{Binding DataContext.ResetAllColumnStylesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce budou dědit z tabu Obecné"
+                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce převezmou styl ze záložky Obecné"
                                         Padding="10,3"/>
                             </StackPanel>
 

@@ -27,24 +27,25 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // čeho se pole týkají; klíče polí se NEMĚNÍ, mění se jen zařazení a popisky.
         d form.AddGroup("groups", "Skupiny dnů")
         s f = form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
-        s f.helpText = "Nadpis nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
+        s f.helpText = "Záhlaví nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         s f = form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f.helpText = "Sloupec s hodinami se zopakuje u každé skupiny dnů. Vypnuto = jeden sloupec hodin vlevo pro všechny skupiny."
         s f = form.AddFieldToLastGroup("HourColumnHeaderImageBase64", "Obrázek v záhlaví hodin", $$$FieldTypeImage, 0, 0)
-        s f.helpText = "Ikona se vykreslí v záhlaví sloupce hodin u každé skupiny dnů. Když je nastavená, nadpis sloupce se netískne."
+        s f.helpText = "Ikona se vykreslí v záhlaví sloupce hodin u každé skupiny dnů. Když je nastavená, text záhlaví sloupce se netiskne."
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
         s f.helpText = "Kolik skupin dnů se vejde do prvku; další se nevykreslí. 0 = bez omezení."
 
-        // ── Rozměry a mřížka ──────────────────────────────────────────────
-        d form.AddGroup("layout", "Rozměry a mřížka")
+        // ── Rozměry ───────────────────────────────────────────────────────
+        // Mřížka (čáry) má vlastní skupinu níž; „a mřížka" v názvu skupiny mátlo.
+        d form.AddGroup("layout", "Rozměry")
         s f = form.AddDecimal("MinuteWidth", "Šířka minuty", 5, 3, 15, "mm")
         s f.helpText = "Šířka jednoho políčka s minutou - určuje, kolik minut se vejde na řádek"
         s f = form.AddFieldToLastGroup("MinuteSpacing", "Rozestup odjezdů", $$$FieldTypeList, 0, 1)
         d f.AddListItem("ByContent", "Bez zarovnání"), f.AddListItem("Even", "Zarovnat dle nejširšího odjezdu"), f.AddListItem("Fixed", "Zarovnat na pevnou šířku")
         s f.helpText = "Bez zarovnání: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí. Zarovnat dle nejširšího odjezdu: jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici, ale jeden takový spoj zředí celou vývěsku. Zarovnat na pevnou šířku: rozteč je Šířka minuty, nejméně však minuta a jedna značka, takže ji data nezmění; spoj s víc značkami se do ní vejde jejich zmenšením."
-        s f = form.AddDecimal("GroupSeparatorWidth", "Oddělovač skupin", 0.5, 0, 5, "mm")
-        s f.helpText = "Mezera mezi bloky jednotlivých skupin dnů. 0 = bez mezery."
+        s f = form.AddDecimal("GroupSeparatorWidth", "Mezera mezi skupinami dnů", 0.5, 0, 5, "mm")
+        s f.helpText = "Volné místo mezi bloky jednotlivých skupin dnů. 0 = bez mezery."
         s f = form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
         s f.helpText = "Vodorovná mezera mezi jednotlivými odjezdy v řádku. Prázdné = podle šířky minuty."
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
@@ -60,10 +61,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("style:HeaderStyle", "Styl záhlaví", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit styl…"
         d form.AddDecimal("SkupinaDnuHeaderLineHeight", "Min. výška řádku záhlaví", 4, 2, 10, "mm")
-        s f = form.AddFieldToLastGroup("HeaderVerticalAlignment", "Zarovnání záhlaví", $$$FieldTypeList, 0, 0)
+        s f = form.AddFieldToLastGroup("HeaderVerticalAlignment", "Zarovnání záhlaví svisle", $$$FieldTypeList, 0, 0)
         d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
         s f.value = "Bottom"
-        s f = form.AddFieldToLastGroup("style:HeaderLine2Style", "Styl 2. řádku nadpisu", $$$FieldTypeButton, 0, 0)
+        s f = form.AddFieldToLastGroup("style:HeaderLine2Style", "Styl 2. řádku záhlaví", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit styl…"
 
         // Styl datových buněk: DataStyle = báze (minuty i hodinová čísla z ní dědí),
@@ -78,16 +79,16 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("departure", "Značky u odjezdů")
         s f = form.AddBool("ShowAnotace", "Značky u odjezdů", 1)
         s f.helpText = "Písmena a symboly u minuty (nízkopodlažní spoj, kolo, jede jen v určité dny…). Co se z nich tiskne, řídí prvek Poznámky - ten je i vysvětluje."
-        s f = form.AddDecimal("AnotaceGap", "Mezera minuta ↔ značka", "", 0, 5, "mm")
-        s f.helpText = "Odsazení značky od minuty. Prázdné = automaticky podle velikosti písma."
+        s f = form.AddDecimal("AnotaceGap", "Mezera mezi značkou a minutou", "", 0, 5, "mm")
+        s f.helpText = "Odstup značky od minuty. Prázdné = mezera podle velikosti písma."
         s f = form.AddDecimal("AnotaceInterGap", "Mezera mezi značkami", "", 0, 5, "mm")
         s f.helpText = "Odsazení mezi dvěma značkami u téhož odjezdu"
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ")
         // Negativní značka = symbol vykreslený inverzně (znak na plné ploše) - vlastní dvojice barev.
-        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Pozadí negativní značky", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Negativní značka: Pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         s f.helpText = "Negativní značka = znak vykreslený inverzně, tedy světlý na plné barevné ploše"
-        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva negativní značky", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Negativní značka: Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ")
 

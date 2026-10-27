@@ -123,7 +123,7 @@ class DynamicTableEditorDialogViewModel : EDViewModel
     public bool HasColumnOverflow => TotalVisibleColumnWidth > ElementWidth + 0.01f;
 
     public string ColumnOverflowText =>
-        $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku elementu ({ElementWidth:0.#} mm). Obsah se oříže.";
+        $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku prvku ({ElementWidth:0.#} mm). Obsah se oříže.";
 
     public List<TableColumn> ResultColumns { get; private set; } = [];
 

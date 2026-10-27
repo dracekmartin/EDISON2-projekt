@@ -108,7 +108,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         CurrentElement     = element;
         _currentInvalidate = _invalidate;
-        WindowTitle        = "Vlastnosti: " + element.GetType().Name.Replace("Element", "");
+        WindowTitle        = ElementNames.TitulekVlastnosti(element);
 
         var descriptors = element.GetPropertyDescriptors();
 
@@ -168,7 +168,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         _undoDepthAtOpen   = _state.UndoStack.Count;
         CurrentElement     = null;
         _currentInvalidate = _invalidate;
-        WindowTitle        = $"Společné vlastnosti ({elements.Count} elementů)";
+        WindowTitle        = $"Společné vlastnosti ({elements.Count} {TemplateTreeNames.Prvku(elements.Count)})";
 
         return CurrentDescriptors = BuildMultiElementDescriptors(elements);
     }
@@ -369,7 +369,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         var list = new List<Models.PropertyDescriptor>(descriptors.Count);
         foreach (var d in descriptors)
         {
-            if (d is StringPropertyDescriptor sd && sd.Label == "Text" && sd.MultiLine)
+            if (d is StringPropertyDescriptor sd && sd.Label == TextElement.ObsahLabel && sd.MultiLine)
             {
                 list.Add(new TextWithPickerPropertyDescriptor
                 {
@@ -721,7 +721,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             },
             new FloatPropertyDescriptor
             {
-                Label = "ZIndex", Group = "Pozice",
+                Label = "Vrstva", Group = "Pozice",
                 Get = () => first.ZIndex,
                 Set = v => { foreach (var el in elements) el.ZIndex = (int)Math.Round(v); },
                 Min = 0, Max = 100, Format = "0"

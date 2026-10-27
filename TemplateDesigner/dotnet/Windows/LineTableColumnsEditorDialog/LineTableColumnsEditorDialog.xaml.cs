@@ -44,6 +44,7 @@ public partial class LineTableColumnsEditorDialog : Window
         _vm = new LineTableColumnsEditorDialogViewModel(element, element.Columns);
         DataContext = _vm;
         InitializeComponent();
+        Title = Models.ElementNames.TitulekVlastnosti(element);
 
         GeneralForm.CacheClass = GeneralSchemaClass;
         GeneralForm.SchemaLoaded += OnGeneralFormInitialized;

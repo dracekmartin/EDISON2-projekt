@@ -407,6 +407,17 @@ public class TemplateDesignerViewModel : EDViewModel
             SyncLayoutParamFromTemplate();
             RequestPreviewRefresh?.Invoke();
         }
+        catch (CacheAgendaDataException ex)
+        {
+            // Chyba v datech linky (`B194a` C11): mezi hlášky jako linka bez dat - říká, co opravit.
+            if (gen != _previewDataGeneration) return;
+            _realPreviewData = null;
+            Models.ColorHex.UiData = null;
+            NastavHlaseni(ZdrojHlaseni.Data, [Models.KontrolaVystupu.LinkaChybaDat(instance.Display, ex.Message)]);
+            StatusText = $"Linku nejde vytisknout: {instance.Display}";
+            NotifyPreviewPagesChanged();
+            RequestPreviewRefresh?.Invoke();
+        }
         catch (Exception ex)
         {
             if (gen != _previewDataGeneration) return;
@@ -1638,7 +1649,7 @@ public class TemplateDesignerViewModel : EDViewModel
         int elementCount = section.Elements.Count;
         if (elementCount > 0)
         {
-            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci „{section.Name}“ s {elementCount} elementy?"))
+            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci „{section.Name}“ s {elementCount} prvky?"))
                 return;
         }
 
@@ -2410,9 +2421,19 @@ public class TemplateDesignerViewModel : EDViewModel
                     foreach (var inst in ActiveInstances)
                     {
                         prubeh?.Report((hotovo++, ActiveInstances.Count, inst.Display));
-                        var (instPages, duvod) = provider.GetDataSDuvodem(agendaCode, ComposeGetDataParams(
-                            paramValues, paramName, inst.Value, ActiveSkupinaId, columnsDefJson,
-                            turnusy, JazykSablony));
+                        List<DataContext>? instPages;
+                        string? duvod;
+                        try
+                        {
+                            (instPages, duvod) = provider.GetDataSDuvodem(agendaCode, ComposeGetDataParams(
+                                paramValues, paramName, inst.Value, ActiveSkupinaId, columnsDefJson,
+                                turnusy, JazykSablony));
+                        }
+                        // Chyba v datech tisk zastaví (rozhodnutí Jan 26. 10.), ale musí říct, u které linky.
+                        catch (CacheAgendaDataException ex) when (ex.Linka is null)
+                        {
+                            throw new CacheAgendaDataException(ex.Message, inst.Display);
+                        }
                         if (instPages is null)
                         {
                             // Linka bez dat nezastaví ostatní, ale nesmí zmizet potichu.
@@ -2500,7 +2521,8 @@ public class TemplateDesignerViewModel : EDViewModel
 
         var vm = new SaveToCacheDialogViewModel(
             State.CurrentTemplate.Name,
-            State.CurrentTemplate.AgendaCode);
+            State.CurrentTemplate.AgendaCode,
+            CurrentAgendaDisplayName);
         if (Dialogs?.ShowSaveToCache(vm) != true) return false;
 
         // Kolize názvu: bez kontroly by vznikla tichá duplicita (dvě šablony stejného jména,
@@ -2521,7 +2543,6 @@ public class TemplateDesignerViewModel : EDViewModel
         // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
         State.CurrentTemplate.Id = Guid.NewGuid();
         State.CurrentTemplate.Name = vm.Name;
-        State.CurrentTemplate.AgendaCode = vm.AgendaCode;
 
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();
@@ -2670,7 +2691,7 @@ public class TemplateDesignerViewModel : EDViewModel
             .ToList();
 
         if (commands.Count == 1) Execute(commands[0]);
-        else Execute(new CompositeCommand("Vložit elementy", commands));
+        else Execute(new CompositeCommand("Vložit prvky", commands));
 
         State.SelectedElements.Clear();
         State.SelectedElements.AddRange(newElements);
@@ -2788,7 +2809,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
 
         if (commands.Count == 1) Execute(commands[0]);
-        else Execute(new CompositeCommand("Duplikovat elementy", commands));
+        else Execute(new CompositeCommand("Duplikovat prvky", commands));
 
         State.SelectedElements.Clear();
         State.SelectedElements.AddRange(newElements);
@@ -2964,7 +2985,7 @@ public class TemplateDesignerViewModel : EDViewModel
         State.SelectedElements.Clear();
 
         if (commands.Count == 1) Execute(commands[0]);
-        else Execute(new CompositeCommand("Smazat elementy", commands));
+        else Execute(new CompositeCommand("Smazat prvky", commands));
 
         RequestPropertiesPanelUpdate?.Invoke();
         RequestCanvasRefresh?.Invoke();
@@ -3021,7 +3042,7 @@ public class TemplateDesignerViewModel : EDViewModel
             foreach (var el in selected.OrderBy(e => e.ZIndex))
             {
                 int oldZ = el.ZIndex, newZ = baseZ++;
-                if (oldZ != newZ) commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
+                if (oldZ != newZ) commands.Add(new SetPropertyCommand("Vrstva", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
         else if (toExtreme && sign < 0)
@@ -3030,13 +3051,13 @@ public class TemplateDesignerViewModel : EDViewModel
             foreach (var el in section.Elements.Where(e => !selected.Contains(e)))
             {
                 int oldZ = el.ZIndex, newZ = oldZ + shift;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
+                commands.Add(new SetPropertyCommand("Vrstva", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
             int z = 0;
             foreach (var el in selected.OrderBy(e => e.ZIndex))
             {
                 int oldZ = el.ZIndex, newZ = z++;
-                if (oldZ != newZ) commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
+                if (oldZ != newZ) commands.Add(new SetPropertyCommand("Vrstva", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
         else
@@ -3044,7 +3065,7 @@ public class TemplateDesignerViewModel : EDViewModel
             foreach (var el in selected)
             {
                 int oldZ = el.ZIndex, newZ = Math.Max(0, oldZ + sign);
-                if (oldZ != newZ) commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
+                if (oldZ != newZ) commands.Add(new SetPropertyCommand("Vrstva", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
 
@@ -3325,7 +3346,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (dh != 0f && cile.All(el => el.Height is null))
         {
             StatusText = cile.Count == 1
-                ? "Výšku tohoto prvku počítá engine z dat - zadejte ji v jeho vlastnostech, nebo měňte šířku."
+                ? "Výška tohoto prvku se počítá podle obsahu - zadejte ji v jeho vlastnostech, nebo měňte šířku."
                 : "Vybrané prvky mají výšku z dat - svisle je zvětšit nejde.";
             return;
         }
@@ -4182,21 +4203,14 @@ public class TemplateDesignerViewModel : EDViewModel
         else if (State.SelectedElements.Count > 1)
         {
             int n = State.SelectedElements.Count;
-            SelectionStatusText = $"Vybráno {n} {(n <= 4 ? "prvky" : "prvků")}";
+            SelectionStatusText = $"Vybráno {n} {TemplateTreeNames.Prvku(n)}";
         }
         else if (State.ActiveSection is { } sekce)
         {
-            string typ = sekce.Typ switch
-            {
-                TypSekce.HlavickaStranky   => "hlavička stránky",
-                TypSekce.PodObsahemStranky => "pod obsahem stránky",
-                TypSekce.PatickaStranky    => "patička stránky",
-                _                          => "obsah",
-            };
+            string typ = TemplateTreeNames.NazevTypuSekce(sekce.Typ).ToLower();
             string vyska = sekce.DesignerHeight is { } h ? $"výška {h:0.#} mm" : "výška podle obsahu";
             int n = sekce.Elements.Count;
-            SelectionStatusText = $"Sekce „{sekce.Name}“  ·  {typ}  ·  {vyska}  ·  {n} "
-                + (n == 1 ? "prvek" : n is >= 2 and <= 4 ? "prvky" : "prvků");
+            SelectionStatusText = $"Sekce „{sekce.Name}“  ·  {typ}  ·  {vyska}  ·  {n} {TemplateTreeNames.Prvku(n)}";
         }
         else
         {

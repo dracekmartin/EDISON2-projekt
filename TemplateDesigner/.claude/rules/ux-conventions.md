@@ -26,6 +26,10 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 - Tlačítka **akčně pojmenovaná**, ne „Ano/Ne" - např. „Smazat" / „Storno", „Uložit" / „Zahodit", ne „Yes" / „No".
 - Destruktivní akce a confirmation → vždy přes `IPopupDisplayer.Confirm` z EDControls (R2), nikdy `MessageBox.Show`.
 - Multi-tab dialog: **max 3 taby**. Pokud potřebuješ víc, rozděl do samostatných dialogů nebo restrukturuj.
+- **Seznam v dialogu** (sloupce, pravidla, druhy poznámek): **„Přidat" / „Odebrat"** bez znaménka, posun
+  **jen šipkami ▲ ▼** (bez textu, bublina „Posunout nahoru / dolů"), smazání barvy **„×"** s bublinou
+  „Vymazat barvu" (rozhodnutí Jan 26. 10., `B194` E13a). Žádné „+" na začátku popisku ani mimo dialogy
+  („Přidat sekci", „Přidat stránku").
 
 ---
 
@@ -56,7 +60,7 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 | Ctrl+A | Vybrat vše (v aktivní sekci) |
 | Enter | Vlastnosti výběru (1 element = dialog; víc = dialog společných vlastností) |
 | F2 | Inline editace textu (jen TextElement, 1 vybraný) |
-| Dvojklik | Vlastnosti elementu (dvojklik do prázdna = zrušit výběr) |
+| Dvojklik | Vlastnosti prvku (dvojklik do prázdna = zrušit výběr) |
 
 ### Uvnitř pevné tabulky (editace buněk na plátně)
 
@@ -145,7 +149,7 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 | Ctrl+Shift+H / Ctrl+Shift+J | Split element horizontálně / vertikálně |
 | Ctrl+Shift+N | Normalizovat pozice (snap na grid) |
 | Šipky | Posun vybraného elementu o **1 mm** |
-| Ctrl+šipky | Posun o **velikost mřížky** (lišta Mřížka: 0,2 / 0,5 / 1 / 2 / 5 / 10 mm) |
+| Ctrl+šipky | Posun o **velikost mřížky** (lišta Mřížka plátna: 0,2 / 0,5 / 1 / 2 / 5 / 10 mm) |
 | **Shift+šipky** | **Změna velikosti** o 1 mm - mění se pravá a dolní hrana, levý horní roh drží |
 | Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
 | Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
@@ -257,7 +261,9 @@ Kanonické termíny (font/styl textu):
 |---|---|---|
 | Rodina písma (FontFamily) | **Font** | ~~Rodina písma~~, ~~Písmo~~ |
 | Velikost písma (FontSize) | **Velikost** (`Unit = "pt"`) | ~~Velikost písma~~ |
+| Velikost jako násobek jiné velikosti | **Poměr velikosti …** (`Unit = "×"`) - „Velikost" je vždy pevná hodnota v pt nebo mm, poměr se musí poznat už z popisku (rozhodnutí Jan 26. 10.) | ~~Velikost značek~~ pro poměr |
 | Tučné / Kurzíva / Podtržení / Přeškrtnutí | **Tučné** / **Kurzíva** / **Podtržení** / **Přeškrtnutí** | anglicismy |
+| Vzhled jedné části prvku | **„Část: Vlastnost"** - předpona a kanonický název („Minuta: Velikost", „Aktuální: Tučné", „Projeté: Barva textu"); vysvětlivka prázdné hodnoty do nápovědy (rozhodnutí Jan 26. 10.) | ~~Tučně aktuální zast.~~, ~~Barva projetých~~ |
 | Řádkování (LineSpacing) | **Řádkování** | - |
 | Barva textu / pozadí buňky | **Barva textu buněk** / **Pozadí buněk** | - |
 | Barva textu / pozadí záhlaví | **Barva textu záhlaví** / **Pozadí záhlaví** | - |
@@ -266,18 +272,24 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 
 | Vlastnost | Kanonický label | NE |
 |---|---|---|
-| Uzamčení elementu (IsLocked) | **Uzamčeno** | ~~Zamčeno~~ |
+| Objekt na plátně (TextElement, LineTableElement…) | **prvek** - v UI textech, nápovědách i příručce; třídy v kódu zůstávají `*Element` (rozhodnutí Jan 26. 10.) | ~~element~~ |
+| Uzamčení prvku (IsLocked) | **Uzamčeno** | ~~Zamčeno~~ |
+| Pořadí překrytí (ZIndex) | **Vrstva** („Vyšší vrstva leží nad nižší") - rozhodnutí Jan 26. 10. | ~~ZIndex~~, ~~Pořadí vrstvy~~ |
+| Výška, kterou sazba dopočte | **výška podle obsahu** („výška se počítá podle obsahu") | ~~počítá engine~~, ~~dynamická výška~~ |
+| Plocha návrháře | **plátno** | ~~canvas~~ |
 | Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti** | ~~Viditelnost~~ (samostatné; „Viditelnost řádku" je jiný pojem a je OK) |
 | Síla čáry (BorderWidth aj.) | **Tloušťka …** („Tloušťka rámečku", „Tloušťka okraje") | ~~Šířka rámečku~~, ~~Tl. …~~ |
 | Střídavé podbarvení řádků | **Střídání řádků** | ~~Zebra barva~~ |
-| Směry zarovnání | **Vodorovně / Svisle**, stavy **Nahoře / Dole** | ~~Horizontálně/Vertikálně~~, ~~Nahoru/Dolů~~ |
+| Směry zarovnání | **Zarovnání vodorovně / Zarovnání svisle** (celý tvar, ať jde hledat - rozhodnutí Jan 26. 10.; volba jen jedním směrem nese směr v popisku: „Zarovnání záhlaví svisle"), stavy **Nahoře / Dole** | ~~Horizontálně/Vertikálně~~, samotné ~~Vodorovně~~ / ~~Svisle~~ / ~~Zarovnání~~, ~~Nahoru/Dolů~~ |
 | Přestupy u zastávky | **Přestupy (vlak/autobus)** | ~~(vlak/bus)~~ |
 | Prvek s vysvětlivkami pod vývěskou | **Poznámky** | ~~Legenda poznámek~~ (třída `NotesLegendElement` se nepřejmenovává - visí na ní `type` v šablonách) |
 | Prvek s časy odjezdů po hodinách | **Minuty odjezdů** | ~~Mřížka odjezdů~~ („mřížka" je implementační pojem; třída `DepartureGridElement` zůstává) |
 | Prvek s tabulkou zastávky × spoje | **Tabulka spojů** | ~~Linkový JŘ~~, ~~Tabulka linky~~ (tak se jmenuje **agenda**, prvek by se s ní pletl; třída `LineTableElement` zůstává) |
+| Zóna, km, Tč, zastávka a MHD v Tabulce spojů | **popisné sloupce** (rozhodnutí Jan 26. 10.) | ~~popisové sloupce~~, ~~sloupce popisu~~ |
 | Prvek s QR / čárovým kódem | **Kód (QR, čárový)** | ~~Kód~~ samotné (neřekne, co prvek umí), ~~Kód (QR / čárový)~~ |
 | Zapnutí záhlaví prvku | **Záhlaví** (u zastávek „Záhlaví sloupců") - patří do skupiny **Obecné** | ~~Zobrazit nadpis~~ |
 | Text v záhlaví prvku | **Text záhlaví** | ~~Nadpis~~ (samotné „Nadpis skupiny" u dat je jiný pojem a je OK) |
+| Hlavička tabulky oproti datovým buňkám (řádek, text i styl) | **Záhlaví** („Záhlaví skupin dnů", „Text záhlaví popisných sloupců", „Styl 2. řádku záhlaví") | ~~Nadpis~~ - jen pro koncepčně jinou věc (text skupiny dnů v datech, nadpis okna); rozhodnutí Jan 26. 10. |
 
 **Strojová pojistka:** `EDInputFormSchemaDriftTests` (ban list zakázaných tvarů + „stejný field key
 = stejný label napříč .cls") - nový termín přidej do kanonu ZDE a případně do ban listu testu;

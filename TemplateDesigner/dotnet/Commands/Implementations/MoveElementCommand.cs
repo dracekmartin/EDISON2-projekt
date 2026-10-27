@@ -9,7 +9,7 @@ public class MoveElementCommand : IDesignerCommand
     private readonly float _fromX, _fromY;
     private readonly float _toX,   _toY;
 
-    public string Description => "Přesun elementu";
+    public string Description => "Přesun prvku";
 
     /// <param name="element">Element jehož pozice se mění.</param>
     /// <param name="fromX">Původní X (mm).</param>

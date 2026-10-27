@@ -229,7 +229,7 @@ public class LineTableSirkaSloupcuTests
     [InlineData("Mezera mezi hodinou a minutou")]
     [InlineData("Dorovnat prázdnými sloupci")]
     [InlineData("Stejně široké sloupce spojů")]
-    [InlineData("Mezera mezi skupinami sloupců")]
+    [InlineData("Mezera mezi skupinami dnů")]
     public void NastaveniSirkyJsouVJedneSkupine(string label)
         => Assert.Equal("Šířka sloupců", Descriptor(Prvek(), label).Group);
 

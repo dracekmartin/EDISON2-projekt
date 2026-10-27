@@ -110,13 +110,13 @@ public class VelikostKlavesniciTests
     [Fact]
     public void PrvekSVyskouZDat_SeSvisleNezmeniAReknesSeTo()
     {
-        // Výšku počítá engine, takže fixovat ji tichou cestou by znamenalo přijít o dynamiku
+        // Výška se počítá podle obsahu, takže fixovat ji tichou cestou by znamenalo přijít o dynamiku
         // bez varování - myš mu ze stejného důvodu svislé úchyty nenabízí.
         var (vm, el) = Scena(h: null);
         vm.ResizeByKey(Key.Down, gridStep: false);
 
         Assert.Null(el.Height);
-        Assert.Contains("z dat", vm.StatusText);
+        Assert.Contains("podle obsahu", vm.StatusText);
     }
 
     [Fact]

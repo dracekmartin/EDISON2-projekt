@@ -10,7 +10,7 @@ public class AddElementCommand : IDesignerCommand
     private readonly Section         _section;
     private readonly TemplateElement _element;
 
-    public string Description => "Přidat element";
+    public string Description => "Přidat prvek";
 
     public AddElementCommand(Section section, TemplateElement element)
     {

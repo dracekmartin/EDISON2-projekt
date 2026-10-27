@@ -686,11 +686,16 @@ public class EDInputFormSchemaDriftTests
         "Tučně",            // → Tučné
         "Podtržené",        // → Podtržení
         "Přeškrtnuté",      // → Přeškrtnutí
-        "Horizontálně",     // → Vodorovně
-        "Vertikálně",       // → Svisle
+        "Horizontálně",     // → Zarovnání vodorovně
+        "Vertikálně",       // → Zarovnání svisle
+        "Vodorovně",        // → Zarovnání vodorovně (celý tvar jde hledat, rozhodnutí Jan 2026-10-26, `B194` E6)
+        "Svisle",           // → Zarovnání svisle
         "Nahoru",           // → Nahoře (zarovnání je stav, ne pohyb)
         "Dolů",             // → Dole
         "Pokročilé",        // skupina → Podmínky
+        "ZIndex",           // → Vrstva (rozhodnutí Jan 2026-10-26, `B194` E7)
+        "Velikost značek",  // → Poměr velikosti značek („Velikost" = pevná hodnota v pt / mm, `B194` E9c)
+        "Velikost minut",   // → Poměr velikosti minut
     ];
 
     /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive). Sdílené s
@@ -701,7 +706,7 @@ public class EDInputFormSchemaDriftTests
         "Zebra",            // → Střídání řádků
         "Tl. ",             // → Tloušťka …
         "Řádek NZ",         // → Řádek negativních značek
-        "Font aktuální",    // → Velikost aktuální (je to velikost písma, ne rodina)
+        "Font aktuální",    // → Aktuální: Velikost (je to velikost písma, ne rodina)
         " per ",            // UI texty česky (kanon §8)
         "(vlak/bus)",       // → (vlak/autobus)
         "nástupiště",       // → označník
@@ -709,6 +714,18 @@ public class EDInputFormSchemaDriftTests
         "Tabulka linky",    // → Tabulka spojů (tak se jmenuje agenda, prvek by se s ní pletl)
         "Mřížka odjezdů",   // → Minuty odjezdů
         "Legenda poznámek", // → Poznámky
+        // Hlavička tabulky oproti datovým buňkám = „záhlaví"; „nadpis" jen pro jinou věc
+        // (text skupiny dnů v datech) - rozhodnutí Jan 2026-10-26, `B194` E4
+        "Nadpisy skupin",   // → Záhlaví skupin dnů
+        "Nadpis popisných", // → Text záhlaví popisných sloupců
+        "řádku nadpisu",    // → Styl 2. řádku záhlaví
+        "Oddělovač skupin", // → Mezera mezi skupinami dnů (je to mezera, ne čára; `B194` E9a)
+        "skupinami sloupců", // → Mezera mezi skupinami dnů (stejný pojem v Minutách i Tabulce spojů)
+        "↔",                // → slovy „Mezera mezi značkou a minutou" (`B194` E9b)
+        "aktuální zast.",   // → „Aktuální: Vlastnost" (zkratka; `B194` E10)
+        "projetých",        // → „Projeté: Barva textu", „Projeté: Čas"
+        "element",          // → prvek (rozhodnutí Jan 2026-10-26, `B194` E7)
+        "Element",
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě
         // různá pole a „stanoviště" je zastřešující pojem pro to z nich, které je zvolené parametrem
         // „Číslo stanoviště podle". Jako synonymum pro označník se dál nepoužívá - viz ux-conventions §8.
@@ -739,7 +756,7 @@ public class EDInputFormSchemaDriftTests
         //  ho sjednotil na „Výška" + nápovědu, takže výjimka padla.)
         //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Pozadí značky"), v mřížce
         //     odjezdů stojí hned vedle obecné barvy symbolu anotace, takže tam musí být v popisku
-        //     rozlišené („Pozadí negativní značky"); bez toho se nedá poznat, co která barva řídí.
+        //     rozlišené („Negativní značka: Pozadí"); bez toho se nedá poznat, co která barva řídí.
         //   Format - u stránky je to formát papíru („Formát"), u buňky formát vypisované hodnoty
         //     („Formát hodnoty"). Dvě různé věci, které jen shodou okolností mají stejný název
         //     vlastnosti na svém cíli.

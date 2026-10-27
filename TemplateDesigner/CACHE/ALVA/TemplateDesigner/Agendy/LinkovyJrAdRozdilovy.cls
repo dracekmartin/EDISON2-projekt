@@ -136,7 +136,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
         s pSku = ##class(%DynamicObject).%New()
         s pSku.name = "POROVNAT_SKUPINU"
         s pSku.label = "Porovnat se skupinou JŘ"
-        s pSku.type = "text"
+        s pSku.type = "string"
         s pSku.group = "Obecné"
         s pSku.serverSide = 1
         s pSku.defaultValue = ""
@@ -146,7 +146,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
         s pLin = ##class(%DynamicObject).%New()
         s pLin.name = "POROVNAT_LINKU"
         s pLin.label = "Porovnat s linkou"
-        s pLin.type = "text"
+        s pLin.type = "string"
         s pLin.group = "Obecné"
         s pLin.serverSide = 1
         s pLin.defaultValue = ""

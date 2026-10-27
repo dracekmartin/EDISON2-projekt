@@ -46,7 +46,8 @@ public static class ContentShrinkWarnings
         var elements = template.Sections
             .SelectMany(s => s.Elements)
             .Where(el => el is ScheduleElementBase or TextElement)
-            .Where(el => el.Height.HasValue)
+            // Minuty odjezdů se zmenšují i na šířku, takže i s dynamickou výškou (`B194a` C12).
+            .Where(el => el.Height.HasValue || el is DepartureGridElement)
             .ToList();
         if (elements.Count == 0) return [];
 
@@ -57,14 +58,25 @@ public static class ContentShrinkWarnings
 
             float nejvetsiZmenseni = 1f;
             int dotcenychStranek = 0;
-            bool oriznuto = false;
+            bool oriznuto = false, sirkaOriznuta = false;
             foreach (var page in pages)
             {
                 float zmenseni = Zmenseni(el, page);
                 if (el is TextElement text && text.ContentOverflows(page)) oriznuto = true;
+                if (el is DepartureGridElement mrizka && mrizka.NevejdeSeNaSirku(page)) sirkaOriznuta = true;
                 if (zmenseni >= NoticeableShrink) continue;
                 dotcenychStranek++;
                 if (zmenseni < nejvetsiZmenseni) nejvetsiZmenseni = zmenseni;
+            }
+
+            // Skupiny dnů, které se nevejdou ani po zmenšení na mez: náhled tenhle ořez nehlásí
+            // (na rozdíl od textu), takže platí vždy - jinak by se o něm uživatel dozvěděl až z papíru.
+            if (sirkaOriznuta)
+            {
+                casti.Add(new Hlaseni(ZavaznostHlaseni.Chyba, nazev,
+                    "skupiny dnů se nevejdou do šířky ani po zmenšení písma, ořízly se",
+                    "skrýt některou skupinu dnů, zmenšit písmo minut, nebo rozšířit prvek", el.Id));
+                continue;
             }
             if (oriznuto && !vcetneOrezuTextu) continue;
             if (dotcenychStranek == 0 && !oriznuto) continue;
@@ -95,6 +107,7 @@ public static class ContentShrinkWarnings
         // Textový prvek si škálu počítá sám (výška i šířka, s mezí) - hláška musí dostat totéž
         // číslo jako render, jinak tvrdí jinou velikost, než se vytiskne.
         TextElement text => text.ComputeShrinkScale(text.TextKKresleni(page)),
+        DepartureGridElement mrizka => mrizka.ZmenseniPisma(page),
         ScheduleElementBase schedule => ZmenseniJr(schedule, page),
         _ => 1f,
     };

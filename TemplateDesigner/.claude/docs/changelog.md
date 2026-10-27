@@ -1,5 +1,498 @@
 ﻿# Changelog
 
+## 2026-10-26 (42) - drobnosti prvků: skupina Rozměry, mřížka plátna, negativní značka, ikona Tabulky spojů (`B194d` E16)
+
+Rozhodnutí Jan 26. 10.: Minuty odjezdů mají skupinu **„Rozměry"** místo „Rozměry a mřížka" (čáry tabulky
+má vlastní skupina „Mřížka"). Pomocná mřížka návrháře se v menu Zobrazit a na liště jmenuje **„Mřížka
+plátna"** (i „Přichytit k mřížce plátna", bublina tlačítka a velikosti, skupina lišty „Mřížka plátna
+a přichytávání", nápověda F1 a příručka); prvky si „Mřížka" nechávají. Barvy negativní značky v Minutách
+odjezdů jsou **„Negativní značka: Pozadí" / „Negativní značka: Barva textu"** ve formuláři i v panelu,
+stejným tvarem jako „Symbol: …" a „Text: …" vedle nich. **Tabulka spojů má v paletě vlastní ikonu**
+(Fluent „Table Freeze Column" - tabulka s ukotveným prvním sloupcem zastávek), dosud sdílela autobus se
+Seznamem zastávek; nový klíč `EDIcons.LineTable` v EDControls. Ověřeno voláním `Init` formuláře Minut odjezdů.
+
+## 2026-10-26 (41) - texty nápověd: vykání a srozumitelné výrazy (`B194d` E15)
+
+Rozhodnutí Jan 26. 10.: **vykání všude** („Nahrajte obrázek", „vyberte nebo napište font", „Vyplněním ji
+přepíšete", „napište \n nebo stiskněte Enter"); **technické výrazy po uživatelsku** - „dědit od rodiče" →
+„převezme se z nadřazeného stylu" (editor stylu buňky, okno stylu, reset), „padding zdola" → „vnitřní okraj
+dole" (jako pole ve formuláři), Čára „Dashed=3mm, Dotted=1mm" → „čárkovaná 3 mm, tečkovaná 1 mm" (i délka
+mezery), „tab Obecné / Sloupce" → „záložka", Tabulka z dat „mapování Field" → „Použijte názvy polí ze sloupců";
+překlep „pohledna" v nápovědě F1 (chyběla mezera mezi spojenými texty); dlouhé pomlčky v komentářích
+`App.xaml.cs` → „-". Pokyny pro asistenta (tykají záměrně) beze změny. Ověřeno voláním `Init` formulářů
+Obrázku, Čáry a Tabulky z dat.
+
+## 2026-10-26 (40) - Tabulka spojů bez interních polí zdrojů dat (`B194d` E14)
+
+Formulář Tabulky spojů měl ve skupině Podmínky „Kolekce zastávek / spojů / skupin dnů" s hodnotami
+`ZASTAVKY` / `SPOJE` / `SKUPINY_DNU` - odkud prvek bere data. Všechny agendy (Linkový JŘ AD, MHD,
+rozdílový) posílají vždy tato jména, jiná hodnota tabulku jen vyprázdní a uživatel nepozná proč. Rozhodnutí
+Jan 26. 10.: z formuláře pryč, vlastnost v šabloně zůstává s výchozí hodnotou (starší šablony beze změny).
+Sonda `LinkovyJrNastaveniProbe.ZdrojeTabulkySpoju` nad uloženými šablonami: 30 šablon, 8 s Tabulkou spojů,
+žádná s jinou než výchozí hodnotou. Ověřeno voláním `Init` formuláře.
+
+## 2026-10-26 (39) - tlačítka přidání bez „+" (`B194d` E13a, E13b)
+
+Rozhodnutí Jan 26. 10.: „+" na začátku popisku pryč i v hlavním okně - „Přidat sekci", „Přidat stránku"
+(i nad plátnem místo „+ Stránka"); nápověda F1 „tlačítko Přidat sekci", příručka a Novinky (seedy). Pravidlo
+v `ux-conventions §1`. **E13b** (Tabulce spojů přidat „Přizpůsobit sloupce k šířce prvku") uzavřeno bez
+změny: zadávají se jen šířky popisných sloupců, spoje dostanou zbytek - roztažení popisných na celou šířku
+by spojům vzalo místo.
+
+## 2026-10-26 (38) - tlačítka seznamů v dialozích jednotně (`B194d` E13a)
+
+Stejné akce měly v oknech se seznamem různé popisky: „+ Přidat" / „− Odebrat" (Tabulka z dat) × „Přidat" /
+„Odebrat", posun „▲" × „▲ Nahoru" (Zvýraznění řádků) × šipka s „Nahoru" (Druhy poznámek), smazání barvy
+„×" × „Vymazat". Rozhodnutí Jan 26. 10.: **„Přidat" / „Odebrat" bez znaménka, posun jen šipkami, smazání
+barvy jen „×"**; bubliny „Posunout nahoru / dolů" a „Vymazat barvu" zůstávají (pravidlo: ikonové tlačítko
+má tooltip). Druhy poznámek drží šipky jako tvar (znaky ▲ ▼ mají ve fontu různou velikost). Pravidlo
+v `ux-conventions §1`. „Přizpůsobit sloupce" pro Tabulku spojů (E13b) a společná komponenta (E13c) zbývají.
+
+## 2026-10-26 (37) - „popisné sloupce" všude (`B194d` E12, zúženě)
+
+Skupina zóna / km / Tč / zastávka / MHD Tabulky spojů se jmenovala „Popisné sloupce" (formulář),
+„popisové sloupce" (varování o šířce v okně se sloupci) a „sloupce popisu" (nápověda F1). Rozhodnutí Jan
+26. 10.: všude **„popisné sloupce"**, kanon §8 má řádek. Původně navržené sladění názvů sloupců („Zastávka"
+× pole „Název zastávky") vědomě vypuštěno: údaje zastávek nejsou v záložce Datová pole (ta ukazuje jen
+údaje linky), uživatel je vidí jen v nabídce `{` u podmínky řádku, takže rozdíl nikoho nemate.
+
+## 2026-10-26 (36) - popisky v programu podle formuláře (`B194d` E11, `B194f` G6)
+
+Každé nastavení prvku má popisek dvakrát: ve formuláři ze serveru (panel Vlastnosti, okno prvku) a v
+programu (deskriptor - okno společných vlastností, protokol importu z PDF, popis prvků pro asistenta,
+lišta formátu). Rozešly se na ~20 místech. Rozhodnutí Jan 26. 10.: platí formulář. Přepsáno: Text „Text" →
+„Obsah" (okno vlastností hledalo pole podle popisku - teď konstanta `TextElement.ObsahLabel`),
+„Zalamování" → „Zalamovat řádky"; Obdélník „Výplň" → „Barva pozadí"; tabulky „Záhlaví" → „Záhlaví
+sloupců"; Minuty „Záhlaví skupin" → „Záhlaví skupin dnů", „Min. výška řádku" → „… záhlaví", „Šířka sl.
+hodin" → „Šířka sloupce hodin", „Hodiny u každé sk." → „… skupiny", styly zón „Minuta: / Symbol: / Text:
+Font…" jako ve formuláři; Poznámky „Řazení" → „Řazení poznámek"; Tabulka spojů „Přípojné řádky" →
+„Přípojné řádky (vyčká/navazuje)". Nový test `DescriptorLabelsMatchFormTests` (pokrývá i plánované `G6`):
+popisek každého deskriptoru prvku musí existovat ve formuláři prvku, výjimky s důvodem (barvy zón tabulek
+podle kanonu, pole čekající na E8, pole ve formuláři jinde). `mvvm-patterns.md` opravené: okno společných
+vlastností nabízí jen pevnou sadu polí. Testy importu z PDF přepsané na nové popisky.
+
+## 2026-10-26 (35) - „Aktuální: …" a „Projeté: …" v Seznamu zastávek (`B194d` E10)
+
+Skupina „Aktuální a projeté zastávky" měla každý popisek poskládaný jinak („Podtržení aktuální zast.",
+„Tučně aktuální zast.", „Velikost aktuální (prázdné = dle buňky)", „Barva projetých", „Čas u projetých"),
+rychlý panel a import z PDF jí říkaly „Zvýraznění" (plete se se „Zvýraznění řádků"), F1 „Zvýraznění
+aktuální zastávky". Rozhodnutí Jan 26. 10.: vzor Minut odjezdů **„Část: Vlastnost"** - „Aktuální: Tučné /
+Podtržení / Velikost / Barva textu / Pozadí", „Projeté: Barva textu / Čas", vysvětlivky prázdné hodnoty
+v nápovědě („Prázdné = jako ostatní zastávky", „Prázdné = bez pozadí"), pořadí jako ostatní styly.
+Formulář i deskriptory (skupina `StopListElement.AktualniGroup`), F1, příručka (seed), test importu z PDF;
+vzor v kanonu §8, „aktuální zast." a „projetých" v popiscích mezi zakázanými. Ověřeno voláním `Init`
+formuláře Seznamu zastávek.
+
+## 2026-10-26 (34) - „Poměr velikosti" u násobků v Tabulce spojů (`B194d` E9c)
+
+Tabulka spojů měla „Velikost značek" (1,5) a „Velikost minut" (0,75) - násobky bez jednotky vedle
+„Velikost" v bodech, kdo napsal 7 (myslel pt), dostal chybu rozsahu. Rozhodnutí Jan 26. 10.: **„Velikost"
+je vždy pevná hodnota v pt nebo mm, poměr se jmenuje „Poměr velikosti …"** → „Poměr velikosti značek",
+„Poměr velikosti minut", jednotka „×" ve formuláři i deskriptoru. Jiný poměr pojmenovaný „Velikost"
+v návrháři není (ostatní „Velikost …" mají pt nebo mm). Kanon §8 má řádek, staré popisky mezi zakázanými,
+příručka (seed) upravená. Ověřeno voláním `Init` formuláře Tabulky spojů. Tím je `E9` uzavřené.
+
+## 2026-10-26 (33) - „Mezera mezi značkou a minutou" (`B194d` E9b)
+
+Minuty odjezdů měly „Mezera minuta ↔ značka" (šipka místo slov) s nápovědou „Prázdné = automaticky podle
+velikosti písma", Tabulka spojů „Mezera mezi značkou a časem" a „Prázdné = mezera z písma". Rozhodnutí
+Jan 26. 10.: Minuty **„Mezera mezi značkou a minutou"** (v buňce je jen minuta), Tabulka spojů beze změny,
+tvar „Mezera mezi X a Y" jako ostatní mezery; nápovědy všech mezer v obou prvcích „Prázdné = mezera podle
+velikosti písma". Formulář i deskriptor; „↔" v popisku mezi zakázanými. Ověřeno voláním `Init` obou formulářů.
+
+## 2026-10-26 (32) - „Mezera mezi skupinami dnů" v Minutách i Tabulce spojů (`B194d` E9a)
+
+Totéž nastavení (volné místo mezi bloky skupin dnů) se jmenovalo v Minutách odjezdů „Oddělovač skupin"
+(zní jako čára, je to mezera v mm) a v Tabulce spojů „Mezera mezi skupinami sloupců". Rozhodnutí Jan
+26. 10.: v obou **„Mezera mezi skupinami dnů"**; nápověda Tabulky spojů dál říká, že se mezera dělá
+i za popisnými sloupci. Formuláře i deskriptory, katalog asistenta, příručka (seed), testy
+(`LineTableSirkaSloupcuTests`, `AssistantKnowledgeTests`); staré tvary mezi zakázanými. Ověřeno voláním
+`Init` obou formulářů. Rozdíly E9b a E9c a bod E8 (odložen k rozmyšlení) zůstávají v roadmapě.
+
+## 2026-10-26 (31) - „prvek" místo „element" v textech pro uživatele (`B194d` E7)
+
+Rozhodnutí Jan 26. 10.: sjednotit na **„prvek"** - používá ho paleta, strom, titulky oken, hlášky
+i příručka (103×), „element" zbyl v ~45 textech. Změněno: skupina „Rámeček elementu" → „Rámeček prvku"
+(`BaseElementFields.cls` i `TemplateElement.BorderGroup` naráz), nápovědy „Uzamčený prvek…", „prvek se
+zobrazí jen když…", „podle tloušťky rámečku prvku", volby šipky „u pravého/levého okraje prvku", místní
+nabídka „Vlastnosti prvku…", lišta „Prvky", „Přichytit k prvkům", „Vyberte prvek na plátně", popisy kroku
+zpět („Přidat prvek", „Smazat prvky", „Přesun prvku"…), okna se sloupci („Přizpůsobit sloupce k šířce
+prvku", „dědí výchozí styl prvku", varování o šířce), nápověda F1 (kapitola „Prvky" a 15 řádků),
+Normalizovat pozice, import z PDF, katalog asistenta, potvrzení smazání sekce. Příručka: kapitola
+„Práce s prvky" (i kotva v obsahu) a 5 dalších míst. Kanon §8 má řádek „prvek" (třídy v kódu zůstávají
+`*Element`), „element" / „Element" mezi zakázanými podřetězci. Prompty pro AI model (nevidí je uživatel)
+beze změny. Ověřeno voláním `Init` obdélníku a Seznamu zastávek.
+
+## 2026-10-26 (30) - „Vrstva", „podle obsahu", „plátno" (`B194d` E7, část)
+
+Rozhodnutí Jan 26. 10.: pole „ZIndex" (společná pole každého prvku, panel i společné vlastnosti víc prvků,
+krok zpět „Změna: ZIndex") je **„Vrstva"** s nápovědou „Vyšší vrstva leží nad nižší"; nápověda výšky
+„Prázdné = dynamická výška (počítá engine)" → „Prázdné = výška se počítá podle obsahu", hláška při
+Shift+šipce u prvku s výškou z dat stejně; „canvas" → „plátno" („Vyberte element na plátně"). Kanon §8
+má tři nové řádky, „ZIndex" je mezi zakázanými popisky. Test `VelikostKlavesniciTests` hledal v hlášce
+„z dat" - přepsán na „podle obsahu". Ověřeno voláním `Init` formuláře obdélníku. Příručka (seed) upravená.
+Sjednocení „element" × „prvek" čeká na Janovo potvrzení rozsahu (Jan preferuje „element").
+
+## 2026-10-26 (29) - „Zarovnání vodorovně / svisle" všude (`B194d` E6)
+
+Společná sada stylu (`StyleFields.cls`, všechny prvky se stylem buněk i okno stylu) měla dvojici
+„Zarovnání" / „Svisle", textový prvek, panel buňky a editor stylu sloupce „Vodorovně" / „Svisle" - ve
+formuláři buňky pevné tabulky tak stálo jinak než na liště a v panelu téže buňky. Rozhodnutí Jan 26. 10.:
+celý tvar **„Zarovnání vodorovně" / „Zarovnání svisle"**, ať jde hledat (kanon §8 změněn z „Vodorovně /
+Svisle"). U zón Minut s předponou („Minuta: Zarovnání vodorovně"). Minuty „Zarovnání záhlaví" umí jen
+svisle → „Zarovnání záhlaví svisle". Lišta formátu hledá pole podle popisku - popisky jsou teď konstanty
+`EnumPropertyDescriptor.LabelZarovnaniVodorovne/Svisle`, ať se při přejmenování nerozejde. Samotné
+„Vodorovně" / „Svisle" jako popisek v zakázaných tvarech. Ověřeno voláním `Init` formulářů stylu, textu
+a Minut; příručka (seed) upravená. E5 (Seznam zastávek v MHD) odloženo na pokyn Jana.
+
+## 2026-10-26 (28) - „záhlaví" místo „nadpisu" u hlavičky tabulky (`B194d` E4)
+
+Rozhodnutí Jan 26. 10.: hlavička tabulky oproti datovým buňkám je **záhlaví**, „nadpis" jen pro
+koncepčně jinou věc (text skupiny dnů v datech, nadpis okna). Tabulka spojů: „Nadpisy skupin dnů" →
+„Záhlaví skupin dnů" (jako Minuty), „Nadpis popisných sloupců" → „Text záhlaví popisných sloupců"
+(formulář i deskriptor, klíč `PopisneSloupceNadpis` beze změny). Minuty odjezdů: „Styl 2. řádku nadpisu"
+→ „Styl 2. řádku záhlaví", nápovědy, v okně se sloupci „Záhlaví sloupce" / „Záhlaví:", „Přepis záhlaví
+skupiny", „(bez záhlaví)"; překlep „netískne". Katalog asistenta a příručka (seed připravený k nahrání)
+stejně. Kanon `ux-conventions §8` má nový řádek, zakázané tvary „Nadpisy skupin", „Nadpis popisných",
+„řádku nadpisu" (`EDInputFormSchemaDriftTests`); testy importu z PDF a znalostí asistenta mířily na staré
+popisky a prošly by naprázdno - přepsané. Ověřeno voláním `Init` obou formulářů na serveru. Umístění
+volby záhlaví (kanon: skupina Obecné) zůstává na `E3`.
+
+## 2026-10-26 (27) - jeden titulek oken vlastností prvku (`B194d` E2)
+
+Okna otevřená dvojklikem na prvek měla tři tvary titulku: „Vlastnosti textu / čáry / tabulky…",
+„Zastávky - nastavení", „Odjezdy - nastavení", „Tabulka - nastavení" (staré názvy prvků) a „Linkový JŘ -
+nastavení" (název agendy místo prvku); záložní okno „Vlastnosti: DepartureGrid" a úprava víc prvků
+„Společné vlastnosti (3 elementů)". Teď všude „Vlastnosti - {název z palety}" jako záložka Vlastnosti
+v levém panelu (`ElementNames.TitulekVlastnosti`), víc prvků „Společné vlastnosti (3 prvky)". Čtyři okna
+se sloupci titulek v XAML nemají, dosadí si ho z prvku. Krok zpět po úpravě se jmenuje „Změna vlastností:
+{název prvku}". Okna sekce, stránky, buňky a řádku beze změny. Příručka: „Tabulka - nastavení" →
+„Vlastnosti - Tabulka (z dat)" (seed připravený k nahrání). Testy `ElementNamesTests`
+(`OknoVlastnostiSeJmenujeJakoPrvek`, `OknoVlastnostiNemaTitulekNapevno`). Rozhodnutí Jan 26. 10.
+
+## 2026-10-26 (26) - strom šablony bez interních názvů (`B194d` E1)
+
+Záložka „Strom" ukazovala názvy tříd a interní hodnoty: „Template:", „PageSize: 210x297mm (L=…)",
+„[OnEveryPage] Záhlaví", „[G] <id skupiny> [2 elem.]", „[Z0] DepartureGrid: Odjezdy auto",
+„Rectangle: Fill=#…". Teď jména z palety, formuláře sekce a stavového řádku (`Models/TemplateTreeNames`):
+„Šablona: …", „Stránka: 210 × 297 mm, okraje vlevo …, nahoře …, vpravo …, dole … mm", „Záhlaví -
+Hlavička stránky, 25 mm" (sekce pojmenovaná jako typ ho neopakuje), „Skupina (2 prvky)", prvek přes
+`ElementNames.SPopisem` (text s obsahem). Číslo vrstvy a technické údaje (barvy, font, počet sloupců)
+vypadly - pořadí ve stromu vrstvu ukazuje a název „ZIndex" řeší `E7`. `TemplateElement.GetSummary`
+a `TruncateText` zrušené, stavový řádek bere typ sekce a skloňování „prvek / prvky / prvků" ze
+stejného místa. Skill `novy-element` krok 9 teď vede na `ElementNames`. Test `TemplateTreeNamesTests`.
+Rozhodnutí Jan 26. 10.
+
+## 2026-10-26 (25) - návaznost bez druhu dopravy mimo legendu Linkového JŘ AD (`B194b` T14c)
+
+Starý tisk skládá větu „vyčká / navazuje" jen z návazností s druhem dopravy A, V nebo L (n31 / n32
+`JRapiNZUtl2.mac:266-281, 425-439`); staré záznamy bez něj (CB_CSADAD 995/0380780 z roku 2016,
+spoje 17 a 37) do věty nedá. Linkový JŘ AD je bral jako autobus a tiskl dvě věty navíc. Přípojný
+řádek tabulky je dál bere jako autobus, jako starý tisk. Ověřeno: oracle 23/23, test
+`TestPoznamkyMimoJadroProtiLegacy` o tu linku rozšířen. Tím je `T14` uzavřené.
+
+## 2026-10-26 (24) - značka G u zastávky v legendě Linkového JŘ AD (`B194b` T14b)
+
+Atribut zastávky na trase linky (`J` pole 2) G a a, b, c (zákaz přepravy mezi označenými zastávkami),
+e, f, g (metro) a O (letiště) zastávka v tabulce nesla, ale legenda ho nevysvětlila - převod v
+`PridatStaleZnacky` je neznal. Teď 1:1 gStzNZLi (`JRapiNZUtl3.mac:467-484`). Vědomě zůstává rozsah:
+my vysvětlujeme jen značky zobrazených zastávek, starý tisk celé trasy (liší se jen s volbou
+„netisknout zastávky bez zastavení"). Ověřeno: oracle VS_CSAD 799/0440080 shodně 12/12, test
+`TestPoznamkyMimoJadroProtiLegacy` o tu linku rozšířen. Rozhodnutí Jan 26. 10.: jako starý tisk.
+
+## 2026-10-26 (23) - omezení atributu a „všechny spoje" v Linkovém JŘ AD (`B194b` T14a, T14d)
+
+**T14a:** starý linkový tisk připisuje za větu atributu omezení zadané u spoje (`PATCH,"attrOm"`):
+u jízdních kol období (dvě), „nejvýše N kol(a)" a text, u bezbariérového vozidla období. Spoje se
+stejným omezením tvoří skupinu; mají-li ho všechny spoje s atributem, jde za větu rovnou, jinak
+„ / spoj(e) výčet omezení" (gAtrNZLi `JRapiNZUtl3.mac:80-117, 257-312`). Linkový JŘ AD to netiskl
+(`DoplnOmezeniAtributu`, data přes `FormatDatumyOmezeni` podle `TiskDtm`). Sonda
+`OmezeniAtributuVyskyt`: kola s omezením u linky VS_CSAD 1 157, KV_DP 248, ZL_KOVED 238, CB_CSADAD
+90 (horní odhad), bezbariérové vozidlo nikde. Rozhodnutí Jan 26. 10.: jako starý tisk.
+**T14d** (nalezeno při T14a): tvar „všechny spoje" se porovnával s počtem spojů, které mají nějaký
+atribut, ne se všemi spoji stránky - na KV_DP 775/0410116 jsme tiskli „všechny spoje přepravují
+jízdní kola" místo „spoje 1, 3, 5, 7, 9, 11 …". Chyba od zavedení tvarů (`L2`, 21. 8.).
+Ověřeno: oracle shodně na CB_GWBUS 990/0329471, KV_DP 775/0410116, VS_CSAD 810/0440523, ZL_KOVED
+930/0773777, CB_CSADAD 832/0320680; test `TestPoznamkyMimoJadroProtiLegacy` (dřív jen T13) rozšířen
+o tyto linky a porovnává řádky podle začátku klíče. Brána parity na jádru i zlaté odtisky beze změny.
+
+## 2026-10-26 (22) - poznámky ke spojům a doplněk místenky v Linkovém JŘ AD (`B194b` T13)
+
+Linkový JŘ AD tiskl u spoje značku „p", ale legenda ji nevysvětlila, a u místenky tiskl jen holou
+větu. Teď 1:1 se starým linkovým tiskem (rozhodnutí Jan 26. 10.: srovnat se starým):
+- **poznámka pro spoj / tarifní bod** (`omz` 41 / 42, druh 4): „spoj 6,8 text", spoje se stejným
+  textem v jednom řádku, u tarifního bodu úvod z číselníku firmy (`NCOME` 42) a číslo bodu, sdílený
+  spoj „číslo/sdílené" (gComNZLi → p41 / p42 / sComToArr, `JRapiNZUtl2.mac:73-91, 559-588`,
+  `JRapiLinPrtWin.mac:3582-3594`). V prvku Poznámky ve skupině „Další značky" před místenkami.
+- **místenka** (druh 6): za větou obecný doplněk linky (`^JRL(…,"C",2)`) a poznámky k vybraným spojům
+  („na spoj 11 ze zastávky…"), jen spoje se značkou na stránce; firma s `MistOR` dává každou na nový
+  řádek, `MistNOD` ruší dvojtečku (gMstNZLi `JRapiNZUtl3.mac:325-399`). Slovenské věty a řádek „AMS"
+  podle starého (česká verze dál zná jen R a þ).
+
+Ověřeno: oracle shodně na CB_GWBUS 990/0329471, 990/0322002, 216/0125850, 216/0340941, CB_CSADAD
+995/0380780, VS_CSAD 797/0440055 a 799/0440080; nové testy `TestPoznamkyMimoJadroProtiLegacy`,
+`TestMistenkyNaNovyRadek`, `TestMistenkySlovenskeAAms`. Oracle nově srovná „#" (nový řádek) na mezeru
+i na straně starého tisku. Sonda `PoznamkySpojuVyskyt` (VS_CSAD 333 linek s poznámkou ke spoji,
+1 730 s místenkovou poznámkou). Zlaté odtisky beze změny. Další rozdíly z oraclu mimo T13 jako `T14`.
+
+## 2026-10-26 (21) - zastávka na objednání u času v Linkovém JŘ AD (`B194b` T12)
+
+Starý linkový tisk dává do buňky času telefon, když spoj danou zastávku obsluhuje jen na objednání
+(atribut trasy `r`), a vykřičník u „podmínečně" (`i`; GSId `JRapiLinPrtWin.mac:1629`). V legendě k tomu
+věta „spoj zastávku obsluhuje jen na objednání / podmínečně" s upřesněním (OZO / OZP,
+`JRapiNZUtl3.mac:68-72, 135-158`, piktogram RBU / RBP). Linkový JŘ AD r/i vynechával s mylným
+komentářem „přesunuty do atributů". Teď 1:1: r/i jdou do `ZNACKY` buňky (klient `SymbolMap`
+zastávková mapa r → telefon, i → vykřičník), věty OZO / OZP v pořadí za zasu se značkou RBU / RBP
+a upřesněním přes `UpresneniAtributuSpoje` (rozhodnutí Jan 26. 10.: do první verze přesně podle starého).
+**Zdvojená zastávka:** starý tisk kreslí značky u času i do příjezdového řádku (oracle: paragraf
+u spoje 3, telefon u spoje 8 na Benešov, Konopiště); náš kód je dával jen do odjezdového s odkazem na
+tc2row, který to netvrdí - opraveno, příjezdový řádek je dostane, když má čas. Ověřeno: nový
+`TestZnackaNaObjednaniUCasu` (telefon v 64 buňkách stejně jako starý tisk), oracle věty OZO shodně,
+vykreslení. Sonda `LinkovyJrLegacyOracle.ZnackyNaObjednaniProbe`. Zlaté odtisky beze změny.
+
+## 2026-10-26 (20) - nadpisy skupin dnů z nastavení firmy i v Zastávkovém JŘ AD (`B194b` T11)
+
+Zastávkový JŘ AD měl nadpisy skupin dnů („Pracovní dny", „Soboty"…) napevno česky. Starý zastávkový
+tisk je bral z nastavení firmy `^JRSET("Definice","WinMHD",rec,"DSC")` podle rozložení sloupců a linka
+mohla mít vlastní sadu (`PATCH,ISY_LinkyTiskMHDNadpisy`, `JRapiLinPrtMhd1.mac:541-571`). Teď jedna
+metoda `BaseAgenda.NadpisySkupinDnuAd` pro obě agendy AD: rozložení 0-3 = kusy 2-4 / 5-7 / 8-9 / 10-13,
+sada linky má přednost, `<br>` je druhý řádek nadpisu (Zastávkový) nebo mezera (Linkový - do 26. 10.
+vycházelo doslova, CB_GWBUS „Sobota,<br> Neděle…"), prázdné → dosavadní text (rozhodnutí Jan 26. 10.).
+Vzory vlastních sloupců berou tytéž nadpisy, aby vzor a automatika téhož rozložení tiskly stejně
+(nově i `nadpis2`). Měřeno sondou `NadpisySkupinDnu`: KV_DP, VS_CSAD, ZL_KOVED mají nadpisy malým
+písmenem, CB_GWBUS dvouřádkové, Nitra dvojjazyčné a 218 linek se sadou TN2/TN3. Nadpisy přepsané
+v šabloně mají dál přednost. ⚠️ Šablona s vlastními sloupci z dřívějšího vzoru se u firem s jinými
+nadpisy už nepozná jako vzor (parametr ukáže „Vlastní rozložení"), tisk se jí nemění.
+Testy `TestNadpisySkupinDnuZNastaveni`, `TestNadpisyDvojiceZKusu8a9` (přepsaný na čtení z nastavení);
+re-baseline zlatých odtisků Zastávkového JŘ AD 0365001, 0365005, 0330530: jen md5, počty shodné.
+
+## 2026-10-26 (19) - pokračování spoje v Linkovém JŘ AD i slovensky (`B194b` T10a)
+
+Věta „spoj N pokračuje na lince číslo L spojem číslo S do zastávky Z" byla v Linkovém JŘ AD napevno
+česky i ve slovenské šabloně (komentář tvrdil číselník). Teď z číselníku firmy `NCOME` 34 v jazyce
+šablony, skládaná jako starý tisk (`JRapiExp32.mac:353-357`), bez číselníku české znění
+(`LinkovyJrAd.TextPokracovaniSpoje`; rozhodnutí Jan 26. 10.). Český číselník dává totéž co dřívější
+text, takže české šablony, zlaté odtisky i oracle beze změny. Test `TestPokracovaniSpojeZCiselniku`.
+
+## 2026-10-26 (18) - oddělovač poznámek bez dlouhé pomlčky (`B194b` T9)
+
+Výchozí šablony Zastávkového JŘ AD i MHD měly v prvku Poznámky oddělovač mezi textovou značkou a textem
+dlouhou pomlčku („A — jede přes…"), kterou projekt zakazuje. Teď „ - " jako výchozí hodnota prvku
+(rozhodnutí Jan 26. 10.). Linkové šablony mají vědomě dál tři mezery - legenda je ve sloupcích a mezery
+drží zarovnání. Výchozí šablony nalévá seeder do MLINE při každém startu, uložené zákaznické šablony
+se nemění. Nový test `SystemTemplateSeedTests.SablonaNemaDlouhouPomlckuNikde` projde všechny texty
+každé výchozí šablony (dosud jen název a popis).
+
+## 2026-10-26 (17) - přestup v legendě Zastávkového JŘ AD z číselníku firmy (`B194b` T4d)
+
+Zastávkový JŘ AD vysvětloval piktogram přestupu vlastním textem „přestup na autobus / vlak", Linkový
+JŘ AD větou z číselníku stálých značek firmy („zastávka s možností přestupu na linkovou dopravu",
+„…na železniční dopravu"), agendy MHD z číselníku atributů MHD. Starý zastávkový tisk přestupy netiskl,
+takže vzor je linkový. Teď i Zastávkový JŘ AD z číselníku (`ZastavkoveJrAd.TextPrestupuLegendy`), bez
+něj dosavadní „přestup na …" (rozhodnutí Jan 26. 10.). Řádek se dál objeví jen se zapnutou volbou
+Přestupy (vlak/autobus) u seznamu zastávek. Re-baseline zlatých odtisků 0365001, 0365005, 0330530:
+jen md5, počty shodné. Test `TestTextPrestupuLegendy`. Tím je celé T4 (vysvětlivky téže značky).
+
+## 2026-10-26 (16) - překlep „částečne" pryč z obou agend AD (`B194b` T4b)
+
+Vysvětlivka částečně bezbariérového vozidla měla v Zastávkovém i Linkovém JŘ AD překlep „částečne"
+převzatý ze starého modulu (Linkový JŘ MHD ho neměl). Opraveno; Zastávkový JŘ AD navíc tvarem „s" jako
+v T4a („spoj s částečně bezbariérově přístupným vozidlem, nutná dopomoc průvodce", slovensky jako
+Linkový JŘ AD). V měřených datech takový spoj není, tisk se nikde nezmění - proto nový test
+`TestVysvetlivkyVozidlaJakoLinkovy`, který hlídá shodu obou vysvětlivek vozidla mezi agendami AD
+v obou jazycích (rozhodnutí Jan 26. 10.: opravit, i když se to teď nikde netiskne).
+
+## 2026-10-26 (15) - „spoj s bezbariérově přístupným vozidlem" i v Zastávkovém JŘ AD (`B194b` T4a)
+
+Zastávkový JŘ AD vysvětloval vozíček „spoj má bezbariérově přístupné vozidlo" (a „všechny spoje mají …"),
+Linkový JŘ AD i MHD „spoj s bezbariérově přístupným vozidlem". Každá agenda AD odpovídala svému starému
+tisku. Teď všude tvar „s" (`ZastavkoveJrAd.TextBezbarier`), slovensky „spoj s bezbariérovým prístupom
+do vozidla" (rozhodnutí Jan 26. 10.: zní líp a linkové věty ho potřebují kvůli výčtu spojů). Vědomě
+jinak než starý zastávkový tisk. Zastávkový JŘ MHD bere text z poznámek modulu MHD, netýká se ho.
+Re-baseline zlatých odtisků Zastávkového JŘ AD 0365001, 0365005, 0330530: jen md5, počty shodné.
+Nápověda volby „Souhrn bezbariérových spojů" v prvku Poznámky cituje nové znění.
+
+## 2026-10-26 (14) - pořadí typů omezení v Zastávkovém JŘ AD jako starý tisk (`B194b` T3e)
+
+Spoj s víc typy omezení skládal Zastávkový JŘ AD v pořadí „jede jen", „jede také", „jede"; starý
+zastávkový tisk i Linkový JŘ AD mají „jede" (základní období), „jede také", „jede jen", pak sudé / liché
+týdny a „nejede" (`gComNZLiSp`). Teď i Zastávkový. Týká se spojů s víc typy zároveň (VS_CSAD 4 258,
+CB_CSADAD 85, CB_GWBUS 36, ZL_KOVED 1; sonda `PoradiOmezeniVyskyt`). Oracle `TestTextyOmezeniProtiLegacy`
+rozšířen o CB_CSADAD 997/0370702 (značka 12 „jede od … , jede také …"). **T3 je celé**: text omezení
+skládají obě agendy AD stejně (oddělovač, rok, předložky, pořadí, sudé / liché týdny) a Zastávkový JŘ AD
+se shoduje se starým zastávkovým tiskem na šesti linkách.
+
+## 2026-10-26 (13) - předložky omezení z číselníku i v Zastávkovém JŘ AD (`B194b` T3d)
+
+Zastávkový JŘ AD měl předložky textu omezení napevno, u omezení „v sudých / lichých týdnech od-do"
+zkratkou („jede jen v su. od 12.12.10…") a ve slovenštině „premáva aj". Starý zastávkový tisk
+i Linkový JŘ AD je berou z číselníku firmy `NCOME`. Teď obě agendy přes `BaseAgenda.PredlozkaOmezeni`:
+číselník firmy (CZ / *SK podle jazyka šablony), bez něj standardní znění - totéž, co mají v číselníku
+všechny měřené firmy (sonda `PredlozkyOmezeni`; rozhodnutí Jan 26. 10.). Viditelné jen u omezení
+sudých / lichých týdnů s daty (CB_CSADAD 105 linek, 319 spojů; ostatní firmy je nemají) a ve
+slovenské šabloně. Oracle `TestTextyOmezeniProtiLegacy` rozšířen o CB_CSADAD 990/0680731 (stránku
+s „jede jen v sudých týdnech od …" hledá v textu starého tisku), nový `TestPredlozkaZCiselniku`.
+
+## 2026-10-26 (12) - rok v datech omezení i v Zastávkovém JŘ AD podle nastavení (`B194b` T3c)
+
+Zastávkový JŘ AD tiskl rok v datech omezení napevno dvoumístně. Starý zastávkový tisk se přitom
+řídí režimem `TiskDtm` firmy / linky stejně jako linkový (ověřeno oraclem: CB_GWBUS „bez roku" →
+„jede jen 17.8." místo našeho „17.8.21", KV_DP „jak zadáno" → „31.12.2024" místo „31.12.24").
+Formátování dat je teď jedno pro obě agendy AD v `BaseAgenda` (`TiskDtm`, `FormatDatumyOmezeni`,
+`UpravDatum`, přesunuté z Linkového JŘ AD; kopie v Zastávkovém zrušena). Výchozí režim firmy bez
+nastavení zůstává jako ve starém tisku: rok jak je v datech, tedy celý (všechny měřené firmy ho mají
+vyplněný; až se nastavení přesune nebo zruší, mění se jen `TiskDtm`). Vedlejší oprava: rozsah jednoho
+dne („05.07.2026:05.07.2026") tiskl Zastávkový JŘ AD jako „od 5.7.26 do 5.7.26", teď jedno datum
+jako starý tisk. Oracle `TestTextyOmezeniProtiLegacy` rozšířen o CB_GWBUS 0125850 a KV_DP 0410107.
+Na CB_CSADAD a ZL_KOVED (rok dvoumístně) se výstup nemění.
+
+## 2026-10-26 (11) - čárka s mezerou mezi daty omezení i v Linkovém JŘ AD (`B194b` T3b)
+
+Linkový JŘ AD psal „nejede 24.12.22,31.12.22" (tvar starého linkového tisku), Zastávkový JŘ AD
+„nejede 24.12.22, 31.12.22" (tvar starého zastávkového tisku). Teď obě agendy čárkou s mezerou
+(`LinkovyJrAd.FormatDatumyOmezeni`), dlouhý výčet dat se líp čte (rozhodnutí Jan 26. 10.). Vědomá
+odchylka od starého linkového tisku: oracle (`LinkovyJrLegacyOracle.OddelovacDat`) i test dat
+(`LinkovyJrAdDatumyTest`) převádějí starý text na nový tvar a zbytek věty porovnávají doslova -
+CB_CSADAD 0330510 dál 43/43. Re-baseline zlatých odtisků 0330510, 0330511, 0410107: jen md5, počty
+shodné. Legenda Linkového JŘ AD je u dlouhých výčtů o znak za každým datem delší.
+
+## 2026-10-26 (10) - 📅 liché a sudé týdny i v Zastávkovém JŘ AD (`B194b` T3a)
+
+Spoj s platností „jen v lichých / sudých týdnech" (hlava:8 = 5 / 4) neměl v Zastávkovém JŘ AD ani
+značku u minuty, ani řádek v poznámkách - cestující nepoznal, že jede jen každý druhý týden. Starý
+zastávkový i linkový tisk větu přidávají na začátek textu omezení (`gComNZLiSp`, `JRapiNZUtl2.mac:125-128`),
+Linkový JŘ AD to měl. Teď obě agendy AD přes `BaseAgenda.TextTydnuPlatnosti` (číselník NCOME SU/LI,
+jinak české znění). Ověřeno: nový oracle `ZastavkoveJrAdLegacyTest.TestTextyOmezeniProtiLegacy`
+(CB_GWBUS 216/0103942 značka 11 „jede jen v lichých týdnech" + CB_CSADAD 0330510 osm omezení shodně se
+starým zastávkovým tiskem); sonda `LegendaVedleSebeProbe` (legenda obou stran vedle sebe). Zbytek T3
+(oddělovač, rok, předložky, pořadí) rozdělen na T3b-e.
+
+## 2026-10-26 (9) - 🎨 barvy spojů na vývěsce a checkbox v obou agendách AD (`B194b` T2)
+
+**Vývěska AD** tiskne minutu barvou spoje (pole `#12`, přes `RgbNaHex` - `0;0;0` = nenastaveno), do
+26. 10. posílala `FORE_COLOR` vždy prázdné. Starý vývěskový tisk barvu dával vždy (`JRapiLinPrtMhd1.mac:56`).
+**Parametr „Barvy spojů"** je v obou agendách AD checkbox `TISKNOUT_BARVY_SPOJU` (výchozí zapnuto; vývěska
+skupina Minuty odjezdů, linkový Tabulka spojů). Linkový AD měl třístav `BARVY_SPOJU` s „Automaticky (dle
+linky)"; volba „dle linky" zmizela, protože nastavení u linky (`PATCH,barevnyTiskSpoju`) nemá v datech
+zapnuté žádná linka (sonda `BarvySpojuVyskyt`: ZL_KOVED 651 linek s barvami, VS_CSAD 348, vypnuté 0;
+rozhodnutí Jan 26. 10.). **Nový klíč, ne změna typu starého**: uložené „Automaticky" by se jako bool
+načetlo jako vypnuto. Starší návrhář posílá dál třístav a server ho přebírá (`BaseAgenda.VolbaBarevSpoju`,
+v `ServerSideParamsDriftTests` mezi technickými klíči). Kdo měl v linkovém AD uloženo „Netisknout",
+má po aktualizaci barvy zase zapnuté. Linkové šablony (systémové i rozdílový JŘ) mají nový klíč.
+Ověřeno: `TestBarvySpojuNaMinutach` (ZL_KOVED 260/0000621 zapnuto/vypnuto), `TestVolbaBarevSpoju`,
+vykreslení vývěsky (červené minuty).
+
+## 2026-10-26 (8) - ☎ spoje na objednání a podmínečné (`B194b` T1)
+
+**Vývěska AD** označí spoj „na objednání" telefonem a „podmínečně" vykřičníkem u minuty (příznak
+u spoje i jen v té zastávce, jako starý vývěskový tisk `JRapiLinPrtMhd1.mac:68-69, 203-204`) a stránka
+dostane řádek legendy: věta z číselníku stálých značek firmy a za ní upřesnění. Do 26. 10. nebylo nic.
+**Upřesnění** berou obě agendy AD stejně (`BaseAgenda.UpresneniAtributuSpoje`): text spoje, jinak linky,
+jinak nastavení firmy. Starý vývěskový tisk bral jen text linky; text firmy se přidal vědomě, aby
+vývěska psala totéž co linkový JŘ (rozhodnutí Jan 26. 10.) - u firem s výchozím nastavením to znamená
+„… telefonicky nebo u řidiče" všude, kde linka nemá vlastní text.
+**Linkový AD** upřesnění do věty legendy dřív nepřidával vůbec („spoj jede jen na objednání" bez
+pokračování); teď 1:1 se starým modulem (`gAtrNZLi^JRapiNZUtl3` :227-256), včetně rozpadu na věty
+s výčtem spojů, když se upřesnění spojů liší (v datech nenastává, hlídá syntetický test).
+Ověřeno: oracle linkového AD na CB_GWBUS 216/0103942 (RBU) a 0125850 (RBP) shoda vět, nové fixture
+`TestVetyAtributuProtiLegacy`; vývěska `TestNaObjednaniZnackaALegenda` + vykreslení obou linek
+(telefon a vykřičník ve fontu sedí). Měření `LinkovyJrNastaveniProbe.NaObjednaniVyskyt`.
+Nálezy mimo T1 zapsané jako `T12` (značky u času v zastávce, 77 buněk na 0340941) a `T13` (upřesnění
+místenky, poznámky „p"). Harness `ZkouskaTiskuNaostro` umí `TD_TISK_SKUPINA`.
+
+## 2026-10-26 (7) - 💬 nápovědy parametrů jednotně (`B194c` P7)
+
+Jen texty, tisk beze změny. Linkový MHD u Zvýraznit zastávku už neříká „Projíždí-li linka město víckrát"
+(MHD jezdí v jednom městě), ale „Odpovídá-li zadaný text víc zastávkám, označí se všechny"; AD beze změny.
+Vývěska AD: „Číslo stanoviště podle" bez zakázaného „nástupiště" („Označník (údaj z trasy linky)"),
+„Řazení variant tras" vyjmenuje všechny čtyři volby. Tvar názvu zastávky (všechny agendy) „včetně okresu
+a jeho zkratky" místo „s okresem i jeho zkratku". Linkový AD odkazuje na „prvek Tabulka spojů", ne
+„prvek tabulky". Vypínací věty všude „Vypnuto = …" (dřív i „Vypnuté =" a „Vypnutím…", pět míst). Textové
+parametry linkového AD a rozdílového JŘ mají typ „string" podle kontraktu (dřív „text"; návrhář je bral
+stejně). Ověřeno voláním `GetParameters` (vývěska AD, rozdílový = linkový AD).
+
+## 2026-10-26 (6) - 🗂️ typy provozu linkového MHD ve skupině Tabulka spojů (`B194c` P4)
+
+Zaškrtávátka typů provozu linkového JŘ MHD měla v tabu Parametry vlastní skupinu „Typy provozu pro tisk",
+poslední a mimo pravidlo „Obecné, nebo název prvku". Rozhodnutí Jan 26. 10.: patří k Tabulce spojů (vybírají,
+které spoje tabulka vytiskne), samostatně ne. Skupina „Tabulka spojů", popisek „Typ provozu: <název>", aby
+se v ní odlišily od ostatních voleb; hláška linky bez dat po vypnutí všech typů odkazuje na skupinu Tabulka
+spojů. .NET kontrola skupin (`AgendaParameterDriftTests`) parametry skládané za běhu nevidí - nově je hlídá
+Caché `SkupinyParametruTest` (parametry všech čtyř agend JŘ ze serveru, KV_DP a CB_CSADAD). Ověřeno voláním
+`GetParameters` (KV_DP).
+
+## 2026-10-26 (5) - 🚌 dopravce: pořadí adresy v linkovém MHD a mezery v souhrnném poli (`B194b` T6)
+
+Rozhodnutí Jan 26. 10. jako kompromis sjednocení: linkový JŘ MHD tiskne v řádku „Přepravu zajišťuje"
+adresu v pořadí ulice, PSČ obec jako vývěska MHD (dřív „PSČ obec, ulice" převzaté z linkového AD, kde
+jsou data členěná jinak - sídlo provozovny a celá adresa); oddělovače a „tel." dál jako linkový AD
+(`ZastavkoveJrMhd.RadkyDopravce`, agenda ještě nevydaná). Souhrnné pole dopravců vývěsky AD
+(`DOPRAVCI_SOUHRNNY_JR`) má mezery za čárkami a provoz bez ulice nedá dvojčárku
+(`ZastavkoveJrAd.NazevDopravce`; mění vydaný tisk jen v tomhle poli). „tel:" ve vývěskách a „tel."
+v linkových JŘ vědomě zůstávají - každé podle svého starého tisku. Testy `LinkovyJrMhdTest.TestDopravceJakoVyveska`,
+`ZastavkoveJrAdHelperyTest.TestNazevDopravceJednimRadkem`; zlaté odtisky vývěsky AD 0365001/0365005/0330530
+přebaselinované, mění se jen md5.
+
+## 2026-10-26 (4) - 📐 Minuty odjezdů hlídají šířku jako výšku (`B194a` C12)
+
+Výchozí vývěska MHD na lince se čtyřmi skupinami dnů (KV_DP 17 Tržnice - Dalovice) kreslila nadpisy
+skupin přes sebe i přes „Hod" a ve skupině se značkami zvláštních dnů uřízla minuty; hláška žádná.
+Tři příčiny v prvku Minuty odjezdů: (1) šířka skupiny se počítala jen z počtu minut, bez značek, kdežto
+kreslení je počítalo - teď je výpočet odjezdů jeden (`SlotyOdjezdu`/`PripravSloty`, rozvržení v měřítku 1,
+kreslení v měřítku písma), (2) se druhým nadpisem z dat (období) se nezalamovalo nic - teď se zalamují
+všechny řádky do šířky skupiny, druhý svým písmem, (3) šířku prvku nikdo nehlídal. Rozhodnutí Jan 26. 10.:
+hlídat šířku stejně jako výšku. Když skupině chybí místo a celek se vejde, vezme se skupinám s rezervou
+(úměrně rezervě) - vývěsky, kterým nic nechybělo, se nehnou (porovnání pixelů CB_DP 11350: mřížka shodná,
+rozdíl jen v pruhu dopravce z `C5`); když se nevejde, zmenší se celá mřížka (písmo, šířky, sloupec hodin;
+platí přísnější z výšky a šířky) a ukáže se hláška „písmo zmenšeno"; pod mezí zmenšení (50 %) červená
+hláška, že se skupiny ořízly, s radou (skrýt skupinu, zmenšit písmo, rozšířit prvek). Hláška platí i pro
+prvek s dynamickou výškou, ten se zmenšením na šířku sníží. KV_DP 17 se vejde bez zmenšení (čtvrtá
+skupina si vzala místo prvním třem). Testy `MinutyOdjezduSirkaTests` (místo pro značky - mutací
+ověřeno, zmenšení + hláška, ořez + hláška, dynamická výška, kreslení), `DepartureHeaderLinesTests`
+(zalomení druhého nadpisu). Mezipaměť rozvržení sleduje i šířku prvku a nastavení značek.
+
+## 2026-10-26 (3) - 💬 chyba v datech linky říká, co opravit (`B194a` C11)
+
+Chyba ze serveru u jedné linky zastavila tisk s textem „Načtení dat agendy 'ZASTAVKOVY_JR_AD' z databáze
+selhalo: … Linka 1/380761 neexistuje v ^JRL" (v náhledu jen ve stavovém řádku). Rozhodnutí Jan 26. 10.:
+tisk se zastavit smí, hláška ale musí říct, co je v datech špatně a co s tím. Agendy JŘ teď chyby dat
+posílají přes `BaseAgenda.ChybaDat` (obecná chyba 5001): linka AD ve skupině není („Linka 999999 ve
+skupině 1 v jízdních řádech není. Mohla být smazána nebo přesunuta do jiné skupiny - vyberte linky
+znovu."), linka MHD v modulu není (vývěska MHD na ní dřív padala na `<ILLEGAL VALUE>` - doplněno týž den
+při ověřování `C12`), spoj MHD bez použitelného kalendáře či rozpisu typu provozu (veřejné
+číslo spoje, ne ID), turnusy nejdou načíst, chybí linka. Návrhář chybu 5001 pozná
+(`CacheAgendaProvider.ChybaDat` → `CacheAgendaDataException`) a ukáže ji jako hlášku-problém linky
+(`KontrolaVystupu.LinkaChybaDat`) v náhledu i v tiskovém okně a jako informaci při tisku z EDISONu,
+s číslem linky; jiná chyba serveru (chyba v kódu, výpadek) zůstává chybou programu. Linka mimo JŘ přes
+výběr linek vybrat nejde - jen spuštěním z EDISONu s linkou z jiné skupiny nebo po smazání linky
+(Jan: i tak má hláška smysl). Pravidlo v `cache-api.md`. Testy `ChybaDatTest` (Caché, texty agend ověřené
+i voláním serveru) a `ChybaDatTests` (rozpoznání ze skutečné zprávy MLRest, hláška).
+
+## 2026-10-26 (2) - 🔒 „Uložit jako" už nemění agendu šablony (`B194a` C10)
+
+Okno „Uložit do databáze jako…" nabízelo v poli Agenda všechny agendy z registru, i nezveřejněné
+(Faktury, rozdílový JŘ), a změna uložila šablonu s prvky a poli jedné agendy pod jinou - bez výměny
+nabídky dat, kterou dělá jen Změnit agendu (to zakládá novou šablonu). Obecná agenda v nabídce chyběla.
+Teď pole ukáže jen agendu šablony, nejde změnit a nápověda odkáže na Změnit agendu (Ctrl+Shift+A);
+název agendy pošle návrhář (obecná v registru není), starší klient ho dostane z registru
+(`SaveTemplate.NazevAgendy`). Uložení bere agendu vždy ze šablony - okno ji změnit neumí, `AgendaCode`
+nemá setter. Rozhodnutí Jan 26. 10.: „takové obcházení nesmí být možné". Testy `SaveTemplateFormTest`
+(jediná položka, zamčené, obecná s názvem) a `SaveToCacheDialogViewModelTests`; na serveru ověřeno
+voláním `Init`. Příručka: dialog má název šablony, ne „název a popis".
+
+## 2026-10-26 (1) - 📅 linkový AD tiskne rok v omezeních podle nastavení linky (`B194a` C9)
+
+Modul JŘ ukládá u linky režim tisku roku o 1 výš (0 = nenastaveno), u firmy bez posunu; starý tisk
+u linky odečítá (`JRapiNZUtl2.mac:186-190`), my jsme neodečítali. Měření (`LinkovyJrNastaveniProbe.Vyskyt`,
+6 firem, 94 513 linek): nastavení má 6 268 linek - 5 052 s „rokem dvoumístně" tisklo data bez roku,
+1 213 s „bez roku" tisklo shodou správně, 3 s „jak zadáno" tiskly rok dvoumístně. Teď `TiskDtm`
+odečítá. Zároveň skládání dat přepsané podle starého `gComOddO`: den a měsíc bez úvodních nul a „d.m"
+s tečkou v každém režimu, shodné „od" a „do" jako jedno datum, režim „od bez roku" maže rok jen u „od"
+a jen při stejném roce (dřív u obou vždy; v datech ho dnes nikdo nemá). Parita **oraclem**: test
+`LinkovyJrAdDatumyTest` porovná náš text se starým `gComOddO` ve všech čtyřech režimech na šesti vzorech
+(CB_CSADAD, číselník od/do), plus posun u linky. Zlaté odtisky beze změny - linky jádra sady režim
+nastavený nemají. Rozhodnutí Jan 26. 10.: zatím takto, lépe až po probrání nastavení JŘ s kolegy (backlog).
+
 ## 2026-10-24 (4) - 📅 linkový AD: nadpisy „pracovní dny / víkend" z jejich sady číselníku (`B194a` C8)
 
 Linkový AD při rozdělení na pracovní dny a víkend bral nadpis víkendu z kusu 7 číselníku nadpisů

@@ -95,7 +95,15 @@ Method TestGold0365001()
 	// směr Tam a za ním celý Zpět (1:1 legacy `JRapiLinPrtMhd1.mac:397-398`). ⚠️ **Mění se jen md5**,
 	// počty pages/zast/odj/pozn jsou shodné do jednoho - to je zároveň doklad, že se změnilo
 	// pořadí stránek a nic jiného.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=kG76TYmklbZqWFDHCLylbA==")
+	// Re-baseline 2026-10-26 (`B194a` T6): souhrnné pole dopravců s mezerami za čárkami a bez dvojčárky
+	// („…, Písek, Hálkova 1, tel: …" místo „…, Písek,Hálkova 1,tel:…"). Jen md5, počty shodné.
+	// Re-baseline 2026-10-26 (`B194` T4a): vysvětlivka „spoj s bezbariérově přístupným vozidlem" jako
+	// v Linkovém JŘ AD místo „spoj má …" (vědomě jinak než starý zastávkový tisk). Jen md5, počty shodné.
+	// Re-baseline 2026-10-26 (`B194` T4d): přestup v legendě z číselníku stálých značek firmy („zastávka
+	// s možností přestupu na linkovou dopravu") místo „přestup na autobus". Jen md5, počty shodné.
+	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů (i ve vzorech sloupců) z nastavení firmy
+	// jako starý zastávkový tisk - CB_CSADAD má prázdninové nadpisy malým písmenem. Jen md5, počty shodné.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=Jv9Naf1LpG31sCVpcQck+A==")
 }
 
 Method TestGold0365005()
@@ -136,7 +144,11 @@ Method TestGold0365005()
 	// Re-baseline 2026-09-25 (#12843): odjezd se netiskne na konečné spoje ani v zastávce „jen
 	// výstup" (legacy `JRapiLinPrtMhd1.mac:194,201`). ⚠️ Mění POČTY: odjezdů 498 → 484, poznámek
 	// 236 → 235. Každá stránka linky ověřena proti starému tisku (`ParitaOdjezduProbe`, bez rozdílu).
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=c4VxOnzunreqtdZy8efvIw==")
+	// Re-baseline 2026-10-26: souhrnné pole dopravců - viz gold 0365001. Jen md5.
+	// Re-baseline 2026-10-26 (`B194` T4a): „spoj s bezbariérově přístupným vozidlem" - viz gold 0365001. Jen md5.
+	// Re-baseline 2026-10-26 (`B194` T4d): přestup z číselníku firmy - viz gold 0365001. Jen md5.
+	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=nPFVdSjcdb5ap3lFER6VAw==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -221,7 +233,11 @@ Method TestGold0330530()
 	// Re-baseline 2026-09-25 (#12843): odjezd na konečné spoje a v zastávce „jen výstup" - viz gold
 	// 0365005. Stránek 45 → 44: na jedné zastávce jen končily spoje, starý tisk ji nevydává také.
 	// Odjezdů 1236 → 1232, zastávek 1022 → 999, poznámek 638 → 632; ověřeno proti starému tisku.
-	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=sDwj8xUf0kMBuLmK3Wu9qw==")
+	// Re-baseline 2026-10-26: souhrnné pole dopravců - viz gold 0365001. Jen md5.
+	// Re-baseline 2026-10-26 (`B194` T4a): „spoj s bezbariérově přístupným vozidlem" - viz gold 0365001. Jen md5.
+	// Re-baseline 2026-10-26 (`B194` T4d): přestup z číselníku firmy - viz gold 0365001. Jen md5.
+	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=9fDRNV/Z3F9ETPdLZ2EZ+w==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

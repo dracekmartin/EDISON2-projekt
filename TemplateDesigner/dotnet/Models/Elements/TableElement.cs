@@ -1092,7 +1092,7 @@ public class TableElement : TemplateElement
         },
         new BoolPropertyDescriptor
         {
-            Label = "Záhlaví",
+            Label = "Záhlaví sloupců",
             Group = "Tabulka",
             Get   = () => ShowHeader,
             Set   = v => ShowHeader = v

@@ -60,8 +60,8 @@
             <StackPanel Grid.Column="1" Margin="8,0,0,0" Width="96">
                 <Button Content="Přidat"  Command="{Binding AddRuleCommand}"    Padding="6,3" Margin="0,0,0,4"/>
                 <Button Content="Odebrat" Command="{Binding RemoveCommand}" Padding="6,3" Margin="0,0,0,4"/>
-                <Button Content="▲ Nahoru" Command="{Binding MoveUpCommand}"   Padding="6,3" Margin="0,0,0,4"/>
-                <Button Content="▼ Dolů"   Command="{Binding MoveDownCommand}" Padding="6,3"/>
+                <Button Content="▲" Command="{Binding MoveUpCommand}"   Padding="6,3" Margin="0,0,0,4" ToolTip="Posunout nahoru"/>
+                <Button Content="▼" Command="{Binding MoveDownCommand}" Padding="6,3" ToolTip="Posunout dolů"/>
             </StackPanel>
         </Grid>
 
@@ -72,7 +72,7 @@
                     VerticalAlignment="Center" Margin="0,0,8,0"
                     Background="{Binding SelectedRule.BackgroundColor, Converter={StaticResource HexToBrush}}"/>
             <Button Content="Vybrat…"  Command="{Binding PickColorCommand}"  Padding="10,3" Margin="0,0,6,0"/>
-            <Button Content="Vymazat"  Command="{Binding ClearColorCommand}" Padding="10,3"/>
+            <Button Content="×" Command="{Binding ClearColorCommand}" Padding="8,2" ToolTip="Vymazat barvu"/>
         </StackPanel>
 
         <!-- OK / Storno -->

@@ -30,6 +30,99 @@ Method TestCasJizdySloupce()
 	kill wMap
 }
 
+// ── Vysvětlivky vozidla (B194 T4a, T4b) ─────────────────────────────────────
+/// Vozíček a částečně bezbariérové vozidlo vysvětluje Zastávkový JŘ AD stejně jako Linkový JŘ AD
+/// (obecná věta bez výčtu spojů), česky i slovensky. Částečně bezbariérové vozidlo v datech nemá
+/// žádný spoj, takže jinak by se rozchod ani překlep „částečne" neukázal.
+Method TestVysvetlivkyVozidlaJakoLinkovy()
+{
+	set zast = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", link = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
+	for jazyk = "cs", "sk" {
+		set ^||TiskAd("jazyk") = jazyk, rec = $select(jazyk="sk":"*SK", 1:"CZ")
+		do $$$AssertEquals($classmethod(zast, "TextBezbarier", 0), $classmethod(link, "VetaAtributu", "BEV", rec, 1), jazyk_": bezbariérové vozidlo")
+		do $$$AssertEquals($classmethod(zast, "TextCastecneBezbarier"), $classmethod(link, "VetaAtributu", "CBE", rec, 1), jazyk_": částečně bezbariérové vozidlo")
+	}
+	kill ^||TiskAd("jazyk")
+	do $$$AssertTrue($classmethod(zast, "TextCastecneBezbarier") '[ "částečne ", "překlep „částečne""")
+}
+
+/// Přestup v legendě (`B194` T4d): věta z číselníku stálých značek firmy jako v Linkovém JŘ AD,
+/// bez ní „přestup na autobus / vlak".
+Method TestTextPrestupuLegendy()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	kill ^||TiskAd("jazyk")
+	for db = $namespace, "CB_CSADAD" {
+		continue:'##class(%SYS.Namespace).Exists(db)
+		for znak = "A", "L" {
+			set ciselnik = $get(^[db]JRSET("STALCOME", "CZ", $select(znak="A":"auto", 1:"vlak")))
+			set druh = $select(znak="A":"autobus", 1:"vlak")
+			set ocekavany = $select(ciselnik'="":ciselnik, 1:"přestup na "_druh)
+			do $$$AssertEquals($classmethod(cls, "TextPrestupuLegendy", db, znak, druh), ocekavany, db_" "_znak)
+		}
+	}
+}
+
+// ── Nadpisy skupin dnů (B194 T11) ────────────────────────────────────────────
+/// Nadpisy skupin dnů jdou z nastavení firmy jako ve starém zastávkovém tisku: malá písmena KV_DP,
+/// zalomení `<br>` na druhý řádek (CB_GWBUS), sada nadpisů u linky (Nitra, sada TN2) a bez nastavení
+/// dnešní výchozí text. Linkový JŘ AD z téhož zdroje skládá jeden řádek - `<br>` nesmí vyjít doslova.
+Method TestNadpisySkupinDnuZNastaveni()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
+	if ##class(%SYS.Namespace).Exists("KV_DP") {
+		kill t
+		do $classmethod(cls, "NadpisySkupinDnuAd", "KV_DP", "", "", "CZ", 0, "Pracovní dny~Soboty~Neděle a svátky", .t)
+		do $$$AssertEquals(t(1), $piece($get(^["KV_DP"]JRSET("Definice","WinMHD","CZ","DSC")),"~",2), "KV_DP: nadpis z nastavení firmy")
+	}
+	if ##class(%SYS.Namespace).Exists("CB_GWBUS") {
+		kill t
+		do $classmethod(cls, "NadpisySkupinDnuAd", "CB_GWBUS", "", "", "CZ", 1, "a~b~c", .t)
+		do $$$AssertEquals(t(1)_"|"_t(1,2), "Pracovní dny|mimo prázdniny", "CB_GWBUS: <br> = druhý řádek")
+		kill t
+		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NadpisySkupinDnu("CB_GWBUS", "CZ", .t)
+		do $$$AssertTrue(t("dvojiceVikend") '[ "<br>", "Linkový JŘ AD nesmí tisknout <br> doslova: "_t("dvojiceVikend"))
+	}
+	if ##class(%SYS.Namespace).Exists("SKNI_MHDNITRA") {
+		// první linka s vlastní sadou TN2
+		set sku = "", lin = "", nasel = 0
+		for {
+			set sku = $order(^["SKNI_MHDNITRA"]JRL(sku)) quit:sku=""  quit:nasel
+			continue:'$isvalidnum(sku)
+			set lin = ""
+			for {
+				set lin = $order(^["SKNI_MHDNITRA"]JRL(sku, lin)) quit:lin=""
+				if $get(^["SKNI_MHDNITRA"]JRL(sku, lin, "PATCH", "ISY_LinkyTiskMHDNadpisy")) = "TN2" set nasel = 1  quit
+			}
+		}
+		if nasel {
+			kill t
+			do $classmethod(cls, "NadpisySkupinDnuAd", "SKNI_MHDNITRA", sku, lin, "*SK", 1, "a~b~c", .t)
+			do $$$AssertEquals(t(1)_"|"_t(1,2), "Pracovný deň (škol. rok)|Work day (school year)", "Nitra: sada nadpisů u linky")
+		}
+	}
+	kill t
+	do $classmethod(cls, "NadpisySkupinDnuAd", "", "", "", "CZ", 2, "Pracovní dny~Soboty, neděle a svátky", .t)
+	do $$$AssertEquals(t(1)_"|"_t(2), "Pracovní dny|Soboty, neděle a svátky", "bez nastavení výchozí text")
+}
+
+// ── Barvy spojů (B194 T2) ────────────────────────────────────────────────────
+/// Checkbox `TISKNOUT_BARVY_SPOJU` má přednost; bez něj platí třístav `BARVY_SPOJU`, který posílá
+/// starší návrhář u linkového JŘ - jinak by mu volba „Netisknout" po aktualizaci serveru přestala platit.
+Method TestVolbaBarevSpoju()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
+	kill ^||ML("IN")
+	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "", "nic nepřišlo → podle linky")
+	set ^||ML("IN","BARVY_SPOJU") = "Netisknout"
+	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "Netisknout", "starý třístav se přebírá")
+	set ^||ML("IN","TISKNOUT_BARVY_SPOJU") = "True"
+	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "Tisknout", "checkbox má přednost, velikost písmen nevadí")
+	set ^||ML("IN","TISKNOUT_BARVY_SPOJU") = "false"
+	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "Netisknout")
+	kill ^||ML("IN")
+}
+
 // ── Jazyk textů značek (#12843) ──────────────────────────────────────────────
 /// Slovenský zákazník má správné piktogramy, ale české popisky v legendě. Jazyk se bere
 /// z kultury šablony (`JAZYK` na wire), ne z firemního nastavení legacy tisku.
@@ -274,23 +367,56 @@ Method TestVyberZaklTrasu()
 
 Method TestPrefixOmezeni()
 {
+	kill ^||TiskAd("jazyk")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(11), "jede jen ", "11")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(22), "nejede ", "22")
+	// T3d: celé znění jako v číselníku a Linkovém JŘ AD, dřív zkratka „jede jen v su."
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(14), "jede jen v sudých týdnech ", "14")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(99), "", "neznámé → prázdné")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni("", "*SK", 12), "premáva tiež", "SK standard jako výchozí číselník")
 }
 
+/// Předložka z číselníku firmy má přednost před standardním zněním (`B194` T3d) - zákazník si ji
+/// může přepsat a starý tisk i Linkový JŘ AD ho poslouchají. Testovací namespace číselník nemá;
+/// kdyby ho měl, test ho nepřepisuje a přeskočí se.
+Method TestPredlozkaZCiselniku()
+{
+	set db = $namespace
+	if $data(^[db]JRSET("NCOME","CZ",22)) {
+		do $$$AssertSkipped("testovací namespace má vlastní číselník NCOME - nepřepisuje se")
+		quit
+	}
+	try {
+		set ^[db]JRSET("NCOME","CZ",22) = "nepremáva v dňoch"
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni(db, "CZ", 22), "nepremáva v dňoch", "číselník má přednost")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni(db, "CZ", 11), "jede jen", "co v číselníku chybí, je standard")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRSET("NCOME","CZ",22)
+}
+
+/// Rok podle režimu firmy / linky (`B194` T3c) - do 26. 10. měl Zastávkový JŘ AD rok napevno
+/// dvoumístně, starý zastávkový tisk se ale režimem řídí (CB_GWBUS bez roku, KV_DP celý rok).
+/// Proti starému tisku to hlídá `LinkovyJrAdDatumyTest.TestDatumyJakoStaryTisk` (metoda je společná).
 Method TestUpravDatum()
 {
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).UpravDatum("01.05.2026"), "1.5.26", "strip nul + 2místný rok")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).UpravDatum("24.12.26"), "24.12.26", "už 2místný rok beze změny")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).UpravDatum(""), "", "prázdné → prázdné")
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 1), "1.5.26", "režim 1: strip nul + 2místný rok")
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "24.12.26", 1), "24.12.26", "už 2místný rok beze změny")
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 0), "1.5.2026", "režim 0: rok jak je v datech")
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 3), "1.5.", "režim 3: bez roku")
+	do $$$AssertEquals($classmethod(cls, "UpravDatum", "", 1), "", "prázdné → prázdné")
 }
 
 Method TestFormatDatumyOmezeni()
 {
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).FormatDatumyOmezeni("k@01.05.2026:31.08.2026"), "od 1.5.26 do 31.8.26", "rozsah s prefixem k@")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).FormatDatumyOmezeni("24.12.2026#31.12.2026"), "24.12.26, 31.12.26", "jednotlivá data přes #")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).FormatDatumyOmezeni("05.07.2026"), "5.7.26", "jedno datum bez rozsahu")
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "k@01.05.2026:31.08.2026", 1), "od 1.5.26 do 31.8.26", "rozsah s prefixem k@")
+	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "24.12.2026#31.12.2026", 1), "24.12.26, 31.12.26", "jednotlivá data přes #")
+	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "05.07.2026", 1), "5.7.26", "jedno datum bez rozsahu")
+	// shodné „od" a „do" = jedno datum jako starý tisk; do 26. 10. tu vycházelo „od 5.7.26 do 5.7.26"
+	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "05.07.2026:05.07.2026", 1), "5.7.26", "rozsah jednoho dne")
 }
 
 // ── Atributy, markery, normalizace ──────────────────────────────────────────
@@ -1092,6 +1218,24 @@ Method Znacky(plk As %String, sloupecDny As %String) As %String
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 	quit $classmethod(cls, "DenniZnackyProSloupec", plk, $classmethod(cls, "DnySpoje", plk), sloupecDny)
+}
+
+/// `B194a` T6: souhrnné pole dopravců jedním řádkem - části oddělené „, " a provoz bez ulice bez
+/// dvojčárky. Do 26. 10. „ČSAD Test, Písek,Hálkova 1,tel:386100111" a „…,,tel:386100111".
+Method TestNazevDopravceJednimRadkem()
+{
+	set db = $namespace, fa = "TDTEST"_$translate($system.Util.CreateGUID(), "-")
+	set ad = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	try {
+		set $piece(^[db]JRSET("DOP", fa), "~", 7) = "ČSAD Test"
+		set ^[db]JRSET("DOP", fa, 1) = "Písek~Hálkova 1~386100111"
+		set ^[db]JRSET("DOP", fa, 2) = "Písek~~386100111"
+		do $$$AssertEquals($classmethod(ad, "NazevDopravce", db, fa, 1), "ČSAD Test, Písek, Hálkova 1, tel: 386100111", "s ulicí")
+		do $$$AssertEquals($classmethod(ad, "NazevDopravce", db, fa, 2), "ČSAD Test, Písek, tel: 386100111", "provoz bez ulice")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRSET("DOP", fa)
 }
 
 }

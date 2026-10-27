@@ -138,7 +138,7 @@ public class NotesLegendElement : StopScheduleElementBase
     /// <inheritdoc cref="ShowPoznamkyLinkyTarifni"/>
     public bool ShowPoznamkyLinkyRadiobus { get; set; } = false;
 
-    /// <summary>Souhrnná vysvětlivka „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
+    /// <summary>Souhrnná vysvětlivka „všechny spoje s bezbariérově přístupným vozidlem" (#7161 D6).
     /// Dřív parametr sestavy „Skrýt souhrn…"; přesunuto sem, aby se obsah zapínal na jednom místě.</summary>
     public bool ShowSouhrnBezbarier { get; set; } = true;
 
@@ -528,7 +528,8 @@ public class NotesLegendElement : StopScheduleElementBase
     }
 
     /// <summary>Do které skupiny patří druh poznámky z číselníku linkového JŘ (1-10).</summary>
-    /// <remarks>Druh 4 linková agenda neposílá; neznámý druh jde k dalším značkám, aby nezmizel.</remarks>
+    /// <remarks>Druh 4 (poznámka pro spoj, „p") nemá vlastní skupinu jako ve starém tisku a jde
+    /// k dalším značkám, před místenky; stejně tak neznámý druh, aby nezmizel.</remarks>
     internal static SkupinaPoznamek SkupinaDruhu(string druh) => druh switch
     {
         "1"                => SkupinaPoznamek.TydenniPlatnost,
@@ -536,7 +537,7 @@ public class NotesLegendElement : StopScheduleElementBase
         "3"                => SkupinaPoznamek.Navaznosti,
         "5"                => SkupinaPoznamek.AtributySpoju,
         "8" or "9" or "10" => SkupinaPoznamek.PoznamkyLinky,
-        _                  => SkupinaPoznamek.DalsiZnacky,   // 6 místenky, 7 stálé značky
+        _                  => SkupinaPoznamek.DalsiZnacky,   // 4 poznámky ke spojům, 6 místenky, 7 stálé značky
     };
 
     /// <summary>Klíč tlačítka „Druhy poznámek" ve formuláři prvku (<c>NotesLegendElementEdit.cls</c>).</summary>
@@ -820,7 +821,7 @@ public class NotesLegendElement : StopScheduleElementBase
         new FloatPropertyDescriptor  { FromImage = true, Label = "Počet sloupců",       Group = "Rozložení", Get = () => Columns,     Set = v => Columns = (int)v, Min = 1, Max = 4, Format = "0" },
         new EnumPropertyDescriptor   { FromImage = true, Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
             Options = [("Po sloupcích", (object)LegendWrap.PoSloupcich), ("Po řádcích", (object)LegendWrap.PoRadcich)] },
-        new EnumPropertyDescriptor   { Label = "Řazení",             Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
+        new EnumPropertyDescriptor   { Label = "Řazení poznámek",    Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
             Options = [("Dle typu (dny platnosti → značky → atributy → text)", (object)LegendRazeni.DleTypu), ("Výchozí (dle dat)", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
         new FloatPropertyDescriptor  { FromImage = true, Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 

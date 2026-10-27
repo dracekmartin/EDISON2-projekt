@@ -170,6 +170,34 @@ public class SystemTemplateSeedTests
         }
     }
 
+    /// <summary>Dlouhá pomlčka nesmí být nikde v šabloně - ani v oddělovači poznámek, který se tiskne
+    /// (do 26. 10. ji měly výchozí šablony zastávkových JŘ: „A — jede přes…", `B194` T9).</summary>
+    [Theory]
+    [MemberData(nameof(AllTemplates))]
+    public void SablonaNemaDlouhouPomlckuNikde(string fileName)
+    {
+        var koren = System.Text.Json.Nodes.JsonNode.Parse(
+            File.ReadAllText(Path.Combine(SystemTemplatesDir(), fileName)))!;
+        var nalezy = new List<string>();
+        void Projdi(System.Text.Json.Nodes.JsonNode? uzel, string cesta)
+        {
+            switch (uzel)
+            {
+                case System.Text.Json.Nodes.JsonObject o:
+                    foreach (var (k, v) in o) Projdi(v, $"{cesta}.{k}");
+                    break;
+                case System.Text.Json.Nodes.JsonArray a:
+                    for (int i = 0; i < a.Count; i++) Projdi(a[i], $"{cesta}[{i}]");
+                    break;
+                case System.Text.Json.Nodes.JsonValue h when h.TryGetValue<string>(out var s) && s.Contains('—'):
+                    nalezy.Add(cesta);
+                    break;
+            }
+        }
+        Projdi(koren, "");
+        Assert.True(nalezy.Count == 0, $"{fileName}: dlouhá pomlčka v {string.Join(", ", nalezy)}");
+    }
+
     [Fact]
     public void KazdaSablonaMaVlastniId()
     {

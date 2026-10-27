@@ -23,78 +23,20 @@ opravit do té doby - zákazník pak změnu tisku vůbec neuvidí.
 
 ## 1. Chyby k opravě
 
-- **C9 Linkový AD čte formát data u linky o režim vedle** [S] **tisk** (*ověřeno:* kód). Starý modul ukládá
-  nastavení u linky posunuté o 1 (0 = nenastaveno) a při čtení odečítá (`JRapiNZUtl2.mac:190-193`);
-  `LinkovyJrAd.TiskDtm` (:745-747) bere hodnotu bez odečtu. Počet linek nezměřen: sonda
-  `LinkovyJrNastaveniProbe` klíč nesleduje - přidat `TiskDtm` do `PATCHKLICE` a spustit `Vyskyt`.
-- **C10 „Uložit jako" přepojí šablonu na jinou agendu, i nezveřejněnou** [S] (*ověřeno:* kód, server).
-  Pole Agenda nabízí vše z `ListAgendy` včetně Faktur a rozdílového (`SaveTemplate.AddAgendyItems`), uložení
-  přepíše `AgendaCode` bez výměny schématu (`SaveToCacheAsAsync` :2493). Odporuje pravidlu „změna agendy =
-  nová šablona" (`ChangeAgendaDialogViewModel`). Obecná agenda v nabídce chybí. Návrh: agendu jen ukázat.
-- **C11 Chyba u jedné linky zastaví tisk všech** [M] (*ověřeno:* kód). Linka bez dat už tisk nezastaví
-  (`0ba002d1`), výjimka ze serveru ano: `NacitaniVsechLinek` (:2380) nemá ošetření pro každou linku.
-  Hláška je technická: „LINKA_ID is required", „Linka 1/380761 neexistuje v ^JRL" (`ZastavkoveJrAd.cls:236`,
-  `LinkovyJrAd.cls:550`, `LinkovyJrMhd.cls:236`, `ZastavkoveJrMhd.cls:292`) a nese kód agendy
-  (`CacheAgendaProvider.GetDataSDuvodem`). Návrh: chybu linky zařadit mezi vynechané; linka, která v JŘ
-  není, jako `DUVOD_PRAZDNE` s větou pro uživatele.
-- **C12 Výchozí vývěska MHD: nadpisy skupin dnů a minuty se nevejdou** [M] (*ověřeno:* jen zkušební
-  vykreslení `ZkouskaTiskuNaostro`, KV_DP linka 17 se čtyřmi skupinami dnů, 24. 10.; v návrháři
-  neověřeno). Dvouřádkový nadpis („Pracovní den" / „1.7. - 31.8. a 27.12. - …") přetéká do sousední
-  skupiny a druhý řádek přepisuje „Hod"; ve čtvrté skupině jsou minuty vpravo uříznuté („47 4").
+Všechny hotové (C1-C12, 23.-26. 10.) - viz `roadmap-archive.md` a changelog.
 
 ## 2. Tisk - rozdíly mezi agendami
 
 Všechno mění vytištěný výstup vydaných agend, proto **Jan** u každé. Kde je doložená parita se starým
 modulem, stojí u položky; bez ní je rozdíl nahodilý.
 
-- **T1 Vývěska AD neoznačuje spoje „na objednání" a „podmínečně"** [M] (*ověřeno:* kód; sonda
-  `AtributySpojuVyskyt`: RBU 169 linek, RBP 21). Linkový AD kreslí telefon / vykřičník s vysvětlivkou
-  (`LinkovyJrAd.BuildSpoj`, `AtributSablona`), vývěska nic (`ZastavkoveJrAd.NacistOdjezdy`, anotace
-  :1032-1037). **Mezera proti starému modulu**, ten to tiskl (`JRapiLinPrtMhd1.mac:68-69, 231-241`,
-  `JRapiExp10.mac:606-615`). Doporučení: doplnit.
-- **T2 Vývěska AD nebarví obarvené spoje** [M] (*ověřeno:* kód; 3 926 spojů s barvou). Linkový AD barví
-  (`LinkovyJrAd.BuildSpoj` :1429, volba „Barvy spojů"), vývěska posílá `FORE_COLOR` vždy prázdné
-  (`ZastavkoveJrAd.BuildOdjezd`). **Mezera proti starému modulu** (`JRapiLinPrtMhd1.mac:56`,
-  `JRapiExp10.mac:602-605`). Doporučení: doplnit se stejnou volbou.
-- **T3 Text omezení u značky je na vývěsce AD jiný** [M] (*ověřeno:* kód, server CB_CSADAD 0330510).
-  „nejede 24.12.22, 31.12.22" × linkový „nejede 24.12.22,31.12.22"; vývěska tiskne rok vždy dvoumístně
-  (linkový podle nastavení firmy: 0 VS_CSAD, KV_DP, SKNI_MHDNITRA; 1 CB_CSADAD, ZL_KOVED; 3 CB_GWBUS), má
-  předložky natvrdo místo číselníku NCOME, jiné pořadí typů omezení a nevypíše „jen v sudých/lichých
-  týdnech". `ZastavkoveJrAd.SestavTextOmezeni` (:2608) × `LinkovyJrAd.SestavTextOmezeni` (:2190).
-  Parita vývěsky **nedoložena**: starý vývěskový tisk volá tutéž rutinu jako knižní
-  (`JRapiLinPrtMhd1.mac:155` → `JRapiNZUtl2.mac:110-135`), linkový AD je proti ní ověřený oraclem.
-  Doporučení: jedna metoda, předem porovnat `ZastavkoveJrAdLegacyTest.LegacyStrankaProbe`.
-- **T4 Vysvětlivka téže značky zní v každé agendě jinak** [S] (*ověřeno:* kód, server). Bezbariér
-  („spoj má bezbariérově přístupné vozidlo" jen vývěska AD), překlep **„částečne"** v obou AD (starý modul
-  ho měl taky), „na znamení" (linkový AD bere ze STALCOME, vývěska vědomě Jan), přestup na autobus tři
-  znění (vývěska AD vlastní text `TextPrestupu`). Doporučení: překlep opravit, přestup vývěsky ze STALCOME,
-  zbytek rozhodnout.
-- **T5 Linkový MHD slije dvouřádkový nadpis skupiny dnů** [M] (*ověřeno:* server CB_DP 11350). Tiskne
-  „Pracovní dny prázdniny", vývěska MHD dva řádky (požadavek DPKV #10660). `LinkovyJrMhd.NactiSkupinyProvozu`
-  (:563-574); prvek Tabulka spojů čte jen `NADPIS`. Návrh: přidat `NADPIS2` a naučit ho prvek - **ideálně
-  před 27. 10.** Souvisí: vývěska AD má nadpisy skupin dnů natvrdo česky (`NacistSkupinyDnu` :851), starý
-  tisk bral číselník firmy (`JRapiLinPrtMhd1.mac:541-571`) - nejdřív změřit, u kolika firem se liší.
-- **T6 Dopravce v pěti tvarech** [S] (*ověřeno:* server). Vývěska AD po řádcích s adresou a „tel:" (#13158,
-  vědomé), linkový AD jedním řádkem „tel." bez adresy (ověřený oraclem), pole `DOPRAVCI_SOUHRNNY_JR`
-  „…,Hálkova…,tel:386100111" bez mezer (`ZastavkoveJrAd.NazevDopravce` :3011; nové pole #13008, tvar převzalo,
-  pinuje ho zlatý odtisk), linkový MHD „PSČ obec, ulice" × vývěska MHD „ulice, PSČ obec"
-  (`ZastavkoveJrMhd.RadkyDopravce`). Návrh: souhrnné pole na oddělovače linkového AD, pořadí u linkového
-  MHD **před 27. 10.**, „tel:" × „tel." rozhodnout.
-- **T7 „Jen nástup / jen výstup" chybí jen na vývěsce AD** [S-M] (*ověřeno:* kód). Ostatní tři kreslí šipku
-  a vysvětlivku; vývěska je řadí mezi tiskové pokyny (`ZastavkoveJrAd.JeViditelnyAtribut` :2539). Parita se
-  starou vývěskou (tiskla jen „x"), počet zastávek nezměřen.
-- **T8 Zóny se počítají čtyřmi pravidly** [S] (*ověřeno:* kód). Každé je parita se svým starým modulem
-  (`ZastavkoveJrAd.ZonyZastavky`, `LinkovyJrAd.BuildZastavkaRadek`, `LinkovyJrMhd.ZonyZastavky`,
-  vývěska MHD bez filtru IDS). Doporučení neměnit; opravit komentář `LinkovyJrMhd.cls:533-535`
-  („jako u zastávkového JŘ MHD" neplatí).
-- **T9 Oddělovač v legendě vývěsek je dlouhá pomlčka** [S] (*ověřeno:* kód). `zastavkovy-jr-ad.json:201`,
-  `zastavkovy-jr-mhd.json:201` (znak U+2014), linkové šablony tři mezery, výchozí prvku „ - ". Pravidlo projektu
-  dlouhou pomlčku zakazuje; parita se starým tiskem neověřena.
-- **T10 Drobnosti** [S]. Pokračování spoje v linkovém AD je natvrdo česky i ve slovenské šabloně
-  (`LinkovyJrAd.BuildSpoj` :1649, komentář tvrdí číselník) - zjevná oprava. Stanoviště „, stan.16" (linkový
-  AD, parita) × „, označník 3" (vývěska AD, bez opory); rozdíly tras „neobsluhuje zast." × „nezajíždí do"
-  (parita obou) - neměnit.
-
+- **T7 „Jen nástup / jen výstup" chybí jen v Zastávkovém JŘ AD** [M] **odloženo, Jan 26. 10.** (*ověřeno:*
+  kód, data). Ostatní tři kreslí šipku a vysvětlivku; starý zastávkový tisk to neměl. Rozhodnuto: jako
+  volba u seznamu zastávek, výchozí vypnutá. **Otevřené:** N / V není atribut zastávky (`J`), ale trasy
+  spoje (`W` pole 5) - liší se mezi trasami téže linky (CB_CSADAD 996/0360022: trasa 1 má V na pořadí
+  12-6, jiné trasy tam projíždějí). Návrh: šipka jen když platí pro všechny spoje z vývěsky, které
+  zastávku obsluhují. Rozpracovaný kód (volba, piktogram, legenda) v `git stash` „B194 T7 rozpracovane";
+  sonda `NastupVystupVyskyt` (CB_CSADAD 702 linek s V, VS_CSAD 2 816).
 ## 3. Nabídka dat a parametry sestavy
 
 Popisky a nápovědy výstup ani uložené volby nemění (návrhář je bere ze serveru). Popisky citují i nové
@@ -151,72 +93,32 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
   Linkový „Stránka pro každou zastávku" v Obecné × vývěska „Samostatná stránka pro každé stanoviště"
   ve skupině Seznam zastávek (s ní „Číslo stanoviště podle"). Pravidlo linkového JŘ (Jan 31. 8.): co mění
   složení sestavy, patří do Obecné. Návrh: Obecné, „Stránka pro každé stanoviště".
-- **P4 Linkový MHD: skupina „Typy provozu pro tisk" mimo pravidlo** [S] **Jan** (*ověřeno:* server). Není
-  „Obecné" ani název prvku, je poslední, i když je to hlavní volba tabulky; drift test ji nevidí (název
-  parametru se skládá za běhu). Vědomá výjimka v testu, nebo „Tabulka spojů" - **před 27. 10.**
 - **P5 Linkový AD výlepy: bez pořadí stránek a PDF na zastávku** [M] **Jan** (*ověřeno:* kód). Stránky jdou
   vždy po směrech (`LinkovyJrAd.VypisVylepy`), vývěska nabízí „Po zastávkách"; export „Jeden PDF na
   zastávku" se nabízí jen agendám druhu STOP (`AgendaParams.AddExportFields`).
 - **P6 „Obousměrný tisk" svítí i při jednom směru** [S] (*ověřeno:* server). Doplnit `visibleWhen`
   `SMER_TISKU=Oba` podle vzoru vývěsky, větu z nápovědy Směru pro tisk vypustit.
-- **P7 Nápovědy parametrů** [S] (*ověřeno:* server). Zakázané „nástupiště" (`ZastavkoveJrAd` :3548),
-  řazení variant popisuje 3 ze 4 voleb, „s okresem i jeho zkratku" gramaticky (`BaseAgenda` :352),
-  „Projíždí-li linka město víckrát" u MHD nedává smysl (`LinkovyJrAd.ParametrZvyrazneniZastavky`, **před
-  27. 10.**), „u prvku tabulky" místo „Tabulka spojů" (`LinkovyJrAd` :203), střídá se „Vypnuto =" /
-  „Vypnuté =" / „Vypnutím". Typ „text" u dvou parametrů je mimo dokumentovaný kontrakt (`string`).
 
 ## 4. Prvky a formuláře
 
 Mění se jen popisky a struktura formulářů, klíče vlastností v šablonách zůstávají. Tady je nejvíc práce
 a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions §8` (Jan), pak sjednocovat.**
 
-- **E1 Strom šablony ukazuje anglické názvy tříd** [S] (*ověřeno:* kód). `[Z0] DepartureGrid: Odjezdy auto`,
-  `Rectangle: Fill=#…` (`TemplateTreePanel.CreateElementNode`, `TemplateElement.GetSummary`). Správné názvy
-  dává `ElementNames.SPopisem`.
-- **E2 Okna nastavení se jmenují jinak než prvky** [S] (*ověřeno:* kód). „Zastávky - nastavení", „Odjezdy -
-  nastavení", „Linkový JŘ - nastavení" (proti kanonu), „Tabulka - nastavení"; Tabulka z dat má čtyři názvy.
-  Návrh: „Vlastnosti - {název prvku}" všude, test rozšířit na titulky.
 - **E3 Styl záhlaví a buněk má pět podob** [L] **Jan** (*ověřeno:* kód, server). Plný balíček (Seznam
   zastávek, Tabulka z dat), záhlaví za tlačítkem (Minuty), jen velikost a dvě barvy (Tabulka spojů), bez
   tučného (Poznámky). Skupina „Značky u odjezdů" má 37 polí, pořadí skupin nemá kostru (Minuty začínají
   „Skupiny dnů", Tabulka spojů „Řádky"). Návrh: kostra Obecné → specifické → Záhlaví → Buňky →
   Rámeček/Mřížka/Pozice/Podmínky, zóna stylu vždy stejným balíčkem `StyleFields`.
-- **E4 Záhlaví × nadpis** [S] (*ověřeno:* server). „Záhlaví skupin dnů" (Minuty) × „Nadpisy skupin dnů"
-  (Tabulka spojů), „Nadpis popisných sloupců", „Styl 2. řádku nadpisu", v dialogu Minut obojí. Kanon říká
-  „Záhlaví". Přesun do skupiny Obecné **Jan**.
 - **E5 Seznam zastávek nabízí v MHD věci z AD** [M] (*ověřeno:* kód). Sloupec „Sloupek" (MHD ho nemá) a
   nápověda „Více stanovišť" s odkazem na parametr, který MHD nemá. Skrývání podle agendy už mají Poznámky
   a Tabulka spojů (`ViditelnostPole`).
-- **E6 „Zarovnání" vedle „Svisle"** [S]. `StyleFields.cls:34` → „Vodorovně" (kanon); „Zarovnání záhlaví"
-  v Minutách je jen svislé.
-- **E7 „Element" × „prvek", „ZIndex" × „Vrstva", „engine"** [M] **Jan** (*ověřeno:* kód). Společná pole
-  (`BaseElementFields.cls`: „Rámeček elementu", „Uzamčený element…", „(počítá engine)", „ZIndex"), lišta
-  „Elementy", krok zpět „Přidat element", dialogy sloupců. Návrh: do kanonu „prvek" a „Vrstva";
-  `BorderGroup` změnit v `.cls` i C# naráz.
 - **E8 Význam prázdné hodnoty pěti zápisy, různé rozsahy** [M] **Jan**. „(prázdné = auto)", „(0 = ∞)",
   „(0 = ne)", „(0 = bez limitu)", „(0=vedle)"; výška řádku 1-50 / 1-20 / 2-15 / 2-50 mm, písmo 4-200 ×
   3-24 pt. Návrh: popisek = podstatné jméno, význam prázdna do nápovědy, rozsahy sjednotit.
-- **E9 Minuty × Tabulka spojů pro tentýž pojem** [S] **Jan**. „Oddělovač skupin" × „Mezera mezi skupinami
-  sloupců", „Mezera minuta ↔ značka" × „Mezera mezi značkou a časem", „Velikost značek/minut" jsou poměry
-  vedle „Velikost" v bodech (kanon: Velikost = pt).
-- **E10 Aktuální zastávka v Seznamu zastávek** [S]. „Tučně aktuální zast.", „Podtržení aktuální zast.",
-  C# a Nápověda tomu říkají „Zvýraznění" (plete se se „Zvýraznění řádků"). Návrh: skupina „Aktuální
-  zastávka", „Aktuální: Tučné / Podtržení / …".
-- **E11 Popisky C# a formuláře se rozcházejí** [M] (*ověřeno:* kód). Uživatel je vidí v protokolu importu
-  z PDF, v náhradním panelu a mluví jimi AI („Šířka sl. hodin", „Zalamování", „Výplň"). Návrh: `G6`.
-  `mvvm-patterns.md:14` tvrdí, že úprava více prvků jde přes deskriptory - umí jen 4 pevná pole.
-- **E12 Katalog sloupců Tabulky spojů jinak než data** [S]. „Zastávka", „Zóna", „MHD / IDS" × data
-  „Název zastávky", „Zóny", „MHD/IDS"; „TČ" × „Tč"; „popisné" × „popisové" × „sloupce popisu".
-- **E13 Dialogy sloupců mají každý jiné ovládání** [M]. „+ Přidat" × „Přidat", „▲" × „▲ Nahoru" × „Nahoru",
-  „×" × „Vymazat", nadpisy sekcí; Tabulce spojů chybí „Přizpůsobit sloupce". Návrh: do sdíleného
-  `ColumnListEditor`.
-- **E14 Tabulka spojů ukazuje interní pole** [S] **Jan**. „Kolekce zastávek/spojů/skupin dnů" s klíči
-  `ZASTAVKY`… ve skupině Podmínky (`LineTableElementEdit.cls:172-174`) - skrýt.
-- **E15 Texty nápověd** [S]. Tykání vedle vykání (`ImageElementEdit`, `CellStyleEditor`, `StyleEditDialog`,
-  dva dialogy sloupců), „engine", „padding", „dědit od rodiče", „Dashed=3mm", v F1 „pohledna definici"
-  a cesty, které v UI nejsou. Dlouhá pomlčka v komentářích `App.xaml.cs:17, 210`.
-- **E16 Drobnosti** [S]. Skupina „Rozměry a mřížka" bez mřížky; „Mřížka" znamená čáry tabulky i pomocnou
-  mřížku lišty; barva negativní značky dvěma popisky; Tabulka spojů má ikonu Seznamu zastávek.
+- **E13 Dialogy sloupců mají každý jiné ovládání** [M]. (a) popisky tlačítek hotové (changelog 2026-10-26
+  (38), (39)); (b) uzavřeno bez změny - v Tabulce spojů se zadávají jen popisné sloupce, šířku spojů
+  dopočítá tabulka, „Přizpůsobit" by spojům vzalo místo. Zbývá (c) sloučení do sdíleného `ColumnListEditor`
+  (odloženo s E3).
 
 ## 5. Aplikace a dokumentace
 
@@ -246,7 +148,7 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   u dopravce, číslo stanoviště podle); cesta ve stromu EDISONu (:12) není ani v `prirucka-it.md`.
 - **H2 Nápověda F1** [S]. `HelpDialogViewModel.BuildContent`: štítek „Instance" (:96), import PDF v menu
   Nástroje, který běžný uživatel nemá (:116), „linkový a knižní JŘ" jako dvě sestavy (:244, :308,
-  `CapabilityCatalog.cs:327`), „pohledna" (:301).
+  `CapabilityCatalog.cs:327`) („pohledna" opraveno v E15).
 
 ## 6. Pojistky - testy, které by tyto nálezy chytily
 
@@ -267,7 +169,6 @@ totéž znovu. Pořadí podle přínosu:
 - **G4 Ban list i na nápovědy, části slov a titulky oken** [S]. Odtud „nástupiště" (`P7`), „engine" (`E7`),
   „Tučně" uvnitř popisku (`E10`), „Linkový JŘ - nastavení" (`E2`).
 - **G5 Každé tlačítko formuláře má obsluhu v každém hostiteli** [S]. Odtud `C2`.
-- **G6 Deskriptor C# a formulář `.cls` u téhož klíče mají stejný popisek a skupinu** [S-M]. Odtud `E11`.
 - **G7 Drobné díry drift testů** [S]. Regex schématu nevidí `AddField(kolekce.%Get("fields"), …)` (rozdílový
   `VERZE`, `TC_PUVODNI`, `ZONY_PUVODNI`) a chytá zakomentované řádky; parametry se jménem skládaným za
   běhu (`P4`) a pořadí „Obecné první" u vývěsek a linkového MHD (definice v pomocných metodách) test nevidí.
@@ -317,7 +218,26 @@ totéž znovu. Pořadí podle přínosu:
 
 ## 8. Co je v pořádku
 
-- Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (výjimka `P4`);
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** nadpis skupiny dnů je ve vývěsce MHD dvouřádkový, v linkovém
+  MHD jedním řádkem (`T5`). Vývěska má úzké sloupce skupin, v Tabulce spojů se nadpis táhne přes všechny
+  spoje skupiny. Požadavek DPKV #10660 se týkal vývěsky. Dva řádky v linkovém by se dělaly novým polem.
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** telefon dopravce „tel:" ve vývěskách a „tel." v linkových JŘ
+  (`T6`) - každý tvar odpovídá svému starému tisku a vývěsky jsou vydané.
+- **Vědomě jinak (rozhodnutí Jan 26. 10., potvrzuje srpnové):** vysvětlivka „na znamení" je v Zastávkovém
+  JŘ AD krátká a napevno („na znamení", `ZastavkoveJrAd.TextAtributu`), Linkový JŘ AD ji bere z číselníku
+  stálých značek firmy („zastávka je jen na znamení nebo požádání"), agendy MHD z číselníku atributů MHD
+  (`T4c`). Starý zastávkový tisk měl „zastávka pouze na znamení".
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** zóny zastávky skládá každá agenda pravidlem svého starého
+  modulu (`T8`): Zastávkový AD z trasy linky se záskokem na registr (`ZonyZastavky`), Linkový AD jen z trasy
+  a „-" (`BuildZastavkaRadek`), Zastávkový MHD všechny zóny bez filtru systému, Linkový MHD jen systém
+  linky spojené „/" (`ZonyZastavky`). Rozdíl je vidět jen u zastávek se zónou mimo trasu nebo ve dvou IDS.
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** stanoviště u názvu zastávky (`T10b`). Linkový JŘ AD ho
+  tiskne v řádku tabulky u zastávky s příznakem trasy „S" jako „, stan.16" (parita starého linkového tisku,
+  `LinkovyJrAd` :1011), Zastávkový JŘ AD jen v nadpisu rozdělené vývěsky jako „, označník 3" / „, sloupek 1"
+  (vzor KOVED #8828, `ZastavkoveJrAd` :718). Jiné místo i účel, zkratka „stan." neumí rozlišit označník
+  a sloupek.
+
+- Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (od 26. 10. i typy provozu, `SkupinyParametruTest`);
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,
   zvýraznění zastávky) mají stejný klíč i popisek; `serverSide` sedí oběma směry.
 - Data: obě čísla linky ve všech agendách pod stejným klíčem i popiskem; kolekce `ZASTAVKY`, `SKUPINY_DNU`,

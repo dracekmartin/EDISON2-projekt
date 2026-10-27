@@ -40,15 +40,14 @@ public partial class TemplateTreePanel : UserControl
 
             var root = new TreeViewItem
             {
-                Header     = $"Template: {template.Name}",
+                Header     = TemplateTreeNames.Sablona(template),
                 FontWeight = FontWeights.Bold,
                 IsExpanded = true
             };
 
-            var ps = template.PageSize;
             root.Items.Add(new TreeViewItem
             {
-                Header     = $"PageSize: {ps.Width}x{ps.Height}mm  (L={ps.MarginLeft} T={ps.MarginTop} R={ps.MarginRight} B={ps.MarginBottom})",
+                Header     = TemplateTreeNames.Stranka(template.PageSize),
                 Foreground = Brushes.Gray
             });
 
@@ -56,7 +55,7 @@ public partial class TemplateTreePanel : UserControl
             {
                 var sNode = new TreeViewItem
                 {
-                    Header     = $"[{section.PrintBehavior}] {section.Name}  ({section.DesignerHeight?.ToString("0.#") ?? "auto"} mm)",
+                    Header     = TemplateTreeNames.Sekce(section),
                     Tag        = section,
                     IsExpanded = true,
                     FontWeight = section == _vm.State.ActiveSection ? FontWeights.SemiBold : FontWeights.Normal
@@ -73,7 +72,7 @@ public partial class TemplateTreePanel : UserControl
                         var groupMembers = orderedElements.Where(e2 => e2.GroupId == el.GroupId).ToList();
                         var groupNode = new TreeViewItem
                         {
-                            Header     = $"[G] {el.GroupId}  [{groupMembers.Count} elem.]",
+                            Header     = TemplateTreeNames.Skupina(groupMembers.Count),
                             Tag        = el.GroupId,
                             IsExpanded = true,
                             FontStyle  = FontStyles.Italic
@@ -110,12 +109,10 @@ public partial class TemplateTreePanel : UserControl
 
     private TreeViewItem CreateElementNode(TemplateElement el)
     {
-        string typeName   = el.GetType().Name.Replace("Element", "");
-        string details    = TemplateElement.GetSummary(el);
-        bool   isSelected = _vm!.State.SelectedElements.Contains(el);
+        bool isSelected = _vm!.State.SelectedElements.Contains(el);
         return new TreeViewItem
         {
-            Header     = $"[Z{el.ZIndex}] {typeName}: {details}",
+            Header     = TemplateTreeNames.Prvek(el),
             Tag        = el,
             FontWeight = isSelected ? FontWeights.Bold  : FontWeights.Normal,
             Foreground = isSelected ? Brushes.Blue      : Brushes.Black

@@ -89,7 +89,7 @@ public class PdfImportDialogViewModel : EDViewModel
             $"Zastávkový jízdní řád - AI rozpozná strukturu (zastávky, odjezdy, poznámky) a namapuje pole agendy {SelectedAgendaName}.",
         ScheduleImportType.LinkovyJr =>
             $"Linkový jízdní řád - AI rozpozná tabulku spojů, poznámky a texty v hlavičce a namapuje pole agendy {SelectedAgendaName}.",
-        _ => "Obecný layout - texty a grafika se převezmou 1:1 jako elementy šablony.",
+        _ => "Obecný layout - texty a grafika se převezmou 1:1 jako prvky šablony.",
     };
 
     private string SelectedAgendaName =>
@@ -247,7 +247,7 @@ public class PdfImportDialogViewModel : EDViewModel
                 PopupDisplayer.Info(
                     "PDF neobsahuje rozpoznatelný textový obsah.\n" +
                     "Možná se jedná o skenovaný dokument bez OCR vrstvy.\n\n" +
-                    "Šablona bude vytvořena se správnými rozměry stránky, ale bez elementů.");
+                    "Šablona bude vytvořena se správnými rozměry stránky, ale bez prvků.");
             }
 
             // Debug logy vedle PDF - jen se zaškrtnutým Debug (vývojář); bez popupu,
@@ -263,11 +263,11 @@ public class PdfImportDialogViewModel : EDViewModel
             if (StatusText.StartsWith("AI"))
             {
                 // Zachovat AI status a doplnit celkový výsledek
-                StatusText += $" | Import: {template.Sections.Count} sekcí, {elementCount} elementů";
+                StatusText += $" | Import: {template.Sections.Count} sekcí, {elementCount} prvků";
             }
             else
             {
-                StatusText = $"Import dokončen: {template.Sections.Count} sekcí, {elementCount} elementů";
+                StatusText = $"Import dokončen: {template.Sections.Count} sekcí, {elementCount} prvků";
             }
 
             SaveProtocolFile(pdfPath, enableDebug);

@@ -51,6 +51,14 @@ Dílčí vylepšení a náměty.
 - **Zastávkový JŘ MHD:** přestupy na vlak a autobus se v seznamu zastávek i v poznámkách tisknou
   obrázkem (přestup na vlak dřív vyšel jako písmeno „x"). Řídí je volba **Přestupy (vlak/autobus)**
   u seznamu zastávek. Výchozí šablona ji má zapnutou, ve vlastní uložené šabloně si ji zapněte.
+- **Zastávkový JŘ AD:** spoje na objednání mají u minuty telefon a podmínečné spoje vykřičník,
+  v poznámkách s vysvětlením, jak spoj objednat (text spoje, linky nebo nastavení firmy). Totéž
+  upřesnění nově tiskne i linkový JŘ AD.
+- **Barvy spojů:** zastávkový JŘ AD tiskne minuty barvou spoje z jízdních řádů jako linkový JŘ.
+  V obou se to vypíná zaškrtávátkem **Barvy spojů** v parametrech sestavy.
+- **Nadpisy sloupců dnů** (pracovní dny, soboty…) bere zastávkový JŘ AD z nastavení jízdních řádů
+  vaší firmy, i dvouřádkové a dvojjazyčné, jako starý tisk a linkový JŘ. Nadpisy upravené v šabloně
+  platí dál.
 
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 
@@ -77,7 +85,7 @@ Dílčí vylepšení a náměty.
 
 ### Týden od 28. 9. 2026 · Návrhář - Doklady o více stránkách, kontrola před tiskem
 
-- Šablona může mít víc stránek (např. líc a rub dokladu), přidávají se tlačítkem **„+ Stránka"**.
+- Šablona může mít víc stránek (např. líc a rub dokladu), přidávají se tlačítkem **„Přidat stránku"**.
 - Při tisku lze druhou stránku dokladu dát vedle první, nebo na zadní stranu listu.
 - PDF a PNG se vytváří jen v okně **Tisk**, tlačítka na liště byla zrušena.
 - Hlášky k tisku jsou vpravo dole v jednom bloku podle závažnosti (informace, upozornění,

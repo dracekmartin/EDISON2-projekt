@@ -11,7 +11,7 @@ public class GroupCommand : IDesignerCommand
     private readonly string _newGroupId;
     private readonly Dictionary<TemplateElement, string?> _previousGroupIds;
 
-    public string Description => "Seskupit elementy";
+    public string Description => "Seskupit prvky";
 
     public GroupCommand(IEnumerable<TemplateElement> elements, string groupId)
     {

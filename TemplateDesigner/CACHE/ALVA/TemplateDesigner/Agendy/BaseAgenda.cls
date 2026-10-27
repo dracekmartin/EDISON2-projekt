@@ -228,6 +228,140 @@ ClassMethod RgbNaHex(rgb As %String) As %String
     q out
 }
 
+/// Věta o platnosti spoje AD „jen v sudých / lichých týdnech" (`dlouhodoba` = hlava:8, 4 sudé, 5 liché)
+/// z číselníku firmy (NCOME SU/LI), jinak české znění. Stojí na začátku textu omezení - 1:1 legacy
+/// `gComNZLiSp` (`JRapiNZUtl2.mac:125-128`), který volá starý zastávkový i linkový tisk AD.
+/// Zastávkový JŘ AD ji do 26. 10. vynechával (`B194` T3a).
+ClassMethod TextTydnuPlatnosti(dataDB As %String, rec As %String, dlouhodoba As %String) As %String
+{
+    i (dlouhodoba '= 4) && (dlouhodoba '= 5) q ""
+    q ..PredlozkaOmezeni(dataDB, rec, $s(dlouhodoba=4:14, 1:15))
+}
+
+/// Předložka typu omezení AD (`omzId`): 11 jede jen, 12 jede také, 13 jede, 22 nejede, 14 / 15 jede
+/// jen v sudých / lichých týdnech. Z číselníku firmy `^JRSET("NCOME",rec,…)` (14 / 15 pod klíči SU / LI),
+/// jako starý zastávkový i linkový tisk (`gComNZOmz`, `JRapiNZUtl2.mac:146-153`) - zákazník si znění
+/// může přepsat, `rec` = „CZ" nebo „*SK". Bez číselníku (nebo `dataDB` prázdné) standardní znění.
+/// Do 26. 10. měl Zastávkový JŘ AD předložky napevno, u sudých týdnů zkratkou „jede jen v su."
+/// a ve slovenštině „premáva aj" (`B194` T3d).
+ClassMethod PredlozkaOmezeni(dataDB As %String, rec As %String, omzId As %String) As %String
+{
+    s txt = ""
+    i dataDB '= "" s txt = $g(^[dataDB]JRSET("NCOME",rec,$case(omzId, 14:"SU", 15:"LI", :omzId)))
+    q $s(txt '= "":txt, 1:..PredlozkaOmezeniStandard(rec, omzId))
+}
+
+/// Standardní znění předložek omezení - totéž, co mají v číselníku všechny měřené firmy
+/// (sonda `LinkovyJrNastaveniProbe.PredlozkyOmezeni`, 26. 10.).
+ClassMethod PredlozkaOmezeniStandard(rec As %String, omzId As %String) As %String
+{
+    i rec = "*SK" q $case(omzId, 11:"premáva len", 12:"premáva tiež", 13:"premáva", 14:"premáva len v párnych týždňoch", 15:"premáva len v nepárnych týždňoch", 22:"nepremáva", :"")
+    q $case(omzId, 11:"jede jen", 12:"jede také", 13:"jede", 14:"jede jen v sudých týdnech", 15:"jede jen v lichých týdnech", 22:"nejede", :"")
+}
+
+/// Režim tisku roku v datech omezení AD (legacy TiskDtm): nastavení u linky, jinak u firmy.
+/// 0 = rok jak je v datech (celý), 1 = rok dvoumístně, 2 = rozsahy bez roku v „od", 3 = bez roku.
+/// Firma bez nastavení = 0, jako starý tisk - data jsou uložená s celým rokem, takže výchozí tvar
+/// je jednoznačný. Až se nastavení přesune nebo zruší, mění se jen tady.
+/// ⚠️ U linky je režim uložený **o 1 výš** (0 = nenastaveno), u firmy bez posunu - jako starý tisk
+/// (`JRapiNZUtl2.mac:186-190`). Do 26. 10. se u linky nic neodečítalo a 5 tisíc linek s „rokem
+/// dvoumístně" tisklo data bez roku (`B194a` C9). Zastávkový JŘ AD režim do 26. 10. nečetl vůbec
+/// a tiskl rok vždy dvoumístně, ač starý zastávkový tisk se jím řídí (`B194` T3c).
+ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integer
+{
+    s v = +$g(^[dataDB]JRL(sku,lin,"PATCH","TiskDtm"))
+    q $s(v > 0:v - 1, 1:+$g(^[dataDB]JRSET("Definice","TiskDtm")))
+}
+
+/// Datumová část omezení AD jako starý tisk (`JRapiNZUtl2.mac` gComOddO :197-222): položky (`#`)
+/// spojené ", ", rozsah `od:do` → "od D1 do D2"; shodné nebo chybějící „do" = jedno datum. Datumy
+/// dle režimu `TiskDtm` (viz `UpravDatum`). Společné pro Zastávkový i Linkový JŘ AD.
+///
+/// Vědomě jinak: starý linkový tisk spojuje data čárkou bez mezery („24.12.22,31.12.22", mezeru má
+/// jen před „od"). Čárka s mezerou je tvar starého zastávkového tisku - obě agendy AD tak píšou totéž
+/// a dlouhý výčet se líp čte (`B194` T3b, rozhodnutí Jan 26. 10.).
+ClassMethod FormatDatumyOmezeni(omz As %String, tiskDtm As %Integer) As %String
+{
+    s data = $s(omz["@":$p(omz,"@",2), 1:omz)
+    s casti = ""
+    f i=1:1:$l(data,"#") {
+        s item = $p(data,"#",i)
+        i item = "" continue
+        s od = ..UpravDatum($p(item,":",1), tiskDtm), do = ..UpravDatum($p(item,":",2), tiskDtm)
+        i (do = "") || (do = od) { s cast = od }
+        else {
+            // režim 2: „od" bez roku, jen když je rok stejný jako u „do" (do 26. 10. vždy a u obou)
+            i (tiskDtm = 2) && ($p(od,".",3) = $p(do,".",3)) s od = $p(od,".",1,2)_"."
+            s cast = "od "_od_" do "_do
+        }
+        i casti '= "" s casti = casti_", "
+        s casti = casti_cast
+    }
+    q casti
+}
+
+/// Datum položky omezení: den a měsíc vždy bez úvodních nul a „d.m" s tečkou - starý tisk tak čistí
+/// data s nulou navíc v každém režimu. Režim 1 = rok dvoumístně, 3 = bez roku, 0 a 2 = rok jak je.
+ClassMethod UpravDatum(dat As %String, tiskDtm As %Integer) As %String
+{
+    i dat = "" q ""
+    i dat [ "." { f idx=1:1:2 { s $p(dat,".",idx) = +$p(dat,".",idx) } }
+    i dat ? 1.2N1"."1.2N s dat = dat_"."
+    i tiskDtm = 3 q $p(dat,".",1,2)_"."
+    i tiskDtm = 1 {
+        s rr = $p(dat,".",3)
+        i $l(rr) > 2 s $p(dat,".",3) = $e(rr,*-1,*)
+    }
+    q dat
+}
+
+/// Nadpisy skupin dnů AD z nastavení firmy, jako starý zastávkový tisk (`JRapiLinPrtMhd1.mac:541-571`):
+/// věta `^JRSET("Definice","WinMHD",rec,"DSC")` (kusy `~`) podle `rozlozeni` - 0 = pracovní / soboty /
+/// neděle a svátky (kusy 2-4), 1 = prázdninová trojice (5-7), 2 = pracovní / víkend (8-9),
+/// 3 = prázdninová čtveřice (10-13). Linka může mít vlastní sadu (`PATCH,ISY_LinkyTiskMHDNadpisy` →
+/// `^JRSET("LinkyTiskMHDNadpisy",sada,"R<rozlozeni+1>_SMO<i>")`), ta má přednost. Prázdný kus → i-tý kus
+/// `vychozi`. Výstup `t(i)` = nadpis, `t(i,2)` = druhý řádek (text za `<br>`, další `<br>` jako mezera).
+/// Zastávkový JŘ AD měl do 26. 10. nadpisy napevno česky (`B194` T11).
+ClassMethod NadpisySkupinDnuAd(dataDB As %String, sku As %String, lin As %String, rec As %String, rozlozeni As %Integer, vychozi As %String, ByRef t)
+{
+    k t
+    s dsc = "", sada = ""
+    i dataDB '= "" {
+        s dsc = $g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC"))
+        i (sku '= "") && (lin '= "") s sada = $g(^[dataDB]JRL(sku,lin,"PATCH","ISY_LinkyTiskMHDNadpisy"))
+    }
+    s prvniKus = $case(rozlozeni, 1:5, 2:8, 3:10, :2)
+    f i=1:1:$l(vychozi,"~") {
+        s txt = $p(dsc,"~",prvniKus+i-1)
+        i sada '= "" {
+            s vlastni = $g(^[dataDB]JRSET("LinkyTiskMHDNadpisy",sada,"R"_(rozlozeni+1)_"_SMO"_i))
+            i vlastni '= "" s txt = vlastni
+        }
+        i $tr(txt," ","") = "" s txt = $p(vychozi,"~",i)
+        s t(i) = $zstrip($p(txt,"<br>",1),"<=>W")
+        s t(i,2) = $zstrip($replace($p(txt,"<br>",2,99),"<br>"," "),"<=>W")
+    }
+}
+
+/// Parametr sestavy „Barvy spojů" agend AD jako volba: „Tisknout", „Netisknout", nebo prázdno =
+/// podle linky. Návrhář posílá checkbox `TISKNOUT_BARVY_SPOJU`; starší návrhář u linkového JŘ místo
+/// něj třístav `BARVY_SPOJU` (Automaticky (dle linky) / Tisknout / Netisknout), který se přebírá.
+/// Checkbox nahradil třístav 26. 10. (rozhodnutí Jan): nastavení u linky nemá v datech zapnuté
+/// žádná linka (sonda `BarvySpojuVyskyt`), takže volba „dle linky" nebyla k ničemu.
+ClassMethod VolbaBarevSpoju() As %String
+{
+    s zaskrtnuto = $zcvt($g(^||ML("IN","TISKNOUT_BARVY_SPOJU")),"L")
+    i zaskrtnuto '= "" q $s(zaskrtnuto = "true":"Tisknout", 1:"Netisknout")
+    q $g(^||ML("IN","BARVY_SPOJU"))
+}
+
+/// Tisknou se barvy spojů? `volba` z `VolbaBarevSpoju`; bez ní rozhodne linka
+/// (`PATCH,barevnyTiskSpoju` = 1 znamená tisknout černě, `JRapiLinPrtWin.mac:2085-2102`).
+ClassMethod TiskBarevSpoju(volba As %String, dataDB As %String, sku As %String, lin As %String) As %Boolean
+{
+    q $case(volba, "Tisknout":1, "Netisknout":0, :'+$g(^[dataDB]JRL(sku,lin,"PATCH","barevnyTiskSpoju")))
+}
+
 /// `serverSide` = hodnotu parametru zpracovává až `GetData`, takže její změna musí klientovi
 /// spustit načtení dat, ne jen překreslení náhledu. Dřív si ten seznam držel klient natvrdo a dalo
 /// se na něj zapomenout; příznak patří k definici parametru, kde se stejně píše.
@@ -354,7 +488,7 @@ ClassMethod ParametrTvaruNazvuZastavky(vychozi As %String) As %DynamicObject
     s p.group        = "Obecné"
     s p.serverSide   = 1
     s p.defaultValue = vychozi
-    s p.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek (tak tiskne starý linkový JŘ), s okresem i jeho zkratku - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
+    s p.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek (tak tiskne starý linkový JŘ) včetně okresu a jeho zkratky - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Zkrácený"), opts.%Push("Typograficky upravený"), opts.%Push("Plný CIS"), opts.%Push("Plný CIS s okresem")
     s p.options = opts
@@ -564,12 +698,46 @@ ClassMethod VydatDuvodPrazdne(vychozi As %String = "")
     k ^||TdDuvodPrazdne
 }
 
+/// ── Chyba v datech (`B194a` C11) ──
+/// Linku nejde vytisknout kvůli datům, která uživatel opraví (linka v JŘ není, spoj bez kalendáře…).
+/// Text řekne co a co s tím; návrhář ho ukáže jako informaci s číslem linky a tisk zastaví. Pozná ji
+/// podle tvaru obecné chyby (5001) - chyba v kódu ho nemá a zůstává chybou programu s hlášením.
+ClassMethod ChybaDat(text As %String)
+{
+    throw ##class(%Exception.StatusException).CreateFromStatus($system.Status.Error(5001, text))
+}
+
+/// Linka AD, která ve skupině není - přes výběr linek to nejde, jen spuštěním z EDISONu s linkou
+/// z jiné skupiny, nebo když ji někdo v JŘ smazal či přesunul, zatímco je v návrháři vybraná.
+ClassMethod TextLinkaNeniVJr(sku As %String, lin As %String) As %String
+{
+    q "Linka "_(+lin)_" ve skupině "_sku_" v jízdních řádech není. Mohla být smazána nebo přesunuta do jiné skupiny - vyberte linky znovu."
+}
+
 /// Razítko typu JŘ linky AD podle `PATCH,"OBJ"` (1 výluka, 2 návrh). Texty jako u MHD
 /// (`ZastavkoveJrMhd.TypJrLinky`), aby razítko vypadalo ve všech agendách stejně; starý postskriptový
 /// tisk AD psal u návrhu „návrh jízdního řádu" (rozhodnutí Jan 23. 10.: jednotně „NÁVRH").
 ClassMethod TypJrLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String
 {
     q $case(+$g(^[dataDB]JRL(sku,lin,"PATCH","OBJ")), 1:"VÝLUKOVÝ", 2:"NÁVRH", :"")
+}
+
+/// Upřesnění ke spoji AD „na objednání" (`klic` = RBU) nebo „podmínečně" (RBP), které se lepí za
+/// větu legendy: text u spoje, jinak u linky, jinak v nastavení firmy. Prázdné = bez upřesnění.
+/// 1:1 legacy `JRapiNZUtl3.mac:41-48, 118-130` (spoj `#10`/`#11` podle `JRapiSp.mac:192-193`,
+/// linka `PATCH,SP_TX_JOBJ/JPOD` podle `JRapiLin.mac:402-405`).
+///
+/// Starý vývěskový tisk bral jen text linky (`JRapiLinPrtMhd1.mac:234`); obě agendy AD berou
+/// celé pořadí, aby vývěska i linkový JŘ psaly totéž (rozhodnutí Jan 26. 10.).
+ClassMethod UpresneniAtributuSpoje(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, klic As %String) As %String
+{
+    s naObjednani = (klic = "RBU")
+    s txt = $g(^[dataDB]JRSET("Definice", $s(naObjednani:"PS_RADIOBUS_NZ_RBU", 1:"PS_PODMINECNE_NZ_RBP")))
+    s textLinky = $g(^[dataDB]JRL(sku,lin,"PATCH",$s(naObjednani:"SP_TX_JOBJ", 1:"SP_TX_JPOD")))
+    i textLinky '= "" s txt = textLinky
+    s textSpoje = $p($g(^[dataDB]JRL(sku,lin,smer,sp)), "#", $s(naObjednani:10, 1:11))
+    i textSpoje '= "" s txt = textSpoje
+    q $zstrip(txt, "<>W")
 }
 
 ClassMethod LokalniOznaceniLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String

@@ -14,7 +14,7 @@ public partial class App : Application
     {
         DispatcherUnhandledException += OnUnhandledException;
 
-        // Chyby mimo dispatcher by jinak zmizely beze stopy — do telemetrie, bez dialogu.
+        // Chyby mimo dispatcher by jinak zmizely beze stopy - do telemetrie, bez dialogu.
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
             if (args.ExceptionObject is Exception ex) ErrorReports.ReportFatal(ex);
@@ -208,7 +208,7 @@ public partial class App : Application
         // do telemetrie. Dřív šel detail jen do Debug.WriteLine, takže v Release mizel.
         try
         {
-            // Handler visí od konstruktoru App, tedy dřív než EDServices.Initialize v OnStartup —
+            // Handler visí od konstruktoru App, tedy dřív než EDServices.Initialize v OnStartup -
             // pád při startu by na EDServices.Current hodil druhou výjimku.
             EDServices.Current.PopupDisplayer.Error(e.Exception);
         }

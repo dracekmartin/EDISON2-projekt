@@ -20,7 +20,8 @@ public partial class SaveToCacheDialog : Window
         // s aktuálním Name + AgendaCode šablony.
         var init = new CVar();
         init["name"]       = new CVar(vm.InitialName ?? "");
-        init["agendaCode"] = new CVar(vm.InitialAgendaCode ?? "");
+        init["agendaCode"] = new CVar(vm.AgendaCode);
+        init["agendaLabel"] = new CVar(vm.AgendaLabel);
         TheForm.InitParams = init;
 
         // Tlačítko „Uložit" je nedostupné, dokud není vyplněné jméno - místo popupu při kliku
@@ -44,8 +45,7 @@ public partial class SaveToCacheDialog : Window
 
         // Extract final values z form Items
         var fields = (TheForm.Items ?? []).OfType<Field>().ToDictionary(f => f.Key, f => f.Value ?? "");
-        _vm.Name        = fields.GetValueOrDefault("name", "").Trim();
-        _vm.AgendaCode  = fields.GetValueOrDefault("agendaCode", "");
+        _vm.Name = fields.GetValueOrDefault("name", "").Trim();
 
         DialogResult = true;
         Close();

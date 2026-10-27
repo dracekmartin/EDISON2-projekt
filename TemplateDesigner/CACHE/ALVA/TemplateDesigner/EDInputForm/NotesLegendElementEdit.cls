@@ -113,7 +113,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // značku u minuty I její vysvětlivku - nemůže vzniknout značka, kterou legenda nevysvětlí.
         d form.AddGroup("filtermarks", "Značky u odjezdů")
         s fBez = form.AddBool("ShowSouhrnBezbarier", "Souhrn bezbariérových spojů", 1)
-        s fBez.helpText = "Souhrnná vysvětlivka ""všechny spoje mají bezbariérově přístupné vozidlo"" místo značky u každého odjezdu."
+        s fBez.helpText = "Souhrnná vysvětlivka ""všechny spoje s bezbariérově přístupným vozidlem"" místo značky u každého odjezdu."
         s fKola = form.AddBool("ShowZnackaKola", "Přeprava kol u odjezdů", 0)
         s fKola.helpText = "U spojů, které přepravují jízdní kola, se za časem odjezdu vytiskne symbol kola a do legendy přijde vysvětlivka. Zapíná obojí naráz, aby nevznikla značka bez vysvětlení."
         s fPokr = form.AddBool("ShowPokracujiciSpoje", "Pokračující spoje", 0)

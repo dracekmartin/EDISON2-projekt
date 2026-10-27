@@ -793,6 +793,142 @@ ClassMethod LegacyStrankaProbe(ByRef sys As %String) As %Status
 	quit $$$OK
 }
 
+/// Text omezení u značky se shoduje se starým zastávkovým tiskem AD (`B194` T3). CB_CSADAD 0330510 má
+/// na první stránce osm různých omezení, CB_GWBUS 216/0103942 spoj jen v lichých týdnech (T3a - do
+/// 26. 10. ho Zastávkový JŘ AD vynechával, i když starý tisk i Linkový JŘ AD ho mají). Rok podle
+/// nastavení firmy (T3c): CB_GWBUS 216/0125850 bez roku, KV_DP 0410107 celý rok. Předložky z číselníku
+/// firmy (T3d): CB_CSADAD 990/0680731 „jede jen v sudých týdnech od …" (dřív zkratka „v su.") - ta je
+/// až na pozdější stránce, hledá se podle textu starého tisku. Pořadí typů (T3e): CB_CSADAD 997/0370702
+/// „jede od … , jede také …" (dřív „jede také" první).
+Method TestTextyOmezeniProtiLegacy()
+{
+	set overeno = 0, nalezy = ""
+	for pripad = "CB_CSADAD~1~0330510", "CB_GWBUS~216~0103942", "CB_GWBUS~216~0125850", "KV_DP~1~0410107", "CB_CSADAD~990~0680731~sudých týdnech od", "CB_CSADAD~997~0370702~12.12.20, jede také" {
+		set db = $piece(pripad,"~",1), sku = $piece(pripad,"~",2), lin = $piece(pripad,"~",3), hledany = $piece(pripad,"~",4)
+		set page = 1
+		if hledany '= "" {
+			set page = ..StrankaSTextem(.sys, db, sku, lin, hledany)
+			if 'page {
+				set:##class(%SYS.Namespace).Exists(db) nalezy = nalezy_" | "_db_" "_lin_": starý tisk nemá „"_hledany_""" - fixture vyhnila?"
+				continue
+			}
+		}
+		continue:'..NactiLegendy(.sys, db, sku, lin, page, .leg, .nase)
+		set overeno = overeno + 1, pocet = 0, t = ""
+		for {
+			set t = $order(leg(t)) quit:t=""
+			// typ 2 = negativní značka (omezení), ostatní řádky legendy hlídají jiné testy
+			continue:$piece(leg(t),"#",1)'=2
+			set pocet = pocet + 1
+			continue:$data(nase(t))
+			set nalezy = nalezy_" | "_db_" "_lin_" značka "_$piece(leg(t),"#",2)_": starý ["_t_"] u nás není"
+		}
+		if 'pocet set nalezy = nalezy_" | "_db_" "_lin_": starý tisk nemá žádné omezení - fixture vyhnila?"
+	}
+	if 'overeno {
+		do $$$AssertTrue(1, "starý zastávkový tisk nebo firmy tu nejsou - přeskočeno")
+		quit
+	}
+	do $$$AssertEquals(nalezy, "", "text omezení se liší od starého zastávkového tisku:"_nalezy)
+}
+
+/// První stránka, na které má starý zastávkový tisk v legendě text obsahující `hledany`; 0 = žádná
+/// z prvních `maxStran` (nebo starý tisk tu není). Jen starý tisk - náš GetData se volá až nad ní.
+ClassMethod StrankaSTextem(ByRef sys, db As %String, sku As %String, lin As %String, hledany As %String, maxStran As %Integer = 40) As %Integer
+{
+	quit:'##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") 0
+	quit:'##class(%SYS.Namespace).Exists(db) 0
+	quit:'$data(^[db]JRL(sku, lin, "I")) 0
+	do ..SetupSysFor(.sys, db)
+	set nalezena = 0
+	for page = 1:1:maxStran {
+		kill ^||ML("IN"), ^||ML("OUT")
+		set ^||ML("IN","1") = "VOLANO_Z~JRMAIN"
+		set ^||ML("IN","2") = "SESTAVA~1"
+		set ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
+		do ##class(ALVA.TISKMHD.Data).LoadData(.sys)
+		set i = ""
+		for {
+			set i = $order(^||ML("OUT",i)) quit:i=""
+			set radek = $get(^||ML("OUT",i))
+			continue:$piece(radek,"~",1)'="PoznamkyDataPoznamky"
+			if radek [ hledany set nalezena = page  quit
+		}
+		quit:nalezena
+	}
+	kill ^||ML
+	quit nalezena
+}
+
+/// Legenda stránky `page`: starý zastávkový tisk AD `leg(text) = typ#znak` a náš `GetData`
+/// `nase(text) = typ#znak#kategorie` (text useknutý na 200 znaků). Stránky se párují pořadím -
+/// výchozí pořadí stránek je u obou zastávka × směr. 0 = starý tisk, firma nebo linka tu není.
+ClassMethod NactiLegendy(ByRef sys, db As %String, sku As %String, lin As %String, page As %Integer, ByRef leg, ByRef nase) As %Boolean
+{
+	kill leg, nase
+	quit:'##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") 0
+	quit:'##class(%SYS.Namespace).Exists(db) 0
+	quit:'$data(^[db]JRL(sku, lin, "I")) 0
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","1") = "VOLANO_Z~JRMAIN"
+	set ^||ML("IN","2") = "SESTAVA~1"
+	set ^||ML("IN","3") = "VALUE~"_sku_"#"_lin_"#"_page_"#3#0-23#0##"
+	do ##class(ALVA.TISKMHD.Data).LoadData(.sys)
+	set i = ""
+	for {
+		set i = $order(^||ML("OUT",i)) quit:i=""
+		set radek = $get(^||ML("OUT",i))
+		continue:$piece(radek,"~",1)'="PoznamkyDataPoznamky"
+		set text = $piece($piece(radek,"~",2,999),"#",3,999)
+		continue:text=""
+		set leg($extract(text,1,200)) = $piece($piece(radek,"~",2),"#",1,2)
+	}
+	kill ^||ML
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set json = $get(^||ML("OUT", page))
+	if json '= "" {
+		set ip = ##class(%DynamicObject).%FromJSON(json).rows.POZNAMKY.%GetIterator()
+		while ip.%GetNext(.j, .p) {
+			continue:p.%Get("TEXT")=""
+			set nase($extract(p.%Get("TEXT"),1,200)) = p.%Get("TYP")_"#"_p.%Get("ZNAK")_"#"_p.%Get("KATEGORIE")
+		}
+	}
+	kill ^||ML
+	quit 1
+}
+
+/// Diagnostika (cache_query): legenda stránky `PAGE` vedle sebe (`NactiLegendy`) - `SHODA` /
+/// `JEN LEG` / `JEN MY` podle textu. IN jako u `ZonyProbe`.
+ClassMethod LegendaVedleSebeProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for {
+		set k = $order(^||ML("IN",k)) quit:k=""
+		set v = $get(^||ML("IN",k))
+		set inp($piece(v,"~",1)) = $piece(v,"~",2,999)
+	}
+	set db = $get(inp("DB")), sku = $get(inp("SKU"),1), lin = $get(inp("LIN")), page = +$get(inp("PAGE"),1)
+	if '..NactiLegendy(.sys, db, sku, lin, page, .leg, .nase) {
+		kill ^||ML
+		set ^||ML("OUT", 1) = "SKIP: starý tisk, firma nebo linka tu není"
+		quit $$$OK
+	}
+	set t = "", n = 0
+	for {
+		set t = $order(leg(t)) quit:t=""
+		set n = n + 1, ^||ML("OUT", n) = $select($data(nase(t)):"SHODA", 1:"JEN LEG")_" ~ "_leg(t)_" ~ "_t
+	}
+	set t = ""
+	for {
+		set t = $order(nase(t)) quit:t=""
+		continue:$data(leg(t))
+		set n = n + 1, ^||ML("OUT", n) = "JEN MY ~ "_nase(t)_" ~ "_t
+	}
+	quit $$$OK
+}
+
 /// Diagnostika parity odjezdů (cache_query): pro zastávku `NAZEV` vypíše po stránkách počet odjezdů
 /// a seřazené minuty - legacy `LoadData` (`LEG~stránka`) i náš `GetData` (`OUR~stránka~směr`).
 /// IN jako u `ZonyProbe` + `NAZEV`, `STRAN` (kolik legacy stránek projít, výchozí 60).

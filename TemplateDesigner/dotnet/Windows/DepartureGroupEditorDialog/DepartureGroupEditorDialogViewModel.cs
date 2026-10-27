@@ -158,7 +158,7 @@ public class CustomColumnVM : INotifyPropertyChanged
     private string _period = "";
     public string Period { get => _period; set { _period = value; OnChanged(); } }
 
-    public string DisplayName => string.IsNullOrWhiteSpace(Header) ? "(bez nadpisu)" : Header;
+    public string DisplayName => string.IsNullOrWhiteSpace(Header) ? "(bez záhlaví)" : Header;
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)

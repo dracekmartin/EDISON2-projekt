@@ -24,7 +24,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("image", "Obrázek")
 
         s f = form.AddFieldToLastGroup("ImageBase64", "Obrázek", $$$FieldTypeImage, 0, 0)
-        s f.helpText = "Nahraj obrázek ze souboru (PNG/JPG). Velké soubory se automaticky zmenší."
+        s f.helpText = "Nahrajte obrázek ze souboru (PNG/JPG). Velké soubory se automaticky zmenší."
 
         s f = form.AddText("DataField", "Datové pole")
         s f.helpText = "Volitelné - název pole agendy, ze kterého se obrázek načte při tisku (místo statického)"

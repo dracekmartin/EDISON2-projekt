@@ -193,6 +193,11 @@ public static class SymbolMap
     {
         ["N"] = "m",   // jen nástup (31 → 109)
         ["V"] = "l",   // jen výstup (32 → 108)
+        // Zastávka, kterou spoj obsluhuje na objednání „r" / podmínečně „i" - v buňce času tentýž
+        // telefon a vykřičník jako spoj na objednání / podmínečně (legacy GSId převádí r → RBU, i → RBP,
+        // `JRapiLinPrtWin.mac:1629`; pozice viz PiktogramyLinky). `B194` T12.
+        ["r"] = "Z",   // telefon (29 → 90)
+        ["i"] = "ð",   // vykřičník (57 → 240)
         ["A"] = "z",   // autobus - naše pozice, ne legacy 119; viz PiktogramyLinky
         ["L"] = "x",   // vlak - lokomotiva
         ["O"] = "ö",   // letadlo (53 → 246)

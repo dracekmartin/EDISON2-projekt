@@ -498,15 +498,10 @@
       "serverSide": true
     },
     {
-      "name": "BARVY_SPOJU",
+      "name": "TISKNOUT_BARVY_SPOJU",
       "label": "Barvy spojů",
-      "type": "enum",
-      "defaultValue": "Automaticky (dle linky)",
-      "options": [
-        "Automaticky (dle linky)",
-        "Tisknout",
-        "Netisknout"
-      ],
+      "type": "bool",
+      "defaultValue": "true",
       "group": "Tabulka spojů",
       "serverSide": true
     },
@@ -533,7 +528,7 @@
     "SLOUPEC_TC": "Automaticky (dle linky)",
     "ZASTAVKY_BEZ_ZASTAVENI": "Automaticky (dle linky)",
     "PISMENO_V_ZONE": "Automaticky (dle linky)",
-    "BARVY_SPOJU": "Automaticky (dle linky)",
+    "TISKNOUT_BARVY_SPOJU": "true",
     "ZVYRAZNIT_ZASTAVKU": "",
     "ZVYRAZNIT_TC": ""
   },

@@ -162,7 +162,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     /// <summary>Text pro warning badge.</summary>
     public string ColumnOverflowText =>
-        $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku elementu ({ElementWidth:0.#} mm). Obsah se oříže.";
+        $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku prvku ({ElementWidth:0.#} mm). Obsah se oříže.";
 
     /// <summary>Výsledné sloupce po OK - čteny volajícím.</summary>
     public List<StopColumn> ResultColumns { get; private set; } = [];

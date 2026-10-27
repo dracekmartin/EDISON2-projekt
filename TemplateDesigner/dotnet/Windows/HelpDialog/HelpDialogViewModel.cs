@@ -94,7 +94,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("1. Otevřít šablonu z databáze / založit novou", "Ctrl+O / Ctrl+N"),
                 new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", "Ctrl+Shift+A"),
                 new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "Ctrl+Shift+I"),
-                new("4. Přidat sekce (tlačítko + Sekce) a elementy (táhnout z palety)", "myš"),
+                new("4. Přidat sekce (tlačítko Přidat sekci) a prvky (táhnout z palety)", "myš"),
                 new("5. Napojit data - pole ze záložky „Datová pole“ táhnout na plochu", "táhnout myší"),
                 new("6. Upravit vzhled - záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
                 new("7. Uložit do databáze a vytisknout s reálnými daty", "Ctrl+S, Ctrl+P"),
@@ -161,13 +161,13 @@ public class HelpDialogViewModel : EDViewModel
             Title = "⌨ Výběr a myš",
             Entries =
             [
-                new("Výběr elementu", "klik"),
+                new("Výběr prvku", "klik"),
                 new("Přidat do výběru", "Ctrl+klik"),
-                new("Vybrat jen jeden element ze skupiny", "Alt+klik"),
-                new("Výběr více elementů oblastí", "táhnout přes prázdno"),
+                new("Vybrat jen jeden prvek ze skupiny", "Alt+klik"),
+                new("Výběr více prvků oblastí", "táhnout přes prázdno"),
                 new("Vybrat vše v aktivní sekci", "Ctrl+A"),
-                new("Vlastnosti výběru (1 element / společné vlastnosti více)", "Enter / dvojklik"),
-                new("Úprava textu přímo na ploše (textový element)", "F2"),
+                new("Vlastnosti výběru (1 prvek / společné vlastnosti více)", "Enter / dvojklik"),
+                new("Úprava textu přímo na plátně (textový prvek)", "F2"),
                 new("Zrušit výběr / probíhající akci", "Esc"),
             ],
             Tip = "F2: Enter = potvrdit, Shift+Enter = nový řádek, Esc = zrušit.",
@@ -183,16 +183,16 @@ public class HelpDialogViewModel : EDViewModel
                 new("Duplikovat (kopie posunutá o 5 mm)", "Ctrl+D"),
                 new("Duplikovat vedle originálu s mezerou 4 mm", "Ctrl+D, pak šipka"),
                 new("Kopírovat / vložit STYL (písmo, barvy, rámeček)", "Ctrl+Shift+C / Ctrl+Shift+V"),
-                new("Seskupit / rozeskupit elementy", "Ctrl+G / Ctrl+Shift+G"),
-                new("Rozdělit element vodorovně / svisle na poloviny", "Ctrl+Shift+H / Ctrl+Shift+J"),
+                new("Seskupit / rozeskupit prvky", "Ctrl+G / Ctrl+Shift+G"),
+                new("Rozdělit prvek vodorovně / svisle na poloviny", "Ctrl+Shift+H / Ctrl+Shift+J"),
                 new("Smazat výběr", "Delete"),
                 new("Posun o 1 mm / o krok mřížky", "šipky / Ctrl+šipky"),
                 new("Změna velikosti o 1 mm (pravá a dolní hrana)", "Shift+šipky"),
                 new("Vrstva: dopředu / dozadu (úplně: +Shift)", "Ctrl+PgUp / Ctrl+PgDn"),
-                new("Zarovnání a rozložení vybraných elementů", "lišta nástrojů / menu Upravit"),
+                new("Zarovnání a rozložení vybraných prvků", "lišta nástrojů / menu Upravit"),
                 new("Normalizovat pozice (zaokrouhlit na krok)", "Ctrl+Shift+N"),
             ],
-            Tip = "Hromadná úprava: vyberte víc elementů a stiskněte Enter - dialog společných vlastností.",
+            Tip = "Hromadná úprava: vyberte víc prvků a stiskněte Enter - dialog společných vlastností.",
         },
 
         new HelpSection
@@ -200,7 +200,7 @@ public class HelpDialogViewModel : EDViewModel
             Title = "📑 Sekce",
             Entries =
             [
-                new("Přidat sekci", "tlačítko + Sekce"),
+                new("Přidat sekci", "tlačítko Přidat sekci"),
                 new("Přesunout aktivní sekci nahoru / dolů", "Ctrl+Shift+↑ / Ctrl+Shift+↓"),
                 new("Přesunout sekci tažením", "táhnout myší v panelu"),
                 new("Výška sekce myší - patička se tahá za HORNÍ hranu (roste nahoru)", "táhnout hranu na ploše"),
@@ -221,15 +221,15 @@ public class HelpDialogViewModel : EDViewModel
                 new("Skutečná velikost 100 %", "Ctrl+1"),
                 new("Zoom k kurzoru", "Ctrl+kolečko"),
                 new("Sbalit / rozbalit levý panel", "Ctrl+B"),
-                new("Mřížka, přichytávání, velikost kroku (0,2–10 mm)", "lišta nástrojů"),
-                new("Strom šablony (sekce → skupiny → elementy)", "záložka Strom"),
+                new("Mřížka plátna, přichytávání, velikost kroku (0,2–10 mm)", "lišta nástrojů"),
+                new("Strom šablony (sekce → skupiny → prvky)", "záložka Strom"),
                 new("Nápověda (tento dialog)", "F1"),
             ],
         },
 
         new HelpSection
         {
-            Title = "🔲 Elementy",
+            Title = "🔲 Prvky",
             Entries =
             [
                 new("Text - statický nebo s poli {NAZEV}", "paleta"),
@@ -286,7 +286,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Řazení poznámek a směr plnění sloupců legendy", "prvek Poznámky → Rozložení"),
                 new("Dlouhá trasa na užší vývěsku - rozdělit seznam zastávek na oddíly vedle sebe",
                     "prvek Seznam zastávek → Rozdělit na více oddílů"),
-                new("Zvýraznění aktuální zastávky, projeté zastávky, šipka směru", "prvek Seznam zastávek"),
+                new("Aktuální a projeté zastávky, šipka směru", "prvek Seznam zastávek"),
                 new("Skupiny dnů, šířka minuty, oddělovač skupin, značky u minut", "prvek Minuty odjezdů"),
                 new("Které sloupce vývěsky vzniknou (vzory i vlastní definice)",
                     "prvek Minuty odjezdů → Definice sloupců"),
@@ -298,7 +298,7 @@ public class HelpDialogViewModel : EDViewModel
                   "NE v parametrech sestavy - dřív to byly parametry tisku. Značka u odjezdu a její vysvětlivka " +
                   "jsou jedna volba, takže nemůže vzniknout značka, kterou legenda nevysvětlí. " +
                   "Když šablona prvek Poznámky nemá, značky se nevytisknou vůbec. " +
-                  "Rozvržení sloupců drží šablona: parametr sestavy „Rozdělení sloupců dle platnosti“ je jen pohled" +
+                  "Rozvržení sloupců drží šablona: parametr sestavy „Rozdělení sloupců dle platnosti“ je jen pohled " +
                   "na definici v prvku odjezdů, takže se ta dvě nastavení nemůžou přebíjet. " +
                   "V seznamu zastávek jsou jen zastávky, kam z té vývěsky opravdu nějaký spoj jede.",
         },
@@ -308,7 +308,7 @@ public class HelpDialogViewModel : EDViewModel
             Title = "🚆 Tabulka spojů - linkový a knižní JŘ",
             Entries =
             [
-                new("Které sloupce popisu se tisknou (km, tarifní číslo, zóna, MHD, označník)",
+                new("Které popisné sloupce se tisknou (km, tarifní číslo, zóna, MHD, označník)",
                     "prvek Tabulka spojů → Sloupce"),
                 new("Řádek platnosti pod číslem spoje - denní značky, místenka, atributy vozidla",
                     "prvek Tabulka spojů → Řádky"),
@@ -337,7 +337,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Hodnota pole", "{CISLO_LINKY}"),
                 new("Formát čísla / textu", "{CENA:N2}, {TEXT:UPPER}, {POLE:LEFT(4)}"),
                 new("Aritmetika (počítané sloupce)", "{CENA}*{POCET}"),
-                new("Podmínky (viditelnost elementu/sekce/řádku)", "{POCET} > 0 && {TYP} == 'A'"),
+                new("Podmínky (viditelnost prvku/sekce/řádku)", "{POCET} > 0 && {TYP} == 'A'"),
                 new("Agregace v souhrnných řádcích tabulky", "SUM({CENA}*{POCET}), COUNT, AVG, MIN, MAX"),
                 new("Číslo stránky / celkem stran", "{STRANA} / {POCET_STRAN}"),
                 new("Pokračování / opačný směr (jen v sekci na každé stránce)", "{POKRACOVANI}"),
@@ -352,10 +352,10 @@ public class HelpDialogViewModel : EDViewModel
             Entries =
             [
                 new("Proporcionální škálování celé šablony", "lišta nástrojů 50–200 %"),
-                new("Zamknout element proti posunu/změně velikosti", "vlastnost Uzamčeno"),
+                new("Zamknout prvek proti posunu/změně velikosti", "vlastnost Uzamčeno"),
                 new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
-                new("Výška „auto“ - element roste podle obsahu (text se zalamuje)", "Výška prázdná"),
-                new("JŘ element s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),
+                new("Výška podle obsahu - prvek roste s obsahem (text se zalamuje)", "Výška prázdná"),
+                new("JŘ prvek s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),
                 new("AI průvodce - zeptejte se, kde co v aplikaci najdete", "záložka Pomocník"),
             ],
         },

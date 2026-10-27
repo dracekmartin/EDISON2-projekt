@@ -49,7 +49,7 @@ public class ElementStyleButtonTests
         // Kořen repa od výstupní složky nahoru, jinak podle cesty k tomuhle souboru (test závisí jen na repu).
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln"))) dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
+        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent!;
         return Path.Combine(dir.FullName, "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "EDInputForm");
     }
 

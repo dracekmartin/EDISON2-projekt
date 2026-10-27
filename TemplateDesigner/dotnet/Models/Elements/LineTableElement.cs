@@ -42,7 +42,7 @@ public enum PripojSlucovani
 /// (tarifní čísla) × vodorovné sloupce jednotlivých spojů s časy v buňkách.
 /// Datový zdroj: agenda LINKOVY_JR_AD / LINKOVY_JR_MHD (kolekce ZASTAVKY + SPOJE + SKUPINY_DNU).
 ///
-/// Sloupce (`Columns`, model <see cref="StopColumn"/> - sdílený se StopList) definují popisové
+/// Sloupce (`Columns`, model <see cref="StopColumn"/> - sdílený se StopList) definují popisné
 /// sloupce: Zóna, Km, Tč, Zastávka, MHD + „Spoj" (řídí šířku/styl časových sloupců spojů, které
 /// vznikají z dat). Editace přes 2-tab dialog (Obecné = EDInputForm, Sloupce = sdílený
 /// `ColumnListEditor` + `CellStyleEditor`) - konzistentní se StopList/DepartureGrid.
@@ -3765,7 +3765,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
         new BoolPropertyDescriptor { Label = "Turnusy ke spojům", Group = "Řádky", Get = () => TurnusyKeSpojum, Set = v => TurnusyKeSpojum = v },
         new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
-        new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
+        new BoolPropertyDescriptor { Label = "Přípojné řádky (vyčká/navazuje)", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
         new EnumPropertyDescriptor { Label = "Slučovat přípoje", Group = "Přípojné řádky",
             Get = () => PripojeSlucovani, Set = v => PripojeSlucovani = (PripojSlucovani)v,
             Options =
@@ -3801,9 +3801,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new FloatPropertyDescriptor
         {
-            Label = "Velikost minut", Group = "Datové buňky",
+            Label = "Poměr velikosti minut", Group = "Datové buňky",
             Get = () => PomerMinuty, Set = v => PomerMinuty = v,
-            Min = 0.3f, Max = 1f, Format = "0.##",
+            Min = 0.3f, Max = 1f, Unit = "×", Format = "0.##",
         },
         new BoolPropertyDescriptor { FromImage = true, Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
         new BoolPropertyDescriptor { FromImage = true, Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
@@ -3811,9 +3811,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Čáry u zastávek dle trasy", Group = "Datové buňky", Get = () => CaryZastavekDleTrasy, Set = v => CaryZastavekDleTrasy = v },
         new FloatPropertyDescriptor
         {
-            Label = "Velikost značek", Group = "Řádky",
+            Label = "Poměr velikosti značek", Group = "Řádky",
             Get = () => PomerZnacek, Set = v => PomerZnacek = v,
-            Min = 1f, Max = 3f, Format = "0.##",
+            Min = 1f, Max = 3f, Unit = "×", Format = "0.##",
         },
         new BoolPropertyDescriptor { Label = "Každá zóna ve vlastním sloupci", Group = PopisneGroup,
             Get = () => RozdelitZonyDoSloupcu, Set = v => RozdelitZonyDoSloupcu = v },
@@ -3823,14 +3823,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new FloatPropertyDescriptor { Label = "Nejvýš km sloupců", Group = PopisneGroup,
             Get = () => MaxKmSloupcu ?? 0, Set = v => MaxKmSloupcu = v >= 1 ? (int)v : null,
             Min = 0, Max = 20, Format = "0" },
-        new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
-        new StringPropertyDescriptor { Label = "Nadpis popisných sloupců", Group = PopisneGroup,
+        new BoolPropertyDescriptor { Label = "Záhlaví skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
+        new StringPropertyDescriptor { Label = "Text záhlaví popisných sloupců", Group = PopisneGroup,
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },
         new BoolPropertyDescriptor { FromImage = true, Label = "Popisné sloupce bez vnitřních čar", Group = PopisneGroup,
             Get = () => PopisneSloupceBezVnitrnichCar, Set = v => PopisneSloupceBezVnitrnichCar = v },
         new BoolPropertyDescriptor { Label = "Sloučit popis u příjezdu a odjezdu", Group = PopisneGroup,
             Get = () => SloucitPopisyRozdvojene, Set = v => SloucitPopisyRozdvojene = v },
-        new FloatPropertyDescriptor { Label = "Mezera mezi skupinami sloupců", Group = SirkaGroup,
+        new FloatPropertyDescriptor { Label = "Mezera mezi skupinami dnů", Group = SirkaGroup,
             Unit = "mm", Min = 0, Max = 20, Format = "0.#",
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },

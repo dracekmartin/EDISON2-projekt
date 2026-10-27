@@ -24,7 +24,7 @@
 2. [Orientace v aplikaci](#2-orientace-v-aplikaci)
 3. [Práce se šablonou](#3-práce-se-šablonou)
 4. [Sekce a struktura stránky](#4-sekce-a-struktura-stránky)
-5. [Práce s prvky (elementy)](#5-práce-s-prvky-elementy)
+5. [Práce s prvky](#5-práce-s-prvky)
 6. [Editační nástroje](#6-editační-nástroje)
 7. [Vlastnosti a styly](#7-vlastnosti-a-styly)
 8. [Datová pole a výrazový jazyk](#8-datová-pole-a-výrazový-jazyk)
@@ -65,12 +65,12 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Upravit** - Zpět, Vpřed
 - **Stránka** - Vlastnosti stránky
 - **Sekce** - Přidat sekci (rozbalovací nabídka presetů)
-- **Přidat / Elementy** - paleta prvků: Text, Obdélník, Čára, Obrázek, Tabulka, Kód (QR, čárový) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
+- **Přidat / Prvky** - paleta prvků: Text, Obdélník, Čára, Obrázek, Tabulka, Kód (QR, čárový) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
 - **Vrstva** - Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
 - **Data** - obnovení dat náhledu (↻)
 - **Tisk** - kontrola vybraných linek (lupa) a Tisk; PDF i PNG se vytváří v okně Tisk
-- **Mřížka a přichytávání** - přepínač mřížky, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání
+- **Mřížka plátna a přichytávání** - přepínač mřížky plátna, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání
 - **Zoom** - zoom, tlačítka „Fit" a „1:1"
 - **Panely** - skrytí panelu sekcí, přepínač živého náhledu
 
@@ -101,7 +101,7 @@ Zleva doprava:
   (vlevo, vpravo, na střed, nahoru, dolů) · Rozložit vodorovně / svisle · Normalizovat pozice… ·
   Přepočítat šablonu na jinou velikost (podnabídka procent) · Kopírovat styl · Vložit styl ·
   Použít výchozí font u všech prvků
-- **Zobrazit** - Mřížka, Přichytit na mřížku, Přichytit k elementům, Záhlaví sekcí, Pravítka,
+- **Zobrazit** - Mřížka, Přichytit na mřížku, Přichytit k prvkům, Záhlaví sekcí, Pravítka,
   Panel sekcí, Živý náhled (zaškrtávací položky)
 - **Nástroje** - Změnit agendu… · Šablony v databázi…
 - **Nápověda** - Klávesové zkratky a ovládání (F1) - s fulltextovým hledáním (Ctrl+F)
@@ -140,8 +140,8 @@ a jaké **specializované prvky** máte k dispozici.
   čtení - upravenou verzi uložíte jako vlastní šablonu) a **Moje šablony**; tlačítka
   Přejmenovat…, Smazat, Otevřít.
 - `Soubor → Uložit do databáze` - u šablony již uložené v databázi provede tichý update.
-- `Soubor → Uložit do databáze jako…` - dialog s polem pro název a popis; nová/importovaná
-  šablona se takto poprvé zařadí do databáze.
+- `Soubor → Uložit do databáze jako…` - dialog s názvem šablony; nová/importovaná šablona se
+  takto poprvé zařadí do databáze. Agendu dialog jen ukáže - změníte ji přes `Nástroje → Změnit agendu`.
 - Výhoda oproti lokálním souborům: šablony jsou sdílené, centrální a dohledatelné - ne
   roztroušené po jednotlivých počítačích.
 
@@ -164,7 +164,7 @@ sekce má nastavené chování, které určuje **kdy a jak často** se tiskne a 
 přetečení** obsahu.
 
 ### Přidání sekce
-Tlačítko `+ Přidat sekci` nabízí presety:
+Tlačítko `Přidat sekci` nabízí presety:
 
 - **Hlavička stránky** - každá stránka, 25 mm
 - **Patička stránky** - každá stránka, 15 mm
@@ -191,7 +191,7 @@ v rozbalovacích seznamech:
   na dalším listu. Na listu, kde ještě nic není, se nový nezakládá
 
 **Doklad o více stránkách** (stazka s lícem a rubem, faktura s podmínkami na zadní straně): tlačítko
-**„+ Přidat stránku"** pod seznamem sekcí přidá stránku šablony. Nad plátnem se pak objeví přepínač
+**„Přidat stránku"** pod seznamem sekcí přidá stránku šablony. Nad plátnem se pak objeví přepínač
 stránek („Stránka 1 z 2") a plátno ukazuje vždy jednu stránku přesně velikosti papíru. Hlavička a patička jsou společné - jsou na každé
 stránce, kde se tisknou, a upravit je jde z kterékoli (mají jinak barevný štítek). Obsah, který se
 na stránku nevejde, je pod listem vidět v šrafovaném pásu: při tisku přeteče na další stránku.
@@ -224,12 +224,12 @@ jen se zapnutým Rámečkem.
   výška se proporcionálně rozdělí mezi zbývající sekce (a naopak při přidání nové).
 - **Řazení** - přetažením v levém panelu, nebo šipkami v kontextovém menu.
 - **Vlastní šablony sekcí** - pravý klik na sekci → „Uložit jako šablonu…", zadáte název. Sekce
-  se pak nabízí v menu „+ Přidat sekci" (💾) a lze ji opakovaně vkládat do dalších šablon -
+  se pak nabízí v menu „Přidat sekci" (💾) a lze ji opakovaně vkládat do dalších šablon -
   vkládá se vždy jako nezávislá kopie.
 
 ---
 
-## 5. Práce s prvky (elementy)
+## 5. Práce s prvky
 
 Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
 
@@ -254,8 +254,8 @@ od dat). Vlastnosti: **Upravit sloupce…**, **Zdroj dat**, **Výška řádku**,
 záhlaví**, **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťka, styl), **Střídání řádků**, **Tučné záhlaví**,
 barvy pozadí a textu záhlaví i dat. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
-Editor sloupců (dialog „Tabulka - nastavení") má záložky **Obecné** a **Sloupce**: přidání/
-odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce elementu",
+Editor sloupců (okno „Vlastnosti - Tabulka (z dat)") má záložky **Obecné** a **Sloupce**: přidání/
+odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce prvku",
 a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor stylu (viz kap. 7).
 
 ### Pevná tabulka
@@ -348,7 +348,7 @@ ho aplikuje na vybrané prvky.
 
 ### Hromadné úpravy
 Výběr více prvků + **Enter** otevře dialog společných vlastností: Barva rámečku, Tloušťka rámečku,
-Pořadí vrstvy (ZIndex), Uzamčeno - změna se aplikuje na všechny vybrané najednou.
+Vrstva, Uzamčeno - změna se aplikuje na všechny vybrané najednou.
 
 ### Normalizace pozic
 **Ctrl+Shift+N** - dialog s volbou kroku zaokrouhlení (0,1 / 0,5 / 1 / 2 / 5 mm) a živým náhledem
@@ -497,7 +497,7 @@ vypadá stejně na každé stanici.
 
 U jízdních řádů se tímtéž nastavením řídí i **jazyk vysvětlivek v legendě** (u slovenštiny tedy
 „premáva len", „na znamenie") a **znaková sada symbolů**. Nepřekládá se to, co jste napsali sami -
-poznámky zadané u linky, názvy zastávek ani vlastní nadpisy sloupců dnů zůstávají tak, jak jsou
+poznámky zadané u linky, názvy zastávek ani vlastní záhlaví sloupců dnů zůstávají tak, jak jsou
 uložené.
 
 ---
@@ -620,7 +620,7 @@ operaci).
 - **Šipky** - Posun prvku o 1 mm
 - **Ctrl+šipky** - Posun o velikost mřížky (podle volby v liště)
 - **Shift+šipky** - Změna velikosti prvku o 1 mm; mění se pravá a dolní hrana, levý horní roh
-  zůstává na místě. U prvku, jehož výšku počítá engine z dat, jde měnit jen šířka
+  zůstává na místě. U prvku, jehož výška se počítá podle obsahu, jde měnit jen šířka
 - **Ctrl+Shift+C / Ctrl+Shift+V** - Kopírovat / Vložit styl
 - **Delete** - Smazat výběr
 - **Ctrl+A** - Vybrat vše v aktivní sekci
@@ -799,9 +799,9 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 - **Pozice značek** - Za zastávkou (výchozí) / Před zastávkou
 - **Šipka směru + Pozice šipky + Barva šipky + Tučná šipka** - grafická šipka ukazující směr jízdy od aktuální zastávky dál po trase. Při pozici vlevo má šipka vyhrazený vlastní pruh, takže se ani u úzkého prvku nepřekryje s jízdními dobami
 - **Záhlaví sloupců** - zap/vyp řádek záhlaví
-- **Podtržení aktuální / Tučně aktuální / Velikost aktuální / Pozadí aktuální / Barva textu aktuální** - zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná barva = stejná jako ostatní řádky)
-- **Projeté zastávky + Barva projetých** - zda tisknout i zastávky, které vozidlo od aktuální zastávky již projelo (ztlumeně)
-- **Čas u projetých** (*Nezobrazovat* / *Zobrazit*) - jízdní doby se počítají od vývěskové zastávky,
+- **Aktuální: Tučné / Podtržení / Velikost / Barva textu / Pozadí** - vzhled řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná hodnota = jako ostatní zastávky)
+- **Projeté: Barva textu** - barva zastávek, které vozidlo od aktuální zastávky již projelo; jejich tisk se zapíná v parametrech sestavy (Tisknout projeté zastávky)
+- **Projeté: Čas** (*Nezobrazovat* / *Zobrazit*) - jízdní doby se počítají od vývěskové zastávky,
   takže u projetých vycházejí záporné. *Nezobrazovat* vyprázdní u projetých zastávek **celou buňku**
   časového sloupce, tedy i značku „<" (spoj tudy projíždí); dřív zmizelo jen číslo, takže sloupec
   „Čas" byl prázdný a variantní sloupec vedle něj plný „<". Na neprojetých zastávkách zůstává „<"
@@ -811,12 +811,12 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 
 Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle…).
 
-- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Rozestup odjezdů (Bez zarovnání / Zarovnat dle nejširšího odjezdu / Zarovnat na pevnou šířku - viz níže), Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, nadpis sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
+- **Odjezdy** - Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví svisle, Šířka sloupce hodin, Rozestup odjezdů (Bez zarovnání / Zarovnat dle nejširšího odjezdu / Zarovnat na pevnou šířku - viz níže), Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, text záhlaví sloupce se netiskne), Max. skupin (0 = bez limitu), Šířka minuty, Mezera mezi skupinami dnů
 - **Časová osa** - Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah (+ pole Hodiny od/do); Roztáhnout na výšku - když je mřížka nižší, než by odpovídalo datům, řádky (a font) se proporcionálně zvětší (strop 1,5× přirozené výšky)
 - **Rozestup odjezdů** - jak daleko od sebe stojí minuty v řádku hodiny. *Bez zarovnání*: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí a minuta se značkou odsune odjezdy za sebou. *Zarovnat dle nejširšího odjezdu* (výchozí): jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici napříč hodinami i sloupci, ale jeden takový spoj zředí celou vývěsku, i řádky a sloupce bez značek. *Zarovnat na pevnou šířku*: rozteč se řídí nastavením („Šířka minuty", nejméně však minuta a jedna značka s odstupem), takže ji data nezmění a přidaný označkovaný spoj zbytek vývěsky nepřesází. Spoj s víc značkami se do rozteče vejde tím, že se jeho značky úměrně zmenší - nejvýš na polovinu a nikdy pod 4 body; nevejdou-li se ani tak, zvětšete Šířku minuty
 - **Řádky dat** - Výška řádku, Střídavé podbarvení (sudé řádky)
-- **Záhlaví - 2. řádek** - Velikost, Tučné, Kurzíva, Barva textu pro druhý řádek nadpisu skupiny (např. „den" v „Pracovní / den") - pokud nevyplněno, dědí z prvního řádku
-- **Styl minuty** - Font, Velikost, Tučné, Kurzíva, Barva textu
+- **Záhlaví - 2. řádek** - Velikost, Tučné, Kurzíva, Barva textu pro druhý řádek záhlaví skupiny (např. „den" v „Pracovní / den") - pokud nevyplněno, dědí z prvního řádku
+- **Styl minuty** - Minuta: Font, Velikost, Tučné, Kurzíva, Barva textu
 - **Anotace - symboly** a **Anotace - text** - samostatný styl (font/velikost/řez/barva) pro horní index u minut - symboly/negativní značky vs. textová písmena/dny; u symbolů navíc NZ pozadí a NZ znak (barvy invertovaného boxu negativní značky)
 - **Anotace** - zap/vyp zobrazování anotací u minut
 - **Mezery** - Mezera minuta↔anotace, Mezera anotace↔anotace, Mezera mezi odjezdy
@@ -896,7 +896,7 @@ sloupce vždy z nastavení linky v modulu MHD.
 
 U každého sloupce nastavíte:
 
-- **Nadpis** - i dvouřádkový (Enter uvnitř pole).
+- **Záhlaví** - i dvouřádkové (Enter uvnitř pole).
 - **Týdenní platnost** - jednotlivé dny **Po až Ne** plus dvě samostatné volby podle vyhlášky
   122/2014:
   - **Pracovní dny (X)** - pracovní dny **bez svátků**. Není to zkratka za Po-Pá: spoj „jede
@@ -923,15 +923,15 @@ Analogický dvoutabový dialog:
 
 - První řádek je vždy pevně **„Hodiny"** (nelze přesunout), následují jednotlivé skupiny dnů
   podle skutečných dat.
-- Pro skupinu: viditelnost, pořadí (▲/▼), **přepis nadpisu** (jinak se použije nadpis z dat, u
+- Pro skupinu: viditelnost, pořadí (▲/▼), **přepis záhlaví** (jinak se použije text skupiny z dat, u
   sloupce hodin výchozí „Hod"), pevná šířka (prázdné = automatický výpočet + rovnoměrné dofill),
   vlastní **střídání řádků** pro danou skupinu.
 - **Barevné pruhy podle skupin dnů** - když každá skupina dostane vlastní barvu záhlaví, převezme
   ji i **sloupec hodin** u té skupiny (platí při zapnuté volbě *Hodiny u každé skupiny*), takže
   celý pruh vyjde jednobarevný sám a nemusíte ho barvit zvlášť. Buňka nad hodinami zůstane
   neutrální - je to místo pro ikonku hodin.
-- **Víc řádků v nadpisu skupiny** - v přepisu nadpisu stiskněte **Enter** (nebo napište `\n`)
-  a nadpis se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
+- **Víc řádků v záhlaví skupiny** - v přepisu záhlaví stiskněte **Enter** (nebo napište `\n`)
+  a záhlaví se rozdělí na dva řádky se **stejným** stylem. Výška záhlaví se přizpůsobí. Když má
   jízdní řád u skupiny vyplněný i druhý nadpis, přidá se pod ně jako další řádek s vlastním
   stylem (viz *Záhlaví - 2. řádek* ve vlastnostech prvku).
 - Per-sloupec styl barev a zarovnání zvlášť pro záhlaví a data. **Typografie záhlaví (font,
@@ -978,7 +978,8 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 
 Navíc jen u AD: **Rozdělení sloupců dle platnosti**, **Řazení variant tras**, **Písmena variant
 u odjezdů** (+ **První varianta bez písmene**), **Nejvýš sloupců variant tras**, **Samostatná stránka pro každý označník** (vše
-viz kap. 1), **V rozsahu nepoznámkovat schovat** a **Souhrn „všechny zastávky na znamení"** - místo
+viz kap. 1), **Barvy spojů** (minuty spoje barvou z jízdních řádů, vypnuto = všechny černě),
+**V rozsahu nepoznámkovat schovat** a **Souhrn „všechny zastávky na znamení"** - místo
 značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
 všechny zastávky).
 
@@ -1018,7 +1019,7 @@ odjezdů, poznámek) by potřeboval víc místa, systém automaticky **proporcio
 velikost písma**, aby se všechno vešlo do vymezeného prostoru. Pokud je výška prvku dynamická
 (automatická), tohle se neuplatňuje - prostor prostě roste podle potřeby.
 
-Varování o přetečení (červený rámeček stránky v náhledu) se u JŘ elementů řídí stejným
+Varování o přetečení (červený rámeček stránky v náhledu) se u JŘ prvků řídí stejným
 pravidlem jako v části I (kap. 9): objeví se jen u sekcí nastavených
 jako „Držet pohromadě", a jen když se prvek fyzicky nevejde i po auto-zmenšení písma - pokud
 zmenšení pomůže, k varování nedojde.
@@ -1109,8 +1110,8 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
 
 **Řádky** - co se tiskne navíc k časům:
 
-- **Nadpisy skupin dnů** - pás nad sloupci spojů s označením skupiny (pracovní dny, sobota…).
-- **Čísla spojů** - řádek s čísly spojů nad časy. Vypnuté = řádek zůstane (nese nadpisy popisných
+- **Záhlaví skupin dnů** - pás nad sloupci spojů s označením skupiny (pracovní dny, sobota…).
+- **Čísla spojů** - řádek s čísly spojů nad časy. Vypnuté = řádek zůstane (nese záhlaví popisných
   sloupců), jen nad spoji je prázdný.
 - **Řádek platnosti** - pod číslem spoje řádek se značkami platnosti (denní značky, místenka,
   atributy vozidla).
@@ -1119,7 +1120,7 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
   informace pro cestujícího, proto je z výroby vypnutý; zapnutí stojí čas navíc při načítání dat.
 - **Přípojné řádky (vyčká/navazuje)** - pod zastávkou řádky o přípojích.
 - **Výška řádku** - prázdné = podle velikosti písma.
-- **Velikost značek** - kolikrát větší je písmo značek než písmo buňky (starý tisk 1,5×, aby byly
+- **Poměr velikosti značek** - kolikrát větší je písmo značek než písmo buňky (starý tisk 1,5×, aby byly
   na výtisku čitelné).
 
 **Šířka sloupců** - viz kapitola 4.
@@ -1131,7 +1132,7 @@ Nastavení má v panelu vlastností (a ve stejném okně po Alt+Enter) šest sku
 - **Jedno záhlaví nad km sloupci** - místo „km" nad každým km sloupcem jedno společné přes všechny.
 - **Nejvýš km sloupců** - kolik km sloupců se nejvýš vytiskne; prázdné = všechny. Ostatní se
   netisknou a jejich spoje pak v tabulce kilometry nemají.
-- **Nadpis popisných sloupců** - jeden společný text nad zónou, km, Tč, zastávkou a MHD.
+- **Text záhlaví popisných sloupců** - jeden společný text nad zónou, km, Tč, zastávkou a MHD.
 - **Sloučit popis u příjezdu a odjezdu** - zastávka s příjezdem i odjezdem zabírá dva řádky.
   Vypnuté zopakuje název a km na obou (tvar windowsového tisku), zapnuté je vypíše jednou
   přes oba řádky.
@@ -1143,7 +1144,7 @@ buňky a tyhle volby:
 
 - **Formát času** - *Minuty menším písmem (hh mm)* jako starý tisk, *Celý čas stejně (hh:mm)*
   s dvojtečkou („04:20"), nebo *Celý čas stejně (hh.mm)* s tečkou a hodinou bez nuly („4.20").
-  **Velikost minut** říká, o kolik jsou minuty menší.
+  **Poměr velikosti minut** říká, o kolik jsou minuty menší.
 - **Tečky v prázdných buňkách** - buňka bez času se vyplní tečkami, takže tabulka drží svislé
   vodicí pruhy jako starý tisk. Dostanou je i prázdné sloupce dorovnání.
 - **Tučné zastávky dle trasy** a **Čáry u zastávek dle trasy** - v trase linky jde u zastávky zadat
@@ -1200,7 +1201,7 @@ Zapnuté srovná všechny na nejširší z nich - tabulka je pravidelná, ale za
 **Dorovnat prázdnými sloupci** - co se stane s volným místem vpravo. Zapnuté ho rozkreslí
 prázdnými sloupci, takže tabulka končí rovně; vypnuté ho nechá bílé.
 
-**Mezera mezi skupinami sloupců** - volné místo za popisným blokem a mezi skupinami dnů.
+**Mezera mezi skupinami dnů** - volné místo mezi skupinami dnů a také za popisnými sloupci.
 Bere se ze šířky prvku, takže se do řádku vejde méně spojů.
 
 **Co se nevejde, jde pod tabulku.** Když je spojů víc, než kolik se vejde do šířky prvku, sestaví
@@ -1246,9 +1247,11 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 - **Rozdělení sloupců dle platnosti** - podle čeho se spoje rozdělí do skupin sloupců: *Bez rozlišení*,
   *Pracovní dny / víkend+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
   rozložení* se vybrat nedá - jen hlásí, že si šablona rozvržení drží vlastní.
-- **Sloupec tarifních čísel**, **Zastávky, kde žádný spoj nestaví**, **Písmeno systému u zóny**
-  a **Barvy spojů** - všechny čtyři mají volbu **Automaticky (dle linky)**, tedy podle nastavení
-  u linky v jízdních řádech, a pak *Tisknout* / *Netisknout*, kterými to pro tuhle sestavu přebijete.
+- **Sloupec tarifních čísel**, **Zastávky, kde žádný spoj nestaví** a **Písmeno systému u zóny** -
+  všechny tři mají volbu **Automaticky (dle linky)**, tedy podle nastavení u linky v jízdních řádech,
+  a pak *Tisknout* / *Netisknout*, kterými to pro tuhle sestavu přebijete.
+- **Barvy spojů** - zapnuté tisknou časy spoje barvou, kterou má spoj nastavenou v jízdních řádech;
+  vypnuté = celá tabulka černě. Stejná volba je u zastávkového JŘ AD.
 - **Zvýraznit zastávku** a **Zvýraznit tarifní číslo** - kus názvu zastávky (nerozlišují se velká
   a malá písmena) označí její řádek jako aktuální; vzhled zvýraznění si řeší šablona pravidlem
   nad polem „Aktuální zastávka" (výchozí šablony ho mají: světle šedé pozadí řádku). Projíždí-li

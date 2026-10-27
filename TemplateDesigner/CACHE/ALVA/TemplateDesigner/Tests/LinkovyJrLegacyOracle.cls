@@ -50,6 +50,77 @@ ClassMethod KlicPoznamky(druh As %String, znak As %String, text As %String) As %
 	quit druh_"~"_znak_"~"_$extract(t, 1, 180)_"… (délka "_$length(t)_")"
 }
 
+/// **Vědomá odchylka** (`B194` T3b, rozhodnutí Jan 26. 10.): starý linkový tisk spojuje data omezení
+/// čárkou bez mezery, my čárkou s mezerou jako starý zastávkový tisk. Text starého tisku se proto před
+/// porovnáním převede na náš tvar - zbytek věty se dál porovnává doslova. Jen poznámky druhu 2
+/// (omezení), jinde čárka patří k textu zákazníka.
+ClassMethod OddelovacDat(text As %String) As %String
+{
+	quit ..Norm($replace(text, ",", ", "))
+}
+
+/// Diagnostika (cache_query_cvar, `B194` T12): buňky času se zastávkou na objednání - starý tisk
+/// (první položka buňky = RBU) proti našim značkám „r" v `ZNACKY`. IN: `DB`, `SKU`, `LIN`.
+/// OUT(n) = `JEN LEG|JEN MY ~ směr/řádek/spoj`, SOUHRN = počty.
+ClassMethod ZnackyNaObjednaniProbe(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set db = $get(^||ML("IN","DB")), sku = $get(^||ML("IN","SKU")), lin = $get(^||ML("IN","LIN"))
+		kill parametry, nase, leg
+		if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry) {
+			kill ^||ML  set ^||ML("OUT","SOUHRN") = "SKIP"  ret $$$OK
+		}
+		set key = ""
+		for {
+			set key = $order(^||ML("OUT", key)) quit:key=""
+			continue:'$isvalidnum(key)
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			set sm = page.values.%Get("SMER"), spoje = page.rows.SPOJE
+			continue:'$isobject(spoje)
+			set is = spoje.%GetIterator()
+			while is.%GetNext(.j, .s) {
+				set zn = s.%Get("ZNACKY"), casy = s.%Get("CASY")
+				// detail každé buňky pro výpis rozdílů: typ řádku, čas, naše značky
+				set iz2 = page.rows.ZASTAVKY.%GetIterator()
+				while iz2.%GetNext(.k2, .zr) {
+					set detail(sm_"/"_(k2+1)_"/"_s.%Get("CISLO_SPOJE")) = zr.%Get("TYP")_" "_zr.%Get("NAZEV_ZASTAVKY")_" čas="_$s($isobject(casy):casy.%Get(k2), 1:"")_" značky="_$s($isobject(zn):zn.%Get(k2), 1:"")
+				}
+				continue:'$isobject(zn)
+				set iz = zn.%GetIterator()
+				while iz.%GetNext(.k, .z) { set:z["r" nase(sm_"/"_(k+1)_"/"_s.%Get("CISLO_SPOJE")) = "" }
+			}
+		}
+		if '..NactiLegacy(db, sku, lin, 2, .n) { kill ^||ML  set ^||ML("OUT","SOUHRN") = "SKIP legacy"  ret $$$OK }
+		set sm = ""
+		for {
+			set sm = $order(n("cas", sm)) quit:sm=""
+			set r = ""
+			for {
+				set r = $order(n("cas", sm, r)) quit:r=""
+				set sp = ""
+				for { set sp = $order(n("cas", sm, r, sp), 1, h) quit:sp=""  set:h="RBU" leg(sm_"/"_r_"/"_(+sp)) = "" }
+			}
+		}
+		kill ^||ML
+		set c = 0, k = ""
+		for {
+			set k = $order(leg(k)) quit:k=""  continue:$data(nase(k))
+			// i sousední řádek (zdvojená zastávka: příjezd + odjezd) - kde je značka u nás a u starého
+			set dalsi = $piece(k,"/",1)_"/"_($piece(k,"/",2)+1)_"/"_$piece(k,"/",3)
+			set c = c + 1, ^||ML("OUT", c) = "JEN LEG ~ "_k_" ~ "_$get(detail(k))_" | další řádek: starý ["_$get(n("cas",$piece(k,"/",1),$piece(k,"/",2)+1,$piece(k,"/",3)))_"] my "_$get(detail(dalsi))
+		}
+		set k = ""
+		for { set k = $order(nase(k)) quit:k=""  continue:$data(leg(k))  set c = c + 1, ^||ML("OUT", c) = "JEN MY ~ "_k }
+		set pl = 0, k = "" for { set k = $order(leg(k)) quit:k=""  set pl = pl + 1 }
+		set pn = 0, k = "" for { set k = $order(nase(k)) quit:k=""  set pn = pn + 1 }
+		set ^||ML("OUT","SOUHRN") = "legacy "_pl_", my "_pn
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Je starý modul na tomto serveru vůbec k dispozici?
 ClassMethod OracleDostupny() As %Boolean
 {
@@ -179,6 +250,10 @@ ClassMethod NactiLegacy(db As %String, sku As %String, lin As %String, deleni As
 					quit:ti=""
 					set text = text _ $select(text="":"", 1:" ") _ $get(@glb@(idobj, "dta", pi, "txt", ti))
 				}
+				if druh = 2 set text = ..OddelovacDat(text)
+				// „#" je v obou tiscích nový řádek poznámky (místenky s `MistOR`); naše strana ho
+				// převádí na mezeru, jinak by se lišil jen zlom řádku
+				set text = $translate(text, "#", " ")
 				set klic = ..KlicPoznamky(druh, znak, text)
 				set n("pozn", klic) = $get(n("pozn", klic)) + 1
 			}

@@ -12,7 +12,7 @@ public class DeleteElementCommand : IDesignerCommand
     private readonly TemplateElement _element;
     private          int             _originalIndex;
 
-    public string Description => "Smazat element";
+    public string Description => "Smazat prvek";
 
     public DeleteElementCommand(Section section, TemplateElement element)
     {

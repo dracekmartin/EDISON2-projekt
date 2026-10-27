@@ -55,6 +55,7 @@ public partial class DynamicTableEditorDialog : Window
         SeedForKey(_selectedDataSource);
         DataContext = _vm;
         InitializeComponent();
+        Title = Models.ElementNames.TitulekVlastnosti(element);
 
         // Tab „Obecné": EDInputForm (general properties přes reflexi). Sloupce → tab „Sloupce".
         GeneralForm.CacheClass = GeneralSchemaClass;

@@ -11,7 +11,7 @@ public class ResizeElementCommand : IDesignerCommand
     private readonly float  _toX,   _toY,   _toW;
     private readonly float? _toH;
 
-    public string Description => "Změna velikosti elementu";
+    public string Description => "Změna velikosti prvku";
 
     public ResizeElementCommand(TemplateElement element,
         float fromX, float fromY, float fromW, float? fromH,

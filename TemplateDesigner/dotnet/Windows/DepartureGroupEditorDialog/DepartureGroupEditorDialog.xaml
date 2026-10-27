@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
-        Title="Odjezdy - nastavení"
         Width="680" Height="640"
         MinWidth="560" MinHeight="520"
         WindowStartupLocation="CenterOwner"
@@ -66,7 +65,7 @@
                                      druhý řádek záhlaví, ne potvrzení dialogu. Funguje i token „\n". -->
                                 <TextBox Width="160" Text="{Binding SelectedGroupVM.HeaderOverride, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"
                                          AcceptsReturn="True" MaxLines="3" VerticalScrollBarVisibility="Auto"
-                                         ToolTip="Přepis nadpisu skupiny. Víc řádků: Enter nebo token \n - všechny řádky mají stejný styl."/>
+                                         ToolTip="Přepis záhlaví skupiny. Víc řádků: Enter nebo token \n - všechny řádky mají stejný styl."/>
                                 <TextBlock Text="Šířka (mm):" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                 <TextBox Width="50" Text="{Binding SelectedGroupVM.WidthText, UpdateSourceTrigger=LostFocus}"/>
                             </StackPanel>
@@ -75,7 +74,7 @@
 
                             <Separator Margin="0,8,0,8"/>
 
-                            <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
+                            <TextBlock Text="Prázdné pole = dědí výchozí styl prvku."
                                        FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <!-- ── Záhlaví ──────────────────── -->
@@ -100,7 +99,7 @@
                             <Separator Margin="0,8,0,8"/>
 
                             <!-- Vlastní pole, ne součást stylu buňky: kreslí se pod buňky a platí
-                                 jen pro každý druhý řádek. Prázdné = barva z tabu Obecné. -->
+                                 jen pro každý druhý řádek. Prázdné = barva ze záložky Obecné. -->
                             <TextBlock Text="Střídání řádků" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                 <TextBox Width="90" VerticalAlignment="Center" Margin="0,0,6,0"
@@ -111,7 +110,7 @@
                                 <Button Content="×" Padding="8,2" ToolTip="Zpět na barvu celého prvku"
                                         Command="{Binding DataContext.ClearZebraColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             </StackPanel>
-                            <TextBlock Text="Prázdné = použije se barva z tabu Obecné." FontStyle="Italic"
+                            <TextBlock Text="Prázdné = použije se barva ze záložky Obecné." FontStyle="Italic"
                                        Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             </StackPanel>
@@ -123,7 +122,7 @@
                                         Padding="10,3" Margin="0,0,6,0"/>
                                 <Button Content="Resetovat všechny sloupce"
                                         Command="{Binding DataContext.ResetAllColumnStylesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce budou dědit z tabu Obecné"
+                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce převezmou styl ze záložky Obecné"
                                         Padding="10,3"/>
                             </StackPanel>
 
@@ -194,9 +193,9 @@
                                       VerticalScrollBarVisibility="Auto"
                                       IsEnabled="{Binding HasCustomSelection}">
                             <StackPanel>
-                                <TextBlock Text="Nadpis sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <TextBlock Text="Záhlaví sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                    <TextBlock Text="Nadpis:" VerticalAlignment="Center" Width="90"/>
+                                    <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Width="90"/>
                                     <TextBox Width="220" Text="{Binding SelectedCustomVM.Header, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -240,7 +239,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <TextBlock Text="Nevypisovat značky:" VerticalAlignment="Center" Width="150"
-                                               ToolTip="Spoj se vytiskne, jen se u minuty nezopakuje značka (např. když ji už říká nadpis sloupce)"/>
+                                               ToolTip="Spoj se vytiskne, jen se u minuty nezopakuje značka (např. když ji už říká záhlaví sloupce)"/>
                                     <TextBox Width="160" Text="{Binding SelectedCustomVM.SuppressedMarks, UpdateSourceTrigger=PropertyChanged}"/>
                                 </StackPanel>
                                 <TextBlock Text="Čísla značek oddělená čárkou (např. 52, 53). Prázdné = neomezuje."

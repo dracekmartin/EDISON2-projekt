@@ -14,10 +14,10 @@ public class ElementSettingsFromImageTests
     private static List<string> Apply(StopListElement el, params (string Key, string Value)[] settings) =>
         ElementSettingsFromImage.Apply(el, settings.ToDictionary(s => s.Key, s => s.Value));
 
-    /// <summary>Popisek volby nese vysvětlivku („Vlevo (u levého okraje elementu)"), model odpoví
+    /// <summary>Popisek volby nese vysvětlivku („Vlevo (u levého okraje prvku)"), model odpoví
     /// holé „Vlevo" - musí projít obojí.</summary>
     [Theory]
-    [InlineData("Vlevo (u levého okraje elementu)")]
+    [InlineData("Vlevo (u levého okraje prvku)")]
     [InlineData("Vlevo")]
     public void VyberZNabidkySeZapisePlnymIZkracenymPopiskem(string answer)
     {
@@ -119,7 +119,7 @@ public class ElementSettingsFromImageTests
     [InlineData("Zastávky · Přestupy (vlak/autobus)")]
     [InlineData("Zastávky · Poznámky zastávky")]
     [InlineData("Zastávky · Více stanovišť")]
-    [InlineData("Zvýraznění · Čas u projetých")]
+    [InlineData("Aktuální a projeté zastávky · Projeté: Čas")]
     public void NaVeciNeodvoditelneZObrazkuSeNeptame(string klic)
     {
         var catalog = ElementSettingsFromImage.BuildCatalog(new StopListElement());
@@ -134,7 +134,7 @@ public class ElementSettingsFromImageTests
         var catalog = ElementSettingsFromImage.BuildCatalog(new DepartureGridElement());
 
         Assert.DoesNotContain("Velikost záhlaví", catalog);
-        Assert.DoesNotContain("Min. výška řádku", catalog);
+        Assert.DoesNotContain("Min. výška řádku záhlaví", catalog);
     }
 
     [Theory]

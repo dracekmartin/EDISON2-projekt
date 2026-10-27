@@ -271,7 +271,7 @@ public abstract class TemplateElement
     // Názvy skupin base polí - shodné se sdíleným Caché balíčkem BaseElementFields.cls,
     // ať obě editační cesty řadí tytéž vlastnosti do stejně pojmenovaných skupin.
     internal const string PositionGroup = "Pozice a velikost";
-    internal const string BorderGroup = "Rámeček elementu";
+    internal const string BorderGroup = "Rámeček prvku";
     internal const string ConditionsGroup = "Podmínky";
     internal const string GridGroup = "Mřížka";
 
@@ -336,7 +336,7 @@ public abstract class TemplateElement
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
                 Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
         new FloatPropertyDescriptor { Label = "Rotace",  Group = PositionGroup, Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
-        new FloatPropertyDescriptor { Label = "ZIndex",  Group = PositionGroup, Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
+        new FloatPropertyDescriptor { Label = "Vrstva",  Group = PositionGroup, Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
         new BoolPropertyDescriptor  { Label = "Uzamčeno", Group = PositionGroup, Get = () => IsLocked, Set = v => IsLocked = v },
 
         new ColorPropertyDescriptor { Label = "Barva rámečku", Group = BorderGroup, Get = () => BorderColor, Set = v => BorderColor = v },
@@ -426,32 +426,4 @@ public abstract class TemplateElement
     public float EffectiveDesignerHeight => Height ?? DesignerPlaceholderHeight;
 
     protected virtual float DesignerPlaceholderHeight => 20f;
-
-    // ---------------------------------------------------------------------------
-    // Sdílené utility pro zobrazení v UI (strom, debug)
-
-    /// <summary>Zkrácený popis elementu pro strom šablony a debug výpisy.</summary>
-    public static string GetSummary(TemplateElement el) => el switch
-    {
-        TextElement t      => $"\"{TruncateText(t.Text, 50)}\"  {t.Style.FontFamily ?? "Arial"} {t.Style.FontSize ?? 10f}pt",
-        LineElement l      => $"{l.Orientation} {l.StrokeWidth}mm {l.Color}",
-        RectangleElement r => $"Fill={r.BackgroundColor} Stroke={r.StrokeColor}",
-        ImageElement       => "Image",
-        BarcodeElement b   => $"{b.BarcodeType}",
-        TableElement t     => $"{t.Mode} cols={t.Columns.Count}",
-        DynamicTableElement dt => $"Dynamická tabulka [{dt.DataSource}] cols={dt.Columns.Count}",
-        StopListElement      => "Seznam zastávek",
-        DepartureGridElement d => $"Odjezdy {(d.SkupinaDnuId.Length > 0 ? d.SkupinaDnuId : "auto")}",
-        NotesLegendElement   => "Poznámky",
-        LineTableElement     => "Tabulka spojů (zastávky × spoje)",
-        _                  => $"({el.X:0.#}, {el.Y:0.#}) {el.Width:0.#}x{(el.Height?.ToString("0.#") ?? "auto")}"
-    };
-
-    /// <summary>Zkrátí text na maxLen znaků, nahradí odřádkování mezerou.</summary>
-    public static string TruncateText(string? text, int maxLen)
-    {
-        if (string.IsNullOrEmpty(text)) return "";
-        var oneLine = text.Replace("\n", " ").Replace("\r", "");
-        return oneLine.Length <= maxLen ? oneLine : oneLine[..(maxLen - 3)] + "...";
-    }
 }

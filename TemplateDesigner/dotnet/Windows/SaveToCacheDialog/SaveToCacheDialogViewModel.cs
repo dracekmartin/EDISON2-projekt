@@ -1,5 +1,4 @@
 using EDControls.EDViewModel;
-using TemplateDesigner.Models.Schema;
 
 namespace TemplateDesigner;
 
@@ -20,20 +19,20 @@ public class SaveToCacheDialogViewModel : EDViewModel
     /// <summary>Final Name po user submit (čteno parentem po ShowDialog).</summary>
     public string Name { get; internal set; } = "";
 
-    /// <summary>Final Agenda code po user submit (čteno parentem). Konzistentní s legacy `SelectedAgenda.Code`.</summary>
-    public string AgendaCode { get; internal set; } = "";
+    /// <summary>Agenda šablony - okno ji jen ukáže. Změnit ji jde jedině příkazem Změnit agendu, který
+    /// založí novou šablonu a vymění nabídku dat; přes „Uložit jako" vznikala šablona s prvky jedné
+    /// agendy pod jinou, i nezveřejněnou (`B194a` C10).</summary>
+    public string AgendaCode { get; }
 
-    /// <summary>
-    /// Backward-compat accessor - některé call sites referují `SelectedAgenda.Code`.
-    /// Vrací AgendaInfo s prázdným Name (label není po EDInputForm migraci dostupný).
-    /// </summary>
-    public AgendaInfo SelectedAgenda => new(AgendaCode, "");
+    /// <summary>Zobrazovaný název agendy pro formulář (obecná agenda v serverovém seznamu není).</summary>
+    public string AgendaLabel { get; }
 
-    public SaveToCacheDialogViewModel(string initialName, string? initialAgendaCode)
+    public SaveToCacheDialogViewModel(string initialName, string? agendaCode, string? agendaLabel = null)
     {
         InitialName = initialName;
-        InitialAgendaCode = initialAgendaCode;
+        InitialAgendaCode = agendaCode;
         Name = initialName;
-        AgendaCode = initialAgendaCode ?? "";
+        AgendaCode = agendaCode ?? "";
+        AgendaLabel = string.IsNullOrEmpty(agendaLabel) ? AgendaCode : agendaLabel;
     }
 }

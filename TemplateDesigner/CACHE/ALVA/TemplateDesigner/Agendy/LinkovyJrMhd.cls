@@ -176,11 +176,13 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
             i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Blocked")) continue
             s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Nazev"))
             s cislo = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",tp,"Cislo"), tp)
-            i nazev = "" { s nazev = "Typ provozu "_cislo }
+            i nazev = "" { s nazev = cislo }
             elseif $g(nazvy(nazev)) > 1 { s nazev = nazev_" (č. "_cislo_")" }
             s popis = "Spoje tohoto typu provozu se vytisknou jako samostatný blok. Vypnutý typ provozu se netiskne."
             i $g(provozNadpis(tp)) '= "" s popis = "Nadpis bloku na tisku: „"_provozNadpis(tp)_"“. "_popis
-            d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, ..ParametrTypuProvozu(tp), nazev, 1, "Typy provozu pro tisk", popis, 1)
+            // Skupina podle prvku jako ostatní parametry (`B194c` P4, do 26. 10. vlastní skupina „Typy
+            // provozu pro tisk"); předpona v popisku je odliší od ostatních voleb Tabulky spojů.
+            d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, ..ParametrTypuProvozu(tp), "Typ provozu: "_nazev, 1, "Tabulka spojů", popis, 1)
             // Firma má typů provozu desítky, linka pár - návrhář ukáže jen ty, které načtená linka má.
             d arr.%Get(arr.%Size() - 1).%Set("visibleWhenListedIn", "TYPY_PROVOZU_LINKY")
         }
@@ -233,8 +235,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         s linkaId = $g(^||ML("IN","LINKA_ID"))
         i linkaId = "" s linkaId = $g(^||ML("IN","INSTANCE_ID"))
-        i linkaId = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
-        i '$d(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId)) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_linkaId_" neexistuje v ALVA.MHD.LSO"))
+        i linkaId = "" d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
+        i '$d(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId)) d ..ChybaDat("Vybraná linka v modulu MHD není, mohla být smazána. Vyberte linky znovu.")
 
         s smery = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).SmeryKTisku($g(^||ML("IN","SMER_TISKU")))
         d ..PriradNegativniZnacky(.sys, IdFa, dataDB, linkaId, smery, .znacky)
@@ -417,7 +419,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
         s razeni($g(provozPoradi(typProvozu), 999), typProvozu, vychoziCas, spojId) = ""
         m spojTabulka(spojId) = arrtbsp("arr",1)   // cache pro BuildSpojMhd
     }
-    i '$d(razeni) q ..PrazdnaStranka($s('$g(spojuSmeru):"Linka nemá ve vybraném směru žádné spoje.", $g(vypnuteTypem)=spojuSmeru:"Vybrané typy provozu nemají na lince žádné spoje. V parametrech (Typy provozu pro tisk) zapněte aspoň jeden typ, který linka má.", 1:"Spoje linky nemají spočítané časy, nejspíš chybí jízdní doby. Doplňte jízdní doby linky v modulu MHD."))
+    i '$d(razeni) q ..PrazdnaStranka($s('$g(spojuSmeru):"Linka nemá ve vybraném směru žádné spoje.", $g(vypnuteTypem)=spojuSmeru:"Vybrané typy provozu nemají na lince žádné spoje. V parametrech ve skupině Tabulka spojů zapněte aspoň jeden typ provozu, který linka má.", 1:"Spoje linky nemají spočítané časy, nejspíš chybí jízdní doby. Doplňte jízdní doby linky v modulu MHD."))
 
     // Zastávky, kde žádný tištěný spoj nestaví (jen projíždí nebo jede jinudy), se vynechají jako
     // u AD. Rozhodují spoje vybraných typů provozu, ne celá linka.
@@ -531,8 +533,9 @@ ClassMethod BuildZastavkaRadek(bodVeta As %List, typ As %String, poradi As %Inte
 }
 
 /// Zóny zastávky v integrovaném systému linky (ENUMS Zony ZonaIDSID = IDSID linky), víc zón
-/// spojených „/" jako u zastávkového JŘ MHD. ⚠️ Vědomě jinak než starý tisk, který bere jen poslední
-/// zónu (legacy :353-358): hraniční zastávka patří do obou zón a cestující to má vidět (Jan 22. 10.).
+/// spojených „/". ⚠️ Vědomě jinak než starý tisk, který bere jen poslední zónu (legacy :353-358):
+/// hraniční zastávka patří do obou zón a cestující to má vidět (Jan 22. 10.). Zastávkový JŘ MHD
+/// systém nefiltruje a posílá všechny zóny zastávky - každá agenda drží svůj starý modul (`B194` T8).
 ClassMethod ZonyZastavky(IdFa As %String, dataDB As %String, zastavkaId As %String, idsId As %String) As %String
 {
     s zony = "", c = ""
@@ -879,7 +882,7 @@ ClassMethod OmezeniSpoje(IdFa As %String, dataDB As %String, spojId As %String, 
     s bmp = $p(provozBitmapa,"~",3)
     k arr
     s isok = ##class(ALVA.MHD.KalendarFce).GetJede(IdFa, dataDB, $p(provozBitmapa,"~",1), $p(provozBitmapa,"~",2), typProvozu, "", "", .arr)
-    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Kalendář typu provozu spoje "_spojId_": "_isok))
+    i 'isok d ..ChybaSpoje(IdFa, dataDB, spojId, "kalendář typu provozu", isok)
     s cbmp = $lg($g(arr("dta",1)), 3)
     i cbmp = bmp q ""
 
@@ -887,14 +890,23 @@ ClassMethod OmezeniSpoje(IdFa As %String, dataDB As %String, spojId As %String, 
     s arri("dta",1) = $p(provozBitmapa,"~",1), arri("dta",2) = $p(provozBitmapa,"~",2)
     s arri("dta",3) = bmp, arri("dta",4) = cbmp
     s isok = ##class(ALVA.MHD.KalendarFce).MakeRozpisTplProTypProvozuID(IdFa, dataDB, typProvozu, .arri)
-    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Rozpis typu provozu spoje "_spojId_": "_isok))
+    i 'isok d ..ChybaSpoje(IdFa, dataDB, spojId, "rozpis typu provozu", isok)
     s chyba = $$mkOmzFromOnlyTwoBitmaps^JRapi(IdFa, dataDB, .arri, .arr)
-    i +chyba $$$ThrowStatus($$$ERROR($$$GeneralError, "Omezení spoje "_spojId_": "_chyba))
+    i +chyba d ..ChybaSpoje(IdFa, dataDB, spojId, "omezení proti kalendáři", chyba)
     s dny = $g(arr("dta",1))
     k arri m arri = arr s arri("par",1) = 0 k arr
     s isok = ##class(ALVA.MHD.KalendarFce).MakeOmezeniTXT(IdFa, dataDB, .arri, .arr)
-    i 'isok $$$ThrowStatus($$$ERROR($$$GeneralError, "Text omezení spoje "_spojId_": "_isok))
+    i 'isok d ..ChybaSpoje(IdFa, dataDB, spojId, "text omezení", isok)
     q $g(arr("dta",1))
+}
+
+/// Spoj, u kterého modul MHD nedokáže říct, kdy jede - chyba v datech typu provozu, kterou uživatel
+/// opraví v modulu MHD (`BaseAgenda.ChybaDat`). Číslo spoje veřejné, ne interní ID.
+ClassMethod ChybaSpoje(IdFa As %String, dataDB As %String, spojId As %String, co As %String, vysledek As %String)
+{
+    s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",spojId,"DTA",1,"CisloSpoje"))
+    s detail = $zstrip($s(vysledek["~":$p(vysledek,"~",2,$l(vysledek,"~")), 1:""), "<>W")
+    d ..ChybaDat("Spoj "_$s(cislo'="":cislo, 1:spojId)_": nejde určit, kdy jede ("_co_$s(detail'="":": "_detail, 1:"")_"). Zkontrolujte typ provozu spoje v modulu MHD.")
 }
 
 /// První NZ od `od`, kterou nemá žádný typ provozu, číselník ani už přidělený text (legacy :606-618).

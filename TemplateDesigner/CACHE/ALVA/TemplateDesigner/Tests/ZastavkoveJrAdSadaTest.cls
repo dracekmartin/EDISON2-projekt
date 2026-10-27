@@ -580,6 +580,100 @@ Method TestVlastniSloupecNedeleVratiSpojeSPlus()
 	do $$$AssertEquals(znacek, 0, "ve sloupci ""Neděle"" se objevily denní značky ("_znacek_"), i když ho spoje pokrývají celý")
 }
 
+/// Spoj „na objednání" a „podmínečně" má u minuty telefon / vykřičník a stránka s ním řádek legendy:
+/// věta z číselníku firmy a za ní upřesnění (`B194` T1; starý modul `JRapiLinPrtMhd1.mac:231-241`).
+/// CB_GWBUS 0103942 má upřesnění u linky nebo firmy, 0125850 vlastní text spojů.
+Method TestNaObjednaniZnackaALegenda()
+{
+	do ..SetupSys(.sys)
+	set overeno = 0
+	for pripad = "0103942~RBU~odjezd-na-objednani~Z", "0125850~RBP~odjezd-podminecne~"_$char(240) {
+		set lin = $piece(pripad, "~", 1), klic = $piece(pripad, "~", 2), kat = $piece(pripad, "~", 3), znak = $piece(pripad, "~", 4)
+		kill parametry
+		continue:'..NactiLinku(.sys, "CB_GWBUS", 216, lin, .parametry)
+		set overeno = overeno + 1
+		set stranekSeZnackou = 0, stranekSLegendou = 0, chyby = "", key = ""
+		for  {
+			set key = $order(^||ML("OUT", key))
+			quit:key=""
+			continue:'$isvalidnum(key)
+			set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
+			set znacek = 0, io = page.rows.ODJEZDY.%GetIterator()
+			while io.%GetNext(.j, .o) {
+				set an = o.%Get("ANOTACE")
+				continue:'$isobject(an)
+				for ai = 0:1:an.%Size()-1 {
+					continue:an.%Get(ai).%Get("KATEGORIE")'=kat
+					set znacek = znacek + 1
+					if an.%Get(ai).%Get("ZNAK") '= znak set chyby = chyby_" stránka "_key_": značka ["_an.%Get(ai).%Get("ZNAK")_"]"
+				}
+			}
+			set legenda = "", ip = page.rows.POZNAMKY.%GetIterator()
+			while ip.%GetNext(.j, .p) {
+				if p.%Get("KATEGORIE") = kat set legenda = p.%Get("TEXT")
+			}
+			set:znacek stranekSeZnackou = stranekSeZnackou + 1
+			set:legenda'="" stranekSLegendou = stranekSLegendou + 1
+			if (znacek > 0) '= (legenda '= "") set chyby = chyby_" stránka "_key_": značek "_znacek_", legenda ["_legenda_"]"
+			// upřesnění = to, co spoj vezme (spoj - linka - firma); na obou linkách ho mají všechny spoje stejné
+			if (legenda '= "") && ($get(upresneni) = "") {
+				set upresneni = ""
+				for smer = "T", "Z" {
+					set sp = ""
+					for  {
+						set sp = $order(^["CB_GWBUS"]JRL(216, lin, smer, sp))
+						quit:sp=""
+						continue:'+$piece($piece($get(^["CB_GWBUS"]JRL(216, lin, smer, sp)), "#", 1), ":", $select(klic="RBU":21, 1:23))
+						set upresneni = ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).UpresneniAtributuSpoje("CB_GWBUS", 216, lin, smer, sp, klic)
+						quit
+					}
+					quit:upresneni'=""
+				}
+			}
+			if (legenda '= "") && (legenda '[ upresneni) set chyby = chyby_" stránka "_key_": v legendě ["_legenda_"] chybí upřesnění ["_upresneni_"]"
+		}
+		do $$$AssertTrue(stranekSeZnackou > 0, lin_": žádná stránka nemá značku "_klic_" - fixture vyhnila?")
+		do $$$AssertTrue($get(upresneni) '= "", lin_": spoje "_klic_" nemají upřesnění - fixture vyhnila?")
+		do $$$AssertEquals(chyby, "", lin_":"_chyby)
+		kill upresneni
+	}
+	if 'overeno do $$$AssertTrue(1, "firma CB_GWBUS není na tomto serveru - přeskočeno")
+}
+
+/// Barevný spoj má barvu u minuty a parametr Barvy spojů ji vypne (`B194` T2). ZL_KOVED 260/0000621
+/// má 48 barevných spojů (sonda `BarvySpojuVyskyt`, 26. 10.).
+Method TestBarvySpojuNaMinutach()
+{
+	do ..SetupSys(.sys)
+	kill parametry
+	if '..NactiLinku(.sys, "ZL_KOVED", 260, "0000621", .parametry) {
+		do $$$AssertTrue(1, "linka ZL_KOVED 260/0000621 není na tomto serveru - přeskočeno")
+		quit
+	}
+	do $$$AssertTrue(..PocetBarevnychMinut() > 0, "bez parametru má mít barevný spoj barvu u minuty")
+	set parametry("TISKNOUT_BARVY_SPOJU") = "false"
+	do ..NactiLinku(.sys, "ZL_KOVED", 260, "0000621", .parametry)
+	do $$$AssertEquals(..PocetBarevnychMinut(), 0, "vypnuté Barvy spojů mají nechat všechny minuty bez barvy")
+}
+
+/// Kolik odjezdů právě načteného výstupu nese barvu spoje.
+ClassMethod PocetBarevnychMinut() As %Integer
+{
+	set pocet = 0, key = ""
+	for  {
+		set key = $order(^||ML("OUT", key))
+		quit:key=""
+		continue:'$isvalidnum(key)
+		set odj = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key)).rows.ODJEZDY
+		continue:'$isobject(odj)
+		set io = odj.%GetIterator()
+		while io.%GetNext(.j, .o) {
+			set:o.%Get("FORE_COLOR")'="" pocet = pocet + 1
+		}
+	}
+	quit pocet
+}
+
 /// Počet odjezdů ve všech stránkách právě načteného výstupu.
 ClassMethod PocetOdjezdu() As %Integer
 {

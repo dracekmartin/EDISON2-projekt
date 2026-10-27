@@ -172,15 +172,12 @@ protected override float DesignerPlaceholderHeight => 8f;
 
 ---
 
-## 9. Strom šablony - GetSummary
+## 9. Název prvku pro uživatele - ElementNames
 
-Soubor: `dotnet/Models/TemplateElement.cs`, metoda `GetSummary` (~řádek 236):
-
-```csharp
-NovyElement n => $"Obsah: {TruncateText(n.Content, 30)}",
-```
-
-Bez tohoto se v záložce „Strom" zobrazí generický fallback `(X, Y) WxH`.
+Soubor: `dotnet/Models/ElementNames.cs`, větev v `ForUser` i `ForType` - týž název jako v paletě
+a v nabídce vkládání. Bere ho strom šablony, stavový řádek i hlášky; bez něj ukážou obecné „prvek".
+Prvek doplň i do seznamu v `ElementNamesTests.KazdyTypPrvkuMaJmeno` - sám ho test nenajde.
+Strom technické údaje prvku neukazuje (`B194` E1).
 
 ---
 
@@ -275,7 +272,7 @@ XAML dialogu - 2× `<controls:CellStyleEditor>` (Header + Data zone):
 | 6 | `Windows/MainWindow/MainWindow.xaml.cs` (toolbar menu) | ✅ |
 | 7 | `Windows/MainWindow/MainWindow.xaml` + `EDIcons.xaml` + PNG | volitelné |
 | 8 | `Models/Layout/SkiaHeightCalculator.cs` | jen u dynamické výšky |
-| 9 | `Models/TemplateElement.cs` (GetSummary) | ✅ |
+| 9 | `Models/ElementNames.cs` (ForUser, ForType) | ✅ |
 | 10 | `changelog.md`, `CLAUDE.md` | ✅ |
 
 ---
@@ -283,7 +280,7 @@ XAML dialogu - 2× `<controls:CellStyleEditor>` (Header + Data zone):
 ## Brána - bez tohohle není hotovo
 
 Pořadí záleží: drift test najde chybějící registraci, kterou build neodhalí (`ElementTypes`
-konstanta bez `JsonDerivedType`, chybějící `GetSummary` větev).
+konstanta bez `JsonDerivedType`).
 
 1. `dotnet build EDISON2.sln` - musí projít čistě
 2. `dotnet test TemplateDesigner.Tests --filter ElementRegistrationDrift` - musí projít

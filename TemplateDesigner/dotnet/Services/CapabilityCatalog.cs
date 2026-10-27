@@ -120,7 +120,7 @@ s daty z agendy → PDF.
 
 ### Navigace a zobrazení
 - Zoom: Ctrl+kolečko (k kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
-- Mřížka a přichytávání: toolbar - zobrazit mřížku, snap na mřížku (velikost 0,2–10 mm),
+- Mřížka plátna a přichytávání: toolbar - zobrazit mřížku plátna, snap na mřížku (velikost 0,2–10 mm),
   snap na elementy; Ctrl+Shift+N normalizuje pozice existujících elementů.
 - Levý panel: záložky Sekce / Datová pole / Vlastnosti / Strom / Pomocník; Ctrl+B sbalí.
 - Strom šablony: záložka 'Strom' - hierarchie sekce → skupiny → elementy.
@@ -222,8 +222,8 @@ Pravidla obsahu (ZÁVAZNÁ):
         sb.AppendLine($"- Agenda: {(string.IsNullOrEmpty(agendaName) ? "obecná (bez dat)" : agendaName)}");
         sb.AppendLine($"- Počet sekcí v šabloně: {sectionCount}");
         sb.AppendLine(selectedElementType is null
-            ? "- Vybraný element: žádný"
-            : $"- Vybraný element: {FriendlyName(selectedElementType)}");
+            ? "- Vybraný prvek: žádný"
+            : $"- Vybraný prvek: {FriendlyName(selectedElementType)}");
 
         var specialni = AgendaCapabilities.ScheduleElementTypes(elementKind);
         if (specialni.Count > 0)
@@ -247,7 +247,7 @@ Pravidla obsahu (ZÁVAZNÁ):
     public static string BuildElementCatalog(string? elementKind)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("# Katalog elementů a jejich nastavení");
+        sb.AppendLine("# Katalog prvků a jejich nastavení");
         sb.AppendLine("(Vlastnosti jsou seskupené tak, jak je uživatel vidí v panelu/dialogu.)");
         sb.AppendLine();
 
@@ -348,7 +348,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             "každý oddíl nese celou tabulku znovu včetně záhlaví, takže prvek je nižší a širší.",
         ElementTypes.DepartureGrid =>
             "Mřížka minut odjezdů po skupinách dnů. Skupiny a sloupce mají vlastní dialog " +
-            "(vč. přepisu nadpisu skupiny a sloupce hodin per skupina).",
+            "(vč. přepisu záhlaví skupiny a sloupce hodin per skupina).",
         ElementTypes.NotesLegend =>
             "Legenda vysvětlivek/poznámek pod jízdním řádem (1–4 sloupce, řazení, směr plnění, filtr typů). " +
             "⚠️ Tady se zapínají i ZNAČKY U ODJEZDŮ - přeprava kol, místenky, pokračující spoje - a souhrn " +
@@ -358,8 +358,8 @@ Pravidla obsahu (ZÁVAZNÁ):
             "Sloupcová tabulka celé linky (zastávky × spoje) pro linkový/knižní JŘ. Zastávky jsou řádky, " +
             "spoje sloupce. Viditelnost, pořadí, šířky a styl sloupců má vlastní dialog (Upravit sloupce…). " +
             "POPISNÉ SLOUPCE (zóna, km, Tč, zastávka, MHD, šipka) jsou skupina: dají se přejmenovat, " +
-            "dostat jeden společný nadpis ('Nadpis popisných sloupců'), slít bez vnitřních čar " +
-            "('Popisné sloupce bez vnitřních čar') a oddělit od spojů mezerou ('Mezera mezi skupinami sloupců'). " +
+            "dostat jedno společné záhlaví ('Text záhlaví popisných sloupců'), slít bez vnitřních čar " +
+            "('Popisné sloupce bez vnitřních čar') a oddělit od spojů mezerou ('Mezera mezi skupinami dnů'). " +
             "⚠️ ŠÍŘKA SLOUPCE SPOJE rozhoduje o všem ostatním: kolik spojů se vejde vedle sebe, na kolik ČÁSTÍ " +
             "se tabulka rozřeže a kolik vyjde stran. Ovlivňují ji 'Nejmenší/Největší šířka sloupce spoje', " +
             "'Stejně široké sloupce spojů', vnitřní okraj datových buněk a velikost jejich písma " +

@@ -1296,6 +1296,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     // ─── PropertyDescriptors ────────────────────────────────────────────────
 
+    /// <summary>Skupina vzhledu aktuální a projetých zastávek - jako ve formuláři prvku.</summary>
+    internal const string AktualniGroup = "Aktuální a projeté zastávky";
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         .. GetScheduleBaseDescriptors(),
@@ -1358,8 +1361,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             // u širokého elementu je tedy daleko vpravo a uživateli se zdálo, že se „nic nezměnilo".
             Options =
             [
-                ("Vpravo (u pravého okraje elementu)", (object)DirectionArrowSide.Right),
-                ("Vlevo (u levého okraje elementu)",   (object)DirectionArrowSide.Left),
+                ("Vpravo (u pravého okraje prvku)", (object)DirectionArrowSide.Right),
+                ("Vlevo (u levého okraje prvku)",   (object)DirectionArrowSide.Left),
             ]
         },
         new ColorPropertyDescriptor { FromImage = true, Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },
@@ -1402,17 +1405,18 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         new BoolPropertyDescriptor  { FromImage = true, Label = "Záhlaví sloupců",      Group = "Záhlaví",    Get = () => ShowHeader,            Set = v => ShowHeader = v },
 
-        new BoolPropertyDescriptor  { FromImage = true, Label = "Podtržení aktuální",  Group = "Zvýraznění", Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
-        new BoolPropertyDescriptor  { FromImage = true, Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
-        new ColorPropertyDescriptor { FromImage = true, Label = "Barva textu aktuální", Group = "Zvýraznění", Get = () => CurrentStopTextColor ?? "", Set = v => CurrentStopTextColor = string.IsNullOrWhiteSpace(v) ? null : v },
-        new FloatPropertyDescriptor { Label = "Velikost aktuální",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
-        new ColorPropertyDescriptor { FromImage = true, Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
+        // Popisky i skupina jako formulář (StopListElementEdit.cls), `B194` E10.
+        new BoolPropertyDescriptor  { FromImage = true, Label = "Aktuální: Tučné",       Group = AktualniGroup, Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
+        new BoolPropertyDescriptor  { FromImage = true, Label = "Aktuální: Podtržení",   Group = AktualniGroup, Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
+        new FloatPropertyDescriptor { Label = "Aktuální: Velikost",  Group = AktualniGroup, Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Aktuální: Barva textu", Group = AktualniGroup, Get = () => CurrentStopTextColor ?? "", Set = v => CurrentStopTextColor = string.IsNullOrWhiteSpace(v) ? null : v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Aktuální: Pozadí",      Group = AktualniGroup, Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         // „Projeté zastávky" (zapnutí) tu záměrně není - řídí ji parametr sestavy
         // TISK_PROJETYCH_ZAST. Barva a čas u projetých jsou vzhled, ty do šablony patří.
-        new ColorPropertyDescriptor { FromImage = true, Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Projeté: Barva textu",  Group = AktualniGroup, Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
         new EnumPropertyDescriptor
         {
-            Label = "Čas u projetých", Group = "Zvýraznění",
+            Label = "Projeté: Čas", Group = AktualniGroup,
             Get = () => PassedStopsTime,
             Set = v => PassedStopsTime = (PassedStopsTimeDisplay)v,
             Options =

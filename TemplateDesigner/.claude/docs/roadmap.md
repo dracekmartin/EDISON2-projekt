@@ -20,25 +20,10 @@ co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-
 Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
 vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se linkového MHD, nejlevnější před verzí.
 
-### `B194a` Chyby
-
-- **C9** Linkový AD čte nastavení formátu data u linky o režim vedle [S] **tisk**
-- **C10** „Uložit jako" přepojí šablonu na jinou agendu, i nezveřejněnou [S]
-- **C11** Chyba serveru u jedné linky zastaví tisk všech, hláška je technická [M]
-- **C12** Výchozí vývěska MHD: nadpisy skupin dnů přetékají, minuty ve čtvrté skupině uříznuté [M] **tisk**
-
 ### `B194b` Tisk - rozdíly mezi agendami (všechno **tisk** a **Jan**)
 
-- **T1** Vývěska AD neoznačuje spoje „na objednání" a „podmínečně" - starý modul to tiskl [M]
-- **T2** Vývěska AD nebarví obarvené spoje - starý modul to tiskl [M]
-- **T3** Text omezení u značky je na vývěsce AD jiný než v linkovém AD, parita nedoložena [M]
-- **T4** Vysvětlivka téže značky zní v každé agendě jinak, překlep „částečne" [S]
-- **T5** Linkový MHD slije dvouřádkový nadpis skupiny dnů do jednoho řádku [M] **do 27. 10.**
-- **T6** Dopravce se tiskne v pěti tvarech („tel:" × „tel.", pořadí adresy v linkovém MHD) [S] **do 27. 10.**
-- **T7** „Jen nástup / jen výstup" chybí jen na vývěsce AD [S-M]
-- **T8** Zóny se počítají čtyřmi pravidly - doporučení neměnit, opravit komentář [S]
-- **T9** Oddělovač v legendě vývěsek je dlouhá pomlčka [S]
-- **T10** Pokračování spoje v linkovém AD je natvrdo česky i ve slovenské šabloně [S]
+- **T7** „Jen nástup / jen výstup" chybí v Zastávkovém JŘ AD - **odloženo** (Jan 26. 10.), otevřené: podle
+  kterých spojů šipku ukázat; rozpracováno ve stashi [M]
 
 ### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)
 
@@ -53,29 +38,20 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **P1** Vývěsky: osm voleb bez nápovědy, dvě nesrozumitelné [S]
 - **P2** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M] **Jan**
 - **P3** Stránka pro stanoviště je ve vývěsce jinde a jinak pojmenovaná než v linkovém JŘ [S] **Jan**
-- **P4** Linkový MHD: skupina „Typy provozu pro tisk" mimo pravidlo [S] **Jan** **do 27. 10.**
 - **P5** Linkový AD výlepy: bez pořadí stránek a bez PDF na zastávku [M] **Jan**
 - **P6** „Obousměrný tisk" svítí i při jednom směru [S]
-- **P7** Nápovědy parametrů: „nástupiště", neúplné výčty, věta nevhodná pro MHD [S] **do 27. 10.**
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
-- **E1** Strom šablony ukazuje anglické názvy tříd [S]
-- **E2** Okna nastavení se jmenují jinak než prvky („Linkový JŘ - nastavení") [S]
-- **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan**
-- **E4** „Záhlaví" × „nadpis" pro totéž [S]
-- **E5** Seznam zastávek nabízí v MHD sloupek a parametr, které existují jen v AD [M]
-- **E6** „Zarovnání" vedle „Svisle" místo „Vodorovně" [S]
-- **E7** „Element" × „prvek", „ZIndex" × „Vrstva", „engine" [M] **Jan**
-- **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan**
-- **E9** Minuty odjezdů a Tabulka spojů pojmenovávají mezery a poměry jinak [S] **Jan**
-- **E10** Aktuální zastávka v Seznamu zastávek: zkratky, „Tučně", „Zvýraznění" [S]
-- **E11** Popisky v C# a ve formuláři se rozcházejí (import z PDF, náhradní panel, AI) [M]
-- **E12** Katalog sloupců Tabulky spojů jinak než data („Zastávka", „TČ" × „Tč") [S]
-- **E13** Dialogy sloupců mají každý jiné ovládání [M]
-- **E14** Tabulka spojů ukazuje interní pole „Kolekce …" [S] **Jan**
-- **E15** Texty nápověd: tykání, „engine", „padding", překlep v Nápovědě F1 [S]
-- **E16** Drobnosti: „Rozměry a mřížka", dvojí „Mřížka", stejná ikona dvou prvků [S]
+- **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan** -
+  **odloženo** (Jan 26. 10.) až za menší body E5-E16; patří sem i umístění voleb záhlaví (dnes „Skupiny
+  dnů" / „Řádky", kanon chce „Obecné")
+- **E5** Seznam zastávek nabízí v MHD sloupek, varianty tras a „Více stanovišť", které existují jen v AD [M] -
+  **odloženo** (Jan 26. 10.); návrh: nabídka podle polí, která agenda posílá, zapnutý sloupec zůstane vidět
+- **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan** - **odloženo k rozmyšlení**
+  (Jan 26. 10.); návrh: vysvětlivka z popisku do nápovědy, rozsahy na nejširší (výška řádku 1-50 mm, písmo 3-200 pt)
+- **E13** Dialogy sloupců - zbývá c (jedna společná komponenta oken se sloupci, přestavba) - **odloženo**
+  spolu s E3 [M]
 
 ### `B194e` Aplikace a dokumentace
 
@@ -94,7 +70,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **G3** Jeden popisek = jeden klíč napříč agendami JŘ [S]
 - **G4** Kontrola zakázaných termínů i v nápovědách a titulcích oken [S]
 - **G5** Každé tlačítko formuláře má obsluhu v každém hostiteli [S]
-- **G6** Popisek v C# a ve formuláři u téhož klíče shodný [S-M]
 - **G7** Drobné díry drift testů [S]
 - **G8** Zlatý odtisk linkového MHD včetně hlavičky (po 27. 10.) [S]
 
@@ -124,6 +99,11 @@ Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`
 ## 📥 Backlog
 
 ### Ostatní
+
+- **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - Jan je nejdřív projde s kolegy (26. 10.).
+  Dnes návrhář přebírá nastavení u linky a firmy z modulu JŘ tak, jak je ukládá starý modul (např.
+  formát roku v omezeních, `B194a` C9). Po probrání rozhodnout, co z nich zůstane u linky, co se
+  přesune do šablony a jak se má nastavovat.
 
 - **`B56` Sloučení opsaného kódu agend** [L] - **po vydání** linkového JŘ MHD (čekalo na doimplementaci
   knižního JŘ, splněno 22. 10.). Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už

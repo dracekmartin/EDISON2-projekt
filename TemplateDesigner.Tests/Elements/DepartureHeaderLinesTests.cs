@@ -54,6 +54,18 @@ public class DepartureHeaderLinesTests
         Assert.Equal([false, false, true], lines.Select(l => l.IsSecondary));
     }
 
+    /// <summary>`B194a` C12: se druhým nadpisem z dat se zalamují oba - dlouhé období („1.7. - 31.8.
+    /// a 27.12. - 31.12.") do 26. 10. přetékalo do sousední skupiny. Druhý nadpis svým písmem.</summary>
+    [Fact]
+    public void DruhyNadpis_ZalamujeSeSvymPismem()
+    {
+        var lines = DepartureGridElement.ComposeHeaderLines("Pracovní den", "1.7. - 31.8.",
+            radek => radek.Split(' '), radek => radek.Split(" - "));
+
+        Assert.Equal(["Pracovní", "den", "1.7.", "31.8."], lines.Select(l => l.Text));
+        Assert.Equal([false, false, true, true], lines.Select(l => l.IsSecondary));
+    }
+
     /// <summary>Bez zlomu se pořád zalamuje podle šířky - dosavadní chování beze změny.</summary>
     [Fact]
     public void BezZlomu_ZalamujeDalPodleSirky()

@@ -8,6 +8,7 @@ using EDControls.EDViewModel;
 using Microsoft.Win32;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Layout;
+using TemplateDesigner.Serialization;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner;
@@ -160,6 +161,20 @@ public class PrintDialogViewModel : EDViewModel
         }
     }
 
+    /// <summary>Chyba tisku do stavového řádku. Chybu v datech linky (`B194a` C11) i mezi hlášky - říká, co
+    /// opravit, a klikem přejde na linku; chyba programu zůstává jen ve stavu.</summary>
+    private void UkazChybu(Exception ex)
+    {
+        if (ex is CacheAgendaDataException data)
+        {
+            var linka = data.Linka ?? "";
+            StatusText = $"⚠ Tisk se zastavil u linky {linka}";
+            NastavHlaseni([KontrolaVystupu.LinkaChybaDat(linka, data.Message)], "Linku nejde vytisknout");
+            return;
+        }
+        StatusText = $"⚠ Chyba: {ex.Message}";
+    }
+
     private void NastavHlaseni(IReadOnlyList<Hlaseni> hlaseni, string nadpis)
     {
         Hlaseni = hlaseni;
@@ -241,7 +256,7 @@ public class PrintDialogViewModel : EDViewModel
         }
         catch (Exception ex)
         {
-            StatusText = $"⚠ Chyba: {ex.Message}";
+            UkazChybu(ex);
         }
         finally
         {
@@ -349,7 +364,7 @@ public class PrintDialogViewModel : EDViewModel
         catch (Exception ex)
         {
             Probiha = false;
-            StatusText = $"⚠ Chyba: {ex.Message}";
+            UkazChybu(ex);
         }
     }
 
@@ -465,7 +480,7 @@ public class PrintDialogViewModel : EDViewModel
         }
         catch (Exception ex)
         {
-            StatusText = $"⚠ Chyba: {ex.Message}";
+            UkazChybu(ex);
         }
     }
 
@@ -550,7 +565,7 @@ public class PrintDialogViewModel : EDViewModel
         }
         catch (Exception ex)
         {
-            StatusText = $"⚠ Chyba: {ex.Message}";
+            UkazChybu(ex);
         }
     }
 

@@ -45,11 +45,11 @@ public class LineScheduleImportTests
     [Theory]
     [InlineData("Řádek platnosti")]
     [InlineData("Řádek negativních značek")]
-    [InlineData("Řádky · Přípojné řádky")]
+    [InlineData("Řádky · Přípojné řádky (vyčká/navazuje)")]
     [InlineData("Tučné zastávky dle trasy")]
     [InlineData("Čáry u zastávek dle trasy")]
-    [InlineData("Nadpisy skupin dnů")]
-    [InlineData("Nadpis popisných sloupců")]
+    [InlineData("Záhlaví skupin dnů")]
+    [InlineData("Text záhlaví popisných sloupců")]
     [InlineData("Podbarvit lichá Tč")]   // měří se z PDF
     [InlineData("Barva lichých Tč")]
     public void NaVolbyNepotvrditelneZPapiruSeNeptame(string klic)

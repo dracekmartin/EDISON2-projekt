@@ -251,11 +251,11 @@
                           Click="MenuPrevzitVychoziFont_Click"/>
             </MenuItem>
             <MenuItem Header="Zobrazit">
-                <MenuItem x:Name="MenuGrid" Header="Mřížka" IsCheckable="True"
+                <MenuItem x:Name="MenuGrid" Header="Mřížka plátna" IsCheckable="True"
                           IsChecked="{Binding ShowGrid, Mode=TwoWay}"/>
-                <MenuItem x:Name="MenuSnap" Header="Přichytit na mřížku" IsCheckable="True"
+                <MenuItem x:Name="MenuSnap" Header="Přichytit k mřížce plátna" IsCheckable="True"
                           IsChecked="{Binding SnapToGrid, Mode=TwoWay}"/>
-                <MenuItem x:Name="MenuSnapElements" Header="Přichytit k elementům" IsCheckable="True"
+                <MenuItem x:Name="MenuSnapElements" Header="Přichytit k prvkům" IsCheckable="True"
                           IsChecked="{Binding SnapToElements, Mode=TwoWay}"/>
                 <MenuItem Header="Záhlaví sekcí" IsCheckable="True"
                           IsChecked="{Binding ShowSectionHeaders, Mode=TwoWay}"/>
@@ -385,14 +385,14 @@
                              to pořadí drží samo, u linkových by poznámky stály před svou tabulkou. -->
                         <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Tabulka spojů (zastávky × spoje)" Tag="LineTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
+                            <Image Source="{StaticResource EDIcons.LineTable}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Poznámky" Tag="NotesLegendElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
-                    <TextBlock Text="Elementy" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Prvky" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
@@ -453,12 +453,12 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Mřížka: zobrazit + velikost -->
-                        <ToggleButton x:Name="BtnGrid" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit mřížku"
+                        <ToggleButton x:Name="BtnGrid" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit mřížku plátna"
                                       IsChecked="{Binding ShowGrid, Mode=TwoWay}">
                             <Image Source="{StaticResource EDIcons.Grid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </ToggleButton>
                         <ComboBox x:Name="CmbGridSize" Width="Auto" MinWidth="64" VerticalAlignment="Center" Margin="2,0"
-                                  ToolTip="Velikost mřížky" SelectedIndex="2"
+                                  ToolTip="Velikost mřížky plátna" SelectedIndex="2"
                                   SelectionChanged="CmbGridSize_SelectionChanged">
                             <ComboBoxItem Content="0,2 mm" Tag="0.2"/>
                             <ComboBoxItem Content="0,5 mm" Tag="0.5"/>
@@ -472,12 +472,12 @@
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="6,2" VerticalAlignment="Stretch"/>
 
                         <!-- Snap k mřížce -->
-                        <ToggleButton x:Name="BtnSnap" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytit k mřížce"
+                        <ToggleButton x:Name="BtnSnap" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytit k mřížce plátna"
                                       IsChecked="{Binding SnapToGrid, Mode=TwoWay}"
                                       Content="M" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
 
                         <!-- Snap k objektům + mezera -->
-                        <ToggleButton x:Name="BtnSnapElements" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytávat k objektům (elementy + okraje sekce)"
+                        <ToggleButton x:Name="BtnSnapElements" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytávat k objektům (prvky + okraje sekce)"
                                       IsChecked="{Binding SnapToElements, Mode=TwoWay}"
                                       Content="O" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                         <ComboBox x:Name="CmbSnapGap" Width="Auto" MinWidth="64" VerticalAlignment="Center" Margin="2,0"
@@ -492,7 +492,7 @@
                             <ComboBoxItem Content="10 mm" Tag="10"/>
                         </ComboBox>
                     </StackPanel>
-                    <TextBlock Text="Mřížka a přichytávání" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Mřížka plátna a přichytávání" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
@@ -619,9 +619,9 @@
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
                                     Padding="6" Background="{DynamicResource EDTheme.Bg.Footer}">
                                 <UniformGrid Columns="2">
-                                    <Button x:Name="BtnAddSectionPanel" Content="+ Přidat sekci"
+                                    <Button x:Name="BtnAddSectionPanel" Content="Přidat sekci"
                                             Click="BtnAddSection_Click" HorizontalAlignment="Stretch" Padding="4,4" Margin="0,0,3,0"/>
-                                    <Button x:Name="BtnAddPagePanel" Content="+ Přidat stránku"
+                                    <Button x:Name="BtnAddPagePanel" Content="Přidat stránku"
                                             ToolTip="Nová stránka dokladu, třeba rub stazky - na plátně vlastní list"
                                             Click="BtnAddPage_Click" HorizontalAlignment="Stretch" Padding="4,4" Margin="3,0,0,0"/>
                                 </UniformGrid>
@@ -813,7 +813,7 @@
                             <Button Content="▶" Command="{Binding DalsiPredlohaCommand}" ToolTip="Další stránka šablony"
                                     FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                         </StackPanel>
-                        <Button Content="+ Stránka" Click="BtnAddPage_Click" HorizontalAlignment="Right"
+                        <Button Content="Přidat stránku" Click="BtnAddPage_Click" HorizontalAlignment="Right"
                                 VerticalAlignment="Center" Margin="0,0,8,0" Padding="8,1"
                                 ToolTip="Přidat stránku šablony, třeba rub stazky"
                                 FontSize="{DynamicResource EDTheme.FontSize.Body}"/>

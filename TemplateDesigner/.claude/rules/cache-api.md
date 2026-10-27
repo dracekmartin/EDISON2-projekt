@@ -249,6 +249,12 @@ na začátku GetData, `q ..PrazdnaStranka("…")` místo prázdné stránky, `Vy
 Návrhář z něj udělá hlášku-problém „nemá data, nevytiskne se" (náhled, kontrola, tisk víc linek).
 ⚠️ **Ne chyba přes `$$$ThrowStatus`**: výjimka by při tisku víc linek zastavila i ty s daty.
 
+**Data, která linku vytisknout nedovolí** (linka v JŘ není, spoj MHD bez kalendáře, turnusy nejdou
+načíst), hlásí agenda přes `..ChybaDat("co je špatně. Co s tím.")` z `BaseAgenda`: tisk se zastaví
+(rozhodnutí Jan 26. 10.), návrhář text ukáže jako informaci s číslem linky, ne jako chybu programu.
+Pozná ji podle obecné chyby 5001 (`CacheAgendaProvider.ChybaDat`), takže **technický text do
+`$$$GeneralError` nepiš** - uživatel ho uvidí doslova.
+
 ---
 
 ### Wire formát pravidlo (R3)

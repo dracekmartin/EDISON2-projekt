@@ -3,7 +3,7 @@ Include (GENERAL, EDInputForm)
 /// EDInputForm dispatch třída pro SaveToCacheDialog v TemplateDesigneru.
 /// Definuje formulář pro pojmenování šablony před uložením do Caché:
 /// - name (Text, Required)
-/// - agendaCode (List, Required) - položky načteny z ALVA.TemplateDesigner.API.AgendyRegistr
+/// - agendaCode (List, jen ke čtení) - jediná položka = agenda šablony; změna jen přes Změnit agendu
 ///
 /// Save metoda je no-op - vlastní Caché uložení šablony zajišťuje
 /// `ALVA.TemplateDesigner.API.Sablony.SaveTemplate` (volaná .NET vrstvou přes
@@ -11,7 +11,8 @@ Include (GENERAL, EDInputForm)
 /// pouze definici a validaci formuláře.
 ///
 /// IN["name"] / IN["agendaCode"] - initial values (povinné), používá je Init aby
-/// předvyplnil formulář.
+/// předvyplnil formulář. IN["agendaLabel"] = zobrazovaný název agendy (obecná agenda v registru
+/// není); bez něj se název dohledá v registru.
 Class ALVA.TemplateDesigner.EDInputForm.SaveTemplate Extends %RegisteredObject
 {
 
@@ -23,9 +24,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s initialName  = $g(^||ML("IN","name"))
         s initialAgenda = $g(^||ML("IN","agendaCode"))
-
-        // Načti agendy přes nested call do AgendyRegistr (mirror Instance.cls pattern)
-        s agendyJson = ..FetchAgendyJson(.sys)
+        s agendaLabel = $g(^||ML("IN","agendaLabel"))
 
         // Buduj form
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
@@ -33,8 +32,14 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         d form.AddText("name", "Název šablony", initialName, 1)
 
-        s f = form.AddFieldToLastGroup("agendaCode", "Agenda", $$$FieldTypeList, 0, 1)
-        d ..AddAgendyItems(f, agendyJson, initialAgenda)
+        // Agenda se jen ukáže (`B194a` C10): změna tady uložila šablonu s prvky a poli jedné agendy pod
+        // jinou, i nezveřejněnou. Měnit ji smí jen Změnit agendu, které založí novou šablonu.
+        s f = form.AddFieldToLastGroup("agendaCode", "Agenda", $$$FieldTypeList, 0, 0)
+        i agendaLabel = "" s agendaLabel = ..NazevAgendy(.sys, initialAgenda)
+        d f.AddListItem(initialAgenda, agendaLabel)
+        s f.value = initialAgenda
+        s f.editable = 0
+        s f.helpText = "Agendu změníte příkazem Změnit agendu (Ctrl+Shift+A)."
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }
@@ -84,22 +89,16 @@ ClassMethod FetchAgendyJson(ByRef sys As %String) As %String
     q json
 }
 
-/// Parsuje JSON pole agend a přidá je jako ListItem do field.
-ClassMethod AddAgendyItems(field As ALVA.EDControls.EDInputForm.Field, agendyJson As %String, selectedCode As %String)
+/// Název agendy z registru (pro klienta, který název neposlal); neznámá agenda = její kód.
+ClassMethod NazevAgendy(ByRef sys As %String, code As %String) As %String
 {
-    q:agendyJson=""
-    s arr = ##class(%DynamicArray).%FromJSON(agendyJson)
-    s i = 0
-    for {
-        s entry = arr.%Get(i)
-        q:'$isobject(entry)
-        s code = entry.%Get("code")
-        s label = entry.%Get("label")
-        d field.AddListItem(code, label)
-        s i = i + 1
+    s agendyJson = ..FetchAgendyJson(.sys), nazev = code
+    q:agendyJson="" nazev
+    s it = ##class(%DynamicArray).%FromJSON(agendyJson).%GetIterator()
+    while it.%GetNext(.k, .entry) {
+        i $isobject(entry) && (entry.%Get("code") = code) { s nazev = entry.%Get("label") q }
     }
-    // Pokud caller předal initial code, předvyplň hodnotu
-    s:selectedCode'="" field.value = selectedCode
+    q nazev
 }
 
 }

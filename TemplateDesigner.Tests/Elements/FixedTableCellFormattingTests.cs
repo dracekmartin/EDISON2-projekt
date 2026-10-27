@@ -140,7 +140,7 @@ public class FixedTableCellFormattingTests
 
         var descriptors = Formatting(table).Descriptors();
         var bold  = Assert.IsType<BoolPropertyDescriptor>(descriptors.Single(d => d.Label == "Tučné"));
-        var align = Assert.IsType<EnumPropertyDescriptor>(descriptors.Single(d => d.Label == "Vodorovně"));
+        var align = Assert.IsType<EnumPropertyDescriptor>(descriptors.Single(d => d.Label == EnumPropertyDescriptor.LabelZarovnaniVodorovne));
 
         Assert.True(bold.Get());
         Assert.Equal(TextHorizontalAlignment.Right, align.Get());
@@ -160,7 +160,7 @@ public class FixedTableCellFormattingTests
     public void ZarovnaniZListy_SeZapiseDoBunky()
     {
         var table = Grid();
-        var align = (EnumPropertyDescriptor)Formatting(table).Descriptors().Single(d => d.Label == "Svisle");
+        var align = (EnumPropertyDescriptor)Formatting(table).Descriptors().Single(d => d.Label == EnumPropertyDescriptor.LabelZarovnaniSvisle);
 
         var command = align.MakeCommand!(TextVerticalAlignment.Bottom)!;
 

@@ -18,6 +18,123 @@
   Vlastní sloupce jsou koncept AD, MHD je nedostane (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (3)).
 - **C8** Linkový AD bere nadpisy dvojice pracovní dny / víkend z kusů 8 a 9 číselníku jako starý tisk,
   prázdné → dřívější chování (rozhodnutí Jan 24. 10.; changelog 2026-10-24 (4)).
+- **C9** Linkový AD čte formát roku u linky o 1 níž jako starý modul a data v omezeních skládá jako on
+  (rozhodnutí Jan 26. 10.: zatím takto, lépe po probrání nastavení JŘ - backlog; changelog 2026-10-26 (1)).
+- **C10** „Uložit jako" agendu šablony jen ukáže, změna jen přes Změnit agendu (rozhodnutí Jan 26. 10.;
+  changelog 2026-10-26 (2)).
+- **C11** Chyba v datech linky zastaví tisk, ale ukáže se jako informace s tím, co opravit, a s číslem
+  linky (rozhodnutí Jan 26. 10.: zastavit celé smí; changelog 2026-10-26 (3)).
+- **C12** Minuty odjezdů hlídají šířku jako výšku: skupina dostane místo na minuty se značkami, nadpisy
+  se zalamují do skupiny, co se nevejde, zmenší se s hláškou, pod mezí hláška o ořezu (rozhodnutí Jan
+  26. 10.; changelog 2026-10-26 (4)).
+- **T5** Nadpis skupiny dnů v linkovém MHD jedním řádkem - **vědomý rozdíl** proti vývěsce MHD (rozhodnutí
+  Jan 26. 10.: vývěska má úzké sloupce, v Tabulce spojů je nadpis přes celou skupinu; #10660 se týkal
+  vývěsky). Související nadpisy vývěsky AD natvrdo česky zůstaly jako `T11`.
+- **T6** Dopravce: linkový MHD v pořadí ulice, PSČ obec jako vývěska MHD, souhrnné pole dopravců s mezerami
+  za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
+- **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
+  (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **E16** Drobnosti: Minuty odjezdů skupina „Rozměry", pomocná mřížka „Mřížka plátna" v menu a na liště,
+  „Negativní značka: Pozadí / Barva textu", Tabulka spojů s vlastní ikonou v paletě (rozhodnutí Jan 26. 10.;
+  changelog 2026-10-26 (42)).
+- **E15** Texty nápověd: vykání všude, technické výrazy po uživatelsku („převezme se z nadřazeného stylu",
+  „vnitřní okraj", „čárkovaná / tečkovaná", „záložka"), překlep „pohledna" v F1, dlouhé pomlčky v komentářích
+  (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (41)). Cesty v F1, které v UI nejsou, zůstávají v `H2`.
+- **E14** Tabulka spojů: z formuláře zmizela interní pole „Kolekce zastávek / spojů / skupin dnů"; všechny
+  agendy posílají `ZASTAVKY` / `SPOJE` / `SKUPINY_DNU`, v šablonách vlastnost zůstává (sonda
+  `ZdrojeTabulkySpoju`: 8 šablon s Tabulkou spojů, žádná jiná hodnota; rozhodnutí Jan 26. 10.; changelog
+  2026-10-26 (40)).
+- **E13a** Seznamy v dialozích: „Přidat" / „Odebrat" bez znaménka, posun jen šipkami ▲ ▼ s bublinou,
+  smazání barvy „×" (Tabulka z dat, Zvýraznění řádků, Druhy poznámek); pravidlo v ux-conventions §1
+  (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (38)).
+- **E12** Tabulka spojů: skupina zóna / km / Tč / zastávka / MHD se všude jmenuje „popisné sloupce"
+  (dřív i „popisové", „sloupce popisu"); názvy sloupců v okně se sloupci vědomě beze změny - údaje
+  zastávek nejsou v záložce Datová pole, vedle sebe je uživatel skoro nevidí (rozhodnutí Jan 26. 10.,
+  zúžený rozsah; changelog 2026-10-26 (37)).
+- **E11 + G6** Popisky nastavení v programu (úprava víc prvků, protokol importu z PDF, asistent) jsou
+  tytéž jako ve formuláři; hlídá `DescriptorLabelsMatchFormTests` (páruje podle popisku, deskriptor klíč
+  nenese; výjimky s důvodem). Rozhodnutí Jan 26. 10.: formulář má lepší popisky (changelog 2026-10-26 (36)).
+- **E10** Seznam zastávek: vzhled aktuální a projetých zastávek jako „Aktuální: Tučné / Podtržení /
+  Velikost / Barva textu / Pozadí", „Projeté: Barva textu / Čas", skupina všude „Aktuální a projeté
+  zastávky"; vzor „Část: Vlastnost" v kanonu (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (35)).
+- **E9c** Tabulka spojů: poměry „Poměr velikosti značek" / „Poměr velikosti minut" s jednotkou „×";
+  „Velikost" je vždy pevná hodnota v pt / mm, pravidlo v kanonu §8 (rozhodnutí Jan 26. 10.; changelog
+  2026-10-26 (34)). Tím je `E9` uzavřené.
+- **E9b** Minuty odjezdů: „Mezera mezi značkou a minutou" místo „Mezera minuta ↔ značka", nápovědy mezer
+  v obou prvcích „Prázdné = mezera podle velikosti písma" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (33)).
+- **E9a** Minuty odjezdů i Tabulka spojů: „Mezera mezi skupinami dnů" místo „Oddělovač skupin" (zněl jako
+  čára) a „Mezera mezi skupinami sloupců" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (32)).
+- **E7** Uživatelské texty říkají „prvek" (ne „element"), „Vrstva" (ne „ZIndex"), „výška podle obsahu"
+  (ne „počítá engine") a „plátno" (ne „canvas"); kanon §8 a zakázané tvary (rozhodnutí Jan 26. 10.: „prvek",
+  protože ho používá většina textů i příručka; changelog 2026-10-26 (30), (31)).
+- **E6** Zarovnání je všude „Zarovnání vodorovně" / „Zarovnání svisle" (celý tvar kvůli hledání), volba
+  jen jedním směrem nese směr v popisku („Zarovnání záhlaví svisle"); kanon §8 změněn (rozhodnutí Jan
+  26. 10.; changelog 2026-10-26 (29)).
+- **E4** Hlavička tabulky oproti datovým buňkám je všude „záhlaví" (Záhlaví skupin dnů, Text záhlaví
+  popisných sloupců, Styl 2. řádku záhlaví, okno se sloupci Minut); „nadpis" jen pro jinou věc, pravidlo
+  v kanonu §8 a staré tvary v zakázaných (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (28)).
+- **E2** Okna vlastností prvku mají jeden titulek „Vlastnosti - {název z palety}" jako záložka Vlastnosti,
+  i úprava víc prvků „Společné vlastnosti (N prvků)" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (27)).
+- **E1** Strom šablony mluví jmény z palety a formuláře sekce: „Šablona", „Stránka … okraje", sekce s typem
+  a výškou, „Skupina (N prvků)", prvek jménem z palety (text s obsahem); bez čísla vrstvy a technických
+  údajů (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (26)).
+- **T14** Linkový JŘ AD, další rozdíly proti starému tisku, které oracle našel mimo jádro sady (rozhodnutí
+  Jan 26. 10.: jako starý tisk): (a) omezení atributu kol / bezbariérového vozidla za větou, (d) tvar
+  „všechny spoje" podle všech spojů stránky, ne jen spojů s atributem (chyba od `L2`), (b) značka G a další
+  atributy zastávky na trase v legendě, (c) návaznost bez druhu dopravy mimo větu (changelog 2026-10-26
+  (23)-(25); oracle na 7 linkách pěti firem).
+- **T13** Linkový JŘ AD: legenda vysvětluje poznámky „p" ke spojům a tarifním bodům a místenka nese
+  doplněk linky a poznámky k vybraným spojům (nový řádek podle `MistOR`) - vše jako starý linkový tisk
+  (oracle na 7 linkách tří firem; changelog 2026-10-26 (22)). Zbylé rozdíly z oraclu jako `T14`.
+- **T12** Linkový JŘ AD: telefon / vykřičník u času v zastávce obsluhované na objednání / podmínečně
+  a věty OZO / OZP s upřesněním; značky u času i v příjezdovém řádku zdvojené zastávky - vše jako starý
+  linkový tisk (oracle 64/64 buněk, CB_GWBUS 216/0340941; changelog 2026-10-26 (21)). Původní zápis
+  „netiskne značky u času" byl širší, než platilo - ostatní značky (N, V, x, G) se posílaly.
+- **T11** Nadpisy skupin dnů v Zastávkovém JŘ AD (sloupce i vzory) z nastavení firmy a sady nadpisů u linky
+  jako starý zastávkový tisk, `<br>` = druhý řádek; společné `BaseAgenda.NadpisySkupinDnuAd` i pro Linkový
+  JŘ AD (tam `<br>` mezerou). Bez nastavení dnešní text (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (20)).
+- **T10c** Text rozdílů tras - planý nález, uzavřeno bez změny (Jan 26. 10.): „nezajíždí do" je jen ve vzorových
+  datech Zastávkového JŘ MHD, Linkový JŘ AD rozdíly vypisuje značkou „jede jinudy", Zastávkový JŘ AD
+  větami starého zastávkového tisku, Zastávkový JŘ MHD z dat modulu MHD.
+- **T10b** Stanoviště u názvu zastávky - vědomý rozdíl („, stan.16" v Linkovém JŘ AD × „, označník 3"
+  v nadpisu rozdělené vývěsky; rozhodnutí Jan 26. 10.; `konzistence-agend-jr.md` §8).
+- **T10a** Věta o pokračování spoje v Linkovém JŘ AD z číselníku firmy v jazyce šablony, bez něj české
+  znění (changelog 2026-10-26 (19)).
+- **T9** Oddělovač poznámek ve výchozích šablonách zastávkových JŘ (AD i MHD) „ - " místo dlouhé pomlčky;
+  linkové šablony vědomě dál tři mezery (zarovnání do sloupců). Test na dlouhou pomlčku v celé šabloně
+  (changelog 2026-10-26 (18)).
+- **T8** Zóny - vědomý rozdíl, každá agenda drží pravidlo svého starého modulu (rozhodnutí Jan 26. 10.;
+  `konzistence-agend-jr.md` §8), opravený zavádějící komentář v `LinkovyJrMhd.ZonyZastavky`.
+- **T4d** Přestup v legendě Zastávkového JŘ AD z číselníku stálých značek firmy jako Linkový JŘ AD,
+  bez něj „přestup na autobus / vlak" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (17)). Tím je T4 celé.
+- **T4c** „Na znamení" - vědomý rozdíl: Zastávkový JŘ AD krátce napevno, Linkový JŘ AD z číselníku firmy
+  (rozhodnutí Jan 26. 10., potvrzuje srpnové; `konzistence-agend-jr.md` §8).
+- **T4b** Překlep „částečne" opravený v obou agendách AD, Zastávkový JŘ AD i tvarem „spoj s částečně
+  bezbariérově přístupným vozidlem…" jako linkové (changelog 2026-10-26 (16)).
+- **T4a** Vysvětlivka bezbariérového vozidla i v Zastávkovém JŘ AD „spoj s bezbariérově přístupným
+  vozidlem" jako obě linkové agendy (vědomě jinak než starý zastávkový tisk, rozhodnutí Jan 26. 10.;
+  changelog 2026-10-26 (15)).
+- **T3e** Pořadí typů omezení i v Zastávkovém JŘ AD 13, 12, 11, 14, 15, 22 jako starý zastávkový tisk
+  a Linkový JŘ AD (changelog 2026-10-26 (14)). Tím je T3 (text omezení u značky) celé: obě agendy AD
+  skládají text stejně a Zastávkový se shoduje se starým zastávkovým tiskem (oracle šesti linek).
+- **T3d** Předložky textu omezení i v Zastávkovém JŘ AD z číselníku firmy (NCOME), jinak standardní
+  znění; společné `BaseAgenda.PredlozkaOmezeni`, konec zkratky „jede jen v su." a slovenského „premáva aj"
+  (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (13)).
+- **T3c** Rok v datech omezení i Zastávkový JŘ AD podle nastavení firmy / linky jako starý zastávkový
+  tisk a Linkový JŘ AD; společné `BaseAgenda.TiskDtm/FormatDatumyOmezeni/UpravDatum`, výchozí celý rok
+  (changelog 2026-10-26 (12)).
+- **T3b** Data v textu omezení odděluje i Linkový JŘ AD čárkou s mezerou jako Zastávkový JŘ AD
+  (vědomá odchylka od starého linkového tisku, rozhodnutí Jan 26. 10.; changelog 2026-10-26 (11)).
+- **T3a** „Jede jen v lichých / sudých týdnech" tiskne i Zastávkový JŘ AD (jako starý zastávkový tisk
+  a Linkový JŘ AD, společná `BaseAgenda.TextTydnuPlatnosti`; changelog 2026-10-26 (10)).
+- **T2** Barvy spojů: vývěska AD barví minuty jako linkový JŘ, v obou agendách checkbox „Barvy spojů"
+  místo třístavu „dle linky" (nastavení u linky nemá zapnuté žádná linka; rozhodnutí Jan 26. 10.;
+  changelog 2026-10-26 (9)).
+- **T1** Spoje „na objednání" a „podmínečně": vývěska AD je značí telefonem / vykřičníkem u minuty
+  s řádkem legendy, obě agendy AD připojují upřesnění spoj - linka - firma (i text firmy, rozhodnutí
+  Jan 26. 10.); značky u času v linkovém AD vyčleněny do `T12` (changelog 2026-10-26 (8)).
+- **P7** Nápovědy parametrů sjednocené: bez „nástupiště", úplný výčet řazení variant, věta pro MHD,
+  „prvek Tabulka spojů", všude „Vypnuto = …", typ „string" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (7)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

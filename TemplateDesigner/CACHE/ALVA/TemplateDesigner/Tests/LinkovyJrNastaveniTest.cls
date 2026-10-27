@@ -388,18 +388,32 @@ Method TestDefiniceSloupcuVUkazkovychDatech()
 
 /// `B194a` C8: dvojice pracovní dny / víkend bere nadpisy z kusů 8 a 9 číselníku jako starý tisk;
 /// prázdné → dřívější kus 2 a 7, prázdné vše → pevný text. Trojice beze změny (kusy 2-4).
+/// Číselník se zapisuje dočasně do testovacího namespace (nemá ho) a pak maže; kdyby ho měl,
+/// test ho nepřepisuje a přeskočí se. Od 26. 10. ho čte `BaseAgenda.NadpisySkupinDnuAd` (`B194` T11).
 Method TestNadpisyDvojiceZKusu8a9()
 {
-	set ad = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
-	do $classmethod(ad, "NadpisyZCiselniku", "~pd~so~ne~~~víkend prázdniny~Pracovní dny~Soboty, neděle a svátky", .t)
-	do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "Pracovní dny|Soboty, neděle a svátky", "dvojice z kusů 8 a 9")
-	do $$$AssertEquals(t("PD")_"|"_t("SO")_"|"_t("NE"), "pd|so|ne", "trojice z kusů 2-4")
+	set ad = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd", db = $namespace
+	if $data(^[db]JRSET("Definice","WinMHD","CZ","DSC")) {
+		do $$$AssertSkipped("testovací namespace má vlastní číselník WinMHD - nepřepisuje se")
+		quit
+	}
+	try {
+		set ^[db]JRSET("Definice","WinMHD","CZ","DSC") = "~pd~so~ne~~~víkend prázdniny~Pracovní dny~Soboty, neděle a svátky"
+		kill t  do $classmethod(ad, "NadpisySkupinDnu", db, "CZ", .t)
+		do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "Pracovní dny|Soboty, neděle a svátky", "dvojice z kusů 8 a 9")
+		do $$$AssertEquals(t("PD")_"|"_t("SO")_"|"_t("NE"), "pd|so|ne", "trojice z kusů 2-4")
 
-	do $classmethod(ad, "NadpisyZCiselniku", "~pd~so~ne~~~víkend prázdniny", .t)
-	do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "pd|víkend prázdniny", "bez kusů 8 a 9 jako dřív")
+		set ^[db]JRSET("Definice","WinMHD","CZ","DSC") = "~pd~so~ne~~~víkend prázdniny"
+		kill t  do $classmethod(ad, "NadpisySkupinDnu", db, "CZ", .t)
+		do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "pd|víkend prázdniny", "bez kusů 8 a 9 jako dřív")
 
-	do $classmethod(ad, "NadpisyZCiselniku", "", .t)
-	do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "pracovní dny|soboty, neděle a svátky", "prázdný číselník")
+		kill ^[db]JRSET("Definice","WinMHD","CZ","DSC")
+		kill t  do $classmethod(ad, "NadpisySkupinDnu", db, "CZ", .t)
+		do $$$AssertEquals(t("dvojicePD")_"|"_t("dvojiceVikend"), "pracovní dny|soboty, neděle a svátky", "prázdný číselník")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRSET("Definice","WinMHD","CZ","DSC")
 }
 
 /// Totéž na lince: firma s vyplněnou sadou 8/9 (CB_CSADAD) tiskne obě poloviny dvojice z ní.

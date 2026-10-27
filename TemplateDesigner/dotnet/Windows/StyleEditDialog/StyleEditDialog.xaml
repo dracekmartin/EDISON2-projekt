@@ -17,7 +17,7 @@
             <Button Content="{StaticResource EDStrings.Cancel}" Width="80" IsCancel="True"  Padding="10,3" Margin="0"/>
         </StackPanel>
 
-        <TextBlock DockPanel.Dock="Top" Text="Prázdné pole = dědí výchozí (šedě). Vyplněním přepíšeš."
+        <TextBlock DockPanel.Dock="Top" Text="Prázdné pole = převezme se výchozí hodnota (šedě). Vyplněním ji přepíšete."
                    FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}"
                    TextWrapping="Wrap" Margin="0,0,0,8"/>
 
