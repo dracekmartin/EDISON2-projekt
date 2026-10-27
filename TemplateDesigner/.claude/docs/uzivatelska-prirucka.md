@@ -768,7 +768,7 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     ⚠️ Slití něco stojí: u slitých spojů jsou **časy té delší varianty**. U dvou variant se shodnými
     časy to nevadí, u variant s jinými jízdními dobami se minuty posunou. Zapíná se to na celou
     sestavu, ne po jednotlivých variantách - před zapnutím si vývěsku prohlédněte.
-- **Samostatná stránka pro každé stanoviště** (parametr ve skupině „Seznam zastávek") - zastávka
+- **Samostatná stránka pro každé stanoviště** (parametr ve skupině „Obecné") - zastávka
   obsluhovaná z více stanovišť se vytiskne jako **samostatná vývěska pro každé z nich**, vždy jen
   s odjezdy spojů, které z něj jedou; číslo stanoviště je i v titulku stránky. Hodí se, když vývěsku
   fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy). Zda je

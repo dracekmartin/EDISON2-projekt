@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-27 (23) - „Samostatná stránka pro každé stanoviště" ve skupině Obecné (`B194c` P3)
+
+Volba zastávkového JŘ AD, která rozdělí zastávku obsluhovanou z víc stanovišť na víc vývěsek, je
+v panelu Parametry a v okně Tisk ve skupině **Obecné** za Pořadím stránek, ne v Seznamu zastávek: mění
+počet vývěsek celé sestavy, a takové volby patří do Obecné (pravidlo Jan 31. 8., stejně jako linkové
+„Stránka pro každou zastávku"). Uložená volba se nemění - persistuje se klíč a ano/ne, ne skupina.
+„Číslo stanoviště podle" zůstává v Seznamu zastávek, řídí i řádky seznamu. Ověřeno voláním
+`GetParameters` na CB_CSADAD. Název volby zatím beze změny (přejmenování na „Stránka pro každé
+stanoviště" k rozhodnutí Jan). Při ověřování se ukázalo, že revizí navržené sjednocení s linkovým JŘ
+nejde: linková volba dělí po zastávkách, vývěsková po stanovištích - jsou to dvě různé věci.
+
 ## 2026-10-27 (22) - panel Parametry po změně agendy neukazuje parametry té předchozí
 
 Jan to občas viděl při předvádění zákazníkům: po přepnutí zastávkového JŘ AD na linkový zůstaly
