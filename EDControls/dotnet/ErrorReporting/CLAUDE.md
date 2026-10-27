@@ -51,10 +51,10 @@ EDISONu. Hlídá to `ErrorReportTests`, u události s modulem od volajícího (`
 - **Neodeslaná hlášení** (offline, VPN, 500) zachytí `ErrorFallbackLog`:
   `%APPDATA%\m-line\common\error-reports.log`, NDJSON **bez příloh**, rotace nad ~1 MB
   do `.old`. Nic se zpětně neodesílá - podpora si soubor vyžádá ručně.
-- `ReportLegacyExit` (pád hostovaného legacy modulu podle exit kódu, volá `LegacyModuleHost`):
-  kontext okna = forma/exe modulu a **stabilní throttle klíč** `LegacyExit|exe|forma|kód` - syntetická
-  výjimka nemá stack, `BuildKey` by slepil pády všech modulů do jednoho záznamu. Výjimku zná jen host:
-  před pádem ji zapíše do `%TEMP%\m-line\legacy-crash\<pid>.txt` (`LegacyCrashDetail`, cestu zrcadlí
+- `ReportLegacyExit` (konec hostovaného legacy modulu podle exit kódu, volá `LegacyModuleHost`): kontext okna =
+  forma/exe modulu a **stabilní throttle klíč** `LegacyExit|exe|forma|kód` (syntetická výjimka nemá stack). Druh, typ
+  a text dává `LegacyExitCodes` (0xCFFFFFFF zaseknutí = `warning`, `data.kind`, `data.uptimeSec`), typ výjimky zůstává kvůli
+  filtrům. Výjimku zná jen host: zapíše ji do `%TEMP%\m-line\legacy-crash\<pid>.txt` (`LegacyCrashDetail`, cestu zrcadlí
   `HostedErrorReporter` v repu EDISON) a shell ji po konci procesu přiloží (`data.stack`, příčina v popisu).
 - `ReportFatal` posílá **synchronně** s 5s timeoutem: po `AppDomain.UnhandledException`
   runtime proces vzápětí ukončí a fire-and-forget by se nestihl.

@@ -44,7 +44,7 @@ internal sealed class LegacyModuleHost
     private readonly Func<EDServices> _services;
     private readonly Func<ProcessStartInfo, ILegacyProcess?> _start;
     private readonly Func<string, bool> _fileExists;
-    private readonly Action<string, string, int, string?> _reportExit;
+    private readonly Action<string, string, int, string?, TimeSpan> _reportExit;
     private readonly Func<int, DateTime, string?> _takeCrashDetail;
     private readonly Action<string, string> _trackUsage;
     private readonly Action<Action> _postToUi;
@@ -59,7 +59,7 @@ internal sealed class LegacyModuleHost
         Func<EDServices> services,
         Func<ProcessStartInfo, ILegacyProcess?>? start = null,
         Func<string, bool>? fileExists = null,
-        Action<string, string, int, string?>? reportExit = null,
+        Action<string, string, int, string?, TimeSpan>? reportExit = null,
         Func<int, DateTime, string?>? takeCrashDetail = null,
         Action<string, string>? trackUsage = null,
         Action<Action>? postToUi = null,
@@ -74,7 +74,8 @@ internal sealed class LegacyModuleHost
         _launcherExe = launcherExe;
         _start = start ?? SystemLegacyProcess.Start;
         _fileExists = fileExists ?? File.Exists;
-        _reportExit = reportExit ?? ErrorReporting.ErrorReports.ReportLegacyExit;
+        _reportExit = reportExit ?? ((exe, form, code, detail, uptime) =>
+            ErrorReporting.ErrorReports.Pipeline.ReportLegacyExit(exe, form, code, detail, uptime));
         _takeCrashDetail = takeCrashDetail ?? ErrorReporting.LegacyCrashDetail.Take;
         _trackUsage = trackUsage ?? EDUsageTelemetry.Track;
         // Konec procesu chodí z thread poolu; při shutdownu (Application.Current null) se zahodí.
@@ -335,7 +336,7 @@ internal sealed class LegacyModuleHost
             // Detail se odebere při každém konci, i nehlášeném (kill shellem uprostřed chybového dialogu).
             var crashDetail = _takeCrashDetail(pid, startedUtc);
             if (code is { } exitCode && ShouldReportExit(exitCode, launch.KilledByShell))
-                _reportExit(exeName, formFqn, exitCode, crashDetail);
+                _reportExit(exeName, formFqn, exitCode, crashDetail, _utcNow() - startedUtc);
         });
         return launch;
     }

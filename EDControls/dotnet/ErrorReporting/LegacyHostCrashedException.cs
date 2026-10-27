@@ -6,8 +6,7 @@ namespace EDControls.ErrorReporting;
 /// <paramref name="cause"/> je první řádek výjimky, kterou host zapsal před pádem (typ a zpráva).
 /// </summary>
 public sealed class LegacyHostCrashedException(string exeName, string formFqn, int exitCode, string? cause)
-    : Exception($"Modul {exeName} ({formFqn}) skončil s kódem {exitCode} (0x{exitCode:X8})."
-                + (string.IsNullOrEmpty(cause) ? "" : $" Příčina: {cause}"))
+    : Exception(LegacyExitCodes.Describe(exeName, formFqn, exitCode, cause))
 {
     /// <summary>Původní signatura pro exe přeložené proti starší samostatně nasazené EDControls.dll.</summary>
     public LegacyHostCrashedException(string exeName, string formFqn, int exitCode)

@@ -72,6 +72,7 @@ public class LegacyModuleHostTests
         public List<ProcessStartInfo> Started { get; } = [];
         public List<(string Exe, string Form, int Code)> Reports { get; } = [];
         public List<string?> ReportedDetails { get; } = [];
+        public List<TimeSpan> ReportedUptimes { get; } = [];
         /// <summary>Detail pádu, který „zapsal host", podle pid.</summary>
         public Dictionary<int, string> CrashDetails { get; } = [];
         public List<(int Pid, DateTime StartedUtc)> TakenDetails { get; } = [];
@@ -116,10 +117,11 @@ public class LegacyModuleHostTests
                     return Last = CreateProcess();
                 },
                 fileExists: path => !MissingFiles.Contains(path) && !MissingFiles.Contains(Path.GetFileName(path)),
-                reportExit: (exe, form, code, detail) =>
+                reportExit: (exe, form, code, detail, uptime) =>
                 {
                     Reports.Add((exe, form, code));
                     ReportedDetails.Add(detail);
+                    ReportedUptimes.Add(uptime);
                 },
                 takeCrashDetail: (pid, startedUtc) =>
                 {
@@ -685,6 +687,20 @@ public class LegacyModuleHostTests
         Assert.Contains("EDISONMAIN2API.exe", ex.Message);
         Assert.Empty(h.Started);
         Assert.Empty(h.Host.GetRunningModules());
+    }
+
+    [Fact]
+    public void Exit_ReportsUptimeSinceStart()
+    {
+        // Doba běhu odliší zaseknutí hned po startu od zaseknutí po hodinách práce.
+        var start = new DateTime(2026, 10, 26, 8, 0, 0, DateTimeKind.Utc);
+        var h = new Harness { Now = start };
+        h.Host.ShowLegacy(Exe, Form, true, "");
+        h.Now = start.AddSeconds(90);
+
+        h.Last!.Exit(unchecked((int)0xCFFFFFFF));
+
+        Assert.Equal([TimeSpan.FromSeconds(90)], h.ReportedUptimes);
     }
 
     [Fact]

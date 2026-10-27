@@ -270,6 +270,32 @@ public class ErrorReportsTests : IDisposable
     }
 
     [Fact]
+    public async Task ReportLegacyExit_Hang_IsWarningWithKindAndUptime()
+    {
+        _pipeline.ReportLegacyExit("ISYJR2.exe", "ALVA.ISY.ISYJR2.formISYJR2HlavniOkno", unchecked((int)0xCFFFFFFF), null,
+            TimeSpan.FromSeconds(90));
+
+        await WaitForRequests(1);
+        var body = Body(0);
+        Assert.Equal("warning", body["type"]!.GetValue<string>());
+        Assert.Equal("hang", body["data"]!["kind"]!.GetValue<string>());
+        Assert.Equal(90, body["data"]!["uptimeSec"]!.GetValue<long>());
+        // Typ výjimky zůstává kvůli filtrům a hledání v Přehledu.
+        Assert.Equal(typeof(LegacyHostCrashedException).FullName, body["data"]!["exceptionType"]!.GetValue<string>());
+        Assert.Contains("přestal odpovídat", body["description"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task ReportLegacyExit_LaunchFailed_IsErrorWithKind()
+    {
+        _pipeline.ReportLegacyExit("POKLADNAEX.exe", "ALVA.POKLADNAEX.formPOKLADNAEXMain", 2);
+
+        await WaitForRequests(1);
+        Assert.Equal("error", Body(0)["type"]!.GetValue<string>());
+        Assert.Equal("launchFailed", Body(0)["data"]!["kind"]!.GetValue<string>());
+    }
+
+    [Fact]
     public async Task ReportLegacyExit_HostDetail_CarriesCauseAndHostStack()
     {
         const string detail = "\r\nSystem.InvalidOperationException: CRASHTEST bg\r\n   at ALVA.USERS.formUSERSActivity.OnShown()";

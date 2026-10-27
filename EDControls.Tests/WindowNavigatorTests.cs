@@ -21,7 +21,7 @@ public class WindowNavigatorTests
                 started.Add(p);
                 return p;
             },
-            fileExists: _ => true, reportExit: (_, _, _, _) => { }, takeCrashDetail: (_, _) => null,
+            fileExists: _ => true, reportExit: (_, _, _, _, _) => { }, takeCrashDetail: (_, _) => null,
             trackUsage: (_, _) => { },
             postToUi: a => a(), dialogOwner: () => null, focus: _ => { });
         return (new WindowNavigator(host), started);

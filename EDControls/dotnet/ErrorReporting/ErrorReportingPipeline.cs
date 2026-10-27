@@ -154,7 +154,8 @@ internal sealed class ErrorReportingPipeline
     }
 
     /// <inheritdoc cref="ErrorReports.ReportLegacyExit"/>
-    internal void ReportLegacyExit(string exeName, string formFqn, int exitCode, string? hostDetail = null)
+    internal void ReportLegacyExit(string exeName, string formFqn, int exitCode, string? hostDetail = null,
+                                   TimeSpan? uptime = null)
     {
         try
         {
@@ -165,11 +166,15 @@ internal sealed class ErrorReportingPipeline
 
             var ctx = BuildContext(null) with { WindowNamespace = formFqn, WindowTitle = exeName };
             var cause = string.IsNullOrWhiteSpace(hostDetail) ? null : FirstLine(hostDetail);
+            var kind = LegacyExitCodes.Classify(exitCode);
             var report = ErrorReportBuilder.Build(
-                new LegacyHostCrashedException(exeName, formFqn, exitCode, cause), ctx, null, decision.RepeatCount);
+                new LegacyHostCrashedException(exeName, formFqn, exitCode, cause), ctx, null, decision.RepeatCount,
+                LegacyExitCodes.ReportType(kind));
             report.Data["legacyHost"] = true;
             report.Data["exitCode"] = exitCode;
             report.Data["exitCodeHex"] = $"0x{exitCode:X8}";
+            report.Data["kind"] = LegacyExitCodes.KindName(kind);
+            if (uptime is { } running) report.Data["uptimeSec"] = (long)running.TotalSeconds;
             // Stack syntetické výjimky by ukazoval do shellu, skutečný je ve výpisu hosta.
             if (cause is not null) report.Data["stack"] = hostDetail;
             Send(report);
