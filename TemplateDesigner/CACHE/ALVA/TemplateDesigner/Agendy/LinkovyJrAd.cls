@@ -269,6 +269,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pObou.group        = "Obecné"
     s pObou.serverSide   = 1
     s pObou.defaultValue = "false"
+    // S jedním směrem nemá co skládat a GetData ji ignoruje - nabízí se jen při obou směrech.
+    s pObou.visibleWhen  = "SMER_TISKU=Oba"
     s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuto = každý směr na vlastní stránce."
 
     // Výlepy na zastávky (Jan 1. 10.): místo stránky za směr stránka za každou zastávku a směr,
@@ -402,9 +404,8 @@ ClassMethod ParametrZvyrazneniZastavky(sTarifnimCislem As %Boolean = 1) As %Dyna
 
 /// Směr pro tisk (legacy MHD `arr,11` „SmerID#", Jan 12. 10.): které směry linky se vytisknou.
 /// Jediná definice pro AD i MHD variantu - musí se v obou jmenovat a chovat stejně.
-/// `sObousmernym` = agenda nabízí obousměrný tisk a popis na něj odkáže (MHD ho nemá).
 /// ⚠️ Popisky voleb jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
-ClassMethod ParametrSmeruTisku(sObousmernym As %Boolean = 1) As %DynamicObject
+ClassMethod ParametrSmeruTisku() As %DynamicObject
 {
     s pSmer = ##class(%DynamicObject).%New()
     s pSmer.name         = "SMER_TISKU"
@@ -414,7 +415,8 @@ ClassMethod ParametrSmeruTisku(sObousmernym As %Boolean = 1) As %DynamicObject
     s pSmer.group        = "Obecné"
     s pSmer.serverSide   = 1
     s pSmer.defaultValue = "Oba"
-    s pSmer.description  = "Které směry linky se vytisknou."_$s(sObousmernym:" S jedním směrem se obousměrný tisk neuplatní.", 1:"")
+    // Bez věty o obousměrném tisku: při jednom směru se ta volba sama schová (její visibleWhen).
+    s pSmer.description  = "Které směry linky se vytisknou."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Oba"), opts.%Push("Tam"), opts.%Push("Zpět")
     s pSmer.options = opts

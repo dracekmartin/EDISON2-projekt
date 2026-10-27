@@ -26,6 +26,28 @@ Method TestVypnuty()
 	do $$$AssertEquals(pocetStranek, 2, "bez parametru mají být dvě stránky (tam, zpět), je "_pocetStranek)
 }
 
+/// Volba se nabízí jen při obou směrech: s jedním ji GetData ignoruje a v panelu by klik nic neudělal.
+/// Podmínka musí trefit doslovný text volby „Směru pro tisk", jinak by se schovala natrvalo.
+Method TestNabiziSeJenPriObouSmerech()
+{
+	do ..SetupSys(.sys)
+	kill ^||ML
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetParameters(.sys)
+	set it = ##class(%DynamicArray).%FromJSON(^||ML("OUT",1)).%GetIterator()
+	set podminka = "(chybí)", volby = "", popisSmeru = ""
+	while it.%GetNext(.k, .p) {
+		set:p.name="OBOUSMERNY_TISK" podminka = p.visibleWhen
+		if p.name = "SMER_TISKU" {
+			set popisSmeru = p.description
+			set io = p.options.%GetIterator()
+			while io.%GetNext(.ko, .o) { set volby = volby_"|"_o }
+		}
+	}
+	do $$$AssertEquals(podminka, "SMER_TISKU=Oba", "obousměrný tisk se má nabízet jen při obou směrech")
+	do $$$AssertTrue(volby [ "|Oba", "Směr pro tisk nemá volbu „Oba"", na kterou podmínka míří: "_volby)
+	do $$$AssertTrue(popisSmeru '[ "obousměrný", "popis Směru pro tisk už o obousměrném tisku mluvit nemá: "_popisSmeru)
+}
+
 /// Zapnutý parametr = jedna stránka, na ní spoje obou směrů.
 Method TestZapnutyDavaJednuStranku()
 {

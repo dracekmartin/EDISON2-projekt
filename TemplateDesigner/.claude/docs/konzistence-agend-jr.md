@@ -96,8 +96,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
 - **P5 Linkový AD výlepy: bez pořadí stránek a PDF na zastávku** [M] **Jan** (*ověřeno:* kód). Stránky jdou
   vždy po směrech (`LinkovyJrAd.VypisVylepy`), vývěska nabízí „Po zastávkách"; export „Jeden PDF na
   zastávku" se nabízí jen agendám druhu STOP (`AgendaParams.AddExportFields`).
-- **P6 „Obousměrný tisk" svítí i při jednom směru** [S] (*ověřeno:* server). Doplnit `visibleWhen`
-  `SMER_TISKU=Oba` podle vzoru vývěsky, větu z nápovědy Směru pro tisk vypustit.
 
 ## 4. Prvky a formuláře
 

@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-27 (1) - Obousměrný tisk se nabízí jen při obou směrech (`B194c` P6)
+
+Linkový JŘ AD: volba **„Obousměrný tisk"** se v parametrech (panel i tiskový dialog) ukáže jen při
+„Směr pro tisk = Oba". S jedním směrem ji server ignoroval už dřív, takže zaškrtnutí nic nedělalo
+a jediné varování byla věta v nápovědě Směru pro tisk - ta zmizela (popis je teď v AD i MHD stejný).
+Uložená volba se nemaže, po návratu na „Oba" platí dál. Tisk beze změny. Rozhodnutí Jan 27. 10.:
+„Směr pro tisk" zůstává v obou linkových agendách (MHD parita se starým tiskem, který měl výběr
+směrů; AD kvůli stejným parametrům obou agend). Test `LinkovyJrObousmernyTest.TestNabiziSeJenPriObouSmerech`,
+ověřeno voláním `GetParameters` obou linkových agend.
+
 ## 2026-10-26 (42) - drobnosti prvků: skupina Rozměry, mřížka plátna, negativní značka, ikona Tabulky spojů (`B194d` E16)
 
 Rozhodnutí Jan 26. 10.: Minuty odjezdů mají skupinu **„Rozměry"** místo „Rozměry a mřížka" (čáry tabulky

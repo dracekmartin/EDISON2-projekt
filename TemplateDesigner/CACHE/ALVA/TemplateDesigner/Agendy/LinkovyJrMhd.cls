@@ -149,8 +149,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         s arr = ##class(%DynamicArray).%New()
-        // Bez zmínky o obousměrném tisku - MHD ho nemá (`B191d`).
-        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku(0))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
         // Až 3 strany - městská linka má víc spojů než meziměstská (Jan 22. 10.).
         d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran(0, 3))
         // Bez „Automaticky (dle linky)" - linka MHD to nastavení nemá; výchozí Tisknout jako starý tisk.

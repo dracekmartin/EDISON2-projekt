@@ -1221,10 +1221,9 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 
 **Obecné:**
 
-- **Směr pro tisk** - Oba / Tam / Zpět: které směry linky se vytisknou. S jedním směrem se
-  obousměrný tisk neuplatní.
+- **Směr pro tisk** - Oba / Tam / Zpět: které směry linky se vytisknou.
 - **Obousměrný tisk** - oba směry v jedné tabulce, spoje opačného směru na druhé straně od
-  zastávek. Vypnuté = každý směr na vlastní stránce.
+  zastávek. Vypnuté = každý směr na vlastní stránce. Nabízí se jen při Směru pro tisk *Oba*.
 - **Stránka pro každou zastávku** - výlepy na zastávky: každá zastávka, ze které spoje odjíždějí,
   dostane vlastní stránku za každý směr (i u obousměrného tisku) a její řádek je v tabulce
   inverzní (bílé písmo na černém), jako ve starém tisku.

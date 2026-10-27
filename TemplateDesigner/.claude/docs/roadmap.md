@@ -39,7 +39,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **P2** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M] **Jan**
 - **P3** Stránka pro stanoviště je ve vývěsce jinde a jinak pojmenovaná než v linkovém JŘ [S] **Jan**
 - **P5** Linkový AD výlepy: bez pořadí stránek a bez PDF na zastávku [M] **Jan**
-- **P6** „Obousměrný tisk" svítí i při jednom směru [S]
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
