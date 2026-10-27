@@ -63,16 +63,15 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 
 - **Soubor** - Nová šablona, Otevřít, Uložit
 - **Upravit** - Zpět, Vpřed
-- **Stránka** - Vlastnosti stránky
-- **Sekce** - Přidat sekci (rozbalovací nabídka presetů)
-- **Přidat / Prvky** - paleta prvků: Text, Obdélník, Čára, Obrázek, Kód (QR, čárový), Tabulka (z dat), Tabulka (pevná) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
+- **Stránka a sekce** - Vlastnosti stránky, Přidat sekci (rozbalovací nabídka presetů)
+- **Prvky** - paleta prvků: Text, Obdélník, Čára, Obrázek, Kód (QR, čárový), Tabulka (z dat), Tabulka (pevná) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
 - **Vrstva** - Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
-- **Data** - obnovení dat náhledu (↻)
-- **Tisk** - kontrola vybraných linek (lupa) a Tisk; PDF i PNG se vytváří v okně Tisk
 - **Mřížka plátna a přichytávání** - přepínač mřížky plátna, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání
 - **Zoom** - zoom, tlačítka „Fit" a „1:1"
 - **Panely** - skrytí panelu sekcí, přepínač živého náhledu
+- **Data** - obnovení dat náhledu (↻)
+- **Tisk** - kontrola vybraných linek (lupa) a Tisk; PDF i PNG se vytváří v okně Tisk
 
 ### Levý panel - 6 záložek
 

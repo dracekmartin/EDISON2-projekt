@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-27 (18) - lišta: skupina „Stránka a sekce", bez osiřelého oddělovače v obecné agendě
+
+Vlastnosti stránky a Přidat sekci jsou v jedné skupině lišty „Stránka a sekce" (rozhodnutí Jan 27. 10.,
+obě tlačítka nastavují strukturu dokumentu a samostatné skupiny po jednom tlačítku zabíraly místo).
+V obecné agendě se s prvky JŘ schová i jejich oddělovač ve skupině Prvky a v místní nabídce přidání
+prvku - dřív na konci visela svislá čára, za kterou nic nebylo. Příručka: seznam skupin lišty podle
+skutečného pořadí.
+
 ## 2026-10-27 (17) - Minuty odjezdů přepočítají šířky po změně stylu ve formuláři (review bod 3)
 
 Změna „Minuta: Velikost", „Symbol: Velikost", písma značek nebo písma buněk (kromě velikosti) se do

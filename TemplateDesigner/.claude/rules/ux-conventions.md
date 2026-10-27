@@ -235,7 +235,9 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
 ## 6. Toolbar / paleta
 
 - Ikony z **Fluent UI System Icons** (Microsoft, MIT licence) - viz `EDIcons.xaml`.
-- Skupiny tlačítek oddělené `Separator` (Soubor / Upravit / Přidat / Elementy / Vrstva / Zarovnat / Zobrazení).
+- Skupiny tlačítek oddělené `Separator` (Soubor / Upravit / Stránka a sekce / Prvky / Vrstva / Zarovnat /
+  Mřížka plátna a přichytávání / Zoom / Panely / Data / Tisk). Oddělovač, za kterým nic nezůstane (prvky JŘ
+  v obecné agendě), se schová s tím, co odděluje.
 - Drag-from-palette: `PreviewMouseLeftButtonDown` → ghost preview na canvasu → drop = `AddElementCommand`.
 
 ---

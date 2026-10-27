@@ -1640,7 +1640,8 @@ public partial class MainWindow : Window
 
         // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
         var kind = _vm.CurrentAgendaElementKind;
-        menu.Items.Add(new Separator());
+        if (AgendaCapabilities.ScheduleElementTypes(kind).Count > 0)
+            menu.Items.Add(new Separator());
         if (AgendaCapabilities.Supports(kind, ElementTypes.StopList))
             Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
@@ -2325,6 +2326,7 @@ public partial class MainWindow : Window
         BtnPalDepartureGrid.Visibility = Vis(AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid));
         BtnPalNotesLegend.Visibility   = Vis(AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend));
         BtnPalLineTable.Visibility     = Vis(AgendaCapabilities.Supports(kind, ElementTypes.LineTable));
+        PalScheduleSep.Visibility      = Vis(AgendaCapabilities.ScheduleElementTypes(kind).Count > 0);
     }
 
     private void ShowHelp()
