@@ -4,8 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** linkový JŘ MHD jde do verze 27. 10. (`B191g`: finální zkouška, po vydání ověření
-> u zákazníka), souběžně druhé kolo sjednocení agend JŘ (`B194`, bod po bodu), po něm `B56` (backlog). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** zbytek druhého kola sjednocení agend JŘ (`B194`, bod po bodu; linkový JŘ MHD
+> vydaný 27. 10.), po něm `B56` (backlog). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -67,17 +67,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **R5** Parametry vývěsek do jedné definice (první krok `B56`) [S-M]
 - **R6** Dokumentace pro rozvoj (`cache-api.md` vzor a checklist, Faktury) [S]
 - **R7** Názvosloví v kódu sjednotit jen u nových názvů [S]
-
----
-
-## 🔎 Linkový JŘ MHD ve verzi 27. 10. (`B191g`)
-
-Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`B191f`, archiv).
-
-1. **Finální zkouška (Jan) před úterkem** [S] - postup v [`§18.10`](linkovy-knizni-jr-implementace-analyza.md).
-2. **Po vydání ověřit u zákazníka** [S], co dev data nemají: poznámky z trasy u zastávky, příjezd
-   a odjezd na jedné zastávce, atributy spoje mimo B/C ([`§18.7`](linkovy-knizni-jr-implementace-analyza.md)).
-   Postavené podle kódu starého tisku; nahrát Novinky na wiki až s verzí.
 
 ---
 

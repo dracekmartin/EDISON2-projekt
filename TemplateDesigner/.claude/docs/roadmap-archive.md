@@ -193,6 +193,16 @@ kterou obsluhují jen spoje s tím písmenem („Areál VŠTE, A" na CB_DP 11350
 Pole Barva linky a Barva linky 2 jako u vývěsky AD, týmž voláním. MHD zatím ne (Jan 23. 10.).
 Detail changelog 2026-10-23 (13).
 
+## `B191g` Linkový JŘ MHD ve verzi 27. 10. (uzavřeno 27. 10. 2026)
+
+- **Finální zkouška** podle `linkovy-knizni-jr-implementace-analyza.md` §18.10 na Release exe z 27. 10.:
+  strojově (Caché 261/261, integrační 45/45, nabídka agend a typy provozu voláním serveru), pak Jan
+  očima - v pořádku. Větev M-line na devu vyčištěná na 5 šablon, které nese exe (dvě staré nikdy
+  nevydané šablony linkového AD smazané).
+- **Po vydání ověřit u zákazníka**, co dev data nemají (poznámky z trasy u zastávky, příjezd a odjezd
+  na jedné zastávce, atributy spoje mimo B/C, §18.7), a nahrát Novinky na wiki s verzí - z roadmapy
+  vyřazeno při vydání (rozhodnutí Jan 27. 10.), hlídá Jan.
+
 ## `B191f` Linkový JŘ MHD: vydání (připraveno 23. 10. 2026 do verze 27. 10.)
 
 Zveřejněná agenda, systémová šablona ze zkušební (s pravidlem zvýraznění aktuální zastávky, které
