@@ -1,0 +1,13 @@
+[26.10.2026 12:39:35] Parametr: UpdateType=Task
+[26.10.2026 12:39:35] Parametr: AsyncTransfer=True
+[26.10.2026 12:39:35] Parametr: SourcePath=http://server/EDISON
+[26.10.2026 12:39:35] Parametr: TargetPath=C:\EDISON
+[26.10.2026 12:39:35] Parametr: Version=9.999
+[26.10.2026 12:39:35] Parametr: OldVersion=1.000
+[26.10.2026 12:39:35] Parametr: Nucenyupdate=False
+[26.10.2026 12:39:35] Parametr: NucenyupdateTime=
+[26.10.2026 12:39:35] Parametr: WaitProcess=
+[26.10.2026 12:39:35] KontrolaParametru: OK
+[26.10.2026 12:39:35] ClearTempData: OK
+[26.10.2026 12:39:35] UPDATER: Chyba při aktualizaci [The remote server returned an error: (404) Not Found.]
+[26.10.2026 12:39:35] UPDATER: Konec [ExitCode=1]

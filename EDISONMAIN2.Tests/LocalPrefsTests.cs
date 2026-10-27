@@ -58,6 +58,27 @@ public class LocalPrefsTests
     }
 
     [Fact]
+    public void ReportedUpdaterFailures_OldFileLeavesNull_SaveMergesPerInstallation()
+    {
+        // Soubor sdílí víc instancí shellu (dvě instalace na stanici) - nahlášené běhy se slučují po adresáři.
+        WithTempPrefs("""{"lastIdfaByServer":{"dev-host:57772":"CB_DP"}}""", _ =>
+        {
+            var a = LocalPrefs.Load();
+            var b = LocalPrefs.Load();
+            Assert.Null(a.ReportedUpdaterFailures);
+
+            a.ReportedUpdaterFailures = new() { [@"C:\EDISON"] = "26.10.2026 11:20:57" };
+            a.Save();
+            b.ReportedUpdaterFailures = new() { [@"D:\EDISON"] = "27.10.2026 08:00:00" };
+            b.Save();
+
+            var loaded = LocalPrefs.Load();
+            Assert.Equal("26.10.2026 11:20:57", loaded.ReportedUpdaterFailures![@"C:\EDISON"]);
+            Assert.Equal("27.10.2026 08:00:00", loaded.ReportedUpdaterFailures[@"D:\EDISON"]);
+        });
+    }
+
+    [Fact]
     public void Load_CorruptFile_ReturnsDefaults()
     {
         WithTempPrefs("{ tohle není JSON", _ =>

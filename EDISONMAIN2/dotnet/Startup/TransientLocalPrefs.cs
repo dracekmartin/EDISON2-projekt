@@ -18,6 +18,7 @@ internal sealed class TransientLocalPrefs : ILocalPrefs
     public List<SavedConnection>? Connections { get; set; }
     public Dictionary<string, WindowBoundsPrefs>? ShellWindowBoundsByServer { get; set; }
     [Obsolete(ServerPrefs.LegacyGlobalObsolete)] public WindowBoundsPrefs? ShellWindowBounds { get; init; }
+    public Dictionary<string, string>? ReportedUpdaterFailures { get; set; }
 
     public void Save() { }
 }

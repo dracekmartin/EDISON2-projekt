@@ -1,0 +1,24 @@
+[26.10.2026 12:39:54] Parametr: UpdateType=Task
+[26.10.2026 12:39:54] Parametr: AsyncTransfer=True
+[26.10.2026 12:39:54] Parametr: SourcePath=\\SERVER\EDISON
+[26.10.2026 12:39:54] Parametr: TargetPath=C:\EDISON
+[26.10.2026 12:39:54] Parametr: Version=9.999
+[26.10.2026 12:39:54] Parametr: OldVersion=1.000
+[26.10.2026 12:39:54] Parametr: Nucenyupdate=False
+[26.10.2026 12:39:54] Parametr: NucenyupdateTime=
+[26.10.2026 12:39:54] Parametr: WaitProcess=
+[26.10.2026 12:39:54] KontrolaParametru: OK
+[26.10.2026 12:39:54] GetEdisonFiles: OK [4 souborů]
+[26.10.2026 12:39:54] CreateBackupDir: C:\EDISON\BKP_Files:OK
+[26.10.2026 12:39:54] BackupFiles: OK
+[26.10.2026 12:39:54] CopyEdisonFile: \\SERVER\EDISON\A.dll -> C:\EDISON\A.dll
+[26.10.2026 12:39:55] CopyEdisonFile: \\SERVER\EDISON\B.big -> C:\EDISON\B.big
+[26.10.2026 12:39:55] CopyEdisonFile: \\SERVER\EDISON\VERZE.INF -> C:\EDISON\VERZE.INF
+[26.10.2026 12:39:55] CopyEdisonFile.ErrCopyFile: \\SERVER\EDISON\Z.dll -> C:\EDISON\Z.dll | IOException HRESULT=0x80070020 The process cannot access the file '\\SERVER\EDISON\Z.dll' because it is being used by another process. | sourceExists=1 sourceLength=8 targetExists=0
+[26.10.2026 12:39:55] CopyEdisonFiles: InstallEdisonFiles.CopyCoreFile: \\SERVER\EDISON\Z.dll nelze zkopirovat. (The process cannot access the file '\\SERVER\EDISON\Z.dll' because it is being used by another process.)
+[26.10.2026 12:39:55] RestoreFile.ErrCopyFile: C:\EDISON\BKP_Files\A.dll The process cannot access the file 'C:\EDISON\BKP_Files\A.dll' because it is being used by another process.
+[26.10.2026 12:39:55] RestoreFile: C:\EDISON\BKP_Files\VERZE.INF -> C:\EDISON\VERZE.INF
+[26.10.2026 12:39:55] ClearTempData: OK
+[26.10.2026 12:39:55] RestoreFiles: Chyba [Počet souborů, které se nepodařilo obnovit: 1. První: A.dll (The process cannot access the file 'C:\EDISON\BKP_Files\A.dll' because it is being used by another process.)]
+[26.10.2026 12:39:55] UPDATER: Chyba při aktualizaci [InstallEdisonFiles.CopyCoreFile: \\SERVER\EDISON\Z.dll nelze zkopirovat. (The process cannot access the file '\\SERVER\EDISON\Z.dll' because it is being used by another process.)]
+[26.10.2026 12:39:55] UPDATER: Konec [ExitCode=200]

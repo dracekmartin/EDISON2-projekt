@@ -59,6 +59,10 @@ public interface ILocalPrefs
     [Obsolete(ServerPrefs.LegacyGlobalObsolete)]
     WindowBoundsPrefs? ShellWindowBounds { get; }
 
+    /// <summary>Naposledy nahlášený neúspěšný běh updateru per adresář instalace (<see cref="UpdaterFailureReport"/>).
+    /// Null = nic nenahlášeno.</summary>
+    Dictionary<string, string>? ReportedUpdaterFailures { get; set; }
+
     void Save();
 }
 
@@ -178,6 +182,7 @@ public class LocalPrefs : ILocalPrefs
     public List<SavedConnection>? Connections { get; set; }
     public Dictionary<string, WindowBoundsPrefs>? ShellWindowBoundsByServer { get; set; }
     [Obsolete(ServerPrefs.LegacyGlobalObsolete)] public WindowBoundsPrefs? ShellWindowBounds { get; init; }
+    public Dictionary<string, string>? ReportedUpdaterFailures { get; set; }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

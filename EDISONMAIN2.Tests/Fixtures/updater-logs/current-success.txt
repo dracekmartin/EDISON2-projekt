@@ -1,0 +1,20 @@
+[26.10.2026 12:39:34] Parametr: UpdateType=Task
+[26.10.2026 12:39:34] Parametr: AsyncTransfer=True
+[26.10.2026 12:39:34] Parametr: SourcePath=\\SERVER\EDISON
+[26.10.2026 12:39:34] Parametr: TargetPath=C:\EDISON
+[26.10.2026 12:39:34] Parametr: Version=9.999
+[26.10.2026 12:39:34] Parametr: OldVersion=1.000
+[26.10.2026 12:39:34] Parametr: Nucenyupdate=False
+[26.10.2026 12:39:34] Parametr: NucenyupdateTime=
+[26.10.2026 12:39:34] Parametr: WaitProcess=
+[26.10.2026 12:39:34] KontrolaParametru: OK
+[26.10.2026 12:39:34] GetEdisonFiles: OK [3 souborů]
+[26.10.2026 12:39:34] CreateBackupDir: C:\EDISON\BKP_Files:OK
+[26.10.2026 12:39:34] BackupFiles: OK
+[26.10.2026 12:39:34] CopyEdisonFile: \\SERVER\EDISON\A.dll -> C:\EDISON\A.dll
+[26.10.2026 12:39:34] CopyEdisonFile: \\SERVER\EDISON\B.dll -> C:\EDISON\B.dll
+[26.10.2026 12:39:34] CopyEdisonFile: \\SERVER\EDISON\VERZE.INF -> C:\EDISON\VERZE.INF
+[26.10.2026 12:39:34] CopyEdisonFiles: OK
+[26.10.2026 12:39:34] ClearTempData: OK
+[26.10.2026 12:39:34] UPDATER: Aktualizace proběhla úspěšně
+[26.10.2026 12:39:34] UPDATER: Konec [ExitCode=0]

@@ -55,7 +55,8 @@ public sealed record SessionOpenSteps
 /// </summary>
 /// <param name="wireActivityFailed">Napojení force-logout / version gate handlerů na nový MLRest.</param>
 /// <param name="options">Režim startu - session přihlášení jiného uživatele má stejný GUID a verzi jako startovní.</param>
-public class SessionOpener(EDServices services, StartupOptions options, Action<IMLRest> wireActivityFailed)
+public class SessionOpener(EDServices services, StartupOptions options, Action<IMLRest> wireActivityFailed,
+                           ILocalPrefs? prefs = null)
 {
     /// <param name="query">Spojení, ve kterém se zjistí povolené firmy nového uživatele.</param>
     /// <param name="preferredIdfa">Firma, ve které má session vzniknout, když do ní uživatel smí.</param>
@@ -112,6 +113,8 @@ public class SessionOpener(EDServices services, StartupOptions options, Action<I
         // Klon s Locks=0: session nese verzi stanice a po FULL vydání by ji server version gate
         // odmítl dřív, než se update spustí (legacy shell kontroluje ještě před nastavením verze).
         var settings = updater.LoadSettings(session.MLRest.With(cacheLocks: 0));
+        // Před Check: spuštěný updater log předchozího běhu přepíše. Serverovou instalaci updater nemění.
+        if (!settings.ServerInstallation) ReportUpdaterFailure();
         var result = updater.Check(settings);
         switch (result.Outcome)
         {
@@ -139,4 +142,11 @@ public class SessionOpener(EDServices services, StartupOptions options, Action<I
     }
 
     protected virtual Updater CreateUpdater() => new();
+
+    /// <summary>Neúspěšný běh legacy updateru stanice do telemetrie, jednou za běh (<see cref="UpdaterFailureReport"/>).</summary>
+    protected virtual void ReportUpdaterFailure()
+    {
+        if (prefs is null || Updater.ActiveKind != ClientUpdaterKind.LegacyEdupdate) return;
+        UpdaterFailureReport.ForInstallation(prefs).ReportIfNew();
+    }
 }

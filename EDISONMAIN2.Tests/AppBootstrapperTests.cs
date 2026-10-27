@@ -144,7 +144,7 @@ public class AppBootstrapperTests
         /// <summary>Opener se skutečným pořadím kroků, kroky zapisuje do <see cref="Calls"/>.</summary>
         public TestableSessionOpener? Opener { get; private set; }
 
-        protected override SessionOpener CreateSessionOpener(EDServices services) =>
+        protected override SessionOpener CreateSessionOpener(EDServices services, ILocalPrefs prefs) =>
             Opener = new TestableSessionOpener(services, calls: Calls)
             {
                 AllowedCompanies = AllowedCompanies,

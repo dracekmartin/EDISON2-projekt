@@ -117,7 +117,7 @@ public class AppBootstrapper
         }
 
         // Předloginový seznam je úplný (server bez uživatele nefiltruje); povolené firmy uživatele vybere opener.
-        var opener = CreateSessionOpener(services);
+        var opener = CreateSessionOpener(services, prefs);
         var opened = opener.Open(login,
             new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
             PreferredIdfa(prefs, prep.Companies, prep.Server, prep.Port),
@@ -160,8 +160,8 @@ public class AppBootstrapper
     }
 
     /// <summary>Cesta po loginu sdílená s přihlášením jiného uživatele; tatáž instance jde do <see cref="SessionSwitcher"/>.</summary>
-    protected virtual SessionOpener CreateSessionOpener(EDServices services) =>
-        new(services, _options, new ServerSessionEnd(_host, _shutdown, () => services.PopupDisplayer).Wire);
+    protected virtual SessionOpener CreateSessionOpener(EDServices services, ILocalPrefs prefs) =>
+        new(services, _options, new ServerSessionEnd(_host, _shutdown, () => services.PopupDisplayer).Wire, prefs);
 
     private void ShowStartupProgress(string message)
     {

@@ -74,6 +74,16 @@ Chybovou stránku proxy s HTTP 200 chytí u běžného updatu hash, u vynucené 
 hlavička PE (`MZ`, nad rámec legacy); konfigurační soubory nechrání nic. Timeout 30 s hlídá hlavičky,
 60 s bez dat tělo; zavření okna ruší i rozběhnuté stahování. Stale `_DIFF.INF` se posuzuje proti manifestu.
 
+## Hlášení selhaného updatu (legacy EDUPDATE)
+
+Legacy `EDUPDATE.exe` nic nehlásí a shell na jeho exit kód nečeká. Shell proto v `SessionOpener.CheckForUpdate` před
+`Check` přečte `_LOG_UPDATER.txt` (a `_LOG_UPDATER_bkp.txt`) a neúspěšný běh pošle jednou do telemetrie
+(`UpdaterFailureReport`, module `EDUPDATE`, warning, opakované nebo neobnovené selhání error). Musí to být před
+`LaunchUpdate`, další běh log přepíše. Řádky čte `UpdaterLog`, formát je kontrakt s repem EDISON (`UPDATERCL/clsAPI.vb`):
+build od 10/2026 končí běh `UPDATER: Konec [ExitCode=N]`, starší jen výsledkem. Vzorky skutečných běhů obou buildů jsou
+v `EDISONMAIN2.Tests/Fixtures/updater-logs`. Nahlášený běh si shell pamatuje per adresář instalace v `local.json`
+(`ReportedUpdaterFailures`), log starší 30 dní nehlásí.
+
 ## Vynucená aktualizace - stopa CliUp2.ini
 
 Hotfix nástroj: opravené binárky se nahrají na server zákazníka a v Caché se nastaví

@@ -41,10 +41,18 @@ public class SessionOpenerUpdateTests
             Calls.Add($"launch:{version}|forced={forced}|stamp={forcedStamp}");
     }
 
-    private sealed class UpdateCheckOpener(EDServices services, Updater updater)
+    private sealed class UpdateCheckOpener(EDServices services, Updater updater, List<string>? reportLog = null)
         : SessionOpener(services, new StartupOptions(), _ => { })
     {
         protected override Updater CreateUpdater() => updater;
+
+        public int Reports { get; private set; }
+
+        protected override void ReportUpdaterFailure()
+        {
+            Reports++;
+            reportLog?.Add("report");
+        }
 
         public (bool ShouldExit, Task<ReleaseNoticeResult>? Notice) Call(EDControls.IMLRest? sessionRest = null,
                                                                          bool startNotice = true) =>
@@ -73,6 +81,30 @@ public class SessionOpenerUpdateTests
         Assert.Null(notice);
         popup.Received(1).Info(Arg.Is<string>(s => s.Contains("260901.1")));
         Assert.Equal(["copy", "launch:260901.1|forced=False|stamp="], updater.Calls);
+    }
+
+    [Fact]
+    public void UpdateRequired_ReportsUpdaterFailureBeforeCopyAndLaunch()
+    {
+        // Spuštěný updater log předchozího běhu přepíše, hlášení musí být první.
+        var updater = new FakeUpdater { SourceVersion = "260901.1" };
+        var services = new EDServices(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+        var opener = new UpdateCheckOpener(services, updater, updater.Calls);
+
+        opener.Call();
+
+        Assert.Equal(["report", "copy", "launch:260901.1|forced=False|stamp="], updater.Calls);
+    }
+
+    [Fact]
+    public void ServerInstallation_DoesNotReportUpdaterFailure()
+    {
+        var updater = new FakeUpdater { Settings = new UpdateSettings("260825.1", @"\\server\Edison", "") { ServerInstallation = true } };
+        var (opener, _) = Build(updater);
+
+        opener.Call();
+
+        Assert.Equal(0, opener.Reports);
     }
 
     [Fact]

@@ -1,0 +1,12 @@
+[26.10.2026 12:39:34] Parametr: UpdateType=Task
+[26.10.2026 12:39:34] Parametr: AsyncTransfer=True
+[26.10.2026 12:39:34] Parametr: SourcePath=\\SERVER\EDISON
+[26.10.2026 12:39:34] Parametr: TargetPath=C:\EDISON
+[26.10.2026 12:39:34] Parametr: Version=1.000
+[26.10.2026 12:39:34] Parametr: OldVersion=1.000
+[26.10.2026 12:39:34] Parametr: Nucenyupdate=False
+[26.10.2026 12:39:34] Parametr: NucenyupdateTime=
+[26.10.2026 12:39:34] Parametr: WaitProcess=
+[26.10.2026 12:39:34] KontrolaParametru: OK
+[26.10.2026 12:39:34] UPDATER: Aktualizaci nebylo nutné provést
+[26.10.2026 12:39:34] UPDATER: Konec [ExitCode=0]

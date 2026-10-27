@@ -31,7 +31,7 @@ ne `@port`** (to je superserver); wizard zapisuje plnou legacy paritu (`initiali
 ukáže hlášku a aplikaci ukončí (`IStartupHost.ReportUnreachableServer`), v login okně jde do `ErrorMessage`, telemetrii varování.
 Start bez značky `reason=2` od EDLOADERu (pin na liště, zástupce na exe) `App` přesměruje přes
 `EDISON.exe` kvůli uzlu NewShell (`EDISONMAIN2_REDIRECTED` brání smyčce); výjimky (připojení, `e2e=1`, `bin\`) kryjí brány `PassesPreLoginGates`.
-Update check a vynucená vlna (`Updater`): [EDUPDATE2/CLAUDE.md](../../../EDUPDATE2/CLAUDE.md).
+Update check, vynucená vlna a hlášení selhaného updatu (`Updater`, `UpdaterFailureReport`): [EDUPDATE2/CLAUDE.md](../../../EDUPDATE2/CLAUDE.md).
 
 ## Session / ACTIVITY zámek
 

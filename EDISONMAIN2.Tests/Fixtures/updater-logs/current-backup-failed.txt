@@ -1,0 +1,17 @@
+[26.10.2026 12:39:35] Parametr: UpdateType=Task
+[26.10.2026 12:39:35] Parametr: AsyncTransfer=True
+[26.10.2026 12:39:35] Parametr: SourcePath=\\SERVER\EDISON
+[26.10.2026 12:39:35] Parametr: TargetPath=C:\EDISON
+[26.10.2026 12:39:35] Parametr: Version=9.999
+[26.10.2026 12:39:35] Parametr: OldVersion=1.000
+[26.10.2026 12:39:35] Parametr: Nucenyupdate=False
+[26.10.2026 12:39:35] Parametr: NucenyupdateTime=
+[26.10.2026 12:39:35] Parametr: WaitProcess=
+[26.10.2026 12:39:35] KontrolaParametru: OK
+[26.10.2026 12:39:35] GetEdisonFiles: OK [3 souborů]
+[26.10.2026 12:39:35] CreateBackupDir: C:\EDISON\BKP_Files:OK
+[26.10.2026 12:39:35] BackupFiles.ErrDeleteFile: C:\EDISON\A.dll | IOException HRESULT=0x80070020 The process cannot access the file 'C:\EDISON\A.dll' because it is being used by another process.
+[26.10.2026 12:39:35] BackupFiles: BackupFiles.DeleteFile: C:\EDISON\A.dll je používán. (The process cannot access the file 'C:\EDISON\A.dll' because it is being used by another process.)
+[26.10.2026 12:39:35] ClearTempData: OK
+[26.10.2026 12:39:35] UPDATER: Chyba při aktualizaci [BackupFiles.DeleteFile: C:\EDISON\A.dll je používán. (The process cannot access the file 'C:\EDISON\A.dll' because it is being used by another process.)]
+[26.10.2026 12:39:35] UPDATER: Konec [ExitCode=1]
