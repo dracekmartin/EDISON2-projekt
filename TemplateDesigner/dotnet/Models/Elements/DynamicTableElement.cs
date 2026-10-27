@@ -503,13 +503,13 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         },
         new FloatPropertyDescriptor
         {
-            Label = "Min. řádků (0 = ne)", Group = "Tabulka",
+            Label = "Nejméně řádků", Group = "Tabulka",
             Get   = () => MinRows, Set = v => MinRows = (int)Math.Max(0, v),
             Min   = 0, Max = 200, Format = "0"
         },
         new FloatPropertyDescriptor
         {
-            Label = "Max. řádků (0 = bez limitu)", Group = "Tabulka",
+            Label = "Nejvýš řádků", Group = "Tabulka",
             Get   = () => MaxRows, Set = v => MaxRows = (int)Math.Max(0, v),
             Min   = 0, Max = 500, Format = "0"
         },

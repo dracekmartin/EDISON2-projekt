@@ -43,10 +43,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "0"
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
         s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
-        s f = form.AddNumber("MinRows", "Min. řádků (0 = ne)", 0, 0, 200)
-        s f.helpText = "Doplní prázdné řádky do tohoto počtu - pevná výška boxu (např. faktura). 0 = bez minima"
-        s f = form.AddNumber("MaxRows", "Max. řádků (0 = bez limitu)", 0, 0, 500)
-        s f.helpText = "Ořízne přebytečné datové řádky. 0 = bez omezení"
+        s f = form.AddNumber("MinRows", "Nejméně řádků", 0, 0, 200)
+        s f.helpText = "Když je řádků s daty méně, doplní se prázdné, takže tabulka má vždy stejnou výšku (např. faktura). 0 = bez doplnění."
+        s f = form.AddNumber("MaxRows", "Nejvýš řádků", 0, 0, 500)
+        s f.helpText = "Řádky s daty nad tento počet se nevytisknou. 0 = bez omezení."
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
         // Pozadí bez výchozí hodnoty - nese ho prvek sám, prázdno znamená bez podbarvení.

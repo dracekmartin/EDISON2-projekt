@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-27 (30) - Tabulka z dat: „Nejméně řádků" a „Nejvýš řádků" (`B194d` E8d)
+
+„Min. řádků (0 = ne)" a „Max. řádků (0 = bez limitu)" se ve formuláři i v panelu jmenují „Nejméně
+řádků" a „Nejvýš řádků" jako ostatní pole tohoto druhu; význam nuly je v nápovědě („0 = bez doplnění",
+„0 = bez omezení"). Chování beze změny; ověřeno voláním `Init`.
+
 ## 2026-10-27 (29) - „Nejvýš skupin dnů" místo „Max skupin (0 = ∞)" (`B194d` E8c)
 
 Pole Minut odjezdů, kterým se omezí počet vytištěných skupin dnů, se ve formuláři i v panelu jmenuje
