@@ -2,7 +2,7 @@
   "version": "1.15.0",
   "id": "7ed7faf5-947e-4fb3-b676-1e3908fcb218",
   "name": "Linkový JŘ (AD) - postskriptový vzhled A5",
-  "description": "Systémová šablona linkového jízdního řádu (AD) v podobě starého postskriptového tisku: hlavička linky, tabulka celé linky s úzkými sloupci spojů a dvousloupcová legenda poznámek. Formát A5 na šířku.",
+  "description": "Systémová šablona linkového jízdního řádu (AD) v podobě starého postskriptového tisku: hlavička linky, tabulka celé linky s úzkými sloupci spojů a Poznámky ve dvou sloupcích. Formát A5 na šířku.",
   "pageSize": {
     "width": 210,
     "height": 148,

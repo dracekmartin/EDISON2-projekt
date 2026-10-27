@@ -2,7 +2,7 @@
   "version": "1.3.0",
   "id": "5b1e0000-0000-4000-8000-000000000001",
   "name": "Zastávkový JŘ (AD) - výchozí",
-  "description": "Výchozí systémová šablona zastávkového jízdního řádu (AD): hlavička, seznam zastávek, mřížka odjezdů, legenda poznámek, QR a logo. Formát A5 na šířku.",
+  "description": "Výchozí systémová šablona zastávkového jízdního řádu (AD): hlavička, Seznam zastávek, Minuty odjezdů, Poznámky, Kód (QR) a logo. Formát A5 na šířku.",
   "pageSize": {
     "width": 210,
     "height": 148,
@@ -14,7 +14,7 @@
   "sections": [
     {
       "id": "aa0c5718-3c1f-4f6e-b4b5-647f3a81140d",
-      "name": "J\u0158 Zast\u00e1vkov\u00fd",
+      "name": "Obsah",
       "designerHeight": 146.6,
       "printBehavior": "Once",
       "overflowBehavior": "KeepTogether",

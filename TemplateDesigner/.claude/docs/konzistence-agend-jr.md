@@ -85,13 +85,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
 - **A2 Start z EDISONu vždy předvolí zastávkový JŘ** [S-M] **Jan** (*ověřeno:* kód). Linkový JŘ nemá ve stromu
   vstup (`EDISONMAIN2/.../API/Tree.cls:414, 493`, generuje se z legacy XML) a agenda ze shellu má přednost
   před naposledy použitou. Rozhodnout s autory stromu.
-- **A3 Výběr linek: „Číslo" znamená v každé variantě něco jiného** [S-M] (*ověřeno:* kód). AD licenční a řadí
-  podle něj, MHD veřejné a řadí podle interního ID; platnost ve sloupci „Detail"; „5 - Skupina 5" a „Linka
-  <ID>" u nepojmenovaných. Měnit jen popisky (rozvržení sloupců se ukládá podle klíčů).
-- **A4 Systémové šablony** [S]. Vývěsky jedna sekce „JŘ Zastávkový", linkové „Hlavička / Jízdní řád /
-  Poznámky", nová šablona „Záhlaví / Obsah"; popis šablony AD používá staré názvy prvků. Oddělovač viz `T9`.
-- **A5 Slovo „linka" natvrdo** [S]. V tisku a menu (pro agendu bez linek nesedí). (Ostatní drobnosti textů
-  hotové 27. 10.)
 
 ## 6. Pojistky - testy, které by tyto nálezy chytily
 

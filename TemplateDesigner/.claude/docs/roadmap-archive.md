@@ -34,6 +34,10 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **A4** Systémové šablony: sekce zastávkové „Obsah", popisy s dnešními názvy prvků; stavba šablon
+  zůstává různá (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (16)).
+- **A3 (zbytek)** Skupina bez názvu a linka MHD bez čísla i názvu - vědomě beze změny, jen neúplná
+  data (rozhodnutí Jan 27. 10.).
 - **A3 (část)** Okno Vybrat linky: „Číslo linky" (číselné řazení), „Platnost", linky MHD podle čísla
   (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (15)).
 - **H1, H2** Příručka, nápověda F1 a Pomocník srovnané s aktuální aplikací (~50 míst příručky; rozhodnutí

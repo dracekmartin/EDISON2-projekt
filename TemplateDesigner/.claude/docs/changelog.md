@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-27 (16) - systémové šablony bez matoucích názvů (`B194e` A4)
+
+Sekce výchozích zastávkových šablon (AD i MHD) se jmenuje **„Obsah"** místo „JŘ Zastávkový" (obrácený
+název agendy, o sekci nic neříkal). Popisy v okně Otevřít používají dnešní názvy prvků: zastávkový AD
+„Seznam zastávek, Minuty odjezdů, Poznámky, Kód (QR) a logo" místo „mřížka odjezdů, legenda poznámek",
+linkové AD i MHD „Poznámky ve dvou sloupcích". Stavba šablon zůstává různá - zastávkový JŘ je jedna
+pevná stránka, linkový hlavička + tabulka přes stránky + poznámky (rozhodnutí Jan 27. 10.). Seeder je
+při startu nové verze nahraje do MLINE větve, vlastní šablony firem se nemění. Rozhodnutí Jan 27. 10.:
+A3 zbytek (skupina bez názvu, linka MHD bez čísla) zůstává beze změny, A5 (slovo „linka" napevno)
+odloženo do backlogu, až se bude vydávat agenda bez linek.
+
 ## 2026-10-27 (15) - okno Vybrat linky: „Číslo linky", „Platnost", řazení podle čísla (`B194e` A3, část)
 
 Sloupce okna **Vybrat linky** se jmenují **„Číslo linky"** (dřív „Číslo") a **„Platnost"** (dřív

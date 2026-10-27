@@ -46,10 +46,7 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194e` Aplikace a dokumentace
 
-- **A2** Start z EDISONu vždy předvolí zastávkový JŘ, linkový JŘ nemá vstup [S-M] **Jan**
-- **A3** Výběr linek: zbývá skupina bez názvu („5 - Skupina 5") a linka MHD bez čísla i názvu (interní ID) [S] **Jan**
-- **A4** Systémové šablony postavené různě (sekce, popis) [S]
-- **A5** Slovo „linka" natvrdo v tisku a menu (u agendy bez linek nesedí) [S]
+- **A2** Start z EDISONu vždy předvolí zastávkový JŘ, linkový JŘ nemá vstup [S-M] **Jan** - **odloženo** (Jan 27. 10.)
 
 ### `B194f` Pojistky před `B56`
 
@@ -87,6 +84,11 @@ Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`
 ## 📥 Backlog
 
 ### Ostatní
+
+- **Slovo „linka" napevno** (`B194e` A5) [M] - asi 25 textů (menu „Zkontrolovat vybrané linky…",
+  hlášky „Žádná vybraná linka nemá data", průběh kontroly). Udělat, **až se bude vydávat agenda bez
+  linek** (Faktury, převod Report Generátoru) - skloňovat podle názvu instance agendy; okno výběru
+  už ho bere (Jan 27. 10.).
 
 - **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - Jan je nejdřív projde s kolegy (26. 10.).
   Dnes návrhář přebírá nastavení u linky a firmy z modulu JŘ tak, jak je ukládá starý modul (např.
