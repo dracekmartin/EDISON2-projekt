@@ -127,7 +127,7 @@ public class HelpDialogViewModel : EDViewModel
             [
                 new("Vytvořit PDF / PNG - z vybraných linek, bez vybrané linky z ukázkových dat", "Ctrl+P → Vytvořit"),
                 new("Členění výstupu - vše do jednoho / po linkách / po zastávkách a směrech", "dialog tisku"),
-                new("Název souboru z dat - tokeny {CISLO_LINKY} apod.", "dialog tisku"),
+                new("Název souboru z datových polí, např. {CISLO_LINKY}", "dialog tisku"),
                 new("Víc stránek na jeden papír (šablona o víc stránkách)", "dialog tisku → Uspořádání na list"),
                 new("Druhá stránka dokladu vedle první, nebo na zadní stranu listu", "dialog tisku → Uspořádání na list"),
                 new("Kontrola všech vybraných linek bez tisku", "dialog tisku → Zkontrolovat, lupa na liště"),

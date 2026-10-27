@@ -459,7 +459,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „…výběr - linky").</summary>
     public string PreviousInstanceTooltip => $"Předchozí {CurrentInstanceLabel}";
     public string NextInstanceTooltip     => $"Další {CurrentInstanceLabel}";
-    public string InstancePickerHint      => $"Klikněte pro výběr - {CurrentInstanceLabelPlural} (Ctrl+Shift+I)";
+    public string InstancePickerHint      => $"Vybrat {CurrentInstanceLabelPlural} - Ctrl+Shift+I";
 
     private static string CapitalizeFirst(string s) =>
         string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];

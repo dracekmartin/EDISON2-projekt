@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-27 (13) - drobné texty v aplikaci (`B194e` A5)
+
+Bublina modrého štítku linky **„Vybrat linky - Ctrl+Shift+I"** (tvar „Akce - klávesa" z pravidel), titulek
+okna výběru **„Vybrat linky"**, v tiskovém dialogu **„Název souboru"** s nápovědou „Datová pole vložíte
+tlačítkem { }, např. {CISLO_LINKY}." místo „(tokeny {POLE})", tlačítka „Přejmenovat…" a „Procházet…" se
+znakem tří teček jako ostatní, prázdné parametry jedním textem „Tato šablona nemá parametry." (panel
+i tiskový dialog). Slovo „linka" natvrdo v tisku a menu zůstává v roadmapě. Rozhodnutí Jan 27. 10.
+Ověřeno voláním `AgendaParams.Init`.
+
 ## 2026-10-27 (12) - název agendy jedním tvarem, varianty jen „AD" / „MHD", „Obecná (bez dat)" (`B194e` A1)
 
 Varianta agendy se všude píše krátce: **„AD"**, **„MHD"** a u porovnání linek **„AD - porovnání verzí"**

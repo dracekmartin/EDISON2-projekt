@@ -90,9 +90,8 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   <ID>" u nepojmenovaných. Měnit jen popisky (rozvržení sloupců se ukládá podle klíčů).
 - **A4 Systémové šablony** [S]. Vývěsky jedna sekce „JŘ Zastávkový", linkové „Hlavička / Jízdní řád /
   Poznámky", nová šablona „Záhlaví / Obsah"; popis šablony AD používá staré názvy prvků. Oddělovač viz `T9`.
-- **A5 Drobnosti textů** [S]. „Název souboru (tokeny {POLE})", „Klikněte pro výběr - linky (Ctrl+Shift+I)"
-  (není tvar „Akce - klávesa"), titulek „Výběr - linky", „Přejmenovat..." třemi tečkami, dva texty pro
-  šablonu bez parametrů, slovo „linka" natvrdo v tisku a menu (pro agendu bez linek nesedí).
+- **A5 Slovo „linka" natvrdo** [S]. V tisku a menu (pro agendu bez linek nesedí). (Ostatní drobnosti textů
+  hotové 27. 10.)
 - **H1 Příručka nesedí s UI na 21 místech** [S] (*ověřeno:* kód; seed, nahrává se až s verzí).
   `uzivatelska-prirucka.md`: „Instance:" (:91, :947) → „Linka:"; titulek (:109); dvě výchozí sekce (:117);
   štítek agendy (:128); sekce „Systémové M-line / Moje šablony" (:139, :1029, :1043, :1266, :1284) → sloupec

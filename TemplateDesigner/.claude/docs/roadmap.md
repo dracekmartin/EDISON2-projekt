@@ -49,7 +49,7 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **A2** Start z EDISONu vždy předvolí zastávkový JŘ, linkový JŘ nemá vstup [S-M] **Jan**
 - **A3** Výběr linek: „Číslo" znamená v každé variantě něco jiného [S-M]
 - **A4** Systémové šablony postavené různě (sekce, popis) [S]
-- **A5** Drobnosti textů (tokeny, tooltip výběru linek, „Přejmenovat...") [S]
+- **A5** Slovo „linka" natvrdo v tisku a menu (u agendy bez linek nesedí) [S]
 - **H1** Příručka nesedí s UI na 21 místech [S]
 - **H2** Nápověda F1 zastaralá a s překlepem [S]
 

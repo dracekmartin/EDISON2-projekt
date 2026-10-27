@@ -560,7 +560,7 @@ Nastavení výstupu je univerzální napříč agendami:
   i jemnější dělení, viz dokument dané agendy).
 - **Měřítko tisku** - hotová sestava se před tiskem celá zvětší nebo zmenší (1 = skutečná
   velikost); počet stránek se nemění. Stavový řádek okna řekne, jaký rozměr papíru z toho vyjde.
-- **Název souboru (tokeny {POLE})** - vlastní kombinace datových polí pro pojmenování
+- **Název souboru** - vlastní kombinace datových polí pro pojmenování
   výsledných souborů; při rozdělení výstupu na víc souborů se vybírá cílová složka, kolize jmen
   se řeší automaticky příponou `_2`, `_3`…
 - **Uspořádání na list** (panel pod formulářem) - víc stránek na jeden papír, který pak
@@ -997,7 +997,7 @@ Tato pole se nastavují jen v tiskovém dialogu (nejsou to parametry sestavy, ta
 v záložce Parametry v levém panelu):
 
 - **Členění výstupu** - Vše do jednoho PDF / Jeden PDF na linku / Jeden PDF na zastávku/směr.
-- **Název souboru (tokeny {POLE})** - výchozí u zastávkového JŘ `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}`,
+- **Název souboru** - výchozí u zastávkového JŘ `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{KONECNA_ZASTAVKA}`,
   u linkového `{CISLO_LINKY}_{VYCHOZI_ZASTAVKA}_{KONECNA_ZASTAVKA}` (číslo linky je i u MHD licenční).
   Lze upravit na libovolnou kombinaci datových polí.
 - **Jeden PDF na linku** vytvoří jeden soubor za každou linku vybranou v seznamu linek.

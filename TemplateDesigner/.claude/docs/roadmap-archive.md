@@ -34,6 +34,9 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **A5 (část)** „Vybrat linky - Ctrl+Shift+I", titulek „Vybrat linky", „Název souboru" s nápovědou,
+  „Přejmenovat…" / „Procházet…", „Tato šablona nemá parametry." (rozhodnutí Jan 27. 10.; changelog
+  2026-10-27 (13)).
 - **A1** Název agendy jedním tvarem „Zastávkový JŘ · AD" (titulek, stavový řádek, Uložit jako), varianty
   „AD" / „MHD" / „AD - porovnání verzí", bez interních kódů, „Obecná (bez dat)"; model agenda + varianta
   a kód v okně Změnit agendu zůstávají (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (12)).

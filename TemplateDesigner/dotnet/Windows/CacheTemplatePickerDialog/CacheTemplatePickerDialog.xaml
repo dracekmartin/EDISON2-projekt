@@ -25,7 +25,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Content="Přejmenovat..." Command="{Binding RenameCommand}"
+            <Button Grid.Column="0" Content="Přejmenovat…" Command="{Binding RenameCommand}"
                     Padding="10,4" Margin="0,0,8,0"/>
             <Button Grid.Column="1" Content="Smazat"         Command="{Binding DeleteTemplateCommand}"
                     Padding="10,4"/>

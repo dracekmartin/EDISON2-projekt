@@ -69,7 +69,7 @@
                 <TextBox Grid.Column="0" Text="{Binding PdfFilePath, Mode=OneWay}"
                          IsReadOnly="True" Padding="6,4" VerticalContentAlignment="Center"/>
 
-                <Button Grid.Column="1" Content="Procházet..."
+                <Button Grid.Column="1" Content="Procházet…"
                         Command="{Binding BrowsePdfCommand}"
                         IsEnabled="{Binding IsNotBusy}"
                         Padding="12,4" Margin="8,0,0,0"/>

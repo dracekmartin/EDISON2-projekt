@@ -74,7 +74,7 @@
                                  Visibility="{Binding HasForm, Converter={StaticResource BoolToVis}}"/>
 
                 <!-- Stav: bez agendy (GENERAL) -->
-                <TextBlock Text="Šablona nemá žádné parametry."
+                <TextBlock Text="Tato šablona nemá parametry."
                            FontSize="{DynamicResource EDTheme.FontSize.Header}"
                            Foreground="{DynamicResource EDTheme.Border.Strong}"
                            VerticalAlignment="Center" HorizontalAlignment="Center">
