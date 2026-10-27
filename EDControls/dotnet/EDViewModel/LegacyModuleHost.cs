@@ -306,17 +306,23 @@ internal sealed class LegacyModuleHost
         var services = _services();
         var mlRest = services.MLRest
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.MLRest.");
+
+        // EDISONMAIN se spouští napřímo (ne přes host): jeho ApplicationEvents.OnRun nastavuje
+        // per-forma default EDParamIn (ApplyDefaultInput), který generický host neumí dodat.
+        bool direct = LaunchesDirectly(exeName);
+        // Bez hosta nejde spustit žádný modul přes něj: hláška místo chybového dialogu a hlášení za každé kliknutí.
+        if (!direct && MissingLauncherMessage() is { } missingLauncher)
+        {
+            services.PopupDisplayer.Info(missingLauncher);
+            return null;
+        }
         // Launch modulu jako usage telemetrie shellu. Záměrně ne (formFqn, "OPEN") -
         // hostovaná legacy forma si OPEN trackne sama přes EDForm, jinak by byl dvakrát.
         _trackUsage($"{services.FormIdPrefix}.LegacyLaunch", string.IsNullOrEmpty(formFqn) ? exeName : formFqn);
         var shellGuid = ShellGuidFor(mlRest, shareShellSession);
         // Chybějící soubor by skončil Win32Exception bez jména souboru; správce IS potřebuje vědět, co chybí.
         var agendaPath = ResolveExistingPath(exeName, _fileExists, DefaultDeployRoot);
-
-        // EDISONMAIN se spouští napřímo (ne přes host): jeho ApplicationEvents.OnRun nastavuje
-        // per-forma default EDParamIn (ApplyDefaultInput), který generický host neumí dodat.
-        bool direct = LaunchesDirectly(exeName);
-        var launcherPath = direct ? agendaPath : ResolveExistingPath(_launcherExe, _fileExists, DefaultDeployRoot);
+        var launcherPath = direct ? agendaPath : ResolvePath(_launcherExe, _fileExists, DefaultDeployRoot);
 
         var startedUtc = _utcNow();
         var prc = _start(new ProcessStartInfo
@@ -401,13 +407,24 @@ internal sealed class LegacyModuleHost
     {
         var path = ResolvePath(relativePath, fileExists, deployRoot);
         if (fileExists(path)) return path;
-        var searched = new[] { Path.Combine(AppContext.BaseDirectory, relativePath), path }
-            .Select(Path.GetDirectoryName)
-            .Distinct(StringComparer.OrdinalIgnoreCase);
         throw new FileNotFoundException(
-            $"Nelze spustit modul: soubor {Path.GetFileName(relativePath)} chybí v adresáři {string.Join(" i ", searched)}. " +
+            $"Nelze spustit modul: soubor {Path.GetFileName(relativePath)} chybí v adresáři {SearchedDirectories(relativePath, path)}. " +
             "Kontaktujte správce IS.", path);
     }
+
+    /// <summary>Hláška pro uživatele, když chybí generický host modulů, jinak null. Moduly spouštěné napřímo ho nepotřebují.</summary>
+    internal string? MissingLauncherMessage()
+    {
+        var path = ResolvePath(_launcherExe, _fileExists, DefaultDeployRoot);
+        if (_fileExists(path)) return null;
+        return $"Moduly nelze spouštět: soubor {Path.GetFileName(_launcherExe)} chybí v adresáři " +
+               $"{SearchedDirectories(_launcherExe, path)}. Kontaktujte správce IS.";
+    }
+
+    private static string SearchedDirectories(string relativePath, string resolvedPath) =>
+        string.Join(" i ", new[] { Path.Combine(AppContext.BaseDirectory, relativePath), resolvedPath }
+            .Select(Path.GetDirectoryName)
+            .Distinct(StringComparer.OrdinalIgnoreCase));
 
     /// <summary>Text v záhlaví okna, fallback poslední segment FormFqn (<c>formMHD2Main</c>), nebo EXE bez přípony.</summary>
     internal static string FormatLegacyLabel(LegacyLaunch entry)

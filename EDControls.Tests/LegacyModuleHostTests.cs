@@ -677,16 +677,58 @@ public class LegacyModuleHostTests
     }
 
     [Fact]
-    public void Launch_MissingLauncher_ThrowsBeforeStart()
+    public void Launch_MissingLauncher_InformsWithoutStartErrorOrReport()
+    {
+        // Bez hosta nejde žádný modul přes něj: hláška, ne chybový dialog s hlášením za každé kliknutí.
+        var h = new Harness();
+        h.MissingFiles.Add("EDISONMAIN2API.exe");
+
+        h.Host.ShowLegacy(Exe, Form, true, "");
+
+        h.Services.PopupDisplayer.Received(1).Info(Arg.Is<string>(m => m.Contains("EDISONMAIN2API.exe")), Arg.Any<Window?>());
+        Assert.Empty(h.Started);
+        Assert.Empty(h.Host.GetRunningModules());
+        // Spuštění, které neproběhlo, nepatří do usage telemetrie.
+        Assert.Empty(h.Usage);
+    }
+
+    [Fact]
+    public async Task ShowLegacyAsync_MissingLauncher_CompletesWithoutFault()
     {
         var h = new Harness();
         h.MissingFiles.Add("EDISONMAIN2API.exe");
 
-        var ex = Assert.Throws<FileNotFoundException>(() => h.Host.ShowLegacy(Exe, Form, true, ""));
+        await h.Host.ShowLegacyAsync(Exe, Form, true, "");
 
-        Assert.Contains("EDISONMAIN2API.exe", ex.Message);
         Assert.Empty(h.Started);
-        Assert.Empty(h.Host.GetRunningModules());
+    }
+
+    [Theory]
+    [InlineData("EDISONMAIN.exe")]
+    [InlineData("TemplateDesigner.exe")]
+    public void Launch_DirectExe_IgnoresMissingLauncher(string exe)
+    {
+        var h = new Harness();
+        h.MissingFiles.Add("EDISONMAIN2API.exe");
+
+        h.Host.ShowLegacy(exe, Form, true, "");
+
+        Assert.Single(h.Started);
+        h.Services.PopupDisplayer.DidNotReceiveWithAnyArgs().Info(default!, default);
+    }
+
+    [Fact]
+    public void MissingLauncherMessage_NamesFileAndDirectories_NullWhenPresent()
+    {
+        var h = new Harness();
+        Assert.Null(h.Host.MissingLauncherMessage());
+
+        h.MissingFiles.Add("EDISONMAIN2API.exe");
+
+        var message = h.Host.MissingLauncherMessage()!;
+        Assert.Contains("EDISONMAIN2API.exe", message);
+        Assert.Contains(AppContext.BaseDirectory.TrimEnd('\\'), message);
+        Assert.Contains(LegacyModuleHost.DefaultDeployRoot, message);
     }
 
     [Fact]

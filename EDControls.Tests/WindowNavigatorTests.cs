@@ -109,4 +109,17 @@ public class WindowNavigatorTests
 
         Assert.Equal(Path.Combine(WindowNavigator.EdisonDeployRoot, nonExistent), result);
     }
+
+    [Theory]
+    [InlineData("USERS.exe", true)]
+    [InlineData("EDREPORTS.dll", true)]
+    [InlineData("EDISONMAIN.exe", false)]
+    [InlineData("TemplateDesigner.exe", false)]
+    [InlineData("", false)]
+    public void LaunchesThroughLegacyHost_SameRuleAsLaunch(string exe, bool expected) =>
+        Assert.Equal(expected, WindowNavigator.LaunchesThroughLegacyHost(exe));
+
+    [Fact]
+    public void MissingLegacyHostMessage_WpfOnly_IsNull() =>
+        Assert.Null(((WindowNavigator)WindowNavigator.WpfOnly()).MissingLegacyHostMessage());
 }

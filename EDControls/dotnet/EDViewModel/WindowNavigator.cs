@@ -112,6 +112,13 @@ public class WindowNavigator : IWindowNavigator
     /// <summary>Jen legacy část <see cref="CloseAll"/>: kill tracked child procesů.</summary>
     public void CloseLegacyModules() => _legacy?.CloseAll();
 
+    /// <summary>Hláška pro uživatele, když chybí generický host legacy modulů, jinak null (i bez legacy podpory).</summary>
+    public string? MissingLegacyHostMessage() => _legacy?.MissingLauncherMessage();
+
+    /// <summary>Legacy agenda (.exe i .dll) se spouští přes generický host, EDISONMAIN a TemplateDesigner jdou napřímo.</summary>
+    public static bool LaunchesThroughLegacyHost(string exeName) =>
+        !string.IsNullOrEmpty(exeName) && !LegacyModuleHost.LaunchesDirectly(exeName);
+
     /// <summary>Snapshot pro menu „Spuštěné moduly": legacy moduly + WPF okna kromě <c>MainWindow</c>.
     /// Shell-only, proto ne na <see cref="IWindowNavigator"/>.</summary>
     public IReadOnlyList<RunningModuleInfo> GetActiveModules()
