@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-27 (6) - Linkový JŘ AD bez „Pořadí" v nabídce dat (`B194c` D2)
+
+V Linkovém JŘ AD (a v porovnání linek, které schéma přebírá) neslo pole „Pořadí" v kolekci Zastávky
+tarifní číslo - s mezerami a ve směru zpět sestupně - kdežto v ostatních agendách je to pořadí 1..N.
+Z nabídky dat zmizelo; tarifní číslo je v ní dál jako **„Tarifní číslo"**. `GetData` `PORADI` posílá dál:
+Tabulka spojů podle něj páruje příjezdový a odjezdový řádek zastávky, značky a přípoje, a staví se podle
+něj výlepy i porovnání linek. Přepsat jeho význam na 1..N by znamenalo přestavět to párování (rozhodnutí
+Jan 27. 10.: z nabídky pryč, význam nechat). Linkový JŘ MHD a vývěsky „Pořadí" mají dál - tam je to
+opravdu pořadí. Test `AgendaSchemaDriftTests.VyrazenaPoleAgendy_NejsouVJejiNabidce`, ověřeno voláním
+`GetSchema`.
+
 ## 2026-10-27 (5) - srozumitelnější popisky v nabídce dat (`B194c` D6)
 
 Ve všech čtyřech agendách JŘ: „Popis linky" → **„Název linky"** (pole nese název linky, ne popis),

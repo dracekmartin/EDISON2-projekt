@@ -53,6 +53,24 @@ public class AgendaSchemaDriftTests
         Assert.True(hits.Count == 0, "Vyřazené pole je zpátky v nabídce dat:\n" + string.Join("\n", hits));
     }
 
+    /// <summary>Totéž pro pole vyřazené jen z jedné agendy - jinde znamená něco jiného a zůstává.</summary>
+    private static readonly (string File, string Key, string Proc)[] VyrazenaVAgende =
+    [
+        ("LinkovyJrAd.cls", "PORADI", "nese tarifní číslo, ne pořadí 1..N jako jinde; v nabídce je „Tarifní číslo“ (Jan 27. 10.)"),
+    ];
+
+    [Fact]
+    public void VyrazenaPoleAgendy_NejsouVJejiNabidce()
+    {
+        var hits = AllFields()
+            .SelectMany(e => VyrazenaVAgende.Where(v => v.File == e.File && v.Key == e.Key)
+                .Select(v => $"{e.File} {e.Scope}|{e.Key}: {v.Proc}"))
+            .Distinct()
+            .ToList();
+
+        Assert.True(hits.Count == 0, "Vyřazené pole je zpátky v nabídce dat agendy:\n" + string.Join("\n", hits));
+    }
+
     private static readonly Regex AddFieldRx = new(
         """AddField\(\s*\w+\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*[,)]""",
         RegexOptions.Compiled);

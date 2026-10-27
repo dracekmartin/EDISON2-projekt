@@ -42,9 +42,6 @@ modulem, stojí u položky; bez ní je rozdíl nahodilý.
 Popisky a nápovědy výstup ani uložené volby nemění (návrhář je bere ze serveru). Popisky citují i nové
 hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`) - při přejmenování opravit i je.
 
-- **D2 „Pořadí" v linkovém AD je tarifní číslo** [S] **Jan** (*ověřeno:* kód). Jinde 1..N, v linkovém AD
-  tarifní číslo s mezerami a ve směru Zpět sestupně (`LinkovyJrAd.BuildZastavkaRadek` :1014). Prvek podle
-  něj páruje řádky, význam měnit nejde. Návrh: z nabídky stáhnout a dál posílat (jako `POPIS_PLATNOSTI`).
 - **D3 Konečná × cílová, CIS na začátku × na konci, vývěska bez výchozí zastávky** [S] (*ověřeno:* kód).
   „Konečná zastávka" vedle „CIS číslo cílové zastávky", „Aktuální zastávka (CIS)" vedle „CIS číslo zastávky"
   (`ZastavkoveJrAd.AddStandardJRFields`). Návrh: „Číslo … (CIS)" jednotně, přidat `VYCHOZI_ZASTAVKA` do vývěsek.

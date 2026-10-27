@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **D2** Linkový JŘ AD: „Pořadí" (nese tarifní číslo) z nabídky dat pryč, data ho posílají dál pro
+  Tabulku spojů (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (6)).
 - **D6 (část)** „Název linky", „URL adresa pro QR kód", „Druh poznámky"; „MHD/IDS" vědomě ponechané,
   typy poznámek a řádků zůstávají v roadmapě (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (5)).
 - **P1** Vývěsky: nápověda u osmi voleb, „Zastávky na znamení souhrnně" a „Schovat poznámky v rozsahu

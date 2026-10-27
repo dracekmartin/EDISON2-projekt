@@ -127,7 +127,8 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g = ##class(%DynamicObject).%New()
     s g.name = "Zastávky", g.collectionKey = "ZASTAVKY"
     s gf = ##class(%DynamicArray).%New()
-    d ..AddField(gf, "PORADI",         "Pořadí",             "number")
+    // Bez „Pořadí" (Jan 27. 10.): nese tarifní číslo, ne pořadí 1..N jako jinde - v nabídce je jako
+    // „Tarifní číslo". GetData PORADI posílá dál, prvek podle něj páruje řádky, značky a přípoje zastávky.
     d ..AddField(gf, "TYP",            "Typ řádku",          "text")
     d ..AddField(gf, "CZST",           "Číslo zastávky",     "number")
     d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")

@@ -27,7 +27,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)
 
-- **D2** „Pořadí" v linkovém AD je ve skutečnosti tarifní číslo [S] **Jan**
 - **D3** „Konečná" × „cílová", CIS na začátku × na konci popisku, vývěsky bez výchozí zastávky [S]
 - **D4** Údaje dopravce po jednotlivých polích má jen vývěska AD [M] **Jan**
 - **D5** Pořadí polí v nabídce dat se mezi agendami liší [S]
