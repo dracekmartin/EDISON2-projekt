@@ -61,9 +61,6 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   tučného (Poznámky). Skupina „Značky u odjezdů" má 37 polí, pořadí skupin nemá kostru (Minuty začínají
   „Skupiny dnů", Tabulka spojů „Řádky"). Návrh: kostra Obecné → specifické → Záhlaví → Buňky →
   Rámeček/Mřížka/Pozice/Podmínky, zóna stylu vždy stejným balíčkem `StyleFields`.
-- **E5 Seznam zastávek nabízí v MHD věci z AD** [M] (*ověřeno:* kód). Sloupec „Sloupek" (MHD ho nemá) a
-  nápověda „Více stanovišť" s odkazem na parametr, který MHD nemá. Skrývání podle agendy už mají Poznámky
-  a Tabulka spojů (`ViditelnostPole`).
 - **E8 Význam prázdné hodnoty pěti zápisy, různé rozsahy** [M] **Jan**. „(prázdné = auto)", „(0 = ∞)",
   „(0 = ne)", „(0 = bez limitu)", „(0=vedle)"; výška řádku 1-50 / 1-20 / 2-15 / 2-50 mm, písmo 4-200 ×
   3-24 pt. Návrh: popisek = podstatné jméno, význam prázdna do nápovědy, rozsahy sjednotit.

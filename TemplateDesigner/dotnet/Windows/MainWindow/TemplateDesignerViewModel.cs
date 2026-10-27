@@ -446,6 +446,18 @@ public class TemplateDesignerViewModel : EDViewModel
     /// záložku radši ukázat než schovat tam, kde funguje.</summary>
     public bool CurrentAgendaCustomColumns => AgendaEntry(State.CurrentTemplate.AgendaCode)?.CustomColumns ?? true;
 
+    /// <summary>Posílá agenda šablony u zastávek časy variant tras? Neznámá agenda ano (viz výše).</summary>
+    public bool CurrentAgendaVariantyTras => AgendaEntry(State.CurrentTemplate.AgendaCode)?.VariantyTras ?? true;
+
+    /// <summary>Je pole v řádcích kolekce podle schématu agendy šablony? Bez schématu nebo bez té kolekce
+    /// ano - radši nabídnout než schovat tam, kde funguje.</summary>
+    public bool AgendaPosilaPoleKolekce(string kolekce, string pole)
+    {
+        var sloupce = SchemaProvider.GetSchema(State.CurrentTemplate.AgendaCode ?? "")?.FieldCollections?
+            .FirstOrDefault(c => c.CollectionKey == kolekce);
+        return sloupce is null || sloupce.Fields.Any(f => f.FieldName == pole);
+    }
+
     /// <summary>Zobrazovací název aktuální konfigurace „Agenda · Varianta" (např. „Zastávkový JŘ · AD");
     /// fallback = syrový kód (registr nedostupný / neznámý kód). Čte titulek okna.</summary>
     public string CurrentAgendaDisplayName =>

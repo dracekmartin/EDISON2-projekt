@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-27 (25) - Seznam zastávek v MHD nenabízí sloupek, varianty tras ani Více stanovišť (`B194d` E5)
+
+Vývěska MHD posílá u zastávek jen označník: sloupky (číselník AD), časy variant tras ani stanoviště
+podle spojů nemá. Seznam zastávek přesto nabízel sloupce „Sloupek" a „Varianty tras" (zůstaly by
+prázdné) a skupinu „Stanoviště" s volbou Více stanovišť, jejíž nápověda odkazovala na parametr, který
+MHD nemá. Nabídka se teď řídí daty agendy, ne jejím jménem: sloupek a Více stanovišť podle polí
+`SLOUPEK` / `NASTUPISTE_SPOJU` ve schématu zastávek, varianty tras podle nového příznaku registru
+`VariantyTras` (stejný mechanismus jako `CustomColumns`; drží ho test proti `TRASA_MIN` v kódu agendy).
+Zapnutý sloupec se nabídne vždy, aby šel vypnout, a vypnutý nenabízený ze šablony nezmizí. Rozhodnutí
+Jan 27. 10.: sloupek a stanoviště jsou koncept AD, **varianty tras v MHD chce** - zapsáno do backlogu,
+po jejich dodělání stačí přepnout příznak. Pojistky `NabidkaSeznamuZastavekTests`.
+
 ## 2026-10-27 (24) - údaje dopravce po polích ve všech agendách JŘ (`B194c` D4)
 
 Název, Adresa, Telefon, E-mail a IČO dopravce nabízí teď každá agenda JŘ pod stejnými klíči

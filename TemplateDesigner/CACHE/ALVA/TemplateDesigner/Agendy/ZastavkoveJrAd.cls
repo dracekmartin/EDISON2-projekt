@@ -44,6 +44,8 @@ Parameter InstanceParamName = "LINKA_ID";
 
 Parameter CustomColumns As %Boolean = 1;
 
+Parameter VariantyTras As %Boolean = 1;
+
 Parameter ElementKind = "STOP";
 
 Parameter InstanceLabel = "linka";

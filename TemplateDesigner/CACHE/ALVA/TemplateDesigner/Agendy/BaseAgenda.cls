@@ -70,6 +70,11 @@ Parameter InstanceParamName As %String = "INSTANCE_ID";
 /// která ji nečte, by nic nedělala (vývěska MHD, rozhodnutí Jan 24. 10.: koncept AD).
 Parameter CustomColumns As %Boolean = 0;
 
+/// Agenda posílá u zastávek časy variant tras (`TRASA_MIN`). Návrhář podle toho nabídne v Seznamu
+/// zastávek sloupec „Varianty tras"; bez nich by zůstal prázdný (vývěska MHD, `B194d` E5). Až MHD
+/// varianty dostane (backlog), stačí přepnout tady.
+Parameter VariantyTras As %Boolean = 0;
+
 /// Druh JŘ elementů, které agenda podporuje - řídí kontextové menu/paletu okna.
 /// "STOP" = zastávkové (StopList/DepartureGrid/NotesLegend), "LINE" = knižní/linkové
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.

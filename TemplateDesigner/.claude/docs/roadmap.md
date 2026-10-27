@@ -35,8 +35,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan** -
   **odloženo** (Jan 26. 10.) až za menší body E5-E16; patří sem i umístění voleb záhlaví (dnes „Skupiny
   dnů" / „Řádky", kanon chce „Obecné")
-- **E5** Seznam zastávek nabízí v MHD sloupek, varianty tras a „Více stanovišť", které existují jen v AD [M] -
-  **odloženo** (Jan 26. 10.); návrh: nabídka podle polí, která agenda posílá, zapnutý sloupec zůstane vidět
 - **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan** - **odloženo k rozmyšlení**
   (Jan 26. 10.); návrh: vysvětlivka z popisku do nápovědy, rozsahy na nejširší (výška řádku 1-50 mm, písmo 3-200 pt)
 - **E13** Dialogy sloupců - zbývá c (jedna společná komponenta oken se sloupci, přestavba) - **odloženo**
@@ -71,6 +69,11 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 ## 📥 Backlog
 
 ### Ostatní
+
+- **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
+  (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
+  na trasy a body MHD a ověřit proti datům, pak v `ZastavkoveJrMhd` přepnout `VariantyTras = 1` -
+  nabídka sloupce se ukáže sama. Hodí se spojit s `B56` (sdílený kód agend).
 
 - **Slovo „linka" napevno** (`B194e` A5) [M] - asi 25 textů (menu „Zkontrolovat vybrané linky…",
   hlášky „Žádná vybraná linka nemá data", průběh kontroly). Udělat, **až se bude vydávat agenda bez

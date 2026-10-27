@@ -22,6 +22,21 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     // ═══════════════════════════════════════════
     public List<StopColumn> Columns { get; set; } = GetDefaultColumns();
 
+    /// <summary>Nabízí okno sloupců tenhle sloupec? Sloupek a Varianty tras jen agenda, která k nim posílá
+    /// data (`B194d` E5) - vývěska MHD sloupky ani varianty nemá a sloupec by zůstal prázdný. Zapnutý
+    /// sloupec okno ukáže i tak, aby šel vypnout.</summary>
+    public static bool SloupecNabizet(string key, bool maSloupek, bool maVarianty) => key switch
+    {
+        StopFields.Sloupek            => maSloupek,
+        StopFields.TravelTimeVariants => maVarianty,
+        _                             => true,
+    };
+
+    /// <summary>Které pole formuláře prvku je vidět: „Více stanovišť" jen u agendy, která posílá stanoviště
+    /// podle spojů (AD) - bez nich zbývá jen „Z trasy linky", tedy výchozí chování (`B194d` E5).</summary>
+    public static bool PoleFormulareViditelne(string klic, bool stanovisteDleSpoju) =>
+        klic != nameof(MultiPlatformMode) || stanovisteDleSpoju;
+
     public static List<StopColumn> GetDefaultColumns() =>
     [
         new() { Key = StopFields.TravelTime,   Header = "Čas",       Width = 8f,  Visible = true },

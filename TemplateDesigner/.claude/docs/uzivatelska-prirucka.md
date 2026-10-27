@@ -709,7 +709,8 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   na zvolený vzor. Vzory: Pracovní-Sobota-Neděle+svátky / Pracovní-víkend / Prázdniny (mimo+o
   prázdninách)-víkend / Prázdniny (mimo+o prázdninách)-Sobota-Neděle+svátky.
 - **Varianty tras** (sloupec „Varianty tras" na prvku Seznam zastávek - zapíná se v jeho nastavení
-  na záložce Sloupce; **z výroby je vypnutý**) - když spoje jedou z dané zastávky různými trasami,
+  na záložce Sloupce; **z výroby je vypnutý**; zatím jen u AD - vývěska MHD varianty nepočítá a sloupec
+  nenabízí) - když spoje jedou z dané zastávky různými trasami,
   dostane každá trasa vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek);
   v jejím sloupci je **průběh jedné skutečné trasy** - té s delší jízdní dobou, takže údaj odpovídá
   spoji, který opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže
@@ -792,8 +793,8 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 - **Varianty tras** (sloupec v editoru sloupců, výchozí vypnutý) - zap. = časové sloupce podle skutečných variant tras (jen AD; viz kap. 1). Je to **týž údaj jako sloupec „Čas jízdy"**, takže zapnuté má být vždy jen jedno z toho: kdo chce varianty, vypne si „Čas jízdy". Linka, kde jedou všechny spoje stejnou trasou, dostane jeden variantní sloupec (dřív žádný, takže na takové lince nebylo vidět nic)
 - **Oddělovací čáry** - vodorovné čáry mezi řádky zastávek
 - **Odsazení** - odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
-- **Sloupec Označník** (a u AD i **Sloupek**) - volitelný sloupec s číslem stanoviště, ze kterého spoj odjíždí; zapíná se v editoru sloupců, tiskne se jen tam, kde jsou data vyplněná
-- **Více stanovišť** (skupina Stanoviště) - jak sloupec naloží se zastávkou, ze které různé spoje odjíždějí z různých stanovišť: **Z trasy linky** (výchozí, číslo z trasy) / **Nejčetnější dle spojů** / **Výčet všech** (např. „2, 3") / **Řádek pro každé stanoviště** (zastávku vypíše jako víc řádků, jeden na každé stanoviště, s časy jen variant, které z něj jedou)
+- **Sloupec Označník** (a u AD i **Sloupek**; MHD sloupky nemá, sloupec proto nenabízí) - volitelný sloupec s číslem stanoviště, ze kterého spoj odjíždí; zapíná se v editoru sloupců, tiskne se jen tam, kde jsou data vyplněná
+- **Více stanovišť** (skupina Stanoviště, jen AD - MHD nemá stanoviště podle spojů) - jak sloupec naloží se zastávkou, ze které různé spoje odjíždějí z různých stanovišť: **Z trasy linky** (výchozí, číslo z trasy) / **Nejčetnější dle spojů** / **Výčet všech** (např. „2, 3") / **Řádek pro každé stanoviště** (zastávku vypíše jako víc řádků, jeden na každé stanoviště, s časy jen variant, které z něj jedou)
 - **Na znamení + Symbol na znamení** - zobrazí značku „na znamení" u zastávky a definuje, jaký znak se použije (výchozí „×")
 - **Atributy** - zobrazí atributy zastávky vedle názvu
 - **Přestupy (vlak/autobus)** - zobrazí u zastávky symbol přestupu na vlak („L") / autobus („A"); výchozí vypnuto

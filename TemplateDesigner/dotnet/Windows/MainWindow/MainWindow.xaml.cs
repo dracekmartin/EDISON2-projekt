@@ -1958,8 +1958,11 @@ public partial class MainWindow : Window
 
     private void OpenStopColumnsDialog(StopListElement element)
     {
-        var dlg = new StopColumnsEditorDialog(element)
-            { Owner = this, SearchMemoryKey = ElementDialogSearchKey(element), UpravaPoli = DoplneniPoliRadku(element) };
+        var dlg = new StopColumnsEditorDialog(element, NabidkaSloupcuZastavek(element))
+        {
+            Owner = this, SearchMemoryKey = ElementDialogSearchKey(element), UpravaPoli = DoplneniPoliRadku(element),
+            ViditelnostPole = ViditelnostSeznamuZastavek(element),
+        };
 
         if (dlg.ShowDialog() == true)
         {
@@ -1970,6 +1973,23 @@ public partial class MainWindow : Window
         InvalidateCanvas();
         InvalidatePreview();
         UpdatePropertiesPanel();
+    }
+
+    /// <summary>Sloupce Seznamu zastávek, ke kterým agenda šablony posílá data (`B194d` E5): sloupek jen
+    /// se sloupkem ve schématu zastávek, varianty tras jen s příznakem v registru agend.</summary>
+    private Func<string, bool> NabidkaSloupcuZastavek(StopListElement prvek)
+    {
+        bool sloupek = _vm!.AgendaPosilaPoleKolekce(prvek.ZastavkyDataSource, StopFields.Sloupek);
+        bool varianty = _vm.CurrentAgendaVariantyTras;
+        return klic => StopListElement.SloupecNabizet(klic, sloupek, varianty);
+    }
+
+    /// <summary>Pole formuláře Seznamu zastávek podle dat agendy - „Více stanovišť" jen se stanovišti
+    /// podle spojů (`B194d` E5).</summary>
+    private Func<string, IReadOnlyDictionary<string, string>, bool> ViditelnostSeznamuZastavek(StopListElement prvek)
+    {
+        bool dleSpoju = _vm!.AgendaPosilaPoleKolekce(prvek.ZastavkyDataSource, StopFields.NastupisteSpoju);
+        return (klic, _) => StopListElement.PoleFormulareViditelne(klic, dleSpoju);
     }
 
     /// <summary>EDInputForm button v inline panelu - otevře editor pravidel zvýraznění.</summary>
@@ -2256,6 +2276,7 @@ public partial class MainWindow : Window
                 {
                     NotesLegendElement => (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy, rozdilovy),
                     LineTableElement   => (klic, _) => LineTableElement.PoleFormulareViditelne(klic, rozdilovy),
+                    StopListElement s  => ViditelnostSeznamuZastavek(s),
                     _                  => null,
                 };
                 InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : DoplneniPoliRadku(selected[0]);

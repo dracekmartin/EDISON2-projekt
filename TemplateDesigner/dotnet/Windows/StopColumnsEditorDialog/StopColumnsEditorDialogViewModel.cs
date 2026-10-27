@@ -195,9 +195,15 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     private readonly StopListElement _element;
 
+    /// <summary>Vypnuté sloupce, ke kterým agenda nemá data - nenabízejí se, ale ze šablony nezmizí.</summary>
+    private readonly List<StopColumn> _nenabizene = [];
+
+    /// <param name="nabizetSloupec">Které sloupce nabídnout (podle dat agendy); null = všechny.
+    /// Zapnutý sloupec se nabídne vždy, aby šel vypnout.</param>
     public StopColumnsEditorDialogViewModel(
         StopListElement element,
-        List<StopColumn> columns)
+        List<StopColumn> columns,
+        Func<string, bool>? nabizetSloupec = null)
     {
         _element           = element;
 
@@ -205,14 +211,17 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         var dataInherited   = element.ResolveColumnDataParent();
 
         foreach (var col in columns)
+        {
+            if (!col.Visible && nabizetSloupec?.Invoke(col.Key) == false) { _nenabizene.Add(col); continue; }
             ColumnVMs.Add(StopColumnVM.FromModel(col, headerInherited, dataInherited));
+        }
 
         // Doplň chybějící známé sloupce (uložená šablona může mít jen podmnožinu) - ať uživatel
         // vidí VŠECHNY dostupné sloupce a může je zapnout checkboxem, místo aby zmizely z nabídky
         // a daly se vrátit jen přes "Výchozí". Doplněné jsou skryté (nezmění render, dokud je nezapne).
         var presentKeys = columns.Select(c => c.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var def in StopListElement.GetDefaultColumns())
-            if (!presentKeys.Contains(def.Key))
+            if (!presentKeys.Contains(def.Key) && nabizetSloupec?.Invoke(def.Key) != false)
             {
                 def.Visible = false;
                 ColumnVMs.Add(StopColumnVM.FromModel(def, headerInherited, dataInherited));
@@ -296,7 +305,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         RequestCommitEdits?.Invoke();
 
         // Element-level styl + ostatní general props řeší embedded EDInputForm (code-behind).
-        ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
+        ResultColumns = [.. ColumnVMs.Select(vm => vm.ToModel()), .. _nenabizene];
         CloseDialog(true);
     }
 }
