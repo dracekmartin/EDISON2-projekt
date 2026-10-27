@@ -41,7 +41,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("ThenByDescending", "Směr (druhý klíč)", $$$FieldTypeList, 0, 0)
         d f.AddListItem("0", "Vzestupně"), f.AddListItem("1", "Sestupně")
         s f.value = "0"
-        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
+        s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
         s f = form.AddNumber("MinRows", "Min. řádků (0 = ne)", 0, 0, 200)
         s f.helpText = "Doplní prázdné řádky do tohoto počtu - pevná výška boxu (např. faktura). 0 = bez minima"
         s f = form.AddNumber("MaxRows", "Max. řádků (0 = bez limitu)", 0, 0, 500)

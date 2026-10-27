@@ -31,7 +31,7 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   **odloženo** (Jan 26. 10.) až za menší body E5-E16; patří sem i umístění voleb záhlaví (dnes „Skupiny
   dnů" / „Řádky", kanon chce „Obecné")
 - **E8** Význam prázdné hodnoty a rozsahy polí - **po krocích a-f** (Jan 27. 10.): a výška řádku, b střídání
-  řádků, c nejvýš skupin, d nejméně/nejvýš řádků, e šířka buňky značky, f rozsahy písma (hotovo: a) [M] **Jan**
+  řádků, c nejvýš skupin, d nejméně/nejvýš řádků, e šířka buňky značky, f rozsahy písma (hotovo: a, b) [M] **Jan**
 - **E13** Dialogy sloupců - zbývá c (jedna společná komponenta oken se sloupci, přestavba) - **odloženo**
   spolu s E3 [M]
 

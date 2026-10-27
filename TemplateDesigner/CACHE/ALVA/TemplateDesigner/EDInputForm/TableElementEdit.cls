@@ -27,7 +27,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("general", "Obecné")
         s f = form.AddDecimal("RowHeight", "Výška řádku", 6, 1, 50, "mm")
         s f.helpText = "Výchozí výška řádku. Roztažením prvku do výšky se řádky natáhnou, písmo zůstane."
-        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
+        s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
 
         // Řádek záhlaví je u ručně vyplňované tabulky zbytečný pojem (záhlaví = první řádek, který
         // si uživatel udělá tučný). Zůstává kvůli šablonám, které ho už mají - proto je pole

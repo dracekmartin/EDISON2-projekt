@@ -50,7 +50,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Vodorovná mezera mezi jednotlivými odjezdy v řádku. Prázdné = podle šířky minuty."
         s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
         s f.helpText = "Prázdné = podle velikosti písma."
-        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
+        s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
         // Časová osa (rozsah hodin) i „Roztáhnout na výšku" jsou parametry sestavy
         // (CASOVA_OSA/HODINY_OD/DO, ROZTAHNOUT_NA_VYSKU), sdílené a autoritativní - NEduplikovat
         // jako pole prvku, parametr by je přebil a klik by nic nedělal (hlášení B22/B24).

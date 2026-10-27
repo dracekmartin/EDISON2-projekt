@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-27 (28) - Střídání řádků s popiskem bez závorky a s nápovědou (`B194d` E8b)
+
+Minuty odjezdů, Tabulka z dat a Pevná tabulka mají ve formuláři popisek „Střídání řádků" jako panel
+návrháře (dřív „Střídání řádků (prázdné = žádné)") a stejnou nápovědu: „Barva, kterou se podbarví
+každý druhý řádek. Prázdné = bez střídání." Chování beze změny; ověřeno voláním `Init` všech tří formulářů.
+
 ## 2026-10-27 (27) - Výška řádku má ve všech prvcích stejný popisek, nápovědu a rozsah (`B194d` E8a)
 
 Popisek je všude jen „Výška řádku" (dřív u Seznamu zastávek, Minut odjezdů a Tabulky spojů „Výška
