@@ -90,6 +90,11 @@ Agenda, systémová šablona, Novinky i příručka jsou připravené 23. 10. (`
   linek** (Faktury, převod Report Generátoru) - skloňovat podle názvu instance agendy; okno výběru
   už ho bere (Jan 27. 10.).
 
+- **Změna agendy nesmí nechat v šabloně prvky jiné agendy** [S-M] - dnes jde šablonu s Minutami odjezdů
+  přepnout na Obecnou (Ctrl+Shift+A) a prvek zůstane jen s upozorněním. Prvky JŘ mají jít otevřít jen
+  ve své agendě, takže změnu agendy v takové šabloně zablokovat a říct proč (rozhodnutí Jan 27. 10.).
+  Odtud i prázdná záložka „Vlastní definice sloupců" v obecné šabloně (review 27. 10., bod 4).
+
 - **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - Jan je nejdřív projde s kolegy (26. 10.).
   Dnes návrhář přebírá nastavení u linky a firmy z modulu JŘ tak, jak je ukládá starý modul (např.
   formát roku v omezeních, `B194a` C9). Po probrání rozhodnout, co z nich zůstane u linky, co se
