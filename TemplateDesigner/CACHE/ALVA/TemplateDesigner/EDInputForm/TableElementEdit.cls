@@ -25,7 +25,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Obecné ────────────────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
-        s f = form.AddDecimal("RowHeight", "Výška řádku", 6, 2, 50, "mm")
+        s f = form.AddDecimal("RowHeight", "Výška řádku", 6, 1, 50, "mm")
         s f.helpText = "Výchozí výška řádku. Roztažením prvku do výšky se řádky natáhnou, písmo zůstane."
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
 

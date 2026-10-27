@@ -454,7 +454,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         {
             Label = "Výška řádku", Group = "Tabulka",
             Get   = () => RowHeight, Set = v => RowHeight = v,
-            Min   = 2, Max = 50, Unit = "mm"
+            Min   = 1, Max = 50, Unit = "mm"
         },
         new BoolPropertyDescriptor { Label = "Záhlaví sloupců", Group = "Tabulka", Get = () => ShowHeader, Set = v => ShowHeader = v },
         new FloatPropertyDescriptor

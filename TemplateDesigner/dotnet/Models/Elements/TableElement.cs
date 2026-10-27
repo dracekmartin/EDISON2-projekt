@@ -1088,7 +1088,7 @@ public class TableElement : TemplateElement
             Group = "Tabulka",
             Get   = () => RowHeight,
             Set   = v => RowHeight = v,
-            Min   = 2, Max = 50, Unit = "mm"
+            Min   = 1, Max = 50, Unit = "mm"
         },
         new BoolPropertyDescriptor
         {

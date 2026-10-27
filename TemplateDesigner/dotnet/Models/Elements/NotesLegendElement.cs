@@ -816,7 +816,7 @@ public class NotesLegendElement : StopScheduleElementBase
             // Hodnota shodná s automatickou = vrátit se k dědění z písma; uživatel tak nemusí znát
             // magické číslo, aby se dostal zpátky (týž vzor jako GetDataRowHeightDescriptor).
             Set = v => NoteLineHeight = MathF.Abs(v - ComputeRowH(NoteFontSize)) < 0.01f ? null : v,
-            Min = 2, Max = 15, Unit = "mm" },
+            Min = 1, Max = 50, Unit = "mm" },
 
         new FloatPropertyDescriptor  { FromImage = true, Label = "Počet sloupců",       Group = "Rozložení", Get = () => Columns,     Set = v => Columns = (int)v, Min = 1, Max = 4, Format = "0" },
         new EnumPropertyDescriptor   { FromImage = true, Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,

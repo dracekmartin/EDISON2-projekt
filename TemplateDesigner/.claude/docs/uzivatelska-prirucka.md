@@ -1131,7 +1131,7 @@ Pozice a Podmínky jako u ostatních prvků.
 - **Turnusy ke spojům** - k číslu spoje se dotáhne turnus. Je to provozní údaj dopravce, ne
   informace pro cestujícího, proto je z výroby vypnutý; zapnutí stojí čas navíc při načítání dat.
 - **Přípojné řádky (vyčká/navazuje)** - pod zastávkou řádky o přípojích.
-- **Výška řádku (prázdné = auto)** - prázdné = podle velikosti písma.
+- **Výška řádku** - prázdné = podle velikosti písma.
 - **Poměr velikosti značek** - kolikrát větší je písmo značek než písmo buňky (starý tisk 1,5×, aby byly
   na výtisku čitelné).
 

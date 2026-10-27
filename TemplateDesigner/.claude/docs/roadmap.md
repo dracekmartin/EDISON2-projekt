@@ -30,8 +30,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan** -
   **odloženo** (Jan 26. 10.) až za menší body E5-E16; patří sem i umístění voleb záhlaví (dnes „Skupiny
   dnů" / „Řádky", kanon chce „Obecné")
-- **E8** Význam prázdné hodnoty zapsaný pěti způsoby, různé rozsahy [M] **Jan** - **odloženo k rozmyšlení**
-  (Jan 26. 10.); návrh: vysvětlivka z popisku do nápovědy, rozsahy na nejširší (výška řádku 1-50 mm, písmo 3-200 pt)
+- **E8** Význam prázdné hodnoty a rozsahy polí - **po krocích a-f** (Jan 27. 10.): a výška řádku, b střídání
+  řádků, c nejvýš skupin, d nejméně/nejvýš řádků, e šířka buňky značky, f rozsahy písma (hotovo: a) [M] **Jan**
 - **E13** Dialogy sloupců - zbývá c (jedna společná komponenta oken se sloupci, přestavba) - **odloženo**
   spolu s E3 [M]
 

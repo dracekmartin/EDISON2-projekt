@@ -36,8 +36,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowNzRow", "Řádek negativních značek", 1)
         d form.AddBool("TurnusyKeSpojum", "Turnusy ke spojům", 0)
         d form.AddBool("ShowPripojeRows", "Přípojné řádky (vyčká/navazuje)", 1)
-        s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 20, "mm")
-        s f.helpText = "Prázdné = auto podle velikosti písma"
+        s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
+        s f.helpText = "Prázdné = podle velikosti písma."
         s f = form.AddDecimal("PomerZnacek", "Poměr velikosti značek", 1.5, 1, 3, "×")
         s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
 

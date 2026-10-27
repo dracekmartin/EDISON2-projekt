@@ -28,7 +28,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // z dialog-scoped stavu (viz DynamicTableEditorDialog).
         d form.AddFieldToLastGroup("DataSource", "Zdroj dat", $$$FieldTypeList, 0, 0)
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
-        d form.AddDecimal("RowHeight", "Výška řádku", 6, 2, 50, "mm")
+        d form.AddDecimal("RowHeight", "Výška řádku", 6, 1, 50, "mm")
         d form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
         // Řazení řádků: sloupce jsou per element, Caché je nezná - položky plní klient
         // (PopulateSortFields), stejně jako u „Zdroj dat". Prázdné = pořadí z agendy.

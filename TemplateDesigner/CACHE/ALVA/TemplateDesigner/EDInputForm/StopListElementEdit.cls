@@ -22,7 +22,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Obecné ────────────────────────────────────────────────────────
         d form.AddGroup("general", "Obecné")
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
-        s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
+        s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
+        s f.helpText = "Prázdné = podle velikosti písma."
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
         // Pozadí bez výchozí hodnoty - nese ho prvek sám, prázdno znamená bez podbarvení.

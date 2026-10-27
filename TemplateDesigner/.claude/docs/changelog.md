@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-27 (27) - Výška řádku má ve všech prvcích stejný popisek, nápovědu a rozsah (`B194d` E8a)
+
+Popisek je všude jen „Výška řádku" (dřív u Seznamu zastávek, Minut odjezdů a Tabulky spojů „Výška
+řádku (prázdné = auto)"), význam prázdného pole je v nápovědě a začíná všude stejně: „Prázdné = podle
+velikosti písma." Rozsah je ve všech šesti prvcích 1-50 mm (dřív Tabulka spojů 1-20, Poznámky 2-15,
+tabulky 2-50) - jen rozšíření, uložené hodnoty zůstávají platné. Formuláře i panel návrháře shodně;
+ověřeno voláním `Init` všech šesti formulářů. Rozhodnutí Jan 27. 10.: E8 po krocích, tohle je krok a.
+
 ## 2026-10-27 (26) - spuštění z EDISONu otevře naposledy použitou agendu modulu (`B194e` A2)
 
 Strom EDISONu má jeden vstup do návrháře v uzlu JŘ a jeden v uzlu MHD a posílá napevno zastávkový
