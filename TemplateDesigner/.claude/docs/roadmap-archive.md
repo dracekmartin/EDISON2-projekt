@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **P5** Výlepy linkového AD po zastávkách a PDF na zastávku - **vyřazeno, nedělá se** (rozhodnutí Jan
+  27. 10.: není to přímočaré sjednocení, chce zásah do exportu; vrátit se jen na poptávku zákazníka).
 - **E5** Seznam zastávek v MHD nenabízí Sloupek, Varianty tras ani Více stanovišť - nabídka podle dat
   agendy, zapnutý sloupec zůstává (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (25)). Varianty tras
   pro MHD v backlogu.

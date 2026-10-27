@@ -47,9 +47,6 @@ hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`)
   vývěsky; vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`). Volby jsou zamčené → přidat souběžný
   klíč `optionLabels`, `options` nechat jako text (`CacheAgendaProvider.ParseParameters` :305 by na objektu
   ztratil všechny parametry). Třetí kopie popisků v `DepartureColumnPresets.cs:20-37`.
-- **P5 Linkový AD výlepy: bez pořadí stránek a PDF na zastávku** [M] **Jan** (*ověřeno:* kód). Stránky jdou
-  vždy po směrech (`LinkovyJrAd.VypisVylepy`), vývěska nabízí „Po zastávkách"; export „Jeden PDF na
-  zastávku" se nabízí jen agendám druhu STOP (`AgendaParams.AddExportFields`).
 
 ## 4. Prvky a formuláře
 
