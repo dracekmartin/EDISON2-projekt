@@ -15,10 +15,20 @@ public class AgendaRegistryEntryTests
     public void DisplayName_SVariantou_AgendaTeckaVarianta()
     {
         var e = new AgendaRegistryEntry("ZASTAVKOVY_JR_AD", "Zastávkový JŘ (AD)", "cls",
-            Agenda: "ZASTAVKOVY_JR", AgendaLabel: "Zastávkový JŘ", Variant: "AD", VariantLabel: "AD (linková doprava)");
+            Agenda: "ZASTAVKOVY_JR", AgendaLabel: "Zastávkový JŘ", Variant: "AD", VariantLabel: "AD");
 
         Assert.Equal("Zastávkový JŘ · AD", e.DisplayName);
         Assert.Equal("Zastávkový JŘ", e.EffectiveAgendaLabel);
+    }
+
+    /// <summary>Uživatel nevidí kód varianty („AD_ROZDILOVY"), ale její popisek (`B194` A1).</summary>
+    [Fact]
+    public void DisplayName_PouzijePopisekVarianty_NeKod()
+    {
+        var e = new AgendaRegistryEntry("LINKOVY_JR_AD_ROZDILOVY", "Linkový JŘ (AD_ROZDILOVY)", "cls",
+            Agenda: "LINKOVY_JR", AgendaLabel: "Linkový JŘ", Variant: "AD_ROZDILOVY", VariantLabel: "AD - porovnání verzí");
+
+        Assert.Equal("Linkový JŘ · AD - porovnání verzí", e.DisplayName);
     }
 
     [Fact]
@@ -47,7 +57,7 @@ public class AgendaRegistryEntryTests
         const string json = """
             [{"code":"ZASTAVKOVY_JR_AD","label":"Zastávkový JŘ (AD)",
               "agenda":"ZASTAVKOVY_JR","agendaLabel":"Zastávkový JŘ",
-              "variant":"AD","variantLabel":"AD (linková doprava)",
+              "variant":"AD","variantLabel":"AD",
               "cacheClass":"ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd",
               "instanceParamName":"LINKA_ID","elementKind":"STOP",
               "instanceLabel":"linka","instanceLabelPlural":"linky",

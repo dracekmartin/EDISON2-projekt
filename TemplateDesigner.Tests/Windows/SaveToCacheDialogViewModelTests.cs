@@ -28,6 +28,6 @@ public class SaveToCacheDialogViewModelTests
         var vm = new SaveToCacheDialogViewModel("Šablona", "GENERAL");
 
         Assert.Equal("GENERAL", vm.AgendaLabel);
-        Assert.Equal("Obecná (bez databáze)", new SaveToCacheDialogViewModel("Šablona", "GENERAL", "Obecná (bez databáze)").AgendaLabel);
+        Assert.Equal("Obecná (bez dat)", new SaveToCacheDialogViewModel("Šablona", "GENERAL", "Obecná (bez dat)").AgendaLabel);
     }
 }

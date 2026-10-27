@@ -52,7 +52,7 @@ Parameter AgendaLabel As %String = "Linkový JŘ";
 
 Parameter Variant As %String = "AD_ROZDILOVY";
 
-Parameter VariantLabel As %String = "AD - rozdílový (porovnání dvou verzí)";
+Parameter VariantLabel As %String = "AD - porovnání verzí";
 
 /// Zatím jen na ukázku a pro vývoj - uživatelům se nenabízí. Spuštění ze shellu s kódem agendy
 /// ji otevře i tak (launch kontrakt filtr zveřejnění nemá).

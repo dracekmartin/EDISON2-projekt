@@ -41,9 +41,13 @@ public record AgendaRegistryEntry(
     /// <summary>Label agendy s fallbackem pro starší Caché bez dvouosých klíčů (→ kombinovaný Label).</summary>
     public string EffectiveAgendaLabel => AgendaLabel is { Length: > 0 } ? AgendaLabel : Label;
 
+    /// <summary>Varianta pro uživatele („AD", „AD - porovnání verzí"); kód varianty (`AD_ROZDILOVY`)
+    /// jen u starší Caché bez popisku.</summary>
+    public string EffectiveVariantLabel => VariantLabel is { Length: > 0 } ? VariantLabel : Variant;
+
     /// <summary>Zobrazovací text konfigurace: „Zastávkový JŘ · AD", bez varianty jen label agendy.</summary>
     public string DisplayName => Variant is { Length: > 0 }
-        ? $"{EffectiveAgendaLabel} · {Variant}"
+        ? $"{EffectiveAgendaLabel} · {EffectiveVariantLabel}"
         : EffectiveAgendaLabel;
 }
 

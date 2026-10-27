@@ -56,7 +56,8 @@ Parameter AgendaLabel As %String = "Linkový JŘ";
 
 Parameter Variant As %String = "AD";
 
-Parameter VariantLabel As %String = "AD (linková doprava)";
+/// Jen „AD": „(linková doprava)" se pletlo s agendou Linkový JŘ (Jan 27. 10.).
+Parameter VariantLabel As %String = "AD";
 
 /// Vydaná zákazníkům 22. 9. (před tím 24. 8. zveřejněná, 1. 9. skrytá, 3. 9. vrácená kvůli dovývoji).
 ///

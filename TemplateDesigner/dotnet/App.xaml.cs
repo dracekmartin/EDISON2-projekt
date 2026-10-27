@@ -140,7 +140,7 @@ public partial class App : Application
         else
         {
             // Standalone bez Caché - pouze GENERAL (synthetic injection v registru, ale registr není volaný)
-            agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez databáze)", "")];
+            agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "")];
         }
 
         // inputParam kontraktu "Agenda=<kód>" → startovní agenda šablony. Uzel stromu legacy

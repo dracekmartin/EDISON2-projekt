@@ -3406,7 +3406,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (CacheProvider is not null && !CacheProvider.IsSchemaCached(agendaCode))
         {
             var code = agendaCode;
-            AgendaNameText = $"Agenda: {code} (načítám schéma…)";
+            AgendaNameText = $"Agenda: {AgendaEntry(code)?.DisplayName ?? code} (načítám…)";
             return Task.Run(() => SchemaProvider.GetSchema(code))
                 .ContinueWith(_ => RefreshFieldsListCore(code),
                               TaskScheduler.FromCurrentSynchronizationContext());
@@ -3422,7 +3422,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         if (schema is null)
         {
-            AgendaNameText = $"Agenda: {agendaCode} (schéma nenalezeno)";
+            AgendaNameText = $"Agenda: {AgendaEntry(agendaCode)?.DisplayName ?? agendaCode} (nedostupná)";
             UpdateCacheStatus(agendaCode, null);
             LoadAgendaParameters(agendaCode);
             RebuildSchemaTree(null);
@@ -3433,7 +3433,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // bez varianty jen „Agenda: Faktury". Fallback = jméno ze schématu (registr nezná kód).
         var entry = AgendaEntry(agendaCode);
         AgendaNameText = entry is { Variant.Length: > 0 }
-            ? $"Agenda: {entry.EffectiveAgendaLabel} · Varianta: {entry.Variant}"
+            ? $"Agenda: {entry.EffectiveAgendaLabel} · Varianta: {entry.EffectiveVariantLabel}"
             : $"Agenda: {entry?.EffectiveAgendaLabel ?? schema.AgendaName}";
         var cacheSchema = CacheProvider?.GetSchema(agendaCode);
         UpdateCacheStatus(agendaCode, cacheSchema);

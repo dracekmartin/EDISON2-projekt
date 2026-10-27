@@ -35,7 +35,8 @@ Parameter AgendaLabel = "Zastávkový JŘ";
 
 Parameter Variant = "AD";
 
-Parameter VariantLabel = "AD (linková doprava)";
+/// Jen „AD": „(linková doprava)" se pletlo s agendou Linkový JŘ (Jan 27. 10.).
+Parameter VariantLabel = "AD";
 
 Parameter Released = 1;
 

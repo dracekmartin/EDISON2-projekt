@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-27 (12) - varianty agend jen „AD" / „MHD", bez interních kódů, „Obecná (bez dat)" (`B194e` A1, část)
+
+Varianta agendy se všude píše krátce: **„AD"**, **„MHD"** a u porovnání linek **„AD - porovnání verzí"**
+(dřív „AD (linková doprava)", které se pletlo s agendou Linkový JŘ, a „AD - rozdílový (porovnání dvou
+verzí)"). Titulek okna, filtr v Otevřít, stavový řádek a sloupec Varianta v seznamu šablon berou popisek
+varianty, ne kód - u porovnání linek už nestojí „AD_ROZDILOVY". Stavový řádek ani při načítání neukazuje
+kód agendy („Agenda: ZASTAVKOVY_JR_AD (načítám schéma…)" → „Agenda: Zastávkový JŘ · AD (načítám…)").
+Obecná šablona se všude jmenuje **„Obecná (bez dat)"** - „bez databáze" neplatilo, ukládá se do ní taky.
+Kódy agend beze změny (šablony, start z EDISONu). Rozhodnutí Jan 27. 10.; jednotný tvar zápisu
+(„Agenda · Varianta" vs. „Agenda: … · Varianta: …") ještě otevřený. Ověřeno voláním `ListAgendy`.
+
 ## 2026-10-27 (11) - pole v nabídce dat ve stejném pořadí ve všech agendách JŘ (`B194c` D5)
 
 Nabídka dat (záložka Datová pole i „vložit pole") ukazuje pole v pořadí, v jakém je agenda posílá.

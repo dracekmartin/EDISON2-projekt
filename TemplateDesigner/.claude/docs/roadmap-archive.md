@@ -34,6 +34,8 @@
   za čárkami; „tel:" × „tel." vědomě ponecháno (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (5)).
 - **P4** Typy provozu linkového MHD ve skupině parametrů „Tabulka spojů" s popiskem „Typ provozu: …"
   (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (6)).
+- **A1 (část)** Varianty „AD" / „MHD" / „AD - porovnání verzí", bez interních kódů, „Obecná (bez dat)"
+  (rozhodnutí Jan 27. 10.; changelog 2026-10-27 (12)).
 - **D5** Pole v nabídce dat ve stejném pořadí bloků ve všech čtyřech agendách, hlídá test (rozhodnutí
   Jan 27. 10.; changelog 2026-10-27 (11)).
 - **D8 (dokončení)** Ukázka linkového MHD s typy provozu linky, „Čas jízdy" jako text, opravený komentář

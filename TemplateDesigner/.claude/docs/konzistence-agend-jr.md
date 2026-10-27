@@ -86,6 +86,8 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   filtr), „Agenda: … · Varianta: AD" (stavový řádek), „Zastávkový JŘ (AD)" (Uložit jako), dvojice sloupců,
   „AD (linková doprava)" × „MHD" (výběr agendy; plete se s Linkovým JŘ), syrový kód při načítání
   (`RefreshFieldsList` :3384), „Obecná" × „Obecná (bez databáze)". Návrh: jeden tvar, symetrické popisy variant.
+  *Hotovo 27. 10.:* varianty „AD" / „MHD" / „AD - porovnání verzí", bez kódu v titulku, seznamu i při načítání,
+  „Obecná (bez dat)". Zbývá jednotný tvar zápisu a kód v okně Změnit agendu (rozhodnutí Jan 5. 8. ho tam nechat).
 - **A2 Start z EDISONu vždy předvolí zastávkový JŘ** [S-M] **Jan** (*ověřeno:* kód). Linkový JŘ nemá ve stromu
   vstup (`EDISONMAIN2/.../API/Tree.cls:414, 493`, generuje se z legacy XML) a agenda ze shellu má přednost
   před naposledy použitou. Rozhodnout s autory stromu.
