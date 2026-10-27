@@ -182,6 +182,26 @@ public class LicenceVerifierTests
     }
 
     [Fact]
+    public void AdminRetry_LegacyHostMissing_RefusesWithoutOfferLoop()
+    {
+        // Okno aktivity by bez hosta nenaběhlo a „Pokračovat?" by se vracelo dokola.
+        var mlRest = MLRestMocks.Create();
+        SetupVerifyLic(mlRest, -1, 1);
+        var popup = Substitute.For<IPopupDisplayer>();
+        popup.Confirm(Arg.Any<string>()).Returns(true);
+        var services = new EDServices(mlRest, Substitute.For<IWindowNavigator>(), popup);
+        var nav = new WindowNavigator(new LegacyModuleHost(() => services, fileExists: _ => false));
+
+        var (outcome, _) = LicenceVerifier.TryAcquireSession(
+            mlRest, () => new Lic { CountsLOGIN = 5 }, isAdmin: true, popup, nav);
+
+        Assert.Equal(LicenceAcquireOutcome.Refused, outcome);
+        popup.DidNotReceiveWithAnyArgs().Confirm(default!);
+        // Bez důvodu by admin viděl jen „překročen počet licencí“ a nevěděl, proč okno aktivity nejde otevřít.
+        popup.Received(1).Info(Arg.Is<string>(m => m.Contains("EDISONMAIN2API.exe")), Arg.Any<System.Windows.Window?>());
+    }
+
+    [Fact]
     public void AdminRetry_MultipleIterations_LaunchesUsersExeEachTime()
     {
         var mlRest = MLRestMocks.Create();

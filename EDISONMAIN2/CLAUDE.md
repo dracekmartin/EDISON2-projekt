@@ -127,11 +127,11 @@ defaultuje na **false**; [16]/[17] osobní adresář a e-mail z loginu → `User
 
 Pasti:
 
-- Chyby hostované formy: `HostedErrorReporter` (host i `ApplicationEvents.vb`) → legacy
-  `MLError.ShowError` (telemetrie až na tlačítko, source `EDISON`); výjimku z `Form.Load` na x64
-  spolkne sám Windows (kernel callback), nevidí ji ani try/catch kolem `ShowDialog`. Tvrdý pád
-  hlásí shell z exit kódu (`LegacyModuleHost.Launch` → `ReportLegacyExit`); kódy hosta 2 =
-  launch fail, 3 = fatal po dialogu. Ověření bez pádu: Debug host + `EDISONMAIN2API_CRASHTEST=ui|bg`.
+- Chyby hostované formy: `HostedErrorReporter` (host i `ApplicationEvents.vb`) → legacy `MLError.ShowError`
+  (telemetrie až na tlačítko, source `EDISON`), WPF část agendy (`ElementHost`) přes `Dispatcher.UnhandledException`;
+  výjimku z `Form.Load` na x64 spolkne sám Windows (kernel callback), nevidí ji ani try/catch kolem `ShowDialog`.
+  Konec procesu hlásí shell z exit kódu (`ReportLegacyExit`, druhy v `LegacyExitCodes`), chybějící host jednou po startu
+  (`LegacyHostCheck`, klik pak jen hláška). Ověření bez pádu: Debug host + `EDISONMAIN2API_CRASHTEST=ui|bg|load|wpf|wpfrepeat`.
 - Non-prázdný `shellGuid` → modul sdílí shellův GUID + `CacheLocks=1` (zánik shell zámku shodí
   i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks.
   TemplateDesigner totéž bez hosta (`LaunchesDirectly`, viz `TemplateDesigner/CLAUDE.md`); legacy

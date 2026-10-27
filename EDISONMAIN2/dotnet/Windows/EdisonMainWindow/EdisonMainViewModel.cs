@@ -269,7 +269,18 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 return;
             }
             await ShowShellChangelogIfAnyAsync();
-            OpenStartupWindowIfAny();
+            OpenStartupWindowIfAny(skipHostedModule: LegacyHostMissing());
+        }
+
+        /// <summary>Kontrola hosta legacy modulů po startu, null = vypnuto (E2E běh, testy).</summary>
+        internal LegacyHostCheck? LegacyHostCheck { get; set; }
+
+        private bool LegacyHostMissing()
+        {
+            if (LegacyHostCheck?.MissingMessage() is not { } message) return false;
+            LegacyHostCheck.Report(message);
+            PopupDisplayer.Info(message);
+            return true;
         }
 
         private Task? _initialization;
@@ -397,12 +408,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// přepnutí firmy). Nepovolený/chybějící modul (není ve stromu) se tiše přeskočí.
         /// Poslední krok <see cref="StartAsync"/>.
         /// </summary>
-        internal void OpenStartupWindowIfAny()
+        internal void OpenStartupWindowIfAny(bool skipHostedModule = false)
         {
             if (_startupWindowOpened) return;
             _startupWindowOpened = true;
             if (!OpensStartupWindow || DefaultWindowId == 0) return;
             var module = _trees.AllExecutables().FirstOrDefault(e => e.ElementId == DefaultWindowId.ToString());
+            // Chybějící host právě ohlásila hláška, výchozí modul přes něj by ji jen zopakoval.
+            if (module != null && skipHostedModule
+                && EDControls.EDViewModel.WindowNavigator.LaunchesThroughLegacyHost(module.ExecutablePath)) return;
             if (module != null && OpenModuleCommand.CanExecute(module))
                 OpenModuleCommand.Execute(module);
         }

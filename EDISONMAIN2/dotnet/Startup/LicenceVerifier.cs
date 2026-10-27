@@ -74,6 +74,12 @@ public static class LicenceVerifier
 
             if (result == -1 && isAdmin)
             {
+                // Bez hosta modulů okno aktivity nenaběhne a nabídka by se točila dokola: důvod, pak odmítnutí jako bez admina.
+                if (windowNavigator is WindowNavigator nav && nav.MissingLegacyHostMessage() is { } hostMissing)
+                {
+                    popup.Info(hostMissing);
+                    return (LicenceAcquireOutcome.Refused, licence);
+                }
                 if (!popup.Confirm(
                     "Byl překročen počet licencí. Otevřu okno aktivity uživatelů - můžete někoho odhlásit. Po zavření okna zkusím znovu. Pokračovat?"))
                     return (LicenceAcquireOutcome.Cancelled, licence);

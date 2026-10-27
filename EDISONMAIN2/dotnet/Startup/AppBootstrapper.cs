@@ -431,7 +431,9 @@ public class AppBootstrapper
                                        _options.InternalDiagnosticsEnabled,
                                        LicenceSyncFor(_options))
         {
-            OpensStartupWindow = !testRun
+            OpensStartupWindow = !testRun,
+            // E2E běh modální hlášku neodklikne.
+            LegacyHostCheck = testRun ? null : LegacyHostCheck.For(nav),
         };
     }
 

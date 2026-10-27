@@ -85,6 +85,65 @@ public class EdisonMainViewModelStartTests
         Assert.Equal(["novinky", "výchozí okno"], events);
     }
 
+    // Výchozí okno 23 je ve stromu jako modul exe (přes host, nebo napřímo).
+    private static (IMLRest Session, IModuleTreeLoader Trees) SessionWithStartupModule(string exe)
+    {
+        var ml = MockMLRest();
+        ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
+            .Returns(MLRestMocks.Output("23"));
+        var trees = TreeLoaderWith([new ExecutableModule { Name = "A", ExecutablePath = exe, FormName = "ALVA.A.frm", ElementId = "23" }]);
+        return (ml, trees);
+    }
+
+    private static async Task<(List<string> Reports, IPopupDisplayer Popup, IWindowNavigator Nav)> StartWithHostCheck(
+        string startupExe, string? missingMessage)
+    {
+        var nav = Substitute.For<IWindowNavigator>();
+        var popup = Substitute.For<IPopupDisplayer>();
+        var (ml, trees) = SessionWithStartupModule(startupExe);
+        var vm = CreateVM(services: MockServices(nav: nav, popup: popup), mlRest: ml, treeLoader: trees,
+                          changelogSource: Substitute.For<IChangelogSource>(),
+                          dialogs: new RecordingChangelogDialog([]), initialize: false);
+        var reports = new List<string>();
+        vm.LegacyHostCheck = new LegacyHostCheck(() => missingMessage, reports.Add);
+
+        await vm.StartAsync();
+
+        return (reports, popup, nav);
+    }
+
+    [Theory]
+    [InlineData("a.exe")]
+    [InlineData("EDREPORTS.dll")]
+    public async Task StartAsync_LegacyHostMissing_ReportsOnceInformsAndSkipsHostedStartupWindow(string startupExe)
+    {
+        // Přes host jdou i agendy v .dll (EDREPORTS, EDISON AI).
+        var (reports, popup, nav) = await StartWithHostCheck(startupExe, "chybí EDISONMAIN2API.exe");
+
+        Assert.Equal(["chybí EDISONMAIN2API.exe"], reports);
+        popup.Received(1).Info("chybí EDISONMAIN2API.exe", Arg.Any<System.Windows.Window?>());
+        await nav.DidNotReceive().ShowLegacyAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task StartAsync_LegacyHostMissing_DirectStartupWindowStillOpens()
+    {
+        // EDISONMAIN.exe host nepotřebuje.
+        var (_, _, nav) = await StartWithHostCheck("EDISONMAIN.exe", "chybí EDISONMAIN2API.exe");
+
+        await nav.Received(1).ShowLegacyAsync("EDISONMAIN.exe", Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task StartAsync_LegacyHostPresent_OpensStartupWindowWithoutNotice()
+    {
+        var (reports, popup, nav) = await StartWithHostCheck("a.exe", null);
+
+        Assert.Empty(reports);
+        popup.DidNotReceiveWithAnyArgs().Info(default!, default);
+        await nav.Received(1).ShowLegacyAsync("a.exe", Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string>());
+    }
+
     [Fact]
     public async Task StartAsync_SessionLoadFails_ReportsErrorAndOpensNothing()
     {
