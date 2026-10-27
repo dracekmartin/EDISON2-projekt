@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-27 (17) - Minuty odjezdů přepočítají šířky po změně stylu ve formuláři (review bod 3)
+
+Změna „Minuta: Velikost", „Symbol: Velikost", písma značek nebo písma buněk (kromě velikosti) se do
+šířek skupin dnů nepromítla, dokud se znovu nenačetla data (F5, jiná linka) - minuty přetekly nebo se
+uřízly. Prvek si rozvržení pamatuje a změnu poznával podle objektu stylu, jenže formulář mění styl na
+místě. Otisk cache teď bere obsah všech stylů prvku (`TextStyle.ContentHash`) a skalární zálohy
+`MinuteBold`/`AnotaceFontSize`. Pojistky: `MinutyOdjezduSirkaTests.ZmenaStylu_PrepocitaSirky` (před
+opravou padal), `KazdyStylPrvku_ZmeniOtiskCache`, `TextStyleTests.ContentHash_PoznaZmenuKazdeVlastnosti`.
+
 ## 2026-10-27 (16) - systémové šablony bez matoucích názvů (`B194e` A4)
 
 Sekce výchozích zastávkových šablon (AD i MHD) se jmenuje **„Obsah"** místo „JŘ Zastávkový" (obrácený

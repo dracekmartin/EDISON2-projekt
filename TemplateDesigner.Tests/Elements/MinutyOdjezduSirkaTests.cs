@@ -155,4 +155,50 @@ public class MinutyOdjezduSirkaTests
         foreach (float sirka in new[] { 150f, 60f, 25f })
             Assert.Null(Record.Exception(() => RenderSnapshot.Capture(Prvek(sirka), Data())));
     }
+
+    /// <summary>Formulář mění styl zóny na místě (`MinuteStyle.FontSize = …`), objekt stylu zůstává
+    /// týž. Rozvržení se proto musí přepočítat podle obsahu stylu, ne podle toho, jestli jde o jiný
+    /// objekt - jinak šířky skupin zůstanou ze staré velikosti, dokud se znovu nenačtou data.</summary>
+    [Theory]
+    [InlineData("Minuta: Velikost")]
+    [InlineData("Symbol: Velikost")]
+    [InlineData("Buňky: Velikost")]
+    [InlineData("Buňky: Font")]
+    public void ZmenaStylu_PrepocitaSirky(string zmena)
+    {
+        var data = Data();
+        var prvek = Prvek(400);
+        var (_, pred, _) = prvek.RozvrzeniSirek(data);
+
+        switch (zmena)
+        {
+            case "Minuta: Velikost": prvek.MinuteStyle.FontSize = 16; break;
+            case "Symbol: Velikost": prvek.AnotaceSymbolStyle.FontSize = 16; break;
+            case "Buňky: Velikost": prvek.DataStyle.FontSize = 16; break;
+            default: prvek.DataStyle.FontFamily = "Courier New"; break;
+        }
+        var (_, po, _) = prvek.RozvrzeniSirek(data);
+
+        Assert.True(Math.Abs(po[1] - pred[1]) > 0.1f, $"{zmena}: skupina se značkami potřebuje {po[1]:0.00} mm, před změnou {pred[1]:0.00} mm");
+    }
+
+    /// <summary>Každý styl prvku patří do otisku cache - i ten, jehož změna se v datech testu výše
+    /// na šířce neprojeví (text značek, tučné minuty v rastru). Nový styl prvku sem patří taky.</summary>
+    [Fact]
+    public void KazdyStylPrvku_ZmeniOtiskCache()
+    {
+        var styly = typeof(DepartureGridElement).GetProperties()
+            .Where(p => p.PropertyType == typeof(TextStyle) && p.CanWrite).ToList();
+        Assert.NotEmpty(styly);
+
+        foreach (var p in styly)
+        {
+            var prvek = Prvek(400);
+            var styl = (TextStyle?)p.GetValue(prvek) ?? new TextStyle();
+            p.SetValue(prvek, styl);
+            int pred = prvek.LayoutFingerprint();
+            styl.Bold = !(styl.Bold ?? false);
+            Assert.True(prvek.LayoutFingerprint() != pred, $"změna {p.Name} nepřepočítá rozvržení");
+        }
+    }
 }

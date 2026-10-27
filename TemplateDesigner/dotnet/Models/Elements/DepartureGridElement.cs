@@ -483,17 +483,18 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
     /// <summary>Rychlý fingerprint layout-affecting properties pro invalidaci cache.</summary>
     private int ComputeLayoutFingerprint() => HashCode.Combine(
-        HashCode.Combine(HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
-            MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount, GroupColumns.Count),
+        HashCode.Combine(SkupinaDnuHeaderLineHeight,
+            MinuteFontSize, MinuteBold, AnotaceFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount, GroupColumns.Count),
+        // Styly podle hodnot: formulář je mění na místě, objekt stylu zůstává týž.
+        HashCode.Combine(HeaderStyle.ContentHash(), DataStyle.ContentHash(), MinuteStyle.ContentHash(),
+            HeaderLine2Style?.ContentHash() ?? 0, AnotaceSymbolStyle.ContentHash(), AnotaceTextStyle.ContentHash()),
         // Časová osa a roztažení na výšku sem nepatří - jsou to parametry sestavy, ne vlastnosti
         // prvku, a cache se invaliduje změnou dat (DataContext), přes které parametry přicházejí.
-        HeaderLine2Style?.GetHashCode() ?? 0,
         HashCode.Combine(DataRowHeight, AnotaceGap, OdjezdGap, GroupSeparatorWidth, HourColumnPerGroup,
             ShowSkupinaDnuHeader, SkupinaDnuId),
         GroupHeaderOverridesHash(),
         // Šířka skupin počítá se značkami a zmenšení s šířkou prvku (`B194a` C12).
-        HashCode.Combine(Width, MinuteSpacing, ShowAnotace, AnotaceInterGap,
-            AnotaceSymbolStyle.GetHashCode(), AnotaceTextStyle.GetHashCode()));
+        HashCode.Combine(Width, MinuteSpacing, ShowAnotace, AnotaceInterGap));
 
     /// <summary>Hash layout-affecting per-group nastavení (nadpis override, šířka override, pořadí) -
     /// mění šířku/wrap/pořadí, musí invalidovat layout cache (Count v hlavním fingerprintu to nezachytí).
@@ -1554,6 +1555,9 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
     /// pro testy rozvržení.</summary>
     internal (float[] Sirky, float[] Potreby, float Meritko) RozvrzeniSirek(DataContext? data) =>
         ComputeLayout(data) is { } l ? ([.. l.Groups.Select(g => g.GroupWidth)], l.PotrebneSirky, l.MeritkoSirky) : ([], [], 1f);
+
+    /// <summary>Otisk nastavení, podle kterého cache rozvržení pozná změnu - pro testy.</summary>
+    internal int LayoutFingerprint() => ComputeLayoutFingerprint();
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 
