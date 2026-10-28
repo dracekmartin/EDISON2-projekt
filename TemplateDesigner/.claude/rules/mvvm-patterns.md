@@ -302,10 +302,6 @@ i chování se rozešly (`B194` E13c) - **novou kopii nepsat**.
   `ExtraDataTemplate` (DataContext šablony = vybraný řádek).
 - OK okna **prvek nemění** - výsledky předá volajícímu, který je provede jako jeden vratný krok
   (hodiny Minut do 28. 10. psaly rovnou do prvku a Ctrl+Z je nevrátil).
-- **Styl sloupce = formulář `TableColumnEdit.cls`** (`UsesStyleForm = true`, rozhodnutí Jan 28. 10.): táž
-  sada `StyleFields` jako formulář prvku, cíl je kopie stylu řádku (`ColumnVisualStyle`, klíče `Header.*`/
-  `Data.*`), zděděné hodnoty z `InheritedStyleValues` a zapíše se jen změna. Zatím jen Seznam zastávek;
-  ostatní okna mají dosavadní `CellStyleEditor`, dokud nepřejdou (roadmapa E13c).
 
 `Controls/CellStyleEditor.xaml` - editor stylu sloupce uvnitř záložky. DataContext = `CellStyleVM`.
 Converters v `CellStyleEditor.Converters.cs`. `EditOptions` (`CellStyleEditOptions`) řídí viditelnost řádků.

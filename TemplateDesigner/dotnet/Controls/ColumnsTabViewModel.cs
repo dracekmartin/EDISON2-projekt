@@ -24,8 +24,8 @@ public sealed class ColumnsTabViewModel : INotifyPropertyChanged
         MoveDownCommand = new RelayCommand(() => Move(+1));
         AddCommand = new RelayCommand(Add);
         RemoveCommand = new RelayCommand(Remove);
-        ResetStyleCommand = new RelayCommand(() => { SelectedRow?.ResetStyle(); StylesReset?.Invoke(); });
-        ResetAllCommand = new RelayCommand(() => { foreach (var row in Rows) row.ResetStyle(); StylesReset?.Invoke(); });
+        ResetStyleCommand = new RelayCommand(() => SelectedRow?.ResetStyle());
+        ResetAllCommand = new RelayCommand(() => { foreach (var row in Rows) row.ResetStyle(); });
         FitCommand = new RelayCommand(FitToElementWidth);
     }
 
@@ -52,14 +52,6 @@ public sealed class ColumnsTabViewModel : INotifyPropertyChanged
 
     /// <summary>Co se stane, když sloupce přesáhnou šířku prvku (věta za hlášením o přesahu).</summary>
     public string OverflowNote { get; init; } = "Tabulka se zmenší, aby se vešla.";
-
-    /// <summary>Styl sloupce ve formuláři se sadou stylu formuláře prvku; false = dosavadní editor
-    /// stylu (okna, která na formulář ještě nepřešla).</summary>
-    public bool UsesStyleForm { get; init; }
-    public bool UsesStyleEditor => !UsesStyleForm;
-
-    /// <summary>Reset stylu sloupce - formulář stylu se musí znovu naplnit, sám změnu nepozná.</summary>
-    public event Action? StylesReset;
 
     public bool CanAddRemove => NewRow is not null;
 

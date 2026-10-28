@@ -1,7 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using TemplateDesigner.Models;
-using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Controls;
@@ -88,36 +86,6 @@ public abstract class ColumnRowVM : INotifyPropertyChanged, IColumnRowVM
     {
         HeaderStyle.Reset();
         DataStyle.Reset();
-    }
-
-    // ── Formulář stylu sloupce (TableColumnEdit.cls) ─────────────────────
-
-    /// <summary>Serverový formulář stylu sloupce - táž sada stylu jako ve formuláři prvku.</summary>
-    public const string StyleFormClass = "ALVA.TemplateDesigner.EDInputForm.TableColumnEdit";
-
-    /// <summary>Cíl formuláře: kopie explicitních hodnot stylu, do které formulář zapisuje reflexí
-    /// (klíče <c>Header.*</c>, <c>Data.*</c>). Zpět do řádku se přenese přes <see cref="ApplyStyle"/>.</summary>
-    public ColumnVisualStyle CreateStyleTarget() =>
-        new() { Header = HeaderStyle.ToModel(), Data = DataStyle.ToModel() };
-
-    /// <summary>Hodnoty, které sloupec bez vlastního nastavení zdědí, ve tvaru polí formuláře. Formulář
-    /// jimi ukáže, jak se sloupec vytiskne, a zapíše jen to, co uživatel změní.</summary>
-    public Dictionary<string, string> InheritedStyleValues()
-    {
-        var values = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var property in typeof(ResolvedTextStyle).GetProperties())
-        {
-            if (property.GetIndexParameters().Length > 0) continue;
-            values["Header." + property.Name] = ElementPropertyAccessor.ToFormValue(property.GetValue(HeaderStyle.Inherited));
-            values["Data." + property.Name] = ElementPropertyAccessor.ToFormValue(property.GetValue(DataStyle.Inherited));
-        }
-        return values;
-    }
-
-    public void ApplyStyle(ColumnVisualStyle target)
-    {
-        HeaderStyle.Load(target.Header);
-        DataStyle.Load(target.Data);
     }
 
     private void OnStyleChanged(object? sender, PropertyChangedEventArgs e)

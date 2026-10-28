@@ -90,31 +90,21 @@
 
                 <Separator Margin="0,8,0,8"/>
 
-                <!-- Styl ve formuláři se sadou stylu formuláře prvku (TableColumnEdit.cls) -->
-                <StackPanel Visibility="{Binding UsesStyleForm, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Style="{StaticResource Hint}"
-                               Text="Pole ukazují, jak se sloupec vytiskne. Uloží se jen to, co změníte; vymazané pole převezme nastavení prvku ze záložky Obecné. Úpravy stylu sloupce zruší tlačítko Resetovat styl sloupce."/>
-                    <local:InlinePropertiesForm x:Name="StyleForm"/>
-                </StackPanel>
+                <TextBlock Text="Prázdné pole = převezme se nastavení prvku ze záložky Obecné." Style="{StaticResource Hint}"/>
 
-                <!-- Dosavadní editor stylu - okna, která na formulář ještě nepřešla -->
-                <StackPanel Visibility="{Binding UsesStyleEditor, Converter={StaticResource BoolToVis}}">
-                    <TextBlock Text="Prázdné pole = převezme se nastavení prvku ze záložky Obecné." Style="{StaticResource Hint}"/>
+                <TextBlock Text="Záhlaví" Style="{StaticResource Title}"/>
+                <local:CellStyleEditor
+                    DataContext="{Binding SelectedRow.HeaderStyle}"
+                    EditOptions="{Binding DataContext.SelectedRow.HeaderEditOptions, ElementName=Root}"/>
 
-                    <TextBlock Text="Záhlaví" Style="{StaticResource Title}"/>
-                    <local:CellStyleEditor
-                        DataContext="{Binding SelectedRow.HeaderStyle}"
-                        EditOptions="{Binding DataContext.SelectedRow.HeaderEditOptions, ElementName=Root}"/>
+                <Separator Margin="0,8,0,8"/>
 
-                    <Separator Margin="0,8,0,8"/>
-
-                    <TextBlock Text="{Binding SelectedRow.DataZoneTitle}" Style="{StaticResource Title}"/>
-                    <TextBlock Text="{Binding SelectedRow.DataZoneHint}" Style="{StaticResource Hint}" Margin="0,0,0,6"
-                               Visibility="{Binding SelectedRow.HasDataZoneHint, Converter={StaticResource BoolToVis}}"/>
-                    <local:CellStyleEditor
-                        DataContext="{Binding SelectedRow.DataStyle}"
-                        EditOptions="{Binding DataContext.SelectedRow.DataEditOptions, ElementName=Root}"/>
-                </StackPanel>
+                <TextBlock Text="{Binding SelectedRow.DataZoneTitle}" Style="{StaticResource Title}"/>
+                <TextBlock Text="{Binding SelectedRow.DataZoneHint}" Style="{StaticResource Hint}" Margin="0,0,0,6"
+                           Visibility="{Binding SelectedRow.HasDataZoneHint, Converter={StaticResource BoolToVis}}"/>
+                <local:CellStyleEditor
+                    DataContext="{Binding SelectedRow.DataStyle}"
+                    EditOptions="{Binding DataContext.SelectedRow.DataEditOptions, ElementName=Root}"/>
 
                 <ContentControl Content="{Binding SelectedRow}" Focusable="False"
                                 ContentTemplate="{Binding ExtraDataTemplate, ElementName=Root}"

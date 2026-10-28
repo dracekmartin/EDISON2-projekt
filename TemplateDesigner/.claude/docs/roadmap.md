@@ -35,10 +35,10 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   tiskem), sloučení tvaru mění model šablony = migrace **Jan** [S]
 - **Ověřit: Seznam zastávek po „<1" možná přepne písmo na výchozí** - `StopListElement.cs:928` uvolní sdílené
   písmo z mezipaměti; nalezeno čtením, nereprodukováno [S]
-- **E13c** Záložka Sloupce - styl sloupce ve formuláři se sadou stylu prvku (varianta B, Jan 28. 10.) má
-  prototyp na Seznamu zastávek (changelog 2026-10-28 (6)), **Jan zkouší**. Pak převést Minuty (+ zebra),
-  Tabulku spojů (zóna Šipka) a Tabulku z dat, odebrat `CellStyleEditor` a přepsat příručku (kaskáda stylů,
-  část I kap. 7). Otevřený zůstává název záložky Obecné [M] **Jan**
+- **E13c** Záložka Sloupce - společná komponenta je hotová (changelog 2026-10-28 (5)). Zbývá styl sloupce
+  proti formuláři (pořadí, čtyři pole místo „Styl:", okraje nahoře/vpravo/dole/vlevo, meze, popisky bez
+  dvojteček): A = srovnat editor stylu, B = použít formulář se sadou stylu (zděděné hodnoty, předloha buňka
+  Pevné tabulky); doporučeno B s prototypem. A název záložky Obecné [M] **Jan**
 - **Víceřádkové záhlaví sloupce v Tabulce spojů a Tabulce z dat** - kreslení počítá výšku záhlaví z jednoho
   řádku (pevná u Tabulky z dat), proto ho okno nenabízí; až to kreslení umět bude, zapne se přepínačem
   `MultilineHeader` [S]
