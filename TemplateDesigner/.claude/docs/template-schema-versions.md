@@ -240,6 +240,10 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   `oddTcBackColor: null`. ⚠️ Null se u této vlastnosti zapisuje (`JsonIgnoreCondition.Never`):
   výchozí je zapnuto, takže bez zápisu by se vypnuté podbarvení po načtení samo zapnulo.
 
+- **1.17.0** `MigrationProjeteZobrazitCas` (2026-10-28) - `passedStopsTime` (Hide / Show) v Seznamu
+  zastávek se mění na `passedStopsShowTime` (true jen u Show): výběr ze dvou možností ano/ne je
+  zaškrtávátko „Projeté: Zobrazit čas" (rozhodnutí Jan, popisky podle typu pole).
+
 ---
 
 ## Operational notes

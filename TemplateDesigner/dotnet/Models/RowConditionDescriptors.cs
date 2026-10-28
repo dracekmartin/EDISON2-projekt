@@ -9,10 +9,10 @@ namespace TemplateDesigner.Models;
 /// </summary>
 public static class RowConditionDescriptors
 {
-    /// <summary>Descriptor „Viditelnost řádku" - výraz nad daty řádku; prázdné = všechny řádky.</summary>
+    /// <summary>Descriptor „Podmínka viditelnosti řádku" - výraz nad daty řádku; prázdné = všechny řádky.</summary>
     public static StringPropertyDescriptor RowVisibility(Func<string?> get, Action<string?> set) => new()
     {
-        Label = "Viditelnost řádku", Group = "Podmínky",
+        Label = "Podmínka viditelnosti řádku", Group = "Podmínky",
         Get = () => get() ?? "",
         Set = v => set(string.IsNullOrWhiteSpace(v) ? null : v.Trim()),
         Validate = ExpressionEvaluator.Validate

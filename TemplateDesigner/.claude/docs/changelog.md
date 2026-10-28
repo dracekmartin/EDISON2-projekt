@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-28 (16) - Popisky Seznamu zastávek podle toho, co pole dělá
+
+Popisky polí Seznamu zastávek odpovídají typu pole a tomu, co uživatel udělá (rozhodnutí Jan 28. 10., pravidla v `ux-conventions §8`).
+- **Počet oddílů** místo „Rozdělit na více oddílů" - pole je číslo, ne zaškrtávátko. **Výběr stanoviště** místo „Více stanovišť" - je to výběr ze čtyř možností.
+- Zaškrtávátka říkají, co zapínají: **Odsazení podle trasy**, **Značka na znamení**, **Atributy zastávky**.
+- **Projeté: Zobrazit čas** je zaškrtávátko místo výběru Nezobrazovat / Zobrazit; šablony převede migrace 1.17.0.
+- Skupina **Šipka směru** název šipky neopakuje: Pozice, Barva, Tloušťka, Velikost hrotu, **Tvar hrotu**, Styl čáry. Volby pozice jsou jen Vpravo / Vlevo, že se šipka kreslí u okraje prvku, říká nápověda.
+- Volby bez „dle": Podle trasy linky, Nejčetnější podle spojů, Všechna podle četnosti. Pozice značek: Za názvem / Před názvem.
+- **Podmínka viditelnosti řádku** místo „Viditelnost řádku" i v Tabulce spojů a Tabulce z dat - je to podmínka, ne zaškrtávátko.
+- Panel vlastností má tytéž popisky i skupiny jako formulář; protokol načtení z obrázku vypisuje pole i se skupinou („Šipka směru · Pozice").
+
 ## 2026-10-28 (15) - Formulář Poznámek bez polí, která nic nedělají (`B194d` E3b)
 
 Poznámky nejsou tabulka, takže kostru formuláře tabulek nepřebírají (rozhodnutí Jan 28. 10.). Opravily se jen věcné chyby:

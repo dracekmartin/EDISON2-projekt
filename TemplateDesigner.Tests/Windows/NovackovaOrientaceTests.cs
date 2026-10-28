@@ -66,7 +66,7 @@ public class NovackovaOrientaceTests
     {
         var text = ClsText("StopListElementEdit.cls");
 
-        Assert.Contains("\"PartCount\", \"Rozdělit na více oddílů\"", text);
+        Assert.Contains("\"PartCount\", \"Počet oddílů\"", text);
         Assert.Contains("\"PartGap\", \"Mezera mezi oddíly\"", text);
     }
 

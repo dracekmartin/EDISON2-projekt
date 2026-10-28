@@ -175,7 +175,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Řádkové podmínky (do skupiny "Podmínky" výše). Zdroje dat (ZastavkyDataSource / SpojeDataSource /
         // SkupinyDnuDataSource) formulář nenabízí: všechny agendy posílají ZASTAVKY / SPOJE / SKUPINY_DNU
         // a jiná hodnota tabulku jen vyprázdní; v šabloně vlastnost zůstává (`B194` E14).
-        s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
+        s f = form.AddText("RowVisibilityExpression", "Podmínka viditelnosti řádku")
         s f.placeholders = 1
         // Pole řádku doplní návrhář podle agendy šablony (ElementFormBinder.DoplnPoleRadku) - pevný seznam lhal.
         s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí (i s přípojnými řádky). Např. {NAZEV_ZASTAVKY} != 'Nádraží'."

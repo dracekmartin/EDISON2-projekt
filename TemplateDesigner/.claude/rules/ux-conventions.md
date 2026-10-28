@@ -274,6 +274,25 @@ Stejná vlastnost = **stejný label** ve všech elementech, dialozích i EDInput
 je zdvojený (PropertyDescriptor v `.cs` **i** EDInputForm `.cls`) → při změně/přidání uprav **obě**
 místa. **Před vymýšlením nového popisku grepni, jak se to jmenuje jinde**, a použij zavedený termín.
 
+**Jak se popisek tvoří** (rozhodnutí Jan 28. 10. na Seznamu zastávek; hledání ve formuláři porovnává celý
+zadaný text s popiskem nebo názvem skupiny, nápovědu ne - `EDInputForm.xaml.cs` `ComputeSearchMatches`):
+
+- **Popisek odpovídá typu pole a tomu, co uživatel udělá.** Číslo = jméno veličiny nebo **„Počet …"**
+  (~~Rozdělit na více oddílů~~ → Počet oddílů), zaškrtávátko = věc, kterou zapíná (~~Odsazení~~ → Odsazení
+  podle trasy), výběr = co se vybírá (~~Více stanovišť~~ → Výběr stanoviště, ~~Hrot šipky~~ → Tvar hrotu).
+  Výběr ze dvou možností ano/ne je zaškrtávátko (~~Projeté: Čas~~ Nezobrazovat/Zobrazit → Projeté: Zobrazit čas).
+- **Popisek začíná vlastností** v zavedeném tvaru (Barva…, Tloušťka…, Velikost…, Výška…, Šířka…, Mezera…,
+  Zarovnání…, Styl…); barevné pole vždy obsahuje „Barva", jinak ho hledání „barva" nenajde.
+- **Ve skupině jedné části prvku se název části neopakuje** (skupina Šipka směru: Pozice, Barva, Tloušťka -
+  ne ~~Barva šipky~~), jako formátovací panely ve Wordu; část najde hledání podle skupiny. Ve sdílené skupině
+  „Část: Vlastnost" v 1. pádě (Aktuální: Tučné, Minuta: Velikost). Kde se popisek ukazuje bez skupiny
+  (protokol importu, asistent), jde se skupinou: „Šipka směru · Pozice".
+- **„podle", ne „dle"; bez zkratek** („Min.", „Max."); **vysvětlení do nápovědy, ne do závorky** v popisku
+  ani ve volbě (~~Vpravo (u pravého okraje prvku)~~). Závorka zůstává u zavedených výjimek (Přestupy
+  (vlak/autobus), Kód (QR, čárový)) a u ukázky formátu ve volbě (hh:mm).
+- Texty voleb prvků se neukládají (ukládá se kód), přejmenovat je jde; **volby parametrů sestavy ano ne**
+  (zamčené, viz níž).
+
 Kanonické termíny (font/styl textu):
 
 | Vlastnost | Kanonický label | NE |
@@ -296,7 +315,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Pořadí překrytí (ZIndex) | **Vrstva** („Vyšší vrstva leží nad nižší") - rozhodnutí Jan 26. 10. | ~~ZIndex~~, ~~Pořadí vrstvy~~ |
 | Výška, kterou sazba dopočte | **výška podle obsahu** („výška se počítá podle obsahu") | ~~počítá engine~~, ~~dynamická výška~~ |
 | Plocha návrháře | **plátno** | ~~canvas~~ |
-| Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti** | ~~Viditelnost~~ (samostatné; „Viditelnost řádku" je jiný pojem a je OK) |
+| Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti**, u řádku **Podmínka viditelnosti řádku** (je to podmínka, ne zaškrtávátko - rozhodnutí Jan 28. 10.) | ~~Viditelnost~~, ~~Viditelnost řádku~~ |
 | Síla čáry (BorderWidth aj.) | **Tloušťka …** („Tloušťka rámečku", „Tloušťka okraje") | ~~Šířka rámečku~~, ~~Tl. …~~ |
 | Střídavé podbarvení řádků | **Střídání řádků** | ~~Zebra barva~~ |
 | Směry zarovnání | **Zarovnání vodorovně / Zarovnání svisle** (celý tvar, ať jde hledat - rozhodnutí Jan 26. 10.; volba jen jedním směrem nese směr v popisku: „Zarovnání záhlaví svisle"), stavy **Nahoře / Dole** | ~~Horizontálně/Vertikálně~~, samotné ~~Vodorovně~~ / ~~Svisle~~ / ~~Zarovnání~~, ~~Nahoru/Dolů~~ |
@@ -333,7 +352,7 @@ doménově říká označník**, takže se názvosloví mezi AD a MHD záměrně
 Jan 2026-08-03); MHD pole `SLOUPEK` nemá. Datová mapa obou → `docs/ad-data-mapa.md`.
 „Stanoviště" tím přestalo být zakázaný tvar (byl zakázaný jako synonymum označníku) a je to teď
 **zastřešující pojem** - používej ho jen tam, kde se opravdu míní „ten zvolený z těch dvou"
-(popisky „Více stanovišť", „Řádek pro každé stanoviště", „Číslo stanoviště podle").
+(popisky „Výběr stanoviště", „Řádek pro každé stanoviště", „Číslo stanoviště podle").
 
 Výjimka: text „tisk stanoviště" v legendě CIS atributů (`ZastavkoveJrAd.TextAtributu`, znak „S") je
 doslovná parita textů starého modulu - nechává se.

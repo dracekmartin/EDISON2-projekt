@@ -86,7 +86,7 @@ public class StopListSubMinuteTravelTests
 
     /// <summary>Projeté zastávky mají nulu vynucenou agendou („údaj není relevantní", KOVED #13091),
     /// takže z nich nesmí být „&lt;1". Že se ta nula při zvoleném „Zobrazit" vypíše, je důsledek volby -
-    /// výchozí „Nezobrazovat" ji schová (test níže).</summary>
+    /// výchozí vypnuté „Projeté: Zobrazit čas" ji schová (test níže).</summary>
     [Fact]
     public void Zapnuto_ProjetaZastavkaZnackuNedostane()
     {
@@ -97,7 +97,7 @@ public class StopListSubMinuteTravelTests
             Stop("Hned za ní", 0),
         ];
 
-        var el = new StopListElement { ShowSubMinuteTravel = true, PassedStopsTime = PassedStopsTimeDisplay.Show };
+        var el = new StopListElement { ShowSubMinuteTravel = true, PassedStopsShowTime = true };
         var texty = Texty(el, trasa, showPassed: true);
 
         Assert.Equal(["0", "", "<1"], texty);
@@ -111,7 +111,7 @@ public class StopListSubMinuteTravelTests
     [InlineData("-7")]
     public void ProjetaZastavkaJeVychoziNastavenimPrazdna(string cas)
     {
-        var el = new StopListElement();   // PassedStopsTime = Hide (výchozí)
+        var el = new StopListElement();   // Projeté: Zobrazit čas vypnuté (výchozí)
         var z = new ZastavkaData { Popis = "Projetá", CasJizdy = cas, TrasaMin = [cas] };
 
         Assert.Equal("", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
@@ -124,7 +124,7 @@ public class StopListSubMinuteTravelTests
     [Fact]
     public void ProjetaZastavka_NemaAniZnackuProjizdi()
     {
-        var el = new StopListElement();   // PassedStopsTime = Hide (výchozí)
+        var el = new StopListElement();   // Projeté: Zobrazit čas vypnuté (výchozí)
         var z = new ZastavkaData { Popis = "Projetá", CasJizdy = "<", TrasaMin = ["<", "3"] };
 
         Assert.Equal("", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
@@ -137,7 +137,7 @@ public class StopListSubMinuteTravelTests
     [Fact]
     public void ProjetaZastavka_SeZobrazenimZustaneVse()
     {
-        var el = new StopListElement { PassedStopsTime = PassedStopsTimeDisplay.Show };
+        var el = new StopListElement { PassedStopsShowTime = true };
         var z = new ZastavkaData { Popis = "Projetá", CasJizdy = "<", TrasaMin = ["<", "3"] };
 
         Assert.Equal("<", el.GetCellText(z, StopFields.TravelTime, isPassed: true));

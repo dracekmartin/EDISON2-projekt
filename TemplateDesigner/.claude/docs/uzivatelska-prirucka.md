@@ -804,24 +804,24 @@ Pod nimi jsou skupiny, které mají všechny tabulky stejně: Záhlaví, Datové
 - **Upravit sloupce…** - otevře editor sloupců (kap. 3)
 - **Varianty tras** (sloupec v editoru sloupců, výchozí vypnutý) - zap. = časové sloupce podle skutečných variant tras (jen AD; viz kap. 1). Je to **týž údaj jako sloupec „Čas jízdy"**, takže zapnuté má být vždy jen jedno z toho: kdo chce varianty, vypne si „Čas jízdy". Linka, kde jedou všechny spoje stejnou trasou, dostane jeden variantní sloupec (dřív žádný, takže na takové lince nebylo vidět nic)
 - **Oddělovací čáry** - vodorovné čáry mezi řádky zastávek
-- **Odsazení** - odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
+- **Odsazení podle trasy** - odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
 - **Sloupec Označník** (a u AD i **Sloupek**; MHD sloupky nemá, sloupec proto nenabízí) - volitelný sloupec s číslem stanoviště, ze kterého spoj odjíždí; zapíná se v editoru sloupců, tiskne se jen tam, kde jsou data vyplněná
-- **Více stanovišť** (skupina Stanoviště, jen AD - MHD nemá stanoviště podle spojů) - jak sloupec naloží se zastávkou, ze které různé spoje odjíždějí z různých stanovišť: **Z trasy linky** (výchozí, číslo z trasy) / **Nejčetnější dle spojů** / **Výčet všech** (např. „2, 3") / **Řádek pro každé stanoviště** (zastávku vypíše jako víc řádků, jeden na každé stanoviště, s časy jen variant, které z něj jedou)
-- **Na znamení + Symbol na znamení** - zobrazí značku „na znamení" u zastávky a definuje, jaký znak se použije (výchozí „×")
-- **Atributy** - zobrazí atributy zastávky vedle názvu
+- **Výběr stanoviště** (skupina Stanoviště, jen AD - MHD nemá stanoviště podle spojů) - jak sloupec naloží se zastávkou, ze které různé spoje odjíždějí z různých stanovišť: **Podle trasy linky** (výchozí, číslo z trasy) / **Nejčetnější podle spojů** / **Všechna podle četnosti** (např. „2, 3") / **Řádek pro každé stanoviště** (zastávku vypíše jako víc řádků, jeden na každé stanoviště, s časy jen variant, které z něj jedou)
+- **Značka na znamení + Symbol na znamení** - zobrazí značku „na znamení" u zastávky a definuje, jaký znak se použije (výchozí „×")
+- **Atributy zastávky** - zobrazí atributy zastávky vedle názvu
 - **Přestupy (vlak/autobus)** - zobrazí u zastávky symbol přestupu na vlak („L") / autobus („A"); výchozí vypnuto
 - **Poznámky zastávky** - zobrazí poznámkové značky u zastávky
-- **Pozice značek** (*Za zastávkou* / *Před zastávkou*) - kde u názvu zastávky stojí značky na znamení, atributy, přestupy a poznámky
+- **Pozice značek** (*Za názvem* / *Před názvem*) - kde u názvu zastávky stojí značky na znamení, atributy, přestupy a poznámky
 - **Jízda pod minutu jako <1** - jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů „<1" místo prázdna; výchozí vypnuto. Zastávka, kterou spoj neobsluhuje, zůstane prázdná
   Znak „<" se přitom vysune doleva, aby číslice zůstaly ve svislici s ostatními časy (při zarovnání sloupce vpravo se srovnají samy, tam se nic nevysouvá)
 - **Nastavení sloupce Čas jízdy se dědí na varianty** - když má linka víc variant tras a sloupec se rozpadne na víc časových sloupců, platí pro všechny zarovnání i styl (font, barvy, okraje) nastavený u sloupce „Čas jízdy"
-- **Šipka směru** - Pozice šipky, Barva šipky, Tloušťka šipky, Velikost hrotu, Hrot šipky, Styl čáry šipky. Šipka ukazuje směr jízdy od aktuální zastávky dál po trase; zapíná se parametrem sestavy *Tisknout šipky směru*. Při pozici vlevo má šipka vyhrazený vlastní pruh, takže se ani u úzkého prvku nepřekryje s jízdními dobami
+- **Šipka směru** (skupina) - Pozice, Barva, Tloušťka, Velikost hrotu, Tvar hrotu, Styl čáry. Šipka se kreslí u okraje prvku, ne u sloupců. Šipka ukazuje směr jízdy od aktuální zastávky dál po trase; zapíná se parametrem sestavy *Tisknout šipky směru*. Při pozici vlevo má šipka vyhrazený vlastní pruh, takže se ani u úzkého prvku nepřekryje s jízdními dobami
 - **Záhlaví sloupců** (první pole skupiny Záhlaví) - zap/vyp řádek záhlaví
 - **Záhlaví a Datové buňky** - písmo, barva textu, barva pozadí, zarovnání a vnitřní okraje celého záhlaví a všech buněk; Datové buňky mají navíc Výšku řádku. Jednotlivému sloupci jde vzhled přebít v editoru sloupců
 - **Aktuální: Tučné / Podtržení / Velikost / Barva textu / Barva pozadí** - vzhled řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná hodnota = jako ostatní zastávky)
 - **Projeté: Barva textu** - barva zastávek, které vozidlo od aktuální zastávky již projelo; jejich tisk se zapíná v parametrech sestavy (Tisknout projeté zastávky)
-- **Projeté: Čas** (*Nezobrazovat* / *Zobrazit*) - jízdní doby se počítají od vývěskové zastávky,
-  takže u projetých vycházejí záporné. *Nezobrazovat* vyprázdní u projetých zastávek **celou buňku**
+- **Projeté: Zobrazit čas** (výchozí vypnuto) - jízdní doby se počítají od vývěskové zastávky,
+  takže u projetých vycházejí záporné. Vypnuté vyprázdní u projetých zastávek **celou buňku**
   časového sloupce, tedy i značku „<" (spoj tudy projíždí). Na neprojetých zastávkách zůstává „<"
   beze změny - tam je to platná informace.
 
@@ -1190,7 +1190,7 @@ Zarovnání vodorovně ze stylu platí i pro pás skupin dnů, prázdné = na st
 **Datové buňky** - **Výška řádku** (prázdné = podle velikosti písma), **Lichá Tč: Barva pozadí** (řádek zastávky s lichým tarifním číslem se podbarví, prázdné = bez podbarvení; řídí se tarifním číslem, ne pořadím řádku, takže příjezd a odjezd jedné zastávky mají barvu stejnou) a styl buněk.
 Velikost písma a vnitřní okraje vlevo a vpravo určují i šířku sloupce spoje.
 
-**Podmínky** - vedle podmínky viditelnosti celého prvku **Viditelnost řádku** (výraz nad poli
+**Podmínky** - vedle podmínky viditelnosti celého prvku **Podmínka viditelnosti řádku** (výraz nad poli
 zastávky, např. `{ZONY} == "1"`) a **Zvýraznění řádků** (seznam pravidel podmínka → barva pozadí,
 první splněné vyhrává).
 

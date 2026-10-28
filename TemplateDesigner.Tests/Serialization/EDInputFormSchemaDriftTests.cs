@@ -713,7 +713,9 @@ public class EDInputFormSchemaDriftTests
     internal static readonly string[] BannedExactLabels =
     [
         "Zamčeno",          // → Uzamčeno
-        "Viditelnost",      // → Podmínka viditelnosti (samostatná „Viditelnost řádku" je jiný pojem a je OK)
+        "Viditelnost",      // → Podmínka viditelnosti
+        "Viditelnost řádku", // → Podmínka viditelnosti řádku (je to podmínka, ne zaškrtávátko - Jan 28. 10.)
+        "Rozdělit na více oddílů", // → Počet oddílů (číslo se jmenuje podle toho, co se zadává - Jan 28. 10.)
         "Tučně",            // → Tučné
         "Podtržené",        // → Podtržení
         "Přeškrtnuté",      // → Přeškrtnutí

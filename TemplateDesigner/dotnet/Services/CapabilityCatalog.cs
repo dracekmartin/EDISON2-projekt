@@ -344,7 +344,7 @@ Pravidla obsahu (ZÁVAZNÁ):
         ElementTypes.StopList =>
             "Tabulka zastávek linky. Sloupce a jejich styl se nastavují ve vlastním dialogu sloupců " +
             "(vč. volitelného sloupce Označník). Podporuje podmíněnou viditelnost a zvýraznění řádků. " +
-            "Dlouhou trasu lze rozdělit na víc oddílů vedle sebe (Rozdělit na více oddílů + Mezera mezi oddíly) - " +
+            "Dlouhou trasu lze rozdělit na víc oddílů vedle sebe (Počet oddílů + Mezera mezi oddíly) - " +
             "každý oddíl nese celou tabulku znovu včetně záhlaví, takže prvek je nižší a širší.",
         ElementTypes.DepartureGrid =>
             "Mřížka minut odjezdů po skupinách dnů. Skupiny a sloupce mají vlastní dialog " +

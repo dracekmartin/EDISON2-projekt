@@ -165,9 +165,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public string PassedStopsForeColor { get; set; } = "#FF999999";
 
     /// <summary>Čas jízdy u projeté zastávky. Časy jsou kumulativní od vývěskové zastávky, takže
-    /// u projetých vycházejí záporné (KOVED #13091: „údaj není relevantní") - default je proto skryje.
-    /// Ne-číselné značky (např. „&lt;" = projíždí) zůstávají, nejsou to časy.</summary>
-    public PassedStopsTimeDisplay PassedStopsTime { get; set; } = PassedStopsTimeDisplay.Hide;
+    /// u projetých vycházejí záporné (KOVED #13091: „údaj není relevantní") - default je proto skryje
+    /// i se značkou „&lt;" (`B148`). Do 28. 10. výběr Nezobrazovat / Zobrazit, migrace 1.17.0.</summary>
+    public bool PassedStopsShowTime { get; set; }
 
     /// <summary>Zobrazují se varianty jízdních dob? Řídí to **viditelnost sloupce**
     /// <see cref="StopFields.TravelTimeVariants"/>, ne vlastnost prvku - do 8/2026 to bylo
@@ -959,7 +959,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private static string FilterCurrentStopTime(string value, ZastavkaData z) =>
         z.JeAktualni && int.TryParse(value, out _) ? "" : value;
 
-    /// <summary>Čas jízdy u projeté zastávky podle volby <see cref="PassedStopsTime"/>.
+    /// <summary>Čas jízdy u projeté zastávky podle volby <see cref="PassedStopsShowTime"/>.
     ///
     /// <para>`B148`: „Nezobrazovat" vyprázdní buňku **celou**, včetně „&lt;" (projíždí). Do 11. 9. se
     /// zahazovala jen čísla s tím, že „&lt;" je značka, ne čas - jenže sloupec „Čas" u projetých nosí
@@ -967,7 +967,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// a sloupec plný „&lt;". Hlásil TRANSDEV 11. 9.</para></summary>
     private string FilterPassedTime(string value, bool isPassed)
     {
-        if (!isPassed || value.Length == 0 || PassedStopsTime == PassedStopsTimeDisplay.Show) return value;
+        if (!isPassed || value.Length == 0 || PassedStopsShowTime) return value;
         return "";
     }
 
@@ -1314,6 +1314,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     /// <summary>Skupina vzhledu aktuální a projetých zastávek - jako ve formuláři prvku.</summary>
     internal const string AktualniGroup = "Aktuální a projeté zastávky";
+    internal const string ArrowGroup = "Šipka směru";
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
@@ -1323,32 +1324,32 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce…", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
         new FloatPropertyDescriptor
         {
-            FromImage = true, Label = "Rozdělit na více oddílů", Group = "Zastávky",
+            FromImage = true, Label = "Počet oddílů", Group = "Rozložení",
             Get = () => PartCount, Set = v => PartCount = (int)MathF.Round(v),
             Min = 1, Max = MaxPartCount, Format = "0"
         },
         new FloatPropertyDescriptor
         {
-            FromImage = true, Label = "Mezera mezi oddíly", Group = "Zastávky",
+            FromImage = true, Label = "Mezera mezi oddíly", Group = "Rozložení",
             Get = () => PartGap, Set = v => PartGap = v,
             Min = 0, Max = 50, Unit = "mm", Format = "0.##"
         },
         GetDataRowHeightDescriptor(),
 
-        new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
-        new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
+        new BoolPropertyDescriptor  { Label = "Odsazení podle trasy", Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
+        new BoolPropertyDescriptor   { Label = "Značka na znamení", Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
         new StringPropertyDescriptor { FromImage = true, Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
-        new BoolPropertyDescriptor  { Label = "Atributy",          Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
+        new BoolPropertyDescriptor  { Label = "Atributy zastávky", Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
         new BoolPropertyDescriptor  { Label = "Přestupy (vlak/autobus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
         new EnumPropertyDescriptor
         {
-            Label = "Více stanovišť", Group = "Zastávky",
+            Label = "Výběr stanoviště", Group = "Stanoviště",
             Get = () => MultiPlatformMode,
             Set = v => MultiPlatformMode = (MultiPlatformDisplay)v,
             Options = [
-                ("Z trasy linky", (object)MultiPlatformDisplay.FromRoute),
-                ("Nejčetnější dle spojů", (object)MultiPlatformDisplay.MostFrequent),
-                ("Výčet všech", (object)MultiPlatformDisplay.All),
+                ("Podle trasy linky", (object)MultiPlatformDisplay.FromRoute),
+                ("Nejčetnější podle spojů", (object)MultiPlatformDisplay.MostFrequent),
+                ("Všechna podle četnosti", (object)MultiPlatformDisplay.All),
                 ("Řádek pro každé stanoviště", (object)MultiPlatformDisplay.RowPerPlatform)
             ]
         },
@@ -1361,8 +1362,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             Set = v => MarkersPosition = (StopMarkersSide)v,
             Options =
             [
-                ("Za zastávkou",  (object)StopMarkersSide.AfterName),
-                ("Před zastávkou", (object)StopMarkersSide.BeforeName),
+                ("Za názvem",  (object)StopMarkersSide.AfterName),
+                ("Před názvem", (object)StopMarkersSide.BeforeName),
             ]
         },
 
@@ -1370,33 +1371,33 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // vlastnost prvku přebíjí. Vzhled šipky (barva, tloušťka, hrot, styl) do šablony patří.
         new EnumPropertyDescriptor
         {
-            FromImage = true, Label = "Pozice šipky", Group = "Směr jízdy",
+            FromImage = true, Label = "Pozice", Group = ArrowGroup,
             Get = () => DirectionArrowPosition,
             Set = v => DirectionArrowPosition = (DirectionArrowSide)v,
-            // „u okraje elementu" v labelu záměrně - šipka se kreslí na hraně elementu, ne u sloupců;
-            // u širokého elementu je tedy daleko vpravo a uživateli se zdálo, že se „nic nezměnilo".
+            // Šipka se kreslí na hraně prvku, ne u sloupců - u širokého prvku je daleko vpravo a uživateli
+            // se zdálo, že se „nic nezměnilo". Do 28. 10. to stálo ve volbách, teď v nápovědě formuláře.
             Options =
             [
-                ("Vpravo (u pravého okraje prvku)", (object)DirectionArrowSide.Right),
-                ("Vlevo (u levého okraje prvku)",   (object)DirectionArrowSide.Left),
+                ("Vpravo", (object)DirectionArrowSide.Right),
+                ("Vlevo",  (object)DirectionArrowSide.Left),
             ]
         },
-        new ColorPropertyDescriptor { FromImage = true, Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Barva",     Group = ArrowGroup, Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },
         new FloatPropertyDescriptor
         {
-            FromImage = true, Label = "Tloušťka šipky", Group = "Směr jízdy",
+            FromImage = true, Label = "Tloušťka", Group = ArrowGroup,
             Get = () => DirectionArrowWidth, Set = v => DirectionArrowWidth = v,
             Min = 0.05f, Max = 5, Unit = "mm", Format = "0.##"
         },
         new FloatPropertyDescriptor
         {
-            FromImage = true, Label = "Velikost hrotu", Group = "Směr jízdy",
+            FromImage = true, Label = "Velikost hrotu", Group = ArrowGroup,
             Get = () => DirectionArrowHeadSize, Set = v => DirectionArrowHeadSize = v,
             Min = 0.5f, Max = 20, Unit = "mm", Format = "0.##"
         },
         new EnumPropertyDescriptor
         {
-            FromImage = true, Label = "Hrot šipky", Group = "Směr jízdy",
+            FromImage = true, Label = "Tvar hrotu", Group = ArrowGroup,
             Get = () => DirectionArrowHead,
             Set = v => DirectionArrowHead = (ArrowHeadShape)v,
             Options =
@@ -1408,7 +1409,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         },
         new EnumPropertyDescriptor
         {
-            FromImage = true, Label = "Styl čáry šipky", Group = "Směr jízdy",
+            FromImage = true, Label = "Styl čáry", Group = ArrowGroup,
             Get = () => DirectionArrowLineStyle,
             Set = v => DirectionArrowLineStyle = (LineStyle)v,
             Options =
@@ -1430,17 +1431,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // „Projeté zastávky" (zapnutí) tu záměrně není - řídí ji parametr sestavy
         // TISK_PROJETYCH_ZAST. Barva a čas u projetých jsou vzhled, ty do šablony patří.
         new ColorPropertyDescriptor { FromImage = true, Label = "Projeté: Barva textu",  Group = AktualniGroup, Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
-        new EnumPropertyDescriptor
-        {
-            Label = "Projeté: Čas", Group = AktualniGroup,
-            Get = () => PassedStopsTime,
-            Set = v => PassedStopsTime = (PassedStopsTimeDisplay)v,
-            Options =
-            [
-                ("Nezobrazovat", (object)PassedStopsTimeDisplay.Hide),
-                ("Zobrazit", (object)PassedStopsTimeDisplay.Show),
-            ]
-        },
+        new BoolPropertyDescriptor { Label = "Projeté: Zobrazit čas", Group = AktualniGroup, Get = () => PassedStopsShowTime, Set = v => PassedStopsShowTime = v },
 
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
 
@@ -1489,7 +1480,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             MultiPlatformMode       = MultiPlatformMode,
             CurrentStopUnderline    = CurrentStopUnderline,
             PassedStopsForeColor    = PassedStopsForeColor,
-            PassedStopsTime         = PassedStopsTime,
+            PassedStopsShowTime     = PassedStopsShowTime,
             ExcludedAttributeIds    = [.. ExcludedAttributeIds],
             ShowHeader              = ShowHeader,
             CurrentStopBold         = CurrentStopBold,
@@ -1541,13 +1532,6 @@ public enum ArrowHeadShape
 /// <remarks>Samostatná volba „skrýt jen záporné" tu byla a padla: časy jsou kumulativní od
 /// vývěskové zastávky, takže u projeté zastávky jiný než záporný čas nevznikne a chovala se
 /// shodně s <see cref="Hide"/>.</remarks>
-public enum PassedStopsTimeDisplay
-{
-    /// <summary>U projetých zastávek nezobrazí žádný čas (výchozí) - značka „projíždí" zůstává.</summary>
-    Hide,
-    /// <summary>Zobrazí čas tak, jak přišel z dat (chování do 7/2026, tedy i záporný).</summary>
-    Show,
-}
 
 /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>
 public enum StopMarkersSide
