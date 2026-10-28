@@ -70,7 +70,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Negativní značka = znak vykreslený inverzně, tedy světlý na plné barevné ploše"
         s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Negativní značka: Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ", 0, 0)
+        // „Textová značka", ne „Text": z „Text: Barva textu" nešlo poznat, o jaký text jde (`B194h` H11).
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Textová značka: ", 0, 0)
 
         // ── Záhlaví / Datové buňky ────────────────────────────────────────
         // Skupina části prvku: první pole část zapíná, pak pole pro celý řádek, pod nimi sada stylu.

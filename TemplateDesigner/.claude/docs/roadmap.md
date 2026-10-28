@@ -24,10 +24,10 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 
 Nezávislá revize `B194d` (formuláře proti serveru, kód a testy, dokumentace). Projít před `B194f`.
 
-- **H11** Minuty: předpona „Text:" ve Značkách u odjezdů neřekne, o jaký text jde [S] **Jan**
 - **H12** Hledání ve formuláři nenajde „písmo", „podbarvení" ani „čára" a zahltí polohou prvku [M] **Jan**
 - **H13** Novinky mají staré názvy polí („Rozestup odjezdů", „Více stanovišť") - opravit, a patří přejmenování z 28. 10. do Novinek? [S] **Jan**
 - **H16** `review-proklik-checklist.md` ze 4. 8. má body pro ruční proklik, které čekají na Jana - projít, nebo smazat [S] **Jan**
+- **H17** Panel a import z PDF mají u Minut odjezdů jiné skupiny než formulář („Odjezdy", „Řádky dat", „Styl minuty"…) [S]
 
 ### `B194f` Pojistky před `B56`
 

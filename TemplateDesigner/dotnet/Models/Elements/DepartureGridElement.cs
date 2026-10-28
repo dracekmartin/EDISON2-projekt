@@ -1817,20 +1817,20 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         new ColorPropertyDescriptor  { Label = "Minuta: Barva textu",  Group = "Styl minuty", Get = () => MinuteStyle.TextColor ?? "",            Set = v => MinuteStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
         // ── Styl anotací - symboly (speciální/NZ) ──
-        new StringPropertyDescriptor { Label = "Symbol: Font",         Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.FontFamily ?? "", Set = v => AnotaceSymbolStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new FloatPropertyDescriptor  { Label = "Symbol: Velikost",     Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.FontSize ?? 0, Set = v => AnotaceSymbolStyle.FontSize = v > 0 ? v : null, Min = 0, Max = 72, Unit = "pt" },
-        new BoolPropertyDescriptor   { Label = "Symbol: Tučné",        Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
-        new BoolPropertyDescriptor   { Label = "Symbol: Kurzíva",      Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
-        new ColorPropertyDescriptor  { Label = "Symbol: Barva textu",  Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
-        new ColorPropertyDescriptor  { FromImage = true, Label = "Negativní značka: Barva pozadí", Group = "Značky u odjezdů - symbol", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
-        new ColorPropertyDescriptor  { FromImage = true, Label = "Negativní značka: Barva textu", Group = "Značky u odjezdů - symbol", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
+        new StringPropertyDescriptor { Label = "Symbol: Font",         Group = "Značky u odjezdů", Get = () => AnotaceSymbolStyle.FontFamily ?? "", Set = v => AnotaceSymbolStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
+        new FloatPropertyDescriptor  { Label = "Symbol: Velikost",     Group = "Značky u odjezdů", Get = () => AnotaceSymbolStyle.FontSize ?? 0, Set = v => AnotaceSymbolStyle.FontSize = v > 0 ? v : null, Min = 0, Max = 72, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Symbol: Tučné",        Group = "Značky u odjezdů", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
+        new BoolPropertyDescriptor   { Label = "Symbol: Kurzíva",      Group = "Značky u odjezdů", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
+        new ColorPropertyDescriptor  { Label = "Symbol: Barva textu",  Group = "Značky u odjezdů", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
+        new ColorPropertyDescriptor  { FromImage = true, Label = "Negativní značka: Barva pozadí", Group = "Značky u odjezdů", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor  { FromImage = true, Label = "Negativní značka: Barva textu", Group = "Značky u odjezdů", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
         // ── Styl anotací - text (písmena, dny) ──
-        new StringPropertyDescriptor { Label = "Text: Font",         Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new FloatPropertyDescriptor  { Label = "Text: Velikost",     Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.FontSize ?? AnotaceFontSize, Set = v => AnotaceTextStyle.FontSize = v, Min = 3, Max = 72, Unit = "pt" },
-        new BoolPropertyDescriptor   { Label = "Text: Tučné",        Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.Bold ?? false,   Set = v => AnotaceTextStyle.Bold = v ? true : null },
-        new BoolPropertyDescriptor   { Label = "Text: Kurzíva",      Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.Italic ?? false, Set = v => AnotaceTextStyle.Italic = v ? true : null },
-        new ColorPropertyDescriptor  { Label = "Text: Barva textu",  Group = "Značky u odjezdů - text", Get = () => AnotaceTextStyle.TextColor ?? "", Set = v => AnotaceTextStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
+        new StringPropertyDescriptor { Label = "Textová značka: Font",         Group = "Značky u odjezdů", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
+        new FloatPropertyDescriptor  { Label = "Textová značka: Velikost",     Group = "Značky u odjezdů", Get = () => AnotaceTextStyle.FontSize ?? AnotaceFontSize, Set = v => AnotaceTextStyle.FontSize = v, Min = 3, Max = 72, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Textová značka: Tučné",        Group = "Značky u odjezdů", Get = () => AnotaceTextStyle.Bold ?? false,   Set = v => AnotaceTextStyle.Bold = v ? true : null },
+        new BoolPropertyDescriptor   { Label = "Textová značka: Kurzíva",      Group = "Značky u odjezdů", Get = () => AnotaceTextStyle.Italic ?? false, Set = v => AnotaceTextStyle.Italic = v ? true : null },
+        new ColorPropertyDescriptor  { Label = "Textová značka: Barva textu",  Group = "Značky u odjezdů", Get = () => AnotaceTextStyle.TextColor ?? "", Set = v => AnotaceTextStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
         new BoolPropertyDescriptor  { Label = "Značky u odjezdů",     Group = "Značky u odjezdů", Get = () => ShowAnotace,              Set = v => ShowAnotace = v },
 

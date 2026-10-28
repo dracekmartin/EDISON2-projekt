@@ -248,6 +248,8 @@
 - **H10** Tabulka spojů: skupina „Řádky nad časy" (ne „Řádky značek" z revize - turnusy nejsou značky),
   Přípojné řádky před Šířkou sloupců, nápovědy tří řádků; skupiny panelu a importu jako ve formuláři
   (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (25)).
+- **H11** Minuty: styl textových značek u minuty „Textová značka: …", „Symbol: …" zůstává; značky v panelu
+  a importu v jedné skupině jako ve formuláři (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (26)).
 
 ## Popisky polí podle pravidel - složité prvky (hotovo 28. 10. 2026)
 

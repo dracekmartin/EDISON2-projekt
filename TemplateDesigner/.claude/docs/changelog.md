@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-28 (26) - Minuty odjezdů: „Textová značka" místo „Text" (`B194h` H11)
+
+- Styl písmen a čísel u minuty („R", „u1") se ve skupině Značky u odjezdů jmenuje **„Textová značka: …"** souběžně s „Negativní značka: …". Z „Text: Barva textu" nešlo poznat, o jaký text jde. „Symbol: …" zůstává, nápověda u zapnutí značek mluví o písmenech a symbolech.
+- Panel vlastností a protokol importu z PDF mají všechny značky v jedné skupině Značky u odjezdů jako formulář (dřív „Značky u odjezdů - symbol" a „- text").
+- Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` na dev serveru.
+
 ## 2026-10-28 (25) - Tabulka spojů: „Řádky nad časy" a Přípojné řádky před Šířkou sloupců (`B194h` H10)
 
 - Skupina **„Řádky"** se jmenuje **„Řádky nad časy"** - jsou to řádky v hlavičce sloupců spojů mezi čísly spojů a časy (platnost, negativní značky, turnusy). Samotné „Řádky" neříkalo, o jaké jde, a hledání ho pletlo s Přípojnými řádky.

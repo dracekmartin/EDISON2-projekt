@@ -187,15 +187,8 @@ kód a testy (build bez chyb, 2492 testů zelených v čisté kopii `7dfb5b1a`) 
 Směr potvrzený: tabulky mají jednu kostru, stejné sady stylu a stejné popisky; „barva" najde v každém
 formuláři všechna barevná pole.
 H1, H2, H4, H5, H7, H8, H14, H15 a dokumentační část H13 jsou hotové (changelog 2026-10-28 (18)-(21)),
-H3 rozhodnutý (nechat, archiv), H6, H9 a H10 hotové (changelog 2026-10-28 (22)-(25)).
+H3 rozhodnutý (nechat, archiv), H6, H9, H10 a H11 hotové (changelog 2026-10-28 (22)-(26)).
 
-- **H10 Tabulka spojů: pořadí a názvy skupin** [S] **Jan** (*ověřeno:* server).
-  Přípojné řádky (obsah) stojí za Šířkou sloupců (rozložení), proti pořadí v `ux §4`.
-  Skupina „Řádky" nic neříká a hledání „řádk" ji plete s Přípojnými řádky a Výškou řádku; návrh „Řádky značek".
-  Řádek platnosti, Řádek negativních značek a Řádky turnusů nemají nápovědu.
-- **H11 Minuty: předpona „Text:"** [S] **Jan** (*ověřeno:* server).
-  Skupina Značky u odjezdů má 21 polí a z „Text: Barva textu" není poznat, o jaký text jde.
-  Návrh: „Textová značka: …" souběžně s „Negativní značka: …".
 - **H12 Hledání ve formuláři** [M] **Jan** (*ověřeno:* server, kód hledání).
   Formuláře tabulek mají 86-109 polí bez sbalování, hledání je hlavní cesta k poli.
   Porovnává podřetězec popisku nebo názvu skupiny bez synonym a tvarů slov (`EDInputForm.xaml.cs`
@@ -213,6 +206,13 @@ H3 rozhodnutý (nechat, archiv), H6, H9 a H10 hotové (changelog 2026-10-28 (22)
 - **H16 `review-proklik-checklist.md`** [S] **Jan**.
   Jednorázový dokument ze 4. 8. pro ruční proklik; podle hlavičky ho po projití smazat, ale část bodů pořád
   čeká na Jana (vizuální dojem, hlášky naživo). Projít, nebo smazat.
+- **H17 Skupiny panelu Minut neodpovídají formuláři** [S] (*ověřeno:* kód; nalezeno při H11).
+  Panel vlastností a protokol importu z PDF poznají pole podle skupiny a popisku. Minuty odjezdů mají
+  v `DepartureGridElement.GetPropertyDescriptors` skupiny, které formulář nemá: „Odjezdy" (záhlaví skupin dnů,
+  šířka hodin, Nejvýš skupin dnů…), „Řádky dat", „Záhlaví - 2. řádek" (popisky bez předpony „2. řádek:"),
+  „Styl minuty", „Mezery". Formulář má Skupiny dnů, Rozměry, Značky u odjezdů, Záhlaví, Datové buňky.
+  Výška řádku Seznamu zastávek je v panelu ve skupině „Řádky" (výchozí `GetDataRowHeightDescriptor`).
+  Srovnat jako Tabulku spojů (`H10`), včetně klíčů v testech importu a v příkladu zadání pro AI import.
 
 **Před smazáním tohoto souboru** přesunout §7 (připravenost na `B56`) do `legacy-nahrada §4` spolu s R2
 a odstavec níž k položce backlogu, které se týká. P2 a vědomé rozdíly už jsou v `legacy-nahrada.md §4` (H14).
