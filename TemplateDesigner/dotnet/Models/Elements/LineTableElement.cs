@@ -44,8 +44,8 @@ public enum PripojSlucovani
 ///
 /// Sloupce (`Columns`, model <see cref="StopColumn"/> - sdílený se StopList) definují popisné
 /// sloupce: Zóna, Km, Tč, Zastávka, MHD + „Spoj" (řídí šířku/styl časových sloupců spojů, které
-/// vznikají z dat). Editace přes 2-tab dialog (Obecné = EDInputForm, Sloupce = sdílený
-/// `ColumnListEditor` + `CellStyleEditor`) - konzistentní se StopList/DepartureGrid.
+/// vznikají z dat). Editace v okně se záložkami Obecné (EDInputForm) a Sloupce (sdílená
+/// `ColumnsTab`) - stejně jako ostatní tabulky se sloupci.
 ///
 /// První řez: bez 2D bin-packingu přes stránky (stránkuje PageLayoutEngine per sekce),
 /// symboly jako textový fallback (Timetable font = roadmap 42b).

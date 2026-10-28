@@ -1,4 +1,3 @@
-using System.Text.Json;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -98,11 +97,25 @@ public class LineTableColumnVM : Controls.ColumnRowVM
     /// <summary>Zděděná vrstva se záložním zarovnáním sloupce jako při tisku
     /// (<see cref="TableLayout.ResolveCascade"/>) - jinak by šedá nápověda ukazovala Vlevo u sloupce,
     /// který se tiskne na střed.</summary>
-    public static LineTableColumnVM FromModel(StopColumn c, LineTableElement element) => new(c,
-        CellStyleVM.FromModel(c.Style?.Header, TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(),
-            c.Alignment, elementDefinesHAlign: element.HeaderStyle.HAlign is not null)),
-        CellStyleVM.FromModel(c.Style?.Data, TableLayout.ResolveCascade(null, element.ResolveColumnDataParent(),
-            c.Alignment, elementDefinesHAlign: element.DataStyle.HAlign is not null)));
+    public static LineTableColumnVM FromModel(StopColumn c, LineTableElement element)
+    {
+        var (header, data) = Zdedene(c.Alignment, element);
+        return new(c, CellStyleVM.FromModel(c.Style?.Header, header), CellStyleVM.FromModel(c.Style?.Data, data));
+    }
+
+    /// <summary>Zděděná vrstva podle prvku, jak ho právě nastavuje záložka Obecné.</summary>
+    public void ObnovZdedene(LineTableElement element)
+    {
+        var (header, data) = Zdedene(Alignment, element);
+        UpdateInherited(header, data);
+    }
+
+    private static (ResolvedTextStyle Header, ResolvedTextStyle Data) Zdedene(TextHorizontalAlignment zaloha,
+        LineTableElement element) =>
+        (TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(), zaloha,
+             elementDefinesHAlign: element.HeaderStyle.HAlign is not null),
+         TableLayout.ResolveCascade(null, element.ResolveColumnDataParent(), zaloha,
+             elementDefinesHAlign: element.DataStyle.HAlign is not null));
 }
 
 // ─── Dialog ViewModel ───────────────────────────────────────────────────────
@@ -117,10 +130,7 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
     public List<StopColumn> ResultColumns { get; private set; } = [];
 
     private readonly List<StopColumn> _puvodni;
-
-    /// <summary>Sloupce doplněné oknem (šablona je nemá) a jejich podoba při otevření - nedotčené se do
-    /// šablony nezapíšou.</summary>
-    private readonly Dictionary<string, string> _doplnene = new(StringComparer.OrdinalIgnoreCase);
+    private readonly string _priOtevreni;
 
     public LineTableColumnsEditorDialogViewModel(LineTableElement element, List<StopColumn> columns)
     {
@@ -134,9 +144,7 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
             if (!presentKeys.Contains(def.Key))
             {
                 def.Visible = false;
-                var row = LineTableColumnVM.FromModel(def, element);
-                rows.Add(row);
-                _doplnene[def.Key] = JsonSerializer.Serialize(row.ToModel());
+                rows.Add(LineTableColumnVM.FromModel(def, element));
             }
 
         // Přizpůsobit tu není záměrně (rozhodnutí Jan 26. 10., `B194` E13b): zadávají se jen popisné
@@ -147,13 +155,20 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
             OverflowNote = "Na sloupce spojů nezbude místo.",
             MultilineHeader = true,
         };
+        _priOtevreni = Controls.ColumnsTabViewModel.Snapshot(Vysledek());
+    }
+
+    /// <summary>Přepočítá zděděné styly sloupců podle náhledu prvku se změnami ze záložky Obecné.</summary>
+    public void ObnovZdedene(LineTableElement nahled)
+    {
+        foreach (var row in Columns.Rows.Cast<LineTableColumnVM>()) row.ObnovZdedene(nahled);
     }
 
     protected override void OnOk()
     {
-        var vysledek = Columns.Rows.Cast<LineTableColumnVM>().Select(vm => vm.ToModel()).ToList();
-        ResultColumns = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodni, vysledek,
-            c => _doplnene.TryGetValue(c.Key, out var json) && JsonSerializer.Serialize(c) == json);
+        ResultColumns =Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodni, _priOtevreni, Vysledek());
         CloseDialog(true);
     }
+
+    private List<StopColumn> Vysledek() => [.. Columns.Rows.Cast<LineTableColumnVM>().Select(vm => vm.ToModel())];
 }

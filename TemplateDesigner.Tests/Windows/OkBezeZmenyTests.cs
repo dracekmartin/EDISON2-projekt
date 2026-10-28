@@ -143,6 +143,95 @@ public class OkBezeZmenyTests
         AssertBezKroku(navrhar);
     }
 
+    // Hodnoty, které okno při načtení převede do jiného tvaru (prázdný styl, mezera na konci, starší
+    // zápis dnů). Do 28. 10. je OK beze změny zapsalo, protože se porovnávala šablona s výstupem okna
+    // místo výstupu okna při otevření a při OK (`B194h` H1).
+
+    [Fact]
+    public void SeznamZastavek_PrazdnyStylSloupce()
+    {
+        var prvek = new StopListElement();
+        prvek.Columns[0].Style = new ColumnVisualStyle { Header = new TextStyle() };
+        var okno = new StopColumnsEditorDialogViewModel(prvek, prvek.Columns);
+        var navrhar = new TemplateDesignerViewModel();
+
+        okno.OkCommand.Execute(null);
+        navrhar.ApplyStopColumnsEdit(prvek, null, okno.ResultColumns);
+
+        AssertBezKroku(navrhar);
+    }
+
+    [Fact]
+    public void TabulkaSpoju_PrazdnyStylSloupce()
+    {
+        var prvek = new LineTableElement();
+        prvek.Columns[0].Style = new ColumnVisualStyle { Data = new TextStyle() };
+        var okno = new LineTableColumnsEditorDialogViewModel(prvek, prvek.Columns);
+        var navrhar = new TemplateDesignerViewModel();
+
+        okno.OkCommand.Execute(null);
+        navrhar.ApplyLineTableColumnsEdit(prvek, null, okno.ResultColumns);
+
+        AssertBezKroku(navrhar);
+    }
+
+    [Fact]
+    public void TabulkaZDat_HodnotyVJinemTvaru()
+    {
+        var prvek = new DynamicTableElement
+        {
+            Columns =
+            [
+                new TableColumn { Header = "Cena", Field = "", Expression = "{A} ", Width = 40f },
+                new TableColumn { Header = "Kód", Field = "KOD", Width = 20f, HeaderStyle = new TextStyle() },
+            ],
+        };
+        var okno = new DynamicTableEditorDialogViewModel(prvek, []);
+        var navrhar = new TemplateDesignerViewModel();
+
+        okno.OkCommand.Execute(null);
+        navrhar.ApplyDynamicTableEdit(prvek, null, okno.ResultColumns);
+
+        AssertBezKroku(navrhar);
+    }
+
+    [Fact]
+    public void MinutyOdjezdu_HodnotyVJinemTvaru()
+    {
+        var prvek = new DepartureGridElement
+        {
+            HourColumnHeader = "Hod ",
+            HourColumnStyle = new ColumnVisualStyle { Header = new TextStyle() },
+            CustomColumns = [new DepartureColumnDefinition { Id = "1", Header = "Neděle", Days = "7+" }],
+        };
+        var okno = new DepartureGroupEditorDialogViewModel(prvek, [], prvek.GroupColumns, prvek.HourColumnStyle,
+            prvek.CustomColumns);
+        var navrhar = new TemplateDesignerViewModel();
+
+        okno.OkCommand.Execute(null);
+        navrhar.ApplyDepartureGridEdit(prvek, null, okno.ResultGroupColumns, false, okno.ResultHourColumnStyle,
+            okno.ResultHourColumnHeader, okno.ResultHourColumnWidth, okno.ResultCustomColumns);
+
+        AssertBezKroku(navrhar);
+    }
+
+    /// <summary>Tabulka z dat: skutečná změna jednoho sloupce zapíše i převedené hodnoty ostatních - je to
+    /// výstup okna, které uživatel potvrdil.</summary>
+    [Fact]
+    public void TabulkaZDat_SkutecnaZmena_JeJedenKrok()
+    {
+        var prvek = new DynamicTableElement { Columns = [new TableColumn { Header = "Cena", Field = "CENA", Width = 40f }] };
+        var okno = new DynamicTableEditorDialogViewModel(prvek, []);
+        var navrhar = new TemplateDesignerViewModel();
+
+        okno.Columns.Rows[0].Header = "Částka";
+        okno.OkCommand.Execute(null);
+        navrhar.ApplyDynamicTableEdit(prvek, null, okno.ResultColumns);
+
+        Assert.True(navrhar.CanUndo);
+        Assert.Equal("Částka", prvek.Columns[0].Header);
+    }
+
     /// <summary>Pojistka opačným směrem: skutečná změna dál vznikne jako jeden vratný krok.</summary>
     [Fact]
     public void SkutecnaZmena_JeJedenKrok()

@@ -1,4 +1,5 @@
 using EDControls;
+using EDControls.EDInputForm;
 using EDControls.EDViewModel;
 using NSubstitute;
 using TemplateDesigner.Models;
@@ -87,5 +88,45 @@ public class ZalozkaSloupceOpravyTests
 
         Assert.Equal("Hod", prvek.HourColumnHeader);
         Assert.Equal(8f, prvek.HourColumnWidth);
+    }
+    /// <summary>Tučné záhlaví zapnuté na záložce Obecné a v téže chvíli vypnuté u jednoho sloupce: sloupec
+    /// se nesmí vytisknout tučně (`B194h` H2). Zaškrtávátko dřív porovnávalo se stavem prvku z otevření
+    /// okna, takže odškrtnutí uložilo dědění a sloupec po OK zdědil nové tučné.</summary>
+    [Fact]
+    public void TucneZeZalozkyObecne_SloupecOdlisenyOdskrtnutim_ZustaneNetucny()
+    {
+        var prvek = new StopListElement();
+        prvek.HeaderStyle.Bold = false;
+        var okno = new StopColumnsEditorDialogViewModel(prvek, prvek.Columns);
+        var pole = new List<Field> { new() { Key = "HeaderStyle.Bold", Label = "Tučné", FieldType = FieldType.Bool } };
+        var preFilled = ElementFormBinder.Prefill(pole, prvek);
+
+        pole[0].Value = "1";                                                      // Obecné: tučné záhlaví
+        okno.ObnovZdedene(ElementFormBinder.Nahled(pole, prvek, preFilled));       // přechod na záložku Sloupce
+        var sloupec = okno.Columns.Rows[0].HeaderStyle;
+        Assert.True(sloupec.EffectiveBold);
+        sloupec.EffectiveBold = false;
+
+        okno.OkCommand.Execute(null);
+        foreach (var prikaz in ElementFormBinder.ExtractCommands(pole, prvek, preFilled)) prikaz.Execute();
+
+        Assert.True(prvek.HeaderStyle.Bold);
+        Assert.False(okno.ResultColumns[0].Style?.Header?.Bold);
+    }
+
+    /// <summary>Náhled prvku pro záložku Sloupce nesmí změnit prvek - změny ze záložky Obecné zapíše až OK.</summary>
+    [Fact]
+    public void NahledProZalozkuSloupce_PrvekNemeni()
+    {
+        var prvek = new StopListElement();
+        prvek.HeaderStyle.Bold = false;
+        var pole = new List<Field> { new() { Key = "HeaderStyle.Bold", Label = "Tučné", FieldType = FieldType.Bool } };
+        var preFilled = ElementFormBinder.Prefill(pole, prvek);
+
+        pole[0].Value = "1";
+        var nahled = ElementFormBinder.Nahled(pole, prvek, preFilled);
+
+        Assert.True(nahled.HeaderStyle.Bold);
+        Assert.False(prvek.HeaderStyle.Bold);
     }
 }

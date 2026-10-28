@@ -1985,7 +1985,7 @@ public partial class MainWindow : Window
         return klic => StopListElement.SloupecNabizet(klic, sloupek, varianty);
     }
 
-    /// <summary>Pole formuláře Seznamu zastávek podle dat agendy - „Více stanovišť" jen se stanovišti
+    /// <summary>Pole formuláře Seznamu zastávek podle dat agendy - „Výběr stanoviště" jen se stanovišti
     /// podle spojů (`B194d` E5).</summary>
     private Func<string, IReadOnlyDictionary<string, string>, bool> ViditelnostSeznamuZastavek(StopListElement prvek)
     {

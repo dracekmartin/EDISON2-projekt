@@ -759,7 +759,7 @@ public class EDInputFormSchemaDriftTests
         "skupinami sloupců", // → Mezera mezi skupinami dnů (stejný pojem v Minutách i Tabulce spojů)
         "↔",                // → slovy „Mezera mezi značkou a minutou" (`B194` E9b)
         "aktuální zast.",   // → „Aktuální: Vlastnost" (zkratka; `B194` E10)
-        "projetých",        // → „Projeté: Barva textu", „Projeté: Čas"
+        "projetých",        // → „Projeté: Barva textu", „Projeté: Zobrazit čas"
         "element",          // → prvek (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Element",
         "cílov",            // → konečná (poslední zastávka směru; Jan 2026-10-27, `B194` D3)

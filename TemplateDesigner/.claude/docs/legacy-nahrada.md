@@ -276,6 +276,16 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
    per-řádek zvýraznění/barvy z dat, overflow módy buňky, opakování mezisoučtového
    řádku, řádek-jako-designový-layout (koncepčně PerDataRow sekce), datové typy sloupců.
    Merged cells + conditional formatting už jsou v backlogu roadmapy (tabulkové prvky).
+
+   **Rozpis roadmapy `F3`** (navazuje na dynamickou tabulku a `B76`):
+   - per-řádek zvýraznění 0-5 z dat, vlastní barvy per řádek a buňka;
+   - overflow módy (zalamování → klonování řádků), opakování mezisoučtu na další stránce;
+   - datové typy sloupců (datum, minuty, záporné červeně, skrýt nuly), řádek jako layout;
+   - **seskupení řádků** (nadpis a mezisoučet za skupinu) a **vnořená data** (doklad → jeho položky).
+
+   ⚠️ Poslední dvě visely samostatně v backlogu.
+   Patří sem, protože mají smysl jen nad daty (pevná tabulka je vyplňovaná ručně), a jejich tvar se má odvodit **z reálných sestav RG**, ne navrhnout dopředu naslepo.
+   Poptávku nemá ani jedna.
 4. **Výstupní kanály fáze 2:** Excel export, PDF heslo/podpis, Epson znakový tisk -
    podle reálné poptávky (Epson = pokladny/jízdenky, ověřit zda vůbec migruje do TD
    nebo zůstane v legacy TISKu).
@@ -793,3 +803,29 @@ mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje. Popi
   nikde nenabízí a do 23. 10. při volání padaly (`B193f`). Zrušit, nebo napojit do vkládání tabulky.
 - **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (`LinkovyJrAd.cls:1814, 2120, 2131`
   × `LinkovyJrMhd.cls:1176-1195`) a `RgbToHex` vedle `BaseAgenda.RgbNaHex`.
+
+**Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - patří ke kroku R5
+(parametry vývěsek do jedné definice), čeká na vyjasnění nastavení JŘ s kolegy (Jan 28. 10.).
+
+- Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb: „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", k tomu kryptické prázdninové volby vývěsky.
+  Vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`).
+- Volby jsou zamčené (ukládá se zobrazený text, `ux-conventions §8`), proto přidat souběžný klíč `optionLabels` a `options` nechat jako text.
+  `CacheAgendaProvider.ParseParameters` čte `options` jako pole textů: volba poslaná jako objekt by vyhodila výjimku a návrhář by ztratil všechny parametry agendy.
+- Třetí kopie popisků je v `DepartureColumnPresets` (vzory vlastních sloupců).
+- Popisky a nápovědy parametrů výstup ani uložené volby nemění, návrhář je bere ze serveru.
+  Citují je ale hlášky linky bez dat (`BuildStrankaLinky` v obou linkových agendách), při přejmenování opravit i je.
+
+**Vědomé rozdíly mezi agendami JŘ (rozhodnutí Jan 26. 10., revize `B194`)** - každá agenda tu drží tvar
+svého starého modulu, sloučení kódu je nesmí srovnat.
+
+- **T5 Nadpis skupiny dnů:** ve vývěsce MHD dvouřádkový, v linkovém MHD jedním řádkem.
+  Vývěska má úzké sloupce skupin, v Tabulce spojů se nadpis táhne přes všechny spoje skupiny.
+  Požadavek DPKV #10660 se týkal vývěsky; dva řádky v linkovém by se dělaly novým polem.
+- **T6 Telefon dopravce:** „tel:" ve vývěskách a „tel." v linkových JŘ.
+  Každý tvar odpovídá svému starému tisku a vývěsky jsou vydané.
+- **T4c Vysvětlivka „na znamení"** (potvrzuje srpnové rozhodnutí): v Zastávkovém JŘ AD krátká a napevno („na znamení", `ZastavkoveJrAd.TextAtributu`), Linkový JŘ AD ji bere z číselníku stálých značek firmy („zastávka je jen na znamení nebo požádání"), agendy MHD z číselníku atributů MHD.
+  Starý zastávkový tisk měl „zastávka pouze na znamení".
+- **T8 Zóny zastávky** skládá každá agenda pravidlem svého starého modulu: Zastávkový AD z trasy linky se záskokem na registr (`ZonyZastavky`), Linkový AD jen z trasy a „-" (`BuildZastavkaRadek`), Zastávkový MHD všechny zóny bez filtru systému, Linkový MHD jen systém linky spojené „/" (`ZonyZastavky`).
+  Rozdíl je vidět jen u zastávek se zónou mimo trasu nebo ve dvou IDS.
+- **T10b Stanoviště u názvu zastávky:** Linkový JŘ AD ho tiskne v řádku tabulky u zastávky s příznakem trasy „S" jako „, stan.16" (parita starého linkového tisku, `LinkovyJrAd.BuildZastavkaRadek`), Zastávkový JŘ AD jen v nadpisu rozdělené vývěsky jako „, označník 3" / „, sloupek 1" (vzor KOVED #8828, `ZastavkoveJrAd.BuildStrankaZastavky`).
+  Jiné místo i účel; zkratka „stan." neumí rozlišit označník a sloupek.

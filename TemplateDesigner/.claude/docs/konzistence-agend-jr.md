@@ -28,14 +28,8 @@ Všechno hotové nebo rozhodnuté (27. 10.) - viz `roadmap-archive.md`, `B194` T
 
 ## 3. Nabídka dat a parametry sestavy
 
-Popisky a nápovědy výstup ani uložené volby nemění (návrhář je bere ze serveru). Popisky citují i nové
-hlášky linky bez dat (`LinkovyJrAd.BuildStrankaLinky`, `LinkovyJrMhd.cls:420`) - při přejmenování opravit i je.
-
-- **P2 Totéž rozdělení sloupců má ve vývěsce a v linkovém jiné volby** [M] **Jan** (*ověřeno:* server).
-  „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", kryptické prázdninové volby
-  vývěsky; vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`). Volby jsou zamčené → přidat souběžný
-  klíč `optionLabels`, `options` nechat jako text (`CacheAgendaProvider.ParseParameters` :305 by na objektu
-  ztratil všechny parametry). Třetí kopie popisků v `DepartureColumnPresets.cs:20-37`.
+Zbývající `P2` (popisky voleb rozdělení sloupců) čeká v backlogu; detail přesunut do
+[`legacy-nahrada.md §4`](legacy-nahrada.md) (28. 10.).
 
 ## 4. Prvky a formuláře
 
@@ -170,24 +164,8 @@ totéž znovu. Pořadí podle přínosu:
 
 ## 8. Co je v pořádku
 
-- **Vědomě jinak (rozhodnutí Jan 26. 10.):** nadpis skupiny dnů je ve vývěsce MHD dvouřádkový, v linkovém
-  MHD jedním řádkem (`T5`). Vývěska má úzké sloupce skupin, v Tabulce spojů se nadpis táhne přes všechny
-  spoje skupiny. Požadavek DPKV #10660 se týkal vývěsky. Dva řádky v linkovém by se dělaly novým polem.
-- **Vědomě jinak (rozhodnutí Jan 26. 10.):** telefon dopravce „tel:" ve vývěskách a „tel." v linkových JŘ
-  (`T6`) - každý tvar odpovídá svému starému tisku a vývěsky jsou vydané.
-- **Vědomě jinak (rozhodnutí Jan 26. 10., potvrzuje srpnové):** vysvětlivka „na znamení" je v Zastávkovém
-  JŘ AD krátká a napevno („na znamení", `ZastavkoveJrAd.TextAtributu`), Linkový JŘ AD ji bere z číselníku
-  stálých značek firmy („zastávka je jen na znamení nebo požádání"), agendy MHD z číselníku atributů MHD
-  (`T4c`). Starý zastávkový tisk měl „zastávka pouze na znamení".
-- **Vědomě jinak (rozhodnutí Jan 26. 10.):** zóny zastávky skládá každá agenda pravidlem svého starého
-  modulu (`T8`): Zastávkový AD z trasy linky se záskokem na registr (`ZonyZastavky`), Linkový AD jen z trasy
-  a „-" (`BuildZastavkaRadek`), Zastávkový MHD všechny zóny bez filtru systému, Linkový MHD jen systém
-  linky spojené „/" (`ZonyZastavky`). Rozdíl je vidět jen u zastávek se zónou mimo trasu nebo ve dvou IDS.
-- **Vědomě jinak (rozhodnutí Jan 26. 10.):** stanoviště u názvu zastávky (`T10b`). Linkový JŘ AD ho
-  tiskne v řádku tabulky u zastávky s příznakem trasy „S" jako „, stan.16" (parita starého linkového tisku,
-  `LinkovyJrAd` :1011), Zastávkový JŘ AD jen v nadpisu rozdělené vývěsky jako „, označník 3" / „, sloupek 1"
-  (vzor KOVED #8828, `ZastavkoveJrAd` :718). Jiné místo i účel, zkratka „stan." neumí rozlišit označník
-  a sloupek.
+- **Vědomě jinak (rozhodnutí Jan 26. 10.):** `T5`, `T6`, `T4c`, `T8`, `T10b` - přesunuto do
+  [`legacy-nahrada.md §4`](legacy-nahrada.md) (28. 10.), odstavec „Vědomé rozdíly mezi agendami JŘ".
 
 - Parametry: „Obecné" první ve všech čtyřech agendách, ostatní skupiny nesou název prvku (od 26. 10. i typy provozu, `SkupinyParametruTest`);
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,
@@ -208,35 +186,19 @@ Nezávislá revize `B194d`: formuláře šesti tabulek a Textu volané na server
 kód a testy (build bez chyb, 2492 testů zelených v čisté kopii `7dfb5b1a`) a dokumentace.
 Směr potvrzený: tabulky mají jednu kostru, stejné sady stylu a stejné popisky; „barva" najde v každém
 formuláři všechna barevná pole.
+H1, H2, H4, H5, H7, H8, H14, H15 a dokumentační část H13 jsou hotové (changelog 2026-10-28 (18)-(21)).
 
-- **H1 OK beze změny pořád mění šablonu** [S] (*ověřeno:* test v kopii repa).
-  Návrhář porovná sloupce v šabloně s tím, co okno vrátí po převodu (`ResultOrOriginal`, `AddIfChanged`
-  v `TemplateDesignerViewModel`).
-  Když převod hodnotu přepíše do jiného tvaru, OK bez dotyku přidá krok zpět a označí šablonu jako změněnou.
-  Doložené vstupy: Seznam zastávek se `Style = { Header = {} }`; Tabulka z dat s `Field = ""`, výrazem
-  s mezerou na konci nebo prázdným `HeaderStyle`; Minuty s vlastním sloupcem `Days = "7+"` (starší tvar,
-  navíc zbytečně znovu načte data).
-  Tabulka z dat `ResultOrOriginal` nevolá vůbec.
-  Návrh: porovnat výstup okna při otevření s výstupem při OK, jako skupiny dnů (`_skupinyPriOtevreni`).
-  `OkBezeZmenyTests` mají jen výchozí sloupce, doplnit tyto vstupy.
-- **H2 Zaškrtávátko stylu sloupce porovnává se stavem prvku z doby otevření okna** [S] (*ověřeno:* kód, v UI ne).
-  `CellStyleVM` zapíše přepsání, jen když se hodnota liší od zděděné, a zděděná se za běhu okna nemění:
-  záložka Obecné se do prvku zapíše až při OK.
-  Scénář: na Obecné zapnout tučné záhlaví, u jednoho sloupce Tučné zaškrtnout a odškrtnout.
-  Uloží se dědění a sloupec se vytiskne tučně; dřív se uložilo „ne".
-  Že dotčené pole se shodnou hodnotou začne dědit, je vědomé (changelog 2026-10-28 (6)); tenhle případ ne.
-- **H3 Styl smazaného vlastního sloupce Minut zůstane v šabloně** [S] (*ověřeno:* kód).
-  Od `E13g` okno nechává nastavení, které nenabídlo (`WithNotOffered`), a to platí i pro smazané vlastní
-  sloupce (id „1", „2"…) a položky `__INDEX_`.
+- **H3 Styl smazaného vlastního sloupce Minut zůstane v šabloně** [S] **Jan** (*ověřeno:* kód).
+  Od `E13g` okno nechává nastavení skupin, které nenabídlo (`WithNotOffered`), a to platí i pro styl smazaného
+  vlastního sloupce (id „1", „2"…).
   Vzor (`ApplyPresetCommand`) čísluje sloupce 1..n, takže nový sloupec ze vzoru převezme styl smazaného
   sloupce se stejným číslem; `NextFreeCustomId` se starým číslům vyhne, vzor ne.
-  Návrh: nechávat jen skupiny dnů, které vybraná linka nemá; vlastní sloupce okno zná vždy, ty uklidit.
-- **H4 Posun sloupce na okamžik zdvojí položku v seznamu** [S] (*ověřeno:* kód, v UI ne).
-  `ColumnsTabViewModel` prohazuje sloupce dvěma přiřazeními, výběr může na okamžik spadnout na nic.
-  Staré kopie oken používaly `ObservableCollection.Move`.
-- **H5 Podtržení pod značkou s vlastní barvou** [S] **tisk** (*ověřeno:* kód).
-  `SymbolRunRenderer` kreslí podtržení a přeškrtnutí barvou textu i pod značkou s vlastní barvou (`FORE_COLOR`).
-  Týká se jen šablon, které si u minuty nebo značek zapnou podtržení (možné od 2026-10-28 (2)).
+  Revize navrhla vlastní sloupce uklidit, **jednoznačně to ale nejde**: skupiny dnů z dat mají čísla ve stejném
+  tvaru („1", server je posílá jako text, `ZastavkoveJrAd.NacistSkupinyDnu`), takže úklid podle čísla by smazal
+  nastavení skupin jiných linek - přesně chybu, kterou opravil `E13g`.
+  Vzor navíc styly podle pořadí přebírá záměrně („existující styly zůstanou na svém místě", `NextFreeCustomId`).
+  Doporučení: nechat, nebo rozlišit vlastní sloupce od skupin dnů jiným tvarem čísla (změna šablon s migrací).
+  Položky `__INDEX_` zůstávají vědomě (E13g, výchozí nastavení podle pořadí ze vzorů a importu).
 - **H6 „Výška záhlaví" má dva významy** [S] **Jan** (*ověřeno:* kód).
   Tabulka z dat ji od 2026-10-28 (13) bere jako nejmenší výšku (záhlaví roste s počtem řádků), Pevná tabulka
   jako pevnou.
@@ -244,23 +206,6 @@ formuláři všechna barevná pole.
   Oba tvary ve skupině Záhlaví opakují název části (`ux §8`).
   Návrh revize: Tabulka z dat a Minuty „Nejmenší výška řádku" s nápovědou, Pevná tabulka „Výška řádku" jako
   v Datových buňkách. Klíče zůstávají, panel přes `DescriptorLabelsMatchFormTests`.
-- **H7 Popisky v oknech sloupců** [S] (*ověřeno:* kód).
-  Vlastní definice sloupců u Minut má dvojtečky (`DepartureGroupEditorDialog.xaml`: Vzor, Záhlaví, Druhý řádek,
-  Jen spoje se značkami, Bez spojů se značkami, Nevypisovat značky, Rozsahy dat) a „Druhý řádek", kde
-  formulář říká „2. řádek: …".
-  Na záložce Sloupce je „Záhlaví" popisek pole s textem (`ColumnsTab.xaml` :76) i nadpis sekce stylu hned
-  pod ním (:95); pro text je kanon „Text záhlaví".
-  Bublina u řezu písma „dle reálných řezů" (`CellStyleEditor.xaml` :91).
-- **H8 Nápovědy a komentáře se starými názvy** [S] (*ověřeno:* kód).
-  Uživatel vidí: nápověda parametru `ZastavkoveJrAd.cls` :3625 „Volba řídí Více stanovišť" (pole je
-  „Výběr stanoviště"); popisek parametru „Rozdělení sloupců dle platnosti" (`LinkovyJrAd.cls` :211,
-  `ZastavkoveJrAd.cls` :3698) - zamčené jsou volby, ne popisek, ověřit, že se hodnota ukládá podle klíče.
-  Komentáře: `StopListElement.cs:35`, `MainWindow.xaml.cs:1988`, `NabidkaSeznamuZastavekTests.cs:16`
-  („Více stanovišť"), `RowVisibilityHelpTests.cs:12`, `EDInputFormSchemaDriftTests.cs:762`,
-  `StopListCellTextTests.cs:8`, `LineTableElement.cs:46-48` (dvě záložky, `ColumnListEditor`),
-  `CellStyleEditor.xaml.cs:15` (tri-state), `CellStyleVM.cs:19` (tři okna místo čtyř), `CellStyleVM.cs`
-  popis `SetColor` nad `Clamp`.
-  `.cls` upravit editačním nástrojem a ověřit voláním.
 - **H9 Poznámky při přepínání prvků působí jako chyba** [S] **Jan** (*ověřeno:* server).
   Výjimka `E3b` platí, ale: Záhlaví a Datové buňky jsou nahoře místo dole; pole stylu záhlaví jsou
   obráceně (Barva pozadí, Barva textu, Font, Řez, Velikost); chybí Tučné a Kurzíva, ačkoli záhlaví kreslí
@@ -285,25 +230,16 @@ formuláři všechna barevná pole.
   Návrh: seznam synonym, slova od 5 znaků porovnat bez koncovky, a když se shoduje popisek pole, nerozbalovat
   celou skupinu jen kvůli shodě v jejím názvu.
   Popisky neměnit. Změna je v EDControls, platí pro formuláře celého EDISONu.
-- **H13 Příručka a dokumenty pro agenty** [S] (*ověřeno:* kód).
-  Příručka (wiki seed `uzivatelska-prirucka.md`): Editor skupin dnů tvrdí, že písmo záhlaví nejde nastavit po
-  skupinách (jde od 16. 9.), odkazuje na „Záhlaví - 2. řádek" a píše o dvou záložkách (má tři); dál
-  „Oddělovací čáry" (dnes Čáry mezi řádky), „Značky - jen s těmito / bez těchto", „rodina písma", „výplň".
-  Novinky (`plan-a-zmeny.md`: „Rozestup odjezdů", „Více stanovišť") jsou datované; jestli je opravit a jestli
-  přejmenování patří do Novinek, rozhodne Jan.
-  Pro agenty: skill `novy-element` (radí `CellStyleEditor` místo `ColumnsTab`, chybí krok formuláře podle
-  `ux §4` a ochrana `ResultOrOriginal` / `WithNotOffered`), `elementy-architektura.md` (počet tabulkových
-  prvků, okno Minut „2-tab"), `ux-conventions.md` (příklad „Zarovnání záhlaví svisle" je dnes jen v panelu),
-  `template-schema-versions.md` (nadpis „V1.1.0-V1.9.0" nad verzemi do 1.17.0), changelog 2026-10-28 (1)
-  uvádí smazaný `SadaStyluTextTests`, `customer-requirements` (stav UI 31. 7. s „Upravit styl…"),
-  `review-proklik-checklist.md` (jednorázový ze 4. 8.) smazat.
-- **H14 Před smazáním tohoto souboru** [S].
-  Detail P2 (§3) do položky v roadmapě nebo do `legacy-nahrada §4`.
-  Vědomé rozdíly z §8 (T4c, T5, T6, T8, T10b), na které odkazuje archiv, do `legacy-nahrada.md`.
-  Připravenost na `B56` (§7) do `legacy-nahrada §4` spolu s R2.
-- **H15 Dlouhé položky roadmapy** [S].
-  `B155` (14 řádků), `B171`, `B190`, `B179`, `B144`, `B18` a řádek `F3` jsou delší než 6 řádků; zjištění do `docs/`
-  podle směrovací tabulky, v roadmapě odkaz.
+- **H13 Novinky se starými názvy polí** [S] **Jan**.
+  `plan-a-zmeny.md` (článek je veřejný) má „Rozestup odjezdů" a „Více stanovišť"; záznamy jsou datované.
+  Jestli je opravit a jestli přejmenování polí z 28. 10. patří do Novinek (pravidlo: jen změny, které uživatel
+  pozná), rozhodne Jan. Příručka a dokumenty pro agenty jsou opravené (changelog 2026-10-28 (21)).
+- **H16 `review-proklik-checklist.md`** [S] **Jan**.
+  Jednorázový dokument ze 4. 8. pro ruční proklik; podle hlavičky ho po projití smazat, ale část bodů pořád
+  čeká na Jana (vizuální dojem, hlášky naživo). Projít, nebo smazat.
+
+**Před smazáním tohoto souboru** přesunout §7 (připravenost na `B56`) do `legacy-nahrada §4` spolu s R2
+a odstavec níž k položce backlogu, které se týká. P2 a vědomé rozdíly už jsou v `legacy-nahrada.md §4` (H14).
 
 **K backlogu „Popisky jednoduchých prvků"** (táž revize, ověřeno na serveru):
 - Obecné názvy skupin, kvůli kterým se u tabulek rušilo „Obecné": „Vzhled" (Obdélník, Kód, Sekce), „Barvy" (Text).

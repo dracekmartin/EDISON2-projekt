@@ -79,6 +79,12 @@ public partial class StopColumnsEditorDialog : Window
         if (ViditelnostPole is not null) ElementFormBinder.PouzijViditelnost(GeneralForm.Items, ViditelnostPole);
     }
 
+    // Záložka Obecné zapíše styl prvku až při OK - sloupce mají dědit z toho, co na ní právě je.
+    private void ColumnsTab_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true) _vm.ObnovZdedene(ElementFormBinder.Nahled(GeneralForm, _element, _preFilled));
+    }
+
     private void OkButton_Click(object sender, RoutedEventArgs e)
     {
         // EDInputForm validace „Obecné" - při chybě zůstat v dialogu.

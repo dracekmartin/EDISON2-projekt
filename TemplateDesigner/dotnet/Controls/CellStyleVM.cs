@@ -16,7 +16,7 @@ namespace TemplateDesigner;
 /// <see cref="Inherited"/> drží vyřešený rodičovský styl - UI ho zobrazuje jako placeholder/default
 /// u každé vlastnosti, aby uživatel viděl, co bude skutečně platit, když nic nepřepíše.
 ///
-/// Sdíleno všemi dialogy sloupců (DepartureGrid / StopList / TableElement).
+/// Sdíleno všemi čtyřmi okny tabulek se sloupci (záložka Sloupce, <see cref="Controls.ColumnsTab"/>).
 /// </summary>
 public class CellStyleVM : INotifyPropertyChanged
 {
@@ -93,7 +93,23 @@ public class CellStyleVM : INotifyPropertyChanged
     /// Vyřešený rodičovský styl (element-level resolved). UI ho ukazuje jako
     /// placeholder u prázdných polí - uživatel vidí, co bude platit, když nic nepřepíše.
     /// </summary>
-    public ResolvedTextStyle Inherited { get; }
+    public ResolvedTextStyle Inherited { get; private set; }
+
+    /// <summary>
+    /// Nová zděděná vrstva - okno ji přepočítá, když se na záložce Obecné změní styl prvku. Bez toho by
+    /// zaškrtávátko porovnávalo se stavem prvku z otevření okna a odškrtnutí, které má sloupec odlišit
+    /// od nově zapnutého tučného prvku, by uložilo dědění (`B194h` H2).
+    /// </summary>
+    public void UpdateInherited(ResolvedTextStyle inherited)
+    {
+        Inherited = inherited;
+        OnChanged(nameof(Inherited));
+        OnChanged(nameof(EffectiveBold));
+        OnChanged(nameof(EffectiveItalic));
+        OnChanged(nameof(EffectiveUnderline));
+        OnChanged(nameof(EffectiveStrikethrough));
+        RefreshWeightOptions();
+    }
 
     // ── Řez (váha) - dynamická nabídka reálných řezů fontu ────────────────
 
@@ -264,12 +280,12 @@ public class CellStyleVM : INotifyPropertyChanged
 
     private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
 
+    private static float? Clamp(float? value, float min, float max) => value is { } v ? Math.Clamp(v, min, max) : null;
+
     /// <summary>Zapíše barvu, jen když je to platná hodnota (hex nebo barva z dat) - jinak nechá
     /// předchozí. Barva se od zavedení textového zápisu dá napsat rukou, a neplatná uložená hodnota
     /// se dřív projevila až při kreslení a šablona pak vypadala rozbitá (viz <see cref="ColorHex"/>).
     /// Notifikaci pošle volající vždy, takže se pole ve formuláři vrátí na platnou hodnotu.</summary>
-    private static float? Clamp(float? value, float min, float max) => value is { } v ? Math.Clamp(v, min, max) : null;
-
     private static void SetColor(string? value, ref string? target)
     {
         var normalized = NullIfEmpty(value);

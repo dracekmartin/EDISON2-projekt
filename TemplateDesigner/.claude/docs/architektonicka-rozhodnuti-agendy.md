@@ -197,6 +197,13 @@ export) už udělalo půlku - render bere šablonu parametrem.
 **fasádu udělat hned při implementaci A3** (~den práce navíc), takže přechod na B později
 = zabalit fasádu do služby, ne přepis. Rozhodnout při návrhu bloku A.
 
+**Navazuje `B190` - tisk z modulu jízdních řádů bez návrháře** (roadmapa, čeká na kolegy, spíš další verze).
+Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez otevření návrháře; šablonu určí jednoduchá volba výchozí šablony (nebo podobně, doladí se).
+Podle doporučení výše začít spuštěním návrháře z EDISONu s parametry (launch kontrakt už je) a render oddělit fasádou; postupovat pilotem podle R7.
+PDF bez okna ze spuštění už je pro jednu linku (`Vystup=PDF`, rozdílový JŘ 23. 10., `Config/LaunchInput`), šablona zatím jen ze `LaunchTemplates/` v exe.
+Zbývá víc linek a volba šablony z databáze.
+**Před začátkem rozhodnout**, odkud se bere výchozí šablona a jak ji uživatel volí.
+
 ---
 
 ## R5. Fonty jako součást aplikace, ne instalace Windows

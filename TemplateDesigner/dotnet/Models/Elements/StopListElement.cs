@@ -32,8 +32,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         _                             => true,
     };
 
-    /// <summary>Které pole formuláře prvku je vidět: „Více stanovišť" jen u agendy, která posílá stanoviště
-    /// podle spojů (AD) - bez nich zbývá jen „Z trasy linky", tedy výchozí chování (`B194d` E5).</summary>
+    /// <summary>Které pole formuláře prvku je vidět: „Výběr stanoviště" jen u agendy, která posílá stanoviště
+    /// podle spojů (AD) - bez nich zbývá jen „Podle trasy linky", tedy výchozí chování (`B194d` E5).</summary>
     public static bool PoleFormulareViditelne(string klic, bool stanovisteDleSpoju) =>
         klic != nameof(MultiPlatformMode) || stanovisteDleSpoju;
 

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -73,11 +72,25 @@ public class StopColumnVM : Controls.ColumnRowVM
     /// <summary>Zděděná vrstva počítá se záložním zarovnáním sloupce stejně jako tisk
     /// (<see cref="TableLayout.ResolveCascade"/>) - jinak by šedá nápověda ukazovala jiné zarovnání,
     /// než se vytiskne.</summary>
-    public static StopColumnVM FromModel(StopColumn c, StopListElement element) => new(c,
-        CellStyleVM.FromModel(c.Style?.Header, TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(),
-            c.Alignment, elementDefinesHAlign: element.HeaderStyle.HAlign is not null)),
-        CellStyleVM.FromModel(c.Style?.Data, TableLayout.ResolveCascade(null, element.ResolveColumnDataParent(),
-            c.Alignment, elementDefinesHAlign: element.DataStyle.HAlign is not null)));
+    public static StopColumnVM FromModel(StopColumn c, StopListElement element)
+    {
+        var (header, data) = Zdedene(c.Alignment, element);
+        return new(c, CellStyleVM.FromModel(c.Style?.Header, header), CellStyleVM.FromModel(c.Style?.Data, data));
+    }
+
+    /// <summary>Zděděná vrstva podle prvku, jak ho právě nastavuje záložka Obecné.</summary>
+    public void ObnovZdedene(StopListElement element)
+    {
+        var (header, data) = Zdedene(Alignment, element);
+        UpdateInherited(header, data);
+    }
+
+    private static (ResolvedTextStyle Header, ResolvedTextStyle Data) Zdedene(TextHorizontalAlignment zaloha,
+        StopListElement element) =>
+        (TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(), zaloha,
+             elementDefinesHAlign: element.HeaderStyle.HAlign is not null),
+         TableLayout.ResolveCascade(null, element.ResolveColumnDataParent(), zaloha,
+             elementDefinesHAlign: element.DataStyle.HAlign is not null));
 }
 
 // ─── Dialog ViewModel ───────────────────────────────────────────────────────
@@ -92,17 +105,11 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     /// <summary>Výsledné sloupce po OK - čteny volajícím.</summary>
     public List<StopColumn> ResultColumns { get; private set; } = [];
 
-    /// <summary>Vypnuté sloupce, ke kterým agenda nemá data - nenabízejí se, ale ze šablony nezmizí.</summary>
-    private readonly List<StopColumn> _nenabizene = [];
-
     private readonly List<StopColumn> _puvodni;
-
-    /// <summary>Sloupce doplněné oknem (šablona je nemá) a jejich podoba při otevření - nedotčené se do
-    /// šablony nezapíšou.</summary>
-    private readonly Dictionary<string, string> _doplnene = new(StringComparer.OrdinalIgnoreCase);
+    private readonly string _priOtevreni;
 
     /// <param name="nabizetSloupec">Které sloupce nabídnout (podle dat agendy); null = všechny.
-    /// Zapnutý sloupec se nabídne vždy, aby šel vypnout.</param>
+    /// Zapnutý sloupec se nabídne vždy, aby šel vypnout. Nenabídnutý ze šablony nezmizí.</param>
     public StopColumnsEditorDialogViewModel(
         StopListElement element,
         List<StopColumn> columns,
@@ -112,7 +119,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         var rows = new List<StopColumnVM>();
         foreach (var col in columns)
         {
-            if (!col.Visible && nabizetSloupec?.Invoke(col.Key) == false) { _nenabizene.Add(col); continue; }
+            if (!col.Visible && nabizetSloupec?.Invoke(col.Key) == false) continue;
             rows.Add(StopColumnVM.FromModel(col, element));
         }
 
@@ -124,9 +131,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
             if (!presentKeys.Contains(def.Key) && nabizetSloupec?.Invoke(def.Key) != false)
             {
                 def.Visible = false;
-                var row = StopColumnVM.FromModel(def, element);
-                rows.Add(row);
-                _doplnene[def.Key] = JsonSerializer.Serialize(row.ToModel());
+                rows.Add(StopColumnVM.FromModel(def, element));
             }
 
         // Seznam zastávek se při přesahu zmenší (TableLayout - nejdřív pevné šířky, pak zmenšení).
@@ -136,18 +141,22 @@ class StopColumnsEditorDialogViewModel : EDViewModel
             CanFit = true,
             MultilineHeader = true,
         };
+        _priOtevreni = Controls.ColumnsTabViewModel.Snapshot(Vysledek());
+    }
+
+    /// <summary>Přepočítá zděděné styly sloupců podle náhledu prvku se změnami ze záložky Obecné.</summary>
+    public void ObnovZdedene(StopListElement nahled)
+    {
+        foreach (var row in Columns.Rows.Cast<StopColumnVM>()) row.ObnovZdedene(nahled);
     }
 
     protected override void OnOk()
     {
         // Element-level styl + ostatní general props řeší embedded EDInputForm (code-behind).
-        var vysledek = Controls.ColumnsTabViewModel.WithNotOffered(_puvodni,
-            [.. Columns.Rows.Cast<StopColumnVM>().Select(vm => vm.ToModel())], c => c.Key);
-        ResultColumns = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodni, vysledek,
-            c => _nenabizene.Contains(c) || NedotcenyDoplneny(c));
+        ResultColumns = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodni, _priOtevreni, Vysledek());
         CloseDialog(true);
     }
 
-    private bool NedotcenyDoplneny(StopColumn c) =>
-        _doplnene.TryGetValue(c.Key, out var json) && JsonSerializer.Serialize(c) == json;
+    private List<StopColumn> Vysledek() => Controls.ColumnsTabViewModel.WithNotOffered(_puvodni,
+        [.. Columns.Rows.Cast<StopColumnVM>().Select(vm => vm.ToModel())], c => c.Key);
 }

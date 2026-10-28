@@ -13,7 +13,7 @@ namespace TemplateDesigner.Tests.Windows;
 
 /// <summary>
 /// `B194d` E5: Seznam zastávek nabízí jen to, k čemu agenda šablony posílá data. Vývěska MHD nemá
-/// sloupky, varianty tras ani stanoviště podle spojů - sloupce by zůstaly prázdné a „Více stanovišť"
+/// sloupky, varianty tras ani stanoviště podle spojů - sloupce by zůstaly prázdné a „Výběr stanoviště"
 /// by nic nedělalo. Zapnutý sloupec zůstává v nabídce, aby šel vypnout.
 /// </summary>
 public class NabidkaSeznamuZastavekTests

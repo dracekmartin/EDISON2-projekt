@@ -169,6 +169,16 @@ upozornění vpravo dole (`SazbaHlaseni`, `B178`).
 Podmínka, kterou nejde přečíst, se dál tiskne (fail-open), ale hlásí se jako upozornění.
 `Section.RowHeight` čte jen škálování šablony.
 
+### Úprava vysázené stránky před tiskem - nápad (`B171`, Jan 21. 9., bez poptávky)
+
+Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší.
+Nápad: sázecí engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi (`LayoutResult`), a nad ním by šlo u jedné stránky prvek posunout nebo zvětšit, teprve pak PDF.
+Umí to FastReport a Stimulsoft, Acrobat totéž nad hotovým PDF.
+
+⚠️ **Data se znovu nevysází** - roztažený prvek dá bílé místo, ne víc textu, a úprava platí jen pro ten jeden tisk.
+Levnější cesty k témuž: nechat prvek při přetečení narůst do volného místa pod sebou místo zmenšení písma, a přiřadit lince vlastní šablonu (index dnes jen podle agendy, chybí i dávkový tisk).
+Tohle vytáhnout, až se ukáže, že obojí nestačí.
+
 ### Import z PDF - jak funguje a kam směřuje (`B179`, 2. 10.)
 
 Dnes (`PdfImport/`): PdfPig vyčte slova s polohou, písmem a barvou, čáry, obdélníky a obrázky
@@ -185,6 +195,10 @@ s očekáváním (náš tisk ze známé šablony, skutečné PDF s ručně zapsa
 výsledku; **(2)** import nejdřív sám rozdělí stránku z PDF na bloky, model dostane obrázek
 s očíslovanými bloky a jen je pojmenuje, polohy bere import z PDF; **(3)** tabulka spojů měřená
 z PDF celá (hranice popisných sloupců, šířka sloupce spoje, písma záhlaví a buněk).
+
+**Stav (roadmapa `B179`):** krok (1) je hotový 2. 10. (`PdfImport/Kvalita/`, výchozí stav v changelogu), (2) a (3) čekají.
+Import funguje, ale není použitelný, protože polohy tabulky a poznámek jsou odhad modelu.
+Od 9. 10. je to **jen interní nástroj** (`dev.pdfImport` v lokálním configu): převody předloh dělá M-line a dál se pokračuje, až se při nich ukáže, že import šetří čas.
 
 ---
 

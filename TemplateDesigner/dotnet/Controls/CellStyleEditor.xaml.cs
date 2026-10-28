@@ -12,7 +12,7 @@ namespace TemplateDesigner.Controls;
 /// Sdílený editor TextStyle zóny (záhlaví NEBO data) pro všechny dialogy sloupců.
 /// DataContext = CellStyleVM. EditOptions řídí, které řádky se zobrazí.
 /// Placeholdery zobrazují zděděné hodnoty (CellStyleVM.Inherited) u polí, která uživatel
-/// explicitně nepřepsal. Tri-state checkboxy = null znamená „dědit".
+/// explicitně nepřepsal. Zaškrtávátka jsou dvoustavová: hodnota shodná se zděděnou se dědí.
 /// Tlačítka barev jedou přes příkazy na <see cref="CellStyleVM"/>; tenhle control mu jen dosadí,
 /// jak výběr barvy vyvolat.
 /// </summary>

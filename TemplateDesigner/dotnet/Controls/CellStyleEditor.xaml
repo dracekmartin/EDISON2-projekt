@@ -88,7 +88,7 @@
                       ItemsSource="{Binding WeightOptions}"
                       DisplayMemberPath="Label" SelectedValuePath="Value"
                       SelectedValue="{Binding FontWeight, UpdateSourceTrigger=PropertyChanged}"
-                      ToolTip="Řez (váha) písma - nabídka dle reálných řezů vybraného fontu"/>
+                      ToolTip="Řez (váha) písma - nabídka podle řezů, které vybraný font má"/>
         </Grid>
 
         <Grid Visibility="{Binding EditOptions.AllowFontSize, ElementName=Root, Converter={StaticResource BoolToVis}}">

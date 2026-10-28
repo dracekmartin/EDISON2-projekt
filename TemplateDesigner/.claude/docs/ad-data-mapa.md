@@ -293,6 +293,11 @@ obsloužených zastávek), legacy ho aproximuje **délkou textu průběhu** - ko
 a oraclem to ověřené nemáme; (b) legacy v automatickém režimu plní **až čtyři** sloupce Času, my jeden
 (zbytek na vyžádání); (c) ruční minuty nečteme (viz výše)
 
+**Návrh volby zdroje sloupce „Čas" (`B144`, odloženo Janem 11. 9.):** spočítané z jízdních dob (dnes), ruční „MHD čas tam/zpět" z trasy linky, nebo „Automaticky (dle linky)" podle přepínače u linky.
+Výchozí musí zůstat spočítané, jinak se českým firmám sloupec vyprázdní (ruční minuty mají prázdné).
+Parametr zpracuje server, takže v `GetParameters` potřebuje příznak `serverSide` (`cache-api.md`).
+⚠️ Odloženo, protože si o to zákazník neřekl: vyšlo to najevo při hovoru jako rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
+
 ⚠️ **Sloupec „Čas jízdy" nese tři stavy** (`B67`): číslo, „<" (základní trasa zastávkou projíždí bez
 stání) nebo prázdno (mimo základní trasu). Dřív bylo prázdno v obou případech. Na wire je to od té
 doby **text, ne číslo** (schéma pole zůstalo `number`, protože MHD posílá jen čísla); na gold lince

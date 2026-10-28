@@ -63,11 +63,25 @@ public class DynamicTableColumnVM : Controls.ColumnRowVM
     };
 
     /// <summary>Zděděná vrstva se záložním zarovnáním sloupce jako při tisku (<see cref="TableLayout.ResolveCascade"/>).</summary>
-    public static DynamicTableColumnVM FromModel(TableColumn c, DynamicTableElement element) => new(c,
-        CellStyleVM.FromModel(c.HeaderStyle, TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(),
-            c.Alignment, elementDefinesHAlign: element.HeaderStyle?.HAlign is not null)),
-        CellStyleVM.FromModel(c.DataStyle, TableLayout.ResolveCascade(null, element.ResolveColumnDataParent(),
-            c.Alignment, elementDefinesHAlign: element.DataStyle?.HAlign is not null)));
+    public static DynamicTableColumnVM FromModel(TableColumn c, DynamicTableElement element)
+    {
+        var (header, data) = Zdedene(c.Alignment, element);
+        return new(c, CellStyleVM.FromModel(c.HeaderStyle, header), CellStyleVM.FromModel(c.DataStyle, data));
+    }
+
+    /// <summary>Zděděná vrstva podle prvku, jak ho právě nastavuje záložka Obecné.</summary>
+    public void ObnovZdedene(DynamicTableElement element)
+    {
+        var (header, data) = Zdedene(Alignment, element);
+        UpdateInherited(header, data);
+    }
+
+    private static (ResolvedTextStyle Header, ResolvedTextStyle Data) Zdedene(TextHorizontalAlignment zaloha,
+        DynamicTableElement element) =>
+        (TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(), zaloha,
+             elementDefinesHAlign: element.HeaderStyle?.HAlign is not null),
+         TableLayout.ResolveCascade(null, element.ResolveColumnDataParent(), zaloha,
+             elementDefinesHAlign: element.DataStyle?.HAlign is not null));
 }
 
 // ─── Dialog ViewModel ────────────────────────────────────────────────────────
@@ -102,6 +116,7 @@ class DynamicTableEditorDialogViewModel : EDViewModel
             MultilineHeader = true,
             NewRow = () => DynamicTableColumnVM.FromModel(new TableColumn { Header = "", Width = 0f }, element),
         };
+        _priOtevreni = Controls.ColumnsTabViewModel.Snapshot(Vysledek());
 
         // Nabídka polí „Pole" pro aktuální zdroj (načtený element) - jen našeptávání, neseeduje sloupce.
         var current = collections.FirstOrDefault(c => c.CollectionKey == element.DataSource);
@@ -135,10 +150,20 @@ class DynamicTableEditorDialogViewModel : EDViewModel
         _seededFromKey = sourceKey;
     }
 
+    /// <summary>Přepočítá zděděné styly sloupců podle náhledu prvku se změnami ze záložky Obecné.</summary>
+    public void ObnovZdedene(DynamicTableElement nahled)
+    {
+        foreach (var row in ColumnVMs) row.ObnovZdedene(nahled);
+    }
+
     protected override void OnOk()
     {
         // Element-level styl + ostatní general props řeší embedded EDInputForm (code-behind).
-        ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
+        ResultColumns =Controls.ColumnsTabViewModel.ResultOrOriginal(_element.Columns, _priOtevreni, Vysledek());
         CloseDialog(true);
     }
+
+    private readonly string _priOtevreni;
+
+    private List<TableColumn> Vysledek() => [.. ColumnVMs.Select(vm => vm.ToModel())];
 }

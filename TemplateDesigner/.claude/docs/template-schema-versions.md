@@ -141,7 +141,7 @@ bumpne na „1.1.0" **spolu s** `ITemplateMigration`. (Kosmetický rozdíl „1.
 Caché metadat vs „1.0.0" v C# je funkčně irelevantní - `VersionComparer` je srovnává jako rovné a
 metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 
-### V1.1.0–V1.9.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
+### V1.1.0-V1.17.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
 
 - **1.1.0** `MigrationHighlightRules` - řádkové zvýraznění: skalární pár → `highlightRules[]` seznam.
 - **1.2.0** `MigrationKnizniToLinkovy` - přejmenování knižní → linkový (agenda kódy/typy).

@@ -95,6 +95,13 @@ public class DepartureGroupColumnVM : Controls.ColumnRowVM
             Header = element.HourColumnHeader,
             Width = element.HourColumnWidth,
         };
+
+    /// <summary>Zděděná vrstva podle prvku, jak ho právě nastavuje záložka Obecné.</summary>
+    public void ObnovZdedene(DepartureGridElement element)
+    {
+        if (IsHourColumn) UpdateInherited(element.ResolveHourHeaderParent(), element.ResolveHourDataParent());
+        else UpdateInherited(element.ResolveGroupHeaderParent(), element.ResolveGroupMinuteParent());
+    }
 }
 
 // ─── CustomColumnVM - řádek definice vlastního sloupce (tab „Definice sloupců") ──
@@ -310,6 +317,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     {
         _element = element;
         _puvodniSkupiny = currentStyles;
+        _puvodniStylHodin = hourColumnStyle;
         UkazatVlastniSloupce = ukazatVlastniSloupce;
         _puvodniVlastniSloupce = customColumns;
         _presety = DepartureColumnPresets.Parse(presetsJson);
@@ -399,6 +407,11 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             MultilineHeader = true,
             WidthHint = "Prázdná šířka = automaticky podle obsahu.",
         };
+        var hodiny = VysledekHodin();
+        _stylHodinPriOtevreni = Controls.ColumnsTabViewModel.Snapshot(hodiny.Styl);
+        _zahlaviHodinPriOtevreni = Controls.ColumnsTabViewModel.Snapshot(hodiny.Zahlavi);
+        _sirkaHodinPriOtevreni = Controls.ColumnsTabViewModel.Snapshot(hodiny.Sirka);
+        _vlastniSloupcePriOtevreni = Controls.ColumnsTabViewModel.Snapshot(VysledekVlastnichSloupcu());
 
         // Střídání řádků per skupina - vlastní pole, ne součást stylu buňky: kreslí se pod buňky
         // a platí jen pro každý druhý řádek, takže do CellStyleEditoru nepatří.
@@ -441,6 +454,12 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             .ToHashSet(StringComparer.Ordinal);
         for (int i = 1; ; i++)
             if (!used.Contains(i.ToString())) return i.ToString();
+    }
+
+    /// <summary>Přepočítá zděděné styly sloupců podle náhledu prvku se změnami ze záložky Obecné.</summary>
+    public void ObnovZdedene(DepartureGridElement nahled)
+    {
+        foreach (var row in Columns.Rows.Cast<DepartureGroupColumnVM>()) row.ObnovZdedene(nahled);
     }
 
     // ── OK ──────────────────────────────────────────────────────────
@@ -513,28 +532,38 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
         // Element-level styl (HeaderStyle/DataStyle/MinuteStyle/…) řeší EDInputForm v tabu Obecné
         // (code-behind přes ElementFormBinder). Zde jen per-skupina/sloupec + hour.
-        var skupiny = Columns.Rows.Cast<DepartureGroupColumnVM>().ToList();
-        var hourVm = skupiny.First(vm => vm.IsHourColumn);
-        var style = new ColumnVisualStyle { Header = hourVm.HeaderStyle.ToModel(), Data = hourVm.DataStyle.ToModel() };
-        ResultHourColumnStyle = style.IsEmpty ? null : style;
-        ResultHourColumnHeader = hourVm.Header.Trim();
-        // Sloupec hodin má pevnou šířku (element-level); prázdné pole ponechá stávající.
-        ResultHourColumnWidth = hourVm.Width is float hw && hw > 0 ? hw : _element.HourColumnWidth;
+        var hodiny = VysledekHodin();
+        ResultHourColumnStyle = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodniStylHodin, _stylHodinPriOtevreni, hodiny.Styl);
+        ResultHourColumnHeader = Controls.ColumnsTabViewModel.ResultOrOriginal(_element.HourColumnHeader, _zahlaviHodinPriOtevreni, hodiny.Zahlavi);
+        ResultHourColumnWidth = Controls.ColumnsTabViewModel.ResultOrOriginal(_element.HourColumnWidth, _sirkaHodinPriOtevreni, hodiny.Sirka);
 
         // Beze změny vrátit uložené skupiny: okno pro skupiny bez nastavení vytváří výchozí řádky a ty by
         // šablonu změnily (`B194d` E13d). Skupiny, které vybraná linka nemá, zůstanou (E13g).
-        var nabidnute = SkupinyZRadku(skupiny);
+        var nabidnute = SkupinyZRadku(Columns.Rows.Cast<DepartureGroupColumnVM>());
         ResultGroupColumns = JsonSerializer.Serialize(nabidnute) == _skupinyPriOtevreni
             ? [.. _puvodniSkupiny]
             : Controls.ColumnsTabViewModel.WithNotOffered(_puvodniSkupiny, nabidnute, g => g.SkupinaDnuId);
 
-        // Definice vlastních sloupců - null = automaticky (vypnuté, nebo zapnuté bez sloupců)
-        ResultCustomColumns = !UkazatVlastniSloupce ? _puvodniVlastniSloupce
-            : UseCustomColumns && CustomColumnVMs.Count > 0 ? CustomColumnVMs.Select(vm => vm.ToModel()).ToList()
-            : null;
+        ResultCustomColumns = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodniVlastniSloupce,
+            _vlastniSloupcePriOtevreni, VysledekVlastnichSloupcu());
 
         CloseDialog(true);
     }
+
+    private (ColumnVisualStyle? Styl, string Zahlavi, float Sirka) VysledekHodin()
+    {
+        var hourVm = Columns.Rows.Cast<DepartureGroupColumnVM>().First(vm => vm.IsHourColumn);
+        var style = new ColumnVisualStyle { Header = hourVm.HeaderStyle.ToModel(), Data = hourVm.DataStyle.ToModel() };
+        // Sloupec hodin má pevnou šířku (element-level); prázdné pole ponechá stávající.
+        return (style.IsEmpty ? null : style, hourVm.Header.Trim(),
+                hourVm.Width is float hw && hw > 0 ? hw : _element.HourColumnWidth);
+    }
+
+    /// <summary>Definice vlastních sloupců - null = automaticky (vypnuté, nebo zapnuté bez sloupců).</summary>
+    private List<DepartureColumnDefinition>? VysledekVlastnichSloupcu() =>
+        !UkazatVlastniSloupce ? _puvodniVlastniSloupce
+        : UseCustomColumns && CustomColumnVMs.Count > 0 ? [.. CustomColumnVMs.Select(vm => vm.ToModel())]
+        : null;
 
     /// <summary>Hláška je jen na záložce Vlastní definice - z jiné záložky by OK nic neudělalo a neřeklo proč
     /// (`B194d` E13h). Okno proto na záložku přepne a vybere chybný sloupec.</summary>
@@ -547,6 +576,9 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
     private readonly List<DepartureGroupColumnStyle> _puvodniSkupiny;
     private readonly string _skupinyPriOtevreni;
+    private readonly ColumnVisualStyle? _puvodniStylHodin;
+    private readonly string _stylHodinPriOtevreni, _zahlaviHodinPriOtevreni, _sirkaHodinPriOtevreni;
+    private readonly string _vlastniSloupcePriOtevreni;
 
     private static List<DepartureGroupColumnStyle> SkupinyZRadku(IEnumerable<DepartureGroupColumnVM> rows) =>
         [.. rows.Where(vm => !vm.IsHourColumn).Select(vm => vm.ToModel())];

@@ -155,18 +155,18 @@
   datech Zastávkového JŘ MHD, Linkový JŘ AD rozdíly vypisuje značkou „jede jinudy", Zastávkový JŘ AD
   větami starého zastávkového tisku, Zastávkový JŘ MHD z dat modulu MHD.
 - **T10b** Stanoviště u názvu zastávky - vědomý rozdíl („, stan.16" v Linkovém JŘ AD × „, označník 3"
-  v nadpisu rozdělené vývěsky; rozhodnutí Jan 26. 10.; `konzistence-agend-jr.md` §8).
+  v nadpisu rozdělené vývěsky; rozhodnutí Jan 26. 10.; `legacy-nahrada.md` §4, Vědomé rozdíly mezi agendami JŘ).
 - **T10a** Věta o pokračování spoje v Linkovém JŘ AD z číselníku firmy v jazyce šablony, bez něj české
   znění (changelog 2026-10-26 (19)).
 - **T9** Oddělovač poznámek ve výchozích šablonách zastávkových JŘ (AD i MHD) „ - " místo dlouhé pomlčky;
   linkové šablony vědomě dál tři mezery (zarovnání do sloupců). Test na dlouhou pomlčku v celé šabloně
   (changelog 2026-10-26 (18)).
 - **T8** Zóny - vědomý rozdíl, každá agenda drží pravidlo svého starého modulu (rozhodnutí Jan 26. 10.;
-  `konzistence-agend-jr.md` §8), opravený zavádějící komentář v `LinkovyJrMhd.ZonyZastavky`.
+  `legacy-nahrada.md` §4, Vědomé rozdíly mezi agendami JŘ), opravený zavádějící komentář v `LinkovyJrMhd.ZonyZastavky`.
 - **T4d** Přestup v legendě Zastávkového JŘ AD z číselníku stálých značek firmy jako Linkový JŘ AD,
   bez něj „přestup na autobus / vlak" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (17)). Tím je T4 celé.
 - **T4c** „Na znamení" - vědomý rozdíl: Zastávkový JŘ AD krátce napevno, Linkový JŘ AD z číselníku firmy
-  (rozhodnutí Jan 26. 10., potvrzuje srpnové; `konzistence-agend-jr.md` §8).
+  (rozhodnutí Jan 26. 10., potvrzuje srpnové; `legacy-nahrada.md` §4, Vědomé rozdíly mezi agendami JŘ).
 - **T4b** Překlep „částečne" opravený v obou agendách AD, Zastávkový JŘ AD i tvarem „spoj s částečně
   bezbariérově přístupným vozidlem…" jako linkové (changelog 2026-10-26 (16)).
 - **T4a** Vysvětlivka bezbariérového vozidla i v Zastávkovém JŘ AD „spoj s bezbariérově přístupným
@@ -222,6 +222,16 @@
 - **E3b** Poznámky kostru tabulek nepřebírají (nejsou tabulka), opravené jen věcné chyby: pryč Barva pozadí
   buněk, kterou nekreslí, zapnutí záhlaví ve skupině Záhlaví místo Obecné, nápověda u Mřížky, že je to jen
   čára pod záhlavím (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (15)).
+- **H1** OK beze změny v okně tabulky nezapíše ani hodnoty, které okno při načtení převede - porovnává se výstup
+  okna při otevření a při OK (revize 28. 10.; changelog 2026-10-28 (18)).
+- **H2** Záložka Sloupce dědí z toho, co je právě na záložce Obecné, takže zaškrtávátko stylu sloupce porovnává
+  s tím, co se vytiskne (revize 28. 10.; changelog 2026-10-28 (19)).
+- **H4, H5, H7, H8** Posun sloupce bez zdvojení v seznamu, podtržení pod barevnou značkou její barvou, „Text
+  záhlaví" a popisky Vlastní definice sloupců bez dvojteček, „Rozdělení sloupců podle platnosti" a nápověda
+  s „Výběr stanoviště" (revize 28. 10.; changelog 2026-10-28 (20)).
+- **H13 (dokumentace), H14, H15** Příručka a dokumenty pro agenty s dnešními popisky a okny, `P2` a vědomé
+  rozdíly mezi agendami v `legacy-nahrada.md §4`, dlouhé položky roadmapy zkrácené s detailem v `docs/`
+  (revize 28. 10.; changelog 2026-10-28 (21)). Novinky zůstaly v `H13` na rozhodnutí Jana.
 
 ## Popisky polí podle pravidel - složité prvky (hotovo 28. 10. 2026)
 

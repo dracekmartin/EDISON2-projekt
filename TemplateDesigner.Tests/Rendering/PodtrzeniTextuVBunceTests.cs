@@ -54,6 +54,32 @@ public class PodtrzeniTextuVBunceTests
         Assert.True(s > bez + PrirustekCary, $"podtržený čas má {s} tmavých pixelů, bez podtržení {bez}");
     }
 
+    /// <summary>Pod úsekem s vlastní barvou (značka jedné verze linky v rozdílovém JŘ) je čára jeho barvou,
+    /// jako pod barevným textem buňky - do 28. 10. byla v barvě textu buňky (`B194h` H5).</summary>
+    [Fact]
+    public void BarevnyUsek_Podtrzeni_MaJehoBarvu()
+    {
+        int bez = Cervene(Usekovy(underline: false, barvaMinut: "#FFFF0000"));
+        int s = Cervene(Usekovy(underline: true, barvaMinut: "#FFFF0000"));
+
+        Assert.True(s > bez + PrirustekCary, $"podtržený červený úsek má {s} červených pixelů, bez podtržení {bez}");
+    }
+
+    private static int Cervene(SKBitmap bmp)
+    {
+        using (bmp)
+        {
+            int n = 0;
+            for (int y = 0; y < bmp.Height; y++)
+                for (int x = 0; x < bmp.Width; x++)
+                {
+                    var c = bmp.GetPixel(x, y);
+                    if (c.Red > 180 && c.Green < 90 && c.Blue < 90) n++;
+                }
+            return n;
+        }
+    }
+
     private static SKBitmap Mrizka(Action<DepartureGridElement> nastav, string? znacka = null)
     {
         var prvek = new DepartureGridElement
@@ -82,11 +108,12 @@ public class PodtrzeniTextuVBunceTests
         return bmp;
     }
 
-    private static SKBitmap Usekovy(bool underline)
+    private static SKBitmap Usekovy(bool underline, string? barvaMinut = null)
     {
         var styl = new TextStyle { FontFamily = "Arial", FontSize = 10, Underline = underline }
             .Resolve(CellDefaults.Default);
-        List<SymbolRunRenderer.Run> useky = [new("16", false), new(" ", false, 0.75f), new("40", false, 0.75f)];
+        List<SymbolRunRenderer.Run> useky = [new("16", false), new(" ", false, 0.75f),
+            new("40", false, 0.75f, Barva: barvaMinut)];
 
         var bmp = new SKBitmap(200, 80, SKColorType.Rgba8888, SKAlphaType.Premul);
         using var canvas = new SKCanvas(bmp);

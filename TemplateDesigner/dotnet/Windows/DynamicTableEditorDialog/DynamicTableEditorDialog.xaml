@@ -27,7 +27,7 @@
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->
             <TabItem Header="Sloupce">
-                <controls:ColumnsTab DataContext="{Binding Columns}">
+                <controls:ColumnsTab DataContext="{Binding Columns}" IsVisibleChanged="ColumnsTab_IsVisibleChanged">
                     <!-- Odkud sloupec bere hodnotu - jen Tabulka z dat (DataContext = vybraný sloupec). -->
                     <controls:ColumnsTab.ExtraColumnTemplate>
                         <DataTemplate>

@@ -58,6 +58,26 @@ public class ZalozkaSloupceTests
         Assert.Equal("Šipka", tab.SelectedRow!.DisplayName);
     }
 
+    /// <summary>Seznam v okně nesmí při posunu ani na okamžik držet týž řádek dvakrát - seznam by ztratil
+    /// výběr a editor stylu pod ním by na chvíli zmizel (`B194h` H4; do 28. 10. se prohazovalo přiřazením).</summary>
+    [Fact]
+    public void Posun_KazdyRadekJeVSeznamuVzdyJednou()
+    {
+        var tab = new ColumnsTabViewModel([new Radek("Zastávka"), new Radek("Spoje", pevny: true), new Radek("Šipka")]);
+        var zdvojeno = new List<string>();
+        tab.Rows.CollectionChanged += (_, _) =>
+        {
+            if (tab.Rows.Distinct().Count() != tab.Rows.Count) zdvojeno.Add(string.Join(",", Poradi(tab)));
+        };
+
+        tab.SelectedRow = tab.Rows[0];
+        tab.MoveDownCommand.Execute(null);
+
+        Assert.Empty(zdvojeno);
+        Assert.Equal(["Šipka", "Spoje", "Zastávka"], Poradi(tab));
+        Assert.Equal("Zastávka", tab.SelectedRow!.DisplayName);
+    }
+
     /// <summary>Do součtu šířek jdou jen viditelné sloupce, které se počítají do šířky prvku
     /// (spoje v Tabulce spojů ne); okno bez šířky prvku přesah nehlídá (Minuty).</summary>
     [Fact]

@@ -208,7 +208,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // Dělení sloupců spojů podle platnosti (legacy in("A",2,"arr",3) = 0/1/2)
     s p = ##class(%DynamicObject).%New()
     s p.name = "DELENI_SLOUPCU"
-    s p.label = "Rozdělení sloupců dle platnosti"
+    s p.label = "Rozdělení sloupců podle platnosti"
     s p.type = "enum"
     // Skupina = název prvku jako u vývěsek; do 23. 10. „Tabulka linky", což se pletlo s agendou (`ux-conventions §8`).
     s p.group = "Tabulka spojů"
@@ -720,7 +720,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Mapování volby parametru „Rozdělení sloupců dle platnosti" na legacy mód 0/1/2.
+/// Mapování volby parametru „Rozdělení sloupců podle platnosti" na legacy mód 0/1/2.
 ClassMethod DeleniZParametru(label As %String) As %Integer
 {
     // „Vlastní rozložení" sem nemá jak dojít jako skutečná volba - je to jen ukazatel a objeví se,
@@ -944,7 +944,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         }
     }
     }
-    i spoje.%Size() = 0 q ..PrazdnaStranka("Žádný spoj linky nepatří do sloupců šablony. Zkontrolujte Rozdělení sloupců dle platnosti, případně vlastní rozložení sloupců u prvku Tabulka spojů.")
+    i spoje.%Size() = 0 q ..PrazdnaStranka("Žádný spoj linky nepatří do sloupců šablony. Zkontrolujte Rozdělení sloupců podle platnosti, případně vlastní rozložení sloupců u prvku Tabulka spojů.")
 
     // ── poznámky (pevné pořadí druhů 1:1 MT3: platnosti, NZ, návaznosti - pokračuje/vyčká/
     //    navazuje, atributy, místenkování, stálé značky, poznámky linky) ──

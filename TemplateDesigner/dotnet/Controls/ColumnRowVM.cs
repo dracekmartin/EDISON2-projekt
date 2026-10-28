@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using TemplateDesigner.Models;
 using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Controls;
@@ -86,6 +87,12 @@ public abstract class ColumnRowVM : INotifyPropertyChanged, IColumnRowVM
     {
         HeaderStyle.Reset();
         DataStyle.Reset();
+    }
+
+    protected void UpdateInherited(ResolvedTextStyle header, ResolvedTextStyle data)
+    {
+        HeaderStyle.UpdateInherited(header);
+        DataStyle.UpdateInherited(data);
     }
 
     private void OnStyleChanged(object? sender, PropertyChangedEventArgs e)

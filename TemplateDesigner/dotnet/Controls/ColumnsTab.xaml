@@ -73,7 +73,7 @@
 
                 <TextBlock Text="Sloupec" Style="{StaticResource Title}"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                    <TextBlock Text="Záhlaví" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBlock Text="Text záhlaví" VerticalAlignment="Center" Margin="0,0,4,0"/>
                     <TextBox Width="160" Margin="0,0,10,0"
                              Text="{Binding SelectedRow.Header, UpdateSourceTrigger=LostFocus}"
                              AcceptsReturn="{Binding MultilineHeader}" MaxLines="3" VerticalScrollBarVisibility="Auto"

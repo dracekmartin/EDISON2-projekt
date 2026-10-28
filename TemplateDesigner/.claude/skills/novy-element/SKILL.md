@@ -12,7 +12,7 @@ Tento soubor je autoritativní reference. Kroky jsou uspořádány tak, že po k
 Reference implementace:
 - **Jednoduchý element:** `BarcodeElement` (pevná výška, vlastní rendering, žádný TextStyle)
 - **Textový element:** `TextElement` (TextStyle, dynamická výška přes WordWrap)
-- **Tabulkový element:** `TableElement` / `StopListElement` / `DepartureGridElement` - používají **jednotnou kaskádu** `column.Style → element.HeaderStyle/DataStyle → defaults → CellDefaults`; pozicování textu přes `Rendering/CellRenderer.DrawCell`; viz `mvvm-patterns.md §Jednotná kaskáda stylů buněk`. Pro sloupce použij sdílený `Controls/CellStyleEditor` UserControl v dialogu (nikdy neduplikuj inline XAML)
+- **Tabulkový element:** `TableElement` / `StopListElement` / `DepartureGridElement` - používají **jednotnou kaskádu** `column.Style → element.HeaderStyle/DataStyle → defaults → CellDefaults`; pozicování textu přes `Rendering/CellRenderer.DrawCell`; viz `mvvm-patterns.md §Jednotná kaskáda stylů buněk`. Okno sloupců staví na sdílené záložce `Controls/ColumnsTab` (editor stylu `CellStyleEditor` je její součást) a formulář na kostře z `ux-conventions §4` - viz Dodatek
 - **Komplexní element:** `NotesLegendElement` (dědí z `ScheduleElementBase`, per-column styling, data cache)
 
 ---
@@ -192,7 +192,7 @@ Strom technické údaje prvku neukazuje (`B194` E1).
 
 ## Dodatek: tabulkový element s per-column stylingem
 
-Pokud nový element má **sloupce se samostatným stylingem záhlaví/dat** (jako `TableElement`/`StopListElement`/`DepartureGridElement`), postupuj podle 4 doplňujících kroků (detaily v `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`):
+Pokud nový element má **sloupce se samostatným stylingem záhlaví/dat** (jako `TableElement`/`StopListElement`/`DepartureGridElement`), postupuj podle 5 doplňujících kroků (detaily v `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`):
 
 **1. Model - per-column `TextStyle?`:**
 ```csharp
@@ -247,12 +247,32 @@ Záložku Sloupce **nekopíruj** - dodej jen:
   Styl: `CellStyleVM.FromModel(column.HeaderStyle, TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(), col.Alignment, …))`
 - **ViewModel okna**: `Columns = new ColumnsTabViewModel(rows) { ElementWidth = () => element.Width, CanFit = …, NewRow = … }`,
   v `OnOk` jen výsledky (prvek neměnit - provede je volající jako jeden vratný krok)
+- **OK beze změny vrací původní sloupce** přes `ColumnsTabViewModel.ResultOrOriginal`. Okno při načtení
+  doplňuje vypnuté sloupce a převádí hodnoty, takže porovnání se šablonou by OK bez dotyku zapsalo a přidalo
+  krok do Ctrl+Z. Pojistka `OkBezeZmenyTests` - nový prvek do ní přidej.
+- **Co okno nenabízí, nechá v šabloně na místě** přes `ColumnsTabViewModel.WithNotOffered` (sloupec, ke kterému
+  agenda nemá data, skupina dnů jiné linky). Šablona slouží víc linkám i agendám; bez toho OK nastavení ztratí
+  nebo přehází. Vzor obou: `StopColumnsEditorDialogViewModel`.
 - **XAML**: `<controls:ColumnsTab DataContext="{Binding Columns}"/>`, pole navíc přes `ExtraColumnTemplate` / `ExtraDataTemplate`
 
 **Reference implementace:** `LineTableColumnsEditorDialog` (pevný sloupec spojů, zvláštní zóna šipky),
 `DynamicTableEditorDialog` (přidání/odebrání, pole navíc), `DepartureGroupEditorDialog` (skupiny dnů + sloupec hodin).
 
-**NIKDY neduplikuj inline XAML pro editaci stylu buněk** - vše přes `<CellStyleEditor>`.
+**NIKDY nekopíruj záložku Sloupce ani editor stylu buněk** - vše přes `<ColumnsTab>`, který `CellStyleEditor` obsahuje.
+
+**5. Formulář `*ElementEdit.cls` (záložka Obecné i panel vlastností):**
+
+Soubor `CACHE/ALVA/TemplateDesigner/EDInputForm/NovyElementEdit.cls`, napojení v `MainWindow.PanelCacheClass`
+a v konstantě `GeneralSchemaClass` okna sloupců. Formulář dodrží kostru z `ux-conventions §4`:
+- **Nahoře skupiny jen tohoto prvku**, pojmenované podle toho, čeho se na výtisku týkají; skupina „Obecné" se nepoužívá.
+- **Pod nimi vždy stejný konec:** Záhlaví, Datové buňky, pak `BaseElementFields.AddBorder`, `AddGrid`, `AddPosition`,
+  `AddConditions` (Rámeček prvku, Mřížka, Pozice a velikost, Podmínky).
+- **Skupina části** (Záhlaví, Datové buňky): první pole část zapíná, pak pole pro celý řádek (výška, střídání),
+  pod nimi sada stylu `StyleFields.Add(form, "HeaderStyle", …)` - sada Buňka (`bunka = 1`, 15 polí) pro záhlaví
+  a buňky, sada Text (`bunka = 0`, 8 polí) pro text uvnitř buňky. Pole, které prvek nekreslí, formulář nenabízí.
+- **Popisky** podle `ux-conventions §8`; deskriptory v C# mají tytéž popisky a skupiny (`DescriptorLabelsMatchFormTests`,
+  `EDInputFormSchemaDriftTests`).
+- **Nasazení** `.cls` jen editačním nástrojem a ověření voláním `Init` na serveru - `cache-api.md` §Nasazení `.cls`.
 
 ---
 
@@ -268,7 +288,8 @@ Záložku Sloupce **nekopíruj** - dodej jen:
 | 7 | `Windows/MainWindow/MainWindow.xaml` + `EDIcons.xaml` + PNG | volitelné |
 | 8 | `Models/Layout/SkiaHeightCalculator.cs` | jen u dynamické výšky |
 | 9 | `Models/ElementNames.cs` (ForUser, ForType) | ✅ |
-| 10 | `changelog.md`, `CLAUDE.md` | ✅ |
+| 10 | `changelog.md` (`CLAUDE.md` jen u neodvoditelného invariantu) | ✅ |
+| D5 | `CACHE/.../EDInputForm/NovyElementEdit.cls` + `MainWindow.PanelCacheClass` | u tabulkového prvku |
 
 ---
 
@@ -281,7 +302,9 @@ konstanta bez `JsonDerivedType`).
 2. `dotnet test TemplateDesigner.Tests --filter ElementRegistrationDrift` - musí projít
 3. `dotnet test TemplateDesigner.Tests --filter CloneCompleteness` - hlídá, že `Clone()`
    nezapomněl novou property
-4. **Přečti výstup**, netvrď „mělo by to projít". Když test spadne, oprav a spusť znovu.
+4. U prvku s formulářem `dotnet test TemplateDesigner.Tests --filter EDInputFormSchemaDrift` a `--filter DescriptorLabelsMatchForm`,
+   u okna sloupců `--filter OkBezeZmeny`
+5. **Přečti výstup**, netvrď „mělo by to projít". Když test spadne, oprav a spusť znovu.
 
 Vizuál (jak element vypadá na canvasu a v PDF) žádný test nevidí - to musí proklikat
 uživatel. Do reportu napiš konkrétní cestu: co přidat, kam táhnout, co má být vidět.

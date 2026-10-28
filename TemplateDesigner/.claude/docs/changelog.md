@@ -1,5 +1,39 @@
 ﻿# Changelog
 
+## 2026-10-28 (21) - Příručka a dokumentace po sjednocení formulářů (`B194h` H13-H15)
+
+- **Příručka:** Editor skupin dnů popisuje záložky Obecné, Sloupce a u AD Vlastní definice sloupců a říká, že styl záhlaví jde nastavit po skupinách (od 16. 9. to jde, příručka tvrdila opak).
+  Pole se jmenují jako ve formuláři: Čáry mezi řádky, Jen spoje se značkami / Bez spojů se značkami, Střídání řádků: Barva pozadí, Font, Barva pozadí, Text záhlaví, Rozdělení sloupců podle platnosti.
+- **Pro agenty:** skill `novy-element` vede na sdílenou záložku Sloupce, kostru formuláře z `ux-conventions §4` a ochranu proti zápisu při OK beze změny; opravené `elementy-architektura.md`, `ux-conventions.md`, `template-schema-versions.md`, `customer-requirements`.
+- **Roadmapa:** dlouhé položky (`B155`, `B171`, `B190`, `B179`, `B144`, `B18`, `F3`) zkrácené na pár řádků, zjištění přesunutá do `docs/` podle směrovací tabulky. Detail `P2` a vědomé rozdíly mezi agendami JŘ jsou v `legacy-nahrada.md §4`.
+
+## 2026-10-28 (20) - Drobnosti po revizi sjednocení (`B194h` H4, H5, H7, H8)
+
+- **Posun sloupce** šipkami ▲ ▼ v oknech tabulek už na okamžik neztratí výběr - seznam při posunu nedrží týž sloupec dvakrát (pojistka `ZalozkaSloupceTests.Posun_KazdyRadekJeVSeznamuVzdyJednou`, na původním kódu padala).
+- **Podtržení a přeškrtnutí** času v Tabulce spojů má pod značkou s vlastní barvou (verze linky v rozdílovém JŘ) barvu té značky, ne barvu textu (pojistka `PodtrzeniTextuVBunceTests.BarevnyUsek_Podtrzeni_MaJehoBarvu`, na původním kódu padala).
+- **Okna sloupců:** pole s textem záhlaví se jmenuje „Text záhlaví", ať se neplete s nadpisem sekce stylu „Záhlaví" pod ním.
+  Vlastní definice sloupců u Minut má popisky bez dvojteček a záhlaví sloupce zadává jako „1. řádek" a „2. řádek".
+- **Parametr „Rozdělení sloupců podle platnosti"** místo „dle platnosti" (vývěska i linkový JŘ AD, hláška linky bez spojů a nápověda F1).
+  Hodnota se ukládá podle klíče, uložené volby zůstávají.
+  Nápověda parametru „Číslo stanoviště podle" jmenuje pole „Výběr stanoviště" místo dřívějšího „Více stanovišť".
+  Ověřeno voláním `GetParameters` obou agend na dev serveru.
+
+## 2026-10-28 (19) - Sloupce dědí z toho, co je právě na záložce Obecné (`B194h` H2)
+
+Okno tabulky zapíše záložku Obecné do prvku až při OK, záložka Sloupce ale ukazovala zděděné hodnoty z doby otevření okna.
+Když uživatel na Obecné zapnul tučné záhlaví a u jednoho sloupce ho chtěl vypnout, zaškrtávátko to porovnalo se starým stavem prvku, uložilo dědění a sloupec se vytiskl tučně.
+- Při přechodu na záložku Sloupce okno přepočítá zděděné hodnoty podle toho, co je na Obecné: šedé nápovědy, zaškrtávátka i nabídka řezů ukazují, co se opravdu vytiskne.
+- Platí ve všech čtyřech oknech tabulek. Prvek se tím nemění, změny ze záložky Obecné zapíše dál až OK.
+- Pojistky `ZalozkaSloupceOpravyTests.TucneZeZalozkyObecne_SloupecOdlisenyOdskrtnutim_ZustaneNetucny` a `NahledProZalozkuSloupce_PrvekNemeni`. Přechod mezi záložkami v okně není ověřený proklikem.
+
+## 2026-10-28 (18) - OK beze změny nezapíše ani hodnoty, které okno převede (`B194h` H1)
+
+Okna tabulek některé uložené hodnoty při načtení převádějí: prázdný styl sloupce zahodí, mezeru na konci výrazu oříznou, starší zápis dnů „7+" u vlastních sloupců Minut načtou jako „+".
+OK beze změny pak šablonu stejně označilo jako změněnou a přidalo krok do Ctrl+Z, protože se porovnávala šablona s výstupem okna.
+- Okno si výstup zapamatuje při otevření a při OK ho porovná s tím, co vrací teď. Beze změny vrátí původní hodnoty šablony.
+- Platí pro sloupce všech čtyř oken, hodiny Minut (záhlaví, šířka, styl) i vlastní sloupce Minut.
+- Reprodukce a pojistky v `OkBezeZmenyTests` (čtyři vstupy, na původním kódu padaly).
+
 ## 2026-10-28 (17) - Popisky Minut odjezdů, Tabulky spojů, Poznámek a tabulek podle pravidel
 
 Popisky složitých prvků podle týchž pravidel jako Seznam zastávek (rozhodnutí Jan 28. 10.).
@@ -143,7 +177,7 @@ Rozhodnutí Jan 28. 10. (detail `konzistence-agend-jr.md` E3), zatím zapracovan
 - **Sady stylu:** Buňka (15 polí) pro záhlaví a buňky, Text (8 polí, písmo a barva textu) pro minutu a značky u odjezdů a pro okno 2. řádku záhlaví Minut. Pozadí, zarovnání ani okraje tomuto textu prvek nekreslí. Pořadí v sadě Buňka: nejdřív pole textu, pak pole buňky. Formulář Minut se zkrátil z 96 na 75 polí.
 - **„Barva pozadí"** místo „Pozadí" ve všech tabulkách, oknech sloupců a v programu bez skupin („Barva pozadí záhlaví"), aby šla najít hledáním „barva". Tabulka spojů a Poznámky mají ve skupinách Záhlaví / Datové buňky krátké „Barva textu" / „Barva pozadí".
 
-Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` všech dotčených formulářů; pojistky `EDInputFormSchemaDriftTests.TextUvnitrBunky_MaJenSaduText` a `SadaStyluTextTests`.
+Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` všech dotčených formulářů; pojistky `EDInputFormSchemaDriftTests.TextUvnitrBunky_MaJenSaduText` a `SadaStyluTextTests` (smazán v (3) spolu s oknem stylu; 2. řádek záhlaví od té doby hlídá `TextUvnitrBunky_MaJenSaduText`).
 
 ## 2026-10-27 (32) - Velikost písma všude 3-72 pt (`B194d` E8f)
 

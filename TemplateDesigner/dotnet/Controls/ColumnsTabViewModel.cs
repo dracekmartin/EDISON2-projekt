@@ -33,17 +33,16 @@ public sealed class ColumnsTabViewModel : INotifyPropertyChanged
     public ObservableCollection<ColumnRowVM> Rows { get; } = [];
 
     /// <summary>
-    /// Sloupce po OK okna: když uživatel nic nezměnil, vrátí původní sloupce šablony beze změny. Okno
-    /// doplňuje vypnuté sloupce, které starší šablona nemá, a nenabízené řadí na konec - bez toho by OK
-    /// beze změny změnilo šablonu a přidalo krok do Ctrl+Z (`B194d` E13d).
+    /// Výsledek okna po OK: když se neliší od výsledku při otevření, vrátí původní hodnotu šablony. Okno
+    /// doplňuje vypnuté sloupce, které starší šablona nemá, a hodnoty při načtení převádí (prázdný styl,
+    /// mezera na konci, starší zápis dnů) - porovnání se šablonou by OK beze změny zapsalo a přidalo krok
+    /// do Ctrl+Z (`B194d` E13d, `B194h` H1).
     /// </summary>
-    /// <param name="ignore">Sloupce mimo porovnání: nenabízené (okno je jen vrací) a doplněné, na které
-    /// uživatel nesáhl.</param>
-    public static List<T> ResultOrOriginal<T>(List<T> original, List<T> result, Func<T, bool> ignore) =>
-        JsonSerializer.Serialize(original.Where(c => !ignore(c)).ToList())
-            == JsonSerializer.Serialize(result.Where(c => !ignore(c)).ToList())
-            ? [.. original]
-            : result;
+    /// <param name="atOpen">Výsledek okna serializovaný hned po otevření (<see cref="Snapshot"/>).</param>
+    public static T ResultOrOriginal<T>(T original, string atOpen, T result) =>
+        Snapshot(result) == atOpen ? original : result;
+
+    public static string Snapshot<T>(T result) => JsonSerializer.Serialize(result);
 
     /// <summary>
     /// Výsledek okna doplněný o položky šablony, které okno nenabídlo (sloupec, ke kterému agenda nemá
@@ -166,9 +165,9 @@ public sealed class ColumnsTabViewModel : INotifyPropertyChanged
         while (to >= 0 && to < Rows.Count && !Rows[to].CanMove) to += direction;
         if (to < 0 || to >= Rows.Count) return;
 
-        var other = Rows[to];
-        Rows[to] = row;
-        Rows[from] = other;
+        // Dvěma přesuny, ne přiřazením: seznam by na okamžik držel řádek dvakrát a ztratil výběr.
+        Rows.Move(from, to);
+        Rows.Move(to - direction, from);
         SelectedRow = row;
     }
 
