@@ -20,15 +20,4 @@ public record CellStyleEditOptions
 
     /// <summary>Vše povolené - výchozí chování.</summary>
     public static readonly CellStyleEditOptions AllEnabled = new();
-
-    /// <summary>Sada Text: písmo a barva textu. Pro text uvnitř buňky (2. řádek záhlaví Minut), který
-    /// nemá vlastní pozadí, zarovnání ani okraje - prvek je nekreslí. Totéž jako <c>bunka = 0</c>
-    /// v <c>StyleFields.cls</c>.</summary>
-    public static readonly CellStyleEditOptions TextOnly = new()
-    {
-        AllowBackgroundColor = false,
-        AllowHAlign = false,
-        AllowVAlign = false,
-        AllowPadding = false,
-    };
 }

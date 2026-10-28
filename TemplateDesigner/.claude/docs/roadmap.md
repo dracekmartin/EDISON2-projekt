@@ -28,8 +28,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
 - **E3** Kostra formulářů tabulek - **rozhodnuto** (Jan 28. 10., `konzistence-agend-jr.md` E3), hotový Seznam
-  zastávek a sady stylu Buňka / Text. Zbývá převést Minuty (styl za tlačítkem?), Tabulku spojů, Tabulku z dat
-  a Pevnou tabulku; Poznámky projít zvlášť [L] **Jan**
+  zastávek, Minuty odjezdů a sady stylu Buňka / Text. Zbývá převést Tabulku spojů, Tabulku z dat a Pevnou
+  tabulku; Poznámky projít zvlášť [L] **Jan**
 - **Poznámky: Barva pozadí buněk se nabízí a nekreslí** - formulář i panel ji mají, kreslení ji nečte
   (`NotesLegendElement.cs`); dokreslit pod blok, nebo odebrat **Jan** [S]
 - **Ověřit: Seznam zastávek po „<1" možná přepne písmo na výchozí** - `StopListElement.cs:928` uvolní sdílené

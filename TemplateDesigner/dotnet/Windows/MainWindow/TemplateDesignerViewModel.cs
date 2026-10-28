@@ -1213,13 +1213,12 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Odjezdová mřížka: tab „Obecné" (EDInputForm) + per-column styly + styl sloupce hodin
     /// jako jeden undo krok.</summary>
     public void ApplyDepartureGridEdit(DepartureGridElement element, IDesignerCommand? generalCommand,
-        IEnumerable<IDesignerCommand> styleCommands, List<DepartureGroupColumnStyle> resultGroupColumns,
+        List<DepartureGroupColumnStyle> resultGroupColumns,
         bool hasGroups, ColumnVisualStyle? resultHourColumnStyle,
         List<DepartureColumnDefinition>? resultCustomColumns)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.AddRange(styleCommands);
         if (hasGroups)
             cmds.Add(new SetPropertyCommand("Skupiny dnů", element.GroupColumns, resultGroupColumns,
                 v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));

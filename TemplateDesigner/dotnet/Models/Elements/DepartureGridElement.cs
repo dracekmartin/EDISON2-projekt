@@ -785,6 +785,10 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         return p;
     }
 
+    /// <summary>Z čeho dědí 2. řádek záhlaví: ze záhlaví prvku, prázdná pole formuláře znamenají
+    /// „jako 1. řádek".</summary>
+    public ResolvedTextStyle ResolveElementHeaderLine2Parent() => ResolveElementHeaderParent();
+
     /// <summary>Z čeho dědí symboly anotací = datový styl prvku (velikost si zóna dopočítá
     /// z minutové, viz <see cref="Render"/>).</summary>
     public ResolvedTextStyle ResolveElementAnotaceSymbolParent() => DataStyle.Resolve(ScheduleDataDefaults);
@@ -797,17 +801,6 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         if (DataStyle.FontSize is null) p = p with { FontSize = AnotaceFontSize };
         return p;
     }
-
-    /// <summary>Z čeho dědí zóna, kterou otevírá tlačítko „Upravit styl…" formuláře (klíč <c>style:&lt;vlastnost&gt;</c>);
-    /// null = prvek takovou zónu nemá a tlačítko by nic neupravilo.</summary>
-    public ResolvedTextStyle? ResolveStyleParent(string property) => property switch
-    {
-        nameof(HeaderStyle)      => ResolveElementHeaderParent(),
-        nameof(HeaderLine2Style) => ResolveElementHeaderParent(),   // 2. řádek dědí ze záhlaví
-        nameof(DataStyle)        => ResolveElementDataParent(),
-        nameof(MinuteStyle)      => ResolveGroupMinuteParent(),
-        _                        => null
-    };
 
     /// <summary>Parent kaskády pro per-column override minutové buňky skupiny.</summary>
     public ResolvedTextStyle ResolveGroupMinuteParent()
@@ -1774,8 +1767,10 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // „Výška řádku záhl." (mm), která ale text zvětší jen dokud je FontSize null (legacy derive).
         new FloatPropertyDescriptor { Label = "Velikost záhlaví",  Group = "Odjezdy", Get = () => HeaderStyle.FontSize ?? 9f,  Set = SetHeaderFontSize, Min = 3, Max = 72, Unit = "pt" },
         new FloatPropertyDescriptor { Label = "Min. výška řádku záhlaví", Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
+        // Zapisuje do stylu záhlaví, stejně jako formulář (Zarovnání svisle ve skupině Záhlaví);
+        // HeaderVerticalAlignment zůstává jen jako výchozí hodnota, když styl zarovnání nemá.
         new EnumPropertyDescriptor  { FromImage = true, Label = "Zarovnání záhlaví svisle", Group = "Odjezdy",
-            Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (TextVerticalAlignment)v,
+            Get = () => HeaderStyle.VAlign ?? HeaderVerticalAlignment, Set = v => HeaderStyle.VAlign = (TextVerticalAlignment)v,
             Options = EnumPropertyDescriptor.VAlignOptions },
         new FloatPropertyDescriptor { FromImage = true, Label = "Šířka sloupce hodin", Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
 

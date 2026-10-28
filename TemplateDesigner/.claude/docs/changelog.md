@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-28 (3) - Minuty odjezdů: kostra formuláře a styl bez tlačítka „Upravit styl…" (`B194d` E3)
+
+Minuty odjezdů mají stejnou kostru jako Seznam zastávek: nahoře Skupiny dnů, Rozměry a Značky u odjezdů, pod nimi Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
+Styl záhlaví a 2. řádku záhlaví už není za tlačítkem „Upravit styl…", ale rozepsaný ve skupině Záhlaví jako u ostatních tabulek (rozhodnutí Jan 28. 10.); 2. řádek má sadu Text („2. řádek: …").
+Záhlaví skupin dnů a Min. výška řádku záhlaví jsou první pole Záhlaví, Výška řádku a Střídání řádků první pole Datových buněk.
+Samostatné „Zarovnání záhlaví svisle" z formuláře zmizelo - dělalo totéž co Zarovnání svisle ve stylu a platilo jen při prázdném; výchozí Dole zůstává a šablony se nemění.
+Panel a import z PDF pod tímtéž popiskem zapisují do stylu záhlaví.
+Okno stylu (`StyleEditDialog`, `ElementStyleButton`) i nepoužívaný serverový `StyleEdit.cls` jsou pryč; pojistka `EDInputFormSchemaDriftTests.Formulare_NemajiTlacitkoStylu`.
+Daň za konzistenci: prázdné pole stylu neukazuje zděděnou hodnotu, kterou okno stylu ukazovalo šedě. Ověřeno voláním `Init`.
+
 ## 2026-10-28 (2) - Minuta, značky a časy Tabulky spojů kreslí podtržení a přeškrtnutí (`B194d` E3)
 
 Sada stylu Text nabízí Podtržení a Přeškrtnutí, ale minuta a značky u odjezdů v Minutách odjezdů a časy a značky v Tabulce spojů je nekreslily.

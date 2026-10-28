@@ -1882,7 +1882,7 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)
 
-        _vm.ApplyDepartureGridEdit(element, dlg.GeneralCommand, dlg.StyleCommands,
+        _vm.ApplyDepartureGridEdit(element, dlg.GeneralCommand,
             dlg.ResultGroupColumns, availableGroups.Count > 0, dlg.ResultHourColumnStyle,
             dlg.ResultCustomColumns);
 
@@ -1998,18 +1998,6 @@ public partial class MainWindow : Window
     {
         // Z formuláře buňky zpátky na nastavení celé tabulky (= odchod z buňky, jako Esc).
         if (key == "__tableSettings") { ExitToTableSettings(); return; }
-
-        if (ElementStyleButton.StyleProperty(key) is { } styl)
-        {
-            if (_vm!.State.SelectedElements is [DepartureGridElement odjezdy]
-                && ElementStyleButton.Edit(this, odjezdy, styl, InlineElementForm.TheForm) is { } command)
-            {
-                _vm.Execute(command);
-                InvalidateCanvas();
-                InvalidatePreview();
-            }
-            return;
-        }
 
         if (key == NotesLegendElement.SkupinyPoznamekKlic)
         {

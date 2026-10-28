@@ -1,14 +1,13 @@
 Include (GENERAL, EDInputForm)
 
-/// EDInputForm schema pro tab „Obecné" editoru DepartureGridElement (mřížka odjezdů).
-/// Field key = property path na C# DepartureGridElement. Stejná 4-skupinová kostra jako
-/// StopListElementEdit: Obecné · Styl záhlaví · Styl datových buněk · Odjezdy-specifické (+ Pozice/Podmínky).
+/// EDInputForm schema pro tab „Obecné" editoru DepartureGridElement (Minuty odjezdů).
+/// Field key = property path na C# DepartureGridElement. Kostra jako u ostatních tabulek: nahoře
+/// skupiny jen tohoto prvku, pod nimi Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice, Podmínky.
 /// Stylové balíčky přes ALVA.TemplateDesigner.EDInputForm.StyleFields (jediný zdroj sady polí).
 ///
 /// Element-level styl = prostá pole (element je báze kaskády); per-sloupec/skupina override řeší
-/// CellStyleEditor v tabu „Sloupce". Lazy/legacy-scalar nuance (HeaderLine2Style alokace,
-/// MinuteStyle/Anotace fallback scaláry, HeaderVerticalAlignment fallback, SetHeaderFontSize cleanup)
-/// dořeší C# host (DepartureGroupEditorDialog) v Init/OnOk - viz tam.
+/// CellStyleEditor v tabu „Sloupce". Nullable HeaderLine2Style alokuje až zápis pole
+/// (ElementPropertyAccessor), prázdná pole dědí z 1. řádku záhlaví.
 ///
 /// ⚠️ Schema je manual mirror PropertyDescriptors v DepartureGridElement.cs (viz memory
 /// project_edinputform_schema_duplication.md).
@@ -22,12 +21,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         $$$FillParams
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
+        // Nahoře skupiny, které má jen tento prvek, pod nimi společný konec všech tabulek
+        // (Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky).
+
         // ── Skupiny dnů ───────────────────────────────────────────────────
         // Původní „Obecné" mělo 10 polí bez jediné vysvětlivky (rozpočet je ~7). Rozpad podle toho,
         // čeho se pole týkají; klíče polí se NEMĚNÍ, mění se jen zařazení a popisky.
         d form.AddGroup("groups", "Skupiny dnů")
-        s f = form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
-        s f.helpText = "Záhlaví nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) - jediný zdroj, ať nekoliduje.
         s f = form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f.helpText = "Sloupec s hodinami se zopakuje u každé skupiny dnů. Vypnuto = jeden sloupec hodin vlevo pro všechny skupiny."
@@ -48,31 +48,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Volné místo mezi bloky jednotlivých skupin dnů. 0 = bez mezery."
         s f = form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
         s f.helpText = "Vodorovná mezera mezi jednotlivými odjezdy v řádku. Prázdné = podle šířky minuty."
-        s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
-        s f.helpText = "Prázdné = podle velikosti písma."
-        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
-        s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
         // Časová osa (rozsah hodin) i „Roztáhnout na výšku" jsou parametry sestavy
         // (CASOVA_OSA/HODINY_OD/DO, ROZTAHNOUT_NA_VYSKU), sdílené a autoritativní - NEduplikovat
         // jako pole prvku, parametr by je přebil a klik by nic nedělal (hlášení B22/B24).
-
-        // ── Styl záhlaví ──────────────────────────────────────────────────
-        // PROTOTYP: styl jako tlačítko → pod-formulář (StyleEditDialog). Klíč „style:<prefix>"
-        // (ne property path) → ElementFormBinder ho ignoruje; C# host z něj vytáhne prefix.
-        d form.AddGroup("hstyle", "Styl záhlaví")
-        s f = form.AddFieldToLastGroup("style:HeaderStyle", "Styl záhlaví", $$$FieldTypeButton, 0, 0)
-        s f.value = "Upravit styl…"
-        d form.AddDecimal("SkupinaDnuHeaderLineHeight", "Min. výška řádku záhlaví", 4, 2, 10, "mm")
-        s f = form.AddFieldToLastGroup("HeaderVerticalAlignment", "Zarovnání záhlaví svisle", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
-        s f.value = "Bottom"
-        s f = form.AddFieldToLastGroup("style:HeaderLine2Style", "Styl 2. řádku záhlaví", $$$FieldTypeButton, 0, 0)
-        s f.value = "Upravit styl…"
-
-        // Styl datových buněk: DataStyle = báze (minuty i hodinová čísla z ní dědí),
-        // MinuteStyle = minutový override navrch (prefix „Minuta:").
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "")
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ", 1, 0)
 
         // ── Značky u odjezdů ──────────────────────────────────────────────
         // „Anotace" bylo interní slovo - uživatel tomu říká značky u odjezdů (písmena a symboly
@@ -93,6 +71,30 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Negativní značka: Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ", 0, 0)
+
+        // ── Záhlaví / Datové buňky ────────────────────────────────────────
+        // Skupina části prvku: první pole část zapíná, pak pole pro celý řádek, pod nimi sada stylu.
+        // Styl je rozepsaný jako u ostatních tabulek (do 28. 10. za tlačítkem „Upravit styl…").
+        // Samostatné „Zarovnání záhlaví svisle" (HeaderVerticalAlignment) tu záměrně není: dělalo
+        // totéž co Zarovnání svisle ve stylu a platilo, jen když bylo prázdné - zůstává jako výchozí Dole.
+        d form.AddGroup("hstyle", "Záhlaví")
+        s f = form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
+        s f.helpText = "Záhlaví nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
+        s f = form.AddDecimal("SkupinaDnuHeaderLineHeight", "Min. výška řádku záhlaví", 4, 2, 10, "mm")
+        s f.helpText = "Nejmenší výška řádku záhlaví skupiny dnů. Když není vyplněná Velikost, písmo záhlaví se z ní dopočítá."
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Záhlaví", "#FF000000", "", 0, "", 1)
+        // 2. řádek záhlaví skupiny (Nadpis2 z dat, např. „den" v „Pracovní / den") je text uvnitř
+        // záhlaví: pozadí, zarovnání a okraje mu kreslí 1. řádek, proto jen sada Text.
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderLine2Style", "", "", "", "", 0, "2. řádek: ", 1, 0)
+
+        // DataStyle = báze (minuty i hodinová čísla z ní dědí), MinuteStyle = minutový override navrch.
+        d form.AddGroup("dstyle", "Datové buňky")
+        s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
+        s f.helpText = "Prázdné = podle velikosti písma."
+        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
+        s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Datové buňky", "#FF000000", "", 0)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ", 1, 0)
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)

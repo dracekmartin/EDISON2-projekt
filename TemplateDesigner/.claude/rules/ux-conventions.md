@@ -291,7 +291,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Prvek s QR / čárovým kódem | **Kód (QR, čárový)** | ~~Kód~~ samotné (neřekne, co prvek umí), ~~Kód (QR / čárový)~~ |
 | Zapnutí záhlaví prvku | **Záhlaví** (u zastávek „Záhlaví sloupců") - **první pole skupiny Záhlaví**; skupinu „Obecné" tabulky nemají, nic neříkala o tom, co v ní je (rozhodnutí Jan 28. 10., kostra formuláře viz `docs/konzistence-agend-jr.md` E3) | ~~Zobrazit nadpis~~ |
 | Text v záhlaví prvku | **Text záhlaví** | ~~Nadpis~~ (samotné „Nadpis skupiny" u dat je jiný pojem a je OK) |
-| Hlavička tabulky oproti datovým buňkám (řádek, text i styl) | **Záhlaví** („Záhlaví skupin dnů", „Text záhlaví popisných sloupců", „Styl 2. řádku záhlaví") | ~~Nadpis~~ - jen pro koncepčně jinou věc (text skupiny dnů v datech, nadpis okna); rozhodnutí Jan 26. 10. |
+| Hlavička tabulky oproti datovým buňkám (řádek, text i styl) | **Záhlaví** („Záhlaví skupin dnů", „Text záhlaví popisných sloupců", „2. řádek: Velikost" ve skupině Záhlaví) | ~~Nadpis~~ - jen pro koncepčně jinou věc (text skupiny dnů v datech, nadpis okna); rozhodnutí Jan 26. 10. |
 
 **Strojová pojistka:** `EDInputFormSchemaDriftTests` (ban list zakázaných tvarů + „stejný field key
 = stejný label napříč .cls") - nový termín přidej do kanonu ZDE a případně do ban listu testu;

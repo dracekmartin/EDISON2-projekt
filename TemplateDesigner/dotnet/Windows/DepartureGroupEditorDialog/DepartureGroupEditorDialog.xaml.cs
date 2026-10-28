@@ -22,7 +22,6 @@ public partial class DepartureGroupEditorDialog : Window
     private readonly DepartureGroupEditorDialogViewModel _vm;
     private readonly DepartureGridElement _element;
     private Dictionary<string, string> _preFilled = [];
-    private readonly Dictionary<string, IDesignerCommand> _styleCommands = [];
 
     public List<DepartureGroupColumnStyle> ResultGroupColumns => _vm.ResultGroupColumns;
     public ColumnVisualStyle? ResultHourColumnStyle => _vm.ResultHourColumnStyle;
@@ -33,10 +32,6 @@ public partial class DepartureGroupEditorDialog : Window
     /// <summary>Command z tabu „Obecné" (EDInputForm) - null pokud se nic nezměnilo.
     /// Caller (MainWindow) ho vykoná spolu se Result* (per-column styly + hour).</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
-
-    /// <summary>Commandy ze stylových pod-formulářů (tlačítka „Styl…"), keyované prefixem zóny
-    /// (opakované otevření téže zóny nahradí předchozí). Caller je přidá do composite.</summary>
-    public IReadOnlyCollection<IDesignerCommand> StyleCommands => _styleCommands.Values;
 
     public DepartureGroupEditorDialog(
         DepartureGridElement element,
@@ -59,7 +54,6 @@ public partial class DepartureGroupEditorDialog : Window
         GeneralForm.CacheClass = GeneralSchemaClass;
         GeneralForm.SchemaLoaded += OnGeneralFormInitialized;
         ElementFormBinder.HookFontWeightRefresh(GeneralForm);
-        GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 
         _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         _vm.RequestClose += result => { DialogResult = result; Close(); };
@@ -73,15 +67,6 @@ public partial class DepartureGroupEditorDialog : Window
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
         ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
         GeneralForm.Validate();
-    }
-
-    // Tlačítko „Styl…" v EDInputformu → otevři pod-formulář stylu pro daný prefix (key = "style:<prefix>").
-    // Command se akumuluje a vykoná se v parent OK (batch, jeden undo krok).
-    private void OnGeneralButtonClicked(string key)
-    {
-        if (ElementStyleButton.StyleProperty(key) is not { } prefix) return;
-        if (ElementStyleButton.Edit(this, _element, prefix, GeneralForm) is { } command)
-            _styleCommands[prefix] = command;   // replace (poslední edit zóny vyhraje)
     }
 
     private void OkButton_Click(object sender, RoutedEventArgs e)
