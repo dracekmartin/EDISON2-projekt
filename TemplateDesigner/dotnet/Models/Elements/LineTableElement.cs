@@ -955,6 +955,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private StopColumn TripColumn() =>
         Columns.FirstOrDefault(c => c.Key == TripKey) ?? new StopColumn { Key = TripKey, Width = null };
 
+    /// <summary>Výška řádku čísel spojů, ve kterém jsou i záhlaví popisných sloupců: tolik řádků, kolik má
+    /// nejdelší záhlaví (Enter nebo \n). Jediné místo pro výšku prvku i kreslení, jinak by se rozešlo
+    /// stránkování s tím, co se nakreslí.</summary>
+    private float VyskaRadkuCiselSpoju(float headerH) => headerH * StructuralColumns()
+        .Select(c => CellLayout.LineCount(c.Header != "" ? c.Header : DefaultHeaderFor(c.Key)))
+        .DefaultIfEmpty(1).Max();
+
     private static string DefaultHeaderFor(string key) => key switch
     {
         ColumnKeys.Zone or ColumnKeys.OriginalZone => "Zóna", ColumnKeys.Km => "km",
@@ -1990,7 +1997,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         var hlava = new List<float>();
         if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
-        hlava.Add(headerH);                                                  // řádek čísel spojů
+        hlava.Add(VyskaRadkuCiselSpoju(headerH));                            // řádek čísel spojů
         for (int tr = 0; tr < PocetTurnusovychRadku(spojeTohotoBloku); tr++) hlava.Add(rowH);
         float znackaH = VyskaRadkuZnacek(rowH);
         for (int pr = 0; pr < PocetRadkuPlatnosti(spojeTohotoBloku); pr++) hlava.Add(znackaH);
@@ -2727,7 +2734,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             headerSpecs.Add(new(sirka, text, styl, SuppressLeadingLine: BezCaryVlevo(index, mrizka)));
         PridejSpoje(headerSpecs, mrizka, trips.Count, headerResolved,
             ti => (TextCislaSpoje(trips[ti]), SVerzi(tripHeaderStyle, trips[ti])), tripHeaderStyle);
-        plan.Add(new(RowKind.Header, headerH, headerSpecs)
+        plan.Add(new(RowKind.Header, VyskaRadkuCiselSpoju(headerH), headerSpecs)
             { VerticalLinePaint = sloupcovaCara, LineBelowPaint = radkovaCara });
 
         // řádky turnusů - jeden na turnus, hned pod čísly spojů a **nad** řádkem platnosti.

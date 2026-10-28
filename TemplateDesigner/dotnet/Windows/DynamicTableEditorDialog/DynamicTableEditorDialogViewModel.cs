@@ -99,6 +99,7 @@ class DynamicTableEditorDialogViewModel : EDViewModel
         {
             ElementWidth = () => element.Width,
             CanFit = true,
+            MultilineHeader = true,
             NewRow = () => DynamicTableColumnVM.FromModel(new TableColumn { Header = "", Width = 0f }, element),
         };
 

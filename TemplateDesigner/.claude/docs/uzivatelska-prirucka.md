@@ -481,8 +481,10 @@ Text prvku i buňky/záhlaví tabulky může mít **víc řádků**. Nový řád
 
 Typické využití je **dvouřádkové (dvojjazyčné) záhlaví sloupce** - první řádek česky, druhý
 cizojazyčně (např. „Zastávka" / „Station"). U tabulkových prvků se **výška řádku záhlaví
-automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. Funguje v textových prvcích
-i v záhlaví a buňkách tabulek a specializovaných prvků jízdního řádu.
+automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. U Tabulky z dat je nastavená
+„Výška záhlaví" nejmenší výška - záhlaví se zvětší, jen když se řádky do ní nevejdou.
+Zalomení funguje v textových prvcích i v buňkách, řádek s daty se ale nezvětší: víc řádků se
+vejde jen do dost vysokého řádku.
 
 ### Podmíněná viditelnost
 Prvek nebo sekci lze zobrazit jen za podmínky - pole **Podmínka viditelnosti**, např.:

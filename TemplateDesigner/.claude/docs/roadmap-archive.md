@@ -214,6 +214,8 @@
 - **E13i** Název záložky Obecné v oknech tabulek **zůstává** - po sjednocení dává smysl (rozhodnutí Jan 28. 10.).
 - **Seznam zastávek s „<1" přepnul přibalené písmo na výchozí** - měření znaku „<" uvolnilo sdílené písmo;
   písma ze systému se to netýkalo (changelog 2026-10-28 (12)).
+- **Víceřádkové záhlaví v Tabulce spojů a Tabulce z dat** - výška záhlaví roste s počtem řádků, okna sloupců
+  ho nabízejí; u Tabulky z dat je nastavená výška záhlaví nejmenší výška (changelog 2026-10-28 (13)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

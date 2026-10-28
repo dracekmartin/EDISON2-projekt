@@ -178,7 +178,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         // Vodorovně totéž: součet pevných šířek nad šířku elementu se dřív oříznul (bez varování).
         // Zmenšuje se tou horší z obou stran - výšky se pak zmenší taky, takže svisle to jen pomůže.
         float scale = MathF.Min(heightScale, ComputeWidthScale(visibleColumns));
-        float headerH  = HeaderHeight * scale;
+        float headerH  = EffectiveHeaderHeight() * scale;
         float rowH     = RowHeight * scale;
 
         ctx.Canvas.Save();
@@ -271,7 +271,19 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     private float NaturalHeight(int dataRowCount)
     {
         float summaryH = (SummaryRows?.Count ?? 0) * RowHeight;
-        return (ShowHeader ? HeaderHeight : 0f) + dataRowCount * RowHeight + summaryH;
+        return (ShowHeader ? EffectiveHeaderHeight() : 0f) + dataRowCount * RowHeight + summaryH;
+    }
+
+    /// <summary>Výška záhlaví: nastavená, a když má záhlaví víc řádků (Enter nebo \n), než se do ní vejde,
+    /// tolik, aby se vešly - řádek stejně vysoký jako u ostatních tabulek. Jednořádkové záhlaví má
+    /// nastavenou výšku beze změny, takže stávající šablony vypadají stejně.</summary>
+    private float EffectiveHeaderHeight()
+    {
+        var cols = Columns.Where(c => c.Visible).ToList();
+        int radku = cols.Select(c => CellLayout.LineCount(Rendering.ColumnHeader.Resolve(c.Header, ""))).DefaultIfEmpty(1).Max();
+        if (radku <= 1) return HeaderHeight;
+        float pismo = cols.Max(c => ResolveColumnHeaderStyle(c).FontSize);
+        return MathF.Max(HeaderHeight, ScheduleElementBase.ComputeHeaderH(pismo) * radku);
     }
 
     /// <summary>

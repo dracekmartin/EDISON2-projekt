@@ -145,6 +145,7 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
         {
             ElementWidth = () => element.Width,
             OverflowNote = "Na sloupce spojů nezbude místo.",
+            MultilineHeader = true,
         };
     }
 

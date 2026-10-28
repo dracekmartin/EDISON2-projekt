@@ -33,9 +33,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **E3c** Lichá Tč a Střídání řádků - projít s Janem, jestli sjednotit tvar: Střídání je jedno pole (prázdná
   barva = bez), lichá Tč zaškrtávátko + barva. Chování se liší (podle Tč, ne pořadí řádku - parita se starým
   tiskem), sloučení tvaru mění model šablony = migrace **Jan** [S]
-- **Víceřádkové záhlaví sloupce v Tabulce spojů a Tabulce z dat** - kreslení počítá výšku záhlaví z jednoho
-  řádku (pevná u Tabulky z dat), proto ho okno nenabízí; až to kreslení umět bude, zapne se přepínačem
-  `MultilineHeader` [S]
 
 ### `B194f` Pojistky před `B56`
 

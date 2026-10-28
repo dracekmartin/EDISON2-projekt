@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-28 (13) - Záhlaví na víc řádků i v Tabulce spojů a Tabulce z dat
+
+Do záhlaví sloupce v Tabulce spojů a Tabulce z dat jde zadat víc řádků (Enter nebo `\n`), jako u Seznamu zastávek a Minut odjezdů.
+Kreslení víc řádků umělo i dřív, ale výška záhlaví počítala s jedním řádkem a druhý přetekl do dat, proto ho okna sloupců nenabízela.
+- Tabulka spojů: řádek čísel spojů, ve kterém jsou i záhlaví popisných sloupců, je tak vysoký, kolik řádků má nejdelší záhlaví. Stejně se počítá výška prvku, stránkování i opakovaná hlavička na další straně.
+- Tabulka z dat: nastavená „Výška záhlaví" zůstává nejmenší výškou; záhlaví se zvětší, jen když se řádky do ní nevejdou. Jednořádkové záhlaví se nemění.
+- Příručka v kapitole o zalomení řádku už netvrdí, že se zvětší i řádek s daty.
+
 ## 2026-10-28 (12) - Seznam zastávek s „<1" nepřepne písmo na výchozí
 
 Seznam zastávek se zapnutým „<1" měří znak „<", aby ostatní čísla zarovnal pod sebe, a změřené písmo pak uvolnil.

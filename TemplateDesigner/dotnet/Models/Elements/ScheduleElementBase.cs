@@ -192,7 +192,7 @@ public abstract class ScheduleElementBase : TemplateElement
     protected static float ComputeRowH(float fontSizePt) => fontSizePt * PtToMm * RowHeightFactor;
 
     /// <summary>Vypočítá výšku záhlaví v mm pro danou velikost fontu záhlaví (pt).</summary>
-    protected static float ComputeHeaderH(float headerFontSizePt) => headerFontSizePt * PtToMm * HeaderHeightFactor;
+    protected internal static float ComputeHeaderH(float headerFontSizePt) => headerFontSizePt * PtToMm * HeaderHeightFactor;
 
     /// <summary>Vytvoří standardní sadu paintů pro JŘ elementy. Volající musí dispose.</summary>
     protected SchedulePaints CreateStandardPaints(RenderContext ctx)
