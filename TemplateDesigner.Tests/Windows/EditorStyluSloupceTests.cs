@@ -58,6 +58,28 @@ public class EditorStyluSloupceTests
         Assert.Null(vm.FontSize);
     }
 
+    /// <summary>Zaškrtávátko nemá vlastní „×": zpátky k dědění se vrací tím, že se nastaví na hodnotu prvku.
+    /// Do 28. 10. uložilo odškrtnutí „vypnuto" jako vlastní nastavení sloupce, takže tečka přepsaného
+    /// sloupce v seznamu zůstala a vrátit dědění šlo jen křížkem vedle.</summary>
+    [Fact]
+    public void ZaskrtnutiAOdskrtnuti_VratiDedeni()
+    {
+        var vm = CellStyleVM.FromModel(null, ResolvedTextStyle.Default with { Bold = false, Italic = true });
+
+        vm.EffectiveBold = true;
+        Assert.Equal(true, vm.Bold);
+        Assert.True(vm.HasAnyExplicit);
+
+        vm.EffectiveBold = false;
+        Assert.Null(vm.Bold);
+        Assert.False(vm.HasAnyExplicit);
+
+        vm.EffectiveItalic = false;   // zděděné zapnuto - vypnutí je vlastní nastavení
+        Assert.Equal(false, vm.Italic);
+        vm.EffectiveItalic = true;
+        Assert.Null(vm.ToModel());
+    }
+
     private static string StyleFields() => File.ReadAllText(Path.Combine(RepoRoot(),
         "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "EDInputForm", "StyleFields.cls"));
 

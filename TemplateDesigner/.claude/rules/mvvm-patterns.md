@@ -314,8 +314,9 @@ ale musí odpovídat sadě `StyleFields.cls` - hlídá `EditorStyluSloupceTests`
 Všechny editovatelné vlastnosti jsou nullable (`string?`, `float?`, `bool?`, `TextHorizontalAlignment?`…). Null = dědit od rodiče.
 
 - `Inherited: ResolvedTextStyle` (read-only) - vyřešený parent styl, XAML ho zobrazuje jako šedivý italic placeholder v prázdných polích
-- `EffectiveBold`/`EffectiveItalic`/`EffectiveUnderline`/`EffectiveStrikethrough` derived gettery (`_bold ?? Inherited.Bold`) - binding pro 2-stavové checkboxy. Setter zapisuje explicit override
-- `HasExplicit<X>` derived - viditelnost „×" reset tlačítek (jen když user explicitně přepsal)
+- `EffectiveBold`/`EffectiveItalic`/`EffectiveUnderline`/`EffectiveStrikethrough` derived gettery (`_bold ?? Inherited.Bold`) - binding pro 2-stavové checkboxy. Setter zapíše přepsání, jen když se liší od zděděné hodnoty, jinak null -
+  zaškrtávátko proto nemá „×" a odškrtnutím se vrací k dědění (rozhodnutí Jan 28. 10.)
+- `HasExplicit<X>` derived - viditelnost „×" reset tlačítek u polí, která se k dědění samy vrátit neumí (font, velikost, zarovnání)
 - `ResetFieldCommand(paramName: string?)` - jedno command, CommandParameter = název property („Bold", „HAlign", …)
 - `FromModel(TextStyle? explicit, ResolvedTextStyle inherited)` - povinně bere inherited z elementu. U sloupce
   s legacy `Alignment` přes `TableLayout.ResolveCascade(null, parent, col.Alignment, …)` - jinak šedá nápověda

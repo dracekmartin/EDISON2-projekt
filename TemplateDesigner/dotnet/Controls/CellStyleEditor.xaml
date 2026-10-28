@@ -112,20 +112,16 @@
             </StackPanel>
         </Grid>
 
-        <!-- Zaškrtávátka ukazují efektivní hodnotu, × jen při přepsání -->
+        <!-- Zaškrtávátka ukazují efektivní hodnotu; hodnota shodná s prvkem se dědí, proto bez „×" -->
         <Grid Visibility="{Binding EditOptions.AllowBold, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="Tučné" Style="{StaticResource FieldLabel}"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <CheckBox VerticalAlignment="Center"
-                          IsChecked="{Binding EffectiveBold, UpdateSourceTrigger=PropertyChanged}"
-                          ToolTip="Kliknutím nastavíte explicitně. Pokud není přepsáno, dědí se."/>
-                <Button Style="{StaticResource ResetButton}" CommandParameter="Bold"
-                        Visibility="{Binding HasExplicitBold, Converter={StaticResource BoolToVis}}"/>
-            </StackPanel>
+            <CheckBox Grid.Column="1" VerticalAlignment="Center"
+                      IsChecked="{Binding EffectiveBold, UpdateSourceTrigger=PropertyChanged}"
+                      ToolTip="Stejná hodnota jako u prvku = převezme se z prvku."/>
         </Grid>
 
         <Grid Visibility="{Binding EditOptions.AllowItalic, ElementName=Root, Converter={StaticResource BoolToVis}}">
@@ -134,12 +130,9 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="Kurzíva" Style="{StaticResource FieldLabel}"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <CheckBox VerticalAlignment="Center"
-                          IsChecked="{Binding EffectiveItalic, UpdateSourceTrigger=PropertyChanged}"/>
-                <Button Style="{StaticResource ResetButton}" CommandParameter="Italic"
-                        Visibility="{Binding HasExplicitItalic, Converter={StaticResource BoolToVis}}"/>
-            </StackPanel>
+            <CheckBox Grid.Column="1" VerticalAlignment="Center"
+                      IsChecked="{Binding EffectiveItalic, UpdateSourceTrigger=PropertyChanged}"
+                      ToolTip="Stejná hodnota jako u prvku = převezme se z prvku."/>
         </Grid>
 
         <Grid Visibility="{Binding EditOptions.AllowUnderline, ElementName=Root, Converter={StaticResource BoolToVis}}">
@@ -148,12 +141,9 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="Podtržení" Style="{StaticResource FieldLabel}"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <CheckBox VerticalAlignment="Center"
-                          IsChecked="{Binding EffectiveUnderline, UpdateSourceTrigger=PropertyChanged}"/>
-                <Button Style="{StaticResource ResetButton}" CommandParameter="Underline"
-                        Visibility="{Binding HasExplicitUnderline, Converter={StaticResource BoolToVis}}"/>
-            </StackPanel>
+            <CheckBox Grid.Column="1" VerticalAlignment="Center"
+                      IsChecked="{Binding EffectiveUnderline, UpdateSourceTrigger=PropertyChanged}"
+                      ToolTip="Stejná hodnota jako u prvku = převezme se z prvku."/>
         </Grid>
 
         <Grid Visibility="{Binding EditOptions.AllowStrikethrough, ElementName=Root, Converter={StaticResource BoolToVis}}">
@@ -162,12 +152,9 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="Přeškrtnutí" Style="{StaticResource FieldLabel}"/>
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <CheckBox VerticalAlignment="Center"
-                          IsChecked="{Binding EffectiveStrikethrough, UpdateSourceTrigger=PropertyChanged}"/>
-                <Button Style="{StaticResource ResetButton}" CommandParameter="Strikethrough"
-                        Visibility="{Binding HasExplicitStrikethrough, Converter={StaticResource BoolToVis}}"/>
-            </StackPanel>
+            <CheckBox Grid.Column="1" VerticalAlignment="Center"
+                      IsChecked="{Binding EffectiveStrikethrough, UpdateSourceTrigger=PropertyChanged}"
+                      ToolTip="Stejná hodnota jako u prvku = převezme se z prvku."/>
         </Grid>
 
         <!-- Vzorek = efektivní barva; textový zápis umí i barvu z dat ({BARVA_LINKY}), kterou výběr barvy nenabídne -->

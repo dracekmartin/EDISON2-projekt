@@ -421,6 +421,8 @@ Pole jsou ve stejném pořadí a se stejnými názvy jako ve formuláři prvku.
   zobrazí jako šedý kurzívou psaný náznak zděděné hodnoty.
 - Pokud hodnotu explicitně přepíšete, objeví se u pole tlačítko „×" pro rychlý návrat ke
   zděděné hodnotě.
+- Zaškrtávátka (Tučné, Kurzíva, Podtržení, Přeškrtnutí) křížek nemají: když nastavíte stejnou
+  hodnotu, jakou má prvek, sloupec ji zase převezme z prvku.
 - Tlačítka „Resetovat styl sloupce" a „Resetovat všechny sloupce" v dialogu vrátí nastavení
   do výchozího stavu.
 
