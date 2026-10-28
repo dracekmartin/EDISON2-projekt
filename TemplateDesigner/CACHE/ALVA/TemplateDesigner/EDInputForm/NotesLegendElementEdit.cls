@@ -22,16 +22,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
-        // ── Skupina "Obecné" ──────────────────────────────────────────────
-        d form.AddGroup("general", "Obecné")
-        // Zapínadlo záhlaví sedí v Obecném jako u zastávek; jeho vzhled je ve skupině Záhlaví.
-        // Klíč HeaderBar, ne ShowHeader: ten u zastávek a tabulek znamená záhlaví SLOUPCŮ, které
-        // legenda nemá. Stejný klíč se dvěma popisky hlídá drift test.
+        // ── Skupina "Záhlaví" ─────────────────────────────────────────────
+        // Zapínadlo je první pole skupiny jako u tabulek (skupina Obecné by nesla jen je). Klíč
+        // HeaderBar, ne ShowHeader: ten u zastávek a tabulek znamená záhlaví SLOUPCŮ, které legenda
+        // nemá. Stejný klíč se dvěma popisky hlídá drift test.
+        d form.AddGroup("header", "Záhlaví")
         s f = form.AddBool("ShowHeaderBar", "Záhlaví", 1)
         s f.helpText = "Vypnuté záhlaví se nekreslí ani s podbarvením a nezabírá výšku - poznámky pak začínají u horní hrany prvku."
-
-        // ── Skupina "Záhlaví" ─────────────────────────────────────────────
-        d form.AddGroup("header", "Záhlaví")
         d form.AddText("HeaderText", "Text záhlaví", "Poznámky")
         // Pozadí BEZ výchozí hodnoty - podbarvení si prvek nese sám, takže pole má ukázat jeho
         // hodnotu. Výchozí barva by se vracela do vymazaného pole a vypadalo by to, že vymazání
@@ -48,9 +45,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Velikost písma v záhlaví prvku. Prázdné = 9 bodů. Výška pruhu záhlaví se počítá z ní."
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
+        // Barva pozadí tu záměrně není: prvek kreslí jen text poznámek, pozadí buněk nekreslí nikde.
         d form.AddGroup("data", "Datové buňky")
-        s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
@@ -143,6 +139,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 0)
+        // Mřížkou kreslí Poznámky jen čáru pod pruhem záhlaví - s vypnutým záhlavím pole nic nedělají.
+        s f = form.GetField("Grid.Color")
+        s f.helpText = "U Poznámek jen čára pod záhlavím. S vypnutým záhlavím se nekreslí."
+        s f = form.GetField("Grid.Width")
+        s f.helpText = "U Poznámek jen čára pod záhlavím. Prázdné nebo 0 = podle tloušťky rámečku prvku."
+        s f = form.GetField("Grid.Style")
+        s f.helpText = "U Poznámek jen čára pod záhlavím."
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 100)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

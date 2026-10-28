@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-28 (15) - Formulář Poznámek bez polí, která nic nedělají (`B194d` E3b)
+
+Poznámky nejsou tabulka, takže kostru formuláře tabulek nepřebírají (rozhodnutí Jan 28. 10.). Opravily se jen věcné chyby:
+- **Barva pozadí** v Datových buňkách zmizela z formuláře i z rychlých barev - prvek kreslí jen text poznámek a pozadí buněk nekreslil nikde.
+- **Záhlaví** (zapnutí pruhu) je první pole skupiny Záhlaví; skupina Obecné, ve které bylo samo, zmizela.
+- Pole skupiny **Mřížka** mají nápovědu, že u Poznámek kreslí jen čáru pod záhlavím a s vypnutým záhlavím nic.
+
 ## 2026-10-28 (14) - Lichá Tč se nastavují jen barvou (`B194d` E3c)
 
 Podbarvení lichých Tč v Tabulce spojů mělo zaškrtávátko „Podbarvit lichá Tč" a k němu „Barvu lichých Tč"; ostatní tabulky mají Střídání řádků jedním polem, kde prázdná barva znamená bez střídání.

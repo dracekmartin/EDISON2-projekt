@@ -27,9 +27,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
-- **E3b** Poznámky do kostry formuláře (`ux-conventions §4`) - nejsou klasická tabulka, záhlaví je jeden
-  text a důležitější je pořadí a výběr poznámek; projít zvlášť **Jan** [M]. Patří k tomu: Barva pozadí buněk
-  se nabízí a nekreslí (`NotesLegendElement.cs`) - dokreslit pod blok, nebo odebrat
 
 ### `B194f` Pojistky před `B56`
 

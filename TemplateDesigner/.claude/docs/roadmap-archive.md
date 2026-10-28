@@ -219,6 +219,9 @@
 - **E3c** Lichá Tč zůstávají podle tarifního čísla, ne Střídání řádků (parita `JRapiLinPrtWin.mac:1206`,
   příjezd a odjezd jedné zastávky stejně); nastavují se jen barvou, prázdná = bez, migrace 1.16.0
   (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (14)).
+- **E3b** Poznámky kostru tabulek nepřebírají (nejsou tabulka), opravené jen věcné chyby: pryč Barva pozadí
+  buněk, kterou nekreslí, zapnutí záhlaví ve skupině Záhlaví místo Obecné, nápověda u Mřížky, že je to jen
+  čára pod záhlavím (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (15)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

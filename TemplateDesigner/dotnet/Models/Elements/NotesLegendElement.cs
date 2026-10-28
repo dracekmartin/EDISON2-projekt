@@ -793,13 +793,12 @@ public class NotesLegendElement : StopScheduleElementBase
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         .. GetScheduleBaseDescriptors(withLineToggles: false),   // mřížkou kreslí jen čáru pod záhlavím
-        .. GetCellZoneBaseColorDescriptors(),
+        .. GetCellZoneBaseColorDescriptors(withDataBackground: false),   // pozadí buněk nekreslí
 
-        // Zapínadlo do Obecného, jeho vzhled do Záhlaví - týž vzor jako u zastávek, kde „Záhlaví
-        // sloupců" sedí v Obecném a barvy ve „Stylu záhlaví" (rozhodnutí Jan 1. 9.).
+        // Zapínadlo je první pole skupiny Záhlaví jako u tabulek (rozhodnutí Jan 28. 10.).
         // Z papíru se pozná vždy: poznámky linky mají obsah pokaždé, takže chybějící pruh nadpisu je
         // volba, ne prázdná data (u 940 IDZK záhlaví není).
-        new BoolPropertyDescriptor   { FromImage = true, Label = "Záhlaví", Group = "Obecné",       Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
+        new BoolPropertyDescriptor   { FromImage = true, Label = "Záhlaví", Group = "Záhlaví",      Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
         new StringPropertyDescriptor { FromImage = true, Label = "Text záhlaví",         Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
         // Datová zóna má velikost jako „Velikost poznámek" v Rozložení, záhlaví ji do 16. 9. nemělo

@@ -307,9 +307,12 @@ public abstract class ScheduleElementBase : TemplateElement
     /// (StopList, DepartureGrid, NotesLegend) bez nutnosti otevírat dialog sloupců.
     /// Detailní cascade (font, alignment, padding) zůstává v dialogu kde má per-column granularitu.
     /// </summary>
+    /// <param name="withDataBackground">False u prvku, který pozadí buněk nekreslí (Poznámky) - pole,
+    /// které nic nedělá, by se nemělo nabízet.</param>
     protected IReadOnlyList<PropertyDescriptor> GetCellZoneBaseColorDescriptors(
         string headerGroup = "Záhlaví",
-        string dataGroup = "Datové buňky") =>
+        string dataGroup = "Datové buňky",
+        bool withDataBackground = true) =>
     [
         new ColorPropertyDescriptor
         {
@@ -323,12 +326,17 @@ public abstract class ScheduleElementBase : TemplateElement
             Get = () => HeaderStyle.TextColor ?? ScheduleHeaderDefaults.TextColor,
             Set = v => HeaderStyle.TextColor = v,
         },
-        new ColorPropertyDescriptor
-        {
-            Label = "Barva pozadí buněk", Group = dataGroup,
-            Get = () => DataStyle.BackgroundColor ?? ScheduleDataDefaults.BackgroundColor,
-            Set = v => DataStyle.BackgroundColor = v,
-        },
+        .. (withDataBackground
+            ? new PropertyDescriptor[]
+            {
+                new ColorPropertyDescriptor
+                {
+                    Label = "Barva pozadí buněk", Group = dataGroup,
+                    Get = () => DataStyle.BackgroundColor ?? ScheduleDataDefaults.BackgroundColor,
+                    Set = v => DataStyle.BackgroundColor = v,
+                },
+            }
+            : []),
         new ColorPropertyDescriptor
         {
             Label = "Barva textu buněk", Group = dataGroup,

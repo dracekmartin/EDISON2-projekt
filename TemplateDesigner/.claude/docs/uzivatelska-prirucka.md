@@ -843,7 +843,7 @@ Nahoře jsou skupiny jen tohoto prvku (Skupiny dnů, Rozměry, Značky u odjezd�
 
 Vysvětlivky pod odjezdy.
 
-- **Záhlaví** (skupina Obecné) - vypnutím zmizí celý pruh záhlaví i s podbarvením a přestane
+- **Záhlaví** (první pole skupiny Záhlaví) - vypnutím zmizí celý pruh záhlaví i s podbarvením a přestane
   zabírat výšku, takže poznámky začínají u horní hrany prvku. Prázdný text záhlaví pruh nezruší -
   pás bez textu může být záměr
 - **Text záhlaví** - co je v pruhu napsané (výchozí „Poznámky")
