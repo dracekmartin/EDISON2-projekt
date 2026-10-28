@@ -505,7 +505,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// spoje) - kreslí se písmem, ne piktogramem. Prázdné = všechny jdou přes mapu značek.</summary>
         public HashSet<string> TextoveZnacky = [];
         /// <summary>Označení turnusů, ve kterých spoj jede („110.01"). Posílá je server jen
-        /// se zapnutým parametrem „Turnusy ke spojům" - jinak je seznam prázdný a řádky nevzniknou.</summary>
+        /// se zapnutou volbou „Řádky turnusů" - jinak je seznam prázdný a řádky nevzniknou.</summary>
         public List<string> Turnusy = [];
         public List<string> Casy = [];
         /// <summary>Značky u zastávky per řádek, stejně indexované jako <see cref="Casy"/>
@@ -3780,14 +3780,14 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     [
         new BoolPropertyDescriptor { FromImage = true, Label = "Čísla spojů", Group = "Řádky", Get = () => ShowTripNumbers, Set = v => ShowTripNumbers = v },
         new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
-        new BoolPropertyDescriptor { Label = "Turnusy ke spojům", Group = "Řádky", Get = () => TurnusyKeSpojum, Set = v => TurnusyKeSpojum = v },
+        new BoolPropertyDescriptor { Label = "Řádky turnusů", Group = "Řádky", Get = () => TurnusyKeSpojum, Set = v => TurnusyKeSpojum = v },
         new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
-        new BoolPropertyDescriptor { Label = "Přípojné řádky (vyčká/navazuje)", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
-        new EnumPropertyDescriptor { Label = "Slučovat přípoje", Group = "Přípojné řádky",
+        new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
+        new EnumPropertyDescriptor { Label = "Slučování přípojů", Group = "Přípojné řádky",
             Get = () => PripojeSlucovani, Set = v => PripojeSlucovani = (PripojSlucovani)v,
             Options =
             [
-                ("Ne - řádek pro každý spoj", (object)PripojSlucovani.Ne),
+                ("Řádek pro každý spoj", (object)PripojSlucovani.Ne),
                 ("Podle směru",               (object)PripojSlucovani.PodleSmeru),
                 ("Podle směru a linky",       (object)PripojSlucovani.PodleSmeruALinky),
             ] },
@@ -3824,8 +3824,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new BoolPropertyDescriptor { FromImage = true, Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
         new BoolPropertyDescriptor { FromImage = true, Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
-        new BoolPropertyDescriptor { Label = "Tučné zastávky dle trasy", Group = "Datové buňky", Get = () => TucneZastavkyDleTrasy, Set = v => TucneZastavkyDleTrasy = v },
-        new BoolPropertyDescriptor { Label = "Čáry u zastávek dle trasy", Group = "Datové buňky", Get = () => CaryZastavekDleTrasy, Set = v => CaryZastavekDleTrasy = v },
+        new BoolPropertyDescriptor { Label = "Tučné zastávky podle trasy", Group = "Datové buňky", Get = () => TucneZastavkyDleTrasy, Set = v => TucneZastavkyDleTrasy = v },
+        new BoolPropertyDescriptor { Label = "Čáry u zastávek podle trasy", Group = "Datové buňky", Get = () => CaryZastavekDleTrasy, Set = v => CaryZastavekDleTrasy = v },
         new FloatPropertyDescriptor
         {
             Label = "Poměr velikosti značek", Group = "Řádky",
@@ -3852,10 +3852,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
         new ColorPropertyDescriptor { Label = "Lichá Tč: Barva pozadí", Group = "Vzhled", Get = () => OddTcBackColor ?? "",
             Set = v => OddTcBackColor = string.IsNullOrWhiteSpace(v) ? null : v },
-        new ColorPropertyDescriptor { Label = "Původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
-        new ColorPropertyDescriptor { Label = "Nová verze", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor, Set = v => RozdilNovaBackColor = v },
-        new ColorPropertyDescriptor { Label = "Značky původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniZnackaColor, Set = v => RozdilPuvodniZnackaColor = v },
-        new ColorPropertyDescriptor { Label = "Značky nové verze", Group = "Porovnání verzí", Get = () => RozdilNovaZnackaColor, Set = v => RozdilNovaZnackaColor = v },
+        new ColorPropertyDescriptor { Label = "Původní verze: Barva pozadí", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
+        new ColorPropertyDescriptor { Label = "Nová verze: Barva pozadí", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor, Set = v => RozdilNovaBackColor = v },
+        new ColorPropertyDescriptor { Label = "Původní verze: Barva značek", Group = "Porovnání verzí", Get = () => RozdilPuvodniZnackaColor, Set = v => RozdilPuvodniZnackaColor = v },
+        new ColorPropertyDescriptor { Label = "Nová verze: Barva značek", Group = "Porovnání verzí", Get = () => RozdilNovaZnackaColor, Set = v => RozdilNovaZnackaColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
         // #8360: přípojný řádek se má dát odlišit od časů spojů. Prázdné = dědí se z buněk.
         new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 3, Max = 72,

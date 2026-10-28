@@ -243,7 +243,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Tabulka spojů - zastávky × spoje (linkový JŘ)", "paleta (JŘ agenda)"),
             ],
             Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
-                  "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr), min/max počet řádků " +
+                  "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr řazení), nejméně a nejvýš řádků " +
                   "a souhrnné řádky (SUM, COUNT, AVG…). Vše v dialogu tabulky (dvojklik).",
         },
 

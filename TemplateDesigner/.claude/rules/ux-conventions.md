@@ -317,7 +317,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Plocha návrháře | **plátno** | ~~canvas~~ |
 | Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti**, u řádku **Podmínka viditelnosti řádku** (je to podmínka, ne zaškrtávátko - rozhodnutí Jan 28. 10.) | ~~Viditelnost~~, ~~Viditelnost řádku~~ |
 | Síla čáry (BorderWidth aj.) | **Tloušťka …** („Tloušťka rámečku", „Tloušťka okraje") | ~~Šířka rámečku~~, ~~Tl. …~~ |
-| Střídavé podbarvení řádků | **Střídání řádků** | ~~Zebra barva~~ |
+| Střídavé podbarvení řádků | **Střídání řádků: Barva pozadí** (barva se musí najít hledáním „barva", jako Lichá Tč: Barva pozadí - rozhodnutí Jan 28. 10.) | ~~Zebra barva~~, samotné ~~Střídání řádků~~ |
 | Směry zarovnání | **Zarovnání vodorovně / Zarovnání svisle** (celý tvar, ať jde hledat - rozhodnutí Jan 26. 10.; volba jen jedním směrem nese směr v popisku: „Zarovnání záhlaví svisle"), stavy **Nahoře / Dole** | ~~Horizontálně/Vertikálně~~, samotné ~~Vodorovně~~ / ~~Svisle~~ / ~~Zarovnání~~, ~~Nahoru/Dolů~~ |
 | Přestupy u zastávky | **Přestupy (vlak/autobus)** | ~~(vlak/bus)~~ |
 | Prvek s vysvětlivkami pod vývěskou | **Poznámky** | ~~Legenda poznámek~~ (třída `NotesLegendElement` se nepřejmenovává - visí na ní `type` v šablonách) |

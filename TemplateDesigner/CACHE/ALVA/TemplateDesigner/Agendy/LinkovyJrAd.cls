@@ -1335,7 +1335,7 @@ ClassMethod NactiTurnusy(dataDB As %String, sku As %String, lin As %String, ByRe
     s chyba = ##class(ALVA.ADMAIN.MLAPI).gSplTur(dataDB, dataDB, dh, .tin, .tout)
     // Chyba se **nepolyká**: uživatel si turnusy vyžádal parametrem, takže tisk bez nich by byl
     // tichý fallback - pozná se až na papíře, že tam nejsou.
-    i +chyba d ..ChybaDat("Turnusy ke spojům nejde načíst"_$s($p(chyba,"~",2)'="":" ("_$p(chyba,"~",2)_")", 1:"")_". Zkontrolujte turnusy v modulu AD, nebo u Tabulky spojů vypněte Turnusy ke spojům.")
+    i +chyba d ..ChybaDat("Turnusy ke spojům nejde načíst"_$s($p(chyba,"~",2)'="":" ("_$p(chyba,"~",2)_")", 1:"")_". Zkontrolujte turnusy v modulu AD, nebo u Tabulky spojů vypněte Řádky turnusů.")
     s sp = ""
     f {
         s sp = $o(tout("arr",1,+lin,sp))

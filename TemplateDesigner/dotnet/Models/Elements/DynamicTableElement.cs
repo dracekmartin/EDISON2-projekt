@@ -488,7 +488,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         },
         new EnumPropertyDescriptor
         {
-            Label = "Směr", Group = "Tabulka",
+            Label = "Směr řazení", Group = "Tabulka",
             VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField),
             Get = () => SortDescending, Set = v => SortDescending = (bool)v,
             Options = [("Vzestupně", (object)false), ("Sestupně", (object)true)]
@@ -502,14 +502,14 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         },
         new EnumPropertyDescriptor
         {
-            Label = "Směr (druhý klíč)", Group = "Tabulka",
+            Label = "Směr druhého řazení", Group = "Tabulka",
             VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField) && !string.IsNullOrWhiteSpace(ThenByField),
             Get = () => ThenByDescending, Set = v => ThenByDescending = (bool)v,
             Options = [("Vzestupně", (object)false), ("Sestupně", (object)true)]
         },
         new ColorPropertyDescriptor
         {
-            Label = "Střídání řádků", Group = "Tabulka",
+            Label = "Střídání řádků: Barva pozadí", Group = "Tabulka",
             Get   = () => AlternatingRowColor ?? "#00FFFFFF",
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v
         },

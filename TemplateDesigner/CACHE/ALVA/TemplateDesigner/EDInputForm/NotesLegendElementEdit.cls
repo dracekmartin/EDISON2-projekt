@@ -75,9 +75,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "PoSloupcich"
         s f = form.AddFieldToLastGroup("Razeni", "Řazení poznámek", $$$FieldTypeList, 0, 0)
         // Volby 1:1 s panelem (DleTypu je default elementu - dřív v dialogu úplně chyběla)
-        d f.AddListItem("DleTypu", "Dle typu (dny platnosti → značky → atributy → text)"), f.AddListItem("Vychozi", "Výchozí (dle dat)")
+        d f.AddListItem("DleTypu", "Podle typu"), f.AddListItem("Vychozi", "Podle dat")
         d f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
         s f.value = "DleTypu"
+        s f.helpText = "Podle typu: dny platnosti, pak značky, atributy a text. Podle dat: v pořadí, v jakém poznámky přišly."
         s f = form.AddDecimal("MarkerSirka", "Šířka buňky značky", 0, 0, 30, "mm")
         s f.helpText = "Pevná šířka místa pro značku, aby texty poznámek začínaly pod sebou. 0 = text hned za značkou."
 
@@ -129,10 +130,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Jen rozdílový linkový JŘ: legenda nese poznámky obou verzí linky. Data říkají verzi,
         // barvu určuje šablona. Návrhář skupinu jinde schová.
         d form.AddGroup("verze", "Porovnání verzí")
-        s f = form.AddFieldToLastGroup("RozdilPuvodniBackColor", "Původní verze", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("RozdilPuvodniBackColor", "Původní verze: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFF08080"
         s f.helpText = "Podbarvení poznámky, která je jen v původní verzi linky. Stejně jako odlišné buňky v Tabulce spojů."
-        s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF92D36E"
         s f.helpText = "Podbarvení poznámky, která je jen v nové verzi linky."
 

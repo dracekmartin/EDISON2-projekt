@@ -254,10 +254,10 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 ### Dynamická tabulka
 Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
 od dat). Vlastnosti:
-- **Data** - **Zdroj dat**, řazení (**Řadit podle**, **Potom podle**), **Nejméně řádků** a **Nejvýš řádků**
+- **Data** - **Zdroj dat**, řazení (**Řadit podle** a **Směr řazení**, **Potom podle** a **Směr druhého řazení**), **Nejméně řádků** a **Nejvýš řádků**
 - **Záhlaví** - **Záhlaví sloupců**, **Výška záhlaví** a styl záhlaví
-- **Datové buňky** - **Výška řádku**, **Střídání řádků** a styl buněk
-- **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťka, styl) a **Podmínky** s **Viditelností řádku** a **Zvýrazněním řádků**
+- **Datové buňky** - **Výška řádku**, **Střídání řádků: Barva pozadí** a styl buněk
+- **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťka, styl) a **Podmínky** s **Podmínkou viditelnosti řádku** a **Zvýrazněním řádků**
 
 Sloupce se upravují tlačítkem **Upravit sloupce…**. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
@@ -832,11 +832,11 @@ Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle�
 Nahoře jsou skupiny jen tohoto prvku (Skupiny dnů, Rozměry, Značky u odjezdů), pod nimi skupiny, které mají všechny tabulky stejně: Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
 
 - **Skupiny dnů** - Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Obrázek v záhlaví hodin (vykreslí se v záhlaví hodinového sloupce u každé skupiny dnů; je-li nastavený, text záhlaví sloupce se netiskne), Nejvýš skupin dnů (0 = bez omezení). Sloupce a jejich šířky nastavíte v okně „Upravit sloupce…"
-- **Rozměry** - Šířka minuty, Rozestup odjezdů (Bez zarovnání / Zarovnat dle nejširšího odjezdu / Zarovnat na pevnou šířku - viz níže), Mezera mezi skupinami dnů, Mezera mezi odjezdy
+- **Rozměry** - Šířka minuty, Zarovnání minut (Bez zarovnání / Podle nejširšího odjezdu / Na pevnou šířku - viz níže), Mezera mezi skupinami dnů, Mezera mezi odjezdy
 - **Časová osa** a **Roztáhnout na výšku** nejsou vlastnosti prvku, ale parametry sestavy (kap. 5)
-- **Rozestup odjezdů** - jak daleko od sebe stojí minuty v řádku hodiny. *Bez zarovnání*: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí a minuta se značkou odsune odjezdy za sebou. *Zarovnat dle nejširšího odjezdu* (výchozí): jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici napříč hodinami i sloupci, ale jeden takový spoj zředí celou vývěsku, i řádky a sloupce bez značek. *Zarovnat na pevnou šířku*: rozteč se řídí nastavením („Šířka minuty", nejméně však minuta a jedna značka s odstupem), takže ji data nezmění a přidaný označkovaný spoj zbytek vývěsky nepřesází. Spoj s víc značkami se do rozteče vejde tím, že se jeho značky úměrně zmenší - nejvýš na polovinu a nikdy pod 4 body; nevejdou-li se ani tak, zvětšete Šířku minuty
-- **Záhlaví** - Záhlaví skupin dnů (zapnutí), Min. výška řádku záhlaví (když není vyplněná Velikost, písmo se z ní dopočítá), styl záhlaví (prázdné Zarovnání svisle = Dole; záhlaví skupin dnů je při prázdném Zarovnání vodorovně na střed) a řádky „2. řádek: …" pro druhý řádek záhlaví skupiny (např. „den" v „Pracovní / den"; nevyplněné se dědí z prvního řádku). 2. řádek má jen písmo a barvu textu - pozadí, zarovnání a okraje přebírá z prvního řádku
-- **Datové buňky** - Výška řádku, Střídání řádků, písmo hodin i minut; řádky „Minuta: …" styl minut přebijí. Minuta je text uvnitř buňky, takže má jen písmo a barvu textu: Font, Řez, Velikost, Tučné, Kurzíva, Podtržení, Přeškrtnutí, Barva textu
+- **Zarovnání minut** - jak daleko od sebe stojí minuty v řádku hodiny. *Bez zarovnání*: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí a minuta se značkou odsune odjezdy za sebou. *Podle nejširšího odjezdu* (výchozí): jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici napříč hodinami i sloupci, ale jeden takový spoj zředí celou vývěsku, i řádky a sloupce bez značek. *Na pevnou šířku*: rozteč se řídí nastavením („Šířka minuty", nejméně však minuta a jedna značka s odstupem), takže ji data nezmění a přidaný označkovaný spoj zbytek vývěsky nepřesází. Spoj s víc značkami se do rozteče vejde tím, že se jeho značky úměrně zmenší - nejvýš na polovinu a nikdy pod 4 body; nevejdou-li se ani tak, zvětšete Šířku minuty
+- **Záhlaví** - Záhlaví skupin dnů (zapnutí), Nejmenší výška řádku záhlaví (když není vyplněná Velikost, písmo se z ní dopočítá), styl záhlaví (prázdné Zarovnání svisle = Dole; záhlaví skupin dnů je při prázdném Zarovnání vodorovně na střed) a řádky „2. řádek: …" pro druhý řádek záhlaví skupiny (např. „den" v „Pracovní / den"; nevyplněné se dědí z prvního řádku). 2. řádek má jen písmo a barvu textu - pozadí, zarovnání a okraje přebírá z prvního řádku
+- **Datové buňky** - Výška řádku, Střídání řádků: Barva pozadí, písmo hodin i minut; řádky „Minuta: …" styl minut přebijí. Minuta je text uvnitř buňky, takže má jen písmo a barvu textu: Font, Řez, Velikost, Tučné, Kurzíva, Podtržení, Přeškrtnutí, Barva textu
 - **Značky u odjezdů** - zapnutí písmen a symbolů u minut, Mezera mezi značkou a minutou, Mezera mezi značkami, styl symbolů („Symbol: …") a textových značek („Text: …") - obojí jen písmo a barva textu, barvy negativní značky („Negativní značka: Barva pozadí", „Negativní značka: Barva textu")
 
 #### Poznámky
@@ -857,7 +857,7 @@ Vysvětlivky pod odjezdy.
 - **Druhy poznámek** (jen linkový JŘ, první ve skupině Rozložení) - viz *Poznámky po druzích* níže
 - **Počet sloupců (1–4) + Směr plnění** - „Po sloupcích" (jako noviny) nebo „Po řádcích". U linkového
   JŘ je jen Směr plnění, sloupce se nastavují po druzích
-- **Řazení poznámek** - Dle typu (dny platnosti → značky → atributy → text; výchozí) / Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně. U linkového JŘ platí uvnitř každého druhu a volba Dle typu tam není
+- **Řazení poznámek** - Podle typu (dny platnosti → značky → atributy → text; výchozí) / Podle dat (pořadí, v jakém poznámky přišly) / Délka vzestupně / Délka sestupně. U linkového JŘ platí uvnitř každého druhu a volba Podle typu tam není
 - **Šířka buňky značky** - pevná šířka místa pro značku, aby texty poznámek začínaly pod sebou (0 = text hned za značkou)
 - **Negativní značky / Speciální znaky / Textové poznámky** (skupina Obsah poznámek, jen vývěska) - přepínače, které typy poznámek se v legendě vůbec zobrazí
 - **Barva pozadí značky / Barva textu značky** (skupina Negativní značky) - barvy invertovaného boxu u negativních značek
@@ -1143,7 +1143,7 @@ Pod nimi jsou skupiny, které mají všechny tabulky stejně: Záhlaví, Datové
 - **Řádek platnosti** - pod číslem spoje řádek se značkami platnosti (denní značky, místenka,
   atributy vozidla).
 - **Řádek negativních značek** - značky, které pro spoj **neplatí** (bílý text v černém poli).
-- **Turnusy ke spojům** - k číslu spoje se dotáhne turnus. Je to provozní údaj dopravce, ne
+- **Řádky turnusů** - k číslu spoje se dotáhne turnus. Je to provozní údaj dopravce, ne
   informace pro cestujícího, proto je z výroby vypnutý; zapnutí stojí čas navíc při načítání dat.
 - **Poměr velikosti značek** - kolikrát větší je písmo značek než písmo buňky (starý tisk 1,5×, aby byly
   na výtisku čitelné).
@@ -1172,15 +1172,15 @@ Pod nimi jsou skupiny, které mají všechny tabulky stejně: Záhlaví, Datové
 
 **Zastávky** - jak se tiskne název zastávky:
 
-- **Tučné zastávky dle trasy** a **Čáry u zastávek dle trasy** - v trase linky jde u zastávky zadat
+- **Tučné zastávky podle trasy** a **Čáry u zastávek podle trasy** - v trase linky jde u zastávky zadat
   „tučně" a „podtrženo"; zapnuté znamená, že je návrhář respektuje. Vypíná se to tady, ne
   v parametrech sestavy - je to údaj z jízdních řádů.
 - **Tečky za názvem zastávky** - tečky od názvu k pravému okraji sloupce, aby oko dojelo k času.
 
 **Šířka sloupců** - viz kapitola 4.
 
-**Přípojné řádky** - **Přípojné řádky (vyčká/navazuje)** zapne pod zastávkou řádky o přípojích.
-**Slučovat přípoje** (*Ne - řádek pro každý spoj* / *Podle směru* / *Podle směru a linky*): sloučený řádek nese časy víc spojů a v popisku má směr („ze směru Trhové Sviny"), takže šetří místo.
+**Přípojné řádky** - **Přípojné řádky** zapne pod zastávkou řádky o přípojích (vyčká / navazuje).
+**Slučování přípojů** (*Řádek pro každý spoj* / *Podle směru* / *Podle směru a linky*): sloučený řádek nese časy víc spojů a v popisku má směr („ze směru Trhové Sviny"), takže šetří místo.
 Vzhled řádku má celou sadu stylu jako buňky (písmo, barvy, zarovnání, okraje); prázdné = jako datové buňky.
 Menší kurzíva odliší přípoj od časů spojů i na černobílém tisku, tmavá barva pozadí s bílým písmem dá inverzní řádek.
 

@@ -1766,7 +1766,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // Velikost písma záhlaví - přímý ovladač HeaderStyle.FontSize. Bez něj šlo měnit jen
         // „Výška řádku záhl." (mm), která ale text zvětší jen dokud je FontSize null (legacy derive).
         new FloatPropertyDescriptor { Label = "Velikost záhlaví",  Group = "Odjezdy", Get = () => HeaderStyle.FontSize ?? 9f,  Set = SetHeaderFontSize, Min = 3, Max = 72, Unit = "pt" },
-        new FloatPropertyDescriptor { Label = "Min. výška řádku záhlaví", Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Nejmenší výška řádku záhlaví", Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
         // Zapisuje do stylu záhlaví, stejně jako formulář (Zarovnání svisle ve skupině Záhlaví);
         // HeaderVerticalAlignment zůstává jen jako výchozí hodnota, když styl zarovnání nemá.
         new EnumPropertyDescriptor  { FromImage = true, Label = "Zarovnání záhlaví svisle", Group = "Odjezdy",
@@ -1783,7 +1783,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         new FloatPropertyDescriptor { FromImage = true, Label = "Šířka minuty",       Group = "Odjezdy", Get = () => MinuteWidth,                Set = v => MinuteWidth = v, Min = 3, Max = 15, Unit = "mm" },
         new EnumPropertyDescriptor
         {
-            FromImage = true, Label = "Rozestup odjezdů", Group = "Odjezdy",
+            FromImage = true, Label = "Zarovnání minut", Group = "Odjezdy",
             Get = () => MinuteSpacing,
             Set = v => MinuteSpacing = (DepartureSpacing)v,
             Options =
@@ -1793,14 +1793,14 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                 // rozteč. Dřívější trojice („Podle obsahu / Rovnoměrný / Pevný rastr") mluvila
                 // v každé položce o něčem jiném (rozhodnutí Jan 18. 9.).
                 ("Bez zarovnání", (object)DepartureSpacing.ByContent),
-                ("Zarovnat dle nejširšího odjezdu", (object)DepartureSpacing.Even),
-                ("Zarovnat na pevnou šířku", (object)DepartureSpacing.Fixed),
+                ("Podle nejširšího odjezdu", (object)DepartureSpacing.Even),
+                ("Na pevnou šířku", (object)DepartureSpacing.Fixed),
             ]
         },
         new FloatPropertyDescriptor { FromImage = true, Label = "Mezera mezi skupinami dnů", Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
 
         GetDataRowHeightDescriptor("Řádky dat"),
-        new ColorPropertyDescriptor { FromImage = true, Label = "Střídání řádků", Group = "Řádky dat", Get = () => AlternatingRowColor ?? "", Set = v => AlternatingRowColor = string.IsNullOrEmpty(v) ? null : v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Střídání řádků: Barva pozadí", Group = "Řádky dat", Get = () => AlternatingRowColor ?? "", Set = v => AlternatingRowColor = string.IsNullOrEmpty(v) ? null : v },
 
         // ── Styl 2. řádku záhlaví skupin dnů (např. "den" v "Pracovní / den") ──
         // Aplikuje se POUZE pokud SkupinaDnu.Nadpis2 je vyplněn. Null = stejné jako Line 1 (HeaderStyle).

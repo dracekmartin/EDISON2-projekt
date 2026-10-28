@@ -112,7 +112,7 @@ public class SkupinyPoznamekDialogTests
         var volby = NotesLegendElement.VolbyRazeni(linkovyJr: true, ulozene);
 
         Assert.Equal([hodnotaDleDat, "DleDelkyVzestupne", "DleDelkySestupne"], volby.Select(v => v.Hodnota));
-        Assert.Equal("Výchozí (dle dat)", volby[0].Popis);
+        Assert.Equal("Podle dat", volby[0].Popis);
         Assert.Contains(volby, v => v.Hodnota == ulozene);
     }
 

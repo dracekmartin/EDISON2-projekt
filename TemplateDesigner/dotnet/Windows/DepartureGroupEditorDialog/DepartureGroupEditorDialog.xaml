@@ -37,7 +37,7 @@
                         <DataTemplate>
                             <StackPanel Visibility="{Binding SupportsZebra, Converter={StaticResource BoolToVis}}">
                                 <Separator Margin="0,8,0,8"/>
-                                <TextBlock Text="Střídání řádků" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <TextBlock Text="Střídání řádků: Barva pozadí" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <TextBox Width="90" VerticalAlignment="Center" Margin="0,0,6,0"
                                              Text="{Binding AlternatingRowColor, UpdateSourceTrigger=LostFocus}"

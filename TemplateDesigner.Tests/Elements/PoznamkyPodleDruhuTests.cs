@@ -79,7 +79,7 @@ public class PoznamkyPodleDruhuTests
     [Fact]
     public void DleTypuUvnitrDruhu_JePoradiZDat()
     {
-        // U linkového nabízí formulář „Dle typu" jako „Výchozí (dle dat)" - pořadí typů drží skupiny.
+        // U linkového nabízí formulář „Podle typu" jako „Podle dat" - pořadí typů drží skupiny.
         var data = Linkova(
             Poznamka("7", "text", "MHD", "platí tarif MHD"),
             Poznamka("7", "znak", "x", "zastávka na znamení"));

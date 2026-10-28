@@ -7,7 +7,7 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Windows;
 
 /// <summary>
-/// Cesta volby „Turnusy ke spojům" z <b>prvku</b> na server (`L6c`).
+/// Cesta volby „Řádky turnusů" z <b>prvku</b> na server (`L6c`).
 /// </summary>
 /// <remarks>
 /// Turnus je provozní věc dopravce, takže volba patří k prvku, ne k parametrům tisku (rozhodnutí

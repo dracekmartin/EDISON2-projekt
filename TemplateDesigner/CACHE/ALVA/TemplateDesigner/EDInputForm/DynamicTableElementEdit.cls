@@ -35,11 +35,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // (PopulateSortFields), stejně jako u „Zdroj dat". Prázdné = pořadí z agendy.
         s f = form.AddFieldToLastGroup("SortField", "Řadit podle", $$$FieldTypeList, 0, 0)
         s f.helpText = "Prázdné = pořadí, v jakém řádky vrátí databáze. Číslo, datum i text se poznají z hodnot."
-        s f = form.AddFieldToLastGroup("SortDescending", "Směr", $$$FieldTypeList, 0, 0)
+        s f = form.AddFieldToLastGroup("SortDescending", "Směr řazení", $$$FieldTypeList, 0, 0)
         d f.AddListItem("0", "Vzestupně"), f.AddListItem("1", "Sestupně")
         s f.value = "0"
         s f = form.AddFieldToLastGroup("ThenByField", "Potom podle", $$$FieldTypeList, 0, 0)
-        s f = form.AddFieldToLastGroup("ThenByDescending", "Směr (druhý klíč)", $$$FieldTypeList, 0, 0)
+        s f = form.AddFieldToLastGroup("ThenByDescending", "Směr druhého řazení", $$$FieldTypeList, 0, 0)
         d f.AddListItem("0", "Vzestupně"), f.AddListItem("1", "Sestupně")
         s f.value = "0"
         s f = form.AddNumber("MinRows", "Nejméně řádků", 0, 0, 200)
@@ -56,7 +56,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Záhlaví", "#FF333333", "", 0, "", 1)
         d form.AddGroup("dstyle", "Datové buňky")
         d form.AddDecimal("RowHeight", "Výška řádku", 6, 1, 50, "mm")
-        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Datové buňky", "#FF222222", "#00FFFFFF", 0)
 

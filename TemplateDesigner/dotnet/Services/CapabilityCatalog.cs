@@ -339,7 +339,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             "sloupce s mapováním na pole NEBO počítaným výrazem ({CENA}*{POCET}) a formátem; " +
             "podmíněnou viditelnost řádku (výraz nad daty řádku); pravidla zvýraznění řádku (výraz → barva pozadí); " +
             "min/max počet řádků (min doplní prázdné = pevná výška, max ořízne); " +
-            "řazení řádků (Řadit podle + Směr; prázdné = pořadí z agendy); " +
+            "řazení řádků (Řadit podle + Směr řazení; prázdné = pořadí z agendy); " +
             "souhrnné řádky s agregacemi SUM/COUNT/AVG/MIN/MAX (i nad výrazem, např. SUM({CENA}*{POCET})).",
         ElementTypes.StopList =>
             "Tabulka zastávek linky. Sloupce a jejich styl se nastavují ve vlastním dialogu sloupců " +

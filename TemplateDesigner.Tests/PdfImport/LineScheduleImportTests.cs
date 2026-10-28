@@ -45,13 +45,12 @@ public class LineScheduleImportTests
     [Theory]
     [InlineData("Řádek platnosti")]
     [InlineData("Řádek negativních značek")]
-    [InlineData("Řádky · Přípojné řádky (vyčká/navazuje)")]
-    [InlineData("Tučné zastávky dle trasy")]
-    [InlineData("Čáry u zastávek dle trasy")]
+    [InlineData("Řádky · Přípojné řádky")]
+    [InlineData("Tučné zastávky podle trasy")]
+    [InlineData("Čáry u zastávek podle trasy")]
     [InlineData("Záhlaví skupin dnů")]
     [InlineData("Text záhlaví popisných sloupců")]
-    [InlineData("Podbarvit lichá Tč")]   // měří se z PDF
-    [InlineData("Barva lichých Tč")]
+    [InlineData("Lichá Tč: Barva pozadí")]   // měří se z PDF
     public void NaVolbyNepotvrditelneZPapiruSeNeptame(string klic)
     {
         Assert.DoesNotContain(klic, ElementSettingsFromImage.BuildCatalog(new LineTableElement()));

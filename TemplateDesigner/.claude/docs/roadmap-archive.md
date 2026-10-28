@@ -223,6 +223,14 @@
   buněk, kterou nekreslí, zapnutí záhlaví ve skupině Záhlaví místo Obecné, nápověda u Mřížky, že je to jen
   čára pod záhlavím (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (15)).
 
+## Popisky polí podle pravidel - složité prvky (hotovo 28. 10. 2026)
+
+- Pravidla tvorby popisků v `ux-conventions §8` (popisek podle typu pole, ve skupině části bez jejího názvu,
+  barva vždy s „Barva", „podle", vysvětlení do nápovědy). Převedeny Seznam zastávek, Minuty odjezdů, Tabulka
+  spojů, Poznámky, Tabulka z dat a Pevná tabulka (changelog 2026-10-28 (16)-(17)). U Poznámek zůstalo
+  opakování názvu skupiny (Poznámky linky - …), nastavení je tam málo (rozhodnutí Jan); meze Nejvýš / Nejméně
+  zůstávají.
+
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 
 Buď se řeší jinde, nebo to není důležité - backlog se pročistil od položek, na které nikdo nesahá.

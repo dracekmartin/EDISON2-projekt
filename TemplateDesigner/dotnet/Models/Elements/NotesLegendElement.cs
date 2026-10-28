@@ -575,19 +575,19 @@ public class NotesLegendElement : StopScheduleElementBase
     /// Druhy poznámek a uvnitř druhu znamená „Dle typu" totéž co pořadí z dat.
     /// </summary>
     /// <remarks>
-    /// U linkového nese „Výchozí (dle dat)" tu z obou hodnot, kterou šablona má (výchozí prvku je
+    /// U linkového nese „Podle dat" tu z obou hodnot, kterou šablona má (výchozí prvku je
     /// „Dle typu"). Pole tak u starší šablony nezůstane prázdné a otevření formuláře nic nezapíše.
     /// </remarks>
     public static IReadOnlyList<(string Hodnota, string Popis)> VolbyRazeni(bool linkovyJr, string aktualni)
     {
-        const string dleDat = "Výchozí (dle dat)";
+        const string dleDat = "Podle dat";
         (string, string)[] delka =
         [
             (nameof(LegendRazeni.DleDelkyVzestupne), "Délka vzestupně"),
             (nameof(LegendRazeni.DleDelkySestupne), "Délka sestupně"),
         ];
         if (!linkovyJr)
-            return [(nameof(LegendRazeni.DleTypu), "Dle typu (dny platnosti → značky → atributy → text)"),
+            return [(nameof(LegendRazeni.DleTypu), "Podle typu"),
                     (nameof(LegendRazeni.Vychozi), dleDat), .. delka];
         var dleDatHodnota = aktualni == nameof(LegendRazeni.Vychozi) ? nameof(LegendRazeni.Vychozi) : nameof(LegendRazeni.DleTypu);
         return [(dleDatHodnota, dleDat), .. delka];
@@ -821,7 +821,7 @@ public class NotesLegendElement : StopScheduleElementBase
         new EnumPropertyDescriptor   { FromImage = true, Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
             Options = [("Po sloupcích", (object)LegendWrap.PoSloupcich), ("Po řádcích", (object)LegendWrap.PoRadcich)] },
         new EnumPropertyDescriptor   { Label = "Řazení poznámek",    Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
-            Options = [("Dle typu (dny platnosti → značky → atributy → text)", (object)LegendRazeni.DleTypu), ("Výchozí (dle dat)", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
+            Options = [("Podle typu", (object)LegendRazeni.DleTypu), ("Podle dat", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
         new FloatPropertyDescriptor  { FromImage = true, Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
@@ -848,8 +848,8 @@ public class NotesLegendElement : StopScheduleElementBase
 
         new ColorPropertyDescriptor { FromImage = true, Label = "Barva pozadí značky",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { FromImage = true, Label = "Barva textu značky", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
-        new ColorPropertyDescriptor { Label = "Původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
-        new ColorPropertyDescriptor { Label = "Nová verze",    Group = "Porovnání verzí", Get = () => RozdilNovaBackColor,    Set = v => RozdilNovaBackColor = v },
+        new ColorPropertyDescriptor { Label = "Původní verze: Barva pozadí", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
+        new ColorPropertyDescriptor { Label = "Nová verze: Barva pozadí", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor,    Set = v => RozdilNovaBackColor = v },
 
         .. GetPositionDescriptors()
     ];

@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-28 (17) - Popisky Minut odjezdů, Tabulky spojů, Poznámek a tabulek podle pravidel
+
+Popisky složitých prvků podle týchž pravidel jako Seznam zastávek (rozhodnutí Jan 28. 10.).
+- **Minuty odjezdů:** Zarovnání minut místo „Rozestup odjezdů" (volby jsou o zarovnání: Bez zarovnání / Podle nejširšího odjezdu / Na pevnou šířku), Nejmenší výška řádku záhlaví místo „Min. …".
+- **Tabulka spojů:** Řádky turnusů, Tučné zastávky / Čáry u zastávek podle trasy, Přípojné řádky (vysvětlení vyčká / navazuje v nápovědě), Slučování přípojů s volbou Řádek pro každý spoj; barvy verzí se jmenují Původní verze: Barva pozadí, Nová verze: Barva značek a podobně. Hláška o nenačtených turnusech radí vypnout Řádky turnusů.
+- **Poznámky:** volby řazení Podle typu / Podle dat (pořadí typů v nápovědě), barvy verzí jako u Tabulky spojů. Ostatní zůstalo (rozhodnutí Jan: nastavení je tam málo).
+- **Tabulka z dat:** Směr řazení a Směr druhého řazení.
+- **Střídání řádků: Barva pozadí** v Minutách, Tabulce z dat i Pevné tabulce a u skupiny dnů v okně Minut - barva se najde hledáním „barva" a jmenuje se stejně jako Lichá Tč: Barva pozadí.
+
 ## 2026-10-28 (16) - Popisky Seznamu zastávek podle toho, co pole dělá
 
 Popisky polí Seznamu zastávek odpovídají typu pole a tomu, co uživatel udělá (rozhodnutí Jan 28. 10., pravidla v `ux-conventions §8`).

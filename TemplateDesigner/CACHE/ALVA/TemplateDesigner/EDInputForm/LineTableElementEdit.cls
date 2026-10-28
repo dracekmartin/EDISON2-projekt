@@ -34,7 +34,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("rows", "Řádky")
         d form.AddBool("ShowPlatnostRow", "Řádek platnosti", 1)
         d form.AddBool("ShowNzRow", "Řádek negativních značek", 1)
-        d form.AddBool("TurnusyKeSpojum", "Turnusy ke spojům", 0)
+        d form.AddBool("TurnusyKeSpojum", "Řádky turnusů", 0)
         s f = form.AddDecimal("PomerZnacek", "Poměr velikosti značek", 1.5, 1, 3, "×")
         s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
 
@@ -73,9 +73,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Zastávky" ────────────────────────────────────────────
         // Jak se tiskne název zastávky. Do 28. 10. ve skupině Datové buňky.
         d form.AddGroup("stops", "Zastávky")
-        s f = form.AddBool("TucneZastavkyDleTrasy", "Tučné zastávky dle trasy", 1)
+        s f = form.AddBool("TucneZastavkyDleTrasy", "Tučné zastávky podle trasy", 1)
         s f.helpText = "V trase linky jde u zastávky zadat atribut ""tučně"" - zapnuté = návrhář ho respektuje, stejně jako to dělá starý tisk. Vypnuté = všechny zastávky stejným písmem."
-        s f = form.AddBool("CaryZastavekDleTrasy", "Čáry u zastávek dle trasy", 1)
+        s f = form.AddBool("CaryZastavekDleTrasy", "Čáry u zastávek podle trasy", 1)
         s f.helpText = "V trase linky jde u zastávky zadat ""podtrženo"" nebo ""podtrženo nad i pod"" - zapnuté = návrhář nakreslí čáru přes celou šířku tabulky, stejně jako starý tisk. Odděluje se tím úsek linky."
         s f = form.AddBool("TeckyZaNazvemZastavky", "Tečky za názvem zastávky", 0)
         s f.helpText = "Za název zastávky se doplní tečky k pravému okraji sloupce, aby oko dojelo k času. Končí před piktogramem přestupu."
@@ -104,9 +104,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // „nekřičel" stejně jako odjezdy. Prázdné = dědí se z datových buněk. Přípojný řádek je
         // řádek buněk (popisek přes CellRenderer, časy po úsecích), proto celá sada Buňka.
         d form.AddGroup("pripoj", "Přípojné řádky")
-        d form.AddBool("ShowPripojeRows", "Přípojné řádky (vyčká/navazuje)", 1)
-        s f = form.AddFieldToLastGroup("PripojeSlucovani", "Slučovat přípoje", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Ne", "Ne - řádek pro každý spoj")
+        s f = form.AddBool("ShowPripojeRows", "Přípojné řádky", 1)
+        s f.helpText = "Pod zastávkou se vytisknou řádky o přípojích (vyčká / navazuje)."
+        s f = form.AddFieldToLastGroup("PripojeSlucovani", "Slučování přípojů", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Ne", "Řádek pro každý spoj")
         d f.AddListItem("PodleSmeru", "Podle směru")
         d f.AddListItem("PodleSmeruALinky", "Podle směru a linky")
         s f.helpText = "Sloučený řádek nese časy víc spojů a v popisku má směr (""ze směru Trhové Sviny""), takže šetří místo. Bez slučování má každý spoj vlastní řádek s číslem spoje a linky."
@@ -121,16 +122,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Jen rozdílový linkový JŘ: změněný spoj stojí dvakrát vedle sebe a odlišné časy se podbarví.
         // Data říkají, která buňka se liší, barvu určuje šablona. Návrhář skupinu jinde schová.
         d form.AddGroup("verze", "Porovnání verzí")
-        s f = form.AddFieldToLastGroup("RozdilPuvodniBackColor", "Původní verze", $$$FieldTypeColor, 0, 0)
+        // Barvy mají v popisku „Barva", jinak je hledání „barva" nenajde (ux-conventions §8).
+        s f = form.AddFieldToLastGroup("RozdilPuvodniBackColor", "Původní verze: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFF08080"
         s f.helpText = "Podbarvení časů původní verze spoje, které se v nové verzi změnily."
-        s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF92D36E"
         s f.helpText = "Podbarvení časů nové verze spoje, které se proti původní změnily, a všech časů nového spoje."
-        s f = form.AddFieldToLastGroup("RozdilPuvodniZnackaColor", "Značky původní verze", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("RozdilPuvodniZnackaColor", "Původní verze: Barva značek", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF960000"
         s f.helpText = "Barva značky, kterou spoj měl jen v původní verzi. Platí pro spoj, kterému se změnily jen značky - ten zůstává v jednom sloupci."
-        s f = form.AddFieldToLastGroup("RozdilNovaZnackaColor", "Značky nové verze", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("RozdilNovaZnackaColor", "Nová verze: Barva značek", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF009600"
         s f.helpText = "Barva značky, kterou spoj má jen v nové verzi."
 

@@ -716,6 +716,8 @@ public class EDInputFormSchemaDriftTests
         "Viditelnost",      // → Podmínka viditelnosti
         "Viditelnost řádku", // → Podmínka viditelnosti řádku (je to podmínka, ne zaškrtávátko - Jan 28. 10.)
         "Rozdělit na více oddílů", // → Počet oddílů (číslo se jmenuje podle toho, co se zadává - Jan 28. 10.)
+        "Střídání řádků",   // → Střídání řádků: Barva pozadí (barva se najde hledáním „barva" - Jan 28. 10.)
+        "Rozestup odjezdů", // → Zarovnání minut (volby jsou o zarovnání - Jan 28. 10.)
         "Tučně",            // → Tučné
         "Podtržené",        // → Podtržení
         "Přeškrtnuté",      // → Přeškrtnutí
@@ -736,7 +738,8 @@ public class EDInputFormSchemaDriftTests
     internal static readonly string[] BannedLabelSubstrings =
     [
         "Šířka rámečku",    // → Tloušťka rámečku (Šířka patří elementu)
-        "Zebra",            // → Střídání řádků
+        "Zebra",            // → Střídání řádků: Barva pozadí
+        "Min. ",            // zkratky ne → „Nejmenší …" (Jan 28. 10.)
         "Tl. ",             // → Tloušťka …
         "Řádek NZ",         // → Řádek negativních značek
         "Font aktuální",    // → Aktuální: Velikost (je to velikost písma, ne rodina)

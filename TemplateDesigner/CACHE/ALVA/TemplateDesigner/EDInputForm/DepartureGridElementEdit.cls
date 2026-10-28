@@ -41,9 +41,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("layout", "Rozměry")
         s f = form.AddDecimal("MinuteWidth", "Šířka minuty", 5, 3, 15, "mm")
         s f.helpText = "Šířka jednoho políčka s minutou - určuje, kolik minut se vejde na řádek"
-        s f = form.AddFieldToLastGroup("MinuteSpacing", "Rozestup odjezdů", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("ByContent", "Bez zarovnání"), f.AddListItem("Even", "Zarovnat dle nejširšího odjezdu"), f.AddListItem("Fixed", "Zarovnat na pevnou šířku")
-        s f.helpText = "Bez zarovnání: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí. Zarovnat dle nejširšího odjezdu: jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici, ale jeden takový spoj zředí celou vývěsku. Zarovnat na pevnou šířku: rozteč je Šířka minuty, nejméně však minuta a jedna značka, takže ji data nezmění; spoj s víc značkami se do ní vejde jejich zmenšením."
+        s f = form.AddFieldToLastGroup("MinuteSpacing", "Zarovnání minut", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("ByContent", "Bez zarovnání"), f.AddListItem("Even", "Podle nejširšího odjezdu"), f.AddListItem("Fixed", "Na pevnou šířku")
+        s f.helpText = "Bez zarovnání: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí. Podle nejširšího odjezdu: jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici, ale jeden takový spoj zředí celou vývěsku. Na pevnou šířku: rozteč je Šířka minuty, nejméně však minuta a jedna značka, takže ji data nezmění; spoj s víc značkami se do ní vejde jejich zmenšením."
         s f = form.AddDecimal("GroupSeparatorWidth", "Mezera mezi skupinami dnů", 0.5, 0, 5, "mm")
         s f.helpText = "Volné místo mezi bloky jednotlivých skupin dnů. 0 = bez mezery."
         s f = form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
@@ -80,7 +80,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("hstyle", "Záhlaví")
         s f = form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
         s f.helpText = "Záhlaví nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
-        s f = form.AddDecimal("SkupinaDnuHeaderLineHeight", "Min. výška řádku záhlaví", 4, 2, 10, "mm")
+        s f = form.AddDecimal("SkupinaDnuHeaderLineHeight", "Nejmenší výška řádku záhlaví", 4, 2, 10, "mm")
         s f.helpText = "Nejmenší výška řádku záhlaví skupiny dnů. Když není vyplněná Velikost, písmo záhlaví se z ní dopočítá."
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Záhlaví", "#FF000000", "", 0, "", 1)
         // 2. řádek záhlaví skupiny (Nadpis2 z dat, např. „den" v „Pracovní / den") je text uvnitř
@@ -91,7 +91,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("dstyle", "Datové buňky")
         s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
         s f.helpText = "Prázdné = podle velikosti písma."
-        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Datové buňky", "#FF000000", "", 0)
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ", 1, 0)

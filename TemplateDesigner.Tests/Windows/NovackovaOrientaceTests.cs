@@ -77,7 +77,7 @@ public class NovackovaOrientaceTests
         var text = ClsText("DynamicTableElementEdit.cls");
 
         Assert.Contains("\"SortField\", \"Řadit podle\"", text);
-        Assert.Contains("\"SortDescending\", \"Směr\"", text);
+        Assert.Contains("\"SortDescending\", \"Směr řazení\"", text);
     }
 
     /// <summary>

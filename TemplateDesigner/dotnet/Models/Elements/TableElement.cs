@@ -1108,7 +1108,7 @@ public class TableElement : TemplateElement
         .. GetGridDescriptors(Grid),
         new ColorPropertyDescriptor
         {
-            Label = "Střídání řádků",
+            Label = "Střídání řádků: Barva pozadí",
             Group = "Tabulka",
             Get   = () => AlternatingRowColor ?? "#00FFFFFF",
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v

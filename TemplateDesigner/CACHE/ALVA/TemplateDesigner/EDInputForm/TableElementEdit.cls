@@ -35,7 +35,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("dstyle", "Styl všech buněk")
         s f = form.AddDecimal("RowHeight", "Výška řádku", 6, 1, 50, "mm")
         s f.helpText = "Výchozí výška řádku. Roztažením prvku do výšky se řádky natáhnou, písmo zůstane."
-        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl všech buněk", "#FF222222", "#00FFFFFF", 0)
 
