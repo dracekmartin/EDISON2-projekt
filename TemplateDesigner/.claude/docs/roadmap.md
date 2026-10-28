@@ -20,11 +20,6 @@ co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-
 Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
 vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se linkového MHD, nejlevnější před verzí.
 
-### `B194c` Nabídka dat a parametry (jen popisky a nápovědy, pokud není uvedeno jinak)
-
-- **P2** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M] **Jan** -
-  **odloženo** (Jan 27. 10.) do rozhodnutí o jednotném formátu voleb; patří k `B56` R5 (stálý kód vedle popisku)
-
 ### `B194f` Pojistky před `B56`
 
 - **G1** Kontraktový Caché test přes registr agend (schéma, ukázka, data, kódy, důvod prázdného výstupu) [M]
@@ -51,6 +46,9 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### Ostatní
 
+- **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
+  **Jan** - čeká na vyjasnění nastavení JŘ s kolegy, ze kterého volby vycházejí (Jan 28. 10.); patří k `B56` R5
+  (stálý kód vedle popisku)
 - **Sjednocené věci definovat jednou** [M] **Jan** (27. 10.) - nejdřív revize toho, co `B194` sjednotilo (popisky,
   nápovědy a rozsahy polí E8, údaje dopravce D4, nabídka podle dat E5, kanon `ux-conventions §8`), a pro každé
   rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky
