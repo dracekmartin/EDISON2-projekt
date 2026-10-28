@@ -29,12 +29,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Nahoře skupiny, které má jen tento prvek, pod nimi společný konec všech tabulek
         // (Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky).
 
-        // ── Skupina "Řádky" ───────────────────────────────────────────────
-        // Řádky značek nad časy. Záhlaví skupin dnů a čísla spojů jsou v Záhlaví, přípoje ve svých řádcích.
-        d form.AddGroup("rows", "Řádky")
-        d form.AddBool("ShowPlatnostRow", "Řádek platnosti", 1)
-        d form.AddBool("ShowNzRow", "Řádek negativních značek", 1)
-        d form.AddBool("TurnusyKeSpojum", "Řádky turnusů", 0)
+        // ── Skupina "Řádky nad časy" ──────────────────────────────────────
+        // Řádky v hlavičce sloupců spojů mezi čísly spojů a časy. Samotné „Řádky" neříkalo, o jaké jde,
+        // a hledání ho pletlo s Přípojnými řádky (`B194h` H10). Záhlaví skupin dnů a čísla spojů jsou
+        // v Záhlaví, přípoje ve svých řádcích.
+        d form.AddGroup("rows", "Řádky nad časy")
+        s f = form.AddBool("ShowPlatnostRow", "Řádek platnosti", 1)
+        s f.helpText = "Nad časy spojů se vytiskne řádek se značkami spoje: dny platnosti (X, 6, 7, +), místenka a atributy spoje (bezbariérový, kola…)."
+        s f = form.AddBool("ShowNzRow", "Řádek negativních značek", 1)
+        s f.helpText = "Nad časy spojů se vytiskne řádek s čísly negativních značek spoje."
+        s f = form.AddBool("TurnusyKeSpojum", "Řádky turnusů", 0)
+        s f.helpText = "Pod čísly spojů se vytisknou řádky s označením turnusu. Je to provozní údaj dopravce; vypnuté = turnusy se ani nenačítají."
         s f = form.AddDecimal("PomerZnacek", "Poměr velikosti značek", 1.5, 1, 3, "×")
         s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
 
@@ -80,6 +85,26 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddBool("TeckyZaNazvemZastavky", "Tečky za názvem zastávky", 0)
         s f.helpText = "Za název zastávky se doplní tečky k pravému okraji sloupce, aby oko dojelo k času. Končí před piktogramem přestupu."
 
+        // ── Skupina "Přípojné řádky" (#8360) ──────────────────────────────
+        // Obsah tabulky, proto před Šířkou sloupců (`ux §4`: obsah, rozložení, zvláštní stavy; `B194h` H10).
+        // Přípoj má jít odlišit od časů spojů - obvykle menším kurzívním písmem, aby v tabulce
+        // „nekřičel" stejně jako odjezdy. Prázdné = dědí se z datových buněk. Přípojný řádek je
+        // řádek buněk (popisek přes CellRenderer, časy po úsecích), proto celá sada Buňka.
+        d form.AddGroup("pripoj", "Přípojné řádky")
+        s f = form.AddBool("ShowPripojeRows", "Přípojné řádky", 1)
+        s f.helpText = "Pod zastávkou se vytisknou řádky o přípojích (vyčká / navazuje)."
+        s f = form.AddFieldToLastGroup("PripojeSlucovani", "Slučování přípojů", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Ne", "Řádek pro každý spoj")
+        d f.AddListItem("PodleSmeru", "Podle směru")
+        d f.AddListItem("PodleSmeruALinky", "Podle směru a linky")
+        s f.helpText = "Sloučený řádek nese časy víc spojů a v popisku má směr (""ze směru Trhové Sviny""), takže šetří místo. Bez slučování má každý spoj vlastní řádek s číslem spoje a linky."
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "PripojStyle", "", "", "", "", 0)
+        s f = form.GetField("PripojStyle.FontSize")
+        s f.helpText = "Prázdné = jako datové buňky"
+        // Pozadí celého řádku - s bílým písmem dá inverzní řádek, o který si KU HK řekl (#8360).
+        s f = form.GetField("PripojStyle.BackgroundColor")
+        s f.helpText = "Podbarví celý přípojný řádek. S bílým písmem dá inverzní řádek. Prázdné = jako datové buňky."
+
         // ── Skupina "Šířka sloupců" ───────────────────────────────────────
         // Šířka sloupce spoje je zadané přání a to, co se do sloupce musí vejít. Všechno, co do
         // toho vstupuje - i odstupy mezi značkami a časem - patří pod jeden nadpis; do 8. 9. to
@@ -98,25 +123,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Vypnuté = každý sloupec je tak široký, jak ho potřebuje jeho obsah, takže ten se značkami je širší než ostatní (tak to dělá starý tisk) a tabulka působí roztřepeně; do řádku se ale vejde víc spojů. Zapnuté = všechny dostanou šířku toho nejširšího, tabulka je pravidelná a zabere víc místa."
         s f = form.AddDecimal("MezeraMeziSkupinamiMm", "Mezera mezi skupinami dnů", 0, 0, 20, "mm")
         s f.helpText = "Volné místo mezi skupinami dnů a také za popisnými sloupci. 0 = souvislá mřížka bez mezer. Mezera se bere ze šířky prvku, takže se do řádku vejde méně spojů."
-
-        // ── Skupina "Přípojné řádky" (#8360) ──────────────────────────────
-        // Přípoj má jít odlišit od časů spojů - obvykle menším kurzívním písmem, aby v tabulce
-        // „nekřičel" stejně jako odjezdy. Prázdné = dědí se z datových buněk. Přípojný řádek je
-        // řádek buněk (popisek přes CellRenderer, časy po úsecích), proto celá sada Buňka.
-        d form.AddGroup("pripoj", "Přípojné řádky")
-        s f = form.AddBool("ShowPripojeRows", "Přípojné řádky", 1)
-        s f.helpText = "Pod zastávkou se vytisknou řádky o přípojích (vyčká / navazuje)."
-        s f = form.AddFieldToLastGroup("PripojeSlucovani", "Slučování přípojů", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Ne", "Řádek pro každý spoj")
-        d f.AddListItem("PodleSmeru", "Podle směru")
-        d f.AddListItem("PodleSmeruALinky", "Podle směru a linky")
-        s f.helpText = "Sloučený řádek nese časy víc spojů a v popisku má směr (""ze směru Trhové Sviny""), takže šetří místo. Bez slučování má každý spoj vlastní řádek s číslem spoje a linky."
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "PripojStyle", "", "", "", "", 0)
-        s f = form.GetField("PripojStyle.FontSize")
-        s f.helpText = "Prázdné = jako datové buňky"
-        // Pozadí celého řádku - s bílým písmem dá inverzní řádek, o který si KU HK řekl (#8360).
-        s f = form.GetField("PripojStyle.BackgroundColor")
-        s f.helpText = "Podbarví celý přípojný řádek. S bílým písmem dá inverzní řádek. Prázdné = jako datové buňky."
 
         // ── Skupina "Porovnání verzí" (B192) ──────────────────────────────
         // Jen rozdílový linkový JŘ: změněný spoj stojí dvakrát vedle sebe a odlišné časy se podbarví.

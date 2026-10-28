@@ -245,6 +245,9 @@
 - **H9 (3)** Velikost a Výška řádku Poznámek v Datových buňkách jako u tabulek - mění rozhodnutí z 1. 9.
   (nález Pavla, kdy Datové buňky měly jen barvy); dnes je tam Font a Řez (rozhodnutí Jan 28. 10.;
   changelog 2026-10-28 (24)).
+- **H10** Tabulka spojů: skupina „Řádky nad časy" (ne „Řádky značek" z revize - turnusy nejsou značky),
+  Přípojné řádky před Šířkou sloupců, nápovědy tří řádků; skupiny panelu a importu jako ve formuláři
+  (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (25)).
 
 ## Popisky polí podle pravidel - složité prvky (hotovo 28. 10. 2026)
 

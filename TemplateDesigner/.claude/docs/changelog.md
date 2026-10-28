@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-28 (25) - Tabulka spojů: „Řádky nad časy" a Přípojné řádky před Šířkou sloupců (`B194h` H10)
+
+- Skupina **„Řádky"** se jmenuje **„Řádky nad časy"** - jsou to řádky v hlavičce sloupců spojů mezi čísly spojů a časy (platnost, negativní značky, turnusy). Samotné „Řádky" neříkalo, o jaké jde, a hledání ho pletlo s Přípojnými řádky.
+- **Přípojné řádky** stojí před Šířkou sloupců: nahoře je nejdřív obsah, pak rozložení, pak zvláštní stavy (`ux-conventions §4`).
+- **Řádek platnosti, Řádek negativních značek a Řádky turnusů** mají nápovědu. Řádek platnosti nese dny platnosti, místenku i atributy spoje.
+- Panel vlastností a protokol importu z PDF mají skupiny jako formulář (dřív např. „Datové buňky · Formát času" místo „Časy · Formát času"); příklad v zadání pro AI import používá nový klíč.
+- Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` na dev serveru.
+
 ## 2026-10-28 (24) - Poznámky: Velikost a Výška řádku v Datových buňkách (`B194h` H9)
 
 Velikost písma poznámek a Výška řádku jsou ve skupině **Datové buňky** jako u tabulek: Výška řádku, Font, Řez, **Velikost**, Barva textu. Pole „Velikost poznámek" se jmenuje „Velikost".

@@ -187,7 +187,7 @@ kód a testy (build bez chyb, 2492 testů zelených v čisté kopii `7dfb5b1a`) 
 Směr potvrzený: tabulky mají jednu kostru, stejné sady stylu a stejné popisky; „barva" najde v každém
 formuláři všechna barevná pole.
 H1, H2, H4, H5, H7, H8, H14, H15 a dokumentační část H13 jsou hotové (changelog 2026-10-28 (18)-(21)),
-H3 rozhodnutý (nechat, archiv), H6 a H9 hotové (changelog 2026-10-28 (22)-(24)).
+H3 rozhodnutý (nechat, archiv), H6, H9 a H10 hotové (changelog 2026-10-28 (22)-(25)).
 
 - **H10 Tabulka spojů: pořadí a názvy skupin** [S] **Jan** (*ověřeno:* server).
   Přípojné řádky (obsah) stojí za Šířkou sloupců (rozložení), proti pořadí v `ux §4`.

@@ -45,7 +45,7 @@ public class LineScheduleImportTests
     [Theory]
     [InlineData("Řádek platnosti")]
     [InlineData("Řádek negativních značek")]
-    [InlineData("Řádky · Přípojné řádky")]
+    [InlineData("Přípojné řádky · Přípojné řádky")]
     [InlineData("Tučné zastávky podle trasy")]
     [InlineData("Čáry u zastávek podle trasy")]
     [InlineData("Záhlaví skupin dnů")]
@@ -64,7 +64,7 @@ public class LineScheduleImportTests
         ElementSettingsFromImage.Apply(el, new Dictionary<string, string>
         {
             ["Popisné sloupce · Popisné sloupce bez vnitřních čar"] = "ano",
-            ["Datové buňky · Formát času"] = "Celý čas stejně (hh:mm)",
+            ["Časy · Formát času"] = "Celý čas stejně (hh:mm)",
         });
 
         Assert.True(el.PopisneSloupceBezVnitrnichCar);

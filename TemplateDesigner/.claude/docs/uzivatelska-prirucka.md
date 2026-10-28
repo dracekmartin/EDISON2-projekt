@@ -1137,10 +1137,10 @@ přípojné řádky a texty poznámek.
 
 ### 2. Prvek Tabulka spojů
 
-Nastavení má v panelu vlastností (a ve stejném okně po Enter nebo dvojkliku) nahoře skupiny jen tohoto prvku: Řádky, Časy, Popisné sloupce, Zastávky, Šířka sloupců, Přípojné řádky a Porovnání verzí.
+Nastavení má v panelu vlastností (a ve stejném okně po Enter nebo dvojkliku) nahoře skupiny jen tohoto prvku: Řádky nad časy, Časy, Popisné sloupce, Zastávky, Přípojné řádky, Šířka sloupců a Porovnání verzí.
 Pod nimi jsou skupiny, které mají všechny tabulky stejně: Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
 
-**Řádky** - řádky značek nad časy:
+**Řádky nad časy** - řádky v hlavičce sloupců spojů, mezi čísly spojů a časy:
 
 - **Řádek platnosti** - pod číslem spoje řádek se značkami platnosti (denní značky, místenka,
   atributy vozidla).
