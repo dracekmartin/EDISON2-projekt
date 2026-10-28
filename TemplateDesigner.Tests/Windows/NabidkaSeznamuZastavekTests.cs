@@ -28,7 +28,7 @@ public class NabidkaSeznamuZastavekTests
     public void Mhd_NenabiziSloupekAniVarianty()
     {
         var vm = new StopColumnsEditorDialogViewModel(new StopListElement(), [], JakoMhd);
-        var klice = vm.ColumnVMs.Select(c => c.Key).ToList();
+        var klice = vm.Columns.Rows.Cast<StopColumnVM>().Select(c => c.Key).ToList();
 
         Assert.DoesNotContain(StopFields.Sloupek, klice);
         Assert.DoesNotContain(StopFields.TravelTimeVariants, klice);
@@ -39,7 +39,7 @@ public class NabidkaSeznamuZastavekTests
     public void BezPravidla_NabiziVse()
     {
         var vm = new StopColumnsEditorDialogViewModel(new StopListElement(), []);
-        var klice = vm.ColumnVMs.Select(c => c.Key).ToList();
+        var klice = vm.Columns.Rows.Cast<StopColumnVM>().Select(c => c.Key).ToList();
 
         Assert.Contains(StopFields.Sloupek, klice);
         Assert.Contains(StopFields.TravelTimeVariants, klice);
@@ -61,8 +61,8 @@ public class NabidkaSeznamuZastavekTests
         };
         var vm = new StopColumnsEditorDialogViewModel(el, el.Columns, JakoMhd);
 
-        Assert.Contains(StopFields.Sloupek, vm.ColumnVMs.Select(c => c.Key));
-        Assert.DoesNotContain(StopFields.TravelTimeVariants, vm.ColumnVMs.Select(c => c.Key));
+        Assert.Contains(StopFields.Sloupek, vm.Columns.Rows.Cast<StopColumnVM>().Select(c => c.Key));
+        Assert.DoesNotContain(StopFields.TravelTimeVariants, vm.Columns.Rows.Cast<StopColumnVM>().Select(c => c.Key));
 
         vm.OkCommand.Execute(null);
 

@@ -1,0 +1,125 @@
+<UserControl x:Class="TemplateDesigner.Controls.ColumnsTab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TemplateDesigner.Controls"
+             x:Name="Root">
+    <!-- Sdílená záložka Sloupce oken tabulek. DataContext = ColumnsTabViewModel; okno prvku dodá
+         řádky a případná pole navíc přes ExtraColumnTemplate / ExtraDataTemplate (DataContext šablony
+         = vybraný řádek). -->
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:NotNullToVisibleConverter x:Key="NotNullToVis"/>
+        <Style x:Key="Hint" TargetType="TextBlock">
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Muted}"/>
+            <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Body}"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+        <Style x:Key="Title" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="6">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="210" MinWidth="160"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Vlevo: seznam sloupců, přidání a odebrání, hlídání šířky -->
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Text="Sloupce:" Style="{StaticResource Title}" Margin="0,0,0,4"/>
+
+            <local:ColumnListEditor Grid.Row="1"
+                ItemsSource="{Binding Rows}"
+                SelectedItem="{Binding SelectedRow, Mode=TwoWay}"
+                MoveUpCommand="{Binding MoveUpCommand}"
+                MoveDownCommand="{Binding MoveDownCommand}"/>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0"
+                        Visibility="{Binding CanAddRemove, Converter={StaticResource BoolToVis}}">
+                <Button Content="Přidat" Command="{Binding AddCommand}" Padding="8,3" Margin="0,0,6,0"/>
+                <Button Content="Odebrat" Command="{Binding RemoveCommand}"
+                        IsEnabled="{Binding HasSelection}" Padding="8,3"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="3" Margin="0,4,0,0">
+                <TextBlock Text="{Binding ColumnOverflowText}" TextWrapping="Wrap" Margin="0,8,0,0"
+                           Foreground="{DynamicResource EDTheme.Semantic.Danger}"
+                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                           Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
+                <Button Content="Přizpůsobit sloupce k šířce prvku"
+                        Command="{Binding FitCommand}"
+                        ToolTip="Zmenší pevné šířky sloupců ve stejném poměru, aby se součet rovnal šířce prvku. Automatické šířky zůstanou."
+                        HorizontalAlignment="Stretch" Padding="6,3" Margin="0,4,0,0"
+                        Visibility="{Binding ShowFit, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Vpravo: detail vybraného sloupce -->
+        <ScrollViewer Grid.Column="1" Margin="8,0,0,0"
+                      VerticalScrollBarVisibility="Auto"
+                      IsEnabled="{Binding HasSelection}">
+            <StackPanel>
+
+                <TextBlock Text="Sloupec" Style="{StaticResource Title}"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBox Width="160" Margin="0,0,10,0"
+                             Text="{Binding SelectedRow.Header, UpdateSourceTrigger=LostFocus}"
+                             AcceptsReturn="{Binding MultilineHeader}" MaxLines="3" VerticalScrollBarVisibility="Auto"
+                             ToolTip="{Binding HeaderToolTip}"/>
+                    <TextBlock Text="{Binding SelectedRow.WidthLabel}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <TextBox Width="50" Text="{Binding SelectedRow.WidthText, UpdateSourceTrigger=LostFocus}"/>
+                </StackPanel>
+                <TextBlock Text="{Binding SelectedWidthHint}" Style="{StaticResource Hint}"/>
+                <TextBlock Text="{Binding SelectedRow.ColumnHint}" Style="{StaticResource Hint}"
+                           Visibility="{Binding SelectedRow.HasColumnHint, Converter={StaticResource BoolToVis}}"/>
+                <ContentControl Content="{Binding SelectedRow}" Focusable="False"
+                                ContentTemplate="{Binding ExtraColumnTemplate, ElementName=Root}"
+                                Visibility="{Binding ExtraColumnTemplate, ElementName=Root, Converter={StaticResource NotNullToVis}}"/>
+
+                <Separator Margin="0,8,0,8"/>
+
+                <TextBlock Text="Prázdné pole = převezme se nastavení prvku ze záložky Obecné." Style="{StaticResource Hint}"/>
+
+                <TextBlock Text="Záhlaví" Style="{StaticResource Title}"/>
+                <local:CellStyleEditor
+                    DataContext="{Binding SelectedRow.HeaderStyle}"
+                    EditOptions="{Binding DataContext.SelectedRow.HeaderEditOptions, ElementName=Root}"/>
+
+                <Separator Margin="0,8,0,8"/>
+
+                <TextBlock Text="{Binding SelectedRow.DataZoneTitle}" Style="{StaticResource Title}"/>
+                <TextBlock Text="{Binding SelectedRow.DataZoneHint}" Style="{StaticResource Hint}" Margin="0,0,0,6"
+                           Visibility="{Binding SelectedRow.HasDataZoneHint, Converter={StaticResource BoolToVis}}"/>
+                <local:CellStyleEditor
+                    DataContext="{Binding SelectedRow.DataStyle}"
+                    EditOptions="{Binding DataContext.SelectedRow.DataEditOptions, ElementName=Root}"/>
+
+                <ContentControl Content="{Binding SelectedRow}" Focusable="False"
+                                ContentTemplate="{Binding ExtraDataTemplate, ElementName=Root}"
+                                Visibility="{Binding ExtraDataTemplate, ElementName=Root, Converter={StaticResource NotNullToVis}}"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <Button Content="Resetovat styl sloupce" Command="{Binding ResetStyleCommand}"
+                            ToolTip="Smaže úpravy stylu tohoto sloupce - převezme styl ze záložky Obecné"
+                            Padding="10,3" Margin="0,0,6,0"/>
+                    <Button Content="Resetovat všechny sloupce" Command="{Binding ResetAllCommand}"
+                            ToolTip="Smaže úpravy stylu všech sloupců - převezmou styl ze záložky Obecné"
+                            Padding="10,3"/>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -1215,10 +1215,15 @@ public class TemplateDesignerViewModel : EDViewModel
     public void ApplyDepartureGridEdit(DepartureGridElement element, IDesignerCommand? generalCommand,
         List<DepartureGroupColumnStyle> resultGroupColumns,
         bool hasGroups, ColumnVisualStyle? resultHourColumnStyle,
+        string hourColumnHeader, float hourColumnWidth,
         List<DepartureColumnDefinition>? resultCustomColumns)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
+        cmds.Add(new SetPropertyCommand("Záhlaví hodin", element.HourColumnHeader, hourColumnHeader,
+            v => element.HourColumnHeader = (string)v!));
+        cmds.Add(new SetPropertyCommand("Šířka hodin", element.HourColumnWidth, hourColumnWidth,
+            v => element.HourColumnWidth = (float)v!));
         if (hasGroups)
             cmds.Add(new SetPropertyCommand("Skupiny dnů", element.GroupColumns, resultGroupColumns,
                 v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));

@@ -1884,7 +1884,7 @@ public partial class MainWindow : Window
 
         _vm.ApplyDepartureGridEdit(element, dlg.GeneralCommand,
             dlg.ResultGroupColumns, availableGroups.Count > 0, dlg.ResultHourColumnStyle,
-            dlg.ResultCustomColumns);
+            dlg.ResultHourColumnHeader, dlg.ResultHourColumnWidth, dlg.ResultCustomColumns);
 
         InvalidateCanvas();
         InvalidatePreview();

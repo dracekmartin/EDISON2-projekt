@@ -8,9 +8,8 @@ using System.Windows.Input;
 namespace TemplateDesigner.Controls;
 
 /// <summary>
-/// Sdílený levý seznam sloupců pro tabulkové editory (StopList, DepartureGrid).
-/// Položky implementují <see cref="IColumnRowVM"/>; přesun ▲▼ deleguje na příkazy z host VM.
-/// Detail vybraného sloupce zůstává v hostujícím dialogu (vpravo).
+/// Levý seznam sloupců sdílené záložky Sloupce (<see cref="ColumnsTab"/>).
+/// Položky implementují <see cref="IColumnRowVM"/>; přesun ▲▼ deleguje na příkazy záložky.
 /// </summary>
 public partial class ColumnListEditor : UserControl
 {
@@ -54,7 +53,7 @@ public partial class ColumnListEditor : UserControl
     }
 }
 
-/// <summary>Parse/format šířky sloupce pro editory (sdílené StopList i DepartureGrid).
+/// <summary>Parse/format šířky sloupce pro záložku Sloupce.
 /// Přijímá tečku i čárku, InvariantCulture; prázdné/nevalidní/≤0 → null (auto).</summary>
 public static class ColumnWidthText
 {

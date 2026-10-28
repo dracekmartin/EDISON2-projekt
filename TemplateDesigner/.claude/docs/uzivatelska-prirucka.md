@@ -885,6 +885,11 @@ uplatňují **auto-zmenšení písma** (kap. 6).
 
 ### 3. Editory sloupců
 
+Záložka **Sloupce** vypadá ve všech oknech tabulek stejně.
+Vlevo je seznam sloupců se zaškrtávátkem viditelnosti a šipkami ▲/▼, u Tabulky z dat navíc Přidat a Odebrat.
+Vpravo je vybraný sloupec: **Záhlaví**, **Šířka** a styl zvlášť pro **Záhlaví** a **Datové buňky**; prázdné pole převezme nastavení prvku ze záložky Obecné.
+Sloupec, který se tiskne vždy (Hodiny u Minut odjezdů, sloupce spojů u Tabulky spojů), nejde skrýt ani posunout.
+
 #### Editor sloupců zastávek
 Dvoutabový dialog: **Obecné** (vlastnosti prvku) a **Sloupce**:
 
@@ -935,7 +940,7 @@ platnosti"** - viz výše.
 #### Editor skupin dnů (sloupec hodin + skupiny)
 Analogický dvoutabový dialog:
 
-- První řádek je vždy pevně **„Hodiny"** (nelze přesunout), následují jednotlivé skupiny dnů
+- První řádek je vždy pevně **„Hodiny"** (nelze přesunout ani skrýt), následují jednotlivé skupiny dnů
   podle skutečných dat.
 - Pro skupinu: viditelnost, pořadí (▲/▼), **přepis záhlaví** (jinak se použije text skupiny z dat, u
   sloupce hodin výchozí „Hod"), pevná šířka (prázdné = automatický výpočet + rovnoměrné dofill),

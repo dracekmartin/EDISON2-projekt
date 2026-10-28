@@ -238,24 +238,19 @@ public override void Render(RenderContext ctx) {
 }
 ```
 
-**4. Dialog sloupců - sdílený `<CellStyleEditor>`:**
+**4. Okno se sloupci - sdílená záložka `<ColumnsTab>`:**
 
-Dialog (okno triad): `Windows/NovyColumnsEditorDialog/{Window,ViewModel,xaml}.cs`. VM musí:
-- V konstruktoru brát `NovyElement element` a volat `element.ResolveColumnHeaderParent()` / `ResolveColumnDataParent()`
-- Předat inherited do `CellStyleVM.FromModel(column.HeaderStyle, headerInherited)`
-- Exposovat 8 commands (`Pick/Clear<Header|Data><Text|Bg>ColorCommand`), `ResetStyleCommand`, `RequestColorPicker` callback
-- Exposovat `HeaderEditOptions` + `DataEditOptions` (`CellStyleEditOptions.AllEnabled` obvykle)
+Okno (triáda): `Windows/NovyColumnsEditorDialog/{Window,ViewModel,xaml}.cs`, záložky Obecné (EDInputForm) a Sloupce.
+Záložku Sloupce **nekopíruj** - dodej jen:
+- **řádek** `NovyColumnVM : Controls.ColumnRowVM` - převod sloupce z/do modelu (co okno nenabízí, vrať beze
+  změny) a schopnosti (`CanHide`, `CanMove`, `CountsTowardWidth`, `WidthHint`, `DataZoneTitle`…).
+  Styl: `CellStyleVM.FromModel(column.HeaderStyle, TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(), col.Alignment, …))`
+- **ViewModel okna**: `Columns = new ColumnsTabViewModel(rows) { ElementWidth = () => element.Width, CanFit = …, NewRow = … }`,
+  v `OnOk` jen výsledky (prvek neměnit - provede je volající jako jeden vratný krok)
+- **XAML**: `<controls:ColumnsTab DataContext="{Binding Columns}"/>`, pole navíc přes `ExtraColumnTemplate` / `ExtraDataTemplate`
 
-XAML dialogu - 2× `<controls:CellStyleEditor>` (Header + Data zone):
-```xml
-<controls:CellStyleEditor
-    DataContext="{Binding SelectedColumnVM.HeaderStyle}"
-    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-    PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-    ... /> <!-- 3 zbývající color commands -->
-```
-
-**Reference implementace:** `TableEditorDialog` (Fixed+Dynamic sloupce), `StopColumnsEditorDialog` (jednoduché sloupce), `DepartureGroupEditorDialog` (skupiny dnů + sloupec hodin).
+**Reference implementace:** `LineTableColumnsEditorDialog` (pevný sloupec spojů, zvláštní zóna šipky),
+`DynamicTableEditorDialog` (přidání/odebrání, pole navíc), `DepartureGroupEditorDialog` (skupiny dnů + sloupec hodin).
 
 **NIKDY neduplikuj inline XAML pro editaci stylu buněk** - vše přes `<CellStyleEditor>`.
 

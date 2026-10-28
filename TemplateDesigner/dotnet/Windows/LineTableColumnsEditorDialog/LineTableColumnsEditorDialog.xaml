@@ -3,15 +3,12 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
-        Width="680" Height="640"
-        MinWidth="560" MinHeight="520"
+        Width="700" Height="640"
+        MinWidth="580" MinHeight="520"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip">
 
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-    </Window.Resources>
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -28,86 +25,7 @@
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->
             <TabItem Header="Sloupce">
-                <Grid Margin="6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="200" MinWidth="150"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Vlevo: sdílený seznam sloupců (ColumnListEditor) + warning -->
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Text="Sloupce:" FontWeight="SemiBold" Margin="0,0,0,4"/>
-
-                        <controls:ColumnListEditor Grid.Row="1"
-                            ItemsSource="{Binding ColumnVMs}"
-                            SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
-                            MoveUpCommand="{Binding MoveUpCommand}"
-                            MoveDownCommand="{Binding MoveDownCommand}"/>
-
-                        <TextBlock Grid.Row="2" Text="{Binding ColumnOverflowText}"
-                                   Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
-                                   TextWrapping="Wrap"
-                                   Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
-                    </Grid>
-
-                    <!-- Vpravo: detail vybraného sloupce -->
-                    <ScrollViewer Grid.Column="1" Margin="8,0,0,0"
-                                  VerticalScrollBarVisibility="Auto"
-                                  IsEnabled="{Binding HasSelection}">
-                        <StackPanel>
-
-                            <TextBlock Text="Struktura sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="160" Text="{Binding SelectedColumnVM.Header, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
-                                <TextBlock Text="Šířka (mm):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="50" Text="{Binding SelectedColumnVM.WidthText, UpdateSourceTrigger=LostFocus}"/>
-                            </StackPanel>
-                            <TextBlock Text="Šířka prázdná = automaticky (rozdělí zbývající šířku mezi auto-sloupce a spoje)." FontStyle="Italic"
-                                       Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
-
-                            <Separator Margin="0,8,0,8"/>
-
-                            <TextBlock Text="Prázdné pole = převezme se styl prvku (záložka Obecné)."
-                                       FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
-
-                            <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                            <controls:CellStyleEditor
-                                DataContext="{Binding SelectedColumnVM.HeaderStyle}"
-                                EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
-
-                            <Separator Margin="0,8,0,8"/>
-
-                            <TextBlock Text="{Binding NazevZonyDat}" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                            <TextBlock Text="{Binding NapovedaZonyDat}" FontStyle="Italic"
-                                       TextWrapping="Wrap" Margin="0,0,0,6"
-                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
-                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                                       Visibility="{Binding MaNapoveduZonyDat, Converter={StaticResource BoolToVis}}"/>
-                            <controls:CellStyleEditor
-                                DataContext="{Binding SelectedColumnVM.DataStyle}"
-                                EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <Button Content="Resetovat styl sloupce"
-                                        Command="{Binding DataContext.ResetStyleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        Padding="10,3" Margin="0,0,6,0"/>
-                                <Button Content="Resetovat všechny sloupce"
-                                        Command="{Binding DataContext.ResetAllColumnStylesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce převezmou styl ze záložky Obecné"
-                                        Padding="10,3"/>
-                            </StackPanel>
-
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
+                <controls:ColumnsTab DataContext="{Binding Columns}"/>
             </TabItem>
 
         </TabControl>

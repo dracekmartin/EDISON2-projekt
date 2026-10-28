@@ -143,7 +143,7 @@ je to vědomá výjimka, ne nedodělek (`mvvm-patterns.md` §Známé záměrné 
 
 ### Jednotná kaskáda stylů buněk
 
-Všechny tři tabulkové JŘ elementy (StopList, DepartureGrid, NotesLegend) používají spolu s `TableElement` sdílenou 4-vrstvou kaskádu `column.Style → element.HeaderStyle/DataStyle → element-specific defaults → CellDefaults`. Rendering přes `Rendering/CellRenderer.DrawCell` - jediné místo v aplikaci pozicování textu buňky (bg → padding → HAlign+VAlign → decorations). Dialogy sloupců (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`) používají sdílený `Controls/CellStyleEditor` UserControl.
+Všechny tři tabulkové JŘ elementy (StopList, DepartureGrid, NotesLegend) používají spolu s `TableElement` sdílenou 4-vrstvou kaskádu `column.Style → element.HeaderStyle/DataStyle → element-specific defaults → CellDefaults`. Rendering přes `Rendering/CellRenderer.DrawCell` - jediné místo v aplikaci pozicování textu buňky (bg → padding → HAlign+VAlign → decorations). Okna se sloupci (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `LineTableColumnsEditorDialog`, `DynamicTableEditorDialog`) mají sdílenou záložku Sloupce `Controls/ColumnsTab` s editorem stylu `Controls/CellStyleEditor`.
 
 Detaily patternu + element-side pattern (`Resolve*Style` helpery, pre-created per-column fonty/painty pro perf) viz `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`.
 
@@ -351,13 +351,16 @@ Vše v `dotnet/Rendering/`:
 
 | Prvek | Co dělá | Používá |
 |---|---|---|
-| `ColumnListEditor` + `IColumnRowVM` | levý seznam sloupců (checkbox viditelnost, override tečka, ▲▼, šířka) | StopList, DepartureGrid, LineTable |
-| `CellStyleEditor` + `CellStyleVM` | tri-state editor stylu buňky (font/barvy/align/padding, „×" reset) | všechny dialogy sloupců |
-| **2-tab dialog** (Obecné + Sloupce) | Tab 1 = EDInputForm (`*ElementEdit.cls`, element-wide props), Tab 2 = `ColumnListEditor` + `CellStyleEditor` | StopColumnsEditorDialog, DepartureGroupEditorDialog, DynamicTableEditorDialog, LineTableColumnsEditorDialog |
+| `ColumnsTab` + `ColumnsTabViewModel` + `ColumnRowVM` | celá záložka Sloupce: seznam, detail sloupce, součet šířek, Přizpůsobit, přidání/odebrání, reset | všechny čtyři okna se sloupci |
+| `ColumnListEditor` + `IColumnRowVM` | levý seznam uvnitř záložky (zaškrtávátko viditelnosti, tečka vlastního stylu, ▲▼, šířka) | `ColumnsTab` |
+| `CellStyleEditor` + `CellStyleVM` | tri-state editor stylu buňky (font/barvy/align/padding, „×" reset) | `ColumnsTab` |
+| **2-tab dialog** (Obecné + Sloupce) | Tab 1 = EDInputForm (`*ElementEdit.cls`, element-wide props), Tab 2 = `ColumnsTab` | StopColumnsEditorDialog, DepartureGroupEditorDialog, DynamicTableEditorDialog, LineTableColumnsEditorDialog |
 
-**2-tab dialog = závazný vzor** pro každý tabulkový element s editovatelnou kolekcí sloupců. Nový
-element ho postaví jako klon některého existujícího (nejblíž `LineTableColumnsEditorDialog`), NIKDY
-neduplikuje inline XAML pro editaci stylu buňky.
+**2-tab dialog = závazný vzor** pro každý tabulkový element s editovatelnou kolekcí sloupců. Záložka
+Sloupce se **nekopíruje** (do 28. 10. ji měla každá tabulka vlastní a rozešly se, `B194` E13c): nový
+element dodá podtřídu `ColumnRowVM` (převod sloupce z/do modelu a schopnosti řádku) a vytvoří
+`ColumnsTabViewModel`; pole navíc dá do `ExtraColumnTemplate` / `ExtraDataTemplate`. Detail v
+`mvvm-patterns.md` §Sdílená záložka Sloupce.
 
 ---
 
@@ -386,7 +389,7 @@ Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho d
   `ColumnRenderer.DrawRow` („řádek = sekvence sloupců") jeho tvar neumí vyjádřit. Vlastní: pivot layout,
   redistribuce šířek, word-wrap víceřádkových záhlaví, HourColumnPerGroup, NZ invertované minuty,
   extended hours přes půlnoc. **Sdílí ale plně datovou vrstvu** (column model `DepartureGroupColumnStyle`,
-  kaskádu, `CellStyleEditor`/`ColumnListEditor`, `CellRenderer.DrawCell` na hodinové buňky) → z pohledu
+  kaskádu, záložku Sloupce `ColumnsTab`, `CellRenderer.DrawCell` na hodinové buňky) → z pohledu
   uživatele je konzistentní.
 
 ---
@@ -394,8 +397,8 @@ Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho d
 ## 3. Nový tabulkový element - co dostaneš zdarma, co musíš dodat
 
 **Zdarma z jádra:** kreslení buňky, kreslení řádku, **svislá smyčka** (`RowPlanRenderer`), výpočet
-šířek (pokud tvůj model je „per-sloupec"), kaskáda stylů, editor sloupců + styl editor, 2-tab dialog
-(klon).
+šířek (pokud tvůj model je „per-sloupec"), kaskáda stylů, záložka Sloupce (`ColumnsTab` - dodáš jen
+řádek sloupce), 2-tab dialog.
 
 **Musíš dodat (tvé odlišnosti):** column model (nebo reuse `StopColumn`/`TableColumn`), mapování
 „co je v buňce" (klíč → hodnota z dat), **plán řádků** (`RowSpec` per řádek s druhem, výškou

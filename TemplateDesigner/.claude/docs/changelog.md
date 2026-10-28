@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-28 (5) - Jedna společná záložka Sloupce pro všechny tabulky (`B194d` E13c)
+
+Seznam zastávek, Minuty odjezdů, Tabulka spojů a Tabulka z dat měly záložku Sloupce každá ve vlastní kopii (asi 800 skoro shodných řádků) a texty i chování se rozešly.
+Teď ji sdílejí (`ColumnsTab`); okno jen dodá své sloupce a řekne, co u něj platí.
+- **Stejné texty:** popisek „Sloupce:", nadpis „Sloupec", zóny „Záhlaví" a „Datové buňky" jako ve formuláři prvku (u šipky „Šipka"), jedna nápověda k dědění, hlášení o přesahu šířky bez nepravdivého „obsah se ořízne", reset s bublinou, „×" u Střídání řádků s bublinou „Vymazat barvu". Okna mají stejnou šířku.
+- **Pevné sloupce:** Hodiny u Minut a sloupce spojů u Tabulky spojů nejdou skrýt ani posunout (zaškrtávátko dřív nic nedělalo). Posun ostatních sloupců je kolem nich prohodí.
+- **Minuty:** seznam ukazuje název skupiny dnů z dat i po přepisu záhlaví, ať je vidět, o kterou jde.
+- **Chyba:** OK v okně Tabulky z dat zahodilo zarovnání sloupce a šířku v procentech (40 % se změnilo na 40 mm) i u tabulky, na kterou nikdo nesáhl. Okno je teď vrací beze změny a procentní šířku ukáže v %.
+- **Chyba:** záhlaví a šířku hodin okno Minut zapisovalo rovnou do prvku, takže je Ctrl+Z nevrátil. Jsou teď součástí jednoho vratného kroku s ostatním nastavením.
+- **Chyba:** šedá zděděná hodnota zarovnání ukazovala Vlevo u sloupce, který se tiskne na střed (Tabulka spojů); zděděná vrstva teď počítá se záložním zarovnáním sloupce jako tisk.
+
+Víceřádkové záhlaví zůstává jen u Seznamu zastávek a Minut a Přizpůsobit jen u Seznamu zastávek a Tabulky z dat (Tabulka spojů záměrně, rozhodnutí 26. 10.): Tabulka spojů a Tabulka z dat výšku záhlaví podle počtu řádků nepočítají.
+Reprodukce a pojistky `ZalozkaSloupceOpravyTests` (na původním kódu padaly), `ZalozkaSloupceTests`.
+
 ## 2026-10-28 (4) - Tabulka spojů, Tabulka z dat a Pevná tabulka ve společné kostře formuláře (`B194d` E3)
 
 Všechny tabulky kromě Poznámek mají teď stejnou kostru formuláře (pravidlo `ux-conventions §4`).

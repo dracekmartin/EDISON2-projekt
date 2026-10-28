@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
-        Width="680" Height="640"
-        MinWidth="560" MinHeight="520"
+        Width="700" Height="640"
+        MinWidth="580" MinHeight="520"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip">
@@ -29,106 +29,30 @@
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->
             <TabItem Header="Sloupce">
-                <Grid Margin="6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="200" MinWidth="150"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Vlevo: sdílený seznam sloupců (ColumnListEditor) -->
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Text="Skupiny dnů:" FontWeight="SemiBold" Margin="0,0,0,4"/>
-
-                        <controls:ColumnListEditor Grid.Row="1"
-                            ItemsSource="{Binding GroupVMs}"
-                            SelectedItem="{Binding SelectedGroupVM, Mode=TwoWay}"
-                            MoveUpCommand="{Binding MoveUpCommand}"
-                            MoveDownCommand="{Binding MoveDownCommand}"/>
-                    </Grid>
-
-                    <!-- Vpravo: detail vybraného sloupce -->
-                    <ScrollViewer Grid.Column="1" Margin="8,0,0,0"
-                                  VerticalScrollBarVisibility="Auto"
-                                  IsEnabled="{Binding HasSelection}">
-                        <StackPanel>
-
-                            <!-- ── Struktura sloupce - nadpis (override výchozí hodnoty) ──────────────────── -->
-                            <TextBlock Text="Struktura sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <!-- Víceřádkové jako u nadpisů sloupců zastávek: Enter uvnitř pole udělá
-                                     druhý řádek záhlaví, ne potvrzení dialogu. Funguje i token „\n". -->
-                                <TextBox Width="160" Text="{Binding SelectedGroupVM.HeaderOverride, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"
-                                         AcceptsReturn="True" MaxLines="3" VerticalScrollBarVisibility="Auto"
-                                         ToolTip="Přepis záhlaví skupiny. Víc řádků: Enter nebo token \n - všechny řádky mají stejný styl."/>
-                                <TextBlock Text="Šířka (mm):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="50" Text="{Binding SelectedGroupVM.WidthText, UpdateSourceTrigger=LostFocus}"/>
+                <controls:ColumnsTab DataContext="{Binding Columns}">
+                    <!-- Střídání řádků per skupina dnů (DataContext = vybraný sloupec). Vlastní pole, ne součást
+                         stylu buňky: kreslí se pod buňky a platí jen pro každý druhý řádek. Celý blok mizí
+                         u sloupce hodin - hodinový pruh si barvu bere od skupin (nález Jan 11. 9.). -->
+                    <controls:ColumnsTab.ExtraDataTemplate>
+                        <DataTemplate>
+                            <StackPanel Visibility="{Binding SupportsZebra, Converter={StaticResource BoolToVis}}">
+                                <Separator Margin="0,8,0,8"/>
+                                <TextBlock Text="Střídání řádků" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBox Width="90" VerticalAlignment="Center" Margin="0,0,6,0"
+                                             Text="{Binding AlternatingRowColor, UpdateSourceTrigger=LostFocus}"
+                                             ToolTip="Barva každého druhého řádku v této skupině. Prázdné = barva nastavená pro celý prvek."/>
+                                    <Button Content="Vybrat…" Padding="8,2" Margin="0,0,6,0"
+                                            Command="{Binding DataContext.PickZebraColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                    <Button Content="×" Padding="8,2" ToolTip="Vymazat barvu"
+                                            Command="{Binding DataContext.ClearZebraColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                                </StackPanel>
+                                <TextBlock Text="Prázdné = použije se barva ze záložky Obecné." FontStyle="Italic" Margin="0,0,0,8"
+                                           Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
                             </StackPanel>
-                            <TextBlock Text="Šířka prázdná = automaticky dle obsahu." FontStyle="Italic"
-                                       Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
-
-                            <Separator Margin="0,8,0,8"/>
-
-                            <TextBlock Text="Prázdné pole = dědí výchozí styl prvku."
-                                       FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
-
-                            <!-- ── Záhlaví ──────────────────── -->
-                            <TextBlock Text="Styl záhlaví sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                            <controls:CellStyleEditor
-                                DataContext="{Binding SelectedGroupVM.Header}"
-                                EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
-
-                            <Separator Margin="0,8,0,8"/>
-
-                            <!-- ── Datové buňky ──────────────── -->
-                            <TextBlock Text="Datové buňky" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                            <controls:CellStyleEditor
-                                DataContext="{Binding SelectedGroupVM.Data}"
-                                EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
-
-                            <!-- ── Střídání řádků (per skupina) ────────────────
-                                 Celý blok mizí u sloupce hodin: zebra se kreslí per skupina dnů
-                                 a hodinový pruh si barvu bere od nich, takže by tam hodnota nic
-                                 neudělala (nález Jan 11. 9.). -->
-                            <StackPanel Visibility="{Binding SelectedGroupVM.SupportsZebra, Converter={StaticResource BoolToVis}}">
-                            <Separator Margin="0,8,0,8"/>
-
-                            <!-- Vlastní pole, ne součást stylu buňky: kreslí se pod buňky a platí
-                                 jen pro každý druhý řádek. Prázdné = barva ze záložky Obecné. -->
-                            <TextBlock Text="Střídání řádků" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBox Width="90" VerticalAlignment="Center" Margin="0,0,6,0"
-                                         Text="{Binding SelectedGroupVM.AlternatingRowColor, UpdateSourceTrigger=LostFocus}"
-                                         ToolTip="Barva každého druhého řádku v této skupině. Prázdné = barva nastavená pro celý prvek."/>
-                                <Button Content="Vybrat…" Padding="8,2" Margin="0,0,6,0"
-                                        Command="{Binding DataContext.PickZebraColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                                <Button Content="×" Padding="8,2" ToolTip="Zpět na barvu celého prvku"
-                                        Command="{Binding DataContext.ClearZebraColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            </StackPanel>
-                            <TextBlock Text="Prázdné = použije se barva ze záložky Obecné." FontStyle="Italic"
-                                       Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
-
-                            </StackPanel>
-
-                            <!-- Resetovat -->
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <Button Content="Resetovat styl sloupce"
-                                        Command="{Binding DataContext.ResetStyleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        Padding="10,3" Margin="0,0,6,0"/>
-                                <Button Content="Resetovat všechny sloupce"
-                                        Command="{Binding DataContext.ResetAllColumnStylesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce převezmou styl ze záložky Obecné"
-                                        Padding="10,3"/>
-                            </StackPanel>
-
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
+                        </DataTemplate>
+                    </controls:ColumnsTab.ExtraDataTemplate>
+                </controls:ColumnsTab>
             </TabItem>
 
             <!-- ── Tab 3: Vlastní definice sloupců (dny + značky + období; tab Sloupce zůstává vzhled) ── -->

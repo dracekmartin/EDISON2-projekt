@@ -25,6 +25,8 @@ public partial class DepartureGroupEditorDialog : Window
 
     public List<DepartureGroupColumnStyle> ResultGroupColumns => _vm.ResultGroupColumns;
     public ColumnVisualStyle? ResultHourColumnStyle => _vm.ResultHourColumnStyle;
+    public string ResultHourColumnHeader => _vm.ResultHourColumnHeader;
+    public float ResultHourColumnWidth => _vm.ResultHourColumnWidth;
 
     /// <summary>Definice vlastních sloupců (tab „Definice sloupců"). Null = automaticky dle linky.</summary>
     public List<DepartureColumnDefinition>? ResultCustomColumns => _vm.ResultCustomColumns;

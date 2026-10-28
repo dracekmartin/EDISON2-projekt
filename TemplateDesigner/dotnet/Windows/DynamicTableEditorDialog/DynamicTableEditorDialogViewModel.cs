@@ -1,8 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -13,61 +11,42 @@ namespace TemplateDesigner;
 
 // ─── ViewModel pro řádek sloupce (mapuje TableColumn) ────────────────────────
 
-public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
+public class DynamicTableColumnVM : Controls.ColumnRowVM
 {
-    private string _header = "";
     private string _field = "";
     private string _expression = "";
     private string _format = "";
-    private float? _width;              // null = auto (rozdělí zbývající šířku)
-    private bool   _visible = true;
 
-    public string Header  { get => _header;  set { _header = value;  OnChanged(); OnChanged(nameof(DisplayName)); } }
-    public string Field   { get => _field;   set { _field = value;   OnChanged(); OnChanged(nameof(DisplayName)); } }
+    private DynamicTableColumnVM(TableColumn c, CellStyleVM headerStyle, CellStyleVM dataStyle) : base(headerStyle, dataStyle)
+    {
+        Alignment   = c.Alignment;
+        WidthMode   = c.WidthMode;
+        Header      = c.Header;
+        _field      = c.Field ?? "";
+        _expression = c.Expression ?? "";
+        _format     = c.Format ?? "";
+        Width       = c.Width > 0f ? c.Width : null;   // 0 → auto
+        Visible     = c.Visible;
+    }
+
+    public string Field      { get => _field;      set { _field = value;      OnChanged(); OnChanged(nameof(DisplayName)); } }
     public string Expression { get => _expression; set { _expression = value; OnChanged(); OnChanged(nameof(DisplayName)); } }
-    public string Format  { get => _format;  set { _format = value;  OnChanged(); } }
-    public float? Width   { get => _width;   set { _width = value;   OnChanged(); OnChanged(nameof(WidthText)); OnChanged(nameof(ColumnWidth)); } }
-    public bool   Visible { get => _visible; set { _visible = value; OnChanged(); } }
+    public string Format     { get => _format;     set { _format = value;     OnChanged(); } }
 
-    /// <summary>Šířka jako text (prázdné = auto).</summary>
-    public string WidthText
-    {
-        get => Controls.ColumnWidthText.Format(_width);
-        set => Width = Controls.ColumnWidthText.Parse(value);
-    }
+    /// <summary>Zarovnání a režim šířky okno nenabízí - musí je ale vrátit beze změny. Do 28. 10.
+    /// je OK zahodilo (zarovnání spadlo na Vlevo, 40 % se změnilo na 40 mm).</summary>
+    public TextHorizontalAlignment Alignment { get; }
+    public ColumnWidthMode WidthMode { get; }
 
-    // IColumnRowVM - sdílený seznam sloupců
-    public string DisplayName => !string.IsNullOrWhiteSpace(_header) ? _header
-                               : !string.IsNullOrWhiteSpace(_field) ? "{" + _field + "}"
-                               : !string.IsNullOrWhiteSpace(_expression) ? "= " + _expression
-                               : "(nový sloupec)";
-    public float? ColumnWidth => Width;
+    public override string WidthUnit => WidthMode == ColumnWidthMode.Percent ? "%" : "mm";
 
-    private CellStyleVM _headerStyle = null!;
-    public CellStyleVM HeaderStyle
-    {
-        get => _headerStyle;
-        private init { _headerStyle = value; _headerStyle.PropertyChanged += OnChildChanged; }
-    }
+    public override float FixedWidthMm(float elementWidthMm) =>
+        WidthMode == ColumnWidthMode.Percent ? (Width ?? 0f) / 100f * elementWidthMm : Width ?? 0f;
 
-    private CellStyleVM _dataStyle = null!;
-    public CellStyleVM DataStyle
-    {
-        get => _dataStyle;
-        private init { _dataStyle = value; _dataStyle.PropertyChanged += OnChildChanged; }
-    }
-
-    public bool HasAnyOverride => HeaderStyle.HasAnyExplicit || DataStyle.HasAnyExplicit;
-
-    private void OnChildChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(CellStyleVM.HasAnyExplicit))
-            OnChanged(nameof(HasAnyOverride));
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-    private void OnChanged([CallerMemberName] string? p = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+    public override string DisplayName => !string.IsNullOrWhiteSpace(Header) ? Header
+                                        : !string.IsNullOrWhiteSpace(_field) ? "{" + _field + "}"
+                                        : !string.IsNullOrWhiteSpace(_expression) ? "= " + _expression
+                                        : "(nový sloupec)";
 
     public TableColumn ToModel() => new()
     {
@@ -76,24 +55,19 @@ public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowV
         Expression  = string.IsNullOrWhiteSpace(Expression) ? null : Expression.Trim(),
         Format      = string.IsNullOrWhiteSpace(Format) ? null : Format.Trim(),
         Width       = Width ?? 0f,               // 0 = auto (rozdělí šířku elementu)
-        WidthMode   = ColumnWidthMode.Mm,
+        WidthMode   = WidthMode,
+        Alignment   = Alignment,
         Visible     = Visible,
         HeaderStyle = HeaderStyle.ToModel(),
         DataStyle   = DataStyle.ToModel()
     };
 
-    public static DynamicTableColumnVM FromModel(TableColumn c,
-        ResolvedTextStyle headerInherited, ResolvedTextStyle dataInherited) => new()
-    {
-        Header      = c.Header,
-        Field       = c.Field ?? "",
-        Expression  = c.Expression ?? "",
-        Format      = c.Format ?? "",
-        Width       = c.Width > 0f ? c.Width : (float?)null,   // 0 → auto
-        Visible     = c.Visible,
-        HeaderStyle = CellStyleVM.FromModel(c.HeaderStyle, headerInherited),
-        DataStyle   = CellStyleVM.FromModel(c.DataStyle,   dataInherited)
-    };
+    /// <summary>Zděděná vrstva se záložním zarovnáním sloupce jako při tisku (<see cref="TableLayout.ResolveCascade"/>).</summary>
+    public static DynamicTableColumnVM FromModel(TableColumn c, DynamicTableElement element) => new(c,
+        CellStyleVM.FromModel(c.HeaderStyle, TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(),
+            c.Alignment, elementDefinesHAlign: element.HeaderStyle?.HAlign is not null)),
+        CellStyleVM.FromModel(c.DataStyle, TableLayout.ResolveCascade(null, element.ResolveColumnDataParent(),
+            c.Alignment, elementDefinesHAlign: element.DataStyle?.HAlign is not null)));
 }
 
 // ─── Dialog ViewModel ────────────────────────────────────────────────────────
@@ -101,59 +75,19 @@ public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowV
 class DynamicTableEditorDialogViewModel : EDViewModel
 {
     // Tab 1 „Obecné" = embedded EDInputForm (DynamicTableElementEdit.cls) - řeší code-behind
-    // přes ElementFormBinder. VM drží jen per-sloupec editaci (tab 2).
+    // přes ElementFormBinder. VM drží jen záložku Sloupce (sdílená ColumnsTab).
 
-    public ObservableCollection<DynamicTableColumnVM> ColumnVMs { get; } = [];
+    public Controls.ColumnsTabViewModel Columns { get; }
 
-    public float[] FontSizeOptions { get; } = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24];
+    /// <summary>Sloupce okna (řádky záložky Sloupce).</summary>
+    public IEnumerable<DynamicTableColumnVM> ColumnVMs => Columns.Rows.Cast<DynamicTableColumnVM>();
 
     /// <summary>Dostupná datová pole aktuální kolekce (pro našeptávání „Pole").</summary>
     public ObservableCollection<string> AvailableFields { get; } = [];
 
-    public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
-    public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
-
-    // ── Overflow detekce ────────────────────────────────────────────────────
-
-    public float ElementWidth => _element.Width;
-
-    public float TotalVisibleColumnWidth =>
-        ColumnVMs.Where(c => c.Visible).Sum(c => c.Width ?? 0f);
-
-    public bool HasColumnOverflow => TotalVisibleColumnWidth > ElementWidth + 0.01f;
-
-    public string ColumnOverflowText =>
-        $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku prvku ({ElementWidth:0.#} mm). Obsah se oříže.";
-
     public List<TableColumn> ResultColumns { get; private set; } = [];
 
-    // ── Výběr ─────────────────────────────────────────────────────────────────
-
-    private DynamicTableColumnVM? _selectedColumnVM;
-    public DynamicTableColumnVM? SelectedColumnVM
-    {
-        get => _selectedColumnVM;
-        set { Set(ref _selectedColumnVM, value); OnPropertyChanged(nameof(HasSelection)); }
-    }
-
-    public bool HasSelection => _selectedColumnVM is not null;
-
-    // ── Commands ─────────────────────────────────────────────────────────────────
-
-    public RelayCommand MoveUpCommand   { get; }
-    public RelayCommand MoveDownCommand { get; }
-    public RelayCommand AddColumnCommand    { get; }
-    public RelayCommand RemoveColumnCommand { get; }
-
-    public RelayCommand ResetStyleCommand           { get; }
-    public RelayCommand ResetAllColumnStylesCommand { get; }
-    public RelayCommand FitColumnsToWidthCommand    { get; }
-
-    // ── Konstruktor ────────────────────────────────────────────────────────────────
-
     private readonly DynamicTableElement _element;
-    private readonly ResolvedTextStyle _headerInherited;
-    private readonly ResolvedTextStyle _dataInherited;
 
     public DynamicTableEditorDialogViewModel(
         DynamicTableElement element,
@@ -161,56 +95,17 @@ class DynamicTableEditorDialogViewModel : EDViewModel
     {
         _element = element;
 
-        _headerInherited = element.ResolveColumnHeaderParent();
-        _dataInherited   = element.ResolveColumnDataParent();
-
-        foreach (var col in element.Columns)
-            ColumnVMs.Add(Wire(DynamicTableColumnVM.FromModel(col, _headerInherited, _dataInherited)));
+        Columns = new Controls.ColumnsTabViewModel(element.Columns.Select(col => DynamicTableColumnVM.FromModel(col, element)))
+        {
+            ElementWidth = () => element.Width,
+            CanFit = true,
+            NewRow = () => DynamicTableColumnVM.FromModel(new TableColumn { Header = "", Width = 0f }, element),
+        };
 
         // Nabídka polí „Pole" pro aktuální zdroj (načtený element) - jen našeptávání, neseeduje sloupce.
         var current = collections.FirstOrDefault(c => c.CollectionKey == element.DataSource);
         foreach (var fld in current?.Fields ?? [])
             AvailableFields.Add(fld.FieldName);
-
-        if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
-
-        MoveUpCommand   = Command(MoveUp);
-        MoveDownCommand = Command(MoveDown);
-        AddColumnCommand    = Command(AddColumn);
-        RemoveColumnCommand = Command(RemoveColumn);
-
-        ResetStyleCommand = Command(() =>
-        {
-            if (SelectedColumnVM is null) return;
-            SelectedColumnVM.HeaderStyle.Reset();
-            SelectedColumnVM.DataStyle.Reset();
-        });
-
-        ResetAllColumnStylesCommand = Command(() =>
-        {
-            foreach (var vm in ColumnVMs)
-            {
-                vm.HeaderStyle.Reset();
-                vm.DataStyle.Reset();
-            }
-        });
-
-        FitColumnsToWidthCommand = Command(() =>
-        {
-            var visible = ColumnVMs.Where(c => c.Visible).ToList();
-            if (visible.Count == 0) return;
-            float total = visible.Sum(c => c.Width ?? 0f);
-            if (total <= 0.01f) return;
-            float scale = ElementWidth / total;
-            foreach (var vm in visible)
-                if (vm.Width is float w) vm.Width = (float)Math.Round(w * scale, 2);
-        });
-    }
-
-    private DynamicTableColumnVM Wire(DynamicTableColumnVM vm)
-    {
-        vm.PropertyChanged += OnColumnChanged;
-        return vm;
     }
 
     /// <summary>Zdroj, ze kterého byly sloupce naposledy auto-seedovány (null = sloupce jsou ruční /
@@ -228,75 +123,16 @@ class DynamicTableEditorDialogViewModel : EDViewModel
         AvailableFields.Clear();
         foreach (var f in fields) AvailableFields.Add(f.FieldName);
 
-        bool autoSeeded   = _seededFromKey is not null;
+        bool autoSeeded    = _seededFromKey is not null;
         bool sourceChanged = _seededFromKey != sourceKey;
 
         // Nesahat: prázdné není (máme sloupce) A nejde o přepnutí auto-seedovaného zdroje.
-        if (ColumnVMs.Count > 0 && !(autoSeeded && sourceChanged)) return;
+        if (Columns.Rows.Count > 0 && !(autoSeeded && sourceChanged)) return;
 
-        foreach (var vm in ColumnVMs.ToList()) vm.PropertyChanged -= OnColumnChanged;
-        ColumnVMs.Clear();
-
-        foreach (var col in DynamicTableElement.BuildColumnsFromFields(fields))
-            ColumnVMs.Add(Wire(DynamicTableColumnVM.FromModel(col, _headerInherited, _dataInherited)));
+        Columns.ReplaceRows(DynamicTableElement.BuildColumnsFromFields(fields)
+            .Select(col => DynamicTableColumnVM.FromModel(col, _element)));
         _seededFromKey = sourceKey;
-
-        SelectedColumnVM = ColumnVMs.Count > 0 ? ColumnVMs[0] : null;
-        OnPropertyChanged(nameof(TotalVisibleColumnWidth));
-        OnPropertyChanged(nameof(HasColumnOverflow));
-        OnPropertyChanged(nameof(ColumnOverflowText));
     }
-
-    private void OnColumnChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(DynamicTableColumnVM.Width) ||
-            e.PropertyName == nameof(DynamicTableColumnVM.Visible))
-        {
-            OnPropertyChanged(nameof(TotalVisibleColumnWidth));
-            OnPropertyChanged(nameof(HasColumnOverflow));
-            OnPropertyChanged(nameof(ColumnOverflowText));
-        }
-    }
-
-    // ── Přidání / odebrání ───────────────────────────────────────────────────────
-
-    private void AddColumn()
-    {
-        var vm = Wire(DynamicTableColumnVM.FromModel(new TableColumn { Header = "", Width = 0f },
-            _headerInherited, _dataInherited));
-        ColumnVMs.Add(vm);
-        SelectedColumnVM = vm;
-    }
-
-    private void RemoveColumn()
-    {
-        if (SelectedColumnVM is null) return;
-        int idx = ColumnVMs.IndexOf(SelectedColumnVM);
-        SelectedColumnVM.PropertyChanged -= OnColumnChanged;
-        ColumnVMs.Remove(SelectedColumnVM);
-        SelectedColumnVM = ColumnVMs.Count > 0 ? ColumnVMs[Math.Min(idx, ColumnVMs.Count - 1)] : null;
-        OnPropertyChanged(nameof(TotalVisibleColumnWidth));
-        OnPropertyChanged(nameof(HasColumnOverflow));
-        OnPropertyChanged(nameof(ColumnOverflowText));
-    }
-
-    // ── Přesouvání ──────────────────────────────────────────────────────────────
-
-    private void MoveUp()
-    {
-        if (SelectedColumnVM is null) return;
-        int idx = ColumnVMs.IndexOf(SelectedColumnVM);
-        if (idx > 0) ColumnVMs.Move(idx, idx - 1);
-    }
-
-    private void MoveDown()
-    {
-        if (SelectedColumnVM is null) return;
-        int idx = ColumnVMs.IndexOf(SelectedColumnVM);
-        if (idx >= 0 && idx < ColumnVMs.Count - 1) ColumnVMs.Move(idx, idx + 1);
-    }
-
-    // ── OK ───────────────────────────────────────────────────────────────────────
 
     protected override void OnOk()
     {
