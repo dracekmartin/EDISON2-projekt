@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-28 (4) - Tabulka spojů, Tabulka z dat a Pevná tabulka ve společné kostře formuláře (`B194d` E3)
+
+Všechny tabulky kromě Poznámek mají teď stejnou kostru formuláře (pravidlo `ux-conventions §4`).
+- **Tabulka spojů:** nahoře Řádky, Časy (Formát času, Poměr velikosti minut, Tečky v prázdných buňkách), Popisné sloupce, Zastávky (Tučné zastávky a Čáry dle trasy, Tečky za názvem), Šířka sloupců, Přípojné řádky a Porovnání verzí; pod nimi Záhlaví (Záhlaví skupin dnů, Čísla spojů) a Datové buňky (Výška řádku, Podbarvit lichá Tč) s plnou sadou stylu - dřív tu bylo 3 a 5 polí stylu a osm voleb, které nejsou styl, sedělo v Datových buňkách. Přípojné řádky mají celou sadu Buňka a zapnutí přípojů je jejich první pole. Nápovědy k velikosti a okrajům, které nesou šířku sloupce spoje, zůstaly.
+- **Pás skupin dnů poslouchá Zarovnání vodorovně** ze stylu Záhlaví, prázdné dál znamená na střed; do teď byl natvrdo na střed (reprodukce a pojistka `ZarovnaniPasuSkupinTests`, bez opravy padala).
+- **Tabulka z dat:** místo Obecné skupina Data (zdroj, řazení, počet řádků); zapnutí a výška záhlaví v Záhlaví, výška řádku a střídání v Datových buňkách.
+- **Pevná tabulka:** pole z Obecné přešla do „Styl všech buněk" a „Styl řádku záhlaví"; pořadí a názvy zůstávají jako vědomá výjimka.
+
+Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` všech tří formulářů.
+
 ## 2026-10-28 (3) - Minuty odjezdů: kostra formuláře a styl bez tlačítka „Upravit styl…" (`B194d` E3)
 
 Minuty odjezdů mají stejnou kostru jako Seznam zastávek: nahoře Skupiny dnů, Rozměry a Značky u odjezdů, pod nimi Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.

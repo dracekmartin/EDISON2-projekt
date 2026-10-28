@@ -49,7 +49,7 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   zastávek, Tabulka z dat), záhlaví za tlačítkem (Minuty), jen velikost a dvě barvy (Tabulka spojů), bez
   tučného (Poznámky). Skupina „Značky u odjezdů" má 37 polí, pořadí skupin nemá kostru (Minuty začínají
   „Skupiny dnů", Tabulka spojů „Řádky").
-  **Rozhodnuto 28. 10. (Jan)**, zapracováno u Seznamu zastávek, Minut odjezdů a ve sdílené sadě stylu:
+  **Rozhodnuto 28. 10. (Jan)**, zapracováno u všech tabulek kromě Poznámek; trvalé pravidlo je v `ux-conventions §4`:
   - Nahoře skupiny jen toho prvku, pojmenované podle toho, čeho na výtisku se týkají (Zastávky, Stanoviště, Rozložení…); smí míchat logiku i vzhled své věci.
   - Pod nimi u všech tabulek stejný konec: Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
   - Skupina „Obecné" se ruší. Zapnutí záhlaví je první pole skupiny Záhlaví, Zdroj dat Tabulky z dat půjde do vlastní skupiny Data.
@@ -59,7 +59,9 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   - Bez záložek, bez sbalování skupin, bez stylu pro celý prvek (zvažováno, odmítnuto).
   - Styl je všude rozepsaný, žádné tlačítko „Upravit styl…" (Minuty ho měly jako jediné). Daň: prázdné pole neukazuje zděděnou hodnotu, jako u ostatních tabulek.
   - Poznámky nejsou klasická tabulka, projdou se zvlášť (jejich Barva pozadí buněk se dnes nekreslí).
-  Zbývá převést Tabulku spojů, Tabulku z dat a Pevnou tabulku.
+  - Pevná tabulka je výjimka: „Styl všech buněk" před „Styl řádku záhlaví", obsah se vyplňuje v buňkách.
+  - Pozadí prvku se do tabulek nepřidává (mají barvu pozadí záhlaví a buněk); Viditelnost řádku a Zvýraznění řádků zůstávají v Podmínkách.
+  Zbývají Poznámky.
 - **E13 Dialogy sloupců mají každý jiné ovládání** [M]. (a) popisky tlačítek hotové (changelog 2026-10-26
   (38), (39)); (b) uzavřeno bez změny - v Tabulce spojů se zadávají jen popisné sloupce, šířku spojů
   dopočítá tabulka, „Přizpůsobit" by spojům vzalo místo. Zbývá (c) sloučení do sdíleného `ColumnListEditor`

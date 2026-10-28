@@ -23,29 +23,34 @@ ClassMethod Init(ByRef sys As %String) As %Status
         $$$FillParams
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
-        // ── Obecné ────────────────────────────────────────────────────────
-        d form.AddGroup("general", "Obecné")
+        // Pevná tabulka nemá vlastní skupiny: obsah se vyplňuje v buňkách na plátně. Společný konec
+        // má jako výjimku (rozhodnutí Jan 28. 10.): buňky před záhlavím a vlastní názvy skupin,
+        // protože datové buňky tu nejsou a řádek záhlaví zůstal jen kvůli starším šablonám.
+        // Skupina části: pole pro celý řádek, pod nimi sada stylu.
+
+        // ── Styl všech buněk ──────────────────────────────────────────────
+        // ⚠️ Popisek skupiny říká „všech": tenhle formulář je výchozí styl CELÉ tabulky, zatímco
+        // panel u vybrané buňky mění jen tu jednu. Bez toho stály proti sobě dvě sady týchž
+        // vlastností a nešlo poznat, která kam sahá (nález Jan 17. 8.).
+        d form.AddGroup("dstyle", "Styl všech buněk")
         s f = form.AddDecimal("RowHeight", "Výška řádku", 6, 1, 50, "mm")
         s f.helpText = "Výchozí výška řádku. Roztažením prvku do výšky se řádky natáhnou, písmo zůstane."
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků", $$$FieldTypeColor, 0, 0)
         s f.helpText = "Barva, kterou se podbarví každý druhý řádek. Prázdné = bez střídání."
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl všech buněk", "#FF222222", "#00FFFFFF", 0)
 
+        // ── Styl řádku záhlaví ────────────────────────────────────────────
         // Řádek záhlaví je u ručně vyplňované tabulky zbytečný pojem (záhlaví = první řádek, který
         // si uživatel udělá tučný). Zůstává kvůli šablonám, které ho už mají - proto je pole
         // schované za nápovědou, ne odstraněné.
         // Label je kanonický (týž klíč má stejný popisek i u ostatních tabulek) - proč se u ručně
         // vyplňované tabulky nehodí, vysvětluje nápověda.
+        // Pozadí bez výchozí hodnoty - nese ho prvek sám, prázdno znamená bez podbarvení.
+        d form.AddGroup("hstyle", "Styl řádku záhlaví")
         s f = form.AddBool("ShowHeader", "Záhlaví sloupců", 0)
         s f.helpText = "Nové tabulky ho nepotřebují - záhlaví si udělejte z prvního řádku (tučně). Zůstává kvůli starším šablonám."
         d form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
-
-        // ── Styl buněk (sdílený balíček polí) ─────────────────────────────
-        // ⚠️ Popisek skupiny říká „všech": tenhle formulář je výchozí styl CELÉ tabulky, zatímco
-        // panel u vybrané buňky mění jen tu jednu. Bez toho stály proti sobě dvě sady týchž
-        // vlastností a nešlo poznat, která kam sahá (nález Jan 17. 8.).
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl všech buněk", "#FF222222", "#00FFFFFF")
-        // Pozadí bez výchozí hodnoty - nese ho prvek sám, prázdno znamená bez podbarvení.
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl řádku záhlaví", "#FF333333", "", 1, "", 1)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl řádku záhlaví", "#FF333333", "", 0, "", 1)
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form, 1, "#FF999999", 0.19)

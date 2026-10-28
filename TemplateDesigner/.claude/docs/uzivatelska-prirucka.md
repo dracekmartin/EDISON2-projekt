@@ -253,10 +253,13 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 
 ### Dynamická tabulka
 Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
-od dat). Vlastnosti: **Upravit sloupce…**, **Zdroj dat**, **Záhlaví sloupců**, **Výška řádku**,
-**Výška záhlaví**, řazení (**Řadit podle**, **Potom podle**), **Střídání řádků**, **Nejméně řádků**
-a **Nejvýš řádků**, **Viditelnost řádku**, **Zvýraznění řádků**, **Mřížka** (čáry mezi řádky / mezi
-sloupci, barva, tloušťka, styl) a styl záhlaví i buněk. Buňka může obsahovat souhrnný výraz - viz kap. 8.
+od dat). Vlastnosti:
+- **Data** - **Zdroj dat**, řazení (**Řadit podle**, **Potom podle**), **Nejméně řádků** a **Nejvýš řádků**
+- **Záhlaví** - **Záhlaví sloupců**, **Výška záhlaví** a styl záhlaví
+- **Datové buňky** - **Výška řádku**, **Střídání řádků** a styl buněk
+- **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťka, styl) a **Podmínky** s **Viditelností řádku** a **Zvýrazněním řádků**
+
+Sloupce se upravují tlačítkem **Upravit sloupce…**. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
 Editor sloupců (okno „Vlastnosti - Tabulka (z dat)") má záložky **Obecné** a **Sloupce**: přidání/
 odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce prvku",
@@ -1123,26 +1126,26 @@ přípojné řádky a texty poznámek.
 
 ### 2. Prvek Tabulka spojů
 
-Nastavení má v panelu vlastností (a ve stejném okně po Enter nebo dvojkliku) skupiny Řádky,
-Šířka sloupců, Popisné sloupce, Záhlaví, Datové buňky a Přípojné řádky, pod nimi Rámeček, Mřížka,
-Pozice a Podmínky jako u ostatních prvků.
+Nastavení má v panelu vlastností (a ve stejném okně po Enter nebo dvojkliku) nahoře skupiny jen tohoto prvku: Řádky, Časy, Popisné sloupce, Zastávky, Šířka sloupců, Přípojné řádky a Porovnání verzí.
+Pod nimi jsou skupiny, které mají všechny tabulky stejně: Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
 
-**Řádky** - co se tiskne navíc k časům:
+**Řádky** - řádky značek nad časy:
 
-- **Záhlaví skupin dnů** - pás nad sloupci spojů s označením skupiny (pracovní dny, sobota…).
-- **Čísla spojů** - řádek s čísly spojů nad časy. Vypnuté = řádek zůstane (nese záhlaví popisných
-  sloupců), jen nad spoji je prázdný.
 - **Řádek platnosti** - pod číslem spoje řádek se značkami platnosti (denní značky, místenka,
   atributy vozidla).
 - **Řádek negativních značek** - značky, které pro spoj **neplatí** (bílý text v černém poli).
 - **Turnusy ke spojům** - k číslu spoje se dotáhne turnus. Je to provozní údaj dopravce, ne
   informace pro cestujícího, proto je z výroby vypnutý; zapnutí stojí čas navíc při načítání dat.
-- **Přípojné řádky (vyčká/navazuje)** - pod zastávkou řádky o přípojích.
-- **Výška řádku** - prázdné = podle velikosti písma.
 - **Poměr velikosti značek** - kolikrát větší je písmo značek než písmo buňky (starý tisk 1,5×, aby byly
   na výtisku čitelné).
 
-**Šířka sloupců** - viz kapitola 4.
+**Časy** - co se tiskne v buňkách spojů:
+
+- **Formát času** - *Minuty menším písmem (hh mm)* jako starý tisk, *Celý čas stejně (hh:mm)*
+  s dvojtečkou („04:20"), nebo *Celý čas stejně (hh.mm)* s tečkou a hodinou bez nuly („4.20").
+  **Poměr velikosti minut** říká, o kolik jsou minuty menší.
+- **Tečky v prázdných buňkách** - buňka bez času se vyplní tečkami, takže tabulka drží svislé
+  vodicí pruhy jako starý tisk. Dostanou je i prázdné sloupce dorovnání.
 
 **Popisné sloupce** (levý blok se zastávkami):
 
@@ -1158,24 +1161,25 @@ Pozice a Podmínky jako u ostatních prvků.
 - **Popisné sloupce bez vnitřních čar** - levý blok se kreslí jako jeden celek, svislé čáry mezi
   spoji zůstanou.
 
-**Záhlaví** a **Datové buňky** - velikost písma, pozadí a barva textu obou zón, vnitřní okraje
-buňky a tyhle volby:
+**Zastávky** - jak se tiskne název zastávky:
 
-- **Formát času** - *Minuty menším písmem (hh mm)* jako starý tisk, *Celý čas stejně (hh:mm)*
-  s dvojtečkou („04:20"), nebo *Celý čas stejně (hh.mm)* s tečkou a hodinou bez nuly („4.20").
-  **Poměr velikosti minut** říká, o kolik jsou minuty menší.
-- **Tečky v prázdných buňkách** - buňka bez času se vyplní tečkami, takže tabulka drží svislé
-  vodicí pruhy jako starý tisk. Dostanou je i prázdné sloupce dorovnání.
 - **Tučné zastávky dle trasy** a **Čáry u zastávek dle trasy** - v trase linky jde u zastávky zadat
   „tučně" a „podtrženo"; zapnuté znamená, že je návrhář respektuje. Vypíná se to tady, ne
   v parametrech sestavy - je to údaj z jízdních řádů.
 - **Tečky za názvem zastávky** - tečky od názvu k pravému okraji sloupce, aby oko dojelo k času.
-- **Podbarvit lichá Tč** a **Barva lichých Tč** - střídavé podbarvení podle tarifního čísla.
 
-**Přípojné řádky** - **Slučovat přípoje** (*Ne - řádek pro každý spoj* / *Podle směru* / *Podle směru a linky*) a vlastní
-vzhled řádku: velikost, tučné, kurzíva, barva textu a pozadí řádku. Sloučený řádek nese časy víc
-spojů a v popisku má směr („ze směru Trhové Sviny"), takže šetří místo. Menší kurzíva odliší přípoj
-od časů spojů i na černobílém tisku; tmavé pozadí s bílým písmem dá inverzní řádek.
+**Šířka sloupců** - viz kapitola 4.
+
+**Přípojné řádky** - **Přípojné řádky (vyčká/navazuje)** zapne pod zastávkou řádky o přípojích.
+**Slučovat přípoje** (*Ne - řádek pro každý spoj* / *Podle směru* / *Podle směru a linky*): sloučený řádek nese časy víc spojů a v popisku má směr („ze směru Trhové Sviny"), takže šetří místo.
+Vzhled řádku má celou sadu stylu jako buňky (písmo, barvy, zarovnání, okraje); prázdné = jako datové buňky.
+Menší kurzíva odliší přípoj od časů spojů i na černobílém tisku, tmavá barva pozadí s bílým písmem dá inverzní řádek.
+
+**Záhlaví** - **Záhlaví skupin dnů** (pás nad sloupci spojů s označením skupiny, např. pracovní dny, sobota), **Čísla spojů** (řádek s čísly spojů nad časy; vypnuté = řádek zůstane, protože nese záhlaví popisných sloupců, jen nad spoji je prázdný) a styl záhlaví.
+Zarovnání vodorovně ze stylu platí i pro pás skupin dnů, prázdné = na střed.
+
+**Datové buňky** - **Výška řádku** (prázdné = podle velikosti písma), **Podbarvit lichá Tč** a **Barva lichých Tč** (řádek zastávky s lichým tarifním číslem se podbarví) a styl buněk.
+Velikost písma a vnitřní okraje vlevo a vpravo určují i šířku sloupce spoje.
 
 **Podmínky** - vedle podmínky viditelnosti celého prvku **Viditelnost řádku** (výraz nad poli
 zastávky, např. `{ZONY} == "1"`) a **Zvýraznění řádků** (seznam pravidel podmínka → barva pozadí,

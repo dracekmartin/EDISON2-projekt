@@ -23,7 +23,9 @@ public class RozsahPismaTests
         var vsechna = Directory.GetFiles(FormulareDir(), "*.cls")
             .SelectMany(f => pole.Matches(File.ReadAllText(f)).Select(m => (Soubor: Path.GetFileName(f), m)))
             .ToList();
-        Assert.True(vsechna.Count >= 8, $"našlo se jen {vsechna.Count} polí písma - změnil se zápis formulářů?");
+        // Tabulky berou velikost ze sdílené sady stylu (jeden výskyt v StyleFields.cls), takže
+        // zbývá sada, Text, Aktuální zastávka a Poznámky - pojistka, že regex pořád něco najde.
+        Assert.True(vsechna.Count >= 5, $"našlo se jen {vsechna.Count} polí písma - změnil se zápis formulářů?");
 
         var mimo = vsechna
             .Where(x => x.m.Groups["min"].Value != "3" || x.m.Groups["max"].Value != "72")

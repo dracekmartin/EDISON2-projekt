@@ -2361,7 +2361,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // element-level styly pro pás skupin / řádek platnosti / NZ (nejsou vázané na sloupec)
         var headerResolved = ResolveColumnHeaderParent();
         var dataResolved = ResolveColumnDataParent();
-        var headerCentered = headerResolved with { HAlign = TextHorizontalAlignment.Center };
+        // Pás skupin dnů je výchozí na střed; vyplněné Zarovnání vodorovně ve stylu Záhlaví vyhrává.
+        var headerCentered = HeaderStyle.HAlign is null
+            ? headerResolved with { HAlign = TextHorizontalAlignment.Center }
+            : headerResolved;
         var dataCentered = dataResolved with { HAlign = TextHorizontalAlignment.Center };
 
         int kmCount = MaxKmCount(stops);
@@ -3849,7 +3852,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => PripojStyle.Italic ?? ResolveElementPripojParent().Italic, Set = v => PripojStyle.Italic = v },
         new ColorPropertyDescriptor { Label = "Barva textu", Group = "Přípojné řádky",
             Get = () => PripojStyle.TextColor ?? ResolveElementPripojParent().TextColor, Set = v => PripojStyle.TextColor = v },
-        new ColorPropertyDescriptor { Label = "Barva pozadí řádku", Group = "Přípojné řádky",
+        new ColorPropertyDescriptor { Label = "Barva pozadí", Group = "Přípojné řádky",
             Get = () => PripojStyle.BackgroundColor ?? ResolveElementPripojParent().BackgroundColor, Set = v => PripojStyle.BackgroundColor = v },
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneFontSizeDescriptors(),

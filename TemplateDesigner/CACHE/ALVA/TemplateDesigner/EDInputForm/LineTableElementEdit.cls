@@ -6,10 +6,8 @@ Include (GENERAL, EDInputForm)
 /// Field key = property path na C# LineTableElement (vč. nested HeaderStyle.X / DataStyle.X).
 /// Init jen definuje strukturu + defaults; generický ElementEditDialog dělá pre-fill přes reflexi.
 ///
-/// Pozn.: LineTable v prvním řezu NEMÁ per-column kolekci (sloupce spojů vznikají z dat,
-/// popisové sloupce jsou pevné properties) → čistý generic kandidát jako NotesLegend.
-/// Per-column overridy (2-tab dialog se sdíleným ColumnListEditor) přijdou s R1 extrakcí
-/// tabulkového jádra.
+/// Kostra jako u ostatních tabulek: nahoře skupiny jen tohoto prvku, pod nimi Záhlaví, Datové
+/// buňky, Rámeček prvku, Mřížka, Pozice, Podmínky. Per-sloupcové styly jsou v okně prvku (Sloupce).
 ///
 /// ⚠️ TECHNICKÝ DLUH - Schema duplikace: manual mirror PropertyDescriptors v
 /// `LineTableElement.cs`. Viz memory `project_edinputform_schema_duplication.md`.
@@ -28,18 +26,59 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // (Zóna, km, Tč, Zastávka, MHD, Spoj) se editují v tabu „Sloupce" (ColumnListEditor),
         // konzistentně se StopList/DepartureGrid. Tady jen element-wide vlastnosti.
 
+        // Nahoře skupiny, které má jen tento prvek, pod nimi společný konec všech tabulek
+        // (Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky).
+
         // ── Skupina "Řádky" ───────────────────────────────────────────────
+        // Řádky značek nad časy. Záhlaví skupin dnů a čísla spojů jsou v Záhlaví, přípoje ve svých řádcích.
         d form.AddGroup("rows", "Řádky")
-        d form.AddBool("ShowGroupHeaders", "Záhlaví skupin dnů", 1)
-        d form.AddBool("ShowTripNumbers", "Čísla spojů", 1)
         d form.AddBool("ShowPlatnostRow", "Řádek platnosti", 1)
         d form.AddBool("ShowNzRow", "Řádek negativních značek", 1)
         d form.AddBool("TurnusyKeSpojum", "Turnusy ke spojům", 0)
-        d form.AddBool("ShowPripojeRows", "Přípojné řádky (vyčká/navazuje)", 1)
-        s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
-        s f.helpText = "Prázdné = podle velikosti písma."
         s f = form.AddDecimal("PomerZnacek", "Poměr velikosti značek", 1.5, 1, 3, "×")
         s f.helpText = "Kolikrát větší je písmo značek platnosti a negativních značek než písmo datové buňky. Starý tisk je má jedenapůlkrát větší, aby byly na výtisku čitelné. Řádek značek se tím zvýší."
+
+        // ── Skupina "Časy" ────────────────────────────────────────────────
+        // Co se tiskne v buňkách spojů. Do 28. 10. ve skupině Datové buňky, která má mít jen vzhled.
+        d form.AddGroup("times", "Časy")
+        s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
+        d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")
+        d f.AddListItem("STeckou", "Celý čas stejně (hh.mm)")
+        s f.value = "HodinaVetsi"
+        s f.helpText = "Starý tisk sází hodinu větším písmem a minutu menším, oddělené mezerou bez dvojtečky. Ostatní volby vypíší celý čas jednou velikostí: s dvojtečkou (04:20), nebo s tečkou a hodinou bez nuly (4.20)."
+        s f = form.AddDecimal("PomerMinuty", "Poměr velikosti minut", 0.75, 0.3, 1, "×")
+        s f.helpText = "Podíl velikosti minut vůči hodině. 1 = obojí stejně velké. Uplatní se jen u formátu s hodinou větším písmem."
+        s f = form.AddBool("VyplnitPrazdneBunkySpoju", "Tečky v prázdných buňkách", 0)
+        s f.helpText = "Buňka spoje, ve které není čas, se vyplní tečkami - tabulka pak drží svislé vodicí pruhy jako starý tisk. U linky, kde většina spojů jede jen část trasy, se tím tabulka zaplní a čte se hůř."
+
+        // ── Skupina "Popisné sloupce" ──────────────────────────────────────
+        // Zóna, km, Tč, zastávka a MHD. Viditelnost, šířky a pořadí jednotlivých sloupců se
+        // editují v tabu "Sloupce"; sem patří jen volby platné pro celou skupinu.
+        d form.AddGroup("columns", "Popisné sloupce")
+        s f = form.AddBool("RozdelitZonyDoSloupcu", "Každá zóna ve vlastním sloupci", 0)
+        s f.helpText = "Zastávka na hranici zón má víc zón. Vypnuté = všechny v jednom sloupci za sebou, zapnuté = každá ve vlastním sloupci vedle sebe (jako kilometry). Sloupec zón se tím rozšíří o tolik dílů, kolik zón má nejbohatší zastávka."
+        s f = form.AddBool("JednoZahlaviKm", "Jedno záhlaví nad km sloupci", 0)
+        s f.helpText = "Vypnuté = nad každým km sloupcem je vlastní záhlaví ""km"", zapnuté = jedno společné přes všechny. Kilometry zůstávají v samostatných sloupcích."
+        s f = form.AddNumber("MaxKmSloupcu", "Nejvýš km sloupců", "", 1, 20)
+        s f.helpText = "Kolik km sloupců se nejvýš vytiskne. Prázdné = všechny. Vezmou se první v pořadí, ve kterém je linka má, ostatní se netisknou - jejich spoje pak v tabulce kilometry nemají. Zúží to tabulku za cenu té informace."
+        // Jedno záhlaví nad celou skupinou a jeden slitý blok bez vnitřních čar. Změřeno na vzoru IDZK 940.
+        s f = form.AddText("PopisneSloupceNadpis", "Text záhlaví popisných sloupců")
+        s f.helpText = "Text nad zónou, km, Tč, zastávkou a MHD - všechny mají jedno společné záhlaví. Prázdné = bez záhlaví."
+        s f = form.AddBool("SloucitPopisyRozdvojene", "Sloučit popis u příjezdu a odjezdu", 0)
+        s f.helpText = "Zastávka, u které se tiskne příjezd i odjezd, zabírá dva řádky. Vypnuté = km, tarifní číslo, název i MHD se na obou zopakují (tvar windowsového tisku). Zapnuté = vypíšou se jednou přes oba řádky na střed a mezi časy je vodorovná úsečka (tvar postskriptového tisku). Zóna se opakuje vždy."
+        s f = form.AddBool("PopisneSloupceBezVnitrnichCar", "Popisné sloupce bez vnitřních čar", 0)
+        s f.helpText = "Popisné sloupce se kreslí jako jeden slitý blok. Svislé čáry mezi sloupci spojů zůstanou."
+
+        // ── Skupina "Zastávky" ────────────────────────────────────────────
+        // Jak se tiskne název zastávky. Do 28. 10. ve skupině Datové buňky.
+        d form.AddGroup("stops", "Zastávky")
+        s f = form.AddBool("TucneZastavkyDleTrasy", "Tučné zastávky dle trasy", 1)
+        s f.helpText = "V trase linky jde u zastávky zadat atribut ""tučně"" - zapnuté = návrhář ho respektuje, stejně jako to dělá starý tisk. Vypnuté = všechny zastávky stejným písmem."
+        s f = form.AddBool("CaryZastavekDleTrasy", "Čáry u zastávek dle trasy", 1)
+        s f.helpText = "V trase linky jde u zastávky zadat ""podtrženo"" nebo ""podtrženo nad i pod"" - zapnuté = návrhář nakreslí čáru přes celou šířku tabulky, stejně jako starý tisk. Odděluje se tím úsek linky."
+        s f = form.AddBool("TeckyZaNazvemZastavky", "Tečky za názvem zastávky", 0)
+        s f.helpText = "Za název zastávky se doplní tečky k pravému okraji sloupce, aby oko dojelo k času. Končí před piktogramem přestupu."
 
         // ── Skupina "Šířka sloupců" ───────────────────────────────────────
         // Šířka sloupce spoje je zadané přání a to, co se do sloupce musí vejít. Všechno, co do
@@ -60,90 +99,23 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("MezeraMeziSkupinamiMm", "Mezera mezi skupinami dnů", 0, 0, 20, "mm")
         s f.helpText = "Volné místo mezi skupinami dnů a také za popisnými sloupci. 0 = souvislá mřížka bez mezer. Mezera se bere ze šířky prvku, takže se do řádku vejde méně spojů."
 
-        // ── Skupina "Popisné sloupce" ──────────────────────────────────────
-        // Zóna, km, Tč, zastávka a MHD. Viditelnost, šířky a pořadí jednotlivých sloupců se
-        // editují v tabu "Sloupce"; sem patří jen volby platné pro celou skupinu.
-        d form.AddGroup("columns", "Popisné sloupce")
-        s f = form.AddBool("RozdelitZonyDoSloupcu", "Každá zóna ve vlastním sloupci", 0)
-        s f.helpText = "Zastávka na hranici zón má víc zón. Vypnuté = všechny v jednom sloupci za sebou, zapnuté = každá ve vlastním sloupci vedle sebe (jako kilometry). Sloupec zón se tím rozšíří o tolik dílů, kolik zón má nejbohatší zastávka."
-        s f = form.AddBool("JednoZahlaviKm", "Jedno záhlaví nad km sloupci", 0)
-        s f.helpText = "Vypnuté = nad každým km sloupcem je vlastní záhlaví ""km"", zapnuté = jedno společné přes všechny. Kilometry zůstávají v samostatných sloupcích."
-        s f = form.AddNumber("MaxKmSloupcu", "Nejvýš km sloupců", "", 1, 20)
-        s f.helpText = "Kolik km sloupců se nejvýš vytiskne. Prázdné = všechny. Vezmou se první v pořadí, ve kterém je linka má, ostatní se netisknou - jejich spoje pak v tabulce kilometry nemají. Zúží to tabulku za cenu té informace."
-        // Jedno záhlaví nad celou skupinou a jeden slitý blok bez vnitřních čar. Změřeno na vzoru IDZK 940.
-        s f = form.AddText("PopisneSloupceNadpis", "Text záhlaví popisných sloupců")
-        s f.helpText = "Text nad zónou, km, Tč, zastávkou a MHD - všechny mají jedno společné záhlaví. Prázdné = bez záhlaví."
-        s f = form.AddBool("SloucitPopisyRozdvojene", "Sloučit popis u příjezdu a odjezdu", 0)
-        s f.helpText = "Zastávka, u které se tiskne příjezd i odjezd, zabírá dva řádky. Vypnuté = km, tarifní číslo, název i MHD se na obou zopakují (tvar windowsového tisku). Zapnuté = vypíšou se jednou přes oba řádky na střed a mezi časy je vodorovná úsečka (tvar postskriptového tisku). Zóna se opakuje vždy."
-        s f = form.AddBool("PopisneSloupceBezVnitrnichCar", "Popisné sloupce bez vnitřních čar", 0)
-        s f.helpText = "Popisné sloupce se kreslí jako jeden slitý blok. Svislé čáry mezi sloupci spojů zůstanou."
-
-        // ── Skupina "Záhlaví" ─────────────────────────────────────────────
-        d form.AddGroup("header", "Záhlaví")
-        // Velikost je u tabulky rozměrová volba, ne kosmetika: nese výšku řádku i šířku sloupce
-        // spoje. Prázdné pole = dědí se (kaskáda dá 9 pt), per-sloupcová velikost z dialogu vyhrává.
-        s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", 9, 3, 72, "pt", "0.#")
-        s f.helpText = "Písmo záhlaví celého prvku. Jednotlivému sloupci se dá přebít v záložce Sloupce."
-        // Bez výchozí hodnoty - podbarvení nese prvek sám, prázdno znamená bez podbarvení.
-        s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
-        s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF000000"
-
-        // ── Skupina "Datové buňky" ────────────────────────────────────────
-        d form.AddGroup("data", "Datové buňky")
-        s f = form.AddDecimal("DataStyle.FontSize", "Velikost", 8, 3, 72, "pt", "0.#")
-        s f.helpText = "Písmo buněk celého prvku. Řídí i výšku řádku, když je prázdná, a šířku sloupce spoje."
-        s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
-        s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF000000"
-        // Vnitřní okraj je u této tabulky rozměrová volba, ne kosmetika: dolní práh sloupce spoje
-        // je šířka času plus okraje po stranách, takže rozhoduje, kolik spojů se vejde do bloku
-        // a kolikrát se tabulka řízne na šířku. Jen vodorovné - svislé drží pole "Výška řádku".
-        // ⚠️ Výchozí hodnota vypsaná, ne prázdné pole: „prázdné = 0,5 mm" nedávalo smysl nikomu,
-        // kdo si chtěl sloupce utáhnout, protože z formuláře nebylo poznat, kolik vzduchu tam je
-        // (nález Jan 22. 9.). Binder prázdnou hodnotu modelu nechá na tomhle defaultu.
-        s f = form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", 0.5, 0, 20, "mm")
-        s f.helpText = "Odsazení textu od svislé čáry. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
-        s f = form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", 0.5, 0, 20, "mm")
-        s f.helpText = "Odsazení textu od svislé čáry. Je to hlavní páka na vzduch kolem času: větší okraj sloupec rozšíří, nulou se stáhne až k obsahu, ale nikdy tak, aby se číslice dotýkaly čar."
-        s f = form.AddFieldToLastGroup("FormatCasu", "Formát času", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("HodinaVetsi", "Minuty menším písmem (hh mm)")
-        d f.AddListItem("SDvojteckou", "Celý čas stejně (hh:mm)")
-        d f.AddListItem("STeckou", "Celý čas stejně (hh.mm)")
-        s f.value = "HodinaVetsi"
-        s f.helpText = "Starý tisk sází hodinu větším písmem a minutu menším, oddělené mezerou bez dvojtečky. Ostatní volby vypíší celý čas jednou velikostí: s dvojtečkou (04:20), nebo s tečkou a hodinou bez nuly (4.20)."
-        s f = form.AddDecimal("PomerMinuty", "Poměr velikosti minut", 0.75, 0.3, 1, "×")
-        s f.helpText = "Podíl velikosti minut vůči hodině. 1 = obojí stejně velké. Uplatní se jen u formátu s hodinou větším písmem."
-        s f = form.AddBool("VyplnitPrazdneBunkySpoju", "Tečky v prázdných buňkách", 0)
-        s f.helpText = "Buňka spoje, ve které není čas, se vyplní tečkami - tabulka pak drží svislé vodicí pruhy jako starý tisk. U linky, kde většina spojů jede jen část trasy, se tím tabulka zaplní a čte se hůř."
-        s f = form.AddBool("TucneZastavkyDleTrasy", "Tučné zastávky dle trasy", 1)
-        s f.helpText = "V trase linky jde u zastávky zadat atribut ""tučně"" - zapnuté = návrhář ho respektuje, stejně jako to dělá starý tisk. Vypnuté = všechny zastávky stejným písmem."
-        s f = form.AddBool("CaryZastavekDleTrasy", "Čáry u zastávek dle trasy", 1)
-        s f.helpText = "V trase linky jde u zastávky zadat ""podtrženo"" nebo ""podtrženo nad i pod"" - zapnuté = návrhář nakreslí čáru přes celou šířku tabulky, stejně jako starý tisk. Odděluje se tím úsek linky."
-        s f = form.AddBool("TeckyZaNazvemZastavky", "Tečky za názvem zastávky", 0)
-        s f.helpText = "Za název zastávky se doplní tečky k pravému okraji sloupce, aby oko dojelo k času. Končí před piktogramem přestupu."
-        d form.AddBool("HighlightOddTc", "Podbarvit lichá Tč", 1)
-        s f = form.AddFieldToLastGroup("OddTcBackColor", "Barva lichých Tč", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFEEEEEE"
-
         // ── Skupina "Přípojné řádky" (#8360) ──────────────────────────────
         // Přípoj má jít odlišit od časů spojů - obvykle menším kurzívním písmem, aby v tabulce
-        // „nekřičel" stejně jako odjezdy. Prázdné = dědí se z datových buněk.
+        // „nekřičel" stejně jako odjezdy. Prázdné = dědí se z datových buněk. Přípojný řádek je
+        // řádek buněk (popisek přes CellRenderer, časy po úsecích), proto celá sada Buňka.
         d form.AddGroup("pripoj", "Přípojné řádky")
+        d form.AddBool("ShowPripojeRows", "Přípojné řádky (vyčká/navazuje)", 1)
         s f = form.AddFieldToLastGroup("PripojeSlucovani", "Slučovat přípoje", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Ne", "Ne - řádek pro každý spoj")
         d f.AddListItem("PodleSmeru", "Podle směru")
         d f.AddListItem("PodleSmeruALinky", "Podle směru a linky")
         s f.helpText = "Sloučený řádek nese časy víc spojů a v popisku má směr (""ze směru Trhové Sviny""), takže šetří místo. Bez slučování má každý spoj vlastní řádek s číslem spoje a linky."
-        s f = form.AddDecimal("PripojStyle.FontSize", "Velikost", "", 3, 72, "pt")
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "PripojStyle", "", "", "", "", 0)
+        s f = form.GetField("PripojStyle.FontSize")
         s f.helpText = "Prázdné = jako datové buňky"
-        d form.AddBool("PripojStyle.Bold", "Tučné", 0)
-        d form.AddBool("PripojStyle.Italic", "Kurzíva", 0)
-        s f = form.AddFieldToLastGroup("PripojStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
-        // Pozadí celého řádku - s bílým písmem dá inverzní řádek, o který si KU HK řekl vedle
-        // velikosti a řezu (#8360). Prázdné = jako datové buňky.
-        s f = form.AddFieldToLastGroup("PripojStyle.BackgroundColor", "Barva pozadí řádku", $$$FieldTypeColor, 0, 0)
+        // Pozadí celého řádku - s bílým písmem dá inverzní řádek, o který si KU HK řekl (#8360).
+        s f = form.GetField("PripojStyle.BackgroundColor")
+        s f.helpText = "Podbarví celý přípojný řádek. S bílým písmem dá inverzní řádek. Prázdné = jako datové buňky."
 
         // ── Skupina "Porovnání verzí" (B192) ──────────────────────────────
         // Jen rozdílový linkový JŘ: změněný spoj stojí dvakrát vedle sebe a odlišné časy se podbarví.
@@ -161,6 +133,38 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("RozdilNovaZnackaColor", "Značky nové verze", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF009600"
         s f.helpText = "Barva značky, kterou spoj má jen v nové verzi."
+
+        // ── Záhlaví / Datové buňky ────────────────────────────────────────
+        // Skupina části prvku: zapnutí, pole pro celý řádek, pod nimi sada stylu (rozhodnutí Jan 28. 10.).
+        // Velikost a vnitřní okraje jsou u této tabulky rozměrové volby, ne kosmetika: nesou výšku řádku
+        // i šířku sloupce spoje, proto si nesou vlastní nápovědy.
+        d form.AddGroup("header", "Záhlaví")
+        d form.AddBool("ShowGroupHeaders", "Záhlaví skupin dnů", 1)
+        d form.AddBool("ShowTripNumbers", "Čísla spojů", 1)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "header", "Záhlaví", "#FF000000", "", 0, "", 1)
+        s f = form.GetField("HeaderStyle.FontSize")
+        s f.helpText = "Písmo záhlaví celého prvku, prázdné = 9 bodů. Jednotlivému sloupci se dá přebít v záložce Sloupce."
+
+        d form.AddGroup("data", "Datové buňky")
+        s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
+        s f.helpText = "Prázdné = podle velikosti písma."
+        // Podbarvení řádku zastávky podle tarifního čísla - obdoba Střídání řádků u ostatních tabulek.
+        d form.AddBool("HighlightOddTc", "Podbarvit lichá Tč", 1)
+        s f = form.AddFieldToLastGroup("OddTcBackColor", "Barva lichých Tč", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FFEEEEEE"
+        s f.helpText = "Řádek zastávky s lichým tarifním číslem dostane tuto barvu místo Barvy pozadí buněk."
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "data", "Datové buňky", "#FF000000", "#00FFFFFF", 0)
+        s f = form.GetField("DataStyle.FontSize")
+        s f.helpText = "Písmo buněk celého prvku, prázdné = 8 bodů. Řídí i výšku řádku, když je prázdná, a šířku sloupce spoje."
+        // ⚠️ Výchozí hodnota vypsaná, ne prázdné pole: „prázdné = 0,5 mm" nedávalo smysl nikomu,
+        // kdo si chtěl sloupce utáhnout, protože z formuláře nebylo poznat, kolik vzduchu tam je
+        // (nález Jan 22. 9.). Binder prázdnou hodnotu modelu nechá na tomhle defaultu.
+        s f = form.GetField("DataStyle.PaddingLeft")
+        s f.value = 0.5
+        s f.helpText = "Odsazení textu od svislé čáry. Větší okraj rozšíří sloupec spoje, takže se do řádku vejde méně spojů."
+        s f = form.GetField("DataStyle.PaddingRight")
+        s f.value = 0.5
+        s f.helpText = "Odsazení textu od svislé čáry. Je to hlavní páka na vzduch kolem času: větší okraj sloupec rozšíří, nulou se stáhne až k obsahu, ale nikdy tak, aby se číslice dotýkaly čar."
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)

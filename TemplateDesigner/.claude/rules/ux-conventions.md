@@ -222,6 +222,23 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
 - Tri-state placeholder: `null = dědit` → XAML zobrazí *italic šedý* placeholder zděděné hodnoty; „×" reset jen při explicit override.
 - Multi-element edit: Enter na multi-select → dialog společných vlastností.
 
+**Kostra formuláře tabulkového prvku** (rozhodnutí Jan 28. 10., `B194` E3; nový tabulkový prvek ji dodrží):
+
+- **Nahoře skupiny jen toho prvku**, pojmenované podle toho, čeho na výtisku se týkají (Zastávky,
+  Skupiny dnů, Časy, Data…), ne obecně. Smí míchat logiku i vzhled své věci; stejná věc má u všech
+  prvků stejný název. Pořadí: co určuje obsah, potom rozložení, zvláštní stavy, grafika.
+- **Pod nimi vždy stejný konec:** Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost,
+  Podmínky. Skupina **„Obecné" se nepoužívá** - nic neříká o tom, co v ní je.
+- **Skupina části** (Záhlaví, Datové buňky): první pole část zapíná, pak pole pro celý řádek (výška,
+  střídání), pod nimi sada stylu ze `StyleFields`. Co mění obsah výtisku, patří do skupin prvku.
+- **Sady stylu:** Buňka (15 polí) pro záhlaví a buňky, Text (8 polí, písmo a barva textu) pro text
+  uvnitř buňky (minuta, značky, 2. řádek záhlaví). Styl je vždy rozepsaný, nikdy za tlačítkem, a
+  formulář nenabízí pole, které prvek nekreslí.
+- **Bez** záložek, sbalených skupin a stylu pro celý prvek (zvažováno, odmítnuto).
+- **Výjimky:** Pevná tabulka má „Styl všech buněk" před „Styl řádku záhlaví" (buňky se vyplňují
+  ručně, řádek záhlaví zůstal jen kvůli starým šablonám). Poznámky nejsou klasická tabulka a mají
+  vlastní strukturu.
+
 ---
 
 ## 5. Context menu
@@ -267,7 +284,7 @@ Kanonické termíny (font/styl textu):
 | Tučné / Kurzíva / Podtržení / Přeškrtnutí | **Tučné** / **Kurzíva** / **Podtržení** / **Přeškrtnutí** | anglicismy |
 | Vzhled jedné části prvku | **„Část: Vlastnost"** - předpona a kanonický název („Minuta: Velikost", „Aktuální: Tučné", „Projeté: Barva textu"); vysvětlivka prázdné hodnoty do nápovědy (rozhodnutí Jan 26. 10.) | ~~Tučně aktuální zast.~~, ~~Barva projetých~~ |
 | Řádkování (LineSpacing) | **Řádkování** | - |
-| Barva textu / pozadí | **Barva textu** / **Barva pozadí** - ve skupině části prvku (Záhlaví, Datové buňky) bez upřesnění, část říká název skupiny; jinde s částí („Barva pozadí řádku", „Aktuální: Barva pozadí"). Celý tvar „Barva …" kvůli hledání podle „barva" (rozhodnutí Jan 28. 10.) | ~~Pozadí~~ samotné, ~~Výplň~~ |
+| Barva textu / pozadí | **Barva textu** / **Barva pozadí** - ve skupině části prvku (Záhlaví, Datové buňky) bez upřesnění, část říká název skupiny; jinde s částí („Barva pozadí značky", „Aktuální: Barva pozadí"). Celý tvar „Barva …" kvůli hledání podle „barva" (rozhodnutí Jan 28. 10.) | ~~Pozadí~~ samotné, ~~Výplň~~ |
 | Totéž v programu bez skupiny (rychlé barvy zón tabulky, asistent, import z PDF) | **Barva textu záhlaví** / **Barva pozadí záhlaví**, **Barva textu buněk** / **Barva pozadí buněk** | ~~Pozadí záhlaví~~, ~~Pozadí buněk~~ |
 
 Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
