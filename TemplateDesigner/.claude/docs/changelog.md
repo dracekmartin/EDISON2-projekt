@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-28 (8) - Pravidla zvýraznění v jednom kroku zpět s oknem tabulky (`B194d` E13e)
+
+Pravidla zvýraznění upravená v okně Seznamu zastávek, Tabulky spojů nebo Tabulky z dat byla samostatný krok zpět.
+Jedno Ctrl+Z vrátilo jen pravidla a změny sloupců a nastavení z okna zůstaly.
+- Teď jdou pravidla do téhož kroku jako zbytek okna, takže jedno Ctrl+Z vrátí celé OK.
+- Pravidla beze změny (i v samostatném okně zvýraznění z panelu) krok nevytvoří.
+
 ## 2026-10-28 (7) - OK beze změny v okně tabulky šablonu nemění (`B194d` E13d)
 
 OK v okně Seznamu zastávek, Minut odjezdů, Tabulky spojů a Tabulky z dat, ve kterém se nic nezměnilo, přidalo krok do Ctrl+Z a označilo šablonu jako změněnou.

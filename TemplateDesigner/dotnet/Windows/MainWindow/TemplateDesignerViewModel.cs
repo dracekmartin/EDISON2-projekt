@@ -1248,9 +1248,20 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Zvýraznění řádků (seznam pravidel) - jeden undoable krok. Prázdný seznam → null (čistý JSON).</summary>
     public void ApplyHighlightRulesEdit(IRowHighlightable element, List<HighlightRule> resultRules)
     {
+        var cmds = new List<IDesignerCommand>();
+        AddHighlightRules(cmds, element, resultRules);
+        ExecuteAsComposite("Zvýraznění řádků", cmds);
+    }
+
+    /// <summary>Pravidla zvýraznění z okna tabulky do téhož vratného kroku jako zbytek okna (`B194d` E13e).
+    /// null = okno pravidla neupravilo; prázdný seznam → null (čistý JSON).</summary>
+    private static void AddHighlightRules(List<IDesignerCommand> cmds, IRowHighlightable element,
+        List<HighlightRule>? resultRules)
+    {
+        if (resultRules is null) return;
         List<HighlightRule>? newVal = resultRules.Count > 0 ? resultRules : null;
-        Execute(new SetPropertyCommand("Zvýraznění řádků", element.HighlightRules, newVal,
-            v => element.HighlightRules = (List<HighlightRule>?)v));
+        AddIfChanged(cmds, "Zvýraznění řádků", element.HighlightRules, newVal,
+            v => element.HighlightRules = (List<HighlightRule>?)v);
     }
 
     /// <summary>Okno „Druhy poznámek" jako jeden vratný krok (`#7487`).</summary>
@@ -1259,32 +1270,38 @@ public class TemplateDesignerViewModel : EDViewModel
             v => element.Skupiny = (List<NastaveniSkupinyPoznamek>?)v);
 
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
-    public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
+    public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns,
+        List<HighlightRule>? resultHighlightRules = null)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
         AddIfChanged(cmds, "Sloupce zastávek", element.Columns, resultColumns,
             v => element.Columns = (List<StopColumn>)v!);
+        AddHighlightRules(cmds, element, resultHighlightRules);
         ExecuteAsComposite("Nastavení zastávek", cmds);
     }
 
     /// <summary>Linkový JŘ LineTable: tab „Obecné" + sloupce jako jeden undo krok.</summary>
-    public void ApplyLineTableColumnsEdit(LineTableElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
+    public void ApplyLineTableColumnsEdit(LineTableElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns,
+        List<HighlightRule>? resultHighlightRules = null)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
         AddIfChanged(cmds, "Sloupce linkového JŘ", element.Columns, resultColumns,
             v => element.Columns = (List<StopColumn>)v!);
+        AddHighlightRules(cmds, element, resultHighlightRules);
         ExecuteAsComposite("Nastavení linkového JŘ", cmds);
     }
 
     /// <summary>Dynamická tabulka: tab „Obecné" + sloupce jako jeden undo krok.</summary>
-    public void ApplyDynamicTableEdit(DynamicTableElement element, IDesignerCommand? generalCommand, List<TableColumn> resultColumns)
+    public void ApplyDynamicTableEdit(DynamicTableElement element, IDesignerCommand? generalCommand, List<TableColumn> resultColumns,
+        List<HighlightRule>? resultHighlightRules = null)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
         AddIfChanged(cmds, "Sloupce tabulky", element.Columns, resultColumns,
             v => element.Columns = (List<TableColumn>)v!);
+        AddHighlightRules(cmds, element, resultHighlightRules);
         ExecuteAsComposite("Nastavení tabulky", cmds);
     }
 

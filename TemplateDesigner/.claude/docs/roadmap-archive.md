@@ -203,6 +203,8 @@
   (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (5)-(6)). Nálezy z průzkumu šly do `E13d`-`E13h`.
 - **E13d** OK v okně tabulky beze změny nepřidá krok do Ctrl+Z ani neoznačí šablonu jako změněnou, i u starší
   šablony bez nových sloupců a u agendy, která některé sloupce nenabízí (changelog 2026-10-28 (7)).
+- **E13e** Pravidla zvýraznění upravená v okně Seznamu zastávek, Tabulky spojů a Tabulky z dat jsou ve stejném
+  kroku zpět jako zbytek okna (changelog 2026-10-28 (8)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

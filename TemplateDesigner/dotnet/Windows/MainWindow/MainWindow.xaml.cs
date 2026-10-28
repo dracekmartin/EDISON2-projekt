@@ -1967,8 +1967,8 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() == true)
         {
-            _vm!.ApplyStopColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
-            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+            _vm!.ApplyStopColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns,
+                dlg.HighlightEdited ? dlg.ResultHighlightRules ?? [] : null);
         }
 
         InvalidateCanvas();
@@ -2048,8 +2048,8 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() == true)
         {
-            _vm!.ApplyLineTableColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
-            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+            _vm!.ApplyLineTableColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns,
+                dlg.HighlightEdited ? dlg.ResultHighlightRules ?? [] : null);
         }
 
         InvalidateCanvas();
@@ -2064,8 +2064,8 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() == true)
         {
-            _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
-            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+            _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns,
+                dlg.HighlightEdited ? dlg.ResultHighlightRules ?? [] : null);
         }
 
         InvalidateCanvas();
