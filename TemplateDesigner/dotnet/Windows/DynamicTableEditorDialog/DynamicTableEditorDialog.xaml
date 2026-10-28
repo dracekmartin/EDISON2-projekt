@@ -33,18 +33,18 @@
                         <DataTemplate>
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                    <TextBlock Text="Pole:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Pole" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                     <ComboBox Width="200" IsEditable="True"
                                               Text="{Binding Field, UpdateSourceTrigger=LostFocus}"
                                               ItemsSource="{Binding DataContext.AvailableFields, RelativeSource={RelativeSource AncestorType=Window}}"
                                               ToolTip="Datové pole kolekce, ze kterého se plní buňky sloupce (např. POPIS)."/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                    <TextBlock Text="Výraz:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Výraz" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                     <TextBox Width="200"
                                              Text="{Binding Expression, UpdateSourceTrigger=LostFocus}"
                                              ToolTip="Počítané pole - aritmetika nad poli řádku, např. {CENA} * {POCET}. Má-li hodnotu, přebíjí Pole."/>
-                                    <TextBlock Text="Formát:" VerticalAlignment="Center" Margin="12,0,4,0"/>
+                                    <TextBlock Text="Formát" VerticalAlignment="Center" Margin="12,0,4,0"/>
                                     <TextBox Width="80"
                                              Text="{Binding Format, UpdateSourceTrigger=LostFocus}"
                                              ToolTip="Formát hodnoty, např. N2 (2 desetinná místa), dd.MM.yyyy. Prázdné = beze změny."/>

@@ -65,7 +65,7 @@ public abstract class ColumnRowVM : INotifyPropertyChanged, IColumnRowVM
     /// <summary>Pevná šířka v mm pro součet proti šířce prvku; automatická = 0.</summary>
     public virtual float FixedWidthMm(float elementWidthMm) => Width ?? 0f;
 
-    public string WidthLabel => $"Šířka ({WidthUnit}):";
+    public string WidthLabel => $"Šířka ({WidthUnit})";
 
     /// <summary>Nápověda pod šířkou; null = obecná nápověda záložky.</summary>
     public virtual string? WidthHint => null;

@@ -102,7 +102,7 @@ public class ZalozkaSloupceTests
             new TableColumn { Header = "Cena", Width = 50f, WidthMode = ColumnWidthMode.Percent }, new DynamicTableElement());
         var tab = new ColumnsTabViewModel([sloupec]) { ElementWidth = () => 80f };
 
-        Assert.Equal("Šířka (%):", sloupec.WidthLabel);
+        Assert.Equal("Šířka (%)", sloupec.WidthLabel);
         Assert.Equal(40f, tab.TotalWidth);
     }
 

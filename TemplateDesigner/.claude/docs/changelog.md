@@ -7,6 +7,7 @@ Editor stylu sloupce na záložce Sloupce (všechna čtyři okna tabulek) má po
 - Vnitřní okraj má čtyři pole nahoře, vpravo, dole a vlevo místo šipek, které ukazovaly směr posunu textu (šipka nahoru byla okraj dole).
 - Popisky jsou bez dvojteček a velikost i okraj mají jednotku za polem; velikost se omezí na 3 až 72 pt a okraj na 0 až 20 mm.
 - Zaškrtávátka nemají „×": hodnota shodná s prvkem se zase dědí, takže odškrtnutí vrátí sloupec k nastavení prvku a tečka přepsaného sloupce v seznamu zmizí. Dřív odškrtnutí uložilo „vypnuto" jako vlastní nastavení sloupce.
+- Popisky na záložce Sloupce (Sloupce, Záhlaví, Šířka, u Tabulky z dat Pole, Výraz, Formát) jsou bez dvojteček jako ve formuláři prvku.
 - Editor zůstal samostatný: prototyp s formulářem prvku vypadal v okně sloupců cize (vyhledávání, sbalovací skupiny) a Jan ho zamítl. Shodu se sadou formuláře hlídá test.
 
 ## 2026-10-28 (5) - Jedna společná záložka Sloupce pro všechny tabulky (`B194d` E13c)

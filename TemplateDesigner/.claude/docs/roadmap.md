@@ -27,6 +27,21 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
+Nálezy z průzkumu oken sloupců (28. 10.), zatím jen čtené z kódu - každý nejdřív reprodukovat:
+
+- **E13d** OK v okně tabulky beze změny přidá krok do Ctrl+Z a označí šablonu jako změněnou - sloupce se
+  zapíšou vždy (`TemplateDesignerViewModel.cs:1215-1280`, `Apply*Edit`) [S]
+- **E13e** Pravidla zvýraznění jsou druhý krok zpět vedle nastavení okna; Ctrl+Z vrátí jen jeden
+  (`MainWindow.xaml.cs:1971`, `ApplyHighlightRulesEdit`) [S]
+- **E13f** Barva Střídání řádků skupiny dnů v Minutách se nekontroluje, nesmysl se uloží do šablony
+  (`DepartureGroupEditorDialogViewModel.cs:47`) [S]
+- **E13g** OK v Minutách možná zahodí nastavení skupiny dnů, která v aktuálních datech není - výsledek se
+  skládá jen z nabídnutých řádků (`DepartureGroupEditorDialogViewModel.cs:503`) [S]
+- **E13h** Chyba ve Vlastní definici sloupců u Minut je vidět jen na té záložce; z jiné OK nic neudělá
+  a neřekne proč (`DepartureGroupEditorDialogViewModel.cs:472-489`, `.xaml:82`) [S]
+- **E13i** Název záložky Obecné v oknech tabulek - skupinu Obecné kostra formuláře zrušila; návrh
+  „Celá tabulka" (navazuje na „Nastavení celé tabulky"), přejmenovat i nápovědy na záložce Sloupce **Jan** [S]
+
 - **E3b** Poznámky do kostry formuláře (`ux-conventions §4`) - nejsou klasická tabulka, záhlaví je jeden
   text a důležitější je pořadí a výběr poznámek; projít zvlášť **Jan** [M]. Patří k tomu: Barva pozadí buněk
   se nabízí a nekreslí (`NotesLegendElement.cs`) - dokreslit pod blok, nebo odebrat
@@ -35,8 +50,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   tiskem), sloučení tvaru mění model šablony = migrace **Jan** [S]
 - **Ověřit: Seznam zastávek po „<1" možná přepne písmo na výchozí** - `StopListElement.cs:928` uvolní sdílené
   písmo z mezipaměti; nalezeno čtením, nereprodukováno [S]
-- **E13c** Záložka Sloupce - společná komponenta i styl sloupce podle formuláře prvku jsou hotové (changelog
-  2026-10-28 (5) a (6)). Zbývá vizuální doladění záložky, které Jan zmínil, a název záložky Obecné [S] **Jan**
 - **Víceřádkové záhlaví sloupce v Tabulce spojů a Tabulce z dat** - kreslení počítá výšku záhlaví z jednoho
   řádku (pevná u Tabulky z dat), proto ho okno nenabízí; až to kreslení umět bude, zapne se přepínačem
   `MultilineHeader` [S]

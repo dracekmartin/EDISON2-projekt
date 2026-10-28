@@ -197,6 +197,10 @@
   Rámeček, Mřížka, Pozice, Podmínky), bez Obecné, sady stylu Buňka / Text, styl vždy rozepsaný, „Barva
   pozadí", Řádkování z tabulek pryč. Převedeny všechny tabulky kromě Poznámek, které šly do `E3b`
   (rozhodnutí Jan 28. 10., pravidlo `ux-conventions §4`; changelog 2026-10-28 (1)-(4)).
+- **E13c** Záložka Sloupce jedna pro všechna čtyři okna tabulek (`ColumnsTab`), opravené ztráty zarovnání
+  a procentní šířky u Tabulky z dat a hodiny Minut mimo zpětný krok; editor stylu sloupce s poli, popisky
+  a mezemi formuláře prvku, zaškrtávátka bez „×". Prototyp s formulářem prvku zamítnut, vypadal cize
+  (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (5)-(6)). Nálezy z průzkumu šly do `E13d`-`E13h`.
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 
