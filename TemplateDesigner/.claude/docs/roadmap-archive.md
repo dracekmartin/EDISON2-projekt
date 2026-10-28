@@ -205,6 +205,8 @@
   šablony bez nových sloupců a u agendy, která některé sloupce nenabízí (changelog 2026-10-28 (7)).
 - **E13e** Pravidla zvýraznění upravená v okně Seznamu zastávek, Tabulky spojů a Tabulky z dat jsou ve stejném
   kroku zpět jako zbytek okna (changelog 2026-10-28 (8)).
+- **E13f** Barva Střídání řádků skupiny dnů v okně Minut nepřijme neplatnou hodnotu, jako barvy v editoru
+  stylu (changelog 2026-10-28 (9)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

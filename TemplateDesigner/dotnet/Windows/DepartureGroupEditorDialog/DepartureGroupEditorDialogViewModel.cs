@@ -47,7 +47,14 @@ public class DepartureGroupColumnVM : Controls.ColumnRowVM
     public string AlternatingRowColor
     {
         get => _alternatingRowColor;
-        set { _alternatingRowColor = value; OnChanged(); }
+        set
+        {
+            // Neplatnou barvu kreslení přečte jako průhlednou a skupina by ztratila střídání i barvu prvku;
+            // pole ji proto nepřijme, stejně jako barvy v editoru stylu.
+            var barva = value?.Trim() ?? "";
+            if (barva.Length == 0 || ColorHex.IsValid(barva)) _alternatingRowColor = barva;
+            OnChanged();
+        }
     }
 
     public DepartureGroupColumnStyle ToModel() => new()

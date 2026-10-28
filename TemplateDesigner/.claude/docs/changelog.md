@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-28 (9) - Barva Střídání řádků skupiny dnů se kontroluje (`B194d` E13f)
+
+Pole Střídání řádků u skupiny dnů v okně Minut odjezdů přijalo jakýkoli text.
+Neplatnou barvu kreslení přečetlo jako průhlednou, takže skupina ztratila střídání řádků a přebila i barvu nastavenou na prvku.
+- Pole teď přijme jen platnou barvu (`#RRGGBB`, `#AARRGGBB`, `{BARVA_LINKY}`) nebo prázdnou hodnotu; jinak zůstane původní, stejně jako barvy v editoru stylu.
+
 ## 2026-10-28 (8) - Pravidla zvýraznění v jednom kroku zpět s oknem tabulky (`B194d` E13e)
 
 Pravidla zvýraznění upravená v okně Seznamu zastávek, Tabulky spojů nebo Tabulky z dat byla samostatný krok zpět.

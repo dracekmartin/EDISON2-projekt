@@ -29,8 +29,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 Nálezy z průzkumu oken sloupců (28. 10.), zatím jen čtené z kódu - každý nejdřív reprodukovat:
 
-- **E13f** Barva Střídání řádků skupiny dnů v Minutách se nekontroluje, nesmysl se uloží do šablony
-  (`DepartureGroupEditorDialogViewModel.cs:47`) [S]
 - **E13g** OK v Minutách možná zahodí nastavení skupiny dnů, která v aktuálních datech není - výsledek se
   skládá jen z nabídnutých řádků (`DepartureGroupEditorDialogViewModel.cs:503`) [S]
 - **E13h** Chyba ve Vlastní definici sloupců u Minut je vidět jen na té záložce; z jiné OK nic neudělá
