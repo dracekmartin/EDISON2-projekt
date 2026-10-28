@@ -20,15 +20,6 @@ co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-
 Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
 vydané agendy · **Jan** = potřebuje rozhodnutí.
 
-### `B194h` Dodělávky po sjednocení formulářů (revize 28. 10.)
-
-Nezávislá revize `B194d` (formuláře proti serveru, kód a testy, dokumentace). Projít před `B194f`.
-
-- **H12** Hledání ve formuláři nenajde „písmo", „podbarvení" ani „čára" a zahltí polohou prvku [M] **Jan**
-- **H13** Novinky mají staré názvy polí („Rozestup odjezdů", „Více stanovišť") - opravit, a patří přejmenování z 28. 10. do Novinek? [S] **Jan**
-- **H16** `review-proklik-checklist.md` ze 4. 8. má body pro ruční proklik, které čekají na Jana - projít, nebo smazat [S] **Jan**
-- **H17** Panel a import z PDF mají u Minut odjezdů jiné skupiny než formulář („Odjezdy", „Řádky dat", „Styl minuty"…) [S]
-
 ### `B194f` Pojistky před `B56`
 
 - **G1** Kontraktový Caché test přes registr agend (schéma, ukázka, data, kódy, důvod prázdného výstupu) [M]
@@ -58,6 +49,11 @@ Nezávislá revize `B194d` (formuláře proti serveru, kód a testy, dokumentace
 - **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
   **Jan** - čeká na vyjasnění nastavení JŘ s kolegy, ze kterého volby vycházejí (Jan 28. 10.); patří k `B56` R5
   (stálý kód vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
+- **Hledání ve formuláři po slovech a se synonymy** [M] (z `B194h` H12, Jan 28. 10.: zajímavé, ale ne
+  teď). Hledání dnes bere celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení"
+  ani „čára" nenajdou nic, „výška záhlaví" po `H6` nenajde Nejmenší výšku. Návrh: každé slovo zvlášť
+  přes popisek i skupinu, bez koncovky u slov od 5 písmen, a krátký seznam synonym (písmo → Font, Řez,
+  Velikost; podbarvení → Barva pozadí). Sdílená komponenta EDControls - platí pro celý EDISON.
 - **Sjednocené věci definovat jednou** [M] **Jan** (27. 10.) - nejdřív revize toho, co `B194` sjednotilo (popisky,
   nápovědy a rozsahy polí E8, údaje dopravce D4, nabídka podle dat E5, kanon `ux-conventions §8`), a pro každé
   rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky

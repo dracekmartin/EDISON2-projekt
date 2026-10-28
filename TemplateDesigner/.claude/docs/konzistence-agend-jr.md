@@ -187,32 +187,8 @@ kód a testy (build bez chyb, 2492 testů zelených v čisté kopii `7dfb5b1a`) 
 Směr potvrzený: tabulky mají jednu kostru, stejné sady stylu a stejné popisky; „barva" najde v každém
 formuláři všechna barevná pole.
 H1, H2, H4, H5, H7, H8, H14, H15 a dokumentační část H13 jsou hotové (changelog 2026-10-28 (18)-(21)),
-H3 rozhodnutý (nechat, archiv), H6, H9, H10 a H11 hotové (changelog 2026-10-28 (22)-(26)).
-
-- **H12 Hledání ve formuláři** [M] **Jan** (*ověřeno:* server, kód hledání).
-  Formuláře tabulek mají 86-109 polí bez sbalování, hledání je hlavní cesta k poli.
-  Porovnává podřetězec popisku nebo názvu skupiny bez synonym a tvarů slov (`EDInputForm.xaml.cs`
-  `ComputeSearchMatches`, `SearchNormalization.cs` v EDControls).
-  „písmo", „barva písma" a „podbarvení" nenajdou nic (Font, Barva textu, Barva pozadí); „čára" nic (Čáry mezi
-  řádky, Styl čáry); „rámeček" jen přes název skupiny; „velikost" a „pozice" vytáhnou celou skupinu Pozice
-  a velikost (v Seznamu zastávek 7 z 12 výsledků mimo).
-  Návrh: seznam synonym, slova od 5 znaků porovnat bez koncovky, a když se shoduje popisek pole, nerozbalovat
-  celou skupinu jen kvůli shodě v jejím názvu.
-  Popisky neměnit. Změna je v EDControls, platí pro formuláře celého EDISONu.
-- **H13 Novinky se starými názvy polí** [S] **Jan**.
-  `plan-a-zmeny.md` (článek je veřejný) má „Rozestup odjezdů" a „Více stanovišť"; záznamy jsou datované.
-  Jestli je opravit a jestli přejmenování polí z 28. 10. patří do Novinek (pravidlo: jen změny, které uživatel
-  pozná), rozhodne Jan. Příručka a dokumenty pro agenty jsou opravené (changelog 2026-10-28 (21)).
-- **H16 `review-proklik-checklist.md`** [S] **Jan**.
-  Jednorázový dokument ze 4. 8. pro ruční proklik; podle hlavičky ho po projití smazat, ale část bodů pořád
-  čeká na Jana (vizuální dojem, hlášky naživo). Projít, nebo smazat.
-- **H17 Skupiny panelu Minut neodpovídají formuláři** [S] (*ověřeno:* kód; nalezeno při H11).
-  Panel vlastností a protokol importu z PDF poznají pole podle skupiny a popisku. Minuty odjezdů mají
-  v `DepartureGridElement.GetPropertyDescriptors` skupiny, které formulář nemá: „Odjezdy" (záhlaví skupin dnů,
-  šířka hodin, Nejvýš skupin dnů…), „Řádky dat", „Záhlaví - 2. řádek" (popisky bez předpony „2. řádek:"),
-  „Styl minuty", „Mezery". Formulář má Skupiny dnů, Rozměry, Značky u odjezdů, Záhlaví, Datové buňky.
-  Výška řádku Seznamu zastávek je v panelu ve skupině „Řádky" (výchozí `GetDataRowHeightDescriptor`).
-  Srovnat jako Tabulku spojů (`H10`), včetně klíčů v testech importu a v příkladu zadání pro AI import.
+H3 rozhodnutý (nechat, archiv), H6, H9, H10 a H11 hotové (changelog 2026-10-28 (22)-(26)), H12 v backlogu (roadmapa),
+H13 rozhodnutý (Novinky beze změny), H16 smazaný, H17 hotový (changelog 2026-10-28 (27)). `B194h` je uzavřený.
 
 **Před smazáním tohoto souboru** přesunout §7 (připravenost na `B56`) do `legacy-nahrada §4` spolu s R2
 a odstavec níž k položce backlogu, které se týká. P2 a vědomé rozdíly už jsou v `legacy-nahrada.md §4` (H14).

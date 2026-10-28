@@ -288,7 +288,7 @@ public abstract class ScheduleElementBase : TemplateElement
     /// Get vrací reálnou hodnotu (explicit nebo auto-vypočtenou z fontu),
     /// Set rozpozná „auto" zpětně přes epsilon comparison - uživatel po editaci nemusí vědět magickou hodnotu.
     /// </summary>
-    protected FloatPropertyDescriptor GetDataRowHeightDescriptor(string group = "Řádky") => new()
+    protected FloatPropertyDescriptor GetDataRowHeightDescriptor(string group = "Datové buňky") => new()
     {
         Label = "Výška řádku",
         Group = group,

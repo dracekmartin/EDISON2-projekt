@@ -28,9 +28,6 @@ public class DescriptorLabelsMatchFormTests
         ["Barva pozadí buněk"] = "barvy zón tabulky",
         ["Barva textu buněk"] = "barvy zón tabulky",
         ["Tučné záhlaví"] = "promoted shortcut tabulek (mvvm-patterns)",
-        // Minuty odjezdů: v programu bez skupin s upřesněním, ve formuláři ve skupině Záhlaví bez něj.
-        ["Velikost záhlaví"] = "Minuty odjezdů: ve formuláři „Velikost“ ve skupině Záhlaví",
-        ["Zarovnání záhlaví svisle"] = "Minuty odjezdů: ve formuláři „Zarovnání svisle“ ve skupině Záhlaví",
         // Ve formuláři je jinde než v hlavním formuláři prvku.
         ["Šířka sloupce hodin"] = "Minuty odjezdů: ve formuláři v záložce Sloupce (řádek Hodiny)",
         ["Zdroj dat"] = "pevná tabulka: jen u starých šablon v režimu tabulky z dat, formulář ho nenabízí",

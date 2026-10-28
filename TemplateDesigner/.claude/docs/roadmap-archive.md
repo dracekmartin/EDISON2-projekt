@@ -250,6 +250,13 @@
   (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (25)).
 - **H11** Minuty: styl textových značek u minuty „Textová značka: …", „Symbol: …" zůstává; značky v panelu
   a importu v jedné skupině jako ve formuláři (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (26)).
+- **H12** Hledání ve formuláři po slovech a se synonymy - do backlogu, není potřeba k dokončení `B194`
+  (rozhodnutí Jan 28. 10.).
+- **H13** Novinky se nemění: starší záznamy popisují stav, kdy vyšly, a dnešní přejmenování do nich nepatří
+  (rozhodnutí Jan 28. 10.).
+- **H16** `review-proklik-checklist.md` ze 4. 8. smazaný, body neodpovídaly dnešnímu stavu (rozhodnutí Jan 28. 10.).
+- **H17** Panel vlastností a protokol importu z PDF mají u Minut odjezdů skupiny a popisky jako formulář,
+  Výška řádku Seznamu zastávek je v Datových buňkách (changelog 2026-10-28 (27)). `B194h` uzavřený.
 
 ## Popisky polí podle pravidel - složité prvky (hotovo 28. 10. 2026)
 

@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-28 (27) - Panel Minut odjezdů má skupiny jako formulář (`B194h` H17)
+
+Protokol importu z PDF a asistent poznají nastavení podle skupiny a popisku. Minuty odjezdů měly v programu skupiny, které formulář nemá („Odjezdy", „Řádky dat", „Záhlaví - 2. řádek", „Styl minuty", „Mezery").
+- Teď mají skupiny Skupiny dnů, Rozměry, Značky u odjezdů, Záhlaví a Datové buňky jako formulář. Popisky ve skupině Záhlaví jsou „Velikost", „Zarovnání svisle" a „2. řádek: …", stejně jako ve formuláři.
+- Výška řádku Seznamu zastávek je v programu ve skupině Datové buňky jako ve formuláři (dřív „Řádky").
+- Formuláře ani šablony se nemění. Tabulka spojů se srovnala v (25).
+
 ## 2026-10-28 (26) - Minuty odjezdů: „Textová značka" místo „Text" (`B194h` H11)
 
 - Styl písmen a čísel u minuty („R", „u1") se ve skupině Značky u odjezdů jmenuje **„Textová značka: …"** souběžně s „Negativní značka: …". Z „Text: Barva textu" nešlo poznat, o jaký text jde. „Symbol: …" zůstává, nápověda u zapnutí značek mluví o písmenech a symbolech.
