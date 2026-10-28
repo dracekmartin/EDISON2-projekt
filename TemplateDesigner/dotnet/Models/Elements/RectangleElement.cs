@@ -1,57 +1,34 @@
-using SkiaSharp;
-using System.Text.Json.Serialization;
-
 namespace TemplateDesigner.Models.Elements;
 
+/// <summary>
+/// Obdélník = plocha s barvou pozadí a obrysem. Obrys je rámeček prvku (společný všem prvkům, i s rohy);
+/// do 28. 10. měl obdélník navíc vlastní okraj se stejným tvarem - dvě nastavení pro jednu čáru,
+/// převedeno migrací 1.18.0 (<see cref="Serialization.MigrationObdelnikRamecek"/>).
+/// </summary>
 public class RectangleElement : TemplateElement
 {
-    /// <summary>Barva okraje ve formátu #AARRGGBB.</summary>
-    public string StrokeColor { get; set; } = "#FF000000";
-
-    /// <summary>Tloušťka okraje v mm. 0 = bez okraje.</summary>
-    public float StrokeWidth { get; set; } = 0.5f;
-
-    [JsonIgnore]
-    public SKColor SkStrokeColor => ColorHex.ParseOrBlack(StrokeColor);
-
-    public override void Render(RenderContext ctx)
+    /// <summary>Nový obdélník má černý obrys 0,5 mm, jako měl dřív vlastním okrajem.</summary>
+    public RectangleElement()
     {
-        if (Width <= 0) return;
-        var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
-
-        // Výplň (BackgroundColor) kreslí base RenderBackgroundPass před obsahem - respektuje rohy.
-        // Zde jen okraj tvaru; DrawElementShape aplikuje CornerStyle (ostré/zaoblené/zkosené).
-        if (StrokeWidth > 0 && SkStrokeColor.Alpha > 0)
-        {
-            using var stroke = new SKPaint { Color = SkStrokeColor, IsStroke = true, StrokeWidth = Math.Max(0.5f, ctx.Px(StrokeWidth)), IsAntialias = true };
-            DrawElementShape(ctx, rect, stroke);
-        }
+        BorderColor = "#FF000000";
+        BorderWidth = 0.5f;
     }
 
-    public override void ApplyScale(float scale)
-    {
-        base.ApplyScale(scale);   // X/Y/Width/Height/BorderWidth + CornerSize
-        StrokeWidth *= scale;
-    }
+    // Výplň (BackgroundColor) kreslí RenderBackgroundPass a obrys RenderBorderPass, obojí s rohy.
+    public override void Render(RenderContext ctx) { }
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new ColorPropertyDescriptor { Label = "Barva pozadí", Group = "Vzhled", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
-        new ColorPropertyDescriptor { Label = "Barva okraje", Group = "Vzhled", Get = () => StrokeColor,  Set = v => StrokeColor = v },
-        new FloatPropertyDescriptor { Label = "Tloušťka okraje",  Group = "Vzhled", Get = () => StrokeWidth,  Set = v => StrokeWidth = v,  Min = 0, Max = 10, Unit = "mm" },
-        // Rohy (Ostré/Zaoblené/Zkosené + velikost) jsou společné pro všechny elementy → GetPositionDescriptors.
+        new ColorPropertyDescriptor { Label = "Barva pozadí", Group = "Obdélník", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
+        // Obrys (Barva a Tloušťka rámečku) a rohy jsou společné pro všechny prvky → GetPositionDescriptors.
 
         .. GetPositionDescriptors()
     ];
 
     public override TemplateElement Clone()
     {
-        var clone = new RectangleElement
-        {
-            StrokeColor = StrokeColor,
-            StrokeWidth = StrokeWidth
-        };
-        CopyBaseTo(clone);   // vč. CornerStyle/CornerSize
+        var clone = new RectangleElement();
+        CopyBaseTo(clone);   // vč. rámečku, rohů a pozadí
         return clone;
     }
 }

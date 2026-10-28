@@ -190,16 +190,7 @@ H1, H2, H4, H5, H7, H8, H14, H15 a dokumentační část H13 jsou hotové (chang
 H3 rozhodnutý (nechat, archiv), H6, H9, H10 a H11 hotové (changelog 2026-10-28 (22)-(26)), H12 v backlogu (roadmapa),
 H13 rozhodnutý (Novinky beze změny), H16 smazaný, H17 hotový (changelog 2026-10-28 (27)). `B194h` je uzavřený.
 
-**Před smazáním tohoto souboru** přesunout §7 (připravenost na `B56`) do `legacy-nahrada §4` spolu s R2
-a odstavec níž k položce backlogu, které se týká. P2 a vědomé rozdíly už jsou v `legacy-nahrada.md §4` (H14).
+Popisky jednoduchých prvků z téže revize jsou hotové (changelog 2026-10-28 (28)).
 
-**K backlogu „Popisky jednoduchých prvků"** (táž revize, ověřeno na serveru):
-- Obecné názvy skupin, kvůli kterým se u tabulek rušilo „Obecné": „Vzhled" (Obdélník, Kód, Sekce), „Barvy" (Text).
-  Text má styl ve třech skupinách (Font, Barvy, Zarovnání), tabulky v jedné skupině části.
-- „Okraj" znamená tři věci: obrys Obdélníku (a pod ním ještě skupina Rámeček prvku, tedy dva rámečky),
-  „Vnitřní okraj" u tabulek, skupina Okraje u Stránky v pořadí Nahoře, Dole, Vlevo, Vpravo (tabulky nahoře,
-  vpravo, dole, vlevo).
-- Obrázek má Barvu pozadí ve skupině Rámeček prvku a volbu „Vyplnit (oříznout)" se závorkou.
-- Stránka: „Kultura (formátování)" a volba „(výchozí dle systému)"; skupina „Výchozí styl" má jediné pole.
-- Čára má skupinu Rámeček prvku (jestli ho kreslí, neověřeno); Text nemá u Barvy textu nápovědu
-  `{BARVA_LINKY}`, kterou tabulky mají; u Sekce „rámeček" najde jen přepínač, ne barvu a tloušťku.
+**Před smazáním tohoto souboru** přesunout §7 (připravenost na `B56`) do `legacy-nahrada §4` spolu s R2.
+P2 a vědomé rozdíly už jsou v `legacy-nahrada.md §4` (H14).

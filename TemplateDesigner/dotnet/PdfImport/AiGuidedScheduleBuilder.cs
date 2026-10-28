@@ -1205,8 +1205,8 @@ public static class AiGuidedScheduleBuilder
                 Height = r.Height,
                 ZIndex = i - plochy.Count,   // za všemi texty (ty číslují od 0)
                 BackgroundColor = r.FillColorHex!,
-                StrokeColor = r.StrokeColorHex ?? r.FillColorHex!,
-                StrokeWidth = r.StrokeColorHex is null ? 0f : Math.Clamp(r.StrokeWidth, 0.1f, 0.5f),
+                BorderColor = r.StrokeColorHex ?? r.FillColorHex!,
+                BorderWidth = r.StrokeColorHex is null ? 0f : Math.Clamp(r.StrokeWidth, 0.1f, 0.5f),
             });
             debug.Add($"Pozadí hlavičky: ({r.X:0.#},{r.Y:0.#}) {r.Width:0.#}×{r.Height:0.#}mm {r.FillColorHex}");
         }

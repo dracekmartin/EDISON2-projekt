@@ -265,6 +265,10 @@
   spojů, Poznámky, Tabulka z dat a Pevná tabulka (changelog 2026-10-28 (16)-(17)). U Poznámek zůstalo
   opakování názvu skupiny (Poznámky linky - …), nastavení je tam málo (rozhodnutí Jan); meze Nejvýš / Nejméně
   zůstávají.
+- Jednoduché prvky (Stránka, Sekce, Text, Obdélník, Čára, Obrázek, Kód) podle týchž pravidel: skupiny podle
+  prvku místo „Vzhled", Přizpůsobení velikosti, Rozdělení na stránky, Písmo a formát, nápověda barvy linky
+  u všech barev. Obdélník kreslí obrys jen rámečkem prvku, migrace 1.18.0; Text si nechává tři skupiny stylu
+  (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (28)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

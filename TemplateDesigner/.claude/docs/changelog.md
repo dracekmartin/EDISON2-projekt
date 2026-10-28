@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-28 (28) - Popisky jednoduchých prvků podle pravidel, obdélník kreslí obrys rámečkem
+
+Stránka, Sekce, Text, Obdélník, Čára, Obrázek a Kód se řídí stejnými pravidly popisků jako tabulky (rozhodnutí Jan 28. 10., `ux-conventions §8`).
+- **Obdélník** má jeden obrys - rámeček prvku (barva, tloušťka, rohy). Vlastní okraj se stejným tvarem i rohy byl druhé nastavení pro tutéž čáru; migrace 1.18.0 ho převede do rámečku, pokud rámeček nastavený není, jinak zůstane rámeček. Nový obdélník má dál černý obrys 0,5 mm a import z PDF zapisuje rámeček.
+  Rámeček se kreslí až po obsahu všech prvků, okraj se kreslil s obsahem: prvek, který přes hranu obdélníku zasahuje, teď leží pod obrysem.
+- **Skupiny podle prvku místo „Vzhled":** Obdélník má skupinu Obdélník, Kód má barvy ve skupině Kód, Sekce má skupinu **Rámeček sekce** (hledání „rámeček" ji najde celou).
+- **Obrázek:** **Přizpůsobení velikosti** místo „Škálování", volba „Vyplnit" bez závorky (co se ořízne, říká nápověda), Barva pozadí ve skupině Obrázek místo Rámečku prvku.
+- **Stránka:** okraje v pořadí Nahoře, Vpravo, Dole, Vlevo jako vnitřní okraj buněk; Výchozí font a **Formát data a čísel** (dřív „Kultura (formátování)") v jedné skupině **Písmo a formát**, volba „Podle systému".
+- **Sekce:** **Rozdělení na stránky** místo „Přetečení".
+- Všechna barevná pole mají nápovědu, že jde zadat barvu linky ({BARVA_LINKY}) - umí to každé, nápovědu měla jen část. Text si styl nechává ve třech skupinách Font, Barvy a Zarovnání (rozhodnutí Jan).
+- Panel vlastností a protokol importu mají skupiny a popisky jako formuláře. Ověřeno voláním `Init` všech sedmi formulářů na dev serveru; pojistka migrace `MigrationObdelnikRamecekTests`.
+
 ## 2026-10-28 (27) - Panel Minut odjezdů má skupiny jako formulář (`B194h` H17)
 
 Protokol importu z PDF a asistent poznají nastavení podle skupiny a popisku. Minuty odjezdů měly v programu skupiny, které formulář nemá („Odjezdy", „Řádky dat", „Záhlaví - 2. řádek", „Styl minuty", „Mezery").

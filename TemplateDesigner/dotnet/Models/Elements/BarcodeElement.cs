@@ -267,8 +267,8 @@ public class BarcodeElement : TemplateElement
                 ("DataMatrix", (object)BarcodeElementType.DataMatrix),
             ]
         },
-        new ColorPropertyDescriptor { Label = "Barva kódu",   Group = "Vzhled", Get = () => ForeColor,       Set = v => ForeColor = v },
-        new ColorPropertyDescriptor { Label = "Barva pozadí", Group = "Vzhled", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
+        new ColorPropertyDescriptor { Label = "Barva kódu",   Group = "Kód", Get = () => ForeColor,       Set = v => ForeColor = v },
+        new ColorPropertyDescriptor { Label = "Barva pozadí", Group = "Kód", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
 
         .. GetPositionDescriptors()
     ];

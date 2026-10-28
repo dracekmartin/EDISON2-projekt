@@ -141,7 +141,7 @@ bumpne na „1.1.0" **spolu s** `ITemplateMigration`. (Kosmetický rozdíl „1.
 Caché metadat vs „1.0.0" v C# je funkčně irelevantní - `VersionComparer` je srovnává jako rovné a
 metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 
-### V1.1.0-V1.17.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
+### V1.1.0-V1.18.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
 
 - **1.1.0** `MigrationHighlightRules` - řádkové zvýraznění: skalární pár → `highlightRules[]` seznam.
 - **1.2.0** `MigrationKnizniToLinkovy` - přejmenování knižní → linkový (agenda kódy/typy).
@@ -243,6 +243,12 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 - **1.17.0** `MigrationProjeteZobrazitCas` (2026-10-28) - `passedStopsTime` (Hide / Show) v Seznamu
   zastávek se mění na `passedStopsShowTime` (true jen u Show): výběr ze dvou možností ano/ne je
   zaškrtávátko „Projeté: Zobrazit čas" (rozhodnutí Jan, popisky podle typu pole).
+
+- **1.18.0** `MigrationObdelnikRamecek` (2026-10-28) - Obdélník ztrácí vlastní okraj (`strokeColor`,
+  `strokeWidth`): viditelný okraj přejde do rámečku prvku (`borderColor`, `borderWidth`), pokud rámeček
+  viditelný není; mají-li obojí, zůstane rámeček. Chybějící klíče = tehdejší výchozí okraj černý 0,5 mm
+  (rozhodnutí Jan, dvě nastavení pro tutéž čáru). ⚠️ Rámeček se kreslí až po obsahu všech prvků,
+  okraj se kreslil s obsahem - prvek, který přes hranu obdélníku zasahuje, teď leží pod obrysem.
 
 ---
 

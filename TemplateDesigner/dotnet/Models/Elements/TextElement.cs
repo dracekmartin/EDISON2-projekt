@@ -148,7 +148,7 @@ public class TextElement : TemplateElement
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new StringPropertyDescriptor { Label = ObsahLabel,     Group = "Obsah",     Get = () => Text,                Set = v => Text = v,                                   MultiLine = true },
+        new StringPropertyDescriptor { Label = ObsahLabel,     Group = "Text",     Get = () => Text,                Set = v => Text = v,                                   MultiLine = true },
 
         new StringPropertyDescriptor { Label = "Font",         Group = "Font",      Get = () => Style.FontFamily ?? "Arial",  Set = v => Style.FontFamily = v },
         new FloatPropertyDescriptor  { Label = "Velikost",      Group = "Font",      Get = () => Style.FontSize ?? 10f,        Set = v => Style.FontSize = v,                 Min = 3, Max = 72, Unit = "pt" },
@@ -156,7 +156,7 @@ public class TextElement : TemplateElement
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Font",      Get = () => Style.Italic ?? false,        Set = v => Style.Italic = v },
         new BoolPropertyDescriptor   { Label = "Podtržení",    Group = "Font",      Get = () => Style.Underline ?? false,      Set = v => Style.Underline = v },
         new BoolPropertyDescriptor   { Label = "Přeškrtnutí", Group = "Font",      Get = () => Style.Strikethrough ?? false,  Set = v => Style.Strikethrough = v },
-        new BoolPropertyDescriptor   { Label = "Zalamovat řádky", Group = "Font",      Get = () => WordWrap,                     Set = v => WordWrap = v },
+        new BoolPropertyDescriptor   { Label = "Zalamovat řádky", Group = "Text",      Get = () => WordWrap,                     Set = v => WordWrap = v },
         new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => Style.LineSpacing ?? 1.2f,    Set = v => Style.LineSpacing = v,               Min = 0.8f, Max = 3f, Format = "0.0#" },
 
         // HAlign rozšířený o Justify - inline (sdílené HAlignOptions Justify nemají, cell elementy ho v rendereru ignorují)
@@ -164,8 +164,8 @@ public class TextElement : TemplateElement
             Options = [..EnumPropertyDescriptor.HAlignOptions, ("Do bloku", TextHorizontalAlignment.Justify)] },
         new EnumPropertyDescriptor   { Label = EnumPropertyDescriptor.LabelZarovnaniSvisle, Group = "Zarovnání", Get = () => Style.VAlign ?? TextVerticalAlignment.Top,  Set = v => Style.VAlign = (TextVerticalAlignment)v,  Options = EnumPropertyDescriptor.VAlignOptions },
 
-        new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Vzhled",    Get = () => Style.TextColor ?? "#FF000000",     Set = v => Style.TextColor = v },
-        new ColorPropertyDescriptor  { Label = "Barva pozadí", Group = "Vzhled",    Get = () => Style.BackgroundColor ?? "#00FFFFFF", Set = v => Style.BackgroundColor = v },
+        new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Barvy",    Get = () => Style.TextColor ?? "#FF000000",     Set = v => Style.TextColor = v },
+        new ColorPropertyDescriptor  { Label = "Barva pozadí", Group = "Barvy",    Get = () => Style.BackgroundColor ?? "#00FFFFFF", Set = v => Style.BackgroundColor = v },
 
         .. GetPositionDescriptors()
     ];

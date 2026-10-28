@@ -789,7 +789,6 @@ public class EDInputFormSchemaDriftTests
     public void StejnyFieldKey_MaVsudeStejnyLabel()
     {
         // Legitimní rozdíly labelu téhož klíče mezi formuláři (kontextové upřesnění) - vědomé výjimky:
-        //   StrokeWidth - u čáry je to „Tloušťka" (čáry samotné), u obdélníku „Tloušťka okraje"
         // („Height" tu byl do 29. 7. kvůli rozdílnému popisku výšky - sdílený BaseElementFields
         //  ho sjednotil na „Výška" + nápovědu, takže výjimka padla.)
         //   NegativniZnacka*Color - v Poznámkách mají vlastní skupinu Negativní značky („Barva pozadí"), v mřížce
@@ -801,7 +800,7 @@ public class EDInputFormSchemaDriftTests
         //   HeaderHeight - v Tabulce z dat je to nejmenší výška záhlaví (víc řádků ho zvětší), v Pevné
         //     tabulce pevná výška; stejný popisek by tvrdil, že se chovají stejně (`B194h` H6).
         var exempt = new HashSet<string>(StringComparer.Ordinal)
-            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor", "Format", "HeaderHeight" };
+            { "NegativniZnackaBackColor", "NegativniZnackaForeColor", "Format", "HeaderHeight" };
 
         var labelsPerKey = new Dictionary<string, Dictionary<string, List<string>>>();
         foreach (var file in AllEditClsFiles())

@@ -2954,7 +2954,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var el = type switch
         {
             ElementTypes.Text          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
+            ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Line          => new LineElement      { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Image         => new ImageElement     { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Table         => NewFixedTable(x, y, w, h),

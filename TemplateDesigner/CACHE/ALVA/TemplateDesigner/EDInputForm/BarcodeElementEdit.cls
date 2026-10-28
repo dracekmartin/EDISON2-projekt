@@ -32,15 +32,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("DataMatrix", "DataMatrix")
         s f.value = "QR"
 
-        // ── Skupina "Vzhled" ──────────────────────────────────────────────
-        d form.AddGroup("appearance", "Vzhled")
-
+        // Barvy ve skupině Kód - samostatná skupina „Vzhled" nic neříkala (popisky jednoduchých prvků 28. 10.).
         s f = form.AddFieldToLastGroup("ForeColor", "Barva kódu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
 
         s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         // Bílá, ne průhledná jako u ostatních prvků - čtečka potřebuje kontrast (drží to C# ctor).
         s f.value = "#FFFFFFFF"
+        s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)

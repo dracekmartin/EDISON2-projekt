@@ -48,7 +48,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "Vsechny"
         s f.helpText = "Na kterých listech sestavy se hlavička nebo patička vytiskne. Kde na listu leží, určuje Typ sekce"
 
-        s f = form.AddFieldToLastGroup("OverflowBehavior", "Přetečení", $$$FieldTypeList, 0, 1)
+        s f = form.AddFieldToLastGroup("OverflowBehavior", "Rozdělení na stránky", $$$FieldTypeList, 0, 1)
         d f.AddListItem("KeepTogether", "Držet pohromadě")
         d f.AddListItem("SplitAcrossPages", "Rozdělit přes stránky")
         s f.value = "KeepTogether"
@@ -57,13 +57,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddBool("ZacitNaNoveStrance", "Začít na nové stránce", 0)
         s f.helpText = "Sekce začne na novém listu - třeba poznámky na samostatné stránce za tabulkou. Na listu, kde ještě nic není, se nový nezakládá"
 
-        // ── Skupina "Vzhled" ──────────────────────────────────────────────
-        d form.AddGroup("appearance", "Vzhled")
+        // ── Skupina "Rámeček sekce" ───────────────────────────────────────
+        // Jako „Rámeček prvku" u prvků; „Vzhled" nic neříkal a hledání „rámeček" našlo jen přepínač.
+        d form.AddGroup("appearance", "Rámeček sekce")
 
         d form.AddBool("ShowBorder", "Rámeček", 0)
 
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
 
         s f = form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0.3, 0, 5, "mm")
         s f.helpText = "Jen když je zapnutý Rámeček. Prázdné nebo 0 = bez rámečku"

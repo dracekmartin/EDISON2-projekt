@@ -316,7 +316,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Výška, kterou sazba dopočte | **výška podle obsahu** („výška se počítá podle obsahu") | ~~počítá engine~~, ~~dynamická výška~~ |
 | Plocha návrháře | **plátno** | ~~canvas~~ |
 | Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti**, u řádku **Podmínka viditelnosti řádku** (je to podmínka, ne zaškrtávátko - rozhodnutí Jan 28. 10.) | ~~Viditelnost~~, ~~Viditelnost řádku~~ |
-| Síla čáry (BorderWidth aj.) | **Tloušťka …** („Tloušťka rámečku", „Tloušťka okraje") | ~~Šířka rámečku~~, ~~Tl. …~~ |
+| Síla čáry (BorderWidth aj.) | **Tloušťka …** („Tloušťka rámečku", „Tloušťka mřížky") | ~~Šířka rámečku~~, ~~Tl. …~~ |
 | Střídavé podbarvení řádků | **Střídání řádků: Barva pozadí** (barva se musí najít hledáním „barva", jako Lichá Tč: Barva pozadí - rozhodnutí Jan 28. 10.) | ~~Zebra barva~~, samotné ~~Střídání řádků~~ |
 | Směry zarovnání | **Zarovnání vodorovně / Zarovnání svisle** (celý tvar, ať jde hledat - rozhodnutí Jan 26. 10.), stavy **Nahoře / Dole** | ~~Horizontálně/Vertikálně~~, samotné ~~Vodorovně~~ / ~~Svisle~~ / ~~Zarovnání~~, ~~Nahoru/Dolů~~ |
 | Přestupy u zastávky | **Přestupy (vlak/autobus)** | ~~(vlak/bus)~~ |

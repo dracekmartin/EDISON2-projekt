@@ -179,8 +179,8 @@ Tlačítko `Přidat sekci` nabízí presety:
 - *(vlastní uložené šablony sekcí, značené 💾)* - podle uložené šablony
 
 ### Vlastnosti sekce (dialog)
-Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Typ sekce**, **Tisknout na**, **Přetečení**,
-**Rámeček**, **Barva rámečku**, **Tloušťka rámečku**, **Podmínka viditelnosti**. Volby
+Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Typ sekce**, **Tisknout na**, **Rozdělení na stránky**,
+**Rámeček**, **Barva rámečku**, **Tloušťka rámečku** (skupina Rámeček sekce), **Podmínka viditelnosti**. Volby
 v rozbalovacích seznamech:
 
 - **Typ sekce**: Hlavička stránky · Obsah · Pod obsahem stránky · Patička stránky. Obsah se tiskne
@@ -188,7 +188,7 @@ v rozbalovacích seznamech:
 - **Tisknout na** (jen u hlavičky a patičky): Každé stránce · Jen první stránce · Jen poslední
   stránce - patička s „Jen poslední stránce" je dole jen na posledním listu. Pod obsahem stránky
   se tiskne vždy na každé stránce
-- **Přetečení** (jen u obsahu): Držet pohromadě · Rozdělit přes stránky
+- **Rozdělení na stránky** (jen u obsahu): Držet pohromadě · Rozdělit přes stránky
 - **Začít na nové stránce** (jen u obsahu): sekce začne na novém listu - např. poznámky na
   samostatné stránce za tabulkou. S přetečením „Rozdělit přes stránky" dlouhé poznámky pokračují
   na dalším listu. Na listu, kde ještě nic není, se nový nezakládá
@@ -237,8 +237,8 @@ jen se zapnutým Rámečkem.
 Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
 
 - **Text** - text (víceřádkový), font, řez a velikost písma (3–72 pt, stejně u všech prvků), tučné/kurzíva/podtržení/přeškrtnutí, zalamování (výchozí vypnuté), řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí. Pole z dat na víc řádků (třeba popis dopravce: název, sídlo, telefon) se bez zalamování vypíše na jeden řádek a části oddělí čárka; se zalamováním zůstanou pod sebou
-- **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy. Obrázek bez souboru se netiskne - rámeček „IMG" je jen v návrháři
-- **Obdélník** - barva pozadí, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
+- **Obrázek** - nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, **Přizpůsobení velikosti**: vejít celý / vyplnit (co přečnívá, se ořízne) / roztáhnout / bez úpravy, barva pozadí pod obrázkem. Obrázek bez souboru se netiskne - rámeček „IMG" je jen v návrháři
+- **Obdélník** - barva pozadí; obrys je **rámeček prvku** (barva, tloušťka, zaoblené nebo zkosené rohy), nový obdélník má černý obrys 0,5 mm
 - **Čára** - orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
 - **Kód (QR, čárový)** - obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí.
   Kód vždy vyplní celý prvek. **Musí být dost velký, aby se dal sejmout z papíru** - potřebná
@@ -501,8 +501,8 @@ V obsahu buňky dynamické tabulky lze počítat souhrny: `SUM({POLE})`, `COUNT(
 `MIN({POLE})`, `MAX({POLE})`.
 
 ### Jazyk šablony (lokalizace)
-Šablona má nastavený **jazyk** - dialog `Vlastnosti stránky…` (Ctrl+Shift+P), skupina **Jazyk**,
-pole „Kultura (formátování)": Čeština, Slovenština, Angličtina, Němčina, nebo „(výchozí dle systému)".
+Šablona má nastavený **jazyk** - dialog `Vlastnosti stránky…` (Ctrl+Shift+P), skupina **Písmo a formát**,
+pole „Formát data a čísel": Čeština, Slovenština, Angličtina, Němčina, nebo „Podle systému".
 Se zvoleným jazykem se formát čísel a datumů řídí jím, nezávisle na tom, na jakém počítači se
 tiskne - tisk tak vypadá stejně na každé stanici.
 

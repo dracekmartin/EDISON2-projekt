@@ -43,20 +43,16 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.validateOnChange = 1
 
         // ── Skupina "Okraje" ──────────────────────────────────────────────
+        // Pořadí po směru hodin jako vnitřní okraj buněk (nahoře, vpravo, dole, vlevo).
         d form.AddGroup("margins", "Okraje")
         d form.AddDecimal("PageSize.MarginTop", "Nahoře", 0, 0, 200, "mm")
+        d form.AddDecimal("PageSize.MarginRight", "Vpravo", 0, 0, 200, "mm")
         d form.AddDecimal("PageSize.MarginBottom", "Dole", 0, 0, 200, "mm")
         d form.AddDecimal("PageSize.MarginLeft", "Vlevo", 0, 0, 200, "mm")
-        d form.AddDecimal("PageSize.MarginRight", "Vpravo", 0, 0, 200, "mm")
 
-        // ── Skupina "Jazyk" ───────────────────────────────────────────────
-        d form.AddGroup("locale", "Jazyk")
-        s f = form.AddFieldToLastGroup("CultureCode", "Kultura (formátování)", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("", "(výchozí dle systému)"), f.AddListItem("cs-CZ", "Čeština")
-        d f.AddListItem("sk-SK", "Slovenština"), f.AddListItem("en-US", "Angličtina")
-        d f.AddListItem("de-DE", "Němčina")
-
-        // ── Skupina "Výchozí styl" ────────────────────────────────────────
+        // ── Skupina "Písmo a formát" ──────────────────────────────────────
+        // Do 28. 10. dvě skupiny Jazyk a Výchozí styl, každá s jediným polem.
+        //
         // Výchozí font celé šablony - kořen kaskády (dědí ho elementy bez vlastního fontu).
         // Prázdné = zapečený default (Arial). Key = property path → Template.DefaultTextStyle.FontFamily
         // (accessor lazy alokuje DefaultTextStyle). Ostatní style property zatím vědomě nevystaveny.
@@ -64,8 +60,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ComboBox (editovatelný + autocomplete) s PRÁZDNÝM seznamem - Caché fonty klienta nezná.
         // Seznam nainstalovaných fontů naplní C# klient po načtení schématu (ElementEditDialog
         // .OnFormInitialized z SKFontManager). Editovatelný = uživatel může i napsat vlastní font.
-        d form.AddGroup("style", "Výchozí styl")
+        d form.AddGroup("style", "Písmo a formát")
         d form.AddFieldToLastGroup("DefaultTextStyle.FontFamily", "Výchozí font", $$$FieldTypeComboBox, 0, 0)
+
+        // Jazyk šablony mění jen formát dat a čísel z dat (PageLayoutEngine.ApplyCulture).
+        s f = form.AddFieldToLastGroup("CultureCode", "Formát data a čísel", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("", "Podle systému"), f.AddListItem("cs-CZ", "Čeština")
+        d f.AddListItem("sk-SK", "Slovenština"), f.AddListItem("en-US", "Angličtina")
+        d f.AddListItem("de-DE", "Němčina")
+        s f.helpText = "Podle kterého jazyka se formátují data a čísla z dat. Podle systému = jazyk počítače, na kterém se tiskne."
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

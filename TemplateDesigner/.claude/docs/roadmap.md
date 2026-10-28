@@ -59,10 +59,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky
   a rozsahy ze schématu formuláře `*Edit.cls` místo opisu v `GetPropertyDescriptors` (dnes se píše dvakrát).
   Navazuje na E3 / E13; serverovou stranu agend řeší `B56`.
-- **Popisky jednoduchých prvků podle pravidel** [S] **Jan** - složité prvky jsou hotové (changelog 2026-10-28
-  (16)-(17)); zbývá Stránka (okraje Nahoře/Dole…, Kultura (formátování)), Obdélník (dva obrysy - okraj a rámeček
-  prvku), Obrázek (Škálování), Sekce (Přetečení), Text, Kód, Čára. Pravidla v `ux-conventions §8`, nálezy
-  revize 28. 10. v [`konzistence-agend-jr.md §9`](konzistence-agend-jr.md).
 
 - **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
   (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet

@@ -56,6 +56,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s f = form.AddFieldToLastGroup("Style.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
 
         s f = form.AddFieldToLastGroup("Style.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
