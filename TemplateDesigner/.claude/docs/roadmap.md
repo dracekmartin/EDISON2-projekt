@@ -27,10 +27,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
-Nálezy z průzkumu oken sloupců (28. 10.), zatím jen čtené z kódu - každý nejdřív reprodukovat:
-
-- **E13h** Chyba ve Vlastní definici sloupců u Minut je vidět jen na té záložce; z jiné OK nic neudělá
-  a neřekne proč (`DepartureGroupEditorDialogViewModel.cs:472-489`, `.xaml:82`) [S]
 - **E13i** Název záložky Obecné v oknech tabulek - skupinu Obecné kostra formuláře zrušila; návrh
   „Celá tabulka" (navazuje na „Nastavení celé tabulky"), přejmenovat i nápovědy na záložce Sloupce **Jan** [S]
 

@@ -257,6 +257,16 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     /// <summary>Výsledná definice: null = „Automaticky (dle linky)".</summary>
     public List<DepartureColumnDefinition>? ResultCustomColumns { get; private set; }
 
+    /// <summary>Pořadí záložky Vlastní definice sloupců (Obecné, Sloupce, Vlastní definice).</summary>
+    public const int VlastniDefiniceTabIndex = 2;
+
+    private int _selectedTabIndex;
+    public int SelectedTabIndex
+    {
+        get => _selectedTabIndex;
+        set => Set(ref _selectedTabIndex, value);
+    }
+
     private string? _customColumnsError;
     /// <summary>Chyba validace definice sloupců - OK dialog nezavře, dokud trvá. Null = v pořádku.</summary>
     public string? CustomColumnsError
@@ -489,13 +499,13 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
                 !JsouPlatneZnacky(vm.IncludeMarks) || !JsouPlatneZnacky(vm.ExcludeMarks) || !JsouPlatneZnacky(vm.SuppressedMarks));
             if (chybny is not null)
             {
-                CustomColumnsError = $"Sloupec „{chybny.DisplayName}“: seznamy značek smí obsahovat jen čísla oddělená čárkou (např. 52, 53).";
+                UkazChybu(chybny, $"Sloupec „{chybny.DisplayName}“: seznamy značek smí obsahovat jen čísla oddělená čárkou (např. 52, 53).");
                 return;
             }
             var chybneObdobi = CustomColumnVMs.FirstOrDefault(vm => !JePlatneObdobi(vm.Period));
             if (chybneObdobi is not null)
             {
-                CustomColumnsError = $"Sloupec „{chybneObdobi.DisplayName}“: období smí být jen rozsahy dat oddělené čárkou (např. 1.7.-31.8., 29.10.-30.10.).";
+                UkazChybu(chybneObdobi, $"Sloupec „{chybneObdobi.DisplayName}“: období smí být jen rozsahy dat oddělené čárkou (např. 1.7.-31.8., 29.10.-30.10.).");
                 return;
             }
         }
@@ -524,6 +534,15 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             : null;
 
         CloseDialog(true);
+    }
+
+    /// <summary>Hláška je jen na záložce Vlastní definice - z jiné záložky by OK nic neudělalo a neřeklo proč
+    /// (`B194d` E13h). Okno proto na záložku přepne a vybere chybný sloupec.</summary>
+    private void UkazChybu(CustomColumnVM sloupec, string text)
+    {
+        CustomColumnsError = text;
+        SelectedCustomVM = sloupec;
+        SelectedTabIndex = VlastniDefiniceTabIndex;
     }
 
     private readonly List<DepartureGroupColumnStyle> _puvodniSkupiny;

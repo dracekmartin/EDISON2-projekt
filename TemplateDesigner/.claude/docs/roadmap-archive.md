@@ -209,6 +209,8 @@
   stylu (changelog 2026-10-28 (9)).
 - **E13g** OK v okně Minut nezahodí nastavení skupiny dnů, kterou vybraná linka nemá, ani nastavení podle
   pořadí ze vzorů; nenabídnuté skupiny i sloupce zůstanou na svém místě (changelog 2026-10-28 (10)).
+- **E13h** Chyba ve Vlastní definici sloupců u Minut přepne OK na její záložku a vybere chybný sloupec
+  (changelog 2026-10-28 (11)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-28 (11) - Chyba ve Vlastní definici sloupců je vidět i z jiné záložky (`B194d` E13h)
+
+Hláška o chybném seznamu značek nebo období ve Vlastní definici sloupců u Minut odjezdů byla jen na té záložce.
+OK z jiné záložky okno nezavřelo a neřeklo proč.
+- OK teď při chybě přepne na záložku Vlastní definice sloupců a vybere sloupec, ve kterém chyba je.
+
 ## 2026-10-28 (10) - Nastavení skupin dnů jiných linek přežije OK v okně Minut (`B194d` E13g)
 
 Okno Minut odjezdů nabízí jen skupiny dnů z dat vybrané linky, šablona ale slouží víc linkám.

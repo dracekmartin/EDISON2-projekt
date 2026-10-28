@@ -20,7 +20,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TabControl>
+        <TabControl SelectedIndex="{Binding SelectedTabIndex}">
 
             <!-- ── Tab 1: Obecné (EDInputForm - schéma z Caché DepartureGridElementEdit) ── -->
             <TabItem Header="Obecné">

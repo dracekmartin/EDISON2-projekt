@@ -41,6 +41,30 @@ public class OknoMinutSkupinyTests
         Assert.Equal(ocekavano, radek.AlternatingRowColor);
     }
 
+    /// <summary>Chyba ve Vlastní definici sloupců je vidět jen na její záložce. OK z jiné záložky do 28. 10.
+    /// nic neudělalo a neřeklo proč; okno teď na záložku přepne a vybere chybný sloupec (`B194d` E13h).</summary>
+    [Theory]
+    [InlineData("abc", "")]
+    [InlineData("", "nesmysl")]
+    public void ChybaVeVlastniDefinici_PrepneNaZalozkuAVybereSloupec(string znacky, string obdobi)
+    {
+        var prvek = new DepartureGridElement();
+        var okno = Okno(prvek);
+        var dobry = new CustomColumnVM { Id = "1", Header = "Pracovní dny" };
+        var chybny = new CustomColumnVM { Id = "2", Header = "Prázdniny", IncludeMarks = znacky, Period = obdobi };
+        okno.CustomColumnVMs.Add(dobry);
+        okno.CustomColumnVMs.Add(chybny);
+        okno.UseCustomColumns = true;
+        okno.SelectedCustomVM = dobry;
+        okno.SelectedTabIndex = 1;
+
+        okno.OkCommand.Execute(null);
+
+        Assert.NotNull(okno.CustomColumnsError);
+        Assert.Equal(DepartureGroupEditorDialogViewModel.VlastniDefiniceTabIndex, okno.SelectedTabIndex);
+        Assert.Same(chybny, okno.SelectedCustomVM);
+    }
+
     private static DepartureGroupColumnStyle Styl(string id, string zahlavi) => new() { SkupinaDnuId = id, HeaderOverride = zahlavi };
 
     /// <summary>Okno nabízí jen skupiny z dat vybrané linky, šablona ale slouží víc linkám. Nastavení skupiny,
