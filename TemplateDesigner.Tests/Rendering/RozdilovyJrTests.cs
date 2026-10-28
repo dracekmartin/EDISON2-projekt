@@ -231,7 +231,7 @@ public class RozdilovyJrTests
             ("SKUPINY_DNU", [RenderSnapshot.Row(("ID", "1"), ("NADPIS", "Pracovní dny"), ("PORADI", "1"))]));
 
         var prvek = Prvek();
-        prvek.HighlightOddTc = true;
+        prvek.OddTcBackColor = "#FFEEEEEE";
         // Pruh aspoň 40 mm široký a 4 mm vysoký - víc, než kolik zabere jedna buňka.
         int radekPx = (int)(40 * MmToPx * 4f * MmToPx);
 

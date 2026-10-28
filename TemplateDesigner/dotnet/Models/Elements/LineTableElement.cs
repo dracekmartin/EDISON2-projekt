@@ -341,9 +341,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     // ─── Vzhled ─────────────────────────────────────────────────────────────
 
-    /// <summary>Podbarvení řádků s lichým tarifním číslem (legacy 25% šedá).</summary>
-    public bool HighlightOddTc { get; set; } = true;
-
     /// <summary>Vlastní definice sloupců spojů. Null nebo prázdné = server rozdělí spoje podle
     /// hrubého přepínače dělení, jako dosud.</summary>
     /// <remarks>
@@ -363,7 +360,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// data nesou, že přípoj existuje, jak vypadá rozhoduje návrhář.
     /// </remarks>
     public TextStyle PripojStyle { get; set; } = new();
-    public string OddTcBackColor { get; set; } = "#FFEEEEEE";
+
+    /// <summary>Podbarvení řádků zastávky s lichým tarifním číslem; null = bez podbarvení.</summary>
+    /// <remarks>
+    /// Řídí se tarifním číslem, ne pořadím řádku - zastávka rozdělená na příjezd a odjezd má obě řádky
+    /// stejně. Tak to tiskne starý modul (`JRapiLinPrtWin.mac:1206-1210`, bez sloupce Tč `:1233-1238`;
+    /// „25% šedá" `:237`), proto to není Střídání řádků. Odstín proti výtisku starého modulu neověřen.
+    /// ⚠️ Null se do šablony zapisuje: šablony se ukládají bez prázdných hodnot a výchozí je zapnuto,
+    /// takže vypnuté podbarvení by se po načtení samo zapnulo.
+    /// </remarks>
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+    public string? OddTcBackColor { get; set; } = "#FFEEEEEE";
 
     /// <summary>
     /// Podbarvení buněk, ve kterých se původní podoba spoje liší od nové - rozdílový linkový JŘ
@@ -2827,7 +2834,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
 
             // Zastávka jen v jedné verzi trasy má barvu verze celý řádek - lichá Tč by ji v buňkách překryla.
-            bool oddTc = stop.Verze == "" && HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
+            bool oddTc = stop.Verze == "" && !string.IsNullOrWhiteSpace(OddTcBackColor)
+                && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
             bool inverze = JeZastavkaVylepu(ctx.Data, stop.SourceRow);
 
             var specs = new List<ColumnRenderer.CellSpec>();
@@ -3549,7 +3557,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     internal string TextCislaSpoje(LineTripData spoj) => ShowTripNumbers ? spoj.CisloSpoje : "";
 
     private ResolvedTextStyle OddTc(ResolvedTextStyle style, bool odd) =>
-        odd ? style with { BackgroundColor = OddTcBackColor } : style;
+        odd ? style with { BackgroundColor = OddTcBackColor! } : style;
 
     /// <summary>Popisky přípojných řádků jdou jazykem šablony, jako legenda poznámek.</summary>
     /// <remarks>Na slovenské šabloně vycházely česky, horší než starý tisk (#9088).</remarks>
@@ -3737,7 +3745,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
             SloucitPopisyRozdvojene = SloucitPopisyRozdvojene,
             MezeraMeziSkupinamiMm = MezeraMeziSkupinamiMm,
-            HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
             RozdilPuvodniBackColor = RozdilPuvodniBackColor,
             RozdilNovaBackColor = RozdilNovaBackColor,
@@ -3843,8 +3850,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new FloatPropertyDescriptor { Label = "Mezera mezi skupinami dnů", Group = SirkaGroup,
             Unit = "mm", Min = 0, Max = 20, Format = "0.#",
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
-        new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
-        new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
+        new ColorPropertyDescriptor { Label = "Lichá Tč: Barva pozadí", Group = "Vzhled", Get = () => OddTcBackColor ?? "",
+            Set = v => OddTcBackColor = string.IsNullOrWhiteSpace(v) ? null : v },
         new ColorPropertyDescriptor { Label = "Původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
         new ColorPropertyDescriptor { Label = "Nová verze", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor, Set = v => RozdilNovaBackColor = v },
         new ColorPropertyDescriptor { Label = "Značky původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniZnackaColor, Set = v => RozdilPuvodniZnackaColor = v },

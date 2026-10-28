@@ -49,7 +49,7 @@ public class DorovnaniZbytkuTests
         PadEmptyColumns = true,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 7 },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         ShowGroupHeaders = false,
         ShowTripNumbers = false,
         ShowPlatnostRow = false,

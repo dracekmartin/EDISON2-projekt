@@ -41,7 +41,7 @@ public class ZarovnaniPasuSkupinTests
         ShowTripNumbers = false, ShowPlatnostRow = false, ShowNzRow = false,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 8, HAlign = zarovnani },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FFFFFFFF", Width = 0.3f },
         Columns =
         [

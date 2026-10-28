@@ -24,7 +24,7 @@ public class SkupinaPopisnychSloupcuTests
         X = 0, Y = 0, Width = 120, Height = null,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 8 },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 7 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         Grid = new GridStyle { ShowRowLines = false, ShowColumnLines = true, Color = "#FF000000", Width = 0.3f },
     };
 

@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-28 (14) - Lichá Tč se nastavují jen barvou (`B194d` E3c)
+
+Podbarvení lichých Tč v Tabulce spojů mělo zaškrtávátko „Podbarvit lichá Tč" a k němu „Barvu lichých Tč"; ostatní tabulky mají Střídání řádků jedním polem, kde prázdná barva znamená bez střídání.
+- Teď je to jedno pole **Lichá Tč: Barva pozadí**, prázdné = bez podbarvení. Zaškrtávátko zmizelo.
+- Podbarvení se dál řídí tarifním číslem, ne pořadím řádku, takže příjezd a odjezd jedné zastávky mají barvu stejnou. Tak to tiskne i starý modul (`JRapiLinPrtWin.mac:1206-1210`); do Střídání řádků se proto neslučuje (rozhodnutí Jan 28. 10.).
+- Šablony s vypnutým podbarvením převede migrace 1.16.0 na prázdnou barvu, ostatní se nemění. Import z PDF nastaví prázdnou barvu, když předloha podbarvení nemá.
+
 ## 2026-10-28 (13) - Záhlaví na víc řádků i v Tabulce spojů a Tabulce z dat
 
 Do záhlaví sloupce v Tabulce spojů a Tabulce z dat jde zadat víc řádků (Enter nebo `\n`), jako u Seznamu zastávek a Minut odjezdů.

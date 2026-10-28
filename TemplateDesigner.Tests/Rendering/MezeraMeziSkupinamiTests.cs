@@ -41,7 +41,7 @@ public class MezeraMeziSkupinamiTests
         JednotnaSirkaSpoju = false,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 8, BackgroundColor = "#FFE0E0E0" },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FFFFFFFF", Width = 0.3f },
         Columns =
         [

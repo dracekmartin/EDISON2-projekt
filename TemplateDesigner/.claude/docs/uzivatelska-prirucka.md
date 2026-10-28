@@ -1187,7 +1187,7 @@ Menší kurzíva odliší přípoj od časů spojů i na černobílém tisku, tm
 **Záhlaví** - **Záhlaví skupin dnů** (pás nad sloupci spojů s označením skupiny, např. pracovní dny, sobota), **Čísla spojů** (řádek s čísly spojů nad časy; vypnuté = řádek zůstane, protože nese záhlaví popisných sloupců, jen nad spoji je prázdný) a styl záhlaví.
 Zarovnání vodorovně ze stylu platí i pro pás skupin dnů, prázdné = na střed.
 
-**Datové buňky** - **Výška řádku** (prázdné = podle velikosti písma), **Podbarvit lichá Tč** a **Barva lichých Tč** (řádek zastávky s lichým tarifním číslem se podbarví) a styl buněk.
+**Datové buňky** - **Výška řádku** (prázdné = podle velikosti písma), **Lichá Tč: Barva pozadí** (řádek zastávky s lichým tarifním číslem se podbarví, prázdné = bez podbarvení; řídí se tarifním číslem, ne pořadím řádku, takže příjezd a odjezd jedné zastávky mají barvu stejnou) a styl buněk.
 Velikost písma a vnitřní okraje vlevo a vpravo určují i šířku sloupce spoje.
 
 **Podmínky** - vedle podmínky viditelnosti celého prvku **Viditelnost řádku** (výraz nad poli

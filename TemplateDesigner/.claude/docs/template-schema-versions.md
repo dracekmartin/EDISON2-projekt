@@ -234,6 +234,12 @@ metadata verze se k migraci nepoužívá; neřešeno záměrně.)
   se dopíše `jednotnaSirkaSpoju: true`: od 7. 9. to bylo výchozí chování a nová výchozí hodnota je
   vypnuto, takže by se jí jinak rozvržení změnilo.
 
+- **1.16.0** `MigrationLichaTcBarvou` (2026-10-28) - ruší `highlightOddTc`: podbarvení lichých Tč
+  v Tabulce spojů se nastavuje jen barvou `oddTcBackColor`, prázdná = bez podbarvení, jako Střídání
+  řádků u ostatních tabulek (rozhodnutí Jan, `B194d` E3c). Vypnuté podbarvení se přepíše na
+  `oddTcBackColor: null`. ⚠️ Null se u této vlastnosti zapisuje (`JsonIgnoreCondition.Never`):
+  výchozí je zapnuto, takže bez zápisu by se vypnuté podbarvení po načtení samo zapnulo.
+
 ---
 
 ## Operational notes

@@ -483,7 +483,6 @@ public static class AiGuidedScheduleBuilder
             .FirstOrDefault();
         if (radky is not null && radky.Count() >= 3)
         {
-            el.HighlightOddTc = true;
             el.OddTcBackColor = radky.Key;
             debug.Add($"LineTable podbarvení řádků: {radky.Key} ({radky.Count()} řádků)");
         }
@@ -491,7 +490,7 @@ public static class AiGuidedScheduleBuilder
         {
             // Řádky jsou na papíře vždy, takže chybějící podbarvení je volba, ne prázdná data.
             // Výchozí zapnuté by předloze bez podbarvení přidalo šedé pruhy (měření 2. 10.).
-            el.HighlightOddTc = false;
+            el.OddTcBackColor = null;
             debug.Add("LineTable podbarvení řádků: žádné");
         }
 

@@ -82,7 +82,7 @@ public class CaraUZastavkyTests
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 7, TextColor = "#FFFFFFFF" },
         // Text i mřížka bílé: v obrázku má být tmavá jen čára úseku.
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6, TextColor = "#FF000000" },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         ShowGroupHeaders = false,
         ShowPlatnostRow = false,
         DataRowHeight = VyskaRadku,

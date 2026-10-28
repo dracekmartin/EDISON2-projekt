@@ -148,11 +148,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("data", "Datové buňky")
         s f = form.AddDecimal("DataRowHeight", "Výška řádku", "", 1, 50, "mm")
         s f.helpText = "Prázdné = podle velikosti písma."
-        // Podbarvení řádku zastávky podle tarifního čísla - obdoba Střídání řádků u ostatních tabulek.
-        d form.AddBool("HighlightOddTc", "Podbarvit lichá Tč", 1)
-        s f = form.AddFieldToLastGroup("OddTcBackColor", "Barva lichých Tč", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFEEEEEE"
-        s f.helpText = "Řádek zastávky s lichým tarifním číslem dostane tuto barvu místo Barvy pozadí buněk."
+        // Podbarvení řádku zastávky podle tarifního čísla - obdoba Střídání řádků u ostatních tabulek,
+        // jen barva (prázdná = bez), jako Střídání. Výchozí hodnota schválně chybí: klient by ji ukázal
+        // u vypnutého podbarvení (prázdná hodnota prvku) a vypadalo by to zapnuté.
+        s f = form.AddFieldToLastGroup("OddTcBackColor", "Lichá Tč: Barva pozadí", $$$FieldTypeColor, 0, 0)
+        s f.helpText = "Řádek zastávky s lichým tarifním číslem dostane tuto barvu místo Barvy pozadí. Řídí se tarifním číslem, ne pořadím řádku, takže příjezd a odjezd jedné zastávky mají barvu stejnou. Prázdné = bez podbarvení."
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "data", "Datové buňky", "#FF000000", "#00FFFFFF", 0)
         s f = form.GetField("DataStyle.FontSize")
         s f.helpText = "Písmo buněk celého prvku, prázdné = 8 bodů. Řídí i výšku řádku, když je prázdná, a šířku sloupce spoje."
