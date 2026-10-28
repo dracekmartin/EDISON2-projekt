@@ -211,6 +211,9 @@
   pořadí ze vzorů; nenabídnuté skupiny i sloupce zůstanou na svém místě (changelog 2026-10-28 (10)).
 - **E13h** Chyba ve Vlastní definici sloupců u Minut přepne OK na její záložku a vybere chybný sloupec
   (changelog 2026-10-28 (11)).
+- **E13i** Název záložky Obecné v oknech tabulek **zůstává** - po sjednocení dává smysl (rozhodnutí Jan 28. 10.).
+- **Seznam zastávek s „<1" přepnul přibalené písmo na výchozí** - měření znaku „<" uvolnilo sdílené písmo;
+  písma ze systému se to netýkalo (changelog 2026-10-28 (12)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

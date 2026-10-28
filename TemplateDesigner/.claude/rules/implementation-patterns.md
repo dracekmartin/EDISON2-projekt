@@ -91,6 +91,9 @@ pro budoucí vlastnosti bez změny modelu a bez nutnosti verzovat JSON schéma.
 - NU1701 warningy jsou očekávané a neškodné - balíčky fungují správně za běhu
 - `using SkiaSharp;` **není** v implicitních using WPF projektu - přidej explicitně do každého souboru, kde se používají SK typy (`SKCanvas`, `SKPaint`, `SKColor`, `SKFont`…)
 - `using System.IO;` taktéž není implicitní - přidej do souborů pracujících se soubory
+- ⚠️ **Písmo z `GetTypeface` / `FontResolver.Resolve` je sdílené z mezipaměti - nikdy `using` ani `Dispose`**
+  (uvolňuje se jen `SKFont`). Písmo ze systému SkiaSharp uvolnit nenechá, ale přibalené (`Fonts/*.ttf`) se uvolní
+  doopravdy a další měření i kreslení téhož písma tiše vezme výchozí písmo (nález 28. 10. u „&lt;1" v Seznamu zastávek)
 - `SKFilterQuality` v SkiaSharp 3.x **neexistuje** - byl odebrán; pro kvalitu renderování nastav `SKSamplingOptions` nebo nech výchozí hodnotu
 
 ---

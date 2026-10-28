@@ -925,8 +925,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// <summary>Šířka znaku „&lt;" v mm pro daný řez a velikost písma.</summary>
     private static float HangWidthMm(ResolvedTextStyle style)
     {
-        using var typeface = GetTypeface(style);
-        using var font = new SKFont(typeface, style.FontSize);   // velikost v pt → míra v pt
+        // Písmo je sdílené z mezipaměti - neuvolňovat: přibalené písmo by se uvolnilo doopravdy a další
+        // měření i kreslení by vzalo výchozí písmo.
+        using var font = new SKFont(GetTypeface(style), style.FontSize);   // velikost v pt → míra v pt
         return font.MeasureText(SubMinuteText.AsSpan(0, 1)) * PtToMm;
     }
 

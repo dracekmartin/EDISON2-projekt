@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-28 (12) - Seznam zastávek s „<1" nepřepne písmo na výchozí
+
+Seznam zastávek se zapnutým „<1" měří znak „<", aby ostatní čísla zarovnal pod sebe, a změřené písmo pak uvolnil.
+Písmo je ale sdílené pro všechno kreslení.
+U písma ze systému to SkiaSharp ignoruje, písmo přibalené v aplikaci se ale uvolnilo doopravdy a další kreslení téhož písma vzalo výchozí písmo (druhé měření vyšlo 2,43 mm místo 3,02 mm).
+- Měření sdílené písmo neuvolňuje; past je zapsaná v `implementation-patterns.md` (SkiaSharp).
+
 ## 2026-10-28 (11) - Chyba ve Vlastní definici sloupců je vidět i z jiné záložky (`B194d` E13h)
 
 Hláška o chybném seznamu značek nebo období ve Vlastní definici sloupců u Minut odjezdů byla jen na té záložce.

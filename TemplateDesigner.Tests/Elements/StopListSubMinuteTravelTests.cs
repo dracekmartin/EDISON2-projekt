@@ -225,6 +225,25 @@ public class StopListSubMinuteTravelTests
         Assert.True(bezZnacky - vychozi > 0.5f, $"odsazení je podezřele malé: {bezZnacky - vychozi} mm");
     }
 
+    /// <summary>Měření znaku „&lt;" nesmí uvolnit písmo ze sdílené mezipaměti. U písma z operačního
+    /// systému to SkiaSharp ignoruje, ale písmo přibalené v aplikaci (`Fonts/*.ttf`) se opravdu uvolní
+    /// a další měření i kreslení téhož písma vezme výchozí písmo - do 28. 10. se tak druhé odsazení
+    /// lišilo od prvního.</summary>
+    [Theory]
+    [InlineData("Courier New")]
+    [InlineData("Timetable_nove")]
+    public void MereniZnacky_NeuvolniSdilenePismo(string pismo)
+    {
+        var trasa = Trasa();
+        var el = new StopListElement { ShowSubMinuteTravel = true };
+        el.DataStyle.FontFamily = pismo;
+
+        float prvni = Odsazeni(el, trasa, 3);
+        float druhe = Odsazeni(el, trasa, 3);
+
+        Assert.Equal(prvni, druhe, 4);
+    }
+
     /// <summary>Při zarovnání vpravo se číslice srovnají samy - odsazení by je rozhodilo.</summary>
     [Fact]
     public void ZarovnaniVpravo_Neodsazuje()

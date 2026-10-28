@@ -27,17 +27,12 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
-- **E13i** Název záložky Obecné v oknech tabulek - skupinu Obecné kostra formuláře zrušila; návrh
-  „Celá tabulka" (navazuje na „Nastavení celé tabulky"), přejmenovat i nápovědy na záložce Sloupce **Jan** [S]
-
 - **E3b** Poznámky do kostry formuláře (`ux-conventions §4`) - nejsou klasická tabulka, záhlaví je jeden
   text a důležitější je pořadí a výběr poznámek; projít zvlášť **Jan** [M]. Patří k tomu: Barva pozadí buněk
   se nabízí a nekreslí (`NotesLegendElement.cs`) - dokreslit pod blok, nebo odebrat
 - **E3c** Lichá Tč a Střídání řádků - projít s Janem, jestli sjednotit tvar: Střídání je jedno pole (prázdná
   barva = bez), lichá Tč zaškrtávátko + barva. Chování se liší (podle Tč, ne pořadí řádku - parita se starým
   tiskem), sloučení tvaru mění model šablony = migrace **Jan** [S]
-- **Ověřit: Seznam zastávek po „<1" možná přepne písmo na výchozí** - `StopListElement.cs:928` uvolní sdílené
-  písmo z mezipaměti; nalezeno čtením, nereprodukováno [S]
 - **Víceřádkové záhlaví sloupce v Tabulce spojů a Tabulce z dat** - kreslení počítá výšku záhlaví z jednoho
   řádku (pevná u Tabulky z dat), proto ho okno nenabízí; až to kreslení umět bude, zapne se přepínačem
   `MultilineHeader` [S]
