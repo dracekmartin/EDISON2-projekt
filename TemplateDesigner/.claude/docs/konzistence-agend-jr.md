@@ -61,7 +61,7 @@ a zároveň základ pro další prvky: **nejdřív doplnit kanon `ux-conventions
   - Poznámky nejsou klasická tabulka, projdou se zvlášť (jejich Barva pozadí buněk se dnes nekreslí).
   - Pevná tabulka je výjimka: „Styl všech buněk" před „Styl řádku záhlaví", obsah se vyplňuje v buňkách.
   - Pozadí prvku se do tabulek nepřidává (mají barvu pozadí záhlaví a buněk); Viditelnost řádku a Zvýraznění řádků zůstávají v Podmínkách.
-  Zbývají Poznámky.
+  Poznámky přešly do `E3b`, sjednocení tvaru lichých Tč a Střídání řádků do `E3c` (roadmapa).
 - **E13 Dialogy sloupců mají každý jiné ovládání** [M]. (a) popisky tlačítek hotové (changelog 2026-10-26
   (38), (39)); (b) uzavřeno bez změny - v Tabulce spojů se zadávají jen popisné sloupce, šířku spojů
   dopočítá tabulka, „Přizpůsobit" by spojům vzalo místo. Zbývá (c) sloučení do sdíleného `ColumnListEditor`

@@ -27,14 +27,18 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
-- **E3** Kostra formulářů tabulek - **rozhodnuto a převedeno** (Jan 28. 10., pravidlo `ux-conventions §4`)
-  u všech tabulek kromě Poznámek. Zbývá projít Poznámky zvlášť - nejsou klasická tabulka [M] **Jan**
-- **Poznámky: Barva pozadí buněk se nabízí a nekreslí** - formulář i panel ji mají, kreslení ji nečte
-  (`NotesLegendElement.cs`); dokreslit pod blok, nebo odebrat **Jan** [S]
+- **E3b** Poznámky do kostry formuláře (`ux-conventions §4`) - nejsou klasická tabulka, záhlaví je jeden
+  text a důležitější je pořadí a výběr poznámek; projít zvlášť **Jan** [M]. Patří k tomu: Barva pozadí buněk
+  se nabízí a nekreslí (`NotesLegendElement.cs`) - dokreslit pod blok, nebo odebrat
+- **E3c** Lichá Tč a Střídání řádků - projít s Janem, jestli sjednotit tvar: Střídání je jedno pole (prázdná
+  barva = bez), lichá Tč zaškrtávátko + barva. Chování se liší (podle Tč, ne pořadí řádku - parita se starým
+  tiskem), sloučení tvaru mění model šablony = migrace **Jan** [S]
 - **Ověřit: Seznam zastávek po „<1" možná přepne písmo na výchozí** - `StopListElement.cs:928` uvolní sdílené
   písmo z mezipaměti; nalezeno čtením, nereprodukováno [S]
-- **E13** Dialogy sloupců - zbývá c (jedna společná komponenta oken se sloupci, přestavba) - **odloženo**
-  spolu s E3 [M]
+- **E13c** Záložka Sloupce v oknech tabulek (zastávky, minuty, spoje, z dat) - sjednotit, co uživatel vidí
+  (nadpisy, pořadí polí stylu jako formulář, nápovědy, víceřádkové záhlaví, Přizpůsobit, název záložky Obecné),
+  jedna společná komponenta místo čtyř kopií detailu sloupce a dvě chyby Hodin v okně Minut (OK ignoruje
+  Viditelné, zápis mimo zpětný krok) [M] **Jan**
 
 ### `B194f` Pojistky před `B56`
 

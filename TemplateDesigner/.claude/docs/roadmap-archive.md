@@ -193,6 +193,10 @@
   Jan 26. 10.); značky u času v linkovém AD vyčleněny do `T12` (changelog 2026-10-26 (8)).
 - **P7** Nápovědy parametrů sjednocené: bez „nástupiště", úplný výčet řazení variant, věta pro MHD,
   „prvek Tabulka spojů", všude „Vypnuto = …", typ „string" (rozhodnutí Jan 26. 10.; changelog 2026-10-26 (7)).
+- **E3** Kostra formulářů tabulek: nahoře skupiny prvku, pod nimi stejný konec (Záhlaví, Datové buňky,
+  Rámeček, Mřížka, Pozice, Podmínky), bez Obecné, sady stylu Buňka / Text, styl vždy rozepsaný, „Barva
+  pozadí", Řádkování z tabulek pryč. Převedeny všechny tabulky kromě Poznámek, které šly do `E3b`
+  (rozhodnutí Jan 28. 10., pravidlo `ux-conventions §4`; changelog 2026-10-28 (1)-(4)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 
