@@ -40,4 +40,67 @@ public class OknoMinutSkupinyTests
 
         Assert.Equal(ocekavano, radek.AlternatingRowColor);
     }
+
+    private static DepartureGroupColumnStyle Styl(string id, string zahlavi) => new() { SkupinaDnuId = id, HeaderOverride = zahlavi };
+
+    /// <summary>Okno nabízí jen skupiny z dat vybrané linky, šablona ale slouží víc linkám. Nastavení skupiny,
+    /// kterou tahle linka nemá (sobota), musí OK přežít - do 28. 10. ho OK zahodilo (`B194d` E13g).</summary>
+    [Fact]
+    public void SkupinaMimoData_ZustaneVSablone()
+    {
+        var prvek = new DepartureGridElement { GroupColumns = [Styl("PD", "Pracovní dny"), Styl("SO", "Sobota!")] };
+        var okno = Okno(prvek, "PD");
+
+        Radek(okno, "PD").Header = "Po-Pá";
+        okno.OkCommand.Execute(null);
+
+        Assert.Equal("Sobota!", Assert.Single(okno.ResultGroupColumns, g => g.SkupinaDnuId == "SO").HeaderOverride);
+        Assert.Equal("Po-Pá", Assert.Single(okno.ResultGroupColumns, g => g.SkupinaDnuId == "PD").HeaderOverride);
+    }
+
+    /// <summary>Pořadí skupin v šabloně je uživatelovo pořadí ▲▼ - skupina mimo data musí zůstat na svém místě,
+    /// jinak by se u linky, která ji má, přeházely sloupce.</summary>
+    [Fact]
+    public void SkupinaMimoData_DrziSvePoradi()
+    {
+        var prvek = new DepartureGridElement { GroupColumns = [Styl("A", "a"), Styl("B", "b"), Styl("C", "c")] };
+        var okno = Okno(prvek, "A", "C");
+
+        Radek(okno, "A").Header = "a2";
+        okno.OkCommand.Execute(null);
+
+        Assert.Equal(["A", "B", "C"], okno.ResultGroupColumns.Select(g => g.SkupinaDnuId));
+    }
+
+    /// <summary>Výchozí nastavení podle pořadí (`__INDEX_n`, ze vzorů a importu) platí pro linky s jinými
+    /// skupinami - OK ho nesmí nahradit nastavením jen pro skupiny vybrané linky.</summary>
+    [Fact]
+    public void NastaveniPodlePoradi_ZustaneVSablone()
+    {
+        var index0 = GroupColumnIndexResolver.IndexKeyPrefix + "0";
+        var prvek = new DepartureGridElement { GroupColumns = [Styl(index0, "První")] };
+        var okno = Okno(prvek, "PD", "SO");
+
+        Radek(okno, "SO").Header = "Víkend";
+        okno.OkCommand.Execute(null);
+
+        Assert.Contains(okno.ResultGroupColumns, g => g.SkupinaDnuId == index0 && g.HeaderOverride == "První");
+    }
+
+    /// <summary>OK beze změny se skupinami v datech nesmí šablonu měnit (`B194d` E13d): okno pro skupiny bez
+    /// uloženého nastavení vytvoří výchozí řádky a dřív je zapsalo.</summary>
+    [Fact]
+    public void OkBezeZmeny_SeSkupinamiVDatech_NeniKrok()
+    {
+        var prvek = new DepartureGridElement { GroupColumns = [Styl(GroupColumnIndexResolver.IndexKeyPrefix + "0", "První")] };
+        var okno = Okno(prvek, "PD", "SO");
+        var navrhar = new TemplateDesignerViewModel();
+
+        okno.OkCommand.Execute(null);
+        navrhar.ApplyDepartureGridEdit(prvek, null, okno.ResultGroupColumns, true, okno.ResultHourColumnStyle,
+            okno.ResultHourColumnHeader, okno.ResultHourColumnWidth, okno.ResultCustomColumns);
+
+        Assert.False(navrhar.CanUndo);
+        Assert.False(navrhar.IsDirty);
+    }
 }

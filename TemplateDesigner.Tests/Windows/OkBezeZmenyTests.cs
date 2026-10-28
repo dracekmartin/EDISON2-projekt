@@ -53,6 +53,22 @@ public class OkBezeZmenyTests
         AssertBezKroku(navrhar);
     }
 
+    /// <summary>Při skutečné změně zůstane nenabízený sloupec na svém místě - do 28. 10. se přesunul na konec
+    /// a u agendy, která ho nabízí, se pak sloupce přeházely (`B194d` E13g).</summary>
+    [Fact]
+    public void SeznamZastavek_NenabizenySloupecPriZmene_ZustaneNaMiste()
+    {
+        var prvek = new StopListElement();
+        var poradi = prvek.Columns.Select(c => c.Key).ToList();
+        var okno = new StopColumnsEditorDialogViewModel(prvek, prvek.Columns,
+            klic => klic != StopFields.TravelTimeVariants);
+
+        okno.Columns.Rows[0].Header = "Jiné záhlaví";
+        okno.OkCommand.Execute(null);
+
+        Assert.Equal(poradi, okno.ResultColumns.Select(c => c.Key));
+    }
+
     /// <summary>Starší šablona bez později přidaných sloupců: okno je nabídne vypnuté, ale dokud na ně
     /// uživatel nesáhne, šablona se nemění.</summary>
     [Fact]

@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-28 (10) - Nastavení skupin dnů jiných linek přežije OK v okně Minut (`B194d` E13g)
+
+Okno Minut odjezdů nabízí jen skupiny dnů z dat vybrané linky, šablona ale slouží víc linkám.
+OK zahodilo nastavení skupiny, kterou vybraná linka nemá (třeba sobota u linky jen pro pracovní dny), i výchozí nastavení podle pořadí ze vzorů a importu.
+- Nastavení skupin, které okno nenabídlo, teď zůstane v šabloně na svém místě, takže se u jiné linky sloupce nepřeházejí.
+- OK beze změny u linky se skupinami šablonu nemění (zbytek `E13d`: okno dřív zapsalo výchozí nastavení pro každou skupinu z dat).
+- Totéž pravidlo platí pro sloupce Seznamu zastávek, které agenda nenabízí: po změně v okně zůstanou na svém místě, dřív se přesunuly na konec.
+
 ## 2026-10-28 (9) - Barva Střídání řádků skupiny dnů se kontroluje (`B194d` E13f)
 
 Pole Střídání řádků u skupiny dnů v okně Minut odjezdů přijalo jakýkoli text.

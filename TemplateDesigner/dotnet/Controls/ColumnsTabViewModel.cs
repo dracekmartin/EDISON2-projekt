@@ -45,6 +45,29 @@ public sealed class ColumnsTabViewModel : INotifyPropertyChanged
             ? [.. original]
             : result;
 
+    /// <summary>
+    /// Výsledek okna doplněný o položky šablony, které okno nenabídlo (sloupec, ke kterému agenda nemá
+    /// data, skupina dnů jiné linky): zůstanou na svém místě, za položkou, která byla před nimi. Šablona
+    /// slouží víc linkám a agendám - bez toho by OK nastavení ztratilo nebo přeházelo (`B194d` E13g).
+    /// </summary>
+    public static List<T> WithNotOffered<T>(IReadOnlyList<T> original, IReadOnlyList<T> offered, Func<T, string> key)
+    {
+        var result = offered.ToList();
+        var offeredKeys = offered.Select(key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < original.Count; i++)
+        {
+            if (offeredKeys.Contains(key(original[i]))) continue;
+            int at = 0;
+            for (int j = i - 1; j >= 0 && at == 0; j--)
+            {
+                var predchozi = key(original[j]);
+                at = result.FindIndex(r => string.Equals(key(r), predchozi, StringComparison.OrdinalIgnoreCase)) + 1;
+            }
+            result.Insert(at, original[i]);
+        }
+        return result;
+    }
+
     // ── Co platí v okně ──────────────────────────────────────────────────
 
     /// <summary>Šířka prvku pro hlídání přesahu; null = okno přesah nepočítá (Minuty jsou pivot,

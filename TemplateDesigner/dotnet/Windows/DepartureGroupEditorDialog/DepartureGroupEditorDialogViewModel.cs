@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text.Json;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -298,6 +299,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         bool ukazatVlastniSloupce = true)
     {
         _element = element;
+        _puvodniSkupiny = currentStyles;
         UkazatVlastniSloupce = ukazatVlastniSloupce;
         _puvodniVlastniSloupce = customColumns;
         _presety = DepartureColumnPresets.Parse(presetsJson);
@@ -378,6 +380,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             styleMap.TryGetValue(skupina.Id, out var existing);
             rows.Add(DepartureGroupColumnVM.FromData(skupina, existing, groupHeaderInherited, groupDataInherited));
         }
+
+        _skupinyPriOtevreni = JsonSerializer.Serialize(SkupinyZRadku(rows));
 
         // Minuty jsou pivot: šířky skupin se dopočítají z obsahu, přesah se proto nehlídá.
         Columns = new Controls.ColumnsTabViewModel(rows)
@@ -507,10 +511,12 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         // Sloupec hodin má pevnou šířku (element-level); prázdné pole ponechá stávající.
         ResultHourColumnWidth = hourVm.Width is float hw && hw > 0 ? hw : _element.HourColumnWidth;
 
-        ResultGroupColumns = skupiny
-            .Where(vm => !vm.IsHourColumn)
-            .Select(vm => vm.ToModel())
-            .ToList();
+        // Beze změny vrátit uložené skupiny: okno pro skupiny bez nastavení vytváří výchozí řádky a ty by
+        // šablonu změnily (`B194d` E13d). Skupiny, které vybraná linka nemá, zůstanou (E13g).
+        var nabidnute = SkupinyZRadku(skupiny);
+        ResultGroupColumns = JsonSerializer.Serialize(nabidnute) == _skupinyPriOtevreni
+            ? [.. _puvodniSkupiny]
+            : Controls.ColumnsTabViewModel.WithNotOffered(_puvodniSkupiny, nabidnute, g => g.SkupinaDnuId);
 
         // Definice vlastních sloupců - null = automaticky (vypnuté, nebo zapnuté bez sloupců)
         ResultCustomColumns = !UkazatVlastniSloupce ? _puvodniVlastniSloupce
@@ -519,4 +525,10 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
         CloseDialog(true);
     }
+
+    private readonly List<DepartureGroupColumnStyle> _puvodniSkupiny;
+    private readonly string _skupinyPriOtevreni;
+
+    private static List<DepartureGroupColumnStyle> SkupinyZRadku(IEnumerable<DepartureGroupColumnVM> rows) =>
+        [.. rows.Where(vm => !vm.IsHourColumn).Select(vm => vm.ToModel())];
 }

@@ -141,7 +141,8 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     protected override void OnOk()
     {
         // Element-level styl + ostatní general props řeší embedded EDInputForm (code-behind).
-        List<StopColumn> vysledek = [.. Columns.Rows.Cast<StopColumnVM>().Select(vm => vm.ToModel()), .. _nenabizene];
+        var vysledek = Controls.ColumnsTabViewModel.WithNotOffered(_puvodni,
+            [.. Columns.Rows.Cast<StopColumnVM>().Select(vm => vm.ToModel())], c => c.Key);
         ResultColumns = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodni, vysledek,
             c => _nenabizene.Contains(c) || NedotcenyDoplneny(c));
         CloseDialog(true);

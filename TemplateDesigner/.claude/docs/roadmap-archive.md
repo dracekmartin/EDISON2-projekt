@@ -207,6 +207,8 @@
   kroku zpět jako zbytek okna (changelog 2026-10-28 (8)).
 - **E13f** Barva Střídání řádků skupiny dnů v okně Minut nepřijme neplatnou hodnotu, jako barvy v editoru
   stylu (changelog 2026-10-28 (9)).
+- **E13g** OK v okně Minut nezahodí nastavení skupiny dnů, kterou vybraná linka nemá, ani nastavení podle
+  pořadí ze vzorů; nenabídnuté skupiny i sloupce zůstanou na svém místě (changelog 2026-10-28 (10)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 
