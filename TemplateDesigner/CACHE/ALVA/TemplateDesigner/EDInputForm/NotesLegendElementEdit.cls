@@ -36,8 +36,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Pozadí BEZ výchozí hodnoty - podbarvení si prvek nese sám, takže pole má ukázat jeho
         // hodnotu. Výchozí barva by se vracela do vymazaného pole a vypadalo by to, že vymazání
         // neplatí (nález Pavel 1. 9.). Prázdno = bez podbarvení.
-        s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
-        s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("HeaderStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
@@ -49,9 +49,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
         d form.AddGroup("data", "Datové buňky")
-        s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Pozadí buněk", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
-        s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("DataStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
@@ -124,7 +124,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Negativní značky" ────────────────────────────────────
         d form.AddGroup("nz", "Negativní značky")
-        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Pozadí značky", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Barva pozadí značky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva textu značky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"

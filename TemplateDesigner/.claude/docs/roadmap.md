@@ -27,9 +27,13 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 
 ### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
 
-- **E3** Styl záhlaví a buněk má v pěti prvcích pět podob, formuláře nemají společnou kostru [L] **Jan** -
-  **odloženo** (Jan 26. 10.) až za menší body E5-E16; patří sem i umístění voleb záhlaví (dnes „Skupiny
-  dnů" / „Řádky", kanon chce „Obecné")
+- **E3** Kostra formulářů tabulek - **rozhodnuto** (Jan 28. 10., `konzistence-agend-jr.md` E3), hotový Seznam
+  zastávek a sady stylu Buňka / Text. Zbývá převést Minuty (styl za tlačítkem?), Tabulku spojů, Tabulku z dat
+  a Pevnou tabulku; Poznámky projít zvlášť [L] **Jan**
+- **Poznámky: Barva pozadí buněk se nabízí a nekreslí** - formulář i panel ji mají, kreslení ji nečte
+  (`NotesLegendElement.cs`); dokreslit pod blok, nebo odebrat **Jan** [S]
+- **Ověřit: Seznam zastávek po „<1" možná přepne písmo na výchozí** - `StopListElement.cs:928` uvolní sdílené
+  písmo z mezipaměti; nalezeno čtením, nereprodukováno [S]
 - **E13** Dialogy sloupců - zbývá c (jedna společná komponenta oken se sloupci, přestavba) - **odloženo**
   spolu s E3 [M]
 
@@ -64,6 +68,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky
   a rozsahy ze schématu formuláře `*Edit.cls` místo opisu v `GetPropertyDescriptors` (dnes se píše dvakrát).
   Navazuje na E3 / E13; serverovou stranu agend řeší `B56`.
+- **Popisky polí dohledatelné hledáním** [M] **Jan** (28. 10.) - projít popisky všech formulářů, aby byly úplné
+  a šly najít slovem, které uživatel hledá (vzor „Barva pozadí" místo „Pozadí", kanon `ux-conventions §8`).
 
 - **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
   (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet

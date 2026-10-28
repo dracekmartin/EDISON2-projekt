@@ -558,6 +558,29 @@ public class EDInputFormSchemaDriftTests
         return prefixes.ToHashSet(StringComparer.Ordinal);
     }
 
+    /// <summary>Sada Text (`bunka = 0`) je jen písmo a barva textu. Minuta a značky u odjezdů jsou
+    /// text uvnitř buňky - pozadí, zarovnání ani okraje jim prvek nekreslí, takže je formulář nesmí
+    /// nabízet (`B194` E3). Okno stylu 2. řádku záhlaví hlídá <c>SadaStyluTextTests</c>.</summary>
+    [Fact]
+    public void TextUvnitrBunky_MaJenSaduText()
+    {
+        var add = BaseFieldsMethods()["Add"];
+        var sadaText = ExpandBody(add.Body, new Dictionary<string, string> { ["bunka"] = "0" })
+            .SelectMany(l => StyleFieldsSuffixRx.Matches(l).Select(m => m.Groups[1].Value))
+            .ToHashSet();
+        Assert.Equal(new HashSet<string> { "FontFamily", "FontWeight", "FontSize", "Bold", "Italic",
+            "Underline", "Strikethrough", "TextColor" }, sadaText);
+
+        var bunkaPodleZony = File.ReadAllLines(Path.Combine(EDInputFormDir(), "DepartureGridElementEdit.cls"))
+            .Select(l => BaseFieldsCallWithArgsRx.Match(l))
+            .Where(m => m.Success && m.Groups[1].Value == "Add")
+            .Select(m => BindArguments(add.Parameters, m.Groups[2].Value))
+            .ToDictionary(a => a["prefix"].Trim('"'), a => a["bunka"]);
+        foreach (var zona in new[] { "MinuteStyle", "AnotaceSymbolStyle", "AnotaceTextStyle" })
+            Assert.Equal("0", bunkaPodleZony[zona]);
+        Assert.Equal("1", bunkaPodleZony["DataStyle"]);
+    }
+
     [Fact]
     public void StyleFieldsSuffixy_SeNaparsovaly()
     {
@@ -756,9 +779,9 @@ public class EDInputFormSchemaDriftTests
         //   StrokeWidth - u čáry je to „Tloušťka" (čáry samotné), u obdélníku „Tloušťka okraje"
         // („Height" tu byl do 29. 7. kvůli rozdílnému popisku výšky - sdílený BaseElementFields
         //  ho sjednotil na „Výška" + nápovědu, takže výjimka padla.)
-        //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Pozadí značky"), v mřížce
+        //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Barva pozadí značky"), v mřížce
         //     odjezdů stojí hned vedle obecné barvy symbolu anotace, takže tam musí být v popisku
-        //     rozlišené („Negativní značka: Pozadí"); bez toho se nedá poznat, co která barva řídí.
+        //     rozlišené („Negativní značka: Barva pozadí"); bez toho se nedá poznat, co která barva řídí.
         //   Format - u stránky je to formát papíru („Formát"), u buňky formát vypisované hodnoty
         //     („Formát hodnoty"). Dvě různé věci, které jen shodou okolností mají stejný název
         //     vlastnosti na svém cíli.

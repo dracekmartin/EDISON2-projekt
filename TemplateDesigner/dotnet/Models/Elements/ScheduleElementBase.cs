@@ -313,7 +313,7 @@ public abstract class ScheduleElementBase : TemplateElement
     [
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí záhlaví", Group = headerGroup,
+            Label = "Barva pozadí záhlaví", Group = headerGroup,
             Get = () => HeaderStyle.BackgroundColor ?? ScheduleHeaderDefaults.BackgroundColor,
             Set = v => HeaderStyle.BackgroundColor = v,
         },
@@ -325,7 +325,7 @@ public abstract class ScheduleElementBase : TemplateElement
         },
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí buněk", Group = dataGroup,
+            Label = "Barva pozadí buněk", Group = dataGroup,
             Get = () => DataStyle.BackgroundColor ?? ScheduleDataDefaults.BackgroundColor,
             Set = v => DataStyle.BackgroundColor = v,
         },

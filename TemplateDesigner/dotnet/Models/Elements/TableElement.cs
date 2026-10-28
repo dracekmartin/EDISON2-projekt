@@ -1125,7 +1125,7 @@ public class TableElement : TemplateElement
         },
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí záhlaví",
+            Label = "Barva pozadí záhlaví",
             Group = "Záhlaví",
             Get   = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",
             Set   = v => Header().BackgroundColor = v
@@ -1139,7 +1139,7 @@ public class TableElement : TemplateElement
         },
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí buněk",
+            Label = "Barva pozadí buněk",
             Group = "Datové buňky",
             Get   = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",
             Set   = v => Data().BackgroundColor = v

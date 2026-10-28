@@ -3849,7 +3849,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => PripojStyle.Italic ?? ResolveElementPripojParent().Italic, Set = v => PripojStyle.Italic = v },
         new ColorPropertyDescriptor { Label = "Barva textu", Group = "Přípojné řádky",
             Get = () => PripojStyle.TextColor ?? ResolveElementPripojParent().TextColor, Set = v => PripojStyle.TextColor = v },
-        new ColorPropertyDescriptor { Label = "Pozadí řádku", Group = "Přípojné řádky",
+        new ColorPropertyDescriptor { Label = "Barva pozadí řádku", Group = "Přípojné řádky",
             Get = () => PripojStyle.BackgroundColor ?? ResolveElementPripojParent().BackgroundColor, Set = v => PripojStyle.BackgroundColor = v },
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneFontSizeDescriptors(),

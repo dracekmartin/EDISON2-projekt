@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-28 (1) - Kostra formulářů tabulek, sady stylu Buňka a Text, „Barva pozadí" (`B194d` E3)
+
+Rozhodnutí Jan 28. 10. (detail `konzistence-agend-jr.md` E3), zatím zapracované u Seznamu zastávek a ve sdílené sadě stylu.
+- **Seznam zastávek:** nahoře skupiny jen tohoto prvku (Zastávky, Stanoviště, Rozložení, Aktuální a projeté zastávky, Šipka směru), pod nimi společný konec Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky. Skupina Obecné zmizela: Záhlaví sloupců je první pole skupiny Záhlaví, Výška řádku první pole Datových buněk. Pozice značek přešla k ostatním značkám do skupiny Zastávky.
+- **Řádkování** zmizelo ze všech tabulek - buňka má jeden řádek a tabulka ho nikdy nekreslila. U Textu zůstává a má nápovědu, co znamená.
+- **Sady stylu:** Buňka (15 polí) pro záhlaví a buňky, Text (8 polí, písmo a barva textu) pro minutu a značky u odjezdů a pro okno 2. řádku záhlaví Minut. Pozadí, zarovnání ani okraje tomuto textu prvek nekreslí. Pořadí v sadě Buňka: nejdřív pole textu, pak pole buňky. Formulář Minut se zkrátil z 96 na 75 polí.
+- **„Barva pozadí"** místo „Pozadí" ve všech tabulkách, oknech sloupců a v programu bez skupin („Barva pozadí záhlaví"), aby šla najít hledáním „barva". Tabulka spojů a Poznámky mají ve skupinách Záhlaví / Datové buňky krátké „Barva textu" / „Barva pozadí".
+
+Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` všech dotčených formulářů; pojistky `EDInputFormSchemaDriftTests.TextUvnitrBunky_MaJenSaduText` a `SadaStyluTextTests`.
+
 ## 2026-10-27 (32) - Velikost písma všude 3-72 pt (`B194d` E8f)
 
 Velikost písma jde ve všech formulářích i v panelu zadat 3-72 pt (rozhodnutí Jan 27. 10.: pod 3 pt

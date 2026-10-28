@@ -231,7 +231,7 @@
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Pozadí:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Barva pozadí:" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
                         Command="{Binding PickBgColorCommand}"

@@ -1823,7 +1823,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         new BoolPropertyDescriptor   { Label = "Symbol: Tučné",        Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
         new BoolPropertyDescriptor   { Label = "Symbol: Kurzíva",      Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Symbol: Barva textu",  Group = "Značky u odjezdů - symbol", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
-        new ColorPropertyDescriptor  { FromImage = true, Label = "Negativní značka: Pozadí", Group = "Značky u odjezdů - symbol", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor  { FromImage = true, Label = "Negativní značka: Barva pozadí", Group = "Značky u odjezdů - symbol", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor  { FromImage = true, Label = "Negativní značka: Barva textu", Group = "Značky u odjezdů - symbol", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
         // ── Styl anotací - text (písmena, dny) ──

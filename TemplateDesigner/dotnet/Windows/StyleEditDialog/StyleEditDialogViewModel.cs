@@ -19,17 +19,19 @@ class StyleEditDialogViewModel : EDViewModel
     private readonly TextStyle? _original;
 
     public CellStyleVM Style { get; }
-    public CellStyleEditOptions EditOptions { get; } = CellStyleEditOptions.AllEnabled;
+    public CellStyleEditOptions EditOptions { get; }
 
     /// <summary>Po OK: undo-able command měnící danou style property (null = beze změny).</summary>
     public IDesignerCommand? ResultCommand { get; private set; }
 
     public RelayCommand ResetStyleCommand { get; }
 
-    public StyleEditDialogViewModel(object element, string prefix, ResolvedTextStyle inherited)
+    public StyleEditDialogViewModel(object element, string prefix, ResolvedTextStyle inherited,
+        CellStyleEditOptions? editOptions = null)
     {
         _element = element;
         _prefix = prefix;
+        EditOptions = editOptions ?? CellStyleEditOptions.AllEnabled;
         _original = element.GetType().GetProperty(prefix)?.GetValue(element) as TextStyle;
         Style = CellStyleVM.FromModel(_original, inherited);
 

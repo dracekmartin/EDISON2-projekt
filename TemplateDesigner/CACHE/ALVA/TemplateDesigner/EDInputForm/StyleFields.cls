@@ -16,10 +16,14 @@ Class ALVA.TemplateDesigner.EDInputForm.StyleFields
 /// <var>defBold</var>=1 u zóny, která se tučně tiskne i bez nastavení uživatele (záhlaví tabulek,
 /// minuty JŘ) - jinak by formulář ukazoval nezaškrtnuté „Tučné" u textu, který tučný je.
 /// Musí souhlasit s tím, co pro tu zónu vydá kaskáda (hlídá EDInputFormSchemaDriftTests).
-ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, groupKey As %String, groupLabel As %String, defTextColor As %String = "", defBgColor As %String = "", newGroup As %Boolean = 1, labelPrefix As %String = "", defBold As %Boolean = 0)
+/// <var>bunka</var>=1 → sada Buňka (15 polí) pro záhlaví a datové buňky tabulek. 0 → sada Text
+/// (prvních 8 polí: písmo a barva textu) pro text uvnitř buňky (minuta, značky u odjezdů), který
+/// nemá vlastní pozadí, zarovnání ani okraje, takže by tam ta pole nic nedělala.
+ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, groupKey As %String, groupLabel As %String, defTextColor As %String = "", defBgColor As %String = "", newGroup As %Boolean = 1, labelPrefix As %String = "", defBold As %Boolean = 0, bunka As %Boolean = 1)
 {
     s barvaZDat = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
     i newGroup d form.AddGroup(groupKey, groupLabel)
+    // ── Sada Text ──
     // ComboBox (editovatelný) s prázdným seznamem - klient naplní nainstalovanými fonty
     // (ElementFormBinder.PopulateFontFields). Prázdné = dědit z rodiče kaskády.
     d form.AddFieldToLastGroup(prefix_".FontFamily", labelPrefix_"Font", $$$FieldTypeComboBox, 0, 0)
@@ -31,21 +35,25 @@ ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, gro
     d form.AddBool(prefix_".Italic", labelPrefix_"Kurzíva", 0)
     d form.AddBool(prefix_".Underline", labelPrefix_"Podtržení", 0)
     d form.AddBool(prefix_".Strikethrough", labelPrefix_"Přeškrtnutí", 0)
-    s f = form.AddFieldToLastGroup(prefix_".HAlign", labelPrefix_"Zarovnání vodorovně", $$$FieldTypeList, 0, 0)
-    d f.AddListItem("Left", "Vlevo"), f.AddListItem("Center", "Na střed"), f.AddListItem("Right", "Vpravo")
-    s f = form.AddFieldToLastGroup(prefix_".VAlign", labelPrefix_"Zarovnání svisle", $$$FieldTypeList, 0, 0)
-    d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
     s f = form.AddFieldToLastGroup(prefix_".TextColor", labelPrefix_"Barva textu", $$$FieldTypeColor, 0, 0)
     s:defTextColor'="" f.value = defTextColor
     s f.helpText = barvaZDat
-    s f = form.AddFieldToLastGroup(prefix_".BackgroundColor", labelPrefix_"Pozadí", $$$FieldTypeColor, 0, 0)
-    s:defBgColor'="" f.value = defBgColor
-    s f.helpText = barvaZDat
-    d form.AddDecimal(prefix_".PaddingTop", labelPrefix_"Vnitřní okraj nahoře", "", 0, 20, "mm")
-    d form.AddDecimal(prefix_".PaddingRight", labelPrefix_"Vnitřní okraj vpravo", "", 0, 20, "mm")
-    d form.AddDecimal(prefix_".PaddingBottom", labelPrefix_"Vnitřní okraj dole", "", 0, 20, "mm")
-    d form.AddDecimal(prefix_".PaddingLeft", labelPrefix_"Vnitřní okraj vlevo", "", 0, 20, "mm")
-    d form.AddDecimal(prefix_".LineSpacing", labelPrefix_"Řádkování", "", 0.5, 3, "")
+    // ── Zbytek sady Buňka ──
+    i bunka {
+        s f = form.AddFieldToLastGroup(prefix_".BackgroundColor", labelPrefix_"Barva pozadí", $$$FieldTypeColor, 0, 0)
+        s:defBgColor'="" f.value = defBgColor
+        s f.helpText = barvaZDat
+        s f = form.AddFieldToLastGroup(prefix_".HAlign", labelPrefix_"Zarovnání vodorovně", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("Left", "Vlevo"), f.AddListItem("Center", "Na střed"), f.AddListItem("Right", "Vpravo")
+        s f = form.AddFieldToLastGroup(prefix_".VAlign", labelPrefix_"Zarovnání svisle", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
+        d form.AddDecimal(prefix_".PaddingTop", labelPrefix_"Vnitřní okraj nahoře", "", 0, 20, "mm")
+        d form.AddDecimal(prefix_".PaddingRight", labelPrefix_"Vnitřní okraj vpravo", "", 0, 20, "mm")
+        d form.AddDecimal(prefix_".PaddingBottom", labelPrefix_"Vnitřní okraj dole", "", 0, 20, "mm")
+        d form.AddDecimal(prefix_".PaddingLeft", labelPrefix_"Vnitřní okraj vlevo", "", 0, 20, "mm")
+    }
+    // Řádkování tu záměrně není: buňka tabulky má jeden řádek (CellRenderer), takže by pole nic nedělalo.
+    // Kreslí ho jen Text, který má vlastní pole.
 }
 
 }

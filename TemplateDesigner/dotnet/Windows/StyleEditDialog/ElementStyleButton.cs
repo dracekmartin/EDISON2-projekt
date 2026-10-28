@@ -20,11 +20,19 @@ static class ElementStyleButton
     public static string? StyleProperty(string key) =>
         key.StartsWith(KeyPrefix, System.StringComparison.Ordinal) ? key[KeyPrefix.Length..] : null;
 
+    /// <summary>Které pole okno stylu nabídne: 2. řádek záhlaví je text uvnitř záhlaví skupiny, pozadí,
+    /// zarovnání a okraje mu kreslí 1. řádek - nabízet je by byla pole, která nic nedělají.</summary>
+    public static CellStyleEditOptions EditOptionsFor(string property) =>
+        property == nameof(DepartureGridElement.HeaderLine2Style)
+            ? CellStyleEditOptions.TextOnly
+            : CellStyleEditOptions.AllEnabled;
+
     /// <summary>Okno stylu zóny s titulkem podle popisku tlačítka; null = Storno nebo beze změny.</summary>
     public static IDesignerCommand? Edit(Window owner, DepartureGridElement element, string property, EDInputForm form)
     {
         var title = (form.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == KeyPrefix + property)?.Label ?? "Styl";
-        var vm = new StyleEditDialogViewModel(element, property, element.ResolveStyleParent(property) ?? CellDefaults.Default);
+        var vm = new StyleEditDialogViewModel(element, property, element.ResolveStyleParent(property) ?? CellDefaults.Default,
+            EditOptionsFor(property));
         var dlg = new StyleEditDialog(vm) { Owner = owner, Title = title };
         return dlg.ShowDialog() == true ? vm.ResultCommand : null;
     }

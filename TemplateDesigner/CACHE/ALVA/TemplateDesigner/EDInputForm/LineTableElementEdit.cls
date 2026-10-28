@@ -85,17 +85,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", 9, 3, 72, "pt", "0.#")
         s f.helpText = "Písmo záhlaví celého prvku. Jednotlivému sloupci se dá přebít v záložce Sloupce."
         // Bez výchozí hodnoty - podbarvení nese prvek sám, prázdno znamená bez podbarvení.
-        s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
-        s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
         d form.AddGroup("data", "Datové buňky")
         s f = form.AddDecimal("DataStyle.FontSize", "Velikost", 8, 3, 72, "pt", "0.#")
         s f.helpText = "Písmo buněk celého prvku. Řídí i výšku řádku, když je prázdná, a šířku sloupce spoje."
-        s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Pozadí buněk", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
-        s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         // Vnitřní okraj je u této tabulky rozměrová volba, ne kosmetika: dolní práh sloupce spoje
         // je šířka času plus okraje po stranách, takže rozhoduje, kolik spojů se vejde do bloku
@@ -143,7 +143,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("PripojStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         // Pozadí celého řádku - s bílým písmem dá inverzní řádek, o který si KU HK řekl vedle
         // velikosti a řezu (#8360). Prázdné = jako datové buňky.
-        s f = form.AddFieldToLastGroup("PripojStyle.BackgroundColor", "Pozadí řádku", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("PripojStyle.BackgroundColor", "Barva pozadí řádku", $$$FieldTypeColor, 0, 0)
 
         // ── Skupina "Porovnání verzí" (B192) ──────────────────────────────
         // Jen rozdílový linkový JŘ: změněný spoj stojí dvakrát vedle sebe a odlišné časy se podbarví.

@@ -22,10 +22,10 @@ public class DescriptorLabelsMatchFormTests
     private static readonly Dictionary<string, string> Vyjimky = new()
     {
         // Rychlý přístup ke čtyřem barvám zón tabulky (mvvm-patterns, Pattern 2) - formulář je má
-        // ve skupině stylu jako „Pozadí" / „Barva textu", kanonické názvy jsou tyhle (§8).
-        ["Pozadí záhlaví"] = "barvy zón tabulky",
+        // ve skupině Záhlaví / Datové buňky jako „Barva pozadí" / „Barva textu", kanonické názvy jsou tyhle (§8).
+        ["Barva pozadí záhlaví"] = "barvy zón tabulky",
         ["Barva textu záhlaví"] = "barvy zón tabulky",
-        ["Pozadí buněk"] = "barvy zón tabulky",
+        ["Barva pozadí buněk"] = "barvy zón tabulky",
         ["Barva textu buněk"] = "barvy zón tabulky",
         ["Tučné záhlaví"] = "promoted shortcut tabulek (mvvm-patterns)",
         // Ve formuláři je jinde než v hlavním formuláři prvku.

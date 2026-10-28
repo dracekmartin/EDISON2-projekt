@@ -791,6 +791,9 @@ Levý sloupec sestavy - seznam zastávek s časy a atributy. Do seznamu se dosta
 staví **aspoň jeden spoj, který staví i na té vývěsce** - zastávka, kam odsud nic nejede, by měla
 u všech časů jen „<" a cestujícímu by neřekla nic.
 
+Nastavení je seřazené tak, že nahoře jsou skupiny jen tohoto prvku (Zastávky, Stanoviště, Rozložení, Aktuální a projeté zastávky, Šipka směru).
+Pod nimi jsou skupiny, které mají všechny tabulky stejně: Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
+
 - **Upravit sloupce…** - otevře editor sloupců (kap. 3)
 - **Varianty tras** (sloupec v editoru sloupců, výchozí vypnutý) - zap. = časové sloupce podle skutečných variant tras (jen AD; viz kap. 1). Je to **týž údaj jako sloupec „Čas jízdy"**, takže zapnuté má být vždy jen jedno z toho: kdo chce varianty, vypne si „Čas jízdy". Linka, kde jedou všechny spoje stejnou trasou, dostane jeden variantní sloupec (dřív žádný, takže na takové lince nebylo vidět nic)
 - **Oddělovací čáry** - vodorovné čáry mezi řádky zastávek
@@ -801,12 +804,14 @@ u všech časů jen „<" a cestujícímu by neřekla nic.
 - **Atributy** - zobrazí atributy zastávky vedle názvu
 - **Přestupy (vlak/autobus)** - zobrazí u zastávky symbol přestupu na vlak („L") / autobus („A"); výchozí vypnuto
 - **Poznámky zastávky** - zobrazí poznámkové značky u zastávky
+- **Pozice značek** (*Za zastávkou* / *Před zastávkou*) - kde u názvu zastávky stojí značky na znamení, atributy, přestupy a poznámky
 - **Jízda pod minutu jako <1** - jede-li se na následující zastávku pod minutu, vypíše se ve sloupci časů „<1" místo prázdna; výchozí vypnuto. Zastávka, kterou spoj neobsluhuje, zůstane prázdná
   Znak „<" se přitom vysune doleva, aby číslice zůstaly ve svislici s ostatními časy (při zarovnání sloupce vpravo se srovnají samy, tam se nic nevysouvá)
 - **Nastavení sloupce Čas jízdy se dědí na varianty** - když má linka víc variant tras a sloupec se rozpadne na víc časových sloupců, platí pro všechny zarovnání i styl (font, barvy, okraje) nastavený u sloupce „Čas jízdy"
-- **Značky a šipka směru** - Pozice značek (Za zastávkou / Před zastávkou), Pozice šipky, Barva šipky, Tloušťka šipky, Velikost hrotu, Hrot šipky, Styl čáry šipky. Šipka ukazuje směr jízdy od aktuální zastávky dál po trase; zapíná se parametrem sestavy *Tisknout šipky směru*. Při pozici vlevo má šipka vyhrazený vlastní pruh, takže se ani u úzkého prvku nepřekryje s jízdními dobami
-- **Záhlaví sloupců** - zap/vyp řádek záhlaví
-- **Aktuální: Tučné / Podtržení / Velikost / Barva textu / Pozadí** - vzhled řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná hodnota = jako ostatní zastávky)
+- **Šipka směru** - Pozice šipky, Barva šipky, Tloušťka šipky, Velikost hrotu, Hrot šipky, Styl čáry šipky. Šipka ukazuje směr jízdy od aktuální zastávky dál po trase; zapíná se parametrem sestavy *Tisknout šipky směru*. Při pozici vlevo má šipka vyhrazený vlastní pruh, takže se ani u úzkého prvku nepřekryje s jízdními dobami
+- **Záhlaví sloupců** (první pole skupiny Záhlaví) - zap/vyp řádek záhlaví
+- **Záhlaví a Datové buňky** - písmo, barva textu, barva pozadí, zarovnání a vnitřní okraje celého záhlaví a všech buněk; Datové buňky mají navíc Výšku řádku. Jednotlivému sloupci jde vzhled přebít v editoru sloupců
+- **Aktuální: Tučné / Podtržení / Velikost / Barva textu / Barva pozadí** - vzhled řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku, vlastní barva písma; prázdná hodnota = jako ostatní zastávky)
 - **Projeté: Barva textu** - barva zastávek, které vozidlo od aktuální zastávky již projelo; jejich tisk se zapíná v parametrech sestavy (Tisknout projeté zastávky)
 - **Projeté: Čas** (*Nezobrazovat* / *Zobrazit*) - jízdní doby se počítají od vývěskové zastávky,
   takže u projetých vycházejí záporné. *Nezobrazovat* vyprázdní u projetých zastávek **celou buňku**
@@ -821,9 +826,9 @@ Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle�
 - **Rozměry** - Šířka minuty, Rozestup odjezdů (Bez zarovnání / Zarovnat dle nejširšího odjezdu / Zarovnat na pevnou šířku - viz níže), Mezera mezi skupinami dnů, Mezera mezi odjezdy, Výška řádku, Střídání řádků
 - **Časová osa** a **Roztáhnout na výšku** nejsou vlastnosti prvku, ale parametry sestavy (kap. 5)
 - **Rozestup odjezdů** - jak daleko od sebe stojí minuty v řádku hodiny. *Bez zarovnání*: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí a minuta se značkou odsune odjezdy za sebou. *Zarovnat dle nejširšího odjezdu* (výchozí): jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici napříč hodinami i sloupci, ale jeden takový spoj zředí celou vývěsku, i řádky a sloupce bez značek. *Zarovnat na pevnou šířku*: rozteč se řídí nastavením („Šířka minuty", nejméně však minuta a jedna značka s odstupem), takže ji data nezmění a přidaný označkovaný spoj zbytek vývěsky nepřesází. Spoj s víc značkami se do rozteče vejde tím, že se jeho značky úměrně zmenší - nejvýš na polovinu a nikdy pod 4 body; nevejdou-li se ani tak, zvětšete Šířku minuty
-- **Styl záhlaví** - tlačítko Styl záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví svisle, Styl 2. řádku záhlaví (druhý řádek záhlaví skupiny, např. „den" v „Pracovní / den"; nevyplněné se dědí z prvního řádku)
-- **Styl datových buněk** - písmo hodin i minut; řádky „Minuta: …" (Minuta: Font, Minuta: Velikost, Minuta: Tučné…) styl minut přebijí
-- **Značky u odjezdů** - zapnutí písmen a symbolů u minut, Mezera mezi značkou a minutou, Mezera mezi značkami, styl symbolů („Symbol: …") a textových značek („Text: …"), barvy negativní značky („Negativní značka: Pozadí", „Negativní značka: Barva textu")
+- **Styl záhlaví** - tlačítko Styl záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví svisle, Styl 2. řádku záhlaví (druhý řádek záhlaví skupiny, např. „den" v „Pracovní / den"; nevyplněné se dědí z prvního řádku). Okno 2. řádku nabízí jen písmo a barvu textu - pozadí, zarovnání a okraje přebírá z prvního řádku
+- **Styl datových buněk** - písmo hodin i minut; řádky „Minuta: …" styl minut přebijí. Minuta je text uvnitř buňky, takže má jen písmo a barvu textu: Font, Řez, Velikost, Tučné, Kurzíva, Podtržení, Přeškrtnutí, Barva textu
+- **Značky u odjezdů** - zapnutí písmen a symbolů u minut, Mezera mezi značkou a minutou, Mezera mezi značkami, styl symbolů („Symbol: …") a textových značek („Text: …") - obojí jen písmo a barva textu, barvy negativní značky („Negativní značka: Barva pozadí", „Negativní značka: Barva textu")
 
 #### Poznámky
 
@@ -846,7 +851,7 @@ Vysvětlivky pod odjezdy.
 - **Řazení poznámek** - Dle typu (dny platnosti → značky → atributy → text; výchozí) / Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně. U linkového JŘ platí uvnitř každého druhu a volba Dle typu tam není
 - **Šířka buňky značky** - pevná šířka místa pro značku, aby texty poznámek začínaly pod sebou (0 = text hned za značkou)
 - **Negativní značky / Speciální znaky / Textové poznámky** (skupina Obsah poznámek, jen vývěska) - přepínače, které typy poznámek se v legendě vůbec zobrazí
-- **Pozadí značky / Barva textu značky** (skupina Negativní značky) - barvy invertovaného boxu u negativních značek
+- **Barva pozadí značky / Barva textu značky** (skupina Negativní značky) - barvy invertovaného boxu u negativních značek
 
 **Co se na vývěsce ukáže** (jen zastávkový JŘ z AD dat) - všechno se zapíná tady, v jednom seznamu:
 

@@ -267,8 +267,8 @@ Kanonické termíny (font/styl textu):
 | Tučné / Kurzíva / Podtržení / Přeškrtnutí | **Tučné** / **Kurzíva** / **Podtržení** / **Přeškrtnutí** | anglicismy |
 | Vzhled jedné části prvku | **„Část: Vlastnost"** - předpona a kanonický název („Minuta: Velikost", „Aktuální: Tučné", „Projeté: Barva textu"); vysvětlivka prázdné hodnoty do nápovědy (rozhodnutí Jan 26. 10.) | ~~Tučně aktuální zast.~~, ~~Barva projetých~~ |
 | Řádkování (LineSpacing) | **Řádkování** | - |
-| Barva textu / pozadí buňky | **Barva textu buněk** / **Pozadí buněk** | - |
-| Barva textu / pozadí záhlaví | **Barva textu záhlaví** / **Pozadí záhlaví** | - |
+| Barva textu / pozadí | **Barva textu** / **Barva pozadí** - ve skupině části prvku (Záhlaví, Datové buňky) bez upřesnění, část říká název skupiny; jinde s částí („Barva pozadí řádku", „Aktuální: Barva pozadí"). Celý tvar „Barva …" kvůli hledání podle „barva" (rozhodnutí Jan 28. 10.) | ~~Pozadí~~ samotné, ~~Výplň~~ |
+| Totéž v programu bez skupiny (rychlé barvy zón tabulky, asistent, import z PDF) | **Barva textu záhlaví** / **Barva pozadí záhlaví**, **Barva textu buněk** / **Barva pozadí buněk** | ~~Pozadí záhlaví~~, ~~Pozadí buněk~~ |
 
 Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 
@@ -289,7 +289,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Prvek s tabulkou zastávky × spoje | **Tabulka spojů** | ~~Linkový JŘ~~, ~~Tabulka linky~~ (tak se jmenuje **agenda**, prvek by se s ní pletl; třída `LineTableElement` zůstává) |
 | Zóna, km, Tč, zastávka a MHD v Tabulce spojů | **popisné sloupce** (rozhodnutí Jan 26. 10.) | ~~popisové sloupce~~, ~~sloupce popisu~~ |
 | Prvek s QR / čárovým kódem | **Kód (QR, čárový)** | ~~Kód~~ samotné (neřekne, co prvek umí), ~~Kód (QR / čárový)~~ |
-| Zapnutí záhlaví prvku | **Záhlaví** (u zastávek „Záhlaví sloupců") - patří do skupiny **Obecné** | ~~Zobrazit nadpis~~ |
+| Zapnutí záhlaví prvku | **Záhlaví** (u zastávek „Záhlaví sloupců") - **první pole skupiny Záhlaví**; skupinu „Obecné" tabulky nemají, nic neříkala o tom, co v ní je (rozhodnutí Jan 28. 10., kostra formuláře viz `docs/konzistence-agend-jr.md` E3) | ~~Zobrazit nadpis~~ |
 | Text v záhlaví prvku | **Text záhlaví** | ~~Nadpis~~ (samotné „Nadpis skupiny" u dat je jiný pojem a je OK) |
 | Hlavička tabulky oproti datovým buňkám (řádek, text i styl) | **Záhlaví** („Záhlaví skupin dnů", „Text záhlaví popisných sloupců", „Styl 2. řádku záhlaví") | ~~Nadpis~~ - jen pro koncepčně jinou věc (text skupiny dnů v datech, nadpis okna); rozhodnutí Jan 26. 10. |
 

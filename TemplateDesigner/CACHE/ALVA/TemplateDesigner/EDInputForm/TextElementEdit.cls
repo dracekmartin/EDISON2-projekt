@@ -48,7 +48,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("Style.Italic", "Kurzíva", 0)
         d form.AddBool("Style.Underline", "Podtržení", 0)
         d form.AddBool("Style.Strikethrough", "Přeškrtnutí", 0)
-        d form.AddDecimal("Style.LineSpacing", "Řádkování", 1.2, 0.8, 3, "", "0.0#")
+        s f = form.AddDecimal("Style.LineSpacing", "Řádkování", 1.2, 0.8, 3, "", "0.0#")
+        s f.helpText = "Vzdálenost mezi řádky textu jako násobek velikosti písma: 1,2 = běžné řádkování, 2 = dvojnásobná mezera. Počet řádků určuje text a šířka prvku."
 
         // ── Skupina "Barvy" (rámeček elementu má vlastní skupinu ze sdíleného balíčku) ─────
         d form.AddGroup("appearance", "Barvy")

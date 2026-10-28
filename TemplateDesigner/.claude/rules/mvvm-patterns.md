@@ -306,7 +306,9 @@ Všechny editovatelné vlastnosti jsou nullable (`string?`, `float?`, `bool?`, `
 - `ToModel()` emituje nullable TextStyle - prázdná pole zůstanou null (idempotentní: open+OK beze změn nezmění JSON)
 
 **Host dialog (VM) musí poskytnout:**
-- `HeaderEditOptions` + `DataEditOptions` (zatím všude `AllEnabled`; do budoucna per-kontextové skrytí irelevantních voleb)
+- `HeaderEditOptions` + `DataEditOptions` (dialogy sloupců zatím všude `AllEnabled`). Text uvnitř buňky
+  (2. řádek záhlaví Minut) dostává `TextOnly` - sada Text, jen písmo a barva textu; formulář má totéž
+  přes `StyleFields.Add(…, bunka = 0)`. Nenabízet pole, které zóna nekreslí
 - `ResetStyleCommand` (volitelný, pro tlačítko „Resetovat styl")
 - V konstruktoru: `CellStyleVM.FromModel(columnTextStyle, element.Resolve<Zone>Parent())` - nikdy nevytváří VM bez inherited!
 

@@ -72,7 +72,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Styl datových buněk: DataStyle = báze (minuty i hodinová čísla z ní dědí),
         // MinuteStyle = minutový override navrch (prefix „Minuta:").
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "")
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ", 1)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ", 1, 0)
 
         // ── Značky u odjezdů ──────────────────────────────────────────────
         // „Anotace" bylo interní slovo - uživatel tomu říká značky u odjezdů (písmena a symboly
@@ -85,14 +85,14 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Odstup značky od minuty. Prázdné = mezera podle velikosti písma."
         s f = form.AddDecimal("AnotaceInterGap", "Mezera mezi značkami", "", 0, 5, "mm")
         s f.helpText = "Odsazení mezi dvěma značkami u téhož odjezdu"
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ")
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceSymbolStyle", "", "", "", "", 0, "Symbol: ", 0, 0)
         // Negativní značka = symbol vykreslený inverzně (znak na plné ploše) - vlastní dvojice barev.
-        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Negativní značka: Pozadí", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Negativní značka: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         s f.helpText = "Negativní značka = znak vykreslený inverzně, tedy světlý na plné barevné ploše"
         s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Negativní značka: Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ")
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "AnotaceTextStyle", "", "", "", "", 0, "Text: ", 0, 0)
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
