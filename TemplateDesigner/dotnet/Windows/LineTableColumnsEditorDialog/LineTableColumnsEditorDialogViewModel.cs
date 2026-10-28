@@ -1,3 +1,4 @@
+using System.Text.Json;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -115,8 +116,15 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
 
     public List<StopColumn> ResultColumns { get; private set; } = [];
 
+    private readonly List<StopColumn> _puvodni;
+
+    /// <summary>Sloupce doplněné oknem (šablona je nemá) a jejich podoba při otevření - nedotčené se do
+    /// šablony nezapíšou.</summary>
+    private readonly Dictionary<string, string> _doplnene = new(StringComparer.OrdinalIgnoreCase);
+
     public LineTableColumnsEditorDialogViewModel(LineTableElement element, List<StopColumn> columns)
     {
+        _puvodni = columns;
         var rows = columns.Select(col => LineTableColumnVM.FromModel(col, element)).ToList();
 
         // Doplň chybějící známé sloupce (uložená šablona může mít podmnožinu) - ať uživatel vidí
@@ -126,7 +134,9 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
             if (!presentKeys.Contains(def.Key))
             {
                 def.Visible = false;
-                rows.Add(LineTableColumnVM.FromModel(def, element));
+                var row = LineTableColumnVM.FromModel(def, element);
+                rows.Add(row);
+                _doplnene[def.Key] = JsonSerializer.Serialize(row.ToModel());
             }
 
         // Přizpůsobit tu není záměrně (rozhodnutí Jan 26. 10., `B194` E13b): zadávají se jen popisné
@@ -140,7 +150,9 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
 
     protected override void OnOk()
     {
-        ResultColumns = Columns.Rows.Cast<LineTableColumnVM>().Select(vm => vm.ToModel()).ToList();
+        var vysledek = Columns.Rows.Cast<LineTableColumnVM>().Select(vm => vm.ToModel()).ToList();
+        ResultColumns = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodni, vysledek,
+            c => _doplnene.TryGetValue(c.Key, out var json) && JsonSerializer.Serialize(c) == json);
         CloseDialog(true);
     }
 }

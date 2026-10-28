@@ -201,6 +201,8 @@
   a procentní šířky u Tabulky z dat a hodiny Minut mimo zpětný krok; editor stylu sloupce s poli, popisky
   a mezemi formuláře prvku, zaškrtávátka bez „×". Prototyp s formulářem prvku zamítnut, vypadal cize
   (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (5)-(6)). Nálezy z průzkumu šly do `E13d`-`E13h`.
+- **E13d** OK v okně tabulky beze změny nepřidá krok do Ctrl+Z ani neoznačí šablonu jako změněnou, i u starší
+  šablony bez nových sloupců a u agendy, která některé sloupce nenabízí (changelog 2026-10-28 (7)).
 
 ## Vyřazeno z backlogu (Jan 23. 10. 2026)
 

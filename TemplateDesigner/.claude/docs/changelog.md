@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-28 (7) - OK beze změny v okně tabulky šablonu nemění (`B194d` E13d)
+
+OK v okně Seznamu zastávek, Minut odjezdů, Tabulky spojů a Tabulky z dat, ve kterém se nic nezměnilo, přidalo krok do Ctrl+Z a označilo šablonu jako změněnou.
+Uživatel po pouhém nahlédnutí do nastavení dostal dotaz na uložení a Ctrl+Z zdánlivě nic nevrátil.
+- Návrhář zapíše sloupce, hodiny a skupiny dnů jen tehdy, když se opravdu liší.
+- Okno vrátí původní sloupce i tehdy, když starší šabloně doplnilo vypnuté nové sloupce nebo když agenda některé sloupce nenabízí (dřív je přesunulo na konec seznamu).
+
 ## 2026-10-28 (6) - Styl sloupce má stejná pole jako formulář prvku (`B194d` E13c)
 
 Editor stylu sloupce na záložce Sloupce (všechna čtyři okna tabulek) má pole ve stejném pořadí, se stejnými názvy a mezemi jako sada stylu ve formuláři prvku.

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using EDControls.EDViewModel;
 
 namespace TemplateDesigner.Controls;
@@ -30,6 +31,19 @@ public sealed class ColumnsTabViewModel : INotifyPropertyChanged
     }
 
     public ObservableCollection<ColumnRowVM> Rows { get; } = [];
+
+    /// <summary>
+    /// Sloupce po OK okna: když uživatel nic nezměnil, vrátí původní sloupce šablony beze změny. Okno
+    /// doplňuje vypnuté sloupce, které starší šablona nemá, a nenabízené řadí na konec - bez toho by OK
+    /// beze změny změnilo šablonu a přidalo krok do Ctrl+Z (`B194d` E13d).
+    /// </summary>
+    /// <param name="ignore">Sloupce mimo porovnání: nenabízené (okno je jen vrací) a doplněné, na které
+    /// uživatel nesáhl.</param>
+    public static List<T> ResultOrOriginal<T>(List<T> original, List<T> result, Func<T, bool> ignore) =>
+        JsonSerializer.Serialize(original.Where(c => !ignore(c)).ToList())
+            == JsonSerializer.Serialize(result.Where(c => !ignore(c)).ToList())
+            ? [.. original]
+            : result;
 
     // ── Co platí v okně ──────────────────────────────────────────────────
 

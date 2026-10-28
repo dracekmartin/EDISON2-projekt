@@ -1,3 +1,4 @@
+using System.Text.Json;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -94,6 +95,12 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     /// <summary>Vypnuté sloupce, ke kterým agenda nemá data - nenabízejí se, ale ze šablony nezmizí.</summary>
     private readonly List<StopColumn> _nenabizene = [];
 
+    private readonly List<StopColumn> _puvodni;
+
+    /// <summary>Sloupce doplněné oknem (šablona je nemá) a jejich podoba při otevření - nedotčené se do
+    /// šablony nezapíšou.</summary>
+    private readonly Dictionary<string, string> _doplnene = new(StringComparer.OrdinalIgnoreCase);
+
     /// <param name="nabizetSloupec">Které sloupce nabídnout (podle dat agendy); null = všechny.
     /// Zapnutý sloupec se nabídne vždy, aby šel vypnout.</param>
     public StopColumnsEditorDialogViewModel(
@@ -101,6 +108,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         List<StopColumn> columns,
         Func<string, bool>? nabizetSloupec = null)
     {
+        _puvodni = columns;
         var rows = new List<StopColumnVM>();
         foreach (var col in columns)
         {
@@ -116,7 +124,9 @@ class StopColumnsEditorDialogViewModel : EDViewModel
             if (!presentKeys.Contains(def.Key) && nabizetSloupec?.Invoke(def.Key) != false)
             {
                 def.Visible = false;
-                rows.Add(StopColumnVM.FromModel(def, element));
+                var row = StopColumnVM.FromModel(def, element);
+                rows.Add(row);
+                _doplnene[def.Key] = JsonSerializer.Serialize(row.ToModel());
             }
 
         // Seznam zastávek se při přesahu zmenší (TableLayout - nejdřív pevné šířky, pak zmenšení).
@@ -131,7 +141,12 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     protected override void OnOk()
     {
         // Element-level styl + ostatní general props řeší embedded EDInputForm (code-behind).
-        ResultColumns = [.. Columns.Rows.Cast<StopColumnVM>().Select(vm => vm.ToModel()), .. _nenabizene];
+        List<StopColumn> vysledek = [.. Columns.Rows.Cast<StopColumnVM>().Select(vm => vm.ToModel()), .. _nenabizene];
+        ResultColumns = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodni, vysledek,
+            c => _nenabizene.Contains(c) || NedotcenyDoplneny(c));
         CloseDialog(true);
     }
+
+    private bool NedotcenyDoplneny(StopColumn c) =>
+        _doplnene.TryGetValue(c.Key, out var json) && JsonSerializer.Serialize(c) == json;
 }

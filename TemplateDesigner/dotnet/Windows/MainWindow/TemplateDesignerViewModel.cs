@@ -1207,6 +1207,16 @@ public class TemplateDesignerViewModel : EDViewModel
         Execute(cmds.Count == 1 ? cmds[0] : new CompositeCommand(label, cmds));
     }
 
+    /// <summary>Příkaz jen pro hodnotu, která se opravdu změnila - OK okna beze změny nesmí přidat krok
+    /// do Ctrl+Z ani označit šablonu jako změněnou (`B194d` E13d). Okno seznamy sloupců skládá znovu,
+    /// proto se porovnává obsah, ne instance.</summary>
+    private static void AddIfChanged<T>(List<IDesignerCommand> cmds, string label, T oldValue, T newValue,
+        Action<object?> apply)
+    {
+        if (JsonSerializer.Serialize(oldValue) == JsonSerializer.Serialize(newValue)) return;
+        cmds.Add(new SetPropertyCommand(label, oldValue, newValue, apply));
+    }
+
     // ── Aplikace výsledků editorů sloupců (dialog otevírá code-behind; sestavení
     //    a vykonání příkazů = business logika, patří sem do VM). Metody neznají WPF. ──
 
@@ -1220,17 +1230,17 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.Add(new SetPropertyCommand("Záhlaví hodin", element.HourColumnHeader, hourColumnHeader,
-            v => element.HourColumnHeader = (string)v!));
-        cmds.Add(new SetPropertyCommand("Šířka hodin", element.HourColumnWidth, hourColumnWidth,
-            v => element.HourColumnWidth = (float)v!));
+        AddIfChanged(cmds, "Záhlaví hodin", element.HourColumnHeader, hourColumnHeader,
+            v => element.HourColumnHeader = (string)v!);
+        AddIfChanged(cmds, "Šířka hodin", element.HourColumnWidth, hourColumnWidth,
+            v => element.HourColumnWidth = (float)v!);
         if (hasGroups)
-            cmds.Add(new SetPropertyCommand("Skupiny dnů", element.GroupColumns, resultGroupColumns,
-                v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
-        cmds.Add(new SetPropertyCommand("Styl sloupce hodin", element.HourColumnStyle, resultHourColumnStyle,
-            v => element.HourColumnStyle = (ColumnVisualStyle?)v));
-        cmds.Add(new SetPropertyCommand("Vlastní sloupce", element.CustomColumns, resultCustomColumns,
-            v => element.CustomColumns = (List<DepartureColumnDefinition>?)v));
+            AddIfChanged(cmds, "Skupiny dnů", element.GroupColumns, resultGroupColumns,
+                v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!);
+        AddIfChanged(cmds, "Styl sloupce hodin", element.HourColumnStyle, resultHourColumnStyle,
+            v => element.HourColumnStyle = (ColumnVisualStyle?)v);
+        AddIfChanged(cmds, "Vlastní sloupce", element.CustomColumns, resultCustomColumns,
+            v => element.CustomColumns = (List<DepartureColumnDefinition>?)v);
         // Re-fetch i srovnání parametru rozvržení řeší Execute (RefetchIfColumnsDefinitionChanged).
         ExecuteAsComposite("Nastavení odjezdů", cmds);
     }
@@ -1253,8 +1263,8 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.Add(new SetPropertyCommand("Sloupce zastávek", element.Columns, resultColumns,
-            v => element.Columns = (List<StopColumn>)v!));
+        AddIfChanged(cmds, "Sloupce zastávek", element.Columns, resultColumns,
+            v => element.Columns = (List<StopColumn>)v!);
         ExecuteAsComposite("Nastavení zastávek", cmds);
     }
 
@@ -1263,8 +1273,8 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.Add(new SetPropertyCommand("Sloupce linkového JŘ", element.Columns, resultColumns,
-            v => element.Columns = (List<StopColumn>)v!));
+        AddIfChanged(cmds, "Sloupce linkového JŘ", element.Columns, resultColumns,
+            v => element.Columns = (List<StopColumn>)v!);
         ExecuteAsComposite("Nastavení linkového JŘ", cmds);
     }
 
@@ -1273,12 +1283,10 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.Add(new SetPropertyCommand("Sloupce tabulky", element.Columns, resultColumns,
-            v => element.Columns = (List<TableColumn>)v!));
+        AddIfChanged(cmds, "Sloupce tabulky", element.Columns, resultColumns,
+            v => element.Columns = (List<TableColumn>)v!);
         ExecuteAsComposite("Nastavení tabulky", cmds);
     }
-
-    /// <summary>Statická tabulka (Fixed/Dynamic): sloupce + řádky (Fixed) + souhrnné řádky jako jeden undo krok.</summary>
 
     private void Undo()
     {
