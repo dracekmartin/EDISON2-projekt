@@ -125,6 +125,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
             ElementWidth = () => element.Width,
             CanFit = true,
             MultilineHeader = true,
+            UsesStyleForm = true,
         };
     }
 

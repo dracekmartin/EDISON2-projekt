@@ -612,8 +612,10 @@ public class EDInputFormSchemaDriftTests
         //     nepatří, protože se **nikdy nezobrazí**: klient je před vyplněním přepíše hodnotami
         //     z kaskády (buňka je překryv nad nastavením celé tabulky). Vazbu na C# i pokrytí
         //     kaskádou hlídá `FixedTableCellFormattingTests` - přísněji, než by uměl tenhle test.
+        //   TableColumnEdit = styl vybraného sloupce na záložce Sloupce. Týž důvod jako u buňky,
+        //     vazbu hlídá `FormularStyluSloupceTests`.
         var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "TableCellEdit.cls" };
+            { "TableCellEdit.cls", "TableColumnEdit.cls" };
 
         var covered = SchemaMap.Select(row => (string)row[0]!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);

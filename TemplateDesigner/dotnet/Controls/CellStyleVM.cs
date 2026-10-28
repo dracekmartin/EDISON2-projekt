@@ -229,6 +229,26 @@ public class CellStyleVM : INotifyPropertyChanged
         return s.IsEmpty ? null : s;
     }
 
+    /// <summary>Převezme explicitní hodnoty ze stylu (null = vše se dědí) - zápis z formuláře stylu sloupce.</summary>
+    public void Load(TextStyle? style)
+    {
+        FontFamily    = style?.FontFamily;
+        FontSize      = style?.FontSize;
+        FontWeight    = style?.FontWeight;
+        Bold          = style?.Bold;
+        Italic        = style?.Italic;
+        Underline     = style?.Underline;
+        Strikethrough = style?.Strikethrough;
+        TextColor     = style?.TextColor;
+        BgColor       = style?.BackgroundColor;
+        HAlign        = style?.HAlign;
+        VAlign        = style?.VAlign;
+        PaddingTop    = style?.PaddingTop;
+        PaddingRight  = style?.PaddingRight;
+        PaddingBottom = style?.PaddingBottom;
+        PaddingLeft   = style?.PaddingLeft;
+    }
+
     /// <summary>Resetuje všechny explicitní hodnoty na null (→ plně se dědí z Inherited).</summary>
     public void Reset()
     {

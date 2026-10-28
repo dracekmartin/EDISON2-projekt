@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-28 (6) - Styl sloupce Seznamu zastávek ve formuláři jako styl prvku (`B194d` E13c, prototyp)
+
+Na záložce Sloupce okna Seznamu zastávek se styl záhlaví a buněk sloupce edituje formulářem se stejnou sadou stylu jako ve formuláři prvku (`TableColumnEdit.cls`).
+Pořadí, popisky, meze i vnitřní okraj (nahoře, vpravo, dole, vlevo místo šipek) jsou tak na obou místech stejné a nemůžou se rozejít.
+- Pole ukazují, jak se sloupec vytiskne, i když hodnotu dědí z prvku; uloží se jen to, co uživatel změní. Vymazané pole vrátí dědění, zaškrtávátka a volby vrátí tlačítko Resetovat styl sloupce.
+- Šedé zděděné hodnoty a „×" u jednotlivých polí v tomto okně nejsou (rozhodnutí Jan 28. 10., varianta B).
+- Minuty odjezdů, Tabulka spojů a Tabulka z dat mají zatím dosavadní editor stylu.
+
 ## 2026-10-28 (5) - Jedna společná záložka Sloupce pro všechny tabulky (`B194d` E13c)
 
 Seznam zastávek, Minuty odjezdů, Tabulka spojů a Tabulka z dat měly záložku Sloupce každá ve vlastní kopii (asi 800 skoro shodných řádků) a texty i chování se rozešly.
