@@ -237,8 +237,11 @@
   mají čísla ve stejném tvaru („1", „2"), úklid by smazal nastavení skupin jiných linek (chyba `E13g`), a vzor
   styly podle pořadí přebírá záměrně. Kdyby to vadilo: vlastní sloupce jiným tvarem čísla, s migrací šablon.
 - **H6** Výška záhlaví podle toho, co dělá: Tabulka z dat „Nejmenší výška", Minuty „Nejmenší výška řádku",
-  Pevná tabulka zůstává „Výška záhlaví" s nápovědou, že je pevná (samotné „Výška" už nese výška prvku).
-  Hledání „výška záhlaví" je u prvních dvou do `H12` nenajde (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (22)).
+  Pevná tabulka „Výška" ve skupině Styl řádku záhlaví s nápovědou, že je pevná. Hledání „výška záhlaví"
+  je do `H12` nenajde (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (22)).
+- **H9 (1, 2, 4, 5)** Poznámky: styl záhlaví v pořadí sady stylu a s Tučné / Kurzíva, Datové buňky Font, Řez,
+  Barva textu, Oddělovač v Rozložení, Negativní značky bez opakování názvu skupiny; pořadí skupin zůstává
+  (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (23)).
 
 ## Popisky polí podle pravidel - složité prvky (hotovo 28. 10. 2026)
 

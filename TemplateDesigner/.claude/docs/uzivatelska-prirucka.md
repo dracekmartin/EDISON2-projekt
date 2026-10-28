@@ -849,7 +849,7 @@ Vysvětlivky pod odjezdy.
 - **Text záhlaví** - co je v pruhu napsané (výchozí „Poznámky")
 - **Velikost** (skupina Záhlaví) - velikost písma v pruhu záhlaví; prázdné = 9 bodů. Výška pruhu
   se počítá z ní, takže větší písmo pruh zvýší. Poznámky pod ním mají velikost vlastní
-- **Oddělovač** - text mezi značkou a popisem (výchozí „ - ")
+- **Oddělovač** (skupina Rozložení) - text mezi značkou a popisem (výchozí „ - ")
 - **Velikost poznámek** (skupina Rozložení) - velikost písma. Nevejdou-li se poznámky do prvku, písmo se zmenší
   a aplikace to oznámí ve stavovém řádku
 - **Výška řádku** - prázdné = podle velikosti písma (mezera pak roste s písmem). Vlastní hodnotu
@@ -860,7 +860,7 @@ Vysvětlivky pod odjezdy.
 - **Řazení poznámek** - Podle typu (dny platnosti → značky → atributy → text; výchozí) / Podle dat (pořadí, v jakém poznámky přišly) / Délka vzestupně / Délka sestupně. U linkového JŘ platí uvnitř každého druhu a volba Podle typu tam není
 - **Šířka buňky značky** - pevná šířka místa pro značku, aby texty poznámek začínaly pod sebou (0 = text hned za značkou)
 - **Negativní značky / Speciální znaky / Textové poznámky** (skupina Obsah poznámek, jen vývěska) - přepínače, které typy poznámek se v legendě vůbec zobrazí
-- **Barva pozadí značky / Barva textu značky** (skupina Negativní značky) - barvy invertovaného boxu u negativních značek
+- **Barva pozadí / Barva textu** (skupina Negativní značky) - barvy invertovaného boxu u negativních značek
 
 **Co se na vývěsce ukáže** (jen zastávkový JŘ z AD dat) - všechno se zapíná tady, v jednom seznamu:
 

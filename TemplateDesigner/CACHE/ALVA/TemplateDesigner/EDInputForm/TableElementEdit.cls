@@ -49,9 +49,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("hstyle", "Styl řádku záhlaví")
         s f = form.AddBool("ShowHeader", "Záhlaví sloupců", 0)
         s f.helpText = "Nové tabulky ho nepotřebují - záhlaví si udělejte z prvního řádku (tučně). Zůstává kvůli starším šablonám."
-        // „Výška záhlaví", ne samotné „Výška": to už je výška prvku a asistent i protokol importu poznají
-        // pole podle popisku.
-        s f = form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
+        // Ve skupině části se název části neopakuje (`ux §8`); pevnou výšku říká nápověda (`B194h` H6).
+        s f = form.AddDecimal("HeaderHeight", "Výška", 8, 2, 50, "mm")
         s f.helpText = "Pevná výška řádku záhlaví - podle textu se nezvětšuje."
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl řádku záhlaví", "#FF333333", "", 0, "", 1)
 

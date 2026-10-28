@@ -303,7 +303,7 @@ Kanonické termíny (font/styl textu):
 | Tučné / Kurzíva / Podtržení / Přeškrtnutí | **Tučné** / **Kurzíva** / **Podtržení** / **Přeškrtnutí** | anglicismy |
 | Vzhled jedné části prvku | **„Část: Vlastnost"** - předpona a kanonický název („Minuta: Velikost", „Aktuální: Tučné", „Projeté: Barva textu"); vysvětlivka prázdné hodnoty do nápovědy (rozhodnutí Jan 26. 10.) | ~~Tučně aktuální zast.~~, ~~Barva projetých~~ |
 | Řádkování (LineSpacing) | **Řádkování** | - |
-| Barva textu / pozadí | **Barva textu** / **Barva pozadí** - ve skupině části prvku (Záhlaví, Datové buňky) bez upřesnění, část říká název skupiny; jinde s částí („Barva pozadí značky", „Aktuální: Barva pozadí"). Celý tvar „Barva …" kvůli hledání podle „barva" (rozhodnutí Jan 28. 10.) | ~~Pozadí~~ samotné, ~~Výplň~~ |
+| Barva textu / pozadí | **Barva textu** / **Barva pozadí** - ve skupině části prvku (Záhlaví, Datové buňky) bez upřesnění, část říká název skupiny; jinde s částí („Negativní značka: Barva pozadí" v Minutách, „Aktuální: Barva pozadí"). Celý tvar „Barva …" kvůli hledání podle „barva" (rozhodnutí Jan 28. 10.) | ~~Pozadí~~ samotné, ~~Výplň~~ |
 | Totéž v programu bez skupiny (rychlé barvy zón tabulky, asistent, import z PDF) | **Barva textu záhlaví** / **Barva pozadí záhlaví**, **Barva textu buněk** / **Barva pozadí buněk** | ~~Pozadí záhlaví~~, ~~Pozadí buněk~~ |
 
 Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):

@@ -1099,8 +1099,8 @@ public class TableElement : TemplateElement
         },
         new FloatPropertyDescriptor
         {
-            Label = "Výška záhlaví",
-            Group = "Tabulka",
+            Label = "Výška",
+            Group = "Styl řádku záhlaví",
             Get   = () => HeaderHeight,
             Set   = v => HeaderHeight = v,
             Min   = 2, Max = 50, Unit = "mm"

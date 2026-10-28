@@ -24,7 +24,7 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 
 Nezávislá revize `B194d` (formuláře proti serveru, kód a testy, dokumentace). Projít před `B194f`.
 
-- **H9** Poznámky: obrácené pořadí stylu záhlaví, chybí Tučné a Kurzíva, Oddělovač v Datových buňkách [S] **Jan**
+- **H9** Poznámky: Velikost a Výška řádku do Datových buněk jako u tabulek, nebo nechat v Rozložení (nález Pavel 1. 9.)? [S] **Jan**
 - **H10** Tabulka spojů: Přípojné řádky za Šířkou sloupců, obecná skupina „Řádky", řádky bez nápovědy [S] **Jan**
 - **H11** Minuty: předpona „Text:" ve Značkách u odjezdů neřekne, o jaký text jde [S] **Jan**
 - **H12** Hledání ve formuláři nenajde „písmo", „podbarvení" ani „čára" a zahltí polohou prvku [M] **Jan**

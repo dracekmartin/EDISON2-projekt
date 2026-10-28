@@ -792,7 +792,7 @@ public class EDInputFormSchemaDriftTests
         //   StrokeWidth - u čáry je to „Tloušťka" (čáry samotné), u obdélníku „Tloušťka okraje"
         // („Height" tu byl do 29. 7. kvůli rozdílnému popisku výšky - sdílený BaseElementFields
         //  ho sjednotil na „Výška" + nápovědu, takže výjimka padla.)
-        //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Barva pozadí značky"), v mřížce
+        //   NegativniZnacka*Color - v Poznámkách mají vlastní skupinu Negativní značky („Barva pozadí"), v mřížce
         //     odjezdů stojí hned vedle obecné barvy symbolu anotace, takže tam musí být v popisku
         //     rozlišené („Negativní značka: Barva pozadí"); bez toho se nedá poznat, co která barva řídí.
         //   Format - u stránky je to formát papíru („Formát"), u buňky formát vypisované hodnoty
