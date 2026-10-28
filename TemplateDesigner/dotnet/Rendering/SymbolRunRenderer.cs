@@ -134,6 +134,7 @@ public static class SymbolRunRenderer
 
             var (xPx, baselineY) = CellLayout.TextAnchorPx(
                 tl, br, totalPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
+            float startPx = xPx;
 
             foreach (var r in runs)
             {
@@ -142,6 +143,10 @@ public static class SymbolRunRenderer
                 ctx.Canvas.DrawText(r.Text, xPx, baselineY, f, Paint(r));
                 xPx += f.MeasureText(r.Text);
             }
+
+            // Jedna čára přes všechny úseky, jako u buňky kreslené jedním fontem - podle plného
+            // písma, na kterém úseky sedí.
+            style.DrawTextDecorations(ctx.Canvas, startPx, baselineY, totalPx, normalFont, paint);
         }
         finally
         {

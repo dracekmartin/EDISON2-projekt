@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-28 (2) - Minuta, značky a časy Tabulky spojů kreslí podtržení a přeškrtnutí (`B194d` E3)
+
+Sada stylu Text nabízí Podtržení a Přeškrtnutí, ale minuta a značky u odjezdů v Minutách odjezdů a časy a značky v Tabulce spojů je nekreslily.
+Pole nic nedělala, protože tento text se nekreslí jako celá buňka, ale po kouscích.
+Teď se čára nakreslí stejně jako v buňce: u minuty, u každé textové značky a symbolu a u času v Tabulce spojů jedna přes celý čas i se značkami.
+Negativní značka (invertovaný box) zůstává bez čáry, má vlastní vzhled.
+Reprodukce i pojistka `PodtrzeniTextuVBunceTests` (na původním kódu padala, podtržený a nepodtržený text měl stejný počet tmavých pixelů).
+
 ## 2026-10-28 (1) - Kostra formulářů tabulek, sady stylu Buňka a Text, „Barva pozadí" (`B194d` E3)
 
 Rozhodnutí Jan 28. 10. (detail `konzistence-agend-jr.md` E3), zatím zapracované u Seznamu zastávek a ve sdílené sadě stylu.

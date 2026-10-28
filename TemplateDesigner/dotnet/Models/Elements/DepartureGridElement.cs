@@ -1349,11 +1349,12 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
 
                     var minPt = ctx.ToCanvas(minX + 0.5f, currentY + padT + scaledRowH * TextBaselineFactor);
                     ctx.Canvas.DrawText(minuteText, minPt.X, minPt.Y, mFont, minutePaint);
+                    float minuteTextW = mFont.MeasureText(minuteText);
+                    ms.DrawTextDecorations(ctx.Canvas, minPt.X, minPt.Y, minuteTextW, mFont, minutePaint);
 
                     // Anotace - inline za minutou
                     if (ShowAnotace && odj.Anotace.Count > 0)
                     {
-                        float minuteTextW = mFont.MeasureText(minuteText);
                         float anotX = minPt.X + minuteTextW + anotGapPx;
 
                         foreach (var anot in odj.Anotace)
@@ -1386,7 +1387,10 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
                             }
 
                             ctx.Canvas.DrawText(anotZnak, anotX, minPt.Y, aFont, aPaint);
-                            anotX += aFont.MeasureText(anotZnak) + anotInterGapPx;
+                            float anotW = aFont.MeasureText(anotZnak);
+                            (anot.Typ == TypAnotace.Text ? anotTextStyle : anotSymStyle)
+                                .DrawTextDecorations(ctx.Canvas, anotX, minPt.Y, anotW, aFont, aPaint);
+                            anotX += anotW + anotInterGapPx;
                         }
                     }
 
