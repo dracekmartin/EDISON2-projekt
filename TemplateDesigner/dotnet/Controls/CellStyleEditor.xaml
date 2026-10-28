@@ -39,6 +39,12 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Margin" Value="0,0,8,0"/>
         </Style>
+        <!-- Jednotka za polem, jako ve formuláři prvku -->
+        <Style x:Key="Unit" TargetType="TextBlock">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="4,0,0,0"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Muted}"/>
+        </Style>
     </UserControl.Resources>
 
     <!-- Dvousloupcová mřížka: popisky ve sdíleném levém sloupci (SharedSizeGroup), prvky pod sebou.
@@ -51,13 +57,13 @@
             </Style>
         </StackPanel.Resources>
 
-        <!-- Font -->
+        <!-- Pořadí a popisky = sada stylu formuláře prvku (StyleFields.cls), hlídá EditorStyluSloupceTests -->
         <Grid Visibility="{Binding EditOptions.AllowFontFamily, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Font:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Font" Style="{StaticResource FieldLabel}"/>
             <Grid Grid.Column="1" Width="130" HorizontalAlignment="Left">
                 <ComboBox x:Name="FontFamilyBox"
                           IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True"
@@ -71,13 +77,13 @@
             </Grid>
         </Grid>
 
-        <!-- Řez (váha) - dynamická nabídka reálných řezů vybrané rodiny; „Automaticky (dědit)" = null -->
+        <!-- Řez (váha) - nabídka reálných řezů vybrané rodiny; Automaticky = null -->
         <Grid Visibility="{Binding EditOptions.AllowFontFamily, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Řez:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Řez" Style="{StaticResource FieldLabel}"/>
             <ComboBox Grid.Column="1" x:Name="FontWeightBox" Width="130" HorizontalAlignment="Left"
                       ItemsSource="{Binding WeightOptions}"
                       DisplayMemberPath="Label" SelectedValuePath="Value"
@@ -85,117 +91,92 @@
                       ToolTip="Řez (váha) písma - nabídka dle reálných řezů vybraného fontu"/>
         </Grid>
 
-        <!-- Velikost -->
         <Grid Visibility="{Binding EditOptions.AllowFontSize, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Velikost:" Style="{StaticResource FieldLabel}"/>
-            <Grid Grid.Column="1" Width="70" HorizontalAlignment="Left">
-                <ComboBox x:Name="FontSizeBox"
-                          IsEditable="True"
-                          ToolTip="Prázdné = převezme se z nadřazeného stylu"
-                          ItemsSource="{Binding FontSizeOptions, ElementName=Root}"
-                          Text="{Binding FontSize, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                <TextBlock Style="{StaticResource InheritedPlaceholder}"
-                           Text="{Binding Inherited.FontSize, StringFormat='{}{0}pt'}"
-                           Visibility="{Binding Text, ElementName=FontSizeBox, Converter={StaticResource NullToVis}}"/>
-            </Grid>
-        </Grid>
-
-        <!-- Styl: Tučné / Kurzíva / Podtržení / Přeškrtnutí - 2-state checkboxy (efektivní hodnota),
-             reset × jen při explicitním přepsání. Jednotlivé volby se skrývají dle EditOptions. -->
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Styl:" Style="{StaticResource FieldLabel}"/>
-            <WrapPanel Grid.Column="1">
-                <StackPanel Orientation="Horizontal" Margin="0,0,8,0" VerticalAlignment="Center"
-                            Visibility="{Binding EditOptions.AllowBold, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                    <CheckBox Content="Tučné" VerticalAlignment="Center"
-                              IsChecked="{Binding EffectiveBold, UpdateSourceTrigger=PropertyChanged}"
-                              ToolTip="Kliknutím nastavíte explicitně. Pokud není přepsáno, dědí se."/>
-                    <Button Style="{StaticResource ResetButton}" CommandParameter="Bold"
-                            Visibility="{Binding HasExplicitBold, Converter={StaticResource BoolToVis}}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,8,0" VerticalAlignment="Center"
-                            Visibility="{Binding EditOptions.AllowItalic, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                    <CheckBox Content="Kurzíva" VerticalAlignment="Center"
-                              IsChecked="{Binding EffectiveItalic, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button Style="{StaticResource ResetButton}" CommandParameter="Italic"
-                            Visibility="{Binding HasExplicitItalic, Converter={StaticResource BoolToVis}}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,0,8,0" VerticalAlignment="Center"
-                            Visibility="{Binding EditOptions.AllowUnderline, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                    <CheckBox Content="Podtržení" VerticalAlignment="Center"
-                              IsChecked="{Binding EffectiveUnderline, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button Style="{StaticResource ResetButton}" CommandParameter="Underline"
-                            Visibility="{Binding HasExplicitUnderline, Converter={StaticResource BoolToVis}}"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
-                            Visibility="{Binding EditOptions.AllowStrikethrough, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                    <CheckBox Content="Přeškrtnutí" VerticalAlignment="Center"
-                              IsChecked="{Binding EffectiveStrikethrough, UpdateSourceTrigger=PropertyChanged}"/>
-                    <Button Style="{StaticResource ResetButton}" CommandParameter="Strikethrough"
-                            Visibility="{Binding HasExplicitStrikethrough, Converter={StaticResource BoolToVis}}"/>
-                </StackPanel>
-            </WrapPanel>
-        </Grid>
-
-        <!-- Vodorovně (HAlign) -->
-        <Grid Visibility="{Binding EditOptions.AllowHAlign, ElementName=Root, Converter={StaticResource BoolToVis}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Zarovnání vodorovně:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Velikost" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Grid Width="120">
-                    <ComboBox x:Name="HAlignBox"
-                              ItemsSource="{Binding HAlignOptions, ElementName=Root}"
-                              DisplayMemberPath="Label" SelectedValuePath="Value"
-                              SelectedValue="{Binding HAlign}"/>
+                <Grid Width="70">
+                    <ComboBox x:Name="FontSizeBox"
+                              IsEditable="True"
+                              ToolTip="Prázdné = převezme se z nadřazeného stylu. Rozsah 3 až 72 pt."
+                              ItemsSource="{Binding FontSizeOptions, ElementName=Root}"
+                              Text="{Binding FontSize, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                     <TextBlock Style="{StaticResource InheritedPlaceholder}"
-                               Text="{Binding Inherited.HAlign, Converter={StaticResource HAlignToLabel}, ConverterParameter=cs}"
-                               Visibility="{Binding HAlign, Converter={StaticResource NullToVis}}"/>
+                               Text="{Binding Inherited.FontSize}"
+                               Visibility="{Binding Text, ElementName=FontSizeBox, Converter={StaticResource NullToVis}}"/>
                 </Grid>
-                <Button Style="{StaticResource ResetButton}" CommandParameter="HAlign"
-                        Visibility="{Binding HasExplicitHAlign, Converter={StaticResource BoolToVis}}"/>
+                <TextBlock Text="pt" Style="{StaticResource Unit}"/>
             </StackPanel>
         </Grid>
 
-        <!-- Svisle (VAlign) -->
-        <Grid Visibility="{Binding EditOptions.AllowVAlign, ElementName=Root, Converter={StaticResource BoolToVis}}">
+        <!-- Zaškrtávátka ukazují efektivní hodnotu, × jen při přepsání -->
+        <Grid Visibility="{Binding EditOptions.AllowBold, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Zarovnání svisle:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Tučné" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Grid Width="120">
-                    <ComboBox x:Name="VAlignBox"
-                              ItemsSource="{Binding VAlignOptions, ElementName=Root}"
-                              DisplayMemberPath="Label" SelectedValuePath="Value"
-                              SelectedValue="{Binding VAlign}"/>
-                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
-                               Text="{Binding Inherited.VAlign, Converter={StaticResource VAlignToLabel}, ConverterParameter=cs}"
-                               Visibility="{Binding VAlign, Converter={StaticResource NullToVis}}"/>
-                </Grid>
-                <Button Style="{StaticResource ResetButton}" CommandParameter="VAlign"
-                        Visibility="{Binding HasExplicitVAlign, Converter={StaticResource BoolToVis}}"/>
+                <CheckBox VerticalAlignment="Center"
+                          IsChecked="{Binding EffectiveBold, UpdateSourceTrigger=PropertyChanged}"
+                          ToolTip="Kliknutím nastavíte explicitně. Pokud není přepsáno, dědí se."/>
+                <Button Style="{StaticResource ResetButton}" CommandParameter="Bold"
+                        Visibility="{Binding HasExplicitBold, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
         </Grid>
 
-        <!-- Barva textu (swatch = efektivní barva explicit ?? inherited; × jen při explicit) -->
+        <Grid Visibility="{Binding EditOptions.AllowItalic, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Kurzíva" Style="{StaticResource FieldLabel}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <CheckBox VerticalAlignment="Center"
+                          IsChecked="{Binding EffectiveItalic, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Style="{StaticResource ResetButton}" CommandParameter="Italic"
+                        Visibility="{Binding HasExplicitItalic, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Visibility="{Binding EditOptions.AllowUnderline, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Podtržení" Style="{StaticResource FieldLabel}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <CheckBox VerticalAlignment="Center"
+                          IsChecked="{Binding EffectiveUnderline, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Style="{StaticResource ResetButton}" CommandParameter="Underline"
+                        Visibility="{Binding HasExplicitUnderline, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Visibility="{Binding EditOptions.AllowStrikethrough, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Přeškrtnutí" Style="{StaticResource FieldLabel}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <CheckBox VerticalAlignment="Center"
+                          IsChecked="{Binding EffectiveStrikethrough, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Style="{StaticResource ResetButton}" CommandParameter="Strikethrough"
+                        Visibility="{Binding HasExplicitStrikethrough, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Vzorek = efektivní barva; textový zápis umí i barvu z dat ({BARVA_LINKY}), kterou výběr barvy nenabídne -->
         <Grid Visibility="{Binding EditOptions.AllowTextColor, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Barva textu:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Barva textu" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
                         Command="{Binding PickTextColorCommand}"
@@ -209,8 +190,6 @@
                         </Border.Background>
                     </Border>
                 </Button>
-                <!-- Textový zápis vedle výběru: jinak nejde zadat barvu z dat ({BARVA_LINKY}),
-                     kterou nativní color picker nabídnout neumí. -->
                 <Grid Width="110" Margin="0,0,2,0">
                     <TextBox x:Name="TextColorBox"
                              Text="{Binding TextColor, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
@@ -225,13 +204,12 @@
             </StackPanel>
         </Grid>
 
-        <!-- Pozadí -->
         <Grid Visibility="{Binding EditOptions.AllowBackgroundColor, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Barva pozadí:" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Barva pozadí" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
                         Command="{Binding PickBgColorCommand}"
@@ -259,51 +237,117 @@
             </StackPanel>
         </Grid>
 
-        <!-- Vnitřní okraj (mm). Šipky = směr, kam se posune text (design-tool konvence, ne CSS edge):
-             ↑ push nahoru = PaddingBottom · → doprava = PaddingLeft · ↓ dolů = PaddingTop · ← doleva = PaddingRight -->
+        <Grid Visibility="{Binding EditOptions.AllowHAlign, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Zarovnání vodorovně" Style="{StaticResource FieldLabel}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Grid Width="120">
+                    <ComboBox x:Name="HAlignBox"
+                              ItemsSource="{Binding HAlignOptions, ElementName=Root}"
+                              DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding HAlign}"/>
+                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                               Text="{Binding Inherited.HAlign, Converter={StaticResource HAlignToLabel}, ConverterParameter=cs}"
+                               Visibility="{Binding HAlign, Converter={StaticResource NullToVis}}"/>
+                </Grid>
+                <Button Style="{StaticResource ResetButton}" CommandParameter="HAlign"
+                        Visibility="{Binding HasExplicitHAlign, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Visibility="{Binding EditOptions.AllowVAlign, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Zarovnání svisle" Style="{StaticResource FieldLabel}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Grid Width="120">
+                    <ComboBox x:Name="VAlignBox"
+                              ItemsSource="{Binding VAlignOptions, ElementName=Root}"
+                              DisplayMemberPath="Label" SelectedValuePath="Value"
+                              SelectedValue="{Binding VAlign}"/>
+                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                               Text="{Binding Inherited.VAlign, Converter={StaticResource VAlignToLabel}, ConverterParameter=cs}"
+                               Visibility="{Binding VAlign, Converter={StaticResource NullToVis}}"/>
+                </Grid>
+                <Button Style="{StaticResource ResetButton}" CommandParameter="VAlign"
+                        Visibility="{Binding HasExplicitVAlign, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </Grid>
+
         <Grid Visibility="{Binding EditOptions.AllowPadding, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Vnitřní okraj (mm):" Style="{StaticResource FieldLabel}"/>
+            <TextBlock Grid.Column="0" Text="Vnitřní okraj nahoře" Style="{StaticResource FieldLabel}"/>
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <TextBlock Text="↑" VerticalAlignment="Center" Margin="0,0,2,0"
-                           ToolTip="Posune text nahoru (vnitřní okraj dole)"/>
-                <Grid Width="45" Margin="0,0,6,0">
-                    <TextBox x:Name="PadUp"
-                             Text="{Binding PaddingBottom, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
-                               Text="{Binding Inherited.PaddingBottom}"
-                               Visibility="{Binding Text, ElementName=PadUp, Converter={StaticResource NullToVis}}"/>
-                </Grid>
-                <TextBlock Text="→" VerticalAlignment="Center" Margin="0,0,2,0"
-                           ToolTip="Posune text doprava (vnitřní okraj vlevo)"/>
-                <Grid Width="45" Margin="0,0,6,0">
-                    <TextBox x:Name="PadRightward"
-                             Text="{Binding PaddingLeft, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
-                               Text="{Binding Inherited.PaddingLeft}"
-                               Visibility="{Binding Text, ElementName=PadRightward, Converter={StaticResource NullToVis}}"/>
-                </Grid>
-                <TextBlock Text="↓" VerticalAlignment="Center" Margin="0,0,2,0"
-                           ToolTip="Posune text dolů (vnitřní okraj nahoře)"/>
-                <Grid Width="45" Margin="0,0,6,0">
-                    <TextBox x:Name="PadDown"
+                <Grid Width="70">
+                    <TextBox x:Name="PaddingTopBox" ToolTip="Prázdné = převezme se z nadřazeného stylu. Rozsah 0 až 20 mm."
                              Text="{Binding PaddingTop, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                     <TextBlock Style="{StaticResource InheritedPlaceholder}"
                                Text="{Binding Inherited.PaddingTop}"
-                               Visibility="{Binding Text, ElementName=PadDown, Converter={StaticResource NullToVis}}"/>
+                               Visibility="{Binding Text, ElementName=PaddingTopBox, Converter={StaticResource NullToVis}}"/>
                 </Grid>
-                <TextBlock Text="←" VerticalAlignment="Center" Margin="0,0,2,0"
-                           ToolTip="Posune text doleva (vnitřní okraj vpravo)"/>
-                <Grid Width="45">
-                    <TextBox x:Name="PadLeftward"
+                <TextBlock Text="mm" Style="{StaticResource Unit}"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Visibility="{Binding EditOptions.AllowPadding, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Vnitřní okraj vpravo" Style="{StaticResource FieldLabel}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Grid Width="70">
+                    <TextBox x:Name="PaddingRightBox" ToolTip="Prázdné = převezme se z nadřazeného stylu. Rozsah 0 až 20 mm."
                              Text="{Binding PaddingRight, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                     <TextBlock Style="{StaticResource InheritedPlaceholder}"
                                Text="{Binding Inherited.PaddingRight}"
-                               Visibility="{Binding Text, ElementName=PadLeftward, Converter={StaticResource NullToVis}}"/>
+                               Visibility="{Binding Text, ElementName=PaddingRightBox, Converter={StaticResource NullToVis}}"/>
                 </Grid>
+                <TextBlock Text="mm" Style="{StaticResource Unit}"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Visibility="{Binding EditOptions.AllowPadding, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Vnitřní okraj dole" Style="{StaticResource FieldLabel}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Grid Width="70">
+                    <TextBox x:Name="PaddingBottomBox" ToolTip="Prázdné = převezme se z nadřazeného stylu. Rozsah 0 až 20 mm."
+                             Text="{Binding PaddingBottom, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                               Text="{Binding Inherited.PaddingBottom}"
+                               Visibility="{Binding Text, ElementName=PaddingBottomBox, Converter={StaticResource NullToVis}}"/>
+                </Grid>
+                <TextBlock Text="mm" Style="{StaticResource Unit}"/>
+            </StackPanel>
+        </Grid>
+
+        <Grid Visibility="{Binding EditOptions.AllowPadding, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="Lbl"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Vnitřní okraj vlevo" Style="{StaticResource FieldLabel}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Grid Width="70">
+                    <TextBox x:Name="PaddingLeftBox" ToolTip="Prázdné = převezme se z nadřazeného stylu. Rozsah 0 až 20 mm."
+                             Text="{Binding PaddingLeft, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                               Text="{Binding Inherited.PaddingLeft}"
+                               Visibility="{Binding Text, ElementName=PaddingLeftBox, Converter={StaticResource NullToVis}}"/>
+                </Grid>
+                <TextBlock Text="mm" Style="{StaticResource Unit}"/>
             </StackPanel>
         </Grid>
 

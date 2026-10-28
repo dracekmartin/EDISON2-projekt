@@ -20,6 +20,10 @@ namespace TemplateDesigner;
 /// </summary>
 public class CellStyleVM : INotifyPropertyChanged
 {
+    /// <summary>Meze velikosti a vnitřního okraje - shodné s formulářem prvku (StyleFields.cls),
+    /// hlídá <c>EditorStyluSloupceTests</c>.</summary>
+    public const float MinFontSize = 3f, MaxFontSize = 72f, MaxPadding = 20f;
+
     // ── Editovatelné vlastnosti (null = dědit) ────────────────────────────
 
     private string?                    _fontFamily;
@@ -39,7 +43,7 @@ public class CellStyleVM : INotifyPropertyChanged
     private float?                     _paddingLeft;
 
     public string?                    FontFamily    { get => _fontFamily;    set { _fontFamily    = NullIfEmpty(value); OnChanged(); OnChanged(nameof(HasExplicitFontFamily)); RefreshWeightOptions(); } }
-    public float?                     FontSize      { get => _fontSize;      set { _fontSize      = value;              OnChanged(); OnChanged(nameof(HasExplicitFontSize)); } }
+    public float?                     FontSize      { get => _fontSize;      set { _fontSize      = Clamp(value, MinFontSize, MaxFontSize); OnChanged(); OnChanged(nameof(HasExplicitFontSize)); } }
     public int?                       FontWeight    { get => _fontWeight;    set { _fontWeight    = value;              OnChanged(); OnChanged(nameof(HasExplicitFontWeight)); } }
     public bool?                      Bold          { get => _bold;          set { _bold          = value;              OnChanged(); OnChanged(nameof(EffectiveBold));          OnChanged(nameof(HasExplicitBold)); } }
     public bool?                      Italic        { get => _italic;        set { _italic        = value;              OnChanged(); OnChanged(nameof(EffectiveItalic));        OnChanged(nameof(HasExplicitItalic)); } }
@@ -49,10 +53,10 @@ public class CellStyleVM : INotifyPropertyChanged
     public string?                    BgColor       { get => _bgColor;       set { SetColor(value, ref _bgColor);   OnChanged(); } }
     public TextHorizontalAlignment?   HAlign        { get => _hAlign;        set { _hAlign        = value;              OnChanged(); OnChanged(nameof(HasExplicitHAlign)); } }
     public TextVerticalAlignment?     VAlign        { get => _vAlign;        set { _vAlign        = value;              OnChanged(); OnChanged(nameof(HasExplicitVAlign)); } }
-    public float?                     PaddingTop    { get => _paddingTop;    set { _paddingTop    = value;              OnChanged(); } }
-    public float?                     PaddingRight  { get => _paddingRight;  set { _paddingRight  = value;              OnChanged(); } }
-    public float?                     PaddingBottom { get => _paddingBottom; set { _paddingBottom = value;              OnChanged(); } }
-    public float?                     PaddingLeft   { get => _paddingLeft;   set { _paddingLeft   = value;              OnChanged(); } }
+    public float?                     PaddingTop    { get => _paddingTop;    set { _paddingTop    = Clamp(value, 0f, MaxPadding); OnChanged(); } }
+    public float?                     PaddingRight  { get => _paddingRight;  set { _paddingRight  = Clamp(value, 0f, MaxPadding); OnChanged(); } }
+    public float?                     PaddingBottom { get => _paddingBottom; set { _paddingBottom = Clamp(value, 0f, MaxPadding); OnChanged(); } }
+    public float?                     PaddingLeft   { get => _paddingLeft;   set { _paddingLeft   = Clamp(value, 0f, MaxPadding); OnChanged(); } }
 
     // ── Derived: efektivní bool (explicit ?? inherited) pro 2-state checkboxy ──
     // Setter nastaví explicit hodnotu (user kliká → explicit override).
@@ -266,6 +270,8 @@ public class CellStyleVM : INotifyPropertyChanged
     /// předchozí. Barva se od zavedení textového zápisu dá napsat rukou, a neplatná uložená hodnota
     /// se dřív projevila až při kreslení a šablona pak vypadala rozbitá (viz <see cref="ColorHex"/>).
     /// Notifikaci pošle volající vždy, takže se pole ve formuláři vrátí na platnou hodnotu.</summary>
+    private static float? Clamp(float? value, float min, float max) => value is { } v ? Math.Clamp(v, min, max) : null;
+
     private static void SetColor(string? value, ref string? target)
     {
         var normalized = NullIfEmpty(value);

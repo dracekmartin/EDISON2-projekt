@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-28 (6) - Styl sloupce má stejná pole jako formulář prvku (`B194d` E13c)
+
+Editor stylu sloupce na záložce Sloupce (všechna čtyři okna tabulek) má pole ve stejném pořadí, se stejnými názvy a mezemi jako sada stylu ve formuláři prvku.
+- Tučné, Kurzíva, Podtržení a Přeškrtnutí jsou samostatné řádky místo společného řádku „Styl:", barvy stojí před zarovnáním jako ve formuláři.
+- Vnitřní okraj má čtyři pole nahoře, vpravo, dole a vlevo místo šipek, které ukazovaly směr posunu textu (šipka nahoru byla okraj dole).
+- Popisky jsou bez dvojteček a velikost i okraj mají jednotku za polem; velikost se omezí na 3 až 72 pt a okraj na 0 až 20 mm.
+- Editor zůstal samostatný: prototyp s formulářem prvku vypadal v okně sloupců cize (vyhledávání, sbalovací skupiny) a Jan ho zamítl. Shodu se sadou formuláře hlídá test.
+
 ## 2026-10-28 (5) - Jedna společná záložka Sloupce pro všechny tabulky (`B194d` E13c)
 
 Seznam zastávek, Minuty odjezdů, Tabulka spojů a Tabulka z dat měly záložku Sloupce každá ve vlastní kopii (asi 800 skoro shodných řádků) a texty i chování se rozešly.

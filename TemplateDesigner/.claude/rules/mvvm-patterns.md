@@ -305,6 +305,9 @@ i chování se rozešly (`B194` E13c) - **novou kopii nepsat**.
 
 `Controls/CellStyleEditor.xaml` - editor stylu sloupce uvnitř záložky. DataContext = `CellStyleVM`.
 Converters v `CellStyleEditor.Converters.cs`. `EditOptions` (`CellStyleEditOptions`) řídí viditelnost řádků.
+⚠️ **Vědomá výjimka z formuláře prvku** (rozhodnutí Jan 28. 10.): EDInputForm v okně sloupců vypadal cize
+(vyhledávání, sbalovací skupiny), proto editor zůstává WPF. Pořadí, popisky a meze (`CellStyleVM.MinFontSize`…)
+ale musí odpovídat sadě `StyleFields.cls` - hlídá `EditorStyluSloupceTests`; nové pole sady přidej i sem.
 
 **`CellStyleVM` - tri-state kaskáda (nullable = dědit):**
 

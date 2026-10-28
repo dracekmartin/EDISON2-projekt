@@ -414,8 +414,8 @@ a u vývěsky se stránkou na zastávku vyjde každá jinak podle toho, kolik m�
 ### Kaskáda stylů u tabulkových prvků
 U tabulek a specializovaných prvků jízdního řádu funguje **kaskáda stylů**: nejčastěji měněné
 barvy (pozadí a text záhlaví/dat) nastavíte rychle přímo v panelu Vlastnosti; detailní styl po
-jednotlivých sloupcích (font, velikost, řez, zarovnání, odsazení, dekorace) se nastavuje
-v dialogu sloupců.
+jednotlivých sloupcích (písmo, barvy, zarovnání a vnitřní okraj) se nastavuje v dialogu sloupců.
+Pole jsou ve stejném pořadí a se stejnými názvy jako ve formuláři prvku.
 
 - Co v dialogu sloupce nenastavíte, se **zdědí** z nastavení celého prvku - v dialogu se to
   zobrazí jako šedý kurzívou psaný náznak zděděné hodnoty.
@@ -895,9 +895,9 @@ Dvoutabový dialog: **Obecné** (vlastnosti prvku) a **Sloupce**:
 
 - Seznam sloupců s checkboxem viditelnosti a tlačítky ▲/▼ pro pořadí; sloupce chybějící
   v uložené šabloně se doplní automaticky (skryté, ale kdykoli zapnutelné).
-- Pro vybraný sloupec: **šířka** v mm (prázdné = automatické rozdělení zbylého prostoru),
-  **zarovnání**, a plný per-sloupec styl (font, velikost, řez, barvy, zarovnání, odsazení) zvlášť
-  pro záhlaví a data - viz kaskáda stylů v části I, kap. 7.
+- Pro vybraný sloupec: **šířka** v mm (prázdné = automatické rozdělení zbylého prostoru) a styl
+  záhlaví i datových buněk sloupce (písmo, barvy, zarovnání, vnitřní okraj) - viz kaskáda stylů
+  v části I, kap. 7.
 - **Dvouřádkové záhlaví** - do pole „Záhlaví" lze zadat víc řádků (např. český a cizojazyčný
   název sloupce, „Zastávka" / „Station"): napište `\n` nebo stiskněte Enter. Výška záhlaví se
   přizpůsobí automaticky. Detail viz část I, kap. 8.
