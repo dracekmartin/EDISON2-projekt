@@ -1766,7 +1766,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // Velikost písma záhlaví - přímý ovladač HeaderStyle.FontSize. Bez něj šlo měnit jen
         // „Výška řádku záhl." (mm), která ale text zvětší jen dokud je FontSize null (legacy derive).
         new FloatPropertyDescriptor { Label = "Velikost záhlaví",  Group = "Odjezdy", Get = () => HeaderStyle.FontSize ?? 9f,  Set = SetHeaderFontSize, Min = 3, Max = 72, Unit = "pt" },
-        new FloatPropertyDescriptor { Label = "Nejmenší výška řádku záhlaví", Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Nejmenší výška řádku", Group = "Záhlaví", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
         // Zapisuje do stylu záhlaví, stejně jako formulář (Zarovnání svisle ve skupině Záhlaví);
         // HeaderVerticalAlignment zůstává jen jako výchozí hodnota, když styl zarovnání nemá.
         new EnumPropertyDescriptor  { FromImage = true, Label = "Zarovnání záhlaví svisle", Group = "Odjezdy",

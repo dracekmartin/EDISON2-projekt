@@ -80,8 +80,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("hstyle", "Záhlaví")
         s f = form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
         s f.helpText = "Záhlaví nad každým blokem minut (např. ""Pracovní dny"", ""Sobota"")"
-        s f = form.AddDecimal("SkupinaDnuHeaderLineHeight", "Nejmenší výška řádku záhlaví", 4, 2, 10, "mm")
-        s f.helpText = "Nejmenší výška řádku záhlaví skupiny dnů. Když není vyplněná Velikost, písmo záhlaví se z ní dopočítá."
+        s f = form.AddDecimal("SkupinaDnuHeaderLineHeight", "Nejmenší výška řádku", 4, 2, 10, "mm")
+        s f.helpText = "Nejmenší výška každého řádku záhlaví skupiny dnů (1. i 2. řádku). Když není vyplněná Velikost, písmo záhlaví se z ní dopočítá."
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Záhlaví", "#FF000000", "", 0, "", 1)
         // 2. řádek záhlaví skupiny (Nadpis2 z dat, např. „den" v „Pracovní / den") je text uvnitř
         // záhlaví: pozadí, zarovnání a okraje mu kreslí 1. řádek, proto jen sada Text.

@@ -186,26 +186,9 @@ Nezávislá revize `B194d`: formuláře šesti tabulek a Textu volané na server
 kód a testy (build bez chyb, 2492 testů zelených v čisté kopii `7dfb5b1a`) a dokumentace.
 Směr potvrzený: tabulky mají jednu kostru, stejné sady stylu a stejné popisky; „barva" najde v každém
 formuláři všechna barevná pole.
-H1, H2, H4, H5, H7, H8, H14, H15 a dokumentační část H13 jsou hotové (changelog 2026-10-28 (18)-(21)).
+H1, H2, H4, H5, H7, H8, H14, H15 a dokumentační část H13 jsou hotové (changelog 2026-10-28 (18)-(21)),
+H3 rozhodnutý (nechat, archiv), H6 hotový (changelog 2026-10-28 (22)).
 
-- **H3 Styl smazaného vlastního sloupce Minut zůstane v šabloně** [S] **Jan** (*ověřeno:* kód).
-  Od `E13g` okno nechává nastavení skupin, které nenabídlo (`WithNotOffered`), a to platí i pro styl smazaného
-  vlastního sloupce (id „1", „2"…).
-  Vzor (`ApplyPresetCommand`) čísluje sloupce 1..n, takže nový sloupec ze vzoru převezme styl smazaného
-  sloupce se stejným číslem; `NextFreeCustomId` se starým číslům vyhne, vzor ne.
-  Revize navrhla vlastní sloupce uklidit, **jednoznačně to ale nejde**: skupiny dnů z dat mají čísla ve stejném
-  tvaru („1", server je posílá jako text, `ZastavkoveJrAd.NacistSkupinyDnu`), takže úklid podle čísla by smazal
-  nastavení skupin jiných linek - přesně chybu, kterou opravil `E13g`.
-  Vzor navíc styly podle pořadí přebírá záměrně („existující styly zůstanou na svém místě", `NextFreeCustomId`).
-  Doporučení: nechat, nebo rozlišit vlastní sloupce od skupin dnů jiným tvarem čísla (změna šablon s migrací).
-  Položky `__INDEX_` zůstávají vědomě (E13g, výchozí nastavení podle pořadí ze vzorů a importu).
-- **H6 „Výška záhlaví" má dva významy** [S] **Jan** (*ověřeno:* kód).
-  Tabulka z dat ji od 2026-10-28 (13) bere jako nejmenší výšku (záhlaví roste s počtem řádků), Pevná tabulka
-  jako pevnou.
-  Minuty mají pro „nejmenší" popisek „Nejmenší výška řádku záhlaví".
-  Oba tvary ve skupině Záhlaví opakují název části (`ux §8`).
-  Návrh revize: Tabulka z dat a Minuty „Nejmenší výška řádku" s nápovědou, Pevná tabulka „Výška řádku" jako
-  v Datových buňkách. Klíče zůstávají, panel přes `DescriptorLabelsMatchFormTests`.
 - **H9 Poznámky při přepínání prvků působí jako chyba** [S] **Jan** (*ověřeno:* server).
   Výjimka `E3b` platí, ale: Záhlaví a Datové buňky jsou nahoře místo dole; pole stylu záhlaví jsou
   obráceně (Barva pozadí, Barva textu, Font, Řez, Velikost); chybí Tučné a Kurzíva, ačkoli záhlaví kreslí

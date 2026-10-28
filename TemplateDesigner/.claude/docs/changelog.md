@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-28 (22) - Výška záhlaví se jmenuje podle toho, co dělá (`B194h` H6)
+
+„Výška záhlaví" znamenala v Tabulce z dat nejmenší výšku (víc řádků záhlaví ji zvětší) a v Pevné tabulce pevnou; Minuty měly pro nejmenší výšku jiný popisek.
+- **Tabulka z dat:** „Nejmenší výška" ve skupině Záhlaví s nápovědou, že se záhlaví s víc řádky zvětší.
+- **Minuty odjezdů:** „Nejmenší výška řádku" ve skupině Záhlaví; nápověda říká, že platí pro 1. i 2. řádek záhlaví.
+- **Pevná tabulka:** zůstává „Výška záhlaví" s nápovědou, že je pevná. Samotné „Výška" by se pletlo s výškou prvku, podle popisku pole poznají asistent i protokol importu.
+- Klíče polí se nemění, šablony beze změny. Panel a protokol importu mají tytéž popisky ve skupině Záhlaví. Hledání „výška záhlaví" u prvních dvou nic nenajde, dokud hledání neporovná slova s popiskem i názvem skupiny (`H12`; rozhodnutí Jan 28. 10.).
+- Ověřeno voláním `Init` všech tří formulářů na dev serveru.
+
 ## 2026-10-28 (21) - Příručka a dokumentace po sjednocení formulářů (`B194h` H13-H15)
 
 - **Příručka:** Editor skupin dnů popisuje záložky Obecné, Sloupce a u AD Vlastní definice sloupců a říká, že styl záhlaví jde nastavit po skupinách (od 16. 9. to jde, příručka tvrdila opak).

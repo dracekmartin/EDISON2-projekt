@@ -798,8 +798,10 @@ public class EDInputFormSchemaDriftTests
         //   Format - u stránky je to formát papíru („Formát"), u buňky formát vypisované hodnoty
         //     („Formát hodnoty"). Dvě různé věci, které jen shodou okolností mají stejný název
         //     vlastnosti na svém cíli.
+        //   HeaderHeight - v Tabulce z dat je to nejmenší výška záhlaví (víc řádků ho zvětší), v Pevné
+        //     tabulce pevná výška; stejný popisek by tvrdil, že se chovají stejně (`B194h` H6).
         var exempt = new HashSet<string>(StringComparer.Ordinal)
-            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor", "Format" };
+            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor", "Format", "HeaderHeight" };
 
         var labelsPerKey = new Dictionary<string, Dictionary<string, List<string>>>();
         foreach (var file in AllEditClsFiles())

@@ -52,7 +52,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Pozadí bez výchozí hodnoty - nese ho prvek sám, prázdno znamená bez podbarvení.
         d form.AddGroup("hstyle", "Záhlaví")
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
-        d form.AddDecimal("HeaderHeight", "Výška záhlaví", 8, 2, 50, "mm")
+        s f = form.AddDecimal("HeaderHeight", "Nejmenší výška", 8, 2, 50, "mm")
+        s f.helpText = "Záhlaví s víc řádky (Enter v textu záhlaví sloupce) se zvětší, aby se všechny řádky vešly."
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Záhlaví", "#FF333333", "", 0, "", 1)
         d form.AddGroup("dstyle", "Datové buňky")
         d form.AddDecimal("RowHeight", "Výška řádku", 6, 1, 50, "mm")

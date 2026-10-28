@@ -232,6 +232,13 @@
 - **H13 (dokumentace), H14, H15** Příručka a dokumenty pro agenty s dnešními popisky a okny, `P2` a vědomé
   rozdíly mezi agendami v `legacy-nahrada.md §4`, dlouhé položky roadmapy zkrácené s detailem v `docs/`
   (revize 28. 10.; changelog 2026-10-28 (21)). Novinky zůstaly v `H13` na rozhodnutí Jana.
+- **H3** Styl smazaného vlastního sloupce Minut v šabloně **zůstává** a vzor se stejným pořadím ho převezme
+  (rozhodnutí Jan 28. 10.: okrajový případ). Uklidit ho bezpečně nejde: vlastní sloupce a skupiny dnů z dat
+  mají čísla ve stejném tvaru („1", „2"), úklid by smazal nastavení skupin jiných linek (chyba `E13g`), a vzor
+  styly podle pořadí přebírá záměrně. Kdyby to vadilo: vlastní sloupce jiným tvarem čísla, s migrací šablon.
+- **H6** Výška záhlaví podle toho, co dělá: Tabulka z dat „Nejmenší výška", Minuty „Nejmenší výška řádku",
+  Pevná tabulka zůstává „Výška záhlaví" s nápovědou, že je pevná (samotné „Výška" už nese výška prvku).
+  Hledání „výška záhlaví" je u prvních dvou do `H12` nenajde (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (22)).
 
 ## Popisky polí podle pravidel - složité prvky (hotovo 28. 10. 2026)
 

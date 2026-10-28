@@ -255,7 +255,7 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
 Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
 od dat). Vlastnosti:
 - **Data** - **Zdroj dat**, řazení (**Řadit podle** a **Směr řazení**, **Potom podle** a **Směr druhého řazení**), **Nejméně řádků** a **Nejvýš řádků**
-- **Záhlaví** - **Záhlaví sloupců**, **Výška záhlaví** a styl záhlaví
+- **Záhlaví** - **Záhlaví sloupců**, **Nejmenší výška** (záhlaví s víc řádky se zvětší) a styl záhlaví
 - **Datové buňky** - **Výška řádku**, **Střídání řádků: Barva pozadí** a styl buněk
 - **Mřížka** (čáry mezi řádky / mezi sloupci, barva, tloušťka, styl) a **Podmínky** s **Podmínkou viditelnosti řádku** a **Zvýrazněním řádků**
 
@@ -481,8 +481,8 @@ Text prvku i buňky/záhlaví tabulky může mít **víc řádků**. Nový řád
 
 Typické využití je **dvouřádkové (dvojjazyčné) záhlaví sloupce** - první řádek česky, druhý
 cizojazyčně (např. „Zastávka" / „Station"). U tabulkových prvků se **výška řádku záhlaví
-automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. U Tabulky z dat je nastavená
-„Výška záhlaví" nejmenší výška - záhlaví se zvětší, jen když se řádky do ní nevejdou.
+automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. U Tabulky z dat je to pole
+„Nejmenší výška" ve skupině Záhlaví - záhlaví se zvětší, jen když se řádky do ní nevejdou.
 Zalomení funguje v textových prvcích i v buňkách, řádek s daty se ale nezvětší: víc řádků se
 vejde jen do dost vysokého řádku.
 
@@ -835,7 +835,7 @@ Nahoře jsou skupiny jen tohoto prvku (Skupiny dnů, Rozměry, Značky u odjezd�
 - **Rozměry** - Šířka minuty, Zarovnání minut (Bez zarovnání / Podle nejširšího odjezdu / Na pevnou šířku - viz níže), Mezera mezi skupinami dnů, Mezera mezi odjezdy
 - **Časová osa** a **Roztáhnout na výšku** nejsou vlastnosti prvku, ale parametry sestavy (kap. 5)
 - **Zarovnání minut** - jak daleko od sebe stojí minuty v řádku hodiny. *Bez zarovnání*: každý odjezd zabere jen to, co potřebuje, takže minuty pod sebou nestojí a minuta se značkou odsune odjezdy za sebou. *Podle nejširšího odjezdu* (výchozí): jedna rozteč pro celý prvek podle nejvíc označkovaného spoje - minuty stojí ve svislici napříč hodinami i sloupci, ale jeden takový spoj zředí celou vývěsku, i řádky a sloupce bez značek. *Na pevnou šířku*: rozteč se řídí nastavením („Šířka minuty", nejméně však minuta a jedna značka s odstupem), takže ji data nezmění a přidaný označkovaný spoj zbytek vývěsky nepřesází. Spoj s víc značkami se do rozteče vejde tím, že se jeho značky úměrně zmenší - nejvýš na polovinu a nikdy pod 4 body; nevejdou-li se ani tak, zvětšete Šířku minuty
-- **Záhlaví** - Záhlaví skupin dnů (zapnutí), Nejmenší výška řádku záhlaví (když není vyplněná Velikost, písmo se z ní dopočítá), styl záhlaví (prázdné Zarovnání svisle = Dole; záhlaví skupin dnů je při prázdném Zarovnání vodorovně na střed) a řádky „2. řádek: …" pro druhý řádek záhlaví skupiny (např. „den" v „Pracovní / den"; nevyplněné se dědí z prvního řádku). 2. řádek má jen písmo a barvu textu - pozadí, zarovnání a okraje přebírá z prvního řádku
+- **Záhlaví** - Záhlaví skupin dnů (zapnutí), Nejmenší výška řádku (platí pro každý řádek záhlaví; když není vyplněná Velikost, písmo se z ní dopočítá), styl záhlaví (prázdné Zarovnání svisle = Dole; záhlaví skupin dnů je při prázdném Zarovnání vodorovně na střed) a řádky „2. řádek: …" pro druhý řádek záhlaví skupiny (např. „den" v „Pracovní / den"; nevyplněné se dědí z prvního řádku). 2. řádek má jen písmo a barvu textu - pozadí, zarovnání a okraje přebírá z prvního řádku
 - **Datové buňky** - Výška řádku, Střídání řádků: Barva pozadí, písmo hodin i minut; řádky „Minuta: …" styl minut přebijí. Minuta je text uvnitř buňky, takže má jen písmo a barvu textu: Font, Řez, Velikost, Tučné, Kurzíva, Podtržení, Přeškrtnutí, Barva textu
 - **Značky u odjezdů** - zapnutí písmen a symbolů u minut, Mezera mezi značkou a minutou, Mezera mezi značkami, styl symbolů („Symbol: …") a textových značek („Text: …") - obojí jen písmo a barva textu, barvy negativní značky („Negativní značka: Barva pozadí", „Negativní značka: Barva textu")
 
