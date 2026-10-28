@@ -801,16 +801,16 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor   { FromImage = true, Label = "Záhlaví", Group = "Záhlaví",      Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
         new StringPropertyDescriptor { FromImage = true, Label = "Text záhlaví",         Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        // Datová zóna má velikost jako „Velikost poznámek" v Rozložení, záhlaví ji do 16. 9. nemělo
+        // Datová zóna má velikost zvlášť (NoteFontSize v Datových buňkách), záhlaví ji do 16. 9. nemělo
         // vůbec - přitom se kreslí i počítá výška záhlaví z ní (`B159`, hlásil TRANSDEV).
         GetHeaderFontSizeDescriptor(),
 
         new StringPropertyDescriptor { Label = "Font",                Group = "Datové buňky", Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
         new StringPropertyDescriptor { FromImage = true, Label = "Oddělovač",           Group = "Rozložení", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
-        // Velikost a výška řádku patří k rozložení, ne mezi barvy buněk: uživatel je hledá spolu
-        // s počtem sloupců a ve „Datových buňkách" je nenašel (nález Pavel 1. 9.).
-        new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Rozložení", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 3, Max = 72, Unit = "pt" },
-        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Rozložení",
+        // Velikost a výška řádku jsou v Datových buňkách jako u tabulek (rozhodnutí Jan 28. 10.); do
+        // Rozložení je 1. 9. dal nález Pavla, když Datové buňky měly jen barvy.
+        new FloatPropertyDescriptor  { Label = "Velikost",            Group = "Datové buňky", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 3, Max = 72, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Datové buňky",
             Get = () => EffectiveNoteLineHeight,
             // Hodnota shodná s automatickou = vrátit se k dědění z písma; uživatel tak nemusí znát
             // magické číslo, aby se dostal zpátky (týž vzor jako GetDataRowHeightDescriptor).

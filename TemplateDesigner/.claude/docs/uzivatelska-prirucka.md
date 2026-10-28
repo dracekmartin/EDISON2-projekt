@@ -849,11 +849,11 @@ Vysvětlivky pod odjezdy.
 - **Text záhlaví** - co je v pruhu napsané (výchozí „Poznámky")
 - **Velikost** (skupina Záhlaví) - velikost písma v pruhu záhlaví; prázdné = 9 bodů. Výška pruhu
   se počítá z ní, takže větší písmo pruh zvýší. Poznámky pod ním mají velikost vlastní
+- **Výška řádku** (skupina Datové buňky) - prázdné = podle velikosti písma (mezera pak roste s písmem).
+  Vlastní hodnotu zadejte, jen když chcete legendu vzdušnější nebo stlačenější
+- **Velikost** (skupina Datové buňky) - velikost písma poznámek. Nevejdou-li se poznámky do prvku, písmo
+  se zmenší a aplikace to oznámí ve stavovém řádku
 - **Oddělovač** (skupina Rozložení) - text mezi značkou a popisem (výchozí „ - ")
-- **Velikost poznámek** (skupina Rozložení) - velikost písma. Nevejdou-li se poznámky do prvku, písmo se zmenší
-  a aplikace to oznámí ve stavovém řádku
-- **Výška řádku** - prázdné = podle velikosti písma (mezera pak roste s písmem). Vlastní hodnotu
-  zadejte, jen když chcete legendu vzdušnější nebo stlačenější
 - **Druhy poznámek** (jen linkový JŘ, první ve skupině Rozložení) - viz *Poznámky po druzích* níže
 - **Počet sloupců (1–4) + Směr plnění** - „Po sloupcích" (jako noviny) nebo „Po řádcích". U linkového
   JŘ je jen Směr plnění, sloupce se nastavují po druzích

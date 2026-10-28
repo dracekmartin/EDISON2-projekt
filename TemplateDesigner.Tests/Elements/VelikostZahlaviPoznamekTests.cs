@@ -8,7 +8,7 @@ namespace TemplateDesigner.Tests.Elements;
 /// nastavit: skupina Záhlaví měla text, pozadí, barvu, font i řez, velikost ne. Hlásil TRANSDEV 16. 9.
 /// </summary>
 /// <remarks>
-/// Datová zóna ji má zvlášť jako „Velikost poznámek" ve skupině Rozložení - proto tady přibyl jen
+/// Datová zóna ji má zvlášť jako „Velikost" v Datových buňkách (mimo sadu stylu) - proto tady přibyl jen
 /// popisovač záhlaví, ne obě zóny jako u ostatních tabulkových prvků.
 /// </remarks>
 public class VelikostZahlaviPoznamekTests

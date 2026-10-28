@@ -11,7 +11,7 @@ namespace TemplateDesigner.Tests.Elements;
 /// <remarks>
 /// <para>Nález Jan 7. 9. při stavbě šablony na školení: prvek měl element-level jen barvy, takže
 /// velikost šla nastavit **jen po sloupcích** v dialogu (šest sloupců × dvě zóny), nebo přeškálováním
-/// celé šablony. Přitom u Minut odjezdů („Velikost záhlaví") i u Poznámek („Velikost poznámek")
+/// celé šablony. Přitom u Minut odjezdů („Velikost záhlaví") i u Poznámek („Velikost" v Datových buňkách)
 /// element-level velikost je - u tabulky linky chyběla jako jediná.</para>
 /// <para>⚠️ Není to kosmetika: velikost buněk nese **výšku řádku** (auto se počítá z fontu)
 /// i **šířku sloupce spoje**. Na 31 zastávkách je 9 pt proti 4,8 pt rozdíl 158 proti 65 mm, tedy

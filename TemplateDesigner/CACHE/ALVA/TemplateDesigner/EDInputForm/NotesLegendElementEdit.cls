@@ -35,7 +35,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("HeaderStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("HeaderStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
-        // Velikost záhlaví je samostatná; poznámky mají svou ve skupině Rozložení. Prázdno = 9 bodů,
+        // Velikost záhlaví je samostatná; poznámky mají svou v Datových buňkách. Prázdno = 9 bodů,
         // což kreslení používalo i dřív - do 16. 9. jen nebylo kde to změnit.
         s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", "", 3, 72, "pt", "0.#")
         s f.helpText = "Velikost písma v záhlaví prvku. Prázdné = 9 bodů. Výška pruhu záhlaví se počítá z ní."
@@ -53,16 +53,21 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // Barva pozadí tu záměrně není: prvek kreslí jen text poznámek, pozadí buněk nekreslí nikde.
         // Tučné taky ne: prvek ho bere jen pro značky a ty jsou bez nastavení tučné, takže nezaškrtnuté
         // pole by tvrdilo něco jiného, než se tiskne.
+        // Výška řádku a Velikost jsou tu jako u tabulek (rozhodnutí Jan 28. 10.). Do Rozložení je 1. 9. dal
+        // nález Pavla, protože Datové buňky tehdy měly jen barvy; dnes v nich je i Font a Řez.
+        // Popisky i skupina musí souhlasit s C# descriptory (drift test).
         d form.AddGroup("data", "Datové buňky")
+        s f = form.AddDecimal("NoteLineHeight", "Výška řádku", "", 1, 50, "mm")
+        s f.helpText = "Prázdné = podle velikosti písma. Vlastní hodnotu zadejte, jen když chcete poznámky vzdušnější nebo stlačenější."
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("DataStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("DataStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
+        s f = form.AddDecimal("NoteFontSize", "Velikost", 7, 3, 72, "pt", "0.#")
+        s f.helpText = "Velikost písma poznámek. Nevejdou-li se poznámky do prvku, písmo se zmenší a aplikace to oznámí ve stavovém řádku."
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
 
-        // ── Skupina "Rozložení" (velikost / sloupce / řazení / zarovnání markeru) ────
-        // Velikost a výška řádku patří sem, ne mezi barvy buněk - uživatel je hledá spolu s počtem
-        // sloupců (nález Pavel 1. 9.). Popisky i skupina musí souhlasit s C# descriptory (drift test).
+        // ── Skupina "Rozložení" (sloupce / řazení / zarovnání markeru) ────
         d form.AddGroup("layout", "Rozložení")
         // Linkový JŘ: pořadí, tisk a sloupce po druzích poznámek (#7487) v okně návrháře. Sedí tady,
         // ne v obsahu, aby bylo rozložení na jednom místě, a první, protože je ze skupiny nejdůležitější
@@ -70,10 +75,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("__skupinyPoznamek", "Druhy poznámek", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit…"
         s f.helpText = "Pořadí druhů poznámek, které se tisknou, a počet sloupců každého druhu. Každý druh začíná na novém řádku."
-        s f = form.AddDecimal("NoteFontSize", "Velikost poznámek", 7, 3, 72, "pt", "0.#")
-        s f.helpText = "Velikost písma poznámek. Nevejdou-li se poznámky do prvku, písmo se zmenší a aplikace to oznámí ve stavovém řádku."
-        s f = form.AddDecimal("NoteLineHeight", "Výška řádku", "", 1, 50, "mm")
-        s f.helpText = "Prázdné = podle velikosti písma. Vlastní hodnotu zadejte, jen když chcete poznámky vzdušnější nebo stlačenější."
         d form.AddNumber("Columns", "Počet sloupců", 1, 1, 4)
         s f = form.AddFieldToLastGroup("WrapSmer", "Směr plnění", $$$FieldTypeList, 0, 0)
         d f.AddListItem("PoSloupcich", "Po sloupcích"), f.AddListItem("PoRadcich", "Po řádcích")

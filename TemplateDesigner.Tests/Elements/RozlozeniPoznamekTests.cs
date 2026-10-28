@@ -70,23 +70,24 @@ public class RozlozeniPoznamekTests
         var el = new NotesLegendElement { NoteFontSize = 7f, NoteLineHeight = 8f };
         var vyskaRadku = el.GetPropertyDescriptors()
             .OfType<FloatPropertyDescriptor>()
-            .Single(d => d.Label == "Výška řádku" && d.Group == "Rozložení");
+            .Single(d => d.Label == "Výška řádku" && d.Group == "Datové buňky");
 
         vyskaRadku.Set(3.95f);
         Assert.Null(el.NoteLineHeight);
     }
 
     [Fact]
-    public void VelikostIVyskaRadkuJsouVeSkupineRozlozeni()
+    public void VelikostIVyskaRadkuJsouVDatovychBunkachJakoUTabulek()
     {
-        // Pavel je nenašel, protože byly mezi barvami buněk, zatímco počet sloupců je v Rozložení.
+        // 1. 9. je Pavel v Datových buňkách nenašel, protože tam byly jen barvy; od 28. 10. tam je i Font
+        // a Řez a tabulky tam mají Výšku řádku i Velikost (rozhodnutí Jan, `B194h` H9).
         var skupiny = new NotesLegendElement().GetPropertyDescriptors()
-            .Where(d => d.Label is "Velikost poznámek" or "Výška řádku" or "Počet sloupců")
+            .Where(d => d.Label is "Velikost" or "Výška řádku" && d.Group != "Záhlaví")
             .Select(d => d.Group)
             .Distinct()
             .ToList();
 
-        Assert.Equal(["Rozložení"], skupiny);
+        Assert.Equal(["Datové buňky"], skupiny);
     }
 
     // ── Vypnutý nadpis ──────────────────────────────────────────────────────

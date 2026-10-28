@@ -372,7 +372,7 @@ public abstract class ScheduleElementBase : TemplateElement
     ];
 
     /// <summary>Velikost písma záhlaví samostatně - pro prvek, jehož datová zóna má velikost jinde
-    /// (Poznámky ji mají jako „Velikost poznámek" ve skupině Rozložení).</summary>
+    /// (Poznámky ji mají jako „Velikost" v Datových buňkách, mimo sadu stylu).</summary>
     protected PropertyDescriptor GetHeaderFontSizeDescriptor(string headerGroup = "Záhlaví") =>
         new FloatPropertyDescriptor
         {

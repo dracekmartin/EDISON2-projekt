@@ -242,6 +242,9 @@
 - **H9 (1, 2, 4, 5)** Poznámky: styl záhlaví v pořadí sady stylu a s Tučné / Kurzíva, Datové buňky Font, Řez,
   Barva textu, Oddělovač v Rozložení, Negativní značky bez opakování názvu skupiny; pořadí skupin zůstává
   (rozhodnutí Jan 28. 10.; changelog 2026-10-28 (23)).
+- **H9 (3)** Velikost a Výška řádku Poznámek v Datových buňkách jako u tabulek - mění rozhodnutí z 1. 9.
+  (nález Pavla, kdy Datové buňky měly jen barvy); dnes je tam Font a Řez (rozhodnutí Jan 28. 10.;
+  changelog 2026-10-28 (24)).
 
 ## Popisky polí podle pravidel - složité prvky (hotovo 28. 10. 2026)
 

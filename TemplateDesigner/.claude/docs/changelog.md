@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-28 (24) - Poznámky: Velikost a Výška řádku v Datových buňkách (`B194h` H9)
+
+Velikost písma poznámek a Výška řádku jsou ve skupině **Datové buňky** jako u tabulek: Výška řádku, Font, Řez, **Velikost**, Barva textu. Pole „Velikost poznámek" se jmenuje „Velikost".
+- Do Rozložení je 1. 9. dal nález Pavla: uživatel je hledal u Počtu sloupců, protože Datové buňky tehdy měly jen barvy. Dnes v nich je Font a Řez a velikost patří k nim (rozhodnutí Jan 28. 10.).
+- Klíče polí se nemění, šablony beze změny.
+
 ## 2026-10-28 (23) - Formulář Poznámek: styl záhlaví jako u ostatních prvků, Oddělovač v Rozložení (`B194h` H9)
 
 Poznámky si dál nechávají vlastní pořadí skupin (rozhodnutí Jan 28. 10.), uvnitř skupin se ale srovnaly s ostatními prvky.
