@@ -325,7 +325,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Prvek s tabulkou zastávky × spoje | **Tabulka spojů** | ~~Linkový JŘ~~, ~~Tabulka linky~~ (tak se jmenuje **agenda**, prvek by se s ní pletl; třída `LineTableElement` zůstává) |
 | Zóna, km, Tč, zastávka a MHD v Tabulce spojů | **popisné sloupce** (rozhodnutí Jan 26. 10.) | ~~popisové sloupce~~, ~~sloupce popisu~~ |
 | Prvek s QR / čárovým kódem | **Kód (QR, čárový)** | ~~Kód~~ samotné (neřekne, co prvek umí), ~~Kód (QR / čárový)~~ |
-| Zapnutí záhlaví prvku | **Záhlaví** (u zastávek „Záhlaví sloupců") - **první pole skupiny Záhlaví**; skupinu „Obecné" tabulky nemají, nic neříkala o tom, co v ní je (rozhodnutí Jan 28. 10., kostra formuláře viz `docs/konzistence-agend-jr.md` E3) | ~~Zobrazit nadpis~~ |
+| Zapnutí záhlaví prvku | **Záhlaví** (u tabulek se sloupci „Záhlaví sloupců", u skupin dnů „Záhlaví skupin dnů") - **první pole skupiny Záhlaví**; skupinu „Obecné" tabulky nemají, nic neříkala o tom, co v ní je (rozhodnutí Jan 28. 10., kostra formuláře viz §4) | ~~Zobrazit nadpis~~ |
 | Text v záhlaví prvku | **Text záhlaví** | ~~Nadpis~~ (samotné „Nadpis skupiny" u dat je jiný pojem a je OK) |
 | Hlavička tabulky oproti datovým buňkám (řádek, text i styl) | **Záhlaví** („Záhlaví skupin dnů", „Text záhlaví popisných sloupců", „2. řádek: Velikost" ve skupině Záhlaví) | ~~Nadpis~~ - jen pro koncepčně jinou věc (text skupiny dnů v datech, nadpis okna); rozhodnutí Jan 26. 10. |
 

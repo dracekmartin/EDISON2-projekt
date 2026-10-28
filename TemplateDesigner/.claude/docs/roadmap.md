@@ -18,7 +18,27 @@
 Nezávislá revize čtyř agend JŘ po `B193`, každý nález přeověřený proti kódu. **Jeden řádek = jeden nález**;
 co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-jr.md`](konzistence-agend-jr.md).
 Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
-vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se linkového MHD, nejlevnější před verzí.
+vydané agendy · **Jan** = potřebuje rozhodnutí.
+
+### `B194h` Dodělávky po sjednocení formulářů (revize 28. 10.)
+
+Nezávislá revize `B194d` (formuláře proti serveru, kód a testy, dokumentace). Projít před `B194f`.
+
+- **H1** OK beze změny pořád mění šablonu, když okno sloupců při načtení hodnotu přepíše do jiného tvaru [S]
+- **H2** Zaškrtávátko stylu sloupce porovnává se stavem prvku z doby otevření okna [S]
+- **H3** Styl smazaného vlastního sloupce Minut zůstane v šabloně a převezme ho sloupec ze vzoru [S]
+- **H4** Posun sloupce na okamžik zdvojí položku v seznamu [S]
+- **H5** Podtržení a přeškrtnutí pod značkou s vlastní barvou se kreslí barvou textu [S] **tisk**
+- **H6** „Výška záhlaví" je v Tabulce z dat nejmenší výška, v Pevné tabulce pevná, Minuty to pojmenují jinak [S] **Jan**
+- **H7** Okna sloupců: dvojtečky a „Druhý řádek" u Minut, „Záhlaví" dvakrát pod sebou [S]
+- **H8** Nápovědy a komentáře se starými názvy polí („Více stanovišť", „dle platnosti") [S]
+- **H9** Poznámky: obrácené pořadí stylu záhlaví, chybí Tučné a Kurzíva, Oddělovač v Datových buňkách [S] **Jan**
+- **H10** Tabulka spojů: Přípojné řádky za Šířkou sloupců, obecná skupina „Řádky", řádky bez nápovědy [S] **Jan**
+- **H11** Minuty: předpona „Text:" ve Značkách u odjezdů neřekne, o jaký text jde [S] **Jan**
+- **H12** Hledání ve formuláři nenajde „písmo", „podbarvení" ani „čára" a zahltí polohou prvku [M] **Jan**
+- **H13** Příručka, skill `novy-element` a dokumenty pro agenty se starými popisky a okny [S]
+- **H14** Před smazáním `konzistence-agend-jr.md` přesunout detail P2 a vědomé rozdíly z §8 [S]
+- **H15** Položky roadmapy delší než 6 řádků zkrátit, zjištění do `docs/` [S]
 
 ### `B194f` Pojistky před `B56`
 
@@ -56,7 +76,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   Navazuje na E3 / E13; serverovou stranu agend řeší `B56`.
 - **Popisky jednoduchých prvků podle pravidel** [S] **Jan** - složité prvky jsou hotové (changelog 2026-10-28
   (16)-(17)); zbývá Stránka (okraje Nahoře/Dole…, Kultura (formátování)), Obdélník (dva obrysy - okraj a rámeček
-  prvku), Obrázek (Škálování), Sekce (Přetečení), Text, Kód, Čára. Pravidla v `ux-conventions §8`.
+  prvku), Obrázek (Škálování), Sekce (Přetečení), Text, Kód, Čára. Pravidla v `ux-conventions §8`, nálezy
+  revize 28. 10. v [`konzistence-agend-jr.md §9`](konzistence-agend-jr.md).
 
 - **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
   (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
@@ -166,7 +187,7 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
   **kapabilita sdílené komponenty pro celý EDISON**, ne featura návrháře). Formulář dnes reaguje na
   vyplněné hodnoty jen oklikou přes server. Začít **viditelností** (`visibleWhen`), gramatiku sdílet
   s tiskovými parametry - nezavádět druhý dialekt; skutečná validace zůstává imperativní.
-  Nese s sebou tři návazné věci: migraci `CellStyleEditor` na formulář z Caché, zašednutí polí
+  Nese s sebou dvě návazné věci: zašednutí polí
   bez účinku (parametry sestavy; u sekcí je dnes drží návrhář, `B177`) a **popis u parametru sestavy** (dnes nejde vysvětlit krkolomný
   label) - všechno až s gramatikou, ne zvlášť.
 
