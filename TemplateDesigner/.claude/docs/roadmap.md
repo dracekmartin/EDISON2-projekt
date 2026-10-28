@@ -25,9 +25,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí · **do 27. 10.** = týká se
 - **P2** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M] **Jan** -
   **odloženo** (Jan 27. 10.) do rozhodnutí o jednotném formátu voleb; patří k `B56` R5 (stálý kód vedle popisku)
 
-### `B194d` Prvky a formuláře (nejdřív kanon `ux-conventions §8`, **Jan**)
-
-
 ### `B194f` Pojistky před `B56`
 
 - **G1** Kontraktový Caché test přes registr agend (schéma, ukázka, data, kódy, důvod prázdného výstupu) [M]
