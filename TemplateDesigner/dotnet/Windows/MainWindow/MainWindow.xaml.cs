@@ -325,6 +325,26 @@ public partial class MainWindow : Window
             };
             Loaded += open;
         }
+        else
+        {
+            // Bez linky by uživatel viděl jen prázdnou stránku - úvodní nabídka mu řekne, kudy dál.
+            RoutedEventHandler? start = null;
+            start = async (_, _) =>
+            {
+                Loaded -= start;
+                await _vm.ShowStartPanelAsync();
+            };
+            Loaded += start;
+        }
+    }
+
+    private void StartPanelHelp_Click(object sender, RoutedEventArgs e) => ShowHelp();
+
+    /// <summary>Přepne levý panel na Pomocníka (a rozbalí ho, je-li sbalený).</summary>
+    private void StartPanelGuide_Click(object sender, RoutedEventArgs e)
+    {
+        if (BtnToggleLeftPanel.IsChecked != true) BtnToggleLeftPanel.IsChecked = true;
+        LeftTabControl.SelectedItem = TabAiGuide;
     }
 
     private void OnPreferencesLoaded()

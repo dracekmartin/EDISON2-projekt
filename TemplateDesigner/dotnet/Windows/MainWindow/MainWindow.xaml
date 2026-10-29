@@ -812,6 +812,7 @@
                     </Grid>
                 </Border>
             </Grid>
+            <Grid>
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
                           Background="{DynamicResource EDTheme.Bg.Canvas}"
@@ -846,6 +847,84 @@
                     </Canvas>
                 </Grid>
             </ScrollViewer>
+
+            <!-- Úvodní nabídka po spuštění (zkušební verze, nápad Jan 29. 10.). Leží nad posuvným
+                 plátnem, ne v něm, aby zůstala uprostřed viditelné plochy. Zmizí s první změnou
+                 šablony - viz StartPanelViewModel. -->
+            <Border DataContext="{Binding StartPanel}"
+                    Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Width="440" Margin="16"
+                    Background="{DynamicResource EDTheme.Bg.Panel}"
+                    BorderBrush="{DynamicResource EDTheme.Border.Medium}" BorderThickness="1"
+                    CornerRadius="6" Padding="24,20">
+                <StackPanel>
+                    <TextBlock Text="Jak začít" FontSize="{DynamicResource EDTheme.FontSize.Title}"
+                               FontWeight="SemiBold" Foreground="{DynamicResource EDTheme.Text.Header}"/>
+                    <TextBlock TextWrapping="Wrap" Margin="0,6,0,14" FontSize="{DynamicResource EDTheme.FontSize.Body}">
+                        <Run Text="Nová šablona pro agendu"/>
+                        <Run Text="{Binding AgendaName, Mode=OneWay}" FontWeight="SemiBold"/><Run Text="."/>
+                        <Hyperlink Command="{Binding ChangeAgendaCommand}" Foreground="{DynamicResource EDTheme.Accent.Blue}"
+                                   ToolTip="Změnit agendu - Ctrl+Shift+A">Změnit agendu</Hyperlink>
+                    </TextBlock>
+
+                    <Button Command="{Binding OpenFromDatabaseCommand}" HorizontalContentAlignment="Stretch"
+                            Padding="10,8" Margin="0,0,0,8" ToolTip="Otevřít - Ctrl+O"
+                            Visibility="{Binding CanOpenFromDatabase, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Image Source="{StaticResource EDIcons.Open}" Width="24" Height="24" Margin="0,0,12,0"
+                                   VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <StackPanel>
+                                <TextBlock Text="Otevřít šablonu z databáze" FontWeight="SemiBold"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                <TextBlock Text="Šablony vaší firmy i hotové šablony od M-line." TextWrapping="Wrap"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                                           Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Button>
+
+                    <Button Command="{Binding StartFromSystemTemplateCommand}" HorizontalContentAlignment="Stretch"
+                            Padding="10,8" Margin="0,0,0,8"
+                            Visibility="{Binding HasSystemTemplate, Converter={StaticResource BoolToVis}}">
+                        <DockPanel>
+                            <Image Source="{StaticResource EDIcons.Document}" Width="24" Height="24" Margin="0,0,12,0"
+                                   VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <StackPanel>
+                                <TextBlock Text="Začít z hotové šablony" FontWeight="SemiBold"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                <TextBlock TextWrapping="Wrap" FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                                           Foreground="{DynamicResource EDTheme.Text.Muted}">
+                                    <Run Text="{Binding SystemTemplateName, Mode=OneWay}"/><Run Text=" od M-line. Upravíte ji a uložíte jako svou."/>
+                                </TextBlock>
+                            </StackPanel>
+                        </DockPanel>
+                    </Button>
+
+                    <Button Command="{Binding StartBlankCommand}" HorizontalContentAlignment="Stretch" Padding="10,8">
+                        <DockPanel>
+                            <Image Source="{StaticResource EDIcons.New}" Width="24" Height="24" Margin="0,0,12,0"
+                                   VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <StackPanel>
+                                <TextBlock Text="Prázdná šablona" FontWeight="SemiBold"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                                <TextBlock Text="Navrhnete sestavu od začátku. Prvky přidáte z lišty nahoře." TextWrapping="Wrap"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                                           Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Button>
+
+                    <TextBlock Margin="0,16,0,0" TextWrapping="Wrap" FontSize="{DynamicResource EDTheme.FontSize.Small}">
+                        <Hyperlink Click="StartPanelHelp_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}">Klávesové zkratky a ovládání (F1)</Hyperlink>
+                        <Run Text="   "/>
+                        <Hyperlink Click="StartPanelGuide_Click" Foreground="{DynamicResource EDTheme.Accent.Blue}">Zeptat se Pomocníka</Hyperlink>
+                    </TextBlock>
+                    <TextBlock Text="Nabídka zmizí, jakmile začnete pracovat." Margin="0,6,0,0"
+                               FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                               Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                </StackPanel>
+            </Border>
+            </Grid>
             </DockPanel>
 
             <!-- ── GridSplitter pravý ── -->

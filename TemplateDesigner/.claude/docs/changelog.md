@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-29 - Úvodní nabídka přes prázdné plátno (zkušební verze)
+
+Po spuštění návrháře bez linky leží uprostřed prázdného plátna nabídka „Jak začít" (nápad Jan 29. 10.).
+Nový uživatel místo prázdné stránky vidí, kudy dál.
+- **Otevřít šablonu z databáze** (jen se spojením na server), **Začít z hotové šablony** M-line pro agendu
+  (jen u agendy, která ji má; otevře se jako kopie, Ctrl+S ji uloží jako šablonu firmy) a **Prázdná šablona**
+  (nabídku zavře). Agenda je vidět nahoře s odkazem Změnit agendu; po změně se nabídka ukáže pro novou agendu.
+- Dole odkazy na klávesové zkratky (F1) a Pomocníka.
+- Nabídka zmizí s první úpravou nebo výměnou šablony, takže stálého uživatele nezdrží. Při spuštění s linkou
+  se neukáže, PDF ze shellu hlavní okno vůbec neotevírá.
+- Bez zapamatování poslední šablony a bez „Příště nezobrazovat" - rozhodne se po vyzkoušení.
+  Testy `UvodniNabidkaTests`.
+
 ## 2026-10-28 (28) - Popisky jednoduchých prvků podle pravidel, obdélník kreslí obrys rámečkem
 
 Stránka, Sekce, Text, Obdélník, Čára, Obrázek a Kód se řídí stejnými pravidly popisků jako tabulky (rozhodnutí Jan 28. 10., `ux-conventions §8`).
