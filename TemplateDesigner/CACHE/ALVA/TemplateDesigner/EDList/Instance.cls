@@ -40,9 +40,12 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         s list = ##class(ALVA.EDControls.EDList.List).%New()
-        d list.AddColumn("cislo",    "Číslo",  "TEXT",  70, "",  1)
-        d list.AddColumn("nazev",    "Název",  "TEXT", 260, "",  1)
-        d list.AddColumn("subtitle", "Detail", "TEXT", 220, "",  0)
+        // Popisky podle obsahu (Jan 27. 10.); klíče sloupců se nemění - podle nich se ukládá rozvržení.
+        // NUMBER: klik na záhlaví řadí čísla podle hodnoty (jako TEXT bylo 11 před 2); označení
+        // s písmenem („A42") EDList porovná jako text.
+        d list.AddColumn("cislo",    "Číslo linky", "NUMBER",  70, "",  1)
+        d list.AddColumn("nazev",    "Název",       "TEXT", 260, "",  1)
+        d list.AddColumn("subtitle", "Platnost",    "TEXT", 220, "",  0)
         d list.WriteColumnsToOut()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK

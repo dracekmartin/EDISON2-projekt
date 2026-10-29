@@ -23,7 +23,7 @@
          assembly nenajde a spadne při prvním volání serveru (Could not load file or assembly).
          13.0.3 = stav v C:\Edison\ po přebuildu MLRestu; dřív tu bylo 7.0.1 a to už neplatí. -->
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <!-- OpenTK přitahuje SkiaSharp.Views.WPF kvůli SKGLElement (GL rendering) — TD používá
+    <!-- OpenTK přitahuje SkiaSharp.Views.WPF kvůli SKGLElement (GL rendering) - TD používá
          jen CPU SKElement, takže ~5,5 MB runtime assets vyřazujeme z výstupu. -->
     <PackageReference Include="OpenTK" Version="3.3.1" ExcludeAssets="runtime" />
     <PackageReference Include="OpenTK.GLWpfControl" Version="3.3.0" ExcludeAssets="runtime" />
@@ -45,21 +45,21 @@
     <Content Include="schemas\*.schema.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <!-- Vlastní název kvůli sdílené složce C:\Edison\ — generický appsettings.json
+    <!-- Vlastní název kvůli sdílené složce C:\Edison\ - generický appsettings.json
          tam patří jiným Edison aplikacím (např. EdisonCacheMcp) a docházelo by ke konfliktu. -->
     <!-- Hlavní config je embedded resource → .exe je self-contained, žádný sidecar soubor není potřeba.
          Externí soubor vedle .exe (pokud existuje) má přednost před embedded. -->
     <EmbeddedResource Include="templatedesigner.appsettings.json" LogicalName="templatedesigner.appsettings.json" />
 
-    <!-- Lokální override (gitignored) — kopírujeme jen do bin/, ne do publish (každý si ho dropne sám). -->
+    <!-- Lokální override (gitignored) - kopírujeme jen do bin/, ne do publish (každý si ho dropne sám). -->
     <Content Include="templatedesigner.appsettings.local.json" Condition="Exists('templatedesigner.appsettings.local.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
 
-    <!-- Embedded fonty: stačí hodit .ttf/.otf do složky Fonts/ — glob je zabalí do assembly
+    <!-- Embedded fonty: stačí hodit .ttf/.otf do složky Fonts/ - glob je zabalí do assembly
          (a single-file .exe), FontResolver je auto-načte podle názvu rodiny (bez úpravy kódu).
-         POZOR na licenci: jen fonty s právem redistribuce (OFL/Apache — Arimo, Liberation Sans),
+         POZOR na licenci: jen fonty s právem redistribuce (OFL/Apache - Arimo, Liberation Sans),
          NE komerční (Helvetica/Arial). -->
     <EmbeddedResource Include="Fonts\**\*.ttf" />
     <EmbeddedResource Include="Fonts\**\*.otf" />
@@ -72,7 +72,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Testy smí na internal členy — netřeba zveřejňovat helpery jen kvůli testům. -->
+    <!-- Testy smí na internal členy - netřeba zveřejňovat helpery jen kvůli testům. -->
     <InternalsVisibleTo Include="TemplateDesigner.Tests" />
   </ItemGroup>
 

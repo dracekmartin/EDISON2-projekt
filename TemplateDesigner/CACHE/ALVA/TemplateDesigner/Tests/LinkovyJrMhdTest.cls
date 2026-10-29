@@ -184,6 +184,27 @@ Method TestVyberTypuProvozuJakoWeb()
 	}
 }
 
+/// Ukázka bez vybrané linky nese typy provozu své linky jako tisk - jinak panel ukáže všechny
+/// typy provozu firmy (KV_DP jich má desítky, linka pár).
+Method TestUkazkaNeseTypyProvozuLinky()
+{
+	if '##class(%SYS.Namespace).Exists("KV_DP") {
+		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		quit
+	}
+	do ..SysFirmy(.sys, "KV_DP")
+	kill ^||ML
+	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetMockData(.sys)
+	do $$$AssertEquals($get(^||ML("ERR")), "", "GetMockData skončil chybou")
+	set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT", 1), "{}"))
+	if '$isobject(page.%Get("rows")) || (page.rows.%Get("SPOJE").%Size() = 0) {
+		do $$$AssertTrue(1, "první linka KV_DP nedala ukázku - přeskočeno")
+		quit
+	}
+	set typy = page.values.%Get("TYPY_PROVOZU_LINKY")
+	do $$$AssertTrue($isobject(typy) && (typy.%Size() > 0), "ukázka nemá seznam typů provozu linky")
+}
+
 /// Vypnutý typ provozu proti starému tisku se stejným výběrem na celé sadě linek. Vypíná se typ
 /// prvního spoje s ručně zadanou platností, protože takový spoj dostává volnou negativní značku
 /// z rozsahu - jeho vynechání posune číslování dalších (starý tisk přiděluje jen tištěným).
@@ -232,14 +253,22 @@ Method TestZvyraznitZastavku()
 		set ^||ML("IN","LINKA_ID") = 1073, ^||ML("IN","SMER_TISKU") = "Tam", ^||ML("IN","ZVYRAZNIT_ZASTAVKU") = hledana
 		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrMhd).GetData(.sys)
 		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1))
-		set (oznacene, czst) = "", it = page.rows.%Get("ZASTAVKY").%GetIterator()
+		set (oznacene, czst, nazev) = "", it = page.rows.%Get("ZASTAVKY").%GetIterator()
 		while it.%GetNext(.k, .z) {
 			set ma = ($zconvert(z.%Get("NAZEV_ZASTAVKY"), "L") [ $zconvert(hledana, "L")) && (hledana '= "")
 			do $$$AssertEquals(z.%Get("AKTUALNI_ZASTAVKA"), $select(ma:"true", 1:"false"), """"_hledana_""": "_z.%Get("NAZEV_ZASTAVKY"))
-			if ma set oznacene = oznacene + 1, czst = z.%Get("CZST")
+			if ma set oznacene = oznacene + 1, czst = z.%Get("CZST"), nazev = z.%Get("NAZEV_ZASTAVKY")
 		}
 		do $$$AssertEquals(+oznacene, $case(hledana, "TRŽNICE":1, "tašovice":3, :0), """"_hledana_""": počet označených řádků")
 		do $$$AssertEquals(page.values.%Get("AKTUALNI_ZASTAVKA_CZST"), $select(oznacene=1:czst, 1:""), """"_hledana_""": číslo zastávky pro QR")
+		// Název aktuální zastávky jen při jediné shodě; řádek ho může mít doplněný o značky poznámek.
+		set popis = page.values.%Get("POPIS_ZASTAVKA")
+		if oznacene = 1 {
+			do $$$AssertTrue((popis '= "") && ($extract(nazev, 1, $length(popis)) = popis), """"_hledana_""": název aktuální zastávky „"_popis_"“ × řádek „"_nazev_"“")
+		}
+		else {
+			do $$$AssertEquals(popis, "", """"_hledana_""": bez jediné shody název aktuální zastávky prázdný")
+		}
 	}
 }
 
@@ -520,6 +549,17 @@ Method TestJakoVyveskaMhd()
 		kill polozky(o.value)
 	}
 	do $$$AssertTrue(pocet > 0, "vývěska nabídla aspoň jednu linku")
+	// Řazení podle čísla linky (Jan 27. 10.): čísla vzestupně, pak ostatní označení, ne podle interního ID.
+	set it = ##class(%DynamicArray).%FromJSON(linky(vyv)).%GetIterator(), predchozi = "", spatne = ""
+	while it.%GetNext(.k, .o) {
+		set c = o.cislo
+		if c?1.N { set klic = "0~"_$translate($justify(+c, 12), " ", "0") }
+		elseif c '= "" { set klic = "1~"_$zconvert(c, "U") }
+		else { set klic = "2~" }
+		if (predchozi '= "") && (predchozi ]] klic) { set spatne = spatne_" "_c }
+		set predchozi = klic
+	}
+	do $$$AssertEquals(spatne, "", "linky ve výběru nejsou seřazené podle čísla, mimo pořadí:"_spatne)
 	set prvni = ##class(%DynamicArray).%FromJSON(linky(vyv)).%Get(0)
 	do $$$AssertTrue(prvni.subtitle?1"Platnost od "2N1"."2N1"."4N.E, "platnost ve výběru linek jako u AD (dd.mm.rrrr): "_prvni.subtitle)
 	// Od `B193g` nabízejí obě agendy i linky bez trasy (napíšou u nich důvod) - výběr je totožný.

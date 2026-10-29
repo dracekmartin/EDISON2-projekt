@@ -548,6 +548,13 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             },
             new FloatPropertyDescriptor
             {
+                Label = "Vpravo",  Group = "Okraje",
+                Get   = () => ps.MarginRight,
+                Set   = v  => ps.MarginRight = v,
+                Min   = 0f, Max = 100f, Unit = "mm"
+            },
+            new FloatPropertyDescriptor
+            {
                 Label = "Dole",    Group = "Okraje",
                 Get   = () => ps.MarginBottom,
                 Set   = v  => ps.MarginBottom = v,
@@ -558,13 +565,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                 Label = "Vlevo",   Group = "Okraje",
                 Get   = () => ps.MarginLeft,
                 Set   = v  => ps.MarginLeft = v,
-                Min   = 0f, Max = 100f, Unit = "mm"
-            },
-            new FloatPropertyDescriptor
-            {
-                Label = "Vpravo",  Group = "Okraje",
-                Get   = () => ps.MarginRight,
-                Set   = v  => ps.MarginRight = v,
                 Min   = 0f, Max = 100f, Unit = "mm"
             },
         ];
@@ -629,7 +629,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         list.Add(new EnumPropertyDescriptor
         {
-            Label   = "Přetečení", Group = "Sekce",
+            Label   = "Rozdělení na stránky", Group = "Sekce",
             Get     = () => section.OverflowBehavior,
             Set     = v  => section.OverflowBehavior = (SectionOverflowBehavior)v,
             Options =
@@ -648,21 +648,21 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         list.Add(new BoolPropertyDescriptor
         {
-            Label = "Rámeček", Group = "Vzhled",
+            Label = "Rámeček", Group = "Rámeček sekce",
             Get   = () => section.ShowBorder,
             Set   = v  => section.ShowBorder = v
         });
 
         list.Add(new ColorPropertyDescriptor
         {
-            Label = "Barva rámečku", Group = "Vzhled",
+            Label = "Barva rámečku", Group = "Rámeček sekce",
             Get   = () => section.BorderColor,
             Set   = v  => section.BorderColor = v
         });
 
         list.Add(new FloatPropertyDescriptor
         {
-            Label = "Tloušťka rámečku", Group = "Vzhled",
+            Label = "Tloušťka rámečku", Group = "Rámeček sekce",
             Get   = () => section.BorderWidth,
             Set   = v  => section.BorderWidth = v,
             Min   = 0f, Max = 5f, Unit = "mm"

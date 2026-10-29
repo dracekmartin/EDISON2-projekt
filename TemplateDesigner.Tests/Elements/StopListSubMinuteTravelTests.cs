@@ -86,7 +86,7 @@ public class StopListSubMinuteTravelTests
 
     /// <summary>Projeté zastávky mají nulu vynucenou agendou („údaj není relevantní", KOVED #13091),
     /// takže z nich nesmí být „&lt;1". Že se ta nula při zvoleném „Zobrazit" vypíše, je důsledek volby -
-    /// výchozí „Nezobrazovat" ji schová (test níže).</summary>
+    /// výchozí vypnuté „Projeté: Zobrazit čas" ji schová (test níže).</summary>
     [Fact]
     public void Zapnuto_ProjetaZastavkaZnackuNedostane()
     {
@@ -97,7 +97,7 @@ public class StopListSubMinuteTravelTests
             Stop("Hned za ní", 0),
         ];
 
-        var el = new StopListElement { ShowSubMinuteTravel = true, PassedStopsTime = PassedStopsTimeDisplay.Show };
+        var el = new StopListElement { ShowSubMinuteTravel = true, PassedStopsShowTime = true };
         var texty = Texty(el, trasa, showPassed: true);
 
         Assert.Equal(["0", "", "<1"], texty);
@@ -111,7 +111,7 @@ public class StopListSubMinuteTravelTests
     [InlineData("-7")]
     public void ProjetaZastavkaJeVychoziNastavenimPrazdna(string cas)
     {
-        var el = new StopListElement();   // PassedStopsTime = Hide (výchozí)
+        var el = new StopListElement();   // Projeté: Zobrazit čas vypnuté (výchozí)
         var z = new ZastavkaData { Popis = "Projetá", CasJizdy = cas, TrasaMin = [cas] };
 
         Assert.Equal("", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
@@ -124,7 +124,7 @@ public class StopListSubMinuteTravelTests
     [Fact]
     public void ProjetaZastavka_NemaAniZnackuProjizdi()
     {
-        var el = new StopListElement();   // PassedStopsTime = Hide (výchozí)
+        var el = new StopListElement();   // Projeté: Zobrazit čas vypnuté (výchozí)
         var z = new ZastavkaData { Popis = "Projetá", CasJizdy = "<", TrasaMin = ["<", "3"] };
 
         Assert.Equal("", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
@@ -137,7 +137,7 @@ public class StopListSubMinuteTravelTests
     [Fact]
     public void ProjetaZastavka_SeZobrazenimZustaneVse()
     {
-        var el = new StopListElement { PassedStopsTime = PassedStopsTimeDisplay.Show };
+        var el = new StopListElement { PassedStopsShowTime = true };
         var z = new ZastavkaData { Popis = "Projetá", CasJizdy = "<", TrasaMin = ["<", "3"] };
 
         Assert.Equal("<", el.GetCellText(z, StopFields.TravelTime, isPassed: true));
@@ -223,6 +223,25 @@ public class StopListSubMinuteTravelTests
         Assert.True(bezZnacky > seZnackou, $"číslo mělo být odsazené: {bezZnacky} vs {seZnackou}");
         Assert.Equal(vychozi, seZnackou, 3);
         Assert.True(bezZnacky - vychozi > 0.5f, $"odsazení je podezřele malé: {bezZnacky - vychozi} mm");
+    }
+
+    /// <summary>Měření znaku „&lt;" nesmí uvolnit písmo ze sdílené mezipaměti. U písma z operačního
+    /// systému to SkiaSharp ignoruje, ale písmo přibalené v aplikaci (`Fonts/*.ttf`) se opravdu uvolní
+    /// a další měření i kreslení téhož písma vezme výchozí písmo - do 28. 10. se tak druhé odsazení
+    /// lišilo od prvního.</summary>
+    [Theory]
+    [InlineData("Courier New")]
+    [InlineData("Timetable_nove")]
+    public void MereniZnacky_NeuvolniSdilenePismo(string pismo)
+    {
+        var trasa = Trasa();
+        var el = new StopListElement { ShowSubMinuteTravel = true };
+        el.DataStyle.FontFamily = pismo;
+
+        float prvni = Odsazeni(el, trasa, 3);
+        float druhe = Odsazeni(el, trasa, 3);
+
+        Assert.Equal(prvni, druhe, 4);
     }
 
     /// <summary>Při zarovnání vpravo se číslice srovnají samy - odsazení by je rozhodilo.</summary>

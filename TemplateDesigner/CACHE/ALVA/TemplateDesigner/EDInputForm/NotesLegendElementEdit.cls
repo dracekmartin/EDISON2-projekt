@@ -22,46 +22,52 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
-        // ── Skupina "Obecné" ──────────────────────────────────────────────
-        d form.AddGroup("general", "Obecné")
-        // Zapínadlo záhlaví sedí v Obecném jako u zastávek; jeho vzhled je ve skupině Záhlaví.
-        // Klíč HeaderBar, ne ShowHeader: ten u zastávek a tabulek znamená záhlaví SLOUPCŮ, které
-        // legenda nemá. Stejný klíč se dvěma popisky hlídá drift test.
+        // ── Skupina "Záhlaví" ─────────────────────────────────────────────
+        // Zapínadlo je první pole skupiny jako u tabulek (skupina Obecné by nesla jen je). Klíč
+        // HeaderBar, ne ShowHeader: ten u zastávek a tabulek znamená záhlaví SLOUPCŮ, které legenda
+        // nemá. Stejný klíč se dvěma popisky hlídá drift test.
+        d form.AddGroup("header", "Záhlaví")
         s f = form.AddBool("ShowHeaderBar", "Záhlaví", 1)
         s f.helpText = "Vypnuté záhlaví se nekreslí ani s podbarvením a nezabírá výšku - poznámky pak začínají u horní hrany prvku."
-
-        // ── Skupina "Záhlaví" ─────────────────────────────────────────────
-        d form.AddGroup("header", "Záhlaví")
         d form.AddText("HeaderText", "Text záhlaví", "Poznámky")
-        // Pozadí BEZ výchozí hodnoty - podbarvení si prvek nese sám, takže pole má ukázat jeho
-        // hodnotu. Výchozí barva by se vracela do vymazaného pole a vypadalo by to, že vymazání
-        // neplatí (nález Pavel 1. 9.). Prázdno = bez podbarvení.
-        s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí záhlaví", $$$FieldTypeColor, 0, 0)
-        s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF000000"
+        // Pole stylu v pořadí sady StyleFields (písmo, pak barvy), jen ta, která pruh záhlaví kreslí:
+        // zarovnání, okraje, podtržení ani přeškrtnutí ne (`B194h` H9).
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("HeaderStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("HeaderStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
-        // Velikost záhlaví je samostatná; poznámky mají svou ve skupině Rozložení. Prázdno = 9 bodů,
+        // Velikost záhlaví je samostatná; poznámky mají svou v Datových buňkách. Prázdno = 9 bodů,
         // což kreslení používalo i dřív - do 16. 9. jen nebylo kde to změnit.
-        s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", "", 3, 24, "pt", "0.#")
+        s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", "", 3, 72, "pt", "0.#")
         s f.helpText = "Velikost písma v záhlaví prvku. Prázdné = 9 bodů. Výška pruhu záhlaví se počítá z ní."
+        // Výchozí hodnoty = co se kreslí, když styl nic neříká (záhlaví tabulek JŘ je tučné).
+        d form.AddBool("HeaderStyle.Bold", "Tučné", 1)
+        d form.AddBool("HeaderStyle.Italic", "Kurzíva", 0)
+        s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF000000"
+        // Pozadí BEZ výchozí hodnoty - podbarvení si prvek nese sám, takže pole má ukázat jeho
+        // hodnotu. Výchozí barva by se vracela do vymazaného pole a vypadalo by to, že vymazání
+        // neplatí (nález Pavel 1. 9.). Prázdno = bez podbarvení.
+        s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
+        // Barva pozadí tu záměrně není: prvek kreslí jen text poznámek, pozadí buněk nekreslí nikde.
+        // Tučné taky ne: prvek ho bere jen pro značky a ty jsou bez nastavení tučné, takže nezaškrtnuté
+        // pole by tvrdilo něco jiného, než se tiskne.
+        // Výška řádku a Velikost jsou tu jako u tabulek (rozhodnutí Jan 28. 10.). Do Rozložení je 1. 9. dal
+        // nález Pavla, protože Datové buňky tehdy měly jen barvy; dnes v nich je i Font a Řez.
+        // Popisky i skupina musí souhlasit s C# descriptory (drift test).
         d form.AddGroup("data", "Datové buňky")
-        s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Pozadí buněk", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
-        s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF000000"
+        s f = form.AddDecimal("NoteLineHeight", "Výška řádku", "", 1, 50, "mm")
+        s f.helpText = "Prázdné = podle velikosti písma. Vlastní hodnotu zadejte, jen když chcete poznámky vzdušnější nebo stlačenější."
         // ComboBox (editovatelný) - klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("DataStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
         d form.AddFieldToLastGroup("DataStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
-        s f = form.AddText("NoteSeparator", "Oddělovač", " - ")
-        s f.helpText = "Vloží se mezi značku a popis u vlastních poznámek linky. U ikonových atributů (na znamení, bezbariér) se nepoužívá."
+        s f = form.AddDecimal("NoteFontSize", "Velikost", 7, 3, 72, "pt", "0.#")
+        s f.helpText = "Velikost písma poznámek. Nevejdou-li se poznámky do prvku, písmo se zmenší a aplikace to oznámí ve stavovém řádku."
+        s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
+        s f.value = "#FF000000"
 
-        // ── Skupina "Rozložení" (velikost / sloupce / řazení / zarovnání markeru) ────
-        // Velikost a výška řádku patří sem, ne mezi barvy buněk - uživatel je hledá spolu s počtem
-        // sloupců (nález Pavel 1. 9.). Popisky i skupina musí souhlasit s C# descriptory (drift test).
+        // ── Skupina "Rozložení" (sloupce / řazení / zarovnání markeru) ────
         d form.AddGroup("layout", "Rozložení")
         // Linkový JŘ: pořadí, tisk a sloupce po druzích poznámek (#7487) v okně návrháře. Sedí tady,
         // ne v obsahu, aby bylo rozložení na jednom místě, a první, protože je ze skupiny nejdůležitější
@@ -69,20 +75,21 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("__skupinyPoznamek", "Druhy poznámek", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit…"
         s f.helpText = "Pořadí druhů poznámek, které se tisknou, a počet sloupců každého druhu. Každý druh začíná na novém řádku."
-        s f = form.AddDecimal("NoteFontSize", "Velikost poznámek", 7, 4, 20, "pt", "0.#")
-        s f.helpText = "Velikost písma poznámek. Nevejdou-li se poznámky do prvku, písmo se zmenší a aplikace to oznámí ve stavovém řádku."
-        s f = form.AddDecimal("NoteLineHeight", "Výška řádku", "", 2, 15, "mm")
-        s f.helpText = "Prázdné = podle velikosti písma. Vlastní hodnotu zadejte, jen když chcete poznámky vzdušnější nebo stlačenější."
         d form.AddNumber("Columns", "Počet sloupců", 1, 1, 4)
         s f = form.AddFieldToLastGroup("WrapSmer", "Směr plnění", $$$FieldTypeList, 0, 0)
         d f.AddListItem("PoSloupcich", "Po sloupcích"), f.AddListItem("PoRadcich", "Po řádcích")
         s f.value = "PoSloupcich"
         s f = form.AddFieldToLastGroup("Razeni", "Řazení poznámek", $$$FieldTypeList, 0, 0)
         // Volby 1:1 s panelem (DleTypu je default elementu - dřív v dialogu úplně chyběla)
-        d f.AddListItem("DleTypu", "Dle typu (dny platnosti → značky → atributy → text)"), f.AddListItem("Vychozi", "Výchozí (dle dat)")
+        d f.AddListItem("DleTypu", "Podle typu"), f.AddListItem("Vychozi", "Podle dat")
         d f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
         s f.value = "DleTypu"
-        d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
+        s f.helpText = "Podle typu: dny platnosti, pak značky, atributy a text. Podle dat: v pořadí, v jakém poznámky přišly."
+        s f = form.AddDecimal("MarkerSirka", "Šířka buňky značky", 0, 0, 30, "mm")
+        s f.helpText = "Pevná šířka místa pro značku, aby texty poznámek začínaly pod sebou. 0 = text hned za značkou."
+        // Oddělovač mění obsah řádku, ne vzhled buňky - do 28. 10. stál mezi poli stylu (`B194h` H9).
+        s f = form.AddText("NoteSeparator", "Oddělovač", " - ")
+        s f.helpText = "Vloží se mezi značku a popis u vlastních poznámek linky. U ikonových atributů (na znamení, bezbariér) se nepoužívá."
 
         // ── Co blok tiskne ────────────────────────────────────────────────
         // Skupina „Filtrování" míchala tři různé věci a měla 11 položek (rozpočet ~7): které
@@ -123,25 +130,32 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Skupina "Negativní značky" ────────────────────────────────────
         d form.AddGroup("nz", "Negativní značky")
-        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Pozadí značky", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaBackColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva textu značky", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("NegativniZnackaForeColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFFFFFFF"
 
         // ── Skupina "Porovnání verzí" (B192b) ─────────────────────────────
         // Jen rozdílový linkový JŘ: legenda nese poznámky obou verzí linky. Data říkají verzi,
         // barvu určuje šablona. Návrhář skupinu jinde schová.
         d form.AddGroup("verze", "Porovnání verzí")
-        s f = form.AddFieldToLastGroup("RozdilPuvodniBackColor", "Původní verze", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("RozdilPuvodniBackColor", "Původní verze: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FFF08080"
         s f.helpText = "Podbarvení poznámky, která je jen v původní verzi linky. Stejně jako odlišné buňky v Tabulce spojů."
-        s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("RozdilNovaBackColor", "Nová verze: Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF92D36E"
         s f.helpText = "Podbarvení poznámky, která je jen v nové verzi linky."
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddGrid(form, 0)
+        // Mřížkou kreslí Poznámky jen čáru pod pruhem záhlaví - s vypnutým záhlavím pole nic nedělají.
+        s f = form.GetField("Grid.Color")
+        s f.helpText = "U Poznámek jen čára pod záhlavím. S vypnutým záhlavím se nekreslí."
+        s f = form.GetField("Grid.Width")
+        s f.helpText = "U Poznámek jen čára pod záhlavím. Prázdné nebo 0 = podle tloušťky rámečku prvku."
+        s f = form.GetField("Grid.Style")
+        s f.helpText = "U Poznámek jen čára pod záhlavím."
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 100)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

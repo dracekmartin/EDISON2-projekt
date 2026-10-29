@@ -76,6 +76,6 @@ public class PripojnyRadekVzhledTests
     public void FormularNabiziPozadiRadku()
     {
         Assert.Contains(Prvek().GetPropertyDescriptors(),
-            d => d.Label == "Pozadí řádku" && d.Group == "Přípojné řádky");
+            d => d.Label == "Barva pozadí" && d.Group == "Přípojné řádky");
     }
 }

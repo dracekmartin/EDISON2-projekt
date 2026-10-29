@@ -39,9 +39,9 @@ Method TestObecnaAgendaSNazvemOdKlienta()
 {
 	do ..SetupSys(.sys)
 	kill ^||ML
-	set ^||ML("IN","name") = "Zkouška", ^||ML("IN","agendaCode") = "GENERAL", ^||ML("IN","agendaLabel") = "Obecná (bez databáze)"
+	set ^||ML("IN","name") = "Zkouška", ^||ML("IN","agendaCode") = "GENERAL", ^||ML("IN","agendaLabel") = "Obecná (bez dat)"
 	do ##class(ALVA.TemplateDesigner.EDInputForm.SaveTemplate).Init(.sys)
-	do $$$AssertEquals($listget(..PoleAgendy(), 13), "GENERAL~Obecná (bez databáze)", "obecná agenda s názvem")
+	do $$$AssertEquals($listget(..PoleAgendy(), 13), "GENERAL~Obecná (bez dat)", "obecná agenda s názvem")
 }
 
 }

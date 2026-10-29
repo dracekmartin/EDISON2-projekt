@@ -1,5 +1,566 @@
 ﻿# Changelog
 
+## 2026-10-28 (28) - Popisky jednoduchých prvků podle pravidel, obdélník kreslí obrys rámečkem
+
+Stránka, Sekce, Text, Obdélník, Čára, Obrázek a Kód se řídí stejnými pravidly popisků jako tabulky (rozhodnutí Jan 28. 10., `ux-conventions §8`).
+- **Obdélník** má jeden obrys - rámeček prvku (barva, tloušťka, rohy). Vlastní okraj se stejným tvarem i rohy byl druhé nastavení pro tutéž čáru; migrace 1.18.0 ho převede do rámečku, pokud rámeček nastavený není, jinak zůstane rámeček. Nový obdélník má dál černý obrys 0,5 mm a import z PDF zapisuje rámeček.
+  Rámeček se kreslí až po obsahu všech prvků, okraj se kreslil s obsahem: prvek, který přes hranu obdélníku zasahuje, teď leží pod obrysem.
+- **Skupiny podle prvku místo „Vzhled":** Obdélník má skupinu Obdélník, Kód má barvy ve skupině Kód, Sekce má skupinu **Rámeček sekce** (hledání „rámeček" ji najde celou).
+- **Obrázek:** **Přizpůsobení velikosti** místo „Škálování", volba „Vyplnit" bez závorky (co se ořízne, říká nápověda), Barva pozadí ve skupině Obrázek místo Rámečku prvku.
+- **Stránka:** okraje v pořadí Nahoře, Vpravo, Dole, Vlevo jako vnitřní okraj buněk; Výchozí font a **Formát data a čísel** (dřív „Kultura (formátování)") v jedné skupině **Písmo a formát**, volba „Podle systému".
+- **Sekce:** **Rozdělení na stránky** místo „Přetečení".
+- Všechna barevná pole mají nápovědu, že jde zadat barvu linky ({BARVA_LINKY}) - umí to každé, nápovědu měla jen část. Text si styl nechává ve třech skupinách Font, Barvy a Zarovnání (rozhodnutí Jan).
+- Panel vlastností a protokol importu mají skupiny a popisky jako formuláře. Ověřeno voláním `Init` všech sedmi formulářů na dev serveru; pojistka migrace `MigrationObdelnikRamecekTests`.
+
+## 2026-10-28 (27) - Panel Minut odjezdů má skupiny jako formulář (`B194h` H17)
+
+Protokol importu z PDF a asistent poznají nastavení podle skupiny a popisku. Minuty odjezdů měly v programu skupiny, které formulář nemá („Odjezdy", „Řádky dat", „Záhlaví - 2. řádek", „Styl minuty", „Mezery").
+- Teď mají skupiny Skupiny dnů, Rozměry, Značky u odjezdů, Záhlaví a Datové buňky jako formulář. Popisky ve skupině Záhlaví jsou „Velikost", „Zarovnání svisle" a „2. řádek: …", stejně jako ve formuláři.
+- Výška řádku Seznamu zastávek je v programu ve skupině Datové buňky jako ve formuláři (dřív „Řádky").
+- Formuláře ani šablony se nemění. Tabulka spojů se srovnala v (25).
+
+## 2026-10-28 (26) - Minuty odjezdů: „Textová značka" místo „Text" (`B194h` H11)
+
+- Styl písmen a čísel u minuty („R", „u1") se ve skupině Značky u odjezdů jmenuje **„Textová značka: …"** souběžně s „Negativní značka: …". Z „Text: Barva textu" nešlo poznat, o jaký text jde. „Symbol: …" zůstává, nápověda u zapnutí značek mluví o písmenech a symbolech.
+- Panel vlastností a protokol importu z PDF mají všechny značky v jedné skupině Značky u odjezdů jako formulář (dřív „Značky u odjezdů - symbol" a „- text").
+- Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` na dev serveru.
+
+## 2026-10-28 (25) - Tabulka spojů: „Řádky nad časy" a Přípojné řádky před Šířkou sloupců (`B194h` H10)
+
+- Skupina **„Řádky"** se jmenuje **„Řádky nad časy"** - jsou to řádky v hlavičce sloupců spojů mezi čísly spojů a časy (platnost, negativní značky, turnusy). Samotné „Řádky" neříkalo, o jaké jde, a hledání ho pletlo s Přípojnými řádky.
+- **Přípojné řádky** stojí před Šířkou sloupců: nahoře je nejdřív obsah, pak rozložení, pak zvláštní stavy (`ux-conventions §4`).
+- **Řádek platnosti, Řádek negativních značek a Řádky turnusů** mají nápovědu. Řádek platnosti nese dny platnosti, místenku i atributy spoje.
+- Panel vlastností a protokol importu z PDF mají skupiny jako formulář (dřív např. „Datové buňky · Formát času" místo „Časy · Formát času"); příklad v zadání pro AI import používá nový klíč.
+- Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` na dev serveru.
+
+## 2026-10-28 (24) - Poznámky: Velikost a Výška řádku v Datových buňkách (`B194h` H9)
+
+Velikost písma poznámek a Výška řádku jsou ve skupině **Datové buňky** jako u tabulek: Výška řádku, Font, Řez, **Velikost**, Barva textu. Pole „Velikost poznámek" se jmenuje „Velikost".
+- Do Rozložení je 1. 9. dal nález Pavla: uživatel je hledal u Počtu sloupců, protože Datové buňky tehdy měly jen barvy. Dnes v nich je Font a Řez a velikost patří k nim (rozhodnutí Jan 28. 10.).
+- Klíče polí se nemění, šablony beze změny.
+
+## 2026-10-28 (23) - Formulář Poznámek: styl záhlaví jako u ostatních prvků, Oddělovač v Rozložení (`B194h` H9)
+
+Poznámky si dál nechávají vlastní pořadí skupin (rozhodnutí Jan 28. 10.), uvnitř skupin se ale srovnaly s ostatními prvky.
+- **Záhlaví:** pole stylu v pořadí Font, Řez, Velikost, Tučné, Kurzíva, Barva textu, Barva pozadí (dřív obráceně od barev). Přibyly **Tučné** a **Kurzíva** - pruh záhlaví je kreslí, jen nešly nastavit, takže hledání „tučné" v Poznámkách nenašlo nic. Výchozí Tučné je zaškrtnuté, protože záhlaví se bez nastavení tiskne tučně.
+- **Datové buňky:** Font, Řez, Barva textu. Tučné záměrně ne: prvek ho bere jen pro značky, které jsou bez nastavení tučné, takže nezaškrtnuté pole by tvrdilo něco jiného, než se tiskne.
+- **Oddělovač** (text mezi značkou a vysvětlivkou) přešel z Datových buněk do Rozložení - mění obsah řádku, ne vzhled buňky.
+- **Negativní značky:** „Barva pozadí" a „Barva textu" - název skupiny se v popisku neopakuje.
+- Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` na dev serveru.
+
+## 2026-10-28 (22) - Výška záhlaví se jmenuje podle toho, co dělá (`B194h` H6)
+
+„Výška záhlaví" znamenala v Tabulce z dat nejmenší výšku (víc řádků záhlaví ji zvětší) a v Pevné tabulce pevnou; Minuty měly pro nejmenší výšku jiný popisek.
+- **Tabulka z dat:** „Nejmenší výška" ve skupině Záhlaví s nápovědou, že se záhlaví s víc řádky zvětší.
+- **Minuty odjezdů:** „Nejmenší výška řádku" ve skupině Záhlaví; nápověda říká, že platí pro 1. i 2. řádek záhlaví.
+- **Pevná tabulka:** „Výška" ve skupině Styl řádku záhlaví s nápovědou, že je pevná.
+- Klíče polí se nemění, šablony beze změny. Panel a protokol importu mají tytéž popisky a skupiny jako formulář. Hledání „výška záhlaví" u prvních dvou nic nenajde, dokud hledání neporovná slova s popiskem i názvem skupiny (`H12`; rozhodnutí Jan 28. 10.).
+- Ověřeno voláním `Init` všech tří formulářů na dev serveru.
+
+## 2026-10-28 (21) - Příručka a dokumentace po sjednocení formulářů (`B194h` H13-H15)
+
+- **Příručka:** Editor skupin dnů popisuje záložky Obecné, Sloupce a u AD Vlastní definice sloupců a říká, že styl záhlaví jde nastavit po skupinách (od 16. 9. to jde, příručka tvrdila opak).
+  Pole se jmenují jako ve formuláři: Čáry mezi řádky, Jen spoje se značkami / Bez spojů se značkami, Střídání řádků: Barva pozadí, Font, Barva pozadí, Text záhlaví, Rozdělení sloupců podle platnosti.
+- **Pro agenty:** skill `novy-element` vede na sdílenou záložku Sloupce, kostru formuláře z `ux-conventions §4` a ochranu proti zápisu při OK beze změny; opravené `elementy-architektura.md`, `ux-conventions.md`, `template-schema-versions.md`, `customer-requirements`.
+- **Roadmapa:** dlouhé položky (`B155`, `B171`, `B190`, `B179`, `B144`, `B18`, `F3`) zkrácené na pár řádků, zjištění přesunutá do `docs/` podle směrovací tabulky. Detail `P2` a vědomé rozdíly mezi agendami JŘ jsou v `legacy-nahrada.md §4`.
+
+## 2026-10-28 (20) - Drobnosti po revizi sjednocení (`B194h` H4, H5, H7, H8)
+
+- **Posun sloupce** šipkami ▲ ▼ v oknech tabulek už na okamžik neztratí výběr - seznam při posunu nedrží týž sloupec dvakrát (pojistka `ZalozkaSloupceTests.Posun_KazdyRadekJeVSeznamuVzdyJednou`, na původním kódu padala).
+- **Podtržení a přeškrtnutí** času v Tabulce spojů má pod značkou s vlastní barvou (verze linky v rozdílovém JŘ) barvu té značky, ne barvu textu (pojistka `PodtrzeniTextuVBunceTests.BarevnyUsek_Podtrzeni_MaJehoBarvu`, na původním kódu padala).
+- **Okna sloupců:** pole s textem záhlaví se jmenuje „Text záhlaví", ať se neplete s nadpisem sekce stylu „Záhlaví" pod ním.
+  Vlastní definice sloupců u Minut má popisky bez dvojteček a záhlaví sloupce zadává jako „1. řádek" a „2. řádek".
+- **Parametr „Rozdělení sloupců podle platnosti"** místo „dle platnosti" (vývěska i linkový JŘ AD, hláška linky bez spojů a nápověda F1).
+  Hodnota se ukládá podle klíče, uložené volby zůstávají.
+  Nápověda parametru „Číslo stanoviště podle" jmenuje pole „Výběr stanoviště" místo dřívějšího „Více stanovišť".
+  Ověřeno voláním `GetParameters` obou agend na dev serveru.
+
+## 2026-10-28 (19) - Sloupce dědí z toho, co je právě na záložce Obecné (`B194h` H2)
+
+Okno tabulky zapíše záložku Obecné do prvku až při OK, záložka Sloupce ale ukazovala zděděné hodnoty z doby otevření okna.
+Když uživatel na Obecné zapnul tučné záhlaví a u jednoho sloupce ho chtěl vypnout, zaškrtávátko to porovnalo se starým stavem prvku, uložilo dědění a sloupec se vytiskl tučně.
+- Při přechodu na záložku Sloupce okno přepočítá zděděné hodnoty podle toho, co je na Obecné: šedé nápovědy, zaškrtávátka i nabídka řezů ukazují, co se opravdu vytiskne.
+- Platí ve všech čtyřech oknech tabulek. Prvek se tím nemění, změny ze záložky Obecné zapíše dál až OK.
+- Pojistky `ZalozkaSloupceOpravyTests.TucneZeZalozkyObecne_SloupecOdlisenyOdskrtnutim_ZustaneNetucny` a `NahledProZalozkuSloupce_PrvekNemeni`. Přechod mezi záložkami v okně není ověřený proklikem.
+
+## 2026-10-28 (18) - OK beze změny nezapíše ani hodnoty, které okno převede (`B194h` H1)
+
+Okna tabulek některé uložené hodnoty při načtení převádějí: prázdný styl sloupce zahodí, mezeru na konci výrazu oříznou, starší zápis dnů „7+" u vlastních sloupců Minut načtou jako „+".
+OK beze změny pak šablonu stejně označilo jako změněnou a přidalo krok do Ctrl+Z, protože se porovnávala šablona s výstupem okna.
+- Okno si výstup zapamatuje při otevření a při OK ho porovná s tím, co vrací teď. Beze změny vrátí původní hodnoty šablony.
+- Platí pro sloupce všech čtyř oken, hodiny Minut (záhlaví, šířka, styl) i vlastní sloupce Minut.
+- Reprodukce a pojistky v `OkBezeZmenyTests` (čtyři vstupy, na původním kódu padaly).
+
+## 2026-10-28 (17) - Popisky Minut odjezdů, Tabulky spojů, Poznámek a tabulek podle pravidel
+
+Popisky složitých prvků podle týchž pravidel jako Seznam zastávek (rozhodnutí Jan 28. 10.).
+- **Minuty odjezdů:** Zarovnání minut místo „Rozestup odjezdů" (volby jsou o zarovnání: Bez zarovnání / Podle nejširšího odjezdu / Na pevnou šířku), Nejmenší výška řádku záhlaví místo „Min. …".
+- **Tabulka spojů:** Řádky turnusů, Tučné zastávky / Čáry u zastávek podle trasy, Přípojné řádky (vysvětlení vyčká / navazuje v nápovědě), Slučování přípojů s volbou Řádek pro každý spoj; barvy verzí se jmenují Původní verze: Barva pozadí, Nová verze: Barva značek a podobně. Hláška o nenačtených turnusech radí vypnout Řádky turnusů.
+- **Poznámky:** volby řazení Podle typu / Podle dat (pořadí typů v nápovědě), barvy verzí jako u Tabulky spojů. Ostatní zůstalo (rozhodnutí Jan: nastavení je tam málo).
+- **Tabulka z dat:** Směr řazení a Směr druhého řazení.
+- **Střídání řádků: Barva pozadí** v Minutách, Tabulce z dat i Pevné tabulce a u skupiny dnů v okně Minut - barva se najde hledáním „barva" a jmenuje se stejně jako Lichá Tč: Barva pozadí.
+
+## 2026-10-28 (16) - Popisky Seznamu zastávek podle toho, co pole dělá
+
+Popisky polí Seznamu zastávek odpovídají typu pole a tomu, co uživatel udělá (rozhodnutí Jan 28. 10., pravidla v `ux-conventions §8`).
+- **Počet oddílů** místo „Rozdělit na více oddílů" - pole je číslo, ne zaškrtávátko. **Výběr stanoviště** místo „Více stanovišť" - je to výběr ze čtyř možností.
+- Zaškrtávátka říkají, co zapínají: **Odsazení podle trasy**, **Značka na znamení**, **Atributy zastávky**.
+- **Projeté: Zobrazit čas** je zaškrtávátko místo výběru Nezobrazovat / Zobrazit; šablony převede migrace 1.17.0.
+- Skupina **Šipka směru** název šipky neopakuje: Pozice, Barva, Tloušťka, Velikost hrotu, **Tvar hrotu**, Styl čáry. Volby pozice jsou jen Vpravo / Vlevo, že se šipka kreslí u okraje prvku, říká nápověda.
+- Volby bez „dle": Podle trasy linky, Nejčetnější podle spojů, Všechna podle četnosti. Pozice značek: Za názvem / Před názvem.
+- **Podmínka viditelnosti řádku** místo „Viditelnost řádku" i v Tabulce spojů a Tabulce z dat - je to podmínka, ne zaškrtávátko.
+- Panel vlastností má tytéž popisky i skupiny jako formulář; protokol načtení z obrázku vypisuje pole i se skupinou („Šipka směru · Pozice").
+
+## 2026-10-28 (15) - Formulář Poznámek bez polí, která nic nedělají (`B194d` E3b)
+
+Poznámky nejsou tabulka, takže kostru formuláře tabulek nepřebírají (rozhodnutí Jan 28. 10.). Opravily se jen věcné chyby:
+- **Barva pozadí** v Datových buňkách zmizela z formuláře i z rychlých barev - prvek kreslí jen text poznámek a pozadí buněk nekreslil nikde.
+- **Záhlaví** (zapnutí pruhu) je první pole skupiny Záhlaví; skupina Obecné, ve které bylo samo, zmizela.
+- Pole skupiny **Mřížka** mají nápovědu, že u Poznámek kreslí jen čáru pod záhlavím a s vypnutým záhlavím nic.
+
+## 2026-10-28 (14) - Lichá Tč se nastavují jen barvou (`B194d` E3c)
+
+Podbarvení lichých Tč v Tabulce spojů mělo zaškrtávátko „Podbarvit lichá Tč" a k němu „Barvu lichých Tč"; ostatní tabulky mají Střídání řádků jedním polem, kde prázdná barva znamená bez střídání.
+- Teď je to jedno pole **Lichá Tč: Barva pozadí**, prázdné = bez podbarvení. Zaškrtávátko zmizelo.
+- Podbarvení se dál řídí tarifním číslem, ne pořadím řádku, takže příjezd a odjezd jedné zastávky mají barvu stejnou. Tak to tiskne i starý modul (`JRapiLinPrtWin.mac:1206-1210`); do Střídání řádků se proto neslučuje (rozhodnutí Jan 28. 10.).
+- Šablony s vypnutým podbarvením převede migrace 1.16.0 na prázdnou barvu, ostatní se nemění. Import z PDF nastaví prázdnou barvu, když předloha podbarvení nemá.
+
+## 2026-10-28 (13) - Záhlaví na víc řádků i v Tabulce spojů a Tabulce z dat
+
+Do záhlaví sloupce v Tabulce spojů a Tabulce z dat jde zadat víc řádků (Enter nebo `\n`), jako u Seznamu zastávek a Minut odjezdů.
+Kreslení víc řádků umělo i dřív, ale výška záhlaví počítala s jedním řádkem a druhý přetekl do dat, proto ho okna sloupců nenabízela.
+- Tabulka spojů: řádek čísel spojů, ve kterém jsou i záhlaví popisných sloupců, je tak vysoký, kolik řádků má nejdelší záhlaví. Stejně se počítá výška prvku, stránkování i opakovaná hlavička na další straně.
+- Tabulka z dat: nastavená „Výška záhlaví" zůstává nejmenší výškou; záhlaví se zvětší, jen když se řádky do ní nevejdou. Jednořádkové záhlaví se nemění.
+- Příručka v kapitole o zalomení řádku už netvrdí, že se zvětší i řádek s daty.
+
+## 2026-10-28 (12) - Seznam zastávek s „<1" nepřepne písmo na výchozí
+
+Seznam zastávek se zapnutým „<1" měří znak „<", aby ostatní čísla zarovnal pod sebe, a změřené písmo pak uvolnil.
+Písmo je ale sdílené pro všechno kreslení.
+U písma ze systému to SkiaSharp ignoruje, písmo přibalené v aplikaci se ale uvolnilo doopravdy a další kreslení téhož písma vzalo výchozí písmo (druhé měření vyšlo 2,43 mm místo 3,02 mm).
+- Měření sdílené písmo neuvolňuje; past je zapsaná v `implementation-patterns.md` (SkiaSharp).
+
+## 2026-10-28 (11) - Chyba ve Vlastní definici sloupců je vidět i z jiné záložky (`B194d` E13h)
+
+Hláška o chybném seznamu značek nebo období ve Vlastní definici sloupců u Minut odjezdů byla jen na té záložce.
+OK z jiné záložky okno nezavřelo a neřeklo proč.
+- OK teď při chybě přepne na záložku Vlastní definice sloupců a vybere sloupec, ve kterém chyba je.
+
+## 2026-10-28 (10) - Nastavení skupin dnů jiných linek přežije OK v okně Minut (`B194d` E13g)
+
+Okno Minut odjezdů nabízí jen skupiny dnů z dat vybrané linky, šablona ale slouží víc linkám.
+OK zahodilo nastavení skupiny, kterou vybraná linka nemá (třeba sobota u linky jen pro pracovní dny), i výchozí nastavení podle pořadí ze vzorů a importu.
+- Nastavení skupin, které okno nenabídlo, teď zůstane v šabloně na svém místě, takže se u jiné linky sloupce nepřeházejí.
+- OK beze změny u linky se skupinami šablonu nemění (zbytek `E13d`: okno dřív zapsalo výchozí nastavení pro každou skupinu z dat).
+- Totéž pravidlo platí pro sloupce Seznamu zastávek, které agenda nenabízí: po změně v okně zůstanou na svém místě, dřív se přesunuly na konec.
+
+## 2026-10-28 (9) - Barva Střídání řádků skupiny dnů se kontroluje (`B194d` E13f)
+
+Pole Střídání řádků u skupiny dnů v okně Minut odjezdů přijalo jakýkoli text.
+Neplatnou barvu kreslení přečetlo jako průhlednou, takže skupina ztratila střídání řádků a přebila i barvu nastavenou na prvku.
+- Pole teď přijme jen platnou barvu (`#RRGGBB`, `#AARRGGBB`, `{BARVA_LINKY}`) nebo prázdnou hodnotu; jinak zůstane původní, stejně jako barvy v editoru stylu.
+
+## 2026-10-28 (8) - Pravidla zvýraznění v jednom kroku zpět s oknem tabulky (`B194d` E13e)
+
+Pravidla zvýraznění upravená v okně Seznamu zastávek, Tabulky spojů nebo Tabulky z dat byla samostatný krok zpět.
+Jedno Ctrl+Z vrátilo jen pravidla a změny sloupců a nastavení z okna zůstaly.
+- Teď jdou pravidla do téhož kroku jako zbytek okna, takže jedno Ctrl+Z vrátí celé OK.
+- Pravidla beze změny (i v samostatném okně zvýraznění z panelu) krok nevytvoří.
+
+## 2026-10-28 (7) - OK beze změny v okně tabulky šablonu nemění (`B194d` E13d)
+
+OK v okně Seznamu zastávek, Minut odjezdů, Tabulky spojů a Tabulky z dat, ve kterém se nic nezměnilo, přidalo krok do Ctrl+Z a označilo šablonu jako změněnou.
+Uživatel po pouhém nahlédnutí do nastavení dostal dotaz na uložení a Ctrl+Z zdánlivě nic nevrátil.
+- Návrhář zapíše sloupce, hodiny a skupiny dnů jen tehdy, když se opravdu liší.
+- Okno vrátí původní sloupce i tehdy, když starší šabloně doplnilo vypnuté nové sloupce nebo když agenda některé sloupce nenabízí (dřív je přesunulo na konec seznamu).
+
+## 2026-10-28 (6) - Styl sloupce má stejná pole jako formulář prvku (`B194d` E13c)
+
+Editor stylu sloupce na záložce Sloupce (všechna čtyři okna tabulek) má pole ve stejném pořadí, se stejnými názvy a mezemi jako sada stylu ve formuláři prvku.
+- Tučné, Kurzíva, Podtržení a Přeškrtnutí jsou samostatné řádky místo společného řádku „Styl:", barvy stojí před zarovnáním jako ve formuláři.
+- Vnitřní okraj má čtyři pole nahoře, vpravo, dole a vlevo místo šipek, které ukazovaly směr posunu textu (šipka nahoru byla okraj dole).
+- Popisky jsou bez dvojteček a velikost i okraj mají jednotku za polem; velikost se omezí na 3 až 72 pt a okraj na 0 až 20 mm.
+- Zaškrtávátka nemají „×": hodnota shodná s prvkem se zase dědí, takže odškrtnutí vrátí sloupec k nastavení prvku a tečka přepsaného sloupce v seznamu zmizí. Dřív odškrtnutí uložilo „vypnuto" jako vlastní nastavení sloupce.
+- Popisky na záložce Sloupce (Sloupce, Záhlaví, Šířka, u Tabulky z dat Pole, Výraz, Formát) jsou bez dvojteček jako ve formuláři prvku.
+- Editor zůstal samostatný: prototyp s formulářem prvku vypadal v okně sloupců cize (vyhledávání, sbalovací skupiny) a Jan ho zamítl. Shodu se sadou formuláře hlídá test.
+
+## 2026-10-28 (5) - Jedna společná záložka Sloupce pro všechny tabulky (`B194d` E13c)
+
+Seznam zastávek, Minuty odjezdů, Tabulka spojů a Tabulka z dat měly záložku Sloupce každá ve vlastní kopii (asi 800 skoro shodných řádků) a texty i chování se rozešly.
+Teď ji sdílejí (`ColumnsTab`); okno jen dodá své sloupce a řekne, co u něj platí.
+- **Stejné texty:** popisek „Sloupce:", nadpis „Sloupec", zóny „Záhlaví" a „Datové buňky" jako ve formuláři prvku (u šipky „Šipka"), jedna nápověda k dědění, hlášení o přesahu šířky bez nepravdivého „obsah se ořízne", reset s bublinou, „×" u Střídání řádků s bublinou „Vymazat barvu". Okna mají stejnou šířku.
+- **Pevné sloupce:** Hodiny u Minut a sloupce spojů u Tabulky spojů nejdou skrýt ani posunout (zaškrtávátko dřív nic nedělalo). Posun ostatních sloupců je kolem nich prohodí.
+- **Minuty:** seznam ukazuje název skupiny dnů z dat i po přepisu záhlaví, ať je vidět, o kterou jde.
+- **Chyba:** OK v okně Tabulky z dat zahodilo zarovnání sloupce a šířku v procentech (40 % se změnilo na 40 mm) i u tabulky, na kterou nikdo nesáhl. Okno je teď vrací beze změny a procentní šířku ukáže v %.
+- **Chyba:** záhlaví a šířku hodin okno Minut zapisovalo rovnou do prvku, takže je Ctrl+Z nevrátil. Jsou teď součástí jednoho vratného kroku s ostatním nastavením.
+- **Chyba:** šedá zděděná hodnota zarovnání ukazovala Vlevo u sloupce, který se tiskne na střed (Tabulka spojů); zděděná vrstva teď počítá se záložním zarovnáním sloupce jako tisk.
+
+Víceřádkové záhlaví zůstává jen u Seznamu zastávek a Minut a Přizpůsobit jen u Seznamu zastávek a Tabulky z dat (Tabulka spojů záměrně, rozhodnutí 26. 10.): Tabulka spojů a Tabulka z dat výšku záhlaví podle počtu řádků nepočítají.
+Reprodukce a pojistky `ZalozkaSloupceOpravyTests` (na původním kódu padaly), `ZalozkaSloupceTests`.
+
+## 2026-10-28 (4) - Tabulka spojů, Tabulka z dat a Pevná tabulka ve společné kostře formuláře (`B194d` E3)
+
+Všechny tabulky kromě Poznámek mají teď stejnou kostru formuláře (pravidlo `ux-conventions §4`).
+- **Tabulka spojů:** nahoře Řádky, Časy (Formát času, Poměr velikosti minut, Tečky v prázdných buňkách), Popisné sloupce, Zastávky (Tučné zastávky a Čáry dle trasy, Tečky za názvem), Šířka sloupců, Přípojné řádky a Porovnání verzí; pod nimi Záhlaví (Záhlaví skupin dnů, Čísla spojů) a Datové buňky (Výška řádku, Podbarvit lichá Tč) s plnou sadou stylu - dřív tu bylo 3 a 5 polí stylu a osm voleb, které nejsou styl, sedělo v Datových buňkách. Přípojné řádky mají celou sadu Buňka a zapnutí přípojů je jejich první pole. Nápovědy k velikosti a okrajům, které nesou šířku sloupce spoje, zůstaly.
+- **Pás skupin dnů poslouchá Zarovnání vodorovně** ze stylu Záhlaví, prázdné dál znamená na střed; do teď byl natvrdo na střed (reprodukce a pojistka `ZarovnaniPasuSkupinTests`, bez opravy padala).
+- **Tabulka z dat:** místo Obecné skupina Data (zdroj, řazení, počet řádků); zapnutí a výška záhlaví v Záhlaví, výška řádku a střídání v Datových buňkách.
+- **Pevná tabulka:** pole z Obecné přešla do „Styl všech buněk" a „Styl řádku záhlaví"; pořadí a názvy zůstávají jako vědomá výjimka.
+
+Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` všech tří formulářů.
+
+## 2026-10-28 (3) - Minuty odjezdů: kostra formuláře a styl bez tlačítka „Upravit styl…" (`B194d` E3)
+
+Minuty odjezdů mají stejnou kostru jako Seznam zastávek: nahoře Skupiny dnů, Rozměry a Značky u odjezdů, pod nimi Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
+Styl záhlaví a 2. řádku záhlaví už není za tlačítkem „Upravit styl…", ale rozepsaný ve skupině Záhlaví jako u ostatních tabulek (rozhodnutí Jan 28. 10.); 2. řádek má sadu Text („2. řádek: …").
+Záhlaví skupin dnů a Min. výška řádku záhlaví jsou první pole Záhlaví, Výška řádku a Střídání řádků první pole Datových buněk.
+Samostatné „Zarovnání záhlaví svisle" z formuláře zmizelo - dělalo totéž co Zarovnání svisle ve stylu a platilo jen při prázdném; výchozí Dole zůstává a šablony se nemění.
+Panel a import z PDF pod tímtéž popiskem zapisují do stylu záhlaví.
+Okno stylu (`StyleEditDialog`, `ElementStyleButton`) i nepoužívaný serverový `StyleEdit.cls` jsou pryč; pojistka `EDInputFormSchemaDriftTests.Formulare_NemajiTlacitkoStylu`.
+Daň za konzistenci: prázdné pole stylu neukazuje zděděnou hodnotu, kterou okno stylu ukazovalo šedě. Ověřeno voláním `Init`.
+
+## 2026-10-28 (2) - Minuta, značky a časy Tabulky spojů kreslí podtržení a přeškrtnutí (`B194d` E3)
+
+Sada stylu Text nabízí Podtržení a Přeškrtnutí, ale minuta a značky u odjezdů v Minutách odjezdů a časy a značky v Tabulce spojů je nekreslily.
+Pole nic nedělala, protože tento text se nekreslí jako celá buňka, ale po kouscích.
+Teď se čára nakreslí stejně jako v buňce: u minuty, u každé textové značky a symbolu a u času v Tabulce spojů jedna přes celý čas i se značkami.
+Negativní značka (invertovaný box) zůstává bez čáry, má vlastní vzhled.
+Reprodukce i pojistka `PodtrzeniTextuVBunceTests` (na původním kódu padala, podtržený a nepodtržený text měl stejný počet tmavých pixelů).
+
+## 2026-10-28 (1) - Kostra formulářů tabulek, sady stylu Buňka a Text, „Barva pozadí" (`B194d` E3)
+
+Rozhodnutí Jan 28. 10. (detail `konzistence-agend-jr.md` E3), zatím zapracované u Seznamu zastávek a ve sdílené sadě stylu.
+- **Seznam zastávek:** nahoře skupiny jen tohoto prvku (Zastávky, Stanoviště, Rozložení, Aktuální a projeté zastávky, Šipka směru), pod nimi společný konec Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky. Skupina Obecné zmizela: Záhlaví sloupců je první pole skupiny Záhlaví, Výška řádku první pole Datových buněk. Pozice značek přešla k ostatním značkám do skupiny Zastávky.
+- **Řádkování** zmizelo ze všech tabulek - buňka má jeden řádek a tabulka ho nikdy nekreslila. U Textu zůstává a má nápovědu, co znamená.
+- **Sady stylu:** Buňka (15 polí) pro záhlaví a buňky, Text (8 polí, písmo a barva textu) pro minutu a značky u odjezdů a pro okno 2. řádku záhlaví Minut. Pozadí, zarovnání ani okraje tomuto textu prvek nekreslí. Pořadí v sadě Buňka: nejdřív pole textu, pak pole buňky. Formulář Minut se zkrátil z 96 na 75 polí.
+- **„Barva pozadí"** místo „Pozadí" ve všech tabulkách, oknech sloupců a v programu bez skupin („Barva pozadí záhlaví"), aby šla najít hledáním „barva". Tabulka spojů a Poznámky mají ve skupinách Záhlaví / Datové buňky krátké „Barva textu" / „Barva pozadí".
+
+Klíče polí se nemění, šablony beze změny. Ověřeno voláním `Init` všech dotčených formulářů; pojistky `EDInputFormSchemaDriftTests.TextUvnitrBunky_MaJenSaduText` a `SadaStyluTextTests` (smazán v (3) spolu s oknem stylu; 2. řádek záhlaví od té doby hlídá `TextUvnitrBunky_MaJenSaduText`).
+
+## 2026-10-27 (32) - Velikost písma všude 3-72 pt (`B194d` E8f)
+
+Velikost písma jde ve všech formulářích i v panelu zadat 3-72 pt (rozhodnutí Jan 27. 10.: pod 3 pt
+je tisk nečitelný, 72 pt pokryje nadpis na A3). Dřív měla tatáž vlastnost v panelu 3-24 pt, v okně stylu
+4-200 pt, Poznámky 4-20 a textové značky Minut 3-20. Formulář hodnotu mimo rozsah nepustí uložit,
+panel ji ořízne - ve všech 277 hodnotách písma našich šablon (systémové, pro porovnání linek, ukázkové)
+je žádná mimo 4-50 pt. „Symbol: Velikost" v panelu dál přijímá 0 = podle velikosti minuty. Pojistka
+`RozsahPismaTests` (formuláře i panel); ověřeno voláním `Init` sedmi polí včetně sdíleného balíčku stylu.
+Tím je E8 hotové celé.
+
+## 2026-10-27 (31) - Poznámky: „Šířka buňky značky" s nápovědou místo „(0=vedle)" (`B194d` E8e)
+
+Popisek je ve formuláři jako v panelu „Šířka buňky značky" (dřív „Šířka buňky značky (0=vedle)"),
+nová nápověda vysvětluje, k čemu je: „Pevná šířka místa pro značku, aby texty poznámek začínaly pod
+sebou. 0 = text hned za značkou." Poslední výjimka E8 v `DescriptorLabelsMatchFormTests` odešla.
+Chování beze změny; ověřeno voláním `Init`.
+
+## 2026-10-27 (30) - Tabulka z dat: „Nejméně řádků" a „Nejvýš řádků" (`B194d` E8d)
+
+„Min. řádků (0 = ne)" a „Max. řádků (0 = bez limitu)" se ve formuláři i v panelu jmenují „Nejméně
+řádků" a „Nejvýš řádků" jako ostatní pole tohoto druhu; význam nuly je v nápovědě („0 = bez doplnění",
+„0 = bez omezení"). Chování beze změny; ověřeno voláním `Init`.
+
+## 2026-10-27 (29) - „Nejvýš skupin dnů" místo „Max skupin (0 = ∞)" (`B194d` E8c)
+
+Pole Minut odjezdů, kterým se omezí počet vytištěných skupin dnů, se ve formuláři i v panelu jmenuje
+„Nejvýš skupin dnů" jako „Nejvýš km sloupců" a „Nejvýš sloupců variant tras" (dřív zkratka „Max skupin"
+s nekonečnem „(0 = ∞)" v popisku a jednotkou „(0=∞)" v panelu). Nápověda: „Kolik skupin dnů se nejvýš
+vytiskne, další se vynechají. 0 = bez omezení." Hodnota 0 dál znamená bez omezení. Z výjimek testu
+`DescriptorLabelsMatchFormTests` odešly Výška řádku, Střídání řádků i tohle pole - popisky formuláře
+a panelu teď sedí. Ověřeno voláním `Init`.
+
+## 2026-10-27 (28) - Střídání řádků s popiskem bez závorky a s nápovědou (`B194d` E8b)
+
+Minuty odjezdů, Tabulka z dat a Pevná tabulka mají ve formuláři popisek „Střídání řádků" jako panel
+návrháře (dřív „Střídání řádků (prázdné = žádné)") a stejnou nápovědu: „Barva, kterou se podbarví
+každý druhý řádek. Prázdné = bez střídání." Chování beze změny; ověřeno voláním `Init` všech tří formulářů.
+
+## 2026-10-27 (27) - Výška řádku má ve všech prvcích stejný popisek, nápovědu a rozsah (`B194d` E8a)
+
+Popisek je všude jen „Výška řádku" (dřív u Seznamu zastávek, Minut odjezdů a Tabulky spojů „Výška
+řádku (prázdné = auto)"), význam prázdného pole je v nápovědě a začíná všude stejně: „Prázdné = podle
+velikosti písma." Rozsah je ve všech šesti prvcích 1-50 mm (dřív Tabulka spojů 1-20, Poznámky 2-15,
+tabulky 2-50) - jen rozšíření, uložené hodnoty zůstávají platné. Formuláře i panel návrháře shodně;
+ověřeno voláním `Init` všech šesti formulářů. Rozhodnutí Jan 27. 10.: E8 po krocích, tohle je krok a.
+
+## 2026-10-27 (26) - spuštění z EDISONu otevře naposledy použitou agendu modulu (`B194e` A2)
+
+Strom EDISONu má jeden vstup do návrháře v uzlu JŘ a jeden v uzlu MHD a posílá napevno zastávkový
+JŘ; agenda ze shellu měla přednost před naposledy použitou, takže kdo dělal linkové JŘ, musel se po
+každém spuštění přepnout (Ctrl+Shift+A). Teď samotný kód ze shellu (bez dalších hodnot) znamená jen
+modul: otevře se naposledy použitá zveřejněná agenda téže varianty (AD / MHD), napoprvé ta ze shellu
+(`TemplateDesignerViewModel.StartovniAgenda`). Spuštění s linkou (porovnání linek, PDF) určuje agendu
+přesně jako dřív. Strom (generovaný z legacy XML) se nemění. Rozhodnutí Jan 27. 10. Pojistka
+`StartovniAgendaTests`; invariant v `TemplateDesigner/CLAUDE.md` upravený.
+
+## 2026-10-27 (25) - Seznam zastávek v MHD nenabízí sloupek, varianty tras ani Více stanovišť (`B194d` E5)
+
+Vývěska MHD posílá u zastávek jen označník: sloupky (číselník AD), časy variant tras ani stanoviště
+podle spojů nemá. Seznam zastávek přesto nabízel sloupce „Sloupek" a „Varianty tras" (zůstaly by
+prázdné) a skupinu „Stanoviště" s volbou Více stanovišť, jejíž nápověda odkazovala na parametr, který
+MHD nemá. Nabídka se teď řídí daty agendy, ne jejím jménem: sloupek a Více stanovišť podle polí
+`SLOUPEK` / `NASTUPISTE_SPOJU` ve schématu zastávek, varianty tras podle nového příznaku registru
+`VariantyTras` (stejný mechanismus jako `CustomColumns`; drží ho test proti `TRASA_MIN` v kódu agendy).
+Zapnutý sloupec se nabídne vždy, aby šel vypnout, a vypnutý nenabízený ze šablony nezmizí. Rozhodnutí
+Jan 27. 10.: sloupek a stanoviště jsou koncept AD, **varianty tras v MHD chce** - zapsáno do backlogu,
+po jejich dodělání stačí přepnout příznak. Pojistky `NabidkaSeznamuZastavekTests`.
+
+## 2026-10-27 (24) - údaje dopravce po polích ve všech agendách JŘ (`B194c` D4)
+
+Název, Adresa, Telefon, E-mail a IČO dopravce nabízí teď každá agenda JŘ pod stejnými klíči
+a popisky - do 27. 10. je měla jen vývěska AD (vývěska MHD jen název). Šablona si údaje poskládá
+sama a jde přenést mezi agendami. Linkový AD bere prvního dopravce linky týmž voláním jako vývěska
+AD (`ZastavkoveJrAd.DopravceSkalary`), obě MHD z karty dopravce, kterou už čte Popis dopravce
+(`ZastavkoveJrMhd.DopravceSkalary`; vlastní firma IČO z pole 7, cizí dopravce IČO 5 a e-mail 13).
+**E-mail vlastní firmy u MHD zůstává prázdný** (rozhodnutí Jan 27. 10.): jediný e-mail na kartě
+firmy (26) je odesílací adresa EDISONu vedle SMTP nastavení - KV_DP „edison@…", CB_DP
+„no-reply@m-line.cz" - a cestujícím by se vytiskla. Popis dopravce se nemění: vývěsky ho dál
+píšou na víc řádků, linkové JŘ jedním řádkem jako starý tisk (vědomý rozdíl, Jan 27. 10.).
+Ověřeno voláním na CB_CSADAD 0330510, KV_DP 1073 (obě MHD) a CB_DP 11350. Pojistka
+`DopravcePoPolichTest`.
+
+## 2026-10-27 (23) - „Stránka pro každé stanoviště" ve skupině Obecné (`B194c` P3)
+
+Volba zastávkového JŘ AD, která rozdělí zastávku obsluhovanou z víc stanovišť na víc vývěsek, je
+v panelu Parametry a v okně Tisk ve skupině **Obecné** za Pořadím stránek, ne v Seznamu zastávek: mění
+počet vývěsek celé sestavy, a takové volby patří do Obecné (pravidlo Jan 31. 8., stejně jako linkové
+„Stránka pro každou zastávku"). Uložená volba se nemění - persistuje se klíč a ano/ne, ne skupina.
+„Číslo stanoviště podle" zůstává v Seznamu zastávek, řídí i řádky seznamu. Ověřeno voláním
+`GetParameters` na CB_CSADAD. Volba se dřív jmenovala „Samostatná stránka pro každé stanoviště";
+nový název ladí s volbou prvku „Řádek pro každé stanoviště" i s linkovou „Stránka pro každou
+zastávku" (rozhodnutí Jan 27. 10.), uložené hodnoty se to netýká. Při ověřování se ukázalo, že revizí navržené sjednocení s linkovým JŘ
+nejde: linková volba dělí po zastávkách, vývěsková po stanovištích - jsou to dvě různé věci.
+
+## 2026-10-27 (22) - panel Parametry po změně agendy neukazuje parametry té předchozí
+
+Jan to občas viděl při předvádění zákazníkům: po přepnutí zastávkového JŘ AD na linkový zůstaly
+v záložce Parametry volby vývěsky, zatímco náhled a tisk už jely podle nové agendy. Stalo se to,
+když záložka Parametry při změně agendy nebyla vidět - formulář parametrů se při zobrazení sestavuje
+jen jednou pro svou Caché třídu (`EDInputForm` auto-init) a ta je pro všechny agendy stejná, takže
+se po návratu na záložku nepřenačetl. Teď ho `MainWindow.ReloadParamsTabForm` mimo záložku vyprázdněním
+a vrácením třídy přinutí sestavit se znovu s aktuální agendou. Druhá, vzácnější cesta téhož příznaku:
+pozdě dorazivší načtení schématu agendy otevřené poprvé teď parametry nastaví, jen když šablona tu
+agendu pořád má. Pojistka mechanismu v EDControls `EDInputFormViewTests.Loaded_AfterCacheClassReset_InitsSameClassAgain`;
+okno samo test nemá (TD testy okna nespouští), ověřeno ručně v návrháři - simulace před opravou
+chybu ukázala (Jan 27. 10.).
+
+## 2026-10-27 (21) - popisy metod zpátky u svých metod, bez dlouhých pomlček (review body 9, 10)
+
+Na deseti místech se mezi popis a jeho metodu vložila nová metoda, takže popis visel u cizí (C#:
+`PreviewCanvas.CountOverflowingPages`, `PageLayoutEngine.Layout`, `MainWindow.NastavVolbyRazeni`,
+čtyři metody `LineTableElement`, test `LineTableBlokyTests`; Caché: `BaseAgenda.LokalniOznaceniLinkyAd`,
+`LinkovyJrAd.OznaceniLinky`). Dlouhá pomlčka zmizela z komentářů, csproj, changelogu a demo šablon QR;
+testy, které ji hledají, ji zapisují jako `—`, takže repo projde grepem. Chování beze změny.
+Rozhodnutí Jan 27. 10. k review: bod 1 (demo QR u linky bez spojů) a bod 8 (čárka u omezení jen
+ve druhém období - stejně jako starý tisk, v datech CB_CSADAD, ZL_KOVED ani KV_DP ani jednou)
+se neopravují, bod 4 přešel do backlogu jako blokace změny agendy.
+
+## 2026-10-27 (20) - rozdílový JŘ nevydává chybu programu za chybu v datech (review bod 2)
+
+Rozdílový JŘ si obě verze linky bere z linkového JŘ AD a každou jeho chybu přebalil na chybu v datech
+(5001). Chyba v kódu (`<UNDEFINED>…`) by tak v návrháři vyšla jako hláška „Linku nejde vytisknout"
+místo chybového okna a uživatel by hledal chybu v datech, která jsou v pořádku. Chybou v datech teď
+zůstane jen to, co tak označil už linkový JŘ (`ChybaDat`), zbytek jde dál jako chyba programu (5002);
+prefix „Původní verze (skupina, linka)" zůstává v obou (`LinkovyJrAdRozdilovy.StatusVnoreneChyby`,
+`LinkovyJrRozdilovyTest.TestChybaProgramuNeniChybaDat`). Ověřeno voláním na CB_CSADAD: linka mimo
+skupinu dál vrací 5001 s textem pro uživatele.
+
+## 2026-10-27 (19) - stavový řádek: Obecná agenda bez „(nedostupná)"
+
+Stavový řádek ukazoval „Agenda: Obecná (bez dat) (nedostupná)". Přípona hlásí, že od serveru nepřišlo
+schéma (výpadek, agenda na serveru chybí), jenže Obecná agenda nemá třídu na serveru a schéma nemá
+z principu. U agendy bez třídy se přípona vynechá, ostatním zůstává
+(`AgendaRegistryEntryTests.StavovyRadek_BezSchematu_NedostupnaJenUAgendySeTridou`).
+
+## 2026-10-27 (18) - lišta: skupina „Stránka a sekce", bez osiřelého oddělovače v obecné agendě
+
+Vlastnosti stránky a Přidat sekci jsou v jedné skupině lišty „Stránka a sekce" (rozhodnutí Jan 27. 10.,
+obě tlačítka nastavují strukturu dokumentu a samostatné skupiny po jednom tlačítku zabíraly místo).
+V obecné agendě se s prvky JŘ schová i jejich oddělovač ve skupině Prvky a v místní nabídce přidání
+prvku - dřív na konci visela svislá čára, za kterou nic nebylo. Příručka: seznam skupin lišty podle
+skutečného pořadí.
+
+## 2026-10-27 (17) - Minuty odjezdů přepočítají šířky po změně stylu ve formuláři (review bod 3)
+
+Změna „Minuta: Velikost", „Symbol: Velikost", písma značek nebo písma buněk (kromě velikosti) se do
+šířek skupin dnů nepromítla, dokud se znovu nenačetla data (F5, jiná linka) - minuty přetekly nebo se
+uřízly. Prvek si rozvržení pamatuje a změnu poznával podle objektu stylu, jenže formulář mění styl na
+místě. Otisk cache teď bere obsah všech stylů prvku (`TextStyle.ContentHash`) a skalární zálohy
+`MinuteBold`/`AnotaceFontSize`. Pojistky: `MinutyOdjezduSirkaTests.ZmenaStylu_PrepocitaSirky` (před
+opravou padal), `KazdyStylPrvku_ZmeniOtiskCache`, `TextStyleTests.ContentHash_PoznaZmenuKazdeVlastnosti`.
+
+## 2026-10-27 (16) - systémové šablony bez matoucích názvů (`B194e` A4)
+
+Sekce výchozích zastávkových šablon (AD i MHD) se jmenuje **„Obsah"** místo „JŘ Zastávkový" (obrácený
+název agendy, o sekci nic neříkal). Popisy v okně Otevřít používají dnešní názvy prvků: zastávkový AD
+„Seznam zastávek, Minuty odjezdů, Poznámky, Kód (QR) a logo" místo „mřížka odjezdů, legenda poznámek",
+linkové AD i MHD „Poznámky ve dvou sloupcích". Stavba šablon zůstává různá - zastávkový JŘ je jedna
+pevná stránka, linkový hlavička + tabulka přes stránky + poznámky (rozhodnutí Jan 27. 10.). Seeder je
+při startu nové verze nahraje do MLINE větve, vlastní šablony firem se nemění. Rozhodnutí Jan 27. 10.:
+A3 zbytek (skupina bez názvu, linka MHD bez čísla) zůstává beze změny, A5 (slovo „linka" napevno)
+odloženo do backlogu, až se bude vydávat agenda bez linek.
+
+## 2026-10-27 (15) - okno Vybrat linky: „Číslo linky", „Platnost", řazení podle čísla (`B194e` A3, část)
+
+Sloupce okna **Vybrat linky** se jmenují **„Číslo linky"** (dřív „Číslo") a **„Platnost"** (dřív
+„Detail", přitom ukazoval jen platnost). Sloupec čísla je číselný, takže klik na záhlaví řadí 2 před 11;
+označení s písmenem EDList porovná jako text. **Linky MHD jdou v seznamu podle čísla linky** jako v AD
+(čísla vzestupně, pak ostatní označení, linky bez čísla na konci) - dřív podle interního ID, takže
+vypadaly rozházeně (11, 1, 25, 2). Klíče sloupců beze změny, uložené rozvržení platí dál. Rozhodnutí
+Jan 27. 10. Test pořadí v `LinkovyJrMhdTest.TestJakoVyveskaMhd` (KV_DP), ověřeno voláním
+`EDList.Instance.InitializeList`.
+
+## 2026-10-27 (14) - příručka, nápověda F1 a Pomocník podle aktuální aplikace (`B194e` H1, H2)
+
+**Příručka** (`uzivatelska-prirucka.md`, wiki seed): opravených ~50 míst, kde nesouhlasila s aplikací -
+linkový JŘ MHD je hotový; paleta a názvy prvků (Seznam zastávek, Tabulka (z dat)); štítek „Linka:"
+místo „Instance:"; menu Zobrazit a Soubor (Mřížka plátna, Importovat ze souboru…); titulek okna
+„[Zastávkový JŘ · AD]"; nová šablona se dvěma sekcemi; sloupec Zdroj v Otevřít místo sekcí „Systémové
+M-line / Moje šablony"; skupiny formuláře Minut odjezdů a Seznamu zastávek (Stanoviště, Značky a šipka
+směru), Poznámek a Tabulky spojů (Podmínky místo Data); parametry vývěsky AD, které chyběly (tvar názvu,
+název pro MHD, výčet spojů u dopravce, číslo stanoviště podle), zrušený parametr bezbariérového souhrnu
+pryč; „Rozdělení sloupců dle platnosti", „Písmena variant tras", „stanoviště" místo „označník";
+okno „Vybrat linky"; jazyk šablony „Kultura (formátování)"; tlačítka „Resetovat styl sloupce";
+typy provozu MHD jako parametry „Typ provozu: …". **Nápověda F1**: štítek „Linka", bez importu PDF
+(nemá ho běžný uživatel), „linkový JŘ" místo „linkový a knižní JŘ", změna formátu stránky se ptá na
+přepočet (nezakládá novou šablonu), obousměrný tisk je parametr sestavy, dorovnání sloupců a mezera
+mezi skupinami dnů správně. **Pomocník** (katalog schopností): stejné opravy plus šipky/Shift, export
+jen v dialogu tisku, parametry v levém panelu, nové uspořádání na list. Seed příručky připravený
+k nahrání s verzí. Rozhodnutí Jan 27. 10.
+
+## 2026-10-27 (13) - drobné texty v aplikaci (`B194e` A5)
+
+Bublina modrého štítku linky **„Vybrat linky - Ctrl+Shift+I"** (tvar „Akce - klávesa" z pravidel), titulek
+okna výběru **„Vybrat linky"**, v tiskovém dialogu **„Název souboru"** s nápovědou „Datová pole vložíte
+tlačítkem { }, např. {CISLO_LINKY}." místo „(tokeny {POLE})", tlačítka „Přejmenovat…" a „Procházet…" se
+znakem tří teček jako ostatní, prázdné parametry jedním textem „Tato šablona nemá parametry." (panel
+i tiskový dialog). Slovo „linka" natvrdo v tisku a menu zůstává v roadmapě. Rozhodnutí Jan 27. 10.
+Ověřeno voláním `AgendaParams.Init`.
+
+## 2026-10-27 (12) - název agendy jedním tvarem, varianty jen „AD" / „MHD", „Obecná (bez dat)" (`B194e` A1)
+
+Varianta agendy se všude píše krátce: **„AD"**, **„MHD"** a u porovnání linek **„AD - porovnání verzí"**
+(dřív „AD (linková doprava)", které se pletlo s agendou Linkový JŘ, a „AD - rozdílový (porovnání dvou
+verzí)"). Titulek okna, filtr v Otevřít, stavový řádek a sloupec Varianta v seznamu šablon berou popisek
+varianty, ne kód - u porovnání linek už nestojí „AD_ROZDILOVY". Stavový řádek ani při načítání neukazuje
+kód agendy („Agenda: ZASTAVKOVY_JR_AD (načítám schéma…)" → „Agenda: Zastávkový JŘ · AD (načítám…)").
+Obecná šablona se všude jmenuje **„Obecná (bez dat)"** - „bez databáze" neplatilo, ukládá se do ní taky.
+Stavový řádek píše agendu stejně jako titulek okna a Uložit jako: **„Agenda: Zastávkový JŘ · AD"** (bez
+slova „Varianta"). Model agenda + varianta zůstává (sloupce v Otevřít, okno Změnit agendu), kód varianty
+v okně Změnit agendu taky (rozhodnutí Jan 5. 8.). Kódy agend beze změny (šablony, start z EDISONu).
+Rozhodnutí Jan 27. 10. Ověřeno voláním `ListAgendy`.
+
+## 2026-10-27 (11) - pole v nabídce dat ve stejném pořadí ve všech agendách JŘ (`B194c` D5)
+
+Nabídka dat (záložka Datová pole i „vložit pole") ukazuje pole v pořadí, v jakém je agenda posílá.
+Teď mají všechny čtyři agendy JŘ stejné bloky podle vývěsky AD: **linka** (číslo, veřejné označení,
+název, typ JŘ, barvy) → **dopravce** → **platnost** → **zastávka a směr** (aktuální zastávka, směr,
+výchozí, konečná) → **poznámky a doplňky** (poznámka nad linku, pod dopravce, URL adresa pro QR kód).
+Nejvíc se posunul Linkový JŘ AD (poznámky a QR byly mezi linkou a dopravcem, typ JŘ za platností),
+u Linkového MHD typ JŘ, QR a výchozí před konečnou. Šablony ani tisk se nemění. Rozhodnutí Jan 27. 10.
+Test `AgendaSchemaDriftTests.SkalarniPoleJr_MajiSpolecnePoradi`, ověřeno voláním `GetSchema`.
+
+## 2026-10-27 (10) - drobnosti v datech a ukázkách (`B194c` D8, dokončení)
+
+**Linkový JŘ MHD bez vybrané linky** ukazoval v parametrech všechny typy provozu firmy (KV_DP desítky),
+protože ukázka neposílala `TYPY_PROVOZU_LINKY` jako tisk - teď ho posílá (test
+`LinkovyJrMhdTest.TestUkazkaNeseTypyProvozuLinky`, KV_DP linka 1073). „Čas jízdy" ve vývěskách AD i MHD
+má v nabídce dat typ text, ne číslo - nese i „<" a prázdno. Opravený mylný komentář o tarifním čísle
+ve vývěsce AD a klíče v sondě `AdSloupekProbe` (pole se přejmenovala na `CISLO_ZASTAVKA_*_CIS`).
+Rozhodnutí Jan 27. 10.
+
+## 2026-10-27 (9) - náhled vývěsky MHD bez linky ukazuje skutečnou linku (`B194c` D7)
+
+Zastávkový JŘ MHD měl jako jediná agenda v náhledu bez vybrané linky vymyšlenou brněnskou linku
+(Líšeň - Bystrc, DPMB), která se od dat lišila stavbou (bez označníku, s „na znamení") a tiskla se do PDF
+z ukázky. Teď ukazuje **první vývěsku první linky výchozí skupiny**, jako ostatní agendy JŘ první skutečnou
+linku; když linka data nedá, „Ukázka bez dat - vyberte linku (Ctrl+Shift+I)". Tisk i ukázka staví vývěsky
+jednou cestou (`ZastavkoveJrMhd.SestavitVyvesky`), ukázka se zastaví po první stránce (CB_DP: linka 1,
+0,3 s). Rozhodnutí Jan 27. 10. Nový test `ZastavkoveJrMhdUkazkaTest` (jedna stránka = první vývěska tisku),
+zlaté otisky MHD beze změny. Ověřeno voláním `GetMockData` na CB_DP.
+
+## 2026-10-27 (8) - „Typ poznámky" a „Typ řádku" zmizely z nabídky dat (`B194c` D6)
+
+Obě pole vracela interní kódy pro prvky: typ poznámky `znak` / `specialni` (vývěsky) / `nz` / `text` -
+podle něj prvek Poznámky kreslí značku, negativní značku nebo jen text; typ řádku `zastavka` / `prijezd`
+v linkových JŘ - podle něj Tabulka spojů pozná vložený příjezdový řádek. Uživatel s nimi nic neudělá,
+proto jsou z nabídky dat pryč ve všech čtyřech agendách; data je posílají dál a prvky fungují beze změny
+(rozhodnutí Jan 27. 10.). `AgendaSchemaDriftTests` hlídá, aby se `TYP` do nabídky nevrátil. Ověřeno voláním
+`GetSchema` všech čtyř agend.
+
+## 2026-10-27 (7) - čísla zastávek jednou řadou, „konečná" místo „cílová", vývěsky s výchozí zastávkou (`B194c` D3)
+
+Zastávkový JŘ AD: „Číslo zastávky" → **„Číslo aktuální zastávky"** (jako v linkových JŘ), „CIS číslo
+zastávky" → **„Číslo aktuální zastávky (CIS)"** (v kolekci Zastávky „Číslo zastávky (CIS)"), „CIS číslo
+výchozí zastávky" → **„Číslo výchozí zastávky (CIS)"**, „CIS číslo cílové zastávky" → **„Číslo konečné
+zastávky (CIS)"** - CIS vždy na konci v závorce jako u názvů, poslední zastávka směru je „konečná"
+(rozhodnutí Jan 27. 10., kanon `ux-conventions §8`, ban list „cílov" / „CIS číslo"). Zastávkový JŘ MHD:
+„Číslo aktuální zastávky" (nese číslo i s označníkem). **Obě vývěsky nově posílají „Výchozí zastávku"**
+(`VYCHOZI_ZASTAVKA`, aditivně) - první vytištěnou zastávku směru, jako linkové JŘ. Klíče beze změny.
+Ověřeno voláním `GetSchema` obou vývěsek. Zlaté otisky vývěsek přebaselinované (nové pole, jen md5,
+počty shodné).
+
+## 2026-10-27 (6) - Linkový JŘ AD bez „Pořadí" v nabídce dat (`B194c` D2)
+
+V Linkovém JŘ AD (a v porovnání linek, které schéma přebírá) neslo pole „Pořadí" v kolekci Zastávky
+tarifní číslo - s mezerami a ve směru zpět sestupně - kdežto v ostatních agendách je to pořadí 1..N.
+Z nabídky dat zmizelo; tarifní číslo je v ní dál jako **„Tarifní číslo"**. `GetData` `PORADI` posílá dál:
+Tabulka spojů podle něj páruje příjezdový a odjezdový řádek zastávky, značky a přípoje, a staví se podle
+něj výlepy i porovnání linek. Přepsat jeho význam na 1..N by znamenalo přestavět to párování (rozhodnutí
+Jan 27. 10.: z nabídky pryč, význam nechat). Linkový JŘ MHD a vývěsky „Pořadí" mají dál - tam je to
+opravdu pořadí. Test `AgendaSchemaDriftTests.VyrazenaPoleAgendy_NejsouVJejiNabidce`, ověřeno voláním
+`GetSchema`.
+
+## 2026-10-27 (5) - srozumitelnější popisky v nabídce dat (`B194c` D6)
+
+Ve všech čtyřech agendách JŘ: „Popis linky" → **„Název linky"** (pole nese název linky, ne popis),
+„QR kód URL" → **„URL adresa pro QR kód"**; v kolekci Poznámky linkových JŘ „Druh (1-10)" → **„Druh
+poznámky"**. Klíče beze změny. Vědomě ponecháno: „MHD/IDS" (zavedené označení sloupce v tištěném JŘ)
+a „Typ poznámky" / „Typ řádku" s interními kódy (čeká na rozhodnutí). Rozhodnutí Jan 27. 10. Ověřeno
+voláním `GetSchema` všech čtyř agend.
+
+## 2026-10-27 (4) - volby vývěsek mají nápovědu, dvě srozumitelnější popisky (`B194c` P1)
+
+Zastávkový JŘ AD i MHD: nápovědu dostaly **Tisknout šipky směru, Tisknout projeté zastávky, Časová osa
+odjezdů, Hodiny od / do** (včetně rozsahu přes půlnoc) a **Roztáhnout na výšku**; u AD navíc dvě volby
+poznámek s novým popiskem - `Souhrn "všechny zastávky na znamení" místo × u každé` → **„Zastávky na znamení
+souhrnně"**, „V rozsahu nepoznámkovat schovat" → **„Schovat poznámky v rozsahu „nepoznámkovat“"**, obě
+s nápovědou. Uložené volby beze změny (ukládá se název parametru; volby enumu nedotčené). Rozhodnutí Jan
+27. 10. Ověřeno voláním `GetParameters` obou vývěsek.
+
+## 2026-10-27 (3) - náhled bez dat neukazuje globál ani kód firmy (`B194c` D8, část)
+
+Náhled bez vybrané linky bere jako ukázku první linku firmy. Když nedala data (firma žádnou nemá, nebo
+první nemá trasu), stálo v místě popisu linky „(žádná linka v ^JRL pro firmu MLINE)", u MHD „(žádná MHD
+linka pro firmu KV_DP)". Teď ve všech třech agendách (Linkový JŘ AD a MHD, Zastávkový JŘ AD) jednotně
+**„Ukázka bez dat - vyberte linku (Ctrl+Shift+I)"** ze sdíleného `BaseAgenda.TextUkazkyBezDat`.
+Rozhodnutí Jan 27. 10. Nový test `AgendaUserTextTests`: hodnota stránky v agendě nesmí skládat kód
+firmy / jmenného prostoru ani obsahovat název globálu (kontrola si sama ověřuje, že původní tvar chytí).
+Ověřeno voláním `GetMockData` všech tří agend u firmy bez linek.
+
+## 2026-10-27 (2) - název aktuální zastávky se nepere s příznakem řádku, linkové JŘ ho dostaly (`B194c` D1)
+
+V nabídce polí („vložit pole" u textu) stály ve vývěskách dvě položky „Aktuální zastávka" - název
+zastávky a příznak řádku ano/ne pro pravidla zvýraznění - a nešlo je rozlišit. Popisky teď jsou
+**„Název aktuální zastávky"** (`POPIS_ZASTAVKA`), **„Název aktuální zastávky (CIS)"** (`POPIS_ZASTAVKA_CIS`,
+jen vývěska AD) a **„Je aktuální zastávka"** (`AKTUALNI_ZASTAVKA`, příznak řádku; stejně i položka
+v okně sloupců Seznamu zastávek) ve všech čtyřech agendách. Klíče se nemění, uložené šablony beze změny.
+**Linkový JŘ AD i MHD nově posílají `POPIS_ZASTAVKA`** (aditivně) - název do hlavičky výlepu: na výlepu
+vždy název zvýrazněného řádku, jinak jen když Zvýraznit zastávku / tarifní číslo trefí jedinou zastávku
+(jako Číslo aktuální zastávky); MHD bez značek poznámek, které řádek nese u názvu. Rozhodnutí Jan 27. 10.
+Testy `LinkovyJrNastaveniTest` (každý výlep), `LinkovyJrMhdTest` (jediná / víc shod), ověřeno
+voláním `GetSchema` všech čtyř agend. Zlaté otisky linkového JŘ přebaselinované (nové pole v hlavičce, jen
+md5, počty shodné).
+
+## 2026-10-27 (1) - Obousměrný tisk se nabízí jen při obou směrech (`B194c` P6)
+
+Linkový JŘ AD: volba **„Obousměrný tisk"** se v parametrech (panel i tiskový dialog) ukáže jen při
+„Směr pro tisk = Oba". S jedním směrem ji server ignoroval už dřív, takže zaškrtnutí nic nedělalo
+a jediné varování byla věta v nápovědě Směru pro tisk - ta zmizela (popis je teď v AD i MHD stejný).
+Uložená volba se nemaže, po návratu na „Oba" platí dál. Tisk beze změny. Rozhodnutí Jan 27. 10.:
+„Směr pro tisk" zůstává v obou linkových agendách (MHD parita se starým tiskem, který měl výběr
+směrů; AD kvůli stejným parametrům obou agend). Test `LinkovyJrObousmernyTest.TestNabiziSeJenPriObouSmerech`,
+ověřeno voláním `GetParameters` obou linkových agend.
+
 ## 2026-10-26 (42) - drobnosti prvků: skupina Rozměry, mřížka plátna, negativní značka, ikona Tabulky spojů (`B194d` E16)
 
 Rozhodnutí Jan 26. 10.: Minuty odjezdů mají skupinu **„Rozměry"** místo „Rozměry a mřížka" (čáry tabulky
@@ -277,7 +838,7 @@ text, takže české šablony, zlaté odtisky i oracle beze změny. Test `TestPo
 ## 2026-10-26 (18) - oddělovač poznámek bez dlouhé pomlčky (`B194b` T9)
 
 Výchozí šablony Zastávkového JŘ AD i MHD měly v prvku Poznámky oddělovač mezi textovou značkou a textem
-dlouhou pomlčku („A — jede přes…"), kterou projekt zakazuje. Teď „ - " jako výchozí hodnota prvku
+dlouhou pomlčku (mezi „A" a „jede přes…"), kterou projekt zakazuje. Teď „ - " jako výchozí hodnota prvku
 (rozhodnutí Jan 26. 10.). Linkové šablony mají vědomě dál tři mezery - legenda je ve sloupcích a mezery
 drží zarovnání. Výchozí šablony nalévá seeder do MLINE při každém startu, uložené zákaznické šablony
 se nemění. Nový test `SystemTemplateSeedTests.SablonaNemaDlouhouPomlckuNikde` projde všechny texty
@@ -7164,7 +7725,7 @@ starší bod „přestup na vlak se zobrazuje se symbolem bicykla".
 
 **Co nedělá:** texty legendy. Ty generuje agenda a jsou napevno české. Na jeho vývěsce je to vidět
 v jedné legendě vedle sebe - „x **na znamení**" a „**přestup na autobus**" česky (naše), ale
-„K — **premáva po zast. Kmeťova**" slovensky (jeho komentář z číselníku linky).
+„K - **premáva po zast. Kmeťova**" slovensky (jeho komentář z číselníku linky).
 
 ⚠️ **Korekce odhadu:** psal jsem, že to chce vymyslet slovenská znění a poslat serveru jazyk.
 První část neplatí - **starý modul má obě varianty napevno** a přepíná je firemním příznakem

@@ -38,7 +38,7 @@ public class AssistantKnowledgeTests
     {
         var catalog = CapabilityCatalog.BuildElementCatalog("STOP");
 
-        Assert.Contains("Pozice šipky", catalog);
+        Assert.Contains("Tvar hrotu", catalog);
         Assert.DoesNotContain("vlastnosti se nepodařilo načíst", catalog);
     }
 

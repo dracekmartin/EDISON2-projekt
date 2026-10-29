@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -7,77 +5,78 @@ using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner;
 
-// ─── ViewModel pro řádek sloupce linkového JŘ ────────────────────────────────
+// ─── ViewModel pro řádek sloupce Tabulky spojů ───────────────────────────────
 
 /// <summary>
-/// Řádek sloupce v editoru linkového JŘ - sdílí model <see cref="StopColumn"/> i UI infrastrukturu
-/// (<see cref="Controls.ColumnListEditor"/> + <see cref="Controls.CellStyleEditor"/>) se StopList.
-/// Zarovnání se prosazuje přes HAlign v CellStyleEditor; <see cref="Alignment"/> je jen passthrough
-/// per-column default (StopName vlevo, ostatní na střed).
+/// Řádek sloupce Tabulky spojů - sdílí model <see cref="StopColumn"/> se Seznamem zastávek.
+/// Zarovnání se prosazuje přes HAlign ve stylu; <see cref="Alignment"/> je jen záloha sloupce
+/// (zastávka vlevo, ostatní na střed), kterou okno vrací beze změny.
 /// </summary>
-public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
+public class LineTableColumnVM : Controls.ColumnRowVM
 {
-    private string _key = "";
-    private string _header = "";
-    private float? _width;
-    private bool _visible = true;
-
-    public string Key     { get => _key;     set { _key = value;     OnChanged(); } }
-    public string Header  { get => _header;  set { _header = value;  OnChanged(); OnChanged(nameof(DisplayName)); } }
-    public float? Width   { get => _width;   set { _width = value;   OnChanged(); OnChanged(nameof(WidthText)); OnChanged(nameof(ColumnWidth)); } }
-    public bool   Visible { get => _visible; set { _visible = value; OnChanged(); } }
-
-    public TextHorizontalAlignment Alignment { get; set; } = TextHorizontalAlignment.Left;
-
-    public string WidthText
+    private LineTableColumnVM(StopColumn c, CellStyleVM headerStyle, CellStyleVM dataStyle) : base(headerStyle, dataStyle)
     {
-        get => Controls.ColumnWidthText.Format(_width);
-        set => Width = Controls.ColumnWidthText.Parse(value);
+        Key       = c.Key;
+        Alignment = c.Alignment;
+        Header    = c.Header;
+        Width     = c.Width;
+        Visible   = c.Visible;
     }
 
-    // IColumnRowVM - čitelný název dle klíče (Header je tištěná zkratka)
-    public string DisplayName => FriendlyName(_key, _header);
-    public float? ColumnWidth => Width;
+    public string Key { get; }
+    public TextHorizontalAlignment Alignment { get; }
 
-    private static string FriendlyName(string key, string header) => key switch
+    // Čitelný název dle klíče (Header je tištěná zkratka)
+    public override string DisplayName => Key switch
     {
-        ColumnKeys.Zone     => "Zóna",
-        ColumnKeys.Km       => "Kilometry",
-        ColumnKeys.Tc       => "Tarifní číslo (TČ)",
+        ColumnKeys.Zone         => "Zóna",
+        ColumnKeys.Km           => "Kilometry",
+        ColumnKeys.Tc           => "Tarifní číslo (TČ)",
         ColumnKeys.OriginalZone => "Zóna původní verze",
         ColumnKeys.OriginalTc   => "Tarifní číslo (TČ) původní verze",
-        ColumnKeys.StopName => "Zastávka",
-        ColumnKeys.Mhd      => "MHD / IDS",
-        ColumnKeys.Trip     => "Spoje (časové sloupce)",
-        ColumnKeys.Arrow    => "Šipka směru",
-        _                   => string.IsNullOrWhiteSpace(header) ? key : header,
+        ColumnKeys.StopName     => "Zastávka",
+        ColumnKeys.Mhd          => "MHD / IDS",
+        ColumnKeys.Trip         => "Spoje (časové sloupce)",
+        ColumnKeys.Arrow        => "Šipka směru",
+        _                       => string.IsNullOrWhiteSpace(Header) ? Key : Header,
     };
 
-    private CellStyleVM _headerStyle = null!;
-    public CellStyleVM HeaderStyle
-    {
-        get => _headerStyle;
-        private init { _headerStyle = value; _headerStyle.PropertyChanged += OnChildChanged; }
-    }
+    /// <summary>Sloupec spoje se tiskne vždy a vždy za popisnými sloupci (`LineTableElement.TripColumn`
+    /// viditelnost ani pořadí nečte), takže ho nejde skrýt ani posunout.</summary>
+    private bool JeSpoj => Key == LineTableElement.TripKey;
+    private bool JeSipka => Key == ColumnKeys.Arrow;
 
-    private CellStyleVM _dataStyle = null!;
-    public CellStyleVM DataStyle
-    {
-        get => _dataStyle;
-        private init { _dataStyle = value; _dataStyle.PropertyChanged += OnChildChanged; }
-    }
+    public override bool CanHide => !JeSpoj;
+    public override bool CanMove => !JeSpoj;
 
-    public bool HasAnyOverride => HeaderStyle.HasAnyExplicit || DataStyle.HasAnyExplicit;
+    /// <summary>Přesah hlídají jen popisné sloupce - spoje mají šířku podle obsahu a dělí se do bloků.</summary>
+    public override bool CountsTowardWidth => !JeSpoj;
 
-    private void OnChildChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(CellStyleVM.HasAnyExplicit))
-            OnChanged(nameof(HasAnyOverride));
-    }
+    public override string? WidthHint => JeSpoj
+        ? "Šířka každého sloupce spoje. Prázdná = podle obsahu (čas a značky)."
+        : "Prázdná šířka = automaticky: popisné sloupce bez šířky si rozdělí místo, které zbude po sloupcích spojů.";
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-    private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+    /// <remarks>
+    /// ⚠️ U <b>šipky směru</b> se v datech nekreslí text, ale <b>šipka</b>, takže font, řez, zarovnání
+    /// ani odsazení nemají co ovlivnit - zbývá barva (kreslí se jí šipka) a pozadí buňky. Nález Jan
+    /// 28. 8.: nastavil barvu ve stylu záhlaví, protože u sloupce bez textu se nedalo poznat, že
+    /// šipku řídí zóna datových buněk. Skrytí nesmyslných polí i vlastní nadpis zóny tu cestu ukazují.
+    /// </remarks>
+    public override CellStyleEditOptions DataEditOptions => JeSipka
+        ? new CellStyleEditOptions
+        {
+            AllowFontFamily = false, AllowFontSize = false, AllowBold = false, AllowItalic = false,
+            AllowUnderline = false, AllowStrikethrough = false,
+            AllowHAlign = false, AllowVAlign = false, AllowPadding = false,
+            AllowTextColor = true, AllowBackgroundColor = true,
+        }
+        : CellStyleEditOptions.AllEnabled;
+
+    public override string DataZoneTitle => JeSipka ? "Šipka" : base.DataZoneTitle;
+
+    public override string DataZoneHint => JeSipka
+        ? "Šipka se kreslí barvou textu. Font ani zarovnání na ni nemají vliv."
+        : "";
 
     public StopColumn ToModel() => new()
     {
@@ -91,25 +90,32 @@ public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 
     private ColumnVisualStyle? BuildStyle()
     {
-        var style = new ColumnVisualStyle
-        {
-            Header = HeaderStyle.ToModel(),
-            Data = DataStyle.ToModel()
-        };
+        var style = new ColumnVisualStyle { Header = HeaderStyle.ToModel(), Data = DataStyle.ToModel() };
         return style.IsEmpty ? null : style;
     }
 
-    public static LineTableColumnVM FromModel(StopColumn c,
-        ResolvedTextStyle headerInherited, ResolvedTextStyle dataInherited) => new()
+    /// <summary>Zděděná vrstva se záložním zarovnáním sloupce jako při tisku
+    /// (<see cref="TableLayout.ResolveCascade"/>) - jinak by šedá nápověda ukazovala Vlevo u sloupce,
+    /// který se tiskne na střed.</summary>
+    public static LineTableColumnVM FromModel(StopColumn c, LineTableElement element)
     {
-        Key         = c.Key,
-        Header      = c.Header,
-        Width       = c.Width,
-        Visible     = c.Visible,
-        Alignment   = c.Alignment,
-        HeaderStyle = CellStyleVM.FromModel(c.Style?.Header, headerInherited),
-        DataStyle   = CellStyleVM.FromModel(c.Style?.Data,   dataInherited)
-    };
+        var (header, data) = Zdedene(c.Alignment, element);
+        return new(c, CellStyleVM.FromModel(c.Style?.Header, header), CellStyleVM.FromModel(c.Style?.Data, data));
+    }
+
+    /// <summary>Zděděná vrstva podle prvku, jak ho právě nastavuje záložka Obecné.</summary>
+    public void ObnovZdedene(LineTableElement element)
+    {
+        var (header, data) = Zdedene(Alignment, element);
+        UpdateInherited(header, data);
+    }
+
+    private static (ResolvedTextStyle Header, ResolvedTextStyle Data) Zdedene(TextHorizontalAlignment zaloha,
+        LineTableElement element) =>
+        (TableLayout.ResolveCascade(null, element.ResolveColumnHeaderParent(), zaloha,
+             elementDefinesHAlign: element.HeaderStyle.HAlign is not null),
+         TableLayout.ResolveCascade(null, element.ResolveColumnDataParent(), zaloha,
+             elementDefinesHAlign: element.DataStyle.HAlign is not null));
 }
 
 // ─── Dialog ViewModel ───────────────────────────────────────────────────────
@@ -117,97 +123,19 @@ public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 class LineTableColumnsEditorDialogViewModel : EDViewModel
 {
     // Tab 1 „Obecné" = embedded EDInputForm (LineTableElementEdit.cls) - řeší code-behind.
-    // VM drží jen per-sloupec editaci (tab 2).
+    // VM drží jen záložku Sloupce (sdílená ColumnsTab).
 
-    public ObservableCollection<LineTableColumnVM> ColumnVMs { get; } = [];
-
-    public float[] FontSizeOptions { get; } = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24];
-
-    public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
-
-    /// <summary>
-    /// Co jde nastavit v <b>datové</b> zóně vybraného sloupce.
-    /// </summary>
-    /// <remarks>
-    /// ⚠️ U <b>šipky směru</b> se v datech nekreslí text, ale <b>šipka</b>, takže font, řez, zarovnání
-    /// ani odsazení nemají co ovlivnit - zbývá barva (kreslí se jí šipka) a pozadí buňky. Nález Jan
-    /// 28. 8.: nastavil barvu ve „Stylu záhlaví", protože u sloupce bez textu se nedalo poznat, že
-    /// šipku řídí zóna datových buněk. Skrytí nesmyslných polí i vlastní popisek zóny (viz
-    /// <see cref="NazevZonyDat"/>) tu cestu ukazují.
-    /// </remarks>
-    public CellStyleEditOptions DataEditOptions => JeSipka
-        ? new CellStyleEditOptions
-        {
-            AllowFontFamily = false, AllowFontSize = false, AllowBold = false, AllowItalic = false,
-            AllowUnderline = false, AllowStrikethrough = false,
-            AllowHAlign = false, AllowVAlign = false, AllowPadding = false,
-            AllowTextColor = true, AllowBackgroundColor = true,
-        }
-        : CellStyleEditOptions.AllEnabled;
-
-    /// <summary>Popisek datové zóny - u šipky se z ní kreslí šipka, ne buňky s textem.</summary>
-    public string NazevZonyDat => JeSipka ? "Styl šipky" : "Styl datových buněk";
-
-    /// <summary>Nápověda pod datovou zónou; prázdná u sloupců, kde není co vysvětlovat.</summary>
-    public string NapovedaZonyDat => JeSipka
-        ? "Šipka se kreslí barvou textu. Font ani zarovnání na ni nemají vliv."
-        : "";
-
-    /// <summary>Je nápověda pod datovou zónou neprázdná? (viditelnost v XAML)</summary>
-    public bool MaNapoveduZonyDat => NapovedaZonyDat.Length > 0;
-
-    private bool JeSipka => _selectedColumnVM?.Key == ColumnKeys.Arrow;
-
-    public float ElementWidth => _element.Width;
-
-    /// <summary>Součet pevných šířek viditelných sloupců (mm); auto (null) i spojový sloupec se nepočítá.</summary>
-    public float TotalVisibleColumnWidth =>
-        ColumnVMs.Where(c => c.Visible && c.Key != LineTableElement.TripKey).Sum(c => c.Width ?? 0f);
-
-    public bool HasColumnOverflow => TotalVisibleColumnWidth > ElementWidth + 0.01f;
-
-    public string ColumnOverflowText =>
-        $"⚠ Součet šířek popisných sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku prvku ({ElementWidth:0.#} mm). Na spoje nezbude místo.";
+    public Controls.ColumnsTabViewModel Columns { get; }
 
     public List<StopColumn> ResultColumns { get; private set; } = [];
 
-    private LineTableColumnVM? _selectedColumnVM;
-    public LineTableColumnVM? SelectedColumnVM
-    {
-        get => _selectedColumnVM;
-        set
-        {
-            Set(ref _selectedColumnVM, value);
-            OnPropertyChanged(nameof(HasSelection));
-            // Datová zóna se mění podle druhu sloupce - u šipky nabízí jen barvu a pozadí.
-            OnPropertyChanged(nameof(DataEditOptions));
-            OnPropertyChanged(nameof(NazevZonyDat));
-            OnPropertyChanged(nameof(NapovedaZonyDat));
-            OnPropertyChanged(nameof(MaNapoveduZonyDat));
-        }
-    }
-
-    public bool HasSelection => _selectedColumnVM is not null;
-
-    public RelayCommand MoveUpCommand   { get; }
-    public RelayCommand MoveDownCommand { get; }
-
-
-
-    public RelayCommand ResetStyleCommand { get; }
-    public RelayCommand ResetAllColumnStylesCommand { get; }
-
-    private readonly LineTableElement _element;
+    private readonly List<StopColumn> _puvodni;
+    private readonly string _priOtevreni;
 
     public LineTableColumnsEditorDialogViewModel(LineTableElement element, List<StopColumn> columns)
     {
-        _element = element;
-
-        var headerInherited = element.ResolveColumnHeaderParent();
-        var dataInherited   = element.ResolveColumnDataParent();
-
-        foreach (var col in columns)
-            ColumnVMs.Add(LineTableColumnVM.FromModel(col, headerInherited, dataInherited));
+        _puvodni = columns;
+        var rows = columns.Select(col => LineTableColumnVM.FromModel(col, element)).ToList();
 
         // Doplň chybějící známé sloupce (uložená šablona může mít podmnožinu) - ať uživatel vidí
         // všechny dostupné sloupce a může je zapnout checkboxem. Doplněné jsou skryté.
@@ -216,64 +144,31 @@ class LineTableColumnsEditorDialogViewModel : EDViewModel
             if (!presentKeys.Contains(def.Key))
             {
                 def.Visible = false;
-                ColumnVMs.Add(LineTableColumnVM.FromModel(def, headerInherited, dataInherited));
+                rows.Add(LineTableColumnVM.FromModel(def, element));
             }
 
-        if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
-
-        MoveUpCommand   = Command(MoveUp);
-        MoveDownCommand = Command(MoveDown);
-
-
-
-        ResetStyleCommand = Command(() =>
+        // Přizpůsobit tu není záměrně (rozhodnutí Jan 26. 10., `B194` E13b): zadávají se jen popisné
+        // sloupce, šířku spojů dopočítá tabulka, takže by tlačítko spojům jen vzalo místo.
+        Columns = new Controls.ColumnsTabViewModel(rows)
         {
-            if (SelectedColumnVM is null) return;
-            SelectedColumnVM.HeaderStyle.Reset();
-            SelectedColumnVM.DataStyle.Reset();
-        });
-
-        ResetAllColumnStylesCommand = Command(() =>
-        {
-            foreach (var vm in ColumnVMs)
-            {
-                vm.HeaderStyle.Reset();
-                vm.DataStyle.Reset();
-            }
-        });
-
-        foreach (var vm in ColumnVMs)
-            vm.PropertyChanged += OnColumnChanged;
+            ElementWidth = () => element.Width,
+            OverflowNote = "Na sloupce spojů nezbude místo.",
+            MultilineHeader = true,
+        };
+        _priOtevreni = Controls.ColumnsTabViewModel.Snapshot(Vysledek());
     }
 
-    private void OnColumnChanged(object? sender, PropertyChangedEventArgs e)
+    /// <summary>Přepočítá zděděné styly sloupců podle náhledu prvku se změnami ze záložky Obecné.</summary>
+    public void ObnovZdedene(LineTableElement nahled)
     {
-        if (e.PropertyName == nameof(LineTableColumnVM.Width) ||
-            e.PropertyName == nameof(LineTableColumnVM.Visible))
-        {
-            OnPropertyChanged(nameof(TotalVisibleColumnWidth));
-            OnPropertyChanged(nameof(HasColumnOverflow));
-            OnPropertyChanged(nameof(ColumnOverflowText));
-        }
-    }
-
-    private void MoveUp()
-    {
-        if (SelectedColumnVM is null) return;
-        int idx = ColumnVMs.IndexOf(SelectedColumnVM);
-        if (idx > 0) ColumnVMs.Move(idx, idx - 1);
-    }
-
-    private void MoveDown()
-    {
-        if (SelectedColumnVM is null) return;
-        int idx = ColumnVMs.IndexOf(SelectedColumnVM);
-        if (idx >= 0 && idx < ColumnVMs.Count - 1) ColumnVMs.Move(idx, idx + 1);
+        foreach (var row in Columns.Rows.Cast<LineTableColumnVM>()) row.ObnovZdedene(nahled);
     }
 
     protected override void OnOk()
     {
-        ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
+        ResultColumns =Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodni, _priOtevreni, Vysledek());
         CloseDialog(true);
     }
+
+    private List<StopColumn> Vysledek() => [.. Columns.Rows.Cast<LineTableColumnVM>().Select(vm => vm.ToModel())];
 }

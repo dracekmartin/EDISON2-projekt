@@ -112,4 +112,26 @@ public class TextStyleTests
 
         Assert.Equal(once, twice);
     }
+
+    /// <summary>Hash pro cache rozvržení musí poznat změnu každé vlastnosti - nová vlastnost stylu,
+    /// kterou do něj nikdo nepřidá, by změnu z formuláře zase schovala do staré cache.</summary>
+    [Fact]
+    public void ContentHash_PoznaZmenuKazdeVlastnosti()
+    {
+        var vlastnosti = typeof(TextStyle).GetProperties()
+            .Where(p => p.CanWrite && p.GetIndexParameters().Length == 0).ToList();
+        Assert.NotEmpty(vlastnosti);
+
+        foreach (var p in vlastnosti)
+        {
+            var styl = new TextStyle();
+            int pred = styl.ContentHash();
+            var typ = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+            object hodnota = typ == typeof(string) ? "#FF123456"
+                : typ.IsEnum ? Enum.GetValues(typ).GetValue(Enum.GetValues(typ).Length - 1)!
+                : Convert.ChangeType(1, typ);
+            p.SetValue(styl, hodnota);
+            Assert.True(styl.ContentHash() != pred, $"ContentHash nepozná změnu {p.Name}");
+        }
+    }
 }

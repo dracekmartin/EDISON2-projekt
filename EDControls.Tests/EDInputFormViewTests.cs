@@ -104,6 +104,33 @@ public class EDInputFormViewTests
         });
     }
 
+    /// <summary>Host, který změní vstupy formuláře mimo vizuální strom, vynutí nový auto-init
+    /// vyprázdněním a vrácením téže třídy. Stojí na tom tab parametrů TemplateDesigneru
+    /// (`MainWindow.ReloadParamsTabForm`): jedna třída pro všechny agendy, a bez toho by po změně
+    /// agendy mimo tab ukázal parametry té předchozí.</summary>
+    [Fact]
+    public void Loaded_AfterCacheClassReset_InitsSameClassAgain()
+    {
+        RunSta(() =>
+        {
+            var mock = MLRestMocks.Create();
+            mock.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>()).Returns(new CVar());
+            var form = new Form
+            {
+                CacheClass = "ALVA.A",
+                ServicesOverride = new EDServices(mock,
+                    Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()),
+            };
+            RaiseLoaded(form);
+
+            form.CacheClass = "";
+            form.CacheClass = "ALVA.A";
+            RaiseLoaded(form);
+
+            mock.Received(2).QueryOrThrow("ALVA.A", "Init", Arg.Any<CVar>());
+        });
+    }
+
     [Fact]
     public void Loaded_WithoutCacheClass_DoesNotInit_ToolbarSearchWorksFromConstruction()
     {

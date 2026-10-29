@@ -192,7 +192,7 @@ public abstract class ScheduleElementBase : TemplateElement
     protected static float ComputeRowH(float fontSizePt) => fontSizePt * PtToMm * RowHeightFactor;
 
     /// <summary>Vypočítá výšku záhlaví v mm pro danou velikost fontu záhlaví (pt).</summary>
-    protected static float ComputeHeaderH(float headerFontSizePt) => headerFontSizePt * PtToMm * HeaderHeightFactor;
+    protected internal static float ComputeHeaderH(float headerFontSizePt) => headerFontSizePt * PtToMm * HeaderHeightFactor;
 
     /// <summary>Vytvoří standardní sadu paintů pro JŘ elementy. Volající musí dispose.</summary>
     protected SchedulePaints CreateStandardPaints(RenderContext ctx)
@@ -288,7 +288,7 @@ public abstract class ScheduleElementBase : TemplateElement
     /// Get vrací reálnou hodnotu (explicit nebo auto-vypočtenou z fontu),
     /// Set rozpozná „auto" zpětně přes epsilon comparison - uživatel po editaci nemusí vědět magickou hodnotu.
     /// </summary>
-    protected FloatPropertyDescriptor GetDataRowHeightDescriptor(string group = "Řádky") => new()
+    protected FloatPropertyDescriptor GetDataRowHeightDescriptor(string group = "Datové buňky") => new()
     {
         Label = "Výška řádku",
         Group = group,
@@ -307,13 +307,16 @@ public abstract class ScheduleElementBase : TemplateElement
     /// (StopList, DepartureGrid, NotesLegend) bez nutnosti otevírat dialog sloupců.
     /// Detailní cascade (font, alignment, padding) zůstává v dialogu kde má per-column granularitu.
     /// </summary>
+    /// <param name="withDataBackground">False u prvku, který pozadí buněk nekreslí (Poznámky) - pole,
+    /// které nic nedělá, by se nemělo nabízet.</param>
     protected IReadOnlyList<PropertyDescriptor> GetCellZoneBaseColorDescriptors(
         string headerGroup = "Záhlaví",
-        string dataGroup = "Datové buňky") =>
+        string dataGroup = "Datové buňky",
+        bool withDataBackground = true) =>
     [
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí záhlaví", Group = headerGroup,
+            Label = "Barva pozadí záhlaví", Group = headerGroup,
             Get = () => HeaderStyle.BackgroundColor ?? ScheduleHeaderDefaults.BackgroundColor,
             Set = v => HeaderStyle.BackgroundColor = v,
         },
@@ -323,12 +326,17 @@ public abstract class ScheduleElementBase : TemplateElement
             Get = () => HeaderStyle.TextColor ?? ScheduleHeaderDefaults.TextColor,
             Set = v => HeaderStyle.TextColor = v,
         },
-        new ColorPropertyDescriptor
-        {
-            Label = "Pozadí buněk", Group = dataGroup,
-            Get = () => DataStyle.BackgroundColor ?? ScheduleDataDefaults.BackgroundColor,
-            Set = v => DataStyle.BackgroundColor = v,
-        },
+        .. (withDataBackground
+            ? new PropertyDescriptor[]
+            {
+                new ColorPropertyDescriptor
+                {
+                    Label = "Barva pozadí buněk", Group = dataGroup,
+                    Get = () => DataStyle.BackgroundColor ?? ScheduleDataDefaults.BackgroundColor,
+                    Set = v => DataStyle.BackgroundColor = v,
+                },
+            }
+            : []),
         new ColorPropertyDescriptor
         {
             Label = "Barva textu buněk", Group = dataGroup,
@@ -357,18 +365,18 @@ public abstract class ScheduleElementBase : TemplateElement
         GetHeaderFontSizeDescriptor(headerGroup),
         new FloatPropertyDescriptor
         {
-            Label = "Velikost", Group = dataGroup, Unit = "pt", Min = 3, Max = 24,
+            Label = "Velikost", Group = dataGroup, Unit = "pt", Min = 3, Max = 72,
             Get = () => DataStyle.FontSize ?? ScheduleDataDefaults.FontSize,
             Set = v => DataStyle.FontSize = v,
         },
     ];
 
     /// <summary>Velikost písma záhlaví samostatně - pro prvek, jehož datová zóna má velikost jinde
-    /// (Poznámky ji mají jako „Velikost poznámek" ve skupině Rozložení).</summary>
+    /// (Poznámky ji mají jako „Velikost" v Datových buňkách, mimo sadu stylu).</summary>
     protected PropertyDescriptor GetHeaderFontSizeDescriptor(string headerGroup = "Záhlaví") =>
         new FloatPropertyDescriptor
         {
-            Label = "Velikost", Group = headerGroup, Unit = "pt", Min = 3, Max = 24,
+            Label = "Velikost", Group = headerGroup, Unit = "pt", Min = 3, Max = 72,
             Get = () => HeaderStyle.FontSize ?? ScheduleHeaderDefaults.FontSize,
             Set = v => HeaderStyle.FontSize = v,
         };

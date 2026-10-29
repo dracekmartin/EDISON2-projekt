@@ -2,7 +2,7 @@
   "version": "1.15.0",
   "id": "bde92703-ccd9-4fe0-adf2-f6fbf976041f",
   "name": "Linkový JŘ (MHD) - postskriptový vzhled A5",
-  "description": "Systémová šablona linkového jízdního řádu (MHD) v podobě postskriptového tisku jako linkový JŘ AD: hlavička s veřejným označením linky a dopravcem, tabulka celé linky po typech provozu a dvousloupcová legenda poznámek. Formát A5 na šířku.",
+  "description": "Systémová šablona linkového jízdního řádu (MHD) v podobě postskriptového tisku jako linkový JŘ AD: hlavička s veřejným označením linky a dopravcem, tabulka celé linky po typech provozu a Poznámky ve dvou sloupcích. Formát A5 na šířku.",
   "pageSize": {
     "width": 210,
     "height": 148,

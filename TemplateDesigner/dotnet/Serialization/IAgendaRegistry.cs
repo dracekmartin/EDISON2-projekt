@@ -22,6 +22,9 @@ namespace TemplateDesigner.Serialization;
 /// <para><see cref="CustomColumns"/> = agenda čte vlastní definici sloupců ze šablony; jinak okno
 /// Minut odjezdů záložku „Vlastní definice sloupců" schová. Default true = starší Caché bez klíče
 /// ji ukáže jako dřív.</para>
+///
+/// <para><see cref="VariantyTras"/> = agenda posílá u zastávek časy variant tras; jinak Seznam zastávek
+/// sloupec „Varianty tras" nenabízí (zůstal by prázdný). Default true = starší Caché bez klíče jako dřív.</para>
 /// </summary>
 public record AgendaRegistryEntry(
     string Code,
@@ -36,14 +39,19 @@ public record AgendaRegistryEntry(
     string Variant = "",
     string VariantLabel = "",
     bool Released = true,
-    bool CustomColumns = true)
+    bool CustomColumns = true,
+    bool VariantyTras = true)
 {
     /// <summary>Label agendy s fallbackem pro starší Caché bez dvouosých klíčů (→ kombinovaný Label).</summary>
     public string EffectiveAgendaLabel => AgendaLabel is { Length: > 0 } ? AgendaLabel : Label;
 
+    /// <summary>Varianta pro uživatele („AD", „AD - porovnání verzí"); kód varianty (`AD_ROZDILOVY`)
+    /// jen u starší Caché bez popisku.</summary>
+    public string EffectiveVariantLabel => VariantLabel is { Length: > 0 } ? VariantLabel : Variant;
+
     /// <summary>Zobrazovací text konfigurace: „Zastávkový JŘ · AD", bez varianty jen label agendy.</summary>
     public string DisplayName => Variant is { Length: > 0 }
-        ? $"{EffectiveAgendaLabel} · {Variant}"
+        ? $"{EffectiveAgendaLabel} · {EffectiveVariantLabel}"
         : EffectiveAgendaLabel;
 }
 

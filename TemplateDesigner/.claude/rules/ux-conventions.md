@@ -222,6 +222,23 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
 - Tri-state placeholder: `null = dědit` → XAML zobrazí *italic šedý* placeholder zděděné hodnoty; „×" reset jen při explicit override.
 - Multi-element edit: Enter na multi-select → dialog společných vlastností.
 
+**Kostra formuláře tabulkového prvku** (rozhodnutí Jan 28. 10., `B194` E3; nový tabulkový prvek ji dodrží):
+
+- **Nahoře skupiny jen toho prvku**, pojmenované podle toho, čeho na výtisku se týkají (Zastávky,
+  Skupiny dnů, Časy, Data…), ne obecně. Smí míchat logiku i vzhled své věci; stejná věc má u všech
+  prvků stejný název. Pořadí: co určuje obsah, potom rozložení, zvláštní stavy, grafika.
+- **Pod nimi vždy stejný konec:** Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost,
+  Podmínky. Skupina **„Obecné" se nepoužívá** - nic neříká o tom, co v ní je.
+- **Skupina části** (Záhlaví, Datové buňky): první pole část zapíná, pak pole pro celý řádek (výška,
+  střídání), pod nimi sada stylu ze `StyleFields`. Co mění obsah výtisku, patří do skupin prvku.
+- **Sady stylu:** Buňka (15 polí) pro záhlaví a buňky, Text (8 polí, písmo a barva textu) pro text
+  uvnitř buňky (minuta, značky, 2. řádek záhlaví). Styl je vždy rozepsaný, nikdy za tlačítkem, a
+  formulář nenabízí pole, které prvek nekreslí.
+- **Bez** záložek, sbalených skupin a stylu pro celý prvek (zvažováno, odmítnuto).
+- **Výjimky:** Pevná tabulka má „Styl všech buněk" před „Styl řádku záhlaví" (buňky se vyplňují
+  ručně, řádek záhlaví zůstal jen kvůli starým šablonám). Poznámky nejsou klasická tabulka a mají
+  vlastní strukturu.
+
 ---
 
 ## 5. Context menu
@@ -235,7 +252,9 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
 ## 6. Toolbar / paleta
 
 - Ikony z **Fluent UI System Icons** (Microsoft, MIT licence) - viz `EDIcons.xaml`.
-- Skupiny tlačítek oddělené `Separator` (Soubor / Upravit / Přidat / Elementy / Vrstva / Zarovnat / Zobrazení).
+- Skupiny tlačítek oddělené `Separator` (Soubor / Upravit / Stránka a sekce / Prvky / Vrstva / Zarovnat /
+  Mřížka plátna a přichytávání / Zoom / Panely / Data / Tisk). Oddělovač, za kterým nic nezůstane (prvky JŘ
+  v obecné agendě), se schová s tím, co odděluje.
 - Drag-from-palette: `PreviewMouseLeftButtonDown` → ghost preview na canvasu → drop = `AddElementCommand`.
 
 ---
@@ -255,6 +274,25 @@ Stejná vlastnost = **stejný label** ve všech elementech, dialozích i EDInput
 je zdvojený (PropertyDescriptor v `.cs` **i** EDInputForm `.cls`) → při změně/přidání uprav **obě**
 místa. **Před vymýšlením nového popisku grepni, jak se to jmenuje jinde**, a použij zavedený termín.
 
+**Jak se popisek tvoří** (rozhodnutí Jan 28. 10. na Seznamu zastávek; hledání ve formuláři porovnává celý
+zadaný text s popiskem nebo názvem skupiny, nápovědu ne - `EDInputForm.xaml.cs` `ComputeSearchMatches`):
+
+- **Popisek odpovídá typu pole a tomu, co uživatel udělá.** Číslo = jméno veličiny nebo **„Počet …"**
+  (~~Rozdělit na více oddílů~~ → Počet oddílů), zaškrtávátko = věc, kterou zapíná (~~Odsazení~~ → Odsazení
+  podle trasy), výběr = co se vybírá (~~Více stanovišť~~ → Výběr stanoviště, ~~Hrot šipky~~ → Tvar hrotu).
+  Výběr ze dvou možností ano/ne je zaškrtávátko (~~Projeté: Čas~~ Nezobrazovat/Zobrazit → Projeté: Zobrazit čas).
+- **Popisek začíná vlastností** v zavedeném tvaru (Barva…, Tloušťka…, Velikost…, Výška…, Šířka…, Mezera…,
+  Zarovnání…, Styl…); barevné pole vždy obsahuje „Barva", jinak ho hledání „barva" nenajde.
+- **Ve skupině jedné části prvku se název části neopakuje** (skupina Šipka směru: Pozice, Barva, Tloušťka -
+  ne ~~Barva šipky~~), jako formátovací panely ve Wordu; část najde hledání podle skupiny. Ve sdílené skupině
+  „Část: Vlastnost" v 1. pádě (Aktuální: Tučné, Minuta: Velikost). Kde se popisek ukazuje bez skupiny
+  (protokol importu, asistent), jde se skupinou: „Šipka směru · Pozice".
+- **„podle", ne „dle"; bez zkratek** („Min.", „Max."); **vysvětlení do nápovědy, ne do závorky** v popisku
+  ani ve volbě (~~Vpravo (u pravého okraje prvku)~~). Závorka zůstává u zavedených výjimek (Přestupy
+  (vlak/autobus), Kód (QR, čárový)) a u ukázky formátu ve volbě (hh:mm).
+- Texty voleb prvků se neukládají (ukládá se kód), přejmenovat je jde; **volby parametrů sestavy ano ne**
+  (zamčené, viz níž).
+
 Kanonické termíny (font/styl textu):
 
 | Vlastnost | Kanonický label | NE |
@@ -265,8 +303,8 @@ Kanonické termíny (font/styl textu):
 | Tučné / Kurzíva / Podtržení / Přeškrtnutí | **Tučné** / **Kurzíva** / **Podtržení** / **Přeškrtnutí** | anglicismy |
 | Vzhled jedné části prvku | **„Část: Vlastnost"** - předpona a kanonický název („Minuta: Velikost", „Aktuální: Tučné", „Projeté: Barva textu"); vysvětlivka prázdné hodnoty do nápovědy (rozhodnutí Jan 26. 10.) | ~~Tučně aktuální zast.~~, ~~Barva projetých~~ |
 | Řádkování (LineSpacing) | **Řádkování** | - |
-| Barva textu / pozadí buňky | **Barva textu buněk** / **Pozadí buněk** | - |
-| Barva textu / pozadí záhlaví | **Barva textu záhlaví** / **Pozadí záhlaví** | - |
+| Barva textu / pozadí | **Barva textu** / **Barva pozadí** - ve skupině části prvku (Záhlaví, Datové buňky) bez upřesnění, část říká název skupiny; jinde s částí („Negativní značka: Barva pozadí" v Minutách, „Aktuální: Barva pozadí"). Celý tvar „Barva …" kvůli hledání podle „barva" (rozhodnutí Jan 28. 10.) | ~~Pozadí~~ samotné, ~~Výplň~~ |
+| Totéž v programu bez skupiny (rychlé barvy zón tabulky, asistent, import z PDF) | **Barva textu záhlaví** / **Barva pozadí záhlaví**, **Barva textu buněk** / **Barva pozadí buněk** | ~~Pozadí záhlaví~~, ~~Pozadí buněk~~ |
 
 Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 
@@ -277,19 +315,19 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Pořadí překrytí (ZIndex) | **Vrstva** („Vyšší vrstva leží nad nižší") - rozhodnutí Jan 26. 10. | ~~ZIndex~~, ~~Pořadí vrstvy~~ |
 | Výška, kterou sazba dopočte | **výška podle obsahu** („výška se počítá podle obsahu") | ~~počítá engine~~, ~~dynamická výška~~ |
 | Plocha návrháře | **plátno** | ~~canvas~~ |
-| Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti** | ~~Viditelnost~~ (samostatné; „Viditelnost řádku" je jiný pojem a je OK) |
-| Síla čáry (BorderWidth aj.) | **Tloušťka …** („Tloušťka rámečku", „Tloušťka okraje") | ~~Šířka rámečku~~, ~~Tl. …~~ |
-| Střídavé podbarvení řádků | **Střídání řádků** | ~~Zebra barva~~ |
-| Směry zarovnání | **Zarovnání vodorovně / Zarovnání svisle** (celý tvar, ať jde hledat - rozhodnutí Jan 26. 10.; volba jen jedním směrem nese směr v popisku: „Zarovnání záhlaví svisle"), stavy **Nahoře / Dole** | ~~Horizontálně/Vertikálně~~, samotné ~~Vodorovně~~ / ~~Svisle~~ / ~~Zarovnání~~, ~~Nahoru/Dolů~~ |
+| Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti**, u řádku **Podmínka viditelnosti řádku** (je to podmínka, ne zaškrtávátko - rozhodnutí Jan 28. 10.) | ~~Viditelnost~~, ~~Viditelnost řádku~~ |
+| Síla čáry (BorderWidth aj.) | **Tloušťka …** („Tloušťka rámečku", „Tloušťka mřížky") | ~~Šířka rámečku~~, ~~Tl. …~~ |
+| Střídavé podbarvení řádků | **Střídání řádků: Barva pozadí** (barva se musí najít hledáním „barva", jako Lichá Tč: Barva pozadí - rozhodnutí Jan 28. 10.) | ~~Zebra barva~~, samotné ~~Střídání řádků~~ |
+| Směry zarovnání | **Zarovnání vodorovně / Zarovnání svisle** (celý tvar, ať jde hledat - rozhodnutí Jan 26. 10.), stavy **Nahoře / Dole** | ~~Horizontálně/Vertikálně~~, samotné ~~Vodorovně~~ / ~~Svisle~~ / ~~Zarovnání~~, ~~Nahoru/Dolů~~ |
 | Přestupy u zastávky | **Přestupy (vlak/autobus)** | ~~(vlak/bus)~~ |
 | Prvek s vysvětlivkami pod vývěskou | **Poznámky** | ~~Legenda poznámek~~ (třída `NotesLegendElement` se nepřejmenovává - visí na ní `type` v šablonách) |
 | Prvek s časy odjezdů po hodinách | **Minuty odjezdů** | ~~Mřížka odjezdů~~ („mřížka" je implementační pojem; třída `DepartureGridElement` zůstává) |
 | Prvek s tabulkou zastávky × spoje | **Tabulka spojů** | ~~Linkový JŘ~~, ~~Tabulka linky~~ (tak se jmenuje **agenda**, prvek by se s ní pletl; třída `LineTableElement` zůstává) |
 | Zóna, km, Tč, zastávka a MHD v Tabulce spojů | **popisné sloupce** (rozhodnutí Jan 26. 10.) | ~~popisové sloupce~~, ~~sloupce popisu~~ |
 | Prvek s QR / čárovým kódem | **Kód (QR, čárový)** | ~~Kód~~ samotné (neřekne, co prvek umí), ~~Kód (QR / čárový)~~ |
-| Zapnutí záhlaví prvku | **Záhlaví** (u zastávek „Záhlaví sloupců") - patří do skupiny **Obecné** | ~~Zobrazit nadpis~~ |
+| Zapnutí záhlaví prvku | **Záhlaví** (u tabulek se sloupci „Záhlaví sloupců", u skupin dnů „Záhlaví skupin dnů") - **první pole skupiny Záhlaví**; skupinu „Obecné" tabulky nemají, nic neříkala o tom, co v ní je (rozhodnutí Jan 28. 10., kostra formuláře viz §4) | ~~Zobrazit nadpis~~ |
 | Text v záhlaví prvku | **Text záhlaví** | ~~Nadpis~~ (samotné „Nadpis skupiny" u dat je jiný pojem a je OK) |
-| Hlavička tabulky oproti datovým buňkám (řádek, text i styl) | **Záhlaví** („Záhlaví skupin dnů", „Text záhlaví popisných sloupců", „Styl 2. řádku záhlaví") | ~~Nadpis~~ - jen pro koncepčně jinou věc (text skupiny dnů v datech, nadpis okna); rozhodnutí Jan 26. 10. |
+| Hlavička tabulky oproti datovým buňkám (řádek, text i styl) | **Záhlaví** („Záhlaví skupin dnů", „Text záhlaví popisných sloupců", „2. řádek: Velikost" ve skupině Záhlaví) | ~~Nadpis~~ - jen pro koncepčně jinou věc (text skupiny dnů v datech, nadpis okna); rozhodnutí Jan 26. 10. |
 
 **Strojová pojistka:** `EDInputFormSchemaDriftTests` (ban list zakázaných tvarů + „stejný field key
 = stejný label napříč .cls") - nový termín přidej do kanonu ZDE a případně do ban listu testu;
@@ -304,6 +342,8 @@ Kanonické termíny (doména JŘ):
 | Pole „nástupiště" z trasy linky (volný text) | **Označník** (pole `NASTUPISTE` na wire zůstává) | ~~Nástupiště~~, ~~stanoviště~~ |
 | Číslo z číselníku sloupků zastávky (AD) | **Sloupek** (pole `SLOUPEK`) | ~~označník~~ |
 | Zastřešující pojem pro „ten z těch dvou, který je zvolený" | **Stanoviště** (volba „Číslo stanoviště podle") | konkrétní z těch dvou, když se míní obojí |
+| Poslední zastávka směru | **Konečná zastávka** (i „Číslo konečné zastávky (CIS)"; klíč `…_CILOVA_CIS` zůstává) - rozhodnutí Jan 27. 10. | ~~cílová~~ |
+| Údaj podle číselníku CIS | přípona **„(CIS)" na konci** („Číslo aktuální zastávky (CIS)", „Konečná zastávka (CIS)") | ~~CIS číslo …~~ |
 
 ⚠️ **Označník a sloupek NEJSOU synonyma** (zjištěno 2026-08-03 u #13088): v AD jsou to dvě různá pole
 vedle sebe (volný text vs. číselník s GPS a popisem směru) a zákazník je rozlišuje - do 3. 8. tu bylo
@@ -312,13 +352,13 @@ doménově říká označník**, takže se názvosloví mezi AD a MHD záměrně
 Jan 2026-08-03); MHD pole `SLOUPEK` nemá. Datová mapa obou → `docs/ad-data-mapa.md`.
 „Stanoviště" tím přestalo být zakázaný tvar (byl zakázaný jako synonymum označníku) a je to teď
 **zastřešující pojem** - používej ho jen tam, kde se opravdu míní „ten zvolený z těch dvou"
-(popisky „Více stanovišť", „Řádek pro každé stanoviště", „Číslo stanoviště podle").
+(popisky „Výběr stanoviště", „Řádek pro každé stanoviště", „Číslo stanoviště podle").
 
 Výjimka: text „tisk stanoviště" v legendě CIS atributů (`ZastavkoveJrAd.TextAtributu`, znak „S") je
 doslovná parita textů starého modulu - nechává se.
 
 **UI texty jen česky** - žádné cizí výrazy typu „per", „split" v labelech, tooltipech a helpTextech
-(„Samostatná stránka pro každé stanoviště", ne „per označník"; „Řádek pro každé stanoviště",
+(„Stránka pro každé stanoviště", ne „per označník"; „Řádek pro každé stanoviště",
 ne „per stanoviště").
 
 **Nastavení, které je u linky a uživatel ho má jít přebít**, se dělá jako enum s výchozí volbou

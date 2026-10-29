@@ -88,8 +88,9 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
 
     s fname = ""
     i $isobject(vals) && vals.%IsDefined("__EXPORT_FILENAME") { s fname = vals.%Get("__EXPORT_FILENAME") }
-    s f = form.AddText("__EXPORT_FILENAME", "Název souboru (tokeny {POLE})", fname)
+    s f = form.AddText("__EXPORT_FILENAME", "Název souboru", fname)
     s f.placeholders = 1
+    s f.helpText = "Datová pole vložíte tlačítkem { }, např. {CISLO_LINKY}."
 
     // Měřítko tisku: hotová sazba se před tiskem celá zvětší/zmenší (parita s MeritkoVyves
     // starého postskriptu - vývěsky 1,3x, kniha 1x). Stránkování se tím nemění, jen rozměr

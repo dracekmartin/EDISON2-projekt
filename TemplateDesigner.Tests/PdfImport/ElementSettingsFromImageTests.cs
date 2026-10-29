@@ -17,13 +17,13 @@ public class ElementSettingsFromImageTests
     /// <summary>Popisek volby nese vysvětlivku („Vlevo (u levého okraje prvku)"), model odpoví
     /// holé „Vlevo" - musí projít obojí.</summary>
     [Theory]
-    [InlineData("Vlevo (u levého okraje prvku)")]
     [InlineData("Vlevo")]
+    [InlineData("vlevo")]
     public void VyberZNabidkySeZapisePlnymIZkracenymPopiskem(string answer)
     {
         var el = new StopListElement();
 
-        Apply(el, ("Směr jízdy · Pozice šipky", answer));
+        Apply(el, ("Šipka směru · Pozice", answer));
 
         Assert.Equal(DirectionArrowSide.Left, el.DirectionArrowPosition);
     }
@@ -33,7 +33,7 @@ public class ElementSettingsFromImageTests
     {
         var el = new StopListElement();
 
-        Apply(el, ("Zastávky · Pozice značek", "Před zastávkou"));
+        Apply(el, ("Zastávky · Pozice značek", "Před názvem"));
 
         Assert.Equal(StopMarkersSide.BeforeName, el.MarkersPosition);
     }
@@ -56,7 +56,7 @@ public class ElementSettingsFromImageTests
     {
         var el = new StopListElement();
 
-        Apply(el, ("Zastávky · Mezera mezi oddíly", "4,5"));
+        Apply(el, ("Rozložení · Mezera mezi oddíly", "4,5"));
 
         Assert.Equal(4.5f, el.PartGap, 3);
     }
@@ -66,7 +66,7 @@ public class ElementSettingsFromImageTests
     {
         var el = new StopListElement { DirectionArrowColor = "#FF000000" };
 
-        var log = Apply(el, ("Směr jízdy · Barva šipky", "tmavě modrá"));
+        var log = Apply(el, ("Šipka směru · Barva", "tmavě modrá"));
 
         Assert.Equal("#FF000000", el.DirectionArrowColor);
         Assert.Contains(log, l => l.Contains("nerozumím"));
@@ -78,7 +78,7 @@ public class ElementSettingsFromImageTests
         var el = new StopListElement();
         int original = el.PartCount;
 
-        var log = Apply(el, ("Zastávky · Rozdělit na více oddílů", "999"));
+        var log = Apply(el, ("Rozložení · Počet oddílů", "999"));
 
         Assert.Equal(original, el.PartCount);
         Assert.Contains(log, l => l.Contains("nerozumím"));
@@ -101,7 +101,7 @@ public class ElementSettingsFromImageTests
         var catalog = ElementSettingsFromImage.BuildCatalog(new StopListElement());
 
         Assert.DoesNotContain("Pozice a velikost", catalog);
-        Assert.Contains("Pozice šipky", catalog);
+        Assert.Contains("Šipka směru · Pozice", catalog);
     }
 
     [Fact]
@@ -118,8 +118,8 @@ public class ElementSettingsFromImageTests
     [Theory]
     [InlineData("Zastávky · Přestupy (vlak/autobus)")]
     [InlineData("Zastávky · Poznámky zastávky")]
-    [InlineData("Zastávky · Více stanovišť")]
-    [InlineData("Aktuální a projeté zastávky · Projeté: Čas")]
+    [InlineData("Stanoviště · Výběr stanoviště")]
+    [InlineData("Aktuální a projeté zastávky · Projeté: Zobrazit čas")]
     public void NaVeciNeodvoditelneZObrazkuSeNeptame(string klic)
     {
         var catalog = ElementSettingsFromImage.BuildCatalog(new StopListElement());
@@ -133,13 +133,13 @@ public class ElementSettingsFromImageTests
     {
         var catalog = ElementSettingsFromImage.BuildCatalog(new DepartureGridElement());
 
-        Assert.DoesNotContain("Velikost záhlaví", catalog);
-        Assert.DoesNotContain("Min. výška řádku záhlaví", catalog);
+        Assert.DoesNotContain("Záhlaví · Velikost", catalog);
+        Assert.DoesNotContain("Nejmenší výška řádku", catalog);
     }
 
     [Theory]
-    [InlineData("Pozice šipky")]
-    [InlineData("Rozdělit na více oddílů")]
+    [InlineData("Šipka směru · Pozice")]
+    [InlineData("Rozložení · Počet oddílů")]
     public void NaJednoznacneVizualniVeciSeNaopakPtameStale(string popisek)
     {
         var catalog = ElementSettingsFromImage.BuildCatalog(new StopListElement());
@@ -159,8 +159,8 @@ public class ElementSettingsFromImageTests
     {
         var el = new StopListElement();
 
-        var log = Apply(el, ("Směr jízdy · Pozice šipky", "Vlevo"));
+        var log = Apply(el, ("Šipka směru · Pozice", "Vlevo"));
 
-        Assert.Contains(log, l => l.Contains("Pozice šipky") && l.Contains("Vlevo"));
+        Assert.Contains(log, l => l.Contains("Šipka směru · Pozice") && l.Contains("Vlevo"));
     }
 }

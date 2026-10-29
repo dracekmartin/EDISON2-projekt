@@ -13,7 +13,7 @@
     <WarningsAsErrors>$(WarningsAsErrors);RS0016;RS0017</WarningsAsErrors>
     <!-- Nullabilita v podpisu binárně nic nemění, hlídání by jen hlásilo neškodné změny. -->
     <NoWarn>$(NoWarn);RS0037</NoWarn>
-    <!-- EDControls se vydává samostatně (jedna volná DLL v C:\Edison\) — publish smí
+    <!-- EDControls se vydává samostatně (jedna volná DLL v C:\Edison\) - publish smí
          zapsat jen její vlastní assembly, ne celý uzávěr závislostí. -->
     <PublishOwnAssemblyOnly>true</PublishOwnAssemblyOnly>
   </PropertyGroup>

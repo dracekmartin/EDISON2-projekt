@@ -143,7 +143,8 @@ je to vědomá výjimka, ne nedodělek (`mvvm-patterns.md` §Známé záměrné 
 
 ### Jednotná kaskáda stylů buněk
 
-Všechny tři tabulkové JŘ elementy (StopList, DepartureGrid, NotesLegend) používají spolu s `TableElement` sdílenou 4-vrstvou kaskádu `column.Style → element.HeaderStyle/DataStyle → element-specific defaults → CellDefaults`. Rendering přes `Rendering/CellRenderer.DrawCell` - jediné místo v aplikaci pozicování textu buňky (bg → padding → HAlign+VAlign → decorations). Dialogy sloupců (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`) používají sdílený `Controls/CellStyleEditor` UserControl.
+Tabulkové JŘ elementy se sloupci (StopList, DepartureGrid, LineTable) používají spolu s `TableElement` a `DynamicTableElement` sdílenou 4-vrstvou kaskádu `column.Style → element.HeaderStyle/DataStyle → element-specific defaults → CellDefaults`. Rendering přes `Rendering/CellRenderer.DrawCell` - jediné místo v aplikaci pozicování textu buňky (bg → padding → HAlign+VAlign → decorations). Okna se sloupci (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `LineTableColumnsEditorDialog`, `DynamicTableEditorDialog`) mají sdílenou záložku Sloupce `Controls/ColumnsTab` s editorem stylu `Controls/CellStyleEditor`.
+NotesLegend sloupce nemá: bere jen vrstvy prvku (`HeaderStyle`/`DataStyle` nad výchozími hodnotami `ScheduleElementBase`) a poznámky kreslí vlastním kódem, ne přes `CellRenderer`.
 
 Detaily patternu + element-side pattern (`Resolve*Style` helpery, pre-created per-column fonty/painty pro perf) viz `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`.
 
@@ -293,7 +294,7 @@ Každý tabulkový element má **dvě patra**, která se sjednocují nezávisle:
 
 | Patro | Co to je | Konzistence |
 |---|---|---|
-| **Data / nastavení** | model sloupců, kaskáda stylů, editory, 2-tab dialog | **sdílené VŠEMI** tabulkovými elementy (i pivotem DepartureGrid) |
+| **Data / nastavení** | model sloupců, kaskáda stylů, editory, dialog Obecné + Sloupce | **sdílené VŠEMI** tabulkovými elementy (i pivotem DepartureGrid) |
 | **Render / layout** | jak se to skládá na plátno (šířky, řádková smyčka) | sdílené jen mezi **řádkovými** tabulkami; pivot je mimo |
 
 Klíč: „konzistentní" ≠ „stejný render". Element může sdílet vše, co uživatel edituje (a být tak
@@ -351,13 +352,16 @@ Vše v `dotnet/Rendering/`:
 
 | Prvek | Co dělá | Používá |
 |---|---|---|
-| `ColumnListEditor` + `IColumnRowVM` | levý seznam sloupců (checkbox viditelnost, override tečka, ▲▼, šířka) | StopList, DepartureGrid, LineTable |
-| `CellStyleEditor` + `CellStyleVM` | tri-state editor stylu buňky (font/barvy/align/padding, „×" reset) | všechny dialogy sloupců |
-| **2-tab dialog** (Obecné + Sloupce) | Tab 1 = EDInputForm (`*ElementEdit.cls`, element-wide props), Tab 2 = `ColumnListEditor` + `CellStyleEditor` | StopColumnsEditorDialog, DepartureGroupEditorDialog, DynamicTableEditorDialog, LineTableColumnsEditorDialog |
+| `ColumnsTab` + `ColumnsTabViewModel` + `ColumnRowVM` | celá záložka Sloupce: seznam, detail sloupce, součet šířek, Přizpůsobit, přidání/odebrání, reset | všechny čtyři okna se sloupci |
+| `ColumnListEditor` + `IColumnRowVM` | levý seznam uvnitř záložky (zaškrtávátko viditelnosti, tečka vlastního stylu, ▲▼, šířka) | `ColumnsTab` |
+| `CellStyleEditor` + `CellStyleVM` | tri-state editor stylu buňky (font/barvy/align/padding, „×" reset) | `ColumnsTab` |
+| **Dialog Obecné + Sloupce** | Obecné = EDInputForm (`*ElementEdit.cls`, element-wide props), Sloupce = `ColumnsTab`; Minuty mají u AD třetí záložku Vlastní definice sloupců | StopColumnsEditorDialog, DepartureGroupEditorDialog, DynamicTableEditorDialog, LineTableColumnsEditorDialog |
 
-**2-tab dialog = závazný vzor** pro každý tabulkový element s editovatelnou kolekcí sloupců. Nový
-element ho postaví jako klon některého existujícího (nejblíž `LineTableColumnsEditorDialog`), NIKDY
-neduplikuje inline XAML pro editaci stylu buňky.
+**Dialog Obecné + Sloupce = závazný vzor** pro každý tabulkový element s editovatelnou kolekcí sloupců. Záložka
+Sloupce se **nekopíruje** (do 28. 10. ji měla každá tabulka vlastní a rozešly se, `B194` E13c): nový
+element dodá podtřídu `ColumnRowVM` (převod sloupce z/do modelu a schopnosti řádku) a vytvoří
+`ColumnsTabViewModel`; pole navíc dá do `ExtraColumnTemplate` / `ExtraDataTemplate`. Detail v
+`mvvm-patterns.md` §Sdílená záložka Sloupce.
 
 ---
 
@@ -386,7 +390,7 @@ Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho d
   `ColumnRenderer.DrawRow` („řádek = sekvence sloupců") jeho tvar neumí vyjádřit. Vlastní: pivot layout,
   redistribuce šířek, word-wrap víceřádkových záhlaví, HourColumnPerGroup, NZ invertované minuty,
   extended hours přes půlnoc. **Sdílí ale plně datovou vrstvu** (column model `DepartureGroupColumnStyle`,
-  kaskádu, `CellStyleEditor`/`ColumnListEditor`, `CellRenderer.DrawCell` na hodinové buňky) → z pohledu
+  kaskádu, záložku Sloupce `ColumnsTab`, `CellRenderer.DrawCell` na hodinové buňky) → z pohledu
   uživatele je konzistentní.
 
 ---
@@ -394,13 +398,14 @@ Tohle NEpatří do jádra; každý element si drží sám, protože je to jeho d
 ## 3. Nový tabulkový element - co dostaneš zdarma, co musíš dodat
 
 **Zdarma z jádra:** kreslení buňky, kreslení řádku, **svislá smyčka** (`RowPlanRenderer`), výpočet
-šířek (pokud tvůj model je „per-sloupec"), kaskáda stylů, editor sloupců + styl editor, 2-tab dialog
-(klon).
+šířek (pokud tvůj model je „per-sloupec"), kaskáda stylů, záložka Sloupce (`ColumnsTab` - dodáš jen
+řádek sloupce), dialog Obecné + Sloupce.
 
 **Musíš dodat (tvé odlišnosti):** column model (nebo reuse `StopColumn`/`TableColumn`), mapování
 „co je v buňce" (klíč → hodnota z dat), **plán řádků** (`RowSpec` per řádek s druhem, výškou
 a buňkami - ne vlastní svislou smyčku), `CalculateHeightFromData`, per-row overridy pokud máš
 (zvýraznění apod.), a EDInputForm schéma (`*ElementEdit.cls`) pro tab Obecné.
+Formulář drží kostru z `ux-conventions §4` a styl zón skládá ze sad `StyleFields`; postup je ve skillu `novy-element`.
 
 **Rozhodni:** je to řádková tabulka (iteruješ záznamy → řádky) → do řádkového jádra. Nebo pivot /
 jiný tvar → vlastní render, ale sdílej datovou vrstvu (jako DepartureGrid).
@@ -431,6 +436,21 @@ proto, že vznikl 3. konzument (LineTable) - do té doby by přepis gold-ověře
 Svislou smyčku měl každý element vlastní; dnes ji mají všechny čtyři řádkové tabulky společnou a řádek
 navíc nese `RowKind`, tedy svůj význam - na tom stojí řezání širokých tabulek do stránkových bloků
 (`B13` v roadmapě), aby se psalo jednou nad plánem a ne pětkrát v per-element smyčkách.
+
+### Návrh jemnější mřížky (`B155`, podnět Jan 16. 9., čeká na poptávku)
+
+Dnes má `GridStyle` **jednu** barvu, tloušťku a styl pro vodorovné i svislé čáry; ty jdou jen zapnout nebo vypnout.
+Návrh: **čtyři druhy čar** (mezi řádky, mezi sloupci, pod záhlavím, na hranici skupiny sloupců), každý s vlastní barvou, tloušťkou, stylem a volbou „nekreslit".
+Zadávají se **kaskádou** jako styly buněk: nahoře jedna sada, kdo chce, přebije ji u druhu (dvanáct plných polí by formulář neunesl).
+
+- ⚠️ **Per-buňku ani per-hranu ne** (rozhodnutí Jan 16. 9.) - u tiskové sestavy s desítkami řádků je to zbytečné.
+  Vnější obrys zůstává rámečkem prvku, ne součástí mřížky.
+- ⚠️ **Pohltí `PopisneSloupceBezVnitrnichCar`** („Popisné sloupce bez vnitřních čar", otázka Jan 16. 9.).
+  Je to per-prvek náplast, která vznikla právě proto, že obecná mřížka nestačila, a dnes je to jediný způsob, jak čáry odlišit uvnitř tabulky.
+  V editoru je to **jeden z druhů čar** („mezi popisnými sloupci"), ne samostatná volba jinde ve formuláři.
+  Zároveň se tím dá to, co dnes chybí: čára mezi zónou a km, ale ne mezi km podsloupci.
+- Poptávka je zatím **jedna**: KOVED bod 5 z `linkovy-knizni-jr-implementace-analyza.md` §15.2 chce jiný styl u spojů než u info sloupců a dnes se to obchází vypnutím svislých čar.
+  Vytáhnout, až se sejde víc požadavků.
 
 
 

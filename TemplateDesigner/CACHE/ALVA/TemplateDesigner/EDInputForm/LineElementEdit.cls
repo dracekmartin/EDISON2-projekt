@@ -32,6 +32,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s f = form.AddFieldToLastGroup("Color", "Barva", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
 
         d form.AddDecimal("StrokeWidth", "Tloušťka", 0.5, 0.1, 10, "mm")
 

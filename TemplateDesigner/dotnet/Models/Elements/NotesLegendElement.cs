@@ -575,19 +575,19 @@ public class NotesLegendElement : StopScheduleElementBase
     /// Druhy poznámek a uvnitř druhu znamená „Dle typu" totéž co pořadí z dat.
     /// </summary>
     /// <remarks>
-    /// U linkového nese „Výchozí (dle dat)" tu z obou hodnot, kterou šablona má (výchozí prvku je
+    /// U linkového nese „Podle dat" tu z obou hodnot, kterou šablona má (výchozí prvku je
     /// „Dle typu"). Pole tak u starší šablony nezůstane prázdné a otevření formuláře nic nezapíše.
     /// </remarks>
     public static IReadOnlyList<(string Hodnota, string Popis)> VolbyRazeni(bool linkovyJr, string aktualni)
     {
-        const string dleDat = "Výchozí (dle dat)";
+        const string dleDat = "Podle dat";
         (string, string)[] delka =
         [
             (nameof(LegendRazeni.DleDelkyVzestupne), "Délka vzestupně"),
             (nameof(LegendRazeni.DleDelkySestupne), "Délka sestupně"),
         ];
         if (!linkovyJr)
-            return [(nameof(LegendRazeni.DleTypu), "Dle typu (dny platnosti → značky → atributy → text)"),
+            return [(nameof(LegendRazeni.DleTypu), "Podle typu"),
                     (nameof(LegendRazeni.Vychozi), dleDat), .. delka];
         var dleDatHodnota = aktualni == nameof(LegendRazeni.Vychozi) ? nameof(LegendRazeni.Vychozi) : nameof(LegendRazeni.DleTypu);
         return [(dleDatHodnota, dleDat), .. delka];
@@ -793,36 +793,35 @@ public class NotesLegendElement : StopScheduleElementBase
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         .. GetScheduleBaseDescriptors(withLineToggles: false),   // mřížkou kreslí jen čáru pod záhlavím
-        .. GetCellZoneBaseColorDescriptors(),
+        .. GetCellZoneBaseColorDescriptors(withDataBackground: false),   // pozadí buněk nekreslí
 
-        // Zapínadlo do Obecného, jeho vzhled do Záhlaví - týž vzor jako u zastávek, kde „Záhlaví
-        // sloupců" sedí v Obecném a barvy ve „Stylu záhlaví" (rozhodnutí Jan 1. 9.).
+        // Zapínadlo je první pole skupiny Záhlaví jako u tabulek (rozhodnutí Jan 28. 10.).
         // Z papíru se pozná vždy: poznámky linky mají obsah pokaždé, takže chybějící pruh nadpisu je
         // volba, ne prázdná data (u 940 IDZK záhlaví není).
-        new BoolPropertyDescriptor   { FromImage = true, Label = "Záhlaví", Group = "Obecné",       Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
+        new BoolPropertyDescriptor   { FromImage = true, Label = "Záhlaví", Group = "Záhlaví",      Get = () => ShowHeaderBar, Set = v => ShowHeaderBar = v },
         new StringPropertyDescriptor { FromImage = true, Label = "Text záhlaví",         Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        // Datová zóna má velikost jako „Velikost poznámek" v Rozložení, záhlaví ji do 16. 9. nemělo
+        // Datová zóna má velikost zvlášť (NoteFontSize v Datových buňkách), záhlaví ji do 16. 9. nemělo
         // vůbec - přitom se kreslí i počítá výška záhlaví z ní (`B159`, hlásil TRANSDEV).
         GetHeaderFontSizeDescriptor(),
 
         new StringPropertyDescriptor { Label = "Font",                Group = "Datové buňky", Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
-        new StringPropertyDescriptor { FromImage = true, Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
-        // Velikost a výška řádku patří k rozložení, ne mezi barvy buněk: uživatel je hledá spolu
-        // s počtem sloupců a ve „Datových buňkách" je nenašel (nález Pavel 1. 9.).
-        new FloatPropertyDescriptor  { Label = "Velikost poznámek",   Group = "Rozložení", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
-        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Rozložení",
+        new StringPropertyDescriptor { FromImage = true, Label = "Oddělovač",           Group = "Rozložení", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
+        // Velikost a výška řádku jsou v Datových buňkách jako u tabulek (rozhodnutí Jan 28. 10.); do
+        // Rozložení je 1. 9. dal nález Pavla, když Datové buňky měly jen barvy.
+        new FloatPropertyDescriptor  { Label = "Velikost",            Group = "Datové buňky", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 3, Max = 72, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Datové buňky",
             Get = () => EffectiveNoteLineHeight,
             // Hodnota shodná s automatickou = vrátit se k dědění z písma; uživatel tak nemusí znát
             // magické číslo, aby se dostal zpátky (týž vzor jako GetDataRowHeightDescriptor).
             Set = v => NoteLineHeight = MathF.Abs(v - ComputeRowH(NoteFontSize)) < 0.01f ? null : v,
-            Min = 2, Max = 15, Unit = "mm" },
+            Min = 1, Max = 50, Unit = "mm" },
 
         new FloatPropertyDescriptor  { FromImage = true, Label = "Počet sloupců",       Group = "Rozložení", Get = () => Columns,     Set = v => Columns = (int)v, Min = 1, Max = 4, Format = "0" },
         new EnumPropertyDescriptor   { FromImage = true, Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
             Options = [("Po sloupcích", (object)LegendWrap.PoSloupcich), ("Po řádcích", (object)LegendWrap.PoRadcich)] },
         new EnumPropertyDescriptor   { Label = "Řazení poznámek",    Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
-            Options = [("Dle typu (dny platnosti → značky → atributy → text)", (object)LegendRazeni.DleTypu), ("Výchozí (dle dat)", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
+            Options = [("Podle typu", (object)LegendRazeni.DleTypu), ("Podle dat", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
         new FloatPropertyDescriptor  { FromImage = true, Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
@@ -847,10 +846,10 @@ public class NotesLegendElement : StopScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Místenky u odjezdů",           Group = "Filtrování", Get = () => ShowZnackaMistenky,        Set = v => ShowZnackaMistenky = v },
         new BoolPropertyDescriptor  { Label = "Pokračující spoje",            Group = "Filtrování", Get = () => ShowPokracujiciSpoje,      Set = v => ShowPokracujiciSpoje = v },
 
-        new ColorPropertyDescriptor { FromImage = true, Label = "Pozadí značky",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
-        new ColorPropertyDescriptor { FromImage = true, Label = "Barva textu značky", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
-        new ColorPropertyDescriptor { Label = "Původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
-        new ColorPropertyDescriptor { Label = "Nová verze",    Group = "Porovnání verzí", Get = () => RozdilNovaBackColor,    Set = v => RozdilNovaBackColor = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Barva pozadí",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor { FromImage = true, Label = "Barva textu", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
+        new ColorPropertyDescriptor { Label = "Původní verze: Barva pozadí", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
+        new ColorPropertyDescriptor { Label = "Nová verze: Barva pozadí", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor,    Set = v => RozdilNovaBackColor = v },
 
         .. GetPositionDescriptors()
     ];

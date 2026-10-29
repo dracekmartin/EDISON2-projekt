@@ -66,7 +66,11 @@ Method TestGold0330510()
 	// Re-baseline 2026-10-26 (`B194` T3b): data v textu omezení odděluje čárka s mezerou jako
 	// v Zastávkovém JŘ AD (vědomá odchylka od starého linkového tisku, rozhodnutí Jan). Jen md5,
 	// počty shodné; oracle poznámek dál 43/43 (`LinkovyJrLegacyOracle.OddelovacDat`).
-	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=c/fJwE1Ka8vbDvZN30DjYg==")
+	// Re-baseline 2026-10-27 (`B194` D1): do hlavičky přibyl název aktuální zastávky (`POPIS_ZASTAVKA`,
+	// bez zvýraznění prázdný). Mění se jen md5, počty jsou shodné.
+	// Re-baseline 2026-10-27 (`B194c` D4): do hodnot přibyly údaje prvního dopravce po polích
+	// (NAZEV/ADRESA/TELEFON/EMAIL/ICO_DOPRAVCE) jako u vývěsky AD. Jen md5, počty shodné.
+	do ..AssertLinka("CB_CSADAD", 1, "0330510", "pages=2 zast=48 spoju=84 casu=2015 pozn=63 md5=D0X/SBGZcqp3XPfLFdvzhA==")
 }
 
 /// Druhý tvar: bez skupin dnů, zdvojené řádky příjezd/odjezd, šest km sloupců.
@@ -103,7 +107,9 @@ Method TestGold0330511()
 	// Re-baseline 2026-10-23 (#13606): barvy linky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-24 (`B194a` C8): nadpisy vzoru dvojice z kusů 8 a 9 (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T3b): čárka s mezerou mezi daty omezení (viz 0330510). Jen md5.
-	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=emEQ6fTLuXLcppHKZ+wpiw==")
+	// Re-baseline 2026-10-27 (`B194` D1): název aktuální zastávky v hlavičce (viz 0330510). Jen md5.
+	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 0330510. Jen md5.
+	do ..AssertLinka("CB_CSADAD", 1, "0330511", "pages=2 zast=62 spoju=17 casu=246 pozn=25 md5=Q+CZ9LmPQy6Z92g0mFUHfw==")
 }
 
 /// Třetí tvar, jiná firma: největší linka jádra (99 spojů, 53 na stránku, osm km sloupců).
@@ -137,7 +143,9 @@ Method TestGold0410107()
 	// Re-baseline 2026-10-23 (`B193b`): veřejné označení linky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-23 (#13606): barvy linky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T3b): čárka s mezerou mezi daty omezení (viz 0330510). Jen md5.
-	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=FCf3IRbO6Y2wZft5/wTZ7Q==")
+	// Re-baseline 2026-10-27 (`B194` D1): název aktuální zastávky v hlavičce (viz 0330510). Jen md5.
+	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 0330510. Jen md5.
+	do ..AssertLinka("KV_DP", 1, "0410107", "pages=2 zast=98 spoju=99 casu=2362 pozn=34 md5=UKn0LYnZ2HXmhS5a2rVywg==")
 }
 
 /// Čtvrtý tvar: 109 spojů na **jediné** stránce (jeden směr), bez zón a bez sloupce MHD.
@@ -173,7 +181,9 @@ Method TestGold0945001()
 	// (`AKTUALNI_ZASTAVKA_CZST`/`_TC`, bez zvýraznění prázdné). Mění se jen md5, počty jsou shodné.
 	// Re-baseline 2026-10-23 (`B193b`): veřejné označení linky v hlavičce (viz 0330510). Jen md5.
 	// Re-baseline 2026-10-23 (#13606): barvy linky v hlavičce (viz 0330510). Jen md5.
-	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=E6vwHqmH+QmyJuCFtibFKA==")
+	// Re-baseline 2026-10-27 (`B194` D1): název aktuální zastávky v hlavičce (viz 0330510). Jen md5.
+	// Re-baseline 2026-10-27 (`B194c` D4): údaje dopravce po polích - viz gold 0330510. Jen md5.
+	do ..AssertLinka("VS_CSAD", 1, "0945001", "pages=1 zast=33 spoju=109 casu=2175 pozn=14 md5=exdnjFKVlep8FCMZC/TlLQ==")
 }
 
 /// Ověří digest jedné linky proti očekávané hodnotě. Rozlišuje:

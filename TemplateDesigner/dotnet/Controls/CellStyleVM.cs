@@ -16,10 +16,14 @@ namespace TemplateDesigner;
 /// <see cref="Inherited"/> drží vyřešený rodičovský styl - UI ho zobrazuje jako placeholder/default
 /// u každé vlastnosti, aby uživatel viděl, co bude skutečně platit, když nic nepřepíše.
 ///
-/// Sdíleno všemi dialogy sloupců (DepartureGrid / StopList / TableElement).
+/// Sdíleno všemi čtyřmi okny tabulek se sloupci (záložka Sloupce, <see cref="Controls.ColumnsTab"/>).
 /// </summary>
 public class CellStyleVM : INotifyPropertyChanged
 {
+    /// <summary>Meze velikosti a vnitřního okraje - shodné s formulářem prvku (StyleFields.cls),
+    /// hlídá <c>EditorStyluSloupceTests</c>.</summary>
+    public const float MinFontSize = 3f, MaxFontSize = 72f, MaxPadding = 20f;
+
     // ── Editovatelné vlastnosti (null = dědit) ────────────────────────────
 
     private string?                    _fontFamily;
@@ -39,39 +43,37 @@ public class CellStyleVM : INotifyPropertyChanged
     private float?                     _paddingLeft;
 
     public string?                    FontFamily    { get => _fontFamily;    set { _fontFamily    = NullIfEmpty(value); OnChanged(); OnChanged(nameof(HasExplicitFontFamily)); RefreshWeightOptions(); } }
-    public float?                     FontSize      { get => _fontSize;      set { _fontSize      = value;              OnChanged(); OnChanged(nameof(HasExplicitFontSize)); } }
+    public float?                     FontSize      { get => _fontSize;      set { _fontSize      = Clamp(value, MinFontSize, MaxFontSize); OnChanged(); OnChanged(nameof(HasExplicitFontSize)); } }
     public int?                       FontWeight    { get => _fontWeight;    set { _fontWeight    = value;              OnChanged(); OnChanged(nameof(HasExplicitFontWeight)); } }
-    public bool?                      Bold          { get => _bold;          set { _bold          = value;              OnChanged(); OnChanged(nameof(EffectiveBold));          OnChanged(nameof(HasExplicitBold)); } }
-    public bool?                      Italic        { get => _italic;        set { _italic        = value;              OnChanged(); OnChanged(nameof(EffectiveItalic));        OnChanged(nameof(HasExplicitItalic)); } }
-    public bool?                      Underline     { get => _underline;     set { _underline     = value;              OnChanged(); OnChanged(nameof(EffectiveUnderline));     OnChanged(nameof(HasExplicitUnderline)); } }
-    public bool?                      Strikethrough { get => _strikethrough; set { _strikethrough = value;              OnChanged(); OnChanged(nameof(EffectiveStrikethrough)); OnChanged(nameof(HasExplicitStrikethrough)); } }
+    public bool?                      Bold          { get => _bold;          set { _bold          = value;              OnChanged(); OnChanged(nameof(EffectiveBold)); } }
+    public bool?                      Italic        { get => _italic;        set { _italic        = value;              OnChanged(); OnChanged(nameof(EffectiveItalic)); } }
+    public bool?                      Underline     { get => _underline;     set { _underline     = value;              OnChanged(); OnChanged(nameof(EffectiveUnderline)); } }
+    public bool?                      Strikethrough { get => _strikethrough; set { _strikethrough = value;              OnChanged(); OnChanged(nameof(EffectiveStrikethrough)); } }
     public string?                    TextColor     { get => _textColor;     set { SetColor(value, ref _textColor); OnChanged(); } }
     public string?                    BgColor       { get => _bgColor;       set { SetColor(value, ref _bgColor);   OnChanged(); } }
     public TextHorizontalAlignment?   HAlign        { get => _hAlign;        set { _hAlign        = value;              OnChanged(); OnChanged(nameof(HasExplicitHAlign)); } }
     public TextVerticalAlignment?     VAlign        { get => _vAlign;        set { _vAlign        = value;              OnChanged(); OnChanged(nameof(HasExplicitVAlign)); } }
-    public float?                     PaddingTop    { get => _paddingTop;    set { _paddingTop    = value;              OnChanged(); } }
-    public float?                     PaddingRight  { get => _paddingRight;  set { _paddingRight  = value;              OnChanged(); } }
-    public float?                     PaddingBottom { get => _paddingBottom; set { _paddingBottom = value;              OnChanged(); } }
-    public float?                     PaddingLeft   { get => _paddingLeft;   set { _paddingLeft   = value;              OnChanged(); } }
+    public float?                     PaddingTop    { get => _paddingTop;    set { _paddingTop    = Clamp(value, 0f, MaxPadding); OnChanged(); } }
+    public float?                     PaddingRight  { get => _paddingRight;  set { _paddingRight  = Clamp(value, 0f, MaxPadding); OnChanged(); } }
+    public float?                     PaddingBottom { get => _paddingBottom; set { _paddingBottom = Clamp(value, 0f, MaxPadding); OnChanged(); } }
+    public float?                     PaddingLeft   { get => _paddingLeft;   set { _paddingLeft   = Clamp(value, 0f, MaxPadding); OnChanged(); } }
 
     // ── Derived: efektivní bool (explicit ?? inherited) pro 2-state checkboxy ──
-    // Setter nastaví explicit hodnotu (user kliká → explicit override).
-    // Reset na "dědí" = samostatný command (ResetFieldCommand s parametrem).
+    // Hodnota shodná se zděděnou = dědit (null): zaškrtávátko nemá vlastní reset, k dědění se vrací
+    // samo, jinak by odškrtnutí nechalo sloupec přepsaný (rozhodnutí Jan 28. 10.).
 
-    public bool EffectiveBold          { get => _bold          ?? Inherited.Bold;          set => Bold          = value; }
-    public bool EffectiveItalic        { get => _italic        ?? Inherited.Italic;        set => Italic        = value; }
-    public bool EffectiveUnderline     { get => _underline     ?? Inherited.Underline;     set => Underline     = value; }
-    public bool EffectiveStrikethrough { get => _strikethrough ?? Inherited.Strikethrough; set => Strikethrough = value; }
+    public bool EffectiveBold          { get => _bold          ?? Inherited.Bold;          set => Bold          = OrInherit(value, Inherited.Bold); }
+    public bool EffectiveItalic        { get => _italic        ?? Inherited.Italic;        set => Italic        = OrInherit(value, Inherited.Italic); }
+    public bool EffectiveUnderline     { get => _underline     ?? Inherited.Underline;     set => Underline     = OrInherit(value, Inherited.Underline); }
+    public bool EffectiveStrikethrough { get => _strikethrough ?? Inherited.Strikethrough; set => Strikethrough = OrInherit(value, Inherited.Strikethrough); }
+
+    private static bool? OrInherit(bool value, bool inherited) => value == inherited ? null : value;
 
     // ── Derived: "má uživatel explicit override?" (pro viditelnost × tlačítek) ──
 
     public bool HasExplicitFontFamily    => _fontFamily    is not null;
     public bool HasExplicitFontSize      => _fontSize      is not null;
     public bool HasExplicitFontWeight    => _fontWeight    is not null;
-    public bool HasExplicitBold          => _bold          is not null;
-    public bool HasExplicitItalic        => _italic        is not null;
-    public bool HasExplicitUnderline     => _underline     is not null;
-    public bool HasExplicitStrikethrough => _strikethrough is not null;
     public bool HasExplicitHAlign        => _hAlign        is not null;
     public bool HasExplicitVAlign        => _vAlign        is not null;
 
@@ -91,7 +93,23 @@ public class CellStyleVM : INotifyPropertyChanged
     /// Vyřešený rodičovský styl (element-level resolved). UI ho ukazuje jako
     /// placeholder u prázdných polí - uživatel vidí, co bude platit, když nic nepřepíše.
     /// </summary>
-    public ResolvedTextStyle Inherited { get; }
+    public ResolvedTextStyle Inherited { get; private set; }
+
+    /// <summary>
+    /// Nová zděděná vrstva - okno ji přepočítá, když se na záložce Obecné změní styl prvku. Bez toho by
+    /// zaškrtávátko porovnávalo se stavem prvku z otevření okna a odškrtnutí, které má sloupec odlišit
+    /// od nově zapnutého tučného prvku, by uložilo dědění (`B194h` H2).
+    /// </summary>
+    public void UpdateInherited(ResolvedTextStyle inherited)
+    {
+        Inherited = inherited;
+        OnChanged(nameof(Inherited));
+        OnChanged(nameof(EffectiveBold));
+        OnChanged(nameof(EffectiveItalic));
+        OnChanged(nameof(EffectiveUnderline));
+        OnChanged(nameof(EffectiveStrikethrough));
+        RefreshWeightOptions();
+    }
 
     // ── Řez (váha) - dynamická nabídka reálných řezů fontu ────────────────
 
@@ -261,6 +279,8 @@ public class CellStyleVM : INotifyPropertyChanged
     }
 
     private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
+
+    private static float? Clamp(float? value, float min, float max) => value is { } v ? Math.Clamp(v, min, max) : null;
 
     /// <summary>Zapíše barvu, jen když je to platná hodnota (hex nebo barva z dat) - jinak nechá
     /// předchozí. Barva se od zavedení textového zápisu dá napsat rukou, a neplatná uložená hodnota

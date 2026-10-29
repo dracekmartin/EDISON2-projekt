@@ -9,9 +9,6 @@
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip">
 
-    <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-    </Window.Resources>
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -29,119 +26,36 @@
             </TabItem>
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->
-            <TabItem Header="Sloupce" x:Name="ColumnsTab">
-                <Grid Margin="6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="210" MinWidth="160"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Vlevo: seznam sloupců + přidat/odebrat + warning/fit -->
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Text="Sloupce:" FontWeight="SemiBold" Margin="0,0,0,4"/>
-
-                        <controls:ColumnListEditor Grid.Row="1"
-                            ItemsSource="{Binding ColumnVMs}"
-                            SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
-                            MoveUpCommand="{Binding MoveUpCommand}"
-                            MoveDownCommand="{Binding MoveDownCommand}"/>
-
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,4,0,0">
-                            <Button Content="Přidat" Command="{Binding AddColumnCommand}"
-                                    Padding="8,3" Margin="0,0,6,0"/>
-                            <Button Content="Odebrat" Command="{Binding RemoveColumnCommand}"
-                                    IsEnabled="{Binding HasSelection}" Padding="8,3"/>
-                        </StackPanel>
-
-                        <StackPanel Grid.Row="3" Margin="0,4,0,0">
-                            <TextBlock Text="{Binding ColumnOverflowText}"
-                                       Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
-                                       TextWrapping="Wrap"
-                                       Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
-                            <Button Content="Přizpůsobit sloupce k šířce prvku"
-                                    Command="{Binding FitColumnsToWidthCommand}"
-                                    ToolTip="Proporcionálně zmenší/zvětší pevné šířky sloupců, aby součet odpovídal šířce prvku."
-                                    HorizontalAlignment="Stretch" Padding="6,3" Margin="0,4,0,0"
-                                    Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Vpravo: detail vybraného sloupce -->
-                    <ScrollViewer Grid.Column="1" Margin="8,0,0,0"
-                                  VerticalScrollBarVisibility="Auto"
-                                  IsEnabled="{Binding HasSelection}">
-                        <StackPanel>
-
-                            <!-- ── Struktura sloupce ────────────── -->
-                            <TextBlock Text="Struktura sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="150" Text="{Binding SelectedColumnVM.Header, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
-                                <TextBlock Text="Šířka (mm):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="50" Text="{Binding SelectedColumnVM.WidthText, UpdateSourceTrigger=LostFocus}"/>
+            <TabItem Header="Sloupce">
+                <controls:ColumnsTab DataContext="{Binding Columns}" IsVisibleChanged="ColumnsTab_IsVisibleChanged">
+                    <!-- Odkud sloupec bere hodnotu - jen Tabulka z dat (DataContext = vybraný sloupec). -->
+                    <controls:ColumnsTab.ExtraColumnTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Pole" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <ComboBox Width="200" IsEditable="True"
+                                              Text="{Binding Field, UpdateSourceTrigger=LostFocus}"
+                                              ItemsSource="{Binding DataContext.AvailableFields, RelativeSource={RelativeSource AncestorType=Window}}"
+                                              ToolTip="Datové pole kolekce, ze kterého se plní buňky sloupce (např. POPIS)."/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Výraz" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                    <TextBox Width="200"
+                                             Text="{Binding Expression, UpdateSourceTrigger=LostFocus}"
+                                             ToolTip="Počítané pole - aritmetika nad poli řádku, např. {CENA} * {POCET}. Má-li hodnotu, přebíjí Pole."/>
+                                    <TextBlock Text="Formát" VerticalAlignment="Center" Margin="12,0,4,0"/>
+                                    <TextBox Width="80"
+                                             Text="{Binding Format, UpdateSourceTrigger=LostFocus}"
+                                             ToolTip="Formát hodnoty, např. N2 (2 desetinná místa), dd.MM.yyyy. Prázdné = beze změny."/>
+                                </StackPanel>
+                                <TextBlock Text="Výraz (počítané pole) přebíjí Pole. Číselný výsledek naformátujte přes Formát (např. N2)."
+                                           FontStyle="Italic" TextWrapping="Wrap" Margin="0,0,0,8"
+                                           Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
                             </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Pole:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <ComboBox Width="200" IsEditable="True"
-                                          Text="{Binding SelectedColumnVM.Field, UpdateSourceTrigger=LostFocus}"
-                                          ItemsSource="{Binding AvailableFields}"
-                                          ToolTip="Datové pole kolekce, ze kterého se plní buňky sloupce (např. POPIS)."/>
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Výraz:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="200"
-                                         Text="{Binding SelectedColumnVM.Expression, UpdateSourceTrigger=LostFocus}"
-                                         ToolTip="Počítané pole - aritmetika nad poli řádku, např. {CENA} * {POCET}. Má-li hodnotu, přebíjí Pole."/>
-                                <TextBlock Text="Formát:" VerticalAlignment="Center" Margin="12,0,4,0"/>
-                                <TextBox Width="80"
-                                         Text="{Binding SelectedColumnVM.Format, UpdateSourceTrigger=LostFocus}"
-                                         ToolTip="Formát hodnoty, např. N2 (2 desetinná místa), dd.MM.yyyy. Prázdné = beze změny."/>
-                            </StackPanel>
-                            <TextBlock Text="Výraz (počítané pole) přebíjí Pole. Číselný výsledek zformátuj přes Formát (např. N2). Šířka prázdná = automaticky."
-                                       FontStyle="Italic" TextWrapping="Wrap"
-                                       Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
-
-                            <Separator Margin="0,8,0,8"/>
-
-                            <TextBlock Text="Prázdné pole = převezme se styl prvku (záložka Obecné)."
-                                       FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
-
-                            <!-- ── Styl záhlaví ──────────────── -->
-                            <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                            <controls:CellStyleEditor
-                                DataContext="{Binding SelectedColumnVM.HeaderStyle}"
-                                EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
-
-                            <Separator Margin="0,8,0,8"/>
-
-                            <!-- ── Styl dat ──────────────────── -->
-                            <TextBlock Text="Styl datových buněk" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                            <controls:CellStyleEditor
-                                DataContext="{Binding SelectedColumnVM.DataStyle}"
-                                EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <Button Content="Resetovat styl sloupce"
-                                        Command="{Binding DataContext.ResetStyleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        Padding="10,3" Margin="0,0,6,0"/>
-                                <Button Content="Resetovat všechny sloupce"
-                                        Command="{Binding DataContext.ResetAllColumnStylesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        ToolTip="Smaže úpravy jednotlivých sloupců - všechny sloupce převezmou styl ze záložky Obecné"
-                                        Padding="10,3"/>
-                            </StackPanel>
-
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
+                        </DataTemplate>
+                    </controls:ColumnsTab.ExtraColumnTemplate>
+                </controls:ColumnsTab>
             </TabItem>
 
         </TabControl>

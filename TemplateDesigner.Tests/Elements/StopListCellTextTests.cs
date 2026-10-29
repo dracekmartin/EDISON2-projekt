@@ -5,7 +5,7 @@ namespace TemplateDesigner.Tests.Elements;
 
 /// <summary>
 /// Režimy sloupce „Označník" (<see cref="StopListElement.GetCellText"/>, KOVED #13048 bod 4):
-/// Z trasy linky / Nejčetnější dle spojů / Výčet všech - včetně fallbacku na hodnotu z trasy,
+/// Podle trasy linky / Nejčetnější podle spojů / Všechna podle četnosti - včetně fallbacku na hodnotu z trasy,
 /// když per-spoj data chybí.
 /// </summary>
 public class StopListCellTextTests
@@ -163,48 +163,48 @@ public class StopListCellTextTests
         TrasaMin = [.. varianty],
     };
 
-    private static string VariantniCas(PassedStopsTimeDisplay mode, ZastavkaData z, bool projeta) =>
-        new StopListElement { PassedStopsTime = mode }
+    private static string VariantniCas(bool zobrazit, ZastavkaData z, bool projeta) =>
+        new StopListElement { PassedStopsShowTime = zobrazit }
             .GetCellText(z, StopFields.TravelTimeVariantPrefix + "0", projeta);
 
     [Fact]
     public void VychozeSeCasProjeteZastavkyNetiskne()
     {
         // Data dávají u projetých záporný čas (kumulativní od vývěskové zastávky).
-        Assert.Equal("", VariantniCas(PassedStopsTimeDisplay.Hide, StopSCasy(0, "-7"), projeta: true));
-        Assert.Equal("", VariantniCas(PassedStopsTimeDisplay.Hide, StopSCasy(0, "4"), projeta: true));
+        Assert.Equal("", VariantniCas(false, StopSCasy(0, "-7"), projeta: true));
+        Assert.Equal("", VariantniCas(false, StopSCasy(0, "4"), projeta: true));
     }
 
     [Fact]
     public void NeprojetaZastavkaCasySiDrzi()
     {
         var z = StopSCasy(12, "12");
-        Assert.Equal("12", VariantniCas(PassedStopsTimeDisplay.Hide, z, projeta: false));
-        Assert.Equal("12", VariantniCas(PassedStopsTimeDisplay.Show, z, projeta: false));
+        Assert.Equal("12", VariantniCas(false, z, projeta: false));
+        Assert.Equal("12", VariantniCas(true, z, projeta: false));
     }
 
     [Fact]
     public void ZobrazitZachovaDosavadniChovani()
     {
         var z = StopSCasy(0, "-7");
-        Assert.Equal("-7", VariantniCas(PassedStopsTimeDisplay.Show, z, projeta: true));
+        Assert.Equal("-7", VariantniCas(true, z, projeta: true));
     }
 
-    /// <summary>`B148` - „Nezobrazovat" u projetých vyprázdní buňku celou, i značku „&lt;".
+    /// <summary>`B148` - vypnuté „Projeté: Zobrazit čas" vyprázdní buňku celou, i značku „&lt;".
     /// Do 11. 9. se zahazovala jen čísla, takže sloupec „Čas" byl u projetých prázdný a variantní
     /// vedle něj plný „&lt;" (hlásil TRANSDEV). Se „Zobrazit" značka zůstává.</summary>
     [Fact]
     public void ZnackaProjizdiSeUProjetychNetiskne()
     {
         var z = StopSCasy(0, "<");
-        Assert.Equal("", VariantniCas(PassedStopsTimeDisplay.Hide, z, projeta: true));
-        Assert.Equal("<", VariantniCas(PassedStopsTimeDisplay.Show, z, projeta: true));
+        Assert.Equal("", VariantniCas(false, z, projeta: true));
+        Assert.Equal("<", VariantniCas(true, z, projeta: true));
     }
 
     [Fact]
     public void ZakladniSloupecCasu_SeChovaStejneJakoVariantni()
     {
-        var el = new StopListElement { PassedStopsTime = PassedStopsTimeDisplay.Hide };
+        var el = new StopListElement { PassedStopsShowTime = false };
         Assert.Equal("", el.GetCellText(StopSCasy(9), StopFields.TravelTime, isPassed: true));
         Assert.Equal("9", el.GetCellText(StopSCasy(9), StopFields.TravelTime, isPassed: false));
     }
@@ -215,7 +215,7 @@ public class StopListCellTextTests
     [Fact]
     public void ZakladniSloupecCasu_ZobrazitPlatiIProNej()
     {
-        var el = new StopListElement { PassedStopsTime = PassedStopsTimeDisplay.Show };
+        var el = new StopListElement { PassedStopsShowTime = true };
         var z = StopSCasy(0, "-7");
         z.CasJizdy = "-7";
 

@@ -26,7 +26,7 @@ public class SipkaSmeruLinkovaTests
         X = 0, Y = 0, Width = 80, Height = null,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 7 },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FFFFFFFF", Width = 0.2f },
         Columns =
         [

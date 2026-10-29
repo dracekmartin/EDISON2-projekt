@@ -24,7 +24,7 @@ public class TeckyVeVyplniTests
         X = 0, Y = 0, Width = 70, Height = null,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 8 },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         Grid = new GridStyle { ShowColumnLines = false, ShowRowLines = false },
         Columns =
         [

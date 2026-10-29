@@ -223,10 +223,25 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
         d obj.%Set("nazev",    nazev, "string")
         d obj.%Set("display",  display, "string")
         if subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
-        d arr.%Push(obj)
-
-        s count = count + 1
-        q:count>=limit
+        // Řadí se podle čísla linky jako v AD, ne podle interního ID (to dávalo 11, 1, 25, 2 -
+        // Jan 27. 10.): nejdřív čísla vzestupně, pak ostatní označení abecedně, linky bez čísla na konci.
+        s razeni = $s(cislo?1.N:$lb(0, +cislo), cislo'="":$lb(1, $zcvt(cislo,"U")), 1:$lb(2, 0))
+        s radky($lg(razeni,1), $lg(razeni,2), LinkaID) = obj
+    }
+    s skupina = ""
+    for {
+        s skupina = $o(radky(skupina))  q:skupina=""
+        s klic = ""
+        for {
+            s klic = $o(radky(skupina, klic))  q:klic=""
+            s id = ""
+            for {
+                s id = $o(radky(skupina, klic, id))  q:id=""
+                q:count>=limit
+                d arr.%Push(radky(skupina, klic, id))
+                s count = count + 1
+            }
+        }
     }
     q arr
 }
@@ -287,8 +302,19 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     s err = ""
     try {
         $$$FillParams
+        d ..SestavitVyvesky(.sys, $g(^||ML("IN","LINKA_ID")))
+    }
+    catch (ex) { $$$CatchErrRest }
+    k ^||TiskMHD                       // úklid working global i po chybě (self-healing kill je na začátku)
+    ret $$$OK
+}
 
-        s LinkaID = $g(^||ML("IN","LINKA_ID"))
+/// Vývěsky jedné linky do `^||ML("OUT")`. Sdílí ji tisk (`GetData`) i náhled bez linky
+/// (`GetMockData`), aby náhled ukazoval skutečná data stejné stavby; `jenPrvniStranka` vydá
+/// jen první vývěsku (náhled nemusí počítat stránky celé linky).
+ClassMethod SestavitVyvesky(ByRef sys As %String, LinkaID As %String, jenPrvniStranka As %Boolean = 0)
+{
+        $$$FillParams
         i 'LinkaID d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
         // Bez linky by níž $zdh prázdné platnosti spadl na <ILLEGAL VALUE> (`B194a` C11).
         i '$d(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID)) d ..ChybaDat("Vybraná linka v modulu MHD není, mohla být smazána. Vyberte linky znovu.")
@@ -310,7 +336,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         if TrasaID = "" {
             d ..PrazdnaStranka("Linka nemá zadanou trasu. Doplňte trasu u linky v modulu MHD.")
             d ..VydatDuvodPrazdne()
-            quit
+            q
         }
 
         // Nastavení auto-poznámkování
@@ -349,6 +375,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s ^||TiskMHD("config","NazevLinky") = NazevLinky
         s ^||TiskMHD("config","QRKod") = QRKod
         s ^||TiskMHD("config","TypJR") = TypJR
+        s ^||TiskMHD("config","jenPrvniStranka") = jenPrvniStranka
 
         // ═══════════════════════════════════════════════════════════════════
         // FÁZE 1: Příprava trasy pro oba směry
@@ -389,10 +416,6 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // Vývěska bez odjezdů se vynechává (konečná) - linka bez jediné stránky je ta, odkud nejede nic odnikud.
         s maSpoje = ($o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,LinkaID,"")) '= "")
         d ..VydatDuvodPrazdne($s('maSpoje:"Linka nemá žádné spoje. Doplňte spoje linky v modulu MHD.", 1:"Z žádné zastávky linky neodjíždí žádný spoj. Zkontrolujte spoje a jízdní doby linky v modulu MHD."))
-    }
-    catch (ex) { $$$CatchErrRest }
-    k ^||TiskMHD                       // úklid working global i po chybě (self-healing kill je na začátku)
-    ret $$$OK
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -1070,6 +1093,7 @@ ClassMethod SestavitStranky(ByRef sys As %String)
 /// pořadí stránek (`B161`), proto samostatně - podmínky musí být v obou shodné.
 ClassMethod VydatStranku(ByRef sys As %String, SmerID As %Integer, BodID As %String, ByRef pocetZastavek)
 {
+    i $g(^||TiskMHD("config","jenPrvniStranka")) && $d(^||ML("OUT",1)) ret
     i '$d(^||TiskMHD("trasa",SmerID,BodID)) ret
     // Zastávka nemá odjezdy → přeskočit
     i '$d(^||TiskMHD("odjezdy",SmerID,BodID)) ret
@@ -1127,8 +1151,9 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("POPIS_LINKY",            NazevLinky)
     d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .dopravce)
     d vals.%Set("POPIS_DOPRAVCE",         ..RadkyDopravce($g(dopravce("NAZEV")), $g(dopravce("ULICE")), $g(dopravce("MESTO")), $g(dopravce("TELEFON"))))
-    // Samotný název do úzkého rámečku záhlaví, celý popis jde pod název linky (jako vývěska AD).
-    d vals.%Set("NAZEV_DOPRAVCE",         $zstrip($g(dopravce("NAZEV")), "<>W"))
+    // Samotný název do úzkého rámečku záhlaví, celý popis jde pod název linky (jako vývěska AD);
+    // vedle něj adresa, telefon, e-mail a IČO po polích jako ve všech agendách JŘ.
+    d ..DopravceSkalary(.sys, dataDB, IdFa, LinkaID, vals)
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
     d vals.%Set("POPIS_PLATNOSTI",        ..FormatDatum(platnostOd)_" - "_..FormatDatum(platnostDo))
     d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum(platnostOd))
@@ -1151,6 +1176,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     s zastavky = ##class(%DynamicArray).%New()
     s poradiZast = 0
     s konecnaNazev = ""                       // poslední zastávka ve směru = konečná (→ KONECNA_ZASTAVKA, A1)
+    s vychoziNazev = ""                       // první vytištěná zastávka směru (→ VYCHOZI_ZASTAVKA, jako vývěska AD)
     s bodIterator = ""
     f {
         s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator), smerKrok) q:bodIterator=""
@@ -1232,11 +1258,13 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         }
 
         s konecnaNazev = zastNazev
+        s:vychoziNazev="" vychoziNazev = zastNazev
         s oznacnikRow = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastID,"DTA",1,"Oznacnik"))
         d z.%Set("NASTUPISTE", oznacnikRow)   // TR3: nástupiště per zastávka (MHD = Oznacnik)
         d zastavky.%Push(z)
     }
     d rows.%Set("ZASTAVKY", zastavky)
+    d vals.%Set("VYCHOZI_ZASTAVKA", vychoziNazev)
     d vals.%Set("KONECNA_ZASTAVKA", konecnaNazev)   // A1: konečná směru (dřív T/Z, to je teď v SMER)
 
     // SKUPINY_DNU - z typů provozu. Struktura sloupců je per LINKA (všechny SMO sloupce linky),
@@ -1737,12 +1765,17 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     // ── linka ──
     d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",    "text")
-    d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
+    d ..AddField(fields, "POPIS_LINKY",            "Název linky",            "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
 
     // ── dopravce ──
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+    // Po polích pod stejnými klíči jako AD (`B194c` D4).
     d ..AddField(fields, "NAZEV_DOPRAVCE",         "Název dopravce",         "text")
+    d ..AddField(fields, "ADRESA_DOPRAVCE",        "Adresa dopravce",        "text")
+    d ..AddField(fields, "TELEFON_DOPRAVCE",       "Telefon dopravce",       "text")
+    d ..AddField(fields, "EMAIL_DOPRAVCE",         "E-mail dopravce",        "text")
+    d ..AddField(fields, "ICO_DOPRAVCE",           "IČO dopravce",           "text")
 
     // ── platnost ──
     // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD.
@@ -1750,13 +1783,16 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
 
     // ── zastávka, na které vývěska visí, a směr ──
-    d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
-    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
+    // „Název …", aby se v nabídce polí nepletl s příznakem řádku „Je aktuální zastávka" (Jan 27. 10.).
+    d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky", "text")
+    // Popisek jako u vývěsky AD; v MHD nese číslo i s označníkem („101-A").
+    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo aktuální zastávky", "text")
     d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
+    d ..AddField(fields, "VYCHOZI_ZASTAVKA",       "Výchozí zastávka",       "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
 
     // ── doplňky ──
-    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
+    d ..AddField(fields, "QR_KOD",                 "URL adresa pro QR kód",  "text")
 }
 
 /// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.
@@ -1768,9 +1804,10 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colZastavky.collectionKey = "ZASTAVKY"
     s colZastavkyFields = ##class(%DynamicArray).%New()
     d ..AddField(colZastavkyFields, "NAZEV_ZASTAVKY",    "Název zastávky",    "text")
-    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "number")
+    // Text, ne číslo: vedle minut nese „<" (spoj jede jinou trasou) a prázdno (mimo trasu).
+    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "text")
     d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
-    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
+    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
     d ..AddField(colZastavkyFields, "NASTUPISTE",        "Označník",          "text")
     s colZastavky.fields = colZastavkyFields
@@ -1805,7 +1842,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colPoznamky.name          = "Poznámky"
     s colPoznamky.collectionKey = "POZNAMKY"
     s colPoznamkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colPoznamkyFields, "TYP",  "Typ poznámky", "text")
+    // Bez „Typu poznámky" (Jan 27. 10.): interní kód specialni/nz/text pro prvek Poznámky, data ho posílají dál.
     d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
     d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky",  "text")
     s colPoznamky.fields = colPoznamkyFields
@@ -1833,8 +1870,8 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pPorStr.options = optsPS
     d arr.%Push(pPorStr)
 
-    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
-    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
+    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek", "V seznamu zastávek se od aktuální zastávky nakreslí šipka ve směru jízdy. Barvu a stranu šipky nastavíte u prvku Seznam zastávek.")
+    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek", "V seznamu zastávek se vytisknou i zastávky, které spoj před aktuální zastávkou už projel. Vypnuto = seznam začíná aktuální zastávkou.")
 
     // Časová osa odjezdů - popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
     s param = ##class(%DynamicObject).%New()
@@ -1843,6 +1880,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s param.type         = "enum"
     s param.group        = "Minuty odjezdů"
     s param.defaultValue = "Jen hodiny s odjezdy"
+    s param.description  = "Které hodiny se vytisknou: jen hodiny s odjezdy, všechny hodiny od první do poslední hodiny s odjezdem (i prázdné), nebo pevný rozsah Hodiny od - Hodiny do."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Jen hodiny s odjezdy")
     d opts.%Push("Souvislá od první do poslední")
@@ -1857,6 +1895,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pOd.type         = "number"
     s pOd.group        = "Minuty odjezdů"
     s pOd.defaultValue = "4"
+    s pOd.description  = "První vytištěná hodina (0-23)."
     s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pOd)
 
@@ -1866,12 +1905,13 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pDo.type         = "number"
     s pDo.group        = "Minuty odjezdů"
     s pDo.defaultValue = "23"
+    s pDo.description  = "Poslední vytištěná hodina (0-23). Menší než Hodiny od = rozsah přes půlnoc."
     s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pDo)
 
     // Roztáhnout data odjezdů (řádky + fonty) na výšku elementu, pokud je kratší rozsah hodin než kapacita.
     // Hlavička skupin dnů + sloupec hodin zůstávají původní velikost.
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů")
+    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů", "Když je hodin s odjezdy méně, než se do prvku vejde, řádky hodin i písmo se zvětší, aby prvek vyplnily. Záhlaví zůstává.")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -1892,8 +1932,8 @@ ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
     ret ..RadkyDopravce($g(udaje("NAZEV")), $g(udaje("ULICE")), $g(udaje("MESTO")), $g(udaje("TELEFON")), jednimRadkem)
 }
 
-/// Údaje dopravce linky po položkách: `udaje("NAZEV")`, `("ULICE")`, `("MESTO")`, `("TELEFON")`.
-/// Zdroj viz `PopisDopravce`; selhání legacy volání → prázdné pole.
+/// Údaje dopravce linky po položkách: `udaje("NAZEV")`, `("ULICE")`, `("MESTO")`, `("TELEFON")`,
+/// `("EMAIL")`, `("ICO")`. Zdroj viz `PopisDopravce`; selhání legacy volání → prázdné pole.
 ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, ByRef udaje As %String)
 {
     k udaje
@@ -1901,7 +1941,9 @@ ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
         s sysnmsp = $g(sys("U","SystemDB"))
         s druh = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DruhDopravceID"))
         i druh = 0 {
-            // Vlastní firma (MlJFapiFa: 02 název, 03 upřesnění, 13 ulice, 14 město, 15 PSČ, 23 tel)
+            // Vlastní firma (MlJFapiFa: 02 název, 03 upřesnění, 07 IČO, 13 ulice, 14 město, 15 PSČ, 23 tel)
+            // ⚠️ E-mail se nebere: jediný na kartě (26) je odesílací adresa EDISONu vedle SMTP serveru
+            // a hesla (KV_DP edison@…, CB_DP no-reply@m-line.cz), ne kontakt pro cestující (Jan 27. 10.).
             k tmpArr  s err = $$gIdFa^MlJFapi(IdFa, sysnmsp, "", .tmpArr)
             i 'err {
                 s udaje("NAZEV") = $g(tmpArr("dta",2))
@@ -1909,9 +1951,10 @@ ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
                 s udaje("ULICE") = $g(tmpArr("dta",13))
                 s udaje("MESTO") = $zstrip($g(tmpArr("dta",15))_" "_$g(tmpArr("dta",14)), "<>W")
                 s udaje("TELEFON") = $g(tmpArr("dta",23))
+                s udaje("ICO") = $g(tmpArr("dta",7))
             }
         } elseif druh = 1 {
-            // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 7 obchodní název)
+            // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 5 IČO, 7 obchodní název, 13 e-mail)
             s ciziFa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DopravceCiziFirmaID"))
             i ciziFa '= "" {
                 k tmpArr  s err = $$gDopFa^JRapi(IdFa, dataDB, ciziFa, "", .tmpArr)
@@ -1920,11 +1963,27 @@ ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
                     s udaje("ULICE") = $g(tmpArr("dta",2))
                     s udaje("MESTO") = $g(tmpArr("dta",1))
                     s udaje("TELEFON") = $g(tmpArr("dta",3))
+                    s udaje("EMAIL") = $g(tmpArr("dta",13))
+                    s udaje("ICO") = $g(tmpArr("dta",5))
                 }
             }
         }
     } catch ex { k udaje }
     q
+}
+
+/// Údaje dopravce po jednotlivých polích pod stejnými klíči jako agendy AD (`ZastavkoveJrAd.DopravceSkalary`),
+/// aby šablona šla mezi agendami přenášet (`B194c` D4). Adresa = ulice, PSČ a obec.
+/// Linka bez dopravce zapíše prázdno, ať pole v datech existuje vždy.
+ClassMethod DopravceSkalary(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, vals As %DynamicObject)
+{
+    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .udaje)
+    s ulice = $zstrip($g(udaje("ULICE")), "<>W"), mesto = $zstrip($g(udaje("MESTO")), "<>W")
+    d vals.%Set("NAZEV_DOPRAVCE",   $zstrip($g(udaje("NAZEV")), "<>W"))
+    d vals.%Set("ADRESA_DOPRAVCE",  ulice_$s((ulice '= "") && (mesto '= ""):", ", 1:"")_mesto)
+    d vals.%Set("TELEFON_DOPRAVCE", $zstrip($g(udaje("TELEFON")), "<>W"))
+    d vals.%Set("EMAIL_DOPRAVCE",   $zstrip($g(udaje("EMAIL")), "<>W"))
+    d vals.%Set("ICO_DOPRAVCE",     $zstrip($g(udaje("ICO")), "<>W"))
 }
 
 /// Složí dopravce do řádků: název, ulice, sídlo/město, telefon. Prázdné položky se vynechají,
@@ -1950,126 +2009,36 @@ ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, 
     q text
 }
 
-/// Vrátí ukázková data pro live preview v designeru.
-/// Kompletní struktura se všemi kolekcemi a vnořenými poli.
+/// Ukázková data pro live preview: první vývěska první linky výchozí skupiny, stejně jako ostatní
+/// agendy JŘ berou první skutečnou linku. Vymyšlená ukázka se od dat lišila stavbou (neměla označník,
+/// nesla „na znamení", které data nemají) a do PDF z ukázky se tiskla cizí linka.
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
-    s out = ##class(%DynamicObject).%New()
+    s err = ""
+    try {
+        $$$FillParams
+        s skupinaLinek = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
+        s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,""))
+        i linkaId '= "" d ..SestavitVyvesky(.sys, linkaId, 1)
+        // Ukázka je jedna stránka; důvod prázdné linky patří tisku, náhled ho říká záložním textem.
+        k ^||ML("OUT","DUVOD_PRAZDNE")
 
-    // ── Skalární hodnoty ──────────────────────────────────────────────
-    s vals = ##class(%DynamicObject).%New()
-    d vals.%Set("CISLO_LINKY",            "42")
-    d vals.%Set("LOKALNI_OZNACENI_LINKY", "A42")
-    d vals.%Set("POPIS_LINKY",            "Líšeň–Bystrc")
-    d vals.%Set("POPIS_DOPRAVCE",         "Dopravní podnik města Brna, a.s."_$c(10)_"Hlinky 151"_$c(10)_"656 46 Brno"_$c(10)_"tel: 543 171 111")
-    d vals.%Set("NAZEV_DOPRAVCE",         "Dopravní podnik města Brna, a.s.")
-    d vals.%Set("POPIS_PLATNOSTI",        "01.01.2026 - 31.12.2026")
-    d vals.%Set("DATUM_PLATNOSTI_OD",     "01.01.2026")
-    d vals.%Set("DATUM_PLATNOSTI_DO",     "31.12.2026")
-    d vals.%Set("SMER",                   "T")
-    d vals.%Set("KONECNA_ZASTAVKA",             "Bystrc, zoo")
-    d vals.%Set("TYP_JR",                 "")
-    d vals.%Set("QR_KOD",                 "https://jr.example.com/42")
-    d vals.%Set("POPIS_ZASTAVKA",         "Líšeň, Novolíšeňská")
-    d vals.%Set("CISLO_ZASTAVKA",         "101-A")
-    d out.%Set("values", vals)
-
-    // ── Kolekce ─────────────────────────────────────────────────────────
-    s rows = ##class(%DynamicObject).%New()
-
-    // ZASTAVKY
-    s zastavky = ##class(%DynamicArray).%New()
-    s z1 = ..BuildZastavka("1", "Líšeň, Novolíšeňská", "101", 0, 1, 1, 0)
-    d ..AddZona(z1, "A1")
-    d ..AddAtribut(z1, "♿", "Bezbariérový přístup")
-    d zastavky.%Push(z1)
-    s z2 = ..BuildZastavka("2", "Líšeň, Mifkova", "102", 3, 2, 0, 1)
-    d ..AddZona(z2, "A1") d ..AddPoznamkaZastavky(z2, "A", "text", "Končí v zast. Rudolfov")
-    d zastavky.%Push(z2)
-    s z3 = ..BuildZastavka("3", "Šlapanice", "103", 8, 3, 0, 0, 2)
-    d ..AddZona(z3, "A2")
-    d zastavky.%Push(z3)
-    s z4 = ..BuildZastavka("4", "Královo Pole, nádraží", "104", 14, 4, 0, 0)
-    d ..AddZona(z4, "A2") d ..AddAtribut(z4, "P", "Parkoviště P+R")
-    d zastavky.%Push(z4)
-    s z5 = ..BuildZastavka("5", "Bystrc, ZOO", "105", 22, 5, 0, 0)
-    d ..AddZona(z5, "B1")
-    d zastavky.%Push(z5)
-    s z6 = ..BuildZastavka("6", "Bystrc, Ečerova", "106", 26, 6, 0, 1)
-    d ..AddZona(z6, "B1") d ..AddPoznamkaZastavky(z6, "b", "text", "Zastávka na znamení v nočním provozu")
-    d zastavky.%Push(z6)
-    d rows.%Set("ZASTAVKY", zastavky)
-
-    // SKUPINY_DNU
-    s skupiny = ##class(%DynamicArray).%New()
-    d skupiny.%Push(..BuildSkupinaDnu("1001", "PRACOVNÍ DNY", "mimo prázdniny", 1))
-    d skupiny.%Push(..BuildSkupinaDnu("1002", "SOBOTY", "", 2))
-    d skupiny.%Push(..BuildSkupinaDnu("1003", "NEDĚLE A SVÁTKY", "", 3))
-    d skupiny.%Push(..BuildSkupinaDnu("1004", "PRÁZDNINY", "pracovní dny", 4))
-    d skupiny.%Push(..BuildSkupinaDnu("1005", "NOČNÍ PROVOZ", "Pá+So", 5))
-    d rows.%Set("SKUPINY_DNU", skupiny)
-
-    // ODJEZDY
-    s odjezdy = ##class(%DynamicArray).%New()
-    s o1 = ..BuildOdjezd("1", "1001", 5, 15) d odjezdy.%Push(o1)
-    s o2 = ..BuildOdjezd("1", "1001", 5, 30) d ..AddAnotace(o2, "text", "a") d odjezdy.%Push(o2)
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 5, 45))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 6, 0))
-    s o5 = ..BuildOdjezd("1", "1001", 6, 15) d ..AddAnotace(o5, "specialni", "♿") d odjezdy.%Push(o5)
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 6, 30))
-    s o7 = ..BuildOdjezd("1", "1001", 6, 45) d ..AddAnotace(o7, "nz", "22") d odjezdy.%Push(o7)
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 7, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 7, 15))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 7, 30))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 7, 45))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 8, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 8, 20))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 8, 40))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 9, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 9, 30))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 10, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 10, 30))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 11, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1001", 11, 30))
-    d odjezdy.%Push(..BuildOdjezd("1", "1002", 7, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1002", 8, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1002", 9, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1002", 10, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1002", 11, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1002", 12, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1002", 13, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1002", 14, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1003", 8, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1003", 10, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1003", 12, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1003", 14, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1003", 16, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1004", 6, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1004", 7, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1004", 8, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1004", 9, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1004", 10, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1004", 11, 0))
-    d odjezdy.%Push(..BuildOdjezd("1", "1004", 12, 0))
-    s on1 = ..BuildOdjezd("1", "1005", 23, 30) d odjezdy.%Push(on1)
-    s on2 = ..BuildOdjezd("1", "1005", 0, 30) d ..AddAnotace(on2, "text", "a") d odjezdy.%Push(on2)
-    d odjezdy.%Push(..BuildOdjezd("1", "1005", 1, 30))
-    d odjezdy.%Push(..BuildOdjezd("1", "1005", 2, 30))
-    d odjezdy.%Push(..BuildOdjezd("1", "1005", 3, 30))
-    d rows.%Set("ODJEZDY", odjezdy)
-
-    // POZNAMKY
-    s poznamky = ##class(%DynamicArray).%New()
-    d poznamky.%Push(..BuildPoznamka("specialni", "♿", "Spoj s bezbariérovým vozidlem"))
-    d poznamky.%Push(..BuildPoznamka("specialni", "P", "Parkoviště P+R u zastávky"))
-    d poznamky.%Push(..BuildPoznamka("nz", "22", "Nejede 24.12."))
-    d poznamky.%Push(..BuildPoznamka("text", "a", "nezajíždí do zast. Pardubice"))
-    d poznamky.%Push(..BuildPoznamka("text", "b", "zastávka na znamení v nočním provozu"))
-    d poznamky.%Push(..BuildPoznamka("text", "A", "Končí v zast. Rudolfov"))
-    d rows.%Set("POZNAMKY", poznamky)
-
-    d out.%Set("rows", rows)
-    s ^||ML("OUT", $i(^||ML("OUT"))) = out.%ToJSON()
+        i '$d(^||ML("OUT",1)) {
+            s page = ##class(%DynamicObject).%New()
+            s v = ##class(%DynamicObject).%New()
+            d v.%Set("POPIS_LINKY", ..TextUkazkyBezDat())
+            d page.%Set("values", v)
+            s r = ##class(%DynamicObject).%New()
+            d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
+            d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
+            d r.%Set("ODJEZDY", ##class(%DynamicArray).%New())
+            d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
+            d page.%Set("rows", r)
+            s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+        }
+    }
+    catch (ex) { $$$CatchErrRest }
+    k ^||TiskMHD
     ret $$$OK
 }
 

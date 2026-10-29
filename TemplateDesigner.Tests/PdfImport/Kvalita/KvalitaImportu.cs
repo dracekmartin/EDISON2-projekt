@@ -183,7 +183,7 @@ public static class KvalitaImportu
                 PismoBunekPt = tab.ResolveColumnDataParent().FontSize,
                 PozadiZahlavi = tab.ResolveColumnHeaderParent().BackgroundColor,
                 PismoZahlavi = tab.ResolveColumnHeaderParent().TextColor,
-                LicheTc = tab.HighlightOddTc ? tab.OddTcBackColor : "",
+                LicheTc = tab.OddTcBackColor ?? "",
                 // Bez nastavené mezery ji tisk může vložit sám (oddělí skupiny dnů při dělení
                 // tabulky) - na papíře je, v šabloně ne; co má import převzít, se pak nedá říct.
                 MezeraMeziSkupinami = tab.MezeraMeziSkupinamiMm > 0 ? tab.MezeraMeziSkupinamiMm : null,
@@ -283,9 +283,9 @@ public static class KvalitaImportu
         if (o.LicheTc is { } liche)
         {
             if (liche.Length == 0)
-                k.Add(new("Tabulka", "bez podbarvení lichých Tč", !tab.HighlightOddTc, tab.HighlightOddTc ? tab.OddTcBackColor : ""));
+                k.Add(new("Tabulka", "bez podbarvení lichých Tč", tab.OddTcBackColor is null, tab.OddTcBackColor ?? ""));
             else
-                k.Add(Barva("Tabulka", "podbarvení lichých Tč", tab.HighlightOddTc ? tab.OddTcBackColor : "", liche));
+                k.Add(Barva("Tabulka", "podbarvení lichých Tč", tab.OddTcBackColor ?? "", liche));
         }
         if (o.MezeraMeziSkupinami is float m)
             k.Add(new("Tabulka", "mezera mezi skupinami", MathF.Abs(tab.MezeraMeziSkupinamiMm - m) <= 1f,

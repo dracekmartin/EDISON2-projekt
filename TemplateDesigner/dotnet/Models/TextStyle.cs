@@ -91,6 +91,19 @@ public class TextStyle
 
     public TextStyle Clone() => (TextStyle)MemberwiseClone();
 
+    /// <summary>Hash podle hodnot, ne podle objektu - pro cache rozvržení. Formulář mění styl na místě
+    /// (objekt zůstává týž), takže <c>GetHashCode()</c> změnu nepozná. Musí zahrnout všechny vlastnosti.</summary>
+    public int ContentHash()
+    {
+        var h = new HashCode();
+        h.Add(FontFamily); h.Add(FontSize); h.Add(Bold); h.Add(Italic); h.Add(FontWeight);
+        h.Add(Underline); h.Add(Strikethrough); h.Add(TextColor); h.Add(BackgroundColor);
+        h.Add(HAlign); h.Add(VAlign);
+        h.Add(PaddingTop); h.Add(PaddingRight); h.Add(PaddingBottom); h.Add(PaddingLeft);
+        h.Add(LineSpacing);
+        return h.ToHashCode();
+    }
+
     /// <summary>Proporcionálně naškáluje rozměrové hodnoty (velikost písma v pt, paddingy v mm)
     /// při škálování celé šablony. LineSpacing je bezrozměrný násobek → NEŠKÁLUJE se (stejně jako
     /// na base elementu). Volat na každém stylu prvku i per-sloupcových overridech.</summary>

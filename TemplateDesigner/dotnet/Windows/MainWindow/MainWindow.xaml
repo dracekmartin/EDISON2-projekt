@@ -318,25 +318,17 @@
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
-                <!-- ── Stránka (nastavení dokumentu) ── -->
+                <!-- ── 3. Stránka a sekce ── (elementy se přetahují z palety, ne přes seznam) -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button x:Name="BtnPageProps" Style="{StaticResource ToolbarButton}" ToolTip="Vlastnosti stránky - Ctrl+Shift+P" Click="MenuPageProps_Click">
                             <Image Source="{StaticResource EDIcons.Document}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                    </StackPanel>
-                    <TextBlock Text="Stránka" Style="{StaticResource ToolbarGroupLabel}"/>
-                </StackPanel>
-                <Border Style="{StaticResource ToolbarGroupSep}"/>
-
-                <!-- ── 3. Sekce ── (elementy se přetahují z palety, ne přes seznam) -->
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal">
                         <Button x:Name="BtnAddSection" Style="{StaticResource ToolbarButton}" ToolTip="Přidat sekci" Click="BtnAddSection_Click">
                             <Image Source="{StaticResource EDIcons.AddSection}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
-                    <TextBlock Text="Sekce" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Stránka a sekce" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
@@ -371,8 +363,8 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.Grid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
-                        <!-- JŘ elementy - viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
+                        <!-- JŘ elementy i jejich oddělovač - viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
+                        <Border x:Name="PalScheduleSep" Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
                         <Button x:Name="BtnPalStopList" Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>

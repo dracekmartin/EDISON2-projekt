@@ -457,7 +457,7 @@ Klíč použij přesně; u výběru z nabídky vrať jednu z uvedených možnost
     { ""text"": ""Platí od 1.1.2026"", ""role"": ""validity"", ""dbField"": ""DATUM_PLATNOSTI_OD"", ""placeholderText"": ""Platí od {DATUM_PLATNOSTI_OD}"", ""x"": 0.8, ""y"": 0.01, ""w"": 0.18, ""h"": 0.02, ""approxFontSize"": 8, ""confidence"": 0.9 }
   ],
   ""imageMappings"": [],
-  ""elementSettings"": { ""LineTable"": { ""Řádky · Čísla spojů"": ""ano"" } },
+  ""elementSettings"": { ""LineTable"": { ""Záhlaví · Čísla spojů"": ""ano"" } },
   ""notes"": ""volitelné poznámky""
 }");
 

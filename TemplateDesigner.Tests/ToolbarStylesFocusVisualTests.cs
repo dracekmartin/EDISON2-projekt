@@ -30,7 +30,7 @@ public class ToolbarStylesFocusVisualTests
             app.MergedDictionaries.Add(Load("pack://application:,,,/EDControls;component/EDControlStyles/EDControlStyles.xaml"));
             app.MergedDictionaries.Add(Load("pack://application:,,,/TemplateDesigner;component/Styles/ToolbarStyles.xaml"));
 
-            // Setter.Value drží u cross-dictionary StaticResource odloženou referenci, ne Style —
+            // Setter.Value drží u cross-dictionary StaticResource odloženou referenci, ne Style -
             // ověřuje se proto až aplikovaná hodnota na prvku v resource stromu.
             var host = new Grid { Resources = app };
             Control button = isToggle ? new ToggleButton() : new Button();

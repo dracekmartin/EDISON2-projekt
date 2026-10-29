@@ -35,13 +35,16 @@ Parameter AgendaLabel = "Zastávkový JŘ";
 
 Parameter Variant = "AD";
 
-Parameter VariantLabel = "AD (linková doprava)";
+/// Jen „AD": „(linková doprava)" se pletlo s agendou Linkový JŘ (Jan 27. 10.).
+Parameter VariantLabel = "AD";
 
 Parameter Released = 1;
 
 Parameter InstanceParamName = "LINKA_ID";
 
 Parameter CustomColumns As %Boolean = 1;
+
+Parameter VariantyTras As %Boolean = 1;
 
 Parameter ElementKind = "STOP";
 
@@ -399,8 +402,8 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // Tam: vzestupně 1→N. Zpět: sestupně N→1. Aktuální = JE_AKTUALNI; projeté mají casJizdy=0 a bez
     // atributů (jako MHD). StopList je defaultně skryje; „tisk projetých" je zobrazí ztlumeně.
     s zastavky = ##class(%DynamicArray).%New()
-    s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = "", prvniCzst = ""
-    k atrSeen, prestupSeen                                      // atributy zastávek viděné na stránce (znak → text) pro legendu
+    s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = "", prvniCzst = "", prvniNazev = ""
+    k atrSeen, prestupSeen                                     // atributy zastávek viděné na stránce (znak → text) pro legendu
     k servedPoradi
     // Jen zastávky dosažitelné z TÉTO vývěsky (#7959) - zastávka, kam odtud nic nejede, by zabrala
     // řádek s „<" ve sloupci časů i ve všech variantách.
@@ -709,7 +712,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         d z.%Set("CISLO_ZASTAVKA_CIS", ..CisloZastavkyCis(dataDB, czst))
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
-        i prvniCzst = "" s prvniCzst = czst              // výchozí zastávka směru = první obsluhovaná
+        i prvniCzst = "" s prvniCzst = czst, prvniNazev = rawNazev   // výchozí zastávka směru = první obsluhovaná
         s posledniNazev = rawNazev, posledniCzst = czst
     }
 
@@ -721,6 +724,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("SLOUPEK_POPIS",       ..PopisSloupku(dataDB, aktualniCzst, sloupekAkt))
     d vals.%Set("POPIS_ZASTAVKA_CIS",  ..NazevZastavkyCis(dataDB, aktualniCzst))
     d vals.%Set("SMER",                smer)                  // A1: T/Z (KONECNA_ZASTAVKA = konečná)
+    d vals.%Set("VYCHOZI_ZASTAVKA",          prvniNazev)
     d vals.%Set("KONECNA_ZASTAVKA",          posledniNazev)
     d vals.%Set("KONECNA_ZASTAVKA_CIS",      ..NazevZastavkyCis(dataDB, posledniCzst))
     // KOVED #13088: CIS čísla zastávek. „Výchozí" a „cílová" se berou ve SMĚRU stránky (u směru Zpět
@@ -3401,7 +3405,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         i page = "" {
             s page = ##class(%DynamicObject).%New()
             s v = ##class(%DynamicObject).%New()
-            d v.%Set("POPIS_LINKY", "(žádná linka v ^JRL pro firmu "_dataDB_")")
+            d v.%Set("POPIS_LINKY", ..TextUkazkyBezDat())
             d page.%Set("values", v)
             s r = ##class(%DynamicObject).%New()
             d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
@@ -3431,7 +3435,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky", "text")
     d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
-    d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
+    d ..AddField(fields, "POPIS_LINKY",            "Název linky",            "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
     d ..AddField(fields, "BARVA_LINKY",            "Barva linky",            "color")
     d ..AddField(fields, "BARVA_LINKY_2",          "Barva linky 2",          "color")
@@ -3454,25 +3458,29 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
 
     // ── zastávka, na které vývěska visí, a směr ──
-    d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
-    d ..AddField(fields, "POPIS_ZASTAVKA_CIS",     "Aktuální zastávka (CIS)","text")
-    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
-    d ..AddField(fields, "CISLO_ZASTAVKA_CIS",     "CIS číslo zastávky",     "text")
+    // „Název …", aby se v nabídce polí nepletl s příznakem řádku „Je aktuální zastávka" (Jan 27. 10.).
+    d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky",      "text")
+    d ..AddField(fields, "POPIS_ZASTAVKA_CIS",     "Název aktuální zastávky (CIS)","text")
+    // Čísla jednou řadou „Číslo … zastávky (CIS)" - CIS na konci jako u názvů; poslední zastávka
+    // směru je „konečná", ne „cílová" (klíč CILOVA zůstává kvůli šablonám; Jan 27. 10.).
+    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo aktuální zastávky",       "text")
+    d ..AddField(fields, "CISLO_ZASTAVKA_CIS",     "Číslo aktuální zastávky (CIS)", "text")
     d ..AddField(fields, "NASTUPISTE",             "Označník",               "text")
     d ..AddField(fields, "SLOUPEK",                "Sloupek",                "text")
     d ..AddField(fields, "SLOUPEK_POPIS",          "Popis sloupku",          "text")
     d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
+    d ..AddField(fields, "VYCHOZI_ZASTAVKA",       "Výchozí zastávka",       "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA_CIS",   "Konečná zastávka (CIS)", "text")
-    d ..AddField(fields, "CISLO_ZASTAVKA_VYCHOZI_CIS", "CIS číslo výchozí zastávky", "text")
-    d ..AddField(fields, "CISLO_ZASTAVKA_CILOVA_CIS",  "CIS číslo cílové zastávky",  "text")
+    d ..AddField(fields, "CISLO_ZASTAVKA_VYCHOZI_CIS", "Číslo výchozí zastávky (CIS)", "text")
+    d ..AddField(fields, "CISLO_ZASTAVKA_CILOVA_CIS",  "Číslo konečné zastávky (CIS)", "text")
 
     // ── poznámky a doplňky ──
-    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
+    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "VYLUKOVE_TEXTY",         "Výlukové texty",         "text")
-    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
+    d ..AddField(fields, "QR_KOD",                 "URL adresa pro QR kód",  "text")
     // _CIS varianty (celostátní názvy) jsou AD-specifické - MHD je zatím neprodukuje.
     // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values -
     // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.
@@ -3491,18 +3499,19 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colZastavky.collectionKey = "ZASTAVKY"
     s colZastavkyFields = ##class(%DynamicArray).%New()
     d ..AddField(colZastavkyFields, "NAZEV_ZASTAVKY",    "Název zastávky",    "text")
-    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "number")
+    // Text, ne číslo: vedle minut nese „<" (spoj jede jinou trasou) a prázdno (mimo trasu).
+    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "text")
     d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
-    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
+    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
     d ..AddField(colZastavkyFields, "NASTUPISTE",        "Označník",          "text")
     d ..AddField(colZastavkyFields, "NASTUPISTE_SPOJU",  "Označník (dle spojů)", "text")
     d ..AddField(colZastavkyFields, "SLOUPEK",           "Sloupek",           "text")
     d ..AddField(colZastavkyFields, "SLOUPEK_SPOJU",     "Sloupek (dle spojů)", "text")
     d ..AddField(colZastavkyFields, "SLOUPEK_POPIS",     "Popis sloupku",     "text")
-    d ..AddField(colZastavkyFields, "CISLO_ZASTAVKA_CIS", "CIS číslo zastávky", "text")
-    // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno - nese jen J-klíč (= interní ID),
-    // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
+    d ..AddField(colZastavkyFields, "CISLO_ZASTAVKA_CIS", "Číslo zastávky (CIS)", "text")
+    // Tarifní číslo zastávky (klíč bodu trasy ^JRL(sku,lin,"J",tc)) vývěska jako pole nenabízí;
+    // linkový JŘ AD ho posílá jako TC „Tarifní číslo".
     // TRASA_MIN (pole variantních časů jízdy v každém řádku) je wire-only - pole (ne skalár),
     // konzumuje ho StopList (variantní časové sloupce), plochá tabulka ne → ve schématu nefiguruje.
     s colZastavky.fields = colZastavkyFields
@@ -3539,7 +3548,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colPoznamkyFields = ##class(%DynamicArray).%New()
     // Ploché user-facing pole (legenda = znak + text). KATEGORIE (interní filtr-tag) + FORE_COLOR/
     // BACK_COLOR (prezentační nápovědy) zůstávají ve wire, ale NEvystavují se jako sloupce.
-    d ..AddField(colPoznamkyFields, "TYP",  "Typ poznámky",  "text")
+    // Bez „Typu poznámky" (Jan 27. 10.): interní kód specialni/text pro prvek Poznámky, data ho posílají dál.
     d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
     d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky", "text")
     s colPoznamky.fields = colPoznamkyFields
@@ -3591,12 +3600,14 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pPorStr.options = optsPS
     d arr.%Push(pPorStr)
 
-    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
-    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
     // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník
     // (odjezdy filtrované na spoje z toho označníku). Default vyp = jedna vývěska, odjezdy smíchané.
-    // Label zrcadlí volbu elementu „Řádek pro každý označník" - stránka × řádek = dvě roviny téže věci
-    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Samostatná stránka pro každé stanoviště", "false", "Seznam zastávek", "Zastávka obsluhovaná z více stanovišť se vytiskne jako samostatná vývěska pro každé z nich, jen s odjezdy spojů, které z něj jedou. V titulku stránky pak je i jeho číslo. Které číslo to je, řídí volba Číslo stanoviště podle.", 1)
+    // Label zrcadlí volbu elementu „Řádek pro každé stanoviště" - stránka × řádek = dvě roviny téže věci.
+    // „Obecné", protože mění počet vývěsek celé sestavy jako Pořadí stránek (Jan 27. 10., `B194` P3).
+    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Stránka pro každé stanoviště", "false", "Obecné", "Zastávka obsluhovaná z více stanovišť se vytiskne jako samostatná vývěska pro každé z nich, jen s odjezdy spojů, které z něj jedou. V titulku stránky pak je i jeho číslo. Které číslo to je, řídí volba Číslo stanoviště podle.", 1)
+
+    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek", "V seznamu zastávek se od aktuální zastávky nakreslí šipka ve směru jízdy. Barvu a stranu šipky nastavíte u prvku Seznam zastávek.")
+    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek", "V seznamu zastávek se vytisknou i zastávky, které spoj před aktuální zastávkou už projel. Vypnuto = seznam začíná aktuální zastávkou.")
 
     // KOVED #13088: označník a sloupek jsou dvě různá pole (volný text z trasy vs. číselník sloupků
     // zastávky) a zákazníci, kteří evidují sloupky, chtějí logiku stanovišť nad nimi. Jeden přepínač
@@ -3611,7 +3622,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pZdrojSt.group        = "Seznam zastávek"
     s pZdrojSt.serverSide   = 1
     s pZdrojSt.defaultValue = "Označník"
-    s pZdrojSt.description  = "Který údaj z jízdního řádu se bere jako číslo stanoviště: Označník (údaj z trasy linky) nebo Sloupek (číslo z číselníku sloupků zastávky). Volba řídí Více stanovišť, samostatné stránky i titulek stránky. Sloupce Označník a Sloupek jdou tisknout oba nezávisle."
+    s pZdrojSt.description  = "Který údaj z jízdního řádu se bere jako číslo stanoviště: Označník (údaj z trasy linky) nebo Sloupek (číslo z číselníku sloupků zastávky). Volba řídí Výběr stanoviště v Seznamu zastávek, samostatné stránky i titulek stránky. Sloupce Označník a Sloupek jdou tisknout oba nezávisle."
     s optsZS = ##class(%DynamicArray).%New()
     d optsZS.%Push("Označník")
     d optsZS.%Push("Sloupek")
@@ -3684,7 +3695,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRozd.name         = "ROZDELENI_SLOUPCU"
     // Název jako u linkového AD (Jan 23. 10.); do té doby „Rozdělení sloupců (typy provozu)" - typy
     // provozu jsou pojem z MHD, v AD se spoje dělí podle dnů platnosti.
-    s pRozd.label        = "Rozdělení sloupců dle platnosti"
+    s pRozd.label        = "Rozdělení sloupců podle platnosti"
     s pRozd.type         = "enum"
     s pRozd.group        = "Minuty odjezdů"
     s pRozd.serverSide   = 1
@@ -3709,6 +3720,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s param.type         = "enum"
     s param.group        = "Minuty odjezdů"
     s param.defaultValue = "Jen hodiny s odjezdy"
+    s param.description  = "Které hodiny se vytisknou: jen hodiny s odjezdy, všechny hodiny od první do poslední hodiny s odjezdem (i prázdné), nebo pevný rozsah Hodiny od - Hodiny do."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Jen hodiny s odjezdy")
     d opts.%Push("Souvislá od první do poslední")
@@ -3722,6 +3734,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pOd.type         = "number"
     s pOd.group        = "Minuty odjezdů"
     s pOd.defaultValue = "4"
+    s pOd.description  = "První vytištěná hodina (0-23)."
     s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pOd)
 
@@ -3731,22 +3744,24 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pDo.type         = "number"
     s pDo.group        = "Minuty odjezdů"
     s pDo.defaultValue = "23"
+    s pDo.description  = "Poslední vytištěná hodina (0-23). Menší než Hodiny od = rozsah přes půlnoc."
     s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pDo)
 
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů")
+    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů", "Když je hodin s odjezdy méně, než se do prvku vejde, řádky hodin i písmo se zvětší, aby prvek vyplnily. Záhlaví zůstává.")
     d ..AddBoolParam(arr, "TISKNOUT_BARVY_SPOJU", "Barvy spojů", "true", "Minuty odjezdů", "Minuty spoje se tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Vypnuto = všechny minuty černě.", 1)
 
-    d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI", "Souhrn ""všechny zastávky na znamení"" místo × u každé", "false", "Poznámky", , 1)
+    d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI", "Zastávky na znamení souhrnně", "false", "Poznámky", "Když jsou všechny zbývající zastávky na znamení, nevytiskne se značka × u každé z nich, ale jeden řádek v poznámkách.", 1)
 
     // Rozsah „Spoje, nepoznámkovat" definuje legacy data (per spoj + TČ); tato volba určuje, CO se
     // v tom rozsahu v tisku schová. TD-aplikované (filtr nad nadmnožinou). Default = legacy.
     s pNepoz = ##class(%DynamicObject).%New()
     s pNepoz.name         = "SCHOVAT_V_ROZSAHU"
-    s pNepoz.label        = "V rozsahu nepoznámkovat schovat"
+    s pNepoz.label        = "Schovat poznámky v rozsahu „nepoznámkovat“"
     s pNepoz.type         = "enum"
     s pNepoz.group        = "Poznámky"
     s pNepoz.defaultValue = "Ruční komentáře"
+    s pNepoz.description  = "U spojů a zastávek, které mají v jízdních řádech nastavené Spoje, nepoznámkovat, se v tisku schová vybraný druh poznámek: ruční komentáře, automatické poznámky o rozdílech tras, nebo obojí."
     s optsNepoz = ##class(%DynamicArray).%New()
     d optsNepoz.%Push("Ruční komentáře")
     d optsNepoz.%Push("Automatické (rozdíly tras)")

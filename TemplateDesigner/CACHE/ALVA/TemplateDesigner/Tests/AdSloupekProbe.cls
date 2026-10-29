@@ -1394,7 +1394,7 @@ ClassMethod StrankaCisla(ByRef sys As %String) As %Status
 			set ^||ML("OUT","DIAG") = "db="_db_" sku="_sku_" lin="_lin_" poradi="_poradi_" I="_$data(^[db]JRL(sku,lin,"I"))
 			ret $$$OK
 		}
-		set klice = $listbuild("POPIS_ZASTAVKA", "CISLO_ZASTAVKA", "CIS_ZASTAVKA", "CIS_ZASTAVKA_VYCHOZI", "CIS_ZASTAVKA_CILOVA", "KONECNA_ZASTAVKA")
+		set klice = $listbuild("POPIS_ZASTAVKA", "CISLO_ZASTAVKA", "CISLO_ZASTAVKA_CIS", "CISLO_ZASTAVKA_VYCHOZI_CIS", "CISLO_ZASTAVKA_CILOVA_CIS", "KONECNA_ZASTAVKA")
 		for i = 1:1:$listlength(klice) {
 			set k = $list(klice, i)
 			set ^||ML("OUT", k) = page.values.%Get(k)

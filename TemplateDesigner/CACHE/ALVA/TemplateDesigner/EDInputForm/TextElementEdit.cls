@@ -43,18 +43,20 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // z reálných řezů nainstalovaného fontu). Prázdná položka (nepovinné pole) = auto dle Tučně.
         d form.AddFieldToLastGroup("Style.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
-        d form.AddDecimal("Style.FontSize", "Velikost", 10, 4, 200, "pt", "0.#", 1)
+        d form.AddDecimal("Style.FontSize", "Velikost", 10, 3, 72, "pt", "0.#", 1)
         d form.AddBool("Style.Bold", "Tučné", 0)
         d form.AddBool("Style.Italic", "Kurzíva", 0)
         d form.AddBool("Style.Underline", "Podtržení", 0)
         d form.AddBool("Style.Strikethrough", "Přeškrtnutí", 0)
-        d form.AddDecimal("Style.LineSpacing", "Řádkování", 1.2, 0.8, 3, "", "0.0#")
+        s f = form.AddDecimal("Style.LineSpacing", "Řádkování", 1.2, 0.8, 3, "", "0.0#")
+        s f.helpText = "Vzdálenost mezi řádky textu jako násobek velikosti písma: 1,2 = běžné řádkování, 2 = dvojnásobná mezera. Počet řádků určuje text a šířka prvku."
 
         // ── Skupina "Barvy" (rámeček elementu má vlastní skupinu ze sdíleného balíčku) ─────
         d form.AddGroup("appearance", "Barvy")
 
         s f = form.AddFieldToLastGroup("Style.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
 
         s f = form.AddFieldToLastGroup("Style.BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"

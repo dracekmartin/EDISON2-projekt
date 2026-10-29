@@ -110,7 +110,8 @@ public partial class MainWindow : Window
                       Config.LaunchInput? launchInput = null)
     {
         _preferences = preferences;
-        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas, launchInput?.AgendaCode);
+        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas, launchInput?.AgendaCode,
+                                                    startupJenModul: launchInput is { Values.Count: 0 });
         DataContext = _vm;
         InitializeComponent();
 
@@ -1283,13 +1284,21 @@ public partial class MainWindow : Window
             ParamsTabForm.SchemaLoaded += OnParamsTabInitialized;
             _paramsTabInitHooked = true;
         }
-        ParamsTabForm.CacheClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";
+        const string paramsFormClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";
 
         // Init() = synchronní Caché round-trip. Voláme ho jen když je control už Loaded (přepnutí
         // agendy za běhu). Při prvním zobrazení tabu (a v konstruktoru okna) ho spustí EDInputForm
         // Loaded auto-init s aktuálními InitParams - jinak by transientní chyba Caché propadla ven
         // z konstruktoru okna a aplikace by se neotevřela (R1/R2). Chyba jde do status baru, ne do pádu.
-        if (!ParamsTabForm.IsLoaded) return;
+        if (!ParamsTabForm.IsLoaded)
+        {
+            // ⚠️ Auto-init běží jednou za CacheClass a ta je pro všechny agendy stejná: po změně
+            // agendy mimo tab by se ukázaly parametry té předchozí. Prázdná třída ho vynutí znovu.
+            ParamsTabForm.CacheClass = "";
+            ParamsTabForm.CacheClass = paramsFormClass;
+            return;
+        }
+        ParamsTabForm.CacheClass = paramsFormClass;
         try { ParamsTabForm.Init(); }
         catch (System.Exception ex) { _vm.StatusText = $"⚠ Parametry sestavy se nepodařilo načíst: {ex.Message}"; }
     }
@@ -1640,7 +1649,8 @@ public partial class MainWindow : Window
 
         // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
         var kind = _vm.CurrentAgendaElementKind;
-        menu.Items.Add(new Separator());
+        if (AgendaCapabilities.ScheduleElementTypes(kind).Count > 0)
+            menu.Items.Add(new Separator());
         if (AgendaCapabilities.Supports(kind, ElementTypes.StopList))
             Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
@@ -1872,9 +1882,9 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() != true) return;   // Cancel - nic se neaplikovalo (Obecné batchuje na OK)
 
-        _vm.ApplyDepartureGridEdit(element, dlg.GeneralCommand, dlg.StyleCommands,
+        _vm.ApplyDepartureGridEdit(element, dlg.GeneralCommand,
             dlg.ResultGroupColumns, availableGroups.Count > 0, dlg.ResultHourColumnStyle,
-            dlg.ResultCustomColumns);
+            dlg.ResultHourColumnHeader, dlg.ResultHourColumnWidth, dlg.ResultCustomColumns);
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -1949,13 +1959,16 @@ public partial class MainWindow : Window
 
     private void OpenStopColumnsDialog(StopListElement element)
     {
-        var dlg = new StopColumnsEditorDialog(element)
-            { Owner = this, SearchMemoryKey = ElementDialogSearchKey(element), UpravaPoli = DoplneniPoliRadku(element) };
+        var dlg = new StopColumnsEditorDialog(element, NabidkaSloupcuZastavek(element))
+        {
+            Owner = this, SearchMemoryKey = ElementDialogSearchKey(element), UpravaPoli = DoplneniPoliRadku(element),
+            ViditelnostPole = ViditelnostSeznamuZastavek(element),
+        };
 
         if (dlg.ShowDialog() == true)
         {
-            _vm!.ApplyStopColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
-            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+            _vm!.ApplyStopColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns,
+                dlg.HighlightEdited ? dlg.ResultHighlightRules ?? [] : null);
         }
 
         InvalidateCanvas();
@@ -1963,23 +1976,28 @@ public partial class MainWindow : Window
         UpdatePropertiesPanel();
     }
 
+    /// <summary>Sloupce Seznamu zastávek, ke kterým agenda šablony posílá data (`B194d` E5): sloupek jen
+    /// se sloupkem ve schématu zastávek, varianty tras jen s příznakem v registru agend.</summary>
+    private Func<string, bool> NabidkaSloupcuZastavek(StopListElement prvek)
+    {
+        bool sloupek = _vm!.AgendaPosilaPoleKolekce(prvek.ZastavkyDataSource, StopFields.Sloupek);
+        bool varianty = _vm.CurrentAgendaVariantyTras;
+        return klic => StopListElement.SloupecNabizet(klic, sloupek, varianty);
+    }
+
+    /// <summary>Pole formuláře Seznamu zastávek podle dat agendy - „Výběr stanoviště" jen se stanovišti
+    /// podle spojů (`B194d` E5).</summary>
+    private Func<string, IReadOnlyDictionary<string, string>, bool> ViditelnostSeznamuZastavek(StopListElement prvek)
+    {
+        bool dleSpoju = _vm!.AgendaPosilaPoleKolekce(prvek.ZastavkyDataSource, StopFields.NastupisteSpoju);
+        return (klic, _) => StopListElement.PoleFormulareViditelne(klic, dleSpoju);
+    }
+
     /// <summary>EDInputForm button v inline panelu - otevře editor pravidel zvýraznění.</summary>
     private void OnInlineElementButtonClicked(string key)
     {
         // Z formuláře buňky zpátky na nastavení celé tabulky (= odchod z buňky, jako Esc).
         if (key == "__tableSettings") { ExitToTableSettings(); return; }
-
-        if (ElementStyleButton.StyleProperty(key) is { } styl)
-        {
-            if (_vm!.State.SelectedElements is [DepartureGridElement odjezdy]
-                && ElementStyleButton.Edit(this, odjezdy, styl, InlineElementForm.TheForm) is { } command)
-            {
-                _vm.Execute(command);
-                InvalidateCanvas();
-                InvalidatePreview();
-            }
-            return;
-        }
 
         if (key == NotesLegendElement.SkupinyPoznamekKlic)
         {
@@ -2030,8 +2048,8 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() == true)
         {
-            _vm!.ApplyLineTableColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
-            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+            _vm!.ApplyLineTableColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns,
+                dlg.HighlightEdited ? dlg.ResultHighlightRules ?? [] : null);
         }
 
         InvalidateCanvas();
@@ -2046,8 +2064,8 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() == true)
         {
-            _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
-            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+            _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns,
+                dlg.HighlightEdited ? dlg.ResultHighlightRules ?? [] : null);
         }
 
         InvalidateCanvas();
@@ -2075,8 +2093,6 @@ public partial class MainWindow : Window
         };
     }
 
-    /// <summary>Nabídka „Řazení poznámek" podle agendy šablony (<see cref="NotesLegendElement.VolbyRazeni"/>).
-    /// Nastavuje se vždy celá, protože panel drží týž formulář i pro prvek z jiné šablony.</summary>
     /// <summary>Nápověda viditelnosti řádku s poli zastávky z agendy šablony; null = prvek podmínku řádku nemá.</summary>
     private Action<IEnumerable<Item>?>? DoplneniPoliRadku(TemplateElement prvek)
     {
@@ -2091,6 +2107,8 @@ public partial class MainWindow : Window
         return pole => ElementFormBinder.DoplnPoleRadku(pole, schema, kolekce);
     }
 
+    /// <summary>Nabídka „Řazení poznámek" podle agendy šablony (<see cref="NotesLegendElement.VolbyRazeni"/>).
+    /// Nastavuje se vždy celá, protože panel drží týž formulář i pro prvek z jiné šablony.</summary>
     internal static void NastavVolbyRazeni(IEnumerable<Item>? pole, bool linkovyJr)
     {
         if ((pole ?? []).OfType<Field>().FirstOrDefault(f => f.Key == nameof(NotesLegendElement.Razeni)) is not { } razeni)
@@ -2247,6 +2265,7 @@ public partial class MainWindow : Window
                 {
                     NotesLegendElement => (klic, _) => NotesLegendElement.PoleFormulareViditelne(klic, linkovy, rozdilovy),
                     LineTableElement   => (klic, _) => LineTableElement.PoleFormulareViditelne(klic, rozdilovy),
+                    StopListElement s  => ViditelnostSeznamuZastavek(s),
                     _                  => null,
                 };
                 InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : DoplneniPoliRadku(selected[0]);
@@ -2325,6 +2344,7 @@ public partial class MainWindow : Window
         BtnPalDepartureGrid.Visibility = Vis(AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid));
         BtnPalNotesLegend.Visibility   = Vis(AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend));
         BtnPalLineTable.Visibility     = Vis(AgendaCapabilities.Supports(kind, ElementTypes.LineTable));
+        PalScheduleSep.Visibility      = Vis(AgendaCapabilities.ScheduleElementTypes(kind).Count > 0);
     }
 
     private void ShowHelp()

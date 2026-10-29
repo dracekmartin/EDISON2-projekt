@@ -85,9 +85,6 @@ public class EDInputFormSchemaDriftTests
         var missing = keys
             .Where(k => !k.StartsWith("__"))          // defenzivně: __KEY = ne-property field
             .Where(k => !skip.Contains(k))
-            // "style:<prefix>" = tlačítko pod-formuláře stylu (StyleEditDialog);
-            // část za dvojtečkou je property path → validovat taky
-            .Select(k => k.StartsWith("style:") ? k["style:".Length..] : k)
             .Where(k => !PropertyPathExists(targetType, k))
             .ToList();
 
@@ -548,14 +545,49 @@ public class EDInputFormSchemaDriftTests
         return path;
     }
 
-    /// <summary>Prefixy stylových zón ve formuláři - balíček `StyleFields` i tlačítko pod-formuláře
-    /// `style:&lt;prefix&gt;`. Vlastnost pod takovým prefixem je ve formuláři dosažitelná.</summary>
+    /// <summary>Prefixy stylových zón ve formuláři (balíček `StyleFields`). Vlastnost pod takovým
+    /// prefixem je ve formuláři dosažitelná.</summary>
     private static HashSet<string> FormStylePrefixes(string clsFile)
     {
         string text = File.ReadAllText(Path.Combine(EDInputFormDir(), clsFile));
-        var prefixes = StyleFieldsCallRx.Matches(text).Select(m => m.Groups[1].Value)
-            .Concat(Regex.Matches(text, @"""style:([^""]+)""").Select(m => m.Groups[1].Value));
-        return prefixes.ToHashSet(StringComparer.Ordinal);
+        return StyleFieldsCallRx.Matches(text).Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <summary>Sada Text (`bunka = 0`) je jen písmo a barva textu. Minuta, značky u odjezdů a 2. řádek
+    /// záhlaví jsou text uvnitř buňky - pozadí, zarovnání ani okraje jim prvek nekreslí, takže je
+    /// formulář nesmí nabízet (`B194` E3).</summary>
+    [Fact]
+    public void TextUvnitrBunky_MaJenSaduText()
+    {
+        var add = BaseFieldsMethods()["Add"];
+        var sadaText = ExpandBody(add.Body, new Dictionary<string, string> { ["bunka"] = "0" })
+            .SelectMany(l => StyleFieldsSuffixRx.Matches(l).Select(m => m.Groups[1].Value))
+            .ToHashSet();
+        Assert.Equal(new HashSet<string> { "FontFamily", "FontWeight", "FontSize", "Bold", "Italic",
+            "Underline", "Strikethrough", "TextColor" }, sadaText);
+
+        var bunkaPodleZony = File.ReadAllLines(Path.Combine(EDInputFormDir(), "DepartureGridElementEdit.cls"))
+            .Select(l => BaseFieldsCallWithArgsRx.Match(l))
+            .Where(m => m.Success && m.Groups[1].Value == "Add")
+            .Select(m => BindArguments(add.Parameters, m.Groups[2].Value))
+            .ToDictionary(a => a["prefix"].Trim('"'), a => a["bunka"]);
+        foreach (var zona in new[] { "MinuteStyle", "AnotaceSymbolStyle", "AnotaceTextStyle", "HeaderLine2Style" })
+            Assert.Equal("0", bunkaPodleZony[zona]);
+        Assert.Equal("1", bunkaPodleZony["DataStyle"]);
+        Assert.Equal("1", bunkaPodleZony["HeaderStyle"]);
+    }
+
+    /// <summary>Styl je ve formulářích všude rozepsaný, žádný prvek ho neschovává za tlačítko
+    /// „Upravit styl…" (rozhodnutí Jan 28. 10., `B194` E3). Okno stylu, které tlačítko otevíralo,
+    /// je pryč - nové tlačítko s klíčem <c>style:</c> by nic neudělalo.</summary>
+    [Fact]
+    public void Formulare_NemajiTlacitkoStylu()
+    {
+        var sTlacitkem = AllEditClsFiles()
+            .Where(f => File.ReadAllText(Path.Combine(EDInputFormDir(), f)).Contains("\"style:"))
+            .ToList();
+
+        Assert.True(sTlacitkem.Count == 0, "Formulář s tlačítkem stylu: " + string.Join(", ", sTlacitkem));
     }
 
     [Fact]
@@ -576,13 +608,12 @@ public class EDInputFormSchemaDriftTests
     public void VsechnyEditClsFormy_JsouPokryteNeboVyjimka()
     {
         // Ne-elementové formy - needitují property elementu/sekce/šablony:
-        //   StyleEdit = pod-formulář stylu (jeho pole ověřuje StyleFields expanze v rodičích).
         //   TableCellEdit = formulář vybrané buňky pevné tabulky. Do kontroly výchozích hodnot
         //     nepatří, protože se **nikdy nezobrazí**: klient je před vyplněním přepíše hodnotami
         //     z kaskády (buňka je překryv nad nastavením celé tabulky). Vazbu na C# i pokrytí
         //     kaskádou hlídá `FixedTableCellFormattingTests` - přísněji, než by uměl tenhle test.
         var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { "StyleEdit.cls", "TableCellEdit.cls" };
+            { "TableCellEdit.cls" };
 
         var covered = SchemaMap.Select(row => (string)row[0]!)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -682,7 +713,11 @@ public class EDInputFormSchemaDriftTests
     internal static readonly string[] BannedExactLabels =
     [
         "Zamčeno",          // → Uzamčeno
-        "Viditelnost",      // → Podmínka viditelnosti (samostatná „Viditelnost řádku" je jiný pojem a je OK)
+        "Viditelnost",      // → Podmínka viditelnosti
+        "Viditelnost řádku", // → Podmínka viditelnosti řádku (je to podmínka, ne zaškrtávátko - Jan 28. 10.)
+        "Rozdělit na více oddílů", // → Počet oddílů (číslo se jmenuje podle toho, co se zadává - Jan 28. 10.)
+        "Střídání řádků",   // → Střídání řádků: Barva pozadí (barva se najde hledáním „barva" - Jan 28. 10.)
+        "Rozestup odjezdů", // → Zarovnání minut (volby jsou o zarovnání - Jan 28. 10.)
         "Tučně",            // → Tučné
         "Podtržené",        // → Podtržení
         "Přeškrtnuté",      // → Přeškrtnutí
@@ -703,7 +738,8 @@ public class EDInputFormSchemaDriftTests
     internal static readonly string[] BannedLabelSubstrings =
     [
         "Šířka rámečku",    // → Tloušťka rámečku (Šířka patří elementu)
-        "Zebra",            // → Střídání řádků
+        "Zebra",            // → Střídání řádků: Barva pozadí
+        "Min. ",            // zkratky ne → „Nejmenší …" (Jan 28. 10.)
         "Tl. ",             // → Tloušťka …
         "Řádek NZ",         // → Řádek negativních značek
         "Font aktuální",    // → Aktuální: Velikost (je to velikost písma, ne rodina)
@@ -718,18 +754,20 @@ public class EDInputFormSchemaDriftTests
         // (text skupiny dnů v datech) - rozhodnutí Jan 2026-10-26, `B194` E4
         "Nadpisy skupin",   // → Záhlaví skupin dnů
         "Nadpis popisných", // → Text záhlaví popisných sloupců
-        "řádku nadpisu",    // → Styl 2. řádku záhlaví
+        "řádku nadpisu",    // → 2. řádek záhlaví
         "Oddělovač skupin", // → Mezera mezi skupinami dnů (je to mezera, ne čára; `B194` E9a)
         "skupinami sloupců", // → Mezera mezi skupinami dnů (stejný pojem v Minutách i Tabulce spojů)
         "↔",                // → slovy „Mezera mezi značkou a minutou" (`B194` E9b)
         "aktuální zast.",   // → „Aktuální: Vlastnost" (zkratka; `B194` E10)
-        "projetých",        // → „Projeté: Barva textu", „Projeté: Čas"
+        "projetých",        // → „Projeté: Barva textu", „Projeté: Zobrazit čas"
         "element",          // → prvek (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Element",
+        "cílov",            // → konečná (poslední zastávka směru; Jan 2026-10-27, `B194` D3)
+        "CIS číslo",        // → „Číslo … zastávky (CIS)" - CIS na konci jako u názvů (`B194` D3)
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě
         // různá pole a „stanoviště" je zastřešující pojem pro to z nich, které je zvolené parametrem
         // „Číslo stanoviště podle". Jako synonymum pro označník se dál nepoužívá - viz ux-conventions §8.
-        "—",           // em dash → běžná pomlčka "-" (rozhodnutí Jan 2026-07-28)
+        "\u2014",      // em dash → běžná pomlčka "-" (rozhodnutí Jan 2026-07-28)
     ];
 
     private static readonly Regex LabeledFieldRx = new(
@@ -751,17 +789,18 @@ public class EDInputFormSchemaDriftTests
     public void StejnyFieldKey_MaVsudeStejnyLabel()
     {
         // Legitimní rozdíly labelu téhož klíče mezi formuláři (kontextové upřesnění) - vědomé výjimky:
-        //   StrokeWidth - u čáry je to „Tloušťka" (čáry samotné), u obdélníku „Tloušťka okraje"
         // („Height" tu byl do 29. 7. kvůli rozdílnému popisku výšky - sdílený BaseElementFields
         //  ho sjednotil na „Výška" + nápovědu, takže výjimka padla.)
-        //   NegativniZnacka*Color - v legendě poznámek je značka jediná („Pozadí značky"), v mřížce
+        //   NegativniZnacka*Color - v Poznámkách mají vlastní skupinu Negativní značky („Barva pozadí"), v mřížce
         //     odjezdů stojí hned vedle obecné barvy symbolu anotace, takže tam musí být v popisku
-        //     rozlišené („Negativní značka: Pozadí"); bez toho se nedá poznat, co která barva řídí.
+        //     rozlišené („Negativní značka: Barva pozadí"); bez toho se nedá poznat, co která barva řídí.
         //   Format - u stránky je to formát papíru („Formát"), u buňky formát vypisované hodnoty
         //     („Formát hodnoty"). Dvě různé věci, které jen shodou okolností mají stejný název
         //     vlastnosti na svém cíli.
+        //   HeaderHeight - v Tabulce z dat je to nejmenší výška záhlaví (víc řádků ho zvětší), v Pevné
+        //     tabulce pevná výška; stejný popisek by tvrdil, že se chovají stejně (`B194h` H6).
         var exempt = new HashSet<string>(StringComparer.Ordinal)
-            { "StrokeWidth", "NegativniZnackaBackColor", "NegativniZnackaForeColor", "Format" };
+            { "NegativniZnackaBackColor", "NegativniZnackaForeColor", "Format", "HeaderHeight" };
 
         var labelsPerKey = new Dictionary<string, Dictionary<string, List<string>>>();
         foreach (var file in AllEditClsFiles())

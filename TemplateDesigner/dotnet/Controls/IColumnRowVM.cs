@@ -3,17 +3,19 @@ using System.ComponentModel;
 namespace TemplateDesigner.Controls;
 
 /// <summary>
-/// Sdílený kontrakt řádku sloupce pro <see cref="ColumnListEditor"/> - jednotné levé seznamy
-/// napříč tabulkovými editory (StopList, DepartureGrid; výhledově TableElement).
-/// Implementují ho per-komponentní column VM (StopColumnVM, DepartureGroupColumnVM).
+/// Kontrakt řádku sloupce pro levý seznam <see cref="ColumnListEditor"/>. Implementuje ho
+/// <see cref="ColumnRowVM"/> - řádek sdílené záložky Sloupce (<see cref="ColumnsTab"/>).
 /// </summary>
 public interface IColumnRowVM : INotifyPropertyChanged
 {
-    /// <summary>Zobrazovaný název v seznamu (efektivní záhlaví = override, jinak zdroj).</summary>
+    /// <summary>Zobrazovaný název v seznamu - čitelný název sloupce, ne tištěná zkratka záhlaví.</summary>
     string DisplayName { get; }
 
     /// <summary>Viditelnost sloupce (checkbox v seznamu).</summary>
     bool Visible { get; set; }
+
+    /// <summary>False = sloupec se tiskne vždy a zaškrtávátko je vypnuté.</summary>
+    bool CanHide { get; }
 
     /// <summary>True = sloupec má per-column override stylu (modrá tečka v seznamu).</summary>
     bool HasAnyOverride { get; }

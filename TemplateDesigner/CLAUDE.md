@@ -33,7 +33,8 @@ Věci, které se z kódu nepoznají a jejichž porušení něco rozbije uživate
   a `CacheAgendaProvider` ji short-circuituje ve všech metodách.
 - **Launch ze shellu předvolí agendu** - `inputParam` kontraktu ve tvaru `Agenda=<kód>`
   (JŘ uzel stromu → `ZASTAVKOVY_JR_AD`, MHD uzel a MHD2 tlačítko → `ZASTAVKOVY_JR_MHD`),
-  neznámý kód → default. Za kódem smí stát `;KLÍČ=hodnota` (wire jména agendy, `Config/LaunchInput`):
+  neznámý kód → default. Samotný kód bez dalších hodnot znamená jen **modul**: otevře se naposledy
+  použitá zveřejněná agenda téže varianty (AD / MHD), napoprvé ta ze shellu (`StartovniAgenda`, Jan 27. 10.). Za kódem smí stát `;KLÍČ=hodnota` (wire jména agendy, `Config/LaunchInput`):
   s klíčem instance (`LINKA_ID`) TD otevře šablonu agendy (nejnovější vlastní firmy, jinak systémovou),
   vybere linku a nastaví parametry; s `Vystup=PDF` okno neotevře, PDF vyrobí cestou tisku a ukáže ve
   výchozím prohlížeči. Šablonu pro PDF bere jen z `LaunchTemplates/` v exe, **ne z databáze** - tak

@@ -245,13 +245,16 @@ ClassMethod ChybyVylepu(ByRef stranek As %Integer, ByRef vylepy) As %String
 		set page = ##class(%DynamicObject).%FromJSON(^||ML("OUT", key))
 		continue:page.values.%Get("VYLEP_ZASTAVKY")'="true"
 		kill poradi
-		set it = page.rows.ZASTAVKY.%GetIterator()
+		set it = page.rows.ZASTAVKY.%GetIterator(), nazev = ""
 		while it.%GetNext(.i, .radek) {
 			if radek.%Get("AKTUALNI_ZASTAVKA") = "true" set poradi(radek.%Get("PORADI")) = ""
+			if (radek.%Get("AKTUALNI_ZASTAVKA") = "true") && (radek.%Get("TYP") = "zastavka") set nazev = radek.%Get("NAZEV_ZASTAVKY")
 		}
 		set prvni = $order(poradi("")), smer = page.values.%Get("SMER")
 		if (prvni = "") || ($order(poradi(prvni)) '= "") set chyby = chyby_" stránka "_key_" nemá právě jednu zastávku;"
 		if +page.values.%Get("AKTUALNI_ZASTAVKA_TC") '= +prvni set chyby = chyby_" stránka "_key_" má v hlavičce jinou zastávku;"
+		// Název aktuální zastávky do hlavičky výlepu („Zastávka: …") = název zvýrazněného řádku.
+		if (nazev = "") || (page.values.%Get("POPIS_ZASTAVKA") '= nazev) set chyby = chyby_" stránka "_key_" má název aktuální zastávky „"_page.values.%Get("POPIS_ZASTAVKA")_"“ místo „"_nazev_"“;"
 		if (smer '= "T") && (smer '= "Z") set chyby = chyby_" stránka "_key_" nemá směr;"
 		set vylepy(smer, +prvni) = $get(vylepy(smer, +prvni)) + 1
 	}

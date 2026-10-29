@@ -134,6 +134,7 @@ public static class SymbolRunRenderer
 
             var (xPx, baselineY) = CellLayout.TextAnchorPx(
                 tl, br, totalPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
+            float startPx = xPx;
 
             foreach (var r in runs)
             {
@@ -141,6 +142,18 @@ public static class SymbolRunRenderer
                 var f = Font(r);
                 ctx.Canvas.DrawText(r.Text, xPx, baselineY, f, Paint(r));
                 xPx += f.MeasureText(r.Text);
+            }
+
+            // Jedna čára přes všechny úseky, jako u buňky kreslené jedním fontem - podle plného
+            // písma, na kterém úseky sedí. Pod úsekem s vlastní barvou je čára jeho barvou.
+            style.DrawTextDecorations(ctx.Canvas, startPx, baselineY, totalPx, normalFont, paint);
+            float usekPx = startPx;
+            foreach (var r in runs)
+            {
+                float sirkaPx = r.MezeraMm is float mm ? mm * ctx.MmToPx : Font(r).MeasureText(r.Text);
+                if (r.Barva is not null && r.MezeraMm is null)
+                    style.DrawTextDecorations(ctx.Canvas, usekPx, baselineY, sirkaPx, normalFont, Paint(r));
+                usekPx += sirkaPx;
             }
         }
         finally

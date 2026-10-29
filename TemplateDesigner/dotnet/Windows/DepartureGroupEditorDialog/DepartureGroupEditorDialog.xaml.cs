@@ -22,10 +22,11 @@ public partial class DepartureGroupEditorDialog : Window
     private readonly DepartureGroupEditorDialogViewModel _vm;
     private readonly DepartureGridElement _element;
     private Dictionary<string, string> _preFilled = [];
-    private readonly Dictionary<string, IDesignerCommand> _styleCommands = [];
 
     public List<DepartureGroupColumnStyle> ResultGroupColumns => _vm.ResultGroupColumns;
     public ColumnVisualStyle? ResultHourColumnStyle => _vm.ResultHourColumnStyle;
+    public string ResultHourColumnHeader => _vm.ResultHourColumnHeader;
+    public float ResultHourColumnWidth => _vm.ResultHourColumnWidth;
 
     /// <summary>Definice vlastních sloupců (tab „Definice sloupců"). Null = automaticky dle linky.</summary>
     public List<DepartureColumnDefinition>? ResultCustomColumns => _vm.ResultCustomColumns;
@@ -33,10 +34,6 @@ public partial class DepartureGroupEditorDialog : Window
     /// <summary>Command z tabu „Obecné" (EDInputForm) - null pokud se nic nezměnilo.
     /// Caller (MainWindow) ho vykoná spolu se Result* (per-column styly + hour).</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
-
-    /// <summary>Commandy ze stylových pod-formulářů (tlačítka „Styl…"), keyované prefixem zóny
-    /// (opakované otevření téže zóny nahradí předchozí). Caller je přidá do composite.</summary>
-    public IReadOnlyCollection<IDesignerCommand> StyleCommands => _styleCommands.Values;
 
     public DepartureGroupEditorDialog(
         DepartureGridElement element,
@@ -59,7 +56,6 @@ public partial class DepartureGroupEditorDialog : Window
         GeneralForm.CacheClass = GeneralSchemaClass;
         GeneralForm.SchemaLoaded += OnGeneralFormInitialized;
         ElementFormBinder.HookFontWeightRefresh(GeneralForm);
-        GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 
         _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         _vm.RequestClose += result => { DialogResult = result; Close(); };
@@ -75,13 +71,10 @@ public partial class DepartureGroupEditorDialog : Window
         GeneralForm.Validate();
     }
 
-    // Tlačítko „Styl…" v EDInputformu → otevři pod-formulář stylu pro daný prefix (key = "style:<prefix>").
-    // Command se akumuluje a vykoná se v parent OK (batch, jeden undo krok).
-    private void OnGeneralButtonClicked(string key)
+    // Záložka Obecné zapíše styl prvku až při OK - sloupce mají dědit z toho, co na ní právě je.
+    private void ColumnsTab_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (ElementStyleButton.StyleProperty(key) is not { } prefix) return;
-        if (ElementStyleButton.Edit(this, _element, prefix, GeneralForm) is { } command)
-            _styleCommands[prefix] = command;   // replace (poslední edit zóny vyhraje)
+        if (e.NewValue is true) _vm.ObnovZdedene(ElementFormBinder.Nahled(GeneralForm, _element, _preFilled));
     }
 
     private void OkButton_Click(object sender, RoutedEventArgs e)

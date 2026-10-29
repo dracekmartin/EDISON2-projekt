@@ -18,20 +18,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
-        // ── Skupina "Vzhled" ──────────────────────────────────────────────
-        d form.AddGroup("appearance", "Vzhled")
+        // ── Skupina "Obdélník" ────────────────────────────────────────────
+        // Vlastní skupina nese jméno prvku jako u Čáry a Obrázku („Vzhled" nic neříkal).
+        d form.AddGroup("rectangle", "Obdélník")
 
         s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
         s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
 
-        s f = form.AddFieldToLastGroup("StrokeColor", "Barva okraje", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF000000"
-
-        d form.AddDecimal("StrokeWidth", "Tloušťka okraje", 0.5, 0, 10, "mm")
-
-        // Base pole (rámeček elementu je nezávislý na vlastní výplni/okraji obdélníku výše).
-        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
+        // Obrys je rámeček prvku. Vlastní okraj se stejným tvarem i rohy byl druhé nastavení pro tutéž
+        // čáru, migrace 1.18.0 ho převedla do rámečku (rozhodnutí Jan 28. 10.). Výchozí obrys černý 0,5 mm.
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form, 1, "#FF000000", 0.5)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50, 20, 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 

@@ -178,7 +178,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         // Vodorovně totéž: součet pevných šířek nad šířku elementu se dřív oříznul (bez varování).
         // Zmenšuje se tou horší z obou stran - výšky se pak zmenší taky, takže svisle to jen pomůže.
         float scale = MathF.Min(heightScale, ComputeWidthScale(visibleColumns));
-        float headerH  = HeaderHeight * scale;
+        float headerH  = EffectiveHeaderHeight() * scale;
         float rowH     = RowHeight * scale;
 
         ctx.Canvas.Save();
@@ -271,7 +271,19 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     private float NaturalHeight(int dataRowCount)
     {
         float summaryH = (SummaryRows?.Count ?? 0) * RowHeight;
-        return (ShowHeader ? HeaderHeight : 0f) + dataRowCount * RowHeight + summaryH;
+        return (ShowHeader ? EffectiveHeaderHeight() : 0f) + dataRowCount * RowHeight + summaryH;
+    }
+
+    /// <summary>Výška záhlaví: nastavená, a když má záhlaví víc řádků (Enter nebo \n), než se do ní vejde,
+    /// tolik, aby se vešly - řádek stejně vysoký jako u ostatních tabulek. Jednořádkové záhlaví má
+    /// nastavenou výšku beze změny, takže stávající šablony vypadají stejně.</summary>
+    private float EffectiveHeaderHeight()
+    {
+        var cols = Columns.Where(c => c.Visible).ToList();
+        int radku = cols.Select(c => CellLayout.LineCount(Rendering.ColumnHeader.Resolve(c.Header, ""))).DefaultIfEmpty(1).Max();
+        if (radku <= 1) return HeaderHeight;
+        float pismo = cols.Max(c => ResolveColumnHeaderStyle(c).FontSize);
+        return MathF.Max(HeaderHeight, ScheduleElementBase.ComputeHeaderH(pismo) * radku);
     }
 
     /// <summary>
@@ -454,12 +466,12 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         {
             Label = "Výška řádku", Group = "Tabulka",
             Get   = () => RowHeight, Set = v => RowHeight = v,
-            Min   = 2, Max = 50, Unit = "mm"
+            Min   = 1, Max = 50, Unit = "mm"
         },
         new BoolPropertyDescriptor { Label = "Záhlaví sloupců", Group = "Tabulka", Get = () => ShowHeader, Set = v => ShowHeader = v },
         new FloatPropertyDescriptor
         {
-            Label = "Výška záhlaví", Group = "Tabulka",
+            Label = "Nejmenší výška", Group = "Záhlaví",
             Get   = () => HeaderHeight, Set = v => HeaderHeight = v,
             Min   = 2, Max = 50, Unit = "mm"
         },
@@ -476,7 +488,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         },
         new EnumPropertyDescriptor
         {
-            Label = "Směr", Group = "Tabulka",
+            Label = "Směr řazení", Group = "Tabulka",
             VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField),
             Get = () => SortDescending, Set = v => SortDescending = (bool)v,
             Options = [("Vzestupně", (object)false), ("Sestupně", (object)true)]
@@ -490,34 +502,34 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         },
         new EnumPropertyDescriptor
         {
-            Label = "Směr (druhý klíč)", Group = "Tabulka",
+            Label = "Směr druhého řazení", Group = "Tabulka",
             VisibleWhen = () => !string.IsNullOrWhiteSpace(SortField) && !string.IsNullOrWhiteSpace(ThenByField),
             Get = () => ThenByDescending, Set = v => ThenByDescending = (bool)v,
             Options = [("Vzestupně", (object)false), ("Sestupně", (object)true)]
         },
         new ColorPropertyDescriptor
         {
-            Label = "Střídání řádků", Group = "Tabulka",
+            Label = "Střídání řádků: Barva pozadí", Group = "Tabulka",
             Get   = () => AlternatingRowColor ?? "#00FFFFFF",
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v
         },
         new FloatPropertyDescriptor
         {
-            Label = "Min. řádků (0 = ne)", Group = "Tabulka",
+            Label = "Nejméně řádků", Group = "Tabulka",
             Get   = () => MinRows, Set = v => MinRows = (int)Math.Max(0, v),
             Min   = 0, Max = 200, Format = "0"
         },
         new FloatPropertyDescriptor
         {
-            Label = "Max. řádků (0 = bez limitu)", Group = "Tabulka",
+            Label = "Nejvýš řádků", Group = "Tabulka",
             Get   = () => MaxRows, Set = v => MaxRows = (int)Math.Max(0, v),
             Min   = 0, Max = 500, Format = "0"
         },
 
         new BoolPropertyDescriptor  { Label = "Tučné záhlaví",       Group = "Záhlaví",      Get = () => HeaderStyle?.Bold ?? true,                    Set = v => Header().Bold = v },
-        new ColorPropertyDescriptor { Label = "Pozadí záhlaví",      Group = "Záhlaví",      Get = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",  Set = v => Header().BackgroundColor = v },
+        new ColorPropertyDescriptor { Label = "Barva pozadí záhlaví",      Group = "Záhlaví",      Get = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",  Set = v => Header().BackgroundColor = v },
         new ColorPropertyDescriptor { Label = "Barva textu záhlaví", Group = "Záhlaví",      Get = () => HeaderStyle?.TextColor ?? "#FF333333",        Set = v => Header().TextColor = v },
-        new ColorPropertyDescriptor { Label = "Pozadí buněk",        Group = "Datové buňky", Get = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",    Set = v => Data().BackgroundColor = v },
+        new ColorPropertyDescriptor { Label = "Barva pozadí buněk",        Group = "Datové buňky", Get = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",    Set = v => Data().BackgroundColor = v },
         new ColorPropertyDescriptor { Label = "Barva textu buněk",   Group = "Datové buňky", Get = () => DataStyle?.TextColor ?? "#FF222222",          Set = v => Data().TextColor = v },
 
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),

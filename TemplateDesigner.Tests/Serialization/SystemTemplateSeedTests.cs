@@ -171,7 +171,7 @@ public class SystemTemplateSeedTests
     }
 
     /// <summary>Dlouhá pomlčka nesmí být nikde v šabloně - ani v oddělovači poznámek, který se tiskne
-    /// (do 26. 10. ji měly výchozí šablony zastávkových JŘ: „A — jede přes…", `B194` T9).</summary>
+    /// (do 26. 10. ji měly výchozí šablony zastávkových JŘ: mezi „A" a „jede přes…", `B194` T9).</summary>
     [Theory]
     [MemberData(nameof(AllTemplates))]
     public void SablonaNemaDlouhouPomlckuNikde(string fileName)
@@ -189,7 +189,7 @@ public class SystemTemplateSeedTests
                 case System.Text.Json.Nodes.JsonArray a:
                     for (int i = 0; i < a.Count; i++) Projdi(a[i], $"{cesta}[{i}]");
                     break;
-                case System.Text.Json.Nodes.JsonValue h when h.TryGetValue<string>(out var s) && s.Contains('—'):
+                case System.Text.Json.Nodes.JsonValue h when h.TryGetValue<string>(out var s) && s.Contains('\u2014'):
                     nalezy.Add(cesta);
                     break;
             }

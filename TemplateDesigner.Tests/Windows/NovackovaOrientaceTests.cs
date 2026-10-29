@@ -66,7 +66,7 @@ public class NovackovaOrientaceTests
     {
         var text = ClsText("StopListElementEdit.cls");
 
-        Assert.Contains("\"PartCount\", \"Rozdělit na více oddílů\"", text);
+        Assert.Contains("\"PartCount\", \"Počet oddílů\"", text);
         Assert.Contains("\"PartGap\", \"Mezera mezi oddíly\"", text);
     }
 
@@ -77,7 +77,7 @@ public class NovackovaOrientaceTests
         var text = ClsText("DynamicTableElementEdit.cls");
 
         Assert.Contains("\"SortField\", \"Řadit podle\"", text);
-        Assert.Contains("\"SortDescending\", \"Směr\"", text);
+        Assert.Contains("\"SortDescending\", \"Směr řazení\"", text);
     }
 
     /// <summary>
@@ -117,7 +117,7 @@ public class NovackovaOrientaceTests
         var agenda = AgendaText("ZastavkoveJrAd.cls");
 
         Assert.Contains("\"První varianta bez písmene\"", agenda);
-        Assert.Contains("\"Rozdělení sloupců dle platnosti\"", agenda);
+        Assert.Contains("\"Rozdělení sloupců podle platnosti\"", agenda);
     }
 
     /// <summary>Zdroják agendy - vedle složky formulářů, tedy stejnou cestou jako `ClsPath`.</summary>

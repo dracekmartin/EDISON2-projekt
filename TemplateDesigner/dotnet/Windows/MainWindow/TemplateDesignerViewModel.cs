@@ -446,6 +446,18 @@ public class TemplateDesignerViewModel : EDViewModel
     /// záložku radši ukázat než schovat tam, kde funguje.</summary>
     public bool CurrentAgendaCustomColumns => AgendaEntry(State.CurrentTemplate.AgendaCode)?.CustomColumns ?? true;
 
+    /// <summary>Posílá agenda šablony u zastávek časy variant tras? Neznámá agenda ano (viz výše).</summary>
+    public bool CurrentAgendaVariantyTras => AgendaEntry(State.CurrentTemplate.AgendaCode)?.VariantyTras ?? true;
+
+    /// <summary>Je pole v řádcích kolekce podle schématu agendy šablony? Bez schématu nebo bez té kolekce
+    /// ano - radši nabídnout než schovat tam, kde funguje.</summary>
+    public bool AgendaPosilaPoleKolekce(string kolekce, string pole)
+    {
+        var sloupce = SchemaProvider.GetSchema(State.CurrentTemplate.AgendaCode ?? "")?.FieldCollections?
+            .FirstOrDefault(c => c.CollectionKey == kolekce);
+        return sloupce is null || sloupce.Fields.Any(f => f.FieldName == pole);
+    }
+
     /// <summary>Zobrazovací název aktuální konfigurace „Agenda · Varianta" (např. „Zastávkový JŘ · AD");
     /// fallback = syrový kód (registr nedostupný / neznámý kód). Čte titulek okna.</summary>
     public string CurrentAgendaDisplayName =>
@@ -459,7 +471,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „…výběr - linky").</summary>
     public string PreviousInstanceTooltip => $"Předchozí {CurrentInstanceLabel}";
     public string NextInstanceTooltip     => $"Další {CurrentInstanceLabel}";
-    public string InstancePickerHint      => $"Klikněte pro výběr - {CurrentInstanceLabelPlural} (Ctrl+Shift+I)";
+    public string InstancePickerHint      => $"Vybrat {CurrentInstanceLabelPlural} - Ctrl+Shift+I";
 
     private static string CapitalizeFirst(string s) =>
         string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
@@ -1011,6 +1023,33 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand PasteStyleCommand => _pasteStyle ??= Command(PasteStyle, () => State.StyleClipboard is not null);
 
     // ── Constructor ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Agenda, se kterou se návrhář otevře. Agenda ze shellu bez dalších hodnot (uzel stromu JŘ / MHD,
+    /// tlačítko MHD2) říká jen, **z kterého modulu** uživatel přichází: otevře se agenda téže varianty
+    /// (AD / MHD), se kterou pracoval naposledy, napoprvé ta ze shellu (`B194e` A2, Jan 27. 10.) - kdo
+    /// dělá linkové JŘ, se dřív musel po každém spuštění přepínat. Spuštění s linkou (porovnání linek)
+    /// určuje agendu přesně. Neznámý kód se přeskočí.
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ Poslední použitá agenda se obnoví jen když je ZVEŘEJNĚNÁ. Bez té podmínky se skrytá agenda
+    /// vrátila každému, kdo ji kdy vyzkoušel (nález Jan 1. 9.). Kód ze shellu filtr nemá: je to příkaz
+    /// zvenčí a skrytá agenda tam znamená chybu konfigurace shellu, ne zapamatovaný stav uživatele.
+    /// </remarks>
+    internal static string? StartovniAgenda(IReadOnlyList<AgendaRegistryEntry> agendy, string? zeShellu,
+        bool zeShelluJenModul, string? posledni)
+    {
+        AgendaRegistryEntry? Najdi(string? kod, bool jenZverejnene) => kod is null ? null
+            : agendy.FirstOrDefault(a => string.Equals(a.Code, kod, StringComparison.OrdinalIgnoreCase)
+                                        && (!jenZverejnene || a.Released));
+        var shell = Najdi(zeShellu, jenZverejnene: false);
+        var minula = Najdi(posledni, jenZverejnene: true);
+        if (shell is null) return minula?.Code;
+        bool tyzModul = zeShelluJenModul && minula is not null && shell.Variant is { Length: > 0 }
+                        && string.Equals(minula.Variant, shell.Variant, StringComparison.OrdinalIgnoreCase);
+        return tyzModul ? minula!.Code : shell.Code;
+    }
+
     /// <summary>
     /// Per-user state (zoom, grid, splittery, recent files, instance defaults).
     /// Null v testech / standalone bez Caché - get pro UI binding loaded files menu;
@@ -1021,7 +1060,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public TemplateDesignerViewModel(MLRest? mlRest = null,
                                      TdPreferencesService? preferences = null,
                                      IReadOnlyList<AgendaRegistryEntry>? agendas = null,
-                                     string? startupAgendaCode = null)
+                                     string? startupAgendaCode = null,
+                                     bool startupJenModul = false)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
 
@@ -1061,23 +1101,10 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate = CreateSampleTemplate();
 
-        // Startovní agenda - priorita: (1) EDISONMAIN2 kontrakt (inputParam "Agenda=<kód>" dle
-        // uzlu stromu shellu / MHD2 tlačítka), (2) poslední použitá agenda uživatele (per-user
-        // prefs), (3) fallback ze CreateSampleTemplate. Neznámý kód se přeskočí.
-        string? ResolveKnown(string? code, bool jenZverejnene) => code is null ? null
-            : resolvedAgendas.FirstOrDefault(a =>
-                string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase)
-                && (!jenZverejnene || a.Released))?.Code;
-        // ⚠️ Poslední použitá agenda se obnoví jen když je ZVEŘEJNĚNÁ. Bez té podmínky se skrytá
-        // agenda vrátila každému, kdo ji kdy vyzkoušel: uložila se do preferencí, po startu se
-        // obnovila jako agenda šablony a výběr ji pak ukázal (tam se aktuální agenda zobrazuje
-        // vždy, aby šly otevřít hotové šablony). Skrytí linkových JŘ se tím dalo obejít
-        // pamětí aplikace - nález Jan 1. 9. při kontrole před vydáním.
-        //
-        // Kód z launch kontraktu shellu filtr NEmá: to je explicitní příkaz zvenčí a případná
-        // skrytá agenda tam znamená chybu konfigurace shellu, ne zapamatovaný stav uživatele.
-        var startAgenda = ResolveKnown(startupAgendaCode, jenZverejnene: false)
-                          ?? ResolveKnown(preferences?.MainState?.LastAgendaCode, jenZverejnene: true);
+        // Startovní agenda: ze shellu (inputParam "Agenda=<kód>"), poslední použitá uživatele,
+        // jinak fallback ze CreateSampleTemplate - pravidla viz StartovniAgenda.
+        var startAgenda = StartovniAgenda(resolvedAgendas, startupAgendaCode, startupJenModul,
+            preferences?.MainState?.LastAgendaCode);
         if (startAgenda is not null) State.CurrentTemplate.AgendaCode = startAgenda;
 
         RebuildSections();
@@ -1180,26 +1207,40 @@ public class TemplateDesignerViewModel : EDViewModel
         Execute(cmds.Count == 1 ? cmds[0] : new CompositeCommand(label, cmds));
     }
 
+    /// <summary>Příkaz jen pro hodnotu, která se opravdu změnila - OK okna beze změny nesmí přidat krok
+    /// do Ctrl+Z ani označit šablonu jako změněnou (`B194d` E13d). Okno seznamy sloupců skládá znovu,
+    /// proto se porovnává obsah, ne instance.</summary>
+    private static void AddIfChanged<T>(List<IDesignerCommand> cmds, string label, T oldValue, T newValue,
+        Action<object?> apply)
+    {
+        if (JsonSerializer.Serialize(oldValue) == JsonSerializer.Serialize(newValue)) return;
+        cmds.Add(new SetPropertyCommand(label, oldValue, newValue, apply));
+    }
+
     // ── Aplikace výsledků editorů sloupců (dialog otevírá code-behind; sestavení
     //    a vykonání příkazů = business logika, patří sem do VM). Metody neznají WPF. ──
 
     /// <summary>Odjezdová mřížka: tab „Obecné" (EDInputForm) + per-column styly + styl sloupce hodin
     /// jako jeden undo krok.</summary>
     public void ApplyDepartureGridEdit(DepartureGridElement element, IDesignerCommand? generalCommand,
-        IEnumerable<IDesignerCommand> styleCommands, List<DepartureGroupColumnStyle> resultGroupColumns,
+        List<DepartureGroupColumnStyle> resultGroupColumns,
         bool hasGroups, ColumnVisualStyle? resultHourColumnStyle,
+        string hourColumnHeader, float hourColumnWidth,
         List<DepartureColumnDefinition>? resultCustomColumns)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.AddRange(styleCommands);
+        AddIfChanged(cmds, "Záhlaví hodin", element.HourColumnHeader, hourColumnHeader,
+            v => element.HourColumnHeader = (string)v!);
+        AddIfChanged(cmds, "Šířka hodin", element.HourColumnWidth, hourColumnWidth,
+            v => element.HourColumnWidth = (float)v!);
         if (hasGroups)
-            cmds.Add(new SetPropertyCommand("Skupiny dnů", element.GroupColumns, resultGroupColumns,
-                v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
-        cmds.Add(new SetPropertyCommand("Styl sloupce hodin", element.HourColumnStyle, resultHourColumnStyle,
-            v => element.HourColumnStyle = (ColumnVisualStyle?)v));
-        cmds.Add(new SetPropertyCommand("Vlastní sloupce", element.CustomColumns, resultCustomColumns,
-            v => element.CustomColumns = (List<DepartureColumnDefinition>?)v));
+            AddIfChanged(cmds, "Skupiny dnů", element.GroupColumns, resultGroupColumns,
+                v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!);
+        AddIfChanged(cmds, "Styl sloupce hodin", element.HourColumnStyle, resultHourColumnStyle,
+            v => element.HourColumnStyle = (ColumnVisualStyle?)v);
+        AddIfChanged(cmds, "Vlastní sloupce", element.CustomColumns, resultCustomColumns,
+            v => element.CustomColumns = (List<DepartureColumnDefinition>?)v);
         // Re-fetch i srovnání parametru rozvržení řeší Execute (RefetchIfColumnsDefinitionChanged).
         ExecuteAsComposite("Nastavení odjezdů", cmds);
     }
@@ -1207,9 +1248,20 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Zvýraznění řádků (seznam pravidel) - jeden undoable krok. Prázdný seznam → null (čistý JSON).</summary>
     public void ApplyHighlightRulesEdit(IRowHighlightable element, List<HighlightRule> resultRules)
     {
+        var cmds = new List<IDesignerCommand>();
+        AddHighlightRules(cmds, element, resultRules);
+        ExecuteAsComposite("Zvýraznění řádků", cmds);
+    }
+
+    /// <summary>Pravidla zvýraznění z okna tabulky do téhož vratného kroku jako zbytek okna (`B194d` E13e).
+    /// null = okno pravidla neupravilo; prázdný seznam → null (čistý JSON).</summary>
+    private static void AddHighlightRules(List<IDesignerCommand> cmds, IRowHighlightable element,
+        List<HighlightRule>? resultRules)
+    {
+        if (resultRules is null) return;
         List<HighlightRule>? newVal = resultRules.Count > 0 ? resultRules : null;
-        Execute(new SetPropertyCommand("Zvýraznění řádků", element.HighlightRules, newVal,
-            v => element.HighlightRules = (List<HighlightRule>?)v));
+        AddIfChanged(cmds, "Zvýraznění řádků", element.HighlightRules, newVal,
+            v => element.HighlightRules = (List<HighlightRule>?)v);
     }
 
     /// <summary>Okno „Druhy poznámek" jako jeden vratný krok (`#7487`).</summary>
@@ -1218,36 +1270,40 @@ public class TemplateDesignerViewModel : EDViewModel
             v => element.Skupiny = (List<NastaveniSkupinyPoznamek>?)v);
 
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
-    public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
+    public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns,
+        List<HighlightRule>? resultHighlightRules = null)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.Add(new SetPropertyCommand("Sloupce zastávek", element.Columns, resultColumns,
-            v => element.Columns = (List<StopColumn>)v!));
+        AddIfChanged(cmds, "Sloupce zastávek", element.Columns, resultColumns,
+            v => element.Columns = (List<StopColumn>)v!);
+        AddHighlightRules(cmds, element, resultHighlightRules);
         ExecuteAsComposite("Nastavení zastávek", cmds);
     }
 
     /// <summary>Linkový JŘ LineTable: tab „Obecné" + sloupce jako jeden undo krok.</summary>
-    public void ApplyLineTableColumnsEdit(LineTableElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
+    public void ApplyLineTableColumnsEdit(LineTableElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns,
+        List<HighlightRule>? resultHighlightRules = null)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.Add(new SetPropertyCommand("Sloupce linkového JŘ", element.Columns, resultColumns,
-            v => element.Columns = (List<StopColumn>)v!));
+        AddIfChanged(cmds, "Sloupce linkového JŘ", element.Columns, resultColumns,
+            v => element.Columns = (List<StopColumn>)v!);
+        AddHighlightRules(cmds, element, resultHighlightRules);
         ExecuteAsComposite("Nastavení linkového JŘ", cmds);
     }
 
     /// <summary>Dynamická tabulka: tab „Obecné" + sloupce jako jeden undo krok.</summary>
-    public void ApplyDynamicTableEdit(DynamicTableElement element, IDesignerCommand? generalCommand, List<TableColumn> resultColumns)
+    public void ApplyDynamicTableEdit(DynamicTableElement element, IDesignerCommand? generalCommand, List<TableColumn> resultColumns,
+        List<HighlightRule>? resultHighlightRules = null)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.Add(new SetPropertyCommand("Sloupce tabulky", element.Columns, resultColumns,
-            v => element.Columns = (List<TableColumn>)v!));
+        AddIfChanged(cmds, "Sloupce tabulky", element.Columns, resultColumns,
+            v => element.Columns = (List<TableColumn>)v!);
+        AddHighlightRules(cmds, element, resultHighlightRules);
         ExecuteAsComposite("Nastavení tabulky", cmds);
     }
-
-    /// <summary>Statická tabulka (Fixed/Dynamic): sloupce + řádky (Fixed) + souhrnné řádky jako jeden undo krok.</summary>
 
     private void Undo()
     {
@@ -2316,6 +2372,8 @@ public class TemplateDesignerViewModel : EDViewModel
         var (instance, skupinaLabel) = await Task.Run(() =>
         {
             // Popis linky („číslo - název") dá jen server; hledá se podle čísla ve zvolené skupině.
+            // ⚠️ Číslo nese klíč linky jen v AD. MHD má klíč vnitřní ID, popis by se nenašel a ukázalo
+            // by se holé ID - dnes MHD linku ve spuštění neposílá; kdo to zavede, musí hledat podle klíče.
             var found = provider.GetAvailableInstances(agenda, instanceValue.TrimStart('0'), skupinaId: skupina);
             var label = string.IsNullOrEmpty(skupina) ? null
                 : provider.GetAvailableSkupiny(agenda).FirstOrDefault(s => s.Value == skupina)?.Display;
@@ -2896,7 +2954,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var el = type switch
         {
             ElementTypes.Text          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
+            ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Line          => new LineElement      { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Image         => new ImageElement     { X = x, Y = y, Width = w, Height = h },
             ElementTypes.Table         => NewFixedTable(x, y, w, h),
@@ -3406,10 +3464,15 @@ public class TemplateDesignerViewModel : EDViewModel
         if (CacheProvider is not null && !CacheProvider.IsSchemaCached(agendaCode))
         {
             var code = agendaCode;
-            AgendaNameText = $"Agenda: {code} (načítám schéma…)";
+            AgendaNameText = $"Agenda: {AgendaEntry(code)?.DisplayName ?? code} (načítám…)";
             return Task.Run(() => SchemaProvider.GetSchema(code))
-                .ContinueWith(_ => RefreshFieldsListCore(code),
-                              TaskScheduler.FromCurrentSynchronizationContext());
+                .ContinueWith(_ =>
+                {
+                    // Agenda se mezitím změnila: její parametry už nastavilo novější volání a pozdní
+                    // výsledek by tam vrátil parametry té předchozí.
+                    if (string.Equals(State.CurrentTemplate.AgendaCode, code, StringComparison.OrdinalIgnoreCase))
+                        RefreshFieldsListCore(code);
+                }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         RefreshFieldsListCore(agendaCode);
@@ -3422,25 +3485,30 @@ public class TemplateDesignerViewModel : EDViewModel
 
         if (schema is null)
         {
-            AgendaNameText = $"Agenda: {agendaCode} (schéma nenalezeno)";
+            AgendaNameText = AgendaBezSchematuText(AgendaEntry(agendaCode), agendaCode);
             UpdateCacheStatus(agendaCode, null);
             LoadAgendaParameters(agendaCode);
             RebuildSchemaTree(null);
             return;
         }
 
-        // Explicitní dvouosý formát: „Agenda: Zastávkový JŘ · Varianta: AD" (učí nové názvosloví);
-        // bez varianty jen „Agenda: Faktury". Fallback = jméno ze schématu (registr nezná kód).
+        // Týž tvar jako titulek okna a Uložit jako: „Agenda: Zastávkový JŘ · AD" (Jan 27. 10.).
+        // Fallback = jméno ze schématu (registr nezná kód).
         var entry = AgendaEntry(agendaCode);
-        AgendaNameText = entry is { Variant.Length: > 0 }
-            ? $"Agenda: {entry.EffectiveAgendaLabel} · Varianta: {entry.Variant}"
-            : $"Agenda: {entry?.EffectiveAgendaLabel ?? schema.AgendaName}";
+        AgendaNameText = $"Agenda: {entry?.DisplayName ?? schema.AgendaName}";
         var cacheSchema = CacheProvider?.GetSchema(agendaCode);
         UpdateCacheStatus(agendaCode, cacheSchema);
         LoadAgendaParameters(agendaCode);
         RebuildSchemaTree(schema);
         _ = PrefetchMockDataAsync(agendaCode);
     }
+
+    /// <summary>Stavový řádek agendy, od které nepřišlo schéma. Agenda bez třídy na serveru (Obecná)
+    /// ho nemá z principu - „nedostupná" by u ní hlásilo výpadek, který není.</summary>
+    internal static string AgendaBezSchematuText(Serialization.AgendaRegistryEntry? entry, string agendaCode) =>
+        entry is { CacheClass: "" }
+            ? $"Agenda: {entry.DisplayName}"
+            : $"Agenda: {entry?.DisplayName ?? agendaCode} (nedostupná)";
 
     /// <summary>Načte mock data agendy na pozadí do cache a po dokončení překreslí náhled (aby
     /// první vykreslení nešlo přes synchronní HTTP). Když jsou už v cache, hned se vrátí.</summary>

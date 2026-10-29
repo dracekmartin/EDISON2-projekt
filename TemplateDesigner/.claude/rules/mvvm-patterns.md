@@ -164,7 +164,7 @@ public class MyScheduleElement : ScheduleElementBase
 
 ### Pevná × dynamická tabulka jsou dva PRVKY, ne dva režimy
 
-`TableElement` = pevná tabulka: uživatel vyplní sloupce i řádky v `TableEditorDialog`, sázecí
+`TableElement` = pevná tabulka: uživatel vyplní sloupce i řádky v buňkách na plátně, sázecí
 engine v buňkách dosadí `{PLACEHOLDER}` ze skalárů DataContextu. Řádky z kolekce dat kreslí
 samostatný `DynamicTableElement` (`DataSource` = klíč do `DataContext._rows`, odpovídá
 `DataFieldCollection.CollectionKey` ve schématu).
@@ -285,43 +285,53 @@ float headerH = ComputeHeaderH(MaxResolvedHeaderFontPt());
 
 **Aplikováno:** StopListElement i DepartureGridElement (výška z max resolved přes viditelné sloupce - sloupec může mít legitimně jiný font). U odjezdů to platí **od 16. 9.**; do té doby si element typografii záhlaví vynucoval (`WithParentHeaderTypography`), protože import z PDF zapékal `Bold = true` do každé skupiny dnů a přebíjel tím ovladač prvku. Import to už nedělá a migrace 1.13.0 zapečené hodnoty smazala - **nezavádět zpátky**, správné místo pro takovou opravu je zdroj dat, ne render. TableElement asymetrii nemá (výška = pevná `HeaderHeight` property).
 
-## Sdílený `CellStyleEditor` (dialogy sloupců)
+## Sdílená záložka Sloupce (`ColumnsTab`) a `CellStyleEditor`
 
-`Controls/CellStyleEditor.xaml` - UserControl konzumovaný všemi třemi dialogy (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`). DataContext = `CellStyleVM`. Converters v `CellStyleEditor.Converters.cs`.
+Okna tabulek se sloupci (Seznam zastávek, Minuty odjezdů, Tabulka spojů, Tabulka z dat) mají záložku
+Sloupce **jednu společnou**: `Controls/ColumnsTab` + `ColumnsTabViewModel` (výběr, posun, přidání/
+odebrání, součet šířek, Přizpůsobit, reset). Do 28. 10. měla každá tabulka vlastní kopii a texty
+i chování se rozešly (`B194` E13c) - **novou kopii nepsat**.
 
-**Dependency properties:**
-- `EditOptions` (`CellStyleEditOptions`) - řídí viditelnost řádků přes `BooleanToVisibilityConverter`
-- 4× `ICommand` - `Pick/ClearTextColor`, `Pick/ClearBgColor` - dialog passuje své VM commands
-- `HAlignOptions`/`VAlignOptions`/`FontSizeOptions` - defaults s rozumnými labely, lze override per dialog
+- **Řádek** = podtřída `Controls/ColumnRowVM` (záhlaví, šířka, viditelnost, `HeaderStyle`/`DataStyle`).
+  Schopnostmi řekne, co u něj platí: `CanHide`/`CanMove` (hodiny, sloupec spojů = pevné), `CountsTowardWidth`,
+  `WidthUnit`/`FixedWidthMm` (procenta), `WidthHint`, `DataZoneTitle`/`DataZoneHint`/`DataEditOptions` (šipka).
+  Převod z a do modelu prvku má podtřída - třída sloupce se mezi prvky záměrně liší
+  (`elementy-architektura.md` §4). Co okno nenabízí (záložní `Alignment`, `WidthMode`), musí vrátit beze změny.
+- **Okno** vytvoří `ColumnsTabViewModel(rows) { ElementWidth, CanFit, NewRow, MultilineHeader, … }` a v XAML
+  `<controls:ColumnsTab DataContext="{Binding Columns}"/>`; pole navíc přes `ExtraColumnTemplate` /
+  `ExtraDataTemplate` (DataContext šablony = vybraný řádek).
+- OK okna **prvek nemění** - výsledky předá volajícímu, který je provede jako jeden vratný krok
+  (hodiny Minut do 28. 10. psaly rovnou do prvku a Ctrl+Z je nevrátil).
+
+`Controls/CellStyleEditor.xaml` - editor stylu sloupce uvnitř záložky. DataContext = `CellStyleVM`.
+Converters v `CellStyleEditor.Converters.cs`. `EditOptions` (`CellStyleEditOptions`) řídí viditelnost řádků.
+⚠️ **Vědomá výjimka z formuláře prvku** (rozhodnutí Jan 28. 10.): EDInputForm v okně sloupců vypadal cize
+(vyhledávání, sbalovací skupiny), proto editor zůstává WPF. Pořadí, popisky a meze (`CellStyleVM.MinFontSize`…)
+ale musí odpovídat sadě `StyleFields.cls` - hlídá `EditorStyluSloupceTests`; nové pole sady přidej i sem.
 
 **`CellStyleVM` - tri-state kaskáda (nullable = dědit):**
 
 Všechny editovatelné vlastnosti jsou nullable (`string?`, `float?`, `bool?`, `TextHorizontalAlignment?`…). Null = dědit od rodiče.
 
 - `Inherited: ResolvedTextStyle` (read-only) - vyřešený parent styl, XAML ho zobrazuje jako šedivý italic placeholder v prázdných polích
-- `EffectiveBold`/`EffectiveItalic`/`EffectiveUnderline`/`EffectiveStrikethrough` derived gettery (`_bold ?? Inherited.Bold`) - binding pro 2-stavové checkboxy. Setter zapisuje explicit override
-- `HasExplicit<X>` derived - viditelnost „×" reset tlačítek (jen když user explicitně přepsal)
+- `EffectiveBold`/`EffectiveItalic`/`EffectiveUnderline`/`EffectiveStrikethrough` derived gettery (`_bold ?? Inherited.Bold`) - binding pro 2-stavové checkboxy. Setter zapíše přepsání, jen když se liší od zděděné hodnoty, jinak null -
+  zaškrtávátko proto nemá „×" a odškrtnutím se vrací k dědění (rozhodnutí Jan 28. 10.)
+- `HasExplicit<X>` derived - viditelnost „×" reset tlačítek u polí, která se k dědění samy vrátit neumí (font, velikost, zarovnání)
 - `ResetFieldCommand(paramName: string?)` - jedno command, CommandParameter = název property („Bold", „HAlign", …)
-- `FromModel(TextStyle? explicit, ResolvedTextStyle inherited)` - povinně bere inherited z elementu
+- `FromModel(TextStyle? explicit, ResolvedTextStyle inherited)` - povinně bere inherited z elementu. U sloupce
+  s legacy `Alignment` přes `TableLayout.ResolveCascade(null, parent, col.Alignment, …)` - jinak šedá nápověda
+  ukáže jiné zarovnání, než se vytiskne
 - `ToModel()` emituje nullable TextStyle - prázdná pole zůstanou null (idempotentní: open+OK beze změn nezmění JSON)
 
-**Host dialog (VM) musí poskytnout:**
-- `HeaderEditOptions` + `DataEditOptions` (zatím všude `AllEnabled`; do budoucna per-kontextové skrytí irelevantních voleb)
-- `ResetStyleCommand` (volitelný, pro tlačítko „Resetovat styl")
-- V konstruktoru: `CellStyleVM.FromModel(columnTextStyle, element.Resolve<Zone>Parent())` - nikdy nevytváří VM bez inherited!
+Formulář prvku rozlišuje sady stylu přes `StyleFields.Add(…, bunka)`: Buňka (15 polí) pro záhlaví a buňky,
+Text (8 polí) pro text uvnitř buňky (minuta, značky, 2. řádek záhlaví). Nenabízet pole, které zóna nekreslí.
+Styl se ve formuláři nikdy neschovává za tlačítko - je rozepsaný (rozhodnutí Jan 28. 10.).
 
 ⚠️ **Barvy hostitel nedrátuje.** Výběr a smazání barvy textu i pozadí drží `CellStyleVM` (jsou to
 jeho hodnoty) a vyvolání výběru mu dosadí sám `CellStyleEditor`, protože jediný ví, v jakém okně
 sedí. Do 21. 9. si každý hostitel psal osm příkazů a vlastní `RequestColorPicker` - pět kopií téhož.
 Vlastní picker si drží jen dialog, který barvu edituje **mimo** tenhle editor (zebra u skupin dnů,
 pravidla zvýraznění).
-
-**Host dialog (XAML):**
-```xml
-<controls:CellStyleEditor
-    DataContext="{Binding SelectedColumnVM.HeaderStyle}"
-    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
-```
 
 ---
 

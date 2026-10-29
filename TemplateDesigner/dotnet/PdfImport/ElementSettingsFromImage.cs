@@ -38,6 +38,8 @@ internal static class ElementSettingsFromImage
         && d.Group != TemplateElement.PositionGroup
         && d.Group != TemplateElement.ConditionsGroup;
 
+    // I v protokolu se skupinou: popisek ve skupině části prvku název části neopakuje („Šipka směru · Pozice"),
+    // samotné „Pozice" by v protokolu nic neřeklo.
     private static string KeyOf(PropertyDescriptor d) => $"{d.Group}{KeySeparator}{d.Label}";
 
     /// <summary>
@@ -89,7 +91,7 @@ internal static class ElementSettingsFromImage
 
             if (!TryWrite(d, value))
             {
-                log.Add($"⚠ {d.Label}: hodnotě „{value}\" nerozumím, ponechána výchozí");
+                log.Add($"⚠ {KeyOf(d)}: hodnotě „{value}\" nerozumím, ponechána výchozí");
                 continue;
             }
 
@@ -97,7 +99,7 @@ internal static class ElementSettingsFromImage
             // Model často potvrdí i hodnotu, kterou prvek stejně má, a v soupisu to pak vypadá,
             // že z předlohy vzešlo víc, než kolik se doopravdy přeneslo.
             if (Describe(d) != pred)
-                log.Add($"{d.Label} = {value}");
+                log.Add($"{KeyOf(d)} = {value}");
         }
 
         return log;
@@ -175,7 +177,7 @@ internal static class ElementSettingsFromImage
         {
             string ted = Describe(d);
             if (!vychoziPodleKlice.TryGetValue(KeyOf(d), out var puvodne) || ted == puvodne) continue;
-            result.Add($"{d.Label} = {ted}   (výchozí: {puvodne})");
+            result.Add($"{KeyOf(d)} = {ted}   (výchozí: {puvodne})");
         }
 
         return result;

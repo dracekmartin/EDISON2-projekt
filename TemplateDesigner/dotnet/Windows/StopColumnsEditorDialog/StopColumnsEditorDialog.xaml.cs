@@ -23,6 +23,9 @@ public partial class StopColumnsEditorDialog : Window
     /// <summary>Úprava polí „Obecné" po naplnění (nápověda podle agendy) - viz <see cref="ElementEditDialog.UpravaPoli"/>.</summary>
     public Action<IEnumerable<EDControls.EDInputForm.Item>?>? UpravaPoli { get; set; }
 
+    /// <summary>Které pole formuláře „Obecné" je vidět - viz <see cref="ElementEditDialog.ViditelnostPole"/>.</summary>
+    public Func<string, IReadOnlyDictionary<string, string>, bool>? ViditelnostPole { get; set; }
+
     /// <summary>Výsledné sloupce po OK - pass-through z VM.</summary>
     public List<StopColumn> ResultColumns => _vm.ResultColumns;
 
@@ -35,10 +38,11 @@ public partial class StopColumnsEditorDialog : Window
     public List<HighlightRule>? ResultHighlightRules { get; private set; }
     public bool HighlightEdited { get; private set; }
 
-    public StopColumnsEditorDialog(StopListElement element)
+    /// <param name="nabizetSloupec">Které sloupce nabídnout podle dat agendy; null = všechny.</param>
+    public StopColumnsEditorDialog(StopListElement element, Func<string, bool>? nabizetSloupec = null)
     {
         _element = element;
-        _vm = new StopColumnsEditorDialogViewModel(element, element.Columns);
+        _vm = new StopColumnsEditorDialogViewModel(element, element.Columns, nabizetSloupec);
         DataContext = _vm;
         InitializeComponent();
         Title = Models.ElementNames.TitulekVlastnosti(element);
@@ -72,6 +76,13 @@ public partial class StopColumnsEditorDialog : Window
         ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
         GeneralForm.Validate();
         UpravaPoli?.Invoke(GeneralForm.Items);
+        if (ViditelnostPole is not null) ElementFormBinder.PouzijViditelnost(GeneralForm.Items, ViditelnostPole);
+    }
+
+    // Záložka Obecné zapíše styl prvku až při OK - sloupce mají dědit z toho, co na ní právě je.
+    private void ColumnsTab_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (e.NewValue is true) _vm.ObnovZdedene(ElementFormBinder.Nahled(GeneralForm, _element, _preFilled));
     }
 
     private void OkButton_Click(object sender, RoutedEventArgs e)

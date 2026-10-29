@@ -95,16 +95,19 @@ ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, IdFa As %String,
 /// Rozloží kombinovaný kód (metadata AgendaCode) na zobrazovací dvojici Agenda + Varianta
 /// dle parametrů agenda třídy (dvouosý model). Cache per request v ^||TDSablonyAgendy -
 /// GetClassForCode dělá SQL scan, per-řádkové volání by bylo zbytečně drahé.
-/// Neznámý kód (třída neexistuje) → agenda = syrový kód, varianta prázdná; GENERAL → "Obecná".
+/// Neznámý kód (třída neexistuje) → agenda = syrový kód, varianta prázdná; GENERAL → "Obecná (bez dat)"
+/// jako v návrháři. Varianta je popisek („AD - porovnání verzí"), kód jen bez popisku.
 ClassMethod ResolveAgendaVariant(code As %String, ByRef agendaLabel As %String, ByRef variantaText As %String)
 {
     s agendaLabel = code, variantaText = ""
     q:code=""
-    if code = "GENERAL" { s agendaLabel = "Obecná"  q }
+    if code = "GENERAL" { s agendaLabel = "Obecná (bez dat)"  q }
 
     if '$d(^||TDSablonyAgendy(code)) {
         s className = ##class(ALVA.TemplateDesigner.API.AgendyRegistr).GetClassForCode(code)
-        s ^||TDSablonyAgendy(code) = $s(className'="":$lb($parameter(className,"AgendaLabel"), $parameter(className,"Variant")), 1:$lb("",""))
+        s varianta = $s(className'="":$parameter(className,"VariantLabel"), 1:"")
+        s:(varianta="")&&(className'="") varianta = $parameter(className,"Variant")
+        s ^||TDSablonyAgendy(code) = $s(className'="":$lb($parameter(className,"AgendaLabel"), varianta), 1:$lb("",""))
     }
     s cached = ^||TDSablonyAgendy(code)
     s:$lg(cached,1)'="" agendaLabel = $lg(cached,1)

@@ -6,13 +6,13 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Rendering;
 
 /// <summary>
-/// Turnusy ke spojům (`L6c`) - řádky s označením turnusu <b>pod čísly spojů</b>.
+/// Řádky turnusů (`L6c`) - řádky s označením turnusu <b>pod čísly spojů</b>.
 /// </summary>
 /// <remarks>
 /// Řádků je tolik, kolik turnusů má <b>nejbohatší</b> spoj; spoje s méně turnusy mají zbylé řádky
 /// prázdné. Pořadí řádků hlavy je stejné jako ve starém modulu: číslo spoje → turnusy → platnost →
 /// negativní značky (indexy `1`, `1.001xx`, `1.1`, `1.9`, `JRapiLinPrtWin.mac:2948`).
-/// <para>⚠️ Zapíná to <b>volba prvku</b> „Turnusy ke spojům" (turnus je provozní věc dopravce, ne
+/// <para>⚠️ Zapíná to <b>volba prvku</b> „Řádky turnusů" (turnus je provozní věc dopravce, ne
 /// informace pro cestujícího - rozhodnutí Jan 28. 8.). Ta samá volba se posílá serveru, protože
 /// dotaz do modulu turnusů stojí desítky až stovky ms; <b>vypnutá musí nechat tabulku jako dosud</b>,
 /// i kdyby v datech turnusy byly (jiný prvek v šabloně je zapnutý mít může).</para>
@@ -31,7 +31,7 @@ public class TurnusyRadkyTests
         X = 0, Y = 0, Width = 120, Height = null,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 7 },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         ShowGroupHeaders = false,
         TurnusyKeSpojum = true,
         Grid = new GridStyle { ShowColumnLines = true, ShowRowLines = true, Color = "#FFFFFFFF", Width = 0.2f },

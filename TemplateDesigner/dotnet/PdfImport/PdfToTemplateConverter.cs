@@ -241,8 +241,8 @@ public class PdfToTemplateConverter
                 Width = rect.Width, Height = rect.Height,
                 ZIndex = zIndex++,
                 BackgroundColor = rect.FillColorHex ?? Transparent,
-                StrokeColor = rect.StrokeColorHex ?? Black,
-                StrokeWidth = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f)
+                BorderColor = rect.StrokeColorHex ?? Black,
+                BorderWidth = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f)
             });
         }
 

@@ -25,7 +25,7 @@ public class ImportProtocolTests
 
         var diff = ElementSettingsFromImage.DiffFromDefault(el);
 
-        Assert.Contains(diff, d => d.Contains("Pozice šipky") && d.Contains("Vlevo")
+        Assert.Contains(diff, d => d.Contains("Šipka směru · Pozice") && d.Contains("Vlevo")
                                    && d.Contains("výchozí") && d.Contains("Vpravo"));
     }
 

@@ -15,10 +15,20 @@ public class AgendaRegistryEntryTests
     public void DisplayName_SVariantou_AgendaTeckaVarianta()
     {
         var e = new AgendaRegistryEntry("ZASTAVKOVY_JR_AD", "Zastávkový JŘ (AD)", "cls",
-            Agenda: "ZASTAVKOVY_JR", AgendaLabel: "Zastávkový JŘ", Variant: "AD", VariantLabel: "AD (linková doprava)");
+            Agenda: "ZASTAVKOVY_JR", AgendaLabel: "Zastávkový JŘ", Variant: "AD", VariantLabel: "AD");
 
         Assert.Equal("Zastávkový JŘ · AD", e.DisplayName);
         Assert.Equal("Zastávkový JŘ", e.EffectiveAgendaLabel);
+    }
+
+    /// <summary>Uživatel nevidí kód varianty („AD_ROZDILOVY"), ale její popisek (`B194` A1).</summary>
+    [Fact]
+    public void DisplayName_PouzijePopisekVarianty_NeKod()
+    {
+        var e = new AgendaRegistryEntry("LINKOVY_JR_AD_ROZDILOVY", "Linkový JŘ (AD_ROZDILOVY)", "cls",
+            Agenda: "LINKOVY_JR", AgendaLabel: "Linkový JŘ", Variant: "AD_ROZDILOVY", VariantLabel: "AD - porovnání verzí");
+
+        Assert.Equal("Linkový JŘ · AD - porovnání verzí", e.DisplayName);
     }
 
     [Fact]
@@ -47,7 +57,7 @@ public class AgendaRegistryEntryTests
         const string json = """
             [{"code":"ZASTAVKOVY_JR_AD","label":"Zastávkový JŘ (AD)",
               "agenda":"ZASTAVKOVY_JR","agendaLabel":"Zastávkový JŘ",
-              "variant":"AD","variantLabel":"AD (linková doprava)",
+              "variant":"AD","variantLabel":"AD",
               "cacheClass":"ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd",
               "instanceParamName":"LINKA_ID","elementKind":"STOP",
               "instanceLabel":"linka","instanceLabelPlural":"linky",
@@ -75,5 +85,20 @@ public class AgendaRegistryEntryTests
         const string json = """[{"code":"LINKOVY_JR_AD","label":"Linkový JŘ (AD)","cacheClass":"c","released":false}]""";
         var e = Assert.Single(JsonSerializer.Deserialize<List<AgendaRegistryEntry>>(json, Options)!);
         Assert.False(e.Released);
+    }
+
+    /// <summary>Obecná agenda schéma nemá z principu - stavový řádek u ní nesmí hlásit „nedostupná"
+    /// (Jan 27. 10.). Agenda se třídou na serveru bez schématu je výpadek a hlásí ho dál.</summary>
+    [Fact]
+    public void StavovyRadek_BezSchematu_NedostupnaJenUAgendySeTridou()
+    {
+        var obecna = new AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "",
+            Agenda: "GENERAL", AgendaLabel: "Obecná (bez dat)");
+        var zastavkovy = new AgendaRegistryEntry("ZASTAVKOVY_JR_AD", "Zastávkový JŘ (AD)", "cls",
+            Agenda: "ZASTAVKOVY_JR", AgendaLabel: "Zastávkový JŘ", Variant: "AD", VariantLabel: "AD");
+
+        Assert.Equal("Agenda: Obecná (bez dat)", TemplateDesignerViewModel.AgendaBezSchematuText(obecna, "GENERAL"));
+        Assert.Equal("Agenda: Zastávkový JŘ · AD (nedostupná)", TemplateDesignerViewModel.AgendaBezSchematuText(zastavkovy, "ZASTAVKOVY_JR_AD"));
+        Assert.Equal("Agenda: NEZNAMA (nedostupná)", TemplateDesignerViewModel.AgendaBezSchematuText(null, "NEZNAMA"));
     }
 }

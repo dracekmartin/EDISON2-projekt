@@ -250,6 +250,22 @@ public static class ElementFormBinder
     }
 
     /// <summary>
+    /// Kopie prvku se změnami, které formulář zatím jen ukazuje - do prvku je zapíše až OK okna. Okno
+    /// sloupců z ní bere zděděný styl, aby sloupce dědily z toho, co je na záložce Obecné (`B194h` H2).
+    /// </summary>
+    public static T Nahled<T>(EDInputForm form, T element, Dictionary<string, string> preFilled)
+        where T : TemplateElement
+        => Nahled([.. (form.Items ?? []).OfType<Field>()], element, preFilled);
+
+    internal static T Nahled<T>(List<Field> fields, T element, Dictionary<string, string> preFilled)
+        where T : TemplateElement
+    {
+        var nahled = (T)element.Clone();
+        foreach (var command in ExtractCommands(fields, nahled, preFilled)) command.Execute();
+        return nahled;
+    }
+
+    /// <summary>
     /// Vytvoří SetPropertyCommandy pro pole, která se reálně změnila proti <paramref name="preFilled"/>.
     /// Virtuální driver pole (klíč není property cíle) přeskočí. Volat po úspěšném EDInputForm.Save().
     /// </summary>

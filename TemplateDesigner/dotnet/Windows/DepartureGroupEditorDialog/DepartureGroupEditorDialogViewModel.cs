@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text.Json;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -9,101 +10,98 @@ namespace TemplateDesigner;
 
 // ─── DepartureGroupColumnVM - per-column ViewModel ──────────────────────────
 
-public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
+public class DepartureGroupColumnVM : Controls.ColumnRowVM
 {
-    private string _skupinaDnuId = "";
-    private string _name = "";
-    private bool   _visible = true;
+    private string _alternatingRowColor = "";
 
-    private string _headerOverride = "";
-    private float? _widthOverride;
+    private DepartureGroupColumnVM(string skupinaDnuId, string name, CellStyleVM headerStyle, CellStyleVM dataStyle)
+        : base(headerStyle, dataStyle)
+    {
+        SkupinaDnuId = skupinaDnuId;
+        Name = name;
+    }
 
-    public string SkupinaDnuId { get => _skupinaDnuId; set { _skupinaDnuId = value; OnChanged(); OnChanged(nameof(SupportsZebra)); } }
+    public string SkupinaDnuId { get; }
+
+    /// <summary>Název skupiny dnů z dat (u hodin „Hodiny"). Seznam ho ukazuje i po přepisu záhlaví,
+    /// ať je vidět, o kterou skupinu jde - jako čitelné názvy sloupců ostatních tabulek.</summary>
+    public string Name { get; }
+
+    public override string DisplayName => Name;
+
+    public bool IsHourColumn => SkupinaDnuId == DepartureGroupEditorDialogViewModel.HourColumnId;
+
+    /// <summary>Hodiny jsou osa minut: tisknou se vždy a vždy první. Do 28. 10. šly odškrtnout,
+    /// OK zaškrtnutí ignorovalo a po otevření bylo zase zapnuté.</summary>
+    public override bool CanHide => !IsHourColumn;
+    public override bool CanMove => !IsHourColumn;
+
+    /// <summary>Šířka hodin je vlastnost prvku a je vždy pevná; prázdné pole ji nechá, jaká je.</summary>
+    public override string? WidthHint => IsHourColumn
+        ? "Sloupec hodin má vždy pevnou šířku. Prázdné pole ji nezmění."
+        : null;
 
     /// <summary>Má sloupec střídání řádků? Sloupec hodin ne - zebra se kreslí per skupina dnů
     /// a hodinový pruh si barvu bere od nich, takže nastavená hodnota by se nikde neprojevila.</summary>
-    public bool SupportsZebra => _skupinaDnuId != DepartureGroupEditorDialogViewModel.HourColumnId;
-    public string Name         { get => _name;         set { _name = value;         OnChanged(); OnChanged(nameof(DisplayName)); } }
-    public bool   Visible      { get => _visible;      set { _visible = value;      OnChanged(); } }
+    public bool SupportsZebra => !IsHourColumn;
 
-    /// <summary>Override nadpisu sloupce v šabloně. Prázdné = výchozí (nadpis z dat / „Hod").</summary>
-    public string HeaderOverride { get => _headerOverride; set { _headerOverride = value; OnChanged(); OnChanged(nameof(DisplayName)); } }
-
-    /// <summary>Pevná šířka skupiny v mm (override). Null = auto (z obsahu + proporční dofill).</summary>
-    public float? WidthOverride { get => _widthOverride; set { _widthOverride = value; OnChanged(); OnChanged(nameof(WidthText)); OnChanged(nameof(ColumnWidth)); } }
-
-    /// <summary>Šířka jako text pro editor (prázdné = auto). Parsuje na <see cref="WidthOverride"/>.</summary>
-    public string WidthText
-    {
-        get => Controls.ColumnWidthText.Format(_widthOverride);
-        set => WidthOverride = Controls.ColumnWidthText.Parse(value);
-    }
-
-    // IColumnRowVM - sdílený seznam sloupců (efektivní záhlaví = override, jinak zdroj; šířka pin/auto)
-    public string DisplayName => string.IsNullOrWhiteSpace(HeaderOverride) ? Name : HeaderOverride;
-    public float? ColumnWidth => WidthOverride;
-
-    private CellStyleVM _header = null!;
-    public CellStyleVM Header
-    {
-        get => _header;
-        init { _header = value; _header.PropertyChanged += OnChildChanged; }
-    }
-
-    private CellStyleVM _data = null!;
-    public CellStyleVM Data
-    {
-        get => _data;
-        init { _data = value; _data.PropertyChanged += OnChildChanged; }
-    }
-
-    /// <summary>True pokud sloupec má aspoň jeden per-column override v Header nebo Data.</summary>
-    public bool HasAnyOverride => Header.HasAnyExplicit || Data.HasAnyExplicit;
-
-    private void OnChildChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(CellStyleVM.HasAnyExplicit))
-            OnChanged(nameof(HasAnyOverride));
-    }
-
-    private string _alternatingRowColor = "";
     public string AlternatingRowColor
     {
         get => _alternatingRowColor;
-        set { _alternatingRowColor = value; OnChanged(); }
+        set
+        {
+            // Neplatnou barvu kreslení přečte jako průhlednou a skupina by ztratila střídání i barvu prvku;
+            // pole ji proto nepřijme, stejně jako barvy v editoru stylu.
+            var barva = value?.Trim() ?? "";
+            if (barva.Length == 0 || ColorHex.IsValid(barva)) _alternatingRowColor = barva;
+            OnChanged();
+        }
     }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-    private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
 
     public DepartureGroupColumnStyle ToModel() => new()
     {
         SkupinaDnuId = SkupinaDnuId,
         IsVisible = Visible,
         AlternatingRowColor = string.IsNullOrWhiteSpace(AlternatingRowColor) ? null : AlternatingRowColor,
-        HeaderOverride = string.IsNullOrWhiteSpace(HeaderOverride) ? null : HeaderOverride,
-        WidthOverride = WidthOverride,
+        HeaderOverride = string.IsNullOrWhiteSpace(Header) ? null : Header,
+        WidthOverride = Width,
         Style = new ColumnVisualStyle
         {
-            Header = Header.ToModel(),
-            Data = Data.ToModel()
+            Header = HeaderStyle.ToModel(),
+            Data = DataStyle.ToModel()
         }
     };
 
+    /// <summary>Řádek skupiny dnů; <see cref="ColumnRowVM.Header"/> je přepis záhlaví (prázdné = text z dat).</summary>
     public static DepartureGroupColumnVM FromData(
         SkupinaDnuData skupina, DepartureGroupColumnStyle? s,
-        ResolvedTextStyle headerInherited, ResolvedTextStyle dataInherited) => new()
+        ResolvedTextStyle headerInherited, ResolvedTextStyle dataInherited) =>
+        new(skupina.Id, skupina.Nadpis + (skupina.Nadpis2.Length > 0 ? " " + skupina.Nadpis2 : ""),
+            CellStyleVM.FromModel(s?.Style.Header, headerInherited),
+            CellStyleVM.FromModel(s?.Style.Data, dataInherited))
+        {
+            Visible = s?.IsVisible ?? true,
+            AlternatingRowColor = s?.AlternatingRowColor ?? "",
+            Header = s?.HeaderOverride ?? "",
+            Width = s?.WidthOverride,
+        };
+
+    /// <summary>Řádek sloupce hodin - záhlaví a šířka jsou vlastnosti prvku (prázdné záhlaví = „Hod").</summary>
+    public static DepartureGroupColumnVM Hours(DepartureGridElement element, ColumnVisualStyle? hourColumnStyle) =>
+        new(DepartureGroupEditorDialogViewModel.HourColumnId, "Hodiny",
+            CellStyleVM.FromModel(hourColumnStyle?.Header, element.ResolveHourHeaderParent()),
+            CellStyleVM.FromModel(hourColumnStyle?.Data, element.ResolveHourDataParent()))
+        {
+            Header = element.HourColumnHeader,
+            Width = element.HourColumnWidth,
+        };
+
+    /// <summary>Zděděná vrstva podle prvku, jak ho právě nastavuje záložka Obecné.</summary>
+    public void ObnovZdedene(DepartureGridElement element)
     {
-        SkupinaDnuId = skupina.Id,
-        Name = skupina.Nadpis + (skupina.Nadpis2.Length > 0 ? " " + skupina.Nadpis2 : ""),
-        Visible = s?.IsVisible ?? true,
-        AlternatingRowColor = s?.AlternatingRowColor ?? "",
-        HeaderOverride = s?.HeaderOverride ?? "",
-        WidthOverride = s?.WidthOverride,
-        Header = CellStyleVM.FromModel(s?.Style.Header, headerInherited),
-        Data   = CellStyleVM.FromModel(s?.Style.Data,   dataInherited),
-    };
+        if (IsHourColumn) UpdateInherited(element.ResolveHourHeaderParent(), element.ResolveHourDataParent());
+        else UpdateInherited(element.ResolveGroupHeaderParent(), element.ResolveGroupMinuteParent());
+    }
 }
 
 // ─── CustomColumnVM - řádek definice vlastního sloupce (tab „Definice sloupců") ──
@@ -207,14 +205,15 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
     // ── Tab 2: Sloupce ──────────────────────────────────────────────────
 
-    public ObservableCollection<DepartureGroupColumnVM> GroupVMs { get; } = [];
-
-    // ── UI omezení editace - co CellStyleEditor zobrazí per zóna ─────────
-    public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
-    public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
+    public Controls.ColumnsTabViewModel Columns { get; }
 
     public List<DepartureGroupColumnStyle> ResultGroupColumns { get; private set; } = [];
     public ColumnVisualStyle? ResultHourColumnStyle { get; private set; }
+
+    /// <summary>Záhlaví a šířka hodin po OK. Zapisuje je až volající jako součást vratného kroku -
+    /// do 28. 10. je okno psalo rovnou do prvku a Ctrl+Z je nevrátil.</summary>
+    public string ResultHourColumnHeader { get; private set; } = "";
+    public float ResultHourColumnWidth { get; private set; }
 
     // ── Tab 3: Definice sloupců (vlastní sloupce - dny + značky) ─────────
 
@@ -265,6 +264,16 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     /// <summary>Výsledná definice: null = „Automaticky (dle linky)".</summary>
     public List<DepartureColumnDefinition>? ResultCustomColumns { get; private set; }
 
+    /// <summary>Pořadí záložky Vlastní definice sloupců (Obecné, Sloupce, Vlastní definice).</summary>
+    public const int VlastniDefiniceTabIndex = 2;
+
+    private int _selectedTabIndex;
+    public int SelectedTabIndex
+    {
+        get => _selectedTabIndex;
+        set => Set(ref _selectedTabIndex, value);
+    }
+
     private string? _customColumnsError;
     /// <summary>Chyba validace definice sloupců - OK dialog nezavře, dokud trvá. Null = v pořádku.</summary>
     public string? CustomColumnsError
@@ -275,19 +284,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
     private readonly IReadOnlyDictionary<string, List<DepartureColumnDefinition>> _presety;
 
-    /// <summary>Rezervované ID pro sloupec hodin v GroupVMs.</summary>
+    /// <summary>Rezervované ID pro sloupec hodin v seznamu sloupců.</summary>
     internal const string HourColumnId = "__HOUR__";
-
-    // ── Výběr ──────────────────────────────────────────────────────────
-
-    private DepartureGroupColumnVM? _selectedGroupVM;
-    public DepartureGroupColumnVM? SelectedGroupVM
-    {
-        get => _selectedGroupVM;
-        set { Set(ref _selectedGroupVM, value); OnPropertyChanged(nameof(HasSelection)); }
-    }
-
-    public bool HasSelection => _selectedGroupVM is not null;
 
     // ── Callbacks ──────────────────────────────────────────────────────
 
@@ -298,10 +296,6 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     // Per-column (Sloupce tab) - barvy buněk drží CellStyleVM, tady zbývá jen zebra
     public RelayCommand PickZebraColorCommand { get; }
     public RelayCommand ClearZebraColorCommand { get; }
-    public RelayCommand ResetStyleCommand { get; }
-    public RelayCommand ResetAllColumnStylesCommand { get; }
-    public RelayCommand MoveUpCommand { get; }
-    public RelayCommand MoveDownCommand { get; }
 
     // Definice sloupců (tab 3)
     public RelayCommand AddCustomColumnCommand { get; }
@@ -322,6 +316,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         bool ukazatVlastniSloupce = true)
     {
         _element = element;
+        _puvodniSkupiny = currentStyles;
+        _puvodniStylHodin = hourColumnStyle;
         UkazatVlastniSloupce = ukazatVlastniSloupce;
         _puvodniVlastniSloupce = customColumns;
         _presety = DepartureColumnPresets.Parse(presetsJson);
@@ -376,22 +372,11 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         });
 
         // Vyřešené rodičovské styly pro kaskádu (element-level → column override)
-        var hourHeaderInherited  = element.ResolveHourHeaderParent();
-        var hourDataInherited    = element.ResolveHourDataParent();
         var groupHeaderInherited = element.ResolveGroupHeaderParent();
         var groupDataInherited   = element.ResolveGroupMinuteParent();
 
-        // Sloupec hodin - vždy první v seznamu
-        GroupVMs.Add(new DepartureGroupColumnVM
-        {
-            SkupinaDnuId = HourColumnId,
-            Name = "Hodiny",
-            HeaderOverride = element.HourColumnHeader,   // override z elementu (prázdné = „Hod")
-            WidthOverride = element.HourColumnWidth,      // sloupec hodin má vždy pevnou šířku (element-level)
-            Visible = true,
-            Header = CellStyleVM.FromModel(hourColumnStyle?.Header, hourHeaderInherited),
-            Data   = CellStyleVM.FromModel(hourColumnStyle?.Data,   hourDataInherited),
-        });
+        // Sloupec hodin - vždy první v seznamu, pevný (viz DepartureGroupColumnVM.CanMove)
+        var rows = new List<DepartureGroupColumnVM> { DepartureGroupColumnVM.Hours(element, hourColumnStyle) };
 
         var groupIds = availableGroups.Select(g => g.Id).ToList();
         var styleMap = GroupColumnIndexResolver.BuildStyleLookup(currentStyles, groupIds);
@@ -411,58 +396,34 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         foreach (var skupina in orderedGroups)
         {
             styleMap.TryGetValue(skupina.Id, out var existing);
-            GroupVMs.Add(DepartureGroupColumnVM.FromData(skupina, existing, groupHeaderInherited, groupDataInherited));
+            rows.Add(DepartureGroupColumnVM.FromData(skupina, existing, groupHeaderInherited, groupDataInherited));
         }
 
-        if (GroupVMs.Count > 0) SelectedGroupVM = GroupVMs[0];
+        _skupinyPriOtevreni = JsonSerializer.Serialize(SkupinyZRadku(rows));
+
+        // Minuty jsou pivot: šířky skupin se dopočítají z obsahu, přesah se proto nehlídá.
+        Columns = new Controls.ColumnsTabViewModel(rows)
+        {
+            MultilineHeader = true,
+            WidthHint = "Prázdná šířka = automaticky podle obsahu.",
+        };
+        var hodiny = VysledekHodin();
+        _stylHodinPriOtevreni = Controls.ColumnsTabViewModel.Snapshot(hodiny.Styl);
+        _zahlaviHodinPriOtevreni = Controls.ColumnsTabViewModel.Snapshot(hodiny.Zahlavi);
+        _sirkaHodinPriOtevreni = Controls.ColumnsTabViewModel.Snapshot(hodiny.Sirka);
+        _vlastniSloupcePriOtevreni = Controls.ColumnsTabViewModel.Snapshot(VysledekVlastnichSloupcu());
 
         // Střídání řádků per skupina - vlastní pole, ne součást stylu buňky: kreslí se pod buňky
         // a platí jen pro každý druhý řádek, takže do CellStyleEditoru nepatří.
-        PickZebraColorCommand  = Command(() => PickColor(g => g.AlternatingRowColor, (g, c) => g.AlternatingRowColor = c ?? ""));
-        ClearZebraColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.AlternatingRowColor = ""; });
-
-        // Reset vybraného sloupce
-        ResetStyleCommand = Command(() =>
+        PickZebraColorCommand  = Command(() =>
         {
-            if (SelectedGroupVM is null) return;
-            SelectedGroupVM.Header.Reset();
-            SelectedGroupVM.Data.Reset();
+            if (Columns.SelectedRow is not DepartureGroupColumnVM skupina || RequestColorPicker is null) return;
+            if (RequestColorPicker(skupina.AlternatingRowColor) is { } barva) skupina.AlternatingRowColor = barva;
         });
-
-        // Reset všech sloupců - smaže per-column overrides, všechny sloupce budou dědit z Obecné
-        ResetAllColumnStylesCommand = Command(() =>
+        ClearZebraColorCommand = Command(() =>
         {
-            foreach (var vm in GroupVMs)
-            {
-                vm.Header.Reset();
-                vm.Data.Reset();
-            }
+            if (Columns.SelectedRow is DepartureGroupColumnVM skupina) skupina.AlternatingRowColor = "";
         });
-
-        // Move up/down (sloupec Hodiny zůstává vždy na indexu 0)
-        MoveUpCommand = Command(() =>
-        {
-            if (SelectedGroupVM is null) return;
-            var idx = GroupVMs.IndexOf(SelectedGroupVM);
-            if (idx <= 1) return; // 0 = Hodiny (nepřesouvat), 1 = první skupina (nejde výš)
-            GroupVMs.Move(idx, idx - 1);
-        });
-        MoveDownCommand = Command(() =>
-        {
-            if (SelectedGroupVM is null) return;
-            if (SelectedGroupVM.SkupinaDnuId == HourColumnId) return; // Hodiny nepřesouvat
-            var idx = GroupVMs.IndexOf(SelectedGroupVM);
-            if (idx < 0 || idx >= GroupVMs.Count - 1) return;
-            GroupVMs.Move(idx, idx + 1);
-        });
-    }
-
-    private void PickColor(Func<DepartureGroupColumnVM, string?> getter, Action<DepartureGroupColumnVM, string?> setter)
-    {
-        if (SelectedGroupVM is null || RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(SelectedGroupVM) ?? "");
-        if (result is not null)
-            setter(SelectedGroupVM, result);
     }
 
     /// <summary>Vzor, kterému aktuální sloupce přesně odpovídají (nadpisy, dny i značky); null =
@@ -493,6 +454,12 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             .ToHashSet(StringComparer.Ordinal);
         for (int i = 1; ; i++)
             if (!used.Contains(i.ToString())) return i.ToString();
+    }
+
+    /// <summary>Přepočítá zděděné styly sloupců podle náhledu prvku se změnami ze záložky Obecné.</summary>
+    public void ObnovZdedene(DepartureGridElement nahled)
+    {
+        foreach (var row in Columns.Rows.Cast<DepartureGroupColumnVM>()) row.ObnovZdedene(nahled);
     }
 
     // ── OK ──────────────────────────────────────────────────────────
@@ -551,13 +518,13 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
                 !JsouPlatneZnacky(vm.IncludeMarks) || !JsouPlatneZnacky(vm.ExcludeMarks) || !JsouPlatneZnacky(vm.SuppressedMarks));
             if (chybny is not null)
             {
-                CustomColumnsError = $"Sloupec „{chybny.DisplayName}“: seznamy značek smí obsahovat jen čísla oddělená čárkou (např. 52, 53).";
+                UkazChybu(chybny, $"Sloupec „{chybny.DisplayName}“: seznamy značek smí obsahovat jen čísla oddělená čárkou (např. 52, 53).");
                 return;
             }
             var chybneObdobi = CustomColumnVMs.FirstOrDefault(vm => !JePlatneObdobi(vm.Period));
             if (chybneObdobi is not null)
             {
-                CustomColumnsError = $"Sloupec „{chybneObdobi.DisplayName}“: období smí být jen rozsahy dat oddělené čárkou (např. 1.7.-31.8., 29.10.-30.10.).";
+                UkazChybu(chybneObdobi, $"Sloupec „{chybneObdobi.DisplayName}“: období smí být jen rozsahy dat oddělené čárkou (např. 1.7.-31.8., 29.10.-30.10.).");
                 return;
             }
         }
@@ -565,26 +532,54 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
         // Element-level styl (HeaderStyle/DataStyle/MinuteStyle/…) řeší EDInputForm v tabu Obecné
         // (code-behind přes ElementFormBinder). Zde jen per-skupina/sloupec + hour.
-        var hourVm = GroupVMs.FirstOrDefault(vm => vm.SkupinaDnuId == HourColumnId);
-        if (hourVm is not null)
-        {
-            var style = new ColumnVisualStyle { Header = hourVm.Header.ToModel(), Data = hourVm.Data.ToModel() };
-            ResultHourColumnStyle = style.IsEmpty ? null : style;
-            _element.HourColumnHeader = hourVm.HeaderOverride?.Trim() ?? "";
-            // Sloupec hodin má pevnou šířku (element-level); prázdné pole ponechá stávající.
-            if (hourVm.WidthOverride is float hw && hw > 0) _element.HourColumnWidth = hw;
-        }
+        var hodiny = VysledekHodin();
+        ResultHourColumnStyle = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodniStylHodin, _stylHodinPriOtevreni, hodiny.Styl);
+        ResultHourColumnHeader = Controls.ColumnsTabViewModel.ResultOrOriginal(_element.HourColumnHeader, _zahlaviHodinPriOtevreni, hodiny.Zahlavi);
+        ResultHourColumnWidth = Controls.ColumnsTabViewModel.ResultOrOriginal(_element.HourColumnWidth, _sirkaHodinPriOtevreni, hodiny.Sirka);
 
-        ResultGroupColumns = GroupVMs
-            .Where(vm => vm.SkupinaDnuId != HourColumnId)
-            .Select(vm => vm.ToModel())
-            .ToList();
+        // Beze změny vrátit uložené skupiny: okno pro skupiny bez nastavení vytváří výchozí řádky a ty by
+        // šablonu změnily (`B194d` E13d). Skupiny, které vybraná linka nemá, zůstanou (E13g).
+        var nabidnute = SkupinyZRadku(Columns.Rows.Cast<DepartureGroupColumnVM>());
+        ResultGroupColumns = JsonSerializer.Serialize(nabidnute) == _skupinyPriOtevreni
+            ? [.. _puvodniSkupiny]
+            : Controls.ColumnsTabViewModel.WithNotOffered(_puvodniSkupiny, nabidnute, g => g.SkupinaDnuId);
 
-        // Definice vlastních sloupců - null = automaticky (vypnuté, nebo zapnuté bez sloupců)
-        ResultCustomColumns = !UkazatVlastniSloupce ? _puvodniVlastniSloupce
-            : UseCustomColumns && CustomColumnVMs.Count > 0 ? CustomColumnVMs.Select(vm => vm.ToModel()).ToList()
-            : null;
+        ResultCustomColumns = Controls.ColumnsTabViewModel.ResultOrOriginal(_puvodniVlastniSloupce,
+            _vlastniSloupcePriOtevreni, VysledekVlastnichSloupcu());
 
         CloseDialog(true);
     }
+
+    private (ColumnVisualStyle? Styl, string Zahlavi, float Sirka) VysledekHodin()
+    {
+        var hourVm = Columns.Rows.Cast<DepartureGroupColumnVM>().First(vm => vm.IsHourColumn);
+        var style = new ColumnVisualStyle { Header = hourVm.HeaderStyle.ToModel(), Data = hourVm.DataStyle.ToModel() };
+        // Sloupec hodin má pevnou šířku (element-level); prázdné pole ponechá stávající.
+        return (style.IsEmpty ? null : style, hourVm.Header.Trim(),
+                hourVm.Width is float hw && hw > 0 ? hw : _element.HourColumnWidth);
+    }
+
+    /// <summary>Definice vlastních sloupců - null = automaticky (vypnuté, nebo zapnuté bez sloupců).</summary>
+    private List<DepartureColumnDefinition>? VysledekVlastnichSloupcu() =>
+        !UkazatVlastniSloupce ? _puvodniVlastniSloupce
+        : UseCustomColumns && CustomColumnVMs.Count > 0 ? [.. CustomColumnVMs.Select(vm => vm.ToModel())]
+        : null;
+
+    /// <summary>Hláška je jen na záložce Vlastní definice - z jiné záložky by OK nic neudělalo a neřeklo proč
+    /// (`B194d` E13h). Okno proto na záložku přepne a vybere chybný sloupec.</summary>
+    private void UkazChybu(CustomColumnVM sloupec, string text)
+    {
+        CustomColumnsError = text;
+        SelectedCustomVM = sloupec;
+        SelectedTabIndex = VlastniDefiniceTabIndex;
+    }
+
+    private readonly List<DepartureGroupColumnStyle> _puvodniSkupiny;
+    private readonly string _skupinyPriOtevreni;
+    private readonly ColumnVisualStyle? _puvodniStylHodin;
+    private readonly string _stylHodinPriOtevreni, _zahlaviHodinPriOtevreni, _sirkaHodinPriOtevreni;
+    private readonly string _vlastniSloupcePriOtevreni;
+
+    private static List<DepartureGroupColumnStyle> SkupinyZRadku(IEnumerable<DepartureGroupColumnVM> rows) =>
+        [.. rows.Where(vm => !vm.IsHourColumn).Select(vm => vm.ToModel())];
 }

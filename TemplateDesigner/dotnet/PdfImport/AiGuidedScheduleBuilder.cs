@@ -483,7 +483,6 @@ public static class AiGuidedScheduleBuilder
             .FirstOrDefault();
         if (radky is not null && radky.Count() >= 3)
         {
-            el.HighlightOddTc = true;
             el.OddTcBackColor = radky.Key;
             debug.Add($"LineTable podbarvení řádků: {radky.Key} ({radky.Count()} řádků)");
         }
@@ -491,7 +490,7 @@ public static class AiGuidedScheduleBuilder
         {
             // Řádky jsou na papíře vždy, takže chybějící podbarvení je volba, ne prázdná data.
             // Výchozí zapnuté by předloze bez podbarvení přidalo šedé pruhy (měření 2. 10.).
-            el.HighlightOddTc = false;
+            el.OddTcBackColor = null;
             debug.Add("LineTable podbarvení řádků: žádné");
         }
 
@@ -1206,8 +1205,8 @@ public static class AiGuidedScheduleBuilder
                 Height = r.Height,
                 ZIndex = i - plochy.Count,   // za všemi texty (ty číslují od 0)
                 BackgroundColor = r.FillColorHex!,
-                StrokeColor = r.StrokeColorHex ?? r.FillColorHex!,
-                StrokeWidth = r.StrokeColorHex is null ? 0f : Math.Clamp(r.StrokeWidth, 0.1f, 0.5f),
+                BorderColor = r.StrokeColorHex ?? r.FillColorHex!,
+                BorderWidth = r.StrokeColorHex is null ? 0f : Math.Clamp(r.StrokeWidth, 0.1f, 0.5f),
             });
             debug.Add($"Pozadí hlavičky: ({r.X:0.#},{r.Y:0.#}) {r.Width:0.#}×{r.Height:0.#}mm {r.FillColorHex}");
         }

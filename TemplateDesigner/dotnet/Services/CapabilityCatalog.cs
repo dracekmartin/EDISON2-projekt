@@ -54,13 +54,13 @@ s daty z agendy → PDF.
 ### Chci tisknout / exportovat
 - Tisk s reálnými daty: Ctrl+P → dialog tisku (parametry sestavy + tlačítka exportu).
   Aliasy: 'vytisknout linku', 'PDF se skutečnými daty'.
-- Více vývěsek na jeden list / tisk 2×A5 na A4 / řezání (imposice): Ctrl+P → skupina
-  'Export' → pole 'Uspořádání na list' (Vypnuto / A4 / A3 × výška/šířka) + 'Mřížka listu'
-  + 'Každá stránka na celý list (pro řezání)' + 'Ořezové značky'. Volba se pamatuje
-  per agenda - 1 stránka = 1 list vrátíš volbou 'Vypnuto'.
+- Více stránek na jeden list / tisk 2×A5 na A4 / řezání: Ctrl+P → panel 'Uspořádání na list'
+  (jen u šablony o víc stránkách): zvolí se papír, kolik stránek se vejde, spočítá návrhář sám;
+  druhá stránka dokladu jde vedle první, nebo na zadní stranu listu. Volba se pamatuje per agenda.
 - Rozdělení výstupu do více souborů: Ctrl+P → 'Členění výstupu' (vše do jednoho /
-  per linka / per zastávka×směr) + 'Název souboru' s {POLE} tokeny.
-- Rychlý export náhledu bez dialogu: toolbar PDF/PNG (exportuje aktuální instance).
+  jeden PDF na linku / na zastávku a směr) + 'Název souboru' s datovými poli {POLE}.
+- PDF i PNG vzniká jen v dialogu tisku (Ctrl+P → Vytvořit PDF / PNG); bez vybrané linky
+  z ukázkových dat.
 - Náhled se nevejde na stránku: červený rámeček stránky v náhledu + varování ve
   status baru; řeší se zmenšením obsahu, pevnou výškou elementu (auto-scale) nebo
   rozdělitelnou sekcí.
@@ -74,7 +74,7 @@ s daty z agendy → PDF.
 - Datová pole: záložka 'Datová pole' v levém panelu - pole agendy a pole stránky ({STRANA},
   {POCET_STRAN}, {POKRACOVANI}); pole lze táhnout na canvas (vytvoří text) nebo na existující
   text (přidá placeholder); dvojklik = do schránky.
-- Parametry sestavy: lišta parametrů nad náhledem (živě mění náhled) - tytéž
+- Parametry sestavy: záložka 'Parametry' v levém panelu (živě mění náhled) - tytéž
   hodnoty jsou v dialogu tisku.
 
 ### Chci upravit vzhled
@@ -133,12 +133,12 @@ s daty z agendy → PDF.
 - Ctrl+G / Ctrl+Shift+G - seskupit / rozeskupit; Alt+klik - jeden prvek ze skupiny
 - Ctrl+Shift+H / Ctrl+Shift+J - rozdělit element vodorovně / svisle
 - Ctrl+Shift+N - normalizovat pozice na mřížku
-- Šipky - posun elementu (Shift = velký krok, Ctrl = jemný)
+- Šipky - posun prvku o 1 mm; Ctrl+šipky = o krok mřížky; Shift+šipky = změna velikosti o 1 mm
 - Ctrl+Shift+↑/↓ - přesun aktivní sekce nahoru / dolů
 - Ctrl+PageUp / Ctrl+PageDown - pořadí ve vrstvě (Z-order); +Shift = úplně dopředu/dozadu
 - Ctrl+N / Ctrl+O / Ctrl+S - nová / otevřít z databáze / uložit ('Uložit jako' zkratku NEMÁ)
 - Ctrl+P - tisk; Ctrl+Shift+P - vlastnosti stránky; Ctrl+Shift+A - změnit agendu;
-  Ctrl+Shift+I - výběr instancí
+  Ctrl+Shift+I - výběr linek
 - Ctrl+0 - přizpůsobit stránce; Ctrl+1 - 100 %; Ctrl+B - sbalit levý panel
 - F2 - inline editace textu; Enter - vlastnosti výběru; Delete - smazat
 - F5 - obnovit data z databáze; F1 - nápověda; Esc - zrušit probíhající akci
@@ -324,7 +324,7 @@ Pravidla obsahu (ZÁVAZNÁ):
     {
         ElementTypes.StopList or ElementTypes.DepartureGrid or ElementTypes.NotesLegend
             => " (zastávkový JŘ)",
-        ElementTypes.LineTable => " (linkový a knižní JŘ)",
+        ElementTypes.LineTable => " (linkový JŘ)",
         _ => "",
     });
 
@@ -339,12 +339,12 @@ Pravidla obsahu (ZÁVAZNÁ):
             "sloupce s mapováním na pole NEBO počítaným výrazem ({CENA}*{POCET}) a formátem; " +
             "podmíněnou viditelnost řádku (výraz nad daty řádku); pravidla zvýraznění řádku (výraz → barva pozadí); " +
             "min/max počet řádků (min doplní prázdné = pevná výška, max ořízne); " +
-            "řazení řádků (Řadit podle + Směr; prázdné = pořadí z agendy); " +
+            "řazení řádků (Řadit podle + Směr řazení; prázdné = pořadí z agendy); " +
             "souhrnné řádky s agregacemi SUM/COUNT/AVG/MIN/MAX (i nad výrazem, např. SUM({CENA}*{POCET})).",
         ElementTypes.StopList =>
             "Tabulka zastávek linky. Sloupce a jejich styl se nastavují ve vlastním dialogu sloupců " +
             "(vč. volitelného sloupce Označník). Podporuje podmíněnou viditelnost a zvýraznění řádků. " +
-            "Dlouhou trasu lze rozdělit na víc oddílů vedle sebe (Rozdělit na více oddílů + Mezera mezi oddíly) - " +
+            "Dlouhou trasu lze rozdělit na víc oddílů vedle sebe (Počet oddílů + Mezera mezi oddíly) - " +
             "každý oddíl nese celou tabulku znovu včetně záhlaví, takže prvek je nižší a širší.",
         ElementTypes.DepartureGrid =>
             "Mřížka minut odjezdů po skupinách dnů. Skupiny a sloupce mají vlastní dialog " +
@@ -355,7 +355,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             "bezbariérových spojů; NE v parametrech sestavy (dřív to parametry tisku byly). Značka a její " +
             "vysvětlivka jsou jedna volba. Bez tohoto prvku v šabloně se značky nevytisknou vůbec.",
         ElementTypes.LineTable =>
-            "Sloupcová tabulka celé linky (zastávky × spoje) pro linkový/knižní JŘ. Zastávky jsou řádky, " +
+            "Sloupcová tabulka celé linky (zastávky × spoje) pro linkový JŘ. Zastávky jsou řádky, " +
             "spoje sloupce. Viditelnost, pořadí, šířky a styl sloupců má vlastní dialog (Upravit sloupce…). " +
             "POPISNÉ SLOUPCE (zóna, km, Tč, zastávka, MHD, šipka) jsou skupina: dají se přejmenovat, " +
             "dostat jedno společné záhlaví ('Text záhlaví popisných sloupců'), slít bez vnitřních čar " +

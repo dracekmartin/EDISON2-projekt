@@ -44,8 +44,8 @@ public enum PripojSlucovani
 ///
 /// Sloupce (`Columns`, model <see cref="StopColumn"/> - sdílený se StopList) definují popisné
 /// sloupce: Zóna, Km, Tč, Zastávka, MHD + „Spoj" (řídí šířku/styl časových sloupců spojů, které
-/// vznikají z dat). Editace přes 2-tab dialog (Obecné = EDInputForm, Sloupce = sdílený
-/// `ColumnListEditor` + `CellStyleEditor`) - konzistentní se StopList/DepartureGrid.
+/// vznikají z dat). Editace v okně se záložkami Obecné (EDInputForm) a Sloupce (sdílená
+/// `ColumnsTab`) - stejně jako ostatní tabulky se sloupci.
 ///
 /// První řez: bez 2D bin-packingu přes stránky (stránkuje PageLayoutEngine per sekce),
 /// symboly jako textový fallback (Timetable font = roadmap 42b).
@@ -98,7 +98,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// jen nekreslil čáry mezi nimi (`formTISKJRReportDotNet_Module.vb:1832-1861`); skrýval je
     /// jen tisk MHD. Zákazník to čekal (#9088).</remarks>
     public bool ShowTripNumbers { get; set; } = true;
-    /// <summary>Řádek znaků týdenní platnosti (X, 6, 7, +) nad časy spojů.</summary>
+    /// <summary>Řádek značek spoje nad časy: dny platnosti (X, 6, 7, +), místenka a atributy spoje.</summary>
     public bool ShowPlatnostRow { get; set; } = true;
     /// <summary>Řádek negativních značek (NZ) nad časy spojů.</summary>
     public bool ShowNzRow { get; set; } = true;
@@ -341,9 +341,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     // ─── Vzhled ─────────────────────────────────────────────────────────────
 
-    /// <summary>Podbarvení řádků s lichým tarifním číslem (legacy 25% šedá).</summary>
-    public bool HighlightOddTc { get; set; } = true;
-
     /// <summary>Vlastní definice sloupců spojů. Null nebo prázdné = server rozdělí spoje podle
     /// hrubého přepínače dělení, jako dosud.</summary>
     /// <remarks>
@@ -363,7 +360,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// data nesou, že přípoj existuje, jak vypadá rozhoduje návrhář.
     /// </remarks>
     public TextStyle PripojStyle { get; set; } = new();
-    public string OddTcBackColor { get; set; } = "#FFEEEEEE";
+
+    /// <summary>Podbarvení řádků zastávky s lichým tarifním číslem; null = bez podbarvení.</summary>
+    /// <remarks>
+    /// Řídí se tarifním číslem, ne pořadím řádku - zastávka rozdělená na příjezd a odjezd má obě řádky
+    /// stejně. Tak to tiskne starý modul (`JRapiLinPrtWin.mac:1206-1210`, bez sloupce Tč `:1233-1238`;
+    /// „25% šedá" `:237`), proto to není Střídání řádků. Odstín proti výtisku starého modulu neověřen.
+    /// ⚠️ Null se do šablony zapisuje: šablony se ukládají bez prázdných hodnot a výchozí je zapnuto,
+    /// takže vypnuté podbarvení by se po načtení samo zapnulo.
+    /// </remarks>
+    [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
+    public string? OddTcBackColor { get; set; } = "#FFEEEEEE";
 
     /// <summary>
     /// Podbarvení buněk, ve kterých se původní podoba spoje liší od nové - rozdílový linkový JŘ
@@ -498,7 +505,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         /// spoje) - kreslí se písmem, ne piktogramem. Prázdné = všechny jdou přes mapu značek.</summary>
         public HashSet<string> TextoveZnacky = [];
         /// <summary>Označení turnusů, ve kterých spoj jede („110.01"). Posílá je server jen
-        /// se zapnutým parametrem „Turnusy ke spojům" - jinak je seznam prázdný a řádky nevzniknou.</summary>
+        /// se zapnutou volbou „Řádky turnusů" - jinak je seznam prázdný a řádky nevzniknou.</summary>
         public List<string> Turnusy = [];
         public List<string> Casy = [];
         /// <summary>Značky u zastávky per řádek, stejně indexované jako <see cref="Casy"/>
@@ -954,6 +961,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
     private StopColumn TripColumn() =>
         Columns.FirstOrDefault(c => c.Key == TripKey) ?? new StopColumn { Key = TripKey, Width = null };
+
+    /// <summary>Výška řádku čísel spojů, ve kterém jsou i záhlaví popisných sloupců: tolik řádků, kolik má
+    /// nejdelší záhlaví (Enter nebo \n). Jediné místo pro výšku prvku i kreslení, jinak by se rozešlo
+    /// stránkování s tím, co se nakreslí.</summary>
+    private float VyskaRadkuCiselSpoju(float headerH) => headerH * StructuralColumns()
+        .Select(c => CellLayout.LineCount(c.Header != "" ? c.Header : DefaultHeaderFor(c.Key)))
+        .DefaultIfEmpty(1).Max();
 
     private static string DefaultHeaderFor(string key) => key switch
     {
@@ -1946,16 +1960,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             })];
     }
 
-    /// <summary>
-    /// Výšky řádků jednoho bloku ve stejném pořadí, v jakém je skládá <see cref="BuildRowPlan"/>:
-    /// hlava (pás skupin, čísla spojů, platnost, negativní značky) a pod ní řádky zastávek
-    /// i s jejich přípojnými podřádky.
-    /// </summary>
-    /// <remarks>
-    /// Jeden zdroj pro výšku prvku i pro místa, kudy se smí řezat. Kdyby to byly dva výpočty,
-    /// rozešly by se a stránkování by řezalo jinam, než kde jsou doopravdy hranice řádků.
-    /// Volá se až po <c>EnsureParsed</c>.
-    /// </remarks>
     /// <summary>Výška řádku značek - datový řádek zvětšený o <see cref="PomerZnacek"/>.
     /// Jediné místo výpočtu, ať se render a výpočet výšky prvku nerozejdou.</summary>
     private float VyskaRadkuZnacek(float rowH) => rowH * Math.Clamp(PomerZnacek, 1f, 3f);
@@ -1969,6 +1973,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// </param>
     private readonly record struct RadekBloku(float VyskaMm, bool KonecZastavky);
 
+    /// <summary>
+    /// Výšky řádků jednoho bloku ve stejném pořadí, v jakém je skládá <see cref="BuildRowPlan"/>:
+    /// hlava (pás skupin, čísla spojů, platnost, negativní značky) a pod ní řádky zastávek
+    /// i s jejich přípojnými podřádky.
+    /// </summary>
+    /// <remarks>
+    /// Jeden zdroj pro výšku prvku i pro místa, kudy se smí řezat. Kdyby to byly dva výpočty,
+    /// rozešly by se a stránkování by řezalo jinam, než kde jsou doopravdy hranice řádků.
+    /// Volá se až po <c>EnsureParsed</c>.
+    /// </remarks>
     private (List<float> Hlava, List<RadekBloku> Radky) VyskyRadkuBloku(
         IReadOnlyList<LineTripData> spojeBloku, IReadOnlyList<LineTripData>? zrcadleneBloku = null,
         float? meritko = null)
@@ -1990,7 +2004,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
 
         var hlava = new List<float>();
         if (HasGroupHeaderBand(trips, _cachedGroups!)) hlava.Add(headerH);   // pás skupin dnů
-        hlava.Add(headerH);                                                  // řádek čísel spojů
+        hlava.Add(VyskaRadkuCiselSpoju(headerH));                            // řádek čísel spojů
         for (int tr = 0; tr < PocetTurnusovychRadku(spojeTohotoBloku); tr++) hlava.Add(rowH);
         float znackaH = VyskaRadkuZnacek(rowH);
         for (int pr = 0; pr < PocetRadkuPlatnosti(spojeTohotoBloku); pr++) hlava.Add(znackaH);
@@ -2208,13 +2222,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Řezat se má mezi bloky (<see cref="ZlomUroven.Blok"/>) - blok useknutý uprostřed je tabulka
-    /// bez konce. Uvnitř bloku se nabízejí hranice mezi zastávkami
-    /// (<see cref="ZlomUroven.Zastavka"/>) pro případ, kdy je blok sám vyšší než stránka; hranice
-    /// uvnitř zastávky jsou jen nouze (<see cref="ZlomUroven.Radek"/>), aby stránkování mělo kam
-    /// říznout i u zastávky vyšší než celá stránka.
-    /// </summary>
-    /// <summary>
     /// Svislé rozsahy jednotlivých částí tabulky (mm od horní hrany prvku) - podklad pro rámeček
     /// kolem každé části zvlášť.
     /// </summary>
@@ -2294,6 +2301,13 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         }
     }
 
+    /// <summary>
+    /// Řezat se má mezi bloky (<see cref="ZlomUroven.Blok"/>) - blok useknutý uprostřed je tabulka
+    /// bez konce. Uvnitř bloku se nabízejí hranice mezi zastávkami
+    /// (<see cref="ZlomUroven.Zastavka"/>) pro případ, kdy je blok sám vyšší než stránka; hranice
+    /// uvnitř zastávky jsou jen nouze (<see cref="ZlomUroven.Radek"/>), aby stránkování mělo kam
+    /// říznout i u zastávky vyšší než celá stránka.
+    /// </summary>
     public IReadOnlyList<Zlom> ZlomyMm(DataContext? data)
     {
         if (data is null) return [];
@@ -2361,7 +2375,10 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         // element-level styly pro pás skupin / řádek platnosti / NZ (nejsou vázané na sloupec)
         var headerResolved = ResolveColumnHeaderParent();
         var dataResolved = ResolveColumnDataParent();
-        var headerCentered = headerResolved with { HAlign = TextHorizontalAlignment.Center };
+        // Pás skupin dnů je výchozí na střed; vyplněné Zarovnání vodorovně ve stylu Záhlaví vyhrává.
+        var headerCentered = HeaderStyle.HAlign is null
+            ? headerResolved with { HAlign = TextHorizontalAlignment.Center }
+            : headerResolved;
         var dataCentered = dataResolved with { HAlign = TextHorizontalAlignment.Center };
 
         int kmCount = MaxKmCount(stops);
@@ -2513,16 +2530,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Nakreslí šipku směru jízdy přes řádky zastávek bloku - <b>ve svém sloupci</b>.
-    /// </summary>
-    /// <remarks>
-    /// Kreslí se až nad hotovým blokem, protože jde přes víc řádků; buňka umí jen svůj vlastní.
-    /// Rozsah se bere <b>z téhož plánu, který se kreslil</b>, ne z vlastního výpočtu výšek - jinak
-    /// by se šipka rozešla s řádky, jakmile by některý z nich změnil výšku.
-    /// <para>Barvu si bere z <b>textové barvy toho sloupce</b> (kaskáda stylů), takže nepřidává
-    /// další nastavení do panelu; tloušťka a hrot jsou stejné jako u vývěsky.</para>
-    /// </remarks>
-    /// <summary>
     /// Kam ukazuje šipka v daném popisném sloupci: dolů (v pořadí zastávek), nebo nahoru.
     /// </summary>
     /// <remarks>
@@ -2537,6 +2544,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     private static bool HrotDoluUSipky(int indexSloupce, int indexNazvu, bool maZrcadlene) =>
         !(maZrcadlene && indexNazvu >= 0 && indexSloupce > indexNazvu);
 
+    /// <summary>
+    /// Nakreslí šipku směru jízdy přes řádky zastávek bloku - <b>ve svém sloupci</b>.
+    /// </summary>
+    /// <remarks>
+    /// Kreslí se až nad hotovým blokem, protože jde přes víc řádků; buňka umí jen svůj vlastní.
+    /// Rozsah se bere <b>z téhož plánu, který se kreslil</b>, ne z vlastního výpočtu výšek - jinak
+    /// by se šipka rozešla s řádky, jakmile by některý z nich změnil výšku.
+    /// <para>Barvu si bere z <b>textové barvy toho sloupce</b> (kaskáda stylů), takže nepřidává
+    /// další nastavení do panelu; tloušťka a hrot jsou stejné jako u vývěsky.</para>
+    /// </remarks>
     private void KresliSipkuSmeru(RenderContext ctx, SloupcovaMrizka mrizka, List<RowSpec> plan,
         float yBlokuMm)
     {
@@ -2724,7 +2741,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             headerSpecs.Add(new(sirka, text, styl, SuppressLeadingLine: BezCaryVlevo(index, mrizka)));
         PridejSpoje(headerSpecs, mrizka, trips.Count, headerResolved,
             ti => (TextCislaSpoje(trips[ti]), SVerzi(tripHeaderStyle, trips[ti])), tripHeaderStyle);
-        plan.Add(new(RowKind.Header, headerH, headerSpecs)
+        plan.Add(new(RowKind.Header, VyskaRadkuCiselSpoju(headerH), headerSpecs)
             { VerticalLinePaint = sloupcovaCara, LineBelowPaint = radkovaCara });
 
         // řádky turnusů - jeden na turnus, hned pod čísly spojů a **nad** řádkem platnosti.
@@ -2817,7 +2834,8 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
 
             // Zastávka jen v jedné verzi trasy má barvu verze celý řádek - lichá Tč by ji v buňkách překryla.
-            bool oddTc = stop.Verze == "" && HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
+            bool oddTc = stop.Verze == "" && !string.IsNullOrWhiteSpace(OddTcBackColor)
+                && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
             bool inverze = JeZastavkaVylepu(ctx.Data, stop.SourceRow);
 
             var specs = new List<ColumnRenderer.CellSpec>();
@@ -3005,12 +3023,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         && SymbolMap.JeZnackaZastavky(znak)
         && SymbolMap.ResolveZastavka(znak).Mode == SymbolRenderMode.FontGlyf;
 
-    /// <summary>Nakreslí piktogram zastávky vpravo ve sloupci zastávek - jako v původním tisku.</summary>
-    /// <remarks>
-    /// ⚠️ Je to <b>overlay nad hotovou buňkou</b>, ne součást jejího textu: název se kreslí vlevo
-    /// a zmenšuje se, aby se vešel, kdežto piktogram má sedět u pravého okraje. U velmi dlouhého
-    /// názvu se můžou potkat - kdyby se to ukázalo, patří to řešit rezervací místa v buňce.
-    /// </remarks>
     /// <summary>
     /// Úsečka mezi příjezdem a odjezdem rozdvojené zastávky - v každém časovém sloupci a v zóně.
     /// </summary>
@@ -3053,6 +3065,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
                 Usek(X + mrizka.XPopisnehoMm(ci), mrizka.Popisne[ci].Width);
     }
 
+    /// <summary>Nakreslí piktogram zastávky vpravo ve sloupci zastávek - jako v původním tisku.</summary>
+    /// <remarks>
+    /// ⚠️ Je to <b>overlay nad hotovou buňkou</b>, ne součást jejího textu: název se kreslí vlevo
+    /// a zmenšuje se, aby se vešel, kdežto piktogram má sedět u pravého okraje. U velmi dlouhého
+    /// názvu se můžou potkat - kdyby se to ukázalo, patří to řešit rezervací místa v buňce.
+    /// </remarks>
     private static void DrawZnakZastavky(RenderContext ctx, float rowTopMm, float rowH, float xMm,
         SloupcovaMrizka mrizka, int nameIndex, List<SymbolRunRenderer.Run> runs,
         ResolvedTextStyle style, SKTypeface symbolFace, float scale)
@@ -3189,15 +3207,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     }
 
     /// <summary>
-    /// Rozpad času na hodinu a menší minutu, nebo null, když se má vysázet jako obyčejný text.
-    /// </summary>
-    /// <remarks>
-    /// Dělí se jen tvar <c>HH:MM</c>. Buňka může nést i značku („&lt;" jede po jiné trase,
-    /// „|" projíždí) nebo prázdno - to se dělit nesmí, jinak by se z „&lt;" stal nesmysl.
-    /// <para>Mezera místo dvojtečky je záměr, ne úspora: starý tisk sází „16 15" a dvojtečka
-    /// mezi různě velkými čísly působí jako překlep.</para>
-    /// </remarks>
-    /// <summary>
     /// Řetězec teček proložených mezerami, který se vejde do <paramref name="volnoMm"/>.
     /// Prázdno, když se nevejde ani jedna.
     /// </summary>
@@ -3266,6 +3275,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         return (hodina == "" ? "0" : hodina) + "." + minuta;
     }
 
+    /// <summary>
+    /// Rozpad času na hodinu a menší minutu, nebo null, když se má vysázet jako obyčejný text.
+    /// </summary>
+    /// <remarks>
+    /// Dělí se jen tvar <c>HH:MM</c>. Buňka může nést i značku („&lt;" jede po jiné trase,
+    /// „|" projíždí) nebo prázdno - to se dělit nesmí, jinak by se z „&lt;" stal nesmysl.
+    /// <para>Mezera místo dvojtečky je záměr, ne úspora: starý tisk sází „16 15" a dvojtečka
+    /// mezi různě velkými čísly působí jako překlep.</para>
+    /// </remarks>
     internal List<SymbolRunRenderer.Run>? CasRuns(string cas)
     {
         // „Projíždí" a „jede jinudy" nejsou čas ani text - jsou to piktogramy přes výšku řádku
@@ -3539,7 +3557,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     internal string TextCislaSpoje(LineTripData spoj) => ShowTripNumbers ? spoj.CisloSpoje : "";
 
     private ResolvedTextStyle OddTc(ResolvedTextStyle style, bool odd) =>
-        odd ? style with { BackgroundColor = OddTcBackColor } : style;
+        odd ? style with { BackgroundColor = OddTcBackColor! } : style;
 
     /// <summary>Popisky přípojných řádků jdou jazykem šablony, jako legenda poznámek.</summary>
     /// <remarks>Na slovenské šabloně vycházely česky, horší než starý tisk (#9088).</remarks>
@@ -3727,7 +3745,6 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             PopisneSloupceBezVnitrnichCar = PopisneSloupceBezVnitrnichCar,
             SloucitPopisyRozdvojene = SloucitPopisyRozdvojene,
             MezeraMeziSkupinamiMm = MezeraMeziSkupinamiMm,
-            HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
             RozdilPuvodniBackColor = RozdilPuvodniBackColor,
             RozdilNovaBackColor = RozdilNovaBackColor,
@@ -3761,16 +3778,16 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     // měří z PDF (ApplyLineTableColors), změřená barva je přesnější než odhad modelu.
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new BoolPropertyDescriptor { FromImage = true, Label = "Čísla spojů", Group = "Řádky", Get = () => ShowTripNumbers, Set = v => ShowTripNumbers = v },
-        new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
-        new BoolPropertyDescriptor { Label = "Turnusy ke spojům", Group = "Řádky", Get = () => TurnusyKeSpojum, Set = v => TurnusyKeSpojum = v },
-        new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
-        new BoolPropertyDescriptor { Label = "Přípojné řádky (vyčká/navazuje)", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
-        new EnumPropertyDescriptor { Label = "Slučovat přípoje", Group = "Přípojné řádky",
+        new BoolPropertyDescriptor { FromImage = true, Label = "Čísla spojů", Group = "Záhlaví", Get = () => ShowTripNumbers, Set = v => ShowTripNumbers = v },
+        new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky nad časy", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
+        new BoolPropertyDescriptor { Label = "Řádky turnusů", Group = "Řádky nad časy", Get = () => TurnusyKeSpojum, Set = v => TurnusyKeSpojum = v },
+        new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky nad časy", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
+        new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Přípojné řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
+        new EnumPropertyDescriptor { Label = "Slučování přípojů", Group = "Přípojné řádky",
             Get = () => PripojeSlucovani, Set = v => PripojeSlucovani = (PripojSlucovani)v,
             Options =
             [
-                ("Ne - řádek pro každý spoj", (object)PripojSlucovani.Ne),
+                ("Řádek pro každý spoj", (object)PripojSlucovani.Ne),
                 ("Podle směru",               (object)PripojSlucovani.PodleSmeru),
                 ("Podle směru a linky",       (object)PripojSlucovani.PodleSmeruALinky),
             ] },
@@ -3790,7 +3807,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new BoolPropertyDescriptor { Label = "Stejně široké sloupce spojů", Group = SirkaGroup, Get = () => JednotnaSirkaSpoju, Set = v => JednotnaSirkaSpoju = v },
         new EnumPropertyDescriptor
         {
-            FromImage = true, Label = "Formát času", Group = "Datové buňky",
+            FromImage = true, Label = "Formát času", Group = "Časy",
             Get = () => FormatCasu, Set = v => FormatCasu = (FormatCasuSpoje)v,
             Options =
             [
@@ -3801,17 +3818,17 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         },
         new FloatPropertyDescriptor
         {
-            Label = "Poměr velikosti minut", Group = "Datové buňky",
+            Label = "Poměr velikosti minut", Group = "Časy",
             Get = () => PomerMinuty, Set = v => PomerMinuty = v,
             Min = 0.3f, Max = 1f, Unit = "×", Format = "0.##",
         },
-        new BoolPropertyDescriptor { FromImage = true, Label = "Tečky v prázdných buňkách", Group = "Datové buňky", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
-        new BoolPropertyDescriptor { FromImage = true, Label = "Tečky za názvem zastávky", Group = "Datové buňky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
-        new BoolPropertyDescriptor { Label = "Tučné zastávky dle trasy", Group = "Datové buňky", Get = () => TucneZastavkyDleTrasy, Set = v => TucneZastavkyDleTrasy = v },
-        new BoolPropertyDescriptor { Label = "Čáry u zastávek dle trasy", Group = "Datové buňky", Get = () => CaryZastavekDleTrasy, Set = v => CaryZastavekDleTrasy = v },
+        new BoolPropertyDescriptor { FromImage = true, Label = "Tečky v prázdných buňkách", Group = "Časy", Get = () => VyplnitPrazdneBunkySpoju, Set = v => VyplnitPrazdneBunkySpoju = v },
+        new BoolPropertyDescriptor { FromImage = true, Label = "Tečky za názvem zastávky", Group = "Zastávky", Get = () => TeckyZaNazvemZastavky, Set = v => TeckyZaNazvemZastavky = v },
+        new BoolPropertyDescriptor { Label = "Tučné zastávky podle trasy", Group = "Zastávky", Get = () => TucneZastavkyDleTrasy, Set = v => TucneZastavkyDleTrasy = v },
+        new BoolPropertyDescriptor { Label = "Čáry u zastávek podle trasy", Group = "Zastávky", Get = () => CaryZastavekDleTrasy, Set = v => CaryZastavekDleTrasy = v },
         new FloatPropertyDescriptor
         {
-            Label = "Poměr velikosti značek", Group = "Řádky",
+            Label = "Poměr velikosti značek", Group = "Řádky nad časy",
             Get = () => PomerZnacek, Set = v => PomerZnacek = v,
             Min = 1f, Max = 3f, Unit = "×", Format = "0.##",
         },
@@ -3823,7 +3840,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new FloatPropertyDescriptor { Label = "Nejvýš km sloupců", Group = PopisneGroup,
             Get = () => MaxKmSloupcu ?? 0, Set = v => MaxKmSloupcu = v >= 1 ? (int)v : null,
             Min = 0, Max = 20, Format = "0" },
-        new BoolPropertyDescriptor { Label = "Záhlaví skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
+        new BoolPropertyDescriptor { Label = "Záhlaví skupin dnů", Group = "Záhlaví", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new StringPropertyDescriptor { Label = "Text záhlaví popisných sloupců", Group = PopisneGroup,
             Get = () => PopisneSloupceNadpis, Set = v => PopisneSloupceNadpis = v },
         new BoolPropertyDescriptor { FromImage = true, Label = "Popisné sloupce bez vnitřních čar", Group = PopisneGroup,
@@ -3833,15 +3850,15 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
         new FloatPropertyDescriptor { Label = "Mezera mezi skupinami dnů", Group = SirkaGroup,
             Unit = "mm", Min = 0, Max = 20, Format = "0.#",
             Get = () => MezeraMeziSkupinamiMm, Set = v => MezeraMeziSkupinamiMm = v },
-        new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
-        new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
-        new ColorPropertyDescriptor { Label = "Původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
-        new ColorPropertyDescriptor { Label = "Nová verze", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor, Set = v => RozdilNovaBackColor = v },
-        new ColorPropertyDescriptor { Label = "Značky původní verze", Group = "Porovnání verzí", Get = () => RozdilPuvodniZnackaColor, Set = v => RozdilPuvodniZnackaColor = v },
-        new ColorPropertyDescriptor { Label = "Značky nové verze", Group = "Porovnání verzí", Get = () => RozdilNovaZnackaColor, Set = v => RozdilNovaZnackaColor = v },
+        new ColorPropertyDescriptor { Label = "Lichá Tč: Barva pozadí", Group = "Datové buňky", Get = () => OddTcBackColor ?? "",
+            Set = v => OddTcBackColor = string.IsNullOrWhiteSpace(v) ? null : v },
+        new ColorPropertyDescriptor { Label = "Původní verze: Barva pozadí", Group = "Porovnání verzí", Get = () => RozdilPuvodniBackColor, Set = v => RozdilPuvodniBackColor = v },
+        new ColorPropertyDescriptor { Label = "Nová verze: Barva pozadí", Group = "Porovnání verzí", Get = () => RozdilNovaBackColor, Set = v => RozdilNovaBackColor = v },
+        new ColorPropertyDescriptor { Label = "Původní verze: Barva značek", Group = "Porovnání verzí", Get = () => RozdilPuvodniZnackaColor, Set = v => RozdilPuvodniZnackaColor = v },
+        new ColorPropertyDescriptor { Label = "Nová verze: Barva značek", Group = "Porovnání verzí", Get = () => RozdilNovaZnackaColor, Set = v => RozdilNovaZnackaColor = v },
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
         // #8360: přípojný řádek se má dát odlišit od časů spojů. Prázdné = dědí se z buněk.
-        new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 4, Max = 200,
+        new FloatPropertyDescriptor { Label = "Velikost", Group = "Přípojné řádky", Unit = "pt", Min = 3, Max = 72,
             Get = () => PripojStyle.FontSize ?? ResolveElementPripojParent().FontSize, Set = v => PripojStyle.FontSize = v },
         new BoolPropertyDescriptor { Label = "Tučné", Group = "Přípojné řádky",
             Get = () => PripojStyle.Bold ?? ResolveElementPripojParent().Bold, Set = v => PripojStyle.Bold = v },
@@ -3849,7 +3866,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Get = () => PripojStyle.Italic ?? ResolveElementPripojParent().Italic, Set = v => PripojStyle.Italic = v },
         new ColorPropertyDescriptor { Label = "Barva textu", Group = "Přípojné řádky",
             Get = () => PripojStyle.TextColor ?? ResolveElementPripojParent().TextColor, Set = v => PripojStyle.TextColor = v },
-        new ColorPropertyDescriptor { Label = "Pozadí řádku", Group = "Přípojné řádky",
+        new ColorPropertyDescriptor { Label = "Barva pozadí", Group = "Přípojné řádky",
             Get = () => PripojStyle.BackgroundColor ?? ResolveElementPripojParent().BackgroundColor, Set = v => PripojStyle.BackgroundColor = v },
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneFontSizeDescriptors(),
@@ -3865,7 +3882,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
             Unit = "mm", Min = 0, Max = 20, Format = "0.##",
             Get = () => DataStyle.PaddingRight ?? ResolveColumnDataParent().PaddingRight,
             Set = v => DataStyle.PaddingRight = v },
-        GetDataRowHeightDescriptor(),
+        GetDataRowHeightDescriptor("Datové buňky"),
         .. GetPositionDescriptors(),
     ];
 }

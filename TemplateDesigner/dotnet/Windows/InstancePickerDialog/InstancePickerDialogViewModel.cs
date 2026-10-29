@@ -14,8 +14,8 @@ public class InstancePickerDialogViewModel : EDViewModel
     private readonly HashSet<string> _initiallySelectedValues;
     private readonly string _instanceLabelPlural;
 
-    /// <summary>Titulek okna s doménovým názvem instance (např. „Výběr - linky").</summary>
-    public string WindowTitle => $"Výběr - {_instanceLabelPlural}";
+    /// <summary>Titulek okna s doménovým názvem instance (např. „Vybrat linky", jako bublina štítku).</summary>
+    public string WindowTitle => $"Vybrat {_instanceLabelPlural}";
 
     /// <summary>Po OK obsahuje finální seznam vybraných instancí.</summary>
     public IReadOnlyList<AgendaInstance> SelectedInstances { get; private set; } = [];

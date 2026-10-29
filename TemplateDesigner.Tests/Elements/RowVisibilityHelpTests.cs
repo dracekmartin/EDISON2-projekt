@@ -9,7 +9,7 @@ using TemplateDesigner.Models.Schema;
 namespace TemplateDesigner.Tests.Elements;
 
 /// <summary>
-/// Nápověda „Viditelnost řádku" (Seznam zastávek, Tabulka spojů) smí jmenovat jen pole, která řádek
+/// Nápověda „Podmínka viditelnosti řádku" (Seznam zastávek, Tabulka spojů) smí jmenovat jen pole, která řádek
 /// v agendě šablony opravdu nese. Do 23. 10. ji formulář vedl napevno a Tabulka spojů radila
 /// <c>POPIS</c> a <c>ZONA</c>, které žádná agenda nemá - podmínka podle příkladu nic neskryla (`B194a` C7).
 /// Seznam teď doplní návrhář ze schématu agendy; formulář nese jen úvod a příklad.

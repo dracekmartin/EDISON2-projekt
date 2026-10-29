@@ -620,6 +620,7 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
     v properties panelu; po migraci editace na formuláře z Caché je to tlačítko. **Kdo popisuje UI
     zákazníkovi, ať si popisky ověří ve `*Edit.cls`, ne v tomto zápisu** - tady to jednou svedlo
     odpověď na neexistující pole.
+    Od 28. 10. 2026 tlačítko „Upravit styl…" neexistuje: styl je rozepsaný přímo ve formuláři jako pole „2. řádek: …" ve skupině Záhlaví (changelog 2026-10-28 (3)).
 - **Default chování zachované:** `HeaderLine2Style = null` → `hasLine2Override = false` → Line 2 použije stejný styl jako Line 1, žádná regrese pro existující šablony.
 - **Pattern:** plně extensible přes TextStyle cascade - uživatel může v budoucnu doplnit per-column override Line 2, HAlign, padding atd. bez schema změny.
 

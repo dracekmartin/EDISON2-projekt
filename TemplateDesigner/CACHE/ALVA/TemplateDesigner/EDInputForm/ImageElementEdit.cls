@@ -29,18 +29,22 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddText("DataField", "Datové pole")
         s f.helpText = "Volitelné - název pole agendy, ze kterého se obrázek načte při tisku (místo statického)"
 
-        s f = form.AddFieldToLastGroup("ScaleMode", "Škálování", $$$FieldTypeList, 0, 0)
+        // „Škálování" a „(oříznout)" ve volbě nebyly podle pravidel popisků - co se ořízne, říká nápověda.
+        s f = form.AddFieldToLastGroup("ScaleMode", "Přizpůsobení velikosti", $$$FieldTypeList, 0, 0)
         d f.AddListItem("Fit", "Vejít celý")
-        d f.AddListItem("Fill", "Vyplnit (oříznout)")
+        d f.AddListItem("Fill", "Vyplnit")
         d f.AddListItem("Stretch", "Roztáhnout")
         d f.AddListItem("None", "Bez úpravy")
         s f.value = "Fit"
+        s f.helpText = "Vejít celý = celý obrázek, kolem může zbýt místo. Vyplnit = obrázek vyplní prvek a co přečnívá, se ořízne. Roztáhnout = vyplní prvek a změní poměr stran. Bez úpravy = původní velikost."
+
+        // Pozadí prosvítá pod obrázkem, který nevyplní celý prvek - patří k obrázku, ne k rámečku.
+        s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
+        s f.value = "#00FFFFFF"
+        s f.helpText = "Lze zadat i {BARVA_LINKY} nebo {BARVA_LINKY_2} - barvu vezme z jízdního řádu, kde linka může mít víc barev (nenastavená = bílá)"
 
         // ── Base pole ─────────────────────────────────────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form)
-        // Pozadí elementu patří k rámečku (prosvítá pod obrázkem, který nevyplní celý box).
-        s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
 
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 30, 30, 1)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)

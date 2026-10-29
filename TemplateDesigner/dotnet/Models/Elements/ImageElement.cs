@@ -156,10 +156,10 @@ public class ImageElement : TemplateElement
         new StringPropertyDescriptor { Label = "Datové pole", Group = "Obrázek",
             Get = () => DataField ?? "",
             Set = v => DataField = string.IsNullOrWhiteSpace(v) ? null : v },
-        new EnumPropertyDescriptor   { Label = "Škálování", Group = "Obrázek", Get = () => ScaleMode, Set = v => ScaleMode = (ImageScaleMode)v,
+        new EnumPropertyDescriptor   { Label = "Přizpůsobení velikosti", Group = "Obrázek", Get = () => ScaleMode, Set = v => ScaleMode = (ImageScaleMode)v,
             Options = [
                 ("Vejít celý",         (object)ImageScaleMode.Fit),
-                ("Vyplnit (oříznout)", (object)ImageScaleMode.Fill),
+                ("Vyplnit",           (object)ImageScaleMode.Fill),
                 ("Roztáhnout",         (object)ImageScaleMode.Stretch),
                 ("Bez úpravy",         (object)ImageScaleMode.None),
             ] },

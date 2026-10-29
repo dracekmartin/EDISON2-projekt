@@ -50,7 +50,7 @@ public class LineScheduleImportPdfTests(ITestOutputHelper output)
                 Elements = [new LineTableElement { X = 0, Y = 0, Width = PageW - 2 * Margin,
                                                    DataStyle = new TextStyle { FontSize = 7, TextColor = Pismo },
                                                    HeaderStyle = new TextStyle { BackgroundColor = Zahlavi, TextColor = "#FFFFFFFF" },
-                                                   HighlightOddTc = true, OddTcBackColor = LicheTc }],
+                                                   OddTcBackColor = LicheTc }],
             },
             new Section
             {
@@ -150,12 +150,12 @@ public class LineScheduleImportPdfTests(ITestOutputHelper output)
         var table = AiGuidedScheduleBuilder.BuildFromVision(Vision(page), page, 0, 0)
             .OfType<LineTableElement>().Single();
         output.WriteLine($"záhlaví {table.HeaderStyle.BackgroundColor}/{table.HeaderStyle.TextColor}, "
-                         + $"písmo {table.DataStyle.TextColor}, liché Tč {table.HighlightOddTc} {table.OddTcBackColor}, čáry {table.Grid.Color}");
+                         + $"písmo {table.DataStyle.TextColor}, liché Tč {table.OddTcBackColor}, čáry {table.Grid.Color}");
 
         AssertBarva(Zahlavi, table.HeaderStyle.BackgroundColor);
         AssertBarva("#FFFFFFFF", table.HeaderStyle.TextColor);
         AssertBarva(Pismo, table.DataStyle.TextColor);
-        Assert.True(table.HighlightOddTc);
+        Assert.NotNull(table.OddTcBackColor);
         AssertBarva(LicheTc, table.OddTcBackColor);
     }
 

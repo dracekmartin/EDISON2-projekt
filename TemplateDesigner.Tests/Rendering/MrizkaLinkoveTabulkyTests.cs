@@ -33,7 +33,7 @@ public class MrizkaLinkoveTabulkyTests
         X = 0, Y = 0, Width = SirkaMm, Height = null,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 7 },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         ShowGroupHeaders = false,
         Grid = new GridStyle
         {

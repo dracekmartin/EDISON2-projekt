@@ -56,7 +56,8 @@ Parameter AgendaLabel As %String = "Linkový JŘ";
 
 Parameter Variant As %String = "AD";
 
-Parameter VariantLabel As %String = "AD (linková doprava)";
+/// Jen „AD": „(linková doprava)" se pletlo s agendou Linkový JŘ (Jan 27. 10.).
+Parameter VariantLabel As %String = "AD";
 
 /// Vydaná zákazníkům 22. 9. (před tím 24. 8. zveřejněná, 1. 9. skrytá, 3. 9. vrácená kvůli dovývoji).
 ///
@@ -96,28 +97,38 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     // Názvy i popisky polí drží slovník zastávkového JŘ (AgendaSchemaDriftTests) - táž věc se musí
     // v obou agendách jmenovat stejně, jinak binding {NAZEV_ZASTAVKY} v jedné funguje a ve druhé
     // tiše vykreslí prázdno.
+    // Pořadí bloků jako ve všech agendách JŘ (Jan 27. 10.): linka → dopravce → platnost → zastávka
+    // a směr → poznámky a doplňky. Nabídka dat pole nepřeřazuje, ukazuje je v tomhle pořadí.
     d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
-    d ..AddField(fields, "POPIS_LINKY",           "Popis linky",              "text")
+    d ..AddField(fields, "POPIS_LINKY",           "Název linky",              "text")
+    d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
     d ..AddField(fields, "BARVA_LINKY",           "Barva linky",              "color")
     d ..AddField(fields, "BARVA_LINKY_2",         "Barva linky 2",            "color")
-    d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
-    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
+    // Po polích jako vývěska AD - první dopravce linky (`B194c` D4).
+    d ..AddField(fields, "NAZEV_DOPRAVCE",        "Název dopravce",           "text")
+    d ..AddField(fields, "ADRESA_DOPRAVCE",       "Adresa dopravce",          "text")
+    d ..AddField(fields, "TELEFON_DOPRAVCE",      "Telefon dopravce",         "text")
+    d ..AddField(fields, "EMAIL_DOPRAVCE",        "E-mail dopravce",          "text")
+    d ..AddField(fields, "ICO_DOPRAVCE",          "IČO dopravce",             "text")
     // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD; GetData ho posílá dál kvůli starším šablonám.
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
-    d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
-    d ..AddField(fields, "QR_KOD",                "QR kód URL",               "text")
     // Zastávka výlepu (parametr „Zvýraznit zastávku") jako pole stránky, aby ji šlo dosadit do QR.
+    // Klíč i popisek jako u vývěsek; do hlavičky výlepu („Zastávka: …") jiný název stránky není.
+    d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky",  "text")
     d ..AddField(fields, "AKTUALNI_ZASTAVKA_CZST", "Číslo aktuální zastávky",  "number")
     d ..AddField(fields, "AKTUALNI_ZASTAVKA_TC",   "Tarifní číslo aktuální zastávky", "number")
     // Jen u tisku po zastávkách (parametr „Stránka pro každou zastávku"); prvek podle něj zvýrazní inverzně
     // aktuální zastávku. Bez parametru pole na stránce není.
     d ..AddField(fields, "VYLEP_ZASTAVKY",         "Výlep pro zastávku",       "boolean")
     d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
-    d ..AddField(fields, "KONECNA_ZASTAVKA",            "Konečná zastávka",         "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
+    d ..AddField(fields, "KONECNA_ZASTAVKA",      "Konečná zastávka",         "text")
+    d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
+    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
+    d ..AddField(fields, "QR_KOD",                "URL adresa pro QR kód",    "text")
     s def.fields = fields
 
     s collections = ##class(%DynamicArray).%New()
@@ -125,13 +136,14 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g = ##class(%DynamicObject).%New()
     s g.name = "Zastávky", g.collectionKey = "ZASTAVKY"
     s gf = ##class(%DynamicArray).%New()
-    d ..AddField(gf, "PORADI",         "Pořadí",             "number")
-    d ..AddField(gf, "TYP",            "Typ řádku",          "text")
+    // Bez „Pořadí" (Jan 27. 10.): nese tarifní číslo, ne pořadí 1..N jako jinde - v nabídce je jako
+    // „Tarifní číslo". GetData PORADI posílá dál, prvek podle něj páruje řádky, značky a přípoje zastávky.
+    // Bez „Typu řádku" (Jan 27. 10.): interní kód zastavka/prijezd pro Tabulku spojů, data ho posílají dál.
     d ..AddField(gf, "CZST",           "Číslo zastávky",     "number")
     d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
     // Popisek je kanonický z vývěsky - stejné pole se nesmí v nabídce dat jmenovat dvakrát jinak
     // (hlídá AgendaSchemaDriftTests, který to při zavedení hned chytil).
-    d ..AddField(gf, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
+    d ..AddField(gf, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
     d ..AddField(gf, "TC",             "Tarifní číslo",      "number")
     d ..AddField(gf, "ZONY",           "Zóny",               "text")
     d ..AddField(gf, "MHD",            "MHD/IDS",            "text")
@@ -160,8 +172,8 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s g = ##class(%DynamicObject).%New()
     s g.name = "Poznámky", g.collectionKey = "POZNAMKY"
     s gf = ##class(%DynamicArray).%New()
-    d ..AddField(gf, "DRUH", "Druh (1-10)",       "number")
-    d ..AddField(gf, "TYP",  "Typ poznámky",      "text")
+    d ..AddField(gf, "DRUH", "Druh poznámky",     "number")
+    // Bez „Typu poznámky" (Jan 27. 10.): interní kód znak/nz/text pro prvek Poznámky, data ho posílají dál.
     d ..AddField(gf, "ZNAK", "Znak",              "text")
     d ..AddField(gf, "TEXT", "Text poznámky",     "text")
     s g.fields = gf
@@ -196,7 +208,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     // Dělení sloupců spojů podle platnosti (legacy in("A",2,"arr",3) = 0/1/2)
     s p = ##class(%DynamicObject).%New()
     s p.name = "DELENI_SLOUPCU"
-    s p.label = "Rozdělení sloupců dle platnosti"
+    s p.label = "Rozdělení sloupců podle platnosti"
     s p.type = "enum"
     // Skupina = název prvku jako u vývěsek; do 23. 10. „Tabulka linky", což se pletlo s agendou (`ux-conventions §8`).
     s p.group = "Tabulka spojů"
@@ -269,6 +281,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pObou.group        = "Obecné"
     s pObou.serverSide   = 1
     s pObou.defaultValue = "false"
+    // S jedním směrem nemá co skládat a GetData ji ignoruje - nabízí se jen při obou směrech.
+    s pObou.visibleWhen  = "SMER_TISKU=Oba"
     s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuto = každý směr na vlastní stránce."
 
     // Výlepy na zastávky (Jan 1. 10.): místo stránky za směr stránka za každou zastávku a směr,
@@ -384,7 +398,7 @@ ClassMethod ParametrZastavkyBezZastaveni(dleLinky As %Boolean = 1) As %DynamicOb
 }
 
 /// Zvýraznění zastávky, ze které se uživatel dívá (legacy `arr,5` + `arr,10`). Data řádek jen
-/// **označí**, vzhled si řeší šablona pravidlem zvýraznění nad polem „Aktuální zastávka" - stejný
+/// **označí**, vzhled si řeší šablona pravidlem zvýraznění nad polem „Je aktuální zastávka" - stejný
 /// vzor jako aktuální zastávka u vývěsky. Jediná definice pro AD i MHD variantu; `sTarifnimCislem`
 /// = agenda nabízí i Zvýraznit tarifní číslo (MHD sloupec Tč nemá) a popis na něj odkáže.
 ClassMethod ParametrZvyrazneniZastavky(sTarifnimCislem As %Boolean = 1) As %DynamicObject
@@ -402,9 +416,8 @@ ClassMethod ParametrZvyrazneniZastavky(sTarifnimCislem As %Boolean = 1) As %Dyna
 
 /// Směr pro tisk (legacy MHD `arr,11` „SmerID#", Jan 12. 10.): které směry linky se vytisknou.
 /// Jediná definice pro AD i MHD variantu - musí se v obou jmenovat a chovat stejně.
-/// `sObousmernym` = agenda nabízí obousměrný tisk a popis na něj odkáže (MHD ho nemá).
 /// ⚠️ Popisky voleb jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
-ClassMethod ParametrSmeruTisku(sObousmernym As %Boolean = 1) As %DynamicObject
+ClassMethod ParametrSmeruTisku() As %DynamicObject
 {
     s pSmer = ##class(%DynamicObject).%New()
     s pSmer.name         = "SMER_TISKU"
@@ -414,7 +427,8 @@ ClassMethod ParametrSmeruTisku(sObousmernym As %Boolean = 1) As %DynamicObject
     s pSmer.group        = "Obecné"
     s pSmer.serverSide   = 1
     s pSmer.defaultValue = "Oba"
-    s pSmer.description  = "Které směry linky se vytisknou."_$s(sObousmernym:" S jedním směrem se obousměrný tisk neuplatní.", 1:"")
+    // Bez věty o obousměrném tisku: při jednom směru se ta volba sama schová (její visibleWhen).
+    s pSmer.description  = "Které směry linky se vytisknou."
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Oba"), opts.%Push("Tam"), opts.%Push("Zpět")
     s pSmer.options = opts
@@ -614,7 +628,7 @@ ClassMethod VypisVylepy(page As %DynamicObject, smery As %String, obousmerne As 
         while (i >= 0) && (i < pocet) {
             s r = zastavky.%Get(i)
             i (r.%Get("TYP") = "zastavka") && ('filtr || (r.%Get("AKTUALNI_ZASTAVKA") = "true")) && ..Odjizdi(zastavky, spoje, smer, i, krok, pocet) {
-                d ..VypisVylep(page, r.%Get("PORADI"), r.%Get("CZST"), smer)
+                d ..VypisVylep(page, r.%Get("PORADI"), r.%Get("CZST"), smer, r.%Get("NAZEV_ZASTAVKY"))
             }
             s i = i + krok
         }
@@ -652,7 +666,7 @@ ClassMethod JeCas(hodnota As %String) As %Boolean
 
 /// Jedna stránka výlepu: kopie stránky se zvýrazněnou jen zastávkou `poradi` (hlavní i vložený
 /// příjezdový řádek mají totéž pořadí).
-ClassMethod VypisVylep(page As %DynamicObject, poradi As %String, czst As %String, smer As %String)
+ClassMethod VypisVylep(page As %DynamicObject, poradi As %String, czst As %String, smer As %String, nazev As %String = "")
 {
     s vylep = ##class(%DynamicObject).%FromJSON(page.%ToJSON())
     s it = vylep.rows.ZASTAVKY.%GetIterator()
@@ -660,6 +674,7 @@ ClassMethod VypisVylep(page As %DynamicObject, poradi As %String, czst As %Strin
         d r.%Set("AKTUALNI_ZASTAVKA", $s(r.%Get("PORADI") = poradi:"true", 1:"false"))
     }
     d vylep.values.%Set("SMER", smer)
+    d vylep.values.%Set("POPIS_ZASTAVKA", nazev)
     d vylep.values.%Set("AKTUALNI_ZASTAVKA_CZST", czst)
     d vylep.values.%Set("AKTUALNI_ZASTAVKA_TC", +poradi)
     d vylep.values.%Set("VYLEP_ZASTAVKY", "true")
@@ -689,7 +704,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         i page = "" {
             s page = ##class(%DynamicObject).%New()
             s v = ##class(%DynamicObject).%New()
-            d v.%Set("POPIS_LINKY", "(žádná linka v ^JRL pro firmu "_dataDB_")")
+            d v.%Set("POPIS_LINKY", ..TextUkazkyBezDat())
             d page.%Set("values", v)
             s r = ##class(%DynamicObject).%New()
             d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
@@ -705,7 +720,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Mapování volby parametru „Rozdělení sloupců dle platnosti" na legacy mód 0/1/2.
+/// Mapování volby parametru „Rozdělení sloupců podle platnosti" na legacy mód 0/1/2.
 ClassMethod DeleniZParametru(label As %String) As %Integer
 {
     // „Vlastní rozložení" sem nemá jak dojít jako skutečná volba - je to jen ukazatel a objeví se,
@@ -759,6 +774,8 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
+    // Údaje prvního dopravce linky po polích, týmž voláním jako vývěska AD (`B194c` D4).
+    d ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).DopravceSkalary(dataDB, sku, lin, vals)
     // Vzory rozložení sloupců - obsah drží **server**, klient zná jen klíče a popisky. Bez toho
     // by parametr uměl jen hlásit stav, ale ne přepnout (a klientský opis pravidel by se rozešel).
     d vals.%Set("PRESETY_SLOUPCU",        ..PresetySloupcuLinky(dataDB, rec, sku, lin))
@@ -826,7 +843,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s maxKmVeta = ..MaxKmVeta(dataDB, sku, lin, smer, pocetKmSloupcu, spolecneKm)
     k atributyZobrazene                       // znaky atributů trasy viditelné na stránce (legenda druhu 7)
     k atributyZastavek                        // atributy z číselníku zastávek (^JRZ $8, CSV) - legenda druhu 7
-    k zvyraznene                              // tarifní číslo zvýrazněného řádku → CZST
+    k zvyraznene, zvyrazneneNazev             // tarifní číslo zvýrazněného řádku → CZST / název
     s maMhd = 0
     s idx = 0, poradi = ""
     f {
@@ -856,7 +873,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         s rowMeta(idx) = $lb(poradi, "O")
         s z = ..BuildZastavkaRadek(dataDB, sku, lin, smer, poradi, veta, "zastavka", pocetKmSloupcu, maxKmVeta, jeTam, tiskZony, tiskTc, bezPismenVZone, spolecneKm, obousmerne)
         d zastavky.%Push(z)
-        i z.%Get("AKTUALNI_ZASTAVKA") = "true" s zvyraznene(poradi) = czst
+        i z.%Get("AKTUALNI_ZASTAVKA") = "true" s zvyraznene(poradi) = czst, zvyrazneneNazev(poradi) = z.%Get("NAZEV_ZASTAVKY")
 
         f ai=1:1:$l(atrZnaky) s atributyZobrazene($e(atrZnaky,ai)) = ""
         // atributy z číselníku zastávek (^JRZ $8, CSV - např. "A,L" = přestup bus/vlak)
@@ -878,6 +895,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     // aby v QR nezůstal nedosazený `{…}`.
     s zvTc = $o(zvyraznene(""))
     s jednoznacna = (zvTc '= "") && ($o(zvyraznene(zvTc)) = "")
+    d vals.%Set("POPIS_ZASTAVKA",         $s(jednoznacna:zvyrazneneNazev(zvTc), 1:""))
     d vals.%Set("AKTUALNI_ZASTAVKA_CZST", $s(jednoznacna:zvyraznene(zvTc), 1:""))
     d vals.%Set("AKTUALNI_ZASTAVKA_TC",   $s(jednoznacna:+zvTc, 1:""))
 
@@ -926,7 +944,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         }
     }
     }
-    i spoje.%Size() = 0 q ..PrazdnaStranka("Žádný spoj linky nepatří do sloupců šablony. Zkontrolujte Rozdělení sloupců dle platnosti, případně vlastní rozložení sloupců u prvku Tabulka spojů.")
+    i spoje.%Size() = 0 q ..PrazdnaStranka("Žádný spoj linky nepatří do sloupců šablony. Zkontrolujte Rozdělení sloupců podle platnosti, případně vlastní rozložení sloupců u prvku Tabulka spojů.")
 
     // ── poznámky (pevné pořadí druhů 1:1 MT3: platnosti, NZ, návaznosti - pokračuje/vyčká/
     //    navazuje, atributy, místenkování, stálé značky, poznámky linky) ──
@@ -1317,7 +1335,7 @@ ClassMethod NactiTurnusy(dataDB As %String, sku As %String, lin As %String, ByRe
     s chyba = ##class(ALVA.ADMAIN.MLAPI).gSplTur(dataDB, dataDB, dh, .tin, .tout)
     // Chyba se **nepolyká**: uživatel si turnusy vyžádal parametrem, takže tisk bez nich by byl
     // tichý fallback - pozná se až na papíře, že tam nejsou.
-    i +chyba d ..ChybaDat("Turnusy ke spojům nejde načíst"_$s($p(chyba,"~",2)'="":" ("_$p(chyba,"~",2)_")", 1:"")_". Zkontrolujte turnusy v modulu AD, nebo u Tabulky spojů vypněte Turnusy ke spojům.")
+    i +chyba d ..ChybaDat("Turnusy ke spojům nejde načíst"_$s($p(chyba,"~",2)'="":" ("_$p(chyba,"~",2)_")", 1:"")_". Zkontrolujte turnusy v modulu AD, nebo u Tabulky spojů vypněte Řádky turnusů.")
     s sp = ""
     f {
         s sp = $o(tout("arr",1,+lin,sp))
@@ -2607,10 +2625,6 @@ ClassMethod ZaznamZastavky(dataDB As %String, czst As %String) As %String
     ret ..ZaznamZastavkyKDatu(dataDB, czst, $g(^||TiskKnizni("zastavky","hrl")))
 }
 
-/// Označení navazující linky do textu poznámky. U autobusu je to číslo a vede se bez vodicích nul
-/// („0330510" → „330510"), u vlaku ale bývá **nečíselné** („R 627") - a to se převodem na číslo
-/// scvrklo na nulu, takže v tisku stálo „vyčká příjezdu vlaku 0".
-/// ⚠️ Našlo to rozšíření porovnávací sady 24. 8.; na původních čtyřech linkách vlakový přípoj nebyl.
 /// Kus věty návaznosti z číselníku `^JRSET("NCOME",jazyk,31|32)` (kusy oddělené `~`).
 /// Bez záznamu platí česká slova, jak byla v kódu do 23. 9.
 /// 31 = spoj~vyčká v zastávce~příjezdu~vlaku:linky:lodě z~nejvýše~minut,
@@ -2623,6 +2637,10 @@ ClassMethod TextNavaznosti(dataDB As %String, omz As %Integer, kus As %Integer) 
     q $s(text '= "":text, 1:$p(vychozi, "~", kus))
 }
 
+/// Označení navazující linky do textu poznámky. U autobusu je to číslo a vede se bez vodicích nul
+/// („0330510" → „330510"), u vlaku ale bývá **nečíselné** („R 627") - a to se převodem na číslo
+/// scvrklo na nulu, takže v tisku stálo „vyčká příjezdu vlaku 0".
+/// ⚠️ Našlo to rozšíření porovnávací sady 24. 8.; na původních čtyřech linkách vlakový přípoj nebyl.
 ClassMethod OznaceniLinky(hodnota As %String) As %String
 {
     i $isvalidnum(hodnota) q +hodnota

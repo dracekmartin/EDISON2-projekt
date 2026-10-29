@@ -60,7 +60,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
             s entry = ##class(%DynamicObject).%New()
             s entry.code = code
             // Kombinovaný label pro starší klienty - historický formát "Zastávkový JŘ (AD)".
-            s entry.label = agendaLabel_$s(variant'="":" ("_variant_")", 1:"")
+            s entry.label = agendaLabel_$s(variantLabel'="":" ("_variantLabel_")", variant'="":" ("_variant_")", 1:"")
             s entry.agenda = agenda
             s entry.agendaLabel = agendaLabel
             s entry.variant = variant
@@ -73,6 +73,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
             // JSON boolean (ne 1/0) - System.Text.Json na .NET straně deserializuje do bool.
             d entry.%Set("released", $s($parameter(className, "Released")=1:1, 1:0), "boolean")
             d entry.%Set("customColumns", $s($parameter(className, "CustomColumns")=1:1, 1:0), "boolean")
+            d entry.%Set("variantyTras", $s($parameter(className, "VariantyTras")=1:1, 1:0), "boolean")
             d arr.%Push(entry)
         }
 

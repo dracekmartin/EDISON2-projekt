@@ -75,7 +75,7 @@ public class PripojeObouSmeruTests
         DataRowHeight = VyskaRadku,
         HeaderStyle = new TextStyle { FontFamily = "Arial", FontSize = 7 },
         DataStyle = new TextStyle { FontFamily = "Arial", FontSize = 6 },
-        HighlightOddTc = false,
+        OddTcBackColor = null,
         ShowGroupHeaders = false,
         ShowNzRow = false,
         ShowPlatnostRow = false,

@@ -1088,7 +1088,7 @@ public class TableElement : TemplateElement
             Group = "Tabulka",
             Get   = () => RowHeight,
             Set   = v => RowHeight = v,
-            Min   = 2, Max = 50, Unit = "mm"
+            Min   = 1, Max = 50, Unit = "mm"
         },
         new BoolPropertyDescriptor
         {
@@ -1099,8 +1099,8 @@ public class TableElement : TemplateElement
         },
         new FloatPropertyDescriptor
         {
-            Label = "Výška záhlaví",
-            Group = "Tabulka",
+            Label = "Výška",
+            Group = "Styl řádku záhlaví",
             Get   = () => HeaderHeight,
             Set   = v => HeaderHeight = v,
             Min   = 2, Max = 50, Unit = "mm"
@@ -1108,7 +1108,7 @@ public class TableElement : TemplateElement
         .. GetGridDescriptors(Grid),
         new ColorPropertyDescriptor
         {
-            Label = "Střídání řádků",
+            Label = "Střídání řádků: Barva pozadí",
             Group = "Tabulka",
             Get   = () => AlternatingRowColor ?? "#00FFFFFF",
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v
@@ -1125,7 +1125,7 @@ public class TableElement : TemplateElement
         },
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí záhlaví",
+            Label = "Barva pozadí záhlaví",
             Group = "Záhlaví",
             Get   = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",
             Set   = v => Header().BackgroundColor = v
@@ -1139,7 +1139,7 @@ public class TableElement : TemplateElement
         },
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí buněk",
+            Label = "Barva pozadí buněk",
             Group = "Datové buňky",
             Get   = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",
             Set   = v => Data().BackgroundColor = v

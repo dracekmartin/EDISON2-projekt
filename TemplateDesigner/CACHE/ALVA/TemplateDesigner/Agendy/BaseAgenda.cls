@@ -70,6 +70,11 @@ Parameter InstanceParamName As %String = "INSTANCE_ID";
 /// která ji nečte, by nic nedělala (vývěska MHD, rozhodnutí Jan 24. 10.: koncept AD).
 Parameter CustomColumns As %Boolean = 0;
 
+/// Agenda posílá u zastávek časy variant tras (`TRASA_MIN`). Návrhář podle toho nabídne v Seznamu
+/// zastávek sloupec „Varianty tras"; bez nich by zůstal prázdný (vývěska MHD, `B194d` E5). Až MHD
+/// varianty dostane (backlog), stačí přepnout tady.
+Parameter VariantyTras As %Boolean = 0;
+
 /// Druh JŘ elementů, které agenda podporuje - řídí kontextové menu/paletu okna.
 /// "STOP" = zastávkové (StopList/DepartureGrid/NotesLegend), "LINE" = knižní/linkové
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.
@@ -657,9 +662,6 @@ ClassMethod HorologPlatnostiOdLinky(dataDB As %String, sku As %String, lin As %S
     ret hrl
 }
 
-/// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
-/// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). Sdílí vývěska i linkový JŘ AD, aby táž linka
-/// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`NormalizLinku`).
 /// ── Důvod prázdného výstupu (`DUVOD_PRAZDNE`, `cache-api.md`) ──
 /// Agenda během GetData zapíše, proč stránka nevznikla (co v datech chybí a co s tím), a na konci
 /// `VydatDuvodPrazdne` důvody pošle - jen když nevznikla žádná stránka. Návrhář z nich udělá hlášku
@@ -714,6 +716,13 @@ ClassMethod TextLinkaNeniVJr(sku As %String, lin As %String) As %String
     q "Linka "_(+lin)_" ve skupině "_sku_" v jízdních řádech není. Mohla být smazána nebo přesunuta do jiné skupiny - vyberte linky znovu."
 }
 
+/// Název linky v náhledu bez vybrané linky, když první linka firmy nedala data (žádná není, nebo
+/// nemá trasu). Text vidí uživatel na plátně: bez globálů a kódu firmy, jen co udělat.
+ClassMethod TextUkazkyBezDat() As %String
+{
+    q "Ukázka bez dat - vyberte linku (Ctrl+Shift+I)"
+}
+
 /// Razítko typu JŘ linky AD podle `PATCH,"OBJ"` (1 výluka, 2 návrh). Texty jako u MHD
 /// (`ZastavkoveJrMhd.TypJrLinky`), aby razítko vypadalo ve všech agendách stejně; starý postskriptový
 /// tisk AD psal u návrhu „návrh jízdního řádu" (rozhodnutí Jan 23. 10.: jednotně „NÁVRH").
@@ -740,6 +749,9 @@ ClassMethod UpresneniAtributuSpoje(dataDB As %String, sku As %String, lin As %St
     q $zstrip(txt, "<>W")
 }
 
+/// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
+/// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). Sdílí vývěska i linkový JŘ AD, aby táž linka
+/// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`NormalizLinku`).
 ClassMethod LokalniOznaceniLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String
 {
     s lokalni = $p($g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD")),"~",1)

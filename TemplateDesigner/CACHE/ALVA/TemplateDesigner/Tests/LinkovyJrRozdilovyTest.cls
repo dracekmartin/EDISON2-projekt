@@ -409,4 +409,22 @@ Method TestStejniDopravciBezPuvodnich()
 	do $$$AssertNotTrue(spoj.%IsDefined("DOPRAVCI_PUVODNI"), "dopravci beze změny")
 }
 
+/// Chyba v datech od linkového JŘ zůstane chybou v datech, chyba programu chybou programu
+/// (review 27. 10.) - jako chybu v datech by ji návrhář ukázal hláškou místo chybového okna.
+Method TestChybaProgramuNeniChybaDat()
+{
+	set crlf = $char(13,10)
+	set sc = $classmethod(..#AGENDA, "StatusVnoreneChyby", "1~"_crlf_"ERROR #5001: Linka 5 ve skupině 3 v jízdních řádech není.", "", "")
+	do $$$AssertEquals($system.Status.GetErrorCodes(sc), 5001, "chyba v datech zůstane chybou v datech")
+	set text = $system.Status.GetOneErrorText(sc)
+	do $$$AssertTrue(text [ "Linka 5 ve skupině 3", "text chyby v datech: "_text)
+	do $$$AssertNotTrue(text [ "Původní verze", "nová verze nemá prefix původní: "_text)
+
+	set sc = $classmethod(..#AGENDA, "StatusVnoreneChyby", "1~"_crlf_"<UNDEFINED>BuildStranka+45^ALVA.TemplateDesigner.Agendy.LinkovyJrAd.1 *zst", "207", "0380760")
+	do $$$AssertEquals($system.Status.GetErrorCodes(sc), 5002, "chyba programu zůstane chybou programu")
+	set text = $system.Status.GetOneErrorText(sc)
+	do $$$AssertTrue(text [ "<UNDEFINED>", "text chyby programu: "_text)
+	do $$$AssertTrue(text [ "Původní verze (skupina 207, linka 0380760)", "označení původní verze: "_text)
+}
+
 }

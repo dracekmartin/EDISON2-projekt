@@ -22,19 +22,13 @@ public class DescriptorLabelsMatchFormTests
     private static readonly Dictionary<string, string> Vyjimky = new()
     {
         // Rychlý přístup ke čtyřem barvám zón tabulky (mvvm-patterns, Pattern 2) - formulář je má
-        // ve skupině stylu jako „Pozadí" / „Barva textu", kanonické názvy jsou tyhle (§8).
-        ["Pozadí záhlaví"] = "barvy zón tabulky",
+        // ve skupině Záhlaví / Datové buňky jako „Barva pozadí" / „Barva textu", kanonické názvy jsou tyhle (§8).
+        ["Barva pozadí záhlaví"] = "barvy zón tabulky",
         ["Barva textu záhlaví"] = "barvy zón tabulky",
-        ["Pozadí buněk"] = "barvy zón tabulky",
+        ["Barva pozadí buněk"] = "barvy zón tabulky",
         ["Barva textu buněk"] = "barvy zón tabulky",
         ["Tučné záhlaví"] = "promoted shortcut tabulek (mvvm-patterns)",
-        // Formulář nese vysvětlivku prázdné hodnoty v popisku - sjednocení čeká na E8.
-        ["Střídání řádků"] = "E8",
-        ["Max skupin"] = "E8",
-        ["Šířka buňky značky"] = "E8",
-        ["Výška řádku"] = "E8",
         // Ve formuláři je jinde než v hlavním formuláři prvku.
-        ["Velikost záhlaví"] = "Minuty odjezdů: písmo záhlaví je ve formuláři v okně stylu (tlačítko Styl záhlaví)",
         ["Šířka sloupce hodin"] = "Minuty odjezdů: ve formuláři v záložce Sloupce (řádek Hodiny)",
         ["Zdroj dat"] = "pevná tabulka: jen u starých šablon v režimu tabulky z dat, formulář ho nenabízí",
     };
