@@ -1683,7 +1683,8 @@ ClassMethod MhdZnackyLinky(ByRef sys As %String) As %Status
 		kill ^||ML("IN")
 		set ^||ML("IN","LINKA_ID") = linka
 		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
-		set chyba = $get(^||ML("OUT","ERR"))
+		// Chyba agendy je v ^||ML("ERR"); sonda ji vypíše a smaže, jinak by se vrátila jako chyba sondy.
+		set chyba = $get(^||ML("ERR"))  kill ^||ML("ERR")
 		set prvni = "", klic = "", stranek = 0
 		for {
 			set klic = $order(^||ML("OUT",klic)) quit:klic=""
@@ -2261,7 +2262,7 @@ ClassMethod DefiniceObdobiSonda(ByRef sys As %String) As %Status
 			set stranek = stranek + 1
 			if prvni = "" set prvni = $get(^||ML("OUT",klic))
 		}
-		set chyba = $get(^||ML("OUT","ERR"))
+		set chyba = $get(^||ML("ERR"))  kill ^||ML("ERR")
 		kill ^||ML("OUT")
 		set ^||ML("OUT","A_DEFINICE") = def
 		set ^||ML("OUT","B_TRVANI") = $fnumber(trvalo,"",3)_" s, stránek="_stranek

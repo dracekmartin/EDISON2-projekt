@@ -65,9 +65,8 @@ totéž znovu. Pořadí podle přínosu:
 - **G7 Drobné díry drift testů** [S]. Regex schématu nevidí `AddField(kolekce.%Get("fields"), …)` (rozdílový
   `VERZE`, `TC_PUVODNI`, `ZONY_PUVODNI`) a chytá zakomentované řádky; parametry se jménem skládaným za
   běhu (`P4`) a pořadí „Obecné první" u vývěsek a linkového MHD (definice v pomocných metodách) test nevidí.
-  Caché testy kontrolují chybu agendy v `^||ML("OUT","ERR")`, kam `$$$CatchErrRest` nepíše (chyba je
-  v `^||ML("ERR")`), takže „bez chyby" nehlídají: `LinkovyJrSmokeTest` (:28, :134) a sonda
-  `AdSloupekProbe` (nalezeno u `C1`, `DuvodPrazdnehoTest` už opravený).
+  Část o chybě agendy je hotová 29. 10.: `LinkovyJrSmokeTest` a sonda `AdSloupekProbe` čtou chybu
+  z `^||ML("ERR")` místo `^||ML("OUT","ERR")`, kam `$$$CatchErrRest` nepíše.
 - **G8 Zlatý odtisk linkového MHD včetně hlavičky** [S] (po 27. 10.). Bere z vývěsky MHD pět metod
   (dopravce, typ JŘ, seznam linek, skupiny); porovnání se starým modulem kryje jen tabulku a
   `TestDopravceJakoVyveska` porovnává s toutéž funkcí.
@@ -111,7 +110,7 @@ totéž znovu. Pořadí podle přínosu:
 
 **Připravenost na `B56`** (revize 28. 10., čtení kódu, na serveru nic nespuštěno):
 
-- **Nutné před prvním krokem:** G7 (část o chybě), G1 v malé podobě (všechny agendy přes `ListAgendy`:
+- **Nutné před prvním krokem:** G1 v malé podobě (všechny agendy přes `ListAgendy`:
   schéma, parametry a ukázka bez chyby a s platným JSON), G2 jako Caché test nad výstupem `GetParameters`
   (přežije přesun kódu a uvidí i parametry skládané za běhu), G8 a snímek výstupu všech agend.
   Ostatní G a R jsou užitečné, ale bez nich slučování tisk tiše nerozbije.

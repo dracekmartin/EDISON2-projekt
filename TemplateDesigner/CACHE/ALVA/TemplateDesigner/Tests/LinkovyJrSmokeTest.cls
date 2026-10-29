@@ -25,7 +25,8 @@ Method TestAdVraciOcekavaneKolekce()
 		set db = $piece(jadro(i),"~",1), sku = $piece(jadro(i),"~",2), lin = $piece(jadro(i),"~",3)
 		continue:'##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, db, sku, lin, .parametry)
 		set overeno = overeno + 1
-		do $$$AssertEquals($get(^||ML("OUT","ERR")), "", "GetData "_db_" "_lin_" nesmí vrátit chybu")
+		// Chybu agendy zapisuje $$$CatchErrRest do ^||ML("ERR"), ne do OUT - kontrola OUT prošla vždy.
+		do $$$AssertEquals($get(^||ML("ERR")), "", "GetData "_db_" "_lin_" nesmí vrátit chybu: "_$get(^||ML("ERR")))
 		set key = ""
 		for  {
 			set key = $order(^||ML("OUT", key))
@@ -131,7 +132,7 @@ Method ProjdiKontrakt(ByRef sys, trida As %String, popis As %String)
 	for metoda = "GetSchema", "GetParameters", "GetMockData" {
 		kill ^||ML
 		do $classmethod(trida, metoda, .sys)
-		do $$$AssertEquals($get(^||ML("OUT","ERR")), "", popis_" "_metoda_" nesmí vrátit chybu")
+		do $$$AssertEquals($get(^||ML("ERR")), "", popis_" "_metoda_" nesmí vrátit chybu: "_$get(^||ML("ERR")))
 		set json = $get(^||ML("OUT", 1))
 		do $$$AssertNotEquals(json, "", popis_" "_metoda_" musí něco vrátit")
 		// Neplatný JSON by na klientu skončil výjimkou při parsování, ne čitelnou hláškou.

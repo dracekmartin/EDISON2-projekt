@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-29 - Testy linkových JŘ hlídají chybu agendy tam, kam ji server píše (`B194f` G7)
+
+Kontrola „agenda proběhla bez chyby" v `LinkovyJrSmokeTest` (data linek a schéma, parametry, ukázka obou
+linkových agend) četla `^||ML("OUT","ERR")`, kam `$$$CatchErrRest` nic nezapisuje - chyba je v `^||ML("ERR")`.
+Test proto prošel, i když agenda spadla. Teď čte `^||ML("ERR")` a v hlášce ukáže text chyby. Totéž v sondě
+`AdSloupekProbe`, která chybu po přečtení smaže, aby se nevrátila jako chyba sondy. Pojistka před `B56`:
+přesun kódu, který agendu rozbije, se teď v testu ukáže. Caché sada `ALVA.TemplateDesigner.Tests` 263/263.
+
 ## 2026-10-28 (28) - Popisky jednoduchých prvků podle pravidel, obdélník kreslí obrys rámečkem
 
 Stránka, Sekce, Text, Obdélník, Čára, Obrázek a Kód se řídí stejnými pravidly popisků jako tabulky (rozhodnutí Jan 28. 10., `ux-conventions §8`).
