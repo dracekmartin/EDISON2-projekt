@@ -51,7 +51,9 @@ totéž znovu. Pořadí podle přínosu:
   seznamu výjimek); každá kolekce dat je ve schématu; jedinečný `AgendaVariantCode`; `ElementKind` z {"",
   STOP, LINE}; jen známé klíče definice parametru (Faktury mají `default` místo `defaultValue`); výchozí
   hodnota enumu mezi volbami; „Obecné" první; `DUVOD_PRAZDNE` u linky bez dat. Pátou agendu pokryje sám.
-  Dnešní Caché testy agendy vyjmenovávají ručně (`LinkovyJrSmokeTest`, `DuvodPrazdnehoTest`) - odtud `C1`.
+  **Malá podoba hotová 29. 10.** (`KontraktAgendTest`): kontrakt bez chyby a s platným JSON, jedinečný kód,
+  druh prvků, výchozí volba mezi volbami, „Obecné" první. Zbývá: pole schématu v ukázce a datech, kolekce
+  ve schématu, známé klíče definice parametru, `DUVOD_PRAZDNE`.
 - **G2 Celá definice stejnojmenného parametru shodná ve všech agendách** [S]. Popisek, typ, skupina,
   výchozí hodnota, volby, `serverSide` - s pojmenovanými výjimkami (`TVAR_NAZVU_ZASTAVKY`). Uzavře opsané
   parametry vývěsek (`AgendaParameterDriftTests` dnes porovná jen popisek; `ServerSideParamsDriftTests`
@@ -110,8 +112,7 @@ totéž znovu. Pořadí podle přínosu:
 
 **Připravenost na `B56`** (revize 28. 10., čtení kódu, na serveru nic nespuštěno):
 
-- **Nutné před prvním krokem:** G1 v malé podobě (všechny agendy přes `ListAgendy`:
-  schéma, parametry a ukázka bez chyby a s platným JSON), G2 jako Caché test nad výstupem `GetParameters`
+- **Nutné před prvním krokem:** G2 jako Caché test nad výstupem `GetParameters`
   (přežije přesun kódu a uvidí i parametry skládané za běhu), G8 a snímek výstupu všech agend.
   Ostatní G a R jsou užitečné, ale bez nich slučování tisk tiše nerozbije.
 - **Snímek výstupu je sonda, ne test** (pravidlo o testech závislých na stroji): otisk `GetData` přes sady,

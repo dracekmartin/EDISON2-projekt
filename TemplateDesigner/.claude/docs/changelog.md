@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-29 (2) - Test kontraktu všech agend z registru (`B194f` G1, malá podoba)
+
+`KontraktAgendTest` projde všechny agendy, které najde registr (dnes šest včetně porovnání verzí
+a Faktur), místo ručního výčtu - novou agendu pokryje sám. Hlídá:
+- schéma, parametry a ukázková data bez chyby a jako platný JSON,
+- jedinečný kód agendy a známý druh prvků (zastávkové / linkové / žádné),
+- výchozí volbu výběru mezi volbami a „Obecné" jako první skupinu parametrů (u vývěsek a linkového MHD
+  skládají parametry pomocné metody, které offline kontrola nevidí).
+
+Caché sada `ALVA.TemplateDesigner.Tests` 266/266.
+
 ## 2026-10-29 - Testy linkových JŘ hlídají chybu agendy tam, kam ji server píše (`B194f` G7)
 
 Kontrola „agenda proběhla bez chyby" v `LinkovyJrSmokeTest` (data linek a schéma, parametry, ukázka obou
