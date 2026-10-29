@@ -24,6 +24,11 @@ tisku v EDISONu návrhář přebírá a co jde zrušit): [`nastaveni-tisku-jr.md
 - **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
   **Jan** - čeká na nastavení JŘ, ze kterého volby vycházejí; patří k `B56` R5 (stálý kód vedle popisku).
   Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
+- **Nová pole v jízdních řádech, která jsme s kolegy dohodli 10. 8.** [S] **Jan** - zeptat se na stav;
+  v lokálním zdroji nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5,
+  ověřit, že opravdu po zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937,
+  tiket pozastavený; trvá zákazník i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV
+  #9088). Náš díl je pak malý: pole přečíst a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
 
 ---
 
@@ -119,10 +124,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   polohy tabulky a poznámek jsou odhad modelu. **Od 9. 10. jen interní nástroj** - převody předloh
   dělá M-line; dál až se při nich ukáže, že šetří čas. Zbývají kroky **(2)** model pojmenuje bloky
   z PDF a **(3)** tabulka měřená z PDF celá. Stav a proč: [`architecture.md §Import z PDF`](architecture.md).
-
-- **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
-  JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
-  (zákazníkovi odpovězeno 23. 9.). Náš díl: pustit pole schématem obou agend a nabídnout v šabloně.
 
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Posunout nebo zvětšit prvek na jedné vysázené stránce před PDF, když se linkám s mnoha poznámkami
