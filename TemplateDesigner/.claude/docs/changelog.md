@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-29 (6) - Snímek výstupu všech agend před sloučením kódu (`B56`)
+
+Pojistka pro `B56`: testy jedou na pár linkách s výchozími parametry a drobnou změnu výtisku po přesunu kódu
+by nepoznaly. Sonda `SnimekAgendProbe` (seznam volání se správnou firmou) a `SnimekAgendNaostro` (uloží
+a porovná) teď berou celý výstup všech agend - schéma, parametry a ukázku každé agendy z registru a data
+27 linek ze sad testů. První běh snímek uloží, každý další porovná bajt po bajtu a vypíše soubor a uzel,
+který se liší. Bez proměnné `TD_SNIMEK_AGEND` nic nedělá (výstup závisí na datech dev serveru). Sejmuto
+29. 10., dva běhy po sobě shodné. Test porovnání `Porovnani_PoznaKazdyRozdil`.
+
 ## 2026-10-29 (5) - Stejnojmenný parametr je ve všech agendách týž (`B194f` G2)
 
 Parametry, které má víc agend, jsou opsané (zastávkové JŘ AD a MHD, linkové AD a MHD). Kontrola dosud

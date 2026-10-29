@@ -23,7 +23,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 ### `B194f` Pojistky před `B56`
 
 - **G1** Kontraktový Caché test přes registr agend [M] - malá podoba hotová 29. 10., zbývá shoda polí schématu s daty, klíče parametrů a důvod prázdného výstupu
-- **Snímek výstupu všech agend** před prvním krokem `B56` (sonda, ne test) [S] - po každém kroku musí vyjít bajtově stejně
 - **G3** Jeden popisek = jeden klíč napříč agendami JŘ [S]
 - **G4** Kontrola zakázaných termínů i v nápovědách a titulcích oken [S]
 - **G5** Každé tlačítko formuláře má obsluhu v každém hostiteli [S]

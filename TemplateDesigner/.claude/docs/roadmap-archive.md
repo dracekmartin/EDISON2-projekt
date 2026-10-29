@@ -9,6 +9,8 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **Snímek výstupu všech agend** před `B56` (hotovo 29. 10., changelog 2026-10-29 (6)): sonda
+  `SnimekAgendProbe` + `SnimekAgendNaostro`, 45 souborů; jak spustit v `konzistence-agend-jr.md §7`.
 - **G2** Stejnojmenný parametr je ve všech agendách týž (hotovo 29. 10., changelog 2026-10-29 (5)):
   `KontraktAgendTest.TestSdileneParametryShodne` porovná popisek, typ, skupinu, výchozí hodnotu, volby
   a příznak načtení dat z výstupu serveru; 4 vědomé rozdíly s důvodem v testu.
