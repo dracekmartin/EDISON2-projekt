@@ -16,7 +16,7 @@
 ## 📞 Schůzka s kolegy z jízdních řádů - nastavení
 
 Projdeme s Janem před schůzkou, po ní zapsat rozhodnutí a položky přeskládat. Podklad (která nastavení
-tisku v EDISONu návrhář přebírá a co jde zrušit): [`legacy-nahrada.md` §Nastavení tisku v jízdních řádech](legacy-nahrada.md).
+tisku v EDISONu návrhář přebírá a co jde zrušit): [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
 
 - **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - návrhář přebírá nastavení u linky a firmy
   tak, jak je ukládá starý modul (např. formát roku v omezeních, `B194a` C9). Rozhodnout, co zůstane

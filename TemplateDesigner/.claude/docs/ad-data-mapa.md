@@ -939,7 +939,7 @@ poznámka nad linku, typ JR, skrytí agregátu bezbariér (#7161 D6), skrytí le
 Relevantní pro zastávkový JŘ (zbytek = ➖ Win tisk/kniha/HTML/odbavení):
 
 Stav sloupce „Máme" opravený 29. 10. podle kódu; přehled za všechny agendy a části nastavení je
-v [`legacy-nahrada.md` §Nastavení tisku v jízdních řádech](legacy-nahrada.md).
+v [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
 
 | dta | Význam | PATCH | Máme |
 |---|---|---|---|
