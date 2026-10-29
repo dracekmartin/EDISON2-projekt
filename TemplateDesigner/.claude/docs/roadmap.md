@@ -64,6 +64,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   šablony z databáze, nebo zavřít a pokračovat jako dnes (s odkazem na nápovědu). Otevřené: co je
   „ukázková šablona", jestli jen napoprvé / do „Příště nezobrazovat", a nesmí se ukázat při spuštění
   ze shellu s linkou nebo tisku do PDF. Dřív odložený „onboarding průvodce" (archiv) je širší.
+  **Zkušební verze je ve větvi `td/uvodni-nabidka`** (29. 10.: formulář „Jak začít" přes prázdné plátno
+  s testy) - odložená, než doladíme práci kolem `B56` (Jan).
 
 - **Hledání ve formuláři po slovech a se synonymy** [M] (z `B194h` H12, Jan 28. 10.: zajímavé, ale ne
   teď). Hledání dnes bere celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení"
