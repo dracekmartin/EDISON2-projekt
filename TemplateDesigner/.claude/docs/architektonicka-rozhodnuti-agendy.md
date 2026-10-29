@@ -269,6 +269,34 @@ Linkové JŘ i report generátor až po něm - poučené tím, co pilot ukáže.
 
 ---
 
+## R8. Sdílení kódu mezi agendami a cíl sloučení (`B56`) - ROZHODNUTO 29. 10. 2026
+
+**Co tím myslím.** Po čtyřech agendách JŘ (zastávkový a linkový, AD a MHD) je vidět, co mají agendy
+společné. Kód se dnes sdílí třemi způsoby naráz: společný základ `BaseAgenda`, přímá volání mezi
+agendami a opsané kopie. Kopie se už začaly rozcházet (dopravce ve třech verzích, platnost linky
+na sedmi místech, barva `0;0;0` jednou černá, jednou nenastavená).
+
+**Jaký problém to řeší.** Pátá agenda by opsala nejbližšího sourozence a rozjezd by se násobil:
+tatáž oprava na víc místech a nikdo neví, na kterých.
+
+**Rozhodnuto (Jan 29. 10.):**
+
+- Agendy zůstávají **přímými potomky `BaseAgenda`** - registr hledá jen ty a kódy agend se nemění.
+  `BaseAgenda` je kontrakt a obecné věci.
+- Sdílený kód jde do **pomocných tříd mimo hierarchii agend**, rozdělených podle toho, co dělají (čtení
+  dat AD, stavba výstupu zastávkového JŘ, stavba výstupu linkového JŘ, společné parametry). Ne dědičnost:
+  kód se sdílí ve dvou směrech (AD × MHD a zastávkový × linkový) a jedna dědičnost pokryje jen jeden.
+- **Cíl `B56` není sjednotit všechno, co jde.** Cíl je ujasnit a zapsat strukturu, projít agendy a dostat
+  je na základ, na kterém se další agenda staví bez opisování. Sjednocuje se tam, kde hrozí rozjezd, který
+  uživatel uvidí, nebo kde se tatáž oprava dělala víckrát. Vědomé rozdíly mezi agendami
+  ([`legacy-nahrada.md §4`](legacy-nahrada.md)) zůstávají.
+- Postup a pojistky: [`konzistence-agend-jr.md §7`](konzistence-agend-jr.md) - výstup všech agend musí
+  po každém kroku vyjít bajtově stejně.
+
+**Kdy nejpozději.** Před další agendou (Faktury, převod Report generátoru).
+
+---
+
 ## Souhrn - tahák
 
 | # | Rozhodnutí jednou větou | Kdy nejpozději |
@@ -280,6 +308,7 @@ Linkové JŘ i report generátor až po něm - poučené tím, co pilot ukáže.
 | R5 | Fonty přibalit do aplikace, nikdy nespoléhat na instalaci ve Windows | start linkových a knižních JŘ |
 | R6 | Systémové šablony jdou se .exe, DB jen pro zákaznické | návrh bloku B |
 | R7 | Jedna agenda k reálnému zákazníkovi dřív, než se migrují další | teď (další velký blok) |
+| R8 | Agendy dědí jen kontrakt, sdílený kód v pomocných třídách podle účelu; sjednotit jen tam, kde hrozí rozjezd | před další agendou |
 
 **Nit, která to spojuje:** engine se má měnit vzácně a vědomě (R1/R2/R4/R5 ho k tomu
 připravují), agendy se mají přidávat levně a bezpečně (R3/R7), a šablony se mají šířit

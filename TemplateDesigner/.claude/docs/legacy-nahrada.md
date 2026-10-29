@@ -785,9 +785,10 @@ sdílené helpery hostuje.
 **Změřeno 21. 9.:** vývěsky mají 10 metod znak po znaku shodných (~100 řádků: barvy, atributy
 zastávky, stavba odjezdu a skupiny dnů, obě metody předdefinovaných tabulek); ze schématu je 25 z 27
 popisů polí MHD totožných s AD (u linkových 22 z 24). Liší se dva popisky po ose AD × MHD
-(`CISLO_LINKY`, `LOKALNI_OZNACENI_LINKY`) - ve společné metodě by byly parametrem. Navržený tvar:
-mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje. Popisky polí hlídá
-`AgendaSchemaDriftTests`.
+(`CISLO_LINKY`, `LOKALNI_OZNACENI_LINKY`) - ve společné metodě by byly parametrem. Popisky polí hlídá
+`AgendaSchemaDriftTests`. Tvar sdílení je rozhodnutý (29. 10.): **pomocné třídy mimo hierarchii agend**,
+ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval z nabídky
+([`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md)).
 
 **Doplněno 23. 10. (review `B193`)** - kde začít, protože se to už rozešlo:
 

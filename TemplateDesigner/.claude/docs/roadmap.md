@@ -32,7 +32,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 
 ### `B194g` Architektura před `B56`
 
-- **R1** Rozhodnout model sdílení kódu agend - registr najde jen přímé potomky `BaseAgenda` [S] **Jan**
 - **R2** Duplicity pod jiným jménem (dopravce, platnost, barva, texty omezení) doplnit do `legacy-nahrada §4` [M]
 - **R3** Zapsat kontrakt prvek ↔ agenda a hlídat ho testem [M]
 - **R4** Schopnosti agend místo kódů agend natvrdo v C# [S-M] **Jan**
@@ -93,12 +92,12 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   ve své agendě, takže změnu agendy v takové šabloně zablokovat a říct proč (rozhodnutí Jan 27. 10.).
   Odtud i prázdná záložka „Vlastní definice sloupců" v obecné šabloně (review 27. 10., bod 4).
 
-- **`B56` Sloučení opsaného kódu agend** [L] - **po vydání** linkového JŘ MHD (čekalo na doimplementaci
-  knižního JŘ, splněno 22. 10.). Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už
-  rozešlo: výběr skupin linek a linek u AD (MHD sdílí od `B193c`), hlavička linky (rozcházela se
-  v platnosti a razítku, `B193f`), společné parametry vývěsek, předpřipravené tabulky, které návrhář
-  nenabízí (zrušit, nebo napojit). Podklad: [`legacy-nahrada.md §4`](legacy-nahrada.md). **Před startem**
-  rozhodnout model sdílení (`B194g` R1: registr najde jen přímé potomky `BaseAgenda`) a mít pojistky `B194f`.
+- **`B56` Sloučení opsaného kódu agend** [L] - **cíl (Jan 29. 10.) není sjednotit všechno**, ale ujasnit
+  strukturu a dát agendám základ, aby se nerozjížděly tam, kde to uživatel pozná nebo kde se oprava dělala
+  víckrát. Model sdílení: [`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md).
+  Začít tím, co se už rozešlo: výběr skupin linek a linek u AD, hlavička linky, společné parametry vývěsek
+  (`R5`), předpřipravené tabulky (zrušit, nebo napojit). Podklad [`legacy-nahrada.md §4`](legacy-nahrada.md);
+  **před startem** pojistky `B194f`.
 
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech vybere linky a dostane PDF bez otevření návrháře. Pro jednu linku PDF bez

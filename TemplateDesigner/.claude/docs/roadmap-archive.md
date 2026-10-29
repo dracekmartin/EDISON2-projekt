@@ -9,6 +9,9 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **R1** Model sdílení kódu agend rozhodnut (Jan 29. 10.): agendy zůstávají přímými potomky `BaseAgenda`,
+  sdílený kód do pomocných tříd mimo hierarchii podle účelu; cíl `B56` je ujasnit strukturu a zabránit
+  rozjezdům, ne sjednotit všechno. Zapsáno jako [`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md).
 - **C1** Porovnání linek nespadne na lince bez dat: vybraná linka bez dat pošle důvod, původní verze bez
   dat jde do hlášení porovnání (hotovo 23. 10., changelog 2026-10-23 (15)).
 - **C2** „Upravit styl…" v panelu Minut odjezdů otevře okno stylu jako okno nastavení prvku (hotovo

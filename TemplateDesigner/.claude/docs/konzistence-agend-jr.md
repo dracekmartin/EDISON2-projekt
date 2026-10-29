@@ -74,12 +74,9 @@ totéž znovu. Pořadí podle přínosu:
 
 ## 7. Architektura před sloučením kódu (`B56`)
 
-- **R1 Rozhodnout model sdílení kódu agend** [S] **Jan** (*ověřeno:* kód). Registr hledá jen přímé potomky
-  `BaseAgenda` (`AgendyRegistr.ListAgendy` :43, `GetClassForCode` :91), takže mezivrstva navržená
-  v `legacy-nahrada.md §4` (`ZastavkovyJrBase`) by agendy schovala z nabídky. Dnes se sdílí třemi způsoby
-  (`BaseAgenda` s AD helpery, MHD volá sesterskou vývěsku, vývěska AD a linkový AD volají navzájem
-  `MaSpoje` a `BarvaLinky`). Volba: (a) registr přes dědičnost + test jedinečnosti kódu, nebo (b) pomocné
-  třídy mimo hierarchii agend, `BaseAgenda` jen kontrakt. Podle toho opravit §4.
+- **R1 rozhodnuto 29. 10.: varianta (b)**, zapsané jako [`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md).
+  Registr hledá jen přímé potomky `BaseAgenda` (`AgendyRegistr.ListAgendy` :43, `GetClassForCode` :91),
+  takže mezivrstva `ZastavkovyJrBase` navržená v `legacy-nahrada.md §4` nepřipadá v úvahu - opravit §4 při R2.
 - **R2 Duplicity pod jiným jménem** [M] (*ověřeno:* kód; doplnit do §4, analýza je hledala podle názvu).
   Dopravce: tři implementace v Caché + skládání v C# (`PageLayoutEngine.cs:276`,
   `LineTableElement.PopisDopravcuStranky`), rozsahy čísel spojů dvakrát s jinými pravidly
@@ -114,7 +111,7 @@ totéž znovu. Pořadí podle přínosu:
 
 **Připravenost na `B56`** (revize 28. 10., čtení kódu, na serveru nic nespuštěno):
 
-- **Nutné před prvním krokem:** R1, G7 (část o chybě), G1 v malé podobě (všechny agendy přes `ListAgendy`:
+- **Nutné před prvním krokem:** G7 (část o chybě), G1 v malé podobě (všechny agendy přes `ListAgendy`:
   schéma, parametry a ukázka bez chyby a s platným JSON), G2 jako Caché test nad výstupem `GetParameters`
   (přežije přesun kódu a uvidí i parametry skládané za běhu), G8 a snímek výstupu všech agend.
   Ostatní G a R jsou užitečné, ale bez nich slučování tisk tiše nerozbije.
@@ -125,7 +122,7 @@ totéž znovu. Pořadí podle přínosu:
   Dnešní pokrytí: zastávkový AD odtisk 3 linek a oracle jen zčásti, zastávkový MHD 3 linky a oracle,
   linkový AD 4 linky a oracle, linkový MHD jen oracle tabulky, rozdílový jen umělá data.
   Všechny odtisky jedou jen s výchozími parametry.
-- **R1 - doporučení revize (b), pomocné třídy mimo hierarchii agend.**
+- **Proč R1 (b), pomocné třídy mimo hierarchii agend.**
   Kopie vedou dvěma směry: vývěsky AD a MHD sdílejí stavbu výstupu (`BuildOdjezd`, `AddAtribut`), vývěska AD
   a linkový AD čtení dat AD (`NazevLinky`, `PrvniLinka`, `WMapa`); jedna dědičnost pokryje jen jeden.
   Dnešní sdílení už má tvar (b): `LinkovyJrMhd` volá `LinkovyJrAd.Parametr*` a `ZastavkoveJrMhd.SeznamLinek`.
