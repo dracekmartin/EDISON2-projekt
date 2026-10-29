@@ -13,6 +13,12 @@ public class ShellShutdown(Action shutdown)
     private Action? _suppressCloseConfirm;
     private bool _forced;
 
+    /// <summary>
+    /// Běží runner serverové aktualizace (<see cref="ManualUpdate"/>), který session shellu odhlásí o chvíli dřív,
+    /// než dá signál k zavření. <see cref="ServerSessionEnd"/> proto s hláškou o konci session chvíli počká.
+    /// </summary>
+    public bool SessionEndExpected { get; set; }
+
     /// <summary>Napojí suppress hook shellu. Před jeho vznikem není co potlačovat (dialog neexistuje).</summary>
     public void AttachShell(Action suppressCloseConfirm)
     {

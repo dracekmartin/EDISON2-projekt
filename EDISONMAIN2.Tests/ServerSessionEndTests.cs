@@ -16,11 +16,15 @@ public class ServerSessionEndTests
 {
     private readonly FakeStartupHost _host = new();
     private readonly IPopupDisplayer _popups = Substitute.For<IPopupDisplayer>();
+    private readonly ShellShutdown _shutdown;
+    /// <summary>Odklad hlášky při běžícím runneru aktualizace, test ho uvolní ručně.</summary>
+    private readonly TaskCompletionSource _grace = new();
     private readonly ServerSessionEnd _end;
 
     public ServerSessionEndTests()
     {
-        _end = new ServerSessionEnd(_host, new ShellShutdown(_host.Shutdown), () => _popups);
+        _shutdown = new ShellShutdown(_host.Shutdown);
+        _end = new ServerSessionEnd(_host, _shutdown, () => _popups, () => _grace.Task);
     }
 
     [Fact]
@@ -72,6 +76,34 @@ public class ServerSessionEndTests
 
         Assert.ThrowsAny<InvalidOperationException>(() => _end.End(MLRestMocks.Create(), ServerSessionEnd.ActivityLostMessage));
 
+        Assert.Single(_host.Calls, c => c == "shutdown");
+    }
+
+    [Fact]
+    public void End_WhileUpdateRunner_RunnerClosesShellDuringGrace_NoMessage()
+    {
+        // Runner serverové aktualizace odhlásí session shellu dřív, než dá signál k zavření: není to výpadek spojení.
+        _shutdown.SessionEndExpected = true;
+
+        _end.End(MLRestMocks.Create(), ServerSessionEnd.ActivityLostMessage);
+        _shutdown.Force();
+        _grace.SetResult();
+
+        _popups.DidNotReceiveWithAnyArgs().Info(default!);
+        Assert.Single(_host.Calls, c => c == "shutdown");
+    }
+
+    [Fact]
+    public void End_WhileUpdateRunner_SessionLostOtherwise_MessageAfterGrace()
+    {
+        // Odpojení správcem nebo timeout během dialogu runneru: shell se nesmí zavřít bez vysvětlení.
+        _shutdown.SessionEndExpected = true;
+
+        _end.End(MLRestMocks.Create(), ServerSessionEnd.ActivityLostMessage);
+        _popups.DidNotReceiveWithAnyArgs().Info(default!);
+        _grace.SetResult();
+
+        _popups.Received(1).Info(ServerSessionEnd.ActivityLostMessage);
         Assert.Single(_host.Calls, c => c == "shutdown");
     }
 
