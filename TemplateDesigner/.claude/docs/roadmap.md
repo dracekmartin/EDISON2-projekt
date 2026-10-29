@@ -15,8 +15,8 @@
 
 ## 📞 Schůzka s kolegy z jízdních řádů - nastavení
 
-Projdeme s Janem před schůzkou, po ní zapsat rozhodnutí a položky přeskládat. Podklad (co návrhář
-z jízdních řádů čte a otázky na kolegy): [`ad-data-mapa.md §Nastavení z jízdních řádů`](ad-data-mapa.md).
+Projdeme s Janem před schůzkou, po ní zapsat rozhodnutí a položky přeskládat. Podklad (která nastavení
+tisku v EDISONu návrhář přebírá a co jde zrušit): [`legacy-nahrada.md` §Nastavení tisku v jízdních řádech](legacy-nahrada.md).
 
 - **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - návrhář přebírá nastavení u linky a firmy
   tak, jak je ukládá starý modul (např. formát roku v omezeních, `B194a` C9). Rozhodnout, co zůstane
@@ -24,9 +24,6 @@ z jízdních řádů čte a otázky na kolegy): [`ad-data-mapa.md §Nastavení z
 - **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
   **Jan** - čeká na nastavení JŘ, ze kterého volby vycházejí; patří k `B56` R5 (stálý kód vedle popisku).
   Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
-- **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
-  JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
-  (zákazníkovi odpovězeno 23. 9.). Náš díl: pustit pole schématem obou agend a nabídnout v šabloně.
 
 ---
 
@@ -122,6 +119,10 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   polohy tabulky a poznámek jsou odhad modelu. **Od 9. 10. jen interní nástroj** - převody předloh
   dělá M-line; dál až se při nich ukáže, že šetří čas. Zbývají kroky **(2)** model pojmenuje bloky
   z PDF a **(3)** tabulka měřená z PDF celá. Stav a proč: [`architecture.md §Import z PDF`](architecture.md).
+
+- **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
+  JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
+  (zákazníkovi odpovězeno 23. 9.). Náš díl: pustit pole schématem obou agend a nabídnout v šabloně.
 
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Posunout nebo zvětšit prvek na jedné vysázené stránce před PDF, když se linkám s mnoha poznámkami
