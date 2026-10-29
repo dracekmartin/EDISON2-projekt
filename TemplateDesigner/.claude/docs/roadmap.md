@@ -4,31 +4,12 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** příprava na schůzku s kolegy z jízdních řádů (nastavení, která návrhář čte),
-> pak pojistky a architektura před `B56` (`B194f`, `B194g`; linkový JŘ MHD vydaný 27. 10.), po nich `B56`. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** pojistky a architektura před `B56` (`B194f`, `B194g`; linkový JŘ MHD vydaný 27. 10.),
+> po nich `B56`. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
-
----
-
-## 📞 Schůzka s kolegy z jízdních řádů - nastavení
-
-Projdeme s Janem před schůzkou, po ní zapsat rozhodnutí a položky přeskládat. Podklad (která nastavení
-tisku v EDISONu návrhář přebírá a co jde zrušit): [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
-
-- **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - návrhář přebírá nastavení u linky a firmy
-  tak, jak je ukládá starý modul (např. formát roku v omezeních, `B194a` C9). Rozhodnout, co zůstane
-  u linky, co se přesune do šablony a jak se má nastavovat. Na tom visí kroky `B56`, které čtou nastavení linky.
-- **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
-  **Jan** - čeká na nastavení JŘ, ze kterého volby vycházejí; patří k `B56` R5 (stálý kód vedle popisku).
-  Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
-- **Nová pole v jízdních řádech, která jsme s kolegy dohodli 10. 8.** [S] **Jan** - zeptat se na stav;
-  v lokálním zdroji nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5,
-  ověřit, že opravdu po zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937,
-  tiket pozastavený; trvá zákazník i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV
-  #9088). Náš díl je pak malý: pole přečíst a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
 
 ---
 
@@ -65,6 +46,19 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 
 ### Ostatní
 
+- **Úklid nastavení tisku v jízdních řádech - naše strana** [M] - **čeká na kolegu z jízdních řádů**.
+  Domluveno 29. 10.: většinu tiskových nastavení z jízdních řádů vyhodí, zbytek dodělají. Až se k tomu
+  dostane, sladit agendy: nastavení, které zmizí z jízdních řádů a návrhář ho dál čte, by zůstalo uložené
+  a nešlo by změnit. Na tom visí kroky `B56`, které čtou nastavení linky. Co agendy čtou a odkud:
+  [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
+- **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
+  **Jan** - čeká na úklid nastavení v jízdních řádech (výš), ze kterého volby vycházejí; patří k `B56` R5
+  (stálý kód vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
+- **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
+  nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po
+  zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937, pozastavený; trvá zákazník
+  i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV #9088). Náš díl: pole přečíst
+  a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
 - **Úvodní okno pro nové uživatele** [S-M] (nápad Jan 29. 10.). Dnes návrhář otevře prázdnou šablonu
   a nový uživatel neví, kde začít. Okno po otevření nabídne: otevřít ukázkovou šablonu agendy, otevřít
   šablony z databáze, nebo zavřít a pokračovat jako dnes (s odkazem na nápovědu). Otevřené: co je

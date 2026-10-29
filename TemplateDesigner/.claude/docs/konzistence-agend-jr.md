@@ -143,7 +143,7 @@ totéž znovu. Pořadí podle přínosu:
   `GetAvailableSkupiny`/`GetAvailableInstances` (liší se jen `q` × `ret`).
   Kopie s rozdílem až s rozhodnutím Jana nebo s oraclem.
   Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu
-  „Nastavení jízdních řádů, která čte návrhář".
+  „Úklid nastavení tisku v jízdních řádech" (kolegové většinu nastavení vyhodí, domluveno 29. 10.).
 - **Kde by sloučení změnilo tisk** (doplnit do `legacy-nahrada §4` v rámci R2):
   - Texty omezení: `LinkovyJrAd.SestavTextOmezeni` tiskne omezení 14/15 i bez dat, zastávkový je přeskočí.
     Liší se i předložka (`PredlozkaOmezeni` × `PrefixOmezeni`) a zdroj jazyka.

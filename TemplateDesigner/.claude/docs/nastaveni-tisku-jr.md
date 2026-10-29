@@ -4,8 +4,9 @@
 > která ne, a co by šlo zrušit a definovat v šabloně. Co návrhář čte, je ověřené čtením kódu agend; kde
 > se nastavení otevírá, je ze zdroje klientů (`C:\DEV\EDISON\JRMAIN`, `ISYJR2`, `JRSETTINGS`, `MHD2*`),
 > v běžící aplikaci neproklikané.
-> **Jednorázový podklad:** po schůzce rozhodnutí zapsat do roadmapy a trvalých dokumentů
-> (`legacy-nahrada.md`, `ad-data-mapa.md`) a tento soubor smazat.
+> **Jednorázový podklad.** Schůzka 29. 10.: většinu tiskových nastavení kolegové z jízdních řádů vyhodí,
+> zbytek dodělají. Soubor zůstává jako podklad pro backlog „Úklid nastavení tisku v jízdních řádech"
+> (co agendy čtou a odkud); po něm smazat.
 
 Stavy: **bereme** (návrhář nastavení čte, šablona ho nepřebije) · **bereme, šablona přebije** (parametr
 s volbou „Automaticky (dle linky)") · **nebereme** (nahrazuje šablona, nebo chybí).

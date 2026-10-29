@@ -805,7 +805,8 @@ mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase`, varianta si doplní svoje. Popi
   × `LinkovyJrMhd.cls:1176-1195`) a `RgbToHex` vedle `BaseAgenda.RgbNaHex`.
 
 **Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - patří ke kroku R5
-(parametry vývěsek do jedné definice), čeká na vyjasnění nastavení JŘ s kolegy (Jan 28. 10.).
+(parametry vývěsek do jedné definice), čeká na úklid nastavení tisku v jízdních řádech, který dodělají kolegové
+(domluveno 29. 10., backlog).
 
 - Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb: „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", k tomu kryptické prázdninové volby vývěsky.
   Vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`).

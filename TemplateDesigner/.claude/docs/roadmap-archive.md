@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Schůzka s kolegy z jízdních řádů - nastavení tisku (29. 10. 2026)
+
+- **Nastavení jízdních řádů, která čte návrhář** - rozhodnuto s kolegy 29. 10.: většina tiskových nastavení
+  se z jízdních řádů vyhodí, zbytek kolegové dodělají. Naše strana (sladit, co agendy čtou) čeká v backlogu
+  jako „Úklid nastavení tisku v jízdních řádech", spolu s `P2` a novými poli z 10. 8. Podklad ke schůzce
+  [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
+
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
 - **C1** Porovnání linek nespadne na lince bez dat: vybraná linka bez dat pošle důvod, původní verze bez
