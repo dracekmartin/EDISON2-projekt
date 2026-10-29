@@ -43,14 +43,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool IsDirty
     {
         get => _isDirty;
-        private set
-        {
-            if (_isDirty == value) return;
-            _isDirty = value;
-            // Uživatel začal kreslit - úvodní nabídka už jen překáží.
-            if (value) StartPanel.Hide();
-            RequestTitleUpdate?.Invoke();
-        }
+        private set { if (_isDirty != value) { _isDirty = value; RequestTitleUpdate?.Invoke(); } }
     }
 
     // ── Providers ─────────────────────────────────────────────────────────────
@@ -1064,9 +1057,6 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     public TdPreferencesService? Preferences { get; }
 
-    /// <summary>Úvodní nabídka přes prázdné plátno po spuštění.</summary>
-    public StartPanelViewModel StartPanel { get; }
-
     public TemplateDesignerViewModel(MLRest? mlRest = null,
                                      TdPreferencesService? preferences = null,
                                      IReadOnlyList<AgendaRegistryEntry>? agendas = null,
@@ -1074,7 +1064,6 @@ public class TemplateDesignerViewModel : EDViewModel
                                      bool startupJenModul = false)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
-        StartPanel = new StartPanelViewModel(OpenFromCacheAsync, StartFromSystemTemplateAsync, ChangeAgendaFromStartPanelAsync);
 
         // Výměna šablony je jediný okamžik, kdy může přibýt font, který tenhle počítač nemá.
         // Psaní vlastního názvu do pole fontu se sem záměrně nenapojuje: nabídka jmenuje jen
@@ -1084,7 +1073,6 @@ public class TemplateDesignerViewModel : EDViewModel
             NastavHlaseni(ZdrojHlaseni.Font,
                 FontWarnings.Hlaska(State.CurrentTemplate) is { } font ? [font] : []);
             ZkontrolujPrvkyAgendy();
-            StartPanel.Hide();
         };
 
         Preferences = preferences;
@@ -2365,62 +2353,13 @@ public class TemplateDesignerViewModel : EDViewModel
         var own = NewestTemplate(await storage.ListAsync(agenda));
         if (own is not null)
             return ((await storage.LoadAsync(own.TemplateId)).Template, false);
-        return (await LoadSystemTemplateAsync(agenda), true);
-    }
 
-    /// <summary>Hotová šablona M-line pro agendu, null když agenda žádnou nemá.</summary>
-    private async Task<Template?> LoadSystemTemplateAsync(string agenda)
-    {
         var embedded = await Task.Run(() => EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda));
-        if (embedded is null || TemplateStorage is null) return embedded;
+        if (embedded is null) return (null, true);
         // V databázi může být novější verze z distribučního kanálu; když tam ještě není (seed
         // běží souběžně se startem), stačí ta z .exe.
-        try { return (await TemplateStorage.LoadAsync(embedded.Id, Services.CacheTemplateService.MlineIdFa)).Template; }
-        catch (CacheTemplateException) { return embedded; }
-    }
-
-    // ── Úvodní nabídka po spuštění ───────────────────────────────────────────
-
-    /// <summary>
-    /// Ukáže úvodní nabídku přes prázdné plátno. Volá okno po startu, jen když spuštění neotevírá
-    /// konkrétní linku. Hotovou šablonu nabídne jen agendě, která ji má.
-    /// </summary>
-    public async Task ShowStartPanelAsync()
-    {
-        var sablona = State.CurrentTemplate;
-        string? systemova = sablona.AgendaCode is { } agenda
-            ? (await Task.Run(() => EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda)))?.Name
-            : null;
-        // Mezitím mohl uživatel šablonu vyměnit nebo začít kreslit - pak už nabídka nepatří.
-        if (!ReferenceEquals(sablona, State.CurrentTemplate) || IsDirty) return;
-        StartPanel.Show(CurrentAgendaDisplayName, TemplateStorage is not null, systemova);
-    }
-
-    /// <summary>Změna agendy z úvodní nabídky založí prázdnou šablonu nové agendy (a tím nabídku
-    /// zavře) - nabídka se pak ukáže znovu, už s hotovou šablonou té nové agendy.</summary>
-    internal async Task ChangeAgendaFromStartPanelAsync()
-    {
-        var puvodni = State.CurrentTemplate;
-        await ChangeAgendaAsync();
-        if (!ReferenceEquals(puvodni, State.CurrentTemplate)) await ShowStartPanelAsync();
-    }
-
-    /// <summary>Otevře hotovou šablonu M-line agendy jako kopii - Ctrl+S ji uloží jako šablonu firmy.</summary>
-    internal async Task StartFromSystemTemplateAsync()
-    {
-        if (State.CurrentTemplate.AgendaCode is not { } agenda) return;
-        if (!await ConfirmUnsavedChangesAsync()) return;
-        try
-        {
-            var template = await LoadSystemTemplateAsync(agenda);
-            if (template is null)
-            {
-                StatusText = "Agenda nemá hotovou šablonu od M-line.";
-                return;
-            }
-            await ShowTemplateFromDatabaseAsync(template, isSystem: true, loadInstanceDefaults: true);
-        }
-        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+        try { return ((await storage.LoadAsync(embedded.Id, Services.CacheTemplateService.MlineIdFa)).Template, true); }
+        catch (CacheTemplateException) { return (embedded, true); }
     }
 
     internal static CacheTemplateMetadata? NewestTemplate(IEnumerable<CacheTemplateMetadata> templates) =>

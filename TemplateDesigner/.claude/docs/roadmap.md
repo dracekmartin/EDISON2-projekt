@@ -59,10 +59,11 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937, pozastavený; trvá zákazník
   i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV #9088). Náš díl: pole přečíst
   a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
-- **Úvodní nabídka přes prázdné plátno** [S] **Jan** - zkušební verze hotová 29. 10. (changelog), čeká
-  na vyzkoušení a úpravy. Otevřené po vyzkoušení: „Pokračovat" v naposledy otevřené šabloně (návrhář si ji
-  dnes nepamatuje), „Příště nezobrazovat", víc hotových šablon jedné agendy (linkový AD jich má dvě,
-  nabídne se první) a odkaz na příručku (článek na wiki je zatím interní).
+- **Úvodní okno pro nové uživatele** [S-M] (nápad Jan 29. 10.). Dnes návrhář otevře prázdnou šablonu
+  a nový uživatel neví, kde začít. Okno po otevření nabídne: otevřít ukázkovou šablonu agendy, otevřít
+  šablony z databáze, nebo zavřít a pokračovat jako dnes (s odkazem na nápovědu). Otevřené: co je
+  „ukázková šablona", jestli jen napoprvé / do „Příště nezobrazovat", a nesmí se ukázat při spuštění
+  ze shellu s linkou nebo tisku do PDF. Dřív odložený „onboarding průvodce" (archiv) je širší.
 
 - **Hledání ve formuláři po slovech a se synonymy** [M] (z `B194h` H12, Jan 28. 10.: zajímavé, ale ne
   teď). Hledání dnes bere celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení"
