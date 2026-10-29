@@ -72,35 +72,60 @@ public class AgendaSchemaDriftTests
         Assert.True(hits.Count == 0, "Vyřazené pole je zpátky v nabídce dat agendy:\n" + string.Join("\n", hits));
     }
 
+    /// <summary>Cíl je proměnná (<c>gf</c>), nebo pole kolekce převzaté z jiné agendy
+    /// (<c>kolekce.%Get("fields")</c> - porovnání verzí tak rozšiřuje kolekce linkového JŘ).</summary>
     private static readonly Regex AddFieldRx = new(
-        """AddField\(\s*\w+\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*[,)]""",
+        """AddField\(\s*(\w+(?:\.%Get\("fields"\))?)\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,\s*"([^"]+)"\s*[,)]""",
         RegexOptions.Compiled);
 
     private static readonly Regex CollectionKeyRx = new(
         "collectionKey\\s*=\\s*\"([A-Z_0-9]+)\"",
         RegexOptions.Compiled);
 
+    /// <summary>Podmínka na kolekci ve smyčce přes převzaté kolekce: <c>d:klic="SPOJE" ..AddField(…)</c>
+    /// platí pro řádek, <c>continue:klic'="ZASTAVKY"</c> pro řádky pod ním.</summary>
+    private static readonly Regex KlicJeRx = new("(?<!')klic\\s*=\\s*\"([A-Z_0-9]+)\"", RegexOptions.Compiled);
+    private static readonly Regex KlicNeniRx = new("klic\\s*'=\\s*\"([A-Z_0-9]+)\"", RegexOptions.Compiled);
+
     private record Entry(string Scope, string Key, string Label, string Type, string File);
+
+    private static List<Entry> ParseAgenda(string path) =>
+        ParseLines(File.ReadAllLines(path), Path.GetFileName(path));
 
     /// <summary>
     /// Vytáhne pole ze schématu jedné agendy. Čte se <b>sekvenčně</b>: dokud nepadne první
     /// <c>collectionKey</c>, jsou pole skalární; každý další <c>collectionKey</c> otevře novou
     /// kolekci. Proměnná držící pole se v agendách recykluje (<c>gf</c>), takže podle názvu
-    /// proměnné to poznat nejde.
+    /// proměnné to poznat nejde. Zakomentovaný řádek se přeskočí - pole, které agenda neposílá,
+    /// by test jinak porovnával s ostatními (`G7`).
     /// </summary>
-    private static List<Entry> ParseAgenda(string path)
+    private static List<Entry> ParseLines(IEnumerable<string> lines, string file)
     {
         var result = new List<Entry>();
         string scope = "fields";
-        string file = Path.GetFileName(path);
+        string? klicNeni = null;
 
-        foreach (var line in File.ReadAllLines(path))
+        foreach (var line in lines)
         {
+            var t = line.TrimStart();
+            if (t.StartsWith("//", StringComparison.Ordinal) || t.StartsWith("#;", StringComparison.Ordinal)
+                || t.StartsWith(';')) continue;
+
             var col = CollectionKeyRx.Match(line);
             if (col.Success) scope = "collection:" + col.Groups[1].Value;
+            var neni = KlicNeniRx.Match(line);
+            if (neni.Success) klicNeni = neni.Groups[1].Value;
 
             foreach (Match m in AddFieldRx.Matches(line))
-                result.Add(new Entry(scope, m.Groups[1].Value, m.Groups[2].Value, m.Groups[3].Value, file));
+            {
+                string s = scope;
+                if (m.Groups[1].Value.Contains("%Get", StringComparison.Ordinal))
+                {
+                    var je = KlicJeRx.Match(line);
+                    s = "collection:" + (je.Success ? je.Groups[1].Value : klicNeni ?? "?");
+                }
+                result.Add(new Entry(s, m.Groups[2].Value, m.Groups[3].Value, m.Groups[4].Value, file));
+            }
         }
         return result;
     }
@@ -130,6 +155,25 @@ public class AgendaSchemaDriftTests
 
         Assert.Contains(AllFields(),
             e => e.Scope == "collection:ZASTAVKY" && e.Key == "NAZEV_ZASTAVKY");
+        // Porovnání verzí rozšiřuje kolekce linkového JŘ jiným zápisem; do 29. 10. je parser neviděl.
+        Assert.Contains(AllFields(), e => e.Scope == "collection:SPOJE" && e.Key == "VERZE");
+        Assert.Contains(AllFields(), e => e.Scope == "collection:ZASTAVKY" && e.Key == "TC_PUVODNI");
+        Assert.DoesNotContain(AllFields(), e => e.Scope == "collection:?");
+    }
+
+    [Fact]
+    public void Parser_PreskociZakomentovanePole()
+    {
+        string[] radky =
+        [
+            "        d ..AddField(fields, \"CISLO_LINKY\", \"Číslo linky\", \"text\")",
+            "        // d ..AddField(fields, \"STARE_POLE\", \"Staré pole\", \"text\")",
+            "        #; d ..AddField(fields, \"JESTE_STARSI\", \"Ještě starší\", \"text\")",
+        ];
+
+        var pole = ParseLines(radky, "test.cls");
+
+        Assert.Equal(["CISLO_LINKY"], pole.Select(e => e.Key));
     }
 
     /// <summary>Společné pořadí skalárních polí agend JŘ: linka → dopravce → platnost → zastávka a směr →

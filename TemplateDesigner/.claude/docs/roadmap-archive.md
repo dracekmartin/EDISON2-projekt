@@ -9,6 +9,10 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **G7** Drobné díry drift testů (hotovo 29. 10., changelog 2026-10-29 a (3)): Caché testy linkových JŘ
+  a sonda `AdSloupekProbe` čtou chybu agendy z `^||ML("ERR")`; kontrola schématu vidí rozšíření kolekcí
+  v porovnání verzí a přeskakuje zakomentované řádky. Pořadí „Obecné" první hlídá `G1`, parametry
+  se jménem skládaným za běhu převzalo `G2`.
 - **R1** Model sdílení kódu agend rozhodnut (Jan 29. 10.): agendy zůstávají přímými potomky `BaseAgenda`,
   sdílený kód do pomocných tříd mimo hierarchii podle účelu; cíl `B56` je ujasnit strukturu a zabránit
   rozjezdům, ne sjednotit všechno. Zapsáno jako [`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md).

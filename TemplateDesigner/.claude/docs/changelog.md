@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-29 (3) - Kontrola polí agend vidí rozšíření v porovnání verzí a přeskakuje komentáře (`B194f` G7)
+
+Offline kontrola nabídky dat (`AgendaSchemaDriftTests`) nečetla pole, která porovnání verzí přidává do kolekcí
+linkového JŘ (`VERZE` u spojů, `TC_PUVODNI` a `ZONY_PUVODNI` u zastávek), a naopak by počítala i pole
+v zakomentovaném řádku. Teď je vidí a jejich popisky prošly pravidly; pojistka parseru hlídá, že je najde.
+Zbytek G7 kryje G1 (pořadí „Obecné" první) a G2 (parametry se jménem skládaným za běhu).
+
 ## 2026-10-29 (2) - Test kontraktu všech agend z registru (`B194f` G1, malá podoba)
 
 `KontraktAgendTest` projde všechny agendy, které najde registr (dnes šest včetně porovnání verzí

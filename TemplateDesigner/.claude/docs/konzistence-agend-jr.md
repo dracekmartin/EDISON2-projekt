@@ -57,18 +57,14 @@ totéž znovu. Pořadí podle přínosu:
 - **G2 Celá definice stejnojmenného parametru shodná ve všech agendách** [S]. Popisek, typ, skupina,
   výchozí hodnota, volby, `serverSide` - s pojmenovanými výjimkami (`TVAR_NAZVU_ZASTAVKY`). Uzavře opsané
   parametry vývěsek (`AgendaParameterDriftTests` dnes porovná jen popisek; `ServerSideParamsDriftTests`
-  spokojí příznak v kterékoli kopii).
+  spokojí příznak v kterékoli kopii). Jako Caché test nad výstupem uvidí i parametry se jménem skládaným
+  za běhu (`P4`), které offline kontrola nevidí (převzato z `G7`).
 - **G3 Jeden popisek = jeden klíč napříč agendami JŘ** [S]. Chytí `D1` a `D3` (dnes se hlídá jen stejný klíč).
 - **G4 Ban list i na nápovědy, části slov a titulky oken** [S]. Odtud „nástupiště" (`P7`), „engine" (`E7`),
   „Tučně" uvnitř popisku (`E10`), „Linkový JŘ - nastavení" (`E2`).
   Stav 28. 10.: titulky oken vlastností hlídá `ElementNamesTests`, části slov se kontrolují jen v popiscích
   a volbách, nápovědy nic (odtud `H8`).
 - **G5 Každé tlačítko formuláře má obsluhu v každém hostiteli** [S]. Odtud `C2`.
-- **G7 Drobné díry drift testů** [S]. Regex schématu nevidí `AddField(kolekce.%Get("fields"), …)` (rozdílový
-  `VERZE`, `TC_PUVODNI`, `ZONY_PUVODNI`) a chytá zakomentované řádky; parametry se jménem skládaným za
-  běhu (`P4`) a pořadí „Obecné první" u vývěsek a linkového MHD (definice v pomocných metodách) test nevidí.
-  Část o chybě agendy je hotová 29. 10.: `LinkovyJrSmokeTest` a sonda `AdSloupekProbe` čtou chybu
-  z `^||ML("ERR")` místo `^||ML("OUT","ERR")`, kam `$$$CatchErrRest` nepíše.
 - **G8 Zlatý odtisk linkového MHD včetně hlavičky** [S] (po 27. 10.). Bere z vývěsky MHD pět metod
   (dopravce, typ JŘ, seznam linek, skupiny); porovnání se starým modulem kryje jen tabulku a
   `TestDopravceJakoVyveska` porovnává s toutéž funkcí.

@@ -27,7 +27,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 - **G3** Jeden popisek = jeden klíč napříč agendami JŘ [S]
 - **G4** Kontrola zakázaných termínů i v nápovědách a titulcích oken [S]
 - **G5** Každé tlačítko formuláře má obsluhu v každém hostiteli [S]
-- **G7** Drobné díry drift testů [S] - část o chybě agendy hotová 29. 10., zbývají díry v kontrole schématu a parametrů
 - **G8** Zlatý odtisk linkového MHD včetně hlavičky (po 27. 10.) [S]
 
 ### `B194g` Architektura před `B56`
