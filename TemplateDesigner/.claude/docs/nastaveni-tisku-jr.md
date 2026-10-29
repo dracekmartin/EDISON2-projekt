@@ -1,15 +1,21 @@
 # Nastavení tisku v jízdních řádech - co přebírá návrhář (stav 29. 10.)
 
 > Přehled pro schůzku s kolegy z jízdních řádů: která nastavení tisku v EDISONu návrhář už přebírá,
-> která ne, a co by šlo zrušit a definovat v šabloně. Ověřeno čtením kódu agend a zdroje starého
-> modulu (`JRMAIN/CACHE/JRapiLin.mac`, `JRapiLin1.mac`, `JRapiSet.mac`).
+> která ne, a co by šlo zrušit a definovat v šabloně. Co návrhář čte, je ověřené čtením kódu agend; kde
+> se nastavení otevírá, je ze zdroje klientů (`C:\DEV\EDISON\JRMAIN`, `ISYJR2`, `JRSETTINGS`, `MHD2*`),
+> v běžící aplikaci neproklikané.
 > **Jednorázový podklad:** po schůzce rozhodnutí zapsat do roadmapy a trvalých dokumentů
 > (`legacy-nahrada.md`, `ad-data-mapa.md`) a tento soubor smazat.
 
 Stavy: **bereme** (návrhář nastavení čte, šablona ho nepřebije) · **bereme, šablona přebije** (parametr
 s volbou „Automaticky (dle linky)") · **nebereme** (nahrazuje šablona, nebo chybí).
 
-## 1. Jízdní řády AD - linka - dialog „Nastavení pro tisk linky" (82 polí)
+**Okno linky** (výchozí bod částí 1, 2 a 4): v Jízdních řádech vybrat linku a **Upravit linku**. Otevře se
+okno **„Editace Linky"** (starý editor; nový editor linky je v Jízdních řádech zatím vypnutý).
+
+## 1. „Nastavení pro tisk linky" (u linky, 82 polí)
+
+**Kde:** okno linky → tlačítko **Nastavení k tisku** (nebo Nástroje → Nastavení k tisku).
 
 - **Rozvržení starého tisku, asi 60 polí - nebereme, nahrazuje šablona.** Počty spojů na stranu,
   prázdné sloupce, měřítko, okraje, písma, šířky sloupců, ruční zlom, výška JŘ, dělená linka na stránky,
@@ -24,39 +30,61 @@ s volbou „Automaticky (dle linky)") · **nebereme** (nahrazuje šablona, nebo 
 - **Vývěska MHD (5 polí) - bereme** poznámky o odchylkách v trase a jejich písmena, značky minutových
   tras a lokální název. Automatické generování časových průběhů nebereme, varianty počítáme vždy.
 
-## 2. Jízdní řády AD - linka - vlastnosti linky, záložky „MHD - další" a „MHD"
+## 2. „Editace vlastností linky" a pořadí spojů (u linky)
 
-- **Bereme, šablona přebije:** rozvržení sloupců vývěsky (pracovní / sobota / neděle a varianty).
-- **Bereme:** prázdninové dělení sloupců, vyřazení spojů ze sloupce, nevypisovat značku ve sloupci,
-  vlastní nadpisy sloupců. Vlastní sloupce v šabloně tohle všechno nahradí.
+**Kde:** okno linky → tlačítko **Vlastnosti** (nebo Nástroje → Vlastnosti linky). Záložky Obecné,
+Poznámky 1 a 2, Místenkování, MHD, MHD - poznámky, **MHD - další** a QR kód. Ruční pořadí spojů:
+okno linky → Nástroje → **Pořadí spojů pro tisk**.
+
+- **Bereme, šablona přebije:** rozvržení sloupců vývěsky (pracovní / sobota / neděle a varianty),
+  záložka MHD - další.
+- **Bereme:** prázdninové dělení sloupců, vyřazení spojů ze sloupce, nevypisovat značku ve sloupci
+  (vše MHD - další), výběr sady vlastních nadpisů sloupců. Vlastní sloupce v šabloně tohle všechno nahradí.
 - **Bereme jako údaje** (šablona je jen umístí): poznámka nad linkou a pod dopravcem, QR, typ JŘ
   (výluka, návrh), lokální označení, informace, komentáře, „jede na objednání / podmínečně", spoje
-  nepoznámkovat.
+  nepoznámkovat, ruční pořadí spojů.
 - **Nebereme:** jednosměrná linka.
 
-## 3. Jízdní řády AD - nastavení programu za firmu, část tisk linek a MHD (asi 50 polí)
+## 3. „Jízdní řády - nastavení" (za firmu, část tisk asi 50 polí)
 
-- **Bereme:** výchozí rok v omezeních a písmena v zóně (linka je smí přepsat), které atributy spoje
-  dostanou větu v legendě, tvar místenkování, texty „na objednání / podmínečně". Z tiskových programů
-  firmy jen to, jestli se tiskne bezbariérovost (zastávkový JŘ).
-- **Nebereme, nahrazuje šablona:** měřítka, okraje, písma, rámečky, zvýraznění zastávky na vývěsce
-  (dnes parametr sestavy), pořadí poznámek.
-- **Nebereme, chybí:** pořadí a souhrn dopravců, vlastní texty IDP-P / IDP-Z.
+**Kde:** okno **„Jízdní řády - nastavení"** starého programu nastavení jízdních řádů (`JRSETTINGS`). Nový
+klient jízdních řádů má stránku Tisk připravenou, ale vypnutou. Cestu v menu EDISONu jsem neověřil.
+Skupiny, kterých se to týká:
+
+- **Bereme:** „Tisk PS - linky, omezení" (způsob tisku roku v omezeních, způsob tisku místenkování,
+  upřesnění značek „jede jen na objednání / podmínečně"), „Tisk značky pro atribut nad spoj" (které
+  atributy dostanou větu v legendě), „Zóny - tisk a export do JDF bez písmen" (stránka Systém - Linky).
+  Rok v omezeních a písmena v zóně jsou výchozí hodnoty, linka je smí přepsat.
+- **Bereme:** sady vlastních nadpisů sloupců vývěsky („Win MHD - zastávkové", „Nadpisy sekcí pro rozvržení …").
+  Jestli se tiskne bezbariérovost (zastávkový JŘ), je uložené v tiskovém programu PostScript, ne ve formuláři.
+- **Nebereme, nahrazuje šablona:** „Tisky PS - měřítko, okraje", fonty, okraje, rámečky, „Linky - zvýrazněná
+  zastávka" (dnes parametr sestavy), pořadí tisku poznámek, tisk stálých značek.
+- **Nebereme, chybí:** „Tisk PS - linky - souhrn" (pořadí a souhrn dopravců), „PS MHD - vývěsní, knižní
+  jízdní řády" (vlastní texty IDP-P / IDP-Z).
 - **Bereme jako údaje:** číselníky textů značek a dopravci.
 
-## 4. Jízdní řády AD - pod linkou (tarifní číslo, spoj)
+## 4. Pod linkou (spoj, tarifní číslo)
 
-- **Bereme jako údaje:** barva spoje, ruční pořadí spojů, pokračování a návaznosti, místenka.
+**Kde:** okno linky → spoj (barva, pokračování, návaznosti, místenka); tarifní čísla v trase linky.
+
+- **Bereme jako údaje:** barva spoje, pokračování a návaznosti, místenka.
 - **Nebereme:** netisknout tarifní číslo v knižním JŘ, ruční přiřazení spojů do sekcí
   (v datech 0 linek, odloženo `B98`).
 
-## 5. MHD (modul MHD)
+## 5. Modul MHD
 
-- **Linka - bereme:** automatické poznámkování odlišností v platnosti a rozdílů v trase, QR, výluka / návrh.
-- **Firma - bereme:** rozsah čísel negativních značek.
+**Kde:** MHD Linky → okno **„Vlastnosti linek"**, skupina **Tisk**; MHD Číselníky → **Nastavení**, skupina
+**Negativní značky**; MHD Číselníky → typy provozu a poznámky ke spojům.
+
+- **Linka - bereme:** „Automaticky poznámkovat odlišnosti v platnostech spojů", „Automaticky poznámkovat
+  rozdíly v trase spojů" s algoritmem a písmeny, QR kód, poznámka nad linkou, výluka / návrh.
+- **Firma - bereme:** „Rozsah pro přidělování NZ od / do".
 - **Číselníky - bereme:** typy provozu (sloučení do sloupců, nadpisy, pořadí), poznámky ke spojům.
 
 ## 6. Volby ve starém tiskovém dialogu (neukládají se)
+
+**Kde:** okno linky → **Tisky** → Tisk JŘ, Tisk JŘ MHD (zastávkové); okno linky → **Postscriptové výstupy**
+(vývěsní, knižní, vývěsní pro MHD).
 
 Dělení podle platnosti, způsob tisku poznámek, zvýraznění zastávky a tarifního čísla, turnusy, obousměrný
 JŘ, návaznosti, výběr typů provozu, rámečky čísel spojů, prázdné sloupce. U nás parametry sestavy nebo
@@ -64,8 +92,11 @@ vlastnosti šablony; zaniknou se starým tiskem.
 
 ## Co z toho plyne
 
-- **Zrušit se starým tiskem:** rozvržení v „Nastavení pro tisk linky" (asi 60 polí) a v nastavení
-  programu. Návrhář je nečte a šablona je umí sama.
+Jízdní řády už dnes hlásí, že **starý návrhář sestav skončí 31. 1. 2027** a k tisku linkových
+a zastávkových JŘ se má používat nový návrhář.
+
+- **Zrušit se starým tiskem:** rozvržení v „Nastavení pro tisk linky" (asi 60 polí) a tiskové skupiny
+  rozvržení v „Jízdní řády - nastavení". Návrhář je nečte a šablona je umí sama.
 - **Kandidáti na přesun do šablony** (mění vzhled, ne údaje): rok v omezeních, zóny a km, písmena v zóně,
   sloupec tarifních čísel, jen zastávky, kde spoje zastavují, bezbariérovost nad spojem nebo v poznámkách,
   tvar místenkování, rozvržení sloupců vývěsky, nevypisovat značku ve sloupci, vlastní nadpisy sloupců.
