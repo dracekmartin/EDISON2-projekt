@@ -65,4 +65,11 @@ public interface IWindowNavigator
     /// umožní callerovi držet „akce probíhá" overlay po dobu náběhu.
     /// </summary>
     Task ShowLegacyAsDialogAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
+
+    /// <summary>
+    /// Jako <see cref="ShowLegacyAsDialogAsync"/> se sdílenou session, ale proces není v job objectu shellu
+    /// a <c>CloseAll</c> ho nezabije: on i jeho potomci (serverový updater) přežijí konec shellu.
+    /// Null = nic se nespustilo (chybějící host už dostal hlášku), chyba startu hodí výjimku jako ostatní <c>ShowLegacy*</c>.
+    /// </summary>
+    LegacyDialogRun? StartLegacyDetachedDialog(string exeName, string formFqn, string inputParam);
 }

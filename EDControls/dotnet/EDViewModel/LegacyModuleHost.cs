@@ -43,6 +43,7 @@ internal sealed class LegacyModuleHost
     private readonly List<LegacyLaunch> _tracked = [];
     private readonly Func<EDServices> _services;
     private readonly Func<ProcessStartInfo, ILegacyProcess?> _start;
+    private readonly Func<ProcessStartInfo, ILegacyProcess?> _startDetached;
     private readonly Func<string, bool> _fileExists;
     private readonly Action<string, string, int, string?, TimeSpan> _reportExit;
     private readonly Func<int, DateTime, string?> _takeCrashDetail;
@@ -68,11 +69,13 @@ internal sealed class LegacyModuleHost
         Action<IntPtr>? focus = null,
         string launcherExe = DefaultLauncherExe,
         Func<DateTime>? utcNow = null,
-        Func<string?>? shellMonitor = null)
+        Func<string?>? shellMonitor = null,
+        Func<ProcessStartInfo, ILegacyProcess?>? startDetached = null)
     {
         _services = services;
         _launcherExe = launcherExe;
         _start = start ?? SystemLegacyProcess.Start;
+        _startDetached = startDetached ?? SystemLegacyProcess.StartDetached;
         _fileExists = fileExists ?? File.Exists;
         _reportExit = reportExit ?? ((exe, form, code, detail, uptime) =>
             ErrorReporting.ErrorReports.Pipeline.ReportLegacyExit(exe, form, code, detail, uptime));
@@ -147,7 +150,21 @@ internal sealed class LegacyModuleHost
         await WaitForModuleWindowAsync(launch.Process);
     }
 
-    /// <summary>Kill tracked child procesů (zástupci a <c>AndWait</c> se netrackují).</summary>
+    /// <summary>
+    /// Dialog mimo job object: netrackuje se, aby ho <see cref="CloseAll"/> nezabil, když on sám shell zavírá
+    /// (runner serverové aktualizace čeká na konec shellu, teprve pak skončí a pustí instalátor).
+    /// </summary>
+    public LegacyDialogRun? StartLegacyDetachedDialog(string exeName, string formFqn, string inputParam)
+    {
+        var launch = Launch(exeName, formFqn, shareShellSession: true, inputParam, detached: true);
+        if (launch is null) return null;
+        WireDialogBehavior(launch.Process);
+        var exited = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        launch.Process.OnExited(_ => exited.TrySetResult());
+        return new LegacyDialogRun(WaitForModuleWindowAsync(launch.Process), exited.Task);
+    }
+
+    /// <summary>Kill tracked child procesů (zástupci, <c>AndWait</c> a detached dialogy se netrackují).</summary>
     public void CloseAll()
     {
         foreach (var launch in _tracked)
@@ -301,7 +318,7 @@ internal sealed class LegacyModuleHost
     }
 
     private LegacyLaunch? Launch(string exeName, string formFqn, bool shareShellSession,
-                                 string inputParam, string shortcutPayload = "")
+                                 string inputParam, string shortcutPayload = "", bool detached = false)
     {
         var services = _services();
         var mlRest = services.MLRest
@@ -325,7 +342,7 @@ internal sealed class LegacyModuleHost
         var launcherPath = direct ? agendaPath : ResolvePath(_launcherExe, _fileExists, DefaultDeployRoot);
 
         var startedUtc = _utcNow();
-        var prc = _start(new ProcessStartInfo
+        var prc = (detached ? _startDetached : _start)(new ProcessStartInfo
         {
             UseShellExecute = true,
             FileName = launcherPath,

@@ -70,6 +70,8 @@ public class LegacyModuleHostTests
     private sealed class Harness
     {
         public List<ProcessStartInfo> Started { get; } = [];
+        /// <summary>Spuštěné mimo job object shellu (<see cref="LegacyModuleHost.StartLegacyDetachedDialog"/>).</summary>
+        public List<ProcessStartInfo> DetachedStarted { get; } = [];
         public List<(string Exe, string Form, int Code)> Reports { get; } = [];
         public List<string?> ReportedDetails { get; } = [];
         public List<TimeSpan> ReportedUptimes { get; } = [];
@@ -143,7 +145,12 @@ public class LegacyModuleHostTests
                 focus: hwnd => Focused.Add(hwnd),
                 launcherExe: launcherExe,
                 utcNow: () => Now ?? DateTime.UtcNow,
-                shellMonitor: () => ShellMonitor);
+                shellMonitor: () => ShellMonitor,
+                startDetached: psi =>
+                {
+                    DetachedStarted.Add(psi);
+                    return Last = CreateProcess();
+                });
             Host.LegacyModuleExited += () => ModuleExitedCount++;
         }
     }
@@ -359,6 +366,54 @@ public class LegacyModuleHostTests
         h.Host.ShowLegacyAsDialog(Exe, Form, true, "");
 
         Assert.Equal(0, h.ActiveDims);
+    }
+
+    [Fact]
+    public void StartLegacyDetachedDialog_OutsideJob_NotTrackedNorKilledByCloseAll()
+    {
+        // Runner serverové aktualizace zavírá shell a čeká na jeho konec, CloseAll ho zabít nesmí.
+        var h = new Harness();
+
+        h.Host.StartLegacyDetachedDialog("EDISONMAIN.exe", Form, "Test=1");
+        h.Host.CloseAll();
+
+        Assert.Empty(h.Started);
+        var psi = Assert.Single(h.DetachedStarted);
+        Assert.Empty(h.Host.GetRunningModules());
+        Assert.Equal(0, h.Last!.KillCount);
+        var args = EdisonLaunchArgs.TryParse(ProcessArgv.Split(psi.Arguments))!;
+        Assert.Equal("SHELLGUID", args.ShellGuid);
+        Assert.Equal("Test=1", args.InputParam);
+    }
+
+    [Fact]
+    public void StartLegacyDetachedDialog_DimsShellAndCompletesTasksByWindowAndExit()
+    {
+        var h = new Harness { CreateProcess = () => new FakeProcess { Window = 1 } };
+
+        var run = h.Host.StartLegacyDetachedDialog("EDISONMAIN.exe", Form, "")!;
+
+        Assert.True(run.WindowShown.IsCompletedSuccessfully);
+        Assert.False(run.Exited.IsCompleted);
+        Assert.Equal(1, h.ActiveDims);
+
+        h.Last!.Exit(0);
+
+        Assert.True(run.Exited.IsCompletedSuccessfully);
+        Assert.Equal(0, h.ActiveDims);
+        Assert.Empty(h.Reports);
+    }
+
+    [Fact]
+    public void StartLegacyDetachedDialog_HostLaunchFailure_IsReported()
+    {
+        // Starší EDISONMAIN.exe runner nezná: host skončí s kódem 2 a shell ho nahlásí jako u jiných modulů.
+        var h = new Harness();
+
+        h.Host.StartLegacyDetachedDialog("EDISONMAIN.exe", Form, "");
+        h.Last!.Exit(2);
+
+        Assert.Equal([("EDISONMAIN.exe", Form, 2)], h.Reports);
     }
 
     [Fact]
