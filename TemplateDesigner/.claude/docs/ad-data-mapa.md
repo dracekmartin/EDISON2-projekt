@@ -938,24 +938,104 @@ poznámka nad linku, typ JR, skrytí agregátu bezbariér (#7161 D6), skrytí le
 
 Relevantní pro zastávkový JŘ (zbytek = ➖ Win tisk/kniha/HTML/odbavení):
 
+Stav sloupce „Máme" opravený 29. 10. podle kódu; aktuální soupis všech agend je v části
+[Nastavení z jízdních řádů](#nastavení-z-jízdních-řádů-která-čte-návrhář).
+
 | dta | Význam | PATCH | Máme |
 |---|---|---|---|
-| 18 | Tisk ručních názvů zastávek | `nazMHD` | ✅ |
-| 20 | Tisk zóny IDS / km (0-3) | `linIDS` | 🟡 zóny ✅, km ➖ (linkové) |
+| 18 | Tisk ručních názvů zastávek | `nazMHD` | ➖ vývěska nečte, název pro MHD bere vždy (Jan 23. 10., `B193i`); linkový AD ano |
+| 20 | Tisk zóny IDS / km (0-3) | `linIDS` | ❌ vývěska nečte, zóny podle šablony; linkový AD ano |
 | 26 | Uspořádat poznámky dle délky | `Trid_delK` | ✅ AD-N3 (`NotesLegend.Razeni`) |
 | 27 | NZ na nový řádek | `NegZnNR` | ✅ AD-N4 (poznámka per řádek) |
 | 28 | Cizojazyčné poznámky | `prtCzjPzn` | ⬜ AD-N11 |
 | 30 | Gate auto-poznámek odchylek | `mhd,"not"` | ✅ |
 | 32 | Sada písmen markerů | `mhd,"notchar"` | ✅ |
-| 35 | Tisk bezbariér (0/1/2) | `TZPA,"BBP"` | ✅ |
+| 35 | Tisk bezbariér (0/1/2) | `TZPA,"BBP"` | ❌ vývěska nečte (bere firemní `PS,LIMES`); linkový AD ano |
 | 36 | Rok v omezeních (0-4) | `TiskDtm` | ✅ |
-| 73 | Auto generovat časové průběhy | `mhd,"par",1` | ✅ (multi-varianta L1) |
+| 73 | Auto generovat časové průběhy | `mhd,"par",1` | ➖ nečte se, varianty se počítají vždy (multi-varianta L1) |
 | 74 | Volné značky pro minutové trasy | `mhd,"par",2` | ✅ AD-N13 (multi-varianta L1) |
 | 78 | Způsob výpisu návazností | `NavaznostiZpusobVypisu` | ➖ linkové JŘ |
 
 **Reference souborů:** `JRapiLin.mac` (`gPrpLin` ř.282), `JRapiLin1.mac` (`gPrpLinMhd` ř.82,
 `gSetLinPrt` ř.183), `JRapiLinPrtMhd1.mac` (FTL/varianty ř.36-300), `JRapiLinPrtMhd.mac`
 (`OmTrasa`/`gDopMHD`/`UVOD`), `JRapiNZUtl.mac` (omezení/NZ).
+
+
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+# ==== ČÁST: Nastavení z jízdních řádů, která čte návrhář ====
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+
+## Nastavení z jízdních řádů, která čte návrhář
+
+> Podklad ke schůzce s kolegy z jízdních řádů (roadmapa). Soupis 29. 10.: co agendy čtou a jak s tím
+> zacházejí, je ověřené čtením kódu; význam ve starém modulu a počty linek jsou z dokumentů.
+> **Po schůzce** sem zapsat rozhodnutí a soupis zkrátit na to, co zůstane u linky.
+
+Zkratky agend: **ZA** zastávkový AD, **LA** linkový AD (rozdílový jede přes něj), **ZM** zastávkový MHD,
+**LM** linkový MHD. U každého nastavení je otázka stejná: zůstane u linky, přejde do šablony, nebo
+zůstane u linky a šablona ho smí přebít (volba „Automaticky (dle linky)", `ux-conventions §8`).
+
+**Šablona už dnes smí přebít** (parametr sestavy, první volba „Automaticky (dle linky)"):
+
+- `SLOUPEC_TC` (LA) ← `PATCH,netisknoutSloupecTC` (377 linek, `linkovy-knizni §13.6`).
+- `PISMENO_V_ZONE` (LA) ← `ZonaIdsDelZnk` u linky, jinak u firmy. ZA ho čte bez přebití.
+- `ZASTAVKY_BEZ_ZASTAVENI` (LA) ← `tisknoutJenTcKdeSpojeZastavuji`. LM má volbu bez „Automaticky".
+- `ROZDELENI_SLOUPCU` (ZA) ← `MHD_TYP_R`. LA má `DELENI_SLOUPCU` bez „Automaticky" a s jinými popisky (`P2`).
+- `POCET_STRAN_SESTAVY` (LA): pole u linky neexistuje, „Automaticky" zatím nic nečte.
+- Barvy spojů: `barevnyTiskSpoju` je jen záloha za zaškrtávátkem `TISKNOUT_BARVY_SPOJU` (Jan 26. 10.).
+
+**Bere se z jízdních řádů, šablona nepřebije:**
+
+| Nastavení | Úroveň | Agendy | Co mění na výtisku |
+|---|---|---|---|
+| `TiskDtm` | linka, firma | ZA, LA | rok v datech omezení (celý, 2místný, bez roku) - příklad z roadmapy (`B138`) |
+| `linIDS` | linka | LA | sloupce zón a km (0 km, 1 zóna, 2 obojí, 3 nic); ZA řídí šablona |
+| `KmsSmer` | linka | LA | počet a obsah km sloupců po směrech |
+| `nazMHD` + typ linky | linka | LA | ručně upravený název zastávky pro MHD; ZA bere vždy (`B193i`) |
+| `TZPA,BBP` | linka | LA | bezbariérovost obecnou větou, nebo u spojů; ZA bere firemní `PS,LIMES` |
+| `SORT` | linka | LA | ruční pořadí sloupců spojů (4 409 linek) |
+| `mhd,not` / `notchar` / `par,2` | linka | ZA | poznámky o rozdílech tras a jejich písmena |
+| `MHD_NZ1_NZ2`, `MHD_NENZ1_NENZ2`, `MHD_NEZNZ123` | linka | ZA | prázdninové dělení, vyřazení spoje ze sloupce, schování značky u minut |
+| `ISY_LinkyTiskMHDNadpisy` | linka → firma | ZA, LA | vlastní nadpisy skupin dnů (šablona je přepíše textem) |
+| `PAtrSp` | firma | LA | které atributy spoje dostanou větu v legendě |
+| `PS,LIMES` | firma | ZA | jestli se bezbariérovost tiskne |
+| `MistOR` / `MistNOD` | firma | LA | odřádkování a dvojtečka v místenkování |
+| `DOP` pole 6 a 14 | firma | ZA, LA | zkrácený název dopravce pro MHD (LA nahradí i adresu) |
+| `AutomatickyPoznamkovatOdlisnosti…` | linka MHD | ZM, LM | automatické negativní značky ze srovnání kalendářů |
+| `AutomatickyPoznamkovatRozdilyVTrase…` | linka MHD | ZM | poznámky o rozdílech tras (algoritmus, písmena) |
+| `RozsahNegativnichZnacekOd/Do` | firma MHD | ZM, LM | od kterého čísla se značky číslují |
+
+Data, která šablona jen umístí (bez rozhodování): záhlaví, poznámka pod dopravcem, QR, platnost, razítko
+výluky a návrhu, barva linky, poznámky linky, lokální označení.
+
+**Totéž nastavení, jiné chování v agendách** (vyjasnit, který tvar je správný):
+
+- Bezbariérovost: ZA podle firmy (`PS,LIMES`), LA podle linky (`TZPA,BBP`) přebíjející firmu (`PAtrSp`).
+- Zóny a km: LA podle linky (`linIDS`), ZA podle šablony. Jestli starý vývěskový tisk `linIDS` četl, neověřeno.
+- Rozsah negativních značek: ZM čte Od i Do, Do nepoužije, prázdné Od = 10 jen u sloučených sloupců; LM jen Od, prázdné = 0.
+- Barva `0;0;0`: u spoje „nenastaveno", u linky a poznámek MHD černá (`konzistence-agend-jr §7` R2).
+- Značka „pokračuje": LA vynechá spoj s typem výstupu 2, ZA typ výstupu nekontroluje
+  (`ZastavkoveJrAd.PokracovaniZnak` × `LinkovyJrAd.cls` u `omz34`). Co typ 2 znamená, neověřeno.
+
+**Starý modul čte, návrhář ne:** odložené v `B98` (0 linek v datech: `MHD2,netisknout*`, umělé sekce,
+netisknout tarifní číslo v knižním JŘ, `MHDPZ`, `SDOP`); bez dat nebo rozhodnutí: `Print_Dopr_First`,
+`PS_PrintSouhrnDoprLinYes`, `cisIDS` (skládání čísla linky), `prtCzjPzn` (cizojazyčné poznámky),
+`linJEDNOSMERNA`, `PrintKmsSmerNo`, `NavaznostiZpusobVypisu`, MHD `TypLinkyID`. Vědomě nahrazené šablonou:
+`podtrzeniPaJ`, `ZLOM`, `VERTIM`, `ONEPAG`, postskriptové okraje a fonty (`linkovy-knizni §17.3`).
+
+**Otázky na kolegy:**
+
+1. Které nastavení u linky chtějí v jízdních řádech nechat a které má převzít šablona (tabulka výš).
+2. Volby rozdělení sloupců (`MHD_TYP_R`): jak se jmenují u nich a mají vývěska a knižní JŘ znamenat totéž (`P2`)?
+3. Nové pole „název směru" u linky (#9088): ve které verzi a pod jakým klíčem?
+4. Dohodnuté 10. 8. (`customer-requirements §TR`): cíl po zastávce a směru (TR5), odsazení zvlášť
+   pro směry (#7937), obrácené poznámkování (TR9). Stav?
+5. Má číslo negativní značky na všech linkách firmy stejný význam (`customer-requirements §TR10`)?
+6. Barva `0;0;0` v jízdních řádech: černá, nebo nenastaveno?
+7. Typ výstupu 2 u „pokračuje": má se netisknout i ve vývěsce?
+8. Pole „počet stran" u linky: má vzniknout, nebo volbu „Automaticky" zrušit?
+9. `B190` tisk z jízdních řádů bez návrháře: kdy s ním počítají?
 
 
 

@@ -4,12 +4,29 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** zbytek druhého kola sjednocení agend JŘ (`B194`, bod po bodu; linkový JŘ MHD
-> vydaný 27. 10.), po něm `B56` (backlog). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** příprava na schůzku s kolegy z jízdních řádů (nastavení, která návrhář čte),
+> pak pojistky a architektura před `B56` (`B194f`, `B194g`; linkový JŘ MHD vydaný 27. 10.), po nich `B56`. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
+
+---
+
+## 📞 Schůzka s kolegy z jízdních řádů - nastavení
+
+Projdeme s Janem před schůzkou, po ní zapsat rozhodnutí a položky přeskládat. Podklad (co návrhář
+z jízdních řádů čte a otázky na kolegy): [`ad-data-mapa.md §Nastavení z jízdních řádů`](ad-data-mapa.md).
+
+- **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - návrhář přebírá nastavení u linky a firmy
+  tak, jak je ukládá starý modul (např. formát roku v omezeních, `B194a` C9). Rozhodnout, co zůstane
+  u linky, co se přesune do šablony a jak se má nastavovat. Na tom visí kroky `B56`, které čtou nastavení linky.
+- **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
+  **Jan** - čeká na nastavení JŘ, ze kterého volby vycházejí; patří k `B56` R5 (stálý kód vedle popisku).
+  Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
+- **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
+  JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
+  (zákazníkovi odpovězeno 23. 9.). Náš díl: pustit pole schématem obou agend a nabídnout v šabloně.
 
 ---
 
@@ -46,9 +63,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 
 ### Ostatní
 
-- **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
-  **Jan** - čeká na vyjasnění nastavení JŘ s kolegy, ze kterého volby vycházejí (Jan 28. 10.); patří k `B56` R5
-  (stálý kód vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
 - **Hledání ve formuláři po slovech a se synonymy** [M] (z `B194h` H12, Jan 28. 10.: zajímavé, ale ne
   teď). Hledání dnes bere celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení"
   ani „čára" nenajdou nic, „výška záhlaví" po `H6` nenajde Nejmenší výšku. Návrh: každé slovo zvlášť
@@ -74,11 +88,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   přepnout na Obecnou (Ctrl+Shift+A) a prvek zůstane jen s upozorněním. Prvky JŘ mají jít otevřít jen
   ve své agendě, takže změnu agendy v takové šabloně zablokovat a říct proč (rozhodnutí Jan 27. 10.).
   Odtud i prázdná záložka „Vlastní definice sloupců" v obecné šabloně (review 27. 10., bod 4).
-
-- **Nastavení jízdních řádů, která čte návrhář** [M] **Jan** - Jan je nejdřív projde s kolegy (26. 10.).
-  Dnes návrhář přebírá nastavení u linky a firmy z modulu JŘ tak, jak je ukládá starý modul (např.
-  formát roku v omezeních, `B194a` C9). Po probrání rozhodnout, co z nich zůstane u linky, co se
-  přesune do šablony a jak se má nastavovat.
 
 - **`B56` Sloučení opsaného kódu agend** [L] - **po vydání** linkového JŘ MHD (čekalo na doimplementaci
   knižního JŘ, splněno 22. 10.). Bez přínosu pro uživatele, proto až po vydání. Začít tím, co se už
@@ -113,10 +122,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   polohy tabulky a poznámek jsou odhad modelu. **Od 9. 10. jen interní nástroj** - převody předloh
   dělá M-line; dál až se při nich ukáže, že šetří čas. Zbývají kroky **(2)** model pojmenuje bloky
   z PDF a **(3)** tabulka měřená z PDF celá. Stav a proč: [`architecture.md §Import z PDF`](architecture.md).
-
-- **Ručně zadaný „název směru" u linky** [S] (TRANSDEV #9088 bod 3, dřív `C9`; linkové i zastávkové
-  JŘ). Čeká na **nové pole u linky v jízdních řádech** - kolegové s ním v nové verzi počítají
-  (zákazníkovi odpovězeno 23. 9.). Náš díl: pustit pole schématem obou agend a nabídnout v šabloně.
 
 - **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
   Posunout nebo zvětšit prvek na jedné vysázené stránce před PDF, když se linkám s mnoha poznámkami
