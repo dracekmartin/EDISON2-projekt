@@ -68,6 +68,9 @@ public class WindowNavigator : IWindowNavigator
     public Task ShowLegacyAsDialogAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "") =>
         _legacy?.ShowLegacyAsDialogAsync(exeName, formFqn, shareShellSession, inputParam) ?? Task.FromException(NoLegacyHost());
 
+    public LegacyDialogRun? StartLegacyDetachedDialog(string exeName, string formFqn, string inputParam) =>
+        Legacy.StartLegacyDetachedDialog(exeName, formFqn, inputParam);
+
     private LegacyModuleHost Legacy => _legacy ?? throw NoLegacyHost();
 
     private static NotSupportedException NoLegacyHost() =>

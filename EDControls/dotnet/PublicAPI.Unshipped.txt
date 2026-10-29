@@ -231,3 +231,19 @@ EDControls.EDViewModel.EDServices.PreferredMonitor.set -> void
 EDControls.MonitorPlacement
 static EDControls.MonitorPlacement.DeviceNameOf(System.Windows.Window window) -> string
 static EDControls.MonitorPlacement.FallbackWorkArea(System.Windows.Window window) -> System.Windows.Rect
+EDControls.EDViewModel.IWindowNavigator.StartLegacyDetachedDialog(string exeName, string formFqn, string inputParam) -> EDControls.EDViewModel.LegacyDialogRun
+EDControls.EDViewModel.LegacyDialogRun
+EDControls.EDViewModel.LegacyDialogRun.<Clone>$() -> EDControls.EDViewModel.LegacyDialogRun
+EDControls.EDViewModel.LegacyDialogRun.Deconstruct(out System.Threading.Tasks.Task WindowShown, out System.Threading.Tasks.Task Exited) -> void
+EDControls.EDViewModel.LegacyDialogRun.Equals(EDControls.EDViewModel.LegacyDialogRun other) -> bool
+EDControls.EDViewModel.LegacyDialogRun.Exited.get -> System.Threading.Tasks.Task
+EDControls.EDViewModel.LegacyDialogRun.Exited.init -> void
+EDControls.EDViewModel.LegacyDialogRun.LegacyDialogRun(System.Threading.Tasks.Task WindowShown, System.Threading.Tasks.Task Exited) -> void
+EDControls.EDViewModel.LegacyDialogRun.WindowShown.get -> System.Threading.Tasks.Task
+EDControls.EDViewModel.LegacyDialogRun.WindowShown.init -> void
+EDControls.EDViewModel.WindowNavigator.StartLegacyDetachedDialog(string exeName, string formFqn, string inputParam) -> EDControls.EDViewModel.LegacyDialogRun
+override EDControls.EDViewModel.LegacyDialogRun.Equals(object obj) -> bool
+override EDControls.EDViewModel.LegacyDialogRun.GetHashCode() -> int
+override EDControls.EDViewModel.LegacyDialogRun.ToString() -> string
+static EDControls.EDViewModel.LegacyDialogRun.operator !=(EDControls.EDViewModel.LegacyDialogRun left, EDControls.EDViewModel.LegacyDialogRun right) -> bool
+static EDControls.EDViewModel.LegacyDialogRun.operator ==(EDControls.EDViewModel.LegacyDialogRun left, EDControls.EDViewModel.LegacyDialogRun right) -> bool

@@ -115,30 +115,9 @@ public class SessionOpener(EDServices services, StartupOptions options, Action<I
         var settings = updater.LoadSettings(session.MLRest.With(cacheLocks: 0));
         // Před Check: spuštěný updater log předchozího běhu přepíše. Serverovou instalaci updater nemění.
         if (!settings.ServerInstallation) ReportUpdaterFailure();
-        var result = updater.Check(settings);
-        switch (result.Outcome)
-        {
-            case UpdateOutcome.UpdateRequired:
-                services.PopupDisplayer.Info(
-                    $"K dispozici je nová verze programu [{result.Version}]. Aplikace se nyní zaktualizuje a bude ukončena.");
-                try
-                {
-                    updater.CopyUpdater(settings.SourceDir);
-                    updater.LaunchUpdate(settings.SourceDir, result.Version, result.Forced, settings.ForcedStamp);
-                }
-                catch (Exception ex)
-                {
-                    services.PopupDisplayer.Info(
-                        $"Aktualizaci nelze spustit ({ex.Message}). Kontaktujte Vašeho správce IS.");
-                }
-                return (true, null);
-            case UpdateOutcome.Broken:
-                services.PopupDisplayer.Info(result.Message);
-                return (true, null);
-            default:
-                // Notice-only kontrola release serveru M-line běží paralelně se stavbou shellu.
-                return (false, startNotice ? Task.Run(() => updater.GetReleaseNotice(settings, VerzeInf.Current)) : null);
-        }
+        if (StationUpdate.Apply(updater, settings, updater.Check(settings), services.PopupDisplayer)) return (true, null);
+        // Notice-only kontrola release serveru M-line běží paralelně se stavbou shellu.
+        return (false, startNotice ? Task.Run(() => updater.GetReleaseNotice(settings, VerzeInf.Current)) : null);
     }
 
     protected virtual Updater CreateUpdater() => new();

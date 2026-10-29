@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using EDControls;
 using EDControls.EDViewModel;
 
@@ -10,7 +11,9 @@ namespace EDISONMAIN2;
 /// nebo nesedí verze): hláška a ukončení aplikace. Každý další request mrtvé session vyvolá tutéž
 /// událost znovu, proto se konec obslouží jednou. Session-scoped objekt, bootstrapper tou dobou nežije.
 /// </summary>
-internal sealed class ServerSessionEnd(IStartupHost host, ShellShutdown shutdown, Func<IPopupDisplayer> popups)
+/// <param name="expectedEndGrace">Jak dlouho počkat na zavření shellu runnerem serverové aktualizace; null = 5 s.</param>
+internal sealed class ServerSessionEnd(IStartupHost host, ShellShutdown shutdown, Func<IPopupDisplayer> popups,
+                                       Func<Task>? expectedEndGrace = null)
 {
     internal const string ActivityLostMessage = "Spojení se serverem bylo přerušeno. Aplikace bude ukončena.";
     internal const string VersionMismatchMessage = "Rozdílná verze Caché a verze Edison, aplikace bude ukončena.";
@@ -29,12 +32,22 @@ internal sealed class ServerSessionEnd(IStartupHost host, ShellShutdown shutdown
         session.CacheLocks = 0;
         // Uživatel shell zavřel sám, nebo ukončení už běží: hláška by přišla po zavření.
         if (host.ShutdownRequested) return;
-        host.Dispatch(() =>
+        if (!shutdown.SessionEndExpected)
         {
-            if (host.ShutdownRequested) return;
-            // Druhá šance už nepřijde (příznak, Locks=0): bez ukončení by shell běžel nad mrtvou session.
-            try { popups().Info(message); }
-            finally { shutdown.Force(); }
-        });
+            Inform(message);
+            return;
+        }
+        // Runner serverové aktualizace odhlásí session chvíli před signálem k zavření: zavře-li shell on, hláška nepatří.
+        (expectedEndGrace ?? (() => Task.Delay(TimeSpan.FromSeconds(5))))()
+            .ContinueWith(_ => Inform(message), CancellationToken.None,
+                          TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
+
+    private void Inform(string message) => host.Dispatch(() =>
+    {
+        if (host.ShutdownRequested) return;
+        // Druhá šance už nepřijde (příznak, Locks=0): bez ukončení by shell běžel nad mrtvou session.
+        try { popups().Info(message); }
+        finally { shutdown.Force(); }
+    });
 }

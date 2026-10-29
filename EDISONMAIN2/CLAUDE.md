@@ -114,15 +114,13 @@ cesta `ShowAlwaysAsync` (Nápověda, kontextová menu) obchází dedup i snooze,
 
 ## Legacy moduly - EDISONMAIN2API
 
-Most do legacy světa: `EDISONMAIN2API.exe` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET
-Framework 4.8, deploy do `C:\Edison\`). Args: značka `"EDISONMAIN2"` + 21 polí (pořadí
-`EdisonLaunchArgs.Field`), host je mapuje do `MLProps`: [13] zástupce z plochy
-(viz `docs/zastupci-na-plose.md`), [14] admin → `UserIsAdmin` (klíč pro `CAccess(useAdmin)`
-bypass práv), [15] → `UserMayUpdate` (gate serverového update v legacy Nastavení) - host bez pole
-defaultuje na **false**; [16]/[17] osobní adresář a e-mail z loginu → `UserDirectory`/`UserEmail`
-(bez nich agendy exportují do kořene disku); [18]-[20] verze, stav a konec platnosti licence shellu, [21] monitor shellu → `EDForm.PreferredScreenName`. Host nastavuje i `EDFormID` formy - agendy přes něj
-čtou `AccessTable[EDFormID]`, bez něj jsou volby gate-ované právem zašedlé. Vstupy:
-`TryGetFormFromArgs` (typ reflexí ve volajícím assembly - jediný retrofit
+Most do legacy světa: `EDISONMAIN2API.exe` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`, .NET Framework 4.8, deploy do `C:\Edison\`).
+Args: značka `"EDISONMAIN2"` + 21 polí (pořadí `EdisonLaunchArgs.Field`), host je mapuje do `MLProps`: [13] zástupce z plochy
+(viz `docs/zastupci-na-plose.md`), [14] admin → `UserIsAdmin` (klíč pro `CAccess(useAdmin)` bypass práv), [15] → `UserMayUpdate`
+(gate serverového update) - host bez pole defaultuje na **false**; [16]/[17] osobní adresář a e-mail z loginu → `UserDirectory`/
+`UserEmail` (bez nich agendy exportují do kořene disku); [18]-[20] verze, stav a konec platnosti licence shellu, [21] monitor
+shellu → `EDForm.PreferredScreenName`. Host nastavuje i `EDFormID` formy - agendy přes něj čtou `AccessTable[EDFormID]`, bez něj
+jsou volby gate-ované právem zašedlé. Vstupy: `TryGetFormFromArgs` (typ reflexí ve volajícím assembly - jediný retrofit
 `EDISONMAIN/ApplicationEvents.vb`) a `TryRunFromArgs` (`Assembly.LoadFrom`, generický host).
 
 Pasti:
@@ -132,10 +130,9 @@ Pasti:
   výjimku z `Form.Load` na x64 spolkne sám Windows (kernel callback), nevidí ji ani try/catch kolem `ShowDialog`.
   Konec procesu hlásí shell z exit kódu (`ReportLegacyExit`, druhy v `LegacyExitCodes`), chybějící host jednou po startu
   (`LegacyHostCheck`, klik pak jen hláška). Ověření bez pádu: Debug host + `EDISONMAIN2API_CRASHTEST=ui|bg|load|wpf|wpfrepeat`.
-- Non-prázdný `shellGuid` → modul sdílí shellův GUID + `CacheLocks=1` (zánik shell zámku shodí
-  i moduly). Prázdný (over-license retry před VerifyLic) → vlastní GUID, bez CacheLocks.
-  TemplateDesigner totéž bez hosta (`LaunchesDirectly`, viz `TemplateDesigner/CLAUDE.md`); legacy
-  launchery TD (ISYJR2, MHD2Linky, TISKJR stub) guid propagují jen při `CacheLocks==1`.
+- Non-prázdný `shellGuid` → modul sdílí shellův GUID + `CacheLocks=1` (zánik shell zámku shodí i moduly). Prázdný (over-license
+  retry před VerifyLic) → vlastní GUID, bez CacheLocks. TemplateDesigner totéž bez hosta (`LaunchesDirectly`, viz
+  `TemplateDesigner/CLAUDE.md`); legacy launchery TD (ISYJR2, MHD2Linky, TISKJR stub) guid propagují jen při `CacheLocks==1`.
 - `ConfigureForm` skládá licenci z [12] a [18]-[20], jen je-li licence shellu v pořádku (E01) a ještě
   platná; jinak (i za starším shellem) volá `GetActiveLic` (~1 s na DEV) včetně hlášky. Z ní `LicenseTable`,
   `ReadOnlyMode` a `AccessTable`; bez `Version` editor práv v USERS obrátí filtr licencovaných práv a smaže je.
@@ -143,9 +140,12 @@ Pasti:
   (`DialogResult`, `Close()` před sesterskou formou přes `ShowEdisonForm`, ISYJR → ISYJR2), v `Application.Run` by umřel proces.
   Po `ShowDialog` host proces ukončí se svým exit kódem (EDPROCESS ho zabíjel v `OnFormClosed`), jinak modul visí ve Spuštěných bez okna.
 
-Shell strana: `WindowNavigator.ShowLegacy*` ([EDViewModel/CLAUDE.md](../EDControls/dotnet/EDViewModel/CLAUDE.md));
-admin override při out-of-license dělá `LicenceVerifier`.
+Shell strana: `WindowNavigator.ShowLegacy*` ([EDViewModel/CLAUDE.md](../EDControls/dotnet/EDViewModel/CLAUDE.md)), admin override při out-of-license `LicenceVerifier`.
 
-Nástroje → „Spustit starý shell" (jen admin a stanice M-line): `EDISONMAIN.exe` s `reason=2`, bez něj se
-`frmNoMDI` odmítne spustit. Plain `Process.Start`, ne `ShowLegacy*` - starý shell nemá umřít
-s tímhle (KillOnExit) ani být ve „Spuštěné moduly"; přes EDLOADER se k němu už nedostaneš.
+Nástroje: „Spustit starý shell" (admin nebo stanice M-line, přes EDLOADER se k němu už nedostaneš) = `EDISONMAIN.exe` s `reason=2`
+(bez něj se `frmNoMDI` odmítne spustit), plain `Process.Start`: nemá umřít se shellem (KillOnExit) ani být ve „Spuštěné moduly".
+„Zkontrolovat aktualizace" (TEST jen stanice M-line) mají bránu legacy tlačítek Správa systému > EDISON > EDISON (okno ve stromu
+a admin nebo `MayUpdate`). Stanice: `Updater.Check` jako po loginu. Server: runner `formEDISONMAINServerUpdate` (repo EDISON)
+hostuje nezměněnou `frmNoMDI.CheckForUpdate` **mimo job** (EDTRANSFER2 by umřel se shellem). Instalátor čeká jen na procesy
+`EDISONMAIN`: runner po zavření Edisona dá signál (`CloseEvent`) a skončí až po shellu. Session ale odhlásí už před
+signálem, proto `ServerSessionEnd` s hláškou o konci session chvíli počká, jestli shell nezavře runner.

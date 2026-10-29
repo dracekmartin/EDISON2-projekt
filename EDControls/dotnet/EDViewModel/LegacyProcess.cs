@@ -90,6 +90,13 @@ internal sealed class SystemLegacyProcess : ILegacyProcess
         KillOnExit.Bind(process);
         return new SystemLegacyProcess(process);
     }
+
+    /// <summary>Start bez vazby na job object shellu: proces i jeho potomci shell přežijí.</summary>
+    internal static ILegacyProcess? StartDetached(ProcessStartInfo startInfo)
+    {
+        var process = Process.Start(startInfo);
+        return process is null ? null : new SystemLegacyProcess(process);
+    }
 }
 
 /// <summary>

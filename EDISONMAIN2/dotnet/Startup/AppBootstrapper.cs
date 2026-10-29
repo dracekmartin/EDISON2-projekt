@@ -434,6 +434,8 @@ public class AppBootstrapper
             OpensStartupWindow = !testRun,
             // E2E běh modální hlášku neodklikne.
             LegacyHostCheck = testRun ? null : LegacyHostCheck.For(nav),
+            // E2E běh nesmí spustit serverový updater.
+            ManualUpdate = testRun ? null : new ManualUpdate(services, _shutdown),
         };
     }
 
