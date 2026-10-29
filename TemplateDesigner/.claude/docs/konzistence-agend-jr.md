@@ -65,9 +65,6 @@ totéž znovu. Pořadí podle přínosu:
   Stav 28. 10.: titulky oken vlastností hlídá `ElementNamesTests`, části slov se kontrolují jen v popiscích
   a volbách, nápovědy nic (odtud `H8`).
 - **G5 Každé tlačítko formuláře má obsluhu v každém hostiteli** [S]. Odtud `C2`.
-- **G8 Zlatý odtisk linkového MHD včetně hlavičky** [S] (po 27. 10.). Bere z vývěsky MHD pět metod
-  (dopravce, typ JŘ, seznam linek, skupiny); porovnání se starým modulem kryje jen tabulku a
-  `TestDopravceJakoVyveska` porovnává s toutéž funkcí.
 
 ## 7. Architektura před sloučením kódu (`B56`)
 
@@ -109,14 +106,16 @@ totéž znovu. Pořadí podle přínosu:
 **Připravenost na `B56`** (revize 28. 10., čtení kódu, na serveru nic nespuštěno):
 
 - **Nutné před prvním krokem:** G2 jako Caché test nad výstupem `GetParameters`
-  (přežije přesun kódu a uvidí i parametry skládané za běhu), G8 a snímek výstupu všech agend.
+  (přežije přesun kódu a uvidí i parametry skládané za běhu) a snímek výstupu všech agend
+  (G1 malá podoba, G7 a G8 hotové 29. 10.).
   Ostatní G a R jsou užitečné, ale bez nich slučování tisk tiše nerozbije.
 - **Snímek výstupu je sonda, ne test** (pravidlo o testech závislých na stroji): otisk `GetData` přes sady,
   které testy už mají (`ZastavkoveJrAdSadaTest.Sada`, `LinkovyJrSadaTest.Jadro`, `LinkovyJrMhdTest.LINKY`,
   MHD 1001/1003/1006), a celý JSON `GetParameters`, `GetSchema`, `GetMockData`.
   Po každém kroku musí vyjít bajtově stejně; snímek se v `B56` nepřepisuje.
   Dnešní pokrytí: zastávkový AD odtisk 3 linek a oracle jen zčásti, zastávkový MHD 3 linky a oracle,
-  linkový AD 4 linky a oracle, linkový MHD jen oracle tabulky, rozdílový jen umělá data.
+  linkový AD 4 linky a oracle, linkový MHD oracle tabulky a od 29. 10. odtisk 7 linek včetně hlavičky
+  (`LinkovyJrMhdGoldTest`), rozdílový jen umělá data.
   Všechny odtisky jedou jen s výchozími parametry.
 - **Proč R1 (b), pomocné třídy mimo hierarchii agend.**
   Kopie vedou dvěma směry: vývěsky AD a MHD sdílejí stavbu výstupu (`BuildOdjezd`, `AddAtribut`), vývěska AD

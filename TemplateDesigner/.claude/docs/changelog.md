@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-29 (4) - Zlatý odtisk linkového JŘ MHD včetně hlavičky (`B194f` G8)
+
+`LinkovyJrMhdGoldTest` hlídá celý výstup linkového JŘ MHD (stránky i hlavičku) na sedmi linkách
+z `LinkovyJrMhdTest.LINKY` s výchozími parametry. Hlavičku (dopravce, typ JŘ, výběr linek) bere linkový
+MHD z vývěsky MHD a porovnání se starým modulem kryje jen tabulku - přesun těch metod v `B56` by se
+jinak neprojevil v žádném testu. Odtisk sejmutý na dev serveru, dvě volání po sobě daly totéž. Digest
+hlídá změnu proti včerejšku, ne paritu se starým modulem (R6). Caché sada 267/267.
+
 ## 2026-10-29 (3) - Kontrola polí agend vidí rozšíření v porovnání verzí a přeskakuje komentáře (`B194f` G7)
 
 Offline kontrola nabídky dat (`AgendaSchemaDriftTests`) nečetla pole, která porovnání verzí přidává do kolekcí

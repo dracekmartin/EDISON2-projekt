@@ -9,6 +9,9 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **G8** Zlatý odtisk linkového JŘ MHD včetně hlavičky (hotovo 29. 10., changelog 2026-10-29 (4)):
+  `LinkovyJrMhdGoldTest` na 7 linkách s výchozími parametry - kryje i hlavičku, kterou linkový MHD bere
+  z vývěsky MHD a kterou porovnání se starým modulem nevidí.
 - **G7** Drobné díry drift testů (hotovo 29. 10., changelog 2026-10-29 a (3)): Caché testy linkových JŘ
   a sonda `AdSloupekProbe` čtou chybu agendy z `^||ML("ERR")`; kontrola schématu vidí rozšíření kolekcí
   v porovnání verzí a přeskakuje zakomentované řádky. Pořadí „Obecné" první hlídá `G1`, parametry
