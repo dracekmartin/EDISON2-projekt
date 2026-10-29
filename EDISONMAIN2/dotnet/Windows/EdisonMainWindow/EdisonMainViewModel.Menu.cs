@@ -124,6 +124,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 UseShellExecute = true,
             };
 
+        private async Task CheckUpdateAsync(bool testVersion)
+        {
+            if (ManualUpdate is null) return;
+            if (await ManualUpdate.RunAsync(testVersion, () => ActionInProgress())) _forceShutdown();
+        }
+
         // Tmavý režim - sdílená preference (%APPDATA%\m-line\common\theme.json) přes ThemeService;
         // přepne živě + propaguje do ostatních m-line procesů (TemplateDesigner) přes watcher.
         public bool IsDarkMode

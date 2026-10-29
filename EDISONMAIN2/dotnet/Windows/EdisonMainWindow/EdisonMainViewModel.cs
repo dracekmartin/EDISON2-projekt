@@ -52,6 +52,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Start další instance shellu. Testy ho podstrčí, aby nespouštěly skutečný proces.
         private readonly Action<ProcessStartInfo> _startProcess;
         private readonly bool _internalDiagnostics;
+        private readonly bool _isMlineStation;
+        // Okno Správa systému > EDISON > EDISON je v odfiltrovaném stromu (licence, AccessTable, brány složek).
+        private bool _settingsWindowInTree;
 
         public ICommand OpenModuleCommand { get; }
         /// <summary>Spuštění zástupce mimo hlavní nabídku (tisková sestava, pohled DS) přes hosta.</summary>
@@ -72,6 +75,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Starý shell jen pro admina a stanice M-line - běžný uživatel má zůstat v novém shellu.</summary>
         public bool IsLegacyShellVisible => _services.IsAdmin || _internalDiagnostics;
         public ICommand OpenLegacyShellCommand { get; }
+        /// <summary>Kontrola aktualizace jako legacy tlačítko v Správa systému > EDISON > EDISON: kdo okno vidí
+        /// a je správce nebo má právo „Aktualizovat EDISON" (formEDISONMAINSettingsShow.vb:1488).</summary>
+        public bool IsServerUpdateVisible =>
+            ManualUpdate is not null && _settingsWindowInTree && (_services.IsAdmin || _services.MayUpdate);
+        /// <summary>TEST verze jen pro stanice M-line jako legacy tsbCheckTESTVersion (IsDomainMline, ne DEBUG build).</summary>
+        public bool IsTestUpdateVisible => IsServerUpdateVisible && _isMlineStation;
+        public ICommand CheckUpdateCommand { get; }
+        public ICommand CheckTestUpdateCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
         public ICommand CloseMiniAppsCommand { get; }
         public ICommand ResetMiniAppsCommand { get; }
@@ -147,6 +158,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             : base(services)
         {
             _internalDiagnostics = internalDiagnostics;
+            _isMlineStation = (station ?? ModuleTreeStation.Production).IsMlineDomain;
             _loadAllowedCompanies = loadAllowedCompanies;
             _switcher = switcher;
             _switchUser = switchUser;
@@ -178,6 +190,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Test trigger pro error popup - výjimka projde RelayCommand handlerem do EDErrorPopup.
             TriggerErrorCommand = Command(() => throw new InvalidOperationException("Testovací výjimka z toolbaru."));
             OpenLegacyShellCommand = Command(OpenLegacyShell, () => IsLegacyShellVisible);
+            CheckUpdateCommand     = CommandAsync(() => CheckUpdateAsync(testVersion: false), () => IsServerUpdateVisible);
+            CheckTestUpdateCommand = CommandAsync(() => CheckUpdateAsync(testVersion: true), () => IsTestUpdateVisible);
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniApps.Open(d));
             PickMiniAppCommand       = Command(PickMiniApp);
             CloseMiniAppsCommand     = Command(() => _miniApps.CloseClosable());
@@ -275,6 +289,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Kontrola hosta legacy modulů po startu, null = vypnuto (E2E běh, testy).</summary>
         internal LegacyHostCheck? LegacyHostCheck { get; set; }
 
+        /// <summary>Kontrola aktualizace z Nástrojů, null = položky skryté (E2E běh, testy).</summary>
+        internal ManualUpdate? ManualUpdate { get; set; }
+
         private bool LegacyHostMissing()
         {
             if (LegacyHostCheck?.MissingMessage() is not { } message) return false;
@@ -341,6 +358,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Uzly se nahradí novými instancemi, takže zapamatovaný výběr míří do prázdna.
             ForgetSelection();
             _trees.Load(data.Trees, _services.ActiveLicence, data.AccessTable, data.Expansion);
+            _settingsWindowInTree = _trees.AllExecutables().Any(e => e.ElementId == AccessLoader.FormEdisonmainSettingsShow);
+            OnPropertyChanged(nameof(IsServerUpdateVisible));
+            OnPropertyChanged(nameof(IsTestUpdateVisible));
             ApplyPersonalization(data);
             ApplyStartupWindow(data.DefaultWindowId);
             _changelogPrompt?.SeedSnooze(data.ChangelogSnooze);
@@ -987,6 +1007,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     OnPropertyChanged(nameof(Mlp));
                     OnPropertyChanged(nameof(UserDisplay));
                     OnPropertyChanged(nameof(IsLegacyShellVisible));
+                    OnPropertyChanged(nameof(IsServerUpdateVisible));
+                    OnPropertyChanged(nameof(IsTestUpdateVisible));
                     // Admin-gated commandy (ShowUsersLocks/Activity) re-vyhodnotí CanExecute hned,
                     // ne až na první input event po switch.
                     CommandManager.InvalidateRequerySuggested();

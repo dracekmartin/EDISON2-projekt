@@ -32,7 +32,8 @@ Z repa EDISON (build do `C:\Edison`):
 - `EDISONMAIN2API.exe` + `EDISONMAIN2API.exe.config` - generický host agend (projekt je od 06/2026
   WinExe; zbylá `.dll` u zákazníka stíní `.exe`, viz codeBase pin v `EDISONMAIN.exe.config`)
 - existující soubory, všechno buildit z legacy HEAD ≥ `d64a020f1` (2026-09-23, přepínač shellu;
-  `git log --grep=EDISONMAIN2`): `EDISONMAIN.exe` (retrofit `OnRun`), `EDISONMAIN.exe.config`
+  `git log --grep=EDISONMAIN2`): `EDISONMAIN.exe` (retrofit `OnRun`, pro Nástroje → Zkontrolovat aktualizace
+  build s `EDISONMAIN/formEDISONMAINServerUpdate.vb` z 2026-10-29, starší runner nezná), `EDISONMAIN.exe.config`
   (codeBase pin), `EDLibrary.dll` (shortcut sink), `EDUsers.dll`, `EDCore.dll`, `MLRest.dll`,
   `EDLicence.dll`, `EDISONAPI.dll`, `USERS.exe`, `UTILITIES.exe`, `EDISON.exe` (EDLOADER).
 - `EDUPDATE.EXE` - klientský updater obou shellů, build ≥ 2026-06-17 (`WaitProcess`, `49d19295d9`),

@@ -142,6 +142,11 @@
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Tools}" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}"/></MenuItem.Icon>
                 <MenuItem Header="Úlohy na pozadí"      Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenceCommand}"/>
+                <Separator Visibility="{Binding IsServerUpdateVisible, Converter={StaticResource BoolToVis}}"/>
+                <MenuItem Header="Zkontrolovat aktualizace..." Command="{Binding CheckUpdateCommand}"
+                          Visibility="{Binding IsServerUpdateVisible, Converter={StaticResource BoolToVis}}"/>
+                <MenuItem Header="Zkontrolovat aktualizaci TEST verze..." Command="{Binding CheckTestUpdateCommand}"
+                          Visibility="{Binding IsTestUpdateVisible, Converter={StaticResource BoolToVis}}"/>
                 <!-- Separator se skrývá s položkou, jinak by běžnému uživateli zůstaly dva pod sebou. -->
                 <Separator Visibility="{Binding IsLegacyShellVisible, Converter={StaticResource BoolToVis}}"/>
                 <MenuItem Header="Spustit starý shell (EDISONMAIN)" Command="{Binding OpenLegacyShellCommand}"
