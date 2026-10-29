@@ -65,6 +65,12 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 
 ### Ostatní
 
+- **Úvodní okno pro nové uživatele** [S-M] (nápad Jan 29. 10.). Dnes návrhář otevře prázdnou šablonu
+  a nový uživatel neví, kde začít. Okno po otevření nabídne: otevřít ukázkovou šablonu agendy, otevřít
+  šablony z databáze, nebo zavřít a pokračovat jako dnes (s odkazem na nápovědu). Otevřené: co je
+  „ukázková šablona", jestli jen napoprvé / do „Příště nezobrazovat", a nesmí se ukázat při spuštění
+  ze shellu s linkou nebo tisku do PDF. Dřív odložený „onboarding průvodce" (archiv) je širší.
+
 - **Hledání ve formuláři po slovech a se synonymy** [M] (z `B194h` H12, Jan 28. 10.: zajímavé, ale ne
   teď). Hledání dnes bere celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení"
   ani „čára" nenajdou nic, „výška záhlaví" po `H6` nenajde Nejmenší výšku. Návrh: každé slovo zvlášť
