@@ -2,6 +2,7 @@
         x:ClassModifier="internal"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:edlogo="clr-namespace:EDControls.EDLogo"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ShowInTaskbar="False" ShowActivated="False" ResizeMode="NoResize"
         Focusable="False" IsHitTestVisible="False"
@@ -9,21 +10,6 @@
         UseLayoutRounding="True">
 
     <Window.Resources>
-        <!-- ==== Krychle ====
-             Koule skládající se krychle (logo EDISON) - brand oranžová se světlem zleva nahoře,
-             vzadu světlejší (hloubka). Brand literál jako u EDIcons.Molecule, v dark modu se
-             záměrně nemění; vazby jsou theme token (code-behind), aby měly kontrast v obou režimech. -->
-        <RadialGradientBrush x:Key="Cube.AtomFront" GradientOrigin="0.36,0.32" Center="0.36,0.32" RadiusX="0.72" RadiusY="0.72">
-            <GradientStop Color="#FFB27A" Offset="0"/>
-            <GradientStop Color="#FF7433" Offset="0.45"/>
-            <GradientStop Color="#D9400C" Offset="1"/>
-        </RadialGradientBrush>
-        <RadialGradientBrush x:Key="Cube.AtomBack" GradientOrigin="0.36,0.32" Center="0.36,0.32" RadiusX="0.72" RadiusY="0.72">
-            <GradientStop Color="#FFC8A1" Offset="0"/>
-            <GradientStop Color="#FF8A4C" Offset="0.5"/>
-            <GradientStop Color="#E0581F" Offset="1"/>
-        </RadialGradientBrush>
-
         <!-- ==== Sprity ====
              Pixel-art Canvasy v SADÁCH "Sprite.<Sada>.<Kus>", kreslené čelem doprava.
              Výchozí sada "Vehicles" (dopravní prostředky) jede přes průhled a kusy se při
@@ -427,12 +413,9 @@
                 Padding="0,18">
             <StackPanel>
 
-                <!-- Skládající se krychle - výchozí obsah karty; se sadou spritů ho code-behind schová
-                     (PickSet). Koule a vazby staví code-behind z CubeAssembly do plátna 64×64,
-                     Viewbox ho škáluje na velikost karty. -->
-                <Viewbox x:Name="Cube" Width="56" Height="56">
-                    <Canvas x:Name="CubeCanvas" Width="64" Height="64"/>
-                </Viewbox>
+                <!-- Skládající se krychle - výchozí obsah karty; se sadou spritů ji code-behind schová
+                     (PickSet). Smyčku spouští a zastavuje EDLogo samo podle viditelnosti okna. -->
+                <edlogo:EDLogo x:Name="Cube" Width="56" Height="56" AnimationMode="Loop"/>
 
                 <!-- Průhledové okno - kusy jím projíždějí/padají (clip). Obsah vkládá code-behind
                      do SpriteHost; transform (flip + posun) je na hostovi, ne na kusech →

@@ -1,6 +1,7 @@
 <Window x:Class="EDISONMAIN2.Windows.LoginWindow.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:edlogo="clr-namespace:EDControls.EDLogo;assembly=EDControls"
         Title="Přihlášení EDISON"
         WindowState="Maximized"
         WindowStartupLocation="CenterScreen"
@@ -26,7 +27,7 @@
                         Background="{DynamicResource EDTheme.Bg.PanelAlt}"
                         BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Image Source="{StaticResource EDIcons.MoleculeLarge}" Width="56" Height="56"/>
+                        <edlogo:EDLogo Width="56" Height="56" AnimationMode="Once"/>
                         <TextBlock Text="EDISON" FontSize="{DynamicResource EDTheme.FontSize.Display}" FontWeight="Bold"
                                    Foreground="{DynamicResource EDTheme.Text.Header}"
                                    HorizontalAlignment="Center" Margin="0,8,0,0"/>

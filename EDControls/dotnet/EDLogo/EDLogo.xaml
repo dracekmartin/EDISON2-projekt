@@ -1,0 +1,26 @@
+<UserControl x:Class="EDControls.EDLogo.EDLogo"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Focusable="False" IsTabStop="False">
+
+    <UserControl.Resources>
+        <!-- Koule: brand oranžová se světlem zleva nahoře, vzadu světlejší (hloubka). Brand literál
+             jako u EDIcons.MoleculeLarge, v dark modu se záměrně nemění; vazby jsou theme token
+             (code-behind), aby měly kontrast v obou režimech. -->
+        <RadialGradientBrush x:Key="AtomFront" GradientOrigin="0.36,0.32" Center="0.36,0.32" RadiusX="0.72" RadiusY="0.72">
+            <GradientStop Color="#FFB27A" Offset="0"/>
+            <GradientStop Color="#FF7433" Offset="0.45"/>
+            <GradientStop Color="#D9400C" Offset="1"/>
+        </RadialGradientBrush>
+        <RadialGradientBrush x:Key="AtomBack" GradientOrigin="0.36,0.32" Center="0.36,0.32" RadiusX="0.72" RadiusY="0.72">
+            <GradientStop Color="#FFC8A1" Offset="0"/>
+            <GradientStop Color="#FF8A4C" Offset="0.5"/>
+            <GradientStop Color="#E0581F" Offset="1"/>
+        </RadialGradientBrush>
+    </UserControl.Resources>
+
+    <!-- Plátno 64×64 z CubeAssembly, Viewbox ho škáluje na velikost controlu. -->
+    <Viewbox Stretch="Uniform">
+        <Canvas x:Name="LogoCanvas" Width="64" Height="64"/>
+    </Viewbox>
+</UserControl>

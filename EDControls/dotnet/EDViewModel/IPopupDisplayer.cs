@@ -14,6 +14,12 @@ public interface IPopupDisplayer
     bool ConfirmClose(Window? owner = null);
 
     /// <summary>
+    /// Potvrzení ukončení aplikace: Ano/Ne s logem EDISON vlevo. Vrátí true pokud uživatel zvolil Ano.
+    /// Výchozí implementace drží rozhraní kompatibilní s implementacemi v nepřebuildovaných konzumentech.
+    /// </summary>
+    bool ConfirmExit(string message, Window? owner = null) => Confirm(message, owner);
+
+    /// <summary>
     /// Yes/No/Cancel potvrzení. Vrátí true (Ano) / false (Ne) / null (Storno nebo Esc).
     /// Typický use case: "Šablona obsahuje neuložené změny. Chcete je uložit?"
     /// Title volitelný - default "Potvrzení". Lze nastavit kontextově (např. "Neuložené změny").
