@@ -54,11 +54,6 @@ totéž znovu. Pořadí podle přínosu:
   **Malá podoba hotová 29. 10.** (`KontraktAgendTest`): kontrakt bez chyby a s platným JSON, jedinečný kód,
   druh prvků, výchozí volba mezi volbami, „Obecné" první. Zbývá: pole schématu v ukázce a datech, kolekce
   ve schématu, známé klíče definice parametru, `DUVOD_PRAZDNE`.
-- **G2 Celá definice stejnojmenného parametru shodná ve všech agendách** [S]. Popisek, typ, skupina,
-  výchozí hodnota, volby, `serverSide` - s pojmenovanými výjimkami (`TVAR_NAZVU_ZASTAVKY`). Uzavře opsané
-  parametry vývěsek (`AgendaParameterDriftTests` dnes porovná jen popisek; `ServerSideParamsDriftTests`
-  spokojí příznak v kterékoli kopii). Jako Caché test nad výstupem uvidí i parametry se jménem skládaným
-  za běhu (`P4`), které offline kontrola nevidí (převzato z `G7`).
 - **G3 Jeden popisek = jeden klíč napříč agendami JŘ** [S]. Chytí `D1` a `D3` (dnes se hlídá jen stejný klíč).
 - **G4 Ban list i na nápovědy, části slov a titulky oken** [S]. Odtud „nástupiště" (`P7`), „engine" (`E7`),
   „Tučně" uvnitř popisku (`E10`), „Linkový JŘ - nastavení" (`E2`).
@@ -89,7 +84,9 @@ totéž znovu. Pořadí podle přínosu:
   příznaky jako parametry třídy v `BaseAgenda`, přes `ListAgendy` do `AgendaRegistryEntry` (aditivně).
 - **R5 Parametry vývěsek opsané dvakrát** [S-M]. `ZastavkoveJrAd.AddStandardJRParameters` ×
   `ZastavkoveJrMhd.AddStandardJRParameters`; dnes shodné (ověřeno voláním). První krok `B56` podle vzoru
-  `LinkovyJrAd.Parametr*`, před doslovnými buildery.
+  `LinkovyJrAd.Parametr*`, před doslovnými buildery. Shodu hlídá `KontraktAgendTest.TestSdileneParametryShodne`
+  (`G2`); přehled sdílených parametrů vypíše `KontraktAgendTest.Prehled` - 29. 10.: 20 sdílených, 16 shodných,
+  4 vědomé rozdíly (tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
 - **R6 Dokumentace pro rozvoj** [S]. `cache-api.md`: vzor agendy používá `groups`/`scope` a `q 1` bez
   ošetření chyb (porušuje vlastní pravidla 14-15), tabulka pojmů `groups`, „mock s pevnými hodnotami",
   seznam agend v appsettings (sám si odporuje), checklist nové agendy bez parametrů třídy, podmínky přímého
@@ -105,9 +102,7 @@ totéž znovu. Pořadí podle přínosu:
 
 **Připravenost na `B56`** (revize 28. 10., čtení kódu, na serveru nic nespuštěno):
 
-- **Nutné před prvním krokem:** G2 jako Caché test nad výstupem `GetParameters`
-  (přežije přesun kódu a uvidí i parametry skládané za běhu) a snímek výstupu všech agend
-  (G1 malá podoba, G7 a G8 hotové 29. 10.).
+- **Nutné před prvním krokem:** snímek výstupu všech agend (G1 malá podoba, G2, G7 a G8 hotové 29. 10.).
   Ostatní G a R jsou užitečné, ale bez nich slučování tisk tiše nerozbije.
 - **Snímek výstupu je sonda, ne test** (pravidlo o testech závislých na stroji): otisk `GetData` přes sady,
   které testy už mají (`ZastavkoveJrAdSadaTest.Sada`, `LinkovyJrSadaTest.Jadro`, `LinkovyJrMhdTest.LINKY`,

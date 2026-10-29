@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-29 (5) - Stejnojmenný parametr je ve všech agendách týž (`B194f` G2)
+
+Parametry, které má víc agend, jsou opsané (zastávkové JŘ AD a MHD, linkové AD a MHD). Kontrola dosud
+porovnávala jen popisek, takže rozjetá výchozí hodnota nebo volby prošly a uživatel viděl totéž nastavení
+v každé agendě jinak. `KontraktAgendTest.TestSdileneParametryShodne` vezme parametry všech agend z výstupu
+serveru a u stejného jména porovná popisek, typ, skupinu, výchozí hodnotu, volby a příznak načtení dat.
+- Dnes: 20 sdílených parametrů, 16 shodných (všech 7 společných parametrů zastávkových JŘ - podklad pro
+  sloučení v `B56` R5), 4 vědomé rozdíly zapsané v testu s důvodem: výchozí tvar názvu zastávky (parita se
+  starými moduly), počet stran a zastávky bez zastavení (MHD nemá nastavení u linky), skupina barev spojů
+  (nese název prvku).
+- Přehled vypíše `KontraktAgendTest.Prehled`. Caché sada 268/268.
+
 ## 2026-10-29 (4) - Zlatý odtisk linkového JŘ MHD včetně hlavičky (`B194f` G8)
 
 `LinkovyJrMhdGoldTest` hlídá celý výstup linkového JŘ MHD (stránky i hlavičku) na sedmi linkách
