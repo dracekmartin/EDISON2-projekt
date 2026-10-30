@@ -213,8 +213,8 @@ gold oracle ověřeno). Detailní mapovací matice → `legacy-nahrada.md`.
 
 ### 3.3 TiskJR (+ TiskJRRELACE) - výlepový/knižní JŘ linky (nepokryto)
 
-**Rozsah:** TiskJR ~33 400 LOC VB + 3 290 Caché; TiskJRRELACE (slovenský relační fork,
-copy-paste) ~49 700 LOC VB + 3 900 Caché. **Pozor:** výpočetní engine JŘ
+**Rozsah:** TiskJR ~33 400 LOC VB + 3 290 Caché; TiskJRRELACE (relace, kopie kódu TiskJR
+s vlastním výpočtem, ne slovenská) ~49 700 LOC VB + 3 900 Caché. **Pozor:** výpočetní engine JŘ
 (`mkPLinWin`/`mkPRelWin` v `ALVA.JRMAIN.MLAPI` + MAC rutiny) leží mimo a v LOC není.
 
 **Co to je:** sloupcový JŘ celé linky - svislý seznam zastávek (Zóna/Km/Tč/Název/Šipky)
@@ -338,7 +338,8 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
    (2 - TD výrazový jazyk je nadmnožina), checkbox (8). Ověřit se zákazníky a škrtnout.
 
 ### Etapa 5 - Relace (TiskJRRELACE) + vozové JŘ (v roadmapě „Relace a vozové JŘ")
-- Relace: jen AD, živý zákazník BBSK `#13070`; agenda nad sdílenými třídami AD a nový prvek (mapa generátorů §3).
+- Relace: jen AD, živý zákazník BBSK `#13070`; agenda nad sdílenými třídami AD a nový prvek.
+  Rozbor legacy (definice, obě cesty tisku, data, šablona) a návrh převodu: mapa generátorů §3a-3g.
 - Vozový JŘ je jen MHD (tisk DPKV v MHD2Tisk s vlastním kreslením) a převádí se jen na poptávku.
   Vozové listy a turnus pro řidiče jsou sady report generátoru a jdou s etapou 4 (mapa generátorů §4).
 
@@ -350,7 +351,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
 |---|---|---|---|---|
 | TiskMHD | 31 400 + 4 313 | ~90 % (datově 1:1, elementy ✅) | TrasaMin multi-varianta, tarifní pásma, vizuální detaily | M–L (jednotlivosti) |
 | TiskJR | 33 400 + 3 290 | 0 % (jiný formát než zastávkový) | element + agenda + font + layout rozšíření | L (≈ zastávkový JŘ) |
-| TiskJRRELACE | 49 700 + 3 900 | 0 % | agenda nad AD + prvek; živý zákazník BBSK `#13070` | ? |
+| TiskJRRELACE | 49 700 + 3 900 | 0 % | agenda nad AD + prvek (návrh mapa generátorů §3e); živý zákazník BBSK `#13070` | ? |
 | REPORTGENERATOR | 28 850 + 6 055 | ~15 % (TableElement základ; ukázkové Faktury smazané 30. 10.) | 27 agend / ~85 sad (bridge/migrace), tabulkové featury, hromadný tisk, šablony zákazníků, kanály | XL (etapizovat) |
 | **Sdílená infrastruktura** | (napříč) | částečně (DB storage, versioning framework) | vendor šablony, EDISON launch, headless, merge/email | L - **první** |
 
@@ -697,8 +698,118 @@ Do 30. 10. tu stálo „slovenský fork" a „řádky = odjezdy, sloupce = linka
 S linkovým JŘ (`ALVA.TISKJR`) sdílí jen API jízdních řádů a výpočet je jiný (`mkPLinWin` × `mkPRelWin`); zbytek je kopie kódu a šablony má ve vlastním globálu `^AlvaTiskJRRelace`.
 Symboly kreslí fontem TimeTable jako linkový JŘ.
 
-**Stav v TD:** neimplementováno; živý zákazník BBSK `#13070` (odjezdová relace).
-Potřebuje agendu nad AD (čtení linek ze sdílené `Jr/DataAd.cls`) a nový prvek - buňku s volně rozmístěnými údaji žádný prvek nemá.
+**Stav v TD:** neimplementováno.
+Relace podle helpdesku používají BBSK, SADZV, SADLC, Slovak Lines, ZGROUP, KORID a ARRIVA (tikety 2019-2026).
+Otevřené tikety: BBSK `#13070` (vzor odjezdové vývěsky, šablonu jim uděláme po dokončení), BBSK `#13693` (vývěska pro každý označník, Detva aut. st. jich má čtyři), SADZV `#13654` (ptají se, jestli se jejich šablony převedou).
+BBSK dřív chtěla linku IDS „v kosodĺžniku nad časom" (`#8508`), tedy volné rozmístění údajů v buňce zákazníci využívají.
+
+Rozbor 30. 10. 2026 níž (3a-3g) je podklad pro převod, aby se legacy nemusel číst znovu.
+Cesty jsou relativně k `C:\DEV\EDISON\`; rutiny `*.mac` jsou v `JRMAIN/CACHE/`, `Relace.cls` a `JRMAIN/Main.cls` v `JRMAIN/CACHE/ALVA/JRMAIN/`, `Data.cls` a `Main.cls` bez předpony v `TiskJRRELACE/CACHE/ALVA/TISKJRRELACE/`, `Module.vb` je `TiskJRRELACE/TiskJRRelace/formTISKJRRELACEReportDotNet_Module.vb`.
+
+### 3a) Definice a výpočet relace
+
+- Definici čte a ukládá `gDefRel` / `sDefRel` (`JRMAIN/CACHE/JRapiRel.mac:57-148`), okno `formJRMAINRelaceEdit`; klíč je `sku` (skupina linek), `typ` (`o` / `p`) a `rel`.
+- Výchozí zastávka (`Zast`) má číslo, název a „název pro tisk".
+  Windows tisk bere jen název (`JRapiiGOdO.mac:65`), postskript „název pro tisk" (`JRapiRelPrtPS.mac:52-53`).
+- Cílové zastávky (`Smer`) mají název a upravený název.
+  Tiskne se upravený a podle něj se řádky řadí abecedně (`JRapiiGOdO.mac:101-107,162`); ruční pořadí neexistuje.
+- Zastávky „přes" (`Pres`) dávají samostatný řádek „kam / přes X" s vlastními buňkami (`JRapiiGOdO.mac:198-204`).
+- Spoje relace jde ručně upravit (`Relace.cls:657-934`): platnosti, označník, typ linky, příjezd, NZ, zámek, dopravce, BEV/CBE/kola, linka MHD, linka IDS (záznam spoje `JRapiRel.mac:166-185`).
+- Výpočet (`Relace.cls:979`, `calRel^JRapiRel2`) bere skupinu linek, aktuální nebo archivní JŘ a datum.
+  Řídí ho i nastavení jízdních řádů (průjezdy, pokračování spojů, posun platnosti, `JRapiRel2.mac:29-35`) a povolení NZ ve skupině (`:25-27`).
+- Výsledek leží v `^JRi(EaOP,Sku,Rel,"Def",…)` (definice, zóny) a `^JRi(EaOP,Sku,Rel,"Data",cílová,čas,linka,spoj,"Basic")` (jeden spoj).
+  **Obě cesty tisku čtou týž výsledek** (`JRapiRelPrtPS.mac:84-133`, `JRapiiGOdO.mac`) a liší se jen tím, co z něj vezmou.
+- Buňky v řádku jsou seřazené podle času, linky a spoje (`JRapiiGOdO.mac:171-174`), řádky bez buněk se mažou (`JRapiRel4.mac:473-482`).
+
+### 3b) Dvě cesty tisku
+
+| | Windows tisk (`TiskJRRELACE`) | Postskript (`JRMAIN/CACHE/JRapiRelPrtPS.mac`) |
+|---|---|---|
+| Spuštění | okno relací v JŘ, ISYJR2 Tisky (`ISYJR2/TiskJRHelper.cs:362`) | ISYJR2 Tisky → „Postscripty - Vývěsní odjezdové a příjezdové tabule" (`formISYJR2HlavniOkno.Poscripty.cs:35-47`) |
+| Nastavení | šablona, 448 vlastností sekce dat (`TiskJRRELACE/TiskJRRelace/Struktury.vb:41-560`) | 12 voleb dialogu + program `.ps` v databázi firmy (`^JRSET("PS","OZa")`, kniha `"OZaK"`) |
+| Buňka | 9 údajů, každý s pozicí, velikostí, písmem a rámečky | doplněk + platnosti + čas (`JRapiRelPrtPS.mac:236-243`) |
+| Šířka buňky | pevná | podle obsahu (procedura `NC` v programu `.ps`) |
+| Navíc | barva podle druhu spoje a dopravce, výběr cílových zastávek, 5 druhů poznámek s pořadím | dálkové a mezinárodní napřed, číslované značky, písmena místo značek, linka MHD, kniha |
+
+**Postskript** (`JRapiRelPrtPS.mac`, ověřeno v kódu):
+- „U času tisknout" vybírá jeden doplněk: linka-spoj, označník, příjezd, linka IDS, nebo linka MHD (`in("par",6)`, `:150`); linku MHD Windows tisk neposílá, v datech je (`Basic` 13. část, `:201`).
+- Dálkové a mezinárodní spoje jdou napřed a jsou v buňce označené, když to zapíná `^JRSET("Definice",…,"Setup","PrintTyp")` (`:73-75`, `:242`); ve Windows výpočtu to není.
+- Stejná značka s jiným významem dostane číslo (X, X¹), legenda pak zůstane krátká (`Pla`, `:316-358`).
+- Omezení se tisknou jako negativní značky, nebo jako písmena (`:46`, prázdná volba = negativní značky).
+- Texty záhlaví („Cílová zastávka", „Odjezdy ze zastávky", „Linka-spoj") jsou v nastavení jízdních řádů česky i slovensky (`JRMAIN/Main.cls:351-355`), ne v programu.
+- Volby dialogu (`formISYJR2PoscriptParametryTabule`): vývěska / kniha, záhlaví, centrovat záhlaví, typy linek (8), tisk zóny, U času tisknout, značky omezení, poznámky ke spoji, poznámkovat vyloučenou přepravu, měřítko X a Y, inverzní tisk; navíc „Tisknout podle zastávek (stanovišť)" (`JRapiRelPrtPSs.mac`) a výstup do PDF.
+- PDF dělá Ghostscript a dialog volá napevno `gswin32c.exe` (`ISYJR2/PoscriptTisk.cs:90`), 64bitový `gswin64c.exe` nenajde.
+- Program `OZa` ve VS_ZGBUS (54 tisíc znaků, asi 1 400 řádků, přečteno jen rozložení): stránka 210 × 285 mm, okraje 10/10/15/10 mm, sloupec zastávek 35 mm, písmo nadpisu 12, cílové zastávky 12 a 10, doplňku 6, značek 9, času 10 a 6.
+
+### 3c) Data starého Windows tisku (oracle pro paritu, R6)
+
+- Vstup `ALVA.TISKJRRELACE.Data.LoadData`: `SESTAVA` (bez ní spadne na `<UNDEFINED>SestavaId`, ověřeno voláním 30. 10.), `VALUE` = `označník#cílové zastávky^sku|typ|rel[#…]`, `VariantaVolaniMM`, `TypLinekProTisk_*`, `TiskZonyKZastavce`, `PoznamkyTiskPoznamekKeSpoji`.
+- `LoadData` volá `mkPRelWin` (`Data.cls:107`) se vstupem `skrel(rel)`, `skrelzast(rel,zast)` (má přednost), `nast(rel)`, `par(1)` poznámky ke spoji, `par(2)` zóny, `par(3,typ)` typy linek (`JRapiRel4.mac:194-199`).
+- Výstup jsou řádky oddělené `~`:
+  - `RELACE_START~sku~typ~rel~~název výchozí zastávky[(zóny)][, nást. X]` (`Data.cls:229`),
+  - `ROW_START~horní řádek~dolní řádek` - cílová zastávka, dolní řádek je upřesnění nebo „přes X" (`:243`),
+  - `CELL~Linka~LinkaIDS~Spoj~Označník~Platnosti~NZ~Odjezd~Příjezd~DruhSpoje~DopravceId`, časy HH:MM (`:317`),
+  - `ROW_END`, `POZNAMKA~sku~typ~rel~Druh~Typ~ID~Text#Text…` (`:640`), `RELACE_END` (`:653`).
+- Platnosti v buňce jsou spojené `^`: napřed 1-7, +, X, BEV, CBE, PJI jako kódy fontu Timetable (49-55, 43, 88, 72, 70, 76; `Data.cls:259-272`, `Main.cls:35-101`), pak ostatní jako `X01_text` nebo `X02_text_horníIndex` (`:274-308`).
+- `DruhSpoje` = typ linky, `DopravceId` = závod dopravce; barva v datech není.
+- Druhy poznámek: 1 týdenní platnost, 2 NZ, 3 vyčká / navazuje / pokračuje, 4 ostatní (BEV/CBE/PJI, text), 5 barvy; řazení podle pořadí druhů ze šablony (`Data.cls:579-594`).
+- Víc relací: každá položka výběru je samostatný dokument (`formTISKJRRELACEReportDotNet.vb:107-110`); „všechny do jednoho" spojí relace `#` a `LoadData` řadí bloky `RELACE_START…RELACE_END` za sebe (`Data.cls:115-145`); „jeden označník" filtruje buňky přes `nast` (`JRapiRel4.mac:389`).
+
+### 3d) Šablona Windows tisku: 448 vlastností a co z nich zbude
+
+| Skupina | Počet | V návrháři |
+|---|---|---|
+| Obsah buňky: 9 údajů × viditelnost, pozice, velikost, zarovnání, zalomení, popisek, pozadí, 16 rámečků, 9 vlastností písma | 340 | zapnutí údaje + 3 styly (čas, doplněk, značky) |
+| Hlavička (texty odjezd / příjezd, písmo, rámečky) | 39 | záhlaví prvku |
+| Sloupec cílové zastávky (dva řádky písma, pozadí, rámečky) | 23 | sloupec prvku |
+| Mřížka (šířka a výška buňky, sloupec = N buněk, místo pod zastávkou, rámečky) | 20 | 3-4 pole |
+| Poznámky (5 druhů: tisknout / počet na řádek, pořadí, písmo) | 16 | prvek Poznámky |
+| Barva pozadí podle druhu spoje a dopravce (jen 1 a 1 na šablonu) | 8 | zvýraznění buněk pravidly |
+| Opakovat zastávku na další stránce, zóny | 2 | 2 pole |
+
+Obsah výtisku mění jen tři vlastnosti, které jdou na server (zóny, poznámky ke spoji, pořadí druhů poznámek, `formTISKJRRELACEReportDotNet_Module.vb:742-745`), a v klientu výběr údajů, tvar linky (`BunkaLinkaTyp` 1-4), tvar času (12:20 / minuty v horním indexu), legenda jako buňka a legenda barev v poznámkách.
+Zbylých asi 430 vlastností je vzhled.
+Inventář z `Struktury.vb:41-560` a `Designer.cls` (`LoadSekce:9`); renderer `formTISKJRRELACEReportDotNet_Module.vb:1483-1915`.
+
+### 3e) Převod do návrháře (návrh 30. 10. 2026)
+
+Kostra z postskriptu (kompaktní buňka a málo voleb), z Windows tisku jen to, co postskript neumí.
+
+- **Agenda Relace, varianta AD.** MHD varianta nebude, relace počítají jen jízdní řády.
+  Odjezdová i příjezdová relace jsou v téže agendě - druh je v definici relace, liší se jen nadpis.
+  Kód agendy se po vydání nemění, rozhodnout ho před první verzí.
+- **Instance = relace ve skupině linek** (`sku|typ|rel`); výběr skupiny linek přesměruje do `Jr/DataAd.cls` jako ostatní agendy AD, seznam relací skupiny je nový.
+- **Data čte agenda z `^JRi` sama** jako postskript, ne voláním `mkPRelWin`: agendy JŘ v TD čtou data samy a legacy engine je jen oracle v testech (`LinkovyJrLegacyOracle`).
+  Z `^JRi` dostane i linku MHD a pořadí dálkových spojů, které Windows výstup neposílá.
+  Paritu ověří test proti `ALVA.TISKJRRELACE.Data.LoadData` (3c); rozdíly postskriptu (název pro tisk, dálkové napřed) jsou vědomé a zapíšou se jako neověřené proti němu.
+- **Nezávisí na nastavení tisku u linky** - tisk relací ho nečte, takže nečeká na úklid nastavení jízdních řádů.
+- **Nový prvek:** řádky cílových zastávek (a „přes"), v řádku buňky spojů; stavbou je nejblíž Minutám odjezdů (řádek = hodina, buňka = minuta).
+  Buňka má pevnou kostru: čas + platnosti + vybrané doplňky (linka-spoj, linka IDS, linka MHD, označník, příjezd, NZ) s pevným místem nad časem.
+- **Pole prvku (asi 10-12):** doplňky v buňce, tvar čísla linky, tvar času, šířka buňky (0 = podle obsahu), výška buňky, šířka sloupce zastávek, značky omezení (negativní značky / písmena), dálkové a mezinárodní napřed (výchozí podle nastavení jízdních řádů), opakovat zastávku na další stránce, zvýraznění buněk, styly času, doplňku a značek (sada Text); k tomu běžné skupiny Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost.
+- **Zvýraznění buněk** podle druhu spoje a dopravce: model pravidel (`HighlightRule`) mají Seznam zastávek, Tabulka spojů a Tabulka z dat pro řádky („Zvýraznění řádků"); relace ho potřebují pro buňku a bez omezení na jeden druh a jednoho dopravce.
+  Data pošlou typ linky a dopravce u spoje; legenda barev jde do poznámek jako dnes.
+- **Beze změny se použijí** Poznámky (5 druhů jako kategorie), text a obrázek (nadpis, platnost, kontakty IDS, logo); font TimeTable2 i slovenský návrhář přibaluje (`dotnet/Fonts`).
+- **Parametry sestavy (asi 5):** typy linek, vybrané cílové zastávky, „Stránka pro každé stanoviště" (`#13693`; dnes `ROZDELIT_PER_OZNACNIK` jen v `ZastavkoveJrAd`, druhou agendou se podle R8 přestěhuje do `Jr/Parametry.cls`), zóny u názvů a poznámky ke spoji.
+  Zóny a poznámky ke spoji počítá server: parametr sestavy, nebo volba prvku poslaná do vstupu (`cache-api.md` R3) - rozhodnout při stavbě.
+- **Víc relací** do jednoho nebo samostatných dokumentů pokryje tisk víc instancí, který návrhář umí; každá relace na nové stránce je v legacy napevno (`Module.vb:1910`), v návrháři to rozhodne šablona.
+- **Vědomě nepřebírat:** měřítko X a Y a inverzní tisk z postskriptu, volné rozmístění 9 údajů v buňce, písmo NZ převzaté z odjezdu (chyba, `Module.vb:3551-3562`), barvu jen pro jeden druh a jednoho dopravce.
+
+### 3f) Otevřená rozhodnutí
+
+1. **Jak volná bude buňka** - pevná kostra (doporučení) proti volnému rozmístění z Windows (`#8508`), které by potřebovalo editor buňky v okně prvku. Rozhodnout po porovnání se skutečnými šablonami BBSK a SADZV v jejich databázích; zálohy šablon v repu jsou kódované a jen od M-line z let 2014-2020.
+2. **Název výchozí zastávky** - „název pro tisk" jako postskript, nebo název jako Windows tisk.
+3. **Kniha** (`OZaK`) - jestli stačí jiná šablona, nebo kniha skládá stránky jinak; ukáže jen přečtení programu.
+4. **Dálkové a mezinárodní napřed** - volba prvku s výchozí hodnotou podle nastavení jízdních řádů, aby se zákazníkům výstup nezměnil.
+5. **Šablony zákazníků** (SADZV `#13654`) - převod, nebo nové šablony; stejná otázka jako u report generátoru (roadmapa `F10`).
+
+### 3g) Zkušební data na dev serveru
+
+- Firma **VS_ZGBUS** (Zgroup Vsetín), skupina linek 1, odjezdové relace Vs-nam, Vs-pri, luh-ja, luh-vs; data dev serveru jsou pod jménem firmy, ne pod `USER`.
+- **Vs-nam** - Vsetín, Dolní náměstí (zóna 460), 3 cílové zastávky, linky 945601, 945605, 945608, asi 80 spojů, NZ 10-12, bezbariérové spoje; omezení z let 2024-25.
+- **luh-vs** - Vsetín, Luh II, 1 cílová zastávka s asi 100 spoji (zalamování buněk), poznámky „pokračuje" s číslovanými značkami; data z let 2016-17.
+- Ve firmě jsou Windows šablony 1001 „Slovak lines 1" a 1002 „M-line vzor 1" a postscriptový program `OZa`.
+- Relace nepřepočítávat - přepíše se uložený výsledek.
+- Chybí relace s „přes", dálkovými spoji a linkou IDS; CB_CSADAD ve skupině 1 relace nemá, jinde se nehledalo.
 
 ---
 

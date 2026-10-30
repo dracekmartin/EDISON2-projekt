@@ -108,14 +108,18 @@
 
 ## 🚋 Relace a vozové JŘ
 
-**Relace** jsou jen AD a nejsou slovenské: odjezdy nebo příjezdy z jedné zastávky seskupené podle cílové zastávky, v řádku buňky spojů s volně rozmístěnými údaji.
-Živý zákazník je BBSK `#13070` (pozastavený): vypadá jako linkový JŘ, ale předloha je odjezdová relace.
+**Relace** jsou jen AD a nejsou slovenské: odjezdy nebo příjezdy z jedné zastávky seskupené podle cílové zastávky, v řádku buňky spojů.
+Starý modul je tiskne dvěma cestami: Windows šablonou se 448 vlastnostmi (tři čtvrtiny je rozmístění údajů v buňce) a postskriptem s 12 volbami a buňkou čas + platnosti + jeden doplněk.
+Návrh bere kostru z postskriptu a z Windows jen to, co postskript neumí: prvek asi s 10-12 poli, asi 5 parametrů sestavy.
+Používá je sedm zákazníků; otevřené tikety BBSK `#13070` (vzor, pozastavený), `#13693` (vývěska pro každý označník) a SADZV `#13654` (převod šablon).
 **Vozový JŘ** je jen MHD - tisk DPKV v MHD2Tisk s vlastním kreslením, vydaný 27. 10.; vozové listy (MHD) a turnus pro řidiče (AD) jsou sady report generátoru a patří do sekce níž.
-Rozbor 30. 10.: [`legacy-nahrada.md`](legacy-nahrada.md), mapa legacy generátorů §3-4.
+Rozbor 30. 10. (definice, obě cesty tisku, data a oracle, šablona, návrh, zkušební data VS_ZGBUS): [`legacy-nahrada.md`](legacy-nahrada.md), mapa legacy generátorů §3a-3g.
 
 | Co | Stav |
 |---|---|
-| **Relace AD** - agenda nad sdílenými třídami AD z `B56` a nový prvek (mřížka buněk spojů, každý údaj s vlastní pozicí a písmem) | ⬜ další po `B56` |
+| **Rozhodnutí před stavbou relací** - jak volná bude buňka (pevná kostra z postskriptu, nebo volné rozmístění údajů z Windows), „název pro tisk" výchozí zastávky, kniha; podklad je porovnání obou tisků na VS_ZGBUS a šablony BBSK a SADZV (§3f) | ⬜ rozhodnutí Jan |
+| **Relace AD** - agenda (instance = relace ve skupině linek, data čte z `^JRi`, paritu ověří proti starému Windows tisku) a nový prvek (řádky cílových zastávek, buňka = čas + platnosti + doplňky, zvýraznění buněk podle druhu spoje a dopravce) | ⬜ další na řadě, po rozhodnutí |
+| **Šablony relací zákazníků** (SADZV `#13654`) - převod, nebo nové šablony | ⬜ s `F10` |
 | **Vozový JŘ DPKV** do návrháře - jediný zákazník a čerstvý vlastní tisk | ⬜ na poptávku |
 
 ---
