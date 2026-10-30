@@ -731,6 +731,14 @@ public class EDInputFormSchemaDriftTests
         "ZIndex",           // → Vrstva (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Velikost značek",  // → Poměr velikosti značek („Velikost" = pevná hodnota v pt / mm, `B194` E9c)
         "Velikost minut",   // → Poměr velikosti minut
+        "Písmo",            // → Font
+        "Velikost písma",   // → Velikost (ve větě nápovědy je „velikost písma" správně)
+        "Hrot šipky",       // → Tvar hrotu (výběr = co se vybírá, Jan 28. 10.)
+        "Barva šipky",      // → Barva ve skupině Šipka směru (část se v popisku neopakuje)
+        "Odsazení",         // → Odsazení podle trasy (zaškrtávátko = věc, kterou zapíná)
+        "Pozadí",           // → Barva pozadí (hledání podle „barva")
+        "Projeté: Čas",     // → Projeté: Zobrazit čas
+        "Více stanovišť",   // → Výběr stanoviště
     ];
 
     /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive): názvosloví i tvary popisku.
@@ -742,6 +750,8 @@ public class EDInputFormSchemaDriftTests
     internal static readonly string[] BannedLabelForms =
     [
         "Min. ",            // zkratky ne → „Nejmenší …" (Jan 28. 10.)
+        "Max. ",            // → „Největší …" / „Nejvýš …"
+        // „dle" zakázat nejde: zamčené volby parametrů („Automaticky (dle linky)", „Dle četnosti ze zastávky").
         "Tl. ",             // → Tloušťka …
         "Řádek NZ",         // → Řádek negativních značek
         "Font aktuální",    // → Aktuální: Velikost (je to velikost písma, ne rodina)
@@ -752,6 +762,10 @@ public class EDInputFormSchemaDriftTests
         "Tučně",            // → Tučné
         "Podtržené",        // → Podtržení
         "Přeškrtnuté",      // → Přeškrtnutí
+        "Rodina písma",     // → Font
+        "Pozadí záhlaví",   // → Barva pozadí záhlaví (velké P = popisek začíná „Pozadí")
+        "Pozadí buněk",     // → Barva pozadí buněk
+        "(u pravého okraje", // vysvětlení do nápovědy, ne do závorky ve volbě
     ];
 
     /// <summary>Názvosloví (kanon ux-conventions §8), které platí ve všech textech pro uživatele:
@@ -787,6 +801,18 @@ public class EDInputFormSchemaDriftTests
         "Element",
         "cílov",            // → konečná (poslední zastávka směru; Jan 2026-10-27, `B194` D3)
         "CIS číslo",        // → „Číslo … zastávky (CIS)" - CIS na konci jako u názvů (`B194` D3)
+        "canvas",           // → plátno
+        "Výplň",            // → Barva pozadí
+        "Pořadí vrstvy",    // → Vrstva
+        "popisové sloupce", // → popisné sloupce (Jan 26. 10.)
+        "sloupce popisu",   // → popisné sloupce
+        "Zobrazit nadpis",  // → Záhlaví (první pole skupiny Záhlaví)
+        "dynamická výška",  // → výška podle obsahu
+        "počítá engine",    // → výška podle obsahu
+        "fixní tabulka",    // → Pevná tabulka
+        "Datová tabulka",   // → Tabulka s řádky z dat
+        "Výpis z dat",      // → Tabulka s řádky z dat
+        "Kód (QR / čárový)", // → Kód (QR, čárový)
         "Úplně dopředu",    // → Přenést zcela dopředu (příkazy vrstvy, rozhodnutí Jan 30. 10.)
         "Úplně dozadu",     // → Odeslat zcela dozadu
         // „stanoviště" už zakázané NENÍ (2026-08-03, #13088): označník a sloupek se ukázaly být dvě

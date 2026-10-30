@@ -348,7 +348,8 @@ skupina = „Obecné" nebo název prvku, stejný parametr = stejný popisek nap�
 Ban list má dvě části: **názvosloví** (`BannedTerms`: nástupiště, element, cílová, Mřížka odjezdů…) platí
 ve všech textech pro uživatele, tedy i v nápovědách, hláškách agend a textech oken (`NazvosloviTextuTests`);
 **tvary popisku** (`BannedLabelForms`: zkratky, „projetých", „Tučně") jen v popiscích - ve větě nápovědy
-je „tisk projetých zastávek" správně. Nový zakázaný termín zařaď podle toho, kde vadí.
+je „tisk projetých zastávek" správně. Nový zakázaný termín zařaď podle toho, kde vadí. Každý přeškrtnutý
+tvar v tabulkách níž musí být v některém seznamu, nebo mít výjimku s důvodem - hlídá `KanonNazvosloviTests`.
 
 Kanonické termíny (doména JŘ):
 
