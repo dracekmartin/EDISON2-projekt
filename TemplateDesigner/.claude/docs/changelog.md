@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-30 (28) - Dva různé „Jazyk" přejmenované (`B56` S13, druhá část)
+
+Vývěska AD měla `Jazyk()` = jazyk šablony („cs" / „sk") a linkový JŘ AD `Jazyk(dataDB)` = kód číselníku firmy („CZ" / „*SK") - stejné jméno, jiný význam, zapsané v R2 k přejmenování.
+Teď má vývěska `JazykSablony()` a obě agendy `KodJazykaCiselniku`; vývěska ho volí jen podle jazyka šablony, linkový JŘ i podle varianty, kterou má firma v číselníku (vědomý rozdíl).
+Šest opsaných převodů „sk → *SK" ve vývěsce nahradilo jedno volání.
+Ověřeno: snímek výstupu agend bajtově beze změny, Caché testy 272/272 (včetně slovenských textů vývěsky), .NET testy 2548/2548; staré jméno na serveru není.
+
 ## 2026-10-30 (27) - Základ agend jen kontrakt a obecné věci (`B56` S13, první část)
 
 Review B56 ukázalo, že `BaseAgenda` pořád drží 14 metod jen pro jízdní řády, které čtou data AD - R8 je chtělo přesunout, aby základ sloužil i agendám report generátoru a agendy MHD nedědily čtení AD.

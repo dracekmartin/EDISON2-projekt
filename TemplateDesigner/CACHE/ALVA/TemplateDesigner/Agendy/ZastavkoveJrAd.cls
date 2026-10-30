@@ -732,7 +732,7 @@ ClassMethod NacistSkupinyDnu(ftl As %String, dataDB As %String = "", sku As %Str
     s skupiny = ##class(%DynamicArray).%New()
     // nadpisy z nastavení firmy / sady linky (Jr.DataAd.NadpisySkupinDnuZNastaveni), dnešní text jako výchozí
     s rozlozeni = $case(ftl, 1:1, 2:2, 3:3, :0)
-    d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NadpisySkupinDnuZNastaveni(dataDB, sku, lin, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), rozlozeni, ..NadpisySkupinVychozi(rozlozeni), .t)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NadpisySkupinDnuZNastaveni(dataDB, sku, lin, ..KodJazykaCiselniku(), rozlozeni, ..NadpisySkupinVychozi(rozlozeni), .t)
     // ID jde na wire jako text („1"), jako dřív - odjezdy na něj odkazují svým SKUPINA_DNU_ID
     f i=1:1:$o(t(""),-1) d skupiny.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildSkupinaDnu(i_"", t(i), t(i,2), i))
     q skupiny
@@ -818,7 +818,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         // (Jr.DataAd.TextOmezeni) - InPlatDef se nečte (drží zastaralý seed datumů). cnz prázdné → fallback
         // na sekvenční číslo + typ „text" (zachová staré chování pro spoj bez NZ).
         s znak = "", typOmez = "text"
-        s txt = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TextOmezeni(dataDB, sku, lin, smer, sp, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TiskDtm(dataDB, sku, lin))
+        s txt = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TextOmezeni(dataDB, sku, lin, smer, sp, ..KodJazykaCiselniku(), ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TiskDtm(dataDB, sku, lin))
         i txt '= "" {
             i cnz '= "" {
                 s znak = cnz, typOmez = "nz"
@@ -1140,7 +1140,7 @@ ClassMethod ZapsatNaObjednani(ByRef odjAtrLegenda, dataDB As %String, klic As %S
     s naObjednani = (klic = "RBU")
     s znak = $s(naObjednani:..ZnakNaObjednani(), 1:..ZnakPodminecne())
     i '$d(odjAtrLegenda(znak)) {
-        s rec = $s(..Jazyk() = "sk":"*SK", 1:"CZ")
+        s rec = ..KodJazykaCiselniku()
         s veta = $g(^[dataDB]JRSET("STALCOME", rec, klic))
         i veta = "" s veta = ..TextNaObjednani(naObjednani)
         s odjAtrLegenda(znak) = "specialni~"_veta_"~"_$s(naObjednani:"odjezd-na-objednani", 1:"odjezd-podminecne")
@@ -1156,7 +1156,7 @@ ClassMethod ZapsatNaObjednani(ByRef odjAtrLegenda, dataDB As %String, klic As %S
 /// spoj obsluhující zastávku na objednání (`JRapiNZUtl3.mac:174-175, 191-192`).
 ClassMethod TextNaObjednani(naObjednani As %Boolean) As %String
 {
-    i ..Jazyk() = "sk" ret $s(naObjednani:"spoj zastávku obsluhuje len na objednanie", 1:"spoj zastávku obsluhuje len podmienečne")
+    i ..JazykSablony() = "sk" ret $s(naObjednani:"spoj zastávku obsluhuje len na objednanie", 1:"spoj zastávku obsluhuje len podmienečne")
     ret $s(naObjednani:"spoj zastávku obsluhuje jen na objednání", 1:"spoj zastávku obsluhuje jen podmínečně")
 }
 
@@ -1768,7 +1768,7 @@ ClassMethod PresetySloupcu(dataDB As %String, sku As %String, lin As %String) As
 
     // nadpisy vzorů stejně jako automatické rozložení (`Jr.DataAd.NadpisySkupinDnuZNastaveni`, `B194` T11) - vzor
     // a automatika téhož rozložení tak tisknou tytéž nadpisy
-    s rec = $s(..Jazyk() = "sk":"*SK", 1:"CZ")
+    s rec = ..KodJazykaCiselniku()
     f rozl=0:1:3 { k tt  d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NadpisySkupinDnuZNastaveni(dataDB, sku, lin, rec, rozl, ..NadpisySkupinVychozi(rozl), .tt)  m n(rozl) = tt }
 
     s out = ##class(%DynamicObject).%New()
@@ -2506,7 +2506,7 @@ ClassMethod TextAtributu(znak As %String) As %String
     // SK varianty jen u znaků, které se na vývěsce reálně tisknou (`JeViditelnyAtribut` + přestupy).
     // Tiskové direktivy (tučně, podtrženě, jen nástup…) se jako značka nekreslí, takže je nepřekládáme.
     // „na znamenie" je znění z legacy (`MODE=1`), zbytek drží stejný vzor.
-    i ..Jazyk() = "sk" {
+    i ..JazykSablony() = "sk" {
         s s("x") = "na znamenie"
         s s("y") = "na znamenie od 20:00"
         s s("z") = "na znamenie v pracovné dni od 22:00, cez víkendy celodenne"
@@ -2604,7 +2604,7 @@ ClassMethod TextDneVTydnu(dch As %String) As %String
 {
     s txt = $s(dch = "":"", 1:$g(^||TiskAd("znacka", dch)))
     i txt '= "" ret txt
-    i ..Jazyk() = "sk" {
+    i ..JazykSablony() = "sk" {
         q $case(dch, "1":"premáva v pondelok", "2":"premáva v utorok", "3":"premáva v stredu", "4":"premáva vo štvrtok", "5":"premáva v piatok", "6":"premáva v sobotu", "7":"premáva v nedeľu", "+":"premáva v nedeľu a v štátom uznaný deň pracovného pokoja", :"")
     }
     q $case(dch, "1":"jede v pondělí", "2":"jede v úterý", "3":"jede ve středu", "4":"jede ve čtvrtek", "5":"jede v pátek", "6":"jede v sobotu", "7":"jede v neděli", "+":"jede v neděli a ve státem uznané svátky", :"")
@@ -2902,10 +2902,20 @@ ClassMethod NactiJazyk()
     s ^||TiskAd("jazyk") = $s(kod = "sk":"sk", 1:"cs")
 }
 
-/// Jazyk textů tohoto requestu (`cs` / `sk`). Bez `NactiJazyk` (starší klient, sonda) → `cs`.
-ClassMethod Jazyk() As %String
+/// Jazyk textů tohoto requestu (`cs` / `sk`) podle kultury šablony. Bez `NactiJazyk` (starší klient,
+/// sonda) → `cs`. Do 30. 10. `Jazyk()` - stejně se jmenovala metoda linkového JŘ AD, která vrací
+/// kód číselníku „CZ" / „*SK" (`B56` S13).
+ClassMethod JazykSablony() As %String
 {
     ret $g(^||TiskAd("jazyk"), "cs")
+}
+
+/// Jazyková varianta textových číselníků firmy (NCOME/STALCOME/WinMHD): „CZ" nebo „*SK" podle jazyka
+/// šablony. Linkový JŘ AD má metodu stejného jména a významu, jen kód volí i podle toho, kterou variantu
+/// firma v číselníku má (`LinkovyJrAd.KodJazykaCiselniku`, vědomý rozdíl `legacy-nahrada.md §4`).
+ClassMethod KodJazykaCiselniku() As %String
+{
+    q $s(..JazykSablony() = "sk":"*SK", 1:"CZ")
 }
 
 /// Texty denních značek z číselníku `^JRSET("NCOME",rec,znak)` - zákazník si je v EDISONu přepisuje
@@ -2916,7 +2926,7 @@ ClassMethod Jazyk() As %String
 /// obě jazykové varianty vyplněné a texty značek se řídí kulturou šablony (#12843).
 ClassMethod NactiTextyZnacek(dataDB As %String)
 {
-    s rec = $s(..Jazyk() = "sk":"*SK", 1:"CZ")
+    s rec = ..KodJazykaCiselniku()
     f i=1:1:8 {
         s znak = $p("1,2,3,4,5,6,7,+", ",", i)
         s txt = $g(^[dataDB]JRSET("NCOME", rec, znak))
@@ -2930,7 +2940,7 @@ ClassMethod NactiTextyZnacek(dataDB As %String)
 /// s bezbariérovým prístupom do vozidla" je ze starého tisku (#12843).
 ClassMethod TextBezbarier(vsechny As %Boolean) As %String
 {
-    i ..Jazyk() = "sk" {
+    i ..JazykSablony() = "sk" {
         ret $s(vsechny:"všetky spoje s bezbariérovým prístupom do vozidla", 1:"spoj s bezbariérovým prístupom do vozidla")
     }
     ret $s(vsechny:"všechny spoje s bezbariérově přístupným vozidlem", 1:"spoj s bezbariérově přístupným vozidlem")
@@ -2940,27 +2950,27 @@ ClassMethod TextBezbarier(vsechny As %Boolean) As %String
 /// u `TextBezbarier`. Starý tisk psal „částečne" (`B194` T4b, oprava překlepu).
 ClassMethod TextCastecneBezbarier() As %String
 {
-    i ..Jazyk() = "sk" ret "spoj s čiastočne bezbariérovým prístupným vozidlom, nutná dopomoc sprievodcu"
+    i ..JazykSablony() = "sk" ret "spoj s čiastočne bezbariérovým prístupným vozidlom, nutná dopomoc sprievodcu"
     ret "spoj s částečně bezbariérově přístupným vozidlem, nutná dopomoc průvodce"
 }
 
 ClassMethod TextKola() As %String
 {
-    i ..Jazyk() = "sk" ret "spoj prepravuje bicykle"
+    i ..JazykSablony() = "sk" ret "spoj prepravuje bicykle"
     ret "spoj přepravuje jízdní kola"
 }
 
 /// SK znění z legacy (`MODE=1`: „cestovný lístok s miestenkou je možné zakúpiť").
 ClassMethod TextMistenky() As %String
 {
-    i ..Jazyk() = "sk" ret "cestovný lístok s miestenkou je možné zakúpiť"
+    i ..JazykSablony() = "sk" ret "cestovný lístok s miestenkou je možné zakúpiť"
     ret "k jízdence je možné zakoupit místenku"
 }
 
 /// Předložková část věty o přestupu; za ni se lepí druh dopravy z číselníku („autobus" / „vlak").
 ClassMethod TextPrestupu() As %String
 {
-    i ..Jazyk() = "sk" ret "prestup na "
+    i ..JazykSablony() = "sk" ret "prestup na "
     ret "přestup na "
 }
 
@@ -2970,13 +2980,13 @@ ClassMethod TextPrestupu() As %String
 /// Starý zastávkový tisk přestupy netiskl, znění se proto bere z linkového (`B194` T4d, rozhodnutí Jan 26. 10.).
 ClassMethod TextPrestupuLegendy(dataDB As %String, znak As %String, druh As %String) As %String
 {
-    s txt = $g(^[dataDB]JRSET("STALCOME", $s(..Jazyk() = "sk":"*SK", 1:"CZ"), $case(znak, "A":"auto", "L":"vlak", :znak)))
+    s txt = $g(^[dataDB]JRSET("STALCOME", ..KodJazykaCiselniku(), $case(znak, "A":"auto", "L":"vlak", :znak)))
     q $s(txt '= "":txt, 1:..TextPrestupu()_druh)
 }
 
 ClassMethod TextSouhrnuNaZnameni() As %String
 {
-    i ..Jazyk() = "sk" ret "všetky zastávky linky sú na znamenie"
+    i ..JazykSablony() = "sk" ret "všetky zastávky linky sú na znamenie"
     ret "všechny zastávky linky jsou na znamení"
 }
 
@@ -2985,33 +2995,33 @@ ClassMethod TextSouhrnuNaZnameni() As %String
 /// nechává - je slovensky správné, mění se jen předložka („cez"), viz `TextPokracovani`/`TextPres`.
 ClassMethod TextJedePres() As %String
 {
-    i ..Jazyk() = "sk" ret "premáva cez zast. "
+    i ..JazykSablony() = "sk" ret "premáva cez zast. "
     ret "jede přes zast. "
 }
 
 ClassMethod TextNeobsluhuje() As %String
 {
-    i ..Jazyk() = "sk" ret "nepremáva cez zast. "
+    i ..JazykSablony() = "sk" ret "nepremáva cez zast. "
     ret "neobsluhuje zast. "
 }
 
 ClassMethod TextJedeJenDo() As %String
 {
-    i ..Jazyk() = "sk" ret "premáva len do zast. "
+    i ..JazykSablony() = "sk" ret "premáva len do zast. "
     ret "jede jen do zast. "
 }
 
 /// Prodloužení za konec vzorové trasy (#7947) - větu legacy nemá, takže SK drží jeho vzor („premáva").
 ClassMethod TextJedeAzDo() As %String
 {
-    i ..Jazyk() = "sk" ret "premáva až do zast. "
+    i ..JazykSablony() = "sk" ret "premáva až do zast. "
     ret "jede až do zast. "
 }
 
 /// Předložka mezi cílem a výčtem průjezdů („… přes X, Y").
 ClassMethod TextPres() As %String
 {
-    i ..Jazyk() = "sk" ret " cez "
+    i ..JazykSablony() = "sk" ret " cez "
     ret " přes "
 }
 

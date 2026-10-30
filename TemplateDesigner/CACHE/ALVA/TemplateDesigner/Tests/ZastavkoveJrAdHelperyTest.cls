@@ -131,16 +131,16 @@ Method TestJazykTextuZnacek()
 	// Bez NactiJazyk (starší klient, sonda) → čeština; klíče se nesmí protáhnout z jiného testu
 	// (číselník značek zůstává načtený po každém GetData, tedy i po gold testech)
 	kill ^||TiskAd("jazyk"), ^||TiskAd("znacka")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "cs", "výchozí jazyk = čeština")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JazykSablony(), "cs", "výchozí jazyk = čeština")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("x"), "na znamení", "CZ atribut")
 
 	// Neznámý kód i prázdno padá na češtinu, „sk-SK" se zkrátí na „sk"
 	set ^||ML("IN","JAZYK") = "de"
 	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NactiJazyk()
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "cs", "neznámý kód → čeština")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JazykSablony(), "cs", "neznámý kód → čeština")
 	set ^||ML("IN","JAZYK") = "sk-SK"
 	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NactiJazyk()
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "sk", "sk-SK → sk")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JazykSablony(), "sk", "sk-SK → sk")
 
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextDneVTydnu("7"), "premáva v nedeľu", "SK den v týdnu")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("x"), "na znamenie", "SK atribut na znamení")

@@ -537,7 +537,9 @@ ClassMethod DeleniZParametru(label As %String) As %Integer
 /// ⚠️ **Rozhoduje jazyk šablony** (`JAZYK` z klienta), stejně jako u zastávkového JŘ (#12843):
 /// firma může mít vyplněné obě varianty a dřív tu vyhrála čeština vždy, když existovala - slovenská
 /// šablona na Nitře tiskla české poznámky (#9088, 23. 9.). Bez jazyka šablony zůstává dřívější volba.
-ClassMethod Jazyk(dataDB As %String) As %String
+/// Do 30. 10. `Jazyk(dataDB)` - stejně se jmenovala metoda vývěsky AD, která vrací jazyk šablony „cs" / „sk"
+/// (`B56` S13); vývěska má teď `KodJazykaCiselniku()` se stejným významem.
+ClassMethod KodJazykaCiselniku(dataDB As %String) As %String
 {
     s kod = $zcvt($p($g(^||ML("IN","JAZYK")),"-",1),"L")
     i (kod = "sk") && $d(^[dataDB]JRSET("NCOME","*SK")) q "*SK"
@@ -566,7 +568,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
         i '##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MaSpoje(dataDB, sku, lin, smer) q ..PrazdnaStranka("Linka nemá ve vybraném směru žádné spoje.")
     }
 
-    s rec = ..Jazyk(dataDB)
+    s rec = ..KodJazykaCiselniku(dataDB)
     s tiskDtm = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TiskDtm(dataDB, sku, lin)
 
     // ── hlavička linky ──────────────────────────────────────────────
@@ -1396,7 +1398,7 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                         s slovoAvl = $p($p(kus4," ",1), ":", $case(avl, "V":1, "L":3, :2))
                         s predlozka = $p(kus4, " ", 2, 99)
                         // „spoje" (2. pád) v číselníku není - slovensky „spoja"
-                        s slovoSpoje = $s(..Jazyk(dataDB) = "*SK":"spoja", 1:"spoje")
+                        s slovoSpoje = $s(..KodJazykaCiselniku(dataDB) = "*SK":"spoja", 1:"spoje")
                         s f31 = $s(+spoj2:slovoSpoje_" "_(+spoj2)_" ", 1:"")_slovoAvl_" "_..OznaceniLinky(linka2)
                         i kam '= "" s f31 = f31_" "_predlozka_" "_kam
                         s fraze = fraze_$s(fraze="":"", 1:",")_f31
@@ -1918,7 +1920,7 @@ ClassMethod SlozVetu(sablona As %String, uvodniDil As %Integer, vlozka As %Strin
 }
 
 /// Šablona věty atributu, opsaná **doslova** z legacy `gAtrNZLi^JRapiNZUtl3` (`:161-192`).
-/// Dvě jazykové sady, protože je tak má i starý modul; `rec` = „CZ" nebo „*SK" (viz `Jazyk`).
+/// Dvě jazykové sady, protože je tak má i starý modul; `rec` = „CZ" nebo „*SK" (viz `KodJazykaCiselniku`).
 /// Jediná vědomá odchylka: u `CBE` opravený překlep „částečne" → „částečně" (`B194` T4b).
 ClassMethod AtributSablona(klic As %String, rec As %String = "CZ") As %String
 {
@@ -2179,7 +2181,7 @@ ClassMethod NazevZastavkyPoradi(dataDB As %String, sku As %String, lin As %Strin
 {
     s czst = $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1)
     i czst = "" q ""
-    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), "", "Zkrácený", ..Jazyk(dataDB))
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), "", "Zkrácený", ..KodJazykaCiselniku(dataDB))
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -2303,7 +2305,7 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
 ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 {
     i czst = "" q ""
-    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), $p(..ZaznamZastavky(dataDB, czst), "$", 3), $g(^||TiskKnizni("nazev","tvar")), ..Jazyk(dataDB))
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky(..ZdrojNazvuZastavky(dataDB, czst), $p(..ZaznamZastavky(dataDB, czst), "$", 3), $g(^||TiskKnizni("nazev","tvar")), ..KodJazykaCiselniku(dataDB))
 }
 
 /// Záznam zastávky z registru k „platí od" linky, pro kterou se stránka staví (`B188`, časové
@@ -2322,7 +2324,7 @@ ClassMethod TextNavaznosti(dataDB As %String, omz As %Integer, kus As %Integer) 
 {
     s vychozi = $s(omz = 31:"spoj~vyčká v zastávce~příjezdu~vlaku:linky:lodě z~nejvýše~minut",
         1:"na spoj~navazuje v zastávce~spoj~linky~do~vlak~lodní doprava")
-    s text = $p($g(^[dataDB]JRSET("NCOME", ..Jazyk(dataDB), omz)), "~", kus)
+    s text = $p($g(^[dataDB]JRSET("NCOME", ..KodJazykaCiselniku(dataDB), omz)), "~", kus)
     q $s(text '= "":text, 1:$p(vychozi, "~", kus))
 }
 

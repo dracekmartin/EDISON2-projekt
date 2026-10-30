@@ -920,8 +920,10 @@ Vědomě nesjednocovat (rozhodnutí Jan 30. 10.):
 - **Značky u odjezdů a kolekce vývěsek**: `AddAnotace` AD posílá navíc `KATEGORIE`, `SPOJ` a `V_ROZSAHU_NEPOZNAMKOVAT`, `AddStandardJRCollections` AD má o pět polí víc.
   Společná metoda jen tak, aby MHD tyto klíče dál neposílal - jinak by filtr Poznámek podle kategorie začal skrývat poznámky i v MHD.
 
-Stejné jméno, jiný význam - při přesunu do pomocné třídy přejmenovat, ne sloučit:
-`Jazyk` (`*SK`/`CZ` z `JRSET` × `cs`/`sk` z `^||TiskAd`), `ZonaBezPismen` (úprava textu × ano/ne z nastavení), `NactiNastaveniNazvu` (výchozí „Plný CIS" × „Zkrácený", vědomý rozdíl hlídaný v `KontraktAgendTest.Vyjimka`), `PopisDopravce` (viz výš), `BuildStrankaLinky`.
+Stejné jméno, jiný význam - při přesunu do pomocné třídy přejmenovat, ne sloučit.
+`Jazyk` je přejmenovaný (`B56` S13): vývěska AD má `JazykSablony` (`cs`/`sk` z `^||TiskAd`) a obě agendy AD `KodJazykaCiselniku` (`CZ`/`*SK`;
+vývěska ho volí jen podle jazyka šablony, linkový JŘ i podle varianty, kterou má firma v číselníku - vědomý rozdíl).
+Zbývá: `ZonaBezPismen` (úprava textu × ano/ne z nastavení), `NactiNastaveniNazvu` (výchozí „Plný CIS" × „Zkrácený", vědomý rozdíl hlídaný v `KontraktAgendTest.Vyjimka`), `PopisDopravce` (viz výš), `BuildStrankaLinky`.
 Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKnizni("wmap",trasa)` × `^||TiskAd("wmap",db,sku,lin,trasa)`), `ZaznamZastavky` bere datum z jiného globálu.
 
 **Měření duplicity 30. 10.** (skript bez komentářů, prázdných řádků a povinné kostry metod; historie od 19. 5., 287 commitů):
