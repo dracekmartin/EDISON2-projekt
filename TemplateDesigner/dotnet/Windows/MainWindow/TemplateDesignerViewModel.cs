@@ -357,7 +357,6 @@ public partial class TemplateDesignerViewModel : EDViewModel
         Preferences = preferences;
 
         var settings   = AppSettings.Load();
-        var schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");
         _sectionTemplates = new SectionTemplateManager();
 
         var resolvedMlRest = mlRest ?? CacheSchemaWiring.TryCreateMlRest(settings);
@@ -374,9 +373,7 @@ public partial class TemplateDesignerViewModel : EDViewModel
             ? new Services.CacheTemplateService(resolvedMlRest)
             : null;
 
-        SchemaProvider = CacheProvider is not null
-            ? new CompositeDataSchemaProvider(CacheProvider, new JsonFileDataSchemaProvider(schemasDir))
-            : (IDataSchemaProvider)new JsonFileDataSchemaProvider(schemasDir);
+        SchemaProvider = CacheProvider ?? (IDataSchemaProvider)EmptyDataSchemaProvider.Instance;
 
         State.CurrentTemplate = CreateSampleTemplate();
 

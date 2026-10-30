@@ -299,8 +299,6 @@ flowchart TB
     subgraph "C# (.NET)"
         CSW["CacheSchemaWiring"]
         CAP["CacheAgendaProvider<br/><small>IDataSchemaProvider</small>"]
-        COMP["CompositeDataSchemaProvider<br/><small>Caché primary + JSON fallback</small>"]
-        JSON["JsonFileDataSchemaProvider<br/><small>schemas/*.schema.json</small>"]
         MLR["MLRest / IMLRest<br/><small>HTTP klient → Caché</small>"]
     end
 
@@ -318,8 +316,6 @@ flowchart TB
 
     CSW --> CAP
     CAP --> MLR
-    COMP --> CAP
-    COMP --> JSON
     MLR --> |"HTTP CVar"| AA
     AA <|-- MHD
     MHD --> LSO

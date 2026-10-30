@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-30 (45) - Smazaná offline nabídka dat (revize sjednocení D)
+
+Návrhář měl záložní nabídku dat ze souborů `schemas/*.schema.json` pro chod bez serveru, jenže ta složka od `899e05ba` neexistuje, takže záloha nic nenabízela.
+Smazané třídy `JsonFileDataSchemaProvider`, `CompositeDataSchemaProvider` a nepoužitý `CacheDataSchemaProvider` (stará cesta přes `LoadDBFieldIds`), odkaz v projektu a popis v dokumentaci; bez serveru teď stojí `EmptyDataSchemaProvider` se stejným výsledkem (žádné agendy ani pole).
+Ověřeno: .NET testy 2634/2634, žádný kód na smazané třídy neodkazuje.
+
 ## 2026-10-30 (44) - Volby zarovnání na jednom místě (sjednocení A8)
 
 Popisky zarovnání (Vlevo / Na střed / Vpravo / Do bloku, Nahoře / Na střed / Dole) byly v kódu na pěti místech: nabídka panelu, nabídka v editoru stylu sloupce, šedá nápověda zděděné hodnoty, bubliny lišty formátu a volba Do bloku u textu.

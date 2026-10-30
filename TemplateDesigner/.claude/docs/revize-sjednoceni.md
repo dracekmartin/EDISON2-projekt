@@ -42,7 +42,7 @@ Podklad ze tří průzkumů (vlastnosti prvků, agendy a data, názvy a konstant
 Nápověda (jen v .cls), FromImage, nabídka dat (NabidkaDat.cls, C# čte ze serveru), serverSide, skupiny parametrů, visibleWhenColumn, typy a kategorie poznámek, formáty data, ElementKind (jen literály → konstanty), editor stylu sloupce (test existuje), šedé pozadí záhlaví E0 × E8 (ověřit záměr).
 
 ## D. Smazat
-Offline nabídka dat: JsonFileDataSchemaProvider, CompositeDataSchemaProvider, csproj:45 `schemas\*.schema.json` (složka neexistuje od 899e05ba), wiring TemplateDesignerViewModel.cs:378, zmínky v cache-api.md.
+✅ (30. 10., souhlas Jan) Smazané `JsonFileDataSchemaProvider`, `CompositeDataSchemaProvider` a nepoužitý `CacheDataSchemaProvider` (stará cesta přes `LoadDBFieldIds`), odkaz `schemas\*.schema.json` v projektu a zmínky v dokumentaci. Bez serveru `EmptyDataSchemaProvider` - chování stejné, složka `schemas` neexistovala.
 
 ## E. Nalezené chyby (stav 30. 10.)
 - E1 ✅ Formulář textu ukazuje u nenastavené vlastnosti stylu hodnotu z kaskády (`ElementFormBinder.InheritedValuesFor`); panel už nepřenáší zděděné hodnoty buňky pevné tabulky k dalšímu prvku. Ověřeno testem, ne v aplikaci.

@@ -294,7 +294,7 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
 - Agendy najde **registr na serveru** (`AgendyRegistr.ListAgendy` → `CacheAgendaRegistry`); konfigurace aplikace
   (`templatedesigner.appsettings.json`) je nedefinuje. `CacheSchemaWiring.TryCreate` nad nimi vytvoří `CacheAgendaProvider`,
   který volá metody agend přes MLRest a čte jejich JSON.
-- Fallback nabídky dat: `CompositeDataSchemaProvider` (Caché primary + JSON ze `schemas/*.schema.json`).
+- Bez serveru je nabídka dat prázdná (`EmptyDataSchemaProvider`); offline záloha ze souborů je od 30. 10. smazaná.
 - **Návrhář se o agendě rozhoduje podle registru, ne podle kódu agendy** (`B194g` R4, 30. 10.). Co návrhář
   potřebuje vědět, ohlásí agenda parametrem třídy, `ListAgendy` ho pošle (aditivně, s výchozí hodnotou pro starší
   server) a C# ho čte z `AgendaRegistryEntry`. Kód agendy v kódu návrháře zastaví `KodyAgendVKoduTests`;
@@ -310,12 +310,10 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
    Agenda JŘ bere společná pole nabídky ze slovníku `Jr/NabidkaDat.cls` a společné parametry z `Jr/Parametry.cls`;
    pole nebo parametr, který dosud měla jen jedna agenda, se tam přesune, když ho potřebuje druhá (R8).
 3. Nic neregistrovat ručně - agendu najde auto-discovery (`AgendyRegistr.ListAgendy`); v UI se nabízí až s `Released = 1`
-4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
-   - `GetMockData` vrací JSON: `{ "values": { "POLE": "hodnota", ... }, "rows": { "KLIC": [ {...}, ... ] } }`
-5. Linku s daty doplnit do `KontraktAgendTest.LinkyAgend` - test kontraktu na ní ověří, že data posílají
+4. Linku s daty doplnit do `KontraktAgendTest.LinkyAgend` - test kontraktu na ní ověří, že data posílají
    každé nabízené pole. Položku dat mimo nabídku (čte ji prvek, ne uživatel) zapsat do `PolozkyMimoNabidku`
    s druhem; jinak test spadne, protože nevíme, kdo ji čte.
-6. Agenda s prvky JŘ (`ElementKind` STOP / LINE) posílá položky, které prvky čtou, ve tvaru z `KontraktDat.cs`
+5. Agenda s prvky JŘ (`ElementKind` STOP / LINE) posílá položky, které prvky čtou, ve tvaru z `KontraktDat.cs`
    (integrační `KontraktDatAgendTests`, pre-push). Co agenda vědomě nemá, patří do výjimek testu s důvodem.
 
 ---

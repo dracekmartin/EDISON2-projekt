@@ -164,12 +164,8 @@ class DataFieldCollection {      // volitelné - tabulkový datový zdroj pro V2
 - DataSchema je **pouze metadata pro designer** - print engine ji nepotřebuje a nepoužívá
 - `{FIELD_NAME}` placeholder lze použít v libovolném TextElementu kdekoliv v šabloně - schema neeviduje omezení
 - Grouping (Scalar/Table scope) je **organizační hint pro UI**, nikoliv tvrdé omezení na použití placeholderu
-- Schema je **oddělená od šablony** - Template ukládá jen `AgendaCode` (string reference), schema samotná je v `schemas/JR.schema.json`
+- Schema je **oddělená od šablony** - Template ukládá jen `AgendaCode` (string reference), schéma posílá agenda ze serveru (`GetSchema`)
 - Flat `Fields` (V1) a hierarchické `Groups` (V2) mohou koexistovat v jednom souboru; UI zobrazí skupiny pokud jsou definované, jinak flat list
-
-**Dva typy JSON souborů v systému:**
-- `*.json` - šablona (Template) - definuje layout stránky, sekce, elementy
-- `*.schema.json` - schéma agendy (DataSchema) - definuje dostupná DB pole, uloženo ve složce `schemas/`
 
 **IDataSchemaProvider** - rozhraní pro načítání schémat:
 ```csharp
@@ -180,16 +176,17 @@ interface IDataSchemaProvider {
 ```
 
 Implementace:
-- `JsonFileDataSchemaProvider` - načítá `schemas/*.schema.json` ze složky aplikace (offline fallback)
-- `CacheAgendaProvider` - volá Caché `AgendaAPI.GetSchema()` přes MLRest
-- `CompositeDataSchemaProvider` - Caché primary + JSON fallback; vrátí výsledek prvního úspěšného
-- Wiring: `Config/CacheSchemaWiring.TryCreate(AppSettings)` → vrátí null pokud Caché není nakonfigurováno
+- `CacheAgendaProvider` - volá metodu agendy `GetSchema` přes MLRest
+- `EmptyDataSchemaProvider` - bez serveru (žádné agendy ani pole); offline záloha ze `schemas/*.schema.json` je od 30. 10. smazaná
+- Wiring: `Config/CacheSchemaWiring.TryCreate(...)` → vrátí null pokud Caché není nakonfigurováno
 
 ---
 
 ## JSON formáty a příklady
 
-### Formát schématu agendy (*.schema.json)
+### Formát schématu agendy
+
+Posílá ho agenda metodou `GetSchema` (wire formát v `rules/cache-api.md` §Wire formáty, bez `agendaCode`/`agendaName`).
 
 ```json
 {

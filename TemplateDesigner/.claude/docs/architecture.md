@@ -32,9 +32,7 @@ TemplateDesigner/
 /Serialization
   TemplateSerializer.cs             - JSON ukládání a načítání šablony + sekcí
   SectionTemplateManager.cs         - správa custom šablon sekcí (file-based V1, připraveno na DB V2)
-  JsonFileDataSchemaProvider.cs     - načítání *.schema.json ze složky schemas/
   CacheAgendaProvider.cs            - IDataSchemaProvider přes MLRest (metody agend)
-  CompositeDataSchemaProvider.cs    - Caché primary + JSON fallback
 
 /Config
   AppSettings.cs            - POCO konfigurace + static Load() z templatedesigner.appsettings.json
@@ -74,9 +72,6 @@ TemplateDesigner/
   PdfToTemplateConverter.cs - heuristická konverze extrahovaných dat → elementy
   AiGuidedScheduleBuilder.cs / AiVisionImportPipeline.cs - AI-řízený import JŘ (rasterizace → Vision → přesné elementy z PdfPig)
   ExtractedData.cs / EnrichedImportResult.cs - mezistruktury pipeline
-
-/schemas
-  *.schema.json             - schémata agend (offline fallback); kopírováno do output dir
 
 /section-templates (runtime)
   *.json                    - custom šablony sekcí (uložené uživatelem); vedle .exe
