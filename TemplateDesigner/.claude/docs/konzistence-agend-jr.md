@@ -60,15 +60,6 @@ jménem) jsou hotové; R2, připravenost na `B56` a postup jsou v [`legacy-nahra
   `LinkovyJrAd.Parametr*`, před doslovnými buildery. Shodu hlídá `KontraktAgendTest.TestSdileneParametryShodne`
   (`G2`); přehled sdílených parametrů vypíše `KontraktAgendTest.Prehled` - 29. 10.: 20 sdílených, 16 shodných,
   4 vědomé rozdíly (tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
-- **R6 Dokumentace pro rozvoj** [S]. `cache-api.md`: vzor agendy používá `groups`/`scope` a `q 1` bez
-  ošetření chyb (porušuje vlastní pravidla 14-15), tabulka pojmů `groups`, „mock s pevnými hodnotami",
-  seznam agend v appsettings (sám si odporuje), checklist nové agendy bez parametrů třídy, podmínky přímého
-  potomka, `GetParameters`/`serverSide`, důvodu prázdného výstupu a kontraktu řádků. Totéž zastaralé
-  v `CacheSchemaWiring.cs:8`, `CacheAgendaProvider.cs:15`, hlavičce `BaseAgenda.cls`. Popisy přilepené
-  k cizí metodě (stav 28. 10.): popis `AddBoolParam` nad `RgbNaHex` (`BaseAgenda.cls`), popis
-  `GetAvailableInstances` nad `GetAvailableSkupiny` v obou vývěskách. `GetTableTemplate(s)`
-  jsou povinné, ale nic je nečte - výchozí `[]` v `BaseAgenda`. `legacy-nahrada.md §4` odkazuje řádky mimo
-  soubor - odkazovat metody. Faktury (ukázková agenda) učí `default`, `q 1` a prázdné `GetData`.
 - **R7 Názvosloví v kódu** [S]. `^||TiskKnizni*`, infinitivy v `ZastavkoveJrMhd` (`PripravitTrasu`,
   `SestavitStranky`) proti `cache-api.md` pravidlu 5. Kanon jen pro nové názvy, interní sjednotit při `B56`,
   třídy nepřejmenovávat.

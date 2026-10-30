@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-30 (11) - Základ agend a agendy JŘ podle jednoho vzoru (`B194g` R6)
+
+Kdo bude psát další agendu, řídí se návodem v `cache-api.md` a stávajícími agendami; obojí si odporovalo.
+Opsaný vzorový kód v návodu skládal tabulky dat pod klíčem, který návrhář nečte, a končil bez ošetření chyb, což porušovalo pravidla 14-15 o pár řádků níž.
+Návod teď místo opsaného kódu odkazuje na `BaseAgenda.cls` a stručně říká, co je povinné a co volitelné, jaké parametry třídy agenda potřebuje a že musí být přímým potomkem základu.
+Schéma a parametry všech čtyř agend JŘ i výchozí metody základu ošetřují chyby stejně jako ostatní metody; chyba agendy tak skončí srozumitelnou hláškou, ne chybou spojení.
+Předpřipravené tabulky jsou v základu nepovinné s prázdným výchozím výsledkem, linkové agendy své prázdné kopie nemají; zrušit je, nebo napojit, rozhodne `B56`.
+`OsetreniChybAgendTests` hlídá vzor u každé metody agend; spadl na dočasně odebrané výjimce Faktur, které se nesjednocují - jsou ukázka z počátku a možná se smažou (rozhodnutí Jan 30. 10.).
+Opravené zastaralé komentáře (agendy z konfigurace aplikace, popisy nad cizí metodou, „kopie téhož" u převodu barvy) a odkazy na čísla řádků v `legacy-nahrada.md §4`.
+Výstup agend se nezměnil (snímek beze změny).
+Ověřeno: Caché testy návrháře 270/270, .NET testy 2534/2534, integrační testy 48/48.
+
 ## 2026-10-30 (10) - Soupis kódu agend opsaného pod jinými jmény s rozhodnutím pro `B56` (`B194g` R2)
 
 Analýza z 5. 8. hledala opsaný kód podle stejného jména metody, takže kopie pod jinými jmény neviděla.

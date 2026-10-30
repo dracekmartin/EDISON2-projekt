@@ -1,22 +1,21 @@
-/// Abstraktní základ pro implementaci agendy v TemplateDesigneru.
+Include GENERAL
+
+/// Abstraktní základ pro implementaci agendy v TemplateDesigneru: kontrakt, výchozí metody a sdílené
+/// helpery. Agenda = zdroj dat a doménová logika jednoho typu sestavy (zastávkový a linkový JŘ AD a MHD).
 ///
-/// Agenda = zdroj dat a doménová logika pro konkrétní typ tiskové sestavy:
-/// - **MHD** - zastávkové jízdní řády městské hromadné dopravy (linky, zastávky, spoje)
-/// - **FAKTURY** - fakturační sestavy (faktury, položky, DPH)
-/// - připravované: Meziměstský JŘ, Knižní JŘ, Vozový JŘ
+/// Povinné (Abstract, bez nich třída neprojde překladem):
+/// - GetSchema           - nabídka dat: skalární pole + tabulkové kolekce
+/// - GetData             - data pro tisk, stránka po stránce
+/// - GetMockData         - ukázka pro náhled bez vybrané instance
 ///
-/// Každá agenda dědí z této třídy a implementuje povinné Abstract metody:
-/// - GetSchema           - definice dostupných polí (skalární + tabulkové kolekce)
-/// - GetData             - reálná data pro tisk (per IDFa, per instance)
-/// - GetMockData         - vzorová data pro live preview v designeru
-/// - GetTableTemplates   - seznam Fixed šablon tabulek (záhlaví, platnost, ...)
-/// - GetTableTemplate    - definice konkrétní Fixed šablony (sloupce + řádky)
+/// Volitelné (výchozí = prázdný výsledek):
+/// - GetParameters       - parametry sestavy (panel parametrů, tiskový dialog)
+/// - GetAvailableSkupiny, GetAvailableInstances - výběr instancí (skupiny linek, linky)
+/// - GetTableTemplates, GetTableTemplate - předpřipravené tabulky; návrhář je dnes nevolá
+///   (zrušit, nebo napojit rozhodne `B56`, `legacy-nahrada.md §4`)
 ///
-/// Volitelně přepsatelné (default = prázdný seznam):
-/// - GetParameters       - parametry pro PrintDialog (zaškrtávátka, výběry, ...)
-/// - GetAvailableInstances - seznam instancí pro Instance Picker
-///
-/// Caché kompilátor vynucuje implementaci Abstract metod; bez nich třída neprojde compile.
+/// Každá metoda s `ByRef sys` dodržuje vzor z `cache-api.md` (pravidla 14-15: `s err = ""`, `try`/`catch`
+/// s `$$$CatchErrRest`, `ret $$$OK`); hlídá ho `OsetreniChybAgendTests`. Vzorové agendy jsou JŘ, ne Faktury.
 ///
 /// Registrace agendy (2026-05-20; dvouosý model 2026-07-11):
 ///   Agenda se registruje **deklarativně** přes class parametry - kombinovaný klíč
@@ -96,20 +95,32 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status [ Abstract ]
 {
 }
 
-/// Vrátí seznam dostupných Fixed šablon tabulek pro tuto agendu.
+/// Vrátí seznam předpřipravených tabulek agendy. Volitelné - návrhář je dnes nevolá.
 /// OUT[1] = JSON pole objektů:
 ///   [ { "key": "ZAHLAVI_LINKY", "label": "Záhlaví linky" }, ... ]
 /// key = interní identifikátor; česky, velkými písmeny, podtržítko jako oddělovač
-ClassMethod GetTableTemplates(ByRef sys As %String) As %Status [ Abstract ]
+ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
 {
+    s err = ""
+    try {
+        s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
-/// Vrátí kompletní definici Fixed šablony (sloupce + řádky).
-/// IN:  key = klíč šablony (např. "ZAHLAVI_LINKY")
+/// Vrátí definici jedné předpřipravené tabulky (sloupce + řádky). Volitelné - návrhář ji dnes nevolá.
+/// IN:  key = klíč tabulky (např. "ZAHLAVI_LINKY")
 /// OUT[1] = JSON objekt:
 ///   { "columns": [...], "rows": [...] }
-ClassMethod GetTableTemplate(ByRef sys As %String) As %Status [ Abstract ]
+ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
 {
+    s err = ""
+    try {
+        s ^||ML("OUT", $i(^||ML("OUT"))) = "{}"
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// Vrátí data pro tisk: skalární hodnoty + kolekce řádků.
@@ -136,15 +147,18 @@ ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ]
 /// defaultValue je vždy string - C# strana konvertuje dle type.
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
-    q 1
+    s err = ""
+    try {
+        s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// Vrátí seznam dostupných instancí agendy (např. linky pro MHD, faktury pro FAKTURY).
 /// Slouží pro Instance Picker v TD - uživatel vybere 1-N instancí, nad kterými pracuje.
 /// 
-/// Výchozí implementace vrací prázdný seznam - agenda bez konceptu instancí (GENERAL,
-/// případně FAKTURY před implementací) ho nemusí přepisovat.
+/// Výchozí implementace vrací prázdný seznam - agenda bez konceptu instancí ho nemusí přepisovat.
 /// 
 /// IN["search"] = volitelný filtr (substring, case-insensitive)
 /// IN["limit"]  = max počet řádků (default 50)
@@ -159,8 +173,12 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 /// subtitle = volitelný menší text pod displayem (platnost, dopravce, atd.)
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
-    s ^||ML("OUT","1") = "[]"
-    q 1
+    s err = ""
+    try {
+        s ^||ML("OUT","1") = "[]"
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// Vrátí seznam skupin linek pro filtr v Instance Pickeru (vybere se právě jedna → načtou se její
@@ -168,8 +186,12 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 /// Default = prázdné pole → agenda nemá koncept skupin (picker filtr skryje). JR agendy override.
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
-    s ^||ML("OUT","1") = "[]"
-    q 1
+    s err = ""
+    try {
+        s ^||ML("OUT","1") = "[]"
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// Vrátí ukázková (mock) data pro live preview v designeru.
@@ -205,19 +227,12 @@ ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, ty
     d arr.%Push(field)
 }
 
-/// Přidá bool parametr do pole parametrů.
-/// arr        = %DynamicArray kam se přidává
-/// name       = název parametru (např. "TISK_POZNAMKY")
-/// label      = popisek (např. "Tisknout poznámku")
-/// defaultVal = výchozí hodnota (0/1 nebo true/false)
-/// group      = volitelná skupina pro vizuální seskupení v UI (aditivní klíč kontraktu)
-/// desc       = volitelná nápověda (aditivní klíč `description` → helpText bublina ve formuláři)
-/// Barva z legacy tvaru `r;g;b` na `#AARRGGBB` pro SkiaSharp; prázdno, když barva není zadaná.
-/// **`0;0;0` je v legacy „nenastaveno", ne černá** - kdyby se posílalo, dostal by každý spoj
-/// výslovnou černou a nešlo by poznat obarvený spoj od neobarveného.
+/// Barva spoje AD z legacy tvaru `r;g;b` na `#AARRGGBB` pro SkiaSharp; prázdno, když barva není zadaná.
+/// **`0;0;0` je u spojů AD „nenastaveno", ne černá** (2 185 160 z 2 189 806 spojů s barvou, 30. 10.) - kdyby
+/// se posílalo, dostal by každý spoj výslovnou černou a nešlo by poznat obarvený spoj od neobarveného.
 ///
-/// ⚠️ `ZastavkoveJrAd` má vlastní kopii téhož (`RgbToHex`). Vědomě se teď nesjednocuje: zastávková
-/// agenda je vydaná a kryjí ji zlaté odtisky, takže refaktor v ní patří k `B56`, ne sem.
+/// ⚠️ `RgbToHex` ve vývěskách NENÍ kopie téhož: barva linky a barvy poznámek MHD berou `0;0;0` jako
+/// černou, protože tam je to skutečná volba (rozhodnutí Jan 30. 10., `legacy-nahrada.md §4`).
 ClassMethod RgbNaHex(rgb As %String) As %String
 {
     q:rgb="" ""
@@ -367,7 +382,14 @@ ClassMethod TiskBarevSpoju(volba As %String, dataDB As %String, sku As %String, 
     q $case(volba, "Tisknout":1, "Netisknout":0, :'+$g(^[dataDB]JRL(sku,lin,"PATCH","barevnyTiskSpoju")))
 }
 
-/// `serverSide` = hodnotu parametru zpracovává až `GetData`, takže její změna musí klientovi
+/// Přidá bool parametr do pole parametrů.
+/// arr        = %DynamicArray kam se přidává
+/// name       = název parametru (např. "TISK_POZNAMKY")
+/// label      = popisek (např. "Tisknout poznámku")
+/// defaultVal = výchozí hodnota (0/1 nebo true/false)
+/// group      = volitelná skupina pro vizuální seskupení v UI (aditivní klíč kontraktu)
+/// desc       = volitelná nápověda (aditivní klíč `description` → helpText bublina ve formuláři)
+/// serverSide = hodnotu parametru zpracovává až `GetData`, takže její změna musí klientovi
 /// spustit načtení dat, ne jen překreslení náhledu. Dřív si ten seznam držel klient natvrdo a dalo
 /// se na něj zapomenout; příznak patří k definici parametru, kde se stejně píše.
 ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "", desc As %String = "", serverSide As %Boolean = 0)

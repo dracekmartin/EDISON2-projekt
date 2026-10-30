@@ -9,11 +9,11 @@ using TemplateDesigner.Models.Schema;
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
-/// Volá Caché BaseAgenda (GetSchema, GetTableTemplates, GetTableTemplate) přes MLRest.
-/// Nahrazuje CacheDataSchemaProvider - pracuje s JSON formátem místo pipe-delimited stringů.
+/// Volá metody agendy (GetSchema, GetParameters, GetMockData, GetData, výběr instancí) přes MLRest
+/// a čte jejich JSON.
 ///
-/// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.Agendy.BaseAgenda,
-/// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd".
+/// Každá agenda má vlastní Caché třídu, přímého potomka ALVA.TemplateDesigner.Agendy.BaseAgenda;
+/// kód agendy a třídu dodá registr agend ze serveru (<c>CacheSchemaWiring.TryCreate</c>).
 ///
 /// ⚠️ Metody jsou ZÁMĚRNĚ SYNCHRONNÍ (`_mlRest.Query`). Pomalé operace (`GetData`, `GetAvailableInstances`,
 /// první `GetSchema`) musí volající obalit `await Task.Run(...)` - R1, jinak zamrzne UI thread.
@@ -24,7 +24,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 {
     private readonly MLRest _mlRest;
 
-    /// <summary>agendaCode → cacheClass mapping z appsettings</summary>
+    /// <summary>agendaCode → cacheClass z registru agend</summary>
     private readonly Dictionary<string, string> _classMap;
 
     private readonly List<AgendaInfo> _agendas;

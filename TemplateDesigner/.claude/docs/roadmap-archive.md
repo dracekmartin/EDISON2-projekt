@@ -9,6 +9,10 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **R6** Základ agend a agendy JŘ podle jednoho vzoru, návod podle skutečnosti (hotovo 30. 10., changelog
+  2026-10-30 (11)): všechny metody `BaseAgenda` a agend JŘ ošetřují chyby podle pravidel 14-15 (hlídá
+  `OsetreniChybAgendTests`), předpřipravené tabulky jsou nepovinné, `cache-api.md` místo opsaného kódu odkazuje
+  na `BaseAgenda.cls`. Faktury se nesjednocují - ukázka z počátku, možná se smaže (rozhodnutí Jan 30. 10.).
 - **R2** Opsané pod jiným jménem (hotovo 30. 10., changelog 2026-10-30 (10), rozhodnutí Jan 30. 10.):
   změřeno sondou `DuplicityAgendProbe`, zapsané v `legacy-nahrada.md §4` spolu s postupem `B56`.
   Sjednotit platnost linky a omezení 14/15 (tisk se nezmění), vědomě nechat popis dopravce, rozsahy čísel

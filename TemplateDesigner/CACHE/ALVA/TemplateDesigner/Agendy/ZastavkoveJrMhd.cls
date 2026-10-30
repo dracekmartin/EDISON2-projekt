@@ -49,80 +49,90 @@ Parameter InstanceLabelPlural = "linky";
 /// Vrátí schéma polí MHD agendy.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {
-    s def = ##class(%DynamicObject).%New()
+    s err = ""
+    try {
+        s def = ##class(%DynamicObject).%New()
 
-    // Standardní JŘ skalární pole
-    s fields = ##class(%DynamicArray).%New()
-    d ..AddStandardJRFields(fields)
-    s def.fields = fields
+        // Standardní JŘ skalární pole
+        s fields = ##class(%DynamicArray).%New()
+        d ..AddStandardJRFields(fields)
+        s def.fields = fields
 
-    // Standardní JŘ kolekce + MHD-specifické
-    s collections = ##class(%DynamicArray).%New()
-    d ..AddStandardJRCollections(collections)
-    s def.fieldCollections = collections
+        // Standardní JŘ kolekce + MHD-specifické
+        s collections = ##class(%DynamicArray).%New()
+        d ..AddStandardJRCollections(collections)
+        s def.fieldCollections = collections
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
+        s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
-/// Vrátí seznam Fixed šablon tabulek pro MHD.
+/// Vrátí seznam předpřipravených tabulek (návrhář je dnes nevolá, `BaseAgenda`).
 ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
 {
-    s arr = ##class(%DynamicArray).%New()
+    s err = ""
+    try {
+        s arr = ##class(%DynamicArray).%New()
 
-    s t1 = ##class(%DynamicObject).%New()
-    s t1.key   = "ZAHLAVI_LINKY"
-    s t1.label = "Záhlaví linky"
-    d arr.%Push(t1)
+        s t1 = ##class(%DynamicObject).%New()
+        s t1.key   = "ZAHLAVI_LINKY"
+        s t1.label = "Záhlaví linky"
+        d arr.%Push(t1)
 
-    s t2 = ##class(%DynamicObject).%New()
-    s t2.key   = "PLATNOST_DOPRAVCE"
-    s t2.label = "Platnost a dopravce"
-    d arr.%Push(t2)
+        s t2 = ##class(%DynamicObject).%New()
+        s t2.key   = "PLATNOST_DOPRAVCE"
+        s t2.label = "Platnost a dopravce"
+        d arr.%Push(t2)
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
-/// Vrátí definici Fixed šablony.
+/// Vrátí definici předpřipravené tabulky.
 ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
 {
-    s key = $g(^||ML("IN", "key"))
+    s err = ""
+    try {
+        s key = $g(^||ML("IN", "key"))
 
-    if key = "ZAHLAVI_LINKY" {
-        d ..WriteTemplate2Col([
-            ["Linka",       "{CISLO_LINKY}"],
-            ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
-            ["Směr",        "{KONECNA_ZASTAVKA}"],
-            ["Zastávka",    "{POPIS_ZASTAVKA}"],
-            ["Platnost",    "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"]
-        ])
-    }
-    elseif key = "PLATNOST_DOPRAVCE" {
-        d ..WriteTemplate2Col([
-            ["Platnost",  "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"],
-            ["Dopravce",  "{POPIS_DOPRAVCE}"],
-            ["Typ JR",    "{TYP_JR}"]
-        ])
-    }
-
+        if key = "ZAHLAVI_LINKY" {
+            d ..WriteTemplate2Col([
+                ["Linka",       "{CISLO_LINKY}"],
+                ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
+                ["Směr",        "{KONECNA_ZASTAVKA}"],
+                ["Zastávka",    "{POPIS_ZASTAVKA}"],
+                ["Platnost",    "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"]
+            ])
+        }
+        elseif key = "PLATNOST_DOPRAVCE" {
+            d ..WriteTemplate2Col([
+                ["Platnost",  "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"],
+                ["Dopravce",  "{POPIS_DOPRAVCE}"],
+                ["Typ JR",    "{TYP_JR}"]
+            ])
+        }
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
 /// Vrátí parametry sestavy pro MHD.
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    s arr = ##class(%DynamicArray).%New()
+    s err = ""
+    try {
+        s arr = ##class(%DynamicArray).%New()
 
-    // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) - viz GetAvailableInstances.
-    // GetData dostává LINKA_ID z pickeru, ne z těchto parametrů.
-    d ..AddStandardJRParameters(arr)
+        // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) - viz GetAvailableInstances.
+        // GetData dostává LINKA_ID z pickeru, ne z těchto parametrů.
+        d ..AddStandardJRParameters(arr)
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
-/// Vrátí seznam linek pro Instance Picker.
 /// Skupiny linek pro filtr Instance Pickeru - ENUMS "SkupinyLinek" mimo Blocked.
 /// OUT["1"] = JSON pole [{ "value": id, "label": název }].
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
@@ -150,6 +160,7 @@ ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Vrátí seznam linek pro Instance Picker.
 /// IN["search"] = volitelný substring filtr (case-insensitive na display = "Cislo - Nazev")
 /// IN["limit"]  = max počet řádků (default 50)
 /// IN["SKUPINA_LINEK_ID"] = ID skupiny linek (volitelné; default = první nezblokovaná);

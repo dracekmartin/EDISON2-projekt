@@ -96,16 +96,6 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
-{
-    q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetTableTemplates(.sys)
-}
-
-ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
-{
-    q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetTableTemplate(.sys)
-}
-
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
     q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetAvailableSkupiny(.sys)

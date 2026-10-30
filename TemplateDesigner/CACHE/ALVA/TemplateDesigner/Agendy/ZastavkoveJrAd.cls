@@ -55,81 +55,90 @@ Parameter InstanceLabelPlural = "linky";
 /// Vrátí DataSchema - shodné se zastávkovým JŘ MHD (stejný výstupní formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {
-    s def = ##class(%DynamicObject).%New()
+    s err = ""
+    try {
+        s def = ##class(%DynamicObject).%New()
 
-    s fields = ##class(%DynamicArray).%New()
-    d ..AddStandardJRFields(fields)
-    s def.fields = fields
+        s fields = ##class(%DynamicArray).%New()
+        d ..AddStandardJRFields(fields)
+        s def.fields = fields
 
-    s collections = ##class(%DynamicArray).%New()
-    d ..AddStandardJRCollections(collections)
-    s def.fieldCollections = collections
+        s collections = ##class(%DynamicArray).%New()
+        d ..AddStandardJRCollections(collections)
+        s def.fieldCollections = collections
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
+        s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
-/// Vrátí seznam Fixed šablon tabulek.
+/// Vrátí seznam předpřipravených tabulek (návrhář je dnes nevolá, `BaseAgenda`).
 ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
 {
-    s arr = ##class(%DynamicArray).%New()
+    s err = ""
+    try {
+        s arr = ##class(%DynamicArray).%New()
 
-    s t1 = ##class(%DynamicObject).%New()
-    s t1.key   = "ZAHLAVI_LINKY"
-    s t1.label = "Záhlaví linky"
-    d arr.%Push(t1)
+        s t1 = ##class(%DynamicObject).%New()
+        s t1.key   = "ZAHLAVI_LINKY"
+        s t1.label = "Záhlaví linky"
+        d arr.%Push(t1)
 
-    s t2 = ##class(%DynamicObject).%New()
-    s t2.key   = "PLATNOST_DOPRAVCE"
-    s t2.label = "Platnost a dopravce"
-    d arr.%Push(t2)
+        s t2 = ##class(%DynamicObject).%New()
+        s t2.key   = "PLATNOST_DOPRAVCE"
+        s t2.label = "Platnost a dopravce"
+        d arr.%Push(t2)
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
-/// Vrátí definici Fixed šablony.
+/// Vrátí definici předpřipravené tabulky.
 ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
 {
-    s key = $g(^||ML("IN", "key"))
+    s err = ""
+    try {
+        s key = $g(^||ML("IN", "key"))
 
-    if key = "ZAHLAVI_LINKY" {
-        d ..WriteTemplate2Col([
-            ["Linka",       "{CISLO_LINKY}"],
-            ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
-            ["Směr",        "{KONECNA_ZASTAVKA}"],
-            ["Zastávka",    "{POPIS_ZASTAVKA}"],
-            ["Platnost",    "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"]
-        ])
-    }
-    elseif key = "PLATNOST_DOPRAVCE" {
-        d ..WriteTemplate2Col([
-            ["Platnost",  "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"],
-            ["Dopravce",  "{POPIS_DOPRAVCE}"],
-            ["Typ JR",    "{TYP_JR}"]
-        ])
-    }
-
+        if key = "ZAHLAVI_LINKY" {
+            d ..WriteTemplate2Col([
+                ["Linka",       "{CISLO_LINKY}"],
+                ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
+                ["Směr",        "{KONECNA_ZASTAVKA}"],
+                ["Zastávka",    "{POPIS_ZASTAVKA}"],
+                ["Platnost",    "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"]
+            ])
+        }
+        elseif key = "PLATNOST_DOPRAVCE" {
+            d ..WriteTemplate2Col([
+                ["Platnost",  "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"],
+                ["Dopravce",  "{POPIS_DOPRAVCE}"],
+                ["Typ JR",    "{TYP_JR}"]
+            ])
+        }
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
 /// Vrátí parametry sestavy. Instance AD je určená skupinou linek + linkou (^JRL(sku,lin)).
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    // FillParams zde netřeba - AddStandardJRParameters IdFa/dataDB nečte (viz konvence GetParameters).
-    s arr = ##class(%DynamicArray).%New()
+    s err = ""
+    try {
+        // FillParams zde netřeba - AddStandardJRParameters IdFa/dataDB nečte (viz konvence GetParameters).
+        s arr = ##class(%DynamicArray).%New()
 
-    // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) - viz GetAvailableInstances.
-    // SKUPINA_LINEK_ID je zatím fixní (default = první skupina v ^JRL, shodně s pickerem i GetData);
-    // až bude Návrhář spouštěn z JŘ/MHD, pošle se skupina (příp. výchozí linka) jako launch kontext.
-    d ..AddStandardJRParameters(arr)
+        // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) - viz GetAvailableInstances.
+        // SKUPINA_LINEK_ID je zatím fixní (default = první skupina v ^JRL, shodně s pickerem i GetData);
+        // až bude Návrhář spouštěn z JŘ/MHD, pošle se skupina (příp. výchozí linka) jako launch kontext.
+        d ..AddStandardJRParameters(arr)
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
     ret $$$OK
 }
 
-/// Vrátí seznam linek pro Instance Picker (umožní proklikávání stránek v preview).
-/// IN["search"] = substring filtr (case-insensitive), IN["limit"] = max (default 50),
 /// Skupiny linek pro filtr Instance Pickeru - první subscript ^JRL(sku). Název skupiny je 1. `~`-piece
 /// hodnoty ^JRL(sku) (např. "Vertikála k 1.1. - ŘÁDNÉ~01.01.2024~..."). OUT["1"] = [{ value, label }].
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
@@ -157,6 +166,8 @@ ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Vrátí seznam linek pro Instance Picker (umožní proklikávání stránek v preview).
+/// IN["search"] = substring filtr (case-insensitive), IN["limit"] = max (default 50),
 /// IN["SKUPINA_LINEK_ID"] = skupina linek (default první v ^JRL).
 /// OUT["1"] = JSON pole { "value": lin, "display": "číslo - název", "subtitle": "Platnost ..." }.
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status

@@ -798,12 +798,13 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
 - **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - každá agenda ji skládá zvlášť; odtud čtyři
   tvary popisu platnosti a dva texty návrhu (`B193f`, viz changelog 23. 10.).
 - **Společné parametry vývěsek** (Pořadí stránek, šipky, projeté zastávky, časová osa, roztažení) jsou
-  opsané (`ZastavkoveJrAd.cls:3521-3675` × `ZastavkoveJrMhd.cls:1774-1826`). Linkové agendy mají jednu
-  sdílenou definici (`LinkovyJrAd.cls:373-446`) a to je vzor.
+  opsané (`AddStandardJRParameters` ve vývěsce AD i MHD). Linkové agendy mají jednu
+  sdílenou definici (`LinkovyJrAd.Parametr*`) a to je vzor.
 - **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`, vývěsky a faktury): návrhář je
-  nikde nenabízí a do 23. 10. při volání padaly (`B193f`). Zrušit, nebo napojit do vkládání tabulky.
-- **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (`LinkovyJrAd.cls:1814, 2120, 2131`
-  × `LinkovyJrMhd.cls:1176-1195`) a `RgbToHex` vedle `BaseAgenda.RgbNaHex`.
+  nikde nenabízí a do 23. 10. při volání padaly (`B193f`). Od 30. 10. jsou v `BaseAgenda` nepovinné s prázdným
+  výchozím výsledkem a linkové agendy své prázdné kopie nemají. Zrušit, nebo napojit do vkládání tabulky.
+- **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (v `LinkovyJrAd` i `LinkovyJrMhd`);
+  `RgbToHex` vedle `BaseAgenda.RgbNaHex` není kopie, viz „Opsané pod jiným jménem" níž.
 
 **Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - patří ke kroku R5
 (parametry vývěsek do jedné definice), čeká na úklid nastavení tisku v jízdních řádech, který dodělají kolegové

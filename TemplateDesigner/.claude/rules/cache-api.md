@@ -64,103 +64,22 @@ Folder = namespace prefix; class name musí odpovídat file path (InterSystems c
 
 ---
 
-## Caché BaseAgenda architektura (implementováno)
+## Caché agendy - kontrakt `BaseAgenda`
 
-Každá agenda (JR, FAKTURY, ...) má jednu Caché třídu dědící z abstraktního základu.
-Třída slouží jako **kompletní API rozhraní** pro TemplateDesigner - design-time i print-time.
+Každá agenda je jedna Caché třída, **přímý potomek** `ALVA.TemplateDesigner.Agendy.BaseAgenda` - registr
+hledá jen přímé potomky, sdílený kód patří do pomocných tříd mimo hierarchii (`architektonicka-rozhodnuti-agendy.md` R8).
+Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`; čti je tam, sem se kód neopisuje
+(opsaný vzor tu do 30. 10. učil klíče, které návrhář nečte).
 
-### Abstraktní základ - vynucuje kontrakt
-
-```objectscript
-Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]
-{
-    /// Vrátí DataSchema: skalární pole + skupiny tabulek (scope=table)
-    ClassMethod GetSchema(ByRef sys As %String) As %Status [ Abstract ] {}
-
-    /// Vrátí seznam dostupných Fixed šablon tabulek pro tuto agendu
-    ClassMethod GetTableTemplates(ByRef sys As %String) As %Status [ Abstract ] {}
-
-    /// Vrátí definici konkrétní šablony (sloupce + řádky)
-    /// IN: key = klíč šablony (např. "JR_ZAHLAVI")
-    ClassMethod GetTableTemplate(ByRef sys As %String) As %Status [ Abstract ] {}
-
-    /// Vrátí data pro tisk: skaláry + kolekce řádků
-    /// IN: parametry tisku (závisí na agendě)
-    ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ] {}
-
-    /// Vrátí vzorová data pro live preview v designeru
-    /// OUT[1] = { "values": {...}, "rows": { "ZASTAVKY": [...] } }
-    ClassMethod GetMockData(ByRef sys As %String) As %Status [ Abstract ] {}
-}
-```
-
-Každá nová agenda **musí** implementovat všech pět metod - Caché kompilátor to ohlídá.
-
----
-
-### Implementace per agenda
-
-```objectscript
-Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
-{
-    ClassMethod GetSchema(ByRef sys As %String) As %Status
-    {
-        s def = ##class(%DynamicObject).%New()
-
-        // Skalární pole
-        s fields = ##class(%DynamicArray).%New()
-        s f = ##class(%DynamicObject).%New()
-        s f.name = "CISLO_LINKY"  s f.label = "Číslo linky"  s f.type = "number"
-        d fields.%Push(f)
-        // ... další pole ...
-        s def.fields = fields
-
-        // Skupiny tabulek (scope=table)
-        s groups = ##class(%DynamicArray).%New()
-        s g = ##class(%DynamicObject).%New()
-        s g.name = "Zastávky"  s g.scope = "table"  s g.collectionKey = "ZASTAVKY"
-        s gFields = ##class(%DynamicArray).%New()
-        s gf = ##class(%DynamicObject).%New()
-        s gf.name = "POPIS"  s gf.label = "Název zastávky"  s gf.type = "text"
-        d gFields.%Push(gf)
-        s g.fields = gFields
-        d groups.%Push(g)
-        s def.groups = groups
-
-        s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
-        q 1
-    }
-
-    ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
-    {
-        s arr = ##class(%DynamicArray).%New()
-        s t = ##class(%DynamicObject).%New()
-        s t.key = "JR_ZAHLAVI"  s t.label = "Záhlaví JR"
-        d arr.%Push(t)
-        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-        q 1
-    }
-
-    ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
-    {
-        s key = $g(^||ML("IN", "key"))
-        if key = "JR_ZAHLAVI" {
-            // Sestaví a vrátí { "columns": [...], "rows": [...] }
-            // viz wire formát níže
-        }
-        q 1
-    }
-
-    ClassMethod GetData(ByRef sys As %String) As %Status
-    {
-        // Načte parametry z IN, vrátí skaláry + kolekce
-        // viz wire formát níže
-        q 1
-    }
-}
-```
-
----
+- **Povinné:** `GetSchema` (nabídka dat), `GetData` (stránky pro tisk), `GetMockData` (ukázka pro náhled bez instance;
+  agendy JŘ posílají prázdnou stránku s výzvou vybrat linku).
+- **Volitelné**, výchozí prázdný výsledek: `GetParameters`, `GetAvailableSkupiny`, `GetAvailableInstances`,
+  `GetTableTemplates` / `GetTableTemplate` (předpřipravené tabulky - návrhář je nevolá, zrušit nebo napojit rozhodne `B56`).
+- **Parametry třídy** - `AgendaVariantCode` (stabilní persistovaný klíč), `Agenda` / `Variant` s labely, `ElementKind`,
+  `InstanceParamName`, `CustomColumns`, `VariantyTras`, `Released` (bez něj se agenda uživatelům nenabízí).
+- **Každá metoda s `ByRef sys`** dodržuje pravidla 14-15 níž, nebo jen přesměruje na metodu jiné agendy
+  (`q ##class(…).X(.sys)`); hlídá `OsetreniChybAgendTests`.
+- **Vzorem jsou agendy JŘ** (`ZastavkoveJrAd`, `LinkovyJrAd`), ne Faktury - ukázka z počátku, která se možná smaže.
 
 ### Wire formáty
 
@@ -183,32 +102,7 @@ Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner
 }
 ```
 
-#### GetTableTemplates - OUT[1]
-```json
-[
-  { "key": "ZAHLAVI_LINKY",    "label": "Záhlaví linky" },
-  { "key": "PLATNOST_DOPRAVCE","label": "Platnost a dopravce" }
-]
-```
-
-#### GetTableTemplate - IN + OUT[1]
-```
-IN: key = "ZAHLAVI_LINKY"
-```
-```json
-{
-  "columns": [
-    { "header": "Položka", "width": 80, "widthMode": "Mm", "alignment": "Left" },
-    { "header": "Hodnota", "width": 60, "widthMode": "Mm", "alignment": "Right" }
-  ],
-  "rows": [
-    { "cells": [{ "content": "Linka" },       { "content": "{CISLO_LINKY}" }] },
-    { "cells": [{ "content": "Platnost od" }, { "content": "{DATUM_OD}", "format": "dd.MM.yyyy" }] }
-  ]
-}
-```
-
-#### GetMockData - OUT[1] (design-time preview)
+#### GetMockData - OUT[1] (náhled bez vybrané instance)
 ```json
 {
   "values": {
@@ -346,11 +240,11 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
 
 | Anglický název v kódu | Český ekvivalent | Business význam | Příklad |
 |---|---|---|---|
-| `GetSchema` | GetSchema | Vrátí **definici dostupných dat** agendy - co existuje jako pole, ne konkrétní hodnoty | `{ fields: [{name:"CISLO_LINKY",...}], groups: [...] }` |
-| `GetTableTemplates` | GetTableTemplates | Vrátí **seznam předdefinovaných layoutů** Fixed tabulek uložených v Caché | `[{key:"ZAHLAVI_LINKY", label:"Záhlaví linky"}]` |
-| `GetTableTemplate` | GetTableTemplate | Vrátí **konkrétní předdefinovaný layout** - sloupce + předvyplněné řádky | `{ columns:[...], rows:[{cells:[{content:"{CISLO_LINKY}"}]}] }` |
+| `GetSchema` | GetSchema | Vrátí **definici dostupných dat** agendy - co existuje jako pole, ne konkrétní hodnoty | `{ fields: [{name:"CISLO_LINKY",...}], fieldCollections: [...] }` |
+| `GetTableTemplates` | GetTableTemplates | Seznam **předpřipravených tabulek**; volitelné, návrhář je dnes nevolá | `[{key:"ZAHLAVI_LINKY", label:"Záhlaví linky"}]` |
+| `GetTableTemplate` | GetTableTemplate | Jedna **předpřipravená tabulka** - sloupce + předvyplněné řádky; volitelné, nevolá se | `{ columns:[...], rows:[{cells:[{content:"{CISLO_LINKY}"}]}] }` |
 | `GetData` | GetData | Vrátí **reálná data z DB** pro tisk; volaná print enginem za běhu | `{ CISLO_LINKY:"42", NAZEV:"Praha–Brno" }` + kolekce řádků |
-| `GetMockData` | GetMockData | Vrátí **vzorová data** pro live preview v designeru; volaná design-time | stejná struktura jako GetData, ale s pevnými testovacími hodnotami |
+| `GetMockData` | GetMockData | Vrátí **ukázku pro náhled** bez vybrané instance | stejná struktura jako GetData; agendy JŘ posílají prázdnou stránku s výzvou vybrat linku |
 | `fields` | skalární pole | Pole agendy kde každá hodnota existuje **právě jednou** na celou sestavu | `CISLO_LINKY`, `POPIS_DOPRAVCE`, `DATUM_PLATNOSTI_OD` |
 | `fieldCollections` | tabulkové kolekce | Kolekce sad polí kde každá kolekce tvoří **seznam řádků** - zdroj dat pro Dynamic tabulku | kolekce `Zastávky` obsahuje pole `POPIS_ZASTAVKA`, `CAS_ODJEZDU`… |
 | `collectionKey` | klíč kolekce | Identifikátor kolekce řádků v `fieldCollections`; designer ho zobrazuje jako volbu DataSource Dynamic tabulky | `"ZASTAVKY"`, `"SPOJE"` |
@@ -362,46 +256,20 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
 
 ---
 
-### C# strana - konfigurace a provider
+### C# strana - registr a provider
 
-**templatedesigner.appsettings.json** (vlastní název kvůli sdílené složce `C:\Edison\`):
-```json
-{
-  "agendas": [
-    { "code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" },
-    { "code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury" }
-  ]
-}
-```
-
-**CacheAgendaProvider** - jeden provider pokrývá obě rozhraní:
-```csharp
-// Implementuje IDataSchemaProvider + ITableTemplateProvider
-class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
-{
-    string _cacheClass;   // "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
-    MLRest _mlRest;
-
-    // IDataSchemaProvider
-    DataSchema? GetSchema(string agendaCode)     // volá GetSchema
-    IReadOnlyList<AgendaInfo> GetAvailableAgendas()
-
-    // ITableTemplateProvider
-    IReadOnlyList<TableTemplateInfo> GetAvailableTemplates()    // volá GetTableTemplates
-    TableTemplateDefinition GetTemplate(string key)             // volá GetTableTemplate
-}
-```
-
-**Wiring** (`Config/CacheSchemaWiring.cs`):
-- Agendy zjistí **auto-discovery** ze serveru (`AgendyRegistr.ListAgendy` → `CacheAgendaRegistry`); pro každou vytvoří `CacheAgendaProvider(cacheClass, mlRest)`. `templatedesigner.appsettings.json` agendy nedefinuje.
-- Fallback: `CompositeDataSchemaProvider` (Caché primary + JSON fallback ze `schemas/*.schema.json`)
+- Agendy najde **registr na serveru** (`AgendyRegistr.ListAgendy` → `CacheAgendaRegistry`); konfigurace aplikace
+  (`templatedesigner.appsettings.json`) je nedefinuje. `CacheSchemaWiring.TryCreate` nad nimi vytvoří `CacheAgendaProvider`,
+  který volá metody agend přes MLRest a čte jejich JSON.
+- Fallback nabídky dat: `CompositeDataSchemaProvider` (Caché primary + JSON ze `schemas/*.schema.json`).
 
 ---
 
 ### Přidání nové agendy - checklist
 
-1. Vytvořit Caché třídu `ALVA.TemplateDesigner.Agendy.<Agenda> Extends ALVA.TemplateDesigner.Agendy.BaseAgenda`
-2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`, `GetMockData`
+1. Vytvořit Caché třídu `ALVA.TemplateDesigner.Agendy.<Agenda> Extends ALVA.TemplateDesigner.Agendy.BaseAgenda` (přímý potomek)
+   a nastavit parametry třídy (viz kontrakt výš); `AgendaVariantCode` se už nikdy nemění.
+2. Implementovat `GetSchema`, `GetData`, `GetMockData`, volitelné podle potřeby; každou metodu podle pravidel 14-15
 3. Nic neregistrovat ručně - agendu najde auto-discovery (`AgendyRegistr.ListAgendy`); v UI se nabízí až s `Released = 1`
 4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
    - `GetMockData` vrací JSON: `{ "values": { "POLE": "hodnota", ... }, "rows": { "KLIC": [ {...}, ... ] } }`

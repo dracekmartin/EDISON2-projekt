@@ -316,7 +316,7 @@ ClassMethod Nabidka(json As %String, ByRef nabidka)
 /// Agenda, která data nemá a linky v `LinkyAgend` nepotřebuje.
 ClassMethod BezDat(kod As %String) As %Boolean
 {
-	// Ukázková agenda pro vývojáře: GetData nevrací nic (`B194g` R6).
+	// Ukázková agenda z počátku bez zdroje dat, možná se smaže (Jan 30. 10.).
 	quit kod="FAKTURY"
 }
 

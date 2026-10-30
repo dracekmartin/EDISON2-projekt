@@ -89,267 +89,259 @@ Parameter InstanceLabelPlural As %String = "linky";
 /// Vrátí DataSchema - skaláry hlavičky linky + kolekce ZASTAVKY/SPOJE/SKUPINY_DNU/POZNAMKY.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {
-    $$$FillParams
+    s err = ""
+    try {
+        $$$FillParams
 
-    s def = ##class(%DynamicObject).%New()
+        s def = ##class(%DynamicObject).%New()
 
-    s fields = ##class(%DynamicArray).%New()
-    // Názvy i popisky polí drží slovník zastávkového JŘ (AgendaSchemaDriftTests) - táž věc se musí
-    // v obou agendách jmenovat stejně, jinak binding {NAZEV_ZASTAVKY} v jedné funguje a ve druhé
-    // tiše vykreslí prázdno.
-    // Pořadí bloků jako ve všech agendách JŘ (Jan 27. 10.): linka → dopravce → platnost → zastávka
-    // a směr → poznámky a doplňky. Nabídka dat pole nepřeřazuje, ukazuje je v tomhle pořadí.
-    d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
-    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
-    d ..AddField(fields, "POPIS_LINKY",           "Název linky",              "text")
-    d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
-    d ..AddField(fields, "BARVA_LINKY",           "Barva linky",              "color")
-    d ..AddField(fields, "BARVA_LINKY_2",         "Barva linky 2",            "color")
-    d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
-    // Po polích jako vývěska AD - první dopravce linky (`B194c` D4).
-    d ..AddField(fields, "NAZEV_DOPRAVCE",        "Název dopravce",           "text")
-    d ..AddField(fields, "ADRESA_DOPRAVCE",       "Adresa dopravce",          "text")
-    d ..AddField(fields, "TELEFON_DOPRAVCE",      "Telefon dopravce",         "text")
-    d ..AddField(fields, "EMAIL_DOPRAVCE",        "E-mail dopravce",          "text")
-    d ..AddField(fields, "ICO_DOPRAVCE",          "IČO dopravce",             "text")
-    // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD; GetData ho posílá dál kvůli starším šablonám.
-    d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
-    d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
-    // Zastávka výlepu (parametr „Zvýraznit zastávku") jako pole stránky, aby ji šlo dosadit do QR.
-    // Klíč i popisek jako u vývěsek; do hlavičky výlepu („Zastávka: …") jiný název stránky není.
-    d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky",  "text")
-    d ..AddField(fields, "AKTUALNI_ZASTAVKA_CZST", "Číslo aktuální zastávky",  "number")
-    d ..AddField(fields, "AKTUALNI_ZASTAVKA_TC",   "Tarifní číslo aktuální zastávky", "number")
-    // Jen u tisku po zastávkách (parametr „Stránka pro každou zastávku"); prvek podle něj zvýrazní inverzně
-    // aktuální zastávku. Bez parametru pole na stránce není.
-    d ..AddField(fields, "VYLEP_ZASTAVKY",         "Výlep pro zastávku",       "boolean")
-    d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
-    d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
-    d ..AddField(fields, "KONECNA_ZASTAVKA",      "Konečná zastávka",         "text")
-    d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
-    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
-    d ..AddField(fields, "QR_KOD",                "URL adresa pro QR kód",    "text")
-    s def.fields = fields
+        s fields = ##class(%DynamicArray).%New()
+        // Názvy i popisky polí drží slovník zastávkového JŘ (AgendaSchemaDriftTests) - táž věc se musí
+        // v obou agendách jmenovat stejně, jinak binding {NAZEV_ZASTAVKY} v jedné funguje a ve druhé
+        // tiše vykreslí prázdno.
+        // Pořadí bloků jako ve všech agendách JŘ (Jan 27. 10.): linka → dopravce → platnost → zastávka
+        // a směr → poznámky a doplňky. Nabídka dat pole nepřeřazuje, ukazuje je v tomhle pořadí.
+        d ..AddField(fields, "CISLO_LINKY",           "Číslo linky (dle licence)", "number")
+        d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",  "text")
+        d ..AddField(fields, "POPIS_LINKY",           "Název linky",              "text")
+        d ..AddField(fields, "TYP_JR",                "Typ jízdního řádu",        "text")
+        d ..AddField(fields, "BARVA_LINKY",           "Barva linky",              "color")
+        d ..AddField(fields, "BARVA_LINKY_2",         "Barva linky 2",            "color")
+        d ..AddField(fields, "POPIS_DOPRAVCE",        "Popis dopravce",           "text")
+        // Po polích jako vývěska AD - první dopravce linky (`B194c` D4).
+        d ..AddField(fields, "NAZEV_DOPRAVCE",        "Název dopravce",           "text")
+        d ..AddField(fields, "ADRESA_DOPRAVCE",       "Adresa dopravce",          "text")
+        d ..AddField(fields, "TELEFON_DOPRAVCE",      "Telefon dopravce",         "text")
+        d ..AddField(fields, "EMAIL_DOPRAVCE",        "E-mail dopravce",          "text")
+        d ..AddField(fields, "ICO_DOPRAVCE",          "IČO dopravce",             "text")
+        // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD; GetData ho posílá dál kvůli starším šablonám.
+        d ..AddField(fields, "DATUM_PLATNOSTI_OD",    "Datum platnosti od",       "date")
+        d ..AddField(fields, "DATUM_PLATNOSTI_DO",    "Datum platnosti do",       "date")
+        // Zastávka výlepu (parametr „Zvýraznit zastávku") jako pole stránky, aby ji šlo dosadit do QR.
+        // Klíč i popisek jako u vývěsek; do hlavičky výlepu („Zastávka: …") jiný název stránky není.
+        d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky",  "text")
+        d ..AddField(fields, "AKTUALNI_ZASTAVKA_CZST", "Číslo aktuální zastávky",  "number")
+        d ..AddField(fields, "AKTUALNI_ZASTAVKA_TC",   "Tarifní číslo aktuální zastávky", "number")
+        // Jen u tisku po zastávkách (parametr „Stránka pro každou zastávku"); prvek podle něj zvýrazní inverzně
+        // aktuální zastávku. Bez parametru pole na stránce není.
+        d ..AddField(fields, "VYLEP_ZASTAVKY",         "Výlep pro zastávku",       "boolean")
+        d ..AddField(fields, "SMER",                  "Směr (T/Z)",               "text")
+        d ..AddField(fields, "VYCHOZI_ZASTAVKA",      "Výchozí zastávka",         "text")
+        d ..AddField(fields, "KONECNA_ZASTAVKA",      "Konečná zastávka",         "text")
+        d ..AddField(fields, "POZNAMKA_NAD_LINKU",    "Poznámka nad linku",       "text")
+        d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE", "Poznámka pod dopravce",    "text")
+        d ..AddField(fields, "QR_KOD",                "URL adresa pro QR kód",    "text")
+        s def.fields = fields
 
-    s collections = ##class(%DynamicArray).%New()
+        s collections = ##class(%DynamicArray).%New()
 
-    s g = ##class(%DynamicObject).%New()
-    s g.name = "Zastávky", g.collectionKey = "ZASTAVKY"
-    s gf = ##class(%DynamicArray).%New()
-    // Bez „Pořadí" (Jan 27. 10.): nese tarifní číslo, ne pořadí 1..N jako jinde - v nabídce je jako
-    // „Tarifní číslo". GetData PORADI posílá dál, prvek podle něj páruje řádky, značky a přípoje zastávky.
-    // Bez „Typu řádku" (Jan 27. 10.): interní kód zastavka/prijezd pro Tabulku spojů, data ho posílají dál.
-    d ..AddField(gf, "CZST",           "Číslo zastávky",     "number")
-    d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
-    // Popisek je kanonický z vývěsky - stejné pole se nesmí v nabídce dat jmenovat dvakrát jinak
-    // (hlídá AgendaSchemaDriftTests, který to při zavedení hned chytil).
-    d ..AddField(gf, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
-    d ..AddField(gf, "TC",             "Tarifní číslo",      "number")
-    d ..AddField(gf, "ZONY",           "Zóny",               "text")
-    d ..AddField(gf, "MHD",            "MHD/IDS",            "text")
-    d ..AddField(gf, "NASTUPISTE",     "Označník",           "text")
-    s g.fields = gf
-    d collections.%Push(g)
+        s g = ##class(%DynamicObject).%New()
+        s g.name = "Zastávky", g.collectionKey = "ZASTAVKY"
+        s gf = ##class(%DynamicArray).%New()
+        // Bez „Pořadí" (Jan 27. 10.): nese tarifní číslo, ne pořadí 1..N jako jinde - v nabídce je jako
+        // „Tarifní číslo". GetData PORADI posílá dál, prvek podle něj páruje řádky, značky a přípoje zastávky.
+        // Bez „Typu řádku" (Jan 27. 10.): interní kód zastavka/prijezd pro Tabulku spojů, data ho posílají dál.
+        d ..AddField(gf, "CZST",           "Číslo zastávky",     "number")
+        d ..AddField(gf, "NAZEV_ZASTAVKY", "Název zastávky",     "text")
+        // Popisek je kanonický z vývěsky - stejné pole se nesmí v nabídce dat jmenovat dvakrát jinak
+        // (hlídá AgendaSchemaDriftTests, který to při zavedení hned chytil).
+        d ..AddField(gf, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
+        d ..AddField(gf, "TC",             "Tarifní číslo",      "number")
+        d ..AddField(gf, "ZONY",           "Zóny",               "text")
+        d ..AddField(gf, "MHD",            "MHD/IDS",            "text")
+        d ..AddField(gf, "NASTUPISTE",     "Označník",           "text")
+        s g.fields = gf
+        d collections.%Push(g)
 
-    s g = ##class(%DynamicObject).%New()
-    s g.name = "Spoje", g.collectionKey = "SPOJE"
-    s gf = ##class(%DynamicArray).%New()
-    // SKUPINA (spojovací klíč na SKUPINY_DNU) zůstává ve wire, ale NEvystavuje se jako sloupec -
-    // stejně jako ZASTAVKA_ID/SKUPINA_DNU_ID u zastávkových odjezdů.
-    d ..AddField(gf, "CISLO_SPOJE", "Číslo spoje",       "number")
-    d ..AddField(gf, "NZ",          "Negativní značka",  "text")
-    s g.fields = gf
-    d collections.%Push(g)
+        s g = ##class(%DynamicObject).%New()
+        s g.name = "Spoje", g.collectionKey = "SPOJE"
+        s gf = ##class(%DynamicArray).%New()
+        // SKUPINA (spojovací klíč na SKUPINY_DNU) zůstává ve wire, ale NEvystavuje se jako sloupec -
+        // stejně jako ZASTAVKA_ID/SKUPINA_DNU_ID u zastávkových odjezdů.
+        d ..AddField(gf, "CISLO_SPOJE", "Číslo spoje",       "number")
+        d ..AddField(gf, "NZ",          "Negativní značka",  "text")
+        s g.fields = gf
+        d collections.%Push(g)
 
-    s g = ##class(%DynamicObject).%New()
-    s g.name = "Skupiny dnů", g.collectionKey = "SKUPINY_DNU"
-    s gf = ##class(%DynamicArray).%New()
-    // ID (spojovací klíč) zůstává ve wire, ale NEvystavuje se jako sloupec.
-    d ..AddField(gf, "NADPIS", "Nadpis skupiny", "text")
-    s g.fields = gf
-    d collections.%Push(g)
+        s g = ##class(%DynamicObject).%New()
+        s g.name = "Skupiny dnů", g.collectionKey = "SKUPINY_DNU"
+        s gf = ##class(%DynamicArray).%New()
+        // ID (spojovací klíč) zůstává ve wire, ale NEvystavuje se jako sloupec.
+        d ..AddField(gf, "NADPIS", "Nadpis skupiny", "text")
+        s g.fields = gf
+        d collections.%Push(g)
 
-    s g = ##class(%DynamicObject).%New()
-    s g.name = "Poznámky", g.collectionKey = "POZNAMKY"
-    s gf = ##class(%DynamicArray).%New()
-    d ..AddField(gf, "DRUH", "Druh poznámky",     "number")
-    // Bez „Typu poznámky" (Jan 27. 10.): interní kód znak/nz/text pro prvek Poznámky, data ho posílají dál.
-    d ..AddField(gf, "ZNAK", "Znak",              "text")
-    d ..AddField(gf, "TEXT", "Text poznámky",     "text")
-    s g.fields = gf
-    d collections.%Push(g)
+        s g = ##class(%DynamicObject).%New()
+        s g.name = "Poznámky", g.collectionKey = "POZNAMKY"
+        s gf = ##class(%DynamicArray).%New()
+        d ..AddField(gf, "DRUH", "Druh poznámky",     "number")
+        // Bez „Typu poznámky" (Jan 27. 10.): interní kód znak/nz/text pro prvek Poznámky, data ho posílají dál.
+        d ..AddField(gf, "ZNAK", "Znak",              "text")
+        d ..AddField(gf, "TEXT", "Text poznámky",     "text")
+        s g.fields = gf
+        d collections.%Push(g)
 
-    d def.%Set("fieldCollections", collections)
+        d def.%Set("fieldCollections", collections)
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
-    q $$$OK
-}
-
-/// Fixed šablony tabulek - knižní JŘ žádné nemá (layout drží LineTableElement).
-ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
-{
-    s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
-    q $$$OK
-}
-
-/// Fixed šablony tabulek nejsou - vrací prázdnou definici.
-ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
-{
-    s ^||ML("OUT", $i(^||ML("OUT"))) = "{}"
-    q $$$OK
+        s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// Parametry sestavy. Linka se vybírá v Instance Pickeru (GetAvailableInstances).
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    // FillParams zde netřeba - parametry IdFa/dataDB nečtou (viz konvence GetParameters).
-    s arr = ##class(%DynamicArray).%New()
+    s err = ""
+    try {
+        // FillParams zde netřeba - parametry IdFa/dataDB nečtou (viz konvence GetParameters).
+        s arr = ##class(%DynamicArray).%New()
 
-    // Dělení sloupců spojů podle platnosti (legacy in("A",2,"arr",3) = 0/1/2)
-    s p = ##class(%DynamicObject).%New()
-    s p.name = "DELENI_SLOUPCU"
-    s p.label = "Rozdělení sloupců podle platnosti"
-    s p.type = "enum"
-    // Skupina = název prvku jako u vývěsek; do 23. 10. „Tabulka linky", což se pletlo s agendou (`ux-conventions §8`).
-    s p.group = "Tabulka spojů"
-    s p.serverSide = 1
-    s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku Tabulka spojů - tady se jen ukáže, že ho šablona má."
-    s opts = ##class(%DynamicArray).%New()
-    d opts.%Push("Bez rozlišení")
-    d opts.%Push("Pracovní dny / víkend+svátky")
-    d opts.%Push("Pracovní dny / Soboty / Neděle+svátky")
-    // „Vlastní rozložení" je **ukazatel stavu šablony**, ne volba: vybrat ho ručně nejde,
-    // objeví se, když si uživatel sloupce upraví u prvku. Bez téhle položky by parametr neměl
-    // co hlásit a musel by lhát některým ze vzorů.
-    d opts.%Push("Vlastní rozložení")
-    d p.%Set("options", opts)
-    s p.defaultValue = "Pracovní dny / Soboty / Neděle+svátky"
+        // Dělení sloupců spojů podle platnosti (legacy in("A",2,"arr",3) = 0/1/2)
+        s p = ##class(%DynamicObject).%New()
+        s p.name = "DELENI_SLOUPCU"
+        s p.label = "Rozdělení sloupců podle platnosti"
+        s p.type = "enum"
+        // Skupina = název prvku jako u vývěsek; do 23. 10. „Tabulka linky", což se pletlo s agendou (`ux-conventions §8`).
+        s p.group = "Tabulka spojů"
+        s p.serverSide = 1
+        s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku Tabulka spojů - tady se jen ukáže, že ho šablona má."
+        s opts = ##class(%DynamicArray).%New()
+        d opts.%Push("Bez rozlišení")
+        d opts.%Push("Pracovní dny / víkend+svátky")
+        d opts.%Push("Pracovní dny / Soboty / Neděle+svátky")
+        // „Vlastní rozložení" je **ukazatel stavu šablony**, ne volba: vybrat ho ručně nejde,
+        // objeví se, když si uživatel sloupce upraví u prvku. Bez téhle položky by parametr neměl
+        // co hlásit a musel by lhát některým ze vzorů.
+        d opts.%Push("Vlastní rozložení")
+        d p.%Set("options", opts)
+        s p.defaultValue = "Pracovní dny / Soboty / Neděle+svátky"
 
-    // Sloupec tarifních čísel: nastavení je u linky (`PATCH,netisknoutSloupecTC`, zapnuto na 377
-    // linkách), ale uživatel ho má jít přebít. Výchozí volba je proto **konstanta** „Automaticky
-    // (dle linky)" a linku rozhodne server při tisku - parametry se ze serveru berou bez znalosti
-    // instance, takže default načtený z linky by znamenal přenačítání při každé změně linky
-    // a souboj s uloženou volbou uživatele. Zavedený tvar, stejný jako `ROZDELENI_SLOUPCU`
-    // u vývěsek; konvence v `ux-conventions.md`.
-    s pTc = ##class(%DynamicObject).%New()
-    s pTc.name         = "SLOUPEC_TC"
-    s pTc.label        = "Sloupec tarifních čísel"
-    s pTc.type         = "enum"
-    s pTc.group        = "Tabulka spojů"
-    s pTc.serverSide   = 1
-    s pTc.defaultValue = "Automaticky (dle linky)"
-    s pTc.description  = "Zda se tiskne sloupec tarifních čísel. Automaticky = podle nastavení u linky v jízdních řádech; volbou Tisknout nebo Netisknout se to dá přebít pro tuhle sestavu."
-    s optsTc = ##class(%DynamicArray).%New()
-    d optsTc.%Push("Automaticky (dle linky)")
-    d optsTc.%Push("Tisknout")
-    d optsTc.%Push("Netisknout")
-    s pTc.options = optsTc
-
-
-    // Písmeno systému v označení zóny: data ho nesou (změřeno 10. 9. na `ZL_KOVED` 823955 -
-    // syrová hodnota `Z420,I201`, tedy dvě zóny, každá se značkou svého IDS), ale nastavení
-    // `ZonaIdsDelZnk` ho umí odstranit a KOVED to má zapnuté. Linka přes dvě IDS se stejně
-    // číslovanými zónami je pak v tisku nerozeznatelná (`B137`). Týž třístav.
-    s pZon = ##class(%DynamicObject).%New()
-    s pZon.name         = "PISMENO_V_ZONE"
-    s pZon.label        = "Písmeno systému u zóny"
-    s pZon.type         = "enum"
-    s pZon.group        = "Tabulka spojů"
-    s pZon.serverSide   = 1
-    s pZon.defaultValue = "Automaticky (dle linky)"
-    s pZon.description  = "Zda označení zóny nese písmeno svého dopravního systému (Z420 místo 420). Bez něj nejdou u linky přes dvě IDS rozlišit stejně číslované zóny. Automaticky = podle nastavení u linky v jízdních řádech."
-    s optsZon = ##class(%DynamicArray).%New()
-    d optsZon.%Push("Automaticky (dle linky)")
-    d optsZon.%Push("Zobrazit")
-    d optsZon.%Push("Skrýt")
-    s pZon.options = optsZon
+        // Sloupec tarifních čísel: nastavení je u linky (`PATCH,netisknoutSloupecTC`, zapnuto na 377
+        // linkách), ale uživatel ho má jít přebít. Výchozí volba je proto **konstanta** „Automaticky
+        // (dle linky)" a linku rozhodne server při tisku - parametry se ze serveru berou bez znalosti
+        // instance, takže default načtený z linky by znamenal přenačítání při každé změně linky
+        // a souboj s uloženou volbou uživatele. Zavedený tvar, stejný jako `ROZDELENI_SLOUPCU`
+        // u vývěsek; konvence v `ux-conventions.md`.
+        s pTc = ##class(%DynamicObject).%New()
+        s pTc.name         = "SLOUPEC_TC"
+        s pTc.label        = "Sloupec tarifních čísel"
+        s pTc.type         = "enum"
+        s pTc.group        = "Tabulka spojů"
+        s pTc.serverSide   = 1
+        s pTc.defaultValue = "Automaticky (dle linky)"
+        s pTc.description  = "Zda se tiskne sloupec tarifních čísel. Automaticky = podle nastavení u linky v jízdních řádech; volbou Tisknout nebo Netisknout se to dá přebít pro tuhle sestavu."
+        s optsTc = ##class(%DynamicArray).%New()
+        d optsTc.%Push("Automaticky (dle linky)")
+        d optsTc.%Push("Tisknout")
+        d optsTc.%Push("Netisknout")
+        s pTc.options = optsTc
 
 
-    // Obousměrný tisk: oba směry na jedné sestavě (legacy in("A",2,"arr",7), JRapiLinPrtWin.mac:598).
-    // ⚠️ Starý modul zrcadlo tiše VYPNE, když se společný blok nevejde na stránku bez řezu (:627).
-    // My ten fallback vědomě nemáme (rozhodnutí Jan 28. 8.): legacy ho mít musel, protože tiskl
-    // naslepo do pevné stránky, kdežto u nás autor šablony vidí náhled a rozhodne se sám.
-    // Server na tenhle parametr posílá jen DATA - všechny spoje obou směrů nad společným seznamem
-    // zastávek, každý spoj označený svým směrem. O tom, který směr je vlevo, rozhoduje prvek.
-    s pObou = ##class(%DynamicObject).%New()
-    s pObou.name         = "OBOUSMERNY_TISK"
-    s pObou.label        = "Obousměrný tisk"
-    s pObou.type         = "bool"
-    // „Obecné", ne „Tabulka spojů": rozhoduje o složení celé sestavy (jestli vyjde jedna stránka
-    // nebo dvě), ne o vzhledu jednoho prvku. Že se promítne i do tabulky, platí skoro o každém
-    // parametru téhle agendy (rozhodnutí Jan 31. 8.).
-    s pObou.group        = "Obecné"
-    s pObou.serverSide   = 1
-    s pObou.defaultValue = "false"
-    // S jedním směrem nemá co skládat a GetData ji ignoruje - nabízí se jen při obou směrech.
-    s pObou.visibleWhen  = "SMER_TISKU=Oba"
-    s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuto = každý směr na vlastní stránce."
-
-    // Výlepy na zastávky (Jan 1. 10.): místo stránky za směr stránka za každou zastávku a směr,
-    // na které je ta zastávka zvýrazněná - na výlep tak jde i QR s adresou své zastávky.
-    // „Obecné" ze stejného důvodu jako obousměrný tisk: mění složení celé sestavy.
-    s pVyl = ##class(%DynamicObject).%New()
-    s pVyl.name         = "STRANKA_PRO_ZASTAVKU"
-    s pVyl.label        = "Stránka pro každou zastávku"
-    s pVyl.type         = "bool"
-    s pVyl.group        = "Obecné"
-    s pVyl.serverSide   = 1
-    s pVyl.defaultValue = "false"
-    s pVyl.description  = "Každá zastávka, kde spoje odjíždějí, dostane vlastní stránku za každý směr a je na ní zvýrazněná inverzně (bílé na černém). Zvýraznit zastávku a Zvýraznit tarifní číslo pak vyberou jen některé zastávky."
-
-    // ⚠️ **Turnusy ke spojům tu parametr NEJSOU** - je to volba prvku (šablony), stejně jako
-    // v legacy, kde to je nastavení sekce v návrháři sestav. Klient posílá `TURNUSY_KE_SPOJUM`
-    // podle prvku (jako `DEFINICE_SLOUPCU`), takže dotaz do modulu turnusů (40-550 ms na linku)
-    // se pořád nespustí nikomu, kdo turnusy netiskne. Rozhodnutí Jan 28. 8.: turnus je provozní
-    // věc dopravce, ne informace pro cestujícího - patří k sestavě, ne k volbám tisku.
-
-    // Název pro MHD. Legacy ho bere jen u městských linek, které to mají zapnuté - tahle volba
-    // umí navíc i to vypnout (stejně jako u vývěsky). Výchozí zapnuto = chování starého modulu.
-    s pMhd = ##class(%DynamicObject).%New()
-    s pMhd.name         = "NAZEV_PRO_MHD"
-    s pMhd.label        = "Použít název pro MHD"
-    s pMhd.type         = "bool"
-    s pMhd.group        = "Obecné"
-    s pMhd.serverSide   = 1
-    s pMhd.defaultValue = "true"
-    s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté. Vypnuto = všude název podle CIS."
-
-    s pZvT = ##class(%DynamicObject).%New()
-    s pZvT.name         = "ZVYRAZNIT_TC"
-    s pZvT.label        = "Zvýraznit tarifní číslo"
-    s pZvT.type         = "string"
-    s pZvT.group        = "Tabulka spojů"
-    s pZvT.serverSide   = 1
-    s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
+        // Písmeno systému v označení zóny: data ho nesou (změřeno 10. 9. na `ZL_KOVED` 823955 -
+        // syrová hodnota `Z420,I201`, tedy dvě zóny, každá se značkou svého IDS), ale nastavení
+        // `ZonaIdsDelZnk` ho umí odstranit a KOVED to má zapnuté. Linka přes dvě IDS se stejně
+        // číslovanými zónami je pak v tisku nerozeznatelná (`B137`). Týž třístav.
+        s pZon = ##class(%DynamicObject).%New()
+        s pZon.name         = "PISMENO_V_ZONE"
+        s pZon.label        = "Písmeno systému u zóny"
+        s pZon.type         = "enum"
+        s pZon.group        = "Tabulka spojů"
+        s pZon.serverSide   = 1
+        s pZon.defaultValue = "Automaticky (dle linky)"
+        s pZon.description  = "Zda označení zóny nese písmeno svého dopravního systému (Z420 místo 420). Bez něj nejdou u linky přes dvě IDS rozlišit stejně číslované zóny. Automaticky = podle nastavení u linky v jízdních řádech."
+        s optsZon = ##class(%DynamicArray).%New()
+        d optsZon.%Push("Automaticky (dle linky)")
+        d optsZon.%Push("Zobrazit")
+        d optsZon.%Push("Skrýt")
+        s pZon.options = optsZon
 
 
-    // ── pořadí, v jakém je uvidí uživatel ────────────────────────────────────────
-    // Skupiny se v tabu Parametry řadí podle **prvního výskytu** v tomhle poli, ne abecedně, takže
-    // se sem pushuje najednou a v pořadí, které má platit. „Obecné" je první schválně - je to
-    // nastavení celé sestavy, ne jednoho prvku (týž důvod i tvar jako u zastávkového JŘ).
-    // ⚠️ Každý parametr musí mít `group`. Bez ní ho `AddParamGroups` shodí do vlastní skupiny
-    // „Parametry sestavy" a uživatel uvidí osamocenou položku - přesně to potkalo `DELENI_SLOUPCU`
-    // do 31. 8. (`L12`).
-    // Obecné. Tvar názvu zastávky: ⚠️ **výchozí „Plný CIS", jinak než u vývěsky** („Zkrácený") -
-    // starý linkový tisk nechává prázdnou část obce jako dvojčárku („Český Krumlov,,aut. nádraží"),
-    // starý vývěskový modul ji srážel; parita je přednější (potvrzeno Janem 24. 8.).
-    d arr.%Push(..ParametrTvaruNazvuZastavky("Plný CIS"))
-    d arr.%Push(pMhd)
-    d arr.%Push(..ParametrSmeruTisku())
-    d arr.%Push(pObou)
-    d arr.%Push(pVyl)
-    d arr.%Push(..ParametrPoctuStran())
-    d arr.%Push(p)         // Tabulka spojů - dělení spojů je nejdůležitější volba agendy
-    d arr.%Push(pTc)
-    d arr.%Push(..ParametrZastavkyBezZastaveni())
-    d arr.%Push(pZon)
-    // Barvy spojů - checkbox jako u vývěsky, viz BaseAgenda.VolbaBarevSpoju
-    d ..AddBoolParam(arr, "TISKNOUT_BARVY_SPOJU", "Barvy spojů", 1, "Tabulka spojů", "Časy spoje se tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Vypnuto = celá tabulka černě.", 1)
-    d arr.%Push(..ParametrZvyrazneniZastavky())
-    d arr.%Push(pZvT)
+        // Obousměrný tisk: oba směry na jedné sestavě (legacy in("A",2,"arr",7), JRapiLinPrtWin.mac:598).
+        // ⚠️ Starý modul zrcadlo tiše VYPNE, když se společný blok nevejde na stránku bez řezu (:627).
+        // My ten fallback vědomě nemáme (rozhodnutí Jan 28. 8.): legacy ho mít musel, protože tiskl
+        // naslepo do pevné stránky, kdežto u nás autor šablony vidí náhled a rozhodne se sám.
+        // Server na tenhle parametr posílá jen DATA - všechny spoje obou směrů nad společným seznamem
+        // zastávek, každý spoj označený svým směrem. O tom, který směr je vlevo, rozhoduje prvek.
+        s pObou = ##class(%DynamicObject).%New()
+        s pObou.name         = "OBOUSMERNY_TISK"
+        s pObou.label        = "Obousměrný tisk"
+        s pObou.type         = "bool"
+        // „Obecné", ne „Tabulka spojů": rozhoduje o složení celé sestavy (jestli vyjde jedna stránka
+        // nebo dvě), ne o vzhledu jednoho prvku. Že se promítne i do tabulky, platí skoro o každém
+        // parametru téhle agendy (rozhodnutí Jan 31. 8.).
+        s pObou.group        = "Obecné"
+        s pObou.serverSide   = 1
+        s pObou.defaultValue = "false"
+        // S jedním směrem nemá co skládat a GetData ji ignoruje - nabízí se jen při obou směrech.
+        s pObou.visibleWhen  = "SMER_TISKU=Oba"
+        s pObou.description  = "Oba směry v jedné tabulce - spoje opačného směru se tisknou na druhé straně od zastávek. Vypnuto = každý směr na vlastní stránce."
 
-    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    q $$$OK
+        // Výlepy na zastávky (Jan 1. 10.): místo stránky za směr stránka za každou zastávku a směr,
+        // na které je ta zastávka zvýrazněná - na výlep tak jde i QR s adresou své zastávky.
+        // „Obecné" ze stejného důvodu jako obousměrný tisk: mění složení celé sestavy.
+        s pVyl = ##class(%DynamicObject).%New()
+        s pVyl.name         = "STRANKA_PRO_ZASTAVKU"
+        s pVyl.label        = "Stránka pro každou zastávku"
+        s pVyl.type         = "bool"
+        s pVyl.group        = "Obecné"
+        s pVyl.serverSide   = 1
+        s pVyl.defaultValue = "false"
+        s pVyl.description  = "Každá zastávka, kde spoje odjíždějí, dostane vlastní stránku za každý směr a je na ní zvýrazněná inverzně (bílé na černém). Zvýraznit zastávku a Zvýraznit tarifní číslo pak vyberou jen některé zastávky."
+
+        // ⚠️ **Turnusy ke spojům tu parametr NEJSOU** - je to volba prvku (šablony), stejně jako
+        // v legacy, kde to je nastavení sekce v návrháři sestav. Klient posílá `TURNUSY_KE_SPOJUM`
+        // podle prvku (jako `DEFINICE_SLOUPCU`), takže dotaz do modulu turnusů (40-550 ms na linku)
+        // se pořád nespustí nikomu, kdo turnusy netiskne. Rozhodnutí Jan 28. 8.: turnus je provozní
+        // věc dopravce, ne informace pro cestujícího - patří k sestavě, ne k volbám tisku.
+
+        // Název pro MHD. Legacy ho bere jen u městských linek, které to mají zapnuté - tahle volba
+        // umí navíc i to vypnout (stejně jako u vývěsky). Výchozí zapnuto = chování starého modulu.
+        s pMhd = ##class(%DynamicObject).%New()
+        s pMhd.name         = "NAZEV_PRO_MHD"
+        s pMhd.label        = "Použít název pro MHD"
+        s pMhd.type         = "bool"
+        s pMhd.group        = "Obecné"
+        s pMhd.serverSide   = 1
+        s pMhd.defaultValue = "true"
+        s pMhd.description  = "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD. Starý modul ho tiskne u městských linek, které to mají zapnuté. Vypnuto = všude název podle CIS."
+
+        s pZvT = ##class(%DynamicObject).%New()
+        s pZvT.name         = "ZVYRAZNIT_TC"
+        s pZvT.label        = "Zvýraznit tarifní číslo"
+        s pZvT.type         = "string"
+        s pZvT.group        = "Tabulka spojů"
+        s pZvT.serverSide   = 1
+        s pZvT.description  = "Tarifní číslo řádku, který se má zvýraznit. Spolu se zastávkou zúží zvýraznění na ten jediný řádek."
+
+
+        // ── pořadí, v jakém je uvidí uživatel ────────────────────────────────────────
+        // Skupiny se v tabu Parametry řadí podle **prvního výskytu** v tomhle poli, ne abecedně, takže
+        // se sem pushuje najednou a v pořadí, které má platit. „Obecné" je první schválně - je to
+        // nastavení celé sestavy, ne jednoho prvku (týž důvod i tvar jako u zastávkového JŘ).
+        // ⚠️ Každý parametr musí mít `group`. Bez ní ho `AddParamGroups` shodí do vlastní skupiny
+        // „Parametry sestavy" a uživatel uvidí osamocenou položku - přesně to potkalo `DELENI_SLOUPCU`
+        // do 31. 8. (`L12`).
+        // Obecné. Tvar názvu zastávky: ⚠️ **výchozí „Plný CIS", jinak než u vývěsky** („Zkrácený") -
+        // starý linkový tisk nechává prázdnou část obce jako dvojčárku („Český Krumlov,,aut. nádraží"),
+        // starý vývěskový modul ji srážel; parita je přednější (potvrzeno Janem 24. 8.).
+        d arr.%Push(..ParametrTvaruNazvuZastavky("Plný CIS"))
+        d arr.%Push(pMhd)
+        d arr.%Push(..ParametrSmeruTisku())
+        d arr.%Push(pObou)
+        d arr.%Push(pVyl)
+        d arr.%Push(..ParametrPoctuStran())
+        d arr.%Push(p)         // Tabulka spojů - dělení spojů je nejdůležitější volba agendy
+        d arr.%Push(pTc)
+        d arr.%Push(..ParametrZastavkyBezZastaveni())
+        d arr.%Push(pZon)
+        // Barvy spojů - checkbox jako u vývěsky, viz BaseAgenda.VolbaBarevSpoju
+        d ..AddBoolParam(arr, "TISKNOUT_BARVY_SPOJU", "Barvy spojů", 1, "Tabulka spojů", "Časy spoje se tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Vypnuto = celá tabulka černě.", 1)
+        d arr.%Push(..ParametrZvyrazneniZastavky())
+        d arr.%Push(pZvT)
+
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// Počet stran (#8785): sazba zmenší nejdřív poznámky, pak tabulku, aby se sestava vešla. Řeší ho
