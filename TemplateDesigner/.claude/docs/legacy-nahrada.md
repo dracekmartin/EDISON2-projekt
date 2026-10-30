@@ -799,9 +799,8 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
   tvary popisu platnosti a dva texty návrhu (`B193f`, viz changelog 23. 10.).
 - **Společné parametry JŘ** jsou od 30. 10. definované jednou v `Jr/Parametry.cls` (`B56` S2): sedm parametrů
   vývěsek, linkové parametry a tvar názvu zastávky. Agenda si je skládá v `GetParameters` sama, pořadí v panelu drží ona.
-- **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`, vývěsky AD i MHD; faktury smazané 30. 10.): návrhář je
-  nikde nenabízí a do 23. 10. při volání padaly (`B193f`). Od 30. 10. jsou v `BaseAgenda` nepovinné s prázdným
-  výchozím výsledkem a linkové agendy své prázdné kopie nemají. Zrušit, nebo napojit do vkládání tabulky.
+- **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`) jsou od 30. 10. zrušené i se čtením v návrháři
+  (`B56` S10, Jan): návrhář je nikde nenabízel a do 23. 10. při volání padaly (`B193f`). Hotové bloky pokryje `B66`.
 - **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (v `LinkovyJrAd` i `LinkovyJrMhd`);
   `RgbToHex` vedle `BaseAgenda.RgbNaHex` není kopie, viz „Opsané pod jiným jménem" níž.
 
@@ -884,7 +883,7 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
 - **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`) a S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`) hotové 30. 10.
   Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
-  Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky `AddAtribut`, `AddPoznamkaZastavky`, `AddZona`, `BuildOdjezd`, `BuildSkupinaDnu`, `ConvertSpecialniZnak`, `IntToHex2`, `RgbToHex`, `GetTableTemplate(s)`; linkové `BuildPoznamka`, `BuildSkupina`, `FormatCas`; AD `NazevLinky`, `NormalizLinku`, `PrvniLinka`, `CasHodnota`, `GetAvailableSkupiny`/`GetAvailableInstances`.
+  Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky `AddAtribut`, `AddPoznamkaZastavky`, `AddZona`, `BuildOdjezd`, `BuildSkupinaDnu`, `ConvertSpecialniZnak`, `IntToHex2`, `RgbToHex`; linkové `BuildPoznamka`, `BuildSkupina`, `FormatCas`; AD `NazevLinky`, `NormalizLinku`, `PrvniLinka`, `CasHodnota`, `GetAvailableSkupiny`/`GetAvailableInstances`.
   Pak sjednocení z odstavce výš (platnost, omezení 14 a 15).
   Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".
 - **Pojistky při přesunu kódu (S1 hotové 30. 10.):** pomocné třídy jsou v `Agendy/Jr/` a testy čtou zdrojáky přes `ZdrojeAgend`: kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy (přímé potomky `BaseAgenda`, jako registr).

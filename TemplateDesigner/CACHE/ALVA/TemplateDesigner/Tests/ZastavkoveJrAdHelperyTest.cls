@@ -1182,31 +1182,6 @@ Method TestPracovniDnyJakoSamostatnaZnacka()
 }
 
 /// Zkratka pro TestPlusZahrnujeNedeli - sedne spoj s platností `plk` do sloupce s dny `sloupecDny`?
-/// Předpřipravené tabulky agend (`GetTableTemplates` / `GetTableTemplate`) jdou zavolat a vrátí řádky.
-/// Do 23. 10. padalo každé volání na `<LIST>` (pomocná funkce četla JSON pole jako `$lb`) a nikdo si
-/// toho nevšiml, protože je návrhář nikde nenabízí. Zároveň hlídá, že tabulky nepoužívají vyřazený
-/// „Popis platnosti" (`B193f`).
-Method TestPredpripraveneTabulky()
-{
-	do ..SetupSys(.sys)
-	set pocet = 0
-	for cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" {
-		kill ^||ML
-		do $classmethod(cls, "GetTableTemplates", .sys)
-		set it = ##class(%DynamicArray).%FromJSON(^||ML("OUT",1)).%GetIterator()
-		while it.%GetNext(.k, .t) {
-			kill ^||ML
-			set ^||ML("IN","key") = t.key
-			do $classmethod(cls, "GetTableTemplate", .sys)
-			set def = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT",1), "{}"))
-			do $$$AssertTrue($isobject(def.rows) && (def.rows.%Size() > 0), cls_" "_t.key_": tabulka bez řádků")
-			do $$$AssertTrue(def.%ToJSON() '[ "POPIS_PLATNOSTI", cls_" "_t.key_": vyřazený Popis platnosti")
-			set pocet = pocet + 1
-		}
-	}
-	do $$$AssertTrue(pocet >= 4, "projito jen "_pocet_" předpřipravených tabulek")
-}
-
 Method Sedne(plk As %String, sloupecDny As %String) As %Boolean
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"

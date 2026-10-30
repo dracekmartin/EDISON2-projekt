@@ -49,7 +49,6 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Providers ─────────────────────────────────────────────────────────────
     public  IDataSchemaProvider    SchemaProvider        { get; }
     public  CacheAgendaProvider?   CacheProvider         { get; }
-    public  ITableTemplateProvider? TableTemplateProvider => CacheProvider;
 
     /// <summary>Datové MLRest připojení, které používá <see cref="CacheProvider"/> (a úložiště šablon).
     /// Drženo kvůli dev přepínání firem za běhu (<see cref="DevSwitchFirm"/>).</summary>

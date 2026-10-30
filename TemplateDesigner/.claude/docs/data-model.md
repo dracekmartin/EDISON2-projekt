@@ -181,7 +181,7 @@ interface IDataSchemaProvider {
 
 Implementace:
 - `JsonFileDataSchemaProvider` - načítá `schemas/*.schema.json` ze složky aplikace (offline fallback)
-- `CacheAgendaProvider` - volá Caché `AgendaAPI.GetSchema()` přes MLRest; implementuje i `ITableTemplateProvider`
+- `CacheAgendaProvider` - volá Caché `AgendaAPI.GetSchema()` přes MLRest
 - `CompositeDataSchemaProvider` - Caché primary + JSON fallback; vrátí výsledek prvního úspěšného
 - Wiring: `Config/CacheSchemaWiring.TryCreate(AppSettings)` → vrátí null pokud Caché není nakonfigurováno
 

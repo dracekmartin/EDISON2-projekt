@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-30 (19) - Předpřipravené tabulky zrušené (`B56` S10)
+
+Vývěsky AD i MHD nabízely dvě hotové pevné tabulky („Záhlaví linky", „Platnost a dopravce") s popisky a poli, návrhář je ale nikde nenabízel; tlačítko „Ze šablony..." v editoru tabulky, které README popisovalo, v návrháři už není.
+Přesto se podle historie čtyřikrát udržovaly ve dvou kopiích a do 23. 10. při volání padaly.
+Zrušené jsou metody v obou vývěskách, výchozí verze a pomocná metoda v základu agend, čtení v návrháři (rozhraní, dvě mezipaměti, převod odpovědi) i jejich testy (rozhodnutí Jan 30. 10.).
+Hotové bloky do šablony má pokrýt `B66` (vlastní bloky prvků), obecněji než pevná tabulka ze serveru.
+Uživatel nic nepozná.
+Ověřeno: metoda tabulek na serveru už neexistuje (volání vrátí „doesn't exist"), snímek výstupu agend beze změny (42 souborů), Caché testy 269/269, .NET testy 2542/2542, integrační testy 48/48.
+
 ## 2026-10-30 (18) - Ukázková agenda Faktury smazaná (`B56` S11)
 
 Agenda Faktury vznikla na začátku jako ukázka a neměla zdroj dat; uživatelům se nenabízela a testy agend ji musely vynechávat (rozhodnutí Jan 30. 10.).

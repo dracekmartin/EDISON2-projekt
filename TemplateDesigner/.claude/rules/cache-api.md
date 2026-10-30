@@ -75,8 +75,9 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
 
 - **Povinné:** `GetSchema` (nabídka dat), `GetData` (stránky pro tisk), `GetMockData` (ukázka pro náhled bez instance;
   agendy JŘ posílají prázdnou stránku s výzvou vybrat linku).
-- **Volitelné**, výchozí prázdný výsledek: `GetParameters`, `GetAvailableSkupiny`, `GetAvailableInstances`,
-  `GetTableTemplates` / `GetTableTemplate` (předpřipravené tabulky - návrhář je nevolá, zrušit nebo napojit rozhodne `B56`).
+- **Volitelné**, výchozí prázdný výsledek: `GetParameters`, `GetAvailableSkupiny`, `GetAvailableInstances`.
+  Předpřipravené tabulky (`GetTableTemplates` / `GetTableTemplate`) jsou od 30. 10. zrušené - návrhář je nikde nenabízel
+  (`B56` S10); hotové bloky do šablony má pokrýt `B66`.
 - **Parametry třídy** - `AgendaVariantCode` (stabilní persistovaný klíč), `Agenda` / `Variant` s labely, `ElementKind`,
   `InstanceParamName`, `CustomColumns`, `VariantyTras`, `RozdilyVerzi`, `Released` (bez něj se agenda uživatelům nenabízí).
 - **Každá metoda s `ByRef sys`** dodržuje pravidla 14-15 níž, nebo jen přesměruje na metodu jiné agendy
@@ -249,16 +250,11 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
 | Anglický název v kódu | Český ekvivalent | Business význam | Příklad |
 |---|---|---|---|
 | `GetSchema` | GetSchema | Vrátí **definici dostupných dat** agendy - co existuje jako pole, ne konkrétní hodnoty | `{ fields: [{name:"CISLO_LINKY",...}], fieldCollections: [...] }` |
-| `GetTableTemplates` | GetTableTemplates | Seznam **předpřipravených tabulek**; volitelné, návrhář je dnes nevolá | `[{key:"ZAHLAVI_LINKY", label:"Záhlaví linky"}]` |
-| `GetTableTemplate` | GetTableTemplate | Jedna **předpřipravená tabulka** - sloupce + předvyplněné řádky; volitelné, nevolá se | `{ columns:[...], rows:[{cells:[{content:"{CISLO_LINKY}"}]}] }` |
 | `GetData` | GetData | Vrátí **reálná data z DB** pro tisk; volaná print enginem za běhu | `{ CISLO_LINKY:"42", NAZEV:"Praha–Brno" }` + kolekce řádků |
 | `GetMockData` | GetMockData | Vrátí **ukázku pro náhled** bez vybrané instance | stejná struktura jako GetData; agendy JŘ posílají prázdnou stránku s výzvou vybrat linku |
 | `fields` | skalární pole | Pole agendy kde každá hodnota existuje **právě jednou** na celou sestavu | `CISLO_LINKY`, `POPIS_DOPRAVCE`, `DATUM_PLATNOSTI_OD` |
 | `fieldCollections` | tabulkové kolekce | Kolekce sad polí kde každá kolekce tvoří **seznam řádků** - zdroj dat pro Dynamic tabulku | kolekce `Zastávky` obsahuje pole `POPIS_ZASTAVKA`, `CAS_ODJEZDU`… |
 | `collectionKey` | klíč kolekce | Identifikátor kolekce řádků v `fieldCollections`; designer ho zobrazuje jako volbu DataSource Dynamic tabulky | `"ZASTAVKY"`, `"SPOJE"` |
-| `key` (v GetTableTemplates) | klíč šablony | Interní identifikátor Fixed šablony; předává se jako parametr do `GetTableTemplate` | `"ZAHLAVI_LINKY"`, `"PLATNOST_DOPRAVCE"` |
-
-**Konvence klíčů šablon tabulek:** česky, velkými písmeny, podtržítko jako oddělovač, bez prefixu třídy/agendy. Příklady: `ZAHLAVI_LINKY`, `PLATNOST_DOPRAVCE`.
 
 **Konvence collectionKey:** česky, velkými písmeny, množné číslo, podtržítko jako oddělovač. Příklady: `ZASTAVKY`, `SPOJE`, `POLOZKY_FAKTURY`.
 

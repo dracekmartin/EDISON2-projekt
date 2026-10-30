@@ -20,7 +20,7 @@ namespace TemplateDesigner.Serialization;
 /// Rychlé/cachované lookupy (`GetParameters`, opakované `GetSchema`) sync OK. Nová agenda: neplánuj
 /// `GetData` přímo z UI threadu.
 /// </summary>
-public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
+public class CacheAgendaProvider : IDataSchemaProvider
 {
     private readonly MLRest _mlRest;
 
@@ -31,9 +31,6 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
     // Cache pro opakované volání
     private readonly Dictionary<string, DataSchema>                  _schemaCache     = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, TableTemplateDefinition?>    _templateCache   = new(StringComparer.OrdinalIgnoreCase);
-    // Klíč: agendaCode nebo "" pro "všechny agendy" (null argument)
-    private readonly Dictionary<string, List<TableTemplateInfo>>     _templatesCache  = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DataContext?>                _mockDataCache   = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<TemplateParameter>>     _parametersCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, IReadOnlyList<AgendaSkupina>> _skupinyCache   = new(StringComparer.OrdinalIgnoreCase);
@@ -69,14 +66,12 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         OnReadError?.Invoke($"⚠ Databáze - {context} selhalo: {detail}");
     }
 
-    /// <summary>Vyčistí všechny cache - příští čtení (schema/parametry/mock/šablony) půjde znovu
+    /// <summary>Vyčistí všechny cache - příští čtení (schema/parametry/mock) půjde znovu
     /// na Caché. Pro „Obnovit data": data změněná na serveru se projeví bez restartu aplikace.
     /// (GetData cachovaný není - refetch řídí ViewModel voláním GetData znovu.)</summary>
     public void InvalidateCaches()
     {
         _schemaCache.Clear();
-        _templateCache.Clear();
-        _templatesCache.Clear();
         _mockDataCache.Clear();
         _parametersCache.Clear();
         _skupinyCache.Clear();
@@ -140,92 +135,6 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
     }
 
-    // ─── ITableTemplateProvider ───────────────────────────────────────────────
-
-    public IReadOnlyList<TableTemplateInfo> GetAvailableTemplates(string? agendaCode = null)
-    {
-        string cacheKey = agendaCode ?? "";
-        if (_templatesCache.TryGetValue(cacheKey, out var cached))
-            return cached;
-
-        var result = new List<TableTemplateInfo>();
-
-        foreach (var (code, cacheClass) in _classMap)
-        {
-            if (agendaCode is not null &&
-                !code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase))
-                continue;
-
-            // Agenda bez Caché třídy (GENERAL) - žádné Fixed šablony
-            if (string.IsNullOrWhiteSpace(cacheClass)) continue;
-
-            try
-            {
-                CVar cvResult = _mlRest.Query(cacheClass, "GetTableTemplates", new CVar());
-
-                if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
-                {
-                    Debug.WriteLine($"[AgendaProvider] GetTableTemplates error: {_mlRest.RestStatus.Message}");
-                    continue;
-                }
-
-                string? json = cvResult["1"]?.Value?.ToString();
-                if (string.IsNullOrEmpty(json)) continue;
-
-                var templates = JsonSerializer.Deserialize<List<TableTemplateInfo>>(json, JsonOpts);
-                if (templates is not null)
-                    result.AddRange(templates);
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[AgendaProvider] GetTableTemplates exception ({code}): {ex.Message}");
-            }
-        }
-
-        _templatesCache[cacheKey] = result;
-        return result;
-    }
-
-    public TableTemplateDefinition? GetTemplate(string key)
-    {
-        if (_templateCache.TryGetValue(key, out var cached))
-            return cached;
-
-        // Zkus každou třídu dokud nenajdeme šablonu
-        foreach (var cacheClass in _classMap.Values)
-        {
-            // Agenda bez Caché třídy (GENERAL) - žádné šablony
-            if (string.IsNullOrWhiteSpace(cacheClass)) continue;
-
-            try
-            {
-                var inVar = new CVar();
-                inVar["key"] = new CVar(key);
-
-                CVar result = _mlRest.Query(cacheClass, "GetTableTemplate", inVar);
-
-                if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
-                    continue;
-
-                string? json = result["1"]?.Value?.ToString();
-                if (string.IsNullOrEmpty(json)) continue;
-
-                var def = ParseTableTemplate(json);
-                if (def is not null)
-                {
-                    _templateCache[key] = def;
-                    return def;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[AgendaProvider] GetTableTemplate exception: {ex.Message}");
-            }
-        }
-
-        _templateCache[key] = null;
-        return null;
-    }
 
     // ─── Parametry sestavy ───────────────────────────────────────────────────
 
@@ -779,88 +688,6 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         "boolean"  => FieldDataType.Boolean,
         "color"    => FieldDataType.Color,
         _          => FieldDataType.Text
-    };
-
-    /// <summary>Internal kvůli testům wire kontraktu předdefinovaného layoutu tabulky.</summary>
-    internal static TableTemplateDefinition? ParseTableTemplate(string json)
-    {
-        try
-        {
-            var node = JsonNode.Parse(json);
-            if (node is null) return null;
-
-            var def = new TableTemplateDefinition();
-
-            var cols = node["columns"]?.AsArray();
-            if (cols is not null)
-                foreach (var c in cols)
-                {
-                    if (c is null) continue;
-                    def.Columns.Add(new TableColumn
-                    {
-                        Header    = c["header"]?.GetValue<string>() ?? "",
-                        Width     = c["width"]?.GetValue<float>() ?? 30f,
-                        WidthMode = c["widthMode"]?.GetValue<string>()?.ToLower() == "percent"
-                                        ? ColumnWidthMode.Percent : ColumnWidthMode.Mm,
-                        Field     = c["field"]?.GetValue<string>(),
-                        Format    = c["format"]?.GetValue<string>(),
-                        Alignment = ParseAlignment(c["alignment"]?.GetValue<string>())
-                    });
-                }
-
-            var rows = node["rows"]?.AsArray();
-            if (rows is not null)
-                foreach (var r in rows)
-                {
-                    if (r is null) continue;
-                    var row = new TableRow
-                    {
-                        BackgroundColor      = r["backgroundColor"]?.GetValue<string>(),
-                        VisibilityExpression = r["visibilityExpression"]?.GetValue<string>()
-                    };
-
-                    var cells = r["cells"]?.AsArray();
-                    if (cells is not null)
-                        foreach (var cell in cells)
-                        {
-                            if (cell is null) continue;
-                            var fontWeight = cell["fontWeight"]?.GetValue<string>();
-                            var textColor  = cell["textColor"]?.GetValue<string>();
-                            var bgColor    = cell["backgroundColor"]?.GetValue<string>();
-                            TextStyle? cellStyle = (fontWeight is not null || textColor is not null || bgColor is not null)
-                                ? new TextStyle
-                                {
-                                    Bold = fontWeight == "Bold" ? true : null,
-                                    TextColor = textColor,
-                                    BackgroundColor = bgColor,
-                                }
-                                : null;
-
-                            row.Cells.Add(new TableCell
-                            {
-                                Content = cell["content"]?.GetValue<string>() ?? "",
-                                Format  = cell["format"]?.GetValue<string>(),
-                                Style   = cellStyle,
-                            });
-                        }
-
-                    def.Rows.Add(row);
-                }
-
-            return def;
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"[AgendaProvider] ParseTableTemplate exception: {ex.Message}");
-            return null;
-        }
-    }
-
-    private static TextHorizontalAlignment ParseAlignment(string? s) => s?.ToLower() switch
-    {
-        "center" => TextHorizontalAlignment.Center,
-        "right"  => TextHorizontalAlignment.Right,
-        _        => TextHorizontalAlignment.Left
     };
 }
 

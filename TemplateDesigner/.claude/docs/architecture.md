@@ -33,7 +33,7 @@ TemplateDesigner/
   TemplateSerializer.cs             - JSON ukládání a načítání šablony + sekcí
   SectionTemplateManager.cs         - správa custom šablon sekcí (file-based V1, připraveno na DB V2)
   JsonFileDataSchemaProvider.cs     - načítání *.schema.json ze složky schemas/
-  CacheAgendaProvider.cs            - IDataSchemaProvider + ITableTemplateProvider přes MLRest/AgendaAPI
+  CacheAgendaProvider.cs            - IDataSchemaProvider přes MLRest (metody agend)
   CompositeDataSchemaProvider.cs    - Caché primary + JSON fallback
 
 /Config

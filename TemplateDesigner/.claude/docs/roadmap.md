@@ -19,7 +19,7 @@ Sdílený kód jde do pomocných tříd mimo dědičnost agend ([`R8`](architekt
 Postup, pojistky a snímek výstupu jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md): jeden krok = jeden commit, snímek před i po.
 Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného, se při přesunu přejmenuje (`cache-api.md` pravidlo 5).
 Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a pravidlo druhého použití jsou v R8, měření v `legacy-nahrada.md §4`.
-**Fáze (Jan 30. 10.):** 1 struktura a pojistky (S1) → 2 popis agendy podle druhu výstupu (S2, S9, S10; pole pro QR čeká na vyhledávač) →
+**Fáze (Jan 30. 10.):** 1 struktura a pojistky (S1) → 2 popis agendy podle druhu výstupu (S2, S9, S10 hotové 30. 10.; pole pro QR čeká na vyhledávač) →
 3 výstup podle druhu (S3, S4) → 4 data podle zdroje (S5, S6, S8, S7) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje) →
 6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami.
 
@@ -33,8 +33,6 @@ Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a p
 - **S7 Hlavička linky** [M] **Jan** - číslo, platnost, typ JŘ a dopravce skládá každá agenda zvlášť, odtud čtyři tvary popisu platnosti.
   Rozhodnout, co z toho je vědomý rozdíl.
 - **S8 Platnost linky a omezení 14 a 15** [S] - sjednotit podle rozhodnutí z 30. 10. (`B194g` R2), tisk se nezmění.
-- **S10 Předpřipravené tabulky** [S] **Jan** - dvě hotové pevné tabulky vývěsek AD i MHD („Záhlaví linky", „Platnost a dopravce")
-  s popisky a poli; návrhář je nikde nenabízí. Zrušit (i nevolané čtení v návrháři), nebo napojit do vkládání tabulky.
 
 ### Převzato z backlogu - souvisí se sjednocením agend
 

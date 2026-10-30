@@ -27,7 +27,6 @@ public class ServerSideParamsDriftTests
         "LINKA_ID",           // klíč instance (posílá Instance Picker, ne parametr)
         "INSTANCE_ID",        // alias téhož
         "SKUPINA_LINEK_ID",   // skupina linek - session stav pickeru
-        "key",                // GetTableTemplate: klíč šablony tabulky
         "search",             // GetAvailableInstances: filtr pickeru
         "limit",              // GetAvailableInstances: strop počtu
         "DEFINICE_SLOUPCU",   // vlastní sloupce vývěsky - obsah šablony, ne parametr sestavy;

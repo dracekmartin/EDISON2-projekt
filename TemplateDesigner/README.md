@@ -140,19 +140,6 @@ Dvojklikem na tabulkový element se otevře **TableEditorDialog** se dvěma zál
   - **Datové pole sloupce** - ComboBox nabízí pole dostupná v dané kolekci; lze i ručně zadat
   - Při prvním otevření editoru bez sloupců se sloupce automaticky předvyplní z vybrané datové kolekce
 
-**Ze šablony... (Fixed mód):**
-
-Tlačítko "Ze šablony..." v záložce Sloupce umožňuje načíst celé rozvržení tabulky z předdefinovaných šablon uložených v Caché:
-
-1. Nastavte mód tabulky na **Pevná**
-2. Otevřete editor tabulky (dvojklik → tlačítko **Upravit sloupce / řádky...**)
-3. Klikněte na **Ze šablony...**
-4. Vyberte šablonu ze seznamu (např. "Záhlaví linky", "Platnost a dopravce") → **Použít**
-
-Šablona nahradí aktuální sloupce i řádky. Obsah buněk může obsahovat placeholdery (`{CISLO_LINKY}`, `{DATUM_OD}` apod.) - Print Engine je za běhu nahradí skutečnými daty.
-
-> Dostupné šablony jsou definovány v Caché metodou `GetTableTemplates` příslušné agendy. Tlačítko se zobrazí jen pokud je Caché připojeno.
-
 ### QR kódy a čárové kódy (BarcodeElement)
 
 Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:

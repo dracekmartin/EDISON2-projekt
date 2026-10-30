@@ -11,8 +11,9 @@ Include GENERAL
 /// Volitelné (výchozí = prázdný výsledek):
 /// - GetParameters       - parametry sestavy (panel parametrů, tiskový dialog)
 /// - GetAvailableSkupiny, GetAvailableInstances - výběr instancí (skupiny linek, linky)
-/// - GetTableTemplates, GetTableTemplate - předpřipravené tabulky; návrhář je dnes nevolá
-///   (zrušit, nebo napojit rozhodne `B56`, `legacy-nahrada.md §4`)
+///
+/// Předpřipravené tabulky (`GetTableTemplates` / `GetTableTemplate`) jsou od 30. 10. zrušené: návrhář
+/// je nikde nenabízel (`B56` S10). Hotové bloky do šablony má pokrýt `B66` (vlastní bloky prvků).
 ///
 /// Každá metoda s `ByRef sys` dodržuje vzor z `cache-api.md` (pravidla 14-15: `s err = ""`, `try`/`catch`
 /// s `$$$CatchErrRest`, `ret $$$OK`); hlídá ho `OsetreniChybAgendTests`. Vzorové agendy jsou JŘ.
@@ -98,34 +99,6 @@ Parameter InstanceLabelPlural As %String = "instance";
 /// fieldCollections = kolekce sad polí; každá kolekce tvoří zdroj řádků pro Dynamic tabulku
 ClassMethod GetSchema(ByRef sys As %String) As %Status [ Abstract ]
 {
-}
-
-/// Vrátí seznam předpřipravených tabulek agendy. Volitelné - návrhář je dnes nevolá.
-/// OUT[1] = JSON pole objektů:
-///   [ { "key": "ZAHLAVI_LINKY", "label": "Záhlaví linky" }, ... ]
-/// key = interní identifikátor; česky, velkými písmeny, podtržítko jako oddělovač
-ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
-{
-    s err = ""
-    try {
-        s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
-    }
-    catch (ex) { $$$CatchErrRest }
-    ret $$$OK
-}
-
-/// Vrátí definici jedné předpřipravené tabulky (sloupce + řádky). Volitelné - návrhář ji dnes nevolá.
-/// IN:  key = klíč tabulky (např. "ZAHLAVI_LINKY")
-/// OUT[1] = JSON objekt:
-///   { "columns": [...], "rows": [...] }
-ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
-{
-    s err = ""
-    try {
-        s ^||ML("OUT", $i(^||ML("OUT"))) = "{}"
-    }
-    catch (ex) { $$$CatchErrRest }
-    ret $$$OK
 }
 
 /// Vrátí data pro tisk: skalární hodnoty + kolekce řádků.
@@ -450,59 +423,6 @@ ClassMethod FormatDatum(horolog As %String) As %String
     i $g(horolog) = "" q ""
     s iso = $zd(horolog, 3)          // yyyy-mm-dd
     q $p(iso,"-",3)_"."_$p(iso,"-",2)_"."_$p(iso,"-",1)
-}
-
-/// Zapíše šablonu se dvěma sloupci (Položka | Hodnota) do OUT.
-/// rows = COS array ve formátu:
-///   [["Label 1", "{FIELD1}", "format"], ["Label 2", "{FIELD2}", "format"], ...]
-/// Třetí parametr (format) je volitelný.
-/// `rows` = JSON pole dvojic `[["Popisek", "{POLE}"(, "formát")], …]`, jak ho volající píšou.
-/// Do 23. 10. se četlo jako `$lb` seznam a každé volání padlo na `<LIST>`; nevšimlo si toho nic,
-/// protože předpřipravené tabulky návrhář nikde nenabízí.
-ClassMethod WriteTemplate2Col(rows As %DynamicArray)
-{
-    s def = ##class(%DynamicObject).%New()
-
-    // Sloupce
-    s cols = ##class(%DynamicArray).%New()
-    s c1 = ##class(%DynamicObject).%New()
-    s c1.header    = "Položka"
-    s c1.width     = 70
-    s c1.widthMode = "Mm"
-    s c1.alignment = "Left"
-    d cols.%Push(c1)
-    s c2 = ##class(%DynamicObject).%New()
-    s c2.header    = "Hodnota"
-    s c2.width     = 80
-    s c2.widthMode = "Mm"
-    s c2.alignment = "Left"
-    d cols.%Push(c2)
-    s def.columns = cols
-
-    // Řádky
-    s defRows = ##class(%DynamicArray).%New()
-    s it = rows.%GetIterator()
-    while it.%GetNext(.i, .pair) {
-        s row = ##class(%DynamicObject).%New()
-        s cells = ##class(%DynamicArray).%New()
-
-        s cell1 = ##class(%DynamicObject).%New()
-        d cell1.%Set("content", pair.%Get(0))
-        d cells.%Push(cell1)
-
-        s cell2 = ##class(%DynamicObject).%New()
-        d cell2.%Set("content", pair.%Get(1))
-        if pair.%Get(2) '= "" {
-            d cell2.%Set("format", pair.%Get(2))
-        }
-        d cells.%Push(cell2)
-
-        s row.cells = cells
-        d defRows.%Push(row)
-    }
-    s def.rows = defRows
-
-    s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
 }
 
 /// Tvar názvu zastávky pro tisk. Vstup je název z registru zastávek, kde jsou obec, část obce

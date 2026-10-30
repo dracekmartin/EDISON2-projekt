@@ -523,7 +523,7 @@ Reimplementace legacy `ALVA.TISKMHD.Data` větve `VolanoZ=JRMAIN`. **Pozn.: TD b
 je per-namespace, bez IdFa).**
 
 ### ✅ Hotovo a ověřeno (proti gold oracle `ALVA.TISKMHD.Data`)
-- **GetSchema/GetMockData/GetParameters/GetTableTemplates** - schema sdílené s MHD; default LINKA_ID
+- **GetSchema/GetMockData/GetParameters** - schema sdílené s MHD; default LINKA_ID
   = první linka firmy (dynamicky). GetMockData = živý náhled první linky firmy (DEV - viz dev tweaky).
 - **GetData fázový engine** čte `^JRL`/`^JRZ`:
   - Hlavička (CISLO_LINKY, POPIS_LINKY z "I", platnost z PATCH, aktuální zastávka/směr).

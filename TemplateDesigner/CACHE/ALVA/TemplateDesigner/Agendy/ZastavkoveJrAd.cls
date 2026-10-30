@@ -72,55 +72,6 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Vrátí seznam předpřipravených tabulek (návrhář je dnes nevolá, `BaseAgenda`).
-ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
-{
-    s err = ""
-    try {
-        s arr = ##class(%DynamicArray).%New()
-
-        s t1 = ##class(%DynamicObject).%New()
-        s t1.key   = "ZAHLAVI_LINKY"
-        s t1.label = "Záhlaví linky"
-        d arr.%Push(t1)
-
-        s t2 = ##class(%DynamicObject).%New()
-        s t2.key   = "PLATNOST_DOPRAVCE"
-        s t2.label = "Platnost a dopravce"
-        d arr.%Push(t2)
-
-        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    } catch (ex) { $$$CatchErrRest }
-    ret $$$OK
-}
-
-/// Vrátí definici předpřipravené tabulky.
-ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
-{
-    s err = ""
-    try {
-        s key = $g(^||ML("IN", "key"))
-
-        if key = "ZAHLAVI_LINKY" {
-            d ..WriteTemplate2Col([
-                ["Linka",       "{CISLO_LINKY}"],
-                ["Označení",    "{LOKALNI_OZNACENI_LINKY}"],
-                ["Směr",        "{KONECNA_ZASTAVKA}"],
-                ["Zastávka",    "{POPIS_ZASTAVKA}"],
-                ["Platnost",    "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"]
-            ])
-        }
-        elseif key = "PLATNOST_DOPRAVCE" {
-            d ..WriteTemplate2Col([
-                ["Platnost",  "Platí od {DATUM_PLATNOSTI_OD} do {DATUM_PLATNOSTI_DO}"],
-                ["Dopravce",  "{POPIS_DOPRAVCE}"],
-                ["Typ JR",    "{TYP_JR}"]
-            ])
-        }
-    } catch (ex) { $$$CatchErrRest }
-    ret $$$OK
-}
-
 /// Vrátí parametry sestavy. Instance AD je určená skupinou linek + linkou (^JRL(sku,lin)).
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {

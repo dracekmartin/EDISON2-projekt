@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S10** Předpřipravené tabulky zrušené (hotovo 30. 10., changelog 2026-10-30 (19), rozhodnutí Jan 30. 10.): dvě pevné
+  tabulky vývěsek AD i MHD, výchozí metody v základu agend, nevolané čtení v návrháři a jejich testy. Návrhář je nikde
+  nenabízel; hotové bloky do šablony má pokrýt `B66`.
+
 - **S11** Ukázková agenda Faktury smazaná (hotovo 30. 10., changelog 2026-10-30 (18), rozhodnutí Jan 30. 10.): neměla zdroj
   dat, uživatelům se nenabízela a testy agend ji musely vynechávat. Agenda bez linek přijde s převodem Report generátoru
   a postaví se podle pravidel agend.
