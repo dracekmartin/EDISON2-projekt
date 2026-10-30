@@ -405,6 +405,9 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 3. Nic neregistrovat ručně - agendu najde auto-discovery (`AgendyRegistr.ListAgendy`); v UI se nabízí až s `Released = 1`
 4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
    - `GetMockData` vrací JSON: `{ "values": { "POLE": "hodnota", ... }, "rows": { "KLIC": [ {...}, ... ] } }`
+5. Linku s daty doplnit do `KontraktAgendTest.LinkyAgend` - test kontraktu na ní ověří, že data posílají
+   každé nabízené pole. Položku dat mimo nabídku (čte ji prvek, ne uživatel) zapsat do `PolozkyMimoNabidku`
+   s druhem; jinak test spadne, protože nevíme, kdo ji čte.
 
 ---
 

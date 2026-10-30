@@ -1,5 +1,20 @@
 ﻿# Changelog
 
+## 2026-10-30 (4) - Data agendy odpovídají její nabídce dat (`B194f` G1)
+
+Uživatel v návrháři vybírá pole z nabídky dat agendy.
+Pole, které agenda nabízí a v datech nepošle, by vytisklo prázdno, a nic to dosud nehlídalo.
+`KontraktAgendTest.TestDataOdpovidajiNabidce` pro každou agendu z registru načte data linek testovacích sad a porovná je s nabídkou oběma směry.
+Ukázková data agend jsou záměrně prázdná („vyberte linku"), proto se ověřuje na skutečných linkách.
+Položky, které data posílají mimo nabídku, mají v seznamu `PolozkyMimoNabidku` druh: čte je prvek, panel parametrů, posílají se kvůli starým šablonám, nebo je nečte nic.
+.NET test `PolozkyMimoNabidkuTests` hlídá, že položku označenou „čte ji prvek" kód návrháře opravdu čte.
+Měření našlo tři položky, které nečte nic (dopravci po provozovnách, dvě nastavení prázdninových značek); jestli je přestat posílat, rozhodne Jan.
+Agenda bez linky s daty test shodí, takže nová agenda bez pokrytí neprojde.
+Definice parametru smí mít jen klíče, které návrhář čte: Faktury posílaly výchozí hodnotu pod `default` a panel ji nenastavil, opraveno na `defaultValue`.
+Seznam linek sdílí s testem i snímek výstupu agend; snímek se změnil jen v parametrech Faktur.
+Obě nové kontroly spadly na dočasně vyřazené položce a výjimce, oprava Faktur ověřena voláním `GetParameters` na serveru.
+Ověřeno: Caché testy návrháře 271/271 (sada trvá o 13 s déle), .NET testy 2520/2520.
+
 ## 2026-10-30 (3) - Testy poznají linku, která zmizela z testovacích dat
 
 Z dat dev serveru zmizely linky CB_GWBUS 0320118 a 0320113 a všech 268 Caché testů dál hlásilo úspěch.

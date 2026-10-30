@@ -46,14 +46,12 @@ Vše hotové nebo rozhodnuté (27. 10.) - viz `roadmap-archive.md`, `B194` A1-A5
 Dnes testy hlídají hlavně popisky. Bez nich se po sloučení kódu (`B56`) i po každé další agendě rozejde
 totéž znovu. Pořadí podle přínosu:
 
-- **G1 Kontraktový Caché test přes `AgendyRegistr.ListAgendy`** [M]. Každá agenda včetně rozdílového:
-  `GetSchema`/`GetParameters`/`GetMockData` bez chyby; pole schématu jsou v ukázce i v datech (nebo na
-  seznamu výjimek); každá kolekce dat je ve schématu; jedinečný `AgendaVariantCode`; `ElementKind` z {"",
-  STOP, LINE}; jen známé klíče definice parametru (Faktury mají `default` místo `defaultValue`); výchozí
-  hodnota enumu mezi volbami; „Obecné" první; `DUVOD_PRAZDNE` u linky bez dat. Pátou agendu pokryje sám.
-  **Malá podoba hotová 29. 10.** (`KontraktAgendTest`): kontrakt bez chyby a s platným JSON, jedinečný kód,
-  druh prvků, výchozí volba mezi volbami, „Obecné" první. Zbývá: pole schématu v ukázce a datech, kolekce
-  ve schématu, známé klíče definice parametru, `DUVOD_PRAZDNE`.
+- **Zbytky dat agend** [S] **Jan** (nález `G1` 30. 10.). Vývěska AD posílá tři položky, které nabídka nemá
+  a návrhář nečte: kolekci `DOPRAVCI` (provozovny, z nabídky skryté 1. 9., `B112` vyhozené 4. 9.)
+  a `NZ_KONFIG` s `NEVYPISOVAT_ZNACKY_SLOUPCU` (editor sloupců je přestal číst 10. 8., nahradily je hotové
+  vzory `PRESETY_SLOUPCU`). V `KontraktAgendTest.PolozkyMimoNabidku` mají druh `zbytek`. Návrh: přestat
+  je posílat a smazat zastaralé komentáře u nich (`ZastavkoveJrAd` u skalárů dopravce, `BuildDopravci`,
+  NZ konfigurace). Šablona je použít nemůže, v nabídce nejsou; snímek výstupu se tím vědomě změní.
 - **G3 Jeden popisek = jeden klíč napříč agendami JŘ** [S]. Chytí `D1` a `D3` (dnes se hlídá jen stejný klíč).
 - **G4 Ban list i na nápovědy, části slov a titulky oken** [S]. Odtud „nástupiště" (`P7`), „engine" (`E7`),
   „Tučně" uvnitř popisku (`E10`), „Linkový JŘ - nastavení" (`E2`).
@@ -103,7 +101,8 @@ totéž znovu. Pořadí podle přínosu:
 **Připravenost na `B56`** (revize 28. 10., čtení kódu, na serveru nic nespuštěno):
 
 - **Nutné před prvním krokem: splněno 29. 10.** (G1 malá podoba, G2, G7, G8 a snímek výstupu), 30. 10.
-  doplněno hlídání linek z testů (`TestovaciLinkyTest`) a výměna linky, která z dat zmizela.
+  doplněno hlídání linek z testů (`TestovaciLinkyTest`), výměna linky, která z dat zmizela, a celé G1
+  (data agendy odpovídají nabídce, známé klíče parametrů).
   Ostatní G a R jsou užitečné, ale bez nich slučování tisk tiše nerozbije.
 - **Snímek výstupu je sonda, ne test** (pravidlo o testech závislých na stroji), sejmutý znovu 30. 10.: schéma,
   parametry a ukázka všech agend z registru a `GetData` linek ze sad testů (`ZastavkoveJrAdSadaTest.Sada`,
@@ -165,7 +164,8 @@ totéž znovu. Pořadí podle přínosu:
   „Automaticky (dle linky)" jednotně jako první volba; společné definice (tvar názvu, směr, počet stran,
   zvýraznění zastávky) mají stejný klíč i popisek; `serverSide` sedí oběma směry.
 - Data: obě čísla linky ve všech agendách pod stejným klíčem i popiskem; kolekce `ZASTAVKY`, `SKUPINY_DNU`,
-  `POZNAMKY` shodné; datum dd.mm.rrrr a časy HH:MM jednotně; každé pole schématu agenda opravdu posílá.
+  `POZNAMKY` shodné; datum dd.mm.rrrr a časy HH:MM jednotně; každé pole schématu agenda opravdu posílá
+  (od 30. 10. hlídá `KontraktAgendTest.TestDataOdpovidajiNabidce`).
 - Tisk: texty dnů v týdnu a kroužkové číslice, piktogram bezbariéru, kola a místenka v AD, kategorie
   poznámek linky jsou všude stejné.
 - Aplikace: paleta a nabídka prvků se řídí druhem agendy z registru; tiskový dialog je jeden obecný;

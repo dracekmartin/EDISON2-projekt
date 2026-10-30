@@ -24,25 +24,10 @@ ClassMethod Seznam(ByRef sys As %String) As %Status
 				set volani($increment(volani)) = a.code_"-"_metoda_"~"_a.cacheClass_"~"_metoda_"~~~"
 			}
 		}
-		set ag = "ALVA.TemplateDesigner.Agendy."
-		do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).Sada(.sada)
-		for i=1:1:$get(sada) {
-			do ..PridejAd(.volani, "ZASTAVKOVY_JR_AD", ag_"ZastavkoveJrAd", sada(i))
-		}
-		do ##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).Sada(.sada)
-		for i=1:1:$get(sada) {
-			do ..PridejAd(.volani, "LINKOVY_JR_AD", ag_"LinkovyJrAd", sada(i))
-		}
-		// Porovnání verzí: táž dvojice jako spuštění z Porovnání linek (`SpusteniPdfNaostro`).
-		set volani($increment(volani)) = "LINKOVY_JR_AD_ROZDILOVY-CB_CSADAD-0380760~"_ag_"LinkovyJrAdRozdilovy~GetData~~CB_CSADAD~SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760"
-		// Zastávkový MHD: linky zlatého odtisku (`ZastavkoveJrMhdGoldTest`).
-		for lin = 1001, 1003, 1006 {
-			set volani($increment(volani)) = "ZASTAVKOVY_JR_MHD-CB_DP-"_lin_"~"_ag_"ZastavkoveJrMhd~GetData~CB_DP~CB_DP~LINKA_ID="_lin
-		}
-		set linky = ##class(ALVA.TemplateDesigner.Tests.LinkovyJrMhdTest).#LINKY
-		for i=1:1:$length(linky, ",") {
-			set idfa = $piece($piece(linky, ",", i), ":", 1), lin = $piece($piece(linky, ",", i), ":", 2)
-			set volani($increment(volani)) = "LINKOVY_JR_MHD-"_idfa_"-"_lin_"~"_ag_"LinkovyJrMhd~GetData~"_idfa_"~"_idfa_"~LINKA_ID="_lin
+		// Data linek: týž seznam, na kterém kontrakt hlídá, že data odpovídají nabídce.
+		do ##class(ALVA.TemplateDesigner.Tests.KontraktAgendTest).LinkyAgend(.data)
+		for i=1:1:$get(data) {
+			set volani($increment(volani)) = $piece(data(i), "~", 2, 3)_"~GetData~"_$piece(data(i), "~", 4, 6)
 		}
 		for i=1:1:$get(volani) {
 			set ^||ML("OUT", i) = volani(i)
@@ -50,13 +35,6 @@ ClassMethod Seznam(ByRef sys As %String) As %Status
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret $$$OK
-}
-
-/// Položka sady AD („firma~skupina~linka~…") jako volání GetData, firma testů jako v sadových testech.
-ClassMethod PridejAd(ByRef volani, kod As %String, trida As %String, polozka As %String)
-{
-	set db = $piece(polozka, "~", 1), sku = $piece(polozka, "~", 2), lin = $piece(polozka, "~", 3)
-	set volani($increment(volani)) = kod_"-"_db_"-"_lin_"~"_trida_"~GetData~~"_db_"~SKUPINA_LINEK_ID="_sku_";LINKA_ID="_lin
 }
 
 /// Jedno volání ze seznamu. IN: trida, metoda, idfa, db, vstup. OUT = výstup agendy beze změny;

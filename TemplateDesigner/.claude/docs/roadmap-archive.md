@@ -9,6 +9,12 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **G1** Kontraktový Caché test přes registr agend (malá podoba 29. 10., celý 30. 10., changelog
+  2026-10-29 (2) a 2026-10-30 (4)): `KontraktAgendTest` hlídá i to, že data agendy odpovídají nabídce
+  dat, a jen známé klíče definice parametru. Hlášku „linka nemá data" dál hlídá ruční `DuvodPrazdnehoTest`:
+  obecná verze by pro každou agendu potřebovala linku bez dat, kterou registr nezná.
+- **Hlídání linek z testů** (30. 10., changelog 2026-10-30 (3)): `TestovaciLinkyTest`, výměna CB_GWBUS
+  0320118 a 0320113, které z dat zmizely.
 - **Snímek výstupu všech agend** před `B56` (hotovo 29. 10., changelog 2026-10-29 (6)): sonda
   `SnimekAgendProbe` + `SnimekAgendNaostro`, 45 souborů; jak spustit v `konzistence-agend-jr.md §7`.
 - **G2** Stejnojmenný parametr je ve všech agendách týž (hotovo 29. 10., changelog 2026-10-29 (5)):

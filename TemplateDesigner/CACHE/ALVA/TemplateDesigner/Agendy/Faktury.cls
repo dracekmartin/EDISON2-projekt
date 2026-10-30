@@ -152,7 +152,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s pFormat.label = "Formát částek"
     s pFormat.type  = "enum"
     s pFormat.group = "Obecné"
-    d pFormat.%Set("default", "N2")
+    s pFormat.defaultValue = "N2"
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("N2")
     d opts.%Push("N0")
