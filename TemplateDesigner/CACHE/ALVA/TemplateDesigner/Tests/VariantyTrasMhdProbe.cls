@@ -153,7 +153,7 @@ ClassMethod Rozbor(ByRef sys As %String, LinkaID As %String, ByRef v)
                 s stav = "S"
             }
             i stav '= "" s spoj(SmerID,SpojID,BodID) = $lb(stav, cas, jeKonecny)
-            // Fáze 4 bere čas přes `cas > casOdjezdu` s prázdným startem, takže odjezd v 0:00 vynechá.
+            // Odjezd v 0:00 fáze 4 do 30. 10. vynechávala (čas hledala jako maximum od prázdného začátku).
             i nula && (+cas = 0) && 'jeKonecny s v("pulnoc",SpojID,BodID) = SmerID
         }
     }

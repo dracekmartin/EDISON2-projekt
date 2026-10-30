@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-30 (48) - Odjezd v 0:00 na vývěsce MHD
+
+Vývěska MHD vynechávala odjezd přesně v 0:00: čas spoje se hledal jako maximum od prázdného začátku a 0 není větší než nic.
+Na lince 53 CB_DP chyběl odjezd z Nádraží v obou směrech, přitom na další zastávce vývěska ukazovala 0:01.
+Starý tisk má tutéž chybu (oracle: legacy 402 odjezdů, my teď 406, rozdíl jsou jen tyto čtyři), takže je to vědomý rozdíl proti starému modulu (`legacy-nahrada.md` P3).
+Našla ho sonda variant tras MHD (`Tests/VariantyTrasMhdProbe.cls`); z prvních 100 linek CB_DP se to týká linek 53 a 59.
+Ověřeno: Caché testy zastávkového JŘ MHD 20/20 včetně nového `TestOdjezdVPulnoc` (před opravou padal), zlaté otisky i parita se starým tiskem na linkách 1001/1003/1006 beze změny, voláním oracle na lince 53.
+
 ## 2026-10-30 (47) - Přísnější testy toho, co je zapsané dvakrát (sjednocení B1-B9)
 
 Co zůstává na dvou místech (formulář v Caché × panel v kódu, server × klient, kanon × seznam zákazů), teď hlídají testy:

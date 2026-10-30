@@ -522,6 +522,7 @@ Nevyžadují akci; jen aby se to nepletlo s „chybí".
 - **Čárové kódy** - legacy jen QR (JPG, bez ECC/barev). My QR + Code128 + EAN-13/8 + PDF417 + DataMatrix. **Bohatší.**
 - **Vlastnosti stránky** - legacy A2–A6 + landscape + okraje + vodítka. My editor formátů + orientace + okraje + mřížka. **Pokryto.**
 - **Wire formát** - legacy tilde-delimited; my JSON. **Lepší (verzovatelné, debugovatelné).**
+- **Odjezd v 0:00** - legacy ho na vývěsce vynechává (čas spoje hledá jako maximum od prázdného začátku); my ho tiskneme od 30. 10. Oracle na lince 53 CB_DP: legacy 402 odjezdů, my 406, rozdíl jsou jen odjezdy 0:00 z Nádraží. **Oprava chyby.**
 
 ---
 

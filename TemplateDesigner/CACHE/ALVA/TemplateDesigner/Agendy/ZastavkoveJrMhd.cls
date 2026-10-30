@@ -622,9 +622,12 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
                 s bodVal = $g(tabulkaSpoje("arr",1,subBodID))
                 // Průjezd → přeskočit
                 i $lg(bodVal,5) continue
-                // Čas = max(příjezd, odjezd)
-                s cas = $lg(bodVal,3) i $lg(bodVal,4) > cas s cas = $lg(bodVal,4)
-                i cas > casOdjezdu s casOdjezdu = cas
+                // Čas = max(příjezd, odjezd). Prázdno se porovnává zvlášť: 0:00 není větší než prázdný řetězec,
+                // takže odjezd o půlnoci by zmizel (starý tisk ho vynechává, linka 53 CB_DP Nádraží).
+                s prijezd = $lg(bodVal,3), odjezd = $lg(bodVal,4)
+                s cas = $s(prijezd="":odjezd, odjezd="":prijezd, odjezd>prijezd:odjezd, 1:prijezd)
+                i cas = "" continue
+                i (casOdjezdu = "") || (cas > casOdjezdu) s casOdjezdu = cas
             }
 
             i casOdjezdu '= "" {

@@ -102,6 +102,44 @@ Method TestPrestupNaVlakPismenem()
 	do $$$AssertTrue($data(poznamky("L/prestup")) && ($order(poznamky(""))="L/prestup") && ($order(poznamky(""),-1)="L/prestup"), "poznámka přestupu: L s kategorií prestup")
 }
 
+/// Odjezd přesně v 0:00 je na vývěsce (noční linka 53, z Nádraží v obou směrech, pracovní dny i volno).
+/// Do 30. 10. ho vývěska vynechávala stejně jako starý tisk: čas spoje se hledal jako maximum od prázdného
+/// začátku a 0 není větší než nic. Na další zastávce přitom vývěska ukazovala 0:01.
+Method TestOdjezdVPulnoc()
+{
+	set db = ..#GOLDDB
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru")
+		quit
+	}
+	do ##class(ALVA.TemplateDesigner.Tests.MhdLegacyOracle).SetupOur(.sys, ..#GOLDIDFA, db)
+	kill ^||ML
+	set ^||ML("IN","LINKA_ID") = "1023"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
+	kill pulnoc
+	set stranek = 0, p = ""
+	for {
+		set p = $order(^||ML("OUT",p), 1, json)
+		quit:p=""
+		continue:'$isvalidnum(p)
+		set page = ##class(%DynamicObject).%FromJSON(json)
+		continue:page.values.%Get("POPIS_ZASTAVKA")'="Nádraží"
+		set stranek = stranek + 1
+		set io = page.rows.%Get("ODJEZDY").%GetIterator()
+		while io.%GetNext(.ko, .o) {
+			set:(+o.%Get("HODINA")=0)&&(+o.%Get("MINUTA")=0) pulnoc(page.values.%Get("SMER")_"/"_o.%Get("SKUPINA_DNU_ID")) = ""
+		}
+	}
+	set nalez = "", k = ""
+	for {
+		set k = $order(pulnoc(k))
+		quit:k=""
+		set nalez = nalez_" "_k
+	}
+	do $$$AssertEquals(stranek, 2, "linka 53 má vývěsku Nádraží v obou směrech")
+	do $$$AssertEquals(nalez, " T/1 T/2 Z/1 Z/2", "odjezd 0:00 z Nádraží (směr/skupina dnů)")
+}
+
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:
 ///   namespace chybí        → skip (jiný server, legitimní)
 ///   namespace je, linka ne  → FAIL (gold data zmizela / rozbitý fixture)
