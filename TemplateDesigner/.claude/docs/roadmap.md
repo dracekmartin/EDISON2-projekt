@@ -94,10 +94,6 @@
   a odkud: [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md)). Definice pak patří do `Jr/Parametry.cls` (stálý kód
   vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
 
-- **Dva odstíny šedého pozadí záhlaví** [S] (z revize sjednocení 30. 10.) - nový prvek jízdního řádu dostane záhlaví
-  `#FFE0E0E0` (`ScheduleElementBase.NoveZahlaviPozadi`, i import z PDF), nová tabulka `#FFE8E8E8`
-  (`TableStyleDefaults.NoveZahlaviPozadi`). Ověřit s Janem, jestli je rozdíl záměr; když ne, jedna konstanta.
-
 - **Písmena variant a sloupec „Čas jízdy" ve vývěsce MHD** [S] **Jan** - varianty tras MHD běží (30. 10.,
   changelog (50)), písmena jsou zatím pevně `ADLMNPTY` a s rozdíly tras MHD (a-z) se liší jen velikostí.
   Rozhodnout, odkud se sada vezme (souvisí s nastavením tisku u linky). „Čas jízdy" MHD počítá z chronometráže

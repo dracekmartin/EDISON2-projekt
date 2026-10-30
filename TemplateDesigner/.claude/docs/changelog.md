@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-30 (51) - Jedna šedá pro záhlaví nových prvků
+
+Nově vložená pevná tabulka a tabulka s řádky z dat měly záhlaví o odstín světlejší (`#FFE8E8E8`) než prvky jízdních řádů, dodávané šablony a import z PDF (`#FFE0E0E0`). Rozdíl nebyl záměr (Jan).
+Teď mají všechny nové prvky `#FFE0E0E0` z jedné konstanty `TableStyleDefaults.NoveZahlaviPozadi`; konstanta v `ScheduleElementBase` zanikla.
+Hotové šablony se nemění, barvu mají uloženou. Migrace 1.11.0, která starým šablonám barvu dopisuje, má proto původní odstíny zmrazené a nebere je z konstanty nového prvku.
+Ověřeno: .NET testy 2661/2661; test migrace ověřen mutací (s barvou z konstanty by staré tabulky ztmavly a test spadne).
+
 ## 2026-10-30 (50) - Varianty tras ve vývěsce MHD
 
 Seznam zastávek vývěsky MHD umí sloupec „Varianty tras" jako AD: každá trasa ze zastávky má svůj sloupec jízdních dob a minuty odjezdů její písmeno (kategorie „varianta-trasy").

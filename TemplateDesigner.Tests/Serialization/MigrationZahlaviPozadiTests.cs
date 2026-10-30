@@ -1,6 +1,4 @@
 using System.Text.Json.Nodes;
-using TemplateDesigner.Models.Elements;
-using TemplateDesigner.Rendering;
 using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -39,16 +37,18 @@ public class MigrationZahlaviPozadiTests
     public void PrvkyJizdnichRadu_DostanouSedouZapsanou(string typ)
     {
         var root = Migruj($$"""{ "type": "{{typ}}" }""");
-        Assert.Equal(ScheduleElementBase.NoveZahlaviPozadi, Pozadi(root));
+        Assert.Equal("#FFE0E0E0", Pozadi(root));
     }
 
+    /// <summary>Tabulky dostanou svůj starý odstín, i když nová tabulka má od 30. 10. šedou jako prvky JŘ -
+    /// migrace vrací vzhled z 1.10.0, ne dnešní výchozí barvu.</summary>
     [Theory]
     [InlineData("TableElement")]
     [InlineData("DynamicTableElement")]
     public void Tabulky_DostanouSvujOdstin(string typ)
     {
         var root = Migruj($$"""{ "type": "{{typ}}" }""");
-        Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, Pozadi(root));
+        Assert.Equal("#FFE8E8E8", Pozadi(root));
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class MigrationZahlaviPozadiTests
         var root = Migruj("""
             { "type": "NotesLegendElement", "headerStyle": { "fontSize": 10.0, "bold": true } }
             """);
-        Assert.Equal(ScheduleElementBase.NoveZahlaviPozadi, Pozadi(root));
+        Assert.Equal("#FFE0E0E0", Pozadi(root));
         Assert.Equal(10.0, StylZahlavi(root)!["fontSize"]!.GetValue<double>());
     }
 

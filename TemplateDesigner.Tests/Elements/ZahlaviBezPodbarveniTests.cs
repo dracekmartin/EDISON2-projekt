@@ -19,15 +19,17 @@ public class ZahlaviBezPodbarveniTests
     [Fact]
     public void NovyPrvekJizdnihoRadu_NeseSedouZapsanou()
     {
-        Assert.Equal(ScheduleElementBase.NoveZahlaviPozadi, new NotesLegendElement().HeaderStyle.BackgroundColor);
-        Assert.Equal(ScheduleElementBase.NoveZahlaviPozadi, new StopListElement().HeaderStyle.BackgroundColor);
-        Assert.Equal(ScheduleElementBase.NoveZahlaviPozadi, new DepartureGridElement().HeaderStyle.BackgroundColor);
-        Assert.Equal(ScheduleElementBase.NoveZahlaviPozadi, new LineTableElement().HeaderStyle.BackgroundColor);
+        Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, new NotesLegendElement().HeaderStyle.BackgroundColor);
+        Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, new StopListElement().HeaderStyle.BackgroundColor);
+        Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, new DepartureGridElement().HeaderStyle.BackgroundColor);
+        Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, new LineTableElement().HeaderStyle.BackgroundColor);
     }
 
+    /// <summary>Do 30. 10. měly nové tabulky o odstín světlejší šedou než prvky jízdních řádů, bez důvodu.</summary>
     [Fact]
-    public void NovaTabulka_NeseSvujOdstinZapsany()
+    public void NovaTabulka_NeseTutezSeduJakoPrvekJizdnihoRadu()
     {
+        Assert.Equal("#FFE0E0E0", TableStyleDefaults.NoveZahlaviPozadi);
         Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, TableElement.CreateGrid(2, 2).HeaderStyle?.BackgroundColor);
         Assert.Equal(TableStyleDefaults.NoveZahlaviPozadi, new DynamicTableElement().HeaderStyle?.BackgroundColor);
     }
@@ -57,7 +59,7 @@ public class ZahlaviBezPodbarveniTests
         var vysledek = el.HeaderStyle.Resolve(ScheduleElementBase.ScheduleHeaderDefaults);
         var barva = ColorHex.ParseOrTransparent(vysledek.BackgroundColor);
         Assert.Equal(255, barva.Alpha);
-        Assert.Equal(SKColor.Parse(ScheduleElementBase.NoveZahlaviPozadi), barva);
+        Assert.Equal(SKColor.Parse(TableStyleDefaults.NoveZahlaviPozadi), barva);
     }
 
     [Fact]

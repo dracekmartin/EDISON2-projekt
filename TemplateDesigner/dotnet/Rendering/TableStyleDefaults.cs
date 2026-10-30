@@ -40,6 +40,11 @@ public static class TableStyleDefaults
     // Podbarvení záhlaví se do Header záměrně nepíše: prázdná hodnota u prvku má znamenat
     // „nekreslit nic", a zapečená záloha v kaskádě by ji vrátila zpátky na šedou. Novému prvku
     // se šedá zapisuje, existujícím ji dopsala migrace 1.11.0.
-    /// <summary>Podbarvení záhlaví, které dostane <b>nově vložená</b> tabulka (zapisuje se do prvku).</summary>
-    public const string NoveZahlaviPozadi = "#FFE8E8E8";
+    /// <summary>
+    /// Podbarvení záhlaví, které dostane <b>nově vložený</b> prvek s tabulkou - prvky jízdních řádů i obě tabulky.
+    /// Zapisuje se do prvku, není to záloha kaskády - jinak by nešlo rozlišit „nechal jsem to být" od „nechci
+    /// žádné pozadí" a vymazání barvy by se po uložení vrátilo (nález Pavel 1. 9., #13158). Do 30. 10. měly
+    /// tabulky o odstín světlejší `#FFE8E8E8` bez důvodu; staré šablony si ho nesou uložený.
+    /// </summary>
+    public const string NoveZahlaviPozadi = "#FFE0E0E0";
 }

@@ -43,13 +43,6 @@ public abstract class ScheduleElementBase : TemplateElement
         TextColor = "#FF000000",
     };
 
-    /// <summary>
-    /// Podbarvení záhlaví, které dostane <b>nově vložený</b> prvek. Zapisuje se do prvku, není to
-    /// záloha kaskády - jinak by nešlo rozlišit „nechal jsem to být" od „nechci žádné pozadí"
-    /// a vymazání barvy by se po uložení vrátilo (nález Pavel 1. 9., #13158).
-    /// </summary>
-    public const string NoveZahlaviPozadi = "#FFE0E0E0";
-
     /// <summary>Výchozí baked-in styl datových buněk pro JŘ elementy (8pt; font z dokumentového defaultu).</summary>
     public static ResolvedTextStyle ScheduleDataDefaults => CellDefaults.Default with
     {
@@ -62,9 +55,9 @@ public abstract class ScheduleElementBase : TemplateElement
     /// <summary>
     /// Výchozí styl záhlaví. Per-column TextStyle cascaduje od tohoto, tohle pak od
     /// <see cref="ScheduleHeaderDefaults"/>. Podbarvení nese <b>zapsané</b>
-    /// (<see cref="NoveZahlaviPozadi"/>), aby se vymazaná barva nevracela zpátky.
+    /// (<see cref="TableStyleDefaults.NoveZahlaviPozadi"/>), aby se vymazaná barva nevracela zpátky.
     /// </summary>
-    public TextStyle HeaderStyle { get; set; } = new() { BackgroundColor = NoveZahlaviPozadi };
+    public TextStyle HeaderStyle { get; set; } = new() { BackgroundColor = TableStyleDefaults.NoveZahlaviPozadi };
 
     /// <summary>Mřížka = vnitřní čáry prvku. Vnější obrys je rámeček elementu (viz <see cref="GridStyle"/>).</summary>
     public GridStyle Grid { get; set; } = new() { ShowColumnLines = true };

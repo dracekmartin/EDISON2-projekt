@@ -1,5 +1,11 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Jedna šedá pozadí záhlaví (hotovo 30. 10. 2026)
+
+- **Dva odstíny šedého pozadí záhlaví** (z revize sjednocení, changelog 2026-10-30 (51)): nové tabulky měly
+  `#FFE8E8E8`, prvky jízdních řádů `#FFE0E0E0`. Rozdíl nebyl záměr (Jan 30. 10.), všechny nové prvky mají
+  `#FFE0E0E0` z jedné konstanty; migrace 1.11.0 drží pro staré šablony původní odstíny.
+
 ## Varianty tras i ve vývěsce MHD (hotovo 30. 10. 2026)
 
 - **Varianty tras i ve vývěsce MHD** (Jan 27. 10., changelog 2026-10-30 (48)-(50)): sonda nad daty CB_DP a KV_DP

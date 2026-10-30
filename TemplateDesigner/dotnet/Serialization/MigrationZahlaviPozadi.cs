@@ -1,7 +1,5 @@
 using System.Text.Json.Nodes;
 using TemplateDesigner.Models;
-using TemplateDesigner.Models.Elements;
-using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Serialization;
 
@@ -27,15 +25,20 @@ public class MigrationZahlaviPozadi : ITemplateMigration
 
     public string Description => "podbarvení záhlaví se zapisuje do prvku (prázdno = bez podbarvení)";
 
+    // Barvy zálohy, jak byla v 1.10.0 - zmrazené, ne konstanta nového prvku: ta se smí změnit
+    // (30. 10. se tabulky sjednotily na šedou prvků JŘ), vzhled staré šablony po migraci ne.
+    private const string ZalohaJizdniRad = "#FFE0E0E0";
+    private const string ZalohaTabulka = "#FFE8E8E8";
+
     /// <summary>Typ prvku → barva, kterou mu dřív dala zapečená záloha kaskády.</summary>
     private static readonly Dictionary<string, string> ZalohaPodleTypu = new(StringComparer.Ordinal)
     {
-        [ElementTypes.StopList]      = ScheduleElementBase.NoveZahlaviPozadi,
-        [ElementTypes.DepartureGrid] = ScheduleElementBase.NoveZahlaviPozadi,
-        [ElementTypes.NotesLegend]   = ScheduleElementBase.NoveZahlaviPozadi,
-        [ElementTypes.LineTable]     = ScheduleElementBase.NoveZahlaviPozadi,
-        [ElementTypes.Table]         = TableStyleDefaults.NoveZahlaviPozadi,
-        [ElementTypes.DynamicTable]  = TableStyleDefaults.NoveZahlaviPozadi,
+        [ElementTypes.StopList]      = ZalohaJizdniRad,
+        [ElementTypes.DepartureGrid] = ZalohaJizdniRad,
+        [ElementTypes.NotesLegend]   = ZalohaJizdniRad,
+        [ElementTypes.LineTable]     = ZalohaJizdniRad,
+        [ElementTypes.Table]         = ZalohaTabulka,
+        [ElementTypes.DynamicTable]  = ZalohaTabulka,
     };
 
     public JsonNode Migrate(JsonNode root)
