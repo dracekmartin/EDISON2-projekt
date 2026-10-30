@@ -802,7 +802,10 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
 - **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`) jsou od 30. 10. zrušené i se čtením v návrháři
   (`B56` S10, Jan): návrhář je nikde nenabízel a do 23. 10. při volání padaly (`B193f`). Hotové bloky pokryje `B66`.
 - **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (v `LinkovyJrAd` i `LinkovyJrMhd`);
-  `RgbToHex` vedle `BaseAgenda.RgbNaHex` není kopie, viz „Opsané pod jiným jménem" níž.
+  `Jr.VystupZastavkovy.RgbToHex` vedle `BaseAgenda.RgbNaHex` není kopie, viz „Opsané pod jiným jménem" níž.
+- **Stavba výstupu vývěsky** (řádek zastávky, zóna, atribut, poznámka zastávky, skupina dnů, odjezd, poznámka,
+  barva, speciální znak) je od 30. 10. jednou v `Jr/VystupZastavkovy.cls` (`B56` S3); značky u odjezdů
+  (`AddAnotace`) zůstávají v agendách, AD posílá o tři klíče víc.
 
 **Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - až budou volby jednou
 definicí, patří do `Jr/Parametry.cls`; čeká na úklid nastavení tisku v jízdních řádech, který dodělají kolegové
@@ -853,7 +856,7 @@ Vědomě nesjednocovat (rozhodnutí Jan 30. 10.):
   Každé pravidlo sedí na svůj případ.
 - **Barva „0;0;0"** znamená v každém zdroji něco jiného, nejde o kopii téhož.
   Barva spoje AD (`#`-pole 12, `BaseAgenda.RgbNaHex`) = bez barvy: má ji 2 185 160 z 2 189 806 spojů s barvou.
-  Barva linky (`ZastavkoveJrAd.BarvaLinky`) a barvy poznámek ke spojům MHD (`ZastavkoveJrMhd`) jdou přes `RgbToHex` a černá je černá: v KV_DP má 24 poznámek černý znak záměrně.
+  Barva linky (`ZastavkoveJrAd.BarvaLinky`) a barvy poznámek ke spojům MHD (`ZastavkoveJrMhd`) jdou přes `Jr.VystupZastavkovy.RgbToHex` a černá je černá: v KV_DP má 24 poznámek černý znak záměrně.
   Při `B56` jen pojmenovat podle zdroje; komentář „kopie téhož" u `RgbNaHex` neplatí.
 - **Značky u odjezdů a kolekce vývěsek**: `AddAnotace` AD posílá navíc `KATEGORIE`, `SPOJ` a `V_ROZSAHU_NEPOZNAMKOVAT`, `AddStandardJRCollections` AD má o pět polí víc.
   Společná metoda jen tak, aby MHD tyto klíče dál neposílal - jinak by filtr Poznámek podle kategorie začal skrývat poznámky i v MHD.
@@ -881,9 +884,9 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná bajt po bajtu.
   Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
-- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`) a S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`) hotové 30. 10.
+- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11 a S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`) hotové 30. 10.
   Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
-  Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky `AddAtribut`, `AddPoznamkaZastavky`, `AddZona`, `BuildOdjezd`, `BuildSkupinaDnu`, `ConvertSpecialniZnak`, `IntToHex2`, `RgbToHex`; linkové `BuildPoznamka`, `BuildSkupina`, `FormatCas`; AD `NazevLinky`, `NormalizLinku`, `PrvniLinka`, `CasHodnota`, `GetAvailableSkupiny`/`GetAvailableInstances`.
+  Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky (hotové, S3); linkové `BuildPoznamka`, `BuildSkupina`, `FormatCas`; AD `NazevLinky`, `NormalizLinku`, `PrvniLinka`, `CasHodnota`, `GetAvailableSkupiny`/`GetAvailableInstances`.
   Pak sjednocení z odstavce výš (platnost, omezení 14 a 15).
   Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".
 - **Pojistky při přesunu kódu (S1 hotové 30. 10.):** pomocné třídy jsou v `Agendy/Jr/` a testy čtou zdrojáky přes `ZdrojeAgend`: kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy (přímé potomky `BaseAgenda`, jako registr).

@@ -89,6 +89,7 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
   Popisek ze slovníku přepíše jen u vědomého rozdílu. Hlídá `AgendaSchemaDriftTests` (pole je ve slovníku, slovník
   drží jen pole aspoň dvou agend, agenda nepíše pole slovníku znovu přes `AddField`).
 - **Společné parametry JŘ** jsou v `Jr/Parametry.cls`; agenda si je skládá v `GetParameters` a drží jejich pořadí.
+- **Stavba výstupu vývěsky** (řádek zastávky, odjezd, skupina dnů, poznámka, barva, speciální znak) je v `Jr/VystupZastavkovy.cls`.
 
 ### Wire formáty
 

@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S3** Výstup vývěsky z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (20), schválil Jan 30. 10.): deset metod,
+  které měla vývěska AD i MHD shodné, je v `Jr/VystupZastavkovy.cls`. Značky u odjezdů zůstaly v agendách (AD posílá
+  víc klíčů). Výstup agend beze změny.
+
 - **S10** Předpřipravené tabulky zrušené (hotovo 30. 10., changelog 2026-10-30 (19), rozhodnutí Jan 30. 10.): dvě pevné
   tabulky vývěsek AD i MHD, výchozí metody v základu agend, nevolané čtení v návrháři a jejich testy. Návrhář je nikde
   nenabízel; hotové bloky do šablony má pokrýt `B66`.

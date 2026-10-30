@@ -521,8 +521,8 @@ ClassMethod NacistPoznamkyAAtributyZastavek(ByRef sys As %String)
                     i pouzeZnacku s PopisPoznamky = ""
                     i Text = "" continue
                     // Barvy (volitelné - sdíleno s vozovým JŘ; prázdné → default rendering)
-                    s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaZnakuRGB")))
-                    s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaPozadiRGB")))
+                    s pForeColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                    s pBackColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaPozadiRGB")))
                     // Textová poznámka (TypPoznamkyID=0)
                     i 'TypPoznamkyID {
                         s ^||TiskMHD("poznamkyZast",SmerID,BodID,Text) = $lb(PopisPoznamky, 0, pForeColor, pBackColor)
@@ -1169,7 +1169,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         // Na znamení
         s naZnameni = 0
 
-        s z = ..BuildZastavka(bodIterator, zastNazev, zastCislo, casJizdy, poradiZast, jeAktualni, naZnameni, odsazeni)
+        s z = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildZastavka(bodIterator, zastNazev, zastCislo, casJizdy, poradiZast, jeAktualni, naZnameni, odsazeni)
 
         // Zóny
         s zonaidx = ""
@@ -1177,7 +1177,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             s zonaidx = $o(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastID,"DTA",1,"ZonyID",zonaidx)) q:zonaidx=""
             s ZonaID = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastID,"DTA",1,"ZonyID",zonaidx,"Itm"))
             s ZonaCislo = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Zony","DTA",ZonaID,"Cislo"))
-            i ZonaCislo '= "" d ..AddZona(z, ZonaCislo)
+            i ZonaCislo '= "" d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddZona(z, ZonaCislo)
         }
 
         // Atributy zastávky (jen neprojete + aktuální jen N,V,x)
@@ -1188,8 +1188,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                 // Aktuální zastávka: jen základní atributy (ID<=1003)
                 i (bodIterator=aktualniZastBodID)&&(AtributID>1003) continue
                 s atrVal = $g(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID))
-                s SpecZnak = ..ConvertSpecialniZnak($lg(atrVal,3))
-                d ..AddAtribut(z, SpecZnak, $lg(atrVal,1))
+                s SpecZnak = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak($lg(atrVal,3))
+                d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddAtribut(z, SpecZnak, $lg(atrVal,1))
             }
         }
 
@@ -1200,7 +1200,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             f {
                 s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,bodIterator,znakPoznamky)) q:znakPoznamky=""
                 s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,bodIterator,znakPoznamky))
-                d ..AddPoznamkaZastavky(z, znakPoznamky, "text", $lg(pozVal,1))
+                d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddPoznamkaZastavky(z, znakPoznamky, "text", $lg(pozVal,1))
                 s znackyZastavky(znakPoznamky) = ""
             }
             // Písmeno rozdílu trasy (alg. 1002) i u zastávky, kterou obsluhují jen spoje s tímto
@@ -1213,7 +1213,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                     s DiffBitmap = $o(^||TiskMHD("rozdilTrasyPism",SmerID,aktualniZastBodID,0,DiffBitmap), 1, pismeno) q:DiffBitmap=""
                     i '+$e(DiffBitmap, bodIterator) continue
                     i (pismeno = "") || $d(znackyZastavky(pismeno)) continue
-                    d ..AddPoznamkaZastavky(z, pismeno, "text", "zastávky obsluhují pouze shodně označené spoje")
+                    d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddPoznamkaZastavky(z, pismeno, "text", "zastávky obsluhují pouze shodně označené spoje")
                     s znackyZastavky(pismeno) = ""
                 }
             }
@@ -1238,7 +1238,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         s smoCol = $o(^||TiskMHD("smoSloupce",smoCol)) q:smoCol=""
         s nadpisLb = $g(^||TiskMHD("smoNadpis",smoCol))
         // Pořadí = číslo sloupce (SMO1..SMO4), aby sloupce šly zleva SMO1→SMO4 jako v legacy.
-        d skupiny.%Push(..BuildSkupinaDnu(smoCol, $lg(nadpisLb,1), $lg(nadpisLb,2), smoCol))
+        d skupiny.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildSkupinaDnu(smoCol, $lg(nadpisLb,1), $lg(nadpisLb,2), smoCol))
     }
     d rows.%Set("SKUPINY_DNU", skupiny)
 
@@ -1285,7 +1285,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                     // Sloupec může sdílet víc typů provozu - v tomto průchodu jen aktuální typ
                     i $g(^||TiskMHD("spojTyp",SpojID)) '= tpid continue
 
-                    s odj = ..BuildOdjezd(aktualniZastBodID, smoCol, hh, mm)
+                    s odj = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildOdjezd(aktualniZastBodID, smoCol, hh, mm)
 
                     // ── Anotace odjezdu ──
 
@@ -1313,8 +1313,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         i specZnak = "" continue
                         // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
                         // Aplikují se i na anotaci nad minutou (konzistence s legendou).
-                        s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
-                        s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
+                        s pForeColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                        s pBackColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
                         d ..AddAnotace(odj, "specialni", specZnak, pForeColor, pBackColor)
                         s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"PopisPoznamky"))
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkovePouzeZnacku")) {
@@ -1350,7 +1350,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         // SpecZnak z GetAtributySpoj může obsahovat interní ID - přečíst displayový znak z ENUMS
                         s specZnak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atributID,"SpecZnak"))
                         i specZnak = "" continue
-                        s specZnak = ..ConvertSpecialniZnak(specZnak)
+                        s specZnak = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak(specZnak)
                         s Popis = $g(^||TiskMHD("spojAtributy",SpojID,"arr",1,atributID,"Popis"))
                         d ..AddAnotace(odj, "specialni", specZnak)
                         s strankovePoznamky(specZnak) = $lb(Popis, 2)
@@ -1378,8 +1378,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         i znakPozn = "" continue
                         // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
                         // Aplikují se i na anotaci nad minutou (konzistence s legendou).
-                        s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
-                        s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
+                        s pForeColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                        s pBackColor = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
                         d ..AddAnotace(odj, "text", znakPozn, pForeColor, pBackColor)
                         s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"PopisPoznamky"))
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkovePouzeZnacku")) {
@@ -1403,7 +1403,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     f {
         s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky)) q:znakPoznamky=""
         s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky))
-        d poznamky.%Push(..BuildPoznamka("text", znakPoznamky, $lg(pozVal,1), $lg(pozVal,3), $lg(pozVal,4)))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("text", znakPoznamky, $lg(pozVal,1), $lg(pozVal,3), $lg(pozVal,4)))
     }
 
     // Poznámky ze stránky (odjezdy) - formát $lb(text, typeCode, znakOrEmpty, foreColor, backColor)
@@ -1416,7 +1416,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         s pTyp = $s(pTypCislo=0:"text", pTypCislo=1:"nz", 1:"specialni")
         s pZnak = $s(pTypCislo=1:$lg(pVal,3), 1:znak)
         s pText = $lg(pVal, 1)
-        d poznamky.%Push(..BuildPoznamka(pTyp, pZnak, pText, $lg(pVal,4), $lg(pVal,5)))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka(pTyp, pZnak, pText, $lg(pVal,4), $lg(pVal,5)))
     }
 
     // Atributy zastávky jako poznámky - ze VŠECH zobrazených zastávek (ne jen aktuální)
@@ -1435,7 +1435,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             s AtributID = $o(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID)) q:AtributID=""
             i (bodIterator=aktualniZastBodID)&&(AtributID>1003) continue
             s atrVal = $g(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID))
-            s SpecZnak = ..ConvertSpecialniZnak($lg(atrVal,3))
+            s SpecZnak = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak($lg(atrVal,3))
             i SpecZnak = "" continue
             i $d(poznamkyAtribut(SpecZnak)) continue
             s poznamkyAtribut(SpecZnak) = ""
@@ -1443,7 +1443,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             // symbol se liší dle firmy) → přepínač „Na znamení" schová značku i tento řádek legendy (#7161).
             s popisAtr = $lg(atrVal,1)
             s katAtr = $s($zcvt($e(popisAtr,1,9),"L")="na znamen":"atribut-zastavky", ..JePrestup($lg(atrVal,4)):"prestup", 1:"")
-            d poznamky.%Push(..BuildPoznamka("specialni", SpecZnak, popisAtr, "", "", katAtr))
+            d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("specialni", SpecZnak, popisAtr, "", "", katAtr))
         }
     }
 
@@ -1578,72 +1578,8 @@ ClassMethod GetDenVTydnuText(denZnak As %String) As %String
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// JŘ helpery - stavba JSON objektů
+/// Výstupní JSON - společná stavba vývěsky je v `Jr.VystupZastavkovy`, tady jen to, co má jen MHD
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Vytvoří %DynamicObject zastávky s inicializovanými vnořenými poli.
-ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %Integer = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
-{
-    s zastavka = ##class(%DynamicObject).%New()
-    // Čitelná field ID (SLOVO_SLOVO) - sdílený kontrakt sloupců StopList↔DynamicTable.
-    // TC (číslo zastávky z CIS) vědomě nevystaveno; poziční potřebu pokrývá PORADI.
-    d zastavka.%Set("ID", id)                          // interní join klíč (ODJEZDY.ZASTAVKA_ID), ne ve schématu
-    d zastavka.%Set("NAZEV_ZASTAVKY", popis)
-    d zastavka.%Set("CAS_JIZDY", casJizdy)
-    d zastavka.%Set("PORADI", poradi)
-    d zastavka.%Set("AKTUALNI_ZASTAVKA", $s(jeAktualni:"true", 1:"false"))
-    d zastavka.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
-    d zastavka.%Set("ODSAZENI", odsazeni)
-    d zastavka.%Set("ZONY", ##class(%DynamicArray).%New())
-    d zastavka.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
-    d zastavka.%Set("POZNAMKY_ZASTAVKY", ##class(%DynamicArray).%New())
-    q zastavka
-}
-
-ClassMethod AddZona(zastavka As %DynamicObject, zona As %String)
-{
-    d zastavka.%Get("ZONY").%Push(zona)
-}
-
-ClassMethod AddAtribut(zastavka As %DynamicObject, znak As %String, popis As %String = "")
-{
-    s atribut = ##class(%DynamicObject).%New()
-    d atribut.%Set("ZNAK", znak)
-    d atribut.%Set("POPIS", popis)
-    d zastavka.%Get("ATRIBUTY").%Push(atribut)
-}
-
-ClassMethod AddPoznamkaZastavky(zastavka As %DynamicObject, znak As %String, typ As %String = "text", text As %String = "")
-{
-    s poznamka = ##class(%DynamicObject).%New()
-    d poznamka.%Set("ZNAK", znak)
-    d poznamka.%Set("TYP", typ)
-    d poznamka.%Set("TEXT", text)
-    d zastavka.%Get("POZNAMKY_ZASTAVKY").%Push(poznamka)
-}
-
-ClassMethod BuildSkupinaDnu(id As %String, nadpis As %String, nadpis2 As %String = "", poradi As %Integer = 1) As %DynamicObject
-{
-    s skupina = ##class(%DynamicObject).%New()
-    d skupina.%Set("ID", id)
-    d skupina.%Set("NADPIS", nadpis)
-    d skupina.%Set("NADPIS2", nadpis2)
-    d skupina.%Set("PORADI", poradi)
-    q skupina
-}
-
-ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina As %Integer, minuta As %Integer) As %DynamicObject
-{
-    s odjezd = ##class(%DynamicObject).%New()
-    d odjezd.%Set("ZASTAVKA_ID", zastavkaId)
-    d odjezd.%Set("SKUPINA_DNU_ID", skupinaDnuId)
-    d odjezd.%Set("HODINA", hodina)
-    d odjezd.%Set("MINUTA", minuta)
-    d odjezd.%Set("FORE_COLOR", "")
-    d odjezd.%Set("BACK_COLOR", "")
-    d odjezd.%Set("ANOTACE", ##class(%DynamicArray).%New())
-    q odjezd
-}
-
 ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "")
 {
     s anotace = ##class(%DynamicObject).%New()
@@ -1654,41 +1590,6 @@ ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String
     d odjezd.%Get("ANOTACE").%Push(anotace)
 }
 
-ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "") As %DynamicObject
-{
-    s poznamka = ##class(%DynamicObject).%New()
-    d poznamka.%Set("TYP", typ)
-    d poznamka.%Set("ZNAK", znak)
-    d poznamka.%Set("TEXT", text)
-    d poznamka.%Set("FORE_COLOR", foreColor)
-    d poznamka.%Set("BACK_COLOR", backColor)
-    // kategorie = interní tag pro TD filtr viditelnosti legendy (#7161): „atribut-zastavky"
-    // = řádek „na znamení" (skryje se s přepínačem „Na znamení"). Prázdné = needitelné filtrem.
-    d poznamka.%Set("KATEGORIE", kategorie)
-    q poznamka
-}
-
-/// Konvertuje 8-bit integer (0-255) na dvouznakovou velkou hex reprezentaci.
-ClassMethod IntToHex2(n As %Integer) As %String [ Private ]
-{
-    s digits = "0123456789ABCDEF"
-    i n < 0 s n = 0
-    i n > 255 s n = 255
-    q $e(digits, (n\16) + 1) _ $e(digits, (n#16) + 1)
-}
-
-/// Konvertuje RGB string "R;G;B" (např. "255;191;128") na SkiaSharp hex "#FFRRGGBB".
-/// Prázdný vstup nebo nevalidní formát → prázdný string.
-ClassMethod RgbToHex(rgb As %String) As %String
-{
-    i rgb = "" q ""
-    s r = +$p(rgb,";",1)
-    s g = +$p(rgb,";",2)
-    s b = +$p(rgb,";",3)
-    q "#FF"_..IntToHex2(r)_..IntToHex2(g)_..IntToHex2(b)
-}
-
-/// Konvertuje číselný kód speciálního znaku na Unicode string.
 /// Přestup na autobus („A") a vlak („L") jde písmenem jako ve vývěsce AD a v linkovém JŘ - návrhář ho
 /// přeloží na piktogram a řídí ho volba „Přestupy". Kód starého fontu (119 / 120) by nakreslil vagon
 /// a „x", které se tiskne textem jako „na znamení". Ostatní atributy zůstávají kódem fontu, ten sedí.
@@ -1700,19 +1601,6 @@ ClassMethod ZnakAtributu(specialniZnak As %String, znak As %String) As %String
 ClassMethod JePrestup(znak As %String) As %Boolean
 {
     q (znak = "A") || (znak = "L")
-}
-
-ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
-{
-    i cislo = 1 q "Po"
-    i cislo = 2 q "Út"
-    i cislo = 3 q "St"
-    i cislo = 4 q "Čt"
-    i cislo = 5 q "Pá"
-    i cislo = 6 q "So"
-    i cislo = 7 q "Ne"
-    i +cislo > 31 q $c(cislo)
-    q cislo
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

@@ -1737,7 +1737,6 @@ ClassMethod MhdAtributyEnums(ByRef sys As %String) As %Status
 		kill ^||ML("OUT")
 		if db = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "DB je povinné"))
 
-		set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
 		set n = 0, id = ""
 		for {
 			set id = $order(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id)) quit:id=""
@@ -1746,7 +1745,7 @@ ClassMethod MhdAtributyEnums(ByRef sys As %String) As %Status
 			set nazev = $get(^[db]ALVA.MHD.ENUMS(fa,"Atribut","DTA",id,"Nazev"))
 			set n = n + 1
 			quit:n>30
-			set znak = $classmethod(cls, "ConvertSpecialniZnak", spec)
+			set znak = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak(spec)
 			set ^||ML("OUT","ATRIBUT",$translate($justify(n,2)," ",0)) =
 				"id="_id_" SpecZnak="""_spec_""" → kresli se znak """_znak_"""  popis="_$extract(popis_nazev,1,60)
 		}

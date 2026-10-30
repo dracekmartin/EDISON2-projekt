@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-30 (20) - Výstup vývěsky AD a MHD z jedné třídy (`B56` S3)
+
+Deset metod, které skládají výstup vývěsky a měla je vývěska AD i MHD shodné, je jednou v `Jr/VystupZastavkovy.cls`: řádek zastávky, zóna, atribut a poznámka zastávky, skupina dnů, odjezd, poznámka, převod barvy a speciálního znaku.
+Osm z nich bylo znak po znaku stejných, stavba řádku zastávky a poznámky se lišily jen komentářem a nevynucovaným typem jednoho parametru.
+Značky u odjezdů zůstaly v agendách: vývěska AD posílá navíc kategorii, spoj a rozsah „nepoznámkovat" a MHD je posílat nesmí, jinak by filtr Poznámek schovával poznámky i v MHD.
+Do pracovního globálu agendy třída nesahá, všechno dostává parametry (`cache-api.md` pravidlo 6).
+Testy a sondy, které volaly převod speciálního znaku na vývěsce MHD, ho volají na nové třídě; komentář převodu, který ve vývěsce MHD visel nad cizí metodou, je u ní.
+Ověřeno: obě vývěsky na serveru vlastní kopie nemají (volání vrátí „doesn't exist"), snímek výstupu všech agend beze změny (42 souborů), Caché testy 269/269 včetně zlatých odtisků, .NET testy 2542/2542, integrační testy 48/48.
+
 ## 2026-10-30 (19) - Předpřipravené tabulky zrušené (`B56` S10)
 
 Vývěsky AD i MHD nabízely dvě hotové pevné tabulky („Záhlaví linky", „Platnost a dopravce") s popisky a poli, návrhář je ale nikde nenabízel; tlačítko „Ze šablony..." v editoru tabulky, které README popisovalo, v návrháři už není.

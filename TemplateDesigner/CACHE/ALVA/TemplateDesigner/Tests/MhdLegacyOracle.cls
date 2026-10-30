@@ -101,7 +101,7 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 			// náš engine konvertuje už v datech. Sjednotíme přes ConvertSpecialniZnak → porovnává se
 			// finální glyf (což zároveň ověří, že náš převod = legacy převod).
 			set pznakRaw = $get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"dta",1))
-			set pznak = $s(ptyp'=2:..Norm(pznakRaw), (pznakRaw'="")&&$data(prestupKod(pznakRaw)):prestupKod(pznakRaw), 1:##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).ConvertSpecialniZnak(pznakRaw))
+			set pznak = $s(ptyp'=2:..Norm(pznakRaw), (pznakRaw'="")&&$data(prestupKod(pznakRaw)):prestupKod(pznakRaw), 1:##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).ConvertSpecialniZnak(pznakRaw))
 			set ptext = ..Norm($get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"dta",2)))
 			set k = stop_"#"_ptyps_"#"_pznak_"#"_ptext
 			set lp(k) = $get(lp(k)) + 1

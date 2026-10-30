@@ -595,10 +595,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s cnt = cnt + 1
         // „na znamení" se tiskne přes atribut „x" (níže) - legacy UVOD tiskne jen „x". NaZnameni=0,
         // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
-        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0, odsazeni)
+        s z = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0, odsazeni)
         f zi=1:1:$l(zony,";") {
             s zx = $p(zony,";",zi)
-            i zx '= "" d ..AddZona(z, zx)
+            i zx '= "" d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddZona(z, zx)
         }
         // atributy zastávky → symbol u názvu + řádek legendy (jen neprojeté + významové znaky; analogicky MHD).
         // Přestupy (vlak „L" / autobus „A") jdou nad rámec legacy - posílají se vždy jako data zastávky,
@@ -610,7 +610,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
                 i '..JeViditelnyAtribut(znak) && 'jePrestup continue
                 i souhrnNaZn && (znak = "x") continue    // TR2: souhrn místo per-zastávka ×
                 s txtAtr = ..TextAtributu(znak)
-                d ..AddAtribut(z, znak, txtAtr)
+                d ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).AddAtribut(z, znak, txtAtr)
                 // Přestupy jdou do legendy zvlášť (kategorie „prestup") - piktogram autobusu/vlaku
                 // sám o sobě neřekne, co znamená. Šablona, která značku netiskne, si řádek schová
                 // render-time filtrem (stejně jako „× na znamení"), takže se nikomu neobjeví omylem.
@@ -789,7 +789,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             s pozicePoznamky = $o(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD",smerovyKlic,pozicePoznamky))
             q:pozicePoznamky=""
             s textPoznamky = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD",smerovyKlic,pozicePoznamky))
-            i textPoznamky '= "" d poznamky.%Push(..BuildPoznamka("text", "", textPoznamky, "", "", "smerove"))
+            i textPoznamky '= "" d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("text", "", textPoznamky, "", "", "smerove"))
         }
     }
 
@@ -818,7 +818,7 @@ ClassMethod NacistSkupinyDnu(ftl As %String, dataDB As %String = "", sku As %Str
     s rozlozeni = $case(ftl, 1:1, 2:2, 3:3, :0)
     d ..NadpisySkupinDnuAd(dataDB, sku, lin, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), rozlozeni, ..NadpisySkupinVychozi(rozlozeni), .t)
     // ID jde na wire jako text („1"), jako dřív - odjezdy na něj odkazují svým SKUPINA_DNU_ID
-    f i=1:1:$o(t(""),-1) d skupiny.%Push(..BuildSkupinaDnu(i_"", t(i), t(i,2), i))
+    f i=1:1:$o(t(""),-1) d skupiny.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildSkupinaDnu(i_"", t(i), t(i,2), i))
     q skupiny
 }
 
@@ -977,7 +977,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s dnySpoje = ..DnySpoje(plk)
         f gi=1:1:$l(skupiny,",") {
             s idSloupce = $p(skupiny,",",gi)
-            s o = ..BuildOdjezd(currentPoradi, idSloupce, hod, min)
+            s o = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildOdjezd(currentPoradi, idSloupce, hod, min)
             i tiskBarev d o.%Set("FORE_COLOR", ..RgbNaHex($p(spoj,"#",12)))
             s idxSloupce = 0, pokryvaObdobi = 0
             i +$g(defSloupce) {
@@ -1266,7 +1266,7 @@ ClassMethod PoznamkyLinky(dataDB As %String, sku As %String, lin As %String, poz
             s txt = ..TextPoznamkyLinky($g(^[dataDB]JRL(sku,lin,"C",key,idx)))
             continue:txt=""
             s kat = $s(..JeVyluka(txt):"vyluka", 1:kategorie)
-            d poznamky.%Push(..BuildPoznamka("text", "", txt, "", "", kat))
+            d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("text", "", txt, "", "", kat))
         }
     }
 }
@@ -1766,7 +1766,7 @@ ClassMethod NacistSkupinyDnuDleDefinice(ByRef defArr) As %DynamicArray
 {
     s skupiny = ##class(%DynamicArray).%New()
     f i=1:1:+$g(defArr) {
-        d skupiny.%Push(..BuildSkupinaDnu(defArr(i,"id"), defArr(i,"nadpis"), $g(defArr(i,"nadpis2")), i))
+        d skupiny.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildSkupinaDnu(defArr(i,"id"), defArr(i,"nadpis"), $g(defArr(i,"nadpis2")), i))
     }
     q skupiny
 }
@@ -2459,14 +2459,14 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
     f {
         s dch = $o(dnyLegenda(dch))
         q:dch=""
-        d poznamky.%Push(..BuildPoznamka("specialni", dch, dnyLegenda(dch), "", "", "tydenni-platnost"))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("specialni", dch, dnyLegenda(dch), "", "", "tydenni-platnost"))
     }
     // atributy zastávek - jeden řádek legendy na každý viděný znak (znak → text z číselníku)
     s znak = ""
     f {
         s znak = $o(atrSeen(znak))
         q:znak=""
-        d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak), "", "", "atribut-zastavky"))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("specialni", znak, atrSeen(znak), "", "", "atribut-zastavky"))
     }
     // atributy u odjezdu (kola, místenkování) - hodnota je `typ~text~kategorie`, protože kolo je
     // piktogram a „R" prostý text, a každý má vlastní kategorii (zapínají se zvlášť).
@@ -2479,7 +2479,7 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         // upřesnění „na objednání" / „podmínečně" (ZapsatNaObjednani)
         s text = $p(zapis,"~",2)
         f iu=1:1:+$g(odjAtrLegenda(znakAtr, "upresneni")) s text = text_$s(iu=1:" ", 1:"; ")_odjAtrLegenda(znakAtr, "upresneni", iu)
-        d poznamky.%Push(..BuildPoznamka($p(zapis,"~",1), znakAtr, text, "", "", $p(zapis,"~",3)))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka($p(zapis,"~",1), znakAtr, text, "", "", $p(zapis,"~",3)))
     }
     // pokračující spoje - značky u1, u2… přidělil server per stránka (viz PokracovaniZnak).
     // Kreslí se textem (víceznakové), kategorie `pokracovani` = filtr-tag pro šablonu.
@@ -2487,7 +2487,7 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
     f {
         s znakPokr = $o(pokrLegenda(znakPokr))
         q:znakPokr=""
-        d poznamky.%Push(..BuildPoznamka("text", znakPokr, pokrLegenda(znakPokr), "", "", "pokracovani"))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("text", znakPokr, pokrLegenda(znakPokr), "", "", "pokracovani"))
     }
     // přestupy - vlastní kategorie, aby si je šablona bez značky přestupu mohla schovat.
     // Hotová věta z TextPrestupuLegendy (číselník stálých značek firmy, jinak „přestup na …").
@@ -2495,7 +2495,7 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
     f {
         s znak = $o(prestupSeen(znak))
         q:znak=""
-        d poznamky.%Push(..BuildPoznamka("specialni", znak, prestupSeen(znak), "", "", "prestup"))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("specialni", znak, prestupSeen(znak), "", "", "prestup"))
     }
     // atributy spoje - bezbariér (H) / částečně bezbariér (F). Při allBBP je „H" agregátní řádek
     // („všechny spoje…") → kategorie „bezbarier-agregat" (TD filtr ho umí skrýt, #7161 D6).
@@ -2504,21 +2504,21 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         s zb = $o(bezbarLegenda(zb))
         q:zb=""
         s katBezbar = $s((zb="H") && allBBP : "bezbarier-agregat", 1 : "bezbarier")
-        d poznamky.%Push(..BuildPoznamka("specialni", zb, bezbarLegenda(zb), "", "", katBezbar))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("specialni", zb, bezbarLegenda(zb), "", "", katBezbar))
     }
     // rozdíly tras - písmeno → text ("neobsluhuje zast. X" / "jede přes…" / "jede jen do…" / "pokračuje…")
     s pism = ""
     f {
         s pism = $o(rozdilLegenda(pism))
         q:pism=""
-        d poznamky.%Push(..BuildPoznamka("text", pism, rozdilLegenda(pism), "", "", "rozdil-trasy"))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("text", pism, rozdilLegenda(pism), "", "", "rozdil-trasy"))
     }
     // ruční komentáře spoje (tab MHD: Komentáře) - znak → text z SeT_SpeC
     s komentarZnak = ""
     f {
         s komentarZnak = $o(komentareLegenda(komentarZnak))
         q:komentarZnak=""
-        d poznamky.%Push(..BuildPoznamka("text", komentarZnak, komentareLegenda(komentarZnak), "", "", "rucni-komentar"))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("text", komentarZnak, komentareLegenda(komentarZnak), "", "", "rucni-komentar"))
     }
     // datumová omezení (nejede/jede) - marker = číslo NZ (cnz), typ „nz" (invertovaně) pokud pochází
     // z cnz, jinak „text" (sekvenční fallback). Text per-spoj (SestavTextOmezeni).
@@ -2527,7 +2527,7 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         s n = $o(poznMap("byMarker", n))
         q:n=""
         s typPozn = $g(poznMap("typ", n), "text")
-        d poznamky.%Push(..BuildPoznamka(typPozn, n, poznMap("byMarker", n), "", "", "omezeni"))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka(typPozn, n, poznMap("byMarker", n), "", "", "omezeni"))
     }
     q poznamky
 }
@@ -3643,73 +3643,8 @@ ClassMethod JenSeSloupcemVariant(param As %DynamicObject)
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Build* helpery výstupního JSON (duplikováno z ZastavkoveJrMhd - stejný formát)
+/// Výstupní JSON - společná stavba vývěsky je v `Jr.VystupZastavkovy`, tady jen to, co má jen AD
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// `casJizdy` má tři stavy jako `TRASA_MIN`: číslo, „<" (základní trasa projíždí bez stání) nebo
-/// prázdno (mimo základní trasu).
-ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %String = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
-{
-    s zastavka = ##class(%DynamicObject).%New()
-    // Čitelná field ID (SLOVO_SLOVO) - sdílený kontrakt sloupců StopList↔DynamicTable.
-    // TC (tarifní/interní číslo) vědomě nevystaveno; poziční potřebu pokrývá PORADI.
-    d zastavka.%Set("ID", id)                          // interní join klíč (ODJEZDY.ZASTAVKA_ID), ne ve schématu
-    d zastavka.%Set("NAZEV_ZASTAVKY", popis)
-    d zastavka.%Set("CAS_JIZDY", casJizdy)
-    d zastavka.%Set("PORADI", poradi)
-    d zastavka.%Set("AKTUALNI_ZASTAVKA", $s(jeAktualni:"true", 1:"false"))
-    d zastavka.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
-    d zastavka.%Set("ODSAZENI", odsazeni)
-    d zastavka.%Set("ZONY", ##class(%DynamicArray).%New())
-    d zastavka.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
-    d zastavka.%Set("POZNAMKY_ZASTAVKY", ##class(%DynamicArray).%New())
-    q zastavka
-}
-
-ClassMethod AddZona(zastavka As %DynamicObject, zona As %String)
-{
-    d zastavka.%Get("ZONY").%Push(zona)
-}
-
-ClassMethod AddAtribut(zastavka As %DynamicObject, znak As %String, popis As %String = "")
-{
-    s atribut = ##class(%DynamicObject).%New()
-    d atribut.%Set("ZNAK", znak)
-    d atribut.%Set("POPIS", popis)
-    d zastavka.%Get("ATRIBUTY").%Push(atribut)
-}
-
-ClassMethod AddPoznamkaZastavky(zastavka As %DynamicObject, znak As %String, typ As %String = "text", text As %String = "")
-{
-    s poznamka = ##class(%DynamicObject).%New()
-    d poznamka.%Set("ZNAK", znak)
-    d poznamka.%Set("TYP", typ)
-    d poznamka.%Set("TEXT", text)
-    d zastavka.%Get("POZNAMKY_ZASTAVKY").%Push(poznamka)
-}
-
-ClassMethod BuildSkupinaDnu(id As %String, nadpis As %String, nadpis2 As %String = "", poradi As %Integer = 1) As %DynamicObject
-{
-    s skupina = ##class(%DynamicObject).%New()
-    d skupina.%Set("ID", id)
-    d skupina.%Set("NADPIS", nadpis)
-    d skupina.%Set("NADPIS2", nadpis2)
-    d skupina.%Set("PORADI", poradi)
-    q skupina
-}
-
-ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina As %Integer, minuta As %Integer) As %DynamicObject
-{
-    s odjezd = ##class(%DynamicObject).%New()
-    d odjezd.%Set("ZASTAVKA_ID", zastavkaId)
-    d odjezd.%Set("SKUPINA_DNU_ID", skupinaDnuId)
-    d odjezd.%Set("HODINA", hodina)
-    d odjezd.%Set("MINUTA", minuta)
-    d odjezd.%Set("FORE_COLOR", "")
-    d odjezd.%Set("BACK_COLOR", "")
-    d odjezd.%Set("ANOTACE", ##class(%DynamicArray).%New())
-    q odjezd
-}
-
 /// Přidá anotaci (horní index) k odjezdu. `kategorie` + `spoj` + `vRozsahu` slouží TD filtru
 /// viditelnosti (#7955): TD podle nich rozhodne, co schovat. Caché generuje vždy nadmnožinu, filtr je
 /// render-time v TD. Kategorie: rozdil-trasy / omezeni / bezbarier / rucni-komentar.
@@ -3725,30 +3660,6 @@ ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String
     d anotace.%Set("SPOJ", spoj)
     d anotace.%Set("V_ROZSAHU_NEPOZNAMKOVAT", vRozsahu)
     d odjezd.%Get("ANOTACE").%Push(anotace)
-}
-
-/// `kategorie` (atribut-zastavky / bezbarier / rozdil-trasy / rucni-komentar / omezeni / smerove)
-/// umožní TD filtru prořezat legendu jen v relevantní kategorii (např. „x - na znamení" se nesmí
-/// smazat jen proto, že nemá anotaci u minut).
-ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "") As %DynamicObject
-{
-    s poznamka = ##class(%DynamicObject).%New()
-    d poznamka.%Set("TYP", typ)
-    d poznamka.%Set("ZNAK", znak)
-    d poznamka.%Set("TEXT", text)
-    d poznamka.%Set("FORE_COLOR", foreColor)
-    d poznamka.%Set("BACK_COLOR", backColor)
-    d poznamka.%Set("KATEGORIE", kategorie)
-    q poznamka
-}
-
-/// Konvertuje 8-bit integer (0-255) na dvouznakovou velkou hex reprezentaci.
-ClassMethod IntToHex2(n As %Integer) As %String [ Private ]
-{
-    s digits = "0123456789ABCDEF"
-    i n < 0 s n = 0
-    i n > 255 s n = 255
-    q $e(digits, (n\16) + 1) _ $e(digits, (n#16) + 1)
 }
 
 /// Barva přiřazená lince v JŘ modulu, jako "#AARRGGBB" pro SkiaSharp; prázdno, když linka barvu
@@ -3770,30 +3681,7 @@ ClassMethod BarvaLinky(IdFa As %String = "", dataDB As %String = "", sku As %Str
         s rgb = ##class(ALVA.ISY.ISYJR2.API.Linky).GetBarvaLinky(IdFa, dataDB, sku, lin, poradi)
     }
     catch ex { s rgb = "" }
-    ret ..RgbToHex(rgb)
-}
-
-ClassMethod RgbToHex(rgb As %String) As %String
-{
-    i rgb = "" q ""
-    s r = +$p(rgb,";",1)
-    s g = +$p(rgb,";",2)
-    s b = +$p(rgb,";",3)
-    q "#FF"_..IntToHex2(r)_..IntToHex2(g)_..IntToHex2(b)
-}
-
-/// Konvertuje číselný kód speciálního znaku na Unicode string.
-ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
-{
-    i cislo = 1 q "Po"
-    i cislo = 2 q "Út"
-    i cislo = 3 q "St"
-    i cislo = 4 q "Čt"
-    i cislo = 5 q "Pá"
-    i cislo = 6 q "So"
-    i cislo = 7 q "Ne"
-    i +cislo > 31 q $c(cislo)
-    q cislo
+    ret ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex(rgb)
 }
 
 }

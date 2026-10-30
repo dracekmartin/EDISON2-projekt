@@ -25,7 +25,6 @@ Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a p
 
 ### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
 
-- **S3 Doslovné kopie vývěsek** [S] - 8 metod znak po znaku shodných ve vývěsce AD i MHD (atributy a poznámky zastávky, zóna, odjezd, skupina dnů, speciální znaky, barvy).
 - **S4 Doslovné kopie linkových agend** [S] - poznámka, skupina dnů a formát času v linkovém JŘ AD i MHD.
 - **S5 Doslovné kopie AD** [S] - název a normalizace linky, první linka, hodnota času ve vývěsce AD i linkovém JŘ AD (kód shodný, liší se komentáře).
 - **S6 Výběr skupin linek a linek u AD** [S-M] - vývěska AD a linkový JŘ AD mají každá svou kopii (dnes shodnou až na komentáře).
