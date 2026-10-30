@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-30 (29) - Snímek výstupu agend porovnává obsah, ne bajty (`B56` S13, třetí část)
+
+Snímek výstupu agend dřív porovnával bajt po bajtu, takže každé přeskládání položek hlavičky (S7, S12) hlásil jako rozdíl a obsah jsem musel ověřovat skriptem mimo repo.
+Teď porovnává stránky jako JSON: jiná hodnota nebo typ (číslo × text) test shodí a ukáže cestu k prvnímu rozdílu (`$.values.CISLO_LINKY: "325013" → 325013`), jiné pořadí položek jen vypíše - návrhář je čte podle jména.
+Ověřeno na skutečných snímcích: proti snímku před S12 hlásí jen pořadí v 10 souborech MHD (shodně se skriptem), proti snímku před S7 spadne na čísle linky a titulku. Dva nové testy porovnání (pořadí, typ, stránky, text).
+
 ## 2026-10-30 (28) - Dva různé „Jazyk" přejmenované (`B56` S13, druhá část)
 
 Vývěska AD měla `Jazyk()` = jazyk šablony („cs" / „sk") a linkový JŘ AD `Jazyk(dataDB)` = kód číselníku firmy („CZ" / „*SK") - stejné jméno, jiný význam, zapsané v R2 k přejmenování.

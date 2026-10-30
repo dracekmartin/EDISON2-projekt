@@ -942,7 +942,9 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
 
 - **Pojistky:** `KontraktAgendTest` (kontrakt každé agendy z registru, data odpovídají nabídce, sdílené parametry shodné), integrační `KontraktDatAgendTests` (položky, které čtou prvky, ve správném tvaru), `TestovaciLinkyTest` (linky testů v datech jsou), zlaté odtisky všech čtyř agend JŘ a snímek výstupu agend.
 - **Snímek výstupu je sonda, ne test** (výstup závisí na datech dev serveru): schéma, parametry a ukázka všech agend z registru a `GetData` linek z `KontraktAgendTest.LinkyAgend` - 45 souborů, 16 MB.
-  Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná bajt po bajtu.
+  Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná obsah stránek jako JSON.
+  Jiná hodnota nebo typ (číslo × text) test shodí s cestou k prvnímu rozdílu, jiné pořadí položek jen vypíše (návrhář je čte podle jména; do 30. 10. se porovnávalo bajt po bajtu).
+  Nový snímek po vědomé změně: starou podsložku `snimek` přejmenovat (`snimek-pred-…`), další běh sejme nový.
   Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
 - **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5 až S8 (data AD, výběr linek, hlavička linky, platnost a text omezení, `Jr/DataAd.cls`) a S12 (data MHD, `Jr/DataMhd.cls`) hotové 30. 10.

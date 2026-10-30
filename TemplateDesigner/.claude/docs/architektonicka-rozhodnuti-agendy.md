@@ -303,7 +303,7 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
 - **Agenda** vybere zdroj a druh, drží pořadí kroků a vědomé rozdíly svého starého modulu.
   Pomocné třídy JŘ jsou v balíku `ALVA.TemplateDesigner.Agendy.Jr` (složka `Agendy/Jr/`), jméno podle role (`DataAd`, ne `Helpers`).
 - **Žádný společný tvar dat pro AD i MHD** (jeden výpočet nad daty z obou zdrojů): výpočty pocházejí ze dvou starých
-  modulů a výstup musí zůstat bajtově stejný - byl by to přepis, ne sloučení. Společným tvarem je výstup agendy.
+  modulů a výstup musí zůstat obsahově stejný - byl by to přepis, ne sloučení. Společným tvarem je výstup agendy.
 - **Pravidlo druhého použití:** kód jde do pomocné třídy, až když ho potřebuje druhá agenda; do té doby zůstává v agendě.
   Žádná předčasná extrakce „pro jistotu" - proto se s `B56` čekalo, až budou hotové čtyři agendy JŘ (Jan 30. 10.).
 - **Proč se to vyplatí** (měření 30. 10., `legacy-nahrada.md §4`): opsaného kódu je jen asi 8 %, ale za pět měsíců
@@ -314,7 +314,8 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
   uživatel uvidí, nebo kde se tatáž oprava dělala víckrát. Vědomé rozdíly mezi agendami
   ([`legacy-nahrada.md §4`](legacy-nahrada.md)) zůstávají.
 - Postup a pojistky: [`legacy-nahrada.md §4`](legacy-nahrada.md) („Postup `B56`") - výstup všech agend musí
-  po každém kroku vyjít bajtově stejně.
+  po každém kroku vyjít obsahově stejně (snímek porovnává stránky jako JSON, pořadí položek jen hlásí).
+  Vědomá změna výstupu jen s rozhodnutím Jana a v samostatném zápisu (titulek a typ čísla linky v S7).
 
 **Kdy nejpozději.** Před další agendou (relace, vozový JŘ, převod Report generátoru).
 
