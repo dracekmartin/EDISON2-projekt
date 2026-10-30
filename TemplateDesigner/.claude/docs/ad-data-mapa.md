@@ -147,7 +147,7 @@ varianta platná k datu (horolog = dny od 31.12.1840). Analogie MHD `ZastavkyFce
 
 AD agendy (zastávkový i linkový JŘ) čtou **každý údaj zastávky z registru** - název, název pro MHD,
 okres, CIS název a číslo, atributy, zóny registru i popis sloupku - přes
-`BaseAgenda.ZaznamZastavkyKDatu` k **„platí od" linky** (`HorologPlatnostiOdLinky`, `PATCH,"Plati"`;
+`BaseAgenda.ZaznamZastavkyKDatu` k **„platí od" linky** (`Jr.DataAd.HorologPlatnostiLinky`, `PATCH,"Plati"`;
 rozhodnutí Jan s kolegou 7. 10.). Datum nastaví `BuildStrankaZastavky` / `BuildStrankaLinky`
 (`^||TiskAd` / `^||TiskKnizni("zastavky","hrl")`); mimo sestavení stránky platí dnešek.
 
@@ -531,7 +531,7 @@ je per-namespace, bez IdFa).**
     jen zastávky kde staví ≥1 spoj, přes `ObsluhovanePoradi`). Ověřeno: 0410101 → 17 zastávek (=legacy).
   - **Odjezdy** = Odjezd spoje + offset z trasy spoje "W"; **multi-group** (`SkupinyZPlk` - spoj může
     být ve více skupinách dnů, Plk "6+" → soboty i neděle). Ověřeno proti legacy SMO1/2/3.
-  - **Poznámky** = legenda z datumových omezení (omzId 11-15,22; `SestavTextOmezeni`+`PrefixOmezeni`
+  - **Poznámky** = legenda z datumových omezení (omzId 11-15,22; `Jr.DataAd.TextOmezeni`+`PredlozkaOmezeni`
     +`FormatDatumyOmezeni`, 1:1 s `txtNZ`/`TODDO^JRapiNZUtl`) + na-znamení.
   - **Multi-page**: stránka per zastávka × směr (Tam vzestupně / Zpět sestupně k pořadí 1);
     prázdné konečné se skipnou. Ověřeno 0410101: 17 Tam + 20 Zpět.
@@ -542,12 +542,12 @@ je per-namespace, bez IdFa).**
 1. **Názvy zastávek** - `NazevZastavky` bere `^JRZ` `$7` (odbav/MHD název s obcí, "Cheb,aut.nádraží",
    "Fr. Lázně,Krapice,Lužná"), fallback `$2`. Zahozeno `FormatNazev`/`FormatNazevPlny` (drop-obec).
    `NazevLinky` join `–`→`-` (legacy pomlčka).
-2. **Datumy v poznámkách** - `FormatDatumyOmezeni` + `UpravDatum` = 1:1 formát zastávkového JŘ
+2. **Datumy v poznámkách** - `FormatDatumyOmezeni` + `FormatDatumOmezeni` (dřív `UpravDatum`) = 1:1 formát zastávkového JŘ
    (`JRapiLinPrtPS3`/`UprDat`): **2místný rok** (`25.12.22`, ne `25.12.2022`), strip nul ze dne/měsíce,
    rozsah `:`→`od D1 do D2`, položky spojené `, `, `k@`/`L@` prefix se stripuje. **POZOR:** NE `TODDO`
    (to dělá `D1-D2` + verbatim rok) - zastávkový JŘ používá PS3 formát; ověřeno gold 0340303/0365001.
-3. **"jede" omezení** - `SestavTextOmezeni` projde omzId 11,12,13,14,15,22, spojí do jedné poznámky;
-   `PrefixOmezeni` = mapování (11 "jede jen ", 12 "jede také ", 13 "jede ", 14/15 su/li, 22 "nejede ").
+3. **"jede" omezení** - `Jr.DataAd.TextOmezeni` (dřív `SestavTextOmezeni`) projde omzId 13,12,11,14,15,22, spojí do jedné poznámky;
+   `PredlozkaOmezeni` = mapování (11 "jede jen", 12 "jede také", 13 "jede", 14/15 sudé/liché týdny, 22 "nejede").
 4. **POPIS_DOPRAVCE** - `PopisDopravce` (distinct `fa:pr` z `#`-pole 2 spojů obou směrů, dedup názvů,
    "Zajišťuje: …") + `NazevDopravce` chain z `^JRSET("DOP")`: per-provoz `$6` → firma `$14` → `$7` → `$1`.
 5. **LOKALNI_OZNACENI_LINKY + TITULEK + INFORMACE** - všechny z `^JRL(...,"MhD","SeT_MhD")` (delim `~`,
@@ -634,7 +634,7 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   trasa) je jednosloupcová verze 1:1; u variantních linek se ukáže jen jedna varianta.
 - ✅ **Číslování omezení = číslo NZ (`cnz`) invertovaně** (HOTOVO 2026-06-23). Marker omezení je
   **`cnz` spoje** (`$p(spoj,"#",7)`, dta29) renderovaný jako typ `nz` (invertovaný box), text z per-spoj
-  `^JRL(…,sp,omzId)` (`SestavTextOmezeni`). **Žádný firemní gate, žádné čtení InPlatDef** - ověřeno gold
+  `^JRL(…,sp,omzId)` (`Jr.DataAd.TextOmezeni`). **Žádný firemní gate, žádné čtení InPlatDef** - ověřeno gold
   oracle (`ALVA.TISKMHD.Data`) na **obou** firmách: legenda `2#<cnz>#<text>`, anotace `2$<cnz>`.
   - **Korekce dřívějších domněnek:** (1) `MHDnewOM` (= údajný TYPPOZ gate) je prázdný u GWBUS i CSADAD →
     není to gate; chování je **univerzální**. (2) KV_DP spoje mají `cnz` taky (28/30/31/40) a legacy je

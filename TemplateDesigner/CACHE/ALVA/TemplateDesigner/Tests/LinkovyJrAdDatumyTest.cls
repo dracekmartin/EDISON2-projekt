@@ -15,7 +15,7 @@ Parameter VZORY = "01.09.2026:30.06.2027|24.12.2026#25.12.2026|1.5.2026:31.8.202
 Method TestRezimLinkyPosunutyOJedna()
 {
 	set db = $namespace, sku = "TDTEST"_$translate($system.Util.CreateGUID(), "-"), lin = "0999999"
-	set ad = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
+	set ad = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
 	try {
 		set ^[db]JRL(sku, lin, "I") = ""
 		do $$$AssertEquals($classmethod(ad, "TiskDtm", db, sku, lin), +$get(^[db]JRSET("Definice","TiskDtm")), "bez nastavení u linky → firma")
@@ -51,7 +51,7 @@ Method TestDatumyJakoStaryTisk()
 			set vzor = $piece(..#VZORY, "|", v)
 			set legacy = ""
 			set ok = $$gComOddO^JRapiNZUtl2("", db, rec, vzor, .legacy, .set)
-			set nas = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).FormatDatumyOmezeni(vzor, rezim)
+			set nas = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatDatumyOmezeni(vzor, rezim)
 			// mezera za čárkou je vědomá odchylka (T3b), viz LinkovyJrLegacyOracle.OddelovacDat
 			set ocekavany = ##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).OddelovacDat(legacy)
 			do $$$AssertEquals(nas, ocekavany, "režim "_rezim_", "_vzor_": náš „"_nas_""" × starý „"_legacy_"""")

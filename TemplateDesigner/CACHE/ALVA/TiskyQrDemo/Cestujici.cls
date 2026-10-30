@@ -105,7 +105,7 @@ ClassMethod SkupinaLinky(dataDB As %String, lin As %String) As %String
 }
 
 /// Ke každému spoji stránky přidá `OMEZENI` - datumová omezení jako data, aby aplikace sama
-/// poznala, jestli spoj jede dnes. Tisk je má jen jako text (`SestavTextOmezeni`), který se skládá
+/// poznala, jestli spoj jede dnes. Tisk je má jen jako text (`Jr.DataAd.TextOmezeni`), který se skládá
 /// podle nastavení firmy a může být i bez roku, takže se z něj spolehlivě číst nedá.
 ///   OMEZENI: [{"druh":"jen|jede|take|nejede","useky":[{"od":"2022-12-24","do":"2023-01-01"}]}]
 ///   TYDNY:   "sude" | "liche" | ""  (dlouhodobá platnost spoje)
@@ -120,7 +120,7 @@ ClassMethod PridejOmezeni(dataDB As %String, sku As %String, lin As %String, str
         s dlouhodoba = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8)
         d spoj.%Set("TYDNY", $s(dlouhodoba = 4:"sude", dlouhodoba = 5:"liche", 1:""))
         s omezeni = ##class(%DynamicArray).%New()
-        // Druhy omezení podle klíče pod spojem (význam viz `LinkovyJrAd.SestavTextOmezeni`).
+        // Druhy omezení podle klíče pod spojem (význam viz `Jr.DataAd.TextOmezeni`).
         f omzId=11,12,13,22 {
             s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
             continue:omz=""

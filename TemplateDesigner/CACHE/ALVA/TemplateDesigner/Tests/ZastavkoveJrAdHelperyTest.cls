@@ -132,7 +132,6 @@ Method TestJazykTextuZnacek()
 	// (číselník značek zůstává načtený po každém GetData, tedy i po gold testech)
 	kill ^||TiskAd("jazyk"), ^||TiskAd("znacka")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "cs", "výchozí jazyk = čeština")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(22), "nejede ", "CZ prefix omezení")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("x"), "na znamení", "CZ atribut")
 
 	// Neznámý kód i prázdno padá na češtinu, „sk-SK" se zkrátí na „sk"
@@ -143,8 +142,6 @@ Method TestJazykTextuZnacek()
 	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NactiJazyk()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).Jazyk(), "sk", "sk-SK → sk")
 
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(11), "premáva len ", "SK prefix omezení")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(22), "nepremáva ", "SK prefix zákazu")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextDneVTydnu("7"), "premáva v nedeľu", "SK den v týdnu")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("x"), "na znamenie", "SK atribut na znamení")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextKola(), "spoj prepravuje bicykle", "SK kola")
@@ -167,7 +164,7 @@ Method TestJazykZadnyTextNechybi()
 {
 	kill ^||TiskAd("jazyk"), ^||TiskAd("znacka")
 	for znak = "x", "y", "z", "O" { set cs("atr", znak) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu(znak) }
-	for omzId = 11, 12, 13, 14, 15, 22 { set cs("omz", omzId) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(omzId) }
+	for omzId = 11, 12, 13, 14, 15, 22 { set cs("omz", omzId) = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PredlozkaOmezeniStandard("CZ", omzId) }
 	for dch = 1, 2, 3, 4, 5, 6, 7, "+" { set cs("den", dch) = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextDneVTydnu(dch) }
 
 	set ^||TiskAd("jazyk") = "sk"
@@ -177,7 +174,7 @@ Method TestJazykZadnyTextNechybi()
 		do $$$AssertNotEquals(sk, cs("atr", znak), "SK text atributu "_znak_" je přeložený")
 	}
 	for omzId = 11, 12, 13, 14, 15, 22 {
-		set sk = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(omzId)
+		set sk = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PredlozkaOmezeniStandard("*SK", omzId)
 		do $$$AssertNotEquals(sk, "", "SK prefix omezení "_omzId_" není prázdný")
 		do $$$AssertNotEquals(sk, cs("omz", omzId), "SK prefix omezení "_omzId_" je přeložený")
 	}
@@ -365,15 +362,42 @@ Method TestVyberZaklTrasu()
 
 // ── Datumová omezení (1:1 txtNZ^JRapiNZUtl + UprDat^JRapiLinPrtPS3) ─────────
 
-Method TestPrefixOmezeni()
+Method TestPredlozkaOmezeni()
 {
-	kill ^||TiskAd("jazyk")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(11), "jede jen ", "11")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(22), "nejede ", "22")
+	set ad = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
+	do $$$AssertEquals($classmethod(ad, "PredlozkaOmezeni", "", "CZ", 11), "jede jen", "11")
+	do $$$AssertEquals($classmethod(ad, "PredlozkaOmezeni", "", "CZ", 22), "nejede", "22")
 	// T3d: celé znění jako v číselníku a Linkovém JŘ AD, dřív zkratka „jede jen v su."
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(14), "jede jen v sudých týdnech ", "14")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrefixOmezeni(99), "", "neznámé → prázdné")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni("", "*SK", 12), "premáva tiež", "SK standard jako výchozí číselník")
+	do $$$AssertEquals($classmethod(ad, "PredlozkaOmezeni", "", "CZ", 14), "jede jen v sudých týdnech", "14")
+	do $$$AssertEquals($classmethod(ad, "PredlozkaOmezeni", "", "CZ", 99), "", "neznámé → prázdné")
+	do $$$AssertEquals($classmethod(ad, "PredlozkaOmezeni", "", "*SK", 12), "premáva tiež", "SK standard jako výchozí číselník")
+}
+
+/// Text omezení spoje je jeden pro vývěsku i linkový JŘ AD (`B56` S8): pořadí 13, 12, 11, 14, 15, 22,
+/// věta o lichých / sudých týdnech na začátku, omezení bez data se vynechá - kromě 14 a 15, které jsou
+/// větou samy. Vývěska je bez data do 30. 10. vynechávala, linkový JŘ ne.
+Method TestTextOmezeni()
+{
+	set db = $namespace, sku = "TDTEST"_$translate($system.Util.CreateGUID(), "-"), lin = "0999999"
+	set ad = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
+	try {
+		set ^[db]JRL(sku, lin, "T", 1) = ""
+		set ^[db]JRL(sku, lin, "T", 1, 22) = "24.12.2026"
+		set ^[db]JRL(sku, lin, "T", 1, 14) = "k@"
+		set ^[db]JRL(sku, lin, "T", 1, 11) = "k@"
+		set ^[db]JRL(sku, lin, "T", 1, 13) = "01.05.2026:31.08.2026"
+		set ocekavano = $classmethod(ad, "PredlozkaOmezeni", db, "CZ", 13)_" od 1.5.2026 do 31.8.2026, "
+		set ocekavano = ocekavano_$classmethod(ad, "PredlozkaOmezeni", db, "CZ", 14)_", "
+		set ocekavano = ocekavano_$classmethod(ad, "PredlozkaOmezeni", db, "CZ", 22)_" 24.12.2026"
+		do $$$AssertEquals($classmethod(ad, "TextOmezeni", db, sku, lin, "T", 1, "CZ", 0), ocekavano, "pořadí, 14 bez data zůstane, 11 bez data zmizí")
+
+		// hlava:8 = 5 → věta o lichých týdnech, i když spoj jiné omezení nemá
+		set ^[db]JRL(sku, lin, "T", 2) = ":::::::5"
+		do $$$AssertEquals($classmethod(ad, "TextOmezeni", db, sku, lin, "T", 2, "CZ", 0), $classmethod(ad, "PredlozkaOmezeni", db, "CZ", 15), "liché týdny z hlavy spoje")
+	} catch ex {
+		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
+	}
+	kill ^[db]JRL(sku)
 }
 
 /// Předložka z číselníku firmy má přednost před standardním zněním (`B194` T3d) - zákazník si ji
@@ -388,8 +412,8 @@ Method TestPredlozkaZCiselniku()
 	}
 	try {
 		set ^[db]JRSET("NCOME","CZ",22) = "nepremáva v dňoch"
-		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni(db, "CZ", 22), "nepremáva v dňoch", "číselník má přednost")
-		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).PredlozkaOmezeni(db, "CZ", 11), "jede jen", "co v číselníku chybí, je standard")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PredlozkaOmezeni(db, "CZ", 22), "nepremáva v dňoch", "číselník má přednost")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PredlozkaOmezeni(db, "CZ", 11), "jede jen", "co v číselníku chybí, je standard")
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
 	}
@@ -399,19 +423,19 @@ Method TestPredlozkaZCiselniku()
 /// Rok podle režimu firmy / linky (`B194` T3c) - do 26. 10. měl Zastávkový JŘ AD rok napevno
 /// dvoumístně, starý zastávkový tisk se ale režimem řídí (CB_GWBUS bez roku, KV_DP celý rok).
 /// Proti starému tisku to hlídá `LinkovyJrAdDatumyTest.TestDatumyJakoStaryTisk` (metoda je společná).
-Method TestUpravDatum()
+Method TestFormatDatumOmezeni()
 {
-	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 1), "1.5.26", "režim 1: strip nul + 2místný rok")
-	do $$$AssertEquals($classmethod(cls, "UpravDatum", "24.12.26", 1), "24.12.26", "už 2místný rok beze změny")
-	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 0), "1.5.2026", "režim 0: rok jak je v datech")
-	do $$$AssertEquals($classmethod(cls, "UpravDatum", "01.05.2026", 3), "1.5.", "režim 3: bez roku")
-	do $$$AssertEquals($classmethod(cls, "UpravDatum", "", 1), "", "prázdné → prázdné")
+	set cls = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
+	do $$$AssertEquals($classmethod(cls, "FormatDatumOmezeni", "01.05.2026", 1), "1.5.26", "režim 1: strip nul + 2místný rok")
+	do $$$AssertEquals($classmethod(cls, "FormatDatumOmezeni", "24.12.26", 1), "24.12.26", "už 2místný rok beze změny")
+	do $$$AssertEquals($classmethod(cls, "FormatDatumOmezeni", "01.05.2026", 0), "1.5.2026", "režim 0: rok jak je v datech")
+	do $$$AssertEquals($classmethod(cls, "FormatDatumOmezeni", "01.05.2026", 3), "1.5.", "režim 3: bez roku")
+	do $$$AssertEquals($classmethod(cls, "FormatDatumOmezeni", "", 1), "", "prázdné → prázdné")
 }
 
 Method TestFormatDatumyOmezeni()
 {
-	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set cls = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
 	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "k@01.05.2026:31.08.2026", 1), "od 1.5.26 do 31.8.26", "rozsah s prefixem k@")
 	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "24.12.2026#31.12.2026", 1), "24.12.26, 31.12.26", "jednotlivá data přes #")
 	do $$$AssertEquals($classmethod(cls, "FormatDatumyOmezeni", "05.07.2026", 1), "5.7.26", "jedno datum bez rozsahu")

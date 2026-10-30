@@ -837,15 +837,14 @@ svého starého modulu, sloučení kódu je nesmí srovnat.
 **Opsané pod jiným jménem (revize `B194g` R2, změřeno a rozhodnuto 30. 10.)** - kopie, které analýza z 5. 8. hledala podle názvu, a proto je nenašla.
 Měřeno sondou `DuplicityAgendProbe` na šesti testovacích firmách (96 531 linek, 2,4 mil. spojů).
 
-Sjednotit v `B56`, tisk se nezmění:
+Sjednoceno v `B56` S8 (30. 10.), tisk se nezměnil:
 
-- **Platnost linky** (`PATCH,"Plati"` = „od~do:…") se čte na sedmi místech dvěma způsoby a příponu za dvojtečkou odříznou jen `BaseAgenda.HorologPlatnostiOdLinky` a `ZastavkoveJrAd.PlatnostLinky`.
-  Starý modul ji odřízne vždy, ostatní kopie by ji poslaly v datu „do".
-  V datech ji nemá žádná linka (0 z 96 531), sjednocení na jednu metodu s odříznutím proto tisk nezmění.
-  K tomu tři převody data na `$h`.
-- **Omezení 14 a 15** („jede jen v sudých / lichých týdnech") vytiskne `LinkovyJrAd.SestavTextOmezeni` i bez data, `ZastavkoveJrAd.SestavTextOmezeni` je bez data přeskočí.
-  Bez data není žádné z 319 výskytů; sjednotit na chování linkového JŘ (věta platí i bez data).
-  Pozor na jazyk předložky: vývěska ho bere z parametru šablony (`PrefixOmezeni`), linkový JŘ z kódu jazyka (`PredlozkaOmezeni`).
+- **Platnost linky** (`PATCH,"Plati"` = „od~do:…") se četla na šesti místech agend AD a příponu za dvojtečkou odřízla jen dvě; starý modul ji odřízne vždy.
+  V datech ji nemá žádná linka (0 z 96 531). Teď ji čte jen `Jr.DataAd.PlatnostLinky` (s odříznutím) a horolog dává `Jr.DataAd.HorologPlatnostiLinky`.
+  Tři převody data na `$h` vyšly na všech 193 050 datech platnosti stejně (sonda `PrevodyPlatnosti`; všechna mají tvar `dd.mm.rrrr`).
+- **Omezení 14 a 15** („jede jen v sudých / lichých týdnech") linkový JŘ vytiskl i bez data, vývěska bez data přeskočila.
+  Bez data není žádné z 319 výskytů; teď obě agendy skládají text v `Jr.DataAd.TextOmezeni` a věta platí i bez data.
+  Jazyk předložky zůstal každé agendě svůj (parametr `rec`): vývěska ho bere z jazyka šablony, linkový JŘ z kódu jazyka a číselníku firmy.
 
 Vědomě nesjednocovat (rozhodnutí Jan 30. 10.):
 
@@ -884,10 +883,10 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná bajt po bajtu.
   Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
-- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5 a S6 (data AD a výběr linek, `Jr/DataAd.cls`) hotové 30. 10.
+- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5, S6 a S8 (data AD, výběr linek, platnost a text omezení, `Jr/DataAd.cls`) hotové 30. 10.
   Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
   Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky (hotové, S3); linkové (hotové, S4, `Jr/VystupLinkovy.cls`); AD (hotové, S5, `Jr/DataAd.cls`; `NormalizLinku` přejmenované na `FormatCisloLinky`), výběr skupin linek a linek (hotový, S6).
-  Pak sjednocení z odstavce výš (platnost, omezení 14 a 15).
+  Pak sjednocení z odstavce výš (platnost, omezení 14 a 15; hotové, S8).
   Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".
 - **Pojistky při přesunu kódu (S1 hotové 30. 10.):** pomocné třídy jsou v `Agendy/Jr/` a testy čtou zdrojáky přes `ZdrojeAgend`: kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy (přímé potomky `BaseAgenda`, jako registr).
   Při přesunu dál pozor na kontroly vázané na jednu agendu: pořadí polí nabídky po souborech, vyřazená pole agendy, „Obecné" jako první skupina parametrů, příznak v registru proti obsahu agendy (`TRASA_MIN`, `ParseDefiniceSloupcu`, `"puvodni"`) a doslovné `AddBoolParam(arr,` v `ServerSideParamsDriftTests`.

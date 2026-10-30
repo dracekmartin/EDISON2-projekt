@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (24) - Platnost linky a text omezení spojů AD z jedné třídy (`B56` S8)
+
+Platnost jízdního řádu linky (`PATCH,"Plati"`) četly agendy AD na šesti místech a příponu za dvojtečkou odřízla jen dvě; ostatní by ji poslala v datu „do".
+Teď ji čte `Jr.DataAd.PlatnostLinky` a příponu odřízne vždy, jako starý tisk; horolog dává `HorologPlatnostiLinky` jedním převodem místo tří.
+Text datumových omezení spoje měla vývěska AD i linkový JŘ AD každá vlastní; teď ho skládá `Jr.DataAd.TextOmezeni` a omezení 14 a 15 („jede jen v sudých / lichých týdnech") je věta i bez data, jako v linkovém JŘ.
+Pomocné metody omezení (předložka, věta o týdnech, režim roku, formát dat) se přesunuly z `BaseAgenda` do `Jr/DataAd.cls`, protože čtou data AD; `UpravDatum` je teď `FormatDatumOmezeni` (pravidlo 5), `ZastavkoveJrAd.PrefixOmezeni` zmizel.
+Tisk se nemění: příponu nemá žádná linka a omezení 14 a 15 bez data není žádné z 319 (sondy `DuplicityAgendProbe` na šesti firmách), tři převody data vyšly stejně na všech 193 050 datech platnosti (nová sonda `PrevodyPlatnosti`).
+Nové testy: `TestTextOmezeni` (pořadí, 14 bez data zůstane, jiné bez data zmizí, věta o lichých týdnech) a odříznutí přípony v `ZastavkyKDatuTest`.
+Ověřeno: staré metody na serveru nejsou (volání vrátí „doesn't exist"), výběr linek ukazuje platnost jako dřív (CB_GWBUS), snímek výstupu agend beze změny (42 souborů), Caché testy 270/270, .NET testy 2544/2544, integrační testy 48/48.
+
 ## 2026-10-30 (23) - Výběr linek ve všech agendách AD z jednoho místa (`B56` S6)
 
 Výběr skupin linek a linek, který okno výběru linek volá, měla vývěska AD i linkový JŘ AD každá ve vlastní kopii; kopie MHD se do 23. 10. rozešla v příznaku zablokované skupiny a stejné riziko hrozilo u AD.

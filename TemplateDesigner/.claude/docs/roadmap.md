@@ -27,7 +27,6 @@ Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a p
 
 - **S7 Hlavička linky** [M] **Jan** - číslo, platnost, typ JŘ a dopravce skládá každá agenda zvlášť, odtud čtyři tvary popisu platnosti.
   Rozhodnout, co z toho je vědomý rozdíl.
-- **S8 Platnost linky a omezení 14 a 15** [S] - sjednotit podle rozhodnutí z 30. 10. (`B194g` R2), tisk se nezmění.
 
 ### Převzato z backlogu - souvisí se sjednocením agend
 

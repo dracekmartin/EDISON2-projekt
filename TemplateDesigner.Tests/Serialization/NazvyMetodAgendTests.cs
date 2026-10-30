@@ -33,14 +33,14 @@ public class NazvyMetodAgendTests
     /// <summary>Stávající metody s českým slovesem (stav 30. 10.) - přejmenovat při přesunu v <c>B56</c>.</summary>
     private static readonly HashSet<string> Stavajici = new(StringComparer.Ordinal)
     {
-        "BaseAgenda.UpravDatum", "BaseAgenda.NormalizujSeznamZnacek", "BaseAgenda.ZacitDuvodyPrazdne",
+        "BaseAgenda.NormalizujSeznamZnacek", "BaseAgenda.ZacitDuvodyPrazdne",
         "BaseAgenda.VydatDuvodPrazdne",
         "LinkovyJrAd.DoplnBarvyLinky", "LinkovyJrAd.VypisVylepy", "LinkovyJrAd.VypisVylep", "LinkovyJrAd.SeradSpoje",
         "LinkovyJrAd.NactiTurnusy", "LinkovyJrAd.PridejTurnusySpoje", "LinkovyJrAd.PridatPoznamkyPlatnosti",
         "LinkovyJrAd.PridatPoznamkyNZ", "LinkovyJrAd.PridatPoznamkyAtributu", "LinkovyJrAd.DoplnOmezeniAtributu",
         "LinkovyJrAd.PridatVetyUpresneni", "LinkovyJrAd.SlozVetu", "LinkovyJrAd.PridatPoznamkySpoju",
         "LinkovyJrAd.PridatTextSpoje", "LinkovyJrAd.PridatPoznamkyMistenkovani", "LinkovyJrAd.PridatStaleZnacky",
-        "LinkovyJrAd.PridatStalouZnacku", "LinkovyJrAd.PridatPoznamkyLinky", "LinkovyJrAd.SestavTextOmezeni",
+        "LinkovyJrAd.PridatStalouZnacku", "LinkovyJrAd.PridatPoznamkyLinky",
         "LinkovyJrAd.NactiNastaveniNazvu",
         "LinkovyJrAdRozdilovy.NactiStranky", "LinkovyJrAdRozdilovy.SlucStranky", "LinkovyJrAdRozdilovy.PrevezmiSkupinyDnu",
         "LinkovyJrAdRozdilovy.SlucPoznamky", "LinkovyJrAdRozdilovy.DoplnPuvodni", "LinkovyJrAdRozdilovy.SlucZastavky",
@@ -53,7 +53,7 @@ public class NazvyMetodAgendTests
         "ZastavkoveJrAd.ZapsatNaObjednani", "ZastavkoveJrAd.VyberZaklTrasu", "ZastavkoveJrAd.NacistSkupinyDnuDleDefinice",
         "ZastavkoveJrAd.PridatRozsah", "ZastavkoveJrAd.PripravitJede", "ZastavkoveJrAd.ZiskejMarker",
         "ZastavkoveJrAd.ProrezatLegenduRozdilu", "ZastavkoveJrAd.SestavPoznamky", "ZastavkoveJrAd.NepoznamkovatSpoj",
-        "ZastavkoveJrAd.SestavTextOmezeni", "ZastavkoveJrAd.PouzitNazevProMhd",
+        "ZastavkoveJrAd.PouzitNazevProMhd",
         "ZastavkoveJrAd.VypsatSpojeDopravce", "ZastavkoveJrAd.NactiJazyk", "ZastavkoveJrAd.NactiTextyZnacek",
         "ZastavkoveJrAd.NactiNastaveniNazvu",
         "ZastavkoveJrMhd.SestavitVyvesky", "ZastavkoveJrMhd.PripravitTrasu", "ZastavkoveJrMhd.SloucitTotozneZastavky",

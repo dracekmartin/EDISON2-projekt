@@ -96,8 +96,13 @@ Method TestPlatnostOdLinky()
 	set sku = "TD-B188-"_$job
 	set ^JRL(sku,"0000001","PATCH","Plati") = "11.12.2022~09.12.2023"
 	set ocekavano = ##class(ALVA.GENERALAPI.Date).DateToHor("11.12.2022")
-	do $$$AssertEquals($classmethod(..#AGENDA, "HorologPlatnostiOdLinky", $namespace, sku, "0000001"), ocekavano, "platí od linky")
-	do $$$AssertEquals($classmethod(..#AGENDA, "HorologPlatnostiOdLinky", $namespace, sku, "0000002"), "", "linka bez platnosti → prázdné (tisk pak bere dnešek)")
+	set ad = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
+	do $$$AssertEquals($lg($classmethod(ad, "HorologPlatnostiLinky", $namespace, sku, "0000001"), 1), ocekavano, "platí od linky")
+	do $$$AssertEquals($lg($classmethod(ad, "HorologPlatnostiLinky", $namespace, sku, "0000002"), 1), "", "linka bez platnosti → prázdné (tisk pak bere dnešek)")
+	// Přípona za dvojtečkou nepatří do data „do" (`B56` S8) - do 30. 10. ji tam čtyři místa ze šesti nechala.
+	set ^JRL(sku,"0000003","PATCH","Plati") = "11.12.2022~09.12.2023:ruční poznámka"
+	do $$$AssertEquals($listtostring($classmethod(ad, "PlatnostLinky", $namespace, sku, "0000003"), "~"), "11.12.2022~09.12.2023", "přípona se odřízne")
+	do $$$AssertEquals($lg($classmethod(ad, "HorologPlatnostiLinky", $namespace, sku, "0000003"), 2), ##class(ALVA.GENERALAPI.Date).DateToHor("09.12.2023"), "platí do bez přípony")
 }
 
 /// Obě AD agendy čtou zastávku k datu, které si nastavily pro tištěnou linku.

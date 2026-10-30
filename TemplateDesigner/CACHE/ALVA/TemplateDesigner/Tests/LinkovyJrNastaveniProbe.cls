@@ -2231,8 +2231,8 @@ ClassMethod AtributySpojuVyskyt(ByRef sys As %String) As %Status
 }
 
 /// Předložky textu omezení po firmách (`B194` T3d): číselník `NCOME` (CZ i *SK) pro typy omezení
-/// 11, 12, 13, 22 a liché / sudé týdny, ze kterých je bere starý tisk i Linkový JŘ AD. Zastávkový JŘ AD
-/// je má napevno (`PrefixOmezeni`), takže rozdíl je vidět jen tam, kde se číselník od nich liší.
+/// 11, 12, 13, 22 a liché / sudé týdny, ze kterých je bere starý tisk i obě agendy AD
+/// (`Jr.DataAd.PredlozkaOmezeni`); standardní znění platí jen tam, kde číselník chybí.
 ClassMethod PredlozkyOmezeni(ByRef sys As %String) As %Status
 {
 	set err = ""

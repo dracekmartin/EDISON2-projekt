@@ -555,7 +555,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     // B188: údaje zastávek z registru k „platí od" linky (časové varianty), jako starý tisk
-    s ^||TiskKnizni("zastavky","hrl") = ..HorologPlatnostiOdLinky(dataDB, sku, lin)
+    s ^||TiskKnizni("zastavky","hrl") = $lg(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).HorologPlatnostiLinky(dataDB, sku, lin), 1)
     // U obousměrné stránky stačí spoje v jednom ze směrů - kdyby se ptalo jen na `smer`, linka
     // obsluhovaná pouze zpět by nevrátila nic.
     // Důvod prázdné stránky stejnými slovy jako linkový JŘ MHD (`BaseAgenda.PrazdnaStranka`, `B193g`).
@@ -567,7 +567,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     }
 
     s rec = ..Jazyk(dataDB)
-    s tiskDtm = ..TiskDtm(dataDB, sku, lin)
+    s tiskDtm = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TiskDtm(dataDB, sku, lin)
 
     // ── hlavička linky ──────────────────────────────────────────────
     s vals = ##class(%DynamicObject).%New()
@@ -583,8 +583,8 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     // Vzory rozložení sloupců - obsah drží **server**, klient zná jen klíče a popisky. Bez toho
     // by parametr uměl jen hlásit stav, ale ne přepnout (a klientský opis pravidel by se rozešel).
     d vals.%Set("PRESETY_SLOUPCU",        ..PresetySloupcuLinky(dataDB, rec, sku, lin))
-    s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
-    s platiOd = $p(plati,"~",1), platiDo = $p(plati,"~",2)
+    s platnost = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PlatnostLinky(dataDB, sku, lin)
+    s platiOd = $lg(platnost,1), platiDo = $lg(platnost,2)
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
     d vals.%Set("DATUM_PLATNOSTI_DO",     platiDo)
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
@@ -1122,8 +1122,7 @@ ClassMethod CasProRazeni(cas As %String) As %String
 ClassMethod NactiTurnusy(dataDB As %String, sku As %String, lin As %String, ByRef turnusy)
 {
     k turnusy
-    s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
-    s dh = ..DatumNaDh($p(plati,"~",1))
+    s dh = $lg(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).HorologPlatnostiLinky(dataDB, sku, lin), 1)
     q:dh=""
     k tin, tout
     f smerSp = "T", "Z" {
@@ -1697,7 +1696,7 @@ ClassMethod PridatPoznamkyNZ(dataDB As %String, sku As %String, lin As %String, 
                 q:sp=""
                 i '$isvalidnum(sp) continue
                 i $p($g(^[dataDB]JRL(sku,lin,smerNz,sp)),"#",7) '= znak continue
-                s txt = ..SestavTextOmezeni(dataDB, sku, lin, smerNz, sp, rec, tiskDtm)
+                s txt = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TextOmezeni(dataDB, sku, lin, smerNz, sp, rec, tiskDtm)
                 q:txt'=""
             }
             q:txt'=""
@@ -1808,7 +1807,7 @@ ClassMethod DoplnOmezeniAtributu(dataDB As %String, sku As %String, lin As %Stri
 ClassMethod TextOmezeniAtributu(od As %Integer, do As %Integer, pocet As %Integer, info As %String, sablona As %String, tiskDtm As %Integer) As %String
 {
     s txt = ""
-    i od s txt = ..FormatDatumyOmezeni(..DhNaDatum(od)_":"_$s(do:..DhNaDatum(do), 1:""), tiskDtm)
+    i od s txt = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatDatumyOmezeni(..DhNaDatum(od)_":"_$s(do:..DhNaDatum(do), 1:""), tiskDtm)
     i pocet s txt = txt_$s(txt="":"", 1:", ")_$p(sablona,"|",8)_" "_pocet_" "_$p(sablona,"|",9)
     i info '= "" s txt = txt_$s(txt="":"", 1:", ")_info
     q txt
@@ -2224,25 +2223,6 @@ ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy 
         i p '= "" s wMap(p) = $p(seg,":",2)
     }
     i $d(wMap) m ^||TiskKnizni("wmap",cisloTrasy) = wMap
-}
-
-/// Text poznámky z datumových omezení spoje. Nejprve dlouhodobá platnost sudé/liché týdny
-/// (hlava:8 = 4/5 → NCOME "SU"/"LI"), pak omzId v pořadí 13,12,11,14,15,22 (1:1 gComNZLiSp);
-/// prefixy z ^JRSET("NCOME"); víc omezení spojeno ", ".
-ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, rec As %String, tiskDtm As %Integer) As %String
-{
-    s txt = ..TextTydnuPlatnosti(dataDB, rec, $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8))
-    f omzIdx=1:1:6 {
-        s omzId = $p("13,12,11,14,15,22", ",", omzIdx)
-        s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
-        i omz = "" continue
-        s prefix = ..PredlozkaOmezeni(dataDB, rec, omzId)
-        s datumy = ..FormatDatumyOmezeni(omz, tiskDtm)
-        i (datumy = "") && (omzId '= 14) && (omzId '= 15) continue
-        i txt '= "" s txt = txt_", "
-        s txt = txt_prefix_$s(datumy'="":" "_datumy, 1:"")
-    }
-    q txt
 }
 
 /// Věta o pokračování spoje na jinou linku z číselníku firmy (`NCOME` 34, kusy „spoj~pokračuje na

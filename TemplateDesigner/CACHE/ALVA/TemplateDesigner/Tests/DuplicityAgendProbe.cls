@@ -55,14 +55,15 @@ ClassMethod PlatnostSPriponou(ByRef sys As %String) As %Status
 }
 
 /// Spoje s omezením 14 / 15 („jede jen v sudých / lichých týdnech"), u kterých z omezení nevyjde
-/// žádné datum. Linkový JŘ AD větu vytiskne i bez data, vývěska AD ji přeskočí. OUT: souhrn, priklad~n.
+/// žádné datum. Linkový JŘ AD větu vytiskl i bez data, vývěska AD ji do 30. 10. přeskočila (`B56` S8
+/// sjednotil podle linkového). OUT: souhrn, priklad~n.
 ClassMethod OmezeniBezDat(ByRef sys As %String) As %Status
 {
 	set err = ""
 	try {
 		$$$FillParams
 		kill ^||ML
-		set agenda = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+		set agenda = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
 		set sOmezenim = 0, bezDat = 0, prikladu = 0
 		for fi = 1:1:$length(..#FIRMY, ",") {
 			set db = $piece(..#FIRMY, ",", fi)
@@ -160,6 +161,64 @@ ClassMethod CernaBarva(ByRef sys As %String) As %Status
 				}
 				set ^||ML("OUT", "mhd~"_db_"~"_pole) = "poznamek="_poznamek_" sBarvou="_sBarvou_" cerna0;0;0="_cernych
 			}
+		}
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
+/// Tři převody data platnosti linky na `$h` (`B56` S8): `ALVA.GENERALAPI.Date.DateToHor` (začátek
+/// platnosti pro zastávky k datu), kontrola tvaru + `DatumNaHorolog` (období sloupců vývěsky AD)
+/// a `$zdateh` v `DatumNaDh` (turnusy linkového JŘ AD). Vyjdou na reálných datech stejně?
+/// OUT: souhrn, tvar~vzor = počet, rozdil~n = příklad.
+ClassMethod PrevodyPlatnosti(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML, tvary
+		set zastavkovy = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+		set linkovy = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd"
+		set dat = 0, rozdilu = 0, prazdnych = 0
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set sku = ""
+			for {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					continue:'$data(^[db]JRL(sku, lin, "I"))
+					set plati = $piece($get(^[db]JRL(sku, lin, "PATCH", "Plati")), ":", 1)
+					for kus = 1, 2 {
+						set text = $piece(plati, "~", kus)
+						if text = "" { set prazdnych = prazdnych + 1  continue }
+						set dat = dat + 1
+						set vzor = $translate(text, "0123456789", "9999999999")
+						set tvary(vzor) = $get(tvary(vzor)) + 1
+						set a = ""
+						try { set a = ##class(ALVA.GENERALAPI.Date).DateToHor(text) } catch (ex2) { set a = "" }
+						set b = ""
+						if $classmethod(zastavkovy, "JeDatumTvar", text) set b = $classmethod(zastavkovy, "DatumNaHorolog", text, $piece(text, ".", 3))
+						set c = $classmethod(linkovy, "DatumNaDh", text)
+						continue:(a=b)&&(b=c)
+						set rozdilu = rozdilu + 1
+						continue:rozdilu>20
+						set ^||ML("OUT", "rozdil~"_rozdilu) = db_" "_sku_"/"_lin_" "_text_" DateToHor="_a_" DatumNaHorolog="_b_" DatumNaDh="_c
+					}
+				}
+			}
+		}
+		set ^||ML("OUT", "souhrn") = "dat="_dat_" prazdnych="_prazdnych_" rozdilu="_rozdilu
+		set vzor = ""
+		for {
+			set vzor = $order(tvary(vzor))
+			quit:vzor=""
+			set ^||ML("OUT", "tvar~"_vzor) = tvary(vzor)
 		}
 	}
 	catch (ex) { $$$CatchErrRest }

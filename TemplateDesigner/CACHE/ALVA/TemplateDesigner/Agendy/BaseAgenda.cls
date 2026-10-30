@@ -226,93 +226,6 @@ ClassMethod RgbNaHex(rgb As %String) As %String
     q out
 }
 
-/// Věta o platnosti spoje AD „jen v sudých / lichých týdnech" (`dlouhodoba` = hlava:8, 4 sudé, 5 liché)
-/// z číselníku firmy (NCOME SU/LI), jinak české znění. Stojí na začátku textu omezení - 1:1 legacy
-/// `gComNZLiSp` (`JRapiNZUtl2.mac:125-128`), který volá starý zastávkový i linkový tisk AD.
-/// Zastávkový JŘ AD ji do 26. 10. vynechával (`B194` T3a).
-ClassMethod TextTydnuPlatnosti(dataDB As %String, rec As %String, dlouhodoba As %String) As %String
-{
-    i (dlouhodoba '= 4) && (dlouhodoba '= 5) q ""
-    q ..PredlozkaOmezeni(dataDB, rec, $s(dlouhodoba=4:14, 1:15))
-}
-
-/// Předložka typu omezení AD (`omzId`): 11 jede jen, 12 jede také, 13 jede, 22 nejede, 14 / 15 jede
-/// jen v sudých / lichých týdnech. Z číselníku firmy `^JRSET("NCOME",rec,…)` (14 / 15 pod klíči SU / LI),
-/// jako starý zastávkový i linkový tisk (`gComNZOmz`, `JRapiNZUtl2.mac:146-153`) - zákazník si znění
-/// může přepsat, `rec` = „CZ" nebo „*SK". Bez číselníku (nebo `dataDB` prázdné) standardní znění.
-/// Do 26. 10. měl Zastávkový JŘ AD předložky napevno, u sudých týdnů zkratkou „jede jen v su."
-/// a ve slovenštině „premáva aj" (`B194` T3d).
-ClassMethod PredlozkaOmezeni(dataDB As %String, rec As %String, omzId As %String) As %String
-{
-    s txt = ""
-    i dataDB '= "" s txt = $g(^[dataDB]JRSET("NCOME",rec,$case(omzId, 14:"SU", 15:"LI", :omzId)))
-    q $s(txt '= "":txt, 1:..PredlozkaOmezeniStandard(rec, omzId))
-}
-
-/// Standardní znění předložek omezení - totéž, co mají v číselníku všechny měřené firmy
-/// (sonda `LinkovyJrNastaveniProbe.PredlozkyOmezeni`, 26. 10.).
-ClassMethod PredlozkaOmezeniStandard(rec As %String, omzId As %String) As %String
-{
-    i rec = "*SK" q $case(omzId, 11:"premáva len", 12:"premáva tiež", 13:"premáva", 14:"premáva len v párnych týždňoch", 15:"premáva len v nepárnych týždňoch", 22:"nepremáva", :"")
-    q $case(omzId, 11:"jede jen", 12:"jede také", 13:"jede", 14:"jede jen v sudých týdnech", 15:"jede jen v lichých týdnech", 22:"nejede", :"")
-}
-
-/// Režim tisku roku v datech omezení AD (legacy TiskDtm): nastavení u linky, jinak u firmy.
-/// 0 = rok jak je v datech (celý), 1 = rok dvoumístně, 2 = rozsahy bez roku v „od", 3 = bez roku.
-/// Firma bez nastavení = 0, jako starý tisk - data jsou uložená s celým rokem, takže výchozí tvar
-/// je jednoznačný. Až se nastavení přesune nebo zruší, mění se jen tady.
-/// ⚠️ U linky je režim uložený **o 1 výš** (0 = nenastaveno), u firmy bez posunu - jako starý tisk
-/// (`JRapiNZUtl2.mac:186-190`). Do 26. 10. se u linky nic neodečítalo a 5 tisíc linek s „rokem
-/// dvoumístně" tisklo data bez roku (`B194a` C9). Zastávkový JŘ AD režim do 26. 10. nečetl vůbec
-/// a tiskl rok vždy dvoumístně, ač starý zastávkový tisk se jím řídí (`B194` T3c).
-ClassMethod TiskDtm(dataDB As %String, sku As %String, lin As %String) As %Integer
-{
-    s v = +$g(^[dataDB]JRL(sku,lin,"PATCH","TiskDtm"))
-    q $s(v > 0:v - 1, 1:+$g(^[dataDB]JRSET("Definice","TiskDtm")))
-}
-
-/// Datumová část omezení AD jako starý tisk (`JRapiNZUtl2.mac` gComOddO :197-222): položky (`#`)
-/// spojené ", ", rozsah `od:do` → "od D1 do D2"; shodné nebo chybějící „do" = jedno datum. Datumy
-/// dle režimu `TiskDtm` (viz `UpravDatum`). Společné pro Zastávkový i Linkový JŘ AD.
-///
-/// Vědomě jinak: starý linkový tisk spojuje data čárkou bez mezery („24.12.22,31.12.22", mezeru má
-/// jen před „od"). Čárka s mezerou je tvar starého zastávkového tisku - obě agendy AD tak píšou totéž
-/// a dlouhý výčet se líp čte (`B194` T3b, rozhodnutí Jan 26. 10.).
-ClassMethod FormatDatumyOmezeni(omz As %String, tiskDtm As %Integer) As %String
-{
-    s data = $s(omz["@":$p(omz,"@",2), 1:omz)
-    s casti = ""
-    f i=1:1:$l(data,"#") {
-        s item = $p(data,"#",i)
-        i item = "" continue
-        s od = ..UpravDatum($p(item,":",1), tiskDtm), do = ..UpravDatum($p(item,":",2), tiskDtm)
-        i (do = "") || (do = od) { s cast = od }
-        else {
-            // režim 2: „od" bez roku, jen když je rok stejný jako u „do" (do 26. 10. vždy a u obou)
-            i (tiskDtm = 2) && ($p(od,".",3) = $p(do,".",3)) s od = $p(od,".",1,2)_"."
-            s cast = "od "_od_" do "_do
-        }
-        i casti '= "" s casti = casti_", "
-        s casti = casti_cast
-    }
-    q casti
-}
-
-/// Datum položky omezení: den a měsíc vždy bez úvodních nul a „d.m" s tečkou - starý tisk tak čistí
-/// data s nulou navíc v každém režimu. Režim 1 = rok dvoumístně, 3 = bez roku, 0 a 2 = rok jak je.
-ClassMethod UpravDatum(dat As %String, tiskDtm As %Integer) As %String
-{
-    i dat = "" q ""
-    i dat [ "." { f idx=1:1:2 { s $p(dat,".",idx) = +$p(dat,".",idx) } }
-    i dat ? 1.2N1"."1.2N s dat = dat_"."
-    i tiskDtm = 3 q $p(dat,".",1,2)_"."
-    i tiskDtm = 1 {
-        s rr = $p(dat,".",3)
-        i $l(rr) > 2 s $p(dat,".",3) = $e(rr,*-1,*)
-    }
-    q dat
-}
-
 /// Nadpisy skupin dnů AD z nastavení firmy, jako starý zastávkový tisk (`JRapiLinPrtMhd1.mac:541-571`):
 /// věta `^JRSET("Definice","WinMHD",rec,"DSC")` (kusy `~`) podle `rozlozeni` - 0 = pracovní / soboty /
 /// neděle a svátky (kusy 2-4), 1 = prázdninová trojice (5-7), 2 = pracovní / víkend (8-9),
@@ -573,18 +486,6 @@ ClassMethod DnySpoje(plk As %String) As %String
     }
     i (dny["+") && (dny'["7") s dny = dny_"7"
     q $s(dny="":"-", 1:dny)
-}
-
-/// „Platí od" jízdního řádu linky jako horolog (`^JRL(sku,lin,"PATCH","Plati")` = „od~do:…").
-/// 1:1 legacy `gLinHrlOd^JRapiLinUtl`; prázdné, když linka datum platnosti nemá.
-ClassMethod HorologPlatnostiOdLinky(dataDB As %String, sku As %String, lin As %String) As %String
-{
-    i (sku = "") || (lin = "") ret ""
-    s datum = $p($p($g(^[dataDB]JRL(sku,lin,"PATCH","Plati")),":",1),"~",1)
-    i datum = "" ret ""
-    s hrl = ""
-    try { s hrl = ##class(ALVA.GENERALAPI.Date).DateToHor(datum) } catch (ex) { s hrl = "" }
-    ret hrl
 }
 
 /// ── Důvod prázdného výstupu (`DUVOD_PRAZDNE`, `cache-api.md`) ──

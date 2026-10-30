@@ -2,7 +2,7 @@ Include %occInclude
 
 /// %UnitTest pro deterministické helpery ZastavkoveJrMhd - čisté funkce bez čtení globálů
 /// (syntetické vstupy → přesné asserty, stabilní nezávisle na živých datech).
-/// AD helpery (SestavTextOmezeni, ZarazeniSpoje, ...) doplnit až po dokončení
+/// AD helpery (Jr.DataAd.TextOmezeni, ZarazeniSpoje, ...) doplnit až po dokončení
 /// rozpracované práce na ZastavkoveJrAd - netestovat WIP stav.
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrMhdHelperyTest Extends ALVA.EDTesting.MLTestCase
 {

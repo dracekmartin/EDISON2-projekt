@@ -221,7 +221,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
     // B188: údaje zastávek z registru k „platí od" linky (časové varianty), jako starý tisk
-    s ^||TiskAd("zastavky","hrl") = ..HorologPlatnostiOdLinky(dataDB, sku, lin)
+    s ^||TiskAd("zastavky","hrl") = $lg(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).HorologPlatnostiLinky(dataDB, sku, lin), 1)
     s slJakoStanoviste = (zdrojSt = "SL")            // #13088: stanoviště = sloupek, ne označník
 
     // currentPoradi nezadáno → první zastávka trasy
@@ -255,9 +255,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // #12997: JŘ umí od 3. 8. víc barev na linku. Klient je používá jako barvu textu (1.) a pozadí
     // (2.), ale modul jim význam nedává - proto neutrální název a význam nechává na šabloně.
     d vals.%Set("BARVA_LINKY_2",          ..BarvaLinky(IdFa, dataDB, sku, lin, 2))
-    s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
-    s platiOd = $p(plati,"~",1)
-    s platiDo = $p(plati,"~",2)
+    s platnost = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PlatnostLinky(dataDB, sku, lin)
+    s platiOd = $lg(platnost,1)
+    s platiDo = $lg(platnost,2)
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
     d vals.%Set("POPIS_PLATNOSTI",        $s(platiOd'="":"Platí od "_platiOd, 1:""))
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
@@ -829,10 +829,10 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         // anotace z datumových omezení spoje (omzId 11-15, 22) - sdílená přes všechny skupiny spoje.
         // Marker = číslo negativní značky (cnz) + typ „nz" (invertovaně), 1:1 legacy gold (anotace
         // „2$<cnz>", legenda „2#<cnz>#<text>"; ověřeno KV_DP i CB_CSADAD). Text bere per-spoj omzId
-        // (SestavTextOmezeni) - InPlatDef se nečte (drží zastaralý seed datumů). cnz prázdné → fallback
+        // (Jr.DataAd.TextOmezeni) - InPlatDef se nečte (drží zastaralý seed datumů). cnz prázdné → fallback
         // na sekvenční číslo + typ „text" (zachová staré chování pro spoj bez NZ).
         s znak = "", typOmez = "text"
-        s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp)
+        s txt = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TextOmezeni(dataDB, sku, lin, smer, sp, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TiskDtm(dataDB, sku, lin))
         i txt '= "" {
             i cnz '= "" {
                 s znak = cnz, typOmez = "nz"
@@ -1869,18 +1869,6 @@ ClassMethod JeDatumTvar(text As %String) As %Boolean
     q 1
 }
 
-/// Platnost jízdního řádku linky jako $lb(hrlOd, hrlDo) - `PATCH,"Plati"` ve tvaru „datumOd~datumDo:…".
-/// Prázdná složka = neomezeno.
-ClassMethod PlatnostLinky(dataDB As %String, sku As %String, lin As %String) As %String
-{
-    s val = $p($g(^[dataDB]JRL(sku,lin,"PATCH","Plati")), ":", 1)
-    s datumOd = $p(val,"~",1), datumDo = $p(val,"~",2)
-    s hrlOd = "", hrlDo = ""
-    i ..JeDatumTvar(datumOd) s hrlOd = ..DatumNaHorolog(datumOd, $p(datumOd,".",3))
-    i ..JeDatumTvar(datumDo) s hrlDo = ..DatumNaHorolog(datumDo, $p(datumDo,".",3))
-    q $lb(hrlOd, hrlDo)
-}
-
 /// „d.m" + rok → horolog; "" když datum v daném roce neexistuje (29.2. v nepřestupném roce).
 ClassMethod DatumNaHorolog(text As %String, rok As %String) As %String
 {
@@ -1904,7 +1892,7 @@ ClassMethod ObdobiSloupcu(dataDB As %String, sku As %String, lin As %String, ByR
     k obdobiSloupcu
     s obdobiSloupcu("rozsah") = $lb("", "")
     s obdobiSloupcu("mimo") = ""
-    s platnost = ..PlatnostLinky(dataDB, sku, lin)
+    s platnost = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).HorologPlatnostiLinky(dataDB, sku, lin)
     s hrlPlatiOd = $lg(platnost,1), hrlPlatiDo = $lg(platnost,2)
     s dnesniRok = $p(##class(ALVA.GENERALAPI.Date).horToDate($h), ".", 3)
     s rokOd = $s(hrlPlatiOd'="":$p(##class(ALVA.GENERALAPI.Date).horToDate(hrlPlatiOd),".",3), 1:dnesniRok)
@@ -2440,7 +2428,7 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildPoznamka("text", komentarZnak, komentareLegenda(komentarZnak), "", "", "rucni-komentar"))
     }
     // datumová omezení (nejede/jede) - marker = číslo NZ (cnz), typ „nz" (invertovaně) pokud pochází
-    // z cnz, jinak „text" (sekvenční fallback). Text per-spoj (SestavTextOmezeni).
+    // z cnz, jinak „text" (sekvenční fallback). Text per-spoj (Jr.DataAd.TextOmezeni).
     s n = ""
     f {
         s n = $o(poznMap("byMarker", n))
@@ -2555,25 +2543,6 @@ ClassMethod TextAtributu(znak As %String) As %String
     q $g(m(znak))
 }
 
-/// Sestaví text poznámky z datumových omezení spoje (omzId 11-15, 22) jako starý zastávkový tisk
-/// (`gComNZLiSp`, `JRapiNZUtl2.mac:110-131`, volá ho `JRapiLinPrtMhd1.mac:154`): na začátku věta
-/// o lichých / sudých týdnech (`TextTydnuPlatnosti`), pak omezení spojená čárkou v pořadí
-/// 13, 12, 11, 14, 15, 22 - základní období „jede", pak „jede také", „jede jen", nakonec „nejede".
-/// Totéž pořadí má Linkový JŘ AD; do 26. 10. tu bylo 11, 12, 13 (`B194` T3e).
-ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String) As %String
-{
-    s txt = ..TextTydnuPlatnosti(dataDB, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",8))
-    f omzId = 13,12,11,14,15,22 {
-        s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
-        i omz = "" continue
-        s datumy = ..FormatDatumyOmezeni(omz, ..TiskDtm(dataDB, sku, lin))
-        i datumy = "" continue
-        i txt '= "" s txt = txt_", "
-        s txt = txt_..PrefixOmezeni(omzId, dataDB)_datumy
-    }
-    q txt
-}
-
 /// Leží zastávka `poradi` v úseku, podle kterého se rozlišují varianty tras? Tedy od vývěskové
 /// zastávky (včetně) dál ve směru jízdy - 1:1 legacy smyčka `f mytc=Tc:Krok:TcDo`
 /// (`JRapiLinPrtMhd1.mac:274`).
@@ -2639,15 +2608,6 @@ ClassMethod PocetZastaveni(sig As %String) As %Integer
         i $p(sig,"~",i) = "S" s n = n + 1
     }
     ret n
-}
-
-/// Prefix textu pro daný typ omezení v jazyce šablony: předložka z číselníku firmy, jinak standardní
-/// znění (`BaseAgenda.PredlozkaOmezeni`, společné s Linkovým JŘ AD), s mezerou na konci. Prázdné
-/// `dataDB` = jen standardní znění.
-ClassMethod PrefixOmezeni(omzId As %String, dataDB As %String = "") As %String
-{
-    s txt = ..PredlozkaOmezeni(dataDB, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), omzId)
-    q $s(txt '= "":txt_" ", 1:"")
 }
 
 /// Text do legendy pro kroužkovou denní značku týdenní platnosti (dny 1-7, svátek `+`).

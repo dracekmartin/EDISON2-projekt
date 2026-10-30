@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S8** Platnost linky a text omezení spojů AD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (24), rozhodnuto
+  v `B194g` R2): platnost čte jedna metoda a příponu za dvojtečkou odřízne vždy, text omezení skládá jedna metoda
+  a omezení 14 a 15 je věta i bez data. Obojí s pomocnými metodami omezení je v `Jr/DataAd.cls`. Tisk beze změny.
+
 - **S6** Výběr skupin linek a linek u AD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (23), Jan 30. 10.: ať je
   výběr linek konzistentní i pro budoucí relaci nad AD): metody jsou v `Jr/DataAd.cls`, vývěska AD, linkový JŘ AD
   i rozdílový JŘ je jen přesměrují; `VyberLinekAdTests` zastaví agendu nad AD s vlastní verzí.
