@@ -83,11 +83,10 @@
   (analýza 12. 7., detail v historii roadmapy). ⚠️ **Před vydáním:** úvodní obrazovka nabízí „Připojit databázi SQL"
   a „Načíst soubor CSV" jen jako průzkum zájmu - když nebudou hotové, tlačítka odstranit (Jan 30. 10.).
 
-- **Sjednocené věci definovat jednou** [M] **Jan** (27. 10.) - nejdřív revize toho, co `B194` sjednotilo (popisky,
-  nápovědy a rozsahy polí E8, údaje dopravce D4, nabídka podle dat E5, kanon `ux-conventions §8`), a pro každé
-  rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky
-  a rozsahy ze schématu formuláře `*Edit.cls` místo opisu v `GetPropertyDescriptors` (dnes se píše dvakrát).
-  Strana návrháře, navazuje na E3 / E13; kód agend sjednotil `B56`.
+- **Sjednocené věci definovat jednou** [M] (revize 30. 10.: [`revize-sjednoceni.md`](revize-sjednoceni.md)) - Jan
+  rozhodl: formuláře prvků zůstávají v Caché a panel hlídá přísnější test podle klíče pole; nejdřív opravit nalezené
+  chyby (E), pak sloučit katalog prvků, výchozí hodnoty z kaskády a klávesové zkratky (A) a zpřísnit testy agend (B);
+  výchozí mřížka 5 mm bez přichytávání. Před relacemi AD, které přinesou nový prvek.
 
 - **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
   nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po
