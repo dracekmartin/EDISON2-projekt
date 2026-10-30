@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B56` (příprava `B194` hotová 30. 10.); přehled níž, pořadí s Janem teprve projdeme. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** `B56` (příprava `B194` hotová 30. 10.); přehled a pořadí níž. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -18,7 +18,8 @@ Cíl (Jan 29. 10.) není sjednotit všechno, ale ujasnit strukturu a dát agend�
 Sdílený kód jde do pomocných tříd mimo dědičnost agend ([`R8`](architektonicka-rozhodnuti-agendy.md)).
 Postup, pojistky a snímek výstupu jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md): jeden krok = jeden commit, snímek před i po.
 Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného, se při přesunu přejmenuje (`cache-api.md` pravidlo 5).
-**Co sjednotit, co nechat a v jakém pořadí, teprve projdeme s Janem**; zatím je to přehled bez pořadí.
+**Pořadí (Jan 30. 10.):** S1 → S2 → S3 → S4 → S5 a S6 → S8 → S7 → S9 s polem pro QR; S10 a S11 kdykoli po rozhodnutí.
+Položky převzaté z backlogu čekají na kolegy nebo na agendu bez linek.
 
 ### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
 
@@ -40,7 +41,7 @@ Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného,
 - **S11 Faktury** [S] **Jan** - ukázka z počátku bez zdroje dat, uživatelům se nenabízí; test ošetření chyb a test kontraktu dat ji vynechávají.
   Smazat, nebo dorovnat podle pravidel agend.
 
-### Převzato z backlogu - souvisí se sdíleným kódem agend
+### Převzato z backlogu - souvisí se sjednocením agend
 
 - **Úklid nastavení tisku v jízdních řádech - naše strana** [M] - **čeká na kolegu z jízdních řádů**.
   Domluveno 29. 10.: většinu tiskových nastavení z jízdních řádů vyhodí, zbytek dodělají. Až se k tomu
@@ -61,6 +62,15 @@ Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného,
   nabídka sloupce se ukáže sama. Hodí se spojit s `B56` (sdílený kód agend).
 - **Číslo zastávky pro adresu v QR ve všech agendách** [S] (dřív `B193h`, odloženo Janem 23. 10.) - jedno pole
   se stejným klíčem ve všech agendách JŘ; patří k Vyhledávači odjezdů v backlogu.
+- **Sjednocené věci definovat jednou** [M] **Jan** (27. 10.) - nejdřív revize toho, co `B194` sjednotilo (popisky,
+  nápovědy a rozsahy polí E8, údaje dopravce D4, nabídka podle dat E5, kanon `ux-conventions §8`), a pro každé
+  rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky
+  a rozsahy ze schématu formuláře `*Edit.cls` místo opisu v `GetPropertyDescriptors` (dnes se píše dvakrát).
+  Navazuje na E3 / E13; je to strana návrháře, kód agend řeší sekce výš.
+- **Slovo „linka" napevno** (`B194e` A5) [M] - asi 25 textů (menu „Zkontrolovat vybrané linky…",
+  hlášky „Žádná vybraná linka nemá data", průběh kontroly). Udělat, **až se bude vydávat agenda bez
+  linek** (Faktury, převod Report Generátoru) - skloňovat podle názvu instance agendy; okno výběru
+  už ho bere (Jan 27. 10.). Souvisí s S11.
 
 ### Vědomě nesjednocovat
 
@@ -86,17 +96,6 @@ Seznam s důvody je v [`legacy-nahrada.md §4`](legacy-nahrada.md); sloučení k
   ani „čára" nenajdou nic, „výška záhlaví" po `H6` nenajde Nejmenší výšku. Návrh: každé slovo zvlášť
   přes popisek i skupinu, bez koncovky u slov od 5 písmen, a krátký seznam synonym (písmo → Font, Řez,
   Velikost; podbarvení → Barva pozadí). Sdílená komponenta EDControls - platí pro celý EDISON.
-- **Sjednocené věci definovat jednou** [M] **Jan** (27. 10.) - nejdřív revize toho, co `B194` sjednotilo (popisky,
-  nápovědy a rozsahy polí E8, údaje dopravce D4, nabídka podle dat E5, kanon `ux-conventions §8`), a pro každé
-  rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky
-  a rozsahy ze schématu formuláře `*Edit.cls` místo opisu v `GetPropertyDescriptors` (dnes se píše dvakrát).
-  Navazuje na E3 / E13; serverovou stranu agend řeší `B56`.
-
-- **Slovo „linka" napevno** (`B194e` A5) [M] - asi 25 textů (menu „Zkontrolovat vybrané linky…",
-  hlášky „Žádná vybraná linka nemá data", průběh kontroly). Udělat, **až se bude vydávat agenda bez
-  linek** (Faktury, převod Report Generátoru) - skloňovat podle názvu instance agendy; okno výběru
-  už ho bere (Jan 27. 10.).
-
 - **Změna agendy nesmí nechat v šabloně prvky jiné agendy** [S-M] - dnes jde šablonu s Minutami odjezdů
   přepnout na Obecnou (Ctrl+Shift+A) a prvek zůstane jen s upozorněním. Prvky JŘ mají jít otevřít jen
   ve své agendě, takže změnu agendy v takové šabloně zablokovat a říct proč (rozhodnutí Jan 27. 10.).
