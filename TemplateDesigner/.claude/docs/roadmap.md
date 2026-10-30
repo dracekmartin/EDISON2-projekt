@@ -25,7 +25,6 @@ Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a p
 
 ### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
 
-- **S5 Doslovné kopie AD** [S] - název a normalizace linky, první linka, hodnota času ve vývěsce AD i linkovém JŘ AD (kód shodný, liší se komentáře).
 - **S6 Výběr skupin linek a linek u AD** [S-M] - vývěska AD a linkový JŘ AD mají každá svou kopii (dnes shodnou až na komentáře).
   Kopie MHD se do 23. 10. rozešla v příznaku zablokované skupiny; od té doby MHD sdílí jednu.
 - **S7 Hlavička linky** [M] **Jan** - číslo, platnost, typ JŘ a dopravce skládá každá agenda zvlášť, odtud čtyři tvary popisu platnosti.

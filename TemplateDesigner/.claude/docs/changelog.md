@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-30 (22) - Čtení dat AD z jedné třídy (`B56` S5)
+
+Název linky, číslo linky ve tvaru uloženém v `^JRL`, první linka firmy a hodnota času z trasy, které měla vývěska AD i linkový JŘ AD shodné, jsou jednou v `Jr/DataAd.cls`.
+Je to první třída na ose zdroje dat (R8): přibudou do ní další společná čtení AD a budou z ní brát i relace a vozový JŘ.
+Normalizace čísla linky se při přesunu jmenuje `FormatCisloLinky` místo `NormalizLinku` (pravidlo 5 o českých slovesech); seznam stávajících takových metod v `NazvyMetodAgendTests` se tím zmenšil o dvě.
+Rozdílový JŘ a pět Caché testů a sond volá novou třídu.
+Ověřeno: obě agendy AD na serveru vlastní kopii nemají (volání vrátí „doesn't exist"), snímek výstupu všech agend beze změny (42 souborů), Caché testy 269/269 včetně zlatých odtisků, .NET testy 2542/2542, integrační testy 48/48.
+
 ## 2026-10-30 (21) - Výstup linkového JŘ AD a MHD z jedné třídy (`B56` S4)
 
 Stavba poznámky legendy, skupiny dnů a formát času, které měl linkový JŘ AD i MHD znak po znaku stejné, jsou jednou v `Jr/VystupLinkovy.cls`.

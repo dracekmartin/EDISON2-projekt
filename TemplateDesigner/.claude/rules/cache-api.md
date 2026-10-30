@@ -91,6 +91,7 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
 - **Společné parametry JŘ** jsou v `Jr/Parametry.cls`; agenda si je skládá v `GetParameters` a drží jejich pořadí.
 - **Stavba výstupu vývěsky** (řádek zastávky, odjezd, skupina dnů, poznámka, barva, speciální znak) je v `Jr/VystupZastavkovy.cls`,
   linkového JŘ (poznámka, skupina dnů, čas) v `Jr/VystupLinkovy.cls`.
+- **Čtení dat AD** společné agendám nad `^JRL` (název, číslo a první linka, hodnota času) je v `Jr/DataAd.cls`.
 
 ### Wire formáty
 
@@ -308,7 +309,7 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
      `Format` (hodnota na text), `Parse`, `Convert`. Ne `PridatX`, `NactiX`, `SestavitX`, ani rozkazovací `SestavX`.
    - **Funkce pojmenovaná tím, co vrací:** česky bez slovesa (`NazevLinky`, `TextAtributu`, `PocetZastaveni`).
    - **Otázka ano/ne:** `Je…` / `Ma…` (zavedené, `JeAktualni`), ne `Is…`.
-   - Platí pro **nové názvy**. Asi 76 stávajících metod s českým slovesem se přejmenuje, až se jejich kód v `B56`
+   - Platí pro **nové názvy**. Asi 74 stávajících metod s českým slovesem (30. 10.) se přejmenuje, až se jejich kód v `B56`
      stěhuje do pomocných tříd, ne samostatnými commity jen kvůli názvu. Hlídá `NazvyMetodAgendTests`: nový název
      s českým slovesem neprojde a seznam stávajících se smí jen zmenšovat.
    - **Nikdy se nepřejmenovávají** třídy agend, `AgendaVariantCode`, klíče v datech a názvy parametrů sestavy - visí na nich

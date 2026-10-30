@@ -141,7 +141,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             q:lin=""
             i '$d(^[dataDB]JRL(sku,lin,"I")) continue
 
-            s nazev   = ..NazevLinky(dataDB, sku, lin)
+            s nazev   = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NazevLinky(dataDB, sku, lin)
             s cislo   = +lin                          // bez vedoucí nuly (subscript ^JRL ji drží)
             s display = cislo
             i nazev '= "" s display = cislo_" - "_nazev
@@ -199,8 +199,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // LINKA_ID, takže GetData musí číst tutéž skupinu, kterou picker listoval.
         i sku = "" s sku = $o(^[dataDB]JRL(""))
         // LINKA_ID nebo INSTANCE_ID (alias z Instance Pickeru) - co přijde
-        s lin = ..NormalizLinku($g(^||ML("IN","LINKA_ID")))
-        i lin = "" s lin = ..NormalizLinku($g(^||ML("IN","INSTANCE_ID")))
+        s lin = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky($g(^||ML("IN","LINKA_ID")))
+        i lin = "" s lin = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky($g(^||ML("IN","INSTANCE_ID")))
         i lin = "" d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
         // Přes výběr linek nejde, jen spuštěním z EDISONu nebo po smazání linky v JŘ (BaseAgenda.TextLinkaNeniVJr).
         i '$d(^[dataDB]JRL(sku,lin,"I")) d ..ChybaDat(..TextLinkaNeniVJr(sku, lin))
@@ -316,7 +316,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("CISLO_LINKY",            +lin)
     d vals.%Set("LOKALNI_OZNACENI_LINKY", lokalni)
     d vals.%Set("TITULEK",                titulek)
-    d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
+    d vals.%Set("POPIS_LINKY",            ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NazevLinky(dataDB, sku, lin))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
     d vals.%Set("DOPRAVCI_SOUHRNNY_JR",         ..DopravciSouhrnnyJr(dataDB, sku, lin, ..VypsatSpojeDopravce()))
     // Skalární údaje = PRVNÍ dopravce linky (u většiny linek jediný); všechny vypíše DOPRAVCI_SOUHRNNY_JR.
@@ -507,7 +507,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             i '$isvalidnum(ppV) continue
             s vvS = $g(wMapSel(ppV))
             s variantPat(viY,ppV) = $s(vvS="":"", (vvS="<")||(vvS="|"):"<", 1:"S")
-            i ..CasHodnota(vvS) '= "" s variantCas(viY,ppV) = ..CasJizdyZMapy(.wMapSel, currentPoradi, ppV)
+            i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota(vvS) '= "" s variantCas(viY,ppV) = ..CasJizdyZMapy(.wMapSel, currentPoradi, ppV)
         }
     }
 
@@ -877,7 +877,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         // offset času na aktuální zastávce z trasy spoje (cachovaná W-mapa); pobytová zast. = příjezd+čekání
         d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
         i '..OdjizdiZde(.wMap, currentPoradi, $p(hlava, ":", 2)) continue
-        s offset = ..CasHodnota($g(wMap(currentPoradi)))
+        s offset = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMap(currentPoradi)))
 
         // #8828: filtr per stanoviště - na stránce jen spoje odjíždějící z daného stanoviště vývěsky.
         // Spoj úplně bez stanoviště (prázdná W-trasa i J-věta) patří na stránku NEJČETNĚJŠÍHO
@@ -1135,14 +1135,14 @@ ClassMethod ObsluhovanePoradiOd(dataDB As %String, sku As %String, lin As %Strin
         i $d(trasyOdtud(ct)) continue                    // trasu už známe (W-mapa je per trasa)
         k wMapS
         d ..WMapa(dataDB, sku, lin, ct, .wMapS)
-        i ..CasHodnota($g(wMapS(currentPoradi))) = "" { s trasyOdtud(ct) = 0  continue }   // odtud nejede
+        i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMapS(currentPoradi))) = "" { s trasyOdtud(ct) = 0  continue }   // odtud nejede
         s trasyOdtud(ct) = 1
         s pp = ""
         f {
             s pp = $o(wMapS(pp))
             q:pp=""
             i '$isvalidnum(pp) continue
-            i ..CasHodnota($g(wMapS(pp))) '= "" s served(pp) = ""
+            i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMapS(pp))) '= "" s served(pp) = ""
         }
     }
     i $d(served) m ^||TiskAd("servedOd",dataDB,sku,lin,smer,currentPoradi) = served
@@ -1574,7 +1574,7 @@ ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String
             q:pp=""
             i '$isvalidnum(pp) continue
             i '..JeVUsekuVariant(pp, currentPoradi, jeTam) continue
-            i ..CasHodnota($g(wMap(pp))) = "" continue
+            i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMap(pp))) = "" continue
             s n = n + 1
             s t = ..CasJizdyZMapy(.wMap, currentPoradi, pp)
             i t > maxT s maxT = t
@@ -1609,17 +1609,6 @@ ClassMethod VyberZaklTrasu(ByRef pokryti, ByRef delka, ByRef pocet) As %String
     q baseCt
 }
 
-/// Numerická hodnota času z W-segmentu. Pobytová zastávka má formát `příjezd/čekání` (např. `33/4`)
-/// → vrací **odjezd = příjezd + čekání** (1:1 legacy `Cas+Ceka` / `Cas+$P(Cas,"/",2)`). Běžná `27` → 27.
-/// "" když spoj zastávku neobsluhuje: mimo trasu (prázdné), projíždí (`<`), nebo `|` (zastávka na
-/// trase, ale spoj v ní nestaví - legacy `JRapiExp10` ř.272-275 přeskakuje `<`/`|`/prázdné shodně;
-/// dřívější `+"|"` = 0 tisklo falešný čas 0).
-ClassMethod CasHodnota(cas As %String) As %String
-{
-    i (cas = "") || (cas = "<") || (cas = "|") q ""
-    q +$p(cas,"/",1) + +$p(cas,"/",2)        // "33/4"→37, "27"→27 (piece2 prázdné = +0)
-}
-
 /// Odjíždí spoj z vývěskové zastávky? Ne, když tu nestaví, když tu **končí** (`tcDo` = 2. pole
 /// hlavičky spoje) nebo když tu má příznak **jen výstup** (`V`). 1:1 legacy `JRapiLinPrtMhd1.mac`
 /// ř.194 (`I Tc=TcDo Q`) a ř.201 (`I AtrSpTc["V" q`).
@@ -1629,7 +1618,7 @@ ClassMethod CasHodnota(cas As %String) As %String
 /// která je v datech častá (VS_CSAD skoro 30 000 zastávek spojů, obvykle ta před konečnou).
 ClassMethod OdjizdiZde(ByRef wMap, currentPoradi As %String, tcDo As %String) As %Boolean
 {
-    i ..CasHodnota($g(wMap(currentPoradi))) = "" q 0
+    i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMap(currentPoradi))) = "" q 0
     i (tcDo '= "") && (+tcDo = +currentPoradi) q 0
     i $g(wMap(currentPoradi,"atr")) [ "V" q 0
     q 1
@@ -1640,8 +1629,8 @@ ClassMethod OdjizdiZde(ByRef wMap, currentPoradi As %String, tcDo As %String) As
 /// 0 když některá zastávka není na trase / spoj projíždí (`<`).
 ClassMethod CasJizdyZMapy(ByRef wMap, fromPoradi As %String, poradi As %String) As %Integer
 {
-    s cFrom = ..CasHodnota($g(wMap(fromPoradi)))
-    s cTo   = ..CasHodnota($g(wMap(poradi)))
+    s cFrom = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMap(fromPoradi)))
+    s cTo   = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMap(poradi)))
     i (cFrom = "") || (cTo = "") q 0
     q cTo - cFrom
 }
@@ -1658,7 +1647,7 @@ ClassMethod CasJizdySloupce(ByRef wMap, currentPoradi As %String, poradi As %Str
     i jeProjeta q 0
     s vv = $g(wMap(poradi))
     i (vv = "<") || (vv = "|") q "<"
-    i ..CasHodnota(vv) = "" q ""
+    i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota(vv) = "" q ""
     q ..CasJizdyZMapy(.wMap, currentPoradi, poradi)
 }
 
@@ -1674,7 +1663,7 @@ ClassMethod DelkaProfilu(ByRef wMap, currentPoradi As %String, ByRef servedPorad
         q:pp=""
         i '$isvalidnum(pp) continue
         i '..JeVUsekuVariant(pp, currentPoradi, jeTam) continue
-        i ..CasHodnota($g(wMap(pp))) = "" continue
+        i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMap(pp))) = "" continue
         s t = ..CasJizdyZMapy(.wMap, currentPoradi, pp)
         i t > maxT s maxT = t
     }
@@ -2770,45 +2759,6 @@ ClassMethod DenniZnacky(ftl As %String, plk As %String) As %String
     q znacky
 }
 
-/// Najde první linku v zadané firmě (první skupina × první linka s uzlem "I").
-/// Vrací ByRef sku + lin (prázdné, pokud firma nemá v ^JRL žádnou linku).
-ClassMethod PrvniLinka(dataDB As %String, ByRef sku As %String, ByRef lin As %String)
-{
-    s sku = $o(^[dataDB]JRL(""))
-    s lin = ""
-    q:sku=""
-    f {
-        s lin = $o(^[dataDB]JRL(sku,lin))
-        q:lin=""
-        i $d(^[dataDB]JRL(sku,lin,"I")) quit
-    }
-}
-
-/// Normalizuje číslo linky na formát uložený v ^JRL (7 znaků, zleva doplněno nulami).
-ClassMethod NormalizLinku(lin As %String) As %String
-{
-    i lin = "" q ""
-    i $l(lin) < 7 q $e("0000000", 1, 7 - $l(lin)) _ lin
-    q lin
-}
-
-/// Sestaví název linky z částí ^JRL(sku,lin,"I",1..N) spojených pomlčkou.
-ClassMethod NazevLinky(dataDB As %String, sku As %String, lin As %String) As %String
-{
-    s nazev = "", i = ""
-    f {
-        s i = $o(^[dataDB]JRL(sku,lin,"I",i))
-        q:i=""
-        i '$isvalidnum(i) continue       // přeskoč ne-numerické (nemělo by nastat)
-        i i'>0 continue                  // přeskoč konfig uzel "0" (mapování spojek názvu)
-        s cast = $g(^[dataDB]JRL(sku,lin,"I",i))
-        i cast="" continue               // přeskoč prázdnou část, ale pokračuj
-        i nazev '= "" s nazev = nazev _ "-"
-        s nazev = nazev _ cast
-    }
-    q nazev
-}
-
 /// POPIS_DOPRAVCE = **každý dopravce ve vlastním bloku** - název, sídlo, ulice a telefon, každé na
 /// svém řádku; bloky odděluje prázdný řádek. Sesbírá distinct dopravce (fa:pr z `#`-pole 2 spoje)
 /// přes oba směry a resolvuje je přes <see cref="NazevDopravce"/>.
@@ -3351,7 +3301,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         d ..NactiTextyZnacek(dataDB)
 
         // Živý náhled z první linky aktuální firmy (session dataDB) - zrcadlí reálný GetData.
-        d ..PrvniLinka(dataDB, .sku, .lin)
+        d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PrvniLinka(dataDB, .sku, .lin)
         s page = $s(lin'="":..BuildStrankaZastavky(dataDB, sku, lin, , , , IdFa), 1:"")
 
         // Fallback - když firma nemá v ^JRL žádnou linku, ať designer nespadne.

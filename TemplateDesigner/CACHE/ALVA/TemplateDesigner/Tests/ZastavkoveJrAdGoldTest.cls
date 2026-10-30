@@ -399,7 +399,7 @@ Method TestVariantniSloupecJeProbehJedneTrasy()
 					for  {
 						set pp = $order(hodnoty(ci, pp))
 						quit:pp=""
-						if ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota($get(wMap(pp))) = "" { set ok = 0  quit }
+						if ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($get(wMap(pp))) = "" { set ok = 0  quit }
 						if ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasJizdyZMapy(.wMap, aktPoradi, pp) '= hodnoty(ci, pp) { set ok = 0  quit }
 					}
 					set sedi = ok

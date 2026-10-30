@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S5** Čtení dat AD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (22), schválil Jan 30. 10.): název, číslo
+  a první linka a hodnota času z vývěsky AD i linkového JŘ AD jsou v `Jr/DataAd.cls`; `NormalizLinku` je při přesunu
+  `FormatCisloLinky` (pravidlo 5). Výstup agend beze změny.
+
 - **S4** Výstup linkového JŘ z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (21), schválil Jan 30. 10.): poznámka
   legendy, skupina dnů a formát času z linkového JŘ AD i MHD jsou v `Jr/VystupLinkovy.cls`. Výstup agend beze změny.
 

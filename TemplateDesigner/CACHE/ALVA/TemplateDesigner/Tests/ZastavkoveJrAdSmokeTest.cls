@@ -57,7 +57,7 @@ Method TestMaxSloupcuVariantOrizneNaPrvniN()
 Method TestGetDataVraciValidniStrankyProPrvniLinku()
 {
 	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
+	do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PrvniLinka($namespace, .sku, .lin)
 	if lin = "" {
 		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - smoke přeskočen")
 		quit

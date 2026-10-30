@@ -676,7 +676,7 @@ ClassMethod UpresneniAtributuSpoje(dataDB As %String, sku As %String, lin As %St
 
 /// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
 /// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). Sdílí vývěska i linkový JŘ AD, aby táž linka
-/// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`NormalizLinku`).
+/// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`Jr.DataAd.FormatCisloLinky`).
 ClassMethod LokalniOznaceniLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String
 {
     s lokalni = $p($g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD")),"~",1)

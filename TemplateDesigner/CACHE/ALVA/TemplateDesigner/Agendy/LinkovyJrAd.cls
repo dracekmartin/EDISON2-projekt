@@ -379,7 +379,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             q:lin=""
             i '$d(^[dataDB]JRL(sku,lin,"I")) continue
 
-            s nazev   = ..NazevLinky(dataDB, sku, lin)
+            s nazev   = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NazevLinky(dataDB, sku, lin)
             s cislo   = +lin                          // bez vedoucí nuly (subscript ^JRL ji drží)
             s display = cislo
             i nazev '= "" s display = cislo_" - "_nazev
@@ -423,8 +423,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         i sku = "" s sku = $o(^[dataDB]JRL(""))
-        s lin = ..NormalizLinku($g(^||ML("IN","LINKA_ID")))
-        i lin = "" s lin = ..NormalizLinku($g(^||ML("IN","INSTANCE_ID")))
+        s lin = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky($g(^||ML("IN","LINKA_ID")))
+        i lin = "" s lin = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky($g(^||ML("IN","INSTANCE_ID")))
         i lin = "" d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
         i '$d(^[dataDB]JRL(sku,lin,"I")) d ..ChybaDat(..TextLinkaNeniVJr(sku, lin))
 
@@ -565,7 +565,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         $$$FillParams
         k ^||TiskKnizni
 
-        d ..PrvniLinka(dataDB, .sku, .lin)
+        d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PrvniLinka(dataDB, .sku, .lin)
         // Vlastní definice sloupců ze šablony jde i do ukázkových dat - bez ní ukazuje náhled
         // **bez vybrané linky** rozdělení podle linky a uživatelovy sloupce se v něm neprojeví,
         // takže to vypadá jako nefunkční featura (táž třída chyby jako `#13158` u vývěsek).
@@ -646,7 +646,7 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     d vals.%Set("CISLO_LINKY",            +lin)
     // Obě čísla linky jako u vývěsky, šablona si vybere (rozhodnutí Jan 23. 10.).
     d vals.%Set("LOKALNI_OZNACENI_LINKY", ..LokalniOznaceniLinkyAd(dataDB, sku, lin))
-    d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
+    d vals.%Set("POPIS_LINKY",            ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NazevLinky(dataDB, sku, lin))
     d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
@@ -873,7 +873,7 @@ ClassMethod ZastavujiciTc(dataDB As %String, sku As %String, lin As %String, sme
         f {
             s pp = $o(wMap(pp))
             q:pp=""
-            i ..CasHodnota($g(wMap(pp))) = "" continue
+            i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMap(pp))) = "" continue
             s zastavuje(pp) = 1
         }
     }
@@ -1361,7 +1361,7 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
     f i=1:1:pocetRadku {
         i $lg(rowMeta(i),2) '= "O" continue
         s pp = $lg(rowMeta(i),1)
-        i ..CasHodnota($g(wMap(pp))) '= "" {
+        i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota($g(wMap(pp))) '= "" {
             i prvniPoradi = "" s prvniPoradi = pp
             s posledniPoradi = pp
         }
@@ -1386,7 +1386,7 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
             i (pp = posledniPoradi) && ($d(rowMeta(i-1)) && ($lg($g(rowMeta(i-1)),2) = "P") && ($lg($g(rowMeta(i-1)),1) = pp)) {
                 d casy.%Push("")          // zdvojená konečná: odjezd se maže, zůstává příjezd
             }
-            else { d casy.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).FormatCas(odjezd + ..CasHodnota(cas))) }
+            else { d casy.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).FormatCas(odjezd + ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota(cas))) }
         }
     }
     d o.%Set("CASY", casy)
@@ -2298,14 +2298,6 @@ ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy 
     i $d(wMap) m ^||TiskKnizni("wmap",cisloTrasy) = wMap
 }
 
-/// Numerická hodnota času z W-segmentu; pobytová zastávka `příjezd/čekání` → odjezd.
-/// "" pro nečasové markery ("<", "|", prázdno).
-ClassMethod CasHodnota(cas As %String) As %String
-{
-    i (cas = "") || (cas = "<") || (cas = "|") q ""
-    q +$p(cas,"/",1) + +$p(cas,"/",2)
-}
-
 /// Text poznámky z datumových omezení spoje. Nejprve dlouhodobá platnost sudé/liché týdny
 /// (hlava:8 = 4/5 → NCOME "SU"/"LI"), pak omzId v pořadí 13,12,11,14,15,22 (1:1 gComNZLiSp);
 /// prefixy z ^JRSET("NCOME"); víc omezení spojeno ", ".
@@ -2336,43 +2328,6 @@ ClassMethod TextPokracovaniSpoje(dataDB As %String, rec As %String, sp As %Strin
     q $zstrip($p(vzor,"~",1)_" "_sp_" "_$p(vzor,"~",2)_" "_linka_" "_$p(vzor,"~",3)_" "_spoj_" "_$p(vzor,"~",4)_" "_zastavka, "<=>W")
 }
 
-/// Najde první linku firmy (první skupina × první linka s uzlem "I").
-ClassMethod PrvniLinka(dataDB As %String, ByRef sku As %String, ByRef lin As %String)
-{
-    s sku = $o(^[dataDB]JRL(""))
-    s lin = ""
-    q:sku=""
-    f {
-        s lin = $o(^[dataDB]JRL(sku,lin))
-        q:lin=""
-        i $d(^[dataDB]JRL(sku,lin,"I")) quit
-    }
-}
-
-/// Normalizuje číslo linky na formát ^JRL (7 znaků, zleva nuly).
-ClassMethod NormalizLinku(lin As %String) As %String
-{
-    i lin = "" q ""
-    i $l(lin) < 7 q $e("0000000", 1, 7 - $l(lin)) _ lin
-    q lin
-}
-
-/// Název linky z částí ^JRL(sku,lin,"I",1..N) spojených pomlčkou.
-ClassMethod NazevLinky(dataDB As %String, sku As %String, lin As %String) As %String
-{
-    s nazev = "", i = ""
-    f {
-        s i = $o(^[dataDB]JRL(sku,lin,"I",i))
-        q:i=""
-        i '$isvalidnum(i) continue
-        i i'>0 continue
-        s cast = $g(^[dataDB]JRL(sku,lin,"I",i))
-        i cast="" continue
-        i nazev '= "" s nazev = nazev _ "-"
-        s nazev = nazev _ cast
-    }
-    q nazev
-}
 
 /// Dopravci linky (distinct fa:pr přes oba směry) - plný tvar (knižní JŘ tiskne jako
 /// samostatný řádek hlavičky, viz gold PREPRAVCE_NAZEV).

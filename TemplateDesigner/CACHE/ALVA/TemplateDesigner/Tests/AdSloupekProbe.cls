@@ -296,7 +296,7 @@ ClassMethod NajdiVariantniPripady(ByRef sys As %String) As %Status
 						set stav = $select(v="":"-", (v="<")||(v="|"):"<", 1:"S")
 						if stav = "<" set projizdeni = 1
 						set vzor = vzor_stav
-						set casy = casy_"~"_##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota(v)
+						set casy = casy_"~"_##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota(v)
 					}
 					if '$data(sig(vzor)) { set pocetVzoru = pocetVzoru + 1 }
 					elseif sig(vzor) '= casy { set stejnyVzor = 1 }

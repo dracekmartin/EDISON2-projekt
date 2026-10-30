@@ -18,7 +18,7 @@ Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdDopravciTest Extends ALVA.EDTest
 Method TestAdresaDopravceNesePlnyTvarJakoStaryPopis()
 {
 	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
+	do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PrvniLinka($namespace, .sku, .lin)
 	if lin = "" {
 		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - test přeskočen")
 		quit
@@ -46,7 +46,7 @@ Method TestAdresaDopravceNesePlnyTvarJakoStaryPopis()
 Method TestSkalarniPoleOdpovidajiPrvnimuDopravci()
 {
 	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
+	do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PrvniLinka($namespace, .sku, .lin)
 	if lin = "" {
 		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - test přeskočen")
 		quit

@@ -293,11 +293,11 @@ Method TestZnackaSkrytaVeSloupci()
 
 Method TestCasHodnota()
 {
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota("27"), 27, "prostý čas")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota("33/4"), 37, "čas/čekání se sčítá")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota(""), "", "prázdné → prázdné")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota("<"), "", "projíždí → prázdné")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota("|"), "", "| (nestaví) → prázdné, ne čas 0")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota("27"), 27, "prostý čas")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota("33/4"), 37, "čas/čekání se sčítá")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota(""), "", "prázdné → prázdné")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota("<"), "", "projíždí → prázdné")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota("|"), "", "| (nestaví) → prázdné, ne čas 0")
 }
 
 Method TestCasJizdyZMapy()
@@ -495,11 +495,11 @@ Method TestSadyJsouDisjunktni()
 	do $$$AssertEquals(rozdily, "BCEFGHIJOQRWeijqsvwxz", "sada rozdílů tras se nemění (parita s legacy)")
 }
 
-Method TestNormalizLinku()
+Method TestFormatCisloLinky()
 {
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NormalizLinku("410101"), "0410101", "doplnění na 7 znaků")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NormalizLinku("0410101"), "0410101", "7 znaků beze změny")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NormalizLinku(""), "", "prázdné → prázdné")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky("410101"), "0410101", "doplnění na 7 znaků")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky("0410101"), "0410101", "7 znaků beze změny")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky(""), "", "prázdné → prázdné")
 }
 
 // ── Výčet spojů u dopravce stlačený do rozsahů (KOVED #13008) ────────────────

@@ -181,7 +181,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i (skuPuvodni '= "") || (linPuvodni '= "") {
             i skuPuvodni = "" s skuPuvodni = skuNova
             i linPuvodni = "" s linPuvodni = linNova
-            s linPuvodni = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NormalizLinku(linPuvodni)
+            s linPuvodni = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky(linPuvodni)
             i $d(^[dataDB]JRL(skuPuvodni, linPuvodni, "I")) {
                 d ..NactiStranky(.sys, .vstup, skuPuvodni, linPuvodni, .puvodni, .duvodPuvodni)
                 i '$g(puvodni) s hlaseni = "Neporovnáno: linka "_(+linPuvodni)_" ve skupině "_skuPuvodni_" nemá data"_$s(duvodPuvodni="":".", 1:" - "_duvodPuvodni)
