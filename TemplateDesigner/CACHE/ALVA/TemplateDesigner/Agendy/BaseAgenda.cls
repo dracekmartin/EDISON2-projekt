@@ -29,25 +29,25 @@ Include GENERAL
 Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]
 {
 
-/// Kombinovaný kód konfigurace agenda+varianta (např. "ZASTAVKOVY_JR_AD", "FAKTURY").
+/// Kombinovaný kód konfigurace agenda+varianta (např. "ZASTAVKOVY_JR_AD", "LINKOVY_JR_MHD").
 /// Override v každé subclass. **Stabilní persistovaný klíč** - žije v uložených šablonách
 /// (Template JSON `agendaCode`), DB indexu ByAgenda, per-uživatel preferencích a EDISON
 /// launch kontraktu (`Agenda=<kód>`); hodnoty se NIKDY nemění (jen aditivně přibývají).
 /// Konvence: <AGENDA>[_<VARIANTA>], velkými písmeny, podtržítka.
 Parameter AgendaVariantCode As %String = "";
 
-/// Kód agendy = nejvyšší úroveň členění ("ZASTAVKOVY_JR", "LINKOVY_JR", "FAKTURY", "GENERAL").
+/// Kód agendy = nejvyšší úroveň členění ("ZASTAVKOVY_JR", "LINKOVY_JR", "GENERAL").
 /// Dvouosý model (2026-07-11): agenda (co za sestavu dělám) × varianta (datový zdroj).
 /// Zrcadlí legacy: TiskMHD/TiskJR = typ jako aplikace + skrytý přepínač VolanoZ (JRMAIN×MHD);
 /// budoucí RG agendy (Fakturace, MHD provozní, Mzdy…) přibudou jako další agendy bez variant.
 Parameter Agenda As %String = "";
 
-/// User-facing label AGENDY (např. "Zastávkový JŘ", "Faktury") - bez varianty.
+/// User-facing label AGENDY (např. "Zastávkový JŘ", "Linkový JŘ") - bez varianty.
 /// Override v každé subclass. (Do 2026-07-11 nesl kombinovaný label vč. "(AD)" -
 /// kombinovaný label pro starší klienty počítá AgendyRegistr do wire klíče `label`.)
 Parameter AgendaLabel As %String = "";
 
-/// Kód varianty agendy = datový zdroj ("AD", "MHD"); "" = agenda bez variant (FAKTURY).
+/// Kód varianty agendy = datový zdroj ("AD", "MHD"); "" = agenda bez variant (budoucí agendy report generátoru).
 /// Legacy ekvivalent: přepínač VolanoZ (JRMAIN×MHD) v TiskMHD/TiskJR.
 Parameter Variant As %String = "";
 
@@ -133,7 +133,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Vrátí seznam dostupných instancí agendy (např. linky pro MHD, faktury pro FAKTURY).
+/// Vrátí seznam dostupných instancí agendy (např. linky u agend JŘ).
 /// Slouží pro Instance Picker v TD - uživatel vybere 1-N instancí, nad kterými pracuje.
 /// 
 /// Výchozí implementace vrací prázdný seznam - agenda bez konceptu instancí ho nemusí přepisovat.
