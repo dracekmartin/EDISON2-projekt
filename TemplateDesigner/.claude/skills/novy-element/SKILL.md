@@ -133,9 +133,9 @@ Add("Nový element", () => TemplateDesignerViewModel.CreateElementByType(Element
 Soubor: `dotnet/Windows/MainWindow/MainWindow.xaml` (sekce `PaletteButton`):
 
 ```xml
-<Button Style="{StaticResource PaletteButton}" ToolTip="Nový element - táhni na canvas" Tag="NovyElement"
-        PreviewMouseLeftButtonDown="PaletteButton_PreviewMouseLeftButtonDown">
-    <Image Source="{StaticResource EDIcons.NovyElement}" Width="16" Height="16"/>
+<Button Style="{StaticResource PaletteButton}" ToolTip="Nový prvek" Tag="NovyElement"
+        PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
+    <Image Source="{StaticResource EDIcons.NovyElement}" Style="{StaticResource ToolbarIconStyle}"/>
 </Button>
 ```
 
@@ -296,8 +296,9 @@ a v konstantě `GeneralSchemaClass` okna sloupců. Formulář dodrží kostru z 
 
 ## Brána - bez tohohle není hotovo
 
-Pořadí záleží: drift test najde chybějící registraci, kterou build neodhalí (`ElementTypes`
-konstanta bez `JsonDerivedType`).
+Pořadí záleží: drift testy najdou chybějící registraci, kterou build neodhalí - třídu prvku bez
+`JsonDerivedType` (`CloneCompletenessTests`) a typ z atributu, který chybí ve factory switchích
+(`ElementRegistrationDriftTests`). ⚠️ Konstantu v `ElementTypes` bez atributu nehlídá nic.
 
 1. `dotnet build EDISON2.sln` - musí projít čistě
 2. `dotnet test TemplateDesigner.Tests --filter ElementRegistrationDrift` - musí projít

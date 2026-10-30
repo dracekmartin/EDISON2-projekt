@@ -322,8 +322,8 @@ public abstract class TemplateElement
     /// Volej na konci GetPropertyDescriptors() pomocí spread operátoru: [.. GetPositionDescriptors()]
     /// </summary>
     /// <remarks>Popisky, skupiny a rozsahy musí souhlasit se sdíleným Caché balíčkem
-    /// <c>BaseElementFields.cls</c> (druhá editační cesta téže sady polí) - hlídá
-    /// <c>EDInputFormSchemaDriftTests</c>.</remarks>
+    /// <c>BaseElementFields.cls</c> (druhá editační cesta téže sady polí). <c>EDInputFormSchemaDriftTests</c>
+    /// hlídá jen popisky a skupiny, rozsahy zatím nic (`revize-sjednoceni.md` B1).</remarks>
     protected IReadOnlyList<PropertyDescriptor> GetPositionDescriptors() =>
     [
         new FloatPropertyDescriptor { Label = "X",       Group = PositionGroup, Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },

@@ -15,8 +15,7 @@ namespace TemplateDesigner.Models.Elements;
 /// render přes `Rendering/CellRenderer`. 2-tabový editor: „Obecné" (EDInputForm - DataSource + styl)
 /// + „Sloupce" (Field-mapping grid).
 ///
-/// Statická (Fixed) tabulka je dočasně mimo (třída <see cref="TableElement"/> zůstala dormant) -
-/// doděláme ji jako samostatný element až podle poptávky.
+/// Pevná tabulka, kterou uživatel vyplňuje sám, je samostatný prvek <see cref="TableElement"/>.
 /// </summary>
 public class DynamicTableElement : TemplateElement, IRowHighlightable
 {

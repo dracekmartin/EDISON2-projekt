@@ -8,7 +8,7 @@ namespace TemplateDesigner.Models;
 /// </summary>
 /// <remarks>
 /// ⚠️ Musí souhlasit s paletou (<c>MainWindow.xaml</c>) a s nabídkou vkládání
-/// (<c>BuildAddElementMenu</c>); hlídá to <c>ElementNamesTests</c>. Dva prvky se 1. 9. přejmenovaly
+/// (<c>BtnAddElement_Click</c> v <c>MainWindow.Menus.cs</c>); hlídá to <c>ElementNamesTests</c>. Dva prvky se 1. 9. přejmenovaly
 /// („Mřížka odjezdů" → „Minuty odjezdů", „Legenda poznámek" → „Poznámky") a jméno bylo tehdy
 /// opsané na třech místech - proto tahle třída.
 /// </remarks>
