@@ -184,6 +184,13 @@ public sealed class GestureExtension(string name) : MarkupExtension
     public override object ProvideValue(IServiceProvider serviceProvider) => KeyboardShortcuts.Get(name).Gesture;
 }
 
+/// <summary>Název akce do XAML (položka menu): <c>Header="{td:Action BringForward}"</c>.</summary>
+[MarkupExtensionReturnType(typeof(string))]
+public sealed class ActionExtension(string name) : MarkupExtension
+{
+    public override object ProvideValue(IServiceProvider serviceProvider) => KeyboardShortcuts.Get(name).Action;
+}
+
 /// <summary>Bublina „Akce - zkratka": <c>ToolTip="{td:Tip Undo}"</c>; <c>Text</c> nahradí popis akce,
 /// když ho tlačítko říká jinak (šipky sekce v panelu).</summary>
 [MarkupExtensionReturnType(typeof(string))]

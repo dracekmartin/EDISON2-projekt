@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-30 (43) - Jednotné texty příkazů vrstvy (sjednocení A12)
+
+Místní nabídka Vrstva říkala „Dopředu / Dozadu / Úplně dopředu / Úplně dozadu", hlavní menu a bubliny „Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu".
+Platí druhá sada (rozhodnutí Jan) a menu, místní nabídka, bubliny i historie kroků ji berou z tabulky zkratek; nápověda F1 ji shrnuje stejnými slovy. Staré tvary zakazuje test názvosloví (ověřeno mutací).
+Ověřeno: .NET testy 2633/2633; v aplikaci neproklikané.
+
 ## 2026-10-30 (42) - Okno společných vlastností a lišta formátu bez vlastních kopií (sjednocení A7, A9)
 
 **Okno společných vlastností** (Enter nad více prvky) mělo vlastní kopii rámečku, vrstvy a uzamčení se skupinami „Rámeček" a „Pozice"; teď bere tytéž vlastnosti jako panel prvku („Rámeček prvku", „Pozice a velikost").

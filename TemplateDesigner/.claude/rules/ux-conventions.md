@@ -156,7 +156,7 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 | Šipky | Posun vybraného elementu o **1 mm** |
 | Ctrl+šipky | Posun o **velikost mřížky** (lišta Mřížka plátna: 0,2 / 0,5 / 1 / 2 / 5 / 10 mm) |
 | **Shift+šipky** | **Změna velikosti** o 1 mm - mění se pravá a dolní hrana, levý horní roh drží |
-| Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
+| Ctrl+PageUp / Ctrl+PageDown | Přenést dopředu / Odeslat dozadu (+Shift = zcela) |
 | Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
 | **tažení za hranu sekce** | **výška sekce**: sekce pod se posunou a podrží svou výšku, mřížka platí a Ctrl ji vypne, Esc zruší. Sekci nejde zmenšit pod její obsah (jinak by se prvek v návrháři oříznul, ale vytiskl se celý). ⚠️ **Patička se tahá za HORNÍ hranu** - je kotvená ke spodku papíru, takže roste nahoru; tažením zdola by rostla proti pohybu myši. Horní hrana sekce v toku se nechytá zvlášť, je to táž linka jako spodní hrana sekce nad ní. ⚠️ **Úchyt prvku má přednost**, jinak by prvek u hrany nešel roztáhnout - hrana se proto chytá i v levém modrém štítku sekce. Sekce s prázdnou výškou se netahá (počítá ji engine z obsahu) |
 
@@ -321,6 +321,7 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Objekt na plátně (TextElement, LineTableElement…) | **prvek** - v UI textech, nápovědách i příručce; třídy v kódu zůstávají `*Element` (rozhodnutí Jan 26. 10.) | ~~element~~ |
 | Uzamčení prvku (IsLocked) | **Uzamčeno** | ~~Zamčeno~~ |
 | Pořadí překrytí (ZIndex) | **Vrstva** („Vyšší vrstva leží nad nižší") - rozhodnutí Jan 26. 10. | ~~ZIndex~~, ~~Pořadí vrstvy~~ |
+| Příkazy vrstvy (menu, místní nabídka, bubliny, historie kroků) | **Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu** - texty bere z `KeyboardShortcuts` (rozhodnutí Jan 30. 10.) | ~~Dopředu~~ samotné, ~~Úplně dopředu~~, ~~Úplně dozadu~~ |
 | Výška, kterou sazba dopočte | **výška podle obsahu** („výška se počítá podle obsahu") | ~~počítá engine~~, ~~dynamická výška~~ |
 | Plocha návrháře | **plátno** | ~~canvas~~ |
 | Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti**, u řádku **Podmínka viditelnosti řádku** (je to podmínka, ne zaškrtávátko - rozhodnutí Jan 28. 10.) | ~~Viditelnost~~, ~~Viditelnost řádku~~ |

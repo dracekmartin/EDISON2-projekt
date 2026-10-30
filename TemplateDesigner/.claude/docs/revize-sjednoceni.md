@@ -23,7 +23,7 @@ Podklad ze tří průzkumů (vlastnosti prvků, agendy a data, názvy a konstant
 - A9 ✅ (30. 10.) Lišta formátu hledá vlastnosti podle `PropertyDescriptor.ToolbarSlot`, ne podle popisku a skupiny; nastavují ho text a buňka pevné tabulky. Hlídá `ListaFormatuTests` (ověřeno mutací).
 - A10 ✅ (30. 10., s E4) Menu Zobrazit → Levý panel ovládá totéž co ☰ a Ctrl+B.
 - A11 ✅ (30. 10., s A1) Formulář prvku podle pravidla `{Typ}Edit` z katalogu prvků, existenci .cls hlídá `ElementCatalogTests`. Literály zůstaly jen u formulářů mimo prvky (sekce, stránka, řádek a buňka tabulky, vložení tabulky), každý na jednom místě.
-- A12 Příkazy vrstvy: 4 tvary textů → jedna sada (ROZHODNOUT kanon).
+- A12 ✅ (30. 10.) Příkazy vrstvy „Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu" (rozhodnutí Jan) všude: hlavní menu (`{td:Action}`), místní nabídka, bubliny i historie kroků berou text z `KeyboardShortcuts`. „Úplně dopředu/dozadu" je v testu názvosloví zakázané.
 
 ## B. Dvě místa + zpřísnit test (doporučeno, neslučovat)
 - B1 Popisky/skupiny/meze/jednotky/volby: C# deskriptory (~205) × *Edit.cls. Přidat klíč pole (cesta k property) do deskriptoru, test páruje podle klíče a hlídá vše. Neslučovat: formulář se opravuje na serveru bez nového exe, offline konzumenti (import PDF, AI katalog, záloha) by závisely na serveru, parser .cls v testech je křehký.

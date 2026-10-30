@@ -187,7 +187,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Smazat výběr", Delete.Gesture),
                 new("Posun o 1 mm / o krok mřížky", Gestures(Move, MoveByGrid)),
                 new("Změna velikosti o 1 mm (pravá a dolní hrana)", Resize.Gesture),
-                new("Vrstva: dopředu / dozadu (úplně: +Shift)", Gestures(BringForward, SendBackward)),
+                new("Vrstva: přenést dopředu / odeslat dozadu (zcela: +Shift)", Gestures(BringForward, SendBackward)),
                 new("Zarovnání a rozložení vybraných prvků", "lišta nástrojů / menu Upravit"),
                 new("Normalizovat pozice (zaokrouhlit na krok)", NormalizePositions.Gesture),
             ],

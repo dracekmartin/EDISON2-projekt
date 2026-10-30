@@ -423,10 +423,10 @@ public partial class TemplateDesignerViewModel
 
         string desc = (sign > 0, toExtreme) switch
         {
-            (true,  true)  => "Přenést zcela dopředu",
-            (true,  false) => "Přenést dopředu",
-            (false, true)  => "Odeslat zcela dozadu",
-            _              => "Odeslat dozadu"
+            (true,  true)  => KeyboardShortcuts.BringToFront.Action,
+            (true,  false) => KeyboardShortcuts.BringForward.Action,
+            (false, true)  => KeyboardShortcuts.SendToBack.Action,
+            _              => KeyboardShortcuts.SendBackward.Action
         };
 
         Execute(commands.Count == 1 ? commands[0] : new CompositeCommand(desc, commands));

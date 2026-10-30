@@ -211,10 +211,10 @@
                 <Separator/>
                 <MenuItem x:Name="MenuDelete" Header="Smazat" InputGestureText="{td:Gesture Delete}" Click="MenuDelete_Click"/>
                 <Separator/>
-                <MenuItem x:Name="MenuZForward"  Header="Přenést dopředu"       InputGestureText="{td:Gesture BringForward}" Click="BtnZForward_Click"/>
-                <MenuItem x:Name="MenuZBackward" Header="Odeslat dozadu"        InputGestureText="{td:Gesture SendBackward}" Click="BtnZBackward_Click"/>
-                <MenuItem x:Name="MenuZFront"    Header="Přenést zcela dopředu" InputGestureText="{td:Gesture BringToFront}" Click="BtnZFront_Click"/>
-                <MenuItem x:Name="MenuZBack"     Header="Odeslat zcela dozadu"  InputGestureText="{td:Gesture SendToBack}" Click="BtnZBack_Click"/>
+                <MenuItem x:Name="MenuZForward"  Header="{td:Action BringForward}" InputGestureText="{td:Gesture BringForward}" Click="BtnZForward_Click"/>
+                <MenuItem x:Name="MenuZBackward" Header="{td:Action SendBackward}" InputGestureText="{td:Gesture SendBackward}" Click="BtnZBackward_Click"/>
+                <MenuItem x:Name="MenuZFront"    Header="{td:Action BringToFront}" InputGestureText="{td:Gesture BringToFront}" Click="BtnZFront_Click"/>
+                <MenuItem x:Name="MenuZBack"     Header="{td:Action SendToBack}" InputGestureText="{td:Gesture SendToBack}" Click="BtnZBack_Click"/>
                 <Separator/>
                 <MenuItem Header="Zarovnat vlevo"               Click="BtnAlignLeft_Click"/>
                 <MenuItem Header="Zarovnat vpravo"              Click="BtnAlignRight_Click"/>

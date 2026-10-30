@@ -66,7 +66,7 @@ public class KlavesoveZkratkyTests
     public void JmenaVOknechExistuji()
     {
         var jmena = SouboryNavrhare("*.xaml")
-            .SelectMany(f => Regex.Matches(File.ReadAllText(f), @"\{\w+:(?:Gesture|Tip)\s+(\w+)")
+            .SelectMany(f => Regex.Matches(File.ReadAllText(f), @"\{\w+:(?:Gesture|Tip|Action)\s+(\w+)")
                 .Select(m => m.Groups[1].Value))
             .ToList();
 

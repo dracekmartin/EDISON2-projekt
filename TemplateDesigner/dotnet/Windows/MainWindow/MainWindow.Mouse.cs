@@ -595,10 +595,10 @@ public partial class MainWindow
             menu.Items.Add(new Separator());
 
             var zMenu = new MenuItem { Header = "Vrstva" };
-            zMenu.Items.Add(new MenuItem { Header = "Dopředu", InputGestureText = KeyboardShortcuts.BringForward.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, false); InvalidateCanvas(); }) });
-            zMenu.Items.Add(new MenuItem { Header = "Dozadu", InputGestureText = KeyboardShortcuts.SendBackward.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, false); InvalidateCanvas(); }) });
-            zMenu.Items.Add(new MenuItem { Header = "Úplně dopředu", InputGestureText = KeyboardShortcuts.BringToFront.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, true); InvalidateCanvas(); }) });
-            zMenu.Items.Add(new MenuItem { Header = "Úplně dozadu", InputGestureText = KeyboardShortcuts.SendToBack.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, true); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = KeyboardShortcuts.BringForward.Action, InputGestureText = KeyboardShortcuts.BringForward.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, false); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = KeyboardShortcuts.SendBackward.Action, InputGestureText = KeyboardShortcuts.SendBackward.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, false); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = KeyboardShortcuts.BringToFront.Action, InputGestureText = KeyboardShortcuts.BringToFront.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, true); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = KeyboardShortcuts.SendToBack.Action, InputGestureText = KeyboardShortcuts.SendToBack.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, true); InvalidateCanvas(); }) });
             menu.Items.Add(zMenu);
 
             // Seskupení / rozdělení / editace textu - dřív jen na zkratkách, teď viditelné v menu.
