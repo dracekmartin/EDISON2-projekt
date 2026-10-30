@@ -33,7 +33,7 @@ Podklad ze tří průzkumů (vlastnosti prvků, agendy a data, názvy a konstant
 - B3 Zamčené popisky enumů, které C# porovnává (~15: DepartureGridElement.cs:1679-1693, NoteVisibilityFilter.cs:53-58, Columns.cs:204-207, PageLayoutEngine.cs:107-113) a názvy parametrů čtené klientem (~11: CASOVA_OSA, HODINY_OD/DO, PISMENA_VARIANT, ...) → .NET test proti options/parametrům v .cls; konstanty C# do jedné třídy.
 - B4 KontraktDat × PolozkyMimoNabidku (36 „prvek"): test porovná přesně (kolekce + klíč), ne hledání řetězce; KontraktDatTests i čtení přes konstanty; POPIS_DOPRAVCE do kontraktu.
 - B5 Registr agend: BaseAgenda 13 parametrů → ručně ListAgendy (AgendyRegistr.cls:51-77) × AgendaRegistryEntry. Test: každý Parameter z BaseAgenda má vlastnost; případně ListAgendy generickým průchodem %Dictionary.
-- B6 JSON definice sloupců (8 klíčů, VlastniSloupce.cls:23-40 × IColumnLayoutOwner.cs:45-51), ZNAMEKLICEPARAMETRU (12, KontraktAgendTest.cls:15 × CacheAgendaProvider.cs:194-216), typy sekcí (SectionEdit.cls:37-40 × TemplateTreeNames) → testy.
+- B6 ✅ (30. 10.) `KliceKontraktuTests`: klíče definice sloupců (klient píše = server čte, vzory serveru ⊆ definice, klient čte vzory týmiž klíči), `ZNAMEKLICEPARAMETRU` = klíče, které čte klient a formulář parametrů `AgendaParams.cls` (popis čte jen ten), typy sekce v `SectionEdit.cls` = `TypSekce` + názvy stromu. Ověřeno mutací.
 - B7 Názvosloví: test kanon ux §8 (~~…~~) ↔ ban list (~12 tvarů chybí: canvas, Výplň, Pořadí vrstvy, popisové sloupce, Zobrazit nadpis, Max., dle - pozor „Automaticky (dle linky)" zamčené).
 - B8 Zástupná pole `{POLE}` v SystemTemplates/LaunchTemplates proti nabídce dat agendy: test.
 - B9 Výjimky KontraktDatAgendTests odvodit z příznaků registru místo kódu agendy.
