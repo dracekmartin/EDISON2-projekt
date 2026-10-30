@@ -551,8 +551,9 @@ je per-namespace, bez IdFa).**
 4. **POPIS_DOPRAVCE** - `PopisDopravce` (distinct `fa:pr` z `#`-pole 2 spojů obou směrů, dedup názvů,
    "Zajišťuje: …") + `NazevDopravce` chain z `^JRSET("DOP")`: per-provoz `$6` → firma `$14` → `$7` → `$1`.
 5. **LOKALNI_OZNACENI_LINKY + TITULEK + INFORMACE** - všechny z `^JRL(...,"MhD","SeT_MhD")` (delim `~`,
-   1:1 `sTIT^JRapiLinPrtMhd1`): `$1` lokální označení (fallback `$E(Lin,5,7)`="101"), `$2` titulek
-   (fallback "Městská hromadná doprava..."), `$5` informace (`<br>`→newline). Inline v hlavičce, `LokalniOznaceni` helper zrušen.
+   1:1 `sTIT^JRapiLinPrtMhd1`): `$1` lokální označení (fallback `$E(Lin,5,7)`="101", `Jr.DataAd.LokalniOznaceniLinky`),
+   `$2` titulek, `$5` informace (`<br>`→newline). Náhradní titulek starého tisku „Městská hromadná doprava..."
+   od 30. 10. neposíláme (`B56` S7, rozhodnutí Jan): dostalo by ho 97 % linek včetně regionálních.
 7. **Číslování poznámek** - pro KV_DP (TYPPOZ=0 = `^JRSET("Definice","MHDnewOM")` prázdné) legacy používá
    sekvenční čísla = moje 1/2/3 (schéma shodné, hodnoty 39/70/32 byly artefakt jiného seedu). Bez změny.
    TYPPOZ=1 (písmenka a/b/c) / NZ-symbol režim = firm-config feature, deferred. **KOREKCE 2026-06-23:

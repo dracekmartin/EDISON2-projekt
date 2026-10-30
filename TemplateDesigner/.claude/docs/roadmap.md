@@ -20,13 +20,13 @@ Postup, pojistky a snímek výstupu jsou v [`legacy-nahrada.md §4`](legacy-nahr
 Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného, se při přesunu přejmenuje (`cache-api.md` pravidlo 5).
 Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a pravidlo druhého použití jsou v R8, měření v `legacy-nahrada.md §4`.
 **Fáze (Jan 30. 10.):** 1 struktura a pojistky (S1) → 2 popis agendy podle druhu výstupu (S2, S9, S10 hotové 30. 10.; pole pro QR čeká na vyhledávač) →
-3 výstup podle druhu (S3, S4) → 4 data podle zdroje (S5, S6, S8, S7) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje) →
+3 výstup podle druhu (S3, S4) → 4 data podle zdroje (S5-S8 u AD hotové 30. 10., zbývá S12 u MHD) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje) →
 6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami.
 
 ### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
 
-- **S7 Hlavička linky** [M] **Jan** - číslo, platnost, typ JŘ a dopravce skládá každá agenda zvlášť, odtud čtyři tvary popisu platnosti.
-  Rozhodnout, co z toho je vědomý rozdíl.
+- **S12 Data MHD z jedné třídy** [M] - linkový JŘ MHD bere seznam linek, výběr linek, dopravce a typ JŘ voláním vývěsky MHD.
+  Přesunout je do `Jr/DataMhd.cls` jako u AD (S5-S7) a hlavičku linky MHD skládat jednou; MHD a AD tvar dat nesdílí (R8).
 
 ### Převzato z backlogu - souvisí se sjednocením agend
 
@@ -163,19 +163,15 @@ Seznam s důvody je v [`legacy-nahrada.md §4`](legacy-nahrada.md); sloučení k
 
 ## 🚋 Relace a vozové JŘ
 
-Layout TBD - hlavička oběhu, tabulka spojů, poznámky (pravděpodobně víc elementů). Legacy:
-`ALVA.MHD.ReportGenerator` (MHD) + `AD.ADREPORTGEN` (linky), viz
-[`legacy-nahrada.md`](legacy-nahrada.md). **Relace (TiskJRRELACE)** - vývěsky
-nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý use case**.
-
-⚠️ **Živý use case tu je: `#13070`** (BBSK, pozastavený). Vypadá jako linkový jízdní řád, ale
-zákazníkova předloha je **odjezdová relace** - proto se v linkovém tracku neřeší a čeká tady.
+**Relace** jsou jen AD a nejsou slovenské: odjezdy nebo příjezdy z jedné zastávky seskupené podle cílové zastávky, v řádku buňky spojů s volně rozmístěnými údaji.
+Živý zákazník je BBSK `#13070` (pozastavený): vypadá jako linkový JŘ, ale předloha je odjezdová relace.
+**Vozový JŘ** je jen MHD - tisk DPKV v MHD2Tisk s vlastním kreslením, vydaný 27. 10.; vozové listy (MHD) a turnus pro řidiče (AD) jsou sady report generátoru a patří do sekce níž.
+Rozbor 30. 10.: [`legacy-nahrada.md`](legacy-nahrada.md), mapa legacy generátorů §3-4.
 
 | Co | Stav |
 |---|---|
-| Analýza referenčních vozových JŘ - layout + wire formát | ⬜ |
-| `VehicleScheduleElement` (pravděpodobně víc elementů) | ⬜ |
-| Caché `VozovyJrAPI` - GetData/GetMockData + async (velký objem dat) | ⬜ |
+| **Relace AD** - agenda nad sdílenými třídami AD z `B56` a nový prvek (mřížka buněk spojů, každý údaj s vlastní pozicí a písmem) | ⬜ další po `B56` |
+| **Vozový JŘ DPKV** do návrháře - jediný zákazník a čerstvý vlastní tisk | ⬜ na poptávku |
 
 ---
 
@@ -184,17 +180,24 @@ zákazníkova předloha je **odjezdová relace** - proto se v linkovém tracku n
 > ⚠️ **Gate před `F2`: R3 (prezentační nápovědy v datovém kontraktu + aditivní evoluce)** -
 > [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
-Největší kus náhrady - ne kvůli featurám (TD je napřed), ale kvůli **ekosystému ~28 agend** s RG
-kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení: 33k textových elementů,
-774 tabulek. **Ne big-bang** - etapizovat. Detail:
-[`legacy-nahrada.md`](legacy-nahrada.md) §3.1 + §5 etapa 4.
+27 agend starého report generátoru s asi 85 datovými sadami; agenda report generátoru je modul (AD, MHD, mzdy, pokladna…) a teprve jeho sada odpovídá naší agendě.
+Agendy dodávají jen data a kreslí obecný kód - zvláštní prvky jako u jízdních řádů tam nejsou.
+Kreslení je proto hlavně technický převod (tabulka z dat `F3`); koncepčně nové je spouštění tisku, výstupy a šablony zákazníků (`F9`, `F10`).
+Dopravní agendy narazí jen na `F3`, mzdy, pokladna a faktury hned na `F9` a `F10`.
+**Ne big-bang**, pilot podle R7. Rozbor 30. 10. (agendy, sady, mapování, pilot): [`legacy-nahrada.md`](legacy-nahrada.md) §3.1.
 
 | # | Co | Stav |
 |---|---|---|
-| F1 | **Prioritizace podle usage** - legacy `Main.cls:161-188` drží reálná čísla použití; seřadit agendy | ⬜ první (levný) |
-| F2 | **Bridge vs čisté agendy** - bridge `LegacyRgAgenda` (překlad `~`-protokolu na TD JSON, všech 28 najednou s omezenou věrností) vs čisté reimplementace; doporučení: **bridge nejdřív** | ⬜ rozhodnutí |
-| F3 | **TableElement na RG úroveň** (navazuje na dynamickou tabulku + `B76`) - řádky řízené daty, overflow, mezisoučty, seskupení řádků a vnořená data; ⚠️ tvar odvodit z reálných sestav RG. Rozpis [`legacy-nahrada.md`](legacy-nahrada.md) §5 etapa 4 | ⬜ L |
-| F4 | **Výstupní kanály fáze 2** - Excel export, PDF heslo + el. podpis (PDFSIGNER), Epson znakový tisk | ⬜ dle poptávky |
+| F7 | **Pojmenování agend** - sada = naše agenda podle výstupu (`VYPLATNI_PASKA`), modul se stejným výstupem = varianta (`MZDY2`); kód agendy se po vydání nemění, proto před první agendou | ⬜ rozhodnutí Jan |
+| F8 | **Pilot: Vozové listy (MHD)** - 5 polí, 2 tabulky, instance = oběh, volá MHD2Linky; vlastní třída zavolá starý `getSadu`/`getData` a převede výstup, registr se nemění. Narazí na zvýraznění řádku z dat (`F3`, R3). Před vydáním text „linka" napevno (`B194e` A5 u `B56`) | ⬜ po relacích |
+| F2 | **Obecný převodník vs čisté agendy** - rozhodnout po pilotu; převodník potřebuje registr, který vypíše dvojice agenda a sada, a varianty se stejným tvarem dat neumí | ⬜ rozhodnutí po `F8` |
+| F3 | **Tabulka z dat na úroveň RG** (navazuje na dynamickou tabulku + `B76`) - řádky řízené daty, overflow, mezisoučty, seskupení řádků a vnořená data; ⚠️ tvar odvodit z reálných sestav RG. Rozpis [`legacy-nahrada.md`](legacy-nahrada.md) §5 etapa 4 | ⬜ L |
+| F1 | **Pořadí agend** - statistika použití agend neexistuje (`Main.cls:161-188` jsou počty prvků) a tisky se nelogují; počet šablon podle agendy v databázích zákazníků (jen čtení), nebo počet volajících míst. Dopravní agendy napřed | ⬜ |
+| F9 | **Hromadný tisk a tisk bez uživatele** - seznam dokladů, každý s vlastním PDF, heslem, e-mailem, podpisem nebo tiskárnou; spuštění přímo z Caché (mzdy). Návrhář umí jedno PDF v prohlížeči (`Vystup=PDF`). Navazuje R4 a `B190` | ⬜ před první agendou z mezd, pokladny, faktur |
+| F10 | **Šablony zákazníků** - firmy mají vlastní šablony (nejméně stovky) a návrhář je neotevře: převodník, nebo nový návrh. Největší rozhodnutí převodu | ⬜ rozhodnutí Jan, před první agendou s šablonami zákazníků |
+| F11 | **Data pro náhled** - vstup je složený (zaměstnanec + období) nebo jeden doklad z tisíců; u každé agendy ukázková data, nebo výběr dokladu s filtrem | ⬜ u každé agendy |
+| F12 | **Skupiny v nabídce agend** podle oblasti práce (Jízdní řády, Plán a provoz, Mzdy…) a filtr podle licence; okno Otevřít má dnes plochý filtr agend | ⬜ od ~8-10 agend |
+| F4 | **Další výstupy** - Excel (data podle typů sloupců), znakový tisk Epson, JPG | ⬜ dle poptávky |
 | F5 | **Jazykové varianty šablon** - per-jazyk kopie provázaná na CS zdroj | ⬜ |
 | F6 | **Vědomě neportovat bez poptávky** - grafy (12×), AZTEC (2×), calculated (2× - výrazy TD nadmnožina), checkbox (8×); ověřit + škrtnout | ⬜ validace |
 

@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-30 (25) - Hlavička linky AD z jedné metody, titulek bez náhradního textu (`B56` S7)
+
+Hlavičku linky (číslo a označení, název, poznámky nad linkou a pod dopravcem, údaje dopravce po polích, data platnosti, typ JŘ, QR) skládala vývěska AD i linkový JŘ AD každá sama.
+Teď ji zapíše `Jr.DataAd.AddHlavickaLinky` a agenda za ni přidá jen své vědomé rozdíly: titulek (vývěska), popis dopravce (řádky × čárky) a hotovou větu platnosti pro starší šablony.
+Relace a vozový JŘ nad AD tak dostanou tutéž hlavičku. Do `Jr/DataAd.cls` se z `BaseAgenda` a vývěsky AD přesunulo veřejné označení linky, typ JŘ a údaje dopravce po polích.
+Rozhodnutí Jan 30. 10.: agenda posílá hodnoty, ne hotové věty ani náhradní texty (nové pravidlo v `cache-api.md`, výjimky popis platnosti, popis dopravce a typ JŘ).
+Podle něj titulek vývěsky AD už za prázdný neposílá „Městská hromadná doprava..." ze starého tisku - titulek má vyplněný jen 3 227 z 96 531 linek AD (sonda `DuplicityAgendProbe.HlavickaLinky`).
+Šablona s titulkem na lince bez něj teď vytiskne prázdno; na dev serveru je to jediná ukázková šablona KV_DP.
+Číslo linky podle licence posílají všechny agendy jako číslo a veřejné označení jako text; MHD je dřív posílalo podle toho, jak hodnota ležela v datech. Návrhář z obojího dělá text, uživatel rozdíl nepozná.
+Nové testy: `KontraktAgendTest.TestTypyCislaLinky` (spadl na MHD před změnou), `ZastavkoveJrAdSmokeTest.TestTitulekBezNahradnihoTextu` (spadl na náhradním textu před změnou) a typy v `LinkovyJrSmokeTest.TestAdObeCislaLinky`.
+Ověřeno: snímek výstupu agend porovnaný podle obsahu se liší jen v titulku (243 stránek), typu čísla (141) a označení linky (107), jinak jen pořadím položek; zlaté odtisky 11 linek přebaselinované, mění se jen md5. Caché testy 272/272, .NET testy 2544/2544, integrační testy 48/48, staré metody na serveru nejsou.
+
 ## 2026-10-30 (24) - Platnost linky a text omezení spojů AD z jedné třídy (`B56` S8)
 
 Platnost jízdního řádu linky (`PATCH,"Plati"`) četly agendy AD na šesti místech a příponu za dvojtečkou odřízla jen dvě; ostatní by ji poslala v datu „do".

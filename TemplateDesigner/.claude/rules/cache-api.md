@@ -93,6 +93,7 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
   linkového JŘ (poznámka, skupina dnů, čas) v `Jr/VystupLinkovy.cls`.
 - **Čtení dat AD** společné agendám nad `^JRL` (název, číslo a první linka, hodnota času, platnost jízdního řádu,
   text datumových omezení spoje s předložkami a formátem dat) je v `Jr/DataAd.cls`.
+  Hlavičku linky, kterou posílají všechny agendy nad AD stejně, zapíše `Jr.DataAd.AddHlavickaLinky`; agenda za ni přidá jen své vědomé rozdíly.
   Výběr skupin linek a linek (`GetAvailableSkupiny`, `GetAvailableInstances`) agenda nad AD jen přesměruje do `Jr.DataAd`,
   aby se okno výběru linek chovalo ve všech stejně; hlídá `VyberLinekAdTests`.
 
@@ -208,6 +209,21 @@ kterou `GetData` posílá jako pole názvů parametrů týkajících se načten�
 Bez dat, bez té hodnoty a v tiskovém dialogu (tiskne víc instancí) se nic neschovává.
 
 ---
+
+### Data, ne hotové věty (rozhodnutí Jan 30. 10.)
+
+Agenda posílá hodnoty z dat, ne věty z nich poskládané ani náhradní text za prázdnou hodnotu.
+Větu („Platí od … do …", „Linka č. …") si složí šablona z polí, protože jen ona ví, jak ji chce mít.
+Hotová věta z agendy se v šabloně změnit nedá a každá agenda ji měla jinak (čtyři tvary popisu platnosti, `B193f`).
+Prázdná hodnota zůstane prázdná: náhradní titulek „Městská hromadná doprava..." ze starého tisku by dostalo 97 % linek AD včetně regionálních (`B56` S7).
+Číslo jde jako číslo (číslo linky podle licence), označení, které smí obsahovat písmena, jako text (veřejné označení linky); hlídá `KontraktAgendTest.TestTypyCislaLinky`.
+
+Vědomé výjimky:
+
+- `POPIS_PLATNOSTI` - jen kvůli starším šablonám, v nabídce dat není od 23. 10.
+- `POPIS_DOPRAVCE` - tvar podle starého tisku každé agendy (rozhodnutí Jan 30. 10.); po položkách jsou pole `*_DOPRAVCE`.
+- `TYP_JR` („VÝLUKOVÝ", „NÁVRH") - ze dvou kódů by si šablona text složila jen dvěma prvky s podmínkou viditelnosti.
+- Texty poznámek a legendy - počet i znění dávají data a číselník firmy, šablona je sama složit neumí.
 
 ### Prezentační nápovědy (R3) - kolik vzhledu smějí nést data
 

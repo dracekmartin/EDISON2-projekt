@@ -108,20 +108,40 @@ Největší soubory: `MainWindow.xaml.cs` 2 671, `MainWindowViewModel.cs` 2 471 
 
 ### 3.1 REPORTGENERATOR - univerzální generátor sestav (primární cíl)
 
-**Rozsah:** ~28 850 LOC VB (renderer 10 102, designer 5 410) + 6 055 LOC Caché
-(12 tříd). Obsluhuje **~28 agend** (faktury, mzdy, sklady, jízdenky, pokladny, …).
-Reálné nasazení: **33 000 textových elementů, 17 000 DB polí, 774 tabulek** napříč
-zákazníky (`Main.cls:161-188` - usage statistika existuje, použít pro prioritizaci!).
+> Ověřeno v kódu 30. 10. 2026 (`C:\DEV\EDISON\REPORTGENERATOR` a třídy agend v modulech repa EDISON).
+> Do té doby tu stálo „~28 agend" a že `Main.cls:161-188` je statistika použití agend - obojí nepravda, viz níž.
 
-**Model:** šablony čistě v globals `^AlvaReportGenerator("STROM", IdFa, "SESTAVY", ...)`;
-strom USER × MLINE větev → agenda → oblasti (složky) → sestavy; **jazykové varianty**
-(EN/DE kopie provázaná na CS zdroj); „Sada" = field set publikovaný agendou
-(FIELDS/QRKODY/TABLES+COLS/GRAFY/NTEXTS), kopíruje se do sestavy a synchronizuje.
-WYSIWYG designer existuje (5 410 ř., bez undo/redo, bez snapu/gridu - TD je zde lepší).
+**Rozsah:** ~28 850 LOC VB (renderer 10 102, designer 5 410) + 6 055 LOC Caché (12 tříd).
+**27 agend** obsluhuje 26 tříd (MTZ a SKL sdílejí jednu); zdroják 21 z nich je v repu EDISON a nabízí asi 85 pevných datových sad.
+WYSIWYG designer existuje (5 410 ř., bez undo/redo, bez snapu/gridu, bez náhledu s daty - TD je zde lepší).
 
-**Datový kontrakt:** hard-coded if-řetěz dispatch na 28 agend (`Data.cls:627-654`);
-každá agenda implementuje `GetSeznamSad`/`GetSadu`/`GetData` s `~`-delimited tokenovým
-streamem (`FIELD~`, `TABLE_START~`, `ROW_START~`, `CELL~`, `GRAF_START~`, `NTEXT~`).
+**Jak se tiskne:**
+Modul sestaví ID sestavy a `ValueId` (vstupní hodnoty spojené `|`; každá sada si je čte po svém, definice parametrů neexistuje).
+Pak otevře okno report generátoru, nebo spustí `REPORTGENERATOR.EXE` s `AUTOEXPORT=1` / `AUTOPRINT=1` bez okna, i přímo z Caché (výplatní pásky v MZDY2).
+Vstup je seznam dokladů a každý smí mít vlastní soubor PDF a heslo; k tomu e-mail, podpis certifikátem a výchozí tiskárna (`formREPORTGENERATORReportDotNet.vb:12-37`).
+ID sestavy má tvar `MLINE|USER-AGENDA-oblast-n`: z ID se vezme agenda, ze šablony sada (`Data.cls:611-614`) a zavolá se `GetData` agendy.
+Agenda vrátí `~`-textový proud (`FIELD~`, `TABLE_START~`, `ROW_START~`, `CELL~`, `NTEXT~`, `QRKOD~`, `GRAF_START~`…) a klient z něj kreslí PDF, tisk, e-mail nebo Excel.
+Výběr agendy je pevný řetězec podmínek (`Data.cls:627-653`) zkopírovaný na sedm míst (`Sady.cls` 5×, `Epson.cls`, `ExportTabulek.cls`) a kopie se rozcházejí (ISYJBN chybí ve třech).
+
+**Pojmy:**
+- **Agenda** = modul (AD, MHD, MZDY, FAKTURACE…), jedna Caché třída s `GetSeznamSad` / `GetSadu` / `GetData`.
+- **Sada** = nabídka dat agendy: pole se skupinou, tabulky se sloupci s typem (`S`, `D0-4` datum, `B`, `Nx`, `T0-4` minuty, `O0-3` období), QR, dlouhé texty, grafy (`Sady.cls:81-121`); pole typ nemají, agendy posílají hotový text.
+- **Sestava** = šablona nad jednou sadou: kopie sady (synchronizuje se nejvýš jednou denně a uživatel v ní smí přejmenovat popisky), vlastnosti papíru, sekce s prvky.
+- **Strom šablon** `^AlvaReportGenerator("STROM", IdFa|"MLINE", "SESTAVY", SestavaId)`: větev firmy a sdílená větev M-line → agenda → oblast (jen složka) → sestava.
+- Standardní šablony M-line se exportují do souboru a instalace jimi přepíše celou větev `MLINE-<agenda>`; jazyková varianta je samostatná sestava s odkazem na českou předlohu.
+- Návrhář ukazuje všechny agendy z číselníku oblastí bez ohledu na licenci (`Strom.cls:31`), sada v něm není úroveň stromu.
+
+**Agendy a sady** (seznam v `GetSeznamSad` tříd agend):
+- doprava: AD 16 (turnus pro řidiče, objednávky, plán, zpracování, zpožděnka, označení zastávek), MHD 11 (vozové listy, vypravenka, plán, denní plán, mzdové podklady, dovolenka, stažka…), JR 1 (označení vozidel), ISYZASTAVKY 1, ISYJBN 1, VLAKY2 1, ND 1;
+- vozidla: VOZIDLA 3, AUTOOPRAVNA 1; odbavení: TICKETS 2, PREPRAVNIPOKLADNA 2;
+- ekonomika: EKOS 10, POKLADNA 10, HIM 14, MTZ a SKL 2; mzdy: MZDY 2, MZDY2 7;
+- sady podle nastavení firmy: FAKTURACE (sada pro každou agendu faktur), PHLASENI (typy hlášení), SKLADY (rutina `MTapi`);
+- zdroják v repu není: BCCLEARING, BCINTDOP, PARKKARTY, PREPRAVNIKONTROLA, JIKORDPOKLADNA, OBJEDNAVKY.
+
+**Použití:** statistika použití agend neexistuje a tisky se nelogují (`^AlvaReportGeneratorLog` zapisuje jen akce v návrháři).
+`Main.cls:161-188` je zakomentovaný výpis metody `Test()` bez data a zdroje - počty prvků ve všech šablonách: datová pole 17 167, texty 15 751, obdélníky 2 246, vodorovné čáry 711, tabulky 604, nekonečný text 298, obrázky 143, tabulky s měnitelnou šířkou 131, tabulky s nakresleným řádkem 22, kombinované 17, grafy 12, zaškrtávátka 8, QR 7, Aztec 2, vypočtená pole 2; sekce s pevnou výškou 1 388, s tabulkou 604, záhlaví stránky 416.
+⚠️ `Main.Test()` není jen čtení (maže a plní `^wwwZZ`) a dnešní kód řadu typů vynechává, takže výpis nezopakuje.
+Pořadí agend jde odvodit z počtu šablon podle agendy v databázích zákazníků (jen čtení), nebo z počtu míst, která report generátor volají: zpracování AD 13, pokladna 8, zpracování MHD 7, zpracování ISY 5, dispečink AD 5, plán AD 4.
 
 **Feature highlights nad rámec TD:**
 - **Tabulky řízené daty za běhu**: per-řádek zvýraznění 0–5 (každé s kompletním stylem),
@@ -144,6 +164,33 @@ streamem (`FIELD~`, `TABLE_START~`, `ROW_START~`, `CELL~`, `GRAF_START~`, `NTEXT
 **Kde je TD už dnes lepší:** výrazový jazyk (RG má jen ploché AND + binární kalkulačku),
 agregace, undo/redo, snap/grid, JSON verzovatelné šablony, moderní čárové kódy,
 JŘ elementy, PDF import, AI asistence.
+
+#### Převod do návrháře (rozbor 30. 10. 2026)
+
+**Agenda je jen zdroj dat.** Klient report generátoru má 17 obecných typů prvků a 9 typů sekcí (`REPORTGENERATOR/Enums.vb:35-66`) a žádnou podmínku na konkrétní agendu nebo sadu.
+Zvláštní prvky jako u jízdních řádů nejsou; tisky, které obecný kód neuměl, dostaly vlastní program (zastávkový a linkový JŘ, relace, vozový JŘ DPKV).
+Kreslení je proto hlavně technický převod: stavba šablony (sekce, podmínky, opakování sekce pro řádek dat, dělení přes stránky) v návrháři je, tabulka z dat se dotáhne (roadmapa `F3`) a drobné prvky (svislý text, kombinovaná tabulka, graf, zaškrtávátko) mají desítky použití.
+
+**Mapování na agendu a variantu** (návrh 30. 10., rozhodnutí roadmapa `F7`):
+- sada = naše agenda, pojmenovaná podle výstupu (`VYPLATNI_PASKA`), ne podle modulu - kód agendy se po vydání nemění, takže pozdější sloučení variant by jinak znamenalo převod uložených šablon;
+- modul, který dodává data pro tentýž výstup, = varianta: mzdové podklady pro řidiče (AD, MHD), denní plán (AD, MHD), výplatní páska (MZDY, MZDY2), označení zastávek (AD, ISY zastávky); většina sad má jen jeden zdroj;
+- varianty musí mít stejný tvar dat: mzdové podklady AD a MHD sdílejí jen údaje o osobě, přesčasy a tabulku činností (v AD přes 100 sloupců, v MHD 8), takže společná agenda znamená sjednotit data jako u JŘ - převodník bez zásahu do agend to nezvládne;
+- modul report generátoru = skupina v nabídce agend podle oblasti práce (Jízdní řády, Plán a provoz, Objednávky, Mzdy, Pokladna a odbavení, Účetnictví, Majetek a sklad, Vozidla), ohlášená parametrem třídy agendy; skupina se neukládá, jde kdykoli změnit;
+- sady podle nastavení firmy (faktury, hlášení, sklady) se do pevného kódu agendy nevejdou; u faktur asi jedna agenda s výběrem agendy faktur jako parametrem - jestli mají sady faktur stejná pole, neověřeno.
+
+**Koncepčně nové** (návrhář neumí a netýká se to kreslení):
+1. hromadný tisk seznamu dokladů s vlastním PDF, heslem, e-mailem, podpisem nebo tiskárnou pro každý doklad - návrhář ze spuštění umí jedno PDF v prohlížeči (`Vystup=PDF`), heslo, podpis ani e-mail v kódu nejsou;
+2. tisk ze serveru bez uživatele (mzdy spouštějí exe z Caché) - rozhodnutí R4, hotové není;
+3. data pro náhled - vstup je složený (zaměstnanec + období + filtry) nebo jeden doklad z tisíců; u každé agendy rozhodnout, jestli ukázková data, nebo výběr dokladu s filtrem;
+4. šablony zákazníků - návrhář je neotevře; převodník, nebo nový návrh (podle výpisu nejméně stovky šablon: 416 záhlaví stránky, 604 tabulek);
+5. Excel (data, ne vzhled), znakový tisk Epson, JPG;
+6. jazykové varianty šablon.
+
+Dopravní agendy (plán, provoz) narazí jen na tabulku z dat, mzdy, pokladna a faktury hned na body 1, 2 a 4.
+
+**Pilot:** vozové listy MHD (`MHD/CACHE/ALVA/MHD/REPORTGENERATOR/VozoveListy.cls:12-34`) - 5 polí, tabulka průběhu oběhu (10 sloupců) a výkonů (5), instance = oběh, data `^ALVA.MHD.LSO`, volá MHD2Linky (MHD039), řádek nese zvýraznění z dat.
+Vlastní třída agendy zavolá starý `getSadu` / `getData` a převede výstup na JSON: registr se nemění a data se starým tiskem shodují z principu.
+Další kandidáti: denní plán AD a MHD (druhý, ověří dvě varianty; AD 14 polí, 6 tabulek se 74 sloupci), zpožděnka AD (13 polí, žádná tabulka, data přijdou celá ve vstupu), turnus pro řidiče AD (4 tabulky s 12-45 sloupci, na začátek moc velký).
 
 ### 3.2 TiskMHD - zastávkový JŘ (z ~90 % pokryt)
 
@@ -205,9 +252,7 @@ starého modulu se zapnutou volbou (nastavení sekce „Data linky" v návrhář
 znamená, že u turnusů zatím není proti čemu porovnávat** - TD je ověřuje proti témuž zdroji, jaký
 volá legacy.
 
-**TiskJRRELACE** = třetí typ výstupu (řádky = odjezdy, sloupce = linka/čas/směr/
-nástupiště). Samostatné rozhodnutí - ověřit, zda je slovenský zákazník live use case
-(open question v `legacy-nahrada.md`).
+**TiskJRRELACE** = třetí typ výstupu, jen nad daty AD; co to je a jak vypadá, viz mapa legacy generátorů §3 níž (ověřeno 30. 10.).
 
 ---
 
@@ -265,13 +310,13 @@ jejich priorita čtením legacy kódu.
 
 ### Etapa 4 - REPORTGENERATOR: strategie postupné náhrady
 Ne big-bang (must-not-happen #4). Doporučený postup:
-1. **Prioritizovat podle usage statistiky** (`Main.cls:161-188` - reálná čísla per
-   zákazník existují!). 774 tabulek a 33k textů se koncentruje v několika agendách.
+1. **Prioritizovat** - statistika použití agend neexistuje (§3.1 Použití); pořadí z počtu šablon podle agendy u zákazníků nebo z počtu volajících míst, dopravní agendy napřed.
 2. **Rozhodnout bridge vs migrace per agenda:** buď adaptér překládající legacy
    `~`-tokenový protokol (`FIELD~`/`TABLE_START~`/…) na TD JSON DataContext - jedna
-   `LegacyRgAgenda` třída by zpřístupnila všech 28 agend najednou s omezenou věrností;
-   nebo čisté reimplementace vybraných agend (vzor agendy JŘ). Pragmaticky: **bridge
-   nejdřív** (rychlé pokrytí), čisté agendy tam, kde se investice vyplatí.
+   obecná třída by zpřístupnila všech 27 agend najednou s omezenou věrností;
+   nebo čisté reimplementace vybraných agend (vzor agendy JŘ).
+   Od 30. 10.: rozhodnout až po pilotu (§3.1 Pilot), který převede jednu sadu vlastní třídou.
+   Obecný převodník potřebuje registr, který vypíše dvojice agenda a sada, a varianty se stejným tvarem dat neumí.
 3. **TableElement dorovnat na RG úroveň** (navazuje na Dynamic-first tabulku):
    per-řádek zvýraznění/barvy z dat, overflow módy buňky, opakování mezisoučtového
    řádku, řádek-jako-designový-layout (koncepčně PerDataRow sekce), datové typy sloupců.
@@ -293,9 +338,9 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
    (2 - TD výrazový jazyk je nadmnožina), checkbox (8). Ověřit se zákazníky a škrtnout.
 
 ### Etapa 5 - Relace (TiskJRRELACE) + vozové JŘ (v roadmapě „Relace a vozové JŘ")
-- Nejdřív zodpovědět open questions (live use case Relace? priorita vozových?) -
-  viz `legacy-nahrada.md`. Vozové JŘ mají vlastní legacy generátory
-  (`ALVA.MHD.ReportGenerator`, `AD.ADREPORTGEN`) - samostatná analýza až bude aktuální.
+- Relace: jen AD, živý zákazník BBSK `#13070`; agenda nad sdílenými třídami AD a nový prvek (mapa generátorů §3).
+- Vozový JŘ je jen MHD (tisk DPKV v MHD2Tisk s vlastním kreslením) a převádí se jen na poptávku.
+  Vozové listy a turnus pro řidiče jsou sady report generátoru a jdou s etapou 4 (mapa generátorů §4).
 
 ---
 
@@ -305,8 +350,8 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
 |---|---|---|---|---|
 | TiskMHD | 31 400 + 4 313 | ~90 % (datově 1:1, elementy ✅) | TrasaMin multi-varianta, tarifní pásma, vizuální detaily | M–L (jednotlivosti) |
 | TiskJR | 33 400 + 3 290 | 0 % (jiný formát než zastávkový) | element + agenda + font + layout rozšíření | L (≈ zastávkový JŘ) |
-| TiskJRRELACE | 49 700 + 3 900 | 0 % | rozhodnout use case; pak element + agenda | ? (čeká validace) |
-| REPORTGENERATOR | 28 850 + 6 055 | ~15 % (TableElement základ; ukázkové Faktury smazané 30. 10.) | 28 agend (bridge/migrace), tabulkové featury, kanály | XL (etapizovat) |
+| TiskJRRELACE | 49 700 + 3 900 | 0 % | agenda nad AD + prvek; živý zákazník BBSK `#13070` | ? |
+| REPORTGENERATOR | 28 850 + 6 055 | ~15 % (TableElement základ; ukázkové Faktury smazané 30. 10.) | 27 agend / ~85 sad (bridge/migrace), tabulkové featury, hromadný tisk, šablony zákazníků, kanály | XL (etapizovat) |
 | **Sdílená infrastruktura** | (napříč) | částečně (DB storage, versioning framework) | vendor šablony, EDISON launch, headless, merge/email | L - **první** |
 
 ---
@@ -316,7 +361,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
 1. **Epson znakový tisk** - migruje do TD, nebo zůstane navždy v legacy TISK? (Určuje,
    zda TD potřebuje ne-grafický výstupní kanál - architektonicky cizí prvek.)
 2. **RG bridge vs čisté agendy** - akceptovatelná dočasná věrnost bridge překladu?
-3. **Relace (SK zákazník)** - živý use case?
+3. **Relace** - zodpovězeno 30. 10.: živý zákazník je BBSK `#13070` a relace nejsou slovenské.
 4. **Grafy/AZTEC/checkbox** - škrtnout, nebo má některý zákazník tvrdou závislost?
    (Usage čísla: 12/2/8 výskytů celkem.)
 5. **Jazykové varianty šablon** - potřebné i pro JŘ (dvoujazyčné pohraniční vývěsky,
@@ -634,27 +679,41 @@ Mapování typů jízdních řádů na **legacy Caché report generátory** + bu
 
 ---
 
-## 3) Relace (Slováci) - `ALVA.TiskJRRELACE`
+## 3) Relace - `ALVA.TiskJRRELACE` (ověřeno v kódu 30. 10. 2026)
 
-**Použití:** slovenský zákazník (CTC?). Něco mezi zastávkovým a linkovým.
+**Data jen z AD.** Tisk volá výpočet jízdních řádů `##class(ALVA.JRMAIN.MLAPI).mkPRelWin` (`TiskJRRELACE/CACHE/ALVA/TISKJRRELACE/Data.cls:107`); větev pro MHD v kódu není.
+Relaci definuje uživatel v jízdních řádech nad skupinou linek: výchozí zastávka, cílové zastávky, případně „přes"; je odjezdová (`o`) nebo příjezdová (`p`).
+Jízdní řády ji spočítají předem do `^JRi` (`calRel^JRapiRel2`, `JRapiRel2.mac:9`) a tisk jen čte výsledek (`JRapiiGOdO.mac`).
 
-**Vlastnosti:**
-- Podobné zastávkovému, **ale vypadá to trochu jinak**
-- Klíčový obsah: **odjezdy ze zastávky a kam všude to jede** (cílové destinace per odjezd)
+**Výstup:** řádek = cílová zastávka (abecedně, pod názvem upřesnění nebo „přes"), v řádku mřížka buněk pevné velikosti, jedna buňka = jeden spoj do té zastávky.
+Buňka nese linku, linku IDS, spoj, označník, platnosti, NZ, čas odjezdu, čas příjezdu do cíle a obecný text; každý údaj má v šabloně vlastní pozici a písmo a pozadí jde obarvit podle druhu spoje nebo dopravce (`formTISKJRRELACEReportDotNet_Module.vb:1483-1915`).
+Každá relace začíná na nové stránce, pod tabulkou je pět druhů poznámek.
 
-**Stav v TD:** zatím **neimplementováno**. Pravděpodobně extension zastávkového JŘ nebo samostatný element.
+**Výběr před tiskem** (`JRMAIN/frmPomocny_81`): každá relace do vlastního dokumentu, všechny do jednoho, jen jeden označník, nebo jen vybrané cílové zastávky; filtr typů linek.
+Spouští se z okna relace a skupiny linek v jízdních řádech a z ISYJR2 (`ISYJR2/TiskJRHelper.cs:362`).
+
+**Není slovenská.** Slovenské jsou jen texty šablon a režim jízdních řádů `^JRSET("COME","REC")` („cez", „stan.").
+Do 30. 10. tu stálo „slovenský fork" a „řádky = odjezdy, sloupce = linka/čas/směr" - obojí nepravda.
+S linkovým JŘ (`ALVA.TISKJR`) sdílí jen API jízdních řádů a výpočet je jiný (`mkPLinWin` × `mkPRelWin`); zbytek je kopie kódu a šablony má ve vlastním globálu `^AlvaTiskJRRelace`.
+Symboly kreslí fontem TimeTable jako linkový JŘ.
+
+**Stav v TD:** neimplementováno; živý zákazník BBSK `#13070` (odjezdová relace).
+Potřebuje agendu nad AD (čtení linek ze sdílené `Jr/DataAd.cls`) a nový prvek - buňku s volně rozmístěnými údaji žádný prvek nemá.
 
 ---
 
-## 4) Vozové JŘ (turnusy)
+## 4) Vozové JŘ a tisky podle oběhu (ověřeno v kódu 30. 10. 2026)
 
-Dva legacy generátory podle typu:
-- **MHD:** `ALVA.MHD.ReportGenerator`
-- **Linky:** `AD.ADREPORTGEN`
+Do 30. 10. tu stálo, že vozové JŘ tisknou `ALVA.MHD.ReportGenerator` (MHD) a `AD.ADREPORTGEN` (linky).
+Obojí jsou obecné agendy report generátoru s mnoha sadami, ne vozové JŘ (§3.1).
 
-**Použití:** v linkové dopravě se tiskne **v turnusech** (oběhy vozidel - který spoj jede které vozidlo).
+- **Vozový JŘ DPKV** (jen MHD): `MHD2Tisk/CACHE/ALVA/MHD2/Tisk/API/DPKV/VozovyJR.cls` + `VozovyJRTabulky.cls`, klient `MHD2Tisk/API/DPKV/VozovyJR.cs`.
+  Stránka = oběh, vlastní kreslení PDF mimo report generátor (slučování tabulek linek, zmenšení písma); vydaný 27. 10. 2026 (HD 13674, bod S2), spouští ho MHD2Linky tiskem MHD202.
+- **Vozové listy** (MHD): sada `VOZOVE_LISTY` agendy MHD v report generátoru, stránka = oběh, spouští MHD2Linky (MHD039).
+- **Tisk turnusu pro řidiče** (AD): sada `ADTUR_RIDICI` agendy AD v report generátoru, stránka = turnus, spouští ADTURNUSY a ISYTurnusy.
 
-**Stav v TD:** zatím **neimplementováno**. V roadmapě „Relace a vozové JŘ".
+V AD vozový JŘ není.
+Vozové listy a turnus pro řidiče se převedou s report generátorem (§3.1, vozové listy jako pilot); vozový JŘ DPKV jen na poptávku - má jediného zákazníka a čerstvý vlastní tisk.
 
 ---
 
@@ -667,8 +726,8 @@ Per roadmap PRIORITA 2:
 V roadmapě linkové/knižní JŘ a Relace/vozové (později, nižší priorita):
 
 2. **Linkové vývěsní/knižní JŘ** - `ALVA.TISKJR` ekvivalent (meziměstský; legacy generuje obojí)
-3. **Relace** - `ALVA.TiskJRRELACE` ekvivalent (specifický slovenský use case)
-4. **Vozové JŘ** - `ALVA.MHD.ReportGenerator` + `AD.ADREPORTGEN` ekvivalent (vozové JŘ)
+3. **Relace** - `ALVA.TiskJRRELACE` ekvivalent nad AD (živý zákazník BBSK)
+4. **Vozové JŘ** - viz §4: vozové listy a turnus pro řidiče s report generátorem, vozový JŘ DPKV na poptávku
 
 ---
 
@@ -676,8 +735,6 @@ V roadmapě linkové/knižní JŘ a Relace/vozové (později, nižší priorita)
 
 - ❓ `ALVA.TISKJR` - funguje i pro MHD nebo jen linkový?
 - ❓ Datové zdroje linkového JŘ v Caché (analogie `ALVA.MHD.LSO/CHR/ZST` pro MHD)?
-- ❓ Relace - který zákazník přesně, je to live use case nebo legacy?
-- ❓ Vozové JŘ - koho přesně to zajímá, časová priorita?
 
 
 
@@ -795,8 +852,10 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
 - **Výběr skupin linek a linek** - u AD je od 30. 10. jednou v `Jr/DataAd.cls` a agendy AD ho jen přesměrují (`B56` S6,
   hlídá `VyberLinekAdTests`). MHD ho sdílí od 23. 10. přes zastávkový MHD (`ZastavkoveJrMhd.SeznamLinek`, `B193c`),
   kopie se do té doby rozešly v příznaku zablokované skupiny; do pomocné třídy dat MHD půjde s ostatním čtením MHD.
-- **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - každá agenda ji skládá zvlášť; odtud čtyři
-  tvary popisu platnosti a dva texty návrhu (`B193f`, viz changelog 23. 10.).
+- **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - u AD ji od 30. 10. skládá `Jr.DataAd.AddHlavickaLinky` (`B56` S7)
+  a agenda přidá jen svoje vědomé rozdíly: titulek (vývěska, bez náhradního textu), popis dopravce (řádky × čárky) a hotovou
+  větu platnosti pro starší šablony (čtyři tvary, `B193f`). Číslo podle licence jde ve všech agendách jako číslo, veřejné
+  označení jako text (`KontraktAgendTest.TestTypyCislaLinky`). Hlavička MHD čeká na pomocnou třídu dat MHD.
 - **Společné parametry JŘ** jsou od 30. 10. definované jednou v `Jr/Parametry.cls` (`B56` S2): sedm parametrů
   vývěsek, linkové parametry a tvar názvu zastávky. Agenda si je skládá v `GetParameters` sama, pořadí v panelu drží ona.
 - **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`) jsou od 30. 10. zrušené i se čtením v návrháři
@@ -883,7 +942,7 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná bajt po bajtu.
   Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
-- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5, S6 a S8 (data AD, výběr linek, platnost a text omezení, `Jr/DataAd.cls`) hotové 30. 10.
+- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5 až S8 (data AD, výběr linek, hlavička linky, platnost a text omezení, `Jr/DataAd.cls`) hotové 30. 10.
   Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
   Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky (hotové, S3); linkové (hotové, S4, `Jr/VystupLinkovy.cls`); AD (hotové, S5, `Jr/DataAd.cls`; `NormalizLinku` přejmenované na `FormatCisloLinky`), výběr skupin linek a linek (hotový, S6).
   Pak sjednocení z odstavce výš (platnost, omezení 14 a 15; hotové, S8).

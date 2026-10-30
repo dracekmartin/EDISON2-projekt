@@ -97,6 +97,35 @@ Method TestGetDataVraciValidniStrankyProPrvniLinku()
 	}
 }
 
+/// Titulek je jen to, co je u linky v nastavení zastávkového tisku (`MhD,SeT_MhD` kus 2). Starý tisk za
+/// prázdný dosadil „Městská hromadná doprava...", ten by ale dostalo 97 % linek včetně regionálních
+/// (`B56` S7, Jan 30. 10.). Ověřuje se na linkách sady (testovací namespace linky AD nemá): každá vrátí
+/// titulek přesně z nastavení, a aspoň jedna ho nemá - jinak by test náhradní text nepoznal.
+Method TestTitulekBezNahradnihoTextu()
+{
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).Sada(.sada)
+	set overeno = 0, bezTitulku = 0
+	for i = 1:1:$get(sada) {
+		set db = $piece(sada(i), "~", 1), sku = $piece(sada(i), "~", 2), lin = $piece(sada(i), "~", 3)
+		continue:'##class(%SYS.Namespace).Exists(db)
+		do ##class(ALVA.EDTesting.MLTestCase).SetupSys(.sys, "CB_DP")
+		set sys("U","DATA") = db
+		kill ^||ML
+		set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+		set ^||ML("IN","LINKA_ID") = lin
+		do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+		continue:'$data(^||ML("OUT",1))
+		set titulek = $piece($get(^[db]JRL(sku, lin, "MhD", "SeT_MhD")), "~", 2)
+		set overeno = overeno + 1, bezTitulku = bezTitulku + (titulek = "")
+		set values = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)).values
+		do $$$AssertTrue(values.%IsDefined("TITULEK"), db_" "_lin_": titulek je v datech i bez nastavení")
+		do $$$AssertEquals(values.%Get("TITULEK"), titulek, db_" "_lin_": titulek jen z nastavení linky")
+	}
+	kill ^||ML
+	if 'overeno { do $$$AssertSkipped("žádná firma sady není na tomto serveru")  quit }
+	do $$$AssertTrue(bezTitulku > 0, "aspoň jedna linka sady je bez titulku - jinak test náhradní text nepozná")
+}
+
 Method TestGetDataBezLinkyNevraciStranky()
 {
 	do ..SetupSys(.sys)

@@ -25,7 +25,7 @@ Method TestAdresaDopravceNesePlnyTvarJakoStaryPopis()
 	}
 
 	kill udaje
-	set dopravci = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildDopravci($namespace, sku, lin)
+	set dopravci = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BuildDopravci($namespace, sku, lin)
 	if dopravci.%Size() = 0 {
 		do $$$AssertTrue(1, "Linka "_sku_"/"_lin_" nemá v datech dopravce - test přeskočen")
 		quit
@@ -53,9 +53,9 @@ Method TestSkalarniPoleOdpovidajiPrvnimuDopravci()
 	}
 
 	set vals = ##class(%DynamicObject).%New()
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).DopravceSkalary($namespace, sku, lin, vals)
+	do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DopravceSkalary($namespace, sku, lin, vals)
 
-	set dopravci = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildDopravci($namespace, sku, lin)
+	set dopravci = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BuildDopravci($namespace, sku, lin)
 	if dopravci.%Size() = 0 {
 		// Bez dopravce musí pole existovat a být prázdná, ne chybět.
 		do $$$AssertEquals(vals.%Get("NAZEV_DOPRAVCE"), "", "bez dopravce je název prázdný, ne chybějící")

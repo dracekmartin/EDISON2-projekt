@@ -570,32 +570,22 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     s tiskDtm = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TiskDtm(dataDB, sku, lin)
 
     // ── hlavička linky ──────────────────────────────────────────────
+    // Obě čísla linky jako u vývěsky, šablona si vybere (rozhodnutí Jan 23. 10.); hlavičku, kterou
+    // posílají všechny agendy AD stejně, skládá Jr.DataAd.
     s vals = ##class(%DynamicObject).%New()
-    d vals.%Set("CISLO_LINKY",            +lin)
-    // Obě čísla linky jako u vývěsky, šablona si vybere (rozhodnutí Jan 23. 10.).
-    d vals.%Set("LOKALNI_OZNACENI_LINKY", ..LokalniOznaceniLinkyAd(dataDB, sku, lin))
-    d vals.%Set("POPIS_LINKY",            ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NazevLinky(dataDB, sku, lin))
-    d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
-    d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).AddHlavickaLinky(dataDB, sku, lin, vals)
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
-    // Údaje prvního dopravce linky po polích, týmž voláním jako vývěska AD (`B194c` D4).
-    d ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).DopravceSkalary(dataDB, sku, lin, vals)
     // Vzory rozložení sloupců - obsah drží **server**, klient zná jen klíče a popisky. Bez toho
     // by parametr uměl jen hlásit stav, ale ne přepnout (a klientský opis pravidel by se rozešel).
     d vals.%Set("PRESETY_SLOUPCU",        ..PresetySloupcuLinky(dataDB, rec, sku, lin))
-    s platnost = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PlatnostLinky(dataDB, sku, lin)
-    s platiOd = $lg(platnost,1), platiDo = $lg(platnost,2)
-    d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
-    d vals.%Set("DATUM_PLATNOSTI_DO",     platiDo)
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
+    s platiOd = vals.%Get("DATUM_PLATNOSTI_OD"), platiDo = vals.%Get("DATUM_PLATNOSTI_DO")
     s popisPlatnosti = ""
     i platiOd '= "" {
         s popisPlatnosti = "Platí od "_platiOd
         i platiDo '= "" s popisPlatnosti = popisPlatnosti_" do "_platiDo
     }
     d vals.%Set("POPIS_PLATNOSTI",        popisPlatnosti)
-    d vals.%Set("TYP_JR",                 ..TypJrLinkyAd(dataDB, sku, lin))
-    d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     // ⚠️ U obousměrné stránky je směr **prázdný** - stránka nese oba a `SMER` u stránky by šablonu
     // navedl vytisknout jeden z nich jako by byl jediný. Směr každého spoje je na spoji;
     // konce linky drží `VYCHOZI_ZASTAVKA` a `KONECNA_ZASTAVKA`.

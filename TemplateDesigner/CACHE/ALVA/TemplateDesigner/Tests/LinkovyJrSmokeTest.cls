@@ -57,8 +57,14 @@ Method TestAdObeCislaLinky()
 	set db = $namespace, sku = "TDTEST"_$translate($system.Util.CreateGUID(), "-")
 	try {
 		set ^[db]JRL(sku, "0380715", "MhD", "SeT_MhD") = "15~Titulek"
-		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, "0380715"), "15", "z MHD nastavení linky")
-		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, "0380716"), "716", "bez nastavení znaky 5-7 čísla linky")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).LokalniOznaceniLinky(db, sku, "0380715"), "15", "z MHD nastavení linky")
+		do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).LokalniOznaceniLinky(db, sku, "0380716"), "716", "bez nastavení znaky 5-7 čísla linky")
+		// `B56` S7: hlavička AD z jedné metody - číslo podle licence jako číslo, označení jako text, i když vypadá jako číslo
+		set vals = ##class(%DynamicObject).%New()
+		do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).AddHlavickaLinky(db, sku, "0380715", vals)
+		do $$$AssertEquals(vals.%Get("CISLO_LINKY"), 380715, "licenční číslo")
+		do $$$AssertEquals(vals.%GetTypeOf("CISLO_LINKY"), "number", "licenční číslo je číslo")
+		do $$$AssertEquals(vals.%GetTypeOf("LOKALNI_OZNACENI_LINKY"), "string", "veřejné označení je text")
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
 	}
@@ -69,7 +75,7 @@ Method TestAdObeCislaLinky()
 	try {
 		for objekt = $listbuild(1, "VÝLUKOVÝ"), $listbuild(2, "NÁVRH"), $listbuild(0, "") {
 			set ^[db]JRL(sku, "0380715", "PATCH", "OBJ") = $list(objekt, 1)
-			do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).TypJrLinkyAd(db, sku, "0380715"), $list(objekt, 2), "razítko pro OBJ="_$list(objekt, 1))
+			do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TypJrLinky(db, sku, "0380715"), $list(objekt, 2), "razítko pro OBJ="_$list(objekt, 1))
 		}
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
@@ -89,7 +95,7 @@ Method TestAdObeCislaLinky()
 		set overeno = overeno + 1
 		set hodnoty = ##class(%DynamicObject).%FromJSON(^||ML("OUT",1)).values
 		do $$$AssertEquals(hodnoty.%Get("CISLO_LINKY"), +lin, db_" "_lin_": licenční číslo")
-		do $$$AssertEquals(hodnoty.%Get("LOKALNI_OZNACENI_LINKY"), ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).LokalniOznaceniLinkyAd(db, sku, lin), db_" "_lin_": veřejné označení jako vývěska")
+		do $$$AssertEquals(hodnoty.%Get("LOKALNI_OZNACENI_LINKY"), ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).LokalniOznaceniLinky(db, sku, lin), db_" "_lin_": veřejné označení jako vývěska")
 		do $$$AssertTrue(hodnoty.%Get("LOKALNI_OZNACENI_LINKY") '= "", db_" "_lin_": veřejné označení není prázdné")
 	}
 	if 'overeno do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru")

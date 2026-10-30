@@ -1,8 +1,8 @@
 Include GENERAL
 
 /// Čtení dat AD (jízdní řády linkové dopravy, `^JRL`), společné všem agendám nad daty AD - dnes
-/// vývěsce AD, linkovému JŘ AD a rozdílovému JŘ (`B56` S5, S6 a S8, `architektonicka-rozhodnuti-agendy.md` R8):
-/// linka, platnost jízdního řádu, výběr linek a text datumových omezení spojů.
+/// vývěsce AD, linkovému JŘ AD a rozdílovému JŘ (`B56` S5 až S8, `architektonicka-rozhodnuti-agendy.md` R8):
+/// linka a hlavička linky, dopravce po polích, platnost jízdního řádu, výběr linek a text datumových omezení spojů.
 /// Datovou databázi a linku dostává parametry, do pracovního globálu agendy nesahá (`cache-api.md`
 /// pravidlo 6). Do 30. 10. měla každá agenda vlastní kopii.
 /// Výběr skupin linek a linek (`GetAvailableSkupiny`, `GetAvailableInstances`) agendy AD jen přesměrují
@@ -145,6 +145,153 @@ ClassMethod CasHodnota(cas As %String) As %String
 {
     i (cas = "") || (cas = "<") || (cas = "|") q ""
     q +$p(cas,"/",1) + +$p(cas,"/",2)        // "33/4"→37, "27"→27 (piece2 prázdné = +0)
+}
+
+/// Údaje hlavičky linky AD, které posílají všechny agendy nad AD stejně: číslo podle licence (číslo),
+/// veřejné označení (text), název, poznámky nad linkou a pod dopravcem, údaje prvního dopravce po polích,
+/// data platnosti, typ JŘ a QR kód. Co si agenda skládá po svém (titulek, popis dopravce, hotová věta
+/// platnosti pro starší šablony), přidá sama za ně. Hodnoty jsou z dat, bez hotových vět a náhradních
+/// textů (`cache-api.md` §Data, ne hotové věty). Do 30. 10. si hlavičku skládala každá agenda zvlášť (`B56` S7).
+ClassMethod AddHlavickaLinky(dataDB As %String, sku As %String, lin As %String, vals As %DynamicObject)
+{
+    d vals.%Set("CISLO_LINKY",            +lin, "number")
+    d vals.%Set("LOKALNI_OZNACENI_LINKY", ..LokalniOznaceniLinky(dataDB, sku, lin), "string")
+    d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
+    // Poznámka nad linku - legacy gPrpLin dta4 = PATCH,"Head"
+    d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
+    d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
+    d ..DopravceSkalary(dataDB, sku, lin, vals)
+    s platnost = ..PlatnostLinky(dataDB, sku, lin)
+    d vals.%Set("DATUM_PLATNOSTI_OD",     $lg(platnost,1))
+    d vals.%Set("DATUM_PLATNOSTI_DO",     $lg(platnost,2))
+    d vals.%Set("TYP_JR",                 ..TypJrLinky(dataDB, sku, lin))
+    d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
+}
+
+/// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
+/// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). `lin` je sedmimístné číslo linky (<method>FormatCisloLinky</method>).
+/// Je to text, ne číslo - v MHD má část linek označení s písmeny.
+ClassMethod LokalniOznaceniLinky(dataDB As %String, sku As %String, lin As %String) As %String
+{
+    s lokalni = $p($g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD")),"~",1)
+    q $s(lokalni '= "":lokalni, 1:$e(lin,5,7))
+}
+
+/// Razítko typu JŘ linky AD podle `PATCH,"OBJ"` (1 výluka, 2 návrh). Texty jako u MHD
+/// (`ZastavkoveJrMhd.TypJrLinky`), aby razítko vypadalo ve všech agendách stejně; starý postskriptový
+/// tisk AD psal u návrhu „návrh jízdního řádu" (rozhodnutí Jan 23. 10.: jednotně „NÁVRH").
+/// Vědomá výjimka z pravidla „data, ne hotové texty" (Jan 30. 10.): ze dvou kódů by si šablona text
+/// složila jen dvěma prvky s podmínkou viditelnosti.
+ClassMethod TypJrLinky(dataDB As %String, sku As %String, lin As %String) As %String
+{
+    q $case(+$g(^[dataDB]JRL(sku,lin,"PATCH","OBJ")), 1:"VÝLUKOVÝ", 2:"NÁVRH", :"")
+}
+
+/// Skalární pole prvního dopravce linky (NAZEV_DOPRAVCE, ADRESA_DOPRAVCE…) z <method>BuildDopravci</method>;
+/// u linky bez dopravce zapíše prázdno, aby pole ve schématu existovalo vždy (chybějící klíč by
+/// v šabloně vypadal jako neznámé pole). MHD posílá tytéž klíče (`ZastavkoveJrMhd.DopravceSkalary`).
+ClassMethod DopravceSkalary(dataDB As %String, sku As %String, lin As %String, vals As %DynamicObject)
+{
+    s prvni = ..BuildDopravci(dataDB, sku, lin).%Get(0)
+    d vals.%Set("NAZEV_DOPRAVCE",   $s($isobject(prvni):prvni.NAZEV,   1:""))
+    d vals.%Set("ADRESA_DOPRAVCE",  $s($isobject(prvni):prvni.ADRESA,  1:""))
+    d vals.%Set("TELEFON_DOPRAVCE", $s($isobject(prvni):prvni.TELEFON, 1:""))
+    d vals.%Set("EMAIL_DOPRAVCE",   $s($isobject(prvni):prvni.EMAIL,   1:""))
+    d vals.%Set("ICO_DOPRAVCE",     $s($isobject(prvni):prvni.ICO,     1:""))
+    q
+}
+
+/// Dopravci linky - **řádek na každou kombinaci dopravce a provozovny, která na lince jezdí**.
+/// Páry (firma, provoz) sbírá z `#`-pole 2 spojů obou směrů, stejně jako popis dopravce v agendách,
+/// takže se v ní neobjeví dopravce, který linku neobsluhuje. Bere z ní jen <method>DopravceSkalary</method>
+/// první řádek; jako kolekce se do dat neposílá (provozovny vyhozené 4. 9., `B112`).
+ClassMethod BuildDopravci(dataDB As %String, sku As %String, lin As %String) As %DynamicArray
+{
+    s arr = ##class(%DynamicArray).%New()
+    k dop
+    f smer="T","Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+            q:sp=""
+            i '$isvalidnum(sp) continue
+            s carriers = $p($g(^[dataDB]JRL(sku,lin,smer,sp)), "#", 2)
+            f ci=1:1:$l(carriers,"~") {
+                s slot = $p(carriers,"~",ci)
+                i slot = "" continue
+                s fa = $p(slot,":",1)
+                i fa = "" continue
+                s dop(fa, $p(slot,":",2)) = ""
+            }
+        }
+    }
+
+    s fa = ""
+    f {
+        s fa = $o(dop(fa))
+        q:fa=""
+        s pr = ""
+        f {
+            s pr = $o(dop(fa,pr))
+            q:pr=""
+            k udaje
+            d ..DopravceUdaje(dataDB, fa, pr, .udaje)
+            // Dopravce bez jména je prázdný záznam číselníku - řádek by na vývěsce jen zabral místo.
+            i $g(udaje("NAZEV")) = "" continue
+            s r = ##class(%DynamicObject).%New()
+            s kl = ""
+            f {
+                s kl = $o(udaje(kl))
+                q:kl=""
+                d r.%Set(kl, udaje(kl))
+            }
+            d arr.%Push(r)
+        }
+    }
+    q arr
+}
+
+/// Údaje jednoho dopravce a jeho provozovny **po jednotlivých polích**, ne slepené do bloku.
+/// Vrací je v `udaje` (ByRef): NAZEV, ADRESA, TELEFON, EMAIL, ICO a PROVOZOVNA_*.
+///
+/// ⚠️ **Číselník sám není atomický** a tohle je hranice, za kterou pole rozebrat nejde
+/// (ověřeno na CB_CSADAD 1. 9.):
+/// - Adresa firmy nese ulici, PSČ i obec v **jednom** poli - dělit ji parsováním by u tvarů jako
+///   „č.p. 138, 569 07 Radiměř" vyrábělo nesmysly.
+/// - Adresa firmy je v číselníku **dvakrát** (pole 2 a 10) a ⚠️ **nejsou vždy totožné**: u ČSAD
+///   Jindřichův Hradec obě nesou „U Nádraží 694/II, 377 14 Jindřichův Hradec", ale u ČSAD AUTOBUSY
+///   České Budějovice má pole 2 jen „Hálkova 781/9" a plnou adresu s PSČ a obcí nese teprve pole 10.
+///   Bere se proto **pole 10** a pole 2 je záloha - shodně s `ZastavkoveJrAd.NazevDopravce`. Obráceně
+///   by na vývěsce zmizelo PSČ a obec (odhaleno ověřením voláním 1. 9., ne úvahou).
+/// - Telefon provozovny bývá slitý s webem a e-mailem („384 371 922, …, www…, info@…"). Vrací se,
+///   jak je; kdo chce čistý telefon, vezme telefon firmy.
+///
+/// ⚠️ **Pole „zkrácený název pro MHD" se sem záměrně NEDOSTANE.** U ČSAD Jindřichův Hradec obsahuje
+/// celý text včetně telefonů, takže jako jméno slouží špatně - a právě odsud pramení duplicita
+/// telefonů v `ZastavkoveJrAd.NazevDopravce`, na kterou zákazník narazil (#13158).
+ClassMethod DopravceUdaje(dataDB As %String, fa As %String, pr As %String, ByRef udaje As %String)
+{
+    k udaje
+    s firma = $g(^[dataDB]JRSET("DOP",fa))
+    s provoz = $s(pr'="":$g(^[dataDB]JRSET("DOP",fa,pr)), 1:"")
+
+    // Obchodní název (7) má přednost před názvem (1) - u kontrolovaných dopravců jsou shodné,
+    // ale obchodní tvar je ten, který patří na vývěsku.
+    s udaje("NAZEV")   = $s($p(firma,"~",7)'="":$p(firma,"~",7), 1:$p(firma,"~",1))
+    s udaje("ADRESA")  = $s($p(firma,"~",10)'="":$p(firma,"~",10), 1:$p(firma,"~",2))
+    s udaje("TELEFON") = $p(firma,"~",3)
+    s udaje("ICO")     = $p(firma,"~",5)
+    s udaje("EMAIL")   = $p(firma,"~",13)
+    // Fax se vědomě nevystavuje (rozhodnutí Jan 1. 9.) - na vývěsce nemá co dělat. Pole 4 číselníku
+    // ho drží dál, takže se dá kdykoli přidat.
+
+    // Provozovna: 1 je její NÁZEV („provozna Příbram"), ne sídlo - komentář u NazevDopravce
+    // tvrdil opak. 4 je místo („J.Hradec", „Dačice").
+    s udaje("PROVOZOVNA_NAZEV")   = $p(provoz,"~",1)
+    s udaje("PROVOZOVNA_ADRESA")  = $p(provoz,"~",2)
+    s udaje("PROVOZOVNA_TELEFON") = $p(provoz,"~",3)
+    s udaje("PROVOZOVNA_MISTO")   = $p(provoz,"~",4)
+    q
 }
 
 /// Platnost jízdního řádu linky jako $lb(od, do) v textu, jak je v datech (`PATCH,"Plati"` = „od~do:…",

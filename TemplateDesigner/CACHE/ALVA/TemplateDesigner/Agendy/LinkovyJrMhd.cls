@@ -299,8 +299,10 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
     // Rozdělení licenční × veřejné číslo je shodné se zastávkovou vývěskou (ZastavkoveJrMhd:318) -
     // do 17. 8. tu bylo ve CISLO_LINKY veřejné číslo, takže táž linka měla na vývěsce a v linkovém
     // JŘ jiné číslo, aniž to šlo poznat z popisku pole.
-    d vals.%Set("CISLO_LINKY",         $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloLinkyDleLicence")))
-    d vals.%Set("LOKALNI_OZNACENI_LINKY", $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloVerejne")))
+    // Číslo podle licence je číslo, veřejné označení text - jako ve všech agendách JŘ (`KontraktAgendTest.TestTypyCislaLinky`).
+    s cisloLinky = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloLinkyDleLicence"))
+    d vals.%Set("CISLO_LINKY",         $s(cisloLinky?1.N:+cisloLinky, 1:cisloLinky))
+    d vals.%Set("LOKALNI_OZNACENI_LINKY", $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloVerejne")), "string")
     d vals.%Set("POPIS_LINKY",         $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"NazevLinky")))
     // LSO drží datum v ISO tvaru; ven jde ve stejném tvaru jako ze zastávkové vývěsky
     // (ZastavkoveJrMhd:1104), jinak by táž šablona vytiskla jednou "1.11.2018" a podruhé "2018-11-01".

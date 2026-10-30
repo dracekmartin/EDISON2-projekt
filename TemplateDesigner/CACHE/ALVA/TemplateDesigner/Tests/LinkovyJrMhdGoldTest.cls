@@ -15,7 +15,9 @@ Class ALVA.TemplateDesigner.Tests.LinkovyJrMhdGoldTest Extends ALVA.EDTesting.ML
 
 /// Výchozí odtisk 2026-10-29 (`G8`), sejmutý na dev serveru před sloučením kódu agend (`B56`);
 /// dvě volání po sobě daly totéž. Formát „firma:linka=digest", oddělené „|".
-Parameter DIGESTY = "CB_DP:11350=pages=2 zast=41 spoju=122 casu=2500 pozn=6 md5=1cYkmVgcL5q48kd+CQc1tw==|CB_DP:11341=pages=2 zast=58 spoju=318 casu=8095 pozn=10 md5=+1yngMbxEFv3yhsw2yjBQA==|CB_DP:11354=pages=2 zast=17 spoju=411 casu=3494 pozn=4 md5=QP3225JHhl4WJCAMlEeI/Q==|CB_DP:11018=pages=2 zast=47 spoju=228 casu=4945 pozn=13 md5=pqD+EWSoNDG7FAfKoqBmJA==|KV_DP:1073=pages=2 zast=84 spoju=408 casu=10066 pozn=4 md5=2/DWPT9ZnerLv6aoQd6Wsw==|KV_DP:1438=pages=2 zast=44 spoju=42 casu=260 pozn=4 md5=I+uaCPe2YvWSzKFF+b5mrQ==|KV_DP:1520=pages=2 zast=42 spoju=351 casu=4334 pozn=3 md5=lBBDP4CRKCdF98mfgmPvsg==";
+/// Re-baseline 2026-10-30 (`B56` S7): číslo linky podle licence jde jako číslo, ne text, jako ve všech
+/// agendách JŘ (`KontraktAgendTest.TestTypyCislaLinky`). Jen md5, počty u všech sedmi linek beze změny.
+Parameter DIGESTY = "CB_DP:11350=pages=2 zast=41 spoju=122 casu=2500 pozn=6 md5=vIpbL0JhjC8YYjvJ7hUgkQ==|CB_DP:11341=pages=2 zast=58 spoju=318 casu=8095 pozn=10 md5=UmPOWl1aChF0X+D/AhjQTA==|CB_DP:11354=pages=2 zast=17 spoju=411 casu=3494 pozn=4 md5=zt+TLNI6mMEezMVm1t5QAg==|CB_DP:11018=pages=2 zast=47 spoju=228 casu=4945 pozn=13 md5=l/EccN+jojtAW6IqsZdxlg==|KV_DP:1073=pages=2 zast=84 spoju=408 casu=10066 pozn=4 md5=4rEZu1On55+z+oFUvhNGQA==|KV_DP:1438=pages=2 zast=44 spoju=42 casu=260 pozn=4 md5=oUv7sjwgD45+WdZzMvtk1A==|KV_DP:1520=pages=2 zast=42 spoju=351 casu=4334 pozn=3 md5=Fl7d36kTfkhnH4A9A7Ultw==";
 
 Method TestGold()
 {

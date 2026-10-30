@@ -106,7 +106,10 @@ Method TestGold0365001()
 	// Re-baseline 2026-10-27 (`B194` D3): každá stránka nese navíc pole VYCHOZI_ZASTAVKA. Jen md5, počty shodné.
 	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a polí NZ_KONFIG, NEVYPISOVAT_ZNACKY_SLOUPCU,
 	// která nic nečetlo. Jen md5, počty shodné; snímek výstupu agend potvrdil, že jiný rozdíl na stránkách není.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=H1d4xWslxjwPSvgKiC5pyg==")
+	// Re-baseline 2026-10-30 (`B56` S7): hlavičku linky skládá `Jr.DataAd.AddHlavickaLinky` (jiné pořadí
+	// položek) a titulek je bez náhradního textu „Městská hromadná doprava..." (rozhodnutí Jan). Jen md5,
+	// počty shodné; snímek porovnaný podle obsahu nemá jiný rozdíl než titulek.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=zAcoVnGkUw0/fYgusSmOjA==")
 }
 
 Method TestGold0365005()
@@ -153,7 +156,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D3): pole VYCHOZI_ZASTAVKA - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a dvou polí NZ - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=9vL8kcr20GSiARAFN8ZUQw==")
+	// Re-baseline 2026-10-30 (`B56` S7): hlavička linky a titulek - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=n6H6lczT+5SUkrw5pYQMqA==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -244,7 +248,8 @@ Method TestGold0330530()
 	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D3): pole VYCHOZI_ZASTAVKA - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a dvou polí NZ - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=G5EoZoXRlEg8CLzgNiAtJg==")
+	// Re-baseline 2026-10-30 (`B56` S7): hlavička linky a titulek - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=bYToqTAKWlGC/laGVBD61g==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

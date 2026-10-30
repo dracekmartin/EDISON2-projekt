@@ -1108,8 +1108,10 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
 
     // ── Skalární hodnoty ─────────────────────────────────────────────────
     s vals = ##class(%DynamicObject).%New()
-    d vals.%Set("CISLO_LINKY",            CisloLinky)
-    d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni)
+    // Číslo podle licence je číslo, veřejné označení text (v KV_DP má část linek písmena) - jako ve
+    // všech agendách JŘ (`KontraktAgendTest.TestTypyCislaLinky`); do 30. 10. to bylo podle toho, jak leželo v globálu.
+    d vals.%Set("CISLO_LINKY",            $s(CisloLinky?1.N:+CisloLinky, 1:CisloLinky))
+    d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni, "string")
     d vals.%Set("POPIS_LINKY",            NazevLinky)
     d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .dopravce)
     d vals.%Set("POPIS_DOPRAVCE",         ..RadkyDopravce($g(dopravce("NAZEV")), $g(dopravce("ULICE")), $g(dopravce("MESTO")), $g(dopravce("TELEFON"))))
@@ -1725,7 +1727,7 @@ ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
     q
 }
 
-/// Údaje dopravce po jednotlivých polích pod stejnými klíči jako agendy AD (`ZastavkoveJrAd.DopravceSkalary`),
+/// Údaje dopravce po jednotlivých polích pod stejnými klíči jako agendy AD (`Jr.DataAd.DopravceSkalary`),
 /// aby šablona šla mezi agendami přenášet (`B194c` D4). Adresa = ulice, PSČ a obec.
 /// Linka bez dopravce zapíše prázdno, ať pole v datech existuje vždy.
 ClassMethod DopravceSkalary(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, vals As %DynamicObject)

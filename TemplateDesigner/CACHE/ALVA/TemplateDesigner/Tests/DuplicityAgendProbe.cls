@@ -167,6 +167,91 @@ ClassMethod CernaBarva(ByRef sys As %String) As %Status
 	ret $$$OK
 }
 
+/// Hlavička linky (`B56` S7): titulek vývěsky AD (`MhD,SeT_MhD` kus 2, prázdný = „Městská hromadná
+/// doprava..."), tvar čísla linky podle licence a veřejného označení u MHD a šablony, které titulek tisknou.
+/// OUT: ad~firma, titulek~text = počet, mhd~firma, mhdpriklad~n, sablona~n.
+ClassMethod HlavickaLinky(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		kill ^||ML, titulky
+		for fi = 1:1:$length(..#FIRMY, ",") {
+			set db = $piece(..#FIRMY, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linek = 0, sTitulkem = 0, sku = ""
+			for {
+				set sku = $order(^[db]JRL(sku))
+				quit:sku=""
+				continue:'$isvalidnum(sku)
+				set lin = ""
+				for {
+					set lin = $order(^[db]JRL(sku, lin))
+					quit:lin=""
+					continue:'$data(^[db]JRL(sku, lin, "I"))
+					set linek = linek + 1
+					set titulek = $piece($get(^[db]JRL(sku, lin, "MhD", "SeT_MhD")), "~", 2)
+					continue:titulek=""
+					set sTitulkem = sTitulkem + 1, titulky(titulek) = $get(titulky(titulek)) + 1
+				}
+			}
+			set ^||ML("OUT", "ad~"_db) = "linek="_linek_" sTitulkem="_sTitulkem
+		}
+		set titulek = "", n = 0
+		for {
+			set titulek = $order(titulky(titulek))
+			quit:titulek=""
+			set n = n + 1
+			quit:n>30
+			set ^||ML("OUT", "titulek~"_titulek) = titulky(titulek)
+		}
+		set prikladu = 0
+		for fi = 1:1:$length(..#FIRMYMHD, ",") {
+			set db = $piece(..#FIRMYMHD, ",", fi)
+			continue:'##class(%SYS.Namespace).Exists(db)
+			set linek = 0, licenceJinak = 0, verejneJinak = 0, id = ""
+			for {
+				set id = $order(^[db]ALVA.MHD.LSO(db, 1, "DTA", id))
+				quit:id=""
+				set linek = linek + 1
+				set licence = $get(^[db]ALVA.MHD.LSO(db, 1, "DTA", id, "DTA", 1, "CisloLinkyDleLicence"))
+				set verejne = $get(^[db]ALVA.MHD.LSO(db, 1, "DTA", id, "DTA", 1, "CisloVerejne"))
+				set:licence'?1.N licenceJinak = licenceJinak + 1
+				set:verejne'?1.N verejneJinak = verejneJinak + 1
+				continue:(licence?1.N)&&(verejne?1.N)
+				continue:prikladu'<15
+				set prikladu = prikladu + 1
+				set ^||ML("OUT", "mhdpriklad~"_prikladu) = db_" linka "_id_" licence="""_licence_""" verejne="""_verejne_""""
+			}
+			set ^||ML("OUT", "mhd~"_db) = "linek="_linek_" licenceNeniCislo="_licenceJinak_" verejneNeniCislo="_verejneJinak
+		}
+		set n = 0, fa = ""
+		for {
+			set fa = $order(^ALVA.TemplateDesigner.Templates(fa))
+			quit:fa=""
+			set id = ""
+			for {
+				set id = $order(^ALVA.TemplateDesigner.Templates(fa, "DTA", id))
+				quit:id=""
+				// velký blob je po kusech; kus se prohledá zvlášť, aby se celý JSON nemusel skládat do jednoho textu
+				set nalezeno = ($get(^ALVA.TemplateDesigner.Templates(fa, "DTA", id, "Data")) [ "{TITULEK}")
+				set k = ""
+				for {
+					set k = $order(^ALVA.TemplateDesigner.Templates(fa, "DTA", id, "Data", k))
+					quit:(k="")||nalezeno
+					set:$get(^ALVA.TemplateDesigner.Templates(fa, "DTA", id, "Data", k))["{TITULEK}" nalezeno = 1
+				}
+				continue:'nalezeno
+				set n = n + 1
+				set ^||ML("OUT", "sablona~"_n) = fa_" "_id_" "_$get(^ALVA.TemplateDesigner.Templates(fa, "DTA", id, "Metadata", "Name"))_" agenda="_$get(^ALVA.TemplateDesigner.Templates(fa, "DTA", id, "Metadata", "AgendaCode"))
+			}
+		}
+		set ^||ML("OUT", "sablonSTitulkem") = n
+	}
+	catch (ex) { $$$CatchErrRest }
+	ret $$$OK
+}
+
 /// Tři převody data platnosti linky na `$h` (`B56` S8): `ALVA.GENERALAPI.Date.DateToHor` (začátek
 /// platnosti pro zastávky k datu), kontrola tvaru + `DatumNaHorolog` (období sloupců vývěsky AD)
 /// a `$zdateh` v `DatumNaDh` (turnusy linkového JŘ AD). Vyjdou na reálných datech stejně?

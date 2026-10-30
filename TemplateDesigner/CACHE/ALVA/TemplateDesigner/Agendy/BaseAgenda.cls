@@ -549,14 +549,6 @@ ClassMethod TextUkazkyBezDat() As %String
     q "Ukázka bez dat - vyberte linku (Ctrl+Shift+I)"
 }
 
-/// Razítko typu JŘ linky AD podle `PATCH,"OBJ"` (1 výluka, 2 návrh). Texty jako u MHD
-/// (`ZastavkoveJrMhd.TypJrLinky`), aby razítko vypadalo ve všech agendách stejně; starý postskriptový
-/// tisk AD psal u návrhu „návrh jízdního řádu" (rozhodnutí Jan 23. 10.: jednotně „NÁVRH").
-ClassMethod TypJrLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String
-{
-    q $case(+$g(^[dataDB]JRL(sku,lin,"PATCH","OBJ")), 1:"VÝLUKOVÝ", 2:"NÁVRH", :"")
-}
-
 /// Upřesnění ke spoji AD „na objednání" (`klic` = RBU) nebo „podmínečně" (RBP), které se lepí za
 /// větu legendy: text u spoje, jinak u linky, jinak v nastavení firmy. Prázdné = bez upřesnění.
 /// 1:1 legacy `JRapiNZUtl3.mac:41-48, 118-130` (spoj `#10`/`#11` podle `JRapiSp.mac:192-193`,
@@ -573,15 +565,6 @@ ClassMethod UpresneniAtributuSpoje(dataDB As %String, sku As %String, lin As %St
     s textSpoje = $p($g(^[dataDB]JRL(sku,lin,smer,sp)), "#", $s(naObjednani:10, 1:11))
     i textSpoje '= "" s txt = textSpoje
     q $zstrip(txt, "<>W")
-}
-
-/// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
-/// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). Sdílí vývěska i linkový JŘ AD, aby táž linka
-/// nesla v obou totéž označení. `lin` je sedmimístné číslo linky (`Jr.DataAd.FormatCisloLinky`).
-ClassMethod LokalniOznaceniLinkyAd(dataDB As %String, sku As %String, lin As %String) As %String
-{
-    s lokalni = $p($g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD")),"~",1)
-    q $s(lokalni '= "":lokalni, 1:$e(lin,5,7))
 }
 
 /// Záznam zastávky z registru (`$`-věta jako `^JRZ(czst)`) **platný k datu** `hrl` (horolog,

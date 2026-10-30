@@ -208,7 +208,31 @@ Method TestDataOdpovidajiNabidce()
 	do $$$AssertEquals(nalez, "", "data agend neodpovídají nabídce:"_nalez)
 }
 
-/// Linky s daty pro každou agendu JŘ: volani(i) = "kód~název~třída~firma~databáze~vstup", vstup =
+/// Číslo linky podle licence posílají všechny agendy jako číslo a veřejné označení jako text (`B56` S7,
+/// Jan 30. 10.). Do 30. 10. to záviselo na tom, jak hodnota ležela v datech: MHD posílalo licenční číslo
+/// jako text a vývěska MHD číselné označení jako číslo. Prázdná hodnota je dovolená (linka MHD bez čísla).
+Method TestTypyCislaLinky()
+{
+	do ..LinkyAgend(.volani)
+	set nalez = ""
+	for v = 1:1:$get(volani) {
+		kill klice, typy
+		set chyba = ..SberDat(volani(v), .klice, .typy)
+		continue:chyba'=""
+		for pravidlo = $listbuild("CISLO_LINKY", "number"), $listbuild("LOKALNI_OZNACENI_LINKY", "string") {
+			set klic = $list(pravidlo, 1), typ = ""
+			for {
+				set typ = $order(typy(klic, typ))
+				quit:typ=""
+				continue:(typ=$list(pravidlo, 2))||(typ="prazdne")
+				set nalez = nalez_$char(13,10)_$piece(volani(v), "~", 2)_": "_klic_" je "_typ_", má být "_$list(pravidlo, 2)
+			}
+		}
+	}
+	do $$$AssertEquals(nalez, "", "typ čísla linky v datech:"_nalez)
+}
+
+/// Linky s daty pro každou agendu JŘ: volani(i) ="kód~název~třída~firma~databáze~vstup", vstup =
 /// "KLÍČ=hodnota;KLÍČ=hodnota", prázdná firma = výchozí firma testů. Linky ze sad a zlatých odtisků
 /// s výchozími parametry. Bere je i snímek výstupu agend (`SnimekAgendProbe`).
 ClassMethod LinkyAgend(ByRef volani)
@@ -244,9 +268,9 @@ ClassMethod PridejAd(ByRef volani, kod As %String, trida As %String, polozka As 
 }
 
 /// Zavolá GetData jedné linky z `LinkyAgend` a přidá klíče jejích stránek do `klice`: klice("udaje", KLÍČ)
-/// pro údaje, klice(KOLEKCE) a klice(KOLEKCE, POLE) pro řádky. Vrátí text chyby agendy, "-" když firma
-/// na serveru není, jinak "".
-ClassMethod SberDat(radek As %String, ByRef klice) As %String
+/// pro údaje, klice(KOLEKCE) a klice(KOLEKCE, POLE) pro řádky. Do `typy(KLÍČ, typ)` zapíše JSON typ
+/// každého údaje („prazdne" pro prázdný text). Vrátí text chyby agendy, "-" když firma na serveru není, jinak "".
+ClassMethod SberDat(radek As %String, ByRef klice, ByRef typy) As %String
 {
 	set trida = $piece(radek, "~", 3), idfa = $piece(radek, "~", 4), db = $piece(radek, "~", 5), vstup = $piece(radek, "~", 6)
 	quit:(db'="")&&'##class(%SYS.Namespace).Exists(db) "-"
@@ -269,6 +293,8 @@ ClassMethod SberDat(radek As %String, ByRef klice) As %String
 			set it = strana.values.%GetIterator()
 			while it.%GetNext(.klic, .hodnota) {
 				set klice("udaje", klic) = ""
+				set typ = strana.values.%GetTypeOf(klic)
+				set typy(klic, $select((typ="string")&&(hodnota=""):"prazdne", 1:typ)) = ""
 			}
 		}
 		continue:'$isobject(strana.rows)
