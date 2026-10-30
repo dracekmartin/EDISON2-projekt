@@ -60,13 +60,8 @@ public sealed class FirstNonEmptyHexToBrushConverter : IMultiValueConverter
 /// <summary>Převede TextHorizontalAlignment na český label (pro placeholder zobrazení zděděné hodnoty).</summary>
 public sealed class HAlignToLabelConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
-    {
-        TextHorizontalAlignment.Left   => "Vlevo",
-        TextHorizontalAlignment.Center => "Na střed",
-        TextHorizontalAlignment.Right  => "Vpravo",
-        _ => "",
-    };
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is TextHorizontalAlignment h ? AlignmentLabels.Label(h) : "";
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
@@ -75,13 +70,8 @@ public sealed class HAlignToLabelConverter : IValueConverter
 /// <summary>Převede TextVerticalAlignment na český label (pro placeholder zobrazení zděděné hodnoty).</summary>
 public sealed class VAlignToLabelConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
-    {
-        TextVerticalAlignment.Top    => "Nahoře",
-        TextVerticalAlignment.Middle => "Na střed",
-        TextVerticalAlignment.Bottom => "Dole",
-        _ => "",
-    };
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is TextVerticalAlignment v ? AlignmentLabels.Label(v) : "";
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();

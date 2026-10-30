@@ -36,22 +36,22 @@
 
             <!-- ── Vodorovné zarovnání ── -->
             <ToggleButton x:Name="BtnAlignLeft" Style="{StaticResource ToolbarToggle}"
-                          ToolTip="Vlevo" MinWidth="24" MinHeight="24"
+                          MinWidth="24" MinHeight="24"
                           Click="BtnAlignLeft_Click">
                 <TextBlock Text="L" FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontFamily="Consolas"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnAlignCenter" Style="{StaticResource ToolbarToggle}"
-                          ToolTip="Na střed" MinWidth="24" MinHeight="24"
+                          MinWidth="24" MinHeight="24"
                           Click="BtnAlignCenter_Click">
                 <TextBlock Text="C" FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontFamily="Consolas"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnAlignRight" Style="{StaticResource ToolbarToggle}"
-                          ToolTip="Vpravo" MinWidth="24" MinHeight="24"
+                          MinWidth="24" MinHeight="24"
                           Click="BtnAlignRight_Click">
                 <TextBlock Text="R" FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontFamily="Consolas"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnAlignJustify" Style="{StaticResource ToolbarToggle}"
-                          ToolTip="Do bloku" MinWidth="24" MinHeight="24"
+                          MinWidth="24" MinHeight="24"
                           Click="BtnAlignJustify_Click">
                 <TextBlock Text="J" FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontFamily="Consolas"/>
             </ToggleButton>
@@ -60,17 +60,17 @@
 
             <!-- ── Svislé zarovnání ── -->
             <ToggleButton x:Name="BtnVAlignTop" Style="{StaticResource ToolbarToggle}"
-                          ToolTip="Nahoře" MinWidth="24" MinHeight="24"
+                          MinWidth="24" MinHeight="24"
                           Click="BtnVAlignTop_Click">
                 <TextBlock Text="▲" FontSize="{DynamicResource EDTheme.FontSize.Small}"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnVAlignMiddle" Style="{StaticResource ToolbarToggle}"
-                          ToolTip="Na střed (svisle)" MinWidth="24" MinHeight="24"
+                          MinWidth="24" MinHeight="24"
                           Click="BtnVAlignMiddle_Click">
                 <TextBlock Text="▬" FontSize="{DynamicResource EDTheme.FontSize.Small}"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnVAlignBottom" Style="{StaticResource ToolbarToggle}"
-                          ToolTip="Dole" MinWidth="24" MinHeight="24"
+                          MinWidth="24" MinHeight="24"
                           Click="BtnVAlignBottom_Click">
                 <TextBlock Text="▼" FontSize="{DynamicResource EDTheme.FontSize.Small}"/>
             </ToggleButton>

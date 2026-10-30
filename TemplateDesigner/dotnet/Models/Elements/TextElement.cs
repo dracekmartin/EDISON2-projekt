@@ -163,7 +163,7 @@ public class TextElement : TemplateElement
 
         // HAlign rozšířený o Justify - inline (sdílené HAlignOptions Justify nemají, cell elementy ho v rendereru ignorují)
         new EnumPropertyDescriptor   { Label = EnumPropertyDescriptor.LabelZarovnaniVodorovne, Group = "Zarovnání", Get = () => Style.Resolve().HAlign, Set = v => Style.HAlign = (TextHorizontalAlignment)v,
-            Options = [..EnumPropertyDescriptor.HAlignOptions, ("Do bloku", TextHorizontalAlignment.Justify)], ToolbarSlot = FormatToolbarSlot.HorizontalAlignment },
+            Options = [..EnumPropertyDescriptor.HAlignOptions, (AlignmentLabels.Justify.Label, AlignmentLabels.Justify.Value)], ToolbarSlot = FormatToolbarSlot.HorizontalAlignment },
         new EnumPropertyDescriptor   { Label = EnumPropertyDescriptor.LabelZarovnaniSvisle, Group = "Zarovnání", Get = () => Style.Resolve().VAlign, Set = v => Style.VAlign = (TextVerticalAlignment)v,  Options = EnumPropertyDescriptor.VAlignOptions, ToolbarSlot = FormatToolbarSlot.VerticalAlignment },
 
         new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Barvy",    Get = () => Style.Resolve().TextColor, Set = v => Style.TextColor = v },

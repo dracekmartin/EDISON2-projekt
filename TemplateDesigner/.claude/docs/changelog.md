@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-30 (44) - Volby zarovnání na jednom místě (sjednocení A8)
+
+Popisky zarovnání (Vlevo / Na střed / Vpravo / Do bloku, Nahoře / Na střed / Dole) byly v kódu na pěti místech: nabídka panelu, nabídka v editoru stylu sloupce, šedá nápověda zděděné hodnoty, bubliny lišty formátu a volba Do bloku u textu.
+Teď jsou v `Models/Elements/AlignmentLabels.cs` a všechna místa z nich čtou. Formuláře v Caché (sada stylu a formulář textu) se dál opravují na serveru; test `VolbyZarovnaniTests` hlídá, že mají tytéž kódy i popisky (ověřeno mutací).
+Pro uživatele se nic nemění.
+Ověřeno: .NET testy 2634/2634.
+
 ## 2026-10-30 (43) - Jednotné texty příkazů vrstvy (sjednocení A12)
 
 Místní nabídka Vrstva říkala „Dopředu / Dozadu / Úplně dopředu / Úplně dozadu", hlavní menu a bubliny „Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu".

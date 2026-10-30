@@ -16,7 +16,18 @@ public partial class FormatToolbar : UserControl
     private BoolPropertyDescriptor? _bold, _italic, _underline, _strikethrough;
     private EnumPropertyDescriptor? _hAlign, _vAlign;
 
-    public FormatToolbar() => InitializeComponent();
+    public FormatToolbar()
+    {
+        InitializeComponent();
+        BtnAlignLeft.ToolTip    = AlignmentLabels.Label(TextHorizontalAlignment.Left);
+        BtnAlignCenter.ToolTip  = AlignmentLabels.Label(TextHorizontalAlignment.Center);
+        BtnAlignRight.ToolTip   = AlignmentLabels.Label(TextHorizontalAlignment.Right);
+        BtnAlignJustify.ToolTip = AlignmentLabels.Label(TextHorizontalAlignment.Justify);
+        BtnVAlignTop.ToolTip    = AlignmentLabels.Label(TextVerticalAlignment.Top);
+        // „Na střed" je i vodorovně - bez upřesnění by dvě tlačítka vedle sebe měla stejnou bublinu.
+        BtnVAlignMiddle.ToolTip = $"{AlignmentLabels.Label(TextVerticalAlignment.Middle)} (svisle)";
+        BtnVAlignBottom.ToolTip = AlignmentLabels.Label(TextVerticalAlignment.Bottom);
+    }
 
     public void SetContext(Action<IDesignerCommand> execute, Action invalidate)
     {
