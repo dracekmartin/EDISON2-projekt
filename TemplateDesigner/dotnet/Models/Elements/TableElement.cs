@@ -1088,7 +1088,7 @@ public class TableElement : TemplateElement
         new FloatPropertyDescriptor
         {
             Label = "Výška řádku",
-            Group = "Tabulka",
+            Group = "Styl všech buněk",
             Get   = () => RowHeight,
             Set   = v => RowHeight = v,
             Min   = 1, Max = 50, Unit = "mm"
@@ -1096,7 +1096,7 @@ public class TableElement : TemplateElement
         new BoolPropertyDescriptor
         {
             Label = "Záhlaví sloupců",
-            Group = "Tabulka",
+            Group = "Styl řádku záhlaví",
             Get   = () => ShowHeader,
             Set   = v => ShowHeader = v
         },
@@ -1112,7 +1112,7 @@ public class TableElement : TemplateElement
         new ColorPropertyDescriptor
         {
             Label = "Střídání řádků: Barva pozadí",
-            Group = "Tabulka",
+            Group = "Styl všech buněk",
             Get   = () => AlternatingRowColor ?? "#00FFFFFF",
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v
         },

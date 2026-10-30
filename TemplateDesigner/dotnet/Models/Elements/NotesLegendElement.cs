@@ -833,12 +833,12 @@ public class NotesLegendElement : StopScheduleElementBase
             Options = [("Podle typu", (object)LegendRazeni.DleTypu), ("Podle dat", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
         new FloatPropertyDescriptor  { FromImage = true, Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 
-        new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
-        new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Filtrování", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
-        new BoolPropertyDescriptor  { Label = "Textové poznámky",    Group = "Filtrování", Get = () => ShowTextovePoznamky, Set = v => ShowTextovePoznamky = v },
+        new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Obsah poznámek", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
+        new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Obsah poznámek", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
+        new BoolPropertyDescriptor  { Label = "Textové poznámky",    Group = "Obsah poznámek", Get = () => ShowTextovePoznamky, Set = v => ShowTextovePoznamky = v },
         new EnumPropertyDescriptor
         {
-            Label = "Poznámky linky - výluky", Group = "Filtrování",
+            Label = "Poznámky linky - výluky", Group = "Poznámky linky",
             Get = () => Vyluky, Set = v => Vyluky = (VylukyFiltr)v,
             Options =
             [
@@ -847,13 +847,13 @@ public class NotesLegendElement : StopScheduleElementBase
                 ("Jen výluky", (object)VylukyFiltr.Jen)
             ]
         },
-        new BoolPropertyDescriptor  { Label = "Poznámky linky - tarifní",   Group = "Filtrování", Get = () => ShowPoznamkyLinkyTarifni,   Set = v => ShowPoznamkyLinkyTarifni = v },
-        new BoolPropertyDescriptor  { Label = "Poznámky linky - všeobecné", Group = "Filtrování", Get = () => ShowPoznamkyLinkyVseobecne, Set = v => ShowPoznamkyLinkyVseobecne = v },
-        new BoolPropertyDescriptor  { Label = "Poznámky linky - radiobus",  Group = "Filtrování", Get = () => ShowPoznamkyLinkyRadiobus,  Set = v => ShowPoznamkyLinkyRadiobus = v },
-        new BoolPropertyDescriptor  { Label = "Souhrn bezbariérových spojů",  Group = "Filtrování", Get = () => ShowSouhrnBezbarier,       Set = v => ShowSouhrnBezbarier = v },
-        new BoolPropertyDescriptor  { Label = "Přeprava kol u odjezdů",       Group = "Filtrování", Get = () => ShowZnackaKola,            Set = v => ShowZnackaKola = v },
-        new BoolPropertyDescriptor  { Label = "Místenky u odjezdů",           Group = "Filtrování", Get = () => ShowZnackaMistenky,        Set = v => ShowZnackaMistenky = v },
-        new BoolPropertyDescriptor  { Label = "Pokračující spoje",            Group = "Filtrování", Get = () => ShowPokracujiciSpoje,      Set = v => ShowPokracujiciSpoje = v },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - tarifní",   Group = "Poznámky linky", Get = () => ShowPoznamkyLinkyTarifni,   Set = v => ShowPoznamkyLinkyTarifni = v },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - všeobecné", Group = "Poznámky linky", Get = () => ShowPoznamkyLinkyVseobecne, Set = v => ShowPoznamkyLinkyVseobecne = v },
+        new BoolPropertyDescriptor  { Label = "Poznámky linky - radiobus",  Group = "Poznámky linky", Get = () => ShowPoznamkyLinkyRadiobus,  Set = v => ShowPoznamkyLinkyRadiobus = v },
+        new BoolPropertyDescriptor  { Label = "Souhrn bezbariérových spojů",  Group = "Značky u odjezdů", Get = () => ShowSouhrnBezbarier,       Set = v => ShowSouhrnBezbarier = v },
+        new BoolPropertyDescriptor  { Label = "Přeprava kol u odjezdů",       Group = "Značky u odjezdů", Get = () => ShowZnackaKola,            Set = v => ShowZnackaKola = v },
+        new BoolPropertyDescriptor  { Label = "Místenky u odjezdů",           Group = "Značky u odjezdů", Get = () => ShowZnackaMistenky,        Set = v => ShowZnackaMistenky = v },
+        new BoolPropertyDescriptor  { Label = "Pokračující spoje",            Group = "Značky u odjezdů", Get = () => ShowPokracujiciSpoje,      Set = v => ShowPokracujiciSpoje = v },
 
         new ColorPropertyDescriptor { FromImage = true, Label = "Barva pozadí",      Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { FromImage = true, Label = "Barva textu", Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },

@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-30 (47) - Přísnější testy toho, co je zapsané dvakrát (sjednocení B1-B9)
+
+Co zůstává na dvou místech (formulář v Caché × panel v kódu, server × klient, kanon × seznam zákazů), teď hlídají testy:
+- **Panel proti formuláři** (`PanelProtiFormulariTests`): skupina, meze, jednotka, druh a volby každé vlastnosti. Našel 23 jinak pojmenovaných skupin (Poznámky, obě tabulky - srovnané podle formulářů, asistent teď mluví skupinami, které uživatel vidí), panel nedovoloval čáře nulovou šířku ani výšku (vodorovná a svislá čára ji mají) a formuláře u prvků s výškou podle obsahu dovolovaly výšku 0 (teď nejméně 1, prázdné pole dál znamená „podle obsahu").
+- **Klíče mezi klientem a serverem** (`KliceKontraktuTests`, `RegistrAgendKontraktTests`): definice vlastních sloupců, klíče parametrů, typy sekcí, parametry agendy v registru.
+- **Parametry sestavy** (`ParametrySestavy`): jména a zamčené volby, které klient čte, jsou v jedné třídě a test ověří, že je agendy posílají.
+- **Kontrakt dat prvků**: položky mimo nabídku se s ním porovnávají přesně; test čtení dat zná všechny konstanty a našel `POPIS_DOPRAVCE` (sazba stránek ho čte, v kontraktu chyběl). Výjimky agend MHD se odvozují z příznaků registru.
+- **Názvosloví**: každý tvar, který kanon zakazuje, hlídá seznam zákazů (doplněno 25 tvarů, např. canvas, Výplň, dynamická výška).
+- **Dodávané šablony** používají jen pole, která jejich agenda nabízí.
+Každý nový test je ověřený mutací (schválně zanesenou chybou). Ověřeno: .NET testy 2661/2661, Caché testy TemplateDesigneru 274/275 (1 přeskočený z dřívějška), integrační testy agend; formuláře nasazené a ověřené voláním serveru.
+
 ## 2026-10-30 (46) - Popisky vzorů sloupců jen na serveru (sjednocení A5)
 
 Vzory rozložení sloupců (Pracovní / Sobota / Neděle+svátky…) měly popisky na serveru ve volbách parametru „Rozdělení sloupců" i v převodu volby na rozložení a klient je měl opsané znovu, zvlášť pro vývěsku a linkový JŘ.

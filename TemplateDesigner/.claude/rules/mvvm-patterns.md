@@ -24,7 +24,9 @@ Hlavní editační cestou je **Caché formulář** (`*Edit.cls`): u elementu se 
 `BorderGroup`/`ConditionsGroup`); hlídá to `EDInputFormSchemaDriftTests`. Nové base pole se přidává
 **na obou stranách v jednom commitu**, jinak test spadne. Popisek každého deskriptoru prvku musí
 existovat i ve formuláři prvku (protokol importu z PDF a asistent mluví popisky deskriptorů) -
-hlídá to `DescriptorLabelsMatchFormTests`, vědomé výjimky jsou v něm s důvodem.
+hlídá to `DescriptorLabelsMatchFormTests`, vědomé výjimky jsou v něm s důvodem. **Skupinu, meze, jednotku, druh
+a volby** spárovaného pole hlídá `PanelProtiFormulariTests` (čte formuláře včetně `StyleFields` a `BaseElementFields`,
+`FormularePrvku`): nová vlastnost musí mít v deskriptoru tutéž skupinu i meze jako ve formuláři.
 
 **Dostupné typy deskriptorů:**
 - `StringPropertyDescriptor` - textové pole (s volitelným `MultiLine = true`)

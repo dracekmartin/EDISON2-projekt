@@ -50,7 +50,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ── Base pole (čára nemá plochu → bez rohů; nulová šířka je u svislé legitimní) ────
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddBorder(form, 0)
-        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50, "", 0, 0)
+        d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddPosition(form, 50, "", 0, 0, 0)
         d ##class(ALVA.TemplateDesigner.EDInputForm.BaseElementFields).AddConditions(form)
 
         d form.WriteToOut()

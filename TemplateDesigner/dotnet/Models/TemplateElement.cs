@@ -339,13 +339,13 @@ public abstract class TemplateElement
     [
         new FloatPropertyDescriptor { Label = "X",       Group = PositionGroup, Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
         new FloatPropertyDescriptor { Label = "Y",       Group = PositionGroup, Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
-        new FloatPropertyDescriptor { Label = "Šířka",   Group = PositionGroup, Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Šířka",   Group = PositionGroup, Get = () => Width,   Set = v => Width = v,  Min = NejmensiRozmerMm, Max = 9999, Unit = "mm", Format = "0.0#" },
         .. (IsDynamic
             ? new PropertyDescriptor[] { new StringPropertyDescriptor { Label = "Výška", Group = PositionGroup,
                 Get = () => "(podle obsahu)", Set = _ => { } } }
             : new PropertyDescriptor[] { new FloatPropertyDescriptor { Label = "Výška", Group = PositionGroup,
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
-                Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
+                Min = NejmensiRozmerMm, Max = 9999, Unit = "mm", Format = "0.0#" } }),
         new FloatPropertyDescriptor { Label = "Rotace",  Group = PositionGroup, Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
         ZIndexDescriptor(),
         LockedDescriptor(),
@@ -409,6 +409,9 @@ public abstract class TemplateElement
 
     private FloatPropertyDescriptor BorderWidthDescriptor() =>
         new() { Label = "Tloušťka rámečku", Group = BorderGroup, Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" };
+
+    /// <summary>Nejmenší šířka a výška v panelu (formulář: <c>widthMin</c>/<c>heightMin</c> v <c>BaseElementFields.AddPosition</c>).</summary>
+    protected virtual float NejmensiRozmerMm => 1f;
 
     // ── Scale ────────────────────────────────────────────────────────────────
 
