@@ -122,7 +122,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         d ..NactiNastaveniNazvu()         // tvar názvu zastávky + „název pro MHD" (platí pro celou sestavu)
         d ..NactiJazyk()                  // jazyk textů značek = kultura šablony (#12843)
         d ..NactiTextyZnacek(dataDB)      // vysvětlivky dnů z číselníku zákazníka (musí až po NactiJazyk)
-        s ^||TiskAd("volbaBarev") = ..VolbaBarevSpoju()
+        s ^||TiskAd("volbaBarev") = ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).VolbaBarevSpoju()
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         // Default = první skupina v ^JRL - shodně s GetAvailableInstances. Picker posílá jen
@@ -132,8 +132,8 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s lin = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky($g(^||ML("IN","LINKA_ID")))
         i lin = "" s lin = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatCisloLinky($g(^||ML("IN","INSTANCE_ID")))
         i lin = "" d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
-        // Přes výběr linek nejde, jen spuštěním z EDISONu nebo po smazání linky v JŘ (BaseAgenda.TextLinkaNeniVJr).
-        i '$d(^[dataDB]JRL(sku,lin,"I")) d ..ChybaDat(..TextLinkaNeniVJr(sku, lin))
+        // Přes výběr linek nejde, jen spuštěním z EDISONu nebo po smazání linky v JŘ (Jr.DataAd.TextLinkaNeniVJr).
+        i '$d(^[dataDB]JRL(sku,lin,"I")) d ..ChybaDat(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TextLinkaNeniVJr(sku, lin))
 
         // #8828: rozdělit vývěsku per označník - vývěska obsluhovaná z N označníků → N stránek,
         // každá s odjezdy jen z toho označníku. Default vyp = jedna vývěska (odjezdy smíchané).
@@ -623,7 +623,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // Vlastní definice sloupců ze šablony (DEFINICE_SLOUPCU) - když přijde, přebíjí FTL rozvržení
     // i linkové seznamy značek CELÉ (žádné míchání „dny ze šablony, značky z linky"). Bez definice
     // se nic nemění - dnešní chování je backup.
-    s pocetDefSloupcu = ..ParseDefiniceSloupcu(.defSloupce)
+    s pocetDefSloupcu = ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).ParseDefiniceSloupcu(.defSloupce)
     // hotové vzory sloupců - klient je nestaví sám, aby parita hlídala to, co reálně posílá
     d vals.%Set("PRESETY_SLOUPCU", ..PresetySloupcu(dataDB, sku, lin))
 
@@ -730,15 +730,15 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
 ClassMethod NacistSkupinyDnu(ftl As %String, dataDB As %String = "", sku As %String = "", lin As %String = "") As %DynamicArray
 {
     s skupiny = ##class(%DynamicArray).%New()
-    // nadpisy z nastavení firmy / sady linky (BaseAgenda.NadpisySkupinDnuAd), dnešní text jako výchozí
+    // nadpisy z nastavení firmy / sady linky (Jr.DataAd.NadpisySkupinDnuZNastaveni), dnešní text jako výchozí
     s rozlozeni = $case(ftl, 1:1, 2:2, 3:3, :0)
-    d ..NadpisySkupinDnuAd(dataDB, sku, lin, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), rozlozeni, ..NadpisySkupinVychozi(rozlozeni), .t)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NadpisySkupinDnuZNastaveni(dataDB, sku, lin, $s(..Jazyk() = "sk":"*SK", 1:"CZ"), rozlozeni, ..NadpisySkupinVychozi(rozlozeni), .t)
     // ID jde na wire jako text („1"), jako dřív - odjezdy na něj odkazují svým SKUPINA_DNU_ID
     f i=1:1:$o(t(""),-1) d skupiny.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildSkupinaDnu(i_"", t(i), t(i,2), i))
     q skupiny
 }
 
-/// Výchozí nadpisy skupin dnů pro rozložení (viz `NadpisySkupinDnuAd`), když je firma nemá.
+/// Výchozí nadpisy skupin dnů pro rozložení (viz `Jr.DataAd.NadpisySkupinDnuZNastaveni`), když je firma nemá.
 ClassMethod NadpisySkupinVychozi(rozlozeni As %Integer) As %String
 {
     q $case(rozlozeni,
@@ -766,7 +766,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
 
     // Barva spoje u minuty (`B194` T2) - starý vývěskový tisk ji dával vždy (`JRapiLinPrtMhd1.mac:56`),
     // teď ji vypíná parametr Barvy spojů jako u linkového JŘ.
-    s tiskBarev = ..TiskBarevSpoju($g(^||TiskAd("volbaBarev")), dataDB, sku, lin)
+    s tiskBarev = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).TiskBarevSpoju($g(^||TiskAd("volbaBarev")), dataDB, sku, lin)
 
     // období vlastních sloupců: rozsahy dat převedené na horolog proti platnosti jízdního řádku.
     // Sloupec, kterému po ořezu nezbyl žádný rozsah, se hlásí ven - jinak zmlkne bez vysvětlení.
@@ -855,8 +855,8 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s atrZde = $g(wMap(currentPoradi,"atr"))
         s naObjednani = +$p(hlava,":",21) || (atrZde [ "r")
         s podminecne = +$p(hlava,":",23) || (atrZde [ "i")
-        i naObjednani d ..ZapsatNaObjednani(.odjAtrLegenda, dataDB, "RBU", ..UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, "RBU"))
-        i podminecne d ..ZapsatNaObjednani(.odjAtrLegenda, dataDB, "RBP", ..UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, "RBP"))
+        i naObjednani d ..ZapsatNaObjednani(.odjAtrLegenda, dataDB, "RBU", ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, "RBU"))
+        i podminecne d ..ZapsatNaObjednani(.odjAtrLegenda, dataDB, "RBP", ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).UpresneniAtributuSpoje(dataDB, sku, lin, smer, sp, "RBP"))
 
         // ruční komentáře spoje (tab MHD: Komentáře = SeT_SpeC přiřazené spoji přes MhD_SpeC).
         // V rozsahu „Spoje, nepoznámkovat" (MHDSPNPZN) se anotace jen OZNAČÍ (vRozsahu) - co se reálně
@@ -890,11 +890,11 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             s dnyZnaky = ..DenniZnacky(ftl, plk)
             f di=1:1:$l(dnyZnaky) { s dnyLegenda($e(dnyZnaky,di)) = ..TextDneVTydnu($e(dnyZnaky,di)) }
         }
-        s dnySpoje = ..DnySpoje(plk)
+        s dnySpoje = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje(plk)
         f gi=1:1:$l(skupiny,",") {
             s idSloupce = $p(skupiny,",",gi)
             s o = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).BuildOdjezd(currentPoradi, idSloupce, hod, min)
-            i tiskBarev d o.%Set("FORE_COLOR", ..RgbNaHex($p(spoj,"#",12)))
+            i tiskBarev d o.%Set("FORE_COLOR", ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BarvaSpoje($p(spoj,"#",12)))
             s idxSloupce = 0, pokryvaObdobi = 0
             i +$g(defSloupce) {
                 s idxSloupce = ..IndexSloupce(.defSloupce, idSloupce)
@@ -1685,12 +1685,10 @@ ClassMethod NacistSkupinyDnuDleDefinice(ByRef defArr) As %DynamicArray
 /// Vrací CSV id sloupců ("" = spoj nespadl nikam → hlásí se v NEZARAZENE_SPOJE).
 ClassMethod ZarazeniSpojeDleDefinice(ByRef defArr, plk As %String, cnz As %String, smer As %String = "", sp As %String = "", ByRef obdobiSloupcu) As %String
 {
-    s dnySpoje = ..DnySpoje(plk)
+    s dnySpoje = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje(plk)
     s out = ""
     f i=1:1:+$g(defArr) {
-        i '..SedneDoSloupceDny(dnySpoje, defArr(i,"dny")) continue
-        i (defArr(i,"jen") '= "") && ((cnz = "") || (defArr(i,"jen") '[ (","_(+cnz)_","))) continue
-        i (defArr(i,"bez") '= "") && (cnz '= "") && (defArr(i,"bez") [ (","_(+cnz)_",")) continue
+        i '##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).JeSpojVeSloupci(.defArr, i, dnySpoje, cnz) continue
         i ..JizdaVObdobi(smer, sp, .obdobiSloupcu, i, defArr(i,"dny")) = 0 continue
         s out = out_$s(out="":"", 1:",")_defArr(i,"id")
     }
@@ -1768,10 +1766,10 @@ ClassMethod PresetySloupcu(dataDB As %String, sku As %String, lin As %String) As
     s mimoBez   = ..SpojSeznamyZnacek($p(nz,"~",1), $p(nenz,"~",2))
     s oPrazdBez = ..SpojSeznamyZnacek($p(nz,"~",2), $p(nenz,"~",1))
 
-    // nadpisy vzorů stejně jako automatické rozložení (`NadpisySkupinDnuAd`, `B194` T11) - vzor
+    // nadpisy vzorů stejně jako automatické rozložení (`Jr.DataAd.NadpisySkupinDnuZNastaveni`, `B194` T11) - vzor
     // a automatika téhož rozložení tak tisknou tytéž nadpisy
     s rec = $s(..Jazyk() = "sk":"*SK", 1:"CZ")
-    f rozl=0:1:3 { k tt  d ..NadpisySkupinDnuAd(dataDB, sku, lin, rec, rozl, ..NadpisySkupinVychozi(rozl), .tt)  m n(rozl) = tt }
+    f rozl=0:1:3 { k tt  d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NadpisySkupinDnuZNastaveni(dataDB, sku, lin, rec, rozl, ..NadpisySkupinVychozi(rozl), .tt)  m n(rozl) = tt }
 
     s out = ##class(%DynamicObject).%New()
     d out.%Set("PRAC_SO_NE", ..PresetSloupce($lb($lb("1",n(0,1),"X","",n(0,1,2)), $lb("2",n(0,2),"6","",n(0,2,2)), $lb("3",n(0,3),"+","",n(0,3,2))), neznz))
@@ -1941,7 +1939,7 @@ ClassMethod PridatRozsah(hrlOd As %String, hrlDo As %String, hrlPlatiOd As %Stri
 ClassMethod PripravitJede(ByRef sys As %String, dataDB As %String, sku As %String, lin As %String)
 {
     k defArr
-    i '..ParseDefiniceSloupcu(.defArr) q
+    i '##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).ParseDefiniceSloupcu(.defArr) q
     k obdobiSloupcu
     d ..ObdobiSloupcu(dataDB, sku, lin, .defArr, .obdobiSloupcu)
     s hrlOd = $lg(obdobiSloupcu("rozsah"),1), hrlDo = $lg(obdobiSloupcu("rozsah"),2)
@@ -2868,7 +2866,7 @@ ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
     s nazev = ""
     i ..PouzitNazevProMhd() s nazev = $p(rec, "$", 7)
     i nazev = "" s nazev = $p(rec, "$", 2)
-    q ..FormatNazvuZastavky(nazev, $p(rec, "$", 3), ..TvarNazvuZastavky())
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky(nazev, $p(rec, "$", 3), ..TvarNazvuZastavky())
 }
 
 /// Tvar názvu zastávky z parametru sestavy - per požadavek uložený do `^||TiskAd` (nastavuje
@@ -3039,7 +3037,7 @@ ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 /// dnešek jako v legacy `gZst`. `variantaOd` = začátek vybrané varianty (sloupky).
 ClassMethod ZaznamZastavky(dataDB As %String, czst As %String, ByRef variantaOd As %String = "") As %String
 {
-    ret ..ZaznamZastavkyKDatu(dataDB, czst, $g(^||TiskAd("zastavky","hrl")), .variantaOd)
+    ret ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).ZaznamZastavkyKDatu(dataDB, czst, $g(^||TiskAd("zastavky","hrl")), .variantaOd)
 }
 
 /// Číslo zastávky dle celostátního registru (CIS) - `^JRZ(czst)` `$`-pole **9** (legacy `JRapiZst`

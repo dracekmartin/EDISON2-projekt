@@ -18,6 +18,10 @@ Include GENERAL
 /// Každá metoda s `ByRef sys` dodržuje vzor z `cache-api.md` (pravidla 14-15: `s err = ""`, `try`/`catch`
 /// s `$$$CatchErrRest`, `ret $$$OK`); hlídá ho `OsetreniChybAgendTests`. Vzorové agendy jsou JŘ.
 ///
+/// Sem patří jen kontrakt a obecné věci pro všechny agendy, i budoucí z report generátoru (R8).
+/// Čtení dat AD a MHD a věci jen pro jízdní řády jsou v pomocných třídách `Agendy/Jr/` (do 30. 10.
+/// tu jich bylo 14, `B56` S13); že základ data nečte, hlídá `DataPodleZdrojeTests`.
+///
 /// Registrace agendy (2026-05-20; dvouosý model 2026-07-11):
 ///   Agenda se registruje **deklarativně** přes class parametry - kombinovaný klíč
 ///   AgendaVariantCode + osy Agenda/Variant (+ labely). ALVA.TemplateDesigner.API.AgendyRegistr
@@ -205,74 +209,6 @@ ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, ty
     d arr.%Push(field)
 }
 
-/// Barva spoje AD z legacy tvaru `r;g;b` na `#AARRGGBB` pro SkiaSharp; prázdno, když barva není zadaná.
-/// **`0;0;0` je u spojů AD „nenastaveno", ne černá** (2 185 160 z 2 189 806 spojů s barvou, 30. 10.) - kdyby
-/// se posílalo, dostal by každý spoj výslovnou černou a nešlo by poznat obarvený spoj od neobarveného.
-///
-/// ⚠️ `RgbToHex` ve vývěskách NENÍ kopie téhož: barva linky a barvy poznámek MHD berou `0;0;0` jako
-/// černou, protože tam je to skutečná volba (rozhodnutí Jan 30. 10., `legacy-nahrada.md §4`).
-ClassMethod RgbNaHex(rgb As %String) As %String
-{
-    q:rgb="" ""
-    q:rgb="0;0;0" ""
-    s hex = "0123456789ABCDEF"
-    s out = "#FF"
-    f i=1:1:3 {
-        s n = +$p(rgb,";",i)
-        i n < 0 s n = 0
-        i n > 255 s n = 255
-        s out = out_$e(hex,(n\16)+1)_$e(hex,(n#16)+1)
-    }
-    q out
-}
-
-/// Nadpisy skupin dnů AD z nastavení firmy, jako starý zastávkový tisk (`JRapiLinPrtMhd1.mac:541-571`):
-/// věta `^JRSET("Definice","WinMHD",rec,"DSC")` (kusy `~`) podle `rozlozeni` - 0 = pracovní / soboty /
-/// neděle a svátky (kusy 2-4), 1 = prázdninová trojice (5-7), 2 = pracovní / víkend (8-9),
-/// 3 = prázdninová čtveřice (10-13). Linka může mít vlastní sadu (`PATCH,ISY_LinkyTiskMHDNadpisy` →
-/// `^JRSET("LinkyTiskMHDNadpisy",sada,"R<rozlozeni+1>_SMO<i>")`), ta má přednost. Prázdný kus → i-tý kus
-/// `vychozi`. Výstup `t(i)` = nadpis, `t(i,2)` = druhý řádek (text za `<br>`, další `<br>` jako mezera).
-/// Zastávkový JŘ AD měl do 26. 10. nadpisy napevno česky (`B194` T11).
-ClassMethod NadpisySkupinDnuAd(dataDB As %String, sku As %String, lin As %String, rec As %String, rozlozeni As %Integer, vychozi As %String, ByRef t)
-{
-    k t
-    s dsc = "", sada = ""
-    i dataDB '= "" {
-        s dsc = $g(^[dataDB]JRSET("Definice","WinMHD",rec,"DSC"))
-        i (sku '= "") && (lin '= "") s sada = $g(^[dataDB]JRL(sku,lin,"PATCH","ISY_LinkyTiskMHDNadpisy"))
-    }
-    s prvniKus = $case(rozlozeni, 1:5, 2:8, 3:10, :2)
-    f i=1:1:$l(vychozi,"~") {
-        s txt = $p(dsc,"~",prvniKus+i-1)
-        i sada '= "" {
-            s vlastni = $g(^[dataDB]JRSET("LinkyTiskMHDNadpisy",sada,"R"_(rozlozeni+1)_"_SMO"_i))
-            i vlastni '= "" s txt = vlastni
-        }
-        i $tr(txt," ","") = "" s txt = $p(vychozi,"~",i)
-        s t(i) = $zstrip($p(txt,"<br>",1),"<=>W")
-        s t(i,2) = $zstrip($replace($p(txt,"<br>",2,99),"<br>"," "),"<=>W")
-    }
-}
-
-/// Parametr sestavy „Barvy spojů" agend AD jako volba: „Tisknout", „Netisknout", nebo prázdno =
-/// podle linky. Návrhář posílá checkbox `TISKNOUT_BARVY_SPOJU`; starší návrhář u linkového JŘ místo
-/// něj třístav `BARVY_SPOJU` (Automaticky (dle linky) / Tisknout / Netisknout), který se přebírá.
-/// Checkbox nahradil třístav 26. 10. (rozhodnutí Jan): nastavení u linky nemá v datech zapnuté
-/// žádná linka (sonda `BarvySpojuVyskyt`), takže volba „dle linky" nebyla k ničemu.
-ClassMethod VolbaBarevSpoju() As %String
-{
-    s zaskrtnuto = $zcvt($g(^||ML("IN","TISKNOUT_BARVY_SPOJU")),"L")
-    i zaskrtnuto '= "" q $s(zaskrtnuto = "true":"Tisknout", 1:"Netisknout")
-    q $g(^||ML("IN","BARVY_SPOJU"))
-}
-
-/// Tisknou se barvy spojů? `volba` z `VolbaBarevSpoju`; bez ní rozhodne linka
-/// (`PATCH,barevnyTiskSpoju` = 1 znamená tisknout černě, `JRapiLinPrtWin.mac:2085-2102`).
-ClassMethod TiskBarevSpoju(volba As %String, dataDB As %String, sku As %String, lin As %String) As %Boolean
-{
-    q $case(volba, "Tisknout":1, "Netisknout":0, :'+$g(^[dataDB]JRL(sku,lin,"PATCH","barevnyTiskSpoju")))
-}
-
 /// Přidá bool parametr do pole parametrů.
 /// arr        = %DynamicArray kam se přidává
 /// name       = název parametru (např. "TISK_POZNAMKY")
@@ -321,154 +257,22 @@ ClassMethod AddMockValue(vals As %DynamicObject, name As %String, val As %String
     d vals.%Set(name, val)
 }
 
-/// Tvar názvu zastávky pro tisk. Vstup je název z registru zastávek, kde jsou obec, část obce
-/// a lokalita spojené **čárkami** - prázdná část obce se tak projeví **dvojčárkou**
-/// („Zlín,,aut.nádr."). <var>okres</var> = pole 3 registru.
+/// Datum z horologu na český tvar "dd.mm.yyyy" pro pole, která uživatel vidí v šabloně.
+/// Prázdný vstup → prázdný výstup. Obecný základ (R8), ne data MHD: bude ho potřebovat i agenda
+/// report generátoru. Dnes ho volá `Jr.DataMhd`.
 ///
-/// Tvary: „Zkrácený" = dvojčárka na jednu · „Plný CIS" = dvojčárka zůstane (technické exporty,
-/// soutěže) · „Plný CIS s okresem" = a navíc okres na konci · „Typograficky upravený" = zkrácený
-/// + mezera za čárkou a tečkou.
+/// Tvar je zatím **napevno český** (rozhodnutí Jan 2026-08-18). Správně by šel z lokalizace,
+/// ale všichni zákazníci tisknou česky, takže by to dnes byla vrstva bez konzumenta; až
+/// vznikne první jinojazyčná sestava, nahradí se tělo téhle metody a volající se nemění.
 ///
-/// **Slovenský režim skládá název jinak** (legacy `gTskNaZst^JRapiZst`): nikoli čárkami, ale
-/// spojením neprázdných částí přes „, ". Prochází to přes týž vstup, takže se prázdné části
-/// prostě vynechají. ⚠️ **Neověřené porovnáním** - v porovnávací sadě není slovenská firma.
-///
-/// ⚠️ **Sdílené oběma rodinami agend schválně**: kdyby si zastávková vývěska a linkový JŘ
-/// formátovaly název každá po svém, rozešly by se a táž zastávka by se v jedné sestavě jmenovala
-/// jinak než v druhé. Právě to byl stav do 24. 8.
-ClassMethod FormatNazvuZastavky(nazev As %String, okres As %String = "", tvar As %String = "", jazyk As %String = "CZ") As %String
+/// ⚠️ **Nepoužívat `$zd(h, 4)`** - dává "dd/mm/yyyy" s lomítky. Do 18. 8. tak MHD vývěska
+/// tiskla datum platnosti, zatímco AD vedle ní tečky; skládá se to z ISO tvaru záměrně,
+/// aby výstup nezáležel na tom, jaký oddělovač který $ZDATE formát zvolí.
+ClassMethod FormatDatum(horolog As %String) As %String
 {
-    i nazev = "" ret ""
-    i jazyk = "*SK" {
-        s vysledek = ""
-        f di=1:1:$l(nazev, ",") {
-            s cast = $zstrip($p(nazev, ",", di), "<>W")
-            i cast '= "" s vysledek = vysledek_$s(vysledek="":"", 1:", ")_cast
-        }
-        ret vysledek
-    }
-    i tvar = "Plný CIS" ret nazev
-    i tvar = "Plný CIS s okresem" ret nazev_$s(okres'="":","_okres, 1:"")
-    s zkraceny = $replace(nazev, ",,", ",")
-    i tvar = "Typograficky upravený" ret ..MezeryPoInterpunkci(zkraceny)
-    ret zkraceny
-}
-
-/// Doplní mezeru za čárku a tečku - „Zlín,aut.nádr." → „Zlín, aut. nádr.". Před číslicí se mezera
-/// nedoplňuje, aby zůstalo „č.1" a desetinná čísla. Záměrně jen pro **názvy zastávek**: na volný
-/// text se pustit nesmí, rozbila by webovou adresu („www.idzk.cz" → „www. idzk. cz").
-ClassMethod MezeryPoInterpunkci(txt As %String) As %String
-{
-    s vysledek = ""
-    f i=1:1:$l(txt) {
-        s znak = $e(txt, i)
-        s vysledek = vysledek_znak
-        i (znak '= ",") && (znak '= ".") continue
-        s dalsi = $e(txt, i + 1)
-        i dalsi = "" continue            // konec textu
-        i dalsi = " " continue           // mezera už tam je
-        i dalsi ? 1N continue            // číslice
-        s vysledek = vysledek_" "
-    }
-    ret vysledek
-}
-
-/// ── Vlastní definice sloupců (sdílená oběma rodinami agend) ──────────────────────────
-/// Definici skládá uživatel v šabloně a posílá se do `GetData` jako `DEFINICE_SLOUPCU`.
-/// **Význam definice musí být pro všechny agendy tentýž** - jinak by táž definice udělala
-/// ve vývěsce jiné sloupce než v linkovém JŘ. Liší se až to, co s výsledkem prvek udělá:
-/// vývěsce je skupina **jeden sloupec**, linkovému JŘ **pás nad několika sloupci spojů**
-/// (a spoj patřící do dvou skupin se vypíše dvakrát).
-/// Vlastní definice sloupců vývěsky (parametr DEFINICE_SLOUPCU, JSON ze šablony) → lokální pole.
-/// Vrací počet sloupců; 0 = bez definice / nevalidní JSON → režim „automaticky dle linky".
-/// defArr(i,"id"|"nadpis"|"nadpis2"|"dny"|"jen"|"bez") + defArr("nevyp",id) pro potlačení značek;
-/// seznamy značek normalizované do tvaru ",1,2," (containment test přes [).
-ClassMethod ParseDefiniceSloupcu(ByRef defArr) As %Integer
-{
-    k defArr
-    s json = $g(^||ML("IN","DEFINICE_SLOUPCU"))
-    i json = "" q 0
-    s def = ""
-    try { s def = ##class(%DynamicObject).%FromJSON(json) } catch (ex) { ret 0 }
-    i ('$isobject(def)) || ('def.%IsA("%Library.DynamicObject")) q 0
-    s sloupce = def.%Get("sloupce")
-    i ('$isobject(sloupce)) || ('sloupce.%IsA("%Library.DynamicArray")) q 0
-    s n = 0
-    s iter = sloupce.%GetIterator()
-    while iter.%GetNext(.key, .sl) {
-        i '$isobject(sl) continue
-        s n = n + 1
-        s id = sl.%Get("id")
-        i id = "" s id = n
-        s defArr(n,"id")      = id
-        s defArr(n,"nadpis")  = sl.%Get("nadpis")
-        s defArr(n,"nadpis2") = sl.%Get("nadpis2")
-        s defArr(n,"dny")     = sl.%Get("dny")
-        s defArr(n,"jen")     = ..NormalizujSeznamZnacek(sl.%Get("znackyJen"))
-        s defArr(n,"bez")     = ..NormalizujSeznamZnacek(sl.%Get("znackyBez"))
-        // období se drží v původním textovém tvaru - rok se doplňuje až proti platnosti JŘ
-        s defArr(n,"obdobi")  = sl.%Get("obdobi")
-        s defArr("nevyp",id)  = ..NormalizujSeznamZnacek(sl.%Get("nevypisovatZnacky"))
-    }
-    s defArr = n
-    q n
-}
-
-/// CSV seznam čísel značek → normalizovaný tvar ",1,2," (ořez mezer, +normalizace čísel).
-/// Prázdný/bezobsažný vstup → "".
-ClassMethod NormalizujSeznamZnacek(seznam As %String) As %String
-{
-    i $g(seznam) = "" q ""
-    s out = ","
-    f i=1:1:$l(seznam,",") {
-        s cislo = $zstrip($p(seznam,",",i),"<>W")
-        i cislo = "" continue
-        s out = out_(+cislo)_","
-    }
-    q $s(out=",":"", 1:out)
-}
-
-/// Sedí spoj do sloupce podle dnů? Sloupec bez dnů ("") neomezuje - sedí každý spoj
-/// (kontrakt „nevyplněná podmínka neomezuje"). Spoj bez omezení ("") sedí vždy; "-" nikdy;
-/// jinak stačí průnik alespoň jednoho dne.
-ClassMethod SedneDoSloupceDny(dnySpoje As %String, sloupecDny As %String) As %Boolean
-{
-    i sloupecDny = "" q 1
-    i dnySpoje = "" q 1
-    i dnySpoje = "-" q 0
-    // „X" (pracovní dny) se pro **zařazení** chová jako 1-5: spoj jedoucí jen v pondělí do sloupce
-    // pracovních dnů patří (jen ho nepokrývá celý, takže dostane značku). Od kalendářního „12345"
-    // se „X" liší až na ose Období, kde svátek do pracovních dnů nepadne - `DenPatriDoSloupce`.
-    i sloupecDny [ "X" s sloupecDny = sloupecDny_"12345"
-    // „+" znamená „neděle a svátky" i u sloupce, ne jen svátky - jinak by sloupec „Neděle a svátky"
-    // musel vyjmenovat „7+" a spoj jedoucí jen v neděli by z pouhého „+" vypadl.
-    i (sloupecDny [ "+") && (sloupecDny '[ "7") s sloupecDny = sloupecDny_"7"
-    f i=1:1:$l(dnySpoje) {
-        i sloupecDny [ $e(dnySpoje,i) ret 1
-    }
-    q 0
-}
-
-/// Dny, kdy spoj podle týdenní platnosti jede, jako znaky 1-7,+. "" = jede každý den (prázdná
-/// nebo "." platnost); "-" = žádný rozpoznaný den (nerozpoznané Plk → spoj se nikam nezařadí,
-/// jako legacy KamPrt=0). "X" = legislativní zkratka pracovních dnů → 1-5.
-///
-/// ⚠️ **"+" znamená podle vyhlášky 122/2014 „jede v neděli **a** ve státem uznané svátky"**, takže
-/// z něj plyne i neděle - proto se doplní "7". Bez toho spoj s "+" nespadl do vlastního sloupce
-/// s dny "7" a zákazníkovi vyšel sloupec „Neděle" prázdný, přestože nedělní spoje na lince byly
-/// (`B81`, hlásil zákazník). Že jsou to dvě různé značky, potvrzuje i příloha vyhlášky zákazem
-/// kombinace "+" se "7" - kdyby "+" neděli nezahrnovalo, dávala by ta dvojice smysl.
-ClassMethod DnySpoje(plk As %String) As %String
-{
-    i (plk = "") || (plk = ".") q ""
-    s dny = ""
-    f i=1:1:$l(plk) {
-        s ch = $e(plk,i)
-        i ch = "X" { f d=1:1:5 { i dny'[d s dny = dny_d } }
-        elseif ("1234567+"[ch) { i dny'[ch s dny = dny_ch }
-    }
-    i (dny["+") && (dny'["7") s dny = dny_"7"
-    q $s(dny="":"-", 1:dny)
+    i $g(horolog) = "" q ""
+    s iso = $zd(horolog, 3)          // yyyy-mm-dd
+    q $p(iso,"-",3)_"."_$p(iso,"-",2)_"."_$p(iso,"-",1)
 }
 
 /// ── Důvod prázdného výstupu (`DUVOD_PRAZDNE`, `cache-api.md`) ──
@@ -518,69 +322,11 @@ ClassMethod ChybaDat(text As %String)
     throw ##class(%Exception.StatusException).CreateFromStatus($system.Status.Error(5001, text))
 }
 
-/// Linka AD, která ve skupině není - přes výběr linek to nejde, jen spuštěním z EDISONu s linkou
-/// z jiné skupiny, nebo když ji někdo v JŘ smazal či přesunul, zatímco je v návrháři vybraná.
-ClassMethod TextLinkaNeniVJr(sku As %String, lin As %String) As %String
-{
-    q "Linka "_(+lin)_" ve skupině "_sku_" v jízdních řádech není. Mohla být smazána nebo přesunuta do jiné skupiny - vyberte linky znovu."
-}
-
 /// Název linky v náhledu bez vybrané linky, když první linka firmy nedala data (žádná není, nebo
 /// nemá trasu). Text vidí uživatel na plátně: bez globálů a kódu firmy, jen co udělat.
 ClassMethod TextUkazkyBezDat() As %String
 {
     q "Ukázka bez dat - vyberte linku (Ctrl+Shift+I)"
-}
-
-/// Upřesnění ke spoji AD „na objednání" (`klic` = RBU) nebo „podmínečně" (RBP), které se lepí za
-/// větu legendy: text u spoje, jinak u linky, jinak v nastavení firmy. Prázdné = bez upřesnění.
-/// 1:1 legacy `JRapiNZUtl3.mac:41-48, 118-130` (spoj `#10`/`#11` podle `JRapiSp.mac:192-193`,
-/// linka `PATCH,SP_TX_JOBJ/JPOD` podle `JRapiLin.mac:402-405`).
-///
-/// Starý vývěskový tisk bral jen text linky (`JRapiLinPrtMhd1.mac:234`); obě agendy AD berou
-/// celé pořadí, aby vývěska i linkový JŘ psaly totéž (rozhodnutí Jan 26. 10.).
-ClassMethod UpresneniAtributuSpoje(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String, klic As %String) As %String
-{
-    s naObjednani = (klic = "RBU")
-    s txt = $g(^[dataDB]JRSET("Definice", $s(naObjednani:"PS_RADIOBUS_NZ_RBU", 1:"PS_PODMINECNE_NZ_RBP")))
-    s textLinky = $g(^[dataDB]JRL(sku,lin,"PATCH",$s(naObjednani:"SP_TX_JOBJ", 1:"SP_TX_JPOD")))
-    i textLinky '= "" s txt = textLinky
-    s textSpoje = $p($g(^[dataDB]JRL(sku,lin,smer,sp)), "#", $s(naObjednani:10, 1:11))
-    i textSpoje '= "" s txt = textSpoje
-    q $zstrip(txt, "<>W")
-}
-
-/// Záznam zastávky z registru (`$`-věta jako `^JRZ(czst)`) **platný k datu** `hrl` (horolog,
-/// prázdné = dnešek). Zastávka může mít časové varianty `^JRZ(czst,"CasoveVariantyUdaju",od)`:
-/// platí ta s nejpozdějším začátkem ≤ hrl, jejíž konec (`$`-pole 42) je prázdný nebo ≥ hrl;
-/// skončená se přeskočí a zkouší se předchozí. Žádná neplatí → hlavní záznam; je-li prázdný
-/// a datum leží před první variantou, první varianta.
-/// 1:1 legacy `gZst^JRapiZst` (`JRapiZst.mac:123-147`), kterým starý tisk AD čte každou zastávku
-/// k „platí od" linky (`JRapiLinPrtMhd.mac:78`, `JRapiLinPrtPS1.mac:26`). `variantaOd` = začátek
-/// vybrané varianty, prázdné u hlavního záznamu (podle něj se hledají sloupky zastávky).
-ClassMethod ZaznamZastavkyKDatu(dataDB As %String, czst As %String, hrl As %String = "", ByRef variantaOd As %String = "") As %String
-{
-    s variantaOd = ""
-    i czst = "" ret ""
-    s zaznam = $g(^[dataDB]JRZ(czst))
-    i hrl = "" s hrl = +$h
-    s od = hrl + 0.1
-    f {
-        s od = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",od),-1,varianta)
-        q:od=""
-        s konec = $p(varianta,"$",42)
-        i (konec = "") || (konec >= hrl) {
-            s zaznam = varianta, variantaOd = od
-            q
-        }
-    }
-    i zaznam = "" {
-        s prvni = $o(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",""))
-        i (prvni '= "") && (hrl < prvni) {
-            s zaznam = $g(^[dataDB]JRZ(czst,"CasoveVariantyUdaju",prvni)), variantaOd = prvni
-        }
-    }
-    ret zaznam
 }
 
 }

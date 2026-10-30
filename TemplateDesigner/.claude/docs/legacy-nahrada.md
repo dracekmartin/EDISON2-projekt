@@ -862,7 +862,7 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
 - **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`) jsou od 30. 10. zrušené i se čtením v návrháři
   (`B56` S10, Jan): návrhář je nikde nenabízel a do 23. 10. při volání padaly (`B193f`). Hotové bloky pokryje `B66`.
 - **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` jsou od 30. 10. jednou v `Jr/VystupLinkovy.cls` (`B56` S4).
-  `Jr.VystupZastavkovy.RgbToHex` vedle `BaseAgenda.RgbNaHex` není kopie, viz „Opsané pod jiným jménem" níž.
+  `Jr.VystupZastavkovy.RgbToHex` vedle `Jr.DataAd.BarvaSpoje` není kopie, viz „Opsané pod jiným jménem" níž.
 - **Stavba výstupu vývěsky** (řádek zastávky, zóna, atribut, poznámka zastávky, skupina dnů, odjezd, poznámka,
   barva, speciální znak) je od 30. 10. jednou v `Jr/VystupZastavkovy.cls` (`B56` S3); značky u odjezdů
   (`AddAnotace`) zůstávají v agendách, AD posílá o tři klíče víc.
@@ -914,9 +914,9 @@ Vědomě nesjednocovat (rozhodnutí Jan 30. 10.):
 - **Rozsahy čísel spojů**: souhrn dopravců ve vývěsce (`ZastavkoveJrAd.RozsahyCisel`) vede řadu jen přes čísla těsně po sobě („1-35, 37, 39, 41, 43, 45, 101"), Tabulka spojů (`LineTableElement.Rady`) i přes ob jedno, protože stránka nese jeden směr („1-45, 101").
   Každé pravidlo sedí na svůj případ.
 - **Barva „0;0;0"** znamená v každém zdroji něco jiného, nejde o kopii téhož.
-  Barva spoje AD (`#`-pole 12, `BaseAgenda.RgbNaHex`) = bez barvy: má ji 2 185 160 z 2 189 806 spojů s barvou.
+  Barva spoje AD (`#`-pole 12, `Jr.DataAd.BarvaSpoje`, do 30. 10. `BaseAgenda.RgbNaHex`) = bez barvy: má ji 2 185 160 z 2 189 806 spojů s barvou.
   Barva linky (`Jr.DataAd.BarvaLinky`) a barvy poznámek ke spojům MHD (`ZastavkoveJrMhd`) jdou přes `Jr.VystupZastavkovy.RgbToHex` a černá je černá: v KV_DP má 24 poznámek černý znak záměrně.
-  Při `B56` jen pojmenovat podle zdroje; komentář „kopie téhož" u `RgbNaHex` neplatí.
+  Pojmenováno podle zdroje v `B56` S13.
 - **Značky u odjezdů a kolekce vývěsek**: `AddAnotace` AD posílá navíc `KATEGORIE`, `SPOJ` a `V_ROZSAHU_NEPOZNAMKOVAT`, `AddStandardJRCollections` AD má o pět polí víc.
   Společná metoda jen tak, aby MHD tyto klíče dál neposílal - jinak by filtr Poznámek podle kategorie začal skrývat poznámky i v MHD.
 

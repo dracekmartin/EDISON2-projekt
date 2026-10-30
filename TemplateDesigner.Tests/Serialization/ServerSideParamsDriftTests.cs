@@ -38,7 +38,7 @@ public class ServerSideParamsDriftTests
                               // cestujícího) - posílá se ze šablony jako DEFINICE_SLOUPCU a re-fetch
                               // při přepnutí drží týž snapshot (CurrentWireSnapshot)
         "BARVY_SPOJU",        // třístav, který posílá starší návrhář místo checkboxu
-                              // TISKNOUT_BARVY_SPOJU (BaseAgenda.VolbaBarevSpoju) - jen zpětná
+                              // TISKNOUT_BARVY_SPOJU (Jr.Parametry.VolbaBarevSpoju) - jen zpětná
                               // kompatibilita, nový návrhář ho nezná
     };
 

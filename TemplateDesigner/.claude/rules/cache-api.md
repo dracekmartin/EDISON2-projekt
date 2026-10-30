@@ -89,12 +89,16 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
   (`AddPole`, `AddKolekce`, `AddPoleKolekce`) a sama určuje jen výběr a pořadí; pole jen své agendy přidá přes `AddField`.
   Popisek ze slovníku přepíše jen u vědomého rozdílu. Hlídá `AgendaSchemaDriftTests` (pole je ve slovníku, slovník
   drží jen pole aspoň dvou agend, agenda nepíše pole slovníku znovu přes `AddField`).
-- **Společné parametry JŘ** jsou v `Jr/Parametry.cls`; agenda si je skládá v `GetParameters` a drží jejich pořadí.
+- **`BaseAgenda` je jen kontrakt a obecné věci** pro všechny agendy (pomocníci nabídky a parametrů, hlášky bez dat
+  a chyby dat, formát data) - data nečte, hlídá `DataPodleZdrojeTests.ZakladAgendNectaData` (R8, `B56` S13).
+- **Společné parametry JŘ** jsou v `Jr/Parametry.cls` (i čtení volby barev spojů); agenda si je skládá v `GetParameters` a drží jejich pořadí.
 - **Stavba výstupu vývěsky** (řádek zastávky, odjezd, skupina dnů, poznámka, barva, speciální znak) je v `Jr/VystupZastavkovy.cls`,
-  linkového JŘ (poznámka, skupina dnů, čas) v `Jr/VystupLinkovy.cls`.
-- **Čtení dat AD** společné agendám nad `^JRL` (název, číslo a první linka, spoje směru, barva linky, hodnota času,
+  linkového JŘ (poznámka, skupina dnů, čas) v `Jr/VystupLinkovy.cls`, **vlastní sloupce spojů** ze šablony
+  (rozbor `DEFINICE_SLOUPCU`, zařazení spoje podle dnů a značek) pro oba druhy výstupu v `Jr/VlastniSloupce.cls`.
+- **Čtení dat AD** společné agendám nad `^JRL`/`^JRZ`/`^JRSET` (název, číslo a první linka, spoje směru, barva linky a spoje,
+  hodnota času, dny spoje, záznam zastávky k datu a tvar jejího názvu, nadpisy skupin dnů, upřesnění „na objednání",
   platnost jízdního řádu, text datumových omezení spoje s předložkami a formátem dat) je v `Jr/DataAd.cls`,
-  **čtení dat MHD** (seznam linek, dopravce, typ JŘ, formát data) v `Jr/DataMhd.cls`.
+  **čtení dat MHD** (seznam linek, dopravce, typ JŘ) v `Jr/DataMhd.cls`.
   Hlavičku linky, kterou posílají všechny agendy nad týmž zdrojem stejně, zapíše `AddHlavickaLinky` třídy zdroje; agenda za ni přidá jen své vědomé rozdíly.
   Výběr skupin linek a linek (`GetAvailableSkupiny`, `GetAvailableInstances`) agenda jen přesměruje do třídy svého zdroje,
   aby se okno výběru linek chovalo ve všech stejně; hlídá `DataPodleZdrojeTests`.

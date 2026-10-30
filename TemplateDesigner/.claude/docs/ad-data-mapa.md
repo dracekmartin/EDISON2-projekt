@@ -147,7 +147,7 @@ varianta platná k datu (horolog = dny od 31.12.1840). Analogie MHD `ZastavkyFce
 
 AD agendy (zastávkový i linkový JŘ) čtou **každý údaj zastávky z registru** - název, název pro MHD,
 okres, CIS název a číslo, atributy, zóny registru i popis sloupku - přes
-`BaseAgenda.ZaznamZastavkyKDatu` k **„platí od" linky** (`Jr.DataAd.HorologPlatnostiLinky`, `PATCH,"Plati"`;
+`Jr.DataAd.ZaznamZastavkyKDatu` k **„platí od" linky** (`Jr.DataAd.HorologPlatnostiLinky`, `PATCH,"Plati"`;
 rozhodnutí Jan s kolegou 7. 10.). Datum nastaví `BuildStrankaZastavky` / `BuildStrankaLinky`
 (`^||TiskAd` / `^||TiskKnizni("zastavky","hrl")`); mimo sestavení stránky platí dnešek.
 

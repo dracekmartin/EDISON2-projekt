@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (27) - Základ agend jen kontrakt a obecné věci (`B56` S13, první část)
+
+Review B56 ukázalo, že `BaseAgenda` pořád drží 14 metod jen pro jízdní řády, které čtou data AD - R8 je chtělo přesunout, aby základ sloužil i agendám report generátoru a agendy MHD nedědily čtení AD.
+Teď je v `Jr/DataAd.cls` záznam zastávky k datu, tvar názvu zastávky, nadpisy skupin dnů z nastavení, upřesnění „na objednání", dny spoje, barva spoje a tisk barev spojů a hláška „linka není v JŘ".
+Vlastní sloupce spojů (rozbor definice ze šablony, zařazení spoje podle dnů a značek) mají vlastní třídu `Jr/VlastniSloupce.cls`, protože je používají oba druhy výstupu; jádro zařazení spoje, které měla vývěska i linkový JŘ AD opsané, je teď jedno (`JeSpojVeSloupci`).
+Čtení volby barev spojů je u parametrů (`Jr.Parametry`). Formát data se vrátil do základu - v S12 jsem ho omylem přesunul do dat MHD, R8 ho ale řadí k obecným věcem.
+Přejmenováno při přesunu: `RgbNaHex` → `BarvaSpoje` (podle zdroje, R2), `NadpisySkupinDnuAd` → `NadpisySkupinDnuZNastaveni` (odlišené od `LinkovyJrAd.NadpisySkupinDnu`), `NormalizujSeznamZnacek` → `FormatSeznamZnacek` (pravidlo 5).
+Nová kontrola `DataPodleZdrojeTests.ZakladAgendNectaData` zastaví čtení dat v základu.
+Ověřeno: snímek výstupu agend bajtově beze změny (42 souborů), Caché testy 272/272, .NET testy 2548/2548, integrační testy 48/48; staré metody na agendách na serveru nejsou.
+
 ## 2026-10-30 (26) - Data MHD z jedné třídy, agendy se navzájem nevolají (`B56` S12)
 
 Linkový JŘ MHD bral výběr linek, dopravce, typ JŘ a výchozí skupinu linek voláním vývěsky MHD; vývěska AD a linkový JŘ AD si navzájem půjčovaly „má směr spoje" a barvu linky.

@@ -79,8 +79,8 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
         if cislo = "" s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
         s nazev  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
         // LSO drží ISO tvar; ven jako u AD (14.12.2025), ne „2025-12-14" (Jan 23. 10.).
-        s platOd = ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd")),3,,,,,,,""))
-        s platDo = ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo")),3,,,,,,,""))
+        s platOd = ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd")),3,,,,,,,""))
+        s platDo = ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo")),3,,,,,,,""))
 
         s display = cislo
         if nazev '= "" {
@@ -158,8 +158,8 @@ ClassMethod AddHlavickaLinky(ByRef sys As %String, dataDB As %String, IdFa As %S
     d vals.%Set("POPIS_LINKY",            $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky")))
     d ..DopravceSkalary(.sys, dataDB, IdFa, LinkaID, vals)
     // LSO drží datum v ISO tvaru; ven jde jako u AD („1.11.2018" ne „2018-11-01").
-    d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd")),3,,,,,,,"")))
-    d vals.%Set("DATUM_PLATNOSTI_DO",     ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo")),3,,,,,,,"")))
+    d vals.%Set("DATUM_PLATNOSTI_OD",     ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd")),3,,,,,,,"")))
+    d vals.%Set("DATUM_PLATNOSTI_DO",     ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo")),3,,,,,,,"")))
     d vals.%Set("TYP_JR",                 ..TypJrLinky(IdFa, dataDB, LinkaID))
     d vals.%Set("QR_KOD",                 $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"QRCode")))
 }
@@ -264,24 +264,6 @@ ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, 
     i mesto '= "" s text = text_$c(10)_mesto
     i tel '= ""   s text = text_$c(10)_"tel: "_tel
     q text
-}
-
-/// Datum z horologu na český tvar "dd.mm.yyyy" pro pole, která uživatel vidí v šabloně (data MHD jsou
-/// v `LSO` v ISO tvaru). Prázdný vstup → prázdný výstup. Do 30. 10. `BaseAgenda.FormatDatum`, používaly
-/// ho jen agendy MHD.
-///
-/// Tvar je zatím **napevno český** (rozhodnutí Jan 2026-08-18). Správně by šel z lokalizace,
-/// ale všichni zákazníci tisknou česky, takže by to dnes byla vrstva bez konzumenta; až
-/// vznikne první jinojazyčná sestava, nahradí se tělo téhle metody a volající se nemění.
-///
-/// ⚠️ **Nepoužívat `$zd(h, 4)`** - dává "dd/mm/yyyy" s lomítky. Do 18. 8. tak MHD vývěska
-/// tiskla datum platnosti, zatímco AD vedle ní tečky; skládá se to z ISO tvaru záměrně,
-/// aby výstup nezáležel na tom, jaký oddělovač který $ZDATE formát zvolí.
-ClassMethod FormatDatum(horolog As %String) As %String
-{
-    i $g(horolog) = "" q ""
-    s iso = $zd(horolog, 3)          // yyyy-mm-dd
-    q $p(iso,"-",3)_"."_$p(iso,"-",2)_"."_$p(iso,"-",1)
 }
 
 }

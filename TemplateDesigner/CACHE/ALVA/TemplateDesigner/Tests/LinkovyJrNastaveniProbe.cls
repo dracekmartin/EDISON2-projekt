@@ -2590,7 +2590,7 @@ ClassMethod NaObjednaniVyskyt(ByRef sys As %String) As %Status
 							if +$piece(hlava, ":", 23) && ($piece(radek, "#", 11) '= "") set pocty("RBP spoj s vlastnim textem") = $get(pocty("RBP spoj s vlastnim textem")) + 1
 							for ak = "RBU", "RBP" {
 								continue:'+$piece(hlava, ":", $select(ak="RBU":21, 1:23))
-								set ut = ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).UpresneniAtributuSpoje(db, sku, lin, smer, sp, ak)
+								set ut = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).UpresneniAtributuSpoje(db, sku, lin, smer, sp, ak)
 								// prefix kvůli prázdnému upřesnění - prázdný subscript nejde
 								set ruzneTexty(ak, "~"_$extract(ut, 1, 200)) = ""
 							}

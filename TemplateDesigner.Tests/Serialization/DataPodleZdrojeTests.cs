@@ -49,6 +49,24 @@ public class DataPodleZdrojeTests
     }
 
     /// <summary>
+    /// Základ agend je kontrakt a obecné věci pro všechny agendy, i budoucí z report generátoru (R8) - data
+    /// AD ani MHD nečte. Do 30. 10. v něm bylo 14 metod jen pro jízdní řády, které je četly (<c>B56</c> S13).
+    /// </summary>
+    [Fact]
+    public void ZakladAgendNectaData()
+    {
+        var zaklad = File.ReadAllLines(Path.Combine(ZdrojeAgend.Slozka, "BaseAgenda.cls"));
+        var cteni = zaklad
+            .Select((r, i) => (Radek: i + 1, Text: r))
+            .Where(r => !r.Text.TrimStart().StartsWith("///", StringComparison.Ordinal) && r.Text.Contains("^[", StringComparison.Ordinal))
+            .Select(r => $"BaseAgenda.cls:{r.Radek}: {r.Text.Trim()}")
+            .ToList();
+
+        Assert.True(cteni.Count == 0,
+            "Základ agend čte data - patří do Jr.DataAd / Jr.DataMhd (R8):\n" + string.Join("\n", cteni));
+    }
+
+    /// <summary>
     /// Agenda nevolá jinou agendu: co potřebují obě, patří do pomocné třídy zdroje nebo druhu výstupu (R8).
     /// Kdyby agenda brala data z druhé, změna v jedné by tiše změnila výstup té druhé.
     /// </summary>

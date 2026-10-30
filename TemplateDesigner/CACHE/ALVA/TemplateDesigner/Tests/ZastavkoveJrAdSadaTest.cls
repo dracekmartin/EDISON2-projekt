@@ -628,7 +628,7 @@ Method TestNaObjednaniZnackaALegenda()
 						set sp = $order(^["CB_GWBUS"]JRL(216, lin, smer, sp))
 						quit:sp=""
 						continue:'+$piece($piece($get(^["CB_GWBUS"]JRL(216, lin, smer, sp)), "#", 1), ":", $select(klic="RBU":21, 1:23))
-						set upresneni = ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).UpresneniAtributuSpoje("CB_GWBUS", 216, lin, smer, sp, klic)
+						set upresneni = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).UpresneniAtributuSpoje("CB_GWBUS", 216, lin, smer, sp, klic)
 						quit
 					}
 					quit:upresneni'=""

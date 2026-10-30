@@ -392,7 +392,7 @@ Method TestDefiniceSloupcuVUkazkovychDatech()
 /// `B194a` C8: dvojice pracovní dny / víkend bere nadpisy z kusů 8 a 9 číselníku jako starý tisk;
 /// prázdné → dřívější kus 2 a 7, prázdné vše → pevný text. Trojice beze změny (kusy 2-4).
 /// Číselník se zapisuje dočasně do testovacího namespace (nemá ho) a pak maže; kdyby ho měl,
-/// test ho nepřepisuje a přeskočí se. Od 26. 10. ho čte `BaseAgenda.NadpisySkupinDnuAd` (`B194` T11).
+/// test ho nepřepisuje a přeskočí se. Od 26. 10. ho čte `Jr.DataAd.NadpisySkupinDnuZNastaveni` (`B194` T11).
 Method TestNadpisyDvojiceZKusu8a9()
 {
 	set ad = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd", db = $namespace

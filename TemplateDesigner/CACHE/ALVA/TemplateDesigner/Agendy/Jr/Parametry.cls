@@ -6,8 +6,21 @@
 Class ALVA.TemplateDesigner.Agendy.Jr.Parametry Extends %RegisteredObject
 {
 
+/// Parametr sestavy „Barvy spojů" agend AD jako volba: „Tisknout", „Netisknout", nebo prázdno =
+/// podle linky. Návrhář posílá checkbox `TISKNOUT_BARVY_SPOJU`; starší návrhář u linkového JŘ místo
+/// něj třístav `BARVY_SPOJU` (Automaticky (dle linky) / Tisknout / Netisknout), který se přebírá.
+/// Checkbox nahradil třístav 26. 10. (rozhodnutí Jan): nastavení u linky nemá v datech zapnuté
+/// žádná linka (sonda `BarvySpojuVyskyt`), takže volba „dle linky" nebyla k ničemu.
+/// Do 30. 10. v `BaseAgenda` (`B56` S13); o tisku pak rozhodne `Jr.DataAd.TiskBarevSpoju`.
+ClassMethod VolbaBarevSpoju() As %String
+{
+    s zaskrtnuto = $zcvt($g(^||ML("IN","TISKNOUT_BARVY_SPOJU")),"L")
+    i zaskrtnuto '= "" q $s(zaskrtnuto = "true":"Tisknout", 1:"Netisknout")
+    q $g(^||ML("IN","BARVY_SPOJU"))
+}
+
 /// Parametr „Tvar názvu zastávky" (KOVED #13089) - jedna definice pro vývěsku i linkový JŘ AD, aby se
-/// nabízel stejně jako sdílené `BaseAgenda.FormatNazvuZastavky`. Liší se jen výchozí tvar: vývěska
+/// nabízel stejně jako sdílené `Jr.DataAd.FormatNazvuZastavky`. Liší se jen výchozí tvar: vývěska
 /// „Zkrácený" (dosavadní chování, starý vývěskový modul dvojčárku srážel), linkový „Plný CIS" (starý
 /// linkový tisk ji nechává; potvrzeno Janem 24. 8.).
 ClassMethod ParametrTvaruNazvuZastavky(vychozi As %String) As %DynamicObject

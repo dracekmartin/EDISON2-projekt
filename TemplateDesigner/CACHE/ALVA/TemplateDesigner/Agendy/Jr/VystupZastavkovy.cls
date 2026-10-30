@@ -99,7 +99,7 @@ ClassMethod IntToHex2(n As %Integer) As %String [ Private ]
 
 /// Konvertuje RGB string "R;G;B" (např. "255;191;128") na SkiaSharp hex "#FFRRGGBB"; prázdný vstup →
 /// prázdno. „0;0;0" je černá - barva linky a poznámek MHD. Barva spoje AD, kde „0;0;0" znamená
-/// „bez barvy", jde přes `BaseAgenda.RgbNaHex` (dva zdroje, ne kopie - `legacy-nahrada.md §4`).
+/// „bez barvy", jde přes `Jr.DataAd.BarvaSpoje` (dva zdroje, ne kopie - `legacy-nahrada.md §4`).
 ClassMethod RgbToHex(rgb As %String) As %String
 {
     i rgb = "" q ""

@@ -294,8 +294,12 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
   Data nebo jméno pracovního globálu dostane parametrem (`cache-api.md` pravidlo 6), jinak by relace nemohla číst víc linek najednou.
 - **Podle druhu výstupu** (zastávkový, linkový, později relace a vozový): stránky a řádky ve tvaru, který čtou prvky
   (`KontraktDat.cs`), parametry a nabídka dat druhu. Sdílí je AD i MHD.
-- **Obecný základ** (`BaseAgenda`): kontrakt agendy, hlášky bez dat a chyby dat, formát data a barev, pomocníci parametrů.
-  Slouží i agendám report generátoru, proto do něj nepatří čtení dat AD ani věci jen pro JŘ (30. 10. jich tam je asi 16 z 42 metod, přesunou se).
+- **Obecný základ** (`BaseAgenda`): kontrakt agendy, hlášky bez dat a chyby dat, formát data, pomocníci nabídky dat a parametrů.
+  Slouží i agendám report generátoru, proto do něj nepatří čtení dat AD ani věci jen pro JŘ (30. 10. jich tam bylo 14 z 28 metod,
+  přesunuly se v `B56` S13; že základ data nečte, hlídá `DataPodleZdrojeTests.ZakladAgendNectaData`).
+- **Věc společná oběma druhům výstupu** (vlastní sloupce spojů ze šablony) má vlastní pomocnou třídu podle role (`Jr.VlastniSloupce`).
+- **Agenda nevolá jinou agendu** - co potřebují dvě, je v pomocné třídě (výjimka: rozdílový JŘ postavený nad linkovým AD);
+  hlídá `DataPodleZdrojeTests.AgendaNevolaJinouAgendu`.
 - **Agenda** vybere zdroj a druh, drží pořadí kroků a vědomé rozdíly svého starého modulu.
   Pomocné třídy JŘ jsou v balíku `ALVA.TemplateDesigner.Agendy.Jr` (složka `Agendy/Jr/`), jméno podle role (`DataAd`, ne `Helpers`).
 - **Žádný společný tvar dat pro AD i MHD** (jeden výpočet nad daty z obou zdrojů): výpočty pocházejí ze dvou starých

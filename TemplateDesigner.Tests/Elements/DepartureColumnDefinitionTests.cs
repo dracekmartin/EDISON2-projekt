@@ -15,7 +15,7 @@ public class DepartureColumnDefinitionTests
     private static DepartureColumnDefinition Col(string id, string header, string days) =>
         new() { Id = id, Header = header, Days = days };
 
-    // ── Wire JSON - klíče musí sedět na ParseDefiniceSloupcu v ZastavkoveJrAd.cls ────
+    // ── Wire JSON - klíče musí sedět na ParseDefiniceSloupcu v Jr/VlastniSloupce.cls ────
 
     [Fact]
     public void WireJson_NeseKliceKtereCteServer()

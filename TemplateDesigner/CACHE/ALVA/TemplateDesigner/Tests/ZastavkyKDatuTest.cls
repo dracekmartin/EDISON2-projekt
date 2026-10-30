@@ -25,7 +25,7 @@ ClassMethod Zastavka(hlavni As %String = "HLAVNI") As %String
 
 ClassMethod Nazev(czst As %String, hrl As %String, ByRef od As %String) As %String
 {
-	quit $piece($classmethod(..#AGENDA, "ZaznamZastavkyKDatu", $namespace, czst, hrl, .od), "$", 2)
+	quit $piece(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).ZaznamZastavkyKDatu($namespace, czst, hrl, .od), "$", 2)
 }
 
 Method OnAfterOneTest(testname As %String) As %Status

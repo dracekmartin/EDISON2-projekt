@@ -33,7 +33,7 @@ public class NazvyMetodAgendTests
     /// <summary>Stávající metody s českým slovesem (stav 30. 10.) - přejmenovat při přesunu v <c>B56</c>.</summary>
     private static readonly HashSet<string> Stavajici = new(StringComparer.Ordinal)
     {
-        "BaseAgenda.NormalizujSeznamZnacek", "BaseAgenda.ZacitDuvodyPrazdne",
+        "BaseAgenda.ZacitDuvodyPrazdne",
         "BaseAgenda.VydatDuvodPrazdne",
         "LinkovyJrAd.DoplnBarvyLinky", "LinkovyJrAd.VypisVylepy", "LinkovyJrAd.VypisVylep", "LinkovyJrAd.SeradSpoje",
         "LinkovyJrAd.NactiTurnusy", "LinkovyJrAd.PridejTurnusySpoje", "LinkovyJrAd.PridatPoznamkyPlatnosti",

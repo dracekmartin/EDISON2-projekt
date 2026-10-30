@@ -2173,27 +2173,27 @@ ClassMethod ScanNoveZnacky(ByRef sys As %String) As %Status
 						continue:'$isvalidnum(sp)
 						set spoju = spoju + 1
 						set plk = $piece($piece($get(^[db]JRL(sku,lin,smerIdx,sp)), "#", 1), ":", 7)
-						set dny = $classmethod(cls, "DnySpoje", plk)
+						set dny = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje(plk)
 						// oddělený víkendový sloupec „7+" (vzor Prac / So / Ne+svátky)
 						set noveNe = $classmethod(cls, "DenniZnackyProSloupec", dny, "7+")
 						set legacyNe = ""   // legacy FTL0 víkendové značky netiskne vůbec
-						if (noveNe '= legacyNe) && $classmethod(cls, "SedneDoSloupceDny", dny, "7+") set novaNedele = novaNedele + 1
-						do ..Smer(.smery, "NEDELE", legacyNe, noveNe, $classmethod(cls, "SedneDoSloupceDny", dny, "7+"))
+						if (noveNe '= legacyNe) && ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "7+") set novaNedele = novaNedele + 1
+						do ..Smer(.smery, "NEDELE", legacyNe, noveNe, ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "7+"))
 						// slitý víkendový sloupec „67+" (vzor Prac / víkend)
 						set noveSl = $classmethod(cls, "DenniZnackyProSloupec", dny, "67+")
 						set legacySl = $classmethod(cls, "DenniZnacky", 2, plk)
 						set legacySl = $translate(legacySl, "12345")   // ve víkendovém sloupci jde jen o 6/7/+
-						if (noveSl '= legacySl) && $classmethod(cls, "SedneDoSloupceDny", dny, "67+") set novaSlity = novaSlity + 1
-						do ..Smer(.smery, "SLITY", legacySl, noveSl, $classmethod(cls, "SedneDoSloupceDny", dny, "67+"))
+						if (noveSl '= legacySl) && ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "67+") set novaSlity = novaSlity + 1
+						do ..Smer(.smery, "SLITY", legacySl, noveSl, ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "67+"))
 						// pracovní sloupec „12345"
 						set novePr = $classmethod(cls, "DenniZnackyProSloupec", dny, "12345")
 						set legacyPr = $translate($classmethod(cls, "DenniZnacky", 0, plk), "67+")
-						if (novePr '= legacyPr) && $classmethod(cls, "SedneDoSloupceDny", dny, "12345") set novaPrac = novaPrac + 1
-						do ..Smer(.smery, "PRACOVNI", legacyPr, novePr, $classmethod(cls, "SedneDoSloupceDny", dny, "12345"))
+						if (novePr '= legacyPr) && ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "12345") set novaPrac = novaPrac + 1
+						do ..Smer(.smery, "PRACOVNI", legacyPr, novePr, ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "12345"))
 						// jmenovatel: kolik spojů do sloupce vůbec spadne (jak hustá ta změna bude)
-						if $classmethod(cls, "SedneDoSloupceDny", dny, "7+") set smery("NEDELE","vsech") = $get(smery("NEDELE","vsech")) + 1
-						if $classmethod(cls, "SedneDoSloupceDny", dny, "67+") set smery("SLITY","vsech") = $get(smery("SLITY","vsech")) + 1
-						if $classmethod(cls, "SedneDoSloupceDny", dny, "12345") set smery("PRACOVNI","vsech") = $get(smery("PRACOVNI","vsech")) + 1
+						if ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "7+") set smery("NEDELE","vsech") = $get(smery("NEDELE","vsech")) + 1
+						if ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "67+") set smery("SLITY","vsech") = $get(smery("SLITY","vsech")) + 1
+						if ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(dny, "12345") set smery("PRACOVNI","vsech") = $get(smery("PRACOVNI","vsech")) + 1
 					}
 				}
 			}

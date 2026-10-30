@@ -28,7 +28,7 @@ public class VlastniSloupceAgendyTests
         var priznak = new Regex(@"^Parameter CustomColumns As %Boolean = 1;", RegexOptions.Multiline);
         var rozpor = ZdrojeAgend.Agendy()
             .Select(f => (Soubor: Path.GetFileName(f), Text: File.ReadAllText(f)))
-            .Where(a => a.Text.Contains("..ParseDefiniceSloupcu(") != priznak.IsMatch(a.Text))
+            .Where(a => a.Text.Contains("Jr.VlastniSloupce).ParseDefiniceSloupcu(") != priznak.IsMatch(a.Text))
             .Select(a => a.Soubor)
             .ToList();
 

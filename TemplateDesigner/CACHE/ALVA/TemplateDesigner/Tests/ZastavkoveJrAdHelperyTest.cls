@@ -69,15 +69,15 @@ Method TestTextPrestupuLegendy()
 /// dnešní výchozí text. Linkový JŘ AD z téhož zdroje skládá jeden řádek - `<br>` nesmí vyjít doslova.
 Method TestNadpisySkupinDnuZNastaveni()
 {
-	set cls = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
+	set cls = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
 	if ##class(%SYS.Namespace).Exists("KV_DP") {
 		kill t
-		do $classmethod(cls, "NadpisySkupinDnuAd", "KV_DP", "", "", "CZ", 0, "Pracovní dny~Soboty~Neděle a svátky", .t)
+		do $classmethod(cls, "NadpisySkupinDnuZNastaveni","KV_DP", "", "", "CZ", 0, "Pracovní dny~Soboty~Neděle a svátky", .t)
 		do $$$AssertEquals(t(1), $piece($get(^["KV_DP"]JRSET("Definice","WinMHD","CZ","DSC")),"~",2), "KV_DP: nadpis z nastavení firmy")
 	}
 	if ##class(%SYS.Namespace).Exists("CB_GWBUS") {
 		kill t
-		do $classmethod(cls, "NadpisySkupinDnuAd", "CB_GWBUS", "", "", "CZ", 1, "a~b~c", .t)
+		do $classmethod(cls, "NadpisySkupinDnuZNastaveni","CB_GWBUS", "", "", "CZ", 1, "a~b~c", .t)
 		do $$$AssertEquals(t(1)_"|"_t(1,2), "Pracovní dny|mimo prázdniny", "CB_GWBUS: <br> = druhý řádek")
 		kill t
 		do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).NadpisySkupinDnu("CB_GWBUS", "CZ", .t)
@@ -97,12 +97,12 @@ Method TestNadpisySkupinDnuZNastaveni()
 		}
 		if nasel {
 			kill t
-			do $classmethod(cls, "NadpisySkupinDnuAd", "SKNI_MHDNITRA", sku, lin, "*SK", 1, "a~b~c", .t)
+			do $classmethod(cls, "NadpisySkupinDnuZNastaveni","SKNI_MHDNITRA", sku, lin, "*SK", 1, "a~b~c", .t)
 			do $$$AssertEquals(t(1)_"|"_t(1,2), "Pracovný deň (škol. rok)|Work day (school year)", "Nitra: sada nadpisů u linky")
 		}
 	}
 	kill t
-	do $classmethod(cls, "NadpisySkupinDnuAd", "", "", "", "CZ", 2, "Pracovní dny~Soboty, neděle a svátky", .t)
+	do $classmethod(cls, "NadpisySkupinDnuZNastaveni","", "", "", "CZ", 2, "Pracovní dny~Soboty, neděle a svátky", .t)
 	do $$$AssertEquals(t(1)_"|"_t(2), "Pracovní dny|Soboty, neděle a svátky", "bez nastavení výchozí text")
 }
 
@@ -111,7 +111,7 @@ Method TestNadpisySkupinDnuZNastaveni()
 /// starší návrhář u linkového JŘ - jinak by mu volba „Netisknout" po aktualizaci serveru přestala platit.
 Method TestVolbaBarevSpoju()
 {
-	set cls = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
+	set cls = "ALVA.TemplateDesigner.Agendy.Jr.Parametry"
 	kill ^||ML("IN")
 	do $$$AssertEquals($classmethod(cls, "VolbaBarevSpoju"), "", "nic nepřišlo → podle linky")
 	set ^||ML("IN","BARVY_SPOJU") = "Netisknout"
@@ -583,38 +583,38 @@ Method TestTvarNazvuZkraceny()
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 	// Výchozí (prázdný tvar) i pojmenovaný Zkrácený = dosavadní chování, na kterém stojí gold odtisky
-	do $$$AssertEquals($classmethod(cls, "FormatNazvuZastavky", "Zlín,,aut.nádr.", "ZL", ""), "Zlín,aut.nádr.", "prázdný tvar = zkrácený")
-	do $$$AssertEquals($classmethod(cls, "FormatNazvuZastavky", "Zlín,,aut.nádr.", "ZL", "Zkrácený"), "Zlín,aut.nádr.", "zkrácený")
-	do $$$AssertEquals($classmethod(cls, "FormatNazvuZastavky", "", "ZL", "Zkrácený"), "", "prázdný název")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky("Zlín,,aut.nádr.", "ZL", ""), "Zlín,aut.nádr.", "prázdný tvar = zkrácený")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky("Zlín,,aut.nádr.", "ZL", "Zkrácený"), "Zlín,aut.nádr.", "zkrácený")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky("", "ZL", "Zkrácený"), "", "prázdný název")
 }
 
 Method TestTvarNazvuPlnyCis()
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	do $$$AssertEquals($classmethod(cls, "FormatNazvuZastavky", "Zlín,,aut.nádr.", "ZL", "Plný CIS"), "Zlín,,aut.nádr.", "dvojčárka zůstává")
-	do $$$AssertEquals($classmethod(cls, "FormatNazvuZastavky", "Zlín,,aut.nádr.", "ZL", "Plný CIS s okresem"), "Zlín,,aut.nádr.,ZL", "s okresem")
-	do $$$AssertEquals($classmethod(cls, "FormatNazvuZastavky", "Zlín,,aut.nádr.", "", "Plný CIS s okresem"), "Zlín,,aut.nádr.", "bez okresu v registru se nic nepřidá")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky("Zlín,,aut.nádr.", "ZL", "Plný CIS"), "Zlín,,aut.nádr.", "dvojčárka zůstává")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky("Zlín,,aut.nádr.", "ZL", "Plný CIS s okresem"), "Zlín,,aut.nádr.,ZL", "s okresem")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky("Zlín,,aut.nádr.", "", "Plný CIS s okresem"), "Zlín,,aut.nádr.", "bez okresu v registru se nic nepřidá")
 }
 
 Method TestTvarNazvuTypograficky()
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	do $$$AssertEquals($classmethod(cls, "FormatNazvuZastavky", "Zlín,,aut.nádr.", "ZL", "Typograficky upravený"), "Zlín, aut. nádr.", "mezera za čárkou i tečkou")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky("Zlín,,aut.nádr.", "ZL", "Typograficky upravený"), "Zlín, aut. nádr.", "mezera za čárkou i tečkou")
 	// Mezera se doplní za KAŽDOU tečku i čárku (kromě před číslicí a na konci) - tak to klient
 	// popsal, takže „žel.st." se rozpadne na „žel. st.".
-	do $$$AssertEquals($classmethod(cls, "FormatNazvuZastavky", "Otrokovice,Baťov,žel.st.", "", "Typograficky upravený"), "Otrokovice, Baťov, žel. st.", "mezera za každou čárkou i tečkou")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).FormatNazvuZastavky("Otrokovice,Baťov,žel.st.", "", "Typograficky upravený"), "Otrokovice, Baťov, žel. st.", "mezera za každou čárkou i tečkou")
 }
 
 /// Mezera se nesmí vložit před číslici - jinak by z „Zlín,č.1" bylo „Zlín, č. 1" a z „1.5" „1. 5".
 Method TestMezeryPredCislici()
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	do $$$AssertEquals($classmethod(cls, "MezeryPoInterpunkci", "Zlín,č.1"), "Zlín, č.1", "před číslicí bez mezery")
-	do $$$AssertEquals($classmethod(cls, "MezeryPoInterpunkci", "rozc.0.9"), "rozc.0.9", "desetinné číslo beze změny")
-	do $$$AssertEquals($classmethod(cls, "MezeryPoInterpunkci", "Zlín, aut. nádr."), "Zlín, aut. nádr.", "už upravený text se nezdvojí")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MezeryPoInterpunkci("Zlín,č.1"), "Zlín, č.1", "před číslicí bez mezery")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MezeryPoInterpunkci("rozc.0.9"), "rozc.0.9", "desetinné číslo beze změny")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MezeryPoInterpunkci("Zlín, aut. nádr."), "Zlín, aut. nádr.", "už upravený text se nezdvojí")
 	// Dvojčárka se do tohoto pravidla nemá dostat (formátuje se až zkrácený název) - kdyby se
 	// dostala, vznikne osamocená čárka. Zamčeno, ať je vidět, proč je pořadí kroků důležité.
-	do $$$AssertEquals($classmethod(cls, "MezeryPoInterpunkci", "Praha,,Hlavní nádraží."), "Praha, , Hlavní nádraží.", "dvojčárka dává osamocenou čárku - proto se stahuje dřív")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MezeryPoInterpunkci("Praha,,Hlavní nádraží."), "Praha, , Hlavní nádraží.", "dvojčárka dává osamocenou čárku - proto se stahuje dřív")
 }
 
 // ── Zóny: trasa linky, záskok na registr zastávek, odstranění písmen (KOVED #13091 bod 4) ──
@@ -877,14 +877,14 @@ Method TestSloupekChybejiciSegment()
 Method TestDnySpoje()
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", ""), "", "prázdná platnost = jede každý den")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "."), "", "tečka = jede každý den")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "X"), "12345", "X = legislativní zkratka pracovních dnů")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "X6"), "123456", "X + sobota")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "15"), "15", "konkrétní dny beze změny")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "67+"), "67+", "víkend + svátek")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "1X"), "12345", "duplicitní dny se neopakují")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "abc"), "-", "nerozpoznaná platnost → žádný den (spoj se nikam nezařadí)")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje(""), "", "prázdná platnost = jede každý den")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("."), "", "tečka = jede každý den")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("X"), "12345", "X = legislativní zkratka pracovních dnů")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("X6"), "123456", "X + sobota")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("15"), "15", "konkrétní dny beze změny")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("67+"), "67+", "víkend + svátek")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("1X"), "12345", "duplicitní dny se neopakují")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("abc"), "-", "nerozpoznaná platnost → žádný den (spoj se nikam nezařadí)")
 }
 
 Method TestZarazeniSpojeDleDefiniceKaskada()
@@ -1020,7 +1020,7 @@ Method TestParseDefiniceSloupcu()
 	// validní definice
 	set ^||ML("IN","DEFINICE_SLOUPCU") = "{""sloupce"":[{""id"":""1"",""nadpis"":""Pracovní dny"",""nadpis2"":""mimo prázdniny"",""dny"":""12345"",""znackyJen"":"""",""znackyBez"":""21, 32"",""nevypisovatZnacky"":""52""},{""id"":""2"",""nadpis"":""Soboty"",""dny"":""6""}]}"
 	kill def
-	do $$$AssertEquals($classmethod(cls, "ParseDefiniceSloupcu", .def), 2, "dva sloupce")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).ParseDefiniceSloupcu(.def), 2, "dva sloupce")
 	do $$$AssertEquals($get(def(1,"nadpis")), "Pracovní dny", "nadpis 1. sloupce")
 	do $$$AssertEquals($get(def(1,"nadpis2")), "mimo prázdniny", "druhý řádek nadpisu")
 	do $$$AssertEquals($get(def(1,"bez")), ",21,32,", "seznam „bez“ normalizovaný (ořez mezer)")
@@ -1029,11 +1029,11 @@ Method TestParseDefiniceSloupcu()
 
 	// nevalidní vstupy → 0 = režim automaticky
 	set ^||ML("IN","DEFINICE_SLOUPCU") = "tohle není json"
-	do $$$AssertEquals($classmethod(cls, "ParseDefiniceSloupcu", .def), 0, "nevalidní JSON → automaticky")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).ParseDefiniceSloupcu(.def), 0, "nevalidní JSON → automaticky")
 	set ^||ML("IN","DEFINICE_SLOUPCU") = "{""neco"":1}"
-	do $$$AssertEquals($classmethod(cls, "ParseDefiniceSloupcu", .def), 0, "chybí sloupce → automaticky")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).ParseDefiniceSloupcu(.def), 0, "chybí sloupce → automaticky")
 	kill ^||ML("IN","DEFINICE_SLOUPCU")
-	do $$$AssertEquals($classmethod(cls, "ParseDefiniceSloupcu", .def), 0, "bez parametru → automaticky")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).ParseDefiniceSloupcu(.def), 0, "bez parametru → automaticky")
 }
 
 /// Parita presetů: definice odpovídající čtyřem dnešním rozvržením musí zařadit spoj do týchž
@@ -1126,7 +1126,7 @@ Method TestDenniZnackyProSloupec()
 
 	// ── známé kombinace: beze změny proti dnešku ────────────────────────────
 	for plk = "", ".", "X", "15", "6", "7", "+", "67", "67+", "16", "7+" {
-		set dny = $classmethod(cls, "DnySpoje", plk)
+		set dny = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje(plk)
 		do $$$AssertEquals($classmethod(cls, "DenniZnackyProSloupec", plk, dny, "12345"), $classmethod(cls, "DenniZnacky", 0, plk), "pracovní sloupec = dnešek, plk="_plk)
 		do $$$AssertEquals($classmethod(cls, "DenniZnackyProSloupec", plk, dny, "6"), "", "oddělená sobota = bez značky, plk="_plk)
 		do $$$AssertEquals($classmethod(cls, "DenniZnackyProSloupec", plk, dny, "7+"), "", "oddělená neděle+svátky = bez značky, plk="_plk)
@@ -1160,10 +1160,10 @@ Method TestPlusZahrnujeNedeli()
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 
 	// samotné odvození dnů
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "+"), "+7", "z ""+"" plyne i neděle")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "6+"), "6+7", "So + neděle/svátky")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "7+"), "7+", "když už 7 je, nepřidává se podruhé")
-	do $$$AssertEquals($classmethod(cls, "DnySpoje", "7"), "7", "samotná neděle svátek nepřibírá")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("+"), "+7", "z ""+"" plyne i neděle")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("6+"), "6+7", "So + neděle/svátky")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("7+"), "7+", "když už 7 je, nepřidává se podruhé")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje("7"), "7", "samotná neděle svátek nepřibírá")
 
 	// zařazení do vlastního sloupce
 	do $$$AssertEquals(..Sedne("+", "7"), 1, "spoj ""+"" patří do sloupce Neděle")
@@ -1209,14 +1209,14 @@ Method TestPracovniDnyJakoSamostatnaZnacka()
 Method Sedne(plk As %String, sloupecDny As %String) As %Boolean
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	quit $classmethod(cls, "SedneDoSloupceDny", $classmethod(cls, "DnySpoje", plk), sloupecDny)
+	quit ##class(ALVA.TemplateDesigner.Agendy.Jr.VlastniSloupce).SedneDoSloupceDny(##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje(plk), sloupecDny)
 }
 
 /// Zkratka pro TestDenniZnackyProSloupec - `plk` == vypsané dny (bez zkratky X).
 Method Znacky(plk As %String, sloupecDny As %String) As %String
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
-	quit $classmethod(cls, "DenniZnackyProSloupec", plk, $classmethod(cls, "DnySpoje", plk), sloupecDny)
+	quit $classmethod(cls, "DenniZnackyProSloupec", plk, ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).DnySpoje(plk), sloupecDny)
 }
 
 /// `B194a` T6: souhrnné pole dopravců jedním řádkem - části oddělené „, " a provoz bez ulice bez
