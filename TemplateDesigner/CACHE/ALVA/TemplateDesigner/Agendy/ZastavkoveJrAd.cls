@@ -3576,23 +3576,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnuto = název podle CIS.", 1)
     d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.", 1)
 
-    // `B161`: výchozí pořadí je parita se starým tiskem (`JRapiLinPrtMhd1.mac:397-398`, zastávka
-    // vnější smyčka, směr vnitřní) - obě vývěsky téže zastávky jdou za sebou, takže se vytisknou
-    // a pověsí jedním výjezdem. TRANSDEV chce projít trasu tam a pak zpět; místo přepsání logiky
-    // je to volba, protože tvar pořadí se za měsíc měnil potřetí (rozhodnutí Jan 18. 9.).
-    s pPorStr = ##class(%DynamicObject).%New()
-    s pPorStr.name         = "PORADI_STRANEK"
-    s pPorStr.label        = "Pořadí stránek"
-    s pPorStr.type         = "enum"
-    s pPorStr.group        = "Obecné"
-    s pPorStr.serverSide   = 1
-    s pPorStr.defaultValue = "Po zastávkách (oba směry za sebou)"
-    s pPorStr.description  = "V jakém pořadí jdou vývěsky v exportu. Po zastávkách = linka se projde jednou a u každé zastávky jsou obě její vývěsky za sebou (tak to dělá i starý tisk). Po směrech = nejdřív celý směr Tam od první zastávky k poslední, pak celý směr Zpět od poslední k první, takže se trasa projde tam a zase zpátky."
-    s optsPS = ##class(%DynamicArray).%New()
-    d optsPS.%Push("Po zastávkách (oba směry za sebou)")
-    d optsPS.%Push("Po směrech (tam vzestupně, zpět sestupně)")
-    s pPorStr.options = optsPS
-    d arr.%Push(pPorStr)
+    d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoradiStranek())
 
     // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník
     // (odjezdy filtrované na spoje z toho označníku). Default vyp = jedna vývěska, odjezdy smíchané.
@@ -3600,8 +3584,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // „Obecné", protože mění počet vývěsek celé sestavy jako Pořadí stránek (Jan 27. 10., `B194` P3).
     d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Stránka pro každé stanoviště", "false", "Obecné", "Zastávka obsluhovaná z více stanovišť se vytiskne jako samostatná vývěska pro každé z nich, jen s odjezdy spojů, které z něj jedou. V titulku stránky pak je i jeho číslo. Které číslo to je, řídí volba Číslo stanoviště podle.", 1)
 
-    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek", "V seznamu zastávek se od aktuální zastávky nakreslí šipka ve směru jízdy. Barvu a stranu šipky nastavíte u prvku Seznam zastávek.")
-    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek", "V seznamu zastávek se vytisknou i zastávky, které spoj před aktuální zastávkou už projel. Vypnuto = seznam začíná aktuální zastávkou.")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddSipkyAProjeteZastavky(arr)
 
     // KOVED #13088: označník a sloupek jsou dvě různá pole (volný text z trasy vs. číselník sloupků
     // zastávky) a zákazníci, kteří evidují sloupky, chtějí logiku stanovišť nad nimi. Jeden přepínač
@@ -3708,41 +3691,8 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRozd.options = optsR
     d arr.%Push(pRozd)
 
-    s param = ##class(%DynamicObject).%New()
-    s param.name         = "CASOVA_OSA"
-    s param.label        = "Časová osa odjezdů"
-    s param.type         = "enum"
-    s param.group        = "Minuty odjezdů"
-    s param.defaultValue = "Jen hodiny s odjezdy"
-    s param.description  = "Které hodiny se vytisknou: jen hodiny s odjezdy, všechny hodiny od první do poslední hodiny s odjezdem (i prázdné), nebo pevný rozsah Hodiny od - Hodiny do."
-    s opts = ##class(%DynamicArray).%New()
-    d opts.%Push("Jen hodiny s odjezdy")
-    d opts.%Push("Souvislá od první do poslední")
-    d opts.%Push("Vlastní rozsah")
-    s param.options = opts
-    d arr.%Push(param)
-
-    s pOd = ##class(%DynamicObject).%New()
-    s pOd.name         = "HODINY_OD"
-    s pOd.label        = "Hodiny od"
-    s pOd.type         = "number"
-    s pOd.group        = "Minuty odjezdů"
-    s pOd.defaultValue = "4"
-    s pOd.description  = "První vytištěná hodina (0-23)."
-    s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
-    d arr.%Push(pOd)
-
-    s pDo = ##class(%DynamicObject).%New()
-    s pDo.name         = "HODINY_DO"
-    s pDo.label        = "Hodiny do"
-    s pDo.type         = "number"
-    s pDo.group        = "Minuty odjezdů"
-    s pDo.defaultValue = "23"
-    s pDo.description  = "Poslední vytištěná hodina (0-23). Menší než Hodiny od = rozsah přes půlnoc."
-    s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
-    d arr.%Push(pDo)
-
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů", "Když je hodin s odjezdy méně, než se do prvku vejde, řádky hodin i písmo se zvětší, aby prvek vyplnily. Záhlaví zůstává.")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddCasovaOsaOdjezdu(arr)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddRoztazeniNaVysku(arr)
     d ..AddBoolParam(arr, "TISKNOUT_BARVY_SPOJU", "Barvy spojů", "true", "Minuty odjezdů", "Minuty spoje se tisknou barvou, kterou má spoj nastavenou v jízdních řádech. Vypnuto = všechny minuty černě.", 1)
 
     d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI", "Zastávky na znamení souhrnně", "false", "Poznámky", "Když jsou všechny zbývající zastávky na znamení, nevytiskne se značka × u každé z nich, ale jeden řádek v poznámkách.", 1)

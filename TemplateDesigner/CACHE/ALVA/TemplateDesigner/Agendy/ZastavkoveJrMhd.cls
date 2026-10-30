@@ -1865,64 +1865,11 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
     // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč - starší klient ignoruje).
     // Konvence: skupina = UI název elementu, který parametr ovlivňuje; celo-šablonové → „Obecné".
-    // `B161`: výchozí pořadí je parita se starým tiskem (obě vývěsky téže zastávky za sebou).
-    // Znění i chování se musí shodovat s agendou z AD dat, jinak by se tisk choval v každé jinak.
-    s pPorStr = ##class(%DynamicObject).%New()
-    s pPorStr.name         = "PORADI_STRANEK"
-    s pPorStr.label        = "Pořadí stránek"
-    s pPorStr.type         = "enum"
-    s pPorStr.group        = "Obecné"
-    s pPorStr.serverSide   = 1
-    s pPorStr.defaultValue = "Po zastávkách (oba směry za sebou)"
-    s pPorStr.description  = "V jakém pořadí jdou vývěsky v exportu. Po zastávkách = linka se projde jednou a u každé zastávky jsou obě její vývěsky za sebou (tak to dělá i starý tisk). Po směrech = nejdřív celý směr Tam od první zastávky k poslední, pak celý směr Zpět od poslední k první, takže se trasa projde tam a zase zpátky."
-    s optsPS = ##class(%DynamicArray).%New()
-    d optsPS.%Push("Po zastávkách (oba směry za sebou)")
-    d optsPS.%Push("Po směrech (tam vzestupně, zpět sestupně)")
-    s pPorStr.options = optsPS
-    d arr.%Push(pPorStr)
-
-    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek", "V seznamu zastávek se od aktuální zastávky nakreslí šipka ve směru jízdy. Barvu a stranu šipky nastavíte u prvku Seznam zastávek.")
-    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek", "V seznamu zastávek se vytisknou i zastávky, které spoj před aktuální zastávkou už projel. Vypnuto = seznam začíná aktuální zastávkou.")
-
-    // Časová osa odjezdů - popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
-    s param = ##class(%DynamicObject).%New()
-    s param.name         = "CASOVA_OSA"
-    s param.label        = "Časová osa odjezdů"
-    s param.type         = "enum"
-    s param.group        = "Minuty odjezdů"
-    s param.defaultValue = "Jen hodiny s odjezdy"
-    s param.description  = "Které hodiny se vytisknou: jen hodiny s odjezdy, všechny hodiny od první do poslední hodiny s odjezdem (i prázdné), nebo pevný rozsah Hodiny od - Hodiny do."
-    s opts = ##class(%DynamicArray).%New()
-    d opts.%Push("Jen hodiny s odjezdy")
-    d opts.%Push("Souvislá od první do poslední")
-    d opts.%Push("Vlastní rozsah")
-    s param.options = opts
-    d arr.%Push(param)
-
-    // Hodiny od/do - viditelné jen pro Vlastní rozsah; podporují wrap přes půlnoc (např. 22-5).
-    s pOd = ##class(%DynamicObject).%New()
-    s pOd.name         = "HODINY_OD"
-    s pOd.label        = "Hodiny od"
-    s pOd.type         = "number"
-    s pOd.group        = "Minuty odjezdů"
-    s pOd.defaultValue = "4"
-    s pOd.description  = "První vytištěná hodina (0-23)."
-    s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
-    d arr.%Push(pOd)
-
-    s pDo = ##class(%DynamicObject).%New()
-    s pDo.name         = "HODINY_DO"
-    s pDo.label        = "Hodiny do"
-    s pDo.type         = "number"
-    s pDo.group        = "Minuty odjezdů"
-    s pDo.defaultValue = "23"
-    s pDo.description  = "Poslední vytištěná hodina (0-23). Menší než Hodiny od = rozsah přes půlnoc."
-    s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
-    d arr.%Push(pDo)
-
-    // Roztáhnout data odjezdů (řádky + fonty) na výšku elementu, pokud je kratší rozsah hodin než kapacita.
-    // Hlavička skupin dnů + sloupec hodin zůstávají původní velikost.
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů", "Když je hodin s odjezdy méně, než se do prvku vejde, řádky hodin i písmo se zvětší, aby prvek vyplnily. Záhlaví zůstává.")
+    // Jen parametry společné s vývěskou AD (`Jr.Parametry`); vlastní parametry vývěska MHD nemá.
+    d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoradiStranek())
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddSipkyAProjeteZastavky(arr)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddCasovaOsaOdjezdu(arr)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddRoztazeniNaVysku(arr)
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

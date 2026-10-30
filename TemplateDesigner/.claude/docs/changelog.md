@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-30 (16) - Parametry vývěsek AD a MHD z jedné definice (`B56` S2, druhá část)
+
+Sedm parametrů, které měla vývěska AD i MHD opsané znak po znaku (pořadí stránek, šipky směru, projeté zastávky, časová osa s hodinami od a do, roztažení na výšku), je jednou v `Jr/Parametry.cls`.
+Podle historie se jejich popisek nebo nápověda měnily 5× ve dvou kopiích; teď se mění na jednom místě.
+Parametry jsou ve třech souvislých blocích, protože vývěska AD mezi ně vkládá asi 15 vlastních; každá agenda volá bloky ve stávajícím pořadí, takže se panel parametrů nepřeskupí.
+Vývěska MHD vlastní parametry nemá a skládá se jen z těchto bloků.
+Ověřeno: snímek výstupu všech agend beze změny (45 souborů), nová metoda třídy parametrů zavolaná na serveru, Caché testy 270/270, .NET testy 2542/2542, integrační testy 48/48.
+
 ## 2026-10-30 (15) - Sdílené parametry jízdních řádů v jedné třídě, první část (`B56` S2)
 
 První pomocná třída JŘ `Agendy/Jr/Parametry.cls` drží parametry, které používají aspoň dvě agendy: tvar názvu zastávky (dosud v základu agend), směr tisku, počet stran, zastávky bez zastavení a zvýraznění zastávky (dosud v linkovém JŘ AD, odkud si je bral linkový JŘ MHD) a převod volby směru na směry k tisku.

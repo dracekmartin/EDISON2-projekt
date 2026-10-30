@@ -25,8 +25,6 @@ Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a p
 
 ### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
 
-- **S2 Společné parametry vývěsek** (`R5`) [S-M] - sedm parametrů opsaných ve vývěsce AD i MHD do jedné definice, pořadí v panelu se nezmění.
-  Vzorem je jedna definice linkových agend.
 - **S3 Doslovné kopie vývěsek** [S] - 8 metod znak po znaku shodných ve vývěsce AD i MHD (atributy a poznámky zastávky, zóna, odjezd, skupina dnů, speciální znaky, barvy).
 - **S4 Doslovné kopie linkových agend** [S] - poznámka, skupina dnů a formát času v linkovém JŘ AD i MHD.
 - **S5 Doslovné kopie AD** [S] - název a normalizace linky, první linka, hodnota času ve vývěsce AD i linkovém JŘ AD (kód shodný, liší se komentáře).
@@ -49,8 +47,8 @@ Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a p
   a nešlo by změnit. Na tom visí kroky `B56`, které čtou nastavení linky. Co agendy čtou a odkud:
   [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
 - **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
-  **Jan** - čeká na úklid nastavení v jízdních řádech (výš), ze kterého volby vycházejí; patří k S2
-  (stálý kód vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
+  **Jan** - čeká na úklid nastavení v jízdních řádech (výš), ze kterého volby vycházejí; definice pak patří
+  do `Jr/Parametry.cls` (stálý kód vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
 - **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
   nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po
   zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937, pozastavený; trvá zákazník

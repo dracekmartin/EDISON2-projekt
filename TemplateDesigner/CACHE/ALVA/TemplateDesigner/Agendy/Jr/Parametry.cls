@@ -114,4 +114,81 @@ ClassMethod SmeryKTisku(volba As %String) As %String
     q $case(volba, "Tam":"T", "Zpět":"Z", :"T,Z")
 }
 
+/// Pořadí vývěsek v sestavě, společné vývěskám AD i MHD. `B161`: výchozí pořadí je parita se starým
+/// tiskem (`JRapiLinPrtMhd1.mac:397-398`, zastávka vnější smyčka, směr vnitřní) - obě vývěsky téže
+/// zastávky jdou za sebou, takže se vytisknou a pověsí jedním výjezdem. TRANSDEV chce projít trasu tam
+/// a pak zpět; místo přepsání logiky je to volba, protože tvar pořadí se za měsíc měnil potřetí
+/// (rozhodnutí Jan 18. 9.).
+ClassMethod ParametrPoradiStranek() As %DynamicObject
+{
+    s pPorStr = ##class(%DynamicObject).%New()
+    s pPorStr.name         = "PORADI_STRANEK"
+    s pPorStr.label        = "Pořadí stránek"
+    s pPorStr.type         = "enum"
+    s pPorStr.group        = "Obecné"
+    s pPorStr.serverSide   = 1
+    s pPorStr.defaultValue = "Po zastávkách (oba směry za sebou)"
+    s pPorStr.description  = "V jakém pořadí jdou vývěsky v exportu. Po zastávkách = linka se projde jednou a u každé zastávky jsou obě její vývěsky za sebou (tak to dělá i starý tisk). Po směrech = nejdřív celý směr Tam od první zastávky k poslední, pak celý směr Zpět od poslední k první, takže se trasa projde tam a zase zpátky."
+    s optsPS = ##class(%DynamicArray).%New()
+    d optsPS.%Push("Po zastávkách (oba směry za sebou)")
+    d optsPS.%Push("Po směrech (tam vzestupně, zpět sestupně)")
+    s pPorStr.options = optsPS
+    q pPorStr
+}
+
+/// Šipka směru a projeté zastávky v Seznamu zastávek, společné vývěskám AD i MHD. Obě volby
+/// aplikuje návrhář, proto bez `serverSide`.
+ClassMethod AddSipkyAProjeteZastavky(arr As %DynamicArray)
+{
+    d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek", "V seznamu zastávek se od aktuální zastávky nakreslí šipka ve směru jízdy. Barvu a stranu šipky nastavíte u prvku Seznam zastávek.")
+    d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek", "V seznamu zastávek se vytisknou i zastávky, které spoj před aktuální zastávkou už projel. Vypnuto = seznam začíná aktuální zastávkou.")
+}
+
+/// Časová osa Minut odjezdů a pevný rozsah hodin, společné vývěskám AD i MHD. Popisné volby
+/// (Plný den vědomě vynechán, lze docílit Vlastním rozsahem 0-23); Hodiny od a do jsou vidět jen
+/// u Vlastního rozsahu a zvládnou rozsah přes půlnoc (22-5).
+ClassMethod AddCasovaOsaOdjezdu(arr As %DynamicArray)
+{
+    s param = ##class(%DynamicObject).%New()
+    s param.name         = "CASOVA_OSA"
+    s param.label        = "Časová osa odjezdů"
+    s param.type         = "enum"
+    s param.group        = "Minuty odjezdů"
+    s param.defaultValue = "Jen hodiny s odjezdy"
+    s param.description  = "Které hodiny se vytisknou: jen hodiny s odjezdy, všechny hodiny od první do poslední hodiny s odjezdem (i prázdné), nebo pevný rozsah Hodiny od - Hodiny do."
+    s opts = ##class(%DynamicArray).%New()
+    d opts.%Push("Jen hodiny s odjezdy")
+    d opts.%Push("Souvislá od první do poslední")
+    d opts.%Push("Vlastní rozsah")
+    s param.options = opts
+    d arr.%Push(param)
+
+    s pOd = ##class(%DynamicObject).%New()
+    s pOd.name         = "HODINY_OD"
+    s pOd.label        = "Hodiny od"
+    s pOd.type         = "number"
+    s pOd.group        = "Minuty odjezdů"
+    s pOd.defaultValue = "4"
+    s pOd.description  = "První vytištěná hodina (0-23)."
+    s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
+    d arr.%Push(pOd)
+
+    s pDo = ##class(%DynamicObject).%New()
+    s pDo.name         = "HODINY_DO"
+    s pDo.label        = "Hodiny do"
+    s pDo.type         = "number"
+    s pDo.group        = "Minuty odjezdů"
+    s pDo.defaultValue = "23"
+    s pDo.description  = "Poslední vytištěná hodina (0-23). Menší než Hodiny od = rozsah přes půlnoc."
+    s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
+    d arr.%Push(pDo)
+}
+
+/// Roztažení Minut odjezdů na výšku prvku, společné vývěskám AD i MHD: řádky hodin a písmo se zvětší,
+/// když je hodin méně, než prvek pojme; záhlaví skupin dnů a sloupec hodin zůstávají.
+ClassMethod AddRoztazeniNaVysku(arr As %DynamicArray)
+{
+    d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Minuty odjezdů", "Když je hodin s odjezdy méně, než se do prvku vejde, řádky hodin i písmo se zvětší, aby prvek vyplnily. Záhlaví zůstává.")
+}
+
 }

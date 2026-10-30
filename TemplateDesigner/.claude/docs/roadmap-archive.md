@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S2** Společné parametry JŘ v jedné třídě (hotovo 30. 10., changelog 2026-10-30 (15) a (16), schválil Jan 30. 10.):
+  `Jr/Parametry.cls` drží sedm parametrů vývěsek AD i MHD, linkové parametry (dřív v linkovém AD, odkud je volal
+  linkový MHD) a tvar názvu zastávky (dřív v základu agend). Výstup agend beze změny.
+
 - **S1** Místo pro pomocné třídy a pojistky (hotovo 30. 10., changelog 2026-10-30 (14), rozhodnutí Jan 30. 10.):
   pomocné třídy JŘ v `Agendy/Jr/` (balík `ALVA.TemplateDesigner.Agendy.Jr`); testy čtou zdrojáky přes `ZdrojeAgend`
   - kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy.

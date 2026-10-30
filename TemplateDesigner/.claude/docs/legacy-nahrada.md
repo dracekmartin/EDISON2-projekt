@@ -797,17 +797,16 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
   v příznaku zablokované skupiny.
 - **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - každá agenda ji skládá zvlášť; odtud čtyři
   tvary popisu platnosti a dva texty návrhu (`B193f`, viz changelog 23. 10.).
-- **Společné parametry vývěsek** (Pořadí stránek, šipky, projeté zastávky, časová osa, roztažení) jsou
-  opsané (`AddStandardJRParameters` ve vývěsce AD i MHD). Linkové agendy mají jednu
-  sdílenou definici (`LinkovyJrAd.Parametr*`) a to je vzor.
+- **Společné parametry JŘ** jsou od 30. 10. definované jednou v `Jr/Parametry.cls` (`B56` S2): sedm parametrů
+  vývěsek, linkové parametry a tvar názvu zastávky. Agenda si je skládá v `GetParameters` sama, pořadí v panelu drží ona.
 - **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`, vývěsky a faktury): návrhář je
   nikde nenabízí a do 23. 10. při volání padaly (`B193f`). Od 30. 10. jsou v `BaseAgenda` nepovinné s prázdným
   výchozím výsledkem a linkové agendy své prázdné kopie nemají. Zrušit, nebo napojit do vkládání tabulky.
 - **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (v `LinkovyJrAd` i `LinkovyJrMhd`);
   `RgbToHex` vedle `BaseAgenda.RgbNaHex` není kopie, viz „Opsané pod jiným jménem" níž.
 
-**Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - patří ke kroku R5
-(parametry vývěsek do jedné definice), čeká na úklid nastavení tisku v jízdních řádech, který dodělají kolegové
+**Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - až budou volby jednou
+definicí, patří do `Jr/Parametry.cls`; čeká na úklid nastavení tisku v jízdních řádech, který dodělají kolegové
 (domluveno 29. 10., backlog).
 
 - Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb: „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", k tomu kryptické prázdninové volby vývěsky.
@@ -883,10 +882,8 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná bajt po bajtu.
   Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
-- **Pořadí kroků:** nejdřív R5 (parametry vývěsek do jedné definice).
-  Sedm společných parametrů (`PORADI_STRANEK`, `TISK_SIPKY`, `TISK_PROJETYCH_ZAST`, `CASOVA_OSA`, `HODINY_OD`, `HODINY_DO`, `ROZTAHNOUT_NA_VYSKU`) je znak po znaku shodných; AD je má proložené asi 15 vlastními a musí je přidávat ve stávajícím pořadí, jinak se panel parametrů přeskupí.
-  Shodu hlídá `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
-  Vzorem je jedna sdílená definice linkových agend (`LinkovyJrAd.Parametr*`).
+- **Pořadí kroků:** fáze v roadmapě u `B56`; S1 a S2 (parametry) hotové 30. 10.
+  Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
   Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky `AddAtribut`, `AddPoznamkaZastavky`, `AddZona`, `BuildOdjezd`, `BuildSkupinaDnu`, `ConvertSpecialniZnak`, `IntToHex2`, `RgbToHex`, `GetTableTemplate(s)`; linkové `BuildPoznamka`, `BuildSkupina`, `FormatCas`; AD `NazevLinky`, `NormalizLinku`, `PrvniLinka`, `CasHodnota`, `GetAvailableSkupiny`/`GetAvailableInstances`.
   Pak sjednocení z odstavce výš (platnost, omezení 14 a 15).
   Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".
