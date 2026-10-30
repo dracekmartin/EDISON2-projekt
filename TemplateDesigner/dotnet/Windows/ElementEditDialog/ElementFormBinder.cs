@@ -221,6 +221,20 @@ public static class ElementFormBinder
     public static void ApplyInheritedValues(EDInputForm form, IReadOnlyDictionary<string, string>? inherited)
         => ApplyInheritedValues([.. (form.Items ?? []).OfType<Field>()], inherited);
 
+    /// <summary>
+    /// Hodnoty, se kterými se prvek vytiskne, pro pole, která nemá nastavená - formulář jimi předvyplní
+    /// prázdné vlastnosti místo výchozích hodnot schématu (<see cref="ApplyInheritedValues(EDInputForm, IReadOnlyDictionary{string, string}?)"/>).
+    /// Null = prvek takovou kaskádu nemá a formulář nechá výchozí hodnoty schématu.
+    /// </summary>
+    /// <remarks>Text z importu PDF nemá svislé zarovnání: tiskl se „Nahoře", formulář ukazoval
+    /// výchozí „Na střed" (revize 30. 10.). Zatím jen textový prvek; tabulkové prvky řeší sjednocení
+    /// výchozích hodnot (`revize-sjednoceni.md` A2).</remarks>
+    public static IReadOnlyDictionary<string, string>? InheritedValuesFor(TemplateElement element) => element switch
+    {
+        Models.Elements.TextElement text => ElementPropertyAccessor.FormValues(text.Style.Resolve(), "Style."),
+        _ => null,
+    };
+
     internal static void ApplyInheritedValues(List<Field> fields, IReadOnlyDictionary<string, string>? inherited)
     {
         if (inherited is null) return;

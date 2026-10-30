@@ -139,7 +139,10 @@ public partial class MainWindow
     private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
         var dlg = new ElementEditDialog(element, cacheClass, title)
-            { Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey(element) };
+        {
+            Owner = this, PlaceholderFields = _vm!.PlaceholderFieldItems(), SearchMemoryKey = ElementDialogSearchKey(element),
+            InheritedValues = ElementFormBinder.InheritedValuesFor(element),
+        };
         if (element is NotesLegendElement poznamky)
         {
             bool linkovy = _vm.JeLinkovyJr, rozdilovy = _vm.JeRozdilovyJr;
@@ -479,6 +482,8 @@ public partial class MainWindow
                     _                  => null,
                 };
                 InlineElementForm.UpravaPoli = poznamky ? pole => NastavVolbyRazeni(pole, linkovy) : DoplneniPoliRadku(selected[0]);
+                // Vždy znovu: hodnoty buňky pevné tabulky tu jinak zůstaly a panel je ukázal u dalšího prvku.
+                InlineElementForm.InheritedValues = ElementFormBinder.InheritedValuesFor(selected[0]);
                 try
                 {
                     InlineElementForm.ShowElement(selected[0], panelSchema);

@@ -103,15 +103,7 @@ public sealed class TableCellFormatting(
     /// jen to, co uživatel opravdu změní; jinak by potvrzení formuláře odpojilo buňku od tabulky.
     /// Čte se **reflexí přes vyřešený styl**, takže nové pole stylu se propíše samo.
     /// </summary>
-    public Dictionary<string, string> InheritedFormValues()
-    {
-        var resolved = ActiveStyle();
-        var values = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var property in typeof(ResolvedTextStyle).GetProperties())
-            if (property.GetIndexParameters().Length == 0)
-                values["Style." + property.Name] = ElementPropertyAccessor.ToFormValue(property.GetValue(resolved));
-        return values;
-    }
+    public Dictionary<string, string> InheritedFormValues() => ElementPropertyAccessor.FormValues(ActiveStyle(), "Style.");
 
     /// <summary>
     /// Vlastnosti aktivní buňky pro formátovací lištu. Bez nich je lišta u tabulky prázdná a jedinou
