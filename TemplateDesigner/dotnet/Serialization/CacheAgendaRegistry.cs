@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using ALWA.SYS;
 using EDControls;
@@ -11,7 +10,7 @@ namespace TemplateDesigner.Serialization;
 ///
 /// MLRest call je sync (HTTP); wrap v <see cref="Task.Run(System.Action)"/> uvolní
 /// UI thread (R1). Při chybě (Caché nedostupné, class neexistuje, ...) vrátí jen
-/// GENERAL agendu - TD startuje funkčně i bez registru, jen bez Caché-driven agend.
+/// GENERAL agendu a chybu - TD startuje funkčně i bez registru, jen bez Caché-driven agend.
 /// </summary>
 public class CacheAgendaRegistry : IAgendaRegistry
 {
@@ -34,10 +33,9 @@ public class CacheAgendaRegistry : IAgendaRegistry
 
     public CacheAgendaRegistry(IMLRest mlRest) => _mlRest = mlRest;
 
-    public Task<IReadOnlyList<AgendaRegistryEntry>> ListAsync()
-        => Task.Run<IReadOnlyList<AgendaRegistryEntry>>(ListSync);
+    public Task<AgendaRegistryLoad> ListAsync() => Task.Run(ListSync);
 
-    private List<AgendaRegistryEntry> ListSync()
+    private AgendaRegistryLoad ListSync()
     {
         var combined = new List<AgendaRegistryEntry> { GeneralAgenda };
 
@@ -45,17 +43,15 @@ public class CacheAgendaRegistry : IAgendaRegistry
         {
             CVar result = _mlRest.QueryOrThrow(CacheClass, "ListAgendy", new CVar());
             string? json = result["1"]?.Value?.ToString();
-            if (string.IsNullOrEmpty(json)) return combined;
+            if (string.IsNullOrEmpty(json)) return new(combined);
 
             var fromCache = JsonSerializer.Deserialize<List<AgendaRegistryEntry>>(json, JsonOptions);
             if (fromCache is { Count: > 0 }) combined.AddRange(fromCache);
+            return new(combined);
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[CacheAgendaRegistry] ListSync failed: {ex.Message}");
-            // Fallback: GENERAL stays, ostatní agendy nejsou dostupné
+            return new(combined, ex);
         }
-
-        return combined;
     }
 }

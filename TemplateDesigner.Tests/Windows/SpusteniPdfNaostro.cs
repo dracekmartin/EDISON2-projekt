@@ -45,7 +45,7 @@ public class SpusteniPdfNaostro(ITestOutputHelper output)
         var mlRest = CacheSchemaWiring.TryCreateMlRest(settings) ?? throw new Exception("Caché není nakonfigurovaná");
         var popup = Substitute.For<IPopupDisplayer>();
         EDServices.Initialize(new EDServices(new MLRestAdapter(mlRest), Substitute.For<IWindowNavigator>(), popup));
-        var agendas = await new CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync();
+        var agendas = (await new CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync()).Agendas;
         // Načtení schématu pokračuje přes kontext synchronizace (v aplikaci dispatcher okna).
         SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
 

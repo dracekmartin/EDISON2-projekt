@@ -1,8 +1,10 @@
 using System.IO;
 using EDControls;
 using EDControls.EDViewModel;
+using EDTesting;
 using NSubstitute;
 using TemplateDesigner.Config;
+using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Windows;
 
@@ -54,7 +56,8 @@ public class SpusteniPdfTests : IDisposable
     {
         bool otevreno = false, zavreno = false;
         var vm = new LaunchPdfWindowViewModel(LaunchInput.Parse("Agenda=NEEXISTUJE;LINKA_ID=1;Vystup=PDF"),
-            () => throw new InvalidOperationException("bez šablony se návrhář nemá vytvářet"))
+            Task.FromResult(new AgendaRegistryLoad([])),
+            _ => throw new InvalidOperationException("bez šablony se návrhář nemá vytvářet"))
         {
             Folder = _slozka,
             OpenPdf = _ => otevreno = true,
@@ -66,5 +69,68 @@ public class SpusteniPdfTests : IDisposable
         _popup.Received(1).Info(Arg.Is<string>(s => s.Contains("NEEXISTUJE")), Arg.Any<System.Windows.Window?>());
         Assert.False(otevreno);
         Assert.True(zavreno);
+    }
+
+    // Vstup z porovnání linek v ISYJR2 (TiskJRHelper.OpenRozdilovyJR).
+    private const string Porovnani =
+        "Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760;Vystup=PDF";
+
+    private readonly List<Exception> _nahlaseno = [];
+
+    private LaunchPdfWindowViewModel OknoPorovnani(AgendaRegistryLoad registr) =>
+        new(LaunchInput.Parse(Porovnani), Task.FromResult(registr),
+            _ => throw new InvalidOperationException("bez agendy ze serveru se návrhář nemá vytvářet"))
+        {
+            Folder = _slozka,
+            OpenPdf = _ => throw new InvalidOperationException("PDF nemá vzniknout"),
+            ReportFailure = _nahlaseno.Add,
+        };
+
+    [Fact]
+    public async Task ServerNedostupny_RekneZeSeNespojilAComuPredatIT()
+    {
+        // Firewall zablokoval návrháři spojení a hláška dřív tvrdila, že spuštění neurčuje linku.
+        // Hlášku čte provoz, adresa serveru ani text od systému v ní být nemají.
+        const string zakazano = "Došlo k pokusu o přístup k soketu způsobem zakázaným jeho přístupovými oprávněními. " +
+                                "[::ffff:10.0.0.1]:57772 (10.0.0.1:57772)";
+        var vypadek = new Exception(MLRestErrors.Transport("UnknownError", zakazano));
+        var hlasky = new List<string>();
+        _popup.Info(Arg.Do<string>(hlasky.Add), Arg.Any<System.Windows.Window?>());
+        bool zavreno = false;
+        var vm = OknoPorovnani(new AgendaRegistryLoad([], vypadek));
+        vm.RequestClose += _ => zavreno = true;
+
+        await vm.RunAsync();
+
+        var hlaska = Assert.Single(hlasky);
+        Assert.Contains("nespojil se serverem", hlaska);
+        Assert.Contains("firewall", hlaska);
+        Assert.Contains("TemplateDesigner.exe", hlaska);
+        Assert.DoesNotContain("10.0.0.1", hlaska);
+        Assert.DoesNotContain("57772", hlaska);
+        Assert.DoesNotContain("soketu", hlaska);
+        Assert.Same(vypadek, Assert.Single(_nahlaseno));
+        _popup.DidNotReceiveWithAnyArgs().Error(default!);
+        Assert.True(zavreno);
+    }
+
+    [Fact]
+    public async Task ChybaServeru_JdeJakoChybaProgramu()
+    {
+        var chyba = new Exception(MLRestErrors.ServerError("ERROR #5001: <UNDEFINED> zListAgendy+3"));
+
+        await OknoPorovnani(new AgendaRegistryLoad([], chyba)).RunAsync();
+
+        _popup.Received(1).Error(chyba, Arg.Any<System.Windows.Window?>());
+        _popup.DidNotReceiveWithAnyArgs().Info(default!);
+    }
+
+    [Fact]
+    public async Task ServerAgendyNezna_RekneKterou()
+    {
+        await OknoPorovnani(new AgendaRegistryLoad([new AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "")])).RunAsync();
+
+        _popup.Received(1).Info(Arg.Is<string>(s => s.Contains("LINKOVY_JR_AD_ROZDILOVY") && !s.Contains("linku")),
+            Arg.Any<System.Windows.Window?>());
     }
 }

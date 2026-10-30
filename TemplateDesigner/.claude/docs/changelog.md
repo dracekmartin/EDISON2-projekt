@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-30 - Spuštění do PDF řekne, že se návrhář nespojil se serverem (HD 13774)
+
+Když se návrhář po spuštění z porovnání linek v modulu JŘ nespojil se serverem, hlásil „Spuštění neurčuje linku."
+U zákazníka GW mu doma zablokoval spojení firewall, starý EDISON přitom fungoval, a z hlášky to nešlo poznat.
+Registr agend chybu spojení tiše spolkl, rozdílová agenda pak chyběla a návrhář hledal linku pod špatným klíčem.
+Okno průběhu teď na seznam agend počká a při výpadku spojení napíše, že se návrhář nespojil se serverem EDISON a co předat správci sítě (povolit TemplateDesigner.exe ve firewallu nebo antiviru).
+Hlášku čte provoz, proto v ní není adresa serveru ani text chyby od Windows; obojí jde do telemetrie.
+Chyba serveru jde jako chyba programu, server bez agendy řekne, kterou agendu nezná.
+Ve spuštění do PDF zároveň zmizel limit 3 s na seznam agend (hlavní okno ho má dál): pomalý server při studeném startu dřív vedl k hlášce „Návrhář není připojený k databázi."
+Ověřeno skutečným spuštěním TemplateDesigner.exe se serverem 127.0.0.1:1 (před opravou hláška o lince, po ní o serveru) a testy `SpusteniPdfTests`.
+
 ## 2026-10-29 (6) - Snímek výstupu všech agend před sloučením kódu (`B56`)
 
 Pojistka pro `B56`: testy jedou na pár linkách s výchozími parametry a drobnou změnu výtisku po přesunu kódu

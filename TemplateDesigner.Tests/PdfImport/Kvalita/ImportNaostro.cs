@@ -37,7 +37,7 @@ public static class ImportNaostro
             Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
 
         _klic = await EdisonAiService.GetApiKeyAsync();
-        var agendas = await new CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync();
+        var agendas = (await new CacheAgendaRegistry(new MLRestAdapter(mlRest)).ListAsync()).Agendas;
         _provider = CacheSchemaWiring.TryCreate(mlRest, agendas) ?? throw new Exception("Bez agend");
         return (_provider, _klic);
     }

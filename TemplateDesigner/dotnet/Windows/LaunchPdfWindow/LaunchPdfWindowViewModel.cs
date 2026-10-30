@@ -1,6 +1,9 @@
 using System.IO;
+using EDControls;
 using EDControls.EDViewModel;
+using EDControls.ErrorReporting;
 using TemplateDesigner.Config;
+using TemplateDesigner.Serialization;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner;
@@ -13,7 +16,8 @@ namespace TemplateDesigner;
 public class LaunchPdfWindowViewModel : EDViewModel
 {
     private readonly LaunchInput _input;
-    private readonly Func<TemplateDesignerViewModel> _createDesigner;
+    private readonly Task<AgendaRegistryLoad> _agendas;
+    private readonly Func<IReadOnlyList<AgendaRegistryEntry>, TemplateDesignerViewModel> _createDesigner;
 
     private string _statusText = "Připravuji PDF…";
     public string StatusText
@@ -28,9 +32,16 @@ public class LaunchPdfWindowViewModel : EDViewModel
     /// <summary>Otevření hotového PDF; testy ho nahradí, aby se nespouštěl prohlížeč.</summary>
     public Action<string> OpenPdf { get; init; } = DefaultBrowser.Open;
 
-    public LaunchPdfWindowViewModel(LaunchInput input, Func<TemplateDesignerViewModel> createDesigner)
+    /// <summary>Výpadek spojení do telemetrie; testy ho nahradí, aby nic neodcházelo.</summary>
+    public Action<Exception> ReportFailure { get; init; } = ErrorReports.ReportBackground;
+
+    /// <param name="agendas">Načítání registru agend spuštěné při startu - okno na něj počká.</param>
+    /// <param name="createDesigner">Návrhář nad načtenými agendami.</param>
+    public LaunchPdfWindowViewModel(LaunchInput input, Task<AgendaRegistryLoad> agendas,
+                                    Func<IReadOnlyList<AgendaRegistryEntry>, TemplateDesignerViewModel> createDesigner)
     {
         _input = input;
+        _agendas = agendas;
         _createDesigner = createDesigner;
     }
 
@@ -47,7 +58,25 @@ public class LaunchPdfWindowViewModel : EDViewModel
             }
 
             StatusText = $"Připravuji PDF: {template.Name}…";
-            var (path, duvod) = await _createDesigner().ExportLaunchPdfAsync(_input, template, Folder);
+            var registry = await _agendas;
+            if (registry.Failure is { } failure)
+            {
+                if (!MLRestFailure.IsTransport(failure))
+                {
+                    PopupDisplayer.Error(failure);
+                    return;
+                }
+                ReportFailure(failure);
+                PopupDisplayer.Info(UnreachableServerMessage);
+                return;
+            }
+            if (!registry.Agendas.Any(a => a.Code.Equals(agenda, StringComparison.OrdinalIgnoreCase)))
+            {
+                PopupDisplayer.Info($"Návrhář na serveru nenašel agendu {agenda}, PDF nevzniklo.");
+                return;
+            }
+
+            var (path, duvod) = await _createDesigner(registry.Agendas).ExportLaunchPdfAsync(_input, template, Folder);
             if (path is null)
             {
                 PopupDisplayer.Info(duvod ?? "PDF se nepodařilo vytvořit.");
@@ -69,4 +98,11 @@ public class LaunchPdfWindowViewModel : EDViewModel
             CloseDialog(true);
         }
     }
+
+    // Do PDF se návrhář spouští z běžící session EDISONu, server tedy z tohoto počítače dostupný byl.
+    // Hlášku čte provoz: bez adresy serveru a textu od systému, ty nese hlášení do telemetrie.
+    internal const string UnreachableServerMessage =
+        "Návrhář sestav se nespojil se serverem EDISON, PDF nevzniklo.\n\n" +
+        "Pokud vám ostatní části EDISONu fungují, spojení návrháři nejspíš blokuje firewall nebo antivirus " +
+        "na tomto počítači. Předejte správci sítě, že programu TemplateDesigner.exe je potřeba povolit připojení k serveru EDISON.";
 }

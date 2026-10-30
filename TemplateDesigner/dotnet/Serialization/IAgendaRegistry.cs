@@ -56,6 +56,12 @@ public record AgendaRegistryEntry(
 }
 
 /// <summary>
+/// Výsledek načtení registru. Při <see cref="Failure"/> má <see cref="Agendas"/> jen GENERAL: návrhář
+/// běží dál bez agend z Caché a volající podle chyby rozhodne, co uživateli řekne.
+/// </summary>
+public sealed record AgendaRegistryLoad(IReadOnlyList<AgendaRegistryEntry> Agendas, Exception? Failure = null);
+
+/// <summary>
 /// Per-firma registr dostupných agend v TemplateDesigneru. Od 5/2026 nahrazuje
 /// `appsettings.json` agendas[] auto-discovery z Caché `BaseAgenda` subclasses
 /// (`ALVA.TemplateDesigner.API.AgendyRegistr.ListAgendy`).
@@ -65,6 +71,6 @@ public record AgendaRegistryEntry(
 /// </summary>
 public interface IAgendaRegistry
 {
-    /// <summary>Vrátí dostupné agendy včetně GENERAL. Async - volá MLRest na Caché.</summary>
-    Task<IReadOnlyList<AgendaRegistryEntry>> ListAsync();
+    /// <summary>Vrátí dostupné agendy včetně GENERAL. Async - volá MLRest na Caché. Nehází.</summary>
+    Task<AgendaRegistryLoad> ListAsync();
 }
