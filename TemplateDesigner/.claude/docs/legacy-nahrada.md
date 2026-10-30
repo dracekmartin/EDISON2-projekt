@@ -831,3 +831,49 @@ svého starého modulu, sloučení kódu je nesmí srovnat.
   Rozdíl je vidět jen u zastávek se zónou mimo trasu nebo ve dvou IDS.
 - **T10b Stanoviště u názvu zastávky:** Linkový JŘ AD ho tiskne v řádku tabulky u zastávky s příznakem trasy „S" jako „, stan.16" (parita starého linkového tisku, `LinkovyJrAd.BuildZastavkaRadek`), Zastávkový JŘ AD jen v nadpisu rozdělené vývěsky jako „, označník 3" / „, sloupek 1" (vzor KOVED #8828, `ZastavkoveJrAd.BuildStrankaZastavky`).
   Jiné místo i účel; zkratka „stan." neumí rozlišit označník a sloupek.
+
+**Opsané pod jiným jménem (revize `B194g` R2, změřeno a rozhodnuto 30. 10.)** - kopie, které analýza z 5. 8. hledala podle názvu, a proto je nenašla.
+Měřeno sondou `DuplicityAgendProbe` na šesti testovacích firmách (96 531 linek, 2,4 mil. spojů).
+
+Sjednotit v `B56`, tisk se nezmění:
+
+- **Platnost linky** (`PATCH,"Plati"` = „od~do:…") se čte na sedmi místech dvěma způsoby a příponu za dvojtečkou odříznou jen `BaseAgenda.HorologPlatnostiOdLinky` a `ZastavkoveJrAd.PlatnostLinky`.
+  Starý modul ji odřízne vždy, ostatní kopie by ji poslaly v datu „do".
+  V datech ji nemá žádná linka (0 z 96 531), sjednocení na jednu metodu s odříznutím proto tisk nezmění.
+  K tomu tři převody data na `$h`.
+- **Omezení 14 a 15** („jede jen v sudých / lichých týdnech") vytiskne `LinkovyJrAd.SestavTextOmezeni` i bez data, `ZastavkoveJrAd.SestavTextOmezeni` je bez data přeskočí.
+  Bez data není žádné z 319 výskytů; sjednotit na chování linkového JŘ (věta platí i bez data).
+  Pozor na jazyk předložky: vývěska ho bere z parametru šablony (`PrefixOmezeni`), linkový JŘ z kódu jazyka (`PredlozkaOmezeni`).
+
+Vědomě nesjednocovat (rozhodnutí Jan 30. 10.):
+
+- **Popis dopravce** (`POPIS_DOPRAVCE`): tři kopie v agendách a skládání v návrháři (`PageLayoutEngine`, `LineTableElement.PopisDopravcuStranky`).
+  Vývěska AD podle starého zastávkového tisku dává sídlo firmy a sídlo provozovny každé na řádek, takže u GW BUS (320157) vyjde adresa dvakrát; linkový JŘ dává vše na jeden řádek s čárkami a adresu jednou.
+  Každý tvar odpovídá svému starému tisku, dvojí adresu (#13158) řeší pole dopravce po položkách.
+- **Rozsahy čísel spojů**: souhrn dopravců ve vývěsce (`ZastavkoveJrAd.RozsahyCisel`) vede řadu jen přes čísla těsně po sobě („1-35, 37, 39, 41, 43, 45, 101"), Tabulka spojů (`LineTableElement.Rady`) i přes ob jedno, protože stránka nese jeden směr („1-45, 101").
+  Každé pravidlo sedí na svůj případ.
+- **Barva „0;0;0"** znamená v každém zdroji něco jiného, nejde o kopii téhož.
+  Barva spoje AD (`#`-pole 12, `BaseAgenda.RgbNaHex`) = bez barvy: má ji 2 185 160 z 2 189 806 spojů s barvou.
+  Barva linky (`ZastavkoveJrAd.BarvaLinky`) a barvy poznámek ke spojům MHD (`ZastavkoveJrMhd`) jdou přes `RgbToHex` a černá je černá: v KV_DP má 24 poznámek černý znak záměrně.
+  Při `B56` jen pojmenovat podle zdroje; komentář „kopie téhož" u `RgbNaHex` neplatí.
+- **Značky u odjezdů a kolekce vývěsek**: `AddAnotace` AD posílá navíc `KATEGORIE`, `SPOJ` a `V_ROZSAHU_NEPOZNAMKOVAT`, `AddStandardJRCollections` AD má o pět polí víc.
+  Společná metoda jen tak, aby MHD tyto klíče dál neposílal - jinak by filtr Poznámek podle kategorie začal skrývat poznámky i v MHD.
+
+Stejné jméno, jiný význam - při přesunu do pomocné třídy přejmenovat, ne sloučit:
+`Jazyk` (`*SK`/`CZ` z `JRSET` × `cs`/`sk` z `^||TiskAd`), `ZonaBezPismen` (úprava textu × ano/ne z nastavení), `NactiNastaveniNazvu` (výchozí „Plný CIS" × „Zkrácený", vědomý rozdíl hlídaný v `KontraktAgendTest.Vyjimka`), `PopisDopravce` (viz výš), `BuildStrankaLinky`.
+Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKnizni("wmap",trasa)` × `^||TiskAd("wmap",db,sku,lin,trasa)`), `ZaznamZastavky` bere datum z jiného globálu.
+
+**Postup `B56`** (přesunuto z `konzistence-agend-jr.md §7` 30. 10.):
+
+- **Pojistky:** `KontraktAgendTest` (kontrakt každé agendy z registru, data odpovídají nabídce, sdílené parametry shodné), integrační `KontraktDatAgendTests` (položky, které čtou prvky, ve správném tvaru), `TestovaciLinkyTest` (linky testů v datech jsou), zlaté odtisky všech čtyř agend JŘ a snímek výstupu agend.
+- **Snímek výstupu je sonda, ne test** (výstup závisí na datech dev serveru): schéma, parametry a ukázka všech agend z registru a `GetData` linek z `KontraktAgendTest.LinkyAgend` - 45 souborů, 16 MB.
+  Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná bajt po bajtu.
+  Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
+  Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
+- **Pořadí kroků:** nejdřív R5 (parametry vývěsek do jedné definice).
+  Sedm společných parametrů (`PORADI_STRANEK`, `TISK_SIPKY`, `TISK_PROJETYCH_ZAST`, `CASOVA_OSA`, `HODINY_OD`, `HODINY_DO`, `ROZTAHNOUT_NA_VYSKU`) je znak po znaku shodných; AD je má proložené asi 15 vlastními a musí je přidávat ve stávajícím pořadí, jinak se panel parametrů přeskupí.
+  Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky `AddAtribut`, `AddPoznamkaZastavky`, `AddZona`, `BuildOdjezd`, `BuildSkupinaDnu`, `ConvertSpecialniZnak`, `IntToHex2`, `RgbToHex`, `GetTableTemplate(s)`; linkové `BuildPoznamka`, `BuildSkupina`, `FormatCas`; AD `NazevLinky`, `NormalizLinku`, `PrvniLinka`, `CasHodnota`, `GetAvailableSkupiny`/`GetAvailableInstances`.
+  Pak sjednocení z odstavce výš (platnost, omezení 14 a 15).
+  Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".
+- **Pojistky můžou při přesunu kódu ztichnout:** drift testy čtou jen `Agendy/*.cls` bez podsložek, test schématu vynechává `BaseAgenda.cls`, pořadí polí se kontroluje po souborech a `ServerSideParamsDriftTests` hledá doslova `AddBoolParam(arr,`.
+  Před prvním přesunem do pomocné třídy rozhodnout, kam třídy půjdou, a drift testy upravit v témže commitu; serverové kontroly (`KontraktAgendTest`, `KontraktDatAgendTests`) přesun přežijí.

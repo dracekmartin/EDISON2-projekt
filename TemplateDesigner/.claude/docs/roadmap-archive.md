@@ -9,6 +9,10 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **R2** Opsané pod jiným jménem (hotovo 30. 10., changelog 2026-10-30 (10), rozhodnutí Jan 30. 10.):
+  změřeno sondou `DuplicityAgendProbe`, zapsané v `legacy-nahrada.md §4` spolu s postupem `B56`.
+  Sjednotit platnost linky a omezení 14/15 (tisk se nezmění), vědomě nechat popis dopravce, rozsahy čísel
+  spojů, barvu „0;0;0" (tři zdroje s vlastním významem) a nadmnožiny značek u odjezdů.
 - **R3** Kontrakt prvek ↔ agenda zapsaný a hlídaný (hotovo 30. 10., changelog 2026-10-30 (9)): `KontraktDat.cs`
   (položky, které čte kód návrháře, s tvarem a důvodem, proč chodí jen někdy), offline `KontraktDatTests`
   (kód čte jen položky z kontraktu) a integrační `KontraktDatAgendTests` (agendy je na serveru posílají

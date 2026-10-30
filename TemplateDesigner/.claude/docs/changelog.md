@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-30 (10) - Soupis kódu agend opsaného pod jinými jmény s rozhodnutím pro `B56` (`B194g` R2)
+
+Analýza z 5. 8. hledala opsaný kód podle stejného jména metody, takže kopie pod jinými jmény neviděla.
+Nová sonda `DuplicityAgendProbe` je změřila na šesti testovacích firmách (96 531 linek, 2,4 mil. spojů), ukázky jsou ze skutečných dat linek 320157 a 823955.
+Popis dopravce se tiskne jinak: vývěska AD dává údaje na řádky a u GW BUS vypíše adresu dvakrát, linkový JŘ vše na jeden řádek s adresou jednou; každý tvar odpovídá svému starému tisku a zůstává (rozhodnutí Jan 30. 10.).
+Rozsahy čísel spojů mají ve vývěsce a v Tabulce spojů jiné pravidlo, každé sedí na svůj případ; zůstávají.
+Platnost linky s příponou za dvojtečkou (0 linek) a omezení 14 a 15 bez data (0 z 319) se v `B56` sjednotí, tisk se nezmění.
+Barva „0;0;0" znamená u spojů AD „bez barvy" (2 185 160 z 2 189 806), u barvy linky a poznámek MHD černou (24 poznámek KV_DP); jde o tři zdroje, ne o kopii, a nesjednocují se.
+Soupis i postup `B56` (pojistky, snímek, pořadí kroků) jsou v `legacy-nahrada.md §4`; pracovní `konzistence-agend-jr.md` drží už jen R4-R7 a po nich se smaže.
+Kód ani tisk se nemění.
+
 ## 2026-10-30 (9) - Kontrakt mezi prvky a agendami je zapsaný a hlídaný (`B194g` R3)
 
 Seznam zastávek, Minuty odjezdů, Poznámky, Tabulka spojů a navigace stránek čtou z dat agendy asi 80 položek podle jména a nikde nebylo zapsané, které musí agenda posílat a v jakém tvaru.

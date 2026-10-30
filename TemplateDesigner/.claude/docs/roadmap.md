@@ -21,7 +21,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 
 ### `B194g` Architektura před `B56`
 
-- **R2** Duplicity pod jiným jménem (dopravce, platnost, barva, texty omezení) doplnit do `legacy-nahrada §4` [M]
 - **R4** Schopnosti agend místo kódů agend natvrdo v C# [S-M] **Jan**
 - **R5** Parametry vývěsek do jedné definice (první krok `B56`) [S-M]
 - **R6** Dokumentace pro rozvoj (`cache-api.md` vzor a checklist, Faktury) [S]

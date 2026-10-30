@@ -48,16 +48,9 @@ je v `roadmap-archive.md` u `B194` a v changelogu 2026-10-29 a 2026-10-30.
 
 ## 7. Architektura před sloučením kódu (`B56`)
 
-- **R1 rozhodnuto 29. 10.: varianta (b)**, zapsané jako [`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md).
-  Registr hledá jen přímé potomky `BaseAgenda` (`AgendyRegistr.ListAgendy` :43, `GetClassForCode` :91),
-  takže mezivrstva `ZastavkovyJrBase` navržená v `legacy-nahrada.md §4` nepřipadá v úvahu - opravit §4 při R2.
-- **R2 Duplicity pod jiným jménem** [M] (*ověřeno:* kód; doplnit do §4, analýza je hledala podle názvu).
-  Dopravce: tři implementace v Caché + skládání v C# (`PageLayoutEngine.cs:276`,
-  `LineTableElement.PopisDopravcuStranky`), rozsahy čísel spojů dvakrát s jinými pravidly
-  (`ZastavkoveJrAd.RozsahyCisel` × `LineTableElement.Rady`). Platnost linky `PATCH,"Plati"` na sedmi místech
-  dvěma způsoby (příponu `:…` odstraňují jen dvě) a tři převody na `$h`. Barva `r;g;b`: `BaseAgenda.RgbNaHex`
-  bere `0;0;0` jako nenastaveno, `RgbToHex` ve vývěskách jako černou (komentář `BaseAgenda.cls:209` „kopie
-  téhož" neplatí; co znamená `0;0;0`, rozhodne **Jan**). Texty omezení viz `T3`.
+R1 (pomocné třídy mimo hierarchii agend, `architektonicka-rozhodnuti-agendy.md` R8) a R2 (opsané pod jiným
+jménem) jsou hotové; R2, připravenost na `B56` a postup jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md).
+
 - **R4 Schopnosti agend natvrdo v C#** [S-M] **Jan**. `JeRozdilovyJr`, `CreateSampleTemplate` (`"LINKOVY_JR_AD"`),
   `ScheduleImportTypes.ForAgenda` (podle prefixu kódu; enum `ZastavkovyJrMhd` platí i pro AD).
   `ShouldPrefillDepartureColumns` už jde přes příznak `CustomColumns` (28. 10.). Návrh:
@@ -79,63 +72,6 @@ je v `roadmap-archive.md` u `B194` a v changelogu 2026-10-29 a 2026-10-30.
 - **R7 Názvosloví v kódu** [S]. `^||TiskKnizni*`, infinitivy v `ZastavkoveJrMhd` (`PripravitTrasu`,
   `SestavitStranky`) proti `cache-api.md` pravidlu 5. Kanon jen pro nové názvy, interní sjednotit při `B56`,
   třídy nepřejmenovávat.
-
-**Připravenost na `B56`** (revize 28. 10., čtení kódu, na serveru nic nespuštěno):
-
-- **Nutné před prvním krokem: splněno 29. 10.** (G1 malá podoba, G2, G7, G8 a snímek výstupu), 30. 10.
-  doplněno hlídání linek z testů (`TestovaciLinkyTest`), výměna linky, která z dat zmizela, a celé G1
-  (data agendy odpovídají nabídce, známé klíče parametrů).
-  Ostatní G a R jsou užitečné, ale bez nich slučování tisk tiše nerozbije.
-- **Snímek výstupu je sonda, ne test** (pravidlo o testech závislých na stroji), sejmutý znovu 30. 10.: schéma,
-  parametry a ukázka všech agend z registru a `GetData` linek ze sad testů (`ZastavkoveJrAdSadaTest.Sada`,
-  `LinkovyJrSadaTest.Sada`, porovnání verzí CB_CSADAD 0380760, zastávkový MHD 1001/1003/1006,
-  `LinkovyJrMhdTest.LINKY`) - 45 souborů, 15 MB, dva běhy po sobě shodné. Seznam drží `SnimekAgendProbe`,
-  ukládá a porovnává `SnimekAgendNaostro`: `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests
-  --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo).
-  Po každém kroku musí vyjít bajtově stejně; kódem `B56` se snímek nepřepisuje.
-  Výstup závisí na datech dev serveru a ta mění i kolegové (30. 10. zmizely dvě linky z testovacích sad).
-  Proto se snímek porovná **i před krokem**, na nezměněném kódu: když se liší, změnila se data, snímek se
-  sejme znovu a teprve pak přijde krok.
-  Dnešní pokrytí: zastávkový AD odtisk 3 linek a oracle jen zčásti, zastávkový MHD 3 linky a oracle,
-  linkový AD 4 linky a oracle, linkový MHD oracle tabulky a od 29. 10. odtisk 7 linek včetně hlavičky
-  (`LinkovyJrMhdGoldTest`), rozdílový jen umělá data.
-  Všechny odtisky jedou jen s výchozími parametry.
-- **Proč R1 (b), pomocné třídy mimo hierarchii agend.**
-  Kopie vedou dvěma směry: vývěsky AD a MHD sdílejí stavbu výstupu (`BuildOdjezd`, `AddAtribut`), vývěska AD
-  a linkový AD čtení dat AD (`NazevLinky`, `PrvniLinka`, `WMapa`); jedna dědičnost pokryje jen jeden.
-  Dnešní sdílení už má tvar (b): `LinkovyJrMhd` volá `LinkovyJrAd.Parametr*` a `ZastavkoveJrMhd.SeznamLinek`.
-  Metody se stejným jménem a jiným významem (`Jazyk`, `ZonaBezPismen`, `PopisDopravce`, `BuildStrankaLinky`)
-  by v mezivrstvě přes `..X()` tiše volaly verzi podtřídy (na serveru neověřeno).
-- **Pořadí kroků:** nejdřív R5.
-  Sedm společných parametrů (`PORADI_STRANEK`, `TISK_SIPKY`, `TISK_PROJETYCH_ZAST`, `CASOVA_OSA`, `HODINY_OD`,
-  `HODINY_DO`, `ROZTAHNOUT_NA_VYSKU`) je znak po znaku shodných.
-  AD je má proložené asi 15 vlastními a musí je přidávat ve stávajícím pořadí, jinak se panel parametrů přeskupí.
-  Drift testy upravit v témže commitu.
-  Pak doslovné kopie (po odstranění komentářů bez rozdílu), jedna skupina = jeden commit + snímek:
-  vývěsky `AddAtribut`, `AddPoznamkaZastavky`, `AddZona`, `BuildOdjezd`, `BuildSkupinaDnu`,
-  `ConvertSpecialniZnak`, `IntToHex2`, `RgbToHex`, `GetTableTemplate(s)`; linkové `BuildPoznamka`,
-  `BuildSkupina`, `FormatCas`; AD `NazevLinky`, `NormalizLinku`, `PrvniLinka`, `CasHodnota`,
-  `GetAvailableSkupiny`/`GetAvailableInstances` (liší se jen `q` × `ret`).
-  Kopie s rozdílem až s rozhodnutím Jana nebo s oraclem.
-  Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu
-  „Úklid nastavení tisku v jízdních řádech" (kolegové většinu nastavení vyhodí, domluveno 29. 10.).
-- **Kde by sloučení změnilo tisk** (doplnit do `legacy-nahrada §4` v rámci R2):
-  - Texty omezení: `LinkovyJrAd.SestavTextOmezeni` tiskne omezení 14/15 i bez dat, zastávkový je přeskočí.
-    Liší se i předložka (`PredlozkaOmezeni` × `PrefixOmezeni`) a zdroj jazyka.
-  - Stejné jméno, jiný význam: `Jazyk` (`*SK`/`CZ` z `JRSET` × `cs`/`sk` z `^||TiskAd`), `ZonaBezPismen`
-    (úprava textu × ano/ne z nastavení), `NactiNastaveniNazvu` (výchozí „Plný CIS" × „Zkrácený"),
-    `PopisDopravce` (oddělovač `", "` × dva konce řádku).
-  - Pracovní globály: `WMapa` (`^||TiskKnizni("wmap",trasa)` × `^||TiskAd("wmap",db,sku,lin,trasa)`),
-    `ZaznamZastavky` bere datum z jiného globálu.
-  - Barva `0;0;0`: MHD posílá přes `RgbToHex` černou jako `BACK_COLOR` poznámek.
-    Sloučení na `RgbNaHex` by černá pozadí z tisku odstranilo (**Jan**, viz R2).
-  - Nadmnožiny: `AddAnotace` (AD navíc `KATEGORIE`, `SPOJ`, `V_ROZSAHU_NEPOZNAMKOVAT`) a
-    `AddStandardJRCollections` (AD o 5 polí víc).
-    MHD by dostal klíče, které neplní, a filtry Poznámek podle kategorie by začaly působit i na MHD.
-- **Pojistky můžou při přesunu kódu ztichnout:** drift testy čtou jen `Agendy/*.cls` nerekurzivně, test schématu
-  vynechává `BaseAgenda.cls`, pořadí polí se kontroluje po souborech, `ServerSideParamsDriftTests` hledá
-  doslova `AddBoolParam(arr,`.
-  Proto kontroly na serveru (G1, G2), nebo úprava testů v témže commitu.
 
 ## 8. Co je v pořádku
 
@@ -168,5 +104,5 @@ H13 rozhodnutý (Novinky beze změny), H16 smazaný, H17 hotový (changelog 2026
 
 Popisky jednoduchých prvků z téže revize jsou hotové (changelog 2026-10-28 (28)).
 
-**Před smazáním tohoto souboru** přesunout §7 (připravenost na `B56`) do `legacy-nahrada §4` spolu s R2.
-P2 a vědomé rozdíly už jsou v `legacy-nahrada.md §4` (H14).
+**Soubor smazat po R4-R7** (zbytek §7) - připravenost na `B56`, R2, P2 a vědomé rozdíly už jsou
+v `legacy-nahrada.md §4` (30. 10.).
