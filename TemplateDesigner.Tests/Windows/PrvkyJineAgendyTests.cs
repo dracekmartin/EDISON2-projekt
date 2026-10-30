@@ -86,6 +86,54 @@ public class PrvkyJineAgendyTests
         Assert.Equal([typeof(LineTableElement), typeof(TextElement)], sekce.Elements.Select(p => p.GetType()));
     }
 
+    /// <summary>Šablona bez kódu agendy je obecná (tak se i ukládá do databáze) a prvek jízdního řádu
+    /// do ní nepatří. Do 30. 10. ji návrhář v registru nedohledal a nic neblokoval; vzniká importem
+    /// obecné šablony ze souboru, kam se prázdný kód agendy nezapisuje.</summary>
+    [Fact]
+    public void DoSablonyBezKoduAgendySePrvekJrNevlozi()
+    {
+        var obecna = new AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "");
+        var vm = new TemplateDesignerViewModel(null, null, [obecna, Zastavkova, Linkova], Zastavkova.Code);
+        var seznam = new StopListElement();
+        Otevri(vm, Zastavkova.Code, seznam);
+        vm.State.SelectedElements.Add(seznam);
+        vm.CopySelected();
+
+        var cil = Otevri(vm, null);
+        vm.PasteClipboard();
+
+        Assert.DoesNotContain(cil.Elements, p => p is StopListElement);
+        _popup.Received().Info(Arg.Is<string>(s => s.Contains("Seznam zastávek")), Arg.Any<Window?>());
+    }
+
+    /// <summary>Šablonu od AI asistenta skládá model, takže může míchat agendy - projde stejnou
+    /// kontrolou jako import ze souboru (do 30. 10. se otevřela bez ní).</summary>
+    [Fact]
+    public void SablonaOdAsistentaSPrvkemJineAgendySeNeotevre()
+    {
+        var obecna = new AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "");
+        var vm = new TemplateDesignerViewModel(null, null, [obecna, Zastavkova, Linkova], Zastavkova.Code);
+        var otevrena = vm.State.CurrentTemplate;
+        var vygenerovana = new Template { Sections = [new Section { Elements = [new StopListElement()] }] };
+
+        Assert.False(vm.LoadGeneratedTemplate(vygenerovana));
+
+        Assert.Same(otevrena, vm.State.CurrentTemplate);
+        _popup.Received().Info(Arg.Is<string>(s => s.Contains("Seznam zastávek")), Arg.Any<Window?>());
+    }
+
+    [Fact]
+    public void SablonaOdAsistentaSeSvouAgendouSeOtevre()
+    {
+        var obecna = new AgendaRegistryEntry("GENERAL", "Obecná (bez dat)", "");
+        var vm = new TemplateDesignerViewModel(null, null, [obecna, Zastavkova, Linkova], Zastavkova.Code);
+        var vygenerovana = new Template { Sections = [new Section { Elements = [new TextElement { Text = "A" }] }] };
+
+        Assert.True(vm.LoadGeneratedTemplate(vygenerovana));
+
+        Assert.Same(vygenerovana, vm.State.CurrentTemplate);
+    }
+
     /// <summary>Hotová šablona může prvek jiné agendy mít z doby, kdy se nekontrolovalo -
     /// návrhář ho nesmaže sám, ale upozorní na něj a klik ho vybere.</summary>
     [Fact]

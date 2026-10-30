@@ -379,7 +379,7 @@ public partial class TemplateDesignerViewModel
     /// <summary>Loads a template that was generated externally (e.g. AI assistant).</summary>
     public async Task LoadGeneratedTemplateAsync(Template template)
     {
-        LoadGeneratedTemplate(template);
+        if (!LoadGeneratedTemplate(template)) return;
         // Hodnoty nastavení sestavy, které vznikly při importu z předlohy, se musí projevit
         // i v ovladačích - jinak se tiskne něco jiného, než co je v nastavení vidět (viz
         // ApplyPersistedPrintParamsAsync). Import do 19. 8. touhle cestou vůbec neprošel.
@@ -387,9 +387,17 @@ public partial class TemplateDesignerViewModel
         await ApplyPersistedPrintParamsAsync();
     }
 
-    public void LoadGeneratedTemplate(Template template)
+    /// <returns>False = šablonu nejde přijmout (stejná kontrola jako import ze souboru - šablonu
+    /// skládá model, takže může míchat agendy), uživatel dostal důvod a otevřená šablona zůstala.</returns>
+    public bool LoadGeneratedTemplate(Template template)
     {
         var puvodniAgenda = State.CurrentTemplate.AgendaCode;
+        if (TemplateImportCheck.ProcNelzePrijmout(template, _agendaEntries, puvodniAgenda,
+                AppSettings.Current?.Dev.HiddenAgendas == true) is { } duvod)
+        {
+            PopupDisplayer.Info(duvod);
+            return false;
+        }
         State.CurrentTemplate = template;
         // Data a vybrané linky patří agendě předchozí šablony - jako u otevření z databáze nebo
         // souboru. Jinak se nová šablona do přenačtení kreslí nad daty jiného tvaru.
@@ -406,6 +414,7 @@ public partial class TemplateDesignerViewModel
         RebuildSections();
         InvalidateAll();
         RefreshFieldsList();
+        return true;
     }
 
     private void InvalidateAll()

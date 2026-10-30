@@ -239,9 +239,6 @@ public partial class MainWindow : Window
         _propsVm = new ElementPropertiesWindowViewModel(
             _vm.State,
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
-            _vm.RebuildSections,
-            UpdateCanvasSize,
-            () => _vm.RefreshFieldsList(),
             getAvailableFields:    _vm.GetAvailableFields,
             getAvailableGroups:    _vm.GetAvailableGroups);
 

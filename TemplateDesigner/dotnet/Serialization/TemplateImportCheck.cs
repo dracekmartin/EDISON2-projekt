@@ -4,9 +4,9 @@ using TemplateDesigner.Services;
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
-/// Kontrola šablony ze souboru, než nahradí otevřenou šablonu. Soubor přichází zvenku a návrhář
-/// ho přijme, jen když agendu šablony zná, uživatel ji smí použít a prvky jízdních řádů v ní patří
-/// k té agendě. Agendu import přepne podle souboru, stejně jako otevření z databáze.
+/// Kontrola šablony zvenku (ze souboru, z AI asistenta, z importu PDF), než nahradí otevřenou
+/// šablonu. Návrhář ji přijme, jen když agendu šablony zná, uživatel ji smí použít a prvky jízdních
+/// řádů v ní patří k té agendě. Agendu přepne podle šablony, stejně jako otevření z databáze.
 /// </summary>
 /// <remarks>
 /// Do 30. 10. se načetla šablona s neznámou agendou i s tabulkou spojů v zastávkovém JŘ a zůstalo
@@ -22,6 +22,9 @@ public static class TemplateImportCheck
     public static string? ProcNelzePrijmout(Template sablona, IReadOnlyList<AgendaRegistryEntry> agendy,
         string? aktualniAgenda, bool skryteAgendy)
     {
+        // Ze souboru to hlídá už načtení, šablonu od AI asistenta ne.
+        if (sablona.Sections.Count == 0)
+            return "Šablona nemá žádnou sekci a nejde ji načíst.";
         // Obecnou agendu doplňuje návrhář vždy, agendy se třídou na serveru jen s načteným seznamem.
         if (!agendy.Any(a => a.CacheClass.Length > 0))
             return "Seznam agend se nepodařilo načíst ze serveru, takže šablonu teď nejde ověřit. "

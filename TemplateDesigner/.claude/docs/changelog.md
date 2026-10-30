@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-30 (34) - Šablona bez kódu agendy je obecná, šablona od AI asistenta prochází kontrolou
+
+Šablona bez kódu agendy (obecná šablona načtená ze souboru, kam se prázdný kód nezapisuje) dovolila vložit ze schránky prvek jízdního řádu: návrhář ji v seznamu agend nedohledal a nic neblokoval.
+Teď ji bere jako obecnou, stejně jako ukládání do databáze, a prvek jízdního řádu nevloží ani nevynechá bez hlášky.
+Šablona od AI asistenta (a z importu PDF) prochází stejnou kontrolou jako import ze souboru; model může míchat agendy a do 30. 10. se šablona otevřela bez kontroly.
+Z okna vlastností zmizel nepoužívaný kód vlastností stránky a sekce (329 řádků, mimo jiné volné pole „Kód agendy", kterým šlo přepsat agendu i s obsahem); stránku i sekci dnes upravují formuláře `PageEdit` a `SectionEdit`.
+Ověřeno: .NET testy 2578/2578 (tři nové testy, první z nich na kódu před opravou spadl).
+
 ## 2026-10-30 (33) - Import šablony ze souboru ji před otevřením zkontroluje
 
 Položka backlogu „Změna agendy nesmí nechat v šabloně prvky jiné agendy" vycházela z omylu: Změnit agendu (Ctrl+Shift+A) od května zakládá prázdnou šablonu.

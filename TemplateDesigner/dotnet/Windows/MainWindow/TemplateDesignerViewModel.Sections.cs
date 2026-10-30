@@ -413,9 +413,10 @@ public partial class TemplateDesignerViewModel
         return sekce;
     }
 
-    /// <summary>Druh JŘ prvků agendy šablony; null = agenda v registru není (registr se nenačetl,
-    /// šablona bez agendy) a pak se nic neblokuje.</summary>
-    public string? ZnamyDruhAgendy => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind;
+    /// <summary>Druh JŘ prvků agendy šablony; null = agenda v registru není (registr se nenačetl)
+    /// a pak se nic neblokuje. Šablona bez kódu agendy je obecná, tak se i ukládá do databáze.</summary>
+    public string? ZnamyDruhAgendy => AgendaEntry(string.IsNullOrEmpty(State.CurrentTemplate.AgendaCode)
+        ? Services.CacheTemplateService.GeneralAgendaCode : State.CurrentTemplate.AgendaCode)?.ElementKind;
 
     /// <summary>Je šablona linkového JŘ? Řídí, co formulář poznámek nabízí (`#7487`).</summary>
     public bool JeLinkovyJr => string.Equals(ZnamyDruhAgendy, "LINE", StringComparison.OrdinalIgnoreCase);
