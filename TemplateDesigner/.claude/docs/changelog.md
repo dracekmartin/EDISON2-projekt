@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (12) - Pravidla pojmenování v kódu agend a jejich hlídání (`B194g` R7)
+
+Pravidlo 5 v `cache-api.md` říkalo „obecné vzory anglicky", ale nestanovilo, která slovesa, a 76 metod agend začíná českým slovesem (`PridatPoznamky`, `NactiTurnusy`, `SestavitStranky`).
+Pravidlo teď vyjmenovává zavedená anglická slovesa (`Get`, `Build`, `Add`, `Load`, `Write`, `Format`, `Parse`, `Convert`), povoluje funkce pojmenované tím, co vrací, a otázky `Je…`/`Ma…`.
+Stávající metody se přejmenují, až se jejich kód v `B56` stěhuje; samotné přejmenování by jen zvětšilo diff bez užitku (rozhodnutí Jan 30. 10.).
+Třídy agend, kódy variant, klíče dat a názvy parametrů se nepřejmenovávají nikdy, visí na nich uložené šablony a volby.
+Pravidlo 6 zapisuje pracovní globály agend (`^||TiskAd`, `^||TiskMHD`, `^||TiskKnizni`, `^||TiskKnizniMhd`), tvar pro novou agendu a to, že pomocná třída z `B56` do nich napřímo nesahá.
+`NazvyMetodAgendTests` zastaví nový název s českým slovesem a hlídá, že seznam stávajících se jen zmenšuje; spadl na dočasně odebrané výjimce i na výjimce bez metody.
+Kód ani tisk se nemění.
+
 ## 2026-10-30 (11) - Základ agend a agendy JŘ podle jednoho vzoru (`B194g` R6)
 
 Kdo bude psát další agendu, řídí se návodem v `cache-api.md` a stávajícími agendami; obojí si odporovalo.

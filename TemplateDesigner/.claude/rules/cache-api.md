@@ -290,8 +290,23 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
 ### Pojmenování
 3. **Čitelné názvy - čím globálnější, tím důležitější.** Parametry metod, properties tříd, klíče globálů: vždy celá slova (`AutoPoznamkyRozdilTrasyAlgoritmus` místo `AutoPoznRozdTrsSpAlg`). Lokální temp proměnná použitá na jednom místě může být rozumná zkratka.
 4. **Žádné `_` v názvech proměnných** - `_` je v ObjectScript operátor spojení stringů. Použít camelCase nebo celá slova.
-5. **Jazyk: "czechglish"** - business logika česky (`pocetZastavek`, `aktualniSmer`, `casOdjezdu`), obecné programátorské vzory anglicky (`GetData`, `SetTrasa`, `BuildOdjezdy`). Ne `ZiskatData` ani `NastavitTrasu`.
+5. **Jazyk: "czechglish"** - business logika česky (`pocetZastavek`, `aktualniSmer`, `casOdjezdu`), obecné programátorské vzory anglicky (`GetData`, `SetTrasa`, `BuildOdjezdy`). Ne `ZiskatData` ani `NastavitTrasu`. Upřesněno 30. 10. (`B194g` R7):
+   - **Metoda, která něco dělá:** anglické sloveso + česká věc. Zavedená slovesa: `Get` (vrátí), `Build` (sestaví objekt
+     pro výstup), `Add` (přidá do pole nebo objektu), `Load` (načte z globálu), `Write` (zapíše do OUT nebo globálu),
+     `Format` (hodnota na text), `Parse`, `Convert`. Ne `PridatX`, `NactiX`, `SestavitX`, ani rozkazovací `SestavX`.
+   - **Funkce pojmenovaná tím, co vrací:** česky bez slovesa (`NazevLinky`, `TextAtributu`, `PocetZastaveni`).
+   - **Otázka ano/ne:** `Je…` / `Ma…` (zavedené, `JeAktualni`), ne `Is…`.
+   - Platí pro **nové názvy**. Asi 76 stávajících metod s českým slovesem se přejmenuje, až se jejich kód v `B56`
+     stěhuje do pomocných tříd, ne samostatnými commity jen kvůli názvu. Hlídá `NazvyMetodAgendTests`: nový název
+     s českým slovesem neprojde a seznam stávajících se smí jen zmenšovat.
+   - **Nikdy se nepřejmenovávají** třídy agend, `AgendaVariantCode`, klíče v datech a názvy parametrů sestavy - visí na nich
+     uložené šablony a volby uživatelů.
 6. **Žádné tajemné číselné indexy** v globálech - pojmenované klíče (`^||TiskMHD("trasa",SmerID,BodID)` místo `^||wg(1,2,3)`)
+   - **Pracovní globál** má každá agenda svůj: `^||TiskAd` (zastávkový AD), `^||TiskMHD` (zastávkový MHD), `^||TiskKnizni`
+     (linkový AD), `^||TiskKnizniMhd` (linkový MHD); stávající se nepřejmenovávají. Nová agenda: `^||Tisk` + jméno třídy
+     agendy (`^||TiskFaktury`).
+   - **Pomocná třída sdílená agendami** (`B56`, R8) do pracovního globálu agendy napřímo nesahá - každá agenda ho má jinak
+     klíčovaný (`WMapa`, `legacy-nahrada.md §4`); data nebo jméno globálu dostane parametrem.
 
 ### Struktura kódu
 7. **Žádná `@` indirection** - přímé reference (`^||TiskMHD(...)` místo `@wg@(...)`)

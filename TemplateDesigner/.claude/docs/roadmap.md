@@ -23,7 +23,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 
 - **R4** Schopnosti agend místo kódů agend natvrdo v C# [S-M] **Jan**
 - **R5** Parametry vývěsek do jedné definice (první krok `B56`) [S-M]
-- **R7** Názvosloví v kódu sjednotit jen u nových názvů [S]
 
 ---
 

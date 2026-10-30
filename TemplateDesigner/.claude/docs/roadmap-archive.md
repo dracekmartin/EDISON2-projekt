@@ -9,6 +9,10 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **R7** Názvosloví v kódu agend (hotovo 30. 10., changelog 2026-10-30 (12)): `cache-api.md` pravidlo 5
+  upřesňuje anglické sloveso + českou věc, funkce bez slovesa a `Je…`/`Ma…`; pravidlo 6 pracovní globály
+  agend. Stávajících 76 metod s českým slovesem se přejmenuje při přesunu v `B56` (rozhodnutí Jan 30. 10.:
+  jen pravidla, ne plošné přejmenování), nový takový název zastaví `NazvyMetodAgendTests`.
 - **R6** Základ agend a agendy JŘ podle jednoho vzoru, návod podle skutečnosti (hotovo 30. 10., changelog
   2026-10-30 (11)): všechny metody `BaseAgenda` a agend JŘ ošetřují chyby podle pravidel 14-15 (hlídá
   `OsetreniChybAgendTests`), předpřipravené tabulky jsou nepovinné, `cache-api.md` místo opsaného kódu odkazuje

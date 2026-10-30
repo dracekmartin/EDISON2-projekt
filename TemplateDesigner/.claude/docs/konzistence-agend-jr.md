@@ -48,8 +48,9 @@ je v `roadmap-archive.md` u `B194` a v changelogu 2026-10-29 a 2026-10-30.
 
 ## 7. Architektura před sloučením kódu (`B56`)
 
-R1 (pomocné třídy mimo hierarchii agend, `architektonicka-rozhodnuti-agendy.md` R8) a R2 (opsané pod jiným
-jménem) jsou hotové; R2, připravenost na `B56` a postup jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md).
+R1 (pomocné třídy mimo hierarchii agend, `architektonicka-rozhodnuti-agendy.md` R8), R2 (opsané pod jiným
+jménem), R3, R6 a R7 (pravidla pojmenování, `cache-api.md` 5-6) jsou hotové; R2, připravenost na `B56`
+a postup jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md).
 
 - **R4 Schopnosti agend natvrdo v C#** [S-M] **Jan**. `JeRozdilovyJr`, `CreateSampleTemplate` (`"LINKOVY_JR_AD"`),
   `ScheduleImportTypes.ForAgenda` (podle prefixu kódu; enum `ZastavkovyJrMhd` platí i pro AD).
@@ -60,9 +61,6 @@ jménem) jsou hotové; R2, připravenost na `B56` a postup jsou v [`legacy-nahra
   `LinkovyJrAd.Parametr*`, před doslovnými buildery. Shodu hlídá `KontraktAgendTest.TestSdileneParametryShodne`
   (`G2`); přehled sdílených parametrů vypíše `KontraktAgendTest.Prehled` - 29. 10.: 20 sdílených, 16 shodných,
   4 vědomé rozdíly (tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
-- **R7 Názvosloví v kódu** [S]. `^||TiskKnizni*`, infinitivy v `ZastavkoveJrMhd` (`PripravitTrasu`,
-  `SestavitStranky`) proti `cache-api.md` pravidlu 5. Kanon jen pro nové názvy, interní sjednotit při `B56`,
-  třídy nepřejmenovávat.
 
 ## 8. Co je v pořádku
 
@@ -95,5 +93,5 @@ H13 rozhodnutý (Novinky beze změny), H16 smazaný, H17 hotový (changelog 2026
 
 Popisky jednoduchých prvků z téže revize jsou hotové (changelog 2026-10-28 (28)).
 
-**Soubor smazat po R4-R7** (zbytek §7) - připravenost na `B56`, R2, P2 a vědomé rozdíly už jsou
+**Soubor smazat po R4** (zbytek §7; R5 je první krok `B56` a jeho popis se přesune do roadmapy) - připravenost na `B56`, R2, P2 a vědomé rozdíly už jsou
 v `legacy-nahrada.md §4` (30. 10.).
