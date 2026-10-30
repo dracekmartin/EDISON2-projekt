@@ -586,9 +586,9 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         }
 
         // Parametry z DataContext přepíší properties elementu
-        var effectiveTimeAxis = ParseTimeAxisMode(GetStringParam(data, "CASOVA_OSA", DefaultTimeAxis.ToString().ToLowerInvariant()));
-        int effectiveRangeFrom = GetIntParam(data, "HODINY_OD", DefaultRangeFrom);
-        int effectiveRangeTo = GetIntParam(data, "HODINY_DO", DefaultRangeTo);
+        var effectiveTimeAxis = ParseTimeAxisMode(GetStringParam(data, ParametrySestavy.CasovaOsa, DefaultTimeAxis.ToString().ToLowerInvariant()));
+        int effectiveRangeFrom = GetIntParam(data, ParametrySestavy.HodinyOd, DefaultRangeFrom);
+        int effectiveRangeTo = GetIntParam(data, ParametrySestavy.HodinyDo, DefaultRangeTo);
 
         var allHourKeys = groupLayouts.SelectMany(g => g.ByHour.Keys).ToHashSet();
         var hours = GetVisibleHoursFromSet(allHourKeys, effectiveTimeAxis, effectiveRangeFrom, effectiveRangeTo);
@@ -924,7 +924,7 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
         // Roztáhnout na výšku - pokud obsah je kratší než Height a feature je zapnutá,
         // proporcionálně zvětšit data řádky + jejich fonty (header zůstává).
         // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
-        bool effectiveAutoExpand = GetBoolParam(ctx.Data, "ROZTAHNOUT_NA_VYSKU", DefaultAutoExpand);
+        bool effectiveAutoExpand = GetBoolParam(ctx.Data, ParametrySestavy.RoztahnoutNaVysku, DefaultAutoExpand);
         float dataGrow = 1f;
         if (effectiveAutoExpand && Height.HasValue && scale >= 1f && layout.Hours.Count > 0)
         {
@@ -1693,13 +1693,20 @@ public class DepartureGridElement : StopScheduleElementBase, IColumnLayoutOwner
             .ToList();
     }
 
-    private static TimeAxisMode ParseTimeAxisMode(string s) => s.ToLowerInvariant() switch
+    private static TimeAxisMode ParseTimeAxisMode(string s)
     {
-        // Nové popisné labely (varianta A - z Caché AddStandardJRParameters)
-        "jen hodiny s odjezdy"          => TimeAxisMode.Compact,
-        "souvislá od první do poslední"
-            or "souvisla od prvni do posledni" => TimeAxisMode.DataBounded,
-        "vlastní rozsah" or "vlastni rozsah"   => TimeAxisMode.Range,
+        // Volby parametru (zamčené popisky z Caché AddStandardJRParameters)
+        if (s.Equals(ParametrySestavy.CasovaOsaJenSOdjezdy, StringComparison.OrdinalIgnoreCase)) return TimeAxisMode.Compact;
+        if (s.Equals(ParametrySestavy.CasovaOsaSouvisla, StringComparison.OrdinalIgnoreCase)) return TimeAxisMode.DataBounded;
+        if (s.Equals(ParametrySestavy.CasovaOsaVlastniRozsah, StringComparison.OrdinalIgnoreCase)) return TimeAxisMode.Range;
+        return ParseLegacyTimeAxisMode(s);
+    }
+
+    private static TimeAxisMode ParseLegacyTimeAxisMode(string s) => s.ToLowerInvariant() switch
+    {
+        // Tytéž volby bez diakritiky
+        "souvisla od prvni do posledni" => TimeAxisMode.DataBounded,
+        "vlastni rozsah"                => TimeAxisMode.Range,
         // Staré české labely (backward compat - předchozí iterace tohoto enumu)
         "souvislá bez mezer"  or "souvisla bez mezer"  => TimeAxisMode.Compact,
         "souvislá s mezerami" or "souvisla s mezerami" => TimeAxisMode.DataBounded,

@@ -91,7 +91,7 @@ public class PageLayoutEngine
             .Distinct()];
 
     /// <summary>Parametr sestavy „Počet stran" (`#8785`).</summary>
-    public const string CilStranKlic = "POCET_STRAN_SESTAVY";
+    public const string CilStranKlic = ParametrySestavy.PocetStranSestavy;
 
     /// <summary>Míry zmenšení poznámek - zkoušejí se první, tabulka zůstává (`#8785`).</summary>
     /// <remarks>Meze jsou zatím pevné kvůli ladění na vlastních datech (rozhodnutí Jan 23. 9.);

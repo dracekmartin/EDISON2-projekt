@@ -192,10 +192,10 @@ public partial class TemplateDesignerViewModel
     //   žádné sloupce           → „Automaticky (dle linky)"
     //   ručně upravené          → „Vlastní rozložení" (jen ukazatel, ručně vybrat nejde)
 
-    private const string LayoutParamVyveska = "ROZDELENI_SLOUPCU";
-    private const string LayoutParamLinka   = "DELENI_SLOUPCU";
-    private const string LayoutAutoOption   = "Automaticky (dle linky)";
-    private const string LayoutCustomOption = "Vlastní rozložení";
+    private const string LayoutParamVyveska = ParametrySestavy.RozdeleniSloupcu;
+    private const string LayoutParamLinka   = ParametrySestavy.DeleniSloupcu;
+    private const string LayoutAutoOption   = ParametrySestavy.AutomatickyDleLinky;
+    private const string LayoutCustomOption = ParametrySestavy.VlastniRozlozeni;
 
     /// <summary>Který parametr zrcadlí definici sloupců - liší se podle agendy. Vývěska i linka
     /// mají tutéž mechaniku, jen jinak pojmenovanou volbu.</summary>

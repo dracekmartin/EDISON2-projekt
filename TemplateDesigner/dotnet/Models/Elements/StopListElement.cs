@@ -288,7 +288,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Šipka vlevo si nárokuje pruh nalevo od sloupce zastávek. Musí být součástí rozdělení
         // šířek, ne kreslením přes souseda - jinak si po zúžení prvku lehne na jízdní doby
         // (#12843 bod 1). Vpravo se kreslí uvnitř sloupce a rezervu drží nameShrinkReserveMm.
-        bool showArrowEarly = GetBoolParam(ctx.Data, "TISK_SIPKY", DefaultShowArrow);
+        bool showArrowEarly = GetBoolParam(ctx.Data, ParametrySestavy.TiskSipky, DefaultShowArrow);
         float arrowLaneMm = showArrowEarly && DirectionArrowPosition == DirectionArrowSide.Left
             ? ArrowOutsideOffsetMm + (MathF.Max(DirectionArrowHeadSize, DirectionArrowWidth) / 2f) + 0.2f
             : 0f;
@@ -311,7 +311,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         using var paints = CreateStandardPaints(ctx);
 
         // Parametry z tiskového dialogu přepíší element properties
-        bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", DefaultShowPassedStops);
+        bool showPassed = GetBoolParam(ctx.Data, ParametrySestavy.TiskProjetychZastavek, DefaultShowPassedStops);
         bool showArrow = showArrowEarly;
         bool arrowLeft = arrowLaneMm > 0f;
 
@@ -735,7 +735,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         var zastavky = BuildZastavkyProRender(data);
         if (zastavky.Count == 0) return DesignerPlaceholderHeight;
 
-        bool showPassed = GetBoolParam(data, "TISK_PROJETYCH_ZAST", DefaultShowPassedStops);
+        bool showPassed = GetBoolParam(data, ParametrySestavy.TiskProjetychZastavek, DefaultShowPassedStops);
         int visibleStops;
         if (string.IsNullOrWhiteSpace(RowVisibilityExpression))
         {
@@ -826,7 +826,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// z dat. Jediná cesta, jak si prvek zastávky bere - aby zdroj nemohl chybět v jedné z nich.</summary>
     private List<ZastavkaData> BuildZastavkyProRender(DataContext? data)
     {
-        SloupekJakoStanoviste = data?.GetValue("ZDROJ_STANOVISTE")?.ToString() == "Sloupek";
+        SloupekJakoStanoviste = data?.GetValue(ParametrySestavy.ZdrojStanoviste)?.ToString() == ParametrySestavy.ZdrojStanovisteSloupek;
         return ExpandPlatformRows(BuildZastavky(data));
     }
 
