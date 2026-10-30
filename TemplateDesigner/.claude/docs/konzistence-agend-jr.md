@@ -102,15 +102,19 @@ totéž znovu. Pořadí podle přínosu:
 
 **Připravenost na `B56`** (revize 28. 10., čtení kódu, na serveru nic nespuštěno):
 
-- **Nutné před prvním krokem: splněno 29. 10.** (G1 malá podoba, G2, G7, G8 a snímek výstupu).
+- **Nutné před prvním krokem: splněno 29. 10.** (G1 malá podoba, G2, G7, G8 a snímek výstupu), 30. 10.
+  doplněno hlídání linek z testů (`TestovaciLinkyTest`) a výměna linky, která z dat zmizela.
   Ostatní G a R jsou užitečné, ale bez nich slučování tisk tiše nerozbije.
-- **Snímek výstupu je sonda, ne test** (pravidlo o testech závislých na stroji), sejmutý 29. 10.: schéma,
+- **Snímek výstupu je sonda, ne test** (pravidlo o testech závislých na stroji), sejmutý znovu 30. 10.: schéma,
   parametry a ukázka všech agend z registru a `GetData` linek ze sad testů (`ZastavkoveJrAdSadaTest.Sada`,
   `LinkovyJrSadaTest.Sada`, porovnání verzí CB_CSADAD 0380760, zastávkový MHD 1001/1003/1006,
   `LinkovyJrMhdTest.LINKY`) - 45 souborů, 15 MB, dva běhy po sobě shodné. Seznam drží `SnimekAgendProbe`,
   ukládá a porovnává `SnimekAgendNaostro`: `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests
   --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo).
-  Po každém kroku musí vyjít bajtově stejně; snímek se v `B56` nepřepisuje.
+  Po každém kroku musí vyjít bajtově stejně; kódem `B56` se snímek nepřepisuje.
+  Výstup závisí na datech dev serveru a ta mění i kolegové (30. 10. zmizely dvě linky z testovacích sad).
+  Proto se snímek porovná **i před krokem**, na nezměněném kódu: když se liší, změnila se data, snímek se
+  sejme znovu a teprve pak přijde krok.
   Dnešní pokrytí: zastávkový AD odtisk 3 linek a oracle jen zčásti, zastávkový MHD 3 linky a oracle,
   linkový AD 4 linky a oracle, linkový MHD oracle tabulky a od 29. 10. odtisk 7 linek včetně hlavičky
   (`LinkovyJrMhdGoldTest`), rozdílový jen umělá data.

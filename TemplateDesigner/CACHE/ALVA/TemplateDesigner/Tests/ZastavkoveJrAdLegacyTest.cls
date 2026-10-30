@@ -12,7 +12,9 @@ Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdLegacyTest Extends ALVA.EDTestin
 
 Method TestZonyVsLegacyGwbus()
 {
-	do ..AssertZony("CB_GWBUS", 1, 320113, 1)
+	// 320113 z dat zmizela (30. 10.). Na první stránce 320150 je dosažitelná celá trasa, takže seznam
+	// zastávek odpovídá starému modulu; vývěska nedosažitelné zastávky vynechává (#7959).
+	do ..AssertZony("CB_GWBUS", 1, 320150, 1)
 }
 
 Method TestZonyVsLegacyKvdp()

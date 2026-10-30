@@ -20,12 +20,15 @@ Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest Extends ALVA.EDTesting.
 /// v seznamu nejsou. Oba typy dál pokrývají linky KOVEDu, takže sada o pokrytí nepřišla - jen
 /// přestalo platit, že je nese i tahle šestice. Ověřeno měřením (`ProfilyLinek`), ne odhadem:
 /// `<` i prázdno v časech vznikají dál (0330513 má 183 výskytů `<`, 0320680 109 prázdných).
+///
+/// ⚠️ **CB_GWBUS 0320118 z dat zmizela** (zjištěno 30. 10.). Nahradila ji 0320157 (`ProfilyLinek`,
+/// nejdelší linka skupiny, 70 stran): nese všechno kromě „hodně sloupců" (má 6), ten drží 0330530.
 ClassMethod Sada(ByRef sada)
 {
 	kill sada
 	set sada($increment(sada)) = "CB_CSADAD~1~0365001~kontrolniVzorek"
 	set sada($increment(sada)) = "CB_CSADAD~1~0330530~hodneSloupcu"
-	set sada($increment(sada)) = "CB_GWBUS~1~0320118~hodneSloupcu,mensitko,viceStanovist,tydenniPlatnost,zony,poznamkyLinky,pokracovani"
+	set sada($increment(sada)) = "CB_GWBUS~1~0320157~mensitko,viceStanovist,tydenniPlatnost,zony,poznamkyLinky,pokracovani"
 	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000012~mensitko,tydenniPlatnost,prestupy,rucniKomentare"
 	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000009~kola,viceStanovist,smerove,mensitko"
 	set sada($increment(sada)) = "SKNI_MHDNITRA~1~0000006~bezVariant"
@@ -36,11 +39,12 @@ ClassMethod Sada(ByRef sada)
 }
 
 /// Jádro sady pro **drahé** invarianty (každý průchod = GetData nad celou linkou): pět linek ze čtyř
-/// firem s nejrozdílnějším tvarem - nejvíc sloupců, jednovariantní, ruční režim, zóny a místenky.
+/// firem s nejrozdílnějším tvarem - nejvíc stran, nejvíc sloupců, jednovariantní, ruční režim, zóny
+/// a místenky.
 ClassMethod Jadro(ByRef jadro)
 {
 	kill jadro
-	set jadro($increment(jadro)) = "CB_GWBUS~1~0320118"
+	set jadro($increment(jadro)) = "CB_GWBUS~1~0320157"
 	set jadro($increment(jadro)) = "SKNI_MHDNITRA~1~0000012"
 	set jadro($increment(jadro)) = "SKNI_MHDNITRA~1~0000006"
 	set jadro($increment(jadro)) = "CB_CSADAD~1~0330530"

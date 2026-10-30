@@ -44,3 +44,7 @@ Konkrétní situace, které integrace s Caché musí předejít. Kontrolní sezn
    na jeho stroji, kde artefakt existuje a je svěží, a CI, které by sadu pustilo na čistém stroji,
    nemáme. Kontrola: `MachineLocalStateGuardTests` (projede zdrojáky všech `*.Tests` projektů;
    vědomé výjimky u sebe nesou důvod).
+7. **Caché test mlčí, když mu z dat zmizí linka** → přeskočí ji jako chybějící firmu a dál hlásí úspěch,
+   ačkoli nic nekontroluje (30. 10. dvě linky CB_GWBUS, 268 testů zelených). Přeskočit smí jen firma,
+   která na serveru není. Kontrola: `TestovaciLinkyTest` hledá linky ve zdrojácích testů v tvarech
+   z `Tvary` - nový tvar zápisu linky tam přidej.

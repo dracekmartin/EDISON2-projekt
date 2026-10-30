@@ -1,5 +1,22 @@
 ﻿# Changelog
 
+## 2026-10-30 (3) - Testy poznají linku, která zmizela z testovacích dat
+
+Z dat dev serveru zmizely linky CB_GWBUS 0320118 a 0320113 a všech 268 Caché testů dál hlásilo úspěch.
+Test linku, kterou v datech nenajde, přeskočí stejně jako firmu, která na serveru není, takže potichu přestalo běžet všechno, co na nich stálo.
+Linkový JŘ AD tím přišel o jedinou linku s lichými tarifními čísly, stálými značkami a poznámkami linky.
+Porovnání zón se starým modulem pro CB_GWBUS neběželo a snímek výstupu agend před `B56` u 0320118 držel jen chybovou hlášku.
+Nový `TestovaciLinkyTest` projde zdrojáky testů na serveru a u každé linky, jejíž firma na serveru je, ověří, že je v datech.
+Druhý test v něm hlídá, že hledání ve zdrojácích najde linky obou sad.
+Před výměnou linek spadl právě na ty tři výskyty.
+Za 0320118 je v obou sadách 0320157, vybraná měřením sond profilů linek.
+Ve vývěsce nese všechno kromě „hodně sloupců", ten dál drží CB_CSADAD 0330530.
+Test zón jede na 0320150, protože na její první stránce je dosažitelná celá trasa.
+U 0320157 vývěska nedosažitelné zastávky vynechává (#7959), takže se od starého modulu lišit má.
+Sonda `LinkovyJrSadaTest.Profily` umí měřit jen jednu skupinu linek (`SKU`).
+Snímek výstupu agend je sejmutý znovu (45 souborů, druhý běh bajtově shodný); ten z 29. 10. na disku nebyl.
+Ověřeno: Caché testy návrháře 270/270, .NET testy 2517/2517.
+
 ## 2026-10-30 (2) - PDF z porovnání linek do zvolené složky (HD 13492)
 
 Zákazník KIDS své PDF z porovnání linek našel jen v dočasné složce, protože se mu neotevřelo v prohlížeči.
