@@ -32,7 +32,7 @@ public enum DuplicateDirection { Up, Down, Left, Right }
 
 /// <summary>
 /// ViewModel hlavního okna návrháře. Rozdělený do částí podle oblastí (soubory
-/// <c>TemplateDesignerViewModel.*.cs</c>: <c>Instances</c>, <c>DevFirm</c>, <c>PreviewData</c>, <c>Columns</c>, <c>Sections</c>, <c>Files</c>, <c>Launch</c>, <c>Editing</c>, <c>Parameters</c>, <c>Selection</c>, <c>SampleTemplate</c>); tady je stav, kolekce, vlastnosti, příkazy a konstruktor.
+/// <c>TemplateDesignerViewModel.*.cs</c>: <c>Instances</c>, <c>DevFirm</c>, <c>PreviewData</c>, <c>Columns</c>, <c>Sections</c>, <c>Files</c>, <c>Launch</c>, <c>Editing</c>, <c>Parameters</c>, <c>Selection</c>, <c>SampleTemplate</c>, <c>StartPanel</c>); tady je stav, kolekce, vlastnosti, příkazy a konstruktor.
 /// </summary>
 public partial class TemplateDesignerViewModel : EDViewModel
 {
@@ -47,7 +47,14 @@ public partial class TemplateDesignerViewModel : EDViewModel
     public bool IsDirty
     {
         get => _isDirty;
-        private set { if (_isDirty != value) { _isDirty = value; RequestTitleUpdate?.Invoke(); } }
+        private set
+        {
+            if (_isDirty == value) return;
+            _isDirty = value;
+            // Uživatel začal kreslit - úvodní obrazovka už jen překáží.
+            if (value) StartPanel.Hide();
+            RequestTitleUpdate?.Invoke();
+        }
     }
 
     // ── Providers ─────────────────────────────────────────────────────────────
@@ -333,6 +340,8 @@ public partial class TemplateDesignerViewModel : EDViewModel
                                      bool startupJenModul = false)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
+        StartPanel = new StartPanelViewModel(OpenRecentTemplateAsync, OpenFromCacheAsync,
+            StartFromSystemTemplateAsync, ChangeAgendaFromStartPanelAsync, StartBlankFromStartPanelAsync);
 
         // Výměna šablony je jediný okamžik, kdy může přibýt font, který tenhle počítač nemá.
         // Psaní vlastního názvu do pole fontu se sem záměrně nenapojuje: nabídka jmenuje jen
@@ -342,6 +351,7 @@ public partial class TemplateDesignerViewModel : EDViewModel
             NastavHlaseni(ZdrojHlaseni.Font,
                 FontWarnings.Hlaska(State.CurrentTemplate) is { } font ? [font] : []);
             ZkontrolujPrvkyAgendy();
+            StartPanel.Hide();
         };
 
         Preferences = preferences;
@@ -458,6 +468,8 @@ public partial class TemplateDesignerViewModel : EDViewModel
     {
         State.Execute(cmd);
         IsDirty = true;
+        // I nad už neuloženou šablonou (obrazovka otevřená z menu) - IsDirty se tu nezmění.
+        StartPanel.Hide();
         NotifyUndoRedo();
         RequestPropertiesPanelUpdate?.Invoke();
         // Jediné místo, kde příkaz může pohnout definicí sloupců (dialog, přidání/smazání/vložení

@@ -22,7 +22,7 @@ namespace TemplateDesigner;
 /// <summary>
 /// Hlavní okno návrháře. Tady je stav okna, konstruktor a rozložení panelů; zbytek je v částech
 /// <c>MainWindow.&lt;Oblast&gt;.cs</c>: Render (plátno a náhled), Mouse, Keyboard, InlineTextEdit,
-/// TableCells (psaní do pevné tabulky), Palette, Sections, Menus, AgendaParams, Properties.
+/// TableCells (psaní do pevné tabulky), Palette, Sections, Menus, AgendaParams, Properties, StartPanel.
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -268,6 +268,17 @@ public partial class MainWindow : Window
                 await _vm.OpenFromLaunchAsync(launchInput);
             };
             Loaded += open;
+        }
+        else
+        {
+            // Bez linky by uživatel viděl jen prázdnou stránku - úvodní obrazovka mu řekne, kudy dál.
+            RoutedEventHandler? start = null;
+            start = async (_, _) =>
+            {
+                Loaded -= start;
+                await _vm.ShowStartPanelAsync();
+            };
+            Loaded += start;
         }
     }
 

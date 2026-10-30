@@ -102,7 +102,7 @@ Zleva doprava:
   Použít výchozí font u všech prvků
 - **Zobrazit** - Mřížka plátna, Přichytit k mřížce plátna, Přichytit k prvkům, Záhlaví sekcí,
   Pravítka, Panel sekcí, Živý náhled (zaškrtávací položky)
-- **Nástroje** - Změnit agendu… · Šablony v databázi…
+- **Nástroje** - Změnit agendu… · Šablony v databázi… · Úvodní obrazovka
 - **Nápověda** - Klávesové zkratky a ovládání (F1) - s fulltextovým hledáním (Ctrl+F)
 
 Titulek okna má formát `[Agenda · Varianta] [DB nebo neuloženo] Název šablony [*]`, např.
@@ -111,6 +111,13 @@ Titulek okna má formát `[Agenda · Varianta] [DB nebo neuloženo] Název šabl
 ---
 
 ## 3. Práce se šablonou
+
+### Úvodní obrazovka
+
+Po spuštění bez vybrané linky ukáže návrhář přes prázdnou stránku úvodní obrazovku.
+V části „Pokračovat" jsou šablony, se kterými jste naposledy pracovali.
+Pod ní je vybraná agenda a její šablony: šablony vaší firmy a na konci výchozí šablona M-line (s logem M-line), která se otevře jako kopie a uložíte ji jako svou.
+Obrazovka zmizí s první úpravou, zavřete ji také klávesou Esc nebo křížkem; znovu ji otevřete v menu `Nástroje → Úvodní obrazovka`.
 
 ### Nová šablona
 `Soubor → Nová šablona` (Ctrl+N). Nová šablona obsahuje dvě výchozí sekce, **Záhlaví** a **Obsah** -

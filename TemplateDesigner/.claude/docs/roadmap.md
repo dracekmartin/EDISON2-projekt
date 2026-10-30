@@ -17,13 +17,10 @@
 
 ### Ostatní
 
-- **Úvodní okno pro nové uživatele** [S-M] (nápad Jan 29. 10.). Dnes návrhář otevře prázdnou šablonu
-  a nový uživatel neví, kde začít. Okno po otevření nabídne: otevřít ukázkovou šablonu agendy, otevřít
-  šablony z databáze, nebo zavřít a pokračovat jako dnes (s odkazem na nápovědu). Otevřené: co je
-  „ukázková šablona", jestli jen napoprvé / do „Příště nezobrazovat", a nesmí se ukázat při spuštění
-  ze shellu s linkou nebo tisku do PDF. Dřív odložený „onboarding průvodce" (archiv) je širší.
-  **Zkušební verze je ve větvi `td/uvodni-nabidka`** (29. 10.: formulář „Jak začít" přes prázdné plátno
-  s testy) - odložená, než doladíme práci kolem `B56` (Jan).
+- **Úvodní obrazovka** [S] (Jan 29.-30. 10.) - zkušební verze je v main (changelog 2026-10-30 (36)): po spuštění
+  bez linky ukáže poslední šablony, šablony agendy s výchozí šablonou M-line a odkazy na příručku a novinky.
+  **Před vydáním rozhodnout:** tlačítka SQL a CSV pod „Externí datové zdroje - připravujeme" (zatím nic neumí,
+  Jan je chce odstranit, kdyby nebyla hotová) a položka Nástroje → Úvodní obrazovka (přidaná na zkoušení).
 
 - **Hledání ve formuláři po slovech a se synonymy** [M] (z `B194h` H12, Jan 28. 10.: zajímavé, ale ne
   teď). Hledání dnes bere celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení"

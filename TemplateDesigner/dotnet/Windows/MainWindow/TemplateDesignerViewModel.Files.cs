@@ -501,6 +501,7 @@ public partial class TemplateDesignerViewModel
         // Systémová = read-only originál → otevřít jako „kopie": Ctrl+S vynutí „Uložit jako"
         // do firmy (nový GUID). Vlastní firma šablona → normální update.
         _loadedFromCache = !isSystem;
+        if (!isSystem) RememberTemplate(template.Id);
         IsDirty = false;
         State.SelectedElements.Clear();
         State.UndoStack.Clear();

@@ -49,6 +49,14 @@ public partial class MainWindow
         // Bez tohoto by PreviewKeyDown odchytil Enter dřív než TextBox a otevřel dialog místo commitu.
         if (_inlineEditElement is not null) return;
 
+        // Úvodní obrazovka jde zavřít Esc, ať se dá rychle odklidit (Jan 30. 10.).
+        if (e.Key == Key.Escape && _vm.StartPanel.IsVisible)
+        {
+            _vm.StartPanel.Hide();
+            e.Handled = true;
+            return;
+        }
+
         // Uvnitř tabulky patří klávesy buňce, ne prvku (jinak by Delete smazal celou tabulku).
         // ⚠️ Jen když si je nenárokuje pole, kam se píše (`CellKeysActive`): režim buňky zůstává
         // zapnutý i po potvrzení textu, takže bez téhle podmínky by po kliknutí do pole v panelu

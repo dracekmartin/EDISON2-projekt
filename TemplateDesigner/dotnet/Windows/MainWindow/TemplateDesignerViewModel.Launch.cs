@@ -84,13 +84,7 @@ public partial class TemplateDesignerViewModel
         var own = NewestTemplate(await storage.ListAsync(agenda));
         if (own is not null)
             return ((await storage.LoadAsync(own.TemplateId)).Template, false);
-
-        var embedded = await Task.Run(() => EmbeddedTemplates.ForAgenda(EmbeddedTemplates.SystemFolder, agenda));
-        if (embedded is null) return (null, true);
-        // V databázi může být novější verze z distribučního kanálu; když tam ještě není (seed
-        // běží souběžně se startem), stačí ta z .exe.
-        try { return ((await storage.LoadAsync(embedded.Id, Services.CacheTemplateService.MlineIdFa)).Template, true); }
-        catch (CacheTemplateException) { return (embedded, true); }
+        return (await LoadSystemTemplateAsync(agenda), true);
     }
 
     internal static CacheTemplateMetadata? NewestTemplate(IEnumerable<CacheTemplateMetadata> templates) =>
@@ -296,6 +290,7 @@ public partial class TemplateDesignerViewModel
         try
         {
             await TemplateStorage.SaveAsync(State.CurrentTemplate);
+            RememberTemplate(State.CurrentTemplate.Id);
             IsDirty = false;
             RequestTitleUpdate?.Invoke();
             PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do databáze.");
@@ -338,6 +333,7 @@ public partial class TemplateDesignerViewModel
         try
         {
             await TemplateStorage.SaveAsync(State.CurrentTemplate);
+            RememberTemplate(State.CurrentTemplate.Id);
             _loadedFromCache = true;
             CurrentFilePath = null;
             IsDirty = false;

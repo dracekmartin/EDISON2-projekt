@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-30 (36) - Úvodní obrazovka návrháře (zkušební verze)
+
+Návrhář si dosud nepamatoval, s čím uživatel pracoval, a po každém spuštění ukázal prázdnou stránku.
+Teď si pamatuje posledních 10 šablon z databáze, které uživatel otevřel nebo uložil (předvolby uživatele a firmy, `RecentTemplates`), a po spuštění bez linky ukáže přes plátno úvodní obrazovku (zkušební verze z 29. 10. přepracovaná s Janem):
+- **Pokračovat**: až 3 poslední šablony z kterékoli agendy - cesta zkušeného uživatele.
+- **Karta agendy**: agenda nové šablony s tlačítkem „Změnit agendu…" a pod ní „Vyberte šablonu": až 5 naposledy upravených šablon firmy pro agendu a na konci výchozí šablona M-line s ikonou M-line (otevře se jako kopie) - cesta nového uživatele. Bez „Doporučeno" a bez rad, kterou šablonu vzít si uživatel rozhodne sám (Jan). Odkazy „Všechny šablony…" a „Začít s prázdnou šablonou".
+- **Externí datové zdroje - připravujeme**: SQL a CSV zatím jen řeknou, že to návrhář neumí; před vydáním se rozhodne, jestli zůstanou.
+- Dole odkazy na příručku a novinky na podpoře M-line, klávesové zkratky a Pomocníka.
+Obrazovka nic sama neotevře, zmizí s první úpravou nebo otevřením šablony, zavře ji Esc nebo křížek; na zkoušení jde otevřít kdykoli přes Nástroje → Úvodní obrazovka.
+Při spuštění s linkou ani při tisku do PDF se neukáže.
+Mimochodem opravené pozadí nabídky datových polí v buňce tabulky (odkazovalo na neexistující barvu, takže bylo průhledné).
+Ověřeno: .NET testy 2593/2593 (`UvodniObrazovkaTests`); vzhled proklikal Jan, zavření klávesou Esc testy nekryjí a zatím neověřené.
+
 ## 2026-10-30 (35) - Kód hlavního okna rozdělený do souborů
 
 `MainWindow.xaml.cs` měl 3 690 řádků; stejně jako ViewModel (32) ho agent četl po kusech a souběžné práce si v něm překážely.

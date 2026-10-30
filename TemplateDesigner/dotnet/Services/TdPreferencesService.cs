@@ -13,7 +13,8 @@ namespace TemplateDesigner.Services;
 /// <para>
 /// Scope rozdělení:
 /// <list type="bullet">
-///   <item><c>"TemplateDesigner"</c> - <see cref="MainState"/> (MainStatePref), <see cref="RecentFiles"/> (List&lt;string&gt;)</item>
+///   <item><c>"TemplateDesigner"</c> - <see cref="MainState"/> (MainStatePref), <see cref="RecentFiles"/> (List&lt;string&gt;),
+///         <see cref="RecentTemplates"/> (List&lt;Guid&gt;)</item>
 ///   <item><c>"TemplateDesigner.InstanceDefaults"</c> - per-template instance selection (key = template Guid)</item>
 /// </list>
 /// </para>
@@ -31,11 +32,13 @@ public class TdPreferencesService
     private const string MainStateKey          = "MainState";
     private const string RecentFilesKey        = "RecentFiles";
     private const string RecentColorsKey       = "RecentColors";
+    private const string RecentTemplatesKey    = "RecentTemplates";
     private const string InstanceDefaultsScope = "TemplateDesigner.InstanceDefaults";
     private const string PrintParamsScope      = "TemplateDesigner.PrintParams";
 
-    private const int MaxRecentFiles  = 10;
-    private const int MaxRecentColors = 8;
+    private const int MaxRecentFiles     = 10;
+    private const int MaxRecentColors    = 8;
+    private const int MaxRecentTemplates = 10;
 
     private readonly IUserPrefsService _prefs;
 
@@ -49,6 +52,11 @@ public class TdPreferencesService
 
     /// <summary>Aktuální Recent Colors (hex `"#AARRGGBB"`) - prázdný dokud neproběhl <see cref="LoadAsync"/>.</summary>
     public List<string> RecentColors { get; private set; } = [];
+
+    /// <summary>Šablony z databáze, se kterými uživatel naposledy pracoval (otevřel nebo uložil),
+    /// nejnovější první. Jen ID: název a agendu bere úvodní obrazovka z aktuálního seznamu šablon,
+    /// aby neukázala smazanou šablonu ani starý název.</summary>
+    public List<Guid> RecentTemplates { get; private set; } = [];
 
     /// <summary>True jakmile LoadAsync dokončí (úspěch i fallback na defaults).</summary>
     public bool IsLoaded { get; private set; }
@@ -82,6 +90,7 @@ public class TdPreferencesService
         MainState    = await LoadBlobAsync<MainStatePref>(Scope, MainStateKey)    ?? MainStatePref.Default;
         RecentFiles  = await LoadBlobAsync<List<string>>(Scope, RecentFilesKey)  ?? [];
         RecentColors = await LoadBlobAsync<List<string>>(Scope, RecentColorsKey) ?? [];
+        RecentTemplates = await LoadBlobAsync<List<Guid>>(Scope, RecentTemplatesKey) ?? [];
 
         Action? handlers;
         lock (_loadedLock)
@@ -125,6 +134,17 @@ public class TdPreferencesService
         if (RecentFiles.Count > MaxRecentFiles)
             RecentFiles.RemoveRange(MaxRecentFiles, RecentFiles.Count - MaxRecentFiles);
         return SaveBlobAsync(Scope, RecentFilesKey, RecentFiles);
+    }
+
+    /// <summary>Přidá šablonu z databáze na začátek <see cref="RecentTemplates"/> (bez duplicit,
+    /// nejvýš <see cref="MaxRecentTemplates"/>). Fire-and-forget jako ostatní ukládání.</summary>
+    public Task AddRecentTemplateAsync(Guid templateId)
+    {
+        RecentTemplates.Remove(templateId);
+        RecentTemplates.Insert(0, templateId);
+        if (RecentTemplates.Count > MaxRecentTemplates)
+            RecentTemplates.RemoveRange(MaxRecentTemplates, RecentTemplates.Count - MaxRecentTemplates);
+        return SaveBlobAsync(Scope, RecentTemplatesKey, RecentTemplates);
     }
 
     /// <summary>Odebere soubor z Recent Files (volá se po pokusu otevřít missing soubor).</summary>
