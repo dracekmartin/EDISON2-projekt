@@ -31,4 +31,11 @@ public static class EDAppearance
         // Taskbar Win11 se na ikonu ptá jen jednou po vzniku okna; blokovaný startup ho nechá na výchozí.
         TaskbarIcon.AttachToAllWindows();
     }
+
+    /// <summary>
+    /// Přesměruje celou sdílenou složku <c>%APPDATA%\m-line\common</c> (téma, písmo i záložní log
+    /// chyb): E2E běh nesmí číst ani přepsat preference vývojáře. Volat před <see cref="Initialize"/>
+    /// a před prvním použitím cesty, potom hodí <see cref="InvalidOperationException"/>.
+    /// </summary>
+    public static void UseCommonFolder(string folder) => MlineCommonPaths.Redirect(folder);
 }

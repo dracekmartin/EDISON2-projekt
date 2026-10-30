@@ -58,10 +58,10 @@ if [ -n "$RANGE" ]; then
         echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln|cls|inc)$' && run_it=1      || run_it=0
         echo "$CHANGED" | grep -qiE '\.(cls|inc)$'               && it_required=1 || it_required=0
         # E2E převezmou plochu na minuty a zavřou shell z checkoutu: jen když se mění shell, projekty, na které odkazuje,
-        # nebo E2E samy. Serverová část (CACHE), dokumentace a seznamy veřejného API shell nemění; Tree.cls pushuje
-        # každých 10 min úloha tree-sync.
+        # E2E samy nebo jejich harness z EDTesting (zámek session, testovací účet). Serverová část (CACHE), dokumentace
+        # a seznamy veřejného API shell nemění; Tree.cls pushuje každých 10 min úloha tree-sync.
         echo "$CHANGED" | grep -viE '^(EDControls|EDISONMAIN2)/CACHE/|\.md$|(^|/)(Public|Internal)API\.[^/]*\.txt$' \
-            | grep -qE '^(EDISONMAIN2|EDISONMAIN2\.LegacyMiniApps|EDControls|EDUpdateContract|EDISON2\.E2ETests)/' && run_e2e=1 || run_e2e=0
+            | grep -qE '^(EDISONMAIN2|EDISONMAIN2\.LegacyMiniApps|EDControls|EDUpdateContract|EDISON2\.E2ETests|EDTesting/dotnet)/' && run_e2e=1 || run_e2e=0
         echo "$CHANGED" | grep -qE '^tools/nasazeni/' && run_nasazeni=1 || run_nasazeni=0
     fi
 fi

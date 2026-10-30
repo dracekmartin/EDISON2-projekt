@@ -69,6 +69,12 @@ public class EDServices(
     public string? PreferredMonitor { get; set; }
 
     /// <summary>
+    /// Úložiště geometrie podle formID pro okna bez vlastního (<c>EDViewModel.WindowStateStore</c>).
+    /// Null = Caché pod uživatelem × IDFa. E2E běh shellu ji drží v paměti, vývojářovu nečte ani nepřepíše.
+    /// </summary>
+    public Func<string, IWindowStateStore>? WindowStateStoreFactory { get; set; }
+
+    /// <summary>
     /// Persistent per-user state (column layouty, hidden položky, ...). Default je
     /// no-op <see cref="NullUserPrefsService"/>; composition-root nastaví
     /// <see cref="CacheUserPrefsService"/> po vytvoření <see cref="MLRest"/>.

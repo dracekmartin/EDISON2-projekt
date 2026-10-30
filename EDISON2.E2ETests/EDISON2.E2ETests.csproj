@@ -24,4 +24,11 @@
     <ProjectReference Include="..\EDTesting\dotnet\EDTesting.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- CVar pro zrušení zámku E2E session (ShellSession.DropActivityLock). -->
+    <Reference Include="MLRest">
+      <HintPath>C:\Edison\MLRest.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

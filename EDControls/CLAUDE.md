@@ -40,7 +40,7 @@ Podpora, usage telemetrii a obnovu ikony v liště (`TaskbarIcon`). Zbytek povin
   Dark dictionary se přidává na konec MergedDictionaries a přebíjí klíče, proto dark mode
   vidí jen barvy čtené přes `DynamicResource` (pravidlo v root CLAUDE.md). Preference je cross-process
   (`%APPDATA%\m-line\common\theme.json` + FileSystemWatcher) - shell i TemplateDesigner
-  se přepnou spolu. Stejný mechanismus má font (`UserFonts/`, `font.json`).
+  se přepnou spolu. Stejný mechanismus má font (`UserFonts/`, `font.json`). E2E složku přesměruje `EDAppearance.UseCommonFolder`.
   Klíč je `EDTheme.<Skupina>.<Varianta>` **podle účelu, ne podle hodnoty**; ke každé barvě
   patří dvojice `EDTheme.X` (brush) a `EDTheme.X.Color` (`Color` pro gradient stopy).
 - **Font: `font.json` je v pt, tokeny v px** - konverze (×4/3) je jen ve `FontService`,

@@ -11,7 +11,7 @@ dál s login oknem, které během progress fáze zavření ruší. Logout hook (
 `Accepted`, ne až se shellem, aby zámek uvolnil i exit kvůli updatu. **Po návratu z `Run` bootstrapper dožil** - co
 běží dál, má vlastní session-scoped objekt (`SessionSwitcher`, `ShellShutdown`). Cestu po loginu mají start i přihlášení
 jiného uživatele **jen v `SessionOpener`**: nový krok po loginu patří tam. Debug vs. Release rozhoduje **jen `StartupOptions`**
-z `App` (nový rozdíl patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login dialog (E2E ho ignoruje).
+z `App` (nový rozdíl patří tam, ne do `#if`); `EDISON2_DEVLOGIN=0` pustí v Debug skutečný login dialog (E2E ho ignoruje, chce token `login=1`).
 Legacy DLL a události MLRest **jen přes `LegacyApi`** (jediné `MLRestAdapter.Inner`; mock tam hodí výjimku).
 
 WPF stranu startu (okna před shellem, `ShutdownMode`/`MainWindow`, dispečer, konec) dělá **jen `IStartupHost`**, testy

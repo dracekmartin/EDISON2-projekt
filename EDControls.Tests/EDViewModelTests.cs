@@ -309,6 +309,37 @@ public class EDViewModelTests
             Arg.Is<object[]>(a => (string)a[0] == "formID\0EDISON2.FooWindow"));
     }
 
+    [Fact]
+    public void AttachToWindow_StoreFactory_ReplacesCacheStore()
+    {
+        // E2E shell drží geometrii v paměti: z Caché by okno naskočilo podle vývojáře a zavření by mu ji přepsalo.
+        var mlRest = EDTesting.MLRestMocks.Create();
+        mlRest.With().Returns(mlRest);
+        var store = Substitute.For<IWindowStateStore>();
+        store.Load().Returns(new WindowGeometry(null, null, 400, 300, null));
+        var services = MockServices(mlRest);
+        string? requested = null;
+        services.WindowStateStoreFactory = formId =>
+        {
+            requested = formId;
+            return store;
+        };
+
+        EDTesting.Sta.RunOnAppThread(() =>
+        {
+            var window = new System.Windows.Window { ShowInTaskbar = false, ShowActivated = false };
+            new FooViewModel(services).AttachToWindow(window);
+
+            window.Show();
+
+            Assert.Equal(400, window.Width);
+            window.Close();
+        });
+        Assert.Equal("EDISON2.FooWindow", requested);
+        store.Received().Save(Arg.Any<System.Windows.Rect>(), Arg.Any<bool>());
+        mlRest.DidNotReceive().QueryOrThrow("ALVA.LIBRARY.Form", Arg.Any<string>(), Arg.Any<object[]>());
+    }
+
     /// <summary>Konkrétní subclass která vystavuje protected členy pro testy.</summary>
     private class TestViewModel(EDServices services) : EDViewModel.EDViewModel(services)
     {

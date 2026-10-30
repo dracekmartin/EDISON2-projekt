@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using EDControls;
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
 using EDISONMAIN2.Modules;
@@ -49,7 +50,8 @@ public sealed record StartupOptions
         return new StartupOptions
         {
             // E2E přepínač ignoruje: proměnnou zdědí z vývojářova terminálu a login okno by test shodilo.
-            DevLogin = devLoginSwitch == "0" && testRun is null
+            // Login okno chce E2E jen výslovně tokenem login=1.
+            DevLogin = (devLoginSwitch == "0" && testRun is null) || testRun is { RealLogin: true }
                 ? null
                 : new LoginResult(201, "martin.hubata", "martin.hubata", true, "", false, true, ""),
             // Stop Debugging (hard-kill) ACTIVITY zámek neuvolní, deterministický klíč (idfa~ip~guid) ho
@@ -81,5 +83,7 @@ public sealed record StartupOptions
         EDUsageTelemetry.Enabled = false;
         // Widget podpory by pod vývojářovou identitou volal podpora.m-line.cz; čte se až při zobrazení.
         Environment.SetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable, "1");
+        // Výchozí téma a písmo, vývojářovy preference zůstanou netknuté. Složku maže harness, ne shell.
+        EDAppearance.UseCommonFolder(TestRunOptions.CommonFolder);
     }
 }

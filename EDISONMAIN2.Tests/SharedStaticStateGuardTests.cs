@@ -1,6 +1,7 @@
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using EDControls;
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
 using EDISONMAIN2.Modules;
@@ -28,6 +29,8 @@ public class SharedStaticStateGuardTests
         Setter(typeof(ErrorReports), nameof(ErrorReports.Enabled)),
         Setter(typeof(EDUsageTelemetry), nameof(EDUsageTelemetry.Enabled)),
         typeof(StartupOptions).GetMethod(nameof(StartupOptions.ApplyToProcess), Declared)!,
+        typeof(EDAppearance).GetMethod(nameof(EDAppearance.UseCommonFolder), Declared)!,
+        typeof(MlineCommonPaths).GetMethod(nameof(MlineCommonPaths.Restore), Declared)!,
         // Skutečný krok bootstrapperu (testy ho jinak přepisují): Initialize služeb.
         typeof(AppBootstrapper).GetMethod("InitializeServices", Declared)!,
         .. typeof(Environment).GetMethods().Where(m => m.Name == nameof(Environment.SetEnvironmentVariable)),

@@ -247,3 +247,6 @@ override EDControls.EDViewModel.LegacyDialogRun.GetHashCode() -> int
 override EDControls.EDViewModel.LegacyDialogRun.ToString() -> string
 static EDControls.EDViewModel.LegacyDialogRun.operator !=(EDControls.EDViewModel.LegacyDialogRun left, EDControls.EDViewModel.LegacyDialogRun right) -> bool
 static EDControls.EDViewModel.LegacyDialogRun.operator ==(EDControls.EDViewModel.LegacyDialogRun left, EDControls.EDViewModel.LegacyDialogRun right) -> bool
+EDControls.EDViewModel.EDServices.WindowStateStoreFactory.get -> System.Func<string, EDControls.IWindowStateStore>
+EDControls.EDViewModel.EDServices.WindowStateStoreFactory.set -> void
+static EDControls.EDAppearance.UseCommonFolder(string folder) -> void

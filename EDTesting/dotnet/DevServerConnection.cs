@@ -29,8 +29,10 @@ public static class DevServerConnection
     public const string LoginName = "test";
 
     /// <param name="dataNamespace">Datový namespace firmy jako v shellu po výběru firmy, null = výchozí MLRest.</param>
+    /// <param name="guid">GUID session E2E shellu (<c>ShellSession.DropActivityLock</c>), null = náhodný GUID MLRest.
+    /// S GUIDem jiné session ji <c>Logout</c> nebo <c>LockClearExt</c> ukončí.</param>
     public static IMLRest Connect(string idfa = ReadIdfa, string mlp = ReadMlp, string loginName = LoginName,
-        string? dataNamespace = null)
+        string? dataNamespace = null, string? guid = null)
     {
         // false = bez GetConfig: vadný MLRestConfig-data.xml by ukázal WinForms MessageBox a běh by visel.
         // CacheLocks zůstává 0 - s 1 server spouští version gate a kontrolu ACTIVITY zámku.
@@ -42,6 +44,7 @@ public static class DevServerConnection
             FullName = "EDISON2 IntegrationTests",
         };
         if (dataNamespace is not null) rest.DataNamespace = dataNamespace;
+        if (guid is not null) rest.GUID = guid;
         return new MLRestAdapter(rest);
     }
 

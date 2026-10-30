@@ -1,3 +1,4 @@
+using EDControls;
 using EDControls.EDViewModel;
 using EDControls.ErrorReporting;
 using EDISONMAIN2.Modules;
@@ -68,6 +69,17 @@ public class StartupOptionsTests
     }
 
     [Fact]
+    public void Development_TestRunWithRealLogin_LeavesLoginToDialog()
+    {
+        var options = StartupOptions.Development(["e2e=1", "login=1"], devLoginSwitch: null);
+
+        Assert.Null(options.DevLogin);
+        Assert.Equal(TestRunOptions.WindowMarker, options.SessionGuidTag);   // pořád E2E běh s vlastním GUID
+        // Bez e2e=1 token nic neznamená: běžný vývojový start s DevLogin.
+        Assert.NotNull(StartupOptions.Development(["login=1"], devLoginSwitch: null).DevLogin);
+    }
+
+    [Fact]
     public void Production_HasNoDevBehaviour()
     {
         var options = StartupOptions.Production();
@@ -99,6 +111,7 @@ public class StartupOptionsTests
         Assert.False(EDUsageTelemetry.Enabled);
         Assert.True(SupportWidgetHost.ScreenshotMode);
         Assert.True(InternalDiagnostics.Enabled);
+        Assert.Equal(TestRunOptions.CommonFolder, MlineCommonPaths.Redirected);
     }
 
     [Fact]
@@ -114,6 +127,8 @@ public class StartupOptionsTests
         Assert.True(ErrorReports.Enabled);
         Assert.True(EDUsageTelemetry.Enabled);
         Assert.False(InternalDiagnostics.Enabled);
+        // Zákazníkům se téma a písmo čtou dál z %APPDATA%\m-line\common.
+        Assert.Null(MlineCommonPaths.Redirected);
     }
 
     /// <summary>Snímek procesových statik, které <see cref="StartupOptions.ApplyToProcess"/> přepisuje.</summary>
@@ -123,6 +138,11 @@ public class StartupOptionsTests
         private readonly bool _telemetry = EDUsageTelemetry.Enabled;
         private readonly bool _diagnostics = InternalDiagnostics.Enabled;
         private readonly string? _screenshot = Environment.GetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable);
+        private readonly string? _commonFolder = MlineCommonPaths.Redirected;
+        private readonly bool _commonHandedOut = MlineCommonPaths.HandedOut;
+
+        // Jiné testy procesu už sdílenou složku použily, přesměrování by jinak odmítlo.
+        public ProcessStatics() => MlineCommonPaths.Restore(redirected: null, handedOut: false);
 
         public void Dispose()
         {
@@ -130,6 +150,7 @@ public class StartupOptionsTests
             EDUsageTelemetry.Enabled = _telemetry;
             InternalDiagnostics.Enabled = _diagnostics;
             Environment.SetEnvironmentVariable(SupportWidgetHost.ScreenshotModeVariable, _screenshot);
+            MlineCommonPaths.Restore(_commonFolder, _commonHandedOut);
         }
     }
 }

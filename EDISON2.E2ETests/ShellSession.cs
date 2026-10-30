@@ -1,6 +1,10 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using ALWA.SYS;
+using EDControls;
+using EDTesting;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
@@ -22,6 +26,9 @@ internal sealed class ShellSession : IDisposable
     // Kopie EdisonMainViewModel.ExitConfirmMessage.
     private const string ExitConfirmText = "Opravdu chcete ukončit aplikaci? Zavřou se všechna otevřená agendová okna.";
 
+    // Musí sedět s TestRunOptions.CommonFolder: téma a písmo E2E běhu místo vývojářova %APPDATA%\m-line\common.
+    private static readonly string CommonFolder = Path.Combine(Path.GetTempPath(), "EDISON2.E2E", "common");
+
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan StepTimeout = TimeSpan.FromSeconds(30);
 
@@ -33,22 +40,35 @@ internal sealed class ShellSession : IDisposable
     private bool _exited;
     private bool _screenshotTaken;
 
-    private ShellSession(Mutex runLock, Process process)
+    private ShellSession(Mutex runLock, Process process, string idfa, string host, int port)
     {
         _runLock = runLock;
         _process = process;
         _app = Application.Attach(process);
+        Idfa = idfa;
+        ServerAddress = $"{host}:{port}";
     }
 
     public Window Main { get; private set; } = null!;
 
     public int ExitCode => _process.ExitCode;
 
+    /// <summary>Firma, ve které shell startuje (<c>idfa=</c>).</summary>
+    public string Idfa { get; }
+
+    /// <summary>Server shellu jako <c>host:port</c>.</summary>
+    public string ServerAddress { get; }
+
+    public bool HasMainWindow => FindMainWindow() is not null;
+
     public static ShellSession Start() => Launch([], waitUntilReady: true);
 
     /// <summary>Shell s dalšími argumenty bez čekání na hlavní okno: okna před shellem obslouží test
     /// (<see cref="WaitForStartupWindow"/>) a pak zavolá <see cref="WaitUntilReady"/>.</summary>
     public static ShellSession StartBeforeShell(params string[] extraArgs) => Launch(extraArgs, waitUntilReady: false);
+
+    /// <summary>Shell s přihlašovacím oknem místo DevLogin (<c>login=1</c>); okno obslouží test.</summary>
+    public static ShellSession StartWithLogin() => Launch(["login=1"], waitUntilReady: false);
 
     /// <summary>Shell proti serveru, který neodpovídá (zavřený port na loopbacku): start skončí hláškou.</summary>
     public static ShellSession StartUnreachable()
@@ -88,7 +108,9 @@ internal sealed class ShellSession : IDisposable
         ShellSession? session = null;
         try
         {
-            session = new ShellSession(runLock, Process.Start(psi)!);
+            // Až pod mutexem: složku čte běžící E2E shell. Výchozí téma a písmo i po běhu, který je změnil.
+            if (Directory.Exists(CommonFolder)) Directory.Delete(CommonFolder, recursive: true);
+            session = new ShellSession(runLock, Process.Start(psi)!, idfa, host, port);
             if (waitUntilReady) session.WaitUntilReady();
             return session;
         }
@@ -140,6 +162,62 @@ internal sealed class ShellSession : IDisposable
     public string PopupMessage(Window popup) =>
         WaitFor(() => popup.FindFirstDescendant(cf => cf.ByAutomationId("MessageText")), "text popupu").Name;
 
+    /// <summary>EDPopup s titulkem a přesně tímhle textem; jiný popup téhož titulku (dvě „Informace" za sebou) nebere.</summary>
+    public Window WaitForPopup(string title, string message)
+    {
+        _allowedWindows.Add(title);
+        return WaitFor(() => Windows()
+            .Where(w => w.Name == title)
+            .FirstOrDefault(w => w.FindFirstDescendant(cf => cf.ByAutomationId("MessageText"))?.Name == message)
+            ?.AsWindow(), $"popup „{title}\" s textem „{message}\"");
+    }
+
+    /// <summary>Okno, které se smí ukázat, i když na něj test nečeká.</summary>
+    public void AllowWindow(string title) => _allowedWindows.Add(title);
+
+    /// <summary>„Potvrzení" s tímhle textem → „Ano", nebo „Ne" a zavření popupu. Po „Ano" čeká test na další okno sám.</summary>
+    public void AnswerConfirm(string expectedMessage, bool yes)
+    {
+        var popup = WaitForWindow("Potvrzení");
+        var message = PopupMessage(popup);
+        // Titulek „Potvrzení" a „Ano" má i brána přihlášení - její Ano by povolilo přihlašování celému serveru.
+        if (message != expectedMessage) Fail($"Potvrzení s nečekaným textem: „{message}\".", popup);
+        Button(popup, yes ? "PositiveBtn" : "NegativeBtn").Invoke();
+        if (!yes) WaitUntilClosed("Potvrzení");
+    }
+
+    /// <summary>Potvrzení konce shellu (menu i křížek).</summary>
+    public void AnswerExitConfirm(bool yes) => AnswerConfirm(ExitConfirmText, yes);
+
+    /// <summary>Křížek hlavního okna: zpráva se jen pošle, na modální potvrzení konce nečeká.</summary>
+    public void CloseMainWindow() =>
+        PostMessage(Main.Properties.NativeWindowHandle.ValueOrDefault, WmSysCommand, ScClose, 0);
+
+    /// <summary>
+    /// Smaže na serveru ACTIVITY zámek session shellu, jako když session vyprší. <c>Logout</c> bere firmu, IP
+    /// a GUID ze sys kontextu, takže smaže jen zámek E2E session v její firmě. Jako každý logout pak server
+    /// ukončí nečinné session (<c>Activity.Update</c>), totéž dělá i minutový poll každého shellu.
+    /// </summary>
+    public void DropActivityLock()
+    {
+        var guid = SessionGuid();
+        // LockClearExt s prázdným GUID by smazal zámky celého serveru, cizí GUID by shodil vývojářův shell.
+        if (!guid.StartsWith(E2EMarker + "-", StringComparison.Ordinal))
+            throw new InvalidOperationException($"GUID „{guid}\" nepatří E2E běhu.");
+        // Do nepovolené firmy shell nevstoupí a vybere jinou: Logout by minul zámek a test by jen čekal na hlášku.
+        if (FindMainWindow() is { } main && !main.Name.EndsWith($"[{Idfa}]", StringComparison.Ordinal))
+            throw new InvalidOperationException($"Shell neběží ve firmě {Idfa} („{main.Name}\"), EDISON_E2E_IDFA?");
+        DevServerConnection.Connect(Idfa, guid: guid).QueryOrThrow("ALVA.SYS.Login", "Logout", new CVar());
+    }
+
+    // Kopie SessionFactory.Establish: tag E2E, stroj a uživatel Windows (test běží na téže ploše jako shell).
+    private static string SessionGuid()
+    {
+        if (string.IsNullOrWhiteSpace(Environment.MachineName) || string.IsNullOrWhiteSpace(Environment.UserName))
+            throw new InvalidOperationException("Bez jména stroje a uživatele nejde E2E GUID složit.");
+        return $"{E2EMarker}-{Environment.MachineName}-{Environment.UserName}";
+    }
+
     /// <summary>Vyplní pole přes ValuePattern - bez klávesnice a fokusu (i PasswordBox). Hodnota se nikam nevypisuje.</summary>
     public void SetValue(AutomationElement scope, string automationId, string value) =>
         WaitFor(() => scope.FindFirstDescendant(cf => cf.ByAutomationId(automationId)), $"pole {automationId}")
@@ -163,10 +241,22 @@ internal sealed class ShellSession : IDisposable
         WaitUntil(() => FirstTreeItemId() is not { } now || !now.SequenceEqual(before),
                   "nové načtení stromu modulů", StartupTimeout);
 
+    /// <summary>Vybere položku seznamu podle textu, i mimo vykreslenou část virtualizovaného seznamu.</summary>
+    public void SelectListItem(AutomationElement scope, string listId, string name)
+    {
+        var list = WaitFor(() => scope.FindFirstDescendant(cf => cf.ByAutomationId(listId)), $"seznam {listId}");
+        var item = WaitFor(() => list.Patterns.ItemContainer.Pattern
+            .FindItemByProperty(null!, _automation.PropertyLibrary.Element.Name, name), $"položka „{name}\"");
+        item.Patterns.VirtualizedItem.PatternOrDefault?.Realize();
+        item.Patterns.SelectionItem.Pattern.Select();
+    }
+
     public Button Button(AutomationElement scope, string automationId) =>
         WaitFor(() => scope.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.AsButton(), $"tlačítko {automationId}");
 
     public T WaitFor<T>(Func<T?> probe, string what) where T : class => WaitFor(probe, what, StepTimeout);
+
+    public void WaitUntil(Func<bool> condition, string what) => WaitUntil(condition, what, StepTimeout);
 
     /// <summary>Hlavní okno pod minimum; WPF ho zastaví na MinWidth × MinHeight. Vrací se po ustálení velikosti.</summary>
     public void ShrinkToMinimumSize()
@@ -194,11 +284,7 @@ internal sealed class ShellSession : IDisposable
     public void ExitViaMenu()
     {
         InvokeMenu("EdisonMenu", "EDISON", "Ukončit program");
-        var popup = WaitForWindow("Potvrzení");
-        var message = PopupMessage(popup);
-        // Titulek „Potvrzení" a „Ano" má i brána přihlášení - její Ano by povolilo přihlašování celému serveru.
-        if (message != ExitConfirmText) Fail($"Potvrzení s nečekaným textem: „{message}\".", popup);
-        Button(popup, "PositiveBtn").Invoke();
+        AnswerExitConfirm(yes: true);
         if (!_process.WaitForExit(StepTimeout)) Fail("Shell po potvrzení konce do 30 s neskončil.");
         _exited = true;
     }
@@ -227,14 +313,19 @@ internal sealed class ShellSession : IDisposable
     }
 
     /// <summary>Hlavní okno shellu se stromem ze serveru; skončený proces nebo nečekané okno test shodí.</summary>
-    public void WaitUntilReady()
+    /// <param name="requireTree">False pro testovací účet: jeho strom ve startovní firmě může být prázdný.</param>
+    public void WaitUntilReady(bool requireTree = true)
     {
         Main = WaitFor(FindMainWindow, "hlavní okno shellu", StartupTimeout);
         // Starý build e2e=1 nezná a běží s DEV GUID: jeho čistý konec by smazal zámky vývojářova shellu.
         if (Main.Properties.ItemStatus.ValueOrDefault != E2EMarker)
             Fail("Build shellu nezná e2e=1 (hlavní okno nemá značku E2E) - přebuildovat EDISONMAIN2 v Debug.");
+        // Složku zakládá téma shellu při startu; bez ní běží shell ve vývojářově tématu a písmu.
+        if (!Directory.Exists(CommonFolder))
+            Fail($"Shell nečte téma a písmo z {CommonFolder} - build bez izolace nastavení?");
         // Strom ze serveru filtrovaný licencí. Karty ani uzly nepřepínat, obojí zapisuje uživatelovy preference.
-        WaitFor(() => Main.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem)), "položky stromu modulů", StartupTimeout);
+        if (requireTree)
+            WaitFor(() => Main.FindFirstDescendant(cf => cf.ByControlType(ControlType.TreeItem)), "položky stromu modulů", StartupTimeout);
     }
 
     private T WaitFor<T>(Func<T?> probe, string what, TimeSpan timeout) where T : class
@@ -380,6 +471,12 @@ internal sealed class ShellSession : IDisposable
             throw new FileNotFoundException("Chybí DEBUG build shellu - sestav EDISONMAIN2 v Debug, nebo nastav EDISON_E2E_EXE.", exe);
         return exe;
     }
+
+    private const uint WmSysCommand = 0x0112;
+    private const nint ScClose = 0xF060;
+
+    [DllImport("user32.dll")]
+    private static extern bool PostMessage(nint hwnd, uint msg, nint wParam, nint lParam);
 
     private static (string Host, int Port) Server() =>
         (Environment.GetEnvironmentVariable("EDISON_IT_SERVER") is { Length: > 0 } host ? host : "192.168.16.1",

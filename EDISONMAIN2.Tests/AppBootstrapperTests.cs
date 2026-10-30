@@ -605,11 +605,34 @@ public class AppBootstrapperTests
     public void CreateServices_VersionFromVerzeInf_OtherwiseLeftToAppIdentity(string installed, string? expected)
     {
         // Bez VERZE.INF rozhoduje AppIdentity (verze exe s hashem buildu), pevný text by ji přebil.
-        var services = AppBootstrapper.CreateServices(new WindowNavigator(), new PopupDisplayer(), installed);
+        var services = AppBootstrapper.CreateServices(new WindowNavigator(), new PopupDisplayer(), installed,
+                                                      StartupOptions.Production());
 
         Assert.Equal(expected, services.AppVersion);
         Assert.Equal("M-line EDISON 2", services.AppDisplayName);
         Assert.Equal("EDISON2", services.FormIdPrefix);   // součást uložených formID
+    }
+
+    [Fact]
+    public void CreateServices_RegularStart_KeepsWindowGeometryInCache()
+    {
+        // Úložiště v paměti mimo E2E by uživatelům tiše zahodilo uloženou polohu dialogů.
+        foreach (var options in new[] { StartupOptions.Production(), StartupOptions.Development([], null) })
+            Assert.Null(AppBootstrapper.CreateServices(new WindowNavigator(), new PopupDisplayer(), "", options)
+                .WindowStateStoreFactory);
+    }
+
+    [Fact]
+    public void CreateServices_TestRun_KeepsWindowGeometryInMemoryPerForm()
+    {
+        var services = AppBootstrapper.CreateServices(new WindowNavigator(), new PopupDisplayer(), "", E2E());
+        var factory = services.WindowStateStoreFactory
+                      ?? throw new InvalidOperationException("E2E běh nemá úložiště geometrie v paměti.");
+
+        factory("EDISON2.UserProfileWindow").Save(new System.Windows.Rect(10, 20, 300, 200), maximized: false);
+
+        Assert.Equal(new WindowGeometry(10, 20, 300, 200, false), factory("EDISON2.UserProfileWindow").Load());
+        Assert.True(factory("EDISON2.EDInputFormTestWindow").Load().IsEmpty);
     }
 
     [Theory]

@@ -2,7 +2,8 @@ using EDTesting;
 
 namespace EDISON2.E2ETests;
 
-/// <summary>„Přihlásit jiného uživatele" testovacím účtem DEV: shell po přepnutí načte session nového uživatele.</summary>
+/// <summary>„Přihlásit jiného uživatele": testovacím účtem DEV shell načte session nového uživatele, zrušené přihlášení
+/// nechá session DEBUG uživatele.</summary>
 [Trait("Category", "E2E")]
 public class ShellSwitchUserTests
 {
@@ -48,6 +49,35 @@ public class ShellSwitchUserTests
         shell.WaitForTreeReload(debugTree);
 
         // Konec přes menu: logout uvolní zámek nové session pod E2E GUID.
+        shell.ExitViaMenu();
+
+        Assert.Equal(0, shell.ExitCode);
+    }
+
+    [E2EFact]
+    public void SwitchUser_DeclinedThenCancelled_KeepsSessionOfDebugUser()
+    {
+        using var shell = ShellSession.Start();
+
+        shell.InvokeMenu("TopMenu", "Uživatel", "Přihlásit jiného uživatele");
+        shell.AnswerConfirm(SwitchConfirmText, yes: false);
+
+        shell.InvokeMenu("TopMenu", "Uživatel", "Přihlásit jiného uživatele");
+        shell.AnswerConfirm(SwitchConfirmText, yes: true);
+        // Login okno naskočí hned po potvrzení, čekání na zavření potvrzení by ho vzalo za nečekané.
+        var login = shell.WaitForWindow(LoginTitle);
+        shell.WaitUntilClosed("Potvrzení");
+        shell.Button(login, "CancelBtn").Invoke();
+        shell.WaitUntilClosed(LoginTitle);
+
+        Assert.Contains(DebugUser, shell.StatusBarTexts());
+        // Request na staré session projde: profil se načte ze serveru bez hlášky o konci session.
+        shell.InvokeMenu("TopMenu", "Uživatel", "Vlastnosti uživatele");
+        var profile = shell.WaitForWindow("Vlastnosti uživatele");
+        shell.WaitFor(() => profile.FindFirstDescendant(cf => cf.ByName("Export dokumentů")), "skupina „Export dokumentů\"");
+        shell.Button(profile, "StornoBtn").Invoke();
+        shell.WaitUntilClosed("Vlastnosti uživatele");
+
         shell.ExitViaMenu();
 
         Assert.Equal(0, shell.ExitCode);

@@ -30,4 +30,12 @@ public class TestRunOptionsTests
         Assert.False(TestRunOptions.Parse(["e2e=1"])!.PreShellPopup);
         Assert.Null(TestRunOptions.Parse(["preshellpopup=1"]));
     }
+
+    [Fact]
+    public void Parse_RealLoginToken_OnlyWithTestRun()
+    {
+        Assert.True(TestRunOptions.Parse(["e2e=1", "login=1"])!.RealLogin);
+        Assert.False(TestRunOptions.Parse(["e2e=1"])!.RealLogin);
+        Assert.Null(TestRunOptions.Parse(["login=1"]));
+    }
 }
