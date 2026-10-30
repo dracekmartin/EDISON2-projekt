@@ -1785,8 +1785,8 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     // ── zastávka, na které vývěska visí, a směr ──
     // „Název …", aby se v nabídce polí nepletl s příznakem řádku „Je aktuální zastávka" (Jan 27. 10.).
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky", "text")
-    // Popisek jako u vývěsky AD; v MHD nese číslo i s označníkem („101-A").
-    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo aktuální zastávky", "text")
+    // V MHD nese číslo i s označníkem („101-A"), proto jiný popisek než týž klíč ve vývěsce AD (Jan 30. 10.).
+    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo a označník aktuální zastávky", "text")
     d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
     d ..AddField(fields, "VYCHOZI_ZASTAVKA",       "Výchozí zastávka",       "text")
     d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")

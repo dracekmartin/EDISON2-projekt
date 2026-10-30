@@ -9,6 +9,10 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **G3** Jeden popisek = jedno pole (hotovo 30. 10., changelog 2026-10-30 (5)):
+  `AgendaSchemaDriftTests.StejnyPopisek_PatriJednomuPoli`. Vývěska MHD má „Číslo a označník aktuální
+  zastávky"; „Číslo aktuální zastávky" pod dvěma klíči (vývěska AD × linkové JŘ) je výjimka, sjednocení
+  klíče s převodem šablon případně v `B56` (rozhodnutí Jan 30. 10.).
 - **G1** Kontraktový Caché test přes registr agend (malá podoba 29. 10., celý 30. 10., changelog
   2026-10-29 (2) a 2026-10-30 (4)): `KontraktAgendTest` hlídá i to, že data agendy odpovídají nabídce
   dat, a jen známé klíče definice parametru. Hlášku „linka nemá data" dál hlídá ruční `DuvodPrazdnehoTest`:

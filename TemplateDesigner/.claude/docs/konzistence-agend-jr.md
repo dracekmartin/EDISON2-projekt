@@ -52,7 +52,6 @@ totéž znovu. Pořadí podle přínosu:
   vzory `PRESETY_SLOUPCU`). V `KontraktAgendTest.PolozkyMimoNabidku` mají druh `zbytek`. Návrh: přestat
   je posílat a smazat zastaralé komentáře u nich (`ZastavkoveJrAd` u skalárů dopravce, `BuildDopravci`,
   NZ konfigurace). Šablona je použít nemůže, v nabídce nejsou; snímek výstupu se tím vědomě změní.
-- **G3 Jeden popisek = jeden klíč napříč agendami JŘ** [S]. Chytí `D1` a `D3` (dnes se hlídá jen stejný klíč).
 - **G4 Ban list i na nápovědy, části slov a titulky oken** [S]. Odtud „nástupiště" (`P7`), „engine" (`E7`),
   „Tučně" uvnitř popisku (`E10`), „Linkový JŘ - nastavení" (`E2`).
   Stav 28. 10.: titulky oken vlastností hlídá `ElementNamesTests`, části slov se kontrolují jen v popiscích

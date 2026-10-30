@@ -29,10 +29,26 @@ public class AgendaSchemaDriftTests
     /// </summary>
     /// <remarks>Do 23. 10. tu byla obě čísla linky (AD „Číslo linky" × MHD „… (dle licence)").
     /// Od `B193b` nesou obě čísla všechny agendy JŘ, takže se musí všude jmenovat stejně.</remarks>
-    private static readonly HashSet<string> ExemptLabel = new(StringComparer.Ordinal);
+    private static readonly HashSet<string> ExemptLabel = new(StringComparer.Ordinal)
+    {
+        // Vývěska MHD nese v CISLO_ZASTAVKA číslo i s označníkem („101-A"), AD jen číslo (Jan 30. 10.).
+        "fields|CISLO_ZASTAVKA",
+    };
 
     /// <summary>Vědomé rozdíly typu téhož pole. Prázdné = žádný takový dnes není.</summary>
     private static readonly HashSet<string> ExemptType = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Vědomé případy, kdy stejný popisek nesou různá pole (<c>B194f</c> G3). Klíč = <c>&lt;místo&gt;|&lt;popisek&gt;</c>,
+    /// hodnota = pole, která ho smí nést, a důvod. Výjimka platí jen pro tuhle sadu polí - další pole
+    /// pod týmž popiskem test zase zastaví.
+    /// </summary>
+    private static readonly Dictionary<string, (string[] Keys, string Proc)> ExemptKey = new(StringComparer.Ordinal)
+    {
+        ["fields|Číslo aktuální zastávky"] = (["AKTUALNI_ZASTAVKA_CZST", "CISLO_ZASTAVKA"],
+            "totéž číslo zastávky - vývěska AD ho posílá jako CISLO_ZASTAVKA, linkové JŘ jako " +
+            "AKTUALNI_ZASTAVKA_CZST; sjednotit klíč s převodem šablon případně v B56 (Jan 30. 10.)"),
+    };
 
     /// <summary>Pole vyřazená z nabídky dat. Vydané agendy je dál posílají kvůli šablonám, které je
     /// mají, ale nový autor je nesmí najít - jinak se vyřazení nikdy nedokončí.</summary>
@@ -221,6 +237,29 @@ public class AgendaSchemaDriftTests
         Assert.True(drift.Count == 0,
             "Totéž pole má v různých agendách různý popisek - uživatel by v nabídce dat viděl " +
             "dva názvy pro jednu věc (kanon ux-conventions §8). Sjednoť, nebo doplň výjimku s důvodem:\n" +
+            string.Join("\n", drift));
+    }
+
+    /// <summary>
+    /// Opačný směr k <see cref="StejnePole_MaVeVsechAgendachStejnyPopisek"/>: stejný popisek patří jednomu
+    /// poli. Jinak uživatel vidí v nabídce dvou agend stejný název, ale šablona z jedné agendy ve druhé
+    /// vykreslí prázdno, protože pole se jmenuje jinak (odtud nálezy <c>D1</c> a <c>D3</c>).
+    /// </summary>
+    [Fact]
+    public void StejnyPopisek_PatriJednomuPoli()
+    {
+        var drift = AllFields()
+            .GroupBy(e => $"{e.Scope}|{e.Label}")
+            .Select(g => (Id: g.Key, Keys: g.GroupBy(e => e.Key).ToList()))
+            .Where(x => x.Keys.Count > 1)
+            .Where(x => !(ExemptKey.TryGetValue(x.Id, out var v) && x.Keys.Select(k => k.Key).Order().SequenceEqual(v.Keys.Order())))
+            .Select(x => $"{x.Id}: " + string.Join(" × ", x.Keys.Select(
+                k => $"{k.Key} ({string.Join(",", k.Select(e => e.File).Distinct())})")))
+            .ToList();
+
+        Assert.True(drift.Count == 0,
+            "Stejný popisek nesou v nabídce dat různá pole - uživatel nepozná, že jde o dvě věci, a šablona " +
+            "z jedné agendy ve druhé vykreslí prázdno. Rozliš popisky, nebo doplň výjimku s důvodem:\n" +
             string.Join("\n", drift));
     }
 

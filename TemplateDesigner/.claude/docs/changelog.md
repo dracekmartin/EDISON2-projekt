@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (5) - Stejný popisek v nabídce dat patří jednomu poli (`B194f` G3)
+
+Testy hlídaly jen jeden směr: stejné pole má ve všech agendách stejný popisek.
+Opačný směr ne, takže uživatel mohl ve dvou agendách vidět stejný název pro dvě různá pole a šablona z jedné agendy ve druhé vykreslila prázdno (odtud nálezy D1 a D3).
+`AgendaSchemaDriftTests.StejnyPopisek_PatriJednomuPoli` to teď hlídá; před úpravou spadl na „Číslo aktuální zastávky".
+Vývěska MHD v tom poli posílá číslo i s označníkem („101-A"), proto má nově popisek „Číslo a označník aktuální zastávky".
+Vývěska AD a linkové JŘ nesou totéž číslo zastávky pod dvěma klíči; je to zapsaná výjimka a sjednocení klíče s převodem šablon případně přijde v `B56` (rozhodnutí Jan 30. 10.).
+Hotové šablony se nemění, klíč zůstal; snímek výstupu agend se změnil jen v tomto popisku.
+Ověřeno: popisek voláním `GetSchema` na serveru, .NET testy 2521/2521, Caché testy návrháře 271/271.
+
 ## 2026-10-30 (4) - Data agendy odpovídají její nabídce dat (`B194f` G1)
 
 Uživatel v návrháři vybírá pole z nabídky dat agendy.
