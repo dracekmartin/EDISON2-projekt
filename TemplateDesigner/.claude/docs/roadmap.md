@@ -131,7 +131,7 @@ Rozbor 30. 10. (definice, obě cesty tisku, data a oracle, šablona, návrh, zku
 
 27 agend starého report generátoru s asi 85 datovými sadami; agenda report generátoru je modul (AD, MHD, mzdy, pokladna…) a teprve jeho sada odpovídá naší agendě.
 Agendy dodávají jen data a kreslí obecný kód - zvláštní prvky jako u jízdních řádů tam nejsou.
-Kreslení je proto hlavně technický převod (tabulka z dat `F3`); koncepčně nové je spouštění tisku, výstupy a šablony zákazníků (`F9`, `F10`).
+Kreslení je proto hlavně technický převod (tabulka s řádky z dat `F3`); koncepčně nové je spouštění tisku, výstupy a šablony zákazníků (`F9`, `F10`).
 Dopravní agendy narazí jen na `F3`, mzdy, pokladna a faktury hned na `F9` a `F10`.
 **Ne big-bang**, pilot podle R7. Rozbor 30. 10. (agendy, sady, mapování, pilot): [`legacy-nahrada.md`](legacy-nahrada.md) §3.1.
 
@@ -140,7 +140,7 @@ Dopravní agendy narazí jen na `F3`, mzdy, pokladna a faktury hned na `F9` a `F
 | F7 | **Pojmenování agend** - sada = naše agenda podle výstupu (`VYPLATNI_PASKA`), modul se stejným výstupem = varianta (`MZDY2`); kód agendy se po vydání nemění, proto před první agendou | ⬜ rozhodnutí Jan |
 | F8 | **Pilot: Vozové listy (MHD)** - 5 polí, 2 tabulky, instance = oběh, volá MHD2Linky; vlastní třída zavolá starý `getSadu`/`getData` a převede výstup, registr se nemění. Narazí na zvýraznění řádku z dat (`F3`, R3). Před vydáním text „linka" napevno (`B194e` A5, pod tabulkou) | ⬜ po relacích |
 | F2 | **Obecný převodník vs čisté agendy** - rozhodnout po pilotu; převodník potřebuje registr, který vypíše dvojice agenda a sada, a varianty se stejným tvarem dat neumí | ⬜ rozhodnutí po `F8` |
-| F3 | **Tabulka z dat na úroveň RG** (navazuje na dynamickou tabulku + `B76`) - řádky řízené daty, overflow, mezisoučty, seskupení řádků a vnořená data; ⚠️ tvar odvodit z reálných sestav RG. Rozpis [`legacy-nahrada.md`](legacy-nahrada.md) §5 etapa 4 | ⬜ L |
+| F3 | **Tabulka s řádky z dat na úroveň RG** (navazuje na `B76`) - řádky řízené daty, overflow, mezisoučty, seskupení řádků a vnořená data; ⚠️ tvar odvodit z reálných sestav RG. Rozpis [`legacy-nahrada.md`](legacy-nahrada.md) §5 etapa 4 | ⬜ L |
 | F1 | **Pořadí agend** - statistika použití agend neexistuje (`Main.cls:161-188` jsou počty prvků) a tisky se nelogují; počet šablon podle agendy v databázích zákazníků (jen čtení), nebo počet volajících míst. Dopravní agendy napřed | ⬜ |
 | F9 | **Hromadný tisk a tisk bez uživatele** - seznam dokladů, každý s vlastním PDF, heslem, e-mailem, podpisem nebo tiskárnou; spuštění přímo z Caché (mzdy). Návrhář umí jedno PDF v prohlížeči (`Vystup=PDF`). Navazuje R4 a `B190` | ⬜ před první agendou z mezd, pokladny, faktur |
 | F10 | **Šablony zákazníků** - firmy mají vlastní šablony (nejméně stovky) a návrhář je neotevře: převodník, nebo nový návrh. Největší rozhodnutí převodu | ⬜ rozhodnutí Jan, před první agendou s šablonami zákazníků |

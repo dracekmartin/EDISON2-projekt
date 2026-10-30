@@ -64,7 +64,7 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 - **Soubor** - Nová šablona, Otevřít, Uložit
 - **Upravit** - Zpět, Vpřed
 - **Stránka a sekce** - Vlastnosti stránky, Přidat sekci (rozbalovací nabídka presetů)
-- **Prvky** - paleta prvků: Text, Obdélník, Čára, Obrázek, Kód (QR, čárový), Tabulka (z dat), Tabulka (pevná) (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
+- **Prvky** - paleta prvků: Text, Obdélník, Čára, Obrázek, Kód (QR, čárový), Tabulka s řádky z dat, Pevná tabulka (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
 - **Vrstva** - Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
 - **Zarovnat** - Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
 - **Mřížka plátna a přichytávání** - přepínač mřížky plátna, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání
@@ -255,12 +255,12 @@ Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastno
   prvek malý, aplikace po tisku napíše konkrétní čísla („QR kód je 10 mm, pro spolehlivé čtení
   potřebuje 13,2 mm"). Kód bez obsahu (pole z dat bez hodnoty) se netiskne - rámeček „QR" je jen
   v návrháři
-- **Tabulka (z dat)** - řádky se generují automaticky z datové kolekce (viz níže)
-- **Tabulka (pevná)** - mřížku vyplňujete ručně přímo na plátně; náhrada za skládání hlaviček
+- **Tabulka s řádky z dat** - řádků je tolik, kolik je záznamů v datové kolekci (viz níže)
+- **Pevná tabulka** - řádky i obsah zadáváte sami přímo na plátně; náhrada za skládání hlaviček
   a bloků z jednotlivých textových prvků (viz níže)
 - **Prvky jízdního řádu** - specializované prvky pro tisk JŘ - objeví se v paletě jen u agend jízdních řádů; viz část II
 
-### Dynamická tabulka
+### Tabulka s řádky z dat
 Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
 od dat). Vlastnosti:
 - **Data** - **Zdroj dat**, řazení (**Řadit podle** a **Směr řazení**, **Potom podle** a **Směr druhého řazení**), **Nejméně řádků** a **Nejvýš řádků**
@@ -270,7 +270,7 @@ od dat). Vlastnosti:
 
 Sloupce se upravují tlačítkem **Upravit sloupce…**. Buňka může obsahovat souhrnný výraz - viz kap. 8.
 
-Editor sloupců (okno „Vlastnosti - Tabulka (z dat)") má záložky **Obecné** a **Sloupce**: přidání/
+Editor sloupců (okno „Vlastnosti - Tabulka s řádky z dat") má záložky **Obecné** a **Sloupce**: přidání/
 odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce prvku",
 a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor stylu (viz kap. 7).
 
@@ -489,7 +489,7 @@ Text prvku i buňky/záhlaví tabulky může mít **víc řádků**. Nový řád
 
 Typické využití je **dvouřádkové (dvojjazyčné) záhlaví sloupce** - první řádek česky, druhý
 cizojazyčně (např. „Zastávka" / „Station"). U tabulkových prvků se **výška řádku záhlaví
-automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. U Tabulky z dat je to pole
+automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. U Tabulky s řádky z dat je to pole
 „Nejmenší výška" ve skupině Záhlaví - záhlaví se zvětší, jen když se řádky do ní nevejdou.
 Zalomení funguje v textových prvcích i v buňkách, řádek s daty se ale nezvětší: víc řádků se
 vejde jen do dost vysokého řádku.
@@ -505,7 +505,7 @@ Podporované operátory: `&&` (a zároveň), `||` (nebo), `!` (negace), `==`, `!
 upozornění, ať víte, že to potřebuje opravit.
 
 ### Agregace v tabulkách
-V obsahu buňky dynamické tabulky lze počítat souhrny: `SUM({POLE})`, `COUNT()`, `AVG({POLE})`,
+V obsahu buňky tabulky s řádky z dat lze počítat souhrny: `SUM({POLE})`, `COUNT()`, `AVG({POLE})`,
 `MIN({POLE})`, `MAX({POLE})`.
 
 ### Jazyk šablony (lokalizace)
@@ -898,7 +898,7 @@ uplatňují **auto-zmenšení písma** (kap. 6).
 ### 3. Editory sloupců
 
 Záložka **Sloupce** vypadá ve všech oknech tabulek stejně.
-Vlevo je seznam sloupců se zaškrtávátkem viditelnosti a šipkami ▲/▼, u Tabulky z dat navíc Přidat a Odebrat.
+Vlevo je seznam sloupců se zaškrtávátkem viditelnosti a šipkami ▲/▼, u Tabulky s řádky z dat navíc Přidat a Odebrat.
 Vpravo je vybraný sloupec: **Text záhlaví**, **Šířka** a styl zvlášť pro **Záhlaví** a **Datové buňky**; prázdné pole převezme nastavení prvku ze záložky Obecné.
 Sloupec, který se tiskne vždy (Hodiny u Minut odjezdů, sloupce spojů u Tabulky spojů), nejde skrýt ani posunout.
 

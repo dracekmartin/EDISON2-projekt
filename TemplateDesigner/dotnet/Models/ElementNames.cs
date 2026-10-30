@@ -79,8 +79,9 @@ public static class ElementNames
         ElementTypes.Line          => "Čára",
         ElementTypes.Image         => "Obrázek",
         ElementTypes.Barcode       => "Kód (QR, čárový)",
-        ElementTypes.DynamicTable  => "Tabulka (z dat)",
-        ElementTypes.Table         => "Tabulka (pevná)",
+        // Jméno říká, odkud se berou řádky - v tom se tabulky liší, data mohou mít obě (rozhodnutí Jan 30. 10.).
+        ElementTypes.DynamicTable  => "Tabulka s řádky z dat",
+        ElementTypes.Table         => "Pevná tabulka",
         ElementTypes.StopList      => "Seznam zastávek",
         ElementTypes.DepartureGrid => "Minuty odjezdů",
         ElementTypes.NotesLegend   => "Poznámky",

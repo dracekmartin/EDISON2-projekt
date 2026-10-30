@@ -123,7 +123,7 @@ nikdy přebíjet kaskádu.
 
 Tabulka zastávek s konfigurovatelnými sloupci (TC, název, čas jízdy, zóna, průběhy, základní trasa). Každý sloupec má `Key`, `Header`, `Width`, `Visible`, `Alignment`. Sloupce editovatelné přes `StopColumnsEditorDialog`.
 
-**Doménové odlišnosti** (proč je to vlastní element, ne tabulka z dat): zvýraznění aktuální zastávky
+**Doménové odlišnosti** (proč je to vlastní element, ne tabulka s řádky z dat): zvýraznění aktuální zastávky
 a ztišení projetých (obojí per-řádkový override nad kaskádou, viz „feature override" v
 `mvvm-patterns.md`), odsazení a značky před názvem, filtr projížděných zastávek, variantní časové
 sloupce. Aktuální seznam vlastností drží třída a formulář `StopListElementEdit.cls` - **výčet sem

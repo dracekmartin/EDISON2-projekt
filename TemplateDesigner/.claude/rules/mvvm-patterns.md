@@ -162,7 +162,7 @@ public class MyScheduleElement : ScheduleElementBase
 
 ## TableElement - architektura
 
-### Pevná × dynamická tabulka jsou dva PRVKY, ne dva režimy
+### Pevná tabulka × tabulka s řádky z dat jsou dva PRVKY, ne dva režimy
 
 `TableElement` = pevná tabulka: uživatel vyplní sloupce i řádky v buňkách na plátně, sázecí
 engine v buňkách dosadí `{PLACEHOLDER}` ze skalárů DataContextu. Řádky z kolekce dat kreslí
@@ -287,7 +287,7 @@ float headerH = ComputeHeaderH(MaxResolvedHeaderFontPt());
 
 ## Sdílená záložka Sloupce (`ColumnsTab`) a `CellStyleEditor`
 
-Okna tabulek se sloupci (Seznam zastávek, Minuty odjezdů, Tabulka spojů, Tabulka z dat) mají záložku
+Okna tabulek se sloupci (Seznam zastávek, Minuty odjezdů, Tabulka spojů, Tabulka s řádky z dat) mají záložku
 Sloupce **jednu společnou**: `Controls/ColumnsTab` + `ColumnsTabViewModel` (výběr, posun, přidání/
 odebrání, součet šířek, Přizpůsobit, reset). Do 28. 10. měla každá tabulka vlastní kopii a texty
 i chování se rozešly (`B194` E13c) - **novou kopii nepsat**.

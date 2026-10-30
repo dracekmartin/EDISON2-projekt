@@ -66,7 +66,7 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 ### Uvnitř pevné tabulky (editace buněk na plátně)
 
 ⚠️ **Dvojklik zůstává na nastavení i tady** (rozhodnutí Jan 12. 8.). První návrh na něj věsil vstup
-do buňky, jenže uživatel má z ostatních tabulek (zastávky, odjezdy, tabulka z dat) naučené, že
+do buňky, jenže uživatel má z ostatních tabulek (zastávky, odjezdy, tabulka s řádky z dat) naučené, že
 dvojklik otevře nastavení - tabulka by byla jediná výjimka **uvnitř naší aplikace**, a ta shoda váží
 víc než zvyk z Wordu. Do obsahu se proto vchází **F2** (u textového prvku znamená totéž: „uprav
 obsah na místě"), **Alt+klikem** rovnou do zvolené buňky, nebo položkou **„Vyplnit tabulku"**
@@ -325,6 +325,8 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 | Přestupy u zastávky | **Přestupy (vlak/autobus)** | ~~(vlak/bus)~~ |
 | Prvek s vysvětlivkami pod vývěskou | **Poznámky** | ~~Legenda poznámek~~ (třída `NotesLegendElement` se nepřejmenovává - visí na ní `type` v šablonách) |
 | Prvek s časy odjezdů po hodinách | **Minuty odjezdů** | ~~Mřížka odjezdů~~ („mřížka" je implementační pojem; třída `DepartureGridElement` zůstává) |
+| Tabulka, jejíž řádky se berou z kolekce dat | **Tabulka s řádky z dat** - jméno říká, odkud jsou řádky; data (pole `{…}`) může mít i pevná tabulka (rozhodnutí Jan 30. 10.; třída `DynamicTableElement` zůstává) | ~~Tabulka (z dat)~~, ~~dynamická tabulka~~, ~~Datová tabulka~~, ~~Výpis z dat~~ |
+| Tabulka, kterou vyplňuje uživatel | **Pevná tabulka** - řádky i obsah zadává uživatel (třída `TableElement` zůstává) | ~~Tabulka (pevná)~~, ~~fixní tabulka~~ |
 | Prvek s tabulkou zastávky × spoje | **Tabulka spojů** | ~~Linkový JŘ~~, ~~Tabulka linky~~ (tak se jmenuje **agenda**, prvek by se s ní pletl; třída `LineTableElement` zůstává) |
 | Zóna, km, Tč, zastávka a MHD v Tabulce spojů | **popisné sloupce** (rozhodnutí Jan 26. 10.) | ~~popisové sloupce~~, ~~sloupce popisu~~ |
 | Prvek s QR / čárovým kódem | **Kód (QR, čárový)** | ~~Kód~~ samotné (neřekne, co prvek umí), ~~Kód (QR / čárový)~~ |

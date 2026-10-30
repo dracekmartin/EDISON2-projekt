@@ -768,6 +768,14 @@ public class EDInputFormSchemaDriftTests
         "Tabulka linky",    // → Tabulka spojů (tak se jmenuje agenda, prvek by se s ní pletl)
         "Mřížka odjezdů",   // → Minuty odjezdů
         "Legenda poznámek", // → Poznámky
+        // Tabulky se liší tím, odkud se berou řádky - data mohou mít obě (rozhodnutí Jan 30. 10.)
+        "dynamická tabulka", // → Tabulka s řádky z dat (termín se hledá od začátku slova, proto obě velikosti)
+        "Dynamická tabulka",
+        "dynamické tabulky",
+        "Dynamické tabulky",
+        "dynamickou tabulku",
+        "Tabulka (z dat)",  // → Tabulka s řádky z dat
+        "Tabulka (pevná)",  // → Pevná tabulka
         // Hlavička tabulky oproti datovým buňkám = „záhlaví"; „nadpis" jen pro jinou věc
         // (text skupiny dnů v datech) - rozhodnutí Jan 2026-10-26, `B194` E4
         "Nadpisy skupin",   // → Záhlaví skupin dnů

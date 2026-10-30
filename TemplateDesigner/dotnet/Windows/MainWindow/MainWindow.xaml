@@ -356,11 +356,11 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (dynamická - řádky z dat)" Tag="DynamicTableElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka s řádky z dat - řádků je tolik, kolik je záznamů v datech" Tag="DynamicTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (pevná - obsah vyplníte sami)" Tag="TableElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Pevná tabulka - řádky i obsah zadáváte sami" Tag="TableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.Grid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>

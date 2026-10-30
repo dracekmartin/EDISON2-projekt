@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-30 (37) - Opravy z revize sjednocení a nová jména tabulek
+
+Revize „co je definované dvakrát" ([`revize-sjednoceni.md`](revize-sjednoceni.md)) našla chyby, které Jan nechal opravit před slučováním:
+- **Formulář textu** u nenastavené vlastnosti stylu ukazuje hodnotu, se kterou se text tiskne - text z importu PDF ukazoval svislé zarovnání „Na střed" a tiskl se „Nahoře". Panel navíc nesl zděděné hodnoty buňky pevné tabulky k dalšímu vybranému prvku.
+- **Výchozí mřížka plátna** je 5 mm bez přichytávání na jednom místě (rozhodnutí Jan); dřív stav návrháře říkal 1 mm se zapnutým přichytáváním a předvolby uživatele opak.
+- **Menu Zobrazit → Levý panel** dělá totéž co ☰ a Ctrl+B; vlastní kód panel nikdy neschoval.
+- **Nápověda F1, pravidla a asistent** popisují aplikaci, jak se chová: mezera u Ctrl+D + šipka je mezera pro přichytávání, šablona se přepočítá v menu Upravit, Poznámky má i linkový JŘ, změna formátu stránky se ptá, levý panel má 6 záložek, pevná tabulka je živý prvek.
+- Drobnosti: výška „(podle obsahu)", „…" v místní nabídce, zastaralé komentáře a skill pro nový prvek.
+
+**Jména tabulek** (rozhodnutí Jan): **Pevná tabulka** a **Tabulka s řádky z dat** - jméno říká, odkud se berou řádky, protože data (pole `{…}`) může mít i pevná tabulka. Přejmenované v paletě (s vysvětlením v bublině), nabídce, titulcích oken, F1, příručce, Novinkách, pravidlech a pro asistenta; v šablonách se ukládá technický typ, takže se nic nemigruje. „Tabulka (z dat)", „Tabulka (pevná)" a „dynamická tabulka" jsou v kanonu a v testu názvosloví zakázané.
+Ověřeno: .NET testy 2598/2598 (nové testy formuláře textu, výchozí mřížky a jmen pro asistenta; zákaz starých jmen zkoušený mutací); formulář textu a levý panel testy okna nemají, v aplikaci neproklikané.
+
 ## 2026-10-30 (36) - Úvodní obrazovka návrháře (zkušební verze)
 
 Návrhář si dosud nepamatoval, s čím uživatel pracoval, a po každém spuštění ukázal prázdnou stránku.

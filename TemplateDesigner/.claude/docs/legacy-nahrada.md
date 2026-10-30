@@ -186,7 +186,7 @@ Kreslení je proto hlavně technický převod: stavba šablony (sekce, podmínky
 5. Excel (data, ne vzhled), znakový tisk Epson, JPG;
 6. jazykové varianty šablon.
 
-Dopravní agendy (plán, provoz) narazí jen na tabulku z dat, mzdy, pokladna a faktury hned na body 1, 2 a 4.
+Dopravní agendy (plán, provoz) narazí jen na tabulku s řádky z dat, mzdy, pokladna a faktury hned na body 1, 2 a 4.
 
 **Pilot:** vozové listy MHD (`MHD/CACHE/ALVA/MHD/REPORTGENERATOR/VozoveListy.cls:12-34`) - 5 polí, tabulka průběhu oběhu (10 sloupců) a výkonů (5), instance = oběh, data `^ALVA.MHD.LSO`, volá MHD2Linky (MHD039), řádek nese zvýraznění z dat.
 Vlastní třída agendy zavolá starý `getSadu` / `getData` a převede výstup na JSON: registr se nemění a data se starým tiskem shodují z principu.
@@ -322,7 +322,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
    řádku, řádek-jako-designový-layout (koncepčně PerDataRow sekce), datové typy sloupců.
    Merged cells + conditional formatting už jsou v backlogu roadmapy (tabulkové prvky).
 
-   **Rozpis roadmapy `F3`** (navazuje na dynamickou tabulku a `B76`):
+   **Rozpis roadmapy `F3`** (navazuje na tabulku s řádky z dat a `B76`):
    - per-řádek zvýraznění 0-5 z dat, vlastní barvy per řádek a buňka;
    - overflow módy (zalamování → klonování řádků), opakování mezisoučtu na další stránce;
    - datové typy sloupců (datum, minuty, záporné červeně, skrýt nuly), řádek jako layout;

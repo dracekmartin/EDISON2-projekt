@@ -234,7 +234,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             sb.AppendLine($"Tahle agenda má specializované prvky: {string.Join(", ", specialni.Select(FriendlyName))}.");
             sb.AppendLine("Dotaz o obsahu jízdního řádu (zastávky, spoje, časy, km, zóny, tarifní čísla,");
             sb.AppendLine("skupiny dnů, poznámky, přípoje) **odpovídej podle nich** - uživatel se ptá na to,");
-            sb.AppendLine("co má v šabloně před sebou. Obecnou dynamickou nebo pevnou tabulku zmiň jen tehdy,");
+            sb.AppendLine("co má v šabloně před sebou. Obecnou tabulku s řádky z dat nebo pevnou tabulku zmiň jen tehdy,");
             sb.AppendLine("když se na ni ptá výslovně, nebo když specializovaný prvek tu vlastnost opravdu nemá.");
             sb.AppendLine("**Nenabízej výběr mezi nimi** a neptej se zpět, o kterou tabulku jde.");
         }
@@ -337,7 +337,7 @@ Pravidla obsahu (ZÁVAZNÁ):
         ElementTypes.Table =>
             "Mřížka, jejíž obsah vyplňuje uživatel - buňka nese text nebo pole {CISLO_LINKY}. " +
             "Nahrazuje skládání hlaviček a bloků (platební údaje, rekapitulace) z jednotlivých textů: " +
-            "je to jeden prvek, se kterým se hýbe vcelku. Řádky se z dat negenerují - na to je tabulka dynamická.",
+            "je to jeden prvek, se kterým se hýbe vcelku. Řádky se z dat negenerují - na to je tabulka s řádky z dat.",
         ElementTypes.DynamicTable =>
             "Řádky se generují z datové kolekce agendy (DataSource). Dialog tabulky (dvojklik) umí navíc: " +
             "sloupce s mapováním na pole NEBO počítaným výrazem ({CENA}*{POCET}) a formátem; " +

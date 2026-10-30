@@ -303,9 +303,9 @@ polí aktuální agendy s možností hledat.
   i sekce, viditelnost řádku tabulek, název souboru při exportu.
 - Psát názvy polí ručně jde dál, nic se tím nemění.
 
-### 4. 8. 2026 · Návrhář - Řádky dynamické tabulky lze seřadit
+### 4. 8. 2026 · Návrhář - Tabulku s řádky z dat lze seřadit
 
-U dynamické tabulky vyberete **sloupec a směr** řazení; druhý sloupec se nabídne, až vyplníte
+U tabulky s řádky z dat vyberete **sloupec a směr** řazení; druhý sloupec se nabídne, až vyplníte
 první. Čísla, data i text se poznají podle hodnot, takže se neptáme, jak se má řadit - textově
 by „12" bylo před „9". Prázdné hodnoty jdou vždy nakonec. Bez nastavení se pořadí nemění.
 
