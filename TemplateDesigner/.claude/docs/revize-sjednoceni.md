@@ -45,14 +45,14 @@ Nápověda (jen v .cls), FromImage, nabídka dat (NabidkaDat.cls, C# čte ze ser
 ## D. Smazat
 Offline nabídka dat: JsonFileDataSchemaProvider, CompositeDataSchemaProvider, csproj:45 `schemas\*.schema.json` (složka neexistuje od 899e05ba), wiring TemplateDesignerViewModel.cs:378, zmínky v cache-api.md.
 
-## E. Nalezené chyby (opravit zvlášť)
-- E1 Text z importu PDF: VAlign null → formulář „Na střed" (TextElementEdit.cls:78 default), tiskne se „Nahoře" (ResolvedTextStyle.Default). Ověřeno čtením, ne v aplikaci.
-- E2 Ctrl+D + šipka: kód State.SnapGapMm (2 mm, Editing.cs:159), ux §3 + HelpDialogViewModel.cs:183,355 tvrdí 4 mm.
-- E3 Výchozí mřížka: ApplyLoadedPreferences (TemplateDesignerViewModel.cs:413-425) přepíše DesignerState 1 mm/zapnuto na 5 mm/vypnuto (odhad).
-- E4 Panel sekcí v menu nejspíš panel neschová (MinWidth 120) a nesynchronizuje se s ☰ (odhad).
-- E5 Panel ukazuje „Arial" místo výchozího fontu šablony (TextElement.cs:153, NotesLegendElement.cs:800,805) (odhad).
-- E6 AI texty zastaralé: Poznámky „(zastávkový JŘ)" CapabilityCatalog.cs:325; „TableElement NEPOUŽÍVEJ" AnthropicApiClient.cs:165; „změna rozměru = nová šablona" CapabilityCatalog.cs:119; 5 záložek místo 6 :125; F1 „lišta 50–200 %" HelpDialogViewModel.cs:353.
-- E7 Jména prvků mimo ElementNames: bubliny palety (xaml:359,363,379), Menus.cs:373, DepartureColumnWarnings.cs:45,55, LineTableElement.cs:3704; „Tabulka (z dat)" × „Dynamická tabulka" (příručka). ROZHODNOUT kanon.
-- E8 Výška „(dynamická)" TemplateElement.cs:334 × kanon „výška podle obsahu".
-- E9 Zastaralé: skill novy-element (handler, brána drift testu, chybějící místa), ElementNames.cs:11 (BuildAddElementMenu), TemplateElement.cs:324-326 (rozsahy hlídá test), DescriptorLabelsMatchFormTests.cs:9, CapabilityCatalog.cs:251, DynamicTableElement.cs:18 „dormant".
-- E10 Drobnosti: „..." × „…" (Mouse.cs:624,658), „Del/PgDn" × „Delete/PageDown", ux §3 chybí Ctrl+klik, Ctrl+kolečko, Esc na úvodní obrazovce.
+## E. Nalezené chyby (stav 30. 10.)
+- E1 ✅ Formulář textu ukazuje u nenastavené vlastnosti stylu hodnotu z kaskády (`ElementFormBinder.InheritedValuesFor`); panel už nepřenáší zděděné hodnoty buňky pevné tabulky k dalšímu prvku. Ověřeno testem, ne v aplikaci.
+- E2 ✅ F1 a ux §3: mezera u Ctrl+D + šipka = mezera pro přichytávání (výchozí 2 mm); škálování šablony je v menu Upravit, ne na liště.
+- E3 ✅ Výchozí mřížka 5 mm bez přichytávání v jedné konstantě (`DesignerState.Default*`), předvolby ji přebírají; příručka opravená.
+- E4 ✅ Menu Zobrazit → Levý panel ovládá totéž co ☰ a Ctrl+B; název „Levý panel". Ověřeno jen čtením a buildem, ne v aplikaci.
+- E5 ⏳ Panel a lišta ukazují „Arial" místo výchozího fontu šablony - formulář textu opravený s E1, zbytek (deskriptory `?? "Arial"`) patří k A2.
+- E6 ✅ Asistent: Poznámky v obou JŘ (odvozeno z AgendaCapabilities), změna formátu stránky se ptá, 6 záložek, pevná tabulka je živý prvek.
+- E7 ⏳ Jména tabulek: čeká na rozhodnutí Jana (rozhodnutí 4).
+- E8 ✅ Výška prvku podle obsahu: „(podle obsahu)" místo „(dynamická)".
+- E9 ✅ Zastaralé komentáře a skill `novy-element` opravené; `CapabilityCatalog.cs:251` (skupiny „jak je uživatel vidí") zůstává do B1.
+- E10 ✅ „…" v místní nabídce, ux §3 doplněné o Ctrl+klik, Ctrl+kolečko a Esc. „Del/PgDn" × „Delete/PageDown" zůstává ke klávesovým zkratkám (A3).
