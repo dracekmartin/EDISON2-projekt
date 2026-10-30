@@ -21,18 +21,8 @@ Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného,
 Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a pravidlo druhého použití jsou v R8, měření v `legacy-nahrada.md §4`.
 **Fáze (Jan 30. 10.):** 1 struktura a pojistky → 2 popis agendy podle druhu výstupu → 3 výstup podle druhu → 4 data podle zdroje
 (fáze 1-4 hotové 30. 10., kroky S1-S12 v archivu) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje;
-udělá se jako první krok relací) → 6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami.
-
-### Zbývá v `B56`
-
-- **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
-  **Jan** (fáze 6) - čeká, až kolegové uklidí nastavení tisku v jízdních řádech (domluveno 29. 10.; co agendy čtou
-  a odkud: [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md)). Definice pak patří do `Jr/Parametry.cls` (stálý kód
-  vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
-- **Varianty tras i ve vývěsce MHD** [L] (fáze 7) - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
-  (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
-  na trasy a body MHD a ověřit proti datům, pak v `ZastavkoveJrMhd` přepnout `VariantyTras = 1` -
-  nabídka sloupce se ukáže sama.
+udělá se jako první krok relací) → 6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami
+(fáze 6 a 7 Jan 30. 10. odložil, jejich položky P2 a varianty tras v MHD jsou v backlogu).
 
 ### Vědomě nesjednocovat
 
@@ -146,6 +136,16 @@ Seznam s důvody je v [`legacy-nahrada.md §4`](legacy-nahrada.md); sloučení k
   zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937, pozastavený; trvá zákazník
   i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV #9088). Náš díl: pole přečíst
   a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
+
+- **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
+  **Jan** - čeká, až kolegové uklidí nastavení tisku v jízdních řádech (domluveno 29. 10.; co agendy čtou
+  a odkud: [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md)). Definice pak patří do `Jr/Parametry.cls` (stálý kód
+  vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
+
+- **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
+  (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
+  na trasy a body MHD a ověřit proti datům, pak v `ZastavkoveJrMhd` přepnout `VariantyTras = 1` -
+  nabídka sloupce se ukáže sama.
 
 ---
 
