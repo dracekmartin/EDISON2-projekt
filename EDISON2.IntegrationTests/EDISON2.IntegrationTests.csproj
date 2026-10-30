@@ -25,6 +25,12 @@
     <ProjectReference Include="..\EDTesting\dotnet\EDTesting.csproj" />
   </ItemGroup>
 
+  <!-- Kontrakt prvek ↔ agenda návrháře (KontraktDatAgendTests): soubory bez závislostí, ne celá aplikace. -->
+  <ItemGroup>
+    <Compile Include="..\TemplateDesigner\dotnet\Models\KontraktDat.cs" Link="TemplateDesigner\KontraktDat.cs" />
+    <Compile Include="..\TemplateDesigner\dotnet\Models\StopFields.cs" Link="TemplateDesigner\StopFields.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <Reference Include="MLRest">
       <HintPath>C:\Edison\MLRest.dll</HintPath>

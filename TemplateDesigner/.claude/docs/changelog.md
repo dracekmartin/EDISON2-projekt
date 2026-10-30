@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-30 (9) - Kontrakt mezi prvky a agendami je zapsaný a hlídaný (`B194g` R3)
+
+Seznam zastávek, Minuty odjezdů, Poznámky, Tabulka spojů a navigace stránek čtou z dat agendy asi 80 položek podle jména a nikde nebylo zapsané, které musí agenda posílat a v jakém tvaru.
+Chybějící položka se projevila jen prázdným prvkem a jiný tvar shodil náhled (atributy zastávky, 8. 10.).
+`KontraktDat.cs` je teď drží na jednom místě: druh agendy (zastávkové, linkové, každá), kolekci, tvar (hodnota, pole hodnot, pole objektů) a u položky, která nechodí vždy, proč.
+`KontraktDatTests` hlídá, že kód návrháře čte z dat jen položky z kontraktu a každou z nich opravdu čte; při zápisu se tak našly tři čtené položky, které v soupisu chyběly (výlep stránky, aktuální zastávka v linkovém JŘ, „v rozsahu nepoznámkovat").
+Integrační `KontraktDatAgendTests` na dev serveru načte data linek všech agend a ověří, že agenda daného druhu povinné položky posílá v každém řádku a ve správném tvaru; běží v pre-push s ostatními integračními testy (asi 10 s).
+Co agenda vědomě nemá (vývěska MHD sloupky a varianty tras, linkový JŘ MHD tarifní čísla, sloupec MHD, směr a dopravce spoje), jsou výjimky s důvodem a test hlídá, že pořád platí.
+Při revizi se díra nenašla, všechny chybějící položky jsou záměr.
+Testy spadly na dočasně odebrané výjimce, změněném tvaru atributů zastávky (5 966 zastávek vývěsky AD), neplatné výjimce i na položce kontraktu, kterou nic nečte.
+Ověřeno: integrační testy 48/48, .NET testy návrháře 2532/2532.
+
 ## 2026-10-30 (8) - Vývěska AD neposílá data, která nic nečte (`B194f`)
 
 Kontrola dat proti nabídce (G1) našla ve vývěsce AD tři položky, které nabídka nemá a návrhář nečte.

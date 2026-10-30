@@ -58,11 +58,6 @@ je v `roadmap-archive.md` u `B194` a v changelogu 2026-10-29 a 2026-10-30.
   dvěma způsoby (příponu `:…` odstraňují jen dvě) a tři převody na `$h`. Barva `r;g;b`: `BaseAgenda.RgbNaHex`
   bere `0;0;0` jako nenastaveno, `RgbToHex` ve vývěskách jako černou (komentář `BaseAgenda.cls:209` „kopie
   téhož" neplatí; co znamená `0;0;0`, rozhodne **Jan**). Texty omezení viz `T3`.
-- **R3 Kontrakt prvek ↔ agenda není zapsaný** [M]. Prvky čtou klíče řádků literálem (`LineTableElement.
-  EnsureParsed` 31 klíčů, `StopScheduleElementBase.BuildZastavky`), chybějící klíč tiše vykreslí prázdno;
-  `ATRIBUTY` má podle druhu agendy jiný tvar (shodilo náhled 8. 10.). Návrh: konstanty kontraktu podle
-  druhu (STOP/LINE) + offline test, že je každá agenda daného druhu posílá (s výjimkami a důvodem).
-  Stav 28. 10.: zastávky už mají konstanty `StopFields`, Tabulka spojů ne.
 - **R4 Schopnosti agend natvrdo v C#** [S-M] **Jan**. `JeRozdilovyJr`, `CreateSampleTemplate` (`"LINKOVY_JR_AD"`),
   `ScheduleImportTypes.ForAgenda` (podle prefixu kódu; enum `ZastavkovyJrMhd` platí i pro AD).
   `ShouldPrefillDepartureColumns` už jde přes příznak `CustomColumns` (28. 10.). Návrh:

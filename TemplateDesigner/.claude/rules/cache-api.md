@@ -408,6 +408,8 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 5. Linku s daty doplnit do `KontraktAgendTest.LinkyAgend` - test kontraktu na ní ověří, že data posílají
    každé nabízené pole. Položku dat mimo nabídku (čte ji prvek, ne uživatel) zapsat do `PolozkyMimoNabidku`
    s druhem; jinak test spadne, protože nevíme, kdo ji čte.
+6. Agenda s prvky JŘ (`ElementKind` STOP / LINE) posílá položky, které prvky čtou, ve tvaru z `KontraktDat.cs`
+   (integrační `KontraktDatAgendTests`, pre-push). Co agenda vědomě nemá, patří do výjimek testu s důvodem.
 
 ---
 

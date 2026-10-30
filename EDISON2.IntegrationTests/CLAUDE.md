@@ -37,3 +37,6 @@ skutečnou odpovědí.
   - `ResetSettings` / `SaveParams` / `LoadParams` s prázdným MLP - pracují s uživatelem `*`
     (sdílené defaulty).
 - Server má nasazený stav pracovního stromu (compile hook při editaci `.cls`), ne pushovaný commit.
+- **Kontrakt dat agend návrháře** (`KontraktDatAgendTests`): `KontraktDat.cs` a `StopFields.cs` z TemplateDesigner
+  jsou přilinkované (bez závislostí), ne celá aplikace. Linky a volání agend bere ze sondy `ALVA.TemplateDesigner.Tests.SnimekAgendProbe`,
+  musí tedy být na serveru nasazená.

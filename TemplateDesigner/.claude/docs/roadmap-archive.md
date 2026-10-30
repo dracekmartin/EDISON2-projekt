@@ -9,6 +9,10 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **R3** Kontrakt prvek ↔ agenda zapsaný a hlídaný (hotovo 30. 10., changelog 2026-10-30 (9)): `KontraktDat.cs`
+  (položky, které čte kód návrháře, s tvarem a důvodem, proč chodí jen někdy), offline `KontraktDatTests`
+  (kód čte jen položky z kontraktu) a integrační `KontraktDatAgendTests` (agendy je na serveru posílají
+  ve správném tvaru, výjimky s důvodem). Při revizi se díra nenašla, všechny chybějící položky jsou záměr.
 - **Zbytky dat vývěsky AD** (hotovo 30. 10., changelog 2026-10-30 (8), rozhodnutí Jan 30. 10.): kolekce
   `DOPRAVCI` a pole `NZ_KONFIG`, `NEVYPISOVAT_ZNACKY_SLOUPCU` se neposílají - nic je nečetlo (nález `G1`).
   Tím je `B194f` (pojistky před `B56`) celé hotové.
