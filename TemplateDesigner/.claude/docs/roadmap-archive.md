@@ -9,6 +9,9 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **G5** Tlačítko formuláře funguje v každém okně, které ho ukazuje (hotovo 30. 10., changelog 2026-10-30 (7)):
+  okno vlastností skryje tlačítko bez akce (mrtvé „Nastavení celé tabulky" v okně buňky, rozhodnutí Jan
+  30. 10.), klíče tlačítek v `TlacitkaFormulare`, panel a vlastní okna tabulek hlídá `TlacitkaFormulareTests`.
 - **G4** Názvosloví i v nápovědách, hláškách a textech oken (hotovo 30. 10., changelog 2026-10-30 (6)):
   ban list rozdělený na názvosloví (všude, `NazvosloviTextuTests`) a tvary popisku (jen popisky);
   „Tučně", „Podtržené", „Přeškrtnuté" se hledají i uvnitř popisku.

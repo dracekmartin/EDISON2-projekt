@@ -68,8 +68,8 @@ public class SkupinyPoznamekDialogTests
     [InlineData(true, nameof(NotesLegendElement.Vyluky), false)]
     [InlineData(true, nameof(NotesLegendElement.ShowZnackaKola), false)]
     [InlineData(false, nameof(NotesLegendElement.ShowPoznamkyLinkyRadiobus), true)]
-    [InlineData(true, NotesLegendElement.SkupinyPoznamekKlic, true)]
-    [InlineData(false, NotesLegendElement.SkupinyPoznamekKlic, false)]
+    [InlineData(true, TlacitkaFormulare.DruhyPoznamek, true)]
+    [InlineData(false, TlacitkaFormulare.DruhyPoznamek, false)]
     [InlineData(true, nameof(NotesLegendElement.ShowNegativniZnacky), false)]
     [InlineData(true, nameof(NotesLegendElement.ShowTextovePoznamky), false)]
     [InlineData(false, nameof(NotesLegendElement.ShowSpecialniZnaky), true)]
@@ -89,7 +89,7 @@ public class SkupinyPoznamekDialogTests
         List<Item> polozky =
         [
             obsah, new Field { Key = nameof(NotesLegendElement.ShowNegativniZnacky) },
-            new Field { Key = NotesLegendElement.SkupinyPoznamekKlic },
+            new Field { Key = TlacitkaFormulare.DruhyPoznamek },
             linka, new Field { Key = nameof(NotesLegendElement.Vyluky) },
             new Field { Key = nameof(NotesLegendElement.ShowPoznamkyLinkyRadiobus) },
         ];

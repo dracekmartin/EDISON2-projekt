@@ -52,7 +52,6 @@ totéž znovu. Pořadí podle přínosu:
   vzory `PRESETY_SLOUPCU`). V `KontraktAgendTest.PolozkyMimoNabidku` mají druh `zbytek`. Návrh: přestat
   je posílat a smazat zastaralé komentáře u nich (`ZastavkoveJrAd` u skalárů dopravce, `BuildDopravci`,
   NZ konfigurace). Šablona je použít nemůže, v nabídce nejsou; snímek výstupu se tím vědomě změní.
-- **G5 Každé tlačítko formuláře má obsluhu v každém hostiteli** [S]. Odtud `C2`.
 
 ## 7. Architektura před sloučením kódu (`B56`)
 

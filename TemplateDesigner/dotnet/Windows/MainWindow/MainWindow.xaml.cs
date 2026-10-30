@@ -1940,12 +1940,14 @@ public partial class MainWindow : Window
             // Okno vlastností zapisuje až s Uložit - rozpracované druhy si proto drží samo,
             // aby druhé otevření ukázalo první úpravu.
             var rozpracovane = poznamky.EfektivniSkupiny();
-            dlg.AkceTlacitka = klic =>
+            dlg.AkceTlacitek = new Dictionary<string, Func<IDesignerCommand?>>
             {
-                if (klic != NotesLegendElement.SkupinyPoznamekKlic
-                    || VyberSkupinyPoznamek(poznamky, rozpracovane, dlg) is not { } skupiny) return null;
-                rozpracovane = skupiny;
-                return TemplateDesignerViewModel.SkupinyPoznamekCommand(poznamky, skupiny);
+                [TlacitkaFormulare.DruhyPoznamek] = () =>
+                {
+                    if (VyberSkupinyPoznamek(poznamky, rozpracovane, dlg) is not { } skupiny) return null;
+                    rozpracovane = skupiny;
+                    return TemplateDesignerViewModel.SkupinyPoznamekCommand(poznamky, skupiny);
+                },
             };
         }
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
@@ -1997,9 +1999,9 @@ public partial class MainWindow : Window
     private void OnInlineElementButtonClicked(string key)
     {
         // Z formuláře buňky zpátky na nastavení celé tabulky (= odchod z buňky, jako Esc).
-        if (key == "__tableSettings") { ExitToTableSettings(); return; }
+        if (key == TlacitkaFormulare.NastaveniCeleTabulky) { ExitToTableSettings(); return; }
 
-        if (key == NotesLegendElement.SkupinyPoznamekKlic)
+        if (key == TlacitkaFormulare.DruhyPoznamek)
         {
             if (_vm!.State.SelectedElements is [NotesLegendElement poznamky]
                 && VyberSkupinyPoznamek(poznamky, poznamky.EfektivniSkupiny()) is { } skupiny)
@@ -2011,7 +2013,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (key != "__highlightRules") return;
+        if (key != TlacitkaFormulare.ZvyrazneniRadku) return;
         if (_vm!.State.SelectedElements is [IRowHighlightable h])
             OpenHighlightRulesDialog(h);
     }

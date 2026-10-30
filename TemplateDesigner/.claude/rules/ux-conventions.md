@@ -133,7 +133,8 @@ zatímco lišta nad ním jednu buňku, a nešlo je od sebe rozlišit (nález Jan
 
 - panel u buňky ukazuje **týž formulář jako okno Alt+Enter** (jedno schéma, dva hostitelé - jako
   u prvků; dvě různá by se rozešla) a začíná skupinou **„Vybraná buňka"** s tlačítkem
-  **„Nastavení celé tabulky"** (= odchod z buňky, táž cesta jako Esc, jen pojmenovaná),
+  **„Nastavení celé tabulky"** (= odchod z buňky, táž cesta jako Esc, jen pojmenovaná). Okno Alt+Enter
+  ho neukazuje - okno vlastností skryje každé tlačítko, pro které nemá akci (do 30. 10. tam bylo mrtvé),
 - formulář prvku má skupinu **„Styl všech buněk"** - z popisku je vidět, že je to výchozí pro celou
   tabulku, ne pro tu jednu,
 - pole ukazují **vyřešenou** hodnotu (i tu zděděnou - formulář ji dostane z kaskády, ne ze schématu),

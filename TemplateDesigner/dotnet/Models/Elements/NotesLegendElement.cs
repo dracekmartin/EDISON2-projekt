@@ -540,9 +540,6 @@ public class NotesLegendElement : StopScheduleElementBase
         _                  => SkupinaPoznamek.DalsiZnacky,   // 4 poznámky ke spojům, 6 místenky, 7 stálé značky
     };
 
-    /// <summary>Klíč tlačítka „Druhy poznámek" ve formuláři prvku (<c>NotesLegendElementEdit.cls</c>).</summary>
-    public const string SkupinyPoznamekKlic = "__skupinyPoznamek";
-
     /// <summary>
     /// Které pole formuláře prvku je vidět podle druhu agendy: okno druhů jen u linkového JŘ (jen
     /// ten posílá druh poznámky), vývěskové volby a společný počet sloupců naopak jen jinde.
@@ -559,7 +556,7 @@ public class NotesLegendElement : StopScheduleElementBase
     /// </remarks>
     public static bool PoleFormulareViditelne(string klic, bool linkovyJr, bool rozdilovyJr = false) => klic switch
     {
-        SkupinyPoznamekKlic => linkovyJr,
+        TlacitkaFormulare.DruhyPoznamek => linkovyJr,
         // Barvy verzí mají smysl jen tam, kde data verzi nesou (rozdílový linkový JŘ).
         nameof(RozdilPuvodniBackColor) or nameof(RozdilNovaBackColor) => rozdilovyJr,
         nameof(Columns) or nameof(ShowNegativniZnacky) or nameof(ShowSpecialniZnaky) or nameof(ShowTextovePoznamky)

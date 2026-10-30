@@ -125,6 +125,20 @@ public static class ElementFormBinder
         !string.IsNullOrWhiteSpace(value) && !Models.ColorHex.IsValid(value);
 
     /// <summary>
+    /// Schová tlačítka, pro která okno nemá akci - klik by nic neudělal (do 30. 10. „Nastavení celé tabulky"
+    /// v okně buňky). Ostatní pole nechá být, jejich viditelnost posílá server a řídí pravidlo hostitele.
+    /// </summary>
+    public static void SkrytTlacitkaBezAkce(IEnumerable<Item>? items, IEnumerable<string> obsluhovana)
+    {
+        var akce = obsluhovana.ToHashSet(StringComparer.Ordinal);
+        foreach (var f in (items ?? []).OfType<Field>())
+        {
+            if (f.FieldType == FieldType.Button && !akce.Contains(f.Key) && f.Visibility != ItemVisibility.Collapsed)
+                f.Visibility = ItemVisibility.Collapsed;
+        }
+    }
+
+    /// <summary>
     /// Schová pole, která podle pravidla hostitele nic nedělají, a s nimi skupinu, ve které žádné
     /// viditelné pole nezbylo - jinak by po ní zůstal prázdný nadpis. Null pravidlo = vše vidět.
     /// </summary>

@@ -23,7 +23,6 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
 ### `B194f` Pojistky před `B56`
 
 - **Zbytky dat agend** [S] **Jan** - vývěska AD posílá tři položky, které nic nečte (dopravci po provozovnách, dvě nastavení prázdninových značek); přestat je posílat? Detail `konzistence-agend-jr.md §6`
-- **G5** Každé tlačítko formuláře má obsluhu v každém hostiteli [S]
 
 ### `B194g` Architektura před `B56`
 

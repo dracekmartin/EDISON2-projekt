@@ -59,7 +59,7 @@ public partial class StopColumnsEditorDialog : Window
 
     private void OnGeneralButtonClicked(string key)
     {
-        if (key != "__highlightRules") return;
+        if (key != Models.TlacitkaFormulare.ZvyrazneniRadku) return;
         var current = ResultHighlightRules ?? _element.HighlightRules;   // reopen ukáže rozeditovaná pravidla
         var dlg = new HighlightRulesEditorDialog(current) { Owner = this };
         if (dlg.ShowDialog() == true)

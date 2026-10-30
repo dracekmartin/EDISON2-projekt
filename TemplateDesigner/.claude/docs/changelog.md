@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-30 (7) - Tlačítko formuláře funguje v každém okně, které ho ukazuje (`B194f` G5)
+
+Formulář prvku tlačítko jen ukáže a akci si každé okno píše samo; nic nehlídalo, že ji napsalo.
+Okno „Vlastnosti buňky" (Alt+Enter) tak ukazovalo „Nastavení celé tabulky" a na klik nereagovalo - tlačítko je určené pro panel, kde vrací z buňky na celou tabulku (náhrada Esc).
+Okno vlastností teď dostává akce tlačítek podle klíče a tlačítko bez akce skryje, takže v okně buňky už není (rozhodnutí Jan 30. 10.); v panelu zůstalo.
+Platí pro všechna okna tohoto typu (prvek, buňka, řádek, sekce, stránka), i pro tlačítka přidaná v budoucnu.
+Klíče tlačítek jsou v `TlacitkaFormulare`; `TlacitkaFormulareTests` hlídá, že sedí s formuláři a že panel a okna Seznamu zastávek, Tabulky z dat a Tabulky spojů svá tlačítka obsluhují (spadl na dočasně odebrané obsluze).
+Ověřeno: .NET testy 2529/2529 a v aplikaci (Jan): v okně buňky tlačítko není ani po změně pole, v panelu funguje, „Druhy poznámek" v okně Poznámek zůstaly.
+
 ## 2026-10-30 (6) - Dohodnuté názvosloví i v nápovědách, hláškách a textech oken (`B194f` G4)
 
 Zakázané termíny se dosud kontrolovaly jen v popiscích, volbách a skupinách; nápovědy a texty oken nehlídalo nic a tudy se dřív vracela „nástupiště" (P7) a „engine" (E7).
