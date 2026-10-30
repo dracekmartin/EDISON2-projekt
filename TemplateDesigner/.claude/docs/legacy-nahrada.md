@@ -869,7 +869,7 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
 
 **Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - až budou volby jednou
 definicí, patří do `Jr/Parametry.cls`; čeká na úklid nastavení tisku v jízdních řádech, který dodělají kolegové
-(domluveno 29. 10., backlog).
+(domluveno 29. 10., fáze 6 `B56` v roadmapě).
 
 - Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb: „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", k tomu kryptické prázdninové volby vývěsky.
   Vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`).
@@ -947,7 +947,7 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
   Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky (hotové, S3); linkové (hotové, S4, `Jr/VystupLinkovy.cls`); AD (hotové, S5, `Jr/DataAd.cls`; `NormalizLinku` přejmenované na `FormatCisloLinky`), výběr skupin linek a linek (hotový, S6).
   Pak sjednocení z odstavce výš (platnost, omezení 14 a 15; hotové, S8) a data MHD včetně posledních vzájemných volání agend (hotové, S12).
-  Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".
+  Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až kolegové uklidí nastavení tisku v jízdních řádech (fáze 6 `B56`).
 - **Pojistky při přesunu kódu (S1 hotové 30. 10.):** pomocné třídy jsou v `Agendy/Jr/` a testy čtou zdrojáky přes `ZdrojeAgend`: kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy (přímé potomky `BaseAgenda`, jako registr).
   Při přesunu dál pozor na kontroly vázané na jednu agendu: pořadí polí nabídky po souborech, vyřazená pole agendy, „Obecné" jako první skupina parametrů, příznak v registru proti obsahu agendy (`TRASA_MIN`, `ParseDefiniceSloupcu`, `"puvodni"`) a doslovné `AddBoolParam(arr,` v `ServerSideParamsDriftTests`.
   Ty se upraví v témže commitu, který jejich kód přesune; serverové kontroly (`KontraktAgendTest`, `KontraktDatAgendTests`) přesun přežijí.

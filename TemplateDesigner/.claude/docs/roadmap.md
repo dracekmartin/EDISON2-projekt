@@ -20,39 +20,19 @@ Postup, pojistky a snímek výstupu jsou v [`legacy-nahrada.md §4`](legacy-nahr
 Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného, se při přesunu přejmenuje (`cache-api.md` pravidlo 5).
 Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a pravidlo druhého použití jsou v R8, měření v `legacy-nahrada.md §4`.
 **Fáze (Jan 30. 10.):** 1 struktura a pojistky → 2 popis agendy podle druhu výstupu → 3 výstup podle druhu → 4 data podle zdroje
-(fáze 1-4 hotové 30. 10., kroky S1-S12 v archivu; pole pro QR čeká na vyhledávač) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje) →
-6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami.
+(fáze 1-4 hotové 30. 10., kroky S1-S12 v archivu) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje;
+udělá se jako první krok relací) → 6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami.
 
-### Převzato z backlogu - souvisí se sjednocením agend
+### Zbývá v `B56`
 
-- **Úklid nastavení tisku v jízdních řádech - naše strana** [M] - **čeká na kolegu z jízdních řádů**.
-  Domluveno 29. 10.: většinu tiskových nastavení z jízdních řádů vyhodí, zbytek dodělají. Až se k tomu
-  dostane, sladit agendy: nastavení, které zmizí z jízdních řádů a návrhář ho dál čte, by zůstalo uložené
-  a nešlo by změnit. Na tom visí kroky `B56`, které čtou nastavení linky. Co agendy čtou a odkud:
-  [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
 - **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
-  **Jan** - čeká na úklid nastavení v jízdních řádech (výš), ze kterého volby vycházejí; definice pak patří
-  do `Jr/Parametry.cls` (stálý kód vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
-- **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
-  nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po
-  zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937, pozastavený; trvá zákazník
-  i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV #9088). Náš díl: pole přečíst
-  a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
-- **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
+  **Jan** (fáze 6) - čeká, až kolegové uklidí nastavení tisku v jízdních řádech (domluveno 29. 10.; co agendy čtou
+  a odkud: [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md)). Definice pak patří do `Jr/Parametry.cls` (stálý kód
+  vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
+- **Varianty tras i ve vývěsce MHD** [L] (fáze 7) - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
   (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
   na trasy a body MHD a ověřit proti datům, pak v `ZastavkoveJrMhd` přepnout `VariantyTras = 1` -
-  nabídka sloupce se ukáže sama. Hodí se spojit s `B56` (sdílený kód agend).
-- **Číslo zastávky pro adresu v QR ve všech agendách** [S] (dřív `B193h`, odloženo Janem 23. 10.) - jedno pole
-  se stejným klíčem ve všech agendách JŘ; patří k Vyhledávači odjezdů v backlogu.
-- **Sjednocené věci definovat jednou** [M] **Jan** (27. 10.) - nejdřív revize toho, co `B194` sjednotilo (popisky,
-  nápovědy a rozsahy polí E8, údaje dopravce D4, nabídka podle dat E5, kanon `ux-conventions §8`), a pro každé
-  rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky
-  a rozsahy ze schématu formuláře `*Edit.cls` místo opisu v `GetPropertyDescriptors` (dnes se píše dvakrát).
-  Navazuje na E3 / E13; je to strana návrháře, kód agend řeší sekce výš.
-- **Slovo „linka" napevno** (`B194e` A5) [M] - asi 25 textů (menu „Zkontrolovat vybrané linky…",
-  hlášky „Žádná vybraná linka nemá data", průběh kontroly). Udělat, **až se bude vydávat agenda bez
-  linek** (převod Report generátoru; ukázkové Faktury jsou od 30. 10. smazané) - skloňovat podle názvu
-  instance agendy; okno výběru už ho bere (Jan 27. 10.).
+  nabídka sloupce se ukáže sama.
 
 ### Vědomě nesjednocovat
 
@@ -97,8 +77,9 @@ Seznam s důvody je v [`legacy-nahrada.md §4`](legacy-nahrada.md); sloučení k
 - **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
   otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.
   Nahrazuje lokální demo z 1. 10. (`edwcore/apps/tisky-qr` nad EDISONem). Zadání, k ověření
-  a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md). Jedno pole čísla zastávky
-  pro adresu v QR ve všech agendách je v přehledu `B56`.
+  a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md). Patří k tomu **jedno pole čísla
+  zastávky pro adresu v QR ve všech agendách** (dřív `B193h`): dnes ho každá agenda nese jinak, pole se vybere
+  podle tvaru adresy.
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
@@ -154,6 +135,18 @@ Seznam s důvody je v [`legacy-nahrada.md §4`](legacy-nahrada.md); sloučení k
   JSON zdroj ze souboru nebo URL. Dořešit přihlašovací údaje a odvození schématu z dat
   (analýza 12. 7., detail v historii roadmapy).
 
+- **Sjednocené věci definovat jednou** [M] **Jan** (27. 10.) - nejdřív revize toho, co `B194` sjednotilo (popisky,
+  nápovědy a rozsahy polí E8, údaje dopravce D4, nabídka podle dat E5, kanon `ux-conventions §8`), a pro každé
+  rozhodnout, kde má extrakce na jedno místo smysl a kde stačí drift test. Kandidát: panel návrháře bere popisky
+  a rozsahy ze schématu formuláře `*Edit.cls` místo opisu v `GetPropertyDescriptors` (dnes se píše dvakrát).
+  Strana návrháře, navazuje na E3 / E13; kód agend sjednotil `B56`.
+
+- **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
+  nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po
+  zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937, pozastavený; trvá zákazník
+  i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV #9088). Náš díl: pole přečíst
+  a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
+
 ---
 
 ## 🚋 Relace a vozové JŘ
@@ -184,7 +177,7 @@ Dopravní agendy narazí jen na `F3`, mzdy, pokladna a faktury hned na `F9` a `F
 | # | Co | Stav |
 |---|---|---|
 | F7 | **Pojmenování agend** - sada = naše agenda podle výstupu (`VYPLATNI_PASKA`), modul se stejným výstupem = varianta (`MZDY2`); kód agendy se po vydání nemění, proto před první agendou | ⬜ rozhodnutí Jan |
-| F8 | **Pilot: Vozové listy (MHD)** - 5 polí, 2 tabulky, instance = oběh, volá MHD2Linky; vlastní třída zavolá starý `getSadu`/`getData` a převede výstup, registr se nemění. Narazí na zvýraznění řádku z dat (`F3`, R3). Před vydáním text „linka" napevno (`B194e` A5 u `B56`) | ⬜ po relacích |
+| F8 | **Pilot: Vozové listy (MHD)** - 5 polí, 2 tabulky, instance = oběh, volá MHD2Linky; vlastní třída zavolá starý `getSadu`/`getData` a převede výstup, registr se nemění. Narazí na zvýraznění řádku z dat (`F3`, R3). Před vydáním text „linka" napevno (`B194e` A5, pod tabulkou) | ⬜ po relacích |
 | F2 | **Obecný převodník vs čisté agendy** - rozhodnout po pilotu; převodník potřebuje registr, který vypíše dvojice agenda a sada, a varianty se stejným tvarem dat neumí | ⬜ rozhodnutí po `F8` |
 | F3 | **Tabulka z dat na úroveň RG** (navazuje na dynamickou tabulku + `B76`) - řádky řízené daty, overflow, mezisoučty, seskupení řádků a vnořená data; ⚠️ tvar odvodit z reálných sestav RG. Rozpis [`legacy-nahrada.md`](legacy-nahrada.md) §5 etapa 4 | ⬜ L |
 | F1 | **Pořadí agend** - statistika použití agend neexistuje (`Main.cls:161-188` jsou počty prvků) a tisky se nelogují; počet šablon podle agendy v databázích zákazníků (jen čtení), nebo počet volajících míst. Dopravní agendy napřed | ⬜ |
@@ -195,6 +188,11 @@ Dopravní agendy narazí jen na `F3`, mzdy, pokladna a faktury hned na `F9` a `F
 | F4 | **Další výstupy** - Excel (data podle typů sloupců), znakový tisk Epson, JPG | ⬜ dle poptávky |
 | F5 | **Jazykové varianty šablon** - per-jazyk kopie provázaná na CS zdroj | ⬜ |
 | F6 | **Vědomě neportovat bez poptávky** - grafy (12×), AZTEC (2×), calculated (2× - výrazy TD nadmnožina), checkbox (8×); ověřit + škrtnout | ⬜ validace |
+
+- **Slovo „linka" napevno** (`B194e` A5) [M] - asi 25 textů (menu „Zkontrolovat vybrané linky…",
+  hlášky „Žádná vybraná linka nemá data", průběh kontroly). Udělat **před vydáním první agendy bez
+  linek** (pilot `F8`; ukázkové Faktury jsou od 30. 10. smazané) - skloňovat podle názvu instance agendy;
+  okno výběru už ho bere (Jan 27. 10.).
 
 ---
 

@@ -5,8 +5,8 @@
 > se nastavení otevírá, je ze zdroje klientů (`C:\DEV\EDISON\JRMAIN`, `ISYJR2`, `JRSETTINGS`, `MHD2*`),
 > v běžící aplikaci neproklikané.
 > **Jednorázový podklad.** Schůzka 29. 10.: většinu tiskových nastavení kolegové z jízdních řádů vyhodí,
-> zbytek dodělají. Soubor zůstává jako podklad pro backlog „Úklid nastavení tisku v jízdních řádech"
-> (co agendy čtou a odkud); po něm smazat.
+> zbytek dodělají. Soubor zůstává jako podklad pro fázi 6 `B56` a `P2` v roadmapě (co agendy čtou a odkud);
+> smazat, až kolegové nastavení uklidí a agendy se srovnají.
 
 Stavy: **bereme** (návrhář nastavení čte, šablona ho nepřebije) · **bereme, šablona přebije** (parametr
 s volbou „Automaticky (dle linky)") · **nebereme** (nahrazuje šablona, nebo chybí).
