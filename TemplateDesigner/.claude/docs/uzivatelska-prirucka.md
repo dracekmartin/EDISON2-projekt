@@ -101,7 +101,7 @@ Zleva doprava:
   Přepočítat šablonu na jinou velikost (podnabídka procent) · Kopírovat styl · Vložit styl ·
   Použít výchozí font u všech prvků
 - **Zobrazit** - Mřížka plátna, Přichytit k mřížce plátna, Přichytit k prvkům, Záhlaví sekcí,
-  Pravítka, Panel sekcí, Živý náhled (zaškrtávací položky)
+  Pravítka, Levý panel (Ctrl+B), Živý náhled (zaškrtávací položky)
 - **Nástroje** - Změnit agendu… · Šablony v databázi… · Úvodní obrazovka
 - **Nápověda** - Klávesové zkratky a ovládání (F1) - s fulltextovým hledáním (Ctrl+F)
 

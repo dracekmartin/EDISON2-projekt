@@ -482,16 +482,17 @@ public partial class MainWindow : Window
             SectionsColumn.Width = new GridLength(0);
             SectionsSplitterColumn.Width = new GridLength(0);
         }
+        if (MenuSectionsPanel is not null) MenuSectionsPanel.IsChecked = BtnToggleLeftPanel.IsChecked == true;
     }
 
     // ── Panel visibility ──────────────────────────────────────────────────────
 
+    /// <summary>Menu Zobrazit → Levý panel dělá totéž co ☰ a Ctrl+B. Do 30. 10. mělo vlastní kód, který
+    /// panel neschoval (sloupec drží nejmenší šířku) a se ☰ se rozcházel.</summary>
     private void MenuPanelSection_Changed(object sender, RoutedEventArgs e)
     {
-        if (SectionsColumn is null) return;
-        SectionsColumn.Width = MenuSectionsPanel.IsChecked
-            ? new GridLength(200, GridUnitType.Pixel)
-            : new GridLength(0);
+        if (BtnToggleLeftPanel is null) return;
+        BtnToggleLeftPanel.IsChecked = MenuSectionsPanel.IsChecked;
     }
 
     private void BtnPreview_Changed(object sender, RoutedEventArgs e)

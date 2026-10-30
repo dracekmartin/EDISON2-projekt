@@ -262,7 +262,7 @@
                 <MenuItem Header="Pravítka" IsCheckable="True"
                           IsChecked="{Binding ShowRuler, Mode=TwoWay}"/>
                 <Separator/>
-                <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
+                <MenuItem x:Name="MenuSectionsPanel" Header="Levý panel" InputGestureText="Ctrl+B" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
                 <MenuItem x:Name="MenuPreview" Header="Živý náhled" IsCheckable="True" IsChecked="True"
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
@@ -531,7 +531,7 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ToggleButton x:Name="BtnToggleLeftPanel" Style="{StaticResource ToolbarToggle}"
-                                      ToolTip="Skrýt/zobrazit panel sekcí - Ctrl+B"
+                                      ToolTip="Skrýt/zobrazit levý panel - Ctrl+B"
                                       IsChecked="True" Checked="BtnToggleLeftPanel_Changed" Unchecked="BtnToggleLeftPanel_Changed"
                                       Content="☰" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt živý náhled"
