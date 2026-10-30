@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S9** Slovník nabídky dat JŘ (hotovo 30. 10., changelog 2026-10-30 (17), schválil Jan 30. 10.): `Jr/NabidkaDat.cls`
+  drží popisek a typ 23 polí stránky a 17 polí kolekcí, která nabízejí aspoň dvě agendy; agenda vybírá pole a pořadí.
+  Výstup agend beze změny; že slovník na serveru používají všechny čtyři agendy, ověřeno zkušebním popiskem.
+
 - **S2** Společné parametry JŘ v jedné třídě (hotovo 30. 10., changelog 2026-10-30 (15) a (16), schválil Jan 30. 10.):
   `Jr/Parametry.cls` drží sedm parametrů vývěsek AD i MHD, linkové parametry (dřív v linkovém AD, odkud je volal
   linkový MHD) a tvar názvu zastávky (dřív v základu agend). Výstup agend beze změny.

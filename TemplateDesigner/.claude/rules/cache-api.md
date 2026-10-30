@@ -82,6 +82,11 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
 - **Každá metoda s `ByRef sys`** dodržuje pravidla 14-15 níž, nebo jen přesměruje na metodu jiné agendy
   (`q ##class(…).X(.sys)`); hlídá `OsetreniChybAgendTests`.
 - **Vzorem jsou agendy JŘ** (`ZastavkoveJrAd`, `LinkovyJrAd`), ne Faktury - ukázka z počátku, která se možná smaže.
+- **Nabídka dat agendy JŘ:** pole, které nabízejí aspoň dvě agendy, bere agenda ze slovníku `Jr/NabidkaDat.cls`
+  (`AddPole`, `AddKolekce`, `AddPoleKolekce`) a sama určuje jen výběr a pořadí; pole jen své agendy přidá přes `AddField`.
+  Popisek ze slovníku přepíše jen u vědomého rozdílu. Hlídá `AgendaSchemaDriftTests` (pole je ve slovníku, slovník
+  drží jen pole aspoň dvou agend, agenda nepíše pole slovníku znovu přes `AddField`).
+- **Společné parametry JŘ** jsou v `Jr/Parametry.cls`; agenda si je skládá v `GetParameters` a drží jejich pořadí.
 
 ### Wire formáty
 
@@ -275,7 +280,9 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
 
 1. Vytvořit Caché třídu `ALVA.TemplateDesigner.Agendy.<Agenda> Extends ALVA.TemplateDesigner.Agendy.BaseAgenda` (přímý potomek)
    a nastavit parametry třídy (viz kontrakt výš); `AgendaVariantCode` se už nikdy nemění.
-2. Implementovat `GetSchema`, `GetData`, `GetMockData`, volitelné podle potřeby; každou metodu podle pravidel 14-15
+2. Implementovat `GetSchema`, `GetData`, `GetMockData`, volitelné podle potřeby; každou metodu podle pravidel 14-15.
+   Agenda JŘ bere společná pole nabídky ze slovníku `Jr/NabidkaDat.cls` a společné parametry z `Jr/Parametry.cls`;
+   pole nebo parametr, který dosud měla jen jedna agenda, se tam přesune, když ho potřebuje druhá (R8).
 3. Nic neregistrovat ručně - agendu najde auto-discovery (`AgendyRegistr.ListAgendy`); v UI se nabízí až s `Released = 1`
 4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
    - `GetMockData` vrací JSON: `{ "values": { "POLE": "hodnota", ... }, "rows": { "KLIC": [ {...}, ... ] } }`

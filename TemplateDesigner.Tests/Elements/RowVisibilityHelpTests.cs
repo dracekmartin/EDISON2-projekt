@@ -92,7 +92,8 @@ public class RowVisibilityHelpTests
         return napoveda.Groups[1].Value.Replace("\"\"", "\"");
     }
 
-    /// <summary>Pole kolekce ZASTAVKY ve schématu agendy (čte se sekvenčně jako v <c>AgendaSchemaDriftTests</c>).</summary>
+    /// <summary>Pole kolekce ZASTAVKY ve schématu agendy (čte se sekvenčně jako v <c>AgendaSchemaDriftTests</c>):
+    /// vlastní pole agendy (<c>AddField</c>) i pole ze slovníku nabídky dat (<c>AddPoleKolekce</c>, <c>B56</c> S9).</summary>
     private static HashSet<string> PoleZastavek(string agenda)
     {
         var vysledek = new HashSet<string>(StringComparer.Ordinal);
@@ -100,6 +101,9 @@ public class RowVisibilityHelpTests
         foreach (var radek in File.ReadAllLines(Path.Combine(CacheDir(), "Agendy", agenda)))
         {
             if (Regex.Match(radek, "collectionKey\\s*=\\s*\"([A-Z_0-9]+)\"") is { Success: true } k) kolekce = k.Groups[1].Value;
+            if (Regex.Match(radek, "AddKolekce\\(\\s*\\w+\\s*,\\s*\"([A-Z_0-9]+)\"") is { Success: true } nova) kolekce = nova.Groups[1].Value;
+            foreach (Match m in Regex.Matches(radek, "AddPoleKolekce\\(\\s*\\w+\\s*,\\s*\"ZASTAVKY\"\\s*,\\s*\"([A-Z_0-9]+)\""))
+                vysledek.Add(m.Groups[1].Value);
             if (kolekce != "ZASTAVKY") continue;
             foreach (Match m in Regex.Matches(radek, "AddField\\(\\s*\\w+\\s*,\\s*\"([A-Z_0-9]+)\""))
                 vysledek.Add(m.Groups[1].Value);

@@ -1765,99 +1765,55 @@ ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Standardní JŘ schema definice
+/// Nabídka dat - všechna pole vývěsky MHD jsou ze slovníku `Jr.NabidkaDat`
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Přidá standardní skalární pole JŘ agendy do pole fields.
+/// Přidá standardní skalární pole JŘ agendy do pole fields (pořadí shodně s vývěskou AD).
 ClassMethod AddStandardJRFields(fields As %DynamicArray)
 {
-    // Pořadí seskupené podle toho, čeho se pole týká - shodně s AD vývěskou (nález Jan 31. 8.:
-    // zastávková pole byla rozházená mezi ostatní a hledala se v seznamu po jednom).
-
-    // ── linka ──
-    d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
-    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",    "text")
-    d ..AddField(fields, "POPIS_LINKY",            "Název linky",            "text")
-    d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
-
-    // ── dopravce ──
-    d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
-    // Po polích pod stejnými klíči jako AD (`B194c` D4).
-    d ..AddField(fields, "NAZEV_DOPRAVCE",         "Název dopravce",         "text")
-    d ..AddField(fields, "ADRESA_DOPRAVCE",        "Adresa dopravce",        "text")
-    d ..AddField(fields, "TELEFON_DOPRAVCE",       "Telefon dopravce",       "text")
-    d ..AddField(fields, "EMAIL_DOPRAVCE",         "E-mail dopravce",        "text")
-    d ..AddField(fields, "ICO_DOPRAVCE",           "IČO dopravce",           "text")
-
-    // ── platnost ──
-    // Bez „Popisu platnosti" (Jan 23. 10.) - viz vývěska AD.
-    d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
-    d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
-
-    // ── zastávka, na které vývěska visí, a směr ──
-    // „Název …", aby se v nabídce polí nepletl s příznakem řádku „Je aktuální zastávka" (Jan 27. 10.).
-    d ..AddField(fields, "POPIS_ZASTAVKA",         "Název aktuální zastávky", "text")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "CISLO_LINKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "LOKALNI_OZNACENI_LINKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "POPIS_LINKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "TYP_JR")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "POPIS_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "NAZEV_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "ADRESA_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "TELEFON_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "EMAIL_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "ICO_DOPRAVCE")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "DATUM_PLATNOSTI_OD")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "DATUM_PLATNOSTI_DO")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "POPIS_ZASTAVKA")
     // V MHD nese číslo i s označníkem („101-A"), proto jiný popisek než týž klíč ve vývěsce AD (Jan 30. 10.).
-    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo a označník aktuální zastávky", "text")
-    d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
-    d ..AddField(fields, "VYCHOZI_ZASTAVKA",       "Výchozí zastávka",       "text")
-    d ..AddField(fields, "KONECNA_ZASTAVKA",       "Konečná zastávka",       "text")
-
-    // ── doplňky ──
-    d ..AddField(fields, "QR_KOD",                 "URL adresa pro QR kód",  "text")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "CISLO_ZASTAVKA", "Číslo a označník aktuální zastávky")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "SMER")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "VYCHOZI_ZASTAVKA")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "KONECNA_ZASTAVKA")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPole(fields, "QR_KOD")
 }
 
 /// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.
 ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 {
-    // ZASTAVKY
-    s colZastavky = ##class(%DynamicObject).%New()
-    s colZastavky.name          = "Zastávky"
-    s colZastavky.collectionKey = "ZASTAVKY"
-    s colZastavkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colZastavkyFields, "NAZEV_ZASTAVKY",    "Název zastávky",    "text")
-    // Text, ne číslo: vedle minut nese „<" (spoj jede jinou trasou) a prázdno (mimo trasu).
-    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "text")
-    d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
-    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Je aktuální zastávka", "boolean")
-    d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
-    d ..AddField(colZastavkyFields, "NASTUPISTE",        "Označník",          "text")
-    s colZastavky.fields = colZastavkyFields
-    d collections.%Push(colZastavky)
+    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, "ZASTAVKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "NAZEV_ZASTAVKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "CAS_JIZDY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "PORADI")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "AKTUALNI_ZASTAVKA")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "ZONY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ZASTAVKY", "NASTUPISTE")
 
-    // SKUPINY_DNU
-    s colSkupiny = ##class(%DynamicObject).%New()
-    s colSkupiny.name          = "Skupiny dnů"
-    s colSkupiny.collectionKey = "SKUPINY_DNU"
-    s colSkupinyFields = ##class(%DynamicArray).%New()
-    // ID (join/pivot klíč) zůstává ve wire, ale NEvystavuje se jako sloupec.
-    d ..AddField(colSkupinyFields, "NADPIS",  "Nadpis skupiny",   "text")
-    d ..AddField(colSkupinyFields, "NADPIS2", "Nadpis skupiny 2", "text")
-    d ..AddField(colSkupinyFields, "PORADI",  "Pořadí",           "number")
-    s colSkupiny.fields = colSkupinyFields
-    d collections.%Push(colSkupiny)
+    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, "SKUPINY_DNU")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "SKUPINY_DNU", "NADPIS")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "SKUPINY_DNU", "NADPIS2")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "SKUPINY_DNU", "PORADI")
 
-    // ODJEZDY
-    s colOdjezdy = ##class(%DynamicObject).%New()
-    s colOdjezdy.name          = "Odjezdy"
-    s colOdjezdy.collectionKey = "ODJEZDY"
-    s colOdjezdyFields = ##class(%DynamicArray).%New()
-    // Ploché user-facing pole. ZASTAVKA_ID/SKUPINA_DNU_ID (join/pivot klíče) + FORE_COLOR/BACK_COLOR
-    // (prezentační nápovědy, čte je jen render) zůstávají ve wire, ale NEvystavují se jako sloupce.
-    d ..AddField(colOdjezdyFields, "HODINA", "Hodina", "number")
-    d ..AddField(colOdjezdyFields, "MINUTA", "Minuta", "number")
-    s colOdjezdy.fields = colOdjezdyFields
-    d collections.%Push(colOdjezdy)
+    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, "ODJEZDY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ODJEZDY", "HODINA")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "ODJEZDY", "MINUTA")
 
-    // POZNAMKY
-    s colPoznamky = ##class(%DynamicObject).%New()
-    s colPoznamky.name          = "Poznámky"
-    s colPoznamky.collectionKey = "POZNAMKY"
-    s colPoznamkyFields = ##class(%DynamicArray).%New()
-    // Bez „Typu poznámky" (Jan 27. 10.): interní kód specialni/nz/text pro prvek Poznámky, data ho posílají dál.
-    d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
-    d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky",  "text")
-    s colPoznamky.fields = colPoznamkyFields
-    d collections.%Push(colPoznamky)
+    s pole = ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddKolekce(collections, "POZNAMKY")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "POZNAMKY", "ZNAK")
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.NabidkaDat).AddPoleKolekce(pole, "POZNAMKY", "TEXT")
 }
 
 /// Přidá standardní JŘ parametry do pole parametrů.

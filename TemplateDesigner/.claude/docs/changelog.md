@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-30 (17) - Slovník nabídky dat jízdních řádů (`B56` S9)
+
+Popisek a typ každého pole, které v nabídce dat nabízejí aspoň dvě agendy JŘ, jsou jednou v `Jr/NabidkaDat.cls`: 23 polí stránky (linka, dopravce, platnost, zastávka a směr, poznámky, adresa pro QR) a 17 polí kolekcí (zastávky, skupiny dnů, odjezdy, poznámky, spoje).
+Do teď je každá agenda psala sama a 17 polí měly všechny čtyři agendy stejně; podle historie je nabídka dat místo, kde se změny nejčastěji dělaly dvakrát (21× v obou kopiích, 27× jen v jedné).
+Agenda dál sama určuje, která pole nabízí a v jakém pořadí, a pole jen své agendy si přidá sama; vědomý rozdíl (číslo aktuální zastávky ve vývěsce MHD nese i označník) přepíše popisek ve volání.
+Data posílá každá agenda dál sama a test kontraktu na serveru hlídá, že posílá každé nabízené pole.
+`AgendaSchemaDriftTests` čte popisky ze slovníku a nově hlídá, že pole ze slovníku ve slovníku je (jinak by na serveru spadla celá nabídka), že slovník drží jen pole aspoň dvou agend (pravidlo druhého použití, R8) a že agenda pole slovníku nepíše znovu s vlastním popiskem; všechny tři kontroly spadly na dočasně vložené chybě.
+`RowVisibilityHelpTests` čte pole zastávek i ze slovníku (bez toho spadl).
+Pole čísla zastávky pro QR v kroku není: čeká na tvar adresy u vyhledávače odjezdů.
+Ověřeno: snímek výstupu všech agend beze změny (45 souborů); dočasný popisek ve slovníku se na serveru ukázal ve všech čtyřech agendách, po vrácení snímek opět beze změny; Caché testy 270/270, .NET testy 2546/2546, integrační testy 48/48.
+
 ## 2026-10-30 (16) - Parametry vývěsek AD a MHD z jedné definice (`B56` S2, druhá část)
 
 Sedm parametrů, které měla vývěska AD i MHD opsané znak po znaku (pořadí stránek, šipky směru, projeté zastávky, časová osa s hodinami od a do, roztažení na výšku), je jednou v `Jr/Parametry.cls`.
