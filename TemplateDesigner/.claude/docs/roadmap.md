@@ -4,7 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B56` (příprava `B194` hotová 30. 10.; postup s Janem naplánovat, první krok `R5`). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** `B56` (příprava `B194` hotová 30. 10.); přehled níž, pořadí s Janem teprve projdeme. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -12,9 +12,35 @@
 
 ---
 
-## 📥 Backlog
+## 🧱 `B56` Sloučení kódu agend JŘ [L] (přehled 30. 10.)
 
-### Ostatní
+Cíl (Jan 29. 10.) není sjednotit všechno, ale ujasnit strukturu a dát agendám základ, aby se nerozjížděly tam, kde to uživatel pozná nebo kde se oprava dělala víckrát.
+Sdílený kód jde do pomocných tříd mimo dědičnost agend ([`R8`](architektonicka-rozhodnuti-agendy.md)).
+Postup, pojistky a snímek výstupu jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md): jeden krok = jeden commit, snímek před i po.
+Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného, se při přesunu přejmenuje (`cache-api.md` pravidlo 5).
+**Co sjednotit, co nechat a v jakém pořadí, teprve projdeme s Janem**; zatím je to přehled bez pořadí.
+
+### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
+
+- **S1 Kam půjdou pomocné třídy** [S] **Jan** - rozhodnout před prvním přesunem.
+  Testy kódu agend (názvy metod, ošetření chyb, popisky) čtou jen soubory přímo ve složce agend; musí se naučit i nové místo, jinak přesunutý kód přestanou hlídat.
+- **S2 Společné parametry vývěsek** (`R5`) [S-M] - sedm parametrů opsaných ve vývěsce AD i MHD do jedné definice, pořadí v panelu se nezmění.
+  Vzorem je jedna definice linkových agend.
+- **S3 Doslovné kopie vývěsek** [S] - 8 metod znak po znaku shodných ve vývěsce AD i MHD (atributy a poznámky zastávky, zóna, odjezd, skupina dnů, speciální znaky, barvy).
+- **S4 Doslovné kopie linkových agend** [S] - poznámka, skupina dnů a formát času v linkovém JŘ AD i MHD.
+- **S5 Doslovné kopie AD** [S] - název a normalizace linky, první linka, hodnota času ve vývěsce AD i linkovém JŘ AD (kód shodný, liší se komentáře).
+- **S6 Výběr skupin linek a linek u AD** [S-M] - vývěska AD a linkový JŘ AD mají každá svou kopii (dnes shodnou až na komentáře).
+  Kopie MHD se do 23. 10. rozešla v příznaku zablokované skupiny; od té doby MHD sdílí jednu.
+- **S7 Hlavička linky** [M] **Jan** - číslo, platnost, typ JŘ a dopravce skládá každá agenda zvlášť, odtud čtyři tvary popisu platnosti.
+  Rozhodnout, co z toho je vědomý rozdíl.
+- **S8 Platnost linky a omezení 14 a 15** [S] - sjednotit podle rozhodnutí z 30. 10. (`B194g` R2), tisk se nezmění.
+- **S9 Pole nabídky dat AD × MHD** [S-M] - 25 z 27 popisů polí vývěsek je totožných, u linkových 22 z 24 (změřeno 21. 9.).
+  Liší se popisek čísla linky a lokálního označení; jedna definice s popiskem jako parametrem.
+- **S10 Předpřipravené tabulky** [S] **Jan** - návrhář je nikde nenabízí; zrušit, nebo napojit do vkládání tabulky.
+- **S11 Faktury** [S] **Jan** - ukázka z počátku bez zdroje dat, uživatelům se nenabízí; test ošetření chyb a test kontraktu dat ji vynechávají.
+  Smazat, nebo dorovnat podle pravidel agend.
+
+### Převzato z backlogu - souvisí se sdíleným kódem agend
 
 - **Úklid nastavení tisku v jízdních řádech - naše strana** [M] - **čeká na kolegu z jízdních řádů**.
   Domluveno 29. 10.: většinu tiskových nastavení z jízdních řádů vyhodí, zbytek dodělají. Až se k tomu
@@ -22,13 +48,31 @@
   a nešlo by změnit. Na tom visí kroky `B56`, které čtou nastavení linky. Co agendy čtou a odkud:
   [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
 - **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
-  **Jan** - čeká na úklid nastavení v jízdních řádech (výš), ze kterého volby vycházejí; patří k `B56` R5
+  **Jan** - čeká na úklid nastavení v jízdních řádech (výš), ze kterého volby vycházejí; patří k S2
   (stálý kód vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
 - **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
   nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po
   zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937, pozastavený; trvá zákazník
   i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV #9088). Náš díl: pole přečíst
   a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
+- **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
+  (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
+  na trasy a body MHD a ověřit proti datům, pak v `ZastavkoveJrMhd` přepnout `VariantyTras = 1` -
+  nabídka sloupce se ukáže sama. Hodí se spojit s `B56` (sdílený kód agend).
+- **Číslo zastávky pro adresu v QR ve všech agendách** [S] (dřív `B193h`, odloženo Janem 23. 10.) - jedno pole
+  se stejným klíčem ve všech agendách JŘ; patří k Vyhledávači odjezdů v backlogu.
+
+### Vědomě nesjednocovat
+
+Každá agenda tu drží tvar svého starého modulu: nadpis skupiny dnů, telefon dopravce, vysvětlivka „na znamení", zóny zastávky, stanoviště u názvu, popis dopravce, rozsahy čísel spojů, barva „0;0;0", značky u odjezdů.
+Seznam s důvody je v [`legacy-nahrada.md §4`](legacy-nahrada.md); sloučení kódu je nesmí srovnat.
+
+---
+
+## 📥 Backlog
+
+### Ostatní
+
 - **Úvodní okno pro nové uživatele** [S-M] (nápad Jan 29. 10.). Dnes návrhář otevře prázdnou šablonu
   a nový uživatel neví, kde začít. Okno po otevření nabídne: otevřít ukázkovou šablonu agendy, otevřít
   šablony z databáze, nebo zavřít a pokračovat jako dnes (s odkazem na nápovědu). Otevřené: co je
@@ -48,11 +92,6 @@
   a rozsahy ze schématu formuláře `*Edit.cls` místo opisu v `GetPropertyDescriptors` (dnes se píše dvakrát).
   Navazuje na E3 / E13; serverovou stranu agend řeší `B56`.
 
-- **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
-  (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
-  na trasy a body MHD a ověřit proti datům, pak v `ZastavkoveJrMhd` přepnout `VariantyTras = 1` -
-  nabídka sloupce se ukáže sama. Hodí se spojit s `B56` (sdílený kód agend).
-
 - **Slovo „linka" napevno** (`B194e` A5) [M] - asi 25 textů (menu „Zkontrolovat vybrané linky…",
   hlášky „Žádná vybraná linka nemá data", průběh kontroly). Udělat, **až se bude vydávat agenda bez
   linek** (Faktury, převod Report Generátoru) - skloňovat podle názvu instance agendy; okno výběru
@@ -62,13 +101,6 @@
   přepnout na Obecnou (Ctrl+Shift+A) a prvek zůstane jen s upozorněním. Prvky JŘ mají jít otevřít jen
   ve své agendě, takže změnu agendy v takové šabloně zablokovat a říct proč (rozhodnutí Jan 27. 10.).
   Odtud i prázdná záložka „Vlastní definice sloupců" v obecné šabloně (review 27. 10., bod 4).
-
-- **`B56` Sloučení opsaného kódu agend** [L] - **cíl (Jan 29. 10.) není sjednotit všechno**, ale ujasnit
-  strukturu a dát agendám základ, aby se nerozjížděly tam, kde to uživatel pozná nebo kde se oprava dělala
-  víckrát. Model sdílení: [`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md).
-  Začít tím, co se už rozešlo: výběr skupin linek a linek u AD, hlavička linky, společné parametry vývěsek
-  (`R5`, první krok), předpřipravené tabulky (zrušit, nebo napojit). Postup, pojistky a snímek výstupu
-  v [`legacy-nahrada.md §4`](legacy-nahrada.md); příprava `B194` hotová 30. 10.
 
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech vybere linky a dostane PDF bez otevření návrháře. Pro jednu linku PDF bez
@@ -84,8 +116,8 @@
 - **Vyhledávač odjezdů pro cestující** [M] (zadání Jan 13. 10.). QR u sloupku (zastávka a stanoviště)
   otevře aplikaci v ISYCloud: cestující zadá cíl a dozví se nejbližší přímé spoje odsud, data z CIS.
   Nahrazuje lokální demo z 1. 10. (`edwcore/apps/tisky-qr` nad EDISONem). Zadání, k ověření
-  a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md). Patří sem i jedno pole
-  čísla zastávky pro adresu v QR ve všech agendách (dřív `B193h`, odloženo Janem 23. 10.).
+  a stav: [`qr-linkovy-jr-pro-cestujici.md`](qr-linkovy-jr-pro-cestujici.md). Jedno pole čísla zastávky
+  pro adresu v QR ve všech agendách je v přehledu `B56`.
 
 - **`B185` Stránky dokladu jako pojem šablony** [L] (Jan 25. 9.). Pojmenované stránky (pevná /
   průběžná), pás stránek v návrháři, hlavička a patička s volbou stránek; nahradí „Začít na nové
