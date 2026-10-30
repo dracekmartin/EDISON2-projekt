@@ -154,17 +154,17 @@ public class TextElement : TemplateElement
 
         new StringPropertyDescriptor { Label = "Font",         Group = "Font",      Get = () => Style.Resolve().FontFamily, Set = v => Style.FontFamily = v },
         new FloatPropertyDescriptor  { Label = "Velikost",      Group = "Font",      Get = () => Style.Resolve().FontSize,   Set = v => Style.FontSize = v,                 Min = 3, Max = 72, Unit = "pt" },
-        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Font",      Get = () => Style.Resolve().Bold,       Set = v => Style.Bold = v },
-        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Font",      Get = () => Style.Resolve().Italic,     Set = v => Style.Italic = v },
-        new BoolPropertyDescriptor   { Label = "Podtržení",    Group = "Font",      Get = () => Style.Resolve().Underline,  Set = v => Style.Underline = v },
-        new BoolPropertyDescriptor   { Label = "Přeškrtnutí", Group = "Font",      Get = () => Style.Resolve().Strikethrough, Set = v => Style.Strikethrough = v },
+        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Font",      Get = () => Style.Resolve().Bold,       Set = v => Style.Bold = v, ToolbarSlot = FormatToolbarSlot.Bold },
+        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Font",      Get = () => Style.Resolve().Italic,     Set = v => Style.Italic = v, ToolbarSlot = FormatToolbarSlot.Italic },
+        new BoolPropertyDescriptor   { Label = "Podtržení",    Group = "Font",      Get = () => Style.Resolve().Underline,  Set = v => Style.Underline = v, ToolbarSlot = FormatToolbarSlot.Underline },
+        new BoolPropertyDescriptor   { Label = "Přeškrtnutí", Group = "Font",      Get = () => Style.Resolve().Strikethrough, Set = v => Style.Strikethrough = v, ToolbarSlot = FormatToolbarSlot.Strikethrough },
         new BoolPropertyDescriptor   { Label = "Zalamovat řádky", Group = "Text",      Get = () => WordWrap,                     Set = v => WordWrap = v },
         new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => Style.Resolve().LineSpacing, Set = v => Style.LineSpacing = v,               Min = 0.8f, Max = 3f, Format = "0.0#" },
 
         // HAlign rozšířený o Justify - inline (sdílené HAlignOptions Justify nemají, cell elementy ho v rendereru ignorují)
         new EnumPropertyDescriptor   { Label = EnumPropertyDescriptor.LabelZarovnaniVodorovne, Group = "Zarovnání", Get = () => Style.Resolve().HAlign, Set = v => Style.HAlign = (TextHorizontalAlignment)v,
-            Options = [..EnumPropertyDescriptor.HAlignOptions, ("Do bloku", TextHorizontalAlignment.Justify)] },
-        new EnumPropertyDescriptor   { Label = EnumPropertyDescriptor.LabelZarovnaniSvisle, Group = "Zarovnání", Get = () => Style.Resolve().VAlign, Set = v => Style.VAlign = (TextVerticalAlignment)v,  Options = EnumPropertyDescriptor.VAlignOptions },
+            Options = [..EnumPropertyDescriptor.HAlignOptions, ("Do bloku", TextHorizontalAlignment.Justify)], ToolbarSlot = FormatToolbarSlot.HorizontalAlignment },
+        new EnumPropertyDescriptor   { Label = EnumPropertyDescriptor.LabelZarovnaniSvisle, Group = "Zarovnání", Get = () => Style.Resolve().VAlign, Set = v => Style.VAlign = (TextVerticalAlignment)v,  Options = EnumPropertyDescriptor.VAlignOptions, ToolbarSlot = FormatToolbarSlot.VerticalAlignment },
 
         new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Barvy",    Get = () => Style.Resolve().TextColor, Set = v => Style.TextColor = v },
         new ColorPropertyDescriptor  { Label = "Barva pozadí", Group = "Barvy",    Get = () => Style.Resolve().BackgroundColor, Set = v => Style.BackgroundColor = v },

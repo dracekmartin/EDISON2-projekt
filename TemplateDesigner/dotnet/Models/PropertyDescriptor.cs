@@ -51,7 +51,14 @@ public abstract class PropertyDescriptor
     /// (stejný vzor jako vratná změna struktury tabulky).
     /// </summary>
     public Func<object?, Commands.IDesignerCommand?>? MakeCommand { get; init; }
+
+    /// <summary>Tlačítko lišty formátu, které vlastnost ovládá. Lišta hledá vlastnosti podle něj, ne podle
+    /// popisku a skupiny - do 30. 10. by přejmenování popisku nebo skupiny lištu tiše vypnulo.</summary>
+    public FormatToolbarSlot ToolbarSlot { get; init; }
 }
+
+/// <summary>Tlačítka lišty formátu (tučné, kurzíva…, zarovnání).</summary>
+public enum FormatToolbarSlot { None, Bold, Italic, Underline, Strikethrough, HorizontalAlignment, VerticalAlignment }
 
 // ─── Konkrétní typy ────────────────────────────────────────────────────────────
 
@@ -121,7 +128,7 @@ public class EnumPropertyDescriptor : PropertyDescriptor
     ];
 
     /// <summary>Popisky zarovnání (kanon §8, rozhodnutí Jan 26. 10.: celé „Zarovnání …", ať jde
-    /// hledat). Podle nich pole najde lišta formátu, proto jedno místo.</summary>
+    /// hledat). Používá je text i buňka pevné tabulky, proto jedno místo.</summary>
     public const string LabelZarovnaniVodorovne = "Zarovnání vodorovně";
     public const string LabelZarovnaniSvisle    = "Zarovnání svisle";
 }

@@ -11,8 +11,11 @@ Hlavní editační cestou je **Caché formulář** (`*Edit.cls`): u elementu se 
 živé ve třech konkrétních rolích a proto je nelze odstranit:
 
 1. **Formátovací lišta** (`FormatToolbar`) je potřebuje **vždy**, i když se zobrazuje Caché formulář.
+   Najde je podle `ToolbarSlot` (tlačítko, které vlastnost ovládá), ne podle popisku a skupiny.
 2. **Úprava více prvků naráz** jde jen přes ně (Caché formulář edituje jeden cíl) - okno společných
-   vlastností nabízí jen pevnou sadu (rámeček, vrstva, uzamčení), ne všechny deskriptory prvků.
+   vlastností nabízí jen pevnou sadu `TemplateElement.MultiEditDescriptors()` (rámeček, vrstva, uzamčení),
+   tytéž deskriptory jako panel prvku. Zápis je jeden vratný krok složený z kroku každého prvku, takže
+   Ctrl+Z vrátí každému jeho hodnotu (do 30. 10. dostaly všechny hodnotu prvního).
 3. **Fallback** pro element bez `*Edit.cls` schématu (dnes pevná tabulka).
 
 **Nejsou tedy druhý zdroj pravdy pro schéma** - u base polí je autoritou sdílený

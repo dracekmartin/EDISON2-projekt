@@ -360,40 +360,68 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
     // ── Multi-element společné vlastnosti ───────────────────────────────
 
-    private IReadOnlyList<Models.PropertyDescriptor> BuildMultiElementDescriptors(List<TemplateElement> elements)
+    /// <summary>Okno ukazuje hodnotu prvního prvku a zápis jde do všech.</summary>
+    private static IReadOnlyList<Models.PropertyDescriptor> BuildMultiElementDescriptors(List<TemplateElement> elements)
     {
-        var first = elements[0];
+        var poPrvcich = elements.Select(e => e.MultiEditDescriptors()).ToList();
+        return [.. Enumerable.Range(0, poPrvcich[0].Count).Select(i => ProVsechnyPrvky([.. poPrvcich.Select(d => d[i])]))];
+    }
 
-        // Helper: vytvoří setter, který změní property na všech elementech
-        // Čte aktuální hodnotu z prvního elementu, nastaví na všechny
-        return
-        [
-            new ColorPropertyDescriptor
+    /// <summary>Jedna vlastnost pro všechny vybrané prvky. Zápis je jeden vratný krok složený z kroku
+    /// každého prvku, takže Ctrl+Z vrátí každému jeho původní hodnotu - do 30. 10. dostaly všechny
+    /// hodnotu prvního prvku a rámečky nebo vrstvy, které se lišily, zůstaly srovnané.</summary>
+    private static Models.PropertyDescriptor ProVsechnyPrvky(IReadOnlyList<Models.PropertyDescriptor> stejne)
+    {
+        var prvni = stejne[0];
+
+        IDesignerCommand Zapis(object? hodnota)
+        {
+            var prikaz = new CompositeCommand($"Změna: {prvni.Label}",
+                stejne.Select(d => new SetPropertyCommand(d.Label, Hodnota(d), hodnota, v => Nastav(d, v))));
+            prikaz.Execute();
+            return prikaz;
+        }
+
+        void NastavVsem(object? hodnota)
+        {
+            foreach (var d in stejne) Nastav(d, hodnota);
+        }
+
+        return prvni switch
+        {
+            FloatPropertyDescriptor f => new FloatPropertyDescriptor
             {
-                Label = "Barva rámečku", Group = "Rámeček",
-                Get = () => first.BorderColor,
-                Set = v => { foreach (var el in elements) el.BorderColor = v; }
+                Label = f.Label, Group = f.Group, Min = f.Min, Max = f.Max, Unit = f.Unit, Format = f.Format,
+                Get = f.Get, Set = v => NastavVsem(v), MakeCommand = Zapis
             },
-            new FloatPropertyDescriptor
+            BoolPropertyDescriptor b => new BoolPropertyDescriptor
             {
-                Label = "Tloušťka rámečku", Group = "Rámeček",
-                Get = () => first.BorderWidth,
-                Set = v => { foreach (var el in elements) el.BorderWidth = v; },
-                Min = 0, Max = 5, Unit = "mm", Format = "0.0#"
+                Label = b.Label, Group = b.Group, Get = b.Get, Set = v => NastavVsem(v), MakeCommand = Zapis
             },
-            new FloatPropertyDescriptor
+            ColorPropertyDescriptor c => new ColorPropertyDescriptor
             {
-                Label = "Vrstva", Group = "Pozice",
-                Get = () => first.ZIndex,
-                Set = v => { foreach (var el in elements) el.ZIndex = (int)Math.Round(v); },
-                Min = 0, Max = 100, Format = "0"
+                Label = c.Label, Group = c.Group, Get = c.Get, Set = v => NastavVsem(v), MakeCommand = Zapis
             },
-            new BoolPropertyDescriptor
-            {
-                Label = "Uzamčeno", Group = "Pozice",
-                Get = () => first.IsLocked,
-                Set = v => { foreach (var el in elements) el.IsLocked = v; }
-            },
-        ];
+            _ => throw new NotSupportedException($"Vlastnost „{prvni.Label}\" okno společných vlastností neumí."),
+        };
+    }
+
+    private static object? Hodnota(Models.PropertyDescriptor d) => d switch
+    {
+        FloatPropertyDescriptor f => f.Get(),
+        BoolPropertyDescriptor b  => b.Get(),
+        ColorPropertyDescriptor c => c.Get(),
+        _ => throw new NotSupportedException(d.Label),
+    };
+
+    private static void Nastav(Models.PropertyDescriptor d, object? hodnota)
+    {
+        switch (d)
+        {
+            case FloatPropertyDescriptor f: f.Set((float)hodnota!); break;
+            case BoolPropertyDescriptor b:  b.Set((bool)hodnota!);  break;
+            case ColorPropertyDescriptor c: c.Set((string)hodnota!); break;
+            default: throw new NotSupportedException(d.Label);
+        }
     }
 }

@@ -18,9 +18,9 @@ Podklad ze tří průzkumů (vlastnosti prvků, agendy a data, názvy a konstant
 - A4 ✅ (30. 10.) Údaje ze šablony pro server (sloupce, turnusy, jazyk) v jednom typu `Models/TemplateDataInputs`: vstup `GetData` i ukázkových dat, klíč jejich cache, nové načtení dat po změně (rovnost záznamu) a výjimky testu parametrů. Ukázková data nově dostávají i turnusy; tisk víc linek bere jazyk ze snímku šablony, ne z živé šablony na pozadí. Pátá kopie byla v živém testu tisku (`ZkouskaTiskuNaostro`, jazyk napevno „cs").
 - A5 Popisky vzorů sloupců: DepartureColumnPresets.cs:20-37 × ROZDELENI_/DELENI_SLOUPCU → PRESETY_SLOUPCU aditivně nese popisek, C# čte z dat.
 - A6 ✅ (30. 10., s E3) Výchozí mřížka 5 mm bez přichytávání v `DesignerState.Default*`, předvolby ji přebírají.
-- A7 Úprava více prvků: vlastní 4 deskriptory (ElementPropertiesWindowViewModel.cs:363-398, skupiny „Rámeček"/„Pozice") → GetPositionDescriptors + konstanty skupin. Triviální.
+- A7 ✅ (30. 10.) Okno společných vlastností bere deskriptory z `TemplateElement.MultiEditDescriptors()` (tytéž jako panel prvku, skupiny „Rámeček prvku" a „Pozice a velikost"). Při tom nalezená chyba: Ctrl+Z vracel všem prvkům hodnotu prvního, teď každému jeho (reprodukováno testem `SpolecneVlastnostiTests`).
 - A8 Volby zarovnání: 4 kopie (PropertyDescriptor.cs:109-121, StyleFields.cls:47-49, TextElementEdit.cls:69-78, CellStyleEditor.Converters.cs:65-82) → C# jedna, proti .cls test.
-- A9 Lišta formátu (FormatToolbar.xaml.cs:40-55) hledá deskriptory podle textu skupiny/popisku → konstanty nebo klíč.
+- A9 ✅ (30. 10.) Lišta formátu hledá vlastnosti podle `PropertyDescriptor.ToolbarSlot`, ne podle popisku a skupiny; nastavují ho text a buňka pevné tabulky. Hlídá `ListaFormatuTests` (ověřeno mutací).
 - A10 ✅ (30. 10., s E4) Menu Zobrazit → Levý panel ovládá totéž co ☰ a Ctrl+B.
 - A11 ✅ (30. 10., s A1) Formulář prvku podle pravidla `{Typ}Edit` z katalogu prvků, existenci .cls hlídá `ElementCatalogTests`. Literály zůstaly jen u formulářů mimo prvky (sekce, stránka, řádek a buňka tabulky, vložení tabulky), každý na jednom místě.
 - A12 Příkazy vrstvy: 4 tvary textů → jedna sada (ROZHODNOUT kanon).

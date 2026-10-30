@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-30 (42) - Okno společných vlastností a lišta formátu bez vlastních kopií (sjednocení A7, A9)
+
+**Okno společných vlastností** (Enter nad více prvky) mělo vlastní kopii rámečku, vrstvy a uzamčení se skupinami „Rámeček" a „Pozice"; teď bere tytéž vlastnosti jako panel prvku („Rámeček prvku", „Pozice a velikost").
+Přitom se našla chyba: **Ctrl+Z po změně více prvků vrátil všem hodnotu prvního**, takže rámečky nebo vrstvy, které se předtím lišily, zůstaly srovnané. Teď je zápis jeden vratný krok složený z kroku každého prvku a zpětný krok vrátí každému jeho hodnotu.
+**Lišta formátu** hledala tučné, kurzívu a zarovnání podle textu popisku a skupiny, takže by ji jejich přejmenování tiše vypnulo. Teď vlastnost nese, které tlačítko lišty ovládá.
+Ověřeno: .NET testy 2633/2633; chyba zpětného kroku reprodukovaná testem před opravou, lišta ověřená mutací; v aplikaci neproklikané.
+
 ## 2026-10-30 (41) - Údaje ze šablony pro server v jednom typu (sjednocení A4)
 
 Vlastní sloupce vývěsky, turnusy ke spojům a jazyk textů značek posílá serveru šablona, ne parametry sestavy.

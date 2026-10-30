@@ -39,20 +39,15 @@ public partial class FormatToolbar : UserControl
             {
                 foreach (var d in descriptors)
                 {
-                    if (d is BoolPropertyDescriptor b && b.Group == "Font")
-                        switch (b.Label)
-                        {
-                            case "Tučné":       _bold          = b; break;
-                            case "Kurzíva":     _italic        = b; break;
-                            case "Podtržení":   _underline     = b; break;
-                            case "Přeškrtnutí": _strikethrough = b; break;
-                        }
-                    else if (d is EnumPropertyDescriptor e && e.Group == "Zarovnání")
-                        switch (e.Label)
-                        {
-                            case EnumPropertyDescriptor.LabelZarovnaniVodorovne: _hAlign = e; break;
-                            case EnumPropertyDescriptor.LabelZarovnaniSvisle:    _vAlign = e; break;
-                        }
+                    switch (d.ToolbarSlot, d)
+                    {
+                        case (FormatToolbarSlot.Bold,                BoolPropertyDescriptor b): _bold          = b; break;
+                        case (FormatToolbarSlot.Italic,              BoolPropertyDescriptor b): _italic        = b; break;
+                        case (FormatToolbarSlot.Underline,           BoolPropertyDescriptor b): _underline     = b; break;
+                        case (FormatToolbarSlot.Strikethrough,       BoolPropertyDescriptor b): _strikethrough = b; break;
+                        case (FormatToolbarSlot.HorizontalAlignment, EnumPropertyDescriptor e): _hAlign        = e; break;
+                        case (FormatToolbarSlot.VerticalAlignment,   EnumPropertyDescriptor e): _vAlign        = e; break;
+                    }
                 }
             }
 

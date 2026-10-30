@@ -347,11 +347,11 @@ public abstract class TemplateElement
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
                 Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
         new FloatPropertyDescriptor { Label = "Rotace",  Group = PositionGroup, Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
-        new FloatPropertyDescriptor { Label = "Vrstva",  Group = PositionGroup, Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
-        new BoolPropertyDescriptor  { Label = "Uzamčeno", Group = PositionGroup, Get = () => IsLocked, Set = v => IsLocked = v },
+        ZIndexDescriptor(),
+        LockedDescriptor(),
 
-        new ColorPropertyDescriptor { Label = "Barva rámečku", Group = BorderGroup, Get = () => BorderColor, Set = v => BorderColor = v },
-        new FloatPropertyDescriptor { Label = "Tloušťka rámečku", Group = BorderGroup, Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
+        BorderColorDescriptor(),
+        BorderWidthDescriptor(),
         new EnumPropertyDescriptor
         {
             Label = "Rohy", Group = BorderGroup,
@@ -390,6 +390,25 @@ public abstract class TemplateElement
             }]
             : Array.Empty<PropertyDescriptor>()),
     ];
+
+    /// <summary>
+    /// Vlastnosti, které okno společných vlastností nastavuje více prvkům naráz. Tytéž deskriptory jako
+    /// v <see cref="GetPositionDescriptors"/> - do 30. 10. mělo okno vlastní kopii s jinými skupinami.
+    /// </summary>
+    internal IReadOnlyList<PropertyDescriptor> MultiEditDescriptors() =>
+        [BorderColorDescriptor(), BorderWidthDescriptor(), ZIndexDescriptor(), LockedDescriptor()];
+
+    private FloatPropertyDescriptor ZIndexDescriptor() =>
+        new() { Label = "Vrstva", Group = PositionGroup, Get = () => ZIndex, Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" };
+
+    private BoolPropertyDescriptor LockedDescriptor() =>
+        new() { Label = "Uzamčeno", Group = PositionGroup, Get = () => IsLocked, Set = v => IsLocked = v };
+
+    private ColorPropertyDescriptor BorderColorDescriptor() =>
+        new() { Label = "Barva rámečku", Group = BorderGroup, Get = () => BorderColor, Set = v => BorderColor = v };
+
+    private FloatPropertyDescriptor BorderWidthDescriptor() =>
+        new() { Label = "Tloušťka rámečku", Group = BorderGroup, Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" };
 
     // ── Scale ────────────────────────────────────────────────────────────────
 
