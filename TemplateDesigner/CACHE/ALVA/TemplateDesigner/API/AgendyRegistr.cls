@@ -68,8 +68,12 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
             s entry.cacheClass = className
             s entry.instanceParamName = $parameter(className, "InstanceParamName")
             s entry.elementKind = $parameter(className, "ElementKind")
-            s entry.instanceLabel = $parameter(className, "InstanceLabel")
-            s entry.instanceLabelPlural = $parameter(className, "InstanceLabelPlural")
+            // 1. pád jednotného a množného čísla i zvlášť - čtou je starší návrháři, kteří tvary neznají.
+            s tvary = $parameter(className, "InstanceTvary")
+            s entry.instanceLabel = $p(tvary,",",1)
+            s entry.instanceLabelPlural = $p(tvary,",",4)
+            s entry.instanceTvary = tvary
+            s entry.instanceRod = $parameter(className, "InstanceRod")
             // JSON boolean (ne 1/0) - System.Text.Json na .NET straně deserializuje do bool.
             d entry.%Set("released", $s($parameter(className, "Released")=1:1, 1:0), "boolean")
             d entry.%Set("customColumns", $s($parameter(className, "CustomColumns")=1:1, 1:0), "boolean")

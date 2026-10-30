@@ -45,9 +45,7 @@ Parameter VariantyTras As %Boolean = 1;
 
 Parameter ElementKind = "STOP";
 
-Parameter InstanceLabel = "linka";
-
-Parameter InstanceLabelPlural = "linky";
+Parameter InstanceTvary = "linka,linky,linku,linky,linek";
 
 /// Vrátí schéma polí MHD agendy.
 ClassMethod GetSchema(ByRef sys As %String) As %Status

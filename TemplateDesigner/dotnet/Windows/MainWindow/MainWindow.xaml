@@ -197,7 +197,7 @@
                 <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední soubor"/>
                 <Separator/>
                 <MenuItem x:Name="MenuPrint" Header="Tisk…" InputGestureText="{td:Gesture Print}" Click="MenuPrint_Click"/>
-                <MenuItem x:Name="MenuKontrola" Header="Zkontrolovat vybrané linky…" Click="BtnKontrola_Click"/>
+                <MenuItem x:Name="MenuKontrola" Header="{Binding KontrolaMenuText}" Click="BtnKontrola_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="{td:Gesture PageProperties}" Click="MenuPageProps_Click"/>
                 <Separator/>
@@ -512,7 +512,7 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="BtnKontrola" Style="{StaticResource ToolbarButton}" Click="BtnKontrola_Click"
-                                ToolTip="Zkontrolovat všechny vybrané linky - co se kde nevejde nebo vytiskne jinak">
+                                ToolTip="{Binding KontrolaTooltip}">
                             <!-- Lupa kreslená obrysem v barvě textu - obrázková sada (EDIcons) ji nemá
                                a znak písma se vykreslil plný černý, proti obrysovým ikonám okolo. -->
                             <Viewbox Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}">

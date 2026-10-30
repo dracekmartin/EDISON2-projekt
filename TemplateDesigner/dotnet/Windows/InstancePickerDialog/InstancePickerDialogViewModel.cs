@@ -1,4 +1,5 @@
 using EDControls.EDViewModel;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Schema;
 
 namespace TemplateDesigner;
@@ -12,10 +13,13 @@ public class InstancePickerDialogViewModel : EDViewModel
 {
     private readonly string _agendaCode;
     private readonly HashSet<string> _initiallySelectedValues;
-    private readonly string _instanceLabelPlural;
+    private readonly NazevInstance _nazev;
 
     /// <summary>Titulek okna s doménovým názvem instance (např. „Vybrat linky", jako bublina štítku).</summary>
-    public string WindowTitle => $"Vybrat {_instanceLabelPlural}";
+    public string WindowTitle => $"Vybrat {_nazev.AkuzativMnozne}";
+
+    /// <summary>Popisek filtru skupin („Skupina linek:").</summary>
+    public string SkupinaPopisek => $"Skupina {_nazev.GenitivMnozne}:";
 
     /// <summary>Po OK obsahuje finální seznam vybraných instancí.</summary>
     public IReadOnlyList<AgendaInstance> SelectedInstances { get; private set; } = [];
@@ -54,13 +58,13 @@ public class InstancePickerDialogViewModel : EDViewModel
         IReadOnlyList<AgendaInstance> initiallySelected,
         IReadOnlyList<AgendaSkupina>? skupiny = null,
         string? initialSkupinaId = null,
-        string instanceLabelPlural = "instance")
+        NazevInstance? nazev = null)
     {
         _agendaCode = agendaCode;
         _initiallySelectedValues = initiallySelected.Select(i => i.Value).ToHashSet(StringComparer.Ordinal);
         Skupiny = skupiny ?? [];
         SelectedSkupinaId = initialSkupinaId;
-        _instanceLabelPlural = instanceLabelPlural;
+        _nazev = nazev ?? NazevInstance.Obecny;
     }
 
     public string AgendaCode => _agendaCode;
@@ -71,7 +75,7 @@ public class InstancePickerDialogViewModel : EDViewModel
     {
         SelectedCount = checkedCount;
         StatusText = totalCount == 0
-            ? $"Žádné {_instanceLabelPlural}"
+            ? $"{_nazev.Shoda("Žádné", "Žádné", "Žádní", "Žádná")} {_nazev.Mnozne}"
             : $"Zobrazeno: {totalCount}";
     }
 
@@ -84,7 +88,7 @@ public class InstancePickerDialogViewModel : EDViewModel
         // („chci zrušit výběr") a náhled to řekne štítkem ukázkových dat.
         if (chosen.Count == 0 && _initiallySelectedValues.Count == 0)
         {
-            PopupDisplayer.Info($"Zaškrtněte aspoň jednu položku ({_instanceLabelPlural}), "
+            PopupDisplayer.Info($"Zaškrtněte aspoň jednu položku ({_nazev.Mnozne}), "
                                 + "nebo dialog zavřete přes Storno - náhled pak zůstane na ukázkových datech.");
             return;
         }

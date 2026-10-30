@@ -6,9 +6,9 @@ namespace TemplateDesigner;
 
 public partial class HelpDialog : Window
 {
-    public HelpDialog()
+    public HelpDialog(Models.NazevInstance? nazev = null)
     {
-        DataContext = new HelpDialogViewModel();
+        DataContext = new HelpDialogViewModel(nazev);
         InitializeComponent();
 
         // Ctrl+F fokusne hledání (stejný zvyk jako v EDInputForm)

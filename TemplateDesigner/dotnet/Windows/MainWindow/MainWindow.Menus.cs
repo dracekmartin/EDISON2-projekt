@@ -121,13 +121,14 @@ public partial class MainWindow
     {
         if (_vm is null) return;
         var nacitani = _vm!.NacitaniVsechLinek(out var bezDat);
+        var nazev = _vm.CurrentInstance;
         if (nacitani is null || _vm.ActiveInstances.Count == 0)
         {
-            _vm.StatusText = "Kontrola potřebuje vybrané linky - vyberte je na štítku vedle agendy.";
+            _vm.StatusText = $"Kontrola potřebuje {nazev.VybraneAkuzativ} - vyberte je na štítku vedle agendy.";
             return;
         }
 
-        var vysledek = new KontrolaVysledkuDialogViewModel("Načítám data…", []) { Probiha = true };
+        var vysledek = new KontrolaVysledkuDialogViewModel("Načítám data…", []) { Probiha = true, Nazev = nazev };
         vysledek.RequestVybrat = PrejdiNaHlaseni;
         new KontrolaVysledkuDialog(vysledek) { Owner = this }.Show();
         try
@@ -142,24 +143,24 @@ public partial class MainWindow
             if (data is null or { Count: 0 })
             {
                 // Linky bez dat řeknou proč (`B193g`); bez nich jde nejspíš o výpadek databáze.
-                vysledek.Hlaseni = TemplateDesigner.Models.KontrolaVystupu.SBezDat(bezDat, []);
-                vysledek.Nadpis = bezDat.Count > 0 ? "Žádná vybraná linka nemá data" : "Databáze nevrátila žádná data.";
+                vysledek.Hlaseni = TemplateDesigner.Models.KontrolaVystupu.SBezDat(bezDat, [], nazev);
+                vysledek.Nadpis = bezDat.Count > 0 ? $"{nazev.ZadnaVybrana} nemá data" : "Databáze nevrátila žádná data.";
                 return;
             }
             var template = _vm.State.CurrentTemplate;
             var hlaseni = TemplateDesigner.Models.KontrolaVystupu.SBezDat(bezDat,
                 await TemplateDesigner.Models.KontrolaVystupu.ZkontrolujAsync(template, data,
-                d => TemplateDesigner.Models.KontrolaVystupu.ZLinky(template, d, _previewCanvas!.HlaseniSazby),
+                d => TemplateDesigner.Models.KontrolaVystupu.ZLinky(template, d, _previewCanvas!.HlaseniSazby), nazev,
                 (hotovo, celkem, linka) =>
                 {
                     vysledek.Nadpis = hotovo < celkem ? $"Kontroluji {hotovo + 1} z {celkem} · {linka}" : "";
                     vysledek.Prubeh = celkem > 0 ? 0.5 + 0.5 * hotovo / celkem : 1;
-                }));
+                }), nazev);
             int linek = TemplateDesigner.Models.KontrolaVystupu.PoLinkach(data).Count + bezDat.Count;
             vysledek.Hlaseni = hlaseni;
             vysledek.Nadpis = hlaseni.Count > 0
-                ? $"Zkontrolováno {TemplateDesigner.Models.KontrolaVystupu.Linek(linek)}: {TemplateDesigner.Models.KontrolaVystupu.SouhrnPoctu(hlaseni)}"
-                : $"Zkontrolováno {TemplateDesigner.Models.KontrolaVystupu.Linek(linek)} - bez hlášek";
+                ? $"Zkontrolováno {nazev.Pocet(linek)}: {TemplateDesigner.Models.KontrolaVystupu.SouhrnPoctu(hlaseni)}"
+                : $"Zkontrolováno {nazev.Pocet(linek)} - bez hlášek";
         }
         catch (Exception ex)
         {
@@ -205,7 +206,8 @@ public partial class MainWindow
             onParamsChanged: _vm.OnExternalParamsChanged,
             agendaClass: agendaClass,
             maVybraneLinky: () => _vm.ActiveInstances.Count > 0,
-            elementKind: _vm.CurrentAgendaElementKind);
+            elementKind: _vm.CurrentAgendaElementKind,
+            nazev: _vm.CurrentInstance);
         vm.VynechaneLinky = () => vynechaneLinky;
 
         vm.RequestRenderPng = (filePath, dataPages) =>

@@ -539,7 +539,7 @@ public partial class MainWindow
 
     private void ShowHelp()
     {
-        var helpDialog = new HelpDialog { Owner = this };
+        var helpDialog = new HelpDialog(_vm?.CurrentInstance) { Owner = this };
         helpDialog.ShowDialog();
     }
 

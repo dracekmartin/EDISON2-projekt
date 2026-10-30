@@ -48,9 +48,7 @@ Parameter VariantyTras As %Boolean = 1;
 
 Parameter ElementKind = "STOP";
 
-Parameter InstanceLabel = "linka";
-
-Parameter InstanceLabelPlural = "linky";
+Parameter InstanceTvary = "linka,linky,linku,linky,linek";
 
 /// Vrátí DataSchema - shodné se zastávkovým JŘ MHD (stejný výstupní formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status

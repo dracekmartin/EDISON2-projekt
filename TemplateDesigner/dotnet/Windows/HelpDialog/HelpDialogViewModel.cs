@@ -1,5 +1,6 @@
 using EDControls;
 using EDControls.EDViewModel;
+using TemplateDesigner.Models;
 using static TemplateDesigner.Designer.KeyboardShortcuts;
 
 namespace TemplateDesigner;
@@ -22,7 +23,7 @@ public class HelpSection
 /// </summary>
 public class HelpDialogViewModel : EDViewModel
 {
-    private readonly List<HelpSection> _all = BuildContent();
+    private readonly List<HelpSection> _all;
 
     private List<HelpSection> _filteredSections;
     public List<HelpSection> FilteredSections
@@ -40,8 +41,10 @@ public class HelpDialogViewModel : EDViewModel
 
     public bool NothingFound => FilteredSections.Count == 0;
 
-    public HelpDialogViewModel()
+    /// <param name="nazev">Název instance aktuální agendy (linka) - nápověda o výběru a tisku mluví jeho slovy.</param>
+    public HelpDialogViewModel(NazevInstance? nazev = null)
     {
+        _all = BuildContent(nazev ?? NazevInstance.Obecny);
         _filteredSections = _all;
     }
 
@@ -84,7 +87,7 @@ public class HelpDialogViewModel : EDViewModel
     // Obsah - zkratky z KeyboardShortcuts, popis ručně
     // ─────────────────────────────────────────────────────────────────────
 
-    private static List<HelpSection> BuildContent() =>
+    private static List<HelpSection> BuildContent(NazevInstance n) =>
     [
         new HelpSection
         {
@@ -93,13 +96,13 @@ public class HelpDialogViewModel : EDViewModel
             [
                 new("1. Otevřít šablonu z databáze / založit novou", Gestures(Open, New)),
                 new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", ChangeAgenda.Gesture),
-                new("3. Vybrat linky pro náhled (modrý štítek „Linka“ ve stavovém řádku)", SelectInstances.Gesture),
+                new($"3. Vybrat {n.AkuzativMnozne} pro náhled (modrý štítek „{NazevInstance.SVelkym(n.Jednotne)}“ ve stavovém řádku)", SelectInstances.Gesture),
                 new("4. Přidat sekce (tlačítko Přidat sekci) a prvky (táhnout z palety)", "myš"),
                 new("5. Napojit data - pole ze záložky „Datová pole“ táhnout na plochu", "táhnout myší"),
                 new($"6. Upravit vzhled - záložka Vlastnosti (rychlé) / {Properties.Gesture} (kompletní dialog)", Properties.Gesture),
                 new("7. Uložit do databáze a vytisknout s reálnými daty", $"{Save.Gesture}, {Print.Gesture}"),
             ],
-            Tip = "Živý náhled vpravo ukazuje výsledek s daty vybrané linky průběžně. " +
+            Tip = $"Živý náhled vpravo ukazuje výsledek s daty {n.Shoda("vybrané", "vybraného", "vybraného", "vybraného")} {n.Genitiv} průběžně. " +
                   "Databáze je primární úložiště šablon - soubor JSON slouží jen pro přenos (menu Soubor → Import/Export).",
         },
 
@@ -124,12 +127,12 @@ public class HelpDialogViewModel : EDViewModel
             Title = $"🖨 Tisk a export ({Print.Gesture})",
             Entries =
             [
-                new("Vytvořit PDF / PNG - z vybraných linek, bez vybrané linky z ukázkových dat", $"{Print.Gesture} → Vytvořit"),
-                new("Členění výstupu - vše do jednoho / po linkách / po zastávkách a směrech", "dialog tisku"),
+                new($"Vytvořit PDF / PNG - z vybraných {n.GenitivMnozne}, bez {n.Shoda("vybrané", "vybraného", "vybraného", "vybraného")} {n.Genitiv} z ukázkových dat", $"{Print.Gesture} → Vytvořit"),
+                new($"Členění výstupu - vše do jednoho / jeden PDF na {n.Akuzativ} / jeden PDF na zastávku a směr", "dialog tisku"),
                 new("Název souboru z datových polí, např. {CISLO_LINKY}", "dialog tisku"),
                 new("Víc stránek na jeden papír (šablona o víc stránkách)", "dialog tisku → Uspořádání na list"),
                 new("Druhá stránka dokladu vedle první, nebo na zadní stranu listu", "dialog tisku → Uspořádání na list"),
-                new("Kontrola všech vybraných linek bez tisku", "dialog tisku → Zkontrolovat, lupa na liště"),
+                new($"Kontrola všech vybraných {n.GenitivMnozne} bez tisku", "dialog tisku → Zkontrolovat, lupa na liště"),
                 new("Hlášky k tisku - informace, upozornění, problém", "blok vpravo ve stavovém řádku"),
             ],
             Tip = "Hlášky tisk nezastaví. Problém znamená, že se část obsahu na papír nedostane (ořízne se, " +
@@ -138,13 +141,13 @@ public class HelpDialogViewModel : EDViewModel
 
         new HelpSection
         {
-            Title = "🗂 Data, agenda a linky",
+            Title = $"🗂 Data, agenda a {n.Mnozne}",
             Entries =
             [
                 new("Změnit agendu / variantu (založí novou prázdnou šablonu)", ChangeAgenda.Gesture),
-                new("Výběr linek pro náhled a tisk", $"{SelectInstances.Gesture} / modrý štítek"),
-                new("Listování mezi vybranými linkami", "◀ ▶ u štítku"),
-                new("Seznam vybraných linek k přepnutí", "▲ u štítku"),
+                new($"Výběr {n.GenitivMnozne} pro náhled a tisk", $"{SelectInstances.Gesture} / modrý štítek"),
+                new($"Předchozí a další z vybraných {n.GenitivMnozne}", "◀ ▶ u štítku"),
+                new($"Seznam vybraných {n.GenitivMnozne} k přepnutí", "▲ u štítku"),
                 new("Obnovit data z databáze (znovu načte ze serveru)", RefreshData.Gesture),
                 new("Datová pole → nový text s {POLE} na ploše", "táhnout pole na plochu"),
                 new("Datová pole → přidat {POLE} do existujícího textu", "táhnout pole na text"),

@@ -89,12 +89,16 @@ Parameter RozdilyVerzi As %Boolean = 0;
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.
 Parameter ElementKind As %String = "";
 
-/// User-facing název „instance" agendy (jedn./mn. č., 1. pád) - okno ho zobrazí místo
-/// obecného „instance" (JŘ = „linka"/„linky", faktury = „faktura"/„faktury"). Override
-/// v subclass. Default „instance" pro agendu bez doménového pojmu.
-Parameter InstanceLabel As %String = "instance";
+/// Jak se jmenuje instance agendy - to, co se tiskne (linka, oběh, zaměstnanec). Návrhář z tvarů skládá
+/// texty oken a hlášek („Žádná vybraná linka nemá data", „Tisk se zastavil u linky 12"), aby žádný obecný
+/// text nepočítal s linkami. Tvary čárkou: 1., 2. a 4. pád jednotného čísla, 1. a 2. pád množného
+/// a volitelně 4. pád množného, jen když se liší od 1. (mužský životný: zaměstnanci / zaměstnance).
+/// Výchozí „instance" pro agendu bez doménového pojmu.
+Parameter InstanceTvary As %String = "instance,instance,instanci,instance,instancí";
 
-Parameter InstanceLabelPlural As %String = "instance";
+/// Rod instance pro shodu v textech („Žádná vybraná linka" / „Žádný vybraný oběh"):
+/// F ženský, M mužský neživotný, MZ mužský životný, N střední.
+Parameter InstanceRod As %String = "F";
 
 /// Vrátí DataSchema pro agendu: skalární pole (fields) + tabulkové kolekce (fieldCollections).
 /// OUT[1] = JSON objekt:

@@ -82,9 +82,7 @@ Parameter CustomColumns As %Boolean = 1;
 
 Parameter ElementKind As %String = "LINE";
 
-Parameter InstanceLabel As %String = "linka";
-
-Parameter InstanceLabelPlural As %String = "linky";
+Parameter InstanceTvary As %String = "linka,linky,linku,linky,linek";
 
 /// Vrátí DataSchema - skaláry hlavičky linky + kolekce ZASTAVKY/SPOJE/SKUPINY_DNU/POZNAMKY.
 ClassMethod GetSchema(ByRef sys As %String) As %Status

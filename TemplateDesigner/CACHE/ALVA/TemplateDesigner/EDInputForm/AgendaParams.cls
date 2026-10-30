@@ -65,21 +65,22 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
 
     // Capability metadata agendy (class parametry) - defenzivně, neznámá/prázdná třída → defaults.
     s elementKind = ""
-    s instanceLabel = ""
+    s instanceTvary = ""
     i agendaClass '= "" {
         try {
             s elementKind   = $parameter(agendaClass, "ElementKind")
-            s instanceLabel = $parameter(agendaClass, "InstanceLabel")
-        } catch ex { s elementKind = "", instanceLabel = "" }
+            s instanceTvary = $parameter(agendaClass, "InstanceTvary")
+        } catch ex { s elementKind = "", instanceTvary = "" }
     }
 
     s split = "SINGLE"
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SPLIT") { s split = vals.%Get("__EXPORT_SPLIT") }
     s f = form.AddFieldToLastGroup("__EXPORT_SPLIT", "Členění výstupu", $$$FieldTypeList, 1, 1)
     d f.AddListItem("SINGLE", "Vše do jednoho PDF")
-    s hasPerLine = (instanceLabel '= "")
+    s hasPerLine = (instanceTvary '= "")
     s hasPerStop = (elementKind = "STOP")
-    i hasPerLine { d f.AddListItem("PER_LINE", "Jeden PDF na " _ ..Akuzativ(instanceLabel)) }
+    // 4. pád jednotného čísla z tvarů agendy (`BaseAgenda.InstanceTvary`).
+    i hasPerLine { d f.AddListItem("PER_LINE", "Jeden PDF na " _ $p(instanceTvary,",",3)) }
     i hasPerStop { d f.AddListItem("PER_STOP", "Jeden PDF na zastávku/směr") }
     // Uložená hodnota, kterou tato agenda nenabízí (přepnutí agendy) → fallback SINGLE.
     i (split="PER_LINE") && 'hasPerLine { s split = "SINGLE" }
@@ -140,16 +141,6 @@ ClassMethod AddParamGroups(form As ALVA.EDControls.EDInputForm.Form, arr As %Dyn
             d ..AddParamField(form, arr.%Get(idx), vals)
         }
     }
-}
-
-/// Akuzativ českého labelu instance pro větu „Jeden PDF na …" (linka→linku, faktura→fakturu,
-/// instance→instanci). Jednoduchá heuristika koncovky; neznámá koncovka → beze změny.
-ClassMethod Akuzativ(slovo As %String) As %String
-{
-    q:slovo="" slovo
-    q:$e(slovo,*)="a" $e(slovo, 1, *-1) _ "u"
-    q:$e(slovo,*)="e" $e(slovo, 1, *-1) _ "i"
-    q slovo
 }
 
 ClassMethod Validate(ByRef sys As %String) As %Status

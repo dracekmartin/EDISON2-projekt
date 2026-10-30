@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (52) - Texty návrháře mluví slovem agendy, ne „linkou"
+
+Asi 25 obecných textů (menu a bublina kontroly, hlášky tisku a kontroly, výběr instancí, spuštění z jízdních řádů, nápověda F1, volba exportu „Jeden PDF na …") mělo „linku" napevno; agenda report generátoru by tiskla „Žádná vybraná linka nemá data" i u oběhů.
+Agenda teď hlásí, jak se jmenuje to, co tiskne: parametr třídy `InstanceTvary` (1., 2. a 4. pád jednotného čísla, 1. a 2. pád množného, volitelně 4. pád množného u mužského životného) a `InstanceRod` (F, M, MZ, N); rozhodnutí Jan: tvary a rod, ne přeformulované věty.
+Registr je posílá (aditivně, `instanceLabel` a `instanceLabelPlural` dál z tvarů pro starší návrháře), návrhář z nich skládá věty přes `Models/NazevInstance` včetně shody („Žádný vybraný oběh"). Starší server bez tvarů dá obecné „instance"; server se nasazuje dřív než klient.
+Formulář exportu bral 4. pád heuristikou z koncovky (`AgendaParams.Akuzativ`), ta je smazaná.
+Pro jízdní řády se texty nemění, kromě drobností: chybí-li důvod prázdné linky, rada zní „zkontrolujte data linky" (dřív „jízdní řád linky"), u nápovědy „Předchozí a další z vybraných linek" a hláška spuštění bez agendy na serveru „návrhář ji nemůže otevřít".
+Zbylo jméno zkratky „Výběr linek" v tabulce zkratek (F1, asistent) - tabulka je statická.
+Ověřeno: .NET testy 2675/2675 včetně nových `NazevInstanceTests` (shoda pro všechny rody, starší server, hlídání obecných oken - zabral na skutečném textu), Caché testy TemplateDesigneru 284/285 (1 přeskočený z dřívějška), integrační testy 48/48, voláním `ListAgendy` a formuláře exportu na dev serveru. V aplikaci neproklikané.
+
 ## 2026-10-30 (51) - Jedna šedá pro záhlaví nových prvků
 
 Nově vložená pevná tabulka a tabulka s řádky z dat měly záhlaví o odstín světlejší (`#FFE8E8E8`) než prvky jízdních řádů, dodávané šablony a import z PDF (`#FFE0E0E0`). Rozdíl nebyl záměr (Jan).

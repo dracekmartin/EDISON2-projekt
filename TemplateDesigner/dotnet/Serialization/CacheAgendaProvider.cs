@@ -304,7 +304,7 @@ public class CacheAgendaProvider : IDataSchemaProvider
             CVar result = _mlRest.Query(cacheClass, "GetAvailableSkupiny", new CVar());
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             {
-                NotifyReadError("načtení skupin linek", _mlRest.RestStatus.Message);
+                NotifyReadError("načtení skupin", _mlRest.RestStatus.Message);
                 return [];
             }
 
@@ -328,7 +328,7 @@ public class CacheAgendaProvider : IDataSchemaProvider
         }
         catch (Exception ex)
         {
-            NotifyReadError("načtení skupin linek", ex.Message);
+            NotifyReadError("načtení skupin", ex.Message);
             return [];
         }
     }

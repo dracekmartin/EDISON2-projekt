@@ -292,7 +292,7 @@ public partial class TemplateDesignerViewModel
             if (klic is null || !presety.TryGetValue(klic, out var vzor) || vzor.Count == 0)
             {
                 // Vzory chodí až s daty linky - ať to není tichý no-op jako dřív.
-                StatusText = "Rozvržení sloupců nejde nastavit, dokud nejsou načtená data linky.";
+                StatusText = $"Rozvržení sloupců nejde nastavit, dokud nejsou načtená data {CurrentInstance.Genitiv}.";
                 SyncLayoutParamFromTemplate();
                 return;
             }

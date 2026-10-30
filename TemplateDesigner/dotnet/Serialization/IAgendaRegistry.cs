@@ -1,3 +1,5 @@
+using TemplateDesigner.Models;
+
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
@@ -45,8 +47,15 @@ public record AgendaRegistryEntry(
     bool Released = true,
     bool CustomColumns = true,
     bool VariantyTras = true,
-    bool RozdilyVerzi = false)
+    bool RozdilyVerzi = false,
+    string InstanceTvary = "",
+    string InstanceRod = "")
 {
+    /// <summary>Název instance pro texty návrháře (<see cref="NazevInstance"/>). <see cref="InstanceLabel"/>
+    /// a <see cref="InstanceLabelPlural"/> server posílá jen pro starší návrháře; starší server bez tvarů
+    /// dá obecné „instance" (server se nasazuje dřív než klient).</summary>
+    public NazevInstance Nazev => NazevInstance.Z(InstanceTvary, InstanceRod);
+
     /// <summary>Label agendy s fallbackem pro starší Caché bez dvouosých klíčů (→ kombinovaný Label).</summary>
     public string EffectiveAgendaLabel => AgendaLabel is { Length: > 0 } ? AgendaLabel : Label;
 

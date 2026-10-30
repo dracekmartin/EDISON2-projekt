@@ -133,7 +133,7 @@ Dopravní agendy narazí jen na `F3`, mzdy, pokladna a faktury hned na `F9` a `F
 | # | Co | Stav |
 |---|---|---|
 | F7 | **Pojmenování agend** - sada = naše agenda podle výstupu (`VYPLATNI_PASKA`), modul se stejným výstupem = varianta (`MZDY2`); kód agendy se po vydání nemění, proto před první agendou | ⬜ rozhodnutí Jan |
-| F8 | **Pilot: Vozové listy (MHD)** - 5 polí, 2 tabulky, instance = oběh, volá MHD2Linky; vlastní třída zavolá starý `getSadu`/`getData` a převede výstup, registr se nemění. Narazí na zvýraznění řádku z dat (`F3`, R3). Před vydáním text „linka" napevno (`B194e` A5, pod tabulkou) | ⬜ po relacích |
+| F8 | **Pilot: Vozové listy (MHD)** - 5 polí, 2 tabulky, instance = oběh, volá MHD2Linky; vlastní třída zavolá starý `getSadu`/`getData` a převede výstup, registr se nemění. Narazí na zvýraznění řádku z dat (`F3`, R3). Agenda vyplní `InstanceTvary` (oběh) a `InstanceRod` | ⬜ po relacích |
 | F2 | **Obecný převodník vs čisté agendy** - rozhodnout po pilotu; převodník potřebuje registr, který vypíše dvojice agenda a sada, a varianty se stejným tvarem dat neumí | ⬜ rozhodnutí po `F8` |
 | F3 | **Tabulka s řádky z dat na úroveň RG** (navazuje na `B76`) - řádky řízené daty, overflow, mezisoučty, seskupení řádků a vnořená data; ⚠️ tvar odvodit z reálných sestav RG. Rozpis [`legacy-nahrada.md`](legacy-nahrada.md) §5 etapa 4 | ⬜ L |
 | F1 | **Pořadí agend** - statistika použití agend neexistuje (`Main.cls:161-188` jsou počty prvků) a tisky se nelogují; počet šablon podle agendy v databázích zákazníků (jen čtení), nebo počet volajících míst. Dopravní agendy napřed | ⬜ |
@@ -144,11 +144,6 @@ Dopravní agendy narazí jen na `F3`, mzdy, pokladna a faktury hned na `F9` a `F
 | F4 | **Další výstupy** - Excel (data podle typů sloupců), znakový tisk Epson, JPG | ⬜ dle poptávky |
 | F5 | **Jazykové varianty šablon** - per-jazyk kopie provázaná na CS zdroj | ⬜ |
 | F6 | **Vědomě neportovat bez poptávky** - grafy (12×), AZTEC (2×), calculated (2× - výrazy TD nadmnožina), checkbox (8×); ověřit + škrtnout | ⬜ validace |
-
-- **Slovo „linka" napevno** (`B194e` A5) [M] - asi 25 textů (menu „Zkontrolovat vybrané linky…",
-  hlášky „Žádná vybraná linka nemá data", průběh kontroly). Udělat **před vydáním první agendy bez
-  linek** (pilot `F8`; ukázkové Faktury jsou od 30. 10. smazané) - skloňovat podle názvu instance agendy;
-  okno výběru už ho bere (Jan 27. 10.).
 
 ---
 

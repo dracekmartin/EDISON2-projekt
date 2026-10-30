@@ -64,9 +64,7 @@ Parameter ElementKind As %String = "LINE";
 
 Parameter RozdilyVerzi As %Boolean = 1;
 
-Parameter InstanceLabel As %String = "linka";
-
-Parameter InstanceLabelPlural As %String = "linky";
+Parameter InstanceTvary As %String = "linka,linky,linku,linky,linek";
 
 /// Schéma linkového JŘ + platnost původní verze, zrušené spoje a verze spoje.
 ClassMethod GetSchema(ByRef sys As %String) As %Status

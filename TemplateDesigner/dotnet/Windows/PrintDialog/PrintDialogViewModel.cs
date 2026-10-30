@@ -16,6 +16,9 @@ namespace TemplateDesigner;
 public class PrintDialogViewModel : EDViewModel
 {
     private readonly Template _template;
+    /// <summary>Název instance agendy pro hlášky („Žádná vybraná linka nemá data").</summary>
+    private readonly NazevInstance _nazev;
+    public NazevInstance Nazev => _nazev;
     private readonly Dictionary<string, object?> _paramValues;
     private readonly IReadOnlyList<TemplateParameter> _parameters;
     private readonly string? _agendaClass;
@@ -116,8 +119,14 @@ public class PrintDialogViewModel : EDViewModel
     public Func<IReadOnlyList<(string Linka, string? Duvod)>>? VynechaneLinky { get; set; }
 
     /// <summary>Stav, když nemá data žádná linka: s výčtem linek (důvody jsou v hláškách), jinak obecné navedení.</summary>
-    internal static string ZadnaData(IReadOnlyList<(string Linka, string? Duvod)>? vynechane, string bezDuvodu) =>
-        vynechane is { Count: > 0 } ? $"Žádná vybraná linka nemá data: {string.Join(", ", vynechane.Select(v => v.Linka))}" : bezDuvodu;
+    /// <summary>Bubliny tlačítek Zkontrolovat a Vytvořit s názvem instance agendy.</summary>
+    public string KontrolaTooltip =>
+        $"Projde {_nazev.Shoda("všechny", "všechny", "všechny", "všechna")} {_nazev.VybraneAkuzativ} bez tisku a ukáže, co se kde nevejde nebo vytiskne jinak";
+    public string VytvoritTooltip =>
+        $"Z vybraných {_nazev.GenitivMnozne}; když {_nazev.Shoda("žádná vybraná", "žádný vybraný", "žádný vybraný", "žádné vybrané")} není, z ukázkových dat";
+
+    internal static string ZadnaData(IReadOnlyList<(string Linka, string? Duvod)>? vynechane, string bezDuvodu, NazevInstance nazev) =>
+        vynechane is { Count: > 0 } ? $"{nazev.ZadnaVybrana} nemá data: {string.Join(", ", vynechane.Select(v => v.Linka))}" : bezDuvodu;
 
     /// <summary>Dovětek k hotovému výstupu o linkách, které se vynechaly; prázdný, když žádná.</summary>
     internal static string DovetekVynechanych(IReadOnlyList<(string Linka, string? Duvod)>? vynechane) =>
@@ -127,7 +136,7 @@ public class PrintDialogViewModel : EDViewModel
     /// po vytvoření PDF by překáželo, stačí počet ve stavovém řádku.</summary>
     private void NastavHlaseniBezDat(string nadpis, bool otevrit)
     {
-        var bezDat = KontrolaVystupu.SBezDat(VynechaneLinky?.Invoke(), []);
+        var bezDat = KontrolaVystupu.SBezDat(VynechaneLinky?.Invoke(), [], _nazev);
         if (bezDat.Count == 0) return;
         if (otevrit) NastavHlaseni(bezDat, nadpis);
         else
@@ -168,8 +177,8 @@ public class PrintDialogViewModel : EDViewModel
         if (ex is CacheAgendaDataException data)
         {
             var linka = data.Linka ?? "";
-            StatusText = $"⚠ Tisk se zastavil u linky {linka}";
-            NastavHlaseni([KontrolaVystupu.LinkaChybaDat(linka, data.Message)], "Linku nejde vytisknout");
+            StatusText = $"⚠ Tisk se zastavil u {_nazev.Genitiv} {linka}";
+            NastavHlaseni([KontrolaVystupu.LinkaChybaDat(linka, data.Message)], $"{NazevInstance.SVelkym(_nazev.Akuzativ)} nejde vytisknout");
             return;
         }
         StatusText = $"⚠ Chyba: {ex.Message}";
@@ -215,14 +224,13 @@ public class PrintDialogViewModel : EDViewModel
     /// proto se mezi linkami pustí kreslení - jinak by pruh průběhu stál.
     /// </summary>
     private Task<List<Hlaseni>> ZkontrolujLinkyAsync(IReadOnlyList<DataContext> dataPages) =>
-        KontrolaVystupu.ZkontrolujAsync(_template, dataPages, d => RequestKontrolaLinky?.Invoke(d) ?? [],
+        KontrolaVystupu.ZkontrolujAsync(_template, dataPages, d => RequestKontrolaLinky?.Invoke(d) ?? [], _nazev,
             (hotovo, celkem, linka) =>
             {
                 StatusText = hotovo < celkem ? $"Kontroluji {hotovo + 1} z {celkem} · {linka}" : "Kontrola hotová";
                 Prubeh = celkem > 0 ? 0.5 + 0.5 * hotovo / celkem : 1;
             });
 
-    private static string Linek(int n) => $"{n} {(n == 1 ? "linka" : n <= 4 ? "linky" : "linek")}";
 
     public AsyncRelayCommand KontrolaCommand { get; private set; } = null!;
 
@@ -242,17 +250,17 @@ public class PrintDialogViewModel : EDViewModel
             if (dataPages is null or { Count: 0 })
             {
                 StatusText = ZadnaData(VynechaneLinky?.Invoke(),
-                    "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).");
-                NastavHlaseniBezDat("Žádná vybraná linka nemá data", otevrit: true);
+                    $"Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně {_nazev.Shoda("vybraná", "vybraný", "vybraný", "vybrané")} {_nazev.Jednotne} (štítek vedle agendy).", _nazev);
+                NastavHlaseniBezDat($"{_nazev.ZadnaVybrana} nemá data", otevrit: true);
                 return;
             }
-            var hlaseni = KontrolaVystupu.SBezDat(VynechaneLinky?.Invoke(), await ZkontrolujLinkyAsync(dataPages));
+            var hlaseni = KontrolaVystupu.SBezDat(VynechaneLinky?.Invoke(), await ZkontrolujLinkyAsync(dataPages), _nazev);
             int linek = KontrolaVystupu.PoLinkach(dataPages).Count + (VynechaneLinky?.Invoke().Count ?? 0);
             // Linky bez dat jsou mezi hláškami, dovětek ve stavu by je jen opakoval.
             StatusText = hlaseni.Count > 0
-                ? $"Zkontrolováno {Linek(linek)}"
-                : $"Zkontrolováno {Linek(linek)} - bez hlášek";
-            NastavHlaseni(hlaseni, $"Zkontrolováno {Linek(linek)}: {Souhrn(hlaseni)}");
+                ? $"Zkontrolováno {_nazev.Pocet(linek)}"
+                : $"Zkontrolováno {_nazev.Pocet(linek)} - bez hlášek";
+            NastavHlaseni(hlaseni, $"Zkontrolováno {_nazev.Pocet(linek)}: {Souhrn(hlaseni)}");
         }
         catch (Exception ex)
         {
@@ -289,8 +297,10 @@ public class PrintDialogViewModel : EDViewModel
         Action? onParamsChanged = null,
         string? agendaClass = null,
         Func<bool>? maVybraneLinky = null,
-        string? elementKind = null)
+        string? elementKind = null,
+        NazevInstance? nazev = null)
     {
+        _nazev = nazev ?? NazevInstance.Obecny;
         _maVybraneLinky = maVybraneLinky ?? (() => false);
         _elementKind = elementKind;
         _template = template;
@@ -345,8 +355,8 @@ public class PrintDialogViewModel : EDViewModel
                 Probiha = false;
                 if (stranky.Count == 0)
                 {
-                    StatusText = ZadnaData(VynechaneLinky?.Invoke(), "Databáze nevrátila žádná data.");
-                    NastavHlaseniBezDat("Žádná vybraná linka nemá data", otevrit: true);
+                    StatusText = ZadnaData(VynechaneLinky?.Invoke(), "Databáze nevrátila žádná data.", _nazev);
+                    NastavHlaseniBezDat($"{_nazev.ZadnaVybrana} nemá data", otevrit: true);
                     return;
                 }
             }
@@ -359,7 +369,7 @@ public class PrintDialogViewModel : EDViewModel
                 ? $"PNG uloženo: {Path.GetFileName(path)}"
                 : $"PNG uloženo: {pocet} souborů ({Path.GetFileNameWithoutExtension(path)}_001.png …)")
                 + (ZVybranychLinek ? DovetekVynechanych(VynechaneLinky?.Invoke()) : "");
-            if (ZVybranychLinek) NastavHlaseniBezDat("Některé linky nemají data a nevytiskly se", otevrit: false);
+            if (ZVybranychLinek) NastavHlaseniBezDat($"{_nazev.Shoda("Některé", "Některé", "Někteří", "Některá")} {_nazev.Mnozne} nemají data a {_nazev.Shoda("nevytiskly", "nevytiskly", "nevytiskli", "nevytiskla")} se", otevrit: false);
         }
         catch (Exception ex)
         {
@@ -517,13 +527,13 @@ public class PrintDialogViewModel : EDViewModel
             {
                 // Nejčastější příčina není výpadek DB, ale žádná vybraná linka - navést uživatele.
                 StatusText = ZadnaData(VynechaneLinky?.Invoke(),
-                    "Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně vybraná linka (štítek vedle agendy).");
-                NastavHlaseniBezDat("Žádná vybraná linka nemá data", otevrit: true);
+                    $"Databáze nevrátila žádná data. Zkontrolujte, že je v hlavním okně {_nazev.Shoda("vybraná", "vybraný", "vybraný", "vybrané")} {_nazev.Jednotne} (štítek vedle agendy).", _nazev);
+                NastavHlaseniBezDat($"{_nazev.ZadnaVybrana} nemá data", otevrit: true);
                 return;
             }
             string vynechane = DovetekVynechanych(VynechaneLinky?.Invoke());
             // Vynechané linky jako hlášky - okno se po PDF neotvírá, počet je ve stavovém řádku (`B193g`).
-            NastavHlaseniBezDat("Některé linky nemají data a nevytiskly se", otevrit: false);
+            NastavHlaseniBezDat($"{_nazev.Shoda("Některé", "Některé", "Někteří", "Některá")} {_nazev.Mnozne} nemají data a {_nazev.Shoda("nevytiskly", "nevytiskly", "nevytiskli", "nevytiskla")} se", otevrit: false);
 
             // Kontrolu všech linek tisk sám nespouští (rozhodnutí Jan 5. 10.): PDF vznikne tak jako
             // tak a kontrola by ho jen zdržela. Kdo chce hlášky za všechny linky, má „Zkontrolovat".

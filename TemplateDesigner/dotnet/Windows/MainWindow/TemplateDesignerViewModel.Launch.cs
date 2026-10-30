@@ -54,7 +54,7 @@ public partial class TemplateDesignerViewModel
         // Neznámý kód agendy konstruktor přeskočil - pak tu stojí jiná agenda a linka by k ní nepatřila.
         if (!string.Equals(agenda, input.AgendaCode, StringComparison.OrdinalIgnoreCase))
         {
-            PopupDisplayer.Info($"Agenda {input.AgendaCode} není na serveru k dispozici - linku nelze otevřít.");
+            PopupDisplayer.Info($"Agenda {input.AgendaCode} není na serveru k dispozici, návrhář ji nemůže otevřít.");
             return;
         }
 
@@ -125,7 +125,7 @@ public partial class TemplateDesignerViewModel
         var agenda = input.AgendaCode;
         if (CacheProvider is null || agenda is null) return (null, "Návrhář není připojený k databázi.");
         var instanceValue = input.Get(InstanceParamName(agenda));
-        if (string.IsNullOrEmpty(instanceValue)) return (null, "Spuštění neurčuje linku.");
+        if (string.IsNullOrEmpty(instanceValue)) return (null, $"Spuštění neurčuje {(AgendaEntry(agenda)?.Nazev ?? NazevInstance.Obecny).Akuzativ}.");
 
         State.CurrentTemplate = template;
         await RefreshFieldsList();
@@ -140,8 +140,8 @@ public partial class TemplateDesignerViewModel
         var pages = await Task.Run(() => load(paramsSnapshot, null));
         if (pages is null or { Count: 0 })
             return (null, vynechane.FirstOrDefault().Duvod is { Length: > 0 } duvod
-                ? $"Linka {linka} nemá data: {duvod}"
-                : $"Linka {linka} nemá data.");
+                ? $"{NazevInstance.SVelkym(CurrentInstance.Jednotne)} {linka} nemá data: {duvod}"
+                : $"{NazevInstance.SVelkym(CurrentInstance.Jednotne)} {linka} nemá data.");
 
         var path = LaunchPdfPath(folder, $"{template.Name} - {linka}");
         var snapshot = TemplateSerializer.DeepClone(template);

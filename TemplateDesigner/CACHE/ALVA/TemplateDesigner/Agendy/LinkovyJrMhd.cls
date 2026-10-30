@@ -44,9 +44,7 @@ Parameter InstanceParamName As %String = "LINKA_ID";
 
 Parameter ElementKind As %String = "LINE";
 
-Parameter InstanceLabel As %String = "linka";
-
-Parameter InstanceLabelPlural As %String = "linky";
+Parameter InstanceTvary As %String = "linka,linky,linku,linky,linek";
 
 /// Vrátí DataSchema - shodné s LinkovyJrAd (stejný wire formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status

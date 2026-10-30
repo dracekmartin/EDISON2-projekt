@@ -174,7 +174,7 @@ public partial class TemplateDesignerViewModel
         // Async (R1): cachované, ale první volání jde po síti - na pomalé lince by zmrazilo aplikaci.
         var provider = CacheProvider;
         var skupiny = await Task.Run(() => provider.GetAvailableSkupiny(agendaCode));
-        var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances, skupiny, _activeSkupinaId, CurrentInstanceLabelPlural);
+        var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances, skupiny, _activeSkupinaId, CurrentInstance);
         if (Dialogs?.ShowInstancePicker(vm) != true) return;
 
         _activeSkupinaId = vm.SelectedSkupinaId;

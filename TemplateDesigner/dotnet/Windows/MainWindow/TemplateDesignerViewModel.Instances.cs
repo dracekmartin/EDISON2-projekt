@@ -70,7 +70,7 @@ public partial class TemplateDesignerViewModel
     {
         get
         {
-            var lbl = CapitalizeFirst(CurrentInstanceLabel);
+            var lbl = NazevInstance.SVelkym(CurrentInstance.Jednotne);
             // Bez vybrané instance kreslí náhled ukázková data - řekni to tady, aby se nedal splést
             // s hotovou vývěskou. U šablony bez vazby na databázi se žádná reálná data nečekají,
             // takže by „ukázková data" lhala (rozhodnutí Jan 5. 8.).
@@ -151,7 +151,7 @@ public partial class TemplateDesignerViewModel
             .Where(v => hledani == "" || v.Display.Contains(hledani, StringComparison.CurrentCultureIgnoreCase))];
 
     /// <summary>Popisek hledacího pole v seznamu.</summary>
-    public string InstanceFilterHint => $"Hledat {CurrentInstanceLabelPlural}";
+    public string InstanceFilterHint => $"Hledat {CurrentInstance.AkuzativMnozne}";
 
     /// <summary>Popisek zvolené skupiny linek pro status (prázdné = default/žádná skupina).</summary>
     private string? _activeSkupinaLabel;

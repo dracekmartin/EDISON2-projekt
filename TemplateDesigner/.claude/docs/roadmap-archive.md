@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Slovo „linka" napevno (hotovo 30. 10. 2026)
+
+- **Slovo „linka" napevno** (`B194e` A5, changelog 2026-10-30 (52)): agenda hlásí tvary a rod instance
+  (`InstanceTvary`, `InstanceRod`, rozhodnutí Jan: tvary + rod, ne přeformulování), návrhář z nich skládá texty
+  hlavního okna, tisku, kontroly, výběru instancí, nápovědy F1 a exportu. Zbylo jen jméno zkratky „Výběr linek"
+  v tabulce zkratek (F1, asistent) - tabulka je statická.
+
 ## Jedna šedá pozadí záhlaví (hotovo 30. 10. 2026)
 
 - **Dva odstíny šedého pozadí záhlaví** (z revize sjednocení, changelog 2026-10-30 (51)): nové tabulky měly

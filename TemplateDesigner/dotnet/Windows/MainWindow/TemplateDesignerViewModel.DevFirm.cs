@@ -137,7 +137,7 @@ public partial class TemplateDesignerViewModel
                 Models.ColorHex.UiData = null;
                 // Agenda řekne, co v datech chybí a co s tím (`DUVOD_PRAZDNE`) - jinak by uživatel
                 // hledal chybu v návrháři. Hláška, ne jen text dole (`B193g`).
-                NastavHlaseni(ZdrojHlaseni.Data, [Models.KontrolaVystupu.LinkaBezDat(instance.Display, duvodPrazdneho)]);
+                NastavHlaseni(ZdrojHlaseni.Data, [Models.KontrolaVystupu.LinkaBezDat(instance.Display, duvodPrazdneho, CurrentInstance)]);
                 StatusText = $"Žádná data: {instance.Display}";
             }
             else
@@ -177,7 +177,7 @@ public partial class TemplateDesignerViewModel
             _realPreviewData = null;
             Models.ColorHex.UiData = null;
             NastavHlaseni(ZdrojHlaseni.Data, [Models.KontrolaVystupu.LinkaChybaDat(instance.Display, ex.Message)]);
-            StatusText = $"Linku nejde vytisknout: {instance.Display}";
+            StatusText = $"{NazevInstance.SVelkym(CurrentInstance.Akuzativ)} nejde vytisknout: {instance.Display}";
             NotifyPreviewPagesChanged();
             RequestPreviewRefresh?.Invoke();
         }
@@ -226,23 +226,24 @@ public partial class TemplateDesignerViewModel
     public string CurrentAgendaDisplayName =>
         AgendaEntry(State.CurrentTemplate.AgendaCode)?.DisplayName ?? State.CurrentTemplate.AgendaCode ?? "";
 
-    /// <summary>User-facing název „instance" aktuální agendy (JŘ = „linka", faktury = „faktura",
-    /// jinak „instance") - z registru agend. Okno ho zobrazí místo obecného „instance".</summary>
-    public string CurrentInstanceLabel       => AgendaEntry(State.CurrentTemplate.AgendaCode)?.InstanceLabel ?? "instance";
-    public string CurrentInstanceLabelPlural => AgendaEntry(State.CurrentTemplate.AgendaCode)?.InstanceLabelPlural ?? "instance";
+    /// <summary>Název instance aktuální agendy (JŘ = „linka") z registru agend, pro všechny texty okna
+    /// i hlášek, které o instanci mluví. Bez agendy v registru obecné „instance".</summary>
+    public NazevInstance CurrentInstance => AgendaEntry(State.CurrentTemplate.AgendaCode)?.Nazev ?? NazevInstance.Obecny;
 
-    /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „…výběr - linky").</summary>
-    public string PreviousInstanceTooltip => $"Předchozí {CurrentInstanceLabel}";
-    public string NextInstanceTooltip     => $"Další {CurrentInstanceLabel}";
-    public string InstancePickerHint      => $"Vybrat {CurrentInstanceLabelPlural} - {KeyboardShortcuts.SelectInstances.Gesture}";
+    /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „Vybrat linky").</summary>
+    public string PreviousInstanceTooltip => $"Předchozí {CurrentInstance.Jednotne}";
+    public string NextInstanceTooltip     => $"Další {CurrentInstance.Jednotne}";
+    public string InstancePickerHint      => $"Vybrat {CurrentInstance.AkuzativMnozne} - {KeyboardShortcuts.SelectInstances.Gesture}";
 
-    private static string CapitalizeFirst(string s) =>
-        string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
+    /// <summary>Položka menu a bublina kontroly výstupu („Zkontrolovat vybrané linky…").</summary>
+    public string KontrolaMenuText => $"Zkontrolovat {CurrentInstance.VybraneAkuzativ}…";
+    public string KontrolaTooltip => $"Zkontrolovat {CurrentInstance.Shoda("všechny", "všechny", "všechny", "všechna")} {CurrentInstance.VybraneAkuzativ} - co se kde nevejde nebo vytiskne jinak";
 
     private void NotifyInstanceLabelsChanged()
     {
-        OnPropertyChanged(nameof(CurrentInstanceLabel));
-        OnPropertyChanged(nameof(CurrentInstanceLabelPlural));
+        OnPropertyChanged(nameof(CurrentInstance));
+        OnPropertyChanged(nameof(KontrolaMenuText));
+        OnPropertyChanged(nameof(KontrolaTooltip));
         OnPropertyChanged(nameof(ActiveInstanceText));
         OnPropertyChanged(nameof(PreviousInstanceTooltip));
         OnPropertyChanged(nameof(NextInstanceTooltip));
