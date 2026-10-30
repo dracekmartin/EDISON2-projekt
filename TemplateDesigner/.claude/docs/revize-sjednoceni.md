@@ -52,7 +52,7 @@ Offline nabídka dat: JsonFileDataSchemaProvider, CompositeDataSchemaProvider, c
 - E4 ✅ Menu Zobrazit → Levý panel ovládá totéž co ☰ a Ctrl+B; název „Levý panel". Ověřeno jen čtením a buildem, ne v aplikaci.
 - E5 ⏳ Panel a lišta ukazují „Arial" místo výchozího fontu šablony - formulář textu opravený s E1, zbytek (deskriptory `?? "Arial"`) patří k A2.
 - E6 ✅ Asistent: Poznámky v obou JŘ (odvozeno z AgendaCapabilities), změna formátu stránky se ptá, 6 záložek, pevná tabulka je živý prvek.
-- E7 ⏳ Jména tabulek: čeká na rozhodnutí Jana (rozhodnutí 4).
+- E7 ✅ Jména tabulek: „Pevná tabulka" a „Tabulka s řádky z dat" všude (rozhodnutí Jan 30. 10.), staré tvary zakázané v testu názvosloví. Jména mimo `ElementNames` (hlášky Minut, záhlaví Tabulky spojů) zůstávají ke katalogu prvků (A1).
 - E8 ✅ Výška prvku podle obsahu: „(podle obsahu)" místo „(dynamická)".
 - E9 ✅ Zastaralé komentáře a skill `novy-element` opravené; `CapabilityCatalog.cs:251` (skupiny „jak je uživatel vidí") zůstává do B1.
 - E10 ✅ „…" v místní nabídce, ux §3 doplněné o Ctrl+klik, Ctrl+kolečko a Esc. „Del/PgDn" × „Delete/PageDown" zůstává ke klávesovým zkratkám (A3).
