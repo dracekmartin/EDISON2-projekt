@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (30) - Testy, které nic neověřovaly, a uzavření `B56` (S13, čtvrtá část)
+
+Smoke test GetData vývěsky AD a dva testy dopravců hledaly linku v testovacím namespace, kde linky AD nejsou, a hlásily úspěch, aniž co ověřily.
+Teď běží na linkách sady, jejichž firma je na serveru (`ZastavkoveJrAdSadaTest.LinkyNaServeru`), a bez nich se hlásí jako přeskočené.
+Po zapnutí spadly na zastaralých očekáváních: zastávka už dávno nenese `POPIS` (prvky čtou `NAZEV_ZASTAVKY`) a adresa firmy v popisu dopravce není, když má provozovna vlastní ulici (CB_CSADAD, prov. Písek) - opraveno v testech, výstup je v pořádku.
+Pravidlo „plné pole adresy 10, pole 2 jen záloha" ověřuje nový test na záznamu číselníku pod jedinečným klíčem.
+Stejným způsobem (`$$$AssertTrue(1, "… přeskočeno")`) hlásí přeskočení asi 100 dalších míst v testech; zapsané do backlogu.
+`B56` je tím uzavřené a přesunuté do archivu roadmapy.
+Ověřeno: Caché testy 273/273.
+
 ## 2026-10-30 (29) - Snímek výstupu agend porovnává obsah, ne bajty (`B56` S13, třetí část)
 
 Snímek výstupu agend dřív porovnával bajt po bajtu, takže každé přeskládání položek hlavičky (S7, S12) hlásil jako rozdíl a obsah jsem musel ověřovat skriptem mimo repo.

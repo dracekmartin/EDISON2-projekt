@@ -4,7 +4,8 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** `B56` (příprava `B194` hotová 30. 10.); přehled a pořadí níž. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** projít a protřídit backlog (Jan 30. 10.), pak relace AD (sekce 🚋 níž). `B56` sloučení kódu agend JŘ
+> je uzavřené 30. 10. (archiv). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -12,28 +13,14 @@
 
 ---
 
-## 🧱 `B56` Sloučení kódu agend JŘ [L] (přehled 30. 10.)
-
-Cíl (Jan 29. 10.) není sjednotit všechno, ale ujasnit strukturu a dát agendám základ, aby se nerozjížděly tam, kde to uživatel pozná nebo kde se oprava dělala víckrát.
-Sdílený kód jde do pomocných tříd mimo dědičnost agend ([`R8`](architektonicka-rozhodnuti-agendy.md)).
-Postup, pojistky a snímek výstupu jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md): jeden krok = jeden commit, snímek před i po.
-Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného, se při přesunu přejmenuje (`cache-api.md` pravidlo 5).
-Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a pravidlo druhého použití jsou v R8, měření v `legacy-nahrada.md §4`.
-**Fáze (Jan 30. 10.):** 1 struktura a pojistky → 2 popis agendy podle druhu výstupu → 3 výstup podle druhu → 4 data podle zdroje
-(fáze 1-4 hotové 30. 10., kroky S1-S12 v archivu) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje;
-udělá se jako první krok relací) → 6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami
-(fáze 6 a 7 Jan 30. 10. odložil, jejich položky P2 a varianty tras v MHD jsou v backlogu).
-
-### Vědomě nesjednocovat
-
-Každá agenda tu drží tvar svého starého modulu: nadpis skupiny dnů, telefon dopravce, vysvětlivka „na znamení", zóny zastávky, stanoviště u názvu, popis dopravce, rozsahy čísel spojů, barva „0;0;0", značky u odjezdů.
-Seznam s důvody je v [`legacy-nahrada.md §4`](legacy-nahrada.md); sloučení kódu je nesmí srovnat.
-
----
-
 ## 📥 Backlog
 
 ### Ostatní
+
+- **Testy hlásí přeskočení jako úspěch** [S-M] (nález 30. 10. při uzavření `B56`). Asi 100 míst v testech Caché píše
+  `$$$AssertTrue(1, "… přeskočeno")`, když firma nebo linka na serveru není - v souhrnu pak vypadá jako ověřený.
+  Tři takové testy na serveru nic neověřovaly a jejich očekávání byla zastaralá (opravené v `B56` S13). Převést na
+  `$$$AssertSkipped` (v souhrnu viditelné) a novým zápisům bránit kontrolou zdrojů.
 
 - **Úvodní okno pro nové uživatele** [S-M] (nápad Jan 29. 10.). Dnes návrhář otevře prázdnou šablonu
   a nový uživatel neví, kde začít. Okno po otevření nabídne: otevřít ukázkovou šablonu agendy, otevřít

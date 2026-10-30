@@ -38,6 +38,21 @@ ClassMethod Sada(ByRef sada)
 	set sada($increment(sada)) = "ZL_KOVED~1~0823955~mistenky,vyluky,prazdno"
 }
 
+/// Linky sady, jejichž firma je na serveru a linka v datech: linky(i) = "firma~skupina~linka".
+/// Pro testy, které potřebují skutečnou linku AD - testovací namespace žádnou nemá, takže test nad
+/// „první linkou namespace" do 30. 10. hlásil úspěch, aniž co ověřil (`B56` S13).
+ClassMethod LinkyNaServeru(ByRef linky)
+{
+	kill linky
+	do ..Sada(.sada)
+	for i = 1:1:$get(sada) {
+		set db = $piece(sada(i), "~", 1), sku = $piece(sada(i), "~", 2), lin = $piece(sada(i), "~", 3)
+		continue:'##class(%SYS.Namespace).Exists(db)
+		continue:'$data(^[db]JRL(sku, lin, "I"))
+		set linky($increment(linky)) = db_"~"_sku_"~"_lin
+	}
+}
+
 /// Jádro sady pro **drahé** invarianty (každý průchod = GetData nad celou linkou): pět linek ze čtyř
 /// firem s nejrozdílnějším tvarem - nejvíc stran, nejvíc sloupců, jednovariantní, ruční režim, zóny
 /// a místenky.

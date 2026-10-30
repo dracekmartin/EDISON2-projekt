@@ -7,7 +7,19 @@
   jako „Úklid nastavení tisku v jízdních řádech", spolu s `P2` a novými poli z 10. 8. Podklad ke schůzce
   [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
 
-## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
+## `B56` Sloučení kódu agend JŘ (uzavřené 30. 10. 2026)
+
+Cíl (Jan 29. 10.) nebyl sjednotit všechno, ale ujasnit strukturu a dát agendám základ, aby se nerozjížděly tam, kde to
+uživatel pozná nebo kde se oprava dělala víckrát. Sdílený kód je v pomocných třídách `Agendy/Jr/` mimo dědičnost agend
+(R8: data podle zdroje `DataAd`/`DataMhd`, výstup podle druhu `VystupZastavkovy`/`VystupLinkovy`, `Parametry`, `NabidkaDat`,
+`VlastniSloupce`); `BaseAgenda` je jen kontrakt a obecné věci a agendy se navzájem nevolají. Fáze 1-4 hotové (S1-S13);
+fáze 5 (relace a vozový JŘ nanečisto) se udělá jako první krok relací, fáze 6 a 7 Jan odložil (P2 a varianty tras v MHD
+jsou v backlogu). Vědomě nesjednocené tvary starých modulů s důvody: `legacy-nahrada.md §4`.
+
+- **S13** Dořešené nálezy review `B56` (hotovo 30. 10., changelog 2026-10-30 (27)-(30), Jan 30. 10.): `BaseAgenda` bez
+  14 metod pro jízdní řády (data AD do `Jr/DataAd.cls`, vlastní sloupce do `Jr/VlastniSloupce.cls` s jedním jádrem zařazení
+  spoje, formát data zpět do základu), dva různé „Jazyk" přejmenované, snímek porovnává obsah, ne bajty, a tři testy,
+  které na serveru nic neověřovaly, běží na linkách sady. Tisk beze změny.
 
 - **S12** Data MHD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (26)): výběr linek, hlavička linky, dopravce,
   typ JŘ a formát data v `Jr/DataMhd.cls`; poslední vzájemná volání agend AD (spoje směru, barva linky) v `Jr/DataAd.cls`.

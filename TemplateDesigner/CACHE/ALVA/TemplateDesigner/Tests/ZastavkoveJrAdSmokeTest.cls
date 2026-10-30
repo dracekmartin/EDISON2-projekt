@@ -1,8 +1,8 @@
 Include %occInclude
 
-/// Strukturální smoke test GetData agendy ZastavkoveJrAd nad ŽIVÝMI daty (^JRL v MLINE).
-/// Linku hledá dynamicky přes PrvniLinka (žádná hardcoded gold linka) a assertuje
-/// STRUKTURU wire formátu, ne konkrétní hodnoty - přežije editace JŘ dat.
+/// Strukturální smoke test GetData agendy ZastavkoveJrAd nad ŽIVÝMI daty firem ze sady
+/// (`ZastavkoveJrAdSadaTest.LinkyNaServeru`) a assertuje STRUKTURU wire formátu, ne konkrétní
+/// hodnoty - přežije editace JŘ dat.
 /// Přesné 1:1 porovnání (zmrazený digest) = ZastavkoveJrAdGoldTest (AD) / ZastavkoveJrMhdGoldTest (MHD).
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSmokeTest Extends ALVA.EDTesting.MLTestCase
 {
@@ -54,14 +54,16 @@ Method TestMaxSloupcuVariantOrizneNaPrvniN()
 	do $$$AssertEquals(cizichPismen, 0, "odjezdy bez písmene netištěného sloupce")
 }
 
+/// Na první lince sady, jejíž firma je na serveru - testovací namespace linky AD nemá a do 30. 10. tu
+/// test na „první lince namespace" hlásil úspěch, aniž co ověřil (`B56` S13).
 Method TestGetDataVraciValidniStrankyProPrvniLinku()
 {
-	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).PrvniLinka($namespace, .sku, .lin)
-	if lin = "" {
-		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - smoke přeskočen")
-		quit
-	}
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).LinkyNaServeru(.linky)
+	if '$get(linky) { do $$$AssertSkipped("žádná firma sady není na tomto serveru")  quit }
+	set db = $piece(linky(1), "~", 1), sku = $piece(linky(1), "~", 2), lin = $piece(linky(1), "~", 3)
+	do ##class(ALVA.EDTesting.MLTestCase).SetupSys(.sys, "CB_DP")
+	set sys("U","DATA") = db
+	kill ^||ML
 
 	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
 	set ^||ML("IN","LINKA_ID") = lin
@@ -83,10 +85,11 @@ Method TestGetDataVraciValidniStrankyProPrvniLinku()
 	do $$$AssertTrue($isobject(page.rows.%Get("ODJEZDY")), "ODJEZDY existují")
 	do $$$AssertTrue($isobject(page.rows.%Get("POZNAMKY")), "POZNAMKY existují")
 
-	// Kontrakt řádků: zastávka nese ID/POPIS/CAS_JIZDY, odjezd HODINA/MINUTA + vazby
+	// Kontrakt řádků: zastávka nese ID a NAZEV_ZASTAVKY, odjezd HODINA/MINUTA + vazby. Do 30. 10. se tu
+	// čekalo POPIS, který řádek dávno nenese - test běžel naprázdno a nikdo to neviděl (`B56` S13).
 	set z = zastavky.%Get(0)
 	do $$$AssertNotEquals(z.%Get("ID"), "", "zastávka má ID")
-	do $$$AssertNotEquals(z.%Get("POPIS"), "", "zastávka má POPIS")
+	do $$$AssertNotEquals(z.%Get("NAZEV_ZASTAVKY"), "", "zastávka má název")
 	set odjezdy = page.rows.%Get("ODJEZDY")
 	if odjezdy.%Size() > 0 {
 		set o = odjezdy.%Get(0)
