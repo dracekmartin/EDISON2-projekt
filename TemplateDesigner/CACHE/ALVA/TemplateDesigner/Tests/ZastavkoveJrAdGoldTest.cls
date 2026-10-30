@@ -104,7 +104,9 @@ Method TestGold0365001()
 	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů (i ve vzorech sloupců) z nastavení firmy
 	// jako starý zastávkový tisk - CB_CSADAD má prázdninové nadpisy malým písmenem. Jen md5, počty shodné.
 	// Re-baseline 2026-10-27 (`B194` D3): každá stránka nese navíc pole VYCHOZI_ZASTAVKA. Jen md5, počty shodné.
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=H5xz0Ip6gJQEL6xkNwxSdA==")
+	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a polí NZ_KONFIG, NEVYPISOVAT_ZNACKY_SLOUPCU,
+	// která nic nečetlo. Jen md5, počty shodné; snímek výstupu agend potvrdil, že jiný rozdíl na stránkách není.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=235 md5=H1d4xWslxjwPSvgKiC5pyg==")
 }
 
 Method TestGold0365005()
@@ -150,7 +152,8 @@ Method TestGold0365005()
 	// Re-baseline 2026-10-26 (`B194` T4d): přestup z číselníku firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D3): pole VYCHOZI_ZASTAVKA - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=Z6ABVci/g+cLf4wcIMPO3A==")
+	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a dvou polí NZ - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0365005", "pages=38 zast=709 odj=484 pozn=235 md5=9vL8kcr20GSiARAFN8ZUQw==")
 }
 
 /// Dva variantní sloupce se **nesmí** v tištěném úseku lišit jen před vývěskovou zastávkou - to dá
@@ -240,7 +243,8 @@ Method TestGold0330530()
 	// Re-baseline 2026-10-26 (`B194` T4d): přestup z číselníku firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-26 (`B194` T11): nadpisy skupin dnů z nastavení firmy - viz gold 0365001. Jen md5.
 	// Re-baseline 2026-10-27 (`B194` D3): pole VYCHOZI_ZASTAVKA - viz gold 0365001. Jen md5.
-	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=KDxfDdJGIlEA3XQEzmcdDA==")
+	// Re-baseline 2026-10-30 (zbytky dat): bez kolekce DOPRAVCI a dvou polí NZ - viz gold 0365001. Jen md5.
+	do ..AssertLine(1, "0330530", "pages=44 zast=999 odj=1232 pozn=632 md5=G5EoZoXRlEg8CLzgNiAtJg==")
 }
 
 /// Sada linek pro invarianty žije v `ZastavkoveJrAdSadaTest.Sada` (tam je i popis, co která linka

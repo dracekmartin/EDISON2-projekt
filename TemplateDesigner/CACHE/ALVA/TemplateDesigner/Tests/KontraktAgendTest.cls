@@ -346,11 +346,6 @@ ClassMethod PolozkyMimoNabidku(ByRef mimo)
 	set mimo("udaje", "POPIS_PLATNOSTI") = "sablony"
 	// Dřívější název označníku vývěsky („nejedou spoje" byl omyl ve starém modulu), dnes NASTUPISTE.
 	set mimo("udaje", "NEJEDOU_SPOJE") = "sablony"
-	// Prázdninové značky linky pro editor sloupců; od 10. 8. je nahradily hotové vzory (PRESETY_SLOUPCU).
-	set mimo("udaje", "NZ_KONFIG") = "zbytek"
-	set mimo("udaje", "NEVYPISOVAT_ZNACKY_SLOUPCU") = "zbytek"
-	// Dopravci po provozovnách: z nabídky skryté 1. 9., provozovny vyhozené 4. 9. (`B112`).
-	set mimo("DOPRAVCI") = "zbytek"
 	// Řádky zastávek: Seznam zastávek, Minuty odjezdů a Tabulka spojů.
 	set mimo("ZASTAVKY", "ATRIBUTY") = "prvek"
 	set mimo("ZASTAVKY", "ID") = "prvek"

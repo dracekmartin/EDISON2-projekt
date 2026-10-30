@@ -43,15 +43,8 @@ Vše hotové nebo rozhodnuté (27. 10.) - viz `roadmap-archive.md`, `B194` A1-A5
 
 ## 6. Pojistky - testy, které by tyto nálezy chytily
 
-Dnes testy hlídají hlavně popisky. Bez nich se po sloučení kódu (`B56`) i po každé další agendě rozejde
-totéž znovu. Pořadí podle přínosu:
-
-- **Zbytky dat agend** [S] **Jan** (nález `G1` 30. 10.). Vývěska AD posílá tři položky, které nabídka nemá
-  a návrhář nečte: kolekci `DOPRAVCI` (provozovny, z nabídky skryté 1. 9., `B112` vyhozené 4. 9.)
-  a `NZ_KONFIG` s `NEVYPISOVAT_ZNACKY_SLOUPCU` (editor sloupců je přestal číst 10. 8., nahradily je hotové
-  vzory `PRESETY_SLOUPCU`). V `KontraktAgendTest.PolozkyMimoNabidku` mají druh `zbytek`. Návrh: přestat
-  je posílat a smazat zastaralé komentáře u nich (`ZastavkoveJrAd` u skalárů dopravce, `BuildDopravci`,
-  NZ konfigurace). Šablona je použít nemůže, v nabídce nejsou; snímek výstupu se tím vědomě změní.
+Všechny hotové 30. 10. (G1-G8, hlídání linek z testů, zbytky dat vývěsky AD) - co hlídají a proč,
+je v `roadmap-archive.md` u `B194` a v changelogu 2026-10-29 a 2026-10-30.
 
 ## 7. Architektura před sloučením kódu (`B56`)
 

@@ -357,8 +357,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
     d vals.%Set("DOPRAVCI_SOUHRNNY_JR",         ..DopravciSouhrnnyJr(dataDB, sku, lin, ..VypsatSpojeDopravce()))
-    // Skalární údaje = PRVNÍ dopravce linky (u většiny linek jediný). Linka s víc dopravci se
-    // skládá z kolekce DOPRAVCI - jeden řádek by tu ostatní zamlčel, proto to říká i nápověda pole.
+    // Skalární údaje = PRVNÍ dopravce linky (u většiny linek jediný); všechny vypíše DOPRAVCI_SOUHRNNY_JR.
     d ..DopravceSkalary(dataDB, sku, lin, vals)
     d vals.%Set("BARVA_LINKY",            ..BarvaLinky(IdFa, dataDB, sku, lin))
     // #12997: JŘ umí od 3. 8. víc barev na linku. Klient je používá jako barvu textu (1.) a pozadí
@@ -747,11 +746,6 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // i linkové seznamy značek CELÉ (žádné míchání „dny ze šablony, značky z linky"). Bez definice
     // se nic nemění - dnešní chování je backup.
     s pocetDefSloupcu = ..ParseDefiniceSloupcu(.defSloupce)
-    // NZ konfigurace linky pro klienta - editor sloupců z ní předvyplní prázdninové vzory
-    // (čísla značek „jede/nejede o prázdninách" + poziční „nevypisovat značku"), aby vzor
-    // dal 1:1 stejnou vývěsku jako dnešní rozvržení téže linky.
-    d vals.%Set("NZ_KONFIG", nzCfg)
-    d vals.%Set("NEVYPISOVAT_ZNACKY_SLOUPCU", $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NEZNZ123")))
     // hotové vzory sloupců - klient je nestaví sám, aby parita hlídala to, co reálně posílá
     d vals.%Set("PRESETY_SLOUPCU", ..PresetySloupcu(dataDB, sku, lin))
 
@@ -846,7 +840,6 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     else { d rows.%Set("SKUPINY_DNU", ..NacistSkupinyDnu(ftl, dataDB, sku, lin)) }
     d rows.%Set("ODJEZDY", odjezdy)
     d rows.%Set("POZNAMKY", poznamky)
-    d rows.%Set("DOPRAVCI", ..BuildDopravci(dataDB, sku, lin))
     d out.%Set("rows", rows)
     q out
 }
@@ -3118,9 +3111,9 @@ ClassMethod DopravceUdaje(dataDB As %String, fa As %String, pr As %String, ByRef
     q
 }
 
-/// Skalární pole prvního dopravce linky (NAZEV_DOPRAVCE, ADRESA_DOPRAVCE…). Bere první řádek
-/// kolekce, takže se s ní nemůže rozejít; u linky bez dopravce zapíše prázdno, aby pole ve schématu
-/// existovalo vždy (chybějící klíč by v šabloně vypadal jako neznámé pole).
+/// Skalární pole prvního dopravce linky (NAZEV_DOPRAVCE, ADRESA_DOPRAVCE…) z <see cref="BuildDopravci"/>;
+/// u linky bez dopravce zapíše prázdno, aby pole ve schématu existovalo vždy (chybějící klíč by
+/// v šabloně vypadal jako neznámé pole).
 ClassMethod DopravceSkalary(dataDB As %String, sku As %String, lin As %String, vals As %DynamicObject)
 {
     s prvni = ..BuildDopravci(dataDB, sku, lin).%Get(0)
@@ -3132,12 +3125,10 @@ ClassMethod DopravceSkalary(dataDB As %String, sku As %String, lin As %String, v
     q
 }
 
-/// Kolekce DOPRAVCI - **řádek na každou kombinaci dopravce a provozovny, která na lince jezdí**.
+/// Dopravci linky - **řádek na každou kombinaci dopravce a provozovny, která na lince jezdí**.
 /// Páry (firma, provoz) sbírá z `#`-pole 2 spojů obou směrů, stejně jako <see cref="PopisDopravce"/>,
-/// takže se v ní neobjeví dopravce, který linku neobsluhuje.
-///
-/// Šablona si z ní v tabulce z dat vybere jen sloupce, které chce - tím se řeší duplicita adres,
-/// na kterou zákazník narazil: nikdo mu neslepí adresu firmy s adresou provozovny za něj (#13158).
+/// takže se v ní neobjeví dopravce, který linku neobsluhuje. Bere z ní jen <see cref="DopravceSkalary"/>
+/// první řádek; jako kolekce se do dat neposílá (provozovny vyhozené 4. 9., `B112`).
 ClassMethod BuildDopravci(dataDB As %String, sku As %String, lin As %String) As %DynamicArray
 {
     s arr = ##class(%DynamicArray).%New()
@@ -3412,7 +3403,6 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
             d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
             d r.%Set("ODJEZDY", ##class(%DynamicArray).%New())
             d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
-            d r.%Set("DOPRAVCI", ##class(%DynamicArray).%New())
             d page.%Set("rows", r)
         }
 
@@ -3554,17 +3544,10 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colPoznamky.fields = colPoznamkyFields
     d collections.%Push(colPoznamky)
 
-    // ⚠️ DOPRAVCI (BuildDopravci) se ZÁMĚRNĚ NEVYSTAVUJE - data na drátě jsou, ale uživatel je
-    // v nabídce polí nenajde (rozhodnutí Jan 1. 9., rozdělaná práce v backlogu).
-    //
-    // Důvod: řádek na (dopravce × provozovna) **nutně opakuje údaje firmy**. Tři provozovny téhož
-    // dopravce daly třikrát pod sebou týž telefon a adresu firmy - a tabulka z dat s tím neumí nic
-    // udělat, protože nemá deduplikaci. Původní záměr byl zbavit se duplicity ze slepeného
-    // POPIS_DOPRAVCE, takže takhle by vyměnila jednu duplicitu za druhou. Navíc to není ve své
-    // podstatě tabulka, ale hierarchie „dopravce → jeho provozovny".
-    //
-    // Kód i wire zůstávají živé, ať se na tom dá stavět; skalární pole dopravce (NAZEV_DOPRAVCE…)
-    // fungují a vystavená jsou. Než se kolekce zapne, musí být jasné, čím se ta hierarchie kreslí.
+    // ⚠️ Kolekce dopravců po provozovnách tu ZÁMĚRNĚ NENÍ (rozhodnutí Jan 1. 9., provozovny vyhozené
+    // 4. 9., `B112`): řádek na (dopravce × provozovna) nutně opakuje údaje firmy a tabulka z dat
+    // deduplikaci neumí. Od 30. 10. se neposílá ani v datech. Kdo by ji chtěl vrátit, začne
+    // rozhodnutím, čím se kreslí hierarchie „dopravce → jeho provozovny".
 }
 
 ClassMethod AddStandardJRParameters(arr As %DynamicArray)

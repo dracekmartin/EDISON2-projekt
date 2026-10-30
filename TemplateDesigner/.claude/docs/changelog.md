@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-30 (8) - Vývěska AD neposílá data, která nic nečte (`B194f`)
+
+Kontrola dat proti nabídce (G1) našla ve vývěsce AD tři položky, které nabídka nemá a návrhář nečte.
+Kolekce dopravců po provozovnách byla z nabídky skrytá od 1. 9. a provozovny vyhozené 4. 9. (`B112`), server ji ale posílal dál.
+Nastavení prázdninových značek pro editor sloupců (`NZ_KONFIG`, `NEVYPISOVAT_ZNACKY_SLOUPCU`) editor přestal číst 10. 8., kdy je nahradily hotové vzory sloupců.
+Agenda je přestala posílat (rozhodnutí Jan 30. 10.); šablona je použít nemohla, v nabídce dat nebyly.
+Výpočty, které je potřebují uvnitř (sloupce odjezdů, údaje prvního dopravce), zůstaly; zastaralé komentáře o kolekci jsou pryč.
+Snímek výstupu agend se změnil v 11 souborech vývěsky AD a všech 497 změněných stránek se po vyjmutí těch tří položek shoduje na bajt.
+Zlaté odtisky vývěsky AD mají nový součet, počty stránek, zastávek, odjezdů i poznámek jsou shodné.
+Test kolekce dopravců odpadl, ostatní testy dopravce hlídají skalární pole prvního dopravce.
+Tím je `B194f` (pojistky před `B56`) celé hotové.
+Ověřeno: Caché testy návrháře 270/270, .NET testy 2529/2529; tisk v aplikaci jsem neprocházel, data pro něj se kromě odebraných položek nezměnila.
+
 ## 2026-10-30 (7) - Tlačítko formuláře funguje v každém okně, které ho ukazuje (`B194f` G5)
 
 Formulář prvku tlačítko jen ukáže a akci si každé okno píše samo; nic nehlídalo, že ji napsalo.

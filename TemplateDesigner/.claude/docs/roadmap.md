@@ -4,8 +4,7 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** pojistky a architektura před `B56` (`B194f`, `B194g`; linkový JŘ MHD vydaný 27. 10.),
-> po nich `B56`. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** architektura před `B56` (`B194g`; pojistky `B194f` hotové 30. 10.), po ní `B56`. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
@@ -19,10 +18,6 @@ Nezávislá revize čtyř agend JŘ po `B193`, každý nález přeověřený pro
 co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-jr.md`](konzistence-agend-jr.md).
 Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
 vydané agendy · **Jan** = potřebuje rozhodnutí.
-
-### `B194f` Pojistky před `B56`
-
-- **Zbytky dat agend** [S] **Jan** - vývěska AD posílá tři položky, které nic nečte (dopravci po provozovnách, dvě nastavení prázdninových značek); přestat je posílat? Detail `konzistence-agend-jr.md §6`
 
 ### `B194g` Architektura před `B56`
 

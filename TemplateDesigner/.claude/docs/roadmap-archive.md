@@ -9,6 +9,9 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **Zbytky dat vývěsky AD** (hotovo 30. 10., changelog 2026-10-30 (8), rozhodnutí Jan 30. 10.): kolekce
+  `DOPRAVCI` a pole `NZ_KONFIG`, `NEVYPISOVAT_ZNACKY_SLOUPCU` se neposílají - nic je nečetlo (nález `G1`).
+  Tím je `B194f` (pojistky před `B56`) celé hotové.
 - **G5** Tlačítko formuláře funguje v každém okně, které ho ukazuje (hotovo 30. 10., changelog 2026-10-30 (7)):
   okno vlastností skryje tlačítko bez akce (mrtvé „Nastavení celé tabulky" v okně buňky, rozhodnutí Jan
   30. 10.), klíče tlačítek v `TlacitkaFormulare`, panel a vlastní okna tabulek hlídá `TlacitkaFormulareTests`.

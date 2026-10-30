@@ -1,9 +1,9 @@
 Include %occInclude
 
-/// %UnitTest pro rozložené údaje dopravce - skalární pole (NAZEV_DOPRAVCE…) a kolekci DOPRAVCI.
+/// %UnitTest pro rozložené údaje dopravce - skalární pole (NAZEV_DOPRAVCE…) prvního dopravce linky.
 ///
 /// Vznikly proto, že slepený POPIS_DOPRAVCE dával adresu dvakrát: bral sídlo z provozovny a ulici
-/// z firmy (#13158). Šablona si teď v tabulce z dat vybere jen to, co chce.
+/// z firmy (#13158). Kolekce dopravců po provozovnách se do dat neposílá (od 30. 10., `B112`).
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdDopravciTest Extends ALVA.EDTesting.MLTestCase
 {
 
@@ -42,35 +42,8 @@ Method TestAdresaDopravceNesePlnyTvarJakoStaryPopis()
 	}
 }
 
-/// Kolekce nese jeden řádek na dopravce a provozovnu, a všechna pole jsou přítomná i prázdná -
-/// chybějící klíč by v šabloně vypadal jako neznámé pole.
-Method TestKolekceMaVsechnaPoleIKdyzJsouPrazdna()
-{
-	do ..SetupSys(.sys)
-	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
-	if lin = "" {
-		do $$$AssertTrue(1, "Namespace nemá žádnou linku v ^JRL - test přeskočen")
-		quit
-	}
-
-	set dopravci = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildDopravci($namespace, sku, lin)
-	if dopravci.%Size() = 0 {
-		do $$$AssertTrue(1, "Linka "_sku_"/"_lin_" nemá v datech dopravce - test přeskočen")
-		quit
-	}
-
-	set prvni = dopravci.%Get(0)
-	// Fax se vědomě nevystavuje - na vývěsce nemá co dělat (rozhodnutí Jan 1. 9.).
-	set ocekavane = $listbuild("NAZEV","ADRESA","TELEFON","EMAIL","ICO","PROVOZOVNA_NAZEV","PROVOZOVNA_ADRESA","PROVOZOVNA_TELEFON","PROVOZOVNA_MISTO")
-	for i = 1:1:$listlength(ocekavane) {
-		set klic = $listget(ocekavane, i)
-		do $$$AssertTrue(prvni.%IsDefined(klic), "kolekce DOPRAVCI má pole "_klic)
-	}
-}
-
-/// Skalární pole se nesmí rozejít s prvním řádkem kolekce - jinak by v textu stálo něco jiného
-/// než v tabulce z týchž dat.
-Method TestSkalarniPoleOdpovidajiPrvnimuRadkuKolekce()
+/// Skalární pole nesou prvního dopravce linky, toho, kterého vrací `BuildDopravci` jako první.
+Method TestSkalarniPoleOdpovidajiPrvnimuDopravci()
 {
 	do ..SetupSys(.sys)
 	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PrvniLinka($namespace, .sku, .lin)
@@ -90,17 +63,18 @@ Method TestSkalarniPoleOdpovidajiPrvnimuRadkuKolekce()
 	}
 
 	set prvni = dopravci.%Get(0)
-	do $$$AssertEquals(vals.%Get("NAZEV_DOPRAVCE"), prvni.NAZEV, "NAZEV_DOPRAVCE = první řádek kolekce")
-	do $$$AssertEquals(vals.%Get("ADRESA_DOPRAVCE"), prvni.ADRESA, "ADRESA_DOPRAVCE = první řádek kolekce")
-	do $$$AssertEquals(vals.%Get("ICO_DOPRAVCE"), prvni.ICO, "ICO_DOPRAVCE = první řádek kolekce")
+	do $$$AssertEquals(vals.%Get("NAZEV_DOPRAVCE"), prvni.NAZEV, "NAZEV_DOPRAVCE = první dopravce")
+	do $$$AssertEquals(vals.%Get("ADRESA_DOPRAVCE"), prvni.ADRESA, "ADRESA_DOPRAVCE = první dopravce")
+	do $$$AssertEquals(vals.%Get("ICO_DOPRAVCE"), prvni.ICO, "ICO_DOPRAVCE = první dopravce")
 }
 
-/// Skalární pole musí být ve schématu, kolekce naopak NESMÍ.
+/// Skalární pole musí být ve schématu, kolekce dopravců naopak NESMÍ (v datech ji hlídá
+/// `KontraktAgendTest.TestDataOdpovidajiNabidce`).
 ///
-/// ⚠️ Kolekce je **vědomě skrytá** (rozhodnutí Jan 1. 9.): řádek na dopravce × provozovnu nutně
-/// opakuje údaje firmy, takže tři provozovny daly třikrát týž telefon pod sebou - a tabulka z dat
-/// deduplikaci neumí. Vyměnila by tedy jednu duplicitu za druhou. Kdyby se kolekce do schématu
-/// vrátila bez vyřešené hierarchie „dopravce → provozovny", spadne tenhle test - a to je záměr.
+/// ⚠️ Kolekce je **vědomě pryč** (rozhodnutí Jan 1. 9., provozovny vyhozené 4. 9.): řádek na dopravce
+/// × provozovnu nutně opakuje údaje firmy, takže tři provozovny daly třikrát týž telefon pod sebou -
+/// a tabulka z dat deduplikaci neumí. Kdyby se kolekce vrátila bez vyřešené hierarchie „dopravce →
+/// provozovny", spadne tenhle test - a to je záměr.
 Method TestSchemaNabiziSkalarniPoleAleNeKolekci()
 {
 	do ..SetupSys(.sys)
