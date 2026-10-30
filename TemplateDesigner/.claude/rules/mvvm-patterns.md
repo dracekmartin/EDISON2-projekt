@@ -209,6 +209,12 @@ column.Style (per-column override)
 1. **`Resolve<Zone>Parent(): ResolvedTextStyle`** (public) - vyřešený rodičovský styl pro dialog. Dialogy ho používají jako inherited vrstvu pro `CellStyleVM.Inherited`.
 2. **`Resolve<Zone>Style(col): ResolvedTextStyle`** (private, per element) - kompletní kaskáda včetně per-column overridů. Vrací hotový styl pro `CellRenderer.DrawCell`.
 
+⚠️ **Každá textová část prvku patří do `ResolvedStyleZones()`** (cesta vlastnosti → styl, jak se vytiskne,
+z týchž metod jako kreslení). Odtud berou panel, lišta i formulář hodnotu nenastavené vlastnosti
+(`ElementFormBinder.InheritedValuesFor`). **Deskriptor nikdy nedosazuje vlastní výchozí hodnotu** (`?? 9f`,
+`?? "Arial"`) - do 30. 10. jich tak bylo 44 a ukazovaly jinou hodnotu, než se tiskla (revize, A2).
+Výjimka zůstávají vlastnosti, kde prázdná hodnota znamená „automaticky" (velikost symbolů v Minutách).
+
 ```csharp
 // Public - pro dialog kaskády
 public ResolvedTextStyle ResolveColumnHeaderParent() =>

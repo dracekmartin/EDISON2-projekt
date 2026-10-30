@@ -60,6 +60,9 @@ Pravidla:
 - `Clone()` vždy přes `CopyBaseTo(target)` - kopíruje Id (nové Guid), pozice, border, background, rotaci, GroupId, CustomProperties.
 - `GetPropertyDescriptors()` vždy končí `.. GetPositionDescriptors()` (pozice, border, viditelnost, skupina).
 - `ApplyScale(float)` override **pouze** pokud element má vlastní mm/pt properties mimo base (FontSize v pt, Padding v mm, …). Base třída škáluje X/Y/Width/Height/BorderWidth automaticky.
+- **Prvek s textem** vrací každou textovou část v `ResolvedStyleZones()` (`new("HeaderStyle", ResolveColumnHeaderParent())`,
+  styl z téže metody, kterou kreslí). Deskriptory stylu čtou `ResolvedZone(...)` nebo tutéž metodu, **nikdy `?? 9f` / `?? "Arial"`** -
+  jinak panel a formulář ukazují jinou hodnotu, než se vytiskne. Hlídá `VychoziHodnotyZKaskadyTests.ZdedeneHodnotyFormulare_ProKazdyPrvekSTextem`.
 
 ---
 

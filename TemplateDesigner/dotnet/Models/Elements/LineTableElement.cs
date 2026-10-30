@@ -757,6 +757,9 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// <summary>Parent kaskády pro per-column data override.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
+    public override IEnumerable<StyleZone> ResolvedStyleZones() =>
+        [new("HeaderStyle", ResolveColumnHeaderParent()), new("DataStyle", ResolveColumnDataParent()), new("PripojStyle", ResolvePripojStyle())];
+
     // Kaskáda column → element → baked delegována do sdíleného jádra (TableLayout.ResolveCascade).
     private ResolvedTextStyle ResolveHeaderStyle(StopColumn col) =>
         TableLayout.ResolveCascade(col.Style?.Header, ResolveColumnHeaderParent(), col.Alignment,

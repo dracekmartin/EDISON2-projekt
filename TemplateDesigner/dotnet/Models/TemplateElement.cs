@@ -268,6 +268,17 @@ public abstract class TemplateElement
     /// </summary>
     public abstract IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors();
 
+    /// <summary>
+    /// Jak se vytiskne každá textová část prvku. Panel, lišta i formulář z toho ukazují hodnotu
+    /// nenastavené vlastnosti stylu (revize 30. 10., A2) - do té doby si ji na 40 místech dosazovaly
+    /// samy a ukazovaly jinou, než se tiskla. Prvek bez textu nemá žádnou.
+    /// </summary>
+    public virtual IEnumerable<StyleZone> ResolvedStyleZones() => [];
+
+    /// <summary>Vyřešený styl části prvku podle cesty (<c>HeaderStyle</c>…); null = prvek ji nemá.</summary>
+    public ResolvedTextStyle? ResolvedZone(string path) =>
+        ResolvedStyleZones().FirstOrDefault(z => z.Path == path)?.Style;
+
     // Názvy skupin base polí - shodné se sdíleným Caché balíčkem BaseElementFields.cls,
     // ať obě editační cesty řadí tytéž vlastnosti do stejně pojmenovaných skupin.
     internal const string PositionGroup = "Pozice a velikost";

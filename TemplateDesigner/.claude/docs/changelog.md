@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-30 (39) - Panel, lišta a formulář ukazují písmo, se kterým se prvek tiskne (sjednocení A2)
+
+Nenastavené vlastnosti stylu (font, velikost, tučné, barvy) panel, lišta formátu i formulář prvku dosud doplňovaly vlastní výchozí hodnotou z kódu (44 míst, `?? 9f`, `?? "Arial"`), ne hodnotou, se kterou se prvek vytiskne.
+Projevy: lišta u textu ukazovala „Arial" v šabloně s jiným výchozím fontem, Tabulka s řádky z dat ukazovala šedé pozadí záhlaví, které se netiskne, Minuty odjezdů velikost minuty 8 pt i při jiné velikosti buněk, Poznámky font záhlaví jiný, než se kreslí.
+Teď každý prvek s textem vyjmenuje své části stylu (`TemplateElement.ResolvedStyleZones()`) s hodnotami z týchž metod, kterými kreslí, a panel, lišta i formulář je čtou odtud (`ElementFormBinder.InheritedValuesFor` pro všechny části, ne jen pro text).
+Zaškrtávátka 2. řádku záhlaví, minuty a textu značek v Minutách odjezdů zapisují vypnutí jako hodnotu, ne jako „dědit" - zděděné tučné by se jinak odškrtnutím nevypnulo.
+Symboly značek v Minutách zůstávají mimo (velikost se dopočítá z minut), výška datového řádku také.
+Ověřeno: .NET testy 2606/2606, 6 nových v `VychoziHodnotyZKaskadyTests` před opravou padalo; v aplikaci neproklikané.
+
 ## 2026-10-30 (38) - Katalog prvků (sjednocení A1)
 
 Nový prvek se dosud zapisoval na 12 až 20 míst (továrna, výchozí velikost, paleta, nabídka, jména, agendy, asistent, F1, třídy formulářů…) a dvě z nich se už rozešla.

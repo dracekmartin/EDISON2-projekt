@@ -115,6 +115,9 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     public ResolvedTextStyle ResolveColumnHeaderParent() =>
         (HeaderStyle ?? new TextStyle()).Resolve(TableStyleDefaults.Header);
 
+    public override IEnumerable<StyleZone> ResolvedStyleZones() =>
+        [new("HeaderStyle", ResolveColumnHeaderParent()), new("DataStyle", ResolveColumnDataParent())];
+
     /// <summary>Parent kaskády pro per-column data override.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() =>
         (DataStyle ?? new TextStyle()).Resolve(TableStyleDefaults.Data);
@@ -525,11 +528,11 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
             Min   = 0, Max = 500, Format = "0"
         },
 
-        new BoolPropertyDescriptor  { Label = "Tučné záhlaví",       Group = "Záhlaví",      Get = () => HeaderStyle?.Bold ?? true,                    Set = v => Header().Bold = v },
-        new ColorPropertyDescriptor { Label = "Barva pozadí záhlaví",      Group = "Záhlaví",      Get = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",  Set = v => Header().BackgroundColor = v },
-        new ColorPropertyDescriptor { Label = "Barva textu záhlaví", Group = "Záhlaví",      Get = () => HeaderStyle?.TextColor ?? "#FF333333",        Set = v => Header().TextColor = v },
-        new ColorPropertyDescriptor { Label = "Barva pozadí buněk",        Group = "Datové buňky", Get = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",    Set = v => Data().BackgroundColor = v },
-        new ColorPropertyDescriptor { Label = "Barva textu buněk",   Group = "Datové buňky", Get = () => DataStyle?.TextColor ?? "#FF222222",          Set = v => Data().TextColor = v },
+        new BoolPropertyDescriptor  { Label = "Tučné záhlaví",       Group = "Záhlaví",      Get = () => ResolveColumnHeaderParent().Bold,                    Set = v => Header().Bold = v },
+        new ColorPropertyDescriptor { Label = "Barva pozadí záhlaví",      Group = "Záhlaví",      Get = () => ResolveColumnHeaderParent().BackgroundColor,  Set = v => Header().BackgroundColor = v },
+        new ColorPropertyDescriptor { Label = "Barva textu záhlaví", Group = "Záhlaví",      Get = () => ResolveColumnHeaderParent().TextColor,        Set = v => Header().TextColor = v },
+        new ColorPropertyDescriptor { Label = "Barva pozadí buněk",        Group = "Datové buňky", Get = () => ResolveColumnDataParent().BackgroundColor,    Set = v => Data().BackgroundColor = v },
+        new ColorPropertyDescriptor { Label = "Barva textu buněk",   Group = "Datové buňky", Get = () => ResolveColumnDataParent().TextColor,          Set = v => Data().TextColor = v },
 
         RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
 

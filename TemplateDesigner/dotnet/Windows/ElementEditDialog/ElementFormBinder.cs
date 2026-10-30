@@ -227,13 +227,16 @@ public static class ElementFormBinder
     /// Null = prvek takovou kaskádu nemá a formulář nechá výchozí hodnoty schématu.
     /// </summary>
     /// <remarks>Text z importu PDF nemá svislé zarovnání: tiskl se „Nahoře", formulář ukazoval
-    /// výchozí „Na střed" (revize 30. 10.). Zatím jen textový prvek; tabulkové prvky řeší sjednocení
-    /// výchozích hodnot (`revize-sjednoceni.md` A2).</remarks>
-    public static IReadOnlyDictionary<string, string>? InheritedValuesFor(TemplateElement element) => element switch
+    /// výchozí „Na střed" (revize 30. 10.). Hodnoty dává <see cref="TemplateElement.ResolvedStyleZones"/>,
+    /// totéž, z čeho čte panel a lišta.</remarks>
+    public static IReadOnlyDictionary<string, string>? InheritedValuesFor(TemplateElement element)
     {
-        Models.Elements.TextElement text => ElementPropertyAccessor.FormValues(text.Style.Resolve(), "Style."),
-        _ => null,
-    };
+        Dictionary<string, string>? hodnoty = null;
+        foreach (var zona in element.ResolvedStyleZones())
+            foreach (var (klic, hodnota) in ElementPropertyAccessor.FormValues(zona.Style, zona.Path + "."))
+                (hodnoty ??= new(StringComparer.Ordinal))[klic] = hodnota;
+        return hodnoty;
+    }
 
     internal static void ApplyInheritedValues(List<Field> fields, IReadOnlyDictionary<string, string>? inherited)
     {

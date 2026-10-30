@@ -509,6 +509,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// <summary>Parent kaskády pro per-column data override - co sloupec dědí, když vlastní styl nemá.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
+    public override IEnumerable<StyleZone> ResolvedStyleZones() =>
+        [new("HeaderStyle", ResolveColumnHeaderParent()), new("DataStyle", ResolveColumnDataParent())];
+
     /// <summary>Vyřeší styl záhlaví sloupce přes sdílené jádro (kaskáda column → element → baked +
     /// legacy StopColumn.Alignment fallback). Public kvůli testovatelnosti (StopListCascadeTests).</summary>
     public ResolvedTextStyle ResolveHeaderStyle(StopColumn col) =>
@@ -1425,7 +1428,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         // Popisky i skupina jako formulář (StopListElementEdit.cls), `B194` E10.
         new BoolPropertyDescriptor  { FromImage = true, Label = "Aktuální: Tučné",       Group = AktualniGroup, Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
         new BoolPropertyDescriptor  { FromImage = true, Label = "Aktuální: Podtržení",   Group = AktualniGroup, Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
-        new FloatPropertyDescriptor { Label = "Aktuální: Velikost",  Group = AktualniGroup, Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 3, Max = 72, Unit = "pt" },
+        new FloatPropertyDescriptor { Label = "Aktuální: Velikost",  Group = AktualniGroup, Get = () => CurrentStopFontSize ?? ResolveColumnDataParent().FontSize, Set = v => CurrentStopFontSize = Math.Abs(v - ResolveColumnDataParent().FontSize) < 0.01f ? null : v, Min = 3, Max = 72, Unit = "pt" },
         new ColorPropertyDescriptor { FromImage = true, Label = "Aktuální: Barva textu", Group = AktualniGroup, Get = () => CurrentStopTextColor ?? "", Set = v => CurrentStopTextColor = string.IsNullOrWhiteSpace(v) ? null : v },
         new ColorPropertyDescriptor { FromImage = true, Label = "Aktuální: Barva pozadí",      Group = AktualniGroup, Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         // „Projeté zastávky" (zapnutí) tu záměrně není - řídí ji parametr sestavy

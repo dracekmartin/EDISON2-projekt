@@ -301,6 +301,10 @@ public abstract class ScheduleElementBase : TemplateElement
         Min = 1, Max = 50, Unit = "mm",
     };
 
+    // Záhlaví a buňky tak, jak se vytisknou (ResolvedStyleZones prvku); prvek, který je neuvádí, dědí přímo.
+    private ResolvedTextStyle ZonaZahlavi() => ResolvedZone("HeaderStyle") ?? HeaderStyle.Resolve(ScheduleHeaderDefaults);
+    private ResolvedTextStyle ZonaBunek() => ResolvedZone("DataStyle") ?? DataStyle.Resolve(ScheduleDataDefaults);
+
     /// <summary>
     /// Element-level základní barvy pro zóny Header a Data - bg + text v properties panelu.
     /// Sjednocuje rychlou cestu k nejčastějším úpravám napříč JŘ elementy
@@ -317,13 +321,13 @@ public abstract class ScheduleElementBase : TemplateElement
         new ColorPropertyDescriptor
         {
             Label = "Barva pozadí záhlaví", Group = headerGroup,
-            Get = () => HeaderStyle.BackgroundColor ?? ScheduleHeaderDefaults.BackgroundColor,
+            Get = () => ZonaZahlavi().BackgroundColor,
             Set = v => HeaderStyle.BackgroundColor = v,
         },
         new ColorPropertyDescriptor
         {
             Label = "Barva textu záhlaví", Group = headerGroup,
-            Get = () => HeaderStyle.TextColor ?? ScheduleHeaderDefaults.TextColor,
+            Get = () => ZonaZahlavi().TextColor,
             Set = v => HeaderStyle.TextColor = v,
         },
         .. (withDataBackground
@@ -332,7 +336,7 @@ public abstract class ScheduleElementBase : TemplateElement
                 new ColorPropertyDescriptor
                 {
                     Label = "Barva pozadí buněk", Group = dataGroup,
-                    Get = () => DataStyle.BackgroundColor ?? ScheduleDataDefaults.BackgroundColor,
+                    Get = () => ZonaBunek().BackgroundColor,
                     Set = v => DataStyle.BackgroundColor = v,
                 },
             }
@@ -340,7 +344,7 @@ public abstract class ScheduleElementBase : TemplateElement
         new ColorPropertyDescriptor
         {
             Label = "Barva textu buněk", Group = dataGroup,
-            Get = () => DataStyle.TextColor ?? ScheduleDataDefaults.TextColor,
+            Get = () => ZonaBunek().TextColor,
             Set = v => DataStyle.TextColor = v,
         },
     ];
@@ -366,7 +370,7 @@ public abstract class ScheduleElementBase : TemplateElement
         new FloatPropertyDescriptor
         {
             Label = "Velikost", Group = dataGroup, Unit = "pt", Min = 3, Max = 72,
-            Get = () => DataStyle.FontSize ?? ScheduleDataDefaults.FontSize,
+            Get = () => ZonaBunek().FontSize,
             Set = v => DataStyle.FontSize = v,
         },
     ];
@@ -377,7 +381,7 @@ public abstract class ScheduleElementBase : TemplateElement
         new FloatPropertyDescriptor
         {
             Label = "Velikost", Group = headerGroup, Unit = "pt", Min = 3, Max = 72,
-            Get = () => HeaderStyle.FontSize ?? ScheduleHeaderDefaults.FontSize,
+            Get = () => ZonaZahlavi().FontSize,
             Set = v => HeaderStyle.FontSize = v,
         };
 
