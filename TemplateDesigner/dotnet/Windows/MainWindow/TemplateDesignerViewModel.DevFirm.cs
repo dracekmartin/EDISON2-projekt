@@ -119,9 +119,8 @@ public partial class TemplateDesignerViewModel
             _nacitaniBezi = true;
             var paramName = InstanceParamName(agendaCode);
             // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
-            var columnsDefJson = CurrentColumnsDefinitionJson();
-            var turnusy = CurrentTurnusyKeSpojum();
-            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, columnsDefJson, turnusy, JazykSablony);
+            var dataInputs = CurrentDataInputs();
+            var getDataParams = ComposeGetDataParams(_previewParams, paramName, instance.Value, _activeSkupinaId, dataInputs);
             List<DataContext>? pages;
             string? duvodPrazdneho;
             try { (pages, duvodPrazdneho) = await Task.Run(() => CacheProvider.GetDataSDuvodem(agendaCode, getDataParams)); }
@@ -130,7 +129,7 @@ public partial class TemplateDesignerViewModel
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
             // zastaralý a nesmí dosednout do nové šablony.
             if (gen != _previewDataGeneration) return;
-            _lastColumnsDefinitionSnapshot = CurrentWireSnapshot();   // data odteď odpovídají definici i jazyku
+            _lastDataInputs = dataInputs;   // data odteď odpovídají těmhle údajům ze šablony
 
             if (pages is null || pages.Count == 0)
             {

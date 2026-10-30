@@ -486,34 +486,33 @@ public class CacheAgendaProvider : IDataSchemaProvider
     /// ještě nenačteno (volající pak sáhne po syntetických mock datech ze schématu a spustí prefetch).
     /// GENERAL / agenda bez Caché třídy = trvale bez mock dat → true + null.
     /// </summary>
-    public bool TryGetCachedMockData(string agendaCode, string? columnsDefinitionJson, string jazyk,
-        out DataContext? data)
+    public bool TryGetCachedMockData(string agendaCode, TemplateDataInputs dataInputs, out DataContext? data)
     {
         data = null;
         if (string.IsNullOrEmpty(agendaCode)) return true;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass) || string.IsNullOrWhiteSpace(cacheClass))
             return true;
-        return _mockDataCache.TryGetValue(MockCacheKey(agendaCode, columnsDefinitionJson, jazyk), out data);
+        return _mockDataCache.TryGetValue(MockCacheKey(agendaCode, dataInputs), out data);
     }
 
     /// <summary>
-    /// Klíč cache ukázkových dat. Musí obsahovat všechno, na čem vzorek závisí: <b>definici
-    /// sloupců</b> (#13158) i <b>jazyk</b> šablony - server podle něj překládá texty značek.
-    /// Se samotným kódem agendy se po změně vrátil starý vzorek a vypadalo to, že volba nefunguje;
-    /// u jazyka se to projevilo jen bez vybrané linky, takže to působilo nahodile.
+    /// Klíč cache ukázkových dat. Musí obsahovat všechno, na čem vzorek závisí, tedy všechny údaje ze
+    /// šablony, které jdou serveru: <b>definici sloupců</b> (#13158) i <b>jazyk</b> (server podle něj
+    /// překládá texty značek). Se samotným kódem agendy se po změně vrátil starý vzorek a vypadalo to,
+    /// že volba nefunguje; u jazyka se to projevilo jen bez vybrané linky, takže to působilo nahodile.
     /// </summary>
-    internal static string MockCacheKey(string agendaCode, string? columnsDefinitionJson, string jazyk) =>
-        agendaCode + "|" + (columnsDefinitionJson ?? "") + "|" + jazyk;
+    internal static string MockCacheKey(string agendaCode, TemplateDataInputs dataInputs) =>
+        string.Join("|", dataInputs.Values().Select(v => $"{v.Key}={v.Value}").Prepend(agendaCode));
 
     /// <summary>
     /// Volá GetMockData na Caché třídě a naplní cache (i negativně). SYNCHRONNÍ HTTP - volat jen
     /// z pozadí (prefetch při změně agendy), NE z kreslicí cesty. Null = bez mock dat.
     /// Selhání/prázdno se cachuje také (fail-soft) - čistí ho až „Obnovit data" (InvalidateCaches).
     /// </summary>
-    public DataContext? GetMockData(string agendaCode, string? columnsDefinitionJson, string jazyk)
+    public DataContext? GetMockData(string agendaCode, TemplateDataInputs dataInputs)
     {
         if (string.IsNullOrEmpty(agendaCode)) return null;
-        string cacheKey = MockCacheKey(agendaCode, columnsDefinitionJson, jazyk);
+        string cacheKey = MockCacheKey(agendaCode, dataInputs);
         if (_mockDataCache.TryGetValue(cacheKey, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
 
@@ -522,7 +521,7 @@ public class CacheAgendaProvider : IDataSchemaProvider
 
         try
         {
-            CVar result = _mlRest.Query(cacheClass, "GetMockData", MockDataInput(columnsDefinitionJson, jazyk));
+            CVar result = _mlRest.Query(cacheClass, "GetMockData", MockDataInput(dataInputs));
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); _mockDataCache[cacheKey] = null; return null; }
 
@@ -540,7 +539,7 @@ public class CacheAgendaProvider : IDataSchemaProvider
     }
 
     /// <summary>
-    /// Vstup pro ukázková data. Posílá se <b>definice sloupců</b> ze šablony, aby náhled bez vybrané
+    /// Vstup pro ukázková data: tytéž údaje ze šablony jako do <c>GetData</c>, aby náhled bez vybrané
     /// instance ukázal rozvržení, které si uživatel nastavil.
     /// </summary>
     /// <remarks>
@@ -549,13 +548,11 @@ public class CacheAgendaProvider : IDataSchemaProvider
     /// s vybranou linkou fungovala (#13158). Vzorek tím nezačne odpovídat reálné lince; jde o to, aby
     /// ukazoval <b>to členění</b>, které je v šabloně.
     /// </remarks>
-    internal static CVar MockDataInput(string? columnsDefinitionJson, string jazyk)
+    internal static CVar MockDataInput(TemplateDataInputs dataInputs)
     {
         var inVar = new CVar();
-        if (!string.IsNullOrEmpty(columnsDefinitionJson))
-            inVar["DEFINICE_SLOUPCU"] = new CVar(columnsDefinitionJson);
-        // Jazyk se posílá vždy, i prázdný - server si na neznámou hodnotu spadne do češtiny sám.
-        inVar["JAZYK"] = new CVar(jazyk);
+        foreach (var (key, value) in dataInputs.Values())
+            inVar[key] = new CVar(value);
         return inVar;
     }
 

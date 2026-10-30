@@ -44,7 +44,7 @@ public class VykonNahleduNaostro(ITestOutputHelper output)
         {
             var sw = Stopwatch.StartNew();
             var stranky = provider.GetData(agenda, TemplateDesignerViewModel.ComposeGetDataParams(
-                parametry, "LINKA_ID", linka, null, null, false, "cs"));
+                parametry, "LINKA_ID", linka, null, new TemplateDataInputs(null, false, "cs")));
             long nacteni = sw.ElapsedMilliseconds;
             if (stranky is null || stranky.Count == 0) { output.WriteLine($"{linka}: bez dat"); continue; }
             var data = stranky[0];

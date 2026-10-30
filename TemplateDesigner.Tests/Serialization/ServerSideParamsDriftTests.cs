@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.RegularExpressions;
+using TemplateDesigner.Models;
 
 namespace TemplateDesigner.Tests.Serialization;
 
@@ -29,14 +30,6 @@ public class ServerSideParamsDriftTests
         "SKUPINA_LINEK_ID",   // skupina linek - session stav pickeru
         "search",             // GetAvailableInstances: filtr pickeru
         "limit",              // GetAvailableInstances: strop počtu
-        "DEFINICE_SLOUPCU",   // vlastní sloupce vývěsky - obsah šablony, ne parametr sestavy;
-                              // posílá se vždy čerstvě ze šablony (ComposeGetDataParams) a re-fetch
-                              // při změně řeší vlastní snapshot (RefetchIfColumnsDefinitionChanged)
-        "JAZYK",              // jazyk textů značek = kultura šablony, ne volba v parametrech sestavy;
-                              // re-fetch při přepnutí kultury drží tentýž snapshot (CurrentWireSnapshot)
-        "TURNUSY_KE_SPOJUM",  // volba prvku (turnus je provozní věc dopravce, ne informace pro
-                              // cestujícího) - posílá se ze šablony jako DEFINICE_SLOUPCU a re-fetch
-                              // při přepnutí drží týž snapshot (CurrentWireSnapshot)
         "BARVY_SPOJU",        // třístav, který posílá starší návrhář místo checkboxu
                               // TISKNOUT_BARVY_SPOJU (Jr.Parametry.VolbaBarevSpoju) - jen zpětná
                               // kompatibilita, nový návrhář ho nezná
@@ -75,7 +68,9 @@ public class ServerSideParamsDriftTests
         {
             foreach (var key in StaticInKeys(file))
             {
-                if (InfrastructureKeys.Contains(key) || flagged.Contains(key)) continue;
+                // Údaje ze šablony (sloupce, turnusy, jazyk) nejsou parametry sestavy: posílají se vždy
+                // čerstvě ze šablony a data se při jejich změně načtou znovu podle TemplateDataInputs.
+                if (InfrastructureKeys.Contains(key) || TemplateDataInputs.Keys.Contains(key) || flagged.Contains(key)) continue;
                 found.Add($"{Path.GetFileName(file)}: \"{key}\"");
             }
         }

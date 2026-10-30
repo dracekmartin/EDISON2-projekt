@@ -184,8 +184,7 @@ public partial class TemplateDesignerViewModel
             var provider = CacheProvider;
             var agendaCode = State.CurrentTemplate.AgendaCode!;
             // Snapshot na UI threadu - callback běží na threadpoolu a nesmí sahat na živou šablonu
-            var columnsDefJson = CurrentColumnsDefinitionJson();
-            var turnusy = CurrentTurnusyKeSpojum();
+            var dataInputs = CurrentDataInputs();
             // Kultura šablony (formát dat, čísel) - bez ní by tisk formátoval podle nastavení
             // Windows, zatímco náhled podle šablony, a slovenská šablona by vyšla jinak.
             var kultura = GetTemplateCulture();
@@ -209,8 +208,7 @@ public partial class TemplateDesignerViewModel
                         try
                         {
                             (instPages, duvod) = provider.GetDataSDuvodem(agendaCode, ComposeGetDataParams(
-                                paramValues, paramName, inst.Value, ActiveSkupinaId, columnsDefJson,
-                                turnusy, JazykSablony));
+                                paramValues, paramName, inst.Value, ActiveSkupinaId, dataInputs));
                         }
                         // Chyba v datech tisk zastaví (rozhodnutí Jan 26. 10.), ale musí říct, u které linky.
                         catch (CacheAgendaDataException ex) when (ex.Linka is null)

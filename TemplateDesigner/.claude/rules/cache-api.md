@@ -195,11 +195,12 @@ posílali `"True"`). Labely enum parametrů jsou ZAMČENÉ - persistuje se zobra
 
 **Volba, která patří k prvku, ale server ji musí znát** (dnes `DEFINICE_SLOUPCU`, `JAZYK`,
 `TURNUSY_KE_SPOJUM`) **není parametr sestavy**: skládá se do IN vždy **čerstvě ze šablony**
-v `ComposeGetDataParams` (nikdy z persistovaných hodnot - třída chyb `B24`), příznak `serverSide`
-nedostane (patří do `InfrastructureKeys` v `ServerSideParamsDriftTests`) a **re-fetch při její změně drží
-`CurrentWireSnapshot`** - do něj se nová volba musí přidat, jinak zaškrtnutí nic neudělá, dokud
-uživatel nezmáčkne obnovení dat. Poznávací znak: „odpověď na tuhle otázku dává šablona, ne uživatel
-před tiskem."
+(nikdy z persistovaných hodnot - třída chyb `B24`) a příznak `serverSide` nedostane. Žije v jednom typu
+**`Models/TemplateDataInputs`** (od 30. 10.): nová volba = vlastnost tam, v `From` a ve `Values`. Vstup
+`GetData` i ukázkových dat, klíč jejich cache, nové načtení dat po změně (rovnost záznamu) i výjimky
+`ServerSideParamsDriftTests` ji převezmou samy; do té doby se musela dopsat na čtyři místa a zapomenuté
+místo znamenalo zaškrtnutí, které nic neudělá, dokud uživatel nezmáčkne obnovení dat. Poznávací znak:
+„odpověď na tuhle otázku dává šablona, ne uživatel před tiskem."
 
 **Parametr, který má účinek jen s určitým sloupcem prvku**, nese `visibleWhenColumn` = klíč sloupce
 (dnes parametry variant tras → `CAS_JIZDY_VARIANTY`) a návrhář ho schová, když sloupec žádný prvek

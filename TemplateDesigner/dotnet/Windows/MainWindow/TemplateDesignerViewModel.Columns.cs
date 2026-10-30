@@ -141,19 +141,10 @@ public partial class TemplateDesignerViewModel
         ZkontrolujPrvkyAgendy();
     }
 
-    /// <summary>Definice vlastních sloupců je jediný kus šablony, na kterém závisí DATA (posílá se
-    /// do GetData) - po každé změně, která ji mohla pohnout (dialog sloupců, undo/redo), se musí
-    /// znovu načíst, jinak náhled ukazuje sloupce staré definice.</summary>
-    private string? _lastColumnsDefinitionSnapshot;
-
-    /// <summary>Co ze šablony ovlivňuje **data** z `GetData`: definice sloupců a jazyk textů značek.
-    /// Když se to pohne, náhled musí přenačíst - jinak ukazuje data staré definice / starý jazyk.</summary>
-    private string CurrentWireSnapshot() =>
-        ComposeWireSnapshot(CurrentColumnsDefinitionJson(), CurrentTurnusyKeSpojum(), JazykSablony);
-
-    internal static string ComposeWireSnapshot(string? columnsDefinitionJson, bool turnusyKeSpojum,
-        string jazyk) =>
-        (columnsDefinitionJson ?? "") + "|" + (turnusyKeSpojum ? "T" : "-") + "|" + jazyk;
+    /// <summary>Údaje ze šablony, se kterými se načetla data náhledu. Po každé změně, která je mohla
+    /// pohnout (dialog sloupců, kultura, undo/redo), se musí data načíst znovu, jinak náhled ukazuje
+    /// sloupce staré definice nebo starý jazyk.</summary>
+    private TemplateDataInputs? _lastDataInputs;
 
     private void RefetchIfColumnsDefinitionChanged()
     {
@@ -165,7 +156,7 @@ public partial class TemplateDesignerViewModel
 
         // Snapshot zapisuje až ÚSPĚŠNÝ fetch (RefreshDataForCurrentInstanceAsync) - kdyby se
         // zapsal tady a fetch spadl, další kontroly by se tvářily, že data definici odpovídají.
-        if (CurrentWireSnapshot() == _lastColumnsDefinitionSnapshot) return;
+        if (CurrentDataInputs() == _lastDataInputs) return;
         if (CurrentActiveInstance is not null) { _ = RefreshDataForCurrentInstanceAsync(keepPage: true); return; }
 
         // Bez vybrané instance běží náhled na ukázkových datech - ta se musí přenačíst taky, jinak
@@ -236,7 +227,7 @@ public partial class TemplateDesignerViewModel
     private string? LayoutParamValue() => _previewParams.GetValueOrDefault(LayoutParamName) as string;
 
     /// <summary>Prvek odjezdů, jehož definice sloupců platí pro celou šablonu - stejná volba jako
-    /// <see cref="CurrentColumnsDefinitionJson"/> (první s definicí, jinak první vůbec).</summary>
+    /// <see cref="TemplateDataInputs.From"/> (první s definicí, jinak první vůbec).</summary>
     private IColumnLayoutOwner? LayoutOwner()
     {
         var grids = State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
@@ -377,7 +368,7 @@ public partial class TemplateDesignerViewModel
         // nejsou načtená, spadne to na syntetická data ze schématu (priorita 3) a prefetch
         // spuštěný při změně agendy je po dokončení doplní + překreslí náhled.
         if (mockData is null && agendaCode is not null && CacheProvider is not null
-            && CacheProvider.TryGetCachedMockData(agendaCode, CurrentColumnsDefinitionJson(), JazykSablony, out var cachedMock))
+            && CacheProvider.TryGetCachedMockData(agendaCode, CurrentDataInputs(), out var cachedMock))
             mockData = cachedMock?.WithCulture(culture);
 
         // Priorita 3: syntetická mock data ze schématu

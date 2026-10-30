@@ -101,12 +101,11 @@ public partial class TemplateDesignerViewModel
     private async Task PrefetchMockDataAsync(string agendaCode)
     {
         if (CacheProvider is null || string.IsNullOrEmpty(agendaCode)) return;
-        // Definice sloupců jde i do ukázkových dat - jinak náhled bez vybrané instance ukazuje
+        // Údaje ze šablony jdou i do ukázkových dat - jinak náhled bez vybrané instance ukazuje
         // rozvržení podle linky a vlastní sloupce se v něm neprojeví (#13158).
-        var columnsDefJson = CurrentColumnsDefinitionJson();
-        var jazyk = JazykSablony;
-        if (CacheProvider.TryGetCachedMockData(agendaCode, columnsDefJson, jazyk, out _)) return;   // už načteno (i negativně)
-        await Task.Run(() => CacheProvider.GetMockData(agendaCode, columnsDefJson, jazyk));
+        var dataInputs = CurrentDataInputs();
+        if (CacheProvider.TryGetCachedMockData(agendaCode, dataInputs, out _)) return;   // už načteno (i negativně)
+        await Task.Run(() => CacheProvider.GetMockData(agendaCode, dataInputs));
         // Náhled se mezitím nakreslil ze syntetických dat - překresli s reálnými mock daty.
         if (State.CurrentTemplate.AgendaCode == agendaCode) RequestPreviewRefresh?.Invoke();
     }
@@ -456,55 +455,31 @@ public partial class TemplateDesignerViewModel
         // problém s daty ukáže „Žádná data" nebo prázdný náhled.
     }
 
-    public CultureInfo GetTemplateCulture()
-    {
-        try { return CultureInfo.GetCultureInfo(State.CurrentTemplate.CultureCode ?? "cs-CZ"); }
-        catch (CultureNotFoundException) { return CultureInfo.GetCultureInfo("cs-CZ"); }
-    }
+    public CultureInfo GetTemplateCulture() => State.CurrentTemplate.GetCulture();
 
     // ── Preview mock data (called by code-behind preview renderer) ────────────
 
-    /// <summary>Dvoumístný kód jazyka šablony pro server (`cs` / `sk`) - z kultury, kterou uživatel
-    /// vybírá ve vlastnostech stránky. Tou se řídí i symbolový font, takže jazyk textů a piktogramů
-    /// má jeden zdroj.</summary>
-    internal string JazykSablony => GetTemplateCulture().TwoLetterISOLanguageName.ToLowerInvariant();
+    /// <summary>Údaje ze šablony, na kterých závisí data ze serveru (sloupce, turnusy, jazyk).</summary>
+    internal TemplateDataInputs CurrentDataInputs() => TemplateDataInputs.From(State.CurrentTemplate);
 
     /// <summary>
-    /// Parametry pro `GetData` jedné instance = parametry sestavy + klíč instance + skupina linek.
-    /// **Jediné místo, kde se tahle mapa staví.** Náhled, export i tisk musí serveru poslat totéž,
-    /// jinak vyjede jiný výstup, než ukazuje náhled - a nikdo si toho nevšimne. Přesně tak vznikly
-    /// dvě vady naráz: export z lišty neposílal parametry sestavy, tisk zapomínal skupinu linek
-    /// (u AD je linka klíčovaná dvojicí skupina+linka, takže se fetchla z default skupiny).
+    /// Parametry pro `GetData` jedné instance = parametry sestavy + klíč instance + skupina linek
+    /// + údaje ze šablony. **Jediné místo, kde se tahle mapa staví.** Náhled, export i tisk musí
+    /// serveru poslat totéž, jinak vyjede jiný výstup, než ukazuje náhled - a nikdo si toho nevšimne.
+    /// Přesně tak vznikly dvě vady naráz: export z lišty neposílal parametry sestavy, tisk zapomínal
+    /// skupinu linek (u AD je linka klíčovaná dvojicí skupina+linka, takže se fetchla z default skupiny).
     /// </summary>
     internal static Dictionary<string, object?> ComposeGetDataParams(
         IReadOnlyDictionary<string, object?> printParams, string instanceParamName,
-        string instanceValue, string? skupinaId, string? columnsDefinitionJson,
-        bool turnusyKeSpojum, string? jazyk)
+        string instanceValue, string? skupinaId, TemplateDataInputs dataInputs)
     {
         var p = new Dictionary<string, object?>(printParams, StringComparer.OrdinalIgnoreCase)
         {
             [instanceParamName] = instanceValue   // instance přebíjí případný klíč linky z parametrů
         };
         if (!string.IsNullOrEmpty(skupinaId)) p["SKUPINA_LINEK_ID"] = skupinaId;
-        // Definice vlastních sloupců jde VŽDY čerstvě ze šablony (parametr metody), nikdy přes
-        // _previewParams - tam by ji ApplyPersistedPrintParams mohl přepsat starou persistovanou
-        // hodnotou a tisklo by se jiné rozvržení, než šablona říká (třída chyb B24).
-        // ⚠️ Prázdná hodnota ze šablony musí klíč **odebrat**, ne jen nepřidat - jinak v mapě
-        // zůstane persistovaná hodnota z `printParams` a serveru dojde rozvržení, které šablona
-        // nemá. Do 4. 9. tu byl jen `if`, takže komentář výše popisoval něco jiného, než kód dělal:
-        // uživatel, který si někdy vlastní sloupce nastavil, je dostával i do šablon bez nich -
-        // a spoj, který do žádného z nich nesedne, z tabulky tiše zmizí.
-        if (!string.IsNullOrEmpty(columnsDefinitionJson)) p["DEFINICE_SLOUPCU"] = columnsDefinitionJson;
-        else p.Remove("DEFINICE_SLOUPCU");
-        // Jazyk textů značek (#12843) - jde ze šablony, ne z parametrů sestavy, ať ho persistovaná
-        // hodnota nemůže přepsat (třída chyb B24). Prázdný = server zůstane na češtině.
-        if (!string.IsNullOrEmpty(jazyk)) p["JAZYK"] = jazyk;
-        else p.Remove("JAZYK");
-        // Turnusy ke spojům jsou volba **prvku**, ne parametr sestavy (turnus je provozní věc
-        // dopravce). Serveru to ale dojít musí, protože turnusy nejsou v datech linky a jejich
-        // dotaz stojí 40-550 ms - proto touž cestou jako DEFINICE_SLOUPCU: vždy čerstvě ze
-        // šablony, mimo persistované hodnoty parametrů (třída chyb B24).
-        p["TURNUSY_KE_SPOJUM"] = turnusyKeSpojum ? "true" : "false";
+        // Údaje ze šablony až nakonec - přebijí hodnoty, které by se do parametrů dostaly z uložených voleb.
+        dataInputs.ApplyTo(p);
         return p;
     }
 
@@ -524,18 +499,4 @@ public partial class TemplateDesignerViewModel
     private bool ShouldPrefillDepartureColumns() =>
         AgendaEntry(State.CurrentTemplate.AgendaCode)?.CustomColumns == true
         && !State.CurrentTemplate.Sections.SelectMany(s => s.Elements).OfType<DepartureGridElement>().Any();
-
-    /// <summary>Chce **některý** prvek šablony turnusy ke spojům? Podle toho se posílá serveru
-    /// (dotaz do modulu turnusů je drahý, takže se nesmí spustit jinému než tomu, kdo je tiskne).</summary>
-    internal bool CurrentTurnusyKeSpojum() =>
-        State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
-            .OfType<LineTableElement>().Any(e => e.TurnusyKeSpojum);
-
-    /// <summary>Definice vlastních sloupců platná pro celou šablonu - z prvního prvku odjezdů,
-    /// který ji má. Null = režim „Automaticky (dle linky)".</summary>
-    internal string? CurrentColumnsDefinitionJson() =>
-        State.CurrentTemplate.Sections.SelectMany(s => s.Elements)
-            .OfType<IColumnLayoutOwner>()
-            .Select(e => e.BuildColumnsDefinitionWireJson())
-            .FirstOrDefault(j => j is not null);
 }

@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-30 (41) - Údaje ze šablony pro server v jednom typu (sjednocení A4)
+
+Vlastní sloupce vývěsky, turnusy ke spojům a jazyk textů značek posílá serveru šablona, ne parametry sestavy.
+Byly opsané na čtyřech místech: vstup načtení dat, kontrola „změnila se data, načíst znovu?", vstup ukázkových dat a výjimky testu parametrů. Zapomenuté místo znamenalo zaškrtnutí, které nic neudělá, dokud uživatel nezmáčkne obnovení dat.
+Teď je drží jeden typ `Models/TemplateDataInputs` a všechna čtyři místa se z něj staví; nová taková volba je jedna vlastnost.
+Vedlejší opravy: ukázková data dostávají i turnusy (dřív jen sloupce a jazyk), tisk víc linek bere jazyk ze snímku šablony pořízeného před tiskem (dřív ho četl z živé šablony na pozadí) a živý test tisku posílá jazyk šablony místo napevno „cs".
+Ověřeno: .NET testy 2626/2626, mutace (neodebraný klíč, chybějící hodnota) testy zachytily; v aplikaci neproklikané.
+
 ## 2026-10-30 (40) - Klávesové zkratky v jedné tabulce (sjednocení A3)
 
 Zkratky byly opsané na sedmi místech (obsluha kláves, menu, bubliny, místní nabídky, nápověda F1, asistent, příručka) a rozcházely se: menu psalo „Del" a „Ctrl+PgUp", nápověda „Delete" a „Ctrl+PageUp".

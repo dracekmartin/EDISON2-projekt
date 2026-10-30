@@ -287,7 +287,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable, IColumnL
     /// pro provoz - stejně jako v legacy, kde to je nastavení sekce v návrháři sestav.
     /// <para>Zapnutí musí serveru dojít, protože turnusy nejsou v datech linky a jejich dotaz
     /// stojí 40-550 ms: klient posílá `TURNUSY_KE_SPOJUM` podle prvku (touž cestou jako
-    /// `DEFINICE_SLOUPCU`) a změna spouští re-fetch dat přes `CurrentWireSnapshot`.</para>
+    /// `DEFINICE_SLOUPCU`, obojí v `TemplateDataInputs`) a změna spouští nové načtení dat.</para>
     /// </remarks>
     public bool TurnusyKeSpojum { get; set; }
 
