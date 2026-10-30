@@ -346,8 +346,7 @@ zobrazí jako samostatná úroveň.
 ### Přichytávání
 Tři nezávislé vrstvy, ovládané z lišty nástrojů:
 - **Mřížka plátna** - zobrazí se tlačítkem s ikonou mřížky, přichytávání k ní zapíná tlačítko „M";
-  velikost 0,2–10 mm (výchozí **1 mm**, přichytávání je výchozí **zapnuté** - jemný krok drží
-  pozice čisté, aniž by omezoval).
+  velikost 0,2–10 mm (výchozí **5 mm**, přichytávání k mřížce je výchozí **vypnuté**).
 - **Přichytávání k objektům** - tlačítko „O" (výchozí zapnuto); prvek se přichytává k hranám a
   středům jiných prvků i k okrajům sekce, s vizuálními vodítky.
 - **Mezera pro přichytávání** - 0–10 mm (výchozí 2 mm); prvek se umí přichytit
