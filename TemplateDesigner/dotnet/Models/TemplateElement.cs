@@ -331,7 +331,7 @@ public abstract class TemplateElement
         new FloatPropertyDescriptor { Label = "Šířka",   Group = PositionGroup, Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm", Format = "0.0#" },
         .. (IsDynamic
             ? new PropertyDescriptor[] { new StringPropertyDescriptor { Label = "Výška", Group = PositionGroup,
-                Get = () => "(dynamická)", Set = _ => { } } }
+                Get = () => "(podle obsahu)", Set = _ => { } } }
             : new PropertyDescriptor[] { new FloatPropertyDescriptor { Label = "Výška", Group = PositionGroup,
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
                 Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),

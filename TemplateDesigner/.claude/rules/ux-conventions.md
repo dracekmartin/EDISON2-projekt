@@ -61,6 +61,7 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 | Enter | Vlastnosti výběru (1 element = dialog; víc = dialog společných vlastností) |
 | F2 | Inline editace textu (jen TextElement, 1 vybraný) |
 | Dvojklik | Vlastnosti prvku (dvojklik do prázdna = zrušit výběr) |
+| Ctrl+klik | Přidat prvek do výběru, nebo ho z výběru odebrat (u skupiny celou skupinu) |
 
 ### Uvnitř pevné tabulky (editace buněk na plátně)
 
@@ -197,12 +198,13 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
 | Ctrl+Shift+P | Vlastnosti stránky |
 | Ctrl+Shift+A | Změnit agendu |
 | Ctrl+Shift+I | Výběr instancí (linek) - **I jako instance**, doménové písmeno by platilo jen pro JŘ |
+| Ctrl+kolečko | Zoom ke kurzoru (bod pod myší zůstane pod myší) |
 | Ctrl+0 | Přizpůsobit stránce (Fit) - == tlačítko „Fit" |
 | Ctrl+1 | Skutečná velikost 100 % (1:1) - == tlačítko „1:1" |
 | Ctrl+B | Sbalit / rozbalit levý panel |
 | F5 | Obnovit data - refetch GetData aktuální instance + invalidace cache (== tlačítko ↻ u instance chipu) |
 | F1 | Nápověda |
-| Escape | Zrušit přidávání elementu / probíhající operaci |
+| Escape | Zrušit přidávání elementu / probíhající operaci; zavřít úvodní obrazovku |
 
 ### Pravidla pro nové zkratky
 

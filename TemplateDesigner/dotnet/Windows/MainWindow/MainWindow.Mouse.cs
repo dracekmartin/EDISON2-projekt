@@ -621,7 +621,7 @@ public partial class MainWindow
             menu.Items.Add(new Separator());
             menu.Items.Add(new MenuItem
             {
-                Header = "Vlastnosti prvku...",
+                Header = "Vlastnosti prvku…",
                 Command = new EDControls.EDViewModel.RelayCommand(() =>
                 {
                     // U2: otevřít dialog (jako dvojklik a „Vlastnosti sekce…") - dřív jen přepínalo
@@ -655,7 +655,7 @@ public partial class MainWindow
 
             menu.Items.Add(new MenuItem
             {
-                Header = "Vlastnosti sekce...",
+                Header = "Vlastnosti sekce…",
                 Command = new EDControls.EDViewModel.RelayCommand(() =>
                 {
                     var sectionVm = _vm.Sections.FirstOrDefault(s => s.Section == section);
