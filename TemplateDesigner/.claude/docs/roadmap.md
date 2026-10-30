@@ -17,10 +17,11 @@
 
 ### Ostatní
 
-- **Úvodní obrazovka** [S] (Jan 29.-30. 10.) - zkušební verze je v main (changelog 2026-10-30 (36)): po spuštění
-  bez linky ukáže poslední šablony, šablony agendy s výchozí šablonou M-line a odkazy na příručku a novinky.
-  **Před vydáním rozhodnout:** tlačítka SQL a CSV pod „Externí datové zdroje - připravujeme" (zatím nic neumí,
-  Jan je chce odstranit, kdyby nebyla hotová) a položka Nástroje → Úvodní obrazovka (přidaná na zkoušení).
+- **Výstup jízdního řádu do HTML** [M-L] (podnět Jan 30. 10.) - starý tisk měl kromě PostScriptu i HTML variantu.
+  DPKV má na webu zastávkové JŘ MHD jako statické stránky (stránka na zastávku a směr, odkazy mezi zastávkami,
+  [`dpkv.cz/_data/d-1/1130.htm`](https://www.dpkv.cz/_data/d-1/1130.htm)) a ptali se, jestli by šly generovat automaticky.
+  Otevřené: HTML ze šablony návrháře (sazba je bez SkiaSharp, chyběl by jen výstup do HTML), nebo jednoduché stránky
+  přímo z dat agendy; jak se soubory dostanou na web; jestli to nepokryje Vyhledávač odjezdů v ISYCloud.
 
 - **Hledání ve formuláři po slovech a se synonymy** [M] (z `B194h` H12, Jan 28. 10.: zajímavé, ale ne
   teď). Hledání dnes bere celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení"
@@ -79,7 +80,8 @@
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
   **headless tisk** („pošli šablonu a JSON, vrať PDF"); samostatně by prvním krokem byl generický
   JSON zdroj ze souboru nebo URL. Dořešit přihlašovací údaje a odvození schématu z dat
-  (analýza 12. 7., detail v historii roadmapy).
+  (analýza 12. 7., detail v historii roadmapy). ⚠️ **Před vydáním:** úvodní obrazovka nabízí „Připojit databázi SQL"
+  a „Načíst soubor CSV" jen jako průzkum zájmu - když nebudou hotové, tlačítka odstranit (Jan 30. 10.).
 
 - **Sjednocené věci definovat jednou** [M] **Jan** (27. 10.) - nejdřív revize toho, co `B194` sjednotilo (popisky,
   nápovědy a rozsahy polí E8, údaje dopravce D4, nabídka podle dat E5, kanon `ux-conventions §8`), a pro každé

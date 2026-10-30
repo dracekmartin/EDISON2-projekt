@@ -1,5 +1,13 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Úvodní obrazovka (hotovo 30. 10. 2026)
+
+- **Úvodní obrazovka** (nápad Jan 29. 10., changelog 2026-10-30 (36)): po spuštění bez linky nabídne poslední šablony,
+  kartu agendy s jejími šablonami (šablony firmy, na konci výchozí šablona M-line s ikonou) a odkazy na příručku
+  a novinky; zmizí s první úpravou, zavře ji Esc nebo křížek. Bez „Doporučeno" a bez rad (Jan). Položka
+  Nástroje → Úvodní obrazovka zůstává. Tlačítka SQL a CSV jsou jen průzkum zájmu - před vydáním je hlídá
+  položka „Externí datové zdroje" v backlogu.
+
 ## Prvky jiné agendy a import šablony ze souboru (hotovo 30. 10. 2026)
 
 - **Změna agendy nesmí nechat v šabloně prvky jiné agendy** (review 27. 10., changelog 2026-10-30 (33)): předpoklad
