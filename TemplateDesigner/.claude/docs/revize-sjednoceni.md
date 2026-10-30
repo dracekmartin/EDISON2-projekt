@@ -35,7 +35,7 @@ Podklad ze tří průzkumů (vlastnosti prvků, agendy a data, názvy a konstant
 - B5 ✅ (30. 10.) `RegistrAgendKontraktTests`: každý parametr `BaseAgenda.cls` registr čte (`ListAgendy`) a klíče registru = parametry `AgendaRegistryEntry`. Generický průchod %Dictionary zamítnut - jména klíčů se od parametrů liší (`AgendaVariantCode` → `code`). Ověřeno mutací.
 - B6 ✅ (30. 10.) `KliceKontraktuTests`: klíče definice sloupců (klient píše = server čte, vzory serveru ⊆ definice, klient čte vzory týmiž klíči), `ZNAMEKLICEPARAMETRU` = klíče, které čte klient a formulář parametrů `AgendaParams.cls` (popis čte jen ten), typy sekce v `SectionEdit.cls` = `TypSekce` + názvy stromu. Ověřeno mutací.
 - B7 ✅ (30. 10.) `KanonNazvosloviTests`: každý přeškrtnutý tvar §8 je v seznamu zákazů, nebo má výjimku s důvodem (7: slova správná v jiném významu). Ze 31 nehlídaných tvarů 24 doplněno do seznamů (canvas, Výplň, Pořadí vrstvy, popisové sloupce, Zobrazit nadpis, dynamická výška…), navíc „Max. "; žádný text je neporušoval. „dle" zakázat nejde (zamčené volby parametrů). Ověřeno mutací.
-- B8 Zástupná pole `{POLE}` v SystemTemplates/LaunchTemplates proti nabídce dat agendy: test.
+- B8 ✅ (30. 10.) `ZastupnaPoleSablonTests`: pole `{…}` dodávaných šablon (6 šablon) jsou v nabídce dat jejich agendy (parser `AgendaSchemaDriftTests`, porovnání verzí s převzatou nabídkou linkového JŘ), pole stránky nebo dopravci ze sazby. Dnes vše sedí; ověřeno mutací.
 - B9 Výjimky KontraktDatAgendTests odvodit z příznaků registru místo kódu agendy.
 
 ## C. Nechat být

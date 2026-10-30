@@ -200,6 +200,12 @@ public class AgendaSchemaDriftTests
             .Where(p => !Path.GetFileName(p).Equals("BaseAgenda.cls", StringComparison.OrdinalIgnoreCase))
             .SelectMany(ParseAgenda)];
 
+    /// <summary>Klíče nabídky dat podle souboru agendy (skaláry i pole kolekcí) - čte je test zástupných polí
+    /// dodávaných šablon (<see cref="ZastupnaPoleSablonTests"/>).</summary>
+    internal static Dictionary<string, HashSet<string>> KliceNabidkyPodleSouboru() =>
+        AllFields().GroupBy(e => e.File)
+            .ToDictionary(g => g.Key, g => g.Select(e => e.Key).ToHashSet(StringComparer.Ordinal), StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Pojistka proti tiše zelenému testu: kdyby se změnil zápis schématu a regulární výraz
     /// přestal chytat, ostatní testy projdou na prázdném vstupu a nikdo si toho nevšimne.
