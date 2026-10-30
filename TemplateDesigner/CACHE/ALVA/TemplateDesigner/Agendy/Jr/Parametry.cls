@@ -157,6 +157,73 @@ ClassMethod AddSipkyAProjeteZastavky(arr As %DynamicArray)
     d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek", "V seznamu zastávek se vytisknou i zastávky, které spoj před aktuální zastávkou už projel. Vypnuto = seznam začíná aktuální zastávkou.")
 }
 
+/// Volby variant tras (KOVED #13048 bod 5), společné vývěskám AD i MHD - počítá je `Jr.VariantyTras`.
+/// Týkají se variantních sloupců seznamu zastávek, proto je klient bez toho sloupce schová (`JenSeSloupcemVariant`).
+/// Písmena variant a rozdílů tras jsou dvě nezávislé řady; výchozí sady se v AD nekryjí (`Jr.VariantyTras.SadaVariantDefault`).
+ClassMethod AddVariantyTras(arr As %DynamicArray)
+{
+    s pRazV = ##class(%DynamicObject).%New()
+    s pRazV.name         = "RAZENI_VARIANT"
+    s pRazV.label        = "Řazení variant tras"
+    s pRazV.type         = "enum"
+    s pRazV.group        = "Seznam zastávek"
+    s pRazV.serverSide   = 1
+    s pRazV.defaultValue = "Dle četnosti ze zastávky"
+    s pRazV.description  = "Pořadí variantních časových sloupců v seznamu zastávek: nejčastější varianta z dané zastávky první, stabilní pořadí dle spojů (stejné napříč stránkami), od nejrychlejší varianty k nejpomalejší, nebo od nejpomalejší k nejrychlejší."
+    s optsRV = ##class(%DynamicArray).%New()
+    d optsRV.%Push("Dle četnosti ze zastávky")
+    d optsRV.%Push("Stabilní (pořadí spojů)")
+    // Popisky voleb jsou po vydání ZAMČENÉ (persistuje se zobrazovaný text), proto „nejkratší první"
+    // rovnou v popisku - směr řazení už nepůjde upřesnit přejmenováním.
+    d optsRV.%Push("Dle délky jízdy (nejkratší první)")
+    d optsRV.%Push("Dle délky jízdy (nejdelší první)")
+    s pRazV.options = optsRV
+    d ..JenSeSloupcemVariant(pRazV)
+    d arr.%Push(pRazV)
+
+    // `B181`: hned pod řazením, protože ořezává podle něj.
+    d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddNumberParam(arr, "MAX_SLOUPCU_VARIANT", "Nejvýš sloupců variant tras", "", "Seznam zastávek", "Kolik sloupců variant tras se nejvýš vytiskne. Prázdné = všechny. Vezmou se první podle řazení variant, ostatní se netisknou - jejich spoje pak ve sloupcích nemají svou trasu ani písmeno varianty. Zúží to seznam zastávek za cenu té informace.", 1)
+    d ..JenSeSloupcemVariant(arr.%Get(arr.%Size() - 1))
+
+    // `B142`: vědomá výměna „méně sloupců za méně informace", proto výchozí vypnuto. Popisek i
+    // nápověda musí říct, CO to schová - jinak si to zapne někdo, kdo variantní sloupce nasadil
+    // právě kvůli detailu (KOVED #13048).
+    d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, "SLUCOVAT_PODMNOZINY", "Slučovat varianty, které jedou jen část jiné", "false", "Seznam zastávek", "Varianta, která jede jen souvislý úsek jiné trasy (od - do), dostane sloupec té delší. Ubere to sloupce na lince, kde část spojů jezdí jen kus trasy. Varianta, která uprostřed zajíždí jinam a část zastávek vynechá, si sloupec nechá - jinak by z vývěsky zmizelo, že tam spoj nejede.", 1)
+    d ..JenSeSloupcemVariant(arr.%Get(arr.%Size() - 1))
+
+    // ⚠️ Následující dvě volby musí zůstat vedle sebe a v tomhle pořadí - obě jsou o písmenech
+    // variant a slučování mezi ně nepatří (nález Jan 14. 9.).
+    // Zapínání písmen variant se 17. 8. zrušilo (bez nich nešlo u minuty poznat, který časový
+    // sloupec pro ni platí) a 11. 9. se na žádost TRANSDEV vrátilo: vývěska, která varianty
+    // vysvětluje jinde, je nepotřebuje. Hodnotu aplikuje KLIENT (vyprázdní záhlaví sloupců
+    // a zhasne anotaci u minuty), takže do allowlistu server-side parametrů nepatří - server
+    // písmena posílá dál a nic se kvůli té volbě znovu nenačítá.
+    d ##class(ALVA.TemplateDesigner.Agendy.BaseAgenda).AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant tras", "true", "Seznam zastávek", "Označení variantních sloupců jízdních dob - v záhlaví sloupců i u minut odjezdů. Vypnuto = sloupce s časy zůstanou, jen bez písmen. Netýká se písmen rozdílů tras, ta se vypínají u linky.")
+    d ..JenSeSloupcemVariant(arr.%Get(arr.%Size() - 1))
+
+    s pPrvB = ##class(%DynamicObject).%New()
+    s pPrvB.name         = "PRVNI_BEZ_PISMENE"
+    s pPrvB.label        = "První varianta bez písmene"
+    s pPrvB.type         = "bool"
+    s pPrvB.defaultValue = "true"
+    s pPrvB.group        = "Seznam zastávek"
+    s pPrvB.serverSide   = 1
+    s pPrvB.description  = "Nejčastější varianta zůstane bez písmene (hlavní trasa), odchylky se značí od A. Vypnuto = písmena už od první varianty."
+    // Bez písmen variant tato volba nemá co ovlivnit - schovat ji je míň matoucí než ji nechat
+    // svítit jako mrtvé zaškrtávátko.
+    s pPrvB.visibleWhen  = "PISMENA_VARIANT=true"
+    d ..JenSeSloupcemVariant(pPrvB)
+    d arr.%Push(pPrvB)
+}
+
+/// Parametr variant tras má účinek jen se sloupcem Varianty tras v seznamu zastávek: bez něj se
+/// varianty netisknou ani u minut. Klient takový parametr schová (rozhodnutí Jan 5. 10.); klíč
+/// `visibleWhenColumn` je aditivní, starší klient ho ignoruje a parametr ukáže jako dřív.
+ClassMethod JenSeSloupcemVariant(param As %DynamicObject)
+{
+    d param.%Set("visibleWhenColumn", "CAS_JIZDY_VARIANTY")
+}
+
 /// Časová osa Minut odjezdů a pevný rozsah hodin, společné vývěskám AD i MHD. Popisné volby
 /// (Plný den vědomě vynechán, lze docílit Vlastním rozsahem 0-23); Hodiny od a do jsou vidět jen
 /// u Vlastního rozsahu a zvládnou rozsah přes půlnoc (22-5).

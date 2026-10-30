@@ -95,7 +95,9 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
 - **Společné parametry JŘ** jsou v `Jr/Parametry.cls` (i čtení volby barev spojů); agenda si je skládá v `GetParameters` a drží jejich pořadí.
 - **Stavba výstupu vývěsky** (řádek zastávky, odjezd, skupina dnů, poznámka, barva, speciální znak) je v `Jr/VystupZastavkovy.cls`,
   linkového JŘ (poznámka, skupina dnů, čas) v `Jr/VystupLinkovy.cls`, **vlastní sloupce spojů** ze šablony
-  (rozbor `DEFINICE_SLOUPCU`, zařazení spoje podle dnů a značek) pro oba druhy výstupu v `Jr/VlastniSloupce.cls`.
+  (rozbor `DEFINICE_SLOUPCU`, zařazení spoje podle dnů a značek) pro oba druhy výstupu v `Jr/VlastniSloupce.cls`,
+  **varianty tras** vývěsky (sled zastávek, zástupce varianty, slití, řazení, ořez, písmena) v `Jr/VariantyTras.cls` -
+  agenda do ní dá spoje a průběh zástupce každého sloupce, data sama nečte.
 - **Čtení dat AD** společné agendám nad `^JRL`/`^JRZ`/`^JRSET` (název, číslo a první linka, spoje směru, barva linky a spoje,
   hodnota času, dny spoje, záznam zastávky k datu a tvar jejího názvu, nadpisy skupin dnů, upřesnění „na objednání",
   platnost jízdního řádu, text datumových omezení spoje s předložkami a formátem dat) je v `Jr/DataAd.cls`,

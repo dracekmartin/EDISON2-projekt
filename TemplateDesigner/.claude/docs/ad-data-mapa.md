@@ -253,7 +253,7 @@ trasy, ale tady přes časové průběhy, ne bitmapy obsluhy.)
 konkrétní zastávky. Rozdíl trasy PŘED tou zastávkou variantu zakládat nesmí: časy jsou rozdíl proti
 ní, takže zajezdka v první polovině linky by ve druhé polovině dala dva sloupce s identickými čísly.
 My jsme to do 12. 8. srovnávali přes celý směr (na gold 0365001 to bylo 56 duplicitních sloupců
-ze 116); dnes to drží `JeVUsekuVariant` + invariantní test `TestZadneDuplicitniVariantniSloupce`.
+ze 116); dnes to drží `Jr.VariantyTras.JeVUsekuVariant` + invariantní test `TestZadneDuplicitniVariantniSloupce`.
 
 ⚠️ **Sloupec „Časy" ve starém modulu NENÍ „výchozí spoj".** Přepínač u linky
 `^JRL(sku,lin,"PATCH","mhd","par",1)` (legacy `arrprtlin("dta",73)`, popisek „mhd odjezdník -
@@ -596,7 +596,7 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
 
 ### ✅ Rozdíly tras - HOTOVO (2026-06-11), ověřeno 1:1
 1:1 reimplementace `OmTrasa^JRapiLinPrtMhd` (AD) - metody `RozdilyTras` + helpery `SpojBitmapa`,
-`TrasaBitmapaZPole`, `NazZPoradi`, `GetZnk` v `ZastavkoveJrAd.cls`. Gated `AutoPozn` (`PATCH,"mhd","not"`).
+`TrasaBitmapaZPole`, `NazZPoradi` v `ZastavkoveJrAd.cls`, písmena přes `Jr.VariantyTras.ZnakZeSady` (legacy `GetZnk`). Gated `AutoPozn` (`PATCH,"mhd","not"`).
 - Vzorová trasa = základní trasa (J-věta `#10` dta12), fallback tištěná (`#7`), fallback union obsluhy.
 - Per spoj porovná jeho bitmapu trasy se vzorovou → text **„neobsluhuje zast. X" / „jede přes…" /
   „jede jen do…" / „pokračuje přes…"** (1:1 legacy).

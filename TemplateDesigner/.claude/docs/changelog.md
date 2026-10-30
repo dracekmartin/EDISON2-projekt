@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-30 (49) - Varianty tras ve sdílené třídě (příprava pro vývěsku MHD)
+
+Výpočet variant tras (sled zastávek, zástupce varianty, slití úseků, řazení, ořez a písmena) byl jen ve vývěsce AD.
+Teď je v `Jr/VariantyTras.cls` a vývěska AD do ní jen dává spoje a průběh zástupce; vývěska MHD ji použije stejně.
+Pět voleb variant (řazení, nejvýš sloupců, slučování, písmena, první bez písmene) je ve sdílených parametrech (`Jr.Parametry.AddVariantyTras`).
+Pro uživatele se nic nemění.
+Cestou se opravily dva zastaralé komentáře: u parametrů tvrdil, že se písmena variant a rozdílů tras kryjí (od 3. 9. neplatí), a u písmen, že prázdná sada dá prázdné písmeno (dá výchozí sadu).
+Ověřeno: výstup AD linky 0330510 (11 variant) při čtyřech kombinacích řazení, slučování, ořezu a písmen je znak po znaku stejný jako před změnou, snímek všech agend (42 volání včetně parametrů) beze změny, Caché testy TemplateDesigneru 282/283 (1 přeskočený z dřívějška) včetně nového `VariantyTrasTest` (7 testů, ověřeno mutací), .NET testy 2661/2661.
+
 ## 2026-10-30 (48) - Odjezd v 0:00 na vývěsce MHD
 
 Vývěska MHD vynechávala odjezd přesně v 0:00: čas spoje se hledal jako maximum od prázdného začátku a 0 není větší než nic.

@@ -105,11 +105,12 @@ public class ServerSideParamsDriftTests
     {
         // Pojistka druhého parseru: kdyby zrezivěl, testy výše by prošly na prázdném vstupu.
         var flagged = ServerSideParams(AgendaFile("ZastavkoveJrAd.cls"));
+        var sdilene = ServerSideParams(AgendaFile(Path.Combine("Jr", "Parametry.cls")));
 
         Assert.Contains("ROZDELENI_SLOUPCU", flagged);   // vlastní objekt
         Assert.Contains("SOUHRN_NA_ZNAMENI", flagged);   // přes AddBoolParam
-        Assert.Contains("MAX_SLOUPCU_VARIANT", flagged); // přes AddNumberParam
-        Assert.DoesNotContain("CASOVA_OSA", flagged);    // klientský parametr
+        Assert.Contains("MAX_SLOUPCU_VARIANT", sdilene); // přes AddNumberParam ve sdílených parametrech
+        Assert.DoesNotContain("CASOVA_OSA", sdilene);    // klientský parametr
     }
 
     [Fact]
@@ -118,7 +119,7 @@ public class ServerSideParamsDriftTests
         // Pojistka regexu: kdyby zrezivěl, oba testy výše by prošly na prázdném vstupu.
         var keys = StaticInKeys(AgendaFile("ZastavkoveJrAd.cls"));
 
-        Assert.Contains("PRVNI_BEZ_PISMENE", keys);
+        Assert.Contains("ROZDELENI_SLOUPCU", keys);
         Assert.Contains("LINKA_ID", keys);
         Assert.True(keys.Count >= 10, $"Naparsováno jen {keys.Count} klíčů - regex nesedí na .cls?");
     }

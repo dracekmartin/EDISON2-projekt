@@ -312,18 +312,18 @@ Method TestCasJizdyZMapy()
 Method TestJeVUsekuVariant()
 {
 	// Směr Tam - pořadí roste; vývěskovou zastávku samotnou úsek zahrnuje (legacy začíná na Tc)
-	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(5, 5, 1), "vývěsková zastávka patří do úseku")
-	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(9, 5, 1), "za vývěskou patří do úseku")
-	do $$$AssertNotTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(4, 5, 1), "před vývěskou do úseku nepatří")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(5, 5, 1), "vývěsková zastávka patří do úseku")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(9, 5, 1), "za vývěskou patří do úseku")
+	do $$$AssertNotTrue(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(4, 5, 1), "před vývěskou do úseku nepatří")
 
 	// Směr Zpět - pořadí klesá, takže srovnání je obrácené
-	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(5, 5, 0), "zpět: vývěsková zastávka patří do úseku")
-	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(2, 5, 0), "zpět: za vývěskou je NIŽŠÍ pořadí")
-	do $$$AssertNotTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(9, 5, 0), "zpět: před vývěskou je vyšší pořadí")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(5, 5, 0), "zpět: vývěsková zastávka patří do úseku")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(2, 5, 0), "zpět: za vývěskou je NIŽŠÍ pořadí")
+	do $$$AssertNotTrue(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(9, 5, 0), "zpět: před vývěskou je vyšší pořadí")
 
 	// První zastávka směru = celá trasa je v úseku (tam se varianty rozlišovat mají)
-	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(1, 1, 1), "první zastávka Tam")
-	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).JeVUsekuVariant(20, 1, 1), "konec trasy je v úseku první zastávky")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(1, 1, 1), "první zastávka Tam")
+	do $$$AssertTrue(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(20, 1, 1), "konec trasy je v úseku první zastávky")
 }
 
 // ── Volba trasy pro jediný sloupec časů (#12843) ─────────────────────────────
@@ -454,12 +454,12 @@ Method TestJeViditelnyAtributATextAtributu()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).TextAtributu("?"), "", "neznámý znak → prázdné")
 }
 
-Method TestGetZnk()
+Method TestZnakZeSady()
 {
 	// Písmenná sada markerů; po vyčerpání zdvojení (1:1 GetZnk^JRapiLinPrtMhd)
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetZnk("BCE", 1), "B", "první písmeno")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetZnk("BCE", 3), "E", "třetí písmeno")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetZnk("BCE", 4), "BB", "po vyčerpání zdvojené")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).ZnakZeSady("BCE", 1), "B", "první písmeno")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).ZnakZeSady("BCE", 3), "E", "třetí písmeno")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).ZnakZeSady("BCE", 4), "BB", "po vyčerpání zdvojené")
 }
 
 Method TestZiskejMarkerDedupuje()
@@ -479,28 +479,28 @@ Method TestPismenoVarianty()
 {
 	// První varianta bez písmene (default) - hlavní trasa čistá, odchylky od A.
 	// Výchozí sada je "ADLMNPTY" (disjunktní proti rozdílům tras), takže po A jde D, ne B.
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(1, 1), "", "první sloupec bez písmene")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(2, 1), "A", "druhý sloupec → A")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(3, 1), "D", "třetí sloupec → D (ne B, to má sada rozdílů)")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(9, 1), "Y", "devátý sloupec → poslední z sady")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(10, 1), "AA", "přes délku sady se zdvojuje, ne V27")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(1, 1), "", "první sloupec bez písmene")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(2, 1), "A", "druhý sloupec → A")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(3, 1), "D", "třetí sloupec → D (ne B, to má sada rozdílů)")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(9, 1), "Y", "devátý sloupec → poslední z sady")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(10, 1), "AA", "přes délku sady se zdvojuje, ne V27")
 
 	// Písmena od prvního sloupce
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(1, 0), "A", "první sloupec → A")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(8, 0), "Y", "osmý sloupec → poslední z sady")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(9, 0), "AA", "devátý → zdvojení")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(1, 0), "A", "první sloupec → A")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(8, 0), "Y", "osmý sloupec → poslední z sady")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(9, 0), "AA", "devátý → zdvojení")
 
 	// Vlastní sada od zákazníka se bere DOSLOVA, i s kolizí proti rozdílům tras
 	// (rozhodnutí Jan 2. 9.: tiše do zadaného nastavení nesaháme).
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(2, 1, "ABCDE"), "A", "vlastní sada: druhý → A")
-	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(3, 1, "ABCDE"), "B", "vlastní sada: třetí → B (kolize je volba zákazníka)")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(2, 1, "ABCDE"), "A", "vlastní sada: druhý → A")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PismenoVarianty(3, 1, "ABCDE"), "B", "vlastní sada: třetí → B (kolize je volba zákazníka)")
 }
 
 /// Obě sady písmen u minuty musí být disjunktní - jinak jedno písmeno znamená dvě věci
 /// a legenda ho vysvětlí cizím textem (nález kolega + Jan 2. 9. na vývěsce linky 111).
 Method TestSadyJsouDisjunktni()
 {
-	set varianty = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).#SadaVariantDefault
+	set varianty = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).#SadaVariantDefault
 	set rozdily  = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).#SadaRozdiluDefault
 
 	// Velikost písmen se nerozlišuje: "V" vedle "v" ve výšce písma odjezdů nikdo nerozezná.
