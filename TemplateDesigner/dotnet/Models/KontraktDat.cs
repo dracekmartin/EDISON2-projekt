@@ -34,8 +34,14 @@ public static class KontraktDat
     /// <param name="Volitelna">Proč položka nechodí vždy (parametr, jen některé řádky, jen porovnání verzí).
     /// Null = agenda daného druhu ji posílá v každém řádku.</param>
     /// <param name="VnoreneKlice">U pole objektů klíče, které kód čte z každého objektu.</param>
+    /// <param name="Priznak">Příznak agendy v registru (klíč <c>ListAgendy</c>), bez kterého agenda položku neposílá -
+    /// varianty tras a vzory vlastních sloupců. Null = posílá ji každá agenda daného druhu.</param>
     public sealed record Polozka(string Druh, string Kolekce, string Klic, Tvar Tvar,
-        string? Volitelna = null, string[]? VnoreneKlice = null);
+        string? Volitelna = null, string[]? VnoreneKlice = null, string? Priznak = null);
+
+    /// <summary>Příznaky registru agend, na kterých položky závisí (<see cref="Polozka.Priznak"/>).</summary>
+    public const string PriznakVariantyTras = "variantyTras";
+    public const string PriznakVlastniSloupce = "customColumns";
 
     private const string NavigaceStranek = "popisek stránky v navigaci návrháře a udržení pozice po obnovení dat; bez něj obecný popis";
     private const string PorovnaniVerzi = "jen porovnání verzí";
@@ -51,9 +57,9 @@ public static class KontraktDat
         new(Kazda, Udaje, "SMER", Tvar.Hodnota, NavigaceStranek + "; sazba podle něj rozlišuje obousměrnou stránku"),
 
         // ── Zastávkové JŘ: Seznam zastávek, Minuty odjezdů, Poznámky ──
-        new(Zastavkove, Udaje, "VARIANTY_TRAS", Tvar.PoleHodnot),
+        new(Zastavkove, Udaje, "VARIANTY_TRAS", Tvar.PoleHodnot, Priznak: PriznakVariantyTras),
         new(Zastavkove, Udaje, "ZDROJ_STANOVISTE", Tvar.Hodnota),
-        new(Zastavkove, Udaje, "PRESETY_SLOUPCU", Tvar.Hodnota),
+        new(Zastavkove, Udaje, "PRESETY_SLOUPCU", Tvar.Hodnota, Priznak: PriznakVlastniSloupce),
 
         new(Zastavkove, "ZASTAVKY", StopFields.Id, Tvar.Hodnota),
         new(Zastavkove, "ZASTAVKY", StopFields.StopName, Tvar.Hodnota),
@@ -70,9 +76,9 @@ public static class KontraktDat
         new(Zastavkove, "ZASTAVKY", StopFields.Zone, Tvar.PoleHodnot),
         new(Zastavkove, "ZASTAVKY", "ATRIBUTY", Tvar.PoleObjektu, VnoreneKlice: ["ZNAK", "POPIS"]),
         new(Zastavkove, "ZASTAVKY", "POZNAMKY_ZASTAVKY", Tvar.PoleObjektu, VnoreneKlice: ["ZNAK", "TYP", "TEXT"]),
-        new(Zastavkove, "ZASTAVKY", "TRASA_MIN", Tvar.PoleHodnot),
-        new(Zastavkove, "ZASTAVKY", "NASTUPISTE_VARIANT", Tvar.PoleHodnot),
-        new(Zastavkove, "ZASTAVKY", "SLOUPEK_VARIANT", Tvar.PoleHodnot),
+        new(Zastavkove, "ZASTAVKY", "TRASA_MIN", Tvar.PoleHodnot, Priznak: PriznakVariantyTras),
+        new(Zastavkove, "ZASTAVKY", "NASTUPISTE_VARIANT", Tvar.PoleHodnot, Priznak: PriznakVariantyTras),
+        new(Zastavkove, "ZASTAVKY", "SLOUPEK_VARIANT", Tvar.PoleHodnot, Priznak: PriznakVariantyTras),
 
         new(Zastavkove, "SKUPINY_DNU", "ID", Tvar.Hodnota),
         new(Zastavkove, "SKUPINY_DNU", "NADPIS", Tvar.Hodnota),

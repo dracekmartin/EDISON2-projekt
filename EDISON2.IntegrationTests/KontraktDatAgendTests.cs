@@ -18,23 +18,19 @@ public class KontraktDatAgendTests
     private const string Sonda = "ALVA.TemplateDesigner.Tests.SnimekAgendProbe";
     private const string Registr = "ALVA.TemplateDesigner.API.AgendyRegistr";
 
-    private const string MhdVariantyTras = "MHD varianty tras nemá (backlog „Varianty tras i ve vývěsce MHD“)";
     private const string AdSloupky = "sloupky jsou číselník AD, MHD má jen označník (ux-conventions §8)";
 
     /// <summary>Položky, které konkrétní agenda vědomě neposílá, s důvodem. Výjimka, která přestala platit
-    /// (agenda položku posílá), test taky zastaví - seznam nesmí lhát.</summary>
+    /// (agenda položku posílá), test taky zastaví - seznam nesmí lhát. Položky vázané na příznak registru
+    /// (varianty tras, vzory sloupců - <see cref="KontraktDat.Polozka.Priznak"/>) tu nejsou: výjimku odvodí test
+    /// z registru (revize sjednocení B9); zbyly ty, pro které příznak neexistuje.</summary>
     private static readonly Dictionary<(string Agenda, string Kolekce, string Klic), string> Bez = new()
     {
-        [("ZASTAVKOVY_JR_MHD", KontraktDat.Udaje, "VARIANTY_TRAS")] = MhdVariantyTras,
-        [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", "TRASA_MIN")] = MhdVariantyTras,
-        [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", "NASTUPISTE_VARIANT")] = MhdVariantyTras,
-        [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", "SLOUPEK_VARIANT")] = MhdVariantyTras,
         [("ZASTAVKOVY_JR_MHD", KontraktDat.Udaje, "ZDROJ_STANOVISTE")] = "volba označník / sloupek je jen v AD, " + AdSloupky,
         [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", StopFields.Sloupek)] = AdSloupky,
         [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", StopFields.SloupekSpoju)] = AdSloupky,
         [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", StopFields.SloupekPopis)] = AdSloupky,
         [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", StopFields.NastupisteSpoju)] = "označníky podle spojů bere AD z tras spojů, MHD je nemá",
-        [("ZASTAVKOVY_JR_MHD", KontraktDat.Udaje, "PRESETY_SLOUPCU")] = "vlastní sloupce a jejich vzory jsou koncept AD (rozhodnutí Jan, VlastniSloupceAgendyTests)",
         [("LINKOVY_JR_MHD", "ZASTAVKY", "TC")] = "MHD nemá tarifní čísla",
         [("LINKOVY_JR_MHD", "ZASTAVKY", "MHD")] = "sloupec MHD (přestup na městskou dopravu) je pojem AD",
         [("LINKOVY_JR_MHD", "SPOJE", "SMER")] = "směr spoje slouží jen obousměrnému tisku, který linkový JŘ MHD nemá",
@@ -51,14 +47,16 @@ public class KontraktDatAgendTests
 
         foreach (var (agenda, (druh, strankyAgendy)) in stranky)
         {
+            var priznaky = druhTridy.Values.First(a => a.Kod == agenda).Priznaky;
             foreach (var polozka in KontraktDat.Polozky.Where(p => p.Druh == druh || p.Druh == KontraktDat.Kazda))
             {
                 var hodnoty = Hodnoty(strankyAgendy, polozka);
                 int chybi = hodnoty.Count(h => h is null);
-                bool vyjimka = Bez.ContainsKey((agenda, polozka.Kolekce, polozka.Klic));
+                bool vyjimka = Bez.ContainsKey((agenda, polozka.Kolekce, polozka.Klic))
+                               || (polozka.Priznak is { } priznak && !priznaky.Contains(priznak));
 
                 if (vyjimka && chybi < hodnoty.Count)
-                    nalezy.Add($"{agenda}: {polozka.Kolekce} {polozka.Klic} posílá, výjimka v Bez už neplatí");
+                    nalezy.Add($"{agenda}: {polozka.Kolekce} {polozka.Klic} posílá, výjimka v Bez nebo příznak {polozka.Priznak} v registru už neplatí");
                 else if (polozka.Volitelna is null && !vyjimka && hodnoty.Count == 0)
                     nalezy.Add($"{agenda}: kolekce {polozka.Kolekce} je na všech linkách prázdná, {polozka.Klic} nejde ověřit");
                 else if (polozka.Volitelna is null && !vyjimka && chybi > 0)
@@ -90,17 +88,18 @@ public class KontraktDatAgendTests
         _ => false,
     };
 
-    /// <summary>Třída agendy → (kód, druh prvků) z registru, jak je dostane návrhář.</summary>
-    private static Dictionary<string, (string Kod, string Druh)> DruhyAgend(IMLRest mlRest)
+    /// <summary>Třída agendy → (kód, druh prvků, zapnuté příznaky) z registru, jak je dostane návrhář.</summary>
+    private static Dictionary<string, (string Kod, string Druh, HashSet<string> Priznaky)> DruhyAgend(IMLRest mlRest)
     {
         var json = mlRest.QueryOrThrow(Registr, "ListAgendy", new CVar())["1"]?.Value?.ToString() ?? "[]";
         return JsonNode.Parse(json)!.AsArray().OfType<JsonObject>()
-            .ToDictionary(a => a["cacheClass"]!.ToString(), a => (a["code"]!.ToString(), a["elementKind"]?.ToString() ?? ""));
+            .ToDictionary(a => a["cacheClass"]!.ToString(), a => (a["code"]!.ToString(), a["elementKind"]?.ToString() ?? "",
+                a.Where(kv => kv.Value is JsonValue v && v.TryGetValue<bool>(out var b) && b).Select(kv => kv.Key).ToHashSet()));
     }
 
     /// <summary>Stránky dat agend zastávkového a linkového druhu z linek sondy: kód → (druh, stránky).</summary>
     private static Dictionary<string, (string Druh, List<JsonObject> Stranky)> StrankyAgend(
-        IMLRest mlRest, Dictionary<string, (string Kod, string Druh)> druhTridy, out List<string> chyby)
+        IMLRest mlRest, Dictionary<string, (string Kod, string Druh, HashSet<string> Priznaky)> druhTridy, out List<string> chyby)
     {
         chyby = [];
         var vysledek = new Dictionary<string, (string, List<JsonObject>)>();
