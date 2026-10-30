@@ -58,7 +58,9 @@ public class TlacitkaFormulareTests
     [Fact]
     public void Panel_ObsluhujeVsechnaTlacitka()
     {
-        var kod = File.ReadAllText(Path.Combine(Dotnet(), "Windows", "MainWindow", "MainWindow.xaml.cs"));
+        // Okno je rozdělené do částí MainWindow.*.cs (30. 10.), obsluha může být v kterékoli.
+        var kod = string.Concat(Directory.GetFiles(Path.Combine(Dotnet(), "Windows", "MainWindow"), "MainWindow*.cs")
+            .Order(StringComparer.Ordinal).Select(File.ReadAllText));
         int od = kod.IndexOf("void OnInlineElementButtonClicked(", StringComparison.Ordinal);
         Assert.True(od >= 0, "obsluha tlačítek panelu nenalezena");
         int konec = kod.IndexOf("\n    private ", od, StringComparison.Ordinal);

@@ -662,7 +662,6 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   WMapa guarduje `cisloTrasy=""` (spoj bez trasy) + prázdné mapy necachuje (merge z undef = `<UNDEFINED>`).
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
-- `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).
 - `GetMockData` čte živě z ^JRL (první linka firmy) - zvážit lehký statický vzorek.
 
 ### 🛠️ Debug nástroj

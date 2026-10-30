@@ -232,7 +232,8 @@ přímo - volá callback `RequestCanvasRefresh`.
 - ObservableCollections pro binding (Sections, SchemaGroups, PreviewParameters)
 - Bindovatelné properties (ShowGrid, SnapToGrid, CanUndo, CanRedo, StatusText, ...)
 
-**V `MainWindow.xaml.cs` (musí zůstat - neodstranitelná vazba na WPF/SkiaSharp):**
+**V kódu okna `MainWindow.*.cs` (musí zůstat - neodstranitelná vazba na WPF/SkiaSharp; od 30. 10. rozdělený
+do částí podle oblastí, přehled v `MainWindow.xaml.cs`):**
 - `PaintSurface` eventy (SkiaSharp constraint)
 - Mouse state machine (`_mouseMode`, drag, resize, rubber band)
 - `UpdateCanvasSize()` - čte `skCanvas.ActualWidth/Height`
@@ -355,7 +356,7 @@ _vm.RequestExportPdf          = filePath => _previewCanvas.RenderToPdf(filePath,
 - `DesignerCanvas` - čte stav při každém `Render()`
 - `PreviewCanvas` - čte šablonu a zoom
 - `TemplateDesignerViewModel` - mění stav (výběr, zoom, undo/redo)
-- `MainWindow.xaml.cs` - čte při mouse state machine
+- `MainWindow.Mouse.cs` - čte při mouse state machine
 
 Záměrně bez INotifyPropertyChanged - změny se projeví při příštím `InvalidateVisual()`,
 ne automaticky. Undo/Redo a všechny commands jdou přes `DesignerState.Execute(cmd)`.

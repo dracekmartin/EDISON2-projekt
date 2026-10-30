@@ -43,7 +43,7 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 
 ## 3. Keyboardové zkratky - autoritativní tabulka
 
-> Autoritativní = odpovídá `MainWindow.xaml.cs` KeyDown handleru (ověřeno 2026-07-03). Při změně
+> Autoritativní = odpovídá `MainWindow.Keyboard.cs` KeyDown handleru (ověřeno 2026-07-03). Při změně
 > zkratky v kódu aktualizuj i tuto tabulku. Save As **nemá** zkratku (jen menu/příkaz) - dřívější
 > „Ctrl+Shift+S" byl drift, neexistuje.
 

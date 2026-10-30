@@ -46,8 +46,9 @@ public class ElementNamesTests
     {
         // Paleta a nabídka vkládání jsou to, co uživatel vidí; hláška se musí trefit do stejného
         // slova. ⚠️ Přejmenovat prvek znamená změnit obojí - jinak spadne tady.
-        var paleta = File.ReadAllText(Cesta("dotnet/Windows/MainWindow/MainWindow.xaml.cs"))
-                   + File.ReadAllText(Cesta("dotnet/Windows/MainWindow/MainWindow.xaml"));
+        var okno = Cesta("dotnet/Windows/MainWindow");
+        var paleta = string.Concat(Directory.GetFiles(okno, "MainWindow*.cs").Order(StringComparer.Ordinal).Select(File.ReadAllText))
+                   + File.ReadAllText(Path.Combine(okno, "MainWindow.xaml"));
 
         Assert.Contains(jmeno, paleta);
     }

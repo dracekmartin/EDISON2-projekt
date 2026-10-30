@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 2026-10-30 (35) - Kód hlavního okna rozdělený do souborů
+
+`MainWindow.xaml.cs` měl 3 690 řádků; stejně jako ViewModel (32) ho agent četl po kusech a souběžné práce si v něm překážely.
+Každá oblast, kterou v souboru oddělovaly komentáře, má vlastní část `MainWindow.<Oblast>.cs`: Render (plátno a náhled), Mouse, Keyboard, InlineTextEdit, Palette, Sections, Menus, AgendaParams, Properties; vedle zůstává TableCells.
+Pole stavu myši, přetahování sekcí, palety a zkratky Ctrl+D se přesunula k oblasti, která je používá; v hlavním souboru zůstal stav okna, konstruktor, rozložení panelů a přehled částí.
+Kód se jen přesunul: porovnání proti původnímu souboru nenašlo žádný chybějící řádek, přibyly jen hlavičky částí.
+Dva testy, které hledaly paletu a obsluhu tlačítek formuláře v jednom souboru, čtou všechny části; odkazy v dokumentaci a skillu `novy-element` ukazují na nové části.
+Ověřeno: .NET testy 2578/2578, build bez nových varování.
+
 ## 2026-10-30 (34) - Šablona bez kódu agendy je obecná, šablona od AI asistenta prochází kontrolou
 
 Šablona bez kódu agendy (obecná šablona načtená ze souboru, kam se prázdný kód nezapisuje) dovolila vložit ze schránky prvek jízdního řádu: návrhář ji v seznamu agend nedohledal a nic neblokoval.

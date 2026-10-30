@@ -120,7 +120,7 @@ Výchozí rámeček nastaví `CreateElementByType` automaticky na konci (BorderC
 
 ## 6. Toolbar menu
 
-Soubor: `dotnet/Windows/MainWindow/MainWindow.xaml.cs`, metoda `BtnAddElement_Click` (~řádek 999):
+Soubor: `dotnet/Windows/MainWindow/MainWindow.Menus.cs`, metoda `BtnAddElement_Click`:
 
 ```csharp
 Add("Nový element", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NovyElement, 5, 5));
@@ -285,7 +285,7 @@ a v konstantě `GeneralSchemaClass` okna sloupců. Formulář dodrží kostru z 
 | 3 | `Models/ElementTypes.cs` | ✅ |
 | 4 | `Models/TemplateElement.cs` (JsonDerivedType) | ✅ |
 | 5 | `Windows/MainWindow/TemplateDesignerViewModel.Editing.cs` (2 switches) | ✅ |
-| 6 | `Windows/MainWindow/MainWindow.xaml.cs` (toolbar menu) | ✅ |
+| 6 | `Windows/MainWindow/MainWindow.Menus.cs` (toolbar menu) | ✅ |
 | 7 | `Windows/MainWindow/MainWindow.xaml` + `EDIcons.xaml` + PNG | volitelné |
 | 8 | `Models/Layout/SkiaHeightCalculator.cs` | jen u dynamické výšky |
 | 9 | `Models/ElementNames.cs` (ForUser, ForType) | ✅ |
