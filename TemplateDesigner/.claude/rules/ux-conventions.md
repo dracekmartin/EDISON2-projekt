@@ -54,7 +54,7 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 | Ctrl+Z / Ctrl+Y | Undo / Redo |
 | Ctrl+X / Ctrl+C / Ctrl+V | Cut / Copy / Paste |
 | Ctrl+D | Duplikovat (plain duplikát +5mm offset) |
-| Ctrl+D + šipka | Směrové duplikování (kopie vedle s 4mm mezerou) |
+| Ctrl+D + šipka | Směrové duplikování (kopie vedle s mezerou pro přichytávání, výchozí 2 mm) |
 | Ctrl+Shift+C / Ctrl+Shift+V | Copy / Paste **stylu** (TextStyle + Border + Background) |
 | Delete | Smazat výběr |
 | Ctrl+A | Vybrat vše (v aktivní sekci) |

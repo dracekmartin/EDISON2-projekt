@@ -180,7 +180,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Zpět / Vpřed", "Ctrl+Z / Ctrl+Y"),
                 new("Vyjmout / Kopírovat / Vložit", "Ctrl+X / Ctrl+C / Ctrl+V"),
                 new("Duplikovat (kopie posunutá o 5 mm)", "Ctrl+D"),
-                new("Duplikovat vedle originálu s mezerou 4 mm", "Ctrl+D, pak šipka"),
+                new("Duplikovat vedle originálu s mezerou pro přichytávání (výchozí 2 mm)", "Ctrl+D, pak šipka"),
                 new("Kopírovat / vložit STYL (písmo, barvy, rámeček)", "Ctrl+Shift+C / Ctrl+Shift+V"),
                 new("Seskupit / rozeskupit prvky", "Ctrl+G / Ctrl+Shift+G"),
                 new("Rozdělit prvek vodorovně / svisle na poloviny", "Ctrl+Shift+H / Ctrl+Shift+J"),
@@ -350,9 +350,9 @@ public class HelpDialogViewModel : EDViewModel
             Title = "💡 Tipy a triky",
             Entries =
             [
-                new("Proporcionální škálování celé šablony", "lišta nástrojů 50–200 %"),
+                new("Proporcionální škálování celé šablony", "Upravit → Přepočítat šablonu na jinou velikost"),
                 new("Zamknout prvek proti posunu/změně velikosti", "vlastnost Uzamčeno"),
-                new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
+                new("Chytré přichytávání k hranám sousedů (i v mezeře pro přichytávání)", "při tažení / změně velikosti"),
                 new("Výška podle obsahu - prvek roste s obsahem (text se zalamuje)", "Výška prázdná"),
                 new("JŘ prvek s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),
                 new("AI průvodce - zeptejte se, kde co v aplikaci najdete", "záložka Pomocník"),
