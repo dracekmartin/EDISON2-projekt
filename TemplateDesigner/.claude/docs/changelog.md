@@ -1,5 +1,19 @@
 ﻿# Changelog
 
+## 2026-10-30 (6) - Dohodnuté názvosloví i v nápovědách, hláškách a textech oken (`B194f` G4)
+
+Zakázané termíny se dosud kontrolovaly jen v popiscích, volbách a skupinách; nápovědy a texty oken nehlídalo nic a tudy se dřív vracela „nástupiště" (P7) a „engine" (E7).
+Seznam je rozdělený na dvě části.
+Názvosloví (označník, prvek, konečná, Minuty odjezdů, Poznámky, Tabulka spojů, dlouhá pomlčka…) platí ve všech textech pro uživatele.
+Tvary popisku (zkratky, „projetých", „Tučně") jen v popiscích, protože ve větě nápovědy je „tisk projetých zastávek" správně.
+`NazvosloviTextuTests` kontroluje názvosloví v textech Caché tříd návrháře (nápovědy, hlášky a legendy agend), v oknech (titulky, bubliny, tlačítka) a v textech v kódu (stavový řádek, hlášky, protokol importu).
+Ladicí výpisy a zadání pro AI model se nekontrolují, termín uvnitř jména třídy („RectangleElement") taky ne.
+„Tučně", „Podtržené" a „Přeškrtnuté" se v popiscích hledají i uvnitř textu („Aktuální: Tučně", E10).
+Měření našlo jediný skutečný prohřešek: popis migrace „rámeček elementu", který uživatel uvidí při selhání převodu šablony, je teď „rámeček prvku".
+Legenda atributu CIS „cílová zastávka pro tablo" je výjimka s důvodem: doslovný text číselníku starého modulu, jako „tisk stanoviště".
+Každá ze tří kontrol spadla na dočasně vloženém termínu (nápověda agendy, bublina okna, hláška stavového řádku).
+Ověřeno: .NET testy 2525/2525.
+
 ## 2026-10-30 (5) - Stejný popisek v nabídce dat patří jednomu poli (`B194f` G3)
 
 Testy hlídaly jen jeden směr: stejné pole má ve všech agendách stejný popisek.

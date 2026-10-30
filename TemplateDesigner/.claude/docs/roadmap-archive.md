@@ -9,6 +9,9 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+- **G4** Názvosloví i v nápovědách, hláškách a textech oken (hotovo 30. 10., changelog 2026-10-30 (6)):
+  ban list rozdělený na názvosloví (všude, `NazvosloviTextuTests`) a tvary popisku (jen popisky);
+  „Tučně", „Podtržené", „Přeškrtnuté" se hledají i uvnitř popisku.
 - **G3** Jeden popisek = jedno pole (hotovo 30. 10., changelog 2026-10-30 (5)):
   `AgendaSchemaDriftTests.StejnyPopisek_PatriJednomuPoli`. Vývěska MHD má „Číslo a označník aktuální
   zastávky"; „Číslo aktuální zastávky" pod dvěma klíči (vývěska AD × linkové JŘ) je výjimka, sjednocení

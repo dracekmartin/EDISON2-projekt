@@ -86,7 +86,7 @@ s UI. Tímhle se odhalilo tiše zapnuté rozdělení vývěsky.
   zastávky = vždy **„označník"** (ne nástupiště/stanoviště/sloupek); kanonické termíny viz
   `ux-conventions.md §8`, wire názvy polí (`NASTUPISTE`) se nemění
 - **Žádné dlouhé pomlčky (em dash)** - v kódu, komentářích, UI textech, dokumentaci i odpovědích
-  vždy běžná pomlčka „-" (rozhodnutí Jan 2026-07-28; UI labely hlídá drift test)
+  vždy běžná pomlčka „-" (rozhodnutí Jan 2026-07-28; popisky i ostatní UI texty hlídají drift testy)
 - Každá akce uživatele = `IDesignerCommand` (undo/redo podporováno)
 - Pozice elementů jsou **relativní k sekci**, jednotky = **milimetry**
 - `Height = null` = dynamická výška (print engine počítá); `IsLocked = true` = nelze editovat

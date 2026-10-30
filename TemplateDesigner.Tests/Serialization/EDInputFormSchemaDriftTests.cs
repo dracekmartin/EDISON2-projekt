@@ -733,16 +733,34 @@ public class EDInputFormSchemaDriftTests
         "Velikost minut",   // → Poměr velikosti minut
     ];
 
-    /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive). Sdílené s
-    /// <see cref="AgendaSchemaDriftTests"/>.</summary>
-    internal static readonly string[] BannedLabelSubstrings =
+    /// <summary>Zakázané podřetězce v labelech/volbách (case-sensitive): názvosloví i tvary popisku.
+    /// Sdílené s <see cref="AgendaSchemaDriftTests"/> a <see cref="AgendaParameterDriftTests"/>.</summary>
+    internal static string[] BannedLabelSubstrings => [.. BannedTerms, .. BannedLabelForms];
+
+    /// <summary>Tvary, které vadí jen v popisku, ne ve větě nápovědy nebo hlášky: zkratky a tvar „Část:
+    /// Vlastnost". „Tisk projetých zastávek" je v nápovědě správně, „Barva projetých" v popisku ne.</summary>
+    internal static readonly string[] BannedLabelForms =
     [
-        "Šířka rámečku",    // → Tloušťka rámečku (Šířka patří elementu)
-        "Zebra",            // → Střídání řádků: Barva pozadí
         "Min. ",            // zkratky ne → „Nejmenší …" (Jan 28. 10.)
         "Tl. ",             // → Tloušťka …
         "Řádek NZ",         // → Řádek negativních značek
         "Font aktuální",    // → Aktuální: Velikost (je to velikost písma, ne rodina)
+        "↔",                // → slovy „Mezera mezi značkou a minutou" (`B194` E9b)
+        "aktuální zast.",   // → „Aktuální: Vlastnost" (zkratka; `B194` E10)
+        "projetých",        // → „Projeté: Barva textu", „Projeté: Zobrazit čas"
+        // Celý popisek „Tučně" hlídá BannedExactLabels; tady i uvnitř („Aktuální: Tučně", `B194` E10).
+        "Tučně",            // → Tučné
+        "Podtržené",        // → Podtržení
+        "Přeškrtnuté",      // → Přeškrtnutí
+    ];
+
+    /// <summary>Názvosloví (kanon ux-conventions §8), které platí ve všech textech pro uživatele:
+    /// popiscích, volbách, nápovědách, textech oken i hláškách (`B194f` G4, hlídá
+    /// <see cref="NazvosloviTextuTests"/>).</summary>
+    internal static readonly string[] BannedTerms =
+    [
+        "Šířka rámečku",    // → Tloušťka rámečku (Šířka patří prvku)
+        "Zebra",            // → Střídání řádků: Barva pozadí
         " per ",            // UI texty česky (kanon §8)
         "(vlak/bus)",       // → (vlak/autobus)
         "nástupiště",       // → označník
@@ -757,9 +775,6 @@ public class EDInputFormSchemaDriftTests
         "řádku nadpisu",    // → 2. řádek záhlaví
         "Oddělovač skupin", // → Mezera mezi skupinami dnů (je to mezera, ne čára; `B194` E9a)
         "skupinami sloupců", // → Mezera mezi skupinami dnů (stejný pojem v Minutách i Tabulce spojů)
-        "↔",                // → slovy „Mezera mezi značkou a minutou" (`B194` E9b)
-        "aktuální zast.",   // → „Aktuální: Vlastnost" (zkratka; `B194` E10)
-        "projetých",        // → „Projeté: Barva textu", „Projeté: Zobrazit čas"
         "element",          // → prvek (rozhodnutí Jan 2026-10-26, `B194` E7)
         "Element",
         "cílov",            // → konečná (poslední zastávka směru; Jan 2026-10-27, `B194` D3)

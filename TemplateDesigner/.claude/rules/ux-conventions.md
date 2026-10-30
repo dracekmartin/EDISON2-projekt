@@ -334,6 +334,10 @@ Kanonické termíny (obecné vlastnosti - rozhodnutí Jan 2026-07-28):
 vědomé kontextové rozdíly labelu téhož klíče patří do `exempt` v testu s komentářem. Týž ban list
 hlídá pole agend (`AgendaSchemaDriftTests`) a parametry sestavy (`AgendaParameterDriftTests`: popisek,
 skupina = „Obecné" nebo název prvku, stejný parametr = stejný popisek napříč agendami).
+Ban list má dvě části: **názvosloví** (`BannedTerms`: nástupiště, element, cílová, Mřížka odjezdů…) platí
+ve všech textech pro uživatele, tedy i v nápovědách, hláškách agend a textech oken (`NazvosloviTextuTests`);
+**tvary popisku** (`BannedLabelForms`: zkratky, „projetých", „Tučně") jen v popiscích - ve větě nápovědy
+je „tisk projetých zastávek" správně. Nový zakázaný termín zařaď podle toho, kde vadí.
 
 Kanonické termíny (doména JŘ):
 
