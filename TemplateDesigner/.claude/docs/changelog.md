@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-30 (33) - Import šablony ze souboru ji před otevřením zkontroluje
+
+Položka backlogu „Změna agendy nesmí nechat v šabloně prvky jiné agendy" vycházela z omylu: Změnit agendu (Ctrl+Shift+A) od května zakládá prázdnou šablonu.
+Prvky jiné agendy se do šablony dostávaly importem ze souboru, který přijal skoro cokoli: `{}` jako šablonu bez sekce, neznámou agendu i tabulku spojů v zastávkovém JŘ (zůstalo jen upozornění ve stavovém řádku).
+Prvek bez typu shodil import chybou programu, neznámý typ hlásil „type discriminator" a cizí tvar „migraci ze starší verze se nepodařilo dokončit".
+Teď import šablonu přijme, jen když agendu zná, uživatel ji smí použít (nezveřejněnou jen vývojář nebo ve stejné agendě, jako v okně Změnit agendu) a prvky jízdních řádů k agendě patří (`TemplateImportCheck`); agendu přepne podle souboru jako otevření z databáze.
+Bez seznamu agend ze serveru import odmítne, protože šablonu nejde ověřit (rozhodnutí Jan).
+JSON bez sekcí je informace „není šablona návrháře", poškozená šablona zůstává chybou programu, ale hláška říká, co je špatně (neplatný JSON, prvek bez typu, neznámý typ, nečekaná hodnota).
+Šablony v databázi se nekontrolují (Jan: staré šablony neřešíme); upozornění na prvek jiné agendy u nich zůstává.
+Ověřeno: .NET testy 2575/2575 (nové `ImportSablonyZeSouboruTests` a dva testy importu nad oknem návrháře v `OtevreniCizihoSouboruTests`; s vypnutou kontrolou test okna spadne), v aplikaci neproklikáno.
+
 ## 2026-10-30 (32) - ViewModel hlavního okna rozdělený do souborů a úklid backlogu
 
 `TemplateDesignerViewModel.cs` měl 4 747 řádků; agent ho četl po kusech a dvě souběžné práce si v něm překážely.

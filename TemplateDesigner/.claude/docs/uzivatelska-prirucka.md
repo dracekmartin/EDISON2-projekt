@@ -154,6 +154,8 @@ databázového úložiště:
 
 - `Soubor → Importovat ze souboru…` - otevře soubor JSON; šablona se pak chová jako nová
   neuložená.
+  Otevře se i se svou agendou, stejně jako šablona z databáze.
+  Návrhář soubor odmítne, když nejde o šablonu, její agendu nezná nebo šablona obsahuje prvky jiné agendy; rozdělaná šablona pak zůstane otevřená.
 - `Soubor → Exportovat do souboru…` - uloží aktuální stav do souboru, ale **nemění**
   původ šablony (pořád zůstává vázaná na databázi, pokud odtamtud byla otevřená).
 - Hodí se pro poslání šablony e-mailem kolegovi nebo dopravci.

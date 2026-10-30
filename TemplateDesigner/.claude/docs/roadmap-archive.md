@@ -1,5 +1,13 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Prvky jiné agendy a import šablony ze souboru (hotovo 30. 10. 2026)
+
+- **Změna agendy nesmí nechat v šabloně prvky jiné agendy** (review 27. 10., changelog 2026-10-30 (33)): předpoklad
+  položky neplatil - Změnit agendu (Ctrl+Shift+A) od května zakládá prázdnou šablonu. Prvky jiné agendy se do šablony
+  dostávaly importem ze souboru (a do 8. 10. vložením ze schránky). Import teď šablonu přijme, jen když má tvar
+  šablony, agendu zná, uživatel ji smí použít a prvky JŘ k agendě patří; agendu přepne podle souboru. Šablony
+  v databázi se nekontrolují (Jan 30. 10.: staré šablony neřešíme).
+
 ## Úklid backlogu (30. 10. 2026)
 
 - **Rozsekat `TemplateDesignerViewModel`** (review 21. 9.; hotovo 30. 10., changelog 2026-10-30 (32)): ViewModel měl 4 747

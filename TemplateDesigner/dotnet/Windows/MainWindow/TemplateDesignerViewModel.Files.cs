@@ -239,13 +239,21 @@ public partial class TemplateDesignerViewModel
 
     /// <summary>
     /// Otevře šablonu ze zadané cesty. Společná implementace pro File→Open a Recent Files menu.
+    /// Šablona ze souboru nahradí otevřenou i s agendou, jen když projde <see cref="TemplateImportCheck"/>.
     /// </summary>
     public async Task OpenTemplateFromFileAsync(string filePath)
     {
         try
         {
             var oldAgenda = State.CurrentTemplate.AgendaCode;
-            State.CurrentTemplate = await TemplateSerializer.LoadAsync(filePath);
+            var nactena = await TemplateSerializer.LoadAsync(filePath);
+            if (TemplateImportCheck.ProcNelzePrijmout(nactena, _agendaEntries, oldAgenda,
+                    AppSettings.Current?.Dev.HiddenAgendas == true) is { } duvod)
+            {
+                PopupDisplayer.Info(duvod);
+                return;
+            }
+            State.CurrentTemplate = nactena;
             // Pokud nová šablona má jinou agendu, vyčistit aktivní instance - jejich
             // IDs patří staré agendě a v nové by GetData padl.
             if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))

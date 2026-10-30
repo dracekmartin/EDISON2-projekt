@@ -175,15 +175,38 @@ public static class TemplateSerializer
     /// pokud verze v JSON je nižší než <see cref="TemplateMigrator.CurrentVersion"/>.
     /// </summary>
     /// <exception cref="TemplateDeserializationException">Pokud JSON nelze načíst nebo není platná šablona.</exception>
-    public static Template Deserialize(string json)
+    public static Template Deserialize(string json) => Deserialize(json, jmenoSouboru: null);
+
+    private static Template Deserialize(string json, string? jmenoSouboru)
     {
         try
         {
-            var root = JsonNode.Parse(json)
-                ?? throw new TemplateDeserializationException("JSON deserializace vrátila null.");
+            JsonNode? root;
+            try { root = JsonNode.Parse(json); }
+            catch (JsonException ex) { throw PoskozenaSablona("není to platný JSON", jmenoSouboru, ex); }
+            if (root is null) throw new TemplateDeserializationException("JSON deserializace vrátila null.");
+
+            // Tvar se kontroluje před migrací - migrace s cizím tvarem spadly s hláškou o nepovedené
+            // migraci, která uživateli nic neřekla.
+            if (ProcNemaTvarSablony(root) is { } tvar) throw PoskozenaSablona(tvar, jmenoSouboru);
             var (migrated, wasMigrated, _) = Migrator.Migrate(root);
-            var template = migrated.Deserialize<Template>(Options)
-                ?? throw new TemplateDeserializationException("JSON deserializace vrátila null.");
+            if (ProcNeznamyPrvek(migrated) is { } prvek) throw PoskozenaSablona(prvek, jmenoSouboru);
+
+            Template template;
+            try
+            {
+                template = migrated.Deserialize<Template>(Options)
+                    ?? throw new TemplateDeserializationException("JSON deserializace vrátila null.");
+            }
+            catch (JsonException ex)
+            {
+                throw PoskozenaSablona($"údaj „{ex.Path}“ má nečekanou hodnotu", jmenoSouboru, ex);
+            }
+            catch (NotSupportedException ex)
+            {
+                // Typ prvku existuje (ProcNeznamyPrvek), deserializace ho ale čte jen jako první údaj prvku.
+                throw PoskozenaSablona("u některého prvku není typ uvedený jako první údaj", jmenoSouboru, ex);
+            }
 
             // Přemapuj přejmenované agenda kódy (legacy "MHD" → "ZASTAVKOVY_JR_MHD").
             // Mimo verzový pipeline - rename není verzová breaking change v JSON, ale
@@ -210,6 +233,59 @@ public static class TemplateSerializer
         }
     }
 
+    private static readonly HashSet<string> ZnameTypyPrvku = typeof(TemplateElement)
+        .GetCustomAttributes(typeof(JsonDerivedTypeAttribute), inherit: false)
+        .Cast<JsonDerivedTypeAttribute>()
+        .Select(a => a.TypeDiscriminator as string)
+        .OfType<string>()
+        .ToHashSet(StringComparer.Ordinal);
+
+    /// <summary>Proč JSON nemá tvar šablony (objekt se seznamem sekcí, sekce se seznamem prvků, prvek
+    /// s typem); null = tvar sedí. Sekce ani prvky nejsou povinné - šablona z databáze je mít nemusí.</summary>
+    private static string? ProcNemaTvarSablony(JsonNode root)
+    {
+        const string sekceNeboPrvky = "sekce nebo prvky nemají tvar šablony";
+        if (root is not JsonObject sablona) return "nemá tvar šablony";
+        if (sablona["sections"] is null) return null;
+        if (sablona["sections"] is not JsonArray sekce) return sekceNeboPrvky;
+        foreach (var s in sekce)
+        {
+            if (s is not JsonObject sekceObj) return sekceNeboPrvky;
+            if (sekceObj["elements"] is null) continue;
+            if (sekceObj["elements"] is not JsonArray prvky) return sekceNeboPrvky;
+            foreach (var p in prvky)
+            {
+                if (p is not JsonObject prvek) return sekceNeboPrvky;
+                if (prvek["type"] is not JsonValue typ || !typ.TryGetValue<string>(out var t) || t.Length == 0)
+                    return $"prvek v sekci „{sekceObj["name"]?.ToString()}“ nemá uvedený typ";
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Typ prvku, který návrhář nezná (po migraci, ta typy přejmenovává); null = všechny zná.</summary>
+    private static string? ProcNeznamyPrvek(JsonNode root)
+    {
+        foreach (var sekce in root["sections"] as JsonArray ?? new JsonArray())
+            foreach (var prvek in sekce?["elements"] as JsonArray ?? new JsonArray())
+            {
+                var typ = prvek?["type"] is JsonValue v && v.TryGetValue<string>(out var t) ? t : null;
+                if (typ is null || !ZnameTypyPrvku.Contains(typ))
+                    return $"obsahuje prvek neznámého typu „{typ}“";
+            }
+        return null;
+    }
+
+    /// <summary>Šablona, kterou nejde přečíst. Zůstává chybou (ne informací jako cizí soubor): poškozený
+    /// export může být naše chyba a ta se má dostat k nám.</summary>
+    private static TemplateDeserializationException PoskozenaSablona(string duvod, string? jmenoSouboru, Exception? inner = null)
+    {
+        var text = jmenoSouboru is null
+            ? $"Šablona je poškozená: {duvod}."
+            : $"Šablonu ze souboru „{jmenoSouboru}“ nejde načíst, soubor je poškozený: {duvod}.";
+        return inner is null ? new(text) : new(text, inner);
+    }
+
     /// <summary>Proč soubor není šablona, srozumitelně pro uživatele; null = vypadá jako JSON
     /// a chybu v něm má hlásit až deserializace.</summary>
     /// <remarks>Uživatel při importu vybral PDF předlohy a dostal „'%' is an invalid start of
@@ -218,10 +294,12 @@ public static class TemplateSerializer
     {
         var zacatek = obsah.AsSpan().TrimStart("﻿ \t\r\n");
         if (zacatek.StartsWith("{")) return null;
-        string co = zacatek.StartsWith("%PDF") ? "je PDF, ne šablona" : "není šablona návrháře";
-        return $"Soubor „{jmenoSouboru}“ {co}. Ze souboru jde načíst jen šablona uložená přes "
-            + "Soubor → Exportovat do souboru (soubor .json).";
+        return TextCizihoSouboru(jmenoSouboru, zacatek.StartsWith("%PDF") ? "je PDF, ne šablona" : "není šablona návrháře");
     }
+
+    private static string TextCizihoSouboru(string jmenoSouboru, string co) =>
+        $"Soubor „{jmenoSouboru}“ {co}. Ze souboru jde načíst jen šablona uložená přes "
+        + "Soubor → Exportovat do souboru (soubor .json).";
 
     /// <summary>
     /// Načte šablonu ze souboru. Před deserializací aplikuje <see cref="TemplateMigrator"/>.
@@ -232,9 +310,14 @@ public static class TemplateSerializer
         try
         {
             string json = await File.ReadAllTextAsync(filePath, ct);
-            if (ProcNeniSablona(json, Path.GetFileName(filePath)) is { } duvod)
+            var jmeno = Path.GetFileName(filePath);
+            if (ProcNeniSablona(json, jmeno) is { } duvod)
                 throw new TemplateDeserializationException(duvod) { NeniSablona = true };
-            return Deserialize(json);
+            var sablona = Deserialize(json, jmeno);
+            // Šablona z návrháře má vždy aspoň jednu sekci (poslední smazat nejde) - bez ní jde o cizí JSON.
+            if (sablona.Sections.Count == 0)
+                throw new TemplateDeserializationException(TextCizihoSouboru(jmeno, "není šablona návrháře")) { NeniSablona = true };
+            return sablona;
         }
         catch (TemplateDeserializationException) { throw; }
         catch (JsonException ex)
@@ -301,7 +384,7 @@ public class TemplateDeserializationException : Exception
     public TemplateDeserializationException(string message) : base(message) { }
     public TemplateDeserializationException(string message, Exception inner) : base(message, inner) { }
 
-    /// <summary>Soubor vůbec není šablona (PDF, text…) - uživatel vybral jiný soubor, nejde
-    /// o chybu aplikace. Zpráva je pro uživatele srozumitelná.</summary>
+    /// <summary>Soubor vůbec není šablona (PDF, text, JSON bez sekcí) - uživatel vybral jiný soubor,
+    /// nejde o chybu aplikace. Zpráva je pro uživatele srozumitelná.</summary>
     public bool NeniSablona { get; init; }
 }

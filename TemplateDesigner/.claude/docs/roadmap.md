@@ -30,10 +30,6 @@
   ani „čára" nenajdou nic, „výška záhlaví" po `H6` nenajde Nejmenší výšku. Návrh: každé slovo zvlášť
   přes popisek i skupinu, bez koncovky u slov od 5 písmen, a krátký seznam synonym (písmo → Font, Řez,
   Velikost; podbarvení → Barva pozadí). Sdílená komponenta EDControls - platí pro celý EDISON.
-- **Změna agendy nesmí nechat v šabloně prvky jiné agendy** [S-M] - dnes jde šablonu s Minutami odjezdů
-  přepnout na Obecnou (Ctrl+Shift+A) a prvek zůstane jen s upozorněním. Prvky JŘ mají jít otevřít jen
-  ve své agendě, takže změnu agendy v takové šabloně zablokovat a říct proč (rozhodnutí Jan 27. 10.).
-  Odtud i prázdná záložka „Vlastní definice sloupců" v obecné šabloně (review 27. 10., bod 4).
 
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech vybere linky a dostane PDF bez otevření návrháře. Pro jednu linku PDF bez

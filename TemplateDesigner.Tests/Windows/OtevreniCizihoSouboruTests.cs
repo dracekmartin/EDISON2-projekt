@@ -4,6 +4,7 @@ using EDControls.EDViewModel;
 using NSubstitute;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Windows;
 
@@ -57,6 +58,58 @@ public class OtevreniCizihoSouboruTests : IDisposable
 
         _popup.Received(1).Info(Arg.Is<string>(t => t.Contains("není šablona návrháře")), Arg.Any<System.Windows.Window?>());
         _popup.DidNotReceive().Error(Arg.Any<Exception>(), Arg.Any<System.Windows.Window?>());
+    }
+
+    // Fiktivní kód jako v SkrytaAgendaTests - test nezávisí na tom, které agendy jsou na serveru.
+    // ⚠️ Načtená šablona nesmí mít agendu, pro kterou návrhář stahuje nabídku dat: na stroji
+    // s lokálním připojením (templatedesigner.appsettings.local.json) by test sahal na server.
+    private static readonly AgendaRegistryEntry Obecna = new("GENERAL", "Obecná (bez dat)", "");
+    private static readonly AgendaRegistryEntry Zastavkova =
+        new("TEST_ZASTAVKOVY", "Zastávkový (test)", "ALVA.Test.Zastavkovy", ElementKind: "STOP");
+
+    private static TemplateDesignerViewModel Navrhar(AgendaRegistryEntry agenda) =>
+        new(null, null, [Obecna, Zastavkova], agenda.Code);
+
+    private Task UlozSablonu(string? agenda, TemplateElement prvek)
+    {
+        var sekce = new Section { Name = "Obsah" };
+        sekce.Elements.Add(prvek);
+        var sablona = new Template { Name = "Ze souboru", AgendaCode = agenda };
+        sablona.Sections.Add(sekce);
+        return File.WriteAllTextAsync(_soubor, TemplateSerializer.Serialize(sablona));
+    }
+
+    /// <summary>Šablona s prvkem, který do její agendy nepatří, se nenačte (do 30. 10. se načetla
+    /// a zůstalo jen upozornění ve stavovém řádku).</summary>
+    [Fact]
+    public async Task PrvekJineAgendyJeInformaceARozdelanaPraceZustane()
+    {
+        await UlozSablonu(Zastavkova.Code, new LineTableElement());
+        var vm = Navrhar(Obecna);
+        var sablona = vm.State.CurrentTemplate;
+
+        await vm.OpenTemplateFromFileAsync(_soubor);
+
+        _popup.Received(1).Info(Arg.Is<string>(t => t.Contains(ElementNames.ForUser(new LineTableElement()))),
+            Arg.Any<System.Windows.Window?>());
+        Assert.Same(sablona, vm.State.CurrentTemplate);
+    }
+
+    /// <summary>Import nahradí celou šablonu i s agendou, stejně jako otevření z databáze - prvek
+    /// se nikdy nevloží do šablony jiné agendy.</summary>
+    [Fact]
+    public async Task SablonaJineAgendyPrepneAgendu()
+    {
+        await UlozSablonu(null, new TextElement { Text = "Obecná šablona" });
+        var vm = Navrhar(Zastavkova);
+        Assert.Equal(Zastavkova.Code, vm.State.CurrentTemplate.AgendaCode);
+
+        await vm.OpenTemplateFromFileAsync(_soubor);
+
+        _popup.DidNotReceive().Info(Arg.Any<string>(), Arg.Any<System.Windows.Window?>());
+        Assert.True(string.IsNullOrEmpty(vm.State.CurrentTemplate.AgendaCode));
+        Assert.Contains(vm.State.CurrentTemplate.Sections.SelectMany(s => s.Elements),
+            p => p is TextElement { Text: "Obecná šablona" });
     }
 
     /// <summary>Soubor, který vypadá jako šablona, ale nejde načíst, je dál chyba - ta nás zajímá.</summary>
