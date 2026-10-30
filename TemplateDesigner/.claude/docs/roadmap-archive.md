@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S11** Ukázková agenda Faktury smazaná (hotovo 30. 10., changelog 2026-10-30 (18), rozhodnutí Jan 30. 10.): neměla zdroj
+  dat, uživatelům se nenabízela a testy agend ji musely vynechávat. Agenda bez linek přijde s převodem Report generátoru
+  a postaví se podle pravidel agend.
+
 - **S9** Slovník nabídky dat JŘ (hotovo 30. 10., changelog 2026-10-30 (17), schválil Jan 30. 10.): `Jr/NabidkaDat.cls`
   drží popisek a typ 23 polí stránky a 17 polí kolekcí, která nabízejí aspoň dvě agendy; agenda vybírá pole a pořadí.
   Výstup agend beze změny; že slovník na serveru používají všechny čtyři agendy, ověřeno zkušebním popiskem.

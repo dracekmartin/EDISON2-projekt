@@ -53,7 +53,7 @@ Kontrola má dvě části, protože chyba má dvě podoby:
 `ALVA.TemplateDesigner.*` se dělí **podle role třídy** do folder/namespace:
 
 - **`ALVA.TemplateDesigner.API.*`** - obecná business logika TD projektu (cross-cutting). Příklady: `Sablony` (CRUD šablon), v budoucnu `UserPreferences`, `SectionTemplates`.
-- **`ALVA.TemplateDesigner.Agendy.*`** - agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `Faktury`.
+- **`ALVA.TemplateDesigner.Agendy.*`** - agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `LinkovyJrAd`.
 - **`ALVA.TemplateDesigner.Agendy.Jr.*`** - pomocné třídy sdílené agendami JŘ podle zdroje dat a druhu výstupu (`B56`, R8),
   jméno podle role (`DataAd`). Nejsou potomky `BaseAgenda`, registr je nenabízí; testy je čtou jako kód agend (`ZdrojeAgend`).
 - **`ALVA.TemplateDesigner.EDList.*`** - dispatch třídy pro EDList komponentu (UI contract). Příklady: `Sablony` (backing pro CacheTemplatePickerDialog), `Instance` (backing pro InstancePickerDialog).
@@ -81,7 +81,8 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
   `InstanceParamName`, `CustomColumns`, `VariantyTras`, `RozdilyVerzi`, `Released` (bez něj se agenda uživatelům nenabízí).
 - **Každá metoda s `ByRef sys`** dodržuje pravidla 14-15 níž, nebo jen přesměruje na metodu jiné agendy
   (`q ##class(…).X(.sys)`); hlídá `OsetreniChybAgendTests`.
-- **Vzorem jsou agendy JŘ** (`ZastavkoveJrAd`, `LinkovyJrAd`), ne Faktury - ukázka z počátku, která se možná smaže.
+- **Vzorem jsou agendy JŘ** (`ZastavkoveJrAd`, `LinkovyJrAd`). Ukázková agenda Faktury bez zdroje dat je od 30. 10. smazaná
+  (rozhodnutí Jan); agenda bez linek přijde s převodem Report generátoru.
 - **Nabídka dat agendy JŘ:** pole, které nabízejí aspoň dvě agendy, bere agenda ze slovníku `Jr/NabidkaDat.cls`
   (`AddPole`, `AddKolekce`, `AddPoleKolekce`) a sama určuje jen výběr a pořadí; pole jen své agendy přidá přes `AddField`.
   Popisek ze slovníku přepíše jen u vědomého rozdílu. Hlídá `AgendaSchemaDriftTests` (pole je ve slovníku, slovník

@@ -261,7 +261,7 @@ skládej z jednotlivých TextElementů s rámečky, ne z tabulky.
      (`borderColor`/`borderWidth` na elementu), NE z tabulky.
 
 2b. **AgendaCode:**
-   - Pokud uživatel specifikuje agendu (např. ""faktura""), nastav `agendaCode` (např. `""FAKTURY""`)
+   - Pokud je v zadání uvedený kód agendy, nastav `agendaCode` na tento kód
    - Pokud není specifikováno nebo je šablona obecná, VYNECHEJ agendaCode property úplně (ne null, ne prázdný string)
    - Jízdněřádové šablony negeneruj od nuly - pro ně existují distribuční šablony; odkaž se na ně v name/description a vytvoř jen obecnou kostru
 

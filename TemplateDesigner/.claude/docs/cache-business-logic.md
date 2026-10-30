@@ -6,7 +6,6 @@
 |---|---|---|
 | `AgendaAPI.cls` | - | Abstraktní základ: vynucuje kontrakt 5 metod (GetSchema/GetTableTemplates/GetTableTemplate/GetData/GetMockData) + GetParameters s default implementací + helpery (AddField, AddBoolParam, AddNumberParam, AddMockValue, WriteTemplate2Col) |
 | `ZastavkoveJrMhdAPI.cls` | `AgendaAPI` | Kompletní MHD zastávkový JŘ: 6-fázový tiskový engine + všechny helpery (BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka, AddAnotace, AddAtribut, AddPoznamkaZastavky, AddZona, ConvertSpecialniZnak) + GetSchema/GetData/GetMockData |
-| `TemplateDesignerFAKTURY.cls` | `AgendaAPI` | Fakturační agenda (separátní, nesouvisí s JŘ) |
 
 **Architektura:** Žádné mezivrstvy - každá agenda dědí přímo z `AgendaAPI`. Sdílený kód se extrahuje až když je jasné, co konkrétně sdílejí (ne dopředu).
 

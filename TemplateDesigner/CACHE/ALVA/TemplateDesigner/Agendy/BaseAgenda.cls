@@ -15,7 +15,7 @@ Include GENERAL
 ///   (zrušit, nebo napojit rozhodne `B56`, `legacy-nahrada.md §4`)
 ///
 /// Každá metoda s `ByRef sys` dodržuje vzor z `cache-api.md` (pravidla 14-15: `s err = ""`, `try`/`catch`
-/// s `$$$CatchErrRest`, `ret $$$OK`); hlídá ho `OsetreniChybAgendTests`. Vzorové agendy jsou JŘ, ne Faktury.
+/// s `$$$CatchErrRest`, `ret $$$OK`); hlídá ho `OsetreniChybAgendTests`. Vzorové agendy jsou JŘ.
 ///
 /// Registrace agendy (2026-05-20; dvouosý model 2026-07-11):
 ///   Agenda se registruje **deklarativně** přes class parametry - kombinovaný klíč

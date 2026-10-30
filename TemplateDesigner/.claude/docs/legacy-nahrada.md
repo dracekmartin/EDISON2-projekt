@@ -270,7 +270,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
 2. **Rozhodnout bridge vs migrace per agenda:** buď adaptér překládající legacy
    `~`-tokenový protokol (`FIELD~`/`TABLE_START~`/…) na TD JSON DataContext - jedna
    `LegacyRgAgenda` třída by zpřístupnila všech 28 agend najednou s omezenou věrností;
-   nebo čisté reimplementace vybraných agend (vzor Faktury). Pragmaticky: **bridge
+   nebo čisté reimplementace vybraných agend (vzor agendy JŘ). Pragmaticky: **bridge
    nejdřív** (rychlé pokrytí), čisté agendy tam, kde se investice vyplatí.
 3. **TableElement dorovnat na RG úroveň** (navazuje na Dynamic-first tabulku):
    per-řádek zvýraznění/barvy z dat, overflow módy buňky, opakování mezisoučtového
@@ -306,7 +306,7 @@ Ne big-bang (must-not-happen #4). Doporučený postup:
 | TiskMHD | 31 400 + 4 313 | ~90 % (datově 1:1, elementy ✅) | TrasaMin multi-varianta, tarifní pásma, vizuální detaily | M–L (jednotlivosti) |
 | TiskJR | 33 400 + 3 290 | 0 % (jiný formát než zastávkový) | element + agenda + font + layout rozšíření | L (≈ zastávkový JŘ) |
 | TiskJRRELACE | 49 700 + 3 900 | 0 % | rozhodnout use case; pak element + agenda | ? (čeká validace) |
-| REPORTGENERATOR | 28 850 + 6 055 | ~15 % (Faktury vzor, TableElement základ) | 28 agend (bridge/migrace), tabulkové featury, kanály | XL (etapizovat) |
+| REPORTGENERATOR | 28 850 + 6 055 | ~15 % (TableElement základ; ukázkové Faktury smazané 30. 10.) | 28 agend (bridge/migrace), tabulkové featury, kanály | XL (etapizovat) |
 | **Sdílená infrastruktura** | (napříč) | částečně (DB storage, versioning framework) | vendor šablony, EDISON launch, headless, merge/email | L - **první** |
 
 ---
@@ -799,7 +799,7 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
   tvary popisu platnosti a dva texty návrhu (`B193f`, viz changelog 23. 10.).
 - **Společné parametry JŘ** jsou od 30. 10. definované jednou v `Jr/Parametry.cls` (`B56` S2): sedm parametrů
   vývěsek, linkové parametry a tvar názvu zastávky. Agenda si je skládá v `GetParameters` sama, pořadí v panelu drží ona.
-- **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`, vývěsky a faktury): návrhář je
+- **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`, vývěsky AD i MHD; faktury smazané 30. 10.): návrhář je
   nikde nenabízí a do 23. 10. při volání padaly (`B193f`). Od 30. 10. jsou v `BaseAgenda` nepovinné s prázdným
   výchozím výsledkem a linkové agendy své prázdné kopie nemají. Zrušit, nebo napojit do vkládání tabulky.
 - **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` (v `LinkovyJrAd` i `LinkovyJrMhd`);

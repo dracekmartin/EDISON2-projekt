@@ -82,7 +82,7 @@ public class ZdrojeAgendTests
         var sKodem = ZdrojeAgend.KodAgend()
             .Where(f => Regex.IsMatch(File.ReadAllText(f), @"^Parameter AgendaVariantCode\b[^=]*=\s*""[A-Z]", RegexOptions.Multiline));
 
-        Assert.True(ZdrojeAgend.Agendy().Length >= 6);
+        Assert.True(ZdrojeAgend.Agendy().Length >= 5);
         Assert.Equal(sKodem, ZdrojeAgend.Agendy());
     }
 }

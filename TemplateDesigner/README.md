@@ -224,16 +224,16 @@ AI Assistant automaticky vygeneruje kompletní šablonu podle textového popisu.
    Vytvoř fakturu s hlavičkou obsahující logo a název firmy,
    tabulkou položek (popis, množství, cena) a zápatím s celkovou částkou.
    ```
-2. Vyberte agendu (volitelné) - pokud vyberete "Jízdní řád" nebo "Faktury", AI použije skutečná pole z Caché
+2. Vyberte agendu (volitelné) - pokud ji vyberete, AI použije skutečná pole z Caché
 3. Klikněte **Vygenerovat**
 4. AI vrátí hotovou šablonu - ta se okamžitě otevře v designeru
 
 **Schema injection - AI zná vaše databázová pole:**
 
 Pokud vyberete agendu, AI dostane seznam dostupných polí ze schématu:
-- **Skalární pole** - např. `CISLO_FAKTURY`, `DATUM_VYSTAVENI`, `NAZEV_DODAVATELE`
-- **Kolekce** - např. `POLOZKY` (pro Dynamic tabulky s poli `POPIS`, `MNOZSTVI`, `CENA`)
-- **Parametry** - např. `TISK_POZNAMKY`, `FORMAT_CASTKY`
+- **Skalární pole** - např. `CISLO_LINKY`, `POPIS_DOPRAVCE`, `DATUM_PLATNOSTI_OD`
+- **Kolekce** - např. `ZASTAVKY` (pro Dynamic tabulky s poli `NAZEV_ZASTAVKY`, `ZONY`, `NASTUPISTE`)
+- **Parametry** - např. `TVAR_NAZVU_ZASTAVKY`, `SMER_TISKU`
 
 AI používá **pouze skutečná pole** z vašeho systému, nevymýšlí si názvy. Tabulky mají správné `dataSource`, placeholdery odpovídají skutečným DB sloupcům.
 
@@ -279,21 +279,6 @@ V `templatedesigner.appsettings.json`:
 - Zmíňte agendu v popisu: "Vytvoř šablonu pro jízdní řád s tabulkou zastávek" → AI použije pole z JR schématu
 - AI respektuje typografii: "velký tučný titulek" → FontSize 18, FontWeight Bold
 - Kontrolujte výsledek: AI je chytré, ale může udělat chybu - vždy zkontrolujte generovanou šablonu
-
-**Příklad - faktura s FAKTURY agendou:**
-
-```
-Popis:
-Vytvoř šablonu faktury s hlavičkou (číslo, datum), tabulkou položek
-(popis, množství, cena) a zápatím se souhrnem (základ, DPH, celkem).
-
-Agenda: FAKTURY
-
-→ AI vygeneruje:
-- Hlavička s {CISLO_FAKTURY}, {DATUM_VYSTAVENI}
-- Dynamic tabulka s dataSource="POLOZKY", sloupce POPIS, MNOZSTVI, CENA
-- Zápatí s Fixed tabulkou: {ZAKLAD_DANE}, {DPH}, {CELKOVA_CASTKA}
-```
 
 **Debug a řešení problémů:**
 

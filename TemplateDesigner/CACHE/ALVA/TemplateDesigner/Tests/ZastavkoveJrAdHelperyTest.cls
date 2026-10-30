@@ -1190,7 +1190,7 @@ Method TestPredpripraveneTabulky()
 {
 	do ..SetupSys(.sys)
 	set pocet = 0
-	for cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd", "ALVA.TemplateDesigner.Agendy.Faktury" {
+	for cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" {
 		kill ^||ML
 		do $classmethod(cls, "GetTableTemplates", .sys)
 		set it = ##class(%DynamicArray).%FromJSON(^||ML("OUT",1)).%GetIterator()
@@ -1204,7 +1204,7 @@ Method TestPredpripraveneTabulky()
 			set pocet = pocet + 1
 		}
 	}
-	do $$$AssertTrue(pocet >= 6, "projito jen "_pocet_" předpřipravených tabulek")
+	do $$$AssertTrue(pocet >= 4, "projito jen "_pocet_" předpřipravených tabulek")
 }
 
 Method Sedne(plk As %String, sloupecDny As %String) As %Boolean

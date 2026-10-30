@@ -13,11 +13,8 @@ namespace TemplateDesigner.Tests.Serialization;
 /// </summary>
 public class OsetreniChybAgendTests
 {
-    /// <summary>Třídy mimo kontrolu, s důvodem.</summary>
-    private static readonly Dictionary<string, string> Vyjimky = new(StringComparer.Ordinal)
-    {
-        ["Faktury.cls"] = "ukázková agenda z počátku, možná se smaže (Jan 30. 10.); vzorem jsou BaseAgenda a agendy JŘ",
-    };
+    /// <summary>Třídy mimo kontrolu, s důvodem. Dnes žádná (ukázkové Faktury smazané 30. 10.).</summary>
+    private static readonly Dictionary<string, string> Vyjimky = new(StringComparer.Ordinal);
 
     private static readonly Regex Metoda = new(
         @"^ClassMethod (?<jmeno>\w+)\(ByRef sys As %String\) As %Status(?<abstraktni> \[ Abstract \])?\s*\n\{(?<telo>.*?)\n\}",

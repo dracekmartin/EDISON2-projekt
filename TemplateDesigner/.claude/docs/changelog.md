@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-30 (18) - Ukázková agenda Faktury smazaná (`B56` S11)
+
+Agenda Faktury vznikla na začátku jako ukázka a neměla zdroj dat; uživatelům se nenabízela a testy agend ji musely vynechávat (rozhodnutí Jan 30. 10.).
+Agenda bez linek přijde s převodem Report generátoru a postaví se podle pravidel agend JŘ.
+Smazaná je třída agendy, výjimky v testech (ošetření chyb, kontrakt dat), volba Faktury v asistentovi pro tvorbu šablon a příklad kódu `FAKTURY` v jeho zadání.
+Dokumentace přestala uvádět Faktury jako existující agendu (pravidla agend, architektura, příručka, README); obecné zmínky o fakturách jako o budoucím typu sestavy zůstávají.
+Test předpřipravených tabulek teď prochází čtyři tabulky vývěsek místo šesti.
+Na dev serveru třídu smazal Jan ručně (nasazovací skript mazat neumí); dokud tam byla, registr ji vracel a Caché test kontraktu na ní padal.
+Na produkčních serverech může třída zůstat, pokud se tam nasadila; uživatelům se nenabízí, smazat ji při nejbližším nasazení.
+Ověřeno: registr na dev serveru Faktury nevrací, snímek výstupu agend beze změny až na tři soubory Faktur (přesunuté stranou, 42 souborů), Caché testy 270/270, .NET testy 2546/2546, integrační testy 48/48.
+
 ## 2026-10-30 (17) - Slovník nabídky dat jízdních řádů (`B56` S9)
 
 Popisek a typ každého pole, které v nabídce dat nabízejí aspoň dvě agendy JŘ, jsou jednou v `Jr/NabidkaDat.cls`: 23 polí stránky (linka, dopravce, platnost, zastávka a směr, poznámky, adresa pro QR) a 17 polí kolekcí (zastávky, skupiny dnů, odjezdy, poznámky, spoje).

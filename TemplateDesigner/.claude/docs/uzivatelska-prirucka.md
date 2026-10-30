@@ -121,7 +121,7 @@ kdykoli přes `Nástroje → Změnit agendu` (Ctrl+Shift+A).
 
 ### Agenda a varianta - nad jakými daty šablona běží
 Každá šablona je vázaná na **agendu** (jakou sestavu tvoříte - např. Zastávkový jízdní řád,
-Faktury, Obecná (bez dat)) a u jízdních řádů navíc na **variantu dat** (odkud data jsou - **AD** = linková
+Linkový jízdní řád, Obecná (bez dat)) a u jízdních řádů navíc na **variantu dat** (odkud data jsou - **AD** = linková
 doprava z hlavního JŘ modulu, **MHD** = městský modul). Kombinace určuje, jaká **databázová pole**
 a jaké **specializované prvky** máte k dispozici.
 

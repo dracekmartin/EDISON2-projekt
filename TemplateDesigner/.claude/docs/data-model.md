@@ -6,7 +6,7 @@ class Template {
     Guid Id
     string Name
     string Description
-    string? AgendaCode        // kód agendy pro databázová pole: "JR", "FAKTURY" - null = obecná šablona
+    string? AgendaCode        // kód agendy pro databázová pole: "ZASTAVKOVY_JR_AD", "LINKOVY_JR_MHD" - null = obecná šablona
     PageSize PageSize
     List<Section> Sections
 }
@@ -139,7 +139,7 @@ Systém musí být **rozšiřitelný** - nové typy elementů i sekcí přidáv�
 ### DataSchema (schéma dostupných DB polí - pouze design time)
 ```csharp
 class DataSchema {
-    string AgendaCode                      // "JR", "FAKTURY" - odpovídá Template.AgendaCode
+    string AgendaCode                      // "ZASTAVKOVY_JR_AD", "LINKOVY_JR_MHD" - odpovídá Template.AgendaCode
     string AgendaName                      // "Jízdní řád" - pro UI
     List<DataField> Fields                 // skalární pole - každá hodnota existuje jednou na sestavu
     List<DataFieldCollection> FieldCollections  // tabulkové kolekce - zdroje řádků pro Dynamic tabulky; volitelné V2+

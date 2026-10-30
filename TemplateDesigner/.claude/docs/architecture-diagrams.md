@@ -307,7 +307,6 @@ flowchart TB
     subgraph "Caché (ObjectScript)"
         AA["AgendaAPI<br/><small>abstraktní základ</small>"]
         MHD["ZastavkoveJrMhdAPI<br/><small>6-fázový MHD engine</small>"]
-        FAK["TemplateDesignerFAKTURY<br/><small>fakturační agenda</small>"]
     end
 
     subgraph "Caché DB (globály)"
@@ -323,7 +322,6 @@ flowchart TB
     COMP --> JSON
     MLR --> |"HTTP CVar"| AA
     AA <|-- MHD
-    AA <|-- FAK
     MHD --> LSO
     MHD --> ZST
     MHD --> CHR
@@ -533,5 +531,4 @@ mindmap
     CACHE/
       AgendaAPI (abstract)
       ZastavkoveJrMhdAPI
-      TemplateDesignerFAKTURY
 ```

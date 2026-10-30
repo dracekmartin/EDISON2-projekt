@@ -312,7 +312,7 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
 - Postup a pojistky: [`legacy-nahrada.md §4`](legacy-nahrada.md) („Postup `B56`") - výstup všech agend musí
   po každém kroku vyjít bajtově stejně.
 
-**Kdy nejpozději.** Před další agendou (Faktury, převod Report generátoru).
+**Kdy nejpozději.** Před další agendou (relace, vozový JŘ, převod Report generátoru).
 
 ---
 

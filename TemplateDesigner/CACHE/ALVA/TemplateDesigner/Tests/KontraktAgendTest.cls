@@ -316,8 +316,8 @@ ClassMethod Nabidka(json As %String, ByRef nabidka)
 /// Agenda, která data nemá a linky v `LinkyAgend` nepotřebuje.
 ClassMethod BezDat(kod As %String) As %Boolean
 {
-	// Ukázková agenda z počátku bez zdroje dat, možná se smaže (Jan 30. 10.).
-	quit kod="FAKTURY"
+	// Dnes žádná: ukázková agenda Faktury bez zdroje dat je od 30. 10. smazaná (Jan).
+	quit 0
 }
 
 /// Pole z nabídky, které data linek z `LinkyAgend` vědomě nepošlou.
