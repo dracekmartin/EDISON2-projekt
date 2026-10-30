@@ -6,7 +6,7 @@ using TemplateDesigner.Models;
 namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
-/// Driftová pojistka <b>parametrů sestavy</b> agend (<c>CACHE/ALVA/TemplateDesigner/Agendy/*.cls</c>).
+/// Driftová pojistka <b>parametrů sestavy</b> agend (celý kód agend, <see cref="ZdrojeAgend"/>).
 ///
 /// <para>Slovník polí hlídá <see cref="AgendaSchemaDriftTests"/>, formuláře prvků
 /// <see cref="EDInputFormSchemaDriftTests"/>. Parametry do 23. 10. nehlídalo nic, a tak se do linkových
@@ -14,7 +14,7 @@ namespace TemplateDesigner.Tests.Serialization;
 /// jmenuje „Tabulka spojů" (review `B193`).</para>
 ///
 /// <para>Parser vidí parametr zapsaný literálem (<c>s p.name = "X"</c>, <c>AddBoolParam(arr, "X", …)</c>)
-/// kdekoli v agendě, i ve sdílené definici (<c>ParametrSmeruTisku</c>, <c>BaseAgenda</c>). Parametr
+/// kdekoli v kódu agend, i ve sdílené definici (<c>Jr/Parametry.cls</c>). Parametr
 /// s názvem nebo popiskem skládaným za běhu (typy provozu linkového JŘ MHD) nevidí. Volby enumů se tu
 /// nekontrolují - jejich popisky jsou zamčené (ukládá se zobrazený text).</para>
 ///

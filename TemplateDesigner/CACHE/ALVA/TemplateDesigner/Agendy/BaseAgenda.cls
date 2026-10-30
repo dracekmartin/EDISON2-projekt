@@ -505,28 +505,6 @@ ClassMethod WriteTemplate2Col(rows As %DynamicArray)
     s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
 }
 
-/// Parametr „Tvar názvu zastávky" (KOVED #13089) - jedna definice pro vývěsku i linkový JŘ AD, aby se
-/// nabízel stejně jako sdílené `FormatNazvuZastavky`. Liší se jen výchozí tvar: vývěska „Zkrácený"
-/// (dosavadní chování, starý vývěskový modul dvojčárku srážel), linkový „Plný CIS" (starý linkový
-/// tisk ji nechává; potvrzeno Janem 24. 8.).
-/// ⚠️ Popisky voleb jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
-ClassMethod ParametrTvaruNazvuZastavky(vychozi As %String) As %DynamicObject
-{
-    s p = ##class(%DynamicObject).%New()
-    s p.name         = "TVAR_NAZVU_ZASTAVKY"
-    s p.label        = "Tvar názvu zastávky"
-    s p.type         = "enum"
-    // „Obecné": platí pro název všude, kde se objeví (zastávky, nadpis, cíl, texty poznámek).
-    s p.group        = "Obecné"
-    s p.serverSide   = 1
-    s p.defaultValue = vychozi
-    s p.description  = "Zkrácený: Zlín,aut.nádr. · Typograficky upravený: Zlín, aut. nádr. (mezera za čárkou a tečkou) · Plný CIS zachová dvojčárku podle číselníku zastávek (tak tiskne starý linkový JŘ) včetně okresu a jeho zkratky - pro technické exporty (soutěže) k tomu vypněte i název pro MHD."
-    s opts = ##class(%DynamicArray).%New()
-    d opts.%Push("Zkrácený"), opts.%Push("Typograficky upravený"), opts.%Push("Plný CIS"), opts.%Push("Plný CIS s okresem")
-    s p.options = opts
-    q p
-}
-
 /// Tvar názvu zastávky pro tisk. Vstup je název z registru zastávek, kde jsou obec, část obce
 /// a lokalita spojené **čárkami** - prázdná část obce se tak projeví **dvojčárkou**
 /// („Zlín,,aut.nádr."). <var>okres</var> = pole 3 registru.

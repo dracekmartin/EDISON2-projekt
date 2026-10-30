@@ -148,13 +148,13 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         s arr = ##class(%DynamicArray).%New()
-        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrSmeruTisku())
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrSmeruTisku())
         // Až 3 strany - městská linka má víc spojů než meziměstská (Jan 22. 10.).
-        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran(0, 3))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoctuStran(0, 3))
         // Bez „Automaticky (dle linky)" - linka MHD to nastavení nemá; výchozí Tisknout jako starý tisk.
-        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrZastavkyBezZastaveni(0))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrZastavkyBezZastaveni(0))
         // Bez Zvýraznit tarifní číslo - MHD sloupec Tč nemá (rozsah `B191d`, analýza §18.9).
-        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrZvyrazneniZastavky(0))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrZvyrazneniZastavky(0))
         d ..NactiSkupinyProvozu(IdFa, dataDB, .provozPoradi, .provozNadpis)
         // Stejný název mají v číselníku i různé typy (KV_DP: dvakrát „Sobota", dvakrát „Neděle"),
         // takové se v panelu rozliší číslem typu.
@@ -236,7 +236,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i linkaId = "" d ..ChybaDat("Není vybraná linka. Vyberte linky k tisku.")
         i '$d(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId)) d ..ChybaDat("Vybraná linka v modulu MHD není, mohla být smazána. Vyberte linky znovu.")
 
-        s smery = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).SmeryKTisku($g(^||ML("IN","SMER_TISKU")))
+        s smery = ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).SmeryKTisku($g(^||ML("IN","SMER_TISKU")))
         d ..PriradNegativniZnacky(.sys, IdFa, dataDB, linkaId, smery, .znacky)
         s typyLinky = ..TypyProvozuLinky(IdFa, dataDB, linkaId)
         f si = 1:1:$l(smery, ",") {

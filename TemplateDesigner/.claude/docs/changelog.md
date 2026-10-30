@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-30 (15) - Sdílené parametry jízdních řádů v jedné třídě, první část (`B56` S2)
+
+První pomocná třída JŘ `Agendy/Jr/Parametry.cls` drží parametry, které používají aspoň dvě agendy: tvar názvu zastávky (dosud v základu agend), směr tisku, počet stran, zastávky bez zastavení a zvýraznění zastávky (dosud v linkovém JŘ AD, odkud si je bral linkový JŘ MHD) a převod volby směru na směry k tisku.
+Linkový JŘ MHD tím přestal volat agendu linkový JŘ AD kvůli parametrům a základ agend přišel o parametr, který patří jen jízdním řádům (R8).
+Agendy si parametry dál skládají samy ve stejném pořadí; panel parametrů, popisky, výchozí hodnoty i uložené volby se nemění.
+Test parserů parametrů vyžaduje parametry, které teď leží jen v podsložce `Jr/`, a prošel; testy tedy pomocnou třídu opravdu čtou (doklad k S1).
+Ověřeno: snímek výstupu všech agend beze změny (45 souborů, před krokem i po něm), voláním parametrů linkového JŘ MHD na serveru, Caché testy 270/270, .NET testy 2542/2542, integrační testy 48/48.
+
 ## 2026-10-30 (14) - Místo pro sdílený kód agend a testy, které ho hlídají (`B56` S1)
 
 Sdílený kód agend JŘ bude v podsložce `Agendy/Jr/` (balík `ALVA.TemplateDesigner.Agendy.Jr`), třídy pojmenované podle role; žádná zatím nevznikla, založí ji až krok, který ji potřebuje (rozhodnutí Jan 30. 10., R8).

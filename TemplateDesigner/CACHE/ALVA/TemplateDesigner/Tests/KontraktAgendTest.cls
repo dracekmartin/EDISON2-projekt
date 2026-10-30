@@ -125,10 +125,10 @@ Method TestSdileneParametryShodne()
 ClassMethod Vyjimka(jmeno As %String, pole As %String) As %Boolean
 {
 	// Výchozí tvar podle starého modulu: vývěska „Zkrácený" (dvojčárku srážel), linkový „Plný CIS"
-	// (nechává ji) - potvrzeno Janem 24. 8. (`BaseAgenda.ParametrTvaruNazvuZastavky`).
+	// (nechává ji) - potvrzeno Janem 24. 8. (`Jr.Parametry.ParametrTvaruNazvuZastavky`).
 	quit:jmeno_"|"_pole="TVAR_NAZVU_ZASTAVKY|vychozi" 1
 	// MHD nemá nastavení u linky, takže nemá ani „Automaticky (dle linky)"; počet stran až 3, protože
-	// v MHD jezdí víc spojů (rozhodnutí Jan 22. 10., `LinkovyJrAd.ParametrPoctuStran`).
+	// v MHD jezdí víc spojů (rozhodnutí Jan 22. 10., `Jr.Parametry.ParametrPoctuStran`).
 	quit:(jmeno="POCET_STRAN_SESTAVY")&&((pole="volby")||(pole="vychozi")) 1
 	quit:(jmeno="ZASTAVKY_BEZ_ZASTAVENI")&&((pole="volby")||(pole="vychozi")) 1
 	// Skupina nese název prvku, kterého se parametr týká - barvy spojů kreslí v linkovém JŘ Tabulka

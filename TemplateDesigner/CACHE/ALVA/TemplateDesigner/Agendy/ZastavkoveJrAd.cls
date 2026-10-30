@@ -3571,7 +3571,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // „Obecné" je první schválně - je to nastavení celé sestavy, ne jednoho prvku.
 
     // ⚠️ Výchozí „Zkrácený" = dosavadní chování - jiná výchozí hodnota by pohnula zlatými odtisky.
-    d arr.%Push(..ParametrTvaruNazvuZastavky("Zkrácený"))
+    d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrTvaruNazvuZastavky("Zkrácený"))
 
     d ..AddBoolParam(arr, "NAZEV_PRO_MHD", "Použít název pro MHD", "true", "Obecné", "Zastávka může mít v číselníku vedle názvu podle CIS ještě upravený název pro MHD; ten se tiskne přednostně. Vypnuto = název podle CIS.", 1)
     d ..AddBoolParam(arr, "SPOJE_U_DOPRAVCE", "Výčet spojů u dopravce", "true", "Obecné", "V poli Dopravci souhrnného JŘ se za dopravce dopíše, které spoje jezdí (čísla stlačená do rozsahů). Netýká se pole Popis dopravce.", 1)

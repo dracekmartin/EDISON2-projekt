@@ -330,9 +330,9 @@ Method TestZastavkyBezZastaveni()
 /// (linka MHD nastavení nemá) a až 3 strany; AD zůstává, jak bylo. Návrhář čte cíl z čísla na začátku.
 Method TestPocetStran()
 {
-	set mhd = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran(0, 3)
+	set mhd = ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoctuStran(0, 3)
 	do $$$AssertEquals(mhd.%Get("defaultValue")_"|"_mhd.options.%ToJSON(), "Bez omezení|[""Bez omezení"",""1 strana"",""2 strany"",""3 strany""]", "MHD")
-	set ad = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).ParametrPoctuStran()
+	set ad = ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoctuStran()
 	do $$$AssertEquals(ad.%Get("defaultValue")_"|"_ad.options.%ToJSON(), "Automaticky (dle linky)|[""Automaticky (dle linky)"",""1 strana"",""2 strany""]", "AD")
 	do $$$AssertEquals(mhd.%Get("name")_"|"_mhd.%Get("group")_"|"_mhd.%Get("serverSide"), "POCET_STRAN_SESTAVY|Obecné|", "řeší návrhář, ne server")
 }
