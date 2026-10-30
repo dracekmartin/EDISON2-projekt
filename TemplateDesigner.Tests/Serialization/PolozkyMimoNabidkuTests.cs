@@ -20,21 +20,24 @@ public class PolozkyMimoNabidkuTests
 
     private static readonly HashSet<string> ZnameDruhy = ["prvek", "parametr", "sablony", "zbytek"];
 
+    /// <summary>
+    /// Položka druhu <c>prvek</c> je v kontraktu dat prvků (<see cref="TemplateDesigner.Models.KontraktDat"/>) se stejnou kolekcí i klíčem.
+    /// Že kód návrháře každou položku kontraktu opravdu čte, hlídá <see cref="KontraktDatTests"/>. Do 30. 10. se tu
+    /// klíč jen hledal v uvozovkách kdekoli v kódu, takže krátké klíče (<c>ID</c>, <c>TYP</c>) prošly vždy (revize B4).
+    /// </summary>
     [Fact]
-    public void PolozkaPrvku_CteKodNavrhare()
+    public void PolozkaPrvku_JeVKontraktuDat()
     {
-        var kod = string.Join("\n", Directory.GetFiles(Path.Combine(Koren(), "TemplateDesigner", "dotnet"), "*.cs", SearchOption.AllDirectories)
-            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")
-                        && !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
-            .Select(File.ReadAllText));
-
-        var nectene = Polozky()
-            .Where(p => p.Druh == "prvek" && !kod.Contains($"\"{p.Klic ?? p.Kolekce}\""))
+        var kontrakt = TemplateDesigner.Models.KontraktDat.Polozky;
+        var mimoKontrakt = Polozky()
+            .Where(p => p.Druh == "prvek")
+            .Where(p => !kontrakt.Any(k => k.Kolekce == p.Kolekce && (p.Klic is null || k.Klic == p.Klic)))
             .Select(p => $"{p.Kolekce} {p.Klic}")
             .ToList();
 
-        Assert.True(nectene.Count == 0,
-            "Položka má v seznamu druh „prvek“, ale kód návrháře ji nečte:\n" + string.Join("\n", nectene));
+        Assert.True(mimoKontrakt.Count == 0,
+            "Položka má v seznamu druh „prvek“, ale kontrakt dat prvků (KontraktDat) ji nemá - doplň ji tam, nebo oprav druh:\n"
+            + string.Join("\n", mimoKontrakt));
     }
 
     [Fact]

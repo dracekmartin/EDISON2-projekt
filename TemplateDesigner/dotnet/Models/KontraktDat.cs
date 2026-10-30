@@ -96,6 +96,8 @@ public static class KontraktDat
         new(Zastavkove, "POZNAMKY", "KATEGORIE", Tvar.Hodnota),
 
         // ── Linkové JŘ: Tabulka spojů, Poznámky ──
+        // Sazba stránek z něj skládá dopravce za stránku (#9417) a dopravce po verzích (PageLayoutEngine).
+        new(Linkove, Udaje, "POPIS_DOPRAVCE", Tvar.Hodnota),
         new(Linkove, Udaje, "VYLEP_ZASTAVKY", Tvar.Hodnota, "jen stránka výlepu pro zastávku"),
 
         new(Linkove, "ZASTAVKY", "PORADI", Tvar.Hodnota),

@@ -17,13 +17,36 @@ public class KontraktDatTests
 {
     private static readonly Regex CteniLiteralem = new(
         @"\b(?:GetValue|GetString|GetRows)\(""(?<klic>[A-Z][A-Z0-9_]*)""\)", RegexOptions.Compiled);
+    /// <summary>Čtení přes konstantu (<c>StopFields.Sloupek</c>, <c>PopisDopravceKlic</c>) - hodnotu dosadí
+    /// <see cref="Konstanty"/>. Do 30. 10. se znaly jen konstanty <see cref="StopFields"/>, takže čtení
+    /// <c>POPIS_DOPRAVCE</c> v sazbě stránek test neviděl (revize sjednocení B4).</summary>
     private static readonly Regex CteniKonstantou = new(
-        @"\b(?:GetValue|GetString)\(StopFields\.(?<jmeno>\w+)\)", RegexOptions.Compiled);
+        @"\b(?:GetValue|GetString|GetRows)\((?<jmeno>(?:\w+\.)?[A-Z]\w*)\)", RegexOptions.Compiled);
     private static readonly Regex VnorenyKlic = new(
         @"(?:PoleZaznamu\(\w+, ""(?<klic>[A-Z][A-Z0-9_]*)""\)|\b\w+\[""(?<klic>[A-Z][A-Z0-9_]*)""\](?!\s*=[^=]))", RegexOptions.Compiled);
 
     /// <summary>Čtení, která nejsou z dat agendy. Klíč = soubor|klíč, hodnota = důvod.</summary>
-    private static readonly Dictionary<string, string> MimoData = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, string> MimoData = new(StringComparer.Ordinal)
+    {
+        ["KontrolaVystupu.cs|__LINKA_PRO_HLASKY"] = "popis linky pro hlášky kontroly dosazuje do stránek sám návrhář",
+        ["PrintDialogViewModel.cs|__LINKA_PRO_HLASKY"] = "popis linky pro hlášky kontroly dosazuje do stránek sám návrhář",
+        ["PageLayoutEngine.cs|POCET_STRAN_SESTAVY"] = "počet stran dosazuje sazba stránek, data agendy ho nemají",
+        ["NoteVisibilityFilter.cs|PISMENA_VARIANT"] = "hodnota parametru sestavy, domíchaná do stránek (MergeParamsIntoPages)",
+    };
+
+    /// <summary>Řetězcové konstanty návrháře: „Třída.Pole" vždy, samotné „Pole" jen když je jméno jednoznačné.</summary>
+    private static Dictionary<string, string> Konstanty()
+    {
+        var pole = typeof(KontraktDat).Assembly.GetTypes()
+            .SelectMany(t => t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string))
+            .ToList();
+        var vysledek = pole.GroupBy(f => $"{f.DeclaringType!.Name}.{f.Name}")
+            .ToDictionary(g => g.Key, g => (string)g.First().GetRawConstantValue()!);
+        foreach (var g in pole.GroupBy(f => f.Name).Where(g => g.Select(f => f.GetRawConstantValue()).Distinct().Count() == 1))
+            vysledek[g.Key] = (string)g.First().GetRawConstantValue()!;
+        return vysledek;
+    }
 
     [Fact]
     public void KodCteJenPolozkyKontraktu()
@@ -70,9 +93,7 @@ public class KontraktDatTests
     /// <summary>Všechna čtení z dat v kódu návrháře: (soubor, klíč).</summary>
     private static List<(string Soubor, string Klic)> Cteni()
     {
-        var konstanty = typeof(StopFields).GetFields(BindingFlags.Public | BindingFlags.Static)
-            .Where(f => f.IsLiteral)
-            .ToDictionary(f => f.Name, f => (string)f.GetRawConstantValue()!);
+        var konstanty = Konstanty();
         var vysledek = new List<(string, string)>();
         foreach (var f in Directory.GetFiles(Path.Combine(Koren(), "TemplateDesigner", "dotnet"), "*.cs", SearchOption.AllDirectories))
         {
