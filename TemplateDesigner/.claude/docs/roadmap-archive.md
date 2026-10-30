@@ -9,6 +9,9 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S4** Výstup linkového JŘ z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (21), schválil Jan 30. 10.): poznámka
+  legendy, skupina dnů a formát času z linkového JŘ AD i MHD jsou v `Jr/VystupLinkovy.cls`. Výstup agend beze změny.
+
 - **S3** Výstup vývěsky z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (20), schválil Jan 30. 10.): deset metod,
   které měla vývěska AD i MHD shodné, je v `Jr/VystupZastavkovy.cls`. Značky u odjezdů zůstaly v agendách (AD posílá
   víc klíčů). Výstup agend beze změny.

@@ -440,7 +440,7 @@ ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %
             s typProvozu = $o(razeni(pp, typProvozu))
             q:typProvozu=""
             s skupinaIdx = skupinaIdx + 1
-            d skupinyDnu.%Push(..BuildSkupina(skupinaIdx, $g(provozNadpis(typProvozu))))
+            d skupinyDnu.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildSkupina(skupinaIdx, $g(provozNadpis(typProvozu))))
             k poradi
             s cas = ""
             f {
@@ -648,11 +648,11 @@ ClassMethod BuildSpojMhd(ByRef sys As %String, IdFa As %String, dataDB As %Strin
         s prijezd = +$lg(cb,1), odjezd = +$lg(cb,2)
         i typRadku = "P" {
             i radekBodu = prvniRadek { d casy.%Push("") }
-            else { d casy.%Push(..FormatCas(prijezd)) }
+            else { d casy.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).FormatCas(prijezd)) }
         }
         else {
             i (radekBodu = posledniRadek) && ($lg(body(radekBodu),5)) { d casy.%Push("") }   // zdvojená konečná: jen příjezd
-            else { d casy.%Push(..FormatCas($s(odjezd>prijezd:odjezd, 1:prijezd))) }
+            else { d casy.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).FormatCas($s(odjezd>prijezd:odjezd, 1:prijezd))) }
         }
     }
     d o.%Set("CASY", casy)
@@ -909,7 +909,7 @@ ClassMethod PridatPoznamkuSpoje(ByRef poznSpoju, ByRef pocet, druh As %Integer, 
     i $d(poznSpoju("seen", druh, znak, text)) q
     s poznSpoju("seen", druh, znak, text) = ""
     s pocet = $i(pocet)
-    s poznSpoju(pocet) = ..BuildPoznamka(druh, typ, znak, text)
+    s poznSpoju(pocet) = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(druh, typ, znak, text)
 }
 
 /// Poznámky druhu 2 - NZ spojů stránky s textem omezení; NZ bez textu se nevypisuje (legacy :1384).
@@ -920,22 +920,22 @@ ClassMethod PridatPoznamkyNZMhd(IdFa As %String, dataDB As %String, poznamky As 
         s nz = $o(nzSeen(nz))
         q:nz=""
         s txt = nzSeen(nz)
-        i txt '= "" d poznamky.%Push(..BuildPoznamka(2, "nz", nz, txt))
+        i txt '= "" d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(2, "nz", nz, txt))
     }
 }
 
 /// Poznámky druhu 5 - atributy spoje (BEV/CBE).
 ClassMethod PridatPoznamkyAtributuMhd(poznamky As %DynamicArray, ByRef atributSeen)
 {
-    i $d(atributSeen("BEV")) d poznamky.%Push(..BuildPoznamka(5, "znak", "BEV", "spoj s bezbariérově přístupným vozidlem"))
-    i $d(atributSeen("CBE")) d poznamky.%Push(..BuildPoznamka(5, "znak", "CBE", "spoj s částečně bezbariérově přístupným vozidlem, nutná dopomoc průvodce"))
+    i $d(atributSeen("BEV")) d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(5, "znak", "BEV", "spoj s bezbariérově přístupným vozidlem"))
+    i $d(atributSeen("CBE")) d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(5, "znak", "CBE", "spoj s částečně bezbariérově přístupným vozidlem, nutná dopomoc průvodce"))
 }
 
 /// Poznámky druhu 7 - markery matice.
 ClassMethod PridatStaleZnackyMhd(poznamky As %DynamicArray, ByRef markerSeen)
 {
-    i $d(markerSeen("|")) d poznamky.%Push(..BuildPoznamka(7, "znak", "|", "spoj příslušnou zastávkou projíždí"))
-    i $d(markerSeen("<")) d poznamky.%Push(..BuildPoznamka(7, "znak", "<", "spoj jede po jiné trase"))
+    i $d(markerSeen("|")) d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(7, "znak", "|", "spoj příslušnou zastávkou projíždí"))
+    i $d(markerSeen("<")) d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(7, "znak", "<", "spoj jede po jiné trase"))
 }
 
 /// Značky bodu trasy k názvu zastávky jako řetězec písmen seřazený podle písmene: atributy
@@ -986,7 +986,7 @@ ClassMethod PridatPoznamkyTrasyMhd(ByRef body, pocetBodu As %Integer, poznamky A
         s text = $g(popisy(znak))
         continue:text=""
         continue:$d(poznSpoju("seen", 4, znak, text))
-        d poznamky.%Push(..BuildPoznamka(4, "text", znak, text))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(4, "text", znak, text))
     }
 }
 
@@ -1072,34 +1072,8 @@ ClassMethod PridatAtributyZastavekMhd(ByRef body, pocetBodu As %Integer, poznamk
     f {
         s znak = $o(seen(znak))
         q:znak=""
-        d poznamky.%Push(..BuildPoznamka(7, "znak", znak, $g(popisy(znak))))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(7, "znak", znak, $g(popisy(znak))))
     }
-}
-
-/// JSON objekt jedné poznámky legendy.
-ClassMethod BuildPoznamka(druh As %Integer, typ As %String, znak As %String, text As %String) As %DynamicObject
-{
-    s o = ##class(%DynamicObject).%New()
-    d o.%Set("DRUH", druh)
-    d o.%Set("TYP", typ)
-    d o.%Set("ZNAK", znak)
-    d o.%Set("TEXT", text)
-    q o
-}
-
-ClassMethod BuildSkupina(id As %Integer, nadpis As %String) As %DynamicObject
-{
-    s o = ##class(%DynamicObject).%New()
-    d o.%Set("ID", id)
-    d o.%Set("NADPIS", nadpis)
-    q o
-}
-
-/// Formát času HH:MM z minut od půlnoci.
-ClassMethod FormatCas(minuty As %Integer) As %String
-{
-    s hod = (minuty\60)#24, min = minuty#60
-    q $tr($j(hod,2)," ",0)_":"_$tr($j(min,2)," ",0)
 }
 
 /// SpecZnak poznámky spoje → klíč značky v řádku platnosti, tytéž klíče jako u AD varianty.

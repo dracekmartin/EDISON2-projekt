@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 2026-10-30 (21) - Výstup linkového JŘ AD a MHD z jedné třídy (`B56` S4)
+
+Stavba poznámky legendy, skupiny dnů a formát času, které měl linkový JŘ AD i MHD znak po znaku stejné, jsou jednou v `Jr/VystupLinkovy.cls`.
+Poznámka linkového JŘ má jiný tvar než poznámka vývěsky (druh místo kategorie a barev), proto má linkový výstup vlastní třídu vedle `Jr/VystupZastavkovy.cls`.
+Ověřeno: obě linkové agendy na serveru vlastní kopii nemají (volání vrátí „doesn't exist"), snímek výstupu všech agend beze změny (42 souborů), Caché testy 269/269, .NET testy 2542/2542, integrační testy 48/48.
+
 ## 2026-10-30 (20) - Výstup vývěsky AD a MHD z jedné třídy (`B56` S3)
 
 Deset metod, které skládají výstup vývěsky a měla je vývěska AD i MHD shodné, je jednou v `Jr/VystupZastavkovy.cls`: řádek zastávky, zóna, atribut a poznámka zastávky, skupina dnů, odjezd, poznámka, převod barvy a speciálního znaku.

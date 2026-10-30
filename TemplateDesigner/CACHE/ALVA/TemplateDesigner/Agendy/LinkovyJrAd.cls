@@ -1380,13 +1380,13 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         elseif cas = "" { d casy.%Push("") }
         elseif typRadku = "P" {
             i pp = prvniPoradi { d casy.%Push("") }
-            else { d casy.%Push(..FormatCas(odjezd + +$p(cas,"/",1))) }
+            else { d casy.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).FormatCas(odjezd + +$p(cas,"/",1))) }
         }
         else {
             i (pp = posledniPoradi) && ($d(rowMeta(i-1)) && ($lg($g(rowMeta(i-1)),2) = "P") && ($lg($g(rowMeta(i-1)),1) = pp)) {
                 d casy.%Push("")          // zdvojená konečná: odjezd se maže, zůstává příjezd
             }
-            else { d casy.%Push(..FormatCas(odjezd + ..CasHodnota(cas))) }
+            else { d casy.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).FormatCas(odjezd + ..CasHodnota(cas))) }
         }
     }
     d o.%Set("CASY", casy)
@@ -1462,7 +1462,7 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                 d pr.%Set("PORADI", +tc)
                 d pr.%Set("ZNAK", znak)
                 d pr.%Set("TEXT", kam)
-                d pr.%Set("CAS", ..FormatCas(casMin))
+                d pr.%Set("CAS", ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).FormatCas(casMin))
                 d pr.%Set("LINKA", linka2)
                 d pr.%Set("SPOJ", spoj2)
                 // Druh dopravy (A autobus / V vlak / L loď) - prvek podle něj **seskupuje** přípojné
@@ -1525,7 +1525,7 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
                 i '$d(pripojePoznamky("seen", txt)) {
                     s pripojePoznamky("seen", txt) = ""
                     s seq = $o(pripojePoznamky(bucket, ""), -1) + 1
-                    s pripojePoznamky(bucket, seq) = ..BuildPoznamka(3, "znak", znak, txt)
+                    s pripojePoznamky(bucket, seq) = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(3, "znak", znak, txt)
                 }
             }
         }
@@ -1542,7 +1542,7 @@ ClassMethod BuildSpoj(dataDB As %String, sku As %String, lin As %String, smer As
         i '$d(pripojePoznamky("seen", txt)) {
             s pripojePoznamky("seen", txt) = ""
             s seq = $o(pripojePoznamky(1, ""), -1) + 1
-            s pripojePoznamky(1, seq) = ..BuildPoznamka(3, "znak", znak34, txt)
+            s pripojePoznamky(1, seq) = ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(3, "znak", znak34, txt)
         }
     }
 
@@ -1700,7 +1700,7 @@ ClassMethod BuildSkupinyZDefinice(ByRef defArr) As %DynamicArray
     f i=1:1:+$g(defArr) {
         s nadpis = defArr(i,"nadpis")
         i $g(defArr(i,"nadpis2")) '= "" s nadpis = nadpis_" "_defArr(i,"nadpis2")
-        d arr.%Push(..BuildSkupina(i, nadpis))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildSkupina(i, nadpis))
     }
     q arr
 }
@@ -1712,26 +1712,18 @@ ClassMethod BuildSkupinyDnu(dataDB As %String, rec As %String, deleni As %Intege
 
     s arr = ##class(%DynamicArray).%New()
     i deleni = 0 {
-        d arr.%Push(..BuildSkupina(1, ""))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildSkupina(1, ""))
     }
     elseif deleni = 1 {
-        d arr.%Push(..BuildSkupina(1, t("dvojicePD")))
-        d arr.%Push(..BuildSkupina(2, t("dvojiceVikend")))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildSkupina(1, t("dvojicePD")))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildSkupina(2, t("dvojiceVikend")))
     }
     else {
-        d arr.%Push(..BuildSkupina(1, t("PD")))
-        d arr.%Push(..BuildSkupina(2, t("SO")))
-        d arr.%Push(..BuildSkupina(3, t("NE")))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildSkupina(1, t("PD")))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildSkupina(2, t("SO")))
+        d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildSkupina(3, t("NE")))
     }
     q arr
-}
-
-ClassMethod BuildSkupina(id As %Integer, nadpis As %String) As %DynamicObject
-{
-    s o = ##class(%DynamicObject).%New()
-    d o.%Set("ID", id)
-    d o.%Set("NADPIS", nadpis)
-    q o
 }
 
 /// Poznámky druhu 1 - týdenní platnosti (jen znaky použité na stránce, pořadí X,1-7,+).
@@ -1744,7 +1736,7 @@ ClassMethod PridatPoznamkyPlatnosti(dataDB As %String, rec As %String, poznamky 
         i '$d(platnostZnakySeen(znak)) continue
         s txt = $g(^[dataDB]JRSET("NCOME",rec,znak))
         i txt = "" s txt = ..TextPlatnosti(znak)
-        d poznamky.%Push(..BuildPoznamka(1, "znak", znak, txt))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(1, "znak", znak, txt))
     }
 }
 
@@ -1782,7 +1774,7 @@ ClassMethod PridatPoznamkyNZ(dataDB As %String, sku As %String, lin As %String, 
             }
             q:txt'=""
         }
-        i txt '= "" d poznamky.%Push(..BuildPoznamka(2, "nz", znak, txt))
+        i txt '= "" d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(2, "nz", znak, txt))
     }
 }
 
@@ -1821,7 +1813,7 @@ ClassMethod PridatPoznamkyAtributu(dataDB As %String, sku As %String, lin As %St
             continue
         }
         i (klic = "PJI") || (klic = "BEV") s veta = ..DoplnOmezeniAtributu(dataDB, sku, lin, klic, rec, veta, .atributSeen, tiskDtm)
-        d poznamky.%Push(..BuildPoznamka(5, "znak", klic, veta))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(5, "znak", klic, veta))
     }
 }
 
@@ -1924,14 +1916,14 @@ ClassMethod PridatVetyUpresneni(poznamky As %DynamicArray, klic As %String, rec 
         s pocetSpoju(idx) = pocetSpoju(idx) + 1
     }
     i pocetTextu = 1 {
-        d poznamky.%Push(..BuildPoznamka(5, "znak", ..ZnakAtributuLegendy(klic), obecnaVeta_$s(texty(1)="":"", 1:" "_texty(1))))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(5, "znak", ..ZnakAtributuLegendy(klic), obecnaVeta_$s(texty(1)="":"", 1:" "_texty(1))))
         q
     }
     s sablona = ..AtributSablona(klic, rec)
     f i=1:1:pocetTextu {
         s veta = $s(pocetSpoju(i) > 1:..SlozVetu(sablona, 4, spojeTextu(i), 6), 1:..SlozVetu(sablona, 3, spojeTextu(i), 5))
         i texty(i) '= "" s veta = veta_" "_texty(i)
-        d poznamky.%Push(..BuildPoznamka(5, "znak", ..ZnakAtributuLegendy(klic), veta))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(5, "znak", ..ZnakAtributuLegendy(klic), veta))
     }
 }
 
@@ -2103,7 +2095,7 @@ ClassMethod PridatPoznamkySpoju(dataDB As %String, sku As %String, lin As %Strin
             }
         }
     }
-    f n=1:1:$g(texty) d poznamky.%Push(..BuildPoznamka(4, "znak", "p", "spoj "_texty(n,"sp")_" "_texty(n)))
+    f n=1:1:$g(texty) d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(4, "znak", "p", "spoj "_texty(n,"sp")_" "_texty(n)))
 }
 
 /// Přidá spoj k textu poznámky pro spoj; stejný text = jeden řádek (sComToArr). Prázdný text nic.
@@ -2165,7 +2157,7 @@ ClassMethod PridatPoznamkyMistenkovani(dataDB As %String, sku As %String, lin As
     f {
         s znak = $o(vety(znak))
         q:znak=""
-        d poznamky.%Push(..BuildPoznamka(6, "znak", znak, vety(znak)))
+        d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(6, "znak", znak, vety(znak)))
     }
 }
 
@@ -2236,7 +2228,7 @@ ClassMethod PridatStalouZnacku(dataDB As %String, rec As %String, poznamky As %D
     s txt = $g(^[dataDB]JRSET("STALCOME",rec,klic))
     i txt = "" q
     s znak = $case(klic, "auto":"A", "vlak":"L", "CLO":"C", "(":"V", ")":"N", "lod":"D", "GA":"a", "GB":"b", "GC":"c", :klic)
-    d poznamky.%Push(..BuildPoznamka(7, $s(klic="MHD":"text",1:"znak"), znak, txt))
+    d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(7, $s(klic="MHD":"text",1:"znak"), znak, txt))
 }
 
 /// Poznámky linky (^JRL(sku,lin,"C",key,idx), klíč 2 se přeskakuje): 1 → druh 8 (tarifní),
@@ -2266,26 +2258,8 @@ ClassMethod PridatPoznamkyLinky(dataDB As %String, sku As %String, lin As %Strin
             s upraveny = upraveny_cast
         }
         s txt = upraveny
-        i txt '= "" d poznamky.%Push(..BuildPoznamka(druh, "text", "", txt))
+        i txt '= "" d poznamky.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.VystupLinkovy).BuildPoznamka(druh, "text", "", txt))
     }
-}
-
-/// JSON objekt jedné poznámky legendy.
-ClassMethod BuildPoznamka(druh As %Integer, typ As %String, znak As %String, text As %String) As %DynamicObject
-{
-    s o = ##class(%DynamicObject).%New()
-    d o.%Set("DRUH", druh)
-    d o.%Set("TYP", typ)
-    d o.%Set("ZNAK", znak)
-    d o.%Set("TEXT", text)
-    q o
-}
-
-/// Formát času HH:MM z minut od půlnoci.
-ClassMethod FormatCas(minuty As %Integer) As %String
-{
-    s hod = (minuty\60)#24, min = minuty#60
-    q $tr($j(hod,2)," ",0)_":"_$tr($j(min,2)," ",0)
 }
 
 /// Název zastávky podle pořadí (tarifního čísla) v trase linky - do **textů návazností**
