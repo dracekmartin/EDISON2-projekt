@@ -19,7 +19,7 @@ public class KontraktDatTests
         @"\b(?:GetValue|GetString|GetRows)\(""(?<klic>[A-Z][A-Z0-9_]*)""\)", RegexOptions.Compiled);
     /// <summary>Čtení přes konstantu (<c>StopFields.Sloupek</c>, <c>PopisDopravceKlic</c>) - hodnotu dosadí
     /// <see cref="Konstanty"/>. Do 30. 10. se znaly jen konstanty <see cref="StopFields"/>, takže čtení
-    /// <c>POPIS_DOPRAVCE</c> v sazbě stránek test neviděl (revize sjednocení B4).</summary>
+    /// <c>POPIS_DOPRAVCE</c> v sazbě stránek test neviděl.</summary>
     private static readonly Regex CteniKonstantou = new(
         @"\b(?:GetValue|GetString|GetRows)\((?<jmeno>(?:\w+\.)?[A-Z]\w*)\)", RegexOptions.Compiled);
     private static readonly Regex VnorenyKlic = new(

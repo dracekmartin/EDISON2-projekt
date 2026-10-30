@@ -9,7 +9,7 @@ namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
 /// Katalog prvků je jediný popis druhu prvku, ze kterého se staví paleta, nabídka vložení, továrna,
-/// jména, agendy prvků, seznam pro asistenta a nápověda F1 (revize 30. 10., `revize-sjednoceni.md` A1).
+/// jména, agendy prvků, seznam pro asistenta a nápověda F1.
 /// Ručně zůstávají třída, atribut <see cref="JsonDerivedTypeAttribute"/>, formulář `.cls` a ikona -
 /// tyhle testy hlídají, že s katalogem souhlasí. Do 30. 10. nehlídalo nic konstantu v
 /// <see cref="ElementTypes"/> bez atributu a nový prvek se zapisoval na 12 až 20 míst.

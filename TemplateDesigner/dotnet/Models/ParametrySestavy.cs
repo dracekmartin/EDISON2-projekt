@@ -4,7 +4,7 @@ namespace TemplateDesigner.Models;
 /// Parametry sestavy, které čte nebo porovnává kód návrháře: jména a popisky voleb. Definuje je agenda na serveru
 /// (<c>GetParameters</c>) a popisky voleb jsou <b>zamčené</b> - ukládá se zobrazený text (<c>ux-conventions §8</c>).
 /// Do 30. 10. je měl kód rozepsané na pěti místech; že je agendy opravdu posílají a nikde jinde v kódu nejsou
-/// napevno, hlídá <c>ParametrySestavyTests</c> (revize sjednocení B3).
+/// napevno, hlídá <c>ParametrySestavyTests</c>.
 /// </summary>
 public static class ParametrySestavy
 {

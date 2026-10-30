@@ -56,7 +56,7 @@ public class ElementNamesTests
     }
 
     /// <summary>Do kterého JŘ prvek patří, říká asistentovi seznam prvků agend - vlastní výčet tvrdil,
-    /// že Poznámky jsou jen zastávkové, i když je od 3. 9. má i linkový JŘ (revize 30. 10.).</summary>
+    /// že Poznámky jsou jen zastávkové, i když je od 3. 9. má i linkový JŘ (do 30. 10.).</summary>
     [Fact]
     public void KatalogProAsistenta_RikaDoKterehoJrPrvekPatri()
     {

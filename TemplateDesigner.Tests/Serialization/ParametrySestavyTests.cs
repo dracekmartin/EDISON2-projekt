@@ -7,7 +7,7 @@ namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
 /// Jména parametrů sestavy a zamčené popisky voleb, které kód návrháře čte nebo porovnává, jsou v jedné třídě
-/// <see cref="ParametrySestavy"/> (revize sjednocení B3). Agenda je musí opravdu posílat - přejmenovaný parametr nebo
+/// <see cref="ParametrySestavy"/>. Agenda je musí opravdu posílat - přejmenovaný parametr nebo
 /// volba by na klientu tiše spadla na výchozí chování - a kód je nesmí psát napevno jinde, jinak by se zase rozešly.
 /// </summary>
 public class ParametrySestavyTests

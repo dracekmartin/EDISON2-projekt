@@ -4,8 +4,8 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Elements;
 
 /// <summary>
-/// Panel, lišta i formulář ukazují u nenastavené vlastnosti stylu hodnotu, se kterou se prvek vytiskne
-/// (revize 30. 10., `revize-sjednoceni.md` A2). Do 30. 10. si ji na 40 místech dosazovaly samy
+/// Panel, lišta i formulář ukazují u nenastavené vlastnosti stylu hodnotu, se kterou se prvek vytiskne.
+/// Do 30. 10. si ji na 40 místech dosazovaly samy
 /// (`?? "Arial"`, `?? 9f`): lišta u textu ukazovala Arial, i když šablona měla jiné výchozí písmo,
 /// Minuty ukazovaly velikost minut ze skalárního zálohy, i když ji přebíjelo písmo datových buněk.
 /// Jediný zdroj je <see cref="TemplateElement.ResolvedStyleZones"/>.

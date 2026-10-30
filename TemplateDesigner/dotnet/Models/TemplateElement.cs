@@ -270,7 +270,7 @@ public abstract class TemplateElement
 
     /// <summary>
     /// Jak se vytiskne každá textová část prvku. Panel, lišta i formulář z toho ukazují hodnotu
-    /// nenastavené vlastnosti stylu (revize 30. 10., A2) - do té doby si ji na 40 místech dosazovaly
+    /// nenastavené vlastnosti stylu - do 30. 10. si ji na 40 místech dosazovaly
     /// samy a ukazovaly jinou, než se tiskla. Prvek bez textu nemá žádnou.
     /// </summary>
     public virtual IEnumerable<StyleZone> ResolvedStyleZones() => [];
@@ -333,8 +333,8 @@ public abstract class TemplateElement
     /// Volej na konci GetPropertyDescriptors() pomocí spread operátoru: [.. GetPositionDescriptors()]
     /// </summary>
     /// <remarks>Popisky, skupiny a rozsahy musí souhlasit se sdíleným Caché balíčkem
-    /// <c>BaseElementFields.cls</c> (druhá editační cesta téže sady polí). <c>EDInputFormSchemaDriftTests</c>
-    /// hlídá jen popisky a skupiny, rozsahy zatím nic (`revize-sjednoceni.md` B1).</remarks>
+    /// <c>BaseElementFields.cls</c> (druhá editační cesta téže sady polí) - hlídají to
+    /// <c>EDInputFormSchemaDriftTests</c> a <c>PanelProtiFormulariTests</c>.</remarks>
     protected IReadOnlyList<PropertyDescriptor> GetPositionDescriptors() =>
     [
         new FloatPropertyDescriptor { Label = "X",       Group = PositionGroup, Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },

@@ -7,7 +7,7 @@ namespace TemplateDesigner.Tests.Windows;
 /// <summary>
 /// Formulář textového prvku musí u nenastavené vlastnosti stylu ukázat hodnotu, se kterou se prvek
 /// vytiskne, ne výchozí hodnotu formuláře. Text z importu PDF nemá svislé zarovnání: tiskl se
-/// „Nahoře", formulář ukazoval „Na střed" (revize 30. 10., `revize-sjednoceni.md` E1).
+/// „Nahoře", formulář ukazoval „Na střed".
 /// Cesta jako v panelu i v okně vlastností: zděděné hodnoty → <see cref="ElementFormBinder.Prefill(List{Field}, object)"/>.
 /// </summary>
 public class FormularTextuZKaskadyTests

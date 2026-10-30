@@ -32,7 +32,7 @@ public sealed record ElementCatalogEntry(
 }
 
 /// <summary>
-/// Katalog prvků - jediný popis každého druhu prvku (revize 30. 10., `revize-sjednoceni.md` A1).
+/// Katalog prvků - jediný popis každého druhu prvku.
 /// Paleta, nabídka vložení, továrna, <see cref="ElementNames"/>, <see cref="AgendaCapabilities"/>,
 /// seznam pro asistenta a nápověda F1 se odvozují odtud; do 30. 10. se nový prvek zapisoval na 12
 /// až 20 míst a dvě z nich se už rozešla (jméno v paletě, agendy Poznámek u asistenta).

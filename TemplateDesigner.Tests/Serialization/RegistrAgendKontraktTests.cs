@@ -8,7 +8,7 @@ namespace TemplateDesigner.Tests.Serialization;
 /// <summary>
 /// Co návrhář o agendě ví, ohlásí agenda parametrem třídy (<c>BaseAgenda.cls</c>), registr ho pošle
 /// (<c>AgendyRegistr.ListAgendy</c>) a klient ho přečte do <see cref="AgendaRegistryEntry"/> (`B194g` R4). Tři místa
-/// se doplňují ručně; do 30. 10. je nic neporovnávalo (revize sjednocení B5) a zapomenutý krok znamenal, že parametr
+/// se doplňují ručně; do 30. 10. je nic neporovnávalo a zapomenutý krok znamenal, že parametr
 /// agendy neměl žádný účinek, nebo že klient dostal výchozí hodnotu pro starší server.
 /// </summary>
 public class RegistrAgendKontraktTests

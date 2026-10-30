@@ -217,7 +217,7 @@ column.Style (per-column override)
 ⚠️ **Každá textová část prvku patří do `ResolvedStyleZones()`** (cesta vlastnosti → styl, jak se vytiskne,
 z týchž metod jako kreslení). Odtud berou panel, lišta i formulář hodnotu nenastavené vlastnosti
 (`ElementFormBinder.InheritedValuesFor`). **Deskriptor nikdy nedosazuje vlastní výchozí hodnotu** (`?? 9f`,
-`?? "Arial"`) - do 30. 10. jich tak bylo 44 a ukazovaly jinou hodnotu, než se tiskla (revize, A2).
+`?? "Arial"`) - do 30. 10. jich tak bylo 44 a ukazovaly jinou hodnotu, než se tiskla.
 Výjimka zůstávají vlastnosti, kde prázdná hodnota znamená „automaticky" (velikost symbolů v Minutách).
 
 ```csharp

@@ -7,7 +7,7 @@ namespace TemplateDesigner.Tests.Serialization;
 /// Každý zakázaný tvar z kanonu názvosloví (<c>ux-conventions §8</c>, přeškrtnutý <c>~~tvar~~</c>) hlídá některý
 /// seznam zákazů (<see cref="EDInputFormSchemaDriftTests.BannedTerms"/>, <c>BannedLabelForms</c>, <c>BannedExactLabels</c>),
 /// nebo má výjimku s důvodem. Do 30. 10. se kanon a seznamy doplňovaly ručně každý zvlášť a 31 tvarů nehlídalo nic
-/// (revize sjednocení B7) - kanon tvrdil zákaz, který nikdo nevynucoval.
+/// - kanon tvrdil zákaz, který nikdo nevynucoval.
 /// </summary>
 public class KanonNazvosloviTests
 {

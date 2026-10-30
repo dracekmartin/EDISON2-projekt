@@ -227,7 +227,7 @@ public static class ElementFormBinder
     /// Null = prvek takovou kaskádu nemá a formulář nechá výchozí hodnoty schématu.
     /// </summary>
     /// <remarks>Text z importu PDF nemá svislé zarovnání: tiskl se „Nahoře", formulář ukazoval
-    /// výchozí „Na střed" (revize 30. 10.). Hodnoty dává <see cref="TemplateElement.ResolvedStyleZones"/>,
+    /// výchozí „Na střed" (do 30. 10.). Hodnoty dává <see cref="TemplateElement.ResolvedStyleZones"/>,
     /// totéž, z čeho čte panel a lišta.</remarks>
     public static IReadOnlyDictionary<string, string>? InheritedValuesFor(TemplateElement element)
     {

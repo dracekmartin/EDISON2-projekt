@@ -7,7 +7,7 @@ namespace TemplateDesigner.Tests.Serialization;
 /// <summary>
 /// Vlastnosti prvku jsou na dvou místech: formulář v Caché (<c>*Edit.cls</c>, hlavní editační cesta, opravuje se bez nového
 /// exe) a deskriptory v C# (lišta formátu, úprava více prvků, asistent, protokol importu z PDF). Rozhodnutí Jan 30. 10.:
-/// neslučovat, ale hlídat přísněji (revize sjednocení B1). Popisek hlídá <see cref="DescriptorLabelsMatchFormTests"/>;
+/// neslučovat, ale hlídat přísněji. Popisek hlídá <see cref="DescriptorLabelsMatchFormTests"/>;
 /// tady se deskriptor spáruje s polem formuláře podle popisku (při shodě popisků ve více skupinách i podle skupiny)
 /// a porovná se skupina, meze, jednotka, druh a volby. Do 30. 10. se lišilo 24 skupin a meze nehlídalo nic.
 /// </summary>

@@ -84,7 +84,7 @@ Ověřeno: .NET testy 2599/2599; paleta a nabídka v aplikaci neproklikané.
 
 ## 2026-10-30 (37) - Opravy z revize sjednocení a nová jména tabulek
 
-Revize „co je definované dvakrát" ([`revize-sjednoceni.md`](revize-sjednoceni.md)) našla chyby, které Jan nechal opravit před slučováním:
+Revize „co je definované dvakrát" (jednorázový dokument, po zapracování smazaný - je v historii gitu) našla chyby, které Jan nechal opravit před slučováním:
 - **Formulář textu** u nenastavené vlastnosti stylu ukazuje hodnotu, se kterou se text tiskne - text z importu PDF ukazoval svislé zarovnání „Na střed" a tiskl se „Nahoře". Panel navíc nesl zděděné hodnoty buňky pevné tabulky k dalšímu vybranému prvku.
 - **Výchozí mřížka plátna** je 5 mm bez přichytávání na jednom místě (rozhodnutí Jan); dřív stav návrháře říkal 1 mm se zapnutým přichytáváním a předvolby uživatele opak.
 - **Menu Zobrazit → Levý panel** dělá totéž co ☰ a Ctrl+B; vlastní kód panel nikdy neschoval.

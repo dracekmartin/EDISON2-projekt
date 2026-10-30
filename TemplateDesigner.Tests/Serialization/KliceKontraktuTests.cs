@@ -8,7 +8,7 @@ namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
 /// Klíče, které si klient a server posílají a obě strany je mají zapsané samostatně: definice vlastních sloupců,
-/// známé klíče definice parametru a typy sekcí ve formuláři sekce. Do 30. 10. je nic neporovnávalo (revize sjednocení B6);
+/// známé klíče definice parametru a typy sekcí ve formuláři sekce. Do 30. 10. je nic neporovnávalo;
 /// překlep na jedné straně se projevil jen tím, že se hodnota tiše ztratila.
 /// </summary>
 public class KliceKontraktuTests

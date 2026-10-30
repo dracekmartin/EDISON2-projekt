@@ -23,7 +23,7 @@ public class KontraktDatAgendTests
     /// <summary>Položky, které konkrétní agenda vědomě neposílá, s důvodem. Výjimka, která přestala platit
     /// (agenda položku posílá), test taky zastaví - seznam nesmí lhát. Položky vázané na příznak registru
     /// (varianty tras, vzory sloupců - <see cref="KontraktDat.Polozka.Priznak"/>) tu nejsou: výjimku odvodí test
-    /// z registru (revize sjednocení B9); zbyly ty, pro které příznak neexistuje.</summary>
+    /// z registru; zbyly ty, pro které příznak neexistuje.</summary>
     private static readonly Dictionary<(string Agenda, string Kolekce, string Klic), string> Bez = new()
     {
         [("ZASTAVKOVY_JR_MHD", KontraktDat.Udaje, "ZDROJ_STANOVISTE")] = "volba označník / sloupek je jen v AD, " + AdSloupky,

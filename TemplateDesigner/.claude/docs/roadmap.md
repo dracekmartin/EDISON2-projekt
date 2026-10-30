@@ -94,6 +94,10 @@
   a odkud: [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md)). Definice pak patří do `Jr/Parametry.cls` (stálý kód
   vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
 
+- **Dva odstíny šedého pozadí záhlaví** [S] (z revize sjednocení 30. 10.) - nový prvek jízdního řádu dostane záhlaví
+  `#FFE0E0E0` (`ScheduleElementBase.NoveZahlaviPozadi`, i import z PDF), nová tabulka `#FFE8E8E8`
+  (`TableStyleDefaults.NoveZahlaviPozadi`). Ověřit s Janem, jestli je rozdíl záměr; když ne, jedna konstanta.
+
 - **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
   (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
   na trasy a body MHD a ověřit proti datům, pak v `ZastavkoveJrMhd` přepnout `VariantyTras = 1` -

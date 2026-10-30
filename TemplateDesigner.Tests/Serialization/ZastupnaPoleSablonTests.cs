@@ -8,7 +8,7 @@ namespace TemplateDesigner.Tests.Serialization;
 /// <summary>
 /// Dodávané šablony (<c>SystemTemplates</c>, <c>LaunchTemplates</c>) smějí v zástupných polích <c>{POLE}</c> používat jen
 /// to, co jejich agenda nabízí v nabídce dat (<c>GetSchema</c>), pole stránky a hodnoty, které dosadí sazba. Pole, které
-/// agenda přejmenuje nebo vyřadí, by se v šabloně u zákazníka tiše vytisklo prázdně (revize sjednocení B8).
+/// agenda přejmenuje nebo vyřadí, by se v šabloně u zákazníka tiše vytisklo prázdně.
 /// Nabídku čte z <c>.cls</c> týž parser jako <see cref="AgendaSchemaDriftTests"/> (offline).
 /// </summary>
 public class ZastupnaPoleSablonTests

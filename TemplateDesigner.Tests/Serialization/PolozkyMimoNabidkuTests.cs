@@ -23,7 +23,7 @@ public class PolozkyMimoNabidkuTests
     /// <summary>
     /// Položka druhu <c>prvek</c> je v kontraktu dat prvků (<see cref="TemplateDesigner.Models.KontraktDat"/>) se stejnou kolekcí i klíčem.
     /// Že kód návrháře každou položku kontraktu opravdu čte, hlídá <see cref="KontraktDatTests"/>. Do 30. 10. se tu
-    /// klíč jen hledal v uvozovkách kdekoli v kódu, takže krátké klíče (<c>ID</c>, <c>TYP</c>) prošly vždy (revize B4).
+    /// klíč jen hledal v uvozovkách kdekoli v kódu, takže krátké klíče (<c>ID</c>, <c>TYP</c>) prošly vždy.
     /// </summary>
     [Fact]
     public void PolozkaPrvku_JeVKontraktuDat()
