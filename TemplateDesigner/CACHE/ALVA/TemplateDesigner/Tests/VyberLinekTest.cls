@@ -38,7 +38,7 @@ ClassMethod PocetLinekVeSkupine(db As %String, sku As %Integer) As %Integer
 Method TestVyberVratiCelouSkupinu()
 {
 	if '##class(%SYS.Namespace).Exists(..#TESTDB) {
-		do $$$AssertTrue(1, "namespace "_..#TESTDB_" na tomto serveru není - přeskočeno")
+		do $$$AssertSkipped("namespace "_..#TESTDB_" na tomto serveru není - přeskočeno")
 		quit
 	}
 
@@ -67,7 +67,7 @@ Method TestVyberVratiCelouSkupinu()
 Method TestLinkaZaDvoustovkouJeVeVyberu()
 {
 	if '##class(%SYS.Namespace).Exists(..#TESTDB) || '$data(^[..#TESTDB]JRL(1,"0380761","I")) {
-		do $$$AssertTrue(1, "linka 0380761 na tomto serveru není - přeskočeno")
+		do $$$AssertSkipped("linka 0380761 na tomto serveru není - přeskočeno")
 		quit
 	}
 

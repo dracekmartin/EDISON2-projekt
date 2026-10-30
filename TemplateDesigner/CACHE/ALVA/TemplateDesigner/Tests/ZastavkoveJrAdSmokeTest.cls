@@ -15,7 +15,7 @@ Method TestMaxSloupcuVariantOrizneNaPrvniN()
 {
 	set db = "CB_CSADAD", max = 2
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdLegacyTest).SetupSysFor(.sys, db)

@@ -42,7 +42,7 @@ Method TestAdVraciOcekavaneKolekce()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(chybi, "", "ve výstupu chybí kolekce: "_chybi)
@@ -156,9 +156,16 @@ Method ProjdiKontrakt(ByRef sys, trida As %String, popis As %String)
 /// dokud to někdo nezkusil v aplikaci. Test kontroluje **tvar** odpovědi, ne počet.
 Method TestVyberInstanciMaCisloINazev()
 {
-	do ..SetupSys(.sys)
+	// Každá agenda nad firmou se svými daty: testovací namespace nemá linky AD ani MHD a do 30. 10. se
+	// tu kvůli tomu nic neověřilo (`B56` S13). AD = firma sady, MHD = CB_DP.
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).LinkyNaServeru(.linky)
+	set firmaAd = $piece($get(linky(1)), "~", 1)
 	set chybi = "", overeno = 0
-	for trida = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd", "ALVA.TemplateDesigner.Agendy.LinkovyJrMhd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd" {
+	for trida = "ALVA.TemplateDesigner.Agendy.LinkovyJrAd", "ALVA.TemplateDesigner.Agendy.LinkovyJrMhd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" {
+		set firma = $select(trida [ "Mhd":"CB_DP", 1:firmaAd)
+		continue:(firma="")||'##class(%SYS.Namespace).Exists(firma)
+		do ##class(ALVA.EDTesting.MLTestCase).SetupSys(.sys, $select(trida [ "Mhd":firma, 1:"CB_DP"))
+		set sys("U","DATA") = firma
 		kill ^||ML
 		set ^||ML("IN","search") = ""
 		set ^||ML("IN","limit") = 5
@@ -175,7 +182,7 @@ Method TestVyberInstanciMaCisloINazev()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná agenda na tomto serveru nevrátila instance - přeskočeno")
+		do $$$AssertSkipped("žádná agenda na tomto serveru nevrátila instance - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(chybi, "", "výběr instancí vrací prázdná pole (seznam by byl prázdný): "_chybi)

@@ -95,13 +95,13 @@ Method TestZapnutyParametrPosilaTurnusy()
 Method TestParitaSLegacy()
 {
 	if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).OracleDostupny() {
-		do $$$AssertTrue(1, "starý modul není na tomto serveru - parita přeskočena")
+		do $$$AssertSkipped("starý modul není na tomto serveru - parita přeskočena")
 		quit
 	}
 	if '..NactiSpoje(1, .nase, .spoju, .sKlicem) quit
 	set ok = ##class(ALVA.TemplateDesigner.Tests.LinkovyJrLegacyOracle).NactiLegacyTurnusy(..#TESTDB, ..#TESTSKU, ..#TESTLIN, .leg, .radekTurnusu, .radekPlatnosti)
 	if 'ok {
-		do $$$AssertTrue(1, "starý modul linku nespočítal - parita přeskočena")
+		do $$$AssertSkipped("starý modul linku nespočítal - parita přeskočena")
 		quit
 	}
 
@@ -115,7 +115,7 @@ Method TestParitaSLegacy()
 		set legSpoju = legSpoju + 1
 	}
 	if legSpoju = 0 {
-		do $$$AssertTrue(1, "starý modul nevytiskl turnus ani u jednoho spoje - porovnání přeskočeno (vada legacy, viz komentář třídy)")
+		do $$$AssertSkipped("starý modul nevytiskl turnus ani u jednoho spoje - porovnání přeskočeno (vada legacy, viz komentář třídy)")
 		quit
 	}
 
@@ -152,7 +152,7 @@ Method NactiSpoje(sTurnusy As %Boolean, ByRef turnusy, ByRef spoju, ByRef sKlice
 {
 	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - test přeskočen")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - test přeskočen")
 		quit 0
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {

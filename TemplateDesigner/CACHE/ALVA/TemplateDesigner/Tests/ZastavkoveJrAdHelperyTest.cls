@@ -722,11 +722,11 @@ Method TestNactiTextyZnacekDleJazyka()
 {
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd", db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - číselník značek přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - číselník značek přeskočen")
 		quit
 	}
 	if $get(^[db]JRSET("NCOME", "CZ", "+")) = "" {
-		do $$$AssertTrue(1, "firma nemá v číselníku značku + - test přeskočen")
+		do $$$AssertSkipped("firma nemá v číselníku značku + - test přeskočen")
 		quit
 	}
 

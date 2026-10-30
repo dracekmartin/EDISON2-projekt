@@ -17,7 +17,7 @@ Method TestParitaPresetuNaZivychDatech()
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - parita přeskočena")
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru - parita přeskočena")
 		quit
 	}
 	do ..AssertParita(db, 1, "0365001")
@@ -36,7 +36,8 @@ Method AssertParita(db As %String, sku As %String, lin As %String)
 		// Vědomá odchylka: prázdninové rozvržení bez NZ konfigurace dává v legacy pracovní spoj
 		// jen do 1. sloupce (prázdné nzftl1 == prázdné cnz je „exact match"), definice do obou
 		// pracovních. Degenerovaný případ dokumentovaný v TestDefiniceFtl1BezNzKonfigurace.
-		do $$$AssertTrue(1, "linka "_lin_": FTL "_ftl_" bez NZ konfigurace - parita se neměří (vědomá odchylka)")
+		// Vědomá výjimka, ne přeskočení: druhá linka testu paritu ověří, takže metoda přeskočená není.
+		do ..LogMessage("linka "_lin_": FTL "_ftl_" bez NZ konfigurace - parita se neměří (vědomá odchylka)")
 		quit
 	}
 

@@ -30,12 +30,12 @@ Method TestZaskokZonyNaRegistrZastavek()
 {
 	set db = "CB_GWBUS", czst = 4842
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - záskok zón přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - záskok zón přeskočen")
 		quit
 	}
 	set zonaRegistru = $piece($piece($get(^[db]JRZ(czst)),"$",11),"~",1)
 	if zonaRegistru = "" {
-		do $$$AssertTrue(1, "zastávka "_czst_" nemá v registru zónu - záskok nelze ověřit na těchto datech")
+		do $$$AssertSkipped("zastávka "_czst_" nemá v registru zónu - záskok nelze ověřit na těchto datech")
 		quit
 	}
 	// J-věta bez zóny (9. #-segment prázdný) → hodnota musí přijít z registru zastávek.
@@ -63,11 +63,11 @@ Method TestBarvaLinkyDlePoradi()
 	set cls = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
 	set db = "CB_CSADAD", sku = 1, lin = "0365001"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - barva linky přeskočena")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - barva linky přeskočena")
 		quit
 	}
 	if $get(^[db]JRL(sku, lin, "PATCH", "BARVA")) = "" {
-		do $$$AssertTrue(1, "linka "_lin_" nemá nastavenou barvu - test přeskočen")
+		do $$$AssertSkipped("linka "_lin_" nemá nastavenou barvu - test přeskočen")
 		quit
 	}
 
@@ -87,11 +87,11 @@ Method TestCisloZastavkyCisJe9Pole()
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 	set db = "ZL_KOVED", czst = 41994
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - CIS číslo přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - CIS číslo přeskočeno")
 		quit
 	}
 	if '$data(^[db]JRZ(czst)) {
-		do $$$AssertTrue(1, "zastávka "_czst_" v "_db_" chybí - CIS číslo přeskočeno")
+		do $$$AssertSkipped("zastávka "_czst_" v "_db_" chybí - CIS číslo přeskočeno")
 		quit
 	}
 
@@ -111,11 +111,11 @@ Method TestPopisSloupkuZCiselniku()
 	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
 	set db = "ZL_KOVED", czst = 41994
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - popis sloupku přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - popis sloupku přeskočen")
 		quit
 	}
 	if '$data(^[db]JRZ(czst, "Sloupek", 2)) {
-		do $$$AssertTrue(1, "zastávka "_czst_" nemá číselník sloupků - popis sloupku přeskočen")
+		do $$$AssertSkipped("zastávka "_czst_" nemá číselník sloupků - popis sloupku přeskočen")
 		quit
 	}
 
@@ -134,11 +134,11 @@ Method TestTvarNazvuVDatech()
 {
 	set db = "ZL_KOVED", sku = 1, lin = "0822995"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - tvar názvu přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - tvar názvu přeskočen")
 		quit
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {
-		do $$$AssertTrue(1, "linka "_lin_" v "_db_" chybí - tvar názvu přeskočen")
+		do $$$AssertSkipped("linka "_lin_" v "_db_" chybí - tvar názvu přeskočen")
 		quit
 	}
 
@@ -181,7 +181,7 @@ Method TestPrestupyEmit()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přestupy přeskočeny")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přestupy přeskočeny")
 		quit
 	}
 	set pocetA = ..PrestupovyPocet(db, 1, "0330510", "A")
@@ -194,7 +194,7 @@ Method TestSplitPerOznacnik()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -209,7 +209,7 @@ Method TestNastupisteVariantEmit()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	set pocet = ..PocetDownstreamMultiStanovist(db, 1, "0330510")
@@ -222,7 +222,7 @@ Method TestPismenaVariant()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -254,7 +254,7 @@ Method TestSplitTitulekARadek()
 {
 	set db = "CB_CSADAD"
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSysFor(.sys, db)
@@ -281,7 +281,7 @@ Method TestOdjezdyVsLegacyGwbus()
 {
 	set db = "CB_GWBUS"
 	if '##class(%SYS.Namespace).Exists(db) || '##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") {
-		do $$$AssertTrue(1, "namespace "_db_" nebo legacy ALVA.TISKMHD.Data není na serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" nebo legacy ALVA.TISKMHD.Data není na serveru - přeskočeno")
 		quit
 	}
 	kill ^||ML("IN"), ^||ML("OUT")
@@ -297,16 +297,16 @@ Method TestOdjezdyVsLegacyGwbus()
 Method AssertZony(db As %String, sku As %String, lin As %String, page As %Integer)
 {
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na serveru - zóny "_lin_" přeskočeny")
+		do $$$AssertSkipped("namespace "_db_" není na serveru - zóny "_lin_" přeskočeny")
 		quit
 	}
 	if '##class(%Dictionary.CompiledClass).%ExistsId("ALVA.TISKMHD.Data") {
-		do $$$AssertTrue(1, "legacy ALVA.TISKMHD.Data není na serveru - zóny "_lin_" přeskočeny")
+		do $$$AssertSkipped("legacy ALVA.TISKMHD.Data není na serveru - zóny "_lin_" přeskočeny")
 		quit
 	}
 	set leg = ..LegacyZony(db, sku, lin, page)
 	if leg = "" {
-		do $$$AssertTrue(1, "legacy zóny prázdné pro "_lin_" (firma zóny nemá) - přeskočeno")
+		do $$$AssertSkipped("legacy zóny prázdné pro "_lin_" (firma zóny nemá) - přeskočeno")
 		quit
 	}
 	set our = ..OurZony(db, sku, lin, page)
@@ -828,7 +828,7 @@ Method TestTextyOmezeniProtiLegacy()
 		if 'pocet set nalezy = nalezy_" | "_db_" "_lin_": starý tisk nemá žádné omezení - fixture vyhnila?"
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "starý zastávkový tisk nebo firmy tu nejsou - přeskočeno")
+		do $$$AssertSkipped("starý zastávkový tisk nebo firmy tu nejsou - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(nalezy, "", "text omezení se liší od starého zastávkového tisku:"_nalezy)

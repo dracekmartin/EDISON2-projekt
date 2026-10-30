@@ -29,7 +29,7 @@ Method TestTabulkaJakoStaryModul()
 		do $$$AssertTrue(res("poradi"), idfa_" "_lin_": pořadí spojů se liší "_res("poradi","rozdil"))
 	}
 	if 'porovnano {
-		do $$$AssertTrue(1, "starý tisk MHD nebo firmy na serveru nejsou - přeskočeno")
+		do $$$AssertSkipped("starý tisk MHD nebo firmy na serveru nejsou - přeskočeno")
 		quit
 	}
 	// Shoda nad prázdnými značkami by nic nedokazovala.
@@ -40,7 +40,7 @@ Method TestTabulkaJakoStaryModul()
 Method TestMhdTiskneZvolenySmer()
 {
 	if '##class(%SYS.Namespace).Exists("CB_DP") {
-		do $$$AssertTrue(1, "firma CB_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma CB_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "CB_DP")
@@ -60,7 +60,7 @@ Method TestAdTiskneZvolenySmer()
 		kill parametry
 		set parametry("SMER_TISKU") = volba, parametry("OBOUSMERNY_TISK") = "true"
 		if '##class(ALVA.TemplateDesigner.Tests.LinkovyJrSadaTest).NactiLinku(.sys, "CB_CSADAD", 1, "0330511", .parametry) {
-			do $$$AssertTrue(1, "linka CB_CSADAD 0330511 není na serveru - přeskočeno")
+			do $$$AssertSkipped("linka CB_CSADAD 0330511 není na serveru - přeskočeno")
 			quit
 		}
 		// Obousměrná stránka nese prázdný SMER (`LinkovyJrAd.cls:777`), proto u „Oba" jedna prázdná.
@@ -74,7 +74,7 @@ Method TestAdTiskneZvolenySmer()
 Method TestParametryTypuProvozu()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -114,7 +114,7 @@ Method TestParametryTypuProvozu()
 Method TestVyberTypuProvozuJakoWeb()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -180,7 +180,7 @@ Method TestVyberTypuProvozuJakoWeb()
 			do $$$AssertTrue(res(kat), "proti starému tisku se liší "_kat_" ("_res(kat,"pocet")_") "_res(kat,"rozdil"))
 		}
 	} else {
-		do $$$AssertTrue(1, "starý tisk MHD na serveru není - porovnání přeskočeno")
+		do $$$AssertSkipped("starý tisk MHD na serveru není - porovnání přeskočeno")
 	}
 }
 
@@ -189,7 +189,7 @@ Method TestVyberTypuProvozuJakoWeb()
 Method TestUkazkaNeseTypyProvozuLinky()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -198,7 +198,7 @@ Method TestUkazkaNeseTypyProvozuLinky()
 	do $$$AssertEquals($get(^||ML("ERR")), "", "GetMockData skončil chybou")
 	set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT", 1), "{}"))
 	if '$isobject(page.%Get("rows")) || (page.rows.%Get("SPOJE").%Size() = 0) {
-		do $$$AssertTrue(1, "první linka KV_DP nedala ukázku - přeskočeno")
+		do $$$AssertSkipped("první linka KV_DP nedala ukázku - přeskočeno")
 		quit
 	}
 	set typy = page.values.%Get("TYPY_PROVOZU_LINKY")
@@ -230,7 +230,8 @@ Method TestVyberTypuProvozuJakoStaryModul()
 			do $$$AssertTrue(res(kat), idfa_" "_lin_" bez typu provozu "_vypnout_": liší se "_kat_" ("_res(kat,"pocet")_") "_res(kat,"rozdil"))
 		}
 	}
-	do $$$AssertTrue(1, "porovnáno linek: "_porovnano)
+	if 'porovnano { do $$$AssertSkipped("starý tisk MHD ani linka k porovnání na serveru nejsou - přeskočeno")  quit }
+	do ..LogMessage("porovnáno linek: "_porovnano)
 }
 
 /// Zvýraznit zastávku jako u linkového AD (`B191d`): kus názvu označí řádky zastávky, číslo zastávky
@@ -239,7 +240,7 @@ Method TestVyberTypuProvozuJakoStaryModul()
 Method TestZvyraznitZastavku()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -279,7 +280,7 @@ Method TestZvyraznitZastavku()
 Method TestZastavkyBezZastaveni()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")
@@ -391,7 +392,7 @@ Method TestZonyHranicniZastavky()
 Method TestDuvodPrazdnehoVystupu()
 {
 	if '##class(%SYS.Namespace).Exists("KV_DP") {
-		do $$$AssertTrue(1, "firma KV_DP není na serveru - přeskočeno")
+		do $$$AssertSkipped("firma KV_DP není na serveru - přeskočeno")
 		quit
 	}
 	do ..SysFirmy(.sys, "KV_DP")

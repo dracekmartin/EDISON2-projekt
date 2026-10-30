@@ -39,7 +39,7 @@ Method TestParita1073KvDpSmoKolize()
 {
 	set ok = ##class(ALVA.TemplateDesigner.Tests.MhdLegacyOracle).CompareLine("KV_DP", "KV_DP", "1073", 1, .res)
 	if 'ok {
-		do $$$AssertTrue(1, "legacy oracle / namespace KV_DP nedostupný - parita 1073 přeskočena")
+		do $$$AssertSkipped("legacy oracle / namespace KV_DP nedostupný - parita 1073 přeskočena")
 		quit
 	}
 	do $$$AssertEquals(res("zast","match"), 1, "zastávky 1:1 1073 (leg="_res("zast","legN")_" our="_res("zast","ourN")_") "_res("zast","diff"))
@@ -55,7 +55,7 @@ Method TestParita11350AutoZnacky()
 {
 	set ok = ##class(ALVA.TemplateDesigner.Tests.MhdLegacyOracle).CompareLine(..#GOLDIDFA, ..#GOLDDB, "11350", 1, .res)
 	if 'ok {
-		do $$$AssertTrue(1, "legacy oracle / namespace "_..#GOLDDB_" nedostupný - parita 11350 přeskočena")
+		do $$$AssertSkipped("legacy oracle / namespace "_..#GOLDDB_" nedostupný - parita 11350 přeskočena")
 		quit
 	}
 	do $$$AssertEquals(res("zast","match"), 1, "zastávky 1:1 11350 (leg="_res("zast","legN")_" our="_res("zast","ourN")_") "_res("zast","diff"))
@@ -69,7 +69,7 @@ Method TestPokryti11018AutoZnacky()
 {
 	set ok = ##class(ALVA.TemplateDesigner.Tests.MhdLegacyOracle).CompareLine(..#GOLDIDFA, ..#GOLDDB, "11018", 1, .res)
 	if 'ok {
-		do $$$AssertTrue(1, "legacy oracle / namespace "_..#GOLDDB_" nedostupný - parita 11018 přeskočena")
+		do $$$AssertSkipped("legacy oracle / namespace "_..#GOLDDB_" nedostupný - parita 11018 přeskočena")
 		quit
 	}
 	do $$$AssertEquals(res("pozn","covered"), 1, "poznámky pokrývají legacy 11018 (leg="_res("pozn","legN")_" our="_res("pozn","ourN")_") "_res("pozn","diff"))
@@ -79,7 +79,7 @@ Method AssertParita(lin As %String)
 {
 	set ok = ##class(ALVA.TemplateDesigner.Tests.MhdLegacyOracle).CompareLine(..#GOLDIDFA, ..#GOLDDB, lin, 1, .res)
 	if 'ok {
-		do $$$AssertTrue(1, "legacy oracle nedostupný (ALVA.MHD.LinkyPrintFormatMHD / namespace "_..#GOLDDB_") - parita "_lin_" přeskočena")
+		do $$$AssertSkipped("legacy oracle nedostupný (ALVA.MHD.LinkyPrintFormatMHD / namespace "_..#GOLDDB_") - parita "_lin_" přeskočena")
 		quit
 	}
 	do $$$AssertEquals(res("dep","match"),  1, "odjezdy 1:1 "_lin_" (leg="_res("dep","legN")_" our="_res("dep","ourN")_") "_res("dep","diff"))

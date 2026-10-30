@@ -110,7 +110,7 @@ Method AssertLine(lin As %String, expected As %String)
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
 		quit
 	}
 	set idfa = ..#GOLDIDFA

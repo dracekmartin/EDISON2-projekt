@@ -17,11 +17,6 @@
 
 ### Ostatní
 
-- **Testy hlásí přeskočení jako úspěch** [S-M] (nález 30. 10. při uzavření `B56`). Asi 100 míst v testech Caché píše
-  `$$$AssertTrue(1, "… přeskočeno")`, když firma nebo linka na serveru není - v souhrnu pak vypadá jako ověřený.
-  Tři takové testy na serveru nic neověřovaly a jejich očekávání byla zastaralá (opravené v `B56` S13). Převést na
-  `$$$AssertSkipped` (v souhrnu viditelné) a novým zápisům bránit kontrolou zdrojů.
-
 - **Úvodní okno pro nové uživatele** [S-M] (nápad Jan 29. 10.). Dnes návrhář otevře prázdnou šablonu
   a nový uživatel neví, kde začít. Okno po otevření nabídne: otevřít ukázkovou šablonu agendy, otevřít
   šablony z databáze, nebo zavřít a pokračovat jako dnes (s odkazem na nápovědu). Otevřené: co je

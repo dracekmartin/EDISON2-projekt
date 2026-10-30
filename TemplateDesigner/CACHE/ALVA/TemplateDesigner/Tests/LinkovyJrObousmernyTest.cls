@@ -80,8 +80,8 @@ Method TestKmSloupceObousmerneBerouSpolecnySeznam()
 {
 	do ..SetupSys(.sys)
 	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
-	if '##class(%SYS.Namespace).Exists(db) do $$$AssertTrue(1, "firma "_db_" tu není - přeskočeno") quit
-	if '$data(^[db]JRL(sku, lin, "I")) do $$$AssertTrue(1, "linka "_lin_" tu není - přeskočeno") quit
+	if '##class(%SYS.Namespace).Exists(db) do $$$AssertSkipped("firma "_db_" tu není - přeskočeno") quit
+	if '$data(^[db]JRL(sku, lin, "I")) do $$$AssertSkipped("linka "_lin_" tu není - přeskočeno") quit
 
 	set spolecnych = +$get(^[db]JRL(sku, lin, "K"))
 	set smerovychT = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "T"))
@@ -145,13 +145,13 @@ Method TestKmObouSmeruJsouNaSlouceneStrance()
 {
 	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - test přeskočen")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - test přeskočen")
 		quit
 	}
 	set kmT = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "T"))
 	set kmZ = +$get(^[db]JRL(sku, lin, "PATCH", "KmsSmer", "Z"))
 	if (kmT = 0) || (kmZ = 0) {
-		do $$$AssertTrue(1, "linka nemá km sloupce v obou směrech - test přeskočen")
+		do $$$AssertSkipped("linka nemá km sloupce v obou směrech - test přeskočen")
 		quit
 	}
 
@@ -172,12 +172,12 @@ Method TestKmOpacnehoSmeruNarustajiShoraDolu()
 {
 	set db = ..#TESTDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - test přeskočen")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - test přeskočen")
 		quit
 	}
 	set kmZ = +$get(^[db]JRL(..#TESTSKU, ..#TESTLIN, "PATCH", "KmsSmer", "Z"))
 	if kmZ = 0 {
-		do $$$AssertTrue(1, "linka nemá km sloupce směru zpět - test přeskočen")
+		do $$$AssertSkipped("linka nemá km sloupce směru zpět - test přeskočen")
 		quit
 	}
 
@@ -223,7 +223,7 @@ Method NactiLinku(obousmerne As %Boolean, ByRef pocetStranek, ByRef smery, ByRef
 {
 	set db = ..#TESTDB, sku = ..#TESTSKU, lin = ..#TESTLIN
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - test přeskočen")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - test přeskočen")
 		quit 0
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {

@@ -198,7 +198,7 @@ Method TestGold0945001()
 Method AssertLinka(db As %String, sku As %String, lin As %String, ocekavano As %String)
 {
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - gold "_lin_" přeskočen")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - gold "_lin_" přeskočen")
 		quit
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {

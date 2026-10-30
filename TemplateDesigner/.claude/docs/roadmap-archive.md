@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Testy Caché hlásí přeskočení poctivě (hotovo 30. 10. 2026)
+
+- **Přeskočení jako úspěch** (nález při uzavření `B56`, changelog 2026-10-30 (31)): 99 míst `$$$AssertTrue(1, "… přeskočeno")`
+  převedeno na `$$$AssertSkipped`, informační výpisy na `..LogMessage`. Na dev serveru se tím ukázaly dva další testy, které
+  nic neověřovaly (ukázková data s vlastními sloupci, výběr instancí) - běží na firmách sady. Novým zápisům brání
+  `PreskoceniTestuCacheTests`, pravidlo je v `architecture-rules.md` „must not happen" 8.
+
 ## Schůzka s kolegy z jízdních řádů - nastavení tisku (29. 10. 2026)
 
 - **Nastavení jízdních řádů, která čte návrhář** - rozhodnuto s kolegy 29. 10.: většina tiskových nastavení

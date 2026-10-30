@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (31) - Testy Caché hlásí přeskočení poctivě
+
+99 míst v testech Caché hlásilo „firma nebo linka na serveru není" přes `$$$AssertTrue(1, …)`, takže takový test vypadal v souhrnu jako ověřený.
+Teď jsou to `$$$AssertSkipped` (v souhrnu viditelné jako přeskočené) a dva informační výpisy po skutečných kontrolách šly do `..LogMessage`; „porovnáno linek: 0" u linkového JŘ MHD se hlásí jako přeskočení.
+Na dev serveru se tím ukázaly další dva testy, které nic neověřovaly, protože hledaly data v testovacím namespace: ukázková data s vlastními sloupci a výběr instancí - teď běží na firmách sady (výběr instancí nově u všech čtyř agend JŘ) a procházejí.
+Parita vlastních sloupců hlásila vědomou odchylku linky 0365005 jako přeskočení, ačkoli druhou linku ověří - je to teď zápis do logu.
+Jako přeskočený zůstává jen `LinkovyJrTurnusyTest.TestParitaSLegacy` (starý modul turnus nevytiskne u žádného spoje, popsáno ve třídě).
+Novým zápisům brání `PreskoceniTestuCacheTests` (prohledá třídy Caché všech projektů; na kódu před změnou našla všech 99 míst), pravidlo „must not happen" 8 v `architecture-rules.md`.
+Ověřeno: Caché testy 272 prošlo, 1 přeskočen, 0 selhalo; .NET testy 2550/2550.
+
 ## 2026-10-30 (30) - Testy, které nic neověřovaly, a uzavření `B56` (S13, čtvrtá část)
 
 Smoke test GetData vývěsky AD a dva testy dopravců hledaly linku v testovacím namespace, kde linky AD nejsou, a hlásily úspěch, aniž co ověřily.

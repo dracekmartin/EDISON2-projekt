@@ -210,7 +210,7 @@ Method TestSadaPokryvaTypy()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z testovací sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z testovací sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(chybi, "", "sada už tyhle typy nepokrývá: "_chybi)

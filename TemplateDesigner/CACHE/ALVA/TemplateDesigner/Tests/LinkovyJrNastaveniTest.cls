@@ -105,7 +105,7 @@ Method TestZvyrazneniZastavky()
 	do ..SetupSys(.sys)
 	set db = "CB_CSADAD", sku = 1, lin = "0330511"
 	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
-		do $$$AssertTrue(1, "linka pro zvýraznění není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("linka pro zvýraznění není na tomto serveru - přeskočeno")
 		quit
 	}
 
@@ -164,7 +164,7 @@ Method TestZastavkaVylepu()
 	do ..SetupSys(.sys)
 	set db = "CB_CSADAD", sku = 1, lin = "0330530"
 	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
-		do $$$AssertTrue(1, "linka pro zastávku výlepu není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("linka pro zastávku výlepu není na tomto serveru - přeskočeno")
 		quit
 	}
 
@@ -195,7 +195,7 @@ Method TestStrankaProZastavku()
 	do ..SetupSys(.sys)
 	set db = "CB_CSADAD", sku = 1, lin = "0330530"
 	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
-		do $$$AssertTrue(1, "linka pro výlepy není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("linka pro výlepy není na tomto serveru - přeskočeno")
 		quit
 	}
 
@@ -337,7 +337,7 @@ Method TestVlastniDefiniceSloupcu()
 	do ..SetupSys(.sys)
 	set db = "CB_CSADAD", sku = 1, lin = "0330511"
 	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
-		do $$$AssertTrue(1, "linka pro definici sloupců není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("linka pro definici sloupců není na tomto serveru - přeskočeno")
 		quit
 	}
 
@@ -369,13 +369,18 @@ Method TestVlastniDefiniceSloupcu()
 /// zůstalo (nalezeno 15. 9.); klient definici posílá stejně pro obě agendy.
 Method TestDefiniceSloupcuVUkazkovychDatech()
 {
-	do ..SetupSys(.sys)
+	// Ukázková data bere agenda z první linky firmy - testovací namespace linky AD nemá, proto firma
+	// sady, která na serveru je (do 30. 10. se test kvůli tomu tiše nespustil, `B56` S13).
+	do ##class(ALVA.TemplateDesigner.Tests.ZastavkoveJrAdSadaTest).LinkyNaServeru(.linky)
+	if '$get(linky) { do $$$AssertSkipped("žádná firma sady není na tomto serveru")  quit }
+	do ##class(ALVA.EDTesting.MLTestCase).SetupSys(.sys, "CB_DP")
+	set sys("U","DATA") = $piece(linky(1), "~", 1)
 
 	kill ^||ML
 	do ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetMockData(.sys)
 	set bezDefinice = ..NadpisySkupin()
 	if bezDefinice = "" {
-		do $$$AssertTrue(1, "firma nemá v ^JRL linku pro ukázková data - přeskočeno")
+		do $$$AssertSkipped("firma nemá v ^JRL linku pro ukázková data - přeskočeno")
 		quit
 	}
 
@@ -529,7 +534,7 @@ Method TestRucniPoradiSpoju()
 		do $$$AssertEquals(nase, rucne, "ruční pořadí u linky "_db_" "_lin_" se musí použít")
 	}
 	else {
-		do $$$AssertTrue(1, "na tomto serveru není linka s platným ručním pořadím - přeskočeno")
+		do $$$AssertSkipped("na tomto serveru není linka s platným ručním pořadím - přeskočeno")
 	}
 
 	// ── rozbité pořadí se zahodí a spočítá ──────────────────────────────
@@ -548,7 +553,7 @@ Method TestRucniPoradiSpoju()
 		do $$$AssertEquals(pocet2, vDatech, "rozbité ruční pořadí ("_db2_" "_lin2_") se musí zahodit a spočítat - všechny spoje")
 	}
 	else {
-		do $$$AssertTrue(1, "na tomto serveru není linka s rozbitým ručním pořadím - přeskočeno")
+		do $$$AssertSkipped("na tomto serveru není linka s rozbitým ručním pořadím - přeskočeno")
 	}
 }
 
@@ -595,14 +600,14 @@ Method TestMaticeNastaveni()
 	}
 
 	if 'overeno && (nalezy = "") {
-		do $$$AssertTrue(1, "žádná linka k ověření na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná linka k ověření na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(nalezy, "", "nastavení se nedodržuje: "_nalezy)
 	// Souhrn je součástí výsledku, ne ozdoba: „zelená" musí říct, kolik toho reálně kryje.
 	do $$$AssertNotEquals(overeno, "", "ověřeno "_overeno_", jen změřeno "_jenZmereno_", známých dluhů "_dluhy)
 	if neovereno '= "" {
-		do $$$AssertTrue(1, "v datech se nevyskytuje, zůstává NEOVĚŘENÉ: "_neovereno)
+		do ..LogMessage("v datech se nevyskytuje, zůstává NEOVĚŘENÉ: "_neovereno)
 	}
 }
 
@@ -755,7 +760,7 @@ Method TestMistenkaAmsJenSlovensky()
 	do ..SetupSys(.sys)
 	set db = "CB_CSADAD", sku = 1, lin = "0320913"
 	if '##class(%SYS.Namespace).Exists(db) || '$data(^[db]JRL(sku, lin, "I")) {
-		do $$$AssertTrue(1, "linka s místenkou AMS není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("linka s místenkou AMS není na tomto serveru - přeskočeno")
 		quit
 	}
 	kill parametry

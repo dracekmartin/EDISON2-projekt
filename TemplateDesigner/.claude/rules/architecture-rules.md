@@ -48,3 +48,8 @@ Konkrétní situace, které integrace s Caché musí předejít. Kontrolní sezn
    ačkoli nic nekontroluje (30. 10. dvě linky CB_GWBUS, 268 testů zelených). Přeskočit smí jen firma,
    která na serveru není. Kontrola: `TestovaciLinkyTest` hledá linky ve zdrojácích testů v tvarech
    z `Tvary` - nový tvar zápisu linky tam přidej.
+8. **Test bez dat hlásí úspěch** → `$$$AssertTrue(1, "… přeskočeno")` vypadá v souhrnu jako ověřený test.
+   Do 30. 10. takhle psalo 99 míst a pět testů na dev serveru léta neověřovalo nic, protože hledaly linku
+   v testovacím namespace, kde linky nejsou; dvě jejich očekávání mezitím zastarala. Bez dat
+   `$$$AssertSkipped("důvod")`, informace k testu, který něco ověřil, `do ..LogMessage(…)`; linku AD bere
+   test ze sady (`ZastavkoveJrAdSadaTest.LinkyNaServeru`). Kontrola: `PreskoceniTestuCacheTests`.

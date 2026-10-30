@@ -209,7 +209,7 @@ Method TestSadaPokryvaTypy()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z testovací sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z testovací sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(chybi, "", "sada už tyhle typy nepokrývá: "_chybi)
@@ -256,7 +256,7 @@ Method TestZarovnaniVariantnichPoli()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(radku > 0, 1, "jádro sady nedalo žádnou zastávku - rozbitý fixture?")
@@ -308,7 +308,7 @@ Method TestSeznamNemaNedosazitelneZastavky()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(radku > 0, 1, "jádro sady nedalo žádnou zastávku - rozbitý fixture?")
@@ -364,7 +364,7 @@ Method TestPismenaVariantOdkazujiNaExistujiciSloupec()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(znacek > 0, 1, "ani jedna značka varianty u minut - přestala se písmena přidělovat?")
@@ -382,7 +382,7 @@ Method TestPismenaVariantNevypinajiRozdilovePoznamky()
 	set db = "SKNI_MHDNITRA", sku = 1, lin = "0000014"
 	kill parametry
 	if '..NactiLinku(.sys, db, sku, lin, .parametry) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - přeskočeno")
 		quit
 	}
 	do ..ZmerProfil(.p)
@@ -401,7 +401,7 @@ Method TestRazeniVariantDleDelkyJizdy()
 	set db = "SKNI_MHDNITRA", sku = 1, lin = "0000012"
 	kill parametry
 	if '..NactiLinku(.sys, db, sku, lin, .parametry) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - přeskočeno")
 		quit
 	}
 	do ..ZmerProfil(.pVychozi)
@@ -552,7 +552,7 @@ Method TestZadneDvaSloupceVariantNejsouShodne()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z jádra sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z jádra sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(dvojic > 0, 1, "nenašla se ani jedna stránka se dvěma variantními sloupci - test by neověřil nic")
@@ -570,7 +570,7 @@ Method TestVlastniSloupecNedeleVratiSpojeSPlus()
 	kill parametry
 	set parametry("DEFINICE_SLOUPCU") = "{""sloupce"":[{""id"":1,""nadpis"":""Neděle"",""dny"":""7""}]}"
 	if '..NactiLinku(.sys, db, sku, lin, .parametry) {
-		do $$$AssertTrue(1, "firma "_db_" není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("firma "_db_" není na tomto serveru - přeskočeno")
 		quit
 	}
 
@@ -656,7 +656,7 @@ Method TestNaObjednaniZnackaALegenda()
 		do $$$AssertEquals(chyby, "", lin_":"_chyby)
 		kill upresneni
 	}
-	if 'overeno do $$$AssertTrue(1, "firma CB_GWBUS není na tomto serveru - přeskočeno")
+	if 'overeno do $$$AssertSkipped("firma CB_GWBUS není na tomto serveru - přeskočeno")
 }
 
 /// Barevný spoj má barvu u minuty a parametr Barvy spojů ji vypne (`B194` T2). ZL_KOVED 260/0000621
@@ -666,7 +666,7 @@ Method TestBarvySpojuNaMinutach()
 	do ..SetupSys(.sys)
 	kill parametry
 	if '..NactiLinku(.sys, "ZL_KOVED", 260, "0000621", .parametry) {
-		do $$$AssertTrue(1, "linka ZL_KOVED 260/0000621 není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("linka ZL_KOVED 260/0000621 není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertTrue(..PocetBarevnychMinut() > 0, "bez parametru má mít barevný spoj barvu u minuty")

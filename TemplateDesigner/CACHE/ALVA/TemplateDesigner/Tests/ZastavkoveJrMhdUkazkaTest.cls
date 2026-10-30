@@ -14,7 +14,7 @@ Method TestUkazkaJePrvniVyveskaPrvniLinky()
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSys(.sys, db)
@@ -23,7 +23,7 @@ Method TestUkazkaJePrvniVyveskaPrvniLinky()
 	set skupina = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetDefaultSkupinaLinekID(db, db)
 	set linka = $order(^[db]ALVA.MHD.LSO(db, 1, "IDX", 1, 1, 1, skupina, ""))
 	if linka = "" {
-		do $$$AssertTrue(1, db_" nemá linku ve výchozí skupině - přeskočeno")
+		do $$$AssertSkipped(db_" nemá linku ve výchozí skupině - přeskočeno")
 		quit
 	}
 

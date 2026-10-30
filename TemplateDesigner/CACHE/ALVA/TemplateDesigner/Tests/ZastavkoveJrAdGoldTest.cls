@@ -168,7 +168,7 @@ Method TestZadneDuplicitniVariantniSloupce()
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru - přeskočeno")
 		quit
 	}
 	do ..SetupSys(.sys)
@@ -316,7 +316,7 @@ Method TestZakladniCasNeseJenPovoleneStavy()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z testovací sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z testovací sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	set stavy = "linek "_overeno_" z "_pripady_", čísel "_cisel_", projíždí "_mensitek_", prázdných "_prazdnych_", jiných "_jinych
@@ -325,7 +325,7 @@ Method TestZakladniCasNeseJenPovoleneStavy()
 	// „<" a prázdno umí vyrobit jen část sady, takže na neúplném serveru se ty dva stavy nekontrolují -
 	// jinak by test padal kvůli tomu, kde běží, ne kvůli kódu.
 	if overeno < pripady {
-		do $$$AssertTrue(1, "část sady na serveru chybí, stavy projíždění a prázdno nekontrolovány ("_stavy_")")
+		do $$$AssertSkipped("část sady na serveru chybí, stavy projíždění a prázdno nekontrolovány ("_stavy_")")
 	} else {
 		do $$$AssertEquals(mensitek > 0, 1, "na celé sadě nevznikl stav projíždění, změna je inertní ("_stavy_")")
 		do $$$AssertEquals(prazdnych > 0, 1, "na celé sadě nevzniklo prázdno (zastávka mimo základní trasu) ("_stavy_")")
@@ -417,7 +417,7 @@ Method TestVariantniSloupecJeProbehJedneTrasy()
 		}
 	}
 	if 'overeno {
-		do $$$AssertTrue(1, "žádná firma z testovací sady není na tomto serveru - přeskočeno")
+		do $$$AssertSkipped("žádná firma z testovací sady není na tomto serveru - přeskočeno")
 		quit
 	}
 	do $$$AssertEquals(sloupcu > 0, 1, "sada nedala žádný variantní sloupec - rozbitý fixture? (linek "_overeno_")")
@@ -432,7 +432,7 @@ Method AssertLine(sku As %String, lin As %String, expected As %String)
 {
 	set db = ..#GOLDDB
 	if '##class(%SYS.Namespace).Exists(db) {
-		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
+		do $$$AssertSkipped("namespace "_db_" není na tomto serveru - gold "_lin_" přeskočen")
 		quit
 	}
 	if '$data(^[db]JRL(sku, lin, "I")) {
