@@ -17,12 +17,12 @@ Podklad ze tří průzkumů (vlastnosti prvků, agendy a data, názvy a konstant
 - A3 ✅ (30. 10.) Tabulka zkratek `Designer/KeyboardShortcuts.cs` (akce, kategorie, klávesa; text se z klávesy skládá). Obsluha okna a buňky s ní porovnává (přesná shoda), menu a bubliny přes `{td:Gesture}`/`{td:Tip}`, místní nabídky, F1 a seznam pro asistenta z ní. Věty se zkratkou (asistent, hlášky, příručka celá, ux §3) hlídá `KlavesoveZkratkyTests` (ověřeno mutací). Navigace v buňce (Tab, Enter, šipky) a psaní textu zůstávají v obsluze kódem.
 - A4 Šablonové vstupy GetData (DEFINICE_SLOUPCU, JAZYK, TURNUSY_KE_SPOJUM): 4 kopie v C# (ComposeGetDataParams Parameters.cs:479-508, ComposeWireSnapshot Columns.cs:154 podle pořadí, MockDataInput CacheAgendaProvider.cs:552, InfrastructureKeys v testu) → jeden typ.
 - A5 Popisky vzorů sloupců: DepartureColumnPresets.cs:20-37 × ROZDELENI_/DELENI_SLOUPCU → PRESETY_SLOUPCU aditivně nese popisek, C# čte z dat.
-- A6 Výchozí mřížka a přichytávání: DesignerState.cs:58-69 (1 mm, zapnuto) × MainStatePref (5 mm, vypnuto) × SnapEngine × XAML × příručka §6 → jedna konstanta. ROZHODNOUT default.
+- A6 ✅ (30. 10., s E3) Výchozí mřížka 5 mm bez přichytávání v `DesignerState.Default*`, předvolby ji přebírají.
 - A7 Úprava více prvků: vlastní 4 deskriptory (ElementPropertiesWindowViewModel.cs:363-398, skupiny „Rámeček"/„Pozice") → GetPositionDescriptors + konstanty skupin. Triviální.
 - A8 Volby zarovnání: 4 kopie (PropertyDescriptor.cs:109-121, StyleFields.cls:47-49, TextElementEdit.cls:69-78, CellStyleEditor.Converters.cs:65-82) → C# jedna, proti .cls test.
 - A9 Lišta formátu (FormatToolbar.xaml.cs:40-55) hledá deskriptory podle textu skupiny/popisku → konstanty nebo klíč.
-- A10 Levý panel: menu Zobrazit → „Panel sekcí" (xaml.cs:489) × ☰/Ctrl+B (:468) dvě implementace → jeden příkaz, jedno jméno (asi i chyba: MinWidth 120).
-- A11 Třída formuláře `ALVA.TemplateDesigner.EDInputForm.*Edit`: 23 literálů v 10 souborech → konvence + test existence .cls.
+- A10 ✅ (30. 10., s E4) Menu Zobrazit → Levý panel ovládá totéž co ☰ a Ctrl+B.
+- A11 ✅ (30. 10., s A1) Formulář prvku podle pravidla `{Typ}Edit` z katalogu prvků, existenci .cls hlídá `ElementCatalogTests`. Literály zůstaly jen u formulářů mimo prvky (sekce, stránka, řádek a buňka tabulky, vložení tabulky), každý na jednom místě.
 - A12 Příkazy vrstvy: 4 tvary textů → jedna sada (ROZHODNOUT kanon).
 
 ## B. Dvě místa + zpřísnit test (doporučeno, neslučovat)
