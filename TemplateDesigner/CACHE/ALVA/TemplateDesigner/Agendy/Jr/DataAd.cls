@@ -1,9 +1,99 @@
+Include GENERAL
+
 /// Čtení dat AD (jízdní řády linkové dopravy, `^JRL`), společné všem agendám nad daty AD - dnes
-/// vývěsce AD a linkovému JŘ AD (`B56` S5, `architektonicka-rozhodnuti-agendy.md` R8). Datovou
-/// databázi a linku dostává parametry, do pracovního globálu agendy nesahá (`cache-api.md` pravidlo 6).
-/// Do 30. 10. měla každá agenda vlastní kopii.
+/// vývěsce AD, linkovému JŘ AD a rozdílovému JŘ (`B56` S5 a S6, `architektonicka-rozhodnuti-agendy.md` R8).
+/// Datovou databázi a linku dostává parametry, do pracovního globálu agendy nesahá (`cache-api.md`
+/// pravidlo 6). Do 30. 10. měla každá agenda vlastní kopii.
+/// Výběr skupin linek a linek (`GetAvailableSkupiny`, `GetAvailableInstances`) agendy AD jen přesměrují
+/// sem, aby se okno výběru linek chovalo ve všech stejně - i v budoucí relaci nad AD.
 Class ALVA.TemplateDesigner.Agendy.Jr.DataAd Extends %RegisteredObject
 {
+
+/// Skupiny linek pro filtr výběru linek - první subscript ^JRL(sku). Název skupiny je 1. `~`-piece
+/// hodnoty ^JRL(sku) (např. "Vertikála k 1.1. - ŘÁDNÉ~01.01.2024~..."). OUT["1"] = [{ value, label }].
+/// Bez téhle metody vrátí BaseAgenda prázdno, dialog přepínač skryje a uživatel zůstane trvale
+/// na první skupině (nahlásil Jan 26. 8.).
+ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s arr = ##class(%DynamicArray).%New()
+        s sku = ""
+        f {
+            s sku = $o(^[dataDB]JRL(sku))
+            q:sku=""
+            i 'sku continue                  // přeskoč nenumerický / konfig uzel
+
+            s nazev = $p($g(^[dataDB]JRL(sku)), "~", 1)
+            s obj = ##class(%DynamicObject).%New()
+            d obj.%Set("value", sku)
+            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_sku))
+            d arr.%Push(obj)
+        }
+        s ^||ML("OUT","1") = arr.%ToJSON()
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
+/// Seznam linek pro výběr linek (umožní proklikávání stránek v náhledu).
+/// IN["search"] = substring filtr (case-insensitive), IN["limit"] = max (default 50),
+/// IN["SKUPINA_LINEK_ID"] = skupina linek (default první v ^JRL).
+/// OUT["1"] = JSON pole { "value": lin, "cislo", "nazev", "display": "číslo - název", "subtitle": "Platnost ..." }.
+ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s search = $zcvt($g(^||ML("IN","search")), "L")
+        s limit  = +$g(^||ML("IN","limit"))
+        i 'limit s limit = 50
+
+        s sku = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
+        i 'sku s sku = $o(^[dataDB]JRL(""))      // první skupina linek
+
+        s arr = ##class(%DynamicArray).%New()
+        s count = 0, lin = ""
+        f {
+            s lin = $o(^[dataDB]JRL(sku,lin))
+            q:lin=""
+            i '$d(^[dataDB]JRL(sku,lin,"I")) continue
+
+            s nazev   = ..NazevLinky(dataDB, sku, lin)
+            s cislo   = +lin                          // bez vedoucí nuly (subscript ^JRL ji drží)
+            s display = cislo
+            i nazev '= "" s display = cislo_" - "_nazev
+            i (search '= "") && ('$f($zcvt(display,"L"), search)) continue
+
+            s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
+            s subtitle = ""
+            i $p(plati,"~",1) '= "" {
+                s subtitle = "Platnost od "_$p(plati,"~",1)
+                i $p(plati,"~",2) '= "" s subtitle = subtitle_" do "_$p(plati,"~",2)
+            }
+
+            s obj = ##class(%DynamicObject).%New()
+            // ⚠️ `cislo` a `nazev` musí být ve výstupu, i když je nese `display`: výběr instancí
+            // je vypisuje jako sloupce, takže bez nich vyjde seznam **prázdný** (nahlásil Jan 24. 8.).
+            // "string" type - .NET čte přes GetString(); bez toho číselné cislo/value → JSON number → chyba.
+            d obj.%Set("value", lin, "string")
+            d obj.%Set("cislo", cislo, "string")
+            d obj.%Set("nazev", nazev, "string")
+            d obj.%Set("display", display, "string")
+            i subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
+            d arr.%Push(obj)
+
+            s count = count + 1
+            q:count>=limit
+        }
+
+        s ^||ML("OUT","1") = arr.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
 
 /// Název linky z částí ^JRL(sku,lin,"I",1..N) spojených pomlčkou.
 ClassMethod NazevLinky(dataDB As %String, sku As %String, lin As %String) As %String

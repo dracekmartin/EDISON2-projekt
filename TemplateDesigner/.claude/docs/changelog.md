@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-30 (23) - Výběr linek ve všech agendách AD z jednoho místa (`B56` S6)
+
+Výběr skupin linek a linek, který okno výběru linek volá, měla vývěska AD i linkový JŘ AD každá ve vlastní kopii; kopie MHD se do 23. 10. rozešla v příznaku zablokované skupiny a stejné riziko hrozilo u AD.
+Obě metody jsou teď v `Jr/DataAd.cls` a vývěska AD, linkový JŘ AD i rozdílový JŘ je jen přesměrují; rozdílový JŘ přestal kvůli nim volat linkový JŘ AD.
+Budoucí relace nad AD tak dostane týž výběr linek, ne třetí kopii (Jan 30. 10.).
+`VyberLinekAdTests` zastaví agendu nad daty AD, která by měla vlastní výběr; spadl na dočasně vráceném přesměrování rozdílového JŘ přes linkový JŘ AD.
+Ověřeno: na serveru vracejí vývěska AD i rozdílový JŘ stejné skupiny linek a vývěska AD i linkový JŘ AD stejný seznam linek s filtrem a limitem (CB_GWBUS), snímek výstupu agend beze změny (42 souborů), Caché testy 269/269, .NET testy 2544/2544, integrační testy 48/48.
+
 ## 2026-10-30 (22) - Čtení dat AD z jedné třídy (`B56` S5)
 
 Název linky, číslo linky ve tvaru uloženém v `^JRL`, první linka firmy a hodnota času z trasy, které měla vývěska AD i linkový JŘ AD shodné, jsou jednou v `Jr/DataAd.cls`.

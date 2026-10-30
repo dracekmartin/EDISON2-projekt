@@ -792,9 +792,9 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
 
 **Doplněno 23. 10. (review `B193`)** - kde začít, protože se to už rozešlo:
 
-- **Výběr skupin linek a linek** - u AD dvě kopie (`GetAvailableSkupiny`, `GetAvailableInstances`).
-  MHD je od 23. 10. sdílí (`ZastavkoveJrMhd.SeznamLinek`, `B193c`), kopie se do té doby rozešly
-  v příznaku zablokované skupiny.
+- **Výběr skupin linek a linek** - u AD je od 30. 10. jednou v `Jr/DataAd.cls` a agendy AD ho jen přesměrují (`B56` S6,
+  hlídá `VyberLinekAdTests`). MHD ho sdílí od 23. 10. přes zastávkový MHD (`ZastavkoveJrMhd.SeznamLinek`, `B193c`),
+  kopie se do té doby rozešly v příznaku zablokované skupiny; do pomocné třídy dat MHD půjde s ostatním čtením MHD.
 - **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - každá agenda ji skládá zvlášť; odtud čtyři
   tvary popisu platnosti a dva texty návrhu (`B193f`, viz changelog 23. 10.).
 - **Společné parametry JŘ** jsou od 30. 10. definované jednou v `Jr/Parametry.cls` (`B56` S2): sedm parametrů
@@ -884,9 +884,9 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná bajt po bajtu.
   Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
-- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`) a S5 (data AD, `Jr/DataAd.cls`) hotové 30. 10.
+- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5 a S6 (data AD a výběr linek, `Jr/DataAd.cls`) hotové 30. 10.
   Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
-  Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky (hotové, S3); linkové (hotové, S4, `Jr/VystupLinkovy.cls`); AD (hotové, S5, `Jr/DataAd.cls`; `NormalizLinku` přejmenované na `FormatCisloLinky`), zbývá výběr skupin linek a linek `GetAvailableSkupiny`/`GetAvailableInstances` (S6).
+  Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky (hotové, S3); linkové (hotové, S4, `Jr/VystupLinkovy.cls`); AD (hotové, S5, `Jr/DataAd.cls`; `NormalizLinku` přejmenované na `FormatCisloLinky`), výběr skupin linek a linek (hotový, S6).
   Pak sjednocení z odstavce výš (platnost, omezení 14 a 15).
   Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".
 - **Pojistky při přesunu kódu (S1 hotové 30. 10.):** pomocné třídy jsou v `Agendy/Jr/` a testy čtou zdrojáky přes `ZdrojeAgend`: kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy (přímé potomky `BaseAgenda`, jako registr).

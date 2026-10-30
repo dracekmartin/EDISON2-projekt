@@ -90,86 +90,16 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Skupiny linek pro filtr Instance Pickeru - první subscript ^JRL(sku). Název skupiny je 1. `~`-piece
-/// hodnoty ^JRL(sku) (např. "Vertikála k 1.1. - ŘÁDNÉ~01.01.2024~..."). OUT["1"] = [{ value, label }].
+/// Skupiny linek pro výběr linek - společné agendám nad AD (`Jr.DataAd`).
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
-    s err = ""
-    try {
-        $$$FillParams
-
-        s arr = ##class(%DynamicArray).%New()
-        s sku = ""
-        f {
-            s sku = $o(^[dataDB]JRL(sku))
-            q:sku=""
-            i 'sku continue                  // přeskoč nenumerický / konfig uzel
-
-            s nazev = $p($g(^[dataDB]JRL(sku)), "~", 1)
-            s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value", sku)
-            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_sku))
-            d arr.%Push(obj)
-        }
-        s ^||ML("OUT","1") = arr.%ToJSON()
-    }
-    catch (ex) { $$$CatchErrRest }
-    ret $$$OK
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).GetAvailableSkupiny(.sys)
 }
 
-/// Vrátí seznam linek pro Instance Picker (umožní proklikávání stránek v preview).
-/// IN["search"] = substring filtr (case-insensitive), IN["limit"] = max (default 50),
-/// IN["SKUPINA_LINEK_ID"] = skupina linek (default první v ^JRL).
-/// OUT["1"] = JSON pole { "value": lin, "display": "číslo - název", "subtitle": "Platnost ..." }.
+/// Seznam linek pro výběr linek - společný agendám nad AD (`Jr.DataAd`).
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
-    s err = ""
-    try {
-        $$$FillParams
-
-        s search = $zcvt($g(^||ML("IN","search")), "L")
-        s limit  = +$g(^||ML("IN","limit"))
-        i 'limit s limit = 50
-
-        s sku = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
-        i 'sku s sku = $o(^[dataDB]JRL(""))      // první skupina linek
-
-        s arr = ##class(%DynamicArray).%New()
-        s count = 0, lin = ""
-        f {
-            s lin = $o(^[dataDB]JRL(sku,lin))
-            q:lin=""
-            i '$d(^[dataDB]JRL(sku,lin,"I")) continue
-
-            s nazev   = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).NazevLinky(dataDB, sku, lin)
-            s cislo   = +lin                          // bez vedoucí nuly (subscript ^JRL ji drží)
-            s display = cislo
-            i nazev '= "" s display = cislo_" - "_nazev
-            i (search '= "") && ('$f($zcvt(display,"L"), search)) continue
-
-            s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
-            s subtitle = ""
-            i $p(plati,"~",1) '= "" {
-                s subtitle = "Platnost od "_$p(plati,"~",1)
-                i $p(plati,"~",2) '= "" s subtitle = subtitle_" do "_$p(plati,"~",2)
-            }
-
-            s obj = ##class(%DynamicObject).%New()
-            // "string" type - .NET čte přes GetString(); bez toho číselné cislo/value → JSON number → chyba
-            d obj.%Set("value", lin, "string")
-            d obj.%Set("cislo", cislo, "string")
-            d obj.%Set("nazev", nazev, "string")
-            d obj.%Set("display", display, "string")
-            i subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
-            d arr.%Push(obj)
-
-            s count = count + 1
-            q:count>=limit
-        }
-
-        s ^||ML("OUT","1") = arr.%ToJSON()
-    } catch (ex) { $$$CatchErrRest }
-    ret $$$OK
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).GetAvailableInstances(.sys)
 }
 
 /// Vrátí data pro tisk: 1 stránka per zastávka × směr (reimpl. legacy `WinTiskMhd^JRapiExp10`).

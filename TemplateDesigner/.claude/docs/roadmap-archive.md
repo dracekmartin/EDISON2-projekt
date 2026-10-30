@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S6** Výběr skupin linek a linek u AD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (23), Jan 30. 10.: ať je
+  výběr linek konzistentní i pro budoucí relaci nad AD): metody jsou v `Jr/DataAd.cls`, vývěska AD, linkový JŘ AD
+  i rozdílový JŘ je jen přesměrují; `VyberLinekAdTests` zastaví agendu nad AD s vlastní verzí.
+
 - **S5** Čtení dat AD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (22), schválil Jan 30. 10.): název, číslo
   a první linka a hodnota času z vývěsky AD i linkového JŘ AD jsou v `Jr/DataAd.cls`; `NormalizLinku` je při přesunu
   `FormatCisloLinky` (pravidlo 5). Výstup agend beze změny.

@@ -100,12 +100,12 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
 
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
-    q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetAvailableSkupiny(.sys)
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).GetAvailableSkupiny(.sys)
 }
 
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
-    q ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).GetAvailableInstances(.sys)
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).GetAvailableInstances(.sys)
 }
 
 ClassMethod GetMockData(ByRef sys As %String) As %Status

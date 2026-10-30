@@ -92,6 +92,8 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
 - **Stavba výstupu vývěsky** (řádek zastávky, odjezd, skupina dnů, poznámka, barva, speciální znak) je v `Jr/VystupZastavkovy.cls`,
   linkového JŘ (poznámka, skupina dnů, čas) v `Jr/VystupLinkovy.cls`.
 - **Čtení dat AD** společné agendám nad `^JRL` (název, číslo a první linka, hodnota času) je v `Jr/DataAd.cls`.
+  Výběr skupin linek a linek (`GetAvailableSkupiny`, `GetAvailableInstances`) agenda nad AD jen přesměruje do `Jr.DataAd`,
+  aby se okno výběru linek chovalo ve všech stejně; hlídá `VyberLinekAdTests`.
 
 ### Wire formáty
 
