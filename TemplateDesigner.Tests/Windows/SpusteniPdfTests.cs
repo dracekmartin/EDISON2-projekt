@@ -71,6 +71,48 @@ public class SpusteniPdfTests : IDisposable
         Assert.True(zavreno);
     }
 
+    [Fact]
+    public void SlozkaZeSpusteni_PromenneProstrediSeRozbali_BezNiVychozi()
+    {
+        var promenna = "TD_SLOZKA_" + Guid.NewGuid().ToString("N");
+        Environment.SetEnvironmentVariable(promenna, _slozka);
+        try
+        {
+            Assert.Equal(Path.Combine(_slozka, "Porovnani"), LaunchPdfWindowViewModel.OutputFolder(
+                LaunchInput.Parse($"Agenda=X;Slozka=%{promenna}%\\Porovnani;Vystup=PDF"), "vychozi"));
+            Assert.Equal("vychozi", LaunchPdfWindowViewModel.OutputFolder(LaunchInput.Parse("Agenda=X;Vystup=PDF"), "vychozi"));
+            Assert.Equal("vychozi", LaunchPdfWindowViewModel.OutputFolder(LaunchInput.Parse("Agenda=X;Slozka= ;Vystup=PDF"), "vychozi"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(promenna, null);
+        }
+    }
+
+    [Fact]
+    public async Task DoSlozkyNejdeZapisovat_RekneKteraAPdfNevznikne()
+    {
+        // Složka nejde založit: v cestě stojí soubor. Zjistit se to musí před načtením dat.
+        Directory.CreateDirectory(_slozka);
+        var soubor = Path.Combine(_slozka, "soubor");
+        File.WriteAllText(soubor, "");
+        var cil = Path.Combine(soubor, "Porovnani");
+        var vm = new LaunchPdfWindowViewModel(LaunchInput.Parse($"{Porovnani.Replace(";Vystup=PDF", "")};Slozka={cil};Vystup=PDF"),
+            Task.FromResult(new AgendaRegistryLoad([])),
+            _ => throw new InvalidOperationException("bez zapisovatelné složky se návrhář nemá vytvářet"))
+        {
+            Folder = _slozka,
+            OpenPdf = _ => throw new InvalidOperationException("PDF nemá vzniknout"),
+        };
+
+        await vm.RunAsync();
+
+        _popup.Received(1).Info(Arg.Is<string>(s => s.Contains($"Do složky {cil} nejde zapisovat") && s.Contains("Porovnání linek")),
+            Arg.Any<System.Windows.Window?>());
+        Assert.False(LaunchPdfWindowViewModel.CanWriteTo("Porovnani"));   // relativní cesta by mířila kamkoli
+        Assert.True(LaunchPdfWindowViewModel.CanWriteTo(_slozka));
+    }
+
     // Vstup z porovnání linek v ISYJR2 (TiskJRHelper.OpenRozdilovyJR).
     private const string Porovnani =
         "Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760;Vystup=PDF";

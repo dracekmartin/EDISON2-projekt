@@ -26,7 +26,7 @@ public class LaunchPdfWindowViewModel : EDViewModel
         private set => Set(ref _statusText, value);
     }
 
-    /// <summary>Kam se PDF uloží; testy podstrčí vlastní složku.</summary>
+    /// <summary>Kam se PDF uloží, když spuštění složku neurčí (<see cref="LaunchInput.FolderKey"/>); testy podstrčí vlastní.</summary>
     public string Folder { get; init; } = Path.Combine(Path.GetTempPath(), "EDISON", "TemplateDesigner");
 
     /// <summary>Otevření hotového PDF; testy ho nahradí, aby se nespouštěl prohlížeč.</summary>
@@ -58,6 +58,13 @@ public class LaunchPdfWindowViewModel : EDViewModel
             }
 
             StatusText = $"Připravuji PDF: {template.Name}…";
+            var folder = OutputFolder(_input, Folder);
+            if (!await Task.Run(() => CanWriteTo(folder)))
+            {
+                PopupDisplayer.Info($"Do složky {folder} nejde zapisovat, PDF nevzniklo. Zvolte v okně Porovnání linek jinou složku.");
+                return;
+            }
+
             var registry = await _agendas;
             if (registry.Failure is { } failure)
             {
@@ -76,7 +83,7 @@ public class LaunchPdfWindowViewModel : EDViewModel
                 return;
             }
 
-            var (path, duvod) = await _createDesigner(registry.Agendas).ExportLaunchPdfAsync(_input, template, Folder);
+            var (path, duvod) = await _createDesigner(registry.Agendas).ExportLaunchPdfAsync(_input, template, folder);
             if (path is null)
             {
                 PopupDisplayer.Info(duvod ?? "PDF se nepodařilo vytvořit.");
@@ -96,6 +103,29 @@ public class LaunchPdfWindowViewModel : EDViewModel
         finally
         {
             CloseDialog(true);
+        }
+    }
+
+    /// <summary>Složka ze spuštění s rozbalenými proměnnými prostředí, bez ní <paramref name="fallback"/>.</summary>
+    internal static string OutputFolder(LaunchInput input, string fallback) =>
+        input.Get(LaunchInput.FolderKey)?.Trim() is { Length: > 0 } folder
+            ? Environment.ExpandEnvironmentVariables(folder)
+            : fallback;
+
+    // Právo zápisu se dá zjistit jen zápisem. Zkouší se před načtením dat, ať uživatel nečeká na PDF,
+    // které nepůjde uložit; relativní cesta by mířila do pracovní složky procesu.
+    internal static bool CanWriteTo(string folder)
+    {
+        if (!Path.IsPathFullyQualified(folder)) return false;
+        try
+        {
+            Directory.CreateDirectory(folder);
+            using (File.Create(Path.Combine(folder, $".td-{Guid.NewGuid():N}.tmp"), 1, FileOptions.DeleteOnClose)) { }
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException)
+        {
+            return false;
         }
     }
 

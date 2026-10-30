@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-30 (2) - PDF z porovnání linek do zvolené složky (HD 13492)
+
+Zákazník KIDS své PDF z porovnání linek našel jen v dočasné složce, protože se mu neotevřelo v prohlížeči.
+Okno Porovnání linek v modulu JŘ (repo EDISON) má novou skupinu Výstup s polem „Složka pro PDF".
+Výchozí hodnota je `%TEMP%\EDISON\TemplateDesigner`, takže ostatní uživatelé nic nepoznají.
+Okno si složku pamatuje po uživateli a firmě (`^JRR("PorovnaniLinekSlozka",uživatel)`) a cestu se středníkem odmítne.
+Modul JŘ ji pošle návrháři v klíči `Slozka`, návrhář rozbalí proměnné prostředí a PDF uloží tam.
+Do složky, kam nejde zapisovat, návrhář nic nenačítá a řekne to hned.
+Starší návrhář klíč ignoruje a uloží PDF jako dřív.
+Ověřeno voláním okna na dev serveru (výchozí hodnota, paměť, středník, prázdná hodnota), skutečným spuštěním TemplateDesigner.exe s argumenty nového modulu JŘ (PDF ve zvolené složce i v `%TEMP%`) a testy `SpusteniPdfTests`.
+Klikání v okně modulu JŘ zatím neověřené.
+
 ## 2026-10-30 - Spuštění do PDF řekne, že se návrhář nespojil se serverem (HD 13774)
 
 Když se návrhář po spuštění z porovnání linek v modulu JŘ nespojil se serverem, hlásil „Spuštění neurčuje linku."

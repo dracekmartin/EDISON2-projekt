@@ -3,7 +3,7 @@ namespace TemplateDesigner.Config;
 /// <summary>
 /// Obsah pole <c>inputParam</c> launch kontraktu EDISONMAIN2: <c>Agenda=&lt;kód&gt;</c> a za ním volitelně
 /// další <c>KLÍČ=hodnota</c> oddělené středníkem (jména jako na wire agendy), např. z porovnání linek
-/// v modulu JŘ: <c>Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760;Vystup=PDF</c>.
+/// v modulu JŘ: <c>Agenda=LINKOVY_JR_AD_ROZDILOVY;SKUPINA_LINEK_ID=307;LINKA_ID=0380760;POROVNAT_SKUPINU=207;POROVNAT_LINKU=0380760;Slozka=D:\Porovnani;Vystup=PDF</c>.
 /// </summary>
 /// <remarks>
 /// Producent je v repu EDISON (<c>ISYJR2/TiskJRHelper.cs</c>), proto tvar jen přidáváme.
@@ -17,6 +17,12 @@ public sealed record LaunchInput(string? AgendaCode, IReadOnlyDictionary<string,
 
     /// <summary><c>Vystup=PDF</c>: návrhář neotevře okno, vyrobí PDF a ukáže ho ve výchozím prohlížeči.</summary>
     public const string OutputKey = "Vystup";
+
+    /// <summary>
+    /// Složka pro PDF z <c>Vystup=PDF</c>, smí obsahovat proměnné prostředí (<c>%TEMP%</c>); chybí = dočasná složka.
+    /// Vybírá ji uživatel v okně Porovnání linek modulu JŘ. Středník v cestě nejde, odděluje klíče.
+    /// </summary>
+    public const string FolderKey = "Slozka";
 
     public static readonly LaunchInput Empty = new(null, new Dictionary<string, string>());
 
