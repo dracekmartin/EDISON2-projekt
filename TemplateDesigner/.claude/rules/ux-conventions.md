@@ -36,16 +36,19 @@ Jako plánovaná položka to v roadmapě jen viselo - je to způsob práce, kter
 ## 2. Tooltipy
 
 - **Každý ikonový button** v toolbaru / paletě **musí mít** `ToolTip` - bez textu je tlačítko slepé.
-- Tooltip format: `"Akce - klávesa"` (např. `"Duplikovat - Ctrl+D"`).
+- Tooltip format: `"Akce - klávesa"` (např. `"Duplikovat - Ctrl+D"`). Tlačítko se zkratkou ho bere
+  z tabulky zkratek: `ToolTip="{td:Tip Undo}"`, v menu `InputGestureText="{td:Gesture Undo}"`.
 - Pokud akce nemá keyboard shortcut, jen `"Akce"`.
 
 ---
 
-## 3. Keyboardové zkratky - autoritativní tabulka
+## 3. Keyboardové zkratky
 
-> Autoritativní = odpovídá `MainWindow.Keyboard.cs` KeyDown handleru (ověřeno 2026-07-03). Při změně
-> zkratky v kódu aktualizuj i tuto tabulku. Save As **nemá** zkratku (jen menu/příkaz) - dřívější
-> „Ctrl+Shift+S" byl drift, neexistuje.
+> **Zdroj je `dotnet/Designer/KeyboardShortcuts.cs`** (od 30. 10.): obsluha kláves s ním porovnává, menu,
+> bubliny, nápověda F1 a asistent z něj berou text. Do té doby byly zkratky opsané na sedmi místech a rozcházely se.
+> Tabulky níž jsou přehled s důvody rozhodnutí; `KlavesoveZkratkyTests` hlídá, že ony, příručka i texty
+> v kódu neznají zkratku, kterou tabulka nemá. Shoda je **přesná** (Ctrl+Shift+Z není Ctrl+Z, AltGr nespustí
+> zkratku s Ctrl). Save As **nemá** zkratku (jen menu/příkaz) - dřívější „Ctrl+Shift+S" byl drift, neexistuje.
 
 ### Edit operace
 
@@ -211,7 +214,7 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
 - **Nepřebíjet** standardní Windows zkratky (Ctrl+S, Ctrl+Z, Ctrl+C, Alt+F4, F1, Esc).
 - **Ctrl+Shift+X** prostor je pro „advanced" varianty (Copy Style, Normalize).
 - **Alt+X** prostor je pro alternativní výběr (Alt+klik).
-- **Tlačítko a jeho zkratka musí dělat totéž** (Fit ↔ Ctrl+0, 1:1 ↔ Ctrl+1). Při přidání nové zkratky - **doplnit ji do této tabulky**.
+- **Tlačítko a jeho zkratka musí dělat totéž** (Fit ↔ Ctrl+0, 1:1 ↔ Ctrl+1). Nová zkratka se přidává **do `KeyboardShortcuts`** (menu, bubliny, F1 a asistent ji převezmou) a sem do přehledu.
 
 ---
 

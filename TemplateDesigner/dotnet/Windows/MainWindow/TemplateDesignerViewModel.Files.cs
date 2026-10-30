@@ -166,7 +166,7 @@ public partial class TemplateDesignerViewModel
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode))
         {
-            PopupDisplayer.Info("Nejprve vyberte agendu (Ctrl+Shift+A).");
+            PopupDisplayer.Info($"Nejprve vyberte agendu ({KeyboardShortcuts.ChangeAgenda.Gesture}).");
             return;
         }
 

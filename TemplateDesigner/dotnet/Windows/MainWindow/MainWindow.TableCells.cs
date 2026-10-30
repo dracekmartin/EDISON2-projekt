@@ -5,6 +5,7 @@ using System.Windows.Media;
 using SkiaSharp;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
+using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Rendering;
@@ -287,25 +288,20 @@ public partial class MainWindow
     /// </summary>
     private bool HandleCellFormatKey(KeyEventArgs e)
     {
-        if (_cellTable is null || !Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return false;
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) || Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) return false;
-        if (CellFormatting is not { } formatting) return false;
+        if (_cellTable is null) return false;
+        var zkratka = new[] { KeyboardShortcuts.CellBold, KeyboardShortcuts.CellItalic, KeyboardShortcuts.CellUnderline }
+            .FirstOrDefault(z => z.Matches(e));
+        if (zkratka is null || CellFormatting is not { } formatting) return false;
 
         // Nová hodnota se spočítá **jednou** z aktivní buňky (jako ve Wordu), ne pro každou zvlášť -
         // u výběru oblasti by se jinak buňky navzájem prohodily místo srovnání na jednu hodnotu.
         var style = formatting.ActiveStyle();
-        var (label, change) = e.Key switch
-        {
-            Key.B => ("Tučné",     Set(s => s.Bold          = !style.Bold)),
-            Key.I => ("Kurzíva",   Set(s => s.Italic        = !style.Italic)),
-            Key.U => ("Podtržení", Set(s => s.Underline     = !style.Underline)),
-            _     => (null, null)
-        };
-        if (label is null || change is null) return false;
+        Action<TextStyle> change =
+            zkratka == KeyboardShortcuts.CellBold   ? s => s.Bold      = !style.Bold :
+            zkratka == KeyboardShortcuts.CellItalic ? s => s.Italic    = !style.Italic :
+                                                      s => s.Underline = !style.Underline;
 
-        static Action<TextStyle> Set(Action<TextStyle> action) => action;
-
-        if (formatting.Apply(label, change) is { } command) _vm!.Execute(command);
+        if (formatting.Apply(zkratka.Action, change) is { } command) _vm!.Execute(command);
         SyncFormatToolbar();
         InvalidateCanvas();
         InvalidatePreview();
@@ -343,7 +339,7 @@ public partial class MainWindow
 
             // Alt+Enter = vlastnosti (zavedené ve Windows). Samotný Enter musí zůstat posunu
             // o buňku níž, jinak by se rozbilo vyplňování z klávesnice.
-            case Key.Enter when Keyboard.Modifiers.HasFlag(ModifierKeys.Alt):
+            case Key.Enter when KeyboardShortcuts.CellProperties.Matches(e):
                 OpenCellProperties();
                 return true;
 
@@ -362,22 +358,22 @@ public partial class MainWindow
 
             // Celý řádek a sloupec se vědomě nevybírají zkratkou (rozhodnutí Jan 17. 8.) - tažení
             // a Shift pokrývají totéž a excelové Shift/Ctrl+mezerník se uživatel nemá kde naučit.
-            case Key.A when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+            case Key.A when KeyboardShortcuts.SelectAllCells.Matches(e):
                 SelectWholeTable();
                 return true;
 
             // Schránka uvnitř tabulky patří buňkám, ne prvku - jinak by Ctrl+V uprostřed vyplňování
             // vložil kopii celé tabulky vedle.
-            case Key.C when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+            case Key.C when KeyboardShortcuts.CopyCells.Matches(e):
                 CopyCell();
                 return true;
 
-            case Key.X when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+            case Key.X when KeyboardShortcuts.CutCells.Matches(e):
                 CopyCell();
                 ClearCell();
                 return true;
 
-            case Key.V when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+            case Key.V when KeyboardShortcuts.PasteCells.Matches(e):
                 PasteIntoCells();
                 return true;
 
@@ -989,10 +985,11 @@ public partial class MainWindow
         SelectForContextMenu(cx, cy, cw);
 
         var table = _cellTable;
-        void Add(string header, Action action) =>
+        void Add(string header, Action action, KeyboardShortcut? shortcut = null) =>
             menu.Items.Add(new MenuItem
             {
                 Header  = header,
+                InputGestureText = shortcut?.Gesture ?? "",
                 Command = new EDControls.EDViewModel.RelayCommand(action)
             });
 
@@ -1019,11 +1016,11 @@ public partial class MainWindow
 
         // Popisek říká, na co akce reálně sáhne - u označené oblasti je to celá oblast.
         string co = CellSelection.IsSingle ? "buňky" : "výběru";
-        Add($"Kopírovat obsah {co} (Ctrl+C)", CopyCell);
-        Add("Vložit ze schránky (Ctrl+V)", PasteIntoCells);
-        Add($"Vymazat obsah {co} (Del)", ClearCell);
+        Add($"Kopírovat obsah {co}", CopyCell, KeyboardShortcuts.CopyCells);
+        Add("Vložit ze schránky", PasteIntoCells, KeyboardShortcuts.PasteCells);
+        Add($"Vymazat obsah {co}", ClearCell, KeyboardShortcuts.ClearCells);
         menu.Items.Add(new Separator());
-        Add("Vlastnosti buňky (Alt+Enter)", OpenCellProperties);
+        Add("Vlastnosti buňky", OpenCellProperties, KeyboardShortcuts.CellProperties);
 
         // „Vlastnosti tabulky" tu vědomě nejsou - nabídka pokračuje standardními položkami prvku
         // (Vyjmout, Kopírovat, Smazat, Vrstva, Vlastnosti), společnými pro všechny prvky.

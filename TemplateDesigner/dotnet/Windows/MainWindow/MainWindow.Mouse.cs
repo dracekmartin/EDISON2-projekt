@@ -587,36 +587,36 @@ public partial class MainWindow
                 InvalidateCanvas();
             }
 
-            menu.Items.Add(new MenuItem { Header = "Vyjmout (Ctrl+X)", Command = _vm.CutCommand });
-            menu.Items.Add(new MenuItem { Header = "Kopírovat (Ctrl+C)", Command = _vm.CopyCommand });
-            menu.Items.Add(new MenuItem { Header = "Vložit (Ctrl+V)", Command = _vm.PasteCommand });
+            menu.Items.Add(new MenuItem { Header = "Vyjmout", InputGestureText = KeyboardShortcuts.Cut.Gesture, Command = _vm.CutCommand });
+            menu.Items.Add(new MenuItem { Header = "Kopírovat", InputGestureText = KeyboardShortcuts.Copy.Gesture, Command = _vm.CopyCommand });
+            menu.Items.Add(new MenuItem { Header = "Vložit", InputGestureText = KeyboardShortcuts.Paste.Gesture, Command = _vm.PasteCommand });
             menu.Items.Add(new Separator());
-            menu.Items.Add(new MenuItem { Header = "Smazat (Del)", Command = _vm.DeleteCommand });
+            menu.Items.Add(new MenuItem { Header = "Smazat", InputGestureText = KeyboardShortcuts.Delete.Gesture, Command = _vm.DeleteCommand });
             menu.Items.Add(new Separator());
 
             var zMenu = new MenuItem { Header = "Vrstva" };
-            zMenu.Items.Add(new MenuItem { Header = "Dopředu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, false); InvalidateCanvas(); }) });
-            zMenu.Items.Add(new MenuItem { Header = "Dozadu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, false); InvalidateCanvas(); }) });
-            zMenu.Items.Add(new MenuItem { Header = "Úplně dopředu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, true); InvalidateCanvas(); }) });
-            zMenu.Items.Add(new MenuItem { Header = "Úplně dozadu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, true); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = "Dopředu", InputGestureText = KeyboardShortcuts.BringForward.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, false); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = "Dozadu", InputGestureText = KeyboardShortcuts.SendBackward.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, false); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = "Úplně dopředu", InputGestureText = KeyboardShortcuts.BringToFront.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, true); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = "Úplně dozadu", InputGestureText = KeyboardShortcuts.SendToBack.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, true); InvalidateCanvas(); }) });
             menu.Items.Add(zMenu);
 
             // Seskupení / rozdělení / editace textu - dřív jen na zkratkách, teď viditelné v menu.
             menu.Items.Add(new Separator());
             if (_vm.State.SelectedElements.Count >= 2)
-                menu.Items.Add(new MenuItem { Header = "Seskupit (Ctrl+G)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.GroupSelected(); InvalidateCanvas(); }) });
+                menu.Items.Add(new MenuItem { Header = "Seskupit", InputGestureText = KeyboardShortcuts.Group.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.GroupSelected(); InvalidateCanvas(); }) });
             if (_vm.State.SelectedElements.Any(x => x.GroupId is not null))
-                menu.Items.Add(new MenuItem { Header = "Rozeskupit (Ctrl+Shift+G)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.UngroupSelected(); InvalidateCanvas(); }) });
+                menu.Items.Add(new MenuItem { Header = "Rozeskupit", InputGestureText = KeyboardShortcuts.Ungroup.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.UngroupSelected(); InvalidateCanvas(); }) });
 
             var splitMenu = new MenuItem { Header = "Rozdělit" };
-            splitMenu.Items.Add(new MenuItem { Header = "Vodorovně (Ctrl+Shift+H)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.SplitSelected(horizontal: true); InvalidateCanvas(); }) });
-            splitMenu.Items.Add(new MenuItem { Header = "Svisle (Ctrl+Shift+J)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.SplitSelected(horizontal: false); InvalidateCanvas(); }) });
+            splitMenu.Items.Add(new MenuItem { Header = "Vodorovně", InputGestureText = KeyboardShortcuts.SplitHorizontally.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.SplitSelected(horizontal: true); InvalidateCanvas(); }) });
+            splitMenu.Items.Add(new MenuItem { Header = "Svisle", InputGestureText = KeyboardShortcuts.SplitVertically.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.SplitSelected(horizontal: false); InvalidateCanvas(); }) });
             menu.Items.Add(splitMenu);
 
             if (el is TextElement te)
-                menu.Items.Add(new MenuItem { Header = "Upravit text (F2)", Command = new EDControls.EDViewModel.RelayCommand(() => EnterInlineEdit(te)) });
+                menu.Items.Add(new MenuItem { Header = "Upravit text", InputGestureText = KeyboardShortcuts.EditContent.Gesture, Command = new EDControls.EDViewModel.RelayCommand(() => EnterInlineEdit(te)) });
             if (el is TableElement { Mode: TableMode.Fixed })
-                menu.Items.Add(new MenuItem { Header = "Vyplnit tabulku (Alt+klik, F2)", Command = new EDControls.EDViewModel.RelayCommand(() => TryEnterTableCells(el)) });
+                menu.Items.Add(new MenuItem { Header = "Vyplnit tabulku", InputGestureText = $"{KeyboardShortcuts.EnterCell.Gesture}, {KeyboardShortcuts.EditCell.Gesture}", Command = new EDControls.EDViewModel.RelayCommand(() => TryEnterTableCells(el)) });
 
             menu.Items.Add(new Separator());
             menu.Items.Add(new MenuItem
@@ -637,10 +637,11 @@ public partial class MainWindow
         else
         {
             // Obecné menu - vložit, vybrat vše
-            menu.Items.Add(new MenuItem { Header = "Vložit (Ctrl+V)", Command = _vm.PasteCommand });
+            menu.Items.Add(new MenuItem { Header = "Vložit", InputGestureText = KeyboardShortcuts.Paste.Gesture, Command = _vm.PasteCommand });
             menu.Items.Add(new MenuItem
             {
-                Header = "Vybrat vše (Ctrl+A)",
+                Header = "Vybrat vše",
+                InputGestureText = KeyboardShortcuts.SelectAll.Gesture,
                 Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.SelectAll(); InvalidateCanvas(); })
             });
         }

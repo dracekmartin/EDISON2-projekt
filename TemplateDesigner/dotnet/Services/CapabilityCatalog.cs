@@ -1,4 +1,5 @@
 using System.Text;
+using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 
 namespace TemplateDesigner.Services;
@@ -120,29 +121,11 @@ s daty z agendy → PDF.
   velikost, Ne = změní se jen stránka a prvky zůstanou, Storno = beze změny.
 
 ### Navigace a zobrazení
-- Zoom: Ctrl+kolečko (k kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
+- Zoom: Ctrl+kolečko (ke kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
 - Mřížka plátna a přichytávání: toolbar - zobrazit mřížku plátna, snap na mřížku (velikost 0,2–10 mm),
   snap na elementy; Ctrl+Shift+N normalizuje pozice existujících elementů.
 - Levý panel: záložky Sekce / Datová pole / Vlastnosti / Strom / Pomocník / Parametry; Ctrl+B sbalí.
 - Strom šablony: záložka 'Strom' - hierarchie sekce → skupiny → elementy.
-
-## Klávesové zkratky (kompletní)
-- Ctrl+Z / Ctrl+Y - zpět / vpřed
-- Ctrl+X / Ctrl+C / Ctrl+V - vyjmout / kopírovat / vložit; Ctrl+A - vybrat vše v sekci
-- Ctrl+D - duplikovat (+šipka = kopie vedle s mezerou)
-- Ctrl+Shift+C / Ctrl+Shift+V - kopírovat / vložit styl
-- Ctrl+G / Ctrl+Shift+G - seskupit / rozeskupit; Alt+klik - jeden prvek ze skupiny
-- Ctrl+Shift+H / Ctrl+Shift+J - rozdělit element vodorovně / svisle
-- Ctrl+Shift+N - normalizovat pozice na mřížku
-- Šipky - posun prvku o 1 mm; Ctrl+šipky = o krok mřížky; Shift+šipky = změna velikosti o 1 mm
-- Ctrl+Shift+↑/↓ - přesun aktivní sekce nahoru / dolů
-- Ctrl+PageUp / Ctrl+PageDown - pořadí ve vrstvě (Z-order); +Shift = úplně dopředu/dozadu
-- Ctrl+N / Ctrl+O / Ctrl+S - nová / otevřít z databáze / uložit ('Uložit jako' zkratku NEMÁ)
-- Ctrl+P - tisk; Ctrl+Shift+P - vlastnosti stránky; Ctrl+Shift+A - změnit agendu;
-  Ctrl+Shift+I - výběr linek
-- Ctrl+0 - přizpůsobit stránce; Ctrl+1 - 100 %; Ctrl+B - sbalit levý panel
-- F2 - inline editace textu; Enter - vlastnosti výběru; Delete - smazat
-- F5 - obnovit data z databáze; F1 - nápověda; Esc - zrušit probíhající akci
 
 ## Menu Nástroje
 Změnit agendu, Šablony v databázi (správce), AI průvodce (tento chat).
@@ -200,9 +183,25 @@ Pravidla obsahu (ZÁVAZNÁ):
         sb.AppendLine();
         sb.AppendLine(GeneralIntro);
         sb.AppendLine();
+        sb.AppendLine(BuildShortcutList());
         sb.AppendLine(BuildCurrentContext(agendaName, selectedElementType, sectionCount, elementKind));
         sb.AppendLine();
         sb.AppendLine(BuildElementCatalog(elementKind));
+        return sb.ToString();
+    }
+
+    /// <summary>Úplný seznam zkratek z <see cref="KeyboardShortcuts"/> - ručně psaný se rozcházel s aplikací.</summary>
+    public static string BuildShortcutList()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("## Klávesové zkratky (kompletní)");
+        foreach (var kategorie in KeyboardShortcuts.All.GroupBy(z => z.Category))
+        {
+            sb.AppendLine($"### {kategorie.Key}");
+            foreach (var zkratka in kategorie)
+                sb.AppendLine($"- {zkratka.Gesture} - {zkratka.Action}");
+        }
+        sb.AppendLine("'Uložit jako' zkratku NEMÁ (jen menu Soubor).");
         return sb.ToString();
     }
 

@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
         xmlns:local="clr-namespace:TemplateDesigner"
+        xmlns:td="clr-namespace:TemplateDesigner.Designer"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:aiguide="clr-namespace:TemplateDesigner.Windows.AiGuideDialog"
         xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
@@ -119,13 +120,13 @@
                                 Margin="2,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{Binding MoveDownCommand}"
-                                ToolTip="Přesunout dolů - Ctrl+Shift+↓"/>
+                                ToolTip="{td:Tip MoveSectionDown, Text='Přesunout dolů'}"/>
                         <Button DockPanel.Dock="Right"
                                 Content="▲" MinWidth="18" Padding="2,0" FontSize="{DynamicResource EDTheme.FontSize.Small}"
                                 Margin="2,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{Binding MoveUpCommand}"
-                                ToolTip="Přesunout nahoru - Ctrl+Shift+↑"/>
+                                ToolTip="{td:Tip MoveSectionUp, Text='Přesunout nahoru'}"/>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Header}"
@@ -185,35 +186,35 @@
         <!-- ═══ Menu ═══ -->
         <Menu DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.Footer}">
             <MenuItem Header="Soubor">
-                <MenuItem x:Name="MenuNew"    Header="Nová šablona"  InputGestureText="Ctrl+N" Click="MenuNew_Click"/>
-                <MenuItem x:Name="MenuOpen"   Header="Otevřít z databáze…"  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
+                <MenuItem x:Name="MenuNew"    Header="Nová šablona"  InputGestureText="{td:Gesture New}" Click="MenuNew_Click"/>
+                <MenuItem x:Name="MenuOpen"   Header="Otevřít z databáze…"  InputGestureText="{td:Gesture Open}" Click="MenuOpen_Click"/>
                 <Separator/>
-                <MenuItem x:Name="MenuSave"   Header="Uložit do databáze"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
+                <MenuItem x:Name="MenuSave"   Header="Uložit do databáze"        InputGestureText="{td:Gesture Save}" Click="MenuSave_Click"/>
                 <MenuItem x:Name="MenuSaveAs" Header="Uložit do databáze jako…"                  Click="MenuSaveAs_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuImportJson" Header="Importovat ze souboru…" Command="{Binding ImportJsonCommand}"/>
                 <MenuItem x:Name="MenuExportJson" Header="Exportovat do souboru…" Command="{Binding ExportJsonCommand}"/>
                 <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední soubor"/>
                 <Separator/>
-                <MenuItem x:Name="MenuPrint" Header="Tisk…" InputGestureText="Ctrl+P" Click="MenuPrint_Click"/>
+                <MenuItem x:Name="MenuPrint" Header="Tisk…" InputGestureText="{td:Gesture Print}" Click="MenuPrint_Click"/>
                 <MenuItem x:Name="MenuKontrola" Header="Zkontrolovat vybrané linky…" Click="BtnKontrola_Click"/>
                 <Separator/>
-                <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="Ctrl+Shift+P" Click="MenuPageProps_Click"/>
+                <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="{td:Gesture PageProperties}" Click="MenuPageProps_Click"/>
                 <Separator/>
                 <MenuItem Header="Konec" Click="MenuExit_Click"/>
             </MenuItem>
             <MenuItem Header="Upravit">
-                <MenuItem x:Name="MenuUndo"   Header="Zpět"   InputGestureText="Ctrl+Z"
+                <MenuItem x:Name="MenuUndo"   Header="Zpět"   InputGestureText="{td:Gesture Undo}"
                           Command="{Binding UndoCommand}"/>
-                <MenuItem x:Name="MenuRedo"   Header="Vpřed"  InputGestureText="Ctrl+Y"
+                <MenuItem x:Name="MenuRedo"   Header="Vpřed"  InputGestureText="{td:Gesture Redo}"
                           Command="{Binding RedoCommand}"/>
                 <Separator/>
-                <MenuItem x:Name="MenuDelete" Header="Smazat" InputGestureText="Del"    Click="MenuDelete_Click"/>
+                <MenuItem x:Name="MenuDelete" Header="Smazat" InputGestureText="{td:Gesture Delete}" Click="MenuDelete_Click"/>
                 <Separator/>
-                <MenuItem x:Name="MenuZForward"  Header="Přenést dopředu"       InputGestureText="Ctrl+PgUp"       Click="BtnZForward_Click"/>
-                <MenuItem x:Name="MenuZBackward" Header="Odeslat dozadu"        InputGestureText="Ctrl+PgDn"       Click="BtnZBackward_Click"/>
-                <MenuItem x:Name="MenuZFront"    Header="Přenést zcela dopředu" InputGestureText="Ctrl+Shift+PgUp" Click="BtnZFront_Click"/>
-                <MenuItem x:Name="MenuZBack"     Header="Odeslat zcela dozadu"  InputGestureText="Ctrl+Shift+PgDn" Click="BtnZBack_Click"/>
+                <MenuItem x:Name="MenuZForward"  Header="Přenést dopředu"       InputGestureText="{td:Gesture BringForward}" Click="BtnZForward_Click"/>
+                <MenuItem x:Name="MenuZBackward" Header="Odeslat dozadu"        InputGestureText="{td:Gesture SendBackward}" Click="BtnZBackward_Click"/>
+                <MenuItem x:Name="MenuZFront"    Header="Přenést zcela dopředu" InputGestureText="{td:Gesture BringToFront}" Click="BtnZFront_Click"/>
+                <MenuItem x:Name="MenuZBack"     Header="Odeslat zcela dozadu"  InputGestureText="{td:Gesture SendToBack}" Click="BtnZBack_Click"/>
                 <Separator/>
                 <MenuItem Header="Zarovnat vlevo"               Click="BtnAlignLeft_Click"/>
                 <MenuItem Header="Zarovnat vpravo"              Click="BtnAlignRight_Click"/>
@@ -225,7 +226,7 @@
                 <MenuItem Header="Rozložit vodorovně"           Click="BtnDistributeH_Click"/>
                 <MenuItem Header="Rozložit svisle"              Click="BtnDistributeV_Click"/>
                 <Separator/>
-                <MenuItem Header="Normalizovat pozice…" InputGestureText="Ctrl+Shift+N" Click="MenuNormalizePositions_Click"/>
+                <MenuItem Header="Normalizovat pozice…" InputGestureText="{td:Gesture NormalizePositions}" Click="MenuNormalizePositions_Click"/>
                 <Separator/>
                 <!-- ⚠️ Mění souřadnice prvků v ŠABLONĚ - původní velikost tím zaniká. Měřítko
                      TISKU je něco jiného a bydlí v tiskovém dialogu (`B132`); dokud se obojí
@@ -241,8 +242,8 @@
                     <MenuItem Header="200 %" Tag="2.0"  Click="MenuScale_Click"/>
                 </MenuItem>
                 <Separator/>
-                <MenuItem Header="Kopírovat styl"  InputGestureText="Ctrl+Shift+C" Click="MenuCopyStyle_Click"/>
-                <MenuItem Header="Vložit styl"     InputGestureText="Ctrl+Shift+V" Click="MenuPasteStyle_Click"/>
+                <MenuItem Header="Kopírovat styl"  InputGestureText="{td:Gesture CopyStyle}" Click="MenuCopyStyle_Click"/>
+                <MenuItem Header="Vložit styl"     InputGestureText="{td:Gesture PasteStyle}" Click="MenuPasteStyle_Click"/>
                 <Separator/>
                 <!-- Prvek s vlastním fontem přebíjí výchozí font dokumentu, takže v šabloně, kde ho
                      má každý prvek u sebe, volba „Výchozí font" nic nedělá. Tohle ho u prvků smaže. -->
@@ -262,13 +263,13 @@
                 <MenuItem Header="Pravítka" IsCheckable="True"
                           IsChecked="{Binding ShowRuler, Mode=TwoWay}"/>
                 <Separator/>
-                <MenuItem x:Name="MenuSectionsPanel" Header="Levý panel" InputGestureText="Ctrl+B" IsCheckable="True" IsChecked="True"
+                <MenuItem x:Name="MenuSectionsPanel" Header="Levý panel" InputGestureText="{td:Gesture ToggleLeftPanel}" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
                 <MenuItem x:Name="MenuPreview" Header="Živý náhled" IsCheckable="True" IsChecked="True"
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
             <MenuItem Header="Nástroje">
-                <MenuItem x:Name="MenuChangeAgenda" Header="Změnit agendu…" InputGestureText="Ctrl+Shift+A"
+                <MenuItem x:Name="MenuChangeAgenda" Header="Změnit agendu…" InputGestureText="{td:Gesture ChangeAgenda}"
                           Command="{Binding ChangeAgendaCommand}"/>
                 <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v databázi…"
                           Command="{Binding OpenFromCacheCommand}"/>
@@ -280,7 +281,7 @@
                 <MenuItem x:Name="MenuDevSwitchFirm" Header="Přepnout firmu (DEV)" Visibility="Collapsed"/>
             </MenuItem>
             <MenuItem Header="Nápověda">
-                <MenuItem x:Name="MenuHelp" Header="Klávesové zkratky a ovládání" InputGestureText="F1" Click="MenuHelp_Click"/>
+                <MenuItem x:Name="MenuHelp" Header="Klávesové zkratky a ovládání" InputGestureText="{td:Gesture Help}" Click="MenuHelp_Click"/>
             </MenuItem>
         </Menu>
 
@@ -291,13 +292,13 @@
                 <!-- ── 1. Soubor ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnNew" Style="{StaticResource ToolbarButton}" ToolTip="Nová šablona - Ctrl+N" Click="MenuNew_Click">
+                        <Button x:Name="BtnNew" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip New}" Click="MenuNew_Click">
                             <Image Source="{StaticResource EDIcons.New}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnOpen" Style="{StaticResource ToolbarButton}" ToolTip="Otevřít - Ctrl+O" Click="MenuOpen_Click">
+                        <Button x:Name="BtnOpen" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip Open}" Click="MenuOpen_Click">
                             <Image Source="{StaticResource EDIcons.Open}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnSave" Style="{StaticResource ToolbarButton}" ToolTip="Uložit - Ctrl+S" Click="MenuSave_Click">
+                        <Button x:Name="BtnSave" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip Save}" Click="MenuSave_Click">
                             <Image Source="{StaticResource EDIcons.Save}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -308,10 +309,10 @@
                 <!-- ── 2. Upravit ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnUndo" Style="{StaticResource ToolbarButton}" ToolTip="Zpět - Ctrl+Z" Command="{Binding UndoCommand}">
+                        <Button x:Name="BtnUndo" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip Undo}" Command="{Binding UndoCommand}">
                             <Image Source="{StaticResource EDIcons.Undo}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnRedo" Style="{StaticResource ToolbarButton}" ToolTip="Vpřed - Ctrl+Y" Command="{Binding RedoCommand}">
+                        <Button x:Name="BtnRedo" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip Redo}" Command="{Binding RedoCommand}">
                             <Image Source="{StaticResource EDIcons.Redo}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -322,7 +323,7 @@
                 <!-- ── 3. Stránka a sekce ── (elementy se přetahují z palety, ne přes seznam) -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button x:Name="BtnPageProps" Style="{StaticResource ToolbarButton}" ToolTip="Vlastnosti stránky - Ctrl+Shift+P" Click="MenuPageProps_Click">
+                        <Button x:Name="BtnPageProps" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip PageProperties}" Click="MenuPageProps_Click">
                             <Image Source="{StaticResource EDIcons.Document}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnAddSection" Style="{StaticResource ToolbarButton}" ToolTip="Přidat sekci" Click="BtnAddSection_Click">
@@ -343,16 +344,16 @@
                 <!-- ── 5. Vrstva (Z-order) ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnZForward" Style="{StaticResource ToolbarButton}" ToolTip="Přenést dopředu - Ctrl+PgUp" Click="BtnZForward_Click">
+                        <Button x:Name="BtnZForward" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip BringForward}" Click="BtnZForward_Click">
                             <Image Source="{StaticResource EDIcons.ZForward}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZBackward" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat dozadu - Ctrl+PgDn" Click="BtnZBackward_Click">
+                        <Button x:Name="BtnZBackward" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip SendBackward}" Click="BtnZBackward_Click">
                             <Image Source="{StaticResource EDIcons.ZBackward}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZFront" Style="{StaticResource ToolbarButton}" ToolTip="Přenést zcela dopředu - Ctrl+Shift+PgUp" Click="BtnZFront_Click">
+                        <Button x:Name="BtnZFront" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip BringToFront}" Click="BtnZFront_Click">
                             <Image Source="{StaticResource EDIcons.ZFront}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZBack" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat zcela dozadu - Ctrl+Shift+PgDn" Click="BtnZBack_Click">
+                        <Button x:Name="BtnZBack" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip SendToBack}" Click="BtnZBack_Click">
                             <Image Source="{StaticResource EDIcons.ZBack}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -456,10 +457,10 @@
                             <ComboBoxItem Content="500 %"/>
                         </ComboBox>
                         <Button x:Name="BtnFitPage" Style="{StaticResource ToolbarButton}"
-                                ToolTip="Přizpůsobit stránce - Ctrl+0"
+                                ToolTip="{td:Tip FitToPage}"
                                 Click="BtnFitPage_Click" Content="Fit" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                         <Button x:Name="BtnResetView" Style="{StaticResource ToolbarButton}"
-                                ToolTip="Skutečná velikost 100 % (designer i náhled) - Ctrl+1"
+                                ToolTip="{td:Tip ActualSize, Text='Skutečná velikost 100 % (plátno i náhled)'}"
                                 Click="BtnResetView_Click" Content="1:1" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                         <ComboBox x:Name="CmbPreviewZoom" Width="Auto" MinWidth="64" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
                                   ToolTip="Zoom náhledu"
@@ -482,7 +483,7 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ToggleButton x:Name="BtnToggleLeftPanel" Style="{StaticResource ToolbarToggle}"
-                                      ToolTip="Skrýt/zobrazit levý panel - Ctrl+B"
+                                      ToolTip="{td:Tip ToggleLeftPanel}"
                                       IsChecked="True" Checked="BtnToggleLeftPanel_Changed" Unchecked="BtnToggleLeftPanel_Changed"
                                       Content="☰" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt živý náhled"
@@ -500,7 +501,7 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="BtnRefreshData" Style="{StaticResource ToolbarButton}"
                                 Command="{Binding RefreshDataCommand}"
-                                ToolTip="Obnovit data náhledu - F5"
+                                ToolTip="{td:Tip RefreshData}"
                                 Content="↻" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
                     </StackPanel>
                     <TextBlock Text="Data" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -523,7 +524,7 @@
                                 </Canvas>
                             </Viewbox>
                         </Button>
-                        <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk - Ctrl+P" Click="MenuPrint_Click">
+                        <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="{td:Tip Print}" Click="MenuPrint_Click">
                             <Image Source="{StaticResource EDIcons.Print}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -612,7 +613,7 @@
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                                     Background="{DynamicResource EDTheme.Bg.Panel}" Padding="8,5"
                                     Cursor="Hand"
-                                    ToolTip="Změnit agendu - Ctrl+Shift+A">
+                                    ToolTip="{td:Tip ChangeAgenda}">
                                 <Border.InputBindings>
                                     <MouseBinding MouseAction="LeftClick"
                                                   Command="{Binding ChangeAgendaCommand}"/>
@@ -908,7 +909,7 @@
                                         BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
                                     <DockPanel>
                                         <Button DockPanel.Dock="Right" Content="Změnit agendu…" Command="{Binding ChangeAgendaCommand}"
-                                                ToolTip="Změnit agendu - Ctrl+Shift+A" Padding="10,3" VerticalAlignment="Center"/>
+                                                ToolTip="{td:Tip ChangeAgenda}" Padding="10,3" VerticalAlignment="Center"/>
                                         <StackPanel VerticalAlignment="Center">
                                             <TextBlock Text="Agenda" FontSize="{DynamicResource EDTheme.FontSize.Small}"
                                                        Foreground="{DynamicResource EDTheme.Text.Muted}"/>
@@ -925,10 +926,10 @@
                                                FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                                     <TextBlock FontSize="{DynamicResource EDTheme.FontSize.Small}" Margin="8,6,0,0">
                                         <Hyperlink Command="{Binding OpenFromDatabaseCommand}" Foreground="{DynamicResource EDTheme.Accent.Blue}"
-                                                   ToolTip="Otevřít - Ctrl+O">Všechny šablony…</Hyperlink>
+                                                   ToolTip="{td:Tip Open}">Všechny šablony…</Hyperlink>
                                         <Run Text="   "/>
                                         <Hyperlink Command="{Binding StartBlankCommand}" Foreground="{DynamicResource EDTheme.Accent.Blue}"
-                                                   ToolTip="Nová šablona - Ctrl+N">Začít s prázdnou šablonou</Hyperlink>
+                                                   ToolTip="{td:Tip New}">Začít s prázdnou šablonou</Hyperlink>
                                     </TextBlock>
                                 </StackPanel>
                             </StackPanel>
@@ -1082,7 +1083,7 @@
                     <Border Grid.Column="0"
                             Background="{DynamicResource EDTheme.Accent.GreenBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
-                            ToolTip="Změnit agendu - Ctrl+Shift+A">
+                            ToolTip="{td:Tip ChangeAgenda}">
                         <Border.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding ChangeAgendaCommand}"/>
                         </Border.InputBindings>

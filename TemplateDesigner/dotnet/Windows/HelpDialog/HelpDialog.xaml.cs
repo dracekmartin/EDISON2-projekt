@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Input;
+using TemplateDesigner.Designer;
 
 namespace TemplateDesigner;
 
@@ -13,7 +14,7 @@ public partial class HelpDialog : Window
         // Ctrl+F fokusne hledání (stejný zvyk jako v EDInputForm)
         PreviewKeyDown += (_, e) =>
         {
-            if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+            if (KeyboardShortcuts.HelpSearch.Matches(e))
             {
                 SearchBox.Focus();
                 SearchBox.SelectAll();

@@ -50,7 +50,7 @@ public partial class MainWindow
         if (_inlineEditElement is not null) return;
 
         // Úvodní obrazovka jde zavřít Esc, ať se dá rychle odklidit (Jan 30. 10.).
-        if (e.Key == Key.Escape && _vm.StartPanel.IsVisible)
+        if (KeyboardShortcuts.Cancel.Matches(e) && _vm.StartPanel.IsVisible)
         {
             _vm.StartPanel.Hide();
             e.Handled = true;
@@ -88,42 +88,42 @@ public partial class MainWindow
             if (!ctrl && !Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) return;
         }
 
-        if (e.Key == Key.Z && ctrl)
+        if (KeyboardShortcuts.Undo.Matches(e))
         {
             _vm.UndoCommand.Execute(null);
             e.Handled = true;
         }
-        else if (e.Key == Key.Y && ctrl)
+        else if (KeyboardShortcuts.Redo.Matches(e))
         {
             _vm.RedoCommand.Execute(null);
             e.Handled = true;
         }
-        else if (e.Key == Key.S && ctrl)
+        else if (KeyboardShortcuts.Save.Matches(e))
         {
             _vm.SaveCommand.Execute(null);
             e.Handled = true;
         }
-        else if (e.Key == Key.N && ctrl && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.New.Matches(e))
         {
             _vm.NewCommand.Execute(null);
             e.Handled = true;
         }
-        else if (e.Key == Key.O && ctrl)
+        else if (KeyboardShortcuts.Open.Matches(e))
         {
             MenuOpen_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
-        else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.PageProperties.Matches(e))
         {
             _ = OpenPropertiesForPage(_vm.State.CurrentTemplate);
             e.Handled = true;
         }
-        else if (e.Key == Key.P && ctrl)
+        else if (KeyboardShortcuts.Print.Matches(e))
         {
             MenuPrint_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
-        else if (e.Key == Key.A && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.ChangeAgenda.Matches(e))
         {
             _vm.ChangeAgendaCommand.Execute(null);
             e.Handled = true;
@@ -131,22 +131,22 @@ public partial class MainWindow
         // Výběr instancí z klávesnice - vedle změny agendy, protože je to táž dvojice voleb
         // „nad čím pracuju". Písmeno I jako instance: agenda si sama říká linka nebo faktura,
         // takže doménové písmeno by platilo jen pro jízdní řády.
-        else if (e.Key == Key.I && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.SelectInstances.Matches(e))
         {
             _vm.OpenInstancePickerCommand.Execute(null);
             e.Handled = true;
         }
-        else if (e.Key == Key.PageUp && ctrl)
+        else if (KeyboardShortcuts.BringForward.Matches(e) || KeyboardShortcuts.BringToFront.Matches(e))
         {
-            _vm.ChangeZIndex(+1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            _vm.ChangeZIndex(+1, toExtreme: KeyboardShortcuts.BringToFront.Matches(e));
             e.Handled = true;
         }
-        else if (e.Key == Key.PageDown && ctrl)
+        else if (KeyboardShortcuts.SendBackward.Matches(e) || KeyboardShortcuts.SendToBack.Matches(e))
         {
-            _vm.ChangeZIndex(-1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            _vm.ChangeZIndex(-1, toExtreme: KeyboardShortcuts.SendToBack.Matches(e));
             e.Handled = true;
         }
-        else if (e.Key == Key.A && ctrl && _vm.State.ActiveSection is not null)
+        else if (KeyboardShortcuts.SelectAll.Matches(e) && _vm.State.ActiveSection is not null)
         {
             _vm.State.SelectedElements.Clear();
             _vm.State.SelectedElements.AddRange(_vm.State.ActiveSection.Elements);
@@ -154,69 +154,68 @@ public partial class MainWindow
             InvalidateCanvas();
             e.Handled = true;
         }
-        else if (e.Key == Key.G && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.Ungroup.Matches(e))
         {
             _vm.UngroupSelected();
             InvalidateCanvas();
             e.Handled = true;
         }
-        else if (e.Key == Key.G && ctrl)
+        else if (KeyboardShortcuts.Group.Matches(e))
         {
             _vm.GroupSelected();
             InvalidateCanvas();
             e.Handled = true;
         }
-        else if (e.Key == Key.H && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.SplitHorizontally.Matches(e))
         {
             _vm.SplitSelected(horizontal: true);
             e.Handled = true;
         }
-        else if (e.Key == Key.J && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.SplitVertically.Matches(e))
         {
             _vm.SplitSelected(horizontal: false);
             e.Handled = true;
         }
-        else if (e.Key == Key.C && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.CopyStyle.Matches(e))
         {
             _vm.CopyStyle();
             e.Handled = true;
         }
-        else if (e.Key == Key.V && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.PasteStyle.Matches(e))
         {
             _vm.PasteStyle();
             e.Handled = true;
         }
-        else if (e.Key == Key.C && ctrl)
+        else if (KeyboardShortcuts.Copy.Matches(e))
         {
             _vm.CopySelected();
             e.Handled = true;
         }
-        else if (e.Key == Key.X && ctrl)
+        else if (KeyboardShortcuts.Cut.Matches(e))
         {
             _vm.CutSelected();
             InvalidateCanvas();
             e.Handled = true;
         }
-        else if (e.Key == Key.V && ctrl)
+        else if (KeyboardShortcuts.Paste.Matches(e))
         {
             _vm.PasteClipboard();
             e.Handled = true;
         }
-        else if (e.Key == Key.D && ctrl)
+        else if (KeyboardShortcuts.Duplicate.Matches(e))
         {
             _duplicatePending = true;
             e.Handled = true;
         }
-        else if (e.Key == Key.Delete)
+        else if (KeyboardShortcuts.Delete.Matches(e))
         {
             _vm.DeleteSelected();
             e.Handled = true;
         }
-        else if ((e.Key == Key.Up || e.Key == Key.Down)
-                 && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+        else if ((KeyboardShortcuts.MoveSectionUp.Matches(e) || KeyboardShortcuts.MoveSectionDown.Matches(e))
                  && _vm.State.ActiveSection is not null)
         {
-            _vm.MoveSection(_vm.State.ActiveSection, e.Key == Key.Up ? -1 : +1);
+            _vm.MoveSection(_vm.State.ActiveSection, KeyboardShortcuts.MoveSectionUp.Matches(e) ? -1 : +1);
             e.Handled = true;
         }
         else if (_duplicatePending && e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
@@ -247,17 +246,17 @@ public partial class MainWindow
             }
             e.Handled = true;
         }
-        else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count == 1)
+        else if (KeyboardShortcuts.Properties.Matches(e) && _vm.State.SelectedElements.Count == 1)
         {
             OpenPropertiesForElement(_vm.State.SelectedElements[0]);
             e.Handled = true;
         }
-        else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count > 1)
+        else if (KeyboardShortcuts.Properties.Matches(e) && _vm.State.SelectedElements.Count > 1)
         {
             OpenPropertiesForMultipleElements(_vm.State.SelectedElements);
             e.Handled = true;
         }
-        else if (e.Key == Key.F2 && _vm.State.SelectedElements.Count == 1
+        else if (KeyboardShortcuts.EditContent.Matches(e) && _vm.State.SelectedElements.Count == 1
                  && _vm.State.SelectedElements[0] is TextElement te
                  && te.Rotation == 0f && !te.IsLocked)
         {
@@ -266,42 +265,42 @@ public partial class MainWindow
         }
         // F2 = „uprav obsah na místě" i u pevné tabulky - dvojklik zůstává na nastavení, aby se
         // tabulka nechovala jinak než ostatní prvky (námitka Jana 12. 8.).
-        else if (e.Key == Key.F2 && _vm.State.SelectedElements.Count == 1
+        else if (KeyboardShortcuts.EditContent.Matches(e) && _vm.State.SelectedElements.Count == 1
                  && TryEnterTableCells(_vm.State.SelectedElements[0]))
         {
             e.Handled = true;
         }
-        else if (e.Key == Key.F1)
+        else if (KeyboardShortcuts.Help.Matches(e))
         {
             ShowHelp();
             e.Handled = true;
         }
-        else if (e.Key == Key.F5)
+        else if (KeyboardShortcuts.RefreshData.Matches(e))
         {
             if (_vm.RefreshDataCommand.CanExecute(null)) _vm.RefreshDataCommand.Execute(null);
             e.Handled = true;
         }
-        else if (e.Key == Key.D0 && ctrl)
+        else if (KeyboardShortcuts.FitToPage.Matches(e))
         {
-            FitToPage();       // Ctrl+0 = Přizpůsobit stránce (== tlačítko „Fit")
+            FitToPage();
             e.Handled = true;
         }
-        else if (e.Key == Key.D1 && ctrl)
+        else if (KeyboardShortcuts.ActualSize.Matches(e))
         {
-            ResetZoomTo100();  // Ctrl+1 = Skutečná velikost 100 % (== tlačítko „1:1")
+            ResetZoomTo100();
             e.Handled = true;
         }
-        else if (e.Key == Key.B && ctrl)
+        else if (KeyboardShortcuts.ToggleLeftPanel.Matches(e))
         {
             BtnToggleLeftPanel.IsChecked = !(BtnToggleLeftPanel.IsChecked == true);
             e.Handled = true;
         }
-        else if (e.Key == Key.N && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        else if (KeyboardShortcuts.NormalizePositions.Matches(e))
         {
             OpenNormalizePositionsDialog();
             e.Handled = true;
         }
-        else if (e.Key == Key.Escape)
+        else if (KeyboardShortcuts.Cancel.Matches(e))
         {
             // Escape ruší probíhající operaci: drag/resize vrátí pozice na začátek (commit: false),
             // rubber band se zahodí bez výběru. Bez operace = zrušit výběr.

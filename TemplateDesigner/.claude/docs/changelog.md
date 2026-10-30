@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-30 (40) - Klávesové zkratky v jedné tabulce (sjednocení A3)
+
+Zkratky byly opsané na sedmi místech (obsluha kláves, menu, bubliny, místní nabídky, nápověda F1, asistent, příručka) a rozcházely se: menu psalo „Del" a „Ctrl+PgUp", nápověda „Delete" a „Ctrl+PageUp".
+Teď je každá zkratka jednou v `Designer/KeyboardShortcuts.cs` (akce, kategorie, klávesa) a text se skládá z klávesy:
+- obsluha kláves okna i pevné tabulky s tabulkou porovnává, takže nápis a skutečná klávesa se nemůžou rozejít,
+- hlavní menu a bubliny tlačítek berou text přes `{td:Gesture …}` a `{td:Tip …}`, místní nabídky ukazují zkratku vpravo jako hlavní menu (dřív v závorce za textem) a nově i u příkazů vrstvy,
+- nápověda F1 a úplný seznam pro asistenta se skládají z tabulky.
+Shoda kláves je přesná: Ctrl+Shift+Z už nevrací krok, Shift+Delete nemaže a AltGr nespustí zkratku s Ctrl.
+Věty, které zkratku jen zmiňují (asistent, hlášky, celá příručka, přehled v ux §3), hlídá `KlavesoveZkratkyTests`: zkratku, kterou tabulka nezná, neprojdou (ověřeno mutací).
+Ověřeno: .NET testy; menu, bubliny a klávesy v aplikaci neproklikané.
+
 ## 2026-10-30 (39) - Panel, lišta a formulář ukazují písmo, se kterým se prvek tiskne (sjednocení A2)
 
 Nenastavené vlastnosti stylu (font, velikost, tučné, barvy) panel, lišta formátu i formulář prvku dosud doplňovaly vlastní výchozí hodnotou z kódu (44 míst, `?? 9f`, `?? "Arial"`), ne hodnotou, se kterou se prvek vytiskne.
