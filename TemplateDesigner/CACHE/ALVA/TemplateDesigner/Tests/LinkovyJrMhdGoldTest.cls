@@ -17,7 +17,9 @@ Class ALVA.TemplateDesigner.Tests.LinkovyJrMhdGoldTest Extends ALVA.EDTesting.ML
 /// dvě volání po sobě daly totéž. Formát „firma:linka=digest", oddělené „|".
 /// Re-baseline 2026-10-30 (`B56` S7): číslo linky podle licence jde jako číslo, ne text, jako ve všech
 /// agendách JŘ (`KontraktAgendTest.TestTypyCislaLinky`). Jen md5, počty u všech sedmi linek beze změny.
-Parameter DIGESTY = "CB_DP:11350=pages=2 zast=41 spoju=122 casu=2500 pozn=6 md5=vIpbL0JhjC8YYjvJ7hUgkQ==|CB_DP:11341=pages=2 zast=58 spoju=318 casu=8095 pozn=10 md5=UmPOWl1aChF0X+D/AhjQTA==|CB_DP:11354=pages=2 zast=17 spoju=411 casu=3494 pozn=4 md5=zt+TLNI6mMEezMVm1t5QAg==|CB_DP:11018=pages=2 zast=47 spoju=228 casu=4945 pozn=13 md5=l/EccN+jojtAW6IqsZdxlg==|KV_DP:1073=pages=2 zast=84 spoju=408 casu=10066 pozn=4 md5=4rEZu1On55+z+oFUvhNGQA==|KV_DP:1438=pages=2 zast=44 spoju=42 casu=260 pozn=4 md5=oUv7sjwgD45+WdZzMvtk1A==|KV_DP:1520=pages=2 zast=42 spoju=351 casu=4334 pozn=3 md5=Fl7d36kTfkhnH4A9A7Ultw==";
+/// Re-baseline 2026-10-30 (`B56` S12): hlavičku linky skládá `Jr.DataMhd.AddHlavickaLinky`, změnilo se jen
+/// pořadí položek. Jen md5, počty beze změny; snímek výstupu agend porovnaný podle obsahu jiný rozdíl nemá.
+Parameter DIGESTY = "CB_DP:11350=pages=2 zast=41 spoju=122 casu=2500 pozn=6 md5=7dd4sUq2eWaOPibRo7nLjg==|CB_DP:11341=pages=2 zast=58 spoju=318 casu=8095 pozn=10 md5=KH7xsqecjn6gTVJw576ZRw==|CB_DP:11354=pages=2 zast=17 spoju=411 casu=3494 pozn=4 md5=G3QCn4XpwN6bIbOHt037Vw==|CB_DP:11018=pages=2 zast=47 spoju=228 casu=4945 pozn=13 md5=bUIXcnDiVS6yFEDj7Q3otQ==|KV_DP:1073=pages=2 zast=84 spoju=408 casu=10066 pozn=4 md5=Imx17o7mQlhM7dfbH/GVhQ==|KV_DP:1438=pages=2 zast=44 spoju=42 casu=260 pozn=4 md5=84+xZAOS+kphjBJiG4M/4g==|KV_DP:1520=pages=2 zast=42 spoju=351 casu=4334 pozn=3 md5=JH1iutIimN7VRw487vPo4A==";
 
 Method TestGold()
 {

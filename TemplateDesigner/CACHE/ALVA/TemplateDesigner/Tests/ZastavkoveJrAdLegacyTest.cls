@@ -60,7 +60,7 @@ Method TestZaskokZonyNaRegistrZastavek()
 /// omylem tatáž. Kdyby se pořadí ignorovalo, obě pole by nesla stejnou barvu a nikdo by si nevšiml.
 Method TestBarvaLinkyDlePoradi()
 {
-	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	set cls = "ALVA.TemplateDesigner.Agendy.Jr.DataAd"
 	set db = "CB_CSADAD", sku = 1, lin = "0365001"
 	if '##class(%SYS.Namespace).Exists(db) {
 		do $$$AssertTrue(1, "namespace "_db_" není na serveru - barva linky přeskočena")

@@ -401,12 +401,12 @@ ClassMethod GetData(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Barvy linky z jízdních řádů (#13606) týmž voláním jako vývěska AD (`ZastavkoveJrAd.BarvaLinky`),
+/// Barvy linky z jízdních řádů (#13606) týmž voláním jako vývěska AD (`Jr.DataAd.BarvaLinky`),
 /// aby měla linka v obou sestavách stejnou barvu. Druhou barvu modul významově nepojmenovává.
 ClassMethod DoplnBarvyLinky(page As %DynamicObject, IdFa As %String, dataDB As %String, sku As %String, lin As %String)
 {
-    d page.values.%Set("BARVA_LINKY", ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BarvaLinky(IdFa, dataDB, sku, lin))
-    d page.values.%Set("BARVA_LINKY_2", ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BarvaLinky(IdFa, dataDB, sku, lin, 2))
+    d page.values.%Set("BARVA_LINKY", ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BarvaLinky(IdFa, dataDB, sku, lin))
+    d page.values.%Set("BARVA_LINKY_2", ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BarvaLinky(IdFa, dataDB, sku, lin, 2))
 }
 
 /// Výlepy na zastávky: ze stránky směru (nebo obousměrné) vypíše jednu stránku za každou zastávku
@@ -560,10 +560,10 @@ ClassMethod BuildStrankaLinky(dataDB As %String, sku As %String, lin As %String,
     // obsluhovaná pouze zpět by nevrátila nic.
     // Důvod prázdné stránky stejnými slovy jako linkový JŘ MHD (`BaseAgenda.PrazdnaStranka`, `B193g`).
     i obousmerne {
-        i '..MaSpoje(dataDB, sku, lin, "T") && '..MaSpoje(dataDB, sku, lin, "Z") q ..PrazdnaStranka("Linka nemá ve vybraném směru žádné spoje.")
+        i '##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MaSpoje(dataDB, sku, lin, "T") && '##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MaSpoje(dataDB, sku, lin, "Z") q ..PrazdnaStranka("Linka nemá ve vybraném směru žádné spoje.")
     }
     else {
-        i '..MaSpoje(dataDB, sku, lin, smer) q ..PrazdnaStranka("Linka nemá ve vybraném směru žádné spoje.")
+        i '##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MaSpoje(dataDB, sku, lin, smer) q ..PrazdnaStranka("Linka nemá ve vybraném směru žádné spoje.")
     }
 
     s rec = ..Jazyk(dataDB)
@@ -883,18 +883,6 @@ ClassMethod MhdText(val As %String) As %String
     i val [ "Z" q "IDP-Z"
     i val [ "B" q "BID"
     q ""
-}
-
-/// Má směr aspoň jeden spoj?
-ClassMethod MaSpoje(dataDB As %String, sku As %String, lin As %String, smer As %String) As %Boolean
-{
-    s sp = ""
-    f {
-        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
-        q:sp=""
-        i $isvalidnum(sp) q
-    }
-    q (sp '= "")
 }
 
 /// Obsah jednoho km sloupce (":"-věta) - ze společného seznamu, nebo ze směrového.

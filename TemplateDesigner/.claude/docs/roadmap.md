@@ -19,14 +19,9 @@ Sdílený kód jde do pomocných tříd mimo dědičnost agend ([`R8`](architekt
 Postup, pojistky a snímek výstupu jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md): jeden krok = jeden commit, snímek před i po.
 Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného, se při přesunu přejmenuje (`cache-api.md` pravidlo 5).
 Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a pravidlo druhého použití jsou v R8, měření v `legacy-nahrada.md §4`.
-**Fáze (Jan 30. 10.):** 1 struktura a pojistky (S1) → 2 popis agendy podle druhu výstupu (S2, S9, S10 hotové 30. 10.; pole pro QR čeká na vyhledávač) →
-3 výstup podle druhu (S3, S4) → 4 data podle zdroje (S5-S8 u AD hotové 30. 10., zbývá S12 u MHD) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje) →
+**Fáze (Jan 30. 10.):** 1 struktura a pojistky → 2 popis agendy podle druhu výstupu → 3 výstup podle druhu → 4 data podle zdroje
+(fáze 1-4 hotové 30. 10., kroky S1-S12 v archivu; pole pro QR čeká na vyhledávač) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje) →
 6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami.
-
-### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
-
-- **S12 Data MHD z jedné třídy** [M] - linkový JŘ MHD bere seznam linek, výběr linek, dopravce a typ JŘ voláním vývěsky MHD.
-  Přesunout je do `Jr/DataMhd.cls` jako u AD (S5-S7) a hlavičku linky MHD skládat jednou; MHD a AD tvar dat nesdílí (R8).
 
 ### Převzato z backlogu - souvisí se sjednocením agend
 

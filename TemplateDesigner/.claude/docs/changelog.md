@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-30 (26) - Data MHD z jedné třídy, agendy se navzájem nevolají (`B56` S12)
+
+Linkový JŘ MHD bral výběr linek, dopravce, typ JŘ a výchozí skupinu linek voláním vývěsky MHD; vývěska AD a linkový JŘ AD si navzájem půjčovaly „má směr spoje" a barvu linky.
+Teď je čtení dat MHD v `Jr/DataMhd.cls` (výběr linek, hlavička linky přes `AddHlavickaLinky`, dopravce, typ JŘ, formát data z `BaseAgenda`) a zbytek AD v `Jr/DataAd.cls`, jako u AD v S5 až S7.
+Agendy MHD výběr linek jen přesměrují a hlavičku linky skládá jedna metoda; vývěska MHD přestala hlavičku ukládat do pracovního globálu.
+Nová kontrola `DataPodleZdrojeTests` (dřív `VyberLinekAdTests`) hlídá výběr linek u AD i MHD a zastaví agendu, která volá jinou agendu (výjimka rozdílový JŘ nad linkovým AD); obě části spadly na dočasně vrácené volání vývěsky MHD z linkového JŘ MHD.
+Ověřeno: snímek výstupu agend - AD beze změny i po bajtech, 10 souborů MHD se liší jen pořadím položek hlavičky (porovnáno podle obsahu); zlaté odtisky MHD přebaselinované, mění se jen md5. Na serveru staré metody nejsou a výběr linek MHD vrací linky s platností (KV_DP); výběr linek snímek nepokrývá, kód se přesunul beze změny. Caché testy 272/272, .NET testy 2547/2547, integrační testy 48/48.
+
 ## 2026-10-30 (25) - Hlavička linky AD z jedné metody, titulek bez náhradního textu (`B56` S7)
 
 Hlavičku linky (číslo a označení, název, poznámky nad linkou a pod dopravcem, údaje dopravce po polích, data platnosti, typ JŘ, QR) skládala vývěska AD i linkový JŘ AD každá sama.

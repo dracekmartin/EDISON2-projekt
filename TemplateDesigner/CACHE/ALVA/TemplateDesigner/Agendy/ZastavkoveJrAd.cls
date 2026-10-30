@@ -178,7 +178,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         }
         // Vývěska bez odjezdů se vynechává (konečná), takže linka bez jediné stránky je ta, odkud
         // nejede nic odnikud. Důvod stejnými slovy jako linkové agendy (`BaseAgenda.PrazdnaStranka`, `B193g`).
-        s maSpoje = ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).MaSpoje(dataDB, sku, lin, "T") || ##class(ALVA.TemplateDesigner.Agendy.LinkovyJrAd).MaSpoje(dataDB, sku, lin, "Z")
+        s maSpoje = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MaSpoje(dataDB, sku, lin, "T") || ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).MaSpoje(dataDB, sku, lin, "Z")
         d ..VydatDuvodPrazdne($s('maSpoje:"Linka nemá v jízdních řádech žádné spoje.", 1:"Z žádné zastávky linky neodjíždí žádný spoj. Zkontrolujte časy spojů a trasu linky v jízdních řádech."))
     }
     catch (ex) { $$$CatchErrRest }
@@ -249,10 +249,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
     // Skalární údaje dopravce jsou PRVNÍ dopravce linky (u většiny linek jediný); všechny vypíše DOPRAVCI_SOUHRNNY_JR.
     d vals.%Set("DOPRAVCI_SOUHRNNY_JR",         ..DopravciSouhrnnyJr(dataDB, sku, lin, ..VypsatSpojeDopravce()))
-    d vals.%Set("BARVA_LINKY",            ..BarvaLinky(IdFa, dataDB, sku, lin))
+    d vals.%Set("BARVA_LINKY",            ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BarvaLinky(IdFa, dataDB, sku, lin))
     // #12997: JŘ umí od 3. 8. víc barev na linku. Klient je používá jako barvu textu (1.) a pozadí
     // (2.), ale modul jim význam nedává - proto neutrální název a význam nechává na šabloně.
-    d vals.%Set("BARVA_LINKY_2",          ..BarvaLinky(IdFa, dataDB, sku, lin, 2))
+    d vals.%Set("BARVA_LINKY_2",          ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BarvaLinky(IdFa, dataDB, sku, lin, 2))
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
     s platiOd = vals.%Get("DATUM_PLATNOSTI_OD")
     d vals.%Set("POPIS_PLATNOSTI",        $s(platiOd'="":"Platí od "_platiOd, 1:""))
@@ -3379,28 +3379,6 @@ ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String
     d anotace.%Set("SPOJ", spoj)
     d anotace.%Set("V_ROZSAHU_NEPOZNAMKOVAT", vRozsahu)
     d odjezd.%Get("ANOTACE").%Push(anotace)
-}
-
-/// Barva přiřazená lince v JŘ modulu, jako "#AARRGGBB" pro SkiaSharp; prázdno, když linka barvu
-/// nastavenou nemá (šablona pak použije bílou). Modul ji drží jako "R;G;B".
-///
-/// `poradi` = kolikátá barva linky (1 = primární). JŘ umí od 3. 8. 2026 **víc barev na linku**
-/// (#12997, Petr Šmíd) - klient je používá jako „barva textu" a „barva pozadí", ale samotný modul
-/// jim význam nedává, je to jen seřazený seznam. Uloženo v `^JRL(sku,lin,"PATCH","BARVA")`, starý
-/// tvar (jedna barva jako text) i nový (`$lb`) normalizuje `Linky.BarvyLinkySeznam`, takže tady se
-/// nic neparsuje. Nenastavená n-tá barva = prázdno.
-///
-/// Volání je obalené záměrně: třída patří JŘ modulu (ISYJR2), takže na serveru, kde modul není,
-/// se barva prostě nenaplní a tisk jde dál - vývěska kvůli barvě spadnout nesmí.
-ClassMethod BarvaLinky(IdFa As %String = "", dataDB As %String = "", sku As %String = "", lin As %String = "", poradi As %Integer = 1) As %String
-{
-    i (IdFa = "") || (sku = "") || (lin = "") ret ""
-    s rgb = ""
-    try {
-        s rgb = ##class(ALVA.ISY.ISYJR2.API.Linky).GetBarvaLinky(IdFa, dataDB, sku, lin, poradi)
-    }
-    catch ex { s rgb = "" }
-    ret ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex(rgb)
 }
 
 }

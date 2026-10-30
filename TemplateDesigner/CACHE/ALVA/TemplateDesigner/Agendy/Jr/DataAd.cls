@@ -168,6 +168,41 @@ ClassMethod AddHlavickaLinky(dataDB As %String, sku As %String, lin As %String, 
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
 }
 
+/// Má směr aspoň jeden spoj? Do 30. 10. v linkovém JŘ AD a vývěska AD ji volala přes něj (`B56` S12).
+ClassMethod MaSpoje(dataDB As %String, sku As %String, lin As %String, smer As %String) As %Boolean
+{
+    s sp = ""
+    f {
+        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+        q:sp=""
+        i $isvalidnum(sp) q
+    }
+    q (sp '= "")
+}
+
+/// Barva přiřazená lince v JŘ modulu, jako "#AARRGGBB" pro SkiaSharp; prázdno, když linka barvu
+/// nastavenou nemá (šablona pak použije bílou). Modul ji drží jako "R;G;B". Do 30. 10. ve vývěsce AD
+/// a linkový JŘ AD ji volal přes ni (`B56` S12).
+///
+/// `poradi` = kolikátá barva linky (1 = primární). JŘ umí od 3. 8. 2026 **víc barev na linku**
+/// (#12997, Petr Šmíd) - klient je používá jako „barva textu" a „barva pozadí", ale samotný modul
+/// jim význam nedává, je to jen seřazený seznam. Uloženo v `^JRL(sku,lin,"PATCH","BARVA")`, starý
+/// tvar (jedna barva jako text) i nový (`$lb`) normalizuje `Linky.BarvyLinkySeznam`, takže tady se
+/// nic neparsuje. Nenastavená n-tá barva = prázdno.
+///
+/// Volání je obalené záměrně: třída patří JŘ modulu (ISYJR2), takže na serveru, kde modul není,
+/// se barva prostě nenaplní a tisk jde dál - vývěska kvůli barvě spadnout nesmí.
+ClassMethod BarvaLinky(IdFa As %String = "", dataDB As %String = "", sku As %String = "", lin As %String = "", poradi As %Integer = 1) As %String
+{
+    i (IdFa = "") || (sku = "") || (lin = "") ret ""
+    s rgb = ""
+    try {
+        s rgb = ##class(ALVA.ISY.ISYJR2.API.Linky).GetBarvaLinky(IdFa, dataDB, sku, lin, poradi)
+    }
+    catch ex { s rgb = "" }
+    ret ##class(ALVA.TemplateDesigner.Agendy.Jr.VystupZastavkovy).RgbToHex(rgb)
+}
+
 /// Veřejné (lokální) označení linky AD: první část MHD nastavení linky (`SeT_MhD`), bez něj znaky
 /// 5-7 čísla linky (1:1 `sTIT^JRapiLinPrtMhd1`). `lin` je sedmimístné číslo linky (<method>FormatCisloLinky</method>).
 /// Je to text, ne číslo - v MHD má část linek označení s písmeny.
@@ -178,7 +213,7 @@ ClassMethod LokalniOznaceniLinky(dataDB As %String, sku As %String, lin As %Stri
 }
 
 /// Razítko typu JŘ linky AD podle `PATCH,"OBJ"` (1 výluka, 2 návrh). Texty jako u MHD
-/// (`ZastavkoveJrMhd.TypJrLinky`), aby razítko vypadalo ve všech agendách stejně; starý postskriptový
+/// (`Jr.DataMhd.TypJrLinky`), aby razítko vypadalo ve všech agendách stejně; starý postskriptový
 /// tisk AD psal u návrhu „návrh jízdního řádu" (rozhodnutí Jan 23. 10.: jednotně „NÁVRH").
 /// Vědomá výjimka z pravidla „data, ne hotové texty" (Jan 30. 10.): ze dvou kódů by si šablona text
 /// složila jen dvěma prvky s podmínkou viditelnosti.
@@ -189,7 +224,7 @@ ClassMethod TypJrLinky(dataDB As %String, sku As %String, lin As %String) As %St
 
 /// Skalární pole prvního dopravce linky (NAZEV_DOPRAVCE, ADRESA_DOPRAVCE…) z <method>BuildDopravci</method>;
 /// u linky bez dopravce zapíše prázdno, aby pole ve schématu existovalo vždy (chybějící klíč by
-/// v šabloně vypadal jako neznámé pole). MHD posílá tytéž klíče (`ZastavkoveJrMhd.DopravceSkalary`).
+/// v šabloně vypadal jako neznámé pole). MHD posílá tytéž klíče (`Jr.DataMhd.DopravceSkalary`).
 ClassMethod DopravceSkalary(dataDB As %String, sku As %String, lin As %String, vals As %DynamicObject)
 {
     s prvni = ..BuildDopravci(dataDB, sku, lin).%Get(0)

@@ -849,13 +849,14 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
 
 **Doplněno 23. 10. (review `B193`)** - kde začít, protože se to už rozešlo:
 
-- **Výběr skupin linek a linek** - u AD je od 30. 10. jednou v `Jr/DataAd.cls` a agendy AD ho jen přesměrují (`B56` S6,
-  hlídá `VyberLinekAdTests`). MHD ho sdílí od 23. 10. přes zastávkový MHD (`ZastavkoveJrMhd.SeznamLinek`, `B193c`),
-  kopie se do té doby rozešly v příznaku zablokované skupiny; do pomocné třídy dat MHD půjde s ostatním čtením MHD.
-- **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - u AD ji od 30. 10. skládá `Jr.DataAd.AddHlavickaLinky` (`B56` S7)
-  a agenda přidá jen svoje vědomé rozdíly: titulek (vývěska, bez náhradního textu), popis dopravce (řádky × čárky) a hotovou
-  větu platnosti pro starší šablony (čtyři tvary, `B193f`). Číslo podle licence jde ve všech agendách jako číslo, veřejné
-  označení jako text (`KontraktAgendTest.TestTypyCislaLinky`). Hlavička MHD čeká na pomocnou třídu dat MHD.
+- **Výběr skupin linek a linek** - od 30. 10. jednou pro každý zdroj, v `Jr/DataAd.cls` (`B56` S6) a `Jr/DataMhd.cls` (S12);
+  agendy ho jen přesměrují (hlídá `DataPodleZdrojeTests`). Kopie MHD se do 23. 10. rozešly v příznaku zablokované skupiny.
+- **Hlavička linky** (číslo, platnost, typ JŘ, dopravce) - od 30. 10. ji skládá `Jr.DataAd.AddHlavickaLinky` (`B56` S7)
+  a `Jr.DataMhd.AddHlavickaLinky` (S12); agenda přidá jen svoje vědomé rozdíly: titulek (vývěska AD, bez náhradního textu),
+  popis dopravce (řádky × čárky) a hotovou větu platnosti pro starší šablony (čtyři tvary, `B193f`). Číslo podle licence jde
+  ve všech agendách jako číslo, veřejné označení jako text (`KontraktAgendTest.TestTypyCislaLinky`).
+- **Agendy se navzájem nevolají** (od 30. 10., S12, hlídá `DataPodleZdrojeTests.AgendaNevolaJinouAgendu`): co čtou dvě,
+  je v pomocné třídě zdroje. Výjimka je rozdílový JŘ, který je postavený nad linkovým JŘ AD.
 - **Společné parametry JŘ** jsou od 30. 10. definované jednou v `Jr/Parametry.cls` (`B56` S2): sedm parametrů
   vývěsek, linkové parametry a tvar názvu zastávky. Agenda si je skládá v `GetParameters` sama, pořadí v panelu drží ona.
 - **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`) jsou od 30. 10. zrušené i se čtením v návrháři
@@ -914,7 +915,7 @@ Vědomě nesjednocovat (rozhodnutí Jan 30. 10.):
   Každé pravidlo sedí na svůj případ.
 - **Barva „0;0;0"** znamená v každém zdroji něco jiného, nejde o kopii téhož.
   Barva spoje AD (`#`-pole 12, `BaseAgenda.RgbNaHex`) = bez barvy: má ji 2 185 160 z 2 189 806 spojů s barvou.
-  Barva linky (`ZastavkoveJrAd.BarvaLinky`) a barvy poznámek ke spojům MHD (`ZastavkoveJrMhd`) jdou přes `Jr.VystupZastavkovy.RgbToHex` a černá je černá: v KV_DP má 24 poznámek černý znak záměrně.
+  Barva linky (`Jr.DataAd.BarvaLinky`) a barvy poznámek ke spojům MHD (`ZastavkoveJrMhd`) jdou přes `Jr.VystupZastavkovy.RgbToHex` a černá je černá: v KV_DP má 24 poznámek černý znak záměrně.
   Při `B56` jen pojmenovat podle zdroje; komentář „kopie téhož" u `RgbNaHex` neplatí.
 - **Značky u odjezdů a kolekce vývěsek**: `AddAnotace` AD posílá navíc `KATEGORIE`, `SPOJ` a `V_ROZSAHU_NEPOZNAMKOVAT`, `AddStandardJRCollections` AD má o pět polí víc.
   Společná metoda jen tak, aby MHD tyto klíče dál neposílal - jinak by filtr Poznámek podle kategorie začal skrývat poznámky i v MHD.
@@ -942,10 +943,10 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Spouští se `TD_SNIMEK_AGEND=<složka> dotnet test TemplateDesigner.Tests --filter SnimekAgendNaostro` (u Jana `C:\Users\miesb\source\EDISON2-snimek-agend`, mimo repo); první běh uloží, další porovná bajt po bajtu.
   Porovnává se **před krokem** na nezměněném kódu (data mění i kolegové; když se liší, sejme se znovu) a **po kroku** (musí vyjít stejně).
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
-- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5 až S8 (data AD, výběr linek, hlavička linky, platnost a text omezení, `Jr/DataAd.cls`) hotové 30. 10.
+- **Pořadí kroků:** fáze v roadmapě u `B56`; S1, S2 (parametry, `Jr/Parametry.cls`), S9 (slovník nabídky dat, `Jr/NabidkaDat.cls`), S10, S11, S3 (výstup vývěsky, `Jr/VystupZastavkovy.cls`), S4 (výstup linkového JŘ, `Jr/VystupLinkovy.cls`), S5 až S8 (data AD, výběr linek, hlavička linky, platnost a text omezení, `Jr/DataAd.cls`) a S12 (data MHD, `Jr/DataMhd.cls`) hotové 30. 10.
   Sdílené parametry porovnává mezi agendami `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
   Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky (hotové, S3); linkové (hotové, S4, `Jr/VystupLinkovy.cls`); AD (hotové, S5, `Jr/DataAd.cls`; `NormalizLinku` přejmenované na `FormatCisloLinky`), výběr skupin linek a linek (hotový, S6).
-  Pak sjednocení z odstavce výš (platnost, omezení 14 a 15; hotové, S8).
+  Pak sjednocení z odstavce výš (platnost, omezení 14 a 15; hotové, S8) a data MHD včetně posledních vzájemných volání agend (hotové, S12).
   Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".
 - **Pojistky při přesunu kódu (S1 hotové 30. 10.):** pomocné třídy jsou v `Agendy/Jr/` a testy čtou zdrojáky přes `ZdrojeAgend`: kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy (přímé potomky `BaseAgenda`, jako registr).
   Při přesunu dál pozor na kontroly vázané na jednu agendu: pořadí polí nabídky po souborech, vyřazená pole agendy, „Obecné" jako první skupina parametrů, příznak v registru proti obsahu agendy (`TRASA_MIN`, `ParseDefiniceSloupcu`, `"puvodni"`) a doslovné `AddBoolParam(arr,` v `ServerSideParamsDriftTests`.

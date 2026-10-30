@@ -9,6 +9,10 @@
 
 ## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
 
+- **S12** Data MHD z jedné třídy (hotovo 30. 10., changelog 2026-10-30 (26)): výběr linek, hlavička linky, dopravce,
+  typ JŘ a formát data v `Jr/DataMhd.cls`; poslední vzájemná volání agend AD (spoje směru, barva linky) v `Jr/DataAd.cls`.
+  `DataPodleZdrojeTests` hlídá výběr linek u obou zdrojů a zakazuje agendě volat jinou agendu. Tisk beze změny.
+
 - **S7** Hlavička linky AD z jedné metody (hotovo 30. 10., changelog 2026-10-30 (25), rozhodnutí Jan 30. 10.):
   `Jr.DataAd.AddHlavickaLinky`, agenda přidá jen vědomé rozdíly (titulek, popis dopravce, hotová věta platnosti).
   Titulek bez náhradního textu, číslo podle licence všude číslo, označení text. Pravidlo „data, ne hotové věty" v `cache-api.md`.

@@ -84,128 +84,16 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Skupiny linek pro filtr Instance Pickeru - ENUMS "SkupinyLinek" mimo Blocked.
-/// OUT["1"] = JSON pole [{ "value": id, "label": název }].
+/// Skupiny linek pro filtr výběru linek - jedno místo pro obě agendy MHD (`Jr.DataMhd`, `B56` S12).
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
-    s err = ""
-    try {
-        $$$FillParams
-
-        s arr = ##class(%DynamicArray).%New()
-        s id = ""
-        f {
-            s id = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id))
-            q:id=""
-            i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Blocked")) continue
-
-            s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Nazev"))
-            s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value", id)
-            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_id))
-            d arr.%Push(obj)
-        }
-        s ^||ML("OUT","1") = arr.%ToJSON()
-    }
-    catch (ex) { $$$CatchErrRest }
-    ret $$$OK
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetAvailableSkupiny(.sys)
 }
 
-/// Vrátí seznam linek pro Instance Picker.
-/// IN["search"] = volitelný substring filtr (case-insensitive na display = "Cislo - Nazev")
-/// IN["limit"]  = max počet řádků (default 50)
-/// IN["SKUPINA_LINEK_ID"] = ID skupiny linek (volitelné; default = první nezblokovaná);
-///                          v budoucnu bude předáváno z Edisona jako kontext
-/// OUT["1"] = JSON pole { "value": LinkaID, "display": "Cislo - Nazev", "subtitle": "Platnost ..." }
+/// Linky pro výběr linek - jedno místo pro obě agendy MHD (`Jr.DataMhd`, `B56` S12).
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
-    s err = ""   // $$$CatchErrRest čte err; bez init by catch (např. firma bez MHD dat → throw) padl na <UNDEFINED>err
-    try {
-        $$$FillParams
-        s ^||ML("OUT","1") = ..SeznamLinek(IdFa, dataDB).%ToJSON()
-    } catch (ex) { $$$CatchErrRest }
-    ret $$$OK
-}
-
-/// Linky skupiny pro výběr instancí (číslo, název, platnost). Sdílí ho linkový JŘ MHD, aby se táž
-/// linka v obou nabízela stejně. Nabízí i linky bez trasy - obě agendy u nich napíšou důvod
-/// (`DUVOD_PRAZDNE`); do 23. 10. je vývěska schovávala, protože na nich padala.
-/// Helper - volá se z GetAvailableInstances obou agend MHD, které catch mají.
-ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
-{
-    s search = $zcvt($g(^||ML("IN","search")), "L")
-    s limit  = +$g(^||ML("IN","limit"))
-    if 'limit s limit = 50
-
-    // Skupina linek = organizační kontext. V budoucnu předáváno z Edisona;
-    // zatím default první nezblokovaná skupina v ENUMS.
-    s SkupinaLinekID = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
-    if 'SkupinaLinekID s SkupinaLinekID = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
-
-    s arr = ##class(%DynamicArray).%New()
-    s count = 0
-    // Bez aktivní skupiny linek (typicky firma bez MHD dat, např. čistě AD firma) → prázdný
-    // picker, NE chyba: přepnutí na agendu MHD u takové firmy nemá vyhazovat popup. Smyčka níže
-    // se SkupinaLinekID=0 nenajde v indexu žádnou linku a vrátí prázdné pole.
-    // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID) - jen linky skupiny.
-    s LinkaID = ""
-    for {
-        s LinkaID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID))
-        q:LinkaID=""
-
-        s cislo  =$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
-        if cislo = "" s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
-        s nazev  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
-        // LSO drží ISO tvar; ven jako u AD (14.12.2025), ne „2025-12-14" (Jan 23. 10.).
-        s platOd = ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd")),3,,,,,,,""))
-        s platDo = ..FormatDatum($zdh($g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo")),3,,,,,,,""))
-
-        s display = cislo
-        if nazev '= "" {
-            if display '= "" s display = display_" - "_nazev
-            else  s display = nazev
-        }
-        if display = "" s display = "Linka "_LinkaID
-
-        // Filtr - substring match case-insensitive na display
-        if search '= "" {
-            if '$f($zcvt(display, "L"), search) continue
-        }
-
-        s subtitle = ""
-        if platOd '= "" {
-            s subtitle = "Platnost od "_platOd
-            if platDo '= "" s subtitle = subtitle_" do "_platDo
-        }
-
-        s obj = ##class(%DynamicObject).%New()
-        // "string" type - .NET čte přes GetString(); bez toho číselné cislo/LinkaID → JSON number → chyba
-        d obj.%Set("value",    LinkaID, "string")
-        d obj.%Set("cislo",    cislo, "string")
-        d obj.%Set("nazev",    nazev, "string")
-        d obj.%Set("display",  display, "string")
-        if subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
-        // Řadí se podle čísla linky jako v AD, ne podle interního ID (to dávalo 11, 1, 25, 2 -
-        // Jan 27. 10.): nejdřív čísla vzestupně, pak ostatní označení abecedně, linky bez čísla na konci.
-        s razeni = $s(cislo?1.N:$lb(0, +cislo), cislo'="":$lb(1, $zcvt(cislo,"U")), 1:$lb(2, 0))
-        s radky($lg(razeni,1), $lg(razeni,2), LinkaID) = obj
-    }
-    s skupina = ""
-    for {
-        s skupina = $o(radky(skupina))  q:skupina=""
-        s klic = ""
-        for {
-            s klic = $o(radky(skupina, klic))  q:klic=""
-            s id = ""
-            for {
-                s id = $o(radky(skupina, klic, id))  q:id=""
-                q:count>=limit
-                d arr.%Push(radky(skupina, klic, id))
-                s count = count + 1
-            }
-        }
-    }
-    q arr
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetAvailableInstances(.sys)
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -230,11 +118,6 @@ ClassMethod SeznamLinek(IdFa As %String, dataDB As %String) As %DynamicArray
 ///   ("config","AutoPoznamkyOdlisnostiPlatnosti")               = flag: auto-poznámky platností
 ///   ("config","rozsahNZOd")                                    = rozsah NZ značek od
 ///   ("config","rozsahNZDo")                                    = rozsah NZ značek do
-///   ("config","CisloLinky")                                    = číslo linky dle licence
-///   ("config","LokalniOznaceni")                               = veřejné číslo linky
-///   ("config","NazevLinky")                                    = název linky
-///   ("config","QRKod")                                         = QR kód URL
-///   ("config","TypJR")                                         = typ JŘ (NÁVRH/VÝLUKOVÝ/"")
 ///   ("trasa",SmerID,BodID)                                     = $lb(ZastavkaID, CasJizdy, ZastavkaCislo)
 ///   ("trasa",SmerID,"slouceni",BodID,BodID2)                   = ""   konverzní tabulka sloučených bodů
 ///   ("trasa",SmerID,"slouceniInv",BodID2)                      = BodID hlavní bod po sloučení
@@ -313,13 +196,6 @@ ClassMethod SestavitVyvesky(ByRef sys As %String, LinkaID As %String, jenPrvniSt
         s rozsahNZOd = $g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekOd"))
         s rozsahNZDo = $g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekDo"))
 
-        // Skalární info o lince (pro výstup)
-        s CisloLinky = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
-        s LokalniOznaceni = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
-        s NazevLinky = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
-        s QRKod = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"QRCode"))
-        s TypJR = ..TypJrLinky(IdFa, dataDB, LinkaID)
-
         // Uložit konfiguraci do working globálu - helper metody čtou odtud
         s ^||TiskMHD("config","LinkaID") = LinkaID
         s ^||TiskMHD("config","TrasaID") = TrasaID
@@ -332,11 +208,6 @@ ClassMethod SestavitVyvesky(ByRef sys As %String, LinkaID As %String, jenPrvniSt
         s ^||TiskMHD("config","AutoPoznamkyOdlisnostiPlatnosti") = AutoPoznamkyOdlisnostiPlatnosti
         s ^||TiskMHD("config","rozsahNZOd") = rozsahNZOd
         s ^||TiskMHD("config","rozsahNZDo") = rozsahNZDo
-        s ^||TiskMHD("config","CisloLinky") = CisloLinky
-        s ^||TiskMHD("config","LokalniOznaceni") = LokalniOznaceni
-        s ^||TiskMHD("config","NazevLinky") = NazevLinky
-        s ^||TiskMHD("config","QRKod") = QRKod
-        s ^||TiskMHD("config","TypJR") = TypJR
         s ^||TiskMHD("config","jenPrvniStranka") = jenPrvniStranka
 
         // ═══════════════════════════════════════════════════════════════════
@@ -1076,13 +947,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // Načíst konfiguraci
     s TrasaID = $g(^||TiskMHD("config","TrasaID"))
     s platnostOd = $g(^||TiskMHD("config","platnostOdHrl"))
-    s platnostDo = $g(^||TiskMHD("config","platnostDoHrl"))
-    s CisloLinky = $g(^||TiskMHD("config","CisloLinky"))
     s LinkaID = $g(^||TiskMHD("config","LinkaID"))
-    s LokalniOznaceni = $g(^||TiskMHD("config","LokalniOznaceni"))
-    s NazevLinky = $g(^||TiskMHD("config","NazevLinky"))
-    s QRKod = $g(^||TiskMHD("config","QRKod"))
-    s TypJR = $g(^||TiskMHD("config","TypJR"))
     s AutoPoznamkyRozdilTrasy = $g(^||TiskMHD("config","AutoPoznamkyRozdilTrasy"))
     s AutoPoznamkyRozdilTrasyAlgoritmus = $g(^||TiskMHD("config","AutoPoznamkyRozdilTrasyAlgoritmus"))
     s smerPopis = $s(SmerID=0:"T", 1:"Z")
@@ -1107,24 +972,14 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     }
 
     // ── Skalární hodnoty ─────────────────────────────────────────────────
+    // Hlavičku linky, kterou posílají obě agendy MHD stejně, skládá Jr.DataMhd (`B56` S12).
     s vals = ##class(%DynamicObject).%New()
-    // Číslo podle licence je číslo, veřejné označení text (v KV_DP má část linek písmena) - jako ve
-    // všech agendách JŘ (`KontraktAgendTest.TestTypyCislaLinky`); do 30. 10. to bylo podle toho, jak leželo v globálu.
-    d vals.%Set("CISLO_LINKY",            $s(CisloLinky?1.N:+CisloLinky, 1:CisloLinky))
-    d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni, "string")
-    d vals.%Set("POPIS_LINKY",            NazevLinky)
-    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .dopravce)
-    d vals.%Set("POPIS_DOPRAVCE",         ..RadkyDopravce($g(dopravce("NAZEV")), $g(dopravce("ULICE")), $g(dopravce("MESTO")), $g(dopravce("TELEFON"))))
-    // Samotný název do úzkého rámečku záhlaví, celý popis jde pod název linky (jako vývěska AD);
-    // vedle něj adresa, telefon, e-mail a IČO po polích jako ve všech agendách JŘ.
-    d ..DopravceSkalary(.sys, dataDB, IdFa, LinkaID, vals)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).AddHlavickaLinky(.sys, dataDB, IdFa, LinkaID, vals)
+    // Popis dopravce na řádky pod název linky (jako vývěska AD); NAZEV_DOPRAVCE z hlavičky jde do úzkého rámečku záhlaví.
+    d vals.%Set("POPIS_DOPRAVCE",         ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).PopisDopravce(.sys, dataDB, IdFa, LinkaID))
     // Jen pro starší šablony - v nabídce dat už není (Jan 23. 10.), tvar se proto nemění.
-    d vals.%Set("POPIS_PLATNOSTI",        ..FormatDatum(platnostOd)_" - "_..FormatDatum(platnostDo))
-    d vals.%Set("DATUM_PLATNOSTI_OD",     ..FormatDatum(platnostOd))
-    d vals.%Set("DATUM_PLATNOSTI_DO",     ..FormatDatum(platnostDo))
+    d vals.%Set("POPIS_PLATNOSTI",        vals.%Get("DATUM_PLATNOSTI_OD")_" - "_vals.%Get("DATUM_PLATNOSTI_DO"))
     d vals.%Set("SMER",                   smerPopis)   // T/Z (A1); KONECNA_ZASTAVKA = konečná se nastaví po sestavení trasy
-    d vals.%Set("TYP_JR",                 TypJR)
-    d vals.%Set("QR_KOD",                 QRKod)
     d vals.%Set("POPIS_ZASTAVKA",         NazevZastavky)
     d vals.%Set("CISLO_ZASTAVKA",         CisloZastavky_"-"_Oznacnik)
     // TITULEK / POZNAMKA_POD_DOPRAVCE / INFORMACE: MHD pro ně nemá zdroj → nejsou ve schématu (viz AD, které je má z JRMAIN)
@@ -1672,98 +1527,6 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// GetMockData - ukázková data pro preview
 /// ═══════════════════════════════════════════════════════════════════════════════
-/// Reálný dopravce linky: `DruhDopravceID` → vlastní firma (`$$gIdFa^MlJFapi`) / cizí dopravce
-/// (`$$gDopFa^JRapi`). Firemní data žijí v systémovém NS (`sys("U","SystemDB")`), ne v datovém.
-/// Defensivní - selhání legacy volání → prázdno.
-///
-/// ⚠️ Vrací **víc řádků** (název, ulice, město, telefon), ne "Dopravce: <název>" jako do 31. 8.
-/// Zákazník uvození nechtěl a adresu ano (#13158, rozhodnutí Jan 31. 8.); tvar je shodný s AD
-/// vývěskou, ať se dvě vývěsky vedle sebe neliší. Tím se to rozešlo se vzorem MHD2 `Export.cls`,
-/// odkud tvar původně pocházel - je to vědomé, ne drift.
-/// `jednimRadkem` = řádek hlavičky linkového JŘ MHD (viz `RadkyDopravce`).
-ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, jednimRadkem As %Boolean = 0) As %String
-{
-    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .udaje)
-    ret ..RadkyDopravce($g(udaje("NAZEV")), $g(udaje("ULICE")), $g(udaje("MESTO")), $g(udaje("TELEFON")), jednimRadkem)
-}
-
-/// Údaje dopravce linky po položkách: `udaje("NAZEV")`, `("ULICE")`, `("MESTO")`, `("TELEFON")`,
-/// `("EMAIL")`, `("ICO")`. Zdroj viz `PopisDopravce`; selhání legacy volání → prázdné pole.
-ClassMethod UdajeDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, ByRef udaje As %String)
-{
-    k udaje
-    try {
-        s sysnmsp = $g(sys("U","SystemDB"))
-        s druh = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DruhDopravceID"))
-        i druh = 0 {
-            // Vlastní firma (MlJFapiFa: 02 název, 03 upřesnění, 07 IČO, 13 ulice, 14 město, 15 PSČ, 23 tel)
-            // ⚠️ E-mail se nebere: jediný na kartě (26) je odesílací adresa EDISONu vedle SMTP serveru
-            // a hesla (KV_DP edison@…, CB_DP no-reply@m-line.cz), ne kontakt pro cestující (Jan 27. 10.).
-            k tmpArr  s err = $$gIdFa^MlJFapi(IdFa, sysnmsp, "", .tmpArr)
-            i 'err {
-                s udaje("NAZEV") = $g(tmpArr("dta",2))
-                i $g(tmpArr("dta",3)) '= "" s udaje("NAZEV") = udaje("NAZEV") _ $g(tmpArr("dta",3))
-                s udaje("ULICE") = $g(tmpArr("dta",13))
-                s udaje("MESTO") = $zstrip($g(tmpArr("dta",15))_" "_$g(tmpArr("dta",14)), "<>W")
-                s udaje("TELEFON") = $g(tmpArr("dta",23))
-                s udaje("ICO") = $g(tmpArr("dta",7))
-            }
-        } elseif druh = 1 {
-            // Cizí dopravce (gDopFa: 1 sídlo, 2 ulice, 3 telefon, 5 IČO, 7 obchodní název, 13 e-mail)
-            s ciziFa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DopravceCiziFirmaID"))
-            i ciziFa '= "" {
-                k tmpArr  s err = $$gDopFa^JRapi(IdFa, dataDB, ciziFa, "", .tmpArr)
-                i 'err {
-                    s udaje("NAZEV") = $g(tmpArr("dta",7))
-                    s udaje("ULICE") = $g(tmpArr("dta",2))
-                    s udaje("MESTO") = $g(tmpArr("dta",1))
-                    s udaje("TELEFON") = $g(tmpArr("dta",3))
-                    s udaje("EMAIL") = $g(tmpArr("dta",13))
-                    s udaje("ICO") = $g(tmpArr("dta",5))
-                }
-            }
-        }
-    } catch ex { k udaje }
-    q
-}
-
-/// Údaje dopravce po jednotlivých polích pod stejnými klíči jako agendy AD (`Jr.DataAd.DopravceSkalary`),
-/// aby šablona šla mezi agendami přenášet (`B194c` D4). Adresa = ulice, PSČ a obec.
-/// Linka bez dopravce zapíše prázdno, ať pole v datech existuje vždy.
-ClassMethod DopravceSkalary(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, vals As %DynamicObject)
-{
-    d ..UdajeDopravce(.sys, dataDB, IdFa, LinkaID, .udaje)
-    s ulice = $zstrip($g(udaje("ULICE")), "<>W"), mesto = $zstrip($g(udaje("MESTO")), "<>W")
-    d vals.%Set("NAZEV_DOPRAVCE",   $zstrip($g(udaje("NAZEV")), "<>W"))
-    d vals.%Set("ADRESA_DOPRAVCE",  ulice_$s((ulice '= "") && (mesto '= ""):", ", 1:"")_mesto)
-    d vals.%Set("TELEFON_DOPRAVCE", $zstrip($g(udaje("TELEFON")), "<>W"))
-    d vals.%Set("EMAIL_DOPRAVCE",   $zstrip($g(udaje("EMAIL")), "<>W"))
-    d vals.%Set("ICO_DOPRAVCE",     $zstrip($g(udaje("ICO")), "<>W"))
-}
-
-/// Složí dopravce do řádků: název, ulice, sídlo/město, telefon. Prázdné položky se vynechají,
-/// takže u dopravce bez adresy zbyde samotný název jako dřív.
-/// `jednimRadkem` = tvar řádku „Přepravu zajišťuje" linkového JŘ: název, ulice, PSČ obec, „tel. "
-/// oddělené čárkou. Oddělovače a „tel." jako linkový AD (`LinkovyJrAd.NazevDopravce`), pořadí adresy
-/// jako vývěska MHD - do 26. 10. „PSČ obec, ulice" převzaté z AD, kde jsou data členěná jinak (`B194a` T6).
-ClassMethod RadkyDopravce(nazev As %String, ulice As %String, mesto As %String, tel As %String, jednimRadkem As %Boolean = 0) As %String
-{
-    s nazev = $zstrip($g(nazev), "<>W")
-    i nazev = "" q ""
-    s ulice = $zstrip($g(ulice), "<>W"), mesto = $zstrip($g(mesto), "<>W"), tel = $zstrip($g(tel), "<>W")
-    s text = nazev
-    i jednimRadkem {
-        i ulice '= "" s text = text_", "_ulice
-        i mesto '= "" s text = text_", "_mesto
-        i tel '= ""   s text = text_", tel. "_tel
-        q text
-    }
-    i ulice '= "" s text = text_$c(10)_ulice
-    i mesto '= "" s text = text_$c(10)_mesto
-    i tel '= ""   s text = text_$c(10)_"tel: "_tel
-    q text
-}
-
 /// Ukázková data pro live preview: první vývěska první linky výchozí skupiny, stejně jako ostatní
 /// agendy JŘ berou první skutečnou linku. Vymyšlená ukázka se od dat lišila stavbou (neměla označník,
 /// nesla „na znamení", které data nemají) a do PDF z ukázky se tiskla cizí linka.
@@ -1772,7 +1535,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     s err = ""
     try {
         $$$FillParams
-        s skupinaLinek = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
+        s skupinaLinek = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetDefaultSkupinaLinekID(IdFa, dataDB)
         s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,""))
         i linkaId '= "" d ..SestavitVyvesky(.sys, linkaId, 1)
         // Ukázka je jedna stránka; důvod prázdné linky patří tisku, náhled ho říká záložním textem.
@@ -1795,29 +1558,6 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     catch (ex) { $$$CatchErrRest }
     k ^||TiskMHD
     ret $$$OK
-}
-
-/// Razítko typu JŘ podle příznaků linky; při návrhu i výluce vyhrává výluka (stará vývěska
-/// `LinkyPrintFormatMHD.cls:692-693`). Sdílí linkový JŘ MHD, aby táž linka nesla v obou totéž.
-ClassMethod TypJrLinky(IdFa As %String, dataDB As %String, LinkaID As %String) As %String
-{
-    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Vyluka")) q "VÝLUKOVÝ"
-    i +$g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"Navrh")) q "NÁVRH"
-    q ""
-}
-
-/// Vrátí ID první nezblokované skupiny linek pro danou IdFa.
-/// Vrátí 0 pokud žádná aktivní skupina není.
-/// Použito jako default pro Instance Picker - v budoucnu nahrazeno parametrem z Edisona.
-ClassMethod GetDefaultSkupinaLinekID(IdFa As %String, dataDB As %String) As %Integer
-{
-    s id = ""
-    for {
-        s id = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id))
-        q:id=""
-        if '+$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Blocked")) ret id
-    }
-    ret 0
 }
 
 }

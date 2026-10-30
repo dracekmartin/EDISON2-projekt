@@ -1102,7 +1102,7 @@ ClassMethod BarvyLinky(ByRef sys As %String) As %Status
 			}
 		}
 		// jak to dnes vidí naše agenda (volá GetBarvaLinky bez pořadí)
-		set ^||ML("OUT","AGENDA_BARVA_LINKY") = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BarvaLinky(IdFa, db, sku, lin)
+		set ^||ML("OUT","AGENDA_BARVA_LINKY") = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).BarvaLinky(IdFa, db, sku, lin)
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret $$$OK

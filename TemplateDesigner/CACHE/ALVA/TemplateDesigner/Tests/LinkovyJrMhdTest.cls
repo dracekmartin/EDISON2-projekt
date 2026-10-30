@@ -468,10 +468,10 @@ Method TestPoznamkyZTrasy()
 /// Poznámku nad linku linkový MHD nenabízí - modul MHD ji nedává zadat.
 Method TestDopravceJakoVyveska()
 {
-	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
-	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", " DP, a.s. ", "Hlavní 1", "123 45 Město", "111 222", 1), "DP, a.s., Hlavní 1, 123 45 Město, tel. 111 222", "jedním řádkem")
-	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", "DP", "", "", "", 1), "DP", "bez adresy jen název")
-	do $$$AssertEquals($classmethod(vyv, "RadkyDopravce", "DP", "Hlavní 1", "Město", "111"), "DP"_$c(10)_"Hlavní 1"_$c(10)_"Město"_$c(10)_"tel: 111", "vývěska po řádcích beze změny")
+	set data = "ALVA.TemplateDesigner.Agendy.Jr.DataMhd"
+	do $$$AssertEquals($classmethod(data, "RadkyDopravce", " DP, a.s. ", "Hlavní 1", "123 45 Město", "111 222", 1), "DP, a.s., Hlavní 1, 123 45 Město, tel. 111 222", "jedním řádkem")
+	do $$$AssertEquals($classmethod(data, "RadkyDopravce", "DP", "", "", "", 1), "DP", "bez adresy jen název")
+	do $$$AssertEquals($classmethod(data, "RadkyDopravce", "DP", "Hlavní 1", "Město", "111"), "DP"_$c(10)_"Hlavní 1"_$c(10)_"Město"_$c(10)_"tel: 111", "vývěska po řádcích beze změny")
 
 	do ..SetupSys(.sys)
 	kill ^||ML
@@ -491,8 +491,8 @@ Method TestDopravceJakoVyveska()
 	do $$$AssertTrue('hodnoty.%IsDefined("POZNAMKA_NAD_LINKU"), "poznámka nad linku se neposílá")
 	do $$$AssertTrue('hodnoty.%IsDefined("POPIS_PLATNOSTI"), "hotová věta platnosti se neposílá (agenda nevyšla, Jan 23. 10.)")
 	set dopravce = hodnoty.%Get("POPIS_DOPRAVCE")
-	do $$$AssertEquals(dopravce, ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073, 1), "dopravce ze zdroje vývěsky")
-	set nazev = $piece(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073), $c(10), 1)
+	do $$$AssertEquals(dopravce, ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073, 1), "dopravce ze zdroje vývěsky")
+	set nazev = $piece(##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).PopisDopravce(.sys, "KV_DP", "KV_DP", 1073), $c(10), 1)
 	if nazev = "" {
 		do $$$AssertSkipped("firemní údaje KV_DP nejsou v systémovém namespace testu")
 		quit
@@ -506,19 +506,19 @@ Method TestDopravceJakoVyveska()
 /// a popis Směru pro tisk bez obousměrného tisku.
 Method TestJakoVyveskaMhd()
 {
-	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+	set vyv = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd", data = "ALVA.TemplateDesigner.Agendy.Jr.DataMhd"
 	set idfa = "TDTEST"_$translate($system.Util.CreateGUID(), "-"), db = $namespace
 	try {
 		set g = $name(^[db]ALVA.MHD.LSO(idfa, 1, "DTA", 7, "DTA", 1))
 		set @g@("Navrh") = 1, @g@("Vyluka") = 1
-		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "VÝLUKOVÝ", "návrh i výluka")
+		do $$$AssertEquals($classmethod(data, "TypJrLinky", idfa, db, 7), "VÝLUKOVÝ", "návrh i výluka")
 		set @g@("Vyluka") = 0
-		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "NÁVRH", "jen návrh")
+		do $$$AssertEquals($classmethod(data, "TypJrLinky", idfa, db, 7), "NÁVRH", "jen návrh")
 		set @g@("Navrh") = 0
-		do $$$AssertEquals($classmethod(vyv, "TypJrLinky", idfa, db, 7), "", "bez příznaků")
+		do $$$AssertEquals($classmethod(data, "TypJrLinky", idfa, db, 7), "", "bez příznaků")
 		set ^[db]ALVA.MHD.ENUMS(idfa, "SkupinyLinek", "DTA", 1, "Blocked") = 1
 		set ^[db]ALVA.MHD.ENUMS(idfa, "SkupinyLinek", "DTA", 2, "Blocked") = 0
-		do $$$AssertEquals($classmethod(vyv, "GetDefaultSkupinaLinekID", idfa, db), 2, "zablokovaná skupina se přeskočí")
+		do $$$AssertEquals($classmethod(data, "GetDefaultSkupinaLinekID", idfa, db), 2, "zablokovaná skupina se přeskočí")
 	} catch ex {
 		do $$$AssertTrue(0, "test spadl: "_ex.DisplayString())
 	}

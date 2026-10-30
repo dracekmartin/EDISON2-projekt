@@ -55,7 +55,8 @@ Kontrola má dvě části, protože chyba má dvě podoby:
 - **`ALVA.TemplateDesigner.API.*`** - obecná business logika TD projektu (cross-cutting). Příklady: `Sablony` (CRUD šablon), v budoucnu `UserPreferences`, `SectionTemplates`.
 - **`ALVA.TemplateDesigner.Agendy.*`** - agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `LinkovyJrAd`.
 - **`ALVA.TemplateDesigner.Agendy.Jr.*`** - pomocné třídy sdílené agendami JŘ podle zdroje dat a druhu výstupu (`B56`, R8),
-  jméno podle role (`DataAd`). Nejsou potomky `BaseAgenda`, registr je nenabízí; testy je čtou jako kód agend (`ZdrojeAgend`).
+  jméno podle role (`DataAd`, `DataMhd`). Nejsou potomky `BaseAgenda`, registr je nenabízí; testy je čtou jako kód agend (`ZdrojeAgend`).
+  **Agenda nevolá jinou agendu** - co potřebují dvě, patří sem (výjimka: rozdílový JŘ nad linkovým AD); hlídá `DataPodleZdrojeTests`.
 - **`ALVA.TemplateDesigner.EDList.*`** - dispatch třídy pro EDList komponentu (UI contract). Příklady: `Sablony` (backing pro CacheTemplatePickerDialog), `Instance` (backing pro InstancePickerDialog).
 - **`ALVA.TemplateDesigner.EDInputForm.*`** - dispatch třídy pro EDInputForm komponentu (hlavní editační cesta elementů).
 - **`ALVA.TemplateDesigner.EDInputGrid.*`** - dispatch třídy pro EDInputGrid (až bude potřeba).
@@ -91,11 +92,12 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
 - **Společné parametry JŘ** jsou v `Jr/Parametry.cls`; agenda si je skládá v `GetParameters` a drží jejich pořadí.
 - **Stavba výstupu vývěsky** (řádek zastávky, odjezd, skupina dnů, poznámka, barva, speciální znak) je v `Jr/VystupZastavkovy.cls`,
   linkového JŘ (poznámka, skupina dnů, čas) v `Jr/VystupLinkovy.cls`.
-- **Čtení dat AD** společné agendám nad `^JRL` (název, číslo a první linka, hodnota času, platnost jízdního řádu,
-  text datumových omezení spoje s předložkami a formátem dat) je v `Jr/DataAd.cls`.
-  Hlavičku linky, kterou posílají všechny agendy nad AD stejně, zapíše `Jr.DataAd.AddHlavickaLinky`; agenda za ni přidá jen své vědomé rozdíly.
-  Výběr skupin linek a linek (`GetAvailableSkupiny`, `GetAvailableInstances`) agenda nad AD jen přesměruje do `Jr.DataAd`,
-  aby se okno výběru linek chovalo ve všech stejně; hlídá `VyberLinekAdTests`.
+- **Čtení dat AD** společné agendám nad `^JRL` (název, číslo a první linka, spoje směru, barva linky, hodnota času,
+  platnost jízdního řádu, text datumových omezení spoje s předložkami a formátem dat) je v `Jr/DataAd.cls`,
+  **čtení dat MHD** (seznam linek, dopravce, typ JŘ, formát data) v `Jr/DataMhd.cls`.
+  Hlavičku linky, kterou posílají všechny agendy nad týmž zdrojem stejně, zapíše `AddHlavickaLinky` třídy zdroje; agenda za ni přidá jen své vědomé rozdíly.
+  Výběr skupin linek a linek (`GetAvailableSkupiny`, `GetAvailableInstances`) agenda jen přesměruje do třídy svého zdroje,
+  aby se okno výběru linek chovalo ve všech stejně; hlídá `DataPodleZdrojeTests`.
 
 ### Wire formáty
 

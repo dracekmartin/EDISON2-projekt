@@ -176,23 +176,18 @@ ClassMethod TypProvozuSeTiskne(tp As %String) As %Boolean
     q $zcvt($g(^||ML("IN", ..ParametrTypuProvozu(tp))), "L") '= "false"
 }
 
-/// Skupiny linek pro filtr výběru instancí - tytéž jako u vývěsky MHD (týž číselník).
+/// Skupiny linek pro filtr výběru instancí - jedno místo pro obě agendy MHD (`Jr.DataMhd`, `B56` S12).
 /// Bez téhle metody dialog přepínač skryje a uživatel zůstane na výchozí skupině.
 ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
 {
-    q ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetAvailableSkupiny(.sys)
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetAvailableSkupiny(.sys)
 }
 
-/// Linky pro výběr instancí stejně jako u vývěsky MHD (číslo, název, platnost, i linky bez trasy).
-/// Do 23. 10. tu byla vlastní kopie, která se rozešla v příznaku zablokované skupiny.
+/// Linky pro výběr instancí - jedno místo pro obě agendy MHD (`Jr.DataMhd`, `B56` S12). Do 23. 10.
+/// tu byla vlastní kopie, která se rozešla v příznaku zablokované skupiny.
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
-    s err = ""
-    try {
-        $$$FillParams
-        s ^||ML("OUT","1") = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).SeznamLinek(IdFa, dataDB).%ToJSON()
-    } catch (ex) { $$$CatchErrRest }
-    q $$$OK
+    q ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetAvailableInstances(.sys)
 }
 
 /// Vrátí data pro tisk: 1 stránka per (linka × směr) - směr 0 (T), pak 1 (Z); `SMER_TISKU` vybere jen jeden.
@@ -261,7 +256,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         $$$FillParams
         k ^||TiskKnizniMhd
 
-        s skupinaLinek = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetDefaultSkupinaLinekID(IdFa, dataDB)
+        s skupinaLinek = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetDefaultSkupinaLinekID(IdFa, dataDB)
         s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,""))
         s page = ""
         i linkaId '= "" {
@@ -295,32 +290,16 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 ClassMethod BuildStrankaLinky(ByRef sys As %String, IdFa As %String, dataDB As %String, linkaId As %String, smerId As %Integer, ByRef znacky) As %DynamicObject
 {
     // ── hlavička linky ──────────────────────────────────────────────
+    // Hlavička linky jako na vývěsce MHD z jednoho místa (`Jr.DataMhd`, `B56` S12): licenční × veřejné
+    // číslo (do 17. 8. tu bylo ve CISLO_LINKY veřejné), data platnosti ve stejném tvaru, razítko
+    // typu JŘ (do 23. 10. tu při návrhu i výluce vyhrál návrh; starý knižní tisk ho nemá).
     s vals = ##class(%DynamicObject).%New()
-    // Rozdělení licenční × veřejné číslo je shodné se zastávkovou vývěskou (ZastavkoveJrMhd:318) -
-    // do 17. 8. tu bylo ve CISLO_LINKY veřejné číslo, takže táž linka měla na vývěsce a v linkovém
-    // JŘ jiné číslo, aniž to šlo poznat z popisku pole.
-    // Číslo podle licence je číslo, veřejné označení text - jako ve všech agendách JŘ (`KontraktAgendTest.TestTypyCislaLinky`).
-    s cisloLinky = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloLinkyDleLicence"))
-    d vals.%Set("CISLO_LINKY",         $s(cisloLinky?1.N:+cisloLinky, 1:cisloLinky))
-    d vals.%Set("LOKALNI_OZNACENI_LINKY", $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"CisloVerejne")), "string")
-    d vals.%Set("POPIS_LINKY",         $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"NazevLinky")))
-    // LSO drží datum v ISO tvaru; ven jde ve stejném tvaru jako ze zastávkové vývěsky
-    // (ZastavkoveJrMhd:1104), jinak by táž šablona vytiskla jednou "1.11.2018" a podruhé "2018-11-01".
-    s platiOd = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiOd"))
-    s platiDo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"PlatiDo"))
-    i platiOd '= "" { s platiOd = ..FormatDatum($zdh(platiOd, 3)) }
-    i platiDo '= "" { s platiDo = ..FormatDatum($zdh(platiDo, 3)) }
-    d vals.%Set("DATUM_PLATNOSTI_OD",  platiOd)
-    d vals.%Set("DATUM_PLATNOSTI_DO",  platiDo)
-    // Razítko jako vývěska MHD (do 23. 10. tu při návrhu i výluce vyhrál návrh); starý knižní tisk ho nemá.
-    d vals.%Set("TYP_JR",              ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).TypJrLinky(IdFa, dataDB, linkaId))
-    d vals.%Set("QR_KOD",              $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",linkaId,"DTA",1,"QRCode")))
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).AddHlavickaLinky(.sys, dataDB, IdFa, linkaId, vals)
     d vals.%Set("SMER",                $s(smerId=0:"T", 1:"Z"))
     // Dopravce z téhož zdroje jako vývěska MHD, jen jedním řádkem jako linkový AD. Starý knižní
     // tisk MHD ho neposílal (`LinkyPrintFormatJR.cls:1100-1106`); tatáž linka ho ale má na vývěsce
     // (rozhodnutí Jan 23. 10.).
-    d vals.%Set("POPIS_DOPRAVCE",      ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).PopisDopravce(.sys, dataDB, IdFa, linkaId, 1))
-    d ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).DopravceSkalary(.sys, dataDB, IdFa, linkaId, vals)
+    d vals.%Set("POPIS_DOPRAVCE",      ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).PopisDopravce(.sys, dataDB, IdFa, linkaId, 1))
 
     // ── trasa: body → zastávkové řádky (kategorie 1001, slučování sousedů, odjezd/příjezd) ──
     s trasaId = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, linkaId)

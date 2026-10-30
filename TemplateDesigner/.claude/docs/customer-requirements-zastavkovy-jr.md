@@ -841,7 +841,7 @@ Víkendový je až třetí (`NacistSkupinyDnu`) a nastaví se na 1 bez jakékoli
    ✅ **HOTOVO 2026-08-03 (#12997):** JŘ modul umí od 3. 8. **víc barev na linku** (Petr Šmíd,
    `^JRL(sku,lin,"PATCH","BARVA")`); modul jim význam nedává, klient první používá jako text a druhou
    jako pozadí - přesně jak si to představoval. Agenda je vydává jako `BARVA_LINKY` / `BARVA_LINKY_2`
-   (`ZastavkoveJrAd.BarvaLinky`) a **jdou napsat do každého barevného pole šablony** místo pevné barvy,
+   (`Jr.DataAd.BarvaLinky`) a **jdou napsat do každého barevného pole šablony** místo pevné barvy,
    takže jedna šablona obslouží všechny linky. Nápovědu k tomu nese barevné pole samo.
    - **Záměrně bez mezikroku v paletě** (volba „barva linky" jako položka color pickeru) - přidal by klik
      všem uživatelům kvůli menšině případů; místo toho se placeholder píše do pole (`ColorPickerHelper.cs:35`).

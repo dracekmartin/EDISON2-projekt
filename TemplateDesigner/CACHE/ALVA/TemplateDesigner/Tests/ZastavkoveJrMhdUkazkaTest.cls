@@ -20,7 +20,7 @@ Method TestUkazkaJePrvniVyveskaPrvniLinky()
 	do ..SetupSys(.sys, db)
 	set sys("U","DATA") = db
 	set mhd = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
-	set skupina = $classmethod(mhd, "GetDefaultSkupinaLinekID", db, db)
+	set skupina = ##class(ALVA.TemplateDesigner.Agendy.Jr.DataMhd).GetDefaultSkupinaLinekID(db, db)
 	set linka = $order(^[db]ALVA.MHD.LSO(db, 1, "IDX", 1, 1, 1, skupina, ""))
 	if linka = "" {
 		do $$$AssertTrue(1, db_" nemá linku ve výchozí skupině - přeskočeno")
