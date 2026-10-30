@@ -864,6 +864,18 @@ Stejné jméno, jiný význam - při přesunu do pomocné třídy přejmenovat, 
 `Jazyk` (`*SK`/`CZ` z `JRSET` × `cs`/`sk` z `^||TiskAd`), `ZonaBezPismen` (úprava textu × ano/ne z nastavení), `NactiNastaveniNazvu` (výchozí „Plný CIS" × „Zkrácený", vědomý rozdíl hlídaný v `KontraktAgendTest.Vyjimka`), `PopisDopravce` (viz výš), `BuildStrankaLinky`.
 Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKnizni("wmap",trasa)` × `^||TiskAd("wmap",db,sku,lin,trasa)`), `ZaznamZastavky` bere datum z jiného globálu.
 
+**Měření duplicity 30. 10.** (skript bez komentářů, prázdných řádků a povinné kostry metod; historie od 19. 5., 287 commitů):
+
+- Kód agend JŘ má asi 5 850 řádků kódu (11 600 řádků souborů).
+  Doslova shodných metod je 20 dvojic (asi 170 řádků), téměř shodných 6 dvojic (asi 140 společných řádků).
+- Opsané bloky (6 a více řádků za sebou): vývěska AD 18 % kódu, vývěska MHD 19 %, linkový AD 13 %, linkový MHD 10 %.
+  Vývěsky AD × MHD sdílí asi 200 řádků, vývěska AD × linkový AD 130-170, linkový AD × MHD asi 70 a nabídku dat shodnou z 89 %.
+- 42 commitů změnilo totéž ve dvou agendách (18 oprav), 56 změnilo jen jednu kopii (31 nových funkcí, 12 oprav).
+  Nejvíc kolekce vývěsek (11× obě, 15× jedna) a nabídka linkového JŘ (10× obě, 12× jedna), pak parametry vývěsek (5×) a předpřipravené tabulky (4×, nikdo je nepoužívá).
+  Přiřazení změny k metodě je přibližné (nejbližší hlavička metody v diffu, počítají se i hromadné úpravy).
+- Agendy se navzájem volají 16× (linkový MHD → zastávkový MHD a linkový AD, linkový AD → zastávkový AD, zastávkový AD → linkový AD).
+- Ubude asi 400-500 řádků; přínos je udržitelnost, ne délka kódu ([R8](architektonicka-rozhodnuti-agendy.md)).
+
 **Postup `B56`** (z revize `B194`, 30. 10.):
 
 - **Pojistky:** `KontraktAgendTest` (kontrakt každé agendy z registru, data odpovídají nabídce, sdílené parametry shodné), integrační `KontraktDatAgendTests` (položky, které čtou prvky, ve správném tvaru), `TestovaciLinkyTest` (linky testů v datech jsou), zlaté odtisky všech čtyř agend JŘ a snímek výstupu agend.

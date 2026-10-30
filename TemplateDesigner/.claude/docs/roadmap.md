@@ -18,8 +18,10 @@ Cíl (Jan 29. 10.) není sjednotit všechno, ale ujasnit strukturu a dát agend�
 Sdílený kód jde do pomocných tříd mimo dědičnost agend ([`R8`](architektonicka-rozhodnuti-agendy.md)).
 Postup, pojistky a snímek výstupu jsou v [`legacy-nahrada.md §4`](legacy-nahrada.md): jeden krok = jeden commit, snímek před i po.
 Metoda s českým slovesem nebo se jménem, které jinde znamená něco jiného, se při přesunu přejmenuje (`cache-api.md` pravidlo 5).
-**Pořadí (Jan 30. 10.):** S1 → S2 → S3 → S4 → S5 a S6 → S8 → S7 → S9 s polem pro QR; S10 a S11 kdykoli po rozhodnutí.
-Položky převzaté z backlogu čekají na kolegy nebo na agendu bez linek.
+Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a pravidlo druhého použití jsou v R8, měření v `legacy-nahrada.md §4`.
+**Fáze (Jan 30. 10.):** 1 struktura a pojistky (S1) → 2 popis agendy podle druhu výstupu (S2, S9 s polem pro QR, S10) →
+3 výstup podle druhu (S3, S4) → 4 data podle zdroje (S5, S6, S8, S7) → 5 relace a vozový JŘ nanečisto (co by chybělo, nic se neimplementuje) →
+6 po úklidu nastavení u kolegů → 7 funkce nad společnými třídami. S11 kdykoli po rozhodnutí.
 
 ### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
 

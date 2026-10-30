@@ -286,6 +286,25 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
 - Sdílený kód jde do **pomocných tříd mimo hierarchii agend**, rozdělených podle toho, co dělají (čtení
   dat AD, stavba výstupu zastávkového JŘ, stavba výstupu linkového JŘ, společné parametry). Ne dědičnost:
   kód se sdílí ve dvou směrech (AD × MHD a zastávkový × linkový) a jedna dědičnost pokryje jen jeden.
+
+**Upřesněno 30. 10. (Jan) - dvě osy a pravidlo druhého použití:**
+
+- **Podle zdroje dat** (AD, MHD): načtení linky, tras, spojů, platnosti, dopravce, poznámek a nastavení linky.
+  Sdílí je zastávkový i linkový JŘ téže varianty, později relace a vozový JŘ.
+  Data nebo jméno pracovního globálu dostane parametrem (`cache-api.md` pravidlo 6), jinak by relace nemohla číst víc linek najednou.
+- **Podle druhu výstupu** (zastávkový, linkový, později relace a vozový): stránky a řádky ve tvaru, který čtou prvky
+  (`KontraktDat.cs`), parametry a nabídka dat druhu. Sdílí je AD i MHD.
+- **Obecný základ** (`BaseAgenda`): kontrakt agendy, hlášky bez dat a chyby dat, formát data a barev, pomocníci parametrů.
+  Slouží i agendám report generátoru, proto do něj nepatří čtení dat AD ani věci jen pro JŘ (30. 10. jich tam je asi 16 z 42 metod, přesunou se).
+- **Agenda** vybere zdroj a druh, drží pořadí kroků a vědomé rozdíly svého starého modulu.
+  Pomocné třídy JŘ jsou v balíku `ALVA.TemplateDesigner.Agendy.Jr` (složka `Agendy/Jr/`), jméno podle role (`DataAd`, ne `Helpers`).
+- **Žádný společný tvar dat pro AD i MHD** (jeden výpočet nad daty z obou zdrojů): výpočty pocházejí ze dvou starých
+  modulů a výstup musí zůstat bajtově stejný - byl by to přepis, ne sloučení. Společným tvarem je výstup agendy.
+- **Pravidlo druhého použití:** kód jde do pomocné třídy, až když ho potřebuje druhá agenda; do té doby zůstává v agendě.
+  Žádná předčasná extrakce „pro jistotu" - proto se s `B56` čekalo, až budou hotové čtyři agendy JŘ (Jan 30. 10.).
+- **Proč se to vyplatí** (měření 30. 10., `legacy-nahrada.md §4`): opsaného kódu je jen asi 8 %, ale za pět měsíců
+  se 42× táž změna dělala ve dvou agendách a 56× se změnila jen jedna kopie. Cílem je udržitelnost s dalšími agendami,
+  ne méně řádků.
 - **Cíl `B56` není sjednotit všechno, co jde.** Cíl je ujasnit a zapsat strukturu, projít agendy a dostat
   je na základ, na kterém se další agenda staví bez opisování. Sjednocuje se tam, kde hrozí rozjezd, který
   uživatel uvidí, nebo kde se tatáž oprava dělala víckrát. Vědomé rozdíly mezi agendami
