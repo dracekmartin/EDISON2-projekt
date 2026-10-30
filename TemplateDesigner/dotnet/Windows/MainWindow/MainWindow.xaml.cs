@@ -61,6 +61,7 @@ public partial class MainWindow : Window
                                                     startupJenModul: launchInput is { Values.Count: 0 });
         DataContext = _vm;
         InitializeComponent();
+        BuildElementPalette();
 
         // Ručně, protože TD okna neotvírá přes WindowNavigator - bez tohohle volání by se
         // pozice a velikost hlavního okna nepersistovaly (musí být před Show()).

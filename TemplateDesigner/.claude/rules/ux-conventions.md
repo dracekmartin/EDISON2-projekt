@@ -259,6 +259,8 @@ podrží** (nález Pavel 1. 9., `B105`). Dvě pravidla, která se snadno rozbij�
   Mřížka plátna a přichytávání / Zoom / Panely / Data / Tisk). Oddělovač, za kterým nic nezůstane (prvky JŘ
   v obecné agendě), se schová s tím, co odděluje.
 - Drag-from-palette: `PreviewMouseLeftButtonDown` → ghost preview na canvasu → drop = `AddElementCommand`.
+- **Paleta prvků i nabídka „Přidat prvek" se staví z katalogu prvků** (`Models/ElementCatalog.cs`, od 30. 10.):
+  bublina „Jméno - co prvek dělá", pořadí podle katalogu, prvky JŘ podle druhu agendy. Do okna je nepiš napevno.
 
 ---
 

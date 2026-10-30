@@ -14,7 +14,7 @@ public partial class LineTableColumnsEditorDialog : Window
     /// ho jen otevření vlastností prvku z plátna - jinde se filtr nepamatuje.</summary>
     public string SearchMemoryKey { get => GeneralForm.SearchMemoryKey; set => GeneralForm.SearchMemoryKey = value; }
 
-    private const string GeneralSchemaClass = "ALVA.TemplateDesigner.EDInputForm.LineTableElementEdit";
+    private static readonly string GeneralSchemaClass = Models.ElementCatalog.FormClass(Models.ElementTypes.LineTable);
 
     private readonly LineTableColumnsEditorDialogViewModel _vm;
     private readonly LineTableElement _element;

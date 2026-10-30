@@ -229,19 +229,9 @@ public class HelpDialogViewModel : EDViewModel
         new HelpSection
         {
             Title = "🔲 Prvky",
-            Entries =
-            [
-                new("Text - statický nebo s poli {NAZEV}", "paleta"),
-                new("Obrázek - ze souboru (auto zmenšení velkých)", "paleta"),
-                new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
-                new("Kód (QR, čárový) - QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
-                new("Tabulka s řádky z dat - řádků je tolik, kolik je záznamů v kolekci dat agendy (vč. řazení řádků)", "paleta"),
-                new("Pevná tabulka - řádky i obsah zadáváte sami (rozměr zadáte při vložení)", "paleta"),
-                new("Seznam zastávek - sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
-                new("Minuty odjezdů - po skupinách dnů", "paleta (JŘ agenda)"),
-                new("Poznámky - značky, omezení a vysvětlivky pod vývěskou", "paleta (JŘ agenda)"),
-                new("Tabulka spojů - zastávky × spoje (linkový JŘ)", "paleta (JŘ agenda)"),
-            ],
+            // Prvky a jejich popis z katalogu - totéž, co ukazuje bublina palety.
+            Entries = [.. Models.ElementCatalog.All.Select(e =>
+                new HelpEntry($"{e.Name} - {e.Hint}", e.IsGeneric ? "paleta" : "paleta (JŘ agenda)"))],
             Tip = "Tabulka s řádky z dat umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
                   "zvýraznění řádku podle výrazu, řazení řádků (Řadit podle + Směr řazení), nejméně a nejvýš řádků " +
                   "a souhrnné řádky (SUM, COUNT, AVG…). Vše v dialogu tabulky (dvojklik).",

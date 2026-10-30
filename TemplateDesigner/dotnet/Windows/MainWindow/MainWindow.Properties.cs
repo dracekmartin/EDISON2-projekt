@@ -99,42 +99,17 @@ public partial class MainWindow
         UpdatePropertiesPanel();
     }
 
-    /// <summary>Mapping element type → (Caché schema class, titulek) pro generický
-    /// EDInputForm editor. Vrací (null, null) pro typy bez schema (fallback na legacy).</summary>
-    private static (string? cacheClass, string? title) EDInputFormSchema(TemplateElement element)
-    {
-        string? cacheClass = element switch
-        {
-            Models.Elements.TextElement        => "ALVA.TemplateDesigner.EDInputForm.TextElementEdit",
-            Models.Elements.LineElement        => "ALVA.TemplateDesigner.EDInputForm.LineElementEdit",
-            Models.Elements.RectangleElement   => "ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit",
-            Models.Elements.BarcodeElement     => "ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit",
-            Models.Elements.NotesLegendElement => "ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit",
-            Models.Elements.ImageElement       => "ALVA.TemplateDesigner.EDInputForm.ImageElementEdit",
-            // Pevná tabulka má jediný tab (bez sloupců a řádků) - strukturu i obsah dělá plátno.
-            Models.Elements.TableElement       => "ALVA.TemplateDesigner.EDInputForm.TableElementEdit",
-            // LineTable NENÍ zde - má vlastní 2-tab dialog (Obecné + Sloupce), viz OpenLineTableColumnsDialog.
-            _ => null
-        };
-        return cacheClass is null ? (null, null) : (cacheClass, ElementNames.TitulekVlastnosti(element));
-    }
+    /// <summary>Formulář prvku (<see cref="ElementCatalog.FormClass"/>) a titulek okna pro samostatné okno
+    /// vlastností. Tabulky se sloupci (Seznam zastávek, Minuty, Tabulka s řádky z dat, Tabulka spojů)
+    /// mají vlastní okno se záložkou Sloupce a <see cref="OpenPropertiesForElement"/> je otevře dřív.
+    /// Vrací (null, null) pro prvek mimo katalog (záložní okno z deskriptorů).</summary>
+    private static (string? cacheClass, string? title) EDInputFormSchema(TemplateElement element) =>
+        PanelCacheClass(element) is { } cacheClass ? (cacheClass, ElementNames.TitulekVlastnosti(element)) : (null, null);
 
-    /// <summary>Caché *Edit.cls schéma pro inline panel - pokrývá i komplexní elementy
-    /// (StopList/DepartureGrid/Dynamic), jejichž „Obecné" tab modálu jede na tomtéž schématu.
-    /// Sloupce komplexních zůstávají jen v dvojkliku (plný 2-tab dialog).</summary>
-    private static string? PanelCacheClass(TemplateElement element)
-    {
-        var (cc, _) = EDInputFormSchema(element);
-        if (cc is not null) return cc;
-        return element switch
-        {
-            Models.Elements.StopListElement      => "ALVA.TemplateDesigner.EDInputForm.StopListElementEdit",
-            Models.Elements.DepartureGridElement => "ALVA.TemplateDesigner.EDInputForm.DepartureGridElementEdit",
-            Models.Elements.DynamicTableElement  => "ALVA.TemplateDesigner.EDInputForm.DynamicTableElementEdit",
-            Models.Elements.LineTableElement     => "ALVA.TemplateDesigner.EDInputForm.LineTableElementEdit",
-            _ => null
-        };
-    }
+    /// <summary>Formulář prvku pro panel vlastností; u tabulek se sloupci tentýž jako jejich záložka
+    /// Obecné (sloupce zůstávají jen v okně).</summary>
+    private static string? PanelCacheClass(TemplateElement element) =>
+        ElementCatalog.Find(element) is { } prvek ? ElementCatalog.FormClass(prvek.Type) : null;
 
     private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
@@ -555,11 +530,11 @@ public partial class MainWindow
         if (_vm is null) return;
         var kind = _vm.CurrentAgendaElementKind;
         static Visibility Vis(bool b) => b ? Visibility.Visible : Visibility.Collapsed;
-        BtnPalStopList.Visibility      = Vis(AgendaCapabilities.Supports(kind, ElementTypes.StopList));
-        BtnPalDepartureGrid.Visibility = Vis(AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid));
-        BtnPalNotesLegend.Visibility   = Vis(AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend));
-        BtnPalLineTable.Visibility     = Vis(AgendaCapabilities.Supports(kind, ElementTypes.LineTable));
-        PalScheduleSep.Visibility      = Vis(AgendaCapabilities.ScheduleElementTypes(kind).Count > 0);
+        foreach (var prvek in ElementCatalog.All)
+            if (!prvek.IsGeneric && _paletteButtons.TryGetValue(prvek.Type, out var tlacitko))
+                tlacitko.Visibility = Vis(AgendaCapabilities.Supports(kind, prvek.Type));
+        if (_paletteScheduleSeparator is not null)
+            _paletteScheduleSeparator.Visibility = Vis(AgendaCapabilities.ScheduleElementTypes(kind).Count > 0);
     }
 
     private void ShowHelp()

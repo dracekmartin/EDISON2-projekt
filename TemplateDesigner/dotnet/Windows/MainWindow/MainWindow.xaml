@@ -333,58 +333,9 @@
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
-                <!-- ── 4. Elementy (drag-to-canvas paleta) ── -->
+                <!-- ── 4. Prvky (tažení na plátno) - tlačítka staví BuildElementPalette() z katalogu prvků ── -->
                 <StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Text" Tag="TextElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.TextElement}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obdélník" Tag="RectangleElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.RectElement}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Čára" Tag="LineElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.LineElement}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obrázek" Tag="ImageElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.ImageElement}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový)" Tag="BarcodeElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka s řádky z dat - řádků je tolik, kolik je záznamů v datech" Tag="DynamicTableElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Pevná tabulka - řádky i obsah zadáváte sami" Tag="TableElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.Grid}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <!-- JŘ elementy i jejich oddělovač - viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
-                        <Border x:Name="PalScheduleSep" Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
-                        <Button x:Name="BtnPalStopList" Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <Button x:Name="BtnPalDepartureGrid" Style="{StaticResource PaletteButton}" ToolTip="Minuty odjezdů" Tag="DepartureGridElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.DepartureGrid}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <!-- Hlavní tabulka sestavy před poznámkami - poznámky jsou doplněk. U zastávkových
-                             to pořadí drží samo, u linkových by poznámky stály před svou tabulkou. -->
-                        <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Tabulka spojů (zastávky × spoje)" Tag="LineTableElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.LineTable}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                        <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Poznámky" Tag="NotesLegendElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
-                    </StackPanel>
+                    <StackPanel x:Name="ElementPaletteItems" Orientation="Horizontal"/>
                     <TextBlock Text="Prvky" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>

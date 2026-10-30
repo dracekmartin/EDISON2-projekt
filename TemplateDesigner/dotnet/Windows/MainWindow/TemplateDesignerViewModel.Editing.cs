@@ -260,49 +260,13 @@ public partial class TemplateDesignerViewModel
 
     // ── Element factory (shared by palette drag + toolbar menu) ────────────────
 
-    public static (float Width, float Height) GetDefaultElementSize(string type) => type switch
-    {
-        ElementTypes.Text          => (80f, 8f),
-        ElementTypes.Rectangle     => (60f, 20f),
-        ElementTypes.Line          => (190f, 1f),
-        ElementTypes.Image         => (40f, 30f),
-        ElementTypes.Table         => (90f, 18f),   // 3 řádky po 6 mm - viz CreateGrid
-        ElementTypes.DynamicTable  => (190f, 30f),
-        ElementTypes.Barcode       => (30f, 30f),
-        ElementTypes.StopList      => (60f, 60f),
-        ElementTypes.DepartureGrid => (120f, 60f),
-        ElementTypes.NotesLegend   => (190f, 25f),
-        ElementTypes.LineTable     => (190f, 100f),
-        _                          => (80f, 8f)
-    };
+    /// <summary>Výchozí velikost prvku z <see cref="ElementCatalog"/> (neznámý typ jako text).</summary>
+    public static (float Width, float Height) GetDefaultElementSize(string type) =>
+        ElementCatalog.Find(type) is { } e ? (e.Width, e.Height) : (80f, 8f);
 
-    public static TemplateElement CreateElementByType(string type, float x, float y)
-    {
-        var (w, h) = GetDefaultElementSize(type);
-        var el = type switch
-        {
-            ElementTypes.Text          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.Line          => new LineElement      { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.Image         => new ImageElement     { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.Table         => NewFixedTable(x, y, w, h),
-            ElementTypes.DynamicTable  => new DynamicTableElement { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.Barcode       => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
-            ElementTypes.DepartureGrid => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
-            // Height null = dynamická. Legenda i tabulka rostou z dat, takže pevná výška by jim
-            // obsah **zmenšila do fitu** (písmo na 46 %), ne oříznula - a uživatel na to přišel
-            // až z papíru (nález Jan 7. 9.). Zástupnou výšku (25 / 60 mm) drží prvek sám pro
-            // rámeček výběru v návrháři.
-            ElementTypes.NotesLegend   => new NotesLegendElement   { X = x, Y = y, Width = w },
-            ElementTypes.LineTable     => new LineTableElement     { X = x, Y = y, Width = w },
-            _                          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
-        };
-        // Výchozí rámeček pro nové elementy (na modelu je default bez rámečku kvůli zpětné kompatibilitě)
-        el.BorderColor = "#FF000000";
-        el.BorderWidth = 0.1f;
-        return el;
-    }
+    /// <summary>Nový prvek podle <see cref="ElementCatalog"/>.</summary>
+    public static TemplateElement CreateElementByType(string type, float x, float y) =>
+        ElementCatalog.Create(type, x, y);
 
     /// <summary>
     /// Vytvoří prvek k vložení s výchozími hodnotami agendy šablony; u pevné tabulky se **nejdřív

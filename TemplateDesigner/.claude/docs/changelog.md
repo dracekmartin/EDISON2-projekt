@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (38) - Katalog prvků (sjednocení A1)
+
+Nový prvek se dosud zapisoval na 12 až 20 míst (továrna, výchozí velikost, paleta, nabídka, jména, agendy, asistent, F1, třídy formulářů…) a dvě z nich se už rozešla.
+Teď má každý druh prvku jeden záznam v `Models/ElementCatalog.cs` (jméno, popis, ikona, výchozí velikost, druhy agend, pozice v nabídce, založení) a zbytek se z něj odvozuje:
+- paleta se staví z katalogu (bublina „Jméno - co prvek dělá", u obecných prvků nově i s popisem), nabídka „Přidat prvek" také (s popisem v bublině),
+- `ElementNames`, `AgendaCapabilities`, továrna, seznam prvků pro asistenta a nápovědu F1,
+- třída formuláře podle pravidla `{Typ}Edit` místo 23 opsaných názvů.
+Ručně zůstává třída, atribut `JsonDerivedType`, formulář `.cls`, ikona a výška podle dat. `ElementCatalogTests` porovná katalog s konstantami `ElementTypes`, atributy, třídami, formuláři a ikonami - konstantu bez registrace do 30. 10. nehlídalo nic (ověřeno mutací). Skill `novy-element` popisuje nový postup.
+Ověřeno: .NET testy 2599/2599; paleta a nabídka v aplikaci neproklikané.
+
 ## 2026-10-30 (37) - Opravy z revize sjednocení a nová jména tabulek
 
 Revize „co je definované dvakrát" ([`revize-sjednoceni.md`](revize-sjednoceni.md)) našla chyby, které Jan nechal opravit před slučováním:

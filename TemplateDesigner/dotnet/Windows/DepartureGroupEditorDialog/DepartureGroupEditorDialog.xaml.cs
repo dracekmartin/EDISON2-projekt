@@ -17,7 +17,7 @@ public partial class DepartureGroupEditorDialog : Window
     /// ho jen otevření vlastností prvku z plátna - jinde se filtr nepamatuje.</summary>
     public string SearchMemoryKey { get => GeneralForm.SearchMemoryKey; set => GeneralForm.SearchMemoryKey = value; }
 
-    private const string GeneralSchemaClass = "ALVA.TemplateDesigner.EDInputForm.DepartureGridElementEdit";
+    private static readonly string GeneralSchemaClass = Models.ElementCatalog.FormClass(Models.ElementTypes.DepartureGrid);
 
     private readonly DepartureGroupEditorDialogViewModel _vm;
     private readonly DepartureGridElement _element;

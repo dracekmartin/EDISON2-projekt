@@ -334,9 +334,9 @@ public partial class MainWindow
         }
 
         var menu = new ContextMenu();
-        void Add(string label, Func<TemplateElement?> factory)
+        void Add(string label, string hint, Func<TemplateElement?> factory)
         {
-            var item = new MenuItem { Header = label };
+            var item = new MenuItem { Header = label, ToolTip = hint };
             item.Click += (_, _) =>
             {
                 // Null = uživatel vkládání zrušil (rozměr nové tabulky).
@@ -350,29 +350,16 @@ public partial class MainWindow
             menu.Items.Add(item);
         }
 
-        Add("Text",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Text, 5, 5));
-        Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Rectangle, 5, 5));
-        Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
-        Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
-        Add("Kód (QR, čárový)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
-        Add(ElementNames.ForType(ElementTypes.DynamicTable), () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
-        Add(ElementNames.ForType(ElementTypes.Table), () => _vm.CreateElementInteractive(ElementTypes.Table, 0, 0));
-
-        // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
+        // Prvky z katalogu v jeho pořadí: obecné vždy, prvky JŘ podle druhu agendy (jako paleta).
         var kind = _vm.CurrentAgendaElementKind;
-        if (AgendaCapabilities.ScheduleElementTypes(kind).Count > 0)
-            menu.Items.Add(new Separator());
-        if (AgendaCapabilities.Supports(kind, ElementTypes.StopList))
-            Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
-        if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
-            Add("Minuty odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
-        // Hlavní tabulka sestavy jde před poznámkami - poznámky jsou doplněk. U zastávkových to
-        // pořadí drží samo (seznam zastávek, odjezdy, poznámky), u linkových by poznámky vyšly
-        // první, protože jejich tabulka je v tomhle výčtu za nimi.
-        if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
-            Add("Tabulka spojů (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
-        if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
-            Add("Poznámky",           () => _vm.CreateElementInteractive(ElementTypes.NotesLegend, 0, 0));
+        bool oddelovac = false;
+        foreach (var prvek in ElementCatalog.All)
+        {
+            if (!prvek.IsGeneric && !AgendaCapabilities.Supports(kind, prvek.Type)) continue;
+            if (!prvek.IsGeneric && !oddelovac) { menu.Items.Add(new Separator()); oddelovac = true; }
+            var (x, y) = prvek.MenuPosition;
+            Add(prvek.Name, prvek.Hint, () => _vm.CreateElementInteractive(prvek.Type, x, y));
+        }
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;

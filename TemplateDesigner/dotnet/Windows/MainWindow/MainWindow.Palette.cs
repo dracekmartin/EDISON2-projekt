@@ -37,6 +37,44 @@ public partial class MainWindow
     // Element palette drag
     // ─────────────────────────────────────────────────────────────────────────
 
+    private readonly Dictionary<string, Button> _paletteButtons = [];
+    private Border? _paletteScheduleSeparator;
+
+    /// <summary>
+    /// Tlačítka palety z <see cref="ElementCatalog"/> v jeho pořadí, před prvními prvky JŘ oddělovač.
+    /// Které prvky JŘ jsou vidět, řídí <see cref="UpdatePaletteForAgenda"/>.
+    /// </summary>
+    private void BuildElementPalette()
+    {
+        foreach (var prvek in ElementCatalog.All)
+        {
+            if (!prvek.IsGeneric && _paletteScheduleSeparator is null)
+            {
+                _paletteScheduleSeparator = new Border
+                {
+                    Width = 1, Margin = new Thickness(3, 2, 3, 2), VerticalAlignment = VerticalAlignment.Stretch,
+                };
+                _paletteScheduleSeparator.SetResourceReference(Border.BackgroundProperty, "EDTheme.Border.Light");
+                ElementPaletteItems.Children.Add(_paletteScheduleSeparator);
+            }
+
+            var tlacitko = new Button
+            {
+                Style = (Style)FindResource("PaletteButton"),
+                ToolTip = $"{prvek.Name} - {prvek.Hint}",
+                Tag = prvek.Type,
+                Content = new System.Windows.Controls.Image
+                {
+                    Source = (ImageSource)FindResource(prvek.IconKey),
+                    Style = (Style)FindResource("ToolbarIconStyle"),
+                },
+            };
+            tlacitko.PreviewMouseLeftButtonDown += ElementPalette_MouseDown;
+            _paletteButtons[prvek.Type] = tlacitko;
+            ElementPaletteItems.Children.Add(tlacitko);
+        }
+    }
+
     private void ElementPalette_MouseDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement fe && fe.Tag is string type)

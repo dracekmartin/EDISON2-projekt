@@ -20,7 +20,7 @@ public partial class DynamicTableEditorDialog : Window
     /// ho jen otevření vlastností prvku z plátna - jinde se filtr nepamatuje.</summary>
     public string SearchMemoryKey { get => GeneralForm.SearchMemoryKey; set => GeneralForm.SearchMemoryKey = value; }
 
-    private const string GeneralSchemaClass = "ALVA.TemplateDesigner.EDInputForm.DynamicTableElementEdit";
+    private static readonly string GeneralSchemaClass = Models.ElementCatalog.FormClass(Models.ElementTypes.DynamicTable);
 
     private readonly DynamicTableEditorDialogViewModel _vm;
     private readonly DynamicTableElement _element;

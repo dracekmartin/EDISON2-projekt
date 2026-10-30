@@ -302,11 +302,7 @@ Pravidla obsahu (ZÁVAZNÁ):
 
     // ─── Mapování typů ────────────────────────────────────────────────────────
 
-    private static readonly string[] GenericTypes =
-    [
-        ElementTypes.Text, ElementTypes.Image, ElementTypes.Rectangle,
-        ElementTypes.Line, ElementTypes.Barcode, ElementTypes.DynamicTable, ElementTypes.Table
-    ];
+    private static readonly string[] GenericTypes = [.. ElementCatalog.All.Where(e => e.IsGeneric).Select(e => e.Type)];
 
     /// <summary>
     /// Které typy elementů poslat modelu. Obecné vždy; JŘ elementy podle druhu agendy

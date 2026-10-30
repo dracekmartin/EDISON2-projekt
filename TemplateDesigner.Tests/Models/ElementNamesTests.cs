@@ -32,25 +32,18 @@ public class ElementNamesTests
             Assert.NotEqual("prvek", ElementNames.ForUser(el));
     }
 
-    [Theory]
-    [InlineData("Minuty odjezdů")]
-    [InlineData("Poznámky")]
-    [InlineData("Seznam zastávek")]
-    [InlineData("Pevná tabulka")]
-    [InlineData("Tabulka s řádky z dat")]
-    [InlineData("Obdélník")]
-    [InlineData("Obrázek")]
-    [InlineData("Kód (QR, čárový)")]
-    [InlineData("Tabulka spojů")]
-    public void JmenoSedisPaletou(string jmeno)
+    /// <summary>Paleta a nabídka vkládání jsou to, co uživatel vidí, a hláška se musí trefit do stejného
+    /// slova. Od 30. 10. se obě staví z katalogu prvků, ze kterého bere jména i <see cref="ElementNames"/> -
+    /// tlačítko prvku vrácené do okna napevno by mělo jméno vlastní a mohlo by se rozejít.</summary>
+    [Fact]
+    public void PaletaANabidka_SeStaviZKatalogu()
     {
-        // Paleta a nabídka vkládání jsou to, co uživatel vidí; hláška se musí trefit do stejného
-        // slova. ⚠️ Přejmenovat prvek znamená změnit obojí - jinak spadne tady.
         var okno = Cesta("dotnet/Windows/MainWindow");
-        var paleta = string.Concat(Directory.GetFiles(okno, "MainWindow*.cs").Order(StringComparer.Ordinal).Select(File.ReadAllText))
-                   + File.ReadAllText(Path.Combine(okno, "MainWindow.xaml"));
+        var xaml = File.ReadAllText(Path.Combine(okno, "MainWindow.xaml"));
 
-        Assert.Contains(jmeno, paleta);
+        Assert.All(ElementCatalog.All, prvek => Assert.DoesNotContain($"Tag=\"{prvek.Type}\"", xaml));
+        Assert.Contains("ElementCatalog.All", File.ReadAllText(Path.Combine(okno, "MainWindow.Menus.cs")));
+        Assert.Contains("ElementCatalog.All", File.ReadAllText(Path.Combine(okno, "MainWindow.Palette.cs")));
     }
 
     [Fact]

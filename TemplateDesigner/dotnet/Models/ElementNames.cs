@@ -3,15 +3,10 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Models;
 
 /// <summary>
-/// Názvy prvků tak, jak je uživatel vidí v paletě a v nabídce vkládání. Jediné místo, odkud si je
-/// berou hlášky - jiné jméno v hlášce než na tlačítku znamená, že uživatel neví, o který prvek jde.
+/// Názvy prvků tak, jak je uživatel vidí v paletě a v nabídce vkládání - z <see cref="ElementCatalog"/>,
+/// ze kterého se staví i paleta a nabídka. Hlášky je berou odtud: jiné jméno v hlášce než na tlačítku
+/// znamená, že uživatel neví, o který prvek jde (1. 9. bylo jméno opsané na třech místech).
 /// </summary>
-/// <remarks>
-/// ⚠️ Musí souhlasit s paletou (<c>MainWindow.xaml</c>) a s nabídkou vkládání
-/// (<c>BtnAddElement_Click</c> v <c>MainWindow.Menus.cs</c>); hlídá to <c>ElementNamesTests</c>. Dva prvky se 1. 9. přejmenovaly
-/// („Mřížka odjezdů" → „Minuty odjezdů", „Legenda poznámek" → „Poznámky") a jméno bylo tehdy
-/// opsané na třech místech - proto tahle třída.
-/// </remarks>
 public static class ElementNames
 {
     /// <summary>
@@ -54,38 +49,9 @@ public static class ElementNames
     private const int MaxDelkaPopisu = 30;
 
     /// <summary>Název prvku pro uživatele. Neznámý typ dostane obecné „prvek", aby hláška držela.</summary>
-    public static string ForUser(TemplateElement el) => el switch
-    {
-        TextElement            => ForType(ElementTypes.Text),
-        RectangleElement       => ForType(ElementTypes.Rectangle),
-        LineElement            => ForType(ElementTypes.Line),
-        ImageElement           => ForType(ElementTypes.Image),
-        BarcodeElement         => ForType(ElementTypes.Barcode),
-        DynamicTableElement    => ForType(ElementTypes.DynamicTable),
-        TableElement           => ForType(ElementTypes.Table),
-        StopListElement        => ForType(ElementTypes.StopList),
-        DepartureGridElement   => ForType(ElementTypes.DepartureGrid),
-        NotesLegendElement     => ForType(ElementTypes.NotesLegend),
-        LineTableElement       => ForType(ElementTypes.LineTable),
-        _                      => "prvek",
-    };
+    public static string ForUser(TemplateElement el) => ElementCatalog.Find(el)?.Name ?? "prvek";
 
     /// <summary>Totéž podle typu ze serializace - pro místa, kde je po ruce jen řetězec
     /// (katalog prvků pro asistenta). Neznámý typ se vrátí, jak přišel.</summary>
-    public static string ForType(string type) => type switch
-    {
-        ElementTypes.Text          => "Text",
-        ElementTypes.Rectangle     => "Obdélník",
-        ElementTypes.Line          => "Čára",
-        ElementTypes.Image         => "Obrázek",
-        ElementTypes.Barcode       => "Kód (QR, čárový)",
-        // Jméno říká, odkud se berou řádky - v tom se tabulky liší, data mohou mít obě (rozhodnutí Jan 30. 10.).
-        ElementTypes.DynamicTable  => "Tabulka s řádky z dat",
-        ElementTypes.Table         => "Pevná tabulka",
-        ElementTypes.StopList      => "Seznam zastávek",
-        ElementTypes.DepartureGrid => "Minuty odjezdů",
-        ElementTypes.NotesLegend   => "Poznámky",
-        ElementTypes.LineTable     => "Tabulka spojů",
-        _                          => type,
-    };
+    public static string ForType(string type) => ElementCatalog.Find(type)?.Name ?? type;
 }
