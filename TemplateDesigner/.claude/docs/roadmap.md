@@ -4,25 +4,11 @@
 > changelog → [`changelog.md`](changelog.md), stav tiketů a věci „jen na poptávku" →
 > [`customer-requirements §0`](customer-requirements-zastavkovy-jr.md).
 
-> **Nejblíž na řadě:** architektura před `B56` (`B194g`; pojistky `B194f` hotové 30. 10.), po ní `B56`. Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
+> **Nejblíž na řadě:** `B56` (příprava `B194` hotová 30. 10.; postup s Janem naplánovat, první krok `R5`). Rozdílový linkový JŘ (`B192a-f`) je hotový 17. 10.; od 23. 10.
 > ho jízdní řády (Nástroje → Porovnání linek) tisknou rovnou jako PDF v prohlížeči, šablona není veřejná; mezery proti vzoru v [`§19.6`](linkovy-knizni-jr-implementace-analyza.md).
 > ⚠️ **Ze zastávkových tiketů práci neber bez ověření** - `#12843` byl 15. 9. zavřený (odpověď
 > s výsledky hovoru z 11. 9.). Evidence u něj ještě 3. 9. vedla tři body jako zbývající, ačkoli
 > hotové byly; než z ní něco vezmeš, přečti celý záznam, ne jen odstavec „Zbývá".
-
----
-
-## 🧩 Sjednocení agend JŘ - druhé kolo (`B194`, revize 23. 10.)
-
-Nezávislá revize čtyř agend JŘ po `B193`, každý nález přeověřený proti kódu. **Jeden řádek = jeden nález**;
-co uživatel vidí, doklady a návrh jsou pod stejným ID v [`konzistence-agend-jr.md`](konzistence-agend-jr.md).
-Procházíme s Janem bod po bodu shora, hotový řádek jde do archivu. Značky: **tisk** = změní vytištěný výstup
-vydané agendy · **Jan** = potřebuje rozhodnutí.
-
-### `B194g` Architektura před `B56`
-
-- **R4** Schopnosti agend místo kódů agend natvrdo v C# [S-M] **Jan**
-- **R5** Parametry vývěsek do jedné definice (první krok `B56`) [S-M]
 
 ---
 
@@ -81,8 +67,8 @@ vydané agendy · **Jan** = potřebuje rozhodnutí.
   strukturu a dát agendám základ, aby se nerozjížděly tam, kde to uživatel pozná nebo kde se oprava dělala
   víckrát. Model sdílení: [`architektonicka-rozhodnuti-agendy.md` R8](architektonicka-rozhodnuti-agendy.md).
   Začít tím, co se už rozešlo: výběr skupin linek a linek u AD, hlavička linky, společné parametry vývěsek
-  (`R5`), předpřipravené tabulky (zrušit, nebo napojit). Podklad [`legacy-nahrada.md §4`](legacy-nahrada.md);
-  **před startem** pojistky `B194f`.
+  (`R5`, první krok), předpřipravené tabulky (zrušit, nebo napojit). Postup, pojistky a snímek výstupu
+  v [`legacy-nahrada.md §4`](legacy-nahrada.md); příprava `B194` hotová 30. 10.
 
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech vybere linky a dostane PDF bez otevření návrháře. Pro jednu linku PDF bez

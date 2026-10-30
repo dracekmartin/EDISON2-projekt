@@ -76,7 +76,7 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
 - **Volitelné**, výchozí prázdný výsledek: `GetParameters`, `GetAvailableSkupiny`, `GetAvailableInstances`,
   `GetTableTemplates` / `GetTableTemplate` (předpřipravené tabulky - návrhář je nevolá, zrušit nebo napojit rozhodne `B56`).
 - **Parametry třídy** - `AgendaVariantCode` (stabilní persistovaný klíč), `Agenda` / `Variant` s labely, `ElementKind`,
-  `InstanceParamName`, `CustomColumns`, `VariantyTras`, `Released` (bez něj se agenda uživatelům nenabízí).
+  `InstanceParamName`, `CustomColumns`, `VariantyTras`, `RozdilyVerzi`, `Released` (bez něj se agenda uživatelům nenabízí).
 - **Každá metoda s `ByRef sys`** dodržuje pravidla 14-15 níž, nebo jen přesměruje na metodu jiné agendy
   (`q ##class(…).X(.sys)`); hlídá `OsetreniChybAgendTests`.
 - **Vzorem jsou agendy JŘ** (`ZastavkoveJrAd`, `LinkovyJrAd`), ne Faktury - ukázka z počátku, která se možná smaže.
@@ -262,6 +262,10 @@ Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující š
   (`templatedesigner.appsettings.json`) je nedefinuje. `CacheSchemaWiring.TryCreate` nad nimi vytvoří `CacheAgendaProvider`,
   který volá metody agend přes MLRest a čte jejich JSON.
 - Fallback nabídky dat: `CompositeDataSchemaProvider` (Caché primary + JSON ze `schemas/*.schema.json`).
+- **Návrhář se o agendě rozhoduje podle registru, ne podle kódu agendy** (`B194g` R4, 30. 10.). Co návrhář
+  potřebuje vědět, ohlásí agenda parametrem třídy, `ListAgendy` ho pošle (aditivně, s výchozí hodnotou pro starší
+  server) a C# ho čte z `AgendaRegistryEntry`. Kód agendy v kódu návrháře zastaví `KodyAgendVKoduTests`;
+  výjimky (převody starých šablon, výchozí agenda nové šablony) jsou v testu s důvodem.
 
 ---
 

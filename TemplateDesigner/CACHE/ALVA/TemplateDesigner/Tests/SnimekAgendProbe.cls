@@ -1,6 +1,6 @@
 Include (%occInclude, GENERAL)
 
-/// Snímek výstupu všech agend před sloučením kódu agend (`B56`, `konzistence-agend-jr.md §7`): seznam volání
+/// Snímek výstupu všech agend před sloučením kódu agend (`B56`, `legacy-nahrada.md §4`): seznam volání
 /// a jedno volání se správnou firmou. Sonda, ne test - výstup závisí na datech dev serveru; ukládá
 /// a porovnává ho `SnimekAgendNaostro` v .NET. Linky z testovacích sad, výchozí parametry. Po každém
 /// kroku `B56` musí vyjít bajtově stejně.

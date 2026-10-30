@@ -864,7 +864,7 @@ Stejné jméno, jiný význam - při přesunu do pomocné třídy přejmenovat, 
 `Jazyk` (`*SK`/`CZ` z `JRSET` × `cs`/`sk` z `^||TiskAd`), `ZonaBezPismen` (úprava textu × ano/ne z nastavení), `NactiNastaveniNazvu` (výchozí „Plný CIS" × „Zkrácený", vědomý rozdíl hlídaný v `KontraktAgendTest.Vyjimka`), `PopisDopravce` (viz výš), `BuildStrankaLinky`.
 Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKnizni("wmap",trasa)` × `^||TiskAd("wmap",db,sku,lin,trasa)`), `ZaznamZastavky` bere datum z jiného globálu.
 
-**Postup `B56`** (přesunuto z `konzistence-agend-jr.md §7` 30. 10.):
+**Postup `B56`** (z revize `B194`, 30. 10.):
 
 - **Pojistky:** `KontraktAgendTest` (kontrakt každé agendy z registru, data odpovídají nabídce, sdílené parametry shodné), integrační `KontraktDatAgendTests` (položky, které čtou prvky, ve správném tvaru), `TestovaciLinkyTest` (linky testů v datech jsou), zlaté odtisky všech čtyř agend JŘ a snímek výstupu agend.
 - **Snímek výstupu je sonda, ne test** (výstup závisí na datech dev serveru): schéma, parametry a ukázka všech agend z registru a `GetData` linek z `KontraktAgendTest.LinkyAgend` - 45 souborů, 16 MB.
@@ -873,6 +873,8 @@ Pracovní globály se jmenují jinak a liší se klíčem: `WMapa` (`^||TiskKniz
   Všechny odtisky i snímek jedou jen s výchozími parametry; rozdílový linkový JŘ kryjí jen umělá data a jedna dvojice linek.
 - **Pořadí kroků:** nejdřív R5 (parametry vývěsek do jedné definice).
   Sedm společných parametrů (`PORADI_STRANEK`, `TISK_SIPKY`, `TISK_PROJETYCH_ZAST`, `CASOVA_OSA`, `HODINY_OD`, `HODINY_DO`, `ROZTAHNOUT_NA_VYSKU`) je znak po znaku shodných; AD je má proložené asi 15 vlastními a musí je přidávat ve stávajícím pořadí, jinak se panel parametrů přeskupí.
+  Shodu hlídá `KontraktAgendTest.TestSdileneParametryShodne`; přehled vypíše `KontraktAgendTest.Prehled` (29. 10.: 20 sdílených, 16 shodných, 4 vědomé rozdíly - tvar názvu zastávky, počet stran, zastávky bez zastavení, skupina barev spojů).
+  Vzorem je jedna sdílená definice linkových agend (`LinkovyJrAd.Parametr*`).
   Pak doslovné kopie, jedna skupina = jeden commit + snímek: vývěsky `AddAtribut`, `AddPoznamkaZastavky`, `AddZona`, `BuildOdjezd`, `BuildSkupinaDnu`, `ConvertSpecialniZnak`, `IntToHex2`, `RgbToHex`, `GetTableTemplate(s)`; linkové `BuildPoznamka`, `BuildSkupina`, `FormatCas`; AD `NazevLinky`, `NormalizLinku`, `PrvniLinka`, `CasHodnota`, `GetAvailableSkupiny`/`GetAvailableInstances`.
   Pak sjednocení z odstavce výš (platnost, omezení 14 a 15).
   Metody, které čtou nastavení linky (`NactiNastaveniNazvu`, `ZonaBezPismen`, `TiskBarevSpoju`), až po backlogu „Úklid nastavení tisku v jízdních řádech".

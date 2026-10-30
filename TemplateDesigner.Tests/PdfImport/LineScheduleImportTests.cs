@@ -1,6 +1,10 @@
 using System.IO;
+using EDControls;
+using EDControls.EDViewModel;
+using NSubstitute;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Schema;
 using TemplateDesigner.PdfImport;
 using TemplateDesigner.Services;
 
@@ -13,18 +17,39 @@ namespace TemplateDesigner.Tests.PdfImport;
 /// </summary>
 public class LineScheduleImportTests
 {
+    public LineScheduleImportTests() =>
+        EDServices.Initialize(new EDServices(Substitute.For<IMLRest>(),
+            Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
+
     [Theory]
-    [InlineData("ZASTAVKOVY_JR_AD", ScheduleImportType.ZastavkovyJrMhd)]
-    [InlineData("ZASTAVKOVY_JR_MHD", ScheduleImportType.ZastavkovyJrMhd)]
-    [InlineData("LINKOVY_JR_AD", ScheduleImportType.LinkovyJr)]
-    [InlineData("LINKOVY_JR_MHD", ScheduleImportType.LinkovyJr)]
-    [InlineData("FAKTURY", ScheduleImportType.None)]
-    [InlineData("GENERAL", ScheduleImportType.None)]
+    [InlineData("STOP", ScheduleImportType.ZastavkovyJrMhd)]
+    [InlineData("LINE", ScheduleImportType.LinkovyJr)]
+    [InlineData("line", ScheduleImportType.LinkovyJr)]
     [InlineData("", ScheduleImportType.None)]
     [InlineData(null, ScheduleImportType.None)]
-    public void RezimImportuSeOdvodiZAgendy(string? agenda, ScheduleImportType expected)
+    public void RezimImportuSeOdvodiZDruhuAgendy(string? druh, ScheduleImportType expected)
     {
-        Assert.Equal(expected, ScheduleImportTypes.ForAgenda(agenda));
+        Assert.Equal(expected, ScheduleImportTypes.ForElementKind(druh));
+    }
+
+    /// <summary>Agenda, která v nabídce není (šablona jiné firmy, nenačtený registr), JŘ import
+    /// nespustí ani se známým druhem - dialog by namapoval pole agendy, kterou nezná.</summary>
+    [Fact]
+    public void NeznamaAgenda_ImportJeObecny()
+    {
+        var vm = new PdfImportDialogViewModel(preferredAgendaCode: "LINKOVY_JR_AD", agendaElementKind: "LINE");
+        Assert.Equal(ScheduleImportType.None, vm.ScheduleImportType);
+    }
+
+    [Fact]
+    public void AgendaZNabidky_ImportPodleDruhu()
+    {
+        var schema = Substitute.For<IDataSchemaProvider>();
+        schema.GetAvailableAgendas().Returns([new AgendaInfo("LINKOVY_JR_AD", "Linkový JŘ (AD)")]);
+
+        var vm = new PdfImportDialogViewModel(schema, preferredAgendaCode: "LINKOVY_JR_AD", agendaElementKind: "LINE");
+
+        Assert.Equal(ScheduleImportType.LinkovyJr, vm.ScheduleImportType);
     }
 
     // ── Na co se model u tabulky spojů ptá ──────────────────────────────

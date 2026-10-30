@@ -290,7 +290,7 @@ tatáž oprava na víc místech a nikdo neví, na kterých.
   je na základ, na kterém se další agenda staví bez opisování. Sjednocuje se tam, kde hrozí rozjezd, který
   uživatel uvidí, nebo kde se tatáž oprava dělala víckrát. Vědomé rozdíly mezi agendami
   ([`legacy-nahrada.md §4`](legacy-nahrada.md)) zůstávají.
-- Postup a pojistky: [`konzistence-agend-jr.md §7`](konzistence-agend-jr.md) - výstup všech agend musí
+- Postup a pojistky: [`legacy-nahrada.md §4`](legacy-nahrada.md) („Postup `B56`") - výstup všech agend musí
   po každém kroku vyjít bajtově stejně.
 
 **Kdy nejpozději.** Před další agendou (Faktury, převod Report generátoru).

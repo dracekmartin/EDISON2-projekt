@@ -9,6 +9,14 @@
 
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
+**`B194` je uzavřený 30. 10.** Zbylé `R5` (parametry vývěsek do jedné definice) je první krok `B56` a žije
+u něj v roadmapě; postup a pojistky v `legacy-nahrada.md §4`. Pracovní `konzistence-agend-jr.md` je smazaný
+(git historie).
+
+- **R4** Návrhář se o agendě rozhoduje podle registru, ne podle kódu (hotovo 30. 10., changelog 2026-10-30 (13),
+  rozhodnutí Jan 30. 10.): barvy rozdílů řídí parametr agendy `RozdilyVerzi`, import z PDF druh agendy;
+  výchozí agenda nové šablony zůstává v kódu jako vědomá výjimka. Nový kód agendy v kódu návrháře zastaví
+  `KodyAgendVKoduTests`.
 - **R7** Názvosloví v kódu agend (hotovo 30. 10., changelog 2026-10-30 (12)): `cache-api.md` pravidlo 5
   upřesňuje anglické sloveso + českou věc, funkce bez slovesa a `Je…`/`Ma…`; pravidlo 6 pracovní globály
   agend. Stávajících 76 metod s českým slovesem se přejmenuje při přesunu v `B56` (rozhodnutí Jan 30. 10.:

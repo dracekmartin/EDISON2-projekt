@@ -1485,7 +1485,8 @@ public partial class MainWindow : Window
         try
         {
             var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
-            var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey, _vm.State.CurrentTemplate?.AgendaCode, aiReason);
+            var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey, _vm.State.CurrentTemplate?.AgendaCode, aiReason,
+                _vm.ZnamyDruhAgendy);
             var dialog = new PdfImportDialog(vm) { Owner = this };
 
             if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)

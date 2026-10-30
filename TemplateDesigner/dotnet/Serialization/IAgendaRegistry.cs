@@ -25,6 +25,10 @@ namespace TemplateDesigner.Serialization;
 ///
 /// <para><see cref="VariantyTras"/> = agenda posílá u zastávek časy variant tras; jinak Seznam zastávek
 /// sloupec „Varianty tras" nenabízí (zůstal by prázdný). Default true = starší Caché bez klíče jako dřív.</para>
+///
+/// <para><see cref="RozdilyVerzi"/> = agenda posílá dvě verze linky s vyznačenými rozdíly; jen u ní nabízí
+/// Tabulka spojů a Poznámky barvy rozdílů. Default false: starší Caché bez klíče barvy rozdílů neukáže ani
+/// u rozdílového JŘ - ten se uživatelům nenabízí a PDF pro porovnání linek formulář nepotřebuje.</para>
 /// </summary>
 public record AgendaRegistryEntry(
     string Code,
@@ -40,7 +44,8 @@ public record AgendaRegistryEntry(
     string VariantLabel = "",
     bool Released = true,
     bool CustomColumns = true,
-    bool VariantyTras = true)
+    bool VariantyTras = true,
+    bool RozdilyVerzi = false)
 {
     /// <summary>Label agendy s fallbackem pro starší Caché bez dvouosých klíčů (→ kombinovaný Label).</summary>
     public string EffectiveAgendaLabel => AgendaLabel is { Length: > 0 } ? AgendaLabel : Label;

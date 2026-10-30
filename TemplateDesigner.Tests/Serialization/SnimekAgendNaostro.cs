@@ -8,7 +8,7 @@ using Xunit.Abstractions;
 namespace TemplateDesigner.Tests.Serialization;
 
 /// <summary>
-/// Snímek výstupu všech agend před sloučením kódu agend (<c>B56</c>, <c>konzistence-agend-jr.md §7</c>):
+/// Snímek výstupu všech agend před sloučením kódu agend (<c>B56</c>, <c>legacy-nahrada.md §4</c>):
 /// schéma, parametry a ukázka každé agendy z registru a data linek z testovacích sad, s výchozími parametry
 /// (seznam drží sonda <c>ALVA.TemplateDesigner.Tests.SnimekAgendProbe</c>). První běh uloží snímek, každý
 /// další porovná výstup bajt po bajtu a vypíše, co se liší - změna tisku se tak ukáže u kroku, který ji

@@ -1772,14 +1772,13 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Druh JŘ prvků agendy šablony; null = agenda v registru není (registr se nenačetl,
     /// šablona bez agendy) a pak se nic neblokuje.</summary>
-    private string? ZnamyDruhAgendy => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind;
+    public string? ZnamyDruhAgendy => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind;
 
     /// <summary>Je šablona linkového JŘ? Řídí, co formulář poznámek nabízí (`#7487`).</summary>
     public bool JeLinkovyJr => string.Equals(ZnamyDruhAgendy, "LINE", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Je šablona rozdílového linkového JŘ? Řídí, jestli formulář tabulky ukáže barvy rozdílů.</summary>
-    public bool JeRozdilovyJr => string.Equals(State.CurrentTemplate.AgendaCode, AgendaCapabilities.RozdilovyLinkovyJr,
-        StringComparison.OrdinalIgnoreCase);
+    public bool JeRozdilovyJr => AgendaEntry(State.CurrentTemplate.AgendaCode)?.RozdilyVerzi == true;
 
     /// <summary>Rozdělí prvky na ty, které do šablony téhle agendy smí, a řekne uživateli, které
     /// vynechal (<see cref="AgendaCapabilities.Allows"/>).</summary>

@@ -1,4 +1,7 @@
+using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -86,6 +89,47 @@ public class AgendaRegistryEntryTests
         var e = Assert.Single(JsonSerializer.Deserialize<List<AgendaRegistryEntry>>(json, Options)!);
         Assert.False(e.Released);
     }
+
+    /// <summary>Barvy rozdílů nabízí jen agenda, která rozdíly verzí hlásí; starší server bez klíče
+    /// je neukáže nikde (rozdílový JŘ se uživatelům nenabízí, `B194g` R4).</summary>
+    [Fact]
+    public void RozdilyVerzi_ZeServeru_DefaultFalse()
+    {
+        Assert.False(new AgendaRegistryEntry("X", "X", "cls").RozdilyVerzi);
+
+        const string json = """[{"code":"A","label":"A","cacheClass":"c","rozdilyVerzi":true},{"code":"B","label":"B","cacheClass":"c"}]""";
+        var list = JsonSerializer.Deserialize<List<AgendaRegistryEntry>>(json, Options)!;
+
+        Assert.True(list[0].RozdilyVerzi);
+        Assert.False(list[1].RozdilyVerzi);
+    }
+
+    /// <summary>Příznak sedí s daty: rozdíly hlásí právě agenda, která v datech značí verzi
+    /// („puvodni" / „nova"). Jinak by se barvy rozdílů nabízely bez účinku, nebo chyběly.</summary>
+    [Fact]
+    public void PriznakRozdiluSediSDaty()
+    {
+        var priznak = new Regex(@"^Parameter RozdilyVerzi As %Boolean = 1;", RegexOptions.Multiline);
+        var agendy = Directory.GetFiles(AgendyDir(), "*.cls")
+            .Where(f => Path.GetFileName(f) != "BaseAgenda.cls")
+            .Select(f => (Soubor: Path.GetFileName(f), Text: File.ReadAllText(f)))
+            .ToList();
+
+        Assert.Empty(agendy.Where(a => a.Text.Contains("\"puvodni\"") != priznak.IsMatch(a.Text)).Select(a => a.Soubor));
+        Assert.Contains(agendy, a => priznak.IsMatch(a.Text));
+        Assert.Contains("Parameter RozdilyVerzi As %Boolean = 0;", File.ReadAllText(Path.Combine(AgendyDir(), "BaseAgenda.cls")));
+    }
+
+    private static string AgendyDir()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
+            dir = dir.Parent;
+        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
+        return Path.Combine(dir!.FullName, "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
+    }
+
+    private static string ThisFile([CallerFilePath] string path = "") => path;
 
     /// <summary>Obecná agenda schéma nemá z principu - stavový řádek u ní nesmí hlásit „nedostupná"
     /// (Jan 27. 10.). Agenda se třídou na serveru bez schématu je výpadek a hlásí ho dál.</summary>

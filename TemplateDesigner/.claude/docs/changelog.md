@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 2026-10-30 (13) - Návrhář se o agendě rozhoduje podle registru, ne podle kódu (`B194g` R4)
+
+Barvy rozdílů v Tabulce spojů a Poznámkách nabízel formulář jen u agendy s kódem rozdílového linkového JŘ AD.
+Teď je řídí nový parametr agendy `RozdilyVerzi`, který server posílá v seznamu agend vedle druhu prvků, vlastních sloupců a variant tras; rozdílová agenda pro jinou linku nebo vývěsku tak nepotřebuje změnu návrháře.
+Import z PDF poznával vývěsku a linkový JŘ podle začátku kódu agendy, teď podle druhu agendy, který řídí i paletu prvků.
+Výchozí agenda nové šablony zůstává v kódu: je to volba toho, na čem se pracuje, a musí fungovat i bez seznamu agend (rozhodnutí Jan 30. 10.).
+`KodyAgendVKoduTests` zastaví kód agendy v kódu návrháře (kódy bere z tříd agend), výjimky mají důvod a test hlídá, že pořád platí; spadl na dočasně vráceném porovnání s kódem rozdílového JŘ i se začátkem `ZASTAVKOVY_JR`.
+`AgendaRegistryEntryTests` hlídá, že příznak rozdílů má právě agenda, která v datech značí verzi.
+Starší server příznak neposílá a barvy rozdílů pak formulář neukáže; rozdílový JŘ se uživatelům nenabízí a PDF pro porovnání linek formulář nepotřebuje.
+Pracovní `konzistence-agend-jr.md` je smazaný, `B194` je uzavřený; `R5` je první krok `B56`.
+Tisk se nemění.
+Ověřeno: server posílá příznak jen u rozdílového JŘ (volání `ListAgendy`), .NET testy 2540/2540, Caché testy 270/270, integrační testy 48/48.
+
 ## 2026-10-30 (12) - Pravidla pojmenování v kódu agend a jejich hlídání (`B194g` R7)
 
 Pravidlo 5 v `cache-api.md` říkalo „obecné vzory anglicky", ale nestanovilo, která slovesa, a 76 metod agend začíná českým slovesem (`PridatPoznamky`, `NactiTurnusy`, `SestavitStranky`).

@@ -74,6 +74,11 @@ Parameter CustomColumns As %Boolean = 0;
 /// varianty dostane (backlog), stačí přepnout tady.
 Parameter VariantyTras As %Boolean = 0;
 
+/// Agenda posílá v jedné tabulce dvě verze linky a značí, co je jen v původní a co jen v nové
+/// (rozdílový linkový JŘ). Návrhář podle toho nabídne v Tabulce spojů a Poznámkách barvy rozdílů;
+/// jinde by nic neobarvily. Do 30. 10. to návrhář poznal podle kódu agendy (`B194g` R4).
+Parameter RozdilyVerzi As %Boolean = 0;
+
 /// Druh JŘ elementů, které agenda podporuje - řídí kontextové menu/paletu okna.
 /// "STOP" = zastávkové (StopList/DepartureGrid/NotesLegend), "LINE" = knižní/linkové
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.

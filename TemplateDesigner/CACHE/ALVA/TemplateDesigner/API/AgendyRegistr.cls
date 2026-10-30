@@ -74,6 +74,7 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
             d entry.%Set("released", $s($parameter(className, "Released")=1:1, 1:0), "boolean")
             d entry.%Set("customColumns", $s($parameter(className, "CustomColumns")=1:1, 1:0), "boolean")
             d entry.%Set("variantyTras", $s($parameter(className, "VariantyTras")=1:1, 1:0), "boolean")
+            d entry.%Set("rozdilyVerzi", $s($parameter(className, "RozdilyVerzi")=1:1, 1:0), "boolean")
             d arr.%Push(entry)
         }
 
