@@ -116,13 +116,14 @@ s daty z agendy → PDF.
   'Uložit jako' je v menu Soubor (bez zkratky).
 - Import/export JSON souboru: menu Soubor → Importovat/Exportovat JSON.
 - Vlastnosti stránky (rozměr, orientace, okraje, kultura): Ctrl+Shift+P.
-  POZOR: změna rozměru/orientace = nová prázdná šablona (s potvrzením).
+  Změna formátu nebo orientace se u šablony s obsahem zeptá: Ano = prvky se přepočítají na novou
+  velikost, Ne = změní se jen stránka a prvky zůstanou, Storno = beze změny.
 
 ### Navigace a zobrazení
 - Zoom: Ctrl+kolečko (k kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
 - Mřížka plátna a přichytávání: toolbar - zobrazit mřížku plátna, snap na mřížku (velikost 0,2–10 mm),
   snap na elementy; Ctrl+Shift+N normalizuje pozice existujících elementů.
-- Levý panel: záložky Sekce / Datová pole / Vlastnosti / Strom / Pomocník; Ctrl+B sbalí.
+- Levý panel: záložky Sekce / Datová pole / Vlastnosti / Strom / Pomocník / Parametry; Ctrl+B sbalí.
 - Strom šablony: záložka 'Strom' - hierarchie sekce → skupiny → elementy.
 
 ## Klávesové zkratky (kompletní)
@@ -319,14 +320,17 @@ Pravidla obsahu (ZÁVAZNÁ):
     }
 
     // Jméno prvku drží ElementNames (totéž vidí uživatel v paletě); tady se k němu jen doplní,
-    // do které sestavy prvek patří - asistent jinak neví, kdy ho má vůbec nabízet.
-    internal static string FriendlyName(string type) => ElementNames.ForType(type) + (type switch
-    {
-        ElementTypes.StopList or ElementTypes.DepartureGrid or ElementTypes.NotesLegend
-            => " (zastávkový JŘ)",
-        ElementTypes.LineTable => " (linkový JŘ)",
-        _ => "",
-    });
+    // do které sestavy prvek patří - asistent jinak neví, kdy ho má vůbec nabízet. Bere se
+    // z AgendaCapabilities: vlastní výčet tu tvrdil, že Poznámky jsou jen zastávkové, i když je
+    // od 3. 9. má i linkový JŘ.
+    internal static string FriendlyName(string type) =>
+        ElementNames.ForType(type) + (AgendaCapabilities.Supports("STOP", type), AgendaCapabilities.Supports("LINE", type)) switch
+        {
+            (true, true)  => " (zastávkový i linkový JŘ)",
+            (true, false) => " (zastávkový JŘ)",
+            (false, true) => " (linkový JŘ)",
+            _             => "",
+        };
 
     private static string? ElementNote(string type) => type switch
     {

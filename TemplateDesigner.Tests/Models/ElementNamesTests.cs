@@ -62,6 +62,17 @@ public class ElementNamesTests
             Assert.StartsWith(ElementNames.ForType(typ), CapabilityCatalog.FriendlyName(typ));
     }
 
+    /// <summary>Do kterého JŘ prvek patří, říká asistentovi seznam prvků agend - vlastní výčet tvrdil,
+    /// že Poznámky jsou jen zastávkové, i když je od 3. 9. má i linkový JŘ (revize 30. 10.).</summary>
+    [Fact]
+    public void KatalogProAsistenta_RikaDoKterehoJrPrvekPatri()
+    {
+        Assert.EndsWith("(zastávkový i linkový JŘ)", CapabilityCatalog.FriendlyName(ElementTypes.NotesLegend));
+        Assert.EndsWith("(zastávkový JŘ)", CapabilityCatalog.FriendlyName(ElementTypes.StopList));
+        Assert.EndsWith("(linkový JŘ)", CapabilityCatalog.FriendlyName(ElementTypes.LineTable));
+        Assert.Equal(ElementNames.ForType(ElementTypes.Text), CapabilityCatalog.FriendlyName(ElementTypes.Text));
+    }
+
     [Fact]
     public void KazdyTypMaJmenoIPodleRetezce()
     {
