@@ -98,10 +98,10 @@
   `#FFE0E0E0` (`ScheduleElementBase.NoveZahlaviPozadi`, i import z PDF), nová tabulka `#FFE8E8E8`
   (`TableStyleDefaults.NoveZahlaviPozadi`). Ověřit s Janem, jestli je rozdíl záměr; když ne, jedna konstanta.
 
-- **Varianty tras i ve vývěsce MHD** [L] - sloupec „Varianty tras" v Seznamu zastávek umí jen AD
-  (výpočet variant po trasách, písmena, pět parametrů). Jan je chce i v MHD (27. 10.): přenést výpočet
-  na trasy a body MHD a ověřit proti datům, pak v `ZastavkoveJrMhd` přepnout `VariantyTras = 1` -
-  nabídka sloupce se ukáže sama.
+- **Písmena variant a sloupec „Čas jízdy" ve vývěsce MHD** [S] **Jan** - varianty tras MHD běží (30. 10.,
+  changelog (50)), písmena jsou zatím pevně `ADLMNPTY` a s rozdíly tras MHD (a-z) se liší jen velikostí.
+  Rozhodnout, odkud se sada vezme (souvisí s nastavením tisku u linky). „Čas jízdy" MHD počítá z chronometráže
+  a sedí jen u 56 % odjezdů (sonda `VariantyTrasMhdProbe`) - nechat, nebo brát ze spojů jako AD?
 
 ---
 

@@ -1,5 +1,17 @@
 ﻿# Changelog
 
+## 2026-10-30 (50) - Varianty tras ve vývěsce MHD
+
+Seznam zastávek vývěsky MHD umí sloupec „Varianty tras" jako AD: každá trasa ze zastávky má svůj sloupec jízdních dob a minuty odjezdů její písmeno (kategorie „varianta-trasy").
+Varianty počítá sdílená `Jr/VariantyTras.cls`, platí pro ně týchž pět parametrů sestavy a agenda hlásí `VariantyTras = 1`, takže návrhář sloupec nabídne sám.
+Rozdíl proti AD: zástupcem varianty je spoj s nejdelší jízdou, ne trasa, protože v MHD má jízdní doby každý spoj zvlášť (sonda `VariantyTrasMhdProbe`: spoje jedné varianty se liší až o 16 min).
+Sled varianty se bere jen přes zastávky, které stránka ukazuje (bez bodů „netisknout" a bez zastávek, kam odtud nic nejede); na KV_DP linka 1 by se skrytými body vyšlo až 12 variant místo 7.
+Sloupec „Čas jízdy" počítá dál z chronometráže trasy linky; podle sondy sedí se skutečným spojem jen u 56 % odjezdů, to je samostatná otázka.
+Písmena variant jsou zatím pevně výchozí sada `ADLMNPTY` (rozhodnutí Jan: sada se doladí, až varianty poběží); rozdíly tras MHD mají z výroby a-z, takže se písmena můžou lišit jen velikostí.
+Sloupek variant MHD neposílá (sloupky jsou jen v AD), integrační test kontraktu na to má výjimku.
+Starý tisk MHD varianty neměl, takže paritu není s čím ověřit (R6); `ZastavkoveJrMhdVariantyTest` hlídá vlastnosti výstupu na lince 1 CB_DP (7 variant).
+Ověřeno: Caché testy TemplateDesigneru 284/285 (1 přeskočený z dřívějška; nový test ověřen dvěma mutacemi), zlaté otisky MHD 1001/1003/1006 přepsané se shodnými počty stránek, zastávek, odjezdů i poznámek, parita se starým tiskem beze změny, integrační testy 48/48, .NET testy 2661/2661, voláním na CB_DP 1001 a KV_DP 1073 (počty variant na stránku shodné se sondou). V aplikaci neproklikané.
+
 ## 2026-10-30 (49) - Varianty tras ve sdílené třídě (příprava pro vývěsku MHD)
 
 Výpočet variant tras (sled zastávek, zástupce varianty, slití úseků, řazení, ořez a písmena) byl jen ve vývěsce AD.

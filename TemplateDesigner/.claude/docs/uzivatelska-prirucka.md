@@ -725,19 +725,6 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   sloupce", když jste si ji poskládali po svém. Přepnutím parametru se definice v šabloně přepíše
   na zvolený vzor. Vzory: Pracovní-Sobota-Neděle+svátky / Pracovní-víkend / Prázdniny (mimo+o
   prázdninách)-víkend / Prázdniny (mimo+o prázdninách)-Sobota-Neděle+svátky.
-- **Varianty tras** (sloupec „Varianty tras" na prvku Seznam zastávek - zapíná se v jeho nastavení
-  na záložce Sloupce; **z výroby je vypnutý**; zatím jen u AD - vývěska MHD varianty nepočítá a sloupec
-  nenabízí) - když spoje jedou z dané zastávky různými trasami,
-  dostane každá trasa vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek);
-  v jejím sloupci je **průběh jedné skutečné trasy** - té s delší jízdní dobou, takže údaj odpovídá
-  spoji, který opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže
-  **jedna položka v seznamu sloupců se v tisku rozpadne na víc sloupců**; šířka a styl, které u ní
-  nastavíte, platí pro každý z nich. **Sloupec dostane i linka s jedinou variantou** - stejná trasa
-  všech spojů je taky varianta, takže vývěska postavená na variantách vypadá všude stejně.
-  Řazení a písmenné označení variant se nastavuje parametry sestavy (viz níže).
-  ⚠️ Sloupce „Varianty tras" a „Čas jízdy" ukazují **týž údaj dvěma způsoby**, takže zapnutý má být
-  vždy jen jeden z nich. Proto je variantní z výroby vypnutý; ve vašich hotových šablonách zůstává
-  tak, jak jste si ho nastavili.
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
@@ -750,6 +737,33 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   **prvního** z nich. Stejná pole mají všechny agendy jízdních řádů, šablonu tak jde přenést.
   U MHD zůstává *E-mail dopravce* prázdný, když linku obsluhuje vaše vlastní firma - karta firmy
   nemá kontaktní e-mail, jen adresu, ze které EDISON odesílá poštu.
+- **Stránka pro každé stanoviště** (parametr ve skupině „Obecné") - zastávka
+  obsluhovaná z více stanovišť se vytiskne jako **samostatná vývěska pro každé z nich**, vždy jen
+  s odjezdy spojů, které z něj jedou; číslo stanoviště je i v titulku stránky. Hodí se, když vývěsku
+  fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy). Zda je
+  číslem stanoviště označník z trasy, nebo sloupek z číselníku, řídí parametr **Číslo stanoviště podle**.
+- Doplňkový tiskový parametr: **„Schovat poznámky v rozsahu „nepoznámkovat“"** (Ruční komentáře /
+  Automatické rozdíly tras / Obojí).
+
+#### Varianty tras (AD i MHD)
+
+- **Varianty tras** (sloupec „Varianty tras" na prvku Seznam zastávek - zapíná se v jeho nastavení
+  na záložce Sloupce; **z výroby je vypnutý**) - když spoje jedou z dané zastávky různými trasami,
+  dostane každá trasa vlastní časový sloupec. Varianta = jedna trasa (sled obsluhovaných zastávek);
+  v jejím sloupci je **průběh jednoho skutečného spoje** - toho s nejdelší jízdní dobou, takže údaj
+  odpovídá spoji, který opravdu jede. Počet sloupců je dynamický (tolik, kolik je tras v datech), takže
+  **jedna položka v seznamu sloupců se v tisku rozpadne na víc sloupců**; šířka a styl, které u ní
+  nastavíte, platí pro každý z nich. **Sloupec dostane i linka s jedinou variantou** - stejná trasa
+  všech spojů je taky varianta, takže vývěska postavená na variantách vypadá všude stejně.
+  Řazení a písmenné označení variant se nastavuje parametry sestavy (viz níže).
+  ⚠️ Sloupce „Varianty tras" a „Čas jízdy" ukazují **týž údaj dvěma způsoby**, takže zapnutý má být
+  vždy jen jeden z nich. Proto je variantní z výroby vypnutý; ve vašich hotových šablonách zůstává
+  tak, jak jste si ho nastavili.
+- **Rozdíl u MHD:** v modulu MHD má jízdní doby každý spoj zvlášť, takže spoje jedné trasy můžou jet
+  různě dlouho (třeba ve špičce).
+  Sloupec varianty proto ukazuje spoj s nejdelší jízdou, kdežto sloupec „Čas jízdy" počítá jízdní
+  doby z trasy linky v modulu MHD.
+  Starý tisk MHD varianty tras neměl.
 - **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"). Ukážou se, jen když má
   šablona zapnutý sloupec „Varianty tras" - bez něj nemají na tisk vliv:
   - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
@@ -767,7 +781,10 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     u minuty je nejdřív rozdíl trasy, pak varianta („17BA" = rozdíl B, varianta A).
     Rozdíl trasy říká **kudy** spoj jede jinak a vysvětluje ho text v legendě; varianta říká,
     **podle kterého sloupce časů** se řídí, a vysvětluje ji záhlaví toho sloupce.
-  - **Která písmena se použijí, si určíte u linky** (EDISON → linka → Nastavení k tisku → záložka
+  - **Ve vývěsce MHD** jsou písmena variant zatím vždy výchozí `A, D, L, M, N, P, T, Y`.
+    Rozdíly tras MHD mají z výroby malá písmena a-z, takže se u minuty může potkat písmeno rozdílu
+    a varianty, které se liší jen velikostí (rozdíl „a", varianta „A").
+  - **Která písmena se použijí, si u AD určíte u linky** (EDISON → linka → Nastavení k tisku → záložka
     Odjezdník MHD). „Volné značky" jsou písmena rozdílů tras, „Volné značky pro minutové trasy
     spojů" písmena variant; bere se z nich znak po znaku od začátku a po vyčerpání se zdvojují
     („AA", „DD"). Nechte-li pole prázdné, použijí se **výchozí sady, které se nepřekrývají** -
@@ -788,13 +805,6 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
     ⚠️ Slití něco stojí: u slitých spojů jsou **časy té delší varianty**. U dvou variant se shodnými
     časy to nevadí, u variant s jinými jízdními dobami se minuty posunou. Zapíná se to na celou
     sestavu, ne po jednotlivých variantách - před zapnutím si vývěsku prohlédněte.
-- **Stránka pro každé stanoviště** (parametr ve skupině „Obecné") - zastávka
-  obsluhovaná z více stanovišť se vytiskne jako **samostatná vývěska pro každé z nich**, vždy jen
-  s odjezdy spojů, které z něj jedou; číslo stanoviště je i v titulku stránky. Hodí se, když vývěsku
-  fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy). Zda je
-  číslem stanoviště označník z trasy, nebo sloupek z číselníku, řídí parametr **Číslo stanoviště podle**.
-- Doplňkový tiskový parametr: **„Schovat poznámky v rozsahu „nepoznámkovat“"** (Ruční komentáře /
-  Automatické rozdíly tras / Obojí).
 
 ---
 
@@ -810,7 +820,7 @@ Nastavení je seřazené tak, že nahoře jsou skupiny jen tohoto prvku (Zastáv
 Pod nimi jsou skupiny, které mají všechny tabulky stejně: Záhlaví, Datové buňky, Rámeček prvku, Mřížka, Pozice a velikost, Podmínky.
 
 - **Upravit sloupce…** - otevře editor sloupců (kap. 3)
-- **Varianty tras** (sloupec v editoru sloupců, výchozí vypnutý) - zap. = časové sloupce podle skutečných variant tras (jen AD; viz kap. 1). Je to **týž údaj jako sloupec „Čas jízdy"**, takže zapnuté má být vždy jen jedno z toho: kdo chce varianty, vypne si „Čas jízdy". Linka, kde jedou všechny spoje stejnou trasou, dostane jeden variantní sloupec (dřív žádný, takže na takové lince nebylo vidět nic)
+- **Varianty tras** (sloupec v editoru sloupců, výchozí vypnutý) - zap. = časové sloupce podle skutečných variant tras (viz kap. 1). Je to **týž údaj jako sloupec „Čas jízdy"**, takže zapnuté má být vždy jen jedno z toho: kdo chce varianty, vypne si „Čas jízdy". Linka, kde jedou všechny spoje stejnou trasou, dostane jeden variantní sloupec (dřív žádný, takže na takové lince nebylo vidět nic)
 - **Čáry mezi řádky** (skupina Mřížka) - vodorovné čáry mezi řádky zastávek
 - **Odsazení podle trasy** - odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
 - **Sloupec Označník** (a u AD i **Sloupek**; MHD sloupky nemá, sloupec proto nenabízí) - volitelný sloupec s číslem stanoviště, ze kterého spoj odjíždí; zapíná se v editoru sloupců, tiskne se jen tam, kde jsou data vyplněná

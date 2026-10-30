@@ -59,6 +59,9 @@ Dílčí vylepšení a náměty.
 - **Nadpisy sloupců dnů** (pracovní dny, soboty…) bere zastávkový JŘ AD z nastavení jízdních řádů
   vaší firmy, i dvouřádkové a dvojjazyčné, jako starý tisk a linkový JŘ. Nadpisy upravené v šabloně
   platí dál.
+- **Zastávkový JŘ MHD:** seznam zastávek umí sloupec **Varianty tras** jako vývěska AD.
+  Když spoje jedou ze zastávky různými trasami, dostane každá trasa vlastní sloupec jízdních dob a minuty odjezdů její písmeno.
+  Sloupec se zapíná v editoru sloupců seznamu zastávek.
 
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 

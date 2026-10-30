@@ -30,6 +30,7 @@ public class KontraktDatAgendTests
         [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", StopFields.Sloupek)] = AdSloupky,
         [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", StopFields.SloupekSpoju)] = AdSloupky,
         [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", StopFields.SloupekPopis)] = AdSloupky,
+        [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", "SLOUPEK_VARIANT")] = AdSloupky,
         [("ZASTAVKOVY_JR_MHD", "ZASTAVKY", StopFields.NastupisteSpoju)] = "označníky podle spojů bere AD z tras spojů, MHD je nemá",
         [("LINKOVY_JR_MHD", "ZASTAVKY", "TC")] = "MHD nemá tarifní čísla",
         [("LINKOVY_JR_MHD", "ZASTAVKY", "MHD")] = "sloupec MHD (přestup na městskou dopravu) je pojem AD",

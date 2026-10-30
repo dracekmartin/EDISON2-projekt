@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Varianty tras i ve vývěsce MHD (hotovo 30. 10. 2026)
+
+- **Varianty tras i ve vývěsce MHD** (Jan 27. 10., changelog 2026-10-30 (48)-(50)): sonda nad daty CB_DP a KV_DP
+  (`VariantyTrasMhdProbe`), výpočet variant přesunutý z AD do `Jr/VariantyTras.cls` beze změny výstupu AD,
+  ve vývěsce MHD zástupce varianty = spoj s nejdelší jízdou, `VariantyTras = 1`. Cestou opravený odjezd v 0:00
+  (vynechával ho i starý tisk). Otevřené zůstalo písmeno variant a „Čas jízdy" v MHD (položka v roadmapě).
+
 ## Sjednocené věci definovat jednou (hotovo 30. 10. 2026)
 
 - **Revize „co je definované dvakrát"** (dokument po zapracování smazaný, je v historii gitu; changelog 2026-10-30 (37)-(47)):

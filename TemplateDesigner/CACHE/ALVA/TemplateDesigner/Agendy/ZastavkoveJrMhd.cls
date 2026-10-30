@@ -40,6 +40,9 @@ Parameter Released = 1;
 
 Parameter InstanceParamName = "LINKA_ID";
 
+/// Od 30. 10. jako vývěska AD (`Jr.VariantyTras`); starý tisk MHD varianty neměl.
+Parameter VariantyTras As %Boolean = 1;
+
 Parameter ElementKind = "STOP";
 
 Parameter InstanceLabel = "linka";
@@ -132,6 +135,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 ///   ("spojTyp",SpojID)                                         = TypProvozuID spoje
 ///   ("spojTrasa",SmerID,SpojID)                                = TrasaBitmap
 ///   ("spojTrasa",SmerID,SpojID,BodID)                          = TrasaBitmapZBodu
+///   ("prubeh",SmerID,SpojID,BodID)                             = $lb("S", čas) staví / $lb("<") projíždí - spoje se sloupcem minut, pro varianty tras
 ///   ("spojNZ",SpojID)                                          = NegativniZnacka
 ///   ("nzTexty",NZ)                                             = OmezeniTXT
 ///   ("spojTydenni",SpojID)                                     = tydenniPlatnost
@@ -613,15 +617,18 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
             s jeKonecny = (BodID = konecnyBod)
 
             // Najít čas spoje v tomto bodu (včetně sloučených)
-            s casOdjezdu = ""
+            s casOdjezdu = "", projizdi = 0
             s subBodID = ""
             f {
                 s subBodID = $o(^||TiskMHD("trasa",SmerID,"slouceni",BodID,subBodID), smerKrok) q:subBodID=""
                 i subBodID = konecnyBod s jeKonecny = 1
                 i '$d(tabulkaSpoje("arr",1,subBodID)) continue
                 s bodVal = $g(tabulkaSpoje("arr",1,subBodID))
-                // Průjezd → přeskočit
-                i $lg(bodVal,5) continue
+                // Průjezd → přeskočit (varianty tras ho ale tisknou jako „<")
+                i $lg(bodVal,5) {
+                    s projizdi = 1
+                    continue
+                }
                 // Čas = max(příjezd, odjezd). Prázdno se porovnává zvlášť: 0:00 není větší než prázdný řetězec,
                 // takže odjezd o půlnoci by zmizel (starý tisk ho vynechává, linka 53 CB_DP Nádraží).
                 s prijezd = $lg(bodVal,3), odjezd = $lg(bodVal,4)
@@ -637,6 +644,11 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
                     i smoCol '= "" s ^||TiskMHD("odjezdy",SmerID,BodID,smoCol,hh,mm,SpojID) = ""
                     s ^||TiskMHD("obsluhaKonec",SmerID,BodID,SpojID) = ""
                 }
+            }
+            // Průběh spoje pro varianty tras - jen spoje se sloupcem minut, ostatní se na vývěsce netisknou.
+            i smoCol '= "" {
+                i casOdjezdu '= "" { s ^||TiskMHD("prubeh",SmerID,SpojID,BodID) = $lb("S", casOdjezdu) }
+                elseif projizdi { s ^||TiskMHD("prubeh",SmerID,SpojID,BodID) = $lb("<") }
             }
         }
         s ^||TiskMHD("spojTrasa",SmerID,SpojID) = TrasaBitmap
@@ -989,6 +1001,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // PRVNI_POSLEDNI_SPOJ (text prvního/posledního spoje) odstraněno 2026-07-20 - nepoužívané a drahé:
     // legacy MHD2 CalculatePrvniAndPosledniSpojeText se počítalo per stránka (~6,8 s z 7 s na velké lince,
     // full sken spojů + den-po-dni platnost). Kdyby ho někdo chtěl, reimplementovat nad daty fáze 4 v ^||TiskMHD.
+    d vals.%Set("VARIANTY_TRAS",          ..BuildVariantyTras(SmerID, aktualniZastBodID, ObsluhaBitmap, .varianty, .pismenoSpoje))
     d page.%Set("values", vals)
 
     // ── Kolekce ──────────────────────────────────────────────────────────
@@ -1083,6 +1096,13 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         s:vychoziNazev="" vychoziNazev = zastNazev
         s oznacnikRow = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",zastID,"DTA",1,"Oznacnik"))
         d z.%Set("NASTUPISTE", oznacnikRow)   // TR3: nástupiště per zastávka (MHD = Oznacnik)
+        d z.%Set("TRASA_MIN", ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).BuildTrasaMin(.varianty, bodIterator))
+        // Označník varianty: spoje MHD staví na zastávce u téhož označníku, takže tam, kde varianta staví, je to označník řádku.
+        s oznacnikyVariant = ##class(%DynamicArray).%New()
+        f n=1:1:##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetSloupcu(.varianty) {
+            d oznacnikyVariant.%Push($s(##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).MaZastaveni(.varianty, n, bodIterator):oznacnikRow, 1:""))
+        }
+        d z.%Set("NASTUPISTE_VARIANT", oznacnikyVariant)
         d zastavky.%Push(z)
     }
     d rows.%Set("ZASTAVKY", zastavky)
@@ -1226,6 +1246,10 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                     i AutoPoznamkyRozdilTrasy && (AutoPoznamkyRozdilTrasyAlgoritmus = 1002) {
                         d ..DoplnitPoznamkuRozdilTrasy1002(.sys, odj, SmerID, aktualniZastBodID, SpojID, .strankovePoznamky)
                     }
+
+                    // Písmeno varianty trasy vedle písmene rozdílu, jako ve vývěsce AD. Vysvětluje ho záhlaví
+                    // sloupce variant, ne poznámka; bez toho sloupce ho klient podle kategorie schová.
+                    i $g(pismenoSpoje(SpojID)) '= "" d ..AddAnotace(odj, "text", pismenoSpoje(SpojID), "", "", "varianta-trasy")
 
                     // Textové poznámky spoje
                     s poznamkaID = ""
@@ -1440,14 +1464,75 @@ ClassMethod GetDenVTydnuText(denZnak As %String) As %String
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Výstupní JSON - společná stavba vývěsky je v `Jr.VystupZastavkovy`, tady jen to, co má jen MHD
 /// ═══════════════════════════════════════════════════════════════════════════════
-ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "")
+/// `kategorie` jen u písmene varianty trasy: podle ní ho klient schová. Ostatní značky MHD kategorii
+/// neposílají, jinak by je filtr Poznámek podle kategorie začal schovávat (`legacy-nahrada.md §4`).
+ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "")
 {
     s anotace = ##class(%DynamicObject).%New()
     d anotace.%Set("TYP", typ)
     d anotace.%Set("ZNAK", znak)
     d anotace.%Set("FORE_COLOR", foreColor)
     d anotace.%Set("BACK_COLOR", backColor)
+    i kategorie '= "" d anotace.%Set("KATEGORIE", kategorie)
     d odjezd.%Get("ANOTACE").%Push(anotace)
+}
+
+/// Varianty tras vývěsky (`Jr.VariantyTras`, jako vývěska AD): sled zobrazených zastávek od vývěskové
+/// dál podle průběhu spoje z fáze 4. Vrátí `VARIANTY_TRAS`; `varianty` pak plní řádky zastávek
+/// a `pismenoSpoje(SpojID)` značku u minuty.
+///
+/// Zástupce varianty je **spoj** s nejdelší jízdou, ne trasa jako v AD: v MHD má časy každý spoj zvlášť
+/// a spoje téže varianty jedou různě dlouho (sonda `VariantyTrasMhdProbe` 30. 10.: až o 16 min v CB_DP).
+/// Starý tisk MHD varianty neměl, takže se není s čím porovnat (R6) - ověřené jsou jen vlastnosti výstupu.
+ClassMethod BuildVariantyTras(SmerID As %Integer, aktualniZastBodID As %String, ObsluhaBitmap As %String, ByRef varianty, ByRef pismenoSpoje) As %DynamicArray
+{
+    s smerKrok = $s(SmerID:-1, 1:1), jeTam = 'SmerID
+    k varianty, pismenoSpoje
+    s SpojID = ""
+    f {
+        s SpojID = $o(^||TiskMHD("obsluhaKonec",SmerID,aktualniZastBodID,SpojID)) q:SpojID=""
+        s naVyvesce = $g(^||TiskMHD("prubeh",SmerID,SpojID,aktualniZastBodID))
+        i $lg(naVyvesce,1) '= "S" continue          // spoj bez sloupce minut se na vývěsce netiskne
+        // Sled jen přes zastávky, které stránka ukazuje (jako seznam zastávek): bez skrytých bodů
+        // a bez těch, kam odtud nic nejede - jinak by se spoje lišily v řádku, který nikdo nevidí.
+        s sled = "", delka = 0, BodID = ""
+        f {
+            s BodID = $s(BodID="":aktualniZastBodID, 1:$o(^||TiskMHD("trasa",SmerID,BodID), smerKrok)) q:(BodID="")||('BodID)
+            i (BodID '= aktualniZastBodID) && ($d(^||TiskMHD("trasa",SmerID,"netisknout",BodID)) || '$e(ObsluhaBitmap,BodID)) continue
+            s prubeh = $g(^||TiskMHD("prubeh",SmerID,SpojID,BodID))
+            s $p(sled,"~",BodID) = $lg(prubeh,1)
+            i $lg(prubeh,1) = "S" {
+                s doba = ..CasOdVyvesky($lg(prubeh,2), $lg(naVyvesce,2), 1)
+                i doba > delka s delka = doba
+            }
+        }
+        d ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).AddSpoj(.varianty, SpojID, sled, delka, SpojID)
+    }
+    // Sada písmen je zatím výchozí (Jan 30. 10.: rozhodne se, až varianty poběží).
+    s pismena = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).BuildSloupce(.varianty, "", .pismenoSpoje)
+    // Z průběhu zástupce vyjde i úsek před vývěskou (projeté zastávky), jako v AD.
+    f n=1:1:##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetSloupcu(.varianty) {
+        s zastupce = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).ZastupceSloupce(.varianty, n)
+        s casVyvesky = $lg($g(^||TiskMHD("prubeh",SmerID,zastupce,aktualniZastBodID)),2)
+        s BodID = ""
+        f {
+            s BodID = $o(^||TiskMHD("prubeh",SmerID,zastupce,BodID), 1, prubeh) q:BodID=""
+            s doba = $s($lg(prubeh,1)="S":..CasOdVyvesky($lg(prubeh,2), casVyvesky, ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).JeVUsekuVariant(BodID, aktualniZastBodID, jeTam)), 1:"")
+            d ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).AddZastaveni(.varianty, n, BodID, $lg(prubeh,1), doba)
+        }
+    }
+    q pismena
+}
+
+/// Jízdní doba z vývěskové zastávky na zastávku s časem `cas` (minuty od půlnoci). Za vývěskou je
+/// kladná, před ní (projetá zastávka) záporná jako v AD. Spoj přes půlnoc má za ní menší čas,
+/// proto se doba s nesprávným znaménkem posune o den.
+ClassMethod CasOdVyvesky(cas As %Integer, casVyvesky As %Integer, zaVyveskou As %Boolean) As %Integer
+{
+    s doba = cas - casVyvesky
+    i zaVyveskou && (doba < 0) s doba = doba + 1440
+    i 'zaVyveskou && (doba > 0) s doba = doba - 1440
+    q doba
 }
 
 /// Přestup na autobus („A") a vlak („L") jde písmenem jako ve vývěsce AD a v linkovém JŘ - návrhář ho
@@ -1523,6 +1608,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // Jen parametry společné s vývěskou AD (`Jr.Parametry`); vlastní parametry vývěska MHD nemá.
     d arr.%Push(##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).ParametrPoradiStranek())
     d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddSipkyAProjeteZastavky(arr)
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddVariantyTras(arr)
     d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddCasovaOsaOdjezdu(arr)
     d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddRoztazeniNaVysku(arr)
 }

@@ -205,8 +205,6 @@ jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do
   tiše a jen tam, kde se obojí sejde na jedné vývěsce
 - **Tiskový parametr „Rozdělení sloupců" pro MHD agendu** (M) - sjednocení s AD, kde už je
   (MHD SMO fáze 3)
-- **Parita variant tras + písmen u odjezdů pro MHD agendu** (S–M) - AD hotové 27. 7. (#13048 bod 5),
-  MHD až u zákazníka, který to bude chtít
 - **MHD zdroj označníku pro samostatné stránky per označník** (S–M) - AD hotové, dtto
 - **Exportní parametry per šablona** (S–M) - název souboru / členění / imposice jsou dnes per agenda;
   převod na šablonu má smysl, až někdo bude mít dvě šablony téže agendy s jiným exportem
