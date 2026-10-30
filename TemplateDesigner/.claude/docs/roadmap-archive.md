@@ -1,5 +1,13 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Sjednocené věci definovat jednou (hotovo 30. 10. 2026)
+
+- **Revize „co je definované dvakrát"** ([`revize-sjednoceni.md`](revize-sjednoceni.md), changelog 2026-10-30 (37)-(47)):
+  opravené chyby E1-E10, sloučené A1-A12 (katalog prvků, písmo z kaskády, klávesové zkratky, údaje ze šablony pro server,
+  vzory sloupců ze serveru, zarovnání, příkazy vrstvy, okno více prvků, lišta formátu), přísnější testy B1-B9 (panel ×
+  formulář, klient × server, kanon názvosloví, dodávané šablony), smazaná offline nabídka dat (D). Formuláře prvků
+  zůstávají v Caché (rozhodnutí Jan). Otevřené zůstává jen ověřit, zda je šedé pozadí záhlaví u dvou prvků záměr (revize §C).
+
 ## Úvodní obrazovka (hotovo 30. 10. 2026)
 
 - **Úvodní obrazovka** (nápad Jan 29. 10., changelog 2026-10-30 (36)): po spuštění bez linky nabídne poslední šablony,

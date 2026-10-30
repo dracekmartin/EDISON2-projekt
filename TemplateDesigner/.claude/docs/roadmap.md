@@ -83,11 +83,6 @@
   (analýza 12. 7., detail v historii roadmapy). ⚠️ **Před vydáním:** úvodní obrazovka nabízí „Připojit databázi SQL"
   a „Načíst soubor CSV" jen jako průzkum zájmu - když nebudou hotové, tlačítka odstranit (Jan 30. 10.).
 
-- **Sjednocené věci definovat jednou** [M] (revize 30. 10.: [`revize-sjednoceni.md`](revize-sjednoceni.md)) - Jan
-  rozhodl: formuláře prvků zůstávají v Caché a panel hlídá přísnější test podle klíče pole; nejdřív opravit nalezené
-  chyby (E), pak sloučit katalog prvků, výchozí hodnoty z kaskády a klávesové zkratky (A) a zpřísnit testy agend (B);
-  výchozí mřížka 5 mm bez přichytávání. Před relacemi AD, které přinesou nový prvek.
-
 - **Nová pole v jízdních řádech, dohodnutá s kolegy 10. 8.** [S] - **čeká na kolegu**; v lokálním zdroji
   nových jízdních řádů zatím nejsou (29. 10.). **Cíl** u zastávky pro každý směr (TR5, ověřit, že po
   zastávce a směru), **odsazení zastávky** zvlášť pro oba směry (TRANSDEV #7937, pozastavený; trvá zákazník
