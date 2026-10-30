@@ -15,26 +15,16 @@ public static class DepartureColumnPresets
 {
     public sealed record Preset(string Key, string Label);
 
-    /// <summary>Nabídka vzorů - klíče stabilní (visí na nich volba v editoru), popisky 1:1
-    /// s volbami parametru „Rozdělení sloupců". Obsah vzoru drží server.</summary>
-    public static IReadOnlyList<Preset> All { get; } =
-    [
-        new("PRAC_SO_NE",       "Pracovní / Sobota / Neděle+svátky"),
-        new("PRAC_VIKEND",      "Pracovní / víkend (So+Ne+svátky)"),
-        new("PRAZDNINY_VIKEND", "Prázdniny: Prac. mimo+o prázd. / víkend"),
-        new("PRAZDNINY_SO_NE",  "Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky"),
-    ];
-
-    /// <summary>Vzory <b>linkového</b> JŘ - jiná agenda, jiné volby. Klíče odpovídají tomu, co
-    /// posílá server, popisky volbám parametru „Rozdělení sloupců podle platnosti".</summary>
-    /// <remarks>⚠️ Nesplývá to s vývěskovými vzory schválně: linka jich má tři a jinak pojmenované.
-    /// Společný je jen <b>tvar</b> definice, ne její nabídka.</remarks>
-    public static IReadOnlyList<Preset> Linkove { get; } =
-    [
-        new("BEZ_ROZLISENI", "Bez rozlišení"),
-        new("PRAC_VIKEND",   "Pracovní dny / víkend+svátky"),
-        new("PRAC_SO_NE",    "Pracovní dny / Soboty / Neděle+svátky"),
-    ];
+    /// <summary>
+    /// Nabídka vzorů z parametru „Rozdělení sloupců": volba s klíčem vzoru je vzor, popisek je text volby.
+    /// Popisky drží jen server (agenda, `VzorySloupcu`) - do 30. 10. je měl klient opsané a vývěska i linka
+    /// zvlášť. Starší server klíče neposílá, pak se vzory nenabízejí (stejně jako bez načtených dat).
+    /// </summary>
+    public static IReadOnlyList<Preset> FromParameter(TemplateParameter? parameter)
+    {
+        if (parameter?.Options is not { } volby || parameter.OptionKeys is not { } klice) return [];
+        return [.. volby.Zip(klice).Where(v => v.Second.Length > 0).Select(v => new Preset(v.Second, v.First))];
+    }
 
     /// <summary>Vzory z pole PRESETY_SLOUPCU (klíč vzoru → sloupce). Prázdný/neplatný vstup =
     /// prázdná mapa; volající pak vzory nenabízí.</summary>
@@ -80,14 +70,14 @@ public static class DepartureColumnPresets
     /// druhé nezávislé nastavení. Porovnává se všechno, co jde na server - i nadpis, protože
     /// přejmenovaný sloupec už není ten vzor.
     /// </summary>
-    /// <param name="nabidka">Vzory té agendy - vývěska a linka mají jiné. Null = vývěskové.</param>
+    /// <param name="nabidka">Vzory té agendy (<see cref="FromParameter"/>) - vývěska a linka mají jiné.</param>
     public static string? MatchLabel(
         IReadOnlyList<DepartureColumnDefinition>? sloupce,
         IReadOnlyDictionary<string, List<DepartureColumnDefinition>> vzory,
-        IReadOnlyList<Preset>? nabidka = null)
+        IReadOnlyList<Preset> nabidka)
     {
         if (sloupce is not { Count: > 0 }) return null;
-        foreach (var vzor in nabidka ?? All)
+        foreach (var vzor in nabidka)
         {
             if (vzory.TryGetValue(vzor.Key, out var definice) && SameLayout(sloupce, definice))
                 return vzor.Label;

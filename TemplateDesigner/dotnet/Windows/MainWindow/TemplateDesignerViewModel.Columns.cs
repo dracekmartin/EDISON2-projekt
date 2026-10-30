@@ -210,10 +210,10 @@ public partial class TemplateDesignerViewModel
     private string? LayoutAutoOptionProAgendu =>
         LayoutParamName == LayoutParamVyveska ? LayoutAutoOption : null;
 
-    /// <summary>Vzory rozložení nabízené v parametru - klíče musí odpovídat tomu, co posílá server
-    /// v poli vzorů, popisky volbám parametru.</summary>
-    private IReadOnlyList<DepartureColumnPresets.Preset> LayoutPresety =>
-        LayoutParamName == LayoutParamVyveska ? DepartureColumnPresets.All : DepartureColumnPresets.Linkove;
+    /// <summary>Vzory rozložení nabízené v parametru: klíč a popisek posílá server u voleb parametru
+    /// (vývěska i linka mají svoje), obsah vzoru v poli vzorů dat. Čte je i editor sloupců Minut.</summary>
+    internal IReadOnlyList<DepartureColumnPresets.Preset> LayoutPresety =>
+        DepartureColumnPresets.FromParameter(_agendaParameters.FirstOrDefault(p => p.Name == LayoutParamName));
 
     private bool    _layoutParamSyncing;
     private string? _lastLayoutParamValue;

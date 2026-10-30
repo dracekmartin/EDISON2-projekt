@@ -42,11 +42,12 @@ public partial class DepartureGroupEditorDialog : Window
         ColumnVisualStyle? hourColumnStyle,
         List<DepartureColumnDefinition>? customColumns = null,
         string? presetsJson = null,
-        bool ukazatVlastniSloupce = true)
+        bool ukazatVlastniSloupce = true,
+        IReadOnlyList<DepartureColumnPresets.Preset>? presetOffer = null)
     {
         _element = element;
         _vm = new DepartureGroupEditorDialogViewModel(element, availableGroups, currentStyles, hourColumnStyle,
-            customColumns, presetsJson, ukazatVlastniSloupce);
+            customColumns, presetsJson, ukazatVlastniSloupce, presetOffer);
         DataContext = _vm;
         InitializeComponent();
         Title = ElementNames.TitulekVlastnosti(element);

@@ -179,16 +179,18 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
         s p.group = "Tabulka spojů"
         s p.serverSide = 1
         s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku Tabulka spojů - tady se jen ukáže, že ho šablona má."
-        s opts = ##class(%DynamicArray).%New()
-        d opts.%Push("Bez rozlišení")
-        d opts.%Push("Pracovní dny / víkend+svátky")
-        d opts.%Push("Pracovní dny / Soboty / Neděle+svátky")
+        s opts = ##class(%DynamicArray).%New(), klice = ##class(%DynamicArray).%New()
+        s vzory = ..VzorySloupcuLinky()
+        f i=1:1:$ll(vzory) s vzor = $li(vzory,i) d opts.%Push($li(vzor,2)), klice.%Push($li(vzor,1))
         // „Vlastní rozložení" je **ukazatel stavu šablony**, ne volba: vybrat ho ručně nejde,
         // objeví se, když si uživatel sloupce upraví u prvku. Bez téhle položky by parametr neměl
         // co hlásit a musel by lhát některým ze vzorů.
-        d opts.%Push("Vlastní rozložení")
+        d opts.%Push("Vlastní rozložení"), klice.%Push("")
         d p.%Set("options", opts)
-        s p.defaultValue = "Pracovní dny / Soboty / Neděle+svátky"
+        // Klíč vzoru u každé volby (aditivně, starší klient ho nečte): podle něj klient najde vzor v PRESETY_SLOUPCU.
+        d p.%Set("optionKeys", klice)
+        // Výchozí je trojice pracovní dny / soboty / neděle - poslední vzor.
+        s p.defaultValue = $li($li(vzory, $ll(vzory)), 2)
 
         // Sloupec tarifních čísel: nastavení je u linky (`PATCH,netisknoutSloupecTC`, zapnuto na 377
         // linkách), ale uživatel ho má jít přebít. Výchozí volba je proto **konstanta** „Automaticky
@@ -524,12 +526,25 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Vzory rozložení sloupců linky: `$lb(klíč, popisek, legacy mód)`. **Jediné místo**, odkud jdou volby
+/// parametru „Rozdělení sloupců podle platnosti" (popisky jsou zamčené - ukládá se zobrazený text), klíče
+/// k nim pro klienta (`optionKeys`) i převod volby na legacy mód. Do 30. 10. opsané i v klientovi.
+ClassMethod VzorySloupcuLinky() As %List
+{
+    s vzory = $lb($lb("BEZ_ROZLISENI", "Bez rozlišení", 0))
+    s vzory = vzory_$lb($lb("PRAC_VIKEND", "Pracovní dny / víkend+svátky", 1))
+    s vzory = vzory_$lb($lb("PRAC_SO_NE", "Pracovní dny / Soboty / Neděle+svátky", 2))
+    q vzory
+}
+
 /// Mapování volby parametru „Rozdělení sloupců podle platnosti" na legacy mód 0/1/2.
 ClassMethod DeleniZParametru(label As %String) As %Integer
 {
     // „Vlastní rozložení" sem nemá jak dojít jako skutečná volba - je to jen ukazatel a objeví se,
     // až když šablona definici má; grupování pak řídí ta definice, ne tenhle přepínač.
-    q $case(label, "Bez rozlišení":0, "Pracovní dny / víkend+svátky":1, :2)
+    s vzory = ..VzorySloupcuLinky()
+    f i=1:1:$ll(vzory) s vzor = $li(vzory,i) ret:($li(vzor,2)=label) $li(vzor,3)
+    q 2
 }
 
 /// Jazyková varianta textových číselníků (NCOME/STALCOME/WinMHD): "CZ" nebo "*SK".

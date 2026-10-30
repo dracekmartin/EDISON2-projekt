@@ -617,8 +617,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s ftl   = +$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_TYP_R"))
     // Override FTL z parametru „Rozdělení sloupců" (prázdné/auto = dle linky). Mapuje label → FTL mód;
     // engine (NacistSkupinyDnu + ZarazeniSpoje) zůstává beze změny.
-    s rozdSl = $g(^||ML("IN","ROZDELENI_SLOUPCU"))
-    s ftl = $case(rozdSl, "Pracovní / Sobota / Neděle+svátky":0, "Pracovní / víkend (So+Ne+svátky)":2, "Prázdniny: Prac. mimo+o prázd. / víkend":1, "Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky":3, :ftl)
+    s ftl = ..FtlZVolby($g(^||ML("IN","ROZDELENI_SLOUPCU")), ftl)
     s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
     // Vlastní definice sloupců ze šablony (DEFINICE_SLOUPCU) - když přijde, přebíjí FTL rozvržení
     // i linkové seznamy značek CELÉ (žádné míchání „dny ze šablony, značky z linky"). Bez definice
@@ -1749,6 +1748,27 @@ ClassMethod DenniZnackyProSloupec(plk As %String, dnySpoje As %String, sloupecDn
         i dnySpoje [ dch s znacky = znacky_dch
     }
     q znacky
+}
+
+/// Vzory rozložení sloupců: `$lb(klíč, popisek, FTL)`. **Jediné místo**, odkud jdou volby parametru
+/// „Rozdělení sloupců" (popisky jsou zamčené - ukládá se zobrazený text), klíče k nim pro klienta
+/// (`optionKeys`, podle nich pozná vzor v `PRESETY_SLOUPCU` a popisky neopisuje) i převod volby na FTL.
+/// Do 30. 10. byly popisky opsané v parametru, v převodu na FTL a v klientovi.
+ClassMethod VzorySloupcu() As %List
+{
+    s vzory = $lb($lb("PRAC_SO_NE", "Pracovní / Sobota / Neděle+svátky", 0))
+    s vzory = vzory_$lb($lb("PRAC_VIKEND", "Pracovní / víkend (So+Ne+svátky)", 2))
+    s vzory = vzory_$lb($lb("PRAZDNINY_VIKEND", "Prázdniny: Prac. mimo+o prázd. / víkend", 1))
+    s vzory = vzory_$lb($lb("PRAZDNINY_SO_NE", "Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky", 3))
+    q vzory
+}
+
+/// FTL mód pro volbu parametru „Rozdělení sloupců"; jiná volba (Automaticky, Vlastní rozložení) = `vychozi` (podle linky).
+ClassMethod FtlZVolby(volba As %String, vychozi As %Integer) As %Integer
+{
+    s vzory = ..VzorySloupcu()
+    f i=1:1:$ll(vzory) s vzor = $li(vzory,i) ret:($li(vzor,2)=volba) $li(vzor,3)
+    q vychozi
 }
 
 /// Vzory vlastních sloupců = čtyři dnešní pevná rozvržení, postavená z konfigurace linky.
@@ -3325,17 +3345,17 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRozd.serverSide   = 1
     s pRozd.description  = "Podle čeho se spoje rozdělí do sloupců minut odjezdů. Automaticky = podle nastavení u linky v jízdních řádech. Vlastní rozložení se nastavuje u prvku Minuty odjezdů - tady se jen ukáže, že ho šablona má."
     s pRozd.defaultValue = "Automaticky (dle linky)"
-    s optsR = ##class(%DynamicArray).%New()
-    d optsR.%Push("Automaticky (dle linky)")
-    d optsR.%Push("Pracovní / Sobota / Neděle+svátky")
-    d optsR.%Push("Pracovní / víkend (So+Ne+svátky)")
-    d optsR.%Push("Prázdniny: Prac. mimo+o prázd. / víkend")
-    d optsR.%Push("Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky")
+    s optsR = ##class(%DynamicArray).%New(), klicR = ##class(%DynamicArray).%New()
+    d optsR.%Push("Automaticky (dle linky)"), klicR.%Push("")
+    s vzory = ..VzorySloupcu()
+    f i=1:1:$ll(vzory) s vzor = $li(vzory,i) d optsR.%Push($li(vzor,2)), klicR.%Push($li(vzor,1))
     // Ukazatel, ne rozvržení: klient ji nastaví sám, když si uživatel sloupce upravil tak, že
     // neodpovídají žádnému vzoru. Server ji nezná a spadne do „dle linky" - na výsledku nezáleží,
     // protože s vlastními sloupci stejně přijde DEFINICE_SLOUPCU a ta FTL přebíjí.
-    d optsR.%Push("Vlastní rozložení")
+    d optsR.%Push("Vlastní rozložení"), klicR.%Push("")
     s pRozd.options = optsR
+    // Klíč vzoru u každé volby (aditivně, starší klient ho nečte): podle něj klient najde vzor v PRESETY_SLOUPCU.
+    s pRozd.optionKeys = klicR
     d arr.%Push(pRozd)
 
     d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddCasovaOsaOdjezdu(arr)

@@ -18,9 +18,13 @@ public class DepartureGroupEditorCustomColumnsTests
         EDServices.Initialize(new EDServices(Substitute.For<IMLRest>(),
             Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>()));
 
+    /// <summary>Nabídka vzorů, jak ji posílá server u voleb parametru „Rozdělení sloupců".</summary>
+    private static readonly DepartureColumnPresets.Preset[] Nabidka =
+        [new("PRAC_SO_NE", "Pracovní / Sobota / Neděle+svátky"), new("PRAC_VIKEND", "Pracovní / víkend (So+Ne+svátky)")];
+
     private static DepartureGroupEditorDialogViewModel Vm(DepartureGridElement el) =>
         new(el, [], el.GroupColumns, el.HourColumnStyle, el.CustomColumns,
-            DepartureColumnDefinitionTests.PresetyJson);
+            DepartureColumnDefinitionTests.PresetyJson, presetOffer: Nabidka);
 
     /// <summary>Sloupce vzoru tak, jak je posílá server (obsah vzoru se měří v Caché paritě).</summary>
     private static List<DepartureColumnDefinition> Vzor(string klic = "PRAC_SO_NE") =>

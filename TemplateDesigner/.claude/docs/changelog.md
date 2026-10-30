@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-30 (46) - Popisky vzorů sloupců jen na serveru (sjednocení A5)
+
+Vzory rozložení sloupců (Pracovní / Sobota / Neděle+svátky…) měly popisky na serveru ve volbách parametru „Rozdělení sloupců" i v převodu volby na rozložení a klient je měl opsané znovu, zvlášť pro vývěsku a linkový JŘ.
+Teď agendy zastávkového a linkového JŘ AD staví volby parametru, klíče vzorů k nim (nové aditivní pole `optionKeys`) i převod volby na rozložení z jednoho seznamu (`VzorySloupcu`, `VzorySloupcuLinky`) a klient si popisky vzorů bere z voleb parametru (rozhodnutí Jan: k volbám, ne do dat tisku, takže zlaté otisky zůstaly beze změny).
+Pro uživatele se nic nemění. ⚠️ Server se musí nasadit dřív než klient: nový klient se starým serverem vzory nenabídne (editor sloupců Minut nabídne jen prázdnou definici).
+Ověřeno: .NET testy 2637/2637, Caché testy TemplateDesigneru 274/275 (1 přeskočený z dřívějška) včetně nového `VzorySloupcuTest` (ověřeno mutací), integrační testy agend 2/2, voláním `GetParameters` na dev serveru; v aplikaci neproklikané.
+
 ## 2026-10-30 (45) - Smazaná offline nabídka dat (revize sjednocení D)
 
 Návrhář měl záložní nabídku dat ze souborů `schemas/*.schema.json` pro chod bez serveru, jenže ta složka od `899e05ba` neexistuje, takže záloha nic nenabízela.

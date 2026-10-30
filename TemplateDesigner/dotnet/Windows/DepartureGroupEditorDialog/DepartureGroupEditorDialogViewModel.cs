@@ -313,7 +313,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         ColumnVisualStyle? hourColumnStyle,
         List<DepartureColumnDefinition>? customColumns = null,
         string? presetsJson = null,
-        bool ukazatVlastniSloupce = true)
+        bool ukazatVlastniSloupce = true,
+        IReadOnlyList<DepartureColumnPresets.Preset>? presetOffer = null)
     {
         _element = element;
         _puvodniSkupiny = currentStyles;
@@ -321,7 +322,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         UkazatVlastniSloupce = ukazatVlastniSloupce;
         _puvodniVlastniSloupce = customColumns;
         _presety = DepartureColumnPresets.Parse(presetsJson);
-        Presets = [.. DepartureColumnPresets.All.Where(p => _presety.ContainsKey(p.Key)),
+        // Popisky vzorů posílá server u voleb parametru „Rozdělení sloupců" (presetOffer), obsah v datech.
+        Presets = [.. (presetOffer ?? []).Where(p => _presety.ContainsKey(p.Key)),
                    new("PRAZDNA", "Prázdná (sloupce si přidáte sami)")];
 
         // Tab 3: definice vlastních sloupců (null/prázdné = automaticky dle linky)

@@ -211,9 +211,16 @@ public class CacheAgendaProvider : IDataSchemaProvider
                 };
 
                 if (item["options"] is JsonArray opts)
-                    p.Options = opts.Select(o => o?.GetValue<string>() ?? "")
-                                    .Where(s => s.Length > 0)
+                {
+                    // Klíče jdou ve dvojici s volbou - prázdná volba se vyřadí i se svým klíčem, jinak by se pořadí rozjelo.
+                    var keys = item["optionKeys"] as JsonArray;
+                    var pairs = opts.Select((o, i) => (Option: o?.GetValue<string>() ?? "",
+                                                       Key: keys is not null && i < keys.Count ? keys[i]?.GetValue<string>() ?? "" : ""))
+                                    .Where(x => x.Option.Length > 0)
                                     .ToList();
+                    p.Options = [.. pairs.Select(x => x.Option)];
+                    if (keys is not null) p.OptionKeys = [.. pairs.Select(x => x.Key)];
+                }
 
                 result.Add(p);
             }

@@ -25,6 +25,11 @@ public class TemplateParameter
     /// <summary>Možné hodnoty pro typ "enum".</summary>
     public List<string>? Options { get; set; }
 
+    /// <summary>Stabilní klíč ke každé volbě (stejné pořadí jako <see cref="Options"/>), prázdný = volba bez klíče.
+    /// Dnes klíč vzoru sloupců u „Rozdělení sloupců" - klient podle něj najde vzor v datech a popisky
+    /// vzorů neopisuje. Aditivní klíč kontraktu (R3): starší server ho neposílá, pak je null.</summary>
+    public List<string>? OptionKeys { get; set; }
+
     /// <summary>Skupina pro vizuální seskupení v UI (např. „Obsah", „Sloupce a časová osa").
     /// Null/prázdné = bez skupiny. Aditivní klíč kontraktu (R3) - starší server ho neposílá.</summary>
     public string? Group { get; set; }

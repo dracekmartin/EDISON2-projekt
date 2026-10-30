@@ -191,7 +191,12 @@ argument) - jinak jeho změna v UI nespustí načtení dat a klik je no-op. Klie
 takových parametrů nedrží (od 21. 9.), ptá se definice parametru. Bool parametry se na wire
 posílají jako `"true"/"false"` a server je čte tolerantně přes `$zcvt(...,"L")` (starší klienti
 posílali `"True"`). Labely enum parametrů jsou ZAMČENÉ - persistuje se zobrazovaný text
-(viz `ux-conventions §8`).
+(viz `ux-conventions §8`). Stabilní kód k volbě nese aditivní pole **`optionKeys`** (stejné pořadí
+jako `options`, prázdný = volba bez kódu; `TemplateParameter.OptionKeys`). Dnes klíč vzoru sloupců
+u „Rozdělení sloupců": volby, klíče i převod volby na rozložení staví agenda z jednoho seznamu
+(`VzorySloupcu` / `VzorySloupcuLinky`) a klient z nich bere popisky vzorů (`DepartureColumnPresets.FromParameter`).
+Shodu s `PRESETY_SLOUPCU` hlídá `VzorySloupcuTest`. ⚠️ Nasazuje se server dřív než klient: nový
+klient se starým serverem vzory nenabídne.
 
 **Volba, která patří k prvku, ale server ji musí znát** (dnes `DEFINICE_SLOUPCU`, `JAZYK`,
 `TURNUSY_KE_SPOJUM`) **není parametr sestavy**: skládá se do IN vždy **čerstvě ze šablony**

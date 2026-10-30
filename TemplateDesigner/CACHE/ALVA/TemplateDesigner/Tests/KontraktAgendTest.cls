@@ -12,7 +12,7 @@ Class ALVA.TemplateDesigner.Tests.KontraktAgendTest Extends ALVA.EDTesting.MLTes
 /// Klíče definice parametru, které návrhář čte (`CacheAgendaProvider.ParseParameters` a formulář
 /// `EDInputForm.AgendaParams`). Jiný klíč se tiše ignoruje: Faktury do 30. 10. posílaly výchozí hodnotu
 /// pod `default` a panel ji nenastavil.
-Parameter ZNAMEKLICEPARAMETRU = "name,label,type,group,defaultValue,options,description,serverSide,visibleWhen,visibleWhenColumn,visibleWhenListedIn,perInstance";
+Parameter ZNAMEKLICEPARAMETRU = "name,label,type,group,defaultValue,options,optionKeys,description,serverSide,visibleWhen,visibleWhenColumn,visibleWhenListedIn,perInstance";
 
 /// Agendy z registru tak, jak je dostane návrhář.
 Method Agendy() As %DynamicArray
