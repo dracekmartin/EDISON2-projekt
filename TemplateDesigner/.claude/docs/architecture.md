@@ -157,8 +157,8 @@ na uložené `PrintBehavior` + `Role` - formát šablony se nemění a starší 
   místo opakované sekci, kterou podmínka na stránce schová. Jedno `=` je rovnost.
 - **„Pod obsahem" + „Jen poslední"** (jen staré šablony, formulář to nenabízí) se sází jako obsah
   na konci.
-- **Pole bez účinku formulář schová** (`MainWindow.ViditelnostPoleSekce`) - do `B18` pravidla
-  drží návrhář, formulář z Caché viditelnost neumí.
+- **Pole bez účinku formulář schová** (`MainWindow.ViditelnostPoleSekce`) - pravidla drží návrhář,
+  formulář z Caché viditelnost neumí (deklarativní pravidla formuláře Jan 30. 10. zamítl).
 - **Výška sekce je nejmenší** - `max(zadaná, obsah)`.
 
 **Pořadí priority, když se nastavení tlučou:** výslovný pokyn k sekci (nová stránka, typ) >
@@ -168,16 +168,6 @@ upozornění vpravo dole (`SazbaHlaseni`, `B178`).
 
 Podmínka, kterou nejde přečíst, se dál tiskne (fail-open), ale hlásí se jako upozornění.
 `Section.RowHeight` čte jen škálování šablony.
-
-### Úprava vysázené stránky před tiskem - nápad (`B171`, Jan 21. 9., bez poptávky)
-
-Zákazník tiskne sto linek a jedna dvě mají tolik poznámek, že se jim písmo zmenší.
-Nápad: sázecí engine by uložil vysázené stránky jako dokument, kde jsou pořád prvky se souřadnicemi (`LayoutResult`), a nad ním by šlo u jedné stránky prvek posunout nebo zvětšit, teprve pak PDF.
-Umí to FastReport a Stimulsoft, Acrobat totéž nad hotovým PDF.
-
-⚠️ **Data se znovu nevysází** - roztažený prvek dá bílé místo, ne víc textu, a úprava platí jen pro ten jeden tisk.
-Levnější cesty k témuž: nechat prvek při přetečení narůst do volného místa pod sebou místo zmenšení písma, a přiřadit lince vlastní šablonu (index dnes jen podle agendy, chybí i dávkový tisk).
-Tohle vytáhnout, až se ukáže, že obojí nestačí.
 
 ### Import z PDF - jak funguje a kam směřuje (`B179`, 2. 10.)
 

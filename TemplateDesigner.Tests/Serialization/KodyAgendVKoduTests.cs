@@ -19,7 +19,7 @@ public class KodyAgendVKoduTests
             "převod starých kódů v uložených šablonách"),
         ["Serialization/TemplateSerializer.cs"] = (["ZASTAVKOVY_JR_MHD"],
             "převod starého kódu „MHD\" v uložených šablonách"),
-        ["Windows/MainWindow/TemplateDesignerViewModel.cs"] = (["LINKOVY_JR_AD"],
+        ["Windows/MainWindow/TemplateDesignerViewModel.SampleTemplate.cs"] = (["LINKOVY_JR_AD"],
             "výchozí agenda nové šablony - volba toho, na čem se pracuje (rozhodnutí Jan), musí fungovat i bez registru"),
     };
 

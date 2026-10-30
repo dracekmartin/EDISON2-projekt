@@ -63,12 +63,6 @@
   dělá M-line; dál až se při nich ukáže, že šetří čas. Zbývají kroky **(2)** model pojmenuje bloky
   z PDF a **(3)** tabulka měřená z PDF celá. Stav a proč: [`architecture.md §Import z PDF`](architecture.md).
 
-- **`B171` Úprava vysázené stránky před tiskem** [L] (nápad Jan 21. 9., zatím bez poptávky).
-  Posunout nebo zvětšit prvek na jedné vysázené stránce před PDF, když se linkám s mnoha poznámkami
-  zmenší písmo. ⚠️ **Data se znovu nevysází** a úprava platí jen pro jeden tisk. Vytáhnout, až nebudou
-  stačit levnější cesty (prvek naroste do volného místa, vlastní šablona pro linku).
-  Detail [`architecture.md`](architecture.md) §Úprava vysázené stránky.
-
 - **`B155` Jemnější nastavení mřížky** [M] (podnět Jan 16. 9.). Mřížka má jednu barvu, tloušťku
   a styl pro všechny čáry; návrh jsou čtyři druhy čar s vlastním vzhledem zadávané kaskádou.
   ⚠️ Per-buňku ani per-hranu ne (Jan 16. 9.) a pohltí „Popisné sloupce bez vnitřních čar".
@@ -87,19 +81,6 @@
   z šesti textů musí blok řešit relativní pozice. Otevřené: kde bloky žijí a odkud se vkládají.
   **Pohltí i připravené bloky agend** (dřív `B77`) - jsou to titíž pojmenované bloky, jen dodané
   námi (rozhodnutí Jan 17. 8.).
-
-- **`B18` Deklarativní pravidla EDInputFormu** [M] (odloženo - Jan 5. 8.: **kapabilita sdílené komponenty
-  pro celý EDISON**, ne featura návrháře). Formulář dnes reaguje na hodnoty jen oklikou přes server.
-  Začít **viditelností** (`visibleWhen`), gramatiku sdílet s tiskovými parametry - nezavádět druhý
-  dialekt; validace zůstává imperativní. Až s gramatikou, ne zvlášť: zašednutí polí bez účinku
-  (parametry sestavy; u sekcí je drží návrhář, `B177`). Popis u parametru už je (`description`).
-
-- **Rozsekat `TemplateDesignerViewModel`** [M] (review 21. 9., odloženo). 4 217 řádků a 387 členů,
-  poctivě rozdělených komentářovými pruhy na ~25 celků (soubor, databáze, schránka, zarovnání,
-  parametry agendy, náhled dat, rozvržení sloupců). Každá featura nové agendy přistane sem a dva
-  lidé si v něm překážejí. Návrh: `partial` soubory přesně podle těch pruhů, beze změny chování;
-  precedens je `MainWindow.TableCells.cs` (týž problém má `MainWindow.xaml.cs`, 3 394 řádků).
-  ⚠️ Je to diff přes celý soubor - brát **až nebude ve stromu běžet druhá session**, jinak konflikt.
 
 - **Externí datové zdroje** (na poptávku) - architektura je připravená, engine zná jen
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je

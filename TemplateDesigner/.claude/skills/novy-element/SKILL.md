@@ -101,15 +101,16 @@ Vždy přes konstantu, nikdy literál (C# povoluje `const` expressions v atribut
 
 ## 5. MainWindowViewModel - výchozí rozměry a factory
 
-Soubor: `dotnet/Windows/MainWindow/TemplateDesignerViewModel.cs`
+Soubor: `dotnet/Windows/MainWindow/TemplateDesignerViewModel.Editing.cs` (ViewModel je od 30. 10. rozdělený
+do částí `TemplateDesignerViewModel.*.cs`, tahle drží úpravy prvků)
 
 Dva switch výrazy, oba přes `ElementTypes.NovyElement`:
 
 ```csharp
-// GetDefaultElementSize (~řádek 844)
+// GetDefaultElementSize
 ElementTypes.NovyElement => (80f, 40f),
 
-// CreateElementByType (~řádek 858)
+// CreateElementByType
 ElementTypes.NovyElement => new NovyElement { X = x, Y = y, Width = w, Height = h },
 ```
 
@@ -283,7 +284,7 @@ a v konstantě `GeneralSchemaClass` okna sloupců. Formulář dodrží kostru z 
 | 1 | `Models/Elements/NovyElement.cs` | ✅ |
 | 3 | `Models/ElementTypes.cs` | ✅ |
 | 4 | `Models/TemplateElement.cs` (JsonDerivedType) | ✅ |
-| 5 | `Windows/MainWindow/TemplateDesignerViewModel.cs` (2 switches) | ✅ |
+| 5 | `Windows/MainWindow/TemplateDesignerViewModel.Editing.cs` (2 switches) | ✅ |
 | 6 | `Windows/MainWindow/MainWindow.xaml.cs` (toolbar menu) | ✅ |
 | 7 | `Windows/MainWindow/MainWindow.xaml` + `EDIcons.xaml` + PNG | volitelné |
 | 8 | `Models/Layout/SkiaHeightCalculator.cs` | jen u dynamické výšky |

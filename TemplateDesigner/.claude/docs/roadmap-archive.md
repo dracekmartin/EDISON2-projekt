@@ -1,5 +1,16 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Úklid backlogu (30. 10. 2026)
+
+- **Rozsekat `TemplateDesignerViewModel`** (review 21. 9.; hotovo 30. 10., changelog 2026-10-30 (32)): ViewModel měl 4 747
+  řádků v jednom souboru. Je rozdělený do `partial` souborů podle celků, které už v něm byly oddělené komentáři (instance,
+  náhled dat, sloupce, sekce, soubory, spuštění ze shellu, úpravy prvků, parametry, výběr, ukázková šablona, firma pro vývoj);
+  pomocné ViewModely panelů jsou v `PanelItemViewModels.cs`. Beze změny chování.
+- **`B171` Úprava vysázené stránky před tiskem** - vyhozeno (Jan 30. 10.). Nápad z 21. 9. bez poptávky; levnější cesty
+  (prvek naroste do volného místa, vlastní šablona pro linku) zůstávají možné samy o sobě.
+- **`B18` Deklarativní pravidla EDInputFormu** - vyhozeno (Jan 30. 10.). Viditelnost polí sekce dál drží návrhář
+  (`MainWindow.ViditelnostPoleSekce`).
+
 ## Testy Caché hlásí přeskočení poctivě (hotovo 30. 10. 2026)
 
 - **Přeskočení jako úspěch** (nález při uzavření `B56`, changelog 2026-10-30 (31)): 99 míst `$$$AssertTrue(1, "… přeskočeno")`

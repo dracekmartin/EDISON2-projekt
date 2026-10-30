@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-10-30 (32) - ViewModel hlavního okna rozdělený do souborů a úklid backlogu
+
+`TemplateDesignerViewModel.cs` měl 4 747 řádků; agent ho četl po kusech a dvě souběžné práce si v něm překážely.
+Třída je teď `partial` a každý celek, který už v souboru oddělovaly komentáře, má vlastní soubor `TemplateDesignerViewModel.<Celek>.cs` (Instances, PreviewData, Columns, Sections, Files, Launch, Editing, Parameters, Selection, SampleTemplate, DevFirm).
+V hlavním souboru zůstal konstruktor, sdílený stav a přehled částí; pomocné ViewModely panelů (sekce, pole schématu, ovladač parametru) jsou v `PanelItemViewModels.cs`.
+Kód se jen přesunul: porovnání řádek po řádku proti původnímu souboru nenašlo žádný chybějící řádek, přibyl jen přehled částí.
+Dva testy četly zdroják z jednoho souboru (výjimka kódu agendy u ukázkové šablony, cesty změny parametrů) a teď čtou všechny části.
+Z backlogu vyhozené `B171` (úprava vysázené stránky před tiskem) a `B18` (deklarativní pravidla formuláře), rozhodnutí Jan.
+Ověřeno: .NET testy 2550/2550, build bez nových varování.
+
 ## 2026-10-30 (31) - Testy Caché hlásí přeskočení poctivě
 
 99 míst v testech Caché hlásilo „firma nebo linka na serveru není" přes `$$$AssertTrue(1, …)`, takže takový test vypadal v souhrnu jako ověřený.
