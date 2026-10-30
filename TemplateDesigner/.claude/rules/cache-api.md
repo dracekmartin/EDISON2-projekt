@@ -8,10 +8,11 @@
 - **Nikdy neupravuj `.cls` skriptem.** Ani „mechanicky" (mazání řádků, přidání dvou polí) - právě tam
   se to stalo dvakrát 4. 8. **Když se to stane, vrať soubor (`git checkout --`) a zapiš změnu znovu
   editačním nástrojem** - jen tak hook spustí harness a nasazení proběhne.
-- ⚠️ **Ruční poslání cesty hooku NENASADÍ** (ověřeno 8. 9.). Volání
-  `echo '{"tool_input":{"file_path":"<abs cesta>.cls"}}' | bash .claude/hooks/compile-objectscript.sh`
-  skončí s kódem 0, bez chyby na stderr - a server dál vrací starou třídu. Do 8. 9. tady stálo jako
-  doporučená záchrana; je to tedy **stejná past jako `cache_compile`** níž, jen tiší.
+- ⚠️ **Ruční poslání cesty hooku nasadí jen s obyčejnými lomítky** v cestě
+  (`C:/Users/.../X.cls`; ověřeno 30. 10. voláním serveru). Se zpětnými lomítky hook nenajde `/CACHE/`
+  a skončí s kódem 0 bez chyby - server dál vrací starou třídu (tak to vypadalo 8. 9.). Potřeba je
+  hlavně v session spuštěné ze složky `TemplateDesigner/`: hook na Edit/Write je nastavený jen
+  v kořenovém `.claude/settings.json`. Chybu překladu hook vypíše; úspěch je tichý, proto vždy ověřit voláním.
 - ⚠️ **Skript může soubor rozbít tak, že se od té chvíle nenasadí NIC** (10. 9.). Python zápis
   s `encoding='utf-8-sig'` přidá souboru **BOM**, který v žádném `.cls` není; upload pak posílá
   soubor, jehož první řádek začíná neviditelným znakem, **překlad spadne a server drží poslední
