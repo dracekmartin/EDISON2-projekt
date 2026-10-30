@@ -1,5 +1,16 @@
 ﻿# Changelog
 
+## 2026-10-30 (14) - Místo pro sdílený kód agend a testy, které ho hlídají (`B56` S1)
+
+Sdílený kód agend JŘ bude v podsložce `Agendy/Jr/` (balík `ALVA.TemplateDesigner.Agendy.Jr`), třídy pojmenované podle role; žádná zatím nevznikla, založí ji až krok, který ji potřebuje (rozhodnutí Jan 30. 10., R8).
+Testy zdrojáků agend do teď četly jen soubory přímo ve složce agend a každý soubor braly jako agendu; kód přesunutý do pomocné třídy by tiše přestaly hlídat.
+Nový `ZdrojeAgend` rozlišuje agendu (přímý potomek `BaseAgenda`, stejně jako registr) a celý kód agend včetně podsložek.
+Kontroly kódu a textů (názvosloví a popisky polí a parametrů, příznak mění data, typy poznámek, texty pro uživatele, ošetření chyb, názvy metod) čtou celý kód, kontroly vlastností agendy (zveřejnění, kódy, příznaky registru) jen agendy; 15 testů už nehledá kořen repa každý po svém.
+`ZdrojeAgendTests` na zkušební složce ověří, že pomocná třída v podsložce patří do kódu a není agenda, a že seznam agend v repu odpovídá třídám s kódem agendy.
+Zkouška s dočasnou třídou v repu neproběhla (oprávnění ji nepovolilo); kontroly vázané na jednu agendu upraví až krok, který jejich kód přesune (`legacy-nahrada.md §4`).
+Kód agend ani tisk se nemění.
+Ověřeno: .NET testy 2542/2542.
+
 ## 2026-10-30 (13) - Návrhář se o agendě rozhoduje podle registru, ne podle kódu (`B194g` R4)
 
 Barvy rozdílů v Tabulce spojů a Poznámkách nabízel formulář jen u agendy s kódem rozdílového linkového JŘ AD.

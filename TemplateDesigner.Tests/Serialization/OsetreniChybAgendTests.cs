@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -58,22 +57,11 @@ public class OsetreniChybAgendTests
 
     /// <summary>Metody s <c>ByRef sys</c> ze všech agend (bez abstraktních): soubor, jméno, řádky bez komentářů.</summary>
     private static List<(string Soubor, string Jmeno, List<string> Radky)> Metody() =>
-        Directory.GetFiles(Path.Combine(Koren(), "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy"), "*.cls")
+        ZdrojeAgend.KodAgend()
             .SelectMany(f => Metoda.Matches(File.ReadAllText(f).Replace("\r\n", "\n"))
                 .Where(m => !m.Groups["abstraktni"].Success)
                 .Select(m => (Path.GetFileName(f), m.Groups["jmeno"].Value,
                     m.Groups["telo"].Value.Split('\n').Select(r => KomentarNaKonci.Replace(r, "").Trim())
                         .Where(r => r.Length > 0 && !r.StartsWith("//", StringComparison.Ordinal)).ToList())))
             .ToList();
-
-    private static string Koren()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-        return dir!.FullName;
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

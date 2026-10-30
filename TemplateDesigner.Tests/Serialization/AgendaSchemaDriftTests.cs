@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -147,7 +146,7 @@ public class AgendaSchemaDriftTests
     }
 
     private static List<Entry> AllFields() =>
-        [.. Directory.GetFiles(AgendyDir(), "*.cls")
+        [.. ZdrojeAgend.KodAgend()
             .Where(p => !Path.GetFileName(p).Equals("BaseAgenda.cls", StringComparison.OrdinalIgnoreCase))
             .SelectMany(ParseAgenda)];
 
@@ -298,22 +297,4 @@ public class AgendaSchemaDriftTests
             "Zakázané termíny v popiscích polí agend (kanon ux-conventions §8):\n" +
             string.Join("\n", hits.Distinct()));
     }
-
-    private static string AgendyDir()
-    {
-        // Od bin/Debug/... nahoru k rootu repa (kde leží EDISON2.sln)
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-
-        // Běh z izolovaného výstupu (dotnet test -o mimo repo) → root odvodit z cesty tohoto zdrojáku
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-
-        Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) - drift testy potřebují zdrojáky .cls");
-        return Path.Combine(dir.FullName,
-            "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

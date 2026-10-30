@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -184,25 +183,7 @@ public class ServerSideParamsDriftTests
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-    private static string[] AgendaFiles() => Directory.GetFiles(AgendyDir(), "*.cls");
+    private static string[] AgendaFiles() => ZdrojeAgend.KodAgend();
 
-    private static string AgendaFile(string name) => Path.Combine(AgendyDir(), name);
-
-    private static string AgendyDir()
-    {
-        // Od bin/Debug/... nahoru k rootu repa (kde leží EDISON2.sln)
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-
-        // Běh z izolovaného výstupu (dotnet test -o mimo repo) → root odvodit z cesty tohoto zdrojáku
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-
-        Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) - drift test potřebuje zdrojáky .cls");
-        return Path.Combine(dir.FullName,
-            "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
+    private static string AgendaFile(string name) => Path.Combine(ZdrojeAgend.Slozka, name);
 }

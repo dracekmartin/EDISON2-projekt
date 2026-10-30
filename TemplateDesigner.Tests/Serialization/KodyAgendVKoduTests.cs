@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -61,7 +60,7 @@ public class KodyAgendVKoduTests
         Assert.Contains("LINKOVY_JR_AD_ROZDILOVY", KodyAgend());
 
     private static HashSet<string> KodyAgend() =>
-        Directory.GetFiles(Path.Combine(Koren(), "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy"), "*.cls")
+        ZdrojeAgend.Agendy()
             .SelectMany(f => KodAgendy.Matches(File.ReadAllText(f)).Select(m => m.Groups[1].Value))
             .ToHashSet(StringComparer.Ordinal);
 
@@ -70,7 +69,7 @@ public class KodyAgendVKoduTests
 
     private static IEnumerable<(string Soubor, int Radek, string Kod)> Vyskyty(HashSet<string> kody)
     {
-        var dotnet = Path.Combine(Koren(), "TemplateDesigner", "dotnet");
+        var dotnet = Path.Combine(ZdrojeAgend.Koren(), "TemplateDesigner", "dotnet");
         foreach (var f in Directory.EnumerateFiles(dotnet, "*.cs", SearchOption.AllDirectories))
         {
             var soubor = Path.GetRelativePath(dotnet, f).Replace('\\', '/');
@@ -86,15 +85,4 @@ public class KodyAgendVKoduTests
             }
         }
     }
-
-    private static string Koren()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-        return dir!.FullName;
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

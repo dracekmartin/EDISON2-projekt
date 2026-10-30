@@ -25,8 +25,6 @@ Cílem je udržitelnost s dalšími agendami, ne méně kódu; model dvou os a p
 
 ### Z rozboru kódu agend ([`legacy-nahrada.md §4`](legacy-nahrada.md))
 
-- **S1 Kam půjdou pomocné třídy** [S] **Jan** - rozhodnout před prvním přesunem.
-  Testy kódu agend (názvy metod, ošetření chyb, popisky) čtou jen soubory přímo ve složce agend; musí se naučit i nové místo, jinak přesunutý kód přestanou hlídat.
 - **S2 Společné parametry vývěsek** (`R5`) [S-M] - sedm parametrů opsaných ve vývěsce AD i MHD do jedné definice, pořadí v panelu se nezmění.
   Vzorem je jedna definice linkových agend.
 - **S3 Doslovné kopie vývěsek** [S] - 8 metod znak po znaku shodných ve vývěsce AD i MHD (atributy a poznámky zastávky, zóna, odjezd, skupina dnů, speciální znaky, barvy).

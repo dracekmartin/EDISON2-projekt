@@ -1,6 +1,5 @@
 using System.IO;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using TemplateDesigner.Models;
 
@@ -120,7 +119,7 @@ public class AgendaParameterDriftTests
     }
 
     private static List<Param> AllParams() =>
-        [.. Directory.GetFiles(AgendyDir(), "*.cls").SelectMany(ParseAgenda)];
+        [.. ZdrojeAgend.KodAgend().SelectMany(ParseAgenda)];
 
     /// <summary>Pojistka proti tiše zelenému testu: kdyby se změnil zápis parametrů a parser je
     /// přestal vidět, ostatní testy projdou na prázdném vstupu.</summary>
@@ -202,7 +201,7 @@ public class AgendaParameterDriftTests
         var spatne = new List<string>();
         int pushu = 0;
 
-        foreach (var file in Directory.GetFiles(AgendyDir(), "*.cls"))
+        foreach (var file in ZdrojeAgend.Agendy())
         {
             string body = GetParametersBody(File.ReadAllText(file));
             if (body.Length == 0) continue;
@@ -230,19 +229,4 @@ public class AgendaParameterDriftTests
         int end = text.IndexOf("\nClassMethod ", i + 1, StringComparison.Ordinal);
         return end < 0 ? text[i..] : text[i..end];
     }
-
-    private static string AgendyDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-
-        Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) - drift testy potřebují zdrojáky .cls");
-        return Path.Combine(dir.FullName,
-            "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

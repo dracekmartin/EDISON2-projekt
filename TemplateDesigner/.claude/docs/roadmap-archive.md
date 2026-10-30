@@ -7,6 +7,12 @@
   jako „Úklid nastavení tisku v jízdních řádech", spolu s `P2` a novými poli z 10. 8. Podklad ke schůzce
   [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md).
 
+## `B56` Sloučení kódu agend JŘ (hotové kroky, od 30. 10. 2026)
+
+- **S1** Místo pro pomocné třídy a pojistky (hotovo 30. 10., changelog 2026-10-30 (14), rozhodnutí Jan 30. 10.):
+  pomocné třídy JŘ v `Agendy/Jr/` (balík `ALVA.TemplateDesigner.Agendy.Jr`); testy čtou zdrojáky přes `ZdrojeAgend`
+  - kontroly kódu a textů celý kód agend včetně podsložek, kontroly vlastností agendy jen agendy.
+
 ## `B194` Sjednocení agend JŘ - druhé kolo (hotové body, od 23. 10. 2026)
 
 **`B194` je uzavřený 30. 10.** Zbylé `R5` (parametry vývěsek do jedné definice) je první krok `B56` a žije

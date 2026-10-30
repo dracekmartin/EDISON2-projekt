@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -87,7 +86,7 @@ public class NazvyMetodAgendTests
     }
 
     private static List<string> MetodySCeskymSlovesem() =>
-        Directory.GetFiles(Path.Combine(Koren(), "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy"), "*.cls")
+        ZdrojeAgend.KodAgend()
             .SelectMany(f => Metoda.Matches(File.ReadAllText(f))
                 .Select(m => m.Groups[1].Value)
                 .Where(JeCeskeSloveso)
@@ -99,15 +98,4 @@ public class NazvyMetodAgendTests
         var prvni = PrvniSlovo.Match(jmeno).Value;
         return !NeniCeskeSloveso.Contains(prvni) && (Infinitiv.IsMatch(prvni) || Rozkazovaci.Contains(prvni));
     }
-
-    private static string Koren()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-        return dir!.FullName;
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

@@ -40,9 +40,7 @@ public class PolozkyMimoNabidkuTests
     [Fact]
     public void PolozkaParametru_JeVDefiniciParametru()
     {
-        var agendy = string.Join("\n", Directory.GetFiles(
-            Path.Combine(Koren(), "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy"), "*.cls")
-            .Select(File.ReadAllText));
+        var agendy = string.Join("\n", ZdrojeAgend.KodAgend().Select(File.ReadAllText));
 
         var chybi = Polozky()
             .Where(p => p.Druh == "parametr" && !agendy.Contains($"\"visibleWhenListedIn\", \"{p.Klic}\""))

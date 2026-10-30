@@ -85,15 +85,8 @@ public class SkrytaAgendaTests
     /// test smí záviset jen na obsahu repa.</summary>
     private static List<string> ZverejneneAgendyZRepa()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "TemplateDesigner")))
-            dir = dir.Parent;
-        Assert.NotNull(dir);
-
-        var agendy = Path.Combine(dir!.FullName, "TemplateDesigner", "CACHE", "ALVA",
-                                  "TemplateDesigner", "Agendy");
         var kody = new List<string>();
-        foreach (var soubor in Directory.GetFiles(agendy, "*.cls"))
+        foreach (var soubor in TemplateDesigner.Tests.Serialization.ZdrojeAgend.Agendy())
         {
             var text = File.ReadAllText(soubor);
             if (!Regex.IsMatch(text, @"Parameter\s+Released[^=]*=\s*1\s*;")) continue;

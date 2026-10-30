@@ -54,6 +54,8 @@ Kontrola má dvě části, protože chyba má dvě podoby:
 
 - **`ALVA.TemplateDesigner.API.*`** - obecná business logika TD projektu (cross-cutting). Příklady: `Sablony` (CRUD šablon), v budoucnu `UserPreferences`, `SectionTemplates`.
 - **`ALVA.TemplateDesigner.Agendy.*`** - agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `Faktury`.
+- **`ALVA.TemplateDesigner.Agendy.Jr.*`** - pomocné třídy sdílené agendami JŘ podle zdroje dat a druhu výstupu (`B56`, R8),
+  jméno podle role (`DataAd`). Nejsou potomky `BaseAgenda`, registr je nenabízí; testy je čtou jako kód agend (`ZdrojeAgend`).
 - **`ALVA.TemplateDesigner.EDList.*`** - dispatch třídy pro EDList komponentu (UI contract). Příklady: `Sablony` (backing pro CacheTemplatePickerDialog), `Instance` (backing pro InstancePickerDialog).
 - **`ALVA.TemplateDesigner.EDInputForm.*`** - dispatch třídy pro EDInputForm komponentu (hlavní editační cesta elementů).
 - **`ALVA.TemplateDesigner.EDInputGrid.*`** - dispatch třídy pro EDInputGrid (až bude potřeba).

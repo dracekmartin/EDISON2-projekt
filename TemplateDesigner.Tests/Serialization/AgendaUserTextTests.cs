@@ -1,5 +1,4 @@
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace TemplateDesigner.Tests.Serialization;
@@ -29,7 +28,7 @@ public class AgendaUserTextTests
     public void HodnotyStrankyNeukazujiGlobalyAniKodFirmy()
     {
         var nalezy = new List<string>();
-        foreach (var file in Directory.GetFiles(AgendyDir(), "*.cls"))
+        foreach (var file in ZdrojeAgend.KodAgend())
         {
             var lines = File.ReadAllLines(file);
             for (int i = 0; i < lines.Length; i++)
@@ -58,17 +57,4 @@ public class AgendaUserTextTests
         var val = SetRx.Match(radek).Groups["val"].Value;
         Assert.True(KodFirmyRx.IsMatch(val) || GlobalRx.IsMatch(val));
     }
-
-    private static string AgendyDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "EDISON2.sln")))
-            dir = dir.Parent;
-        dir ??= new FileInfo(ThisFile()).Directory!.Parent!.Parent;
-        Assert.True(File.Exists(Path.Combine(dir!.FullName, "EDISON2.sln")),
-            "Nenalezen root repa (EDISON2.sln) - test potřebuje zdrojáky .cls");
-        return Path.Combine(dir.FullName, "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy");
-    }
-
-    private static string ThisFile([CallerFilePath] string path = "") => path;
 }

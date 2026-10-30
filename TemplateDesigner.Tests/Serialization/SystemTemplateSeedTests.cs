@@ -236,8 +236,7 @@ public class SystemTemplateSeedTests
     private static HashSet<string> DeclaredAgendaCodes()
     {
         var codes = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var f in Directory.GetFiles(Path.Combine(RepoRoot(),
-            "TemplateDesigner", "CACHE", "ALVA", "TemplateDesigner", "Agendy"), "*.cls"))
+        foreach (var f in ZdrojeAgend.Agendy())
             foreach (Match m in AgendaCodeRx.Matches(File.ReadAllText(f)))
                 if (m.Groups[1].Value != "") codes.Add(m.Groups[1].Value);
         return codes;
