@@ -6,6 +6,8 @@
   jízdní doba u bodu trasy ji přebíjí - stejně jako starý tisk, od 31. 10. ověřeno oraclem (changelog (54)).
   Se skutečným spojem sedí jen u 56 % odjezdů (spoje mají vlastní časy po úsecích, sonda `VariantyTrasMhdProbe`);
   časy spojů ukazuje sloupec Varianty tras. Měnit až na podnět z provozu.
+- **Písmena variant ve vývěsce MHD** vyřazená z backlogu (Jan 31. 10.): zůstává pevná výchozí sada `ADLMNPTY`,
+  která se s rozdíly tras MHD (a-z) liší jen velikostí písmen (příručka to uvádí). Řešit, až to někdo nahlásí.
 
 ## Hledání ve formuláři po slovech a se synonymy (hotovo 31. 10. 2026)
 

@@ -32,7 +32,7 @@ Class ALVA.TemplateDesigner.Agendy.Jr.VariantyTras Extends %RegisteredObject
 /// linka se dvěma variantami se tím nezmění a řady se rozejdou až u třetí (rozhodnutí Jan 2. 9.).
 ///
 /// ⚠️ Rozdíly tras MHD mají výchozí sadu „a-z", takže na vývěsce MHD se písmeno varianty s písmenem
-/// rozdílu potkat může. Sada pro MHD se teprve rozhodne (Jan 30. 10.); do té doby platí tahle.
+/// rozdílu liší jen velikostí („a" a „A"). Vědomě ponecháno (Jan 31. 10.), řešit, až to někdo nahlásí.
 Parameter SadaVariantDefault = "ADLMNPTY";
 
 /// Zařadí spoj, který z vývěskové zastávky odjíždí, do varianty podle sledu.

@@ -1506,7 +1506,7 @@ ClassMethod BuildVariantyTras(SmerID As %Integer, aktualniZastBodID As %String, 
         }
         d ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).AddSpoj(.varianty, SpojID, sled, delka, SpojID)
     }
-    // Sada písmen je zatím výchozí (Jan 30. 10.: rozhodne se, až varianty poběží).
+    // Výchozí sada písmen, MHD nastavení u linky nemá (Jan 31. 10.: řešit, až to někdo nahlásí).
     s pismena = ##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).BuildSloupce(.varianty, "", .pismenoSpoje)
     // Z průběhu zástupce vyjde i úsek před vývěskou (projeté zastávky), jako v AD.
     f n=1:1:##class(ALVA.TemplateDesigner.Agendy.Jr.VariantyTras).PocetSloupcu(.varianty) {
