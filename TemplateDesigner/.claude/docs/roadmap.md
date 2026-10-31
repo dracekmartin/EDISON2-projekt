@@ -23,12 +23,6 @@
   Otevřené: HTML ze šablony návrháře (sazba je bez SkiaSharp, chyběl by jen výstup do HTML), nebo jednoduché stránky
   přímo z dat agendy; jak se soubory dostanou na web; jestli to nepokryje Vyhledávač odjezdů v ISYCloud.
 
-- **Hledání ve formuláři po slovech a se synonymy** [M] (z `B194h` H12, Jan 28. 10.: zajímavé, ale ne
-  teď). Hledání dnes bere celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení"
-  ani „čára" nenajdou nic, „výška záhlaví" po `H6` nenajde Nejmenší výšku. Návrh: každé slovo zvlášť
-  přes popisek i skupinu, bez koncovky u slov od 5 písmen, a krátký seznam synonym (písmo → Font, Řez,
-  Velikost; podbarvení → Barva pozadí). Sdílená komponenta EDControls - platí pro celý EDISON.
-
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech vybere linky a dostane PDF bez otevření návrháře. Pro jednu linku PDF bez
   okna už je (rozdílový JŘ); zbývá víc linek a volba šablony z databáze. **Před začátkem rozhodnout**,

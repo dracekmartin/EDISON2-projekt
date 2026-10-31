@@ -53,6 +53,8 @@ Položky se čtou jen z číselných subscriptů. ⚠️ **Nový pojmenovaný kl
   režim a režim by řídil šířku (`EDInputFormNarrowLayoutTests`).
 - Search vstupuje do `EffectiveVisibility` (pole může být skryté hledáním nezávisle na
   `Visibility`). **Navigace mezi nálezy tu záměrně není** - filtrování nechá vidět jen nálezy.
+- `SearchSynonyms` (slovník synonym, slova zvlášť a bez koncovky) je **volba aplikace, ne výchozí chování**: zděděná
+  attached property z okna (TD ji dosazuje na všechna svá okna); bez ní se hledá celý výraz jako dřív.
 - `SearchMemoryKey` (opt-in) drží hledaný výraz v `ISessionState` do konce běhu aplikace; dosazuje
   se až po `SchemaLoaded` (dřív by filtr běžel nad prázdnými Items), smazaný filtr se zapomene.
 - Enter = Tab (na Buttonu klikne); dialog potvrzuje jen Ctrl+Enter (window-level

@@ -200,6 +200,8 @@ public partial class App : Application
     private static void OnAnyWindowLoaded(object sender, RoutedEventArgs e)
     {
         if (sender is not Window window) return;
+        // Synonyma hledání (písmo → Font) jen pro formuláře návrháře; okno je zdědí do všech formulářů v něm.
+        EDControls.EDInputForm.EDInputForm.SetSearchSynonyms(window, Designer.SlovnikHledani.Slovnik);
         if (window.Icon is not null) return;   // explicit Icon (např. MainWindow) ponechán
         if (Application.Current.TryFindResource("EDIcons.Molecule") is System.Windows.Media.ImageSource icon)
             window.Icon = icon;

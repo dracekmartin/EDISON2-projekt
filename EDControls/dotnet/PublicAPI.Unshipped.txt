@@ -247,3 +247,8 @@ override EDControls.EDViewModel.LegacyDialogRun.GetHashCode() -> int
 override EDControls.EDViewModel.LegacyDialogRun.ToString() -> string
 static EDControls.EDViewModel.LegacyDialogRun.operator !=(EDControls.EDViewModel.LegacyDialogRun left, EDControls.EDViewModel.LegacyDialogRun right) -> bool
 static EDControls.EDViewModel.LegacyDialogRun.operator ==(EDControls.EDViewModel.LegacyDialogRun left, EDControls.EDViewModel.LegacyDialogRun right) -> bool
+EDControls.EDInputForm.SearchSynonyms
+EDControls.EDInputForm.SearchSynonyms.SearchSynonyms(System.Collections.Generic.IReadOnlyDictionary<string, string[]> slovnik) -> void
+static EDControls.EDInputForm.EDInputForm.GetSearchSynonyms(System.Windows.DependencyObject element) -> EDControls.EDInputForm.SearchSynonyms
+static EDControls.EDInputForm.EDInputForm.SetSearchSynonyms(System.Windows.DependencyObject element, EDControls.EDInputForm.SearchSynonyms value) -> void
+static readonly EDControls.EDInputForm.EDInputForm.SearchSynonymsProperty -> System.Windows.DependencyProperty

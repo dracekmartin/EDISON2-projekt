@@ -282,8 +282,10 @@ Stejná vlastnost = **stejný label** ve všech elementech, dialozích i EDInput
 je zdvojený (PropertyDescriptor v `.cs` **i** EDInputForm `.cls`) → při změně/přidání uprav **obě**
 místa. **Před vymýšlením nového popisku grepni, jak se to jmenuje jinde**, a použij zavedený termín.
 
-**Jak se popisek tvoří** (rozhodnutí Jan 28. 10. na Seznamu zastávek; hledání ve formuláři porovnává celý
-zadaný text s popiskem nebo názvem skupiny, nápovědu ne - `EDInputForm.xaml.cs` `ComputeSearchMatches`):
+**Jak se popisek tvoří** (rozhodnutí Jan 28. 10. na Seznamu zastávek; hledání ve formuláři porovnává zadaná
+slova s popiskem a názvem skupiny, nápovědu ne - `EDInputForm.xaml.cs` `ComputeSearchMatches`; v oknech návrháře
+navíc se synonymy z `Designer/SlovnikHledani.cs`, „písmo" najde Font - nový zavedený termín, který uživatel hledá
+jiným slovem, dopiš tam):
 
 - **Popisek odpovídá typu pole a tomu, co uživatel udělá.** Číslo = jméno veličiny nebo **„Počet …"**
   (~~Rozdělit na více oddílů~~ → Počet oddílů), zaškrtávátko = věc, kterou zapíná (~~Odsazení~~ → Odsazení

@@ -163,6 +163,26 @@ namespace EDControls.EDInputForm
             set => SetValue(SearchTextProperty, value);
         }
 
+        /// <summary>
+        /// Slovník synonym pro hledání (<see cref="EDInputForm.SearchSynonyms"/>). Dědí se: aplikace ho dosadí na svá
+        /// okna a platí pro všechny formuláře v nich, jinde se nic nemění. Null = hledání jako dřív.
+        /// </summary>
+        public static readonly DependencyProperty SearchSynonymsProperty =
+            DependencyProperty.RegisterAttached("SearchSynonyms", typeof(SearchSynonyms), typeof(EDInputForm),
+                new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.Inherits, OnSearchSynonymsChanged));
+
+        public static SearchSynonyms? GetSearchSynonyms(DependencyObject element) =>
+            (SearchSynonyms?)element.GetValue(SearchSynonymsProperty);
+
+        public static void SetSearchSynonyms(DependencyObject element, SearchSynonyms? value) =>
+            element.SetValue(SearchSynonymsProperty, value);
+
+        private static void OnSearchSynonymsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EDInputForm form && !string.IsNullOrWhiteSpace(form.SearchText))
+                form.ApplySearchFilter(form.SearchText);
+        }
+
         private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not EDInputForm form) return;
@@ -336,7 +356,7 @@ namespace EDControls.EDInputForm
             // Při prvním hledání si zapamatovat rozbalení skupin, ať ho po smazání dotazu obnovíme.
             _expandStateBeforeSearch ??= groups.ToDictionary(g => g, g => g.IsExpanded);
 
-            ComputeSearchMatches(groups, fields, searchText);
+            ComputeSearchMatches(groups, fields, searchText, GetSearchSynonyms(this));
         }
 
         /// <summary>
@@ -345,25 +365,31 @@ namespace EDControls.EDInputForm
         /// (pak ukážeme celou skupinu). Skupina je viditelná, pokud matchne její název nebo obsahuje
         /// aspoň jedno zobrazené pole; zobrazenou skupinu rozbalíme, ať jsou nalezená pole vidět.
         /// Case + diacritics insensitive ("agen" matchne "Ágen").
+        /// Se slovníkem (<paramref name="synonyms"/>) se hledá každé slovo zvlášť přes popisek i skupinu pole a se synonymy.
         /// </summary>
         internal static List<Field> ComputeSearchMatches(
-            IReadOnlyList<Group> groups, IReadOnlyList<Field> fields, string searchText)
+            IReadOnlyList<Group> groups, IReadOnlyList<Field> fields, string searchText, SearchSynonyms? synonyms = null)
         {
             var matches = new List<Field>();
             var needle = NormalizeForSearch(searchText);
+            var words = synonyms is null ? [] : SearchSynonyms.Words(searchText);
+            bool Odpovida(string text) => synonyms is null
+                ? NormalizeForSearch(text).Contains(needle)
+                : synonyms.Matches(NormalizeForSearch(text), words);
 
             foreach (var f in fields)
             {
-                bool fieldMatches = NormalizeForSearch(f.Label ?? "").Contains(needle);
-                bool groupMatches = f.ParentGroup is { } pg && NormalizeForSearch(pg.GroupName).Contains(needle);
-                bool pass = fieldMatches || groupMatches;
+                bool pass = synonyms is null
+                    ? NormalizeForSearch(f.Label ?? "").Contains(needle)
+                      || (f.ParentGroup is { } pg && NormalizeForSearch(pg.GroupName).Contains(needle))
+                    : Odpovida((f.Label ?? "") + " " + (f.ParentGroup?.GroupName ?? ""));
                 f.IsFilteredBySearch = !pass;
                 if (pass) matches.Add(f);
             }
 
             foreach (var g in groups)
             {
-                bool groupMatches = NormalizeForSearch(g.GroupName).Contains(needle);
+                bool groupMatches = Odpovida(g.GroupName);
                 bool hasVisibleField = fields.Any(f => f.ParentGroup == g && !f.IsFilteredBySearch);
                 bool show = groupMatches || hasVisibleField;
                 g.IsFilteredBySearch = !show;

@@ -59,6 +59,8 @@ Dílčí vylepšení a náměty.
 - **Nadpisy sloupců dnů** (pracovní dny, soboty…) bere zastávkový JŘ AD z nastavení jízdních řádů
   vaší firmy, i dvouřádkové a dvojjazyčné, jako starý tisk a linkový JŘ. Nadpisy upravené v šabloně
   platí dál.
+- **Hledání ve vlastnostech prvku** rozumí běžným slovům: „písmo" najde Font a Velikost, „podbarvení" Barvu pozadí,
+  „čára" Rámeček a Mřížku. Hledá se každé slovo zvlášť, takže „výška záhlaví" najde výšku ve skupině Záhlaví.
 - **Zastávkový JŘ MHD:** seznam zastávek umí sloupec **Varianty tras** jako vývěska AD.
   Když spoje jedou ze zastávky různými trasami, dostane každá trasa vlastní sloupec jízdních dob a minuty odjezdů její písmeno.
   Sloupec se zapíná v editoru sloupců seznamu zastávek.

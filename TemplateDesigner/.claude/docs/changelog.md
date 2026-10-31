@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-10-31 (53) - Hledání ve vlastnostech po slovech a se synonymy
+
+Hledání ve formuláři vlastností bralo celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení" ani „čára" nenašly nic a „výška záhlaví" nenašla Nejmenší výšku ve skupině Záhlaví.
+V oknech návrháře teď hledá každé slovo zvlášť přes popisek i skupinu, slova od pěti písmen bez poslední hlásky, a se synonymy ze slovníku `Designer/SlovnikHledani.cs` (písmo → Font, Velikost, Tučné, Kurzíva; podbarvení → Barva pozadí; čára → Rámeček, Mřížka, Tloušťka…; 22 slov).
+Sdílený formulář (`EDControls`) dostal volbu `SearchSynonyms` aditivně: je to zděděná vlastnost, kterou návrhář dosadí na všechna svá okna (`App.OnAnyWindowLoaded`). Rozhodnutí Jan: ne obecné chování - ve zbytku EDISONu, kde by „písmo = font" nedávalo smysl, se hledá jako dřív.
+⚠️ Nové veřejné členy `EDControls.dll` (`PublicAPI.Unshipped.txt`): návrhář s touto změnou potřebuje novou knihovnu, při vydání jdou ven spolu.
+Ověřeno: EDControls testy 1269/1291 (22 testů s okny přeskočených jako vždy) včetně nových `EDInputFormSearchSynonymsTests` (ověřeno mutací: bez dědění z okna test padá), .NET testy návrháře 2677/2677 včetně `SlovnikHledaniTests` (každé synonymum má ve formulářích cíl, ověřeno mutací), build celého řešení bez chyb. V aplikaci neproklikané.
+
 ## 2026-10-30 (52) - Texty návrháře mluví slovem agendy, ne „linkou"
 
 Asi 25 obecných textů (menu a bublina kontroly, hlášky tisku a kontroly, výběr instancí, spuštění z jízdních řádů, nápověda F1, volba exportu „Jeden PDF na …") mělo „linku" napevno; agenda report generátoru by tiskla „Žádná vybraná linka nemá data" i u oběhů.

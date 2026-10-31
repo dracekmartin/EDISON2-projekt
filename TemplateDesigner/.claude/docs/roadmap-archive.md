@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Hledání ve formuláři po slovech a se synonymy (hotovo 31. 10. 2026)
+
+- **Hledání se synonymy** (z `B194h` H12, changelog 2026-10-31 (53)): v oknech návrháře hledá formulář každé
+  slovo zvlášť přes popisek i skupinu, bez koncovky, a se synonymy („písmo" → Font). Rozhodnutí Jan 31. 10.:
+  aditivně jako volba ve sdíleném formuláři (`SearchSynonyms`, zděděná z okna), ne obecné chování - ve zbytku
+  EDISONu se hledá jako dřív. Slovník `Designer/SlovnikHledani.cs`.
+
 ## Vlastní bloky prvků (zrušeno 31. 10. 2026)
 
 - **`B66` Vlastní bloky prvků („moje komponenta")** (podnět Jan 12. 8., zrušeno Jan 31. 10.): uživatel by
