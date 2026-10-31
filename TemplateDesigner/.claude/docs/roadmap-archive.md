@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## AI import z PDF pro linkový JŘ (odloženo 31. 10. 2026)
+
+- **`B179` AI import z PDF pro linkový JŘ** (Jan 24. 9.; první verze 2. 10.): funguje jako interní nástroj
+  (od 9. 10. `dev.pdfImport`, převody předloh dělá M-line), polohy tabulky a poznámek jsou ale odhad modelu.
+  Do archivu 31. 10. (Jan): vytáhnout, až bude aktuální, a pak ladit dál. Nedodělané kroky **(2)** model
+  pojmenuje bloky z PDF a **(3)** tabulka měřená z PDF celá jsou v [`architecture.md §Import z PDF`](architecture.md).
+
 ## Slovo „linka" napevno (hotovo 30. 10. 2026)
 
 - **Slovo „linka" napevno** (`B194e` A5, changelog 2026-10-30 (52)): agenda hlásí tvary a rod instance

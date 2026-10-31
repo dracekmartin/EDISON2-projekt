@@ -181,7 +181,7 @@ výsledku; **(2)** import nejdřív sám rozdělí stránku z PDF na bloky, mode
 s očíslovanými bloky a jen je pojmenuje, polohy bere import z PDF; **(3)** tabulka spojů měřená
 z PDF celá (hranice popisných sloupců, šířka sloupce spoje, písma záhlaví a buněk).
 
-**Stav (roadmapa `B179`):** krok (1) je hotový 2. 10. (`PdfImport/Kvalita/`, výchozí stav v changelogu), (2) a (3) čekají.
+**Stav (`B179`, od 31. 10. v archivu roadmapy):** krok (1) je hotový 2. 10. (`PdfImport/Kvalita/`, výchozí stav v changelogu), (2) a (3) čekají, až bude import zase aktuální (Jan 31. 10.).
 Import funguje, ale není použitelný, protože polohy tabulky a poznámek jsou odhad modelu.
 Od 9. 10. je to **jen interní nástroj** (`dev.pdfImport` v lokálním configu): převody předloh dělá M-line a dál se pokračuje, až se při nich ukáže, že import šetří čas.
 

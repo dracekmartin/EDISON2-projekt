@@ -52,11 +52,6 @@
   stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
   hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184`, `B186` a `B187` hotové, dál podle poptávky.
 
-- **`B179` AI import z PDF pro linkový JŘ** [L] (Jan 24. 9.; první verze 2. 10.). Funguje, ale
-  polohy tabulky a poznámek jsou odhad modelu. **Od 9. 10. jen interní nástroj** - převody předloh
-  dělá M-line; dál až se při nich ukáže, že šetří čas. Zbývají kroky **(2)** model pojmenuje bloky
-  z PDF a **(3)** tabulka měřená z PDF celá. Stav a proč: [`architecture.md §Import z PDF`](architecture.md).
-
 - **`B155` Jemnější nastavení mřížky** [M] (podnět Jan 16. 9.). Mřížka má jednu barvu, tloušťku
   a styl pro všechny čáry; návrh jsou čtyři druhy čar s vlastním vzhledem zadávané kaskádou.
   ⚠️ Per-buňku ani per-hranu ne (Jan 16. 9.) a pohltí „Popisné sloupce bez vnitřních čar".
