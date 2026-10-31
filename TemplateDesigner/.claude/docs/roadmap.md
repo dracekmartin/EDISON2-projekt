@@ -76,10 +76,8 @@
   a odkud: [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md)). Definice pak patří do `Jr/Parametry.cls` (stálý kód
   vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
 
-- **Písmena variant a sloupec „Čas jízdy" ve vývěsce MHD** [S] **Jan** - varianty tras MHD běží (30. 10.,
-  changelog (50)), písmena jsou zatím pevně `ADLMNPTY` a s rozdíly tras MHD (a-z) se liší jen velikostí.
-  Rozhodnout, odkud se sada vezme (souvisí s nastavením tisku u linky). „Čas jízdy" MHD počítá z chronometráže
-  a sedí jen u 56 % odjezdů (sonda `VariantyTrasMhdProbe`) - nechat, nebo brát ze spojů jako AD?
+- **Písmena variant ve vývěsce MHD** [S] (Jan 31. 10.: později) - jsou zatím pevně `ADLMNPTY` a s rozdíly tras MHD
+  (a-z) se liší jen velikostí. Rozhodnout, odkud se sada vezme (souvisí s nastavením tisku u linky).
 
 ---
 

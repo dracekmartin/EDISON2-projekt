@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Sloupec „Čas jízdy" ve vývěsce MHD (rozhodnuto 31. 10. 2026)
+
+- **Čas jízdy MHD zůstává podle trasy linky** (Jan 31. 10.): součet základních dob jízdy z chronometráže, ruční
+  jízdní doba u bodu trasy ji přebíjí - stejně jako starý tisk, od 31. 10. ověřeno oraclem (changelog (54)).
+  Se skutečným spojem sedí jen u 56 % odjezdů (spoje mají vlastní časy po úsecích, sonda `VariantyTrasMhdProbe`);
+  časy spojů ukazuje sloupec Varianty tras. Měnit až na podnět z provozu.
+
 ## Hledání ve formuláři po slovech a se synonymy (hotovo 31. 10. 2026)
 
 - **Hledání se synonymy** (z `B194h` H12, changelog 2026-10-31 (53)): v oknech návrháře hledá formulář každé
