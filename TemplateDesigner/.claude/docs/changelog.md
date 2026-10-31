@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 2026-10-31 (54) - Čas jízdy vývěsky MHD ověřený proti starému tisku
+
+Oracle starého tisku MHD (`MhdLegacyOracle`) porovnával odjezdy, zastávky a poznámky, ale ne čas jízdy v seznamu zastávek - tvrzení „jako starý modul" stálo jen na čtení kódu.
+Teď porovnává i ten (vývěska × zastávka × minuty) a test parity ho hlídá: CB_DP linky 1, 3 a 6 i KV_DP linka 1 sedí 1:1 (např. linka 1: 1543 řádků).
+Výpočet je v obou stejný (`LinkyPrintFormatMHD.cls:189-223` a `:796` × `ZastavkoveJrMhd.PripravitTrasu`): součet základních dob jízdy z chronometráže po bodech trasy linky, ruční jízdní doba u bodu trasy ji přebíjí, v řádku je čas zastávky minus čas vývěskové zastávky. Projetá zastávka má u nás 0, ve starém tisku prázdno - klient ji neukazuje.
+Ověřeno: Caché testy vývěsky MHD 22/22, mutace (+1 minuta v našem výpočtu) shodí paritu na všech čtyřech linkách.
+
 ## 2026-10-31 (53) - Hledání ve vlastnostech po slovech a se synonymy
 
 Hledání ve formuláři vlastností bralo celý text jako souvislou část popisku nebo skupiny: „písmo", „podbarvení" ani „čára" nenašly nic a „výška záhlaví" nenašla Nejmenší výšku ve skupině Záhlaví.

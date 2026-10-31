@@ -43,6 +43,7 @@ Method TestParita1073KvDpSmoKolize()
 		quit
 	}
 	do $$$AssertEquals(res("zast","match"), 1, "zastávky 1:1 1073 (leg="_res("zast","legN")_" our="_res("zast","ourN")_") "_res("zast","diff"))
+	do $$$AssertEquals(res("cas","match"), 1, "čas jízdy 1:1 1073 (leg="_res("cas","legN")_" our="_res("cas","ourN")_") "_res("cas","diff"))
 	do $$$AssertEquals(res("pozn","covered"), 1, "poznámky pokrývají legacy 1073 (leg="_res("pozn","legN")_" our="_res("pozn","ourN")_") "_res("pozn","diff"))
 	do $$$AssertTrue(res("dep","ourN") >= res("dep","legN"), "odjezdy nadmnožina legacy 1073 (leg="_res("dep","legN")_" our="_res("dep","ourN")_")")
 }
@@ -85,6 +86,8 @@ Method AssertParita(lin As %String)
 	do $$$AssertEquals(res("dep","match"),  1, "odjezdy 1:1 "_lin_" (leg="_res("dep","legN")_" our="_res("dep","ourN")_") "_res("dep","diff"))
 	do $$$AssertEquals(res("zast","match"), 1, "zastávky 1:1 "_lin_" (leg="_res("zast","legN")_" our="_res("zast","ourN")_") "_res("zast","diff"))
 	do $$$AssertEquals(res("pozn","match"), 1, "poznámky 1:1 "_lin_" (leg="_res("pozn","legN")_" our="_res("pozn","ourN")_") "_res("pozn","diff"))
+	// Čas jízdy v seznamu zastávek (z jízdních dob trasy linky), do 31. 10. ho oracle nesrovnával.
+	do $$$AssertEquals(res("cas","match"),  1, "čas jízdy 1:1 "_lin_" (leg="_res("cas","legN")_" our="_res("cas","ourN")_") "_res("cas","diff"))
 }
 
 }
