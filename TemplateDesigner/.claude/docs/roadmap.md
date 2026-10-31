@@ -64,13 +64,6 @@
   radši používat varianty tras. Vytáhnout, až to někdo bude chtít.
   Detail [`ad-data-mapa.md`](ad-data-mapa.md) §Rozdílové trasy.
 
-- **`B66` Vlastní bloky prvků („moje komponenta")** [M] (podnět Jan 12. 8.). Uživatel vybere pár
-  prvků, uloží je pod jménem a vkládá jedním kliknutím do dalších šablon - mezistupeň mezi uloženou
-  sekcí a seskupením prvků. **Čeká na pevnou tabulku**: jako jeden prvek je uložení skoro zadarmo,
-  z šesti textů musí blok řešit relativní pozice. Otevřené: kde bloky žijí a odkud se vkládají.
-  **Pohltí i připravené bloky agend** (dřív `B77`) - jsou to titíž pojmenované bloky, jen dodané
-  námi (rozhodnutí Jan 17. 8.).
-
 - **Externí datové zdroje** (na poptávku) - architektura je připravená, engine zná jen
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
   **headless tisk** („pošli šablonu a JSON, vrať PDF"); samostatně by prvním krokem byl generický

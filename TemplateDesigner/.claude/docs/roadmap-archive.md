@@ -1,5 +1,13 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## Vlastní bloky prvků (zrušeno 31. 10. 2026)
+
+- **`B66` Vlastní bloky prvků („moje komponenta")** (podnět Jan 12. 8., zrušeno Jan 31. 10.): uživatel by
+  uložil pár prvků pod jménem a vkládal je do dalších šablon; pohltilo by i připravené bloky agend (`B77`).
+  Zrušeno, protože blok by se vkládal jako kopie: na hlavní případ, firemní hlavičku ve všech šablonách,
+  nepomůže - změna telefonu nebo loga by znamenala upravit každou šablonu. Novou šablonu pokryje „Uložit
+  jako" z firemní šablony nebo uložená sekce; obsah hlavičky jde skládat z polí dopravce, která se mění sama.
+
 ## AI import z PDF pro linkový JŘ (odloženo 31. 10. 2026)
 
 - **`B179` AI import z PDF pro linkový JŘ** (Jan 24. 9.; první verze 2. 10.): funguje jako interní nástroj

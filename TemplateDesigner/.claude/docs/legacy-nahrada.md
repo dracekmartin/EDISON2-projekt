@@ -972,7 +972,7 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
 - **Společné parametry JŘ** jsou od 30. 10. definované jednou v `Jr/Parametry.cls` (`B56` S2): sedm parametrů
   vývěsek, linkové parametry a tvar názvu zastávky. Agenda si je skládá v `GetParameters` sama, pořadí v panelu drží ona.
 - **Předpřipravené tabulky** (`GetTableTemplates`/`GetTableTemplate`) jsou od 30. 10. zrušené i se čtením v návrháři
-  (`B56` S10, Jan): návrhář je nikde nenabízel a do 23. 10. při volání padaly (`B193f`). Hotové bloky pokryje `B66`.
+  (`B56` S10, Jan): návrhář je nikde nenabízel a do 23. 10. při volání padaly (`B193f`). Hotové bloky se nedělají (`B66` zrušené 31. 10.).
 - **Linkové helpery** `BuildPoznamka`, `BuildSkupina`, `FormatCas` jsou od 30. 10. jednou v `Jr/VystupLinkovy.cls` (`B56` S4).
   `Jr.VystupZastavkovy.RgbToHex` vedle `Jr.DataAd.BarvaSpoje` není kopie, viz „Opsané pod jiným jménem" níž.
 - **Stavba výstupu vývěsky** (řádek zastávky, zóna, atribut, poznámka zastávky, skupina dnů, odjezd, poznámka,

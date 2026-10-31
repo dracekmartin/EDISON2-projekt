@@ -79,7 +79,7 @@ Kontrakt, výchozí metody a parametry třídy s popisem drží `BaseAgenda.cls`
   agendy JŘ posílají prázdnou stránku s výzvou vybrat linku).
 - **Volitelné**, výchozí prázdný výsledek: `GetParameters`, `GetAvailableSkupiny`, `GetAvailableInstances`.
   Předpřipravené tabulky (`GetTableTemplates` / `GetTableTemplate`) jsou od 30. 10. zrušené - návrhář je nikde nenabízel
-  (`B56` S10); hotové bloky do šablony má pokrýt `B66`.
+  (`B56` S10). Hotové bloky do šablony se nedělají (`B66` zrušené 31. 10.), výchozím bodem jsou dodané šablony.
 - **Parametry třídy** - `AgendaVariantCode` (stabilní persistovaný klíč), `Agenda` / `Variant` s labely, `ElementKind`,
   `InstanceParamName`, `CustomColumns`, `VariantyTras`, `RozdilyVerzi`, `Released` (bez něj se agenda uživatelům nenabízí),
   `InstanceTvary` + `InstanceRod` (jak se jmenuje to, co agenda tiskne - tvary pádů a rod; návrhář z nich skládá
