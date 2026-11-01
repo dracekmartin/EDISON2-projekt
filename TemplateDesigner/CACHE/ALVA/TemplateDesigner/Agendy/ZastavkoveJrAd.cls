@@ -121,6 +121,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         d ..NactiJazyk()                  // jazyk textů značek = kultura šablony (#12843)
         d ..NactiTextyZnacek(dataDB)      // vysvětlivky dnů z číselníku zákazníka (musí až po NactiJazyk)
         s ^||TiskAd("volbaBarev") = ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).VolbaBarevSpoju()
+        s ^||TiskAd("casJizdyPodleLinky") = ($zcvt($g(^||ML("IN","CAS_JIZDY_PODLE_LINKY")),"L") = "true")
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         // Default = první skupina v ^JRL - shodně s GetAvailableInstances. Picker posílá jen
@@ -318,6 +319,13 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // zastávce; W-mapu rozparsujeme jednou a v cyklu zastávek z ní jen čteme
     s zaklCt = ..ZakladniCisloTrasy(dataDB, sku, lin, smer, currentPoradi)
     d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
+    // `B144`: s volbou „Čas jízdy podle nastavení linky" bere linka v ručním režimu minuty u trasy
+    s casyRucne = $g(^||TiskAd("casJizdyPodleLinky")) && '..MaAutomatickeCasyJizdy(dataDB, sku, lin)
+    i casyRucne {
+        k trasaJ, rucniCasy
+        m trasaJ = ^[dataDB]JRL(sku,lin,"J")
+        d ..RucniCasyJizdy(.trasaJ, currentPoradi, jeTam, .rucniCasy)
+    }
 
     // ── varianty tras (dynamické „TrasaMin") - KOVED #13048 bod 5, počítá je `Jr.VariantyTras` ──
     // Sled jen přes ZOBRAZENÉ zastávky (servedPoradi): staví = „S", nestaví = „<" (`<` i `|`),
@@ -384,7 +392,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s odsazeni  = +$p(veta,"#",5)                        // dta7 „odrazeni" - odsazení názvu o N znaků (legacy mkPLinWin/JRapiLin: 5. #-segment)
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
-        s casJizdy = ..CasJizdySloupce(.zaklWMap, currentPoradi, poradi, jeProjeta)
+        s casJizdy = $s(casyRucne:$g(rucniCasy(poradi)), 1:..CasJizdySloupce(.zaklWMap, currentPoradi, poradi, jeProjeta))
         s cnt = cnt + 1
         // „na znamení" se tiskne přes atribut „x" (níže) - legacy UVOD tiskne jen „x". NaZnameni=0,
         // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
@@ -1391,6 +1399,49 @@ ClassMethod CasJizdySloupce(ByRef wMap, currentPoradi As %String, poradi As %Str
     i (vv = "<") || (vv = "|") q "<"
     i ##class(ALVA.TemplateDesigner.Agendy.Jr.DataAd).CasHodnota(vv) = "" q ""
     q ..CasJizdyZMapy(.wMap, currentPoradi, poradi)
+}
+
+/// Má linka zapnuté automatické generování časových průběhů tras? Přepínač u linky v JŘ
+/// (legacy `arrprtlin("dta",73)`, `JRapiLin1.mac:355`); vypnutý = starý tisk bere do sloupce Čas
+/// ruční minuty u trasy (`JRapiExp10.mac:383`).
+ClassMethod MaAutomatickeCasyJizdy(dataDB As %String, sku As %String, lin As %String) As %Boolean
+{
+    q ''+$g(^[dataDB]JRL(sku,lin,"PATCH","mhd","par",1))
+}
+
+/// Ručně zadané minuty zastávky v jednom směru: 8. `#`-segment J-věty `Tam:Zpět`. Prázdno, když
+/// zastávka nemá nenulovou hodnotu ani v jednom směru - starý tisk ji pak nenačte vůbec
+/// (`JRapiLinPrtMhd.mac:180-184`).
+ClassMethod RucniMinuty(veta As %String, jeTam As %Boolean) As %String
+{
+    s minuty = $p(veta,"#",8)
+    i '($p(minuty,":",1) || $p(minuty,":",2)) q ""
+    q $p(minuty,":",$s(jeTam:1, 1:2))
+}
+
+/// Sloupec Čas z ručně zadaných minut u trasy, jak ho tiskne starý modul (`GetMin`,
+/// `JRapiLinPrtMhd1.mac:765-790`). `trasa(poradi)` = J-věta, `casy(poradi)` = minuty od vývěskové
+/// zastávky. Prázdno u projetých, u vývěskové a tam, kde rozdíl vyjde nula nebo záporný.
+/// Vývěsková zastávka bez minut se počítá od nejbližší předchozí zastávky ve směru jízdy, která je má.
+ClassMethod RucniCasyJizdy(ByRef trasa, currentPoradi As %String, jeTam As %Boolean, ByRef casy)
+{
+    k casy
+    s odMinut = ..RucniMinuty($g(trasa(currentPoradi)), jeTam), pp = currentPoradi
+    while odMinut = "" {
+        s pp = $o(trasa(pp), $s(jeTam:-1, 1:1))
+        q:pp=""
+        i '$isvalidnum(pp) continue
+        s odMinut = ..RucniMinuty($g(trasa(pp)), jeTam)
+    }
+    s pp = ""
+    f {
+        s pp = $o(trasa(pp))
+        q:pp=""
+        i '$isvalidnum(pp) continue
+        i $s(jeTam:(pp '> currentPoradi), 1:(pp '< currentPoradi)) s casy(pp) = ""  continue
+        s cas = ..RucniMinuty($g(trasa(pp)), jeTam) - odMinut
+        s casy(pp) = $s(cas > 0:cas, 1:"")
+    }
 }
 
 /// Jak dlouho průběh jede: nejvzdálenější kumulativní čas od vývěskové zastávky dál. Kritérium pro
@@ -3021,6 +3072,11 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d optsZS.%Push("Sloupek")
     s pZdrojSt.options = optsZS
     d arr.%Push(pZdrojSt)
+
+    // `B144`: starý tisk bere u linky s vypnutým automatickým generováním průběhů ruční minuty u trasy.
+    // ⚠️ Výchozí vypnuto: české firmy mají přepínač vypnutý a minuty prázdné, sloupec by jim zmizel.
+    d ..AddBoolParam(arr, "CAS_JIZDY_PODLE_LINKY", "Čas jízdy podle nastavení linky", "false", "Seznam zastávek", "Linka, která má v jízdních řádech vypnuté automatické generování časových průběhů tras, dostane do sloupce Čas jízdy minuty zadané ručně u trasy linky, jako ve starém tisku. Ostatní linky mají čas spočítaný z jízdních dob. Vypnuto = čas spočítaný z jízdních dob u všech linek.", 1)
+    d arr.%Get(arr.%Size() - 1).%Set("visibleWhenColumn", "CAS_JIZDY")
 
     d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddVariantyTras(arr)
 

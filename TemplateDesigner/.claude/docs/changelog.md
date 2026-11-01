@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-11-01 (55) - Čas jízdy vývěsky AD z ručních minut u trasy (`B144`)
+
+Starý tisk vývěsky AD bere do sloupce Čas ruční minuty u trasy linky, když má linka v JŘ vypnuté automatické generování časových průběhů tras (`^JRL(sku,lin,"PATCH","mhd","par",1)`, `JRapiExp10.mac:383`). My jsme vždy počítali z jízdních dob, takže linky Nitry v ručním režimu měly jiná čísla než starý výtisk.
+Nové zaškrtávátko „Čas jízdy podle nastavení linky" (`CAS_JIZDY_PODLE_LINKY`, skupina Seznam zastávek, serverový parametr, ukáže se jen se sloupcem Čas jízdy) přepínač u linky respektuje; rozhodnutí Jan 1. 11.: zaškrtávátko místo volby ze tří.
+Výchozí vypnuto, protože české firmy mají přepínač vypnutý a minuty prázdné a sloupec by se jim vyprázdnil.
+Přepočet je přepis starého `GetMin` (`JRapiLinPrtMhd1.mac:765-790`) v `ZastavkoveJrAd.RucniCasyJizdy`: rozdíl proti vývěskové zastávce, prázdno u projetých, u vývěskové a u nuly; vývěsková zastávka bez minut se počítá od nejbližší předchozí s minutami.
+Ověřeno: oracle `TestRucniCasJizdyVsLegacyNitra` - Nitra `0000002` shodná se starým tiskem na všech 55 vývěskách (mutace „nula se tiskne" ho shodí na 38 zastávkách); větev bez minut u vývěskové zastávky data Nitry nemají, drží ji jednotkový `TestRucniCasyJizdy` (ověřeno mutací). Na lince `0000001` v automatickém režimu volba nic nemění.
+Caché testy TemplateDesigneru 286/287 (1 přeskočený z dřívějška), .NET testy 2677/2677, integrační testy 48/48, parametr ověřený voláním `GetParameters` na dev serveru. V aplikaci neproklikané.
+Vedlejší nález oraclem (zapsaný v `ad-data-mapa.md`, neřešený): na `0000001` se náš spočítaný Čas od starého tisku liší o 1-2 minuty na řadě vývěsek, protože jinak vybíráme základní trasu; a seznam zastávek `0000002` má 23 řádků navíc (zastávky, kam jezdí jen část spojů).
+
 ## 2026-10-31 (54) - Čas jízdy vývěsky MHD ověřený proti starému tisku
 
 Oracle starého tisku MHD (`MhdLegacyOracle`) porovnával odjezdy, zastávky a poznámky, ale ne čas jízdy v seznamu zastávek - tvrzení „jako starý modul" stálo jen na čtení kódu.

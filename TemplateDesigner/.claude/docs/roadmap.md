@@ -52,12 +52,6 @@
   Poptávka je zatím jedna (KOVED), vytáhnout, až se sejde víc požadavků.
   Návrh a rozhodnutí: [`elementy-architektura.md`](elementy-architektura.md) §Návrh jemnější mřížky.
 
-- **`B144` Sloupec „Čas" i z ručních minut v trase** [S] **(zastávkové JŘ)** - volba zdroje hodnot:
-  spočítané z jízdních dob (dnes, zůstává výchozí), ruční „MHD čas tam/zpět" z trasy, nebo
-  „Automaticky (dle linky)". ⚠️ **Odloženo, protože si o to zákazník neřekl** (Jan 11. 9.) - bude
-  radši používat varianty tras. Vytáhnout, až to někdo bude chtít.
-  Detail [`ad-data-mapa.md`](ad-data-mapa.md) §Rozdílové trasy.
-
 - **Externí datové zdroje** (na poptávku) - architektura je připravená, engine zná jen
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
   **headless tisk** („pošli šablonu a JSON, vrať PDF"); samostatně by prvním krokem byl generický

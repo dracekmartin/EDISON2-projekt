@@ -145,8 +145,9 @@ Method TestGetDataNeexistujiciLinka()
 }
 
 /// Parametry variant tras se v návrháři ukážou, jen když šablona tiskne sloupec Varianty tras
-/// (rozhodnutí Jan 5. 10.). Závislost musí nést právě ty parametry, které bez sloupce nic nedělají:
-/// bez ní by parametr svítil naprázdno, u jiného parametru by ho návrhář schoval.
+/// (rozhodnutí Jan 5. 10.), Čas jízdy podle nastavení linky jen se sloupcem Čas (`B144`). Závislost
+/// musí nést právě ty parametry, které bez sloupce nic nedělají: bez ní by parametr svítil naprázdno,
+/// u jiného parametru by ho návrhář schoval.
 Method TestParametryVariantJenSeSloupcemVariant()
 {
 	do ..SetupSys(.sys)
@@ -156,8 +157,8 @@ Method TestParametryVariantJenSeSloupcemVariant()
 	set nalezeno = 0
 	set iter = params.%GetIterator()
 	while iter.%GetNext(.i, .p) {
-		set cekano = $select($listfind(variantni, p.name): "CAS_JIZDY_VARIANTY", 1: "")
-		set:cekano'="" nalezeno = nalezeno + 1
+		set cekano = $select($listfind(variantni, p.name): "CAS_JIZDY_VARIANTY", p.name="CAS_JIZDY_PODLE_LINKY": "CAS_JIZDY", 1: "")
+		set:$listfind(variantni, p.name) nalezeno = nalezeno + 1
 		do $$$AssertEquals(p.%Get("visibleWhenColumn"), cekano, p.name_": závislost na sloupci variant")
 	}
 	do $$$AssertEquals(nalezeno, $listlength(variantni), "všechny parametry variant jsou v GetParameters")

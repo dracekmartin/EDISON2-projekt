@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B144` Sloupec „Čas" z ručních minut u trasy (hotovo 1. 11. 2026)
+
+- **Zaškrtávátko „Čas jízdy podle nastavení linky"** v Zastávkovém JŘ AD (changelog (55)): linka s vypnutým
+  automatickým generováním časových průběhů tras dostane do sloupce Čas ruční minuty u trasy jako starý tisk,
+  ostatní linky čas spočítaný. Rozhodnutí Jan 1. 11.: zaškrtávátko místo volby ze tří, výchozí vypnuto.
+  Odložené bylo od 11. 9., protože si o to zákazník neřekl; Jan ho vzal jako malou věc k uzavření backlogu.
+
 ## Sloupec „Čas jízdy" ve vývěsce MHD (rozhodnuto 31. 10. 2026)
 
 - **Čas jízdy MHD zůstává podle trasy linky** (Jan 31. 10.): součet základních dob jízdy z chronometráže, ruční

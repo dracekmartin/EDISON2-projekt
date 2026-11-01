@@ -742,6 +742,12 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   s odjezdy spojů, které z něj jedou; číslo stanoviště je i v titulku stránky. Hodí se, když vývěsku
   fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy). Zda je
   číslem stanoviště označník z trasy, nebo sloupek z číselníku, řídí parametr **Číslo stanoviště podle**.
+- **Čas jízdy podle nastavení linky** (parametr ve skupině „Seznam zastávek", jen AD; ukáže se, když
+  šablona tiskne sloupec „Čas jízdy").
+  Linka, která má v jízdních řádech vypnuté automatické generování časových průběhů tras, dostane do
+  sloupce „Čas jízdy" minuty zadané ručně u trasy linky, stejně jako ve starém tisku.
+  Ostatní linky mají čas spočítaný z jízdních dob spojů.
+  Výchozí vypnuto: čas se počítá z jízdních dob u všech linek, i u těch, které ruční minuty nemají vyplněné.
 - Doplňkový tiskový parametr: **„Schovat poznámky v rozsahu „nepoznámkovat“"** (Ruční komentáře /
   Automatické rozdíly tras / Obojí).
 
@@ -1024,8 +1030,8 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 Navíc jen u AD: **Tvar názvu zastávky** (zkrácený / typograficky upravený / plný CIS), **Použít
 název pro MHD**, **Výčet spojů u dopravce**, **Rozdělení sloupců podle platnosti**, **Řazení variant
 tras**, **Písmena variant tras** (+ **První varianta bez písmene**), **Nejvýš sloupců variant tras**,
-**Slučovat varianty, které jedou jen část jiné**, **Stránka pro každé stanoviště**
-a **Číslo stanoviště podle** (vše viz kap. 1), **Barvy spojů** (minuty spoje barvou z jízdních řádů, vypnuto = všechny černě),
+**Slučovat varianty, které jedou jen část jiné**, **Stránka pro každé stanoviště**,
+**Číslo stanoviště podle** a **Čas jízdy podle nastavení linky** (vše viz kap. 1), **Barvy spojů** (minuty spoje barvou z jízdních řádů, vypnuto = všechny černě),
 **Schovat poznámky v rozsahu „nepoznámkovat“** a **Zastávky na znamení souhrnně** - místo
 značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na linkách, kde jsou na znamení
 všechny zastávky).

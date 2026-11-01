@@ -64,6 +64,8 @@ Dílčí vylepšení a náměty.
 - **Zastávkový JŘ MHD:** seznam zastávek umí sloupec **Varianty tras** jako vývěska AD.
   Když spoje jedou ze zastávky různými trasami, dostane každá trasa vlastní sloupec jízdních dob a minuty odjezdů její písmeno.
   Sloupec se zapíná v editoru sloupců seznamu zastávek.
+- **Zastávkový JŘ AD:** zaškrtávátko **Čas jízdy podle nastavení linky** vezme u linek, které mají v jízdních řádech vypnuté automatické generování časových průběhů tras, minuty zadané ručně u trasy, jako starý tisk.
+  Bez něj se čas jízdy počítá z jízdních dob spojů u všech linek.
 
 ### Týden od 19. 10. 2026 · Jízdní řády - obě čísla linky
 

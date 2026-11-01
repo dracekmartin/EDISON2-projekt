@@ -30,6 +30,43 @@ Method TestCasJizdySloupce()
 	kill wMap
 }
 
+// ── Čas jízdy z ručně zadaných minut (B144) ─────────────────────────────────────
+/// Ruční minuty u trasy počítá sloupec Čas jako starý tisk (`GetMin`): rozdíl proti vývěskové zastávce,
+/// prázdno u projetých, u vývěskové i u nuly. Vývěsková zastávka bez minut se počítá od nejbližší
+/// předchozí ve směru jízdy - na datech Nitry, proti kterým běží oracle, ten případ není.
+Method TestRucniCasyJizdy()
+{
+	set cls = "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
+	// J-věta s minutami `Tam:Zpět` v 8. #-segmentu; zastávka 3 minuty nemá
+	kill trasa
+	for poradi = 1:1:6 set trasa(poradi) = poradi_":#######"_$piece("0:30,2:28,:,5:25,5:20,9:0", ",", poradi)
+
+	do $$$AssertEquals($classmethod(cls, "RucniMinuty", trasa(1), 1), "0", "nula tam, když zpět minuty má")
+	do $$$AssertEquals($classmethod(cls, "RucniMinuty", trasa(3), 1), "", "bez minut → prázdno")
+	do $$$AssertEquals($classmethod(cls, "RucniMinuty", "1:#######0:0", 0), "", "nuly v obou směrech = minuty nezadané")
+
+	do $classmethod(cls, "RucniCasyJizdy", .trasa, 4, 1, .casy)
+	do $$$AssertEquals(..Casy(.casy), ",,,,,4", "tam od 4: projeté, vývěsková a nula prázdné")
+
+	do $classmethod(cls, "RucniCasyJizdy", .trasa, 3, 1, .casy)
+	do $$$AssertEquals(..Casy(.casy), ",,,3,3,7", "tam od 3 bez minut: počítá se od zastávky 2")
+
+	do $classmethod(cls, "RucniCasyJizdy", .trasa, 5, 0, .casy)
+	do $$$AssertEquals(..Casy(.casy), "10,8,,5,,", "zpět od 5: minuty Zpět, zastávka bez minut prázdná")
+
+	do $classmethod(cls, "RucniCasyJizdy", .trasa, 3, 0, .casy)
+	do $$$AssertEquals(..Casy(.casy), "5,3,,,,", "zpět od 3 bez minut: počítá se od zastávky 4")
+	kill trasa, casy
+}
+
+/// Hodnoty `casy(1..6)` oddělené čárkou.
+ClassMethod Casy(ByRef casy) As %String
+{
+	set s = ""
+	for poradi = 1:1:6 set s = s_$select(poradi=1:"", 1:",")_$get(casy(poradi), "?")
+	quit s
+}
+
 // ── Vysvětlivky vozidla (B194 T4a, T4b) ─────────────────────────────────────
 /// Vozíček a částečně bezbariérové vozidlo vysvětluje Zastávkový JŘ AD stejně jako Linkový JŘ AD
 /// (obecná věta bez výčtu spojů), česky i slovensky. Částečně bezbariérové vozidlo v datech nemá

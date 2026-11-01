@@ -275,10 +275,15 @@ paušální „Nitra má zapnuto"): linka `0000001` = zapnuto, linka `0000002` =
 vyplněné (`J`-věta segment 8 = `0:34`) → **na téhle lince starý modul tiskne její ruční minuty, ne
 spočítané**. České firmy naopak mají vypnuto s **prázdnými** minutami (vzorek `CB_CSADAD`, `ZL_KOVED`
 0822995, `CB_GWBUS` 0320113 - segment 8 = `:`) → ve starém tiskne prázdno, náš spočítaný sloupec je
-tam tedy featura, ne odchylka. **My přepínač ignorujeme a vždy počítáme**; trasu vybíráme podle
-pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji. Ručně zadané minuty
-**nečteme vůbec** - u linek v ručním režimu s vyplněnými minutami (Nitra) proto tiskneme **jiná
-čísla** než jejich starý výtisk. Vzorek jsou 4 linky, ne plošné měření.
+tam tedy featura, ne odchylka. **Výchozí je přepínač ignorovat a vždy počítat**; trasu vybíráme podle
+pokrytí seznamu (`VyberZaklTrasu`), což je legacy záměr měřený přesněji. Vzorek jsou 4 linky, ne plošné měření.
+
+**Ruční minuty na přání (`B144`, 1. 11.):** zaškrtávátko „Čas jízdy podle nastavení linky" (`CAS_JIZDY_PODLE_LINKY`, výchozí vypnuto) přepínač u linky respektuje.
+Linka v ručním režimu pak dostane do sloupce Čas minuty u trasy přepočtené jako starý `GetMin` (`ZastavkoveJrAd.RucniCasyJizdy`): rozdíl proti vývěskové zastávce, prázdno u projetých, u vývěskové, u nuly a u záporného rozdílu.
+Výchozí vypnuto proto, že by se českým firmám (vypnuto, minuty prázdné) sloupec vyprázdnil.
+Oracle `ZastavkoveJrAdLegacyTest.TestRucniCasJizdyVsLegacyNitra`: Nitra `0000002` sedí se starým tiskem na všech 55 vývěskách.
+Navíc proti starému tisku máme 23 řádků se zastávkami Priemyselný park, kam zajíždí jen část spojů; starý tisk bere seznam ze vzoru trasy, my ze zastávek obsloužených spoji (s volbou to nesouvisí).
+Vývěsková zastávka bez minut se počítá od nejbližší předchozí s minutami - na datech Nitry to není, drží to jednotkový test `TestRucniCasyJizdy`.
 
 ✅ **Obsah sloupce už míchaný není** (`B67`, 13. 8.): variantní sloupec nese **průběh jedné vybrané
 trasy** - v rámci varianty vyhrává delší jízda (`DelkaProfilu`), při shodě nižší číslo trasy. Totéž
@@ -289,14 +294,10 @@ odpovídá; pod mutací +1 minuta padne na 60 z 60 sloupců). Legacy dělá tot�
 (`necham prubeh s delsim casem`).
 
 **Co od legacy zbývá jinak:** (a) kritérium pro jediný sloupec „Časy" měříme jako **dosah** (počet
-obsloužených zastávek), legacy ho aproximuje **délkou textu průběhu** - koreluje to, totožné to není
-a oraclem to ověřené nemáme; (b) legacy v automatickém režimu plní **až čtyři** sloupce Času, my jeden
-(zbytek na vyžádání); (c) ruční minuty nečteme (viz výše)
-
-**Návrh volby zdroje sloupce „Čas" (`B144`, odloženo Janem 11. 9.):** spočítané z jízdních dob (dnes), ruční „MHD čas tam/zpět" z trasy linky, nebo „Automaticky (dle linky)" podle přepínače u linky.
-Výchozí musí zůstat spočítané, jinak se českým firmám sloupec vyprázdní (ruční minuty mají prázdné).
-Parametr zpracuje server, takže v `GetParameters` potřebuje příznak `serverSide` (`cache-api.md`).
-⚠️ Odloženo, protože si o to zákazník neřekl: vyšlo to najevo při hovoru jako rozdíl proti starému výtisku na Nitře, ale on sám řekl, že bude radši používat varianty tras.
+obsloužených zastávek), legacy ho aproximuje **délkou textu průběhu** - koreluje to, totožné to není;
+(b) legacy v automatickém režimu plní **až čtyři** sloupce Času, my jeden (zbytek na vyžádání).
+Oracle z `B144` (sonda `ZastavkoveJrAdLegacyTest.RucniCasyProbe`) to 1. 11. změřil na Nitře `0000001` (automatický režim): na řadě vývěsek se náš Čas liší od starého tisku o 1-2 minuty, místy máme číslo tam, kde starý tisk tiskne „<".
+Je to rozdíl ve výběru základní trasy (a), ne chyba výpočtu; neřešeno, nikdo si nestěžoval.
 
 ⚠️ **Sloupec „Čas jízdy" nese tři stavy** (`B67`): číslo, „<" (základní trasa zastávkou projíždí bez
 stání) nebo prázdno (mimo základní trasu). Dřív bylo prázdno v obou případech. Na wire je to od té
