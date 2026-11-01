@@ -1215,7 +1215,7 @@ je samo o sobě argument pro náhradu.
 | jeden nadpis **„↓ Směr jízdy ↓"** přes všechny info sloupce | každý info sloupec má vlastní popisek, společný nadpis nejde |
 | **mezery mezi bloky** info × pracovní dny × víkendy | souvislá mřížka bez mezer |
 | km bez vnitřního ohraničení | každý km podsloupec orámovaný zvlášť |
-| jemné vodorovné linky, střídavé podbarvení | plná mřížka všude |
+| tečkované svislé čáry mezi spoji, střídavé podbarvení, vodorovné čáry jen na pár místech (opraveno 1. 11. podle PDF) | plná mřížka všude |
 | legenda ve dvou sloupcích pod tabulkou | (na první straně není) |
 
 ### 15.2 Body ze zadání a stav v návrháři
@@ -1228,7 +1228,7 @@ Ověřeno čtením kódu 19. 8., ne odhadem.
 | 2 | **změnit pořadí info sloupců** (zóny, km, zastávky…) | ✅ **umíme** - sloupce jsou seznam a dialog je umí přesouvat (`ColumnListEditor`, `MoveUpCommand`) |
 | 3 | **odstranit sloupec MHD a sloupec se šipkou** | ✅ **umíme** - obojí má zaškrtávátko viditelnosti; MHD navíc zmizí sám, když je pro celou linku prázdný. ⚠️ **Sloupec se šipkou od 10. 9. existuje a je z výroby ZAPNUTÝ** (`B136` - nese `př`/`od` u rozdvojené zastávky, což je jediné, čím se ty dva řádky liší). Do 10. 9. tu stálo, že v prvku vůbec není; kdo chce vzor IDZK, musí ho teď vypnout |
 | 4 | **odstranit ohraničení jednotlivých km sloupců** | ✅ **umíme** (26. 8., `L9`) - „Popisné sloupce bez vnitřních čar" slije km, zastávku a zóny do jednoho bloku a čáry mezi sloupci spojů nechá. ⚠️ Původní tvrzení „kreslí se buď všude, nebo nikde" **neplatilo**: `Grid.ShowColumnLines` prvek vůbec nečte a mřížku kreslí vždy (ověřeno vykreslením 27. 8., vedeno jako `L10`) |
-| 5 | **jiný styl čar mezi spoji** pro celou sekci | 🟡 **částečně** - `GridStyle` má zvlášť vodorovné a svislé čáry, ale **jednu barvu, tloušťku a styl pro obojí**. Vzor má jemné vodorovné a žádné svislé, což už jde; různá barva pro každý směr ne |
+| 5 | **jiný styl čar mezi spoji** pro celou sekci | 🟡 **částečně** - `GridStyle` má zvlášť vodorovné a svislé čáry, ale **jednu barvu, tloušťku a styl pro obojí**. Vzor má tečkované svislé čáry a vodorovné jen na pár místech (do 1. 11. tu chybně stálo „jemné vodorovné a žádné svislé"), což jedním stylem jde; různá barva pro každý směr ne. Širší návrh `B155` je od 1. 11. mimo roadmapu |
 | 6 | **jeden nadpis přes info sloupce** (jako „Pracovní dny" nad spoji) | ✅ **umíme** (26. 8., `L9`) - „Nadpis popisných sloupců". Pás se přitom musel odvázat od skupin dnů: kreslil se jen při víc než jedné skupině, takže na lince s jedinou by nadpis nebyl |
 | 7 | **mezera mezi bloky** (info × pracovní dny × víkendy) | ✅ **umíme** (27. 8., `L9`) - „Mezera mezi skupinami sloupců" v mm, výchozí 0. Bere se ze šířky prvku, takže se do řádku vejde méně spojů |
 | 8 | **popisky info sloupců podle vzoru** | ✅ **umíme** - hlavička sloupce je volný text |

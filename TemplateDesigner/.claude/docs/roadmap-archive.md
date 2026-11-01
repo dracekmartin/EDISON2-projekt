@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `B155` Jemnější nastavení mřížky (vyřazeno 1. 11. 2026)
+
+- **Z roadmapy do zákaznických požadavků** (Jan 1. 11.): řešit, až o to požádá zákazník.
+  Nikomu to slíbené není: podnětem byl bod 5 ze zkoušky kolegy podle vzoru IDZK 940 (19. 8.), ne tiket,
+  a vzor jde nastavit i dnešní mřížkou. Návrh čtyř druhů čar zůstává v `elementy-architektura.md`,
+  odkaz na něj v `customer-requirements-zastavkovy-jr.md` §0.5.
+
 ## `B144` Sloupec „Čas" z ručních minut u trasy (hotovo 1. 11. 2026)
 
 - **Zaškrtávátko „Čas jízdy podle nastavení linky"** v Zastávkovém JŘ AD (changelog (55)): linka s vypnutým

@@ -46,12 +46,6 @@
   stránce" i „Jen první / poslední". Mění formát šablony (migrace). Až budou
   hotové jízdní řády a přijdou doklady typu faktura nebo stazka. Mock viz `B184`. `B184`, `B186` a `B187` hotové, dál podle poptávky.
 
-- **`B155` Jemnější nastavení mřížky** [M] (podnět Jan 16. 9.). Mřížka má jednu barvu, tloušťku
-  a styl pro všechny čáry; návrh jsou čtyři druhy čar s vlastním vzhledem zadávané kaskádou.
-  ⚠️ Per-buňku ani per-hranu ne (Jan 16. 9.) a pohltí „Popisné sloupce bez vnitřních čar".
-  Poptávka je zatím jedna (KOVED), vytáhnout, až se sejde víc požadavků.
-  Návrh a rozhodnutí: [`elementy-architektura.md`](elementy-architektura.md) §Návrh jemnější mřížky.
-
 - **Externí datové zdroje** (na poptávku) - architektura je připravená, engine zná jen
   `Template + DataContext` a ten je zdrojově agnostický JSON. Nejpravděpodobnější nosič je
   **headless tisk** („pošli šablonu a JSON, vrať PDF"); samostatně by prvním krokem byl generický

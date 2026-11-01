@@ -190,10 +190,14 @@ odpovědi na případné znovuotevření/dotaz:
 - **Oddělená barva a tloušťka vodorovných × svislých čar mřížky** (dřív `L9-R3`, z roadmapy
   odstraněno 31. 8. - rozhodnutí Jan). Dnes má mřížka jednu barvu, tloušťku i styl pro obojí;
   zapnout/vypnout jednotlivé druhy čar už jde (`L10`, `L15`). ⚠️ **Nikdo o rozdělení nepožádal**
-  a vzor, kvůli kterému vlna `L9` vznikla (IDZK 940), ho nepotřebuje - má jen svislé čáry jednou
-  barvou, což umí. Kdyby se poptávka objevila, ví se rovnou i tvar řešení: `GridStyle` je sdílený
+  a vzor, kvůli kterému vlna `L9` vznikla (IDZK 940), ho nepotřebuje - má tečkované svislé čáry
+  mezi spoji, střídavé podbarvení řádků a vodorovné čáry jen na pár místech, což jde nastavit jedním
+  stylem čar (přečteno z PDF vzoru 1. 11.). Kdyby se poptávka objevila, ví se rovnou i tvar řešení: `GridStyle` je sdílený
   se všemi tabulkovými prvky, takže se to musí udělat pro všechny naráz, jinak se dvě tabulky
   v téže šabloně nastavují jinak (rozhodnuto 26. 8.).
+  Širší návrh je bývalé `B155` (z roadmapy vyřazeno 1. 11.): čtyři druhy čar (mezi řádky, mezi sloupci,
+  pod záhlavím, mezi skupinami sloupců) s vlastním vzhledem zadávaným kaskádou, které pohltí
+  „Popisné sloupce bez vnitřních čar". Detail `elementy-architektura.md` §Návrh jemnější mřížky.
 
 Není to nedodělek, ale práce, která se vyplatí až s konkrétním zákazníkem - v aktivní roadmapě
 jen zabírala místo (pravidlo „roadmapa = akční práce"). Velikosti: S = do hodiny, M = půl dne.

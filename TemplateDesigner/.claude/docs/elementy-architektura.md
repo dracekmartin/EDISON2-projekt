@@ -437,7 +437,7 @@ Svislou smyčku měl každý element vlastní; dnes ji mají všechny čtyři ř
 navíc nese `RowKind`, tedy svůj význam - na tom stojí řezání širokých tabulek do stránkových bloků
 (`B13` v roadmapě), aby se psalo jednou nad plánem a ne pětkrát v per-element smyčkách.
 
-### Návrh jemnější mřížky (`B155`, podnět Jan 16. 9., čeká na poptávku)
+### Návrh jemnější mřížky (`B155`, podnět Jan 16. 9., od 1. 11. mimo roadmapu, čeká na poptávku)
 
 Dnes má `GridStyle` **jednu** barvu, tloušťku a styl pro vodorovné i svislé čáry; ty jdou jen zapnout nebo vypnout.
 Návrh: **čtyři druhy čar** (mezi řádky, mezi sloupci, pod záhlavím, na hranici skupiny sloupců), každý s vlastní barvou, tloušťkou, stylem a volbou „nekreslit".
@@ -449,8 +449,8 @@ Zadávají se **kaskádou** jako styly buněk: nahoře jedna sada, kdo chce, př
   Je to per-prvek náplast, která vznikla právě proto, že obecná mřížka nestačila, a dnes je to jediný způsob, jak čáry odlišit uvnitř tabulky.
   V editoru je to **jeden z druhů čar** („mezi popisnými sloupci"), ne samostatná volba jinde ve formuláři.
   Zároveň se tím dá to, co dnes chybí: čára mezi zónou a km, ale ne mezi km podsloupci.
-- Poptávka je zatím **jedna**: KOVED bod 5 z `linkovy-knizni-jr-implementace-analyza.md` §15.2 chce jiný styl u spojů než u info sloupců a dnes se to obchází vypnutím svislých čar.
-  Vytáhnout, až se sejde víc požadavků.
+- Podnět byl **jeden** a nebyl to tiket: bod 5 ze zkoušky kolegy podle vzoru IDZK 940 (`linkovy-knizni-jr-implementace-analyza.md` §15.2), jiný styl čar u spojů než u info sloupců.
+  Vzor sám jde nastavit dnešní mřížkou. Vytáhnout, až o to požádá zákazník (rozhodnutí Jan 1. 11.).
 
 
 
