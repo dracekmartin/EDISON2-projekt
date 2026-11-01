@@ -22,8 +22,8 @@
             <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
                        VerticalAlignment="Center" Margin="0,0,4,0" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
             <ComboBox MinWidth="220" FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                      ItemsSource="{Binding Options}"
-                      SelectedItem="{Binding Value, Mode=TwoWay}"/>
+                      ItemsSource="{Binding Options}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                      SelectedValue="{Binding Value, Mode=TwoWay}"/>
         </StackPanel>
     </DataTemplate>
 

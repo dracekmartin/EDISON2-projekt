@@ -13,18 +13,30 @@ namespace TemplateDesigner.Models.Elements;
 /// </summary>
 public static class DepartureColumnPresets
 {
-    public sealed record Preset(string Key, string Label);
+    /// <summary>Vzor rozložení: <paramref name="Label"/> vidí uživatel, <see cref="Option"/> je uložený text
+    /// volby parametru, na který vzor přepne (bez popisku ze serveru jsou stejné).</summary>
+    public sealed record Preset(string Key, string Label)
+    {
+        public string Option { get; init; } = Label;
+    }
 
     /// <summary>
-    /// Nabídka vzorů z parametru „Rozdělení sloupců": volba s klíčem vzoru je vzor, popisek je text volby.
-    /// Popisky drží jen server (agenda, `VzorySloupcu`) - do 30. 10. je měl klient opsané a vývěska i linka
-    /// zvlášť. Starší server klíče neposílá, pak se vzory nenabízejí (stejně jako bez načtených dat).
+    /// Nabídka vzorů z parametru „Rozdělení sloupců": volba s klíčem vzoru je vzor, popisek je popisek volby.
+    /// Popisky drží jen server (agenda, `VzorySloupcu`, společné popisky `Jr.Parametry`) - do 30. 10. je měl
+    /// klient opsané a vývěska i linka zvlášť. Starší server klíče neposílá, pak se vzory nenabízejí
+    /// (stejně jako bez načtených dat).
     /// </summary>
     public static IReadOnlyList<Preset> FromParameter(TemplateParameter? parameter)
     {
         if (parameter?.Options is not { } volby || parameter.OptionKeys is not { } klice) return [];
-        return [.. volby.Zip(klice).Where(v => v.Second.Length > 0).Select(v => new Preset(v.Second, v.First))];
+        return [.. volby.Zip(klice).Where(v => v.Second.Length > 0)
+                        .Select(v => new Preset(v.Second, parameter.OptionLabel(v.First)) { Option = v.First })];
     }
+
+    /// <summary>Klíč vzoru, na který přepne volba parametru. Hodnota parametru je uložený text volby,
+    /// ne popisek, který uživatel vidí (`P2`); null = volba bez vzoru (Automaticky, Vlastní rozložení).</summary>
+    public static string? KeyForOption(IReadOnlyList<Preset> nabidka, string? volba) =>
+        nabidka.FirstOrDefault(p => p.Option == volba)?.Key;
 
     /// <summary>Vzory z pole PRESETY_SLOUPCU (klíč vzoru → sloupce). Prázdný/neplatný vstup =
     /// prázdná mapa; volající pak vzory nenabízí.</summary>
@@ -65,13 +77,13 @@ public static class DepartureColumnPresets
     private static string Text(JsonObject o, string klic) => o[klic]?.GetValue<string>() ?? "";
 
     /// <summary>
-    /// Popisek vzoru, kterému sloupce **přesně** odpovídají; null = žádnému (uživatel si je upravil).
+    /// Uložený text volby vzoru, kterému sloupce **přesně** odpovídají; null = žádnému (uživatel si je upravil).
     /// Slouží k tomu, aby parametr „Rozdělení sloupců" ukazoval skutečný stav šablony místo aby byl
     /// druhé nezávislé nastavení. Porovnává se všechno, co jde na server - i nadpis, protože
     /// přejmenovaný sloupec už není ten vzor.
     /// </summary>
     /// <param name="nabidka">Vzory té agendy (<see cref="FromParameter"/>) - vývěska a linka mají jiné.</param>
-    public static string? MatchLabel(
+    public static string? MatchOption(
         IReadOnlyList<DepartureColumnDefinition>? sloupce,
         IReadOnlyDictionary<string, List<DepartureColumnDefinition>> vzory,
         IReadOnlyList<Preset> nabidka)
@@ -80,7 +92,7 @@ public static class DepartureColumnPresets
         foreach (var vzor in nabidka)
         {
             if (vzory.TryGetValue(vzor.Key, out var definice) && SameLayout(sloupce, definice))
-                return vzor.Label;
+                return vzor.Option;
         }
         return null;
     }

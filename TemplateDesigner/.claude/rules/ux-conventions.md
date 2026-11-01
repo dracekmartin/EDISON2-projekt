@@ -392,9 +392,9 @@ při každé změně instance a souboj s uloženou volbou uživatele (v panelu j
 
 **⚠️ Labely enum parametrů sestavy jsou ZAMČENÉ** - hodnota volby se persistuje i porovnává na
 serveru jako zobrazovaný text (`RAZENI_VARIANT`, `ROZDELENI_SLOUPCU`, `SCHOVAT_V_ROZSAHU`…);
-přejmenování labelu by tiše zahodilo uloženou volbu uživatelů na default. Budoucí přejmenování jen
-se stabilním kódem vedle labelu - pole `optionKeys` u parametru už existuje (dnes jen u „Rozdělení
-sloupců", `cache-api.md` §R3), uložené volby se ale pořád ukládají textem.
+přejmenování labelu by tiše zahodilo uloženou volbu uživatelů na default. Přejmenovat jde jen to, co se
+ukazuje: text volby zůstane a nový popisek se pošle vedle v poli `optionLabels` (`cache-api.md` §R3; dnes
+„Rozdělení sloupců", tatáž volba se ve vývěsce i linkovém JŘ jmenuje stejně).
 
 Výjimka: složené popisky s jasnou sémantikou (`Výchozí font` = font dokumentu) jsou OK, dokud
 obsahují kanonický kořen. Nový termín, který v tabulce není, přidej sem, až ho poprvé zavedeš.

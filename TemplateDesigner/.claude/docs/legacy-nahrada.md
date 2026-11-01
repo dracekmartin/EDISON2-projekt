@@ -979,17 +979,12 @@ ne mezivrstva `ZastavkovyJrBase` / `LinkovyJrBase` - registr agend by ji schoval
   barva, speciální znak) je od 30. 10. jednou v `Jr/VystupZastavkovy.cls` (`B56` S3); značky u odjezdů
   (`AddAnotace`) zůstávají v agendách, AD posílá o tři klíče víc.
 
-**Popisky voleb rozdělení sloupců (`P2`, revize `B194` 23. 10., ověřeno na serveru)** - až budou volby jednou
-definicí, patří do `Jr/Parametry.cls`; čeká na úklid nastavení tisku v jízdních řádech, který dodělají kolegové
-(domluveno 29. 10., fáze 6 `B56` v roadmapě).
-
-- Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb: „Pracovní / Sobota / Neděle+svátky" × „Pracovní dny / Soboty / Neděle+svátky", k tomu kryptické prázdninové volby vývěsky.
-  Vnitřní klíče jsou stejné (`PRAC_SO_NE`, `PRAC_VIKEND`).
-- Volby jsou zamčené (ukládá se zobrazený text, `ux-conventions §8`), proto přidat souběžný klíč `optionLabels` a `options` nechat jako text.
-  `CacheAgendaProvider.ParseParameters` čte `options` jako pole textů: volba poslaná jako objekt by vyhodila výjimku a návrhář by ztratil všechny parametry agendy.
-- Třetí kopie popisků je v `DepartureColumnPresets` (vzory vlastních sloupců).
-- Popisky a nápovědy parametrů výstup ani uložené volby nemění, návrhář je bere ze serveru.
-  Citují je ale hlášky linky bez dat (`BuildStrankaLinky` v obou linkových agendách), při přejmenování opravit i je.
+**Popisky voleb rozdělení sloupců (`P2`, hotovo 1. 11.)** - tatáž volba má ve vývěsce i linkovém JŘ AD stejný popisek
+z `Jr.Parametry.PopisekVzoruSloupcu` podle klíče vzoru (`PRAC_SO_NE`, `PRAC_VIKEND`); volby skládá `AddVolbyRozdeleniSloupcu`.
+Uložené texty voleb (`options`) zůstaly, protože se ukládají; popisek jde vedle v poli `optionLabels` a čte ho lišta parametrů,
+tiskové okno, formulář parametrů (`AgendaParams`) i nabídka vzorů v editoru sloupců. ⚠️ Volba poslaná jako objekt místo textu
+by `CacheAgendaProvider.ParseParameters` shodila a návrhář by ztratil všechny parametry agendy - proto souběžné pole, ne objekty.
+Sada voleb se mezi agendami liší dál (vývěska má Automaticky a prázdninové vzory, linka Bez rozlišení), sjednocené jsou jen jména.
 
 **Vědomé rozdíly mezi agendami JŘ (rozhodnutí Jan 26. 10., revize `B194`)** - každá agenda tu drží tvar
 svého starého modulu, sloučení kódu je nesmí srovnat.

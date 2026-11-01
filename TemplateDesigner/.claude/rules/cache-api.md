@@ -203,6 +203,10 @@ u „Rozdělení sloupců": volby, klíče i převod volby na rozložení staví
 (`VzorySloupcu` / `VzorySloupcuLinky`) a klient z nich bere popisky vzorů (`DepartureColumnPresets.FromParameter`).
 Shodu s `PRESETY_SLOUPCU` hlídá `VzorySloupcuTest`. ⚠️ Nasazuje se server dřív než klient: nový
 klient se starým serverem vzory nenabídne.
+Zobrazovaný popisek, který se liší od uloženého textu volby, nese aditivní pole **`optionLabels`** (stejné pořadí,
+`TemplateParameter.OptionLabel`, formulář `AgendaParams` ho dá do položky seznamu). Dnes u „Rozdělení sloupců":
+tatáž volba má ve vývěsce i linkovém JŘ AD stejný popisek z `Jr.Parametry.PopisekVzoruSloupcu`, uložený text zůstal
+(`P2`, hlídá `VzorySloupcuTest`). Popisek jde přejmenovat volně, text volby ne.
 
 **Volba, která patří k prvku, ale server ji musí znát** (dnes `DEFINICE_SLOUPCU`, `JAZYK`,
 `TURNUSY_KE_SPOJUM`) **není parametr sestavy**: skládá se do IN vždy **čerstvě ze šablony**

@@ -188,7 +188,7 @@ public partial class TemplateDesignerViewModel
     // odjezdů je dostávají předvyplněné), měl z parametru navždy mrtvé tlačítko.
     //
     // Stav drží **jen šablona** (definice sloupců prvku); parametr ji zrcadlí a umí ji přepnout:
-    //   sloupce = některý vzor  → popisek toho vzoru      (vzory jsou 1:1 s volbami parametru)
+    //   sloupce = některý vzor  → volba toho vzoru        (vzory jsou 1:1 s volbami parametru)
     //   žádné sloupce           → „Automaticky (dle linky)"
     //   ručně upravené          → „Vlastní rozložení" (jen ukazatel, ručně vybrat nejde)
 
@@ -251,7 +251,7 @@ public partial class TemplateDesignerViewModel
         if (cols is { Count: > 0 } && presety.Count == 0) return;
 
         var odvozene = cols is { Count: > 0 }
-            ? DepartureColumnPresets.MatchLabel(cols, presety, LayoutPresety) ?? LayoutCustomOption
+            ? DepartureColumnPresets.MatchOption(cols, presety, LayoutPresety) ?? LayoutCustomOption
             : LayoutAutoOptionProAgendu;
         if (odvozene is null) return;   // linka: bez definice se uživatelova volba nechává být
         _lastLayoutParamValue = odvozene;
@@ -287,7 +287,7 @@ public partial class TemplateDesignerViewModel
         List<DepartureColumnDefinition>? nove = null;
         if (value != LayoutAutoOptionProAgendu)
         {
-            var klic = LayoutPresety.FirstOrDefault(p => p.Label == value)?.Key;
+            var klic = DepartureColumnPresets.KeyForOption(LayoutPresety, value);
             var presety = LoadedColumnPresets();
             if (klic is null || !presety.TryGetValue(klic, out var vzor) || vzor.Count == 0)
             {

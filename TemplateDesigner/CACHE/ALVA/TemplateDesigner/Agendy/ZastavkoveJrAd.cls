@@ -1628,10 +1628,10 @@ ClassMethod DenniZnackyProSloupec(plk As %String, dnySpoje As %String, sloupecDn
     q znacky
 }
 
-/// Vzory rozložení sloupců: `$lb(klíč, popisek, FTL)`. **Jediné místo**, odkud jdou volby parametru
-/// „Rozdělení sloupců" (popisky jsou zamčené - ukládá se zobrazený text), klíče k nim pro klienta
+/// Vzory rozložení sloupců: `$lb(klíč, uložený text, FTL)`. **Jediné místo**, odkud jdou volby parametru
+/// „Rozdělení sloupců" (text je zamčený - ukládá se zobrazená volba), klíče k nim pro klienta
 /// (`optionKeys`, podle nich pozná vzor v `PRESETY_SLOUPCU` a popisky neopisuje) i převod volby na FTL.
-/// Do 30. 10. byly popisky opsané v parametru, v převodu na FTL a v klientovi.
+/// Uživatel vidí společný popisek z `Jr.Parametry.PopisekVzoruSloupcu` (`P2`), text jen ukládá.
 ClassMethod VzorySloupcu() As %List
 {
     s vzory = $lb($lb("PRAC_SO_NE", "Pracovní / Sobota / Neděle+svátky", 0))
@@ -3092,17 +3092,9 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRozd.serverSide   = 1
     s pRozd.description  = "Podle čeho se spoje rozdělí do sloupců minut odjezdů. Automaticky = podle nastavení u linky v jízdních řádech. Vlastní rozložení se nastavuje u prvku Minuty odjezdů - tady se jen ukáže, že ho šablona má."
     s pRozd.defaultValue = "Automaticky (dle linky)"
-    s optsR = ##class(%DynamicArray).%New(), klicR = ##class(%DynamicArray).%New()
-    d optsR.%Push("Automaticky (dle linky)"), klicR.%Push("")
-    s vzory = ..VzorySloupcu()
-    f i=1:1:$ll(vzory) s vzor = $li(vzory,i) d optsR.%Push($li(vzor,2)), klicR.%Push($li(vzor,1))
-    // Ukazatel, ne rozvržení: klient ji nastaví sám, když si uživatel sloupce upravil tak, že
-    // neodpovídají žádnému vzoru. Server ji nezná a spadne do „dle linky" - na výsledku nezáleží,
-    // protože s vlastními sloupci stejně přijde DEFINICE_SLOUPCU a ta FTL přebíjí.
-    d optsR.%Push("Vlastní rozložení"), klicR.%Push("")
-    s pRozd.options = optsR
-    // Klíč vzoru u každé volby (aditivně, starší klient ho nečte): podle něj klient najde vzor v PRESETY_SLOUPCU.
-    s pRozd.optionKeys = klicR
+    // „Vlastní rozložení" server nezná a spadne do „dle linky" - na výsledku nezáleží, protože
+    // s vlastními sloupci stejně přijde DEFINICE_SLOUPCU a ta FTL přebíjí.
+    d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddVolbyRozdeleniSloupcu(pRozd, ..VzorySloupcu(), 1)
     d arr.%Push(pRozd)
 
     d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddCasovaOsaOdjezdu(arr)

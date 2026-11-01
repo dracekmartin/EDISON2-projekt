@@ -126,6 +126,9 @@ public class SchemaFieldVM
 // ParameterControlVM
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// <summary>Volba enum parametru sestavy: <paramref name="Value"/> se ukládá, <paramref name="Label"/> se zobrazuje.</summary>
+public sealed record ParameterOption(string Value, string Label);
+
 public class ParameterControlVM : INotifyPropertyChanged
 {
     private readonly TemplateParameter           _param;
@@ -183,7 +186,10 @@ public class ParameterControlVM : INotifyPropertyChanged
 
     public string                    Label         => _param.Label;
     public string                    ParameterType => _param.Type;
-    public IReadOnlyList<string>     Options       => _param.Options ?? [];
+    /// <summary>Volby enum parametru: hodnota je uložený text volby, popisek to, co uživatel vidí.</summary>
+    public IReadOnlyList<ParameterOption> Options =>
+        _options ??= [.. (_param.Options ?? []).Select(o => new ParameterOption(o, _param.OptionLabel(o)))];
+    private IReadOnlyList<ParameterOption>? _options;
     /// <summary>Skupina pro CollectionViewSource grouping v liště parametrů (prázdné = bez skupiny).</summary>
     public string                    Group         => _param.Group ?? "";
 

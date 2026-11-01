@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 2026-11-01 (56) - Rozdělení sloupců se ve vývěsce i linkovém JŘ jmenuje stejně (`P2`)
+
+Volba „Rozdělení sloupců podle platnosti" měla pro totéž rozdělení dvě jména: „Pracovní / Sobota / Neděle+svátky" ve vývěsce a „Pracovní dny / Soboty / Neděle+svátky" v linkovém JŘ, k tomu zkratky v prázdninových volbách vývěsky („Prac. mimo+o prázd.").
+Texty voleb se ukládají (uložené volby uživatelů i šablon), takže je přejmenovat nešlo: uložená volba by se tiše vrátila na výchozí.
+Server teď vedle textů posílá aditivní pole `optionLabels` se společným popiskem podle klíče vzoru (`Jr.Parametry.PopisekVzoruSloupcu`, volby skládá `AddVolbyRozdeleniSloupcu` pro obě agendy).
+Popisek ukazuje lišta parametrů, tiskové okno (`ParameterOption`), formulář parametrů (`AgendaParams` dá popisek do položky seznamu) i nabídka vzorů v editoru sloupců; hodnota je dál uložený text, vzor se hledá podle něj (`DepartureColumnPresets.KeyForOption`, `MatchOption`).
+Nové popisky: Pracovní dny / Soboty / Neděle+svátky, Pracovní dny / Soboty+Neděle+svátky, Pracovní dny mimo prázdniny / o prázdninách / Soboty+Neděle+svátky (i se Sobotou a Nedělí zvlášť). Rozhodnutí Jan 1. 11.: vzít hned, nečekat na úklid nastavení tisku u kolegů - popisek jde teď přejmenovat kdykoli.
+Starší návrhář `optionLabels` nezná a ukáže dosavadní texty; nový návrhář se starším serverem taky.
+Ověřeno: Caché `VzorySloupcuTest` (stejný popisek v obou agendách, uložené texty beze změny; mutace bez společných popisků ho shodí), .NET `VzorySloupcuZParametruTests` (mutace „vzor podle popisku" a „nabídka bez popisků" je shodí), formulář parametrů voláním `AgendaParams.Init` na dev serveru. Caché testy TemplateDesigneru 287/288 (1 přeskočený z dřívějška), .NET testy 2680/2680, integrační 48/48. V aplikaci neproklikané.
+
 ## 2026-11-01 (55) - Čas jízdy vývěsky AD z ručních minut u trasy (`B144`)
 
 Starý tisk vývěsky AD bere do sloupce Čas ruční minuty u trasy linky, když má linka v JŘ vypnuté automatické generování časových průběhů tras (`^JRL(sku,lin,"PATCH","mhd","par",1)`, `JRapiExp10.mac:383`). My jsme vždy počítali z jízdních dob, takže linky Nitry v ručním režimu měly jiná čísla než starý výtisk.

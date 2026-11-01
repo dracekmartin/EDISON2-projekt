@@ -59,11 +59,6 @@
   i na odsazení podle tarifních čísel?), **název směru** u linky (TRANSDEV #9088). Náš díl: pole přečíst
   a nabídnout v šabloně. Detail [`customer-requirements §TR`](customer-requirements-zastavkovy-jr.md).
 
-- **P2 (z `B194c`)** Totéž rozdělení sloupců má ve vývěsce a v linkovém JŘ jiné popisky voleb (zamčené) [M]
-  **Jan** - čeká, až kolegové uklidí nastavení tisku v jízdních řádech (domluveno 29. 10.; co agendy čtou
-  a odkud: [`nastaveni-tisku-jr.md`](nastaveni-tisku-jr.md)). Definice pak patří do `Jr/Parametry.cls` (stálý kód
-  vedle popisku). Detail [`legacy-nahrada.md §4`](legacy-nahrada.md)
-
 
 ---
 

@@ -722,9 +722,11 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 - **Parametr „Rozdělení sloupců podle platnosti"** (záložka Parametry / tiskový dialog) - je to
   **pohled na definici sloupců uložených v šabloně a zároveň její ovladač**: ukazuje název vzoru,
   kterému vaše definice odpovídá, „Automaticky (dle linky)", když žádnou nemáte, nebo „Vlastní
-  sloupce", když jste si ji poskládali po svém. Přepnutím parametru se definice v šabloně přepíše
-  na zvolený vzor. Vzory: Pracovní-Sobota-Neděle+svátky / Pracovní-víkend / Prázdniny (mimo+o
-  prázdninách)-víkend / Prázdniny (mimo+o prázdninách)-Sobota-Neděle+svátky.
+  rozložení", když jste si ji poskládali po svém. Přepnutím parametru se definice v šabloně přepíše
+  na zvolený vzor. Vzory: *Pracovní dny / Soboty / Neděle+svátky*, *Pracovní dny / Soboty+Neděle+svátky*,
+  *Pracovní dny mimo prázdniny / o prázdninách / Soboty+Neděle+svátky* a *Pracovní dny mimo prázdniny /
+  o prázdninách / Soboty / Neděle+svátky*.
+  Stejně se jmenují i v linkovém JŘ AD.
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
@@ -1302,7 +1304,7 @@ V záložce Parametry (a v tiskovém dialogu) jsou dvě skupiny.
 **Tabulka spojů:**
 
 - **Rozdělení sloupců podle platnosti** - podle čeho se spoje rozdělí do skupin sloupců: *Bez rozlišení*,
-  *Pracovní dny / víkend+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
+  *Pracovní dny / Soboty+Neděle+svátky*, *Pracovní dny / Soboty / Neděle+svátky*. Hodnota *Vlastní
   rozložení* se vybrat nedá - jen hlásí, že si šablona rozvržení drží vlastní.
 - **Sloupec tarifních čísel**, **Zastávky, kde žádný spoj nestaví** a **Písmeno systému u zóny** -
   všechny tři mají volbu **Automaticky (dle linky)**, tedy podle nastavení u linky v jízdních řádech,

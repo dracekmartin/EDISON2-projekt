@@ -200,9 +200,16 @@ ClassMethod AddParamField(form As ALVA.EDControls.EDInputForm.Form, p As %Dynami
         // required=1 → enum musí mít vybranou hodnotu (List dropdown bez úvodního prázdného řádku)
         s f = form.AddFieldToLastGroup(name, label, $$$FieldTypeList, 0, 1)
         s opts = p.options
+        // `optionLabels` = co se u volby ukáže, když se liší od uloženého textu (`P2`, `Jr.Parametry.AddVolbyRozdeleniSloupcu`)
+        s popisky = p.optionLabels
         i $isobject(opts) {
             s osz = opts.%Size()
-            for j=0:1:(osz-1) { s o = opts.%Get(j)  d:o'="" f.AddListItem(o, o) }
+            for j=0:1:(osz-1) {
+                s o = opts.%Get(j)
+                continue:o=""
+                s popisek = $s($isobject(popisky):popisky.%Get(j), 1:"")
+                d f.AddListItem(o, $s(popisek'="":popisek, 1:o))
+            }
         }
         s:val'="" f.value = val
     } elseif type = "date" {

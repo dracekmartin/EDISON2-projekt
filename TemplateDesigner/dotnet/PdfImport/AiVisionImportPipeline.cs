@@ -712,7 +712,9 @@ public class AiVisionImportPipeline
                     Label = known.Label,
                     Type = known.Type,
                     DefaultValue = val,
-                    Options = known.Options
+                    Options = known.Options,
+                    OptionKeys = known.OptionKeys,
+                    OptionLabels = known.OptionLabels
                 });
             }
             else

@@ -1,5 +1,12 @@
 ﻿# 🗄️ Archiv - hotové kroky
 
+## `P2` Stejné popisky rozdělení sloupců ve vývěsce i linkovém JŘ (hotovo 1. 11. 2026)
+
+- **Popisky voleb „Rozdělení sloupců podle platnosti"** (z `B194c`, changelog (56)): tatáž volba má ve vývěsce AD
+  i linkovém JŘ AD stejný popisek z `Jr.Parametry.PopisekVzoruSloupcu`. Uložené texty voleb zůstaly, popisek jde
+  vedle v novém poli `optionLabels`. Rozhodnutí Jan 1. 11.: nečekat na úklid nastavení tisku u kolegů - popisky
+  jdou teď přejmenovat bez ztráty uložených voleb, takže případný úklid je jen změna textu.
+
 ## `B155` Jemnější nastavení mřížky (vyřazeno 1. 11. 2026)
 
 - **Z roadmapy do zákaznických požadavků** (Jan 1. 11.): řešit, až o to požádá zákazník.

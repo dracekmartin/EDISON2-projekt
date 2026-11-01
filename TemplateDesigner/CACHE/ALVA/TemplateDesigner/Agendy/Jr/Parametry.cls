@@ -2,7 +2,8 @@
 /// Každý parametr je tu definovaný jednou; agenda si v `GetParameters` vybere, které nabídne a v jakém
 /// pořadí, a tím drží i pořadí v panelu. Jen parametry, které používají aspoň dvě agendy (pravidlo
 /// druhého použití); parametr jedné agendy zůstává v ní.
-/// ⚠️ Popisky voleb enum parametrů jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
+/// ⚠️ Texty voleb enum parametrů jsou zamčené: persistuje se zobrazovaný text (`ux-conventions §8`).
+/// Jiný zobrazovaný popisek se posílá vedle v `optionLabels` (vzor `AddVolbyRozdeleniSloupcu`).
 Class ALVA.TemplateDesigner.Agendy.Jr.Parametry Extends %RegisteredObject
 {
 
@@ -147,6 +148,40 @@ ClassMethod ParametrPoradiStranek() As %DynamicObject
     d optsPS.%Push("Po směrech (tam vzestupně, zpět sestupně)")
     s pPorStr.options = optsPS
     q pPorStr
+}
+
+/// Volby parametru „Rozdělení sloupců podle platnosti", který má vývěska AD i linkový JŘ AD (`P2`).
+/// `vzory` = `$lb($lb(klíč, uložený text, …), …)` z agendy. Uložený text je zamčený (ukládá se zobrazená
+/// volba) a každá agenda ho má jinak; uživatel vidí popisek z `PopisekVzoruSloupcu` v `optionLabels`, takže
+/// tatáž volba se v obou agendách jmenuje stejně a popisek jde přejmenovat bez ztráty uložených voleb.
+/// Starší návrhář `optionLabels` nezná a ukáže uložené texty. Klíč vzoru (`optionKeys`) najde vzor v `PRESETY_SLOUPCU`.
+ClassMethod AddVolbyRozdeleniSloupcu(param As %DynamicObject, vzory As %List, sAutomatickou As %Boolean)
+{
+    s volby = ##class(%DynamicArray).%New(), klice = ##class(%DynamicArray).%New(), popisky = ##class(%DynamicArray).%New()
+    i sAutomatickou d volby.%Push("Automaticky (dle linky)"), klice.%Push(""), popisky.%Push("Automaticky (dle linky)")
+    f i=1:1:$ll(vzory) {
+        s klic = $li($li(vzory,i),1), text = $li($li(vzory,i),2)
+        s popisek = ..PopisekVzoruSloupcu(klic)
+        d volby.%Push(text), klice.%Push(klic), popisky.%Push($s(popisek'="":popisek, 1:text))
+    }
+    // „Vlastní rozložení" je ukazatel stavu šablony, ne volba: objeví se, když si uživatel sloupce upraví
+    // u prvku. Bez něj by parametr neměl co hlásit a musel by lhát některým ze vzorů.
+    d volby.%Push("Vlastní rozložení"), klice.%Push(""), popisky.%Push("Vlastní rozložení")
+    d param.%Set("options", volby)
+    d param.%Set("optionKeys", klice)
+    d param.%Set("optionLabels", popisky)
+}
+
+/// Popisek vzoru rozdělení sloupců, stejný ve všech agendách (`P2`); prázdný = vzor bez společného popisku.
+/// Popisky se neukládají, přejmenovat je jde.
+ClassMethod PopisekVzoruSloupcu(klic As %String) As %String
+{
+    s popisek("BEZ_ROZLISENI")    = "Bez rozlišení"
+    s popisek("PRAC_SO_NE")       = "Pracovní dny / Soboty / Neděle+svátky"
+    s popisek("PRAC_VIKEND")      = "Pracovní dny / Soboty+Neděle+svátky"
+    s popisek("PRAZDNINY_SO_NE")  = "Pracovní dny mimo prázdniny / o prázdninách / Soboty / Neděle+svátky"
+    s popisek("PRAZDNINY_VIKEND") = "Pracovní dny mimo prázdniny / o prázdninách / Soboty+Neděle+svátky"
+    q $g(popisek(klic))
 }
 
 /// Šipka směru a projeté zastávky v Seznamu zastávek, společné vývěskám AD i MHD. Obě volby

@@ -177,16 +177,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
         s p.group = "Tabulka spojů"
         s p.serverSide = 1
         s p.description = "Podle čeho se spoje rozdělí do skupin sloupců. Vlastní rozložení se nastavuje u prvku Tabulka spojů - tady se jen ukáže, že ho šablona má."
-        s opts = ##class(%DynamicArray).%New(), klice = ##class(%DynamicArray).%New()
         s vzory = ..VzorySloupcuLinky()
-        f i=1:1:$ll(vzory) s vzor = $li(vzory,i) d opts.%Push($li(vzor,2)), klice.%Push($li(vzor,1))
-        // „Vlastní rozložení" je **ukazatel stavu šablony**, ne volba: vybrat ho ručně nejde,
-        // objeví se, když si uživatel sloupce upraví u prvku. Bez téhle položky by parametr neměl
-        // co hlásit a musel by lhát některým ze vzorů.
-        d opts.%Push("Vlastní rozložení"), klice.%Push("")
-        d p.%Set("options", opts)
-        // Klíč vzoru u každé volby (aditivně, starší klient ho nečte): podle něj klient najde vzor v PRESETY_SLOUPCU.
-        d p.%Set("optionKeys", klice)
+        d ##class(ALVA.TemplateDesigner.Agendy.Jr.Parametry).AddVolbyRozdeleniSloupcu(p, vzory, 0)
         // Výchozí je trojice pracovní dny / soboty / neděle - poslední vzor.
         s p.defaultValue = $li($li(vzory, $ll(vzory)), 2)
 
@@ -524,9 +516,10 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
-/// Vzory rozložení sloupců linky: `$lb(klíč, popisek, legacy mód)`. **Jediné místo**, odkud jdou volby
-/// parametru „Rozdělení sloupců podle platnosti" (popisky jsou zamčené - ukládá se zobrazený text), klíče
-/// k nim pro klienta (`optionKeys`) i převod volby na legacy mód. Do 30. 10. opsané i v klientovi.
+/// Vzory rozložení sloupců linky: `$lb(klíč, uložený text, legacy mód)`. **Jediné místo**, odkud jdou volby
+/// parametru „Rozdělení sloupců podle platnosti" (text je zamčený - ukládá se zobrazená volba), klíče
+/// k nim pro klienta (`optionKeys`) i převod volby na legacy mód. Uživatel vidí společný popisek
+/// z `Jr.Parametry.PopisekVzoruSloupcu` (`P2`), text jen ukládá.
 ClassMethod VzorySloupcuLinky() As %List
 {
     s vzory = $lb($lb("BEZ_ROZLISENI", "Bez rozlišení", 0))

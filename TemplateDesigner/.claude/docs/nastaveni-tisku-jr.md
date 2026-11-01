@@ -5,7 +5,7 @@
 > se nastavení otevírá, je ze zdroje klientů (`C:\DEV\EDISON\JRMAIN`, `ISYJR2`, `JRSETTINGS`, `MHD2*`),
 > v běžící aplikaci neproklikané.
 > **Jednorázový podklad.** Schůzka 29. 10.: většinu tiskových nastavení kolegové z jízdních řádů vyhodí,
-> zbytek dodělají. Soubor zůstává jako podklad pro fázi 6 `B56` a `P2` v roadmapě (co agendy čtou a odkud);
+> zbytek dodělají. Soubor zůstává jako podklad pro srovnání agend po úklidu (co agendy čtou a odkud);
 > smazat, až kolegové nastavení uklidí a agendy se srovnají.
 
 Stavy: **bereme** (návrhář nastavení čte, šablona ho nepřebije) · **bereme, šablona přebije** (parametr
@@ -29,7 +29,8 @@ okno **„Editace Linky"** (starý editor; nový editor linky je v Jízdních ř
 - **Nebereme, chybí:** tištěné číslo linky (trojmístné, vlastní, tablo), cizojazyčné poznámky,
   km sloupce pro jednosměrné směry, způsob výpisu návazností.
 - **Vývěska MHD (5 polí) - bereme** poznámky o odchylkách v trase a jejich písmena, značky minutových
-  tras a lokální název. Automatické generování časových průběhů nebereme, varianty počítáme vždy.
+  tras a lokální název. Automatické generování časových průběhů bereme jen s volbou „Čas jízdy podle
+  nastavení linky" (od 1. 11., `B144`), jinak čas jízdy i varianty počítáme vždy.
 
 ## 2. „Editace vlastností linky" a pořadí spojů (u linky)
 
@@ -105,5 +106,6 @@ a zastávkových JŘ se má používat nový návrhář.
 - **Zůstává v jízdních řádech:** údaje z části 2, 4 a 5 (poznámky, QR, typ JŘ, barvy a pořadí spojů,
   číselníky, dopravci).
 - **Rozhodnout s kolegy:** které kandidáty přesunout; jestli chybějící nastavení (číslo linky, cizojazyčné
-  poznámky, km pro jednosměrné směry, návaznosti, pořadí dopravců, texty IDP) někdo používá; jak se
-  jmenují volby rozvržení sloupců, které mají vývěska a linkový JŘ různě (`P2`, [`legacy-nahrada.md §4`](legacy-nahrada.md)).
+  poznámky, km pro jednosměrné směry, návaznosti, pořadí dopravců, texty IDP) někdo používá.
+  Volby rozvržení sloupců mají vývěska a linkový JŘ od 1. 11. pojmenované stejně (`P2`, [`legacy-nahrada.md §4`](legacy-nahrada.md));
+  když úklid sadu voleb změní, přejmenovat popisek jde bez ztráty uložených voleb.
