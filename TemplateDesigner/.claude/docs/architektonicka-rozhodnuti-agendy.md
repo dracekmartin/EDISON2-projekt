@@ -202,7 +202,39 @@ Uživatel v jízdních řádech (nové okno JŘ) vybere linky a dostane PDF bez 
 Podle doporučení výše začít spuštěním návrháře z EDISONu s parametry (launch kontrakt už je) a render oddělit fasádou; postupovat pilotem podle R7.
 PDF bez okna ze spuštění už je pro jednu linku (`Vystup=PDF`, rozdílový JŘ 23. 10., `Config/LaunchInput`), šablona zatím jen ze `LaunchTemplates/` v exe.
 Zbývá víc linek a volba šablony z databáze.
-**Před začátkem rozhodnout**, odkud se bere výchozí šablona a jak ji uživatel volí.
+
+**Návrh výchozí šablony (1. 11., čeká na rozhodnutí Jan a domluvu s kolegou z JŘ).**
+Starý systém výchozí šablonu neznal: report generátor, TiskJR i TiskMHD tiskly šablonu, kterou jim poslal volající modul.
+Moduly ji určovaly napevno v kódu, nastavením firmy (zpřesněným na provozovnu, pokladnu, dílnu, linku nebo zaměstnance), poslední volbou uživatele v dialogu, nebo u faktur pravidly podle druhu dokladu.
+JŘ měly u linky šablonu pro A4 a A5 (`^JRL(...,"PATCH","prt","win",1|7)`, MHD `"prt","winmhd",1|2`) a ta přebila volbu v dialogu.
+
+- **Agenda** (kód agendy a varianty) je zdroj dat a druh výstupu; výchozí šablona se váže na ni, stejně jako dnes šablony (RG: sada = agenda, modul = varianta, `F7`).
+- **Instance** je jednotka tisku (linka, zaměstnanec, doklad); tisk víc instancí je seznam, `F9` k němu později přidá PDF, heslo a e-mail ke každé.
+- **Volající modul**, který potřebuje pro jednu agendu víc šablon (provozovna, pokladna), si volbu drží ve svém nastavení a pošle číslo šablony; obecný mechanismus pro to nestavíme.
+
+Pravidlo výběru šablony běží na serveru, jedno pro návrhář, okno JŘ i tisk bez uživatele; platí první krok, který šablonu dá:
+
+1. šablona, kterou poslal volající;
+2. šablona přiřazená instanci (linka, zaměstnanec) - jen připravit, nedělat;
+3. výchozí šablona firmy pro agendu;
+4. výchozí šablona M-line pro agendu;
+5. jinak hláška „agenda nemá šablonu pro tisk".
+
+Nahradí dnešní skrytá pravidla: spuštění bere nejnověji upravenou šablonu firmy, úvodní obrazovka první systémovou v pořadí souborů.
+
+Rozsah `B190`:
+
+- výchozí šablona firmy uložená mimo JSON šablony, např. `^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",AgendaCode)` (příznak v JSON by zkopírovalo „Uložit jako"); M-line ji určí při vydání;
+- nastavení v okně Otevřít z databáze: sloupec „Výchozí" a akce „Nastavit jako výchozí pro tisk";
+- serverová metoda pravidla: okno JŘ podle ní ukáže šablonu u tlačítka Tisk a bez šablony tlačítko zakáže;
+- spuštění bez okna rozšířené o víc linek, volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze (dnes jen `LaunchTemplates/`).
+
+Otevřené otázky (doporučení v závorce):
+
+- výchozí šablona za firmu, nebo za uživatele (za firmu: tisk na jeden klik dopadne stejně, ať tiskne kdokoli; uživatele jde přidat jako další krok pravidla);
+- šablona u linky teď, nebo později (později: staré údaje ukazují na staré šablony, převzít nejdou, byla by to nová data a nové okno);
+- víc linek: jedno PDF, nebo PDF za linku (výchozí jedno, volající smí chtít PDF za linku přes `__EXPORT_SPLIT`);
+- s kolegou: co okno JŘ ukáže a jak předá seznam linek.
 
 ---
 
@@ -538,6 +570,6 @@ z listu udělat složitější hierarchii, až to objem vyžádá.
 ## Navazuje (samostatné, ne součást distribuce)
 
 - **Přiřazení šablony k tisku** (roadmap PC „navazující featury"): „linka X → výchozí šablona Y".
-  O používání, ne o distribuci - řešit zvlášť.
+  O používání, ne o distribuci - řešit zvlášť. Návrh pravidla výběru šablony je u `B190` v R4.
 - **Audit log** (kdo/kdy/co změnil šablonu) + **ECL právo „pouštět designer"** - legacy paralela
   (`^AlvaReportGeneratorLog`, ECL 360080002), mapovat 1:1 až s implementací governance.
