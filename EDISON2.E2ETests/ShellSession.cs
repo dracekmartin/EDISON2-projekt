@@ -20,7 +20,7 @@ internal sealed class ShellSession : IDisposable
     private const string E2EMarker = "E2E";
 
     // Kopie EdisonMainViewModel.ExitConfirmMessage.
-    private const string ExitConfirmText = "Opravdu chcete ukončit aplikaci? Zavřou se všechna otevřená agendová okna.";
+    private const string ExitConfirmText = "Zavřít všechna okna?";
 
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan StepTimeout = TimeSpan.FromSeconds(30);
