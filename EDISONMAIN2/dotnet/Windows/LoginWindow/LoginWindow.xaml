@@ -18,7 +18,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0"
+        <Border x:Name="LoginCard" Grid.Column="0"
                 Background="{DynamicResource EDTheme.Bg.Panel}"
                 BorderBrush="{DynamicResource EDTheme.Border.Light}"
                 BorderThickness="0,0,1,0">
@@ -100,7 +100,7 @@
         </Border>
 
         <!-- Týž widget podpory jako fixní pruh shellu - jeden blok, ne mirror tří miniaplikací. -->
-        <Grid Grid.Column="1">
+        <Grid x:Name="SupportPanel" Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>

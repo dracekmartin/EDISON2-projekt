@@ -8,6 +8,9 @@ namespace EDISONMAIN2.Windows.LoginWindow
     {
         private readonly LoginViewModel _vm;
 
+        // Přechodně vypnuto: přihlášení zabere celé okno místo pravého sloupce s widgetem a WebView2 nevznikne.
+        private const bool SupportWidgetEnabled = false;
+
         // Widget podpory (WebView2) - pre-login, bez session.
         private IDisposable? _supportWidget;
 
@@ -41,6 +44,14 @@ namespace EDISONMAIN2.Windows.LoginWindow
                 case LoginFocus.Password:
                     PasswordBox.Focus();
                     break;
+            }
+
+            if (!SupportWidgetEnabled)
+            {
+                SupportPanel.Visibility = Visibility.Collapsed;
+                System.Windows.Controls.Grid.SetColumnSpan(LoginCard, 2);
+                LoginCard.BorderThickness = new Thickness(0);
+                return;
             }
 
             // Týž widget podpory jako fixní pruh shellu; pre-login nese jen IdFa - uživatel
