@@ -236,7 +236,7 @@ Rozhodnuto (Jan 2. 11.):
 - kdo jen tiskne, nechodí přes návrhář: zůstává v okně JŘ jako dnes a nový tisk tam nahradí cesty přes report generátor a postskript. Návrhář jen vyrobí PDF bez okna. Okno JŘ AD tiskne zastávkový a linkový JŘ AD, později relace; okno MHD totéž vedle.
 
 **Okno JŘ AD (domluveno s kolegou 2. 11., obě strany děláme my):** tlačítko Tisky dostane hned pod „Návrhář sestav" položky „Tisk linkového JŘ (nový)" a „Tisk zastávkového JŘ (nový)", souběžně se starými tisky, kterým končí podpora 31. 1. 2027 (`ISYJR2/CACHE/ALVA/ISY/ISYJR2/TEMPLATES/Tisk.cls`).
-Položka otevře BIG formulář jako starý Tisk JŘ (`Tisky/TiskJR.cls`): šablona (šablony agendy z databáze návrháře, předvybraná podle pravidla), **všechny parametry sestavy agendy** a složka pro PDF.
+Položka otevře BIG formulář jako starý Tisk JŘ (`Tisky/TiskJR.cls`): nahoře skupina „Nastavení tisku" se šablonou (šablony agendy z databáze návrháře, předvybraná podle pravidla) a složkou pro PDF, pod ní **všechny parametry sestavy agendy** ve skupinách agendy.
 Po OK okno spustí návrhář bez okna s označenými linkami (jsou vždy z jedné skupiny, posílá se skupina a seznam čísel; příkazová řádka unese zhruba 3 500 linek) a s hodnotami parametrů, návrhář ukáže průběh a otevře PDF.
 Nejdřív linkový JŘ (pilot), po odladění zastávkový.
 
