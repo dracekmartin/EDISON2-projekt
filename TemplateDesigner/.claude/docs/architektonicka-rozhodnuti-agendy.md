@@ -226,7 +226,7 @@ Rozsah `B190`:
 
 - výchozí šablona firmy uložená mimo JSON šablony, např. `^ALVA.TemplateDesigner.Templates(IdFa,"DEFAULT",AgendaCode)` (příznak v JSON by zkopírovalo „Uložit jako"); M-line ji určí při vydání;
 - nastavení v okně Otevřít z databáze: sloupec „Výchozí" a akce „Nastavit jako výchozí pro tisk";
-- serverová metoda pravidla: okno JŘ podle ní ukáže šablonu u tlačítka Tisk a bez šablony tlačítko zakáže;
+- serverová metoda pravidla: okno JŘ podle ní předvybere šablonu ve formuláři před tiskem a kratší cesta ji použije; bez šablony řekne, že agenda šablonu nemá;
 - spuštění bez okna rozšířené o víc linek, volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze (dnes jen `LaunchTemplates/`).
 
 Rozhodnuto (Jan 2. 11.):
@@ -235,7 +235,10 @@ Rozhodnuto (Jan 2. 11.):
 - šablona u linky zatím ne: krok 2 zůstává v pravidle zapsaný, ale nedělá se a šablona se bere výš (firma, M-line); čtení od konkrétní linky se doladí, až se ukáže potřeba. Staré nastavení u linky ukazuje na staré šablony, převzít nejde. Kolik firem tiskne linky různými šablonami, změřené není;
 - víc linek dá jedno PDF, linky v pořadí, v jakém je pošle volající. PDF po souborech, dynamické názvy souborů a řazení se dodělají, až na ně přijde řada - starý systém na to měl nástroje, z nich se vyjde; tiskové okno návrháře už umí členění a název s datovými poli (`__EXPORT_SPLIT`, `__EXPORT_FILENAME`).
 
-Zbývá domluvit s kolegou z JŘ: co okno JŘ ukáže a jak předá seznam linek.
+- kdo jen tiskne, nechodí přes návrhář: zůstává v okně JŘ jako dnes a nový tisk tam nahradí cesty přes report generátor a postskript. Návrhář jen vyrobí PDF bez okna. **Delší cesta** = formulář před tiskem v okně JŘ (dnes „Nastavení tisku" u tlačítka Tisk, repo EDISON `ISYJR2/CACHE/ALVA/ISY/ISYJR2/Tisky/TiskJR.cls`) se šablonou, pořadím a složkou; **kratší cesta** tiskne rovnou s výchozími hodnotami. Tlačítko Tisk neukáže víc než dnes, nanejvýš výchozí cestu. Okno JŘ AD tiskne zastávkový a linkový JŘ AD, později relace; okno MHD totéž vedle.
+
+Zbývá domluvit s kolegou z JŘ: jak okno předá linky (seznam, nebo celá skupina - příkazová řádka unese zhruba 3 500 linek) a kde v okně bude kratší cesta.
+Dnešní formulář má navíc „Režim zvýraznění" (po linkách / po zastávkách): linkový JŘ se tiskne jednou za každou zastávku s tou zastávkou zvýrazněnou. Návrhář tiskne za instanci jednu linku; jak tohle pokrýt, rozhodnuté není. Volba „Upřednostnit šablonu a vlastnosti z linky" odpadá se šablonou u linky.
 
 ---
 
