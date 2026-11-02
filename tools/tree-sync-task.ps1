@@ -39,11 +39,13 @@ $legacyUrl = 'https://github.com/mlinecz/EDISON.git'
 $repoUrl = 'https://github.com/mlinecz/EDISON2.git'
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 
-# Zdroje generatoru a legacy soubory, ktere v pre-push cte TreeGeneratorTests a LegacyDerivedAccessTests.
+# Zdroje generatoru a legacy soubory, ktere v pre-push cte TreeGeneratorTests, LegacyDerivedAccessTests a ManualUpdateTests.
 $legacyFiles = @(
     'EDCORE/Resources/edisonnavbar.xml',
     'EDCORE/Resources/edisontree.xml',
     'EDCORE/EDFormInterfaceLic.vb',
+    'EDISONMAIN/EDISONMAIN.vbproj',
+    'EDISONMAIN/formEDISONMAINServerUpdate.vb',
     'EDLIBRARY/clsConversion.vb',
     'EDUsers/EDUsers/EDUsers.vb'
 )
