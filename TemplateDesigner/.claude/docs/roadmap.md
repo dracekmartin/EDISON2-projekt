@@ -25,8 +25,8 @@
 
 - **`B190` Tisk z modulu jízdních řádů bez návrháře** [L] - **čeká na kolegy** (spíš další verze).
   Uživatel v jízdních řádech vybere linky a dostane PDF bez otevření návrháře. Pro jednu linku PDF bez
-  okna už je (rozdílový JŘ); zbývá víc linek a volba šablony z databáze. **Návrh výchozí šablony a pravidla
-  výběru je sepsaný (1. 11.)**, čeká na jedno rozhodnutí a domluvu s kolegou: [`R4`](architektonicka-rozhodnuti-agendy.md).
+  okna už je (rozdílový JŘ); zbývá víc linek a volba šablony z databáze. **Výchozí šablona a pravidlo
+  výběru jsou rozhodnuté (2. 11.)**, čeká na domluvu s kolegou z JŘ: [`R4`](architektonicka-rozhodnuti-agendy.md).
 
 - **`B189` Poslání šablony jinému uživateli EDISONu** [?] (podnět Jan 7. 10., **projít s Janem proti
   dnešnímu stavu**, nic se nedělá). Dnes: v rámci firmy šablonu vidí všichni (databáze je za firmu),

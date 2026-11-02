@@ -203,7 +203,7 @@ Podle doporučení výše začít spuštěním návrháře z EDISONu s parametry
 PDF bez okna ze spuštění už je pro jednu linku (`Vystup=PDF`, rozdílový JŘ 23. 10., `Config/LaunchInput`), šablona zatím jen ze `LaunchTemplates/` v exe.
 Zbývá víc linek a volba šablony z databáze.
 
-**Návrh výchozí šablony (1. 11., čeká na rozhodnutí Jan a domluvu s kolegou z JŘ).**
+**Výchozí šablona (návrh 1. 11., rozhodnuto 2. 11., čeká na domluvu s kolegou z JŘ).**
 Starý systém výchozí šablonu neznal: report generátor, TiskJR i TiskMHD tiskly šablonu, kterou jim poslal volající modul.
 Moduly ji určovaly napevno v kódu, nastavením firmy (zpřesněným na provozovnu, pokladnu, dílnu, linku nebo zaměstnance), poslední volbou uživatele v dialogu, nebo u faktur pravidly podle druhu dokladu.
 JŘ měly u linky šablonu pro A4 a A5 (`^JRL(...,"PATCH","prt","win",1|7)`, MHD `"prt","winmhd",1|2`) a ta přebila volbu v dialogu.
@@ -232,12 +232,10 @@ Rozsah `B190`:
 Rozhodnuto (Jan 2. 11.):
 
 - výchozí šablona je za firmu - tisk na jeden klik dopadne stejně, ať tiskne kdokoli; výchozí za uživatele jde přidat jako další krok pravidla;
-- šablona u linky zatím ne: krok 2 zůstává v pravidle zapsaný, ale nedělá se a šablona se bere výš (firma, M-line); čtení od konkrétní linky se doladí, až se ukáže potřeba. Staré nastavení u linky ukazuje na staré šablony, převzít nejde. Kolik firem tiskne linky různými šablonami, změřené není.
+- šablona u linky zatím ne: krok 2 zůstává v pravidle zapsaný, ale nedělá se a šablona se bere výš (firma, M-line); čtení od konkrétní linky se doladí, až se ukáže potřeba. Staré nastavení u linky ukazuje na staré šablony, převzít nejde. Kolik firem tiskne linky různými šablonami, změřené není;
+- víc linek dá jedno PDF, linky v pořadí, v jakém je pošle volající. PDF po souborech, dynamické názvy souborů a řazení se dodělají, až na ně přijde řada - starý systém na to měl nástroje, z nich se vyjde; tiskové okno návrháře už umí členění a název s datovými poli (`__EXPORT_SPLIT`, `__EXPORT_FILENAME`).
 
-Otevřené otázky (doporučení v závorce):
-
-- víc linek: jedno PDF, nebo PDF za linku (výchozí jedno, volající smí chtít PDF za linku přes `__EXPORT_SPLIT`);
-- s kolegou: co okno JŘ ukáže a jak předá seznam linek.
+Zbývá domluvit s kolegou z JŘ: co okno JŘ ukáže a jak předá seznam linek.
 
 ---
 
