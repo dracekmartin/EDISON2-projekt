@@ -239,6 +239,9 @@ Rozhodnuto (Jan 2. 11.):
 Položka otevře BIG formulář jako starý Tisk JŘ (`Tisky/TiskJR.cls`): nahoře skupina „Nastavení tisku" se šablonou (šablony agendy z databáze návrháře, předvybraná podle pravidla) a složkou pro PDF, pod ní **všechny parametry sestavy agendy** ve skupinách agendy.
 Po OK okno spustí návrhář bez okna s označenými linkami (jsou vždy z jedné skupiny, posílá se skupina a seznam čísel; příkazová řádka unese zhruba 3 500 linek) a s hodnotami parametrů, návrhář ukáže průběh a otevře PDF.
 Nejdřív linkový JŘ (pilot), po odladění zastávkový.
+Do příští verze (Jan 2. 11.): položka je zákazníkům skrytá, ukáže ji `^JRR("TiskNovymNavrharem")=1` v datovém namespace firmy.
+
+**Nastavení výchozí šablony (k rozmyšlení, Jan 2. 11.):** ne v okně Otevřít z databáze, ale v samostatném okně s přehledem šablon podle agend (strom nebo seznam s filtrem, jako ve starém návrháři), zatím otevíraném z návrháře; časem může nahradit Ctrl+O a být i v shellu. Návrh se dvěma propojenými seznamy (agendy s výchozí šablonou × šablony vybrané agendy) čeká na rozhodnutí.
 
 **Parametr sestavy × nastavení prvku (Jan 2. 11.):** parametr je volba, která se smí lišit tisk od tisku. Šablona nese jeho výchozí hodnotu (firma ji nastaví v návrháři a uloží se šablonou), formulář před tiskem ji ukáže a uživatel ji smí změnit jen pro tento tisk, šablonu nepřepíše.
 Nastavení prvku je vzhled a obsah výtisku a ve formuláři před tiskem není. Formulář proto ukazuje všechny parametry agendy jako tiskové okno návrháře.
