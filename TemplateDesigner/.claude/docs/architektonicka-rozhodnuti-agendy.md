@@ -214,7 +214,7 @@ JŘ měly u linky šablonu pro A4 a A5 (`^JRL(...,"PATCH","prt","win",1|7)`, MHD
 
 Pravidlo výběru šablony běží na serveru, jedno pro návrhář, okno JŘ i tisk bez uživatele; platí první krok, který šablonu dá:
 
-1. šablona, kterou poslal volající;
+1. šablona, kterou poslal volající (uživatel ji vybral v okně modulu, nebo ji modul určuje svým nastavením - dnes porovnání linek s rozdílovým JŘ);
 2. šablona přiřazená instanci (linka, zaměstnanec) - jen připravit, nedělat;
 3. výchozí šablona firmy pro agendu;
 4. výchozí šablona M-line pro agendu;
@@ -229,9 +229,10 @@ Rozsah `B190`:
 - serverová metoda pravidla: okno JŘ podle ní ukáže šablonu u tlačítka Tisk a bez šablony tlačítko zakáže;
 - spuštění bez okna rozšířené o víc linek, volitelné číslo šablony (`Sablona=`) a PDF ze šablony z databáze (dnes jen `LaunchTemplates/`).
 
+Rozhodnuto (Jan 2. 11.): výchozí šablona je za firmu - tisk na jeden klik dopadne stejně, ať tiskne kdokoli; výchozí za uživatele jde přidat jako další krok pravidla.
+
 Otevřené otázky (doporučení v závorce):
 
-- výchozí šablona za firmu, nebo za uživatele (za firmu: tisk na jeden klik dopadne stejně, ať tiskne kdokoli; uživatele jde přidat jako další krok pravidla);
 - šablona u linky teď, nebo později (později: staré údaje ukazují na staré šablony, převzít nejdou, byla by to nová data a nové okno);
 - víc linek: jedno PDF, nebo PDF za linku (výchozí jedno, volající smí chtít PDF za linku přes `__EXPORT_SPLIT`);
 - s kolegou: co okno JŘ ukáže a jak předá seznam linek.
