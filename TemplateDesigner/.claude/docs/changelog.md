@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 2026-11-02 (3) - Tisk z okna JŘ: formulář se šablonou a všemi parametry sestavy (`B190` krok 3)
+
+Okno JŘ (repo EDISON, ISYJR2) má v Tisky pod „Návrhář sestav" položku „Tisk linkového JŘ (nový)". Formulář BIG nabídne šablonu (předvybraná výchozí, označená „- výchozí"), všechny parametry sestavy agendy ve skupinách agendy a složku pro PDF; po OK okno spustí návrhář do PDF (krok 2) s označenými linkami a hodnotami parametrů.
+Rozhodnutí Jan 2. 11. (R4): parametr je volba, která se smí lišit tisk od tisku - šablona nese výchozí hodnotu, formulář ji ukáže a změna platí jen pro tento tisk; nastavení prvků ve formuláři není. Paměť poslední volby uživatele zatím ne.
+Parametry pro formulář dává návrhář: `SablonyProTisk.ParametryProTisk` vrátí definice z agendy (`GetParameters`, tatáž jako formulář parametrů návrháře) s hodnotou ze zvolené šablony (`printParameters`), jinak výchozí, a skrytí podle `visibleWhen`; BIG je jen převod na položky (`ISYJR2 Tisky.TiskNovymNavrharem`), změna šablony hodnoty přenačte, změna směru přepočítá viditelnost Obousměrného tisku.
+`visibleWhenColumn` a `visibleWhenListedIn` formulář nevyhodnocuje (parametr ukáže vždy), jako tiskové okno návrháře při tisku víc linek.
+Ověřeno: Caché testy TemplateDesigneru 300/301 (1 přeskočený z dřívějška) včetně nových testů parametrů ze šablony a zachování odpovědi volajícího, build ISYJR2. Formulář v okně JŘ strojově neověřený (BIG jde zavolat jen z okna) - čeká na proklikání na DEV.
+
 ## 2026-11-02 (2) - PDF ze spuštění pro víc linek se šablonou z databáze (`B190` krok 2)
 
 Spuštění návrháře do PDF (`Vystup=PDF`) umělo jednu linku rozdílového JŘ se šablonou zabalenou v exe. Hromadný tisk z okna JŘ potřebuje víc linek a šablonu firmy.

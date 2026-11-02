@@ -236,12 +236,17 @@ Rozhodnuto (Jan 2. 11.):
 - kdo jen tiskne, nechodí přes návrhář: zůstává v okně JŘ jako dnes a nový tisk tam nahradí cesty přes report generátor a postskript. Návrhář jen vyrobí PDF bez okna. Okno JŘ AD tiskne zastávkový a linkový JŘ AD, později relace; okno MHD totéž vedle.
 
 **Okno JŘ AD (domluveno s kolegou 2. 11., obě strany děláme my):** tlačítko Tisky dostane hned pod „Návrhář sestav" položky „Tisk linkového JŘ (nový)" a „Tisk zastávkového JŘ (nový)", souběžně se starými tisky, kterým končí podpora 31. 1. 2027 (`ISYJR2/CACHE/ALVA/ISY/ISYJR2/TEMPLATES/Tisk.cls`).
-Položka otevře BIG formulář jako starý Tisk JŘ (`Tisky/TiskJR.cls`): šablona (šablony agendy z databáze návrháře, předvybraná podle pravidla) a složka pro PDF; okno si hodnoty pamatuje.
-Po OK okno spustí návrhář bez okna s označenými linkami (jsou vždy z jedné skupiny, posílá se skupina a seznam čísel; příkazová řádka unese zhruba 3 500 linek), návrhář ukáže průběh a otevře PDF.
-Ostatní nastavení sestavy nese šablona; volbu na každý tisk (směr, zvýrazněná zastávka) jde přidat do BIG jako pole, spuštění parametry podle jména už přijímá.
+Položka otevře BIG formulář jako starý Tisk JŘ (`Tisky/TiskJR.cls`): šablona (šablony agendy z databáze návrháře, předvybraná podle pravidla), **všechny parametry sestavy agendy** a složka pro PDF.
+Po OK okno spustí návrhář bez okna s označenými linkami (jsou vždy z jedné skupiny, posílá se skupina a seznam čísel; příkazová řádka unese zhruba 3 500 linek) a s hodnotami parametrů, návrhář ukáže průběh a otevře PDF.
 Nejdřív linkový JŘ (pilot), po odladění zastávkový.
 
-Dnešní formulář má navíc „Režim zvýraznění" (po linkách / po zastávkách): linkový JŘ se tiskne jednou za každou zastávku s tou zastávkou zvýrazněnou. Návrhář tiskne za instanci jednu linku; jak tohle pokrýt, rozhodnuté není. Volba „Upřednostnit šablonu a vlastnosti z linky" odpadá se šablonou u linky.
+**Parametr sestavy × nastavení prvku (Jan 2. 11.):** parametr je volba, která se smí lišit tisk od tisku. Šablona nese jeho výchozí hodnotu (firma ji nastaví v návrháři a uloží se šablonou), formulář před tiskem ji ukáže a uživatel ji smí změnit jen pro tento tisk, šablonu nepřepíše.
+Nastavení prvku je vzhled a obsah výtisku a ve formuláři před tiskem není. Formulář proto ukazuje všechny parametry agendy jako tiskové okno návrháře.
+Paměť poslední volby uživatele formulář zatím nemá - jednorázová změna by tiše platila i příště a dva lidé by ze stejné šablony tiskli jinak; přidat jde kdykoli.
+BIG i EDInputForm (`AgendaParams.cls`) jsou tenké převody téže definice parametrů z agendy (`SablonyProTisk.ParametryProTisk`), nový parametr se objeví v obou.
+Parametr jen pro určitý sloupec (`visibleWhenColumn`) a jen pro některé linky (`visibleWhenListedIn`) BIG ukazuje vždy, jako tiskové okno návrháře při tisku víc linek.
+
+Dnešní formulář má navíc „Režim zvýraznění". Režim „po linkách" (linkový JŘ jednou za každou zastávku se zvýrazněnou zastávkou) pokrývá parametr „Stránka pro každou zastávku"; režim „po zastávkách" (řazení podle zastávek napříč linkami) pokrytý není. Volba „Upřednostnit šablonu a vlastnosti z linky" odpadá se šablonou u linky.
 
 ---
 

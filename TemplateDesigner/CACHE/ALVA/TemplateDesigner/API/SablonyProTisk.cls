@@ -178,6 +178,98 @@ ClassMethod NajdiSablonu(IdFa As %String, agendaCode As %String, templateId As %
     q $g(sablona)
 }
 
+/// Parametry sestavy pro formulář před tiskem (BIG v okně JŘ, rozhodnutí R4 2. 11.): definice z agendy
+/// (`GetParameters`, tatáž jako formulář parametrů návrháře) a ke každé `value` = hodnota uložená ve vybrané
+/// šabloně, jinak výchozí hodnota parametru, a `hidden` podle `visibleWhen`. Bez šablony se hodnoty berou ze
+/// šablony, kterou vezme pravidlo. Hodnota je text, jak ho čte spuštění návrháře (zaškrtávátko "true"/"false").
+/// `visibleWhenColumn` a `visibleWhenListedIn` se nevyhodnocují: formulář tiskne víc linek a jejich data nezná
+/// (stejně jako tiskové okno návrháře při tisku víc linek).
+ClassMethod ParametryProTisk(IdFa As %String, agendaCode As %String, templateId As %String = "", mlineIdFa As %String = {..#MlineIdFa}) As %DynamicArray
+{
+    s agendaClass = ..AgendaClass(agendaCode)
+    s:templateId="" templateId = ..SablonaProTisk(IdFa, agendaCode, "", mlineIdFa).templateId
+    s ulozene = ..HodnotyZeSablony(IdFa, agendaCode, templateId, mlineIdFa)
+
+    s parametry = ..DefiniceParametru(agendaClass)
+    s iter = parametry.%GetIterator()
+    while iter.%GetNext(.i, .p) {
+        s hodnota = p.defaultValue
+        s:ulozene.%IsDefined(p.name) hodnota = ulozene.%Get(p.name)
+        s p.value = ..TextHodnoty(p.type, hodnota)
+        s hodnoty(p.name) = p.value
+    }
+    s iter = parametry.%GetIterator()
+    while iter.%GetNext(.i, .p) {
+        d p.%Set("hidden", '..Viditelny(p.visibleWhen, .hodnoty), "boolean")
+    }
+    q parametry
+}
+
+/// Hodnota parametru jako text pro spuštění návrháře: zaškrtávátko "true"/"false" (formulář BIG dává 1/0,
+/// JSON šablony true/false), ostatní beze změny.
+ClassMethod TextHodnoty(typ As %String, hodnota As %String) As %String
+{
+    q:typ'="bool" hodnota
+    q $s((hodnota=1)||($zcvt(hodnota,"L")="true"):"true", 1:"false")
+}
+
+/// Podmínka `visibleWhen` ve tvaru „PARAMETR=Hodnota" (jako `TemplateParameter.VisibleWhen` v návrháři)
+/// proti hodnotám parametrů podle jména; prázdná podmínka = vždy viditelný.
+ClassMethod Viditelny(podminka As %String, ByRef hodnoty) As %Boolean
+{
+    q:podminka="" 1
+    q $g(hodnoty($p(podminka,"=",1)))=$p(podminka,"=",2,$l(podminka,"="))
+}
+
+/// Hodnoty parametrů uložené v šabloně (`printParameters` v JSON šablony); prázdný objekt, když šablona
+/// není, patří jiné agendě nebo nejde přečíst.
+ClassMethod HodnotyZeSablony(IdFa As %String, agendaCode As %String, templateId As %String, mlineIdFa As %String = {..#MlineIdFa}) As %DynamicObject
+{
+    s prazdne = ##class(%DynamicObject).%New()
+    s sablona = ..NajdiSablonu(IdFa, agendaCode, templateId, mlineIdFa)
+    q:'$isobject(sablona) prazdne
+    s json = ..SablonaJson(sablona.sourceIdFa, templateId)
+    q:'$isobject(json) prazdne
+    q $s($isobject(json.printParameters):json.printParameters, 1:prazdne)
+}
+
+/// JSON šablony z úložiště (`API.Sablony`: malý blob jednoklíčově, velký po kusech); "" když nejde přečíst.
+ClassMethod SablonaJson(vetev As %String, templateId As %String) As %DynamicObject
+{
+    s vysledek = ""
+    try {
+        s stream = ##class(%Stream.TmpCharacter).%New()
+        i $d(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Data",1)) {
+            f n=1:1:+$g(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Data")) {
+                d stream.Write($g(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Data",n)))
+            }
+        } else {
+            d stream.Write($g(^ALVA.TemplateDesigner.Templates(vetev,"DTA",templateId,"Data")))
+        }
+        i stream.Size > 0 {
+            d stream.Rewind()
+            s vysledek = ##class(%DynamicObject).%FromJSON(stream)
+        }
+    } catch ex { s vysledek = "" }
+    q vysledek
+}
+
+/// Definice parametrů agendy (`GetParameters`) jako pole. Agenda píše do `^||ML("OUT")`, které ve formuláři
+/// patří volajícímu - obsah se uloží a vrátí.
+ClassMethod DefiniceParametru(agendaClass As %String) As %DynamicArray
+{
+    m puvodniOut = ^||ML("OUT")
+    k ^||ML("OUT")
+    m sys = ^||ML("SYS")
+    d $classmethod(agendaClass, "GetParameters", .sys)
+    s json = $g(^||ML("OUT","1"))
+    s chyba = $g(^||ML("OUT","ERR"))
+    k ^||ML("OUT")
+    m ^||ML("OUT") = puvodniOut
+    i chyba '= "" $$$ThrowStatus($$$ERROR($$$GeneralError, "Parametry agendy nejdou načíst: "_chyba))
+    q ##class(%DynamicArray).%FromJSON($s(json="":"[]", 1:json))
+}
+
 /// Třída agendy podle kódu; neznámý kód je chyba volajícího.
 ClassMethod AgendaClass(agendaCode As %String) As %String
 {

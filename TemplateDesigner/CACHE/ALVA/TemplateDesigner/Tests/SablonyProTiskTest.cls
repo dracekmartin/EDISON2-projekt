@@ -202,6 +202,50 @@ Method TestApiNastaveniAVyber()
 	do $$$AssertEquals($data(^||ML("OUT","templateId")), 0, "neznámá agenda: bez výsledku (chyba)")
 }
 
+/// Formulář před tiskem: parametry agendy s hodnotami z vybrané šablony, chybějící z výchozí hodnoty,
+/// skrytí podle visibleWhen (Obousměrný tisk jen při směru Oba).
+Method TestParametryZeSablony()
+{
+	do ..Uloz(..#Firma, "FA-P", "S parametry", ..#Agenda, "{""version"":""1.0.0"",""name"":""x"",""sections"":[],""printParameters"":{""SMER_TISKU"":""Tam"",""OBOUSMERNY_TISK"":""true""}}")
+
+	set parametry = ##class(ALVA.TemplateDesigner.API.SablonyProTisk).ParametryProTisk(..#Firma, ..#Agenda, "FA-P", ..#Mline)
+	do ..PodleJmena(parametry, .hodnota, .skryty, .vychozi)
+	do $$$AssertTrue($data(hodnota("SMER_TISKU")), "parametry agendy z GetParameters")
+	do $$$AssertEquals(hodnota("SMER_TISKU"), "Tam", "hodnota uložená v šabloně")
+	do $$$AssertEquals(hodnota("TVAR_NAZVU_ZASTAVKY"), vychozi("TVAR_NAZVU_ZASTAVKY"), "bez hodnoty v šabloně výchozí")
+	do $$$AssertEquals(hodnota("OBOUSMERNY_TISK"), "true", "zaškrtávátko jako true/false")
+	do $$$AssertEquals(skryty("OBOUSMERNY_TISK"), 1, "Obousměrný tisk skrytý, když směr není Oba")
+	do $$$AssertEquals(skryty("SMER_TISKU"), 0, "bez podmínky vždy viditelný")
+
+	// Bez vybrané šablony a bez šablony podle pravidla: výchozí hodnoty, směr Oba → Obousměrný tisk vidět.
+	set parametry = ##class(ALVA.TemplateDesigner.API.SablonyProTisk).ParametryProTisk(..#Firma, ..#Agenda, "", ..#Mline)
+	kill hodnota, skryty, vychozi
+	do ..PodleJmena(parametry, .hodnota, .skryty, .vychozi)
+	do $$$AssertEquals(hodnota("SMER_TISKU"), "Oba", "bez šablony výchozí hodnota")
+	do $$$AssertEquals(hodnota("OBOUSMERNY_TISK"), "false", "výchozí zaškrtávátko jako false")
+	do $$$AssertEquals(skryty("OBOUSMERNY_TISK"), 0, "při směru Oba Obousměrný tisk vidět")
+}
+
+/// Formulář volá parametry uprostřed vlastní odpovědi - načtení definic z agendy jí nesmí smazat obsah.
+Method TestParametryNechajiOdpovedVolajiciho()
+{
+	set ^||ML("OUT","Items") = "rozpracovaná odpověď formuláře"
+	do ##class(ALVA.TemplateDesigner.API.SablonyProTisk).ParametryProTisk(..#Firma, ..#Agenda, "", ..#Mline)
+	do $$$AssertEquals($get(^||ML("OUT","Items")), "rozpracovaná odpověď formuláře", "odpověď volajícího zůstala")
+	do $$$AssertEquals($data(^||ML("OUT","1")), 0, "výstup GetParameters v odpovědi nezůstal")
+}
+
+/// Hodnota, skrytí a výchozí hodnota parametrů podle jména.
+Method PodleJmena(parametry As %DynamicArray, ByRef hodnota, ByRef skryty, ByRef vychozi)
+{
+	set iter = parametry.%GetIterator()
+	while iter.%GetNext(.i, .polozka) {
+		set hodnota(polozka.name) = polozka.value
+		set skryty(polozka.name) = +polozka.hidden
+		set vychozi(polozka.name) = polozka.defaultValue
+	}
+}
+
 /// Pravidlo nad testovacími větvemi.
 Method Pravidlo(templateId As %String) As %DynamicObject
 {
@@ -225,7 +269,7 @@ Method Popis(seznam As %DynamicArray) As %String
 }
 
 /// Uloží šablonu přes API do dané větve (testovací M-line větev zámek MLINE nemá).
-Method Uloz(vetev As %String, templateId As %String, name As %String, agendaCode As %String)
+Method Uloz(vetev As %String, templateId As %String, name As %String, agendaCode As %String, data As %String = "")
 {
 	kill ^||ML
 	do ..SetupSys(.sys, ..#Firma)
@@ -233,7 +277,7 @@ Method Uloz(vetev As %String, templateId As %String, name As %String, agendaCode
 	set ^||ML("IN","name")       = name
 	set ^||ML("IN","agendaCode") = agendaCode
 	set ^||ML("IN","targetIdFa") = vetev
-	set ^||ML("IN","data")       = "{""version"":""1.0.0"",""name"":""x"",""sections"":[]}"
+	set ^||ML("IN","data")       = $select(data'="":data, 1:"{""version"":""1.0.0"",""name"":""x"",""sections"":[]}")
 	do ##class(ALVA.TemplateDesigner.API.Sablony).SaveTemplate(.sys)
 	do $$$AssertEquals($get(^||ML("OUT","templateId")), templateId, "uložení testovací šablony "_templateId)
 	kill ^||ML
